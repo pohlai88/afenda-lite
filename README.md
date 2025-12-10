@@ -1,16 +1,19 @@
-![Vercel with Neon](./docs/home.png)
+![Vercel with Neon & Neon Auth](./docs/home.png)
 
--> View demo: [vercel-marketplace-neon.vercel.app](https://vercel-marketplace-neon.vercel.app/)
+-> View demo: [vercel-marketplace-neon-auth.vercel.app](https://vercel-marketplace-neon-auth.vercel.app/)
 
 # Neon Postgres
 
-A minimal template for building full-stack React applications using Next.js, Vercel, and Neon.
+A minimal template for building full-stack React applications using Next.js, Vercel, and Neon with Neon Auth.
 
 ## Getting Started
 
 Click the "Deploy" button to clone this repo, create a new Vercel project, setup the Neon integration, and provision a new Neon database:
 
-[![Deploy to Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fneondatabase-labs%2Fvercel-marketplace-neon%2Ftree%2Fmain&project-name=my-vercel-neon-app&repository-name=my-vercel-neon-app&products=[{%22type%22:%22integration%22,%22integrationSlug%22:%22neon%22,%22productSlug%22:%22neon%22,%22protocol%22:%22storage%22}])
+[![Deploy to Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fneondatabase-labs%2Fvercel-marketplace-neon-auth%2Ftree%2Fmain&project-name=my-vercel-neon-app&repository-name=my-vercel-neon-app&products=[{%22type%22:%22integration%22,%22integrationSlug%22:%22neon%22,%22productSlug%22:%22neon%22,%22protocol%22:%22storage%22}])
+
+> [!IMPORTANT]
+> Make sure to check the "Auth" checkbox when creating the Vercel project to enable Neon Auth.
 
 Once the process is complete, you can clone the newly created GitHub repository and start making changes locally.
 
@@ -34,15 +37,22 @@ You can use the package manager of your choice. For example, Vercel also support
 cp .env.example .env
 ```
 
-#### Get your database URL
+#### Set up the environment variables
 
 Run `vercel env pull` to fetch the environment variables from your Vercel project.
 
-Alternatively, obtain the database connection string from the Connection Details widget on the [Neon Dashboard](https://console.neon.tech/). Next, update the `.env` file with your database connection string:
+Alternatively, you can obtain your database connection string and Neon Auth base URL from the obtain the database connection string from the [Neon Dashboard](https://console.neon.tech/).
+
+1. Database Connection String: Obtain the database connection string from the Connection Details widget on the [Neon Dashboard](https://console.neon.tech/) and update the `.env` file:
 
 ```txt
-# The connection string has the format `postgres://user:pass@host/db`
-DATABASE_URL=<your-string-here>
+DATABASE_URL=<postgres://user:pass@host/db>
+```
+
+2. Neon Auth Base URL: Obtain the Neon Auth Base URL from the Auth tab of your production branch on the [Neon Dashboard](https://console.neon.tech/) and update the `.env` file:
+
+```txt
+NEON_AUTH_BASE_URL=<https://ep-xxx.neonauth.us-east-1.aws.neon.tech/neondb/auth>
 ```
 
 #### Start the development server
@@ -69,6 +79,7 @@ To learn more about Neon, check out the Neon documentation:
 
 - [Neon on Vercel Fluid Compute](https://neon.com/docs/guides/vercel-connection-methods) - learn about differnet datatabase connection methods on Fluid.
 - [Neon Documentation](https://neon.tech/docs/introduction) - learn about Neon's features and SDKs.
+- [Neon Auth Documentation](https://neon.com/docs/auth/overview) - learn about Neon Auth.
 - [Neon Discord](https://discord.gg/9kf3G4yUZk) - join the Neon Discord server to ask questions and join the community.
 - [ORM Integrations](https://neon.tech/docs/get-started-with-neon/orms) - find Object-Relational Mappers (ORMs) that work with Neon.
 

@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { checkDbConnection } from "./db";
+import { checkDbConnection } from "@/lib/db";
 
 export default async function Home() {
   const result = await checkDbConnection();
@@ -27,11 +27,11 @@ export default async function Home() {
             />
           </div>
           <h1 className="text-3xl font-semibold leading-none tracking-tighter md:text-4xl md:leading-none lg:text-5xl lg:leading-none">
-            Vercel with Neon Postgres
+            Vercel with Neon Postgres & Neon Auth
           </h1>
           <p className="mt-3.5 max-w-lg text-base leading-snug tracking-tight text-[#61646B] md:text-lg md:leading-snug lg:text-xl lg:leading-snug dark:text-[#94979E]">
             A minimal template for building full-stack React applications using
-            Next.js, Vercel, and Neon.
+            Next.js, Vercel, and Neon with Neon Auth.
           </p>
           <div className="mt-8 flex flex-wrap items-center gap-5 md:mt-9 lg:mt-10">
             <Link

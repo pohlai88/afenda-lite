@@ -8,6 +8,7 @@
     "start": "next start"
   },
   "dependencies": {
+    "@neondatabase/neon-js": "^0.1.0-beta.12",
     "@vercel/functions": "^3.3.3",
     "next": "^16.0.7",
     "pg": "^8.16.3",
