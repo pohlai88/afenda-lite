@@ -1,5 +1,5 @@
 {
-  "name": "vercel-marketplace-neon",
+  "name": "vercel-marketplace-neon-auth",
   "version": "0.1.0",
   "private": true,
   "scripts": {

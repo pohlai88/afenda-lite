@@ -7,7 +7,7 @@ export default neonAuthMiddleware({
 
 export const config = {
   matcher: [
-    // Run the middleware for all paths, except the static resources
-    "/((?!_next/static|_next/image|favicon.ico).*)",
+    // Protected routes requiring authentication
+    "/account/:path*",
   ],
 };

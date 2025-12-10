@@ -1,5 +1,7 @@
+import Link from "next/link";
 import { AccountView } from "@neondatabase/neon-js/auth/react/ui";
 import { accountViewPaths } from "@neondatabase/neon-js/auth/react/ui/server";
+import { UserButton } from "@neondatabase/neon-js/auth/react";
 
 export const dynamicParams = false;
 
@@ -14,8 +16,18 @@ export default async function AccountPage({
 }) {
   const { path } = await params;
   return (
-    <main className="container p-4 md:p-6">
-      <AccountView path={path} />
-    </main>
+    <div className="flex min-h-screen flex-col">
+      <div className="flex w-full flex-1 flex-col px-5">
+        <header className="flex justify-between items-center p-4 gap-4 h-16">
+          <Link href="/" className="text-sm font-medium">
+            Home
+          </Link>
+          <UserButton size="icon" />
+        </header>
+        <main className="flex-1 py-4 md:py-6">
+          <AccountView path={path} />
+        </main>
+      </div>
+    </div>
   );
 }
