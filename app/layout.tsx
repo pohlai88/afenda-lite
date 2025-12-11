@@ -15,11 +15,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      suppressHydrationWarning
-      lang="en"
-      className={`${inter.variable} dark`}
-    >
+    <html suppressHydrationWarning lang="en" className={inter.variable}>
       <body>
         <NeonAuthUIProvider
           authClient={authClient}

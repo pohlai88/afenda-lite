@@ -7,18 +7,18 @@ export function UserButton() {
     <BaseUserButton
       size="icon"
       classNames={{
-        base: "bg-white dark:bg-[#0a0a0a]",
+        base: "bg-card",
         trigger: {
-          base: "bg-white dark:bg-[#0a0a0a] border border-[#E4E5E7] dark:border-[#303236] hover:border-[#00E599]",
+          base: "bg-card border border-border hover:border-brand",
         },
         content: {
-          base: "bg-white dark:bg-[#0a0a0a] border border-[#E4E5E7] dark:border-[#303236] shadow-lg",
+          base: "bg-card border border-border shadow-lg",
           user: {
-            base: "text-[#61646B] dark:text-[#94979E]",
+            base: "text-muted-foreground",
           },
           menuItem:
-            "text-[#171717] dark:text-[#ededed] hover:bg-[#00E599]/10 hover:text-[#00E599] focus:bg-[#00E599]/10 focus:text-[#00E599]",
-          separator: "bg-[#E4E5E7] dark:bg-[#303236]",
+            "text-foreground [&[role=menuitem]]:hover:bg-brand/10 hover:text-brand focus:text-brand",
+          separator: "bg-border",
         },
       }}
     />

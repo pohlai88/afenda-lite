@@ -2,22 +2,120 @@
 @import "@neondatabase/neon-js/ui/css";
 
 :root {
+  /* Core colors */
   --background: #ffffff;
   --foreground: #171717;
+
+  /* Card */
+  --card: #ffffff;
+  --card-foreground: #171717;
+
+  /* Muted */
+  --muted: #fafafa;
+  --muted-foreground: #61646b;
+
+  /* Accent (for hover states, etc.) */
+  --accent: #f5f5f5;
+  --accent-foreground: #171717;
+
+  /* Secondary */
+  --secondary: #f5f5f5;
+  --secondary-foreground: #171717;
+
+  /* Borders and inputs */
+  --border: #e4e5e7;
+  --input: #e4e5e7;
+
+  /* Primary (dark buttons) */
+  --primary: #171717;
+  --primary-foreground: #ffffff;
+
+  /* Brand (Neon green) */
+  --brand: #00e599;
+  --brand-hover: #00e5bf;
+  --brand-foreground: #0c0d0d;
+
+  /* Destructive */
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+
+  /* Ring/focus */
+  --ring: #00e599;
+
+  /* Sidebar */
+  --sidebar: #ffffff;
+  --sidebar-foreground: #171717;
+  --sidebar-accent: #f5f5f5;
+  --sidebar-accent-foreground: #171717;
+  --sidebar-border: #e4e5e7;
+}
+
+/* Dark mode - system preference */
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Core colors */
+    --background: #0a0a0a;
+    --foreground: #ededed;
+
+    /* Card */
+    --card: #0a0a0a;
+    --card-foreground: #ededed;
+
+    /* Muted */
+    --muted: #141414;
+    --muted-foreground: #94979e;
+
+    /* Accent */
+    --accent: #1a1a1a;
+    --accent-foreground: #ededed;
+
+    /* Secondary */
+    --secondary: #1a1a1a;
+    --secondary-foreground: #ededed;
+
+    /* Borders and inputs */
+    --border: #303236;
+    --input: #303236;
+
+    /* Primary (light buttons in dark mode) */
+    --primary: #ededed;
+    --primary-foreground: #0a0a0a;
+
+    /* Destructive */
+    --destructive: #ef4444;
+    --destructive-foreground: #ffffff;
+
+    /* Sidebar */
+    --sidebar: #0a0a0a;
+    --sidebar-foreground: #ededed;
+    --sidebar-accent: #1a1a1a;
+    --sidebar-accent-foreground: #ededed;
+    --sidebar-border: #303236;
+  }
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-brand: var(--brand);
+  --color-brand-hover: var(--brand-hover);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 body {

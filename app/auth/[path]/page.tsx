@@ -21,16 +21,17 @@ export default async function AuthPage({
           <AuthView
             path={path}
             classNames={{
-              base: "bg-white dark:bg-[#0a0a0a] border border-[#E4E5E7] dark:border-[#303236] rounded-lg shadow-sm",
-              header: "border-b border-[#E4E5E7] dark:border-[#303236]",
-              title: "text-[#171717] dark:text-[#ededed] font-semibold",
-              description: "text-[#61646B] dark:text-[#94979E]",
-              footerLink: "text-[#00E599] hover:text-[#00E5BF]",
+              base: "bg-card border border-border rounded-lg shadow-sm",
+              header: "border-b border-border",
+              title: "text-foreground font-semibold",
+              description: "text-muted-foreground",
+              footerLink: "text-brand hover:text-brand-hover",
               form: {
                 input:
-                  "bg-white dark:bg-[#0a0a0a] text-[#171717] dark:text-[#ededed] border-[#E4E5E7] dark:border-[#303236] placeholder:text-[#61646B] dark:placeholder:text-[#94979E]",
-                label: "text-[#171717] dark:text-[#ededed]",
-                primaryButton: "bg-[#00E599] text-[#0C0D0D] hover:bg-[#00E5BF]",
+                  "bg-card text-foreground border-border placeholder:text-muted-foreground",
+                label: "text-foreground",
+                primaryButton:
+                  "bg-brand text-brand-foreground hover:bg-brand-hover",
               },
             }}
           />

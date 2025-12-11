@@ -28,17 +28,25 @@ export default async function AccountPage({
           <AccountView
             path={path}
             classNames={{
-              base: "bg-white dark:bg-[#0a0a0a]",
+              base: "bg-card",
               card: {
-                base: "bg-white dark:bg-[#0a0a0a] border-[#E4E5E7] dark:border-[#303236]",
-                title: "text-[#171717] dark:text-[#ededed] font-semibold",
-                description: "text-[#61646B] dark:text-[#94979E]",
+                base: "bg-card border-border",
+                title: "text-foreground font-semibold",
+                description: "text-muted-foreground",
+                content: "bg-card",
+                footer: "bg-muted border-t border-border",
+                input:
+                  "bg-card text-foreground border-border placeholder:text-muted-foreground",
+                button: "bg-primary text-primary-foreground hover:opacity-90",
+                outlineButton:
+                  "bg-transparent text-foreground border-border hover:bg-accent",
+                cell: "bg-muted border-border text-foreground",
               },
               sidebar: {
-                base: "border-[#E4E5E7] dark:border-[#303236]",
+                base: "border-border",
                 button:
-                  "text-[#61646B] dark:text-[#94979E] hover:text-[#00E599]",
-                buttonActive: "text-[#00E599]",
+                  "text-muted-foreground hover:text-brand hover:bg-transparent",
+                buttonActive: "text-brand bg-transparent",
               },
             }}
           />
