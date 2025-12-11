@@ -1,15 +1,15 @@
 import Image from "next/image";
 import Link from "next/link";
 import { checkDbConnection } from "@/lib/db";
-import { UserButton } from "@neondatabase/neon-js/auth/react";
+import { UserButton } from "@/components/user-button";
 
 export default async function Home() {
   const result = await checkDbConnection();
   return (
     <div className="flex min-h-screen flex-col">
       <div className="mx-auto flex w-full max-w-md flex-1 flex-col px-5 md:max-w-lg md:px-0 lg:max-w-xl">
-      <header className="flex justify-end items-center p-4 gap-4 h-16">
-            <UserButton size="icon" />
+        <header className="flex justify-end items-center p-4 gap-4 h-16">
+          <UserButton />
         </header>
         <main className="flex flex-1 flex-col justify-center">
           <div className="mb-6 md:mb-7">
