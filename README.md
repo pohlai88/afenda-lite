@@ -23,7 +23,7 @@ Once the process is complete, you can clone the newly created GitHub repository 
 
 View live demo: [vercel-marketplace-neon-auth.vercel.app](https://vercel-marketplace-neon-auth.vercel.app/)
 
-<!-- TODO: Add screenshot -->
+![Vercel with Neon Auth](./docs/home.png)
 
 ## Local Setup
 
