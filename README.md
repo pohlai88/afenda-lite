@@ -1,6 +1,8 @@
-![Vercel with Neon & Neon Auth](./docs/home.png)
-
--> View demo: [vercel-marketplace-neon-auth.vercel.app](https://vercel-marketplace-neon-auth.vercel.app/)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://neon.com/brand/neon-logo-dark-color.svg?new">
+  <source media="(prefers-color-scheme: light)" srcset="https://neon.com/brand/neon-logo-light-color.svg?new">
+  <img width="250px" alt="Neon Logo" src="https://neon.com/brand/neon-logo-dark-color.svg?new">
+</picture>
 
 # Neon Postgres
 
@@ -16,6 +18,12 @@ Click the "Deploy" button to clone this repo, create a new Vercel project, setup
 > Make sure to check the "Auth" checkbox when creating the Vercel project to enable Neon Auth.
 
 Once the process is complete, you can clone the newly created GitHub repository and start making changes locally.
+
+## Demo
+
+View live demo: [vercel-marketplace-neon-auth.vercel.app](https://vercel-marketplace-neon-auth.vercel.app/)
+
+<!-- TODO: Add screenshot -->
 
 ## Local Setup
 

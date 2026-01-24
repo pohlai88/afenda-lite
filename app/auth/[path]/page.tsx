@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { AuthView } from "@neondatabase/neon-js/auth/react/ui";
+import { AuthView } from "@neondatabase/auth/react";
 
 export const dynamicParams = false;
 
@@ -17,24 +17,8 @@ export default async function AuthPage({
             Home
           </Link>
         </header>
-        <main className="flex flex-1 flex-col items-center justify-center gap-3 p-4 md:p-6">
-          <AuthView
-            path={path}
-            classNames={{
-              base: "bg-card border border-border rounded-lg shadow-sm",
-              header: "border-b border-border",
-              title: "text-foreground font-semibold",
-              description: "text-muted-foreground",
-              footerLink: "text-brand hover:text-brand-hover",
-              form: {
-                input:
-                  "bg-card text-foreground border-border placeholder:text-muted-foreground",
-                label: "text-foreground",
-                primaryButton:
-                  "bg-brand text-brand-foreground hover:bg-brand-hover",
-              },
-            }}
-          />
+        <main className="container mx-auto flex grow flex-col items-center justify-center gap-3 self-center p-4 md:p-6">
+          <AuthView path={path} />
         </main>
       </div>
     </div>

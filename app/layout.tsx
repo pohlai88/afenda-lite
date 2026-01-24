@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { inter } from "./fonts";
 import { authClient } from "@/lib/auth/client";
-import { NeonAuthUIProvider } from "@neondatabase/neon-js/auth/react/ui";
+import { NeonAuthUIProvider } from "@neondatabase/auth/react";
 
 export const metadata: Metadata = {
   title: "Vercel + Neon",

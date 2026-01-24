@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { AccountView } from "@neondatabase/neon-js/auth/react/ui";
-import { accountViewPaths } from "@neondatabase/neon-js/auth/react/ui/server";
+import { AccountView } from "@neondatabase/auth/react";
+import { accountViewPaths } from "@neondatabase/auth/react/ui/server";
 import { UserButton } from "@/components/user-button";
 
 export const dynamicParams = false;
@@ -24,32 +24,8 @@ export default async function AccountPage({
           </Link>
           <UserButton />
         </header>
-        <main className="flex flex-1 flex-col items-center justify-center gap-3 py-4 md:py-6">
-          <AccountView
-            path={path}
-            classNames={{
-              base: "bg-card",
-              card: {
-                base: "bg-card border-border",
-                title: "text-foreground font-semibold",
-                description: "text-muted-foreground",
-                content: "bg-card",
-                footer: "bg-muted border-t border-border",
-                input:
-                  "bg-card text-foreground border-border placeholder:text-muted-foreground",
-                button: "bg-primary text-primary-foreground hover:opacity-90",
-                outlineButton:
-                  "bg-transparent text-foreground border-border hover:bg-accent",
-                cell: "bg-muted border-border text-foreground",
-              },
-              sidebar: {
-                base: "border-border",
-                button:
-                  "text-muted-foreground hover:text-brand hover:bg-transparent",
-                buttonActive: "text-brand bg-transparent",
-              },
-            }}
-          />
+        <main className="container p-4 md:p-6">
+          <AccountView path={path} />
         </main>
       </div>
     </div>
