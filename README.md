@@ -4,7 +4,7 @@
   <img width="250px" alt="Neon Logo" src="https://neon.com/brand/neon-logo-dark-color.svg?new">
 </picture>
 
-# Neon Postgres
+# Neon Vercel Marketplace Template with Neon Auth
 
 A minimal template for building full-stack React applications using Next.js, Vercel, and Neon with Neon Auth.
 
