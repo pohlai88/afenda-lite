@@ -1,5 +1,5 @@
 ---
-name: using-neon
+name: neon-postgres
 description: Guides and best practices for working with Neon Serverless Postgres. Covers getting started, local development with Neon, choosing a connection method, Neon features, authentication (@neondatabase/auth), PostgREST-style data API (@neondatabase/neon-js), Neon CLI, and Neon's Platform API/SDKs. Use for any Neon-related questions.
 ---
 
@@ -19,10 +19,10 @@ You can use the `curl` commands to fetch the documentation page as markdown:
 
 ```bash
 # Get list of all Neon docs
-curl https://neon.tech/llms.txt
+curl https://neon.com/llms.txt
 
 # Fetch any doc page as markdown
-curl -H "Accept: text/markdown" https://neon.tech/docs/<path>
+curl -H "Accept: text/markdown" https://neon.com/docs/<path>
 ```
 
 Don't guess docs pages. Use the `llms.txt` index to find the relevant URL or follow the links in the resources below.

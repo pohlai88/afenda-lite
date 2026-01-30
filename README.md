@@ -73,13 +73,9 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
-#### Neon MCP Server
+#### Neon MCP Server & Agent Skill
 
-```
-npx neonctl@latest init
-```
-
-The init command installs the Neon MCP (Model Context Protocol) server and authenticates it to Neon using a Neon API key.
+This project includes the [Neon MCP server](https://github.com/neondatabase/mcp-server-neon) and [neon-postgres agent skill](https://github.com/neondatabase/agent-skills) for AI-assisted development with Neon Postgres. Both are configured for Cursor, Claude Code and VS Code.
 
 ## Learn More
 
