@@ -1,13 +1,9 @@
-import { neonAuthMiddleware } from "@neondatabase/auth/next/server";
+import { auth } from "@/lib/auth/server";
 
-export default neonAuthMiddleware({
-  // Redirects unauthenticated users to sign-in page
+export default auth.middleware({
   loginUrl: "/auth/sign-in",
 });
 
 export const config = {
-  matcher: [
-    // Protected routes requiring authentication
-    "/account/:path*",
-  ],
+  matcher: ["/account/:path*"],
 };

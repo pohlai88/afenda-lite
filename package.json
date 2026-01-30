@@ -8,7 +8,7 @@
     "start": "next start"
   },
   "dependencies": {
-    "@neondatabase/auth": "^0.1.0-beta.21",
+    "@neondatabase/auth": "^0.2.0-beta.1",
     "@vercel/functions": "^3.3.3",
     "next": "^16.0.10",
     "pg": "^8.16.3",
