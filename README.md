@@ -47,6 +47,8 @@ cp .env.example .env
 
 #### Set up the environment variables
 
+##### Neon DB & Auth variables
+
 Run `vercel env pull` to fetch the environment variables from your Vercel project.
 
 Alternatively, you can obtain your database connection string and Neon Auth base URL from the obtain the database connection string from the [Neon Dashboard](https://console.neon.tech/).
@@ -61,6 +63,32 @@ DATABASE_URL=<postgres://user:pass@host/db>
 
 ```txt
 NEON_AUTH_BASE_URL=<https://ep-xxx.neonauth.us-east-1.aws.neon.tech/neondb/auth>
+```
+
+##### Cookie Secret
+
+Generate a secure secret for session cookies:
+
+```bash
+openssl rand -base64 32
+```
+
+Add to `.env`:
+
+```txt
+NEON_AUTH_COOKIE_SECRET=<generated-secret>
+```
+
+##### Push to Vercel
+
+Add the cookie secret (and other environment variables) to the Vercel environment variables:
+
+```bash
+vercel env add [name] [environment] < [file]
+```
+
+```bash
+vercel env add NEON_AUTH_COOKIE_SECRET production < .env
 ```
 
 #### Start the development server
