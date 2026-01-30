@@ -48,6 +48,10 @@
   --sidebar-accent: #f5f5f5;
   --sidebar-accent-foreground: #171717;
   --sidebar-border: #e4e5e7;
+
+  /* Popover */
+  --popover: #ffffff;
+  --popover-foreground: #171717;
 }
 
 /* Dark mode - system preference */
@@ -91,6 +95,10 @@
     --sidebar-accent: #1a1a1a;
     --sidebar-accent-foreground: #ededed;
     --sidebar-border: #303236;
+
+    /* Popover */
+    --popover: #0a0a0a;
+    --popover-foreground: #ededed;
   }
 }
 
