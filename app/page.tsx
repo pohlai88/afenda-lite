@@ -67,7 +67,7 @@ export default async function Home() {
             {[
               {
                 text: "Docs",
-                href: "https://neon.tech/docs/",
+                href: "https://neon.com/docs/auth/overview",
                 icon: "/docs.svg",
               },
               {
