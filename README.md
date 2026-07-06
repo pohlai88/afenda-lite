@@ -1,125 +1,107 @@
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://neon.com/brand/neon-logo-dark-color.svg?new">
-  <source media="(prefers-color-scheme: light)" srcset="https://neon.com/brand/neon-logo-light-color.svg?new">
-  <img width="250px" alt="Neon Logo" src="https://neon.com/brand/neon-logo-dark-color.svg?new">
-</picture>
+# Customer Feedback Portal
 
-# Neon Vercel Marketplace Template with Neon Auth
+Collect customer satisfaction feedback with shareable survey links. Built for the fastest possible ship on **Vercel + Neon Postgres + Neon Auth**.
 
-A minimal template for building full-stack React applications using Next.js, Vercel, and Neon with Neon Auth.
+## What you get
 
-## Getting Started
+- Admin sign-up / sign-in via **Neon Auth** (email OTP built in)
+- Create 1–5 rating surveys with optional comments
+- Public customer link at `/survey/[slug]` (no login required)
+- Dashboard to copy links and review responses
 
-Click the "Deploy" button to clone this repo, create a new Vercel project, setup the Neon integration, and provision a new Neon database:
+## Neon configuration (via MCP)
 
-[![Deploy to Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fneondatabase%2Fvercel-marketplace-neon-auth%2Ftree%2Fmain&project-name=my-vercel-neon-app&repository-name=my-vercel-neon-app&products=[{%22type%22:%22integration%22,%22integrationSlug%22:%22neon%22,%22productSlug%22:%22neon%22,%22protocol%22:%22storage%22}])
+This project is linked to Neon project **afenda**:
 
-> [!IMPORTANT]
-> Make sure to check the "Auth" checkbox when creating the Vercel project to enable Neon Auth.
+| Setting | Value |
+|---------|-------|
+| Project ID | `snowy-dawn-60990429` |
+| Branch | `production` (`br-young-term-aobkvd38`) |
+| Database | `neondb` |
 
-Once the process is complete, you can clone the newly created GitHub repository and start making changes locally.
+Local env is in `.env` (gitignored). Project metadata is in `.neon`.
 
-## Demo
+**Trusted domains:** only `http://localhost:3000` for now. After Vercel deploy, add your `*.vercel.app` URL in Neon Console → Auth → Trusted domains.
 
-View live demo: [vercel-marketplace-neon-auth.vercel.app](https://vercel-marketplace-neon-auth.vercel.app/)
+## GitHub
 
-![Vercel with Neon Auth](./docs/home.png)
+Repository: https://github.com/pohlai88/iam-check
 
-## Local Setup
+## Fastest way to ship (3 steps)
 
-### Installation
+### 1. Deploy to Vercel (one click)
 
-Install the dependencies:
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fneondatabase%2Fvercel-marketplace-neon-auth%2Ftree%2Fmain&project-name=client-feedback-portal&repository-name=client-feedback-portal&products=[{%22type%22:%22integration%22,%22integrationSlug%22:%22neon%22,%22productSlug%22:%22neon%22,%22protocol%22:%22storage%22}])
 
-```bash
-npm install
-```
+**Important:** check the **Auth** checkbox when creating the project so Neon Auth is enabled.
 
-You can use the package manager of your choice. For example, Vercel also supports `bun install` out of the box.
+Or push this repo to GitHub and import it in Vercel with the **Neon** integration + **Auth** enabled.
 
-### Development
+### 2. Add one env var in Vercel
 
-#### Create a .env file in the project root
+Vercel + Neon auto-set `DATABASE_URL` and `NEON_AUTH_BASE_URL`.
 
-```bash
-cp .env.example .env
-```
-
-#### Set up the environment variables
-
-##### Neon DB & Auth variables
-
-Run `vercel env pull` to fetch the environment variables from your Vercel project.
-
-Alternatively, you can obtain your database connection string and Neon Auth base URL from the obtain the database connection string from the [Neon Dashboard](https://console.neon.tech/).
-
-1. Database Connection String: Obtain the database connection string from the Connection Details widget on the [Neon Dashboard](https://console.neon.tech/) and update the `.env` file:
-
-```txt
-DATABASE_URL=<postgres://user:pass@host/db>
-```
-
-2. Neon Auth Base URL: Obtain the Neon Auth Base URL from the Auth tab of your production branch on the [Neon Dashboard](https://console.neon.tech/) and update the `.env` file:
-
-```txt
-NEON_AUTH_BASE_URL=<https://ep-xxx.neonauth.us-east-1.aws.neon.tech/neondb/auth>
-```
-
-##### Cookie Secret
-
-Generate a secure secret for session cookies:
+You only add:
 
 ```bash
 openssl rand -base64 32
 ```
 
-Add to `.env`:
+Set `NEON_AUTH_COOKIE_SECRET` in Vercel → Settings → Environment Variables (Production + Preview + Development).
 
-```txt
-NEON_AUTH_COOKIE_SECRET=<generated-secret>
-```
+### 3. Add your domain to Neon Auth trusted domains
 
-##### Push to Vercel
+In [Neon Console](https://console.neon.tech/) → your project → **Auth** → **Trusted domains**, add:
 
-Add the cookie secret (and other environment variables) to the Vercel environment variables:
+- `https://your-app.vercel.app`
+- `http://localhost:3000` (for local dev)
+
+Redeploy if needed. Done.
+
+## Local development
 
 ```bash
-vercel env add [name] [environment] < [file]
+npm install
+cp .env.example .env
 ```
 
-```bash
-vercel env add NEON_AUTH_COOKIE_SECRET production < .env
-```
+Fill `.env` from Neon Console (or run `vercel env pull` after linking):
 
-#### Start the development server
+```env
+DATABASE_URL=postgresql://...
+NEON_AUTH_BASE_URL=https://ep-xxx.neonauth.../neondb/auth
+NEON_AUTH_COOKIE_SECRET=<openssl rand -base64 32>
+```
 
 ```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open http://localhost:3000 → sign up → `/dashboard` → create a survey → share `/survey/[slug]`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Survey tables are created automatically on first use.
 
-#### Neon MCP Server & Agent Skill
+## App routes
 
-This project includes the [Neon MCP server](https://github.com/neondatabase/mcp-server-neon) and [neon-postgres agent skill](https://github.com/neondatabase/agent-skills) for AI-assisted development with Neon Postgres. Both are configured for Cursor, Claude Code and VS Code.
+| Route | Who | Purpose |
+|-------|-----|---------|
+| `/` | Public | Landing page |
+| `/auth/sign-in` | Public | Neon Auth sign in |
+| `/auth/sign-up` | Public | Neon Auth sign up |
+| `/dashboard` | Admin | Create surveys, copy links |
+| `/dashboard/[id]` | Admin | View responses |
+| `/survey/[slug]` | Customer | Submit feedback (anonymous) |
 
-## Learn More
+## Stack
 
-To learn more about Neon, check out the Neon documentation:
+- [Next.js](https://nextjs.org/) on Vercel
+- [Neon Postgres](https://neon.tech/)
+- [Neon Auth](https://neon.com/docs/auth/overview)
+- Based on [neondatabase/vercel-marketplace-neon-auth](https://github.com/neondatabase/vercel-marketplace-neon-auth)
 
-- [Neon on Vercel Fluid Compute](https://neon.com/docs/guides/vercel-connection-methods) - learn about differnet datatabase connection methods on Fluid.
-- [Neon Documentation](https://neon.tech/docs/introduction) - learn about Neon's features and SDKs.
-- [Neon Auth Documentation](https://neon.com/docs/auth/overview) - learn about Neon Auth.
-- [Neon Discord](https://discord.gg/9kf3G4yUZk) - join the Neon Discord server to ask questions and join the community.
-- [ORM Integrations](https://neon.tech/docs/get-started-with-neon/orms) - find Object-Relational Mappers (ORMs) that work with Neon.
+## Why this stack
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-## Deploy on Vercel
-
-Commit and push your code changes to your GitHub repository to automatically trigger a new deployment.
+- **Neon via Vercel Marketplace** — database + auth wired in one flow
+- **No Docker** — unlike Formbricks
+- **No MongoDB** — Postgres only
+- **Minimal code** — survey schema + 4 pages on top of the official Neon template

@@ -5,8 +5,8 @@ import { authClient } from "@/lib/auth/client";
 import { NeonAuthUIProvider } from "@neondatabase/auth/react";
 
 export const metadata: Metadata = {
-  title: "Vercel + Neon",
-  description: "Use Neon with Vercel and Neon Auth",
+  title: "Customer Feedback Portal",
+  description: "Collect customer feedback surveys with Neon and Vercel",
 };
 
 export default function RootLayout({
@@ -19,7 +19,7 @@ export default function RootLayout({
       <body>
         <NeonAuthUIProvider
           authClient={authClient}
-          redirectTo="/account/settings"
+          redirectTo="/dashboard"
           emailOTP
         >
           {children}

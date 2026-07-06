@@ -1,110 +1,69 @@
-import Image from "next/image";
 import Link from "next/link";
-import { checkDbConnection } from "@/lib/db";
 import { UserButton } from "@/components/user-button";
 
-export default async function Home() {
-  const result = await checkDbConnection();
+export default function Home() {
   return (
-    <div className="flex min-h-screen flex-col">
-      <div className="mx-auto flex w-full max-w-md flex-1 flex-col px-5 md:max-w-lg md:px-0 lg:max-w-xl">
-        <header className="flex justify-end items-center p-4 gap-4 h-16">
-          <UserButton />
-        </header>
-        <main className="flex flex-1 flex-col justify-center">
-          <div className="mb-6 md:mb-7">
-            <Image
-              className="lg:h-7 lg:w-auto dark:hidden"
-              src="/logo.svg"
-              alt="Neon logo"
-              width={88}
-              height={24}
-              priority
-            />
-            <Image
-              className="hidden lg:h-7 lg:w-auto dark:block"
-              src="/logo-dark.svg"
-              alt="Neon logo"
-              width={88}
-              height={24}
-              priority
-            />
-          </div>
-          <h1 className="text-3xl font-semibold leading-none tracking-tighter md:text-4xl md:leading-none lg:text-5xl lg:leading-none">
-            Vercel with Neon Postgres & Neon Auth
-          </h1>
-          <p className="mt-3.5 max-w-lg text-base leading-snug tracking-tight text-muted-foreground md:text-lg md:leading-snug lg:text-xl lg:leading-snug">
-            A minimal template for building full-stack React applications using
-            Next.js, Vercel, and Neon with Neon Auth.
+    <main className="min-h-screen bg-background text-foreground">
+      <header className="mx-auto flex w-full max-w-5xl items-center justify-between px-6 py-6">
+        <div>
+          <p className="text-sm text-muted-foreground">Customer feedback</p>
+          <h1 className="text-2xl font-semibold">Feedback Portal</h1>
+        </div>
+        <UserButton />
+      </header>
+
+      <section className="mx-auto max-w-5xl px-6 py-16">
+        <div className="max-w-2xl">
+          <h2 className="text-4xl font-semibold tracking-tight">
+            Collect customer feedback in minutes
+          </h2>
+          <p className="mt-4 text-lg text-muted-foreground">
+            Create a 1–5 satisfaction survey, share a public link with
+            customers, and review responses in your dashboard. Built on Vercel,
+            Neon Postgres, and Neon Auth.
           </p>
-          <div className="mt-8 flex flex-wrap items-center gap-5 md:mt-9 lg:mt-10">
+
+          <div className="mt-8 flex flex-wrap gap-3">
             <Link
-              className="rounded-full bg-brand px-5 py-2.5 font-semibold tracking-tight text-brand-foreground transition-colors duration-200 hover:bg-brand-hover lg:px-7 lg:py-3"
-              href="https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fneondatabase-labs%2Fvercel-marketplace-neon%2Ftree%2Fmain&project-name=my-vercel-neon-app&repository-name=my-vercel-neon-app&products=[{%22type%22:%22integration%22,%22integrationSlug%22:%22neon%22,%22productSlug%22:%22neon%22,%22protocol%22:%22storage%22}]"
-              target="_blank"
+              href="/auth/sign-up"
+              className="rounded-xl bg-primary px-5 py-3 text-sm font-medium text-primary-foreground"
             >
-              Deploy to Vercel
+              Get started
             </Link>
             <Link
-              className="group flex items-center gap-2 leading-none tracking-tight"
-              href="https://github.com/neondatabase-labs/vercel-marketplace-neon"
-              target="_blank"
+              href="/dashboard"
+              className="rounded-xl border border-border px-5 py-3 text-sm font-medium hover:bg-accent"
             >
-              View on GitHub
-              <Image
-                className="transition-transform duration-200 group-hover:translate-x-1 dark:invert"
-                src="/arrow.svg"
-                alt="arrow"
-                width={16}
-                height={10}
-                priority
-              />
+              Open dashboard
             </Link>
           </div>
-        </main>
-        <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-border py-5 sm:gap-2 sm:gap-6 md:pb-12 md:pt-10">
-          <ul className="flex items-center gap-4 sm:gap-6">
-            {[
-              {
-                text: "Docs",
-                href: "https://neon.com/docs/auth/overview",
-                icon: "/docs.svg",
-              },
-              {
-                text: "Discord",
-                href: "https://discord.com/invite/92vNTzKDGp",
-                icon: "/discord.svg",
-              },
-            ].map((link) => (
-              <Link
-                className="flex items-center gap-2 opacity-70 transition-opacity duration-200 hover:opacity-100"
-                key={link.text}
-                href={link.href}
-                target="_blank"
-              >
-                <Image
-                  className="dark:invert"
-                  src={link.icon}
-                  alt={link.text}
-                  width={16}
-                  height={16}
-                  priority
-                />
-                <span className="text-sm tracking-tight">{link.text}</span>
-              </Link>
-            ))}
-          </ul>
-          <span
-            className={`rounded-full border px-3 py-1.5 text-xs font-semibold ${
-              result === "Database connected"
-                ? "border-brand/20 bg-brand/10 text-brand"
-                : "border-destructive/20 bg-destructive/10 text-destructive"
-            }`}
-          >
-            {result}
-          </span>
-        </footer>
-      </div>
-    </div>
+        </div>
+
+        <div className="mt-16 grid gap-4 md:grid-cols-3">
+          {[
+            {
+              title: "Create",
+              body: "Sign in and publish a survey with a title and one core question.",
+            },
+            {
+              title: "Share",
+              body: "Send customers a public link. No account required to respond.",
+            },
+            {
+              title: "Review",
+              body: "Track average score and read comments from your dashboard.",
+            },
+          ].map((item) => (
+            <div
+              key={item.title}
+              className="rounded-2xl border border-border bg-card p-6"
+            >
+              <h3 className="font-medium">{item.title}</h3>
+              <p className="mt-2 text-sm text-muted-foreground">{item.body}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+    </main>
   );
 }
