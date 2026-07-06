@@ -46,6 +46,14 @@ export async function ensureSurveySchema() {
 
       CREATE INDEX IF NOT EXISTS survey_responses_survey_id_idx
         ON survey_responses (survey_id);
+
+      CREATE TABLE IF NOT EXISTS survey_invitations (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        survey_id UUID NOT NULL REFERENCES surveys(id) ON DELETE CASCADE,
+        client_email TEXT NOT NULL,
+        invited_by UUID NOT NULL,
+        sent_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
     `).then(() => undefined);
   }
 
@@ -103,6 +111,32 @@ export async function createSurvey(input: {
   return mapSurvey(result.rows[0]);
 }
 
+export async function listSurveysForAdmin() {
+  await ensureSurveySchema();
+
+  const result = await pool.query(
+    `SELECT
+       s.id,
+       s.slug,
+       s.title,
+       s.question,
+       s.user_id,
+       s.created_at,
+       COUNT(r.id)::int AS response_count,
+       ROUND(AVG(r.rating)::numeric, 1) AS average_rating
+     FROM surveys s
+     LEFT JOIN survey_responses r ON r.survey_id = s.id
+     GROUP BY s.id
+     ORDER BY s.created_at DESC`,
+  );
+
+  return result.rows.map((row) => ({
+    ...mapSurvey(row),
+    responseCount: Number(row.response_count),
+    averageRating: row.average_rating ? Number(row.average_rating) : null,
+  })) satisfies SurveyWithStats[];
+}
+
 export async function listSurveysForUser(userId: string) {
   await ensureSurveySchema();
 
@@ -140,6 +174,24 @@ export async function getSurveyBySlug(slug: string) {
      WHERE slug = $1
      LIMIT 1`,
     [slug],
+  );
+
+  if (!result.rows[0]) {
+    return null;
+  }
+
+  return mapSurvey(result.rows[0]);
+}
+
+export async function getSurveyForAdmin(id: string) {
+  await ensureSurveySchema();
+
+  const result = await pool.query(
+    `SELECT id, slug, title, question, user_id, created_at
+     FROM surveys
+     WHERE id = $1
+     LIMIT 1`,
+    [id],
   );
 
   if (!result.rows[0]) {
@@ -196,4 +248,18 @@ export async function submitSurveyResponse(input: {
   );
 
   return mapResponse(result.rows[0]);
+}
+
+export async function recordSurveyInvitation(input: {
+  surveyId: string;
+  clientEmail: string;
+  invitedBy: string;
+}) {
+  await ensureSurveySchema();
+
+  await pool.query(
+    `INSERT INTO survey_invitations (survey_id, client_email, invited_by)
+     VALUES ($1, $2, $3)`,
+    [input.surveyId, input.clientEmail, input.invitedBy],
+  );
 }

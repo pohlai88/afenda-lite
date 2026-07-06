@@ -2,25 +2,15 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { auth } from "@/lib/auth/server";
+import { requireAdminSession } from "@/app/actions/admin";
 import {
   createSurvey,
   getSurveyBySlug,
   submitSurveyResponse,
 } from "@/lib/surveys";
 
-async function requireUserId() {
-  const { data: session } = await auth.getSession();
-
-  if (!session?.user?.id) {
-    redirect("/auth/sign-in");
-  }
-
-  return session.user.id;
-}
-
 export async function createSurveyAction(formData: FormData) {
-  const userId = await requireUserId();
+  const session = await requireAdminSession();
   const title = String(formData.get("title") ?? "").trim();
   const question = String(formData.get("question") ?? "").trim();
 
@@ -28,7 +18,11 @@ export async function createSurveyAction(formData: FormData) {
     throw new Error("Title and question are required.");
   }
 
-  const survey = await createSurvey({ title, question, userId });
+  const survey = await createSurvey({
+    title,
+    question,
+    userId: session.user.id,
+  });
   revalidatePath("/dashboard");
   redirect(`/dashboard/${survey.id}`);
 }

@@ -2,9 +2,11 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { UserButton } from "@/components/user-button";
 import { CopyLinkButton } from "@/components/copy-link-button";
+import { InviteClientForm } from "@/components/invite-client-form";
+import { isAdminSession } from "@/lib/admin";
 import { auth } from "@/lib/auth/server";
 import {
-  getSurveyForOwner,
+  getSurveyForAdmin,
   listResponsesForSurvey,
 } from "@/lib/surveys";
 
@@ -16,11 +18,11 @@ export default async function SurveyDetailPage({
   const { id } = await params;
   const { data: session } = await auth.getSession();
 
-  if (!session?.user?.id) {
-    redirect("/auth/sign-in");
+  if (!isAdminSession(session)) {
+    redirect("/auth/admin");
   }
 
-  const survey = await getSurveyForOwner(id, session.user.id);
+  const survey = await getSurveyForAdmin(id);
   if (!survey) {
     notFound();
   }
@@ -58,6 +60,7 @@ export default async function SurveyDetailPage({
               {responses.length} responses · Avg {average ? `${average}/5` : "—"}
             </p>
           </div>
+          <InviteClientForm surveyId={survey.id} surveyTitle={survey.title} />
         </section>
 
         <section className="space-y-4">
@@ -65,8 +68,8 @@ export default async function SurveyDetailPage({
 
           {responses.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-border p-8 text-sm text-muted-foreground">
-              No responses yet. Share the customer link to start collecting
-              feedback.
+              No responses yet. Send a client invitation or share the survey
+              link.
             </div>
           ) : (
             responses.map((response) => (

@@ -25,10 +25,10 @@ export default function Home() {
 
           <div className="mt-8 flex flex-wrap gap-3">
             <Link
-              href="/auth/sign-up"
+              href="/auth/admin"
               className="rounded-xl bg-primary px-5 py-3 text-sm font-medium text-primary-foreground"
             >
-              Get started
+              Operator sign in
             </Link>
             <Link
               href="/dashboard"

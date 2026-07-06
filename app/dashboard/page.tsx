@@ -3,23 +3,25 @@ import { redirect } from "next/navigation";
 import { createSurveyAction } from "@/app/actions/surveys";
 import { UserButton } from "@/components/user-button";
 import { CopyLinkButton } from "@/components/copy-link-button";
+import { InviteClientForm } from "@/components/invite-client-form";
+import { isAdminSession } from "@/lib/admin";
 import { auth } from "@/lib/auth/server";
-import { listSurveysForUser } from "@/lib/surveys";
+import { listSurveysForAdmin } from "@/lib/surveys";
 
 export default async function DashboardPage() {
   const { data: session } = await auth.getSession();
 
-  if (!session?.user?.id) {
-    redirect("/auth/sign-in");
+  if (!isAdminSession(session)) {
+    redirect("/auth/admin");
   }
 
-  const surveys = await listSurveysForUser(session.user.id);
+  const surveys = await listSurveysForAdmin();
 
   return (
     <main className="min-h-screen bg-background text-foreground">
       <header className="mx-auto flex w-full max-w-5xl items-center justify-between px-6 py-6">
         <div>
-          <p className="text-sm text-muted-foreground">Admin</p>
+          <p className="text-sm text-muted-foreground">Operator admin</p>
           <h1 className="text-2xl font-semibold">Survey dashboard</h1>
         </div>
         <UserButton />
@@ -104,6 +106,11 @@ export default async function DashboardPage() {
                       View responses
                     </Link>
                   </div>
+
+                  <InviteClientForm
+                    surveyId={survey.id}
+                    surveyTitle={survey.title}
+                  />
                 </article>
               );
             })
