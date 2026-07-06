@@ -21,13 +21,25 @@ This project is linked to Neon project **afenda**:
 
 Local env is in `.env` (gitignored). Project metadata is in `.neon`.
 
-**Trusted domains:** only `http://localhost:3000` for now. After Vercel deploy, add your `*.vercel.app` URL in Neon Console → Auth → Trusted domains.
+**Trusted domains:** `http://localhost:3000` and `https://iam-check.vercel.app`. Custom domains removed; add more Vercel preview URLs in Neon Console → Auth when needed.
 
 ## GitHub
 
 Repository: https://github.com/pohlai88/iam-check
 
-## Fastest way to ship (3 steps)
+Pushes to `main` auto-deploy via Vercel Git integration.
+
+## Vercel
+
+| | |
+|---|---|
+| **Project** | `iam-check` |
+| **Production URL** | https://iam-check.vercel.app |
+| **Dashboard** | https://vercel.com/jacks-projects-7b3cfe94/iam-check |
+
+Env vars (`DATABASE_URL`, `NEON_AUTH_BASE_URL`, `NEON_AUTH_COOKIE_SECRET`) are set in Vercel for production and development.
+
+## Neon configuration (via MCP)
 
 ### 1. Deploy to Vercel (one click)
 
