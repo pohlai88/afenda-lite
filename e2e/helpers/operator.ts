@@ -17,7 +17,7 @@ export const operatorSkipMessage =
 export async function loginAsOperator(page: Page, creds: OperatorCreds) {
   await page.goto("/org/login");
   await page.getByLabel(/email/i).fill(creds.email);
-  await page.getByLabel(/password/i).fill(creds.password);
+  await page.locator('input[name="password"]').fill(creds.password);
   await page.getByRole("button", { name: /sign in/i }).click();
   await expect(page).toHaveURL(/\/dashboard/);
 }

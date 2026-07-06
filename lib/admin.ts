@@ -10,16 +10,22 @@ export function getSharedAdminEmail() {
   return process.env.SHARED_ADMIN_EMAIL?.trim().toLowerCase() ?? "";
 }
 
-export function isAdminSession(session: AdminSession) {
-  if (!session?.user) {
+export function isAdminSession(
+  session: AdminSession,
+  fallbackEmail?: string,
+) {
+  if (!session?.user && !fallbackEmail) {
     return false;
   }
 
   const sharedEmail = getSharedAdminEmail();
-  const userEmail = session.user.email?.trim().toLowerCase() ?? "";
+  const userEmail =
+    session?.user?.email?.trim().toLowerCase() ??
+    fallbackEmail?.trim().toLowerCase() ??
+    "";
 
   return (
-    session.user.role === "admin" ||
+    session?.user?.role === "admin" ||
     (sharedEmail.length > 0 && userEmail === sharedEmail)
   );
 }

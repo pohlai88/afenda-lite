@@ -213,10 +213,10 @@ export async function recordSurveyInvitation(input: {
 
 export async function listSurveyInvitationsForSurvey(surveyId: string) {
   const result = await pool.query(
-    `SELECT id, survey_id, client_email, invited_by, created_at
+    `SELECT id, survey_id, client_email, invited_by, sent_at AS created_at
      FROM survey_invitations
      WHERE survey_id = $1
-     ORDER BY created_at DESC
+     ORDER BY sent_at DESC
      LIMIT 50`,
     [surveyId],
   );
