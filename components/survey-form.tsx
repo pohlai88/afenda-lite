@@ -8,9 +8,11 @@ const labels = ["Very poor", "Poor", "Okay", "Good", "Excellent"];
 export function SurveyForm({
   slug,
   question,
+  anonymous = false,
 }: {
   slug: string;
   question: string;
+  anonymous?: boolean;
 }) {
   const [rating, setRating] = useState<number | null>(null);
   const [comment, setComment] = useState("");
@@ -57,6 +59,13 @@ export function SurveyForm({
       }}
     >
       <p className="text-lg font-medium">{question}</p>
+
+      {anonymous ? (
+        <p className="mt-3 rounded-lg border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+          Anonymous response. Do not include personal details in your comment
+          unless you choose to.
+        </p>
+      ) : null}
 
       <div className="mt-6 grid grid-cols-5 gap-2">
         {[1, 2, 3, 4, 5].map((value) => (

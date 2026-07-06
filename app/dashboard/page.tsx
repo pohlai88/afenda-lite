@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { createSurveyAction } from "@/app/actions/surveys";
 import { UserButton } from "@/components/user-button";
 import { CopyLinkButton } from "@/components/copy-link-button";
-import { InviteClientForm } from "@/components/invite-client-form";
+import { AnonymousSharePanel } from "@/components/anonymous-share-panel";
 import { isAdminSession } from "@/lib/admin";
 import { auth } from "@/lib/auth/server";
 import { listSurveysForAdmin } from "@/lib/surveys";
@@ -12,7 +12,7 @@ export default async function DashboardPage() {
   const { data: session } = await auth.getSession();
 
   if (!isAdminSession(session)) {
-    redirect("/auth/admin");
+    redirect("/");
   }
 
   const surveys = await listSurveysForAdmin();
@@ -107,10 +107,7 @@ export default async function DashboardPage() {
                     </Link>
                   </div>
 
-                  <InviteClientForm
-                    surveyId={survey.id}
-                    surveyTitle={survey.title}
-                  />
+                  <AnonymousSharePanel surveyId={survey.id} />
                 </article>
               );
             })

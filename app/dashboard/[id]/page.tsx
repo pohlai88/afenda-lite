@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { UserButton } from "@/components/user-button";
 import { CopyLinkButton } from "@/components/copy-link-button";
-import { InviteClientForm } from "@/components/invite-client-form";
+import { AnonymousSharePanel } from "@/components/anonymous-share-panel";
 import { isAdminSession } from "@/lib/admin";
 import { auth } from "@/lib/auth/server";
 import {
@@ -19,7 +19,7 @@ export default async function SurveyDetailPage({
   const { data: session } = await auth.getSession();
 
   if (!isAdminSession(session)) {
-    redirect("/auth/admin");
+    redirect("/");
   }
 
   const survey = await getSurveyForAdmin(id);
@@ -60,7 +60,7 @@ export default async function SurveyDetailPage({
               {responses.length} responses · Avg {average ? `${average}/5` : "—"}
             </p>
           </div>
-          <InviteClientForm surveyId={survey.id} surveyTitle={survey.title} />
+          <AnonymousSharePanel surveyId={survey.id} />
         </section>
 
         <section className="space-y-4">
@@ -68,8 +68,7 @@ export default async function SurveyDetailPage({
 
           {responses.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-border p-8 text-sm text-muted-foreground">
-              No responses yet. Send a client invitation or share the survey
-              link.
+              No responses yet. Share the anonymous link or QR code with clients.
             </div>
           ) : (
             responses.map((response) => (

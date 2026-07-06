@@ -54,6 +54,17 @@ export async function ensureSurveySchema() {
         invited_by UUID NOT NULL,
         sent_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       );
+
+      CREATE TABLE IF NOT EXISTS survey_invite_tokens (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        token TEXT UNIQUE NOT NULL,
+        survey_id UUID NOT NULL REFERENCES surveys(id) ON DELETE CASCADE,
+        created_by UUID NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+
+      CREATE INDEX IF NOT EXISTS survey_invite_tokens_survey_id_idx
+        ON survey_invite_tokens (survey_id);
     `).then(() => undefined);
   }
 
@@ -262,4 +273,72 @@ export async function recordSurveyInvitation(input: {
      VALUES ($1, $2, $3)`,
     [input.surveyId, input.clientEmail, input.invitedBy],
   );
+}
+
+function createInviteTokenValue() {
+  return crypto.randomUUID().replace(/-/g, "");
+}
+
+export async function getOrCreateInviteToken(input: {
+  surveyId: string;
+  createdBy: string;
+}) {
+  await ensureSurveySchema();
+
+  const existing = await pool.query(
+    `SELECT token
+     FROM survey_invite_tokens
+     WHERE survey_id = $1
+     ORDER BY created_at DESC
+     LIMIT 1`,
+    [input.surveyId],
+  );
+
+  if (existing.rows[0]) {
+    return String(existing.rows[0].token);
+  }
+
+  const token = createInviteTokenValue();
+  await pool.query(
+    `INSERT INTO survey_invite_tokens (token, survey_id, created_by)
+     VALUES ($1, $2, $3)`,
+    [token, input.surveyId, input.createdBy],
+  );
+
+  return token;
+}
+
+export async function regenerateInviteToken(input: {
+  surveyId: string;
+  createdBy: string;
+}) {
+  await ensureSurveySchema();
+
+  const token = createInviteTokenValue();
+  await pool.query(
+    `INSERT INTO survey_invite_tokens (token, survey_id, created_by)
+     VALUES ($1, $2, $3)`,
+    [token, input.surveyId, input.createdBy],
+  );
+
+  return token;
+}
+
+export async function getSurveyByInviteToken(token: string) {
+  await ensureSurveySchema();
+
+  const result = await pool.query(
+    `SELECT s.id, s.slug, s.title, s.question, s.user_id, s.created_at
+     FROM survey_invite_tokens t
+     JOIN surveys s ON s.id = t.survey_id
+     WHERE t.token = $1
+     LIMIT 1`,
+    [token],
+  );
+
+  if (!result.rows[0]) {
+    return null;
+  }
+
+  return mapSurvey(result.rows[0]);
 }

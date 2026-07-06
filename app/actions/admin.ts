@@ -8,7 +8,7 @@ export async function requireAdminSession() {
   const { data: session } = await auth.getSession();
 
   if (!isAdminSession(session)) {
-    redirect("/auth/admin");
+    redirect("/");
   }
 
   return session!;

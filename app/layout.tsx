@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { inter } from "./fonts";
+import { dmSans, fraunces } from "./fonts";
 import { authClient } from "@/lib/auth/client";
 import { NeonAuthUIProvider } from "@neondatabase/auth/react";
 
 export const metadata: Metadata = {
-  title: "Customer Feedback Portal",
-  description: "Collect customer feedback surveys with Neon and Vercel",
+  title: "Feedback Portal — Operator Sign In",
+  description:
+    "Sign in to create customer satisfaction surveys, share public links, and review responses.",
 };
 
 export default function RootLayout({
@@ -15,7 +16,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html suppressHydrationWarning lang="en" className={inter.variable}>
+    <html
+      suppressHydrationWarning
+      lang="en"
+      className={`${fraunces.variable} ${dmSans.variable}`}
+    >
       <body>
         <NeonAuthUIProvider
           authClient={authClient}
