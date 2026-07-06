@@ -45,7 +45,7 @@ export async function adminSignInAction(formData: FormData) {
 
     const { data: session } = await auth.getSession();
 
-    if (!isAdminSession(session)) {
+    if (!isAdminSession(session, email)) {
       await auth.signOut();
       await recordAuditEvent({
         eventType: "auth.sign_in_failed",

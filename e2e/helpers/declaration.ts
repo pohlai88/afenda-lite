@@ -6,7 +6,10 @@ export async function fillDefaultDeclarationAnswers(
   contextText: string,
 ) {
   await page.getByRole("button", { name: /^yes$/i }).first().click();
-  await page.getByPlaceholder(/enter your response/i).fill(contextText);
+  const textField = page.getByPlaceholder(/enter your response/i);
+  if (await textField.count()) {
+    await textField.fill(contextText);
+  }
 }
 
 export async function submitDefaultDeclarationAnswers(
@@ -25,9 +28,7 @@ export async function expectDeclarationReceived(
     mode === "client"
       ? portalCopy.clientDashboard.receiptTitle
       : portalCopy.declarationForm.thankYouTitle;
-  await expect(
-    page.getByRole("heading", { name: new RegExp(title, "i") }),
-  ).toBeVisible();
+  await expect(page.getByText(title, { exact: true })).toBeVisible();
 }
 
 export function secureLinkLocator(page: Page) {

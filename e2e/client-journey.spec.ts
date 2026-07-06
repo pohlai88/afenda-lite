@@ -40,7 +40,7 @@ test.describe("Client journey @journey", () => {
     const clientEmail = `e2e+${Date.now()}@example.test`;
     await page.getByLabel(/full name/i).fill("E2E Test Client");
     await page.getByLabel(/recipient email/i).fill(clientEmail);
-    await page.locator('select[name="surveyId"]').selectOption({
+    await page.getByLabel(/assign declaration/i).selectOption({
       label: declarationTitle,
     });
     await page.getByRole("button", { name: /issue invitation/i }).click();
@@ -67,8 +67,8 @@ test.describe("Client journey @journey", () => {
       page.getByRole("heading", { name: /accept invitation/i }),
     ).toBeVisible();
 
-    await page.getByLabel(/^password$/i).fill(clientPassword);
-    await page.getByLabel(/confirm password/i).fill(clientPassword);
+    await page.locator('input[name="password"]').fill(clientPassword);
+    await page.locator('input[name="confirmPassword"]').fill(clientPassword);
     await page.getByRole("button", { name: /activate account/i }).click();
     await expect(page).toHaveURL(/\/client\/onboarding/);
 
