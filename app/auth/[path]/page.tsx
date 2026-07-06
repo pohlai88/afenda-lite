@@ -22,12 +22,12 @@ export default async function AuthPage({
       <div className="mx-auto w-full max-w-sm">
         <AuthView path={path} />
         <p className="mt-6 text-center text-sm text-muted-foreground">
-          {portalCopy.clientAuth.operatorLink}{" "}
+          {portalCopy.signIn.orgLink}{" "}
           <Link
-            href="/client/login"
+            href="/org/login"
             className="font-medium text-primary underline-offset-4 hover:underline"
           >
-            {portalCopy.clientAuth.title}
+            {portalCopy.orgSignIn.title}
           </Link>
         </p>
       </div>

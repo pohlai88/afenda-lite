@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import Image from "next/image";
 import { LinkIcon, RefreshCwIcon } from "lucide-react";
 import {
-  getAnonymousInviteLinkAction,
   recordEmailInvitationAction,
   regenerateAnonymousInviteLinkAction,
 } from "@/app/actions/invitations";
@@ -14,50 +13,38 @@ import {
   buildAnonymousQrCodeUrl,
   buildAnonymousWhatsAppMessage,
 } from "@/lib/invite";
+import { copyText } from "@/lib/clipboard";
 import { portalCopy } from "@/lib/portal-copy";
+import { FormErrorAlert } from "@/components/form-error-alert";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Skeleton } from "@/components/ui/skeleton";
 
 type InviteLink = {
   token: string;
   url: string;
 };
 
-async function copyText(text: string) {
-  await navigator.clipboard.writeText(text);
-}
-
 export function AnonymousSharePanel({
   surveyId,
   publicPath,
   embedded = false,
+  initialInvite,
 }: {
   surveyId: string;
   publicPath?: string;
   embedded?: boolean;
+  initialInvite?: InviteLink;
 }) {
   const { share, invite: inviteCopy } = portalCopy;
-  const [inviteLink, setInviteLink] = useState<InviteLink | null>(null);
+  const [inviteLink, setInviteLink] = useState<InviteLink | null>(
+    initialInvite ?? null,
+  );
   const [recipientEmail, setRecipientEmail] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
-
-  useEffect(() => {
-    startTransition(async () => {
-      const result = await getAnonymousInviteLinkAction(surveyId);
-      if (result?.error) {
-        setError(result.error);
-        return;
-      }
-      if (result && "token" in result) {
-        setInviteLink({ token: result.token, url: result.url });
-      }
-    });
-  }, [surveyId]);
 
   const privateInviteUrl =
     inviteLink?.token && typeof window !== "undefined"
@@ -110,7 +97,7 @@ export function AnonymousSharePanel({
         {privateInviteUrl ? (
           <p className="portal-code-block">{privateInviteUrl}</p>
         ) : (
-          <Skeleton className="h-9 w-full" />
+          <p className="text-sm text-muted-foreground">{share.loadingLink}</p>
         )}
 
         <div className="flex flex-wrap gap-2">
@@ -160,9 +147,7 @@ export function AnonymousSharePanel({
             onClick={() => {
               if (!privateInviteUrl) return;
               startTransition(async () => {
-                await copyText(
-                  buildAnonymousWhatsAppMessage(privateInviteUrl),
-                );
+                await copyText(buildAnonymousWhatsAppMessage(privateInviteUrl));
                 setMessage(share.copiedWhatsApp);
                 setError(null);
               });
@@ -198,6 +183,7 @@ export function AnonymousSharePanel({
             {share.newLink}
           </Button>
         </div>
+        <p className="text-xs text-muted-foreground">{share.newLinkPolicy}</p>
       </div>
 
       <div className="space-y-2 border-t pt-4">
@@ -261,11 +247,7 @@ export function AnonymousSharePanel({
           <AlertDescription>{message}</AlertDescription>
         </Alert>
       ) : null}
-      {error ? (
-        <Alert variant="destructive" role="alert" aria-live="polite">
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      ) : null}
+      <FormErrorAlert error={error} />
     </div>
   );
 }

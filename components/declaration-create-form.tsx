@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
 export function DeclarationCreateForm() {
-  const { create } = portalCopy.account;
+  const { create } = portalCopy.org;
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 

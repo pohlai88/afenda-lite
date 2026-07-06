@@ -4,14 +4,43 @@ Client portal for authenticated declarations and secure submission links. Built 
 
 ## What you get
 
-- Admin sign-up / sign-in via **Neon Auth** (email OTP built in)
-- Create 1–5 rating surveys with optional comments
-- Public customer link at `/survey/[slug]` (no login required)
-- Dashboard to copy links and review responses
+- Operator sign-in for managing declarations
+- Dynamic declaration forms (yes/no, text, file metadata)
+- Public and secure share links (`/survey/[slug]`, `/f/[token]`)
+- Client invite, onboarding, and assigned declarations
+- Dashboard with submissions and pending client assignments
 
-## Neon configuration (via MCP)
+## Architecture
 
-This project is linked to Neon project **afenda**:
+Internal full-stack doctrine and slice specs for agents and maintainers:
+
+- [docs/architecture/iam-check-doctrine.md](docs/architecture/iam-check-doctrine.md) — boundaries, CCP register, roadmap
+- [docs/architecture/slices/](docs/architecture/slices/) — per-slice acceptance proofs (S0–S15)
+- [docs/runbooks/production-go-live.md](docs/runbooks/production-go-live.md) — Vercel/Neon production verification
+- [docs/portal-writing.md](docs/portal-writing.md) — UI copy and terminology
+
+## Database migrations
+
+Schema is versioned in [`db/migrations/`](db/migrations/). Apply before first run:
+
+```bash
+npm run db:migrate
+```
+
+Or apply via Neon MCP / Console against project **afenda** (`snowy-dawn-60990429`, branch `production`).
+
+Migrations:
+
+| File | Purpose |
+|------|---------|
+| `001_portal_schema.sql` | All portal tables and indexes |
+| `002_backfill_questions.sql` | Seed `survey_questions` from legacy intro text |
+| `003_drop_rating_comment.sql` | Remove legacy rating/comment columns |
+| `004_audit_events.sql` | Audit event log for mutations |
+
+The app no longer runs DDL on request — tables must exist before deploy.
+
+## Neon configuration
 
 | Setting | Value |
 |---------|-------|
@@ -19,15 +48,11 @@ This project is linked to Neon project **afenda**:
 | Branch | `production` (`br-young-term-aobkvd38`) |
 | Database | `neondb` |
 
-Local env is in `.env` (gitignored). Project metadata is in `.neon`.
-
-**Trusted domains:** `http://localhost:3000` and `https://iam-check.vercel.app`. Custom domains removed; add more Vercel preview URLs in Neon Console → Auth when needed.
+**Trusted domains:** `http://localhost:3000` and `https://iam-check.vercel.app`.
 
 ## GitHub
 
 Repository: https://github.com/pohlai88/iam-check
-
-Pushes to `main` auto-deploy via Vercel Git integration.
 
 ## Vercel
 
@@ -35,85 +60,73 @@ Pushes to `main` auto-deploy via Vercel Git integration.
 |---|---|
 | **Project** | `iam-check` |
 | **Production URL** | https://iam-check.vercel.app |
-| **Dashboard** | https://vercel.com/jacks-projects-7b3cfe94/iam-check |
 
-Env vars (`DATABASE_URL`, `NEON_AUTH_BASE_URL`, `NEON_AUTH_COOKIE_SECRET`) are set in Vercel for production and development.
-
-## Neon configuration (via MCP)
-
-### 1. Deploy to Vercel (one click)
-
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fneondatabase%2Fvercel-marketplace-neon-auth%2Ftree%2Fmain&project-name=client-feedback-portal&repository-name=client-feedback-portal&products=[{%22type%22:%22integration%22,%22integrationSlug%22:%22neon%22,%22productSlug%22:%22neon%22,%22protocol%22:%22storage%22}])
-
-**Important:** check the **Auth** checkbox when creating the project so Neon Auth is enabled.
-
-Or push this repo to GitHub and import it in Vercel with the **Neon** integration + **Auth** enabled.
-
-### 2. Add one env var in Vercel
-
-Vercel + Neon auto-set `DATABASE_URL` and `NEON_AUTH_BASE_URL`.
-
-You only add:
-
-```bash
-openssl rand -base64 32
-```
-
-Set `NEON_AUTH_COOKIE_SECRET` in Vercel → Settings → Environment Variables (Production + Preview + Development).
-
-### 3. Add your domain to Neon Auth trusted domains
-
-In [Neon Console](https://console.neon.tech/) → your project → **Auth** → **Trusted domains**, add:
-
-- `https://your-app.vercel.app`
-- `http://localhost:3000` (for local dev)
-
-Redeploy if needed. Done.
+Env vars: `DATABASE_URL`, `NEON_AUTH_BASE_URL`, `NEON_AUTH_COOKIE_SECRET`, `SHARED_ADMIN_*`, `APP_URL`.
 
 ## Local development
 
 ```bash
 npm install
 cp .env.example .env
-```
-
-Fill `.env` from Neon Console (or run `vercel env pull` after linking):
-
-```env
-DATABASE_URL=postgresql://...
-NEON_AUTH_BASE_URL=https://ep-xxx.neonauth.../neondb/auth
-NEON_AUTH_COOKIE_SECRET=<openssl rand -base64 32>
-```
-
-```bash
+npm run db:migrate
+npm run seed:admin
 npm run dev
 ```
 
-Open http://localhost:3000 → sign up → `/dashboard` → create a survey → share `/survey/[slug]`.
+Open http://localhost:3000 → operator sign-in → `/dashboard`.
 
-Survey tables are created automatically on first use.
+## CI and tests
+
+GitHub Actions (`.github/workflows/ci.yml`) runs on PRs:
+
+- `npm run check:copy` — portal terminology gate
+- `npm run build`
+- `npm run db:migrate` (requires `DATABASE_URL` secret; idempotent via `schema_migrations`)
+- `npm test` — Playwright E2E (`e2e/smoke.spec.ts`, `e2e/secure-file.spec.ts`, `e2e/client-journey.spec.ts`)
+
+Local:
+
+```bash
+npm run check:copy
+npm test
+npm run verify:production
+```
+
+Production readiness (no secrets printed):
+
+```bash
+PRODUCTION_URL=https://iam-check.vercel.app npm run verify:production
+```
+
+See [docs/runbooks/production-go-live.md](docs/runbooks/production-go-live.md) for full go-live checklist.
+
+**Existing databases** (migrated before tracking): run once, then `db:migrate`:
+
+```bash
+npm run db:backfill
+npm run db:migrate
+```
+
+Optional E2E: `E2E_SURVEY_SLUG` only if you skip the operator-create → public chain test.
 
 ## App routes
 
 | Route | Who | Purpose |
 |-------|-----|---------|
-| `/` | Public | Landing page |
-| `/auth/sign-in` | Public | Neon Auth sign in |
-| `/auth/sign-up` | Public | Neon Auth sign up |
-| `/dashboard` | Admin | Create surveys, copy links |
-| `/dashboard/[id]` | Admin | View responses |
-| `/survey/[slug]` | Customer | Submit feedback (anonymous) |
+| `/` | Operator | Sign in |
+| `/dashboard` | Operator | Manage declarations |
+| `/dashboard/clients` | Operator | Invite clients |
+| `/dashboard/[id]` | Operator | View submissions |
+| `/survey/[slug]` | Public | Open declaration link |
+| `/f/[token]` | Public | Secure declaration link |
+| `/client/login` | Client | Client sign in |
+| `/client` | Client | Assigned declarations |
+| `/client/declare/[id]` | Client | Complete assignment |
+| `/invite/[token]` | Public | Accept client invite |
 
 ## Stack
 
 - [Next.js](https://nextjs.org/) on Vercel
 - [Neon Postgres](https://neon.tech/)
 - [Neon Auth](https://neon.com/docs/auth/overview)
-- Based on [neondatabase/vercel-marketplace-neon-auth](https://github.com/neondatabase/vercel-marketplace-neon-auth)
-
-## Why this stack
-
-- **Neon via Vercel Marketplace** — database + auth wired in one flow
-- **No Docker** — unlike Formbricks
-- **No MongoDB** — Postgres only
-- **Minimal code** — survey schema + 4 pages on top of the official Neon template
+- shadcn/ui + Tailwind v4

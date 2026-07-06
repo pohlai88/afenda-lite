@@ -1,7 +1,9 @@
 "use client";
 
+import { useState, useTransition } from "react";
 import { updateSurveyAction } from "@/app/actions/surveys";
 import { QuestionFieldsEditor } from "@/components/question-fields-editor";
+import { FormErrorAlert } from "@/components/form-error-alert";
 import { portalCopy } from "@/lib/portal-copy";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,9 +23,21 @@ export function DeclarationManageForm({
   questions: Array<{ prompt: string; type: QuestionType; required: boolean }>;
 }) {
   const { manage } = portalCopy.declarationDetail;
+  const [error, setError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
 
   return (
-    <form action={updateSurveyAction} className="space-y-4">
+    <form
+      className="space-y-4"
+      onSubmit={(event) => {
+        event.preventDefault();
+        setError(null);
+        startTransition(async () => {
+          const result = await updateSurveyAction(new FormData(event.currentTarget));
+          if (result?.error) setError(result.error);
+        });
+      }}
+    >
       <input type="hidden" name="id" value={surveyId} />
       <div className="space-y-2">
         <Label htmlFor="edit-title">{manage.titleLabel}</Label>
@@ -39,7 +53,10 @@ export function DeclarationManageForm({
         />
       </div>
       <QuestionFieldsEditor initialRows={questions} />
-      <Button type="submit">{manage.save}</Button>
+      <FormErrorAlert error={error} />
+      <Button type="submit" disabled={isPending}>
+        {manage.save}
+      </Button>
     </form>
   );
 }

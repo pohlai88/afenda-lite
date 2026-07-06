@@ -26,11 +26,6 @@ const defaultRows: Row[] = [
     type: "text",
     required: true,
   },
-  {
-    prompt: "Reference a supporting document by filename.",
-    type: "file",
-    required: false,
-  },
 ];
 
 export function QuestionFieldsEditor({

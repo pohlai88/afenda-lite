@@ -1,40 +1,80 @@
 "use server";
 
-import {
-  getEvidenceRecord,
-  registerEvidence,
-} from "@/lib/questions";
-import { getSurveyForAdmin } from "@/lib/surveys";
+import { auth } from "@/lib/auth/server";
+import { isAdminSession } from "@/lib/admin";
+import { recordAuditEvent } from "@/lib/audit";
+import { listQuestionsForSurvey, registerEvidence } from "@/lib/questions";
+import { runLoggedAction } from "@/lib/observability";
+import { getSurveyBySlug, getSurveyForAdmin } from "@/lib/surveys";
 import { portalCopy } from "@/lib/portal-copy";
+import { parseSchema } from "@/lib/schemas/common";
+import { registerEvidenceSchema } from "@/lib/schemas/declarations";
+
+const POLICY_FAILURES = new Set(["size", "mime", "extension"]);
 
 export async function registerEvidenceAction(formData: FormData) {
-  const surveyId = String(formData.get("surveyId") ?? "").trim();
-  const questionId = String(formData.get("questionId") ?? "").trim();
-  const fileName = String(formData.get("fileName") ?? "").trim();
-  const mimeType = String(formData.get("mimeType") ?? "").trim();
-  const sizeBytes = Number(formData.get("sizeBytes") ?? 0);
+  return runLoggedAction("registerEvidenceAction", undefined, async () => {
+    const parsed = parseSchema(registerEvidenceSchema, {
+      surveyId: String(formData.get("surveyId") ?? "").trim(),
+      slug: String(formData.get("slug") ?? "").trim(),
+      questionId: String(formData.get("questionId") ?? "").trim(),
+      fileName: String(formData.get("fileName") ?? "").trim(),
+      mimeType: String(formData.get("mimeType") ?? "").trim(),
+      sizeBytes: formData.get("sizeBytes") ?? 0,
+    });
 
-  if (!surveyId || !questionId || !fileName) {
-    return { error: portalCopy.declarationForm.fileRequired };
-  }
+    if (!parsed.success) {
+      return {
+        error: POLICY_FAILURES.has(parsed.error)
+          ? portalCopy.declarationForm.fileInvalid
+          : portalCopy.declarationForm.fileRequired,
+      };
+    }
 
-  const survey = await getSurveyForAdmin(surveyId);
-  if (!survey) {
-    return { error: "Declaration not found." };
-  }
+    const { surveyId, slug, questionId, fileName, mimeType, sizeBytes } =
+      parsed.data;
 
-  const record = await registerEvidence({
-    surveyId,
-    questionId,
-    fileName,
-    mimeType,
-    sizeBytes,
+    const { data: session } = await auth.getSession();
+    const isOrgUser = isAdminSession(session);
+
+    if (!isOrgUser) {
+      if (!slug) {
+        return { error: portalCopy.errors.declarationNotFound };
+      }
+
+      const publicSurvey = await getSurveyBySlug(slug);
+      if (!publicSurvey || publicSurvey.id !== surveyId) {
+        return { error: portalCopy.errors.declarationNotFound };
+      }
+    } else {
+      const survey = await getSurveyForAdmin(surveyId);
+      if (!survey) {
+        return { error: portalCopy.errors.declarationNotFound };
+      }
+    }
+
+    const questions = await listQuestionsForSurvey(surveyId);
+    const question = questions.find((item) => item.id === questionId);
+    if (!question || question.type !== "file") {
+      return { error: portalCopy.declarationForm.fileInvalid };
+    }
+
+    const record = await registerEvidence({
+      surveyId,
+      questionId,
+      fileName,
+      mimeType,
+      sizeBytes,
+    });
+
+    await recordAuditEvent({
+      actorId: session?.user?.id,
+      eventType: "evidence.registered",
+      resourceType: "evidence",
+      resourceId: record.id,
+      metadata: { surveyId, questionId },
+    });
+
+    return { success: true, evidenceId: record.id, fileName: record.fileName };
   });
-
-  return { success: true, evidenceId: record.id, fileName: record.fileName };
-}
-
-export async function getEvidenceNameAction(evidenceId: string, surveyId: string) {
-  const record = await getEvidenceRecord(evidenceId, surveyId);
-  return record?.fileName ?? evidenceId;
 }

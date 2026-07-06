@@ -2,39 +2,59 @@
 
 import { redirect } from "next/navigation";
 import { isAdminSession } from "@/lib/admin";
+import { recordAuditEvent } from "@/lib/audit";
 import { auth } from "@/lib/auth/server";
+import { runLoggedAction } from "@/lib/observability";
 import { portalCopy } from "@/lib/portal-copy";
+import { parseSchema } from "@/lib/schemas/common";
+import { signInSchema } from "@/lib/schemas/auth";
 
 export async function requireAdminSession() {
   const { data: session } = await auth.getSession();
 
   if (!isAdminSession(session)) {
-    redirect("/?reason=access-denied");
+    redirect("/org/login?reason=access-denied");
   }
 
   return session!;
 }
 
 export async function adminSignInAction(formData: FormData) {
-  const email = String(formData.get("email") ?? "").trim();
-  const password = String(formData.get("password") ?? "");
+  return runLoggedAction("adminSignInAction", undefined, async () => {
+    const parsed = parseSchema(signInSchema, {
+      email: String(formData.get("email") ?? "").trim(),
+      password: String(formData.get("password") ?? ""),
+    });
 
-  if (!email || !password) {
-    return { error: "Email and password are required." };
-  }
+    if (!parsed.success) {
+      return { error: portalCopy.errors.emailPasswordRequired };
+    }
 
-  const { error } = await auth.signIn.email({ email, password });
+    const { email, password } = parsed.data;
 
-  if (error) {
-    return { error: error.message ?? portalCopy.signIn.invalidCredentials };
-  }
+    const { error } = await auth.signIn.email({ email, password });
 
-  const { data: session } = await auth.getSession();
+    if (error) {
+      await recordAuditEvent({
+        eventType: "auth.sign_in_failed",
+        resourceType: "session",
+        metadata: { surface: "org" },
+      });
+      return { error: error.message ?? portalCopy.orgSignIn.invalidCredentials };
+    }
 
-  if (!isAdminSession(session)) {
-    await auth.signOut();
-    return { error: portalCopy.signIn.accessDenied };
-  }
+    const { data: session } = await auth.getSession();
 
-  redirect("/dashboard");
+    if (!isAdminSession(session)) {
+      await auth.signOut();
+      await recordAuditEvent({
+        eventType: "auth.sign_in_failed",
+        resourceType: "session",
+        metadata: { surface: "org", reason: "access_denied" },
+      });
+      return { error: portalCopy.orgSignIn.accessDenied };
+    }
+
+    redirect("/dashboard");
+  });
 }

@@ -1,13 +1,12 @@
-import { notFound, redirect } from "next/navigation";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { requireClientSession } from "@/app/actions/client";
 import { ClientDeclarationForm } from "@/components/client-declaration-form";
+import { ConfirmationReceipt } from "@/components/confirmation-receipt";
+import { DeclarationQuestionsEmpty } from "@/components/declaration-questions-empty";
 import { PortalCustomerShell } from "@/components/portal-customer-shell";
-import { auth } from "@/lib/auth/server";
-import { isAdminSession } from "@/lib/admin";
-import {
-  getClientAssignmentForUser,
-  getClientProfile,
-} from "@/lib/clients";
-import { ensureDefaultQuestions } from "@/lib/questions";
+import { getClientAssignmentForUser } from "@/lib/clients";
+import { listQuestionsForSurvey } from "@/lib/questions";
 import { portalCopy } from "@/lib/portal-copy";
 
 export default async function ClientDeclarePage({
@@ -16,48 +15,43 @@ export default async function ClientDeclarePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const { data: session } = await auth.getSession();
-
-  if (!session?.user?.email) {
-    redirect("/client/login");
-  }
-
-  if (isAdminSession(session)) {
-    redirect("/dashboard");
-  }
-
-  const profile = session.user.id
-    ? await getClientProfile(session.user.id)
-    : null;
-
-  if (!profile?.onboardingComplete) {
-    redirect("/client/onboarding");
-  }
-
+  const { clientDashboard } = portalCopy;
+  const session = await requireClientSession({ requireOnboarding: true });
   const assignment = await getClientAssignmentForUser(id, session.user.email);
 
   if (!assignment || !assignment.surveySlug) {
     notFound();
   }
 
-  const questions = await ensureDefaultQuestions(
-    assignment.surveyId,
-    assignment.surveyQuestion ?? "",
-  );
+  const questions = await listQuestionsForSurvey(assignment.surveyId);
 
-  if (assignment.status === "submitted") {
+  if (assignment.status === "submitted" && assignment.confirmationCode) {
     return (
       <PortalCustomerShell
-        eyebrow={portalCopy.clientDashboard.eyebrow}
+        eyebrow={clientDashboard.eyebrow}
         title={assignment.surveyTitle ?? portalCopy.declarationForm.thankYouTitle}
-        description={portalCopy.clientDashboard.receiptDescription}
+        description={clientDashboard.receiptDescription}
+        backHref="/client"
+        backLabel={clientDashboard.backToAssignments}
+        showSignOut
       >
-        <div className="portal-info-block px-4 py-6 text-center">
-          <p className="font-mono text-lg font-semibold">
-            {assignment.confirmationCode}
-          </p>
-        </div>
+        <ConfirmationReceipt
+          code={assignment.confirmationCode}
+          title={clientDashboard.receiptTitle}
+          description={clientDashboard.receiptDescription}
+          variant="inline"
+        />
       </PortalCustomerShell>
+    );
+  }
+
+  if (questions.length === 0) {
+    return (
+      <DeclarationQuestionsEmpty
+        eyebrow={portalCopy.product.declarationEyebrow}
+        title={assignment.surveyTitle ?? portalCopy.product.declarationEyebrow}
+        description={portalCopy.declarationPage.questionsNotConfigured}
+      />
     );
   }
 
@@ -66,6 +60,9 @@ export default async function ClientDeclarePage({
       eyebrow={portalCopy.product.declarationEyebrow}
       title={assignment.surveyTitle ?? portalCopy.product.declarationEyebrow}
       description={portalCopy.declarationPage.secureFormNote}
+      backHref="/client"
+      backLabel={clientDashboard.backToAssignments}
+      showSignOut
     >
       <ClientDeclarationForm
         assignmentId={assignment.id}

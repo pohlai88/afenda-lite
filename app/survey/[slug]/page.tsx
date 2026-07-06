@@ -1,6 +1,7 @@
 import { PortalCustomerShell } from "@/components/portal-customer-shell";
 import { SurveyForm } from "@/components/survey-form";
-import { ensureDefaultQuestions } from "@/lib/questions";
+import { DeclarationQuestionsEmpty } from "@/components/declaration-questions-empty";
+import { listQuestionsForSurvey } from "@/lib/questions";
 import { portalCopy } from "@/lib/portal-copy";
 import { getSurveyBySlug } from "@/lib/surveys";
 import { notFound } from "next/navigation";
@@ -17,8 +18,18 @@ export default async function PublicSurveyPage({
     notFound();
   }
 
-  const questions = await ensureDefaultQuestions(survey.id, survey.question);
+  const questions = await listQuestionsForSurvey(survey.id);
   const { product, declarationPage } = portalCopy;
+
+  if (questions.length === 0) {
+    return (
+      <DeclarationQuestionsEmpty
+        eyebrow={product.declarationEyebrow}
+        title={survey.title}
+        description={declarationPage.publicDescription}
+      />
+    );
+  }
 
   return (
     <PortalCustomerShell

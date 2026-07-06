@@ -1,51 +1,81 @@
 /**
  * Client portal writing surface.
  *
- * Audience: business clients who sign in, declare who they are, and submit
- * attestations. Link recipients complete declarations without an account.
- *
- * Avoid: operator, admin, issue, distribute, feedback, survey.
+ * Audiences:
+ * - Clients: sign in at `/`, complete assigned declarations at `/client/*`
+ * - Organization users: sign in at `/org/login`, manage at `/dashboard/*`
+ * - Link recipients: open/secure declaration links without an account
  */
 
 export const PORTAL_NAME = "Client Declaration Portal";
+const CLIENT_PORTAL_EYEBROW = "Client portal";
+const ORG_EYEBROW = "Organization";
 
 export const portalCopy = {
   product: {
     name: PORTAL_NAME,
     tagline: "Sign in, declare, and submit with confidence",
-    portalEyebrow: "Client portal",
+    portalEyebrow: CLIENT_PORTAL_EYEBROW,
     declarationEyebrow: "Declaration",
     secureAccessEyebrow: "Secure access",
   },
 
+  errors: {
+    declarationNotFound: "Declaration not found.",
+    emailPasswordRequired: "Email and password are required.",
+    titleRequired: "Title is required.",
+  },
+
   signIn: {
     title: "Sign in",
-    description: "Confirm who you are to access your declarations.",
+    description: "Confirm who you are to access your assigned declarations.",
     emailLabel: "Email",
     emailPlaceholder: "you@company.com",
     passwordLabel: "Password",
     submit: "Sign in",
     submitting: "Signing in…",
+    showPassword: "Show password",
+    hidePassword: "Hide password",
     heroTitle: "Your identity. Your declaration.",
     heroDescription:
-      "Sign in with your business credentials to complete declarations, submit attestations, and review your activity.",
+      "Sign in with your business credentials to complete assigned declarations and review your submissions.",
     steps: [
       { label: "Sign in", detail: "Authenticate with your business account." },
-      { label: "Declare", detail: "Complete the declaration presented to you." },
+      { label: "Declare", detail: "Complete the declaration assigned to you." },
       { label: "Submit", detail: "Send your attestation securely." },
     ] as const,
     footer: "Protected client access",
-    accessDenied:
-      "Your account is signed in but does not have access to this portal. Try a different account or contact your administrator.",
-    invalidCredentials: "Email or password is incorrect.",
+    inviteHint:
+      "Invited to the portal? Open the invitation link sent to your email.",
+    orgLink: "Organization sign in",
     needAccount: "Need an account?",
     createAccount: "Create account",
+    invalidCredentials: "Email or password is incorrect.",
+  },
+
+  orgSignIn: {
+    title: "Organization sign in",
+    description:
+      "Sign in to manage declarations, share access links, and review submissions.",
+    heroTitle: "Manage declarations for your organization",
+    heroDescription:
+      "Create declaration forms, invite clients, distribute secure links, and review submissions.",
+    steps: [
+      { label: "Sign in", detail: "Use your organization credentials." },
+      { label: "Configure", detail: "Create declarations and assign clients." },
+      { label: "Review", detail: "Track submissions from your dashboard." },
+    ] as const,
+    footer: "Authorized organization access",
+    clientLink: "Client sign in",
+    accessDenied:
+      "This account does not have organization access. Use client sign in or contact your administrator.",
+    invalidCredentials: "Email or password is incorrect.",
   },
 
   accessDenied: {
     title: "Access not granted",
     description:
-      "This portal is limited to authorized operators. Contact your administrator if you need access.",
+      "This area is limited to authorized organization users. Use client sign in or contact your administrator.",
   },
 
   notFound: {
@@ -53,13 +83,14 @@ export const portalCopy = {
     description:
       "The page you requested does not exist or may have been removed.",
     backLabel: "Back to sign in",
+    backLabelClient: "Back to your assignments",
   },
 
-  account: {
-    eyebrow: "Client portal",
-    title: "Your declarations",
+  org: {
+    eyebrow: ORG_EYEBROW,
+    title: "Declaration management",
     description:
-      "Manage declaration forms, share access links, and review submissions.",
+      "Create declarations, invite clients, share access links, and review submissions.",
     stats: {
       declarations: {
         title: "Declarations",
@@ -69,9 +100,9 @@ export const portalCopy = {
         title: "Submissions",
         detail: "Declarations completed via your links.",
       },
-      average: {
-        title: "Average score",
-        detail: "Mean rating across declarations with submissions.",
+      pendingAssignments: {
+        title: "Pending assignments",
+        detail: "Client declarations awaiting completion.",
       },
     },
     create: {
@@ -86,27 +117,32 @@ export const portalCopy = {
     },
     list: {
       title: "Declarations",
-      description: "Share access links and review submissions.",
+      description: "Open a declaration to share links and review submissions.",
       empty: "No declarations yet. Create one to get a shareable link.",
       submissions: (count: number) =>
         count === 1 ? "1 submission" : `${count} submissions`,
       viewSubmissions: "View submissions",
+      shareAccess: "Share access",
       inviteClients: "Invite clients",
     },
   },
 
   declarationDetail: {
     eyebrow: "Declaration",
-    backLabel: "Your declarations",
+    backLabel: "Declaration management",
     share: {
       title: "Share access",
       description: "Copy an open link or a secure link for recipients.",
+    },
+    emailLog: {
+      title: "Recorded invitations",
+      description: "Email addresses recorded for this declaration.",
+      empty: "No email invitations recorded yet.",
     },
     submissions: {
       title: "Submissions",
       description: "Declarations completed through your shared links.",
       empty: "No submissions yet. Share a link to start collecting declarations.",
-      rating: (value: number) => `Score ${value}/5`,
       answersTitle: "Answers",
     },
     manage: {
@@ -121,6 +157,7 @@ export const portalCopy = {
         "Permanently removes this declaration and all submissions.",
       deleteConfirm:
         "Delete this declaration and all submissions? This cannot be undone.",
+      deleteCancel: "Cancel",
       deleteSubmit: "Delete declaration",
     },
   },
@@ -134,6 +171,8 @@ export const portalCopy = {
     secureFormNote:
       "Secure submission. Add business context in your note only if appropriate.",
     skipLink: "Skip to declaration",
+    questionsNotConfigured:
+      "This declaration has no questions yet. Contact your organization to finish setup.",
   },
 
   declarationForm: {
@@ -141,7 +180,8 @@ export const portalCopy = {
     noLabel: "No",
     textPlaceholder: "Enter your response…",
     fileHint: "Select a file to register its details",
-    fileNote: "Metadata only — the file is not uploaded. Your operator receives the filename and type.",
+    fileNote:
+      "Metadata only — the file is not uploaded. Your organization receives the filename and type.",
     fileRequired: "Choose a file to register.",
     fileInvalid: "Register the file before submitting.",
     requiredField: (label: string) => `Complete required field: ${label}`,
@@ -177,14 +217,17 @@ export const portalCopy = {
     copyEmail: "Copy for email",
     copyWhatsApp: "Copy for WhatsApp",
     newLink: "Rotate secure link",
+    newLinkPolicy:
+      "Rotating a secure link invalidates previous secure links for this declaration.",
     qrAlt: "QR code for secure declaration link",
     qrHint: "Scan to open the declaration. Sign-in is not required.",
     copiedLink: "Secure link copied.",
     copiedEmail: "Email message copied. Paste into your mail app.",
     copiedWhatsApp: "WhatsApp message copied. Paste into your chat.",
-    newLinkGenerated: "New secure link issued.",
+    newLinkGenerated: "New secure link issued. Previous secure links no longer work.",
     copyPublicLink: "Copy open link",
     copiedPublicLink: "Open link copied.",
+    loadingLink: "Preparing secure link…",
   },
 
   invite: {
@@ -215,15 +258,22 @@ export const portalCopy = {
       ].join("\n"),
   },
 
-  clientAuth: {
-    eyebrow: "Client access",
-    title: "Client sign in",
-    description: "Sign in to complete assigned declarations.",
-    submit: "Sign in",
-    submitting: "Signing in…",
-    invalidCredentials: "Email or password is incorrect.",
-    operatorLink: "Operator sign in",
-    inviteHint: "Invited by your operator? Open the invitation link they sent you.",
+  clientInvitationsPage: {
+    eyebrow: ORG_EYEBROW,
+    title: "Client invitations",
+    description: "Issue secure client accounts and assign declarations.",
+    recentTitle: "Recent invitations",
+    recentDescription: "Pending and accepted client invites.",
+    assignmentsTitle: "Client assignments",
+    assignmentsDescription: "Declarations assigned to invited clients.",
+    assignmentsEmpty: "No assignments yet.",
+    empty: "No client invitations yet.",
+    openInvite: "Open invite link",
+    status: {
+      pending: "Pending",
+      accepted: "Accepted",
+      expired: "Expired",
+    },
   },
 
   clientInvite: {
@@ -242,13 +292,15 @@ export const portalCopy = {
     passwordMismatch: "Passwords do not match.",
     acceptFailed: "Could not activate your account. Try again or contact support.",
     issueTitle: "Invite client",
-    issueDescription: "Send a secure invitation link and optionally assign a declaration.",
+    issueDescription:
+      "Send a secure invitation link and optionally assign a declaration.",
     fullNameLabel: "Full name",
     fullNamePlaceholder: "Alex Morgan",
     issueSubmit: "Issue invitation",
     issueError: "Enter a valid email and full name.",
     assignLabel: "Assign declaration (optional)",
     assignPlaceholder: "No assignment yet",
+    dueDateLabel: "Due date (optional)",
     issued: "Invitation created. Copy the link below.",
     copyInvite: "Copy invitation link",
     copiedInvite: "Invitation link copied.",
@@ -272,18 +324,43 @@ export const portalCopy = {
   },
 
   clientDashboard: {
-    eyebrow: "Client portal",
+    eyebrow: CLIENT_PORTAL_EYEBROW,
     title: "Your assignments",
-    description: "Declarations assigned to you by your operator.",
+    description: "Declarations assigned to you by your organization.",
     pending: "Pending",
     submitted: "Submitted",
     complete: "Complete declaration",
     viewReceipt: "View receipt",
-    empty: "No assignments yet. Your operator will invite you when a declaration is ready.",
+    empty:
+      "No assignments yet. Your organization will invite you when a declaration is ready.",
     assignmentNotFound: "Assignment not found.",
     alreadySubmitted: "This declaration has already been submitted.",
     receiptTitle: "Submission receipt",
     receiptDescription: "Keep this confirmation code for your records.",
     dueLabel: (date: string) => `Due ${date}`,
+    signOut: "Sign out",
+    backToAssignments: "Back to assignments",
+  },
+
+  metadata: {
+    home: {
+      title: "Sign in",
+      description: "Confirm who you are to access your assigned declarations.",
+    },
+    orgLogin: {
+      title: "Organization sign in",
+      description: "Sign in to manage declarations and review submissions.",
+    },
+    client: {
+      title: "Your assignments",
+      description: "Declarations assigned to you.",
+    },
+    dashboard: {
+      title: "Declaration management",
+      description: "Manage declarations, clients, and submissions.",
+    },
   },
 } as const;
+
+/** @deprecated Use org */
+export const account = portalCopy.org;

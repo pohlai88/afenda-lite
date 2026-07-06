@@ -19,7 +19,7 @@ export default async function AccountPage({
   params: Promise<{ path: string }>;
 }) {
   const { path } = await params;
-  const { account, product } = portalCopy;
+  const { org, product } = portalCopy;
 
   return (
     <div className="portal-shell">
@@ -30,7 +30,7 @@ export default async function AccountPage({
               {PORTAL_NAME}
             </p>
             <PortalEyebrow className="mb-1">{product.portalEyebrow}</PortalEyebrow>
-            <h1 className="text-lg font-semibold tracking-tight">{account.title}</h1>
+            <h1 className="text-lg font-semibold tracking-tight">{org.title}</h1>
           </div>
           <div className="flex shrink-0 items-center gap-1">
             <Button
@@ -40,7 +40,7 @@ export default async function AccountPage({
               render={<Link href="/dashboard" />}
               nativeButton={false}
             >
-              {account.title}
+              {org.title}
             </Button>
             <PortalThemeToggle />
             <UserButton />

@@ -1,12 +1,12 @@
 import Link from "next/link";
-import { PortalSignInForm } from "@/components/portal-sign-in-form";
+import { OrgSignInForm } from "@/components/org-sign-in-form";
 import { PortalEyebrow } from "@/components/portal-eyebrow";
 import { PortalThemeToggle } from "@/components/portal-theme-toggle";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { portalCopy, PORTAL_NAME } from "@/lib/portal-copy";
 
-export function PortalLoginPage({ accessDenied = false }: { accessDenied?: boolean }) {
-  const { signIn, product, accessDenied: accessDeniedCopy } = portalCopy;
+export function OrgLoginPage({ accessDenied = false }: { accessDenied?: boolean }) {
+  const { orgSignIn, accessDenied: accessDeniedCopy, product } = portalCopy;
 
   return (
     <div className="grid min-h-dvh lg:grid-cols-2">
@@ -15,7 +15,7 @@ export function PortalLoginPage({ accessDenied = false }: { accessDenied?: boole
       </a>
 
       <section
-        aria-labelledby="landing-heading"
+        aria-labelledby="org-landing-heading"
         className="bg-terminal text-terminal-foreground flex flex-col justify-center gap-10 border-r border-border p-8 max-lg:hidden xl:p-14"
       >
         <div className="w-full max-w-md">
@@ -23,21 +23,18 @@ export function PortalLoginPage({ accessDenied = false }: { accessDenied?: boole
             {product.portalEyebrow}
           </PortalEyebrow>
           <h1
-            id="landing-heading"
+            id="org-landing-heading"
             className="text-balance text-3xl font-semibold tracking-tight xl:text-4xl"
           >
-            {signIn.heroTitle}
+            {orgSignIn.heroTitle}
           </h1>
           <p className="mt-4 text-pretty text-base text-terminal-foreground/80">
-            {signIn.heroDescription}
+            {orgSignIn.heroDescription}
           </p>
 
           <ol className="mt-8 space-y-2">
-            {signIn.steps.map((step, index) => (
-              <li
-                key={step.label}
-                className="flex items-center gap-3 text-sm"
-              >
+            {orgSignIn.steps.map((step, index) => (
+              <li key={step.label} className="flex items-center gap-3 text-sm">
                 <span
                   className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground tabular-nums"
                   aria-hidden="true"
@@ -59,13 +56,13 @@ export function PortalLoginPage({ accessDenied = false }: { accessDenied?: boole
         <p className="text-xs text-terminal-foreground/60">
           <span translate="no">{PORTAL_NAME}</span>
           <span aria-hidden="true"> · </span>
-          {signIn.footer}
+          {orgSignIn.footer}
         </p>
       </section>
 
       <section
         id="sign-in"
-        aria-labelledby="sign-in-heading"
+        aria-labelledby="org-sign-in-heading"
         className="flex min-h-dvh flex-col bg-background"
       >
         <div className="portal-header lg:hidden">
@@ -80,28 +77,27 @@ export function PortalLoginPage({ accessDenied = false }: { accessDenied?: boole
         <div className="flex flex-1 flex-col items-center justify-center px-4 py-10 sm:px-6">
           <div className="w-full max-w-sm space-y-6">
             <header className="space-y-1 text-center lg:text-left">
-              <h2 id="sign-in-heading" className="portal-page-title">
-                {signIn.title}
+              <h2 id="org-sign-in-heading" className="portal-page-title">
+                {orgSignIn.title}
               </h2>
-              <p className="portal-page-description">{signIn.description}</p>
+              <p className="portal-page-description">{orgSignIn.description}</p>
             </header>
 
             {accessDenied ? (
               <Alert variant="destructive" role="alert">
                 <AlertTitle>{accessDeniedCopy.title}</AlertTitle>
-                <AlertDescription>{signIn.accessDenied}</AlertDescription>
+                <AlertDescription>{orgSignIn.accessDenied}</AlertDescription>
               </Alert>
             ) : null}
 
-            <PortalSignInForm />
+            <OrgSignInForm />
 
             <p className="text-center text-sm text-muted-foreground">
-              {signIn.needAccount}{" "}
               <Link
-                href="/auth/sign-up"
+                href="/"
                 className="font-medium text-primary underline-offset-4 hover:underline"
               >
-                {signIn.createAccount}
+                {orgSignIn.clientLink}
               </Link>
             </p>
           </div>

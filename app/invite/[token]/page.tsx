@@ -37,8 +37,8 @@ export default async function AcceptInvitePage({
             : clientInvite.alreadyAccepted
         }
       >
-        <Button render={<Link href="/client/login" />} nativeButton={false}>
-          {portalCopy.clientAuth.title}
+        <Button render={<Link href="/" />} nativeButton={false}>
+          {portalCopy.signIn.title}
         </Button>
       </PortalCustomerShell>
     );

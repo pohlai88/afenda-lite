@@ -4,32 +4,37 @@ import { resolve } from "node:path";
 import pg from "pg";
 import { hashPassword } from "../node_modules/@neondatabase/auth/node_modules/better-auth/dist/crypto/index.mjs";
 
-function loadEnv() {
+function loadEnvFile() {
   const envPath = resolve(process.cwd(), ".env");
-  const content = readFileSync(envPath, "utf8");
-  const env = {};
+  try {
+    const content = readFileSync(envPath, "utf8");
+    const env = {};
 
-  for (const line of content.split("\n")) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith("#")) continue;
-    const index = trimmed.indexOf("=");
-    if (index === -1) continue;
-    env[trimmed.slice(0, index)] = trimmed.slice(index + 1);
+    for (const line of content.split("\n")) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith("#")) continue;
+      const index = trimmed.indexOf("=");
+      if (index === -1) continue;
+      env[trimmed.slice(0, index)] = trimmed.slice(index + 1);
+    }
+
+    return env;
+  } catch {
+    return {};
   }
-
-  return env;
 }
 
-const env = loadEnv();
+const env = loadEnvFile();
 
-const email = env.SHARED_ADMIN_EMAIL;
-const password = env.SHARED_ADMIN_PASSWORD;
-const name = env.SHARED_ADMIN_NAME ?? "Portal Operator";
-const databaseUrl = env.DATABASE_URL;
+const email = process.env.SHARED_ADMIN_EMAIL ?? env.SHARED_ADMIN_EMAIL;
+const password = process.env.SHARED_ADMIN_PASSWORD ?? env.SHARED_ADMIN_PASSWORD;
+const name =
+  process.env.SHARED_ADMIN_NAME ?? env.SHARED_ADMIN_NAME ?? "Portal Operator";
+const databaseUrl = process.env.DATABASE_URL ?? env.DATABASE_URL;
 
 if (!email || !password || !databaseUrl) {
   console.error(
-    "Missing SHARED_ADMIN_EMAIL, SHARED_ADMIN_PASSWORD, or DATABASE_URL in .env",
+    "Missing SHARED_ADMIN_EMAIL, SHARED_ADMIN_PASSWORD, or DATABASE_URL",
   );
   process.exit(1);
 }

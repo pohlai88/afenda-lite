@@ -1,0 +1,2 @@
+E2E sample evidence file for Playwright file-input metadata tests.
+This file is not uploaded to blob storage; only filename, MIME, and size are registered.

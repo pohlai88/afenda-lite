@@ -3,8 +3,15 @@
 import { revalidatePath } from "next/cache";
 import { requireAdminSession } from "@/app/actions/admin";
 import { getAppBaseUrl } from "@/lib/app-url";
+import { recordAuditEvent } from "@/lib/audit";
 import { buildAnonymousEmailMessage } from "@/lib/invite";
+import { runLoggedAction } from "@/lib/observability";
 import { portalCopy } from "@/lib/portal-copy";
+import { parseSchema } from "@/lib/schemas/common";
+import {
+  recordEmailInvitationSchema,
+  surveyIdParamSchema,
+} from "@/lib/schemas/invitations";
 import {
   getOrCreateInviteToken,
   getSurveyForAdmin,
@@ -12,25 +19,26 @@ import {
   regenerateInviteToken,
 } from "@/lib/surveys";
 
-async function buildInviteLink(surveyId: string, token: string) {
-  const survey = await getSurveyForAdmin(surveyId);
-  if (!survey) {
-    return null;
-  }
-
+function inviteLinkFromToken(surveyId: string, token: string) {
   return {
     token,
     url: `${getAppBaseUrl()}/f/${token}`,
-    surveyId: survey.id,
+    surveyId,
   };
 }
 
 export async function getAnonymousInviteLinkAction(surveyId: string) {
   const session = await requireAdminSession();
-  const survey = await getSurveyForAdmin(surveyId);
+  const parsed = parseSchema(surveyIdParamSchema, surveyId);
+
+  if (!parsed.success) {
+    return { error: portalCopy.errors.declarationNotFound };
+  }
+
+  const survey = await getSurveyForAdmin(parsed.data);
 
   if (!survey) {
-    return { error: "Survey not found." };
+    return { error: portalCopy.errors.declarationNotFound };
   }
 
   const token = await getOrCreateInviteToken({
@@ -38,66 +46,105 @@ export async function getAnonymousInviteLinkAction(surveyId: string) {
     createdBy: session.user.id,
   });
 
-  const link = await buildInviteLink(survey.id, token);
-  if (!link) {
-    return { error: "Survey not found." };
-  }
-
-  return { success: true, ...link };
+  return { success: true, ...inviteLinkFromToken(survey.id, token) };
 }
 
 export async function regenerateAnonymousInviteLinkAction(surveyId: string) {
   const session = await requireAdminSession();
-  const survey = await getSurveyForAdmin(surveyId);
 
-  if (!survey) {
-    return { error: "Survey not found." };
-  }
+  return runLoggedAction(
+    "regenerateAnonymousInviteLinkAction",
+    session.user.id,
+    async () => {
+      const parsed = parseSchema(surveyIdParamSchema, surveyId);
 
-  const token = await regenerateInviteToken({
-    surveyId: survey.id,
-    createdBy: session.user.id,
-  });
+      if (!parsed.success) {
+        return { error: portalCopy.errors.declarationNotFound };
+      }
 
-  const link = await buildInviteLink(survey.id, token);
-  if (!link) {
-    return { error: "Survey not found." };
-  }
+      const survey = await getSurveyForAdmin(parsed.data);
 
-  revalidatePath("/dashboard");
-  revalidatePath(`/dashboard/${survey.id}`);
+      if (!survey) {
+        return { error: portalCopy.errors.declarationNotFound };
+      }
 
-  return { success: true, ...link };
+      const token = await regenerateInviteToken({
+        surveyId: survey.id,
+        createdBy: session.user.id,
+      });
+
+      revalidatePath("/dashboard");
+      revalidatePath(`/dashboard/${survey.id}`);
+
+      return { success: true, ...inviteLinkFromToken(survey.id, token) };
+    },
+  );
 }
 
-export async function recordEmailInvitationAction(formData: FormData) {
-  const session = await requireAdminSession();
-  const surveyId = String(formData.get("surveyId") ?? "").trim();
-  const email = String(formData.get("email") ?? "").trim().toLowerCase();
-
-  if (!surveyId || !email.includes("@")) {
-    return { error: portalCopy.invite.recordError };
-  }
-
+export async function loadAnonymousInviteLinkForSurvey(
+  surveyId: string,
+  createdBy: string,
+) {
   const survey = await getSurveyForAdmin(surveyId);
   if (!survey) {
-    return { error: "Declaration not found." };
+    return null;
   }
 
   const token = await getOrCreateInviteToken({
     surveyId: survey.id,
-    createdBy: session.user.id,
-  });
-  const url = `${getAppBaseUrl()}/f/${token}`;
-
-  await recordSurveyInvitation({
-    surveyId: survey.id,
-    clientEmail: email,
-    invitedBy: session.user.id,
+    createdBy,
   });
 
-  revalidatePath(`/dashboard/${survey.id}`);
+  return inviteLinkFromToken(survey.id, token);
+}
 
-  const { combined } = buildAnonymousEmailMessage(url);
-  return { success: true, combined, url };
+export async function recordEmailInvitationAction(formData: FormData) {
+  const session = await requireAdminSession();
+
+  return runLoggedAction(
+    "recordEmailInvitationAction",
+    session.user.id,
+    async () => {
+      const parsed = parseSchema(recordEmailInvitationSchema, {
+        surveyId: String(formData.get("surveyId") ?? "").trim(),
+        email: String(formData.get("email") ?? "").trim().toLowerCase(),
+      });
+
+      if (!parsed.success) {
+        return { error: portalCopy.invite.recordError };
+      }
+
+      const { surveyId, email } = parsed.data;
+
+      const survey = await getSurveyForAdmin(surveyId);
+      if (!survey) {
+        return { error: portalCopy.errors.declarationNotFound };
+      }
+
+      const token = await getOrCreateInviteToken({
+        surveyId: survey.id,
+        createdBy: session.user.id,
+      });
+      const url = `${getAppBaseUrl()}/f/${token}`;
+
+      await recordSurveyInvitation({
+        surveyId: survey.id,
+        clientEmail: email,
+        invitedBy: session.user.id,
+      });
+
+      await recordAuditEvent({
+        actorId: session.user.id,
+        eventType: "invite.issued",
+        resourceType: "declaration",
+        resourceId: survey.id,
+        metadata: { channel: "anonymous_email" },
+      });
+
+      revalidatePath(`/dashboard/${survey.id}`);
+
+      const { combined } = buildAnonymousEmailMessage(url);
+      return { success: true, combined, url };
+    },
+  );
 }

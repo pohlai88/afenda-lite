@@ -3,13 +3,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { portalCopy } from "@/lib/portal-copy";
 
 export default function DashboardLoading() {
-  const { account } = portalCopy;
+  const { org } = portalCopy;
 
   return (
     <PortalShell
-      eyebrow={account.eyebrow}
-      title={account.title}
-      description={account.description}
+      eyebrow={org.eyebrow}
+      title={org.title}
+      description={org.description}
     >
       <div className="grid gap-4 sm:grid-cols-3">
         {Array.from({ length: 3 }).map((_, index) => (

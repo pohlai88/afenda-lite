@@ -3,9 +3,10 @@
 import { useState, useTransition } from "react";
 import { CheckCircleIcon, UploadIcon } from "lucide-react";
 import { registerEvidenceAction } from "@/app/actions/declarations";
+import { ConfirmationReceipt } from "@/components/confirmation-receipt";
+import { FormErrorAlert } from "@/components/form-error-alert";
 import { portalCopy } from "@/lib/portal-copy";
 import type { SurveyAnswers, SurveyQuestion } from "@/lib/questions";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -14,8 +15,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
@@ -58,25 +57,19 @@ export function DeclarationForm({
 
   if (confirmationCode) {
     return (
-      <Card className="text-center">
-        <CardHeader>
-          <CardTitle>
-            {assignmentId
-              ? clientDashboard.receiptTitle
-              : declarationForm.thankYouTitle}
-          </CardTitle>
-          <CardDescription>
-            {assignmentId
-              ? clientDashboard.receiptDescription
-              : declarationForm.thankYouDescription}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="font-mono text-lg font-semibold tracking-wide">
-            {confirmationCode}
-          </p>
-        </CardContent>
-      </Card>
+      <ConfirmationReceipt
+        code={confirmationCode}
+        title={
+          assignmentId
+            ? clientDashboard.receiptTitle
+            : declarationForm.thankYouTitle
+        }
+        description={
+          assignmentId
+            ? clientDashboard.receiptDescription
+            : declarationForm.thankYouDescription
+        }
+      />
     );
   }
 
@@ -132,6 +125,7 @@ export function DeclarationForm({
               key={question.id}
               question={question}
               surveyId={surveyId}
+              slug={slug}
               value={answers[question.id]}
               evidenceName={evidenceNames[question.id]}
               onChange={(value) =>
@@ -150,11 +144,7 @@ export function DeclarationForm({
             />
           ))}
 
-          {error ? (
-            <Alert variant="destructive" role="alert" aria-live="polite">
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          ) : null}
+          <FormErrorAlert error={error} />
 
           <Button type="submit" className="w-full touch-manipulation" disabled={isPending}>
             {isPending ? declarationForm.submitting : declarationForm.submit}
@@ -168,6 +158,7 @@ export function DeclarationForm({
 function QuestionField({
   question,
   surveyId,
+  slug,
   value,
   evidenceName,
   onChange,
@@ -175,6 +166,7 @@ function QuestionField({
 }: {
   question: SurveyQuestion;
   surveyId: string;
+  slug: string;
   value: boolean | string | undefined;
   evidenceName?: string;
   onChange: (value: boolean | string) => void;
@@ -246,6 +238,7 @@ function QuestionField({
                   startRegister(async () => {
                     const formData = new FormData();
                     formData.set("surveyId", surveyId);
+                    formData.set("slug", slug);
                     formData.set("questionId", question.id);
                     formData.set("fileName", file.name);
                     formData.set("mimeType", file.type || "application/octet-stream");
@@ -271,9 +264,7 @@ function QuestionField({
             {declarationForm.fileNote}
           </p>
           {fileError ? (
-            <Alert variant="destructive">
-              <AlertDescription>{fileError}</AlertDescription>
-            </Alert>
+            <FormErrorAlert error={fileError} />
           ) : null}
         </div>
       ) : null}

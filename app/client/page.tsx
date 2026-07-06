@@ -1,6 +1,9 @@
+import type { Metadata } from "next";
 import Link from "next/link";
-import { redirect } from "next/navigation";
+import { requireClientSession } from "@/app/actions/client";
 import { PortalCustomerShell } from "@/components/portal-customer-shell";
+import { ConfirmationReceipt } from "@/components/confirmation-receipt";
+import { PortalEmptyState } from "@/components/portal-empty-state";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,31 +13,17 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { auth } from "@/lib/auth/server";
-import { isAdminSession } from "@/lib/admin";
-import { getClientProfile, listClientAssignments } from "@/lib/clients";
-import { portalCopy } from "@/lib/portal-copy";
+import { listClientAssignments } from "@/lib/clients";
+import { PORTAL_NAME, portalCopy } from "@/lib/portal-copy";
+
+export const metadata: Metadata = {
+  title: `${PORTAL_NAME} — ${portalCopy.metadata.client.title}`,
+  description: portalCopy.metadata.client.description,
+};
 
 export default async function ClientDashboardPage() {
   const { clientDashboard } = portalCopy;
-  const { data: session } = await auth.getSession();
-
-  if (!session?.user?.email) {
-    redirect("/client/login");
-  }
-
-  if (isAdminSession(session)) {
-    redirect("/dashboard");
-  }
-
-  const profile = session.user.id
-    ? await getClientProfile(session.user.id)
-    : null;
-
-  if (!profile?.onboardingComplete) {
-    redirect("/client/onboarding");
-  }
-
+  const session = await requireClientSession({ requireOnboarding: true });
   const assignments = await listClientAssignments(session.user.email);
 
   return (
@@ -42,13 +31,10 @@ export default async function ClientDashboardPage() {
       eyebrow={clientDashboard.eyebrow}
       title={clientDashboard.title}
       description={clientDashboard.description}
+      showSignOut
     >
       {assignments.length === 0 ? (
-        <Card className="border-dashed">
-          <CardContent className="py-10 text-center text-sm text-muted-foreground">
-            {clientDashboard.empty}
-          </CardContent>
-        </Card>
+        <PortalEmptyState>{clientDashboard.empty}</PortalEmptyState>
       ) : (
         <div className="space-y-4">
           {assignments.map((assignment) => (
@@ -78,15 +64,14 @@ export default async function ClientDashboardPage() {
                     )}
                   </p>
                 ) : null}
-                {assignment.status === "submitted" && assignment.confirmationCode ? (
-                  <div className="portal-info-block">
-                    <p className="text-xs text-muted-foreground">
-                      {clientDashboard.receiptTitle}
-                    </p>
-                    <p className="font-mono font-medium">
-                      {assignment.confirmationCode}
-                    </p>
-                  </div>
+                {assignment.status === "submitted" &&
+                assignment.confirmationCode ? (
+                  <ConfirmationReceipt
+                    code={assignment.confirmationCode}
+                    title={clientDashboard.receiptTitle}
+                    description={clientDashboard.receiptDescription}
+                    variant="inline"
+                  />
                 ) : (
                   <Button
                     render={

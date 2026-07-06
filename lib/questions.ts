@@ -1,5 +1,5 @@
 import { pool } from "@/lib/db";
-import { ensureSurveySchema } from "@/lib/surveys";
+import { validateEvidenceMetadata } from "@/lib/evidence-policy";
 
 export type QuestionType = "yes_no" | "text" | "file";
 
@@ -24,46 +24,6 @@ export type EvidenceRecord = {
   createdAt: Date;
 };
 
-let questionSchemaReady: Promise<void> | null = null;
-
-export async function ensureQuestionSchema() {
-  await ensureSurveySchema();
-  if (!questionSchemaReady) {
-    questionSchemaReady = pool
-      .query(`
-      CREATE TABLE IF NOT EXISTS survey_questions (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        survey_id UUID NOT NULL REFERENCES surveys(id) ON DELETE CASCADE,
-        prompt TEXT NOT NULL,
-        type TEXT NOT NULL CHECK (type IN ('yes_no', 'text', 'file')),
-        required BOOLEAN NOT NULL DEFAULT TRUE,
-        sort_order INTEGER NOT NULL DEFAULT 0
-      );
-
-      CREATE INDEX IF NOT EXISTS survey_questions_survey_id_idx
-        ON survey_questions (survey_id);
-
-      CREATE TABLE IF NOT EXISTS evidence_records (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        survey_id UUID NOT NULL REFERENCES surveys(id) ON DELETE CASCADE,
-        question_id UUID NOT NULL REFERENCES survey_questions(id) ON DELETE CASCADE,
-        file_name TEXT NOT NULL,
-        mime_type TEXT NOT NULL DEFAULT 'application/octet-stream',
-        size_bytes INTEGER NOT NULL DEFAULT 0,
-        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-      );
-
-      ALTER TABLE survey_responses
-        ALTER COLUMN rating DROP NOT NULL;
-
-      ALTER TABLE survey_responses
-        ADD COLUMN IF NOT EXISTS answers JSONB;
-    `)
-      .then(() => undefined);
-  }
-  await questionSchemaReady;
-}
-
 function mapQuestion(row: Record<string, unknown>): SurveyQuestion {
   return {
     id: String(row.id),
@@ -75,8 +35,19 @@ function mapQuestion(row: Record<string, unknown>): SurveyQuestion {
   };
 }
 
+function mapEvidenceRecord(row: Record<string, unknown>): EvidenceRecord {
+  return {
+    id: String(row.id),
+    surveyId: String(row.survey_id),
+    questionId: String(row.question_id),
+    fileName: String(row.file_name),
+    mimeType: String(row.mime_type),
+    sizeBytes: Number(row.size_bytes),
+    createdAt: new Date(String(row.created_at)),
+  };
+}
+
 export async function listQuestionsForSurvey(surveyId: string) {
-  await ensureQuestionSchema();
   const result = await pool.query(
     `SELECT id, survey_id, prompt, type, required, sort_order
      FROM survey_questions
@@ -95,7 +66,6 @@ export async function replaceSurveyQuestions(
     required: boolean;
   }>,
 ) {
-  await ensureQuestionSchema();
   await pool.query(`DELETE FROM survey_questions WHERE survey_id = $1`, [surveyId]);
 
   for (const [index, question] of questions.entries()) {
@@ -114,7 +84,15 @@ export async function registerEvidence(input: {
   mimeType: string;
   sizeBytes: number;
 }) {
-  await ensureQuestionSchema();
+  const policy = validateEvidenceMetadata({
+    fileName: input.fileName,
+    mimeType: input.mimeType,
+    sizeBytes: input.sizeBytes,
+  });
+  if (!policy.ok) {
+    throw new Error(`Evidence metadata rejected: ${policy.reason}`);
+  }
+
   const result = await pool.query(
     `INSERT INTO evidence_records (survey_id, question_id, file_name, mime_type, size_bytes)
      VALUES ($1, $2, $3, $4, $5)
@@ -127,20 +105,11 @@ export async function registerEvidence(input: {
       Math.max(0, input.sizeBytes),
     ],
   );
-  const row = result.rows[0];
-  return {
-    id: String(row.id),
-    surveyId: String(row.survey_id),
-    questionId: String(row.question_id),
-    fileName: String(row.file_name),
-    mimeType: String(row.mime_type),
-    sizeBytes: Number(row.size_bytes),
-    createdAt: new Date(String(row.created_at)),
-  } satisfies EvidenceRecord;
+
+  return mapEvidenceRecord(result.rows[0]);
 }
 
 export async function getEvidenceRecord(id: string, surveyId: string) {
-  await ensureQuestionSchema();
   const result = await pool.query(
     `SELECT id, survey_id, question_id, file_name, mime_type, size_bytes, created_at
      FROM evidence_records
@@ -149,31 +118,28 @@ export async function getEvidenceRecord(id: string, surveyId: string) {
     [id, surveyId],
   );
   if (!result.rows[0]) return null;
-  const row = result.rows[0];
-  return {
-    id: String(row.id),
-    surveyId: String(row.survey_id),
-    questionId: String(row.question_id),
-    fileName: String(row.file_name),
-    mimeType: String(row.mime_type),
-    sizeBytes: Number(row.size_bytes),
-    createdAt: new Date(String(row.created_at)),
-  } satisfies EvidenceRecord;
+  return mapEvidenceRecord(result.rows[0]);
 }
 
-export async function ensureDefaultQuestions(surveyId: string, intro: string) {
-  const existing = await listQuestionsForSurvey(surveyId);
-  if (existing.length > 0) return existing;
+export async function getEvidenceRecordsByIds(ids: string[], surveyId: string) {
+  if (ids.length === 0) {
+    return new Map<string, EvidenceRecord>();
+  }
 
-  await replaceSurveyQuestions(surveyId, [
-    {
-      prompt: intro.trim() || "Please complete this declaration.",
-      type: "text",
-      required: true,
-    },
-  ]);
+  const result = await pool.query(
+    `SELECT id, survey_id, question_id, file_name, mime_type, size_bytes, created_at
+     FROM evidence_records
+     WHERE survey_id = $1 AND id = ANY($2::uuid[])`,
+    [surveyId, ids],
+  );
 
-  return listQuestionsForSurvey(surveyId);
+  const records = new Map<string, EvidenceRecord>();
+  for (const row of result.rows) {
+    const record = mapEvidenceRecord(row);
+    records.set(record.id, record);
+  }
+
+  return records;
 }
 
 export function parseQuestionsFromForm(formData: FormData) {

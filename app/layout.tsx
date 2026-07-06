@@ -9,8 +9,8 @@ import { cn } from "@/lib/utils";
 import { PORTAL_NAME, portalCopy } from "@/lib/portal-copy";
 
 export const metadata: Metadata = {
-  title: `${PORTAL_NAME} — Sign in`,
-  description: portalCopy.signIn.description,
+  title: PORTAL_NAME,
+  description: portalCopy.product.tagline,
 };
 
 export default function RootLayout({
@@ -33,7 +33,7 @@ export default function RootLayout({
         <ThemeProvider defaultTheme="system">
           <NeonAuthUIProvider
             authClient={authClient}
-            redirectTo="/dashboard"
+            redirectTo="/client"
             emailOTP
           >
             {children}

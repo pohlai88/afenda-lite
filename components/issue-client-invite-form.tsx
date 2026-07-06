@@ -2,7 +2,9 @@
 
 import { useState, useTransition } from "react";
 import { issueClientInviteAction } from "@/app/actions/client";
+import { copyText } from "@/lib/clipboard";
 import { portalCopy } from "@/lib/portal-copy";
+import { FormErrorAlert } from "@/components/form-error-alert";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -75,6 +77,10 @@ export function IssueClientInviteForm({
           </NativeSelect>
         </div>
       ) : null}
+      <div className="space-y-2">
+        <Label htmlFor="dueDate">{clientInvite.dueDateLabel}</Label>
+        <Input id="dueDate" name="dueDate" type="date" />
+      </div>
       {message ? (
         <Alert>
           <AlertDescription>{message}</AlertDescription>
@@ -88,19 +94,17 @@ export function IssueClientInviteForm({
             variant="outline"
             size="sm"
             onClick={() => {
-              void navigator.clipboard.writeText(inviteUrl);
-              setMessage(clientInvite.copiedInvite);
+              startTransition(async () => {
+                await copyText(inviteUrl);
+                setMessage(clientInvite.copiedInvite);
+              });
             }}
           >
             {clientInvite.copyInvite}
           </Button>
         </div>
       ) : null}
-      {error ? (
-        <Alert variant="destructive" role="alert" aria-live="polite">
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      ) : null}
+      <FormErrorAlert error={error} />
       <Button type="submit" disabled={isPending}>
         {clientInvite.issueSubmit}
       </Button>

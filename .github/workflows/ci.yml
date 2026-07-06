@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      NEON_AUTH_BASE_URL: ${{ secrets.NEON_AUTH_BASE_URL }}
+      NEON_AUTH_COOKIE_SECRET: ${{ secrets.NEON_AUTH_COOKIE_SECRET }}
+      SHARED_ADMIN_EMAIL: ${{ secrets.SHARED_ADMIN_EMAIL }}
+      SHARED_ADMIN_PASSWORD: ${{ secrets.SHARED_ADMIN_PASSWORD }}
+      SHARED_ADMIN_NAME: Portal Operator
+      E2E_SURVEY_SLUG: ${{ secrets.E2E_SURVEY_SLUG }}
+      APP_URL: http://localhost:3000
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Portal terminology check
+        run: npm run check:copy
+
+      - name: Build
+        run: npm run build
+
+      - name: Migration smoke
+        run: npm run db:migrate
+
+      - name: Seed shared operator account
+        run: npm run seed:admin
+
+      - name: Install Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: E2E smoke tests
+        run: npm test
