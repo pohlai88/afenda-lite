@@ -27,6 +27,7 @@ export function ClientDeclarationForm({
       description={description}
       questions={questions}
       assignmentId={assignmentId}
+      hideCardTitle
       onSubmit={async ({ slug, assignmentId, answers }) => {
         if (!assignmentId) return { error: "Assignment not found." };
         return submitClientDeclarationAction({ assignmentId, slug, answers });

@@ -2,12 +2,15 @@ import { pool } from "@/lib/db";
 
 export type AuditEventType =
   | "auth.sign_in_failed"
+  | "admin.client_preview_started"
+  | "admin.client_preview_ended"
   | "declaration.created"
   | "declaration.updated"
   | "declaration.submitted"
   | "declaration.deleted"
   | "invite.issued"
   | "invite.accepted"
+  | "profile.completed"
   | "evidence.registered";
 
 export async function recordAuditEvent(input: {

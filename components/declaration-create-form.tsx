@@ -2,12 +2,14 @@
 
 import { useState, useTransition } from "react";
 import { createSurveyAction } from "@/app/actions/surveys";
+import { FormErrorAlert } from "@/components/form-error-alert";
+import { PortalFormField } from "@/components/portal-form-field";
 import { QuestionFieldsEditor } from "@/components/question-fields-editor";
 import { portalCopy } from "@/lib/portal-copy";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { FieldGroup } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Loader2Icon } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 
 export function DeclarationCreateForm() {
@@ -27,32 +29,50 @@ export function DeclarationCreateForm() {
         });
       }}
     >
-      <div className="space-y-2">
-        <Label htmlFor="survey-title">{create.titleLabel}</Label>
-        <Input
-          id="survey-title"
-          name="title"
-          required
-          placeholder={create.titlePlaceholder}
-        />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="survey-description">{create.introLabel}</Label>
-        <Textarea
-          id="survey-description"
-          name="description"
-          className="min-h-20"
-          placeholder={create.introPlaceholder}
-        />
-      </div>
+      <FieldGroup className="gap-4">
+        <PortalFormField label={create.titleLabel} required>
+          {({ id }) => (
+            <Input
+              id={id}
+              name="title"
+              required
+              autoComplete="off"
+              placeholder={create.titlePlaceholder}
+            />
+          )}
+        </PortalFormField>
+
+        <PortalFormField label={create.introLabel}>
+          {({ id }) => (
+            <Textarea
+              id={id}
+              name="description"
+              className="min-h-20"
+              autoComplete="off"
+              placeholder={create.introPlaceholder}
+            />
+          )}
+        </PortalFormField>
+      </FieldGroup>
+
       <QuestionFieldsEditor />
-      {error ? (
-        <Alert variant="destructive" role="alert" aria-live="polite">
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      ) : null}
-      <Button type="submit" className="w-full" disabled={isPending}>
-        {create.submit}
+
+      <FormErrorAlert error={error} />
+
+      <Button
+        type="submit"
+        className="w-full touch-manipulation"
+        disabled={isPending}
+        aria-busy={isPending}
+      >
+        {isPending ? (
+          <>
+            <Loader2Icon aria-hidden="true" className="animate-spin" />
+            {create.submitting}
+          </>
+        ) : (
+          create.submit
+        )}
       </Button>
     </form>
   );

@@ -7,8 +7,8 @@ import {
   UsersIcon,
 } from "lucide-react";
 import { DeclarationCreateForm } from "@/components/declaration-create-form";
+import { DashboardPage, PortalSection } from "@/components/dashboard-page";
 import { PortalEmptyState } from "@/components/portal-empty-state";
-import { PortalSection, PortalShell } from "@/components/portal-shell";
 import { PortalStatCard } from "@/components/portal-stat-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -28,8 +28,8 @@ export const metadata: Metadata = {
   description: portalCopy.metadata.dashboard.description,
 };
 
-export default async function DashboardPage() {
-  const { org } = portalCopy;
+export default async function DashboardPageRoute() {
+  const { org, nav } = portalCopy;
   await requireAdminSession();
   const [surveys, pendingAssignments] = await Promise.all([
     listSurveysForAdmin(),
@@ -41,11 +41,12 @@ export default async function DashboardPage() {
   );
 
   return (
-    <PortalShell
+    <DashboardPage
       eyebrow={org.eyebrow}
       title={org.title}
       description={org.description}
-      headerActions={
+      breadcrumbs={[{ label: nav.declarations }]}
+      actions={
         <Button
           variant="outline"
           size="sm"
@@ -77,7 +78,7 @@ export default async function DashboardPage() {
         />
       </div>
 
-      <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(280px,320px)_1fr]">
+      <div className="grid gap-8 lg:grid-cols-[minmax(280px,320px)_1fr]">
         <Card>
           <CardHeader>
             <CardTitle>{org.create.title}</CardTitle>
@@ -98,7 +99,7 @@ export default async function DashboardPage() {
             <div className="space-y-4">
               {surveys.map((survey) => (
                 <Card key={survey.id}>
-                  <CardHeader className="flex flex-row items-start justify-between gap-4">
+                  <CardHeader className="h-stack items-start justify-between gap-4">
                     <div className="min-w-0 space-y-1">
                       <CardTitle className="truncate">{survey.title}</CardTitle>
                       <CardDescription className="line-clamp-2">
@@ -133,6 +134,6 @@ export default async function DashboardPage() {
           )}
         </PortalSection>
       </div>
-    </PortalShell>
+    </DashboardPage>
   );
 }

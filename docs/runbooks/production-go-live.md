@@ -22,6 +22,12 @@ Before promoting a release or validating production:
   - `SHARED_ADMIN_PASSWORD`
   - `SHARED_ADMIN_NAME`
   - `APP_URL` (production URL, e.g. `https://iam-check.vercel.app`)
+  - `PREVIEW_CLIENT_EMAIL` (sandbox client for operator portal preview)
+  - `PREVIEW_CLIENT_PASSWORD`
+  - `PREVIEW_CLIENT_NAME` (optional display name)
+  - `PLAYGROUND_ENABLED` (optional; set `true` to expose `/playground` UI review route)
+  - `PLAYGROUND_SURVEY_ID`, `PLAYGROUND_ASSIGNMENT_ID`, `PLAYGROUND_SURVEY_SLUG` (from `seed:preview-client` output)
+- [ ] Preview client seeded on production DB: `npm run seed:preview-client`
 - [ ] Neon Auth **trusted domains** include:
   - `http://localhost:3000`
   - `https://iam-check.vercel.app`

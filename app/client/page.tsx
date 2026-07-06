@@ -31,6 +31,7 @@ export default async function ClientDashboardPage() {
       eyebrow={clientDashboard.eyebrow}
       title={clientDashboard.title}
       description={clientDashboard.description}
+      homeHref="/client"
       showSignOut
     >
       {assignments.length === 0 ? (
@@ -39,7 +40,7 @@ export default async function ClientDashboardPage() {
         <div className="space-y-4">
           {assignments.map((assignment) => (
             <Card key={assignment.id}>
-              <CardHeader className="flex flex-row items-start justify-between gap-4">
+              <CardHeader className="h-stack items-start justify-between gap-4">
                 <div>
                   <CardTitle>{assignment.surveyTitle}</CardTitle>
                   <CardDescription className="line-clamp-2">

@@ -2,6 +2,8 @@ import Link from "next/link";
 import { ClientSignInForm } from "@/components/client-sign-in-form";
 import { PortalEyebrow } from "@/components/portal-eyebrow";
 import { PortalThemeToggle } from "@/components/portal-theme-toggle";
+import { PortalTrustFooter } from "@/components/portal-trust-footer";
+import { PortalTrustNotice } from "@/components/portal-trust-notice";
 import { portalCopy, PORTAL_NAME } from "@/lib/portal-copy";
 
 export function ClientPortalLoginPage() {
@@ -15,7 +17,7 @@ export function ClientPortalLoginPage() {
 
       <section
         aria-labelledby="landing-heading"
-        className="bg-terminal text-terminal-foreground flex flex-col justify-center gap-10 border-r border-border p-8 max-lg:hidden xl:p-14"
+        className="bg-terminal text-terminal-foreground v-stack justify-center gap-10 border-r border-border p-8 max-lg:hidden xl:p-14"
       >
         <div className="w-full max-w-md">
           <PortalEyebrow variant="solid" className="mb-4">
@@ -33,9 +35,9 @@ export function ClientPortalLoginPage() {
 
           <ol className="mt-8 space-y-2">
             {signIn.steps.map((step, index) => (
-              <li key={step.label} className="flex items-center gap-3 text-sm">
+              <li key={step.label} className="h-stack items-center gap-3 text-sm">
                 <span
-                  className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground tabular-nums"
+                  className="center size-6 shrink-0 rounded-full bg-primary text-xs font-semibold text-primary-foreground tabular-nums"
                   aria-hidden="true"
                 >
                   {index + 1}
@@ -50,19 +52,19 @@ export function ClientPortalLoginPage() {
               </li>
             ))}
           </ol>
+
+          <div className="mt-8">
+            <PortalTrustNotice />
+          </div>
         </div>
 
-        <p className="text-xs text-terminal-foreground/60">
-          <span translate="no">{PORTAL_NAME}</span>
-          <span aria-hidden="true"> · </span>
-          {signIn.footer}
-        </p>
+        <PortalTrustFooter />
       </section>
 
       <section
         id="sign-in"
         aria-labelledby="sign-in-heading"
-        className="flex min-h-dvh flex-col bg-background"
+        className="v-stack min-h-dvh bg-background"
       >
         <div className="portal-header lg:hidden">
           <div className="portal-header-inner">
@@ -73,7 +75,7 @@ export function ClientPortalLoginPage() {
           </div>
         </div>
 
-        <div className="flex flex-1 flex-col items-center justify-center px-4 py-10 sm:px-6">
+        <div className="v-stack spacer center px-4 py-10 sm:px-6">
           <div className="w-full max-w-sm space-y-6">
             <header className="space-y-1 text-center lg:text-left">
               <h2 id="sign-in-heading" className="portal-page-title">
@@ -81,6 +83,10 @@ export function ClientPortalLoginPage() {
               </h2>
               <p className="portal-page-description">{signIn.description}</p>
             </header>
+
+            <p className="text-pretty text-xs text-muted-foreground">
+              {portalCopy.trust.notices.clientLogin}
+            </p>
 
             <ClientSignInForm />
 

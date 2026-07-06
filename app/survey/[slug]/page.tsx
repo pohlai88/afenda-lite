@@ -43,6 +43,7 @@ export default async function PublicSurveyPage({
         title={survey.title}
         description={survey.question}
         questions={questions}
+        hideCardTitle
       />
     </PortalCustomerShell>
   );

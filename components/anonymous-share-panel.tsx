@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, type ReactNode } from "react";
 import Image from "next/image";
 import { LinkIcon, RefreshCwIcon } from "lucide-react";
+import { toast } from "sonner";
 import {
   recordEmailInvitationAction,
   regenerateAnonymousInviteLinkAction,
@@ -15,11 +16,11 @@ import {
 } from "@/lib/invite";
 import { copyText } from "@/lib/clipboard";
 import { portalCopy } from "@/lib/portal-copy";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { FormErrorAlert } from "@/components/form-error-alert";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { PortalFormField } from "@/components/portal-form-field";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 
 type InviteLink = {
   token: string;
@@ -42,8 +43,8 @@ export function AnonymousSharePanel({
     initialInvite ?? null,
   );
   const [recipientEmail, setRecipientEmail] = useState("");
-  const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [confirmRegenerate, setConfirmRegenerate] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   const privateInviteUrl =
@@ -55,6 +56,12 @@ export function AnonymousSharePanel({
     publicPath && typeof window !== "undefined"
       ? new URL(publicPath, window.location.origin).toString()
       : null;
+
+  async function copyWithToast(text: string, message: string) {
+    await copyText(text);
+    toast.success(message);
+    setError(null);
+  }
 
   return (
     <div className={embedded ? "space-y-4 border-t pt-4" : "space-y-4"}>
@@ -79,9 +86,7 @@ export function AnonymousSharePanel({
             disabled={isPending}
             onClick={() => {
               startTransition(async () => {
-                await copyText(publicUrl);
-                setMessage(share.copiedPublicLink);
-                setError(null);
+                await copyWithToast(publicUrl, share.copiedPublicLink);
               });
             }}
           >
@@ -101,131 +106,104 @@ export function AnonymousSharePanel({
         )}
 
         <div className="flex flex-wrap gap-2">
-          <Button
-            type="button"
-            size="sm"
-            className="touch-manipulation"
+          <CopyButton
             disabled={!privateInviteUrl || isPending}
             onClick={() => {
               if (!privateInviteUrl) return;
               startTransition(async () => {
-                await copyText(privateInviteUrl);
-                setMessage(share.copiedLink);
-                setError(null);
+                await copyWithToast(privateInviteUrl, share.copiedLink);
               });
             }}
           >
-            <LinkIcon />
+            <LinkIcon aria-hidden="true" />
             {share.copyLink}
-          </Button>
+          </CopyButton>
 
-          <Button
-            type="button"
+          <CopyButton
             variant="outline"
-            size="sm"
-            className="touch-manipulation"
             disabled={!privateInviteUrl || isPending}
             onClick={() => {
               if (!privateInviteUrl) return;
               startTransition(async () => {
-                const { combined } = buildAnonymousEmailMessage(privateInviteUrl);
-                await copyText(combined);
-                setMessage(share.copiedEmail);
-                setError(null);
+                const { combined } =
+                  buildAnonymousEmailMessage(privateInviteUrl);
+                await copyWithToast(combined, share.copiedEmail);
               });
             }}
           >
             {share.copyEmail}
-          </Button>
+          </CopyButton>
 
-          <Button
-            type="button"
+          <CopyButton
             variant="outline"
-            size="sm"
-            className="touch-manipulation"
             disabled={!privateInviteUrl || isPending}
             onClick={() => {
               if (!privateInviteUrl) return;
               startTransition(async () => {
-                await copyText(buildAnonymousWhatsAppMessage(privateInviteUrl));
-                setMessage(share.copiedWhatsApp);
-                setError(null);
+                await copyWithToast(
+                  buildAnonymousWhatsAppMessage(privateInviteUrl),
+                  share.copiedWhatsApp,
+                );
               });
             }}
           >
             {share.copyWhatsApp}
-          </Button>
+          </CopyButton>
 
-          <Button
-            type="button"
+          <CopyButton
             variant="ghost"
-            size="sm"
-            className="touch-manipulation"
             disabled={isPending}
-            onClick={() => {
-              startTransition(async () => {
-                setMessage(null);
-                setError(null);
-                const result =
-                  await regenerateAnonymousInviteLinkAction(surveyId);
-                if (result?.error) {
-                  setError(result.error);
-                  return;
-                }
-                if (result && "token" in result) {
-                  setInviteLink({ token: result.token, url: result.url });
-                  setMessage(share.newLinkGenerated);
-                }
-              });
-            }}
+            onClick={() => setConfirmRegenerate(true)}
           >
-            <RefreshCwIcon />
+            <RefreshCwIcon aria-hidden="true" />
             {share.newLink}
-          </Button>
+          </CopyButton>
         </div>
         <p className="text-xs text-muted-foreground">{share.newLinkPolicy}</p>
       </div>
 
       <div className="space-y-2 border-t pt-4">
-        <Label htmlFor={`invite-email-${surveyId}`}>{inviteCopy.emailLabel}</Label>
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <Input
-            id={`invite-email-${surveyId}`}
-            type="email"
-            value={recipientEmail}
-            onChange={(event) => setRecipientEmail(event.target.value)}
-            placeholder={inviteCopy.emailPlaceholder}
-            autoComplete="off"
-          />
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="shrink-0 touch-manipulation"
-            disabled={isPending}
-            onClick={() => {
-              startTransition(async () => {
-                setMessage(null);
-                setError(null);
-                const formData = new FormData();
-                formData.set("surveyId", surveyId);
-                formData.set("email", recipientEmail);
-                const result = await recordEmailInvitationAction(formData);
-                if (result?.error) {
-                  setError(result.error);
-                  return;
-                }
-                if (result?.success && result.combined) {
-                  await copyText(result.combined);
-                  setMessage(inviteCopy.recorded);
-                  setRecipientEmail("");
-                }
-              });
-            }}
-          >
-            {inviteCopy.recordAndCopy}
-          </Button>
-        </div>
+        <PortalFormField label={inviteCopy.emailLabel}>
+          {({ id }) => (
+            <div className="v-stack gap-2 sm:h-stack">
+              <Input
+                id={id}
+                type="email"
+                value={recipientEmail}
+                onChange={(event) => setRecipientEmail(event.target.value)}
+                placeholder={inviteCopy.emailPlaceholder}
+                autoComplete="off"
+                spellCheck={false}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="shrink-0 touch-manipulation"
+                disabled={isPending || !recipientEmail.trim()}
+                onClick={() => {
+                  startTransition(async () => {
+                    setError(null);
+                    const formData = new FormData();
+                    formData.set("surveyId", surveyId);
+                    formData.set("email", recipientEmail);
+                    const result = await recordEmailInvitationAction(formData);
+                    if (result?.error) {
+                      setError(result.error);
+                      return;
+                    }
+                    if (result?.success && result.combined) {
+                      await copyWithToast(result.combined, inviteCopy.recorded);
+                      setRecipientEmail("");
+                    }
+                  });
+                }}
+              >
+                {inviteCopy.recordAndCopy}
+              </Button>
+            </div>
+          )}
+        </PortalFormField>
       </div>
 
       {privateInviteUrl ? (
@@ -242,12 +220,57 @@ export function AnonymousSharePanel({
         </div>
       ) : null}
 
-      {message ? (
-        <Alert>
-          <AlertDescription>{message}</AlertDescription>
-        </Alert>
-      ) : null}
       <FormErrorAlert error={error} />
+
+      <ConfirmDialog
+        open={confirmRegenerate}
+        title={share.regenerateConfirmTitle}
+        description={share.regenerateConfirmDescription}
+        confirmLabel={share.newLink}
+        cancelLabel={share.regenerateCancel}
+        destructive
+        onCancel={() => setConfirmRegenerate(false)}
+        onConfirm={() => {
+          setConfirmRegenerate(false);
+          startTransition(async () => {
+            setError(null);
+            const result = await regenerateAnonymousInviteLinkAction(surveyId);
+            if (result?.error) {
+              setError(result.error);
+              return;
+            }
+            if (result && "token" in result) {
+              setInviteLink({ token: result.token, url: result.url });
+              toast.success(share.newLinkGenerated);
+            }
+          });
+        }}
+      />
     </div>
+  );
+}
+
+function CopyButton({
+  children,
+  variant = "default",
+  disabled,
+  onClick,
+}: {
+  children: ReactNode;
+  variant?: "default" | "outline" | "ghost";
+  disabled?: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <Button
+      type="button"
+      size="sm"
+      variant={variant}
+      className="touch-manipulation"
+      disabled={disabled}
+      onClick={onClick}
+    >
+      {children}
+    </Button>
   );
 }

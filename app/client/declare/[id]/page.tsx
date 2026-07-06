@@ -15,7 +15,7 @@ export default async function ClientDeclarePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const { clientDashboard } = portalCopy;
+  const { clientDashboard, nav } = portalCopy;
   const session = await requireClientSession({ requireOnboarding: true });
   const assignment = await getClientAssignmentForUser(id, session.user.email);
 
@@ -33,7 +33,15 @@ export default async function ClientDeclarePage({
         description={clientDashboard.receiptDescription}
         backHref="/client"
         backLabel={clientDashboard.backToAssignments}
+        homeHref="/client"
         showSignOut
+        breadcrumbs={[
+          { label: nav.assignments, href: "/client" },
+          {
+            label:
+              assignment.surveyTitle ?? portalCopy.declarationForm.thankYouTitle,
+          },
+        ]}
       >
         <ConfirmationReceipt
           code={assignment.confirmationCode}
@@ -51,6 +59,7 @@ export default async function ClientDeclarePage({
         eyebrow={portalCopy.product.declarationEyebrow}
         title={assignment.surveyTitle ?? portalCopy.product.declarationEyebrow}
         description={portalCopy.declarationPage.questionsNotConfigured}
+        surveyTitle={assignment.surveyTitle ?? portalCopy.product.declarationEyebrow}
       />
     );
   }
@@ -62,7 +71,14 @@ export default async function ClientDeclarePage({
       description={portalCopy.declarationPage.secureFormNote}
       backHref="/client"
       backLabel={clientDashboard.backToAssignments}
+      homeHref="/client"
       showSignOut
+      breadcrumbs={[
+        { label: nav.assignments, href: "/client" },
+        {
+          label: assignment.surveyTitle ?? portalCopy.product.declarationEyebrow,
+        },
+      ]}
     >
       <ClientDeclarationForm
         assignmentId={assignment.id}

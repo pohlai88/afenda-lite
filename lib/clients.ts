@@ -15,10 +15,17 @@ export type ClientInvitation = {
 
 export type ClientProfile = {
   userId: string;
+  fullLegalName: string | null;
+  nationality: string | null;
+  countryOfResidence: string | null;
+  additionalResidenceCountries: string[];
+  passportIssuingCountry: string | null;
+  passportNumber: string | null;
   phone: string | null;
   entityName: string | null;
   jurisdiction: string | null;
   notes: string | null;
+  identityConsentAt: Date | null;
   onboardingComplete: boolean;
   updatedAt: Date;
 };
@@ -51,12 +58,28 @@ function mapInvitation(row: Record<string, unknown>): ClientInvitation {
 }
 
 function mapProfile(row: Record<string, unknown>): ClientProfile {
+  const additional = row.additional_residence_countries;
   return {
     userId: String(row.user_id),
+    fullLegalName: row.full_legal_name ? String(row.full_legal_name) : null,
+    nationality: row.nationality ? String(row.nationality) : null,
+    countryOfResidence: row.country_of_residence
+      ? String(row.country_of_residence)
+      : null,
+    additionalResidenceCountries: Array.isArray(additional)
+      ? additional.map(String)
+      : [],
+    passportIssuingCountry: row.passport_issuing_country
+      ? String(row.passport_issuing_country)
+      : null,
+    passportNumber: row.passport_number ? String(row.passport_number) : null,
     phone: row.phone ? String(row.phone) : null,
     entityName: row.entity_name ? String(row.entity_name) : null,
     jurisdiction: row.jurisdiction ? String(row.jurisdiction) : null,
     notes: row.notes ? String(row.notes) : null,
+    identityConsentAt: row.identity_consent_at
+      ? new Date(String(row.identity_consent_at))
+      : null,
     onboardingComplete: Boolean(row.onboarding_complete),
     updatedAt: new Date(String(row.updated_at)),
   };
@@ -162,9 +185,29 @@ export async function markClientInvitationAccepted(id: string) {
   );
 }
 
+export async function getClientInvitationByEmail(email: string) {
+  const result = await pool.query(
+    `SELECT id, token, email, full_name, invited_by, status, expires_at, created_at
+     FROM client_invitations
+     WHERE lower(email) = lower($1)
+     ORDER BY created_at DESC
+     LIMIT 1`,
+    [email],
+  );
+
+  if (!result.rows[0]) {
+    return null;
+  }
+
+  return mapInvitation(result.rows[0]);
+}
+
 export async function getClientProfile(userId: string) {
   const result = await pool.query(
-    `SELECT user_id, phone, entity_name, jurisdiction, notes, onboarding_complete, updated_at
+    `SELECT user_id, full_legal_name, nationality, country_of_residence,
+            additional_residence_countries, passport_issuing_country, passport_number,
+            phone, entity_name, jurisdiction, notes, identity_consent_at,
+            onboarding_complete, updated_at
      FROM client_profiles
      WHERE user_id = $1
      LIMIT 1`,
@@ -178,31 +221,69 @@ export async function getClientProfile(userId: string) {
   return mapProfile(result.rows[0]);
 }
 
+export async function ensureClientProfileRow(userId: string) {
+  await pool.query(
+    `INSERT INTO client_profiles (user_id, onboarding_complete, updated_at)
+     VALUES ($1, false, NOW())
+     ON CONFLICT (user_id) DO NOTHING`,
+    [userId],
+  );
+}
+
 export async function upsertClientProfile(input: {
   userId: string;
+  fullLegalName: string;
+  nationality: string;
+  countryOfResidence: string;
+  additionalResidenceCountries?: string[];
+  passportIssuingCountry: string;
+  passportNumber: string;
   phone: string;
   entityName: string;
   jurisdiction: string;
   notes?: string;
+  identityConsentAt?: Date;
   onboardingComplete?: boolean;
 }) {
   const result = await pool.query(
-    `INSERT INTO client_profiles (user_id, phone, entity_name, jurisdiction, notes, onboarding_complete, updated_at)
-     VALUES ($1, $2, $3, $4, $5, $6, NOW())
+    `INSERT INTO client_profiles (
+       user_id, full_legal_name, nationality, country_of_residence,
+       additional_residence_countries, passport_issuing_country, passport_number,
+       phone, entity_name, jurisdiction, notes, identity_consent_at,
+       onboarding_complete, updated_at
+     )
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW())
      ON CONFLICT (user_id) DO UPDATE SET
+       full_legal_name = EXCLUDED.full_legal_name,
+       nationality = EXCLUDED.nationality,
+       country_of_residence = EXCLUDED.country_of_residence,
+       additional_residence_countries = EXCLUDED.additional_residence_countries,
+       passport_issuing_country = EXCLUDED.passport_issuing_country,
+       passport_number = EXCLUDED.passport_number,
        phone = EXCLUDED.phone,
        entity_name = EXCLUDED.entity_name,
        jurisdiction = EXCLUDED.jurisdiction,
        notes = EXCLUDED.notes,
+       identity_consent_at = EXCLUDED.identity_consent_at,
        onboarding_complete = EXCLUDED.onboarding_complete,
        updated_at = NOW()
-     RETURNING user_id, phone, entity_name, jurisdiction, notes, onboarding_complete, updated_at`,
+     RETURNING user_id, full_legal_name, nationality, country_of_residence,
+               additional_residence_countries, passport_issuing_country, passport_number,
+               phone, entity_name, jurisdiction, notes, identity_consent_at,
+               onboarding_complete, updated_at`,
     [
       input.userId,
+      input.fullLegalName.trim(),
+      input.nationality.trim(),
+      input.countryOfResidence.trim(),
+      input.additionalResidenceCountries ?? [],
+      input.passportIssuingCountry.trim(),
+      input.passportNumber.trim(),
       input.phone.trim(),
       input.entityName.trim(),
       input.jurisdiction.trim(),
       input.notes?.trim() || null,
+      input.identityConsentAt?.toISOString() ?? null,
       input.onboardingComplete ?? true,
     ],
   );

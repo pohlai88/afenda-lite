@@ -11,6 +11,12 @@ import { getAppBaseUrl } from "@/lib/app-url";
 import { runLoggedAction } from "@/lib/observability";
 import { portalCopy } from "@/lib/portal-copy";
 import {
+  isPlaygroundEmbedRequest,
+  isPlaygroundEnabled,
+} from "@/lib/playground";
+import { getPreviewClientUser } from "@/lib/preview-client";
+import {
+  ensureClientProfileRow,
   completeClientAssignment,
   createClientInvitation,
   createConfirmationCode,
@@ -36,6 +42,38 @@ export async function requireClientSession(options?: {
   requireOnboarding?: boolean;
 }) {
   const { data: session } = await auth.getSession();
+  const embed = await isPlaygroundEmbedRequest();
+
+  if (
+    embed &&
+    isPlaygroundEnabled() &&
+    isAdminSession(session) &&
+    session?.user
+  ) {
+    const previewUser = await getPreviewClientUser();
+    if (!previewUser) {
+      redirect("/client/preview-unavailable?embed=1");
+    }
+
+    const syntheticSession = {
+      ...session,
+      user: {
+        ...session.user,
+        id: previewUser.id,
+        email: previewUser.email,
+        name: previewUser.name,
+      },
+    };
+
+    if (options?.requireOnboarding) {
+      const profile = await getClientProfile(previewUser.id);
+      if (!profile?.onboardingComplete) {
+        redirect("/client/onboarding");
+      }
+    }
+
+    return syntheticSession;
+  }
 
   if (!session?.user?.id || !session.user.email) {
     redirect("/");
@@ -145,14 +183,7 @@ export async function acceptClientInviteAction(formData: FormData) {
 
     const { data: session } = await auth.getSession();
     if (session?.user?.id) {
-      await upsertClientProfile({
-        userId: session.user.id,
-        phone: "",
-        entityName: "",
-        jurisdiction: "",
-        notes: "",
-        onboardingComplete: false,
-      });
+      await ensureClientProfileRow(session.user.id);
     }
 
     await recordAuditEvent({
@@ -174,25 +205,64 @@ export async function saveClientOnboardingAction(formData: FormData) {
     session.user.id,
     async () => {
       const parsed = parseSchema(clientOnboardingSchema, {
+        fullLegalName: String(formData.get("fullLegalName") ?? "").trim(),
+        nationality: String(formData.get("nationality") ?? "").trim(),
+        countryOfResidence: String(formData.get("countryOfResidence") ?? "").trim(),
+        additionalResidenceCountries: formData
+          .getAll("additionalResidenceCountries")
+          .map((value) => String(value).trim())
+          .filter(Boolean),
+        passportIssuingCountry: String(
+          formData.get("passportIssuingCountry") ?? "",
+        ).trim(),
+        passportNumber: String(formData.get("passportNumber") ?? "").trim(),
         phone: String(formData.get("phone") ?? "").trim(),
         entityName: String(formData.get("entityName") ?? "").trim(),
         jurisdiction: String(formData.get("jurisdiction") ?? "").trim(),
         notes: String(formData.get("notes") ?? "").trim(),
+        identityConsent:
+          formData.get("identityConsent") === "true" ? "true" : "",
       });
 
       if (!parsed.success) {
         return { error: portalCopy.clientOnboarding.requiredError };
       }
 
-      const { phone, entityName, jurisdiction, notes } = parsed.data;
-
-      await upsertClientProfile({
-        userId: session.user.id,
+      const {
+        fullLegalName,
+        nationality,
+        countryOfResidence,
+        additionalResidenceCountries,
+        passportIssuingCountry,
+        passportNumber,
         phone,
         entityName,
         jurisdiction,
         notes,
+      } = parsed.data;
+
+      await upsertClientProfile({
+        userId: session.user.id,
+        fullLegalName,
+        nationality,
+        countryOfResidence,
+        additionalResidenceCountries,
+        passportIssuingCountry,
+        passportNumber,
+        phone,
+        entityName,
+        jurisdiction,
+        notes,
+        identityConsentAt: new Date(),
         onboardingComplete: true,
+      });
+
+      await recordAuditEvent({
+        actorId: session.user.id,
+        eventType: "profile.completed",
+        resourceType: "client_profile",
+        resourceId: session.user.id,
+        metadata: { surface: "client" },
       });
 
       redirect("/client");

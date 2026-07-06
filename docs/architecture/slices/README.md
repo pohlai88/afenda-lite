@@ -21,3 +21,4 @@ When implementing a slice, complete its **Acceptance proof** checklist, then upd
 - [s12-tenancy.md](./s12-tenancy.md) — S12
 - [s13-ci-gate.md](./s13-ci-gate.md) — S13
 - [s14-observability.md](./s14-observability.md) — S14
+- [s16-admin-client-preview.md](./s16-admin-client-preview.md) — S16 (admin client preview + operator app shell)

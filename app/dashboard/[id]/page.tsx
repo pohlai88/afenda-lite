@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 import { requireAdminSession } from "@/app/actions/admin";
 import { loadAnonymousInviteLinkForSurvey } from "@/app/actions/invitations";
 import { AnonymousSharePanel } from "@/components/anonymous-share-panel";
@@ -6,7 +7,8 @@ import { DeclarationDeleteButton } from "@/components/declaration-delete-button"
 import { DeclarationManageForm } from "@/components/declaration-manage-form";
 import { PortalEmptyState } from "@/components/portal-empty-state";
 import { SubmissionAnswers } from "@/components/submission-answers";
-import { PortalSection, PortalShell } from "@/components/portal-shell";
+import { SurveyDetailTabs } from "@/components/survey-detail-tabs";
+import { DashboardPage } from "@/components/dashboard-page";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -15,12 +17,21 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { formatDateTime } from "@/lib/format";
 import { listQuestionsForSurvey, getEvidenceRecordsByIds } from "@/lib/questions";
 import { portalCopy } from "@/lib/portal-copy";
-import { listSurveyInvitationsForSurvey } from "@/lib/surveys";
 import {
   getSurveyForAdmin,
   listResponsesForSurvey,
+  listSurveyInvitationsForSurvey,
 } from "@/lib/surveys";
 
 export default async function SurveyDetailPage({
@@ -28,7 +39,7 @@ export default async function SurveyDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { declarationDetail, org } = portalCopy;
+  const { declarationDetail, nav, org } = portalCopy;
   const { id } = await params;
   const session = await requireAdminSession();
 
@@ -61,121 +72,165 @@ export default async function SurveyDetailPage({
     survey.id,
   );
 
-  return (
-    <PortalShell
-      eyebrow={declarationDetail.eyebrow}
-      title={survey.title}
-      description={survey.question}
-      backHref="/dashboard"
-      backLabel={declarationDetail.backLabel}
-    >
-      <Card>
-        <CardHeader>
-          <CardTitle>{declarationDetail.manage.title}</CardTitle>
-          <CardDescription>{declarationDetail.manage.description}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <DeclarationManageForm
-            surveyId={survey.id}
-            title={survey.title}
-            description={survey.question}
-            questions={questions.map((q) => ({
-              prompt: q.prompt,
-              type: q.type,
-              required: q.required,
-            }))}
-          />
-        </CardContent>
-      </Card>
+  const managePanel = (
+    <Card>
+      <CardHeader>
+        <CardTitle>{declarationDetail.manage.title}</CardTitle>
+        <CardDescription>{declarationDetail.manage.description}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <DeclarationManageForm
+          surveyId={survey.id}
+          title={survey.title}
+          description={survey.question}
+          questions={questions.map((q) => ({
+            prompt: q.prompt,
+            type: q.type,
+            required: q.required,
+          }))}
+        />
+      </CardContent>
+    </Card>
+  );
 
-      <Card id="share" className="mt-6 scroll-mt-24">
-        <CardHeader>
-          <CardTitle>{declarationDetail.share.title}</CardTitle>
-          <CardDescription>{declarationDetail.share.description}</CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-wrap items-center gap-2 pb-4">
-          <Badge variant="secondary">
-            {org.list.submissions(responses.length)}
-          </Badge>
-        </CardContent>
-        <CardContent className="border-t pt-4">
-          <AnonymousSharePanel
-            surveyId={survey.id}
-            publicPath={`/survey/${survey.slug}`}
-            initialInvite={
-              initialInvite
-                ? { token: initialInvite.token, url: initialInvite.url }
-                : undefined
-            }
-          />
-        </CardContent>
+  const sharePanel = (
+    <Card>
+      <CardHeader>
+        <CardTitle>{declarationDetail.share.title}</CardTitle>
+        <CardDescription>{declarationDetail.share.description}</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <Badge variant="secondary" className="tabular-nums">
+          {org.list.submissions(responses.length)}
+        </Badge>
+        <AnonymousSharePanel
+          surveyId={survey.id}
+          publicPath={`/survey/${survey.slug}`}
+          embedded
+          initialInvite={
+            initialInvite
+              ? { token: initialInvite.token, url: initialInvite.url }
+              : undefined
+          }
+        />
         {emailInvitations.length > 0 ? (
-          <CardContent className="border-t pt-4">
+          <div className="border-t pt-4">
             <h3 className="mb-2 text-sm font-medium">
               {declarationDetail.emailLog.title}
             </h3>
-            <ul className="space-y-1 text-sm text-muted-foreground">
-              {emailInvitations.map((invitation) => (
-                <li key={invitation.id}>
-                  {invitation.clientEmail}
-                  <span className="ml-2 text-xs tabular-nums">
-                    {invitation.createdAt.toLocaleString()}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </CardContent>
+            <div className="rounded-lg border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{declarationDetail.emailLog.tableEmail}</TableHead>
+                    <TableHead className="text-right">
+                      {declarationDetail.emailLog.tableSent}
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {emailInvitations.map((invitation) => (
+                    <TableRow key={invitation.id}>
+                      <TableCell className="max-w-[240px] truncate">
+                        {invitation.clientEmail}
+                      </TableCell>
+                      <TableCell className="text-right text-muted-foreground tabular-nums">
+                        <time dateTime={invitation.createdAt.toISOString()}>
+                          {formatDateTime(invitation.createdAt)}
+                        </time>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
         ) : null}
-      </Card>
+      </CardContent>
+    </Card>
+  );
 
-      <Card className="mt-6 border-destructive/30">
-        <CardHeader>
-          <CardTitle>{declarationDetail.manage.deleteTitle}</CardTitle>
-          <CardDescription>{declarationDetail.manage.deleteDescription}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <DeclarationDeleteButton surveyId={survey.id} />
-        </CardContent>
-      </Card>
-
-      <div className="mt-8">
-        <PortalSection
-          title={declarationDetail.submissions.title}
-          description={declarationDetail.submissions.description}
-        >
-          {responses.length === 0 ? (
-            <PortalEmptyState>{declarationDetail.submissions.empty}</PortalEmptyState>
-          ) : (
-            <div className="space-y-3">
-              {responses.map((response) => (
-                <Card key={response.id} size="sm">
-                  <CardHeader className="flex flex-row items-center justify-between gap-4">
-                    <CardTitle className="text-sm">
-                      {response.confirmationCode ??
-                        declarationDetail.submissions.answersTitle}
-                    </CardTitle>
-                    <time
-                      dateTime={response.createdAt.toISOString()}
-                      className="text-xs text-muted-foreground tabular-nums"
-                    >
-                      {response.createdAt.toLocaleString()}
-                    </time>
-                  </CardHeader>
+  const submissionsPanel =
+    responses.length === 0 ? (
+      <PortalEmptyState>{declarationDetail.submissions.empty}</PortalEmptyState>
+    ) : (
+      <div className="rounded-lg border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>{declarationDetail.submissions.tableCode}</TableHead>
+              <TableHead className="text-right">
+                {declarationDetail.submissions.tableSubmitted}
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {responses.map((response) => (
+              <TableRow key={response.id}>
+                <TableCell className="align-top">
+                  <p
+                    className="font-medium tabular-nums"
+                    translate="no"
+                  >
+                    {response.confirmationCode ??
+                      declarationDetail.submissions.answersTitle}
+                  </p>
                   {response.answers ? (
-                    <CardContent>
+                    <div className="mt-3 max-w-prose">
                       <SubmissionAnswers
                         response={response}
                         questions={questions}
                         evidenceById={evidenceById}
                       />
-                    </CardContent>
+                    </div>
                   ) : null}
-                </Card>
-              ))}
-            </div>
-          )}
-        </PortalSection>
+                </TableCell>
+                <TableCell className="text-right align-top text-muted-foreground">
+                  <time
+                    dateTime={response.createdAt.toISOString()}
+                    className="text-xs tabular-nums"
+                  >
+                    {formatDateTime(response.createdAt)}
+                  </time>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       </div>
-    </PortalShell>
+    );
+
+  const dangerPanel = (
+    <Card className="border-destructive/30">
+      <CardHeader>
+        <CardTitle>{declarationDetail.manage.deleteTitle}</CardTitle>
+        <CardDescription>{declarationDetail.manage.deleteDescription}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <DeclarationDeleteButton surveyId={survey.id} />
+      </CardContent>
+    </Card>
+  );
+
+  return (
+    <DashboardPage
+      eyebrow={declarationDetail.eyebrow}
+      title={survey.title}
+      description={survey.question}
+      breadcrumbs={[
+        { label: nav.declarations, href: "/dashboard" },
+        { label: survey.title },
+      ]}
+    >
+      <Suspense fallback={null}>
+        <SurveyDetailTabs
+          labels={declarationDetail.tabs}
+          manage={managePanel}
+          share={sharePanel}
+          submissions={submissionsPanel}
+          danger={dangerPanel}
+        />
+      </Suspense>
+    </DashboardPage>
   );
 }

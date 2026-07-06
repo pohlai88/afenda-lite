@@ -10,17 +10,27 @@ export default async function NotFound() {
   const { data: session } = await auth.getSession();
   const isClient =
     session?.user?.id && !isAdminSession(session);
+  const isOperator = isAdminSession(session);
 
-  const backHref = isClient ? "/client" : "/";
-  const backLabel = isClient
-    ? notFound.backLabelClient
-    : notFound.backLabel;
+  const backHref = isOperator
+    ? "/dashboard"
+    : isClient
+      ? "/client"
+      : "/";
+  const backLabel = isOperator
+    ? notFound.backLabelOrg
+    : isClient
+      ? notFound.backLabelClient
+      : notFound.backLabel;
 
   return (
     <PortalCustomerShell
       eyebrow={product.portalEyebrow}
       title={notFound.title}
       description={notFound.description}
+      homeHref={isClient ? "/client" : undefined}
+      showSignOut={isClient}
+      contentWidth="narrow"
     >
       <Button
         className="w-full touch-manipulation"

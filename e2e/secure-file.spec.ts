@@ -10,6 +10,7 @@ import {
   createDeclaration,
   getOperatorCreds,
   loginAsOperator,
+  openSurveyTab,
   operatorSkipMessage,
 } from "./helpers/operator";
 
@@ -50,6 +51,7 @@ test.describe("Secure link and file evidence @journey", () => {
       .fill("Attach supporting document");
     await page.getByRole("button", { name: /save changes/i }).click();
 
+    await openSurveyTab(page, "share");
     const secureLink = secureLinkLocator(page);
     await expect(secureLink).toBeVisible();
     secureUrl = (await secureLink.textContent())?.trim() ?? "";
@@ -88,6 +90,7 @@ test.describe("Secure link and file evidence @journey", () => {
     if (!creds) test.skip(true, operatorSkipMessage);
     await loginAsOperator(page, creds);
     await page.goto(surveyDetailUrl);
+    await openSurveyTab(page, "share");
 
     await expect(
       page.getByText(portalCopy.org.list.submissions(1)),

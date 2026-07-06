@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { OrgLoginPage } from "@/components/org-login-page";
 import { isAdminSession } from "@/lib/admin";
 import { auth } from "@/lib/auth/server";
+import { isPlaygroundEmbedRequest } from "@/lib/playground";
 import { PORTAL_NAME, portalCopy } from "@/lib/portal-copy";
 
 export const metadata: Metadata = {
@@ -17,8 +18,9 @@ export default async function OrgLoginRoute({
 }) {
   const { reason } = await searchParams;
   const { data: session } = await auth.getSession();
+  const embed = await isPlaygroundEmbedRequest();
 
-  if (isAdminSession(session)) {
+  if (isAdminSession(session) && !embed) {
     redirect("/dashboard");
   }
 

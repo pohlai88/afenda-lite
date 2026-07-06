@@ -1,22 +1,26 @@
-import { PortalShell } from "@/components/portal-shell";
+import { DashboardPageSkeleton } from "@/components/dashboard-page";
 import { Skeleton } from "@/components/ui/skeleton";
+import { isPlaygroundEmbedRequest } from "@/lib/playground";
 import { portalCopy } from "@/lib/portal-copy";
 
-export default function DashboardLoading() {
-  const { org } = portalCopy;
+export default async function DashboardLoading() {
+  const embed = await isPlaygroundEmbedRequest();
+  const { nav, org } = portalCopy;
 
   return (
-    <PortalShell
+    <DashboardPageSkeleton
+      embed={embed}
       eyebrow={org.eyebrow}
       title={org.title}
       description={org.description}
+      breadcrumbs={[{ label: nav.declarations }]}
     >
       <div className="grid gap-4 sm:grid-cols-3">
         {Array.from({ length: 3 }).map((_, index) => (
           <Skeleton key={index} className="h-24 rounded-xl" />
         ))}
       </div>
-      <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(280px,320px)_1fr]">
+      <div className="grid gap-8 lg:grid-cols-[minmax(280px,320px)_1fr]">
         <Skeleton className="h-80 rounded-xl" />
         <div className="space-y-4">
           <Skeleton className="h-8 w-48" />
@@ -24,6 +28,6 @@ export default function DashboardLoading() {
           <Skeleton className="h-40 rounded-xl" />
         </div>
       </div>
-    </PortalShell>
+    </DashboardPageSkeleton>
   );
 }

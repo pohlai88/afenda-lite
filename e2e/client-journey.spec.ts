@@ -72,9 +72,17 @@ test.describe("Client journey @journey", () => {
     await page.getByRole("button", { name: /activate account/i }).click();
     await expect(page).toHaveURL(/\/client\/onboarding/);
 
+    await page.getByLabel(/full legal name/i).fill("E2E Test Client");
+    await page.locator('select[name="nationality"]').selectOption("US");
+    await page.locator('select[name="countryOfResidence"]').selectOption("US");
+    await page.locator('select[name="passportIssuingCountry"]').selectOption("US");
+    await page.getByLabel(/passport number/i).fill("E1234567");
     await page.getByLabel(/phone/i).fill("+1 555 0100");
     await page.getByLabel(/entity name/i).fill("E2E Test Entity");
     await page.getByLabel(/jurisdiction/i).fill("US-CA");
+    await page
+      .getByRole("checkbox")
+      .check();
     await page.getByRole("button", { name: /save and continue/i }).click();
     await expect(page).toHaveURL(/\/client$/);
 
