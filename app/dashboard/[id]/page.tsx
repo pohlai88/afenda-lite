@@ -1,10 +1,21 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { UserButton } from "@/components/user-button";
-import { CopyLinkButton } from "@/components/copy-link-button";
 import { AnonymousSharePanel } from "@/components/anonymous-share-panel";
+import { DeclarationDeleteButton } from "@/components/declaration-delete-button";
+import { DeclarationManageForm } from "@/components/declaration-manage-form";
+import { SubmissionAnswers } from "@/components/submission-answers";
+import { PortalSection, PortalShell } from "@/components/portal-shell";
+import { Badge } from "@/components/ui/badge";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { isAdminSession } from "@/lib/admin";
 import { auth } from "@/lib/auth/server";
+import { listQuestionsForSurvey } from "@/lib/questions";
+import { portalCopy } from "@/lib/portal-copy";
 import {
   getSurveyForAdmin,
   listResponsesForSurvey,
@@ -15,11 +26,12 @@ export default async function SurveyDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const { declarationDetail, account } = portalCopy;
   const { id } = await params;
   const { data: session } = await auth.getSession();
 
   if (!isAdminSession(session)) {
-    redirect("/");
+    redirect("/?reason=access-denied");
   }
 
   const survey = await getSurveyForAdmin(id);
@@ -27,71 +39,127 @@ export default async function SurveyDetailPage({
     notFound();
   }
 
-  const responses = await listResponsesForSurvey(survey.id);
+  const [responses, questions] = await Promise.all([
+    listResponsesForSurvey(survey.id),
+    listQuestionsForSurvey(survey.id),
+  ]);
+  const rated = responses.filter((item) => item.rating != null);
   const average =
-    responses.length > 0
+    rated.length > 0
       ? (
-          responses.reduce((sum, item) => sum + item.rating, 0) /
-          responses.length
+          rated.reduce((sum, item) => sum + Number(item.rating), 0) /
+          rated.length
         ).toFixed(1)
       : null;
 
   return (
-    <main className="min-h-screen bg-background text-foreground">
-      <header className="mx-auto flex w-full max-w-5xl items-center justify-between px-6 py-6">
-        <div>
-          <Link
-            href="/dashboard"
-            className="text-sm text-muted-foreground hover:text-foreground"
-          >
-            Back to dashboard
-          </Link>
-          <h1 className="mt-1 text-2xl font-semibold">{survey.title}</h1>
-        </div>
-        <UserButton />
-      </header>
+    <PortalShell
+      eyebrow={declarationDetail.eyebrow}
+      title={survey.title}
+      description={survey.question}
+      backHref="/dashboard"
+      backLabel={declarationDetail.backLabel}
+    >
+      <Card>
+        <CardHeader>
+          <CardTitle>{declarationDetail.manage.title}</CardTitle>
+          <CardDescription>{declarationDetail.manage.description}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <DeclarationManageForm
+            surveyId={survey.id}
+            title={survey.title}
+            description={survey.question}
+            questions={questions.map((q) => ({
+              prompt: q.prompt,
+              type: q.type,
+              required: q.required,
+            }))}
+          />
+        </CardContent>
+      </Card>
 
-      <div className="mx-auto max-w-5xl space-y-6 px-6 py-8">
-        <section className="rounded-2xl border border-border bg-card p-6">
-          <p className="text-muted-foreground">{survey.question}</p>
-          <div className="mt-4 flex flex-wrap items-center gap-4">
-            <CopyLinkButton url={`/survey/${survey.slug}`} />
-            <p className="text-sm text-muted-foreground">
-              {responses.length} responses · Avg {average ? `${average}/5` : "—"}
-            </p>
-          </div>
-          <AnonymousSharePanel surveyId={survey.id} />
-        </section>
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle>{declarationDetail.share.title}</CardTitle>
+          <CardDescription>{declarationDetail.share.description}</CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-wrap items-center gap-2 pb-4">
+          <Badge variant="secondary">
+            {account.list.submissions(responses.length)}
+          </Badge>
+          <Badge variant="outline">
+            Avg {average ? `${average}/5` : "—"}
+          </Badge>
+        </CardContent>
+        <CardContent className="border-t pt-4">
+          <AnonymousSharePanel
+            surveyId={survey.id}
+            publicPath={`/survey/${survey.slug}`}
+          />
+        </CardContent>
+      </Card>
 
-        <section className="space-y-4">
-          <h2 className="text-lg font-medium">Responses</h2>
+      <Card className="mt-6 border-destructive/30">
+        <CardHeader>
+          <CardTitle>{declarationDetail.manage.deleteTitle}</CardTitle>
+          <CardDescription>{declarationDetail.manage.deleteDescription}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <DeclarationDeleteButton surveyId={survey.id} />
+        </CardContent>
+      </Card>
 
+      <div className="mt-8">
+        <PortalSection
+          title={declarationDetail.submissions.title}
+          description={declarationDetail.submissions.description}
+        >
           {responses.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-border p-8 text-sm text-muted-foreground">
-              No responses yet. Share the anonymous link or QR code with clients.
-            </div>
+            <Card className="border-dashed">
+              <CardContent className="py-10 text-center text-sm text-muted-foreground">
+                {declarationDetail.submissions.empty}
+              </CardContent>
+            </Card>
           ) : (
-            responses.map((response) => (
-              <article
-                key={response.id}
-                className="rounded-2xl border border-border bg-card p-5"
-              >
-                <div className="flex items-center justify-between gap-4">
-                  <p className="font-medium">Rating: {response.rating}/5</p>
-                  <p className="text-sm text-muted-foreground">
-                    {response.createdAt.toLocaleString()}
-                  </p>
-                </div>
-                {response.comment ? (
-                  <p className="mt-3 text-sm text-muted-foreground">
-                    {response.comment}
-                  </p>
-                ) : null}
-              </article>
-            ))
+            <div className="space-y-3">
+              {responses.map((response) => (
+                <Card key={response.id} size="sm">
+                  <CardHeader className="flex flex-row items-center justify-between gap-4">
+                    <CardTitle className="text-sm">
+                      {response.confirmationCode ??
+                        (response.rating != null
+                          ? declarationDetail.submissions.rating(response.rating)
+                          : declarationDetail.submissions.answersTitle)}
+                    </CardTitle>
+                    <time
+                      dateTime={response.createdAt.toISOString()}
+                      className="text-xs text-muted-foreground tabular-nums"
+                    >
+                      {response.createdAt.toLocaleString()}
+                    </time>
+                  </CardHeader>
+                  {response.comment || response.answers ? (
+                    <CardContent>
+                      {response.answers ? (
+                        <SubmissionAnswers
+                          response={response}
+                          questions={questions}
+                          surveyId={survey.id}
+                        />
+                      ) : (
+                        <p className="text-pretty text-sm text-muted-foreground">
+                          {response.comment}
+                        </p>
+                      )}
+                    </CardContent>
+                  ) : null}
+                </Card>
+              ))}
+            </div>
           )}
-        </section>
+        </PortalSection>
       </div>
-    </main>
+    </PortalShell>
   );
 }

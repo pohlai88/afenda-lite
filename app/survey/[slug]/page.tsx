@@ -1,6 +1,9 @@
-import { notFound } from "next/navigation";
+import { PortalCustomerShell } from "@/components/portal-customer-shell";
 import { SurveyForm } from "@/components/survey-form";
+import { ensureDefaultQuestions } from "@/lib/questions";
+import { portalCopy } from "@/lib/portal-copy";
 import { getSurveyBySlug } from "@/lib/surveys";
+import { notFound } from "next/navigation";
 
 export default async function PublicSurveyPage({
   params,
@@ -14,19 +17,22 @@ export default async function PublicSurveyPage({
     notFound();
   }
 
+  const questions = await ensureDefaultQuestions(survey.id, survey.question);
+  const { product, declarationPage } = portalCopy;
+
   return (
-    <main className="min-h-screen bg-background px-6 py-16 text-foreground">
-      <div className="mx-auto max-w-xl">
-        <p className="text-sm text-muted-foreground">Customer feedback</p>
-        <h1 className="mt-1 text-3xl font-semibold">{survey.title}</h1>
-        <p className="mt-3 text-sm text-muted-foreground">
-          Responses do not require login. Avoid sharing personal details in
-          comments if you prefer to stay anonymous.
-        </p>
-        <div className="mt-8">
-          <SurveyForm slug={survey.slug} question={survey.question} />
-        </div>
-      </div>
-    </main>
+    <PortalCustomerShell
+      eyebrow={product.declarationEyebrow}
+      title={survey.title}
+      description={declarationPage.publicDescription}
+    >
+      <SurveyForm
+        surveyId={survey.id}
+        slug={survey.slug}
+        title={survey.title}
+        description={survey.question}
+        questions={questions}
+      />
+    </PortalCustomerShell>
   );
 }

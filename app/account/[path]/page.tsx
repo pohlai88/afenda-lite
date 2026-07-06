@@ -1,7 +1,11 @@
 import Link from "next/link";
 import { AccountView } from "@neondatabase/auth/react";
 import { accountViewPaths } from "@neondatabase/auth/react/ui/server";
+import { PortalEyebrow } from "@/components/portal-eyebrow";
+import { PortalThemeToggle } from "@/components/portal-theme-toggle";
 import { UserButton } from "@/components/user-button";
+import { Button } from "@/components/ui/button";
+import { portalCopy, PORTAL_NAME } from "@/lib/portal-copy";
 
 export const dynamicParams = false;
 
@@ -15,19 +19,37 @@ export default async function AccountPage({
   params: Promise<{ path: string }>;
 }) {
   const { path } = await params;
+  const { account, product } = portalCopy;
+
   return (
-    <div className="flex min-h-screen flex-col">
-      <div className="flex w-full flex-1 flex-col px-5">
-        <header className="flex justify-between items-center p-4 gap-4 h-16">
-          <Link href="/" className="text-sm font-medium">
-            Home
-          </Link>
-          <UserButton />
-        </header>
-        <main className="container p-4 md:p-6">
-          <AccountView path={path} />
-        </main>
-      </div>
+    <div className="portal-shell">
+      <header className="portal-header">
+        <div className="portal-header-inner max-w-3xl">
+          <div className="min-w-0">
+            <p className="text-xs text-muted-foreground" translate="no">
+              {PORTAL_NAME}
+            </p>
+            <PortalEyebrow className="mb-1">{product.portalEyebrow}</PortalEyebrow>
+            <h1 className="text-lg font-semibold tracking-tight">{account.title}</h1>
+          </div>
+          <div className="flex shrink-0 items-center gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="hidden sm:inline-flex"
+              render={<Link href="/dashboard" />}
+              nativeButton={false}
+            >
+              {account.title}
+            </Button>
+            <PortalThemeToggle />
+            <UserButton />
+          </div>
+        </div>
+      </header>
+      <main className="portal-main max-w-3xl">
+        <AccountView path={path} />
+      </main>
     </div>
   );
 }

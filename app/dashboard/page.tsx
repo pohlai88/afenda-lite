@@ -1,119 +1,154 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { createSurveyAction } from "@/app/actions/surveys";
-import { UserButton } from "@/components/user-button";
-import { CopyLinkButton } from "@/components/copy-link-button";
+import {
+  BarChart3Icon,
+  ClipboardListIcon,
+  MessageSquareQuoteIcon,
+} from "lucide-react";
 import { AnonymousSharePanel } from "@/components/anonymous-share-panel";
+import { DeclarationCreateForm } from "@/components/declaration-create-form";
+import { PortalSection, PortalShell } from "@/components/portal-shell";
+import { PortalStatCard } from "@/components/portal-stat-card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { isAdminSession } from "@/lib/admin";
 import { auth } from "@/lib/auth/server";
+import { portalCopy } from "@/lib/portal-copy";
 import { listSurveysForAdmin } from "@/lib/surveys";
 
 export default async function DashboardPage() {
+  const { account } = portalCopy;
   const { data: session } = await auth.getSession();
 
   if (!isAdminSession(session)) {
-    redirect("/");
+    redirect("/?reason=access-denied");
   }
 
   const surveys = await listSurveysForAdmin();
+  const totalResponses = surveys.reduce(
+    (sum, survey) => sum + survey.responseCount,
+    0,
+  );
+  const ratedSurveys = surveys.filter((survey) => survey.averageRating);
+  const overallAverage =
+    ratedSurveys.length > 0
+      ? (
+          ratedSurveys.reduce(
+            (sum, survey) => sum + Number(survey.averageRating),
+            0,
+          ) / ratedSurveys.length
+        ).toFixed(1)
+      : "—";
 
   return (
-    <main className="min-h-screen bg-background text-foreground">
-      <header className="mx-auto flex w-full max-w-5xl items-center justify-between px-6 py-6">
-        <div>
-          <p className="text-sm text-muted-foreground">Operator admin</p>
-          <h1 className="text-2xl font-semibold">Survey dashboard</h1>
-        </div>
-        <UserButton />
-      </header>
+    <PortalShell
+      eyebrow={account.eyebrow}
+      title={account.title}
+      description={account.description}
+      headerActions={
+        <Button
+          variant="outline"
+          size="sm"
+          render={<Link href="/dashboard/clients" />}
+          nativeButton={false}
+        >
+          {account.list.inviteClients}
+        </Button>
+      }
+    >
+      <div className="grid gap-4 sm:grid-cols-3">
+        <PortalStatCard
+          icon={<ClipboardListIcon className="size-4" />}
+          value={String(surveys.length)}
+          title={account.stats.declarations.title}
+          detail={account.stats.declarations.detail}
+        />
+        <PortalStatCard
+          icon={<MessageSquareQuoteIcon className="size-4" />}
+          value={String(totalResponses)}
+          title={account.stats.submissions.title}
+          detail={account.stats.submissions.detail}
+        />
+        <PortalStatCard
+          icon={<BarChart3Icon className="size-4" />}
+          value={overallAverage === "—" ? "—" : `${overallAverage}/5`}
+          title={account.stats.average.title}
+          detail={account.stats.average.detail}
+        />
+      </div>
 
-      <div className="mx-auto grid max-w-5xl gap-8 px-6 py-8 lg:grid-cols-[320px_1fr]">
-        <section className="rounded-2xl border border-border bg-card p-6">
-          <h2 className="text-lg font-medium">New survey</h2>
-          <form action={createSurveyAction} className="mt-4 space-y-4">
-            <label className="block text-sm font-medium">
-              Survey title
-              <input
-                name="title"
-                required
-                className="mt-2 w-full rounded-xl border border-input bg-background px-3 py-2"
-                placeholder="Q2 customer satisfaction"
-              />
-            </label>
-            <label className="block text-sm font-medium">
-              Question for customers
-              <textarea
-                name="question"
-                required
-                className="mt-2 min-h-28 w-full rounded-xl border border-input bg-background px-3 py-2"
-                placeholder="How satisfied are you with our service?"
-              />
-            </label>
-            <button
-              type="submit"
-              className="w-full rounded-xl bg-primary px-4 py-3 text-sm font-medium text-primary-foreground"
-            >
-              Create survey
-            </button>
-          </form>
-        </section>
+      <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(280px,320px)_1fr]">
+        <Card>
+          <CardHeader>
+            <CardTitle>{account.create.title}</CardTitle>
+            <CardDescription>{account.create.description}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <DeclarationCreateForm />
+          </CardContent>
+        </Card>
 
-        <section className="space-y-4">
-          <h2 className="text-lg font-medium">Your surveys</h2>
-
+        <PortalSection
+          title={account.list.title}
+          description={account.list.description}
+        >
           {surveys.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-border p-8 text-sm text-muted-foreground">
-              No surveys yet. Create your first one to get a customer link.
-            </div>
+            <Card className="border-dashed">
+              <CardContent className="py-10 text-center text-sm text-muted-foreground">
+                {account.list.empty}
+              </CardContent>
+            </Card>
           ) : (
-            surveys.map((survey) => {
-              const publicUrl = `/survey/${survey.slug}`;
-
-              return (
-                <article
-                  key={survey.id}
-                  className="rounded-2xl border border-border bg-card p-6"
-                >
-                  <div className="flex flex-wrap items-start justify-between gap-4">
-                    <div>
-                      <h3 className="text-lg font-medium">{survey.title}</h3>
-                      <p className="mt-1 text-sm text-muted-foreground">
+            <div className="space-y-4">
+              {surveys.map((survey) => (
+                <Card key={survey.id}>
+                  <CardHeader className="flex flex-row items-start justify-between gap-4">
+                    <div className="min-w-0 space-y-1">
+                      <CardTitle className="truncate">{survey.title}</CardTitle>
+                      <CardDescription className="line-clamp-2">
                         {survey.question}
-                      </p>
+                      </CardDescription>
                     </div>
-                    <div className="text-right text-sm">
-                      <p>
-                        <span className="font-medium">
-                          {survey.responseCount}
-                        </span>{" "}
-                        responses
-                      </p>
-                      <p className="text-muted-foreground">
-                        Avg:{" "}
+                    <div className="flex shrink-0 flex-col items-end gap-2">
+                      <Badge variant="secondary">
+                        {account.list.submissions(survey.responseCount)}
+                      </Badge>
+                      <span className="text-xs text-muted-foreground tabular-nums">
+                        Avg{" "}
                         {survey.averageRating
                           ? `${survey.averageRating}/5`
                           : "—"}
-                      </p>
+                      </span>
                     </div>
-                  </div>
-
-                  <div className="mt-4 flex flex-wrap gap-3">
-                    <CopyLinkButton url={publicUrl} />
-                    <Link
-                      href={`/dashboard/${survey.id}`}
-                      className="rounded-lg border border-border px-3 py-2 text-sm font-medium hover:bg-accent"
+                  </CardHeader>
+                  <CardContent className="space-y-4 pt-0">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      render={<Link href={`/dashboard/${survey.id}`} />}
+                      nativeButton={false}
                     >
-                      View responses
-                    </Link>
-                  </div>
-
-                  <AnonymousSharePanel surveyId={survey.id} />
-                </article>
-              );
-            })
+                      {account.list.viewSubmissions}
+                    </Button>
+                    <AnonymousSharePanel
+                      surveyId={survey.id}
+                      publicPath={`/survey/${survey.slug}`}
+                      embedded
+                    />
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           )}
-        </section>
+        </PortalSection>
       </div>
-    </main>
+    </PortalShell>
   );
 }

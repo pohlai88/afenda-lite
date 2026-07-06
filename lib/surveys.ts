@@ -12,8 +12,10 @@ export type Survey = {
 export type SurveyResponse = {
   id: string;
   surveyId: string;
-  rating: number;
+  rating: number | null;
   comment: string | null;
+  answers: Record<string, boolean | string> | null;
+  confirmationCode: string | null;
   createdAt: Date;
 };
 
@@ -83,11 +85,27 @@ function mapSurvey(row: Record<string, unknown>): Survey {
 }
 
 function mapResponse(row: Record<string, unknown>): SurveyResponse {
+  const answersRaw = row.answers;
+  let answers: Record<string, boolean | string> | null = null;
+  if (answersRaw && typeof answersRaw === "object") {
+    answers = answersRaw as Record<string, boolean | string>;
+  } else if (typeof answersRaw === "string") {
+    try {
+      answers = JSON.parse(answersRaw) as Record<string, boolean | string>;
+    } catch {
+      answers = null;
+    }
+  }
+
   return {
     id: String(row.id),
     surveyId: String(row.survey_id),
-    rating: Number(row.rating),
+    rating: row.rating == null ? null : Number(row.rating),
     comment: row.comment ? String(row.comment) : null,
+    answers,
+    confirmationCode: row.confirmation_code
+      ? String(row.confirmation_code)
+      : null,
     createdAt: new Date(String(row.created_at)),
   };
 }
@@ -212,6 +230,39 @@ export async function getSurveyForAdmin(id: string) {
   return mapSurvey(result.rows[0]);
 }
 
+export async function updateSurvey(input: {
+  id: string;
+  title: string;
+  question: string;
+}) {
+  await ensureSurveySchema();
+
+  const result = await pool.query(
+    `UPDATE surveys
+     SET title = $2, question = $3
+     WHERE id = $1
+     RETURNING id, slug, title, question, user_id, created_at`,
+    [input.id, input.title.trim(), input.question.trim()],
+  );
+
+  if (!result.rows[0]) {
+    return null;
+  }
+
+  return mapSurvey(result.rows[0]);
+}
+
+export async function deleteSurvey(id: string) {
+  await ensureSurveySchema();
+
+  const result = await pool.query(
+    `DELETE FROM surveys WHERE id = $1 RETURNING id`,
+    [id],
+  );
+
+  return Boolean(result.rows[0]);
+}
+
 export async function getSurveyForOwner(id: string, userId: string) {
   await ensureSurveySchema();
 
@@ -234,7 +285,7 @@ export async function listResponsesForSurvey(surveyId: string) {
   await ensureSurveySchema();
 
   const result = await pool.query(
-    `SELECT id, survey_id, rating, comment, created_at
+    `SELECT id, survey_id, rating, comment, answers, confirmation_code, created_at
      FROM survey_responses
      WHERE survey_id = $1
      ORDER BY created_at DESC`,
@@ -246,16 +297,24 @@ export async function listResponsesForSurvey(surveyId: string) {
 
 export async function submitSurveyResponse(input: {
   surveyId: string;
-  rating: number;
+  rating?: number;
   comment?: string;
+  answers?: Record<string, boolean | string>;
+  confirmationCode?: string;
 }) {
   await ensureSurveySchema();
 
   const result = await pool.query(
-    `INSERT INTO survey_responses (survey_id, rating, comment)
-     VALUES ($1, $2, $3)
-     RETURNING id, survey_id, rating, comment, created_at`,
-    [input.surveyId, input.rating, input.comment?.trim() || null],
+    `INSERT INTO survey_responses (survey_id, rating, comment, answers, confirmation_code)
+     VALUES ($1, $2, $3, $4, $5)
+     RETURNING id, survey_id, rating, comment, answers, confirmation_code, created_at`,
+    [
+      input.surveyId,
+      input.rating ?? null,
+      input.comment?.trim() || null,
+      input.answers ? JSON.stringify(input.answers) : null,
+      input.confirmationCode ?? null,
+    ],
   );
 
   return mapResponse(result.rows[0]);

@@ -1,105 +1,93 @@
 @import "tailwindcss";
 @import "@neondatabase/auth/ui/tailwind";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Professional blue palette
+   Corporate navy · Trust blue primary · Cool neutral surfaces */
 :root {
-  /* Core colors */
-  --background: #ffffff;
-  --foreground: #171717;
-
-  /* Card */
-  --card: #ffffff;
-  --card-foreground: #171717;
-
-  /* Muted */
-  --muted: #fafafa;
-  --muted-foreground: #61646b;
-
-  /* Accent (for hover states, etc.) */
-  --accent: #f5f5f5;
-  --accent-foreground: #171717;
-
-  /* Secondary */
-  --secondary: #f5f5f5;
-  --secondary-foreground: #171717;
-
-  /* Borders and inputs */
-  --border: #e4e5e7;
-  --input: #e4e5e7;
-
-  /* Primary (dark buttons) */
-  --primary: #171717;
-  --primary-foreground: #ffffff;
-
-  /* Brand (Neon green) */
-  --brand: #00e599;
-  --brand-hover: #00e5bf;
-  --brand-foreground: #0c0d0d;
-
-  /* Destructive */
-  --destructive: #dc2626;
-  --destructive-foreground: #ffffff;
-
-  /* Ring/focus */
-  --ring: #00e599;
-
-  /* Sidebar */
-  --sidebar: #ffffff;
-  --sidebar-foreground: #171717;
-  --sidebar-accent: #f5f5f5;
-  --sidebar-accent-foreground: #171717;
-  --sidebar-border: #e4e5e7;
-
-  /* Popover */
-  --popover: #ffffff;
-  --popover-foreground: #171717;
+  --background: oklch(0.99 0.004 250);
+  --foreground: oklch(0.22 0.04 255);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.22 0.04 255);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.22 0.04 255);
+  --primary: oklch(0.48 0.14 255);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.96 0.012 250);
+  --secondary-foreground: oklch(0.28 0.05 255);
+  --muted: oklch(0.95 0.012 250);
+  --muted-foreground: oklch(0.50 0.03 255);
+  --accent: oklch(0.94 0.025 250);
+  --accent-foreground: oklch(0.28 0.05 255);
+  --destructive: oklch(0.55 0.22 27);
+  --destructive-foreground: oklch(0.99 0 0);
+  --border: oklch(0.90 0.02 250);
+  --input: oklch(0.90 0.02 250);
+  --ring: oklch(0.48 0.14 255);
+  --ring-offset: oklch(0.99 0.004 250);
+  --brand: oklch(0.48 0.14 255);
+  --brand-hover: oklch(0.42 0.14 255);
+  --brand-foreground: oklch(0.99 0 0);
+  --terminal: oklch(0.28 0.08 255);
+  --terminal-foreground: oklch(0.97 0.01 250);
+  --chart-1: oklch(0.48 0.14 255);
+  --chart-2: oklch(0.58 0.10 230);
+  --chart-3: oklch(0.68 0.08 210);
+  --chart-4: oklch(0.62 0.04 255);
+  --chart-5: oklch(0.38 0.06 255);
+  --radius: 0.5rem;
+  --sidebar: oklch(0.24 0.06 255);
+  --sidebar-foreground: oklch(0.97 0.01 250);
+  --sidebar-primary: oklch(0.55 0.13 255);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+  --sidebar-accent: oklch(0.30 0.05 255);
+  --sidebar-accent-foreground: oklch(0.97 0.01 250);
+  --sidebar-border: oklch(0.34 0.04 255);
+  --sidebar-ring: oklch(0.55 0.13 255);
 }
 
-/* Dark mode - system preference */
-@media (prefers-color-scheme: dark) {
-  :root {
-    /* Core colors */
-    --background: #0a0a0a;
-    --foreground: #ededed;
-
-    /* Card */
-    --card: #0a0a0a;
-    --card-foreground: #ededed;
-
-    /* Muted */
-    --muted: #141414;
-    --muted-foreground: #94979e;
-
-    /* Accent */
-    --accent: #1a1a1a;
-    --accent-foreground: #ededed;
-
-    /* Secondary */
-    --secondary: #1a1a1a;
-    --secondary-foreground: #ededed;
-
-    /* Borders and inputs */
-    --border: #303236;
-    --input: #303236;
-
-    /* Primary (light buttons in dark mode) */
-    --primary: #ededed;
-    --primary-foreground: #0a0a0a;
-
-    /* Destructive */
-    --destructive: #ef4444;
-    --destructive-foreground: #ffffff;
-
-    /* Sidebar */
-    --sidebar: #0a0a0a;
-    --sidebar-foreground: #ededed;
-    --sidebar-accent: #1a1a1a;
-    --sidebar-accent-foreground: #ededed;
-    --sidebar-border: #303236;
-
-    /* Popover */
-    --popover: #0a0a0a;
-    --popover-foreground: #ededed;
-  }
+.dark {
+  --background: oklch(0.16 0.04 255);
+  --foreground: oklch(0.96 0.01 250);
+  --card: oklch(0.20 0.04 255);
+  --card-foreground: oklch(0.96 0.01 250);
+  --popover: oklch(0.20 0.04 255);
+  --popover-foreground: oklch(0.96 0.01 250);
+  --primary: oklch(0.62 0.13 250);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.24 0.04 255);
+  --secondary-foreground: oklch(0.96 0.01 250);
+  --muted: oklch(0.24 0.04 255);
+  --muted-foreground: oklch(0.70 0.02 250);
+  --accent: oklch(0.26 0.04 255);
+  --accent-foreground: oklch(0.96 0.01 250);
+  --destructive: oklch(0.62 0.20 25);
+  --destructive-foreground: oklch(0.99 0 0);
+  --border: oklch(0.30 0.04 255);
+  --input: oklch(0.30 0.04 255);
+  --ring: oklch(0.62 0.13 250);
+  --ring-offset: oklch(0.16 0.04 255);
+  --brand: oklch(0.62 0.13 250);
+  --brand-hover: oklch(0.68 0.12 248);
+  --brand-foreground: oklch(0.99 0 0);
+  --terminal: oklch(0.14 0.05 255);
+  --terminal-foreground: oklch(0.96 0.01 250);
+  --chart-1: oklch(0.62 0.13 250);
+  --chart-2: oklch(0.56 0.10 230);
+  --chart-3: oklch(0.72 0.08 210);
+  --chart-4: oklch(0.68 0.04 255);
+  --chart-5: oklch(0.48 0.05 255);
+  --sidebar: oklch(0.14 0.05 255);
+  --sidebar-foreground: oklch(0.96 0.01 250);
+  --sidebar-primary: oklch(0.62 0.13 250);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+  --sidebar-accent: oklch(0.22 0.04 255);
+  --sidebar-accent-foreground: oklch(0.96 0.01 250);
+  --sidebar-border: oklch(0.28 0.04 255);
+  --sidebar-ring: oklch(0.62 0.13 250);
 }
 
 @theme inline {
@@ -107,61 +95,108 @@
   --color-foreground: var(--foreground);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-ring-offset: var(--ring-offset);
   --color-brand: var(--brand);
   --color-brand-hover: var(--brand-hover);
   --color-brand-foreground: var(--brand-foreground);
-  --color-destructive: var(--destructive);
-  --color-destructive-foreground: var(--destructive-foreground);
-  --font-sans: var(--font-dm-sans);
-  --font-display: var(--font-fraunces);
+  --color-terminal: var(--terminal);
+  --color-terminal-foreground: var(--terminal-foreground);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --font-sans: "Geist", "Geist Fallback", ui-sans-serif, system-ui, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --font-heading: var(--font-sans);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-dm-sans), system-ui, sans-serif;
-  color-scheme: light dark;
-}
-
-.font-display {
-  font-family: var(--font-fraunces), Georgia, "Times New Roman", serif;
-}
-
-.landing-grid {
-  background-image:
-    linear-gradient(to right, color-mix(in srgb, var(--border) 55%, transparent) 1px, transparent 1px),
-    linear-gradient(to bottom, color-mix(in srgb, var(--border) 55%, transparent) 1px, transparent 1px);
-  background-size: 3.5rem 3.5rem;
-  mask-image: radial-gradient(ellipse 80% 70% at 30% 40%, black 20%, transparent 75%);
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .landing-glow {
-    animation: landing-drift 18s ease-in-out infinite alternate;
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
   }
 
-  .landing-glow:last-of-type {
-    animation-delay: -9s;
+  html {
+    @apply font-sans;
+  }
+
+  body {
+    @apply min-h-dvh bg-background text-foreground antialiased;
   }
 }
 
-@keyframes landing-drift {
-  from {
-    transform: translate3d(0, 0, 0) scale(1);
+@layer components {
+  .portal-shell {
+    @apply min-h-dvh bg-background text-foreground;
   }
 
-  to {
-    transform: translate3d(1.5rem, -1rem, 0) scale(1.08);
+  .portal-header {
+    @apply sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80;
+  }
+
+  .portal-header-inner {
+    @apply mx-auto flex w-full items-center justify-between gap-4 px-4 py-3 sm:px-6 sm:py-4;
+  }
+
+  .portal-main {
+    @apply mx-auto w-full px-4 py-8 sm:px-6;
+  }
+
+  .portal-main-wide {
+    @apply mx-auto w-full max-w-5xl px-4 py-8 sm:px-6;
+  }
+
+  .portal-main-narrow {
+    @apply mx-auto w-full max-w-lg px-4 py-8 sm:px-6;
+  }
+
+  .portal-skip-link {
+    @apply sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-card focus:px-4 focus:py-2 focus:text-sm focus:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-ring;
+  }
+
+  .portal-code-block {
+    @apply rounded-lg border border-border bg-muted/30 px-3 py-2 font-mono text-xs break-all text-muted-foreground;
+  }
+
+  .portal-info-block {
+    @apply rounded-lg border border-border bg-muted/30 px-3 py-2 text-sm text-foreground;
+  }
+
+  .portal-page-title {
+    @apply text-2xl font-semibold tracking-tight text-balance;
+  }
+
+  .portal-page-description {
+    @apply text-sm text-pretty text-muted-foreground;
   }
 }

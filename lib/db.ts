@@ -1,7 +1,27 @@
 import { Pool } from "pg";
 import { attachDatabasePool } from "@vercel/functions";
 
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+function getDatabaseUrl(): string | undefined {
+  const url = process.env.DATABASE_URL;
+  if (!url) return undefined;
+
+  try {
+    const parsed = new URL(url);
+    const sslmode = parsed.searchParams.get("sslmode");
+    if (
+      sslmode === "prefer" ||
+      sslmode === "require" ||
+      sslmode === "verify-ca"
+    ) {
+      parsed.searchParams.set("sslmode", "verify-full");
+    }
+    return parsed.toString();
+  } catch {
+    return url;
+  }
+}
+
+const pool = new Pool({ connectionString: getDatabaseUrl() });
 attachDatabasePool(pool);
 
 export { pool };

@@ -1,6 +1,6 @@
-# Customer Feedback Portal
+# Client Declaration Portal
 
-Collect customer satisfaction feedback with shareable survey links. Built for the fastest possible ship on **Vercel + Neon Postgres + Neon Auth**.
+Client portal for authenticated declarations and secure submission links. Built on **Vercel + Neon Postgres + Neon Auth**.
 
 ## What you get
 

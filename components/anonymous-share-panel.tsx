@@ -1,8 +1,11 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
+import Image from "next/image";
+import { LinkIcon, RefreshCwIcon } from "lucide-react";
 import {
   getAnonymousInviteLinkAction,
+  recordEmailInvitationAction,
   regenerateAnonymousInviteLinkAction,
 } from "@/app/actions/invitations";
 import {
@@ -11,6 +14,12 @@ import {
   buildAnonymousQrCodeUrl,
   buildAnonymousWhatsAppMessage,
 } from "@/lib/invite";
+import { portalCopy } from "@/lib/portal-copy";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type InviteLink = {
   token: string;
@@ -21,8 +30,18 @@ async function copyText(text: string) {
   await navigator.clipboard.writeText(text);
 }
 
-export function AnonymousSharePanel({ surveyId }: { surveyId: string }) {
-  const [invite, setInvite] = useState<InviteLink | null>(null);
+export function AnonymousSharePanel({
+  surveyId,
+  publicPath,
+  embedded = false,
+}: {
+  surveyId: string;
+  publicPath?: string;
+  embedded?: boolean;
+}) {
+  const { share, invite: inviteCopy } = portalCopy;
+  const [inviteLink, setInviteLink] = useState<InviteLink | null>(null);
+  const [recipientEmail, setRecipientEmail] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -35,127 +54,218 @@ export function AnonymousSharePanel({ surveyId }: { surveyId: string }) {
         return;
       }
       if (result && "token" in result) {
-        setInvite({ token: result.token, url: result.url });
+        setInviteLink({ token: result.token, url: result.url });
       }
     });
   }, [surveyId]);
 
-  const localInviteUrl =
-    invite?.token && typeof window !== "undefined"
-      ? buildAnonymousInviteUrl(invite.token, window.location.origin)
-      : invite?.url ?? "";
+  const privateInviteUrl =
+    inviteLink?.token && typeof window !== "undefined"
+      ? buildAnonymousInviteUrl(inviteLink.token, window.location.origin)
+      : (inviteLink?.url ?? "");
+
+  const publicUrl =
+    publicPath && typeof window !== "undefined"
+      ? new URL(publicPath, window.location.origin).toString()
+      : null;
 
   return (
-    <div className="mt-4 rounded-xl border border-border bg-background p-4">
-      <p className="text-sm font-medium">Anonymous share</p>
-      <p className="mt-1 text-xs text-muted-foreground">
-        Masked invite links hide survey details in the URL. Copy a neutral
-        message and send it from any email or WhatsApp account — your operator
-        login is never shared with clients.
-      </p>
-
-      <div className="mt-3 rounded-lg border border-dashed border-border bg-card px-3 py-2 text-xs text-muted-foreground">
-        {localInviteUrl || "Generating anonymous link..."}
-      </div>
-
-      <div className="mt-3 flex flex-wrap gap-2">
-        <button
-          type="button"
-          disabled={!localInviteUrl || isPending}
-          className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-60"
-          onClick={() => {
-            if (!localInviteUrl) return;
-            startTransition(async () => {
-              await copyText(localInviteUrl);
-              setMessage("Anonymous link copied.");
-              setError(null);
-            });
-          }}
-        >
-          Copy link
-        </button>
-
-        <button
-          type="button"
-          disabled={!localInviteUrl || isPending}
-          className="rounded-lg border border-border px-4 py-2 text-sm font-medium hover:bg-accent disabled:opacity-60"
-          onClick={() => {
-            if (!localInviteUrl) return;
-            startTransition(async () => {
-              const { combined } = buildAnonymousEmailMessage(localInviteUrl);
-              await copyText(combined);
-              setMessage(
-                "Email message copied. Paste into Gmail, Outlook, or any mail app.",
-              );
-              setError(null);
-            });
-          }}
-        >
-          Copy for email
-        </button>
-
-        <button
-          type="button"
-          disabled={!localInviteUrl || isPending}
-          className="rounded-lg border border-border px-4 py-2 text-sm font-medium hover:bg-accent disabled:opacity-60"
-          onClick={() => {
-            if (!localInviteUrl) return;
-            startTransition(async () => {
-              await copyText(
-                buildAnonymousWhatsAppMessage(localInviteUrl),
-              );
-              setMessage(
-                "WhatsApp message copied. Paste into WhatsApp and choose a contact.",
-              );
-              setError(null);
-            });
-          }}
-        >
-          Copy for WhatsApp
-        </button>
-
-        <button
-          type="button"
-          disabled={isPending}
-          className="rounded-lg border border-border px-4 py-2 text-sm font-medium hover:bg-accent disabled:opacity-60"
-          onClick={() => {
-            startTransition(async () => {
-              setMessage(null);
-              setError(null);
-              const result = await regenerateAnonymousInviteLinkAction(surveyId);
-              if (result?.error) {
-                setError(result.error);
-                return;
-              }
-              if (result && "token" in result) {
-                setInvite({ token: result.token, url: result.url });
-                setMessage("New anonymous link generated.");
-              }
-            });
-          }}
-        >
-          New link
-        </button>
-      </div>
-
-      {localInviteUrl ? (
-        <div className="mt-4 flex items-start gap-4">
-          <img
-            src={buildAnonymousQrCodeUrl(localInviteUrl)}
-            alt="QR code for anonymous survey link"
-            width={120}
-            height={120}
-            className="rounded-lg border border-border bg-white p-2"
-          />
-          <p className="text-xs text-muted-foreground">
-            Scan to open the anonymous survey. No names or emails are collected
-            from respondents.
-          </p>
+    <div className={embedded ? "space-y-4 border-t pt-4" : "space-y-4"}>
+      {!embedded ? (
+        <div className="space-y-1">
+          <h3 className="text-sm font-medium">{share.title}</h3>
+          <p className="text-sm text-muted-foreground">{share.description}</p>
         </div>
       ) : null}
 
-      {message ? <p className="mt-2 text-xs text-brand">{message}</p> : null}
-      {error ? <p className="mt-2 text-xs text-destructive">{error}</p> : null}
+      {publicUrl ? (
+        <div className="space-y-2">
+          <p className="text-xs font-medium text-muted-foreground">
+            {share.publicLabel}
+          </p>
+          <p className="portal-code-block">{publicUrl}</p>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="touch-manipulation"
+            disabled={isPending}
+            onClick={() => {
+              startTransition(async () => {
+                await copyText(publicUrl);
+                setMessage(share.copiedPublicLink);
+                setError(null);
+              });
+            }}
+          >
+            {share.copyPublicLink}
+          </Button>
+        </div>
+      ) : null}
+
+      <div className="space-y-2">
+        <p className="text-xs font-medium text-muted-foreground">
+          {share.privateLabel}
+        </p>
+        {privateInviteUrl ? (
+          <p className="portal-code-block">{privateInviteUrl}</p>
+        ) : (
+          <Skeleton className="h-9 w-full" />
+        )}
+
+        <div className="flex flex-wrap gap-2">
+          <Button
+            type="button"
+            size="sm"
+            className="touch-manipulation"
+            disabled={!privateInviteUrl || isPending}
+            onClick={() => {
+              if (!privateInviteUrl) return;
+              startTransition(async () => {
+                await copyText(privateInviteUrl);
+                setMessage(share.copiedLink);
+                setError(null);
+              });
+            }}
+          >
+            <LinkIcon />
+            {share.copyLink}
+          </Button>
+
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="touch-manipulation"
+            disabled={!privateInviteUrl || isPending}
+            onClick={() => {
+              if (!privateInviteUrl) return;
+              startTransition(async () => {
+                const { combined } = buildAnonymousEmailMessage(privateInviteUrl);
+                await copyText(combined);
+                setMessage(share.copiedEmail);
+                setError(null);
+              });
+            }}
+          >
+            {share.copyEmail}
+          </Button>
+
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="touch-manipulation"
+            disabled={!privateInviteUrl || isPending}
+            onClick={() => {
+              if (!privateInviteUrl) return;
+              startTransition(async () => {
+                await copyText(
+                  buildAnonymousWhatsAppMessage(privateInviteUrl),
+                );
+                setMessage(share.copiedWhatsApp);
+                setError(null);
+              });
+            }}
+          >
+            {share.copyWhatsApp}
+          </Button>
+
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="touch-manipulation"
+            disabled={isPending}
+            onClick={() => {
+              startTransition(async () => {
+                setMessage(null);
+                setError(null);
+                const result =
+                  await regenerateAnonymousInviteLinkAction(surveyId);
+                if (result?.error) {
+                  setError(result.error);
+                  return;
+                }
+                if (result && "token" in result) {
+                  setInviteLink({ token: result.token, url: result.url });
+                  setMessage(share.newLinkGenerated);
+                }
+              });
+            }}
+          >
+            <RefreshCwIcon />
+            {share.newLink}
+          </Button>
+        </div>
+      </div>
+
+      <div className="space-y-2 border-t pt-4">
+        <Label htmlFor={`invite-email-${surveyId}`}>{inviteCopy.emailLabel}</Label>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Input
+            id={`invite-email-${surveyId}`}
+            type="email"
+            value={recipientEmail}
+            onChange={(event) => setRecipientEmail(event.target.value)}
+            placeholder={inviteCopy.emailPlaceholder}
+            autoComplete="off"
+          />
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="shrink-0 touch-manipulation"
+            disabled={isPending}
+            onClick={() => {
+              startTransition(async () => {
+                setMessage(null);
+                setError(null);
+                const formData = new FormData();
+                formData.set("surveyId", surveyId);
+                formData.set("email", recipientEmail);
+                const result = await recordEmailInvitationAction(formData);
+                if (result?.error) {
+                  setError(result.error);
+                  return;
+                }
+                if (result?.success && result.combined) {
+                  await copyText(result.combined);
+                  setMessage(inviteCopy.recorded);
+                  setRecipientEmail("");
+                }
+              });
+            }}
+          >
+            {inviteCopy.recordAndCopy}
+          </Button>
+        </div>
+      </div>
+
+      {privateInviteUrl ? (
+        <div className="flex items-start gap-3">
+          <Image
+            src={buildAnonymousQrCodeUrl(privateInviteUrl)}
+            alt={share.qrAlt}
+            width={96}
+            height={96}
+            unoptimized
+            className="rounded-md border bg-card p-1.5"
+          />
+          <p className="text-xs text-muted-foreground">{share.qrHint}</p>
+        </div>
+      ) : null}
+
+      {message ? (
+        <Alert>
+          <AlertDescription>{message}</AlertDescription>
+        </Alert>
+      ) : null}
+      {error ? (
+        <Alert variant="destructive" role="alert" aria-live="polite">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      ) : null}
     </div>
   );
 }

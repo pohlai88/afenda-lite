@@ -34,7 +34,12 @@ if (!email || !password || !databaseUrl) {
   process.exit(1);
 }
 
-const pool = new pg.Pool({ connectionString: databaseUrl });
+const pool = new pg.Pool({
+  connectionString: databaseUrl.replace(
+    /([?&]sslmode=)(prefer|require|verify-ca)(?=(&|$))/,
+    "$1verify-full",
+  ),
+});
 
 async function main() {
   const existing = await pool.query(

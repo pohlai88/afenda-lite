@@ -3,6 +3,15 @@
     "neon": {
       "type": "http",
       "url": "https://mcp.neon.tech/mcp"
+    },
+    "shadcn": {
+      "command": "npx",
+      "args": ["-y", "shadcn@latest", "mcp"]
+    },
+    "shadcn-studio": {
+      "command": "node",
+      "args": ["${workspaceFolder}/.cursor/mcp/shadcn-studio.mjs"],
+      "envFile": "${workspaceFolder}/.env"
     }
   }
 }

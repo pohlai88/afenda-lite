@@ -1,7 +1,14 @@
 import Link from "next/link";
 import { AuthView } from "@neondatabase/auth/react";
+import { authViewPaths } from "@neondatabase/auth/react/ui/server";
+import { PortalNarrowShell } from "@/components/portal-narrow-shell";
+import { portalCopy } from "@/lib/portal-copy";
 
 export const dynamicParams = false;
+
+export function generateStaticParams() {
+  return Object.values(authViewPaths).map((path) => ({ path }));
+}
 
 export default async function AuthPage({
   params,
@@ -9,18 +16,21 @@ export default async function AuthPage({
   params: Promise<{ path: string }>;
 }) {
   const { path } = await params;
+
   return (
-    <div className="flex min-h-screen flex-col">
-      <div className="flex w-full flex-1 flex-col px-5">
-        <header className="flex justify-between items-center p-4 gap-4 h-16">
-          <Link href="/" className="text-sm font-medium">
-            Home
+    <PortalNarrowShell backHref="/" backLabel={portalCopy.signIn.title} centered>
+      <div className="mx-auto w-full max-w-sm">
+        <AuthView path={path} />
+        <p className="mt-6 text-center text-sm text-muted-foreground">
+          {portalCopy.clientAuth.operatorLink}{" "}
+          <Link
+            href="/client/login"
+            className="font-medium text-primary underline-offset-4 hover:underline"
+          >
+            {portalCopy.clientAuth.title}
           </Link>
-        </header>
-        <main className="container mx-auto flex grow flex-col items-center justify-center gap-3 self-center p-4 md:p-6">
-          <AuthView path={path} />
-        </main>
+        </p>
       </div>
-    </div>
+    </PortalNarrowShell>
   );
 }
