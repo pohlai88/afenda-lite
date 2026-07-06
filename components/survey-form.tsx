@@ -11,6 +11,7 @@ export function SurveyForm({
   description,
   questions,
   anonymous = false,
+  hideCardTitle = false,
 }: {
   surveyId: string;
   slug: string;
@@ -18,6 +19,7 @@ export function SurveyForm({
   description?: string;
   questions: SurveyQuestion[];
   anonymous?: boolean;
+  hideCardTitle?: boolean;
 }) {
   return (
     <DeclarationForm
@@ -27,6 +29,7 @@ export function SurveyForm({
       description={description}
       questions={questions}
       anonymous={anonymous}
+      hideCardTitle={hideCardTitle}
       onSubmit={async ({ slug, answers }) =>
         submitSurveyResponseAction({ slug, answers })
       }

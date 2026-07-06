@@ -5,10 +5,34 @@ export async function fillDefaultDeclarationAnswers(
   page: Page,
   contextText: string,
 ) {
-  await page.getByRole("button", { name: /^yes$/i }).first().click();
-  const textField = page.getByPlaceholder(/enter your response/i);
-  if (await textField.count()) {
-    await textField.fill(contextText);
+  while (true) {
+    const yesRadio = page.getByRole("radio", { name: /^yes$/i }).first();
+    if (await yesRadio.isVisible().catch(() => false)) {
+      await yesRadio.check();
+    }
+
+    const textField = page.getByPlaceholder(/enter your response/i);
+    if (await textField.isVisible().catch(() => false)) {
+      await textField.fill(contextText);
+    }
+
+    const continueButton = page.getByRole("button", { name: /^continue$/i });
+    const submitButton = page.getByRole("button", { name: /submit declaration/i });
+
+    if (await submitButton.isVisible().catch(() => false)) {
+      const reviewSwitch = page.getByRole("switch");
+      if (await reviewSwitch.isVisible().catch(() => false)) {
+        await reviewSwitch.check();
+      }
+      break;
+    }
+
+    if (await continueButton.isVisible().catch(() => false)) {
+      await continueButton.click();
+      continue;
+    }
+
+    break;
   }
 }
 

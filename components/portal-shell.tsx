@@ -42,7 +42,7 @@ export function PortalShell({
                 render={<Link href={backHref} />}
                 nativeButton={false}
               >
-                <ArrowLeftIcon />
+                <ArrowLeftIcon aria-hidden="true" />
                 {backLabel}
               </Button>
             ) : null}

@@ -1,15 +1,22 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { toast } from "sonner";
 import { issueClientInviteAction } from "@/app/actions/client";
 import { copyText } from "@/lib/clipboard";
 import { portalCopy } from "@/lib/portal-copy";
 import { FormErrorAlert } from "@/components/form-error-alert";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { PortalFormField } from "@/components/portal-form-field";
 import { Button } from "@/components/ui/button";
+import { FieldGroup } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { NativeSelect } from "@/components/ui/native-select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export function IssueClientInviteForm({
   surveys,
@@ -17,7 +24,7 @@ export function IssueClientInviteForm({
   surveys: Array<{ id: string; title: string }>;
 }) {
   const { clientInvite } = portalCopy;
-  const [message, setMessage] = useState<string | null>(null);
+  const [surveyId, setSurveyId] = useState("");
   const [inviteUrl, setInviteUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -28,7 +35,6 @@ export function IssueClientInviteForm({
       onSubmit={(event) => {
         event.preventDefault();
         setError(null);
-        setMessage(null);
         startTransition(async () => {
           const result = await issueClientInviteAction(
             new FormData(event.currentTarget),
@@ -39,53 +45,72 @@ export function IssueClientInviteForm({
           }
           if (result?.inviteUrl) {
             setInviteUrl(result.inviteUrl);
-            setMessage(clientInvite.issued);
+            toast.success(clientInvite.issued);
             event.currentTarget.reset();
+            setSurveyId("");
           }
         });
       }}
     >
-      <div className="space-y-2">
-        <Label htmlFor="fullName">{clientInvite.fullNameLabel}</Label>
-        <Input
-          id="fullName"
-          name="fullName"
-          required
-          placeholder={clientInvite.fullNamePlaceholder}
-        />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="email">{portalCopy.invite.emailLabel}</Label>
-        <Input
-          id="email"
-          name="email"
-          type="email"
-          required
-          placeholder={portalCopy.invite.emailPlaceholder}
-        />
-      </div>
-      {surveys.length > 0 ? (
-        <div className="space-y-2">
-          <Label htmlFor="surveyId">{clientInvite.assignLabel}</Label>
-          <NativeSelect id="surveyId" name="surveyId" defaultValue="">
-            <option value="">{clientInvite.assignPlaceholder}</option>
-            {surveys.map((survey) => (
-              <option key={survey.id} value={survey.id}>
-                {survey.title}
-              </option>
-            ))}
-          </NativeSelect>
-        </div>
-      ) : null}
-      <div className="space-y-2">
-        <Label htmlFor="dueDate">{clientInvite.dueDateLabel}</Label>
-        <Input id="dueDate" name="dueDate" type="date" />
-      </div>
-      {message ? (
-        <Alert>
-          <AlertDescription>{message}</AlertDescription>
-        </Alert>
-      ) : null}
+      <FieldGroup className="gap-4">
+        <PortalFormField label={clientInvite.fullNameLabel} required>
+          {({ id }) => (
+            <Input
+              id={id}
+              name="fullName"
+              required
+              autoComplete="name"
+              placeholder={clientInvite.fullNamePlaceholder}
+            />
+          )}
+        </PortalFormField>
+
+        <PortalFormField label={portalCopy.invite.emailLabel} required>
+          {({ id }) => (
+            <Input
+              id={id}
+              name="email"
+              type="email"
+              required
+              autoComplete="email"
+              spellCheck={false}
+              placeholder={portalCopy.invite.emailPlaceholder}
+            />
+          )}
+        </PortalFormField>
+
+        {surveys.length > 0 ? (
+          <PortalFormField label={clientInvite.assignLabel}>
+            {({ id }) => (
+              <>
+                <input type="hidden" name="surveyId" value={surveyId} />
+                <Select
+                  value={surveyId || undefined}
+                  onValueChange={(value) => setSurveyId(value ?? "")}
+                >
+                  <SelectTrigger id={id} className="w-full">
+                    <SelectValue placeholder={clientInvite.assignPlaceholder} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {surveys.map((survey) => (
+                      <SelectItem key={survey.id} value={survey.id}>
+                        {survey.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </>
+            )}
+          </PortalFormField>
+        ) : null}
+
+        <PortalFormField label={clientInvite.dueDateLabel}>
+          {({ id }) => (
+            <Input id={id} name="dueDate" type="date" autoComplete="off" />
+          )}
+        </PortalFormField>
+      </FieldGroup>
+
       {inviteUrl ? (
         <div className="space-y-2">
           <p className="portal-code-block">{inviteUrl}</p>
@@ -93,10 +118,11 @@ export function IssueClientInviteForm({
             type="button"
             variant="outline"
             size="sm"
+            className="touch-manipulation"
             onClick={() => {
               startTransition(async () => {
                 await copyText(inviteUrl);
-                setMessage(clientInvite.copiedInvite);
+                toast.success(clientInvite.copiedInvite);
               });
             }}
           >
@@ -104,8 +130,10 @@ export function IssueClientInviteForm({
           </Button>
         </div>
       ) : null}
+
       <FormErrorAlert error={error} />
-      <Button type="submit" disabled={isPending}>
+
+      <Button type="submit" disabled={isPending} aria-busy={isPending}>
         {clientInvite.issueSubmit}
       </Button>
     </form>

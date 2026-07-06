@@ -27,6 +27,8 @@ export async function createDeclaration(page: Page, title: string) {
   await page.getByRole("button", { name: /create declaration/i }).click();
   await expect(page).toHaveURL(/\/dashboard\/.+/);
 
+  await openSurveyTab(page, "share");
+
   const publicLink = page
     .locator(".portal-code-block")
     .filter({ hasText: /\/survey\// });
@@ -39,4 +41,16 @@ export async function createDeclaration(page: Page, title: string) {
     detailUrl: page.url(),
     publicSlug: match?.[1],
   };
+}
+
+export async function openSurveyTab(page: Page, tab: "manage" | "share" | "submissions" | "danger") {
+  const pattern =
+    tab === "manage"
+      ? /settings/i
+      : tab === "share"
+        ? /^share$/i
+        : tab === "submissions"
+          ? /submissions/i
+          : /delete/i;
+  await page.getByRole("tab", { name: pattern }).click();
 }

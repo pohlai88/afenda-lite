@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import Link from "next/link";
 import {
   Card,
   CardContent,
@@ -11,16 +12,18 @@ export function PortalStatCard({
   value,
   title,
   detail,
+  href,
 }: {
   icon: ReactNode;
   value: string;
   title: string;
   detail: string;
+  href?: string;
 }) {
-  return (
-    <Card>
-      <CardHeader className="flex flex-row items-start gap-3 pb-2">
-        <div className="bg-primary/10 text-primary flex size-8 shrink-0 items-center justify-center rounded-md">
+  const card = (
+    <Card className={href ? "transition-colors hover:bg-muted/40" : undefined}>
+      <CardHeader className="h-stack items-start gap-3 pb-2">
+        <div className="center size-8 shrink-0 rounded-md bg-primary/10 text-primary">
           {icon}
         </div>
         <div className="min-w-0 space-y-1">
@@ -34,5 +37,18 @@ export function PortalStatCard({
         <p className="text-pretty text-xs text-muted-foreground">{detail}</p>
       </CardContent>
     </Card>
+  );
+
+  if (!href) {
+    return card;
+  }
+
+  return (
+    <Link
+      href={href}
+      className="block rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-ring"
+    >
+      {card}
+    </Link>
   );
 }

@@ -1,16 +1,36 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
-import { geistSans } from "./fonts";
+import { ebGaramond, lato } from "./fonts";
 import { authClient } from "@/lib/auth/client";
 import { NeonAuthUIProvider } from "@neondatabase/auth/react";
 import { ThemeProvider } from "@/components/theme-provider";
+import { Toaster } from "@/components/ui/sonner";
+import { getAppBaseUrl } from "@/lib/app-url";
 import { cn } from "@/lib/utils";
 
 import { PORTAL_NAME, portalCopy } from "@/lib/portal-copy";
 
 export const metadata: Metadata = {
-  title: PORTAL_NAME,
-  description: portalCopy.product.tagline,
+  metadataBase: new URL(getAppBaseUrl()),
+  title: {
+    default: PORTAL_NAME,
+    template: `%s | ${PORTAL_NAME}`,
+  },
+  description: portalCopy.trust.meta.defaultDescription,
+  keywords: [...portalCopy.trust.meta.keywords],
+  openGraph: {
+    title: PORTAL_NAME,
+    description: portalCopy.trust.meta.defaultDescription,
+    type: "website",
+    siteName: PORTAL_NAME,
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#0a0a0a" },
+  ],
 };
 
 export default function RootLayout({
@@ -22,7 +42,7 @@ export default function RootLayout({
     <html
       suppressHydrationWarning
       lang="en"
-      className={cn(geistSans.variable, "font-sans")}
+      className={cn(lato.variable, ebGaramond.variable, "font-sans")}
     >
       <body>
         <script
@@ -37,6 +57,7 @@ export default function RootLayout({
             emailOTP
           >
             {children}
+            <Toaster richColors closeButton />
           </NeonAuthUIProvider>
         </ThemeProvider>
       </body>

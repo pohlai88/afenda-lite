@@ -21,7 +21,7 @@ export function PortalNarrowShell({
   centered = false,
 }: PortalNarrowShellProps) {
   return (
-    <div className="portal-shell flex min-h-dvh flex-col">
+    <div className="portal-shell v-stack min-h-dvh">
       <header className="portal-header">
         <div className="portal-header-inner max-w-lg">
           <p className="truncate text-sm font-semibold" translate="no">
@@ -32,7 +32,7 @@ export function PortalNarrowShell({
       </header>
       <main
         className={cn(
-          "portal-main-narrow flex flex-1 flex-col",
+          "portal-main-narrow v-stack spacer",
           centered && "justify-center",
           className,
         )}

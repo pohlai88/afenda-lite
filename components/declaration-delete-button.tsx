@@ -23,7 +23,7 @@ export function DeclarationDeleteButton({ surveyId }: { surveyId: string }) {
         aria-busy={isPending}
         onClick={() => setOpen(true)}
       >
-        <Trash2Icon />
+        <Trash2Icon aria-hidden="true" />
         {manage.deleteSubmit}
       </Button>
 

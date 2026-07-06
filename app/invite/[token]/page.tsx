@@ -36,6 +36,7 @@ export default async function AcceptInvitePage({
             ? clientInvite.expired
             : clientInvite.alreadyAccepted
         }
+        contentWidth="narrow"
       >
         <Button render={<Link href="/" />} nativeButton={false}>
           {portalCopy.signIn.title}
@@ -49,6 +50,7 @@ export default async function AcceptInvitePage({
       eyebrow={clientInvite.eyebrow}
       title={clientInvite.title}
       description={clientInvite.description}
+      contentWidth="narrow"
     >
       <Card>
         <CardHeader>

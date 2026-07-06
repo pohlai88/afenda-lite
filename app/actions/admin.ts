@@ -5,6 +5,12 @@ import { isAdminSession } from "@/lib/admin";
 import { recordAuditEvent } from "@/lib/audit";
 import { auth } from "@/lib/auth/server";
 import { runLoggedAction } from "@/lib/observability";
+import {
+  getPreviewClientEmail,
+  getPreviewClientPassword,
+  isPreviewClientConfigured,
+  isPreviewClientSession,
+} from "@/lib/preview-client";
 import { portalCopy } from "@/lib/portal-copy";
 import { parseSchema } from "@/lib/schemas/common";
 import { signInSchema } from "@/lib/schemas/auth";
@@ -57,4 +63,47 @@ export async function adminSignInAction(formData: FormData) {
 
     redirect("/dashboard");
   });
+}
+
+export async function startClientPreviewAction() {
+  const session = await requireAdminSession();
+
+  if (!isPreviewClientConfigured()) {
+    redirect("/dashboard?preview=not-configured");
+  }
+
+  const email = getPreviewClientEmail();
+  const password = getPreviewClientPassword();
+
+  const { error } = await auth.signIn.email({ email, password });
+
+  if (error) {
+    redirect("/dashboard?preview=failed");
+  }
+
+  await recordAuditEvent({
+    actorId: session.user.id,
+    eventType: "admin.client_preview_started",
+    resourceType: "session",
+    metadata: { previewEmail: email },
+  });
+
+  redirect("/client");
+}
+
+export async function exitClientPreviewAction() {
+  const { data: session } = await auth.getSession();
+
+  if (!isPreviewClientSession(session)) {
+    redirect("/client");
+  }
+
+  await recordAuditEvent({
+    actorId: session?.user?.id,
+    eventType: "admin.client_preview_ended",
+    resourceType: "session",
+  });
+
+  await auth.signOut();
+  redirect("/org/login");
 }
