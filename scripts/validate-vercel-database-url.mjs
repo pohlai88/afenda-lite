@@ -49,7 +49,10 @@ try {
   process.exit(1);
 }
 
-const pooler = url.hostname.includes("-pooler");
+const pooler =
+  url.hostname.includes("pooler.supabase.com") ||
+  url.port === "6543" ||
+  url.hostname.includes("-pooler");
 const result = {
   host: url.hostname,
   pooler,

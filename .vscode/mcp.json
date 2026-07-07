@@ -2,7 +2,18 @@
   "servers": {
     "neon": {
       "type": "http",
-      "url": "https://mcp.neon.tech/mcp"
+      "url": "https://mcp.neon.tech/mcp",
+      "headers": {
+        "Authorization": "Bearer ${NEON_API_KEY}"
+      }
+    },
+    "shadcn-studio": {
+      "command": "npx",
+      "args": ["-y", "shadcn-studio-mcp-1.0.7.tgz"],
+      "env": {
+        "API_KEY": "${SHADCN_STUDIO_API_KEY}",
+        "EMAIL": "${SHADCN_STUDIO_EMAIL}"
+      }
     }
   }
 }

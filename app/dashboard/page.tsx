@@ -15,15 +15,9 @@ import {
   type OrgDeclarationRow,
 } from "@/components/org-declarations-table";
 import { PortalEmptyStateCta } from "@/components/portal-empty-state-cta";
+import { PortalFormSection } from "@/components/portal-form-section";
 import { PortalStatisticsCard } from "@/components/portal-statistics-card";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { countPendingClientAssignments } from "@/lib/clients";
 import { PORTAL_NAME, portalCopy } from "@/lib/portal-copy";
 import { listSurveysForAdmin } from "@/lib/surveys";
@@ -91,15 +85,14 @@ export default async function DashboardPageRoute() {
       </div>
 
       <div className="grid gap-8 lg:grid-cols-[minmax(280px,320px)_1fr]">
-        <Card id="create-declaration" className="scroll-mt-20">
-          <CardHeader>
-            <CardTitle>{org.create.title}</CardTitle>
-            <CardDescription>{org.create.description}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <DeclarationCreateButton />
-          </CardContent>
-        </Card>
+        <PortalFormSection
+          id="create-declaration"
+          className="scroll-mt-20"
+          title={org.create.title}
+          description={org.create.description}
+        >
+          <DeclarationCreateButton />
+        </PortalFormSection>
 
         <PortalSection
           title={org.list.title}

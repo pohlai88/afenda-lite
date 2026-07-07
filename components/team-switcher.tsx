@@ -71,14 +71,17 @@ export function TeamSwitcher({ teams }: { teams: DashboardTeam[] }) {
               />
             }
           >
-            <div className="center size-8 rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+            <div className="center size-8 shrink-0 rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
               {activeTeam.logo}
             </div>
-            <div className="grid flex-1 text-left text-sm leading-tight">
+            <div className="grid min-w-0 flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
               <span className="truncate font-medium">{activeTeam.name}</span>
               <span className="truncate text-xs">{activeTeam.plan}</span>
             </div>
-            <ChevronsUpDownIcon aria-hidden="true" className="ml-auto" />
+            <ChevronsUpDownIcon
+              aria-hidden="true"
+              className="ml-auto group-data-[collapsible=icon]:hidden"
+            />
           </DropdownMenuTrigger>
           <DropdownMenuContent
             className="w-fit min-w-56 rounded-lg"

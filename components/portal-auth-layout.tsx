@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { PortalBrandLogo, PortalBrandMark } from "@/components/portal-brand-mark";
+import { BrandLogo, BrandMark } from "@/components/portal-brand-mark";
 import { PortalThemeToggle } from "@/components/portal-theme-toggle";
 import { Badge } from "@/components/ui/badge";
 import { portalCopy } from "@/lib/portal-copy";
@@ -47,7 +47,7 @@ export function PortalAuthLayout({
 
       <header className="portal-auth-toolbar shrink-0">
         <div className="portal-auth-toolbar-inner">
-          <PortalBrandLogo href="/" size="sm" showName priority />
+          <BrandLogo href="/" context="toolbar" showName priority />
           <PortalThemeToggle />
         </div>
       </header>
@@ -59,7 +59,7 @@ export function PortalAuthLayout({
             className="portal-auth-brand max-lg:order-2"
           >
             <div className="portal-auth-brand-mark">
-              <PortalBrandMark size="hero" priority className="shadow-[0_0_48px_var(--vault-glow)]" />
+              <BrandMark context="hero" priority />
             </div>
 
             <Badge
@@ -100,23 +100,17 @@ export function PortalAuthLayout({
           >
             <div className="portal-auth-chamber">
               <div className="portal-auth-chamber-inner">
-                <div className="flex flex-col items-center gap-3 sm:items-start lg:flex-row lg:items-center lg:gap-3">
-                  <div className="portal-auth-emblem shrink-0">
-                    <PortalBrandMark size="xs" className="size-9 ring-primary/25 lg:size-8" />
-                  </div>
-
-                  <header className="min-w-0 space-y-1 text-center sm:text-left">
-                    <h2
-                      id={signInHeadingId}
-                      className="font-heading text-xl font-semibold tracking-tight text-balance sm:text-2xl lg:text-[1.375rem]"
-                    >
-                      {signInTitle}
-                    </h2>
-                    <p className="text-pretty text-xs leading-snug text-muted-foreground sm:text-sm lg:text-[0.8125rem]">
-                      {signInDescription}
-                    </p>
-                  </header>
-                </div>
+                <header className="min-w-0 space-y-1 text-center sm:text-left">
+                  <h2
+                    id={signInHeadingId}
+                    className="font-heading text-xl font-semibold tracking-tight text-balance sm:text-2xl lg:text-[1.375rem]"
+                  >
+                    {signInTitle}
+                  </h2>
+                  <p className="text-pretty text-xs leading-snug text-muted-foreground sm:text-sm lg:text-[0.8125rem]">
+                    {signInDescription}
+                  </p>
+                </header>
 
                 {headerExtra}
 

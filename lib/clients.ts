@@ -441,3 +441,38 @@ export async function listClientAssignmentsForAdmin() {
 
   return result.rows.map(mapAssignment);
 }
+
+export async function getClientInvitationById(id: string) {
+  const result = await pool.query(
+    `SELECT id, token, email, full_name, invited_by, status, expires_at, created_at
+     FROM client_invitations
+     WHERE id = $1
+     LIMIT 1`,
+    [id],
+  );
+
+  if (!result.rows[0]) {
+    return null;
+  }
+
+  return mapInvitation(result.rows[0]);
+}
+
+export async function deleteClientInvitationById(id: string) {
+  await pool.query(`DELETE FROM client_invitations WHERE id = $1`, [id]);
+}
+
+export async function deleteClientAssignmentsForEmail(email: string) {
+  await pool.query(
+    `DELETE FROM client_assignments WHERE lower(client_email) = lower($1)`,
+    [normalizeEmail(email)],
+  );
+}
+
+export async function deleteClientAssignmentById(id: string) {
+  await pool.query(`DELETE FROM client_assignments WHERE id = $1`, [id]);
+}
+
+export async function deleteClientProfileByUserId(userId: string) {
+  await pool.query(`DELETE FROM client_profiles WHERE user_id = $1`, [userId]);
+}

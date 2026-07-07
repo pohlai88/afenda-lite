@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation";
 import { requireAdminSession } from "@/app/actions/admin";
-import { loadAnonymousInviteLinkForSurvey } from "@/app/actions/invitations";
-import { AnonymousSharePanel } from "@/components/anonymous-share-panel";
+import { ClientAccessSharePanel } from "@/components/client-access-share-panel";
 import { DeclarationDeleteButton } from "@/components/declaration-delete-button";
 import { DeclarationManageForm } from "@/components/declaration-manage-form";
 import { PortalEmptyState } from "@/components/portal-empty-state";
@@ -32,7 +31,6 @@ import { buildSurveyFieldsKey } from "@/lib/survey-form-key";
 import {
   getSurveyForAdmin,
   listResponsesForSurvey,
-  listSurveyInvitationsForSurvey,
 } from "@/lib/surveys";
 
 export default async function SurveyDetailPage({
@@ -49,13 +47,10 @@ export default async function SurveyDetailPage({
     notFound();
   }
 
-  const [responses, questions, initialInvite, emailInvitations] =
-    await Promise.all([
-      listResponsesForSurvey(survey.id),
-      listQuestionsForSurvey(survey.id),
-      loadAnonymousInviteLinkForSurvey(survey.id, session.user.id),
-      listSurveyInvitationsForSurvey(survey.id),
-    ]);
+  const [responses, questions] = await Promise.all([
+    listResponsesForSurvey(survey.id),
+    listQuestionsForSurvey(survey.id),
+  ]);
 
   const evidenceIds = new Set<string>();
   for (const response of responses) {
@@ -108,49 +103,7 @@ export default async function SurveyDetailPage({
         <Badge variant="secondary" className="tabular-nums">
           {org.list.submissions(responses.length)}
         </Badge>
-        <AnonymousSharePanel
-          surveyId={survey.id}
-          publicPath={`/survey/${survey.slug}`}
-          embedded
-          initialInvite={
-            initialInvite
-              ? { token: initialInvite.token, url: initialInvite.url }
-              : undefined
-          }
-        />
-        {emailInvitations.length > 0 ? (
-          <div className="border-t pt-4">
-            <h3 className="mb-2 text-sm font-medium">
-              {declarationDetail.emailLog.title}
-            </h3>
-            <div className="rounded-lg border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{declarationDetail.emailLog.tableEmail}</TableHead>
-                    <TableHead className="text-right">
-                      {declarationDetail.emailLog.tableSent}
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {emailInvitations.map((invitation) => (
-                    <TableRow key={invitation.id}>
-                      <TableCell className="max-w-[240px] truncate">
-                        {invitation.clientEmail}
-                      </TableCell>
-                      <TableCell className="text-right text-muted-foreground tabular-nums">
-                        <time dateTime={invitation.createdAt.toISOString()}>
-                          {formatDateTime(invitation.createdAt)}
-                        </time>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </div>
-        ) : null}
+        <ClientAccessSharePanel />
       </CardContent>
     </Card>
   );

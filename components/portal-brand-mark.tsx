@@ -1,70 +1,74 @@
 import Image from "next/image";
 import Link from "next/link";
 import {
+  BRAND_CONTEXT,
   BRAND_ICON_ALT,
-  BRAND_ICON_HEIGHT,
-  BRAND_ICON_PATH,
-  BRAND_ICON_WIDTH,
+  type BrandContext,
 } from "@/lib/portal-brand";
 import { PORTAL_NAME } from "@/lib/portal-copy";
 import { cn } from "@/lib/utils";
 
-type PortalBrandMarkSize = "xs" | "sm" | "md" | "lg" | "hero";
-
-const sizeConfig: Record<
-  PortalBrandMarkSize,
-  { className: string; width: number; height: number; sizes: string }
-> = {
-  xs: { className: "size-8", width: 32, height: 32, sizes: "32px" },
-  sm: { className: "size-10", width: 40, height: 40, sizes: "40px" },
-  md: { className: "size-14", width: 56, height: 56, sizes: "56px" },
-  lg: { className: "size-20", width: 80, height: 80, sizes: "80px" },
-  hero: {
-    className: "size-28 sm:size-32 lg:size-36",
-    width: 144,
-    height: 144,
-    sizes: "(max-width: 640px) 112px, (max-width: 1024px) 128px, 144px",
-  },
-};
-
-export function PortalBrandMark({
-  size = "md",
-  priority = false,
-  className,
-}: {
-  size?: PortalBrandMarkSize;
+type BrandMarkProps = {
+  context?: BrandContext;
   priority?: boolean;
   className?: string;
-}) {
-  const config = sizeConfig[size];
+};
+
+/** Brand image tuned per surface (sidebar, toolbar, hero, etc.). */
+export function BrandMark({
+  context = "toolbar",
+  priority = false,
+  className,
+}: BrandMarkProps) {
+  const { asset, className: contextClass, decorative } = BRAND_CONTEXT[context];
 
   return (
     <Image
-      src={BRAND_ICON_PATH}
-      alt={BRAND_ICON_ALT}
-      width={config.width}
-      height={config.height}
-      sizes={config.sizes}
+      src={asset.path}
+      alt={decorative ? "" : BRAND_ICON_ALT}
+      width={asset.width}
+      height={asset.height}
+      sizes={asset.sizes}
       priority={priority}
-      className={cn(
-        "shrink-0 rounded-full object-cover ring-1 ring-border/60",
-        config.className,
-        className,
-      )}
+      aria-hidden={decorative || undefined}
+      className={cn(contextClass, className)}
     />
   );
 }
 
-export function PortalBrandLogo({
+/**
+ * shadcn sidebar header icon — `size-8` rounded-lg shell with centered mark.
+ * Use as the first child of `SidebarMenuButton size="lg"`.
+ */
+export function SidebarBrandIcon({ className }: { className?: string }) {
+  return (
+    <div
+      className={cn(
+        "center size-8 shrink-0 overflow-hidden rounded-lg bg-sidebar-primary text-sidebar-primary-foreground",
+        className,
+      )}
+    >
+      <BrandMark context="sidebar" />
+    </div>
+  );
+}
+
+/** Inner mark for team-switcher / dropdown rows (parent supplies the shell). */
+export function SidebarBrandMark({ className }: { className?: string }) {
+  return <BrandMark context="sidebar" className={className} />;
+}
+
+/** Linked logo + optional portal name. */
+export function BrandLogo({
   href = "/",
-  size = "sm",
+  context = "toolbar",
   priority = false,
   showName = false,
   className,
   nameClassName,
 }: {
   href?: string | null;
-  size?: PortalBrandMarkSize;
+  context?: BrandContext;
   priority?: boolean;
   showName?: boolean;
   className?: string;
@@ -72,7 +76,7 @@ export function PortalBrandLogo({
 }) {
   const content = (
     <>
-      <PortalBrandMark size={size} priority={priority} />
+      <BrandMark context={context} priority={priority} />
       {showName ? (
         <span
           translate="no"
@@ -110,9 +114,3 @@ export function PortalBrandLogo({
 
   return <div className={wrapperClass}>{content}</div>;
 }
-
-/** Intrinsic dimensions for metadata and layout reservation. */
-export const portalBrandIntrinsicSize = {
-  width: BRAND_ICON_WIDTH,
-  height: BRAND_ICON_HEIGHT,
-} as const;

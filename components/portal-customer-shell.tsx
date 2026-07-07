@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { ArrowLeftIcon } from "lucide-react";
-import { PortalBrandLogo } from "@/components/portal-brand-mark";
+import { BrandLogo } from "@/components/portal-brand-mark";
 import {
   PortalPageHeader,
   type PortalBreadcrumb,
@@ -105,9 +105,9 @@ export function PortalCustomerShell({
               {backLabel}
             </Button>
           ) : homeHref ? (
-            <PortalBrandLogo href={homeHref} size="xs" showName />
+            <BrandLogo href={homeHref} context="compact" showName />
           ) : (
-            <PortalBrandLogo href={null} size="xs" showName />
+            <BrandLogo href={null} context="compact" showName />
           )}
           <div className="h-stack items-center gap-1">
             <PortalThemeToggle />

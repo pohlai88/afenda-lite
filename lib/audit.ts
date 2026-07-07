@@ -11,6 +11,8 @@ export type AuditEventType =
   | "declaration.imported"
   | "invite.issued"
   | "invite.accepted"
+  | "invite.removed"
+  | "assignment.removed"
   | "profile.completed"
   | "portal.acknowledged"
   | "evidence.registered";

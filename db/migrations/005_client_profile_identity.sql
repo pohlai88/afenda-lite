@@ -13,7 +13,7 @@ ALTER TABLE client_profiles
 UPDATE client_profiles cp
 SET full_legal_name = ci.full_name
 FROM client_invitations ci
-JOIN neon_auth."user" u ON lower(u.email) = lower(ci.email)
+JOIN auth.users u ON lower(u.email) = lower(ci.email)
 WHERE cp.user_id = u.id
   AND ci.status = 'accepted'
   AND cp.full_legal_name IS NULL;

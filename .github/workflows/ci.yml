@@ -13,12 +13,13 @@ jobs:
   quality:
     runs-on: ubuntu-latest
     env:
-      # Preview branch (br-red-dream-aoe3apvj) — never run migrate/E2E against production.
-      DATABASE_URL: ${{ secrets.DATABASE_URL_PREVIEW }}
-      NEON_AUTH_BASE_URL: ${{ secrets.NEON_AUTH_BASE_URL_PREVIEW }}
-      NEON_AUTH_COOKIE_SECRET: ${{ secrets.NEON_AUTH_COOKIE_SECRET_PREVIEW }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
       SHARED_ADMIN_EMAIL: ${{ secrets.SHARED_ADMIN_EMAIL }}
       SHARED_ADMIN_PASSWORD: ${{ secrets.SHARED_ADMIN_PASSWORD }}
+      CLIENT_DEFAULT_PASSWORD: ${{ secrets.CLIENT_DEFAULT_PASSWORD }}
       SHARED_ADMIN_NAME: Portal Operator
       E2E_SURVEY_SLUG: ${{ secrets.E2E_SURVEY_SLUG }}
       APP_URL: http://localhost:3000
@@ -28,7 +29,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "24"
           cache: npm
 
       - name: Install dependencies

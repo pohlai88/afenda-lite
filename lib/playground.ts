@@ -80,10 +80,22 @@ const playgroundScreenDefs: (Omit<PlaygroundScreen, "path"> & {
       path: "/client/declare/{PLAYGROUND_ASSIGNMENT_ID}",
     },
     {
-      id: "client-public-survey",
+      id: "auth-sign-in",
       category: "client",
-      label: "Public survey",
-      path: "/survey/{PLAYGROUND_SURVEY_SLUG}",
+      label: "Sign in",
+      path: "/auth/sign-in",
+    },
+    {
+      id: "account-security",
+      category: "client",
+      label: "Account security",
+      path: "/account/security",
+    },
+    {
+      id: "not-found",
+      category: "client",
+      label: "404 not found",
+      path: "/playground-404-preview",
     },
   ];
 
@@ -159,7 +171,8 @@ export const playgroundRouteFiles: Record<string, string> = {
   "/client/profile": "app/client/profile/page.tsx",
   "/client/declare/{id}": "app/client/declare/[id]/page.tsx",
   "/client/preview-unavailable": "app/client/preview-unavailable/page.tsx",
-  "/survey/{slug}": "app/survey/[slug]/page.tsx",
+  "/auth/sign-in": "app/auth/[path]/page.tsx",
+  "/account/security": "app/account/[path]/page.tsx",
 };
 
 export function resolvePlaygroundRouteFile(path: string) {
@@ -175,10 +188,6 @@ export function resolvePlaygroundRouteFile(path: string) {
 
   if (/^\/client\/declare\/[^/]+$/.test(pathname)) {
     return playgroundRouteFiles["/client/declare/{id}"];
-  }
-
-  if (/^\/survey\/[^/]+$/.test(pathname)) {
-    return playgroundRouteFiles["/survey/{slug}"];
   }
 
   return null;

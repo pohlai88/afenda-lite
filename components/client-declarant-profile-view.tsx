@@ -1,14 +1,8 @@
 import type { ReactNode } from "react";
 import type { ClientProfile } from "@/lib/clients";
 import { countryLabel } from "@/lib/countries";
+import { PortalFormSection } from "@/components/portal-form-section";
 import { portalCopy } from "@/lib/portal-copy";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 
 function ProfileField({
   label,
@@ -37,17 +31,9 @@ function ProfileSection({
   children: ReactNode;
 }) {
   return (
-    <Card>
-      <CardHeader className="gap-1">
-        <CardTitle className="text-lg">{title}</CardTitle>
-        {description ? (
-          <CardDescription className="text-pretty">{description}</CardDescription>
-        ) : null}
-      </CardHeader>
-      <CardContent>
-        <dl className="grid gap-3 sm:grid-cols-2">{children}</dl>
-      </CardContent>
-    </Card>
+    <PortalFormSection title={title} description={description}>
+      <dl className="grid gap-3 sm:grid-cols-2">{children}</dl>
+    </PortalFormSection>
   );
 }
 

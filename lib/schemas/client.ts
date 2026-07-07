@@ -16,17 +16,6 @@ const passportNumberSchema = z
   .max(20)
   .regex(/^[A-Za-z0-9]+$/, "Passport number must be alphanumeric");
 
-export const acceptClientInviteSchema = z
-  .object({
-    token: z.string().trim().min(1).max(200),
-    password: z.string().min(8).max(512),
-    confirmPassword: z.string().min(8).max(512),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords must match",
-    path: ["confirmPassword"],
-  });
-
 export const clientOnboardingSchema = z.object({
   fullLegalName: z.string().trim().min(1).max(500),
   nationality: isoCountrySchema,
@@ -53,8 +42,20 @@ export const submitClientDeclarationSchema = z.object({
 export const issueClientInviteSchema = z.object({
   email: emailSchema,
   fullName: z.string().trim().min(1).max(500),
-  surveyId: z.union([uuidSchema, z.literal("")]).optional(),
-  dueDate: z.string().trim().max(50).optional(),
+  surveyId: uuidSchema,
+  dueDate: z.preprocess(
+    (value) =>
+      typeof value === "string" && value.trim() === "" ? undefined : value,
+    z.string().trim().max(50).optional(),
+  ),
+});
+
+export const removeClientRegistrationSchema = z.object({
+  invitationId: uuidSchema,
+});
+
+export const deleteClientAssignmentSchema = z.object({
+  assignmentId: uuidSchema,
 });
 
 export { signInSchema as clientSignInSchema } from "@/lib/schemas/auth";

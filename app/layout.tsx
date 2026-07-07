@@ -1,8 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { ebGaramond, lato } from "./fonts";
-import { authClient } from "@/lib/auth/client";
-import { NeonAuthUIProvider } from "@neondatabase/auth/react";
+import { PortalAuthProvider } from "@/components/portal-auth-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { getAppBaseUrl } from "@/lib/app-url";
@@ -62,14 +61,10 @@ export default function RootLayout({
           }}
         />
         <ThemeProvider defaultTheme="system">
-          <NeonAuthUIProvider
-            authClient={authClient}
-            redirectTo="/client"
-            emailOTP
-          >
+          <PortalAuthProvider>
             {children}
-            <Toaster richColors closeButton />
-          </NeonAuthUIProvider>
+          </PortalAuthProvider>
+          <Toaster richColors closeButton />
         </ThemeProvider>
       </body>
     </html>
