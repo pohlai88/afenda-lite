@@ -1,37 +1,25 @@
 /**
  * Next.js 16 request proxy (replaces middleware.ts).
- * Neon Auth session checks run on protected prefixes; public entry routes stay open.
+ * Neon Auth session validation and route protection for authenticated prefixes.
+ * Playground embed requests bypass auth and receive the x-playground-embed header.
  */
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth/server";
 
-const neonAuth = auth.middleware({
-  loginUrl: "/",
+const neonMiddleware = auth.middleware({
+  loginUrl: "/auth/sign-in",
 });
 
 export default async function proxy(request: NextRequest) {
-  const requestHeaders = new Headers(request.headers);
   const isEmbed = request.nextUrl.searchParams.get("embed") === "1";
 
   if (isEmbed) {
+    const requestHeaders = new Headers(request.headers);
     requestHeaders.set("x-playground-embed", "1");
+    return NextResponse.next({ request: { headers: requestHeaders } });
   }
 
-  const modifiedRequest = new NextRequest(request.url, {
-    headers: requestHeaders,
-    method: request.method,
-  });
-
-  if (!isEmbed) {
-    const authResponse = await neonAuth(modifiedRequest);
-    if (authResponse) {
-      return authResponse;
-    }
-  }
-
-  return NextResponse.next({
-    request: { headers: requestHeaders },
-  });
+  return neonMiddleware(request);
 }
 
 /** Must cover all session-gated app routes; public routes stay outside the proxy. */
@@ -43,6 +31,8 @@ export const config = {
     "/client/:path*",
     "/org/:path*",
     "/survey/:path*",
+    "/f/:path*",
+    "/invite/:path*",
     "/playground/:path*",
   ],
 };

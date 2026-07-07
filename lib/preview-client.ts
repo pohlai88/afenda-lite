@@ -40,8 +40,8 @@ export async function getPreviewClientUser() {
   }
 
   const result = await pool.query(
-    `SELECT id, email, name
-     FROM neon_auth."user"
+    `SELECT id, email, raw_user_meta_data
+     FROM auth.users
      WHERE lower(email) = lower($1)
      LIMIT 1`,
     [email],
@@ -52,9 +52,17 @@ export async function getPreviewClientUser() {
     return null;
   }
 
+  const metadata =
+    typeof row.raw_user_meta_data === "object" && row.raw_user_meta_data
+      ? (row.raw_user_meta_data as Record<string, unknown>)
+      : {};
+
   return {
     id: String(row.id),
     email: String(row.email),
-    name: String(row.name ?? getPreviewClientName()),
+    name:
+      (typeof metadata.full_name === "string" && metadata.full_name) ||
+      (typeof metadata.name === "string" && metadata.name) ||
+      getPreviewClientName(),
   };
 }

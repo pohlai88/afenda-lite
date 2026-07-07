@@ -5,6 +5,12 @@ import {
   submitDefaultDeclarationAnswers,
 } from "./helpers/declaration";
 import {
+  clientSkipMessage,
+  getClientCreds,
+  loginAsClient,
+  requireClientCreds,
+} from "./helpers/client";
+import {
   createDeclaration,
   getOperatorCreds,
   loginAsOperator,
@@ -13,19 +19,18 @@ import {
 } from "./helpers/operator";
 
 const operatorCreds = getOperatorCreds();
+const clientCreds = getClientCreds();
 
 test.describe("Client journey @journey", () => {
   test.describe.configure({ mode: "serial" });
 
-  const clientPassword = "E2eTestPass123!";
   let declarationTitle: string;
-  let inviteUrl: string;
 
   test.beforeEach(() => {
-    test.skip(!operatorCreds, operatorSkipMessage);
+    test.skip(!operatorCreds || !clientCreds, operatorSkipMessage);
   });
 
-  test("operator creates declaration and issues client invite", async ({
+  test("operator creates declaration and assigns preview client", async ({
     page,
   }) => {
     await loginAsOperator(page, requireOperatorCreds());
@@ -35,55 +40,24 @@ test.describe("Client journey @journey", () => {
     );
     declarationTitle = created.title;
 
+    const previewClient = requireClientCreds();
     await page.goto("/dashboard/clients");
-    const clientEmail = `e2e+${Date.now()}@example.test`;
-    await page.getByLabel(/full name/i).fill("E2E Test Client");
-    await page.getByLabel(/recipient email/i).fill(clientEmail);
+    await page.getByLabel(/full name/i).fill("Preview Client");
+    await page.getByLabel(/recipient email/i).fill(previewClient.email);
     await page.getByLabel(/assign declaration/i).selectOption({
       label: declarationTitle,
     });
-    await page.getByRole("button", { name: /issue invitation/i }).click();
+    await page.getByRole("button", { name: /register client/i }).click();
 
     await expect(
       page.getByText(new RegExp(portalCopy.clientInvite.issued, "i")),
     ).toBeVisible();
-    const inviteLink = page.locator(".portal-code-block").first();
-    await expect(inviteLink).toBeVisible();
-    inviteUrl = (await inviteLink.textContent())?.trim() ?? "";
-    expect(inviteUrl).toMatch(/\/invite\//);
   });
 
-  test("client accepts invite, onboards, and submits assignment", async ({
-    browser,
-  }) => {
-    test.skip(!inviteUrl, "Requires invite URL from prior test");
+  test("client signs in and submits assignment", async ({ page }) => {
+    test.skip(!clientCreds, clientSkipMessage);
 
-    const context = await browser.newContext();
-    const page = await context.newPage();
-
-    await page.goto(inviteUrl);
-    await expect(
-      page.getByRole("heading", { name: /accept invitation/i }),
-    ).toBeVisible();
-
-    await page.locator('input[name="password"]').fill(clientPassword);
-    await page.locator('input[name="confirmPassword"]').fill(clientPassword);
-    await page.getByRole("button", { name: /activate account/i }).click();
-    await expect(page).toHaveURL(/\/client\/onboarding/);
-
-    await page.getByLabel(/full legal name/i).fill("E2E Test Client");
-    await page.locator('select[name="nationality"]').selectOption("US");
-    await page.locator('select[name="countryOfResidence"]').selectOption("US");
-    await page.locator('select[name="passportIssuingCountry"]').selectOption("US");
-    await page.getByLabel(/passport number/i).fill("E1234567");
-    await page.getByLabel(/phone/i).fill("+1 555 0100");
-    await page.getByLabel(/entity name/i).fill("E2E Test Entity");
-    await page.getByLabel(/jurisdiction/i).fill("US-CA");
-    await page
-      .getByRole("checkbox")
-      .check();
-    await page.getByRole("button", { name: /save and continue/i }).click();
-    await expect(page).toHaveURL(/\/client$/);
+    await loginAsClient(page, requireClientCreds());
 
     await page
       .getByRole("checkbox", {
@@ -106,7 +80,5 @@ test.describe("Client journey @journey", () => {
     );
     await expectDeclarationReceived(page, "client");
     await expect(page.getByText(/^CDP-/)).toBeVisible();
-
-    await context.close();
   });
 });

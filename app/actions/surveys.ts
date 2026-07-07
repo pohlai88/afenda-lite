@@ -17,7 +17,6 @@ import { parseSchema } from "@/lib/schemas/common";
 import {
   deleteSurveySchema,
   rawUpdateSurveyFromFormData,
-  submitSurveyResponseSchema,
   updateSurveySchema,
 } from "@/lib/schemas/surveys";
 import {
@@ -256,39 +255,12 @@ export async function deleteSurveyAction(formData: FormData) {
   });
 }
 
-export async function submitSurveyResponseAction(input: {
+export async function submitSurveyResponseAction(_input: {
   slug: string;
   answers: SurveyAnswers;
 }) {
   return runLoggedAction("submitSurveyResponseAction", undefined, async () => {
-    const parsed = parseSchema(submitSurveyResponseSchema, input);
-
-    if (!parsed.success) {
-      return { error: portalCopy.errors.declarationNotFound };
-    }
-
-    const survey = await getSurveyBySlug(parsed.data.slug);
-    if (!survey) {
-      return { error: portalCopy.errors.declarationNotFound };
-    }
-
-    const result = await submitAnswersForSurvey({
-      surveyId: survey.id,
-      answers: parsed.data.answers,
-    });
-
-    if (result.error) {
-      return result;
-    }
-
-    await recordAuditEvent({
-      eventType: "declaration.submitted",
-      resourceType: "declaration",
-      resourceId: survey.id,
-      metadata: { surface: "public" },
-    });
-
-    return { success: true };
+    return { error: portalCopy.errors.signInRequired };
   });
 }
 

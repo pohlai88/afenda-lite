@@ -1,6 +1,6 @@
 # Client Declaration Portal
 
-Client portal for authenticated declarations and secure submission links. Built on **Vercel + Neon Postgres + Neon Auth**.
+Client portal for authenticated declarations and secure submission links. Built on **Vercel + Supabase Postgres + Supabase Auth**.
 
 ## What you get
 
@@ -28,7 +28,7 @@ Schema is versioned in [`db/migrations/`](db/migrations/). Apply before first ru
 npm run db:migrate
 ```
 
-Or apply via Neon MCP / Console against project **afenda** (`snowy-dawn-60990429`, branch `production`).
+Or apply via Supabase SQL editor / `npm run db:migrate` against project **czxbufruvpcioghvfzmo**.
 
 Migrations:
 
@@ -41,17 +41,15 @@ Migrations:
 
 The app no longer runs DDL on request — tables must exist before deploy.
 
-## Neon configuration
+## Supabase configuration
 
 | Setting | Value |
 |---------|-------|
-| Project ID | `snowy-dawn-60990429` |
-| Production branch | `production` (`br-young-term-aobkvd38`) |
-| Preview branch | `preview` (`br-red-dream-aoe3apvj`) — Vercel Preview + CI |
-| Database | `neondb` |
+| Project ref | `czxbufruvpcioghvfzmo` |
+| URL | `https://czxbufruvpcioghvfzmo.supabase.co` |
+| Auth | Invite-only email (`enable_signup = false`) |
 
-**Trusted domains (production):** `http://localhost:3000` and `https://iam-check.vercel.app`.  
-**Preview branch** also allows `https://*.vercel.app` — see [preview-branch-setup.md](docs/runbooks/preview-branch-setup.md).
+**Redirect URLs (production):** `https://iam-check.vercel.app/**`, localhost, and Vercel preview wildcards — configured in `supabase/config.toml`.
 
 ## GitHub
 
@@ -64,9 +62,7 @@ Repository: https://github.com/pohlai88/iam-check
 | **Project** | `iam-check` |
 | **Production URL** | https://iam-check.vercel.app |
 
-Env vars: `DATABASE_URL`, `NEON_AUTH_BASE_URL`, `NEON_AUTH_COOKIE_SECRET`, `SHARED_ADMIN_*`, `APP_URL`.
-
-**Preview deployments** use the Neon `preview` branch (separate env vars in Vercel Preview scope). See [docs/runbooks/preview-branch-setup.md](docs/runbooks/preview-branch-setup.md).
+Env vars: `DATABASE_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `SHARED_ADMIN_*`, `APP_URL`.
 
 ## Local development
 
@@ -86,7 +82,7 @@ GitHub Actions (`.github/workflows/ci.yml`) runs on PRs:
 
 - `npm run check:copy` — portal terminology gate
 - `npm run build`
-- `npm run db:migrate` (requires `DATABASE_URL_PREVIEW` secret; targets Neon `preview` branch)
+- `npm run db:migrate` (requires `DATABASE_URL` secret)
 - `npm test` — Playwright E2E (`e2e/smoke.spec.ts`, `e2e/secure-file.spec.ts`, `e2e/client-journey.spec.ts`)
 
 Local:

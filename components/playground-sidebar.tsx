@@ -77,7 +77,7 @@ export function PlaygroundSidebar({
               <div className="center size-8 rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
                 <LayoutGridIcon className="size-4" aria-hidden="true" />
               </div>
-              <div className="grid flex-1 text-left text-sm leading-tight">
+              <div className="grid min-w-0 flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
                 <span className="truncate font-medium">Playground</span>
                 <span className="truncate text-xs text-muted-foreground">
                   UI review

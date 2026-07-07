@@ -12,6 +12,8 @@ const REQUIRED_MATCHERS = [
   '"/client/:path*"',
   '"/org/:path*"',
   '"/survey/:path*"',
+  '"/f/:path*"',
+  '"/invite/:path*"',
   '"/playground/:path*"',
 ];
 
@@ -19,8 +21,6 @@ const PUBLIC_ROUTE_PREFIXES = [
   "/api/auth/",
   "/api/health/",
   "/auth/",
-  "/f/",
-  "/invite/",
 ];
 
 function main() {

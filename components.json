@@ -20,5 +20,29 @@
     "hooks": "@/hooks"
   },
   "menuColor": "default",
-  "menuAccent": "subtle"
+  "menuAccent": "subtle",
+  "registries": {
+    "@shadcn-studio": "https://shadcnstudio.com/r/{name}.json",
+    "@ss-components": {
+      "url": "https://shadcnstudio.com/r/components/{name}.json",
+      "headers": {
+        "x-license-key": "${LICENSE_KEY}",
+        "x-email": "${EMAIL}"
+      }
+    },
+    "@ss-blocks": {
+      "url": "https://shadcnstudio.com/r/blocks/{name}.json",
+      "headers": {
+        "x-license-key": "${LICENSE_KEY}",
+        "x-email": "${EMAIL}"
+      }
+    },
+    "@ss-themes": {
+      "url": "https://shadcnstudio.com/r/themes/{name}.json",
+      "headers": {
+        "x-license-key": "${LICENSE_KEY}",
+        "x-email": "${EMAIL}"
+      }
+    }
+  }
 }

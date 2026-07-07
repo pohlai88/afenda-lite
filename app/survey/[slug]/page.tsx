@@ -1,50 +1,17 @@
-import { PortalCustomerShell } from "@/components/portal-customer-shell";
-import { SurveyForm } from "@/components/survey-form";
-import { DeclarationQuestionsEmpty } from "@/components/declaration-questions-empty";
-import { listQuestionsForSurvey } from "@/lib/questions";
-import { portalCopy } from "@/lib/portal-copy";
-import { getSurveyBySlug } from "@/lib/surveys";
-import { notFound } from "next/navigation";
+import { redirect } from "next/navigation";
+import { isAdminSession } from "@/lib/admin";
+import { auth } from "@/lib/auth/server";
 
-export default async function PublicSurveyPage({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
-  const { slug } = await params;
-  const survey = await getSurveyBySlug(slug);
+export default async function SurveyRedirectPage() {
+  const { data: session } = await auth.getSession();
 
-  if (!survey) {
-    notFound();
+  if (isAdminSession(session)) {
+    redirect("/dashboard");
   }
 
-  const questions = await listQuestionsForSurvey(survey.id);
-  const { product, declarationPage } = portalCopy;
-
-  if (questions.length === 0) {
-    return (
-      <DeclarationQuestionsEmpty
-        eyebrow={product.declarationEyebrow}
-        title={survey.title}
-        description={declarationPage.publicDescription}
-      />
-    );
+  if (session?.user?.id) {
+    redirect("/client");
   }
 
-  return (
-    <PortalCustomerShell
-      eyebrow={product.declarationEyebrow}
-      title={survey.title}
-      description={declarationPage.publicDescription}
-    >
-      <SurveyForm
-        surveyId={survey.id}
-        slug={survey.slug}
-        title={survey.title}
-        description={survey.question}
-        questions={questions}
-        hideCardTitle
-      />
-    </PortalCustomerShell>
-  );
+  redirect("/?reason=login-required");
 }

@@ -2,6 +2,56 @@ import { readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 import pg from "pg";
 
+function isSupabaseDatabaseUrl(url) {
+  try {
+    return new URL(url).hostname.includes("supabase.com");
+  } catch {
+    return false;
+  }
+}
+
+function normalizeDatabaseUrl(url) {
+  if (isSupabaseDatabaseUrl(url)) {
+    return url;
+  }
+
+  try {
+    const parsed = new URL(url);
+    const sslmode = parsed.searchParams.get("sslmode");
+    if (
+      sslmode === "prefer" ||
+      sslmode === "require" ||
+      sslmode === "verify-ca"
+    ) {
+      parsed.searchParams.set("sslmode", "verify-full");
+    }
+    return parsed.toString();
+  } catch {
+    return url;
+  }
+}
+
+function getDatabasePoolConfig(connectionString) {
+  let connectionStringForPool = connectionString;
+
+  if (isSupabaseDatabaseUrl(connectionString)) {
+    try {
+      const parsed = new URL(connectionString);
+      parsed.searchParams.delete("sslmode");
+      connectionStringForPool = parsed.toString();
+    } catch {
+      connectionStringForPool = connectionString;
+    }
+  }
+
+  return {
+    connectionString: connectionStringForPool,
+    ssl: isSupabaseDatabaseUrl(connectionString)
+      ? { rejectUnauthorized: false }
+      : undefined,
+  };
+}
+
 function loadEnvFile() {
   const envPath = resolve(process.cwd(), ".env");
   try {
@@ -35,7 +85,9 @@ const files = readdirSync(migrationsDir)
   .filter((file) => file.endsWith(".sql"))
   .sort();
 
-const pool = new pg.Pool({ connectionString: databaseUrl });
+const pool = new pg.Pool(
+  getDatabasePoolConfig(normalizeDatabaseUrl(databaseUrl)),
+);
 
 function stripLineComments(sql) {
   return sql

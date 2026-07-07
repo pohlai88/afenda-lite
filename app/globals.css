@@ -1,8 +1,8 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
-@import "@neondatabase/auth/ui/tailwind";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+@import "@neondatabase/auth/ui/tailwind";
 
 @custom-variant dark (&:where(.dark, .dark *));
 
@@ -430,6 +430,22 @@
 
   .portal-auth-alt-link {
     @apply font-medium text-primary underline-offset-4 transition-colors duration-200 hover:text-primary/80 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring;
+  }
+
+  /* Neon Auth views inside portal vault / account shells */
+  .portal-neon-auth-view [data-slot="card"],
+  .portal-neon-account-view [data-slot="card"] {
+    @apply border-0 bg-transparent p-0 shadow-none;
+  }
+
+  .portal-neon-auth-view form,
+  .portal-neon-account-view form {
+    @apply space-y-4;
+  }
+
+  .portal-neon-auth-view button[type="submit"],
+  .portal-neon-account-view button[type="submit"] {
+    @apply min-h-11 w-full touch-manipulation;
   }
 
   .portal-code-block {

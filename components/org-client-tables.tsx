@@ -31,6 +31,8 @@ import {
 } from "@/components/ui/table";
 import { usePagination } from "@/hooks/use-pagination";
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
+import { ClientRegistrationDeleteButton } from "@/components/client-registration-delete-button";
+import { ClientAssignmentDeleteButton } from "@/components/client-assignment-delete-button";
 
 /** datatable-component-04 pattern — client rows with avatar, status badge, actions. */
 export type OrgClientInvitationRow = {
@@ -58,6 +60,7 @@ type OrgClientInvitationsTableProps = {
     tableStatus: string;
     tableActions: string;
     openInvite: string;
+    removeRegistration: string;
     status: Record<OrgClientInvitationRow["status"], string>;
   };
 };
@@ -120,26 +123,15 @@ export function OrgClientInvitationsTable({
       {
         id: "actions",
         header: () => (
-          <span className="sr-only">{labels.tableActions}</span>
+          <span className="block text-right">{labels.tableActions}</span>
         ),
-        cell: ({ row }) =>
-          row.original.status === "pending" ? (
-            <div className="text-right">
-              <Button
-                variant="outline"
-                size="sm"
-                render={
-                  <Link
-                    href={`/invite/${row.original.token}`}
-                    target="_blank"
-                  />
-                }
-                nativeButton={false}
-              >
-                {labels.openInvite}
-              </Button>
-            </div>
-          ) : null,
+        cell: ({ row }) => (
+          <div className="text-right">
+            <ClientRegistrationDeleteButton invitationId={row.original.id} />
+          </div>
+        ),
+        size: 96,
+        enableHiding: false,
       },
     ],
     [labels],
@@ -234,6 +226,8 @@ type OrgClientAssignmentsTableProps = {
     tableClient: string;
     tableStatus: string;
     tableDue: string;
+    tableActions: string;
+    removeAssignment: string;
     pending: string;
     submitted: string;
   };
@@ -291,6 +285,19 @@ export function OrgClientAssignmentsTable({
             {row.original.dueDate ?? "—"}
           </span>
         ),
+      },
+      {
+        id: "actions",
+        header: () => (
+          <span className="block text-right">{labels.tableActions}</span>
+        ),
+        cell: ({ row }) => (
+          <div className="text-right">
+            <ClientAssignmentDeleteButton assignmentId={row.original.id} />
+          </div>
+        ),
+        size: 96,
+        enableHiding: false,
       },
     ],
     [labels],

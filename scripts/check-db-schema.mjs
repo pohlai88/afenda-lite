@@ -2,6 +2,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import process from "node:process";
 import pg from "pg";
+import { getPgPoolConfig } from "./db-pool-config.mjs";
 
 const ROOT = process.cwd();
 const MIGRATIONS_DIR = join(ROOT, "db", "migrations");
@@ -26,7 +27,11 @@ function normalizeDatabaseUrl(url) {
 function isPoolerConnection(url) {
   if (!url) return false;
   try {
-    return new URL(url).hostname.includes("-pooler");
+    return (
+      parsed.hostname.includes("pooler.supabase.com") ||
+      parsed.port === "6543" ||
+      parsed.hostname.includes("-pooler")
+    );
   } catch {
     return false;
   }
@@ -71,15 +76,11 @@ async function main() {
 
   if (process.env.NODE_ENV === "production" && !isPoolerConnection(databaseUrl)) {
     throw new Error(
-      "DATABASE_URL must use the Neon pooler host (-pooler) in production.",
+      "DATABASE_URL must use the Supabase pooler (pooler.supabase.com:6543) in production.",
     );
   }
 
-  const pool = new pg.Pool({
-    connectionString: normalizeDatabaseUrl(databaseUrl),
-    max: 1,
-    connectionTimeoutMillis: 5_000,
-  });
+  const pool = new pg.Pool(getPgPoolConfig(normalizeDatabaseUrl(databaseUrl)));
 
   try {
     const applied = await pool.query(

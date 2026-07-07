@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ClientEmailDeliveryBanner } from "@/components/client-email-delivery-banner";
 import { IssueClientInviteForm } from "@/components/issue-client-invite-form";
 import {
   OrgClientAssignmentsTable,
@@ -9,17 +10,12 @@ import {
 import { OrgInviteClientLink } from "@/components/org-invite-client-link";
 import { DashboardPage, PortalSection } from "@/components/dashboard-page";
 import { PortalEmptyStateCta } from "@/components/portal-empty-state-cta";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { PortalFormSection } from "@/components/portal-form-section";
 import {
   listClientAssignmentsForAdmin,
   listClientInvitationsForAdmin,
 } from "@/lib/clients";
+import { isMailerSendConfigured } from "@/lib/email/mailersend-config";
 import { formatDate } from "@/lib/format";
 import { portalCopy } from "@/lib/portal-copy";
 import { listSurveysForAdmin } from "@/lib/surveys";
@@ -28,6 +24,8 @@ import { UserPlusIcon } from "lucide-react";
 export default async function DashboardClientsPage() {
   const { clientInvite, clientInvitationsPage, clientDashboard, nav } =
     portalCopy;
+
+  const emailDeliveryEnabled = isMailerSendConfigured();
 
   const [invitations, surveys, assignments] = await Promise.all([
     listClientInvitationsForAdmin(),
@@ -66,23 +64,33 @@ export default async function DashboardClientsPage() {
         { label: nav.clientInvitations },
       ]}
     >
+      <ClientEmailDeliveryBanner />
+
       <div className="grid gap-8 lg:grid-cols-[minmax(280px,360px)_1fr]">
-        <Card id="invite-client" className="scroll-mt-20">
-          <CardHeader>
-            <CardTitle>{clientInvite.issueTitle}</CardTitle>
-            <CardDescription>{clientInvite.issueDescription}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <IssueClientInviteForm
-              surveys={surveys.map((survey) => ({
-                id: survey.id,
-                title: survey.title,
-              }))}
-            />
-          </CardContent>
-        </Card>
+        <PortalFormSection
+          id="invite-client"
+          className="scroll-mt-20"
+          title={clientInvite.issueTitle}
+          description={
+            emailDeliveryEnabled
+              ? clientInvite.issueDescriptionWithEmail
+              : clientInvite.issueDescriptionWithoutEmail
+          }
+        >
+          <IssueClientInviteForm
+            emailDeliveryEnabled={emailDeliveryEnabled}
+            surveys={surveys.map((survey) => ({
+              id: survey.id,
+              title: survey.title,
+            }))}
+          />
+        </PortalFormSection>
 
         <div className="space-y-8">
+          <p className="text-sm text-muted-foreground">
+            {clientInvitationsPage.managementNote}
+          </p>
+
           <PortalSection
             title={clientInvitationsPage.recentTitle}
             description={clientInvitationsPage.recentDescription}
@@ -133,6 +141,8 @@ export default async function DashboardClientsPage() {
                   tableClient: clientInvitationsPage.tableClient,
                   tableStatus: clientInvitationsPage.tableStatus,
                   tableDue: clientInvitationsPage.tableDue,
+                  tableActions: clientInvitationsPage.tableActions,
+                  removeAssignment: clientInvitationsPage.removeAssignment,
                   pending: clientDashboard.pending,
                   submitted: clientDashboard.submitted,
                 }}

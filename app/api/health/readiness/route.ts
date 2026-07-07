@@ -12,7 +12,8 @@ export async function GET() {
   const requirePooler = process.env.NODE_ENV === "production";
   const ready =
     Boolean(env.DATABASE_URL) &&
-    Boolean(env.NEON_AUTH_BASE_URL) &&
+    Boolean(env.NEXT_PUBLIC_SUPABASE_URL) &&
+    Boolean(env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY) &&
     dbStatus === "Database connected" &&
     (!requirePooler || connection.pooler);
 
@@ -20,10 +21,10 @@ export async function GET() {
     {
       data: {
         status: ready ? "ready" : "degraded",
-        topology: "Next.js App Router with Neon Auth and Postgres",
+        topology: "Next.js App Router with Supabase Auth and Postgres",
         storage: dbStatus,
         connection,
-        auth: env.NEON_AUTH_BASE_URL ? "configured" : "missing",
+        auth: env.NEXT_PUBLIC_SUPABASE_URL ? "configured" : "missing",
         timestamp: new Date().toISOString(),
       },
     },

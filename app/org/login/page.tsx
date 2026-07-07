@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { OrgLoginPage } from "@/components/org-login-page";
 import { isAdminSession } from "@/lib/admin";
 import { auth } from "@/lib/auth/server";
 import { isPlaygroundEmbedRequest } from "@/lib/playground";
@@ -24,9 +23,14 @@ export default async function OrgLoginRoute({
     redirect("/dashboard");
   }
 
-  return (
-    <main>
-      <OrgLoginPage accessDenied={reason === "access-denied"} />
-    </main>
-  );
+  if (session?.user && !embed) {
+    redirect("/client");
+  }
+
+  const query = new URLSearchParams();
+  if (reason === "access-denied") {
+    query.set("reason", "access-denied");
+  }
+  query.set("from", "org");
+  redirect(`/auth/sign-in?${query.toString()}`);
 }

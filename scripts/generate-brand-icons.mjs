@@ -5,6 +5,7 @@ import sharp from "sharp";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const SOURCE = join(ROOT, "public", "brandicondisk.png");
+const DISPLAY = join(ROOT, "public", "brandicondisk.png");
 const PUBLIC_ICONS = join(ROOT, "public", "icons");
 const APP_DIR = join(ROOT, "app");
 
@@ -22,7 +23,7 @@ const VARIANTS = [
 
 async function writePng(buffer, outputPath, size) {
   const png = await sharp(buffer)
-    .resize(size, size, { fit: "cover", position: "centre" })
+    .resize(size, size, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 1 } })
     .png({ compressionLevel: 9, palette: true, quality: 90 })
     .toBuffer();
 
@@ -34,12 +35,7 @@ async function main() {
   const sourceBuffer = await readFile(SOURCE);
   await mkdir(PUBLIC_ICONS, { recursive: true });
 
-  const compressed512Path = join(ROOT, "public", "brandicondisk.png");
-  const compressed512Bytes = await writePng(
-    sourceBuffer,
-    compressed512Path,
-    512,
-  );
+  const compressed512Bytes = await writePng(sourceBuffer, DISPLAY, 512);
 
   console.log(
     `Compressed brandicondisk.png → 512×512 (${(compressed512Bytes / 1024).toFixed(1)} KB)`,

@@ -23,12 +23,13 @@ function optionalUuid() {
 
 const serverEnvSchema = z.object({
   DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
-  NEON_AUTH_BASE_URL: z
+  NEXT_PUBLIC_SUPABASE_URL: z
     .string()
-    .url("NEON_AUTH_BASE_URL must be a valid URL"),
-  NEON_AUTH_COOKIE_SECRET: z
+    .url("NEXT_PUBLIC_SUPABASE_URL must be a valid URL"),
+  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: z
     .string()
-    .min(32, "NEON_AUTH_COOKIE_SECRET must be at least 32 characters"),
+    .min(1, "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY is required"),
+  SUPABASE_SERVICE_ROLE_KEY: optionalString(),
   APP_URL: z.preprocess(
     (value) => (value === "" || value === undefined ? undefined : value),
     z.string().url().optional(),
@@ -44,6 +45,16 @@ const serverEnvSchema = z.object({
   PLAYGROUND_SURVEY_ID: optionalUuid(),
   PLAYGROUND_ASSIGNMENT_ID: optionalUuid(),
   PLAYGROUND_SURVEY_SLUG: optionalString(),
+  CLIENT_DEFAULT_PASSWORD: z
+    .string()
+    .min(8, "CLIENT_DEFAULT_PASSWORD must be at least 8 characters"),
+  MAILERSEND_API_KEY: optionalString(),
+  MAILERSEND_FROM_EMAIL: optionalEmail(),
+  MAILERSEND_FROM_NAME: optionalString(),
+  NEON_AUTH_BASE_URL: z.string().url("NEON_AUTH_BASE_URL must be a valid URL"),
+  NEON_AUTH_COOKIE_SECRET: z
+    .string()
+    .min(32, "NEON_AUTH_COOKIE_SECRET must be at least 32 characters"),
 });
 
 export type ServerEnv = z.infer<typeof serverEnvSchema>;

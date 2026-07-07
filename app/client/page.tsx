@@ -13,6 +13,7 @@ import {
   listClientAssignments,
 } from "@/lib/clients";
 import { PORTAL_NAME, portalCopy } from "@/lib/portal-copy";
+import { debugAgentLog } from "@/lib/debug-agent-log";
 
 export const metadata: Metadata = {
   title: `${PORTAL_NAME} — ${portalCopy.metadata.client.title}`,
@@ -22,10 +23,38 @@ export const metadata: Metadata = {
 export default async function ClientDashboardPage() {
   const { clientDashboard } = portalCopy;
   const session = await requireClientSession({ requireOnboarding: true });
-  const [assignments, profile] = await Promise.all([
-    listClientAssignments(session.user.email),
-    getClientProfile(session.user.id),
-  ]);
+
+  let assignments;
+  let profile;
+  try {
+    [assignments, profile] = await Promise.all([
+      listClientAssignments(session.user.email),
+      getClientProfile(session.user.id),
+    ]);
+  } catch (error) {
+    debugAgentLog({
+      location: "app/client/page.tsx",
+      message: "dashboard data fetch failed",
+      hypothesisId: "A",
+      data: {
+        userId: session.user.id,
+        error: error instanceof Error ? error.message : "unknown",
+      },
+    });
+    throw error;
+  }
+
+  debugAgentLog({
+    location: "app/client/page.tsx",
+    message: "dashboard data loaded",
+    hypothesisId: "A",
+    data: {
+      userId: session.user.id,
+      assignmentCount: assignments.length,
+      profileExists: Boolean(profile),
+      onboardingComplete: Boolean(profile?.onboardingComplete),
+    },
+  });
 
   const metrics = computeClientDashboardMetrics(assignments);
   const acknowledged = isClientPortalAcknowledged(profile);

@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "engines": {
-    "node": "20.x"
+    "node": "24.x"
   },
   "scripts": {
     "dev": "next dev",
@@ -14,6 +14,8 @@
     "seed:admin": "node scripts/seed-admin.mjs",
     "seed:preview-client": "node scripts/seed-preview-client.mjs",
     "db:migrate": "node scripts/db-migrate.mjs",
+    "db:reset": "node --env-file=.env scripts/db-reset.mjs",
+    "db:reset:preview": "node --env-file=.env scripts/db-reset.mjs --keep-preview-client",
     "db:backfill": "node scripts/db-backfill-migrations.mjs",
     "check:copy": "node scripts/check-portal-terminology.mjs",
     "check:nav": "node scripts/check-portal-nav.mjs",
@@ -23,16 +25,22 @@
     "verify:production": "node scripts/verify-production.mjs",
     "verify:vercel-db": "node scripts/validate-vercel-database-url.mjs",
     "icons:generate": "node scripts/generate-brand-icons.mjs",
-    "test": "playwright test"
+    "test": "playwright test",
+    "evaluate:ui-matrix": "node scripts/evaluate-ui-matrix.mjs",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",
-    "@neondatabase/auth": "^0.2.0-beta.1",
+    "@neondatabase/auth": "^0.4.2-beta",
+    "@supabase/ssr": "^0.12.0",
+    "@supabase/supabase-js": "^2.110.0",
     "@tanstack/react-table": "^8.21.3",
     "@vercel/functions": "^3.3.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^1.23.0",
+    "mailersend": "^3.0.0",
     "next": "^16.0.10",
     "pg": "^8.16.3",
     "react": "^19.2.3",
@@ -44,6 +52,8 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.61.1",
+    "@storybook/addon-links": "^10.4.6",
+    "@storybook/react-vite": "^10.4.6",
     "@tailwindcss/postcss": "^4",
     "@tailwindcss/typography": "^0.5.20",
     "@types/node": "^20",
@@ -52,7 +62,11 @@
     "@types/react-dom": "^19",
     "babel-plugin-react-compiler": "^1.0.0",
     "shadcn": "^4.13.0",
+    "storybook": "^10.4.6",
     "tailwindcss": "^4",
-    "typescript": "^5"
-  }
+    "tsx": "^4.23.0",
+    "typescript": "^5",
+    "vite": "^6.4.3"
+  },
+  "packageManager": "pnpm@10.33.4+sha512.1c67b3b359b2d408119ba1ed289f34b8fc3c6873412bec6fd264fbdc82489e510fcbecb9ce9d22dae7f3b76269d8441046014bdca53b9979cd7a561ad631b800"
 }

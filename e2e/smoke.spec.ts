@@ -7,10 +7,6 @@ import {
   operatorSkipMessage,
   requireOperatorCreds,
 } from "./helpers/operator";
-import {
-  expectDeclarationReceived,
-  submitDefaultDeclarationAnswers,
-} from "./helpers/declaration";
 
 const operatorCreds = getOperatorCreds();
 const publicSurveySlug = process.env.E2E_SURVEY_SLUG;
@@ -60,7 +56,7 @@ test.describe("Portal smoke", () => {
   });
 });
 
-test.describe("Operator and public flows", () => {
+test.describe("Operator and protected declaration routes", () => {
   test.describe.configure({ mode: "serial" });
 
   let createdSurveySlug: string | undefined;
@@ -76,36 +72,27 @@ test.describe("Operator and public flows", () => {
       `E2E declaration ${Date.now()}`,
     );
     await expect(page.getByRole("heading", { name: created.title })).toBeVisible();
-    createdSurveySlug = created.publicSlug;
+    createdSurveySlug = created.slug;
     expect(createdSurveySlug).toBeTruthy();
   });
 
-  test("public declaration page loads from created link", async ({ page }) => {
-    const slug = createdSurveySlug ?? publicSurveySlug;
-    test.skip(!slug, "Requires operator create flow or E2E_SURVEY_SLUG");
-
-    await page.goto(`/survey/${slug}`);
-    await expect(page.getByRole("button", { name: /submit/i })).toBeVisible();
-  });
-
-  test("public declaration accepts yes/no and text answers", async ({
+  test("legacy public survey route redirects to client sign in", async ({
     page,
   }) => {
     const slug = createdSurveySlug ?? publicSurveySlug;
     test.skip(!slug, "Requires operator create flow or E2E_SURVEY_SLUG");
 
     await page.goto(`/survey/${slug}`);
-    await submitDefaultDeclarationAnswers(
-      page,
-      "E2E public open-link submission",
-    );
-    await expectDeclarationReceived(page);
+    await expect(page).toHaveURL(/\/(\?.*)?$/);
+    await expect(
+      page.getByRole("link", { name: /organization sign in/i }),
+    ).toBeVisible();
   });
 });
 
 test.describe("Client invite path", () => {
-  test("invalid invite token shows error state", async ({ page }) => {
+  test("legacy invite token redirects to client sign in", async ({ page }) => {
     await page.goto("/invite/not-a-valid-token");
-    await expect(page.getByRole("heading")).toBeVisible();
+    await expect(page).toHaveURL(/\/(\?.*)?$/);
   });
 });

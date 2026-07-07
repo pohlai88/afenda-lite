@@ -1,8 +1,8 @@
 import { readFileSync } from "node:fs";
-import { randomUUID } from "node:crypto";
 import { resolve } from "node:path";
 import pg from "pg";
-import { hashPassword } from "../node_modules/@neondatabase/auth/node_modules/better-auth/dist/crypto/index.mjs";
+import { createClient } from "@supabase/supabase-js";
+import { getPgPoolConfig } from "./db-pool-config.mjs";
 
 function loadEnvFile() {
   const envPath = resolve(process.cwd(), ".env");
@@ -26,10 +26,11 @@ function loadEnvFile() {
 
 const env = loadEnvFile();
 
-const email =
-  process.env.PREVIEW_CLIENT_EMAIL ?? env.PREVIEW_CLIENT_EMAIL;
+const email = process.env.PREVIEW_CLIENT_EMAIL ?? env.PREVIEW_CLIENT_EMAIL;
 const password =
-  process.env.PREVIEW_CLIENT_PASSWORD ?? env.PREVIEW_CLIENT_PASSWORD;
+  process.env.CLIENT_DEFAULT_PASSWORD ??
+  process.env.PREVIEW_CLIENT_PASSWORD ??
+  env.PREVIEW_CLIENT_PASSWORD;
 const name =
   process.env.PREVIEW_CLIENT_NAME ??
   env.PREVIEW_CLIENT_NAME ??
@@ -37,84 +38,74 @@ const name =
 const adminEmail =
   process.env.SHARED_ADMIN_EMAIL ?? env.SHARED_ADMIN_EMAIL;
 const databaseUrl = process.env.DATABASE_URL ?? env.DATABASE_URL;
+const supabaseUrl =
+  process.env.NEXT_PUBLIC_SUPABASE_URL ?? env.NEXT_PUBLIC_SUPABASE_URL;
+const serviceRoleKey =
+  process.env.SUPABASE_SERVICE_ROLE_KEY ?? env.SUPABASE_SERVICE_ROLE_KEY;
 
-if (!email || !password || !databaseUrl) {
+if (!email || !password || !databaseUrl || !supabaseUrl || !serviceRoleKey) {
   console.error(
-    "Missing PREVIEW_CLIENT_EMAIL, PREVIEW_CLIENT_PASSWORD, or DATABASE_URL",
+    "Missing PREVIEW_CLIENT_EMAIL, PREVIEW_CLIENT_PASSWORD, DATABASE_URL, NEXT_PUBLIC_SUPABASE_URL, or SUPABASE_SERVICE_ROLE_KEY",
   );
   process.exit(1);
 }
 
-const pool = new pg.Pool({
-  connectionString: databaseUrl.replace(
-    /([?&]sslmode=)(prefer|require|verify-ca)(?=(&|$))/,
-    "$1verify-full",
-  ),
+const pool = new pg.Pool(getPgPoolConfig(databaseUrl));
+
+const supabase = createClient(supabaseUrl, serviceRoleKey, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false,
+  },
 });
 
-async function main() {
-  const existing = await pool.query(
-    `SELECT id FROM neon_auth."user" WHERE lower(email) = lower($1) LIMIT 1`,
-    [email],
+async function ensurePreviewUser() {
+  const { data: existingUsers, error: listError } =
+    await supabase.auth.admin.listUsers({
+      page: 1,
+      perPage: 1000,
+    });
+
+  if (listError) {
+    throw listError;
+  }
+
+  const existing = existingUsers.users.find(
+    (user) => user.email?.toLowerCase() === email.toLowerCase(),
   );
 
-  let userId = existing.rows[0]?.id;
+  if (existing) {
+    const { error } = await supabase.auth.admin.updateUserById(existing.id, {
+      password,
+      email_confirm: true,
+      user_metadata: { full_name: name, name },
+    });
 
-  if (!userId) {
-    userId = randomUUID();
-    const passwordHash = await hashPassword(password);
-
-    await pool.query("BEGIN");
-    try {
-      await pool.query(
-        `INSERT INTO neon_auth."user" (id, name, email, "emailVerified", image, "createdAt", "updatedAt", role)
-         VALUES ($1, $2, $3, true, NULL, NOW(), NOW(), NULL)`,
-        [userId, name, email],
-      );
-
-      await pool.query(
-        `INSERT INTO neon_auth.account (id, "accountId", "providerId", "userId", password, "createdAt", "updatedAt")
-         VALUES ($1, $2, 'credential', $3, $4, NOW(), NOW())`,
-        [randomUUID(), userId, userId, passwordHash],
-      );
-
-      await pool.query("COMMIT");
-      console.log(`Created preview client account for ${email}`);
-    } catch (error) {
-      await pool.query("ROLLBACK");
+    if (error) {
       throw error;
-    }
-  } else {
-    const passwordHash = await hashPassword(password);
-    await pool.query(
-      `UPDATE neon_auth."user"
-       SET role = NULL, "emailVerified" = true, name = $2
-       WHERE id = $1`,
-      [userId, name],
-    );
-
-    const account = await pool.query(
-      `SELECT id FROM neon_auth.account
-       WHERE "userId" = $1 AND "providerId" = 'credential'
-       LIMIT 1`,
-      [userId],
-    );
-
-    if (account.rows[0]) {
-      await pool.query(
-        `UPDATE neon_auth.account SET password = $2, "updatedAt" = NOW() WHERE id = $1`,
-        [account.rows[0].id, passwordHash],
-      );
-    } else {
-      await pool.query(
-        `INSERT INTO neon_auth.account (id, "accountId", "providerId", "userId", password, "createdAt", "updatedAt")
-         VALUES ($1, $2, 'credential', $3, $4, NOW(), NOW())`,
-        [randomUUID(), userId, userId, passwordHash],
-      );
     }
 
     console.log(`Updated preview client account for ${email}`);
+    return existing.id;
   }
+
+  const { data, error } = await supabase.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: true,
+    user_metadata: { full_name: name, name },
+  });
+
+  if (error) {
+    throw error;
+  }
+
+  console.log(`Created preview client account for ${email}`);
+  return data.user.id;
+}
+
+async function main() {
+  const userId = await ensurePreviewUser();
 
   await pool.query(
     `INSERT INTO client_profiles (
@@ -158,7 +149,7 @@ async function main() {
 
   const admin = adminEmail
     ? await pool.query(
-        `SELECT id FROM neon_auth."user" WHERE lower(email) = lower($1) LIMIT 1`,
+        `SELECT id FROM auth.users WHERE lower(email) = lower($1) LIMIT 1`,
         [adminEmail],
       )
     : { rows: [] };

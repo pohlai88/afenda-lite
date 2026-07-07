@@ -35,19 +35,12 @@ export async function createDeclaration(page: Page, title: string) {
   await page.getByRole("button", { name: /create declaration/i }).click();
   await expect(page).toHaveURL(/\/dashboard\/.+/);
 
-  await openSurveyTab(page, "share");
-
-  const publicLink = page
-    .locator(".portal-code-block")
-    .filter({ hasText: /\/survey\// });
-  await expect(publicLink).toBeVisible();
-  const href = await publicLink.textContent();
-  const match = href?.match(/\/survey\/([^/\s]+)/);
+  const match = page.url().match(/\/dashboard\/([^/?#]+)/);
 
   return {
     title,
     detailUrl: page.url(),
-    publicSlug: match?.[1],
+    slug: match?.[1],
   };
 }
 

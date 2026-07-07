@@ -4,7 +4,6 @@
  * Audiences:
  * - Clients: sign in at `/`, complete assigned declarations at `/client/*`
  * - Organization users: sign in at `/org/login`, manage at `/dashboard/*`
- * - Link recipients: open/secure declaration links without an account
  */
 
 export const PORTAL_NAME = "Client Declaration Portal";
@@ -25,6 +24,7 @@ export const portalCopy = {
     declarationNotFound: "Declaration not found.",
     emailPasswordRequired: "Email and password are required.",
     titleRequired: "Title is required.",
+    signInRequired: "Sign in to complete this declaration.",
   },
 
   signIn: {
@@ -47,10 +47,11 @@ export const portalCopy = {
     ] as const,
     footer: "Protected client access",
     inviteHint:
-      "Invited to the portal? Open the invitation link sent to your email.",
+      "Registered by your organization? Sign in with your email and the temporary password they shared.",
     orgLink: "Organization sign in",
-    needAccount: "Need an account?",
-    createAccount: "Create account",
+    checkEmailHint:
+      "Open the invitation link in your email to set a password, then sign in here.",
+    loginRequiredHint: "Sign in to access declarations assigned to your account.",
     invalidCredentials: "Email or password is incorrect.",
   },
 
@@ -60,7 +61,7 @@ export const portalCopy = {
       "Sign in to manage declarations, share access links, and review submissions.",
     heroTitle: "Manage declarations for your organization",
     heroDescription:
-      "Create declaration forms, invite clients, distribute secure links, and review submissions.",
+      "Create declaration forms, invite clients, and review signed-in submissions.",
     steps: [
       { label: "Sign in", detail: "Use your organization credentials." },
       { label: "Configure", detail: "Create declarations and assign clients." },
@@ -90,7 +91,7 @@ export const portalCopy = {
 
   nav: {
     declarations: "Declarations",
-    clientInvitations: "Client invitations",
+    clientInvitations: "Clients",
     previewClientPortal: "Preview client portal",
     playground: "Playground",
     assignments: "Your assignments",
@@ -207,7 +208,7 @@ export const portalCopy = {
       settings: "Settings",
       viewSubmissions: "View submissions",
       shareAccess: "Share access",
-      inviteClients: "Invite clients",
+      inviteClients: "Register clients",
       tableTitle: "Declaration",
       tableCase: "Case",
       tableCaseEmpty: "—",
@@ -329,14 +330,14 @@ export const portalCopy = {
       },
     },
     share: {
-      title: "Share access",
-      description: "Copy an open link or a secure link for recipients.",
+      title: "Client access",
+      description: "Invite clients to sign in and complete assigned declarations.",
     },
     tabs: {
       manage: "Settings",
       manageHint: "Case details, questions, and package",
       share: "Share",
-      shareHint: "Open and secure access links",
+      shareHint: "Client sign-in and invitations",
       submissions: "Submissions",
       submissionsHint: "Completed declarations",
       danger: "Delete",
@@ -351,8 +352,8 @@ export const portalCopy = {
     },
     submissions: {
       title: "Submissions",
-      description: "Declarations completed through your shared links.",
-      empty: "No submissions yet. Share a link to start collecting declarations.",
+      description: "Declarations completed by signed-in clients.",
+      empty: "No submissions yet. Invite a client and assign this declaration.",
       answersTitle: "Answers",
       tableCode: "Confirmation",
       tableSubmitted: "Submitted",
@@ -476,29 +477,43 @@ export const portalCopy = {
   },
 
   share: {
-    title: "Share access",
-    description: "Secure links hide declaration details in the URL.",
-    publicLabel: "Open link",
-    privateLabel: "Secure link",
-    copyLink: "Copy secure link",
-    copyEmail: "Copy for email",
-    copyWhatsApp: "Copy for WhatsApp",
-    newLink: "Rotate secure link",
-    newLinkPolicy:
-      "Rotating a secure link invalidates previous secure links for this declaration.",
-    qrAlt: "QR code for secure declaration link",
-    qrHint: "Scan to open the declaration. Sign-in is not required.",
-    copiedLink: "Secure link copied.",
-    copiedEmail: "Email message copied. Paste into your mail app.",
-    copiedWhatsApp: "WhatsApp message copied. Paste into your chat.",
-    newLinkGenerated: "New secure link issued. Previous secure links no longer work.",
-    copyPublicLink: "Copy open link",
-    copiedPublicLink: "Open link copied.",
-    loadingLink: "Preparing secure link…",
-    regenerateConfirmTitle: "Rotate Secure Link?",
-    regenerateConfirmDescription:
-      "Previous secure links will stop working immediately. Copy and share the new link with recipients who still need access.",
-    regenerateCancel: "Keep Current Link",
+    title: "Client access",
+    description: "Share the sign-in page and temporary password with invited clients.",
+    clientAccessDescription:
+      "Register clients under Client invitations. When MailerSend is configured, access details are emailed automatically; otherwise copy the message below.",
+    clientLoginLabel: "Client sign-in URL",
+    inviteClientCta: "Register client",
+    qrAlt: "QR code for client sign-in",
+    qrHint: "Scan to open the client sign-in page. Use the registered email and temporary password.",
+  },
+
+  clientAccess: {
+    copyLabel: "Client access message",
+    copyButton: "Copy access message",
+    copied: "Access message copied.",
+    generalLabel: "General access message (share with any registered client)",
+    personalLabel: "Access message for this client",
+    generalPlaceholderEmail: "your-registered-email@example.com",
+    message: ({
+      portalUrl,
+      clientEmail,
+      temporaryPassword,
+    }: {
+      portalUrl: string;
+      clientEmail: string;
+      temporaryPassword: string;
+    }) =>
+      [
+        "Client Declaration Portal",
+        "",
+        `Sign in: ${portalUrl}`,
+        `Email: ${clientEmail}`,
+        `Temporary password: ${temporaryPassword}`,
+        "",
+        "First visit: complete onboarding, then open your assigned declaration.",
+        "Change your password after your first sign-in.",
+      ].join("\n"),
+    emailSubject: "Your client portal access",
   },
 
   invite: {
@@ -507,7 +522,11 @@ export const portalCopy = {
     emailLabel: "Recipient email",
     emailPlaceholder: "client@company.com",
     recordAndCopy: "Record & copy for email",
+    recordAndSend: "Record & send email",
     recorded: "Invitation recorded and email message copied.",
+    recordedAndSent: "Invitation recorded and email sent.",
+    recordedSendFailed:
+      "Invitation recorded, but the email could not be sent. Copy the message below.",
     recordError: "Enter a valid email address.",
     emailBody: (url: string) =>
       [
@@ -531,22 +550,24 @@ export const portalCopy = {
 
   clientInvitationsPage: {
     eyebrow: ORG_EYEBROW,
-    title: "Client invitations",
-    description: "Issue secure client accounts and assign declarations.",
-    recentTitle: "Recent invitations",
-    recentDescription: "Pending and accepted client invites.",
-    assignmentsTitle: "Client assignments",
-    assignmentsDescription: "Declarations assigned to invited clients.",
+    title: "Client registrations",
+    description:
+      "Register clients with a temporary password and required declaration assignment. Access email sends automatically when MailerSend is configured.",
+    recentTitle: "Registered clients",
+    recentDescription:
+      "Portal accounts created by your team. Access email is sent on registration when MailerSend is active.",
+    assignmentsTitle: "Assignments",
+    assignmentsDescription: "Declarations linked to client emails.",
     assignmentsEmpty: "No assignments yet.",
     assignmentsEmptyTitle: "No assignments yet",
     assignmentsEmptyDescription:
-      "Issue an invitation and optionally assign a declaration to track client progress here.",
-    empty: "No client invitations yet.",
-    emptyTitle: "No client invitations yet",
+      "Register a client and select a declaration to create an assignment.",
+    empty: "No client registrations yet.",
+    emptyTitle: "No client registrations yet",
     emptyDescription:
-      "Invite a client to create a secure account and optionally assign a declaration.",
-    emptyAction: "Invite client",
-    openInvite: "Open invite link",
+      "Register a client to create their account and first assignment.",
+    emptyAction: "Register client",
+    openInvite: "Resend invite",
     tableName: "Name",
     tableEmail: "Email",
     tableStatus: "Status",
@@ -554,41 +575,76 @@ export const portalCopy = {
     tableDeclaration: "Declaration",
     tableClient: "Client",
     tableDue: "Due date",
+    removeRegistration: "Remove",
+    removeRegistrationTitle: "Remove client registration?",
+    removeRegistrationConfirm:
+      "Deletes this registration, assignments for this email, the client profile, and the Supabase login. This cannot be undone.",
+    removeRegistrationSubmit: "Remove client",
+    removeRegistrationCancel: "Cancel",
+    removeSuccess: "Client registration removed.",
+    removeError: "Could not remove this registration.",
+    removeMissing: "Registration not found.",
+    removeAssignment: "Remove",
+    removeAssignmentTitle: "Remove assignment?",
+    removeAssignmentConfirm:
+      "Removes this declaration assignment. The client account stays active.",
+    removeAssignmentSubmit: "Remove assignment",
+    removeAssignmentCancel: "Cancel",
+    assignmentRemoveError: "Could not remove this assignment.",
+    managementNote:
+      "Full admin user management (roles, bulk actions) will be added after deploy.",
     status: {
       pending: "Pending",
-      accepted: "Accepted",
+      accepted: "Active",
       expired: "Expired",
     },
   },
 
   clientInvite: {
-    eyebrow: "Invitation",
-    title: "Accept invitation",
-    description: "Set a password to activate your client account.",
-    passwordLabel: "Password",
-    confirmPasswordLabel: "Confirm password",
-    submit: "Activate account",
-    submitting: "Activating…",
-    missingToken: "Missing invitation token.",
-    invalidToken: "This invitation link is invalid or does not exist.",
-    expired: "This invitation has expired. Contact your administrator.",
-    alreadyAccepted: "This invitation has already been used. Sign in instead.",
-    weakPassword: "Password must be at least 8 characters.",
-    passwordMismatch: "Passwords do not match.",
-    acceptFailed: "Could not activate your account. Try again or contact support.",
-    issueTitle: "Invite client",
+    eyebrow: "Registration",
+    title: "Check your email",
+    description: "Use the access message from your organization to sign in.",
+    issueTitle: "Register client",
     issueDescription:
-      "Send a secure invitation link and optionally assign a declaration.",
+      "Create a Supabase account with the shared temporary password and assign at least one declaration.",
+    issueDescriptionWithEmail:
+      "Creates the client account, assigns the declaration, and emails portal access from your MailerSend sender.",
+    issueDescriptionWithoutEmail:
+      "Creates the client account and assignment. Copy the access message manually until MailerSend is configured.",
     fullNameLabel: "Full name",
     fullNamePlaceholder: "Alex Morgan",
-    issueSubmit: "Issue invitation",
-    issueError: "Enter a valid email and full name.",
-    assignLabel: "Assign declaration (optional)",
-    assignPlaceholder: "No assignment yet",
+    issueSubmit: "Register client",
+    issueSubmitWithEmail: "Register & send access email",
+    issueSubmitting: "Registering client…",
+    issueError: "Enter a valid email, full name, and declaration.",
+    unexpectedError:
+      "Registration could not be completed. Check your connection and try again.",
+    assignLabel: "Assign declaration",
+    assignPlaceholder: "Select a declaration",
+    assignRequired: "Select a declaration to assign.",
+    noDeclarations: "Create a declaration before registering clients.",
     dueDateLabel: "Due date (optional)",
-    issued: "Invitation created. Copy the link below.",
-    copyInvite: "Copy invitation link",
-    copiedInvite: "Invitation link copied.",
+    issued: "Client registered. Copy the access message below.",
+    issuedAndEmailed: "Client registered and access email sent.",
+    issuedEmailFailed:
+      "Client registered, but the email could not be sent. Copy the access message below.",
+    backupAccessLabel: "Backup access message (if email did not arrive)",
+    provisionFailed: "Could not create the client account. Check Supabase configuration.",
+  },
+
+  emailDelivery: {
+    enabledTitle: "Access email is active",
+    enabledDescription: ({
+      fromName,
+      fromEmail,
+    }: {
+      fromName: string;
+      fromEmail: string;
+    }) =>
+      `New registrations email portal access automatically from ${fromName} <${fromEmail}>. You can still copy the message below as a backup.`,
+    disabledTitle: "Access email is not configured",
+    disabledDescription:
+      "Set MAILERSEND_API_KEY and MAILERSEND_FROM_EMAIL in Vercel to send access emails automatically. Until then, copy the access message after each registration.",
   },
 
   clientOnboarding: {

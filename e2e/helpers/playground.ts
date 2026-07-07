@@ -82,12 +82,6 @@ const screenDefs = [
     path: "/client/declare/{PLAYGROUND_ASSIGNMENT_ID}",
     iframeMarker: /submit|declaration|assignment/i,
   },
-  {
-    id: "client-public-survey",
-    label: "Public survey",
-    path: "/survey/{PLAYGROUND_SURVEY_SLUG}",
-    iframeMarker: /submit/i,
-  },
 ] as const;
 
 export const playgroundScreenFixtures: PlaygroundScreenFixture[] = screenDefs.map(

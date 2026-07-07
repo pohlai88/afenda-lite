@@ -1,22 +1,22 @@
 import Link from "next/link";
 import { auth } from "@/lib/auth/server";
 import { isAdminSession } from "@/lib/admin";
-import { PortalCustomerShell } from "@/components/portal-customer-shell";
-import { Button } from "@/components/ui/button";
+import { PortalNotFoundPage } from "@/components/portal-not-found-page";
 import { portalCopy } from "@/lib/portal-copy";
 
 export default async function NotFound() {
-  const { notFound, product } = portalCopy;
+  const { notFound } = portalCopy;
   const { data: session } = await auth.getSession();
-  const isClient =
-    session?.user?.id && !isAdminSession(session);
+  const isClient = Boolean(
+    session?.user?.id && !isAdminSession(session),
+  );
   const isOperator = isAdminSession(session);
 
   const backHref = isOperator
     ? "/dashboard"
     : isClient
       ? "/client"
-      : "/";
+      : "/auth/sign-in";
   const backLabel = isOperator
     ? notFound.backLabelOrg
     : isClient
@@ -24,21 +24,11 @@ export default async function NotFound() {
       : notFound.backLabel;
 
   return (
-    <PortalCustomerShell
-      eyebrow={product.portalEyebrow}
+    <PortalNotFoundPage
       title={notFound.title}
       description={notFound.description}
-      homeHref={isClient ? "/client" : undefined}
-      showSignOut={isClient}
-      contentWidth="narrow"
-    >
-      <Button
-        className="w-full touch-manipulation"
-        render={<Link href={backHref} />}
-        nativeButton={false}
-      >
-        {backLabel}
-      </Button>
-    </PortalCustomerShell>
+      backHref={backHref}
+      backLabel={backLabel}
+    />
   );
 }

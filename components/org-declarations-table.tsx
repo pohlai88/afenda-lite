@@ -44,6 +44,7 @@ import {
   ChevronRightIcon,
   EllipsisVerticalIcon,
 } from "lucide-react";
+import { DeclarationRowDeleteAction } from "@/components/declaration-row-delete-action";
 
 /** datatable-component-01 pattern — compact declaration rows with action menu. */
 export type OrgDeclarationRow = {
@@ -146,6 +147,7 @@ export function OrgDeclarationsTable({ rows }: OrgDeclarationsTableProps) {
                   >
                     {copy.shareAccess}
                   </DropdownMenuItem>
+                  <DeclarationRowDeleteAction surveyId={row.original.id} />
                 </DropdownMenuGroup>
               </DropdownMenuContent>
             </DropdownMenu>

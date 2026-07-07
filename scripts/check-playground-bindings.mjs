@@ -64,12 +64,6 @@ const playgroundScreenDefs = [
     label: "Declaration form",
     path: "/client/declare/{PLAYGROUND_ASSIGNMENT_ID}",
   },
-  {
-    id: "client-public-survey",
-    category: "client",
-    label: "Public survey",
-    path: "/survey/{PLAYGROUND_SURVEY_SLUG}",
-  },
 ];
 
 const playgroundScreens = playgroundScreenDefs.map((screen) => ({
@@ -104,7 +98,6 @@ const routeFiles = {
   "/client/onboarding": "app/client/onboarding/page.tsx",
   "/client/declare/{id}": "app/client/declare/[id]/page.tsx",
   "/client/preview-unavailable": "app/client/preview-unavailable/page.tsx",
-  "/survey/{slug}": "app/survey/[slug]/page.tsx",
 };
 
 function resolveRouteFile(path) {
@@ -113,7 +106,6 @@ function resolveRouteFile(path) {
   if (routeFiles[pathname]) return routeFiles[pathname];
   if (/^\/dashboard\/[^/]+$/.test(pathname)) return routeFiles["/dashboard/{id}"];
   if (/^\/client\/declare\/[^/]+$/.test(pathname)) return routeFiles["/client/declare/{id}"];
-  if (/^\/survey\/[^/]+$/.test(pathname)) return routeFiles["/survey/{slug}"];
   return null;
 }
 
