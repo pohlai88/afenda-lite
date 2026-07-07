@@ -11,6 +11,14 @@ export function getOperatorCreds(): OperatorCreds | null {
   return { email, password };
 }
 
+export function requireOperatorCreds(): OperatorCreds {
+  const creds = getOperatorCreds();
+  if (!creds) {
+    throw new Error(operatorSkipMessage);
+  }
+  return creds;
+}
+
 export const operatorSkipMessage =
   "Set SHARED_ADMIN_* or E2E_OPERATOR_* env vars for operator E2E";
 

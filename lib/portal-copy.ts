@@ -8,6 +8,7 @@
  */
 
 export const PORTAL_NAME = "Client Declaration Portal";
+export const CLIENT_PORTAL_ACK_VERSION = "2026-01";
 const CLIENT_PORTAL_EYEBROW = "Client portal";
 const ORG_EYEBROW = "Organization";
 
@@ -30,7 +31,7 @@ export const portalCopy = {
     title: "Sign in",
     description: "Confirm who you are to access your assigned declarations.",
     emailLabel: "Email",
-    emailPlaceholder: "you@company.com",
+    emailPlaceholder: "name@organization.com…",
     passwordLabel: "Password",
     submit: "Sign in",
     submitting: "Signing in…",
@@ -97,6 +98,11 @@ export const portalCopy = {
     organization: "Organization",
   },
 
+  clientNav: {
+    sectionLabel: "Portal",
+    declarantProfile: "Declarant profile",
+  },
+
   previewClient: {
     openPortal: "Preview client portal",
     opening: "Opening preview…",
@@ -144,6 +150,11 @@ export const portalCopy = {
       complianceNote:
         "Protected access · Encrypted transport · Organization-managed declarations",
     },
+    vaultSignals: [
+      "Encrypted transport",
+      "Verified access",
+      "Audit recorded",
+    ] as const,
     notices: {
       clientLogin:
         "Sign in with credentials issued by your organization. Do not share your password.",
@@ -175,25 +186,32 @@ export const portalCopy = {
     },
     create: {
       title: "New declaration",
-      description: "Add a title, optional intro, and dynamic questions.",
-      titleLabel: "Title",
-      titlePlaceholder: "Q2 service declaration",
-      titleRequired: "Title is required.",
-      introLabel: "Intro (optional)",
-      introPlaceholder: "Brief context shown above the questions.",
-      submit: "Create declaration",
+      description:
+        "The server assigns a tracking ID immediately. Open settings to upload your AI-generated JSON — title, case number, questions, and assignments all come from the file.",
+      hint: "No title or case number needed here. Upload JSON in settings after creating.",
+      openSettings: "Create & open settings",
       submitting: "Creating…",
     },
     list: {
       title: "Declarations",
-      description: "Open a declaration to share links and review submissions.",
+      description:
+        "Open a declaration for settings, JSON import, sharing, and submissions.",
+      draftTitle: (id: string) => `Draft · ${id}`,
       empty: "No declarations yet. Create one to get a shareable link.",
+      emptyTitle: "No declarations yet",
+      emptyDescription: "Create your first declaration to generate a shareable link.",
+      emptyAction: "Create declaration",
       submissions: (count: number) =>
         count === 1 ? "1 submission" : `${count} submissions`,
+      openSettings: "Settings & import",
+      settings: "Settings",
       viewSubmissions: "View submissions",
       shareAccess: "Share access",
       inviteClients: "Invite clients",
       tableTitle: "Declaration",
+      tableCase: "Case",
+      tableCaseEmpty: "—",
+      tableDraftHint: "Upload JSON in settings to fill details.",
       tableSubmissions: "Submissions",
       tableActions: "Actions",
     },
@@ -202,15 +220,127 @@ export const portalCopy = {
   declarationDetail: {
     eyebrow: "Declaration",
     backLabel: "Declaration management",
+    metadata: {
+      title: "Case details",
+      description:
+        "System declaration ID, reference identifiers, parties, purpose, and deadlines.",
+      declarationId: "Declaration ID",
+      declarationIdHint:
+        "System-assigned UUID for this declaration. Use reference or case number for your own identifiers.",
+      referenceNumber: "Reference number",
+      caseNumber: "Case number",
+      effectiveDate: "Effective date",
+      submitBefore: "Submit before",
+      surveyorTitle: "Surveyor (principal)",
+      surveyorName: "Surveyor name",
+      surveyorOrg: "Surveyor organization",
+      surveyeeTitle: "Surveyee (declarant)",
+      surveyeeIndividual: "Individual name",
+      surveyeeOrg: "Organization name",
+      purpose: "Purpose",
+      purposePlaceholder: "Why this declaration is required…",
+      categories: "Categories",
+      categoriesHint: "Comma-separated labels (e.g. KYC, compliance, annual)",
+      categoriesPlaceholder: "KYC, compliance",
+      emptyValue: "Not set",
+    },
+    package: {
+      title: "Import / export package",
+      description:
+        "Download or upload a CDP declaration package (.json). The format mirrors client assignment fields to reduce drift between operator setup and client delivery.",
+      download: "Download package",
+      downloadTemplate: "Download starter template",
+      downloadTemplateHint:
+        "Full CDP scaffold with all recommended audit metadata, example questions, and assignment block. Replace example values before ingest.",
+      aiPromptTitle: "Use with an AI assistant",
+      aiPromptDescription:
+        "Copy the prompt below into ChatGPT, Claude, Gemini, or similar. It includes the CDP v1 schema rules and starter template so the model returns upload-ready JSON.",
+      aiPromptSteps: [
+        "Download the starter template (optional — the prompt already embeds it).",
+        "Click Copy AI prompt and paste it into your AI chat.",
+        "Add your case details in the “My case details” section, or answer the model’s follow-up questions.",
+        "Copy the JSON the AI returns, save as a .json file, and upload it here.",
+      ],
+      aiPromptPreviewLabel: "Prompt preview",
+      aiPromptCopyButton: "Copy AI prompt",
+      aiPromptCopiedButton: "Copied",
+      aiPromptCopied: "AI prompt copied to clipboard.",
+      aiPromptCopyFailed: "Could not copy. Select the preview text manually.",
+      downloading: "Preparing…",
+      upload: "Select package",
+      uploading: "Reading file…",
+      uploadHint:
+        "Select a .json file. You will review validation results before ingest starts.",
+      createAssignment: "Create client assignment from package",
+      createAssignmentHint:
+        "When the package includes assignment.clientEmail, also create a pending client assignment.",
+      imported: "Package imported successfully.",
+      invalidJson: "Could not parse the file. Ensure it is valid JSON.",
+      invalidSchema:
+        "The file is not a valid CDP declaration package (version 1.0).",
+      ingestBlocked:
+        "Ingest blocked. Fix required Definition of Done items before continuing.",
+      reviewTitle: "Review package before ingest",
+      reviewDescription:
+        "Upload does not apply changes automatically. Confirm the checklist below, then start ingest.",
+      startIngest: "Start ingest",
+      startingIngest: "Starting…",
+      cancelReview: "Cancel",
+      closeComplete: "Done",
+      ingestingTitle: "Ingest in progress",
+      ingestingDescription:
+        "Applying package changes. Please keep this window open until complete.",
+      completeTitle: "Ingest complete",
+      completeDescription:
+        "Declaration settings were updated from the package. Review the form below.",
+      confidenceLabel: "Match confidence",
+      confidenceHigh: "High",
+      confidenceMedium: "Medium",
+      confidenceLow: "Low",
+      confidenceHint:
+        "Heuristic score based on schema validity and recommended metadata completeness.",
+      dodTitle: "Definition of Done",
+      dodRequired: "Required",
+      dodRecommended: "Recommended",
+      blockingTitle: "Blocking issues",
+      warningsTitle: "Warnings",
+      noWarnings: "No warnings.",
+      summaryTitle: "Package summary",
+      summaryFile: "File",
+      summaryTitleField: "Declaration title",
+      summaryQuestionsLabel: "Questions",
+      summaryQuestions: (count: number) =>
+        `${count} question${count === 1 ? "" : "s"}`,
+      summaryAssignmentLabel: "Assignment",
+      summaryAssignment: "Client assignment included",
+      summaryNoAssignment: "No client assignment in package",
+      assignmentCreated: "Client assignment created.",
+      assignmentSkipped: "Assignment not created (disabled or missing email).",
+      stepValidate: "Validate package",
+      stepMetadata: "Apply case metadata",
+      stepDeclaration: "Apply declaration & questions",
+      stepAssignment: "Create client assignment",
+      stepFinalize: "Finalize & audit",
+      dodStatus: {
+        pass: "Met",
+        fail: "Failed",
+        warn: "Missing",
+        skip: "N/A",
+      },
+    },
     share: {
       title: "Share access",
       description: "Copy an open link or a secure link for recipients.",
     },
     tabs: {
       manage: "Settings",
+      manageHint: "Case details, questions, and package",
       share: "Share",
+      shareHint: "Open and secure access links",
       submissions: "Submissions",
+      submissionsHint: "Completed declarations",
       danger: "Delete",
+      dangerHint: "Permanently remove this declaration",
     },
     emailLog: {
       title: "Recorded invitations",
@@ -229,11 +359,32 @@ export const portalCopy = {
     },
     manage: {
       title: "Declaration settings",
-      description: "Update the title, intro, and questions.",
+      description: "Update case details, title, intro, and questions.",
       titleLabel: "Title",
       introLabel: "Intro (optional)",
       questionLabel: "Declaration prompt",
       save: "Save changes",
+      sections: {
+        package: {
+          title: "Import & export",
+          description:
+            "Download or upload CDP packages. Upload validates first; ingest starts only when you confirm.",
+        },
+        caseDetails: {
+          title: "Case details",
+          description:
+            "Declaration ID is assigned by the system. Reference and case numbers are your own identifiers.",
+        },
+        declaration: {
+          title: "Declaration content",
+          description: "Title and intro text shown to declarants.",
+        },
+        questions: {
+          title: "Questions",
+          description:
+            "Yes/no, text, and file-reference questions. Expand advanced settings per question.",
+        },
+      },
       deleteTitle: "Delete declaration",
       deleteDescription:
         "Permanently removes this declaration and all submissions.",
@@ -304,11 +455,19 @@ export const portalCopy = {
   questions: {
     editorLabel: "Questions",
     editorHint: "Yes/no, text, and file-reference questions for recipients.",
+    questionNumber: (n: number) => `Question ${n}`,
     promptPlaceholder: "Enter the question prompt…",
     addQuestion: "Add question",
     removeQuestion: "Remove question",
     requiredLabel: "Required",
     emptyError: "Add at least one question.",
+    advancedToggle: "Advanced settings",
+    helpTextLabel: "Help text",
+    helpTextPlaceholder: "Shown below the question prompt…",
+    placeholderLabel: "Placeholder",
+    placeholderHint: "Text questions only",
+    minLengthLabel: "Min length",
+    maxLengthLabel: "Max length",
     types: {
       yesNo: "Yes / No",
       text: "Text",
@@ -379,7 +538,14 @@ export const portalCopy = {
     assignmentsTitle: "Client assignments",
     assignmentsDescription: "Declarations assigned to invited clients.",
     assignmentsEmpty: "No assignments yet.",
+    assignmentsEmptyTitle: "No assignments yet",
+    assignmentsEmptyDescription:
+      "Issue an invitation and optionally assign a declaration to track client progress here.",
     empty: "No client invitations yet.",
+    emptyTitle: "No client invitations yet",
+    emptyDescription:
+      "Invite a client to create a secure account and optionally assign a declaration.",
+    emptyAction: "Invite client",
     openInvite: "Open invite link",
     tableName: "Name",
     tableEmail: "Email",
@@ -592,16 +758,36 @@ export const portalCopy = {
       "Complete all required identity, passport, entity, and contact fields and confirm the accuracy statement.",
   },
 
+  clientProfile: {
+    eyebrow: CLIENT_PORTAL_EYEBROW,
+    title: "Declarant profile",
+    description:
+      "Review the identity and entity details linked to your declaration submissions. These were confirmed when you completed onboarding.",
+    correctionNotice:
+      "Contact your organization directly to request profile changes. Amendments are managed outside this portal.",
+  },
+
   clientDashboard: {
     eyebrow: CLIENT_PORTAL_EYEBROW,
-    title: "Your assignments",
-    description: "Declarations assigned to you by your organization.",
+    title: "Declaration workspace",
+    description:
+      "Review declarations assigned to you by your organization, complete attestations, and retain confirmation codes for your records. Submissions are linked to your declarant profile and retained for organizational review.",
     pending: "Pending",
     submitted: "Submitted",
     complete: "Complete declaration",
     viewReceipt: "View receipt",
+    pendingStatusHelp:
+      "This declaration requires your attestation. Review each section carefully before submitting.",
+    submittedStatusHelp:
+      "This declaration has been submitted. Retain your confirmation code for audit and record-keeping.",
+    dueSoonLabel: "Due soon",
+    overdueLabel: "Overdue",
+    assignmentsSectionTitle: "Assigned declarations",
+    assignmentsSectionDescription:
+      "Complete each pending declaration in full. You cannot amend a submission after it is recorded.",
+    emptyTitle: "No declarations assigned",
     empty:
-      "No assignments yet. Your organization will invite you when a declaration is ready.",
+      "Your organization has not assigned any declarations to you yet. When a declaration is ready, it will appear here with a due date if applicable. Contact your organization if you expected an assignment.",
     assignmentNotFound: "Assignment not found.",
     alreadySubmitted: "This declaration has already been submitted.",
     receiptTitle: "Submission receipt",
@@ -609,6 +795,69 @@ export const portalCopy = {
     dueLabel: (date: string) => `Due ${date}`,
     signOut: "Sign out",
     backToAssignments: "Back to assignments",
+    metrics: {
+      pending: "Pending",
+      pendingDescription: "Declarations awaiting your attestation",
+      submitted: "Submitted",
+      submittedDescription: "Declarations recorded with confirmation codes",
+      dueSoon: "Due soon",
+      dueSoonDescription: "Pending declarations with an approaching due date",
+    },
+    declarantSummaryTitle: "Declarant profile",
+    declarantSummaryDescription:
+      "Identity and entity details established during onboarding. Contact your organization to request corrections.",
+    declarantFullNameLabel: "Full legal name",
+    declarantEntityLabel: "Legal entity",
+    declarantJurisdictionLabel: "Governing jurisdiction",
+    legalNoticeTitle: "Legal notice",
+    legalNotice: [
+      "You must submit only information you are authorized to declare on behalf of the legal entity on your profile, or as an individual declarant where applicable.",
+      "False or misleading declarations may affect organizational review, regulatory obligations, and the validity of attestations linked to your account.",
+      "Identity and entity details were confirmed when you completed your declarant profile. Declaration answers are collected separately for each assignment.",
+    ] as const,
+    statutoryTitle: "Your obligations as a declarant",
+    statutoryItems: [
+      {
+        question: "What am I attesting to?",
+        answer:
+          "Each declaration asks you to confirm specific statements or provide authorized information. Your responses form part of an organizational record and may be subject to review under applicable law.",
+      },
+      {
+        question: "What happens when I submit?",
+        answer:
+          "Your submission is recorded with a confirmation code and linked to your declarant profile. Your organization retains submission records for audit and review.",
+      },
+      {
+        question: "How is file evidence handled?",
+        answer:
+          "File questions record filename and type metadata only. Original files are not uploaded to the portal.",
+      },
+      {
+        question: "What is recorded in the audit trail?",
+        answer:
+          "Sign-in, invitation, profile completion, portal acknowledgement, and declaration events may be recorded for organizational review. Passport numbers and declaration answers are not written to audit logs.",
+      },
+      {
+        question: "How do I correct my profile or a submission?",
+        answer:
+          "Contact your organization directly. Profile changes and submission amendments are managed outside this portal.",
+      },
+    ] as const,
+    acknowledgement: {
+      title: "Acknowledge portal responsibilities",
+      description:
+        "Before completing assigned declarations, confirm you understand your obligations as a declarant on this portal.",
+      summary:
+        "You will submit only authorized information, retain confirmation codes for your records, and follow your organization's declaration requirements.",
+      switchLabel:
+        "I have read and understand my responsibilities as a declarant on this portal.",
+      submit: "Confirm acknowledgement",
+      submitting: "Confirming…",
+      requiredError: "Confirm your responsibilities before continuing.",
+      acknowledgedOn: (date: string) => `Responsibilities acknowledged on ${date}.`,
+      gateNotice:
+        "Confirm your portal responsibilities below before starting a declaration.",
+    },
   },
 
   metadata: {
@@ -621,8 +870,8 @@ export const portalCopy = {
       description: "Sign in to manage declarations and review submissions.",
     },
     client: {
-      title: "Your assignments",
-      description: "Declarations assigned to you.",
+      title: "Declaration workspace",
+      description: "Assigned declarations and declarant attestations.",
     },
     dashboard: {
       title: "Declaration management",
@@ -630,6 +879,3 @@ export const portalCopy = {
     },
   },
 } as const;
-
-/** @deprecated Use org */
-export const account = portalCopy.org;

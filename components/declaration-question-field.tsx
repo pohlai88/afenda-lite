@@ -4,6 +4,7 @@ import { useId, useState, useTransition } from "react";
 import { CheckCircleIcon, Loader2Icon, UploadIcon } from "lucide-react";
 import { registerEvidenceAction } from "@/app/actions/declarations";
 import { FormErrorAlert } from "@/components/form-error-alert";
+import { QuestionSequenceBadge } from "@/components/question-sequence-badge";
 import { portalCopy } from "@/lib/portal-copy";
 import type { SurveyQuestion } from "@/lib/questions";
 import { Label } from "@/components/ui/label";
@@ -13,6 +14,7 @@ import { cn } from "@/lib/utils";
 
 export function DeclarationQuestionField({
   question,
+  sequenceNumber,
   surveyId,
   slug,
   value,
@@ -22,6 +24,7 @@ export function DeclarationQuestionField({
   onEvidenceRegistered,
 }: {
   question: SurveyQuestion;
+  sequenceNumber: number;
   surveyId: string;
   slug: string;
   value: boolean | string | undefined;
@@ -31,6 +34,7 @@ export function DeclarationQuestionField({
   onEvidenceRegistered: (evidenceId: string, fileName: string) => void;
 }) {
   const { declarationForm } = portalCopy;
+  const { questionNumber } = portalCopy.questions;
   const legendId = useId();
   const [fileError, setFileError] = useState<string | null>(null);
   const [isRegistering, startRegister] = useTransition();
@@ -41,18 +45,25 @@ export function DeclarationQuestionField({
 
   return (
     <fieldset
-      className="space-y-2"
+      className="space-y-2 rounded-lg border bg-card p-4"
       data-question-id={question.id}
       aria-invalid={error ? true : undefined}
+      aria-label={`${questionNumber(sequenceNumber)}: ${question.prompt}`}
     >
-      <legend id={legendId} className="text-sm font-medium">
-        {question.prompt}
-        {question.required ? (
-          <span className="text-destructive ml-1" aria-hidden="true">
-            *
-          </span>
-        ) : null}
+      <legend id={legendId} className="flex items-start gap-2 text-sm font-medium">
+        <QuestionSequenceBadge number={sequenceNumber} className="mt-0.5" />
+        <span>
+          {question.prompt}
+          {question.required ? (
+            <span className="text-destructive ml-1" aria-hidden="true">
+              *
+            </span>
+          ) : null}
+        </span>
       </legend>
+      {question.config.helpText ? (
+        <p className="text-xs text-muted-foreground">{question.config.helpText}</p>
+      ) : null}
 
       {question.type === "yes_no" ? (
         <RadioGroup
@@ -93,7 +104,9 @@ export function DeclarationQuestionField({
           className="min-h-24"
           value={typeof value === "string" ? value : ""}
           onChange={(event) => onChange(event.target.value)}
-          placeholder={declarationForm.textPlaceholder}
+          placeholder={
+            question.config.placeholder ?? declarationForm.textPlaceholder
+          }
           autoComplete="off"
           aria-labelledby={legendId}
           aria-invalid={error ? true : undefined}

@@ -1,9 +1,16 @@
 import type { ReactNode } from "react";
 import {
   Building2Icon,
+  ClipboardListIcon,
   LayoutGridIcon,
   UsersIcon,
 } from "lucide-react";
+import {
+  ORG_OPERATOR_PLAYGROUND_ROUTE,
+  ORG_OPERATOR_SIDEBAR_ROUTES,
+  isOrgOperatorSidebarHref,
+  type PortalSidebarRoute,
+} from "@/lib/portal-nav-routes";
 import { PORTAL_NAME, portalCopy } from "@/lib/portal-copy";
 
 export type DashboardTeam = {
@@ -16,25 +23,23 @@ export type DashboardTeam = {
   usePreviewAction?: boolean;
 };
 
-export type DashboardNavItem = {
+export type DashboardSidebarItem = {
+  id: string;
   title: string;
   url: string;
-  /** When true, opens the client portal via preview action instead of a direct link. */
-  usePreviewAction?: boolean;
-};
-
-export type DashboardNavGroup = {
-  title: string;
   icon: ReactNode;
-  items: DashboardNavItem[];
 };
 
-const { nav } = portalCopy;
+const orgRouteIcons: Record<string, ReactNode> = {
+  declarations: <ClipboardListIcon aria-hidden="true" className="size-4" />,
+  "client-invitations": <UsersIcon aria-hidden="true" className="size-4" />,
+  playground: <LayoutGridIcon aria-hidden="true" className="size-4" />,
+};
 
 export const dashboardTeams: DashboardTeam[] = [
   {
     name: PORTAL_NAME,
-    plan: nav.organization,
+    plan: portalCopy.nav.organization,
     href: "/dashboard",
     logo: <Building2Icon aria-hidden="true" className="size-4" />,
     matchPrefixes: ["/dashboard", "/org", "/auth/admin", "/playground"],
@@ -49,59 +54,34 @@ export const dashboardTeams: DashboardTeam[] = [
   },
 ];
 
-/** Operator routes that exist in the app router (no auth/account dev catalog). */
-const operatorNavItems: DashboardNavItem[] = [
-  { title: nav.declarations, url: "/dashboard" },
-  { title: nav.clientInvitations, url: "/dashboard/clients" },
-  { title: portalCopy.orgSignIn.title, url: "/org/login" },
-  { title: "Admin auth", url: "/auth/admin" },
-];
+function resolveOrgSidebarTitle(route: PortalSidebarRoute) {
+  const { copy } = route;
+  if (copy.section === "nav") {
+    return portalCopy.nav[copy.key];
+  }
+  return "";
+}
 
-export function getDashboardNavGroups(options?: {
+export function getOrgOperatorSidebarItems(options?: {
   showPlayground?: boolean;
-}): DashboardNavGroup[] {
-  const items = [...operatorNavItems];
-
+}): DashboardSidebarItem[] {
+  const routes: PortalSidebarRoute[] = [...ORG_OPERATOR_SIDEBAR_ROUTES];
   if (options?.showPlayground) {
-    items.splice(2, 0, {
-      title: nav.playground,
-      url: "/playground",
-    });
+    routes.push(ORG_OPERATOR_PLAYGROUND_ROUTE);
   }
 
-  return [
-    {
-      title: nav.organization,
-      icon: <Building2Icon aria-hidden="true" className="size-4" />,
-      items,
-    },
-  ];
+  return routes.map((route) => ({
+    id: route.id,
+    title: resolveOrgSidebarTitle(route),
+    url: route.href,
+    icon: orgRouteIcons[route.id] ?? (
+      <Building2Icon aria-hidden="true" className="size-4" />
+    ),
+  }));
 }
 
 export function isNavItemActive(pathname: string, url: string) {
-  if (url === "/") {
-    return pathname === "/";
-  }
-
-  if (url === "/dashboard") {
-    return (
-      pathname === "/dashboard" ||
-      (pathname.startsWith("/dashboard/") &&
-        !pathname.startsWith("/dashboard/clients"))
-    );
-  }
-
-  if (url === "/playground") {
-    return (
-      pathname === "/playground" || pathname.startsWith("/playground/")
-    );
-  }
-
-  return pathname === url || pathname.startsWith(`${url}/`);
-}
-
-export function isNavGroupActive(pathname: string, group: DashboardNavGroup) {
-  return group.items.some((item) => isNavItemActive(pathname, item.url));
+  return isOrgOperatorSidebarHref(pathname, url);
 }
 
 export function resolveActiveTeam(pathname: string, teams: DashboardTeam[]) {
@@ -110,33 +90,4 @@ export function resolveActiveTeam(pathname: string, teams: DashboardTeam[]) {
       team.matchPrefixes.some((prefix) => pathname.startsWith(prefix)),
     ) ?? teams[0]
   );
-}
-
-export function getDashboardQuickLinks(options?: { showPlayground?: boolean }) {
-  const links: {
-    title: string;
-    url: string;
-    icon: ReactNode;
-  }[] = [
-    {
-      title: nav.declarations,
-      url: "/dashboard",
-      icon: <Building2Icon aria-hidden="true" className="size-4" />,
-    },
-    {
-      title: nav.clientInvitations,
-      url: "/dashboard/clients",
-      icon: <UsersIcon aria-hidden="true" className="size-4" />,
-    },
-  ];
-
-  if (options?.showPlayground) {
-    links.push({
-      title: nav.playground,
-      url: "/playground",
-      icon: <LayoutGridIcon aria-hidden="true" className="size-4" />,
-    });
-  }
-
-  return links;
 }

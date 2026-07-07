@@ -8,9 +8,11 @@ export type AuditEventType =
   | "declaration.updated"
   | "declaration.submitted"
   | "declaration.deleted"
+  | "declaration.imported"
   | "invite.issued"
   | "invite.accepted"
   | "profile.completed"
+  | "portal.acknowledged"
   | "evidence.registered";
 
 export async function recordAuditEvent(input: {

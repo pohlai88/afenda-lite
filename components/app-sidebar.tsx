@@ -4,7 +4,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { EyeIcon } from "lucide-react";
 import { startClientPreviewAction } from "@/app/actions/admin";
-import { NavMain } from "@/components/nav-main";
 import { PortalThemeToggle } from "@/components/portal-theme-toggle";
 import { TeamSwitcher } from "@/components/team-switcher";
 import { UserButton } from "@/components/user-button";
@@ -23,8 +22,7 @@ import {
 } from "@/components/ui/sidebar";
 import {
   dashboardTeams,
-  getDashboardNavGroups,
-  getDashboardQuickLinks,
+  getOrgOperatorSidebarItems,
   isNavItemActive,
 } from "@/lib/dashboard-nav";
 import { portalCopy } from "@/lib/portal-copy";
@@ -39,8 +37,7 @@ export function AppSidebar({
 }) {
   const pathname = usePathname();
   const { nav } = portalCopy;
-  const quickLinks = getDashboardQuickLinks({ showPlayground });
-  const navGroups = getDashboardNavGroups({ showPlayground });
+  const navItems = getOrgOperatorSidebarItems({ showPlayground });
 
   return (
     <Sidebar collapsible="icon" {...props}>
@@ -50,11 +47,11 @@ export function AppSidebar({
 
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Quick links</SidebarGroupLabel>
+          <SidebarGroupLabel>{nav.organization}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {quickLinks.map((item) => (
-                <SidebarMenuItem key={item.url}>
+              {navItems.map((item) => (
+                <SidebarMenuItem key={item.id}>
                   <SidebarMenuButton
                     isActive={isNavItemActive(pathname, item.url)}
                     render={<Link href={item.url} />}
@@ -78,8 +75,6 @@ export function AppSidebar({
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-
-        <NavMain groups={navGroups} />
       </SidebarContent>
 
       <SidebarFooter className="border-t border-sidebar-border">

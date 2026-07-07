@@ -6,9 +6,8 @@ import { issueClientInviteAction } from "@/app/actions/client";
 import { copyText } from "@/lib/clipboard";
 import { portalCopy } from "@/lib/portal-copy";
 import { FormErrorAlert } from "@/components/form-error-alert";
-import { PortalFormField } from "@/components/portal-form-field";
 import { Button } from "@/components/ui/button";
-import { FieldGroup } from "@/components/ui/field";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -18,6 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+/** form-layout-01 pattern — two-column field grid for client invite capture. */
 export function IssueClientInviteForm({
   surveys,
 }: {
@@ -31,7 +31,7 @@ export function IssueClientInviteForm({
 
   return (
     <form
-      className="space-y-4"
+      className="space-y-6"
       onSubmit={(event) => {
         event.preventDefault();
         setError(null);
@@ -52,68 +52,63 @@ export function IssueClientInviteForm({
         });
       }}
     >
-      <FieldGroup className="gap-4">
-        <PortalFormField label={clientInvite.fullNameLabel} required>
-          {({ id }) => (
-            <Input
-              id={id}
-              name="fullName"
-              required
-              autoComplete="name"
-              placeholder={clientInvite.fullNamePlaceholder}
-            />
-          )}
-        </PortalFormField>
+      <FieldGroup className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <Field className="gap-2 sm:col-span-2">
+          <FieldLabel htmlFor="invite-full-name">{clientInvite.fullNameLabel}</FieldLabel>
+          <Input
+            id="invite-full-name"
+            name="fullName"
+            required
+            autoComplete="name"
+            placeholder={clientInvite.fullNamePlaceholder}
+          />
+        </Field>
 
-        <PortalFormField label={portalCopy.invite.emailLabel} required>
-          {({ id }) => (
-            <Input
-              id={id}
-              name="email"
-              type="email"
-              required
-              autoComplete="email"
-              spellCheck={false}
-              placeholder={portalCopy.invite.emailPlaceholder}
-            />
-          )}
-        </PortalFormField>
+        <Field className="gap-2 sm:col-span-2">
+          <FieldLabel htmlFor="invite-email">{portalCopy.invite.emailLabel}</FieldLabel>
+          <Input
+            id="invite-email"
+            name="email"
+            type="email"
+            required
+            autoComplete="email"
+            spellCheck={false}
+            placeholder={portalCopy.invite.emailPlaceholder}
+          />
+        </Field>
 
         {surveys.length > 0 ? (
-          <PortalFormField label={clientInvite.assignLabel}>
-            {({ id }) => (
-              <>
-                <input type="hidden" name="surveyId" value={surveyId} />
-                <Select
-                  value={surveyId || undefined}
-                  onValueChange={(value) => setSurveyId(value ?? "")}
-                >
-                  <SelectTrigger id={id} className="w-full">
-                    <SelectValue placeholder={clientInvite.assignPlaceholder} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {surveys.map((survey) => (
-                      <SelectItem key={survey.id} value={survey.id}>
-                        {survey.title}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </>
-            )}
-          </PortalFormField>
+          <Field className="gap-2 sm:col-span-2">
+            <FieldLabel htmlFor="invite-declaration">{clientInvite.assignLabel}</FieldLabel>
+            <input type="hidden" name="surveyId" value={surveyId} />
+            <Select
+              value={surveyId || undefined}
+              onValueChange={(value) => setSurveyId(value ?? "")}
+            >
+              <SelectTrigger id="invite-declaration" className="w-full">
+                <SelectValue placeholder={clientInvite.assignPlaceholder} />
+              </SelectTrigger>
+              <SelectContent>
+                {surveys.map((survey) => (
+                  <SelectItem key={survey.id} value={survey.id}>
+                    {survey.title}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
         ) : null}
 
-        <PortalFormField label={clientInvite.dueDateLabel}>
-          {({ id }) => (
-            <Input id={id} name="dueDate" type="date" autoComplete="off" />
-          )}
-        </PortalFormField>
+        <Field className="gap-2 sm:col-span-2">
+          <FieldLabel htmlFor="invite-due-date">{clientInvite.dueDateLabel}</FieldLabel>
+          <Input id="invite-due-date" name="dueDate" type="date" autoComplete="off" />
+        </Field>
       </FieldGroup>
 
       {inviteUrl ? (
-        <div className="space-y-2">
-          <p className="portal-code-block">{inviteUrl}</p>
+        <div className="space-y-2 rounded-md border border-dashed p-4">
+          <p className="text-sm font-medium">{clientInvite.issued}</p>
+          <p className="portal-code-block break-all">{inviteUrl}</p>
           <Button
             type="button"
             variant="outline"
@@ -133,9 +128,11 @@ export function IssueClientInviteForm({
 
       <FormErrorAlert error={error} />
 
-      <Button type="submit" disabled={isPending} aria-busy={isPending}>
-        {clientInvite.issueSubmit}
-      </Button>
+      <div className="flex justify-end">
+        <Button type="submit" disabled={isPending} aria-busy={isPending}>
+          {clientInvite.issueSubmit}
+        </Button>
+      </div>
     </form>
   );
 }

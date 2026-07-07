@@ -1,6 +1,21 @@
 import { pool } from "@/lib/db";
 import { createInviteTokenValue } from "@/lib/tokens";
 
+export { DRAFT_SURVEY_TITLE, isDraftSurveyTitle } from "@/lib/survey-draft";
+
+export type SurveyMetadata = {
+  referenceNumber: string | null;
+  caseNumber: string | null;
+  effectiveDate: Date | null;
+  submitBefore: Date | null;
+  surveyorName: string | null;
+  surveyorOrg: string | null;
+  surveyeeIndividual: string | null;
+  surveyeeOrg: string | null;
+  purpose: string | null;
+  categories: string[];
+};
+
 export type Survey = {
   id: string;
   slug: string;
@@ -8,7 +23,7 @@ export type Survey = {
   question: string;
   userId: string;
   createdAt: Date;
-};
+} & SurveyMetadata;
 
 export type SurveyResponse = {
   id: string;
@@ -22,6 +37,42 @@ export type SurveyWithStats = Survey & {
   responseCount: number;
 };
 
+function mapSurveyMetadata(row: Record<string, unknown>): SurveyMetadata {
+  const categoriesRaw = row.categories;
+  let categories: string[] = [];
+  if (Array.isArray(categoriesRaw)) {
+    categories = categoriesRaw.map(String);
+  }
+
+  return {
+    referenceNumber: row.reference_number
+      ? String(row.reference_number)
+      : null,
+    caseNumber: row.case_number ? String(row.case_number) : null,
+    effectiveDate: row.effective_date
+      ? new Date(String(row.effective_date))
+      : null,
+    submitBefore: row.submit_before
+      ? new Date(String(row.submit_before))
+      : null,
+    surveyorName: row.surveyor_name ? String(row.surveyor_name) : null,
+    surveyorOrg: row.surveyor_org ? String(row.surveyor_org) : null,
+    surveyeeIndividual: row.surveyee_individual
+      ? String(row.surveyee_individual)
+      : null,
+    surveyeeOrg: row.surveyee_org ? String(row.surveyee_org) : null,
+    purpose: row.purpose ? String(row.purpose) : null,
+    categories,
+  };
+}
+
+const SURVEY_SELECT_COLUMNS = `
+  id, slug, title, question, user_id, created_at,
+  reference_number, case_number, effective_date, submit_before,
+  surveyor_name, surveyor_org, surveyee_individual, surveyee_org,
+  purpose, categories
+`;
+
 function mapSurvey(row: Record<string, unknown>): Survey {
   return {
     id: String(row.id),
@@ -30,6 +81,7 @@ function mapSurvey(row: Record<string, unknown>): Survey {
     question: String(row.question),
     userId: String(row.user_id),
     createdAt: new Date(String(row.created_at)),
+    ...mapSurveyMetadata(row),
   };
 }
 
@@ -73,13 +125,35 @@ export async function createSurvey(input: {
   title: string;
   question: string;
   userId: string;
+  metadata?: Partial<SurveyMetadata>;
 }) {
   const slug = createSlug(input.title);
+  const metadata = input.metadata;
   const result = await pool.query(
-    `INSERT INTO surveys (slug, title, question, user_id)
-     VALUES ($1, $2, $3, $4)
-     RETURNING id, slug, title, question, user_id, created_at`,
-    [slug, input.title.trim(), input.question.trim(), input.userId],
+    `INSERT INTO surveys (
+       slug, title, question, user_id,
+       reference_number, case_number, effective_date, submit_before,
+       surveyor_name, surveyor_org, surveyee_individual, surveyee_org,
+       purpose, categories
+     )
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+     RETURNING ${SURVEY_SELECT_COLUMNS}`,
+    [
+      slug,
+      input.title.trim(),
+      input.question.trim(),
+      input.userId,
+      metadata?.referenceNumber ?? null,
+      metadata?.caseNumber ?? null,
+      metadata?.effectiveDate?.toISOString().slice(0, 10) ?? null,
+      metadata?.submitBefore?.toISOString() ?? null,
+      metadata?.surveyorName ?? null,
+      metadata?.surveyorOrg ?? null,
+      metadata?.surveyeeIndividual ?? null,
+      metadata?.surveyeeOrg ?? null,
+      metadata?.purpose ?? null,
+      metadata?.categories ?? [],
+    ],
   );
 
   return mapSurvey(result.rows[0]);
@@ -94,6 +168,16 @@ export async function listSurveysForAdmin() {
        s.question,
        s.user_id,
        s.created_at,
+       s.reference_number,
+       s.case_number,
+       s.effective_date,
+       s.submit_before,
+       s.surveyor_name,
+       s.surveyor_org,
+       s.surveyee_individual,
+       s.surveyee_org,
+       s.purpose,
+       s.categories,
        COUNT(r.id)::int AS response_count
      FROM surveys s
      LEFT JOIN survey_responses r ON r.survey_id = s.id
@@ -109,7 +193,7 @@ export async function listSurveysForAdmin() {
 
 export async function getSurveyBySlug(slug: string) {
   const result = await pool.query(
-    `SELECT id, slug, title, question, user_id, created_at
+    `SELECT ${SURVEY_SELECT_COLUMNS}
      FROM surveys
      WHERE slug = $1
      LIMIT 1`,
@@ -125,7 +209,7 @@ export async function getSurveyBySlug(slug: string) {
 
 export async function getSurveyForAdmin(id: string) {
   const result = await pool.query(
-    `SELECT id, slug, title, question, user_id, created_at
+    `SELECT ${SURVEY_SELECT_COLUMNS}
      FROM surveys
      WHERE id = $1
      LIMIT 1`,
@@ -143,13 +227,40 @@ export async function updateSurvey(input: {
   id: string;
   title: string;
   question: string;
+  metadata?: SurveyMetadata;
 }) {
+  const metadata = input.metadata;
   const result = await pool.query(
     `UPDATE surveys
-     SET title = $2, question = $3
+     SET title = $2,
+         question = $3,
+         reference_number = $4,
+         case_number = $5,
+         effective_date = $6,
+         submit_before = $7,
+         surveyor_name = $8,
+         surveyor_org = $9,
+         surveyee_individual = $10,
+         surveyee_org = $11,
+         purpose = $12,
+         categories = $13
      WHERE id = $1
-     RETURNING id, slug, title, question, user_id, created_at`,
-    [input.id, input.title.trim(), input.question.trim()],
+     RETURNING ${SURVEY_SELECT_COLUMNS}`,
+    [
+      input.id,
+      input.title.trim(),
+      input.question.trim(),
+      metadata?.referenceNumber ?? null,
+      metadata?.caseNumber ?? null,
+      metadata?.effectiveDate?.toISOString().slice(0, 10) ?? null,
+      metadata?.submitBefore?.toISOString() ?? null,
+      metadata?.surveyorName ?? null,
+      metadata?.surveyorOrg ?? null,
+      metadata?.surveyeeIndividual ?? null,
+      metadata?.surveyeeOrg ?? null,
+      metadata?.purpose ?? null,
+      metadata?.categories ?? [],
+    ],
   );
 
   if (!result.rows[0]) {
@@ -277,7 +388,10 @@ export async function regenerateInviteToken(input: {
 
 export async function getSurveyByInviteToken(token: string) {
   const result = await pool.query(
-    `SELECT s.id, s.slug, s.title, s.question, s.user_id, s.created_at
+    `SELECT s.id, s.slug, s.title, s.question, s.user_id, s.created_at,
+            s.reference_number, s.case_number, s.effective_date, s.submit_before,
+            s.surveyor_name, s.surveyor_org, s.surveyee_individual, s.surveyee_org,
+            s.purpose, s.categories
      FROM survey_invite_tokens t
      JOIN surveys s ON s.id = t.survey_id
      WHERE t.token = $1

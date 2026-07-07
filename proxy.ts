@@ -1,3 +1,7 @@
+/**
+ * Next.js 16 request proxy (replaces middleware.ts).
+ * Neon Auth session checks run on protected prefixes; public entry routes stay open.
+ */
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth/server";
 
@@ -30,6 +34,7 @@ export default async function proxy(request: NextRequest) {
   });
 }
 
+/** Must cover all session-gated app routes; public routes stay outside the proxy. */
 export const config = {
   matcher: [
     "/",

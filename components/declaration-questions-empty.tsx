@@ -1,5 +1,6 @@
 import { PortalCustomerShell } from "@/components/portal-customer-shell";
 import { PortalEmptyState } from "@/components/portal-empty-state";
+import { clientDeclarationBreadcrumbs } from "@/lib/client-breadcrumbs";
 import { portalCopy } from "@/lib/portal-copy";
 
 export function DeclarationQuestionsEmpty({
@@ -13,24 +14,17 @@ export function DeclarationQuestionsEmpty({
   description?: string;
   surveyTitle?: string;
 }) {
-  const { clientDashboard, nav } = portalCopy;
   const isClientContext = Boolean(surveyTitle);
 
   return (
     <PortalCustomerShell
+      variant={isClientContext ? "app" : "standalone"}
       eyebrow={eyebrow}
       title={title}
       description={description}
-      backHref={isClientContext ? "/client" : undefined}
-      backLabel={isClientContext ? clientDashboard.backToAssignments : undefined}
-      homeHref={isClientContext ? "/client" : undefined}
-      showSignOut={isClientContext}
       breadcrumbs={
         isClientContext
-          ? [
-              { label: nav.assignments, href: "/client" },
-              { label: surveyTitle! },
-            ]
+          ? clientDeclarationBreadcrumbs(surveyTitle!)
           : undefined
       }
     >

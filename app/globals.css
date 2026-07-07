@@ -41,6 +41,10 @@
   --brand-foreground: oklch(1 0 0);
   --terminal: oklch(0.208 0.040 265.8);
   --terminal-foreground: oklch(0.964 0.010 248.1);
+  --vault-floor: oklch(0.965 0.008 260);
+  --vault-surface: oklch(0.995 0.002 260);
+  --vault-rim: oklch(0.86 0.018 260);
+  --vault-glow: oklch(0.379 0.138 265.5 / 0.18);
   --chart-1: oklch(0.379 0.138 265.5);
   --chart-2: oklch(0.500 0.119 242.8);
   --chart-3: oklch(0.554 0.041 257.4);
@@ -58,50 +62,54 @@
 }
 
 .dark {
-  --background: oklch(0.208 0.040 265.8);
-  --foreground: oklch(0.968 0.007 248.2);
-  --card: oklch(0.279 0.037 260.0);
-  --card-foreground: oklch(0.968 0.007 248.2);
-  --popover: oklch(0.279 0.037 260.0);
-  --popover-foreground: oklch(0.968 0.007 248.2);
-  --primary: oklch(0.714 0.143 254.6);
-  --primary-foreground: oklch(0.208 0.040 265.8);
-  --secondary: oklch(0.279 0.037 260.0);
-  --secondary-foreground: oklch(0.968 0.007 248.2);
-  --muted: oklch(0.279 0.037 260.0);
-  --muted-foreground: oklch(0.704 0.030 256.7);
-  --accent: oklch(0.320 0.035 260.0);
-  --accent-foreground: oklch(0.968 0.007 248.2);
-  --destructive: oklch(0.704 0.191 22.2);
-  --destructive-foreground: oklch(0.208 0.040 265.8);
-  --success: oklch(0.768 0.170 152.0);
-  --success-foreground: oklch(0.208 0.040 265.8);
-  --warning: oklch(0.769 0.158 70.5);
-  --warning-foreground: oklch(0.208 0.040 265.8);
-  --info: oklch(0.770 0.120 234.0);
-  --info-foreground: oklch(0.208 0.040 265.8);
-  --border: oklch(0.372 0.039 257.3);
-  --input: oklch(0.372 0.039 257.3);
-  --ring: oklch(0.714 0.143 254.6);
-  --ring-offset: oklch(0.208 0.040 265.8);
-  --brand: oklch(0.714 0.143 254.6);
-  --brand-hover: oklch(0.770 0.130 254.6);
-  --brand-foreground: oklch(0.208 0.040 265.8);
-  --terminal: oklch(0.160 0.035 265.8);
-  --terminal-foreground: oklch(0.968 0.007 248.2);
+  --background: oklch(0.145 0.022 265);
+  --foreground: oklch(0.94 0.012 248);
+  --card: oklch(0.19 0.026 265);
+  --card-foreground: oklch(0.94 0.012 248);
+  --popover: oklch(0.19 0.026 265);
+  --popover-foreground: oklch(0.94 0.012 248);
+  --primary: oklch(0.62 0.11 254);
+  --primary-foreground: oklch(0.985 0.005 248);
+  --secondary: oklch(0.22 0.024 265);
+  --secondary-foreground: oklch(0.94 0.012 248);
+  --muted: oklch(0.22 0.024 265);
+  --muted-foreground: oklch(0.66 0.022 256);
+  --accent: oklch(0.24 0.022 265);
+  --accent-foreground: oklch(0.94 0.012 248);
+  --destructive: oklch(0.65 0.19 22);
+  --destructive-foreground: oklch(0.985 0.005 248);
+  --success: oklch(0.72 0.14 152);
+  --success-foreground: oklch(0.145 0.022 265);
+  --warning: oklch(0.74 0.14 70);
+  --warning-foreground: oklch(0.145 0.022 265);
+  --info: oklch(0.72 0.1 234);
+  --info-foreground: oklch(0.145 0.022 265);
+  --border: oklch(0.30 0.024 265);
+  --input: oklch(0.30 0.024 265);
+  --ring: oklch(0.62 0.11 254);
+  --ring-offset: oklch(0.145 0.022 265);
+  --brand: oklch(0.62 0.11 254);
+  --brand-hover: oklch(0.68 0.1 254);
+  --brand-foreground: oklch(0.985 0.005 248);
+  --terminal: oklch(0.115 0.022 265);
+  --terminal-foreground: oklch(0.94 0.012 248);
+  --vault-floor: oklch(0.115 0.022 265);
+  --vault-surface: oklch(0.175 0.028 265);
+  --vault-rim: oklch(0.34 0.028 265);
+  --vault-glow: oklch(0.62 0.11 254 / 0.22);
   --chart-1: oklch(0.714 0.143 254.6);
   --chart-2: oklch(0.770 0.120 234.0);
   --chart-3: oklch(0.704 0.030 256.7);
   --chart-4: oklch(0.768 0.170 152.0);
   --chart-5: oklch(0.769 0.158 70.5);
-  --sidebar: oklch(0.160 0.035 265.8);
-  --sidebar-foreground: oklch(0.968 0.007 248.2);
-  --sidebar-primary: oklch(0.714 0.143 254.6);
-  --sidebar-primary-foreground: oklch(0.208 0.040 265.8);
-  --sidebar-accent: oklch(0.240 0.038 260.0);
-  --sidebar-accent-foreground: oklch(0.968 0.007 248.2);
-  --sidebar-border: oklch(0.320 0.035 260.0);
-  --sidebar-ring: oklch(0.714 0.143 254.6);
+  --sidebar: oklch(0.115 0.022 265);
+  --sidebar-foreground: oklch(0.94 0.012 248);
+  --sidebar-primary: oklch(0.62 0.11 254);
+  --sidebar-primary-foreground: oklch(0.985 0.005 248);
+  --sidebar-accent: oklch(0.22 0.024 265);
+  --sidebar-accent-foreground: oklch(0.94 0.012 248);
+  --sidebar-border: oklch(0.30 0.024 265);
+  --sidebar-ring: oklch(0.62 0.11 254);
 }
 
 @theme inline {
@@ -136,6 +144,10 @@
   --color-brand-foreground: var(--brand-foreground);
   --color-terminal: var(--terminal);
   --color-terminal-foreground: var(--terminal-foreground);
+  --color-vault-floor: var(--vault-floor);
+  --color-vault-surface: var(--vault-surface);
+  --color-vault-rim: var(--vault-rim);
+  --color-vault-glow: var(--vault-glow);
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
@@ -275,9 +287,9 @@
     @apply mx-auto w-full max-w-lg px-4 py-8 sm:px-6;
   }
 
-  /* Authenticated client flows: dashboard, onboarding, declaration wizard */
+  /* Authenticated client workspace: use full inset width inside app sidebar */
   .portal-main-client {
-    @apply mx-auto w-full max-w-4xl px-4 py-8 sm:px-6 lg:max-w-5xl;
+    @apply w-full min-w-0 flex-1 px-4 py-6 sm:px-6 md:py-8 lg:px-8;
   }
 
   .portal-content-narrow {
@@ -285,11 +297,135 @@
   }
 
   .portal-content-client {
-    @apply mx-auto w-full max-w-4xl lg:max-w-5xl;
+    @apply w-full min-w-0;
   }
 
   .portal-skip-link {
     @apply sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-card focus:px-4 focus:py-2 focus:text-sm focus:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-ring;
+  }
+
+  .portal-auth-vault {
+    @apply relative isolate flex min-h-dvh flex-col bg-vault-floor text-foreground;
+    @apply lg:h-dvh lg:max-h-dvh lg:min-h-0 lg:overflow-hidden;
+  }
+
+  .portal-auth-atmosphere {
+    @apply pointer-events-none absolute inset-0 -z-10;
+    background:
+      radial-gradient(ellipse 90% 60% at 15% -10%, color-mix(in oklch, var(--primary) 14%, transparent), transparent 58%),
+      radial-gradient(ellipse 70% 50% at 100% 100%, color-mix(in oklch, var(--primary) 10%, transparent), transparent 55%);
+  }
+
+  .portal-auth-gridlines {
+    @apply pointer-events-none absolute inset-0 -z-10 opacity-[0.35];
+    background-image:
+      linear-gradient(to right, color-mix(in oklch, var(--vault-rim) 35%, transparent) 1px, transparent 1px),
+      linear-gradient(to bottom, color-mix(in oklch, var(--vault-rim) 35%, transparent) 1px, transparent 1px);
+    background-size: 48px 48px;
+    mask-image: radial-gradient(ellipse 85% 75% at 50% 45%, black 20%, transparent 78%);
+  }
+
+  .dark .portal-auth-gridlines {
+    @apply opacity-25;
+  }
+
+  .portal-auth-toolbar {
+    @apply relative z-20 border-b border-border/60 bg-vault-floor/80 backdrop-blur-md;
+  }
+
+  .portal-auth-toolbar-inner {
+    @apply mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8 lg:py-2.5;
+  }
+
+  .portal-auth-stage {
+    @apply flex min-h-0 flex-1 items-center px-4 py-6 sm:px-6 sm:py-8 lg:overflow-hidden lg:px-8 lg:py-4;
+  }
+
+  .portal-auth-grid {
+    @apply mx-auto grid w-full max-w-6xl gap-8 lg:max-h-full lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-center lg:gap-8 xl:gap-12;
+  }
+
+  .portal-auth-brand {
+    @apply order-2 lg:order-1;
+  }
+
+  .portal-auth-chamber-wrap {
+    @apply order-1 w-full lg:order-2;
+  }
+
+  .portal-auth-chamber {
+    @apply rounded-2xl p-px shadow-[0_28px_60px_-28px_rgba(0,0,0,0.55)];
+    background: linear-gradient(
+      155deg,
+      color-mix(in oklch, var(--vault-rim) 90%, white 10%),
+      color-mix(in oklch, var(--vault-rim) 45%, transparent)
+    );
+  }
+
+  .portal-auth-chamber-inner {
+    @apply flex flex-col gap-4 rounded-[calc(var(--radius-2xl)-1px)] bg-vault-surface p-5 sm:p-6 lg:gap-3 lg:p-5;
+    box-shadow:
+      inset 0 1px 0 color-mix(in oklch, white 12%, transparent),
+      inset 0 -24px 48px -40px color-mix(in oklch, var(--primary) 18%, transparent);
+  }
+
+  .dark .portal-auth-chamber-inner {
+    box-shadow:
+      inset 0 1px 0 color-mix(in oklch, white 8%, transparent),
+      inset 0 -32px 56px -44px color-mix(in oklch, var(--primary) 22%, transparent);
+  }
+
+  .portal-auth-emblem {
+    @apply mx-auto flex size-10 shrink-0 items-center justify-center rounded-full border border-primary/25 bg-primary/10 text-primary shadow-[0_0_20px_var(--vault-glow)] sm:mx-0 lg:size-9;
+  }
+
+  .portal-auth-footer {
+    @apply shrink-0 border-t border-border/60 px-4 py-4 text-center sm:px-6 lg:py-2.5;
+  }
+
+  .portal-auth-form form {
+    @apply lg:space-y-3;
+  }
+
+  .portal-auth-form [data-slot="field-group"] {
+    @apply lg:gap-3;
+  }
+
+  .portal-auth-form [data-slot="field"] label {
+    @apply lg:text-sm;
+  }
+
+  .portal-auth-form input {
+    @apply lg:min-h-10 lg:py-2;
+  }
+
+  .portal-auth-form button[type="submit"] {
+    @apply lg:min-h-10;
+  }
+
+  @media (min-width: 1024px) and (max-height: 800px) {
+    .portal-auth-brand h1 {
+      font-size: 2rem;
+      line-height: 1.1;
+    }
+
+    .portal-auth-brand p {
+      margin-top: 0.75rem;
+      font-size: 0.875rem;
+      line-height: 1.45;
+    }
+
+    .portal-auth-brand ul {
+      margin-top: 1rem;
+    }
+
+    .portal-auth-chamber-inner h2 {
+      font-size: 1.375rem;
+    }
+  }
+
+  .portal-auth-alt-link {
+    @apply font-medium text-primary underline-offset-4 transition-colors duration-200 hover:text-primary/80 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring;
   }
 
   .portal-code-block {
@@ -318,5 +454,30 @@
 
   .dark .portal-prose {
     @apply prose-invert;
+  }
+
+  /* Modal portal layer — Base UI dialog/sheet (data-starting-style / data-ending-style) */
+  .portal-overlay {
+    @apply fixed inset-0 z-50 bg-black/40 transition-opacity duration-200 ease-out supports-backdrop-filter:backdrop-blur-sm data-starting-style:opacity-0 data-ending-style:opacity-0;
+  }
+
+  .portal-dialog-positioner {
+    @apply fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none;
+  }
+
+  .portal-dialog {
+    @apply relative pointer-events-auto flex max-h-[min(90vh,720px)] w-full max-w-[calc(100%-2rem)] flex-col overflow-hidden rounded-xl border border-border bg-popover text-sm text-popover-foreground shadow-lg transition-[transform,opacity] duration-200 ease-out outline-none data-starting-style:scale-95 data-starting-style:opacity-0 data-ending-style:scale-95 data-ending-style:opacity-0;
+  }
+
+  .portal-dialog-header {
+    @apply v-stack shrink-0 gap-1.5 px-6 pt-6 pr-12;
+  }
+
+  .portal-dialog-body {
+    @apply min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 py-4;
+  }
+
+  .portal-dialog-footer {
+    @apply v-stack-reverse shrink-0 gap-2 border-t border-border bg-muted/40 px-6 py-4 sm:h-stack sm:justify-end sm:gap-3;
   }
 }

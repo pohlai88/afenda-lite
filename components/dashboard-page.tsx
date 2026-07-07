@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
 import {
-  DashboardPageHeader,
-  type DashboardBreadcrumb,
-} from "@/components/dashboard-page-header";
+  PortalPageHeader,
+  type PortalBreadcrumb,
+} from "@/components/portal-page-header";
 import { PortalEyebrow } from "@/components/portal-eyebrow";
 import { isPlaygroundEmbedRequest } from "@/lib/playground";
 
@@ -18,7 +18,7 @@ async function DashboardPageContent({
   eyebrow: string;
   title: string;
   description?: string;
-  breadcrumbs: DashboardBreadcrumb[];
+  breadcrumbs: PortalBreadcrumb[];
   actions?: ReactNode;
   children: ReactNode;
   embed: boolean;
@@ -36,7 +36,7 @@ async function DashboardPageContent({
       <a href="#portal-main" className="portal-skip-link">
         Skip to main content
       </a>
-      <DashboardPageHeader breadcrumbs={breadcrumbs} actions={actions} />
+      <PortalPageHeader breadcrumbs={breadcrumbs} actions={actions} />
       <main
         id="portal-main"
         className="v-stack spacer gap-6 p-4 md:p-6 lg:max-w-5xl"
@@ -65,7 +65,7 @@ export async function DashboardPage({
   eyebrow: string;
   title: string;
   description?: string;
-  breadcrumbs: DashboardBreadcrumb[];
+  breadcrumbs: PortalBreadcrumb[];
   actions?: ReactNode;
   children: ReactNode;
 }) {
@@ -96,7 +96,7 @@ export function DashboardPageSkeleton({
   eyebrow: string;
   title: string;
   description?: string;
-  breadcrumbs: DashboardBreadcrumb[];
+  breadcrumbs: PortalBreadcrumb[];
   children: ReactNode;
   embed?: boolean;
 }) {
@@ -123,7 +123,7 @@ export function DashboardPageSkeleton({
       <a href="#portal-main" className="portal-skip-link">
         Skip to main content
       </a>
-      <DashboardPageHeader breadcrumbs={breadcrumbs} showSidebarTrigger={false} />
+      <PortalPageHeader breadcrumbs={breadcrumbs} showSidebarTrigger={false} />
       <main
         id="portal-main"
         className="v-stack spacer gap-6 p-4 md:p-6 lg:max-w-5xl"

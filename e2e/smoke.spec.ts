@@ -5,6 +5,7 @@ import {
   getOperatorCreds,
   loginAsOperator,
   operatorSkipMessage,
+  requireOperatorCreds,
 } from "./helpers/operator";
 import {
   expectDeclarationReceived,
@@ -15,6 +16,19 @@ const operatorCreds = getOperatorCreds();
 const publicSurveySlug = process.env.E2E_SURVEY_SLUG;
 
 test.describe("Portal smoke", () => {
+  test("liveness endpoint returns alive", async ({ request }) => {
+    const response = await request.get("/api/health/liveness");
+    expect(response.ok()).toBeTruthy();
+
+    const body = await response.json();
+    expect(body.data).toEqual(
+      expect.objectContaining({
+        status: "alive",
+        timestamp: expect.any(String),
+      }),
+    );
+  });
+
   test("readiness endpoint returns JSON", async ({ request }) => {
     const response = await request.get("/api/health/readiness");
     expect(response.ok()).toBeTruthy();
@@ -56,9 +70,7 @@ test.describe("Operator and public flows", () => {
   });
 
   test("operator creates a declaration", async ({ page }) => {
-    const creds = getOperatorCreds();
-    if (!creds) test.skip(true, operatorSkipMessage);
-    await loginAsOperator(page, creds);
+    await loginAsOperator(page, requireOperatorCreds());
     const created = await createDeclaration(
       page,
       `E2E declaration ${Date.now()}`,

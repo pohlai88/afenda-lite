@@ -1,5 +1,7 @@
 import { pool } from "@/lib/db";
 import { validateEvidenceMetadata } from "@/lib/evidence-policy";
+import type { QuestionConfig } from "@/lib/survey-package";
+import { questionConfigSchema } from "@/lib/survey-package";
 
 export type QuestionType = "yes_no" | "text" | "file";
 
@@ -10,6 +12,7 @@ export type SurveyQuestion = {
   type: QuestionType;
   required: boolean;
   sortOrder: number;
+  config: QuestionConfig;
 };
 
 export type SurveyAnswers = Record<string, boolean | string>;
@@ -25,6 +28,20 @@ export type EvidenceRecord = {
 };
 
 function mapQuestion(row: Record<string, unknown>): SurveyQuestion {
+  let config: QuestionConfig = {};
+  const configRaw = row.config;
+  if (configRaw && typeof configRaw === "object") {
+    const parsed = questionConfigSchema.safeParse(configRaw);
+    if (parsed.success) config = parsed.data;
+  } else if (typeof configRaw === "string") {
+    try {
+      const parsed = questionConfigSchema.safeParse(JSON.parse(configRaw));
+      if (parsed.success) config = parsed.data;
+    } catch {
+      config = {};
+    }
+  }
+
   return {
     id: String(row.id),
     surveyId: String(row.survey_id),
@@ -32,6 +49,7 @@ function mapQuestion(row: Record<string, unknown>): SurveyQuestion {
     type: String(row.type) as QuestionType,
     required: Boolean(row.required),
     sortOrder: Number(row.sort_order),
+    config,
   };
 }
 
@@ -49,7 +67,7 @@ function mapEvidenceRecord(row: Record<string, unknown>): EvidenceRecord {
 
 export async function listQuestionsForSurvey(surveyId: string) {
   const result = await pool.query(
-    `SELECT id, survey_id, prompt, type, required, sort_order
+    `SELECT id, survey_id, prompt, type, required, sort_order, config
      FROM survey_questions
      WHERE survey_id = $1
      ORDER BY sort_order ASC`,
@@ -64,15 +82,23 @@ export async function replaceSurveyQuestions(
     prompt: string;
     type: QuestionType;
     required: boolean;
+    config?: QuestionConfig;
   }>,
 ) {
   await pool.query(`DELETE FROM survey_questions WHERE survey_id = $1`, [surveyId]);
 
   for (const [index, question] of questions.entries()) {
     await pool.query(
-      `INSERT INTO survey_questions (survey_id, prompt, type, required, sort_order)
-       VALUES ($1, $2, $3, $4, $5)`,
-      [surveyId, question.prompt.trim(), question.type, question.required, index],
+      `INSERT INTO survey_questions (survey_id, prompt, type, required, sort_order, config)
+       VALUES ($1, $2, $3, $4, $5, $6)`,
+      [
+        surveyId,
+        question.prompt.trim(),
+        question.type,
+        question.required,
+        index,
+        JSON.stringify(question.config ?? {}),
+      ],
     );
   }
 }
@@ -146,11 +172,25 @@ export function parseQuestionsFromForm(formData: FormData) {
   const prompts = formData.getAll("questionPrompt");
   const types = formData.getAll("questionType");
   const requiredFlags = formData.getAll("questionRequired");
+  const configsRaw = String(formData.get("questionConfigs") ?? "[]");
+  let configs: QuestionConfig[] = [];
+  try {
+    const parsed = JSON.parse(configsRaw) as unknown;
+    if (Array.isArray(parsed)) {
+      configs = parsed.map((item) => {
+        const result = questionConfigSchema.safeParse(item ?? {});
+        return result.success ? result.data : {};
+      });
+    }
+  } catch {
+    configs = [];
+  }
 
   const questions: Array<{
     prompt: string;
     type: QuestionType;
     required: boolean;
+    config: QuestionConfig;
   }> = [];
 
   for (let index = 0; index < prompts.length; index += 1) {
@@ -162,6 +202,7 @@ export function parseQuestionsFromForm(formData: FormData) {
       prompt,
       type,
       required: String(requiredFlags[index] ?? "true") === "true",
+      config: configs[index] ?? {},
     });
   }
 

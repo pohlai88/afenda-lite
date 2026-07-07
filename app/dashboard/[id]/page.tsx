@@ -1,5 +1,4 @@
 import { notFound } from "next/navigation";
-import { Suspense } from "react";
 import { requireAdminSession } from "@/app/actions/admin";
 import { loadAnonymousInviteLinkForSurvey } from "@/app/actions/invitations";
 import { AnonymousSharePanel } from "@/components/anonymous-share-panel";
@@ -8,6 +7,7 @@ import { DeclarationManageForm } from "@/components/declaration-manage-form";
 import { PortalEmptyState } from "@/components/portal-empty-state";
 import { SubmissionAnswers } from "@/components/submission-answers";
 import { SurveyDetailTabs } from "@/components/survey-detail-tabs";
+import { SurveyMetadataSummary } from "@/components/survey-metadata-summary";
 import { DashboardPage } from "@/components/dashboard-page";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -28,6 +28,7 @@ import {
 import { formatDateTime } from "@/lib/format";
 import { listQuestionsForSurvey, getEvidenceRecordsByIds } from "@/lib/questions";
 import { portalCopy } from "@/lib/portal-copy";
+import { buildSurveyFieldsKey } from "@/lib/survey-form-key";
 import {
   getSurveyForAdmin,
   listResponsesForSurvey,
@@ -72,25 +73,29 @@ export default async function SurveyDetailPage({
     survey.id,
   );
 
+  const questionDrafts = questions.map((q) => ({
+    prompt: q.prompt,
+    type: q.type,
+    required: q.required,
+    config: q.config,
+  }));
+
+  const fieldsKey = buildSurveyFieldsKey({
+    title: survey.title,
+    description: survey.question,
+    metadata: survey,
+    questions: questionDrafts,
+  });
+
   const managePanel = (
-    <Card>
-      <CardHeader>
-        <CardTitle>{declarationDetail.manage.title}</CardTitle>
-        <CardDescription>{declarationDetail.manage.description}</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <DeclarationManageForm
-          surveyId={survey.id}
-          title={survey.title}
-          description={survey.question}
-          questions={questions.map((q) => ({
-            prompt: q.prompt,
-            type: q.type,
-            required: q.required,
-          }))}
-        />
-      </CardContent>
-    </Card>
+    <DeclarationManageForm
+      surveyId={survey.id}
+      fieldsKey={fieldsKey}
+      title={survey.title}
+      description={survey.question}
+      metadata={survey}
+      questions={questionDrafts}
+    />
   );
 
   const sharePanel = (
@@ -222,15 +227,14 @@ export default async function SurveyDetailPage({
         { label: survey.title },
       ]}
     >
-      <Suspense fallback={null}>
-        <SurveyDetailTabs
-          labels={declarationDetail.tabs}
-          manage={managePanel}
-          share={sharePanel}
-          submissions={submissionsPanel}
-          danger={dangerPanel}
-        />
-      </Suspense>
+      <SurveyMetadataSummary survey={survey} />
+      <SurveyDetailTabs
+        labels={declarationDetail.tabs}
+        manage={managePanel}
+        share={sharePanel}
+        submissions={submissionsPanel}
+        danger={dangerPanel}
+      />
     </DashboardPage>
   );
 }

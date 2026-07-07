@@ -1,19 +1,17 @@
 import { PortalCustomerShell } from "@/components/portal-customer-shell";
 import { Skeleton } from "@/components/ui/skeleton";
+import { clientDashboardBreadcrumb } from "@/lib/client-breadcrumbs";
 import { portalCopy } from "@/lib/portal-copy";
 
 export default function ClientDeclareLoading() {
-  const { clientDashboard, nav } = portalCopy;
+  const { clientDashboard } = portalCopy;
 
   return (
     <PortalCustomerShell
+      variant="app"
       eyebrow={portalCopy.product.declarationEyebrow}
       title={clientDashboard.title}
-      backHref="/client"
-      backLabel={clientDashboard.backToAssignments}
-      homeHref="/client"
-      showSignOut
-      breadcrumbs={[{ label: nav.assignments, href: "/client" }]}
+      breadcrumbs={[clientDashboardBreadcrumb()]}
     >
       <div className="space-y-4">
         <Skeleton className="h-8 w-2/3" />

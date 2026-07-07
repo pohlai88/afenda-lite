@@ -1,11 +1,11 @@
 "use client";
 
 import { MoonIcon, SunIcon } from "lucide-react";
-import { useTheme } from "@/components/theme-provider";
+import { useThemeControls } from "@/components/theme-provider";
 import { Button } from "@/components/ui/button";
 
 export function PortalThemeToggle() {
-  const { resolvedTheme, setTheme } = useTheme();
+  const { resolvedTheme, setTheme } = useThemeControls();
 
   return (
     <Button

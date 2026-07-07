@@ -27,7 +27,7 @@ Automated proof on every pull request.
 1. `npm ci`
 2. `npm run build`
 3. `npm run check:copy`
-4. `npm run db:migrate` (when `DATABASE_URL` secret configured)
+4. `npm run db:migrate` (when `DATABASE_URL_PREVIEW` secret configured; Neon `preview` branch)
 5. Future: `npm test` after E2E slice
 
 ## Critical control points
@@ -56,4 +56,6 @@ Disable workflow or remove required check; does not affect runtime.
 
 ## Open question
 
-**Assumption:** Test DB uses a dedicated Neon branch or GitHub secret `DATABASE_URL_TEST`.
+~~**Assumption:** Test DB uses a dedicated Neon branch or GitHub secret `DATABASE_URL_TEST`.~~
+
+**Resolved:** CI uses Neon branch `preview` (`br-red-dream-aoe3apvj`) via GitHub secrets `DATABASE_URL_PREVIEW`, `NEON_AUTH_BASE_URL_PREVIEW`, `NEON_AUTH_COOKIE_SECRET_PREVIEW`. See [preview-branch-setup.md](../../runbooks/preview-branch-setup.md).

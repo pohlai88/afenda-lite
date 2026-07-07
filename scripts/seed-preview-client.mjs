@@ -121,9 +121,9 @@ async function main() {
        user_id, full_legal_name, nationality, country_of_residence,
        additional_residence_countries, passport_issuing_country, passport_number,
        phone, entity_name, jurisdiction, notes, identity_consent_at,
-       onboarding_complete, updated_at
+       onboarding_complete, portal_ack_at, portal_ack_version, updated_at
      )
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), true, NOW())
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), true, NOW(), $12, NOW())
      ON CONFLICT (user_id) DO UPDATE
      SET full_legal_name = EXCLUDED.full_legal_name,
          nationality = EXCLUDED.nationality,
@@ -137,6 +137,8 @@ async function main() {
          notes = EXCLUDED.notes,
          identity_consent_at = EXCLUDED.identity_consent_at,
          onboarding_complete = true,
+         portal_ack_at = NOW(),
+         portal_ack_version = EXCLUDED.portal_ack_version,
          updated_at = NOW()`,
     [
       userId,
@@ -150,6 +152,7 @@ async function main() {
       "Preview Holdings Ltd",
       "Singapore",
       "Sandbox account for operator client-portal preview.",
+      "2026-01",
     ],
   );
 

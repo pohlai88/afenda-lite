@@ -5,16 +5,8 @@ import { redirect } from "next/navigation";
 import { requireAdminSession } from "@/app/actions/admin";
 import { isAdminSession } from "@/lib/admin";
 import { recordAuditEvent } from "@/lib/audit";
-import { normalizeEmail } from "@/lib/client";
 import { auth } from "@/lib/auth/server";
 import { getAppBaseUrl } from "@/lib/app-url";
-import { runLoggedAction } from "@/lib/observability";
-import { portalCopy } from "@/lib/portal-copy";
-import {
-  isPlaygroundEmbedRequest,
-  isPlaygroundEnabled,
-} from "@/lib/playground";
-import { getPreviewClientUser } from "@/lib/preview-client";
 import {
   ensureClientProfileRow,
   completeClientAssignment,
@@ -23,9 +15,18 @@ import {
   getClientAssignmentForUser,
   getClientInvitationByToken,
   getClientProfile,
+  acknowledgeClientPortal,
   markClientInvitationAccepted,
+  normalizeEmail,
   upsertClientProfile,
 } from "@/lib/clients";
+import { runLoggedAction } from "@/lib/observability";
+import { portalCopy, CLIENT_PORTAL_ACK_VERSION } from "@/lib/portal-copy";
+import {
+  isPlaygroundEmbedRequest,
+  isPlaygroundEnabled,
+} from "@/lib/playground";
+import { getPreviewClientUser } from "@/lib/preview-client";
 import { getSurveyBySlug } from "@/lib/surveys";
 import { submitAnswersForSurvey } from "@/app/actions/surveys";
 import type { SurveyAnswers } from "@/lib/questions";
@@ -266,6 +267,32 @@ export async function saveClientOnboardingAction(formData: FormData) {
       });
 
       redirect("/client");
+    },
+  );
+}
+
+export async function acknowledgeClientPortalAction() {
+  const session = await requireClientSession({ requireOnboarding: true });
+
+  return runLoggedAction(
+    "acknowledgeClientPortalAction",
+    session.user.id,
+    async () => {
+      await acknowledgeClientPortal({
+        userId: session.user.id,
+        version: CLIENT_PORTAL_ACK_VERSION,
+      });
+
+      await recordAuditEvent({
+        actorId: session.user.id,
+        eventType: "portal.acknowledged",
+        resourceType: "client_profile",
+        resourceId: session.user.id,
+        metadata: { version: CLIENT_PORTAL_ACK_VERSION },
+      });
+
+      revalidatePath("/client");
+      return { success: true };
     },
   );
 }

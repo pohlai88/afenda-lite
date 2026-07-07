@@ -12,6 +12,7 @@ import {
   loginAsOperator,
   openSurveyTab,
   operatorSkipMessage,
+  requireOperatorCreds,
 } from "./helpers/operator";
 
 const operatorCreds = getOperatorCreds();
@@ -34,9 +35,7 @@ test.describe("Secure link and file evidence @journey", () => {
   test("operator creates declaration and adds file question", async ({
     page,
   }) => {
-    const creds = getOperatorCreds();
-    if (!creds) test.skip(true, operatorSkipMessage);
-    await loginAsOperator(page, creds);
+    await loginAsOperator(page, requireOperatorCreds());
     const created = await createDeclaration(
       page,
       `E2E secure file ${Date.now()}`,
@@ -86,9 +85,7 @@ test.describe("Secure link and file evidence @journey", () => {
   test("operator sees incremented submission count", async ({ page }) => {
     test.skip(!surveyDetailUrl, "Requires operator setup from prior test");
 
-    const creds = getOperatorCreds();
-    if (!creds) test.skip(true, operatorSkipMessage);
-    await loginAsOperator(page, creds);
+    await loginAsOperator(page, requireOperatorCreds());
     await page.goto(surveyDetailUrl);
     await openSurveyTab(page, "share");
 

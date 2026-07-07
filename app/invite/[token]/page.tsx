@@ -3,13 +3,7 @@ import { notFound } from "next/navigation";
 import { AcceptInviteForm } from "@/components/accept-invite-form";
 import { PortalCustomerShell } from "@/components/portal-customer-shell";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { getClientInvitationByToken } from "@/lib/clients";
 import { portalCopy } from "@/lib/portal-copy";
 
@@ -53,11 +47,7 @@ export default async function AcceptInvitePage({
       contentWidth="narrow"
     >
       <Card>
-        <CardHeader>
-          <CardTitle>{invitation.fullName}</CardTitle>
-          <CardDescription>{invitation.email}</CardDescription>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           <AcceptInviteForm
             token={token}
             fullName={invitation.fullName}

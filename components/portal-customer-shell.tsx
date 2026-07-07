@@ -1,16 +1,20 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { ArrowLeftIcon } from "lucide-react";
-import { ClientBreadcrumb } from "@/components/client-breadcrumb";
+import {
+  PortalPageHeader,
+  type PortalBreadcrumb,
+} from "@/components/portal-page-header";
+import { PortalBreadcrumbList } from "@/components/portal-breadcrumb-list";
 import { PortalThemeToggle } from "@/components/portal-theme-toggle";
 import { ClientSignOutButton } from "@/components/client-sign-out-button";
 import { PortalEyebrow } from "@/components/portal-eyebrow";
 import { portalCopy, PORTAL_NAME } from "@/lib/portal-copy";
 import { Button } from "@/components/ui/button";
-
 import { cn } from "@/lib/utils";
 
 type PortalCustomerContentWidth = "narrow" | "client";
+type PortalCustomerVariant = "standalone" | "app";
 
 export function PortalCustomerShell({
   eyebrow,
@@ -23,6 +27,7 @@ export function PortalCustomerShell({
   homeHref,
   breadcrumbs,
   contentWidth = "client",
+  variant = "standalone",
 }: {
   eyebrow: string;
   title: string;
@@ -32,14 +37,52 @@ export function PortalCustomerShell({
   backLabel?: string;
   showSignOut?: boolean;
   homeHref?: string;
-  breadcrumbs?: { label: string; href?: string }[];
-  /** narrow: invite/simple forms (max-w-lg). client: dashboard + wizard (max-w-4xl/5xl). */
+  breadcrumbs?: PortalBreadcrumb[];
   contentWidth?: PortalCustomerContentWidth;
+  /** app: inside client sidebar shell. standalone: invite/public flows. */
+  variant?: PortalCustomerVariant;
 }) {
   const contentWidthClass =
     contentWidth === "narrow" ? "portal-content-narrow" : "portal-content-client";
   const mainClass =
     contentWidth === "narrow" ? "portal-main-narrow" : "portal-main-client";
+  const isApp = variant === "app";
+
+  const pageHeader = (
+    <>
+      {breadcrumbs && !isApp ? (
+        <PortalBreadcrumbList
+          items={breadcrumbs}
+          maxWidthClass="max-w-[50vw]"
+        />
+      ) : null}
+      <header className="space-y-3">
+        <PortalEyebrow>{eyebrow}</PortalEyebrow>
+        <h1 className="portal-page-title sm:text-3xl">{title}</h1>
+        {description ? (
+          <p className="portal-page-description">{description}</p>
+        ) : null}
+      </header>
+    </>
+  );
+
+  if (isApp) {
+    return (
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+        <a href="#customer-content" className="portal-skip-link">
+          {portalCopy.declarationPage.skipLink}
+        </a>
+        <PortalPageHeader breadcrumbs={breadcrumbs} sticky />
+        <div
+          id="customer-content"
+          className={cn(mainClass, "v-stack gap-6 md:gap-8")}
+        >
+          {pageHeader}
+          {children}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="portal-shell">
@@ -84,16 +127,7 @@ export function PortalCustomerShell({
         id="customer-content"
         className={cn(mainClass, "v-stack gap-6 sm:py-10")}
       >
-        {breadcrumbs ? (
-          <ClientBreadcrumb items={breadcrumbs} />
-        ) : null}
-        <header className="space-y-3">
-          <PortalEyebrow>{eyebrow}</PortalEyebrow>
-          <h1 className="portal-page-title sm:text-3xl">{title}</h1>
-          {description ? (
-            <p className="portal-page-description">{description}</p>
-          ) : null}
-        </header>
+        {pageHeader}
         {children}
       </main>
     </div>

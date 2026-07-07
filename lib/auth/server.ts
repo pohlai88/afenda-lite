@@ -1,8 +1,11 @@
 import { createNeonAuth } from "@neondatabase/auth/next/server";
+import { getServerEnv } from "@/lib/env/server";
+
+const env = getServerEnv();
 
 export const auth = createNeonAuth({
-  baseUrl: process.env.NEON_AUTH_BASE_URL!,
+  baseUrl: env.NEON_AUTH_BASE_URL,
   cookies: {
-    secret: process.env.NEON_AUTH_COOKIE_SECRET!,
+    secret: env.NEON_AUTH_COOKIE_SECRET,
   },
 });

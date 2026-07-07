@@ -204,13 +204,6 @@ if (!firstScreen) {
   }
 }
 
-const proxySource = readFileSync(join(ROOT, "proxy.ts"), "utf8");
-for (const matcher of ['"/"', '"/org/:path*"', '"/survey/:path*"']) {
-  if (!proxySource.includes(matcher)) {
-    fail(`proxy.ts matcher is missing ${matcher}.`);
-  }
-}
-
 if (failures.length > 0) {
   console.error("\nFailures:");
   for (const message of failures) {

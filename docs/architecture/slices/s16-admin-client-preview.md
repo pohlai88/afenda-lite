@@ -32,9 +32,11 @@ Creates/updates the Neon Auth user (non-admin role), completes onboarding profil
 
 ## Sandbox data policy
 
-- Preview submissions write to production tables under the preview email.
+- On **production**, preview submissions write under the preview email — prefer routing operator preview via the Neon **preview** branch in non-prod environments.
 - Use a dedicated preview declaration/assignment; do not point preview at live client PII.
 - Re-seed resets password and profile; assignments are idempotent per email + survey.
+
+See [preview-branch-setup.md](../../runbooks/preview-branch-setup.md).
 
 ## Audit events
 

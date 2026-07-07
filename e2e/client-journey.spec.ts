@@ -9,6 +9,7 @@ import {
   getOperatorCreds,
   loginAsOperator,
   operatorSkipMessage,
+  requireOperatorCreds,
 } from "./helpers/operator";
 
 const operatorCreds = getOperatorCreds();
@@ -27,9 +28,7 @@ test.describe("Client journey @journey", () => {
   test("operator creates declaration and issues client invite", async ({
     page,
   }) => {
-    const creds = getOperatorCreds();
-    if (!creds) test.skip(true, operatorSkipMessage);
-    await loginAsOperator(page, creds);
+    await loginAsOperator(page, requireOperatorCreds());
     const created = await createDeclaration(
       page,
       `E2E client journey ${Date.now()}`,
@@ -85,6 +84,18 @@ test.describe("Client journey @journey", () => {
       .check();
     await page.getByRole("button", { name: /save and continue/i }).click();
     await expect(page).toHaveURL(/\/client$/);
+
+    await page
+      .getByRole("checkbox", {
+        name: new RegExp(portalCopy.clientDashboard.acknowledgement.switchLabel, "i"),
+      })
+      .check();
+    await page
+      .getByRole("button", { name: /confirm acknowledgement/i })
+      .click();
+    await expect(
+      page.getByText(/responsibilities acknowledged on/i),
+    ).toBeVisible();
 
     await page.getByRole("link", { name: /complete declaration/i }).click();
     await expect(page).toHaveURL(/\/client\/declare\/.+/);

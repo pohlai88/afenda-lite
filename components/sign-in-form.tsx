@@ -58,9 +58,11 @@ export function SignInForm({
             id={emailId}
             name="email"
             type="email"
+            inputMode="email"
             required
             autoComplete="username"
             spellCheck={false}
+            className="min-h-11 touch-manipulation"
             placeholder={copy.emailPlaceholder}
           />
         </Field>
@@ -74,7 +76,7 @@ export function SignInForm({
 
         <Field>
           <Button
-            className="w-full touch-manipulation"
+            className="w-full min-h-11 touch-manipulation"
             type="submit"
             disabled={isPending}
             aria-busy={isPending}

@@ -17,6 +17,7 @@ Internal full-stack doctrine and slice specs for agents and maintainers:
 - [docs/architecture/iam-check-doctrine.md](docs/architecture/iam-check-doctrine.md) — boundaries, CCP register, roadmap
 - [docs/architecture/slices/](docs/architecture/slices/) — per-slice acceptance proofs (S0–S15)
 - [docs/runbooks/production-go-live.md](docs/runbooks/production-go-live.md) — Vercel/Neon production verification
+- [docs/runbooks/preview-branch-setup.md](docs/runbooks/preview-branch-setup.md) — Neon preview branch for Vercel Preview and CI
 - [docs/portal-writing.md](docs/portal-writing.md) — UI copy and terminology
 
 ## Database migrations
@@ -45,10 +46,12 @@ The app no longer runs DDL on request — tables must exist before deploy.
 | Setting | Value |
 |---------|-------|
 | Project ID | `snowy-dawn-60990429` |
-| Branch | `production` (`br-young-term-aobkvd38`) |
+| Production branch | `production` (`br-young-term-aobkvd38`) |
+| Preview branch | `preview` (`br-red-dream-aoe3apvj`) — Vercel Preview + CI |
 | Database | `neondb` |
 
-**Trusted domains:** `http://localhost:3000` and `https://iam-check.vercel.app`.
+**Trusted domains (production):** `http://localhost:3000` and `https://iam-check.vercel.app`.  
+**Preview branch** also allows `https://*.vercel.app` — see [preview-branch-setup.md](docs/runbooks/preview-branch-setup.md).
 
 ## GitHub
 
@@ -62,6 +65,8 @@ Repository: https://github.com/pohlai88/iam-check
 | **Production URL** | https://iam-check.vercel.app |
 
 Env vars: `DATABASE_URL`, `NEON_AUTH_BASE_URL`, `NEON_AUTH_COOKIE_SECRET`, `SHARED_ADMIN_*`, `APP_URL`.
+
+**Preview deployments** use the Neon `preview` branch (separate env vars in Vercel Preview scope). See [docs/runbooks/preview-branch-setup.md](docs/runbooks/preview-branch-setup.md).
 
 ## Local development
 
@@ -81,7 +86,7 @@ GitHub Actions (`.github/workflows/ci.yml`) runs on PRs:
 
 - `npm run check:copy` — portal terminology gate
 - `npm run build`
-- `npm run db:migrate` (requires `DATABASE_URL` secret; idempotent via `schema_migrations`)
+- `npm run db:migrate` (requires `DATABASE_URL_PREVIEW` secret; targets Neon `preview` branch)
 - `npm test` — Playwright E2E (`e2e/smoke.spec.ts`, `e2e/secure-file.spec.ts`, `e2e/client-journey.spec.ts`)
 
 Local:
@@ -91,6 +96,11 @@ npm run check:copy
 npm test
 npm run verify:production
 ```
+
+Health endpoints:
+
+- `GET /api/health/liveness` — Vercel uptime monitors (process up, no dependency checks)
+- `GET /api/health/readiness` — deploy gate (`npm run verify:production`)
 
 Production readiness (no secrets printed):
 

@@ -1,10 +1,14 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { IssueClientInviteForm } from "@/components/issue-client-invite-form";
+import {
+  OrgClientAssignmentsTable,
+  OrgClientInvitationsTable,
+  type OrgClientAssignmentRow,
+  type OrgClientInvitationRow,
+} from "@/components/org-client-tables";
+import { OrgInviteClientLink } from "@/components/org-invite-client-link";
 import { DashboardPage, PortalSection } from "@/components/dashboard-page";
-import { PortalEmptyState } from "@/components/portal-empty-state";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { PortalEmptyStateCta } from "@/components/portal-empty-state-cta";
 import {
   Card,
   CardContent,
@@ -13,29 +17,44 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
   listClientAssignmentsForAdmin,
   listClientInvitationsForAdmin,
 } from "@/lib/clients";
 import { formatDate } from "@/lib/format";
 import { portalCopy } from "@/lib/portal-copy";
 import { listSurveysForAdmin } from "@/lib/surveys";
+import { UserPlusIcon } from "lucide-react";
 
 export default async function DashboardClientsPage() {
-  const { clientInvite, clientInvitationsPage, nav } = portalCopy;
+  const { clientInvite, clientInvitationsPage, clientDashboard, nav } =
+    portalCopy;
 
   const [invitations, surveys, assignments] = await Promise.all([
     listClientInvitationsForAdmin(),
     listSurveysForAdmin(),
     listClientAssignmentsForAdmin(),
   ]);
+
+  const invitationRows: OrgClientInvitationRow[] = invitations.map(
+    (invitation) => ({
+      id: invitation.id,
+      token: invitation.token,
+      fullName: invitation.fullName,
+      email: invitation.email,
+      status: invitation.status,
+    }),
+  );
+
+  const assignmentRows: OrgClientAssignmentRow[] = assignments.map(
+    (assignment) => ({
+      id: assignment.id,
+      surveyId: assignment.surveyId,
+      surveyTitle: assignment.surveyTitle ?? "—",
+      clientEmail: assignment.clientEmail,
+      status: assignment.status,
+      dueDate: assignment.dueDate ? formatDate(assignment.dueDate) : null,
+    }),
+  );
 
   return (
     <DashboardPage
@@ -48,7 +67,7 @@ export default async function DashboardClientsPage() {
       ]}
     >
       <div className="grid gap-8 lg:grid-cols-[minmax(280px,360px)_1fr]">
-        <Card>
+        <Card id="invite-client" className="scroll-mt-20">
           <CardHeader>
             <CardTitle>{clientInvite.issueTitle}</CardTitle>
             <CardDescription>{clientInvite.issueDescription}</CardDescription>
@@ -69,56 +88,23 @@ export default async function DashboardClientsPage() {
             description={clientInvitationsPage.recentDescription}
           >
             {invitations.length === 0 ? (
-              <PortalEmptyState>{clientInvitationsPage.empty}</PortalEmptyState>
+              <PortalEmptyStateCta
+                sectionTitle={clientInvitationsPage.recentTitle}
+                sectionDescription={clientInvitationsPage.recentDescription}
+                icon={UserPlusIcon}
+                title={clientInvitationsPage.emptyTitle}
+                description={clientInvitationsPage.emptyDescription}
+                action={
+                  <OrgInviteClientLink
+                    label={clientInvitationsPage.emptyAction}
+                  />
+                }
+              />
             ) : (
-              <div className="rounded-lg border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>{clientInvitationsPage.tableName}</TableHead>
-                      <TableHead>{clientInvitationsPage.tableEmail}</TableHead>
-                      <TableHead>{clientInvitationsPage.tableStatus}</TableHead>
-                      <TableHead className="text-right">
-                        {clientInvitationsPage.tableActions}
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {invitations.map((invitation) => (
-                      <TableRow key={invitation.id}>
-                        <TableCell className="font-medium">
-                          {invitation.fullName}
-                        </TableCell>
-                        <TableCell className="max-w-[200px] truncate text-muted-foreground">
-                          {invitation.email}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="secondary">
-                            {clientInvitationsPage.status[invitation.status]}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {invitation.status === "pending" ? (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              render={
-                                <Link
-                                  href={`/invite/${invitation.token}`}
-                                  target="_blank"
-                                />
-                              }
-                              nativeButton={false}
-                            >
-                              {clientInvitationsPage.openInvite}
-                            </Button>
-                          ) : null}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+              <OrgClientInvitationsTable
+                rows={invitationRows}
+                labels={clientInvitationsPage}
+              />
             )}
           </PortalSection>
 
@@ -127,61 +113,30 @@ export default async function DashboardClientsPage() {
             description={clientInvitationsPage.assignmentsDescription}
           >
             {assignments.length === 0 ? (
-              <PortalEmptyState>
-                {clientInvitationsPage.assignmentsEmpty}
-              </PortalEmptyState>
+              <PortalEmptyStateCta
+                sectionTitle={clientInvitationsPage.assignmentsTitle}
+                sectionDescription={clientInvitationsPage.assignmentsDescription}
+                icon={UserPlusIcon}
+                title={clientInvitationsPage.assignmentsEmptyTitle}
+                description={clientInvitationsPage.assignmentsEmptyDescription}
+                action={
+                  <OrgInviteClientLink
+                    label={clientInvitationsPage.emptyAction}
+                  />
+                }
+              />
             ) : (
-              <div className="rounded-lg border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>
-                        {clientInvitationsPage.tableDeclaration}
-                      </TableHead>
-                      <TableHead>{clientInvitationsPage.tableClient}</TableHead>
-                      <TableHead>{clientInvitationsPage.tableStatus}</TableHead>
-                      <TableHead className="text-right">
-                        {clientInvitationsPage.tableDue}
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {assignments.map((assignment) => (
-                      <TableRow key={assignment.id}>
-                        <TableCell className="max-w-[200px] truncate font-medium">
-                          <Link
-                            href={`/dashboard/${assignment.surveyId}`}
-                            className="rounded-sm outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring"
-                          >
-                            {assignment.surveyTitle}
-                          </Link>
-                        </TableCell>
-                        <TableCell className="max-w-[200px] truncate text-muted-foreground">
-                          {assignment.clientEmail}
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={
-                              assignment.status === "submitted"
-                                ? "secondary"
-                                : "outline"
-                            }
-                          >
-                            {assignment.status === "submitted"
-                              ? portalCopy.clientDashboard.submitted
-                              : portalCopy.clientDashboard.pending}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right text-xs text-muted-foreground tabular-nums">
-                          {assignment.dueDate
-                            ? formatDate(assignment.dueDate)
-                            : "—"}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+              <OrgClientAssignmentsTable
+                rows={assignmentRows}
+                labels={{
+                  tableDeclaration: clientInvitationsPage.tableDeclaration,
+                  tableClient: clientInvitationsPage.tableClient,
+                  tableStatus: clientInvitationsPage.tableStatus,
+                  tableDue: clientInvitationsPage.tableDue,
+                  pending: clientDashboard.pending,
+                  submitted: clientDashboard.submitted,
+                }}
+              />
             )}
           </PortalSection>
         </div>

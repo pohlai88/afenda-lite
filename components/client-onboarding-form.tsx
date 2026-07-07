@@ -13,6 +13,7 @@ import { portalCopy } from "@/lib/portal-copy";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
+  FieldDescription,
   FieldGroup,
   FieldLegend,
   FieldSeparator,
@@ -103,14 +104,18 @@ export function ClientOnboardingForm({
         });
       }}
     >
-      <FieldGroup className="gap-6">
-        <FieldSet>
-          <FieldLegend>{clientOnboarding.credentialsSectionTitle}</FieldLegend>
-          <p className="text-sm text-muted-foreground">
-            {clientOnboarding.credentialsSectionDescription}
-          </p>
+      <FieldGroup className="gap-10">
+        <FieldSet className="grid grid-cols-1 gap-6 md:grid-cols-3">
+          <div>
+            <FieldLegend className="mb-1.5">
+              {clientOnboarding.credentialsSectionTitle}
+            </FieldLegend>
+            <FieldDescription>
+              {clientOnboarding.credentialsSectionDescription}
+            </FieldDescription>
+          </div>
 
-          <div className="v-stack gap-4">
+          <div className="v-stack gap-4 md:col-span-2">
             <div className="rounded-lg border bg-muted/30 px-4 py-3 text-sm">
               <p className="font-medium text-foreground">
                 {clientOnboarding.emailLabel}
@@ -125,13 +130,17 @@ export function ClientOnboardingForm({
 
         <FieldSeparator />
 
-        <FieldSet>
-          <FieldLegend>{clientOnboarding.identitySectionTitle}</FieldLegend>
-          <p className="text-sm text-muted-foreground">
-            {clientOnboarding.identitySectionDescription}
-          </p>
+        <FieldSet className="grid grid-cols-1 gap-6 md:grid-cols-3">
+          <div>
+            <FieldLegend className="mb-1.5">
+              {clientOnboarding.identitySectionTitle}
+            </FieldLegend>
+            <FieldDescription>
+              {clientOnboarding.identitySectionDescription}
+            </FieldDescription>
+          </div>
 
-          <div className="v-stack gap-4">
+          <div className="v-stack gap-4 md:col-span-2">
             <PortalFormField
               label={clientOnboarding.fullLegalNameLabel}
               description={clientOnboarding.fullLegalNameDescription}
@@ -216,13 +225,17 @@ export function ClientOnboardingForm({
 
         <FieldSeparator />
 
-        <FieldSet>
-          <FieldLegend>{clientOnboarding.passportSectionTitle}</FieldLegend>
-          <p className="text-sm text-muted-foreground">
-            {clientOnboarding.passportSectionDescription}
-          </p>
+        <FieldSet className="grid grid-cols-1 gap-6 md:grid-cols-3">
+          <div>
+            <FieldLegend className="mb-1.5">
+              {clientOnboarding.passportSectionTitle}
+            </FieldLegend>
+            <FieldDescription>
+              {clientOnboarding.passportSectionDescription}
+            </FieldDescription>
+          </div>
 
-          <div className="v-stack gap-4">
+          <div className="v-stack gap-4 md:col-span-2">
             <PortalFormField
               label={clientOnboarding.passportCountryLabel}
               description={clientOnboarding.passportCountryDescription}
@@ -263,13 +276,17 @@ export function ClientOnboardingForm({
 
         <FieldSeparator />
 
-        <FieldSet>
-          <FieldLegend>{clientOnboarding.entitySectionTitle}</FieldLegend>
-          <p className="text-sm text-muted-foreground">
-            {clientOnboarding.entitySectionDescription}
-          </p>
+        <FieldSet className="grid grid-cols-1 gap-6 md:grid-cols-3">
+          <div>
+            <FieldLegend className="mb-1.5">
+              {clientOnboarding.entitySectionTitle}
+            </FieldLegend>
+            <FieldDescription>
+              {clientOnboarding.entitySectionDescription}
+            </FieldDescription>
+          </div>
 
-          <div className="v-stack gap-4">
+          <div className="v-stack gap-4 md:col-span-2">
             <PortalFormField
               label={clientOnboarding.entityLabel}
               description={clientOnboarding.entityDescription}
@@ -311,31 +328,36 @@ export function ClientOnboardingForm({
 
         <FieldSeparator />
 
-        <FieldSet>
-          <FieldLegend>{clientOnboarding.contactSectionTitle}</FieldLegend>
-          <p className="text-sm text-muted-foreground">
-            {clientOnboarding.contactSectionDescription}
-          </p>
+        <FieldSet className="grid grid-cols-1 gap-6 md:grid-cols-3">
+          <div>
+            <FieldLegend className="mb-1.5">
+              {clientOnboarding.contactSectionTitle}
+            </FieldLegend>
+            <FieldDescription>
+              {clientOnboarding.contactSectionDescription}
+            </FieldDescription>
+          </div>
 
-          <PortalFormField
-            label={clientOnboarding.phoneLabel}
-            description={clientOnboarding.phoneDescription}
-            required
-          >
-            {(field) => (
-              <Input
-                {...field}
-                name="phone"
-                type="tel"
-                inputMode="tel"
-                autoComplete="tel"
-                required
-                className={inputClassName}
-                defaultValue={defaults?.phone ?? ""}
-                placeholder={clientOnboarding.phonePlaceholder}
-              />
-            )}
-          </PortalFormField>
+          <div className="v-stack gap-4 md:col-span-2">
+            <PortalFormField
+              label={clientOnboarding.phoneLabel}
+              description={clientOnboarding.phoneDescription}
+              required
+            >
+              {(field) => (
+                <Input
+                  {...field}
+                  name="phone"
+                  type="tel"
+                  inputMode="tel"
+                  autoComplete="tel"
+                  required
+                  className={inputClassName}
+                  defaultValue={defaults?.phone ?? ""}
+                  placeholder={clientOnboarding.phonePlaceholder}
+                />
+              )}
+            </PortalFormField>
 
           <PortalFormField
             label={clientOnboarding.notesLabel}
@@ -352,6 +374,7 @@ export function ClientOnboardingForm({
               />
             )}
           </PortalFormField>
+          </div>
         </FieldSet>
       </FieldGroup>
 

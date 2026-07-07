@@ -33,7 +33,8 @@ function walk(dir) {
 
 function scrubTechnicalSymbols(content) {
   return content
-    .replace(/^import .+$/gm, "")
+    .replace(/^import[\s\S]*?from\s+["'][^"']+["'];?\s*$/gm, "")
+    .replace(/\bfrom\s+["'][^"']+["']/g, "")
     .replace(/\bsurveyId\b/g, "")
     .replace(/\bSurvey[A-Z][A-Za-z]*/g, "")
     .replace(/\b(create|update|delete|submit)Survey[A-Za-z]*/g, "")

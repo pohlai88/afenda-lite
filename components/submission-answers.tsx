@@ -4,7 +4,7 @@ import {
   type SurveyQuestion,
 } from "@/lib/questions";
 import type { SurveyResponse } from "@/lib/surveys";
-import { portalCopy } from "@/lib/portal-copy";
+import { QuestionSequenceBadge } from "@/components/question-sequence-badge";
 
 export function SubmissionAnswers({
   response,
@@ -34,10 +34,13 @@ export function SubmissionAnswers({
 
   return (
     <dl className="space-y-2 text-sm">
-      {rows.map((row) => (
+      {rows.map((row, index) => (
         <div key={row.id}>
-          <dt className="font-medium">{row.prompt}</dt>
-          <dd className="text-muted-foreground">{row.display}</dd>
+          <dt className="flex items-start gap-2 font-medium">
+            <QuestionSequenceBadge number={index + 1} className="mt-0.5" />
+            <span>{row.prompt}</span>
+          </dt>
+          <dd className="mt-1 pl-9 text-muted-foreground">{row.display}</dd>
         </div>
       ))}
     </dl>

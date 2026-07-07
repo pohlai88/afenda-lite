@@ -40,6 +40,8 @@ export function PasswordField({
           required
           minLength={minLength}
           autoComplete={autoComplete}
+          spellCheck={false}
+          className="min-h-11 touch-manipulation"
           placeholder="••••••••••••••••"
         />
         <InputGroupAddon align="inline-end" className="pr-1.5">
@@ -47,11 +49,15 @@ export function PasswordField({
             type="button"
             variant="ghost"
             size="icon"
-            className="text-muted-foreground rounded-l-none hover:bg-transparent touch-manipulation"
+            className="size-11 text-muted-foreground rounded-l-none hover:bg-transparent touch-manipulation"
             aria-label={isVisible ? signIn.hidePassword : signIn.showPassword}
             onClick={() => setIsVisible((value) => !value)}
           >
-            {isVisible ? <EyeOffIcon /> : <EyeIcon />}
+            {isVisible ? (
+              <EyeOffIcon aria-hidden="true" />
+            ) : (
+              <EyeIcon aria-hidden="true" />
+            )}
           </Button>
         </InputGroupAddon>
       </InputGroup>

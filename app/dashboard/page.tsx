@@ -4,13 +4,18 @@ import { requireAdminSession } from "@/app/actions/admin";
 import {
   BarChart3Icon,
   ClipboardListIcon,
+  FileTextIcon,
   UsersIcon,
 } from "lucide-react";
-import { DeclarationCreateForm } from "@/components/declaration-create-form";
+import { DeclarationCreateButton } from "@/components/declaration-create-button";
 import { DashboardPage, PortalSection } from "@/components/dashboard-page";
-import { PortalEmptyState } from "@/components/portal-empty-state";
-import { PortalStatCard } from "@/components/portal-stat-card";
-import { Badge } from "@/components/ui/badge";
+import { OrgCreateDeclarationLink } from "@/components/org-create-declaration-link";
+import {
+  OrgDeclarationsTable,
+  type OrgDeclarationRow,
+} from "@/components/org-declarations-table";
+import { PortalEmptyStateCta } from "@/components/portal-empty-state-cta";
+import { PortalStatisticsCard } from "@/components/portal-statistics-card";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -39,6 +44,13 @@ export default async function DashboardPageRoute() {
     (sum, survey) => sum + survey.responseCount,
     0,
   );
+  const declarationRows: OrgDeclarationRow[] = surveys.map((survey) => ({
+    id: survey.id,
+    title: survey.title,
+    description: survey.question,
+    caseNumber: survey.caseNumber,
+    responseCount: survey.responseCount,
+  }));
 
   return (
     <DashboardPage
@@ -58,34 +70,34 @@ export default async function DashboardPageRoute() {
       }
     >
       <div className="grid gap-4 sm:grid-cols-3">
-        <PortalStatCard
+        <PortalStatisticsCard
           icon={<ClipboardListIcon className="size-4" />}
-          value={String(surveys.length)}
+          value={surveys.length}
           title={org.stats.declarations.title}
-          detail={org.stats.declarations.detail}
+          description={org.stats.declarations.detail}
         />
-        <PortalStatCard
+        <PortalStatisticsCard
           icon={<BarChart3Icon className="size-4" />}
-          value={String(totalResponses)}
+          value={totalResponses}
           title={org.stats.submissions.title}
-          detail={org.stats.submissions.detail}
+          description={org.stats.submissions.detail}
         />
-        <PortalStatCard
+        <PortalStatisticsCard
           icon={<UsersIcon className="size-4" />}
-          value={String(pendingAssignments)}
+          value={pendingAssignments}
           title={org.stats.pendingAssignments.title}
-          detail={org.stats.pendingAssignments.detail}
+          description={org.stats.pendingAssignments.detail}
         />
       </div>
 
       <div className="grid gap-8 lg:grid-cols-[minmax(280px,320px)_1fr]">
-        <Card>
+        <Card id="create-declaration" className="scroll-mt-20">
           <CardHeader>
             <CardTitle>{org.create.title}</CardTitle>
             <CardDescription>{org.create.description}</CardDescription>
           </CardHeader>
           <CardContent>
-            <DeclarationCreateForm />
+            <DeclarationCreateButton />
           </CardContent>
         </Card>
 
@@ -94,43 +106,18 @@ export default async function DashboardPageRoute() {
           description={org.list.description}
         >
           {surveys.length === 0 ? (
-            <PortalEmptyState>{org.list.empty}</PortalEmptyState>
+            <PortalEmptyStateCta
+              sectionTitle={org.list.title}
+              sectionDescription={org.list.description}
+              icon={FileTextIcon}
+              title={org.list.emptyTitle}
+              description={org.list.emptyDescription}
+              action={
+                <OrgCreateDeclarationLink label={org.list.emptyAction} />
+              }
+            />
           ) : (
-            <div className="space-y-4">
-              {surveys.map((survey) => (
-                <Card key={survey.id}>
-                  <CardHeader className="h-stack items-start justify-between gap-4">
-                    <div className="min-w-0 space-y-1">
-                      <CardTitle className="truncate">{survey.title}</CardTitle>
-                      <CardDescription className="line-clamp-2">
-                        {survey.question}
-                      </CardDescription>
-                    </div>
-                    <Badge variant="secondary">
-                      {org.list.submissions(survey.responseCount)}
-                    </Badge>
-                  </CardHeader>
-                  <CardContent className="flex flex-wrap gap-2 pt-0">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      render={<Link href={`/dashboard/${survey.id}`} />}
-                      nativeButton={false}
-                    >
-                      {org.list.viewSubmissions}
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      render={<Link href={`/dashboard/${survey.id}#share`} />}
-                      nativeButton={false}
-                    >
-                      {org.list.shareAccess}
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+            <OrgDeclarationsTable rows={declarationRows} />
           )}
         </PortalSection>
       </div>

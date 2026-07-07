@@ -16,10 +16,8 @@ import { portalCopy } from "@/lib/portal-copy";
 import { parseSchema } from "@/lib/schemas/common";
 import {
   deleteSurveySchema,
-  rawSurveyFormFromFormData,
   rawUpdateSurveyFromFormData,
   submitSurveyResponseSchema,
-  surveyFormSchema,
   updateSurveySchema,
 } from "@/lib/schemas/surveys";
 import {
@@ -30,6 +28,17 @@ import {
   submitSurveyResponse,
   updateSurvey,
 } from "@/lib/surveys";
+import { DRAFT_SURVEY_TITLE } from "@/lib/survey-draft";
+import { createClientAssignment } from "@/lib/clients";
+import {
+  buildCdpPackageForExport,
+  cdpQuestionsToDrafts,
+  cdpToMetadata,
+  parseCdpPackage,
+  serializeCdpPackage,
+  type CdpPackage,
+} from "@/lib/survey-package";
+import { analyzeCdpPackageInput, type PackageAnalysis } from "@/lib/survey-package-analyze";
 
 async function submitAnswersForSurvey(input: {
   surveyId: string;
@@ -73,41 +82,98 @@ async function submitAnswersForSurvey(input: {
 
 export { submitAnswersForSurvey };
 
-export async function createSurveyAction(formData: FormData) {
+async function applyCdpPackageToSurvey(
+  surveyId: string,
+  pkg: CdpPackage,
+  actorId: string,
+  createAssignment: boolean,
+) {
+  const metadata = cdpToMetadata(pkg.metadata ?? {});
+
+  await updateSurvey({
+    id: surveyId,
+    title: pkg.declaration.title,
+    question: pkg.declaration.intro ?? pkg.declaration.title,
+    metadata,
+  });
+
+  const drafts = cdpQuestionsToDrafts(pkg.declaration.questions);
+  await replaceSurveyQuestions(
+    surveyId,
+    drafts.map((q) => ({
+      prompt: q.prompt,
+      type: q.type,
+      required: q.required,
+      config: q.config,
+    })),
+  );
+
+  let assignmentCreated = false;
+  if (createAssignment && pkg.assignment?.clientEmail) {
+    await createClientAssignment({
+      surveyId,
+      clientEmail: pkg.assignment.clientEmail,
+      assignedBy: actorId,
+      dueDate: pkg.assignment.dueDate
+        ? new Date(`${pkg.assignment.dueDate}T23:59:59.000Z`)
+        : metadata.submitBefore ?? undefined,
+    });
+    assignmentCreated = true;
+  }
+
+  return { assignmentCreated };
+}
+
+function parseValidatedPackage(
+  packageJson: string,
+):
+  | { ok: true; analysis: PackageAnalysis; pkg: CdpPackage }
+  | { ok: false; error: string; analysis?: PackageAnalysis } {
+  const analysis = analyzeCdpPackageInput({ packageJson });
+
+  if (!analysis.canIngest || !analysis.valid) {
+    return {
+      ok: false,
+      error: portalCopy.declarationDetail.package.ingestBlocked,
+      analysis,
+    };
+  }
+
+  let raw: unknown;
+  try {
+    raw = JSON.parse(packageJson);
+  } catch {
+    return { ok: false, error: portalCopy.declarationDetail.package.invalidJson };
+  }
+
+  const parsed = parseCdpPackage(raw);
+  if (!parsed.success) {
+    return { ok: false, error: portalCopy.declarationDetail.package.invalidSchema };
+  }
+
+  return { ok: true, analysis, pkg: parsed.data };
+}
+
+export async function createDraftSurveyAction() {
   const session = await requireAdminSession();
 
-  return runLoggedAction("createSurveyAction", session.user.id, async () => {
-    const parsed = parseSchema(
-      surveyFormSchema,
-      rawSurveyFormFromFormData(formData),
-    );
-
-    if (!parsed.success) {
-      if (parsed.error.includes("title") || parsed.error.includes("Title")) {
-        return { error: portalCopy.org.create.titleRequired };
-      }
-      return { error: portalCopy.questions.emptyError };
-    }
-
-    const { title, question, questions } = parsed.data;
-
+  return runLoggedAction("createDraftSurveyAction", session.user.id, async () => {
     const survey = await createSurvey({
-      title,
-      question: question || title,
+      title: DRAFT_SURVEY_TITLE,
+      question: "",
       userId: session.user.id,
     });
-    await replaceSurveyQuestions(survey.id, questions);
 
     await recordAuditEvent({
       actorId: session.user.id,
       eventType: "declaration.created",
       resourceType: "declaration",
       resourceId: survey.id,
-      metadata: { title: survey.title },
+      metadata: { title: survey.title, draft: true },
     });
 
     revalidatePath("/dashboard");
-    redirect(`/dashboard/${survey.id}`);
+    redirect(`/dashboard/${survey.id}?tab=manage`);
   });
 }
 
@@ -128,14 +194,19 @@ export async function updateSurveyAction(formData: FormData) {
       };
     }
 
-    const { id, title, question, questions } = parsed.data;
+    const { id, title, question, questions, metadata } = parsed.data;
 
     const existing = await getSurveyForAdmin(id);
     if (!existing) {
       return { error: portalCopy.errors.declarationNotFound };
     }
 
-    await updateSurvey({ id, title, question: question || title });
+    await updateSurvey({
+      id,
+      title,
+      question: question || title,
+      metadata: metadata ?? existing,
+    });
     if (questions.length > 0) {
       await replaceSurveyQuestions(id, questions);
     }
@@ -218,5 +289,81 @@ export async function submitSurveyResponseAction(input: {
     });
 
     return { success: true };
+  });
+}
+
+export async function exportSurveyPackageAction(surveyId: string) {
+  const session = await requireAdminSession();
+
+  return runLoggedAction("exportSurveyPackageAction", session.user.id, async () => {
+    const survey = await getSurveyForAdmin(surveyId);
+    if (!survey) {
+      return { error: portalCopy.errors.declarationNotFound };
+    }
+
+    const questions = await listQuestionsForSurvey(surveyId);
+    const pkg = buildCdpPackageForExport({ survey, questions });
+    return { packageJson: serializeCdpPackage(pkg) };
+  });
+}
+
+export async function validateSurveyPackageAction(input: {
+  packageJson: string;
+  fileName?: string;
+}) {
+  await requireAdminSession();
+
+  return analyzeCdpPackageInput(input);
+}
+
+export async function importSurveyPackageAction(input: {
+  surveyId: string;
+  packageJson: string;
+  createAssignment?: boolean;
+}) {
+  const session = await requireAdminSession();
+
+  return runLoggedAction("importSurveyPackageAction", session.user.id, async () => {
+    const survey = await getSurveyForAdmin(input.surveyId);
+    if (!survey) {
+      return { error: portalCopy.errors.declarationNotFound };
+    }
+
+    const validated = parseValidatedPackage(input.packageJson);
+    if (!validated.ok) {
+      return validated.analysis
+        ? { error: validated.error, analysis: validated.analysis }
+        : { error: validated.error };
+    }
+
+    const { analysis, pkg } = validated;
+
+    const { assignmentCreated } = await applyCdpPackageToSurvey(
+      survey.id,
+      pkg,
+      session.user.id,
+      input.createAssignment ?? true,
+    );
+
+    await recordAuditEvent({
+      actorId: session.user.id,
+      eventType: "declaration.imported",
+      resourceType: "declaration",
+      resourceId: survey.id,
+      metadata: {
+        cdpVersion: pkg.cdpVersion,
+        confidence: analysis.confidence,
+      },
+    });
+
+    revalidatePath("/dashboard");
+    revalidatePath(`/dashboard/${survey.id}`);
+    revalidatePath("/dashboard/clients");
+
+    return {
+      success: true as const,
+      analysis,
+      assignmentCreated,
+    };
   });
 }

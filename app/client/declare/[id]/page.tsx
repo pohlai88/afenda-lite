@@ -1,10 +1,10 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireClientSession } from "@/app/actions/client";
 import { ClientDeclarationForm } from "@/components/client-declaration-form";
 import { ConfirmationReceipt } from "@/components/confirmation-receipt";
 import { DeclarationQuestionsEmpty } from "@/components/declaration-questions-empty";
 import { PortalCustomerShell } from "@/components/portal-customer-shell";
+import { clientDeclarationBreadcrumbs } from "@/lib/client-breadcrumbs";
 import { getClientAssignmentForUser } from "@/lib/clients";
 import { listQuestionsForSurvey } from "@/lib/questions";
 import { portalCopy } from "@/lib/portal-copy";
@@ -15,7 +15,8 @@ export default async function ClientDeclarePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const { clientDashboard, nav } = portalCopy;
+  const { clientDashboard, product, declarationForm, declarationPage } =
+    portalCopy;
   const session = await requireClientSession({ requireOnboarding: true });
   const assignment = await getClientAssignmentForUser(id, session.user.email);
 
@@ -23,25 +24,18 @@ export default async function ClientDeclarePage({
     notFound();
   }
 
+  const declarationTitle =
+    assignment.surveyTitle ?? product.declarationEyebrow;
   const questions = await listQuestionsForSurvey(assignment.surveyId);
 
   if (assignment.status === "submitted" && assignment.confirmationCode) {
     return (
       <PortalCustomerShell
+        variant="app"
         eyebrow={clientDashboard.eyebrow}
-        title={assignment.surveyTitle ?? portalCopy.declarationForm.thankYouTitle}
+        title={declarationTitle}
         description={clientDashboard.receiptDescription}
-        backHref="/client"
-        backLabel={clientDashboard.backToAssignments}
-        homeHref="/client"
-        showSignOut
-        breadcrumbs={[
-          { label: nav.assignments, href: "/client" },
-          {
-            label:
-              assignment.surveyTitle ?? portalCopy.declarationForm.thankYouTitle,
-          },
-        ]}
+        breadcrumbs={clientDeclarationBreadcrumbs(declarationTitle)}
       >
         <ConfirmationReceipt
           code={assignment.confirmationCode}
@@ -56,35 +50,27 @@ export default async function ClientDeclarePage({
   if (questions.length === 0) {
     return (
       <DeclarationQuestionsEmpty
-        eyebrow={portalCopy.product.declarationEyebrow}
-        title={assignment.surveyTitle ?? portalCopy.product.declarationEyebrow}
-        description={portalCopy.declarationPage.questionsNotConfigured}
-        surveyTitle={assignment.surveyTitle ?? portalCopy.product.declarationEyebrow}
+        eyebrow={product.declarationEyebrow}
+        title={declarationTitle}
+        description={declarationPage.questionsNotConfigured}
+        surveyTitle={declarationTitle}
       />
     );
   }
 
   return (
     <PortalCustomerShell
-      eyebrow={portalCopy.product.declarationEyebrow}
-      title={assignment.surveyTitle ?? portalCopy.product.declarationEyebrow}
-      description={portalCopy.declarationPage.secureFormNote}
-      backHref="/client"
-      backLabel={clientDashboard.backToAssignments}
-      homeHref="/client"
-      showSignOut
-      breadcrumbs={[
-        { label: nav.assignments, href: "/client" },
-        {
-          label: assignment.surveyTitle ?? portalCopy.product.declarationEyebrow,
-        },
-      ]}
+      variant="app"
+      eyebrow={product.declarationEyebrow}
+      title={declarationTitle}
+      description={declarationPage.secureFormNote}
+      breadcrumbs={clientDeclarationBreadcrumbs(declarationTitle)}
     >
       <ClientDeclarationForm
         assignmentId={assignment.id}
         surveyId={assignment.surveyId}
         slug={assignment.surveySlug}
-        title={assignment.surveyTitle ?? portalCopy.product.declarationEyebrow}
+        title={declarationTitle}
         description={assignment.surveyQuestion ?? undefined}
         questions={questions}
       />

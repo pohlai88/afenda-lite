@@ -3,6 +3,7 @@ import {
   getOperatorCreds,
   loginAsOperator,
   operatorSkipMessage,
+  requireOperatorCreds,
 } from "./helpers/operator";
 import {
   isPlaygroundEnabledForTests,
@@ -22,13 +23,7 @@ test.describe("Playground nav and iframe binding", () => {
   });
 
   test.beforeEach(async ({ page }) => {
-    const creds = getOperatorCreds();
-    if (!creds) {
-      test.skip(true, operatorSkipMessage);
-      return;
-    }
-
-    await loginAsOperator(page, creds);
+    await loginAsOperator(page, requireOperatorCreds());
     await page.goto("/playground");
     await expect(page).toHaveURL(/\/playground\/admin-dashboard/);
   });

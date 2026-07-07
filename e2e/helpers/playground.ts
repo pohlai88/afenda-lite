@@ -68,7 +68,7 @@ const screenDefs = [
     id: "client-dashboard",
     label: "Client dashboard",
     path: "/client",
-    iframeMarker: /your assignments/i,
+    iframeMarker: /declaration workspace/i,
   },
   {
     id: "client-onboarding",

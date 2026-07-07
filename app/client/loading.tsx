@@ -7,6 +7,7 @@ export default function ClientLoading() {
 
   return (
     <PortalCustomerShell
+      variant="app"
       eyebrow={clientDashboard.eyebrow}
       title={clientDashboard.title}
       description={clientDashboard.description}

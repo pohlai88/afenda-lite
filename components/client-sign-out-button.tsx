@@ -14,6 +14,7 @@ export function ClientSignOutButton() {
       type="button"
       variant="outline"
       size="sm"
+      className="w-full touch-manipulation"
       disabled={isPending}
       onClick={() => {
         startTransition(async () => {

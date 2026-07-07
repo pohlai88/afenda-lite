@@ -1,6 +1,10 @@
 import { pool } from "@/lib/db";
 import { createInviteTokenValue } from "@/lib/tokens";
-import { normalizeEmail } from "@/lib/client";
+import { CLIENT_PORTAL_ACK_VERSION } from "@/lib/portal-copy";
+
+export function normalizeEmail(email: string | null | undefined) {
+  return email?.trim().toLowerCase() ?? "";
+}
 
 export type ClientInvitation = {
   id: string;
@@ -27,6 +31,8 @@ export type ClientProfile = {
   notes: string | null;
   identityConsentAt: Date | null;
   onboardingComplete: boolean;
+  portalAckAt: Date | null;
+  portalAckVersion: string | null;
   updatedAt: Date;
 };
 
@@ -81,6 +87,10 @@ function mapProfile(row: Record<string, unknown>): ClientProfile {
       ? new Date(String(row.identity_consent_at))
       : null,
     onboardingComplete: Boolean(row.onboarding_complete),
+    portalAckAt: row.portal_ack_at ? new Date(String(row.portal_ack_at)) : null,
+    portalAckVersion: row.portal_ack_version
+      ? String(row.portal_ack_version)
+      : null,
     updatedAt: new Date(String(row.updated_at)),
   };
 }
@@ -207,7 +217,7 @@ export async function getClientProfile(userId: string) {
     `SELECT user_id, full_legal_name, nationality, country_of_residence,
             additional_residence_countries, passport_issuing_country, passport_number,
             phone, entity_name, jurisdiction, notes, identity_consent_at,
-            onboarding_complete, updated_at
+            onboarding_complete, portal_ack_at, portal_ack_version, updated_at
      FROM client_profiles
      WHERE user_id = $1
      LIMIT 1`,
@@ -289,6 +299,25 @@ export async function upsertClientProfile(input: {
   );
 
   return mapProfile(result.rows[0]);
+}
+
+export function isClientPortalAcknowledged(profile: ClientProfile | null) {
+  if (!profile?.portalAckAt) {
+    return false;
+  }
+  return profile.portalAckVersion === CLIENT_PORTAL_ACK_VERSION;
+}
+
+export async function acknowledgeClientPortal(input: {
+  userId: string;
+  version: string;
+}) {
+  await pool.query(
+    `UPDATE client_profiles
+     SET portal_ack_at = NOW(), portal_ack_version = $2, updated_at = NOW()
+     WHERE user_id = $1`,
+    [input.userId, input.version],
+  );
 }
 
 export async function createClientAssignment(input: {

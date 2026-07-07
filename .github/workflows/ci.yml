@@ -13,9 +13,10 @@ jobs:
   quality:
     runs-on: ubuntu-latest
     env:
-      DATABASE_URL: ${{ secrets.DATABASE_URL }}
-      NEON_AUTH_BASE_URL: ${{ secrets.NEON_AUTH_BASE_URL }}
-      NEON_AUTH_COOKIE_SECRET: ${{ secrets.NEON_AUTH_COOKIE_SECRET }}
+      # Preview branch (br-red-dream-aoe3apvj) — never run migrate/E2E against production.
+      DATABASE_URL: ${{ secrets.DATABASE_URL_PREVIEW }}
+      NEON_AUTH_BASE_URL: ${{ secrets.NEON_AUTH_BASE_URL_PREVIEW }}
+      NEON_AUTH_COOKIE_SECRET: ${{ secrets.NEON_AUTH_COOKIE_SECRET_PREVIEW }}
       SHARED_ADMIN_EMAIL: ${{ secrets.SHARED_ADMIN_EMAIL }}
       SHARED_ADMIN_PASSWORD: ${{ secrets.SHARED_ADMIN_PASSWORD }}
       SHARED_ADMIN_NAME: Portal Operator
@@ -33,14 +34,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Portal terminology check
-        run: npm run check:copy
+      - name: Portal checks
+        run: npm run checks
+
+      - name: Apply database migrations
+        run: npm run db:migrate
 
       - name: Build
         run: npm run build
-
-      - name: Migration smoke
-        run: npm run db:migrate
 
       - name: Seed shared operator account
         run: npm run seed:admin

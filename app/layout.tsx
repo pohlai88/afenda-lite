@@ -10,6 +10,9 @@ import { cn } from "@/lib/utils";
 
 import { PORTAL_NAME, portalCopy } from "@/lib/portal-copy";
 
+// Auth, cookies, and session-aware UI run on every route — opt out of static prerender.
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   metadataBase: new URL(getAppBaseUrl()),
   title: {

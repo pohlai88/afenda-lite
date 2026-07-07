@@ -1,4 +1,5 @@
 import { portalCopy } from "@/lib/portal-copy";
+import { PortalLegalNoticeSection } from "@/components/portal-legal-notice-section";
 
 export function ClientOnboardingContext() {
   const {
@@ -14,16 +15,11 @@ export function ClientOnboardingContext() {
 
   return (
     <div className="v-stack gap-6">
-      <section aria-labelledby="onboarding-legal-notice">
-        <h2 id="onboarding-legal-notice" className="portal-section-title">
-          {legalNoticeTitle}
-        </h2>
-        <div className="portal-prose mt-2">
-          {legalNotice.map((paragraph) => (
-            <p key={paragraph}>{paragraph}</p>
-          ))}
-        </div>
-      </section>
+      <PortalLegalNoticeSection
+        id="onboarding-legal-notice"
+        title={legalNoticeTitle}
+        paragraphs={legalNotice}
+      />
 
       <section aria-labelledby="onboarding-data-collection">
         <h2 id="onboarding-data-collection" className="portal-section-title">

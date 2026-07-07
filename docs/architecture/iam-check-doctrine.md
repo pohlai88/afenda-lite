@@ -106,7 +106,8 @@ flowchart TB
 | `/f/[token]` | Public | Secure declaration link |
 | `/client/login`, `/client`, `/client/onboarding`, `/client/declare/[id]` | Client | Assigned workflow |
 | `/invite/[token]` | Public | Accept client invitation |
-| `/api/health/readiness` | Ops | Deploy readiness |
+| `/api/health/liveness` | Ops | Uptime / liveness (Vercel monitors) |
+| `/api/health/readiness` | Ops | Deploy readiness (`npm run verify:production`) |
 | `/api/auth/[...path]` | All | Neon Auth handler |
 
 **Auth shell routes (Neon Auth — out of slice scope; do not add business logic)**
@@ -314,7 +315,7 @@ Mutations and public entry points only. Session helpers (`requireAdminSession`, 
 
 ### E2E journeys (S15)
 
-- **Smoke:** `e2e/smoke.spec.ts` — readiness, operator create, public load + submit
+- **Smoke:** `e2e/smoke.spec.ts` — liveness, readiness, operator create, public load + submit
 - **Secure + file:** `e2e/secure-file.spec.ts` — `/f/[token]`, file metadata, submission count
 - **Client path:** `e2e/client-journey.spec.ts` — invite → onboard → submit → `CDP-*`
 - **Evidence policy:** `lib/evidence-policy.ts` — MIME/size allowlist at action boundary

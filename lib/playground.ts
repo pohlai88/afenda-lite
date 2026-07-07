@@ -68,6 +68,12 @@ const playgroundScreenDefs: (Omit<PlaygroundScreen, "path"> & {
       path: "/client/onboarding",
     },
     {
+      id: "client-profile",
+      category: "client",
+      label: "Declarant profile",
+      path: "/client/profile",
+    },
+    {
       id: "client-declare",
       category: "client",
       label: "Declaration form",
@@ -150,6 +156,7 @@ export const playgroundRouteFiles: Record<string, string> = {
   "/org/login": "app/org/login/page.tsx",
   "/client": "app/client/page.tsx",
   "/client/onboarding": "app/client/onboarding/page.tsx",
+  "/client/profile": "app/client/profile/page.tsx",
   "/client/declare/{id}": "app/client/declare/[id]/page.tsx",
   "/client/preview-unavailable": "app/client/preview-unavailable/page.tsx",
   "/survey/{slug}": "app/survey/[slug]/page.tsx",

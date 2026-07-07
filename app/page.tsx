@@ -25,9 +25,5 @@ export default async function Home() {
     redirect(profile?.onboardingComplete ? "/client" : "/client/onboarding");
   }
 
-  return (
-    <main>
-      <ClientPortalLoginPage />
-    </main>
-  );
+  return <ClientPortalLoginPage />;
 }

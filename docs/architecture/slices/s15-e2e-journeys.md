@@ -13,7 +13,7 @@ Automate the remaining identity and submission paths not covered by smoke-only E
 
 ## Owned files
 
-- `e2e/smoke.spec.ts` — readiness, operator create, public page load + submit
+- `e2e/smoke.spec.ts` — liveness, readiness, operator create, public page load + submit
 - `e2e/secure-file.spec.ts` — secure `/f/[token]` + file question (`@journey`)
 - `e2e/client-journey.spec.ts` — invite → onboard → assign → submit → `CDP-*` (`@journey`)
 - `e2e/fixtures/sample-evidence.txt` — Playwright file-input fixture

@@ -13,6 +13,7 @@ import {
 import { ConfirmationReceipt } from "@/components/confirmation-receipt";
 import { DeclarationQuestionField } from "@/components/declaration-question-field";
 import { FormErrorAlert } from "@/components/form-error-alert";
+import { QuestionSequenceBadge } from "@/components/question-sequence-badge";
 import {
   buildDeclarationWizardSteps,
   validateStepAnswers,
@@ -322,9 +323,10 @@ export function DeclarationForm({
                 {currentStep.description}
               </p>
             </div>
-            {currentStep.questions.map((question) => (
+            {currentStep.questions.map((question, index) => (
               <DeclarationQuestionField
                 key={question.id}
+                sequenceNumber={index + 1}
                 question={question}
                 surveyId={surveyId}
                 slug={slug}
@@ -376,13 +378,16 @@ export function DeclarationForm({
             <div className="space-y-4">
               <p className="text-sm font-medium">{wizardCopy.reviewSummaryTitle}</p>
               <dl className="space-y-3 text-sm">
-                {questions.map((question) => (
+                {questions.map((question, index) => (
                   <div
                     key={question.id}
                     className="rounded-lg border bg-muted/30 px-4 py-3"
                   >
-                    <dt className="font-medium text-foreground">{question.prompt}</dt>
-                    <dd className="mt-1 whitespace-pre-wrap text-muted-foreground">
+                    <dt className="flex items-start gap-2 font-medium text-foreground">
+                      <QuestionSequenceBadge number={index + 1} className="mt-0.5" />
+                      <span>{question.prompt}</span>
+                    </dt>
+                    <dd className="mt-1 pl-9 whitespace-pre-wrap text-muted-foreground">
                       {formatReviewAnswer(
                         question,
                         answers[question.id],

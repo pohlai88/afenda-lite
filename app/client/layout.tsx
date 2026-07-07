@@ -1,4 +1,5 @@
 import { PortalPreviewBanner } from "@/components/portal-preview-banner";
+import { ClientRouteShell } from "@/components/client-route-shell";
 import { isPlaygroundEmbedRequest } from "@/lib/playground";
 
 export default async function ClientLayout({
@@ -11,7 +12,7 @@ export default async function ClientLayout({
   return (
     <>
       {!embed ? <PortalPreviewBanner /> : null}
-      {children}
+      <ClientRouteShell embed={embed}>{children}</ClientRouteShell>
     </>
   );
 }

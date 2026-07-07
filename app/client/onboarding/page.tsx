@@ -33,10 +33,10 @@ export default async function ClientOnboardingPage() {
 
   return (
     <PortalCustomerShell
+      variant="app"
       eyebrow={clientOnboarding.eyebrow}
       title={clientOnboarding.title}
       description={clientOnboarding.description}
-      showSignOut
     >
       <div className="v-stack gap-6">
         <ClientOnboardingProgress />

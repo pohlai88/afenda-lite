@@ -2,6 +2,8 @@
 
 Per-slice execution briefs. **Index and status:** [iam-check-doctrine.md §3](../iam-check-doctrine.md#3-slice-index). **Phase C order:** [§10 playbook](../iam-check-doctrine.md#10-phase-c-execution-playbook).
 
+**Interchange format:** [survey-package-format.md](../survey-package-format.md) (CDP JSON v1).
+
 When implementing a slice, complete its **Acceptance proof** checklist, then update status in doctrine §3.
 
 ## Files
@@ -21,4 +23,7 @@ When implementing a slice, complete its **Acceptance proof** checklist, then upd
 - [s12-tenancy.md](./s12-tenancy.md) — S12
 - [s13-ci-gate.md](./s13-ci-gate.md) — S13
 - [s14-observability.md](./s14-observability.md) — S14
+- [s15-e2e-journeys.md](./s15-e2e-journeys.md) — S15
 - [s16-admin-client-preview.md](./s16-admin-client-preview.md) — S16 (admin client preview + operator app shell)
+
+Sidebar route contract: `lib/portal-nav-routes.ts` — validated by `npm run check:nav`.

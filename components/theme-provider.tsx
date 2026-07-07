@@ -29,11 +29,33 @@ function getSystemTheme(): ResolvedTheme {
     : "light";
 }
 
-function applyTheme(theme: Theme) {
+export function readResolvedThemeFromDocument(): ResolvedTheme {
+  if (typeof document === "undefined") {
+    return "light";
+  }
+
+  return document.documentElement.classList.contains("dark") ? "dark" : "light";
+}
+
+export function applyThemeToDocument(theme: Theme) {
   const resolved = theme === "system" ? getSystemTheme() : theme;
   const root = document.documentElement;
   root.classList.toggle("dark", resolved === "dark");
   root.style.colorScheme = resolved;
+  return resolved;
+}
+
+export function persistThemePreference(
+  theme: Theme,
+  storageKey = "client-declaration-theme",
+) {
+  if (typeof window !== "undefined") {
+    window.localStorage.setItem(storageKey, theme);
+  }
+}
+
+function applyTheme(theme: Theme) {
+  applyThemeToDocument(theme);
 }
 
 export function ThemeProvider({
@@ -96,4 +118,32 @@ export function useTheme() {
     throw new Error("useTheme must be used within ThemeProvider");
   }
   return context;
+}
+
+/** Theme controls that work with or without ThemeProvider (e.g. auth shell RSC boundary). */
+export function useThemeControls(storageKey = "client-declaration-theme") {
+  const context = useContext(ThemeContext);
+  const [fallbackResolved, setFallbackResolved] =
+    useState<ResolvedTheme>("light");
+
+  useEffect(() => {
+    if (!context) {
+      setFallbackResolved(readResolvedThemeFromDocument());
+    }
+  }, [context]);
+
+  const resolvedTheme = context?.resolvedTheme ?? fallbackResolved;
+
+  return {
+    resolvedTheme,
+    setTheme: (nextTheme: Extract<Theme, "light" | "dark">) => {
+      if (context) {
+        context.setTheme(nextTheme);
+        return;
+      }
+
+      persistThemePreference(nextTheme, storageKey);
+      setFallbackResolved(applyThemeToDocument(nextTheme));
+    },
+  };
 }
