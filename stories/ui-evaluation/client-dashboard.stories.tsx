@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { getEvaluationRow } from "@/lib/ui-decision-matrix";
+import { productionSeedFixtures } from "@/lib/production-fixtures";
 import {
   ComparisonGrid,
   MockKpiCards,
@@ -7,6 +8,7 @@ import {
 } from "./evaluation-primitives";
 
 const row = getEvaluationRow("client-dashboard")!;
+const { metrics, previewClient, declaration } = productionSeedFixtures;
 
 const meta: Meta = {
   title: "UI Evaluation/Client Dashboard",
@@ -19,7 +21,15 @@ type Story = StoryObj;
 export const CurrentVsStatistics03: Story = {
   render: () => (
     <ComparisonGrid
-      left={<MockKpiCards variant="current" />}
+      left={
+        <div className="space-y-3">
+          <p className="text-sm text-muted-foreground">
+            Seed: {previewClient.displayName} · pending {metrics.pending} (
+            {declaration.title})
+          </p>
+          <MockKpiCards variant="current" />
+        </div>
+      }
       right={<MockKpiCards variant="stats03" />}
       annotation={
         <ScoreAnnotation

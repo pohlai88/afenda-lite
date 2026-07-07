@@ -2,13 +2,19 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { requireAdminSession } from "@/app/actions/admin";
+import { requireAdminSession } from "@/lib/auth/session";
 import { recordAuditEvent } from "@/lib/audit";
+import { createClientAssignment } from "@/lib/clients";
 import {
-  getEvidenceRecordsByIds,
+  OPERATOR_CLIENTS_HREF,
+  OPERATOR_DASHBOARD_HREF,
+  operatorDeclarationHref,
+  operatorDeclarationManageHref,
+} from "@/lib/portal-routes";
+import {
   listQuestionsForSurvey,
   replaceSurveyQuestions,
-  validateAnswers,
+  SurveyHasResponsesError,
   type SurveyAnswers,
 } from "@/lib/questions";
 import { runLoggedAction } from "@/lib/observability";
@@ -17,18 +23,11 @@ import { parseSchema } from "@/lib/schemas/common";
 import {
   deleteSurveySchema,
   rawUpdateSurveyFromFormData,
+  submitSurveyResponseSchema,
+  surveyIdParamSchema,
   updateSurveySchema,
 } from "@/lib/schemas/surveys";
-import {
-  createSurvey,
-  deleteSurvey,
-  getSurveyBySlug,
-  getSurveyForAdmin,
-  submitSurveyResponse,
-  updateSurvey,
-} from "@/lib/surveys";
 import { DRAFT_SURVEY_TITLE } from "@/lib/survey-draft";
-import { createClientAssignment } from "@/lib/clients";
 import {
   buildCdpPackageForExport,
   cdpQuestionsToDrafts,
@@ -37,56 +36,42 @@ import {
   serializeCdpPackage,
   type CdpPackage,
 } from "@/lib/survey-package";
-import { analyzeCdpPackageInput, type PackageAnalysis } from "@/lib/survey-package-analyze";
+import {
+  analyzeCdpPackageInput,
+  type PackageAnalysis,
+} from "@/lib/survey-package-analyze";
+import {
+  createSurvey,
+  deleteSurvey,
+  getSurveyForAdmin,
+  pickSurveyMetadata,
+  regenerateInviteToken,
+  updateSurvey,
+} from "@/lib/surveys";
+import { formString } from "@/lib/server-actions/form-data";
 
-async function submitAnswersForSurvey(input: {
-  surveyId: string;
-  answers: SurveyAnswers;
-  confirmationCode?: string;
-}) {
-  const questions = await listQuestionsForSurvey(input.surveyId);
-  const missing = validateAnswers(questions, input.answers);
-  if (missing) {
-    return { error: portalCopy.declarationForm.requiredField(missing) };
+function revalidateOperatorDashboard(surveyId?: string) {
+  revalidatePath(OPERATOR_DASHBOARD_HREF);
+  if (surveyId) {
+    revalidatePath(operatorDeclarationHref(surveyId));
   }
-
-  const fileEvidenceIds = questions
-    .filter((question) => question.type === "file")
-    .map((question) => input.answers[question.id])
-    .filter((value): value is string => typeof value === "string" && Boolean(value));
-
-  const evidenceById = await getEvidenceRecordsByIds(
-    fileEvidenceIds,
-    input.surveyId,
-  );
-
-  for (const question of questions) {
-    if (question.type !== "file") continue;
-    const evidenceId = input.answers[question.id];
-    if (typeof evidenceId !== "string" || !evidenceId) continue;
-    const evidence = evidenceById.get(evidenceId);
-    if (!evidence || evidence.questionId !== question.id) {
-      return { error: portalCopy.declarationForm.fileInvalid };
-    }
-  }
-
-  await submitSurveyResponse({
-    surveyId: input.surveyId,
-    answers: input.answers,
-    confirmationCode: input.confirmationCode,
-  });
-
-  return { success: true as const };
 }
 
-export { submitAnswersForSurvey };
+function mapUpdateSurveyError(error: string) {
+  return error.includes("id")
+    ? portalCopy.errors.declarationNotFound
+    : portalCopy.errors.titleRequired;
+}
 
 async function applyCdpPackageToSurvey(
   surveyId: string,
   pkg: CdpPackage,
   actorId: string,
   createAssignment: boolean,
-) {
+): Promise<
+  | { assignmentCreated: boolean }
+  | { error: string; assignmentCreated: false }
+> {
   const metadata = cdpToMetadata(pkg.metadata ?? {});
 
   await updateSurvey({
@@ -97,15 +82,22 @@ async function applyCdpPackageToSurvey(
   });
 
   const drafts = cdpQuestionsToDrafts(pkg.declaration.questions);
-  await replaceSurveyQuestions(
-    surveyId,
-    drafts.map((q) => ({
-      prompt: q.prompt,
-      type: q.type,
-      required: q.required,
-      config: q.config,
-    })),
-  );
+  try {
+    await replaceSurveyQuestions(
+      surveyId,
+      drafts.map((question) => ({
+        prompt: question.prompt,
+        type: question.type,
+        required: question.required,
+        config: question.config,
+      })),
+    );
+  } catch (error) {
+    if (error instanceof SurveyHasResponsesError) {
+      return { error: portalCopy.errors.questionsLocked, assignmentCreated: false };
+    }
+    throw error;
+  }
 
   let assignmentCreated = false;
   if (createAssignment && pkg.assignment?.clientEmail) {
@@ -147,7 +139,10 @@ function parseValidatedPackage(
 
   const parsed = parseCdpPackage(raw);
   if (!parsed.success) {
-    return { ok: false, error: portalCopy.declarationDetail.package.invalidSchema };
+    return {
+      ok: false,
+      error: portalCopy.declarationDetail.package.invalidSchema,
+    };
   }
 
   return { ok: true, analysis, pkg: parsed.data };
@@ -171,8 +166,8 @@ export async function createDraftSurveyAction() {
       metadata: { title: survey.title, draft: true },
     });
 
-    revalidatePath("/dashboard");
-    redirect(`/dashboard/${survey.id}?tab=manage`);
+    revalidateOperatorDashboard();
+    redirect(operatorDeclarationManageHref(survey.id));
   });
 }
 
@@ -186,11 +181,7 @@ export async function updateSurveyAction(formData: FormData) {
     );
 
     if (!parsed.success) {
-      return {
-        error: parsed.error.includes("id")
-          ? portalCopy.errors.declarationNotFound
-          : portalCopy.errors.titleRequired,
-      };
+      return { error: mapUpdateSurveyError(parsed.error) };
     }
 
     const { id, title, question, questions, metadata } = parsed.data;
@@ -204,10 +195,18 @@ export async function updateSurveyAction(formData: FormData) {
       id,
       title,
       question: question || title,
-      metadata: metadata ?? existing,
+      metadata: metadata ?? pickSurveyMetadata(existing),
     });
+
     if (questions.length > 0) {
-      await replaceSurveyQuestions(id, questions);
+      try {
+        await replaceSurveyQuestions(id, questions);
+      } catch (error) {
+        if (error instanceof SurveyHasResponsesError) {
+          return { error: portalCopy.errors.questionsLocked };
+        }
+        throw error;
+      }
     }
 
     await recordAuditEvent({
@@ -216,9 +215,9 @@ export async function updateSurveyAction(formData: FormData) {
       resourceType: "declaration",
       resourceId: id,
     });
-    revalidatePath("/dashboard");
-    revalidatePath(`/dashboard/${id}`);
-    redirect(`/dashboard/${id}`);
+
+    revalidateOperatorDashboard(id);
+    redirect(operatorDeclarationHref(id));
   });
 }
 
@@ -227,7 +226,7 @@ export async function deleteSurveyAction(formData: FormData) {
 
   return runLoggedAction("deleteSurveyAction", session.user.id, async () => {
     const parsed = parseSchema(deleteSurveySchema, {
-      id: String(formData.get("id") ?? "").trim(),
+      id: formString(formData, "id"),
     });
 
     if (!parsed.success) {
@@ -250,16 +249,22 @@ export async function deleteSurveyAction(formData: FormData) {
       resourceId: id,
     });
 
-    revalidatePath("/dashboard");
-    redirect("/dashboard");
+    revalidateOperatorDashboard();
+    redirect(OPERATOR_DASHBOARD_HREF);
   });
 }
 
-export async function submitSurveyResponseAction(_input: {
+/** Reserved for anonymous/public submit (S4). Portal routes currently require sign-in. */
+export async function submitSurveyResponseAction(input: {
   slug: string;
   answers: SurveyAnswers;
 }) {
   return runLoggedAction("submitSurveyResponseAction", undefined, async () => {
+    const parsed = parseSchema(submitSurveyResponseSchema, input);
+    if (!parsed.success) {
+      return { error: portalCopy.errors.declarationNotFound };
+    }
+
     return { error: portalCopy.errors.signInRequired };
   });
 }
@@ -268,12 +273,17 @@ export async function exportSurveyPackageAction(surveyId: string) {
   const session = await requireAdminSession();
 
   return runLoggedAction("exportSurveyPackageAction", session.user.id, async () => {
-    const survey = await getSurveyForAdmin(surveyId);
+    const parsed = parseSchema(surveyIdParamSchema, surveyId);
+    if (!parsed.success) {
+      return { error: portalCopy.errors.declarationNotFound };
+    }
+
+    const survey = await getSurveyForAdmin(parsed.data);
     if (!survey) {
       return { error: portalCopy.errors.declarationNotFound };
     }
 
-    const questions = await listQuestionsForSurvey(surveyId);
+    const questions = await listQuestionsForSurvey(parsed.data);
     const pkg = buildCdpPackageForExport({ survey, questions });
     return { packageJson: serializeCdpPackage(pkg) };
   });
@@ -283,9 +293,13 @@ export async function validateSurveyPackageAction(input: {
   packageJson: string;
   fileName?: string;
 }) {
-  await requireAdminSession();
+  const session = await requireAdminSession();
 
-  return analyzeCdpPackageInput(input);
+  return runLoggedAction(
+    "validateSurveyPackageAction",
+    session.user.id,
+    async () => analyzeCdpPackageInput(input),
+  );
 }
 
 export async function importSurveyPackageAction(input: {
@@ -296,7 +310,12 @@ export async function importSurveyPackageAction(input: {
   const session = await requireAdminSession();
 
   return runLoggedAction("importSurveyPackageAction", session.user.id, async () => {
-    const survey = await getSurveyForAdmin(input.surveyId);
+    const parsedSurveyId = parseSchema(surveyIdParamSchema, input.surveyId);
+    if (!parsedSurveyId.success) {
+      return { error: portalCopy.errors.declarationNotFound };
+    }
+
+    const survey = await getSurveyForAdmin(parsedSurveyId.data);
     if (!survey) {
       return { error: portalCopy.errors.declarationNotFound };
     }
@@ -310,12 +329,18 @@ export async function importSurveyPackageAction(input: {
 
     const { analysis, pkg } = validated;
 
-    const { assignmentCreated } = await applyCdpPackageToSurvey(
+    const applied = await applyCdpPackageToSurvey(
       survey.id,
       pkg,
       session.user.id,
       input.createAssignment ?? true,
     );
+
+    if ("error" in applied) {
+      return { error: applied.error, analysis };
+    }
+
+    const { assignmentCreated } = applied;
 
     await recordAuditEvent({
       actorId: session.user.id,
@@ -325,12 +350,12 @@ export async function importSurveyPackageAction(input: {
       metadata: {
         cdpVersion: pkg.cdpVersion,
         confidence: analysis.confidence,
+        assignmentCreated,
       },
     });
 
-    revalidatePath("/dashboard");
-    revalidatePath(`/dashboard/${survey.id}`);
-    revalidatePath("/dashboard/clients");
+    revalidateOperatorDashboard(survey.id);
+    revalidatePath(OPERATOR_CLIENTS_HREF);
 
     return {
       success: true as const,
@@ -338,4 +363,42 @@ export async function importSurveyPackageAction(input: {
       assignmentCreated,
     };
   });
+}
+
+export async function regenerateInviteTokenAction(formData: FormData) {
+  const session = await requireAdminSession();
+
+  return runLoggedAction(
+    "regenerateInviteTokenAction",
+    session.user.id,
+    async () => {
+      const parsed = parseSchema(
+        surveyIdParamSchema,
+        formString(formData, "surveyId"),
+      );
+      if (!parsed.success) {
+        return { error: portalCopy.errors.declarationNotFound };
+      }
+
+      const survey = await getSurveyForAdmin(parsed.data);
+      if (!survey) {
+        return { error: portalCopy.errors.declarationNotFound };
+      }
+
+      await regenerateInviteToken({
+        surveyId: parsed.data,
+        createdBy: session.user.id,
+      });
+
+      await recordAuditEvent({
+        actorId: session.user.id,
+        eventType: "declaration.secure_link_rotated",
+        resourceType: "declaration",
+        resourceId: parsed.data,
+      });
+
+      revalidateOperatorDashboard(parsed.data);
+      return { success: true as const };
+    },
+  );
 }

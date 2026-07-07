@@ -1,84 +1,102 @@
+import type { Metadata } from "next";
 import Link from "next/link";
-import { AuthView } from "@neondatabase/auth/react/ui";
+import { redirect } from "next/navigation";
 import { authViewPaths } from "@neondatabase/auth/react/ui/server";
+import { PortalAccessDeniedNotice } from "@/components/portal-access-denied-notice";
+import { PortalAuthReasonNotice } from "@/components/portal-auth-reason-notice";
 import { PortalAuthLayout } from "@/components/portal-auth-layout";
-import { portalCopy } from "@/lib/portal-copy";
+import { PortalNeonAuthView } from "@/components/portal-neon-view";
+import { resolveAuthShellCopy } from "@/lib/auth-shell-copy";
+import { portalAuthMetadata } from "@/lib/auth-metadata";
+import { resolveClientAuthReasonNotice } from "@/lib/client-sign-in-entry";
+import {
+  isOrgAccessDeniedReason,
+  isOrgSignInFrom,
+} from "@/lib/org-sign-in-entry";
+import { isPlaygroundEmbedRequest } from "@/lib/playground";
+import { AUTH_FORGOT_PASSWORD_HREF, sanitizeReturnToPath } from "@/lib/portal-routes";
+import { getAuthenticatedLandingHref } from "@/lib/portal-session-routing";
 
 export const dynamic = "force-dynamic";
 export const dynamicParams = false;
+
+const AUTH_ENTRY_PATHS = new Set(["sign-in", "sign-up", "forgot-password"]);
 
 export function generateStaticParams() {
   return Object.values(authViewPaths).map((path) => ({ path }));
 }
 
-const authCopyByPath: Record<
-  string,
-  {
-    signInTitle: string;
-    signInDescription: string;
-    alternateLink: { href: string; label: string };
-    signInHeadingId?: string;
-  }
-> = {
-  "sign-in": {
-    signInTitle: portalCopy.signIn.title,
-    signInDescription: portalCopy.signIn.description,
-    alternateLink: { href: "/org/login", label: portalCopy.signIn.orgLink },
-  },
-  "sign-up": {
-    signInTitle: "Create account",
-    signInDescription: "Set up your portal access with the credentials provided by your administrator.",
-    alternateLink: { href: "/auth/sign-in", label: "Back to sign in" },
-  },
-  "forgot-password": {
-    signInTitle: "Reset password",
-    signInDescription: "Enter your email and we will send reset instructions.",
-    alternateLink: { href: "/auth/sign-in", label: "Back to sign in" },
-  },
-  "reset-password": {
-    signInTitle: "Choose a new password",
-    signInDescription: "Enter a new password for your account.",
-    alternateLink: { href: "/auth/sign-in", label: "Back to sign in" },
-  },
-  "sign-out": {
-    signInTitle: "Signing out",
-    signInDescription: "Please wait while we end your session.",
-    alternateLink: { href: "/auth/sign-in", label: "Sign in again" },
-  },
-};
+export async function generateMetadata({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ path: string }>;
+  searchParams: Promise<{ from?: string }>;
+}): Promise<Metadata> {
+  const [{ path }, { from }] = await Promise.all([params, searchParams]);
+  return portalAuthMetadata(path, { from });
+}
 
 export default async function AuthPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ path: string }>;
+  searchParams: Promise<{ from?: string; reason?: string; returnTo?: string }>;
 }) {
-  const { path } = await params;
-  const copy = authCopyByPath[path] ?? authCopyByPath["sign-in"];
-  const { signIn, product } = portalCopy;
+  const [{ path }, { from, reason, returnTo: returnToRaw }] = await Promise.all([
+    params,
+    searchParams,
+  ]);
+  const embed = await isPlaygroundEmbedRequest();
+  const fromOrg = isOrgSignInFrom(from);
+  const returnTo = sanitizeReturnToPath(returnToRaw);
+
+  if (AUTH_ENTRY_PATHS.has(path) && !embed) {
+    const landing = await getAuthenticatedLandingHref();
+    if (landing) {
+      redirect(returnTo ?? landing);
+    }
+  }
+
+  const shell = resolveAuthShellCopy({ path, from });
+  const showAccessDenied =
+    fromOrg && path === "sign-in" && isOrgAccessDeniedReason(reason);
+  const reasonNotice =
+    !fromOrg && path === "sign-in"
+      ? resolveClientAuthReasonNotice(reason)
+      : null;
+
+  const headerExtra = showAccessDenied ? (
+    <PortalAccessDeniedNotice />
+  ) : reasonNotice ? (
+    <PortalAuthReasonNotice message={reasonNotice} />
+  ) : undefined;
 
   return (
     <PortalAuthLayout
-      eyebrow={product.portalEyebrow}
-      heroTitle={signIn.heroTitle}
-      heroDescription={signIn.heroDescription}
-      signInTitle={copy.signInTitle}
-      signInDescription={copy.signInDescription}
-      trustNotice={portalCopy.trust.notices.clientLogin}
-      alternateLink={copy.alternateLink}
-      signInHeadingId={copy.signInHeadingId}
+      eyebrow={shell.eyebrow}
+      heroTitle={shell.heroTitle}
+      heroDescription={shell.heroDescription}
+      signInTitle={shell.signInTitle}
+      signInDescription={shell.signInDescription}
+      trustNotice={shell.trustNotice}
+      alternateLink={shell.alternateLink}
+      signInHeadingId={shell.signInHeadingId}
+      headerExtra={headerExtra}
       form={
-        <div className="portal-neon-auth-view space-y-3">
-          <AuthView pathname={path} />
+        <div className="portal-neon-view v-stack gap-3">
+          <PortalNeonAuthView pathname={path} />
           {path === "sign-in" ? (
             <p className="text-center text-sm">
-              <Link href="/auth/forgot-password" className="portal-auth-alt-link">
+              <Link href={AUTH_FORGOT_PASSWORD_HREF} className="portal-auth-alt-link">
                 Forgot password?
               </Link>
             </p>
           ) : null}
         </div>
       }
-      footerHint={path === "sign-in" ? signIn.inviteHint : undefined}
+      footerHint={shell.footerHint}
     />
   );
 }

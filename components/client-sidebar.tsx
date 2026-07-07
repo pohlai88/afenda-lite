@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ClientSignOutButton } from "@/components/client-sign-out-button";
+import { PortalMemberMenu } from "@/components/portal-member-menu";
+import { usePortalMember } from "@/components/portal-member-context";
 import { SidebarBrandIcon } from "@/components/portal-brand-mark";
 import { PortalThemeToggle } from "@/components/portal-theme-toggle";
 import {
@@ -23,8 +24,11 @@ import { PORTAL_NAME, portalCopy } from "@/lib/portal-copy";
 
 export function ClientSidebar(props: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname();
+  const member = usePortalMember();
   const { clientNav } = portalCopy;
   const navItems = getClientNavItems();
+  const headerTitle = member?.displayName ?? PORTAL_NAME;
+  const headerSubtitle = member?.subtitle ?? portalCopy.clientDashboard.eyebrow;
 
   return (
     <Sidebar collapsible="icon" {...props}>
@@ -34,15 +38,15 @@ export function ClientSidebar(props: React.ComponentProps<typeof Sidebar>) {
             <SidebarMenuButton
               size="lg"
               render={<Link href="/client" />}
-              tooltip={PORTAL_NAME}
+              tooltip={headerTitle}
             >
               <SidebarBrandIcon />
               <div className="grid min-w-0 flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
                 <span className="truncate font-medium" translate="no">
-                  {PORTAL_NAME}
+                  {headerTitle}
                 </span>
                 <span className="truncate text-xs text-muted-foreground">
-                  {portalCopy.clientDashboard.eyebrow}
+                  {headerSubtitle}
                 </span>
               </div>
             </SidebarMenuButton>
@@ -73,8 +77,8 @@ export function ClientSidebar(props: React.ComponentProps<typeof Sidebar>) {
       </SidebarContent>
 
       <SidebarFooter className="border-t border-sidebar-border">
-        <div className="flex flex-col gap-2 px-2 py-2 group-data-[collapsible=icon]:items-center">
-          <ClientSignOutButton />
+        <div className="portal-sidebar-footer h-stack items-center justify-between gap-2 px-2 py-2 group-data-[collapsible=icon]:v-stack">
+          <PortalMemberMenu />
           <PortalThemeToggle />
         </div>
       </SidebarFooter>

@@ -57,5 +57,3 @@ export const removeClientRegistrationSchema = z.object({
 export const deleteClientAssignmentSchema = z.object({
   assignmentId: uuidSchema,
 });
-
-export { signInSchema as clientSignInSchema } from "@/lib/schemas/auth";

@@ -1,8 +1,10 @@
-import Image from "next/image";
 import Link from "next/link";
 import {
   BRAND_CONTEXT,
   BRAND_ICON_ALT,
+  BRAND_RENDER_SIZE,
+  PORTAL_BRAND_ICON,
+  PORTAL_BRAND_SHELL,
   type BrandContext,
 } from "@/lib/portal-brand";
 import { PORTAL_NAME } from "@/lib/portal-copy";
@@ -10,62 +12,118 @@ import { cn } from "@/lib/utils";
 
 type BrandMarkProps = {
   context?: BrandContext;
-  priority?: boolean;
   className?: string;
+  /** @deprecated Raw img chrome does not use next/image priority. */
+  priority?: boolean;
 };
+
+/**
+ * Legacy dual-img theme swap inside a fixed shell — no overflow, no overlap.
+ * Shell clips; imgs are absolute + object-contain within padded inset.
+ */
+export function BrandThemeIcon({
+  shellClassName,
+  className,
+  decorative = true,
+  "data-brand-shell": dataBrandShell,
+}: {
+  shellClassName: string;
+  className?: string;
+  decorative?: boolean;
+  "data-brand-shell"?: string;
+}) {
+  const shellClass = cn(shellClassName, className);
+  const imgClass = PORTAL_BRAND_SHELL.imgBase;
+
+  const shell = (
+    <span
+      className={shellClass}
+      data-brand-shell={dataBrandShell}
+      aria-hidden={decorative ? true : undefined}
+    >
+      <img
+        src={PORTAL_BRAND_ICON.light.chrome512}
+        alt=""
+        width={BRAND_RENDER_SIZE}
+        height={BRAND_RENDER_SIZE}
+        decoding="sync"
+        aria-hidden
+        className={cn(imgClass, "dark:hidden")}
+      />
+      <img
+        src={PORTAL_BRAND_ICON.dark.chrome512}
+        alt=""
+        width={BRAND_RENDER_SIZE}
+        height={BRAND_RENDER_SIZE}
+        decoding="sync"
+        aria-hidden
+        className={cn(imgClass, "hidden dark:block")}
+      />
+    </span>
+  );
+
+  if (decorative) {
+    return shell;
+  }
+
+  return (
+    <span role="img" aria-label={BRAND_ICON_ALT} className="inline-flex shrink-0">
+      {shell}
+    </span>
+  );
+}
 
 /** Brand image tuned per surface (sidebar, toolbar, hero, etc.). */
 export function BrandMark({
   context = "toolbar",
-  priority = false,
   className,
+  priority: _priority,
 }: BrandMarkProps) {
-  const { asset, className: contextClass, decorative } = BRAND_CONTEXT[context];
+  const { shellClass, decorative } = BRAND_CONTEXT[context];
 
   return (
-    <Image
-      src={asset.path}
-      alt={decorative ? "" : BRAND_ICON_ALT}
-      width={asset.width}
-      height={asset.height}
-      sizes={asset.sizes}
-      priority={priority}
-      aria-hidden={decorative || undefined}
-      className={cn(contextClass, className)}
+    <BrandThemeIcon
+      shellClassName={shellClass}
+      className={className}
+      decorative={decorative}
+      data-brand-shell={context}
     />
   );
 }
 
 /**
- * shadcn sidebar header icon — `size-8` rounded-lg shell with centered mark.
+ * shadcn sidebar header icon — 32px shell, theme-aware.
  * Use as the first child of `SidebarMenuButton size="lg"`.
  */
 export function SidebarBrandIcon({ className }: { className?: string }) {
   return (
-    <div
-      className={cn(
-        "center size-8 shrink-0 overflow-hidden rounded-lg bg-sidebar-primary text-sidebar-primary-foreground",
-        className,
-      )}
-    >
-      <BrandMark context="sidebar" />
-    </div>
+    <BrandThemeIcon
+      shellClassName={BRAND_CONTEXT.sidebar.shellClass}
+      className={className}
+      data-brand-shell="sidebar"
+    />
   );
 }
 
-/** Inner mark for team-switcher / dropdown rows (parent supplies the shell). */
+/** Inner mark for team-switcher / operator sidebar header (32px shell). */
 export function SidebarBrandMark({ className }: { className?: string }) {
-  return <BrandMark context="sidebar" className={className} />;
+  return (
+    <BrandThemeIcon
+      shellClassName={BRAND_CONTEXT.sidebar.shellClass}
+      className={className}
+      data-brand-shell="sidebar"
+    />
+  );
 }
 
 /** Linked logo + optional portal name. */
 export function BrandLogo({
   href = "/",
   context = "toolbar",
-  priority = false,
   showName = false,
   className,
   nameClassName,
+  priority: _priority,
 }: {
   href?: string | null;
   context?: BrandContext;
@@ -76,7 +134,7 @@ export function BrandLogo({
 }) {
   const content = (
     <>
-      <BrandMark context={context} priority={priority} />
+      <BrandMark context={context} />
       {showName ? (
         <span
           translate="no"

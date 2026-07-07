@@ -13,14 +13,17 @@ Pre-flight dependency check for deploy verification and operators. **Not** for V
 
 ## Inputs / outputs
 
-- **Inputs:** Env vars, DB ping, pooler topology (production)
-- **Outputs:** JSON `{ status: "ready" | "degraded", checks: {...} }`
+- **Inputs:** Env vars (`DATABASE_URL`, `NEON_AUTH_*`), DB ping, pooler topology (production), Neon Auth JWKS probe
+- **Outputs:** JSON envelope `{ data: { status: "ready" | "degraded", topology, storage, connection, auth, timestamp } }`
+- **HTTP:** Always `200` with `Cache-Control: no-store` — deploy gate reads `data.status`, not status code
 
 ## Owned files
 
 - `app/api/health/liveness/route.ts` — lightweight uptime probe (no DB/env validation)
-- `app/api/health/readiness/route.ts` — deploy gate
-- `lib/db.ts`
+- `app/api/health/readiness/route.ts` — deploy gate route handler
+- `lib/api/health-response.ts` — shared `{ data }` envelope + cache headers
+- `lib/api/readiness.ts` — env probe, JWKS auth probe, readiness evaluation
+- `lib/db.ts` — connection ping + pooler metadata
 
 ## Critical control points
 
@@ -34,8 +37,10 @@ Pre-flight dependency check for deploy verification and operators. **Not** for V
 
 ## Required tests
 
-- `GET /api/health/liveness` returns 200 with `status: "alive"`
-- `GET /api/health/readiness` returns 200
+- `lib/api/health-response.test.ts` — envelope + cache headers
+- `lib/api/readiness.test.ts` — env probe, JWKS probe, readiness evaluation
+- `GET /api/health/liveness` returns 200 with `data.status: "alive"`
+- `GET /api/health/readiness` returns 200 with `data.status` in `ready | degraded`
 - Broken `DATABASE_URL` yields `degraded`
 
 ## Acceptance proof

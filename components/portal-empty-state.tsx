@@ -24,7 +24,7 @@ export function PortalEmptyStateCard({
   return (
     <Card className="w-full">
       <CardContent className="pt-6">
-        <div className="rounded-md border border-dashed p-8 text-center">
+        <div className="portal-empty-state-panel">
           <Icon
             aria-hidden="true"
             className="mx-auto size-12 text-muted-foreground"

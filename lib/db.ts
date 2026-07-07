@@ -20,7 +20,7 @@ if (
   !isPoolerConnection(databaseUrl)
 ) {
   console.warn(
-    "DATABASE_URL should use the Supabase pooler (pooler.supabase.com:6543) for serverless deployments.",
+    "DATABASE_URL should use a pooler endpoint (-pooler host or port 6543) for serverless deployments.",
   );
 }
 

@@ -1,15 +1,15 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "@/testing/e2e/playwright-base";
 import {
   getOperatorCreds,
-  loginAsOperator,
   operatorSkipMessage,
   requireOperatorCreds,
-} from "./helpers/operator";
+} from "@/testing/e2e/credentials";
 import {
   isPlaygroundEnabledForTests,
   playgroundScreenFixtures,
   playgroundSkipMessage,
-} from "./helpers/playground";
+} from "@/testing/e2e/fixtures";
+import { loginAsOperator } from "@/testing/e2e/operator-flows";
 
 const operatorCreds = getOperatorCreds();
 const playgroundEnabled = isPlaygroundEnabledForTests();

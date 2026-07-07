@@ -7,11 +7,22 @@ const securityHeaders = [
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
 ];
 
+// When the dev server is accessed via explicit IP (127.0.0.1) rather than the
+// hostname it binds to (localhost), Next.js sets x-forwarded-host to localhost
+// while the browser sends Origin: http://127.0.0.1:PORT. The two layers that
+// need the same exception are distinct:
+//   1. allowedDevOrigins  — Turbopack HMR WebSocket connections
+//   2. experimental.serverActions.allowedOrigins — Server Action CSRF check
+//      (isCsrfOriginAllowed in action-handler.js reads only this list, NOT
+//       allowedDevOrigins, so both must be set for the sign-in flow to work)
+const DEV_IP_ORIGINS =
+  process.env.NODE_ENV === "development"
+    ? ["127.0.0.1:3000", "127.0.0.1:3001"]
+    : [];
+
 const nextConfig: NextConfig = {
   reactCompiler: true,
   poweredByHeader: false,
-  // Tooling often hits the dev server via 127.0.0.1 while Next binds localhost.
-  // Without this, Turbopack HMR can be blocked and client components fail to hydrate.
   allowedDevOrigins: ["127.0.0.1"],
   serverExternalPackages: ["pg"],
   experimental: {
@@ -20,6 +31,9 @@ const nextConfig: NextConfig = {
       "@base-ui/react",
       "@tanstack/react-table",
     ],
+    serverActions: {
+      allowedOrigins: DEV_IP_ORIGINS,
+    },
   },
   logging: {
     fetches: {

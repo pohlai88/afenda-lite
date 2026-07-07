@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { getEvaluationRow } from "@/lib/ui-decision-matrix";
+import { productionSeedFixtures } from "@/lib/production-fixtures";
 import {
   ComparisonGrid,
   MockDataTable,
@@ -43,7 +44,14 @@ export const DeclarationsVsDatatable01: Story = {
     const row = getEvaluationRow("admin-dashboard")!;
     return (
       <ComparisonGrid
-        left={<MockDataTable variant="current" />}
+        left={
+          <div className="space-y-2">
+            <p className="text-sm text-muted-foreground">
+              Seed: {productionSeedFixtures.declaration.title}
+            </p>
+            <MockDataTable variant="current" />
+          </div>
+        }
         right={<MockDataTable variant="studio" />}
         annotation={
           <ScoreAnnotation

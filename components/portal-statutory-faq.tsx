@@ -46,3 +46,6 @@ export function PortalStatutoryFaq({
     </section>
   );
 }
+
+/** Matrix registry alias for `faq-component-01` adoption. */
+export { PortalStatutoryFaq as PortalFaqSection };

@@ -76,6 +76,13 @@ export async function listQuestionsForSurvey(surveyId: string) {
   return result.rows.map(mapQuestion);
 }
 
+export class SurveyHasResponsesError extends Error {
+  constructor() {
+    super("SURVEY_HAS_RESPONSES");
+    this.name = "SurveyHasResponsesError";
+  }
+}
+
 export async function replaceSurveyQuestions(
   surveyId: string,
   questions: Array<{
@@ -85,21 +92,45 @@ export async function replaceSurveyQuestions(
     config?: QuestionConfig;
   }>,
 ) {
-  await pool.query(`DELETE FROM survey_questions WHERE survey_id = $1`, [surveyId]);
+  const existing = await pool.query(
+    `SELECT COUNT(*)::int AS count
+     FROM survey_responses
+     WHERE survey_id = $1`,
+    [surveyId],
+  );
 
-  for (const [index, question] of questions.entries()) {
-    await pool.query(
-      `INSERT INTO survey_questions (survey_id, prompt, type, required, sort_order, config)
-       VALUES ($1, $2, $3, $4, $5, $6)`,
-      [
-        surveyId,
-        question.prompt.trim(),
-        question.type,
-        question.required,
-        index,
-        JSON.stringify(question.config ?? {}),
-      ],
-    );
+  if (Number(existing.rows[0]?.count ?? 0) > 0) {
+    throw new SurveyHasResponsesError();
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    await client.query(`DELETE FROM survey_questions WHERE survey_id = $1`, [
+      surveyId,
+    ]);
+
+    for (const [index, question] of questions.entries()) {
+      await client.query(
+        `INSERT INTO survey_questions (survey_id, prompt, type, required, sort_order, config)
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        [
+          surveyId,
+          question.prompt.trim(),
+          question.type,
+          question.required,
+          index,
+          JSON.stringify(question.config ?? {}),
+        ],
+      );
+    }
+
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
   }
 }
 

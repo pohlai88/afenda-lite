@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 import { SidebarBrandMark } from "@/components/portal-brand-mark";
+import { PORTAL_BRAND_SHELL } from "@/lib/portal-brand";
+import type { PortalMember } from "@/lib/portal-member-types";
 import {
   ClipboardListIcon,
   LayoutGridIcon,
@@ -12,14 +14,16 @@ import {
   type PortalSidebarRoute,
 } from "@/lib/portal-nav-routes";
 import { PORTAL_NAME, portalCopy } from "@/lib/portal-copy";
+import { fallbackOperatorMember } from "@/lib/portal-member-types";
 
 export type DashboardTeam = {
   name: string;
+  memberLabel: string;
+  memberEmail?: string | null;
   plan: string;
   href: string;
   logo: ReactNode;
   matchPrefixes: string[];
-  /** When true, switching to this team runs the preview-client server action. */
   usePreviewAction?: boolean;
 };
 
@@ -36,23 +40,41 @@ const orgRouteIcons: Record<string, ReactNode> = {
   playground: <LayoutGridIcon aria-hidden="true" className="size-4" />,
 };
 
-export const dashboardTeams: DashboardTeam[] = [
-  {
-    name: PORTAL_NAME,
-    plan: portalCopy.nav.organization,
-    href: "/dashboard",
-    logo: <SidebarBrandMark />,
-    matchPrefixes: ["/dashboard", "/org", "/auth/admin", "/playground"],
-  },
-  {
-    name: "Client portal",
-    plan: "Declarations",
-    href: "/client",
-    logo: <UsersIcon aria-hidden="true" className="size-4" />,
-    matchPrefixes: ["/client"],
-    usePreviewAction: true,
-  },
-];
+const operatorLogo = <SidebarBrandMark />;
+const clientLogo = (
+  <div className={PORTAL_BRAND_SHELL.slot}>
+    <UsersIcon aria-hidden="true" className="size-4" />
+  </div>
+);
+
+export function buildDashboardTeams(input: {
+  operator: PortalMember;
+  previewClient: PortalMember | null;
+}): DashboardTeam[] {
+  const { operator, previewClient } = input;
+
+  return [
+    {
+      name: "operator",
+      memberLabel: operator.displayName,
+      memberEmail: operator.email,
+      plan: portalCopy.nav.organization,
+      href: "/dashboard",
+      logo: operatorLogo,
+      matchPrefixes: ["/dashboard", "/org", "/auth/admin", "/playground"],
+    },
+    {
+      name: "client-preview",
+      memberLabel: previewClient?.displayName ?? "Client portal",
+      memberEmail: previewClient?.email ?? null,
+      plan: previewClient?.subtitle ?? "Declarations",
+      href: "/client",
+      logo: clientLogo,
+      matchPrefixes: ["/client"],
+      usePreviewAction: true,
+    },
+  ];
+}
 
 function resolveOrgSidebarTitle(route: PortalSidebarRoute) {
   const { copy } = route;
@@ -91,3 +113,9 @@ export function resolveActiveTeam(pathname: string, teams: DashboardTeam[]) {
     ) ?? teams[0]
   );
 }
+
+/** Static fallback when dashboard layout has not resolved live member teams yet. */
+export const fallbackDashboardTeams: DashboardTeam[] = buildDashboardTeams({
+  operator: fallbackOperatorMember(PORTAL_NAME),
+  previewClient: null,
+});

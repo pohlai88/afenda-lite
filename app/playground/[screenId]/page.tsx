@@ -3,13 +3,36 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ExternalLinkIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { buildEmbedUrl, getPlaygroundScreen, isPlaygroundScreenPathConfigured } from "@/lib/playground";
+import {
+  buildEmbedUrl,
+  getPlaygroundScreen,
+  getPlaygroundScreenIds,
+  isPlaygroundScreenPathConfigured,
+} from "@/lib/playground";
 import { PORTAL_NAME } from "@/lib/portal-copy";
 
-export const metadata: Metadata = {
-  title: `${PORTAL_NAME} — Playground`,
-  description: "UI review for admin and client portal screens.",
-};
+export const dynamic = "force-dynamic";
+
+export function generateStaticParams() {
+  return getPlaygroundScreenIds().map((screenId) => ({ screenId }));
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ screenId: string }>;
+}): Promise<Metadata> {
+  const { screenId } = await params;
+  const screen = getPlaygroundScreen(screenId);
+
+  return {
+    title: screen
+      ? `${PORTAL_NAME} — Playground · ${screen.label}`
+      : `${PORTAL_NAME} — Playground`,
+    description: "UI review for admin and client portal screens.",
+    robots: { index: false, follow: false },
+  };
+}
 
 export default async function PlaygroundScreenPage({
   params,
@@ -27,16 +50,24 @@ export default async function PlaygroundScreenPage({
   const pathConfigured = isPlaygroundScreenPathConfigured(screen.path);
 
   return (
-    <div className="v-stack gap-4 p-4 md:p-6">
-      <div className="h-stack flex-wrap items-center justify-between gap-3">
-        <div>
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            {screen.category === "admin" ? "Admin" : "Client"}
-          </p>
-          <h1 className="text-lg font-semibold">{screen.label}</h1>
-          <p className="text-sm text-muted-foreground">{screen.path}</p>
-          <p className="text-xs text-muted-foreground">Embed: {embedUrl}</p>
-        </div>
+    <div className="v-stack min-w-0 gap-4 overflow-x-clip p-4 md:p-6">
+      <a href="#playground-main" className="portal-skip-link">
+        Skip to preview
+      </a>
+
+      <div
+        id="playground-main"
+        className="v-stack min-w-0 gap-4"
+      >
+        <div className="h-stack min-w-0 flex-wrap items-center justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <p className="portal-state-kicker">
+              {screen.category === "admin" ? "Admin" : "Client"}
+            </p>
+            <h1 className="portal-toolbar-title">{screen.label}</h1>
+            <p className="text-sm text-muted-foreground break-words">{screen.path}</p>
+            <p className="portal-code-block mt-2 break-all">Embed: {embedUrl}</p>
+          </div>
         <Button
           variant="outline"
           size="sm"
@@ -52,7 +83,7 @@ export default async function PlaygroundScreenPage({
 
       {!pathConfigured ? (
         <div
-          className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-900 dark:text-amber-100"
+          className="rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-warning-foreground"
           data-playground-config-warning
         >
           This screen path is not configured. Set PLAYGROUND_SURVEY_ID,
@@ -69,8 +100,9 @@ export default async function PlaygroundScreenPage({
         data-playground-screen-id={screenId}
         data-playground-target-path={screen.path}
         data-playground-embed-url={embedUrl}
-        className="min-h-[80dvh] w-full rounded-lg border bg-background"
+        className="min-h-[80dvh] w-full min-w-0 rounded-lg border bg-background"
       />
+      </div>
     </div>
   );
 }

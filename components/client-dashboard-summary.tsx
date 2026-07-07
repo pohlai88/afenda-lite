@@ -53,18 +53,24 @@ export function ClientDashboardSummary({
       title: copy.metrics.pending,
       value: metrics.pending,
       description: copy.metrics.pendingDescription,
+      trendLabel: metrics.trends.pending.label,
+      trendVariant: metrics.trends.pending.variant,
     },
     {
       key: "submitted" as const,
       title: copy.metrics.submitted,
       value: metrics.submitted,
       description: copy.metrics.submittedDescription,
+      trendLabel: metrics.trends.submitted.label,
+      trendVariant: metrics.trends.submitted.variant,
     },
     {
       key: "dueSoon" as const,
       title: copy.metrics.dueSoon,
       value: metrics.dueSoon,
       description: copy.metrics.dueSoonDescription,
+      trendLabel: metrics.trends.dueSoon.label,
+      trendVariant: metrics.trends.dueSoon.variant,
     },
   ];
 
@@ -80,6 +86,8 @@ export function ClientDashboardSummary({
               value={metric.value}
               title={metric.title}
               description={metric.description}
+              trendLabel={metric.trendLabel}
+              trendVariant={metric.trendVariant}
             />
           );
         })}

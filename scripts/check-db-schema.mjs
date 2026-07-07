@@ -1,72 +1,74 @@
-import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import process from "node:process";
 import pg from "pg";
-import { getPgPoolConfig } from "./db-pool-config.mjs";
+import {
+  PORTAL_TABLES,
+  REQUIRED_COLUMNS,
+  REQUIRED_CONSTRAINTS,
+  REQUIRED_INDEXES,
+} from "../db/schema-manifest.mjs";
+import { getPgPoolConfig, isPoolerConnection } from "./db-pool-config.mjs";
+import { loadDatabaseUrl } from "./lib/load-database-url.mjs";
+import { listMigrationFiles } from "./lib/list-migration-files.mjs";
 
-const ROOT = process.cwd();
-const MIGRATIONS_DIR = join(ROOT, "db", "migrations");
-
-function normalizeDatabaseUrl(url) {
-  try {
-    const parsed = new URL(url);
-    const sslmode = parsed.searchParams.get("sslmode");
-    if (
-      sslmode === "prefer" ||
-      sslmode === "require" ||
-      sslmode === "verify-ca"
-    ) {
-      parsed.searchParams.set("sslmode", "verify-full");
-    }
-    return parsed.toString();
-  } catch {
-    return url;
+async function assertTables(pool) {
+  const result = await pool.query(
+    `SELECT tablename FROM pg_tables WHERE schemaname = 'public'`,
+  );
+  const present = new Set(result.rows.map((row) => String(row.tablename)));
+  const missing = PORTAL_TABLES.filter((table) => !present.has(table));
+  if (missing.length > 0) {
+    throw new Error(`Missing portal tables: ${missing.join(", ")}`);
   }
 }
 
-function isPoolerConnection(url) {
-  if (!url) return false;
-  try {
-    return (
-      parsed.hostname.includes("pooler.supabase.com") ||
-      parsed.port === "6543" ||
-      parsed.hostname.includes("-pooler")
+async function assertIndexes(pool) {
+  const result = await pool.query(
+    `SELECT indexname FROM pg_indexes WHERE schemaname = 'public'`,
+  );
+  const present = new Set(result.rows.map((row) => String(row.indexname)));
+  const missing = REQUIRED_INDEXES.filter((index) => !present.has(index));
+  if (missing.length > 0) {
+    throw new Error(`Missing portal indexes: ${missing.join(", ")}`);
+  }
+}
+
+async function assertColumns(pool) {
+  for (const [table, columns] of Object.entries(REQUIRED_COLUMNS)) {
+    const result = await pool.query(
+      `SELECT column_name
+       FROM information_schema.columns
+       WHERE table_schema = 'public' AND table_name = $1`,
+      [table],
     );
-  } catch {
-    return false;
-  }
-}
-
-function loadDatabaseUrl() {
-  if (process.env.DATABASE_URL) {
-    return process.env.DATABASE_URL;
-  }
-
-  const envPath = join(ROOT, ".env");
-  try {
-    const content = readFileSync(envPath, "utf8");
-    for (const line of content.split("\n")) {
-      const trimmed = line.trim();
-      if (trimmed.startsWith("DATABASE_URL=")) {
-        return trimmed.slice("DATABASE_URL=".length);
-      }
+    const present = new Set(result.rows.map((row) => String(row.column_name)));
+    const missing = columns.filter((column) => !present.has(column));
+    if (missing.length > 0) {
+      throw new Error(`Missing ${table} columns: ${missing.join(", ")}`);
     }
-  } catch {
-    return undefined;
   }
-
-  return undefined;
 }
 
-function listMigrationFiles() {
-  return readdirSync(MIGRATIONS_DIR)
-    .filter((file) => file.endsWith(".sql"))
-    .sort();
+async function assertConstraints(pool) {
+  const result = await pool.query(
+    `SELECT conname
+     FROM pg_constraint
+     WHERE connamespace = 'public'::regnamespace`,
+  );
+  const present = new Set(result.rows.map((row) => String(row.conname)));
+  const missing = REQUIRED_CONSTRAINTS.filter(
+    (constraint) => !present.has(constraint),
+  );
+  if (missing.length > 0) {
+    throw new Error(`Missing portal constraints: ${missing.join(", ")}`);
+  }
 }
 
 async function main() {
   const migrationFiles = listMigrationFiles();
-  console.log(`check:db-schema OK (${migrationFiles.length} migration files present)`);
+  console.log(
+    `check:db-schema OK (${migrationFiles.length} migration files present)`,
+  );
 
   const databaseUrl = loadDatabaseUrl();
   if (!databaseUrl) {
@@ -76,11 +78,11 @@ async function main() {
 
   if (process.env.NODE_ENV === "production" && !isPoolerConnection(databaseUrl)) {
     throw new Error(
-      "DATABASE_URL must use the Supabase pooler (pooler.supabase.com:6543) in production.",
+      "DATABASE_URL must use a pooler endpoint (-pooler host or port 6543) in production.",
     );
   }
 
-  const pool = new pg.Pool(getPgPoolConfig(normalizeDatabaseUrl(databaseUrl)));
+  const pool = new pg.Pool(getPgPoolConfig(databaseUrl));
 
   try {
     const applied = await pool.query(
@@ -95,8 +97,13 @@ async function main() {
       );
     }
 
+    await assertTables(pool);
+    await assertColumns(pool);
+    await assertIndexes(pool);
+    await assertConstraints(pool);
+
     console.log(
-      `check:db-schema live OK (${appliedFiles.length}/${migrationFiles.length} applied, pooler=${isPoolerConnection(databaseUrl)})`,
+      `check:db-schema live OK (${appliedFiles.length}/${migrationFiles.length} applied, pooler=${isPoolerConnection(databaseUrl)}, tables=${PORTAL_TABLES.length}, indexes=${REQUIRED_INDEXES.length}, constraints=${REQUIRED_CONSTRAINTS.length})`,
     );
   } finally {
     await pool.end();

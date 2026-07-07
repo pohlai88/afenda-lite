@@ -16,7 +16,7 @@ export function PortalNotFoundPage({
   backLabel: string;
 }) {
   return (
-    <main className="flex min-h-dvh flex-col items-center justify-center gap-6 px-4 py-16 text-center">
+    <main className="portal-centered-state">
       <div className="flex size-24 items-center justify-center rounded-2xl border border-dashed bg-muted/30">
         <FileQuestionIcon
           aria-hidden="true"
@@ -24,11 +24,9 @@ export function PortalNotFoundPage({
         />
       </div>
       <div className="max-w-md space-y-2">
-        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-          {PORTAL_NAME}
-        </p>
-        <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-        <p className="text-sm text-muted-foreground text-pretty">{description}</p>
+        <p className="portal-state-kicker">{PORTAL_NAME}</p>
+        <h1 className="portal-state-title">{title}</h1>
+        <p className="portal-state-description">{description}</p>
       </div>
       <Button
         className="touch-manipulation"

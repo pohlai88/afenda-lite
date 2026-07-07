@@ -1,0 +1,37 @@
+import path from "node:path";
+import react from "@vitejs/plugin-react";
+import { defineConfig } from "vitest/config";
+
+const root = path.resolve(__dirname, "..");
+
+export default defineConfig({
+  plugins: [react()],
+  resolve: {
+    alias: {
+      "@": root,
+      "server-only": path.resolve(__dirname, "mocks/server-only.ts"),
+    },
+  },
+  test: {
+    projects: [
+      {
+        extends: true,
+        test: {
+          name: "unit",
+          environment: "node",
+          include: ["lib/**/*.test.ts", "app/api/**/*.test.ts"],
+          exclude: ["**/*.interaction.test.tsx"],
+        },
+      },
+      {
+        extends: true,
+        test: {
+          name: "interaction",
+          environment: "jsdom",
+          setupFiles: [path.resolve(__dirname, "vitest.setup.ts")],
+          include: ["**/*.interaction.test.tsx"],
+        },
+      },
+    ],
+  },
+});

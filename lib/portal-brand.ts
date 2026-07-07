@@ -1,85 +1,122 @@
 import { PORTAL_NAME } from "@/lib/portal-copy";
 
-/** Master display asset (512×512, generated from source). */
-export const BRAND_ICON_PATH = "/brandicondisk.png";
-export const BRAND_ICON_WIDTH = 512;
-export const BRAND_ICON_HEIGHT = 512;
+/** Immutable theme masters (`public/brand/iam-*.png`) — never overwritten by icons:generate. */
+export const BRAND_MASTER_LIGHT_PATH = "/brand/iam-light.png";
+export const BRAND_MASTER_DARK_PATH = "/brand/iam-dark.png";
 
-/** Browser-level icon assets (`npm run icons:generate`). */
-export const BRAND_FAVICON_16_PATH = "/icons/favicon-16.png";
-export const BRAND_FAVICON_32_PATH = "/icons/favicon-32.png";
-export const BRAND_APPLE_ICON_PATH = "/icons/apple-touch-icon.png";
-export const BRAND_PWA_ICON_192_PATH = "/icons/icon-192.png";
-export const BRAND_PWA_ICON_512_PATH = "/icons/icon-512.png";
+/** Full auth mockup reference — design comp only (public/brand/owl-dramatic.png). */
+export const BRAND_DRAMATIC_OWL_MOCKUP_PATH = "/brand/owl-dramatic.png";
+
+/** Isolated painterly owl — auth vault cinematic background only (not for icons). */
+export const BRAND_DRAMATIC_OWL_BACKGROUND_PATH = "/brand/owl-dramatic-isolated.png";
+export const BRAND_DRAMATIC_OWL_BACKGROUND_WIDTH = 524;
+export const BRAND_DRAMATIC_OWL_BACKGROUND_HEIGHT = 561;
+
+/** @deprecated Use BRAND_DRAMATIC_OWL_BACKGROUND_* — background phantom only. */
+export const BRAND_CREDENTIAL_OWL_PATH = BRAND_DRAMATIC_OWL_BACKGROUND_PATH;
+export const BRAND_CREDENTIAL_OWL_WIDTH = BRAND_DRAMATIC_OWL_BACKGROUND_WIDTH;
+export const BRAND_CREDENTIAL_OWL_HEIGHT = BRAND_DRAMATIC_OWL_BACKGROUND_HEIGHT;
+
+/** Full-bleed cinematic owl for auth vault background — decorative only. */
+export const BRAND_CINEMATIC_OWL_PATH = BRAND_DRAMATIC_OWL_BACKGROUND_PATH;
+
+/** Per-theme generated assets (`npm run icons:generate`). */
+export const PORTAL_BRAND_ICON = {
+  light: {
+    chrome512: "/icons/iam-chrome-512-light.png",
+    favicon16: "/icons/favicon-16-light.png",
+    favicon32: "/icons/favicon-32-light.png",
+    pwa192: "/icons/icon-192-light.png",
+    pwa512: "/icons/icon-512-light.png",
+    apple: "/icons/apple-touch-icon-light.png",
+  },
+  dark: {
+    chrome512: "/icons/iam-chrome-512-dark.png",
+    favicon16: "/icons/favicon-16-dark.png",
+    favicon32: "/icons/favicon-32-dark.png",
+    pwa192: "/icons/icon-192-dark.png",
+    pwa512: "/icons/icon-512-dark.png",
+    apple: "/icons/apple-touch-icon-dark.png",
+  },
+} as const;
+
+export type PortalBrandTheme = keyof typeof PORTAL_BRAND_ICON;
+
+export const BRAND_RENDER_SIZE = 512;
+export const BRAND_WEB_MANIFEST_PATH = "/site.webmanifest";
 export const BRAND_OG_IMAGE_PATH = "/icons/og-image.png";
 export const BRAND_OG_IMAGE_WIDTH = 512;
 export const BRAND_OG_IMAGE_HEIGHT = 512;
-export const BRAND_WEB_MANIFEST_PATH = "/site.webmanifest";
 
 export const BRAND_MARK_NAME = "iAM";
 export const BRAND_ICON_ALT = `${BRAND_MARK_NAME} — ${PORTAL_NAME} logo`;
 
-/** Display contexts — each maps to asset size, layout, and a11y. */
+/**
+ * Shell + img closed set — mark stays inside fixed slot (overflow-hidden, object-contain).
+ * Dual imgs stack absolutely inside the shell; theme swap via dark:hidden / hidden dark:block.
+ */
+export const PORTAL_BRAND_SHELL = {
+  /** Inner img — fills padded shell box without bleeding past edges. */
+  imgBase:
+    "absolute inset-0 m-auto size-full max-h-full max-w-full object-contain object-center p-0 border-0 bg-transparent",
+  /** 32px chrome slot — sidebar, toolbar (2px inset padding). */
+  chromeShell:
+    "relative flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-md bg-transparent p-0.5",
+  /** 24px compact slot — team-switcher dropdown rows. */
+  compactShell:
+    "relative flex size-6 shrink-0 items-center justify-center overflow-hidden rounded-md bg-transparent p-px",
+  /** Hero vault frame — larger contain slot with vault chrome on shell only. */
+  heroShell:
+    "relative flex size-28 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-vault-surface p-3 ring-1 ring-vault-rim shadow-[0_0_48px_var(--vault-glow)] sm:size-32 sm:p-3.5 lg:size-36 lg:p-4",
+  /** @deprecated Use chromeShell — kept for non-brand icon slots in dashboard-nav. */
+  slot: "center size-8 shrink-0 p-0 leading-none",
+} as const;
+
+/** Display contexts — each maps to shell bounds, img fit, and a11y. */
 export type BrandContext = "sidebar" | "toolbar" | "compact" | "hero";
 
-type BrandAsset = {
-  path: string;
-  width: number;
-  height: number;
-  sizes: string;
+export type BrandContextConfig = {
+  shellClass: string;
+  decorative: boolean;
+  mode: "chrome" | "hero";
 };
 
-export const BRAND_CONTEXT: Record<
-  BrandContext,
-  {
-    asset: BrandAsset;
-    className: string;
-    decorative: boolean;
-  }
-> = {
-  /** shadcn sidebar `size-8` slot — object-contain inside rounded-lg shell */
+export const BRAND_CONTEXT: Record<BrandContext, BrandContextConfig> = {
   sidebar: {
-    asset: {
-      path: BRAND_FAVICON_32_PATH,
-      width: 32,
-      height: 32,
-      sizes: "32px",
-    },
-    className: "size-full object-contain",
+    shellClass: PORTAL_BRAND_SHELL.chromeShell,
     decorative: true,
+    mode: "chrome",
   },
-  /** Auth toolbar / linked wordmark companion */
   toolbar: {
-    asset: {
-      path: BRAND_FAVICON_32_PATH,
-      width: 32,
-      height: 32,
-      sizes: "40px",
-    },
-    className: "size-10 shrink-0 rounded-lg object-contain ring-1 ring-border/50",
+    shellClass: PORTAL_BRAND_SHELL.chromeShell,
     decorative: true,
+    mode: "chrome",
   },
-  /** Customer shell header — minimal footprint */
   compact: {
-    asset: {
-      path: BRAND_FAVICON_32_PATH,
-      width: 32,
-      height: 32,
-      sizes: "32px",
-    },
-    className: "size-8 shrink-0 rounded-lg object-contain ring-1 ring-border/50",
+    shellClass: PORTAL_BRAND_SHELL.compactShell,
     decorative: true,
+    mode: "chrome",
   },
-  /** Landing hero — LCP, meaningful alt */
   hero: {
-    asset: {
-      path: BRAND_PWA_ICON_192_PATH,
-      width: 192,
-      height: 192,
-      sizes: "(max-width: 640px) 112px, (max-width: 1024px) 128px, 144px",
-    },
-    className:
-      "size-28 rounded-2xl object-contain ring-1 ring-border/40 bg-black shadow-[0_0_48px_var(--vault-glow)] sm:size-32 lg:size-36",
+    shellClass: PORTAL_BRAND_SHELL.heroShell,
     decorative: false,
+    mode: "hero",
   },
+};
+
+export const BRAND_CHROME_CONTEXTS = new Set<BrandContext>([
+  "sidebar",
+  "toolbar",
+  "compact",
+]);
+
+/** Expected outer shell dimensions (px) per context — used by validation + Storybook proof. */
+export const BRAND_SHELL_BOUNDS: Record<
+  BrandContext,
+  { outerPx: number; paddingPx: number }
+> = {
+  sidebar: { outerPx: 32, paddingPx: 2 },
+  toolbar: { outerPx: 32, paddingPx: 2 },
+  compact: { outerPx: 24, paddingPx: 1 },
+  hero: { outerPx: 112, paddingPx: 12 },
 };

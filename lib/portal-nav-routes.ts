@@ -45,13 +45,13 @@ export const CLIENT_SIDEBAR_ROUTES = [
   {
     id: "client-dashboard",
     href: "/client",
-    page: "app/client/page.tsx",
+    page: "app/client/(workspace)/page.tsx",
     copy: { section: "clientDashboard", key: "title" },
   },
   {
     id: "declarant-profile",
     href: "/client/profile",
-    page: "app/client/profile/page.tsx",
+    page: "app/client/(workspace)/profile/page.tsx",
     copy: { section: "clientNav", key: "declarantProfile" },
   },
 ] as const satisfies readonly PortalSidebarRoute[];

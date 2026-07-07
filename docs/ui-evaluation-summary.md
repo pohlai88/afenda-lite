@@ -29,7 +29,7 @@ Run `npm run evaluate:ui-matrix` to verify zero omissions.
 | `client-dashboard` | statistics-component-03 | 4.45 | marginal |
 | `error-404` | error-page-02 | 4.35 | tie |
 | `client-declare-empty` | empty-state-02 | 4.55 | marginal |
-| `user-menu` | dashboard-dropdown-01 | 4.45 | marginal |
+| `user-menu` | keep-current (PortalMemberMenu) | 4.85 | strong |
 | `faq-section` | faq-component-01 | 4.45 | marginal |
 
 ## Auth & account (keep Neon)

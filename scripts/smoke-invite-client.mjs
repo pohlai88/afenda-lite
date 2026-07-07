@@ -1,74 +1,57 @@
 /**
- * Smoke test: register client + assignment (no Supabase email).
+ * Smoke test: register client + assignment (Neon Auth provision).
  * Run: node --env-file=.env scripts/smoke-invite-client.mjs [email] [fullName]
  */
 import pg from "pg";
-import { createClient } from "@supabase/supabase-js";
 import { getPgPoolConfig } from "./db-pool-config.mjs";
+import { loadEnvFile, getEnv } from "./lib/load-env.mjs";
+import {
+  ensureNeonClientUser,
+  findNeonAuthUser,
+} from "./lib/neon-auth-seed.mjs";
 
-const recipientEmail = (process.argv[2] ?? "jackwee2020@gmail.com").trim().toLowerCase();
+const env = loadEnvFile();
+const recipientEmail = (process.argv[2] ?? "jackwee2020@gmail.com")
+  .trim()
+  .toLowerCase();
 const fullName = (process.argv[3] ?? "Jack Wee").trim();
-const appUrl = (process.env.APP_URL ?? "https://iam-check.vercel.app").replace(/\/$/, "");
+const appUrl = (getEnv("APP_URL", env) ?? "https://iam-check.vercel.app").replace(
+  /\/$/,
+  "",
+);
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const databaseUrl = process.env.DATABASE_URL;
-const adminEmail = process.env.SHARED_ADMIN_EMAIL?.trim().toLowerCase();
-const defaultPassword = process.env.CLIENT_DEFAULT_PASSWORD;
+const databaseUrl = getEnv("DATABASE_URL", env);
+const adminEmail = getEnv("SHARED_ADMIN_EMAIL", env)?.trim().toLowerCase();
+const adminPassword = getEnv("SHARED_ADMIN_PASSWORD", env);
+const defaultPassword = getEnv("CLIENT_DEFAULT_PASSWORD", env);
+const authBaseUrl = getEnv("NEON_AUTH_BASE_URL", env);
+const cookieSecret = getEnv("NEON_AUTH_COOKIE_SECRET", env);
 
 function createInviteTokenValue() {
   return crypto.randomUUID().replace(/-/g, "");
 }
 
-async function ensureAuthUser(admin, email, name, password) {
-  const { data: existingUsers } = await admin.auth.admin.listUsers({
-    page: 1,
-    perPage: 1000,
-  });
-  const existing = existingUsers.users.find(
-    (user) => user.email?.toLowerCase() === email,
-  );
-
-  if (existing) {
-    const { error } = await admin.auth.admin.updateUserById(existing.id, {
-      password,
-      email_confirm: true,
-      user_metadata: { full_name: name, name },
-    });
-    if (error) throw error;
-    return existing.id;
-  }
-
-  const { data, error } = await admin.auth.admin.createUser({
-    email,
-    password,
-    email_confirm: true,
-    user_metadata: { full_name: name, name },
-  });
-  if (error) throw error;
-  return data.user.id;
-}
-
 async function main() {
-  if (!supabaseUrl || !serviceRoleKey || !databaseUrl || !defaultPassword) {
+  if (
+    !databaseUrl ||
+    !defaultPassword ||
+    !adminEmail ||
+    !adminPassword ||
+    !authBaseUrl ||
+    !cookieSecret
+  ) {
     throw new Error(
-      "Missing Supabase, DATABASE_URL, or CLIENT_DEFAULT_PASSWORD env vars",
+      "Missing DATABASE_URL, CLIENT_DEFAULT_PASSWORD, SHARED_ADMIN_*, or NEON_AUTH_* env vars",
     );
   }
 
-  const admin = createClient(supabaseUrl, serviceRoleKey, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
   const pool = new pg.Pool(getPgPoolConfig(databaseUrl));
 
   try {
-    const adminUserResult = await pool.query(
-      `SELECT id FROM auth.users WHERE lower(email) = lower($1) LIMIT 1`,
-      [adminEmail ?? "admin@iam-check.com"],
-    );
-    const invitedBy = adminUserResult.rows[0]?.id;
+    const adminUser = await findNeonAuthUser(pool, adminEmail ?? "admin@iam-check.com");
+    const invitedBy = adminUser?.id;
     if (!invitedBy) {
-      throw new Error("Shared admin user not found in auth.users");
+      throw new Error("Shared admin user not found in neon_auth.user");
     }
 
     const surveyResult = await pool.query(
@@ -79,7 +62,14 @@ async function main() {
       throw new Error("No surveys found — create a declaration first");
     }
 
-    await ensureAuthUser(admin, recipientEmail, fullName, defaultPassword);
+    await ensureNeonClientUser({
+      pool,
+      adminEmail,
+      adminPassword,
+      email: recipientEmail,
+      password: defaultPassword,
+      name: fullName,
+    });
 
     const token = createInviteTokenValue();
     const expiresAt = new Date();

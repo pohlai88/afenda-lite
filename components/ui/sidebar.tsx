@@ -277,6 +277,27 @@ function SidebarTrigger({
   )
 }
 
+/** Renders SidebarTrigger when inside SidebarProvider; otherwise a layout spacer. */
+function SidebarTriggerOptional({
+  enabled = true,
+  className,
+  ...props
+}: React.ComponentProps<typeof SidebarTrigger> & { enabled?: boolean }) {
+  const context = React.useContext(SidebarContext)
+  const spacer = (
+    <Skeleton
+      className={cn("-ml-1 size-8 shrink-0 rounded-md", className)}
+      aria-hidden
+    />
+  )
+
+  if (!enabled || !context) {
+    return spacer
+  }
+
+  return <SidebarTrigger className={className} {...props} />
+}
+
 function SidebarRail({ className, ...props }: React.ComponentProps<"button">) {
   const { toggleSidebar } = useSidebar()
 
@@ -719,5 +740,6 @@ export {
   SidebarRail,
   SidebarSeparator,
   SidebarTrigger,
+  SidebarTriggerOptional,
   useSidebar,
 }

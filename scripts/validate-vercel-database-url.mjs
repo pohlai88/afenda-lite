@@ -24,8 +24,7 @@ function resolveDatabaseUrl() {
     return process.env.DATABASE_URL.trim();
   }
 
-  const envFile =
-    process.argv[2] ?? resolve(process.cwd(), ".env.vercel.production.check");
+  const envFile = process.argv[2] ?? resolve(process.cwd(), ".env");
 
   try {
     return readDatabaseUrlFromFile(envFile);
@@ -37,7 +36,7 @@ function resolveDatabaseUrl() {
 const raw = resolveDatabaseUrl();
 if (!raw) {
   console.error(
-    "DATABASE_URL not found. Use `vercel env run --environment production -- node scripts/validate-vercel-database-url.mjs`",
+    "DATABASE_URL not found. Run `npm run env:compose` or pass a file path as the first argument.",
   );
   process.exit(1);
 }

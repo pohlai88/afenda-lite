@@ -18,35 +18,38 @@ Versioned Postgres schema for all portal entities.
 
 ## Owned files
 
-- `db/migrations/001_portal_schema.sql`
-- `db/migrations/002_backfill_questions.sql`
-- `db/migrations/003_drop_rating_comment.sql`
-- `db/migrations/004_audit_events.sql`
+- `db/migrations/001_portal_schema.sql` through `010_evidence_batch_index.sql`
+- `db/schema-manifest.mjs` — expected tables, columns, indexes (CI gate SSOT)
 - `scripts/db-migrate.mjs` — idempotent via `schema_migrations`
-- `scripts/db-backfill-migrations.mjs` — one-time for DBs migrated before tracking
+- `scripts/db-backfill-migrations.mjs` — one-time legacy tracking backfill (`--confirm`)
+- `scripts/check-db-schema.mjs` — migration + manifest validation
+- `scripts/db-inspect.mjs` — dev EXPLAIN diagnostics
 
 ## Critical control points
 
 - Migration applied before app deploy
 - No runtime DDL in application code
 - Re-run safe: applied files skipped via `schema_migrations`
+- `npm run check:db-schema` validates live DB against manifest
 
 ## Failure modes
 
 - Missing migration → query errors at runtime
 - Partial migration → column/type mismatch
-- Legacy DB without tracking → run backfill script once
+- Legacy DB without tracking → run backfill script once with `--confirm`
 
 ## Required tests
 
 - `npm run db:migrate` on clean DB
 - Idempotent re-run (skips applied files)
+- `npm run check:db-schema` passes after migrate
 
 ## Acceptance proof
 
 - [x] `\dt` shows all expected tables including `audit_events`, `schema_migrations`
 - [x] App starts with no DDL errors
 - [x] No `ensureSchema()` or equivalent in `lib/`
+- [x] Hot-path indexes on assignments, questions, evidence
 
 ## Rollback
 

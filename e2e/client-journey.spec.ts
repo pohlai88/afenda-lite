@@ -1,22 +1,22 @@
-import { expect, test } from "@playwright/test";
-import { portalCopy } from "../lib/portal-copy";
+import { expect, test } from "@/testing/e2e/playwright-base";
+import { portalCopy } from "@/lib/portal-copy";
 import {
   expectDeclarationReceived,
   submitDefaultDeclarationAnswers,
-} from "./helpers/declaration";
+} from "@/testing/e2e/declaration-flows";
 import {
   clientSkipMessage,
   getClientCreds,
-  loginAsClient,
+  getOperatorCreds,
+  operatorSkipMessage,
   requireClientCreds,
-} from "./helpers/client";
+  requireOperatorCreds,
+} from "@/testing/e2e/credentials";
+import { loginAsClient } from "@/testing/e2e/client-flows";
 import {
   createDeclaration,
-  getOperatorCreds,
   loginAsOperator,
-  operatorSkipMessage,
-  requireOperatorCreds,
-} from "./helpers/operator";
+} from "@/testing/e2e/operator-flows";
 
 const operatorCreds = getOperatorCreds();
 const clientCreds = getClientCreds();

@@ -1,4 +1,4 @@
-import { getAppBaseUrl } from "@/lib/app-url";
+import { getClientSignInUrl } from "@/lib/app-url";
 import { portalCopy } from "@/lib/portal-copy";
 
 export function buildClientAccessMessage(input: {
@@ -6,7 +6,7 @@ export function buildClientAccessMessage(input: {
   clientEmail: string;
   temporaryPassword: string;
 }) {
-  const portalUrl = input.portalUrl ?? getAppBaseUrl();
+  const portalUrl = input.portalUrl ?? getClientSignInUrl();
   return portalCopy.clientAccess.message({
     portalUrl,
     clientEmail: input.clientEmail,

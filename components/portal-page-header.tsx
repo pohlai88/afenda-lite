@@ -4,8 +4,7 @@ import {
   type PortalBreadcrumb,
 } from "@/components/portal-breadcrumb-list";
 import { Separator } from "@/components/ui/separator";
-import { Skeleton } from "@/components/ui/skeleton";
-import { SidebarTrigger } from "@/components/ui/sidebar";
+import { SidebarTriggerOptional } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 
 export type { PortalBreadcrumb };
@@ -24,16 +23,11 @@ export function PortalPageHeader({
   return (
     <header
       className={cn(
-        "flex h-14 shrink-0 items-center gap-2 border-b px-4",
-        sticky &&
-          "sticky top-0 z-30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80",
+        "portal-page-toolbar",
+        sticky && "portal-page-toolbar-sticky",
       )}
     >
-      {showSidebarTrigger ? (
-        <SidebarTrigger className="-ml-1" />
-      ) : (
-        <Skeleton className="-ml-1 size-8 shrink-0 rounded-md" aria-hidden />
-      )}
+      <SidebarTriggerOptional enabled={showSidebarTrigger} className="-ml-1" />
       {breadcrumbs?.length ? (
         <>
           <Separator

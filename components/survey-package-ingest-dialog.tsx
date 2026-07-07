@@ -56,7 +56,7 @@ function DodStatusIcon({ status }: { status: DodCheck["status"] }) {
       return (
         <AlertTriangleIcon
           aria-hidden="true"
-          className="size-4 shrink-0 text-amber-600 dark:text-amber-400"
+          className="size-4 shrink-0 text-warning"
         />
       );
     default:
@@ -106,8 +106,7 @@ function DodChecklist({ checks }: { checks: DodCheck[] }) {
           "flex flex-col gap-2 rounded-lg border bg-card px-3 py-2.5 text-sm sm:flex-row sm:items-start sm:gap-3",
           dashed && "border-dashed bg-muted/20",
           check.status === "fail" && "border-destructive/40 bg-destructive/5",
-          check.status === "warn" &&
-            "border-amber-500/30 bg-amber-500/5 dark:border-amber-400/30 dark:bg-amber-400/5",
+          check.status === "warn" && "border-warning/30 bg-warning/5",
         )}
       >
         <DodStatusIcon status={check.status} />
@@ -127,8 +126,7 @@ function DodChecklist({ checks }: { checks: DodCheck[] }) {
             "w-fit shrink-0 tabular-nums",
             check.status === "pass" &&
               "border-primary/30 text-primary dark:border-primary/40",
-            check.status === "warn" &&
-              "border-amber-500/40 text-amber-700 dark:text-amber-300",
+            check.status === "warn" && "border-warning/40 text-warning",
             check.status === "fail" && "border-destructive/40 text-destructive",
           )}
         >
@@ -141,14 +139,14 @@ function DodChecklist({ checks }: { checks: DodCheck[] }) {
   return (
     <div className="space-y-5">
       <div>
-        <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+        <p className="portal-state-kicker mb-2">
           {copy.dodRequired}
         </p>
         <ul className="space-y-2">{required.map((check) => renderCheck(check, false))}</ul>
       </div>
       {recommended.length > 0 ? (
         <div>
-          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          <p className="portal-state-kicker mb-2">
             {copy.dodRecommended}
           </p>
           <ul className="space-y-2">

@@ -16,7 +16,7 @@ export type PortalBreadcrumb = {
 export function PortalBreadcrumbList({
   items,
   hideFirstOnMobile = false,
-  maxWidthClass = "max-w-[40vw]",
+  maxWidthClass = "min-w-0 max-w-full",
 }: {
   items: PortalBreadcrumb[];
   hideFirstOnMobile?: boolean;

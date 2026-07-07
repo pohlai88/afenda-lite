@@ -19,9 +19,10 @@ Create, edit, and delete declarations with dynamic question sets.
 ## Owned files
 
 - `app/actions/surveys.ts`
-- `lib/surveys.ts`, `lib/questions.ts`
-- `components/declaration-create-form.tsx`, `declaration-manage-form.tsx`, `question-fields-editor.tsx`
-- `app/dashboard/page.tsx`, `app/dashboard/[id]/page.tsx`
+- `lib/surveys.ts`, `lib/questions.ts`, `lib/operator-dashboard-page.ts`, `lib/operator-breadcrumbs.ts`
+- `components/declaration-create-form.tsx`, `declaration-manage-form.tsx`, `question-fields-editor.tsx`, `operator-dashboard-page-view.tsx`
+- `app/dashboard/layout.tsx`, `app/dashboard/page.tsx`, `app/dashboard/loading.tsx`, `app/dashboard/error.tsx`
+- `app/dashboard/[id]/page.tsx`, `app/dashboard/[id]/loading.tsx`
 
 ## Critical control points
 
@@ -37,12 +38,14 @@ Create, edit, and delete declarations with dynamic question sets.
 ## Required tests
 
 - Create → list → edit questions → delete
+- `e2e/smoke.spec.ts` — create, dashboard list, delete from list
+- `e2e/secure-file.spec.ts` — add file question and verify prompt on detail page
 
 ## Acceptance proof
 
-- [ ] Dashboard lists new declaration
-- [ ] Detail page reflects question edits
-- [ ] Delete removes declaration from list
+- [x] Dashboard lists new declaration (`e2e/smoke.spec.ts`)
+- [x] Detail page reflects question edits (`e2e/secure-file.spec.ts`)
+- [x] Delete removes declaration from list (`e2e/smoke.spec.ts`)
 
 ## Must not bypass
 

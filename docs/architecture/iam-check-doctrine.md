@@ -17,7 +17,7 @@ iam-check is a **client declaration portal** on **Next.js 16 (App Router) + Verc
 
 - **Operators** — manage declarations, share links, invite clients, review submissions
 - **Clients** — accept invite, onboard, complete assigned declarations, receive confirmation codes
-- **Link recipients** — submit via open (`/survey/[slug]`) or secure (`/f/[token]`) links without an account
+- **Link recipients** — enter via open (`/survey/[slug]`) or secure (`/f/[token]`) links; routed to client sign-in and assigned declarations
 
 ### Business capability
 
@@ -100,12 +100,13 @@ flowchart TB
 
 | Route | Persona | Purpose |
 |-------|---------|---------|
-| `/` | Operator | Sign in |
+| `/`, `/client/login` | Client | Session router → Neon Auth or authenticated landing |
 | `/dashboard`, `/dashboard/[id]`, `/dashboard/clients` | Operator | Manage declarations, clients, submissions |
-| `/survey/[slug]` | Public | Open declaration link |
-| `/f/[token]` | Public | Secure declaration link |
-| `/client/login`, `/client`, `/client/onboarding`, `/client/declare/[id]` | Client | Assigned workflow |
-| `/invite/[token]` | Public | Accept client invitation |
+| `/survey/[slug]` | Public | Open declaration link (redirects to client sign-in when required) |
+| `/f/[token]` | Public | Secure declaration link (redirects to client sign-in when required) |
+| `/client`, `/client/onboarding`, `/client/declare/[id]`, `/client/profile` | Client | Assigned workflow (workspace route group) |
+| `/client/preview-unavailable` | Operator | Preview sandbox missing or failed (gate route) |
+| `/invite/[token]` | Public | Legacy invite URL → client sign-in with check-email reason |
 | `/api/health/liveness` | Ops | Uptime / liveness (Vercel monitors) |
 | `/api/health/readiness` | Ops | Deploy readiness (`npm run verify:production`) |
 | `/api/auth/[...path]` | All | Neon Auth handler |
@@ -115,29 +116,41 @@ flowchart TB
 | Route | Purpose |
 |-------|---------|
 | `/account/[path]` | Neon Auth account UI (middleware-protected) |
-| `/auth/[path]`, `/auth/admin` | Neon Auth built-in flows |
-| `/org/login` | Operator sign-in alternate entry; `requireAdminSession` redirect target |
+| `/auth/[path]` | Neon Auth UI (client + operator shells via `from=org`) |
+| `/auth/admin` | Legacy operator sign-in alias → same flow as `/org/login` |
+| `/org/login` | Canonical operator sign-in entry; `requireAdminSession` redirect target |
+| `/client/login` | Named client sign-in entry (QR, access emails); same dispatch as `/` |
 
 These routes are scaffolding only. Product routes and mutations remain under `/`, `/dashboard/*`, `/client/*`, `/survey/*`, `/f/*`, `/invite/*`.
 
+### Playground (local developer tool — not client product)
+
+| Route | Audience | Purpose |
+|-------|----------|---------|
+| `/playground`, `/playground/[screenId]` | Developer (local only) | UI review harness: iframes production routes with `?embed=1`. Gated by `PLAYGROUND_ENABLED` in `env.config` — **never** on Vercel production. |
+
+**Do not** document client gate routes (`/client/login`, `/client/(gate)/*`), sign-in, or onboarding as depending on `/playground`. Clients use real URLs directly. For component-level client UI work, use **Storybook** (`stories/**`) or **E2E** (`e2e/**`), not playground bindings, when describing client product architecture.
+
 ### Server action → slice map
 
-Mutations and public entry points only. Session helpers (`requireAdminSession`, `requireClientSession`, `loadAnonymousInviteLinkForSurvey`) are internal — not Zod targets.
+Mutations and public entry points only. Session helpers (`requireAdminSession`, `requireClientSession`, `loadOpenLinkSurvey`, `loadAnonymousInviteLinkForSurvey`) are internal — not Zod targets.
 
 | Action file | Function | Slice |
 |-------------|----------|-------|
 | `app/actions/admin.ts` | `adminSignInAction` | S1 |
-| `app/actions/surveys.ts` | `createSurveyAction`, `updateSurveyAction`, `deleteSurveyAction` | S3 |
-| `app/actions/surveys.ts` | `submitSurveyResponseAction` | S4 |
+| `app/actions/admin.ts` | `startClientPreviewAction`, `exitClientPreviewAction` | S16 |
+| `app/actions/surveys.ts` | `createDraftSurveyAction`, `updateSurveyAction`, `deleteSurveyAction`, `exportSurveyPackageAction`, `importSurveyPackageAction` | S3 |
+| `app/actions/surveys.ts` | `submitSurveyResponseAction`, `validateSurveyPackageAction` | S4 |
 | `app/actions/declarations.ts` | `registerEvidenceAction` | S4 |
-| `app/actions/invitations.ts` | `getAnonymousInviteLinkAction`, `regenerateAnonymousInviteLinkAction`, `recordEmailInvitationAction` | S5 |
-| `app/actions/client.ts` | `clientSignInAction`, `acceptClientInviteAction`, `saveClientOnboardingAction` | S6 |
-| `app/actions/client.ts` | `submitClientDeclarationAction` | S7 |
-| `app/actions/client.ts` | `issueClientInviteAction` | S6, S7 |
+| `app/actions/client.ts` | `saveClientOnboardingAction`, `issueClientInviteAction`, `removeClientRegistrationAction` | S6 |
+| `app/actions/client.ts` | `submitClientDeclarationAction`, `deleteClientAssignmentAction` | S7 |
+| `app/actions/client.ts` | `acknowledgeClientPortalAction` | S7 |
 
-**Phase C Zod coverage (S10):** all 14 functions above.
+**Neon Auth UI (not server actions):** client and operator sign-in, sign-up, password reset at `/auth/[path]`.
 
-**Phase C audit coverage (S11):** all mutations except read-only `getAnonymousInviteLinkAction` and sign-in actions (add `auth.sign_in_failed` separately if needed).
+**Phase C Zod coverage (S10):** all FormData/JSON mutation entry points in the table above that accept external input.
+
+**Phase C audit coverage (S11):** all mutations except read-only exports; Neon Auth sign-in failures audited via auth middleware / bootstrap where applicable.
 
 ---
 
@@ -282,7 +295,7 @@ Mutations and public entry points only. Session helpers (`requireAdminSession`, 
 
 | Step | Slice | Deliverables | Done when |
 |------|-------|--------------|-----------|
-| 1 | S10 | `lib/schemas/*.ts`, `safeParse` on 14 action functions | ✅ Shipped |
+| 1 | S10 | `lib/schemas/*.ts`, `safeParse` on action mutation entry points | ✅ Shipped |
 | 2 | S13 | `.github/workflows/ci.yml`, `scripts/check-portal-terminology.mjs` | ✅ Shipped |
 | 3 | S11 | `db/migrations/004_audit_events.sql`, `lib/audit.ts` | ✅ Shipped |
 | 4 | S14 | `lib/observability.ts`, `runLoggedAction` on mutations | ✅ Shipped |
@@ -291,7 +304,7 @@ Mutations and public entry points only. Session helpers (`requireAdminSession`, 
 ### S10 — validation contracts
 
 - **Install:** `zod` dependency
-- **Create:** `lib/schemas/` — `common.ts`, `auth.ts`, `surveys.ts`, `invitations.ts`, `client.ts`, `declarations.ts`
+- **Create:** `lib/schemas/` — `common.ts`, `auth.ts`, `surveys.ts`, `client.ts`, `declarations.ts`
 - **Wire:** action entry points listed in [Server action → slice map](#server-action--slice-map)
 - **Rule:** Zod at action boundary only; keep `validateAnswers` in domain layer
 
@@ -317,7 +330,8 @@ Mutations and public entry points only. Session helpers (`requireAdminSession`, 
 
 - **Smoke:** `e2e/smoke.spec.ts` — liveness, readiness, operator create, public load + submit
 - **Secure + file:** `e2e/secure-file.spec.ts` — `/f/[token]`, file metadata, submission count
-- **Client path:** `e2e/client-journey.spec.ts` — invite → onboard → submit → `CDP-*`
+- **Client path:** `e2e/client-journey.spec.ts` — assign → submit → `CDP-*`
+- **Client onboarding:** `e2e/client-onboarding.spec.ts` — operator register → four-step wizard → `/client`
 - **Evidence policy:** `lib/evidence-policy.ts` — MIME/size allowlist at action boundary
 - **Production verify:** `npm run verify:production` — see [production go-live runbook](../runbooks/production-go-live.md)
 

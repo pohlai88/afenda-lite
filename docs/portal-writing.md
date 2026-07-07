@@ -8,7 +8,7 @@ Internal guide for maintainers. **Source of truth:** `lib/portal-copy.ts`.
 |----------|-------|-----------|
 | **Client** | `/` | `/client/*` |
 | **Organization user** | `/org/login` | `/dashboard/*` |
-| **Link recipient** | `/survey/[slug]`, `/f/[token]` | None (no account) |
+| **Link recipient** | `/survey/[slug]`, `/f/[token]` | Routed to sign-in → assigned declaration |
 
 ## Terminology
 

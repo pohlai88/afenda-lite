@@ -6,7 +6,7 @@ import { EyeIcon } from "lucide-react";
 import { startClientPreviewAction } from "@/app/actions/admin";
 import { PortalThemeToggle } from "@/components/portal-theme-toggle";
 import { TeamSwitcher } from "@/components/team-switcher";
-import { UserButton } from "@/components/user-button";
+import { PortalMemberMenu } from "@/components/portal-member-menu";
 import {
   Sidebar,
   SidebarContent,
@@ -21,28 +21,32 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar";
 import {
-  dashboardTeams,
+  fallbackDashboardTeams,
   getOrgOperatorSidebarItems,
   isNavItemActive,
+  type DashboardTeam,
 } from "@/lib/dashboard-nav";
 import { portalCopy } from "@/lib/portal-copy";
 
 export function AppSidebar({
+  teams: teamsProp,
   showPreviewClient = false,
   showPlayground = false,
   ...props
 }: React.ComponentProps<typeof Sidebar> & {
+  teams?: DashboardTeam[];
   showPreviewClient?: boolean;
   showPlayground?: boolean;
 }) {
   const pathname = usePathname();
   const { nav } = portalCopy;
   const navItems = getOrgOperatorSidebarItems({ showPlayground });
+  const teams = teamsProp ?? fallbackDashboardTeams;
 
   return (
     <Sidebar collapsible="icon" {...props}>
-      <SidebarHeader>
-        <TeamSwitcher teams={dashboardTeams} />
+      <SidebarHeader className="border-b border-sidebar-border">
+        <TeamSwitcher teams={teams} />
       </SidebarHeader>
 
       <SidebarContent>
@@ -78,8 +82,8 @@ export function AppSidebar({
       </SidebarContent>
 
       <SidebarFooter className="border-t border-sidebar-border">
-        <div className="h-stack items-center justify-between gap-2 px-2 py-2 group-data-[collapsible=icon]:v-stack">
-          <UserButton />
+        <div className="portal-sidebar-footer h-stack items-center justify-between gap-2 px-2 py-2 group-data-[collapsible=icon]:v-stack">
+          <PortalMemberMenu />
           <PortalThemeToggle />
         </div>
       </SidebarFooter>

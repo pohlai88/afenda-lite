@@ -1,35 +1,42 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { isAdminSession } from "@/lib/admin";
+import {
+  isAdminSession,
+  ORG_SIGN_IN_HREF,
+} from "@/lib/admin";
 import { recordAuditEvent } from "@/lib/audit";
 import { auth } from "@/lib/auth/server";
+import {
+  rejectNonOperatorSignIn,
+  requireAdminSession,
+} from "@/lib/auth/session";
 import { runLoggedAction } from "@/lib/observability";
+import {
+  CLIENT_HOME_HREF,
+  OPERATOR_DASHBOARD_HREF,
+} from "@/lib/portal-routes";
 import {
   getPreviewClientEmail,
   getPreviewClientPassword,
   isPreviewClientConfigured,
   isPreviewClientSession,
+  clientPreviewUnavailableHref,
+  PREVIEW_UNAVAILABLE_FAILED_REASON,
 } from "@/lib/preview-client";
 import { portalCopy } from "@/lib/portal-copy";
 import { parseSchema } from "@/lib/schemas/common";
 import { signInSchema } from "@/lib/schemas/auth";
-
-export async function requireAdminSession() {
-  const { data: session } = await auth.getSession();
-
-  if (!isAdminSession(session)) {
-    redirect("/org/login?reason=access-denied");
-  }
-
-  return session!;
-}
+import {
+  formPassword,
+  formString,
+} from "@/lib/server-actions/form-data";
 
 export async function adminSignInAction(formData: FormData) {
   return runLoggedAction("adminSignInAction", undefined, async () => {
     const parsed = parseSchema(signInSchema, {
-      email: String(formData.get("email") ?? "").trim(),
-      password: String(formData.get("password") ?? ""),
+      email: formString(formData, "email"),
+      password: formPassword(formData, "password"),
     });
 
     if (!parsed.success) {
@@ -49,61 +56,85 @@ export async function adminSignInAction(formData: FormData) {
       return { error: error.message ?? portalCopy.orgSignIn.invalidCredentials };
     }
 
-    const { data: session } = await auth.getSession();
-
-    if (!isAdminSession(session, email)) {
-      await auth.signOut();
-      await recordAuditEvent({
-        eventType: "auth.sign_in_failed",
-        resourceType: "session",
-        metadata: { surface: "org", reason: "access_denied" },
-      });
-      return { error: portalCopy.orgSignIn.accessDenied };
+    const accessDenied = await rejectNonOperatorSignIn(email);
+    if (accessDenied) {
+      return accessDenied;
     }
 
-    redirect("/dashboard");
+    redirect(OPERATOR_DASHBOARD_HREF);
   });
 }
 
 export async function startClientPreviewAction() {
-  const session = await requireAdminSession();
+  return runLoggedAction("startClientPreviewAction", undefined, async () => {
+    const session = await requireAdminSession();
 
-  if (!isPreviewClientConfigured()) {
-    redirect("/dashboard?preview=not-configured");
-  }
+    if (!isPreviewClientConfigured()) {
+      redirect(clientPreviewUnavailableHref());
+    }
 
-  const email = getPreviewClientEmail();
-  const password = getPreviewClientPassword();
+    const email = getPreviewClientEmail();
+    const password = getPreviewClientPassword();
 
-  const { error } = await auth.signIn.email({ email, password });
+    const { error } = await auth.signIn.email({ email, password });
 
-  if (error) {
-    redirect("/dashboard?preview=failed");
-  }
+    if (error) {
+      await recordAuditEvent({
+        actorId: session.user.id,
+        eventType: "admin.client_preview_failed",
+        resourceType: "session",
+        metadata: { previewEmail: email, reason: error.message ?? "sign_in_failed" },
+      });
+      redirect(
+        clientPreviewUnavailableHref({
+          reason: PREVIEW_UNAVAILABLE_FAILED_REASON,
+        }),
+      );
+    }
 
-  await recordAuditEvent({
-    actorId: session.user.id,
-    eventType: "admin.client_preview_started",
-    resourceType: "session",
-    metadata: { previewEmail: email },
+    const { data: previewSession } = await auth.getSession();
+
+    if (!isPreviewClientSession(previewSession)) {
+      await auth.signOut();
+      await recordAuditEvent({
+        actorId: session.user.id,
+        eventType: "admin.client_preview_failed",
+        resourceType: "session",
+        metadata: { previewEmail: email, reason: "session_mismatch" },
+      });
+      redirect(
+        clientPreviewUnavailableHref({
+          reason: PREVIEW_UNAVAILABLE_FAILED_REASON,
+        }),
+      );
+    }
+
+    await recordAuditEvent({
+      actorId: session.user.id,
+      eventType: "admin.client_preview_started",
+      resourceType: "session",
+      metadata: { previewEmail: email },
+    });
+
+    redirect(CLIENT_HOME_HREF);
   });
-
-  redirect("/client");
 }
 
 export async function exitClientPreviewAction() {
-  const { data: session } = await auth.getSession();
+  return runLoggedAction("exitClientPreviewAction", undefined, async () => {
+    const { data: session } = await auth.getSession();
 
-  if (!isPreviewClientSession(session)) {
-    redirect("/client");
-  }
+    if (!isPreviewClientSession(session)) {
+      redirect(CLIENT_HOME_HREF);
+    }
 
-  await recordAuditEvent({
-    actorId: session?.user?.id,
-    eventType: "admin.client_preview_ended",
-    resourceType: "session",
+    await recordAuditEvent({
+      actorId: session?.user?.id,
+      eventType: "admin.client_preview_ended",
+      resourceType: "session",
+    });
+
+    await auth.signOut();
+    redirect(ORG_SIGN_IN_HREF);
   });
-
-  await auth.signOut();
-  redirect("/org/login");
 }

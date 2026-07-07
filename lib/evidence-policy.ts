@@ -50,3 +50,19 @@ export function validateEvidenceMetadata(input: {
 
   return { ok: true };
 }
+
+export const EVIDENCE_POLICY_FAILURE_REASONS = new Set([
+  "size",
+  "mime",
+  "extension",
+] as const);
+
+export type EvidencePolicyFailureReason = "size" | "mime" | "extension";
+
+export function isEvidencePolicyFailureReason(
+  value: string,
+): value is EvidencePolicyFailureReason {
+  return EVIDENCE_POLICY_FAILURE_REASONS.has(
+    value as EvidencePolicyFailureReason,
+  );
+}

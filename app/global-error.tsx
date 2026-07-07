@@ -1,8 +1,14 @@
 "use client";
 
-import { useEffect } from "react";
-import { PORTAL_NAME } from "@/lib/portal-copy";
+import "./globals.css";
+import { PortalRouteError } from "@/components/portal-route-error";
+import { portalFontClassName } from "@/app/fonts";
+import { portalCopy } from "@/lib/portal-copy";
+import { AUTH_SIGN_IN_HREF } from "@/lib/portal-routes";
+import { PORTAL_THEME_BOOT_SCRIPT } from "@/lib/portal-theme";
+import { cn } from "@/lib/utils";
 
+/** Root error boundary — must define its own html/body (outside root layout). */
 export default function GlobalError({
   error,
   reset,
@@ -10,34 +16,21 @@ export default function GlobalError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-  useEffect(() => {
-    console.error(error);
-  }, [error]);
+  const copy = portalCopy.errors.globalBoundary;
 
   return (
-    <html lang="en">
-      <body className="font-sans antialiased">
-        <main className="mx-auto flex min-h-dvh max-w-lg flex-col items-center justify-center gap-6 px-4 py-16 text-center">
-          <div className="space-y-2">
-            <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">
-              {PORTAL_NAME}
-            </p>
-            <h1 className="text-2xl font-semibold tracking-tight">
-              Application error
-            </h1>
-            <p className="text-sm text-neutral-600">
-              A critical error occurred. Please reload the page or try again
-              later.
-            </p>
-          </div>
-          <button
-            type="button"
-            className="inline-flex h-9 items-center justify-center rounded-md bg-neutral-900 px-4 text-sm font-medium text-white"
-            onClick={() => reset()}
-          >
-            Try again
-          </button>
-        </main>
+    <html suppressHydrationWarning lang="en" className={cn(portalFontClassName)}>
+      <body className="portal-shell min-w-0 overflow-x-clip">
+        <script dangerouslySetInnerHTML={{ __html: PORTAL_THEME_BOOT_SCRIPT }} />
+        <PortalRouteError
+          backHref={AUTH_SIGN_IN_HREF}
+          backLabel={portalCopy.errors.routeBoundary.root.backLabel}
+          description={copy.description}
+          error={error}
+          reset={reset}
+          retryLabel={copy.retryLabel}
+          title={copy.title}
+        />
       </body>
     </html>
   );

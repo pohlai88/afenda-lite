@@ -119,16 +119,19 @@ Optional E2E: `E2E_SURVEY_SLUG` only if you skip the operator-create → public 
 
 | Route | Who | Purpose |
 |-------|-----|---------|
-| `/` | Operator | Sign in |
+| `/`, `/client/login` | Client | Session router → Neon Auth or `/client` / onboarding |
+| `/org/login` | Operator | Organization sign in |
 | `/dashboard` | Operator | Manage declarations |
 | `/dashboard/clients` | Operator | Invite clients |
 | `/dashboard/[id]` | Operator | View submissions |
 | `/survey/[slug]` | Public | Open declaration link |
 | `/f/[token]` | Public | Secure declaration link |
-| `/client/login` | Client | Client sign in |
 | `/client` | Client | Assigned declarations |
+| `/client/onboarding` | Client | Declarant profile setup |
 | `/client/declare/[id]` | Client | Complete assignment |
-| `/invite/[token]` | Public | Accept client invite |
+| `/invite/[token]` | Public | Legacy invite URL → client sign-in |
+
+**Local developer only:** `/playground` iframes routes for UI review (`PLAYGROUND_ENABLED` in `env.config`). Not part of the client or operator product — see [AGENTS.md](./AGENTS.md).
 
 ## Stack
 

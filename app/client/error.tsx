@@ -1,6 +1,8 @@
 "use client";
 
 import { PortalRouteError } from "@/components/portal-route-error";
+import { portalCopy } from "@/lib/portal-copy";
+import { CLIENT_HOME_HREF } from "@/lib/portal-routes";
 
 export default function ClientError({
   error,
@@ -9,11 +11,13 @@ export default function ClientError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const copy = portalCopy.errors.routeBoundary.client;
+
   return (
     <PortalRouteError
-      backHref="/client"
-      backLabel="Back to dashboard"
-      description="We could not load this client page. You can try again or return to your dashboard."
+      backHref={CLIENT_HOME_HREF}
+      backLabel={copy.backLabel}
+      description={copy.description}
       error={error}
       reset={reset}
     />

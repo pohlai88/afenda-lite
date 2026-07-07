@@ -5,6 +5,10 @@ import { saveClientOnboardingAction } from "@/app/actions/client";
 import { FormErrorAlert } from "@/components/form-error-alert";
 import { PortalFormField } from "@/components/portal-form-field";
 import {
+  CLIENT_ONBOARDING_FORM_STEPS,
+  type ClientOnboardingFormDefaults,
+} from "@/lib/client-onboarding";
+import {
   ISO_COUNTRY_CODES,
   ISO_COUNTRY_LABELS,
   type IsoCountryCode,
@@ -23,6 +27,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2Icon } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 
 const inputClassName = "min-h-11 touch-manipulation";
 const selectClassName =
@@ -67,33 +72,52 @@ function CountrySelect({
 export function ClientOnboardingForm({
   email,
   defaults,
+  stepIndex = 0,
+  stepCount = CLIENT_ONBOARDING_FORM_STEPS,
+  onStepChange,
 }: {
   email: string;
-  defaults?: {
-    fullLegalName?: string | null;
-    nationality?: string | null;
-    countryOfResidence?: string | null;
-    additionalResidenceCountries?: string[];
-    passportIssuingCountry?: string | null;
-    passportNumber?: string | null;
-    phone?: string | null;
-    entityName?: string | null;
-    jurisdiction?: string | null;
-    notes?: string | null;
-  };
+  defaults?: ClientOnboardingFormDefaults;
+  stepIndex?: number;
+  stepCount?: number;
+  onStepChange?: (step: number) => void;
 }) {
   const { clientOnboarding } = portalCopy;
   const [error, setError] = useState<string | null>(null);
   const [identityConsent, setIdentityConsent] = useState(false);
   const [isPending, startTransition] = useTransition();
   const selectedAdditional = new Set(defaults?.additionalResidenceCountries ?? []);
+  const isLastStep = stepIndex >= stepCount - 1;
+  const isFirstStep = stepIndex === 0;
 
   return (
     <form
       className="space-y-6"
+      noValidate
       onSubmit={(event) => {
         event.preventDefault();
         setError(null);
+
+        if (!isLastStep) {
+          const currentStep = event.currentTarget.querySelector<HTMLElement>(
+            `[data-step="${stepIndex}"]`,
+          );
+          const invalid = currentStep?.querySelector<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>(
+            ":invalid",
+          );
+          if (invalid) {
+            invalid.reportValidity();
+            return;
+          }
+          onStepChange?.(stepIndex + 1);
+          return;
+        }
+
+        if (!event.currentTarget.checkValidity()) {
+          event.currentTarget.reportValidity();
+          return;
+        }
+
         startTransition(async () => {
           const formData = new FormData(event.currentTarget);
           if (identityConsent) {
@@ -130,7 +154,13 @@ export function ClientOnboardingForm({
 
         <FieldSeparator />
 
-        <FieldSet className="grid grid-cols-1 gap-6 md:grid-cols-3">
+        <FieldSet
+          data-step="0"
+          className={cn(
+            "grid grid-cols-1 gap-6 md:grid-cols-3",
+            stepIndex !== 0 && "hidden",
+          )}
+        >
           <div>
             <FieldLegend className="mb-1.5">
               {clientOnboarding.identitySectionTitle}
@@ -223,9 +253,15 @@ export function ClientOnboardingForm({
           </div>
         </FieldSet>
 
-        <FieldSeparator />
+        <FieldSeparator className={stepIndex === 0 ? undefined : "hidden"} />
 
-        <FieldSet className="grid grid-cols-1 gap-6 md:grid-cols-3">
+        <FieldSet
+          data-step="1"
+          className={cn(
+            "grid grid-cols-1 gap-6 md:grid-cols-3",
+            stepIndex !== 1 && "hidden",
+          )}
+        >
           <div>
             <FieldLegend className="mb-1.5">
               {clientOnboarding.passportSectionTitle}
@@ -274,9 +310,15 @@ export function ClientOnboardingForm({
           </div>
         </FieldSet>
 
-        <FieldSeparator />
+        <FieldSeparator className={stepIndex === 1 ? undefined : "hidden"} />
 
-        <FieldSet className="grid grid-cols-1 gap-6 md:grid-cols-3">
+        <FieldSet
+          data-step="2"
+          className={cn(
+            "grid grid-cols-1 gap-6 md:grid-cols-3",
+            stepIndex !== 2 && "hidden",
+          )}
+        >
           <div>
             <FieldLegend className="mb-1.5">
               {clientOnboarding.entitySectionTitle}
@@ -326,9 +368,15 @@ export function ClientOnboardingForm({
           </div>
         </FieldSet>
 
-        <FieldSeparator />
+        <FieldSeparator className={stepIndex === 2 ? undefined : "hidden"} />
 
-        <FieldSet className="grid grid-cols-1 gap-6 md:grid-cols-3">
+        <FieldSet
+          data-step="3"
+          className={cn(
+            "grid grid-cols-1 gap-6 md:grid-cols-3",
+            stepIndex !== 3 && "hidden",
+          )}
+        >
           <div>
             <FieldLegend className="mb-1.5">
               {clientOnboarding.contactSectionTitle}
@@ -378,33 +426,51 @@ export function ClientOnboardingForm({
         </FieldSet>
       </FieldGroup>
 
-      <Label className="flex items-start gap-3 rounded-lg border bg-muted/30 p-4 text-sm font-normal">
-        <Checkbox
-          checked={identityConsent}
-          onCheckedChange={(checked) => setIdentityConsent(checked === true)}
-          required
-          className="mt-0.5"
-        />
-        <span>{clientOnboarding.identityConsentLabel}</span>
-      </Label>
+      {isLastStep ? (
+        <Label className="flex items-start gap-3 rounded-lg border bg-muted/30 p-4 text-sm font-normal">
+          <Checkbox
+            checked={identityConsent}
+            onCheckedChange={(checked) => setIdentityConsent(checked === true)}
+            required
+            className="mt-0.5"
+          />
+          <span>{clientOnboarding.identityConsentLabel}</span>
+        </Label>
+      ) : null}
 
       <FormErrorAlert error={error} />
 
-      <Button
-        type="submit"
-        className="w-full min-h-11 touch-manipulation"
-        disabled={isPending || !identityConsent}
-        aria-busy={isPending}
-      >
-        {isPending ? (
-          <>
-            <Loader2Icon aria-hidden="true" className="animate-spin" />
-            {clientOnboarding.submitting}
-          </>
+      <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">
+        {!isFirstStep ? (
+          <Button
+            type="button"
+            variant="outline"
+            className="min-h-11 touch-manipulation"
+            onClick={() => onStepChange?.(stepIndex - 1)}
+          >
+            {clientOnboarding.formPreviousStep}
+          </Button>
         ) : (
-          clientOnboarding.submit
+          <span />
         )}
-      </Button>
+        <Button
+          type="submit"
+          className="min-h-11 touch-manipulation sm:min-w-40"
+          disabled={isPending || (isLastStep && !identityConsent)}
+          aria-busy={isPending}
+        >
+          {isPending ? (
+            <>
+              <Loader2Icon aria-hidden="true" className="animate-spin" />
+              {clientOnboarding.submitting}
+            </>
+          ) : isLastStep ? (
+            clientOnboarding.submit
+          ) : (
+            clientOnboarding.formNextStep
+          )}
+        </Button>
+      </div>
     </form>
   );
 }

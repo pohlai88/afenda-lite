@@ -9,3 +9,7 @@ export function getAppBaseUrl() {
 
   return "http://localhost:3000";
 }
+
+export function getClientSignInUrl() {
+  return `${getAppBaseUrl()}/client/login`;
+}

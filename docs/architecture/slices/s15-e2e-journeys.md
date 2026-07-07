@@ -9,15 +9,49 @@
 
 ## Purpose
 
-Automate the remaining identity and submission paths not covered by smoke-only E2E: full client assignment journey, secure anonymous link with file metadata, and open-link submit.
+Automate identity, public link routing, and submission paths: smoke checks, public link redirects, client assignment journeys, and file metadata.
+
+## Test factory
+
+Authority: [`testing/README.md`](../../../testing/README.md). Shared E2E helpers live under `testing/e2e/`; specs import `@/testing/e2e/*`. Legacy `e2e/helpers/` re-exports remain for compatibility.
 
 ## Owned files
 
-- `e2e/smoke.spec.ts` — liveness, readiness, operator create, public page load + submit
-- `e2e/secure-file.spec.ts` — secure `/f/[token]` + file question (`@journey`)
-- `e2e/client-journey.spec.ts` — invite → onboard → assign → submit → `CDP-*` (`@journey`)
+### L4 Playwright
+
+- `e2e/smoke.spec.ts` — `@smoke` health, auth ingress, invite redirect; `@journey` operator CRUD
+- `e2e/public-links.spec.ts` — `@smoke` unauthenticated redirects; `@journey` authenticated + share rotate
+- `e2e/org-sidebar.spec.ts` — `@journey` operator sidebar nav
+- `e2e/secure-file.spec.ts` — `@journey` file question + submission count
+- `e2e/client-journey.spec.ts` — `@journey` operator assign → client submit → `CDP-*`
+- `e2e/client-onboarding.spec.ts` — `@journey` register → four-step wizard → `/client`
+- `e2e/playground.spec.ts` — local playground iframe binding (skips when `PLAYGROUND_ENABLED` false)
 - `e2e/fixtures/sample-evidence.txt` — Playwright file-input fixture
-- `lib/evidence-policy.ts` — MIME/size allowlist for file metadata (S4 hardening)
+
+### L0 Vitest
+
+- `lib/evidence-policy.test.ts` — MIME/size/extension policy
+- `lib/portal-routes.test.ts` — `sanitizeReturnToPath`, auth href builders
+- `lib/org-sign-in-entry.test.ts` — org sign-in ingress hrefs
+- `lib/not-found-routing.test.ts` — session-aware not-found back links
+- `lib/public-link-routing.test.ts` — session branches for public link landing
+- `lib/portal-session-routing.test.ts` — authenticated landing dispatch (P3)
+
+### L2 Vitest interaction
+
+- `components/team-switcher.interaction.test.tsx`
+- `components/declaration-row-delete-action.interaction.test.tsx` — delete menu → confirm dialog
+- `components/confirm-dialog.interaction.test.tsx`
+
+## CI gates
+
+| Step | Command | When |
+| --- | --- | --- |
+| L0 | `npm run test:unit` | Every PR + main |
+| L2 | `npm run test:interaction` | Every PR + main |
+| L4 smoke | `npm run test:e2e:smoke` | Every PR + main (after build + seed) |
+| L4 journey | `npm run test:e2e:journey` | **Main push only** (parallel `journey` job) |
+| Full browser (local pre-release) | `npm test` | Local |
 
 ## Critical control points
 
@@ -28,23 +62,27 @@ Automate the remaining identity and submission paths not covered by smoke-only E
 
 ## Required tests
 
-| Spec | Proves |
-|------|--------|
-| smoke | Readiness JSON, org login, create → public load + submit |
-| secure-file | Operator adds file question; `/f/` submit; submission count |
-| client-journey | Invite accept, onboarding, assignment submit, `CDP-*` receipt |
+| Spec | Tag | Proves |
+|------|-----|--------|
+| smoke | `@smoke` / `@journey` | Readiness JSON, org login, invite redirect; operator create/delete |
+| public-links | `@smoke` / `@journey` | Invalid links 404; redirect + returnTo; authenticated declare; share + rotate |
+| org-sidebar | `@journey` | Sidebar links match canonical org routes |
+| secure-file | `@journey` | Operator adds file question; client assignment submit; submission count |
+| client-journey | `@journey` | Operator assign, client submit, `CDP-*` receipt |
+| client-onboarding | `@journey` | Operator register, Neon Auth sign-in, four-step wizard, dashboard |
 
 ## Acceptance proof
 
-- [x] `npm test` runs all specs in CI with secrets configured
+- [x] `npm run test:e2e:smoke` runs in CI with secrets configured
 - [x] `@journey` specs are serial and skip gracefully without operator creds
-- [x] Evidence policy rejects disallowed MIME at action boundary
+- [x] Evidence policy rejects disallowed MIME at action boundary (L0 + L4)
 
 ## Rollback
 
-Remove or skip failing spec files; smoke remains minimum gate.
+Remove or skip failing spec files; `@smoke` remains minimum CI gate.
 
 ## Drift risk
 
 - Question editor missing `file` type breaks secure-file spec
 - Neon Auth trusted-domain mismatch breaks client invite in production manual tests
+- Duplicating E2E helpers outside `testing/e2e/` breaks factory SSOT

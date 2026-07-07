@@ -1,16 +1,16 @@
-import { expect, test } from "@playwright/test";
-import { portalCopy } from "../lib/portal-copy";
+import { expect, test } from "@/testing/e2e/playwright-base";
+import { portalCopy } from "@/lib/portal-copy";
 import {
   getOperatorCreds,
-  loginAsOperator,
   operatorSkipMessage,
   requireOperatorCreds,
-} from "./helpers/operator";
+} from "@/testing/e2e/credentials";
+import { loginAsOperator } from "@/testing/e2e/operator-flows";
 
 const operatorCreds = getOperatorCreds();
 const { nav } = portalCopy;
 
-test.describe("Org sidebar navigation", () => {
+test.describe("Org sidebar navigation @journey", () => {
   test.beforeEach(() => {
     test.skip(!operatorCreds, operatorSkipMessage);
   });

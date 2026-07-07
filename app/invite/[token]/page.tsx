@@ -1,6 +1,10 @@
-import { redirect } from "next/navigation";
+import {
+  legacyInvitePageMetadata,
+  runLegacyInviteTokenPage,
+} from "@/lib/legacy-invite-entry";
 
-/** Legacy portal invite URLs — clients must use the Supabase invite email instead. */
-export default async function InviteRedirectPage() {
-  redirect("/?reason=check-email");
-}
+export const metadata = legacyInvitePageMetadata;
+export const dynamic = "force-dynamic";
+
+/** Legacy portal invite URLs — validate token, then client sign-in dispatch. */
+export default runLegacyInviteTokenPage;

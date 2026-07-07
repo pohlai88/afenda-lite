@@ -17,7 +17,13 @@ import {
 } from "@/components/ui/timeline";
 import { CircleCheckIcon, DotIcon, LoaderIcon } from "lucide-react";
 
-export function ClientOnboardingProgress() {
+export function ClientOnboardingProgress({
+  formStep,
+  formStepCount,
+}: {
+  formStep?: number;
+  formStepCount?: number;
+} = {}) {
   const { clientOnboarding } = portalCopy;
   const { steps, progressTitle, progressDescription } = clientOnboarding;
 
@@ -73,7 +79,11 @@ export function ClientOnboardingProgress() {
                     className="size-2 text-muted-foreground"
                   />
                   <span className="text-xs text-muted-foreground">
-                    {step.statusLabel}
+                    {step.id === "declarant-profile" &&
+                    formStep &&
+                    formStepCount
+                      ? clientOnboarding.formStepLabel(formStep, formStepCount)
+                      : step.statusLabel}
                   </span>
                 </TimelineHeading>
                 <TimelineContent className={cn("ml-4", isLast && "pb-0")}>

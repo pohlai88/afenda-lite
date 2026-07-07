@@ -25,6 +25,11 @@ loadEnvFile();
 
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:3000";
 
+const sharedUse = {
+  baseURL,
+  trace: "on-first-retry" as const,
+};
+
 export default defineConfig({
   testDir: "./e2e",
   fullyParallel: false,
@@ -32,11 +37,23 @@ export default defineConfig({
   retries: process.env.CI ? 1 : 0,
   workers: 1,
   reporter: process.env.CI ? "github" : "list",
-  use: {
-    baseURL,
-    trace: "on-first-retry",
-  },
-  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
+  use: sharedUse,
+  projects: [
+    {
+      name: "smoke",
+      grep: /@smoke/,
+      use: { ...devices["Desktop Chrome"] },
+    },
+    {
+      name: "journey",
+      grep: /@journey/,
+      use: { ...devices["Desktop Chrome"] },
+    },
+    {
+      name: "all",
+      use: { ...devices["Desktop Chrome"] },
+    },
+  ],
   webServer: {
     command: "npm run start",
     url: baseURL,

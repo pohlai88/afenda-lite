@@ -28,14 +28,14 @@ export function PortalStatisticsCard({
           <div className="bg-primary/10 text-primary flex size-8 shrink-0 items-center justify-center rounded-md">
             {icon}
           </div>
-          <span className="text-2xl font-semibold tabular-nums">{value}</span>
+          <span className="portal-kpi-value">{value}</span>
         </div>
         {trendLabel ? (
           <Badge
             variant="outline"
             className={cn(
               "shrink-0 text-xs font-medium",
-              trendVariant === "positive" && "border-emerald-500/40 text-emerald-700 dark:text-emerald-400",
+              trendVariant === "positive" && "border-success/40 text-success",
               trendVariant === "negative" && "border-destructive/40 text-destructive",
             )}
           >
@@ -44,7 +44,7 @@ export function PortalStatisticsCard({
         ) : null}
       </CardHeader>
       <CardContent className="flex flex-col gap-1 pt-0">
-        <span className="text-base font-semibold">{title}</span>
+        <p className="text-base font-semibold">{title}</p>
         <p className="text-sm text-muted-foreground text-pretty">{description}</p>
       </CardContent>
     </Card>

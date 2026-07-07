@@ -43,16 +43,16 @@ export type UiEvaluationRow = {
   gaps: string[];
 };
 
-/** Master registry — 40 surfaces, no omissions. */
+/** Master registry — 34 active surfaces (orphan auth components removed 2026-07). */
 export const UI_SURFACE_REGISTRY: UiSurfaceMeta[] = [
   // Auth & account (7)
-  { surfaceId: "auth-sign-in", domain: "auth", route: "/auth/sign-in", currentComponent: "PortalAuthLayout + Neon AuthView" },
-  { surfaceId: "auth-sign-up", domain: "auth", route: "/auth/sign-up", currentComponent: "PortalAuthLayout + Neon AuthView" },
-  { surfaceId: "auth-forgot-password", domain: "auth", route: "/auth/forgot-password", currentComponent: "PortalAuthLayout + Neon AuthView" },
-  { surfaceId: "auth-reset-password", domain: "auth", route: "/auth/reset-password", currentComponent: "PortalAuthLayout + Neon AuthView" },
-  { surfaceId: "auth-sign-out", domain: "auth", route: "/auth/sign-out", currentComponent: "Neon AuthView" },
-  { surfaceId: "account-settings", domain: "auth", route: "/account/settings", currentComponent: "Neon AccountView" },
-  { surfaceId: "account-security", domain: "auth", route: "/account/security", currentComponent: "Neon AccountView" },
+  { surfaceId: "auth-sign-in", domain: "auth", route: "/auth/sign-in", currentComponent: "PortalAuthLayout + PortalNeonAuthView" },
+  { surfaceId: "auth-sign-up", domain: "auth", route: "/auth/sign-up", currentComponent: "PortalAuthLayout + PortalNeonAuthView" },
+  { surfaceId: "auth-forgot-password", domain: "auth", route: "/auth/forgot-password", currentComponent: "PortalAuthLayout + PortalNeonAuthView" },
+  { surfaceId: "auth-reset-password", domain: "auth", route: "/auth/reset-password", currentComponent: "PortalAuthLayout + PortalNeonAuthView" },
+  { surfaceId: "auth-sign-out", domain: "auth", route: "/auth/sign-out", currentComponent: "PortalNeonAuthView" },
+  { surfaceId: "account-settings", domain: "auth", route: "/account/settings", currentComponent: "PortalNeonAccountView" },
+  { surfaceId: "account-security", domain: "auth", route: "/account/security", currentComponent: "PortalNeonAccountView" },
   // Client portal (9)
   { surfaceId: "client-dashboard", domain: "client", route: "/client", currentComponent: "PortalCustomerShell + inline cards" },
   { surfaceId: "client-onboarding", domain: "client", route: "/client/onboarding", currentComponent: "PortalFormSection" },
@@ -60,8 +60,8 @@ export const UI_SURFACE_REGISTRY: UiSurfaceMeta[] = [
   { surfaceId: "client-declare", domain: "client", route: "/client/declare/[id]", currentComponent: "Declaration form (inline)" },
   { surfaceId: "client-declare-receipt", domain: "client", route: "/client/declare/[id] (submitted)", currentComponent: "Inline receipt state" },
   { surfaceId: "client-declare-empty", domain: "client", route: "/client/declare/[id] (no data)", currentComponent: "Inline empty state" },
-  { surfaceId: "client-acknowledgement", domain: "client", route: "/client/declare/[id] (ack)", currentComponent: "Inline acknowledgement step" },
-  { surfaceId: "client-preview-unavailable", domain: "client", route: "/client/preview-unavailable", currentComponent: "Standalone notice page" },
+  { surfaceId: "client-acknowledgement", domain: "client", route: "/client", currentComponent: "ClientDashboardAcknowledgement" },
+  { surfaceId: "client-preview-unavailable", domain: "client", route: "/client/preview-unavailable", currentComponent: "ClientPreviewUnavailableView" },
   { surfaceId: "client-home-redirect", domain: "client", route: "/", currentComponent: "Redirect to /auth/sign-in" },
   // Admin (6)
   { surfaceId: "admin-dashboard", domain: "admin", route: "/dashboard", currentComponent: "OrgDeclarationsTable" },
@@ -82,14 +82,7 @@ export const UI_SURFACE_REGISTRY: UiSurfaceMeta[] = [
   { surfaceId: "error-boundary-dashboard", domain: "shared", route: "app/dashboard/error.tsx", currentComponent: "PortalRouteError" },
   { surfaceId: "trust-notice", domain: "shared", route: "PortalTrustNotice", currentComponent: "PortalTrustNotice" },
   { surfaceId: "faq-section", domain: "shared", route: "PortalFaqSection", currentComponent: "PortalFaqSection" },
-  { surfaceId: "user-menu", domain: "shared", route: "UserButton", currentComponent: "UserButton" },
-  // Orphan / superseded (6)
-  { surfaceId: "orphan-client-portal-login", domain: "orphan", route: "ClientPortalLoginPage", currentComponent: "ClientPortalLoginPage" },
-  { surfaceId: "orphan-org-login", domain: "orphan", route: "OrgLoginPage", currentComponent: "OrgLoginPage" },
-  { surfaceId: "orphan-sign-in-form", domain: "orphan", route: "SignInForm", currentComponent: "SignInForm" },
-  { surfaceId: "orphan-client-sign-in-form", domain: "orphan", route: "ClientSignInForm", currentComponent: "ClientSignInForm" },
-  { surfaceId: "orphan-org-sign-in-form", domain: "orphan", route: "OrgSignInForm", currentComponent: "OrgSignInForm" },
-  { surfaceId: "orphan-portal-narrow-shell", domain: "orphan", route: "PortalNarrowShell", currentComponent: "PortalNarrowShell" },
+  { surfaceId: "user-menu", domain: "shared", route: "PortalMemberMenu", currentComponent: "PortalMemberMenu" },
 ];
 
 export function computeWeightedTotal(scores: UiCriterionScores): number {
@@ -333,39 +326,8 @@ export const uiEvaluationMatrix: UiEvaluationRow[] = [
 
   row(byId("user-menu"), [
     c("dashboard-dropdown-01", { PatternFit: 5, BrandFit: 4, PortalCompat: 4, A11yMobile: 4, ImplCost: 4, Consistency: 5 }, "Profile dropdown with settings/sign-out."),
-    c("keep-current", { PatternFit: 4, BrandFit: 5, PortalCompat: 5, A11yMobile: 4, ImplCost: 5, Consistency: 4 }, "UserButton."),
-  ], "dashboard-dropdown-01", "dashboard-dropdown-01 Consistency 5.0 with dashboard shell family.", "validated"),
-
-  // ── Orphan cleanup ────────────────────────────────────────────────────────
-  row(byId("orphan-client-portal-login"), [
-    c("retire", { PatternFit: 5, BrandFit: 5, PortalCompat: 5, A11yMobile: 5, ImplCost: 5, Consistency: 5 }, "Superseded by /auth/sign-in redirect."),
-    c("login-page-01", { PatternFit: 2, BrandFit: 2, PortalCompat: 1, A11yMobile: 3, ImplCost: 1, Consistency: 1 }, "Orphan; do not revive."),
-  ], "retire", "Route redirects to Neon AuthView; component unused.", "validated"),
-
-  row(byId("orphan-org-login"), [
-    c("retire", { PatternFit: 5, BrandFit: 5, PortalCompat: 5, A11yMobile: 5, ImplCost: 5, Consistency: 5 }, "Superseded by /auth/sign-in?from=org."),
-    c("login-page-02", { PatternFit: 2, BrandFit: 2, PortalCompat: 1, A11yMobile: 3, ImplCost: 1, Consistency: 1 }, "Orphan."),
-  ], "retire", "Org login redirects to unified auth.", "validated"),
-
-  row(byId("orphan-sign-in-form"), [
-    c("retire", { PatternFit: 5, BrandFit: 5, PortalCompat: 5, A11yMobile: 5, ImplCost: 5, Consistency: 5 }, "Superseded by Neon AuthView."),
-    c("login-page-01", { PatternFit: 2, BrandFit: 2, PortalCompat: 1, A11yMobile: 3, ImplCost: 1, Consistency: 1 }, "Orphan."),
-  ], "retire", "Custom form replaced by Neon auth.", "validated"),
-
-  row(byId("orphan-client-sign-in-form"), [
-    c("retire", { PatternFit: 5, BrandFit: 5, PortalCompat: 5, A11yMobile: 5, ImplCost: 5, Consistency: 5 }, "Superseded by Neon AuthView."),
-    c("login-page-01", { PatternFit: 2, BrandFit: 2, PortalCompat: 1, A11yMobile: 3, ImplCost: 1, Consistency: 1 }, "Orphan."),
-  ], "retire", "Unused client sign-in form.", "validated"),
-
-  row(byId("orphan-org-sign-in-form"), [
-    c("retire", { PatternFit: 5, BrandFit: 5, PortalCompat: 5, A11yMobile: 5, ImplCost: 5, Consistency: 5 }, "Superseded by Neon AuthView."),
-    c("login-page-01", { PatternFit: 2, BrandFit: 2, PortalCompat: 1, A11yMobile: 3, ImplCost: 1, Consistency: 1 }, "Orphan."),
-  ], "retire", "Unused org sign-in form.", "validated"),
-
-  row(byId("orphan-portal-narrow-shell"), [
-    c("retire", { PatternFit: 5, BrandFit: 5, PortalCompat: 5, A11yMobile: 5, ImplCost: 5, Consistency: 5 }, "Superseded by PortalAuthLayout."),
-    c("login-page-01", { PatternFit: 2, BrandFit: 2, PortalCompat: 1, A11yMobile: 3, ImplCost: 1, Consistency: 1 }, "Orphan shell."),
-  ], "retire", "PortalNarrowShell unused after auth migration.", "validated"),
+    c("keep-current", { PatternFit: 5, BrandFit: 5, PortalCompat: 5, A11yMobile: 4, ImplCost: 5, Consistency: 5 }, "PortalMemberMenu with server-synced Neon Auth + client_profiles displayName."),
+  ], "keep-current", "PortalMemberMenu implements dashboard-dropdown-01 pattern with live DB member sync (legal name > auth name > email).", "validated", ["Auth name must stay in sync on onboarding save"]),
 ];
 
 export function getEvaluationRow(surfaceId: string): UiEvaluationRow | undefined {

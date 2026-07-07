@@ -1,111 +1,50 @@
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { loadEnvFile, getEnv } from "./lib/load-env.mjs";
 import pg from "pg";
-import { createClient } from "@supabase/supabase-js";
 import { getPgPoolConfig } from "./db-pool-config.mjs";
-
-function loadEnvFile() {
-  const envPath = resolve(process.cwd(), ".env");
-  try {
-    const content = readFileSync(envPath, "utf8");
-    const env = {};
-
-    for (const line of content.split("\n")) {
-      const trimmed = line.trim();
-      if (!trimmed || trimmed.startsWith("#")) continue;
-      const index = trimmed.indexOf("=");
-      if (index === -1) continue;
-      env[trimmed.slice(0, index)] = trimmed.slice(index + 1);
-    }
-
-    return env;
-  } catch {
-    return {};
-  }
-}
+import {
+  ensureNeonClientUser,
+  findNeonAuthUser,
+} from "./lib/neon-auth-seed.mjs";
 
 const env = loadEnvFile();
 
-const email = process.env.PREVIEW_CLIENT_EMAIL ?? env.PREVIEW_CLIENT_EMAIL;
+const email = getEnv("PREVIEW_CLIENT_EMAIL", env);
 const password =
   process.env.CLIENT_DEFAULT_PASSWORD ??
-  process.env.PREVIEW_CLIENT_PASSWORD ??
-  env.PREVIEW_CLIENT_PASSWORD;
-const name =
-  process.env.PREVIEW_CLIENT_NAME ??
-  env.PREVIEW_CLIENT_NAME ??
-  "Preview Client";
-const adminEmail =
-  process.env.SHARED_ADMIN_EMAIL ?? env.SHARED_ADMIN_EMAIL;
-const databaseUrl = process.env.DATABASE_URL ?? env.DATABASE_URL;
-const supabaseUrl =
-  process.env.NEXT_PUBLIC_SUPABASE_URL ?? env.NEXT_PUBLIC_SUPABASE_URL;
-const serviceRoleKey =
-  process.env.SUPABASE_SERVICE_ROLE_KEY ?? env.SUPABASE_SERVICE_ROLE_KEY;
+  getEnv("PREVIEW_CLIENT_PASSWORD", env);
+const name = getEnv("PREVIEW_CLIENT_NAME", env) ?? "Preview Client";
+const adminEmail = getEnv("SHARED_ADMIN_EMAIL", env);
+const adminPassword = getEnv("SHARED_ADMIN_PASSWORD", env);
+const databaseUrl = getEnv("DATABASE_URL", env);
+const authBaseUrl = getEnv("NEON_AUTH_BASE_URL", env);
+const cookieSecret = getEnv("NEON_AUTH_COOKIE_SECRET", env);
 
-if (!email || !password || !databaseUrl || !supabaseUrl || !serviceRoleKey) {
+if (
+  !email ||
+  !password ||
+  !databaseUrl ||
+  !adminEmail ||
+  !adminPassword ||
+  !authBaseUrl ||
+  !cookieSecret
+) {
   console.error(
-    "Missing PREVIEW_CLIENT_EMAIL, PREVIEW_CLIENT_PASSWORD, DATABASE_URL, NEXT_PUBLIC_SUPABASE_URL, or SUPABASE_SERVICE_ROLE_KEY",
+    "Missing PREVIEW_CLIENT_EMAIL, PREVIEW_CLIENT_PASSWORD (or CLIENT_DEFAULT_PASSWORD), DATABASE_URL, SHARED_ADMIN_*, NEON_AUTH_BASE_URL, or NEON_AUTH_COOKIE_SECRET",
   );
   process.exit(1);
 }
 
 const pool = new pg.Pool(getPgPoolConfig(databaseUrl));
 
-const supabase = createClient(supabaseUrl, serviceRoleKey, {
-  auth: {
-    autoRefreshToken: false,
-    persistSession: false,
-  },
-});
-
-async function ensurePreviewUser() {
-  const { data: existingUsers, error: listError } =
-    await supabase.auth.admin.listUsers({
-      page: 1,
-      perPage: 1000,
-    });
-
-  if (listError) {
-    throw listError;
-  }
-
-  const existing = existingUsers.users.find(
-    (user) => user.email?.toLowerCase() === email.toLowerCase(),
-  );
-
-  if (existing) {
-    const { error } = await supabase.auth.admin.updateUserById(existing.id, {
-      password,
-      email_confirm: true,
-      user_metadata: { full_name: name, name },
-    });
-
-    if (error) {
-      throw error;
-    }
-
-    console.log(`Updated preview client account for ${email}`);
-    return existing.id;
-  }
-
-  const { data, error } = await supabase.auth.admin.createUser({
+async function main() {
+  const userId = await ensureNeonClientUser({
+    pool,
+    adminEmail,
+    adminPassword,
     email,
     password,
-    email_confirm: true,
-    user_metadata: { full_name: name, name },
+    name,
   });
-
-  if (error) {
-    throw error;
-  }
-
-  console.log(`Created preview client account for ${email}`);
-  return data.user.id;
-}
-
-async function main() {
-  const userId = await ensurePreviewUser();
 
   await pool.query(
     `INSERT INTO client_profiles (
@@ -147,14 +86,8 @@ async function main() {
     ],
   );
 
-  const admin = adminEmail
-    ? await pool.query(
-        `SELECT id FROM auth.users WHERE lower(email) = lower($1) LIMIT 1`,
-        [adminEmail],
-      )
-    : { rows: [] };
-
-  const assignedBy = admin.rows[0]?.id ?? userId;
+  const admin = await findNeonAuthUser(pool, adminEmail);
+  const assignedBy = admin?.id ?? userId;
   const survey = await pool.query(
     `SELECT id, title, slug FROM surveys ORDER BY created_at ASC LIMIT 1`,
   );

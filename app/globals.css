@@ -1,8 +1,8 @@
 @import "tailwindcss";
-@plugin "@tailwindcss/typography";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @import "@neondatabase/auth/ui/tailwind";
+@plugin "@tailwindcss/typography";
 
 @custom-variant dark (&:where(.dark, .dark *));
 
@@ -113,6 +113,7 @@
 }
 
 @theme inline {
+  --breakpoint-md: 48rem;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -169,6 +170,8 @@
   --text-body: 1rem;
   --text-caption: 0.875rem;
   --text-label: 0.875rem;
+  --text-micro: 0.6875rem;
+  --text-nano: 0.625rem;
   --leading-body: 1.5;
   --leading-tight: 1.25;
   --radius-sm: calc(var(--radius) * 0.6);
@@ -232,11 +235,11 @@
   }
 
   html {
-    @apply font-sans;
+    @apply overflow-x-clip font-sans;
   }
 
   body {
-    @apply min-h-dvh bg-background text-base leading-relaxed text-foreground antialiased;
+    @apply min-h-dvh min-w-0 overflow-x-clip bg-background text-base leading-relaxed text-foreground antialiased;
   }
 
   h1,
@@ -264,7 +267,7 @@
 
 @layer components {
   .portal-shell {
-    @apply min-h-dvh bg-background text-foreground;
+    @apply min-h-dvh min-w-0 overflow-x-clip bg-background text-foreground;
   }
 
   .portal-header {
@@ -289,7 +292,7 @@
 
   /* Authenticated client workspace: use full inset width inside app sidebar */
   .portal-main-client {
-    @apply w-full min-w-0 flex-1 px-4 py-6 sm:px-6 md:py-8 lg:px-8;
+    @apply w-full min-w-0 flex-1 overflow-x-clip px-4 py-6 sm:px-6 md:py-8 lg:px-8;
   }
 
   .portal-content-narrow {
@@ -300,33 +303,376 @@
     @apply w-full min-w-0;
   }
 
+  .portal-content-account {
+    @apply mx-auto w-full max-w-3xl;
+  }
+
+  .portal-subnav-link {
+    @apply text-sm text-muted-foreground transition-colors duration-200 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring;
+  }
+
+  .portal-subnav-link[data-active="true"] {
+    @apply font-medium text-primary;
+  }
+
+  /* Sidebar footer — member menu + theme toggle on dark sidebar chrome */
+  .portal-sidebar-footer [data-slot="button"] {
+    @apply rounded-full border border-sidebar-border/70 bg-transparent text-sidebar-foreground shadow-none hover:bg-sidebar-accent hover:text-sidebar-accent-foreground aria-expanded:bg-sidebar-accent aria-expanded:text-sidebar-accent-foreground focus-visible:ring-sidebar-ring dark:border-sidebar-border dark:bg-transparent dark:hover:bg-sidebar-accent;
+  }
+
+  .portal-sidebar-footer [data-slot="avatar"] {
+    @apply after:border-sidebar-border/80 after:mix-blend-normal;
+  }
+
+  .portal-sidebar-footer [data-slot="avatar-fallback"] {
+    @apply bg-sidebar-accent text-sidebar-accent-foreground;
+  }
+
   .portal-skip-link {
-    @apply sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-card focus:px-4 focus:py-2 focus:text-sm focus:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-ring;
+    @apply sr-only;
+  }
+
+  .portal-skip-link:focus-visible {
+    position: absolute;
+    left: 1rem;
+    top: 1rem;
+    z-index: 50;
+    width: auto;
+    height: auto;
+    margin: 0;
+    padding: 0.5rem 1rem;
+    overflow: visible;
+    clip: auto;
+    clip-path: none;
+    white-space: normal;
+    @apply rounded-lg bg-card text-caption shadow-md outline-none ring-2 ring-ring;
   }
 
   .portal-auth-vault {
-    @apply relative isolate flex min-h-dvh flex-col bg-vault-floor text-foreground;
-    @apply lg:h-dvh lg:max-h-dvh lg:min-h-0 lg:overflow-hidden;
+    @apply relative isolate flex min-h-dvh flex-col overflow-x-clip bg-vault-floor text-foreground;
   }
 
+  .dark .portal-auth-vault {
+    --vault-floor: oklch(0.055 0.016 265);
+    --vault-glow: oklch(0.72 0.14 234 / 0.32);
+  }
+
+  /* ── Atmosphere — large radial primary blooms ──────────────────────── */
   .portal-auth-atmosphere {
     @apply pointer-events-none absolute inset-0 -z-10;
     background:
-      radial-gradient(ellipse 90% 60% at 15% -10%, color-mix(in oklch, var(--primary) 14%, transparent), transparent 58%),
-      radial-gradient(ellipse 70% 50% at 100% 100%, color-mix(in oklch, var(--primary) 10%, transparent), transparent 55%);
+      radial-gradient(
+        ellipse 68% 58% at 38% 24%,
+        color-mix(in oklch, var(--info) 16%, transparent),
+        transparent 58%
+      ),
+      radial-gradient(
+        circle at 36% 30%,
+        color-mix(in oklch, var(--primary) 18%, transparent),
+        transparent 32rem
+      ),
+      radial-gradient(
+        ellipse 55% 42% at 12% 8%,
+        color-mix(in oklch, var(--primary) 12%, transparent),
+        transparent 52%
+      ),
+      radial-gradient(
+        ellipse 50% 40% at 100% 96%,
+        color-mix(in oklch, var(--primary) 6%, transparent),
+        transparent 48%
+      );
   }
 
+  .dark .portal-auth-atmosphere {
+    background:
+      radial-gradient(
+        ellipse 78% 68% at 32% 28%,
+        color-mix(in oklch, var(--info) 22%, transparent),
+        transparent 58%
+      ),
+      radial-gradient(circle at 28% 36%, color-mix(in oklch, var(--primary) 16%, transparent), transparent 36rem),
+      radial-gradient(circle at 76% 42%, color-mix(in oklch, var(--primary) 7%, transparent), transparent 28rem),
+      radial-gradient(ellipse 55% 40% at 98% 96%, color-mix(in oklch, var(--primary) 10%, transparent), transparent 52%);
+  }
+
+  /* ── Blueprint grid ─────────────────────────────────────────────────── */
   .portal-auth-gridlines {
-    @apply pointer-events-none absolute inset-0 -z-10 opacity-[0.35];
+    @apply pointer-events-none absolute inset-0 -z-10 opacity-[0.22];
     background-image:
-      linear-gradient(to right, color-mix(in oklch, var(--vault-rim) 35%, transparent) 1px, transparent 1px),
-      linear-gradient(to bottom, color-mix(in oklch, var(--vault-rim) 35%, transparent) 1px, transparent 1px);
-    background-size: 48px 48px;
-    mask-image: radial-gradient(ellipse 85% 75% at 50% 45%, black 20%, transparent 78%);
+      linear-gradient(to right, color-mix(in oklch, var(--info) 22%, transparent) 1px, transparent 1px),
+      linear-gradient(to bottom, color-mix(in oklch, var(--info) 22%, transparent) 1px, transparent 1px);
+    background-size: 56px 56px;
+    mask-image: radial-gradient(ellipse 78% 72% at 38% 32%, black 20%, transparent 78%);
   }
 
   .dark .portal-auth-gridlines {
-    @apply opacity-25;
+    @apply opacity-[0.08];
+    background-image:
+      linear-gradient(to right, rgba(96, 165, 250, 0.38) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(96, 165, 250, 0.38) 1px, transparent 1px);
+    mask-image: radial-gradient(ellipse 90% 80% at 28% 42%, black 15%, transparent 72%);
+  }
+
+  /* ── Cinematic owl — full-bleed background guardian ─────────────────── */
+
+  .portal-auth-phantom-glow {
+    @apply pointer-events-none absolute z-[1];
+    left: 34%;
+    top: clamp(4rem, 14vh, 9rem);
+    width: clamp(34rem, 72vw, 60rem);
+    height: clamp(34rem, 72vw, 60rem);
+    transform: translateX(-46%);
+    border-radius: 9999px;
+    background:
+      radial-gradient(
+        circle,
+        color-mix(in oklch, var(--info) 28%, transparent) 0%,
+        color-mix(in oklch, var(--primary) 18%, transparent) 38%,
+        transparent 70%
+      );
+    filter: blur(100px);
+  }
+
+  .portal-auth-phantom-keylight {
+    @apply pointer-events-none absolute z-[1];
+    left: 34%;
+    top: clamp(12rem, 34vh, 20rem);
+    width: clamp(10rem, 20vw, 16rem);
+    height: clamp(10rem, 20vw, 16rem);
+    transform: translateX(-46%);
+    border-radius: 9999px;
+    background: radial-gradient(
+      circle,
+      color-mix(in oklch, var(--info) 32%, transparent) 0%,
+      transparent 72%
+    );
+    filter: blur(52px);
+  }
+
+  .dark .portal-auth-phantom-glow {
+    left: 32%;
+    top: clamp(3rem, 10vh, 7rem);
+    width: clamp(38rem, 78vw, 68rem);
+    height: clamp(38rem, 78vw, 68rem);
+    transform: translateX(-40%);
+    background:
+      radial-gradient(
+        circle at 50% 46%,
+        color-mix(in oklch, var(--info) 42%, transparent) 0%,
+        color-mix(in oklch, var(--primary) 28%, transparent) 36%,
+        transparent 68%
+      );
+    filter: blur(128px);
+  }
+
+  .dark .portal-auth-phantom-keylight {
+    left: 32%;
+    top: clamp(10rem, 30vh, 18rem);
+    width: clamp(11rem, 22vw, 18rem);
+    height: clamp(11rem, 22vw, 18rem);
+    transform: translateX(-40%);
+    background: radial-gradient(
+      circle,
+      color-mix(in oklch, var(--info) 55%, transparent) 0%,
+      color-mix(in oklch, var(--primary) 28%, transparent) 42%,
+      transparent 74%
+    );
+    filter: blur(56px);
+  }
+
+  .portal-auth-phantom-owl {
+    @apply pointer-events-none absolute z-[2];
+    left: 34%;
+    top: clamp(1rem, 4vh, 3rem);
+    width: min(92vw, 44rem);
+    height: min(94vh, 58rem);
+    transform: translateX(-44%);
+    transform-origin: center top;
+    -webkit-mask-image:
+      radial-gradient(
+        ellipse 84% 78% at 48% 40%,
+        black 0%,
+        rgb(0 0 0 / 0.92) 48%,
+        rgb(0 0 0 / 0.52) 72%,
+        transparent 96%
+      );
+    mask-image:
+      radial-gradient(
+        ellipse 84% 78% at 48% 40%,
+        black 0%,
+        rgb(0 0 0 / 0.92) 48%,
+        rgb(0 0 0 / 0.52) 72%,
+        transparent 96%
+      );
+  }
+
+  .dark .portal-auth-phantom-owl {
+    left: 32%;
+    top: clamp(0.5rem, 2vh, 2rem);
+    width: min(90vw, 46rem);
+    height: min(96vh, 60rem);
+    transform: translateX(-38%);
+    -webkit-mask-image:
+      radial-gradient(
+        ellipse 90% 84% at 46% 42%,
+        black 0%,
+        rgb(0 0 0 / 0.94) 54%,
+        rgb(0 0 0 / 0.45) 78%,
+        transparent 98%
+      );
+    mask-image:
+      radial-gradient(
+        ellipse 90% 84% at 46% 42%,
+        black 0%,
+        rgb(0 0 0 / 0.94) 54%,
+        rgb(0 0 0 / 0.45) 78%,
+        transparent 98%
+      );
+  }
+
+  .portal-auth-phantom-owl-img {
+    height: 100%;
+    width: 100%;
+    object-fit: contain;
+    object-position: center 20%;
+    mix-blend-mode: screen;
+    opacity: 0.42;
+    filter:
+      saturate(1.18)
+      contrast(1.12)
+      brightness(1.08)
+      drop-shadow(0 0 36px color-mix(in oklch, var(--info) 32%, transparent))
+      drop-shadow(0 0 80px color-mix(in oklch, var(--primary) 22%, transparent))
+      drop-shadow(0 48px 96px color-mix(in oklch, var(--primary) 16%, transparent));
+  }
+
+  .dark .portal-auth-phantom-owl-img {
+    mix-blend-mode: normal;
+    opacity: 1;
+    filter:
+      saturate(1.42)
+      contrast(1.18)
+      brightness(1.12)
+      drop-shadow(0 0 48px color-mix(in oklch, var(--info) 62%, transparent))
+      drop-shadow(0 0 104px color-mix(in oklch, var(--primary) 42%, transparent))
+      drop-shadow(0 0 160px color-mix(in oklch, var(--info) 28%, transparent));
+  }
+
+  .portal-auth-cinematic-scrim {
+    @apply pointer-events-none absolute inset-0 z-[3];
+    background:
+      linear-gradient(
+        to top,
+        var(--vault-floor) 0%,
+        color-mix(in oklch, var(--vault-floor) 88%, transparent) 14%,
+        transparent 36%
+      ),
+      linear-gradient(
+        to right,
+        transparent 0%,
+        color-mix(in oklch, var(--vault-floor) 35%, transparent) 52%,
+        color-mix(in oklch, var(--vault-floor) 72%, transparent) 78%,
+        color-mix(in oklch, var(--vault-floor) 88%, transparent) 100%
+      ),
+      radial-gradient(
+        ellipse 70% 55% at 78% 48%,
+        color-mix(in oklch, var(--vault-floor) 68%, transparent) 0%,
+        transparent 58%
+      );
+  }
+
+  .dark .portal-auth-cinematic-scrim {
+    background:
+      linear-gradient(
+        to top,
+        var(--vault-floor) 0%,
+        color-mix(in oklch, var(--vault-floor) 88%, transparent) 16%,
+        transparent 44%
+      ),
+      linear-gradient(
+        to right,
+        transparent 0%,
+        transparent 46%,
+        color-mix(in oklch, var(--vault-floor) 42%, transparent) 68%,
+        color-mix(in oklch, var(--vault-floor) 78%, transparent) 88%,
+        color-mix(in oklch, var(--vault-floor) 92%, transparent) 100%
+      ),
+      radial-gradient(
+        ellipse 48% 42% at 86% 50%,
+        color-mix(in oklch, var(--vault-floor) 72%, transparent) 0%,
+        transparent 58%
+      );
+  }
+
+  @media (max-width: 1023px) {
+    .portal-auth-phantom-glow {
+      left: 50%;
+      top: clamp(3rem, 8vh, 6rem);
+      width: clamp(22rem, 92vw, 34rem);
+      height: clamp(22rem, 48vh, 30rem);
+      transform: translateX(-50%);
+      filter: blur(80px);
+    }
+
+    .portal-auth-phantom-owl {
+      left: 50%;
+      top: clamp(1.5rem, 4vh, 3rem);
+      width: min(98vw, 38rem);
+      height: min(54vh, 28rem);
+      transform: translateX(-50%);
+      -webkit-mask-image:
+        radial-gradient(
+          ellipse 82% 76% at 50% 34%,
+          black 0%,
+          rgb(0 0 0 / 0.62) 46%,
+          transparent 88%
+        );
+      mask-image:
+        radial-gradient(
+          ellipse 82% 76% at 50% 34%,
+          black 0%,
+          rgb(0 0 0 / 0.62) 46%,
+          transparent 88%
+        );
+    }
+
+    .portal-auth-phantom-owl-img {
+      opacity: 0.28;
+    }
+
+    .dark .portal-auth-phantom-owl-img {
+      opacity: 0.96;
+    }
+
+    .portal-auth-cinematic-scrim {
+      background:
+        linear-gradient(
+          to top,
+          var(--vault-floor) 0%,
+          color-mix(in oklch, var(--vault-floor) 92%, transparent) 22%,
+          transparent 50%
+        ),
+        radial-gradient(
+          ellipse 92% 78% at 50% 28%,
+          color-mix(in oklch, var(--vault-floor) 55%, transparent) 0%,
+          transparent 68%
+        );
+    }
+
+    .dark .portal-auth-cinematic-scrim {
+      background:
+        linear-gradient(
+          to top,
+          var(--vault-floor) 0%,
+          color-mix(in oklch, var(--vault-floor) 96%, transparent) 28%,
+          transparent 55%
+        ),
+        radial-gradient(
+          ellipse 90% 75% at 50% 30%,
+          color-mix(in oklch, var(--vault-floor) 70%, transparent) 0%,
+          transparent 65%
+        );
+    }
   }
 
   .portal-auth-toolbar {
@@ -338,27 +684,97 @@
   }
 
   .portal-auth-stage {
-    @apply flex min-h-0 flex-1 items-center px-4 py-6 sm:px-6 sm:py-8 lg:overflow-hidden lg:px-8 lg:py-4;
+    @apply flex min-h-0 flex-1 items-start px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-6;
   }
 
   .portal-auth-grid {
-    @apply mx-auto grid w-full max-w-6xl gap-8 lg:max-h-full lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-center lg:gap-8 xl:gap-12;
+    @apply mx-auto grid w-full min-w-0 max-w-6xl gap-8 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-end lg:gap-8 xl:gap-12;
   }
 
   .portal-auth-brand {
-    @apply order-2 lg:order-1;
+    @apply order-2 flex min-w-0 flex-col lg:order-1 lg:justify-end;
   }
 
-  .portal-auth-brand-mark {
-    @apply mx-auto mb-6 flex w-fit justify-center lg:mx-0 lg:mb-5 lg:justify-start;
+  .portal-auth-eyebrow {
+    @apply mb-3 border-vault-rim bg-vault-surface/50 text-foreground backdrop-blur-sm lg:mb-2;
   }
+
+  .portal-auth-brand h1 {
+    @apply font-heading text-3xl font-semibold tracking-tight text-balance break-words sm:text-4xl lg:text-4xl xl:text-4xl;
+    line-height: 1.1;
+  }
+
+  @media (min-width: 1024px) and (max-width: 1279px) {
+    .portal-auth-brand h1 {
+      font-size: 2.375rem;
+    }
+  }
+
+  .portal-auth-hero-description {
+    @apply mt-3 max-w-md text-pretty text-sm leading-relaxed text-muted-foreground sm:text-base lg:mt-2.5 lg:leading-snug;
+  }
+
+  @media (min-width: 1024px) {
+    .portal-auth-hero-description {
+      font-size: 0.9375rem;
+    }
+  }
+
+  .portal-auth-vault-signals {
+    @apply mt-5 flex flex-wrap gap-x-3 gap-y-1.5 text-xs text-muted-foreground sm:text-sm lg:mt-4;
+  }
+
+  .portal-auth-vault-signal-dot {
+    @apply size-1.5 shrink-0 rounded-full bg-primary;
+    box-shadow: 0 0 8px var(--vault-glow);
+  }
+
+  .portal-auth-chamber-inner h2 {
+    @apply font-heading text-xl font-semibold tracking-tight text-balance sm:text-2xl;
+  }
+
+  @media (min-width: 1024px) {
+    .portal-auth-chamber-inner h2 {
+      font-size: 1.375rem;
+    }
+  }
+
+  .portal-auth-sign-in-description {
+    @apply text-pretty text-xs leading-snug text-muted-foreground sm:text-sm;
+  }
+
+  @media (min-width: 1024px) {
+    .portal-auth-sign-in-description {
+      font-size: 0.8125rem;
+    }
+  }
+
+  .portal-auth-trust-notice {
+    @apply rounded-md border border-border/80 bg-muted/40 px-3 py-2 text-pretty text-micro leading-snug text-muted-foreground sm:text-xs lg:py-1.5;
+  }
+
+  .portal-auth-footer-hint {
+    @apply text-center text-micro leading-snug text-muted-foreground text-pretty sm:text-left sm:text-xs;
+  }
+
+  .portal-auth-footer-note {
+    @apply inline-flex items-center justify-center gap-2 text-micro text-muted-foreground sm:text-xs;
+  }
+
+  /* Flexible spacer — pushes text block down so owl reads above/behind copy */
+  .portal-auth-brand-spacer {
+    @apply hidden lg:block lg:flex-1;
+    min-height: clamp(14rem, 30vh, 22rem);
+  }
+
+  /* Remove old scene container classes (no longer used in layout flow) */
 
   .portal-auth-chamber-wrap {
-    @apply order-1 w-full lg:order-2;
+    @apply order-1 w-full min-w-0 max-w-full lg:order-2;
   }
 
   .portal-auth-chamber {
-    @apply rounded-2xl p-px shadow-[0_28px_60px_-28px_rgba(0,0,0,0.55)];
+    @apply w-full min-w-0 rounded-2xl p-px shadow-[0_28px_60px_-28px_rgba(0,0,0,0.55)];
     background: linear-gradient(
       155deg,
       color-mix(in oklch, var(--vault-rim) 90%, white 10%),
@@ -367,7 +783,7 @@
   }
 
   .portal-auth-chamber-inner {
-    @apply flex flex-col gap-4 rounded-[calc(var(--radius-2xl)-1px)] bg-vault-surface p-5 sm:p-6 lg:gap-3 lg:p-5;
+    @apply flex min-w-0 flex-col gap-4 rounded-[calc(var(--radius-2xl)-1px)] bg-vault-surface p-5 sm:p-6 lg:gap-3 lg:p-5;
     box-shadow:
       inset 0 1px 0 color-mix(in oklch, white 12%, transparent),
       inset 0 -24px 48px -40px color-mix(in oklch, var(--primary) 18%, transparent);
@@ -384,7 +800,11 @@
   }
 
   .portal-auth-footer {
-    @apply shrink-0 border-t border-border/60 px-4 py-4 text-center sm:px-6 lg:py-2.5;
+    @apply shrink-0 border-t border-border/60 px-4 py-4 text-center sm:px-6 lg:py-3;
+  }
+
+  .portal-auth-form {
+    @apply min-w-0 w-full;
   }
 
   .portal-auth-form form {
@@ -405,6 +825,16 @@
 
   .portal-auth-form button[type="submit"] {
     @apply lg:min-h-10;
+  }
+
+  @media (min-width: 1024px) and (min-height: 900px) {
+    .portal-auth-stage {
+      @apply items-center;
+    }
+
+    .portal-auth-grid {
+      @apply items-center;
+    }
   }
 
   @media (min-width: 1024px) and (max-height: 800px) {
@@ -433,39 +863,92 @@
   }
 
   /* Neon Auth views inside portal vault / account shells */
-  .portal-neon-auth-view [data-slot="card"],
-  .portal-neon-account-view [data-slot="card"] {
-    @apply border-0 bg-transparent p-0 shadow-none;
+  .portal-neon-view [data-slot="card"] {
+    @apply min-w-0 max-w-full border-0 bg-transparent p-0 shadow-none;
   }
 
-  .portal-neon-auth-view form,
-  .portal-neon-account-view form {
-    @apply space-y-4;
+  .portal-neon-view form {
+    @apply min-w-0 space-y-4;
   }
 
-  .portal-neon-auth-view button[type="submit"],
-  .portal-neon-account-view button[type="submit"] {
+  .portal-neon-view button[type="submit"] {
     @apply min-h-11 w-full touch-manipulation;
   }
 
   .portal-code-block {
-    @apply rounded-lg border border-border bg-muted/30 px-3 py-2 font-mono text-xs break-all text-muted-foreground;
+    @apply rounded-lg border border-border bg-muted/30 px-3 py-2 font-mono text-caption break-all text-muted-foreground;
   }
 
   .portal-info-block {
-    @apply rounded-lg border border-border bg-muted/30 px-3 py-2 text-sm text-foreground;
+    @apply rounded-lg border border-border bg-muted/30 px-3 py-2 text-body text-foreground;
   }
 
   .portal-page-title {
-    @apply font-heading text-2xl font-semibold leading-tight tracking-tight text-balance sm:text-3xl;
+    @apply font-heading text-title font-semibold leading-tight tracking-tight text-balance sm:text-display;
   }
 
   .portal-page-description {
-    @apply text-base leading-relaxed text-pretty text-muted-foreground;
+    @apply text-body leading-body text-pretty text-muted-foreground;
   }
 
   .portal-section-title {
-    @apply font-heading text-lg font-semibold leading-tight tracking-tight text-balance;
+    @apply font-heading text-title font-semibold leading-tight tracking-tight text-balance;
+  }
+
+  .portal-subsection-title {
+    @apply text-base font-medium text-foreground;
+  }
+
+  .portal-page-toolbar {
+    @apply flex h-14 shrink-0 items-center gap-2 border-b border-border px-4;
+  }
+
+  .portal-page-toolbar-sticky {
+    @apply sticky top-0 z-30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80;
+  }
+
+  .portal-toolbar-title {
+    @apply text-lg font-semibold tracking-tight;
+  }
+
+  .portal-centered-state {
+    @apply flex min-h-dvh flex-col items-center justify-center gap-6 px-4 py-16 text-center;
+  }
+
+  .portal-centered-state-panel {
+    @apply mx-auto flex min-h-[40dvh] w-full max-w-lg flex-col items-center justify-center gap-6 px-4 py-16 text-center;
+  }
+
+  .portal-centered-state-embed {
+    @apply mx-auto flex min-h-[50dvh] w-full max-w-lg items-center p-6;
+  }
+
+  .portal-state-kicker {
+    @apply text-xs font-medium uppercase tracking-wide text-muted-foreground;
+  }
+
+  .portal-state-title {
+    @apply text-2xl font-semibold tracking-tight;
+  }
+
+  .portal-state-description {
+    @apply text-sm text-muted-foreground text-pretty;
+  }
+
+  .portal-kpi-value {
+    @apply text-title font-semibold tabular-nums;
+  }
+
+  .portal-empty-state-panel {
+    @apply rounded-md border border-dashed p-8 text-center;
+  }
+
+  .portal-grid-split {
+    @apply grid min-w-0 gap-8 lg:grid-cols-[minmax(280px,320px)_minmax(0,1fr)];
+  }
+
+  .portal-grid-split-wide {
+    @apply grid min-w-0 gap-8 lg:grid-cols-[minmax(280px,360px)_minmax(0,1fr)];
   }
 
   .portal-prose {
@@ -478,7 +961,7 @@
 
   /* Modal portal layer — Base UI dialog/sheet (data-starting-style / data-ending-style) */
   .portal-overlay {
-    @apply fixed inset-0 z-50 bg-black/40 transition-opacity duration-200 ease-out supports-backdrop-filter:backdrop-blur-sm data-starting-style:opacity-0 data-ending-style:opacity-0;
+    @apply fixed inset-0 z-50 bg-black/40 transition-opacity duration-200 ease-out supports-[backdrop-filter]:backdrop-blur-sm data-starting-style:opacity-0 data-ending-style:opacity-0;
   }
 
   .portal-dialog-positioner {

@@ -1,11 +1,12 @@
 import { DashboardPageSkeleton } from "@/components/dashboard-page";
 import { Skeleton } from "@/components/ui/skeleton";
+import { operatorDashboardBreadcrumbs } from "@/lib/operator-breadcrumbs";
 import { isPlaygroundEmbedRequest } from "@/lib/playground";
 import { portalCopy } from "@/lib/portal-copy";
 
 export default async function DashboardLoading() {
   const embed = await isPlaygroundEmbedRequest();
-  const { nav, org } = portalCopy;
+  const { org } = portalCopy;
 
   return (
     <DashboardPageSkeleton
@@ -13,7 +14,7 @@ export default async function DashboardLoading() {
       eyebrow={org.eyebrow}
       title={org.title}
       description={org.description}
-      breadcrumbs={[{ label: nav.declarations }]}
+      breadcrumbs={operatorDashboardBreadcrumbs()}
     >
       <div className="grid gap-4 sm:grid-cols-3">
         {Array.from({ length: 3 }).map((_, index) => (

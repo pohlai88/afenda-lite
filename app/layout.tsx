@@ -1,14 +1,21 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
-import { ebGaramond, lato } from "./fonts";
+import { portalFontClassName } from "./fonts";
+import { BrandFaviconSync } from "@/components/brand-favicon-sync";
 import { PortalAuthProvider } from "@/components/portal-auth-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { getAppBaseUrl } from "@/lib/app-url";
 import {
+  BRAND_OG_IMAGE_HEIGHT,
+  BRAND_OG_IMAGE_PATH,
+  BRAND_OG_IMAGE_WIDTH,
   BRAND_WEB_MANIFEST_PATH,
+  BRAND_ICON_ALT,
+  PORTAL_BRAND_ICON,
 } from "@/lib/portal-brand";
 import { PORTAL_NAME, portalCopy } from "@/lib/portal-copy";
+import { PORTAL_THEME_BOOT_SCRIPT } from "@/lib/portal-theme";
 import { cn } from "@/lib/utils";
 
 // Auth, cookies, and session-aware UI run on every route — opt out of static prerender.
@@ -23,16 +30,55 @@ export const metadata: Metadata = {
   description: portalCopy.trust.meta.defaultDescription,
   keywords: [...portalCopy.trust.meta.keywords],
   manifest: BRAND_WEB_MANIFEST_PATH,
+  icons: {
+    icon: [
+      {
+        url: PORTAL_BRAND_ICON.light.favicon32,
+        type: "image/png",
+        sizes: "32x32",
+        media: "(prefers-color-scheme: light)",
+      },
+      {
+        url: PORTAL_BRAND_ICON.dark.favicon32,
+        type: "image/png",
+        sizes: "32x32",
+        media: "(prefers-color-scheme: dark)",
+      },
+    ],
+    apple: [
+      {
+        url: PORTAL_BRAND_ICON.light.apple,
+        type: "image/png",
+        sizes: "180x180",
+        media: "(prefers-color-scheme: light)",
+      },
+      {
+        url: PORTAL_BRAND_ICON.dark.apple,
+        type: "image/png",
+        sizes: "180x180",
+        media: "(prefers-color-scheme: dark)",
+      },
+    ],
+  },
   openGraph: {
     title: PORTAL_NAME,
     description: portalCopy.trust.meta.defaultDescription,
     type: "website",
     siteName: PORTAL_NAME,
+    images: [
+      {
+        url: BRAND_OG_IMAGE_PATH,
+        width: BRAND_OG_IMAGE_WIDTH,
+        height: BRAND_OG_IMAGE_HEIGHT,
+        alt: BRAND_ICON_ALT,
+      },
+    ],
   },
   twitter: {
     card: "summary",
     title: PORTAL_NAME,
     description: portalCopy.trust.meta.defaultDescription,
+    images: [BRAND_OG_IMAGE_PATH],
   },
 };
 
@@ -49,18 +95,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      suppressHydrationWarning
-      lang="en"
-      className={cn(lato.variable, ebGaramond.variable, "font-sans")}
-    >
-      <body>
+    <html suppressHydrationWarning lang="en" className={cn(portalFontClassName)}>
+      <body className="min-w-0 overflow-x-clip">
         <script
-          dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem("client-declaration-theme");var d=t==="dark"||(t!=="light"&&window.matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.classList.toggle("dark",d);document.documentElement.style.colorScheme=d?"dark":"light";}catch(e){}})();`,
-          }}
+          dangerouslySetInnerHTML={{ __html: PORTAL_THEME_BOOT_SCRIPT }}
         />
         <ThemeProvider defaultTheme="system">
+          <BrandFaviconSync />
           <PortalAuthProvider>
             {children}
           </PortalAuthProvider>

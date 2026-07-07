@@ -1,17 +1,11 @@
-import { redirect } from "next/navigation";
-import { isAdminSession } from "@/lib/admin";
-import { auth } from "@/lib/auth/server";
+import {
+  openLinkPageMetadata,
+  runOpenLinkPage,
+} from "@/lib/open-link-entry";
 
-export default async function SurveyRedirectPage() {
-  const { data: session } = await auth.getSession();
+export const dynamic = "force-dynamic";
 
-  if (isAdminSession(session)) {
-    redirect("/dashboard");
-  }
+export const generateMetadata = openLinkPageMetadata;
 
-  if (session?.user?.id) {
-    redirect("/client");
-  }
-
-  redirect("/?reason=login-required");
-}
+/** Open declaration link — resolves slug, then routes to sign-in or assignment. */
+export default runOpenLinkPage;

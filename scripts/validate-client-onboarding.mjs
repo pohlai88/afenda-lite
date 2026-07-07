@@ -1,20 +1,20 @@
 /**
- * Validates client onboarding lifecycle against Supabase Auth + portal DB.
+ * Validates client onboarding lifecycle against Neon Auth + portal DB.
  * Run: node --env-file=.env scripts/validate-client-onboarding.mjs
  */
 import pg from "pg";
-import { createClient } from "@supabase/supabase-js";
 import { getPgPoolConfig } from "./db-pool-config.mjs";
+import { loadEnvFile, getEnv } from "./lib/load-env.mjs";
+import { findNeonAuthUser } from "./lib/neon-auth-seed.mjs";
 
-const PROJECT_REF = "czxbufruvpcioghvfzmo";
-const APP_URL = process.env.APP_URL ?? "https://iam-check.vercel.app";
+const env = loadEnvFile();
+const APP_URL = getEnv("APP_URL", env) ?? "https://iam-check.vercel.app";
+const databaseUrl = getEnv("DATABASE_URL", env);
+const authBaseUrl = getEnv("NEON_AUTH_BASE_URL", env);
+const cookieSecret = getEnv("NEON_AUTH_COOKIE_SECRET", env);
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const databaseUrl = process.env.DATABASE_URL;
-
-function fail(message) {
-  return { ok: false, message };
+function fail(message, detail) {
+  return { ok: false, message, detail };
 }
 
 function pass(message, detail) {
@@ -23,9 +23,9 @@ function pass(message, detail) {
 
 async function checkEnv() {
   const missing = [
-    !supabaseUrl && "NEXT_PUBLIC_SUPABASE_URL",
-    !serviceRoleKey && "SUPABASE_SERVICE_ROLE_KEY",
     !databaseUrl && "DATABASE_URL",
+    !authBaseUrl && "NEON_AUTH_BASE_URL",
+    !cookieSecret && "NEON_AUTH_COOKIE_SECRET",
   ].filter(Boolean);
 
   if (missing.length) {
@@ -59,235 +59,139 @@ async function checkSchema(pool) {
     return fail(`Missing portal tables: ${missing.join(", ")}`);
   }
 
+  const neonAuth = await pool.query(
+    `SELECT COUNT(*)::int AS tables
+     FROM information_schema.tables
+     WHERE table_schema = 'neon_auth'`,
+  );
+
+  if ((neonAuth.rows[0]?.tables ?? 0) === 0) {
+    return fail("neon_auth schema is missing — provision Neon Auth on this branch");
+  }
+
   const migrations = await pool.query(
     `SELECT filename FROM schema_migrations ORDER BY filename`,
   );
 
   return pass("Portal schema present", {
     tables: [...found],
+    neonAuthTables: neonAuth.rows[0]?.tables,
     migrations: migrations.rows.map((row) => row.filename),
   });
 }
 
-async function checkAuthUsers(admin) {
-  const { data, error } = await admin.auth.admin.listUsers({
-    page: 1,
-    perPage: 1000,
-  });
+async function checkAuthUsers(pool) {
+  const usersResult = await pool.query(
+    `SELECT id, email, name, role, "emailVerified"
+     FROM neon_auth."user"
+     ORDER BY email`,
+  );
 
-  if (error) {
-    return fail(`Auth listUsers failed: ${error.message}`);
-  }
-
-  const users = data.users.map((user) => ({
+  const users = usersResult.rows.map((user) => ({
     id: user.id,
     email: user.email,
-    confirmed: Boolean(user.email_confirmed_at),
-    invited: Boolean(user.invited_at),
-    lastSignIn: user.last_sign_in_at,
-    role: user.app_metadata?.role ?? null,
-    fullName: user.user_metadata?.full_name ?? user.user_metadata?.name ?? null,
+    role: user.role,
+    verified: user.emailVerified,
+    name: user.name,
   }));
 
-  const adminEmail = process.env.SHARED_ADMIN_EMAIL?.toLowerCase();
-  const previewEmail = process.env.PREVIEW_CLIENT_EMAIL?.toLowerCase();
+  const adminEmail = getEnv("SHARED_ADMIN_EMAIL", env)?.toLowerCase();
+  const previewEmail = getEnv("PREVIEW_CLIENT_EMAIL", env)?.toLowerCase();
 
-  const adminUser = users.find((u) => u.email?.toLowerCase() === adminEmail);
-  const previewUser = users.find((u) => u.email?.toLowerCase() === previewEmail);
+  const adminUser = users.find((user) => user.email?.toLowerCase() === adminEmail);
+  const previewUser = users.find(
+    (user) => user.email?.toLowerCase() === previewEmail,
+  );
 
   const issues = [];
-  if (!adminUser) issues.push("Shared admin user not found in auth.users");
-  else if (!adminUser.confirmed) issues.push("Shared admin email not confirmed");
-  else if (adminUser.role !== "admin") issues.push("Shared admin missing app_metadata.role=admin");
+  if (!adminUser) {
+    issues.push("Shared admin user not found in neon_auth.user");
+  } else if (adminUser.role !== "admin") {
+    issues.push("Shared admin missing role=admin (run npm run seed:admin)");
+  }
 
   if (previewEmail && !previewUser) {
-    issues.push("Preview client user not found in auth.users");
-  } else if (previewUser && !previewUser.confirmed) {
-    issues.push("Preview client email not confirmed");
+    issues.push("Preview client user not found in neon_auth.user");
   }
 
   if (issues.length) {
     return fail(issues.join("; "), { users });
   }
 
-  return pass("Auth users configured", { users });
+  return pass("Neon Auth users configured", { users });
 }
 
-async function checkOnboardingState(pool, admin) {
-  const { data } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
-  const emails = data.users
-    .map((u) => u.email?.toLowerCase())
-    .filter(Boolean);
-
-  const invitations = await pool.query(
-    `SELECT id, email, status, expires_at, created_at
-     FROM client_invitations
-     ORDER BY created_at DESC
-     LIMIT 20`,
+async function checkAuthEndpoint() {
+  const jwksUrl = new URL(
+    ".well-known/jwks.json",
+    authBaseUrl.endsWith("/") ? authBaseUrl : `${authBaseUrl}/`,
   );
+  const response = await fetch(jwksUrl, { method: "GET" });
+  if (!response.ok) {
+    return fail(`Neon Auth JWKS endpoint returned ${response.status}`);
+  }
 
+  return pass("Neon Auth JWKS reachable", { url: jwksUrl.toString() });
+}
+
+async function checkOnboardingState(pool) {
   const profiles = await pool.query(
-    `SELECT user_id, full_legal_name, onboarding_complete, identity_consent_at, updated_at
+    `SELECT user_id, onboarding_complete
      FROM client_profiles
      ORDER BY updated_at DESC
      LIMIT 20`,
   );
 
-  const audit = await pool.query(
-    `SELECT event_type, resource_type, created_at
-     FROM audit_events
-     WHERE event_type IN ('invite.issued', 'invite.accepted', 'profile.completed')
-     ORDER BY created_at DESC
-     LIMIT 20`,
-  );
-
-  const profileByUser = new Map(
-    profiles.rows.map((row) => [String(row.user_id), row]),
-  );
-
-  const lifecycle = [];
-  for (const user of data.users) {
-    if (user.app_metadata?.role === "admin") continue;
-    const email = user.email?.toLowerCase() ?? "";
-    const invitation = invitations.rows.find(
-      (row) => String(row.email).toLowerCase() === email,
-    );
-    const profile = profileByUser.get(user.id);
-
-    lifecycle.push({
-      email,
-      authConfirmed: Boolean(user.email_confirmed_at),
-      invitationStatus: invitation?.status ?? "none",
-      profileExists: Boolean(profile),
-      onboardingComplete: profile?.onboarding_complete ?? false,
-    });
-  }
-
-  return pass("Onboarding state snapshot", {
-    invitations: invitations.rows,
+  return pass("Client profiles readable", {
     profiles: profiles.rows,
-    audit: audit.rows,
-    lifecycle,
+    appUrl: APP_URL,
   });
-}
-
-async function checkInviteRedirectConfig() {
-  const expectedRedirect = `${APP_URL}/auth/callback?next=/client/onboarding`;
-
-  return pass("Invite redirect target configured in app code", {
-    siteUrl: APP_URL,
-    inviteRedirectTo: expectedRedirect,
-    callbackRoute: "/auth/callback",
-    onboardingRoute: "/client/onboarding",
-    note: "Supabase Auth → Dashboard → URL Configuration must allow this redirect",
-  });
-}
-
-async function dryRunProvision(admin) {
-  const testEmail = `lifecycle-test-${Date.now()}@example.com`;
-  const password = process.env.CLIENT_DEFAULT_PASSWORD;
-
-  if (!password) {
-    return fail("CLIENT_DEFAULT_PASSWORD is not set");
-  }
-
-  const { data, error } = await admin.auth.admin.createUser({
-    email: testEmail,
-    password,
-    email_confirm: true,
-    user_metadata: { full_name: "Lifecycle Test Client" },
-  });
-
-  if (error) {
-    return fail(`createUser dry-run failed: ${error.message}`);
-  }
-
-  const userId = data.user?.id;
-  if (userId) {
-    await admin.auth.admin.deleteUser(userId);
-  }
-
-  return pass("Supabase admin createUser works with CLIENT_DEFAULT_PASSWORD (test user cleaned up)", {
-    testEmail,
-    passwordConfigured: true,
-  });
-}
-
-async function checkAuthLogsViaCli() {
-  try {
-    const { spawnSync } = await import("node:child_process");
-    const result = spawnSync(
-      "supabase",
-      ["projects", "api-keys", "--project-ref", PROJECT_REF],
-      { encoding: "utf8", shell: process.platform === "win32" },
-    );
-
-    if (result.status !== 0) {
-      return pass("CLI project access (skipped auth log tail)", {
-        note: "Could not read project keys via CLI; MCP/CLI org may differ",
-      });
-    }
-
-    return pass("Supabase CLI can access project", {
-      cliLinked: true,
-    });
-  } catch {
-    return pass("CLI check skipped");
-  }
 }
 
 async function main() {
-  const report = {
-    project: PROJECT_REF,
-    checkedAt: new Date().toISOString(),
-    checks: [],
-  };
+  const checks = [];
+  checks.push(["env", await checkEnv()]);
 
-  const push = (name, result) => {
-    report.checks.push({ name, ...result });
-    const icon = result.ok ? "PASS" : "FAIL";
-    console.log(`${icon} ${name}: ${result.message}`);
-    if (result.detail) {
-      console.log(JSON.stringify(result.detail, null, 2));
-    }
-  };
-
-  push("env", await checkEnv());
-  if (!report.checks.at(-1)?.ok) {
-    console.log(JSON.stringify(report, null, 2));
+  if (!databaseUrl) {
+    printReport(checks);
     process.exit(1);
   }
 
-  const admin = createClient(supabaseUrl, serviceRoleKey, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
-
   const pool = new pg.Pool(getPgPoolConfig(databaseUrl));
-
   try {
-    push("schema", await checkSchema(pool));
-    push("auth-users", await checkAuthUsers(admin));
-    push("onboarding-state", await checkOnboardingState(pool, admin));
-    push("redirect-config", await checkInviteRedirectConfig());
-    push("provision-auth-user", await dryRunProvision(admin));
-    push("supabase-cli", await checkAuthLogsViaCli());
+    checks.push(["schema", await checkSchema(pool)]);
+    checks.push(["auth-users", await checkAuthUsers(pool)]);
+    checks.push(["auth-endpoint", await checkAuthEndpoint()]);
+    checks.push(["onboarding", await checkOnboardingState(pool)]);
+
+    const adminEmail = getEnv("SHARED_ADMIN_EMAIL", env);
+    if (adminEmail) {
+      const admin = await findNeonAuthUser(pool, adminEmail);
+      checks.push([
+        "admin-lookup",
+        admin
+          ? pass("Admin user resolvable by email", { id: admin.id })
+          : fail("Admin user not found by email lookup"),
+      ]);
+    }
   } finally {
     await pool.end();
   }
 
-  const failed = report.checks.filter((check) => !check.ok);
-  console.log("\n--- Summary ---");
-  console.log(`Passed: ${report.checks.length - failed.length}/${report.checks.length}`);
+  printReport(checks);
+  const failed = checks.some(([, result]) => !result.ok);
+  process.exit(failed ? 1 : 0);
+}
 
-  if (failed.length) {
-    console.log("Failed checks:");
-    for (const check of failed) {
-      console.log(`- ${check.name}: ${check.message}`);
+function printReport(checks) {
+  console.log("\nClient onboarding validation\n");
+  for (const [name, result] of checks) {
+    const icon = result.ok ? "OK" : "FAIL";
+    console.log(`${icon}  ${name}: ${result.message}`);
+    if (result.detail) {
+      console.log(JSON.stringify(result.detail, null, 2));
     }
-    process.exit(1);
   }
-
-  console.log("Client onboarding lifecycle validation complete.");
 }
 
 main().catch((error) => {

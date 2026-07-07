@@ -1,0 +1,80 @@
+/** SSOT for portal Postgres schema expectations (used by check-db-schema). */
+
+export const PORTAL_TABLES = [
+  "audit_events",
+  "client_assignments",
+  "client_invitations",
+  "client_profiles",
+  "evidence_records",
+  "schema_migrations",
+  "survey_invitations",
+  "survey_invite_tokens",
+  "survey_questions",
+  "survey_responses",
+  "surveys",
+];
+
+export const REQUIRED_INDEXES = [
+  "audit_events_actor_id_idx",
+  "audit_events_created_at_idx",
+  "audit_events_event_type_idx",
+  "client_assignments_active_unique_idx",
+  "client_assignments_email_created_at_idx",
+  "client_assignments_email_idx",
+  "client_assignments_email_lower_idx",
+  "client_assignments_email_survey_status_idx",
+  "client_assignments_pending_idx",
+  "client_assignments_survey_id_idx",
+  "client_invitations_email_idx",
+  "evidence_records_survey_id_id_idx",
+  "evidence_records_survey_id_idx",
+  "survey_invitations_survey_id_idx",
+  "survey_invite_tokens_survey_id_idx",
+  "survey_questions_survey_id_id_idx",
+  "survey_questions_survey_sort_idx",
+  "survey_responses_assignment_id_unique_idx",
+  "survey_responses_confirmation_code_idx",
+  "survey_responses_survey_id_idx",
+  "surveys_user_id_created_at_idx",
+];
+
+export const REQUIRED_CONSTRAINTS = [
+  "client_assignments_status_check",
+  "client_invitations_status_check",
+  "evidence_records_question_survey_fk",
+];
+
+export const REQUIRED_COLUMNS = {
+  client_profiles: [
+    "user_id",
+    "full_legal_name",
+    "nationality",
+    "country_of_residence",
+    "additional_residence_countries",
+    "passport_issuing_country",
+    "passport_number",
+    "phone",
+    "entity_name",
+    "jurisdiction",
+    "notes",
+    "identity_consent_at",
+    "onboarding_complete",
+    "portal_ack_at",
+    "portal_ack_version",
+    "updated_at",
+  ],
+  surveys: [
+    "reference_number",
+    "case_number",
+    "effective_date",
+    "submit_before",
+    "surveyor_name",
+    "surveyor_org",
+    "surveyee_individual",
+    "surveyee_org",
+    "purpose",
+    "categories",
+  ],
+  survey_questions: ["config"],
+  survey_responses: ["answers", "confirmation_code", "assignment_id"],
+};

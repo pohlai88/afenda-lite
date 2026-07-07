@@ -1,17 +1,11 @@
-import { redirect } from "next/navigation";
-import { isAdminSession } from "@/lib/admin";
-import { auth } from "@/lib/auth/server";
+import {
+  runSecureLinkPage,
+  secureLinkPageMetadata,
+} from "@/lib/secure-link-entry";
 
-export default async function SecureLinkRedirectPage() {
-  const { data: session } = await auth.getSession();
+export const dynamic = "force-dynamic";
 
-  if (isAdminSession(session)) {
-    redirect("/dashboard");
-  }
+export const generateMetadata = secureLinkPageMetadata;
 
-  if (session?.user?.id) {
-    redirect("/client");
-  }
-
-  redirect("/?reason=login-required");
-}
+/** Secure declaration link — resolves token, then routes to sign-in or assignment. */
+export default runSecureLinkPage;

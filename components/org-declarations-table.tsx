@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import type { ColumnDef, PaginationState } from "@tanstack/react-table";
 import {
-  flexRender,
   getCoreRowModel,
   getFilteredRowModel,
   getPaginationRowModel,
@@ -13,7 +12,6 @@ import {
 } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,29 +19,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-} from "@/components/ui/pagination";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { usePagination } from "@/hooks/use-pagination";
+import { FilteredDataTable } from "@/components/filtered-datatable";
 import { displaySurveyTitle } from "@/lib/survey-display";
 import { isDraftSurveyTitle } from "@/lib/survey-draft";
 import { portalCopy } from "@/lib/portal-copy";
-import {
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  EllipsisVerticalIcon,
-} from "lucide-react";
+import { EllipsisVerticalIcon } from "lucide-react";
 import { DeclarationRowDeleteAction } from "@/components/declaration-row-delete-action";
 
 /** datatable-component-01 pattern — compact declaration rows with action menu. */
@@ -177,145 +157,5 @@ export function OrgDeclarationsTable({ rows }: OrgDeclarationsTableProps) {
     state: { pagination },
   });
 
-  const { pages, showLeftEllipsis, showRightEllipsis } = usePagination({
-    currentPage: table.getState().pagination.pageIndex + 1,
-    totalPages: table.getPageCount(),
-    paginationItemsToDisplay: 2,
-  });
-
-  return (
-    <Card className="overflow-hidden py-0">
-      <div className="border-b">
-        <Table>
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <TableHead
-                    key={header.id}
-                    className="text-muted-foreground h-12 first:pl-4 last:pr-4"
-                  >
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext(),
-                        )}
-                  </TableHead>
-                ))}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows.map((row) => (
-              <TableRow key={row.id}>
-                {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id} className="first:pl-4 last:pr-4">
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </TableCell>
-                ))}
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-      {rows.length > pageSize ? (
-        <DeclarationsTablePager
-          table={table}
-          pageSize={pageSize}
-          total={rows.length}
-          pages={pages}
-          showLeftEllipsis={showLeftEllipsis}
-          showRightEllipsis={showRightEllipsis}
-        />
-      ) : null}
-    </Card>
-  );
-}
-
-function DeclarationsTablePager({
-  table,
-  pageSize,
-  total,
-  pages,
-  showLeftEllipsis,
-  showRightEllipsis,
-}: {
-  table: {
-    getState: () => { pagination: PaginationState };
-    previousPage: () => void;
-    nextPage: () => void;
-    setPageIndex: (index: number) => void;
-    getCanPreviousPage: () => boolean;
-    getCanNextPage: () => boolean;
-  };
-  pageSize: number;
-  total: number;
-  pages: number[];
-  showLeftEllipsis: boolean;
-  showRightEllipsis: boolean;
-}) {
-  return (
-    <div className="flex items-center justify-between gap-3 px-4 py-3 max-sm:flex-col">
-      <p className="text-muted-foreground text-sm whitespace-nowrap">
-        Showing {table.getState().pagination.pageIndex * pageSize + 1}–
-        {Math.min(
-          (table.getState().pagination.pageIndex + 1) * pageSize,
-          total,
-        )}{" "}
-        of {total}
-      </p>
-      <Pagination>
-        <PaginationContent>
-          <PaginationItem>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => table.previousPage()}
-              disabled={!table.getCanPreviousPage()}
-            >
-              <ChevronLeftIcon aria-hidden="true" />
-              Previous
-            </Button>
-          </PaginationItem>
-          {showLeftEllipsis ? (
-            <PaginationItem>
-              <PaginationEllipsis />
-            </PaginationItem>
-          ) : null}
-          {pages.map((page) => {
-            const isActive = page === table.getState().pagination.pageIndex + 1;
-            return (
-              <PaginationItem key={page}>
-                <Button
-                  size="icon-sm"
-                  variant={isActive ? "default" : "ghost"}
-                  onClick={() => table.setPageIndex(page - 1)}
-                  aria-current={isActive ? "page" : undefined}
-                >
-                  {page}
-                </Button>
-              </PaginationItem>
-            );
-          })}
-          {showRightEllipsis ? (
-            <PaginationItem>
-              <PaginationEllipsis />
-            </PaginationItem>
-          ) : null}
-          <PaginationItem>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => table.nextPage()}
-              disabled={!table.getCanNextPage()}
-            >
-              Next
-              <ChevronRightIcon aria-hidden="true" />
-            </Button>
-          </PaginationItem>
-        </PaginationContent>
-      </Pagination>
-    </div>
-  );
+  return <FilteredDataTable table={table} pageSize={pageSize} />;
 }

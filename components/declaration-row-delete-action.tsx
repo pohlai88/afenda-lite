@@ -30,7 +30,6 @@ export function DeclarationRowDeleteAction({ surveyId }: { surveyId: string }) {
         destructive
         onCancel={() => setOpen(false)}
         onConfirm={() => {
-          setOpen(false);
           const formData = new FormData();
           formData.set("id", surveyId);
           startTransition(async () => {

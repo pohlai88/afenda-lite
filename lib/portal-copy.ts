@@ -25,6 +25,36 @@ export const portalCopy = {
     emailPasswordRequired: "Email and password are required.",
     titleRequired: "Title is required.",
     signInRequired: "Sign in to complete this declaration.",
+    questionsLocked:
+      "Questions cannot be changed after clients have submitted responses.",
+    routeBoundary: {
+      root: {
+        description:
+          "We could not complete this request. You can try again or return to sign in.",
+        backLabel: "Back to sign in",
+      },
+      client: {
+        description:
+          "We could not load this client page. You can try again or return to your dashboard.",
+        backLabel: "Back to dashboard",
+      },
+      operator: {
+        description:
+          "We could not load this organization page. You can try again or return to the dashboard.",
+        backLabel: "Back to dashboard",
+      },
+      account: {
+        description:
+          "We could not load account settings. Try again or return to sign in.",
+        backLabel: "Back to sign in",
+      },
+    },
+    globalBoundary: {
+      title: "Application error",
+      description:
+        "A critical error occurred. Please reload the page or try again later.",
+      retryLabel: "Try again",
+    },
   },
 
   signIn: {
@@ -51,6 +81,10 @@ export const portalCopy = {
     orgLink: "Organization sign in",
     checkEmailHint:
       "Open the invitation link in your email to set a password, then sign in here.",
+    inviteExpiredHint:
+      "This invitation has expired. Contact your organization to register again.",
+    inviteInvalidHint:
+      "This invitation link is not valid. Sign in if you already registered, or contact your organization.",
     loginRequiredHint: "Sign in to access declarations assigned to your account.",
     invalidCredentials: "Email or password is incorrect.",
   },
@@ -96,7 +130,28 @@ export const portalCopy = {
     playground: "Playground",
     assignments: "Your assignments",
     account: "Account",
+    accountSecurity: "Security",
     organization: "Organization",
+  },
+
+  userMenu: {
+    signedInAs: "Signed in as",
+    accountSettings: "Account settings",
+    accountSecurity: "Security",
+  },
+
+  account: {
+    skipLink: "Skip to account content",
+    backToDashboard: "Declaration management",
+    settings: {
+      title: "Account settings",
+      description: "Manage your profile, display name, and account details.",
+    },
+    security: {
+      title: "Security & password",
+      description: "Update your password and review active sessions.",
+    },
+    sectionNavLabel: "Account sections",
   },
 
   clientNav: {
@@ -113,6 +168,7 @@ export const portalCopy = {
     returnToOrg: "Return to organization",
     notConfigured:
       "Preview client is not configured. Set PREVIEW_CLIENT_EMAIL and PREVIEW_CLIENT_PASSWORD, then run npm run seed:preview-client.",
+    notConfiguredTitle: "Preview not available",
     signInFailed:
       "Could not open the preview client portal. Check preview credentials and seed data.",
   },
@@ -353,6 +409,7 @@ export const portalCopy = {
     submissions: {
       title: "Submissions",
       description: "Declarations completed by signed-in clients.",
+      emptyTitle: "No submissions yet",
       empty: "No submissions yet. Invite a client and assign this declaration.",
       answersTitle: "Answers",
       tableCode: "Confirmation",
@@ -481,6 +538,18 @@ export const portalCopy = {
     description: "Share the sign-in page and temporary password with invited clients.",
     clientAccessDescription:
       "Register clients under Client invitations. When MailerSend is configured, access details are emailed automatically; otherwise copy the message below.",
+    secureLinkLabel: "Secure declaration link",
+    secureLinkHint:
+      "Tokenized link that does not expose the declaration slug. Prefer for controlled distribution.",
+    openLinkLabel: "Open declaration link",
+    openLinkHint:
+      "Discoverable link using the declaration slug. Share only when intentional.",
+    rotateSecureLinkTitle: "Rotate secure link",
+    rotateSecureLinkConfirm:
+      "Generate a new secure link? The current link stops working immediately.",
+    rotateSecureLinkCta: "Rotate secure link",
+    rotateSecureLinkSubmit: "Rotate link",
+    rotateSecureLinkCancel: "Cancel",
     clientLoginLabel: "Client sign-in URL",
     inviteClientCta: "Register client",
     qrAlt: "QR code for client sign-in",
@@ -575,6 +644,10 @@ export const portalCopy = {
     tableDeclaration: "Declaration",
     tableClient: "Client",
     tableDue: "Due date",
+    searchPlaceholder: "Search clients…",
+    searchAssignmentsPlaceholder: "Search assignments…",
+    filterAll: "All statuses",
+    filterStatusLabel: "Status",
     removeRegistration: "Remove",
     removeRegistrationTitle: "Remove client registration?",
     removeRegistrationConfirm:
@@ -591,6 +664,7 @@ export const portalCopy = {
     removeAssignmentSubmit: "Remove assignment",
     removeAssignmentCancel: "Cancel",
     assignmentRemoveError: "Could not remove this assignment.",
+    assignmentRemoveMissing: "Assignment not found.",
     managementNote:
       "Full admin user management (roles, bulk actions) will be added after deploy.",
     status: {
@@ -810,6 +884,10 @@ export const portalCopy = {
     ] as const,
     submit: "Save and continue",
     submitting: "Saving…",
+    formStepLabel: (current: number, total: number) =>
+      `Step ${current} of ${total}`,
+    formNextStep: "Continue",
+    formPreviousStep: "Back",
     requiredError:
       "Complete all required identity, passport, entity, and contact fields and confirm the accuracy statement.",
   },
@@ -846,6 +924,10 @@ export const portalCopy = {
       "Your organization has not assigned any declarations to you yet. When a declaration is ready, it will appear here with a due date if applicable. Contact your organization if you expected an assignment.",
     assignmentNotFound: "Assignment not found.",
     alreadySubmitted: "This declaration has already been submitted.",
+    deadlineExpiredAssignment:
+      "This assignment is past its due date and can no longer be submitted.",
+    deadlineExpiredDeclaration:
+      "This declaration is past its submission deadline and can no longer be submitted.",
     receiptTitle: "Submission receipt",
     receiptDescription: "Keep this confirmation code for your records.",
     dueLabel: (date: string) => `Due ${date}`,
@@ -932,6 +1014,71 @@ export const portalCopy = {
     dashboard: {
       title: "Declaration management",
       description: "Manage declarations, clients, and submissions.",
+    },
+    accountSettings: {
+      title: "Account settings",
+      description:
+        "Manage your organization operator profile and account details.",
+    },
+    accountSecurity: {
+      title: "Security",
+      description: "Change your password and manage active sessions.",
+    },
+    clientInvitations: {
+      title: "Client registrations",
+      description:
+        "Register clients with a temporary password and required declaration assignment.",
+    },
+    clientProfile: {
+      title: "Declarant profile",
+      description:
+        "Review the identity and entity details linked to your declaration submissions.",
+    },
+    clientOnboarding: {
+      title: "Establish your declarant identity",
+      description:
+        "Confirm the legal entity and jurisdiction under which you attest before completing declarations.",
+    },
+    clientDeclare: {
+      title: "Complete declaration",
+      description:
+        "Secure submission for your assigned declaration. Add business context in your note only if appropriate.",
+    },
+    authSignUp: {
+      title: "Create account",
+      description:
+        "Set up your portal access with the credentials provided by your administrator.",
+    },
+    authForgotPassword: {
+      title: "Reset password",
+      description: "Enter your email and we will send reset instructions.",
+    },
+    authResetPassword: {
+      title: "Choose a new password",
+      description: "Enter a new password for your account.",
+    },
+    authSignOut: {
+      title: "Signing out",
+      description: "Please wait while we end your session.",
+    },
+    previewUnavailable: {
+      title: "Preview not available",
+      description:
+        "Configure preview client credentials and seed data before using operator preview.",
+    },
+    inviteRedirect: {
+      title: "Invitation link",
+      description: "Legacy invitation link forwarding to client sign in.",
+    },
+    openLink: {
+      title: "Open declaration link",
+      description:
+        "Public declaration link. Sign in to complete your assigned declaration.",
+    },
+    secureLink: {
+      title: "Secure declaration link",
+      description:
+        "Secure declaration link. Sign in to complete your assigned declaration.",
     },
   },
 } as const;

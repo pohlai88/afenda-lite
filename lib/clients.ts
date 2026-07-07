@@ -1,6 +1,7 @@
 import { pool } from "@/lib/db";
 import { createInviteTokenValue } from "@/lib/tokens";
 import { CLIENT_PORTAL_ACK_VERSION } from "@/lib/portal-copy";
+import type { PoolClient } from "pg";
 
 export function normalizeEmail(email: string | null | undefined) {
   return email?.trim().toLowerCase() ?? "";
@@ -61,6 +62,23 @@ function mapInvitation(row: Record<string, unknown>): ClientInvitation {
     expiresAt: new Date(String(row.expires_at)),
     createdAt: new Date(String(row.created_at)),
   };
+}
+
+async function expirePendingInvitationIfNeeded(
+  invitation: ClientInvitation,
+): Promise<ClientInvitation> {
+  if (
+    invitation.status === "pending" &&
+    invitation.expiresAt.getTime() < Date.now()
+  ) {
+    await pool.query(
+      `UPDATE client_invitations SET status = 'expired' WHERE id = $1`,
+      [invitation.id],
+    );
+    return { ...invitation, status: "expired" as const };
+  }
+
+  return invitation;
 }
 
 function mapProfile(row: Record<string, unknown>): ClientProfile {
@@ -139,25 +157,42 @@ export async function createClientInvitation(input: {
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + (input.expiresInDays ?? 14));
 
-  const result = await pool.query(
-    `INSERT INTO client_invitations (token, email, full_name, invited_by, expires_at)
-     VALUES ($1, $2, $3, $4, $5)
-     RETURNING id, token, email, full_name, invited_by, status, expires_at, created_at`,
-    [token, email, input.fullName.trim(), input.invitedBy, expiresAt.toISOString()],
-  );
+  const dbClient = await pool.connect();
+  try {
+    await dbClient.query("BEGIN");
 
-  const invitation = mapInvitation(result.rows[0]);
+    const result = await dbClient.query(
+      `INSERT INTO client_invitations (token, email, full_name, invited_by, expires_at)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING id, token, email, full_name, invited_by, status, expires_at, created_at`,
+      [
+        token,
+        email,
+        input.fullName.trim(),
+        input.invitedBy,
+        expiresAt.toISOString(),
+      ],
+    );
 
-  if (input.surveyId) {
-    await createClientAssignment({
-      surveyId: input.surveyId,
-      clientEmail: email,
-      assignedBy: input.invitedBy,
-      dueDate: input.dueDate,
-    });
+    const invitation = mapInvitation(result.rows[0]);
+
+    if (input.surveyId) {
+      await insertClientAssignment(dbClient, {
+        surveyId: input.surveyId,
+        clientEmail: email,
+        assignedBy: input.invitedBy,
+        dueDate: input.dueDate,
+      });
+    }
+
+    await dbClient.query("COMMIT");
+    return invitation;
+  } catch (error) {
+    await dbClient.query("ROLLBACK");
+    throw error;
+  } finally {
+    dbClient.release();
   }
-
-  return invitation;
 }
 
 export async function getClientInvitationByToken(token: string) {
@@ -173,19 +208,7 @@ export async function getClientInvitationByToken(token: string) {
     return null;
   }
 
-  const invitation = mapInvitation(result.rows[0]);
-  if (
-    invitation.status === "pending" &&
-    invitation.expiresAt.getTime() < Date.now()
-  ) {
-    await pool.query(
-      `UPDATE client_invitations SET status = 'expired' WHERE id = $1`,
-      [invitation.id],
-    );
-    return { ...invitation, status: "expired" as const };
-  }
-
-  return invitation;
+  return expirePendingInvitationIfNeeded(mapInvitation(result.rows[0]));
 }
 
 export async function markClientInvitationAccepted(id: string) {
@@ -209,7 +232,7 @@ export async function getClientInvitationByEmail(email: string) {
     return null;
   }
 
-  return mapInvitation(result.rows[0]);
+  return expirePendingInvitationIfNeeded(mapInvitation(result.rows[0]));
 }
 
 export async function getClientProfile(userId: string) {
@@ -280,7 +303,7 @@ export async function upsertClientProfile(input: {
      RETURNING user_id, full_legal_name, nationality, country_of_residence,
                additional_residence_countries, passport_issuing_country, passport_number,
                phone, entity_name, jurisdiction, notes, identity_consent_at,
-               onboarding_complete, updated_at`,
+               onboarding_complete, portal_ack_at, portal_ack_version, updated_at`,
     [
       input.userId,
       input.fullLegalName.trim(),
@@ -320,13 +343,16 @@ export async function acknowledgeClientPortal(input: {
   );
 }
 
-export async function createClientAssignment(input: {
-  surveyId: string;
-  clientEmail: string;
-  assignedBy: string;
-  dueDate?: Date;
-}) {
-  const result = await pool.query(
+async function insertClientAssignment(
+  dbClient: PoolClient,
+  input: {
+    surveyId: string;
+    clientEmail: string;
+    assignedBy: string;
+    dueDate?: Date;
+  },
+) {
+  const result = await dbClient.query(
     `INSERT INTO client_assignments (survey_id, client_email, assigned_by, due_date)
      VALUES ($1, $2, $3, $4)
      RETURNING id, survey_id, client_email, assigned_by, status, due_date, confirmation_code, created_at`,
@@ -339,6 +365,26 @@ export async function createClientAssignment(input: {
   );
 
   return mapAssignment(result.rows[0]);
+}
+
+export async function createClientAssignment(input: {
+  surveyId: string;
+  clientEmail: string;
+  assignedBy: string;
+  dueDate?: Date;
+}) {
+  const dbClient = await pool.connect();
+  try {
+    await dbClient.query("BEGIN");
+    const assignment = await insertClientAssignment(dbClient, input);
+    await dbClient.query("COMMIT");
+    return assignment;
+  } catch (error) {
+    await dbClient.query("ROLLBACK");
+    throw error;
+  } finally {
+    dbClient.release();
+  }
 }
 
 export async function listClientAssignments(email: string) {
@@ -357,12 +403,46 @@ export async function listClientAssignments(email: string) {
        s.slug AS survey_slug
      FROM client_assignments a
      JOIN surveys s ON s.id = a.survey_id
-     WHERE a.client_email = $1
+     WHERE lower(a.client_email) = lower($1)
      ORDER BY a.created_at DESC`,
     [normalizeEmail(email)],
   );
 
   return result.rows.map(mapAssignment);
+}
+
+export async function getActiveClientAssignmentForSurvey(
+  email: string,
+  surveyId: string,
+) {
+  const result = await pool.query(
+    `SELECT
+       a.id,
+       a.survey_id,
+       a.client_email,
+       a.assigned_by,
+       a.status,
+       a.due_date,
+       a.confirmation_code,
+       a.created_at,
+       s.title AS survey_title,
+       s.question AS survey_question,
+       s.slug AS survey_slug
+     FROM client_assignments a
+     JOIN surveys s ON s.id = a.survey_id
+     WHERE lower(a.client_email) = lower($1)
+       AND a.survey_id = $2
+       AND a.status <> 'submitted'
+     ORDER BY a.created_at DESC
+     LIMIT 1`,
+    [normalizeEmail(email), surveyId],
+  );
+
+  if (!result.rows[0]) {
+    return null;
+  }
+
+  return mapAssignment(result.rows[0]);
 }
 
 export async function getClientAssignmentForUser(
@@ -384,7 +464,7 @@ export async function getClientAssignmentForUser(
        s.slug AS survey_slug
      FROM client_assignments a
      JOIN surveys s ON s.id = a.survey_id
-     WHERE a.id = $1 AND a.client_email = $2
+     WHERE a.id = $1 AND lower(a.client_email) = lower($2)
      LIMIT 1`,
     [assignmentId, normalizeEmail(email)],
   );
@@ -400,12 +480,15 @@ export async function completeClientAssignment(input: {
   assignmentId: string;
   confirmationCode: string;
 }) {
-  await pool.query(
+  const result = await pool.query(
     `UPDATE client_assignments
      SET status = 'submitted', confirmation_code = $2
-     WHERE id = $1`,
+     WHERE id = $1 AND status <> 'submitted'
+     RETURNING id`,
     [input.assignmentId, input.confirmationCode],
   );
+
+  return Boolean(result.rows[0]);
 }
 
 export async function listClientInvitationsForAdmin() {
@@ -467,6 +550,15 @@ export async function deleteClientAssignmentsForEmail(email: string) {
     `DELETE FROM client_assignments WHERE lower(client_email) = lower($1)`,
     [normalizeEmail(email)],
   );
+}
+
+export async function getClientAssignmentById(id: string) {
+  const result = await pool.query(
+    `SELECT id FROM client_assignments WHERE id = $1 LIMIT 1`,
+    [id],
+  );
+
+  return result.rows[0] ? { id: result.rows[0].id as string } : null;
 }
 
 export async function deleteClientAssignmentById(id: string) {

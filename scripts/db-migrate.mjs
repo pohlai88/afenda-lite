@@ -1,79 +1,12 @@
-import { readFileSync, readdirSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import pg from "pg";
+import { getPgPoolConfig } from "./db-pool-config.mjs";
+import { loadDatabaseUrl } from "./lib/load-database-url.mjs";
+import { listMigrationFiles } from "./lib/list-migration-files.mjs";
+import { splitSqlStatements, stripSqlLineComments } from "./lib/sql-split.mjs";
 
-function isSupabaseDatabaseUrl(url) {
-  try {
-    return new URL(url).hostname.includes("supabase.com");
-  } catch {
-    return false;
-  }
-}
-
-function normalizeDatabaseUrl(url) {
-  if (isSupabaseDatabaseUrl(url)) {
-    return url;
-  }
-
-  try {
-    const parsed = new URL(url);
-    const sslmode = parsed.searchParams.get("sslmode");
-    if (
-      sslmode === "prefer" ||
-      sslmode === "require" ||
-      sslmode === "verify-ca"
-    ) {
-      parsed.searchParams.set("sslmode", "verify-full");
-    }
-    return parsed.toString();
-  } catch {
-    return url;
-  }
-}
-
-function getDatabasePoolConfig(connectionString) {
-  let connectionStringForPool = connectionString;
-
-  if (isSupabaseDatabaseUrl(connectionString)) {
-    try {
-      const parsed = new URL(connectionString);
-      parsed.searchParams.delete("sslmode");
-      connectionStringForPool = parsed.toString();
-    } catch {
-      connectionStringForPool = connectionString;
-    }
-  }
-
-  return {
-    connectionString: connectionStringForPool,
-    ssl: isSupabaseDatabaseUrl(connectionString)
-      ? { rejectUnauthorized: false }
-      : undefined,
-  };
-}
-
-function loadEnvFile() {
-  const envPath = resolve(process.cwd(), ".env");
-  try {
-    const content = readFileSync(envPath, "utf8");
-    const env = {};
-
-    for (const line of content.split("\n")) {
-      const trimmed = line.trim();
-      if (!trimmed || trimmed.startsWith("#")) continue;
-      const index = trimmed.indexOf("=");
-      if (index === -1) continue;
-      env[trimmed.slice(0, index)] = trimmed.slice(index + 1);
-    }
-
-    return env;
-  } catch {
-    return {};
-  }
-}
-
-const env = loadEnvFile();
-const databaseUrl = process.env.DATABASE_URL || env.DATABASE_URL;
+const databaseUrl = loadDatabaseUrl();
 
 if (!databaseUrl) {
   console.log("Skipping migrations: DATABASE_URL not set.");
@@ -81,20 +14,9 @@ if (!databaseUrl) {
 }
 
 const migrationsDir = resolve(process.cwd(), "db/migrations");
-const files = readdirSync(migrationsDir)
-  .filter((file) => file.endsWith(".sql"))
-  .sort();
+const files = listMigrationFiles();
 
-const pool = new pg.Pool(
-  getDatabasePoolConfig(normalizeDatabaseUrl(databaseUrl)),
-);
-
-function stripLineComments(sql) {
-  return sql
-    .split("\n")
-    .map((line) => line.replace(/--.*$/, ""))
-    .join("\n");
-}
+const pool = new pg.Pool(getPgPoolConfig(databaseUrl));
 
 async function main() {
   await pool.query(`
@@ -104,22 +26,21 @@ async function main() {
     )
   `);
 
-  for (const file of files) {
-    const applied = await pool.query(
-      "SELECT 1 FROM schema_migrations WHERE filename = $1 LIMIT 1",
-      [file],
-    );
+  const appliedBefore = await pool.query(
+    "SELECT filename FROM schema_migrations ORDER BY filename",
+  );
+  const appliedSet = new Set(
+    appliedBefore.rows.map((row) => String(row.filename)),
+  );
 
-    if (applied.rowCount && applied.rowCount > 0) {
+  for (const file of files) {
+    if (appliedSet.has(file)) {
       console.log(`Skipping ${file} (already applied).`);
       continue;
     }
 
     const sql = readFileSync(resolve(migrationsDir, file), "utf8");
-    const statements = stripLineComments(sql)
-      .split(";")
-      .map((statement) => statement.trim())
-      .filter(Boolean);
+    const statements = splitSqlStatements(stripSqlLineComments(sql));
 
     console.log(`Applying ${file} (${statements.length} statements)...`);
 

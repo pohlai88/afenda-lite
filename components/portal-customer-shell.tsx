@@ -33,7 +33,7 @@ export function PortalCustomerShell({
   eyebrow: string;
   title: string;
   description?: string;
-  children: ReactNode;
+  children?: ReactNode;
   backHref?: string;
   backLabel?: string;
   showSignOut?: boolean;
@@ -54,12 +54,12 @@ export function PortalCustomerShell({
       {breadcrumbs && !isApp ? (
         <PortalBreadcrumbList
           items={breadcrumbs}
-          maxWidthClass="max-w-[50vw]"
+          maxWidthClass="min-w-0 max-w-full"
         />
       ) : null}
       <header className="space-y-3">
         <PortalEyebrow>{eyebrow}</PortalEyebrow>
-        <h1 className="portal-page-title sm:text-3xl">{title}</h1>
+        <h1 className="portal-page-title">{title}</h1>
         {description ? (
           <p className="portal-page-description">{description}</p>
         ) : null}

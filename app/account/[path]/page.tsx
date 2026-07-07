@@ -1,20 +1,41 @@
-import { AccountView } from "@neondatabase/auth/react/ui";
-import { accountViewPaths } from "@neondatabase/auth/react/ui/server";
-import Link from "next/link";
-import { PortalEyebrow } from "@/components/portal-eyebrow";
-import { PortalThemeToggle } from "@/components/portal-theme-toggle";
-import { UserButton } from "@/components/user-button";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { auth } from "@/lib/auth/server";
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+import { requireAccountSession } from "@/lib/account-session";
+import { PortalAccountSectionNav } from "@/components/portal-account-section-nav";
+import { PortalAccountShell } from "@/components/portal-account-shell";
+import { PortalFormSection } from "@/components/portal-form-section";
+import { PortalNeonAccountView } from "@/components/portal-neon-view";
+import {
+  accountCopyKey,
+  isPortalAccountPath,
+  PORTAL_ACCOUNT_PATHS,
+} from "@/lib/account-paths";
 import { portalCopy, PORTAL_NAME } from "@/lib/portal-copy";
-import { redirect } from "next/navigation";
 
-export const dynamic = "force-dynamic";
 export const dynamicParams = false;
 
 export function generateStaticParams() {
-  return Object.values(accountViewPaths).map((path) => ({ path }));
+  return PORTAL_ACCOUNT_PATHS.map((path) => ({ path }));
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ path: string }>;
+}): Promise<Metadata> {
+  const { path } = await params;
+
+  if (path === "security") {
+    return {
+      title: `${PORTAL_NAME} — ${portalCopy.metadata.accountSecurity.title}`,
+      description: portalCopy.metadata.accountSecurity.description,
+    };
+  }
+
+  return {
+    title: `${PORTAL_NAME} — ${portalCopy.metadata.accountSettings.title}`,
+    description: portalCopy.metadata.accountSettings.description,
+  };
 }
 
 export default async function AccountPage({
@@ -23,69 +44,26 @@ export default async function AccountPage({
   params: Promise<{ path: string }>;
 }) {
   const { path } = await params;
-  const { data: session } = await auth.getSession();
 
-  if (!session?.user) {
-    redirect("/auth/sign-in");
+  if (!isPortalAccountPath(path)) {
+    notFound();
   }
 
-  const { org, product } = portalCopy;
-  const title =
-    path === "security" ? "Security & password" : "Account settings";
+  const member = await requireAccountSession();
+  const copy = portalCopy.account[accountCopyKey(path)];
 
   return (
-    <div className="portal-shell">
-      <header className="portal-header">
-        <div className="portal-header-inner max-w-3xl">
-          <div className="min-w-0">
-            <p className="text-xs text-muted-foreground" translate="no">
-              {PORTAL_NAME}
-            </p>
-            <PortalEyebrow className="mb-1">{product.portalEyebrow}</PortalEyebrow>
-            <h1 className="text-lg font-semibold tracking-tight">{org.title}</h1>
-          </div>
-          <div className="flex shrink-0 items-center gap-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="hidden sm:inline-flex"
-              render={<Link href="/dashboard" />}
-              nativeButton={false}
-            >
-              {org.title}
-            </Button>
-            <PortalThemeToggle />
-            <UserButton />
-          </div>
+    <PortalAccountShell member={member}>
+      <PortalFormSection
+        headingLevel={1}
+        title={copy.title}
+        description={copy.description}
+      >
+        <div className="portal-neon-view">
+          <PortalNeonAccountView pathname={path} />
         </div>
-      </header>
-      <main className="portal-main max-w-3xl space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>{title}</CardTitle>
-            <CardDescription>
-              Manage your profile, password, and active sessions.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="portal-neon-account-view">
-            <AccountView pathname={path} />
-          </CardContent>
-        </Card>
-        <div className="flex gap-3 text-sm">
-          <Link
-            href="/account/settings"
-            className={path === "settings" ? "font-medium text-primary" : "text-muted-foreground hover:text-foreground"}
-          >
-            Settings
-          </Link>
-          <Link
-            href="/account/security"
-            className={path === "security" ? "font-medium text-primary" : "text-muted-foreground hover:text-foreground"}
-          >
-            Security
-          </Link>
-        </div>
-      </main>
-    </div>
+      </PortalFormSection>
+      <PortalAccountSectionNav activePath={path} />
+    </PortalAccountShell>
   );
 }

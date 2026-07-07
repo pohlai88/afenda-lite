@@ -18,13 +18,16 @@ Operator assigns declaration to client email; client submits with confirmation r
 
 ## Owned files
 
-- `app/client/page.tsx`, `app/client/declare/[id]/page.tsx`
+- `app/client/(workspace)/page.tsx`, `app/client/(workspace)/declare/[id]/page.tsx`
+- `app/client/error.tsx` — segment error boundary (covers `(workspace)` and `(gate)`)
+- `app/client/(workspace)/layout.tsx`, `app/client/(workspace)/loading.tsx`
 - `components/client-declaration-form.tsx`
 - `app/actions/client.ts`
 
 ## Critical control points
 
 - `getClientAssignmentForUser` scopes by `client_email`
+- Portal acknowledgement required before declare form and `submitClientDeclarationAction`
 - Reuses S4 validation pipeline
 
 ## Failure modes

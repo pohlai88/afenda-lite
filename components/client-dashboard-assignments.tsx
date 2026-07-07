@@ -4,6 +4,8 @@ import { ConfirmationReceipt } from "@/components/confirmation-receipt";
 import { PortalEmptyStateCard } from "@/components/portal-empty-state";
 import type { ClientAssignment } from "@/lib/clients";
 import { assignmentDueUrgency } from "@/lib/client-dashboard-metrics";
+import { formatDate } from "@/lib/format";
+import { clientDeclareHref } from "@/lib/portal-routes";
 import { portalCopy } from "@/lib/portal-copy";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -79,7 +81,7 @@ export function ClientDashboardAssignments({
               </p>
               {assignment.dueDate ? (
                 <p className="text-xs text-muted-foreground">
-                  {copy.dueLabel(assignment.dueDate.toLocaleDateString())}
+                  {copy.dueLabel(formatDate(assignment.dueDate))}
                 </p>
               ) : null}
               {isSubmitted && assignment.confirmationCode ? (
@@ -92,7 +94,7 @@ export function ClientDashboardAssignments({
               ) : actionsEnabled ? (
                 <Button
                   render={
-                    <Link href={`/client/declare/${assignment.id}`} />
+                    <Link href={clientDeclareHref(assignment.id)} />
                   }
                   nativeButton={false}
                 >

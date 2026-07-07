@@ -7,6 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { PORTAL_THEME_STORAGE_KEY } from "@/lib/portal-theme";
 
 type Theme = "light" | "dark" | "system";
 type ResolvedTheme = "light" | "dark";
@@ -47,7 +48,7 @@ export function applyThemeToDocument(theme: Theme) {
 
 export function persistThemePreference(
   theme: Theme,
-  storageKey = "client-declaration-theme",
+  storageKey = PORTAL_THEME_STORAGE_KEY,
 ) {
   if (typeof window !== "undefined") {
     window.localStorage.setItem(storageKey, theme);
@@ -61,7 +62,7 @@ function applyTheme(theme: Theme) {
 export function ThemeProvider({
   children,
   defaultTheme = "system",
-  storageKey = "client-declaration-theme",
+  storageKey = PORTAL_THEME_STORAGE_KEY,
 }: {
   children: ReactNode;
   defaultTheme?: Theme;
@@ -121,7 +122,7 @@ export function useTheme() {
 }
 
 /** Theme controls that work with or without ThemeProvider (e.g. auth shell RSC boundary). */
-export function useThemeControls(storageKey = "client-declaration-theme") {
+export function useThemeControls(storageKey = PORTAL_THEME_STORAGE_KEY) {
   const context = useContext(ThemeContext);
   const [fallbackResolved, setFallbackResolved] =
     useState<ResolvedTheme>("light");

@@ -10,7 +10,7 @@ export function ClientEmailDeliveryBanner() {
 
   if (status.enabled) {
     return (
-      <Alert className="border-emerald-500/30 bg-emerald-500/5">
+      <Alert className="border-success/30 bg-success/5">
         <MailCheckIcon />
         <AlertTitle>{emailDelivery.enabledTitle}</AlertTitle>
         <AlertDescription>
@@ -24,7 +24,7 @@ export function ClientEmailDeliveryBanner() {
   }
 
   return (
-    <Alert variant="destructive" className="border-amber-500/40 bg-amber-500/5 text-foreground *:data-[slot=alert-description]:text-muted-foreground">
+    <Alert className="border-warning/40 bg-warning/5 text-foreground *:data-[slot=alert-description]:text-muted-foreground">
       <MailWarningIcon />
       <AlertTitle>{emailDelivery.disabledTitle}</AlertTitle>
       <AlertDescription>{emailDelivery.disabledDescription}</AlertDescription>

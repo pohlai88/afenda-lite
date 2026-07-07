@@ -15,7 +15,7 @@ export function PortalSection({
     <section className="space-y-4">
       <div className="flex flex-wrap items-end justify-between gap-3 border-b border-border pb-3">
         <div className="min-w-0">
-          <h2 className="text-base font-medium text-foreground">{title}</h2>
+          <h2 className="portal-subsection-title">{title}</h2>
           {description ? (
             <p className="portal-page-description mt-0.5">{description}</p>
           ) : null}

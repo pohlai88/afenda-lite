@@ -2,245 +2,54 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { requireAdminSession } from "@/app/actions/admin";
-import { isAdminSession } from "@/lib/admin";
+import { requireAdminSession, requireClientSession } from "@/lib/auth/session";
 import { recordAuditEvent } from "@/lib/audit";
 import { auth } from "@/lib/auth/server";
+import { bootstrapClientAfterAuth } from "@/lib/auth/bootstrap-client-invite";
 import { buildClientAccessMessage } from "@/lib/client-access-message";
+import { parseClientOnboardingFormData } from "@/lib/client-onboarding.server";
 import { ensureClientAuthUser } from "@/lib/client-auth-provision";
-import { isMailerSendConfigured } from "@/lib/email/mailersend-config";
-import { sendClientAccessEmail } from "@/lib/email/send-client-access-email";
 import { getClientDefaultPassword } from "@/lib/client-default-password";
-import { bootstrapClientAfterSupabaseAuth } from "@/lib/auth/bootstrap-client-invite";
 import {
-  completeClientAssignment,
+  CLIENT_HOME_HREF,
+  CLIENT_ONBOARDING_HREF,
+  OPERATOR_DASHBOARD_HREF,
+} from "@/lib/client-session";
+import {
+  acknowledgeClientPortal,
   createClientInvitation,
   createConfirmationCode,
   deleteClientAssignmentById,
   deleteClientAssignmentsForEmail,
   deleteClientInvitationById,
   deleteClientProfileByUserId,
+  getClientAssignmentById,
   getClientAssignmentForUser,
   getClientInvitationById,
   getClientProfile,
-  acknowledgeClientPortal,
+  isClientPortalAcknowledged,
   normalizeEmail,
   upsertClientProfile,
 } from "@/lib/clients";
 import { deleteClientAuthUserByEmail } from "@/lib/delete-client-auth-user";
+import { isMailerSendConfigured } from "@/lib/email/mailersend-config";
+import { sendClientAccessEmail } from "@/lib/email/send-client-access-email";
 import { runLoggedAction } from "@/lib/observability";
+import { OPERATOR_CLIENTS_HREF } from "@/lib/portal-routes";
 import { portalCopy, CLIENT_PORTAL_ACK_VERSION } from "@/lib/portal-copy";
-import {
-  isPlaygroundEmbedRequest,
-  isPlaygroundEnabled,
-} from "@/lib/playground";
-import { getPreviewClientUser } from "@/lib/preview-client";
-import { getSurveyBySlug, getSurveyForAdmin } from "@/lib/surveys";
-import { submitAnswersForSurvey } from "@/app/actions/surveys";
 import type { SurveyAnswers } from "@/lib/questions";
-import { debugAgentLog } from "@/lib/debug-agent-log";
 import { parseSchema } from "@/lib/schemas/common";
 import {
-  clientOnboardingSchema,
-  clientSignInSchema,
   deleteClientAssignmentSchema,
   issueClientInviteSchema,
   removeClientRegistrationSchema,
   submitClientDeclarationSchema,
 } from "@/lib/schemas/client";
+import { getSurveyBySlug, getSurveyForAdmin } from "@/lib/surveys";
+import { submitClientDeclaration } from "@/lib/survey-submission";
+import { formString } from "@/lib/server-actions/form-data";
 
-export async function requireClientSession(options?: {
-  requireOnboarding?: boolean;
-}) {
-  const { data: session } = await auth.getSession();
-  const embed = await isPlaygroundEmbedRequest();
-
-  if (
-    embed &&
-    isPlaygroundEnabled() &&
-    isAdminSession(session) &&
-    session?.user
-  ) {
-    const previewUser = await getPreviewClientUser();
-    if (!previewUser) {
-      redirect("/client/preview-unavailable?embed=1");
-    }
-
-    const syntheticSession = {
-      ...session,
-      user: {
-        ...session.user,
-        id: previewUser.id,
-        email: previewUser.email,
-        name: previewUser.name,
-      },
-    };
-
-    if (options?.requireOnboarding) {
-      const profile = await getClientProfile(previewUser.id);
-      if (!profile?.onboardingComplete) {
-        redirect("/client/onboarding");
-      }
-    }
-
-    return syntheticSession;
-  }
-
-  if (!session?.user?.id || !session.user.email) {
-    debugAgentLog({
-      location: "app/actions/client.ts:requireClientSession",
-      message: "missing session user id or email — redirect home",
-      hypothesisId: "D",
-      data: {
-        hasSession: Boolean(session),
-        hasUserId: Boolean(session?.user?.id),
-        hasEmail: Boolean(session?.user?.email),
-      },
-    });
-    redirect("/");
-  }
-
-  const authenticatedSession = {
-    ...session,
-    user: {
-      ...session.user,
-      id: session.user.id,
-      email: session.user.email,
-    },
-  };
-
-  if (isAdminSession(authenticatedSession)) {
-    redirect("/dashboard");
-  }
-
-  if (options?.requireOnboarding) {
-    let profile = null;
-    try {
-      profile = await getClientProfile(authenticatedSession.user.id);
-    } catch (error) {
-      debugAgentLog({
-        location: "app/actions/client.ts:requireClientSession",
-        message: "getClientProfile failed during onboarding gate",
-        hypothesisId: "A",
-        data: {
-          userId: authenticatedSession.user.id,
-          error: error instanceof Error ? error.message : "unknown",
-        },
-      });
-      throw error;
-    }
-
-    debugAgentLog({
-      location: "app/actions/client.ts:requireClientSession",
-      message: "onboarding gate evaluated",
-      hypothesisId: "C",
-      data: {
-        userId: authenticatedSession.user.id,
-        profileExists: Boolean(profile),
-        onboardingComplete: Boolean(profile?.onboardingComplete),
-      },
-    });
-
-    if (!profile?.onboardingComplete) {
-      redirect("/client/onboarding");
-    }
-  }
-
-  debugAgentLog({
-    location: "app/actions/client.ts:requireClientSession",
-    message: "client session resolved",
-    hypothesisId: "D",
-    data: {
-      userId: authenticatedSession.user.id,
-      requireOnboarding: Boolean(options?.requireOnboarding),
-    },
-  });
-
-  return authenticatedSession;
-}
-
-export async function clientSignInAction(formData: FormData) {
-  return runLoggedAction("clientSignInAction", undefined, async () => {
-    const parsed = parseSchema(clientSignInSchema, {
-      email: String(formData.get("email") ?? "").trim(),
-      password: String(formData.get("password") ?? ""),
-    });
-
-    if (!parsed.success) {
-      return { error: portalCopy.errors.emailPasswordRequired };
-    }
-
-    const { email, password } = parsed.data;
-
-    const { error } = await auth.signIn.email({ email, password });
-
-    if (error) {
-      await recordAuditEvent({
-        eventType: "auth.sign_in_failed",
-        resourceType: "session",
-        metadata: { surface: "client" },
-      });
-      return { error: error.message ?? portalCopy.signIn.invalidCredentials };
-    }
-
-    const { data: session } = await auth.getSession();
-
-    if (isAdminSession(session)) {
-      redirect("/dashboard");
-    }
-
-    if (session?.user?.id) {
-      try {
-        await bootstrapClientAfterSupabaseAuth({
-          userId: session.user.id,
-          email: session.user.email,
-          userMetadata: null,
-        });
-        debugAgentLog({
-          location: "app/actions/client.ts:clientSignInAction",
-          message: "bootstrap after sign-in succeeded",
-          hypothesisId: "C",
-          data: { userId: session.user.id },
-        });
-      } catch (error) {
-        debugAgentLog({
-          location: "app/actions/client.ts:clientSignInAction",
-          message: "bootstrap after sign-in failed",
-          hypothesisId: "C",
-          data: {
-            userId: session.user.id,
-            error: error instanceof Error ? error.message : "unknown",
-          },
-        });
-        throw error;
-      }
-    }
-
-    let profile = null;
-    if (session?.user?.id) {
-      try {
-        profile = await getClientProfile(session.user.id);
-      } catch (error) {
-        debugAgentLog({
-          location: "app/actions/client.ts:clientSignInAction",
-          message: "getClientProfile after sign-in failed",
-          hypothesisId: "A",
-          data: {
-            userId: session.user.id,
-            error: error instanceof Error ? error.message : "unknown",
-          },
-        });
-        throw error;
-      }
-    }
-
-    if (!profile?.onboardingComplete) {
-      redirect("/client/onboarding");
-    }
-
-    redirect("/client");
-  });
-}
+export { requireClientSession };
 
 export async function saveClientOnboardingAction(formData: FormData) {
   const session = await requireClientSession();
@@ -249,25 +58,7 @@ export async function saveClientOnboardingAction(formData: FormData) {
     "saveClientOnboardingAction",
     session.user.id,
     async () => {
-      const parsed = parseSchema(clientOnboardingSchema, {
-        fullLegalName: String(formData.get("fullLegalName") ?? "").trim(),
-        nationality: String(formData.get("nationality") ?? "").trim(),
-        countryOfResidence: String(formData.get("countryOfResidence") ?? "").trim(),
-        additionalResidenceCountries: formData
-          .getAll("additionalResidenceCountries")
-          .map((value) => String(value).trim())
-          .filter(Boolean),
-        passportIssuingCountry: String(
-          formData.get("passportIssuingCountry") ?? "",
-        ).trim(),
-        passportNumber: String(formData.get("passportNumber") ?? "").trim(),
-        phone: String(formData.get("phone") ?? "").trim(),
-        entityName: String(formData.get("entityName") ?? "").trim(),
-        jurisdiction: String(formData.get("jurisdiction") ?? "").trim(),
-        notes: String(formData.get("notes") ?? "").trim(),
-        identityConsent:
-          formData.get("identityConsent") === "true" ? "true" : "",
-      });
+      const parsed = parseClientOnboardingFormData(formData);
 
       if (!parsed.success) {
         return { error: portalCopy.clientOnboarding.requiredError };
@@ -302,6 +93,11 @@ export async function saveClientOnboardingAction(formData: FormData) {
         onboardingComplete: true,
       });
 
+      await auth.admin.updateUser({
+        userId: session.user.id,
+        data: { name: fullLegalName },
+      });
+
       await recordAuditEvent({
         actorId: session.user.id,
         eventType: "profile.completed",
@@ -310,7 +106,7 @@ export async function saveClientOnboardingAction(formData: FormData) {
         metadata: { surface: "client" },
       });
 
-      redirect("/client");
+      redirect(CLIENT_HOME_HREF);
     },
   );
 }
@@ -335,7 +131,7 @@ export async function acknowledgeClientPortalAction() {
         metadata: { version: CLIENT_PORTAL_ACK_VERSION },
       });
 
-      revalidatePath("/client");
+      revalidatePath(CLIENT_HOME_HREF);
       return { success: true };
     },
   );
@@ -346,7 +142,7 @@ export async function submitClientDeclarationAction(input: {
   slug: string;
   answers: SurveyAnswers;
 }) {
-  const session = await requireClientSession();
+  const session = await requireClientSession({ requireOnboarding: true });
 
   return runLoggedAction(
     "submitClientDeclarationAction",
@@ -362,7 +158,7 @@ export async function submitClientDeclarationAction(input: {
 
       const assignment = await getClientAssignmentForUser(
         assignmentId,
-        session.user.email ?? "",
+        session.user.email,
       );
 
       if (!assignment) {
@@ -376,23 +172,36 @@ export async function submitClientDeclarationAction(input: {
         };
       }
 
+      const profile = await getClientProfile(session.user.id);
+      if (!isClientPortalAcknowledged(profile)) {
+        return { error: portalCopy.clientDashboard.acknowledgement.gateNotice };
+      }
+
       const survey = await getSurveyBySlug(slug);
       if (!survey || survey.id !== assignment.surveyId) {
         return { error: portalCopy.clientDashboard.assignmentNotFound };
       }
 
       const confirmationCode = createConfirmationCode(assignmentId);
-      const result = await submitAnswersForSurvey({
+      const result = await submitClientDeclaration({
+        assignmentId,
         surveyId: survey.id,
+        clientEmail: session.user.email,
         answers,
         confirmationCode,
+        dueDate: assignment.dueDate,
+        submitBefore: survey.submitBefore,
       });
 
-      if (result.error) {
-        return result;
+      if ("error" in result && result.error) {
+        return {
+          error: result.error,
+          confirmationCode:
+            "confirmationCode" in result
+              ? result.confirmationCode
+              : undefined,
+        };
       }
-
-      await completeClientAssignment({ assignmentId, confirmationCode });
 
       await recordAuditEvent({
         actorId: session.user.id,
@@ -402,8 +211,8 @@ export async function submitClientDeclarationAction(input: {
         metadata: { surface: "client", assignmentId },
       });
 
-      revalidatePath("/client");
-      revalidatePath("/dashboard");
+      revalidatePath(CLIENT_HOME_HREF);
+      revalidatePath(OPERATOR_DASHBOARD_HREF);
 
       return { success: true, confirmationCode };
     },
@@ -411,34 +220,17 @@ export async function submitClientDeclarationAction(input: {
 }
 
 export async function issueClientInviteAction(formData: FormData) {
-  let session;
+  const session = await requireAdminSession();
 
-  try {
-    session = await requireAdminSession();
-  } catch (error) {
-    if (
-      typeof error === "object" &&
-      error !== null &&
-      "digest" in error &&
-      typeof (error as { digest?: string }).digest === "string" &&
-      (error as { digest: string }).digest.startsWith("NEXT_")
-    ) {
-      throw error;
-    }
-
-    return { error: portalCopy.orgSignIn.accessDenied };
-  }
-
-  try {
-    return await runLoggedAction(
-      "issueClientInviteAction",
-      session.user.id,
-      async () => {
+  return runLoggedAction(
+    "issueClientInviteAction",
+    session.user.id,
+    async () => {
       const parsed = parseSchema(issueClientInviteSchema, {
-        email: String(formData.get("email") ?? "").trim(),
-        fullName: String(formData.get("fullName") ?? "").trim(),
-        surveyId: String(formData.get("surveyId") ?? "").trim(),
-        dueDate: String(formData.get("dueDate") ?? "").trim(),
+        email: formString(formData, "email"),
+        fullName: formString(formData, "fullName"),
+        surveyId: formString(formData, "surveyId"),
+        dueDate: formString(formData, "dueDate"),
       });
 
       if (!parsed.success) {
@@ -474,7 +266,7 @@ export async function issueClientInviteAction(formData: FormData) {
           dueDate && !Number.isNaN(dueDate.getTime()) ? dueDate : undefined,
       });
 
-      await bootstrapClientAfterSupabaseAuth({
+      await bootstrapClientAfterAuth({
         userId: provision.userId,
         email: normalizeEmail(email),
         userMetadata: { invitation_id: invitation.id },
@@ -512,7 +304,7 @@ export async function issueClientInviteAction(formData: FormData) {
         },
       });
 
-      revalidatePath("/dashboard/clients");
+      revalidatePath(OPERATOR_CLIENTS_HREF);
 
       return {
         success: true,
@@ -521,12 +313,8 @@ export async function issueClientInviteAction(formData: FormData) {
         emailSent,
         emailError,
       };
-      },
-    );
-  } catch (error) {
-    console.error("issueClientInviteAction failed", error);
-    return { error: portalCopy.clientInvite.unexpectedError };
-  }
+    },
+  );
 }
 
 export async function removeClientRegistrationAction(formData: FormData) {
@@ -537,7 +325,7 @@ export async function removeClientRegistrationAction(formData: FormData) {
     session.user.id,
     async () => {
       const parsed = parseSchema(removeClientRegistrationSchema, {
-        invitationId: String(formData.get("invitationId") ?? "").trim(),
+        invitationId: formString(formData, "invitationId"),
       });
 
       if (!parsed.success) {
@@ -571,7 +359,7 @@ export async function removeClientRegistrationAction(formData: FormData) {
         metadata: { email, authUserRemoved: authResult.deleted === true },
       });
 
-      revalidatePath("/dashboard/clients");
+      revalidatePath(OPERATOR_CLIENTS_HREF);
       return { success: true };
     },
   );
@@ -585,23 +373,28 @@ export async function deleteClientAssignmentAction(formData: FormData) {
     session.user.id,
     async () => {
       const parsed = parseSchema(deleteClientAssignmentSchema, {
-        assignmentId: String(formData.get("assignmentId") ?? "").trim(),
+        assignmentId: formString(formData, "assignmentId"),
       });
 
       if (!parsed.success) {
         return { error: portalCopy.clientInvitationsPage.assignmentRemoveError };
       }
 
-      await deleteClientAssignmentById(parsed.data.assignmentId);
+      const assignment = await getClientAssignmentById(parsed.data.assignmentId);
+      if (!assignment) {
+        return { error: portalCopy.clientInvitationsPage.assignmentRemoveMissing };
+      }
+
+      await deleteClientAssignmentById(assignment.id);
 
       await recordAuditEvent({
         actorId: session.user.id,
         eventType: "assignment.removed",
         resourceType: "client_assignment",
-        resourceId: parsed.data.assignmentId,
+        resourceId: assignment.id,
       });
 
-      revalidatePath("/dashboard/clients");
+      revalidatePath(OPERATOR_CLIENTS_HREF);
       return { success: true };
     },
   );

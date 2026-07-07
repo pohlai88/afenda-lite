@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { parseQuestionsFromForm } from "@/lib/questions";
 import { metadataFromFormData } from "@/lib/survey-package";
-import { surveyAnswersSchema, uuidSchema } from "@/lib/schemas/common";
+import { surveyAnswersSchema, slugSchema, uuidSchema } from "@/lib/schemas/common";
 
 export const questionConfigFormSchema = z.object({
   helpText: z.string().trim().max(2000).optional(),
@@ -56,6 +56,12 @@ export const submitSurveyResponseSchema = z.object({
 });
 
 export const surveyIdParamSchema = uuidSchema;
+
+/** Secure share token (`survey_invite_tokens.token`) — not a UUID. */
+export const surveyInviteTokenParamSchema = z.string().trim().min(1).max(200);
+
+/** Open share slug (`surveys.slug`). */
+export const openSurveySlugParamSchema = slugSchema;
 
 export function rawSurveyFormFromFormData(formData: FormData) {
   return {

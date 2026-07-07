@@ -148,11 +148,11 @@ export function DeclarationQuestionField({
                     );
                     formData.set("sizeBytes", String(file.size));
                     const result = await registerEvidenceAction(formData);
-                    if (result?.error) {
+                    if (result && "error" in result && result.error) {
                       setFileError(result.error);
                       return;
                     }
-                    if (result?.evidenceId) {
+                    if (result && "evidenceId" in result && result.evidenceId) {
                       onEvidenceRegistered(result.evidenceId, file.name);
                     }
                   });

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutGridIcon } from "lucide-react";
 import { PortalThemeToggle } from "@/components/portal-theme-toggle";
-import { UserButton } from "@/components/user-button";
+import { PortalMemberMenu } from "@/components/portal-member-menu";
 import {
   Sidebar,
   SidebarContent,
@@ -18,7 +18,9 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar";
+import { PORTAL_BRAND_SHELL } from "@/lib/portal-brand";
 import type { PlaygroundScreen } from "@/lib/playground";
+import { playgroundScreenHref } from "@/lib/portal-routes";
 
 function PlaygroundNavGroup({
   label,
@@ -38,7 +40,7 @@ function PlaygroundNavGroup({
             <SidebarMenuItem key={screen.id}>
               <SidebarMenuButton
                 isActive={screen.id === activeId}
-                render={<Link href={`/playground/${screen.id}`} />}
+                render={<Link href={playgroundScreenHref(screen.id)} />}
                 tooltip={screen.label}
               >
                 <span>{screen.label}</span>
@@ -74,7 +76,7 @@ export function PlaygroundSidebar({
               render={<Link href="/playground" />}
               tooltip="Playground"
             >
-              <div className="center size-8 rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+              <div className={PORTAL_BRAND_SHELL.slot}>
                 <LayoutGridIcon className="size-4" aria-hidden="true" />
               </div>
               <div className="grid min-w-0 flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
@@ -102,8 +104,8 @@ export function PlaygroundSidebar({
       </SidebarContent>
 
       <SidebarFooter className="border-t border-sidebar-border">
-        <div className="h-stack items-center justify-between gap-2 px-2 py-2 group-data-[collapsible=icon]:v-stack">
-          <UserButton />
+        <div className="portal-sidebar-footer h-stack items-center justify-between gap-2 px-2 py-2 group-data-[collapsible=icon]:v-stack">
+          <PortalMemberMenu />
           <PortalThemeToggle />
         </div>
       </SidebarFooter>

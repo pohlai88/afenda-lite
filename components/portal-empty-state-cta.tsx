@@ -1,6 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
 
 /** empty-state-02 pattern — dashed panel with optional CTA action. */
 export function PortalEmptyStateCta({
@@ -21,11 +21,11 @@ export function PortalEmptyStateCta({
   return (
     <Card className="w-full">
       <CardHeader className="gap-0">
-        <CardTitle>{sectionTitle}</CardTitle>
+        <h2 className="font-heading text-lg font-medium leading-snug">{sectionTitle}</h2>
         <CardDescription>{sectionDescription}</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="rounded-md border border-dashed p-8 text-center">
+        <div className="portal-empty-state-panel">
           <Icon
             aria-hidden="true"
             className="mx-auto size-12 text-muted-foreground"

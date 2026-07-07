@@ -1,28 +1,27 @@
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+/**
+ * One-time backfill for databases migrated before schema_migrations tracking.
+ * Marks all migration files as applied without running SQL.
+ * Usage: node scripts/db-backfill-migrations.mjs --confirm
+ */
 import pg from "pg";
+import { getPgPoolConfig } from "./db-pool-config.mjs";
+import { loadDatabaseUrl } from "./lib/load-database-url.mjs";
+import { listMigrationFiles } from "./lib/list-migration-files.mjs";
 
-function loadDatabaseUrl() {
-  if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
-  const envPath = resolve(process.cwd(), ".env");
-  const content = readFileSync(envPath, "utf8");
-  for (const line of content.split("\n")) {
-    const trimmed = line.trim();
-    if (trimmed.startsWith("DATABASE_URL=")) {
-      return trimmed.slice("DATABASE_URL=".length);
-    }
-  }
+if (!process.argv.includes("--confirm")) {
+  console.error(
+    "Refusing to run without --confirm. Only use on legacy DBs that already have the full schema.",
+  );
+  process.exit(1);
+}
+
+const databaseUrl = loadDatabaseUrl();
+if (!databaseUrl) {
   throw new Error("DATABASE_URL not found");
 }
 
-const pool = new pg.Pool({ connectionString: loadDatabaseUrl() });
-
-const existing = [
-  "001_portal_schema.sql",
-  "002_backfill_questions.sql",
-  "003_drop_rating_comment.sql",
-  "004_audit_events.sql",
-];
+const pool = new pg.Pool(getPgPoolConfig(databaseUrl));
+const existing = listMigrationFiles();
 
 await pool.query(`
   CREATE TABLE IF NOT EXISTS schema_migrations (
@@ -38,5 +37,5 @@ for (const filename of existing) {
   );
 }
 
-console.log("Backfilled schema_migrations for existing migrations.");
+console.log(`Backfilled schema_migrations (${existing.length} files).`);
 await pool.end();

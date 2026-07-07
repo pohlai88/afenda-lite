@@ -23,8 +23,8 @@ if (extra.length > 0) {
   process.exit(1);
 }
 
-if (registryIds.size !== 40) {
-  console.error(`FAIL: expected 40 surfaces in registry, got ${registryIds.size}`);
+if (registryIds.size !== 34) {
+  console.error(`FAIL: expected 34 surfaces in registry, got ${registryIds.size}`);
   process.exit(1);
 }
 
@@ -62,4 +62,4 @@ console.log("-".repeat(90));
 console.log(
   `Total: ${uiEvaluationMatrix.length} surfaces | strong: ${strong} | marginal: ${marginal} | tie: ${tie}`,
 );
-console.log("PASS: no omissions — all 40 surfaces scored.");
+console.log("PASS: no omissions — all 34 surfaces scored.");

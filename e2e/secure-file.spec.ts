@@ -1,32 +1,27 @@
-import { expect, test } from "@playwright/test";
-import { portalCopy } from "../lib/portal-copy";
+import { expect, test } from "@/testing/e2e/playwright-base";
+import { portalCopy } from "@/lib/portal-copy";
 import {
   expectDeclarationReceived,
   fillDefaultDeclarationAnswers,
-} from "./helpers/declaration";
+} from "@/testing/e2e/declaration-flows";
+import { evidenceFixturePath } from "@/testing/e2e/fixtures";
 import {
   clientSkipMessage,
   getClientCreds,
-  loginAsClient,
+  getOperatorCreds,
+  operatorSkipMessage,
   requireClientCreds,
-} from "./helpers/client";
+  requireOperatorCreds,
+} from "@/testing/e2e/credentials";
+import { loginAsClient } from "@/testing/e2e/client-flows";
 import {
   createDeclaration,
-  getOperatorCreds,
   loginAsOperator,
   openSurveyTab,
-  operatorSkipMessage,
-  requireOperatorCreds,
-} from "./helpers/operator";
-import path from "node:path";
+} from "@/testing/e2e/operator-flows";
 
 const operatorCreds = getOperatorCreds();
 const clientCreds = getClientCreds();
-const evidenceFixture = path.join(
-  __dirname,
-  "fixtures",
-  "sample-evidence.txt",
-);
 
 test.describe("Client assignment and file evidence @journey", () => {
   test.describe.configure({ mode: "serial" });
@@ -56,6 +51,7 @@ test.describe("Client assignment and file evidence @journey", () => {
       .last()
       .fill("Attach supporting document");
     await page.getByRole("button", { name: /save changes/i }).click();
+    await expect(page.getByText("Attach supporting document")).toBeVisible();
 
     const previewClient = requireClientCreds();
     await page.goto("/dashboard/clients");
@@ -84,7 +80,7 @@ test.describe("Client assignment and file evidence @journey", () => {
       "E2E secure file submission context",
     );
 
-    await page.locator('input[type="file"]').setInputFiles(evidenceFixture);
+    await page.locator('input[type="file"]').setInputFiles(evidenceFixturePath);
     await expect(page.getByText("sample-evidence.txt")).toBeVisible();
 
     await page.getByRole("button", { name: /submit declaration/i }).click();

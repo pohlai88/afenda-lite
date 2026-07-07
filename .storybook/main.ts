@@ -3,16 +3,52 @@ import { fileURLToPath } from "node:url";
 import type { StorybookConfig } from "@storybook/react-vite";
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
+const projectRoot = path.resolve(dirname, "..");
+const nextLinkMock = path.resolve(dirname, "./mocks/next-link.tsx");
+const nextImageMock = path.resolve(dirname, "./mocks/next-image.tsx");
 
 const config: StorybookConfig = {
   stories: ["../stories/**/*.stories.@(ts|tsx)"],
+  staticDirs: [{ from: path.join(projectRoot, "public"), to: "/" }],
   framework: "@storybook/react-vite",
+  addons: ["@storybook/addon-mcp"],
+
   viteFinal: async (viteConfig) => {
     viteConfig.resolve = viteConfig.resolve ?? {};
-    viteConfig.resolve.alias = {
-      ...viteConfig.resolve.alias,
-      "@": path.resolve(dirname, ".."),
+    viteConfig.resolve.alias = [
+      ...(Array.isArray(viteConfig.resolve.alias)
+        ? viteConfig.resolve.alias
+        : Object.entries(viteConfig.resolve.alias ?? {}).map(([find, replacement]) => ({
+            find,
+            replacement,
+          }))),
+      { find: "@", replacement: projectRoot },
+      { find: /^next\/link$/, replacement: nextLinkMock },
+      { find: /^next\/image$/, replacement: nextImageMock },
+    ];
+
+    viteConfig.server = {
+      ...viteConfig.server,
+      fs: {
+        ...viteConfig.server?.fs,
+        allow: [...(viteConfig.server?.fs?.allow ?? []), projectRoot],
+      },
+      watch: {
+        ...viteConfig.server?.watch,
+        ignored: ["**/storybook-static/**", ...(Array.isArray(viteConfig.server?.watch?.ignored)
+          ? viteConfig.server.watch.ignored
+          : viteConfig.server?.watch?.ignored
+            ? [viteConfig.server.watch.ignored]
+            : [])],
+      },
     };
+
+    viteConfig.define = {
+      ...viteConfig.define,
+      "process.env.NODE_ENV": JSON.stringify("development"),
+      "process.env.NEXT_PUBLIC_VERCEL_ENV": JSON.stringify("development"),
+    };
+
     return viteConfig;
   },
 };

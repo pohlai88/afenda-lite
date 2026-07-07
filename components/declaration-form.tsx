@@ -316,13 +316,14 @@ export function DeclarationForm({
         className="col-span-5 flex min-w-0 flex-col gap-6 p-6 md:col-span-3 lg:col-span-3"
       >
         {currentStep?.kind === "questions" ? (
-          <div className="space-y-6">
-            <div>
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+            <div className="md:sticky md:top-6 md:self-start">
               <h2 className="portal-section-title">{currentStep.title}</h2>
-              <p className="mt-1 text-sm text-muted-foreground">
+              <p className="mt-1 text-sm text-muted-foreground text-pretty">
                 {currentStep.description}
               </p>
             </div>
+            <div className="space-y-6 md:col-span-2">
             {currentStep.questions.map((question, index) => (
               <DeclarationQuestionField
                 key={question.id}
@@ -363,17 +364,19 @@ export function DeclarationForm({
                 }}
               />
             ))}
+            </div>
           </div>
         ) : null}
 
         {isReviewStep ? (
-          <div className="space-y-6">
-            <div>
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+            <div className="md:sticky md:top-6 md:self-start">
               <h2 className="portal-section-title">{currentStep.title}</h2>
-              <p className="mt-1 text-sm text-muted-foreground">
+              <p className="mt-1 text-sm text-muted-foreground text-pretty">
                 {currentStep.description}
               </p>
             </div>
+            <div className="space-y-6 md:col-span-2">
 
             <div className="space-y-4">
               <p className="text-sm font-medium">{wizardCopy.reviewSummaryTitle}</p>
@@ -416,6 +419,7 @@ export function DeclarationForm({
               </Label>
             </div>
             {reviewError ? <FormErrorAlert error={reviewError} /> : null}
+            </div>
           </div>
         ) : null}
 

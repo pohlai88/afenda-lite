@@ -76,88 +76,6 @@ export function ComparisonGrid({
   );
 }
 
-function MockAuthForm() {
-  return (
-    <div className="space-y-3 rounded-lg border bg-card p-6">
-      <label className="block text-sm">
-        Email
-        <input
-          className="mt-1 w-full rounded-md border px-3 py-2"
-          placeholder="you@example.com"
-          readOnly
-        />
-      </label>
-      <label className="block text-sm">
-        Password
-        <input
-          className="mt-1 w-full rounded-md border px-3 py-2"
-          type="password"
-          placeholder="••••••••"
-          readOnly
-        />
-      </label>
-      <button
-        type="button"
-        className="w-full rounded-md bg-primary px-4 py-2 text-primary-foreground"
-      >
-        Sign in
-      </button>
-    </div>
-  );
-}
-
-export function CurrentAuthShell({ form }: { form?: ReactNode }) {
-  return (
-    <div className="portal-auth-vault relative min-h-[480px] overflow-hidden rounded-xl border">
-      <div className="grid min-h-[480px] lg:grid-cols-2">
-        <section className="flex flex-col justify-center gap-3 p-8">
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">
-            Secure declarations
-          </p>
-          <h2 className="font-heading text-2xl font-semibold">
-            Your legal vault
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            Trust notice and brand hero column — vault tone.
-          </p>
-        </section>
-        <section className="flex items-center justify-center bg-card/50 p-8">
-          {form ?? <MockAuthForm />}
-        </section>
-      </div>
-    </div>
-  );
-}
-
-export function LoginPage02Shell({ form }: { form?: ReactNode }) {
-  return (
-    <div className="grid min-h-[480px] rounded-xl border lg:grid-cols-2">
-      <section className="flex items-center justify-center bg-muted p-8">
-        <div className="rounded-lg border bg-card p-4 text-center text-sm text-muted-foreground">
-          Dashboard preview / border-beam animation
-        </div>
-      </section>
-      <section className="flex items-center justify-center p-8">
-        {form ?? <MockAuthForm />}
-      </section>
-    </div>
-  );
-}
-
-export function LoginPage01Shell({ form }: { form?: ReactNode }) {
-  return (
-    <div className="flex min-h-[480px] items-center justify-center rounded-xl border bg-muted/30 p-8">
-      <div className="w-full max-w-md space-y-4">
-        <p className="text-center text-sm font-medium">Logo</p>
-        {form ?? <MockAuthForm />}
-        <p className="text-center text-xs text-muted-foreground">
-          Social login row (unused for Neon)
-        </p>
-      </div>
-    </div>
-  );
-}
-
 export function MockKpiCards({ variant }: { variant: "current" | "stats03" }) {
   const items =
     variant === "current"
@@ -178,7 +96,7 @@ export function MockKpiCards({ variant }: { variant: "current" | "stats03" }) {
           <p className="text-xs text-muted-foreground">{item.label}</p>
           <p className="text-2xl font-semibold">{item.value}</p>
           {"trend" in item && item.trend ? (
-            <p className="text-xs text-emerald-600">{item.trend} vs last month</p>
+            <p className="text-caption text-success">{item.trend} vs last month</p>
           ) : null}
         </div>
       ))}

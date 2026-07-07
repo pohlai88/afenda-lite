@@ -37,6 +37,21 @@ export type SurveyWithStats = Survey & {
   responseCount: number;
 };
 
+export function pickSurveyMetadata(survey: Survey): SurveyMetadata {
+  return {
+    referenceNumber: survey.referenceNumber,
+    caseNumber: survey.caseNumber,
+    effectiveDate: survey.effectiveDate,
+    submitBefore: survey.submitBefore,
+    surveyorName: survey.surveyorName,
+    surveyorOrg: survey.surveyorOrg,
+    surveyeeIndividual: survey.surveyeeIndividual,
+    surveyeeOrg: survey.surveyeeOrg,
+    purpose: survey.purpose,
+    categories: survey.categories,
+  };
+}
+
 function mapSurveyMetadata(row: Record<string, unknown>): SurveyMetadata {
   const categoriesRaw = row.categories;
   let categories: string[] = [];

@@ -71,12 +71,12 @@ export function TeamSwitcher({ teams }: { teams: DashboardTeam[] }) {
               />
             }
           >
-            <div className="center size-8 shrink-0 rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-              {activeTeam.logo}
-            </div>
+            {activeTeam.logo}
             <div className="grid min-w-0 flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
-              <span className="truncate font-medium">{activeTeam.name}</span>
-              <span className="truncate text-xs">{activeTeam.plan}</span>
+              <span className="truncate font-medium">{activeTeam.memberLabel}</span>
+              <span className="truncate text-xs text-muted-foreground">
+                {activeTeam.plan}
+              </span>
             </div>
             <ChevronsUpDownIcon
               aria-hidden="true"
@@ -100,13 +100,13 @@ export function TeamSwitcher({ teams }: { teams: DashboardTeam[] }) {
                   onClick={() => void selectTeam(team)}
                   className="gap-2 p-2"
                 >
-                  <div className="center size-6 rounded-md border">
+                  <div className="flex size-8 shrink-0 items-center justify-center">
                     {team.logo}
                   </div>
                   <div className="min-w-0">
-                    <p className="truncate font-medium">{team.name}</p>
+                    <p className="truncate font-medium">{team.memberLabel}</p>
                     <p className="truncate text-xs text-muted-foreground">
-                      {team.plan}
+                      {team.memberEmail ?? team.plan}
                     </p>
                   </div>
                   <DropdownMenuShortcut>⌘{index + 1}</DropdownMenuShortcut>

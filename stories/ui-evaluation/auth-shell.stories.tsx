@@ -1,12 +1,10 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { getEvaluationRow } from "@/lib/ui-decision-matrix";
+import { ComparisonGrid, ScoreAnnotation } from "./evaluation-primitives";
 import {
-  ComparisonGrid,
-  CurrentAuthShell,
-  LoginPage01Shell,
-  LoginPage02Shell,
-  ScoreAnnotation,
-} from "./evaluation-primitives";
+  IamCheckAuthShellPreview,
+  RejectedStudioAuthPanel,
+} from "./auth-shell-preview";
 
 const row = getEvaluationRow("shell-auth")!;
 
@@ -18,11 +16,12 @@ const meta: Meta = {
 export default meta;
 type Story = StoryObj;
 
-export const PortalAuthLayoutVsLoginPage02: Story = {
+export const IamCheckVaultShell: Story = {
+  name: "iam-check vault shell (winner)",
   render: () => (
     <ComparisonGrid
-      left={<CurrentAuthShell />}
-      right={<LoginPage02Shell />}
+      left={<IamCheckAuthShellPreview />}
+      right={<RejectedStudioAuthPanel />}
       annotation={
         <ScoreAnnotation
           winner="keep-current (PortalAuthLayout)"
@@ -41,24 +40,7 @@ export const PortalAuthLayoutVsLoginPage02: Story = {
   ),
 };
 
-export const LoginPage01Reference: Story = {
-  render: () => (
-    <ComparisonGrid
-      left={<CurrentAuthShell />}
-      right={<LoginPage01Shell />}
-      annotation={
-        <ScoreAnnotation
-          winner="keep-current"
-          runnerUp="login-page-01"
-          winnerScore={5}
-          runnerUpScore={2.85}
-          deltas={[
-            { criterion: "PatternFit", winner: 5, runnerUp: 3 },
-            { criterion: "BrandFit", winner: 5, runnerUp: 3 },
-          ]}
-          summary="Centered card loses vault hero column needed for trust notice placement."
-        />
-      }
-    />
-  ),
+export const IamCheckAuthShellOnly: Story = {
+  name: "iam-check auth shell only",
+  render: () => <IamCheckAuthShellPreview />,
 };

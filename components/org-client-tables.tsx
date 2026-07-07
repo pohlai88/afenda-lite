@@ -2,9 +2,12 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import type { ColumnDef, PaginationState } from "@tanstack/react-table";
+import type {
+  ColumnDef,
+  ColumnFiltersState,
+  PaginationState,
+} from "@tanstack/react-table";
 import {
-  flexRender,
   getCoreRowModel,
   getFilteredRowModel,
   getPaginationRowModel,
@@ -14,25 +17,13 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-} from "@/components/ui/pagination";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { usePagination } from "@/hooks/use-pagination";
-import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
+import { FilteredDataTable } from "@/components/filtered-datatable";
+import { DataTableToolbar } from "@/components/datatable-toolbar";
 import { ClientRegistrationDeleteButton } from "@/components/client-registration-delete-button";
 import { ClientAssignmentDeleteButton } from "@/components/client-assignment-delete-button";
+
+const selectClassName =
+  "border-input bg-background ring-offset-background focus-visible:ring-ring h-9 min-w-[8rem] rounded-md border px-3 text-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none";
 
 /** datatable-component-04 pattern — client rows with avatar, status badge, actions. */
 export type OrgClientInvitationRow = {
@@ -52,6 +43,38 @@ function initials(name: string) {
     .join("");
 }
 
+function StatusFilter({
+  label,
+  value,
+  allLabel,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  allLabel: string;
+  options: { value: string; label: string }[];
+  onChange: (value: string) => void;
+}) {
+  return (
+    <label className="flex items-center gap-2 text-sm">
+      <span className="text-muted-foreground whitespace-nowrap">{label}</span>
+      <select
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className={selectClassName}
+      >
+        <option value="all">{allLabel}</option>
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
 type OrgClientInvitationsTableProps = {
   rows: OrgClientInvitationRow[];
   labels: {
@@ -61,6 +84,9 @@ type OrgClientInvitationsTableProps = {
     tableActions: string;
     openInvite: string;
     removeRegistration: string;
+    searchPlaceholder: string;
+    filterAll: string;
+    filterStatusLabel: string;
     status: Record<OrgClientInvitationRow["status"], string>;
   };
 };
@@ -102,6 +128,7 @@ export function OrgClientInvitationsTable({
       {
         accessorKey: "status",
         header: labels.tableStatus,
+        filterFn: "equals",
         cell: ({ row }) => {
           const status = row.original.status;
           return (
@@ -142,6 +169,8 @@ export function OrgClientInvitationsTable({
     pageIndex: 0,
     pageSize,
   });
+  const [globalFilter, setGlobalFilter] = useState("");
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
 
   const table = useReactTable({
     data: rows,
@@ -151,62 +180,47 @@ export function OrgClientInvitationsTable({
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     onPaginationChange: setPagination,
-    state: { pagination },
+    onGlobalFilterChange: setGlobalFilter,
+    onColumnFiltersChange: setColumnFilters,
+    globalFilterFn: "includesString",
+    state: { pagination, globalFilter, columnFilters },
   });
 
-  const { pages, showLeftEllipsis, showRightEllipsis } = usePagination({
-    currentPage: table.getState().pagination.pageIndex + 1,
-    totalPages: table.getPageCount(),
-    paginationItemsToDisplay: 2,
-  });
+  const statusFilter =
+    (columnFilters.find((filter) => filter.id === "status")?.value as
+      | string
+      | undefined) ?? "all";
 
   return (
-    <Card className="overflow-hidden py-0">
-      <div className="border-b">
-        <Table>
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <TableHead
-                    key={header.id}
-                    className="text-muted-foreground h-12 first:pl-4 last:pr-4"
-                  >
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext(),
-                        )}
-                  </TableHead>
-                ))}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows.map((row) => (
-              <TableRow key={row.id}>
-                {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id} className="first:pl-4 last:pr-4">
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </TableCell>
-                ))}
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-      {rows.length > pageSize ? (
-        <TablePager
-          table={table}
-          pageSize={pageSize}
-          total={rows.length}
-          pages={pages}
-          showLeftEllipsis={showLeftEllipsis}
-          showRightEllipsis={showRightEllipsis}
+    <FilteredDataTable
+      table={table}
+      pageSize={pageSize}
+      toolbar={
+        <DataTableToolbar
+          searchValue={globalFilter}
+          onSearchChange={setGlobalFilter}
+          searchPlaceholder={labels.searchPlaceholder}
+          filters={
+            <StatusFilter
+              label={labels.filterStatusLabel}
+              value={statusFilter}
+              allLabel={labels.filterAll}
+              options={(
+                Object.keys(labels.status) as OrgClientInvitationRow["status"][]
+              ).map((status) => ({
+                value: status,
+                label: labels.status[status],
+              }))}
+              onChange={(value) => {
+                setColumnFilters(
+                  value === "all" ? [] : [{ id: "status", value }],
+                );
+              }}
+            />
+          }
         />
-      ) : null}
-    </Card>
+      }
+    />
   );
 }
 
@@ -230,6 +244,9 @@ type OrgClientAssignmentsTableProps = {
     removeAssignment: string;
     pending: string;
     submitted: string;
+    searchPlaceholder: string;
+    filterAll: string;
+    filterStatusLabel: string;
   };
 };
 
@@ -263,6 +280,7 @@ export function OrgClientAssignmentsTable({
       {
         accessorKey: "status",
         header: labels.tableStatus,
+        filterFn: "equals",
         cell: ({ row }) => (
           <Badge
             variant={
@@ -308,6 +326,8 @@ export function OrgClientAssignmentsTable({
     pageIndex: 0,
     pageSize,
   });
+  const [globalFilter, setGlobalFilter] = useState("");
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
 
   const table = useReactTable({
     data: rows,
@@ -317,148 +337,44 @@ export function OrgClientAssignmentsTable({
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     onPaginationChange: setPagination,
-    state: { pagination },
+    onGlobalFilterChange: setGlobalFilter,
+    onColumnFiltersChange: setColumnFilters,
+    globalFilterFn: "includesString",
+    state: { pagination, globalFilter, columnFilters },
   });
 
-  const { pages, showLeftEllipsis, showRightEllipsis } = usePagination({
-    currentPage: table.getState().pagination.pageIndex + 1,
-    totalPages: table.getPageCount(),
-    paginationItemsToDisplay: 2,
-  });
+  const statusFilter =
+    (columnFilters.find((filter) => filter.id === "status")?.value as
+      | string
+      | undefined) ?? "all";
 
   return (
-    <Card className="overflow-hidden py-0">
-      <div className="border-b">
-        <Table>
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <TableHead
-                    key={header.id}
-                    className="text-muted-foreground h-12 first:pl-4 last:pr-4"
-                  >
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext(),
-                        )}
-                  </TableHead>
-                ))}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows.map((row) => (
-              <TableRow key={row.id}>
-                {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id} className="first:pl-4 last:pr-4">
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </TableCell>
-                ))}
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-      {rows.length > pageSize ? (
-        <TablePager
-          table={table}
-          pageSize={pageSize}
-          total={rows.length}
-          pages={pages}
-          showLeftEllipsis={showLeftEllipsis}
-          showRightEllipsis={showRightEllipsis}
+    <FilteredDataTable
+      table={table}
+      pageSize={pageSize}
+      toolbar={
+        <DataTableToolbar
+          searchValue={globalFilter}
+          onSearchChange={setGlobalFilter}
+          searchPlaceholder={labels.searchPlaceholder}
+          filters={
+            <StatusFilter
+              label={labels.filterStatusLabel}
+              value={statusFilter}
+              allLabel={labels.filterAll}
+              options={[
+                { value: "pending", label: labels.pending },
+                { value: "submitted", label: labels.submitted },
+              ]}
+              onChange={(value) => {
+                setColumnFilters(
+                  value === "all" ? [] : [{ id: "status", value }],
+                );
+              }}
+            />
+          }
         />
-      ) : null}
-    </Card>
-  );
-}
-
-function TablePager({
-  table,
-  pageSize,
-  total,
-  pages,
-  showLeftEllipsis,
-  showRightEllipsis,
-}: {
-  table: {
-    getState: () => { pagination: PaginationState };
-    previousPage: () => void;
-    nextPage: () => void;
-    setPageIndex: (index: number) => void;
-    getCanPreviousPage: () => boolean;
-    getCanNextPage: () => boolean;
-  };
-  pageSize: number;
-  total: number;
-  pages: number[];
-  showLeftEllipsis: boolean;
-  showRightEllipsis: boolean;
-}) {
-  return (
-    <div className="flex items-center justify-between gap-3 px-4 py-3 max-sm:flex-col">
-      <p className="text-muted-foreground text-sm whitespace-nowrap">
-        Showing {table.getState().pagination.pageIndex * pageSize + 1}–
-        {Math.min(
-          (table.getState().pagination.pageIndex + 1) * pageSize,
-          total,
-        )}{" "}
-        of {total}
-      </p>
-      <Pagination>
-        <PaginationContent>
-          <PaginationItem>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => table.previousPage()}
-              disabled={!table.getCanPreviousPage()}
-            >
-              <ChevronLeftIcon aria-hidden="true" />
-              Previous
-            </Button>
-          </PaginationItem>
-          {showLeftEllipsis ? (
-            <PaginationItem>
-              <PaginationEllipsis />
-            </PaginationItem>
-          ) : null}
-          {pages.map((page) => {
-            const isActive = page === table.getState().pagination.pageIndex + 1;
-            return (
-              <PaginationItem key={page}>
-                <Button
-                  size="icon-sm"
-                  variant={isActive ? "default" : "ghost"}
-                  onClick={() => table.setPageIndex(page - 1)}
-                  aria-current={isActive ? "page" : undefined}
-                >
-                  {page}
-                </Button>
-              </PaginationItem>
-            );
-          })}
-          {showRightEllipsis ? (
-            <PaginationItem>
-              <PaginationEllipsis />
-            </PaginationItem>
-          ) : null}
-          <PaginationItem>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => table.nextPage()}
-              disabled={!table.getCanNextPage()}
-            >
-              Next
-              <ChevronRightIcon aria-hidden="true" />
-            </Button>
-          </PaginationItem>
-        </PaginationContent>
-      </Pagination>
-    </div>
+      }
+    />
   );
 }

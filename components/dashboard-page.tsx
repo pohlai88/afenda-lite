@@ -25,9 +25,17 @@ async function DashboardPageContent({
 }) {
   if (embed) {
     return (
-      <main id="portal-main" className="v-stack spacer gap-6 p-4 md:p-6 lg:max-w-5xl">
-        {children}
-      </main>
+      <>
+        <a href="#portal-main" className="portal-skip-link">
+          Skip to main content
+        </a>
+        <main
+          id="portal-main"
+          className="v-stack min-w-0 flex-1 gap-6 overflow-x-clip p-4 md:p-6 lg:max-w-5xl"
+        >
+          {children}
+        </main>
+      </>
     );
   }
 
@@ -36,10 +44,10 @@ async function DashboardPageContent({
       <a href="#portal-main" className="portal-skip-link">
         Skip to main content
       </a>
-      <PortalPageHeader breadcrumbs={breadcrumbs} actions={actions} />
+      <PortalPageHeader breadcrumbs={breadcrumbs} actions={actions} sticky />
       <main
         id="portal-main"
-        className="v-stack spacer gap-6 p-4 md:p-6 lg:max-w-5xl"
+        className="v-stack min-w-0 flex-1 gap-6 overflow-x-clip p-4 md:p-6 lg:max-w-5xl"
       >
         <header className="space-y-1">
           <PortalEyebrow className="mb-2">{eyebrow}</PortalEyebrow>
@@ -104,7 +112,7 @@ export function DashboardPageSkeleton({
     return (
       <main
         id="portal-main"
-        className="v-stack spacer gap-6 p-4 md:p-6 lg:max-w-5xl"
+        className="v-stack min-w-0 flex-1 gap-6 overflow-x-clip p-4 md:p-6 lg:max-w-5xl"
       >
         <header className="space-y-1">
           <PortalEyebrow className="mb-2">{eyebrow}</PortalEyebrow>
@@ -126,7 +134,7 @@ export function DashboardPageSkeleton({
       <PortalPageHeader breadcrumbs={breadcrumbs} showSidebarTrigger={false} />
       <main
         id="portal-main"
-        className="v-stack spacer gap-6 p-4 md:p-6 lg:max-w-5xl"
+        className="v-stack min-w-0 flex-1 gap-6 overflow-x-clip p-4 md:p-6 lg:max-w-5xl"
       >
         <header className="space-y-1">
           <PortalEyebrow className="mb-2">{eyebrow}</PortalEyebrow>
