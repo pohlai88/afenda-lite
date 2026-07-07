@@ -78,7 +78,7 @@ export function TeamSwitcher({ teams }: { teams: DashboardTeam[] }) {
               <span className="truncate font-medium">{activeTeam.name}</span>
               <span className="truncate text-xs">{activeTeam.plan}</span>
             </div>
-            <ChevronsUpDownIcon className="ml-auto" />
+            <ChevronsUpDownIcon aria-hidden="true" className="ml-auto" />
           </DropdownMenuTrigger>
           <DropdownMenuContent
             className="w-fit min-w-56 rounded-lg"

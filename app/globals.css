@@ -349,6 +349,10 @@
     @apply order-2 lg:order-1;
   }
 
+  .portal-auth-brand-mark {
+    @apply mx-auto mb-6 flex w-fit justify-center lg:mx-0 lg:mb-5 lg:justify-start;
+  }
+
   .portal-auth-chamber-wrap {
     @apply order-1 w-full lg:order-2;
   }
@@ -376,7 +380,7 @@
   }
 
   .portal-auth-emblem {
-    @apply mx-auto flex size-10 shrink-0 items-center justify-center rounded-full border border-primary/25 bg-primary/10 text-primary shadow-[0_0_20px_var(--vault-glow)] sm:mx-0 lg:size-9;
+    @apply mx-auto flex shrink-0 items-center justify-center sm:mx-0;
   }
 
   .portal-auth-footer {

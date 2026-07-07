@@ -6,9 +6,11 @@ import { NeonAuthUIProvider } from "@neondatabase/auth/react";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { getAppBaseUrl } from "@/lib/app-url";
-import { cn } from "@/lib/utils";
-
+import {
+  BRAND_WEB_MANIFEST_PATH,
+} from "@/lib/portal-brand";
 import { PORTAL_NAME, portalCopy } from "@/lib/portal-copy";
+import { cn } from "@/lib/utils";
 
 // Auth, cookies, and session-aware UI run on every route — opt out of static prerender.
 export const dynamic = "force-dynamic";
@@ -21,11 +23,17 @@ export const metadata: Metadata = {
   },
   description: portalCopy.trust.meta.defaultDescription,
   keywords: [...portalCopy.trust.meta.keywords],
+  manifest: BRAND_WEB_MANIFEST_PATH,
   openGraph: {
     title: PORTAL_NAME,
     description: portalCopy.trust.meta.defaultDescription,
     type: "website",
     siteName: PORTAL_NAME,
+  },
+  twitter: {
+    card: "summary",
+    title: PORTAL_NAME,
+    description: portalCopy.trust.meta.defaultDescription,
   },
 };
 

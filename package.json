@@ -22,6 +22,7 @@
     "check:playground": "node scripts/check-playground-bindings.mjs",
     "verify:production": "node scripts/verify-production.mjs",
     "verify:vercel-db": "node scripts/validate-vercel-database-url.mjs",
+    "icons:generate": "node scripts/generate-brand-icons.mjs",
     "test": "playwright test"
   },
   "dependencies": {

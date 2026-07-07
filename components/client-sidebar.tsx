@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ClientSignOutButton } from "@/components/client-sign-out-button";
+import { PortalBrandMark } from "@/components/portal-brand-mark";
 import { PortalThemeToggle } from "@/components/portal-theme-toggle";
 import {
   Sidebar,
@@ -35,10 +36,8 @@ export function ClientSidebar(props: React.ComponentProps<typeof Sidebar>) {
               render={<Link href="/client" />}
               tooltip={PORTAL_NAME}
             >
-              <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                <span className="text-xs font-semibold" translate="no">
-                  CDP
-                </span>
+              <div className="flex aspect-square size-8 items-center justify-center overflow-hidden rounded-lg bg-sidebar-primary">
+                <PortalBrandMark size="xs" className="size-full ring-0" />
               </div>
               <div className="grid min-w-0 flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium" translate="no">

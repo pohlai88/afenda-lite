@@ -2,11 +2,12 @@
 
 import type { ReactNode } from "react";
 import Link from "next/link";
+import { PortalBrandLogo, PortalBrandMark } from "@/components/portal-brand-mark";
 import { PortalThemeToggle } from "@/components/portal-theme-toggle";
 import { Badge } from "@/components/ui/badge";
-import { PORTAL_NAME, portalCopy } from "@/lib/portal-copy";
+import { portalCopy } from "@/lib/portal-copy";
 import { cn } from "@/lib/utils";
-import { LockKeyholeIcon, ShieldCheckIcon } from "lucide-react";
+import { ShieldCheckIcon } from "lucide-react";
 
 export function PortalAuthLayout({
   eyebrow,
@@ -46,11 +47,7 @@ export function PortalAuthLayout({
 
       <header className="portal-auth-toolbar shrink-0">
         <div className="portal-auth-toolbar-inner">
-          <div className="min-w-0">
-            <p className="truncate text-sm font-semibold tracking-wide" translate="no">
-              {PORTAL_NAME}
-            </p>
-          </div>
+          <PortalBrandLogo href="/" size="sm" showName priority />
           <PortalThemeToggle />
         </div>
       </header>
@@ -61,6 +58,10 @@ export function PortalAuthLayout({
             aria-labelledby="auth-brand-heading"
             className="portal-auth-brand max-lg:order-2"
           >
+            <div className="portal-auth-brand-mark">
+              <PortalBrandMark size="hero" priority className="shadow-[0_0_48px_var(--vault-glow)]" />
+            </div>
+
             <Badge
               variant="outline"
               className="portal-auth-eyebrow mb-3 border-vault-rim bg-vault-surface/50 text-foreground backdrop-blur-sm lg:mb-2"
@@ -100,8 +101,8 @@ export function PortalAuthLayout({
             <div className="portal-auth-chamber">
               <div className="portal-auth-chamber-inner">
                 <div className="flex flex-col items-center gap-3 sm:items-start lg:flex-row lg:items-center lg:gap-3">
-                  <div className="portal-auth-emblem" aria-hidden="true">
-                    <LockKeyholeIcon className="size-4 lg:size-3.5" />
+                  <div className="portal-auth-emblem shrink-0">
+                    <PortalBrandMark size="xs" className="size-9 ring-primary/25 lg:size-8" />
                   </div>
 
                   <header className="min-w-0 space-y-1 text-center sm:text-left">

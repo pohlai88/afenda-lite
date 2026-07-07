@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
+import { PortalBrandMark } from "@/components/portal-brand-mark";
 import {
-  Building2Icon,
   ClipboardListIcon,
   LayoutGridIcon,
   UsersIcon,
@@ -41,7 +41,7 @@ export const dashboardTeams: DashboardTeam[] = [
     name: PORTAL_NAME,
     plan: portalCopy.nav.organization,
     href: "/dashboard",
-    logo: <Building2Icon aria-hidden="true" className="size-4" />,
+    logo: <PortalBrandMark size="xs" className="size-full" />,
     matchPrefixes: ["/dashboard", "/org", "/auth/admin", "/playground"],
   },
   {
@@ -75,7 +75,7 @@ export function getOrgOperatorSidebarItems(options?: {
     title: resolveOrgSidebarTitle(route),
     url: route.href,
     icon: orgRouteIcons[route.id] ?? (
-      <Building2Icon aria-hidden="true" className="size-4" />
+      <PortalBrandMark size="xs" className="size-4 rounded-md" />
     ),
   }));
 }
