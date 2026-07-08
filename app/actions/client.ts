@@ -26,9 +26,8 @@ import {
   isClientPortalAcknowledged,
   normalizeEmail,
   upsertClientProfile,
-  saveClientAssignmentDraft,
 } from "@/lib/clients";
-import { assignmentDeadlineExpired } from "@/lib/client-dashboard-metrics";
+import { persistClientDeclarationDraft } from "@/lib/client-declaration-draft";
 import { deleteClientAuthUserByEmail } from "@/lib/delete-client-auth-user";
 import { isClientEmailDeliveryEnabled } from "@/lib/email/client-email-delivery";
 import { sendClientOnboardingEmail } from "@/lib/email/send-client-onboarding-email";
@@ -236,40 +235,19 @@ export async function saveClientDeclarationDraftAction(input: {
 
       const { assignmentId, answers, stepIndex } = parsed.data;
 
-      const assignment = await getClientAssignmentForUser(
+      const result = await persistClientDeclarationDraft({
         assignmentId,
-        session.user.email,
-      );
-
-      if (!assignment || assignment.status === "submitted") {
-        return { error: portalCopy.clientDashboard.assignmentNotFound };
-      }
-
-      const expiredReason = assignmentDeadlineExpired(assignment);
-      if (expiredReason === "assignment") {
-        return { error: portalCopy.clientDashboard.deadlineExpiredAssignment };
-      }
-      if (expiredReason === "declaration") {
-        return { error: portalCopy.clientDashboard.deadlineExpiredDeclaration };
-      }
-
-      const profile = await getClientProfile(session.user.id);
-      if (!isClientPortalAcknowledged(profile)) {
-        return { error: portalCopy.clientDashboard.acknowledgement.gateNotice };
-      }
-
-      const savedAt = await saveClientAssignmentDraft({
-        assignmentId,
-        clientEmail: session.user.email,
         answers,
         stepIndex,
+        userId: session.user.id,
+        userEmail: session.user.email,
       });
 
-      if (!savedAt) {
-        return { error: portalCopy.declarationForm.wizard.draftSaveError };
+      if (!result.success) {
+        return { error: result.error };
       }
 
-      return { success: true as const, savedAt: savedAt.toISOString() };
+      return { success: true as const, savedAt: result.savedAt };
     },
   );
 }
