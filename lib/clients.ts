@@ -506,7 +506,7 @@ export async function saveClientAssignmentDraft(input: {
      WHERE id = $1
        AND lower(client_email) = lower($2)
        AND status = 'pending'
-     RETURNING id`,
+     RETURNING draft_saved_at`,
     [
       input.assignmentId,
       normalizeEmail(input.clientEmail),
@@ -515,7 +515,16 @@ export async function saveClientAssignmentDraft(input: {
     ],
   );
 
-  return Boolean(result.rows[0]);
+  const savedAt = result.rows[0]?.draft_saved_at;
+  return savedAt ? new Date(String(savedAt)) : null;
+}
+
+export function assignmentHasDraftProgress(assignment: ClientAssignment) {
+  if (assignment.status !== "pending" || !assignment.draftAnswers) {
+    return false;
+  }
+
+  return Object.keys(assignment.draftAnswers).length > 0;
 }
 
 export async function completeClientAssignment(input: {

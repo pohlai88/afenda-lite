@@ -3,7 +3,7 @@ import { ClipboardListIcon } from "lucide-react";
 import { ConfirmationReceipt } from "@/components/confirmation-receipt";
 import { FormErrorAlert } from "@/components/form-error-alert";
 import { PortalEmptyStateCard } from "@/components/portal-empty-state";
-import type { ClientAssignment } from "@/lib/clients";
+import { assignmentHasDraftProgress, type ClientAssignment } from "@/lib/clients";
 import {
   assignmentDeadlineExpired,
   assignmentDueUrgency,
@@ -58,6 +58,7 @@ export function ClientDashboardAssignments({
         const urgency = assignmentDueUrgency(assignment);
         const expiredReason = assignmentDeadlineExpired(assignment);
         const isSubmitted = assignment.status === "submitted";
+        const hasDraft = assignmentHasDraftProgress(assignment);
         const effectiveDeadline =
           assignment.dueDate && assignment.submitBefore
             ? assignment.dueDate < assignment.submitBefore
@@ -82,13 +83,21 @@ export function ClientDashboardAssignments({
                   <Badge variant="outline">{copy.dueSoonLabel}</Badge>
                 ) : null}
                 <Badge variant={isSubmitted ? "secondary" : "outline"}>
-                  {isSubmitted ? copy.submitted : copy.pending}
+                  {isSubmitted
+                    ? copy.submitted
+                    : hasDraft
+                      ? copy.inProgress
+                      : copy.pending}
                 </Badge>
               </div>
             </CardHeader>
             <CardContent className="space-y-3">
               <p className="text-sm text-muted-foreground text-pretty">
-                {isSubmitted ? copy.submittedStatusHelp : copy.pendingStatusHelp}
+                {isSubmitted
+                  ? copy.submittedStatusHelp
+                  : hasDraft
+                    ? copy.inProgressStatusHelp
+                    : copy.pendingStatusHelp}
               </p>
 
               {!isSubmitted && (assignment.dueDate || assignment.submitBefore) ? (
@@ -136,7 +145,7 @@ export function ClientDashboardAssignments({
                   }
                   nativeButton={false}
                 >
-                  {copy.complete}
+                  {hasDraft ? copy.continue : copy.complete}
                 </Button>
               ) : (
                 <Button disabled>{copy.complete}</Button>

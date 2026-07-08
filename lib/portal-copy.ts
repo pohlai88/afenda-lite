@@ -647,6 +647,7 @@ export const portalCopy = {
         `${answered.toLocaleString()} of ${total.toLocaleString()} questions answered. Use Previous to revisit earlier steps before submitting.`,
       draftSaveError: "Could not save your progress. Try again before continuing.",
       draftSaving: "Saving progress…",
+      draftSavedAt: (savedAt: string) => `Progress saved ${savedAt}`,
       reviewAttestationSwitch:
         "I have reviewed my responses and confirm they are accurate.",
       reviewAttestationRequired:
@@ -1087,11 +1088,15 @@ export const portalCopy = {
     description:
       "Review declarations assigned to you by your organization, complete attestations, and retain confirmation codes for your records. Submissions are linked to your declarant profile and retained for organizational review.",
     pending: "Pending",
+    inProgress: "In progress",
     submitted: "Submitted",
     complete: "Complete declaration",
+    continue: "Continue declaration",
     viewReceipt: "View receipt",
     pendingStatusHelp:
       "This declaration requires your attestation. Review each section carefully before submitting.",
+    inProgressStatusHelp:
+      "You started this declaration. Saved answers are restored when you continue.",
     submittedStatusHelp:
       "This declaration has been submitted. Retain your confirmation code for audit and record-keeping.",
     dueSoonLabel: "Due soon",

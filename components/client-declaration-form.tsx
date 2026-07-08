@@ -17,6 +17,7 @@ export function ClientDeclarationForm({
   initialAnswers,
   initialStepIndex,
   initialEvidenceNames,
+  initialDraftSavedAt,
 }: {
   assignmentId: string;
   surveyId: string;
@@ -27,6 +28,7 @@ export function ClientDeclarationForm({
   initialAnswers?: SurveyAnswers;
   initialStepIndex?: number;
   initialEvidenceNames?: Record<string, string>;
+  initialDraftSavedAt?: Date;
 }) {
   return (
     <DeclarationForm
@@ -40,6 +42,7 @@ export function ClientDeclarationForm({
       initialAnswers={initialAnswers}
       initialStepIndex={initialStepIndex}
       initialEvidenceNames={initialEvidenceNames}
+      initialDraftSavedAt={initialDraftSavedAt}
       onSaveDraft={async ({ assignmentId, answers, stepIndex }) =>
         saveClientDeclarationDraftAction({ assignmentId, answers, stepIndex })
       }
