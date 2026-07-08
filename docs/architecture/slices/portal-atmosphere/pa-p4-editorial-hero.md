@@ -2,7 +2,7 @@
 
 | Field | Value |
 |-------|-------|
-| **Status** | pending |
+| **Status** | ready-for-review |
 | **Sequence** | 4 |
 | **Depends on** | PA-P3 |
 | **Feeds into** | PA-P5–PA-P10 |
@@ -81,12 +81,12 @@ Implement `TRUTH / IS / PROTECTED` editorial poster typography with theme-specif
 
 ## Acceptance proof
 
-- [ ] One word inverted per theme only
-- [ ] Matches reference PNG inversion intent
-- [ ] sr-only h1 present; visual hero aria-hidden
-- [ ] Hero uses editorial font; connector uses UI font
-- [ ] Token-based colors only
-- [ ] No auth changes
+- [x] One word inverted per theme only
+- [ ] Matches reference PNG inversion intent — visual
+- [x] sr-only h1 present; visual hero aria-hidden
+- [x] Hero uses editorial font; connector uses UI font
+- [x] Token-based colors only
+- [x] No auth changes
 - [ ] Visual regression captures approved
 
 ## Rollback

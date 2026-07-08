@@ -28,6 +28,7 @@ import {
   upsertClientProfile,
   saveClientAssignmentDraft,
 } from "@/lib/clients";
+import { assignmentDeadlineExpired } from "@/lib/client-dashboard-metrics";
 import { deleteClientAuthUserByEmail } from "@/lib/delete-client-auth-user";
 import { isClientEmailDeliveryEnabled } from "@/lib/email/client-email-delivery";
 import { sendClientOnboardingEmail } from "@/lib/email/send-client-onboarding-email";
@@ -242,6 +243,14 @@ export async function saveClientDeclarationDraftAction(input: {
 
       if (!assignment || assignment.status === "submitted") {
         return { error: portalCopy.clientDashboard.assignmentNotFound };
+      }
+
+      const expiredReason = assignmentDeadlineExpired(assignment);
+      if (expiredReason === "assignment") {
+        return { error: portalCopy.clientDashboard.deadlineExpiredAssignment };
+      }
+      if (expiredReason === "declaration") {
+        return { error: portalCopy.clientDashboard.deadlineExpiredDeclaration };
       }
 
       const profile = await getClientProfile(session.user.id);

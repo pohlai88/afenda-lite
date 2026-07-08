@@ -1,31 +1,18 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { ClientDeclarantProfileView } from "@/components/client-declarant-profile-view";
 import { PortalFormSection } from "@/components/portal-form-section";
-import type { ClientProfile } from "@/lib/clients";
 import { getEvaluationRow } from "@/lib/ui-decision-matrix";
+import { productionSeedFixtures } from "@/lib/production-fixtures";
 import { portalCopy } from "@/lib/portal-copy";
 import { ComparisonGrid, ScoreAnnotation } from "./evaluation-primitives";
+import {
+  syncedPreviewClientProfile,
+  syncedProductionFixtureLabel,
+} from "./synced-production-fixtures";
 
 const row = getEvaluationRow("client-profile")!;
-
-const fixtureProfile: ClientProfile = {
-  userId: "user_fixture_001",
-  fullLegalName: "Alexandra Chen",
-  nationality: "SG",
-  countryOfResidence: "SG",
-  additionalResidenceCountries: ["MY"],
-  passportIssuingCountry: "SG",
-  passportNumber: "E1234567A",
-  phone: "+65 9123 4567",
-  entityName: "Chen Holdings Pte. Ltd.",
-  jurisdiction: "Singapore",
-  notes: "Primary contact for Q3 declaration cycle.",
-  identityConsentAt: new Date("2026-01-15T10:00:00Z"),
-  onboardingComplete: true,
-  portalAckAt: new Date("2026-01-16T09:30:00Z"),
-  portalAckVersion: "2026-01",
-  updatedAt: new Date("2026-03-01T14:22:00Z"),
-};
+const syncedProfile = syncedPreviewClientProfile();
+const { previewClient } = productionSeedFixtures;
 
 function FormLayout01Reference() {
   return (
@@ -56,23 +43,37 @@ const meta: Meta = {
 export default meta;
 type Story = StoryObj;
 
+export const SyncedProductionFixture: Story = {
+  render: () => (
+    <div className="mx-auto max-w-3xl space-y-4 p-6">
+      <p className="text-sm text-muted-foreground">
+        Production seed: {syncedProductionFixtureLabel()}
+      </p>
+      <ClientDeclarantProfileView
+        email={previewClient.email}
+        profile={syncedProfile}
+      />
+    </div>
+  ),
+};
+
 export const DeclarantProfileRedesign: Story = {
   render: () => (
     <ComparisonGrid
       left={
         <div className="mx-auto max-w-3xl">
           <ClientDeclarantProfileView
-            email="alexandra.chen@example.com"
-            profile={fixtureProfile}
+            email={previewClient.email}
+            profile={syncedProfile}
           />
         </div>
       }
       right={
         <div className="mx-auto max-w-3xl space-y-6">
           <div className="rounded-lg border bg-card p-6">
-            <p className="text-xl font-semibold">{fixtureProfile.fullLegalName}</p>
+            <p className="text-xl font-semibold">{syncedProfile.fullLegalName}</p>
             <p className="text-sm text-muted-foreground">
-              {fixtureProfile.entityName} · {fixtureProfile.jurisdiction}
+              {syncedProfile.entityName} · {syncedProfile.jurisdiction}
             </p>
           </div>
           <FormLayout01Reference />
@@ -99,8 +100,8 @@ export const ProfileViewOnly: Story = {
   render: () => (
     <div className="mx-auto max-w-3xl p-6">
       <ClientDeclarantProfileView
-        email="alexandra.chen@example.com"
-        profile={fixtureProfile}
+        email={previewClient.email}
+        profile={syncedProfile}
       />
     </div>
   ),

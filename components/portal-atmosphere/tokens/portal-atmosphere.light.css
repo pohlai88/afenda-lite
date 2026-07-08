@@ -1,0 +1,41 @@
+/*
+ * Portal Atmosphere System — light theme tokens.
+ *
+ * Theme: archival ivory.
+ *
+ * PA-P1 only defines token values.
+ * No rendering, layout, gradients, components, or auth styling.
+ */
+
+:where(
+  .portal-atmosphere-theme-light,
+  [data-portal-theme="light"]
+) {
+  color-scheme: light;
+
+  /*
+   * Generic atmosphere surface mapping.
+   *
+   * --portal-bg may align with --background.
+   * --portal-card-adjacent may align with --card.
+   * Portal-specific meanings remain under --portal-* only.
+   */
+  --portal-bg: oklch(0.955 0.018 88);
+  --portal-fg: oklch(0.19 0.035 255);
+  --portal-card-adjacent: oklch(0.985 0.012 88 / 0.88);
+  --portal-muted: oklch(0.47 0.032 250);
+  --portal-border: oklch(0.78 0.026 248 / 0.6);
+  --portal-ring: oklch(0.54 0.09 232);
+
+  --portal-owl-line: oklch(0.62 0.032 236 / 0.24);
+  --portal-owl-shadow: oklch(0.58 0.03 250 / 0.18);
+  --portal-owl-highlight: oklch(0.98 0.012 86 / 0.7);
+
+  --portal-hero-truth: oklch(0.42 0.06 246);
+  --portal-hero-protected: oklch(0.63 0.045 82);
+  --portal-hero-is: oklch(0.38 0.035 250);
+  --portal-hero-rule: oklch(0.54 0.035 238 / 0.48);
+
+  --portal-glow-primary: oklch(0.68 0.07 232 / 0.22);
+  --portal-glow-soft: oklch(0.86 0.035 92 / 0.42);
+}

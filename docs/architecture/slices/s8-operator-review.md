@@ -35,8 +35,8 @@ View submissions and per-question answer breakdown for operators.
 
 ## Acceptance proof
 
-- [ ] Operator sees matching answers after client/public submit
-- [ ] File evidence shows metadata, not download link
+- [x] Operator sees matching answers after client/public submit — `e2e/client-journey.spec.ts`, `e2e/secure-file.spec.ts`
+- [x] File evidence shows metadata, not download link — `e2e/secure-file.spec.ts`, `e2e/client-journey.spec.ts`
 
 ## Drift risk
 

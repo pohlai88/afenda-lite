@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generatedAt": "2026-07-08T04:41:48.978Z",
+  "generatedAt": "2026-07-08T09:59:29.641Z",
   "summary": {
     "surfaces": {
       "total": 23,
@@ -56,7 +56,6 @@
         ],
         "scannedFiles": [
           "app/join/page.tsx",
-          "components/portal-auth-brand-scene.tsx",
           "components/portal-auth-email-trust-notice.tsx",
           "components/portal-auth-layout.tsx",
           "components/portal-auth-neon-view.tsx",
@@ -103,7 +102,6 @@
         "scannedFiles": [
           "app/auth/[path]/page.tsx",
           "components/portal-access-denied-notice.tsx",
-          "components/portal-auth-brand-scene.tsx",
           "components/portal-auth-email-trust-notice.tsx",
           "components/portal-auth-form-intro.tsx",
           "components/portal-auth-layout.tsx",
@@ -144,7 +142,6 @@
         "scannedFiles": [
           "app/auth/[path]/page.tsx",
           "components/portal-access-denied-notice.tsx",
-          "components/portal-auth-brand-scene.tsx",
           "components/portal-auth-email-trust-notice.tsx",
           "components/portal-auth-form-intro.tsx",
           "components/portal-auth-layout.tsx",
@@ -185,7 +182,6 @@
         "scannedFiles": [
           "app/auth/[path]/page.tsx",
           "components/portal-access-denied-notice.tsx",
-          "components/portal-auth-brand-scene.tsx",
           "components/portal-auth-email-trust-notice.tsx",
           "components/portal-auth-form-intro.tsx",
           "components/portal-auth-layout.tsx",
@@ -226,7 +222,6 @@
         "scannedFiles": [
           "app/auth/[path]/page.tsx",
           "components/portal-access-denied-notice.tsx",
-          "components/portal-auth-brand-scene.tsx",
           "components/portal-auth-email-trust-notice.tsx",
           "components/portal-auth-form-intro.tsx",
           "components/portal-auth-layout.tsx",
@@ -267,7 +262,6 @@
         "scannedFiles": [
           "app/auth/[path]/page.tsx",
           "components/portal-access-denied-notice.tsx",
-          "components/portal-auth-brand-scene.tsx",
           "components/portal-auth-email-trust-notice.tsx",
           "components/portal-auth-form-intro.tsx",
           "components/portal-auth-layout.tsx",
@@ -314,7 +308,6 @@
         "scannedFiles": [
           "app/auth/[path]/page.tsx",
           "components/portal-access-denied-notice.tsx",
-          "components/portal-auth-brand-scene.tsx",
           "components/portal-auth-email-trust-notice.tsx",
           "components/portal-auth-form-intro.tsx",
           "components/portal-auth-layout.tsx",

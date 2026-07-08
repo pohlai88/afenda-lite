@@ -2,7 +2,7 @@
 
 | Field | Value |
 |-------|-------|
-| **Status** | pending |
+| **Status** | implemented — manual QA + captures pending |
 | **Sequence** | 9 |
 | **Depends on** | PA-P8 |
 | **Feeds into** | PA-P10 |
@@ -91,15 +91,15 @@ After real auth integration, the adapter must choose **one** of two valid patter
 
 ## Acceptance proof
 
-- [ ] sr-only h1 present; visual hero aria-hidden
-- [ ] Owl not announced
-- [ ] Seal does not pollute screen reader output
-- [ ] Contrast review passed for placeholder slot
-- [ ] `prefers-reduced-motion` rule applied
-- [ ] All PA-P7/P8 visual captures still approved
-- [ ] Heading ownership rule documented for PA-P10 adapter
-- [ ] Static acceptance complete — motion may be proposed in follow-up only
-- [ ] No auth changes
+- [x] sr-only h1 present; visual hero aria-hidden — `portal-atmosphere.a11y.test.tsx`
+- [x] Owl not announced — decorative `aria-hidden` on owl subtree
+- [x] Seal does not pollute screen reader output — always `aria-hidden`
+- [ ] Contrast review passed for placeholder slot — manual
+- [x] `prefers-reduced-motion` rule applied — `portal-atmosphere.a11y.css`
+- [ ] All PA-P7/P8 visual captures still approved — manual Storybook
+- [x] Heading ownership rule documented for PA-P10 adapter — `suppressPageHeading` + pa-p10-integration-contract
+- [x] Static acceptance complete — no motion enablement in PA-P9
+- [x] No auth changes — `check:storybook-auth-boundary` pass
 
 ## Rollback
 

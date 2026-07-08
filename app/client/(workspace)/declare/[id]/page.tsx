@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { requireClientSession } from "@/app/actions/client";
+import { ClientAssignmentDeadlineNotice } from "@/components/client-assignment-deadline-notice";
 import { ClientDeclarationForm } from "@/components/client-declaration-form";
 import { ConfirmationReceipt } from "@/components/confirmation-receipt";
 import { DeclarationQuestionsEmpty } from "@/components/declaration-questions-empty";
 import { PortalCustomerShell } from "@/components/portal-customer-shell";
 import { clientDeclarationBreadcrumbs } from "@/lib/client-breadcrumbs";
+import { assignmentDeadlineExpired } from "@/lib/client-dashboard-metrics";
 import {
   getClientAssignmentForUser,
   getClientProfile,
@@ -15,6 +18,7 @@ import { buildEvidenceNamesFromDraft } from "@/lib/declaration-steps";
 import { getEvidenceRecordsByIds, listQuestionsForSurvey } from "@/lib/questions";
 import { CLIENT_HOME_HREF } from "@/lib/portal-routes";
 import { PORTAL_NAME, portalCopy } from "@/lib/portal-copy";
+import { Button } from "@/components/ui/button";
 
 export const metadata: Metadata = {
   title: `${PORTAL_NAME} — ${portalCopy.metadata.clientDeclare.title}`,
@@ -27,8 +31,7 @@ export default async function ClientDeclarePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const { clientDashboard, product, declarationForm, declarationPage } =
-    portalCopy;
+  const { clientDashboard, product, declarationPage } = portalCopy;
   const session = await requireClientSession({ requireOnboarding: true });
   const [assignment, profile] = await Promise.all([
     getClientAssignmentForUser(id, session.user.email),
@@ -49,6 +52,7 @@ export default async function ClientDeclarePage({
   const declarationTitle =
     assignment.surveyTitle ?? product.declarationEyebrow;
   const questions = await listQuestionsForSurvey(assignment.surveyId);
+  const expiredReason = assignmentDeadlineExpired(assignment);
 
   if (assignment.status === "submitted" && assignment.confirmationCode) {
     return (
@@ -80,6 +84,32 @@ export default async function ClientDeclarePage({
     );
   }
 
+  if (expiredReason) {
+    return (
+      <PortalCustomerShell
+        variant="app"
+        eyebrow={product.declarationEyebrow}
+        title={declarationTitle}
+        description={declarationPage.secureFormNote}
+        breadcrumbs={clientDeclarationBreadcrumbs(declarationTitle)}
+      >
+        <div className="space-y-4">
+          <ClientAssignmentDeadlineNotice
+            assignment={assignment}
+            showExpiredBanner
+          />
+          <Button
+            render={<Link href={CLIENT_HOME_HREF} />}
+            nativeButton={false}
+            variant="secondary"
+          >
+            {clientDashboard.backToAssignments}
+          </Button>
+        </div>
+      </PortalCustomerShell>
+    );
+  }
+
   const draftAnswers = assignment.draftAnswers ?? undefined;
   const fileEvidenceIds = draftAnswers
     ? questions
@@ -105,18 +135,21 @@ export default async function ClientDeclarePage({
       description={declarationPage.secureFormNote}
       breadcrumbs={clientDeclarationBreadcrumbs(declarationTitle)}
     >
-      <ClientDeclarationForm
-        assignmentId={assignment.id}
-        surveyId={assignment.surveyId}
-        slug={assignment.surveySlug}
-        title={declarationTitle}
-        description={assignment.surveyQuestion ?? undefined}
-        questions={questions}
-        initialAnswers={draftAnswers}
-        initialStepIndex={assignment.draftStepIndex ?? undefined}
-        initialEvidenceNames={initialEvidenceNames}
-        initialDraftSavedAt={assignment.draftSavedAt ?? undefined}
-      />
+      <div className="space-y-4">
+        <ClientAssignmentDeadlineNotice assignment={assignment} />
+        <ClientDeclarationForm
+          assignmentId={assignment.id}
+          surveyId={assignment.surveyId}
+          slug={assignment.surveySlug}
+          title={declarationTitle}
+          description={assignment.surveyQuestion ?? undefined}
+          questions={questions}
+          initialAnswers={draftAnswers}
+          initialStepIndex={assignment.draftStepIndex ?? undefined}
+          initialEvidenceNames={initialEvidenceNames}
+          initialDraftSavedAt={assignment.draftSavedAt ?? undefined}
+        />
+      </div>
     </PortalCustomerShell>
   );
 }

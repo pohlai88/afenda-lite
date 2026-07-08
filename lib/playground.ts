@@ -8,9 +8,10 @@ import {
 
 export type PlaygroundScreen = {
   id: string;
-  category: "admin" | "client";
+  category: "admin" | "client" | "dynamic";
   label: string;
   path: string;
+  routeFile?: string;
 };
 
 export {
@@ -32,6 +33,7 @@ export const playgroundScreens: PlaygroundScreen[] = playgroundScreenDefs.map(
 export const playgroundNav = {
   admin: playgroundScreens.filter((screen) => screen.category === "admin"),
   client: playgroundScreens.filter((screen) => screen.category === "client"),
+  dynamic: playgroundScreens.filter((screen) => screen.category === "dynamic"),
 };
 
 export function isPlaygroundEnabled() {
@@ -49,6 +51,22 @@ export async function isPlaygroundEmbedRequest() {
   const { headers } = await import("next/headers");
   const headerList = await headers();
   return headerList.get("x-playground-embed") === "1";
+}
+
+/** Playground iframe: `?embed=1` on public routes and/or proxy `x-playground-embed` header. */
+export async function resolvePlaygroundEmbedActive(
+  searchParams?: { embed?: string | string[] | undefined },
+): Promise<boolean> {
+  if (searchParams && isPlaygroundEmbed(searchParams)) {
+    return true;
+  }
+
+  return isPlaygroundEmbedRequest();
+}
+
+export function appendPlaygroundEmbedQuery(href: string): string {
+  const separator = href.includes("?") ? "&" : "?";
+  return `${href}${separator}embed=1`;
 }
 
 export function getPlaygroundScreen(id: string) {

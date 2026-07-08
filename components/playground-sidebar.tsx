@@ -56,10 +56,12 @@ function PlaygroundNavGroup({
 export function PlaygroundSidebar({
   adminScreens,
   clientScreens,
+  dynamicScreens,
   ...props
 }: React.ComponentProps<typeof Sidebar> & {
   adminScreens: PlaygroundScreen[];
   clientScreens: PlaygroundScreen[];
+  dynamicScreens: PlaygroundScreen[];
 }) {
   const pathname = usePathname();
   const activeId = pathname.startsWith("/playground/")
@@ -91,6 +93,22 @@ export function PlaygroundSidebar({
       </SidebarHeader>
 
       <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupLabel>Review</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  isActive={pathname === "/playground/hitl-review"}
+                  render={<Link href="/playground/hitl-review" />}
+                  tooltip="HITL route checklist"
+                >
+                  <span>HITL route checklist</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
         <PlaygroundNavGroup
           label="Admin"
           screens={adminScreens}
@@ -99,6 +117,11 @@ export function PlaygroundSidebar({
         <PlaygroundNavGroup
           label="Client"
           screens={clientScreens}
+          activeId={activeId}
+        />
+        <PlaygroundNavGroup
+          label="Dynamic routes"
+          screens={dynamicScreens}
           activeId={activeId}
         />
       </SidebarContent>

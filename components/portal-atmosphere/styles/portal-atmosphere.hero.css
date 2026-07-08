@@ -1,0 +1,197 @@
+/*
+ * Portal Atmosphere System — PA-P4 editorial hero.
+ *
+ * Scope:
+ * - TRUTH / IS / PROTECTED visual poster typography
+ * - Theme-specific single-word inversion
+ * - Connector rule styling
+ *
+ * Forbidden in PA-P4:
+ * - auth selectors
+ * - form/card/access-slot selectors
+ * - owl styling
+ * - seal line
+ * - route/session behavior
+ * - page-specific auth layout
+ */
+
+.portal-editorial-hero {
+  pointer-events: none;
+  position: relative;
+  z-index: 5;
+
+  display: grid;
+  width: min-content;
+  max-inline-size: 100%;
+  gap: clamp(0.5rem, 1.4vw, 1rem);
+
+  color: var(--portal-fg);
+  font-family: var(--font-editorial);
+  line-height: 0.78;
+  letter-spacing: -0.075em;
+  text-transform: uppercase;
+  user-select: none;
+}
+
+.portal-hero-word {
+  display: block;
+  font-size: clamp(4.75rem, 13vw, 13.5rem);
+  font-weight: 600;
+  white-space: nowrap;
+  transform-origin: center;
+}
+
+.portal-hero-word--truth {
+  color: var(--portal-hero-truth);
+}
+
+.portal-hero-word--protected {
+  color: var(--portal-hero-protected);
+}
+
+.portal-hero-word--inverted {
+  transform: rotate(180deg);
+}
+
+.portal-hero-connector {
+  display: grid;
+  grid-template-columns: minmax(2.5rem, 1fr) auto minmax(2.5rem, 1fr);
+  align-items: center;
+  gap: clamp(0.75rem, 1.8vw, 1.5rem);
+  color: var(--portal-hero-is);
+  font-family: var(--font-ui);
+  font-size: clamp(0.75rem, 1vw, 1rem);
+  font-weight: 600;
+  letter-spacing: 0.42em;
+  line-height: 1;
+}
+
+.portal-hero-connector__rule {
+  block-size: 1px;
+  background: var(--portal-hero-rule);
+  opacity: 0.72;
+}
+
+.portal-hero-connector__text {
+  padding-inline-start: 0.42em;
+}
+
+.portal-atmosphere[data-portal-theme="dark"] .portal-editorial-hero {
+  opacity: 0.96;
+}
+
+.portal-atmosphere[data-portal-theme="dark"] .portal-hero-word--truth {
+  text-shadow:
+    0 0 1.8rem color-mix(in oklch, var(--portal-hero-truth) 12%, transparent),
+    0 1.4rem 3.6rem color-mix(in oklch, var(--portal-owl-shadow) 62%, transparent);
+}
+
+.portal-atmosphere[data-portal-theme="dark"] .portal-hero-word--protected {
+  text-shadow:
+    0 0 1.8rem color-mix(in oklch, var(--portal-hero-protected) 20%, transparent),
+    0 1.4rem 3.2rem color-mix(in oklch, var(--portal-owl-shadow) 58%, transparent);
+}
+
+.portal-atmosphere[data-portal-theme="light"] .portal-editorial-hero {
+  opacity: 0.94;
+}
+
+.portal-atmosphere[data-portal-theme="light"] .portal-hero-word {
+  text-shadow:
+    0 0.08rem 0 color-mix(in oklch, white 46%, transparent),
+    0 1rem 2.6rem color-mix(in oklch, var(--portal-owl-shadow) 18%, transparent);
+}
+
+.portal-atmosphere[data-portal-theme="light"] .portal-hero-connector__rule {
+  opacity: 0.62;
+}
+
+@media (min-width: 1024px) {
+  .portal-editorial-hero {
+    margin-inline-start: clamp(1rem, 4vw, 4rem);
+  }
+}
+
+@media (max-width: 767px) {
+  .portal-hero-word {
+    font-size: clamp(3.25rem, 18vw, 6rem);
+  }
+
+  .portal-hero-connector {
+    letter-spacing: 0.28em;
+  }
+}
+
+/*
+ * Sharp editorial variant — sentence headline + diamond divider (auth-hero-dual.png).
+ */
+
+.portal-editorial-hero--sharp {
+  gap: clamp(0.75rem, 1.6vw, 1.25rem);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  text-transform: none;
+  max-inline-size: min(36rem, 92vw);
+}
+
+.portal-hero-headline {
+  margin: 0;
+  font-size: clamp(2.35rem, 4.8vw, 4.5rem);
+  font-weight: 500;
+  line-height: 0.98;
+  letter-spacing: -0.03em;
+  color: var(--portal-hero-truth);
+}
+
+.portal-hero-divider {
+  display: grid;
+  grid-template-columns: minmax(2rem, 1fr) auto minmax(2rem, 1fr);
+  align-items: center;
+  gap: clamp(0.65rem, 1.2vw, 1rem);
+  width: min(100%, 14rem);
+}
+
+.portal-hero-divider__line {
+  block-size: 1px;
+  background: var(--portal-hero-rule);
+  opacity: 0.72;
+}
+
+.portal-hero-divider__gem {
+  color: var(--portal-hero-is);
+  font-size: clamp(0.55rem, 0.7vw, 0.7rem);
+  line-height: 1;
+  opacity: 0.88;
+}
+
+.portal-hero-subtitle {
+  margin: 0;
+  max-width: 22rem;
+  color: color-mix(in oklch, var(--portal-hero-is) 84%, var(--portal-fg) 16%);
+  font-family: var(--font-editorial);
+  font-size: clamp(0.95rem, 1.15vw, 1.15rem);
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  line-height: 1.45;
+  text-transform: none;
+}
+
+.portal-atmosphere[data-portal-theme="dark"] .portal-editorial-hero--sharp .portal-hero-headline {
+  text-shadow:
+    0 0 1.4rem color-mix(in oklch, var(--portal-hero-truth) 10%, transparent),
+    0 1rem 2.4rem color-mix(in oklch, var(--portal-owl-shadow) 48%, transparent);
+}
+
+.portal-atmosphere[data-portal-theme="light"] .portal-editorial-hero--sharp .portal-hero-headline {
+  color: var(--portal-hero-protected);
+  text-shadow:
+    0 0.06rem 0 color-mix(in oklch, white 40%, transparent),
+    0 0.8rem 2rem color-mix(in oklch, var(--portal-owl-shadow) 14%, transparent);
+}
+
+@media (min-width: 1024px) {
+  .portal-editorial-hero--sharp {
+    margin-inline-start: clamp(1.25rem, 4.5vw, 4.5rem);
+  }
+}

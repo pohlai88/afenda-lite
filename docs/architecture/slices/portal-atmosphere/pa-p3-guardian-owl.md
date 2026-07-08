@@ -2,7 +2,7 @@
 
 | Field | Value |
 |-------|-------|
-| **Status** | pending |
+| **Status** | ready-for-review |
 | **Sequence** | 3 |
 | **Depends on** | PA-P2 |
 | **Feeds into** | PA-P4–PA-P10 |
@@ -29,7 +29,7 @@ Add the ghost owl as a governed background authority object at z-2 — placement
 ## Inputs / outputs
 
 - **Inputs:** PA-P2 shell; owl asset path; prototype CSS tuning
-- **Outputs:** `PortalGuardianOwl` (+ optional glow/keylight sublayers)
+- **Outputs:** `PortalGuardianOwl`; keylight/scrim via CSS pseudos on the layer root
 
 ## Owned files
 
@@ -78,12 +78,12 @@ Compare owl scale, opacity, and position to reference PNGs.
 
 ## Acceptance proof
 
-- [ ] Owl does not block UI interaction
-- [ ] `aria-hidden` on all owl decorative nodes
-- [ ] Dark mode feels moonlit; light mode feels embossed
-- [ ] Tokens drive glow/scrim colors where applicable
-- [ ] Consistent at 1280px and 1440px width
-- [ ] No auth imports
+- [x] Owl does not block UI interaction
+- [x] `aria-hidden` on all owl decorative nodes
+- [ ] Dark mode feels moonlit; light mode feels embossed — visual
+- [x] Tokens drive glow/scrim colors where applicable
+- [ ] Consistent at 1280px and 1440px width — visual
+- [x] No auth imports
 - [ ] Visual regression captures approved
 
 ## Rollback

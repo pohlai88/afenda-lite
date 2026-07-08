@@ -1,14 +1,10 @@
 import Link from "next/link";
 import { ClipboardListIcon } from "lucide-react";
+import { ClientAssignmentDeadlineNotice } from "@/components/client-assignment-deadline-notice";
 import { ConfirmationReceipt } from "@/components/confirmation-receipt";
-import { FormErrorAlert } from "@/components/form-error-alert";
 import { PortalEmptyStateCard } from "@/components/portal-empty-state";
 import { assignmentHasDraftProgress, type ClientAssignment } from "@/lib/clients";
-import {
-  assignmentDeadlineExpired,
-  assignmentDueUrgency,
-} from "@/lib/client-dashboard-metrics";
-import { formatDate } from "@/lib/format";
+import { assignmentDueUrgency } from "@/lib/client-dashboard-metrics";
 import { clientDeclareHref } from "@/lib/portal-routes";
 import { portalCopy } from "@/lib/portal-copy";
 import { Badge } from "@/components/ui/badge";
@@ -56,15 +52,25 @@ export function ClientDashboardAssignments({
 
       {assignments.map((assignment) => {
         const urgency = assignmentDueUrgency(assignment);
-        const expiredReason = assignmentDeadlineExpired(assignment);
         const isSubmitted = assignment.status === "submitted";
         const hasDraft = assignmentHasDraftProgress(assignment);
-        const effectiveDeadline =
-          assignment.dueDate && assignment.submitBefore
-            ? assignment.dueDate < assignment.submitBefore
-              ? assignment.dueDate
-              : assignment.submitBefore
-            : assignment.dueDate ?? assignment.submitBefore;
+        const statusKey = isSubmitted
+          ? "submitted"
+          : hasDraft
+            ? "inProgress"
+            : "pending";
+        const statusLabel =
+          statusKey === "submitted"
+            ? copy.submitted
+            : statusKey === "inProgress"
+              ? copy.inProgress
+              : copy.pending;
+        const statusHelp =
+          statusKey === "submitted"
+            ? copy.submittedStatusHelp
+            : statusKey === "inProgress"
+              ? copy.inProgressStatusHelp
+              : copy.pendingStatusHelp;
 
         return (
           <Card key={assignment.id}>
@@ -83,62 +89,38 @@ export function ClientDashboardAssignments({
                   <Badge variant="outline">{copy.dueSoonLabel}</Badge>
                 ) : null}
                 <Badge variant={isSubmitted ? "secondary" : "outline"}>
-                  {isSubmitted
-                    ? copy.submitted
-                    : hasDraft
-                      ? copy.inProgress
-                      : copy.pending}
+                  {statusLabel}
                 </Badge>
               </div>
             </CardHeader>
             <CardContent className="space-y-3">
               <p className="text-sm text-muted-foreground text-pretty">
-                {isSubmitted
-                  ? copy.submittedStatusHelp
-                  : hasDraft
-                    ? copy.inProgressStatusHelp
-                    : copy.pendingStatusHelp}
+                {statusHelp}
               </p>
 
-              {!isSubmitted && (assignment.dueDate || assignment.submitBefore) ? (
-                <div className="rounded-md border border-border/60 bg-muted/30 px-3 py-2.5 text-sm">
-                  <p className="font-medium text-foreground">
-                    {copy.deadlineRequirementsTitle}
-                  </p>
-                  <ul className="mt-1.5 list-disc space-y-1 pl-4 text-xs text-muted-foreground">
-                    {assignment.dueDate ? (
-                      <li>{copy.dueLabel(formatDate(assignment.dueDate))}</li>
-                    ) : null}
-                    {assignment.submitBefore ? (
-                      <li>
-                        {copy.submitBeforeLabel(formatDate(assignment.submitBefore))}
-                      </li>
-                    ) : null}
-                    {effectiveDeadline && urgency === "due_soon" ? (
-                      <li>{copy.deadlineDueSoonBanner(formatDate(effectiveDeadline))}</li>
-                    ) : null}
-                  </ul>
-                </div>
-              ) : null}
-
-              {expiredReason && !isSubmitted ? (
-                <FormErrorAlert
-                  error={
-                    expiredReason === "assignment"
-                      ? copy.deadlineExpiredAssignment
-                      : copy.deadlineExpiredDeclaration
-                  }
-                />
+              {!isSubmitted ? (
+                <ClientAssignmentDeadlineNotice assignment={assignment} />
               ) : null}
 
               {isSubmitted && assignment.confirmationCode ? (
-                <ConfirmationReceipt
-                  code={assignment.confirmationCode}
-                  title={copy.receiptTitle}
-                  description={copy.receiptDescription}
-                  variant="inline"
-                />
-              ) : actionsEnabled && !expiredReason ? (
+                <>
+                  <ConfirmationReceipt
+                    code={assignment.confirmationCode}
+                    title={copy.receiptTitle}
+                    description={copy.receiptDescription}
+                    variant="inline"
+                  />
+                  <Button
+                    variant="outline"
+                    render={
+                      <Link href={clientDeclareHref(assignment.id)} />
+                    }
+                    nativeButton={false}
+                  >
+                    {copy.viewReceipt}
+                  </Button>
+                </>
+              ) : actionsEnabled && urgency !== "overdue" ? (
                 <Button
                   render={
                     <Link href={clientDeclareHref(assignment.id)} />

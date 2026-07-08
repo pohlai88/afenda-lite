@@ -13,8 +13,8 @@
 
 | Theme | Asset |
 |-------|-------|
-| Dark (midnight vault) | [`public/landing-design/dark-theme.png`](../../../public/landing-design/dark-theme.png) |
-| Light (archival ivory) | [`public/landing-design/light-theme.png`](../../../public/landing-design/light-theme.png) |
+| Dark (midnight vault) | [`public/brand/heroes/auth-hero-dark.png`](../../../public/brand/heroes/auth-hero-dark.png) |
+| Light (archival ivory) | [`public/brand/heroes/auth-hero-light.png`](../../../public/brand/heroes/auth-hero-light.png) |
 
 **Related docs:** [iam-check-doctrine.md](../iam-check-doctrine.md) · [portal-writing.md](../../portal-writing.md) · [s2-ui-copy-doctrine.md](../slices/s2-ui-copy-doctrine.md)
 
@@ -394,7 +394,7 @@ Required states:
 - Mobile
 - Reduced-motion mode (where motion exists)
 
-Phase acceptance requires **visual comparison against approved reference PNGs** ([dark](../../../public/landing-design/dark-theme.png), [light](../../../public/landing-design/light-theme.png)). Reference PNGs alone are not sufficient — implementation output must be captured and compared at each visible phase gate.
+Phase acceptance requires **visual comparison against approved reference PNGs** ([dark](../../../public/brand/heroes/auth-hero-dark.png), [light](../../../public/brand/heroes/auth-hero-light.png)). Reference PNGs alone are not sufficient — implementation output must be captured and compared at each visible phase gate.
 
 ---
 

@@ -6,6 +6,9 @@ import {
   IamCheckAuthOrganizationShellPreview,
   IamCheckAuthOtpShellPreview,
   IamCheckAuthShellPreview,
+  IamCheckClientJoinAcceptShellPreview,
+  IamCheckClientJoinOtpShellPreview,
+  IamCheckClientJoinSignupShellPreview,
   RejectedStudioAuthPanel,
 } from "./auth-shell-preview";
 
@@ -61,4 +64,19 @@ export const IamCheckMagicLinkShell: Story = {
 export const IamCheckOrganizationShell: Story = {
   name: "iam-check organization invitation shell",
   render: () => <IamCheckAuthOrganizationShellPreview />,
+};
+
+export const IamCheckClientJoinSignupShell: Story = {
+  name: "iam-check client join — create account",
+  render: () => <IamCheckClientJoinSignupShellPreview />,
+};
+
+export const IamCheckClientJoinOtpShell: Story = {
+  name: "iam-check client join — verify email",
+  render: () => <IamCheckClientJoinOtpShellPreview />,
+};
+
+export const IamCheckClientJoinAcceptShell: Story = {
+  name: "iam-check client join — accept invitation",
+  render: () => <IamCheckClientJoinAcceptShellPreview />,
 };

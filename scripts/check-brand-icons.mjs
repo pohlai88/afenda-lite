@@ -33,8 +33,8 @@ const REQUIRED_THEMED_ICON_FILES = [
   "og-image.png",
 ];
 const MASTERS = {
-  light: join(ROOT, "public", "brand", "iam-light.png"),
-  dark: join(ROOT, "public", "brand", "iam-dark.png"),
+  light: join(ROOT, "public", "brand", "identity", "iam-light.png"),
+  dark: join(ROOT, "public", "brand", "identity", "iam-dark.png"),
 };
 const CHROME = {
   light: join(ROOT, "public", "icons", "iam-chrome-512-light.png"),
@@ -86,7 +86,7 @@ async function main() {
     try {
       masterBuffer = await readFile(masterPath);
     } catch {
-      fail(`missing public/brand/iam-${theme}.png`);
+      fail(`missing public/brand/identity/iam-${theme}.png`);
     }
 
     const hash = createHash("sha256").update(masterBuffer).digest("hex");

@@ -2,7 +2,7 @@
 
 | Field | Value |
 |-------|-------|
-| **Status** | pending |
+| **Status** | implemented — production adapter wired; E2E smoke + legacy CSS retirement pending |
 | **Deliverable type** | Documentation and sample composition only |
 | **Sequence** | 10 |
 | **Depends on** | PA-P9 |
@@ -12,7 +12,7 @@
 
 Document the access-slot integration contract and provide a sample composition — **without** changing live auth behavior, providers, or production routes in this slice.
 
-**Clarification:** Production wiring is **not** complete merely because PA-P10 is accepted. PA-P10 acceptance only approves the integration contract and sample composition. Live auth wiring is a **separate follow-up PR** with its own acceptance proof.
+**Clarification:** Production wiring ships in `components/portal-auth-layout.tsx` (PA-P8 slots + `PortalAccessSlot` child). Remaining follow-up: E2E smoke on auth routes, visual regression baselines (WP-1), and retiring Storybook-only `.portal-auth-*` phantom CSS after sign-off.
 
 ## Authority
 
@@ -48,17 +48,23 @@ Document the access-slot integration contract and provide a sample composition �
 - Provide sample:
 
 ```tsx
-<PortalAtmosphere theme={theme}>
-  <PortalAtmosphere.Header>{/* toolbar + theme toggle */}</PortalAtmosphere.Header>
-  <PortalBackgroundLayers />
-  <PortalGuardianOwl />
-  <PortalEditorialHero theme={theme} />
-  <PortalSealLine />
-  <PortalAccessSlot>
-    {/* PA-P10 sample only — production wiring is follow-up PR */}
-    <PortalNeonAuthView />
-  </PortalAccessSlot>
-</PortalAtmosphere>
+<PortalAtmosphere
+  theme={theme}
+  header={toolbar}
+  layers={<PortalGuardianOwl showOwl />}
+  brand={
+    <>
+      <PortalEditorialHero theme={theme} />
+      <PortalSealLine showSeal />
+    </>
+  }
+  accessSlot={
+    <PortalAccessSlot>
+      {/* PA-P10 sample only — production wiring is follow-up PR */}
+      <PortalNeonAuthView />
+    </PortalAccessSlot>
+  }
+/>
 ```
 
 - List rollback: revert layout adapter only; atmosphere package unchanged.
@@ -105,20 +111,20 @@ Doc-only PA-P10: confirm PA-P9 captures still valid.
 
 PA-P10 slice status may move to **accepted** when all below are true — **without** production auth wiring:
 
-- [ ] Integration contract published (`pa-p10-integration-contract.md`)
-- [ ] Sample composition documented
-- [ ] Forbidden coupling list explicit
-- [ ] Heading ownership rule aligned with PA-P9
-- [ ] Rollback steps documented
+- [x] Integration contract published (`pa-p10-integration-contract.md`)
+- [x] Sample composition documented
+- [x] Forbidden coupling list explicit
+- [x] Heading ownership rule aligned with PA-P9
+- [x] Rollback steps documented
 
-### Wiring follow-up (separate PR — not part of PA-P10 slice acceptance)
+### Wiring follow-up (production adapter)
 
-- [ ] `PortalAuthLayout` consumes `PortalAtmosphere`
-- [ ] Auth card renders in `PortalAccessSlot`
-- [ ] No auth logic inside atmosphere components
-- [ ] E2E smoke passes
+- [x] `PortalAuthLayout` consumes `PortalAtmosphere` (PA-P8 slots)
+- [x] Auth card renders in `PortalAccessSlot`
+- [x] No auth logic inside atmosphere components
+- [ ] E2E smoke passes — operator verify after deploy
 - [ ] Visual regression with real auth approved
-- [ ] Migrated `.portal-auth-*` visual rules removed or deprecated
+- [ ] Migrated unused `.portal-auth-*` / `.portal-hero-*` visual rules removed (legacy phantom CSS retained for Storybook evaluation stories until retired)
 
 ## Rollback
 

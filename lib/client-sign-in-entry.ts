@@ -2,7 +2,10 @@ import "server-only";
 
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { isPlaygroundEmbedRequest } from "@/lib/playground";
+import {
+  appendPlaygroundEmbedQuery,
+  resolvePlaygroundEmbedActive,
+} from "@/lib/playground";
 import { PORTAL_NAME, portalCopy } from "@/lib/portal-copy";
 import {
   AUTH_SIGN_IN_HREF,
@@ -79,18 +82,17 @@ export async function redirectClientSignInEntry(options?: {
     redirect(landing);
   }
 
-  redirect(clientSignInAuthHref(options?.reason));
+  const target = clientSignInAuthHref(options?.reason);
+  redirect(options?.embed ? appendPlaygroundEmbedQuery(target) : target);
 }
 
 /** Shared page handler for `/client/login` and the root session router at `/`. */
 export async function runClientSignInEntryPage({
   searchParams,
 }: {
-  searchParams: Promise<{ reason?: string }>;
+  searchParams: Promise<{ reason?: string; embed?: string }>;
 }): Promise<never> {
-  const [{ reason }, embed] = await Promise.all([
-    searchParams,
-    isPlaygroundEmbedRequest(),
-  ]);
-  return redirectClientSignInEntry({ reason, embed });
+  const params = await searchParams;
+  const embed = await resolvePlaygroundEmbedActive(params);
+  return redirectClientSignInEntry({ reason: params.reason, embed });
 }

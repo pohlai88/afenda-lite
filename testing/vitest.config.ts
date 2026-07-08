@@ -19,8 +19,12 @@ export default defineConfig({
         test: {
           name: "unit",
           environment: "node",
-          include: ["lib/**/*.test.ts", "app/api/**/*.test.ts"],
-          exclude: ["**/*.interaction.test.tsx"],
+          include: [
+            "lib/**/*.test.ts",
+            "app/api/**/*.test.ts",
+            "components/portal-atmosphere/**/*.test.ts",
+          ],
+          exclude: ["**/*.interaction.test.tsx", "**/*.a11y.test.tsx"],
         },
       },
       {
@@ -29,7 +33,7 @@ export default defineConfig({
           name: "interaction",
           environment: "jsdom",
           setupFiles: [path.resolve(__dirname, "vitest.setup.ts")],
-          include: ["**/*.interaction.test.tsx"],
+          include: ["**/*.interaction.test.tsx", "**/*.a11y.test.tsx"],
         },
       },
     ],

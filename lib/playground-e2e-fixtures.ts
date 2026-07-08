@@ -70,6 +70,51 @@ const e2eAssertions: Record<
   "not-found": {
     iframeMarker: new RegExp(portalCopy.notFound.title, "i"),
   },
+  "dynamic-dashboard-id": {
+    iframeMarker: /submissions|share access|declaration/i,
+  },
+  "dynamic-declare-id": {
+    iframeMarker: /submit|declaration|assignment/i,
+  },
+  "dynamic-auth-sign-up": {
+    iframeMarker: /sign up|create account/i,
+  },
+  "dynamic-auth-email-otp": {
+    iframeMarker: /verification|otp|code/i,
+  },
+  "dynamic-auth-forgot-password": {
+    iframeMarker: /forgot password|reset/i,
+  },
+  "dynamic-auth-reset-password": {
+    iframeMarker: /reset password|new password/i,
+  },
+  "dynamic-auth-magic-link": {
+    iframeMarker: /magic link|email/i,
+  },
+  "dynamic-auth-accept-invitation": {
+    iframeMarker: /invitation|accept|organization/i,
+  },
+  "dynamic-auth-sign-out": {
+    iframeMarker: /sign in|sign out|organization sign in/i,
+  },
+  "dynamic-account-settings": {
+    iframeMarker: /settings|account|name/i,
+  },
+  "dynamic-account-security": {
+    iframeMarker: /security|password/i,
+  },
+  "dynamic-public-survey-slug": {
+    iframeMarker: /sign in|declaration|survey/i,
+  },
+  "dynamic-public-secure-token": {
+    iframeMarker: /sign in|secure|link/i,
+  },
+  "dynamic-legacy-invite-token": {
+    iframeMarker: /sign in|check your email|invitation/i,
+  },
+  "dynamic-client-join": {
+    iframeMarker: /join|invitation|sign up|organization/i,
+  },
 };
 
 function buildPlaygroundE2eFixture(

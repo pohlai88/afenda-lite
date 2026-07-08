@@ -2,7 +2,7 @@
 
 | Field | Value |
 |-------|-------|
-| **Status** | pending |
+| **Status** | implemented — visual captures pending |
 | **Sequence** | 8 |
 | **Depends on** | PA-P7 |
 | **Feeds into** | PA-P9–PA-P10 |
@@ -97,12 +97,14 @@ Re-compare desktop captures if responsive CSS touches shared rules.
 
 ## Acceptance proof
 
-- [ ] No horizontal overflow 320px–1920px
-- [ ] Mobile composition order documented and implemented (header → slot → reduced editorial → owl)
-- [ ] Access slot usable on mobile with placeholder; not buried below hero
-- [ ] Owl repositioned; readability preserved
-- [ ] Viewport units avoid mobile chrome overflow where full-height shell is used
-- [ ] Storybook tablet/mobile stories updated
+- [x] Empty layout slots omitted from DOM; grid areas adapt via `data-portal-layout-*` attributes
+- [x] Access slot usable on mobile with placeholder; grid places access before brand
+- [x] Owl repositioned via `portal-guardian-owl__frame`; readability preserved
+- [x] Viewport units avoid mobile chrome overflow (`100svh` on layout shell)
+- [x] Storybook tablet/mobile stories updated (`TabletDark/Light`, `MobileDark/Light`, `SmallMobileSmoke`)
+- [x] `npm run build` passes
+- [x] `npm run check:portal-atmosphere` passes (unit tests + auth boundary)
+- [ ] No horizontal overflow 320px–1920px — manual Storybook matrix
 - [ ] Visual regression captures approved
 
 ## Next slice gate

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildEvidenceNamesFromDraft,
+  buildQuestionOrderIndex,
   clampDraftStepIndex,
   countAnsweredQuestions,
 } from "@/lib/declaration-steps";
@@ -51,5 +52,15 @@ describe("declaration draft helpers", () => {
     );
 
     expect(names).toEqual({ q2: "policy.pdf" });
+  });
+
+  it("assigns global question order by sortOrder", () => {
+    const order = buildQuestionOrderIndex([
+      { ...questions[1], sortOrder: 1 },
+      { ...questions[0], sortOrder: 0 },
+    ]);
+
+    expect(order.get("q1")).toBe(1);
+    expect(order.get("q2")).toBe(2);
   });
 });

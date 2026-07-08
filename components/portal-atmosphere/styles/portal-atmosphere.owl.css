@@ -1,0 +1,250 @@
+/*
+ * PA-P3 — Guardian owl layer.
+ * Scope: decorative owl placement, opacity, blend, keylight/scrim pseudos only.
+ * No hero, seal, access slot, or auth selectors.
+ */
+
+.portal-guardian-owl {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  overflow: hidden;
+  user-select: none;
+}
+
+.portal-guardian-owl::before {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  z-index: 1;
+  width: clamp(28rem, 48vw, 56rem);
+  height: clamp(28rem, 48vw, 56rem);
+  left: clamp(-12rem, -6vw, -3rem);
+  top: clamp(1rem, 6vh, 6rem);
+  border-radius: 999rem;
+  background:
+    radial-gradient(
+      circle at 50% 48%,
+      color-mix(in oklch, var(--portal-owl-highlight) 28%, transparent) 0%,
+      color-mix(in oklch, var(--portal-glow-primary) 16%, transparent) 34%,
+      transparent 72%
+    );
+  filter: blur(34px);
+  opacity: 0.58;
+}
+
+.portal-guardian-owl::after {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+  background:
+    linear-gradient(
+      90deg,
+      transparent 0%,
+      transparent 32%,
+      color-mix(in oklch, var(--portal-bg) 24%, transparent) 58%,
+      color-mix(in oklch, var(--portal-bg) 52%, transparent) 100%
+    );
+  opacity: 0.62;
+}
+
+.portal-guardian-owl__frame {
+  pointer-events: none;
+  position: absolute;
+  z-index: 2;
+  width: clamp(34rem, 54vw, 58rem);
+  height: clamp(34rem, 54vw, 58rem);
+  left: clamp(-13rem, -8vw, -5rem);
+  top: clamp(2rem, 8vh, 7rem);
+  opacity: 0.74;
+  transform: translateZ(0);
+}
+
+.portal-guardian-owl__image {
+  pointer-events: none;
+  object-fit: contain;
+  object-position: left center;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.portal-atmosphere[data-portal-theme="dark"] .portal-guardian-owl__frame {
+  opacity: 0.72;
+  mix-blend-mode: screen;
+  filter:
+    drop-shadow(
+      0 1.6rem 3.8rem color-mix(in oklch, var(--portal-owl-shadow) 72%, transparent)
+    )
+    drop-shadow(
+      0 0 2.4rem color-mix(in oklch, var(--portal-owl-highlight) 18%, transparent)
+    );
+}
+
+.portal-atmosphere[data-portal-theme="dark"] .portal-guardian-owl__image {
+  opacity: 0.9;
+}
+
+.portal-atmosphere[data-portal-theme="dark"] .portal-guardian-owl::before {
+  opacity: 0.66;
+}
+
+.portal-atmosphere[data-portal-theme="dark"] .portal-guardian-owl::after {
+  opacity: 0.68;
+}
+
+.portal-atmosphere[data-portal-theme="light"] .portal-guardian-owl__frame {
+  opacity: 0.26;
+  mix-blend-mode: multiply;
+  filter:
+    grayscale(0.18)
+    contrast(0.92)
+    drop-shadow(
+      0 1.25rem 3rem color-mix(in oklch, var(--portal-owl-shadow) 34%, transparent)
+    );
+}
+
+.portal-atmosphere[data-portal-theme="light"] .portal-guardian-owl__image {
+  opacity: 0.82;
+}
+
+.portal-atmosphere[data-portal-theme="light"] .portal-guardian-owl::before {
+  opacity: 0.24;
+  filter: blur(42px);
+}
+
+.portal-atmosphere[data-portal-theme="light"] .portal-guardian-owl::after {
+  background:
+    linear-gradient(
+      90deg,
+      transparent 0%,
+      transparent 30%,
+      color-mix(in oklch, var(--portal-bg) 18%, transparent) 58%,
+      color-mix(in oklch, var(--portal-bg) 64%, transparent) 100%
+    );
+  opacity: 0.48;
+}
+
+@media (min-width: 1280px) {
+  .portal-guardian-owl__frame {
+    width: clamp(42rem, 52vw, 60rem);
+    height: clamp(42rem, 52vw, 60rem);
+    left: clamp(-11rem, -7vw, -4rem);
+    top: clamp(2rem, 7vh, 6rem);
+  }
+
+  .portal-guardian-owl::before {
+    width: clamp(38rem, 48vw, 58rem);
+    height: clamp(38rem, 48vw, 58rem);
+  }
+}
+
+/*
+ * Sharp owl preset — centered photoreal guardian from brand/heroes/auth-hero-dual.png.
+ * Intrinsic crop: 435×405 (scripts/extract-sharp-owl-assets.py).
+ */
+
+.portal-guardian-owl--sharp::before {
+  left: 50%;
+  top: clamp(2rem, 7vh, 5rem);
+  width: clamp(18rem, 44vw, 42rem);
+  aspect-ratio: 435 / 405;
+  height: auto;
+  translate: -50% 0;
+  opacity: 0.55;
+}
+
+.portal-guardian-owl--sharp::after {
+  background:
+    linear-gradient(
+      90deg,
+      transparent 0%,
+      transparent 34%,
+      color-mix(in oklch, var(--portal-bg) 12%, transparent) 58%,
+      color-mix(in oklch, var(--portal-bg) 42%, transparent) 100%
+    );
+  opacity: 0.5;
+}
+
+.portal-guardian-owl--sharp .portal-guardian-owl__frame {
+  left: 50%;
+  top: clamp(2rem, 7vh, 5rem);
+  width: clamp(18rem, 44vw, 42rem);
+  aspect-ratio: 435 / 405;
+  height: auto;
+  translate: -50% 0;
+  opacity: 1;
+  mix-blend-mode: normal;
+  filter: none;
+}
+
+.portal-guardian-owl--sharp .portal-guardian-owl__image {
+  object-fit: contain;
+  object-position: center center;
+}
+
+.portal-atmosphere[data-portal-theme="dark"]
+  .portal-guardian-owl--sharp
+  .portal-guardian-owl__image--light {
+  display: none;
+}
+
+.portal-atmosphere[data-portal-theme="light"]
+  .portal-guardian-owl--sharp
+  .portal-guardian-owl__image--dark {
+  display: none;
+}
+
+.portal-atmosphere[data-portal-theme="dark"] .portal-guardian-owl--sharp .portal-guardian-owl__frame {
+  filter:
+    drop-shadow(
+      0 1.6rem 3.6rem color-mix(in oklch, var(--portal-owl-shadow) 55%, transparent)
+    );
+}
+
+.portal-atmosphere[data-portal-theme="dark"]
+  .portal-guardian-owl--sharp
+  .portal-guardian-owl__image--dark {
+  opacity: 1;
+}
+
+.portal-atmosphere[data-portal-theme="light"] .portal-guardian-owl--sharp .portal-guardian-owl__frame {
+  opacity: 1;
+  mix-blend-mode: normal;
+  filter:
+    drop-shadow(
+      0 1rem 2.8rem color-mix(in oklch, var(--portal-owl-shadow) 16%, transparent)
+    );
+}
+
+.portal-atmosphere[data-portal-theme="light"]
+  .portal-guardian-owl--sharp
+  .portal-guardian-owl__image--light {
+  opacity: 1;
+}
+
+.portal-atmosphere[data-portal-theme="light"] .portal-guardian-owl--sharp::before {
+  opacity: 0.22;
+  filter: blur(40px);
+}
+
+.portal-atmosphere[data-portal-theme="light"] .portal-guardian-owl--sharp::after {
+  opacity: 0.38;
+}
+
+@media (min-width: 1280px) {
+  .portal-guardian-owl--sharp .portal-guardian-owl__frame,
+  .portal-guardian-owl--sharp::before {
+    width: clamp(24rem, 40vw, 44rem);
+  }
+}
+
+@media (max-width: 767px) {
+  .portal-guardian-owl--sharp .portal-guardian-owl__frame,
+  .portal-guardian-owl--sharp::before {
+    width: min(92vw, 22rem);
+    top: clamp(0.75rem, 4vh, 2.5rem);
+  }
+}

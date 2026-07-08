@@ -2,28 +2,15 @@ import type { Meta, StoryObj } from "@storybook/react";
 import { PortalMemberMenu } from "@/components/portal-member-menu";
 import { PortalMemberProvider } from "@/components/portal-member-context";
 import { getEvaluationRow } from "@/lib/ui-decision-matrix";
-import { productionSeedFixtures } from "@/lib/production-fixtures";
 import { portalCopy } from "@/lib/portal-copy";
 import { ComparisonGrid, ScoreAnnotation } from "./evaluation-primitives";
+import {
+  syncedPreviewClientMember,
+  syncedProductionFixtureLabel,
+} from "./synced-production-fixtures";
 
 const row = getEvaluationRow("user-menu")!;
-const { previewClient } = productionSeedFixtures;
-
-const syncedMember = {
-  userId: "00000000-0000-0000-0000-000000000001",
-  email: previewClient.email,
-  authName: previewClient.displayName,
-  displayName: previewClient.displayName,
-  subtitle: previewClient.entityName,
-  role: previewClient.role,
-  context: "client" as const,
-  isPreviewSession: false,
-  profile: {
-    fullLegalName: previewClient.displayName,
-    entityName: previewClient.entityName,
-    onboardingComplete: true,
-  },
-};
+const syncedMember = syncedPreviewClientMember();
 
 const meta: Meta = {
   title: "UI Evaluation/User Menu",
@@ -38,7 +25,7 @@ export const SyncedProductionFixture: Story = {
     <PortalMemberProvider member={syncedMember}>
       <div className="flex min-w-[20rem] flex-col gap-4 rounded-lg border bg-card p-6">
         <p className="text-sm text-muted-foreground">
-          Production seed: {previewClient.email} · {previewClient.entityName}
+          Production seed: {syncedProductionFixtureLabel()}
         </p>
         <PortalMemberMenu />
       </div>

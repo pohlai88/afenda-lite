@@ -2,7 +2,7 @@
 
 | Field | Value |
 |-------|-------|
-| **Status** | pending |
+| **Status** | ready-for-review |
 | **Sequence** | 5 |
 | **Depends on** | PA-P4 |
 | **Feeds into** | PA-P6–PA-P10 |
@@ -29,7 +29,7 @@ Add minimal institutional seal microcopy (`SECURE · CONFIDENTIAL · VERIFIED`) 
 ## Inputs / outputs
 
 - **Inputs:** PA-P4 hero layout; seal copy contract
-- **Outputs:** `PortalSealLine` component; optional `showSeal` prop on `PortalAtmosphere`
+- **Outputs:** `PortalSealLine` component with optional `showSeal`; preview fixture may forward `showSeal` — not a prop on `PortalAtmosphere`
 
 ## Owned files
 
@@ -74,12 +74,12 @@ Add minimal institutional seal microcopy (`SECURE · CONFIDENTIAL · VERIFIED`) 
 
 ## Acceptance proof
 
-- [ ] Single seal line component
-- [ ] Optional rendering via prop
-- [ ] Copy from contract default
-- [ ] Does not compete with hero
-- [ ] Token-based color
-- [ ] No auth changes
+- [x] Single seal line component
+- [x] Optional rendering via prop (`showSeal` on `PortalSealLine`)
+- [x] Copy from contract default (`resolvePortalSealText`)
+- [ ] Does not compete with hero — visual
+- [x] Token-based color
+- [x] No auth changes
 - [ ] Visual regression captures approved
 
 ## Rollback

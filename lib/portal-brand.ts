@@ -1,18 +1,28 @@
 import { PORTAL_NAME } from "@/lib/portal-copy";
 
-/** Immutable theme masters (`public/brand/iam-*.png`) — never overwritten by icons:generate. */
-export const BRAND_MASTER_LIGHT_PATH = "/brand/iam-light.png";
-export const BRAND_MASTER_DARK_PATH = "/brand/iam-dark.png";
+/** Immutable theme masters (`public/brand/identity/iam-*.png`) — never overwritten by icons:generate. */
+export const BRAND_MASTER_LIGHT_PATH = "/brand/identity/iam-light.png";
+export const BRAND_MASTER_DARK_PATH = "/brand/identity/iam-dark.png";
 
-/** Full auth mockup reference — design comp (public/brand/owl-dramatic.png). */
-export const BRAND_DRAMATIC_OWL_MOCKUP_PATH = "/brand/owl-dramatic.png";
+/** Full auth mockup reference — design comp (public/brand/owls/guardian-dramatic-full.png). */
+export const BRAND_DRAMATIC_OWL_MOCKUP_PATH = "/brand/owls/guardian-dramatic-full.png";
 export const BRAND_DRAMATIC_OWL_MOCKUP_WIDTH = 1536;
 export const BRAND_DRAMATIC_OWL_MOCKUP_HEIGHT = 1024;
 
 /** Isolated painterly owl — auth vault cinematic background only (not for icons). */
-export const BRAND_DRAMATIC_OWL_BACKGROUND_PATH = "/brand/owl-dramatic-isolated.png";
+export const BRAND_DRAMATIC_OWL_BACKGROUND_PATH = "/brand/owls/guardian-dramatic-iso.png";
 export const BRAND_DRAMATIC_OWL_BACKGROUND_WIDTH = 524;
 export const BRAND_DRAMATIC_OWL_BACKGROUND_HEIGHT = 561;
+
+/** Sharp owl guardian — extracted from `public/brand/heroes/auth-hero-dual.png`. */
+export const BRAND_SHARP_OWL_REFERENCE_PATH = "/brand/heroes/auth-hero-dual.png";
+export const BRAND_SHARP_OWL_DARK_PATH = "/brand/owls/guardian-sharp-dark.png";
+export const BRAND_SHARP_OWL_LIGHT_PATH = "/brand/owls/guardian-sharp-light.png";
+export const BRAND_SHARP_OWL_GUARDIAN_PATH = "/brand/owls/guardian-sharp-full.png";
+export const BRAND_SHARP_OWL_WIDTH = 435;
+export const BRAND_SHARP_OWL_HEIGHT = 405;
+
+export type PortalGuardianOwlPreset = "dramatic" | "sharp";
 
 /** @deprecated Use BRAND_DRAMATIC_OWL_BACKGROUND_* — background phantom only. */
 export const BRAND_CREDENTIAL_OWL_PATH = BRAND_DRAMATIC_OWL_BACKGROUND_PATH;

@@ -21,6 +21,7 @@ const playgroundScreens = playgroundScreenDefs.map((screen) => ({
 const playgroundNav = {
   admin: playgroundScreens.filter((screen) => screen.category === "admin"),
   client: playgroundScreens.filter((screen) => screen.category === "client"),
+  dynamic: playgroundScreens.filter((screen) => screen.category === "dynamic"),
 };
 
 function getPlaygroundScreen(id: string) {
@@ -64,6 +65,7 @@ for (const screen of playgroundScreens) {
   }
 
   const routeFile =
+    screen.routeFile ??
     resolvePlaygroundRouteFile(screen.path) ??
     resolvePlaygroundRouteFile(
       playgroundScreenDefs.find((def) => def.id === screen.id)?.path ?? "",
@@ -99,7 +101,11 @@ for (const screen of playgroundScreens) {
   );
 }
 
-const navScreens = [...playgroundNav.admin, ...playgroundNav.client];
+const navScreens = [
+  ...playgroundNav.admin,
+  ...playgroundNav.client,
+  ...playgroundNav.dynamic,
+];
 if (navScreens.length !== playgroundScreens.length) {
   fail(
     `Nav parity mismatch: nav has ${navScreens.length} screens, registry has ${playgroundScreens.length}.`,

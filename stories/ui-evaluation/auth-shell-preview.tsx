@@ -2,6 +2,7 @@ import { PortalAuthLayout } from "@/components/portal-auth-layout";
 import { PortalAuthEmailTrustNotice } from "@/components/portal-auth-email-trust-notice";
 import { PortalInvitationJoinBrandPanel } from "@/components/portal-invitation-join-brand-panel";
 import { PortalInvitationJoinSteps } from "@/components/portal-invitation-join-steps";
+import { productionSeedFixtures } from "@/lib/production-fixtures";
 import { portalCopy } from "@/lib/portal-copy";
 
 /** Mock sign-in card for Storybook — mirrors Neon AuthView card chrome without provider. */
@@ -140,6 +141,163 @@ export function IamCheckAuthMagicLinkShellPreview() {
   return (
     <PortalAuthLayout>
       <MockNeonMagicLinkCard />
+    </PortalAuthLayout>
+  );
+}
+
+/** Mock sign-up card for Storybook — mirrors Neon sign-up step on /join. */
+function MockNeonSignUpCard() {
+  const { signIn, signUp, clientInvitationJoin } = portalCopy;
+  const invitedEmail = productionSeedFixtures.previewClient.email;
+
+  return (
+    <div className="bg-card text-card-foreground flex w-full max-w-sm flex-col gap-6 rounded-xl border py-6 shadow-sm">
+      <div className="grid auto-rows-min grid-rows-[auto_auto] gap-1.5 px-6">
+        <div className="font-semibold text-lg md:text-xl">
+          {clientInvitationJoin.panelCreateTitle}
+        </div>
+        <div className="text-muted-foreground text-xs md:text-sm">
+          {clientInvitationJoin.panelCreateDescription}
+        </div>
+      </div>
+      <div className="grid gap-6 px-6">
+        <div className="grid gap-4">
+          <label className="grid gap-2 text-sm">
+            <span className="font-medium">{signIn.emailLabel}</span>
+            <input
+              className="border-input flex h-9 w-full rounded-md border bg-transparent px-3 py-1 text-sm"
+              defaultValue={invitedEmail}
+              readOnly
+            />
+          </label>
+          <label className="grid gap-2 text-sm">
+            <span className="font-medium">{signIn.passwordLabel}</span>
+            <input
+              className="border-input flex h-9 w-full rounded-md border bg-transparent px-3 py-1 text-sm"
+              type="password"
+              placeholder="Password"
+              readOnly
+            />
+          </label>
+          <p className="text-caption text-muted-foreground">{signUp.passwordRequirements}</p>
+          <button
+            type="button"
+            className="bg-primary text-primary-foreground inline-flex h-9 w-full items-center justify-center rounded-md text-sm font-medium"
+          >
+            Create account
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Vault shell with /join sign-up step mock. */
+export function IamCheckClientJoinSignupShellPreview() {
+  const { clientInvitationJoin } = portalCopy;
+
+  return (
+    <PortalAuthLayout
+      brandPanel={<PortalInvitationJoinBrandPanel activeStep={0} />}
+      headerExtra={
+        <PortalAuthEmailTrustNotice
+          message={clientInvitationJoin.trustNotice}
+          variant="email"
+        />
+      }
+    >
+      <div className="flex w-full flex-col gap-4">
+        <PortalInvitationJoinSteps activeStep={0} variant="compact" className="lg:hidden" />
+        <MockNeonSignUpCard />
+      </div>
+    </PortalAuthLayout>
+  );
+}
+
+/** Vault shell with /join email verification step mock. */
+export function IamCheckClientJoinOtpShellPreview() {
+  const { clientInvitationJoin, emailOtp } = portalCopy;
+
+  return (
+    <PortalAuthLayout
+      brandPanel={<PortalInvitationJoinBrandPanel activeStep={1} />}
+      headerExtra={
+        <PortalAuthEmailTrustNotice message={emailOtp.trustNotice} variant="email" />
+      }
+    >
+      <div className="flex w-full flex-col gap-4">
+        <PortalInvitationJoinSteps activeStep={1} variant="compact" className="lg:hidden" />
+        <div className="bg-card text-card-foreground flex w-full max-w-sm flex-col gap-6 rounded-xl border py-6 shadow-sm">
+          <div className="grid auto-rows-min grid-rows-[auto_auto] gap-1.5 px-6">
+            <div className="font-semibold text-lg md:text-xl">
+              {clientInvitationJoin.panelVerifyTitle}
+            </div>
+            <div className="text-muted-foreground text-xs md:text-sm">
+              {clientInvitationJoin.panelVerifyDescription}
+            </div>
+          </div>
+          <div className="grid gap-6 px-6">
+            <div className="flex justify-center gap-2" aria-hidden>
+              {Array.from({ length: 6 }, (_, index) => (
+                <div
+                  key={index}
+                  className="flex h-11 w-10 items-center justify-center rounded-md border border-border bg-background text-base font-medium"
+                >
+                  {index === 0 ? "4" : ""}
+                </div>
+              ))}
+            </div>
+            <button
+              type="button"
+              className="bg-primary text-primary-foreground inline-flex h-9 w-full items-center justify-center rounded-md text-sm font-medium"
+            >
+              {emailOtp.verifyCodeAction}
+            </button>
+            <p className="text-center text-caption text-muted-foreground">
+              {emailOtp.codeSentNotice}
+            </p>
+          </div>
+        </div>
+      </div>
+    </PortalAuthLayout>
+  );
+}
+
+/** Vault shell with /join accept-invitation step mock. */
+export function IamCheckClientJoinAcceptShellPreview() {
+  const { clientInvitationJoin, organizationAuth } = portalCopy;
+
+  return (
+    <PortalAuthLayout
+      brandPanel={<PortalInvitationJoinBrandPanel activeStep={2} />}
+      headerExtra={
+        <PortalAuthEmailTrustNotice
+          message={clientInvitationJoin.trustNotice}
+          variant="email"
+        />
+      }
+    >
+      <div className="flex w-full flex-col gap-4">
+        <PortalInvitationJoinSteps activeStep={2} variant="compact" className="lg:hidden" />
+        <div className="bg-card text-card-foreground flex w-full max-w-sm flex-col gap-6 rounded-xl border py-6 shadow-sm">
+          <div className="grid auto-rows-min grid-rows-[auto_auto] gap-1.5 px-6">
+            <div className="font-semibold text-lg md:text-xl">
+              {clientInvitationJoin.panelAcceptTitle}
+            </div>
+            <div className="text-muted-foreground text-xs md:text-sm">
+              {clientInvitationJoin.panelAcceptDescription}
+            </div>
+          </div>
+          <div className="grid gap-6 px-6">
+            <button
+              type="button"
+              className="bg-primary text-primary-foreground inline-flex h-9 w-full items-center justify-center rounded-md text-sm font-medium"
+            >
+              {organizationAuth.acceptInvitationTitle}
+            </button>
+          </div>
+        </div>
+      </div>
     </PortalAuthLayout>
   );
 }

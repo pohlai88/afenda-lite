@@ -43,8 +43,8 @@ Operator assigns declaration to client email; client submits with confirmation r
 
 ## Acceptance proof
 
-- [ ] `CDP-*` code on client dashboard
-- [ ] Same submission visible on operator detail list
+- [x] `CDP-*` code on client dashboard — `e2e/client-journey.spec.ts`
+- [x] Same submission visible on operator detail list — `e2e/client-journey.spec.ts` (submissions tab)
 
 ## Must not bypass
 

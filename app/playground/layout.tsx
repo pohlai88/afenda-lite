@@ -48,6 +48,7 @@ export default async function PlaygroundLayout({
         <PlaygroundSidebar
           adminScreens={playgroundNav.admin}
           clientScreens={playgroundNav.client}
+          dynamicScreens={playgroundNav.dynamic}
         />
       }
     >

@@ -2,7 +2,7 @@
 
 | Field | Value |
 |-------|-------|
-| **Status** | approved for implementation |
+| **Status** | implemented |
 | **Sequence** | 2 |
 | **Depends on** | PA-P1 |
 | **Feeds into** | PA-P3–PA-P10 |
@@ -23,7 +23,7 @@ Render base canvas, radial gradients, and glow fields as a static atmosphere she
 | Colors | `var(--portal-*)` and mapped shadcn vars only |
 | Layers | z-0 base, z-1 atmospheric gradients; `pointer-events-none` on decorative layers |
 | CSS ownership | `portal-atmosphere.base.css` may define shell and background-layer classes only; no auth, card, owl, hero, seal, or form selectors |
-| Theme selectors | Use `.portal-atmosphere[data-theme="dark"]` / `.portal-atmosphere[data-theme="light"]` or PA-P1-approved equivalent |
+| Theme selectors | Use `.portal-atmosphere[data-portal-theme="dark"|"light"]` and/or `.portal-atmosphere-theme-dark` / `.portal-atmosphere-theme-light` |
 | Motion | None |
 | API | `PortalBackgroundLayers` + root `PortalAtmosphere` shell (minimal — theme class + children slot) |
 
@@ -83,14 +83,14 @@ Optional this phase: tablet, mobile (formal gate in PA-P8).
 
 ## Acceptance proof
 
-- [ ] Dark background matches midnight vault direction
-- [ ] Light background matches archival ivory direction
-- [ ] Layers use token variables only
-- [ ] No auth dependency
-- [ ] No interactive behavior
-- [ ] No horizontal overflow at 1280px and 1440px
+- [ ] Dark background matches midnight vault direction — visual
+- [ ] Light background matches archival ivory direction — visual
+- [x] Layers use token variables only
+- [x] No auth dependency
+- [x] No interactive behavior
+- [ ] No horizontal overflow at 1280px and 1440px — manual (see PA-P8 / G-MAN-01)
 - [ ] Visual regression captures attached or in Storybook
-- [ ] No poster grid, header placement, or access-slot layout in PA-P2 files
+- [x] No poster grid, header placement, or access-slot layout in PA-P2 files
 
 ## Next slice gate
 

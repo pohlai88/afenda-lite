@@ -29,7 +29,7 @@ export async function generateMetadata({
     title: screen
       ? `${PORTAL_NAME} — Playground · ${screen.label}`
       : `${PORTAL_NAME} — Playground`,
-    description: "UI review for admin and client portal screens.",
+    description: "UI review for admin, client, and dynamic route screens.",
     robots: { index: false, follow: false },
   };
 }
@@ -62,10 +62,19 @@ export default async function PlaygroundScreenPage({
         <div className="h-stack min-w-0 flex-wrap items-center justify-between gap-3">
           <div className="min-w-0 flex-1">
             <p className="portal-state-kicker">
-              {screen.category === "admin" ? "Admin" : "Client"}
+              {screen.category === "admin"
+                ? "Admin"
+                : screen.category === "client"
+                  ? "Client"
+                  : "Dynamic route"}
             </p>
             <h1 className="portal-toolbar-title">{screen.label}</h1>
             <p className="text-sm text-muted-foreground break-words">{screen.path}</p>
+            {screen.routeFile ? (
+              <p className="text-xs text-muted-foreground font-mono break-all">
+                Page: {screen.routeFile}
+              </p>
+            ) : null}
             <p className="portal-code-block mt-2 break-all">Embed: {embedUrl}</p>
           </div>
         <Button

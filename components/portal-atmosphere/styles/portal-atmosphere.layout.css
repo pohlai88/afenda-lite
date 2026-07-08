@@ -1,0 +1,293 @@
+/*
+ * Portal Atmosphere System — PA-P6 access slot layout.
+ *
+ * Scope:
+ * - Right-side access slot positioning
+ * - Static placeholder card styling
+ *
+ * Forbidden in PA-P6:
+ * - Neon Auth imports/selectors
+ * - AuthView styling
+ * - real form field behavior
+ * - submit buttons
+ * - route/session behavior
+ * - OAuth/provider styling
+ * - credential validation
+ */
+
+.portal-access-slot {
+  position: fixed;
+  z-index: 20;
+  inset-block: 0;
+  right: clamp(2rem, 6vw, 7rem);
+
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+
+  width: min(34rem, calc(100vw - 4rem));
+  min-height: 100svh;
+
+  pointer-events: auto;
+}
+
+.portal-access-slot__inner {
+  width: min(100%, 24rem);
+  margin-inline-start: auto;
+}
+
+/*
+ * Static mock chamber.
+ *
+ * This uses shadcn-compatible semantic surfaces where appropriate:
+ * - --card
+ * - --card-foreground
+ * - --border
+ * - --ring
+ *
+ * The surrounding atmosphere uses:
+ * - --portal-card-adjacent
+ * - --portal-bg
+ */
+
+.portal-access-placeholder {
+  position: relative;
+  overflow: hidden;
+
+  border: 1px solid
+    color-mix(in oklch, var(--border, var(--portal-border)) 76%, transparent);
+  border-radius: 1.4rem;
+
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in oklch, var(--card, var(--portal-card-adjacent)) 94%, white 6%) 0%,
+      color-mix(in oklch, var(--card, var(--portal-card-adjacent)) 88%, var(--portal-bg) 12%) 100%
+    );
+
+  color: var(--card-foreground, var(--portal-fg));
+
+  box-shadow:
+    0 1.2rem 3rem color-mix(in oklch, var(--portal-owl-shadow) 34%, transparent),
+    0 0 0 1px color-mix(in oklch, var(--portal-ring) 10%, transparent) inset;
+
+  padding: clamp(1.3rem, 2vw, 1.75rem);
+  font-family: var(--font-ui);
+}
+
+.portal-access-placeholder::before {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(
+      circle at 18% 0%,
+      color-mix(in oklch, var(--portal-glow-primary) 16%, transparent) 0%,
+      transparent 38%
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in oklch, white 8%, transparent) 0%,
+      transparent 42%
+    );
+  opacity: 0.68;
+}
+
+.portal-access-placeholder > * {
+  position: relative;
+  z-index: 1;
+}
+
+.portal-access-placeholder__eyebrow {
+  margin-bottom: clamp(1.15rem, 2vw, 1.65rem);
+
+  color: color-mix(in oklch, var(--portal-muted) 84%, var(--portal-fg) 16%);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.portal-access-placeholder__header {
+  display: grid;
+  gap: 0.58rem;
+  margin-bottom: clamp(1.25rem, 2vw, 1.75rem);
+}
+
+.portal-access-placeholder__title {
+  margin: 0;
+
+  color: var(--card-foreground, var(--portal-fg));
+  font-size: clamp(1.45rem, 2vw, 1.85rem);
+  font-weight: 700;
+  letter-spacing: -0.045em;
+  line-height: 1.05;
+}
+
+.portal-access-placeholder__copy {
+  margin: 0;
+
+  color: color-mix(in oklch, var(--portal-muted) 88%, var(--portal-fg) 12%);
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+
+.portal-access-placeholder__mock-form {
+  display: grid;
+  gap: 0.92rem;
+}
+
+.portal-access-placeholder__mock-field {
+  display: grid;
+  gap: 0.42rem;
+}
+
+.portal-access-placeholder__mock-label {
+  color: color-mix(in oklch, var(--portal-muted) 82%, var(--portal-fg) 18%);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.portal-access-placeholder__mock-input {
+  display: block;
+  height: 2.75rem;
+
+  border: 1px solid
+    color-mix(in oklch, var(--border, var(--portal-border)) 78%, transparent);
+  border-radius: 0.82rem;
+
+  background:
+    color-mix(in oklch, var(--background, var(--portal-bg)) 58%, transparent);
+
+  box-shadow:
+    0 0 0 1px color-mix(in oklch, var(--portal-ring) 6%, transparent) inset;
+}
+
+.portal-access-placeholder__mock-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  height: 2.82rem;
+  margin-top: 0.18rem;
+  border-radius: 0.88rem;
+
+  background:
+    color-mix(in oklch, var(--portal-hero-protected) 86%, var(--portal-fg) 14%);
+  color: var(--portal-bg);
+
+  font-size: 0.86rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.portal-access-placeholder__footer {
+  margin-top: clamp(1.25rem, 2vw, 1.65rem);
+  padding-top: 1rem;
+  border-top: 1px solid
+    color-mix(in oklch, var(--border, var(--portal-border)) 54%, transparent);
+
+  color: color-mix(in oklch, var(--portal-muted) 76%, var(--portal-fg) 24%);
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  line-height: 1.25;
+  text-transform: uppercase;
+}
+
+/*
+ * Dark theme:
+ * Slightly glassed vault chamber.
+ */
+
+.portal-atmosphere[data-portal-theme="dark"] .portal-access-placeholder {
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in oklch, var(--portal-card-adjacent) 92%, white 8%) 0%,
+      color-mix(in oklch, var(--portal-card-adjacent) 82%, var(--portal-bg) 18%) 100%
+    );
+
+  box-shadow:
+    0 1.4rem 4rem color-mix(in oklch, black 44%, transparent),
+    0 0 2.2rem color-mix(in oklch, var(--portal-glow-primary) 10%, transparent),
+    0 0 0 1px color-mix(in oklch, var(--portal-ring) 12%, transparent) inset;
+}
+
+.portal-atmosphere[data-portal-theme="dark"]
+  .portal-access-placeholder__mock-input {
+  background:
+    color-mix(in oklch, var(--portal-bg) 72%, var(--portal-card-adjacent) 28%);
+}
+
+.portal-atmosphere[data-portal-theme="dark"]
+  .portal-access-placeholder__mock-button {
+  box-shadow:
+    0 0.9rem 1.8rem color-mix(in oklch, var(--portal-hero-protected) 18%, transparent);
+}
+
+/*
+ * Light theme:
+ * Archival card, lower glow, readable neutral controls.
+ */
+
+.portal-atmosphere[data-portal-theme="light"] .portal-access-placeholder {
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in oklch, var(--card, white) 88%, var(--portal-bg) 12%) 0%,
+      color-mix(in oklch, var(--portal-card-adjacent) 82%, white 18%) 100%
+    );
+
+  box-shadow:
+    0 1.2rem 3rem color-mix(in oklch, var(--portal-owl-shadow) 22%, transparent),
+    0 0 0 1px color-mix(in oklch, var(--portal-border) 42%, transparent) inset;
+}
+
+.portal-atmosphere[data-portal-theme="light"]
+  .portal-access-placeholder__mock-input {
+  background:
+    color-mix(in oklch, white 72%, var(--portal-bg) 28%);
+}
+
+.portal-atmosphere[data-portal-theme="light"]
+  .portal-access-placeholder__mock-button {
+  color: white;
+}
+
+/*
+ * Desktop stability.
+ */
+
+@media (min-width: 1280px) {
+  .portal-access-slot {
+    right: clamp(3rem, 6.4vw, 7.8rem);
+    width: min(34rem, 34vw);
+  }
+
+  .portal-access-slot__inner {
+    width: min(100%, 24rem);
+  }
+}
+
+/*
+ * Tablet/mobile access-slot behavior lives in portal-atmosphere.responsive.css (PA-P8).
+ */
+
+@media (max-width: 767px) {
+  .portal-access-placeholder {
+    border-radius: 1.1rem;
+    padding: 1.1rem;
+  }
+
+  .portal-access-placeholder__footer {
+    letter-spacing: 0.11em;
+  }
+}

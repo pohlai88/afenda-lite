@@ -87,15 +87,21 @@ test.describe("Client assignment and file evidence @journey", () => {
     await expectDeclarationReceived(page, "client");
   });
 
-  test("operator sees incremented submission count", async ({ page }) => {
+  test("operator sees file metadata on submissions tab", async ({ page }) => {
     test.skip(!surveyDetailUrl, "Requires operator setup from prior test");
 
     await loginAsOperator(page, requireOperatorCreds());
     await page.goto(surveyDetailUrl);
-    await openSurveyTab(page, "share");
+    await openSurveyTab(page, "submissions");
 
-    await expect(
-      page.getByText(portalCopy.org.list.submissions(1)),
-    ).toBeVisible();
+    const viewAnswersButton = page.getByRole("button", {
+      name: new RegExp(portalCopy.declarationDetail.submissions.viewAnswers, "i"),
+    }).first();
+    await expect(viewAnswersButton).toBeVisible();
+    await viewAnswersButton.click();
+
+    await expect(page.getByText("sample-evidence.pdf")).toBeVisible();
+    await expect(page.getByText("E2E secure file submission context")).toBeVisible();
+    await expect(page.getByRole("link", { name: /download/i })).toHaveCount(0);
   });
 });

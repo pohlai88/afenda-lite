@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import sharp from "sharp";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
-const BRAND_DIR = join(ROOT, "public", "brand");
+const BRAND_DIR = join(ROOT, "public", "brand", "identity");
 const PUBLIC_ICONS = join(ROOT, "public", "icons");
 const MANIFEST_PATH = join(PUBLIC_ICONS, ".brand-icons-manifest.json");
 
@@ -122,12 +122,12 @@ async function main() {
   const manifest = {
     masters: {
       light: {
-        path: "public/brand/iam-light.png",
+        path: "public/brand/identity/iam-light.png",
         sha256: masterHashes.light,
         size: masterSizes.light,
       },
       dark: {
-        path: "public/brand/iam-dark.png",
+        path: "public/brand/identity/iam-dark.png",
         sha256: masterHashes.dark,
         size: masterSizes.dark,
       },

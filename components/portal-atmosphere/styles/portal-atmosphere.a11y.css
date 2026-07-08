@@ -1,0 +1,28 @@
+/*
+ * PA-P9 — Accessibility and QA.
+ * Static atmosphere only. No auth wiring. No motion enablement.
+ */
+
+.portal-atmosphere,
+.portal-atmosphere * {
+  box-sizing: border-box;
+}
+
+.portal-atmosphere :focus-visible {
+  outline: 2px solid var(--portal-ring);
+  outline-offset: 3px;
+}
+
+.portal-atmosphere [aria-hidden="true"] {
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .portal-atmosphere,
+  .portal-atmosphere * {
+    animation: none !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+  }
+}

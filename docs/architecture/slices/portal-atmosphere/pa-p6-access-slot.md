@@ -2,7 +2,7 @@
 
 | Field | Value |
 |-------|-------|
-| **Status** | pending |
+| **Status** | ready-for-review |
 | **Sequence** | 6 |
 | **Depends on** | PA-P5 |
 | **Feeds into** | PA-P7–PA-P10 |
@@ -78,11 +78,11 @@ Compare card position and atmosphere balance to reference PNGs.
 
 ## Acceptance proof
 
-- [ ] Accepts placeholder child; no auth imports
-- [ ] Desktop right alignment matches mock direction
-- [ ] Placeholder readable on both themes
-- [ ] Composed atmosphere (layers + owl + hero + seal + slot) renders
-- [ ] No credential or session code touched
+- [x] Accepts placeholder child; no auth imports
+- [ ] Desktop right alignment matches mock direction — visual
+- [ ] Placeholder readable on both themes — visual / contrast
+- [x] Composed atmosphere (layers + owl + hero + seal + slot) renders
+- [x] No credential or session code touched
 - [ ] Visual regression captures approved
 
 ## Rollback

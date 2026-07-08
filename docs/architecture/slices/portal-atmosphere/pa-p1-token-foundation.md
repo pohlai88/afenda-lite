@@ -2,7 +2,7 @@
 
 | Field | Value |
 |-------|-------|
-| **Status** | approved for implementation |
+| **Status** | implemented |
 | **Sequence** | 1 |
 | **Depends on** | PA-P0 |
 | **Feeds into** | PA-P2–PA-P10 |
@@ -131,18 +131,18 @@ Capture if produced:
 
 ## Acceptance proof
 
-- [ ] All ADR `--portal-*` families defined in OKLCH for dark and light
-- [ ] Dark/light CSS files share identical token key sets
-- [ ] No hardcoded colors in `components/portal-atmosphere/**` TS/TSX
-- [ ] CSS owns runtime color values; TS owns names/contracts only
-- [ ] Token ownership documented; shadcn tokens unchanged in meaning
-- [ ] Contracts exported from `components/portal-atmosphere/index.ts`
-- [ ] Contract and token parity tests pass
-- [ ] `app/globals.css` imports atmosphere token CSS only
-- [ ] No new `.portal-auth-*` rules added
-- [ ] No `.portal-auth-*` rendering CSS deleted or migrated
-- [ ] Build passes
-- [ ] No auth file changes
+- [x] All ADR `--portal-*` families defined in OKLCH for dark and light
+- [x] Dark/light CSS files share identical token key sets
+- [x] No hardcoded colors in `components/portal-atmosphere/**` TS/TSX
+- [x] CSS owns runtime color values; TS owns names/contracts only
+- [x] Token ownership documented; shadcn tokens unchanged in meaning
+- [x] Contracts exported from `components/portal-atmosphere/index.ts`
+- [x] Contract and token parity tests pass
+- [x] `app/globals.css` imports atmosphere token CSS only
+- [x] No new `.portal-auth-*` rules added (slice-scoped — package does not expand them)
+- [x] No `.portal-auth-*` rendering CSS deleted or migrated (deferred to PA-P10 wiring)
+- [x] Build passes
+- [x] No auth file changes
 
 ## Next slice gate
 

@@ -648,6 +648,9 @@ export const portalCopy = {
       draftSaveError: "Could not save your progress. Try again before continuing.",
       draftSaving: "Saving progress…",
       draftSavedAt: (savedAt: string) => `Progress saved ${savedAt}`,
+      questionsAnswered: (answered: number, total: number) =>
+        `${answered.toLocaleString()} of ${total.toLocaleString()} questions answered`,
+      saveProgress: "Save progress",
       reviewAttestationSwitch:
         "I have reviewed my responses and confirm they are accurate.",
       reviewAttestationRequired:
@@ -1126,7 +1129,9 @@ export const portalCopy = {
     backToAssignments: "Back to assignments",
     metrics: {
       pending: "Pending",
-      pendingDescription: "Declarations awaiting your attestation",
+      pendingDescription: "Declarations not yet started",
+      inProgress: "In progress",
+      inProgressDescription: "Declarations with saved answers to resume",
       submitted: "Submitted",
       submittedDescription: "Declarations recorded with confirmation codes",
       dueSoon: "Due soon",

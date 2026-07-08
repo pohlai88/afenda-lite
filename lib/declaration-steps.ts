@@ -110,6 +110,18 @@ export function buildDeclarationWizardSteps(
   return steps;
 }
 
+/** Collapse sidebar step list above this count (large declarations). */
+export const WIZARD_SIDEBAR_STEP_LIMIT = 20;
+
+export function buildQuestionOrderIndex(questions: SurveyQuestion[]) {
+  const sorted = [...questions].sort((a, b) => a.sortOrder - b.sortOrder);
+  const orderIndex = new Map<string, number>();
+  for (const [index, question] of sorted.entries()) {
+    orderIndex.set(question.id, index + 1);
+  }
+  return orderIndex;
+}
+
 /** Skip per-question review summary above this count (large declarations). */
 export const REVIEW_SUMMARY_QUESTION_LIMIT = 50;
 

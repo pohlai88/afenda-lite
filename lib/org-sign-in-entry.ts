@@ -3,7 +3,10 @@ import "server-only";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { ORG_SIGN_IN_HREF } from "@/lib/admin";
-import { isPlaygroundEmbedRequest } from "@/lib/playground";
+import {
+  appendPlaygroundEmbedQuery,
+  resolvePlaygroundEmbedActive,
+} from "@/lib/playground";
 import { PORTAL_NAME, portalCopy } from "@/lib/portal-copy";
 import {
   authSignInHref,
@@ -25,6 +28,7 @@ export const orgLoginPageMetadata: Metadata = {
 export type OrgSignInEntrySearchParams = {
   reason?: string;
   returnTo?: string;
+  embed?: string;
 };
 
 export function isOrgSignInFrom(value: string | undefined) {
@@ -82,7 +86,8 @@ export async function redirectOrgSignInEntry(options?: {
     redirect(sanitizeReturnToPath(options?.returnTo) ?? landing);
   }
 
-  redirect(orgSignInAuthHref(options?.reason, options?.returnTo));
+  const target = orgSignInAuthHref(options?.reason, options?.returnTo);
+  redirect(options?.embed ? appendPlaygroundEmbedQuery(target) : target);
 }
 
 /** Shared page handler for `/org/login` and legacy `/auth/admin`. */
@@ -91,9 +96,11 @@ export async function runOrgSignInEntryPage({
 }: {
   searchParams: Promise<OrgSignInEntrySearchParams>;
 }): Promise<never> {
-  const [{ reason, returnTo }, embed] = await Promise.all([
-    searchParams,
-    isPlaygroundEmbedRequest(),
-  ]);
-  return redirectOrgSignInEntry({ reason, embed, returnTo });
+  const params = await searchParams;
+  const embed = await resolvePlaygroundEmbedActive(params);
+  return redirectOrgSignInEntry({
+    reason: params.reason,
+    embed,
+    returnTo: params.returnTo,
+  });
 }

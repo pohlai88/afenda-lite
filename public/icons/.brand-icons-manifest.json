@@ -1,15 +1,15 @@
 {
   "masters": {
     "light": {
-      "path": "public/brand/iam-light.png",
+      "path": "public/brand/identity/iam-light.png",
       "sha256": "4c60e748d3fa67c938bf6282ae1c25fe7548f3002c17e69732db07200d14683d",
       "size": 226555
     },
     "dark": {
-      "path": "public/brand/iam-dark.png",
+      "path": "public/brand/identity/iam-dark.png",
       "sha256": "0125cb1c7bea85535f638d7b1a6538bb871fe62e39bc87f8d85f0c32fe8e55a6",
       "size": 227670
     }
   },
-  "generatedAt": "2026-07-07T18:02:09.593Z"
+  "generatedAt": "2026-07-08T11:57:01.418Z"
 }

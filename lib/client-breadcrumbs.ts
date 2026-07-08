@@ -11,7 +11,13 @@ export function clientDashboardBreadcrumb(): PortalBreadcrumb {
 export function clientDeclarationBreadcrumbs(
   surveyTitle: string,
 ): PortalBreadcrumb[] {
-  return [clientDashboardBreadcrumb(), { label: surveyTitle }];
+  return [
+    {
+      label: portalCopy.clientDashboard.backToAssignments,
+      href: "/client",
+    },
+    { label: surveyTitle },
+  ];
 }
 
 export function clientProfileBreadcrumbs(): PortalBreadcrumb[] {

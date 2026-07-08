@@ -43,8 +43,8 @@ Single submission pipeline for public, secure, and client-assigned surfaces.
 
 ## Acceptance proof
 
-- [ ] Submission visible on operator detail via `submission-answers.tsx`
-- [ ] All question types render correctly in review
+- [x] Submission visible on operator detail via `submission-answers.tsx` — `e2e/client-journey.spec.ts`, `e2e/secure-file.spec.ts`
+- [x] All question types render correctly in review — secure-file journey (yes/no, text, file metadata)
 
 ## Must not bypass
 

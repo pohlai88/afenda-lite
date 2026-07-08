@@ -1,0 +1,41 @@
+/*
+ * Portal Atmosphere System — dark theme tokens.
+ *
+ * Theme: midnight vault.
+ *
+ * PA-P1 only defines token values.
+ * No rendering, layout, gradients, components, or auth styling.
+ */
+
+:where(
+  .portal-atmosphere-theme-dark,
+  [data-portal-theme="dark"]
+) {
+  color-scheme: dark;
+
+  /*
+   * Generic atmosphere surface mapping.
+   *
+   * --portal-bg may align with --background.
+   * --portal-card-adjacent may align with --card.
+   * Portal-specific meanings remain under --portal-* only.
+   */
+  --portal-bg: oklch(0.145 0.025 255);
+  --portal-fg: oklch(0.94 0.018 86);
+  --portal-card-adjacent: oklch(0.19 0.028 255 / 0.86);
+  --portal-muted: oklch(0.72 0.028 252);
+  --portal-border: oklch(0.38 0.04 252 / 0.45);
+  --portal-ring: oklch(0.78 0.08 230);
+
+  --portal-owl-line: oklch(0.82 0.055 230 / 0.46);
+  --portal-owl-shadow: oklch(0.18 0.04 255 / 0.72);
+  --portal-owl-highlight: oklch(0.9 0.035 225 / 0.58);
+
+  --portal-hero-truth: oklch(0.95 0.018 86);
+  --portal-hero-protected: oklch(0.72 0.075 232);
+  --portal-hero-is: oklch(0.76 0.032 248);
+  --portal-hero-rule: oklch(0.72 0.035 238 / 0.58);
+
+  --portal-glow-primary: oklch(0.52 0.14 242 / 0.32);
+  --portal-glow-soft: oklch(0.82 0.055 230 / 0.14);
+}

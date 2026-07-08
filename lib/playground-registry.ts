@@ -3,7 +3,9 @@
  * Imported by lib/playground.ts, check scripts, and E2E helpers.
  */
 
-export type PlaygroundScreenCategory = "admin" | "client";
+import { SANDBOX_INVITE_TOKEN, SANDBOX_SURVEY_SLUG } from "@/lib/production-fixtures";
+
+export type PlaygroundScreenCategory = "admin" | "client" | "dynamic";
 
 export type PlaygroundScreenDef = {
   id: string;
@@ -11,6 +13,8 @@ export type PlaygroundScreenDef = {
   label: string;
   /** Path template — may include {PLAYGROUND_SURVEY_ID}, etc. */
   path: string;
+  /** App router page when the preview hits a dynamic segment route. */
+  routeFile?: string;
 };
 
 /** Static map from resolved path patterns to app router page files. */
@@ -28,7 +32,13 @@ export const playgroundRouteFiles: Record<string, string> = {
   "/client/declare/{id}": "app/client/(workspace)/declare/[id]/page.tsx",
   "/client/preview-unavailable": "app/client/(gate)/preview-unavailable/page.tsx",
   "/auth/sign-in": "app/auth/[path]/page.tsx",
+  "/auth/{path}": "app/auth/[path]/page.tsx",
   "/account/security": "app/account/[path]/page.tsx",
+  "/account/{path}": "app/account/[path]/page.tsx",
+  "/survey/{slug}": "app/survey/[slug]/page.tsx",
+  "/f/{token}": "app/f/[token]/page.tsx",
+  "/invite/{token}": "app/invite/[token]/page.tsx",
+  "/join": "app/join/page.tsx",
   "/playground-404-preview": "app/not-found.tsx",
 };
 
@@ -131,18 +141,126 @@ export const playgroundScreenDefs: PlaygroundScreenDef[] = [
     category: "client",
     label: "Sign in",
     path: "/auth/sign-in",
+    routeFile: "app/auth/[path]/page.tsx",
   },
   {
     id: "account-security",
     category: "client",
     label: "Account security",
     path: "/account/security",
+    routeFile: "app/account/[path]/page.tsx",
   },
   {
     id: "not-found",
     category: "client",
     label: "404 not found",
     path: "/playground-404-preview",
+  },
+  // ── Dynamic routes (multiplexed `[path]` / `[id]` / `[token]` pages) ───────
+  {
+    id: "dynamic-dashboard-id",
+    category: "dynamic",
+    label: "Dashboard [id]",
+    path: "/dashboard/{PLAYGROUND_SURVEY_ID}",
+    routeFile: "app/dashboard/[id]/page.tsx",
+  },
+  {
+    id: "dynamic-declare-id",
+    category: "dynamic",
+    label: "Declare [id]",
+    path: "/client/declare/{PLAYGROUND_ASSIGNMENT_ID}",
+    routeFile: "app/client/(workspace)/declare/[id]/page.tsx",
+  },
+  {
+    id: "dynamic-auth-sign-up",
+    category: "dynamic",
+    label: "Auth [path] · sign-up",
+    path: "/auth/sign-up",
+    routeFile: "app/auth/[path]/page.tsx",
+  },
+  {
+    id: "dynamic-auth-email-otp",
+    category: "dynamic",
+    label: "Auth [path] · email OTP",
+    path: "/auth/email-otp",
+    routeFile: "app/auth/[path]/page.tsx",
+  },
+  {
+    id: "dynamic-auth-forgot-password",
+    category: "dynamic",
+    label: "Auth [path] · forgot password",
+    path: "/auth/forgot-password",
+    routeFile: "app/auth/[path]/page.tsx",
+  },
+  {
+    id: "dynamic-auth-reset-password",
+    category: "dynamic",
+    label: "Auth [path] · reset password",
+    path: "/auth/reset-password",
+    routeFile: "app/auth/[path]/page.tsx",
+  },
+  {
+    id: "dynamic-auth-magic-link",
+    category: "dynamic",
+    label: "Auth [path] · magic link",
+    path: "/auth/magic-link",
+    routeFile: "app/auth/[path]/page.tsx",
+  },
+  {
+    id: "dynamic-auth-accept-invitation",
+    category: "dynamic",
+    label: "Auth [path] · accept invitation",
+    path: "/auth/accept-invitation",
+    routeFile: "app/auth/[path]/page.tsx",
+  },
+  {
+    id: "dynamic-auth-sign-out",
+    category: "dynamic",
+    label: "Auth [path] · sign-out",
+    path: "/auth/sign-out",
+    routeFile: "app/auth/[path]/page.tsx",
+  },
+  {
+    id: "dynamic-account-settings",
+    category: "dynamic",
+    label: "Account [path] · settings",
+    path: "/account/settings",
+    routeFile: "app/account/[path]/page.tsx",
+  },
+  {
+    id: "dynamic-account-security",
+    category: "dynamic",
+    label: "Account [path] · security",
+    path: "/account/security",
+    routeFile: "app/account/[path]/page.tsx",
+  },
+  {
+    id: "dynamic-public-survey-slug",
+    category: "dynamic",
+    label: "Survey [slug]",
+    path: "/survey/{PLAYGROUND_SURVEY_SLUG}",
+    routeFile: "app/survey/[slug]/page.tsx",
+  },
+  {
+    id: "dynamic-public-secure-token",
+    category: "dynamic",
+    label: "Secure link [token]",
+    path: "/f/{PLAYGROUND_SECURE_LINK_TOKEN}",
+    routeFile: "app/f/[token]/page.tsx",
+  },
+  {
+    id: "dynamic-legacy-invite-token",
+    category: "dynamic",
+    label: "Legacy invite [token]",
+    path: "/invite/{PLAYGROUND_LEGACY_INVITE_TOKEN}",
+    routeFile: "app/invite/[token]/page.tsx",
+  },
+  {
+    id: "dynamic-client-join",
+    category: "dynamic",
+    label: "Join (invitation entry)",
+    path: "/join",
+    routeFile: "app/join/page.tsx",
   },
 ];
 
@@ -157,7 +275,18 @@ export function resolvePlaygroundPathTemplate(template: string) {
       "{PLAYGROUND_ASSIGNMENT_ID}",
       playgroundEnv("PLAYGROUND_ASSIGNMENT_ID"),
     )
-    .replace("{PLAYGROUND_SURVEY_SLUG}", playgroundEnv("PLAYGROUND_SURVEY_SLUG"));
+    .replace(
+      "{PLAYGROUND_SURVEY_SLUG}",
+      playgroundEnv("PLAYGROUND_SURVEY_SLUG") || SANDBOX_SURVEY_SLUG,
+    )
+    .replace(
+      "{PLAYGROUND_SECURE_LINK_TOKEN}",
+      playgroundEnv("PLAYGROUND_SECURE_LINK_TOKEN") || SANDBOX_INVITE_TOKEN,
+    )
+    .replace(
+      "{PLAYGROUND_LEGACY_INVITE_TOKEN}",
+      playgroundEnv("PLAYGROUND_LEGACY_INVITE_TOKEN") || "invalid-preview-token",
+    );
 }
 
 export function resolvePlaygroundRouteFile(pathOrTemplate: string) {
@@ -181,6 +310,30 @@ export function resolvePlaygroundRouteFile(pathOrTemplate: string) {
 
   if (/^\/client\/declare\/[^/]+$/.test(pathname)) {
     return playgroundRouteFiles["/client/declare/{id}"];
+  }
+
+  if (/^\/auth\/[^/]+$/.test(pathname)) {
+    return playgroundRouteFiles["/auth/{path}"];
+  }
+
+  if (/^\/account\/[^/]+$/.test(pathname)) {
+    return playgroundRouteFiles["/account/{path}"];
+  }
+
+  if (/^\/survey\/[^/]+$/.test(pathname)) {
+    return playgroundRouteFiles["/survey/{slug}"];
+  }
+
+  if (/^\/f\/[^/]+$/.test(pathname)) {
+    return playgroundRouteFiles["/f/{token}"];
+  }
+
+  if (/^\/invite\/[^/]+$/.test(pathname)) {
+    return playgroundRouteFiles["/invite/{token}"];
+  }
+
+  if (pathname === "/join") {
+    return playgroundRouteFiles["/join"];
   }
 
   return null;

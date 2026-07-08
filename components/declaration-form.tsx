@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import {
   ArrowLeftIcon,
   ArrowRightIcon,
@@ -16,10 +16,12 @@ import { FormErrorAlert } from "@/components/form-error-alert";
 import { QuestionSequenceBadge } from "@/components/question-sequence-badge";
 import {
   buildDeclarationWizardSteps,
+  buildQuestionOrderIndex,
   clampDraftStepIndex,
   countAnsweredQuestions,
   REVIEW_SUMMARY_QUESTION_LIMIT,
   validateStepAnswers,
+  WIZARD_SIDEBAR_STEP_LIMIT,
   type DeclarationWizardStep,
 } from "@/lib/declaration-steps";
 import { portalCopy } from "@/lib/portal-copy";
@@ -130,6 +132,10 @@ export function DeclarationForm({
     () => buildDeclarationWizardSteps(questions, wizardCopy),
     [questions, wizardCopy],
   );
+  const questionOrderIndex = useMemo(
+    () => buildQuestionOrderIndex(questions),
+    [questions],
+  );
   const questionValidationCopy = useMemo(
     () => ({
       requiredFieldError: declarationForm.requiredFieldError,
@@ -142,6 +148,9 @@ export function DeclarationForm({
   );
 
   const [currentStepIndex, setCurrentStepIndex] = useState(() =>
+    clampDraftStepIndex(initialStepIndex, steps.length),
+  );
+  const [furthestStepIndex, setFurthestStepIndex] = useState(() =>
     clampDraftStepIndex(initialStepIndex, steps.length),
   );
   const [answers, setAnswers] = useState<SurveyAnswers>(() => initialAnswers ?? {});
@@ -159,6 +168,12 @@ export function DeclarationForm({
   );
   const [isPending, startTransition] = useTransition();
   const contentRef = useRef<HTMLDivElement>(null);
+  const draftSnapshotRef = useRef({
+    answers: initialAnswers ?? {},
+    stepIndex: clampDraftStepIndex(initialStepIndex, steps.length),
+  });
+
+  draftSnapshotRef.current = { answers, stepIndex: currentStepIndex };
 
   const currentStep = steps[currentStepIndex];
   const isReviewStep = currentStep?.kind === "review";
@@ -168,7 +183,56 @@ export function DeclarationForm({
     [questions, answers],
   );
   const showReviewSummary = questions.length <= REVIEW_SUMMARY_QUESTION_LIMIT;
+  const compactSidebar = steps.length > WIZARD_SIDEBAR_STEP_LIMIT;
   const isSavingDraft = isPending && !isReviewStep;
+
+  useEffect(() => {
+    if (!assignmentId || !onSaveDraft) {
+      return;
+    }
+
+    const draftAssignmentId = assignmentId;
+    const saveDraft = onSaveDraft;
+
+    function handleBeforeUnload() {
+      const { answers: latestAnswers, stepIndex } = draftSnapshotRef.current;
+      void saveDraft({
+        assignmentId: draftAssignmentId,
+        answers: latestAnswers,
+        stepIndex,
+      });
+    }
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [assignmentId, onSaveDraft]);
+
+  async function persistDraft(stepIndex: number) {
+    if (!assignmentId || !onSaveDraft) {
+      return true;
+    }
+
+    const saveResult = await onSaveDraft({
+      assignmentId,
+      answers,
+      stepIndex,
+    });
+    if (saveResult?.error) {
+      setError(saveResult.error);
+      return false;
+    }
+    if (saveResult?.savedAt) {
+      setDraftSavedAt(new Date(saveResult.savedAt));
+    }
+    return true;
+  }
+
+  function handleSaveProgress() {
+    setError(null);
+    startTransition(async () => {
+      await persistDraft(currentStepIndex);
+    });
+  }
 
   if (confirmationCode) {
     return (
@@ -282,27 +346,31 @@ export function DeclarationForm({
     }
 
     startTransition(async () => {
-      if (assignmentId && onSaveDraft) {
-        const saveResult = await onSaveDraft({
-          assignmentId,
-          answers,
-          stepIndex: currentStepIndex + 1,
-        });
-        if (saveResult?.error) {
-          setError(saveResult.error);
-          return;
-        }
-        if (saveResult?.savedAt) {
-          setDraftSavedAt(new Date(saveResult.savedAt));
-        }
+      const saved = await persistDraft(currentStepIndex + 1);
+      if (!saved) {
+        return;
       }
 
-      goToStep(Math.min(currentStepIndex + 1, steps.length - 1));
+      const nextIndex = Math.min(currentStepIndex + 1, steps.length - 1);
+      setFurthestStepIndex((current) => Math.max(current, nextIndex));
+      goToStep(nextIndex);
     });
   }
 
   function handlePrevious() {
-    goToStep(Math.max(currentStepIndex - 1, 0));
+    if (currentStepIndex === 0) {
+      return;
+    }
+
+    setError(null);
+    const previousIndex = currentStepIndex - 1;
+    startTransition(async () => {
+      const saved = await persistDraft(previousIndex);
+      if (!saved) {
+        return;
+      }
+      goToStep(previousIndex);
+    });
   }
 
   return (
@@ -326,6 +394,11 @@ export function DeclarationForm({
             <p className="text-sm text-muted-foreground">
               {wizardCopy.stepProgress(currentStepIndex + 1, steps.length)}
             </p>
+            {questions.length > 0 ? (
+              <p className="text-sm text-muted-foreground">
+                {wizardCopy.questionsAnswered(answeredCount, questions.length)}
+              </p>
+            ) : null}
             {assignmentId && draftSavedAt ? (
               <p className="text-xs text-muted-foreground">
                 {wizardCopy.draftSavedAt(formatDateTime(draftSavedAt))}
@@ -335,29 +408,42 @@ export function DeclarationForm({
         ) : undefined
       }
       sidebar={
-        <nav aria-label={wizardCopy.stepProgress(currentStepIndex + 1, steps.length)}>
-          <ol className="flex flex-col gap-4">
-            {steps.map((step, index) => {
-              const Icon = stepIcon(step);
-              return (
-                <StudioFormLayoutWizardStep
-                  key={step.id}
-                  title={step.title}
-                  description={step.description}
-                  icon={<Icon aria-hidden="true" className="size-4" />}
-                  active={index === currentStepIndex}
-                  complete={index < currentStepIndex}
-                  disabled={index > currentStepIndex}
-                  onSelect={() => {
-                    if (index <= currentStepIndex) {
-                      goToStep(index);
-                    }
-                  }}
-                />
-              );
-            })}
-          </ol>
-        </nav>
+        compactSidebar ? (
+          <div className="space-y-3 rounded-lg border bg-muted/30 p-4 text-sm">
+            <p className="font-medium">{currentStep?.title}</p>
+            <p className="text-muted-foreground">
+              {wizardCopy.stepProgress(currentStepIndex + 1, steps.length)}
+            </p>
+            <p className="text-muted-foreground">
+              {wizardCopy.questionsAnswered(answeredCount, questions.length)}
+            </p>
+          </div>
+        ) : (
+          <nav aria-label={wizardCopy.stepProgress(currentStepIndex + 1, steps.length)}>
+            <ol className="flex flex-col gap-4">
+              {steps.map((step, index) => {
+                const Icon = stepIcon(step);
+                const reachable = index <= furthestStepIndex;
+                return (
+                  <StudioFormLayoutWizardStep
+                    key={step.id}
+                    title={step.title}
+                    description={step.description}
+                    icon={<Icon aria-hidden="true" className="size-4" />}
+                    active={index === currentStepIndex}
+                    complete={index < currentStepIndex}
+                    disabled={!reachable}
+                    onSelect={() => {
+                      if (reachable) {
+                        goToStep(index);
+                      }
+                    }}
+                  />
+                );
+              })}
+            </ol>
+          </nav>
+        )
       }
       contentRef={contentRef}
     >
@@ -370,10 +456,10 @@ export function DeclarationForm({
               </p>
             </div>
             <div className="space-y-6 md:col-span-2">
-            {currentStep.questions.map((question, index) => (
+            {currentStep.questions.map((question) => (
               <DeclarationQuestionField
                 key={question.id}
-                sequenceNumber={index + 1}
+                sequenceNumber={questionOrderIndex.get(question.id) ?? 0}
                 question={question}
                 surveyId={surveyId}
                 slug={slug}
@@ -428,13 +514,16 @@ export function DeclarationForm({
               <p className="text-sm font-medium">{wizardCopy.reviewSummaryTitle}</p>
               {showReviewSummary ? (
                 <dl className="space-y-3 text-sm">
-                  {questions.map((question, index) => (
+                  {questions.map((question) => (
                     <div
                       key={question.id}
                       className="rounded-lg border bg-muted/30 px-4 py-3"
                     >
                       <dt className="flex items-start gap-2 font-medium text-foreground">
-                        <QuestionSequenceBadge number={index + 1} className="mt-0.5" />
+                        <QuestionSequenceBadge
+                          number={questionOrderIndex.get(question.id) ?? 0}
+                          className="mt-0.5"
+                        />
                         <span>{question.prompt}</span>
                       </dt>
                       <dd className="mt-1 pl-9 whitespace-pre-wrap text-muted-foreground">
@@ -488,13 +577,25 @@ export function DeclarationForm({
             <ArrowLeftIcon aria-hidden="true" />
             {wizardCopy.previous}
           </Button>
-          <Button
-            type="button"
-            className="min-h-11 touch-manipulation"
-            onClick={handleNext}
-            disabled={isPending}
-            aria-busy={isPending}
-          >
+          <div className="flex flex-col-reverse gap-3 sm:flex-row">
+            {assignmentId && onSaveDraft && !isReviewStep ? (
+              <Button
+                type="button"
+                variant="outline"
+                className="min-h-11 touch-manipulation"
+                onClick={handleSaveProgress}
+                disabled={isPending}
+              >
+                {isSavingDraft ? wizardCopy.draftSaving : wizardCopy.saveProgress}
+              </Button>
+            ) : null}
+            <Button
+              type="button"
+              className="min-h-11 touch-manipulation"
+              onClick={handleNext}
+              disabled={isPending}
+              aria-busy={isPending}
+            >
             {isPending ? (
               <>
                 <Loader2Icon aria-hidden="true" className="animate-spin" />
@@ -509,6 +610,7 @@ export function DeclarationForm({
               </>
             )}
           </Button>
+          </div>
         </div>
     </StudioFormLayoutWizardShell>
   );

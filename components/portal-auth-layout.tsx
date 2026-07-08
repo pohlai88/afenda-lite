@@ -1,40 +1,41 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { PortalAuthPhantomOwl } from "@/components/portal-auth-brand-scene";
+import {
+  PortalAccessSlot,
+  PortalAtmosphere,
+  PortalEditorialHero,
+  PortalGuardianOwl,
+  PortalSealLine,
+  type PortalAtmosphereTheme,
+} from "@/components/portal-atmosphere";
 import { BrandLogo } from "@/components/portal-brand-mark";
 import { PortalThemeToggle } from "@/components/portal-theme-toggle";
+import { useThemeControls } from "@/components/theme-provider";
 import { ShieldCheckIcon } from "lucide-react";
 
-function PortalAuthDefaultBrandPanel() {
+function resolveAtmosphereTheme(
+  resolvedTheme: string | undefined,
+): PortalAtmosphereTheme {
+  return resolvedTheme === "dark" ? "dark" : "light";
+}
+
+function PortalAuthDefaultBrand({ theme }: { theme: PortalAtmosphereTheme }) {
   return (
     <>
-      <div aria-hidden className="portal-auth-brand-spacer" />
-
-      <div className="portal-hero-stack">
-        <h1 className="sr-only">Truth is Protected</h1>
-
-        <div aria-hidden className="portal-hero-heading">
-          <span className="portal-hero-word portal-hero-truth">TRUTH</span>
-
-          <div className="portal-hero-connector">
-            <span className="portal-hero-rule" />
-            <span className="portal-hero-is">IS</span>
-            <span className="portal-hero-rule" />
-          </div>
-
-          <span className="portal-hero-word portal-hero-protected">PROTECTED</span>
-        </div>
-      </div>
-
-      <div className="portal-auth-seal-line">
-        <ShieldCheckIcon aria-hidden className="portal-auth-seal-icon" />
-        <span>SECURE · CONFIDENTIAL · VERIFIED</span>
-      </div>
+      <PortalEditorialHero theme={theme} />
+      <PortalSealLine showSeal />
     </>
   );
 }
 
+/**
+ * Auth route adapter (PA-P10 wiring).
+ *
+ * Composes production `PortalAtmosphere` with PA-P8 layout slots.
+ * Neon Auth UI is injected only as `PortalAccessSlot` children — never imported
+ * into `components/portal-atmosphere/`.
+ */
 export function PortalAuthLayout({
   children,
   headerExtra,
@@ -45,48 +46,54 @@ export function PortalAuthLayout({
   /** Replaces the default TRUTH / IS / PROTECTED poster on large screens. */
   brandPanel?: ReactNode;
 }) {
+  const { resolvedTheme } = useThemeControls();
+  const theme = resolveAtmosphereTheme(resolvedTheme);
+
   return (
-    <main className="portal-auth-vault">
+    <>
       <a href="#neon-auth-view" className="portal-skip-link">
         Skip to sign in
       </a>
 
-      <div aria-hidden="true" className="portal-auth-atmosphere" />
-      <div aria-hidden="true" className="portal-auth-gridlines" />
-      <PortalAuthPhantomOwl />
-
-      <header className="portal-auth-toolbar shrink-0">
-        <div className="portal-auth-toolbar-inner">
-          <BrandLogo href="/" context="toolbar" showName priority />
-          <PortalThemeToggle />
-        </div>
-      </header>
-
-      <div className="portal-auth-stage">
-        <div className="portal-auth-grid">
-          <section aria-label="Declaration portal" className="portal-auth-brand max-lg:hidden">
-            {brandPanel ?? <PortalAuthDefaultBrandPanel />}
-          </section>
-
-          <section
-            id="sign-in"
-            aria-label="Sign in"
-            className="portal-auth-neon-slot max-lg:order-1"
-          >
-            {headerExtra}
-            <div id="neon-auth-view" className="portal-neon-view w-full max-w-sm">
-              {children}
+      <PortalAtmosphere
+        theme={theme}
+        header={
+          <div className="portal-auth-toolbar w-full shrink-0">
+            <div className="portal-auth-toolbar-inner">
+              <BrandLogo href="/" context="toolbar" showName priority />
+              <PortalThemeToggle />
             </div>
-          </section>
-        </div>
-      </div>
-
-      <footer className="portal-auth-footer">
-        <p className="portal-auth-footer-note">
-          <ShieldCheckIcon aria-hidden="true" className="size-3 shrink-0 text-primary" />
-          <span>Protected access · Encrypted transport · Organization-managed declarations</span>
-        </p>
-      </footer>
-    </main>
+          </div>
+        }
+        layers={<PortalGuardianOwl showOwl theme={theme} />}
+        brand={brandPanel ?? <PortalAuthDefaultBrand theme={theme} />}
+        accessSlot={
+          <PortalAccessSlot>
+            <section
+              id="sign-in"
+              aria-label="Sign in"
+              className="portal-auth-neon-slot"
+            >
+              {headerExtra}
+              <div id="neon-auth-view" className="portal-neon-view w-full max-w-sm">
+                {children}
+              </div>
+            </section>
+            <footer className="portal-auth-footer">
+              <p className="portal-auth-footer-note">
+                <ShieldCheckIcon
+                  aria-hidden="true"
+                  className="size-3 shrink-0 text-primary"
+                />
+                <span>
+                  Protected access · Encrypted transport · Organization-managed
+                  declarations
+                </span>
+              </p>
+            </footer>
+          </PortalAccessSlot>
+        }
+      />
+    </>
   );
 }

@@ -14,7 +14,7 @@ Lock portal background design doctrine and governance boundary before any atmosp
 ## Authority
 
 - [ADR-Portal-BG-001: Portal Atmosphere System](../../adr/ADR-Portal-BG-001-portal-atmosphere-system.md) — **Accepted 2026-07-08**
-- Design references: `public/landing-design/dark-theme.png`, `public/landing-design/light-theme.png`
+- Design references: `public/brand/heroes/auth-hero-dark.png`, `public/brand/heroes/auth-hero-light.png`
 
 ## Design system compliance
 

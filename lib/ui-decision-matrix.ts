@@ -145,7 +145,7 @@ function row(
 const S = UI_SURFACE_REGISTRY;
 const byId = (id: string) => S.find((s) => s.surfaceId === id)!;
 
-/** Scored evaluation for all 39 surfaces. */
+/** Scored evaluation for every UI_SURFACE_REGISTRY entry. */
 export const uiEvaluationMatrix: UiEvaluationRow[] = [
   // ── Auth (Neon AuthView + PortalAuthLayout chrome) ──────────────────────
   row(byId("auth-sign-in"), [
@@ -268,6 +268,11 @@ export const uiEvaluationMatrix: UiEvaluationRow[] = [
     c("error-page-02", { PatternFit: 3, BrandFit: 3, PortalCompat: 3, A11yMobile: 4, ImplCost: 3, Consistency: 3 }, "404-style; wrong semantics for preview gate."),
     c("keep-current", { PatternFit: 4, BrandFit: 5, PortalCompat: 5, A11yMobile: 4, ImplCost: 5, Consistency: 4 }, "Custom notice page."),
   ], "empty-state-01", "empty-state-01 PatternFit 5.0 vs keep-current 4.0 — standardize notice as empty-state card.", "validated"),
+
+  row(byId("client-preview-banner"), [
+    c("keep-current", { PatternFit: 5, BrandFit: 5, PortalCompat: 5, A11yMobile: 5, ImplCost: 5, Consistency: 5 }, "PortalPreviewBanner exit strip in PortalCustomerShell during operator preview."),
+    c("empty-state-01", { PatternFit: 3, BrandFit: 4, PortalCompat: 3, A11yMobile: 4, ImplCost: 3, Consistency: 3 }, "Zero-state card pattern; wrong for persistent session chrome."),
+  ], "keep-current", "Inline banner is correct UX for preview mode; studio empty-state is layout reference only.", "validated"),
 
   row(byId("client-home-redirect"), [
     c("keep-current", { PatternFit: 5, BrandFit: 5, PortalCompat: 5, A11yMobile: 5, ImplCost: 5, Consistency: 5 }, "Server redirect to sign-in."),
@@ -413,6 +418,11 @@ export const STUDIO_IMPLEMENTATION_BY_SURFACE: Record<
   "client-declare-empty": { kind: "portal-wrapper", component: "portal-empty-state.tsx", blockSlug: "empty-state-02" },
   "client-acknowledgement": { kind: "hardcoded", component: "client-dashboard-summary.tsx", blockSlug: "form-layout-01" },
   "client-preview-unavailable": { kind: "hardcoded", component: "client-preview-unavailable-view.tsx", blockSlug: "empty-state-01" },
+  "client-preview-banner": {
+    kind: "hardcoded",
+    component: "portal-preview-banner.tsx",
+    notes: "Preview-mode exit banner; consumed by PortalCustomerShell",
+  },
   "client-home-redirect": { kind: "neon-integrated", component: "app/page.tsx redirect" },
   "client-join": { kind: "portal-wrapper", component: "portal-invitation-join-page.tsx", notes: "PortalAuthLayout + invitation stepper + PortalInvitationJoinPanel" },
   // Admin

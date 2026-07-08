@@ -16,7 +16,7 @@ import {
   isOrgAccessDeniedReason,
   isOrgSignInFrom,
 } from "@/lib/org-sign-in-entry";
-import { isPlaygroundEmbedRequest } from "@/lib/playground";
+import { resolvePlaygroundEmbedActive } from "@/lib/playground";
 import { sanitizeReturnToPath } from "@/lib/portal-routes";
 import { getAuthenticatedLandingHref } from "@/lib/portal-session-routing";
 
@@ -45,13 +45,17 @@ export default async function AuthPage({
   searchParams,
 }: {
   params: Promise<{ path: string }>;
-  searchParams: Promise<{ from?: string; reason?: string; returnTo?: string; invitationId?: string }>;
+  searchParams: Promise<{
+    from?: string;
+    reason?: string;
+    returnTo?: string;
+    invitationId?: string;
+    embed?: string;
+  }>;
 }) {
-  const [{ path }, { from, reason, returnTo: returnToRaw, invitationId }] = await Promise.all([
-    params,
-    searchParams,
-  ]);
-  const embed = await isPlaygroundEmbedRequest();
+  const [{ path }, query] = await Promise.all([params, searchParams]);
+  const { from, reason, returnTo: returnToRaw, invitationId } = query;
+  const embed = await resolvePlaygroundEmbedActive(query);
   const fromOrg = isOrgSignInFrom(from);
   const returnTo = sanitizeReturnToPath(returnToRaw);
 

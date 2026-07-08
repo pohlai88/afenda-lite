@@ -9,7 +9,8 @@
 |---------|--------|-------|
 | `npm run env:compose` | PASS | 26 keys composed |
 | `npm run check:copy` | PASS | 140 component files |
-| `npm run check:db-schema` | PASS | 11/11 migrations applied, pooler=true |
+| `npm run check:db-schema` | PASS | 12/12 migrations applied, pooler=true |
+| `npm run verify:draft-migration` | PASS | `012_assignment_draft.sql` applied |
 | `npm run build` | PASS | After fixing governance `.ts` imports + `client-preview-banner` registry |
 | `npm run test:unit` | PASS | 95 tests |
 | `npm run test:interaction` | PASS | 3 tests |
@@ -44,7 +45,8 @@ curl https://iam-check.vercel.app/api/health/readiness
 | S9 Vercel uptime monitor → `/api/health/liveness` | Ops | Before release | Dashboard config not verifiable from repo; manual check required |
 | S9 staging readiness curl | Engineering | Optional | Verified production readiness; staging URL not in local env |
 | S1 operator full login → dashboard | Engineering | Next sprint | `@journey` operator login stayed on `/auth/sign-in?from=org` locally — confirm `SHARED_ADMIN_*` matches Neon Auth production branch user |
-| S4/S7/S8 submission/receipt/review proof | Engineering | After journey green | Requires operator journey E2E or manual walkthrough |
+| S4/S7/S8 submission/receipt/review proof | Engineering | **CLOSED** | `e2e/client-journey.spec.ts` (draft resume, CDP receipt, operator submissions); `e2e/secure-file.spec.ts` (file metadata, no download) |
+| Client draft save/resume | Engineering | **CLOSED** | Migration `012_assignment_draft.sql`; `saveClientDeclarationDraftAction`; draft resume E2E |
 | `@journey` local run | Engineering | CI authority | 10/15 failed locally; treat **GitHub Actions `journey` job on `main`** as release authority |
 | CI `main` green | Engineering | TBD | Latest runs fail on `check:ui-sync` — `node --env-file=.env` missing in CI (28917462951) |
 

@@ -20,8 +20,12 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-const metricIcons: Record<"pending" | "submitted" | "dueSoon", LucideIcon> = {
+const metricIcons: Record<
+  "pending" | "inProgress" | "submitted" | "dueSoon",
+  LucideIcon
+> = {
   pending: ClipboardListIcon,
+  inProgress: ClockIcon,
   submitted: ClipboardCheckIcon,
   dueSoon: ClockIcon,
 };
@@ -44,6 +48,14 @@ export function ClientDashboardSummary({
       trendVariant: metrics.trends.pending.variant,
     },
     {
+      key: "inProgress" as const,
+      title: copy.metrics.inProgress,
+      value: metrics.inProgress,
+      description: copy.metrics.inProgressDescription,
+      trendLabel: metrics.trends.inProgress.label,
+      trendVariant: metrics.trends.inProgress.variant,
+    },
+    {
       key: "submitted" as const,
       title: copy.metrics.submitted,
       value: metrics.submitted,
@@ -63,7 +75,7 @@ export function ClientDashboardSummary({
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {metricItems.map((metric) => {
           const Icon = metricIcons[metric.key];
           return (
