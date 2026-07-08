@@ -1,4 +1,8 @@
 import type { QuestionType, SurveyQuestion } from "@/lib/question-models";
+import {
+  validateQuestionAnswer,
+  type QuestionAnswerValidationCopy,
+} from "@/lib/question-answer-validation";
 
 export type DeclarationWizardStep = {
   id: string;
@@ -108,7 +112,7 @@ export function buildDeclarationWizardSteps(
 export function validateStepAnswers(
   step: DeclarationWizardStep,
   answers: Record<string, boolean | string | undefined>,
-  requiredFieldError: string,
+  copy: QuestionAnswerValidationCopy,
 ): Record<string, string> {
   if (step.kind === "review") {
     return {};
@@ -116,10 +120,9 @@ export function validateStepAnswers(
 
   const errors: Record<string, string> = {};
   for (const question of step.questions) {
-    if (!question.required) continue;
-    const value = answers[question.id];
-    if (value === undefined || value === "") {
-      errors[question.id] = requiredFieldError;
+    const message = validateQuestionAnswer(question, answers[question.id], copy);
+    if (message) {
+      errors[question.id] = message;
     }
   }
   return errors;

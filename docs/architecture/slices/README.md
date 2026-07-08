@@ -25,5 +25,8 @@ When implementing a slice, complete its **Acceptance proof** checklist, then upd
 - [s14-observability.md](./s14-observability.md) — S14
 - [s15-e2e-journeys.md](./s15-e2e-journeys.md) — S15
 - [s16-admin-client-preview.md](./s16-admin-client-preview.md) — S16 (admin client preview + operator app shell)
+- [s17-production-acceptance-closure.md](./s17-production-acceptance-closure.md) — S17 (**in progress** — [evidence log](./s17-evidence-log.md))
+
+**Portal atmosphere (ADR-Portal-BG-001):** [portal-atmosphere/](./portal-atmosphere/README.md) — PA-P0–PA-P10
 
 Sidebar route contract: `lib/portal-nav-routes.ts` — validated by `npm run check:nav`.

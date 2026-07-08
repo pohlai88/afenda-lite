@@ -2,7 +2,7 @@ import path from "node:path";
 
 export const evidenceFixturePath = path.join(
   process.cwd(),
-  "e2e/fixtures/sample-evidence.txt",
+  "e2e/fixtures/sample-evidence.pdf",
 );
 
 export {

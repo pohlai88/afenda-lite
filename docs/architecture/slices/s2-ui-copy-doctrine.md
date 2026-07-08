@@ -37,9 +37,9 @@ Consistent layout, terminology, and accessibility across operator and client sur
 
 ## Acceptance proof
 
-- [ ] Build passes
-- [ ] Dashboard and client surfaces use declaration/client/submission language
-- [ ] No inline marketing or help copy in components
+- [x] Build passes — 2026-07-08 (S17)
+- [x] Dashboard and client surfaces use declaration/client/submission language — `check:copy` 2026-07-08
+- [x] No inline marketing or help copy in components — `check:copy` 2026-07-08
 
 ## Rollback
 

@@ -57,7 +57,7 @@ export type UiEvaluationRow = {
   gaps: string[];
 };
 
-/** Master registry — 39 active surfaces (orphan auth components removed 2026-07). */
+/** Master registry — 40 active surfaces (orphan auth components removed 2026-07). */
 export const UI_SURFACE_REGISTRY: UiSurfaceMeta[] = [
   // Auth & account (11)
   { surfaceId: "auth-sign-in", domain: "auth", route: "/auth/sign-in", currentComponent: "PortalAuthLayout + PortalNeonAuthView" },
@@ -80,6 +80,7 @@ export const UI_SURFACE_REGISTRY: UiSurfaceMeta[] = [
   { surfaceId: "client-declare-empty", domain: "client", route: "/client/declare/[id] (no data)", currentComponent: "Inline empty state" },
   { surfaceId: "client-acknowledgement", domain: "client", route: "/client", currentComponent: "ClientDashboardAcknowledgement" },
   { surfaceId: "client-preview-unavailable", domain: "client", route: "/client/preview-unavailable", currentComponent: "ClientPreviewUnavailableView" },
+  { surfaceId: "client-preview-banner", domain: "client", route: "/client (preview mode)", currentComponent: "PortalPreviewBanner" },
   { surfaceId: "client-home-redirect", domain: "client", route: "/", currentComponent: "Redirect to /auth/sign-in" },
   { surfaceId: "client-join", domain: "client", route: "/join", currentComponent: "PortalInvitationJoinPage" },
   // Admin (6)

@@ -57,7 +57,7 @@ export async function saveClientOnboardingAction(formData: FormData) {
       const parsed = parseClientOnboardingFormData(formData);
 
       if (!parsed.success) {
-        return { error: portalCopy.clientOnboarding.requiredError };
+        return { error: parsed.error };
       }
 
       const {

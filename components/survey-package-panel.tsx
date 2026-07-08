@@ -58,6 +58,13 @@ export function SurveyPackagePanel({ surveyId }: { surveyId: string }) {
   return (
     <>
       <div className="space-y-4">
+        <div className="rounded-md border border-border/60 bg-muted/30 px-3 py-2.5 text-xs text-muted-foreground">
+          <p className="font-medium text-foreground">{copy.uploadRequirementsTitle}</p>
+          <ul className="mt-1.5 list-disc space-y-1 pl-4">
+            <li>{copy.uploadRequirementsAccepted}</li>
+            <li>{copy.uploadRequirementsRejected}</li>
+          </ul>
+        </div>
         <div
           className={cn(
             "rounded-xl border border-dashed p-6 transition-colors",

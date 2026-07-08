@@ -19,9 +19,10 @@ type EvidenceAccess = {
 };
 
 function mapRegisterEvidenceParseError(error: string) {
-  return isEvidencePolicyFailureReason(error)
-    ? portalCopy.declarationForm.fileInvalid
-    : portalCopy.declarationForm.fileRequired;
+  if (isEvidencePolicyFailureReason(error)) {
+    return portalCopy.declarationForm.filePolicyError(error);
+  }
+  return portalCopy.declarationForm.fileRequired;
 }
 
 function readRegisterEvidenceInput(formData: FormData) {
@@ -104,7 +105,7 @@ export async function registerEvidenceAction(formData: FormData) {
       const questions = await listQuestionsForSurvey(surveyId);
       const question = questions.find((item) => item.id === questionId);
       if (!question || question.type !== "file") {
-        return { error: portalCopy.declarationForm.fileInvalid };
+        return { error: portalCopy.declarationForm.fileQuestionInvalid };
       }
 
       const record = await registerEvidence({

@@ -8,6 +8,7 @@ import {
   CLIENT_ONBOARDING_FORM_STEPS,
   type ClientOnboardingFormDefaults,
 } from "@/lib/client-onboarding";
+import { CLIENT_ONBOARDING } from "@/lib/form-constraints";
 import {
   ISO_COUNTRY_CODES,
   ISO_COUNTRY_LABELS,
@@ -85,8 +86,11 @@ export function ClientOnboardingForm({
   const { clientOnboarding } = portalCopy;
   const [error, setError] = useState<string | null>(null);
   const [identityConsent, setIdentityConsent] = useState(false);
+  const [additionalCountries, setAdditionalCountries] = useState<string[]>(
+    defaults?.additionalResidenceCountries ?? [],
+  );
   const [isPending, startTransition] = useTransition();
-  const selectedAdditional = new Set(defaults?.additionalResidenceCountries ?? []);
+  const selectedAdditional = new Set(additionalCountries);
   const isLastStep = stepIndex >= stepCount - 1;
   const isFirstStep = stepIndex === 0;
 
@@ -182,6 +186,7 @@ export function ClientOnboardingForm({
                   name="fullLegalName"
                   autoComplete="name"
                   required
+                  maxLength={CLIENT_ONBOARDING.fullLegalNameMax}
                   className={inputClassName}
                   defaultValue={defaults?.fullLegalName ?? ""}
                   placeholder={clientOnboarding.fullLegalNamePlaceholder}
@@ -233,21 +238,46 @@ export function ClientOnboardingForm({
                 </p>
               </div>
               <div className="grid gap-2 sm:grid-cols-2">
-                {ISO_COUNTRY_CODES.map((code) => (
+                {ISO_COUNTRY_CODES.map((code) => {
+                  const checked = selectedAdditional.has(code);
+                  const atLimit =
+                    !checked &&
+                    additionalCountries.length >=
+                      CLIENT_ONBOARDING.additionalCountriesMax;
+                  return (
                   <label
                     key={code}
-                    className="flex items-center gap-2 rounded-md border px-3 py-2 text-sm"
+                    className={cn(
+                      "flex items-center gap-2 rounded-md border px-3 py-2 text-sm",
+                      atLimit && "cursor-not-allowed opacity-50",
+                    )}
                   >
                     <input
                       type="checkbox"
                       name="additionalResidenceCountries"
                       value={code}
-                      defaultChecked={selectedAdditional.has(code)}
+                      checked={checked}
+                      disabled={atLimit}
+                      onChange={(event) => {
+                        setAdditionalCountries((current) => {
+                          if (event.target.checked) {
+                            if (
+                              current.length >=
+                              CLIENT_ONBOARDING.additionalCountriesMax
+                            ) {
+                              return current;
+                            }
+                            return [...current, code];
+                          }
+                          return current.filter((item) => item !== code);
+                        });
+                      }}
                       className="size-4 rounded border-input"
                     />
                     {ISO_COUNTRY_LABELS[code as IsoCountryCode]}
                   </label>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -301,6 +331,10 @@ export function ClientOnboardingForm({
                   autoComplete="off"
                   required
                   spellCheck={false}
+                  minLength={CLIENT_ONBOARDING.passportNumberMin}
+                  maxLength={CLIENT_ONBOARDING.passportNumberMax}
+                  pattern="[A-Za-z0-9]+"
+                  title={clientOnboarding.passportNumberDescription}
                   className={inputClassName}
                   defaultValue={defaults?.passportNumber ?? ""}
                   placeholder={clientOnboarding.passportNumberPlaceholder}
@@ -341,6 +375,7 @@ export function ClientOnboardingForm({
                   autoComplete="organization"
                   required
                   spellCheck={false}
+                  maxLength={CLIENT_ONBOARDING.entityNameMax}
                   className={inputClassName}
                   defaultValue={defaults?.entityName ?? ""}
                   placeholder={clientOnboarding.entityPlaceholder}
@@ -359,6 +394,7 @@ export function ClientOnboardingForm({
                   name="jurisdiction"
                   autoComplete="off"
                   required
+                  maxLength={CLIENT_ONBOARDING.jurisdictionMax}
                   className={inputClassName}
                   defaultValue={defaults?.jurisdiction ?? ""}
                   placeholder={clientOnboarding.jurisdictionPlaceholder}
@@ -400,6 +436,7 @@ export function ClientOnboardingForm({
                   inputMode="tel"
                   autoComplete="tel"
                   required
+                  maxLength={CLIENT_ONBOARDING.phoneMax}
                   className={inputClassName}
                   defaultValue={defaults?.phone ?? ""}
                   placeholder={clientOnboarding.phonePlaceholder}
@@ -417,6 +454,7 @@ export function ClientOnboardingForm({
                 name="notes"
                 className="min-h-28 touch-manipulation"
                 autoComplete="off"
+                maxLength={CLIENT_ONBOARDING.notesMax}
                 defaultValue={defaults?.notes ?? ""}
                 placeholder={clientOnboarding.notesPlaceholder}
               />

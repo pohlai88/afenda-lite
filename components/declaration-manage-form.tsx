@@ -11,8 +11,9 @@ import { SurveyMetadataFields } from "@/components/survey-metadata-fields";
 import { SurveyPackagePanel } from "@/components/survey-package-panel";
 import { FormErrorAlert } from "@/components/form-error-alert";
 import { portalCopy } from "@/lib/portal-copy";
+import { SURVEY_EDITOR } from "@/lib/form-constraints";
 import { Button } from "@/components/ui/button";
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import type { QuestionType } from "@/lib/question-models";
@@ -86,8 +87,10 @@ export function DeclarationManageForm({
                 id="edit-title"
                 name="title"
                 required
+                maxLength={SURVEY_EDITOR.titleMax}
                 defaultValue={title}
               />
+              <FieldDescription>{manage.titleHint}</FieldDescription>
             </Field>
             <Field>
               <FieldLabel htmlFor="edit-description">{manage.introLabel}</FieldLabel>
@@ -95,8 +98,10 @@ export function DeclarationManageForm({
                 id="edit-description"
                 name="description"
                 className="min-h-20"
+                maxLength={SURVEY_EDITOR.introMax}
                 defaultValue={description}
               />
+              <FieldDescription>{manage.introHint}</FieldDescription>
             </Field>
           </FieldGroup>
         </DeclarationSettingsSection>

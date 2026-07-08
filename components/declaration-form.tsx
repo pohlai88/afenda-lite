@@ -21,6 +21,7 @@ import {
 } from "@/lib/declaration-steps";
 import { portalCopy } from "@/lib/portal-copy";
 import type { SurveyAnswers, SurveyQuestion } from "@/lib/question-models";
+import { validateQuestionAnswer } from "@/lib/question-answer-validation";
 import {
   StudioFormLayoutWizardShell,
   StudioFormLayoutWizardStep,
@@ -110,6 +111,16 @@ export function DeclarationForm({
     () => buildDeclarationWizardSteps(questions, wizardCopy),
     [questions, wizardCopy],
   );
+  const questionValidationCopy = useMemo(
+    () => ({
+      requiredFieldError: declarationForm.requiredFieldError,
+      fileRequired: declarationForm.fileRequired,
+      yesNoRequired: declarationForm.yesNoRequired,
+      textTooShort: declarationForm.textTooShort,
+      textTooLong: declarationForm.textTooLong,
+    }),
+    [declarationForm],
+  );
 
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [answers, setAnswers] = useState<SurveyAnswers>({});
@@ -161,10 +172,13 @@ export function DeclarationForm({
   function validateAllAnswers(): Record<string, string> {
     const nextErrors: Record<string, string> = {};
     for (const question of questions) {
-      if (!question.required) continue;
-      const value = answers[question.id];
-      if (value === undefined || value === "") {
-        nextErrors[question.id] = declarationForm.requiredFieldError;
+      const message = validateQuestionAnswer(
+        question,
+        answers[question.id],
+        questionValidationCopy,
+      );
+      if (message) {
+        nextErrors[question.id] = message;
       }
     }
     return nextErrors;
@@ -227,7 +241,7 @@ export function DeclarationForm({
     const stepErrors = validateStepAnswers(
       currentStep,
       answers,
-      declarationForm.requiredFieldError,
+      questionValidationCopy,
     );
     setFieldErrors(stepErrors);
     if (Object.keys(stepErrors).length > 0) {

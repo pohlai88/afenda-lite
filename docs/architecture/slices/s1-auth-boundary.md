@@ -65,7 +65,7 @@ Neon Auth sessions with operator vs client separation.
 
 - [ ] Operator: `/org/login` → `/auth/sign-in?from=org` → `/dashboard` (or `returnTo` when provided)
 - [ ] Client: `/client/login` or `/` → `/client` or `/client/onboarding`
-- [ ] Unauthorized operator: `/org/login?reason=access-denied`
+- [x] Unauthorized operator: `/org/login?reason=access-denied` — smoke E2E 2026-07-08
 - [ ] Client session scoped to client routes only
 
 ## Rollback

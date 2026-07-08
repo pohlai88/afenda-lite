@@ -17,10 +17,11 @@ Production branch (as of setup): `verify_email_on_sign_up: true`, `require_email
 Because verification is **not required** before sign-in, the `/join` flow is:
 
 1. Sign up (`AuthView` sign-up)
-2. Sign in (AuthView redirects here after sign-up)
+2. Verify email (`AuthView` email-otp) — **required before org accept** (Neon returns 403 otherwise)
 3. Accept invitation
+4. Sign in only if returning with an existing account
 
-No custom verification UI in the portal — Neon Auth UI handles auth forms; optional verification emails come from Neon.
+No custom verification UI beyond Neon Auth `AuthView`; OTP email comes from `auth@mail.myneon.app`.
 
 ## Trusted domains
 

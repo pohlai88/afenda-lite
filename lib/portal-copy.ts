@@ -6,6 +6,14 @@
  * - Organization users: sign in at `/org/login`, manage at `/dashboard/*`
  */
 
+import { EVIDENCE_ACCEPTANCE } from "@/lib/evidence-policy";
+import {
+  CLIENT_INVITE,
+  CLIENT_ONBOARDING,
+  SURVEY_EDITOR,
+  SURVEY_TEXT_ANSWER_MAX,
+} from "@/lib/form-constraints";
+
 export const PORTAL_NAME = "Client Declaration Portal";
 export const CLIENT_PORTAL_ACK_VERSION = "2026-01";
 const CLIENT_PORTAL_EYEBROW = "Client portal";
@@ -110,6 +118,11 @@ export const portalCopy = {
       "Codes are sent from our secure auth service. Do not share verification codes with anyone.",
     rateLimitHint:
       "Too many attempts? Wait a few minutes, then request a new code.",
+    codeExpiryHint: "Verification codes expire after 15 minutes.",
+  },
+
+  signUp: {
+    passwordRequirements: "Use at least 8 characters for your password.",
   },
 
   organizationAuth: {
@@ -365,19 +378,29 @@ export const portalCopy = {
       declarationIdHint:
         "System-assigned UUID for this declaration. Use reference or case number for your own identifiers.",
       referenceNumber: "Reference number",
+      referenceNumberHint: `Up to ${SURVEY_EDITOR.referenceMax} characters.`,
       caseNumber: "Case number",
+      caseNumberHint: `Up to ${SURVEY_EDITOR.referenceMax} characters.`,
       effectiveDate: "Effective date",
+      effectiveDateHint: "Optional. YYYY-MM-DD.",
       submitBefore: "Submit before",
+      submitBeforeHint:
+        "Optional declaration-wide deadline shown to clients. Submissions are blocked after this date.",
       surveyorTitle: "Surveyor (principal)",
       surveyorName: "Surveyor name",
+      surveyorNameHint: `Up to ${SURVEY_EDITOR.partyNameMax} characters.`,
       surveyorOrg: "Surveyor organization",
+      surveyorOrgHint: `Up to ${SURVEY_EDITOR.partyNameMax} characters.`,
       surveyeeTitle: "Surveyee (declarant)",
       surveyeeIndividual: "Individual name",
+      surveyeeIndividualHint: `Up to ${SURVEY_EDITOR.partyNameMax} characters.`,
       surveyeeOrg: "Organization name",
+      surveyeeOrgHint: `Up to ${SURVEY_EDITOR.partyNameMax} characters.`,
       purpose: "Purpose",
+      purposeHint: `Up to ${SURVEY_EDITOR.purposeMax.toLocaleString()} characters.`,
       purposePlaceholder: "Why this declaration is required…",
       categories: "Categories",
-      categoriesHint: "Comma-separated labels (e.g. KYC, compliance, annual)",
+      categoriesHint: `Comma-separated labels, up to ${SURVEY_EDITOR.categoriesMax} items (${SURVEY_EDITOR.categoryMax} characters each). e.g. KYC, compliance, annual`,
       categoriesPlaceholder: "KYC, compliance",
       emptyValue: "Not set",
     },
@@ -408,6 +431,11 @@ export const portalCopy = {
       uploading: "Reading file…",
       uploadHint:
         "Select a .json file. You will review validation results before ingest starts.",
+      uploadRequirementsTitle: "Package requirements",
+      uploadRequirementsAccepted:
+        "Accepted: CDP version 1.0 JSON with at least one question and a declaration title.",
+      uploadRequirementsRejected:
+        "Rejected: invalid JSON, wrong schema version, missing title, or empty question list.",
       createAssignment: "Create client assignment from package",
       createAssignmentHint:
         "When the package includes assignment.clientEmail, also create a pending client assignment.",
@@ -507,7 +535,9 @@ export const portalCopy = {
       title: "Declaration settings",
       description: "Update case details, title, intro, and questions.",
       titleLabel: "Title",
+      titleHint: `Up to ${SURVEY_EDITOR.titleMax} characters. Shown to declarants.`,
       introLabel: "Intro (optional)",
+      introHint: `Up to ${SURVEY_EDITOR.introMax.toLocaleString()} characters. Shown below the title.`,
       questionLabel: "Declaration prompt",
       save: "Save changes",
       sections: {
@@ -558,19 +588,22 @@ export const portalCopy = {
     yesLabel: "Yes",
     noLabel: "No",
     textPlaceholder: "Enter your response…",
-    fileHint: "Select a file to record its name and type",
-    fileNote:
-      "The file itself is not uploaded — only its name and type are saved. Provide the original document to your organization separately.",
-    fileRequired: "Select a file before continuing.",
+    fileHint: "Select a PDF to record its name and type",
+    fileRequirementsTitle: "File requirements",
+    fileAcceptanceAccepted: `Accepted: ${EVIDENCE_ACCEPTANCE.format} only, ${EVIDENCE_ACCEPTANCE.maxSizeLabel} maximum.`,
+    fileAcceptanceRejected: `Rejected: images, Word/Excel documents, and any file over ${EVIDENCE_ACCEPTANCE.maxSizeLabel}.`,
+    fileNotUploadedNote:
+      "The file itself is not uploaded — only its name and type are saved.",
+    fileRequired: "Select a PDF before continuing.",
     fileRegistering: "Recording file details…",
     filePolicyError: (reason: "size" | "mime" | "extension") => {
       switch (reason) {
         case "size":
-          return "File is too large (maximum 10 MB). Choose a smaller file.";
+          return `File exceeds the ${EVIDENCE_ACCEPTANCE.maxSizeLabel} limit. Choose a smaller PDF.`;
         case "mime":
-          return "File type not supported. Use PDF, JPEG, PNG, GIF, WebP, or plain text.";
+          return `Only ${EVIDENCE_ACCEPTANCE.format} files are accepted. Choose a .pdf file.`;
         case "extension":
-          return "File extension not allowed. Use PDF or a common image format.";
+          return `Only ${EVIDENCE_ACCEPTANCE.format} files are accepted. The filename must end with .pdf.`;
       }
     },
     fileEvidenceMissing:
@@ -578,6 +611,13 @@ export const portalCopy = {
     fileEvidenceMismatch:
       "File record does not match this question. Select the file again.",
     fileQuestionInvalid: "This question does not accept file references.",
+    yesNoHint: "Select Yes or No.",
+    yesNoRequired: "Select Yes or No before continuing.",
+    textTooShort: (min: number) =>
+      `Enter at least ${min.toLocaleString()} characters.`,
+    textTooLong: (max: number) =>
+      `Keep your answer to ${max.toLocaleString()} characters or fewer.`,
+    textAnswerMaxHint: `Up to ${SURVEY_TEXT_ANSWER_MAX.toLocaleString()} characters unless a shorter limit is shown.`,
     requiredFieldError: "This field is required.",
     requiredField: (label: string) => `Complete required field: ${label}`,
     submitError: "Could not submit. Check your answers and try again.",
@@ -594,8 +634,7 @@ export const portalCopy = {
       stepTextDescription:
         "Provide open responses where requested. Include only information you are authorized to declare.",
       stepFileTitle: "Supporting documents",
-      stepFileDescription:
-        "For each question, select a file to record its name and type. Original files are not uploaded to the portal.",
+      stepFileDescription: `For each question, select a ${EVIDENCE_ACCEPTANCE.format} (${EVIDENCE_ACCEPTANCE.maxSizeLabel} maximum). Original files are not uploaded to the portal.`,
       stepReviewTitle: "Review and submit",
       stepReviewDescription:
         "Confirm your answers before submitting your declaration.",
@@ -614,7 +653,12 @@ export const portalCopy = {
 
   questions: {
     editorLabel: "Questions",
-    editorHint: "Yes/no, text, and file-reference questions for recipients.",
+    editorHint:
+      "Yes/no, text, and file-reference questions for recipients. File questions accept PDF metadata only (1 MB max).",
+    promptHint: `Up to ${SURVEY_EDITOR.promptMax.toLocaleString()} characters per prompt.`,
+    helpTextHint: `Up to ${SURVEY_EDITOR.helpTextMax.toLocaleString()} characters. Shown below the prompt.`,
+    placeholderHint: `Text questions only. Up to ${SURVEY_EDITOR.placeholderMax} characters.`,
+    textBoundsHint: `Optional bounds for text answers (0–${SURVEY_EDITOR.textBoundMax.toLocaleString()}). Default max is ${SURVEY_TEXT_ANSWER_MAX.toLocaleString()} when unset.`,
     questionNumber: (n: number) => `Question ${n}`,
     promptPlaceholder: "Enter the question prompt…",
     addQuestion: "Add question",
@@ -625,7 +669,6 @@ export const portalCopy = {
     helpTextLabel: "Help text",
     helpTextPlaceholder: "Shown below the question prompt…",
     placeholderLabel: "Placeholder",
-    placeholderHint: "Text questions only",
     minLengthLabel: "Min length",
     maxLengthLabel: "Max length",
     types: {
@@ -814,6 +857,10 @@ export const portalCopy = {
       "Creates the client account and assignment. Copy the access message manually until MailerSend is configured.",
     fullNameLabel: "Full name",
     fullNamePlaceholder: "Alex Morgan",
+    fullNameHint: `Up to ${CLIENT_INVITE.fullNameMax} characters.`,
+    emailHint: `Valid email address, up to ${CLIENT_INVITE.emailMax} characters.`,
+    inviteExpiryHint: `Registration links expire after ${CLIENT_INVITE.expiresInDays} days.`,
+    dueDateHint: "Optional. Must be a future date in YYYY-MM-DD format.",
     issueSubmit: "Register client",
     issueSubmitWithEmail: "Register & send access email",
     issueSubmitting: "Registering client…",
@@ -932,7 +979,7 @@ export const portalCopy = {
       "Confirm your legal name and residence. These details verify who is making declarations on this account.",
     fullLegalNameLabel: "Full legal name",
     fullLegalNameDescription:
-      "As it appears on your passport or national identity document. Confirm or correct the name from your invitation.",
+      `As it appears on your passport or national identity document. Up to ${CLIENT_ONBOARDING.fullLegalNameMax} characters.`,
     fullLegalNamePlaceholder: "Alex Morgan",
     nationalityLabel: "Nationality",
     nationalityDescription:
@@ -942,7 +989,7 @@ export const portalCopy = {
       "Your primary country of tax or legal residence.",
     additionalResidenceLabel: "Additional countries of residence (optional)",
     additionalResidenceDescription:
-      "Select any other countries where you have tax or legal residence relevant to your declarations.",
+      `Select up to ${CLIENT_ONBOARDING.additionalCountriesMax} other countries where you have tax or legal residence relevant to your declarations.`,
     countrySelectPlaceholder: "Select country",
     passportSectionTitle: "Passport details",
     passportSectionDescription:
@@ -952,7 +999,7 @@ export const portalCopy = {
       "Country that issued your passport.",
     passportNumberLabel: "Passport number",
     passportNumberDescription:
-      "As printed on your passport. Stored securely for organizational review only.",
+      `${CLIENT_ONBOARDING.passportNumberMin}–${CLIENT_ONBOARDING.passportNumberMax} letters and numbers only, as printed on your passport. Document scans are not uploaded.`,
     passportNumberPlaceholder: "E1234567",
     identityConsentLabel:
       "I confirm this identity information is accurate and authorize its processing for declaration review by my organization.",
@@ -964,19 +1011,19 @@ export const portalCopy = {
       "The organization or person making declarations on this account. Incorrect entity details may affect organizational review of your attestations.",
     phoneLabel: "Phone number",
     phoneDescription:
-      "Include country code. Required for declaration-related contact only — not for marketing or unrelated outreach.",
+      `Include country code. Up to ${CLIENT_ONBOARDING.phoneMax} characters. Required for declaration-related contact only — not for marketing.`,
     phonePlaceholder: "+65 9123 4567",
     entityLabel: "Legal entity name",
     entityDescription:
-      "Use the registered legal name as it appears on official records or filings. This name is shown on your submission records.",
+      `Use the registered legal name as it appears on official records or filings. Up to ${CLIENT_ONBOARDING.entityNameMax} characters.`,
     entityPlaceholder: "Acme Holdings Pte. Ltd.",
     jurisdictionLabel: "Governing jurisdiction",
     jurisdictionDescription:
-      "Country or region whose laws govern your declarations and review (e.g. Singapore, US-CA, England & Wales). Your organization's requirements may depend on applicable local law.",
+      `Country or region whose laws govern your declarations and review (e.g. Singapore, US-CA, England & Wales). Up to ${CLIENT_ONBOARDING.jurisdictionMax} characters.`,
     jurisdictionPlaceholder: "Singapore",
     notesLabel: "Notes for your reviewer",
     notesDescription:
-      "Optional. Trading names, group structure, or other context your reviewer should know before reviewing submissions. Do not include sensitive personal data unrelated to the declaration.",
+      `Optional. Up to ${CLIENT_ONBOARDING.notesMax.toLocaleString()} characters. Trading names, group structure, or other context your reviewer should know.`,
     notesPlaceholder:
       "e.g. Declarations made on behalf of Acme Asia subsidiary…",
     steps: [
@@ -1059,7 +1106,13 @@ export const portalCopy = {
       "This declaration is past its submission deadline and can no longer be submitted.",
     receiptTitle: "Submission receipt",
     receiptDescription: "Keep this confirmation code for your records.",
-    dueLabel: (date: string) => `Due ${date}`,
+    dueLabel: (date: string) => `Assignment due ${date}`,
+    submitBeforeLabel: (date: string) => `Submit before ${date}`,
+    deadlineRequirementsTitle: "Submission deadline",
+    deadlineExpiredBanner:
+      "This assignment is past its deadline. You can review it here, but new submissions are blocked.",
+    deadlineDueSoonBanner: (date: string) =>
+      `Submit before ${date}. Submissions are blocked after the deadline.`,
     signOut: "Sign out",
     backToAssignments: "Back to assignments",
     metrics: {

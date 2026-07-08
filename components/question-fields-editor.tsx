@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { ChevronDownIcon, PlusIcon, Trash2Icon } from "lucide-react";
 import type { QuestionType } from "@/lib/question-models";
 import type { QuestionConfig } from "@/lib/survey-package";
+import { SURVEY_EDITOR } from "@/lib/form-constraints";
 import { portalCopy } from "@/lib/portal-copy";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -81,6 +82,7 @@ export function QuestionFieldsEditor({
       <div>
         <Label>{copy.editorLabel}</Label>
         <p className="text-xs text-muted-foreground">{copy.editorHint}</p>
+        <p className="text-xs text-muted-foreground">{copy.promptHint}</p>
       </div>
       {rows.map((row, index) => (
         <div key={index} className="rounded-lg border p-3">
@@ -104,6 +106,7 @@ export function QuestionFieldsEditor({
                     updateRow(index, { prompt: event.target.value })
                   }
                   placeholder={copy.promptPlaceholder}
+                  maxLength={SURVEY_EDITOR.promptMax}
                   required
                   aria-label={`${copy.questionNumber(index + 1)} prompt`}
                 />
@@ -152,6 +155,7 @@ export function QuestionFieldsEditor({
                 <CollapsibleContent className="mt-3 space-y-3 border-t pt-3">
                   <div className="space-y-2">
                     <Label htmlFor={`helpText-${index}`}>{copy.helpTextLabel}</Label>
+                    <p className="text-xs text-muted-foreground">{copy.helpTextHint}</p>
                     <Textarea
                       id={`helpText-${index}`}
                       value={row.config.helpText ?? ""}
@@ -161,6 +165,7 @@ export function QuestionFieldsEditor({
                         })
                       }
                       placeholder={copy.helpTextPlaceholder}
+                      maxLength={SURVEY_EDITOR.helpTextMax}
                       className="min-h-14"
                     />
                   </div>
@@ -170,6 +175,9 @@ export function QuestionFieldsEditor({
                         <Label htmlFor={`placeholder-${index}`}>
                           {copy.placeholderLabel}
                         </Label>
+                        <p className="text-xs text-muted-foreground">
+                          {copy.placeholderHint}
+                        </p>
                         <Input
                           id={`placeholder-${index}`}
                           value={row.config.placeholder ?? ""}
@@ -178,7 +186,13 @@ export function QuestionFieldsEditor({
                               placeholder: event.target.value || undefined,
                             })
                           }
+                          maxLength={SURVEY_EDITOR.placeholderMax}
                         />
+                      </div>
+                      <div className="space-y-2 sm:col-span-3">
+                        <p className="text-xs text-muted-foreground">
+                          {copy.textBoundsHint}
+                        </p>
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor={`minLength-${index}`}>
@@ -188,6 +202,7 @@ export function QuestionFieldsEditor({
                           id={`minLength-${index}`}
                           type="number"
                           min={0}
+                          max={SURVEY_EDITOR.textBoundMax}
                           value={row.config.minLength ?? ""}
                           onChange={(event) =>
                             updateConfig(index, {
@@ -206,6 +221,7 @@ export function QuestionFieldsEditor({
                           id={`maxLength-${index}`}
                           type="number"
                           min={1}
+                          max={SURVEY_EDITOR.textBoundMax}
                           value={row.config.maxLength ?? ""}
                           onChange={(event) =>
                             updateConfig(index, {
