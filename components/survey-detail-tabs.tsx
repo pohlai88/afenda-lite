@@ -7,11 +7,16 @@ import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-const TAB_VALUES = ["manage", "share", "submissions", "danger"] as const;
+const TAB_VALUES = ["manage", "share", "submissions"] as const;
 type TabValue = (typeof TAB_VALUES)[number];
 
 function isTabValue(value: string | null): value is TabValue {
   return TAB_VALUES.includes(value as TabValue);
+}
+
+function resolveTab(value: string | null): TabValue {
+  if (value === "danger") return "manage";
+  return isTabValue(value) ? value : "manage";
 }
 
 export function SurveyDetailTabs(props: {
@@ -22,13 +27,10 @@ export function SurveyDetailTabs(props: {
     shareHint: string;
     submissions: string;
     submissionsHint: string;
-    danger: string;
-    dangerHint: string;
   };
   manage: ReactNode;
   share: ReactNode;
   submissions: ReactNode;
-  danger: ReactNode;
 }) {
   return (
     <Suspense fallback={<SurveyDetailTabsFallback labels={props.labels} />}>
@@ -46,11 +48,9 @@ function SurveyDetailTabsFallback({
     <Card className="mt-2 overflow-hidden py-0">
       <div className="border-b px-4 py-4 sm:px-6">
         <div className="flex gap-4 overflow-x-auto">
-          {[labels.manage, labels.share, labels.submissions, labels.danger].map(
-            (label) => (
-              <Skeleton key={label} className="h-14 w-28 shrink-0 rounded-md" />
-            ),
-          )}
+          {[labels.manage, labels.share, labels.submissions].map((label) => (
+            <Skeleton key={label} className="h-14 w-28 shrink-0 rounded-md" />
+          ))}
         </div>
       </div>
       <div className="space-y-3 px-4 py-6 sm:px-6">
@@ -69,13 +69,10 @@ type SurveyDetailTabsProps = {
     shareHint: string;
     submissions: string;
     submissionsHint: string;
-    danger: string;
-    dangerHint: string;
   };
   manage: ReactNode;
   share: ReactNode;
   submissions: ReactNode;
-  danger: ReactNode;
 };
 
 function SurveyDetailTabsContent({
@@ -83,22 +80,27 @@ function SurveyDetailTabsContent({
   manage,
   share,
   submissions,
-  danger,
 }: SurveyDetailTabsProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
   const requested = searchParams.get("tab");
-  const activeTab = isTabValue(requested) ? requested : "manage";
+  const activeTab = resolveTab(requested);
 
-  // Legacy links used `#share`; normalize to `?tab=share`.
+  // Legacy links used `#share` or `?tab=danger`; normalize to query tabs.
   useEffect(() => {
     if (typeof window === "undefined") return;
+
     const hash = window.location.hash.replace("#", "");
-    if (!isTabValue(hash)) return;
-    if (searchParams.get("tab") === hash) return;
+    const tabParam = searchParams.get("tab");
+    const legacyTarget =
+      tabParam === "danger" ? "manage" : isTabValue(hash) ? hash : null;
+
+    if (!legacyTarget) return;
+    if (tabParam === legacyTarget) return;
+
     const params = new URLSearchParams(searchParams.toString());
-    params.set("tab", hash);
+    params.set("tab", legacyTarget);
     router.replace(`${pathname}?${params.toString()}`, { scroll: false });
   }, [pathname, router, searchParams]);
 
@@ -131,11 +133,6 @@ function SurveyDetailTabsContent({
               title={labels.submissions}
               hint={labels.submissionsHint}
             />
-            <DetailTabTrigger
-              value="danger"
-              title={labels.danger}
-              hint={labels.dangerHint}
-            />
           </TabsList>
           <ScrollBar orientation="horizontal" />
         </ScrollArea>
@@ -147,9 +144,6 @@ function SurveyDetailTabsContent({
         </TabsContent>
         <TabsContent value="submissions" className="mt-0 min-w-0 px-4 py-6 sm:px-6">
           {submissions}
-        </TabsContent>
-        <TabsContent value="danger" className="mt-0 min-w-0 px-4 py-6 sm:px-6">
-          {danger}
         </TabsContent>
       </Tabs>
     </Card>

@@ -86,6 +86,7 @@ npm run studio:install-block -- statistics-component-03
 | `datatable-component-04` | **Installed** | `components/shadcn-studio/blocks/datatable-user.tsx` → `org-client-tables.tsx` |
 | `statistics-component-03` | **Installed** | `components/shadcn-studio/blocks/statistics-card-03.tsx` → `portal-statistics-card.tsx` |
 | `form-layout-01` | **Installed** | `components/shadcn-studio/blocks/form-layout-01/form-layout-section.tsx` → `portal-form-section.tsx` |
+| `form-layout-02` | **Installed** | `components/shadcn-studio/blocks/form-layout-02/form-layout-section.tsx` → `declaration-settings-section.tsx` |
 | `empty-state-01` | Wrapper | `components/portal-empty-state.tsx` |
 | `empty-state-02` | Wrapper | `components/portal-empty-state-cta.tsx` |
 | `error-page-02` | Wrapper | `components/portal-not-found-page.tsx` |

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "syncedAt": "2026-07-08T01:00:00.000Z",
+  "syncedAt": "2026-07-08T01:27:39.461Z",
   "project": {
     "projectId": "young-hat-54755363",
     "projectName": "iam-check",
@@ -54,6 +54,12 @@
     "https://iam-check.vercel.app",
     "http://localhost:3000"
   ],
+  "allowLocalhost": true,
+  "productionChecklist": {
+    "applicationName": "Client Declaration Portal",
+    "emailProviderPolicy": "shared-otp-waiver",
+    "requireLocalhostDisabledAtCutover": true
+  },
   "ui": {
     "basePath": "/auth",
     "accountBasePath": "/account",
@@ -68,11 +74,5 @@
       "signUp": true,
       "social": false
     }
-  },
-  "allowLocalhost": true,
-  "productionChecklist": {
-    "applicationName": "Client Declaration Portal",
-    "emailProviderPolicy": "shared-otp-waiver",
-    "requireLocalhostDisabledAtCutover": true
   }
 }

@@ -200,7 +200,7 @@ export const uiEvaluationMatrix: UiEvaluationRow[] = [
   ], "multi-step-form-01", "Beats keep-current on PatternFit (+2) for step navigation; loses ImplCost (-2) — adopt stepper chrome, keep server actions.", "validated", ["Billing/payment steps in block must be stripped"]),
 
   row(byId("client-profile"), [
-    c("form-layout-01", { PatternFit: 5, BrandFit: 5, PortalCompat: 5, A11yMobile: 5, ImplCost: 5, Consistency: 5 }, "Already adopted via PortalFormSection."),
+    c("form-layout-01", { PatternFit: 5, BrandFit: 5, PortalCompat: 5, A11yMobile: 5, ImplCost: 5, Consistency: 5 }, "PortalFormSection + PortalProfileField read-only grid."),
     c("form-layout-02", { PatternFit: 4, BrandFit: 4, PortalCompat: 4, A11yMobile: 4, ImplCost: 3, Consistency: 4 }, "Three-section settings; overkill for declarant profile."),
     c("keep-current", { PatternFit: 4, BrandFit: 5, PortalCompat: 5, A11yMobile: 4, ImplCost: 5, Consistency: 5 }, "ClientDeclarantProfileView uses PortalFormSection."),
   ], "form-layout-01", "form-layout-01 and keep-current tie on weighted score; block is canonical pattern name.", "validated"),
@@ -363,7 +363,7 @@ export const STUDIO_IMPLEMENTATION_BY_SURFACE: Record<
   // Client
   "client-dashboard": { kind: "studio-installed", component: "client-dashboard-summary.tsx → statistics-card-03.tsx", blockSlug: "statistics-component-03" },
   "client-onboarding": { kind: "hardcoded", component: "client-onboarding-progress.tsx", blockSlug: "multi-step-form-01", notes: "Custom timeline; stepper block not installed" },
-  "client-profile": { kind: "studio-installed", component: "client-declarant-profile-view.tsx → form-layout-section.tsx", blockSlug: "form-layout-01" },
+  "client-profile": { kind: "studio-installed", component: "client-declarant-profile-view.tsx → form-layout-section.tsx + portal-profile-field.tsx", blockSlug: "form-layout-01", notes: "Summary card inspired by account-settings-01 personal-info chrome; read-only Field+Input rows" },
   "client-declare": { kind: "hardcoded", component: "client-declaration-form.tsx", blockSlug: "form-layout-01" },
   "client-declare-receipt": { kind: "hardcoded", component: "confirmation-receipt.tsx", blockSlug: "empty-state-01" },
   "client-declare-empty": { kind: "portal-wrapper", component: "portal-empty-state.tsx", blockSlug: "empty-state-02" },
@@ -373,7 +373,7 @@ export const STUDIO_IMPLEMENTATION_BY_SURFACE: Record<
   // Admin
   "admin-dashboard": { kind: "studio-installed", component: "operator-dashboard-page-view.tsx", blockSlug: "datatable-component-01", notes: "StudioDataTable + StudioStatisticsCard KPI row" },
   "admin-clients": { kind: "studio-installed", component: "org-client-tables.tsx", blockSlug: "datatable-component-04", notes: "StudioFilterDataTable" },
-  "admin-declaration-detail": { kind: "hardcoded", component: "operator-declaration-detail-view.tsx", blockSlug: "dashboard-shell-05", notes: "Raw Table for submissions tab" },
+  "admin-declaration-detail": { kind: "studio-installed", component: "operator-declaration-detail-view.tsx", blockSlug: "form-layout-02", notes: "form-layout-02 settings sections + datatable-component-01 submissions + danger footer" },
   "admin-create-declaration": { kind: "studio-installed", component: "operator-dashboard-page-view.tsx → form-layout-section.tsx", blockSlug: "form-layout-01" },
   "admin-issue-invite": { kind: "studio-installed", component: "operator-clients-page-view.tsx → form-layout-section.tsx", blockSlug: "form-layout-01" },
   "admin-access-share": { kind: "hardcoded", component: "client-access-share-panel.tsx", blockSlug: "form-layout-02" },

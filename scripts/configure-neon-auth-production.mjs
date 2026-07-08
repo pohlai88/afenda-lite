@@ -51,11 +51,25 @@ function runNeon(commandArgs) {
     console.log("[dry-run]", "npx neon@latest", ...commandArgs, ...neonArgs);
     return "";
   }
-  return execFileSync("npx", ["neon@latest", ...commandArgs, ...neonArgs], {
-    env: { ...process.env, NEON_API_KEY: apiKey },
-    encoding: "utf8",
-    shell: true,
-  });
+  try {
+    return execFileSync("npx", ["neon@latest", ...commandArgs, ...neonArgs], {
+      env: { ...process.env, NEON_API_KEY: apiKey },
+      encoding: "utf8",
+      shell: true,
+    });
+  } catch (error) {
+    const stderr = error.stderr?.toString?.() ?? "";
+    if (
+      commandArgs[0] === "neon-auth" &&
+      commandArgs[1] === "domain" &&
+      commandArgs[2] === "add" &&
+      (stderr.includes("DOMAIN_ALREADY_EXISTS") || stderr.includes("Domain already exists"))
+    ) {
+      console.log("Trusted domain already configured — skipping.");
+      return "";
+    }
+    throw error;
+  }
 }
 
 async function patchPlugin(path, body, label) {

@@ -14,6 +14,7 @@
     "build:check": "npm run checks && npm run build",
     "checks": "node scripts/run-checks.mjs",
     "sync:neon-auth-manifest": "node scripts/sync-neon-auth-manifest.mjs",
+    "validate:neon-env": "node scripts/validate-neon-env.mjs",
     "audit:neon-auth-production": "node scripts/audit-neon-auth-production.mjs",
     "configure:neon-auth-production": "node scripts/configure-neon-auth-production.mjs",
     "seed:admin": "node scripts/seed-admin.mjs",

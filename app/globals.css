@@ -899,6 +899,19 @@
     @apply font-medium text-primary underline-offset-4 transition-colors duration-200 hover:text-primary/80 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring;
   }
 
+  /* Client invitation join — editorial hero on vault brand column */
+  .portal-invitation-hero-stack {
+    @apply flex max-w-lg flex-col items-start gap-4;
+  }
+
+  .portal-invitation-hero-title {
+    @apply font-heading text-3xl font-semibold tracking-tight text-balance xl:text-4xl;
+  }
+
+  .portal-invitation-hero-description {
+    @apply max-w-md text-body text-muted-foreground text-pretty;
+  }
+
   /* Neon Auth page shell — semantic tokens; AuthView card uses @neondatabase/auth-ui defaults */
   .neon-auth-page {
     @apply relative flex min-h-svh w-full flex-col bg-background text-foreground;

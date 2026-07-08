@@ -471,13 +471,11 @@ export const portalCopy = {
     },
     tabs: {
       manage: "Settings",
-      manageHint: "Case details, questions, and package",
+      manageHint: "Package, case metadata, questions, and delete",
       share: "Share",
       shareHint: "Client sign-in and invitations",
       submissions: "Submissions",
       submissionsHint: "Completed declarations",
-      danger: "Delete",
-      dangerHint: "Permanently remove this declaration",
     },
     emailLog: {
       title: "Recorded invitations",
@@ -494,6 +492,9 @@ export const portalCopy = {
       answersTitle: "Answers",
       tableCode: "Confirmation",
       tableSubmitted: "Submitted",
+      viewAnswers: "View answers",
+      hideAnswers: "Hide answers",
+      noAnswers: "No answers recorded",
     },
     manage: {
       title: "Declaration settings",

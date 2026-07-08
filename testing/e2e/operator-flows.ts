@@ -87,7 +87,7 @@ export async function createDeclaration(page: Page, title: string) {
 
 export async function openSurveyTab(
   page: Page,
-  tab: "manage" | "share" | "submissions" | "danger",
+  tab: "manage" | "share" | "submissions",
 ) {
   const labels = portalCopy.declarationDetail.tabs;
   const pattern =
@@ -95,9 +95,7 @@ export async function openSurveyTab(
       ? new RegExp(labels.manage, "i")
       : tab === "share"
         ? new RegExp(labels.share, "i")
-        : tab === "submissions"
-          ? new RegExp(labels.submissions, "i")
-          : new RegExp(labels.danger, "i");
+        : new RegExp(labels.submissions, "i");
   await page.getByRole("tab", { name: pattern }).click();
 }
 

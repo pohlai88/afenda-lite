@@ -5,6 +5,10 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { PortalStatisticsCard } from "@/components/portal-statistics-card";
+import {
+  PortalProfileField,
+  PortalProfileFieldGroup,
+} from "@/components/portal-profile-field";
 import type { ClientProfile } from "@/lib/clients";
 import type { ClientDashboardMetrics } from "@/lib/client-dashboard-metrics";
 import { portalCopy } from "@/lib/portal-copy";
@@ -15,23 +19,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-
-function DeclarantField({
-  label,
-  value,
-}: {
-  label: string;
-  value: string | null | undefined;
-}) {
-  if (!value) return null;
-
-  return (
-    <div className="rounded-lg border bg-muted/30 px-4 py-3">
-      <dt className="text-xs font-medium text-muted-foreground">{label}</dt>
-      <dd className="mt-1 text-sm font-medium text-foreground">{value}</dd>
-    </div>
-  );
-}
 
 const metricIcons: Record<"pending" | "submitted" | "dueSoon", LucideIcon> = {
   pending: ClipboardListIcon,
@@ -102,20 +89,20 @@ export function ClientDashboardSummary({
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <dl className="grid gap-3 sm:grid-cols-2">
-              <DeclarantField
+            <PortalProfileFieldGroup className="gap-4">
+              <PortalProfileField
                 label={copy.declarantFullNameLabel}
                 value={profile.fullLegalName}
               />
-              <DeclarantField
+              <PortalProfileField
                 label={copy.declarantEntityLabel}
                 value={profile.entityName}
               />
-              <DeclarantField
+              <PortalProfileField
                 label={copy.declarantJurisdictionLabel}
                 value={profile.jurisdiction}
               />
-            </dl>
+            </PortalProfileFieldGroup>
           </CardContent>
         </Card>
       ) : null}

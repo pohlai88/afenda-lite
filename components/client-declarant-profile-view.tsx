@@ -1,25 +1,22 @@
 import type { ReactNode } from "react";
+import { InfoIcon } from "lucide-react";
+import {
+  PortalProfileField,
+  PortalProfileFieldGroup,
+} from "@/components/portal-profile-field";
+import { PortalFormSection } from "@/components/portal-form-section";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import type { ClientProfile } from "@/lib/clients";
 import { countryLabel } from "@/lib/countries";
-import { PortalFormSection } from "@/components/portal-form-section";
+import { formatDateTime } from "@/lib/format";
 import { portalCopy } from "@/lib/portal-copy";
-
-function ProfileField({
-  label,
-  value,
-}: {
-  label: string;
-  value: string | null | undefined;
-}) {
-  if (!value) return null;
-
-  return (
-    <div className="rounded-lg border bg-muted/30 px-4 py-3">
-      <dt className="text-xs font-medium text-muted-foreground">{label}</dt>
-      <dd className="mt-1 text-sm font-medium text-foreground">{value}</dd>
-    </div>
-  );
-}
 
 function ProfileSection({
   title,
@@ -32,9 +29,19 @@ function ProfileSection({
 }) {
   return (
     <PortalFormSection title={title} description={description}>
-      <dl className="grid gap-3 sm:grid-cols-2">{children}</dl>
+      <PortalProfileFieldGroup>{children}</PortalProfileFieldGroup>
     </PortalFormSection>
   );
+}
+
+function formatCountryValue(code: string | null | undefined) {
+  if (!code) return null;
+  return `${countryLabel(code)} (${code})`;
+}
+
+function formatSummarySecondary(profile: ClientProfile) {
+  const parts = [profile.entityName, profile.jurisdiction].filter(Boolean);
+  return parts.length > 0 ? parts.join(" · ") : null;
 }
 
 export function ClientDeclarantProfileView({
@@ -49,65 +56,74 @@ export function ClientDeclarantProfileView({
   const additionalResidence = profile.additionalResidenceCountries
     .map(countryLabel)
     .join(", ");
+  const summarySecondary = formatSummarySecondary(profile);
 
   return (
     <div className="v-stack gap-6">
-      <p className="text-sm text-muted-foreground text-pretty">
-        {copy.correctionNotice}
-      </p>
+      <Alert className="border-muted-foreground/20 bg-muted/30">
+        <InfoIcon aria-hidden className="size-4 text-muted-foreground" />
+        <AlertDescription className="text-pretty text-foreground">
+          {copy.correctionNotice}
+        </AlertDescription>
+      </Alert>
+
+      <Card>
+        <CardHeader className="gap-1">
+          <CardTitle className="text-xl font-semibold">
+            {profile.fullLegalName ?? email}
+          </CardTitle>
+          {summarySecondary ? (
+            <CardDescription className="text-pretty">
+              {summarySecondary}
+            </CardDescription>
+          ) : null}
+        </CardHeader>
+        <CardContent className="text-sm text-muted-foreground">
+          <p>{email}</p>
+          <p className="mt-1">
+            Last updated {formatDateTime(profile.updatedAt)}
+          </p>
+        </CardContent>
+      </Card>
 
       <ProfileSection
         title={onboarding.credentialsSectionTitle}
         description={onboarding.credentialsSectionDescription}
       >
-        <ProfileField label={onboarding.emailLabel} value={email} />
+        <PortalProfileField label={onboarding.emailLabel} value={email} />
       </ProfileSection>
 
       <ProfileSection
         title={onboarding.identitySectionTitle}
         description={onboarding.identitySectionDescription}
       >
-        <ProfileField
+        <PortalProfileField
           label={onboarding.fullLegalNameLabel}
           value={profile.fullLegalName}
         />
-        <ProfileField
+        <PortalProfileField
           label={onboarding.nationalityLabel}
-          value={
-            profile.nationality
-              ? `${countryLabel(profile.nationality)} (${profile.nationality})`
-              : null
-          }
+          value={formatCountryValue(profile.nationality)}
         />
-        <ProfileField
+        <PortalProfileField
           label={onboarding.countryOfResidenceLabel}
-          value={
-            profile.countryOfResidence
-              ? `${countryLabel(profile.countryOfResidence)} (${profile.countryOfResidence})`
-              : null
-          }
+          value={formatCountryValue(profile.countryOfResidence)}
         />
-        {additionalResidence ? (
-          <ProfileField
-            label={onboarding.additionalResidenceLabel}
-            value={additionalResidence}
-          />
-        ) : null}
+        <PortalProfileField
+          label={onboarding.additionalResidenceLabel}
+          value={additionalResidence || null}
+        />
       </ProfileSection>
 
       <ProfileSection
         title={onboarding.passportSectionTitle}
         description={onboarding.passportSectionDescription}
       >
-        <ProfileField
+        <PortalProfileField
           label={onboarding.passportCountryLabel}
-          value={
-            profile.passportIssuingCountry
-              ? `${countryLabel(profile.passportIssuingCountry)} (${profile.passportIssuingCountry})`
-              : null
-          }
+          value={formatCountryValue(profile.passportIssuingCountry)}
         />
-        <ProfileField
+        <PortalProfileField
           label={onboarding.passportNumberLabel}
           value={profile.passportNumber}
         />
@@ -117,8 +133,11 @@ export function ClientDeclarantProfileView({
         title={onboarding.entitySectionTitle}
         description={onboarding.entitySectionDescription}
       >
-        <ProfileField label={onboarding.entityLabel} value={profile.entityName} />
-        <ProfileField
+        <PortalProfileField
+          label={onboarding.entityLabel}
+          value={profile.entityName}
+        />
+        <PortalProfileField
           label={onboarding.jurisdictionLabel}
           value={profile.jurisdiction}
         />
@@ -128,12 +147,12 @@ export function ClientDeclarantProfileView({
         title={onboarding.contactSectionTitle}
         description={onboarding.contactSectionDescription}
       >
-        <ProfileField label={onboarding.phoneLabel} value={profile.phone} />
-        {profile.notes ? (
-          <div className="sm:col-span-2">
-            <ProfileField label={onboarding.notesLabel} value={profile.notes} />
-          </div>
-        ) : null}
+        <PortalProfileField label={onboarding.phoneLabel} value={profile.phone} />
+        <PortalProfileField
+          label={onboarding.notesLabel}
+          value={profile.notes}
+          colSpan={2}
+        />
       </ProfileSection>
     </div>
   );

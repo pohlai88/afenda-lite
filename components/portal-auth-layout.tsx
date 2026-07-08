@@ -6,12 +6,44 @@ import { BrandLogo } from "@/components/portal-brand-mark";
 import { PortalThemeToggle } from "@/components/portal-theme-toggle";
 import { ShieldCheckIcon } from "lucide-react";
 
+function PortalAuthDefaultBrandPanel() {
+  return (
+    <>
+      <div aria-hidden className="portal-auth-brand-spacer" />
+
+      <div className="portal-hero-stack">
+        <h1 className="sr-only">Truth is Protected</h1>
+
+        <div aria-hidden className="portal-hero-heading">
+          <span className="portal-hero-word portal-hero-truth">TRUTH</span>
+
+          <div className="portal-hero-connector">
+            <span className="portal-hero-rule" />
+            <span className="portal-hero-is">IS</span>
+            <span className="portal-hero-rule" />
+          </div>
+
+          <span className="portal-hero-word portal-hero-protected">PROTECTED</span>
+        </div>
+      </div>
+
+      <div className="portal-auth-seal-line">
+        <ShieldCheckIcon aria-hidden className="portal-auth-seal-icon" />
+        <span>SECURE · CONFIDENTIAL · VERIFIED</span>
+      </div>
+    </>
+  );
+}
+
 export function PortalAuthLayout({
   children,
   headerExtra,
+  brandPanel,
 }: {
   children: ReactNode;
   headerExtra?: ReactNode;
+  /** Replaces the default TRUTH / IS / PROTECTED poster on large screens. */
+  brandPanel?: ReactNode;
 }) {
   return (
     <main className="portal-auth-vault">
@@ -33,28 +65,7 @@ export function PortalAuthLayout({
       <div className="portal-auth-stage">
         <div className="portal-auth-grid">
           <section aria-label="Declaration portal" className="portal-auth-brand max-lg:hidden">
-            <div aria-hidden className="portal-auth-brand-spacer" />
-
-            <div className="portal-hero-stack">
-              <h1 className="sr-only">Truth is Protected</h1>
-
-              <div aria-hidden className="portal-hero-heading">
-                <span className="portal-hero-word portal-hero-truth">TRUTH</span>
-
-                <div className="portal-hero-connector">
-                  <span className="portal-hero-rule" />
-                  <span className="portal-hero-is">IS</span>
-                  <span className="portal-hero-rule" />
-                </div>
-
-                <span className="portal-hero-word portal-hero-protected">PROTECTED</span>
-              </div>
-            </div>
-
-            <div className="portal-auth-seal-line">
-              <ShieldCheckIcon aria-hidden className="portal-auth-seal-icon" />
-              <span>SECURE · CONFIDENTIAL · VERIFIED</span>
-            </div>
+            {brandPanel ?? <PortalAuthDefaultBrandPanel />}
           </section>
 
           <section

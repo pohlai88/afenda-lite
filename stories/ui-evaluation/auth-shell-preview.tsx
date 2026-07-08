@@ -1,4 +1,7 @@
 import { PortalAuthLayout } from "@/components/portal-auth-layout";
+import { PortalAuthEmailTrustNotice } from "@/components/portal-auth-email-trust-notice";
+import { PortalInvitationJoinBrandPanel } from "@/components/portal-invitation-join-brand-panel";
+import { PortalInvitationJoinSteps } from "@/components/portal-invitation-join-steps";
 import { portalCopy } from "@/lib/portal-copy";
 
 /** Mock sign-in card for Storybook — mirrors Neon AuthView card chrome without provider. */
@@ -169,9 +172,22 @@ function MockNeonAcceptInvitationCard() {
 
 /** Vault shell with organization accept-invitation step mock. */
 export function IamCheckAuthOrganizationShellPreview() {
+  const { organizationAuth } = portalCopy;
+
   return (
-    <PortalAuthLayout>
-      <MockNeonAcceptInvitationCard />
+    <PortalAuthLayout
+      brandPanel={<PortalInvitationJoinBrandPanel activeStep={2} />}
+      headerExtra={
+        <PortalAuthEmailTrustNotice
+          message={organizationAuth.trustNotice}
+          variant="email"
+        />
+      }
+    >
+      <div className="flex w-full flex-col gap-4">
+        <PortalInvitationJoinSteps activeStep={2} variant="compact" className="lg:hidden" />
+        <MockNeonAcceptInvitationCard />
+      </div>
     </PortalAuthLayout>
   );
 }
