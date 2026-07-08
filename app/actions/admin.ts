@@ -22,7 +22,6 @@ import {
 import {
   getPreviewClientUser,
   isPreviewClientConfigured,
-  isPreviewClientSession,
   clientPreviewUnavailableHref,
   PREVIEW_UNAVAILABLE_FAILED_REASON,
 } from "@/lib/preview-client";
@@ -101,15 +100,23 @@ export async function startClientPreviewAction() {
       );
     }
 
-    const { data: previewSession } = await auth.getSession();
+    const impersonatedEmail = impersonation.user?.email?.trim().toLowerCase();
+    const expectedPreviewEmail = previewEmail.trim().toLowerCase();
 
-    if (!isPreviewClientSession(previewSession)) {
+    if (
+      !impersonatedEmail ||
+      impersonatedEmail !== expectedPreviewEmail
+    ) {
       await neonAdminStopImpersonating();
       await recordAuditEvent({
         actorId: session.user.id,
         eventType: "admin.client_preview_failed",
         resourceType: "session",
-        metadata: { previewEmail, reason: "session_mismatch" },
+        metadata: {
+          previewEmail: expectedPreviewEmail,
+          reason: "session_mismatch",
+          impersonatedEmail: impersonatedEmail ?? null,
+        },
       });
       redirect(
         clientPreviewUnavailableHref({

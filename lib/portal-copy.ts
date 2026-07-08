@@ -469,6 +469,13 @@ export const portalCopy = {
       title: "Client access",
       description: "Invite clients to sign in and complete assigned declarations.",
     },
+    workspace: {
+      submissionsTitle: "Submissions",
+      questionsTitle: "Questions",
+      questionsDescription: (count: number) =>
+        `${count} question${count === 1 ? "" : "s"} configured`,
+      deadlineTitle: "Submit before",
+    },
     tabs: {
       manage: "Settings",
       manageHint: "Package, case metadata, questions, and delete",

@@ -1,7 +1,7 @@
 # UI Evaluation Summary
 
-**Date:** 2026-07-08 (rescored after Shadcn Studio block installs)  
-**Scope:** 34 portal surfaces scored against Shadcn Studio blocks.  
+**Date:** 2026-07-08 (rescored after auth surface registry BL-08)  
+**Scope:** 39 portal surfaces scored against Shadcn Studio blocks.  
 **Validation:** `npm run evaluate:ui-matrix` — scoring + implementation alignment.
 
 ## Scoring criteria (weighted)
@@ -21,23 +21,23 @@ Run `npm run evaluate:ui-matrix` for the full scored table with implementation k
 
 | Kind | Count | Meaning |
 |------|-------|---------|
-| `studio-installed` | 6 | Block from `@ss-blocks/base-nova` registry |
-| `portal-wrapper` | 6 | Custom `portal-*` mimicking a block pattern |
-| `neon-integrated` | 10 | Neon AuthView / AccountView — keep by design |
-| `hardcoded` | 12 | Custom UI; matrix may still recommend a block |
+| `studio-installed` | 8 | Block from `@ss-blocks/base-nova` registry |
+| `portal-wrapper` | 7 | Custom `portal-*` mimicking a block pattern |
+| `neon-integrated` | 14 | Neon AuthView / AccountView — keep by design |
+| `hardcoded` | 10 | Custom UI; matrix may still recommend a block |
 
-**Winner alignment:** 34/34 surfaces match matrix winner intent (see runner `ok` column).
+**Winner alignment:** 38/39 surfaces match matrix winner intent (see runner `ok` column).
 
-**Needs registry install:** 15 surfaces — winner is a Studio block but implementation is wrapper or hardcoded.
+**Needs registry install:** 13 surfaces — winner is a Studio block but implementation is wrapper or hardcoded.
 
 ## Aggregate scores (latest run)
 
 | Metric | Value |
 |--------|-------|
-| Surfaces scored | 34 |
-| Strong recommendation | 15 |
+| Surfaces scored | 39 |
+| Strong recommendation | 19 |
 | Marginal | 4 |
-| Tie | 15 |
+| Tie | 16 |
 | Studio-installed | 6 |
 | Portal-wrapper | 6 |
 | Hardcoded | 12 |
@@ -87,6 +87,8 @@ npm run studio:install-block -- statistics-component-03
 | `statistics-component-03` | **Installed** | `components/shadcn-studio/blocks/statistics-card-03.tsx` → `portal-statistics-card.tsx` |
 | `form-layout-01` | **Installed** | `components/shadcn-studio/blocks/form-layout-01/form-layout-section.tsx` → `portal-form-section.tsx` |
 | `form-layout-02` | **Installed** | `components/shadcn-studio/blocks/form-layout-02/form-layout-section.tsx` → `declaration-settings-section.tsx` |
+| `form-layout-08` | **Installed** | `components/shadcn-studio/blocks/form-layout-08/form-layout-wizard-shell.tsx` → `declaration-form.tsx` |
+| `dashboard-shell-05` | **Pattern** | `components/portal-declaration-workspace.tsx` → KPI row + tabbed workspace |
 | `empty-state-01` | Wrapper | `components/portal-empty-state.tsx` |
 | `empty-state-02` | Wrapper | `components/portal-empty-state-cta.tsx` |
 | `error-page-02` | Wrapper | `components/portal-not-found-page.tsx` |

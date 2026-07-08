@@ -152,14 +152,18 @@ record(
 );
 
 // 6. Localhost access
-const localhostAllowed = liveSnapshot.allowLocalhost !== false;
+const localhostInTrustedOrigins = liveSnapshot.trustedOrigins.some((origin) =>
+  origin.toLowerCase().includes("localhost"),
+);
+const localhostAllowed =
+  liveSnapshot.allowLocalhost !== false || localhostInTrustedOrigins;
 record(
   "6-localhost",
   "Disable localhost access (production)",
   localhostAllowed ? "manual" : "pass",
   localhostAllowed
-    ? `allow_localhost is enabled (or unknown). Trusted origins include localhost for local dev against this branch. Disable only at production cutover if you stop using localhost against production auth.`
-    : "Localhost access disabled on this branch.",
+    ? `allow_localhost is enabled (or localhost is trusted). Origins: ${liveSnapshot.trustedOrigins.join(", ") || "none"}. Disable at production cutover or remove localhost from trusted domains.`
+    : "Localhost access disabled on this branch (no localhost trusted origin).",
   "npm run configure:neon-auth-production -- --disable-localhost (production cutover only)",
 );
 

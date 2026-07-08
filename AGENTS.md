@@ -63,6 +63,8 @@ Use `npm run audit:vercel` for key-name validation instead.
 
 Authority: [`.agents/skills/neon/SKILL.md`](.agents/skills/neon/SKILL.md), [`.agents/skills/neon-postgres/references/neon-auth/portal-email-verification.md`](.agents/skills/neon-postgres/references/neon-auth/portal-email-verification.md).
 
+**Setup / audit:** Cursor `setup-neon-auth` may 404 — use MCP `get_neon_auth_config`, then `npm run sync:neon-auth-manifest` and `npm run audit:neon-auth-production`. Cross-check [docs/backlogs/neon-auth-validation-matrix.md](docs/backlogs/neon-auth-validation-matrix.md).
+
 ### Email — default Neon shared provider only
 
 - Neon Auth transactional mail uses the **shared provider** (`auth@mail.myneon.app`). Do **not** configure custom SMTP / MailerSend for Neon Auth.
@@ -77,8 +79,6 @@ When `APP_URL` or preview URLs change, add them to Neon Auth trusted origins:
 neon neon-auth domain add https://iam-check.vercel.app
 neon neon-auth domain list
 ```
-
-Local dev: `neon neon-auth domain allow-localhost`.
 
 Branch plugins (magic link, organization): `npm run configure:neon-auth-production -- --configure-plugins`, then `npm run sync:neon-auth-manifest`.
 
@@ -96,6 +96,21 @@ Authority: [`.agents/skills/neon-postgres/references/neon-auth/portal-password-r
 - Enabled when Neon `email_password` is on (MCP `get_neon_auth_config`) — no custom SMTP required.
 - UI: `/auth/forgot-password` and `/auth/reset-password` via `AuthView`; `NeonAuthUIProvider` must set `baseURL` (client origin) for reset email links.
 - Do not use SDK `resetPasswordForEmail` — use Neon Auth UI forms only (Neon docs).
+
+### Local development auth
+
+Production branch has `allow_localhost: false`. **Do not re-enable localhost on production.**
+
+**Strategy (Option A):** use a dedicated **dev** Neon branch per feature via the branch-first workflow. Allow localhost only on that dev branch.
+
+1. `neon link` once per machine; then `neon checkout dev-<feature>` (creates or selects the branch; updates `.neon` only).
+2. Copy branch-scoped values into `env.secret` (`DATABASE_URL`) and `env.config` (`NEON_AUTH_BASE_URL`, `NEON_BRANCH_ID`) from Neon Console or `neon neon-auth status`.
+3. On the **checked-out dev branch only:** `neon neon-auth domain allow-localhost`.
+4. `npm run env:compose` → `npm run dev` → sign in at `http://localhost:3000`.
+
+Keep `APP_URL` as the production URL in `env.config` — server-side org invites still emit production links (see `lib/auth/neon-auth-request.ts`). For layout-only UI work without auth, use Storybook or `/playground` embed.
+
+Runbook: [docs/runbooks/local-dev-auth.md](docs/runbooks/local-dev-auth.md). Slice: [docs/backlogs/slices/bl-09-local-dev-auth.md](docs/backlogs/slices/bl-09-local-dev-auth.md).
 
 ---
 

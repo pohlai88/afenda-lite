@@ -251,6 +251,7 @@ export async function issueClientInviteAction(formData: FormData) {
 
       let emailSent = false;
       let emailError: string | undefined;
+      let neonAuthStatus: number | undefined;
 
       if (isClientEmailDeliveryEnabled()) {
         const emailDelivery = await sendClientOnboardingEmail({
@@ -261,6 +262,7 @@ export async function issueClientInviteAction(formData: FormData) {
         emailSent = emailDelivery.ok;
         if (!emailDelivery.ok) {
           emailError = emailDelivery.error;
+          neonAuthStatus = emailDelivery.status;
         }
       } else {
         emailError = portalCopy.clientInvite.emailNotConfigured;
@@ -275,6 +277,7 @@ export async function issueClientInviteAction(formData: FormData) {
           channel: "neon_auth_organization",
           emailSent,
           ...(emailError ? { emailError } : {}),
+          ...(neonAuthStatus !== undefined ? { neonAuthStatus } : {}),
         },
       });
 

@@ -27,8 +27,8 @@ if (extra.length > 0) {
   process.exit(1);
 }
 
-if (registryIds.size !== 34) {
-  console.error(`FAIL: expected 34 surfaces in registry, got ${registryIds.size}`);
+if (registryIds.size !== 39) {
+  console.error(`FAIL: expected 39 surfaces in registry, got ${registryIds.size}`);
   process.exit(1);
 }
 
@@ -91,4 +91,4 @@ console.log(
 console.log(
   `Alignment: ${adoption.winnerAligned}/${uiEvaluationMatrix.length} winners matched | needs registry install: ${adoption.needsRegistryInstall}`,
 );
-console.log("PASS: all 34 surfaces scored and implementation-tracked.");
+console.log("PASS: all 39 surfaces scored and implementation-tracked.");

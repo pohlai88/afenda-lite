@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "syncedAt": "2026-07-08T01:27:39.461Z",
+  "syncedAt": "2026-07-08T01:48:31.782Z",
   "project": {
     "projectId": "young-hat-54755363",
     "projectName": "iam-check",
@@ -51,10 +51,9 @@
     }
   ],
   "trustedDomains": [
-    "https://iam-check.vercel.app",
-    "http://localhost:3000"
+    "https://iam-check.vercel.app"
   ],
-  "allowLocalhost": true,
+  "allowLocalhost": false,
   "productionChecklist": {
     "applicationName": "Client Declaration Portal",
     "emailProviderPolicy": "shared-otp-waiver",

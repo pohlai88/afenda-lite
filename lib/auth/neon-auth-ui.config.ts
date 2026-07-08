@@ -116,3 +116,4 @@ export const neonAuthUiProviderDefaults = {
 } as const;
 
 export const neonAuthUiApplicationName = PORTAL_NAME;
+/** Email sender display name is Neon Console → Auth → Configuration (BL-05), not a provider prop. */

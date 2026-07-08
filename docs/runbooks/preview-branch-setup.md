@@ -119,6 +119,7 @@ For higher isolation, enable [Neon-Managed Vercel integration](https://neon.com/
 
 ## Related
 
+- [local-dev-auth.md](./local-dev-auth.md) — personal `dev-*` branches for local sign-in (Option A); preview branch is for Vercel/CI, not the default local dev path
 - [production-go-live.md](./production-go-live.md)
 - [S13 CI gate](../architecture/slices/s13-ci-gate.md)
 - [S16 admin client preview](../architecture/slices/s16-admin-client-preview.md)

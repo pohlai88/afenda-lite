@@ -3,7 +3,7 @@ import { DeclarationSharePanel } from "@/components/declaration-share-panel";
 import { DashboardPage } from "@/components/dashboard-page";
 import { DeclarationManageForm } from "@/components/declaration-manage-form";
 import { OrgDeclarationSubmissionsTable } from "@/components/org-declaration-submissions-table";
-import { SurveyDetailTabs } from "@/components/survey-detail-tabs";
+import { PortalDeclarationWorkspace } from "@/components/portal-declaration-workspace";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -83,7 +83,10 @@ export function OperatorDeclarationDetailView({
         </Badge>
       }
     >
-      <SurveyDetailTabs
+      <PortalDeclarationWorkspace
+        survey={survey}
+        responseCount={responses.length}
+        questionCount={questions.length}
         labels={declarationDetail.tabs}
         manage={managePanel}
         share={sharePanel}

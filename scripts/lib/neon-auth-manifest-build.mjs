@@ -3,6 +3,22 @@
  * UI feature flags (e.g. social login) stay product-controlled in the committed manifest.
  */
 
+/** Prefer Neon status; infer from trusted domains when CLI omits the flag. */
+export function resolveAllowLocalhost(statusJson, domainsJson) {
+  if (typeof statusJson?.allow_localhost === "boolean") {
+    return statusJson.allow_localhost;
+  }
+
+  const trustedDomains = (domainsJson ?? []).map((entry) =>
+    String(entry.domain ?? entry).toLowerCase(),
+  );
+  const localhostTrusted = trustedDomains.some((domain) =>
+    domain.includes("localhost"),
+  );
+
+  return localhostTrusted;
+}
+
 export function parseJsonOutput(raw) {
   const start = raw.indexOf("{");
   const arrayStart = raw.indexOf("[");
@@ -107,7 +123,7 @@ export function buildNeonAuthManifest({
     },
     oauthProviders,
     trustedDomains: domainsJson.map((entry) => entry.domain),
-    allowLocalhost: statusJson.allow_localhost ?? existing.allowLocalhost ?? true,
+    allowLocalhost: resolveAllowLocalhost(statusJson, domainsJson),
     productionChecklist: existing.productionChecklist ?? {
       applicationName: "Client Declaration Portal",
       emailProviderPolicy: "shared-otp-waiver",

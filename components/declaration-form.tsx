@@ -21,17 +21,18 @@ import {
 } from "@/lib/declaration-steps";
 import { portalCopy } from "@/lib/portal-copy";
 import type { SurveyAnswers, SurveyQuestion } from "@/lib/questions";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import {
+  StudioFormLayoutWizardShell,
+  StudioFormLayoutWizardStep,
+} from "@/components/shadcn-studio/blocks/form-layout-08/form-layout-wizard-shell";
 import { Button } from "@/components/ui/button";
 import {
   Card,
-  CardContent,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { cn } from "@/lib/utils";
 
 type SubmitResult = {
   success?: boolean;
@@ -242,79 +243,56 @@ export function DeclarationForm({
   }
 
   return (
-    <Card className="min-w-0 gap-0 p-0 md:grid md:max-lg:grid-cols-5 lg:grid-cols-4">
-      {!hideCardTitle || description || anonymous ? (
-        <CardHeader className="border-b md:col-span-full">
-          {!hideCardTitle ? (
-            <CardTitle className="text-lg text-pretty">{title}</CardTitle>
-          ) : null}
-          {description ? (
-            <div className="portal-prose">
-              <p>{description}</p>
-            </div>
-          ) : null}
-          {anonymous ? (
-            <div className="portal-prose">
-              <p>{declarationPage.secureFormNote}</p>
-            </div>
-          ) : null}
-          <p className="text-sm text-muted-foreground">
-            {wizardCopy.stepProgress(currentStepIndex + 1, steps.length)}
-          </p>
-        </CardHeader>
-      ) : null}
-
-      <CardContent className="col-span-5 min-w-0 overflow-hidden border-b p-4 md:max-lg:col-span-2 md:border-r md:p-6 lg:col-span-1 lg:border-b-0">
+    <StudioFormLayoutWizardShell
+      header={
+        !hideCardTitle || description || anonymous ? (
+          <>
+            {!hideCardTitle ? (
+              <CardTitle className="text-lg text-pretty">{title}</CardTitle>
+            ) : null}
+            {description ? (
+              <div className="portal-prose">
+                <p>{description}</p>
+              </div>
+            ) : null}
+            {anonymous ? (
+              <div className="portal-prose">
+                <p>{declarationPage.secureFormNote}</p>
+              </div>
+            ) : null}
+            <p className="text-sm text-muted-foreground">
+              {wizardCopy.stepProgress(currentStepIndex + 1, steps.length)}
+            </p>
+          </>
+        ) : undefined
+      }
+      sidebar={
         <nav aria-label={wizardCopy.stepProgress(currentStepIndex + 1, steps.length)}>
           <ol className="flex flex-col gap-4">
             {steps.map((step, index) => {
               const Icon = stepIcon(step);
-              const isActive = index === currentStepIndex;
-              const isComplete = index < currentStepIndex;
-
               return (
-                <li key={step.id} className="min-w-0">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    className="h-auto w-full min-w-0 cursor-pointer items-start justify-start gap-3 overflow-hidden whitespace-normal rounded px-2 py-2 text-left"
-                    onClick={() => {
-                      if (index <= currentStepIndex) {
-                        goToStep(index);
-                      }
-                    }}
-                    disabled={index > currentStepIndex}
-                  >
-                    <Avatar className="size-10 shrink-0">
-                      <AvatarFallback
-                        className={cn(
-                          isActive || isComplete
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-muted text-muted-foreground",
-                        )}
-                      >
-                        <Icon aria-hidden="true" className="size-4" />
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="min-w-0 flex-1 text-left">
-                      <p className="text-sm font-medium text-pretty">{step.title}</p>
-                      <p className="text-xs text-muted-foreground text-pretty break-words">
-                        {step.description}
-                      </p>
-                    </div>
-                  </Button>
-                </li>
+                <StudioFormLayoutWizardStep
+                  key={step.id}
+                  title={step.title}
+                  description={step.description}
+                  icon={<Icon aria-hidden="true" className="size-4" />}
+                  active={index === currentStepIndex}
+                  complete={index < currentStepIndex}
+                  disabled={index > currentStepIndex}
+                  onSelect={() => {
+                    if (index <= currentStepIndex) {
+                      goToStep(index);
+                    }
+                  }}
+                />
               );
             })}
           </ol>
         </nav>
-      </CardContent>
-
-      <CardContent
-        ref={contentRef}
-        tabIndex={-1}
-        className="col-span-5 flex min-w-0 flex-col gap-6 p-6 md:col-span-3 lg:col-span-3"
-      >
+      }
+      contentRef={contentRef}
+    >
         {currentStep?.kind === "questions" ? (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
             <div className="md:sticky md:top-6 md:self-start">
@@ -458,7 +436,6 @@ export function DeclarationForm({
             )}
           </Button>
         </div>
-      </CardContent>
-    </Card>
+    </StudioFormLayoutWizardShell>
   );
 }

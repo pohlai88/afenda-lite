@@ -7,7 +7,7 @@ import {
 
 export type ClientOnboardingEmailResult =
   | { ok: true; provider: "neon-auth-organization" }
-  | { ok: false; error: string };
+  | { ok: false; error: string; status?: number };
 
 export async function sendClientOnboardingEmail(input: {
   toEmail: string;

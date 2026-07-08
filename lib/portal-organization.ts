@@ -109,6 +109,7 @@ export async function inviteClientOrganizationMember(input: {
     return {
       ok: false as const,
       error: delivery.error,
+      status: delivery.status,
     };
   }
 
