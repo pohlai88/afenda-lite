@@ -1,4 +1,5 @@
 import type { ClientAssignment, ClientProfile } from "@/lib/clients";
+import { buildDeclarantSummaryView } from "@/lib/client-dashboard.presenter";
 import {
   computeClientDashboardMetrics,
   type ClientDashboardMetrics,
@@ -67,6 +68,10 @@ export function syncedPreviewClientAssignment(): ClientAssignment {
 
 export function syncedPreviewClientMetrics(): ClientDashboardMetrics {
   return computeClientDashboardMetrics([syncedPreviewClientAssignment()]);
+}
+
+export function syncedPreviewClientDeclarant() {
+  return buildDeclarantSummaryView(syncedPreviewClientProfile());
 }
 
 export function syncedPreviewClientMember(): PortalMember {

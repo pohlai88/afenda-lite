@@ -3,9 +3,7 @@ import { ClipboardListIcon } from "lucide-react";
 import { ClientAssignmentDeadlineNotice } from "@/components/client-assignment-deadline-notice";
 import { ConfirmationReceipt } from "@/components/confirmation-receipt";
 import { PortalEmptyStateCard } from "@/components/portal-empty-state";
-import { assignmentHasDraftProgress, type ClientAssignment } from "@/lib/clients";
-import { assignmentDueUrgency } from "@/lib/client-dashboard-metrics";
-import { clientDeclareHref } from "@/lib/portal-routes";
+import type { AssignmentCardView } from "@/lib/client-dashboard.presenter";
 import { portalCopy } from "@/lib/portal-copy";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -17,11 +15,34 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
+function statusCopy(
+  status: AssignmentCardView["status"],
+  copy: typeof portalCopy.clientDashboard,
+) {
+  switch (status) {
+    case "submitted":
+      return {
+        label: copy.submitted,
+        help: copy.submittedStatusHelp,
+      };
+    case "inProgress":
+      return {
+        label: copy.inProgress,
+        help: copy.inProgressStatusHelp,
+      };
+    default:
+      return {
+        label: copy.pending,
+        help: copy.pendingStatusHelp,
+      };
+  }
+}
+
 export function ClientDashboardAssignments({
   assignments,
   actionsEnabled,
 }: {
-  assignments: ClientAssignment[];
+  assignments: AssignmentCardView[];
   actionsEnabled: boolean;
 }) {
   const copy = portalCopy.clientDashboard;
@@ -37,9 +58,11 @@ export function ClientDashboardAssignments({
   }
 
   return (
-    <div className="space-y-4" id="assignments">
+    <section className="space-y-4" id="assignments" aria-labelledby="assignments-heading">
       <div>
-        <h2 className="portal-section-title">{copy.assignmentsSectionTitle}</h2>
+        <h2 id="assignments-heading" className="portal-section-title text-pretty">
+          {copy.assignmentsSectionTitle}
+        </h2>
         <p className="mt-1 text-sm text-muted-foreground text-pretty">
           {copy.assignmentsSectionDescription}
         </p>
@@ -50,92 +73,88 @@ export function ClientDashboardAssignments({
         ) : null}
       </div>
 
-      {assignments.map((assignment) => {
-        const urgency = assignmentDueUrgency(assignment);
-        const isSubmitted = assignment.status === "submitted";
-        const hasDraft = assignmentHasDraftProgress(assignment);
-        const statusKey = isSubmitted
-          ? "submitted"
-          : hasDraft
-            ? "inProgress"
-            : "pending";
-        const statusLabel =
-          statusKey === "submitted"
-            ? copy.submitted
-            : statusKey === "inProgress"
-              ? copy.inProgress
-              : copy.pending;
-        const statusHelp =
-          statusKey === "submitted"
-            ? copy.submittedStatusHelp
-            : statusKey === "inProgress"
-              ? copy.inProgressStatusHelp
-              : copy.pendingStatusHelp;
+      <ul className="space-y-4">
+        {assignments.map((assignment) => {
+          const { label, help } = statusCopy(assignment.status, copy);
+          const isSubmitted = assignment.status === "submitted";
 
-        return (
-          <Card key={assignment.id}>
-            <CardHeader className="h-stack items-start justify-between gap-4">
-              <div className="min-w-0">
-                <CardTitle className="text-pretty">{assignment.surveyTitle}</CardTitle>
-                <CardDescription className="line-clamp-2 text-pretty">
-                  {assignment.surveyQuestion}
-                </CardDescription>
-              </div>
-              <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
-                {urgency === "overdue" ? (
-                  <Badge variant="destructive">{copy.overdueLabel}</Badge>
-                ) : null}
-                {urgency === "due_soon" ? (
-                  <Badge variant="outline">{copy.dueSoonLabel}</Badge>
-                ) : null}
-                <Badge variant={isSubmitted ? "secondary" : "outline"}>
-                  {statusLabel}
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <p className="text-sm text-muted-foreground text-pretty">
-                {statusHelp}
-              </p>
+          return (
+            <li key={assignment.id} className="min-w-0">
+              <Card>
+                <CardHeader className="h-stack items-start justify-between gap-4">
+                  <div className="min-w-0">
+                    <CardTitle className="text-pretty">{assignment.title}</CardTitle>
+                    {assignment.question ? (
+                      <CardDescription className="line-clamp-2 min-w-0 text-pretty">
+                        {assignment.question}
+                      </CardDescription>
+                    ) : null}
+                  </div>
+                  <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+                    {assignment.urgency === "overdue" ? (
+                      <Badge variant="destructive">{copy.overdueLabel}</Badge>
+                    ) : null}
+                    {assignment.urgency === "due_soon" ? (
+                      <Badge variant="outline">{copy.dueSoonLabel}</Badge>
+                    ) : null}
+                    <Badge variant={isSubmitted ? "secondary" : "outline"}>
+                      {label}
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <p className="text-sm text-muted-foreground text-pretty">
+                    {help}
+                  </p>
 
-              {!isSubmitted ? (
-                <ClientAssignmentDeadlineNotice assignment={assignment} />
-              ) : null}
+                  {!isSubmitted ? (
+                    <ClientAssignmentDeadlineNotice
+                      assignment={{
+                        status: "pending",
+                        dueDate: assignment.dueDate,
+                        submitBefore: assignment.submitBefore,
+                      }}
+                    />
+                  ) : null}
 
-              {isSubmitted && assignment.confirmationCode ? (
-                <>
-                  <ConfirmationReceipt
-                    code={assignment.confirmationCode}
-                    title={copy.receiptTitle}
-                    description={copy.receiptDescription}
-                    variant="inline"
-                  />
-                  <Button
-                    variant="outline"
-                    render={
-                      <Link href={clientDeclareHref(assignment.id)} />
-                    }
-                    nativeButton={false}
-                  >
-                    {copy.viewReceipt}
-                  </Button>
-                </>
-              ) : actionsEnabled && urgency !== "overdue" ? (
-                <Button
-                  render={
-                    <Link href={clientDeclareHref(assignment.id)} />
-                  }
-                  nativeButton={false}
-                >
-                  {hasDraft ? copy.continue : copy.complete}
-                </Button>
-              ) : (
-                <Button disabled>{copy.complete}</Button>
-              )}
-            </CardContent>
-          </Card>
-        );
-      })}
-    </div>
+                  {isSubmitted && assignment.confirmationCode ? (
+                    <>
+                      <ConfirmationReceipt
+                        code={assignment.confirmationCode}
+                        title={copy.receiptTitle}
+                        description={copy.receiptDescription}
+                        variant="inline"
+                      />
+                      <Button
+                        variant="outline"
+                        className="min-h-11 touch-manipulation"
+                        render={<Link href={assignment.href} />}
+                        nativeButton={false}
+                      >
+                        {copy.viewReceipt}
+                      </Button>
+                    </>
+                  ) : actionsEnabled && assignment.urgency !== "overdue" ? (
+                    <Button
+                      className="min-h-11 touch-manipulation"
+                      render={<Link href={assignment.href} />}
+                      nativeButton={false}
+                    >
+                      {assignment.status === "inProgress"
+                        ? copy.continue
+                        : copy.complete}
+                    </Button>
+                  ) : (
+                    <Button className="min-h-11 touch-manipulation" disabled>
+                      {copy.complete}
+                    </Button>
+                  )}
+                </CardContent>
+              </Card>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
   );
 }

@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { Loader2Icon } from "lucide-react";
 import { acknowledgeClientPortalAction } from "@/app/actions/client";
 import { FormErrorAlert } from "@/components/form-error-alert";
+import type { AcknowledgementView } from "@/lib/client-dashboard.presenter";
 import { portalCopy } from "@/lib/portal-copy";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,7 +17,29 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 
-export function ClientDashboardAcknowledgement() {
+export function ClientDashboardAcknowledgement({
+  status,
+}: {
+  status: AcknowledgementView;
+}) {
+  const copy = portalCopy.clientDashboard.acknowledgement;
+
+  if (status.kind === "acknowledged") {
+    if (!status.acknowledgedOn) {
+      return null;
+    }
+
+    return (
+      <p className="text-sm text-muted-foreground text-pretty" aria-live="polite">
+        {copy.acknowledgedOn(status.acknowledgedOn)}
+      </p>
+    );
+  }
+
+  return <ClientDashboardAcknowledgementForm />;
+}
+
+function ClientDashboardAcknowledgementForm() {
   const copy = portalCopy.clientDashboard.acknowledgement;
   const [confirmed, setConfirmed] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -37,7 +60,7 @@ export function ClientDashboardAcknowledgement() {
   return (
     <Card className="border-primary/30 bg-primary/5">
       <CardHeader>
-        <CardTitle className="text-lg">{copy.title}</CardTitle>
+        <CardTitle className="text-pretty text-lg">{copy.title}</CardTitle>
         <CardDescription className="text-pretty">{copy.description}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">

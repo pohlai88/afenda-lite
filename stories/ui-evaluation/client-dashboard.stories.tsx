@@ -7,8 +7,8 @@ import {
   ScoreAnnotation,
 } from "./evaluation-primitives";
 import {
+  syncedPreviewClientDeclarant,
   syncedPreviewClientMetrics,
-  syncedPreviewClientProfile,
   syncedProductionFixtureLabel,
 } from "./synced-production-fixtures";
 
@@ -29,7 +29,7 @@ export const SyncedProductionFixture: Story = {
         Production seed: {syncedProductionFixtureLabel()}
       </p>
       <ClientDashboardSummary
-        profile={syncedPreviewClientProfile()}
+        declarant={syncedPreviewClientDeclarant()}
         metrics={syncedPreviewClientMetrics()}
       />
     </div>
@@ -45,7 +45,7 @@ export const CurrentVsStatistics03: Story = {
             Production seed: {syncedProductionFixtureLabel()}
           </p>
           <ClientDashboardSummary
-            profile={syncedPreviewClientProfile()}
+            declarant={syncedPreviewClientDeclarant()}
             metrics={syncedPreviewClientMetrics()}
           />
         </div>
