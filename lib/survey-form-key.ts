@@ -1,4 +1,4 @@
-import type { QuestionType } from "@/lib/questions";
+import type { QuestionType } from "@/lib/question-models";
 import type { SurveyMetadata } from "@/lib/surveys";
 
 /** Stable key so defaultValue fields remount when server survey data changes (e.g. after package ingest). */

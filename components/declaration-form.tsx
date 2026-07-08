@@ -20,7 +20,7 @@ import {
   type DeclarationWizardStep,
 } from "@/lib/declaration-steps";
 import { portalCopy } from "@/lib/portal-copy";
-import type { SurveyAnswers, SurveyQuestion } from "@/lib/questions";
+import type { SurveyAnswers, SurveyQuestion } from "@/lib/question-models";
 import {
   StudioFormLayoutWizardShell,
   StudioFormLayoutWizardStep,

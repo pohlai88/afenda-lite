@@ -2,7 +2,7 @@ import {
   formatAnswerForDisplay,
   type EvidenceRecord,
   type SurveyQuestion,
-} from "@/lib/questions";
+} from "@/lib/question-models";
 import type { SurveyResponse } from "@/lib/surveys";
 import { QuestionSequenceBadge } from "@/components/question-sequence-badge";
 

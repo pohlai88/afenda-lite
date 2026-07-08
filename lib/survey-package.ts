@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { QuestionType, SurveyQuestion } from "@/lib/questions";
+import type { QuestionType, SurveyQuestion } from "@/lib/question-models";
 import type { Survey, SurveyMetadata } from "@/lib/surveys";
 
 export const CDP_PACKAGE_VERSION = "1.0" as const;

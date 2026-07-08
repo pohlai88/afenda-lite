@@ -22,6 +22,7 @@ import {
 import {
   getPreviewClientUser,
   isPreviewClientConfigured,
+  isPreviewClientSession,
   clientPreviewUnavailableHref,
   PREVIEW_UNAVAILABLE_FAILED_REASON,
 } from "@/lib/preview-client";

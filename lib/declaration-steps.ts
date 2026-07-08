@@ -1,4 +1,4 @@
-import type { QuestionType, SurveyQuestion } from "@/lib/questions";
+import type { QuestionType, SurveyQuestion } from "@/lib/question-models";
 
 export type DeclarationWizardStep = {
   id: string;

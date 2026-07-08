@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { ChevronDownIcon, PlusIcon, Trash2Icon } from "lucide-react";
-import type { QuestionType } from "@/lib/questions";
+import type { QuestionType } from "@/lib/question-models";
 import type { QuestionConfig } from "@/lib/survey-package";
 import { portalCopy } from "@/lib/portal-copy";
 import { Button } from "@/components/ui/button";
