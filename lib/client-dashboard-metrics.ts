@@ -1,4 +1,5 @@
 import type { ClientAssignment } from "@/lib/clients";
+import { getDeclarationDeadlineError } from "@/lib/declaration-deadlines";
 
 const DUE_SOON_DAYS = 7;
 
@@ -77,11 +78,7 @@ export function computeClientDashboardMetrics(
     }
 
     pending += 1;
-    if (
-      assignment.dueDate &&
-      assignment.dueDate >= now &&
-      assignment.dueDate <= dueSoonThreshold
-    ) {
+    if (assignmentDueUrgency(assignment) === "due_soon") {
       dueSoon += 1;
     }
   }
@@ -101,22 +98,46 @@ export function computeClientDashboardMetrics(
   };
 }
 
+export function assignmentDeadlineExpired(
+  assignment: ClientAssignment,
+): "assignment" | "declaration" | null {
+  if (assignment.status === "submitted") {
+    return null;
+  }
+
+  return getDeclarationDeadlineError({
+    dueDate: assignment.dueDate,
+    submitBefore: assignment.submitBefore,
+  });
+}
+
 export function assignmentDueUrgency(
   assignment: ClientAssignment,
 ): "overdue" | "due_soon" | null {
-  if (assignment.status === "submitted" || !assignment.dueDate) {
+  if (assignment.status === "submitted") {
     return null;
+  }
+
+  if (assignmentDeadlineExpired(assignment)) {
+    return "overdue";
   }
 
   const now = new Date();
   const dueSoonThreshold = new Date(now);
   dueSoonThreshold.setDate(dueSoonThreshold.getDate() + DUE_SOON_DAYS);
 
-  if (assignment.dueDate < now) {
-    return "overdue";
+  const effectiveDeadline =
+    assignment.dueDate && assignment.submitBefore
+      ? assignment.dueDate < assignment.submitBefore
+        ? assignment.dueDate
+        : assignment.submitBefore
+      : assignment.dueDate ?? assignment.submitBefore;
+
+  if (!effectiveDeadline) {
+    return null;
   }
 
-  if (assignment.dueDate <= dueSoonThreshold) {
+  if (effectiveDeadline <= dueSoonThreshold) {
     return "due_soon";
   }
 

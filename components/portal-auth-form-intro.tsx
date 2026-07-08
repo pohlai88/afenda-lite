@@ -3,7 +3,12 @@ import type { AuthShellCopy } from "@/lib/auth-shell-copy";
 
 type PortalAuthFormIntroProps = Pick<
   AuthShellCopy,
-  "signInTitle" | "signInDescription" | "alternateLink" | "signInHeadingId" | "footerHint"
+  | "signInTitle"
+  | "signInDescription"
+  | "alternateLink"
+  | "signInHeadingId"
+  | "footerHint"
+  | "constraintHint"
 >;
 
 /** Portal-owned headings above Neon AuthView — restores copy smoke/E2E and a11y targets. */
@@ -13,6 +18,7 @@ export function PortalAuthFormIntro({
   alternateLink,
   signInHeadingId,
   footerHint,
+  constraintHint,
 }: PortalAuthFormIntroProps) {
   return (
     <div className="flex w-full flex-col gap-4">
@@ -24,6 +30,9 @@ export function PortalAuthFormIntro({
           {signInTitle}
         </h2>
         <p className="text-body text-muted-foreground text-pretty">{signInDescription}</p>
+        {constraintHint ? (
+          <p className="text-caption text-muted-foreground text-pretty">{constraintHint}</p>
+        ) : null}
       </div>
 
       <p className="text-center text-caption text-muted-foreground lg:text-right">

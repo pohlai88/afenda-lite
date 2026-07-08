@@ -2,7 +2,6 @@ import "server-only";
 
 import { buildClientOnboardingFormDefaults } from "@/lib/client-onboarding";
 import { getClientInvitationByEmail, getClientProfile } from "@/lib/clients";
-import { parseSchema } from "@/lib/schemas/common";
 import { clientOnboardingSchema } from "@/lib/schemas/client";
 import {
   formBooleanLiteral,
@@ -11,7 +10,7 @@ import {
 } from "@/lib/server-actions/form-data";
 
 export function parseClientOnboardingFormData(formData: FormData) {
-  return parseSchema(clientOnboardingSchema, {
+  const result = clientOnboardingSchema.safeParse({
     fullLegalName: formString(formData, "fullLegalName"),
     nationality: formString(formData, "nationality"),
     countryOfResidence: formString(formData, "countryOfResidence"),
@@ -27,6 +26,15 @@ export function parseClientOnboardingFormData(formData: FormData) {
     notes: formString(formData, "notes"),
     identityConsent: formBooleanLiteral(formData, "identityConsent"),
   });
+
+  if (!result.success) {
+    return {
+      success: false as const,
+      error: result.error.issues[0]?.message ?? "Check your entries and try again.",
+    };
+  }
+
+  return { success: true as const, data: result.data };
 }
 
 export async function loadClientOnboardingPageData(user: {

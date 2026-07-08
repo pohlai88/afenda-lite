@@ -44,6 +44,7 @@ export type ClientAssignment = {
   assignedBy: string;
   status: "pending" | "submitted";
   dueDate: Date | null;
+  submitBefore: Date | null;
   createdAt: Date;
   surveyTitle?: string;
   surveyQuestion?: string;
@@ -121,6 +122,9 @@ function mapAssignment(row: Record<string, unknown>): ClientAssignment {
     assignedBy: String(row.assigned_by),
     status: String(row.status) as ClientAssignment["status"],
     dueDate: row.due_date ? new Date(String(row.due_date)) : null,
+    submitBefore: row.submit_before
+      ? new Date(String(row.submit_before))
+      : null,
     confirmationCode: row.confirmation_code ? String(row.confirmation_code) : null,
     createdAt: new Date(String(row.created_at)),
     surveyTitle: row.survey_title ? String(row.survey_title) : undefined,
@@ -400,7 +404,8 @@ export async function listClientAssignments(email: string) {
        a.created_at,
        s.title AS survey_title,
        s.question AS survey_question,
-       s.slug AS survey_slug
+       s.slug AS survey_slug,
+       s.submit_before
      FROM client_assignments a
      JOIN surveys s ON s.id = a.survey_id
      WHERE lower(a.client_email) = lower($1)
@@ -427,7 +432,8 @@ export async function getActiveClientAssignmentForSurvey(
        a.created_at,
        s.title AS survey_title,
        s.question AS survey_question,
-       s.slug AS survey_slug
+       s.slug AS survey_slug,
+       s.submit_before
      FROM client_assignments a
      JOIN surveys s ON s.id = a.survey_id
      WHERE lower(a.client_email) = lower($1)
@@ -461,7 +467,8 @@ export async function getClientAssignmentForUser(
        a.created_at,
        s.title AS survey_title,
        s.question AS survey_question,
-       s.slug AS survey_slug
+       s.slug AS survey_slug,
+       s.submit_before
      FROM client_assignments a
      JOIN surveys s ON s.id = a.survey_id
      WHERE a.id = $1 AND lower(a.client_email) = lower($2)
@@ -515,7 +522,8 @@ export async function listClientAssignmentsForAdmin() {
        a.created_at,
        s.title AS survey_title,
        s.question AS survey_question,
-       s.slug AS survey_slug
+       s.slug AS survey_slug,
+       s.submit_before
      FROM client_assignments a
      JOIN surveys s ON s.id = a.survey_id
      ORDER BY a.created_at DESC

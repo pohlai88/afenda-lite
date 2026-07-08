@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  EVIDENCE_ACCEPTANCE,
   isEvidencePolicyFailureReason,
   validateEvidenceMetadata,
 } from "@/lib/evidence-policy";
@@ -15,12 +16,22 @@ describe("validateEvidenceMetadata", () => {
     ).toEqual({ ok: true });
   });
 
-  it("rejects oversize files", () => {
+  it("accepts PDF with empty mime when extension is .pdf", () => {
+    expect(
+      validateEvidenceMetadata({
+        fileName: "report.pdf",
+        mimeType: "  ",
+        sizeBytes: 100,
+      }),
+    ).toEqual({ ok: true });
+  });
+
+  it("rejects oversize PDFs", () => {
     expect(
       validateEvidenceMetadata({
         fileName: "large.pdf",
         mimeType: "application/pdf",
-        sizeBytes: 11 * 1024 * 1024,
+        sizeBytes: EVIDENCE_ACCEPTANCE.maxBytes + 1,
       }),
     ).toEqual({ ok: false, reason: "size" });
   });
@@ -35,34 +46,34 @@ describe("validateEvidenceMetadata", () => {
     ).toEqual({ ok: false, reason: "size" });
   });
 
-  it("rejects disallowed mime types", () => {
+  it("rejects non-PDF mime types", () => {
     expect(
       validateEvidenceMetadata({
-        fileName: "script.html",
-        mimeType: "text/html",
-        sizeBytes: 100,
-      }),
-    ).toEqual({ ok: false, reason: "mime" });
-  });
-
-  it("rejects blocked extensions even with octet-stream mime", () => {
-    expect(
-      validateEvidenceMetadata({
-        fileName: "payload.exe",
-        mimeType: "application/octet-stream",
+        fileName: "photo.jpg",
+        mimeType: "image/jpeg",
         sizeBytes: 100,
       }),
     ).toEqual({ ok: false, reason: "extension" });
   });
 
-  it("defaults empty mime to application/octet-stream", () => {
+  it("rejects non-PDF extensions even with PDF mime", () => {
     expect(
       validateEvidenceMetadata({
         fileName: "notes.txt",
-        mimeType: "  ",
+        mimeType: "application/pdf",
         sizeBytes: 100,
       }),
-    ).toEqual({ ok: true });
+    ).toEqual({ ok: false, reason: "extension" });
+  });
+
+  it("rejects wrong mime on PDF extension", () => {
+    expect(
+      validateEvidenceMetadata({
+        fileName: "report.pdf",
+        mimeType: "text/html",
+        sizeBytes: 100,
+      }),
+    ).toEqual({ ok: false, reason: "mime" });
   });
 });
 
@@ -70,5 +81,18 @@ describe("isEvidencePolicyFailureReason", () => {
   it("narrows known failure reasons", () => {
     expect(isEvidencePolicyFailureReason("mime")).toBe(true);
     expect(isEvidencePolicyFailureReason("unknown")).toBe(false);
+  });
+});
+
+describe("portalCopy.declarationForm.filePolicyError", () => {
+  it("returns specific messages for each policy failure", async () => {
+    const { portalCopy } = await import("@/lib/portal-copy");
+    expect(portalCopy.declarationForm.filePolicyError("size")).toContain(
+      EVIDENCE_ACCEPTANCE.maxSizeLabel,
+    );
+    expect(portalCopy.declarationForm.filePolicyError("mime")).toContain("PDF");
+    expect(portalCopy.declarationForm.filePolicyError("extension")).toContain(
+      ".pdf",
+    );
   });
 });

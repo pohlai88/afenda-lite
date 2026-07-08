@@ -81,7 +81,7 @@ test.describe("Client assignment and file evidence @journey", () => {
     );
 
     await page.locator('input[type="file"]').setInputFiles(evidenceFixturePath);
-    await expect(page.getByText("sample-evidence.txt")).toBeVisible();
+    await expect(page.getByText("sample-evidence.pdf")).toBeVisible();
 
     await page.getByRole("button", { name: /submit declaration/i }).click();
     await expectDeclarationReceived(page, "client");

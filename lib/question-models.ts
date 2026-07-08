@@ -1,4 +1,8 @@
 import type { QuestionConfig } from "@/lib/survey-package";
+import {
+  validateQuestionAnswer,
+  type QuestionAnswerValidationCopy,
+} from "@/lib/question-answer-validation";
 
 export type QuestionType = "yes_no" | "text" | "file";
 
@@ -27,20 +31,24 @@ export type EvidenceRecord = {
 export function validateAnswers(
   questions: SurveyQuestion[],
   answers: SurveyAnswers,
-) {
+  copy?: QuestionAnswerValidationCopy,
+): string | null {
+  const defaultCopy: QuestionAnswerValidationCopy = {
+    requiredFieldError: "This field is required.",
+    fileRequired: "Select a PDF before continuing.",
+    yesNoRequired: "Select Yes or No before continuing.",
+    textTooShort: (min) => `Enter at least ${min} characters.`,
+    textTooLong: (max) => `Keep your answer to ${max} characters or fewer.`,
+  };
+
   for (const question of questions) {
-    const value = answers[question.id];
-    if (!question.required) continue;
-
-    if (question.type === "yes_no") {
-      if (typeof value !== "boolean") {
-        return question.prompt;
-      }
-      continue;
-    }
-
-    if (typeof value !== "string" || !value.trim()) {
-      return question.prompt;
+    const message = validateQuestionAnswer(
+      question,
+      answers[question.id],
+      copy ?? defaultCopy,
+    );
+    if (message) {
+      return message;
     }
   }
   return null;

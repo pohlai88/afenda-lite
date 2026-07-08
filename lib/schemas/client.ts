@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { CLIENT_ONBOARDING } from "@/lib/form-constraints";
 import { ISO_COUNTRY_CODES } from "@/lib/countries";
 import {
   emailSchema,
@@ -12,25 +13,74 @@ const isoCountrySchema = z.enum(ISO_COUNTRY_CODES);
 const passportNumberSchema = z
   .string()
   .trim()
-  .min(6)
-  .max(20)
-  .regex(/^[A-Za-z0-9]+$/, "Passport number must be alphanumeric");
+  .min(
+    CLIENT_ONBOARDING.passportNumberMin,
+    `Passport number must be at least ${CLIENT_ONBOARDING.passportNumberMin} characters.`,
+  )
+  .max(
+    CLIENT_ONBOARDING.passportNumberMax,
+    `Passport number must be ${CLIENT_ONBOARDING.passportNumberMax} characters or fewer.`,
+  )
+  .regex(
+    CLIENT_ONBOARDING.passportNumberPattern,
+    "Passport number must contain letters and numbers only.",
+  );
 
 export const clientOnboardingSchema = z.object({
-  fullLegalName: z.string().trim().min(1).max(500),
+  fullLegalName: z
+    .string()
+    .trim()
+    .min(1, "Full legal name is required.")
+    .max(
+      CLIENT_ONBOARDING.fullLegalNameMax,
+      `Full legal name must be ${CLIENT_ONBOARDING.fullLegalNameMax} characters or fewer.`,
+    ),
   nationality: isoCountrySchema,
   countryOfResidence: isoCountrySchema,
   additionalResidenceCountries: z
     .array(isoCountrySchema)
-    .max(5)
+    .max(
+      CLIENT_ONBOARDING.additionalCountriesMax,
+      `Select up to ${CLIENT_ONBOARDING.additionalCountriesMax} additional countries.`,
+    )
     .default([]),
   passportIssuingCountry: isoCountrySchema,
   passportNumber: passportNumberSchema,
-  phone: z.string().trim().min(1).max(50),
-  entityName: z.string().trim().min(1).max(500),
-  jurisdiction: z.string().trim().min(1).max(200),
-  notes: z.string().trim().max(5000),
-  identityConsent: z.literal("true"),
+  phone: z
+    .string()
+    .trim()
+    .min(1, "Phone number is required.")
+    .max(
+      CLIENT_ONBOARDING.phoneMax,
+      `Phone number must be ${CLIENT_ONBOARDING.phoneMax} characters or fewer.`,
+    ),
+  entityName: z
+    .string()
+    .trim()
+    .min(1, "Legal entity name is required.")
+    .max(
+      CLIENT_ONBOARDING.entityNameMax,
+      `Legal entity name must be ${CLIENT_ONBOARDING.entityNameMax} characters or fewer.`,
+    ),
+  jurisdiction: z
+    .string()
+    .trim()
+    .min(1, "Governing jurisdiction is required.")
+    .max(
+      CLIENT_ONBOARDING.jurisdictionMax,
+      `Governing jurisdiction must be ${CLIENT_ONBOARDING.jurisdictionMax} characters or fewer.`,
+    ),
+  notes: z
+    .string()
+    .trim()
+    .max(
+      CLIENT_ONBOARDING.notesMax,
+      `Notes must be ${CLIENT_ONBOARDING.notesMax.toLocaleString()} characters or fewer.`,
+    ),
+  identityConsent: z.custom<"true">(
+    (value) => value === "true",
+    "Confirm your identity information before saving.",
+  ),
 });
 
 export const submitClientDeclarationSchema = z.object({

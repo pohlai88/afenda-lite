@@ -169,11 +169,13 @@ Mutations and public entry points only. Session helpers (`requireAdminSession`, 
 | S8 | Operator review surface | shipped | 9 | [s8-operator-review.md](./slices/s8-operator-review.md) |
 | S9 | Readiness and deploy gate | shipped | 10 | [s9-readiness.md](./slices/s9-readiness.md) |
 | S10 | Validation contracts (Zod) | shipped | 11 | [s10-validation-contracts.md](./slices/s10-validation-contracts.md) |
-| S11 | Audit event log | shipped | 12 | [s11-audit-events.md](./slices/s11-audit-events.md) |
-| S12 | Tenancy and row scope | planned | 13 | [s12-tenancy.md](./slices/s12-tenancy.md) |
+| S11 | Audit events | shipped | 12 | [s11-audit-events.md](./slices/s11-audit-events.md) |
 | S13 | CI quality gate | shipped | 14 | [s13-ci-gate.md](./slices/s13-ci-gate.md) |
 | S14 | Observability | shipped | 15 | [s14-observability.md](./slices/s14-observability.md) |
 | S15 | E2E journeys + evidence policy | shipped | 16 | [s15-e2e-journeys.md](./slices/s15-e2e-journeys.md) |
+| S16 | Admin client portal preview | shipped | — | [s16-admin-client-preview.md](./slices/s16-admin-client-preview.md) |
+| S17 | Production acceptance closure | in_progress | 17 | [s17-production-acceptance-closure.md](./slices/s17-production-acceptance-closure.md) |
+| S12 | Tenancy and row scope | planned | 18 — **after S17** | [s12-tenancy.md](./slices/s12-tenancy.md) |
 
 ---
 
@@ -193,9 +195,10 @@ Mutations and public entry points only. Session helpers (`requireAdminSession`, 
 | S9 | S0, S1 | deploy | — | all | — |
 | S10 | S3, S4 | S13 | hand-parse FormData | — | enterprise gate |
 | S11 | S1 | compliance | mutations without audit | — | prod scale |
-| S12 | S3 | multi-tenant | global admin list | — | SaaS launch |
+| S12 | S3, S17 | multi-tenant | global admin list | — | SaaS launch (S17 first) |
 | S13 | S10 | release | manual-only verify | — | team CI |
 | S14 | S1 | ops | — | S11 | — |
+| S17 | S0–S16 | release sign-off, S12 decision | new features during closure | — | S12, SaaS expansion |
 
 ---
 
@@ -233,7 +236,8 @@ Mutations and public entry points only. Session helpers (`requireAdminSession`, 
 12. **S13** CI workflow (build + migrate + copy grep)  
 13. **S11** Audit events on mutations  
 14. **S14** Correlation ID + structured logging  
-15. **S12** Tenancy — only if multi-operator SaaS confirmed
+15. **S17** Production acceptance closure — close proof gaps before SaaS  
+16. **S12** Tenancy — only if multi-operator SaaS confirmed **and S17 accepted**
 
 **Build principles**
 
@@ -251,11 +255,11 @@ Mutations and public entry points only. Session helpers (`requireAdminSession`, 
 - [x] Migrations applied on production branch (`npm run db:migrate`; uses `schema_migrations`)
 - [ ] Env: `DATABASE_URL`, `NEON_AUTH_*`, `SHARED_ADMIN_*`, `APP_URL` on Vercel — [production go-live runbook](../runbooks/production-go-live.md)
 - [ ] Neon Auth trusted domains include production URL — [runbook](../runbooks/production-go-live.md#preflight)
-- [x] Operator E2E: create → share → receive submission (`e2e/smoke.spec.ts`, `e2e/secure-file.spec.ts`)
-- [x] Client E2E: invite → onboard → assign → submit → receipt (`e2e/client-journey.spec.ts`)
-- [x] Anonymous E2E: open + secure links, file metadata (`e2e/smoke.spec.ts`, `e2e/secure-file.spec.ts`)
-- [x] Non-operator rejected → `/org/login?reason=access-denied`
-- [ ] `GET /api/health/readiness` returns `ready` on production — `npm run verify:production` + [runbook](../runbooks/production-go-live.md)
+- [x] Operator E2E: create → share → receive submission (`e2e/smoke.spec.ts`, `e2e/secure-file.spec.ts`) — smoke partial; journey pending S17
+- [x] Client E2E: invite → onboard → assign → submit → receipt (`e2e/client-journey.spec.ts`) — CI authority; local journey failed S17
+- [x] Anonymous E2E: open + secure links, file metadata (`e2e/smoke.spec.ts`, `e2e/secure-file.spec.ts`) — smoke PASS S17
+- [x] Non-operator rejected → `/org/login?reason=access-denied` — smoke PASS S17
+- [x] `GET /api/health/readiness` returns `ready` on production — `npm run verify:production` + curl S17 2026-07-08
 - [x] CI green on PR (S13)
 - [x] Audit on critical mutations (S11)
 - [x] Zod on all actions (S10)
@@ -291,7 +295,7 @@ Mutations and public entry points only. Session helpers (`requireAdminSession`, 
 
 ## 10. Phase C execution playbook
 
-**Status:** Phase C shipped (S10–S14 + E2E smoke). **S12 deferred** until multi-operator SaaS confirmed.
+**Status:** Phase C shipped (S10–S14 + E2E smoke). **S17 next** — close acceptance proof before SaaS. **S12 frozen** until S17 accepted and multi-operator SaaS confirmed.
 
 | Step | Slice | Deliverables | Done when |
 |------|-------|--------------|-----------|

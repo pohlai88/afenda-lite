@@ -3,13 +3,15 @@
 | Field | Value |
 |-------|-------|
 | **Status** | planned |
-| **Sequence** | 13 — only when multi-operator SaaS required |
-| **Depends on** | S3 |
+| **Sequence** | 18 — only when multi-operator SaaS required; **after S17 accepted** |
+| **Depends on** | S3, S17 |
 | **Feeds into** | Multi-operator SaaS |
 
 ## Purpose
 
 Replace global operator model with org/workspace scope.
+
+**Gate:** Do not start until [S17 production acceptance closure](./s17-production-acceptance-closure.md) is accepted.
 
 ## Inputs / outputs
 

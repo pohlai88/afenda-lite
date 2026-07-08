@@ -17,9 +17,15 @@ async function validateSubmissionAnswers(input: {
   answers: SurveyAnswers;
 }) {
   const questions = await listQuestionsForSurvey(input.surveyId);
-  const missing = validateAnswers(questions, input.answers);
-  if (missing) {
-    return { error: portalCopy.declarationForm.requiredField(missing) };
+  const validationError = validateAnswers(questions, input.answers, {
+    requiredFieldError: portalCopy.declarationForm.requiredFieldError,
+    fileRequired: portalCopy.declarationForm.fileRequired,
+    yesNoRequired: portalCopy.declarationForm.yesNoRequired,
+    textTooShort: portalCopy.declarationForm.textTooShort,
+    textTooLong: portalCopy.declarationForm.textTooLong,
+  });
+  if (validationError) {
+    return { error: validationError };
   }
 
   const fileEvidenceIds = questions
@@ -39,8 +45,11 @@ async function validateSubmissionAnswers(input: {
     const evidenceId = input.answers[question.id];
     if (typeof evidenceId !== "string" || !evidenceId) continue;
     const evidence = evidenceById.get(evidenceId);
-    if (!evidence || evidence.questionId !== question.id) {
-      return { error: portalCopy.declarationForm.fileInvalid };
+    if (!evidence) {
+      return { error: portalCopy.declarationForm.fileEvidenceMissing };
+    }
+    if (evidence.questionId !== question.id) {
+      return { error: portalCopy.declarationForm.fileEvidenceMismatch };
     }
   }
 

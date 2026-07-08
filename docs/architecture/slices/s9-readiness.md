@@ -45,8 +45,8 @@ Pre-flight dependency check for deploy verification and operators. **Not** for V
 
 ## Acceptance proof
 
-- [ ] Curl on staging returns expected readiness status
-- [ ] `npm run verify:production` exits 0 against production
+- [ ] Curl on staging returns expected readiness status — deferred; production verified S17
+- [x] `npm run verify:production` exits 0 against production — 2026-07-08
 - [ ] Vercel uptime monitor targets `/api/health/liveness` (dashboard config)
 
 ## Rollback

@@ -17,12 +17,20 @@ export type AuthShellCopy = {
   trustNotice: string;
   alternateLink: { href: string; label: string };
   footerHint?: string;
+  constraintHint?: string;
   signInHeadingId?: string;
 };
 
 const clientAuthCopyByPath: Record<
   string,
-  Pick<AuthShellCopy, "signInTitle" | "signInDescription" | "alternateLink" | "signInHeadingId">
+  Pick<
+    AuthShellCopy,
+    | "signInTitle"
+    | "signInDescription"
+    | "alternateLink"
+    | "signInHeadingId"
+    | "constraintHint"
+  >
 > = {
   "sign-in": {
     signInTitle: portalCopy.signIn.title,
@@ -33,16 +41,20 @@ const clientAuthCopyByPath: Record<
     signInTitle: portalCopy.metadata.authSignUp.title,
     signInDescription: portalCopy.metadata.authSignUp.description,
     alternateLink: { href: AUTH_SIGN_IN_HREF, label: "Back to sign in" },
+    constraintHint: portalCopy.signUp.passwordRequirements,
   },
   "forgot-password": {
     signInTitle: portalCopy.metadata.authForgotPassword.title,
     signInDescription: portalCopy.metadata.authForgotPassword.description,
     alternateLink: { href: AUTH_SIGN_IN_HREF, label: "Back to sign in" },
+    constraintHint:
+      "Reset links expire after 15 minutes and can only be used once.",
   },
   "reset-password": {
     signInTitle: portalCopy.metadata.authResetPassword.title,
     signInDescription: portalCopy.metadata.authResetPassword.description,
     alternateLink: { href: AUTH_SIGN_IN_HREF, label: "Back to sign in" },
+    constraintHint: portalCopy.signUp.passwordRequirements,
   },
   "sign-out": {
     signInTitle: portalCopy.metadata.authSignOut.title,
@@ -59,11 +71,14 @@ const clientAuthCopyByPath: Record<
     signInTitle: "Sign in with verification code",
     signInDescription: portalCopy.emailOtp.signInDescription,
     alternateLink: { href: AUTH_SIGN_IN_HREF, label: "Sign in with password" },
+    constraintHint: portalCopy.emailOtp.codeExpiryHint,
   },
   "magic-link": {
     signInTitle: portalCopy.metadata.authMagicLink.title,
     signInDescription: portalCopy.magicLink.signInDescription,
     alternateLink: { href: AUTH_SIGN_IN_HREF, label: "Sign in with password" },
+    constraintHint:
+      "Sign-in links expire after 15 minutes and can only be used once.",
   },
 };
 
@@ -101,6 +116,7 @@ export function resolveAuthShellCopy(input: {
     trustNotice: trust.notices.clientLogin,
     alternateLink: pathCopy.alternateLink,
     footerHint: input.path === "sign-in" ? signIn.inviteHint : undefined,
+    constraintHint: pathCopy.constraintHint,
     signInHeadingId: pathCopy.signInHeadingId,
   };
 }

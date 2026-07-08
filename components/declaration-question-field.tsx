@@ -3,10 +3,15 @@
 import { useId, useState, useTransition } from "react";
 import { CheckCircleIcon, Loader2Icon, UploadIcon } from "lucide-react";
 import { registerEvidenceAction } from "@/app/actions/declarations";
+import { EVIDENCE_FILE_INPUT_ACCEPT } from "@/lib/evidence-policy";
 import { FormErrorAlert } from "@/components/form-error-alert";
 import { QuestionSequenceBadge } from "@/components/question-sequence-badge";
 import { portalCopy } from "@/lib/portal-copy";
 import type { SurveyQuestion } from "@/lib/question-models";
+import {
+  textAnswerMaxLength,
+  textAnswerRequirementsHint,
+} from "@/lib/question-answer-validation";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
@@ -66,7 +71,13 @@ export function DeclarationQuestionField({
       ) : null}
 
       {question.type === "yes_no" ? (
-        <RadioGroup
+        <>
+          {question.required ? (
+            <p className="text-xs text-muted-foreground">
+              {declarationForm.yesNoHint}
+            </p>
+          ) : null}
+          <RadioGroup
           value={radioValue}
           onValueChange={(next) => onChange(next === "yes")}
           className="v-stack gap-2 sm:h-stack sm:gap-4"
@@ -95,22 +106,30 @@ export function DeclarationQuestionField({
             </Label>
           ))}
         </RadioGroup>
+        </>
       ) : null}
 
       {question.type === "text" ? (
-        <Textarea
-          id={`${legendId}-text`}
-          name={`answer-${question.id}`}
-          className="min-h-24"
-          value={typeof value === "string" ? value : ""}
-          onChange={(event) => onChange(event.target.value)}
-          placeholder={
-            question.config.placeholder ?? declarationForm.textPlaceholder
-          }
-          autoComplete="off"
-          aria-labelledby={legendId}
-          aria-invalid={error ? true : undefined}
-        />
+        <>
+          <Textarea
+            id={`${legendId}-text`}
+            name={`answer-${question.id}`}
+            className="min-h-24"
+            value={typeof value === "string" ? value : ""}
+            onChange={(event) => onChange(event.target.value)}
+            placeholder={
+              question.config.placeholder ?? declarationForm.textPlaceholder
+            }
+            maxLength={textAnswerMaxLength(question)}
+            autoComplete="off"
+            aria-labelledby={legendId}
+            aria-invalid={error ? true : undefined}
+          />
+          <p className="text-xs text-muted-foreground">
+            {textAnswerRequirementsHint(question) ??
+              declarationForm.textAnswerMaxHint}
+          </p>
+        </>
       ) : null}
 
       {question.type === "file" ? (
@@ -128,6 +147,7 @@ export function DeclarationQuestionField({
               <input
                 id={fileInputId}
                 type="file"
+                accept={EVIDENCE_FILE_INPUT_ACCEPT}
                 className="sr-only"
                 disabled={isRegistering}
                 aria-labelledby={legendId}
@@ -142,10 +162,7 @@ export function DeclarationQuestionField({
                     formData.set("slug", slug);
                     formData.set("questionId", question.id);
                     formData.set("fileName", file.name);
-                    formData.set(
-                      "mimeType",
-                      file.type || "application/octet-stream",
-                    );
+                    formData.set("mimeType", file.type || "application/pdf");
                     formData.set("sizeBytes", String(file.size));
                     const result = await registerEvidenceAction(formData);
                     if (result && "error" in result && result.error) {
@@ -171,7 +188,7 @@ export function DeclarationQuestionField({
                       aria-hidden="true"
                       className="size-5 animate-spin"
                     />
-                    <span>{declarationForm.fileUploading}</span>
+                    <span>{declarationForm.fileRegistering}</span>
                   </>
                 ) : (
                   <>
@@ -182,9 +199,16 @@ export function DeclarationQuestionField({
               </Label>
             </>
           )}
-          <p className="text-xs text-muted-foreground">
-            {declarationForm.fileNote}
-          </p>
+          <div className="rounded-md border border-border/60 bg-muted/30 px-3 py-2.5 text-xs text-muted-foreground">
+            <p className="font-medium text-foreground">
+              {declarationForm.fileRequirementsTitle}
+            </p>
+            <ul className="mt-1.5 list-disc space-y-1 pl-4">
+              <li>{declarationForm.fileAcceptanceAccepted}</li>
+              <li>{declarationForm.fileAcceptanceRejected}</li>
+              <li>{declarationForm.fileNotUploadedNote}</li>
+            </ul>
+          </div>
           {fileError ? <FormErrorAlert error={fileError} /> : null}
         </div>
       ) : null}

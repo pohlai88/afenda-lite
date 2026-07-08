@@ -4,6 +4,7 @@ import { FieldGroup } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { SURVEY_EDITOR } from "@/lib/form-constraints";
 import { portalCopy } from "@/lib/portal-copy";
 import { formatCategoriesInput } from "@/lib/survey-package";
 import type { SurveyMetadata } from "@/lib/surveys";
@@ -11,6 +12,10 @@ import type { SurveyMetadata } from "@/lib/surveys";
 function toDateInputValue(value: Date | null) {
   if (!value) return "";
   return value.toISOString().slice(0, 10);
+}
+
+function FieldHint({ children }: { children: string }) {
+  return <p className="text-xs text-muted-foreground">{children}</p>;
 }
 
 export function SurveyMetadataFields({
@@ -27,7 +32,7 @@ export function SurveyMetadataFields({
       {declarationId ? (
         <div className="space-y-2 sm:col-span-2">
           <Label htmlFor="declarationId">{copy.declarationId}</Label>
-          <p className="text-xs text-muted-foreground">{copy.declarationIdHint}</p>
+          <FieldHint>{copy.declarationIdHint}</FieldHint>
           <Input
             id="declarationId"
             value={declarationId}
@@ -39,24 +44,29 @@ export function SurveyMetadataFields({
       ) : null}
       <div className="space-y-2">
         <Label htmlFor="referenceNumber">{copy.referenceNumber}</Label>
+        <FieldHint>{copy.referenceNumberHint}</FieldHint>
         <Input
           id="referenceNumber"
           name="referenceNumber"
+          maxLength={SURVEY_EDITOR.referenceMax}
           defaultValue={metadata?.referenceNumber ?? ""}
           autoComplete="off"
         />
       </div>
       <div className="space-y-2">
         <Label htmlFor="caseNumber">{copy.caseNumber}</Label>
+        <FieldHint>{copy.caseNumberHint}</FieldHint>
         <Input
           id="caseNumber"
           name="caseNumber"
+          maxLength={SURVEY_EDITOR.referenceMax}
           defaultValue={metadata?.caseNumber ?? ""}
           autoComplete="off"
         />
       </div>
       <div className="space-y-2">
         <Label htmlFor="effectiveDate">{copy.effectiveDate}</Label>
+        <FieldHint>{copy.effectiveDateHint}</FieldHint>
         <Input
           id="effectiveDate"
           name="effectiveDate"
@@ -67,6 +77,7 @@ export function SurveyMetadataFields({
       </div>
       <div className="space-y-2">
         <Label htmlFor="submitBefore">{copy.submitBefore}</Label>
+        <FieldHint>{copy.submitBeforeHint}</FieldHint>
         <Input
           id="submitBefore"
           name="submitBefore"
@@ -82,18 +93,22 @@ export function SurveyMetadataFields({
         </legend>
         <div className="space-y-2">
           <Label htmlFor="surveyorName">{copy.surveyorName}</Label>
+          <FieldHint>{copy.surveyorNameHint}</FieldHint>
           <Input
             id="surveyorName"
             name="surveyorName"
+            maxLength={SURVEY_EDITOR.partyNameMax}
             defaultValue={metadata?.surveyorName ?? ""}
             autoComplete="off"
           />
         </div>
         <div className="space-y-2">
           <Label htmlFor="surveyorOrg">{copy.surveyorOrg}</Label>
+          <FieldHint>{copy.surveyorOrgHint}</FieldHint>
           <Input
             id="surveyorOrg"
             name="surveyorOrg"
+            maxLength={SURVEY_EDITOR.partyNameMax}
             defaultValue={metadata?.surveyorOrg ?? ""}
             autoComplete="off"
           />
@@ -106,18 +121,22 @@ export function SurveyMetadataFields({
         </legend>
         <div className="space-y-2">
           <Label htmlFor="surveyeeIndividual">{copy.surveyeeIndividual}</Label>
+          <FieldHint>{copy.surveyeeIndividualHint}</FieldHint>
           <Input
             id="surveyeeIndividual"
             name="surveyeeIndividual"
+            maxLength={SURVEY_EDITOR.partyNameMax}
             defaultValue={metadata?.surveyeeIndividual ?? ""}
             autoComplete="off"
           />
         </div>
         <div className="space-y-2">
           <Label htmlFor="surveyeeOrg">{copy.surveyeeOrg}</Label>
+          <FieldHint>{copy.surveyeeOrgHint}</FieldHint>
           <Input
             id="surveyeeOrg"
             name="surveyeeOrg"
+            maxLength={SURVEY_EDITOR.partyNameMax}
             defaultValue={metadata?.surveyeeOrg ?? ""}
             autoComplete="off"
           />
@@ -126,10 +145,12 @@ export function SurveyMetadataFields({
 
       <div className="space-y-2 sm:col-span-2">
         <Label htmlFor="purpose">{copy.purpose}</Label>
+        <FieldHint>{copy.purposeHint}</FieldHint>
         <Textarea
           id="purpose"
           name="purpose"
           className="min-h-16"
+          maxLength={SURVEY_EDITOR.purposeMax}
           defaultValue={metadata?.purpose ?? ""}
           placeholder={copy.purposePlaceholder}
         />
@@ -137,10 +158,13 @@ export function SurveyMetadataFields({
 
       <div className="space-y-2 sm:col-span-2">
         <Label htmlFor="categories">{copy.categories}</Label>
-        <p className="text-xs text-muted-foreground">{copy.categoriesHint}</p>
+        <FieldHint>{copy.categoriesHint}</FieldHint>
         <Input
           id="categories"
           name="categories"
+          maxLength={
+            SURVEY_EDITOR.categoriesMax * (SURVEY_EDITOR.categoryMax + 2)
+          }
           defaultValue={formatCategoriesInput(metadata?.categories ?? [])}
           placeholder={copy.categoriesPlaceholder}
           autoComplete="off"

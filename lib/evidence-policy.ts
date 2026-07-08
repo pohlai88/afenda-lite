@@ -1,27 +1,18 @@
-export const MAX_EVIDENCE_BYTES = 10 * 1024 * 1024;
+export const MAX_EVIDENCE_BYTES = 1 * 1024 * 1024;
+
+export const EVIDENCE_ACCEPTANCE = {
+  maxBytes: MAX_EVIDENCE_BYTES,
+  maxSizeLabel: "1 MB",
+  format: "PDF",
+  extension: ".pdf",
+  mimeType: "application/pdf",
+} as const;
 
 export const ALLOWED_EVIDENCE_MIME_TYPES = new Set([
-  "application/pdf",
-  "image/jpeg",
-  "image/png",
-  "image/gif",
-  "image/webp",
-  "text/plain",
-  "application/octet-stream",
+  EVIDENCE_ACCEPTANCE.mimeType,
 ]);
 
-const BLOCKED_EXTENSIONS = new Set([
-  ".exe",
-  ".bat",
-  ".cmd",
-  ".com",
-  ".msi",
-  ".dll",
-  ".scr",
-  ".js",
-  ".vbs",
-  ".ps1",
-]);
+export const EVIDENCE_FILE_INPUT_ACCEPT = `${EVIDENCE_ACCEPTANCE.mimeType},${EVIDENCE_ACCEPTANCE.extension}`;
 
 export function validateEvidenceMetadata(input: {
   fileName: string;
@@ -34,18 +25,14 @@ export function validateEvidenceMetadata(input: {
     return { ok: false, reason: "size" };
   }
 
-  const mime = input.mimeType.trim().toLowerCase() || "application/octet-stream";
-  if (!ALLOWED_EVIDENCE_MIME_TYPES.has(mime)) {
-    return { ok: false, reason: "mime" };
+  const lowerName = input.fileName.trim().toLowerCase();
+  if (!lowerName.endsWith(EVIDENCE_ACCEPTANCE.extension)) {
+    return { ok: false, reason: "extension" };
   }
 
-  const lowerName = input.fileName.trim().toLowerCase();
-  const extension = lowerName.includes(".")
-    ? lowerName.slice(lowerName.lastIndexOf("."))
-    : "";
-
-  if (extension && BLOCKED_EXTENSIONS.has(extension)) {
-    return { ok: false, reason: "extension" };
+  const mime = input.mimeType.trim().toLowerCase();
+  if (mime && mime !== EVIDENCE_ACCEPTANCE.mimeType) {
+    return { ok: false, reason: "mime" };
   }
 
   return { ok: true };

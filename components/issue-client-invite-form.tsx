@@ -4,9 +4,10 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { issueClientInviteAction } from "@/app/actions/client";
 import { portalCopy } from "@/lib/portal-copy";
+import { CLIENT_INVITE } from "@/lib/form-constraints";
 import { FormErrorAlert } from "@/components/form-error-alert";
 import { Button } from "@/components/ui/button";
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -89,8 +90,10 @@ export function IssueClientInviteForm({
             name="fullName"
             required
             autoComplete="name"
+            maxLength={CLIENT_INVITE.fullNameMax}
             placeholder={clientInvite.fullNamePlaceholder}
           />
+          <FieldDescription>{clientInvite.fullNameHint}</FieldDescription>
         </Field>
 
         <Field className="gap-2 sm:col-span-2">
@@ -101,9 +104,11 @@ export function IssueClientInviteForm({
             type="email"
             required
             autoComplete="email"
+            maxLength={CLIENT_INVITE.emailMax}
             spellCheck={false}
             placeholder={portalCopy.invite.emailPlaceholder}
           />
+          <FieldDescription>{clientInvite.emailHint}</FieldDescription>
         </Field>
 
         <Field className="gap-2 sm:col-span-2">
@@ -132,8 +137,11 @@ export function IssueClientInviteForm({
         <Field className="gap-2 sm:col-span-2">
           <FieldLabel htmlFor="invite-due-date">{clientInvite.dueDateLabel}</FieldLabel>
           <Input id="invite-due-date" name="dueDate" type="date" autoComplete="off" />
+          <FieldDescription>{clientInvite.dueDateHint}</FieldDescription>
         </Field>
       </FieldGroup>
+
+      <p className="text-xs text-muted-foreground">{clientInvite.inviteExpiryHint}</p>
 
       <FormErrorAlert error={error} />
 
