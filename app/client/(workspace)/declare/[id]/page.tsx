@@ -11,7 +11,8 @@ import {
   getClientProfile,
   isClientPortalAcknowledged,
 } from "@/lib/clients";
-import { listQuestionsForSurvey } from "@/lib/questions";
+import { buildEvidenceNamesFromDraft } from "@/lib/declaration-steps";
+import { getEvidenceRecordsByIds, listQuestionsForSurvey } from "@/lib/questions";
 import { CLIENT_HOME_HREF } from "@/lib/portal-routes";
 import { PORTAL_NAME, portalCopy } from "@/lib/portal-copy";
 
@@ -79,6 +80,23 @@ export default async function ClientDeclarePage({
     );
   }
 
+  const draftAnswers = assignment.draftAnswers ?? undefined;
+  const fileEvidenceIds = draftAnswers
+    ? questions
+        .filter((question) => question.type === "file")
+        .map((question) => draftAnswers[question.id])
+        .filter(
+          (value): value is string => typeof value === "string" && Boolean(value),
+        )
+    : [];
+  const evidenceById =
+    fileEvidenceIds.length > 0
+      ? await getEvidenceRecordsByIds(fileEvidenceIds, assignment.surveyId)
+      : new Map();
+  const initialEvidenceNames = draftAnswers
+    ? buildEvidenceNamesFromDraft(questions, draftAnswers, evidenceById)
+    : undefined;
+
   return (
     <PortalCustomerShell
       variant="app"
@@ -94,6 +112,9 @@ export default async function ClientDeclarePage({
         title={declarationTitle}
         description={assignment.surveyQuestion ?? undefined}
         questions={questions}
+        initialAnswers={draftAnswers}
+        initialStepIndex={assignment.draftStepIndex ?? undefined}
+        initialEvidenceNames={initialEvidenceNames}
       />
     </PortalCustomerShell>
   );

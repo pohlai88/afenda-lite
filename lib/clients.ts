@@ -1,6 +1,7 @@
 import { pool } from "@/lib/db";
 import { createInviteTokenValue } from "@/lib/tokens";
 import { CLIENT_PORTAL_ACK_VERSION } from "@/lib/portal-copy";
+import type { SurveyAnswers } from "@/lib/question-models";
 import type { PoolClient } from "pg";
 
 export function normalizeEmail(email: string | null | undefined) {
@@ -50,6 +51,9 @@ export type ClientAssignment = {
   surveyQuestion?: string;
   surveySlug?: string;
   confirmationCode?: string | null;
+  draftAnswers?: SurveyAnswers | null;
+  draftStepIndex?: number | null;
+  draftSavedAt?: Date | null;
 };
 
 function mapInvitation(row: Record<string, unknown>): ClientInvitation {
@@ -114,6 +118,21 @@ function mapProfile(row: Record<string, unknown>): ClientProfile {
   };
 }
 
+function mapDraftAnswers(value: unknown): SurveyAnswers | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return null;
+  }
+
+  const answers: SurveyAnswers = {};
+  for (const [key, answer] of Object.entries(value)) {
+    if (typeof answer === "boolean" || typeof answer === "string") {
+      answers[key] = answer;
+    }
+  }
+
+  return Object.keys(answers).length > 0 ? answers : null;
+}
+
 function mapAssignment(row: Record<string, unknown>): ClientAssignment {
   return {
     id: String(row.id),
@@ -130,8 +149,34 @@ function mapAssignment(row: Record<string, unknown>): ClientAssignment {
     surveyTitle: row.survey_title ? String(row.survey_title) : undefined,
     surveyQuestion: row.survey_question ? String(row.survey_question) : undefined,
     surveySlug: row.survey_slug ? String(row.survey_slug) : undefined,
+    draftAnswers: mapDraftAnswers(row.draft_answers),
+    draftStepIndex:
+      row.draft_step_index === null || row.draft_step_index === undefined
+        ? null
+        : Number(row.draft_step_index),
+    draftSavedAt: row.draft_saved_at
+      ? new Date(String(row.draft_saved_at))
+      : null,
   };
 }
+
+const ASSIGNMENT_SELECT = `
+  a.id,
+  a.survey_id,
+  a.client_email,
+  a.assigned_by,
+  a.status,
+  a.due_date,
+  a.confirmation_code,
+  a.created_at,
+  a.draft_answers,
+  a.draft_step_index,
+  a.draft_saved_at,
+  s.title AS survey_title,
+  s.question AS survey_question,
+  s.slug AS survey_slug,
+  s.submit_before
+`;
 
 export function createConfirmationCode(assignmentId: string) {
   const suffix = crypto.randomUUID().slice(0, 8).toUpperCase();
@@ -393,19 +438,7 @@ export async function createClientAssignment(input: {
 
 export async function listClientAssignments(email: string) {
   const result = await pool.query(
-    `SELECT
-       a.id,
-       a.survey_id,
-       a.client_email,
-       a.assigned_by,
-       a.status,
-       a.due_date,
-       a.confirmation_code,
-       a.created_at,
-       s.title AS survey_title,
-       s.question AS survey_question,
-       s.slug AS survey_slug,
-       s.submit_before
+    `SELECT ${ASSIGNMENT_SELECT}
      FROM client_assignments a
      JOIN surveys s ON s.id = a.survey_id
      WHERE lower(a.client_email) = lower($1)
@@ -421,19 +454,7 @@ export async function getActiveClientAssignmentForSurvey(
   surveyId: string,
 ) {
   const result = await pool.query(
-    `SELECT
-       a.id,
-       a.survey_id,
-       a.client_email,
-       a.assigned_by,
-       a.status,
-       a.due_date,
-       a.confirmation_code,
-       a.created_at,
-       s.title AS survey_title,
-       s.question AS survey_question,
-       s.slug AS survey_slug,
-       s.submit_before
+    `SELECT ${ASSIGNMENT_SELECT}
      FROM client_assignments a
      JOIN surveys s ON s.id = a.survey_id
      WHERE lower(a.client_email) = lower($1)
@@ -456,19 +477,7 @@ export async function getClientAssignmentForUser(
   email: string,
 ) {
   const result = await pool.query(
-    `SELECT
-       a.id,
-       a.survey_id,
-       a.client_email,
-       a.assigned_by,
-       a.status,
-       a.due_date,
-       a.confirmation_code,
-       a.created_at,
-       s.title AS survey_title,
-       s.question AS survey_question,
-       s.slug AS survey_slug,
-       s.submit_before
+    `SELECT ${ASSIGNMENT_SELECT}
      FROM client_assignments a
      JOIN surveys s ON s.id = a.survey_id
      WHERE a.id = $1 AND lower(a.client_email) = lower($2)
@@ -481,6 +490,32 @@ export async function getClientAssignmentForUser(
   }
 
   return mapAssignment(result.rows[0]);
+}
+
+export async function saveClientAssignmentDraft(input: {
+  assignmentId: string;
+  clientEmail: string;
+  answers: SurveyAnswers;
+  stepIndex: number;
+}) {
+  const result = await pool.query(
+    `UPDATE client_assignments
+     SET draft_answers = $3::jsonb,
+         draft_step_index = $4,
+         draft_saved_at = NOW()
+     WHERE id = $1
+       AND lower(client_email) = lower($2)
+       AND status = 'pending'
+     RETURNING id`,
+    [
+      input.assignmentId,
+      normalizeEmail(input.clientEmail),
+      JSON.stringify(input.answers),
+      input.stepIndex,
+    ],
+  );
+
+  return Boolean(result.rows[0]);
 }
 
 export async function completeClientAssignment(input: {
@@ -511,19 +546,7 @@ export async function listClientInvitationsForAdmin() {
 
 export async function listClientAssignmentsForAdmin() {
   const result = await pool.query(
-    `SELECT
-       a.id,
-       a.survey_id,
-       a.client_email,
-       a.assigned_by,
-       a.status,
-       a.due_date,
-       a.confirmation_code,
-       a.created_at,
-       s.title AS survey_title,
-       s.question AS survey_question,
-       s.slug AS survey_slug,
-       s.submit_before
+    `SELECT ${ASSIGNMENT_SELECT}
      FROM client_assignments a
      JOIN surveys s ON s.id = a.survey_id
      ORDER BY a.created_at DESC

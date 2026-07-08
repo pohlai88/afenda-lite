@@ -150,7 +150,11 @@ export async function submitClientDeclaration(input: {
 
     const completed = await client.query(
       `UPDATE client_assignments
-       SET status = 'submitted', confirmation_code = $2
+       SET status = 'submitted',
+           confirmation_code = $2,
+           draft_answers = NULL,
+           draft_step_index = NULL,
+           draft_saved_at = NULL
        WHERE id = $1 AND status <> 'submitted'
        RETURNING id`,
       [input.assignmentId, input.confirmationCode],

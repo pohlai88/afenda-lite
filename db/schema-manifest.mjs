@@ -77,4 +77,9 @@ export const REQUIRED_COLUMNS = {
   ],
   survey_questions: ["config"],
   survey_responses: ["answers", "confirmation_code", "assignment_id"],
+  client_assignments: [
+    "draft_answers",
+    "draft_step_index",
+    "draft_saved_at",
+  ],
 };

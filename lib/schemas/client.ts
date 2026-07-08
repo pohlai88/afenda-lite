@@ -89,6 +89,12 @@ export const submitClientDeclarationSchema = z.object({
   answers: surveyAnswersSchema,
 });
 
+export const saveClientDeclarationDraftSchema = z.object({
+  assignmentId: uuidSchema,
+  answers: surveyAnswersSchema,
+  stepIndex: z.number().int().min(0).max(10_000),
+});
+
 export const issueClientInviteSchema = z.object({
   email: emailSchema,
   fullName: z.string().trim().min(1).max(500),

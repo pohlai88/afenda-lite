@@ -643,6 +643,10 @@ export const portalCopy = {
       previous: "Previous",
       next: "Continue",
       reviewSummaryTitle: "Your responses",
+      reviewSummaryCompact: (answered: number, total: number) =>
+        `${answered.toLocaleString()} of ${total.toLocaleString()} questions answered. Use Previous to revisit earlier steps before submitting.`,
+      draftSaveError: "Could not save your progress. Try again before continuing.",
+      draftSaving: "Saving progress…",
       reviewAttestationSwitch:
         "I have reviewed my responses and confirm they are accurate.",
       reviewAttestationRequired:

@@ -1,4 +1,5 @@
 import type { QuestionType, SurveyQuestion } from "@/lib/question-models";
+import type { SurveyAnswers } from "@/lib/question-models";
 import {
   validateQuestionAnswer,
   type QuestionAnswerValidationCopy,
@@ -107,6 +108,39 @@ export function buildDeclarationWizardSteps(
   });
 
   return steps;
+}
+
+/** Skip per-question review summary above this count (large declarations). */
+export const REVIEW_SUMMARY_QUESTION_LIMIT = 50;
+
+export function clampDraftStepIndex(stepIndex: number, stepCount: number) {
+  if (stepCount <= 0) return 0;
+  return Math.min(Math.max(0, stepIndex), stepCount - 1);
+}
+
+export function countAnsweredQuestions(
+  questions: SurveyQuestion[],
+  answers: Record<string, boolean | string | undefined>,
+) {
+  return questions.filter((question) => {
+    const value = answers[question.id];
+    return value !== undefined && value !== "";
+  }).length;
+}
+
+export function buildEvidenceNamesFromDraft(
+  questions: SurveyQuestion[],
+  answers: SurveyAnswers,
+  evidenceById: ReadonlyMap<string, { fileName: string }>,
+) {
+  const names: Record<string, string> = {};
+  for (const question of questions) {
+    if (question.type !== "file") continue;
+    const value = answers[question.id];
+    if (typeof value !== "string" || !value) continue;
+    names[question.id] = evidenceById.get(value)?.fileName ?? value;
+  }
+  return names;
 }
 
 export function validateStepAnswers(

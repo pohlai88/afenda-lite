@@ -16,6 +16,9 @@ import { FormErrorAlert } from "@/components/form-error-alert";
 import { QuestionSequenceBadge } from "@/components/question-sequence-badge";
 import {
   buildDeclarationWizardSteps,
+  clampDraftStepIndex,
+  countAnsweredQuestions,
+  REVIEW_SUMMARY_QUESTION_LIMIT,
   validateStepAnswers,
   type DeclarationWizardStep,
 } from "@/lib/declaration-steps";
@@ -88,6 +91,10 @@ export function DeclarationForm({
   anonymous = false,
   assignmentId,
   hideCardTitle = false,
+  initialAnswers,
+  initialStepIndex = 0,
+  initialEvidenceNames,
+  onSaveDraft,
   onSubmit,
 }: {
   surveyId: string;
@@ -98,6 +105,14 @@ export function DeclarationForm({
   anonymous?: boolean;
   assignmentId?: string;
   hideCardTitle?: boolean;
+  initialAnswers?: SurveyAnswers;
+  initialStepIndex?: number;
+  initialEvidenceNames?: Record<string, string>;
+  onSaveDraft?: (input: {
+    assignmentId: string;
+    answers: SurveyAnswers;
+    stepIndex: number;
+  }) => Promise<SubmitResult>;
   onSubmit: (input: {
     slug: string;
     assignmentId?: string;
@@ -122,9 +137,13 @@ export function DeclarationForm({
     [declarationForm],
   );
 
-  const [currentStepIndex, setCurrentStepIndex] = useState(0);
-  const [answers, setAnswers] = useState<SurveyAnswers>({});
-  const [evidenceNames, setEvidenceNames] = useState<Record<string, string>>({});
+  const [currentStepIndex, setCurrentStepIndex] = useState(() =>
+    clampDraftStepIndex(initialStepIndex, steps.length),
+  );
+  const [answers, setAnswers] = useState<SurveyAnswers>(() => initialAnswers ?? {});
+  const [evidenceNames, setEvidenceNames] = useState<Record<string, string>>(
+    () => initialEvidenceNames ?? {},
+  );
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [reviewConfirmed, setReviewConfirmed] = useState(false);
   const [reviewError, setReviewError] = useState<string | null>(null);
@@ -137,6 +156,12 @@ export function DeclarationForm({
   const currentStep = steps[currentStepIndex];
   const isReviewStep = currentStep?.kind === "review";
   const isLastStep = currentStepIndex === steps.length - 1;
+  const answeredCount = useMemo(
+    () => countAnsweredQuestions(questions, answers),
+    [questions, answers],
+  );
+  const showReviewSummary = questions.length <= REVIEW_SUMMARY_QUESTION_LIMIT;
+  const isSavingDraft = isPending && !isReviewStep;
 
   if (confirmationCode) {
     return (
@@ -249,7 +274,21 @@ export function DeclarationForm({
       return;
     }
 
-    goToStep(Math.min(currentStepIndex + 1, steps.length - 1));
+    startTransition(async () => {
+      if (assignmentId && onSaveDraft) {
+        const saveResult = await onSaveDraft({
+          assignmentId,
+          answers,
+          stepIndex: currentStepIndex + 1,
+        });
+        if (saveResult?.error) {
+          setError(saveResult.error);
+          return;
+        }
+      }
+
+      goToStep(Math.min(currentStepIndex + 1, steps.length - 1));
+    });
   }
 
   function handlePrevious() {
@@ -372,26 +411,32 @@ export function DeclarationForm({
 
             <div className="space-y-4">
               <p className="text-sm font-medium">{wizardCopy.reviewSummaryTitle}</p>
-              <dl className="space-y-3 text-sm">
-                {questions.map((question, index) => (
-                  <div
-                    key={question.id}
-                    className="rounded-lg border bg-muted/30 px-4 py-3"
-                  >
-                    <dt className="flex items-start gap-2 font-medium text-foreground">
-                      <QuestionSequenceBadge number={index + 1} className="mt-0.5" />
-                      <span>{question.prompt}</span>
-                    </dt>
-                    <dd className="mt-1 pl-9 whitespace-pre-wrap text-muted-foreground">
-                      {formatReviewAnswer(
-                        question,
-                        answers[question.id],
-                        evidenceNames[question.id],
-                      )}
-                    </dd>
-                  </div>
-                ))}
-              </dl>
+              {showReviewSummary ? (
+                <dl className="space-y-3 text-sm">
+                  {questions.map((question, index) => (
+                    <div
+                      key={question.id}
+                      className="rounded-lg border bg-muted/30 px-4 py-3"
+                    >
+                      <dt className="flex items-start gap-2 font-medium text-foreground">
+                        <QuestionSequenceBadge number={index + 1} className="mt-0.5" />
+                        <span>{question.prompt}</span>
+                      </dt>
+                      <dd className="mt-1 pl-9 whitespace-pre-wrap text-muted-foreground">
+                        {formatReviewAnswer(
+                          question,
+                          answers[question.id],
+                          evidenceNames[question.id],
+                        )}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+              ) : (
+                <p className="rounded-lg border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+                  {wizardCopy.reviewSummaryCompact(answeredCount, questions.length)}
+                </p>
+              )}
             </div>
 
             <div className="flex items-start gap-3 rounded-lg border bg-muted/30 p-4">
@@ -438,7 +483,7 @@ export function DeclarationForm({
             {isPending ? (
               <>
                 <Loader2Icon aria-hidden="true" className="animate-spin" />
-                {declarationForm.submitting}
+                {isSavingDraft ? wizardCopy.draftSaving : declarationForm.submitting}
               </>
             ) : isLastStep ? (
               declarationForm.submit

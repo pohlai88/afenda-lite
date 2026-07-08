@@ -26,6 +26,7 @@ import {
   isClientPortalAcknowledged,
   normalizeEmail,
   upsertClientProfile,
+  saveClientAssignmentDraft,
 } from "@/lib/clients";
 import { deleteClientAuthUserByEmail } from "@/lib/delete-client-auth-user";
 import { isClientEmailDeliveryEnabled } from "@/lib/email/client-email-delivery";
@@ -39,6 +40,7 @@ import {
   deleteClientAssignmentSchema,
   issueClientInviteSchema,
   removeClientRegistrationSchema,
+  saveClientDeclarationDraftSchema,
   submitClientDeclarationSchema,
 } from "@/lib/schemas/client";
 import { getSurveyBySlug, getSurveyForAdmin } from "@/lib/surveys";
@@ -210,6 +212,55 @@ export async function submitClientDeclarationAction(input: {
       revalidatePath(OPERATOR_DASHBOARD_HREF);
 
       return { success: true, confirmationCode };
+    },
+  );
+}
+
+export async function saveClientDeclarationDraftAction(input: {
+  assignmentId: string;
+  answers: SurveyAnswers;
+  stepIndex: number;
+}) {
+  const session = await requireClientSession({ requireOnboarding: true });
+
+  return runLoggedAction(
+    "saveClientDeclarationDraftAction",
+    session.user.id,
+    async () => {
+      const parsed = parseSchema(saveClientDeclarationDraftSchema, input);
+
+      if (!parsed.success) {
+        return { error: portalCopy.clientDashboard.assignmentNotFound };
+      }
+
+      const { assignmentId, answers, stepIndex } = parsed.data;
+
+      const assignment = await getClientAssignmentForUser(
+        assignmentId,
+        session.user.email,
+      );
+
+      if (!assignment || assignment.status === "submitted") {
+        return { error: portalCopy.clientDashboard.assignmentNotFound };
+      }
+
+      const profile = await getClientProfile(session.user.id);
+      if (!isClientPortalAcknowledged(profile)) {
+        return { error: portalCopy.clientDashboard.acknowledgement.gateNotice };
+      }
+
+      const saved = await saveClientAssignmentDraft({
+        assignmentId,
+        clientEmail: session.user.email,
+        answers,
+        stepIndex,
+      });
+
+      if (!saved) {
+        return { error: portalCopy.declarationForm.wizard.draftSaveError };
+      }
+
+      return { success: true as const };
     },
   );
 }

@@ -1,8 +1,11 @@
 "use client";
 
 import { DeclarationForm } from "@/components/declaration-form";
-import { submitClientDeclarationAction } from "@/app/actions/client";
-import type { SurveyQuestion } from "@/lib/question-models";
+import {
+  saveClientDeclarationDraftAction,
+  submitClientDeclarationAction,
+} from "@/app/actions/client";
+import type { SurveyAnswers, SurveyQuestion } from "@/lib/question-models";
 
 export function ClientDeclarationForm({
   assignmentId,
@@ -11,6 +14,9 @@ export function ClientDeclarationForm({
   title,
   description,
   questions,
+  initialAnswers,
+  initialStepIndex,
+  initialEvidenceNames,
 }: {
   assignmentId: string;
   surveyId: string;
@@ -18,6 +24,9 @@ export function ClientDeclarationForm({
   title: string;
   description?: string;
   questions: SurveyQuestion[];
+  initialAnswers?: SurveyAnswers;
+  initialStepIndex?: number;
+  initialEvidenceNames?: Record<string, string>;
 }) {
   return (
     <DeclarationForm
@@ -28,6 +37,12 @@ export function ClientDeclarationForm({
       questions={questions}
       assignmentId={assignmentId}
       hideCardTitle
+      initialAnswers={initialAnswers}
+      initialStepIndex={initialStepIndex}
+      initialEvidenceNames={initialEvidenceNames}
+      onSaveDraft={async ({ assignmentId, answers, stepIndex }) =>
+        saveClientDeclarationDraftAction({ assignmentId, answers, stepIndex })
+      }
       onSubmit={async ({ slug, assignmentId, answers }) => {
         if (!assignmentId) return { error: "Assignment not found." };
         return submitClientDeclarationAction({ assignmentId, slug, answers });
