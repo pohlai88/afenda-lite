@@ -249,18 +249,18 @@ export async function saveClientDeclarationDraftAction(input: {
         return { error: portalCopy.clientDashboard.acknowledgement.gateNotice };
       }
 
-      const saved = await saveClientAssignmentDraft({
+      const savedAt = await saveClientAssignmentDraft({
         assignmentId,
         clientEmail: session.user.email,
         answers,
         stepIndex,
       });
 
-      if (!saved) {
+      if (!savedAt) {
         return { error: portalCopy.declarationForm.wizard.draftSaveError };
       }
 
-      return { success: true as const };
+      return { success: true as const, savedAt: savedAt.toISOString() };
     },
   );
 }

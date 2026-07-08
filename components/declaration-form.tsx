@@ -23,6 +23,7 @@ import {
   type DeclarationWizardStep,
 } from "@/lib/declaration-steps";
 import { portalCopy } from "@/lib/portal-copy";
+import { formatDateTime } from "@/lib/format";
 import type { SurveyAnswers, SurveyQuestion } from "@/lib/question-models";
 import { validateQuestionAnswer } from "@/lib/question-answer-validation";
 import {
@@ -42,6 +43,7 @@ type SubmitResult = {
   success?: boolean;
   error?: string;
   confirmationCode?: string;
+  savedAt?: string;
 };
 
 function stepIcon(step: DeclarationWizardStep) {
@@ -94,6 +96,7 @@ export function DeclarationForm({
   initialAnswers,
   initialStepIndex = 0,
   initialEvidenceNames,
+  initialDraftSavedAt,
   onSaveDraft,
   onSubmit,
 }: {
@@ -108,6 +111,7 @@ export function DeclarationForm({
   initialAnswers?: SurveyAnswers;
   initialStepIndex?: number;
   initialEvidenceNames?: Record<string, string>;
+  initialDraftSavedAt?: Date;
   onSaveDraft?: (input: {
     assignmentId: string;
     answers: SurveyAnswers;
@@ -150,6 +154,9 @@ export function DeclarationForm({
   const [error, setError] = useState<string | null>(null);
   const [confirmationCode, setConfirmationCode] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
+  const [draftSavedAt, setDraftSavedAt] = useState<Date | null>(
+    () => initialDraftSavedAt ?? null,
+  );
   const [isPending, startTransition] = useTransition();
   const contentRef = useRef<HTMLDivElement>(null);
 
@@ -285,6 +292,9 @@ export function DeclarationForm({
           setError(saveResult.error);
           return;
         }
+        if (saveResult?.savedAt) {
+          setDraftSavedAt(new Date(saveResult.savedAt));
+        }
       }
 
       goToStep(Math.min(currentStepIndex + 1, steps.length - 1));
@@ -298,7 +308,7 @@ export function DeclarationForm({
   return (
     <StudioFormLayoutWizardShell
       header={
-        !hideCardTitle || description || anonymous ? (
+        !hideCardTitle || description || anonymous || assignmentId ? (
           <>
             {!hideCardTitle ? (
               <CardTitle className="text-lg text-pretty">{title}</CardTitle>
@@ -316,6 +326,11 @@ export function DeclarationForm({
             <p className="text-sm text-muted-foreground">
               {wizardCopy.stepProgress(currentStepIndex + 1, steps.length)}
             </p>
+            {assignmentId && draftSavedAt ? (
+              <p className="text-xs text-muted-foreground">
+                {wizardCopy.draftSavedAt(formatDateTime(draftSavedAt))}
+              </p>
+            ) : null}
           </>
         ) : undefined
       }

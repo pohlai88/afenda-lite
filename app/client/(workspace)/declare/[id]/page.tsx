@@ -115,6 +115,7 @@ export default async function ClientDeclarePage({
         initialAnswers={draftAnswers}
         initialStepIndex={assignment.draftStepIndex ?? undefined}
         initialEvidenceNames={initialEvidenceNames}
+        initialDraftSavedAt={assignment.draftSavedAt ?? undefined}
       />
     </PortalCustomerShell>
   );
