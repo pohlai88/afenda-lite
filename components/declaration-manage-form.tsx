@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import type { QuestionType } from "@/lib/questions";
+import type { QuestionType } from "@/lib/question-models";
 import type { QuestionConfig } from "@/lib/survey-package";
 import type { SurveyMetadata } from "@/lib/surveys";
 

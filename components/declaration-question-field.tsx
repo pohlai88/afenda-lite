@@ -6,7 +6,7 @@ import { registerEvidenceAction } from "@/app/actions/declarations";
 import { FormErrorAlert } from "@/components/form-error-alert";
 import { QuestionSequenceBadge } from "@/components/question-sequence-badge";
 import { portalCopy } from "@/lib/portal-copy";
-import type { SurveyQuestion } from "@/lib/questions";
+import type { SurveyQuestion } from "@/lib/question-models";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";

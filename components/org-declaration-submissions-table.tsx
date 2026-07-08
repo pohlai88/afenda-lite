@@ -15,7 +15,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { formatDateTime } from "@/lib/format";
-import type { EvidenceRecord, SurveyQuestion } from "@/lib/questions";
+import type { EvidenceRecord, SurveyQuestion } from "@/lib/question-models";
 import type { SurveyResponse } from "@/lib/surveys";
 import { portalCopy } from "@/lib/portal-copy";
 

@@ -2,7 +2,7 @@
 
 import { DeclarationForm } from "@/components/declaration-form";
 import { submitClientDeclarationAction } from "@/app/actions/client";
-import type { SurveyQuestion } from "@/lib/questions";
+import type { SurveyQuestion } from "@/lib/question-models";
 
 export function ClientDeclarationForm({
   assignmentId,
