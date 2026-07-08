@@ -7,6 +7,7 @@ import { PortalAuthNeonView } from "@/components/portal-auth-neon-view";
 import { PortalInvitationJoinSteps } from "@/components/portal-invitation-join-steps";
 import { Skeleton } from "@/components/ui/skeleton";
 import { authClient } from "@/lib/auth/client";
+import { resolveJoinInvitationAuthView } from "@/lib/client-invitation-join-auth";
 import { CLIENT_ONBOARDING_HREF } from "@/lib/client-session";
 import { portalCopy } from "@/lib/portal-copy";
 import { authSignInHref, buildClientJoinHref } from "@/lib/portal-routes";
@@ -48,18 +49,23 @@ function PortalInvitationJoinPanelInner() {
 
   const joinHref = buildClientJoinHref(invitationId);
   const isAuthenticated = Boolean(session?.session);
-  const activeStep = isAuthenticated ? 2 : 0;
-  const panelDescription = isAuthenticated
-    ? clientInvitationJoin.panelAcceptDescription
-    : clientInvitationJoin.panelCreateDescription;
-  const panelTitle = isAuthenticated
-    ? clientInvitationJoin.panelAcceptTitle
-    : clientInvitationJoin.panelCreateTitle;
+  const emailVerified = Boolean(session?.user.emailVerified);
+  const authView = resolveJoinInvitationAuthView({
+    isPending,
+    isAuthenticated,
+    emailVerified,
+  });
+  const panelTitle = clientInvitationJoin[authView.panelTitleKey];
+  const panelDescription = clientInvitationJoin[authView.panelDescriptionKey];
+  const redirectTo =
+    authView.pathname === "accept-invitation"
+      ? CLIENT_ONBOARDING_HREF
+      : joinHref;
 
   return (
     <div className="flex w-full flex-col gap-4">
       <PortalInvitationJoinSteps
-        activeStep={activeStep}
+        activeStep={authView.activeStep}
         variant="compact"
         className="lg:hidden"
       />
@@ -75,9 +81,9 @@ function PortalInvitationJoinPanelInner() {
       </div>
 
       <PortalAuthNeonView
-        pathname={isAuthenticated ? "accept-invitation" : "sign-up"}
-        redirectTo={isAuthenticated ? CLIENT_ONBOARDING_HREF : joinHref}
-        callbackURL={isAuthenticated ? undefined : joinHref}
+        pathname={authView.pathname}
+        redirectTo={redirectTo}
+        callbackURL={authView.pathname === "sign-up" ? joinHref : undefined}
       />
 
       {!isAuthenticated ? (

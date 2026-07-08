@@ -16,6 +16,7 @@ import { loginAsClient } from "@/testing/e2e/client-flows";
 import {
   createDeclaration,
   loginAsOperator,
+  registerClient,
 } from "@/testing/e2e/operator-flows";
 
 const operatorCreds = getOperatorCreds();
@@ -41,13 +42,11 @@ test.describe("Client journey @journey", () => {
     declarationTitle = created.title;
 
     const previewClient = requireClientCreds();
-    await page.goto("/dashboard/clients");
-    await page.getByLabel(/full name/i).fill("Preview Client");
-    await page.getByLabel(/recipient email/i).fill(previewClient.email);
-    await page.getByLabel(/assign declaration/i).selectOption({
-      label: declarationTitle,
+    await registerClient(page, {
+      fullName: "Preview Client",
+      email: previewClient.email,
+      declarationLabel: declarationTitle,
     });
-    await page.getByRole("button", { name: /register client/i }).click();
 
     await expect(page.getByText(/Client registered/i)).toBeVisible();
   });

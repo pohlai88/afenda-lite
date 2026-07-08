@@ -80,7 +80,7 @@ test.describe("Portal smoke @smoke", () => {
 
     if (page.url().includes("/client/preview-unavailable")) {
       await expect(
-        page.getByRole("heading", { name: /preview not available/i }),
+        page.getByText(portalCopy.previewClient.notConfiguredTitle),
       ).toBeVisible();
       await expect(
         page.getByText(portalCopy.previewClient.notConfigured, { exact: false }),

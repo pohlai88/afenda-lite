@@ -1,6 +1,7 @@
 import { expect, type Page } from "@/testing/e2e/playwright-base";
 import { portalCopy } from "@/lib/portal-copy";
 import type { OperatorCreds } from "@/testing/e2e/credentials";
+import { selectRadixOption } from "@/testing/e2e/radix-select";
 
 export async function loginAsOperator(page: Page, creds: OperatorCreds) {
   await page.goto("/org/login");
@@ -22,16 +23,20 @@ export async function registerClient(
   await page.getByLabel(/full name/i).fill(input.fullName);
   await page.getByLabel(/recipient email/i).fill(input.email);
 
-  const declarationSelect = page.getByLabel(/assign declaration/i);
   if (input.declarationLabel) {
-    await declarationSelect.selectOption({ label: input.declarationLabel });
+    await selectRadixOption(
+      page,
+      /assign declaration/i,
+      new RegExp(input.declarationLabel.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"),
+    );
   } else {
-    const firstAssignable = declarationSelect.locator("option").nth(1);
-    const value = await firstAssignable.getAttribute("value");
-    if (!value) {
+    await page.getByLabel(/assign declaration/i).click();
+    const firstOption = page.getByRole("option").first();
+    const optionText = await firstOption.textContent();
+    if (!optionText?.trim()) {
       throw new Error("No declarations available to assign during client registration");
     }
-    await declarationSelect.selectOption(value);
+    await firstOption.click();
   }
 
   await page.getByRole("button", { name: /register client/i }).click();

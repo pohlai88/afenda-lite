@@ -6,20 +6,30 @@ import { PortalAuthEmailTrustNotice } from "@/components/portal-auth-email-trust
 import { PortalInvitationJoinBrandPanel } from "@/components/portal-invitation-join-brand-panel";
 import { PortalInvitationJoinPanel } from "@/components/portal-invitation-join-panel";
 import { authClient } from "@/lib/auth/client";
+import { resolveJoinInvitationAuthView } from "@/lib/client-invitation-join-auth";
 import { portalCopy } from "@/lib/portal-copy";
 
 function PortalInvitationJoinPageInner() {
   const { data: session, isPending } = authClient.useSession();
-  const { organizationAuth } = portalCopy;
-  const activeStep = !isPending && session?.session ? 2 : 0;
+  const { organizationAuth, emailOtp } = portalCopy;
+  const authView = resolveJoinInvitationAuthView({
+    isPending,
+    isAuthenticated: Boolean(session?.session),
+    emailVerified: Boolean(session?.user.emailVerified),
+  });
+
+  const headerNotice =
+    authView.pathname === "email-otp"
+      ? emailOtp.trustNotice
+      : organizationAuth.trustNotice;
 
   return (
     <PortalAuthLayout
-      brandPanel={<PortalInvitationJoinBrandPanel activeStep={activeStep} />}
+      brandPanel={<PortalInvitationJoinBrandPanel activeStep={authView.activeStep} />}
       headerExtra={
         <PortalAuthEmailTrustNotice
-          message={organizationAuth.trustNotice}
-          variant="email"
+          message={headerNotice}
+          variant={authView.pathname === "email-otp" ? "email" : "email"}
         />
       }
     >
