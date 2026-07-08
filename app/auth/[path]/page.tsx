@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { authViewPaths } from "@neondatabase/auth-ui/server";
-import { NeonAuthPageShell } from "@/components/neon-auth-page-shell";
 import { PortalAccessDeniedNotice } from "@/components/portal-access-denied-notice";
+import { PortalAuthFormIntro } from "@/components/portal-auth-form-intro";
+import { PortalAuthLayout } from "@/components/portal-auth-layout";
 import { PortalAuthNeonView } from "@/components/portal-auth-neon-view";
 import { PortalAuthEmailTrustNotice } from "@/components/portal-auth-email-trust-notice";
 import { PortalAuthReasonNotice } from "@/components/portal-auth-reason-notice";
+import { resolveAuthShellCopy } from "@/lib/auth-shell-copy";
 import { portalCopy } from "@/lib/portal-copy";
 import { portalAuthMetadata } from "@/lib/auth-metadata";
 import { redirectAuthAcceptInvitationToJoin } from "@/lib/client-invitation-entry";
@@ -112,9 +114,14 @@ export default async function AuthPage({
     </>
   );
 
+  const shellCopy = resolveAuthShellCopy({ path, from });
+
   return (
-    <NeonAuthPageShell header={header}>
-      <PortalAuthNeonView pathname={path} />
-    </NeonAuthPageShell>
+    <PortalAuthLayout headerExtra={header}>
+      <div className="flex w-full flex-col gap-4">
+        <PortalAuthFormIntro {...shellCopy} />
+        <PortalAuthNeonView pathname={path} redirectTo={returnTo ?? undefined} />
+      </div>
+    </PortalAuthLayout>
   );
 }

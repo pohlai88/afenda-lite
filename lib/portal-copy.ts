@@ -558,12 +558,26 @@ export const portalCopy = {
     yesLabel: "Yes",
     noLabel: "No",
     textPlaceholder: "Enter your response…",
-    fileHint: "Select a file to register its details",
+    fileHint: "Select a file to record its name and type",
     fileNote:
-      "Metadata only — the file is not uploaded. Your organization receives the filename and type.",
-    fileRequired: "Choose a file to register.",
-    fileInvalid: "Register the file before submitting.",
-    fileUploading: "Uploading…",
+      "The file itself is not uploaded — only its name and type are saved. Provide the original document to your organization separately.",
+    fileRequired: "Select a file before continuing.",
+    fileRegistering: "Recording file details…",
+    filePolicyError: (reason: "size" | "mime" | "extension") => {
+      switch (reason) {
+        case "size":
+          return "File is too large (maximum 10 MB). Choose a smaller file.";
+        case "mime":
+          return "File type not supported. Use PDF, JPEG, PNG, GIF, WebP, or plain text.";
+        case "extension":
+          return "File extension not allowed. Use PDF or a common image format.";
+      }
+    },
+    fileEvidenceMissing:
+      "File record not found. Select the file again before submitting.",
+    fileEvidenceMismatch:
+      "File record does not match this question. Select the file again.",
+    fileQuestionInvalid: "This question does not accept file references.",
     requiredFieldError: "This field is required.",
     requiredField: (label: string) => `Complete required field: ${label}`,
     submitError: "Could not submit. Check your answers and try again.",
@@ -581,7 +595,7 @@ export const portalCopy = {
         "Provide open responses where requested. Include only information you are authorized to declare.",
       stepFileTitle: "Supporting documents",
       stepFileDescription:
-        "Register file details for each question. Original files are not uploaded to the portal.",
+        "For each question, select a file to record its name and type. Original files are not uploaded to the portal.",
       stepReviewTitle: "Review and submit",
       stepReviewDescription:
         "Confirm your answers before submitting your declaration.",
@@ -628,7 +642,10 @@ export const portalCopy = {
     panelCreateTitle: "Step 1 — Create your account",
     panelCreateDescription:
       "Sign up with the email address from your invitation. If you already have an account, sign in instead.",
-    panelAcceptTitle: "Step 2 — Accept invitation",
+    panelVerifyTitle: "Step 2 — Verify your email",
+    panelVerifyDescription:
+      "Enter the six-digit code sent to your inbox. Organization invitations require a verified email before you can accept.",
+    panelAcceptTitle: "Step 3 — Accept invitation",
     panelAcceptDescription:
       "Confirm below to join your organization and access your assigned declarations.",
     missingInvitationError:
@@ -638,7 +655,7 @@ export const portalCopy = {
     alternateSignInLabel: "Already have an account? Sign in",
     steps: [
       { label: "Create account", detail: "Sign up with your invited email." },
-      { label: "Sign in", detail: "Use the same email to sign in after creating your account." },
+      { label: "Verify email", detail: "Enter the six-digit code from your inbox." },
       { label: "Accept invitation", detail: "Join your organization workspace." },
     ] as const,
   },

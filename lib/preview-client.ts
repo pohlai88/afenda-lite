@@ -139,11 +139,16 @@ export async function isPreviewClientReady() {
 export async function resolvePreviewUnavailableLandingHref(options?: {
   embed?: boolean;
 }) {
+  // Playground embeds iframe this gate for layout review — never redirect away.
+  if (options?.embed) {
+    return null;
+  }
+
   if (!(await isPreviewClientReady())) {
     return null;
   }
 
-  return options?.embed ? clientHomeHref({ embed: true }) : OPERATOR_DASHBOARD_HREF;
+  return OPERATOR_DASHBOARD_HREF;
 }
 
 /** Shared page handler for `/client/preview-unavailable`. */

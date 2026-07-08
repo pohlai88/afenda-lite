@@ -120,6 +120,11 @@ async function main() {
       return { organization, delivery };
     });
 
+    const neonAuthInvitationId = inviteResult.delivery?.id;
+    const joinUrl = neonAuthInvitationId
+      ? `${appUrl}/join?invitationId=${encodeURIComponent(neonAuthInvitationId)}`
+      : `${appUrl}/join`;
+
     console.log(
       JSON.stringify(
         {
@@ -127,13 +132,14 @@ async function main() {
           channel: "neon_auth_organization",
           recipientEmail,
           fullName,
-          invitationId: invitation.id,
+          portalInvitationId: invitation.id,
+          neonAuthInvitationId,
           survey: { id: survey.id, title: survey.title },
           organization: {
             id: inviteResult.organization.id,
             slug: inviteResult.organization.slug,
           },
-          acceptInvitationUrl: `${appUrl}/join`,
+          joinUrl,
           signInUrl: appUrl,
           neonAuthResponse: inviteResult.delivery,
         },
