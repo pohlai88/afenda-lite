@@ -58,3 +58,17 @@ export async function expectDeclarationReceived(
 export function secureLinkLocator(page: Page) {
   return page.locator(".portal-code-block").filter({ hasText: /\/f\// });
 }
+
+export async function answerFirstYesNoQuestion(page: Page) {
+  const yesRadio = page.getByRole("radio", { name: /^yes$/i }).first();
+  await expect(yesRadio).toBeVisible();
+  await yesRadio.check();
+}
+
+export async function openFirstClientAssignment(page: Page) {
+  await page
+    .getByRole("link", { name: /continue declaration|complete declaration/i })
+    .first()
+    .click();
+  await expect(page).toHaveURL(/\/client\/declare\/.+/);
+}

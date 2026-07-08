@@ -280,9 +280,11 @@ export function DeclarationForm({
       return true;
     }
 
+    const { answers: latestAnswers } = draftSnapshotRef.current;
+
     const saveResult = await onSaveDraft({
       assignmentId,
-      answers,
+      answers: latestAnswers,
       stepIndex,
     });
     if (saveResult?.error) {
@@ -291,7 +293,7 @@ export function DeclarationForm({
     }
     if (saveResult?.savedAt) {
       setDraftSavedAt(new Date(saveResult.savedAt));
-      lastPersistedRef.current = draftSnapshot(answers, stepIndex);
+      lastPersistedRef.current = draftSnapshot(latestAnswers, stepIndex);
     }
     return true;
   }
