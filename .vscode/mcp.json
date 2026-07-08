@@ -8,12 +8,8 @@
       }
     },
     "shadcn-studio": {
-      "command": "npx",
-      "args": ["-y", "shadcn-studio-mcp-1.0.7.tgz"],
-      "env": {
-        "API_KEY": "${SHADCN_STUDIO_API_KEY}",
-        "EMAIL": "${SHADCN_STUDIO_EMAIL}"
-      }
+      "command": "node",
+      "args": ["scripts/shadcn-studio-mcp.mjs"]
     },
     "client-declaration-portal-sb-mcp": {
       "type": "http",

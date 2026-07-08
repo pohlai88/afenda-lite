@@ -4,7 +4,6 @@ import {
   CardContent,
   CardDescription,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import { formatDate } from "@/lib/format";
 import { portalCopy } from "@/lib/portal-copy";
@@ -29,7 +28,7 @@ function DetailItem({
         className={
           monospace
             ? "break-all font-mono text-xs font-medium"
-            : "text-sm font-medium"
+            : "min-w-0 break-words text-sm font-medium"
         }
       >
         {display}
@@ -54,9 +53,9 @@ export function SurveyMetadataSummary({ survey }: { survey: Survey }) {
     survey.categories.length > 0;
 
   return (
-    <Card>
+    <Card className="min-w-0">
       <CardHeader className="pb-3">
-        <CardTitle className="text-base">{metadata.title}</CardTitle>
+        <h2 className="portal-card-title">{metadata.title}</h2>
         <CardDescription>{metadata.description}</CardDescription>
       </CardHeader>
       <CardContent>
@@ -110,7 +109,7 @@ export function SurveyMetadataSummary({ survey }: { survey: Survey }) {
         {survey.categories.length > 0 ? (
           <div className="mt-4 flex flex-wrap gap-2">
             {survey.categories.map((category) => (
-              <Badge key={category} variant="secondary">
+              <Badge key={category} variant="surface">
                 {category}
               </Badge>
             ))}

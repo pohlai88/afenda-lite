@@ -19,6 +19,14 @@ export async function sendClientAccessEmail(input: {
   toName: string;
   text: string;
 }) {
+  return sendClientAccessEmailViaMailerSend(input);
+}
+
+export async function sendClientAccessEmailViaMailerSend(input: {
+  toEmail: string;
+  toName: string;
+  text: string;
+}) {
   const config = getMailerSendConfig();
   if (!config) {
     return { ok: false as const, error: "MailerSend is not configured." };

@@ -1,7 +1,7 @@
 import { loadEnvFile, getEnv } from "./lib/load-env.mjs";
 import pg from "pg";
 import { getPgPoolConfig } from "./db-pool-config.mjs";
-import { ensureNeonAdminUser } from "./lib/neon-auth-seed.mjs";
+import { ensureNeonAdminUser, ensurePortalOrganization, withAdminSession } from "./lib/neon-auth-seed.mjs";
 
 const env = loadEnvFile();
 
@@ -27,6 +27,10 @@ async function main() {
     email,
     password,
     name,
+  });
+
+  await withAdminSession(email, password, async (cookie) => {
+    await ensurePortalOrganization({ cookie });
   });
 }
 

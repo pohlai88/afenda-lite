@@ -2,11 +2,14 @@
 
 import { redirect } from "next/navigation";
 import {
-  isAdminSession,
   ORG_SIGN_IN_HREF,
 } from "@/lib/admin";
 import { recordAuditEvent } from "@/lib/audit";
 import { auth } from "@/lib/auth/server";
+import {
+  neonAdminImpersonateUser,
+  neonAdminStopImpersonating,
+} from "@/lib/auth/admin";
 import {
   rejectNonOperatorSignIn,
   requireAdminSession,
@@ -17,8 +20,7 @@ import {
   OPERATOR_DASHBOARD_HREF,
 } from "@/lib/portal-routes";
 import {
-  getPreviewClientEmail,
-  getPreviewClientPassword,
+  getPreviewClientUser,
   isPreviewClientConfigured,
   isPreviewClientSession,
   clientPreviewUnavailableHref,
@@ -73,17 +75,24 @@ export async function startClientPreviewAction() {
       redirect(clientPreviewUnavailableHref());
     }
 
-    const email = getPreviewClientEmail();
-    const password = getPreviewClientPassword();
+    const previewUser = await getPreviewClientUser();
+    if (!previewUser) {
+      redirect(clientPreviewUnavailableHref());
+    }
 
-    const { error } = await auth.signIn.email({ email, password });
+    const previewEmail = previewUser.email;
 
-    if (error) {
+    const impersonation = await neonAdminImpersonateUser(previewUser.id);
+
+    if ("error" in impersonation) {
       await recordAuditEvent({
         actorId: session.user.id,
         eventType: "admin.client_preview_failed",
         resourceType: "session",
-        metadata: { previewEmail: email, reason: error.message ?? "sign_in_failed" },
+        metadata: {
+          previewEmail,
+          reason: impersonation.error,
+        },
       });
       redirect(
         clientPreviewUnavailableHref({
@@ -95,12 +104,12 @@ export async function startClientPreviewAction() {
     const { data: previewSession } = await auth.getSession();
 
     if (!isPreviewClientSession(previewSession)) {
-      await auth.signOut();
+      await neonAdminStopImpersonating();
       await recordAuditEvent({
         actorId: session.user.id,
         eventType: "admin.client_preview_failed",
         resourceType: "session",
-        metadata: { previewEmail: email, reason: "session_mismatch" },
+        metadata: { previewEmail, reason: "session_mismatch" },
       });
       redirect(
         clientPreviewUnavailableHref({
@@ -113,7 +122,7 @@ export async function startClientPreviewAction() {
       actorId: session.user.id,
       eventType: "admin.client_preview_started",
       resourceType: "session",
-      metadata: { previewEmail: email },
+      metadata: { previewEmail, mode: "impersonation" },
     });
 
     redirect(CLIENT_HOME_HREF);
@@ -134,7 +143,12 @@ export async function exitClientPreviewAction() {
       resourceType: "session",
     });
 
-    await auth.signOut();
-    redirect(ORG_SIGN_IN_HREF);
+    const stopResult = await neonAdminStopImpersonating();
+    if ("error" in stopResult) {
+      await auth.signOut();
+      redirect(ORG_SIGN_IN_HREF);
+    }
+
+    redirect(OPERATOR_DASHBOARD_HREF);
   });
 }

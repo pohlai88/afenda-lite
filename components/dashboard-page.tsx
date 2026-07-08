@@ -31,7 +31,7 @@ async function DashboardPageContent({
         </a>
         <main
           id="portal-main"
-          className="v-stack min-w-0 flex-1 gap-6 overflow-x-clip p-4 md:p-6 lg:max-w-5xl"
+          className="v-stack mx-auto w-full min-w-0 flex-1 gap-6 overflow-x-clip p-4 md:p-6 lg:max-w-5xl"
         >
           {children}
         </main>
@@ -47,7 +47,7 @@ async function DashboardPageContent({
       <PortalPageHeader breadcrumbs={breadcrumbs} actions={actions} sticky />
       <main
         id="portal-main"
-        className="v-stack min-w-0 flex-1 gap-6 overflow-x-clip p-4 md:p-6 lg:max-w-5xl"
+        className="v-stack mx-auto w-full min-w-0 flex-1 gap-6 overflow-x-clip p-4 md:p-6 lg:max-w-5xl"
       >
         <header className="space-y-1">
           <PortalEyebrow className="mb-2">{eyebrow}</PortalEyebrow>
@@ -112,7 +112,7 @@ export function DashboardPageSkeleton({
     return (
       <main
         id="portal-main"
-        className="v-stack min-w-0 flex-1 gap-6 overflow-x-clip p-4 md:p-6 lg:max-w-5xl"
+        className="v-stack mx-auto w-full min-w-0 flex-1 gap-6 overflow-x-clip p-4 md:p-6 lg:max-w-5xl"
       >
         <header className="space-y-1">
           <PortalEyebrow className="mb-2">{eyebrow}</PortalEyebrow>
@@ -134,7 +134,7 @@ export function DashboardPageSkeleton({
       <PortalPageHeader breadcrumbs={breadcrumbs} showSidebarTrigger={false} />
       <main
         id="portal-main"
-        className="v-stack min-w-0 flex-1 gap-6 overflow-x-clip p-4 md:p-6 lg:max-w-5xl"
+        className="v-stack mx-auto w-full min-w-0 flex-1 gap-6 overflow-x-clip p-4 md:p-6 lg:max-w-5xl"
       >
         <header className="space-y-1">
           <PortalEyebrow className="mb-2">{eyebrow}</PortalEyebrow>

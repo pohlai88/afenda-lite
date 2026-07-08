@@ -49,6 +49,22 @@ const clientAuthCopyByPath: Record<
     signInDescription: portalCopy.metadata.authSignOut.description,
     alternateLink: { href: AUTH_SIGN_IN_HREF, label: "Sign in again" },
   },
+  "accept-invitation": {
+    signInTitle: portalCopy.organizationAuth.acceptInvitationTitle,
+    signInDescription: portalCopy.organizationAuth.acceptInvitationDescription,
+    alternateLink: { href: AUTH_SIGN_IN_HREF, label: "Back to sign in" },
+    signInHeadingId: "accept-invitation-heading",
+  },
+  "email-otp": {
+    signInTitle: "Sign in with verification code",
+    signInDescription: portalCopy.emailOtp.signInDescription,
+    alternateLink: { href: AUTH_SIGN_IN_HREF, label: "Sign in with password" },
+  },
+  "magic-link": {
+    signInTitle: portalCopy.metadata.authMagicLink.title,
+    signInDescription: portalCopy.magicLink.signInDescription,
+    alternateLink: { href: AUTH_SIGN_IN_HREF, label: "Sign in with password" },
+  },
 };
 
 export function resolveAuthShellCopy(input: {

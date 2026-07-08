@@ -1,38 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
-import type {
-  ColumnDef,
-  ColumnFiltersState,
-  PaginationState,
-} from "@tanstack/react-table";
-import {
-  getCoreRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useReactTable,
-} from "@tanstack/react-table";
+import { useMemo } from "react";
+import type { ColumnDef } from "@tanstack/react-table";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { FilteredDataTable } from "@/components/filtered-datatable";
-import { DataTableToolbar } from "@/components/datatable-toolbar";
+import {
+  Card,
+  CardDescription,
+  CardHeader,
+} from "@/components/ui/card";
+import { StudioFilterDataTable } from "@/components/shadcn-studio/blocks/datatable-user";
 import { ClientRegistrationDeleteButton } from "@/components/client-registration-delete-button";
 import { ClientAssignmentDeleteButton } from "@/components/client-assignment-delete-button";
-
-const selectClassName =
-  "border-input bg-background ring-offset-background focus-visible:ring-ring h-9 min-w-[8rem] rounded-md border px-3 text-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none";
-
-/** datatable-component-04 pattern — client rows with avatar, status badge, actions. */
-export type OrgClientInvitationRow = {
-  id: string;
-  token: string;
-  fullName: string;
-  email: string;
-  status: "pending" | "accepted" | "expired";
-};
 
 function initials(name: string) {
   return name
@@ -43,40 +23,19 @@ function initials(name: string) {
     .join("");
 }
 
-function StatusFilter({
-  label,
-  value,
-  allLabel,
-  options,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  allLabel: string;
-  options: { value: string; label: string }[];
-  onChange: (value: string) => void;
-}) {
-  return (
-    <label className="flex items-center gap-2 text-sm">
-      <span className="text-muted-foreground whitespace-nowrap">{label}</span>
-      <select
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        className={selectClassName}
-      >
-        <option value="all">{allLabel}</option>
-        {options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
-    </label>
-  );
-}
+/** datatable-component-04 — client rows with avatar, status badge, actions. */
+export type OrgClientInvitationRow = {
+  id: string;
+  token: string;
+  fullName: string;
+  email: string;
+  status: "pending" | "accepted" | "expired";
+};
 
 type OrgClientInvitationsTableProps = {
   rows: OrgClientInvitationRow[];
+  title?: string;
+  description?: string;
   labels: {
     tableName: string;
     tableEmail: string;
@@ -93,6 +52,8 @@ type OrgClientInvitationsTableProps = {
 
 export function OrgClientInvitationsTable({
   rows,
+  title,
+  description,
   labels,
 }: OrgClientInvitationsTableProps) {
   const columns = useMemo<ColumnDef<OrgClientInvitationRow>[]>(
@@ -128,14 +89,26 @@ export function OrgClientInvitationsTable({
       {
         accessorKey: "status",
         header: labels.tableStatus,
-        filterFn: "equals",
+        filterFn: "equalsString",
+        enableSorting: true,
+        meta: {
+          filterVariant: "select",
+          filterLabel: labels.filterStatusLabel,
+          filterAllLabel: labels.filterAll,
+          filterOptions: (
+            Object.keys(labels.status) as OrgClientInvitationRow["status"][]
+          ).map((status) => ({
+            value: status,
+            label: labels.status[status],
+          })),
+        },
         cell: ({ row }) => {
           const status = row.original.status;
           return (
             <Badge
               variant={
                 status === "accepted"
-                  ? "secondary"
+                  ? "success"
                   : status === "expired"
                     ? "outline"
                     : "default"
@@ -159,68 +132,35 @@ export function OrgClientInvitationsTable({
         ),
         size: 96,
         enableHiding: false,
+        enableSorting: false,
       },
     ],
     [labels],
   );
 
   const pageSize = 8;
-  const [pagination, setPagination] = useState<PaginationState>({
-    pageIndex: 0,
-    pageSize,
-  });
-  const [globalFilter, setGlobalFilter] = useState("");
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-
-  const table = useReactTable({
-    data: rows,
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    onPaginationChange: setPagination,
-    onGlobalFilterChange: setGlobalFilter,
-    onColumnFiltersChange: setColumnFilters,
-    globalFilterFn: "includesString",
-    state: { pagination, globalFilter, columnFilters },
-  });
-
-  const statusFilter =
-    (columnFilters.find((filter) => filter.id === "status")?.value as
-      | string
-      | undefined) ?? "all";
+  const hasHeader = Boolean(title || description);
 
   return (
-    <FilteredDataTable
-      table={table}
-      pageSize={pageSize}
-      toolbar={
-        <DataTableToolbar
-          searchValue={globalFilter}
-          onSearchChange={setGlobalFilter}
-          searchPlaceholder={labels.searchPlaceholder}
-          filters={
-            <StatusFilter
-              label={labels.filterStatusLabel}
-              value={statusFilter}
-              allLabel={labels.filterAll}
-              options={(
-                Object.keys(labels.status) as OrgClientInvitationRow["status"][]
-              ).map((status) => ({
-                value: status,
-                label: labels.status[status],
-              }))}
-              onChange={(value) => {
-                setColumnFilters(
-                  value === "all" ? [] : [{ id: "status", value }],
-                );
-              }}
-            />
-          }
-        />
-      }
-    />
+    <Card className="min-w-0 overflow-hidden py-0">
+      {hasHeader ? (
+        <CardHeader className="border-b py-4">
+          {title ? <h2 className="portal-card-title">{title}</h2> : null}
+          {description ? (
+            <CardDescription className="text-pretty">
+              {description}
+            </CardDescription>
+          ) : null}
+        </CardHeader>
+      ) : null}
+      <StudioFilterDataTable
+        data={rows}
+        columns={columns}
+        pageSize={pageSize}
+        filterColumnIds={["status"]}
+        searchPlaceholder={labels.searchPlaceholder}
+      />
+    </Card>
   );
 }
 
@@ -235,6 +175,8 @@ export type OrgClientAssignmentRow = {
 
 type OrgClientAssignmentsTableProps = {
   rows: OrgClientAssignmentRow[];
+  title?: string;
+  description?: string;
   labels: {
     tableDeclaration: string;
     tableClient: string;
@@ -252,6 +194,8 @@ type OrgClientAssignmentsTableProps = {
 
 export function OrgClientAssignmentsTable({
   rows,
+  title,
+  description,
   labels,
 }: OrgClientAssignmentsTableProps) {
   const columns = useMemo<ColumnDef<OrgClientAssignmentRow>[]>(
@@ -259,10 +203,11 @@ export function OrgClientAssignmentsTable({
       {
         accessorKey: "surveyTitle",
         header: labels.tableDeclaration,
+        enableSorting: true,
         cell: ({ row }) => (
           <Link
             href={`/dashboard/${row.original.surveyId}`}
-            className="block max-w-[220px] truncate font-medium rounded-sm outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring"
+            className="block max-w-[220px] truncate rounded-sm font-medium outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring"
           >
             {row.original.surveyTitle}
           </Link>
@@ -271,6 +216,7 @@ export function OrgClientAssignmentsTable({
       {
         accessorKey: "clientEmail",
         header: labels.tableClient,
+        enableSorting: true,
         cell: ({ row }) => (
           <span className="max-w-[220px] truncate text-muted-foreground">
             {row.original.clientEmail}
@@ -280,11 +226,21 @@ export function OrgClientAssignmentsTable({
       {
         accessorKey: "status",
         header: labels.tableStatus,
-        filterFn: "equals",
+        filterFn: "equalsString",
+        enableSorting: true,
+        meta: {
+          filterVariant: "select",
+          filterLabel: labels.filterStatusLabel,
+          filterAllLabel: labels.filterAll,
+          filterOptions: [
+            { value: "pending", label: labels.pending },
+            { value: "submitted", label: labels.submitted },
+          ],
+        },
         cell: ({ row }) => (
           <Badge
             variant={
-              row.original.status === "submitted" ? "secondary" : "outline"
+              row.original.status === "submitted" ? "success" : "outline"
             }
           >
             {row.original.status === "submitted"
@@ -298,6 +254,7 @@ export function OrgClientAssignmentsTable({
         header: () => (
           <span className="block text-right">{labels.tableDue}</span>
         ),
+        enableSorting: true,
         cell: ({ row }) => (
           <span className="block text-right text-xs text-muted-foreground tabular-nums">
             {row.original.dueDate ?? "—"}
@@ -316,65 +273,34 @@ export function OrgClientAssignmentsTable({
         ),
         size: 96,
         enableHiding: false,
+        enableSorting: false,
       },
     ],
     [labels],
   );
 
   const pageSize = 8;
-  const [pagination, setPagination] = useState<PaginationState>({
-    pageIndex: 0,
-    pageSize,
-  });
-  const [globalFilter, setGlobalFilter] = useState("");
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-
-  const table = useReactTable({
-    data: rows,
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    onPaginationChange: setPagination,
-    onGlobalFilterChange: setGlobalFilter,
-    onColumnFiltersChange: setColumnFilters,
-    globalFilterFn: "includesString",
-    state: { pagination, globalFilter, columnFilters },
-  });
-
-  const statusFilter =
-    (columnFilters.find((filter) => filter.id === "status")?.value as
-      | string
-      | undefined) ?? "all";
+  const hasHeader = Boolean(title || description);
 
   return (
-    <FilteredDataTable
-      table={table}
-      pageSize={pageSize}
-      toolbar={
-        <DataTableToolbar
-          searchValue={globalFilter}
-          onSearchChange={setGlobalFilter}
-          searchPlaceholder={labels.searchPlaceholder}
-          filters={
-            <StatusFilter
-              label={labels.filterStatusLabel}
-              value={statusFilter}
-              allLabel={labels.filterAll}
-              options={[
-                { value: "pending", label: labels.pending },
-                { value: "submitted", label: labels.submitted },
-              ]}
-              onChange={(value) => {
-                setColumnFilters(
-                  value === "all" ? [] : [{ id: "status", value }],
-                );
-              }}
-            />
-          }
-        />
-      }
-    />
+    <Card className="min-w-0 overflow-hidden py-0">
+      {hasHeader ? (
+        <CardHeader className="border-b py-4">
+          {title ? <h2 className="portal-card-title">{title}</h2> : null}
+          {description ? (
+            <CardDescription className="text-pretty">
+              {description}
+            </CardDescription>
+          ) : null}
+        </CardHeader>
+      ) : null}
+      <StudioFilterDataTable
+        data={rows}
+        columns={columns}
+        pageSize={pageSize}
+        filterColumnIds={["status"]}
+        searchPlaceholder={labels.searchPlaceholder}
+      />
+    </Card>
   );
 }

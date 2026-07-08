@@ -9,6 +9,7 @@ import { SurveyMetadataSummary } from "@/components/survey-metadata-summary";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
+  CardAction,
   CardContent,
   CardDescription,
   CardHeader,
@@ -55,15 +56,17 @@ export function OperatorDeclarationDetailView({
   );
 
   const sharePanel = (
-    <Card>
+    <Card className="min-w-0">
       <CardHeader>
-        <CardTitle>{declarationDetail.share.title}</CardTitle>
+        <CardTitle className="portal-card-title">{declarationDetail.share.title}</CardTitle>
         <CardDescription>{declarationDetail.share.description}</CardDescription>
+        <CardAction>
+          <Badge variant="surface" className="tabular-nums">
+            {org.list.submissions(responses.length)}
+          </Badge>
+        </CardAction>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <Badge variant="secondary" className="tabular-nums">
-          {org.list.submissions(responses.length)}
-        </Badge>
+      <CardContent>
         <DeclarationSharePanel surveyId={survey.id} slug={survey.slug} />
       </CardContent>
     </Card>
@@ -77,7 +80,7 @@ export function OperatorDeclarationDetailView({
         description={declarationDetail.submissions.empty}
       />
     ) : (
-      <div className="rounded-lg border">
+      <div className="min-w-0 overflow-hidden rounded-lg border">
         <Table>
           <TableHeader>
             <TableRow>
@@ -90,13 +93,13 @@ export function OperatorDeclarationDetailView({
           <TableBody>
             {responses.map((response) => (
               <TableRow key={response.id}>
-                <TableCell className="align-top">
+                <TableCell className="min-w-0 align-top whitespace-normal">
                   <p className="font-medium tabular-nums" translate="no">
                     {response.confirmationCode ??
                       declarationDetail.submissions.answersTitle}
                   </p>
                   {response.answers ? (
-                    <div className="mt-3 max-w-prose">
+                    <div className="mt-3 min-w-0 max-w-full">
                       <SubmissionAnswers
                         response={response}
                         questions={questions}
@@ -105,7 +108,7 @@ export function OperatorDeclarationDetailView({
                     </div>
                   ) : null}
                 </TableCell>
-                <TableCell className="text-right align-top text-muted-foreground">
+                <TableCell className="shrink-0 text-right align-top whitespace-normal text-muted-foreground">
                   <time
                     dateTime={response.createdAt.toISOString()}
                     className="text-xs tabular-nums"
@@ -123,7 +126,9 @@ export function OperatorDeclarationDetailView({
   const dangerPanel = (
     <Card className="border-destructive/30">
       <CardHeader>
-        <CardTitle>{declarationDetail.manage.deleteTitle}</CardTitle>
+        <CardTitle className="portal-card-title">
+          {declarationDetail.manage.deleteTitle}
+        </CardTitle>
         <CardDescription>
           {declarationDetail.manage.deleteDescription}
         </CardDescription>

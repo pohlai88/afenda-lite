@@ -1,7 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "@neondatabase/auth/ui/tailwind";
+@import "@neondatabase/auth-ui/tailwind";
 @plugin "@tailwindcss/typography";
 
 @custom-variant dark (&:where(.dark, .dark *));
@@ -162,9 +162,11 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
-  --font-sans: var(--font-lato), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-ui: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  --font-heading: var(--font-eb-garamond), ui-serif, Georgia, serif;
+  --font-heading: var(--font-cormorant), ui-serif, Georgia, serif;
+  --font-editorial: var(--font-cormorant), ui-serif, Georgia, serif;
   --text-display: 2rem;
   --text-title: 1.5rem;
   --text-body: 1rem;
@@ -353,8 +355,25 @@
   }
 
   .dark .portal-auth-vault {
-    --vault-floor: oklch(0.055 0.016 265);
-    --vault-glow: oklch(0.72 0.14 234 / 0.32);
+    --vault-floor: oklch(0.095 0.022 255);
+    --vault-glow: var(--glow-primary, oklch(0.60 0.14 255 / 0.32));
+    background:
+      radial-gradient(
+        circle at 44% 30%,
+        oklch(0.34 0.08 255 / 0.34),
+        transparent 30%
+      ),
+      radial-gradient(
+        circle at 22% 48%,
+        oklch(0.24 0.07 255 / 0.28),
+        transparent 38%
+      ),
+      linear-gradient(
+        90deg,
+        oklch(0.10 0.026 255) 0%,
+        oklch(0.145 0.035 255) 44%,
+        oklch(0.055 0.018 255) 100%
+      );
   }
 
   /* ── Atmosphere — large radial primary blooms ──────────────────────── */
@@ -386,13 +405,15 @@
   .dark .portal-auth-atmosphere {
     background:
       radial-gradient(
-        ellipse 78% 68% at 32% 28%,
-        color-mix(in oklch, var(--info) 22%, transparent),
-        transparent 58%
+        circle at 44% 30%,
+        var(--glow-primary, oklch(0.60 0.14 255 / 0.32)),
+        transparent 36%
       ),
-      radial-gradient(circle at 28% 36%, color-mix(in oklch, var(--primary) 16%, transparent), transparent 36rem),
-      radial-gradient(circle at 76% 42%, color-mix(in oklch, var(--primary) 7%, transparent), transparent 28rem),
-      radial-gradient(ellipse 55% 40% at 98% 96%, color-mix(in oklch, var(--primary) 10%, transparent), transparent 52%);
+      radial-gradient(
+        circle at 22% 48%,
+        var(--glow-soft, oklch(0.42 0.09 255 / 0.24)),
+        transparent 40%
+      );
   }
 
   /* ── Blueprint grid ─────────────────────────────────────────────────── */
@@ -457,12 +478,12 @@
     transform: translateX(-40%);
     background:
       radial-gradient(
-        circle at 50% 46%,
-        color-mix(in oklch, var(--info) 42%, transparent) 0%,
-        color-mix(in oklch, var(--primary) 28%, transparent) 36%,
+        circle at 50% 44%,
+        var(--glow-primary, oklch(0.60 0.14 255 / 0.32)) 0%,
+        var(--glow-soft, oklch(0.42 0.09 255 / 0.24)) 38%,
         transparent 68%
       );
-    filter: blur(128px);
+    filter: blur(140px);
   }
 
   .dark .portal-auth-phantom-keylight {
@@ -473,11 +494,10 @@
     transform: translateX(-40%);
     background: radial-gradient(
       circle,
-      color-mix(in oklch, var(--info) 55%, transparent) 0%,
-      color-mix(in oklch, var(--primary) 28%, transparent) 42%,
-      transparent 74%
+      var(--glow-primary, oklch(0.60 0.14 255 / 0.32)) 0%,
+      transparent 62%
     );
-    filter: blur(56px);
+    filter: blur(60px);
   }
 
   .portal-auth-phantom-owl {
@@ -546,16 +566,20 @@
       drop-shadow(0 48px 96px color-mix(in oklch, var(--primary) 16%, transparent));
   }
 
+  /*
+   * Dark: moonlit owl — screen blend lifts it against the dark navy sky.
+   * Partial desaturation keeps the cold-blue moonlit cast without oversaturating.
+   * drop-shadow layers add depth + the glow-soft atmosphere corona.
+   */
   .dark .portal-auth-phantom-owl-img {
-    mix-blend-mode: normal;
-    opacity: 1;
+    mix-blend-mode: screen;
+    opacity: 0.62;
     filter:
-      saturate(1.42)
-      contrast(1.18)
-      brightness(1.12)
-      drop-shadow(0 0 48px color-mix(in oklch, var(--info) 62%, transparent))
-      drop-shadow(0 0 104px color-mix(in oklch, var(--primary) 42%, transparent))
-      drop-shadow(0 0 160px color-mix(in oklch, var(--info) 28%, transparent));
+      saturate(0.55)
+      brightness(0.72)
+      contrast(1.08)
+      drop-shadow(0 0 42px var(--glow-soft, oklch(0.42 0.09 255 / 0.24)))
+      drop-shadow(0 22px 80px oklch(0.04 0.02 255 / 0.80));
   }
 
   .portal-auth-cinematic-scrim {
@@ -641,7 +665,7 @@
     }
 
     .dark .portal-auth-phantom-owl-img {
-      opacity: 0.96;
+      opacity: 0.55;
     }
 
     .portal-auth-cinematic-scrim {
@@ -676,7 +700,7 @@
   }
 
   .portal-auth-toolbar {
-    @apply relative z-20 border-b border-border/60 bg-vault-floor/80 backdrop-blur-md;
+    @apply sticky top-0 z-30 bg-transparent;
   }
 
   .portal-auth-toolbar-inner {
@@ -688,143 +712,170 @@
   }
 
   .portal-auth-grid {
-    @apply mx-auto grid w-full min-w-0 max-w-6xl gap-8 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-end lg:gap-8 xl:gap-12;
+    @apply mx-auto grid w-full min-w-0 max-w-6xl gap-8 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-center lg:gap-8 xl:gap-12;
   }
 
   .portal-auth-brand {
     @apply order-2 flex min-w-0 flex-col lg:order-1 lg:justify-end;
   }
 
-  .portal-auth-eyebrow {
-    @apply mb-3 border-vault-rim bg-vault-surface/50 text-foreground backdrop-blur-sm lg:mb-2;
+  /* ── Editorial poster: TRUTH / IS / PROTECTED ──────────────────────────── */
+
+  .portal-hero-stack {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
   }
 
-  .portal-auth-brand h1 {
-    @apply font-heading text-3xl font-semibold tracking-tight text-balance break-words sm:text-4xl lg:text-4xl xl:text-4xl;
-    line-height: 1.1;
+  .portal-hero-heading {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0;
   }
 
-  @media (min-width: 1024px) and (max-width: 1279px) {
-    .portal-auth-brand h1 {
-      font-size: 2.375rem;
-    }
+  .portal-hero-word {
+    display: block;
+    font-family: var(--font-editorial);
+    font-size: clamp(4.5rem, 9.5vw, 11rem);
+    font-weight: 500;
+    line-height: 0.86;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    transform-origin: center;
   }
 
-  .portal-auth-hero-description {
-    @apply mt-3 max-w-md text-pretty text-sm leading-relaxed text-muted-foreground sm:text-base lg:mt-2.5 lg:leading-snug;
+  /* Light mode: TRUTH deep navy, normal */
+  .portal-hero-truth {
+    color: var(--hero-truth-flipped, var(--foreground));
   }
 
-  @media (min-width: 1024px) {
-    .portal-auth-hero-description {
-      font-size: 0.9375rem;
-    }
+  /* Light mode: PROTECTED champagne-stone, flipped */
+  .portal-hero-protected {
+    color: var(--hero-protected, oklch(0.60 0.045 82));
+    transform: rotate(180deg);
   }
 
-  .portal-auth-vault-signals {
-    @apply mt-5 flex flex-wrap gap-x-3 gap-y-1.5 text-xs text-muted-foreground sm:text-sm lg:mt-4;
+  /* Dark mode overrides */
+  .dark .portal-hero-truth {
+    color: var(--hero-truth, var(--foreground));
+    text-shadow:
+      0 1px 0 oklch(1 0 0 / 0.15),
+      0 18px 42px oklch(0.04 0.02 255 / 0.65);
   }
 
-  .portal-auth-vault-signal-dot {
-    @apply size-1.5 shrink-0 rounded-full bg-primary;
-    box-shadow: 0 0 8px var(--vault-glow);
+  .dark .portal-hero-protected {
+    color: transparent;
+    background-image: linear-gradient(
+      180deg,
+      var(--hero-protected-flipped, oklch(0.70 0.11 255)) 0%,
+      oklch(0.52 0.10 255) 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    text-shadow: none;
   }
 
-  .portal-auth-chamber-inner h2 {
-    @apply font-heading text-xl font-semibold tracking-tight text-balance sm:text-2xl;
+  /* "IS" connector with horizontal rules */
+  .portal-hero-connector {
+    display: grid;
+    grid-template-columns: minmax(2rem, 5rem) auto minmax(2rem, 5rem);
+    align-items: center;
+    gap: clamp(0.75rem, 1.2vw, 1.25rem);
+    width: 100%;
+    margin-block: clamp(0.6rem, 1vw, 1rem);
   }
 
-  @media (min-width: 1024px) {
-    .portal-auth-chamber-inner h2 {
-      font-size: 1.375rem;
-    }
+  .portal-hero-is {
+    font-family: var(--font-ui);
+    font-size: clamp(0.65rem, 0.7vw, 0.78rem);
+    font-weight: 600;
+    letter-spacing: 0.38em;
+    text-transform: uppercase;
+    color: oklch(0.36 0.04 255);
+    white-space: nowrap;
   }
 
-  .portal-auth-sign-in-description {
-    @apply text-pretty text-xs leading-snug text-muted-foreground sm:text-sm;
+  .dark .portal-hero-is {
+    color: var(--hero-is, oklch(0.74 0.06 255));
   }
 
-  @media (min-width: 1024px) {
-    .portal-auth-sign-in-description {
-      font-size: 0.8125rem;
-    }
+  .portal-hero-rule {
+    display: block;
+    height: 1px;
+    background: oklch(0.78 0.018 82);
+    opacity: 0.72;
   }
 
-  .portal-auth-trust-notice {
-    @apply rounded-md border border-border/80 bg-muted/40 px-3 py-2 text-pretty text-micro leading-snug text-muted-foreground sm:text-xs lg:py-1.5;
+  .dark .portal-hero-rule {
+    background: linear-gradient(90deg, transparent, var(--hero-rule, oklch(0.58 0.035 255)), transparent);
+    opacity: 1;
   }
 
-  .portal-auth-footer-hint {
-    @apply text-center text-micro leading-snug text-muted-foreground text-pretty sm:text-left sm:text-xs;
+  /* Seal line: shield + SECURE · CONFIDENTIAL · VERIFIED */
+  .portal-auth-seal-line {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: clamp(1.5rem, 3vw, 2.5rem);
+
+    font-family: var(--font-ui);
+    font-size: clamp(0.6rem, 0.62vw, 0.72rem);
+    font-weight: 600;
+    letter-spacing: clamp(0.22em, 0.4vw, 0.42em);
+    text-transform: uppercase;
+    color: var(--muted-foreground);
+  }
+
+  .dark .portal-auth-seal-line {
+    color: oklch(0.74 0.055 255);
+  }
+
+  .portal-auth-seal-icon {
+    width: 0.875rem;
+    height: 0.875rem;
+    flex-shrink: 0;
+    color: var(--seal-blue, var(--primary));
+    opacity: 0.82;
   }
 
   .portal-auth-footer-note {
     @apply inline-flex items-center justify-center gap-2 text-micro text-muted-foreground sm:text-xs;
   }
 
-  /* Flexible spacer — pushes text block down so owl reads above/behind copy */
   .portal-auth-brand-spacer {
     @apply hidden lg:block lg:flex-1;
-    min-height: clamp(14rem, 30vh, 22rem);
+    min-height: clamp(3rem, 8vh, 6rem);
   }
 
-  /* Remove old scene container classes (no longer used in layout flow) */
-
-  .portal-auth-chamber-wrap {
-    @apply order-1 w-full min-w-0 max-w-full lg:order-2;
+  /* Neon AuthView slot — default card from @neondatabase/auth-ui */
+  .portal-auth-neon-slot {
+    @apply order-1 flex w-full min-w-0 flex-col items-center gap-4 lg:order-2 lg:items-end lg:justify-center;
   }
 
-  .portal-auth-chamber {
-    @apply w-full min-w-0 rounded-2xl p-px shadow-[0_28px_60px_-28px_rgba(0,0,0,0.55)];
-    background: linear-gradient(
-      155deg,
-      color-mix(in oklch, var(--vault-rim) 90%, white 10%),
-      color-mix(in oklch, var(--vault-rim) 45%, transparent)
-    );
+  /* Email OTP — vault-density digit inputs inside Neon Auth card */
+  .portal-neon-view [data-slot="input-otp"] {
+    @apply w-full justify-center gap-2;
   }
 
-  .portal-auth-chamber-inner {
-    @apply flex min-w-0 flex-col gap-4 rounded-[calc(var(--radius-2xl)-1px)] bg-vault-surface p-5 sm:p-6 lg:gap-3 lg:p-5;
-    box-shadow:
-      inset 0 1px 0 color-mix(in oklch, white 12%, transparent),
-      inset 0 -24px 48px -40px color-mix(in oklch, var(--primary) 18%, transparent);
+  .portal-neon-view [data-slot="input-otp-group"] {
+    @apply gap-0;
   }
 
-  .dark .portal-auth-chamber-inner {
-    box-shadow:
-      inset 0 1px 0 color-mix(in oklch, white 8%, transparent),
-      inset 0 -32px 56px -44px color-mix(in oklch, var(--primary) 22%, transparent);
+  .portal-neon-view [data-slot="input-otp-slot"] {
+    @apply h-11 w-10 border-border bg-background text-base font-medium text-foreground shadow-none first:rounded-l-md last:rounded-r-md;
   }
 
-  .portal-auth-emblem {
-    @apply mx-auto flex shrink-0 items-center justify-center sm:mx-0;
+  .portal-neon-view [data-slot="input-otp-slot"][data-active="true"] {
+    @apply border-primary ring-2 ring-primary/25;
+  }
+
+  .portal-neon-view [data-slot="input-otp-separator"] {
+    @apply text-muted-foreground;
   }
 
   .portal-auth-footer {
     @apply shrink-0 border-t border-border/60 px-4 py-4 text-center sm:px-6 lg:py-3;
-  }
-
-  .portal-auth-form {
-    @apply min-w-0 w-full;
-  }
-
-  .portal-auth-form form {
-    @apply lg:space-y-3;
-  }
-
-  .portal-auth-form [data-slot="field-group"] {
-    @apply lg:gap-3;
-  }
-
-  .portal-auth-form [data-slot="field"] label {
-    @apply lg:text-sm;
-  }
-
-  .portal-auth-form input {
-    @apply lg:min-h-10 lg:py-2;
-  }
-
-  .portal-auth-form button[type="submit"] {
-    @apply lg:min-h-10;
   }
 
   @media (min-width: 1024px) and (min-height: 900px) {
@@ -842,37 +893,32 @@
       font-size: 2rem;
       line-height: 1.1;
     }
-
-    .portal-auth-brand p {
-      margin-top: 0.75rem;
-      font-size: 0.875rem;
-      line-height: 1.45;
-    }
-
-    .portal-auth-brand ul {
-      margin-top: 1rem;
-    }
-
-    .portal-auth-chamber-inner h2 {
-      font-size: 1.375rem;
-    }
   }
 
   .portal-auth-alt-link {
     @apply font-medium text-primary underline-offset-4 transition-colors duration-200 hover:text-primary/80 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring;
   }
 
-  /* Neon Auth views inside portal vault / account shells */
-  .portal-neon-view [data-slot="card"] {
-    @apply min-w-0 max-w-full border-0 bg-transparent p-0 shadow-none;
+  /* Neon Auth page shell — semantic tokens; AuthView card uses @neondatabase/auth-ui defaults */
+  .neon-auth-page {
+    @apply relative flex min-h-svh w-full flex-col bg-background text-foreground;
+    background-image: radial-gradient(
+      ellipse 120% 80% at 50% -20%,
+      color-mix(in oklch, var(--primary) 8%, transparent),
+      transparent 60%
+    );
   }
 
-  .portal-neon-view form {
-    @apply min-w-0 space-y-4;
+  .neon-auth-page-inner {
+    @apply flex flex-1 flex-col items-center justify-center gap-4 p-6;
   }
 
-  .portal-neon-view button[type="submit"] {
-    @apply min-h-11 w-full touch-manipulation;
+  .neon-auth-page-notices {
+    @apply flex w-full max-w-sm flex-col gap-3;
+  }
+
+  .neon-auth-page-slot {
+    @apply w-full max-w-sm min-w-0;
   }
 
   .portal-code-block {

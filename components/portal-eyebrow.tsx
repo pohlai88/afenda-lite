@@ -16,7 +16,7 @@ export function PortalEyebrow({
       className={cn(
         variant === "solid"
           ? "bg-primary text-primary-foreground hover:bg-primary/90"
-          : "bg-primary/10 text-primary hover:bg-primary/15",
+          : "border-primary/30 bg-background text-primary hover:bg-primary/5",
         className,
       )}
     >

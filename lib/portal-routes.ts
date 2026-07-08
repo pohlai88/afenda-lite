@@ -19,9 +19,17 @@ export const HOME_HREF = "/" as const;
 /** Named client sign-in entry (share links, QR codes, emails). */
 export const CLIENT_SIGN_IN_ENTRY_HREF = "/client/login" as const;
 
+/** Dedicated client org invitation entry — Neon Auth UI sign-up then accept. */
+export const CLIENT_JOIN_HREF = "/join" as const;
+
+export function buildClientJoinHref(invitationId: string) {
+  return `${CLIENT_JOIN_HREF}?invitationId=${encodeURIComponent(invitationId)}`;
+}
+
 /** Neon Auth UI (matches `proxy.ts` loginUrl). */
 export const AUTH_SIGN_IN_HREF = "/auth/sign-in" as const;
 export const AUTH_FORGOT_PASSWORD_HREF = "/auth/forgot-password" as const;
+export const AUTH_RESET_PASSWORD_HREF = "/auth/reset-password" as const;
 
 export const CLIENT_PROFILE_HREF = "/client/profile" as const;
 export const OPERATOR_CLIENTS_HREF = "/dashboard/clients" as const;
@@ -56,6 +64,7 @@ const RETURN_TO_PREFIXES = [
   "/survey/",
   "/client/",
   "/invite/",
+  "/join",
 ] as const;
 
 export function sanitizeReturnToPath(value: string | undefined) {

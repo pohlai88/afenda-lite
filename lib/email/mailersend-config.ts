@@ -23,16 +23,3 @@ export function getMailerSendConfig() {
     fromName: env.MAILERSEND_FROM_NAME ?? portalCopy.invite.sender,
   };
 }
-
-export function getClientEmailDeliveryStatus() {
-  const config = getMailerSendConfig();
-  if (!config) {
-    return { enabled: false as const };
-  }
-
-  return {
-    enabled: true as const,
-    fromName: config.fromName,
-    fromEmail: config.fromEmail,
-  };
-}

@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { issueClientInviteAction } from "@/app/actions/client";
-import { CopyAccessMessage } from "@/components/copy-access-message";
 import { portalCopy } from "@/lib/portal-copy";
 import { FormErrorAlert } from "@/components/form-error-alert";
 import { Button } from "@/components/ui/button";
@@ -27,7 +26,6 @@ export function IssueClientInviteForm({
 }) {
   const { clientInvite } = portalCopy;
   const [surveyId, setSurveyId] = useState("");
-  const [accessMessage, setAccessMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -43,7 +41,6 @@ export function IssueClientInviteForm({
       onSubmit={async (event) => {
         event.preventDefault();
         setError(null);
-        setAccessMessage(null);
 
         if (!surveyId) {
           setError(clientInvite.assignRequired);
@@ -69,10 +66,6 @@ export function IssueClientInviteForm({
               toast.warning(clientInvite.issuedEmailFailed);
             } else {
               toast.success(clientInvite.issued);
-            }
-
-            if (result.accessMessage) {
-              setAccessMessage(result.accessMessage);
             }
 
             form.reset();
@@ -117,7 +110,7 @@ export function IssueClientInviteForm({
           <FieldLabel htmlFor="invite-declaration">{clientInvite.assignLabel}</FieldLabel>
           <input type="hidden" name="surveyId" value={surveyId} />
           <Select
-            value={surveyId || undefined}
+            value={surveyId}
             onValueChange={(value) => setSurveyId(value ?? "")}
           >
             <SelectTrigger id="invite-declaration" className="w-full">
@@ -141,17 +134,6 @@ export function IssueClientInviteForm({
           <Input id="invite-due-date" name="dueDate" type="date" autoComplete="off" />
         </Field>
       </FieldGroup>
-
-      {accessMessage ? (
-        <CopyAccessMessage
-          message={accessMessage}
-          label={
-            emailDeliveryEnabled
-              ? portalCopy.clientInvite.backupAccessLabel
-              : portalCopy.clientAccess.personalLabel
-          }
-        />
-      ) : null}
 
       <FormErrorAlert error={error} />
 

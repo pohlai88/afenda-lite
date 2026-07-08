@@ -1,56 +1,178 @@
 import { PortalAuthLayout } from "@/components/portal-auth-layout";
 import { portalCopy } from "@/lib/portal-copy";
 
-/** Mock sign-in fields for Storybook — mirrors Neon AuthView layout without provider. */
-function MockSignInForm() {
+/** Mock sign-in card for Storybook — mirrors Neon AuthView card chrome without provider. */
+function MockNeonAuthCard() {
   const { signIn } = portalCopy;
 
   return (
-    <div className="space-y-4">
-      <label className="block space-y-1.5 text-sm">
-        <span className="font-medium">{signIn.emailLabel}</span>
-        <input
-          className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm"
-          placeholder={signIn.emailPlaceholder}
-          readOnly
-          defaultValue=""
-        />
-      </label>
-      <label className="block space-y-1.5 text-sm">
-        <span className="font-medium">{signIn.passwordLabel}</span>
-        <input
-          className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm"
-          type="password"
-          placeholder="••••••••"
-          readOnly
-        />
-      </label>
-      <button
-        type="button"
-        className="h-8 w-full rounded-lg bg-primary text-sm font-medium text-primary-foreground"
-      >
-        {signIn.submit}
-      </button>
+    <div className="bg-card text-card-foreground flex w-full max-w-sm flex-col gap-6 rounded-xl border py-6 shadow-sm">
+      <div className="grid auto-rows-min grid-rows-[auto_auto] gap-1.5 px-6">
+        <div className="font-semibold text-lg md:text-xl">{signIn.title}</div>
+        <div className="text-muted-foreground text-xs md:text-sm">{signIn.description}</div>
+      </div>
+      <div className="grid gap-6 px-6">
+        <div className="grid gap-4">
+          <label className="grid gap-2 text-sm">
+            <span className="font-medium">{signIn.emailLabel}</span>
+            <input
+              className="border-input flex h-9 w-full rounded-md border bg-transparent px-3 py-1 text-sm"
+              placeholder={signIn.emailPlaceholder}
+              readOnly
+            />
+          </label>
+          <label className="grid gap-2 text-sm">
+            <span className="font-medium">{signIn.passwordLabel}</span>
+            <input
+              className="border-input flex h-9 w-full rounded-md border bg-transparent px-3 py-1 text-sm"
+              type="password"
+              placeholder="Password"
+              readOnly
+            />
+          </label>
+          <button
+            type="button"
+            className="bg-primary text-primary-foreground inline-flex h-9 w-full items-center justify-center rounded-md text-sm font-medium"
+          >
+            {signIn.submit}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
 
-/** Production iam-check auth shell — real BrandMark, vault tokens, portal copy. */
-export function IamCheckAuthShellPreview() {
-  const { signIn, product } = portalCopy;
+/** Mock OTP verification card for Storybook — mirrors Neon Email OTP step chrome. */
+function MockNeonOtpCard() {
+  const { emailOtp } = portalCopy;
 
   return (
-    <PortalAuthLayout
-      eyebrow={product.portalEyebrow}
-      heroTitle={signIn.heroTitle}
-      heroDescription={signIn.heroDescription}
-      signInTitle={signIn.title}
-      signInDescription={signIn.description}
-      trustNotice={portalCopy.trust.notices.clientLogin}
-      alternateLink={{ href: "/org/login", label: signIn.orgLink }}
-      footerHint={signIn.inviteHint}
-      form={<MockSignInForm />}
-    />
+    <div className="bg-card text-card-foreground flex w-full max-w-sm flex-col gap-6 rounded-xl border py-6 shadow-sm">
+      <div className="grid auto-rows-min grid-rows-[auto_auto] gap-1.5 px-6">
+        <div className="font-semibold text-lg md:text-xl">{emailOtp.label}</div>
+        <div className="text-muted-foreground text-xs md:text-sm">
+          {emailOtp.enterCodeDescription}
+        </div>
+      </div>
+      <div className="grid gap-6 px-6">
+        <div className="flex justify-center gap-2" aria-hidden>
+          {Array.from({ length: 6 }, (_, index) => (
+            <div
+              key={index}
+              className="flex h-11 w-10 items-center justify-center rounded-md border border-border bg-background text-base font-medium"
+            >
+              {index === 0 ? "4" : ""}
+            </div>
+          ))}
+        </div>
+        <button
+          type="button"
+          className="bg-primary text-primary-foreground inline-flex h-9 w-full items-center justify-center rounded-md text-sm font-medium"
+        >
+          {emailOtp.verifyCodeAction}
+        </button>
+        <p className="text-center text-caption text-muted-foreground">
+          {emailOtp.codeSentNotice}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/** Production iam-check auth shell — editorial poster + Neon Auth card slot. */
+export function IamCheckAuthShellPreview() {
+  return (
+    <PortalAuthLayout>
+      <MockNeonAuthCard />
+    </PortalAuthLayout>
+  );
+}
+
+/** Vault shell with Email OTP verification step mock. */
+export function IamCheckAuthOtpShellPreview() {
+  return (
+    <PortalAuthLayout>
+      <MockNeonOtpCard />
+    </PortalAuthLayout>
+  );
+}
+
+/** Mock magic-link card for Storybook — mirrors Neon Magic Link step chrome. */
+function MockNeonMagicLinkCard() {
+  const { magicLink, signIn } = portalCopy;
+
+  return (
+    <div className="bg-card text-card-foreground flex w-full max-w-sm flex-col gap-6 rounded-xl border py-6 shadow-sm">
+      <div className="grid auto-rows-min grid-rows-[auto_auto] gap-1.5 px-6">
+        <div className="font-semibold text-lg md:text-xl">{magicLink.label}</div>
+        <div className="text-muted-foreground text-xs md:text-sm">
+          {magicLink.signInDescription}
+        </div>
+      </div>
+      <div className="grid gap-6 px-6">
+        <label className="grid gap-2 text-sm">
+          <span className="font-medium">{signIn.emailLabel}</span>
+          <input
+            className="border-input flex h-9 w-full rounded-md border bg-transparent px-3 py-1 text-sm"
+            placeholder={signIn.emailPlaceholder}
+            readOnly
+          />
+        </label>
+        <button
+          type="button"
+          className="bg-primary text-primary-foreground inline-flex h-9 w-full items-center justify-center rounded-md text-sm font-medium"
+        >
+          {magicLink.sendLinkAction}
+        </button>
+        <p className="text-center text-caption text-muted-foreground">
+          {magicLink.existingUsersOnlyHint}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/** Vault shell with Magic Link sign-in step mock. */
+export function IamCheckAuthMagicLinkShellPreview() {
+  return (
+    <PortalAuthLayout>
+      <MockNeonMagicLinkCard />
+    </PortalAuthLayout>
+  );
+}
+
+/** Mock accept-invitation card for Storybook — organization join step. */
+function MockNeonAcceptInvitationCard() {
+  const { organizationAuth } = portalCopy;
+
+  return (
+    <div className="bg-card text-card-foreground flex w-full max-w-sm flex-col gap-6 rounded-xl border py-6 shadow-sm">
+      <div className="grid auto-rows-min grid-rows-[auto_auto] gap-1.5 px-6">
+        <div className="font-semibold text-lg md:text-xl">
+          {organizationAuth.acceptInvitationTitle}
+        </div>
+        <div className="text-muted-foreground text-xs md:text-sm">
+          {organizationAuth.acceptInvitationDescription}
+        </div>
+      </div>
+      <div className="grid gap-6 px-6">
+        <button
+          type="button"
+          className="bg-primary text-primary-foreground inline-flex h-9 w-full items-center justify-center rounded-md text-sm font-medium"
+        >
+          {organizationAuth.acceptInvitationTitle}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/** Vault shell with organization accept-invitation step mock. */
+export function IamCheckAuthOrganizationShellPreview() {
+  return (
+    <PortalAuthLayout>
+      <MockNeonAcceptInvitationCard />
+    </PortalAuthLayout>
   );
 }
 

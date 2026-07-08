@@ -45,7 +45,7 @@ Templates (committed): `env.config.example`, `env.secret.example`.
 
 **Keys synced to Vercel production:** Neon (`DATABASE_URL`, `NEON_AUTH_*`), admin/preview client, `APP_URL`, MailerSend.
 
-**Keys never synced:** `PLAYGROUND_*`, `NEON_API_KEY`, `NEON_PROJECT_ID`, `NEON_BRANCH_ID`, Shadcn Studio (`SHADCN_STUDIO_*`, `LICENSE_KEY`, `EMAIL`).
+**Keys never synced:** `PLAYGROUND_*`, `NEON_API_KEY`, `NEON_ORG_ID`, `NEON_PROJECT_ID`, `NEON_BRANCH_ID`, Shadcn Studio (`SHADCN_STUDIO_*`, `LICENSE_KEY`, `EMAIL`).
 
 After `sync:vercel`, redeploy: `vercel deploy --prod --yes`.
 
@@ -56,6 +56,46 @@ After `sync:vercel`, redeploy: `vercel deploy --prod --yes`.
 - Do not overwrite `env.config` / `env.secret` from Vercel.
 
 Use `npm run audit:vercel` for key-name validation instead.
+
+---
+
+## Neon Auth
+
+Authority: [`.agents/skills/neon/SKILL.md`](.agents/skills/neon/SKILL.md), [`.agents/skills/neon-postgres/references/neon-auth/portal-email-verification.md`](.agents/skills/neon-postgres/references/neon-auth/portal-email-verification.md).
+
+### Email — default Neon shared provider only
+
+- Neon Auth transactional mail uses the **shared provider** (`auth@mail.myneon.app`). Do **not** configure custom SMTP / MailerSend for Neon Auth.
+- **MailerSend** is for app-sent access emails only (`MAILERSEND_API_KEY`), not Neon Auth verification or org-invite mail.
+- Before advising on auth email, read live config via Neon MCP `get_neon_auth_config`.
+
+### Trusted domains
+
+When `APP_URL` or preview URLs change, add them to Neon Auth trusted origins:
+
+```bash
+neon neon-auth domain add https://iam-check.vercel.app
+neon neon-auth domain list
+```
+
+Local dev: `neon neon-auth domain allow-localhost`.
+
+Branch plugins (magic link, organization): `npm run configure:neon-auth-production -- --configure-plugins`, then `npm run sync:neon-auth-manifest`.
+
+Production checklist: `npm run audit:neon-auth-production`.
+
+### Client invitation entry
+
+- Canonical URL: `/join?invitationId=…` (not `/auth/accept-invitation` or `/?invitationId=…`).
+- Org invites must use production `APP_URL` as Origin — see `lib/auth/neon-auth-request.ts`.
+
+### Password reset
+
+Authority: [`.agents/skills/neon-postgres/references/neon-auth/portal-password-reset.md`](.agents/skills/neon-postgres/references/neon-auth/portal-password-reset.md).
+
+- Enabled when Neon `email_password` is on (MCP `get_neon_auth_config`) — no custom SMTP required.
+- UI: `/auth/forgot-password` and `/auth/reset-password` via `AuthView`; `NeonAuthUIProvider` must set `baseURL` (client origin) for reset email links.
+- Do not use SDK `resetPasswordForEmail` — use Neon Auth UI forms only (Neon docs).
 
 ---
 

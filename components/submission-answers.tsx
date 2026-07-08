@@ -33,14 +33,16 @@ export function SubmissionAnswers({
   });
 
   return (
-    <dl className="space-y-2 text-sm">
+    <dl className="min-w-0 space-y-2 text-sm">
       {rows.map((row, index) => (
-        <div key={row.id}>
-          <dt className="flex items-start gap-2 font-medium">
-            <QuestionSequenceBadge number={index + 1} className="mt-0.5" />
-            <span>{row.prompt}</span>
+        <div key={row.id} className="min-w-0">
+          <dt className="flex min-w-0 items-start gap-2 font-medium">
+            <QuestionSequenceBadge number={index + 1} className="mt-0.5 shrink-0" />
+            <span className="min-w-0 break-words">{row.prompt}</span>
           </dt>
-          <dd className="mt-1 pl-9 text-muted-foreground">{row.display}</dd>
+          <dd className="mt-1 min-w-0 break-words pl-9 text-muted-foreground">
+            {row.display}
+          </dd>
         </div>
       ))}
     </dl>

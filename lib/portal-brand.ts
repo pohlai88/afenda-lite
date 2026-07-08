@@ -4,8 +4,10 @@ import { PORTAL_NAME } from "@/lib/portal-copy";
 export const BRAND_MASTER_LIGHT_PATH = "/brand/iam-light.png";
 export const BRAND_MASTER_DARK_PATH = "/brand/iam-dark.png";
 
-/** Full auth mockup reference — design comp only (public/brand/owl-dramatic.png). */
+/** Full auth mockup reference — design comp (public/brand/owl-dramatic.png). */
 export const BRAND_DRAMATIC_OWL_MOCKUP_PATH = "/brand/owl-dramatic.png";
+export const BRAND_DRAMATIC_OWL_MOCKUP_WIDTH = 1536;
+export const BRAND_DRAMATIC_OWL_MOCKUP_HEIGHT = 1024;
 
 /** Isolated painterly owl — auth vault cinematic background only (not for icons). */
 export const BRAND_DRAMATIC_OWL_BACKGROUND_PATH = "/brand/owl-dramatic-isolated.png";

@@ -120,6 +120,93 @@ export async function signInEmail({ email, password }) {
   return { cookie, body };
 }
 
+async function authJsonRequest(cookie, path, { method = "POST", body } = {}) {
+  const response = await fetch(`${getAuthBaseUrl()}/${path}`, {
+    method,
+    headers: authRequestHeaders({ Cookie: cookie }),
+    ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
+  });
+
+  const parsed = await readJson(response);
+  if (!response.ok) {
+    throw new Error(
+      parsed?.message ??
+        parsed?.error ??
+        `Neon Auth ${path} failed (${response.status})`,
+    );
+  }
+
+  return parsed;
+}
+
+function slugifyPortalOrg(value) {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 48);
+}
+
+export function getPortalOrganizationSlug() {
+  const configured = process.env.PORTAL_ORG_SLUG?.trim();
+  if (configured) {
+    return slugifyPortalOrg(configured);
+  }
+
+  const appUrl = process.env.APP_URL?.replace(/\/$/, "");
+  if (appUrl) {
+    try {
+      const hostname = new URL(appUrl).hostname;
+      const label = hostname.split(".")[0];
+      if (label && label !== "localhost") {
+        return slugifyPortalOrg(label);
+      }
+    } catch {
+      // fall through
+    }
+  }
+
+  return slugifyPortalOrg(process.env.PORTAL_ORG_NAME?.trim() || "iam-check");
+}
+
+export async function ensurePortalOrganization({ cookie }) {
+  const slug = getPortalOrganizationSlug();
+  const name = process.env.PORTAL_ORG_NAME?.trim() || "iam-check";
+
+  const list = await authJsonRequest(cookie, "organization/list", {
+    method: "GET",
+  });
+  const organizations = list?.organizations ?? list?.data ?? list ?? [];
+
+  const existing =
+    organizations.find((organization) => organization.slug === slug) ??
+    organizations[0];
+
+  if (existing?.id) {
+    await authJsonRequest(cookie, "organization/set-active", {
+      body: { organizationId: existing.id },
+    });
+    console.log(`Using portal organization: ${existing.slug} (${existing.id})`);
+    return existing;
+  }
+
+  const created = await authJsonRequest(cookie, "organization/create", {
+    body: { name, slug },
+  });
+  const organization = created?.organization ?? created?.data ?? created;
+
+  if (!organization?.id) {
+    throw new Error("Neon Auth organization create did not return an id");
+  }
+
+  await authJsonRequest(cookie, "organization/set-active", {
+    body: { organizationId: organization.id },
+  });
+  console.log(`Created portal organization: ${organization.slug} (${organization.id})`);
+  return organization;
+}
+
 async function adminRequest(cookie, path, payload) {
   const response = await fetch(`${getAuthBaseUrl()}/${path}`, {
     method: "POST",

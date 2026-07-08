@@ -58,7 +58,7 @@ export const portalCopy = {
   },
 
   signIn: {
-    title: "Sign in",
+    title: "Access Vault",
     description: "Confirm who you are to access your assigned declarations.",
     emailLabel: "Email",
     emailPlaceholder: "name@organization.com…",
@@ -77,16 +77,80 @@ export const portalCopy = {
     ] as const,
     footer: "Protected client access",
     inviteHint:
-      "Registered by your organization? Sign in with your email and the temporary password they shared.",
+      "Already completed your invitation? Sign in with the email and password you created.",
     orgLink: "Organization sign in",
     checkEmailHint:
-      "Open the invitation link in your email to set a password, then sign in here.",
+      "Open the invitation link in your email to create your account — do not use the general sign-in page first.",
     inviteExpiredHint:
       "This invitation has expired. Contact your organization to register again.",
     inviteInvalidHint:
       "This invitation link is not valid. Sign in if you already registered, or contact your organization.",
     loginRequiredHint: "Sign in to access declarations assigned to your account.",
     invalidCredentials: "Email or password is incorrect.",
+  },
+
+  emailOtp: {
+    label: "Verification code",
+    oneTimePasswordLabel: "One-time verification code",
+    signInDescription:
+      "Enter your email. We will send a six-digit code to confirm your identity.",
+    signUpVerificationNotice:
+      "After sign-up, check your inbox for a verification code from our secure auth service.",
+    codeSentNotice:
+      "Check your inbox for a six-digit verification code. It may take a minute to arrive.",
+    sendCodeAction: "Send verification code",
+    verifyCodeAction: "Verify and continue",
+    sendVerificationCodeAction: "Send verification code",
+    resendCodeAction: "Resend code",
+    enterCodeDescription: "Enter the six-digit code from your email to continue.",
+    forgotPasswordDescription:
+      "Enter your email. We will send a verification code to reset your password.",
+    sendResetCodeAction: "Send reset code",
+    trustNotice:
+      "Codes are sent from our secure auth service. Do not share verification codes with anyone.",
+    rateLimitHint:
+      "Too many attempts? Wait a few minutes, then request a new code.",
+  },
+
+  organizationAuth: {
+    acceptInvitationTitle: "Accept invitation",
+    acceptInvitationDescription:
+      "Confirm below to join your organization and access assigned declarations.",
+    acceptInvitationSuccess: "You have joined your organization.",
+    inviteMemberDescription:
+      "Invite a client with the email address they will use to sign in.",
+    sendInvitationAction: "Send invitation",
+    sendInvitationSuccess: "Invitation sent. The client will receive an email with next steps.",
+    trustNotice:
+      "Invitations are tied to the invited email address. Clients must sign up with that exact address before accepting.",
+    pendingInvitationsDescription:
+      "Pending client invitations for your organization workspace.",
+    invitationExpired: "This invitation has expired. Contact your organization to register again.",
+  },
+
+  magicLink: {
+    label: "Email link",
+    signInDescription:
+      "Enter your email. We will send a secure sign-in link that expires in 15 minutes.",
+    sendLinkAction: "Send sign-in link",
+    linkSentNotice:
+      "Check your inbox for a sign-in link from our secure auth service. The link expires in 15 minutes.",
+    trustNotice:
+      "Sign-in links are single-use and time-limited. Do not forward them or open links on shared devices.",
+    existingUsersOnlyHint:
+      "Magic links work for existing accounts. New clients should use their organization invitation email.",
+  },
+
+  passwordReset: {
+    forgotDescription:
+      "Enter your email. We will send a secure reset link that expires in 15 minutes.",
+    resetDescription: "Choose a new password for your account.",
+    linkSentNotice:
+      "Check your inbox for a password reset link from our secure auth service. The link expires in 15 minutes.",
+    trustNotice:
+      "Reset links are single-use and time-limited. Do not forward them or open links on shared devices.",
+    noAccountHint:
+      "No account yet? Use your organization invitation email to sign up first — password reset only works for existing accounts.",
   },
 
   orgSignIn: {
@@ -150,6 +214,22 @@ export const portalCopy = {
     security: {
       title: "Security & password",
       description: "Update your password and review active sessions.",
+    },
+    management: {
+      displayNameLabel: "Display name",
+      displayNameDescription:
+        "Shown in your account menu and operator workspace.",
+      displayNamePlaceholder: "Display name",
+      profileUpdated: "Profile updated successfully.",
+      changePasswordTitle: "Change password",
+      changePasswordDescription:
+        "Enter your current password and choose a new one. Saving signs out other devices.",
+      changePasswordInstructions: "Use at least 8 characters.",
+      changePasswordSuccess: "Password changed successfully.",
+      currentPasswordLabel: "Current password",
+      currentPasswordPlaceholder: "Current password",
+      newPasswordLabel: "New password",
+      newPasswordPlaceholder: "New password",
     },
     sectionNavLabel: "Account sections",
   },
@@ -533,6 +613,28 @@ export const portalCopy = {
     },
   },
 
+  clientInvitationJoin: {
+    heroTitle: "You're invited to declare.",
+    heroDescription:
+      "Your organization registered you for the Client Declaration Portal. Create your account with the same email they used, then accept the invitation.",
+    panelCreateTitle: "Step 1 — Create your account",
+    panelCreateDescription:
+      "Sign up with the email address from your invitation. If you already have an account, sign in instead.",
+    panelAcceptTitle: "Step 2 — Accept invitation",
+    panelAcceptDescription:
+      "Confirm below to join your organization and access your assigned declarations.",
+    missingInvitationError:
+      "This invitation link is incomplete. Ask your administrator to resend the email.",
+    trustNotice:
+      "Use only the email your organization registered. Invitations cannot be accepted with a different address.",
+    alternateSignInLabel: "Already have an account? Sign in",
+    steps: [
+      { label: "Create account", detail: "Sign up with your invited email." },
+      { label: "Sign in", detail: "Use the same email to sign in after creating your account." },
+      { label: "Accept invitation", detail: "Join your organization workspace." },
+    ] as const,
+  },
+
   share: {
     title: "Client access",
     description: "Share the sign-in page and temporary password with invited clients.",
@@ -702,6 +804,8 @@ export const portalCopy = {
     issuedAndEmailed: "Client registered and access email sent.",
     issuedEmailFailed:
       "Client registered, but the email could not be sent. Copy the access message below.",
+    emailNotConfigured:
+      "Access email is not configured. Copy the access message below after registration.",
     backupAccessLabel: "Backup access message (if email did not arrive)",
     provisionFailed: "Could not create the client account. Check Supabase configuration.",
   },
@@ -1047,19 +1151,30 @@ export const portalCopy = {
     authSignUp: {
       title: "Create account",
       description:
-        "Set up your portal access with the credentials provided by your administrator.",
+        "Set up your portal access. We will send a verification code to confirm your email.",
     },
     authForgotPassword: {
       title: "Reset password",
-      description: "Enter your email and we will send reset instructions.",
+      description:
+        "Enter your email and we will send a secure reset link. The link expires in 15 minutes.",
     },
     authResetPassword: {
       title: "Choose a new password",
-      description: "Enter a new password for your account.",
+      description: "Enter a new password for your account, then sign in.",
     },
     authSignOut: {
       title: "Signing out",
       description: "Please wait while we end your session.",
+    },
+    authEmailOtp: {
+      title: "Sign in with verification code",
+      description:
+        "Receive a one-time verification code by email to access your declarations.",
+    },
+    authMagicLink: {
+      title: "Sign in with email link",
+      description:
+        "Receive a secure, time-limited sign-in link by email to access your declarations.",
     },
     previewUnavailable: {
       title: "Preview not available",
@@ -1069,6 +1184,11 @@ export const portalCopy = {
     inviteRedirect: {
       title: "Invitation link",
       description: "Legacy invitation link forwarding to client sign in.",
+    },
+    clientInvitationJoin: {
+      title: "Accept your invitation",
+      description:
+        "Create your portal account with your invited email, then join your organization.",
     },
     openLink: {
       title: "Open declaration link",

@@ -27,18 +27,20 @@ export function PortalPageHeader({
         sticky && "portal-page-toolbar-sticky",
       )}
     >
-      <SidebarTriggerOptional enabled={showSidebarTrigger} className="-ml-1" />
+      <SidebarTriggerOptional enabled={showSidebarTrigger} className="-ml-1 shrink-0" />
       {breadcrumbs?.length ? (
         <>
           <Separator
             orientation="vertical"
-            className="mr-2 data-[orientation=vertical]:h-4"
+            className="mr-2 shrink-0 data-[orientation=vertical]:h-4"
           />
-          <PortalBreadcrumbList items={breadcrumbs} hideFirstOnMobile />
+          <div className="min-w-0 flex-1">
+            <PortalBreadcrumbList items={breadcrumbs} hideFirstOnMobile />
+          </div>
         </>
       ) : null}
       {actions ? (
-        <div className="flex shrink-0 items-center gap-2">{actions}</div>
+        <div className="ml-auto flex shrink-0 items-center gap-2">{actions}</div>
       ) : null}
     </header>
   );

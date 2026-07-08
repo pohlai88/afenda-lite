@@ -1,8 +1,8 @@
 # UI Evaluation Summary
 
-**Date:** 2026-07-07  
-**Scope:** 40 portal surfaces scored against shadcn studio blocks (MCP metadata).  
-**Validation:** Matrix script pass + 8 Storybook comparison stories.
+**Date:** 2026-07-08 (rescored after Shadcn Studio block installs)  
+**Scope:** 34 portal surfaces scored against Shadcn Studio blocks.  
+**Validation:** `npm run evaluate:ui-matrix` — scoring + implementation alignment.
 
 ## Scoring criteria (weighted)
 
@@ -15,38 +15,84 @@
 | ImplCost | 10% |
 | Consistency | 10% |
 
-Run `npm run evaluate:ui-matrix` to verify zero omissions.
+Run `npm run evaluate:ui-matrix` for the full scored table with implementation kind and winner alignment.
 
-## Top 10 highest-impact wins
+## Studio adoption (2026-07-08)
 
-| Surface | Winner | Score | Strength |
-|---------|--------|-------|----------|
-| `auth-sign-in` | keep-current (Neon AuthView + PortalAuthLayout) | 5.00 | strong |
-| `client-onboarding` | multi-step-form-01 | 4.25 | marginal |
-| `admin-clients` | datatable-component-04 | 4.65 | marginal |
-| `admin-dashboard` | datatable-component-01 | 4.55 | marginal |
-| `shell-dashboard` | dashboard-shell-05 | 4.25 | tie |
-| `client-dashboard` | statistics-component-03 | 4.45 | marginal |
-| `error-404` | error-page-02 | 4.35 | tie |
-| `client-declare-empty` | empty-state-02 | 4.55 | marginal |
-| `user-menu` | keep-current (PortalMemberMenu) | 4.85 | strong |
-| `faq-section` | faq-component-01 | 4.45 | marginal |
+| Kind | Count | Meaning |
+|------|-------|---------|
+| `studio-installed` | 6 | Block from `@ss-blocks/base-nova` registry |
+| `portal-wrapper` | 6 | Custom `portal-*` mimicking a block pattern |
+| `neon-integrated` | 10 | Neon AuthView / AccountView — keep by design |
+| `hardcoded` | 12 | Custom UI; matrix may still recommend a block |
+
+**Winner alignment:** 34/34 surfaces match matrix winner intent (see runner `ok` column).
+
+**Needs registry install:** 15 surfaces — winner is a Studio block but implementation is wrapper or hardcoded.
+
+## Aggregate scores (latest run)
+
+| Metric | Value |
+|--------|-------|
+| Surfaces scored | 34 |
+| Strong recommendation | 15 |
+| Marginal | 4 |
+| Tie | 15 |
+| Studio-installed | 6 |
+| Portal-wrapper | 6 |
+| Hardcoded | 12 |
+| Neon-integrated | 10 |
+| Winner alignment | 34/34 |
+| Needs registry install | 15 |
+
+## Top wins (rescored)
+
+| Surface | Winner | Score | Strength | Implementation |
+|---------|--------|-------|----------|----------------|
+| `admin-dashboard` | datatable-component-01 | **4.65** | strong | studio-installed |
+| `admin-clients` | datatable-component-04 | **4.80** | strong | studio-installed |
+| `auth-sign-in` | keep-current | 5.00 | strong | neon-integrated |
+| `client-dashboard` | statistics-component-03 | 4.35 | tie | studio-installed |
+| `client-profile` | form-layout-01 | 5.00 | marginal | studio-installed |
+| `admin-create-declaration` | form-layout-01 | 5.00 | strong | studio-installed |
+| `admin-issue-invite` | form-layout-01 | 5.00 | strong | studio-installed |
+
+## Next installs (by matrix priority)
+
+1. **empty-state-01 / empty-state-02** — error and empty surfaces
+2. **error-page-02** — `portal-not-found-page.tsx`
+3. **multi-step-form-01** — client onboarding stepper
+4. **dashboard-shell-05** + **dashboard-sidebar** — operator/client shells
+
+## Block installation
+
+Registry URL (working):
+
+```text
+https://shadcnstudio.com/r/blocks/base-nova/{block}.json
+```
+
+Auth headers: `SHADCN_STUDIO_API_KEY` + `EMAIL` (see `components.json`).
+
+```bash
+npm run studio:install-block -- datatable-component-01
+npm run studio:install-block -- datatable-component-04
+npm run studio:install-block -- statistics-component-03
+```
+
+| Matrix winner | Status | Portal file |
+|---------------|--------|-------------|
+| `datatable-component-01` | **Installed** | `components/shadcn-studio/blocks/datatable-transaction.tsx` → `org-declarations-table.tsx` |
+| `datatable-component-04` | **Installed** | `components/shadcn-studio/blocks/datatable-user.tsx` → `org-client-tables.tsx` |
+| `statistics-component-03` | **Installed** | `components/shadcn-studio/blocks/statistics-card-03.tsx` → `portal-statistics-card.tsx` |
+| `form-layout-01` | **Installed** | `components/shadcn-studio/blocks/form-layout-01/form-layout-section.tsx` → `portal-form-section.tsx` |
+| `empty-state-01` | Wrapper | `components/portal-empty-state.tsx` |
+| `empty-state-02` | Wrapper | `components/portal-empty-state-cta.tsx` |
+| `error-page-02` | Wrapper | `components/portal-not-found-page.tsx` |
 
 ## Auth & account (keep Neon)
 
-All 7 auth/account surfaces **keep Neon `AuthView` / `AccountView`** as winners. Studio blocks (`login-page-*`, `account-settings-*`) are **layout chrome references only** — never replace auth logic.
-
-## Orphan cleanup (6 surfaces)
-
-All orphan components score **retire** — superseded by Neon auth and `PortalAuthLayout`.
-
-## Ties requiring product decision
-
-| Surface | Options | Notes |
-|---------|---------|-------|
-| `shell-dashboard` | dashboard-shell-05 vs keep-current | Shell block wins PatternFit; current wins ImplCost |
-| `error-404` | error-page-02 vs keep-current | Equal weighted score; adopt block for consistency |
-| `client-profile` | form-layout-01 vs keep-current | Already aligned via PortalFormSection |
+All 7 auth/account surfaces **keep Neon `AuthView` / `AccountView`**. Studio login/register blocks are layout references only.
 
 ## Storybook comparisons
 
@@ -54,27 +100,11 @@ All orphan components score **retire** — superseded by Neon auth and `PortalAu
 npm run storybook
 ```
 
-Stories under `stories/ui-evaluation/` show current vs winning candidate with `ScoreAnnotation` panels explaining criterion deltas.
+Stories under `stories/ui-evaluation/` use `getEvaluationRow()` from `lib/ui-decision-matrix.ts`.
 
 ## Gaps documented in matrix
 
 - Social login slots in studio login blocks unused (Neon email/password only)
 - multi-step-form-01 billing/payment steps must be stripped for onboarding
-- 2FA from account-settings-06 not wired to Neon yet
+- Admin dashboard KPI row uses StudioStatisticsCard (statistics-component-03)
 - Share/submissions tabs on declaration detail need custom panels beyond shell block
-
-## Block installation status
-
-Direct `npx shadcn add @ss-blocks/*` returns **404** from the registry. Pattern adoption uses portal wrapper components instead:
-
-| Matrix winner | Portal implementation |
-|---------------|----------------------|
-| `statistics-component-03` | [`components/portal-statistics-card.tsx`](components/portal-statistics-card.tsx) |
-| `empty-state-01` | [`components/portal-empty-state.tsx`](components/portal-empty-state.tsx) |
-| `empty-state-02` | [`components/portal-empty-state-cta.tsx`](components/portal-empty-state-cta.tsx) |
-| `form-layout-01` | [`components/portal-form-section.tsx`](components/portal-form-section.tsx) |
-| `multi-step-form-01` | [`components/client-onboarding-progress.tsx`](components/client-onboarding-progress.tsx) |
-| `datatable-component-01` | [`components/org-declarations-table.tsx`](components/org-declarations-table.tsx) |
-| `error-page-02` | [`components/portal-not-found-page.tsx`](components/portal-not-found-page.tsx) |
-
-Install via MCP `/cui` when registry access is resolved.

@@ -112,8 +112,8 @@ function SurveyDetailTabsContent({
   );
 
   return (
-    <Card className="mt-2 overflow-hidden py-0">
-      <Tabs value={activeTab} onValueChange={setTab} className="w-full">
+    <Card className="mt-2 min-w-0 overflow-hidden py-0">
+      <Tabs value={activeTab} onValueChange={setTab} className="min-w-0 w-full">
         <ScrollArea className="w-full">
           <TabsList className="bg-background h-auto min-h-16 w-full justify-start rounded-none border-b p-0">
             <DetailTabTrigger
@@ -139,16 +139,16 @@ function SurveyDetailTabsContent({
           </TabsList>
           <ScrollBar orientation="horizontal" />
         </ScrollArea>
-        <TabsContent value="manage" className="mt-0 px-4 py-6 sm:px-6">
+        <TabsContent value="manage" className="mt-0 min-w-0 px-4 py-6 sm:px-6">
           {manage}
         </TabsContent>
-        <TabsContent value="share" className="mt-0 px-4 py-6 sm:px-6">
+        <TabsContent value="share" className="mt-0 min-w-0 px-4 py-6 sm:px-6">
           {share}
         </TabsContent>
-        <TabsContent value="submissions" className="mt-0 px-4 py-6 sm:px-6">
+        <TabsContent value="submissions" className="mt-0 min-w-0 px-4 py-6 sm:px-6">
           {submissions}
         </TabsContent>
-        <TabsContent value="danger" className="mt-0 px-4 py-6 sm:px-6">
+        <TabsContent value="danger" className="mt-0 min-w-0 px-4 py-6 sm:px-6">
           {danger}
         </TabsContent>
       </Tabs>
@@ -170,8 +170,8 @@ function DetailTabTrigger({
       value={value}
       className="bg-background data-active:border-primary dark:data-active:border-primary dark:data-active:bg-background h-full min-h-16 flex-col rounded-none border-0 border-b-2 border-transparent px-4 py-3 group-data-horizontal/tabs:after:h-0 data-active:shadow-none sm:px-6"
     >
-      <span>{title}</span>
-      <span className="text-muted-foreground text-xs">{hint}</span>
+      <span className="truncate">{title}</span>
+      <span className="text-muted-foreground truncate text-xs">{hint}</span>
     </TabsTrigger>
   );
 }

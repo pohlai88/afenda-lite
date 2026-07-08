@@ -24,16 +24,16 @@
   "registries": {
     "@shadcn-studio": "https://shadcnstudio.com/r/{name}.json",
     "@ss-components": {
-      "url": "https://shadcnstudio.com/r/components/{name}.json",
+      "url": "https://shadcnstudio.com/r/components/base-nova/{name}.json",
       "headers": {
-        "x-license-key": "${LICENSE_KEY}",
+        "x-license-key": "${SHADCN_STUDIO_API_KEY}",
         "x-email": "${EMAIL}"
       }
     },
     "@ss-blocks": {
-      "url": "https://shadcnstudio.com/r/blocks/{name}.json",
+      "url": "https://shadcnstudio.com/r/blocks/base-nova/{name}.json",
       "headers": {
-        "x-license-key": "${LICENSE_KEY}",
+        "x-license-key": "${SHADCN_STUDIO_API_KEY}",
         "x-email": "${EMAIL}"
       }
     },

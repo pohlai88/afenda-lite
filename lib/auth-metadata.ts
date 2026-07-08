@@ -39,6 +39,21 @@ export function portalAuthMetadata(
         title: `${PORTAL_NAME} — ${meta.authSignOut.title}`,
         description: meta.authSignOut.description,
       };
+    case "accept-invitation":
+      return {
+        title: `${PORTAL_NAME} — ${meta.clientInvitationJoin.title}`,
+        description: portalCopy.organizationAuth.acceptInvitationDescription,
+      };
+    case "email-otp":
+      return {
+        title: `${PORTAL_NAME} — ${meta.authEmailOtp.title}`,
+        description: meta.authEmailOtp.description,
+      };
+    case "magic-link":
+      return {
+        title: `${PORTAL_NAME} — ${meta.authMagicLink.title}`,
+        description: meta.authMagicLink.description,
+      };
     default:
       return {
         title: `${PORTAL_NAME} — ${meta.home.title}`,

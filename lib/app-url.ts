@@ -13,3 +13,12 @@ export function getAppBaseUrl() {
 export function getClientSignInUrl() {
   return `${getAppBaseUrl()}/client/login`;
 }
+
+export function getClientJoinUrl(invitationId?: string) {
+  const base = `${getAppBaseUrl()}/join`;
+  if (!invitationId?.trim()) {
+    return base;
+  }
+
+  return `${base}?invitationId=${encodeURIComponent(invitationId.trim())}`;
+}

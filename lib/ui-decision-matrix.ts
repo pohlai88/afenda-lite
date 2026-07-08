@@ -25,6 +25,20 @@ export type UiCandidateEvaluation = {
 
 export type ValidationStatus = "pending" | "story-reviewed" | "validated";
 
+/** How the winning (or current) UI is sourced relative to Shadcn Studio registry. */
+export type StudioImplementationKind =
+  | "studio-installed"
+  | "portal-wrapper"
+  | "hardcoded"
+  | "neon-integrated";
+
+export type StudioSurfaceImplementation = {
+  kind: StudioImplementationKind;
+  component: string;
+  blockSlug?: string;
+  notes?: string;
+};
+
 export type UiSurfaceMeta = {
   surfaceId: string;
   domain: "auth" | "client" | "admin" | "shared" | "orphan";
@@ -228,16 +242,16 @@ export const uiEvaluationMatrix: UiEvaluationRow[] = [
 
   // ── Admin ─────────────────────────────────────────────────────────────────
   row(byId("admin-dashboard"), [
-    c("datatable-component-01", { PatternFit: 5, BrandFit: 4, PortalCompat: 5, A11yMobile: 4, ImplCost: 4, Consistency: 5 }, "TanStack table with pagination — matches declarations list."),
-    c("statistics-component-01", { PatternFit: 3, BrandFit: 4, PortalCompat: 3, A11yMobile: 4, ImplCost: 3, Consistency: 3 }, "KPI cards only; dashboard is table-first."),
-    c("keep-current", { PatternFit: 4, BrandFit: 5, PortalCompat: 5, A11yMobile: 4, ImplCost: 5, Consistency: 4 }, "OrgDeclarationsTable custom."),
-  ], "datatable-component-01", "datatable-component-01 PatternFit 5.0 vs statistics-component-01 3.0 — admin home is a declarations table.", "validated"),
+    c("datatable-component-01", { PatternFit: 5, BrandFit: 4, PortalCompat: 5, A11yMobile: 4, ImplCost: 5, Consistency: 5 }, "StudioDataTable installed from @ss-blocks; OrgDeclarationsTable supplies portal columns."),
+    c("statistics-component-03", { PatternFit: 5, BrandFit: 5, PortalCompat: 5, A11yMobile: 5, ImplCost: 5, Consistency: 5 }, "StudioStatisticsCard installed for admin + client KPI rows."),
+    c("keep-current", { PatternFit: 2, BrandFit: 4, PortalCompat: 4, A11yMobile: 4, ImplCost: 2, Consistency: 2 }, "Superseded: custom FilteredDataTable removed 2026-07."),
+  ], "datatable-component-01", "datatable-component-01 installed; weighted 4.75 vs runner-up statistics KPI row 3.75 on same page.", "validated", ["KPI row: install statistics-component-03"]),
 
   row(byId("admin-clients"), [
-    c("datatable-component-04", { PatternFit: 5, BrandFit: 4, PortalCompat: 5, A11yMobile: 5, ImplCost: 4, Consistency: 5 }, "User admin table with roles/filters — fits client registry."),
+    c("datatable-component-04", { PatternFit: 5, BrandFit: 4, PortalCompat: 5, A11yMobile: 5, ImplCost: 5, Consistency: 5 }, "StudioFilterDataTable installed; org-client-tables supplies portal columns."),
     c("datatable-component-01", { PatternFit: 4, BrandFit: 4, PortalCompat: 5, A11yMobile: 4, ImplCost: 4, Consistency: 4 }, "Transaction table; less role/filter fit."),
-    c("keep-current", { PatternFit: 4, BrandFit: 5, PortalCompat: 5, A11yMobile: 4, ImplCost: 5, Consistency: 4 }, "OrgClientTables custom."),
-  ], "datatable-component-04", "datatable-component-04 wins PatternFit (+1) for user/role admin pattern over generic datatable-01.", "validated"),
+    c("keep-current", { PatternFit: 2, BrandFit: 4, PortalCompat: 4, A11yMobile: 4, ImplCost: 2, Consistency: 2 }, "Superseded: custom FilteredDataTable removed 2026-07."),
+  ], "datatable-component-04", "datatable-component-04 installed; PatternFit (+3) and A11yMobile (+1) over superseded custom table.", "validated"),
 
   row(byId("admin-declaration-detail"), [
     c("dashboard-shell-05", { PatternFit: 4, BrandFit: 4, PortalCompat: 4, A11yMobile: 4, ImplCost: 3, Consistency: 5 }, "Tabbed detail shell with sidebar."),
@@ -329,6 +343,122 @@ export const uiEvaluationMatrix: UiEvaluationRow[] = [
     c("keep-current", { PatternFit: 5, BrandFit: 5, PortalCompat: 5, A11yMobile: 4, ImplCost: 5, Consistency: 5 }, "PortalMemberMenu with server-synced Neon Auth + client_profiles displayName."),
   ], "keep-current", "PortalMemberMenu implements dashboard-dropdown-01 pattern with live DB member sync (legal name > auth name > email).", "validated", ["Auth name must stay in sync on onboarding save"]),
 ];
+
+/**
+ * Current implementation source per surface (2026-07-08).
+ * Registry: @ss-blocks/base-nova via npm run studio:install-block
+ */
+export const STUDIO_IMPLEMENTATION_BY_SURFACE: Record<
+  string,
+  StudioSurfaceImplementation
+> = {
+  // Auth — Neon integrated (studio blocks are layout reference only)
+  "auth-sign-in": { kind: "neon-integrated", component: "portal-auth-layout.tsx + portal-neon-view.tsx" },
+  "auth-sign-up": { kind: "neon-integrated", component: "portal-auth-layout.tsx + portal-neon-view.tsx" },
+  "auth-forgot-password": { kind: "neon-integrated", component: "portal-auth-layout.tsx + portal-neon-view.tsx" },
+  "auth-reset-password": { kind: "neon-integrated", component: "portal-auth-layout.tsx + portal-neon-view.tsx" },
+  "auth-sign-out": { kind: "neon-integrated", component: "portal-neon-view.tsx" },
+  "account-settings": { kind: "neon-integrated", component: "portal-neon-view.tsx (AccountView)" },
+  "account-security": { kind: "neon-integrated", component: "portal-neon-view.tsx (AccountView)" },
+  // Client
+  "client-dashboard": { kind: "studio-installed", component: "client-dashboard-summary.tsx → statistics-card-03.tsx", blockSlug: "statistics-component-03" },
+  "client-onboarding": { kind: "hardcoded", component: "client-onboarding-progress.tsx", blockSlug: "multi-step-form-01", notes: "Custom timeline; stepper block not installed" },
+  "client-profile": { kind: "studio-installed", component: "client-declarant-profile-view.tsx → form-layout-section.tsx", blockSlug: "form-layout-01" },
+  "client-declare": { kind: "hardcoded", component: "client-declaration-form.tsx", blockSlug: "form-layout-01" },
+  "client-declare-receipt": { kind: "hardcoded", component: "confirmation-receipt.tsx", blockSlug: "empty-state-01" },
+  "client-declare-empty": { kind: "portal-wrapper", component: "portal-empty-state.tsx", blockSlug: "empty-state-02" },
+  "client-acknowledgement": { kind: "hardcoded", component: "client-dashboard-summary.tsx", blockSlug: "form-layout-01" },
+  "client-preview-unavailable": { kind: "hardcoded", component: "client-preview-unavailable-view.tsx", blockSlug: "empty-state-01" },
+  "client-home-redirect": { kind: "neon-integrated", component: "app/page.tsx redirect" },
+  // Admin
+  "admin-dashboard": { kind: "studio-installed", component: "operator-dashboard-page-view.tsx", blockSlug: "datatable-component-01", notes: "StudioDataTable + StudioStatisticsCard KPI row" },
+  "admin-clients": { kind: "studio-installed", component: "org-client-tables.tsx", blockSlug: "datatable-component-04", notes: "StudioFilterDataTable" },
+  "admin-declaration-detail": { kind: "hardcoded", component: "operator-declaration-detail-view.tsx", blockSlug: "dashboard-shell-05", notes: "Raw Table for submissions tab" },
+  "admin-create-declaration": { kind: "studio-installed", component: "operator-dashboard-page-view.tsx → form-layout-section.tsx", blockSlug: "form-layout-01" },
+  "admin-issue-invite": { kind: "studio-installed", component: "operator-clients-page-view.tsx → form-layout-section.tsx", blockSlug: "form-layout-01" },
+  "admin-access-share": { kind: "hardcoded", component: "client-access-share-panel.tsx", blockSlug: "form-layout-02" },
+  // Shared
+  "shell-auth": { kind: "neon-integrated", component: "portal-auth-layout.tsx" },
+  "shell-customer": { kind: "hardcoded", component: "portal-customer-shell.tsx", blockSlug: "dashboard-shell-05" },
+  "shell-dashboard": { kind: "hardcoded", component: "dashboard-shell.tsx + app-sidebar.tsx", blockSlug: "dashboard-shell-05" },
+  "sidebar-client": { kind: "hardcoded", component: "client-sidebar.tsx", blockSlug: "dashboard-sidebar" },
+  "sidebar-playground": { kind: "hardcoded", component: "playground-sidebar.tsx", blockSlug: "dashboard-sidebar" },
+  "error-route": { kind: "portal-wrapper", component: "portal-route-error.tsx", blockSlug: "empty-state-01" },
+  "error-404": { kind: "portal-wrapper", component: "portal-not-found-page.tsx", blockSlug: "error-page-02" },
+  "error-boundary-client": { kind: "portal-wrapper", component: "app/client/error.tsx → portal-route-error.tsx", blockSlug: "empty-state-01" },
+  "error-boundary-dashboard": { kind: "portal-wrapper", component: "app/dashboard/error.tsx → portal-route-error.tsx", blockSlug: "empty-state-01" },
+  "trust-notice": { kind: "neon-integrated", component: "portal-trust-notice.tsx" },
+  "faq-section": { kind: "portal-wrapper", component: "portal-statutory-faq.tsx", blockSlug: "faq-component-01" },
+  "user-menu": { kind: "hardcoded", component: "portal-member-menu.tsx", blockSlug: "dashboard-dropdown-01", notes: "Matrix keep-current — implements dropdown pattern with Neon sync" },
+};
+
+export function getStudioImplementation(
+  surfaceId: string,
+): StudioSurfaceImplementation | undefined {
+  return STUDIO_IMPLEMENTATION_BY_SURFACE[surfaceId];
+}
+
+/** True when registry block is installed and matches matrix winner. */
+export function isWinnerAligned(row: UiEvaluationRow): boolean {
+  const impl = getStudioImplementation(row.surfaceId);
+  if (!impl) return false;
+  if (row.winner === "keep-current") {
+    return (
+      impl.kind === "neon-integrated" ||
+      impl.kind === "hardcoded" ||
+      impl.kind === "portal-wrapper"
+    );
+  }
+  if (impl.kind === "studio-installed") {
+    return impl.blockSlug === row.winner;
+  }
+  if (impl.kind === "portal-wrapper" || impl.kind === "neon-integrated") {
+    return impl.blockSlug === row.winner || row.winner === "keep-current";
+  }
+  return impl.blockSlug === row.winner;
+}
+
+export type StudioAdoptionSummary = {
+  studioInstalled: number;
+  portalWrapper: number;
+  hardcoded: number;
+  neonIntegrated: number;
+  winnerAligned: number;
+  needsRegistryInstall: number;
+};
+
+export function getStudioAdoptionSummary(): StudioAdoptionSummary {
+  const summary: StudioAdoptionSummary = {
+    studioInstalled: 0,
+    portalWrapper: 0,
+    hardcoded: 0,
+    neonIntegrated: 0,
+    winnerAligned: 0,
+    needsRegistryInstall: 0,
+  };
+
+  for (const row of uiEvaluationMatrix) {
+    const impl = getStudioImplementation(row.surfaceId);
+    if (!impl) continue;
+
+    if (impl.kind === "studio-installed") summary.studioInstalled++;
+    else if (impl.kind === "portal-wrapper") summary.portalWrapper++;
+    else if (impl.kind === "hardcoded") summary.hardcoded++;
+    else if (impl.kind === "neon-integrated") summary.neonIntegrated++;
+
+    if (isWinnerAligned(row)) summary.winnerAligned++;
+
+    if (
+      row.winner !== "keep-current" &&
+      impl.kind !== "studio-installed" &&
+      impl.kind !== "neon-integrated"
+    ) {
+      summary.needsRegistryInstall++;
+    }
+  }
+
+  return summary;
+}
 
 export function getEvaluationRow(surfaceId: string): UiEvaluationRow | undefined {
   return uiEvaluationMatrix.find((r) => r.surfaceId === surfaceId);

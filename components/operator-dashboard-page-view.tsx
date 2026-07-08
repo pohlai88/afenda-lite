@@ -6,7 +6,7 @@ import {
   UsersIcon,
 } from "lucide-react";
 import { DeclarationCreateButton } from "@/components/declaration-create-button";
-import { DashboardPage, PortalSection } from "@/components/dashboard-page";
+import { DashboardPage } from "@/components/dashboard-page";
 import { OrgCreateDeclarationLink } from "@/components/org-create-declaration-link";
 import { OrgDeclarationsTable } from "@/components/org-declarations-table";
 import { PortalEmptyStateCta } from "@/components/portal-empty-state-cta";
@@ -74,22 +74,22 @@ export function OperatorDashboardPageView({
           <DeclarationCreateButton />
         </PortalFormSection>
 
-        <PortalSection title={org.list.title} description={org.list.description}>
-          {declarationRows.length === 0 ? (
-            <PortalEmptyStateCta
-              sectionTitle={org.list.title}
-              sectionDescription={org.list.description}
-              icon={FileTextIcon}
-              title={org.list.emptyTitle}
-              description={org.list.emptyDescription}
-              action={
-                <OrgCreateDeclarationLink label={org.list.emptyAction} />
-              }
-            />
-          ) : (
-            <OrgDeclarationsTable rows={declarationRows} />
-          )}
-        </PortalSection>
+        {declarationRows.length === 0 ? (
+          <PortalEmptyStateCta
+            sectionTitle={org.list.title}
+            sectionDescription={org.list.description}
+            icon={FileTextIcon}
+            title={org.list.emptyTitle}
+            description={org.list.emptyDescription}
+            action={<OrgCreateDeclarationLink label={org.list.emptyAction} />}
+          />
+        ) : (
+          <OrgDeclarationsTable
+            rows={declarationRows}
+            title={org.list.title}
+            description={org.list.description}
+          />
+        )}
       </div>
     </DashboardPage>
   );

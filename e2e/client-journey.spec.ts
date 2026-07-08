@@ -49,9 +49,7 @@ test.describe("Client journey @journey", () => {
     });
     await page.getByRole("button", { name: /register client/i }).click();
 
-    await expect(
-      page.getByText(new RegExp(portalCopy.clientInvite.issued, "i")),
-    ).toBeVisible();
+    await expect(page.getByText(/Client registered/i)).toBeVisible();
   });
 
   test("client signs in and submits assignment", async ({ page }) => {

@@ -4,7 +4,7 @@ import { requireAccountSession } from "@/lib/account-session";
 import { PortalAccountSectionNav } from "@/components/portal-account-section-nav";
 import { PortalAccountShell } from "@/components/portal-account-shell";
 import { PortalFormSection } from "@/components/portal-form-section";
-import { PortalNeonAccountView } from "@/components/portal-neon-view";
+import { PortalAccountNeonView } from "@/components/portal-account-neon-view";
 import {
   accountCopyKey,
   isPortalAccountPath,
@@ -59,9 +59,7 @@ export default async function AccountPage({
         title={copy.title}
         description={copy.description}
       >
-        <div className="portal-neon-view">
-          <PortalNeonAccountView pathname={path} />
-        </div>
+        <PortalAccountNeonView pathname={path} />
       </PortalFormSection>
       <PortalAccountSectionNav activePath={path} />
     </PortalAccountShell>

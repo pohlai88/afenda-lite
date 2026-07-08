@@ -21,6 +21,7 @@ export const SECRET_KEYS = new Set([
 /** Never push to Vercel production (local dev / tooling only). */
 export const LOCAL_ONLY_KEYS = new Set([
   "NEON_API_KEY",
+  "NEON_ORG_ID",
   "NEON_PROJECT_ID",
   "NEON_BRANCH_ID",
   "PLAYGROUND_ENABLED",
@@ -106,6 +107,10 @@ export function loadComposedEnv() {
 }
 
 export function getEnvValue(key, fileEnv = loadComposedEnv()) {
+  // env.secret / env.config win for credentials — stale shell exports must not override.
+  if (SECRET_KEYS.has(key) && fileEnv[key]) {
+    return fileEnv[key];
+  }
   return process.env[key] ?? fileEnv[key];
 }
 

@@ -1,17 +1,28 @@
-import { EB_Garamond, Lato } from "next/font/google";
+import { Cormorant_Garamond, Inter } from "next/font/google";
 
-export const lato = Lato({
+/**
+ * UI sans — form fields, labels, body copy.
+ * Inter: neutral grotesque, engineered for screen legibility.
+ */
+export const inter = Inter({
   subsets: ["latin"],
-  weight: ["400", "700"],
+  weight: ["400", "500", "600"],
   display: "swap",
-  variable: "--font-lato",
+  variable: "--font-inter",
 });
 
-export const ebGaramond = EB_Garamond({
+/**
+ * Editorial serif — hero display, headings.
+ * Cormorant Garamond: extreme hairline/bold contrast (Didot / Bodoni family),
+ * designed for large display sizes. Load 300 for feather-light display, 500 for
+ * mid-weight titles, 700 for bold emphasis. Italic for decorative dividers.
+ */
+export const cormorant = Cormorant_Garamond({
   subsets: ["latin"],
-  weight: ["500", "600", "700"],
+  weight: ["300", "400", "500", "600", "700"],
+  style: ["normal", "italic"],
   display: "swap",
-  variable: "--font-eb-garamond",
+  variable: "--font-cormorant",
 });
 
-export const portalFontClassName = `${lato.variable} ${ebGaramond.variable} font-sans`;
+export const portalFontClassName = `${inter.variable} ${cormorant.variable} font-sans`;

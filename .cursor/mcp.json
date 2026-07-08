@@ -8,13 +8,16 @@
         "PROGRAMFILES": "C:\\Program Files"
       }
     },
-    "shadcn-studio": {
-      "command": "npx",
-      "args": ["-y", "shadcn-studio-mcp-1.0.7.tgz"],
-      "env": {
-        "API_KEY": "${SHADCN_STUDIO_API_KEY}",
-        "EMAIL": "${SHADCN_STUDIO_EMAIL}"
+    "neon": {
+      "type": "http",
+      "url": "https://mcp.neon.tech/mcp?projectId=young-hat-54755363",
+      "headers": {
+        "Authorization": "Bearer ${NEON_API_KEY}"
       }
+    },
+    "shadcn-studio": {
+      "command": "node",
+      "args": ["scripts/shadcn-studio-mcp.mjs"]
     },
     "client-declaration-portal-sb-mcp": {
       "type": "http",

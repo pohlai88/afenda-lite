@@ -64,12 +64,15 @@ export function getDatabasePoolConfig(connectionString: string | undefined) {
     }
   }
 
+  const isVercelRuntime = Boolean(process.env.VERCEL);
+
   return {
     connectionString: connectionStringForPool,
-    max: process.env.VERCEL ? 5 : 10,
-    idleTimeoutMillis: 10_000,
-    connectionTimeoutMillis: 5_000,
-    allowExitOnIdle: true,
+    max: isVercelRuntime ? 5 : 10,
+    idleTimeoutMillis: isVercelRuntime ? 10_000 : 30_000,
+    connectionTimeoutMillis: 15_000,
+    allowExitOnIdle: isVercelRuntime,
+    keepAlive: true,
     ssl: getDatabaseSslOption(connectionString),
   };
 }

@@ -2,7 +2,7 @@ import "server-only";
 
 import { getServerEnv } from "@/lib/env/server";
 
-/** Temporary shared password for MVP client provisioning (MailerSend optional for access email). */
+/** Temporary shared password for MVP client provisioning (Neon Auth sends onboarding email). */
 export function getClientDefaultPassword() {
   const password = getServerEnv().CLIENT_DEFAULT_PASSWORD;
   if (!password) {

@@ -62,7 +62,7 @@ export function AppSidebar({
                     tooltip={item.title}
                   >
                     {item.icon}
-                    <span>{item.title}</span>
+                    <span className="truncate">{item.title}</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -71,7 +71,7 @@ export function AppSidebar({
                   <form action={startClientPreviewAction}>
                     <SidebarMenuButton type="submit" tooltip={nav.previewClientPortal}>
                       <EyeIcon aria-hidden="true" />
-                      <span>{nav.previewClientPortal}</span>
+                      <span className="truncate">{nav.previewClientPortal}</span>
                     </SidebarMenuButton>
                   </form>
                 </SidebarMenuItem>

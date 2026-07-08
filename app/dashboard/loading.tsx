@@ -21,13 +21,9 @@ export default async function DashboardLoading() {
           <Skeleton key={index} className="h-24 rounded-xl" />
         ))}
       </div>
-      <div className="grid gap-8 lg:grid-cols-[minmax(280px,320px)_1fr]">
+      <div className="grid gap-8 portal-grid-split">
         <Skeleton className="h-80 rounded-xl" />
-        <div className="space-y-4">
-          <Skeleton className="h-8 w-48" />
-          <Skeleton className="h-40 rounded-xl" />
-          <Skeleton className="h-40 rounded-xl" />
-        </div>
+        <Skeleton className="h-64 rounded-xl" />
       </div>
     </DashboardPageSkeleton>
   );

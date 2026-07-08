@@ -31,7 +31,7 @@ export default async function proxy(request: NextRequest) {
   return neonMiddleware(request);
 }
 
-/** Session-gated routes only. Public entries: `/auth/*`, `/org/login`, `/invite/*`, `/api/*`, `/survey/*`, `/f/*` (page-level session routing with returnTo). */
+/** Session-gated routes only. Public entries: `/auth/*`, `/join`, `/org/login`, `/invite/*`, `/api/*`, `/survey/*`, `/f/*` (page-level session routing with returnTo). */
 export const config = {
   matcher: [
     "/",

@@ -17,10 +17,10 @@ export default async function DashboardClientsLoading() {
       breadcrumbs={operatorClientsBreadcrumbs()}
     >
       <Skeleton className="h-16 rounded-xl" />
-      <div className="grid gap-8 lg:grid-cols-[minmax(280px,360px)_1fr]">
+      <div className="grid gap-8 portal-grid-split-wide">
         <Skeleton className="h-96 rounded-xl" />
-        <div className="space-y-8">
-          <Skeleton className="h-4 w-full max-w-md" />
+        <div className="min-w-0 space-y-8">
+          <Skeleton className="h-16 rounded-xl" />
           <Skeleton className="h-48 rounded-xl" />
           <Skeleton className="h-48 rounded-xl" />
         </div>

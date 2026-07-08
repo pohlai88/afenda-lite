@@ -62,7 +62,7 @@ test.describe("Client assignment and file evidence @journey", () => {
     });
     await page.getByRole("button", { name: /register client/i }).click();
     await expect(
-      page.getByText(new RegExp(portalCopy.clientInvite.issued, "i")),
+      page.getByText(/Client registered/i),
     ).toBeVisible();
   });
 

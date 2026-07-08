@@ -20,6 +20,7 @@ const PUBLIC_ROUTE_PREFIXES = [
   "/api/auth/",
   "/api/health/",
   "/auth/",
+  "/join",
   "/org/login",
   "/invite/",
 ];

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   AUTH_SIGN_IN_HREF,
   authSignInHref,
+  buildClientJoinHref,
   clientPostAuthHref,
   sanitizeReturnToPath,
 } from "@/lib/portal-routes";
@@ -14,6 +15,9 @@ describe("sanitizeReturnToPath", () => {
       "/client/declare/abc",
     );
     expect(sanitizeReturnToPath("/invite/legacy")).toBe("/invite/legacy");
+    expect(sanitizeReturnToPath("/join?invitationId=abc")).toBe(
+      "/join?invitationId=abc",
+    );
   });
 
   it("rejects protocol-relative and off-prefix paths", () => {
@@ -25,6 +29,12 @@ describe("sanitizeReturnToPath", () => {
   it("returns null for empty input", () => {
     expect(sanitizeReturnToPath(undefined)).toBeNull();
     expect(sanitizeReturnToPath("   ")).toBeNull();
+  });
+});
+
+describe("buildClientJoinHref", () => {
+  it("encodes invitation id in join url", () => {
+    expect(buildClientJoinHref("abc-123")).toBe("/join?invitationId=abc-123");
   });
 });
 

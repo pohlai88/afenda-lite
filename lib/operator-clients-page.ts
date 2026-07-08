@@ -10,7 +10,7 @@ import {
   listClientAssignmentsForAdmin,
   listClientInvitationsForAdmin,
 } from "@/lib/clients";
-import { isMailerSendConfigured } from "@/lib/email/mailersend-config";
+import { isClientEmailDeliveryEnabled } from "@/lib/email/client-email-delivery";
 import { formatDate } from "@/lib/format";
 import { PORTAL_NAME, portalCopy } from "@/lib/portal-copy";
 import { listSurveysForAdmin } from "@/lib/surveys";
@@ -59,7 +59,7 @@ export const loadOperatorClientsPage = cache(
       listSurveysForAdmin(),
       listClientAssignmentsForAdmin(),
     ]);
-    const emailDeliveryEnabled = isMailerSendConfigured();
+    const emailDeliveryEnabled = isClientEmailDeliveryEnabled();
 
     return {
       emailDeliveryEnabled,

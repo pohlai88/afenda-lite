@@ -4,7 +4,7 @@ import {
   PORTAL_ACCOUNT_SETTINGS_HREF,
   type PortalAccountPath,
 } from "@/lib/account-paths";
-import { accountViewPaths } from "@neondatabase/auth/react/ui/server";
+import { accountViewPaths } from "@neondatabase/auth-ui/server";
 import { portalCopy } from "@/lib/portal-copy";
 
 const accountNavItems: {

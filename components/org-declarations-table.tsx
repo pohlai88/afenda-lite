@@ -1,17 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
-import type { ColumnDef, PaginationState } from "@tanstack/react-table";
-import {
-  getCoreRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useReactTable,
-} from "@tanstack/react-table";
+import { useMemo } from "react";
+import type { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardDescription,
+  CardHeader,
+} from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,14 +17,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { FilteredDataTable } from "@/components/filtered-datatable";
+import { StudioDataTable } from "@/components/shadcn-studio/blocks/datatable-transaction";
+import { DeclarationRowDeleteAction } from "@/components/declaration-row-delete-action";
 import { displaySurveyTitle } from "@/lib/survey-display";
 import { isDraftSurveyTitle } from "@/lib/survey-draft";
 import { portalCopy } from "@/lib/portal-copy";
 import { EllipsisVerticalIcon } from "lucide-react";
-import { DeclarationRowDeleteAction } from "@/components/declaration-row-delete-action";
 
-/** datatable-component-01 pattern — compact declaration rows with action menu. */
+/** datatable-component-01 — declaration rows on Shadcn Studio table shell. */
 export type OrgDeclarationRow = {
   id: string;
   title: string;
@@ -37,9 +35,15 @@ export type OrgDeclarationRow = {
 
 type OrgDeclarationsTableProps = {
   rows: OrgDeclarationRow[];
+  title?: string;
+  description?: string;
 };
 
-export function OrgDeclarationsTable({ rows }: OrgDeclarationsTableProps) {
+export function OrgDeclarationsTable({
+  rows,
+  title,
+  description,
+}: OrgDeclarationsTableProps) {
   const { list: copy } = portalCopy.org;
 
   const columns = useMemo<ColumnDef<OrgDeclarationRow>[]>(
@@ -55,7 +59,7 @@ export function OrgDeclarationsTable({ rows }: OrgDeclarationsTableProps) {
             <div className="min-w-0 max-w-[280px]">
               <Link
                 href={`/dashboard/${row.original.id}`}
-                className="block truncate font-medium rounded-sm outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring"
+                className="block truncate rounded-sm font-medium outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring"
               >
                 {title}
               </Link>
@@ -85,7 +89,7 @@ export function OrgDeclarationsTable({ rows }: OrgDeclarationsTableProps) {
         accessorKey: "responseCount",
         header: copy.tableSubmissions,
         cell: ({ row }) => (
-          <Badge variant="secondary" className="tabular-nums">
+          <Badge variant="surface" className="tabular-nums">
             {copy.submissions(row.original.responseCount)}
           </Badge>
         ),
@@ -99,13 +103,16 @@ export function OrgDeclarationsTable({ rows }: OrgDeclarationsTableProps) {
               <DropdownMenuTrigger
                 render={
                   <Button
-                    size="icon-sm"
+                    size="icon"
                     variant="ghost"
                     aria-label={copy.tableActions}
                   />
                 }
               >
-                <EllipsisVerticalIcon className="size-4" aria-hidden="true" />
+                <EllipsisVerticalIcon
+                  className="size-5"
+                  aria-hidden="true"
+                />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuGroup>
@@ -133,7 +140,7 @@ export function OrgDeclarationsTable({ rows }: OrgDeclarationsTableProps) {
             </DropdownMenu>
           </div>
         ),
-        size: 48,
+        size: 60,
         enableHiding: false,
       },
     ],
@@ -141,21 +148,26 @@ export function OrgDeclarationsTable({ rows }: OrgDeclarationsTableProps) {
   );
 
   const pageSize = 8;
-  const [pagination, setPagination] = useState<PaginationState>({
-    pageIndex: 0,
-    pageSize,
-  });
+  const hasHeader = Boolean(title || description);
 
-  const table = useReactTable({
-    data: rows,
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    onPaginationChange: setPagination,
-    state: { pagination },
-  });
-
-  return <FilteredDataTable table={table} pageSize={pageSize} />;
+  return (
+    <Card className="min-w-0 overflow-hidden py-0">
+      {hasHeader ? (
+        <CardHeader className="border-b py-4">
+          {title ? <h2 className="portal-card-title">{title}</h2> : null}
+          {description ? (
+            <CardDescription className="text-pretty">
+              {description}
+            </CardDescription>
+          ) : null}
+        </CardHeader>
+      ) : null}
+      <StudioDataTable
+        data={rows}
+        columns={columns}
+        pageSize={pageSize}
+        emptyMessage={copy.emptyTitle}
+      />
+    </Card>
+  );
 }

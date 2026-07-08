@@ -1,7 +1,7 @@
 import { MailCheckIcon, MailWarningIcon } from "lucide-react";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { getClientEmailDeliveryStatus } from "@/lib/email/mailersend-config";
+import { getClientEmailDeliveryStatus } from "@/lib/email/client-email-delivery";
 import { portalCopy } from "@/lib/portal-copy";
 
 export function ClientEmailDeliveryBanner() {

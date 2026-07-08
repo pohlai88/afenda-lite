@@ -12,6 +12,7 @@ import { loadEnvFile, getEnv } from "./lib/load-env.mjs";
 import {
   ensureNeonAdminUser,
   ensureNeonClientUser,
+  ensurePortalOrganization,
   withAdminSession,
   adminUpdateUser,
 } from "./lib/neon-auth-seed.mjs";
@@ -282,6 +283,7 @@ async function main() {
   await ensurePreviewProfile(previewUserId);
 
   await withAdminSession(adminEmail, adminPassword, async (cookie) => {
+    await ensurePortalOrganization({ cookie });
     await adminUpdateUser(cookie, {
       userId: previewUserId,
       data: { name: previewName },

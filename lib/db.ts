@@ -6,26 +6,41 @@ import {
   normalizeDatabaseUrl,
 } from "@/lib/db-config";
 
+type GlobalPoolState = typeof globalThis & {
+  portalPgPool?: Pool;
+};
+
 function getDatabaseUrl(): string | undefined {
   const url = process.env.DATABASE_URL;
   if (!url) return undefined;
   return normalizeDatabaseUrl(url);
 }
 
-const databaseUrl = getDatabaseUrl();
+function createPool(): Pool {
+  const databaseUrl = getDatabaseUrl();
 
-if (
-  process.env.NODE_ENV === "production" &&
-  databaseUrl &&
-  !isPoolerConnection(databaseUrl)
-) {
-  console.warn(
-    "DATABASE_URL should use a pooler endpoint (-pooler host or port 6543) for serverless deployments.",
-  );
+  if (
+    process.env.NODE_ENV === "production" &&
+    databaseUrl &&
+    !isPoolerConnection(databaseUrl)
+  ) {
+    console.warn(
+      "DATABASE_URL should use a pooler endpoint (-pooler host or port 6543) for serverless deployments.",
+    );
+  }
+
+  const nextPool = new Pool(getDatabasePoolConfig(databaseUrl));
+
+  if (process.env.VERCEL) {
+    attachDatabasePool(nextPool);
+  }
+
+  return nextPool;
 }
 
-const pool = new Pool(getDatabasePoolConfig(databaseUrl));
-attachDatabasePool(pool);
+const globalForPool = globalThis as GlobalPoolState;
+const pool = globalForPool.portalPgPool ?? createPool();
+globalForPool.portalPgPool = pool;
 
 export { pool, isPoolerConnection };
 

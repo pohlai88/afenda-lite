@@ -1,4 +1,4 @@
-import { accountViewPaths } from "@neondatabase/auth/react/ui/server";
+import { accountViewPaths } from "@neondatabase/auth-ui/server";
 import type { PortalMemberContext } from "@/lib/portal-member-types";
 import { CLIENT_PROFILE_HREF } from "@/lib/portal-routes";
 

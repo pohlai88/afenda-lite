@@ -2,6 +2,9 @@ import type { Meta, StoryObj } from "@storybook/react";
 import { getEvaluationRow } from "@/lib/ui-decision-matrix";
 import { ComparisonGrid, ScoreAnnotation } from "./evaluation-primitives";
 import {
+  IamCheckAuthMagicLinkShellPreview,
+  IamCheckAuthOrganizationShellPreview,
+  IamCheckAuthOtpShellPreview,
   IamCheckAuthShellPreview,
   RejectedStudioAuthPanel,
 } from "./auth-shell-preview";
@@ -43,4 +46,19 @@ export const IamCheckVaultShell: Story = {
 export const IamCheckAuthShellOnly: Story = {
   name: "iam-check auth shell only",
   render: () => <IamCheckAuthShellPreview />,
+};
+
+export const IamCheckEmailOtpShell: Story = {
+  name: "iam-check email OTP shell",
+  render: () => <IamCheckAuthOtpShellPreview />,
+};
+
+export const IamCheckMagicLinkShell: Story = {
+  name: "iam-check magic link shell",
+  render: () => <IamCheckAuthMagicLinkShellPreview />,
+};
+
+export const IamCheckOrganizationShell: Story = {
+  name: "iam-check organization invitation shell",
+  render: () => <IamCheckAuthOrganizationShellPreview />,
 };

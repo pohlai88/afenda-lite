@@ -1,6 +1,10 @@
 import "server-only";
 
-import { auth } from "@/lib/auth/server";
+import {
+  neonAdminCreateUser,
+  neonAdminSetUserPassword,
+  neonAdminUpdateUser,
+} from "@/lib/auth/admin";
 import { getClientDefaultPassword } from "@/lib/client-default-password";
 import { normalizeEmail } from "@/lib/clients";
 import { getNeonAuthUserByEmail } from "@/lib/neon-auth-users";
@@ -17,40 +21,40 @@ export async function ensureClientAuthUser(input: {
   const existing = await getNeonAuthUserByEmail(email);
 
   if (existing?.id) {
-    const { error } = await auth.admin.setUserPassword({
+    const passwordResult = await neonAdminSetUserPassword({
       userId: existing.id,
       newPassword: password,
     });
 
-    if (error) {
-      return { error: error.message };
+    if ("error" in passwordResult) {
+      return { error: passwordResult.error };
     }
 
-    const { error: updateError } = await auth.admin.updateUser({
+    const updateResult = await neonAdminUpdateUser({
       userId: existing.id,
       data: { name },
     });
 
-    if (updateError) {
-      return { error: updateError.message };
+    if ("error" in updateResult) {
+      return { error: updateResult.error };
     }
 
     return { userId: existing.id, created: false as const };
   }
 
-  const { data, error } = await auth.admin.createUser({
+  const createResult = await neonAdminCreateUser({
     email,
     password,
     name,
     role: "user",
   });
 
-  if (error) {
-    return { error: error.message };
+  if ("error" in createResult) {
+    return { error: createResult.error };
   }
 
   const userId =
-    data?.user?.id ?? (await getNeonAuthUserByEmail(email))?.id ?? null;
+    createResult.user.id ?? (await getNeonAuthUserByEmail(email))?.id ?? null;
   if (!userId) {
     return { error: "Neon Auth user was created but no user id was returned" };
   }

@@ -1,20 +1,21 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { redirect } from "next/navigation";
-import { authViewPaths } from "@neondatabase/auth/react/ui/server";
+import { authViewPaths } from "@neondatabase/auth-ui/server";
+import { NeonAuthPageShell } from "@/components/neon-auth-page-shell";
 import { PortalAccessDeniedNotice } from "@/components/portal-access-denied-notice";
+import { PortalAuthNeonView } from "@/components/portal-auth-neon-view";
+import { PortalAuthEmailTrustNotice } from "@/components/portal-auth-email-trust-notice";
 import { PortalAuthReasonNotice } from "@/components/portal-auth-reason-notice";
-import { PortalAuthLayout } from "@/components/portal-auth-layout";
-import { PortalNeonAuthView } from "@/components/portal-neon-view";
-import { resolveAuthShellCopy } from "@/lib/auth-shell-copy";
+import { portalCopy } from "@/lib/portal-copy";
 import { portalAuthMetadata } from "@/lib/auth-metadata";
+import { redirectAuthAcceptInvitationToJoin } from "@/lib/client-invitation-entry";
 import { resolveClientAuthReasonNotice } from "@/lib/client-sign-in-entry";
 import {
   isOrgAccessDeniedReason,
   isOrgSignInFrom,
 } from "@/lib/org-sign-in-entry";
 import { isPlaygroundEmbedRequest } from "@/lib/playground";
-import { AUTH_FORGOT_PASSWORD_HREF, sanitizeReturnToPath } from "@/lib/portal-routes";
+import { sanitizeReturnToPath } from "@/lib/portal-routes";
 import { getAuthenticatedLandingHref } from "@/lib/portal-session-routing";
 
 export const dynamic = "force-dynamic";
@@ -42,15 +43,19 @@ export default async function AuthPage({
   searchParams,
 }: {
   params: Promise<{ path: string }>;
-  searchParams: Promise<{ from?: string; reason?: string; returnTo?: string }>;
+  searchParams: Promise<{ from?: string; reason?: string; returnTo?: string; invitationId?: string }>;
 }) {
-  const [{ path }, { from, reason, returnTo: returnToRaw }] = await Promise.all([
+  const [{ path }, { from, reason, returnTo: returnToRaw, invitationId }] = await Promise.all([
     params,
     searchParams,
   ]);
   const embed = await isPlaygroundEmbedRequest();
   const fromOrg = isOrgSignInFrom(from);
   const returnTo = sanitizeReturnToPath(returnToRaw);
+
+  if (path === "accept-invitation" && invitationId?.trim()) {
+    redirectAuthAcceptInvitationToJoin(invitationId.trim());
+  }
 
   if (AUTH_ENTRY_PATHS.has(path) && !embed) {
     const landing = await getAuthenticatedLandingHref();
@@ -59,7 +64,6 @@ export default async function AuthPage({
     }
   }
 
-  const shell = resolveAuthShellCopy({ path, from });
   const showAccessDenied =
     fromOrg && path === "sign-in" && isOrgAccessDeniedReason(reason);
   const reasonNotice =
@@ -67,36 +71,50 @@ export default async function AuthPage({
       ? resolveClientAuthReasonNotice(reason)
       : null;
 
-  const headerExtra = showAccessDenied ? (
-    <PortalAccessDeniedNotice />
-  ) : reasonNotice ? (
-    <PortalAuthReasonNotice message={reasonNotice} />
-  ) : undefined;
+  const showOtpTrustNotice =
+    path === "sign-up" || path === "email-otp";
+
+  const showPasswordResetTrustNotice =
+    path === "forgot-password" || path === "reset-password";
+
+  const showMagicLinkTrustNotice = path === "magic-link";
+
+  const showOrganizationTrustNotice = path === "accept-invitation";
+
+  const header = (
+    <>
+      {showAccessDenied ? <PortalAccessDeniedNotice /> : null}
+      {reasonNotice ? <PortalAuthReasonNotice message={reasonNotice} /> : null}
+      {showOtpTrustNotice ? (
+        <PortalAuthEmailTrustNotice
+          message={portalCopy.emailOtp.trustNotice}
+          variant="email"
+        />
+      ) : null}
+      {showPasswordResetTrustNotice ? (
+        <PortalAuthEmailTrustNotice
+          message={portalCopy.passwordReset.trustNotice}
+          variant="link"
+        />
+      ) : null}
+      {showMagicLinkTrustNotice ? (
+        <PortalAuthEmailTrustNotice
+          message={portalCopy.magicLink.trustNotice}
+          variant="link"
+        />
+      ) : null}
+      {showOrganizationTrustNotice ? (
+        <PortalAuthEmailTrustNotice
+          message={portalCopy.organizationAuth.trustNotice}
+          variant="email"
+        />
+      ) : null}
+    </>
+  );
 
   return (
-    <PortalAuthLayout
-      eyebrow={shell.eyebrow}
-      heroTitle={shell.heroTitle}
-      heroDescription={shell.heroDescription}
-      signInTitle={shell.signInTitle}
-      signInDescription={shell.signInDescription}
-      trustNotice={shell.trustNotice}
-      alternateLink={shell.alternateLink}
-      signInHeadingId={shell.signInHeadingId}
-      headerExtra={headerExtra}
-      form={
-        <div className="portal-neon-view v-stack gap-3">
-          <PortalNeonAuthView pathname={path} />
-          {path === "sign-in" ? (
-            <p className="text-center text-sm">
-              <Link href={AUTH_FORGOT_PASSWORD_HREF} className="portal-auth-alt-link">
-                Forgot password?
-              </Link>
-            </p>
-          ) : null}
-        </div>
-      }
-      footerHint={shell.footerHint}
-    />
+    <NeonAuthPageShell header={header}>
+      <PortalAuthNeonView pathname={path} />
+    </NeonAuthPageShell>
   );
 }

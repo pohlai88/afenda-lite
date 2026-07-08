@@ -5,11 +5,7 @@ import { redirect } from "next/navigation";
 import { requireAdminSession, requireClientSession } from "@/lib/auth/session";
 import { recordAuditEvent } from "@/lib/audit";
 import { auth } from "@/lib/auth/server";
-import { bootstrapClientAfterAuth } from "@/lib/auth/bootstrap-client-invite";
-import { buildClientAccessMessage } from "@/lib/client-access-message";
 import { parseClientOnboardingFormData } from "@/lib/client-onboarding.server";
-import { ensureClientAuthUser } from "@/lib/client-auth-provision";
-import { getClientDefaultPassword } from "@/lib/client-default-password";
 import {
   CLIENT_HOME_HREF,
   CLIENT_ONBOARDING_HREF,
@@ -32,8 +28,8 @@ import {
   upsertClientProfile,
 } from "@/lib/clients";
 import { deleteClientAuthUserByEmail } from "@/lib/delete-client-auth-user";
-import { isMailerSendConfigured } from "@/lib/email/mailersend-config";
-import { sendClientAccessEmail } from "@/lib/email/send-client-access-email";
+import { isClientEmailDeliveryEnabled } from "@/lib/email/client-email-delivery";
+import { sendClientOnboardingEmail } from "@/lib/email/send-client-onboarding-email";
 import { runLoggedAction } from "@/lib/observability";
 import { OPERATOR_CLIENTS_HREF } from "@/lib/portal-routes";
 import { portalCopy, CLIENT_PORTAL_ACK_VERSION } from "@/lib/portal-copy";
@@ -93,9 +89,8 @@ export async function saveClientOnboardingAction(formData: FormData) {
         onboardingComplete: true,
       });
 
-      await auth.admin.updateUser({
-        userId: session.user.id,
-        data: { name: fullLegalName },
+      await auth.updateUser({
+        name: fullLegalName,
       });
 
       await recordAuditEvent({
@@ -245,18 +240,6 @@ export async function issueClientInviteAction(formData: FormData) {
         return { error: portalCopy.errors.declarationNotFound };
       }
 
-      const temporaryPassword = getClientDefaultPassword();
-
-      const provision = await ensureClientAuthUser({
-        email,
-        fullName,
-        password: temporaryPassword,
-      });
-
-      if (provision.error || !provision.userId) {
-        return { error: portalCopy.clientInvite.provisionFailed };
-      }
-
       const invitation = await createClientInvitation({
         email,
         fullName,
@@ -266,30 +249,21 @@ export async function issueClientInviteAction(formData: FormData) {
           dueDate && !Number.isNaN(dueDate.getTime()) ? dueDate : undefined,
       });
 
-      await bootstrapClientAfterAuth({
-        userId: provision.userId,
-        email: normalizeEmail(email),
-        userMetadata: { invitation_id: invitation.id },
-      });
-
-      const accessMessage = buildClientAccessMessage({
-        clientEmail: normalizeEmail(email),
-        temporaryPassword,
-      });
-
       let emailSent = false;
       let emailError: string | undefined;
 
-      if (isMailerSendConfigured()) {
-        const emailDelivery = await sendClientAccessEmail({
+      if (isClientEmailDeliveryEnabled()) {
+        const emailDelivery = await sendClientOnboardingEmail({
           toEmail: normalizeEmail(email),
           toName: fullName,
-          text: accessMessage,
+          text: "",
         });
         emailSent = emailDelivery.ok;
         if (!emailDelivery.ok) {
           emailError = emailDelivery.error;
         }
+      } else {
+        emailError = portalCopy.clientInvite.emailNotConfigured;
       }
 
       await recordAuditEvent({
@@ -298,7 +272,7 @@ export async function issueClientInviteAction(formData: FormData) {
         resourceType: "client_invitation",
         resourceId: invitation.id,
         metadata: {
-          channel: "client_provision",
+          channel: "neon_auth_organization",
           emailSent,
           ...(emailError ? { emailError } : {}),
         },
@@ -309,7 +283,6 @@ export async function issueClientInviteAction(formData: FormData) {
       return {
         success: true,
         email: normalizeEmail(email),
-        accessMessage,
         emailSent,
         emailError,
       };
