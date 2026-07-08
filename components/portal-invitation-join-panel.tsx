@@ -78,7 +78,7 @@ function PortalInvitationJoinPanelInner() {
           {panelTitle}
         </h2>
         <p className="text-body text-muted-foreground text-pretty">{panelDescription}</p>
-        {authView.pathname === "sign-up" || authView.pathname === "reset-password" ? (
+        {authView.pathname === "sign-up" ? (
           <p className="text-caption text-muted-foreground text-pretty">
             {portalCopy.signUp.passwordRequirements}
           </p>
