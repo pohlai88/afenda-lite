@@ -1,7 +1,9 @@
 import { expect, test } from "@/testing/e2e/playwright-base";
 import { portalCopy } from "@/lib/portal-copy";
 import {
+  answerFirstYesNoQuestion,
   expectDeclarationReceived,
+  openFirstClientAssignment,
   submitDefaultDeclarationAnswers,
 } from "@/testing/e2e/declaration-flows";
 import {
@@ -77,10 +79,9 @@ test.describe("Client journey @journey", () => {
     await loginAsClient(page, requireClientCreds());
     await acknowledgePortalIfNeeded(page);
 
-    await page.getByRole("link", { name: /complete declaration/i }).click();
-    await expect(page).toHaveURL(/\/client\/declare\/.+/);
+    await openFirstClientAssignment(page);
 
-    await page.getByRole("radio", { name: /^yes$/i }).first().check();
+    await answerFirstYesNoQuestion(page);
     await page.getByRole("button", { name: /^continue$/i }).click();
     await expect(page.getByText(/progress saved/i)).toBeVisible({
       timeout: 15_000,
@@ -88,6 +89,46 @@ test.describe("Client journey @journey", () => {
 
     await page.reload();
     await expect(page.getByRole("radio", { name: /^yes$/i }).first()).toBeChecked();
+  });
+
+  test("client draft survives navigate away without Continue @journey", async ({
+    page,
+  }) => {
+    test.skip(!clientCreds, clientSkipMessage);
+
+    await loginAsClient(page, requireClientCreds());
+    await acknowledgePortalIfNeeded(page);
+
+    await openFirstClientAssignment(page);
+    await answerFirstYesNoQuestion(page);
+
+    await page.goto("/client");
+    await expect(page).toHaveURL(/\/client$/);
+
+    await openFirstClientAssignment(page);
+    await expect(
+      page.getByRole("radio", { name: /^yes$/i }).first(),
+    ).toBeChecked({ timeout: 15_000 });
+  });
+
+  test("client draft autosaves without Continue @journey", async ({ page }) => {
+    test.skip(!clientCreds, clientSkipMessage);
+
+    await loginAsClient(page, requireClientCreds());
+    await acknowledgePortalIfNeeded(page);
+
+    await openFirstClientAssignment(page);
+    await answerFirstYesNoQuestion(page);
+
+    await expect(page.getByText(/progress saved/i)).toBeVisible({
+      timeout: 15_000,
+    });
+
+    await page.goto("/client");
+    await openFirstClientAssignment(page);
+    await expect(
+      page.getByRole("radio", { name: /^yes$/i }).first(),
+    ).toBeChecked();
   });
 
   test("client signs in and submits assignment", async ({ page }) => {
