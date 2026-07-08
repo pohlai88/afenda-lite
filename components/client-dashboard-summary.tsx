@@ -1,16 +1,16 @@
+import { PortalStatisticsCard } from "@/components/portal-statistics-card";
+import {
+  PortalProfileField,
+  PortalProfileFieldGroup,
+} from "@/components/portal-profile-field";
+import type { DeclarantSummaryView } from "@/lib/client-dashboard.presenter";
+import type { ClientDashboardMetrics } from "@/lib/client-dashboard-metrics";
 import {
   ClipboardCheckIcon,
   ClipboardListIcon,
   ClockIcon,
   type LucideIcon,
 } from "lucide-react";
-import { PortalStatisticsCard } from "@/components/portal-statistics-card";
-import {
-  PortalProfileField,
-  PortalProfileFieldGroup,
-} from "@/components/portal-profile-field";
-import type { ClientProfile } from "@/lib/clients";
-import type { ClientDashboardMetrics } from "@/lib/client-dashboard-metrics";
 import { portalCopy } from "@/lib/portal-copy";
 import {
   Card,
@@ -31,10 +31,10 @@ const metricIcons: Record<
 };
 
 export function ClientDashboardSummary({
-  profile,
+  declarant,
   metrics,
 }: {
-  profile: ClientProfile | null;
+  declarant: DeclarantSummaryView | null;
   metrics: ClientDashboardMetrics;
 }) {
   const copy = portalCopy.clientDashboard;
@@ -74,7 +74,7 @@ export function ClientDashboardSummary({
   ];
 
   return (
-    <div className="space-y-6">
+    <section className="space-y-6" aria-label={copy.title}>
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {metricItems.map((metric) => {
           const Icon = metricIcons[metric.key];
@@ -92,10 +92,12 @@ export function ClientDashboardSummary({
         })}
       </div>
 
-      {profile ? (
+      {declarant ? (
         <Card>
           <CardHeader className="gap-1">
-            <CardTitle className="text-lg">{copy.declarantSummaryTitle}</CardTitle>
+            <CardTitle className="text-pretty text-lg">
+              {copy.declarantSummaryTitle}
+            </CardTitle>
             <CardDescription className="text-pretty">
               {copy.declarantSummaryDescription}
             </CardDescription>
@@ -104,20 +106,20 @@ export function ClientDashboardSummary({
             <PortalProfileFieldGroup className="gap-4">
               <PortalProfileField
                 label={copy.declarantFullNameLabel}
-                value={profile.fullLegalName}
+                value={declarant.fullLegalName}
               />
               <PortalProfileField
                 label={copy.declarantEntityLabel}
-                value={profile.entityName}
+                value={declarant.entityName}
               />
               <PortalProfileField
                 label={copy.declarantJurisdictionLabel}
-                value={profile.jurisdiction}
+                value={declarant.jurisdiction}
               />
             </PortalProfileFieldGroup>
           </CardContent>
         </Card>
       ) : null}
-    </div>
+    </section>
   );
 }

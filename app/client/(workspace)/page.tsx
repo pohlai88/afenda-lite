@@ -6,14 +6,12 @@ import { ClientDashboardContext } from "@/components/client-dashboard-context";
 import { ClientDashboardSummary } from "@/components/client-dashboard-summary";
 import { PortalCustomerShell } from "@/components/portal-customer-shell";
 import { PortalTrustNotice } from "@/components/portal-trust-notice";
-import { computeClientDashboardMetrics } from "@/lib/client-dashboard-metrics";
+import { buildClientDashboardView } from "@/lib/client-dashboard.presenter";
 import {
   getClientProfile,
-  isClientPortalAcknowledged,
   listClientAssignments,
 } from "@/lib/clients";
 import { PORTAL_NAME, portalCopy } from "@/lib/portal-copy";
-import { formatDate } from "@/lib/format";
 
 export const metadata: Metadata = {
   title: `${PORTAL_NAME} — ${portalCopy.metadata.client.title}`,
@@ -28,11 +26,7 @@ export default async function ClientDashboardPage() {
     listClientAssignments(session.user.email),
     getClientProfile(session.user.id),
   ]);
-  const metrics = computeClientDashboardMetrics(assignments);
-  const acknowledged = isClientPortalAcknowledged(profile);
-  const acknowledgedDate = profile?.portalAckAt
-    ? formatDate(profile.portalAckAt)
-    : undefined;
+  const view = buildClientDashboardView({ assignments, profile });
 
   return (
     <PortalCustomerShell
@@ -42,27 +36,25 @@ export default async function ClientDashboardPage() {
       description={clientDashboard.description}
     >
       <div className="flex flex-col gap-8">
-        <ClientDashboardSummary profile={profile} metrics={metrics} />
+        <ClientDashboardSummary
+          declarant={view.declarant}
+          metrics={view.metrics}
+        />
 
-        {acknowledged ? (
-          acknowledgedDate ? (
-            <p className="text-sm text-muted-foreground">
-              {clientDashboard.acknowledgement.acknowledgedOn(acknowledgedDate)}
-            </p>
-          ) : null
-        ) : (
-          <ClientDashboardAcknowledgement />
-        )}
+        <ClientDashboardAcknowledgement status={view.acknowledgement} />
 
         <div className="grid min-w-0 gap-8 xl:grid-cols-[minmax(0,1fr)_22rem]">
           <div className="min-w-0">
             <ClientDashboardAssignments
-              assignments={assignments}
-              actionsEnabled={acknowledged}
+              assignments={view.assignments}
+              actionsEnabled={view.actionsEnabled}
             />
           </div>
 
-          <aside className="min-w-0 space-y-6 xl:sticky xl:top-20 xl:self-start">
+          <aside
+            className="min-w-0 space-y-6 xl:sticky xl:top-20 xl:self-start"
+            aria-label={clientDashboard.legalNoticeTitle}
+          >
             <ClientDashboardContext />
             <PortalTrustNotice />
           </aside>

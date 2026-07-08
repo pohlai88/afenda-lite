@@ -3,6 +3,7 @@ import {
   buildEvidenceNamesFromDraft,
   buildQuestionOrderIndex,
   clampDraftStepIndex,
+  collectFileEvidenceIds,
   countAnsweredQuestions,
 } from "@/lib/declaration-steps";
 import type { SurveyQuestion } from "@/lib/question-models";
@@ -33,6 +34,16 @@ describe("declaration draft helpers", () => {
     expect(clampDraftStepIndex(-1, 5)).toBe(0);
     expect(clampDraftStepIndex(3, 5)).toBe(3);
     expect(clampDraftStepIndex(99, 5)).toBe(4);
+  });
+
+  it("collects file evidence ids from draft answers", () => {
+    expect(
+      collectFileEvidenceIds(questions, {
+        q1: true,
+        q2: "550e8400-e29b-41d4-a716-446655440050",
+      }),
+    ).toEqual(["550e8400-e29b-41d4-a716-446655440050"]);
+    expect(collectFileEvidenceIds(questions, undefined)).toEqual([]);
   });
 
   it("counts answered questions", () => {

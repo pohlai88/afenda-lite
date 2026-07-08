@@ -1,18 +1,20 @@
 {
   "version": "1.0.0",
-  "generatedAt": "2026-07-08T09:59:29.641Z",
+  "generatedAt": "2026-07-08T15:49:32.951Z",
   "summary": {
     "surfaces": {
       "total": 23,
-      "aligned": 23,
-      "drift": 0
+      "aligned": 22,
+      "drift": 1
     },
     "actions": {
       "total": 18,
       "aligned": 18,
       "drift": 0
     },
-    "orphanActions": [],
+    "orphanActions": [
+      "action:saveClientDeclarationDraftAction"
+    ],
     "internalActions": [
       "action:adminSignInAction",
       "action:validateSurveyPackageAction"
@@ -480,6 +482,7 @@
         ],
         "scannedFiles": [
           "app/client/(workspace)/page.tsx",
+          "components/client-assignment-deadline-notice.tsx",
           "components/client-dashboard-acknowledgement.tsx",
           "components/client-dashboard-assignments.tsx",
           "components/client-dashboard-context.tsx",
@@ -569,6 +572,7 @@
         "discovered": [
           "action:registerEvidenceAction",
           "action:requireClientSession",
+          "action:saveClientDeclarationDraftAction",
           "action:submitClientDeclarationAction",
           "domain:clients",
           "domain:questions"
@@ -581,9 +585,11 @@
           "domain:questions"
         ],
         "declaredOnly": [],
-        "discoveredOnly": [],
+        "discoveredOnly": [
+          "action:saveClientDeclarationDraftAction"
+        ],
         "inherited": [],
-        "status": "aligned"
+        "status": "drift"
       },
       "evidence": {
         "entryFiles": [
@@ -593,12 +599,13 @@
         ],
         "scannedFiles": [
           "app/client/(workspace)/declare/[id]/page.tsx",
+          "components/client-assignment-deadline-notice.tsx",
           "components/client-declaration-form.tsx",
+          "components/client-declare-workspace.tsx",
           "components/client-sign-out-button.tsx",
           "components/confirmation-receipt.tsx",
           "components/declaration-form.tsx",
           "components/declaration-question-field.tsx",
-          "components/declaration-questions-empty.tsx",
           "components/form-error-alert.tsx",
           "components/portal-brand-mark.tsx",
           "components/portal-breadcrumb-list.tsx",

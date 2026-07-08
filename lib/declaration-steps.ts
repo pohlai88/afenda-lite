@@ -140,6 +140,22 @@ export function countAnsweredQuestions(
   }).length;
 }
 
+export function collectFileEvidenceIds(
+  questions: SurveyQuestion[],
+  answers: SurveyAnswers | null | undefined,
+): string[] {
+  if (!answers) {
+    return [];
+  }
+
+  return questions
+    .filter((question) => question.type === "file")
+    .map((question) => answers[question.id])
+    .filter(
+      (value): value is string => typeof value === "string" && Boolean(value),
+    );
+}
+
 export function buildEvidenceNamesFromDraft(
   questions: SurveyQuestion[],
   answers: SurveyAnswers,
