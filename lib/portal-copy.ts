@@ -648,6 +648,7 @@ export const portalCopy = {
       draftSaveError: "Could not save your progress. Try again before continuing.",
       draftSaving: "Saving progress…",
       draftSavedAt: (savedAt: string) => `Progress saved ${savedAt}`,
+      draftAutosavePending: "Unsaved changes — saving automatically",
       questionsAnswered: (answered: number, total: number) =>
         `${answered.toLocaleString()} of ${total.toLocaleString()} questions answered`,
       saveProgress: "Save progress",

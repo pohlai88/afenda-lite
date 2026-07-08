@@ -48,6 +48,12 @@ type SubmitResult = {
   savedAt?: string;
 };
 
+const DRAFT_AUTOSAVE_MS = 1200;
+
+function draftSnapshot(answers: SurveyAnswers, stepIndex: number) {
+  return JSON.stringify({ answers, stepIndex });
+}
+
 function stepIcon(step: DeclarationWizardStep) {
   if (step.kind === "review") {
     return RocketIcon;
@@ -168,12 +174,21 @@ export function DeclarationForm({
   );
   const [isPending, startTransition] = useTransition();
   const contentRef = useRef<HTMLDivElement>(null);
+  const initialStep = clampDraftStepIndex(initialStepIndex, steps.length);
   const draftSnapshotRef = useRef({
     answers: initialAnswers ?? {},
-    stepIndex: clampDraftStepIndex(initialStepIndex, steps.length),
+    stepIndex: initialStep,
   });
+  const lastPersistedRef = useRef(
+    draftSnapshot(initialAnswers ?? {}, initialStep),
+  );
 
   draftSnapshotRef.current = { answers, stepIndex: currentStepIndex };
+
+  const currentSnapshot = draftSnapshot(answers, currentStepIndex);
+  const isDraftDirty =
+    Boolean(assignmentId && onSaveDraft) &&
+    currentSnapshot !== lastPersistedRef.current;
 
   const currentStep = steps[currentStepIndex];
   const isReviewStep = currentStep?.kind === "review";
@@ -187,25 +202,78 @@ export function DeclarationForm({
   const isSavingDraft = isPending && !isReviewStep;
 
   useEffect(() => {
-    if (!assignmentId || !onSaveDraft) {
+    if (!assignmentId || !onSaveDraft || isReviewStep) {
       return;
     }
 
-    const draftAssignmentId = assignmentId;
-    const saveDraft = onSaveDraft;
+    if (currentSnapshot === lastPersistedRef.current) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      startTransition(async () => {
+        await persistDraft(currentStepIndex);
+      });
+    }, DRAFT_AUTOSAVE_MS);
+
+    return () => window.clearTimeout(timer);
+  }, [
+    assignmentId,
+    onSaveDraft,
+    isReviewStep,
+    currentSnapshot,
+    currentStepIndex,
+  ]);
+
+  useEffect(() => {
+    if (!assignmentId) {
+      return;
+    }
+
+    function flushDraftKeepalive() {
+      const { answers: latestAnswers, stepIndex } = draftSnapshotRef.current;
+      const snapshot = draftSnapshot(latestAnswers, stepIndex);
+      if (snapshot === lastPersistedRef.current) {
+        return;
+      }
+
+      void fetch("/api/client/declaration-draft", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          assignmentId,
+          answers: latestAnswers,
+          stepIndex,
+        }),
+        keepalive: true,
+      })
+        .then((response) => response.json())
+        .then((payload: { savedAt?: string }) => {
+          if (payload.savedAt) {
+            lastPersistedRef.current = snapshot;
+          }
+        })
+        .catch(() => undefined);
+    }
 
     function handleBeforeUnload() {
-      const { answers: latestAnswers, stepIndex } = draftSnapshotRef.current;
-      void saveDraft({
-        assignmentId: draftAssignmentId,
-        answers: latestAnswers,
-        stepIndex,
-      });
+      flushDraftKeepalive();
+    }
+
+    function handleVisibilityChange() {
+      if (document.visibilityState === "hidden") {
+        flushDraftKeepalive();
+      }
     }
 
     window.addEventListener("beforeunload", handleBeforeUnload);
-    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
-  }, [assignmentId, onSaveDraft]);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      flushDraftKeepalive();
+    };
+  }, [assignmentId]);
 
   async function persistDraft(stepIndex: number) {
     if (!assignmentId || !onSaveDraft) {
@@ -223,6 +291,7 @@ export function DeclarationForm({
     }
     if (saveResult?.savedAt) {
       setDraftSavedAt(new Date(saveResult.savedAt));
+      lastPersistedRef.current = draftSnapshot(answers, stepIndex);
     }
     return true;
   }
@@ -289,6 +358,23 @@ export function DeclarationForm({
   }
 
   function goToStep(index: number) {
+    if (
+      index !== currentStepIndex &&
+      assignmentId &&
+      onSaveDraft &&
+      currentSnapshot !== lastPersistedRef.current
+    ) {
+      startTransition(async () => {
+        const saved = await persistDraft(currentStepIndex);
+        if (saved) {
+          setCurrentStepIndex(index);
+          setReviewError(null);
+          contentRef.current?.focus();
+        }
+      });
+      return;
+    }
+
     setCurrentStepIndex(index);
     setReviewError(null);
     contentRef.current?.focus();
@@ -399,9 +485,18 @@ export function DeclarationForm({
                 {wizardCopy.questionsAnswered(answeredCount, questions.length)}
               </p>
             ) : null}
-            {assignmentId && draftSavedAt ? (
-              <p className="text-xs text-muted-foreground">
-                {wizardCopy.draftSavedAt(formatDateTime(draftSavedAt))}
+            {assignmentId ? (
+              <p
+                className="text-xs text-muted-foreground"
+                aria-live="polite"
+              >
+                {isSavingDraft
+                  ? wizardCopy.draftSaving
+                  : isDraftDirty
+                    ? wizardCopy.draftAutosavePending
+                    : draftSavedAt
+                      ? wizardCopy.draftSavedAt(formatDateTime(draftSavedAt))
+                      : wizardCopy.draftAutosavePending}
               </p>
             ) : null}
           </>
