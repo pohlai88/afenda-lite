@@ -33,10 +33,29 @@ export default async function TradeAdminEventsPage({
       </div>
 
       <div className="flex flex-wrap gap-2">
+        <Link
+          href={tradeHref(locale, "/admin/events/new")}
+          className="bg-primary text-primary-foreground rounded-md px-3 py-1.5 text-sm"
+        >
+          {locale === "vi" ? "Tạo sự kiện" : "New event"}
+        </Link>
+        <Link
+          href={tradeHref(locale, "/admin/rbac")}
+          className="rounded-md border px-3 py-1.5 text-sm"
+        >
+          {locale === "vi" ? "Vai trò" : "Roles"}
+        </Link>
         <TradeEnsureTemplateButton locale={locale} />
       </div>
 
-      <TradeNewEventForm locale={locale} />
+      <details className="rounded-lg border p-4">
+        <summary className="cursor-pointer text-sm font-medium">
+          Quick create (on-list)
+        </summary>
+        <div className="mt-4">
+          <TradeNewEventForm locale={locale} />
+        </div>
+      </details>
 
       <div className="space-y-3">
         <h2 className="font-medium">Events</h2>

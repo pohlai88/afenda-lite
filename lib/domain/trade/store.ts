@@ -1233,3 +1233,204 @@ export async function bootstrapPhase1RbacAssignments(input: {
     });
   }
 }
+
+export type HotSalesRoleRow = {
+  id: string;
+  name: string;
+  description: string | null;
+  active: boolean;
+  isSystemTemplate: boolean;
+  templateKey: string | null;
+  permissionCodes: string[];
+};
+
+export async function listHotSalesRoles(): Promise<HotSalesRoleRow[]> {
+  const roles = await pool.query(
+    `SELECT * FROM hot_sales_role ORDER BY is_system_template DESC, name ASC`,
+  );
+  const out: HotSalesRoleRow[] = [];
+  for (const row of roles.rows) {
+    const perms = await pool.query(
+      `SELECT permission_code FROM hot_sales_role_permission WHERE role_id = $1 ORDER BY permission_code`,
+      [row.id],
+    );
+    out.push({
+      id: row.id,
+      name: row.name,
+      description: row.description,
+      active: Boolean(row.active),
+      isSystemTemplate: Boolean(row.is_system_template),
+      templateKey: row.template_key,
+      permissionCodes: perms.rows.map((p) => p.permission_code as string),
+    });
+  }
+  return out;
+}
+
+export async function createCustomRole(input: {
+  name: string;
+  description?: string;
+  permissionCodes: string[];
+  actorId: string;
+}) {
+  const result = await pool.query(
+    `INSERT INTO hot_sales_role (name, description, active, is_system_template, created_by)
+     VALUES ($1, $2, TRUE, FALSE, $3)
+     RETURNING id`,
+    [input.name.trim(), input.description?.trim() || null, input.actorId],
+  );
+  const roleId = result.rows[0].id as string;
+  for (const code of input.permissionCodes) {
+    await pool.query(
+      `INSERT INTO hot_sales_role_permission (role_id, permission_code, granted_by)
+       VALUES ($1, $2, $3)`,
+      [roleId, code, input.actorId],
+    );
+    if (isSensitivePermission(code)) {
+      await recordRbacAudit({
+        action: "role.permission_grant",
+        actorId: input.actorId,
+        roleId,
+        permissionCode: code,
+        reason: "custom_role_create",
+      });
+    }
+  }
+  await recordRbacAudit({
+    action: "role.create",
+    actorId: input.actorId,
+    roleId,
+    newValue: { name: input.name, permissionCodes: input.permissionCodes },
+  });
+  return roleId;
+}
+
+export async function setRolePermissions(input: {
+  roleId: string;
+  permissionCodes: string[];
+  actorId: string;
+}) {
+  const before = await pool.query(
+    `SELECT permission_code FROM hot_sales_role_permission WHERE role_id = $1`,
+    [input.roleId],
+  );
+  const beforeCodes = new Set(before.rows.map((r) => r.permission_code as string));
+  const nextCodes = new Set(input.permissionCodes);
+
+  await pool.query(`DELETE FROM hot_sales_role_permission WHERE role_id = $1`, [
+    input.roleId,
+  ]);
+  for (const code of nextCodes) {
+    await pool.query(
+      `INSERT INTO hot_sales_role_permission (role_id, permission_code, granted_by)
+       VALUES ($1, $2, $3)`,
+      [input.roleId, code, input.actorId],
+    );
+    if (isSensitivePermission(code) && !beforeCodes.has(code)) {
+      await recordRbacAudit({
+        action: "role.permission_grant",
+        actorId: input.actorId,
+        roleId: input.roleId,
+        permissionCode: code,
+        reason: "role_permission_update",
+      });
+    }
+  }
+  for (const code of beforeCodes) {
+    if (isSensitivePermission(code) && !nextCodes.has(code)) {
+      await recordRbacAudit({
+        action: "role.permission_revoke",
+        actorId: input.actorId,
+        roleId: input.roleId,
+        permissionCode: code,
+        reason: "role_permission_update",
+      });
+    }
+  }
+  await recordRbacAudit({
+    action: "role.permissions_set",
+    actorId: input.actorId,
+    roleId: input.roleId,
+    oldValue: { permissionCodes: [...beforeCodes] },
+    newValue: { permissionCodes: [...nextCodes] },
+  });
+}
+
+export async function setRoleActive(input: {
+  roleId: string;
+  active: boolean;
+  actorId: string;
+}) {
+  await pool.query(
+    `UPDATE hot_sales_role SET active = $2, updated_at = NOW(), updated_by = $3 WHERE id = $1`,
+    [input.roleId, input.active, input.actorId],
+  );
+  await recordRbacAudit({
+    action: input.active ? "role.enable" : "role.disable",
+    actorId: input.actorId,
+    roleId: input.roleId,
+  });
+}
+
+export async function duplicateRole(input: {
+  sourceRoleId: string;
+  name: string;
+  actorId: string;
+}) {
+  const source = await pool.query(`SELECT * FROM hot_sales_role WHERE id = $1`, [
+    input.sourceRoleId,
+  ]);
+  if (!source.rows[0]) throw new Error("role_not_found");
+  const perms = await pool.query(
+    `SELECT permission_code FROM hot_sales_role_permission WHERE role_id = $1`,
+    [input.sourceRoleId],
+  );
+  return createCustomRole({
+    name: input.name,
+    description: source.rows[0].description ?? undefined,
+    permissionCodes: perms.rows.map((p) => p.permission_code as string),
+    actorId: input.actorId,
+  });
+}
+
+export async function listAllRoleAssignments() {
+  const result = await pool.query(
+    `SELECT a.*, r.name AS role_name
+     FROM hot_sales_role_assignment a
+     INNER JOIN hot_sales_role r ON r.id = a.role_id
+     WHERE a.active = TRUE
+     ORDER BY a.created_at DESC
+     LIMIT 200`,
+  );
+  return result.rows.map((row) => ({
+    id: row.id as string,
+    userId: row.user_id as string,
+    userEmail: (row.user_email as string | null) ?? null,
+    roleId: row.role_id as string,
+    roleName: row.role_name as string,
+    scopeType: row.scope_type as HotSalesScopeType,
+    scopeId: (row.scope_id as string | null) ?? null,
+  }));
+}
+
+export async function revokeRoleAssignment(input: {
+  assignmentId: string;
+  actorId: string;
+}) {
+  const before = await pool.query(
+    `SELECT * FROM hot_sales_role_assignment WHERE id = $1`,
+    [input.assignmentId],
+  );
+  if (!before.rows[0]) return;
+  await pool.query(
+    `UPDATE hot_sales_role_assignment SET active = FALSE, updated_at = NOW() WHERE id = $1`,
+    [input.assignmentId],
+  );
+  await recordRbacAudit({
+    action: "assignment.revoke",
+    actorId: input.actorId,
+    targetUserId: before.rows[0].user_id,
+    roleId: before.rows[0].role_id,
+    oldValue: before.rows[0],
+  });
+}

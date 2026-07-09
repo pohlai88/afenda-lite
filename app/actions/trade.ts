@@ -1,7 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireTradeAccess, requireTradeAdmin } from "@/lib/auth/trade-session";
+import { requireTradeAccess, requireTradeAdmin, requireTradePermission } from "@/lib/auth/trade-session";
+import {
+  HOT_SALES_SCOPE_TYPES,
+  type HotSalesScopeType,
+} from "@/lib/domain/trade/rbac-catalog";
 import {
   calculateAllocation,
   validateManualAllocationQuantity,
@@ -33,10 +37,13 @@ import {
   approveTransfer,
   cloneEventFromTemplate,
   completeOrder,
+  createCustomRole,
   createEvent,
   createOrder,
   createTransferRequest,
+  duplicateRole,
   ensureGp2PigletTemplate,
+  ensureRoleAssignment,
   getEventById,
   getOrderById,
   importPriorityCsv,
@@ -48,7 +55,11 @@ import {
   ordersToCsv,
   recordHotSalesAudit,
   rejectTransfer,
+  revokeRoleAssignment,
   runAllocationForEvent,
+  seedHotSalesRbacCatalog,
+  setRoleActive,
+  setRolePermissions,
   updateEvent,
   upsertFieldDef,
   upsertProduct,
@@ -60,6 +71,8 @@ function revalidateTrade(locale: TradeLocale, eventId?: string) {
   revalidatePath(`/trade/${locale}/events`);
   revalidatePath(`/trade/${locale}/my-orders`);
   revalidatePath(`/trade/${locale}/admin/events`);
+  revalidatePath(`/trade/${locale}/admin/rbac`);
+  revalidatePath(`/trade/${locale}/admin/events/new`);
   if (eventId) {
     revalidatePath(`/trade/${locale}/admin/events/${eventId}/setup`);
     revalidatePath(`/trade/${locale}/admin/events/${eventId}/allocation`);
@@ -72,7 +85,7 @@ export async function createTradeEventAction(
   formData: FormData,
 ) {
   if (!isTradeLocale(locale)) throw new Error("invalid_locale");
-  const admin = await requireTradeAdmin();
+  const access = await requireTradePermission("event.create");
 
   const eventName = String(formData.get("eventName") ?? "").trim();
   const eventType = String(formData.get("eventType") ?? "hot_sales").trim();
@@ -92,14 +105,14 @@ export async function createTradeEventAction(
     closesAt,
     timezone,
     sourceLocation,
-    createdBy: admin.userId,
+    createdBy: access.userId,
   });
 
   await recordHotSalesAudit({
     eventId: event.id,
     action: "event.created",
-    actorId: admin.userId,
-    actorRole: "admin",
+    actorId: access.userId,
+    actorRole: access.isAdmin ? "admin" : "operator",
     newValue: { eventName: event.eventName },
   });
 
@@ -132,7 +145,7 @@ export async function cloneTradeEventAction(locale: string, sourceEventId: strin
 
 export async function openTradeEventAction(locale: string, eventId: string) {
   if (!isTradeLocale(locale)) throw new Error("invalid_locale");
-  const admin = await requireTradeAdmin();
+  const admin = await requireTradePermission("event.open_close", { eventId });
   const event = await getEventById(eventId);
   if (!event) return { error: "not_found" };
 
@@ -161,7 +174,7 @@ export async function activateScheduledTradeEventAction(
   eventId: string,
 ) {
   if (!isTradeLocale(locale)) throw new Error("invalid_locale");
-  const admin = await requireTradeAdmin();
+  const admin = await requireTradePermission("event.open_close", { eventId });
   const event = await getEventById(eventId);
   if (!event) return { error: "not_found" };
   if (event.status !== "scheduled") return { error: "not_scheduled" };
@@ -182,7 +195,7 @@ export async function activateScheduledTradeEventAction(
 
 export async function closeTradeEventAction(locale: string, eventId: string) {
   if (!isTradeLocale(locale)) throw new Error("invalid_locale");
-  const admin = await requireTradeAdmin();
+  const admin = await requireTradePermission("event.open_close", { eventId });
   const event = await getEventById(eventId);
   if (!event) return { error: "not_found" };
 
@@ -513,7 +526,7 @@ export async function submitTradeOrderAction(
   formData: FormData,
 ) {
   if (!isTradeLocale(locale)) throw new Error("invalid_locale");
-  const access = await requireTradeAccess();
+  const access = await requireTradePermission("order.create", { eventId });
   const event = await getEventById(eventId);
   if (!event) return { error: "not_found" };
 
@@ -578,7 +591,7 @@ export async function runTradeAllocationAction(
   reason?: string,
 ) {
   if (!isTradeLocale(locale)) throw new Error("invalid_locale");
-  const admin = await requireTradeAdmin();
+  const admin = await requireTradePermission("allocation.run", { eventId });
 
   const [event, products, orders] = await Promise.all([
     getEventById(eventId),
@@ -654,7 +667,7 @@ export async function manualAdjustTradeOrderAction(
   reason: string,
 ) {
   if (!isTradeLocale(locale)) throw new Error("invalid_locale");
-  const admin = await requireTradeAdmin();
+  const admin = await requireTradePermission("allocation.override");
   if (!reason.trim()) return { error: "reason_required" };
 
   const order = await getOrderById(orderId);
@@ -877,4 +890,123 @@ export async function listEventTransfersAction(locale: string, eventId: string) 
   if (!isTradeLocale(locale)) throw new Error("invalid_locale");
   await requireTradeAdmin();
   return listTransfersForEvent(eventId);
+}
+
+export async function seedTradeRbacCatalogAction(locale: string) {
+  if (!isTradeLocale(locale)) throw new Error("invalid_locale");
+  const access = await requireTradePermission("role.manage");
+  await seedHotSalesRbacCatalog(access.userId);
+  revalidateTrade(locale);
+  return { ok: true };
+}
+
+export async function createTradeRoleAction(
+  locale: string,
+  name: string,
+  permissionCodes: string[],
+) {
+  if (!isTradeLocale(locale)) throw new Error("invalid_locale");
+  const access = await requireTradePermission("role.manage");
+  if (!name.trim()) return { error: "invalid_name" };
+  const roleId = await createCustomRole({
+    name,
+    permissionCodes,
+    actorId: access.userId,
+  });
+  revalidateTrade(locale);
+  return { ok: true, roleId };
+}
+
+export async function setTradeRolePermissionsAction(
+  locale: string,
+  roleId: string,
+  permissionCodes: string[],
+) {
+  if (!isTradeLocale(locale)) throw new Error("invalid_locale");
+  const access = await requireTradePermission("role.manage");
+  await setRolePermissions({
+    roleId,
+    permissionCodes,
+    actorId: access.userId,
+  });
+  revalidateTrade(locale);
+  return { ok: true };
+}
+
+export async function setTradeRoleActiveAction(
+  locale: string,
+  roleId: string,
+  active: boolean,
+) {
+  if (!isTradeLocale(locale)) throw new Error("invalid_locale");
+  const access = await requireTradePermission("role.manage");
+  await setRoleActive({ roleId, active, actorId: access.userId });
+  revalidateTrade(locale);
+  return { ok: true };
+}
+
+export async function duplicateTradeRoleAction(
+  locale: string,
+  sourceRoleId: string,
+  name: string,
+) {
+  if (!isTradeLocale(locale)) throw new Error("invalid_locale");
+  const access = await requireTradePermission("role.manage");
+  const roleId = await duplicateRole({
+    sourceRoleId,
+    name,
+    actorId: access.userId,
+  });
+  revalidateTrade(locale);
+  return { ok: true, roleId };
+}
+
+export async function assignTradeRoleAction(
+  locale: string,
+  input: {
+    userId: string;
+    userEmail?: string;
+    roleId: string;
+    scopeType: HotSalesScopeType;
+    scopeId?: string | null;
+  },
+) {
+  if (!isTradeLocale(locale)) throw new Error("invalid_locale");
+  const access = await requireTradePermission("role.manage");
+  if (!input.userId || !input.roleId) return { error: "invalid_input" };
+  if (!HOT_SALES_SCOPE_TYPES.includes(input.scopeType)) {
+    return { error: "invalid_scope" };
+  }
+  if (
+    (input.scopeType === "team" ||
+      input.scopeType === "event" ||
+      input.scopeType === "bu") &&
+    !input.scopeId
+  ) {
+    return { error: "scope_id_required" };
+  }
+  await ensureRoleAssignment({
+    userId: input.userId,
+    userEmail: input.userEmail,
+    roleId: input.roleId,
+    scopeType: input.scopeType,
+    scopeId: input.scopeId,
+    actorId: access.userId,
+  });
+  revalidateTrade(locale);
+  return { ok: true };
+}
+
+export async function revokeTradeRoleAssignmentAction(
+  locale: string,
+  assignmentId: string,
+) {
+  if (!isTradeLocale(locale)) throw new Error("invalid_locale");
+  const access = await requireTradePermission("role.manage");
+  await revokeRoleAssignment({
+    assignmentId,
+    actorId: access.userId,
+  });
+  revalidateTrade(locale);
+  return { ok: true };
 }
