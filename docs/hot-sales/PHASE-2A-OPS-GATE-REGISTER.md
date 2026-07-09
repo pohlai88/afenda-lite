@@ -54,12 +54,12 @@ Operational gates map to [PHASE-2A-RELEASE-READINESS.md](./PHASE-2A-RELEASE-READ
 | **4 repair** | Production DB migrate (`013` + `014`) | ✅ Complete |
 | **4 fix** | next-intl TradeShell SSR crash (`4d203a7`) | ✅ Merged to `main` (`ee14f10`) |
 | **4 admin** | Phase 1 admin matrix (flag off) | ✅ Passed |
-| **4B** | Phase 1 sales allowlist matrix (flag off) | ✅ **Closed — data/setup** (matrix rows 6–10 pending operator data) |
-| **5** | `requestTransferAction` / transfer-lite triage | ⏸ Blocked until Gate 4B matrix re-run passes |
+| **4B** | Phase 1 sales allowlist matrix (flag off) | ✅ **PASS** — rows 6–10 passed on live app (2026-07-10) |
+| **5** | `requestTransferAction` / transfer-lite triage | ⏸ Next — unblocked by matrix; triage still required |
 | **6** | Controlled `HOT_SALES_RBAC_ENABLED=true` | ⏸ Blocked |
 | **7** | Production RBAC enable | ⏸ Blocked |
 
-**Gate 4 overall:** admin ✅, sales allowlist **classified as data/setup** ✅. **Do not advance to Gate 5** until operator adds production data and matrix rows 6–10 pass.
+**Gate 4 overall:** admin ✅, sales allowlist matrix rows 6–10 ✅ (2026-07-10). **Gate 5** may proceed to transfer-lite triage. **Open ops gap:** live Vercel `DATABASE_URL` still points at `dev-spec-b`; production branch `br-tiny-hill-ao82jp6f` has matching allowlist + event data but is not the live deploy DB until cutover.
 
 ---
 
@@ -105,35 +105,49 @@ select * from hot_sales_sales_member where active = true;
 
 If the sales test email is missing: add via **approved admin UI** (`/trade/vi/admin/events/{id}/setup` → Sales allowlist) or documented production data-ops. Record as **production data setup**, not code scope.
 
-### Production evidence (2026-07-09)
+### Production evidence (2026-07-09 data setup · 2026-07-10 matrix)
 
-**Branch verified:** `production` (`br-tiny-hill-ao82jp6f`) — not `dev-spec-b`.
+**Data branches:** allowlist + open event seeded on `br-tiny-hill-ao82jp6f` (gate SSOT) and `br-super-hill-aojc9a4p` (live Vercel deploy DB).
 
 ```sql
-select * from hot_sales_sales_member where active = true;
--- Result: 0 rows (table exists; no allowlisted sales users in production)
+select email, active from hot_sales_sales_member where active = true;
+-- Result (both branches): 1 row — preview-client@iam-check.com (domain: iam-check.com)
 
-select count(*) from hot_sales_event;
--- Result (post-setup): 1 open event + 1 product on br-tiny-hill-ao82jp6f
--- Event: GATE-4B-PROD-20260709 · Gate 4B Production SKU · final_confirmed_quantity=100
+-- br-tiny-hill-ao82jp6f open event: GATE-4B-PROD-20260709 · Gate 4B Production SKU · qty=100
+-- br-super-hill-aojc9a4p open event (matrix): Gate 4B Ops Event 20260709 · Gate 4B SKU · qty=100
 ```
 
-**Verdict (classification):**
+**Matrix re-run (rows 6–10 only)** — `https://iam-check.vercel.app`, sales session on allowlisted `iam-check.com` account, `HOT_SALES_RBAC_ENABLED=false`:
+
+| Row | Result | Evidence |
+|-----|--------|----------|
+| 6 | ✅ PASS | `/trade/vi/events` — no `/client` bounce |
+| 7 | ✅ PASS | Order submit → `/my-orders` with new customer row |
+| 8 | ✅ PASS | Same order visible on `/trade/vi/my-orders` |
+| 9 | ✅ PASS | `/trade/vi/admin/events` → redirected to `/trade/vi/events` |
+| 10 | ✅ PASS | RSC `requireTradePermission("event.create")` redirect; `createTradeEventAction` replay as sales → HTTP **303**, no `eventId` created |
+
+Runner: `node scripts/gate-4b-rows-6-10.mjs` (Playwright, production base URL).
+
+**Verdict:**
 
 ```text
-Sales account: none allowlisted / allowlist row: no
-Active open event + product: yes (br-tiny-hill-ao82jp6f · GATE-4B-PROD-20260709)
-Rows 6–10: deferred — pending operator production data setup
-/client bounce with PREVIEW_CLIENT_EMAIL or any non-allowlisted session: expected (not code)
-Gate 4B: CLOSED — data/setup lane (not code)
+Sales account: iam-check.com / allowlist row: yes
+Active open event + product: yes (live deploy · Gate 4B Ops Event 20260709)
+Row 6–10: pass (5/5)
+Gate 4B: PASS
 ```
 
-**Operator next steps (production data only):**
+**DB drift caveat (must stay visible):**
 
-1. Sign in as `SHARED_ADMIN_EMAIL` → create event via `/trade/vi/admin/events/new`
-2. Complete setup → add intended sales email to allowlist on event setup
-3. Re-run matrix rows 6–10 with that allowlisted account
-4. Record matrix pass before advancing to Gate 5
+```text
+Runtime DB for this run: dev-spec-b / br-super-hill-aojc9a4p
+Gate SSOT production branch: br-tiny-hill-ao82jp6f
+SSOT branch has matching allowlist + GATE-4B-PROD-20260709 data
+DB cutover remains a separate ops step
+```
+
+**Remaining ops (not matrix):** align live Vercel `DATABASE_URL` to `br-tiny-hill-ao82jp6f` when Neon Auth cutover is ready.
 
 ### Event/product prerequisite (rows 7–8)
 

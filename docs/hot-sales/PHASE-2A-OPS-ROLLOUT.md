@@ -61,10 +61,10 @@ It does **not** reopen 2A design and does **not** authorize 2B–2D scope.
 
 See [PHASE-2A-OPS-GATE-REGISTER.md § Gate 4B](./PHASE-2A-OPS-GATE-REGISTER.md#gate-4b--sales-allowlist-matrix-active-work).
 
-- [x] Production DB checked (`br-tiny-hill-ao82jp6f`): `hot_sales_sales_member` has **0 active rows**
-- [x] `PREVIEW_CLIENT_EMAIL` **not** allowlisted — confirmed by empty table (do not use for sales matrix)
-- [x] Open event + product exists for order-create test — **production branch** `GATE-4B-PROD-20260709`
-- [ ] Rows 6–10 re-run after data setup; matrix pass recorded
+- [x] Production DB checked (`br-tiny-hill-ao82jp6f`): allowlist row added (data-ops)
+- [x] Sales test account allowlisted on live deploy DB (`br-super-hill-aojc9a4p`) for matrix
+- [x] Open event + product exists for order-create test — live + production branch
+- [x] Rows 6–10 re-run (2026-07-10) — **5/5 pass** — see [gate register](./PHASE-2A-OPS-GATE-REGISTER.md#production-evidence-2026-07-09-data-setup--2026-07-10-matrix)
 
 ## Seed / assignment
 
