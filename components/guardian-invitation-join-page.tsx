@@ -6,16 +6,16 @@ import {
   type GuardianMode,
 } from "@/components/auth";
 import { useGuardianNeonAuthState } from "@/components/auth/use-guardian-neon-auth-state";
-import { PortalInvitationJoinBrandPanel } from "@/components/portal-invitation-join-brand-panel";
-import { PortalInvitationJoinPanel } from "@/components/portal-invitation-join-panel";
+import { PortalInvitationJoinBrandPanel } from "@/components/portal/portal-invitation-join-brand-panel";
+import { PortalInvitationJoinPanel } from "@/components/portal/portal-invitation-join-panel";
 import { useThemeControls } from "@/components/theme-provider";
 import type { JoinInvitationAuthView } from "@/lib/client-invitation-join-auth";
 import {
   guardianModeFromPortalTheme,
   portalThemeFromGuardianMode,
   resolveGuardianJoinCopyOverride,
-} from "@/lib/guardian-editorial-copy";
-import { GUARDIAN_AUTH_ASSET_SET } from "@/lib/portal-brand";
+} from "@/lib/copy/guardian-editorial-copy";
+import { GUARDIAN_AUTH_ASSET_SET } from "@/lib/copy/portal-brand";
 
 export type GuardianInvitationJoinPageProps = {
   activeStep: number;

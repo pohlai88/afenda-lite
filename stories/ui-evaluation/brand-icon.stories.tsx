@@ -8,7 +8,7 @@ import {
   BrandIconSurfacePlacements,
   BrandIconThemeCompare,
 } from "./brand-icon-preview";
-import { PortalAuthPhantomOwl } from "@/components/portal-auth-brand-scene";
+import { PortalAuthPhantomOwl } from "@/components/portal/portal-auth-brand-scene";
 
 const meta: Meta = {
   title: "UI Evaluation/Brand Icon",

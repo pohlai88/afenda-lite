@@ -20,7 +20,7 @@ Create, edit, and delete declarations with dynamic question sets.
 
 - `app/actions/surveys.ts`
 - `lib/surveys.ts`, `lib/questions.ts`, `lib/operator-dashboard-page.ts`, `lib/operator-breadcrumbs.ts`
-- `components/declaration-create-form.tsx`, `declaration-manage-form.tsx`, `question-fields-editor.tsx`, `operator-dashboard-page-view.tsx`
+- `components/declaration-create-button.tsx`, `components/org-create-declaration-link.tsx`, `declaration-manage-form.tsx`, `question-fields-editor.tsx`, `operator-dashboard-page-view.tsx`
 - `app/dashboard/layout.tsx`, `app/dashboard/page.tsx`, `app/dashboard/loading.tsx`, `app/dashboard/error.tsx`
 - `app/dashboard/[id]/page.tsx`, `app/dashboard/[id]/loading.tsx`
 - `lib/operator-declaration-detail.tsx`, `lib/operator-declaration-detail.logic.ts`

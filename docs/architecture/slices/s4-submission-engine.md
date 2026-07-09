@@ -18,7 +18,7 @@ Single submission pipeline for public, secure, and client-assigned surfaces.
 
 ## Owned files
 
-- `components/declaration-form.tsx` (wrappers: `survey-form.tsx`, `client-declaration-form.tsx`)
+- `components/declaration-form.tsx`, `components/client-declaration-form.tsx`
 - `app/actions/surveys.ts` (`submitAnswersForSurvey`)
 - `app/actions/declarations.ts`
 - `lib/questions.ts` (`validateAnswers`, `registerEvidence`)

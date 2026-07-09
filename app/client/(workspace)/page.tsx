@@ -1,7 +1,7 @@
 import {
   clientDashboardPageMetadata,
   runClientDashboardPage,
-} from "@/lib/client-dashboard-page";
+} from "@/lib/pages/client-dashboard-page";
 
 export const metadata = clientDashboardPageMetadata;
 export const dynamic = "force-dynamic";

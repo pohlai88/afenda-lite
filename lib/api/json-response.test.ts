@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { mapClientSessionGuardToHttp } from "@/lib/api/json-response";
-import { portalCopy } from "@/lib/portal-copy";
+import { portalCopy } from "@/lib/copy/portal-copy";
 
 describe("mapClientSessionGuardToHttp", () => {
   it("maps guard reasons to JSON API status codes", () => {

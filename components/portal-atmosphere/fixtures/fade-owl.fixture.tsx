@@ -8,7 +8,7 @@ import {
   FADE_OWL_RENDER_LIGHT_PATH,
   FADE_OWL_RENDER_NIGHT_PATH,
   type FadeOwlMode,
-} from "@/lib/portal-brand";
+} from "@/lib/copy/portal-brand";
 
 export type { FadeOwlMode };
 

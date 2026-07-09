@@ -1,13 +1,13 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import { PortalAuthPhantomOwl } from "@/components/portal-auth-brand-scene";
+import { PortalAuthPhantomOwl } from "@/components/portal/portal-auth-brand-scene";
 import { Badge } from "@/components/ui/badge";
 import {
   BRAND_DRAMATIC_OWL_BACKGROUND_HEIGHT,
   BRAND_DRAMATIC_OWL_BACKGROUND_PATH,
   BRAND_DRAMATIC_OWL_BACKGROUND_WIDTH,
   BRAND_DRAMATIC_OWL_MOCKUP_PATH,
-} from "@/lib/portal-brand";
-import { portalCopy } from "@/lib/portal-copy";
+} from "@/lib/copy/portal-brand";
+import { portalCopy } from "@/lib/copy/portal-copy";
 import { IamCheckAuthShellPreview } from "./auth-shell-preview";
 
 /** Storybook defaults — dramatic background reads on near-black vault floor. */

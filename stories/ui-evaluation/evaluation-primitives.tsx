@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { UiCriterion } from "@/lib/ui-decision-matrix";
+import type { UiCriterion } from "@/lib/governance/ui-decision-matrix";
 
 type Delta = {
   criterion: UiCriterion;

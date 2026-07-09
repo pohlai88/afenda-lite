@@ -1,8 +1,8 @@
 import "server-only";
 
-import { PortalPreviewBanner } from "@/components/portal-preview-banner";
-import { ClientRouteShell } from "@/components/client-route-shell";
-import { isPlaygroundEmbedRequest } from "@/lib/playground";
+import { PortalPreviewBanner } from "@/components/portal/portal-preview-banner";
+import { ClientRouteShell } from "@/components/client/client-route-shell";
+import { isPlaygroundEmbedRequest } from "@/lib/playground/playground";
 import { resolvePortalMember } from "@/lib/portal-member";
 
 /** Shared layout handler for `app/client/(workspace)`. */

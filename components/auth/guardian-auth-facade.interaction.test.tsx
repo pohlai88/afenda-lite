@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { GuardianAuthFacade } from "@/components/auth";
 import { ThemeProvider } from "@/components/theme-provider";
-import { GUARDIAN_AUTH_ASSET_SET } from "@/lib/portal-brand";
+import { GUARDIAN_AUTH_ASSET_SET } from "@/lib/copy/portal-brand";
 
 function renderGuardian(ui: ReactNode) {
   return render(<ThemeProvider>{ui}</ThemeProvider>);

@@ -7,7 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { PORTAL_THEME_STORAGE_KEY } from "@/lib/portal-theme";
+import { PORTAL_THEME_STORAGE_KEY } from "@/lib/copy/portal-theme";
 
 type Theme = "light" | "dark" | "system";
 type ResolvedTheme = "light" | "dark";

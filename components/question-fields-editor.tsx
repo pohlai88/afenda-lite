@@ -3,9 +3,9 @@
 import { useMemo, useState } from "react";
 import { ChevronDownIcon, PlusIcon, Trash2Icon } from "lucide-react";
 import type { QuestionType } from "@/lib/question-models";
-import type { QuestionConfig } from "@/lib/survey-package";
+import type { QuestionConfig } from "@/lib/domain/survey-package";
 import { SURVEY_EDITOR } from "@/lib/form-constraints";
-import { portalCopy } from "@/lib/portal-copy";
+import { portalCopy } from "@/lib/copy/portal-copy";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {

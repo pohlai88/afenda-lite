@@ -11,7 +11,7 @@ import { exportSurveyPackageAction } from "@/app/actions/surveys";
 import {
   createCdpStarterTemplate,
   serializeCdpPackage,
-} from "@/lib/survey-package";
+} from "@/lib/domain/survey-package";
 import {
   analyzeUploadedPackage,
   SurveyPackageIngestDialog,
@@ -21,8 +21,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
-import { portalCopy } from "@/lib/portal-copy";
-import type { PackageAnalysis } from "@/lib/survey-package-analyze";
+import { portalCopy } from "@/lib/copy/portal-copy";
+import type { PackageAnalysis } from "@/lib/domain/survey-package-analyze";
 import { cn } from "@/lib/utils";
 
 export function SurveyPackagePanel({ surveyId }: { surveyId: string }) {

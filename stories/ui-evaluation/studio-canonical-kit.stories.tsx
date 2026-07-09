@@ -2,12 +2,12 @@ import type { Meta, StoryObj } from "@storybook/react";
 import LoginPage02 from "@/components/shadcn-studio/blocks/login-page-02/login-page-02";
 import EmptyState01 from "@/components/shadcn-studio/blocks/empty-state-01/empty-state-01";
 import AccountSettings01 from "@/components/shadcn-studio/blocks/account-settings-01/account-settings-01";
-import { PortalEmptyStateCard } from "@/components/portal-empty-state";
-import { PortalFormSection } from "@/components/portal-form-section";
+import { PortalEmptyStateCard } from "@/components/portal/portal-empty-state";
+import { PortalFormSection } from "@/components/portal/portal-form-section";
 import {
   CANONICAL_STUDIO_KIT,
   getCanonicalStudioEntry,
-} from "@/lib/studio-canonical-kit";
+} from "@/lib/governance/studio-canonical-kit";
 import { InboxIcon } from "lucide-react";
 
 const meta: Meta = {

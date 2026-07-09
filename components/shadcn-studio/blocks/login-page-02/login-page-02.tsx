@@ -1,4 +1,4 @@
-import { IconPlaceholder } from '@/registry/icons/icon-placeholder'
+import { IconPlaceholder } from '@/components/svg/icon-placeholder'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 

@@ -6,7 +6,7 @@ import {
   AUTH_ENTRY_PATHS,
   resolveAuthPageTrustNoticeFlags,
 } from "@/lib/auth/auth-page-trust";
-import { portalCopy } from "@/lib/portal-copy";
+import { portalCopy } from "@/lib/copy/portal-copy";
 
 describe("auth-page-trust", () => {
   it("lists authenticated redirect entry paths", () => {

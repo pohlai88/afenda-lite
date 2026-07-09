@@ -1,18 +1,18 @@
 "use server";
 
 import { isAdminSession } from "@/lib/admin";
-import { recordAuditEvent } from "@/lib/audit";
+import { recordAuditEvent } from "@/lib/domain/audit";
 import { auth } from "@/lib/auth/server";
 import { toClientAuthenticatedSession } from "@/lib/client-session";
-import { listClientAssignments } from "@/lib/clients";
-import { isEvidencePolicyFailureReason } from "@/lib/evidence-policy";
-import { listQuestionsForSurvey, registerEvidence } from "@/lib/questions";
+import { listClientAssignments } from "@/lib/domain/clients";
+import { isEvidencePolicyFailureReason } from "@/lib/domain/evidence-policy";
+import { listQuestionsForSurvey, registerEvidence } from "@/lib/domain/questions";
 import { runLoggedAction } from "@/lib/observability";
-import { portalCopy } from "@/lib/portal-copy";
+import { portalCopy } from "@/lib/copy/portal-copy";
 import { parseSchema } from "@/lib/schemas/common";
 import { registerEvidenceSchema } from "@/lib/schemas/declarations";
-import { getSurveyBySlug, getSurveyForAdmin } from "@/lib/surveys";
-import { formString } from "@/lib/server-actions/form-data";
+import { getSurveyBySlug, getSurveyForAdmin } from "@/lib/domain/surveys";
+import { readRegisterEvidenceFromFormData } from "@/lib/server-actions/register-evidence-form";
 
 type EvidenceAccess = {
   actorId?: string;
@@ -23,17 +23,6 @@ function mapRegisterEvidenceParseError(error: string) {
     return portalCopy.declarationForm.filePolicyError(error);
   }
   return portalCopy.declarationForm.fileRequired;
-}
-
-function readRegisterEvidenceInput(formData: FormData) {
-  return {
-    surveyId: formString(formData, "surveyId"),
-    slug: formString(formData, "slug"),
-    questionId: formString(formData, "questionId"),
-    fileName: formString(formData, "fileName"),
-    mimeType: formString(formData, "mimeType"),
-    sizeBytes: formData.get("sizeBytes") ?? 0,
-  };
 }
 
 async function resolveEvidenceAccess(input: {
@@ -83,7 +72,7 @@ async function resolveEvidenceAccess(input: {
 export async function registerEvidenceAction(formData: FormData) {
   const parsed = parseSchema(
     registerEvidenceSchema,
-    readRegisterEvidenceInput(formData),
+    readRegisterEvidenceFromFormData(formData),
   );
 
   if (!parsed.success) {

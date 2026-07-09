@@ -3,7 +3,7 @@ import {
   HEALTH_LIVENESS_API_HREF,
   HEALTH_READINESS_API_HREF,
 } from "@/lib/api/routes";
-import { portalCopy } from "@/lib/portal-copy";
+import { portalCopy } from "@/lib/copy/portal-copy";
 import {
   getOperatorCreds,
   operatorSkipMessage,
@@ -76,6 +76,11 @@ test.describe("Portal smoke @smoke", () => {
     await expect(
       page.getByText(portalCopy.accessDenied.title),
     ).toBeVisible();
+  });
+
+  test("trade routes require authentication", async ({ page }) => {
+    await page.goto("/trade/vi/events");
+    await expect(page).toHaveURL(/\/auth\/sign-in/);
   });
 
   test("preview unavailable gate renders in playground embed", async ({ page }) => {

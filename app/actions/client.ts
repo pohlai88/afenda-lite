@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdminSession, requireClientSession } from "@/lib/auth/session";
-import { recordAuditEvent } from "@/lib/audit";
+import { recordAuditEvent } from "@/lib/domain/audit";
 import { auth } from "@/lib/auth/server";
 import { parseClientOnboardingFormData } from "@/lib/client-onboarding.server";
 import {
@@ -11,7 +11,7 @@ import {
   CLIENT_ONBOARDING_HREF,
   OPERATOR_CLIENTS_HREF,
   OPERATOR_DASHBOARD_HREF,
-} from "@/lib/portal-routes";
+} from "@/lib/routing/portal-routes";
 import {
   acknowledgeClientPortal,
   createClientInvitation,
@@ -27,14 +27,14 @@ import {
   isClientPortalAcknowledged,
   normalizeEmail,
   upsertClientProfile,
-} from "@/lib/clients";
-import { persistClientDeclarationDraft } from "@/lib/client-declaration-draft";
+} from "@/lib/domain/clients";
+import { persistClientDeclarationDraft } from "@/lib/domain/client-declaration-draft";
 import { deleteClientAuthUserByEmail } from "@/lib/delete-client-auth-user";
 import { isClientEmailDeliveryEnabled } from "@/lib/email/client-email-delivery";
 import { sendClientOnboardingEmail } from "@/lib/email/send-client-onboarding-email";
 import { runLoggedAction } from "@/lib/observability";
-import { portalCopy, CLIENT_PORTAL_ACK_VERSION } from "@/lib/portal-copy";
-import type { SurveyAnswers } from "@/lib/questions";
+import { portalCopy, CLIENT_PORTAL_ACK_VERSION } from "@/lib/copy/portal-copy";
+import type { SurveyAnswers } from "@/lib/domain/questions";
 import { parseSchema } from "@/lib/schemas/common";
 import {
   deleteClientAssignmentSchema,
@@ -43,8 +43,8 @@ import {
   saveClientDeclarationDraftSchema,
   submitClientDeclarationSchema,
 } from "@/lib/schemas/client";
-import { getSurveyBySlug, getSurveyForAdmin } from "@/lib/surveys";
-import { submitClientDeclaration } from "@/lib/survey-submission";
+import { getSurveyBySlug, getSurveyForAdmin } from "@/lib/domain/surveys";
+import { submitClientDeclaration } from "@/lib/domain/survey-submission";
 import { formString } from "@/lib/server-actions/form-data";
 
 export async function saveClientOnboardingAction(formData: FormData) {
@@ -292,8 +292,6 @@ export async function issueClientInviteAction(formData: FormData) {
       if (isClientEmailDeliveryEnabled()) {
         const emailDelivery = await sendClientOnboardingEmail({
           toEmail: normalizeEmail(email),
-          toName: fullName,
-          text: "",
         });
         emailSent = emailDelivery.ok;
         if (!emailDelivery.ok) {

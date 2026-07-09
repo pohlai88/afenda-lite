@@ -1,0 +1,77 @@
+import { describe, expect, it } from "vitest";
+import {
+  buildEvidenceNamesFromDraft,
+  buildQuestionOrderIndex,
+  clampDraftStepIndex,
+  collectFileEvidenceIds,
+  countAnsweredQuestions,
+} from "@/lib/domain/declaration-steps";
+import type { SurveyQuestion } from "@/lib/question-models";
+
+const questions: SurveyQuestion[] = [
+  {
+    id: "q1",
+    surveyId: "s1",
+    prompt: "Yes or no?",
+    type: "yes_no",
+    required: true,
+    sortOrder: 0,
+    config: {},
+  },
+  {
+    id: "q2",
+    surveyId: "s1",
+    prompt: "Upload",
+    type: "file",
+    required: true,
+    sortOrder: 1,
+    config: {},
+  },
+];
+
+describe("declaration draft helpers", () => {
+  it("clamps step index to wizard bounds", () => {
+    expect(clampDraftStepIndex(-1, 5)).toBe(0);
+    expect(clampDraftStepIndex(3, 5)).toBe(3);
+    expect(clampDraftStepIndex(99, 5)).toBe(4);
+  });
+
+  it("collects file evidence ids from draft answers", () => {
+    expect(
+      collectFileEvidenceIds(questions, {
+        q1: true,
+        q2: "550e8400-e29b-41d4-a716-446655440050",
+      }),
+    ).toEqual(["550e8400-e29b-41d4-a716-446655440050"]);
+    expect(collectFileEvidenceIds(questions, undefined)).toEqual([]);
+  });
+
+  it("counts answered questions", () => {
+    expect(
+      countAnsweredQuestions(questions, {
+        q1: true,
+        q2: "",
+      }),
+    ).toBe(1);
+  });
+
+  it("maps file evidence ids to filenames", () => {
+    const names = buildEvidenceNamesFromDraft(
+      questions,
+      { q2: "evidence-1" },
+      new Map([["evidence-1", { fileName: "policy.pdf" }]]),
+    );
+
+    expect(names).toEqual({ q2: "policy.pdf" });
+  });
+
+  it("assigns global question order by sortOrder", () => {
+    const order = buildQuestionOrderIndex([
+      { ...questions[1], sortOrder: 1 },
+      { ...questions[0], sortOrder: 0 },
+    ]);
+
+    expect(order.get("q1")).toBe(1);
+    expect(order.get("q2")).toBe(2);
+  });
+});

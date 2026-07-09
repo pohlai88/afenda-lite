@@ -2,21 +2,21 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { authViewPaths } from "@neondatabase/auth-ui/server";
 import { GuardianAuthLoginPage } from "@/components/guardian-auth-login-page";
-import { PortalAuthFormIntro } from "@/components/portal-auth-form-intro";
-import { PortalAuthLayout } from "@/components/portal-auth-layout";
-import { PortalAuthNeonView } from "@/components/portal-auth-neon-view";
+import { PortalAuthFormIntro } from "@/components/portal/portal-auth-form-intro";
+import { PortalAuthLayout } from "@/components/portal/portal-auth-layout";
+import { PortalAuthNeonView } from "@/components/portal/portal-auth-neon-view";
 import {
   AUTH_ENTRY_PATHS,
   AuthPageNotices,
 } from "@/lib/auth/auth-page-notices";
 import { resolveShowVaultHeading } from "@/lib/auth/auth-form-intro-visibility";
 import { isGuardianAuthShellEnabled } from "@/lib/auth/guardian-auth-shell";
-import { resolveAuthShellCopy } from "@/lib/auth-shell-copy";
+import { resolveAuthShellCopy } from "@/lib/copy/auth-shell-copy";
 import { portalAuthMetadata } from "@/lib/auth-metadata";
-import { redirectAuthAcceptInvitationToJoin } from "@/lib/client-invitation-entry";
-import { resolvePlaygroundEmbedActive } from "@/lib/playground";
-import { sanitizeReturnToPath } from "@/lib/portal-routes";
-import { getAuthenticatedLandingHref } from "@/lib/portal-session-routing";
+import { redirectAuthAcceptInvitationToJoin } from "@/lib/entry/client-invitation-entry";
+import { resolvePlaygroundEmbedActive } from "@/lib/playground/playground";
+import { sanitizeReturnToPath } from "@/lib/routing/portal-routes";
+import { getAuthenticatedLandingHref } from "@/lib/routing/portal-session-routing";
 
 export const dynamic = "force-dynamic";
 export const dynamicParams = false;

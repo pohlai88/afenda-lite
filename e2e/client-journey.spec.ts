@@ -1,5 +1,5 @@
 import { expect, test } from "@/testing/e2e/playwright-base";
-import { portalCopy } from "@/lib/portal-copy";
+import { portalCopy } from "@/lib/copy/portal-copy";
 import {
   answerFirstYesNoQuestion,
   ensureAttestationsStep,

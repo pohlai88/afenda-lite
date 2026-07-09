@@ -1,11 +1,11 @@
-import { PortalAccessDeniedNotice } from "@/components/portal-access-denied-notice";
-import { PortalAuthEmailTrustNotice } from "@/components/portal-auth-email-trust-notice";
-import { PortalAuthReasonNotice } from "@/components/portal-auth-reason-notice";
+import { PortalAccessDeniedNotice } from "@/components/portal/portal-access-denied-notice";
+import { PortalAuthEmailTrustNotice } from "@/components/portal/portal-auth-email-trust-notice";
+import { PortalAuthReasonNotice } from "@/components/portal/portal-auth-reason-notice";
 import {
   resolveAuthPageTrustNoticeFlags,
   type AuthPageNoticeInput,
 } from "@/lib/auth/auth-page-trust";
-import { portalCopy } from "@/lib/portal-copy";
+import { portalCopy } from "@/lib/copy/portal-copy";
 
 export { AUTH_ENTRY_PATHS } from "@/lib/auth/auth-page-trust";
 export type { AuthPageNoticeInput } from "@/lib/auth/auth-page-trust";

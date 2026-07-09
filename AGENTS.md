@@ -1,5 +1,7 @@
 # Agent instructions — Client Declaration Portal
 
+**Repository layout:** [docs/architecture/repo-layout.md](docs/architecture/repo-layout.md) — Root = bootstrap, L1 = concern, L2 = bounded context. Migration closed: [repo-migration-map.md](docs/architecture/repo-migration-map.md).
+
 ## Environment variables
 
 ### Source of truth (local dev)
@@ -20,6 +22,8 @@ Templates (committed): `env.config.example`, `env.secret.example`.
 3. Run `npm run dev`.
 
 `.env` is **generated** — do not edit it by hand.
+
+**Runtime SSOT (Next.js server):** `lib/env/` — manifest in `manifest.ts` (single source for schema + Vercel/sync policy), Zod schema in `schema.ts`, startup validation in `server.ts` (via `instrumentation.ts`), typed accessors in `accessors.ts`. App code should read config through accessors or `getServerEnv()`, not scattered `process.env` reads. Scripts import compose policy from `scripts/lib/env-manifest.generated.mjs` (`npm run env:manifest:sync` after manifest edits). Pre-sync validation: `npm run validate:env-sync`.
 
 ### Playground (`/playground`) — local developer UI review only
 
@@ -120,7 +124,7 @@ Guidelines: [docs/runbooks/spec-b-local-preview-env.md](docs/runbooks/spec-b-loc
 
 Keep `APP_URL` as the production URL in `env.config` — server-side org invites still emit production links (see `lib/auth/neon-auth-request.ts`). For layout-only UI work without auth, use Storybook or `/playground` embed.
 
-Runbook: [docs/runbooks/local-dev-auth.md](docs/runbooks/local-dev-auth.md). Slice: [docs/backlogs/slices/bl-09-local-dev-auth.md](docs/backlogs/slices/bl-09-local-dev-auth.md).
+Runbook: [docs/runbooks/local-dev-auth.md](docs/runbooks/local-dev-auth.md). Context: [docs/backlogs/bl-slices.md](docs/backlogs/bl-slices.md#bl-09).
 
 ---
 
@@ -196,7 +200,7 @@ Registry scripts (`npm run checks`) are non-Vitest L0 substitutes for copy, nav,
 
 ### Factory SSOT
 
-Credentials, fixtures, Playwright base, and React test helpers live under **`testing/`** only. Specs import from `@/testing/e2e/*` — do not duplicate helpers in `e2e/helpers/`.
+Credentials, fixtures, Playwright base, and React test helpers live under **`testing/`** only. Specs import from `@/testing/e2e/*`.
 
 ### Commands
 

@@ -2,7 +2,7 @@ import {
   CDP_PACKAGE_VERSION,
   createCdpStarterTemplate,
   serializeCdpPackage,
-} from "@/lib/survey-package";
+} from "@/lib/domain/survey-package";
 
 /** Copy-paste prompt for ChatGPT, Claude, etc. to customize a CDP declaration package. */
 export function buildCdpAiAssistantPrompt(): string {

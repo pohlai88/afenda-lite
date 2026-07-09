@@ -24,14 +24,14 @@ import {
 } from "@/components/ui/dialog";
 import { FormErrorAlert } from "@/components/form-error-alert";
 import { Progress } from "@/components/ui/progress";
-import { portalCopy } from "@/lib/portal-copy";
+import { portalCopy } from "@/lib/copy/portal-copy";
 import {
   analyzeCdpPackageInput,
   confidenceLabel,
   INGEST_STEPS,
   type DodCheck,
   type PackageAnalysis,
-} from "@/lib/survey-package-analyze";
+} from "@/lib/domain/survey-package-analyze";
 import { cn } from "@/lib/utils";
 
 type Phase = "preview" | "ingesting" | "complete" | "error";

@@ -4,8 +4,8 @@ import {
   CLIENT_SIDEBAR_ROUTES,
   clientRouteUsesSidebar,
   isClientSidebarHref,
-} from "@/lib/portal-nav-routes";
-import { portalCopy } from "@/lib/portal-copy";
+} from "@/lib/routing/portal-nav-routes";
+import { portalCopy } from "@/lib/copy/portal-copy";
 
 export type ClientNavItem = {
   id: string;

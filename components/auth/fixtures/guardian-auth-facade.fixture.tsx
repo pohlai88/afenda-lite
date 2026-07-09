@@ -10,9 +10,9 @@ import { useThemeControls } from "@/components/theme-provider";
 import {
   guardianModeFromPortalTheme,
   portalThemeFromGuardianMode,
-} from "@/lib/guardian-editorial-copy";
-import { GUARDIAN_AUTH_ASSET_SET } from "@/lib/portal-brand";
-import { portalCopy } from "@/lib/portal-copy";
+} from "@/lib/copy/guardian-editorial-copy";
+import { GUARDIAN_AUTH_ASSET_SET } from "@/lib/copy/portal-brand";
+import { portalCopy } from "@/lib/copy/portal-copy";
 
 export type GuardianAuthFacadePreviewProps = {
   mode?: GuardianMode;

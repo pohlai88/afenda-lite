@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generatedAt": "2026-07-09T10:44:35.478Z",
+  "generatedAt": "2026-07-09T13:30:38.104Z",
   "summary": {
     "surfaces": {
       "total": 26,
@@ -55,10 +55,10 @@
       "evidence": {
         "entryFiles": [
           "app/join/page.tsx",
-          "lib/client-invitation-entry.ts",
-          "components/portal-invitation-join-page.tsx",
+          "lib/entry/client-invitation-entry.ts",
+          "components/portal/portal-invitation-join-page.tsx",
           "components/guardian-invitation-join-page.tsx",
-          "components/portal-invitation-join-panel.tsx",
+          "components/portal/portal-invitation-join-panel.tsx",
           "components/use-join-invitation-auth-view.ts",
           "lib/client-invitation-join-auth.ts"
         ],
@@ -66,16 +66,17 @@
           "app/join/page.tsx",
           "components/auth/use-guardian-neon-auth-state.ts",
           "components/guardian-invitation-join-page.tsx",
-          "components/portal-auth-email-trust-notice.tsx",
-          "components/portal-auth-layout.tsx",
-          "components/portal-auth-neon-view.tsx",
-          "components/portal-brand-mark.tsx",
-          "components/portal-eyebrow.tsx",
-          "components/portal-invitation-join-brand-panel.tsx",
-          "components/portal-invitation-join-page.tsx",
-          "components/portal-invitation-join-panel.tsx",
-          "components/portal-invitation-join-steps.tsx",
-          "components/portal-theme-toggle.tsx",
+          "components/hooks/use-mounted.ts",
+          "components/portal/portal-auth-email-trust-notice.tsx",
+          "components/portal/portal-auth-layout.tsx",
+          "components/portal/portal-auth-neon-view.tsx",
+          "components/portal/portal-brand-mark.tsx",
+          "components/portal/portal-eyebrow.tsx",
+          "components/portal/portal-invitation-join-brand-panel.tsx",
+          "components/portal/portal-invitation-join-page.tsx",
+          "components/portal/portal-invitation-join-panel.tsx",
+          "components/portal/portal-invitation-join-steps.tsx",
+          "components/portal/portal-theme-toggle.tsx",
           "components/theme-provider.tsx",
           "components/ui/alert.tsx",
           "components/ui/badge.tsx",
@@ -83,8 +84,8 @@
           "components/ui/skeleton.tsx",
           "components/ui/timeline.tsx",
           "components/use-join-invitation-auth-view.ts",
-          "lib/client-invitation-entry.ts",
-          "lib/client-invitation-join-auth.ts"
+          "lib/client-invitation-join-auth.ts",
+          "lib/entry/client-invitation-entry.ts"
         ]
       }
     },
@@ -116,11 +117,12 @@
           "app/auth/[path]/page.tsx",
           "components/auth/use-guardian-neon-auth-state.ts",
           "components/guardian-auth-login-page.tsx",
-          "components/portal-auth-form-intro.tsx",
-          "components/portal-auth-layout.tsx",
-          "components/portal-auth-neon-view.tsx",
-          "components/portal-brand-mark.tsx",
-          "components/portal-theme-toggle.tsx",
+          "components/hooks/use-mounted.ts",
+          "components/portal/portal-auth-form-intro.tsx",
+          "components/portal/portal-auth-layout.tsx",
+          "components/portal/portal-auth-neon-view.tsx",
+          "components/portal/portal-brand-mark.tsx",
+          "components/portal/portal-theme-toggle.tsx",
           "components/theme-provider.tsx",
           "components/ui/button.tsx",
           "components/ui/skeleton.tsx",
@@ -156,11 +158,12 @@
           "app/auth/[path]/page.tsx",
           "components/auth/use-guardian-neon-auth-state.ts",
           "components/guardian-auth-login-page.tsx",
-          "components/portal-auth-form-intro.tsx",
-          "components/portal-auth-layout.tsx",
-          "components/portal-auth-neon-view.tsx",
-          "components/portal-brand-mark.tsx",
-          "components/portal-theme-toggle.tsx",
+          "components/hooks/use-mounted.ts",
+          "components/portal/portal-auth-form-intro.tsx",
+          "components/portal/portal-auth-layout.tsx",
+          "components/portal/portal-auth-neon-view.tsx",
+          "components/portal/portal-brand-mark.tsx",
+          "components/portal/portal-theme-toggle.tsx",
           "components/theme-provider.tsx",
           "components/ui/button.tsx",
           "components/ui/skeleton.tsx",
@@ -196,11 +199,12 @@
           "app/auth/[path]/page.tsx",
           "components/auth/use-guardian-neon-auth-state.ts",
           "components/guardian-auth-login-page.tsx",
-          "components/portal-auth-form-intro.tsx",
-          "components/portal-auth-layout.tsx",
-          "components/portal-auth-neon-view.tsx",
-          "components/portal-brand-mark.tsx",
-          "components/portal-theme-toggle.tsx",
+          "components/hooks/use-mounted.ts",
+          "components/portal/portal-auth-form-intro.tsx",
+          "components/portal/portal-auth-layout.tsx",
+          "components/portal/portal-auth-neon-view.tsx",
+          "components/portal/portal-brand-mark.tsx",
+          "components/portal/portal-theme-toggle.tsx",
           "components/theme-provider.tsx",
           "components/ui/button.tsx",
           "components/ui/skeleton.tsx",
@@ -236,11 +240,12 @@
           "app/auth/[path]/page.tsx",
           "components/auth/use-guardian-neon-auth-state.ts",
           "components/guardian-auth-login-page.tsx",
-          "components/portal-auth-form-intro.tsx",
-          "components/portal-auth-layout.tsx",
-          "components/portal-auth-neon-view.tsx",
-          "components/portal-brand-mark.tsx",
-          "components/portal-theme-toggle.tsx",
+          "components/hooks/use-mounted.ts",
+          "components/portal/portal-auth-form-intro.tsx",
+          "components/portal/portal-auth-layout.tsx",
+          "components/portal/portal-auth-neon-view.tsx",
+          "components/portal/portal-brand-mark.tsx",
+          "components/portal/portal-theme-toggle.tsx",
           "components/theme-provider.tsx",
           "components/ui/button.tsx",
           "components/ui/skeleton.tsx",
@@ -276,11 +281,12 @@
           "app/auth/[path]/page.tsx",
           "components/auth/use-guardian-neon-auth-state.ts",
           "components/guardian-auth-login-page.tsx",
-          "components/portal-auth-form-intro.tsx",
-          "components/portal-auth-layout.tsx",
-          "components/portal-auth-neon-view.tsx",
-          "components/portal-brand-mark.tsx",
-          "components/portal-theme-toggle.tsx",
+          "components/hooks/use-mounted.ts",
+          "components/portal/portal-auth-form-intro.tsx",
+          "components/portal/portal-auth-layout.tsx",
+          "components/portal/portal-auth-neon-view.tsx",
+          "components/portal/portal-brand-mark.tsx",
+          "components/portal/portal-theme-toggle.tsx",
           "components/theme-provider.tsx",
           "components/ui/button.tsx",
           "components/ui/skeleton.tsx",
@@ -318,21 +324,22 @@
       "evidence": {
         "entryFiles": [
           "app/auth/[path]/page.tsx",
-          "lib/client-invitation-entry.ts"
+          "lib/entry/client-invitation-entry.ts"
         ],
         "scannedFiles": [
           "app/auth/[path]/page.tsx",
           "components/auth/use-guardian-neon-auth-state.ts",
           "components/guardian-auth-login-page.tsx",
-          "components/portal-auth-form-intro.tsx",
-          "components/portal-auth-layout.tsx",
-          "components/portal-auth-neon-view.tsx",
-          "components/portal-brand-mark.tsx",
-          "components/portal-theme-toggle.tsx",
+          "components/hooks/use-mounted.ts",
+          "components/portal/portal-auth-form-intro.tsx",
+          "components/portal/portal-auth-layout.tsx",
+          "components/portal/portal-auth-neon-view.tsx",
+          "components/portal/portal-brand-mark.tsx",
+          "components/portal/portal-theme-toggle.tsx",
           "components/theme-provider.tsx",
           "components/ui/button.tsx",
           "components/ui/skeleton.tsx",
-          "lib/client-invitation-entry.ts"
+          "lib/entry/client-invitation-entry.ts"
         ]
       }
     },
@@ -358,13 +365,13 @@
       "evidence": {
         "entryFiles": [
           "app/client/(gate)/login/page.tsx",
-          "lib/client-sign-in-entry.ts",
-          "lib/portal-routes.ts"
+          "lib/entry/client-sign-in-entry.ts",
+          "lib/routing/portal-routes.ts"
         ],
         "scannedFiles": [
           "app/client/(gate)/login/page.tsx",
-          "lib/client-sign-in-entry.ts",
-          "lib/portal-routes.ts"
+          "lib/entry/client-sign-in-entry.ts",
+          "lib/routing/portal-routes.ts"
         ]
       }
     },
@@ -398,15 +405,15 @@
       "evidence": {
         "entryFiles": [
           "app/page.tsx",
-          "lib/client-sign-in-entry.ts",
-          "lib/client-invitation-entry.ts",
-          "lib/portal-routes.ts"
+          "lib/entry/client-sign-in-entry.ts",
+          "lib/entry/client-invitation-entry.ts",
+          "lib/routing/portal-routes.ts"
         ],
         "scannedFiles": [
           "app/page.tsx",
-          "lib/client-invitation-entry.ts",
-          "lib/client-sign-in-entry.ts",
-          "lib/portal-routes.ts"
+          "lib/entry/client-invitation-entry.ts",
+          "lib/entry/client-sign-in-entry.ts",
+          "lib/routing/portal-routes.ts"
         ]
       }
     },
@@ -434,21 +441,22 @@
       "evidence": {
         "entryFiles": [
           "app/client/(gate)/preview-unavailable/page.tsx",
-          "lib/client-preview-unavailable-page.tsx",
-          "components/client-preview-unavailable-view.tsx",
+          "lib/pages/client-preview-unavailable-page.tsx",
+          "components/client/client-preview-unavailable-view.tsx",
           "lib/preview-client.ts"
         ],
         "scannedFiles": [
           "app/client/(gate)/preview-unavailable/page.tsx",
-          "components/client-preview-unavailable-view.tsx",
-          "components/client-sign-out-button.tsx",
-          "components/portal-brand-mark.tsx",
-          "components/portal-breadcrumb-list.tsx",
-          "components/portal-customer-shell.tsx",
-          "components/portal-empty-state.tsx",
-          "components/portal-eyebrow.tsx",
-          "components/portal-page-header.tsx",
-          "components/portal-theme-toggle.tsx",
+          "components/client/client-preview-unavailable-view.tsx",
+          "components/client/client-sign-out-button.tsx",
+          "components/hooks/use-mobile.ts",
+          "components/portal/portal-brand-mark.tsx",
+          "components/portal/portal-breadcrumb-list.tsx",
+          "components/portal/portal-customer-shell.tsx",
+          "components/portal/portal-empty-state.tsx",
+          "components/portal/portal-eyebrow.tsx",
+          "components/portal/portal-page-header.tsx",
+          "components/portal/portal-theme-toggle.tsx",
           "components/theme-provider.tsx",
           "components/ui/badge.tsx",
           "components/ui/breadcrumb.tsx",
@@ -460,7 +468,7 @@
           "components/ui/sidebar.tsx",
           "components/ui/skeleton.tsx",
           "components/ui/tooltip.tsx",
-          "lib/client-preview-unavailable-page.tsx",
+          "lib/pages/client-preview-unavailable-page.tsx",
           "lib/preview-client.ts"
         ]
       }
@@ -501,28 +509,31 @@
       "evidence": {
         "entryFiles": [
           "app/client/(workspace)/onboarding/page.tsx",
-          "lib/client-onboarding-page.tsx",
-          "components/client-onboarding-wizard.tsx",
-          "lib/client-onboarding.server.ts"
+          "lib/pages/client-onboarding-page.tsx",
+          "components/client/client-onboarding-wizard.tsx",
+          "components/client/client-onboarding-form.tsx",
+          "lib/client-onboarding.server.ts",
+          "lib/server-actions/form-data.ts"
         ],
         "scannedFiles": [
           "app/client/(workspace)/onboarding/page.tsx",
-          "components/client-onboarding-context.tsx",
-          "components/client-onboarding-form.tsx",
-          "components/client-onboarding-progress.tsx",
-          "components/client-onboarding-wizard.tsx",
-          "components/client-sign-out-button.tsx",
+          "components/client/client-onboarding-context.tsx",
+          "components/client/client-onboarding-form.tsx",
+          "components/client/client-onboarding-progress.tsx",
+          "components/client/client-onboarding-wizard.tsx",
+          "components/client/client-sign-out-button.tsx",
           "components/form-error-alert.tsx",
-          "components/portal-brand-mark.tsx",
-          "components/portal-breadcrumb-list.tsx",
-          "components/portal-customer-shell.tsx",
-          "components/portal-eyebrow.tsx",
-          "components/portal-form-field.tsx",
-          "components/portal-form-section.tsx",
-          "components/portal-legal-notice-section.tsx",
-          "components/portal-page-header.tsx",
-          "components/portal-theme-toggle.tsx",
-          "components/portal-trust-notice.tsx",
+          "components/hooks/use-mobile.ts",
+          "components/portal/portal-brand-mark.tsx",
+          "components/portal/portal-breadcrumb-list.tsx",
+          "components/portal/portal-customer-shell.tsx",
+          "components/portal/portal-eyebrow.tsx",
+          "components/portal/portal-form-field.tsx",
+          "components/portal/portal-form-section.tsx",
+          "components/portal/portal-legal-notice-section.tsx",
+          "components/portal/portal-page-header.tsx",
+          "components/portal/portal-theme-toggle.tsx",
+          "components/portal/portal-trust-notice.tsx",
           "components/shadcn-studio/blocks/form-layout-01/form-layout-section.tsx",
           "components/theme-provider.tsx",
           "components/ui/alert.tsx",
@@ -541,8 +552,9 @@
           "components/ui/textarea.tsx",
           "components/ui/timeline.tsx",
           "components/ui/tooltip.tsx",
-          "lib/client-onboarding-page.tsx",
-          "lib/client-onboarding.server.ts"
+          "lib/client-onboarding.server.ts",
+          "lib/pages/client-onboarding-page.tsx",
+          "lib/server-actions/form-data.ts"
         ]
       }
     },
@@ -574,21 +586,22 @@
       "evidence": {
         "entryFiles": [
           "app/client/(workspace)/profile/page.tsx",
-          "lib/client-profile-page.tsx",
-          "components/client-declarant-profile-view.tsx"
+          "lib/pages/client-profile-page.tsx",
+          "components/client/client-declarant-profile-view.tsx"
         ],
         "scannedFiles": [
           "app/client/(workspace)/profile/page.tsx",
-          "components/client-declarant-profile-view.tsx",
-          "components/client-sign-out-button.tsx",
-          "components/portal-brand-mark.tsx",
-          "components/portal-breadcrumb-list.tsx",
-          "components/portal-customer-shell.tsx",
-          "components/portal-eyebrow.tsx",
-          "components/portal-form-section.tsx",
-          "components/portal-page-header.tsx",
-          "components/portal-profile-field.tsx",
-          "components/portal-theme-toggle.tsx",
+          "components/client/client-declarant-profile-view.tsx",
+          "components/client/client-sign-out-button.tsx",
+          "components/hooks/use-mobile.ts",
+          "components/portal/portal-brand-mark.tsx",
+          "components/portal/portal-breadcrumb-list.tsx",
+          "components/portal/portal-customer-shell.tsx",
+          "components/portal/portal-eyebrow.tsx",
+          "components/portal/portal-form-section.tsx",
+          "components/portal/portal-page-header.tsx",
+          "components/portal/portal-profile-field.tsx",
+          "components/portal/portal-theme-toggle.tsx",
           "components/shadcn-studio/blocks/form-layout-01/form-layout-section.tsx",
           "components/theme-provider.tsx",
           "components/ui/alert.tsx",
@@ -604,7 +617,7 @@
           "components/ui/sidebar.tsx",
           "components/ui/skeleton.tsx",
           "components/ui/tooltip.tsx",
-          "lib/client-profile-page.tsx"
+          "lib/pages/client-profile-page.tsx"
         ]
       }
     },
@@ -639,33 +652,34 @@
       "evidence": {
         "entryFiles": [
           "app/client/(workspace)/page.tsx",
-          "lib/client-dashboard-page.tsx",
-          "components/client-dashboard-acknowledgement.tsx",
-          "components/client-dashboard-assignments.tsx",
-          "components/client-dashboard-summary.tsx"
+          "lib/pages/client-dashboard-page.tsx",
+          "components/client/client-dashboard-acknowledgement.tsx",
+          "components/client/client-dashboard-assignments.tsx",
+          "components/client/client-dashboard-summary.tsx"
         ],
         "scannedFiles": [
           "app/client/(workspace)/page.tsx",
-          "components/client-assignment-deadline-notice.tsx",
-          "components/client-dashboard-acknowledgement.tsx",
-          "components/client-dashboard-assignments.tsx",
-          "components/client-dashboard-context.tsx",
-          "components/client-dashboard-summary.tsx",
-          "components/client-sign-out-button.tsx",
+          "components/client/client-assignment-deadline-notice.tsx",
+          "components/client/client-dashboard-acknowledgement.tsx",
+          "components/client/client-dashboard-assignments.tsx",
+          "components/client/client-dashboard-context.tsx",
+          "components/client/client-dashboard-summary.tsx",
+          "components/client/client-sign-out-button.tsx",
           "components/confirmation-receipt.tsx",
           "components/form-error-alert.tsx",
-          "components/portal-brand-mark.tsx",
-          "components/portal-breadcrumb-list.tsx",
-          "components/portal-customer-shell.tsx",
-          "components/portal-empty-state.tsx",
-          "components/portal-eyebrow.tsx",
-          "components/portal-legal-notice-section.tsx",
-          "components/portal-page-header.tsx",
-          "components/portal-profile-field.tsx",
-          "components/portal-statistics-card.tsx",
-          "components/portal-statutory-faq.tsx",
-          "components/portal-theme-toggle.tsx",
-          "components/portal-trust-notice.tsx",
+          "components/hooks/use-mobile.ts",
+          "components/portal/portal-brand-mark.tsx",
+          "components/portal/portal-breadcrumb-list.tsx",
+          "components/portal/portal-customer-shell.tsx",
+          "components/portal/portal-empty-state.tsx",
+          "components/portal/portal-eyebrow.tsx",
+          "components/portal/portal-legal-notice-section.tsx",
+          "components/portal/portal-page-header.tsx",
+          "components/portal/portal-profile-field.tsx",
+          "components/portal/portal-statistics-card.tsx",
+          "components/portal/portal-statutory-faq.tsx",
+          "components/portal/portal-theme-toggle.tsx",
+          "components/portal/portal-trust-notice.tsx",
           "components/shadcn-studio/blocks/statistics-card-03.tsx",
           "components/theme-provider.tsx",
           "components/ui/alert.tsx",
@@ -684,7 +698,7 @@
           "components/ui/sidebar.tsx",
           "components/ui/skeleton.tsx",
           "components/ui/tooltip.tsx",
-          "lib/client-dashboard-page.tsx"
+          "lib/pages/client-dashboard-page.tsx"
         ]
       }
     },
@@ -709,10 +723,10 @@
       },
       "evidence": {
         "entryFiles": [
-          "components/client-dashboard-acknowledgement.tsx"
+          "components/client/client-dashboard-acknowledgement.tsx"
         ],
         "scannedFiles": [
-          "components/client-dashboard-acknowledgement.tsx",
+          "components/client/client-dashboard-acknowledgement.tsx",
           "components/form-error-alert.tsx",
           "components/ui/alert.tsx",
           "components/ui/button.tsx",
@@ -765,31 +779,35 @@
       "evidence": {
         "entryFiles": [
           "app/client/(workspace)/declare/[id]/page.tsx",
-          "lib/client-declare-page.tsx",
-          "lib/client-declare-page.logic.ts",
-          "components/client-declare-workspace.tsx",
-          "components/client-declaration-form.tsx",
+          "lib/pages/client-declare-page.tsx",
+          "lib/pages/client-declare-page.logic.ts",
+          "components/client/client-declare-workspace.tsx",
+          "components/client/client-declaration-form.tsx",
           "components/declaration-form.tsx",
-          "app/api/client/declaration-draft/route.ts"
+          "app/api/client/declaration-draft/route.ts",
+          "lib/api/client-declaration-draft-route.ts",
+          "lib/api/client-declaration-draft-route.logic.ts",
+          "lib/server-actions/register-evidence-form.ts"
         ],
         "scannedFiles": [
           "app/api/client/declaration-draft/route.ts",
           "app/client/(workspace)/declare/[id]/page.tsx",
-          "components/client-assignment-deadline-notice.tsx",
-          "components/client-declaration-form.tsx",
-          "components/client-declare-workspace.tsx",
-          "components/client-sign-out-button.tsx",
+          "components/client/client-assignment-deadline-notice.tsx",
+          "components/client/client-declaration-form.tsx",
+          "components/client/client-declare-workspace.tsx",
+          "components/client/client-sign-out-button.tsx",
           "components/confirmation-receipt.tsx",
           "components/declaration-form.tsx",
           "components/declaration-question-field.tsx",
           "components/form-error-alert.tsx",
-          "components/portal-brand-mark.tsx",
-          "components/portal-breadcrumb-list.tsx",
-          "components/portal-customer-shell.tsx",
-          "components/portal-empty-state.tsx",
-          "components/portal-eyebrow.tsx",
-          "components/portal-page-header.tsx",
-          "components/portal-theme-toggle.tsx",
+          "components/hooks/use-mobile.ts",
+          "components/portal/portal-brand-mark.tsx",
+          "components/portal/portal-breadcrumb-list.tsx",
+          "components/portal/portal-customer-shell.tsx",
+          "components/portal/portal-empty-state.tsx",
+          "components/portal/portal-eyebrow.tsx",
+          "components/portal/portal-page-header.tsx",
+          "components/portal/portal-theme-toggle.tsx",
           "components/question-sequence-badge.tsx",
           "components/shadcn-studio/blocks/form-layout-08/form-layout-wizard-shell.tsx",
           "components/theme-provider.tsx",
@@ -808,8 +826,11 @@
           "components/ui/switch.tsx",
           "components/ui/textarea.tsx",
           "components/ui/tooltip.tsx",
-          "lib/client-declare-page.logic.ts",
-          "lib/client-declare-page.tsx"
+          "lib/api/client-declaration-draft-route.logic.ts",
+          "lib/api/client-declaration-draft-route.ts",
+          "lib/pages/client-declare-page.logic.ts",
+          "lib/pages/client-declare-page.tsx",
+          "lib/server-actions/register-evidence-form.ts"
         ]
       }
     },
@@ -850,10 +871,10 @@
         "entryFiles": [
           "app/dashboard/page.tsx",
           "app/dashboard/loading.tsx",
-          "lib/operator-dashboard-page.ts",
-          "lib/operator-dashboard-types.ts",
-          "components/operator-dashboard-page-view.tsx",
-          "components/org-declarations-table.tsx"
+          "lib/pages/operator-dashboard-page.ts",
+          "lib/pages/operator-dashboard-types.ts",
+          "components/operator/operator-dashboard-page-view.tsx",
+          "components/operator/org-declarations-table.tsx"
         ],
         "scannedFiles": [
           "app/dashboard/loading.tsx",
@@ -862,15 +883,17 @@
           "components/dashboard-page.tsx",
           "components/declaration-create-button.tsx",
           "components/declaration-row-delete-action.tsx",
-          "components/operator-dashboard-page-view.tsx",
-          "components/org-create-declaration-link.tsx",
-          "components/org-declarations-table.tsx",
-          "components/portal-breadcrumb-list.tsx",
-          "components/portal-empty-state-cta.tsx",
-          "components/portal-eyebrow.tsx",
-          "components/portal-form-section.tsx",
-          "components/portal-page-header.tsx",
-          "components/portal-statistics-card.tsx",
+          "components/hooks/use-mobile.ts",
+          "components/hooks/use-pagination.ts",
+          "components/operator/operator-dashboard-page-view.tsx",
+          "components/operator/org-create-declaration-link.tsx",
+          "components/operator/org-declarations-table.tsx",
+          "components/portal/portal-breadcrumb-list.tsx",
+          "components/portal/portal-empty-state-cta.tsx",
+          "components/portal/portal-eyebrow.tsx",
+          "components/portal/portal-form-section.tsx",
+          "components/portal/portal-page-header.tsx",
+          "components/portal/portal-statistics-card.tsx",
           "components/shadcn-studio/blocks/datatable-transaction.tsx",
           "components/shadcn-studio/blocks/form-layout-01/form-layout-section.tsx",
           "components/shadcn-studio/blocks/statistics-card-03.tsx",
@@ -889,8 +912,8 @@
           "components/ui/skeleton.tsx",
           "components/ui/table.tsx",
           "components/ui/tooltip.tsx",
-          "lib/operator-dashboard-page.ts",
-          "lib/operator-dashboard-types.ts"
+          "lib/pages/operator-dashboard-page.ts",
+          "lib/pages/operator-dashboard-types.ts"
         ]
       }
     },
@@ -950,19 +973,19 @@
         "entryFiles": [
           "app/dashboard/[id]/page.tsx",
           "app/dashboard/[id]/loading.tsx",
-          "lib/operator-declaration-detail.tsx",
-          "lib/operator-declaration-detail.logic.ts",
-          "components/operator-declaration-detail-view.tsx",
+          "lib/pages/operator-declaration-detail.tsx",
+          "lib/pages/operator-declaration-detail.logic.ts",
+          "components/operator/operator-declaration-detail-view.tsx",
           "components/declaration-manage-form.tsx",
           "components/declaration-share-panel.tsx",
-          "components/client-access-share-panel.tsx",
-          "components/org-declaration-submissions-table.tsx"
+          "components/client/client-access-share-panel.tsx",
+          "components/operator/org-declaration-submissions-table.tsx"
         ],
         "scannedFiles": [
           "app/dashboard/[id]/loading.tsx",
           "app/dashboard/[id]/page.tsx",
           "components/cdp-ai-prompt-instructions.tsx",
-          "components/client-access-share-panel.tsx",
+          "components/client/client-access-share-panel.tsx",
           "components/confirm-dialog.tsx",
           "components/copy-access-message.tsx",
           "components/dashboard-page.tsx",
@@ -972,14 +995,16 @@
           "components/declaration-settings-section.tsx",
           "components/declaration-share-panel.tsx",
           "components/form-error-alert.tsx",
-          "components/operator-declaration-detail-view.tsx",
-          "components/org-declaration-submissions-table.tsx",
-          "components/portal-breadcrumb-list.tsx",
-          "components/portal-declaration-workspace.tsx",
-          "components/portal-empty-state.tsx",
-          "components/portal-eyebrow.tsx",
-          "components/portal-page-header.tsx",
-          "components/portal-statistics-card.tsx",
+          "components/hooks/use-mobile.ts",
+          "components/hooks/use-pagination.ts",
+          "components/operator/operator-declaration-detail-view.tsx",
+          "components/operator/org-declaration-submissions-table.tsx",
+          "components/portal/portal-breadcrumb-list.tsx",
+          "components/portal/portal-declaration-workspace.tsx",
+          "components/portal/portal-empty-state.tsx",
+          "components/portal/portal-eyebrow.tsx",
+          "components/portal/portal-page-header.tsx",
+          "components/portal/portal-statistics-card.tsx",
           "components/question-fields-editor.tsx",
           "components/question-sequence-badge.tsx",
           "components/secure-link-rotate-button.tsx",
@@ -1015,8 +1040,8 @@
           "components/ui/tabs.tsx",
           "components/ui/textarea.tsx",
           "components/ui/tooltip.tsx",
-          "lib/operator-declaration-detail.logic.ts",
-          "lib/operator-declaration-detail.tsx"
+          "lib/pages/operator-declaration-detail.logic.ts",
+          "lib/pages/operator-declaration-detail.tsx"
         ]
       }
     },
@@ -1063,32 +1088,36 @@
         "entryFiles": [
           "app/dashboard/clients/page.tsx",
           "app/dashboard/clients/loading.tsx",
-          "lib/operator-clients-page.ts",
-          "lib/operator-clients-types.ts",
+          "lib/pages/operator-clients-page.ts",
+          "lib/pages/operator-clients-types.ts",
           "lib/email/client-email-delivery.ts",
-          "components/operator-clients-page-view.tsx",
-          "components/org-client-tables.tsx",
+          "lib/email/send-client-onboarding-email.ts",
+          "components/operator/operator-clients-page-view.tsx",
+          "components/client/client-email-delivery-banner.tsx",
+          "components/operator/org-client-tables.tsx",
           "components/issue-client-invite-form.tsx"
         ],
         "scannedFiles": [
           "app/dashboard/clients/loading.tsx",
           "app/dashboard/clients/page.tsx",
-          "components/client-assignment-delete-button.tsx",
-          "components/client-email-delivery-banner.tsx",
-          "components/client-registration-delete-button.tsx",
+          "components/client/client-assignment-delete-button.tsx",
+          "components/client/client-email-delivery-banner.tsx",
+          "components/client/client-registration-delete-button.tsx",
           "components/confirm-dialog.tsx",
           "components/dashboard-page.tsx",
           "components/datatable-toolbar.tsx",
           "components/form-error-alert.tsx",
+          "components/hooks/use-mobile.ts",
+          "components/hooks/use-pagination.ts",
           "components/issue-client-invite-form.tsx",
-          "components/operator-clients-page-view.tsx",
-          "components/org-client-tables.tsx",
-          "components/org-invite-client-link.tsx",
-          "components/portal-breadcrumb-list.tsx",
-          "components/portal-empty-state-cta.tsx",
-          "components/portal-eyebrow.tsx",
-          "components/portal-form-section.tsx",
-          "components/portal-page-header.tsx",
+          "components/operator/operator-clients-page-view.tsx",
+          "components/operator/org-client-tables.tsx",
+          "components/operator/org-invite-client-link.tsx",
+          "components/portal/portal-breadcrumb-list.tsx",
+          "components/portal/portal-empty-state-cta.tsx",
+          "components/portal/portal-eyebrow.tsx",
+          "components/portal/portal-form-section.tsx",
+          "components/portal/portal-page-header.tsx",
           "components/shadcn-studio/blocks/datatable-user.tsx",
           "components/shadcn-studio/blocks/form-layout-01/form-layout-section.tsx",
           "components/ui/alert-dialog.tsx",
@@ -1110,8 +1139,9 @@
           "components/ui/table.tsx",
           "components/ui/tooltip.tsx",
           "lib/email/client-email-delivery.ts",
-          "lib/operator-clients-page.ts",
-          "lib/operator-clients-types.ts"
+          "lib/email/send-client-onboarding-email.ts",
+          "lib/pages/operator-clients-page.ts",
+          "lib/pages/operator-clients-types.ts"
         ]
       }
     },
@@ -1143,7 +1173,8 @@
       },
       "evidence": {
         "entryFiles": [
-          "components/issue-client-invite-form.tsx"
+          "components/issue-client-invite-form.tsx",
+          "lib/email/send-client-onboarding-email.ts"
         ],
         "scannedFiles": [
           "components/form-error-alert.tsx",
@@ -1154,7 +1185,8 @@
           "components/ui/input.tsx",
           "components/ui/label.tsx",
           "components/ui/select.tsx",
-          "components/ui/separator.tsx"
+          "components/ui/separator.tsx",
+          "lib/email/send-client-onboarding-email.ts"
         ]
       }
     },
@@ -1180,11 +1212,11 @@
       "evidence": {
         "entryFiles": [
           "components/declaration-create-button.tsx",
-          "components/org-create-declaration-link.tsx"
+          "components/operator/org-create-declaration-link.tsx"
         ],
         "scannedFiles": [
           "components/declaration-create-button.tsx",
-          "components/org-create-declaration-link.tsx",
+          "components/operator/org-create-declaration-link.tsx",
           "components/ui/button.tsx"
         ]
       }
@@ -1223,17 +1255,17 @@
         "entryFiles": [
           "components/declaration-share-panel.tsx",
           "components/secure-link-rotate-button.tsx",
-          "lib/declaration-share-links.ts"
+          "lib/domain/declaration-share-links.ts"
         ],
         "scannedFiles": [
-          "components/client-access-share-panel.tsx",
+          "components/client/client-access-share-panel.tsx",
           "components/confirm-dialog.tsx",
           "components/copy-access-message.tsx",
           "components/declaration-share-panel.tsx",
           "components/secure-link-rotate-button.tsx",
           "components/ui/alert-dialog.tsx",
           "components/ui/button.tsx",
-          "lib/declaration-share-links.ts"
+          "lib/domain/declaration-share-links.ts"
         ]
       }
     },
@@ -1264,11 +1296,11 @@
       "evidence": {
         "entryFiles": [
           "app/survey/[slug]/page.tsx",
-          "lib/open-link-entry.ts"
+          "lib/entry/open-link-entry.ts"
         ],
         "scannedFiles": [
           "app/survey/[slug]/page.tsx",
-          "lib/open-link-entry.ts"
+          "lib/entry/open-link-entry.ts"
         ]
       }
     },
@@ -1299,11 +1331,11 @@
       "evidence": {
         "entryFiles": [
           "app/f/[token]/page.tsx",
-          "lib/secure-link-entry.ts"
+          "lib/entry/secure-link-entry.ts"
         ],
         "scannedFiles": [
           "app/f/[token]/page.tsx",
-          "lib/secure-link-entry.ts"
+          "lib/entry/secure-link-entry.ts"
         ]
       }
     },
@@ -1328,12 +1360,12 @@
       },
       "evidence": {
         "entryFiles": [
-          "lib/org-sign-in-entry.ts",
-          "lib/portal-routes.ts"
+          "lib/entry/org-sign-in-entry.ts",
+          "lib/routing/portal-routes.ts"
         ],
         "scannedFiles": [
-          "lib/org-sign-in-entry.ts",
-          "lib/portal-routes.ts"
+          "lib/entry/org-sign-in-entry.ts",
+          "lib/routing/portal-routes.ts"
         ]
       }
     },
@@ -1380,9 +1412,11 @@
           "components/app-sidebar-skeleton.tsx",
           "components/app-sidebar.tsx",
           "components/dashboard-shell.tsx",
-          "components/portal-member-context.tsx",
-          "components/portal-member-menu.tsx",
-          "components/portal-theme-toggle.tsx",
+          "components/hooks/use-mobile.ts",
+          "components/hooks/use-mounted.ts",
+          "components/portal/portal-member-context.tsx",
+          "components/portal/portal-member-menu.tsx",
+          "components/portal/portal-theme-toggle.tsx",
           "components/team-switcher.tsx",
           "components/theme-provider.tsx",
           "components/ui/avatar.tsx",
@@ -1428,18 +1462,19 @@
         "entryFiles": [
           "app/client/(workspace)/layout.tsx",
           "lib/client-workspace-layout.tsx",
-          "components/portal-preview-banner.tsx"
+          "components/portal/portal-preview-banner.tsx"
         ],
         "scannedFiles": [
           "app/client/(workspace)/layout.tsx",
-          "components/client-route-shell.tsx",
-          "components/client-shell.tsx",
-          "components/client-sidebar.tsx",
-          "components/portal-brand-mark.tsx",
-          "components/portal-member-context.tsx",
-          "components/portal-member-menu.tsx",
-          "components/portal-preview-banner.tsx",
-          "components/portal-theme-toggle.tsx",
+          "components/client/client-route-shell.tsx",
+          "components/client/client-shell.tsx",
+          "components/client/client-sidebar.tsx",
+          "components/hooks/use-mobile.ts",
+          "components/portal/portal-brand-mark.tsx",
+          "components/portal/portal-member-context.tsx",
+          "components/portal/portal-member-menu.tsx",
+          "components/portal/portal-preview-banner.tsx",
+          "components/portal/portal-theme-toggle.tsx",
           "components/theme-provider.tsx",
           "components/ui/alert.tsx",
           "components/ui/avatar.tsx",
@@ -1460,7 +1495,7 @@
   "actions": [
     {
       "actionId": "action:requireClientSession",
-      "file": "app/actions/client.ts",
+      "file": "lib/auth/session.ts",
       "compare": {
         "declared": [
           "domain:auth",
@@ -1469,11 +1504,8 @@
         "discovered": [
           "domain:audit",
           "domain:auth",
-          "domain:client-onboarding",
           "domain:clients",
-          "domain:email",
-          "domain:questions",
-          "domain:surveys"
+          "domain:preview-client"
         ],
         "aligned": [
           "domain:auth",
@@ -1482,10 +1514,7 @@
         "declaredOnly": [],
         "discoveredOnly": [
           "domain:audit",
-          "domain:client-onboarding",
-          "domain:email",
-          "domain:questions",
-          "domain:surveys"
+          "domain:preview-client"
         ],
         "inherited": [],
         "status": "aligned"
@@ -1493,7 +1522,7 @@
     },
     {
       "actionId": "action:requireAdminSession",
-      "file": "app/actions/admin.ts",
+      "file": "lib/auth/session.ts",
       "compare": {
         "declared": [
           "domain:auth"
@@ -1501,6 +1530,7 @@
         "discovered": [
           "domain:audit",
           "domain:auth",
+          "domain:clients",
           "domain:preview-client"
         ],
         "aligned": [
@@ -1509,6 +1539,7 @@
         "declaredOnly": [],
         "discoveredOnly": [
           "domain:audit",
+          "domain:clients",
           "domain:preview-client"
         ],
         "inherited": [],
@@ -1711,22 +1742,19 @@
     },
     {
       "actionId": "action:postClientDeclarationDraftApi",
-      "file": "app/api/client/declaration-draft/route.ts",
+      "file": "lib/api/client-declaration-draft-route.ts",
       "compare": {
         "declared": [
           "domain:auth",
-          "domain:clients",
-          "domain:questions"
+          "domain:clients"
         ],
         "discovered": [
           "domain:auth",
-          "domain:clients",
-          "domain:questions"
+          "domain:clients"
         ],
         "aligned": [
           "domain:auth",
-          "domain:clients",
-          "domain:questions"
+          "domain:clients"
         ],
         "declaredOnly": [],
         "discoveredOnly": [],

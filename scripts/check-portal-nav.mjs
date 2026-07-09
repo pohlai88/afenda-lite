@@ -3,7 +3,7 @@ import { join } from "node:path";
 import process from "node:process";
 
 const ROOT = process.cwd();
-const ROUTES_FILE = join(ROOT, "lib", "portal-nav-routes.ts");
+const ROUTES_FILE = join(ROOT, "lib", "routing", "portal-nav-routes.ts");
 
 function extractRouteBlocks(source) {
   const routes = [];

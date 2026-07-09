@@ -1,3 +1,5 @@
+import { getSharedAdminEmail as readSharedAdminEmail } from "@/lib/env/accessors";
+
 type AdminSession = {
   user?: {
     id?: string;
@@ -23,7 +25,7 @@ export const ORG_ACCESS_DENIED_HREF = "/org/login?reason=access-denied" as const
 export const ORG_SIGN_IN_HREF = "/org/login" as const;
 
 export function getSharedAdminEmail() {
-  return process.env.SHARED_ADMIN_EMAIL?.trim().toLowerCase() ?? "";
+  return readSharedAdminEmail();
 }
 
 export function isAdminSession(

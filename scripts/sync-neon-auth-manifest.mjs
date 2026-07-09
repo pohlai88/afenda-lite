@@ -35,7 +35,7 @@ function runNeon(args) {
           "Neon CLI could not read auth config for this project/branch.",
           "Regenerate NEON_API_KEY for org org-royal-bar-40022480 (Neon Console → Account → API keys),",
           "update env.secret, run npm run env:compose, then retry.",
-          "For a one-off refresh, use Neon MCP get_neon_auth_config and update config/neon-auth.manifest.json.",
+          "For a one-off refresh, use Neon MCP get_neon_auth_config and update lib/auth/neon-auth.manifest.json.",
         ].join("\n"),
       );
     }
@@ -46,7 +46,7 @@ function runNeon(args) {
 function main() {
   const neonFile = JSON.parse(readFileSync(".neon", "utf8"));
   const existing = JSON.parse(
-    readFileSync("config/neon-auth.manifest.json", "utf8"),
+    readFileSync("lib/auth/neon-auth.manifest.json", "utf8"),
   );
 
   const status = runNeon(["neon-auth", "status"]);
@@ -85,12 +85,12 @@ function main() {
   });
 
   writeFileSync(
-    "config/neon-auth.manifest.json",
+    "lib/auth/neon-auth.manifest.json",
     `${JSON.stringify(manifest, null, 2)}\n`,
     "utf8",
   );
 
-  console.log("Updated config/neon-auth.manifest.json");
+  console.log("Updated lib/auth/neon-auth.manifest.json");
   console.log(`  baseUrl: ${manifest.integration.baseUrl}`);
   console.log(`  trustedDomains: ${manifest.trustedDomains.join(", ")}`);
   console.log(

@@ -1,7 +1,7 @@
 import {
   clientLoginPageMetadata,
   runClientSignInEntryPage,
-} from "@/lib/client-sign-in-entry";
+} from "@/lib/entry/client-sign-in-entry";
 
 export const metadata = clientLoginPageMetadata;
 export const dynamic = "force-dynamic";

@@ -1,4 +1,9 @@
-import { portalCopy } from "@/lib/portal-copy";
+/**
+ * S1 auth ingress query params and reason → copy resolution.
+ *
+ * Shared by client (`client-sign-in-entry`), org (`org-sign-in-entry`), and Guardian trust notices.
+ */
+import { portalCopy } from "@/lib/copy/portal-copy";
 
 export const ORG_SIGN_IN_FROM_PARAM = "org" as const;
 export const ORG_ACCESS_DENIED_REASON = "access-denied" as const;

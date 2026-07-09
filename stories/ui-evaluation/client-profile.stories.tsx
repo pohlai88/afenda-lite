@@ -1,9 +1,9 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import { ClientDeclarantProfileView } from "@/components/client-declarant-profile-view";
-import { PortalFormSection } from "@/components/portal-form-section";
-import { getEvaluationRow } from "@/lib/ui-decision-matrix";
+import { ClientDeclarantProfileView } from "@/components/client/client-declarant-profile-view";
+import { PortalFormSection } from "@/components/portal/portal-form-section";
+import { getEvaluationRow } from "@/lib/governance/ui-decision-matrix";
 import { productionSeedFixtures } from "@/lib/production-fixtures";
-import { portalCopy } from "@/lib/portal-copy";
+import { portalCopy } from "@/lib/copy/portal-copy";
 import { ComparisonGrid, ScoreAnnotation } from "./evaluation-primitives";
 import {
   syncedPreviewClientProfile,

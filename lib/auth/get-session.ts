@@ -1,5 +1,6 @@
 import "server-only";
 
+/** S1 request-scoped Neon Auth session — single `auth.getSession()` per RSC render. */
 import { cache } from "react";
 import { auth } from "@/lib/auth/server";
 import type { AuthSession } from "@/lib/auth/types";

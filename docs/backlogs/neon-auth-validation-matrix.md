@@ -167,12 +167,12 @@ npm run test:unit -- lib/auth/neon-auth.manifest.test.ts
 
 | Matrix area | Backlog slice |
 | --- | --- |
-| Sync & audit | [BL-01](./slices/bl-01-config-truth-audit.md) |
-| Operator invite email | [BL-02](./slices/bl-02-operator-invite-email.md) |
-| Preview impersonation | [BL-03](./slices/bl-03-operator-client-preview.md) |
-| Production cutover | [BL-04](./slices/bl-04-production-cutover.md) |
-| Email branding | [BL-05](./slices/bl-05-auth-email-branding.md) |
-| Client `/join` journey | [BL-06](./slices/bl-06-client-join-journey.md) |
-| Account self-service | [BL-07](./slices/bl-07-account-self-service.md) |
-| Surface registry | [BL-08](./slices/bl-08-surface-registry.md) |
-| Local dev strategy | [BL-09](./slices/bl-09-local-dev-auth.md) |
+| Sync & audit | [BL-01](./bl-slices.md#bl-01) |
+| Operator invite email | [BL-02](./bl-slices.md#bl-02) |
+| Preview impersonation | [BL-03](./bl-slices.md#bl-03) |
+| Production cutover | [BL-04](./bl-slices.md#bl-04) |
+| Email branding | [BL-05](./bl-slices.md#bl-05) |
+| Client `/join` journey | [BL-06](./bl-slices.md#bl-06) |
+| Account self-service | [BL-07](./bl-slices.md#bl-07) |
+| Surface registry | [BL-08](./bl-slices.md#bl-08) |
+| Local dev strategy | [BL-09](./bl-slices.md#bl-09) |

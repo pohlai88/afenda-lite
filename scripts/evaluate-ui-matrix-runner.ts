@@ -7,7 +7,7 @@ import {
   getStudioImplementation,
   isWinnerAligned,
   getStudioAdoptionSummary,
-} from "../lib/ui-decision-matrix";
+} from "../lib/governance/ui-decision-matrix";
 
 const registryIds = new Set(UI_SURFACE_REGISTRY.map((s) => s.surfaceId));
 const matrixIds = new Set(uiEvaluationMatrix.map((r) => r.surfaceId));

@@ -1,9 +1,9 @@
 import { z } from "zod";
-import { CLIENT_ONBOARDING } from "@/lib/form-constraints";
+import { CLIENT_ONBOARDING, CLIENT_INVITE } from "@/lib/form-constraints";
 import { ISO_COUNTRY_CODES } from "@/lib/countries";
 import {
   emailSchema,
-  passwordSchema,
+  slugSchema,
   surveyAnswersSchema,
   uuidSchema,
 } from "@/lib/schemas/common";
@@ -85,7 +85,7 @@ export const clientOnboardingSchema = z.object({
 
 export const submitClientDeclarationSchema = z.object({
   assignmentId: uuidSchema,
-  slug: z.string().trim().min(1).max(200),
+  slug: slugSchema,
   answers: surveyAnswersSchema,
 });
 
@@ -97,7 +97,11 @@ export const saveClientDeclarationDraftSchema = z.object({
 
 export const issueClientInviteSchema = z.object({
   email: emailSchema,
-  fullName: z.string().trim().min(1).max(500),
+  fullName: z
+    .string()
+    .trim()
+    .min(1)
+    .max(CLIENT_INVITE.fullNameMax),
   surveyId: uuidSchema,
   dueDate: z.preprocess(
     (value) =>

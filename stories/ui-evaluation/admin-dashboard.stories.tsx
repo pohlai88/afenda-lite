@@ -8,39 +8,16 @@ import {
 import { useMemo } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { StudioDataTable } from "@/components/shadcn-studio/blocks/datatable-transaction";
-import { PortalEyebrow } from "@/components/portal-eyebrow";
-import { PortalStatisticsCard } from "@/components/portal-statistics-card";
+import { PortalEyebrow } from "@/components/portal/portal-eyebrow";
+import { PortalStatisticsCard } from "@/components/portal/portal-statistics-card";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { getEvaluationRow } from "@/lib/ui-decision-matrix";
+import { getEvaluationRow } from "@/lib/governance/ui-decision-matrix";
+import type { OrgDeclarationRow } from "@/lib/pages/operator-dashboard-types";
 import { ComparisonGrid, ScoreAnnotation } from "./evaluation-primitives";
+import { previewDeclarationRows } from "./evaluation-fixtures";
 
 const dashboardRow = getEvaluationRow("admin-dashboard")!;
-
-type PreviewDeclarationRow = {
-  id: string;
-  title: string;
-  description: string;
-  caseNumber: string | null;
-  responseCount: number;
-};
-
-const sampleRows: PreviewDeclarationRow[] = [
-  {
-    id: "decl-1",
-    title: "E2E client journey 1783452156625",
-    description: "Annual compliance declaration for client onboarding.",
-    caseNumber: "CASE-2048",
-    responseCount: 0,
-  },
-  {
-    id: "decl-2",
-    title: "Director statutory declaration",
-    description: "Board member attestation for FY2025.",
-    caseNumber: null,
-    responseCount: 3,
-  },
-];
 
 /** Storybook-safe table preview — avoids server actions from OrgDeclarationsTable. */
 function AdminDeclarationsTablePreview({
@@ -48,11 +25,11 @@ function AdminDeclarationsTablePreview({
   title,
   description,
 }: {
-  rows: PreviewDeclarationRow[];
+  rows: OrgDeclarationRow[];
   title?: string;
   description?: string;
 }) {
-  const columns = useMemo<ColumnDef<PreviewDeclarationRow>[]>(
+  const columns = useMemo<ColumnDef<OrgDeclarationRow>[]>(
     () => [
       {
         accessorKey: "title",
@@ -161,7 +138,7 @@ function AdminDashboardPreview() {
       </div>
 
       <AdminDeclarationsTablePreview
-        rows={sampleRows}
+        rows={previewDeclarationRows}
         title="Declarations"
         description="Open a declaration for settings, JSON import, sharing, and submissions."
       />
@@ -187,7 +164,7 @@ export const DeclarationsTableWithIntegratedHeader: Story = {
   render: () => (
     <div className="mx-auto max-w-3xl p-6">
       <AdminDeclarationsTablePreview
-        rows={sampleRows}
+        rows={previewDeclarationRows}
         title="Declarations"
         description="Open a declaration for settings, JSON import, sharing, and submissions."
       />

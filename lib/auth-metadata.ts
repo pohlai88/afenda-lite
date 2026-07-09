@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { PORTAL_NAME, portalCopy } from "@/lib/portal-copy";
+import { PORTAL_NAME, portalCopy } from "@/lib/copy/portal-copy";
 import { isOrgSignInFrom, ORG_SIGN_IN_FROM_PARAM } from "@/lib/auth/auth-entry-params";
 
 const { metadata: meta } = portalCopy;

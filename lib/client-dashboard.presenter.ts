@@ -1,12 +1,12 @@
-import type { ClientAssignment, ClientProfile } from "@/lib/clients";
+import type { ClientAssignment, ClientProfile } from "@/lib/domain/clients";
 import {
   assignmentDueUrgency,
   computeClientDashboardMetrics,
   type ClientDashboardMetrics,
 } from "@/lib/client-dashboard-metrics";
 import { formatDate } from "@/lib/format";
-import { CLIENT_PORTAL_ACK_VERSION } from "@/lib/portal-copy";
-import { clientDeclareHref } from "@/lib/portal-routes";
+import { CLIENT_PORTAL_ACK_VERSION } from "@/lib/copy/portal-copy";
+import { clientDeclareHref } from "@/lib/routing/portal-routes";
 
 export type DeclarantSummaryView = {
   fullLegalName: string | null;

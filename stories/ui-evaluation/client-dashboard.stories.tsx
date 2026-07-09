@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import { ClientDashboardSummary } from "@/components/client-dashboard-summary";
-import { getEvaluationRow } from "@/lib/ui-decision-matrix";
+import { ClientDashboardSummary } from "@/components/client/client-dashboard-summary";
+import { getEvaluationRow } from "@/lib/governance/ui-decision-matrix";
 import {
   ComparisonGrid,
   MockKpiCards,

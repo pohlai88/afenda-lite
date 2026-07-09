@@ -26,7 +26,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { usePagination } from "@/hooks/use-pagination";
+import { usePagination } from "@/components/hooks/use-pagination";
 
 /** datatable-component-01 — Shadcn Studio transaction table shell (pagination + table layout). */
 export type StudioDataTableProps<TData> = {

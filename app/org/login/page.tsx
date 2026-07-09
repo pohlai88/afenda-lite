@@ -1,7 +1,7 @@
 import {
   orgLoginPageMetadata,
   runOrgSignInEntryPage,
-} from "@/lib/org-sign-in-entry";
+} from "@/lib/entry/org-sign-in-entry";
 
 export const metadata = orgLoginPageMetadata;
 export const dynamic = "force-dynamic";

@@ -1,6 +1,6 @@
 import { requireAdminSession } from "@/lib/auth/session";
 import { DashboardShell } from "@/components/dashboard-shell";
-import { isPlaygroundEmbedRequest, isPlaygroundEnabled } from "@/lib/playground";
+import { isPlaygroundEmbedRequest, isPlaygroundEnabled } from "@/lib/playground/playground";
 import { loadOperatorShellMembers } from "@/lib/operator-shell-members";
 
 export default async function DashboardLayout({

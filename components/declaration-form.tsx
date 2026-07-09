@@ -23,9 +23,9 @@ import {
   validateStepAnswers,
   WIZARD_SIDEBAR_STEP_LIMIT,
   type DeclarationWizardStep,
-} from "@/lib/declaration-steps";
+} from "@/lib/domain/declaration-steps";
 import { CLIENT_DECLARATION_DRAFT_API_HREF } from "@/lib/api/routes";
-import { portalCopy } from "@/lib/portal-copy";
+import { portalCopy } from "@/lib/copy/portal-copy";
 import { formatDateTime } from "@/lib/format";
 import type { SurveyAnswers, SurveyQuestion } from "@/lib/question-models";
 import { validateQuestionAnswer } from "@/lib/question-answer-validation";

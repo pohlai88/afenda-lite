@@ -1,8 +1,8 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { SESSION_HELPER_ACTIONS } from "@/lib/surface-entry-points";
-import { listExportedActionIds } from "@/lib/portal-reliance-scan";
+import { SESSION_HELPER_ACTIONS } from "@/lib/routing/surface-entry-points";
+import { listExportedActionIds } from "@/lib/governance/portal-reliance-scan";
 
 const REPO_ROOT = join(import.meta.dirname, "..");
 const ACTION_FILES = [

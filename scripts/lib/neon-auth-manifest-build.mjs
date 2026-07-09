@@ -1,5 +1,5 @@
 /**
- * Build config/neon-auth.manifest.json from Neon CLI/API snapshots.
+ * Build lib/auth/neon-auth.manifest.json from Neon CLI/API snapshots.
  * UI feature flags (e.g. social login) stay product-controlled in the committed manifest.
  */
 

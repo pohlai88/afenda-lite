@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import { getEvaluationRow } from "@/lib/ui-decision-matrix";
+import { getEvaluationRow } from "@/lib/governance/ui-decision-matrix";
 import { ComparisonGrid, ScoreAnnotation } from "./evaluation-primitives";
 import {
   IamCheckAuthMagicLinkShellPreview,

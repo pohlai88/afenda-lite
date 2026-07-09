@@ -12,7 +12,7 @@ import { StudioFilterDataTable } from "@/components/shadcn-studio/blocks/datatab
 import {
   PLAYGROUND_HITL_STORAGE_KEY,
   type PlaygroundHitlRow,
-} from "@/lib/playground-hitl-rows";
+} from "@/lib/playground/playground-hitl-rows";
 import { cn } from "@/lib/utils";
 
 type PlaygroundHitlTableRow = PlaygroundHitlRow & {

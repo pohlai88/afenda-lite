@@ -1,4 +1,4 @@
-import type { ClientAssignment, ClientProfile } from "@/lib/clients";
+import type { ClientAssignment, ClientProfile } from "@/lib/domain/clients";
 import { buildDeclarantSummaryView } from "@/lib/client-dashboard.presenter";
 import {
   computeClientDashboardMetrics,

@@ -1,17 +1,17 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { requireAccountSession } from "@/lib/account-session";
-import { PortalAccountSectionNav } from "@/components/portal-account-section-nav";
-import { PortalAccountShell } from "@/components/portal-account-shell";
-import { PortalFormSection } from "@/components/portal-form-section";
-import { PortalAccountNeonView } from "@/components/portal-account-neon-view";
+import { PortalAccountSectionNav } from "@/components/portal/portal-account-section-nav";
+import { PortalAccountShell } from "@/components/portal/portal-account-shell";
+import { PortalFormSection } from "@/components/portal/portal-form-section";
+import { PortalAccountNeonView } from "@/components/portal/portal-account-neon-view";
 import {
   accountCopyKey,
   isPortalAccountPath,
   PORTAL_ACCOUNT_PATHS,
   resolveAccountPathAccess,
-} from "@/lib/account-paths";
-import { portalCopy, PORTAL_NAME } from "@/lib/portal-copy";
+} from "@/lib/routing/account-paths";
+import { portalCopy, PORTAL_NAME } from "@/lib/copy/portal-copy";
 
 export const dynamic = "force-dynamic";
 export const dynamicParams = false;

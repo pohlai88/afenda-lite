@@ -8,6 +8,7 @@ import { getServerEnv } from "@/lib/env/server";
 import {
   getClientEmailDeliveryStatus,
   isClientEmailDeliveryEnabled,
+  NEON_AUTH_SHARED_SENDER_EMAIL,
 } from "@/lib/email/client-email-delivery";
 
 const mockedGetServerEnv = vi.mocked(getServerEnv);
@@ -27,7 +28,7 @@ describe("client email delivery (operator register)", () => {
       enabled: true,
       provider: "neon-auth-organization",
       fromName: "Client Declaration Portal",
-      fromEmail: "auth@mail.myneon.app",
+      fromEmail: NEON_AUTH_SHARED_SENDER_EMAIL,
     });
   });
 

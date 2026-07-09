@@ -1,4 +1,4 @@
-import { PORTAL_NAME } from "@/lib/portal-copy";
+import { PORTAL_NAME } from "@/lib/copy/portal-copy";
 import { PortalAtmosphere } from "../PortalAtmosphere";
 import { PortalDualGuardianDeco } from "../PortalDualGuardianDeco";
 import { PortalDualGuardianOwls } from "../PortalDualGuardianOwls";

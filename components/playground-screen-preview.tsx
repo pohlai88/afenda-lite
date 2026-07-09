@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ExternalLinkIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { PlaygroundScreen } from "@/lib/playground";
+import type { PlaygroundScreen } from "@/lib/playground/playground";
 
 export function PlaygroundScreenPreview({
   screen,

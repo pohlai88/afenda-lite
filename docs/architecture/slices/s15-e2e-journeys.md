@@ -13,7 +13,7 @@ Automate identity, public link routing, and submission paths: smoke checks, publ
 
 ## Test factory
 
-Authority: [`testing/README.md`](../../../testing/README.md). Shared E2E helpers live under `testing/e2e/`; specs import `@/testing/e2e/*`. Legacy `e2e/helpers/` re-exports remain for compatibility.
+Authority: [`testing/README.md`](../../../testing/README.md). Shared E2E helpers live under `testing/e2e/`; specs import `@/testing/e2e/*`.
 
 ## Owned files
 
@@ -25,6 +25,8 @@ Authority: [`testing/README.md`](../../../testing/README.md). Shared E2E helpers
 - `e2e/secure-file.spec.ts` — `@journey` file question + submission count
 - `e2e/client-journey.spec.ts` — `@journey` operator assign → client submit → `CDP-*`
 - `e2e/client-onboarding.spec.ts` — `@journey` register → four-step wizard → `/client`
+- `e2e/client-declare-gates.spec.ts` — `@journey` declare wizard gates (review attestation, draft save)
+- `e2e/client-invitation-journey.spec.ts` — `@journey` org invitation → join → onboarding
 - `e2e/playground.spec.ts` — local playground iframe binding (skips when `PLAYGROUND_ENABLED` false)
 - `e2e/fixtures/sample-evidence.txt` — Playwright file-input fixture
 
@@ -39,9 +41,7 @@ Authority: [`testing/README.md`](../../../testing/README.md). Shared E2E helpers
 
 ### L2 Vitest interaction
 
-- `components/team-switcher.interaction.test.tsx`
-- `components/declaration-row-delete-action.interaction.test.tsx` — delete menu → confirm dialog
-- `components/confirm-dialog.interaction.test.tsx`
+See `testing/README.md` — 17 interaction/a11y files including declaration form, confirm dialog, portal-atmosphere fixtures, join panel.
 
 ## CI gates
 

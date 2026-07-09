@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { portalFontClassName } from "./fonts";
 import { BrandFaviconSync } from "@/components/brand-favicon-sync";
-import { PortalAuthProvider } from "@/components/portal-auth-provider";
+import { PortalAuthProvider } from "@/components/portal/portal-auth-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { getAppBaseUrl } from "@/lib/app-url";
@@ -13,9 +13,9 @@ import {
   BRAND_WEB_MANIFEST_PATH,
   BRAND_ICON_ALT,
   PORTAL_BRAND_ICON,
-} from "@/lib/portal-brand";
-import { PORTAL_NAME, portalCopy } from "@/lib/portal-copy";
-import { PORTAL_THEME_BOOT_SCRIPT } from "@/lib/portal-theme";
+} from "@/lib/copy/portal-brand";
+import { PORTAL_NAME, portalCopy } from "@/lib/copy/portal-copy";
+import { PORTAL_THEME_BOOT_SCRIPT } from "@/lib/copy/portal-theme";
 import { cn } from "@/lib/utils";
 
 // Auth, cookies, and session-aware UI run on every route — opt out of static prerender.

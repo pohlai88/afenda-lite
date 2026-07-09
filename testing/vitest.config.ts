@@ -10,6 +10,7 @@ export default defineConfig({
     alias: {
       "@": root,
       "server-only": path.resolve(__dirname, "mocks/server-only.ts"),
+      "next/image": path.resolve(__dirname, "mocks/next-image.tsx"),
     },
   },
   test: {
@@ -34,6 +35,9 @@ export default defineConfig({
           environment: "jsdom",
           setupFiles: [path.resolve(__dirname, "vitest.setup.ts")],
           include: ["**/*.interaction.test.tsx", "**/*.a11y.test.tsx"],
+          // Radix portals + next/image + fake-timer suites need a stable single worker.
+          maxWorkers: 1,
+          testTimeout: 15_000,
         },
       },
     ],

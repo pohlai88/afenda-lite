@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutGridIcon } from "lucide-react";
-import { PortalThemeToggle } from "@/components/portal-theme-toggle";
-import { PortalMemberMenu } from "@/components/portal-member-menu";
+import { PortalThemeToggle } from "@/components/portal/portal-theme-toggle";
+import { PortalMemberMenu } from "@/components/portal/portal-member-menu";
 import {
   Sidebar,
   SidebarContent,
@@ -18,13 +18,13 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar";
-import { PORTAL_BRAND_SHELL } from "@/lib/portal-brand";
-import type { PlaygroundScreen } from "@/lib/playground";
+import { PORTAL_BRAND_SHELL } from "@/lib/copy/portal-brand";
+import type { PlaygroundScreen } from "@/lib/playground/playground";
 import {
   PLAYGROUND_HREF,
   PLAYGROUND_HITL_REVIEW_HREF,
-} from "@/lib/playground-nav";
-import { playgroundScreenHref } from "@/lib/portal-routes";
+} from "@/lib/playground/playground-nav";
+import { playgroundScreenHref } from "@/lib/routing/portal-routes";
 
 function PlaygroundNavGroup({
   label,

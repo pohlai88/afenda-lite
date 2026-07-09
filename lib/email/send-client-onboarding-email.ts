@@ -9,14 +9,10 @@ export type ClientOnboardingEmailResult =
   | { ok: true; provider: "neon-auth-organization" }
   | { ok: false; error: string; status?: number };
 
+/** Sends a Neon Auth organization invitation for operator client registration. */
 export async function sendClientOnboardingEmail(input: {
   toEmail: string;
-  toName: string;
-  text: string;
 }): Promise<ClientOnboardingEmailResult> {
-  void input.toName;
-  void input.text;
-
   try {
     const organization = await ensurePortalOrganization();
     const delivery = await inviteClientOrganizationMember({

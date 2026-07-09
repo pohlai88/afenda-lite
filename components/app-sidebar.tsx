@@ -4,9 +4,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { EyeIcon } from "lucide-react";
 import { startClientPreviewAction } from "@/app/actions/admin";
-import { PortalThemeToggle } from "@/components/portal-theme-toggle";
+import { PortalThemeToggle } from "@/components/portal/portal-theme-toggle";
 import { TeamSwitcher } from "@/components/team-switcher";
-import { PortalMemberMenu } from "@/components/portal-member-menu";
+import { PortalMemberMenu } from "@/components/portal/portal-member-menu";
 import {
   Sidebar,
   SidebarContent,
@@ -26,7 +26,7 @@ import {
   isNavItemActive,
   type DashboardTeam,
 } from "@/lib/dashboard-nav";
-import { portalCopy } from "@/lib/portal-copy";
+import { portalCopy } from "@/lib/copy/portal-copy";
 
 export function AppSidebar({
   teams: teamsProp,

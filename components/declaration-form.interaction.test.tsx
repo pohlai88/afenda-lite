@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, fireEvent, screen, waitFor } from "@testing-library/react";
-import { portalCopy } from "@/lib/portal-copy";
+import { portalCopy } from "@/lib/copy/portal-copy";
 import type { SurveyQuestion } from "@/lib/question-models";
 import { renderPortal, setupUser } from "@/testing/react";
 
@@ -53,6 +53,7 @@ function renderDeclarationForm(
 
 describe("DeclarationForm draft save", () => {
   beforeEach(() => {
+    vi.useRealTimers();
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValue({
@@ -64,10 +65,51 @@ describe("DeclarationForm draft save", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
     vi.useRealTimers();
+    vi.clearAllTimers();
+  });
+
+  it("saves immediately when Save progress is clicked", async () => {
+    const user = setupUser();
+    const onSaveDraft = vi.fn(async () => ({
+      savedAt: "2026-07-08T12:00:00.000Z",
+    }));
+
+    renderDeclarationForm(onSaveDraft);
+
+    await user.click(screen.getByRole("radio", { name: /^yes$/i }));
+    await user.click(
+      screen.getByRole("button", {
+        name: portalCopy.declarationForm.wizard.saveProgress,
+      }),
+    );
+
+    await waitFor(() => {
+      expect(onSaveDraft).toHaveBeenCalledOnce();
+    });
+    await waitFor(() => {
+      expect(screen.getByText(/progress saved/i)).toBeInTheDocument();
+    });
+  });
+});
+
+describe("DeclarationForm draft autosave timing", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        json: async () => ({ savedAt: "2026-07-08T12:00:00.000Z" }),
+      }),
+    );
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.useRealTimers();
+    vi.clearAllTimers();
   });
 
   it("debounces autosave until answers stop changing for 1.2s", async () => {
-    vi.useFakeTimers();
     const onSaveDraft = vi.fn(async () => ({
       savedAt: "2026-07-08T12:00:00.000Z",
     }));
@@ -95,7 +137,6 @@ describe("DeclarationForm draft save", () => {
   });
 
   it("flushes keepalive draft save on unmount before debounce fires", async () => {
-    vi.useFakeTimers();
     const fetchMock = vi.mocked(global.fetch);
     const onSaveDraft = vi.fn(async () => ({
       savedAt: "2026-07-08T12:00:00.000Z",
@@ -120,28 +161,5 @@ describe("DeclarationForm draft save", () => {
         }),
       }),
     );
-  });
-
-  it("saves immediately when Save progress is clicked", async () => {
-    const user = setupUser();
-    const onSaveDraft = vi.fn(async () => ({
-      savedAt: "2026-07-08T12:00:00.000Z",
-    }));
-
-    renderDeclarationForm(onSaveDraft);
-
-    await user.click(screen.getByRole("radio", { name: /^yes$/i }));
-    await user.click(
-      screen.getByRole("button", {
-        name: portalCopy.declarationForm.wizard.saveProgress,
-      }),
-    );
-
-    await waitFor(() => {
-      expect(onSaveDraft).toHaveBeenCalledOnce();
-    });
-    expect(
-      screen.getByText(/progress saved/i),
-    ).toBeInTheDocument();
   });
 });

@@ -18,7 +18,7 @@ Versioned Postgres schema for all portal entities.
 
 ## Owned files
 
-- `db/migrations/001_portal_schema.sql` through `010_evidence_batch_index.sql`
+- `db/migrations/001_portal_schema.sql` through `012_assignment_draft.sql`
 - `db/schema-manifest.mjs` — expected tables, columns, indexes (CI gate SSOT)
 - `scripts/db-migrate.mjs` — idempotent via `schema_migrations`
 - `scripts/db-backfill-migrations.mjs` — one-time legacy tracking backfill (`--confirm`)

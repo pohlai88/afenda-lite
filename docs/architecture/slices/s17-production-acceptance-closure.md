@@ -70,7 +70,7 @@ Runtime foundation is largely complete; operational and business acceptance evid
 
 Manual acceptance closes gaps that automation does not yet cover (branch protection, Vercel monitor config, production `verify:production`).
 
-**Evidence log:** [s17-evidence-log.md](./s17-evidence-log.md) (2026-07-08 local run)
+**Evidence log:** § [Evidence log (2026-07-08)](#evidence-log-2026-07-08) below · **Live status:** [TRACKING.md](../../TRACKING.md)
 
 ## Acceptance proof to close
 
@@ -168,7 +168,7 @@ If an item cannot close in S17, record it here — do not leave silent open boxe
 Documentation and proof only — no new runtime modules unless fixing a failed acceptance check:
 
 - `docs/architecture/slices/s17-production-acceptance-closure.md` (this file)
-- `docs/architecture/slices/s17-evidence-log.md`
+- `docs/TRACKING.md` — live program status (edit on closure)
 - Source slice specs: update checkboxes when proof closes
 - `docs/architecture/iam-check-doctrine.md` §7 when doctrine checklist completes
 
@@ -183,12 +183,36 @@ Documentation and proof only — no new runtime modules unless fixing a failed a
 
 | Layer | Command | Pass criteria |
 |-------|---------|---------------|
-| L0 | `npm run test:unit` | Green |
-| L2 | `npm run test:interaction` | Green |
+| L0 | `npm run test:unit` | Green — **386 pass (2026-07-09)** |
+| L2 | `npm run test:interaction` | Green — **58 pass (2026-07-09)** |
 | L4 smoke | `npm run test:e2e:smoke` | Green in CI — **PASS local 13/13 (2026-07-08)** |
 | L4 journey | `npm run test:e2e:journey` | Green on `main` — **FAIL local 2026-07-08** |
 | Production | `npm run verify:production` | Exit 0 — **PASS 2026-07-08** |
 | Copy | `npm run check:copy` | Exit 0 |
+| Architecture | `npm run checks` | **Pass 12 gates (2026-07-09)** |
+
+## Evidence log (2026-07-08) {#evidence-log-2026-07-08}
+
+**Environment:** `npm run env:compose`; production checks against `https://iam-check.vercel.app`
+
+| Command | Result | Notes |
+|---------|--------|-------|
+| `npm run env:compose` | PASS | 26 keys composed |
+| `npm run check:copy` | PASS | 235 component files (2026-07-09) |
+| `npm run check:db-schema` | PASS | 12/12 migrations, pooler=true |
+| `npm run verify:draft-migration` | PASS | `012_assignment_draft.sql` applied |
+| `npm run build` | PASS | — |
+| `npm run test:unit` | PASS | 386 (2026-07-09) |
+| `npm run test:interaction` | PASS | 58 (2026-07-09; harness stabilized) |
+| `npm run test:e2e:smoke` | PASS | 13/13 |
+| `npm run test:e2e:journey` | **FAIL** | 10 failed locally — operator sign-in; CI is release authority |
+| `npm run verify:production` | PASS | Production readiness OK |
+
+**Production health:** `GET /api/health/liveness` → `alive`; `GET /api/health/readiness` → `ready`.
+
+**Fixes during S17:** governance `.ts` import extensions; `client-preview-banner` registry; interaction test harness (`testing/vitest.config.ts`, `next/image` mock); CI `check:ui-sync` no longer requires `.env` file.
+
+**Deferrals:** See [TRACKING.md § Open gaps](../../TRACKING.md#open-gaps-p0) for current P0 items (branch protection, Vercel monitor, post-deploy, journey CI).
 
 ## Exit criteria
 

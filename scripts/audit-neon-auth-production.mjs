@@ -21,7 +21,7 @@ const portalApplicationName =
   getEnvValue("NEON_AUTH_APPLICATION_NAME", env) ?? "Client Declaration Portal";
 
 const manifest = JSON.parse(
-  readFileSync("config/neon-auth.manifest.json", "utf8"),
+  readFileSync("lib/auth/neon-auth.manifest.json", "utf8"),
 );
 
 const liveSnapshot = {
@@ -114,7 +114,7 @@ if (!liveSnapshot.uiSocialEnabled) {
     sharedOAuth.length
       ? `Shared OAuth on branch (${sharedOAuth.map((p) => p.id).join(", ")}) — UI social login is off; no action.`
       : "OAuth not configured — credentials/email-password only.",
-    "Enable ui.features.social in config/neon-auth.manifest.json only if product adds social sign-in.",
+    "Enable ui.features.social in lib/auth/neon-auth.manifest.json only if product adds social sign-in.",
   );
 } else if (sharedOAuth.length > 0) {
   record(

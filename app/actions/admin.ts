@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import {
   ORG_SIGN_IN_HREF,
 } from "@/lib/admin";
-import { recordAuditEvent } from "@/lib/audit";
+import { recordAuditEvent } from "@/lib/domain/audit";
 import { auth } from "@/lib/auth/server";
 import {
   neonAdminImpersonateUser,
@@ -18,7 +18,7 @@ import { runLoggedAction } from "@/lib/observability";
 import {
   CLIENT_HOME_HREF,
   OPERATOR_DASHBOARD_HREF,
-} from "@/lib/portal-routes";
+} from "@/lib/routing/portal-routes";
 import {
   getPreviewClientUser,
   isPreviewClientConfigured,
@@ -26,7 +26,7 @@ import {
   clientPreviewUnavailableHref,
   PREVIEW_UNAVAILABLE_FAILED_REASON,
 } from "@/lib/preview-client";
-import { portalCopy } from "@/lib/portal-copy";
+import { portalCopy } from "@/lib/copy/portal-copy";
 import { parseSchema } from "@/lib/schemas/common";
 import { signInSchema } from "@/lib/schemas/auth";
 import {

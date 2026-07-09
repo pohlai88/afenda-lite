@@ -1,7 +1,7 @@
 import "server-only";
 
 import { buildClientOnboardingFormDefaults } from "@/lib/client-onboarding";
-import { getClientInvitationByEmail, getClientProfile } from "@/lib/clients";
+import { getClientInvitationByEmail, getClientProfile } from "@/lib/domain/clients";
 import { clientOnboardingSchema } from "@/lib/schemas/client";
 import {
   formBooleanLiteral,

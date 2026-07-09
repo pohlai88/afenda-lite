@@ -1,31 +1,14 @@
-import { execFileSync } from "node:child_process";
-import { resolve } from "node:path";
 import { expect, type Page } from "@/testing/e2e/playwright-base";
-import { portalCopy } from "@/lib/portal-copy";
-import { clientDeclareHref } from "@/lib/portal-routes";
+import { portalCopy } from "@/lib/copy/portal-copy";
+import { clientDeclareHref } from "@/lib/routing/portal-routes";
+import { runNodeScriptJson } from "@/testing/e2e/run-node-script";
 
-function runPortalStateScript(args: string[]) {
-  const output = execFileSync(
-    process.execPath,
-    ["--env-file=.env", resolve("scripts/e2e-client-portal-state.mjs"), ...args],
-    { cwd: process.cwd(), encoding: "utf8" },
-  );
-
-  const start = output.indexOf("{");
-  const end = output.lastIndexOf("}");
-  if (start === -1 || end === -1 || end <= start) {
-    throw new Error(`e2e-client-portal-state did not return JSON:\n${output}`);
-  }
-
-  return JSON.parse(output.slice(start, end + 1)) as {
+export function getClientAssignmentIdForEmail(email: string) {
+  const payload = runNodeScriptJson<{
     success: boolean;
     assignmentId?: string;
     error?: string;
-  };
-}
-
-export function getClientAssignmentIdForEmail(email: string) {
-  const payload = runPortalStateScript(["assignment-id", email]);
+  }>("scripts/e2e-client-portal-state.mjs", ["assignment-id", email]);
   if (!payload.success || !payload.assignmentId) {
     throw new Error(
       payload.error ?? `No assignment found for ${email}`,
@@ -35,11 +18,11 @@ export function getClientAssignmentIdForEmail(email: string) {
 }
 
 export function clearClientPortalAcknowledgement(email: string) {
-  runPortalStateScript(["set-ack", email, "cleared"]);
+  runNodeScriptJson("scripts/e2e-client-portal-state.mjs", ["set-ack", email, "cleared"]);
 }
 
 export function restoreClientPortalAcknowledgement(email: string) {
-  runPortalStateScript(["set-ack", email, "seeded"]);
+  runNodeScriptJson("scripts/e2e-client-portal-state.mjs", ["set-ack", email, "seeded"]);
 }
 
 export async function expectClientDeclareNotFound(page: Page, assignmentId: string) {

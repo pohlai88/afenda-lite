@@ -5,7 +5,7 @@ import { CheckIcon, CopyIcon, SparklesIcon } from "lucide-react";
 import { toast } from "sonner";
 import { copyText } from "@/lib/clipboard";
 import { buildCdpAiAssistantPrompt } from "@/lib/cdp-ai-prompt";
-import { portalCopy } from "@/lib/portal-copy";
+import { portalCopy } from "@/lib/copy/portal-copy";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 

@@ -1,4 +1,4 @@
-import { portalCopy } from "@/lib/portal-copy";
+import { portalCopy } from "@/lib/copy/portal-copy";
 
 export type JoinInvitationAuthView =
   | { activeStep: 0; pathname: "sign-up"; panelTitleKey: "panelCreateTitle"; panelDescriptionKey: "panelCreateDescription" }

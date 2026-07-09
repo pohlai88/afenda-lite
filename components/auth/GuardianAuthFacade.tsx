@@ -7,7 +7,7 @@ import { EditorialPosterCopy } from "./EditorialPosterCopy";
 import { AccessVaultCard } from "./AccessVaultCard";
 import { ThemeToggle } from "./ThemeToggle";
 import { GuardianShield } from "./GuardianShield";
-import { resolveGuardianEditorialCopy } from "@/lib/guardian-editorial-copy";
+import { resolveGuardianEditorialCopy } from "@/lib/copy/guardian-editorial-copy";
 import "./guardian-auth-facade.css";
 
 type Props = {

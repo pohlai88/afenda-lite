@@ -5,17 +5,17 @@ import {
   GuardianAuthFacade,
   type GuardianMode,
 } from "@/components/auth";
-import { PortalAuthFormIntro } from "@/components/portal-auth-form-intro";
+import { PortalAuthFormIntro } from "@/components/portal/portal-auth-form-intro";
 import { useGuardianNeonAuthState } from "@/components/auth/use-guardian-neon-auth-state";
-import { PortalAuthNeonView } from "@/components/portal-auth-neon-view";
+import { PortalAuthNeonView } from "@/components/portal/portal-auth-neon-view";
 import { useThemeControls } from "@/components/theme-provider";
-import type { AuthShellCopy } from "@/lib/auth-shell-copy";
+import type { AuthShellCopy } from "@/lib/copy/auth-shell-copy";
 import {
   guardianModeFromPortalTheme,
   portalThemeFromGuardianMode,
   resolveGuardianAuthCopyOverride,
-} from "@/lib/guardian-editorial-copy";
-import { GUARDIAN_AUTH_ASSET_SET } from "@/lib/portal-brand";
+} from "@/lib/copy/guardian-editorial-copy";
+import { GUARDIAN_AUTH_ASSET_SET } from "@/lib/copy/portal-brand";
 
 export type GuardianAuthLoginPageProps = {
   pathname: string;

@@ -6,7 +6,7 @@ import {
   buildRelianceGraphSnapshot,
   compareRelianceGraphSnapshots,
   type RelianceGraphSnapshot,
-} from "../../lib/portal-reliance-graph";
+} from "../../lib/governance/portal-reliance-graph";
 
 const repoRoot = join(import.meta.dirname, "../..");
 const snapshotPath = join(repoRoot, "docs/architecture/reliance-graph.snapshot.json");

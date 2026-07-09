@@ -3,7 +3,7 @@ import {
   type EvidenceRecord,
   type SurveyQuestion,
 } from "@/lib/question-models";
-import type { SurveyResponse } from "@/lib/surveys";
+import type { SurveyResponse } from "@/lib/domain/surveys";
 import { QuestionSequenceBadge } from "@/components/question-sequence-badge";
 
 export function SubmissionAnswers({

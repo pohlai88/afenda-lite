@@ -1,4 +1,4 @@
-import { IconPlaceholder } from '@/registry/icons/icon-placeholder'
+import { IconPlaceholder } from '@/components/svg/icon-placeholder'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 
 function EmptyState() {

@@ -1,4 +1,4 @@
-import { portalCopy } from "@/lib/portal-copy";
+import { portalCopy } from "@/lib/copy/portal-copy";
 
 export type PortalMemberContext = "operator" | "client";
 

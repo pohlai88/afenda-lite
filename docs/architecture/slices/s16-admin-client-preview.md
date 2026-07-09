@@ -34,7 +34,7 @@ During **local development only**, `/playground` can iframe client routes with `
 - `app/client/(workspace)/layout.tsx` — workspace shell entry
 - `lib/client-workspace-layout.tsx` — preview banner + `ClientRouteShell` handler
 - `components/portal-preview-banner.tsx` — preview mode banner UI
-- `app/actions/client.ts` — `startClientPreviewAction`, `exitClientPreviewAction`
+- `app/actions/admin.ts` — `startClientPreviewAction`, `exitClientPreviewAction`
 - `lib/preview-client.ts` — preview unavailable page handler
 
 ## Configuration

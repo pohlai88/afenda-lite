@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 
-import { IconPlaceholder } from '@/registry/icons/icon-placeholder'
+import { IconPlaceholder } from '@/components/svg/icon-placeholder'
 import {
   Dialog,
   DialogContent,

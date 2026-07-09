@@ -1,3 +1,7 @@
+/**
+ * Postgres connection helpers for Neon (primary) and legacy Supabase URLs.
+ * Script twin: scripts/db-pool-config.mjs — keep pooler/SSL rules in sync.
+ */
 export function normalizeDatabaseUrl(url: string): string {
   if (isSupabaseDatabaseUrl(url)) {
     return url;
@@ -33,6 +37,7 @@ export function isPoolerConnection(url: string | undefined): boolean {
   }
 }
 
+/** Legacy Supabase-hosted Postgres; Neon is the production host. */
 export function isSupabaseDatabaseUrl(url: string | undefined): boolean {
   if (!url) return false;
   try {

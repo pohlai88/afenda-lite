@@ -1,6 +1,6 @@
-import { PortalCustomerShell } from "@/components/portal-customer-shell";
+import { PortalCustomerShell } from "@/components/portal/portal-customer-shell";
 import { Skeleton } from "@/components/ui/skeleton";
-import { portalCopy } from "@/lib/portal-copy";
+import { portalCopy } from "@/lib/copy/portal-copy";
 
 export default function ClientLoading() {
   const { clientDashboard } = portalCopy;

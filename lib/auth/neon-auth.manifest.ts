@@ -1,6 +1,6 @@
 import "server-only";
 
-import manifest from "@/config/neon-auth.manifest.json";
+import manifest from "@/lib/auth/neon-auth.manifest.json";
 import { readNeonAuthEnv } from "@/lib/auth/env";
 
 export type NeonAuthManifest = typeof manifest;

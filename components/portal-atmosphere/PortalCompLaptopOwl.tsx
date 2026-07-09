@@ -2,7 +2,7 @@ import Image from "next/image";
 import {
   BRAND_COMP_OWL_DARK_PATH,
   BRAND_COMP_OWL_LIGHT_PATH,
-} from "@/lib/portal-brand";
+} from "@/lib/copy/portal-brand";
 import type { PortalAtmosphereTheme } from "./contracts/portal-theme.contract";
 import { cn } from "@/lib/utils";
 

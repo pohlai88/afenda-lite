@@ -18,12 +18,17 @@ Shared runtime and TypeScript contracts for all server action inputs.
 
 ## Owned files
 
-- `lib/schemas/common.ts` — shared string limits, UUID, email
+- `lib/schemas/common.ts` — shared string limits, UUID, email, `parseSchema`
+- `lib/schemas/questions.ts` — question config + draft shapes (editor + CDP package SSOT)
 - `lib/schemas/auth.ts` — operator sign-in payloads
-- `lib/schemas/surveys.ts` — declaration CRUD + public submit + package import
-- `lib/schemas/client.ts` — invite, onboard, assign submit, admin client ops
+- `lib/schemas/surveys.ts` — declaration CRUD + public submit + param schemas
+- `lib/schemas/client.ts` — invite, onboard, assign submit, draft save, admin client ops
 - `lib/schemas/declarations.ts` — evidence registration
+- `lib/survey-package.ts` — CDP package envelope (re-exports question schemas from S10)
 - `lib/client-onboarding.server.ts` — `parseClientOnboardingFormData()` (FormData → schema)
+- `lib/api/client-declaration-draft-route.logic.ts` — `parseDeclarationDraftJsonBody()` (JSON → schema)
+- `lib/server-actions/form-data.ts` — trimmed FormData field readers (SSOT)
+- `lib/server-actions/register-evidence-form.ts` — evidence upload FormData reader
 - Wire into all `app/actions/*.ts` mutation entry points (see doctrine § action map)
 
 ## Execution entry points
@@ -31,9 +36,10 @@ Shared runtime and TypeScript contracts for all server action inputs.
 | File | Functions |
 |------|-----------|
 | `admin.ts` | `adminSignInAction` |
-| `surveys.ts` | `updateSurveyAction`, `deleteSurveyAction`, `submitSurveyResponseAction`, `exportSurveyPackageAction`, `importSurveyPackageAction` |
+| `surveys.ts` | `updateSurveyAction`, `deleteSurveyAction`, `submitSurveyResponseAction`, `exportSurveyPackageAction`, `importSurveyPackageAction`, `regenerateInviteTokenAction` |
 | `declarations.ts` | `registerEvidenceAction` |
-| `client.ts` | `saveClientOnboardingAction`, `submitClientDeclarationAction`, `issueClientInviteAction`, `removeClientRegistrationAction`, `deleteClientAssignmentAction` |
+| `client.ts` | `saveClientOnboardingAction`, `submitClientDeclarationAction`, `saveClientDeclarationDraftAction`, `issueClientInviteAction`, `removeClientRegistrationAction`, `deleteClientAssignmentAction` |
+| `lib/api/client-declaration-draft-route.ts` | `POST /api/client/declaration-draft` (JSON autosave; same schema as draft action) |
 
 **Not Zod targets:** session helpers (`requireAdminSession`, `requireClientSession`), preview actions (`startClientPreviewAction`, `exitClientPreviewAction`), `createDraftSurveyAction` (no input), `acknowledgeClientPortalAction` (no input), `validateSurveyPackageAction` (analysis helper). Client/operator sign-in via Neon Auth UI is outside server actions.
 

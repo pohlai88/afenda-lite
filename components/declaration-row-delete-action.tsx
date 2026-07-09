@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { deleteSurveyAction } from "@/app/actions/surveys";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
-import { portalCopy } from "@/lib/portal-copy";
+import { portalCopy } from "@/lib/copy/portal-copy";
 
 export function DeclarationRowDeleteAction({ surveyId }: { surveyId: string }) {
   const { manage } = portalCopy.declarationDetail;

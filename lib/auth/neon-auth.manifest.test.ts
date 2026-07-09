@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import manifest from "@/config/neon-auth.manifest.json";
+import manifest from "@/lib/auth/neon-auth.manifest.json";
 import {
   assertNeonAuthManifestMatchesEnv,
   getNeonAuthManifest,

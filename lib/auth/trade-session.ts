@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { isAdminSession } from "@/lib/admin";
 import { getAuthSession } from "@/lib/auth/get-session";
-import { AUTH_SIGN_IN_HREF } from "@/lib/portal-routes";
+import { AUTH_SIGN_IN_HREF } from "@/lib/routing/portal-routes";
 import { canSalesAccessTrade } from "@/lib/domain/trade/access";
 import { listSalesMembers } from "@/lib/domain/trade/store";
 

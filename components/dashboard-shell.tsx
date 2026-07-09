@@ -3,10 +3,10 @@
 import type { ReactNode } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { AppSidebarSkeleton } from "@/components/app-sidebar-skeleton";
-import { PortalMemberProvider } from "@/components/portal-member-context";
+import { PortalMemberProvider } from "@/components/portal/portal-member-context";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { useMounted } from "@/hooks/use-mounted";
+import { useMounted } from "@/components/hooks/use-mounted";
 import type { DashboardTeam } from "@/lib/dashboard-nav";
 import type { PortalMember } from "@/lib/portal-member-types";
 

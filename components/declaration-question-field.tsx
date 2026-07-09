@@ -3,10 +3,10 @@
 import { useId, useState, useTransition } from "react";
 import { CheckCircleIcon, Loader2Icon, UploadIcon } from "lucide-react";
 import { registerEvidenceAction } from "@/app/actions/declarations";
-import { EVIDENCE_FILE_INPUT_ACCEPT } from "@/lib/evidence-policy";
+import { EVIDENCE_FILE_INPUT_ACCEPT } from "@/lib/domain/evidence-policy";
 import { FormErrorAlert } from "@/components/form-error-alert";
 import { QuestionSequenceBadge } from "@/components/question-sequence-badge";
-import { portalCopy } from "@/lib/portal-copy";
+import { portalCopy } from "@/lib/copy/portal-copy";
 import type { SurveyQuestion } from "@/lib/question-models";
 import {
   textAnswerMaxLength,

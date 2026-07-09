@@ -1,9 +1,9 @@
-import { PortalNotFoundPage } from "@/components/portal-not-found-page";
+import { PortalNotFoundPage } from "@/components/portal/portal-not-found-page";
 import {
   notFoundPageMetadata,
   resolveNotFoundDestination,
-} from "@/lib/not-found-routing";
-import { portalCopy } from "@/lib/portal-copy";
+} from "@/lib/routing/not-found-routing";
+import { portalCopy } from "@/lib/copy/portal-copy";
 
 export const metadata = notFoundPageMetadata;
 

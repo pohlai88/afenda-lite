@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
-import { SidebarBrandMark } from "@/components/portal-brand-mark";
-import { PORTAL_BRAND_SHELL } from "@/lib/portal-brand";
+import { SidebarBrandMark } from "@/components/portal/portal-brand-mark";
+import { PORTAL_BRAND_SHELL } from "@/lib/copy/portal-brand";
 import type { PortalMember } from "@/lib/portal-member-types";
 import {
   ClipboardListIcon,
@@ -12,8 +12,8 @@ import {
   ORG_OPERATOR_SIDEBAR_ROUTES,
   isOrgOperatorSidebarHref,
   type PortalSidebarRoute,
-} from "@/lib/portal-nav-routes";
-import { PORTAL_NAME, portalCopy } from "@/lib/portal-copy";
+} from "@/lib/routing/portal-nav-routes";
+import { PORTAL_NAME, portalCopy } from "@/lib/copy/portal-copy";
 import { fallbackOperatorMember } from "@/lib/portal-member-types";
 
 export type DashboardTeam = {

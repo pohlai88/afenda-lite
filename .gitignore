@@ -28,6 +28,9 @@
 # misc
 .DS_Store
 *.pem
+debug-storybook.log
+/*.tgz
+.env.vercel.*
 
 # debug
 npm-debug.log*

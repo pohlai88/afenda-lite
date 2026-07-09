@@ -1,7 +1,7 @@
 import {
   legacyInvitePageMetadata,
   runLegacyInviteTokenPage,
-} from "@/lib/legacy-invite-entry";
+} from "@/lib/entry/legacy-invite-entry";
 
 export const metadata = legacyInvitePageMetadata;
 export const dynamic = "force-dynamic";

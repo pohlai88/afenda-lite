@@ -1,4 +1,4 @@
-import { IconPlaceholder } from '@/registry/icons/icon-placeholder'
+import { IconPlaceholder } from '@/components/svg/icon-placeholder'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog'

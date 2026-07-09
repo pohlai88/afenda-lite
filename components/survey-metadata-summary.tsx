@@ -6,8 +6,8 @@ import {
   CardHeader,
 } from "@/components/ui/card";
 import { formatDate } from "@/lib/format";
-import { portalCopy } from "@/lib/portal-copy";
-import type { Survey } from "@/lib/surveys";
+import { portalCopy } from "@/lib/copy/portal-copy";
+import type { Survey } from "@/lib/domain/surveys";
 
 function DetailItem({
   label,

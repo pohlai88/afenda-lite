@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import { PortalAuthPhantomOwl } from "@/components/portal-auth-brand-scene";
+import { PortalAuthPhantomOwl } from "@/components/portal/portal-auth-brand-scene";
 import { IamCheckAuthShellPreview } from "./auth-shell-preview";
 
 const meta: Meta = {

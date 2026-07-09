@@ -2,7 +2,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { pathToFileURL } from "node:url";
 
-import { buildRelianceGraphSnapshot } from "../../lib/portal-reliance-graph";
+import { buildRelianceGraphSnapshot } from "../../lib/governance/portal-reliance-graph";
 
 const repoRoot = join(import.meta.dirname, "../..");
 const snapshotPath = join(repoRoot, "docs/architecture/reliance-graph.snapshot.json");

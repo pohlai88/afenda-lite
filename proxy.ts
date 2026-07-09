@@ -5,7 +5,7 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth/server";
-import { CLIENT_PREVIEW_UNAVAILABLE_HREF } from "@/lib/portal-routes";
+import { CLIENT_PREVIEW_UNAVAILABLE_HREF } from "@/lib/routing/portal-routes";
 
 const neonMiddleware = auth.middleware({
   loginUrl: "/auth/sign-in",

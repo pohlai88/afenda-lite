@@ -1,7 +1,11 @@
 "use client";
 
+/**
+ * S1 browser Neon Auth client — same-origin `/api/auth/*` handlers.
+ * Server config: `lib/auth/server.ts` (`NEON_AUTH_*` via `lib/auth/env.ts`).
+ */
 import { createAuthClient } from "@neondatabase/auth/next";
-import { AUTH_SIGN_IN_HREF } from "@/lib/portal-routes";
+import { AUTH_SIGN_IN_HREF } from "@/lib/routing/portal-routes";
 
 /**
  * Browser auth client — uses same-origin `/api/auth/*` route handlers.

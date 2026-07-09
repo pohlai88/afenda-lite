@@ -13,6 +13,7 @@ type GlobalPoolState = typeof globalThis & {
 };
 
 function getDatabaseUrl(): string | undefined {
+  // Read directly for pool bootstrap; full bag validated in instrumentation.ts via lib/env/server.
   const url = process.env.DATABASE_URL;
   if (!url) return undefined;
   return normalizeDatabaseUrl(url);

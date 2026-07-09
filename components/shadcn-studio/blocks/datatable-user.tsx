@@ -50,7 +50,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { usePagination } from "@/hooks/use-pagination";
+import { usePagination } from "@/components/hooks/use-pagination";
 import { cn } from "@/lib/utils";
 import { DataTableToolbar } from "@/components/datatable-toolbar";
 

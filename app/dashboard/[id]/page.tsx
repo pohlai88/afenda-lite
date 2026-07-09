@@ -1,7 +1,7 @@
 import {
   operatorDeclarationDetailMetadata,
   runOperatorDeclarationDetailPage,
-} from "@/lib/operator-declaration-detail";
+} from "@/lib/pages/operator-declaration-detail";
 
 export const dynamic = "force-dynamic";
 

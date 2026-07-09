@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { isPoolerConnection } from "./db-pool-config.mjs";
 
 function readDatabaseUrlFromFile(envFile) {
   const content = readFileSync(envFile, "utf8");
@@ -48,12 +49,16 @@ try {
   process.exit(1);
 }
 
-const pooler =
-  url.hostname.includes("pooler.supabase.com") ||
-  url.port === "6543" ||
-  url.hostname.includes("-pooler");
+const pooler = isPoolerConnection(raw);
+const provider = url.hostname.includes("neon.tech")
+  ? "neon"
+  : url.hostname.includes("supabase.com")
+    ? "supabase-legacy"
+    : "other";
+
 const result = {
   host: url.hostname,
+  provider,
   pooler,
   sslmode: url.searchParams.get("sslmode"),
   database: url.pathname.replace(/^\//, ""),

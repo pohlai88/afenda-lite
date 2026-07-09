@@ -1,6 +1,6 @@
-import type { ClientAssignment } from "@/lib/clients";
-import { assignmentHasDraftProgress } from "@/lib/clients";
-import { getDeclarationDeadlineError } from "@/lib/declaration-deadlines";
+import type { ClientAssignment } from "@/lib/domain/clients";
+import { assignmentHasDraftProgress } from "@/lib/domain/clients";
+import { getDeclarationDeadlineError } from "@/lib/domain/declaration-deadlines";
 
 const DUE_SOON_DAYS = 7;
 

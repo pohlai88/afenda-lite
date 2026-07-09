@@ -1,5 +1,5 @@
 import { getClientSignInUrl } from "@/lib/app-url";
-import { portalCopy } from "@/lib/portal-copy";
+import { portalCopy } from "@/lib/copy/portal-copy";
 
 export function buildClientAccessMessage(input: {
   portalUrl?: string;

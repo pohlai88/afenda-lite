@@ -1,3 +1,4 @@
+/** Keep in sync with lib/db-config.ts (Neon primary; Supabase legacy SSL/pooler rules). */
 export function isSupabaseDatabaseUrl(url) {
   if (!url) return false;
   try {

@@ -3,22 +3,22 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdminSession } from "@/lib/auth/session";
-import { recordAuditEvent } from "@/lib/audit";
-import { createClientAssignment } from "@/lib/clients";
+import { recordAuditEvent } from "@/lib/domain/audit";
+import { createClientAssignment } from "@/lib/domain/clients";
 import {
   OPERATOR_CLIENTS_HREF,
   OPERATOR_DASHBOARD_HREF,
   operatorDeclarationHref,
   operatorDeclarationManageHref,
-} from "@/lib/portal-routes";
+} from "@/lib/routing/portal-routes";
 import {
   listQuestionsForSurvey,
   replaceSurveyQuestions,
   SurveyHasResponsesError,
   type SurveyAnswers,
-} from "@/lib/questions";
+} from "@/lib/domain/questions";
 import { runLoggedAction } from "@/lib/observability";
-import { portalCopy } from "@/lib/portal-copy";
+import { portalCopy } from "@/lib/copy/portal-copy";
 import { parseSchema } from "@/lib/schemas/common";
 import {
   deleteSurveySchema,
@@ -27,7 +27,7 @@ import {
   surveyIdParamSchema,
   updateSurveySchema,
 } from "@/lib/schemas/surveys";
-import { DRAFT_SURVEY_TITLE } from "@/lib/survey-draft";
+import { DRAFT_SURVEY_TITLE } from "@/lib/domain/survey-draft";
 import {
   buildCdpPackageForExport,
   cdpQuestionsToDrafts,
@@ -35,11 +35,11 @@ import {
   parseCdpPackage,
   serializeCdpPackage,
   type CdpPackage,
-} from "@/lib/survey-package";
+} from "@/lib/domain/survey-package";
 import {
   analyzeCdpPackageInput,
   type PackageAnalysis,
-} from "@/lib/survey-package-analyze";
+} from "@/lib/domain/survey-package-analyze";
 import {
   createSurvey,
   deleteSurvey,
@@ -47,7 +47,7 @@ import {
   pickSurveyMetadata,
   regenerateInviteToken,
   updateSurvey,
-} from "@/lib/surveys";
+} from "@/lib/domain/surveys";
 import { formString } from "@/lib/server-actions/form-data";
 
 function revalidateOperatorDashboard(surveyId?: string) {

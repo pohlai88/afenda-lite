@@ -1,11 +1,11 @@
 "use client";
 
 import "./globals.css";
-import { PortalRouteError } from "@/components/portal-route-error";
+import { PortalRouteError } from "@/components/portal/portal-route-error";
 import { portalFontClassName } from "@/app/fonts";
-import { portalCopy } from "@/lib/portal-copy";
-import { AUTH_SIGN_IN_HREF } from "@/lib/portal-routes";
-import { PORTAL_THEME_BOOT_SCRIPT } from "@/lib/portal-theme";
+import { portalCopy } from "@/lib/copy/portal-copy";
+import { AUTH_SIGN_IN_HREF } from "@/lib/routing/portal-routes";
+import { PORTAL_THEME_BOOT_SCRIPT } from "@/lib/copy/portal-theme";
 import { cn } from "@/lib/utils";
 
 /** Root error boundary — must define its own html/body (outside root layout). */

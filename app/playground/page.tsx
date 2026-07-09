@@ -1,4 +1,4 @@
-import { runPlaygroundIndexPage } from "@/lib/playground-index-page";
+import { runPlaygroundIndexPage } from "@/lib/pages/playground/playground-index-page";
 
 export const dynamic = "force-dynamic";
 

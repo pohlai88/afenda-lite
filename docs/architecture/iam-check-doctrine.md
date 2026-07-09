@@ -156,6 +156,8 @@ Mutations and public entry points only. Session helpers (`requireAdminSession`, 
 
 ## 3. Slice index
 
+**Live status (code, prod verify, gates):** [TRACKING.md](../TRACKING.md)
+
 | ID | Name | Status | Sequence | Spec |
 |----|------|--------|----------|------|
 | S0 | Schema foundation | shipped | 1 | [s0-schema-foundation.md](./slices/s0-schema-foundation.md) |

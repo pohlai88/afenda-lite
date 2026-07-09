@@ -4,6 +4,7 @@ Internal technical architecture for the Client Declaration Portal ([iam-check](h
 
 | Document | Purpose |
 |----------|---------|
+| [TRACKING.md](../TRACKING.md) | **Program status SSOT** — gates, BL/S slice status, open P0 gaps |
 | [iam-check-doctrine.md](./iam-check-doctrine.md) | Full-stack doctrine, pipeline, CCP register, roadmap, acceptance checklist |
 | [reliance-mapping.snapshot.json](./reliance-mapping.snapshot.json) | **Primary SSOT** — declared vs discovered vs aligned compare per surface/action |
 | [reliance-graph.snapshot.json](./reliance-graph.snapshot.json) | Derived force-graph materialization (nodes/edges for gates and CCPs) |

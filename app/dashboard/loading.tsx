@@ -1,8 +1,8 @@
 import { DashboardPageSkeleton } from "@/components/dashboard-page";
 import { Skeleton } from "@/components/ui/skeleton";
 import { operatorDashboardBreadcrumbs } from "@/lib/operator-breadcrumbs";
-import { isPlaygroundEmbedRequest } from "@/lib/playground";
-import { portalCopy } from "@/lib/portal-copy";
+import { isPlaygroundEmbedRequest } from "@/lib/playground/playground";
+import { portalCopy } from "@/lib/copy/portal-copy";
 
 export default async function DashboardLoading() {
   const embed = await isPlaygroundEmbedRequest();

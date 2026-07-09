@@ -1,9 +1,8 @@
 import { expect, type Page } from "@/testing/e2e/playwright-base";
-import { execFileSync } from "node:child_process";
-import { resolve } from "node:path";
-import { portalCopy } from "@/lib/portal-copy";
-import { authSignInHref, buildClientJoinHref } from "@/lib/portal-routes";
+import { portalCopy } from "@/lib/copy/portal-copy";
+import { authSignInHref, buildClientJoinHref } from "@/lib/routing/portal-routes";
 import { getClientDefaultPasswordFromEnv } from "@/testing/e2e/credentials";
+import { runNodeScript } from "@/testing/e2e/run-node-script";
 
 export type ClientInviteJourney = {
   email: string;
@@ -152,28 +151,10 @@ export function createNeonAuthUserForE2e(
   password: string,
   fullName: string,
 ) {
-  execFileSync(
-    process.execPath,
-    [
-      "--env-file=.env",
-      resolve(process.cwd(), "scripts/e2e-join-sign-up.mjs"),
-      email,
-      password,
-      fullName,
-    ],
-    { encoding: "utf8" },
-  );
+  runNodeScript("scripts/e2e-join-sign-up.mjs", [email, password, fullName]);
 }
 
 /** E2E only — marks verified after API sign-up (no OTP inbox in CI). */
 export function markTestUserEmailVerified(email: string) {
-  execFileSync(
-    process.execPath,
-    [
-      "--env-file=.env",
-      resolve(process.cwd(), "scripts/mark-neon-auth-email-verified.mjs"),
-      email,
-    ],
-    { encoding: "utf8" },
-  );
+  runNodeScript("scripts/mark-neon-auth-email-verified.mjs", [email]);
 }

@@ -3,7 +3,7 @@ import { screen, waitFor } from "@testing-library/react";
 import { TeamSwitcher } from "@/components/team-switcher";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import type { DashboardTeam } from "@/lib/dashboard-nav";
-import { portalCopy } from "@/lib/portal-copy";
+import { portalCopy } from "@/lib/copy/portal-copy";
 import { renderPortal, setupUser } from "@/testing/react";
 
 const push = vi.fn();

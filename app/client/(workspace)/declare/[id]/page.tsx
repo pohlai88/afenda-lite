@@ -1,7 +1,7 @@
 import {
   clientDeclarePageMetadata,
   runClientDeclarePage,
-} from "@/lib/client-declare-page";
+} from "@/lib/pages/client-declare-page";
 
 export const metadata = clientDeclarePageMetadata;
 export const dynamic = "force-dynamic";

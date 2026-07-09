@@ -1,7 +1,7 @@
 import {
   openLinkPageMetadata,
   runOpenLinkPage,
-} from "@/lib/open-link-entry";
+} from "@/lib/entry/open-link-entry";
 
 export const dynamic = "force-dynamic";
 

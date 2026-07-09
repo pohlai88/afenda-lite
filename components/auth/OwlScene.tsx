@@ -2,7 +2,7 @@ import type { GuardianAssetSet, GuardianMode, GuardianState } from "./types";
 import {
   BRAND_DRAMATIC_OWL_BACKGROUND_HEIGHT,
   BRAND_DRAMATIC_OWL_BACKGROUND_WIDTH,
-} from "@/lib/portal-brand";
+} from "@/lib/copy/portal-brand";
 
 type Props = {
   mode: GuardianMode;

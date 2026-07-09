@@ -5,7 +5,7 @@ import { RefreshCwIcon } from "lucide-react";
 import { regenerateInviteTokenAction } from "@/app/actions/surveys";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Button } from "@/components/ui/button";
-import { portalCopy } from "@/lib/portal-copy";
+import { portalCopy } from "@/lib/copy/portal-copy";
 
 export function SecureLinkRotateButton({ surveyId }: { surveyId: string }) {
   const { share } = portalCopy;

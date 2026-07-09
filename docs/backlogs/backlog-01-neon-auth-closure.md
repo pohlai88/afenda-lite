@@ -1,7 +1,7 @@
 # Backlog-01 — Neon Auth end-to-end closure (iam-check)
 
 **Status:** Active — code complete; **production verification:** [post-deploy-verification.md](./post-deploy-verification.md)  
-**Completeness snapshot:** [implementation-completeness.md](./implementation-completeness.md)
+**Status board (SSOT):** [TRACKING.md](../TRACKING.md)
 **Audience:** Engineers, operators, release owner  
 **Lifecycle:** Maintenance / pre-launch closure  
 **Source of truth:** Live Neon Auth branch (`production`) ↔ materialized manifest ↔ portal UI  
@@ -14,7 +14,7 @@
 
 Close every open gap between **what Neon Auth is configured to do**, **what the portal exposes to users**, and **what operators can verify in production** — so client onboarding and operator workflows work end-to-end without silent failures.
 
-This backlog is **outcome-focused**. Implementation detail lives in individual slice briefs under [`slices/`](./slices/).
+This backlog is **outcome-focused**. Problem context and code maps: [bl-slices.md](./bl-slices.md). Checklists: [post-deploy-verification.md](./post-deploy-verification.md) only.
 
 ---
 
@@ -56,15 +56,15 @@ This backlog is **outcome-focused**. Implementation detail lives in individual s
 
 | ID | Title | Priority | Depends on | Slice |
 | --- | --- | --- | --- | --- |
-| BL-01 | Configuration truth & audit pipeline | P0 | — | [BL-01](./slices/bl-01-config-truth-audit.md) |
-| BL-02 | Operator client invitation email | P0 | BL-01 | [BL-02](./slices/bl-02-operator-invite-email.md) |
-| BL-03 | Operator client portal preview | P1 | BL-01 | [BL-03](./slices/bl-03-operator-client-preview.md) |
-| BL-04 | Production auth cutover readiness | P1 | BL-01 | [BL-04](./slices/bl-04-production-cutover.md) |
-| BL-05 | Auth email branding & sender trust | P2 | BL-04 | [BL-05](./slices/bl-05-auth-email-branding.md) |
-| BL-06 | Client invitation join journey | P0 | BL-02 | [BL-06](./slices/bl-06-client-join-journey.md) |
-| BL-07 | Account & credential self-service | P2 | BL-01 | [BL-07](./slices/bl-07-account-self-service.md) |
-| BL-08 | Auth surface registry & traceability | P2 | BL-01 | [BL-08](./slices/bl-08-surface-registry.md) |
-| BL-09 | Local development auth strategy | P1 | BL-04 | [BL-09](./slices/bl-09-local-dev-auth.md) |
+| BL-01 | Configuration truth & audit pipeline | P0 | — | [BL-01](./bl-slices.md#bl-01) |
+| BL-02 | Operator client invitation email | P0 | BL-01 | [BL-02](./bl-slices.md#bl-02) |
+| BL-03 | Operator client portal preview | P1 | BL-01 | [BL-03](./bl-slices.md#bl-03) |
+| BL-04 | Production auth cutover readiness | P1 | BL-01 | [BL-04](./bl-slices.md#bl-04) |
+| BL-05 | Auth email branding & sender trust | P2 | BL-04 | [BL-05](./bl-slices.md#bl-05) |
+| BL-06 | Client invitation join journey | P0 | BL-02 | [BL-06](./bl-slices.md#bl-06) |
+| BL-07 | Account & credential self-service | P2 | BL-01 | [BL-07](./bl-slices.md#bl-07) |
+| BL-08 | Auth surface registry & traceability | P2 | BL-01 | [BL-08](./bl-slices.md#bl-08) |
+| BL-09 | Local development auth strategy | P1 | BL-04 | [BL-09](./bl-slices.md#bl-09) |
 
 **Recommended execution order:** BL-01 → BL-02 + BL-03 (parallel) → BL-06 → BL-04 → BL-09 → BL-05 + BL-07 + BL-08 (parallel).
 
@@ -92,7 +92,7 @@ Backlog-01 is **closed** when [post-deploy-verification.md](./post-deploy-verifi
 ## Related documents
 
 - [post-deploy-verification.md](./post-deploy-verification.md) — **single post-deploy checklist (SSOT)**
-- [implementation-completeness.md](./implementation-completeness.md) — plan ↔ codebase status
+- [TRACKING.md](../TRACKING.md) — program status (SSOT)
 - [neon-auth-validation-matrix.md](./neon-auth-validation-matrix.md) — live ↔ manifest ↔ UI (MCP-validated)
 - [AGENTS.md](../../AGENTS.md) — Neon Auth env and MCP workflow
 - [production-go-live.md](../runbooks/production-go-live.md) — launch runbook

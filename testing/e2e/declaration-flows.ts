@@ -1,5 +1,5 @@
 import { expect, type Page } from "@/testing/e2e/playwright-base";
-import { portalCopy } from "@/lib/portal-copy";
+import { portalCopy } from "@/lib/copy/portal-copy";
 
 function reviewConfirmSwitch(page: Page) {
   return page.getByRole("switch", { name: /reviewed my responses/i });

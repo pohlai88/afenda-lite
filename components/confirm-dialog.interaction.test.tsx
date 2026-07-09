@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { screen, waitFor } from "@testing-library/react";
 import { useState } from "react";
 import { ConfirmDialog } from "@/components/confirm-dialog";
-import { portalCopy } from "@/lib/portal-copy";
+import { portalCopy } from "@/lib/copy/portal-copy";
 import { renderPortal, setupUser } from "@/testing/react";
 
 describe("ConfirmDialog", () => {

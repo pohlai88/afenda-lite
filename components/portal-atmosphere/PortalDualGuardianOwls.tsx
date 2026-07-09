@@ -2,7 +2,7 @@ import Image from "next/image";
 import {
   BRAND_DUAL_GUARDIAN_OWL_DARK_PATH,
   BRAND_DUAL_GUARDIAN_OWL_LIGHT_PATH,
-} from "@/lib/portal-brand";
+} from "@/lib/copy/portal-brand";
 
 /**
  * Dual Guardian Facade — night (dark, left) and light (white, right) owls

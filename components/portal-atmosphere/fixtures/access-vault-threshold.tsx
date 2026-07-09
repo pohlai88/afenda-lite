@@ -4,7 +4,7 @@
  * `portalCopy.signIn`; no Neon Auth, no form actions.
  */
 import { ShieldCheck } from "lucide-react";
-import { portalCopy } from "@/lib/portal-copy";
+import { portalCopy } from "@/lib/copy/portal-copy";
 
 export function AccessVaultThreshold() {
   return (

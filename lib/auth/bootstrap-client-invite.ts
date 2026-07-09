@@ -1,10 +1,10 @@
-import { recordAuditEvent } from "@/lib/audit";
+import { recordAuditEvent } from "@/lib/domain/audit";
 import type { BootstrapClientAuthInput } from "@/lib/auth/types";
 import {
   ensureClientProfileRow,
   getClientInvitationByEmail,
   markClientInvitationAccepted,
-} from "@/lib/clients";
+} from "@/lib/domain/clients";
 
 export function resolveMetadataInvitationId(
   userMetadata?: Record<string, unknown> | null,

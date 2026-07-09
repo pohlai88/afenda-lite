@@ -5,9 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { SURVEY_EDITOR } from "@/lib/form-constraints";
-import { portalCopy } from "@/lib/portal-copy";
-import { formatCategoriesInput } from "@/lib/survey-package";
-import type { SurveyMetadata } from "@/lib/surveys";
+import { portalCopy } from "@/lib/copy/portal-copy";
+import { formatCategoriesInput } from "@/lib/domain/survey-package";
+import type { SurveyMetadata } from "@/lib/domain/surveys";
 
 function toDateInputValue(value: Date | null) {
   if (!value) return "";

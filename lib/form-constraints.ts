@@ -1,4 +1,4 @@
-/** Shared validation limits — keep in sync with Zod schemas in lib/schemas/. */
+/** Shared validation limits — keep in sync with Zod schemas in `lib/schemas/`. */
 
 export const SURVEY_TEXT_ANSWER_MAX = 10_000;
 

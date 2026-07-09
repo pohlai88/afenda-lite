@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, afterEach } from "vitest";
 
 import {
   PREVIEW_UNAVAILABLE_FAILED_REASON,
@@ -12,9 +12,33 @@ import {
 import {
   CLIENT_HOME_HREF,
   CLIENT_PREVIEW_UNAVAILABLE_HREF,
-} from "@/lib/portal-routes";
+} from "@/lib/routing/portal-routes";
+import { resetServerEnvCache } from "@/lib/env/server";
+
+const validEnv = {
+  DATABASE_URL: "postgresql://user:pass@localhost:5432/db",
+  NEON_AUTH_BASE_URL: "https://auth.example.test/neondb/auth",
+  NEON_AUTH_COOKIE_SECRET: "x".repeat(32),
+  CLIENT_DEFAULT_PASSWORD: "preview-pass",
+};
 
 describe("preview client helpers", () => {
+  const snapshot = { ...process.env };
+
+  afterEach(() => {
+    for (const key of Object.keys(process.env)) {
+      if (!(key in snapshot)) {
+        delete process.env[key];
+      }
+    }
+    Object.assign(process.env, snapshot);
+    resetServerEnvCache();
+  });
+
+  function withPreviewEnv(overrides: Record<string, string | undefined>) {
+    Object.assign(process.env, validEnv, overrides);
+    resetServerEnvCache();
+  }
   it("detects failed preview reason", () => {
     expect(isPreviewUnavailableFailedReason(PREVIEW_UNAVAILABLE_FAILED_REASON)).toBe(
       true,
@@ -46,8 +70,7 @@ describe("preview client helpers", () => {
   });
 
   it("matches preview client session by configured email", () => {
-    const originalEmail = process.env.PREVIEW_CLIENT_EMAIL;
-    process.env.PREVIEW_CLIENT_EMAIL = "preview@example.com";
+    withPreviewEnv({ PREVIEW_CLIENT_EMAIL: "preview@example.com" });
 
     expect(isPreviewClientSession({ user: { email: "preview@example.com" } })).toBe(
       true,
@@ -55,22 +78,18 @@ describe("preview client helpers", () => {
     expect(isPreviewClientSession({ user: { email: "other@example.com" } })).toBe(
       false,
     );
-
-    process.env.PREVIEW_CLIENT_EMAIL = originalEmail;
   });
 
   it("reports preview client configured only when env has email and password", () => {
-    const originalEmail = process.env.PREVIEW_CLIENT_EMAIL;
-    const originalPassword = process.env.PREVIEW_CLIENT_PASSWORD;
-
-    process.env.PREVIEW_CLIENT_EMAIL = " preview@example.com ";
-    process.env.PREVIEW_CLIENT_PASSWORD = "secret";
+    withPreviewEnv({
+      PREVIEW_CLIENT_EMAIL: " preview@example.com ",
+      PREVIEW_CLIENT_PASSWORD: "secret",
+    });
     expect(isPreviewClientConfigured()).toBe(true);
 
-    process.env.PREVIEW_CLIENT_EMAIL = "";
+    withPreviewEnv({ PREVIEW_CLIENT_PASSWORD: "secret" });
+    delete process.env.PREVIEW_CLIENT_EMAIL;
+    resetServerEnvCache();
     expect(isPreviewClientConfigured()).toBe(false);
-
-    process.env.PREVIEW_CLIENT_EMAIL = originalEmail;
-    process.env.PREVIEW_CLIENT_PASSWORD = originalPassword;
   });
 });

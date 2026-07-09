@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { screen, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { DeclarationRowDeleteAction } from "@/components/declaration-row-delete-action";
-import { portalCopy } from "@/lib/portal-copy";
+import { portalCopy } from "@/lib/copy/portal-copy";
 import { renderPortal, setupUser } from "@/testing/react";
 
 vi.mock("@/app/actions/surveys", () => ({

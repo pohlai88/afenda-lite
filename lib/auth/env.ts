@@ -1,4 +1,8 @@
-const MIN_COOKIE_SECRET_LENGTH = 32;
+import "server-only";
+
+import { MIN_NEON_AUTH_COOKIE_SECRET_LENGTH } from "@/lib/env/constants";
+
+const MIN_COOKIE_SECRET_LENGTH = MIN_NEON_AUTH_COOKIE_SECRET_LENGTH;
 
 /** Env bag for probes — accepts partial records in unit tests. */
 export type EnvBag = Record<string, string | undefined>;

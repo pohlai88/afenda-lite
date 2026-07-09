@@ -8,8 +8,8 @@ import {
   playgroundScreenDefs,
   resolvePlaygroundPathTemplate,
   resolvePlaygroundRouteFile,
-} from "../lib/playground-registry";
-import { playgroundE2eFixtures } from "../lib/playground-e2e-fixtures";
+} from "@/lib/playground/playground-registry";
+import { playgroundE2eFixtures } from "@/lib/playground/playground-e2e-fixtures";
 
 const ROOT = process.cwd();
 
@@ -148,7 +148,7 @@ if (!existsSync(join(ROOT, "app/playground/hitl-review/page.tsx"))) {
 
 const layoutSource = readFileSync(join(ROOT, "app/playground/layout.tsx"), "utf8");
 const layoutHandlerSource = readFileSync(
-  join(ROOT, "lib/playground-layout.tsx"),
+  join(ROOT, "lib/playground/playground-layout.tsx"),
   "utf8",
 );
 if (!layoutSource.includes("runPlaygroundLayout")) {

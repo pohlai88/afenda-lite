@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { PORTAL_BRAND_ICON } from "@/lib/portal-brand";
+import { PORTAL_BRAND_ICON } from "@/lib/copy/portal-brand";
 import { useTheme } from "@/components/theme-provider";
 
 /** Sync tab favicon when the user manually toggles theme (media queries follow OS only). */

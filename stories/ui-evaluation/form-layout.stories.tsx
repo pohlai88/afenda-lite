@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import { PortalFormSection } from "@/components/portal-form-section";
-import { getEvaluationRow } from "@/lib/ui-decision-matrix";
+import { PortalFormSection } from "@/components/portal/portal-form-section";
+import { getEvaluationRow } from "@/lib/governance/ui-decision-matrix";
 import { ComparisonGrid, ScoreAnnotation } from "./evaluation-primitives";
 
 const row = getEvaluationRow("client-profile")!;

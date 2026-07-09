@@ -1,8 +1,8 @@
 import {
   loadOperatorClientsPage,
   operatorClientsPageMetadata,
-} from "@/lib/operator-clients-page";
-import { OperatorClientsPageView } from "@/components/operator-clients-page-view";
+} from "@/lib/pages/operator-clients-page";
+import { OperatorClientsPageView } from "@/components/operator/operator-clients-page-view";
 
 export const metadata = operatorClientsPageMetadata;
 export const dynamic = "force-dynamic";

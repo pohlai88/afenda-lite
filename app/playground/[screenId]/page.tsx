@@ -2,7 +2,7 @@ import {
   generatePlaygroundScreenStaticParams,
   playgroundScreenPageMetadata,
   runPlaygroundScreenPage,
-} from "@/lib/playground-screen-page";
+} from "@/lib/pages/playground/playground-screen-page";
 
 export const dynamic = "force-dynamic";
 

@@ -1,6 +1,6 @@
 # Client Declaration Portal
 
-Client portal for authenticated declarations and secure submission links. Built on **Vercel + Supabase Postgres + Supabase Auth**.
+Client portal for authenticated declarations and secure submission links. Built on **Vercel + Neon Postgres + Neon Auth**.
 
 ## What you get
 
@@ -14,11 +14,11 @@ Client portal for authenticated declarations and secure submission links. Built 
 
 Internal full-stack doctrine and slice specs for agents and maintainers:
 
+- [docs/TRACKING.md](docs/TRACKING.md) — **program status SSOT** (gates, backlog, open gaps)
 - [docs/architecture/iam-check-doctrine.md](docs/architecture/iam-check-doctrine.md) — boundaries, CCP register, roadmap
-- [docs/architecture/slices/](docs/architecture/slices/) — per-slice acceptance proofs (S0–S15)
-- [docs/runbooks/production-go-live.md](docs/runbooks/production-go-live.md) — Vercel/Neon production verification
-- [docs/runbooks/preview-branch-setup.md](docs/runbooks/preview-branch-setup.md) — Neon preview branch for Vercel Preview and CI
-- [docs/portal-writing.md](docs/portal-writing.md) — UI copy and terminology
+- [docs/architecture/repo-layout.md](docs/architecture/repo-layout.md) — **Root / L1 / L2 folder rules** (where code lives)
+- [docs/architecture/slices/](docs/architecture/slices/) — per-slice acceptance proofs (S0–S18)
+- [docs/backlogs/post-deploy-verification.md](docs/backlogs/post-deploy-verification.md) — production sign-off checklist
 
 ## Database migrations
 
@@ -28,28 +28,19 @@ Schema is versioned in [`db/migrations/`](db/migrations/). Apply before first ru
 npm run db:migrate
 ```
 
-Or apply via Supabase SQL editor / `npm run db:migrate` against project **czxbufruvpcioghvfzmo**.
-
-Migrations:
-
-| File | Purpose |
-|------|---------|
-| `001_portal_schema.sql` | All portal tables and indexes |
-| `002_backfill_questions.sql` | Seed `survey_questions` from legacy intro text |
-| `003_drop_rating_comment.sql` | Remove legacy rating/comment columns |
-| `004_audit_events.sql` | Audit event log for mutations |
+Apply against your Neon branch (`DATABASE_URL` in `env.secret`). See [docs/runbooks/local-dev-auth.md](docs/runbooks/local-dev-auth.md).
 
 The app no longer runs DDL on request — tables must exist before deploy.
 
-## Supabase configuration
+## Auth and database
 
-| Setting | Value |
-|---------|-------|
-| Project ref | `czxbufruvpcioghvfzmo` |
-| URL | `https://czxbufruvpcioghvfzmo.supabase.co` |
-| Auth | Invite-only email (`enable_signup = false`) |
+| Concern | Authority |
+|---------|-----------|
+| Postgres | Neon — `DATABASE_URL` (use `-pooler` host in production/serverless) |
+| Auth | Neon Auth — `NEON_AUTH_BASE_URL`, trusted domains per [AGENTS.md](./AGENTS.md) |
+| Schema | [`db/migrations/`](db/migrations/) |
 
-**Redirect URLs (production):** `https://iam-check.vercel.app/**`, localhost, and Vercel preview wildcards — configured in `supabase/config.toml`.
+Legacy Supabase CLI config was removed; see [supabase/README.md](supabase/README.md).
 
 ## GitHub
 
@@ -62,13 +53,16 @@ Repository: https://github.com/pohlai88/iam-check
 | **Project** | `iam-check` |
 | **Production URL** | https://iam-check.vercel.app |
 
-Env vars: `DATABASE_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `SHARED_ADMIN_*`, `APP_URL`.
+Env vars: `DATABASE_URL`, `NEON_AUTH_*`, `SHARED_ADMIN_*`, `APP_URL`. Source of truth: `env.config` + `env.secret` → `npm run env:compose`. Stale Supabase keys: `npm run cleanup:vercel`.
 
 ## Local development
 
 ```bash
 npm install
-cp .env.example .env
+cp env.config.example env.config
+cp env.secret.example env.secret
+# edit env.config / env.secret, then:
+npm run env:compose
 npm run db:migrate
 npm run seed:admin
 npm run dev

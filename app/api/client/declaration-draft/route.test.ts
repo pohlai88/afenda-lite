@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { portalCopy } from "@/lib/portal-copy";
+import { portalCopy } from "@/lib/copy/portal-copy";
 
 vi.mock("server-only", () => ({}));
 
@@ -10,7 +10,7 @@ vi.mock("@/lib/auth/session", () => ({
   guardClientSession: (...args: unknown[]) => mockGuardClientSession(...args),
 }));
 
-vi.mock("@/lib/client-declaration-draft", () => ({
+vi.mock("@/lib/domain/client-declaration-draft", () => ({
   persistClientDeclarationDraft: (...args: unknown[]) =>
     mockPersistClientDeclarationDraft(...args),
 }));

@@ -2,7 +2,7 @@
 
 import { useFormStatus } from "react-dom";
 import { createDraftSurveyAction } from "@/app/actions/surveys";
-import { portalCopy } from "@/lib/portal-copy";
+import { portalCopy } from "@/lib/copy/portal-copy";
 import { Button } from "@/components/ui/button";
 import { Loader2Icon, SettingsIcon } from "lucide-react";
 

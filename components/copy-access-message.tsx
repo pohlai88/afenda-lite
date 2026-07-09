@@ -3,7 +3,7 @@
 import { useTransition } from "react";
 import { toast } from "sonner";
 import { copyText } from "@/lib/clipboard";
-import { portalCopy } from "@/lib/portal-copy";
+import { portalCopy } from "@/lib/copy/portal-copy";
 import { Button } from "@/components/ui/button";
 
 export function CopyAccessMessage({

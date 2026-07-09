@@ -1,7 +1,7 @@
 import {
   previewUnavailablePageMetadata,
   runClientPreviewUnavailablePage,
-} from "@/lib/client-preview-unavailable-page";
+} from "@/lib/pages/client-preview-unavailable-page";
 
 export const metadata = previewUnavailablePageMetadata;
 export const dynamic = "force-dynamic";

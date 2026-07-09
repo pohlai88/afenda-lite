@@ -4,9 +4,9 @@
 **Production URL:** https://iam-check.vercel.app  
 **Master backlog:** [backlog-01-neon-auth-closure.md](./backlog-01-neon-auth-closure.md)  
 **Preflight & deploy mechanics:** [production-go-live.md](../runbooks/production-go-live.md)  
-**Status snapshot:** [implementation-completeness.md](./implementation-completeness.md)
+**Status snapshot:** [TRACKING.md](../TRACKING.md)
 
-This is the **single checklist** for everything that must happen **after** code is merged and production is redeployed. Slice briefs ([`slices/`](./slices/)) hold problem context and code maps — do not duplicate deploy steps there.
+This is the **single checklist** for everything that must happen **after** code is merged and production is redeployed. Problem context: [bl-slices.md](./bl-slices.md) — do not duplicate deploy steps there.
 
 **Last updated:** 2026-07-09
 
@@ -53,7 +53,7 @@ vercel deploy --prod --yes
 
 ### BL-02 — Operator client invitation email (J1)
 
-**Slice:** [bl-02-operator-invite-email.md](./slices/bl-02-operator-invite-email.md)
+**Context:** [BL-02](./bl-slices.md#bl-02)
 
 | Step | Action | Pass criteria |
 | --- | --- | --- |
@@ -73,7 +73,7 @@ node --env-file=.env scripts/live-org-invite.mjs "client@example.com" "Client Na
 
 ### BL-03 — Operator client portal preview (J6)
 
-**Slice:** [bl-03-operator-client-preview.md](./slices/bl-03-operator-client-preview.md)
+**Context:** [BL-03](./bl-slices.md#bl-03)
 
 **Prerequisites:** `PREVIEW_CLIENT_*` on Vercel; `npm run seed:preview-client` on production DB if not already seeded.
 
@@ -90,7 +90,7 @@ node --env-file=.env scripts/live-org-invite.mjs "client@example.com" "Client Na
 
 ## Phase 2 — Client invitation join (BL-06)
 
-**Slice:** [bl-06-client-join-journey.md](./slices/bl-06-client-join-journey.md)  
+**Context:** [BL-06](./bl-slices.md#bl-06)  
 **Journey runbook (screenshots):** [client-invitation-sign-in-journey.md](../runbooks/client-invitation-sign-in-journey.md)
 
 Depends on **BL-02** (working invite email).
@@ -148,7 +148,7 @@ node scripts/capture-client-journey-screenshots.mjs
 
 ### BL-05 — Email branding (Console, not deploy)
 
-**Slice:** [bl-05-auth-email-branding.md](./slices/bl-05-auth-email-branding.md)
+**Context:** [BL-05](./bl-slices.md#bl-05)
 
 | Step | Action | Pass criteria |
 | --- | --- | --- |
@@ -160,7 +160,7 @@ node scripts/capture-client-journey-screenshots.mjs
 
 ### BL-07 — Account & credential self-service (J3, J5, J7)
 
-**Slice:** [bl-07-account-self-service.md](./slices/bl-07-account-self-service.md)
+**Context:** [BL-07](./bl-slices.md#bl-07)
 
 | Flow | Pass criteria |
 | --- | --- |
@@ -183,7 +183,7 @@ node scripts/capture-client-journey-screenshots.mjs
 | 3 | Journeys J1–J8 | Exercised in production or documented exception below |
 | 4 | BL-04 sign-off (optional) | Release owner recorded |
 
-**J8 reference:** [bl-04-production-cutover.md](./slices/bl-04-production-cutover.md) — `allow_localhost: false`, trusted origins = `APP_URL`.
+**J8 reference:** [BL-04](./bl-slices.md#bl-04) — `allow_localhost: false`, trusted origins = `APP_URL`.
 
 ### Exceptions (if any)
 
@@ -225,4 +225,4 @@ Backlog-01 program closed: [ ] Yes  [ ] No — blockers:
 Notes:
 ```
 
-When all required boxes pass, update [implementation-completeness.md](./implementation-completeness.md) slice statuses and close [backlog-01-neon-auth-closure.md](./backlog-01-neon-auth-closure.md) program DoD.
+When all required boxes pass, update [TRACKING.md](../TRACKING.md) and close [backlog-01-neon-auth-closure.md](./backlog-01-neon-auth-closure.md) program DoD.

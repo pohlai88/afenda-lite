@@ -18,6 +18,9 @@ Provision client Neon Auth users via operator invitation and onboarding.
 
 ## Owned files
 
+- `app/join/page.tsx` — canonical org invitation entry (`/join?invitationId=…`)
+- `lib/client-invitation-entry.ts`, `lib/client-invitation-join-auth.ts`
+- `components/portal-invitation-join-page.tsx`, `components/portal-invitation-join-panel.tsx`, `components/guardian-invitation-join-page.tsx`, `components/use-join-invitation-auth-view.ts`
 - `app/invite/[token]/page.tsx` — legacy redirect to client sign-in
 - `lib/legacy-invite-entry.ts`
 - `lib/client-sign-in-entry.ts` — reason codes + session dispatch
@@ -29,6 +32,7 @@ Provision client Neon Auth users via operator invitation and onboarding.
 - `components/client-onboarding-wizard.tsx`, `components/client-onboarding-form.tsx`, `components/client-onboarding-context.tsx`, `components/client-onboarding-progress.tsx`
 - `app/dashboard/clients/page.tsx`, `app/dashboard/clients/loading.tsx`
 - `lib/operator-clients-page.ts`, `components/operator-clients-page-view.tsx`
+- `lib/email/client-email-delivery.ts`, `lib/email/send-client-onboarding-email.ts` — Neon Auth org invitation (not MailerSend)
 - `e2e/client-onboarding.spec.ts`
 
 ## Auth model (Neon Auth)

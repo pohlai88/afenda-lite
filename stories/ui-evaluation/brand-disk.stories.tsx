@@ -2,8 +2,8 @@
  * @deprecated Prefer UI Evaluation / Brand Icon — kept for bookmark compatibility.
  */
 import type { Meta, StoryObj } from "@storybook/react";
-import { BrandThemeIcon } from "@/components/portal-brand-mark";
-import { BRAND_CONTEXT } from "@/lib/portal-brand";
+import { BrandThemeIcon } from "@/components/portal/portal-brand-mark";
+import { BRAND_CONTEXT } from "@/lib/copy/portal-brand";
 
 const meta: Meta = {
   title: "UI Evaluation/Brand Disk",

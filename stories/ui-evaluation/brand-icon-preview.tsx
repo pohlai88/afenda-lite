@@ -4,16 +4,16 @@ import {
   BrandLogo,
   BrandMark,
   SidebarBrandIcon,
-} from "@/components/portal-brand-mark";
-import { PortalAuthPhantomOwl } from "@/components/portal-auth-brand-scene";
+} from "@/components/portal/portal-brand-mark";
+import { PortalAuthPhantomOwl } from "@/components/portal/portal-auth-brand-scene";
 import {
   PORTAL_BRAND_ICON,
   PORTAL_BRAND_SHELL,
   BRAND_CONTEXT,
   BRAND_SHELL_BOUNDS,
   type BrandContext,
-} from "@/lib/portal-brand";
-import { PORTAL_NAME } from "@/lib/portal-copy";
+} from "@/lib/copy/portal-brand";
+import { PORTAL_NAME } from "@/lib/copy/portal-copy";
 import { cn } from "@/lib/utils";
 
 function SpecLabel({ children }: { children: ReactNode }) {

@@ -1,14 +1,20 @@
 import "server-only";
 
 import type { Metadata } from "next";
-import { isPlaygroundEmbedRequest } from "@/lib/playground";
-import { PORTAL_NAME, portalCopy } from "@/lib/portal-copy";
-import { getNeonAuthUserByEmail } from "@/lib/neon-auth-users";
+import {
+  getPreviewClientEmail as readPreviewClientEmail,
+  getPreviewClientName as readPreviewClientName,
+  getPreviewClientPassword as readPreviewClientPassword,
+  isPreviewClientConfigured as readPreviewClientConfigured,
+} from "@/lib/env/accessors";
+import { isPlaygroundEmbedRequest } from "@/lib/playground/playground";
+import { PORTAL_NAME, portalCopy } from "@/lib/copy/portal-copy";
+import { getNeonAuthUserByEmail } from "@/lib/domain/neon-auth-users";
 import {
   CLIENT_HOME_HREF,
   CLIENT_PREVIEW_UNAVAILABLE_HREF,
   OPERATOR_DASHBOARD_HREF,
-} from "@/lib/portal-routes";
+} from "@/lib/routing/portal-routes";
 
 type PreviewSession = {
   user?: {
@@ -51,17 +57,15 @@ export async function resolvePreviewEmbedFlag(
 }
 
 export function getPreviewClientEmail() {
-  return process.env.PREVIEW_CLIENT_EMAIL?.trim().toLowerCase() ?? "";
+  return readPreviewClientEmail();
 }
 
 export function getPreviewClientPassword() {
-  return process.env.PREVIEW_CLIENT_PASSWORD ?? "";
+  return readPreviewClientPassword();
 }
 
 export function isPreviewClientConfigured() {
-  return (
-    getPreviewClientEmail().length > 0 && getPreviewClientPassword().length > 0
-  );
+  return readPreviewClientConfigured();
 }
 
 export function isPreviewClientSession(session: PreviewSession) {
@@ -74,7 +78,7 @@ export function isPreviewClientSession(session: PreviewSession) {
 }
 
 export function getPreviewClientName() {
-  return process.env.PREVIEW_CLIENT_NAME?.trim() || "Preview Client";
+  return readPreviewClientName();
 }
 
 export async function getPreviewClientUser() {

@@ -1,9 +1,15 @@
 import "server-only";
 
 import { getServerEnv } from "@/lib/env/server";
-import { PORTAL_NAME, portalCopy } from "@/lib/portal-copy";
+import { portalCopy } from "@/lib/copy/portal-copy";
 
-/** Neon Auth shared SMTP sender when using the managed email provider. */
+/**
+ * Operator client registration email — Neon Auth organization invitations only.
+ *
+ * - Enabled when `NEON_AUTH_BASE_URL` is set (shared provider: auth@mail.myneon.app).
+ * - Not MailerSend / custom SMTP (see AGENTS.md; MailerSend keys are stale in env manifest).
+ * - Send path: `sendClientOnboardingEmail` → `inviteClientOrganizationMember`.
+ */
 export const NEON_AUTH_SHARED_SENDER_EMAIL = "auth@mail.myneon.app";
 
 export type ClientEmailDeliveryStatus =
@@ -15,9 +21,8 @@ export type ClientEmailDeliveryStatus =
     }
   | { enabled: false };
 
-export function isNeonAuthEmailConfigured() {
-  const env = getServerEnv();
-  return Boolean(env.NEON_AUTH_BASE_URL);
+function isNeonAuthEmailConfigured() {
+  return Boolean(getServerEnv().NEON_AUTH_BASE_URL);
 }
 
 export function isClientEmailDeliveryEnabled() {
@@ -25,14 +30,14 @@ export function isClientEmailDeliveryEnabled() {
 }
 
 export function getClientEmailDeliveryStatus(): ClientEmailDeliveryStatus {
-  if (isNeonAuthEmailConfigured()) {
-    return {
-      enabled: true,
-      provider: "neon-auth-organization",
-      fromName: portalCopy.invite.sender || PORTAL_NAME,
-      fromEmail: NEON_AUTH_SHARED_SENDER_EMAIL,
-    };
+  if (!isNeonAuthEmailConfigured()) {
+    return { enabled: false };
   }
 
-  return { enabled: false };
+  return {
+    enabled: true,
+    provider: "neon-auth-organization",
+    fromName: portalCopy.invite.sender,
+    fromEmail: NEON_AUTH_SHARED_SENDER_EMAIL,
+  };
 }

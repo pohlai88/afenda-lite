@@ -1,6 +1,6 @@
-import type { PortalBreadcrumb } from "@/components/portal-breadcrumb-list";
-import { portalCopy } from "@/lib/portal-copy";
-import { OPERATOR_DASHBOARD_HREF } from "@/lib/portal-routes";
+import type { PortalBreadcrumb } from "@/components/portal/portal-breadcrumb-list";
+import { portalCopy } from "@/lib/copy/portal-copy";
+import { OPERATOR_DASHBOARD_HREF } from "@/lib/routing/portal-routes";
 
 export function operatorDashboardBreadcrumbs(): PortalBreadcrumb[] {
   return [{ label: portalCopy.nav.declarations }];

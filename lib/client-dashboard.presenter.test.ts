@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
-import type { ClientAssignment, ClientProfile } from "@/lib/clients";
+import type { ClientAssignment, ClientProfile } from "@/lib/domain/clients";
 import {
   assignmentCardStatus,
   buildAssignmentCardView,
   buildClientDashboardView,
   buildDeclarantSummaryView,
 } from "@/lib/client-dashboard.presenter";
-import { CLIENT_PORTAL_ACK_VERSION } from "@/lib/portal-copy";
+import { CLIENT_PORTAL_ACK_VERSION } from "@/lib/copy/portal-copy";
 
 const baseAssignment: ClientAssignment = {
   id: "550e8400-e29b-41d4-a716-446655440001",

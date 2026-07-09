@@ -1,35 +1,18 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import { PortalDeclarationWorkspace } from "@/components/portal-declaration-workspace";
-import { PortalEyebrow } from "@/components/portal-eyebrow";
+import { PortalDeclarationWorkspace } from "@/components/portal/portal-declaration-workspace";
+import { PortalEyebrow } from "@/components/portal/portal-eyebrow";
 import { DeclarationSettingsSection } from "@/components/declaration-settings-section";
-import { PortalEmptyStateCard } from "@/components/portal-empty-state";
+import { PortalEmptyStateCard } from "@/components/portal/portal-empty-state";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { getEvaluationRow } from "@/lib/ui-decision-matrix";
-import { portalCopy } from "@/lib/portal-copy";
+import { getEvaluationRow } from "@/lib/governance/ui-decision-matrix";
+import { portalCopy } from "@/lib/copy/portal-copy";
 import { InboxIcon } from "lucide-react";
 import { ComparisonGrid, ScoreAnnotation } from "./evaluation-primitives";
+import { previewOperatorSurvey } from "./evaluation-fixtures";
 
 const detailRow = getEvaluationRow("admin-declaration-detail")!;
 
-const sampleSurvey = {
-  id: "decl-preview-001",
-  userId: "operator-preview",
-  title: "Director statutory declaration",
-  question: "Annual compliance attestation for board members.",
-  slug: "director-statutory-declaration",
-  referenceNumber: "REF-2026-014",
-  caseNumber: "CASE-2048",
-  effectiveDate: new Date("2026-07-01"),
-  submitBefore: new Date("2026-08-15"),
-  surveyorName: "Jane Operator",
-  surveyorOrg: "Acme Compliance Ltd",
-  surveyeeIndividual: null,
-  surveyeeOrg: "Example Holdings",
-  purpose: "FY2026 board attestation",
-  categories: ["compliance", "annual"],
-  createdAt: new Date("2026-06-01"),
-  updatedAt: new Date("2026-07-01"),
-};
+const sampleSurvey = previewOperatorSurvey();
 
 function DeclarationWorkspacePreview() {
   const { declarationDetail } = portalCopy;

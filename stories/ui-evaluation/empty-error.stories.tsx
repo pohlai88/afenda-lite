@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import { PortalRouteError } from "@/components/portal-route-error";
-import { getEvaluationRow } from "@/lib/ui-decision-matrix";
+import { PortalRouteError } from "@/components/portal/portal-route-error";
+import { getEvaluationRow } from "@/lib/governance/ui-decision-matrix";
 import { ComparisonGrid, ScoreAnnotation } from "./evaluation-primitives";
 
 const errorRow = getEvaluationRow("error-route")!;

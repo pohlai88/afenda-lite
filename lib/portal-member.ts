@@ -2,13 +2,13 @@ import "server-only";
 
 import { isAdminSession } from "@/lib/admin";
 import { getAuthSession } from "@/lib/auth/get-session";
-import { getClientProfile } from "@/lib/clients";
+import { getClientProfile } from "@/lib/domain/clients";
 import {
   getPreviewClientName,
   getPreviewClientUser,
   isPreviewClientSession,
 } from "@/lib/preview-client";
-import { portalCopy } from "@/lib/portal-copy";
+import { portalCopy } from "@/lib/copy/portal-copy";
 import {
   pickDisplayName,
   type PortalMember,

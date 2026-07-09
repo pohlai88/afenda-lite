@@ -2,9 +2,9 @@ import type { ReactNode } from "react";
 import {
   PortalPageHeader,
   type PortalBreadcrumb,
-} from "@/components/portal-page-header";
-import { PortalEyebrow } from "@/components/portal-eyebrow";
-import { isPlaygroundEmbedRequest } from "@/lib/playground";
+} from "@/components/portal/portal-page-header";
+import { PortalEyebrow } from "@/components/portal/portal-eyebrow";
+import { isPlaygroundEmbedRequest } from "@/lib/playground/playground";
 
 async function DashboardPageContent({
   eyebrow,
@@ -149,4 +149,4 @@ export function DashboardPageSkeleton({
   );
 }
 
-export { PortalSection } from "@/components/portal-shell";
+export { PortalSection } from "@/components/portal/portal-shell";

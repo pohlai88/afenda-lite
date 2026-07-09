@@ -21,6 +21,8 @@ Pre-flight dependency check for deploy verification and operators. **Not** for V
 
 - `app/api/health/liveness/route.ts` — lightweight uptime probe (no DB/env validation)
 - `app/api/health/readiness/route.ts` — deploy gate route handler
+- `lib/api/health-liveness-route.ts` — serialized liveness handler
+- `lib/api/health-readiness-route.ts` — serialized readiness handler
 - `lib/api/health-response.ts` — shared `{ data }` envelope + cache headers
 - `lib/api/readiness.ts` — env probe, JWKS auth probe, readiness evaluation
 - `lib/db.ts` — connection ping + pooler metadata

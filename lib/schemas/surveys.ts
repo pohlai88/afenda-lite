@@ -1,47 +1,31 @@
 import { z } from "zod";
-import { parseQuestionsFromForm } from "@/lib/questions";
-import { metadataFromFormData } from "@/lib/survey-package";
+import { SURVEY_EDITOR } from "@/lib/form-constraints";
+import { parseQuestionsFromForm } from "@/lib/domain/questions";
+import { metadataFromFormData } from "@/lib/domain/survey-package";
+import { questionDraftSchema } from "@/lib/schemas/questions";
 import { surveyAnswersSchema, slugSchema, uuidSchema } from "@/lib/schemas/common";
 
-export const questionConfigFormSchema = z.object({
-  helpText: z.string().trim().max(2000).optional(),
-  placeholder: z.string().trim().max(500).optional(),
-  minLength: z.number().int().min(0).max(10000).optional(),
-  maxLength: z.number().int().min(1).max(10000).optional(),
-  defaultValue: z.union([z.string(), z.boolean()]).optional(),
-});
-
-export const questionDraftSchema = z.object({
-  prompt: z.string().trim().min(1).max(2000),
-  type: z.enum(["yes_no", "text", "file"]),
-  required: z.boolean(),
-  config: questionConfigFormSchema.optional(),
-});
+export { questionConfigSchema, questionDraftSchema } from "@/lib/schemas/questions";
 
 export const surveyMetadataFormSchema = z.object({
-  referenceNumber: z.string().trim().max(100).nullable(),
-  caseNumber: z.string().trim().max(100).nullable(),
+  referenceNumber: z.string().trim().max(SURVEY_EDITOR.referenceMax).nullable(),
+  caseNumber: z.string().trim().max(SURVEY_EDITOR.referenceMax).nullable(),
   effectiveDate: z.date().nullable(),
   submitBefore: z.date().nullable(),
-  surveyorName: z.string().trim().max(500).nullable(),
-  surveyorOrg: z.string().trim().max(500).nullable(),
-  surveyeeIndividual: z.string().trim().max(500).nullable(),
-  surveyeeOrg: z.string().trim().max(500).nullable(),
-  purpose: z.string().trim().max(5000).nullable(),
-  categories: z.array(z.string().trim().min(1).max(100)).max(20),
-});
-
-export const surveyFormSchema = z.object({
-  title: z.string().trim().min(1).max(500),
-  question: z.string().trim().max(5000),
-  questions: z.array(questionDraftSchema),
-  metadata: surveyMetadataFormSchema.optional(),
+  surveyorName: z.string().trim().max(SURVEY_EDITOR.partyNameMax).nullable(),
+  surveyorOrg: z.string().trim().max(SURVEY_EDITOR.partyNameMax).nullable(),
+  surveyeeIndividual: z.string().trim().max(SURVEY_EDITOR.partyNameMax).nullable(),
+  surveyeeOrg: z.string().trim().max(SURVEY_EDITOR.partyNameMax).nullable(),
+  purpose: z.string().trim().max(SURVEY_EDITOR.purposeMax).nullable(),
+  categories: z
+    .array(z.string().trim().min(1).max(SURVEY_EDITOR.categoryMax))
+    .max(SURVEY_EDITOR.categoriesMax),
 });
 
 export const updateSurveySchema = z.object({
   id: uuidSchema,
-  title: z.string().trim().min(1).max(500),
-  question: z.string().trim().max(5000),
+  title: z.string().trim().min(1).max(SURVEY_EDITOR.titleMax),
+  question: z.string().trim().max(SURVEY_EDITOR.introMax),
   questions: z.array(questionDraftSchema),
   metadata: surveyMetadataFormSchema.optional(),
 });
@@ -51,7 +35,7 @@ export const deleteSurveySchema = z.object({
 });
 
 export const submitSurveyResponseSchema = z.object({
-  slug: z.string().trim().min(1).max(200),
+  slug: slugSchema,
   answers: surveyAnswersSchema,
 });
 

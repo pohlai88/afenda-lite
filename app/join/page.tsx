@@ -1,8 +1,8 @@
-import { PortalInvitationJoinPage } from "@/components/portal-invitation-join-page";
+import { PortalInvitationJoinPage } from "@/components/portal/portal-invitation-join-page";
 import {
   clientInvitationJoinMetadata,
   runClientInvitationJoinPage,
-} from "@/lib/client-invitation-entry";
+} from "@/lib/entry/client-invitation-entry";
 import { isGuardianAuthShellEnabled } from "@/lib/auth/guardian-auth-shell";
 
 export const metadata = clientInvitationJoinMetadata;

@@ -4,7 +4,7 @@
 **Environment:** production — `https://iam-check.vercel.app`  
 **Last verified:** 2026-07-08 — Phases 1–3 and 5–8 (Playwright `@journey` + capture script; Phase 4 pending production OTP UI)
 
-**Related:** [BL-06](../backlogs/slices/bl-06-client-join-journey.md) · [post-deploy-verification.md](../backlogs/post-deploy-verification.md) (production sign-off) · [neon-auth-validation-matrix.md](../backlogs/neon-auth-validation-matrix.md)
+**Related:** [BL-06](../backlogs/bl-slices.md#bl-06) · [post-deploy-verification.md](../backlogs/post-deploy-verification.md) (production sign-off) · [neon-auth-validation-matrix.md](../backlogs/neon-auth-validation-matrix.md)
 
 ---
 
@@ -140,6 +140,8 @@ npm run audit:neon-auth-production
 | --- | --- |
 | Join auth state (sign-up → OTP → accept) | `lib/client-invitation-join-auth.ts`, `components/use-join-invitation-auth-view.ts` |
 | Join panel | `components/portal-invitation-join-panel.tsx` |
+| Operator invite email | `lib/email/send-client-onboarding-email.ts` → `lib/portal-organization.ts` |
+| Invite delivery status UI | `lib/email/client-email-delivery.ts`, `components/client-email-delivery-banner.tsx` |
 | Invite API + join URL | `scripts/live-org-invite.mjs` → `joinUrl`, `neonAuthInvitationId` |
 | Bootstrap after auth | `lib/auth/bootstrap-client-invite.ts` |
 | E2E flows | `testing/e2e/client-invitation-flows.ts` |

@@ -1,5 +1,14 @@
 import "server-only";
 
+/**
+ * S1 session guards — operator and client route enforcement.
+ *
+ * - `requireAdminSession` / `requireClientSession` — redirecting page guards
+ * - `guardClientSession` — non-redirecting gate for JSON APIs (`declaration-draft`)
+ * - `rejectNonOperatorSignIn` — org login boundary (sign-out + audit on denial)
+ *
+ * Operator role check: `lib/admin.ts` (`isAdminSession`). Neon Admin APIs: `lib/auth/admin.ts`.
+ */
 import { redirect } from "next/navigation";
 import {
   isAdminSession,
@@ -7,7 +16,7 @@ import {
   toAdminAuthenticatedSession,
   type AdminAuthenticatedSession,
 } from "@/lib/admin";
-import { recordAuditEvent } from "@/lib/audit";
+import { recordAuditEvent } from "@/lib/domain/audit";
 import { bootstrapClientAfterAuth } from "@/lib/auth/bootstrap-client-invite";
 import { getAuthSession } from "@/lib/auth/get-session";
 import { auth } from "@/lib/auth/server";
@@ -17,16 +26,16 @@ import {
   toPreviewClientSession,
   type ClientAuthenticatedSession,
 } from "@/lib/client-session";
-import { getClientProfile } from "@/lib/clients";
+import { getClientProfile } from "@/lib/domain/clients";
 import {
   AUTH_SIGN_IN_HREF,
   OPERATOR_DASHBOARD_HREF,
-} from "@/lib/portal-routes";
+} from "@/lib/routing/portal-routes";
 import {
   isPlaygroundEmbedRequest,
   isPlaygroundEnabled,
-} from "@/lib/playground";
-import { portalCopy } from "@/lib/portal-copy";
+} from "@/lib/playground/playground";
+import { portalCopy } from "@/lib/copy/portal-copy";
 import {
   clientPreviewUnavailableHref,
   getPreviewClientUser,

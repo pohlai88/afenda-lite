@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 
-import { IconPlaceholder } from '@/registry/icons/icon-placeholder'
+import { IconPlaceholder } from '@/components/svg/icon-placeholder'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 

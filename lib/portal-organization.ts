@@ -3,7 +3,7 @@ import "server-only";
 import { auth } from "@/lib/auth/server";
 import { neonAuthServerFetch } from "@/lib/auth/neon-auth-request";
 import { getServerEnv } from "@/lib/env/server";
-import { PORTAL_NAME } from "@/lib/portal-copy";
+import { PORTAL_NAME } from "@/lib/copy/portal-copy";
 
 export type PortalOrganization = {
   id: string;
@@ -22,7 +22,7 @@ function slugifyPortalOrg(value: string) {
 
 export function getPortalOrganizationSlug() {
   const env = getServerEnv();
-  const configured = process.env.PORTAL_ORG_SLUG?.trim();
+  const configured = env.PORTAL_ORG_SLUG?.trim();
   if (configured) {
     return slugifyPortalOrg(configured);
   }
@@ -43,7 +43,7 @@ export function getPortalOrganizationSlug() {
 }
 
 export function getPortalOrganizationName() {
-  return process.env.PORTAL_ORG_NAME?.trim() || "iam-check";
+  return getServerEnv().PORTAL_ORG_NAME?.trim() || "iam-check";
 }
 
 export async function ensurePortalOrganization(): Promise<PortalOrganization> {

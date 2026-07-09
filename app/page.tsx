@@ -1,8 +1,8 @@
 import {
   clientLoginPageMetadata,
   runClientSignInEntryPage,
-} from "@/lib/client-sign-in-entry";
-import { redirectInvitationIdToJoin } from "@/lib/client-invitation-entry";
+} from "@/lib/entry/client-sign-in-entry";
+import { redirectInvitationIdToJoin } from "@/lib/entry/client-invitation-entry";
 
 export const metadata = clientLoginPageMetadata;
 export const dynamic = "force-dynamic";

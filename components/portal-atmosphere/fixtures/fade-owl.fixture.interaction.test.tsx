@@ -10,7 +10,7 @@ import {
   FADE_OWL_GUARDIAN_OWL_PATH,
   FADE_OWL_RENDER_LIGHT_PATH,
   FADE_OWL_RENDER_NIGHT_PATH,
-} from "@/lib/portal-brand";
+} from "@/lib/copy/portal-brand";
 
 describe("fade owl fixture — dual variant", () => {
   it("renders dual guardian layers and mode attribute", () => {

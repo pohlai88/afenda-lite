@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import { PortalMemberMenu } from "@/components/portal-member-menu";
-import { PortalMemberProvider } from "@/components/portal-member-context";
-import { getEvaluationRow } from "@/lib/ui-decision-matrix";
-import { portalCopy } from "@/lib/portal-copy";
+import { PortalMemberMenu } from "@/components/portal/portal-member-menu";
+import { PortalMemberProvider } from "@/components/portal/portal-member-context";
+import { getEvaluationRow } from "@/lib/governance/ui-decision-matrix";
+import { portalCopy } from "@/lib/copy/portal-copy";
 import { ComparisonGrid, ScoreAnnotation } from "./evaluation-primitives";
 import {
   syncedPreviewClientMember,
@@ -14,7 +14,7 @@ const syncedMember = syncedPreviewClientMember();
 
 const meta: Meta = {
   title: "UI Evaluation/User Menu",
-  parameters: { layout: "centered" },
+  parameters: { layout: "fullscreen" },
 };
 
 export default meta;

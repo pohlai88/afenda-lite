@@ -6,6 +6,7 @@ import {
   CLIENT_DECLARATION_DRAFT_API_HREF,
   HEALTH_LIVENESS_API_HREF,
   HEALTH_READINESS_API_HREF,
+  POST_CLIENT_DECLARATION_DRAFT_API_ACTION,
 } from "@/lib/api/routes";
 
 const REPO_ROOT = join(import.meta.dirname, "../..");
@@ -27,6 +28,9 @@ describe("lib/api/routes", () => {
   });
 
   it("maps keepalive API constants to reliance action ids", () => {
+    expect(POST_CLIENT_DECLARATION_DRAFT_API_ACTION).toBe(
+      "postClientDeclarationDraftApi",
+    );
     expect(API_ROUTE_ACTION_IDS.CLIENT_DECLARATION_DRAFT_API_HREF).toBe(
       "action:postClientDeclarationDraftApi",
     );
@@ -34,11 +38,32 @@ describe("lib/api/routes", () => {
 });
 
 describe("app/api route segments", () => {
-  it('declares nodejs runtime and force-dynamic on operational routes', () => {
+  it("declares nodejs runtime and force-dynamic on operational routes", () => {
     for (const file of API_ROUTE_FILES) {
       const source = readFileSync(join(REPO_ROOT, file), "utf8");
       expect(source, file).toContain('export const runtime = "nodejs"');
       expect(source, file).toContain('export const dynamic = "force-dynamic"');
     }
+  });
+
+  it("delegates handler logic to lib/api serialized route modules", () => {
+    expect(
+      readFileSync(
+        join(REPO_ROOT, "app/api/health/liveness/route.ts"),
+        "utf8",
+      ),
+    ).toContain("runHealthLivenessGet");
+    expect(
+      readFileSync(
+        join(REPO_ROOT, "app/api/health/readiness/route.ts"),
+        "utf8",
+      ),
+    ).toContain("runHealthReadinessGet");
+    expect(
+      readFileSync(
+        join(REPO_ROOT, "app/api/client/declaration-draft/route.ts"),
+        "utf8",
+      ),
+    ).toContain("runPostClientDeclarationDraft");
   });
 });

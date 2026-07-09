@@ -1,4 +1,4 @@
-import type { QuestionConfig } from "@/lib/survey-package";
+import type { QuestionConfig } from "@/lib/domain/survey-package";
 import {
   validateQuestionAnswer,
   type QuestionAnswerValidationCopy,

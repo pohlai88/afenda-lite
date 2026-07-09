@@ -1,11 +1,11 @@
-import { PortalAuthLayout } from "@/components/portal-auth-layout";
-import { PortalAuthEmailTrustNotice } from "@/components/portal-auth-email-trust-notice";
+import { PortalAuthLayout } from "@/components/portal/portal-auth-layout";
+import { PortalAuthEmailTrustNotice } from "@/components/portal/portal-auth-email-trust-notice";
 import { GuardianAuthFacade } from "@/components/auth";
-import { GUARDIAN_AUTH_ASSET_SET } from "@/lib/portal-brand";
-import { PortalInvitationJoinBrandPanel } from "@/components/portal-invitation-join-brand-panel";
-import { PortalInvitationJoinSteps } from "@/components/portal-invitation-join-steps";
+import { GUARDIAN_AUTH_ASSET_SET } from "@/lib/copy/portal-brand";
+import { PortalInvitationJoinBrandPanel } from "@/components/portal/portal-invitation-join-brand-panel";
+import { PortalInvitationJoinSteps } from "@/components/portal/portal-invitation-join-steps";
 import { productionSeedFixtures } from "@/lib/production-fixtures";
-import { portalCopy } from "@/lib/portal-copy";
+import { portalCopy } from "@/lib/copy/portal-copy";
 
 /** Mock sign-in card for Storybook — mirrors Neon AuthView card chrome without provider. */
 function MockNeonAuthCard() {

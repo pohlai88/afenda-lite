@@ -2,8 +2,8 @@ import "server-only";
 
 import { getSharedAdminEmail } from "@/lib/admin";
 import { neonAdminRemoveUser } from "@/lib/auth/admin";
-import { normalizeEmail } from "@/lib/clients";
-import { getNeonAuthUserByEmail } from "@/lib/neon-auth-users";
+import { normalizeEmail } from "@/lib/domain/clients";
+import { getNeonAuthUserByEmail } from "@/lib/domain/neon-auth-users";
 
 export async function deleteClientAuthUserByEmail(email: string) {
   const normalized = normalizeEmail(email);

@@ -1,11 +1,11 @@
 import { z } from "zod";
-import { validateEvidenceMetadata } from "@/lib/evidence-policy";
-import { uuidSchema } from "@/lib/schemas/common";
+import { validateEvidenceMetadata } from "@/lib/domain/evidence-policy";
+import { slugSchema, uuidSchema } from "@/lib/schemas/common";
 
 export const registerEvidenceSchema = z
   .object({
     surveyId: uuidSchema,
-    slug: z.string().trim().max(200),
+    slug: slugSchema,
     questionId: uuidSchema,
     fileName: z.string().trim().min(1).max(500),
     mimeType: z.string().trim().max(200),

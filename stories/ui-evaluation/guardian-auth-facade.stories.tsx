@@ -5,7 +5,7 @@ import {
   GuardianAuthFacadePreview,
   GuardianAuthNeonSlotPreview,
 } from "@/components/auth/fixtures/guardian-auth-facade.fixture";
-import { GUARDIAN_AUTH_ASSET_SET } from "@/lib/portal-brand";
+import { GUARDIAN_AUTH_ASSET_SET } from "@/lib/copy/portal-brand";
 
 const LAPTOP_1024 = { viewport: { defaultViewport: "laptop1024" as const } };
 const DESKTOP_1440 = { viewport: { defaultViewport: "desktop1440" as const } };

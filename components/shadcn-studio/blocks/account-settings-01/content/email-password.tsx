@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react'
 
-import { IconPlaceholder } from '@/registry/icons/icon-placeholder'
+import { IconPlaceholder } from '@/components/svg/icon-placeholder'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 
