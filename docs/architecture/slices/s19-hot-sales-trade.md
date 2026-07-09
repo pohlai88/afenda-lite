@@ -38,7 +38,8 @@ Keep unrelated layout / repo-migration WIP off Hot Sales history. Do not fold po
 | [PRD-V2-Phase2.md](../../hot-sales/PRD-V2-Phase2.md) | Build contract (**Accepted**) |
 | [ADR-001-phase-2-rbac.md](../../hot-sales/ADR-001-phase-2-rbac.md) | RBAC (**Accepted**) |
 | [PHASE-2A-SLICES.md](../../hot-sales/PHASE-2A-SLICES.md) | 2A slices (**Approved** / closed) |
-| [PHASE-2A-RELEASE-READINESS.md](../../hot-sales/PHASE-2A-RELEASE-READINESS.md) | 2A release readiness (ops only) |
+| [PHASE-2A-RELEASE-READINESS.md](../../hot-sales/PHASE-2A-RELEASE-READINESS.md) | 2A release readiness (ops packaging) |
+| [PHASE-2A-OPS-ROLLOUT.md](../../hot-sales/PHASE-2A-OPS-ROLLOUT.md) | 2A ops rollout checklist |
 | [PHASE-2-SCOPING.md](../../hot-sales/PHASE-2-SCOPING.md) | Candidate list (superseded for planning) |
 
 **Phase 2A** may proceed per approved slices. **No 2B–2D** until separately approved.

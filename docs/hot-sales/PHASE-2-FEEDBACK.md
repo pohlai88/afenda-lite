@@ -4,7 +4,7 @@
 **Phase 1 baseline:** commit `1bc1294` · tag `hot-sales-phase-1`  
 **Candidate-list note (superseded for sequencing / 7-role framing):** [PHASE-2-SCOPING.md](./PHASE-2-SCOPING.md)
 
-**Phase 2A closed** at tag `hot-sales-phase-2a`. Next: [PHASE-2A-RELEASE-READINESS.md](./PHASE-2A-RELEASE-READINESS.md) (ops rollout only). Do not start 2B–2D.
+**Phase 2A closed** at tag `hot-sales-phase-2a`. Next: [PHASE-2A-RELEASE-READINESS.md](./PHASE-2A-RELEASE-READINESS.md) · [PHASE-2A-OPS-ROLLOUT.md](./PHASE-2A-OPS-ROLLOUT.md) (ops rollout only). Do not start 2B–2D.
 
 1. ~~[ADR-001-phase-2-rbac.md](./ADR-001-phase-2-rbac.md)~~ Accepted  
 2. ~~[PRD-V2-Phase2.md](./PRD-V2-Phase2.md)~~ Accepted  

@@ -7,6 +7,14 @@
 | **Scope** | Phase 2A only. **No 2B / 2C / 2D.** No new permissions, roles, UI surfaces, or schema expansion except emergency fixes. |
 | **Contract** | [PRD-V2-Phase2.md](./PRD-V2-Phase2.md) · [ADR-001-phase-2-rbac.md](./ADR-001-phase-2-rbac.md) · [PHASE-2A-SLICES.md](./PHASE-2A-SLICES.md) |
 
+## Related
+
+- Ops checklist: [PHASE-2A-OPS-ROLLOUT.md](./PHASE-2A-OPS-ROLLOUT.md)
+- Product boundary: tag `hot-sales-phase-2a` → `8e650ff`
+- Readiness docs commit: `0fd22f4`
+
+---
+
 ## Purpose
 
 Validate and safely enable the **already-shipped** Phase 2A RBAC capability.

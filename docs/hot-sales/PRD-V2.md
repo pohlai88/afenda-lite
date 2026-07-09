@@ -157,7 +157,8 @@ Smoke auth redirect is the Phase 1 gate; journey is optional post-closure verifi
 | [PRD-V2-Phase2.md](./PRD-V2-Phase2.md) | Build contract (**Accepted**) |
 | [ADR-001-phase-2-rbac.md](./ADR-001-phase-2-rbac.md) | RBAC decision (**Accepted**) |
 | [PHASE-2A-SLICES.md](./PHASE-2A-SLICES.md) | Phase 2A slice plan (**Approved** / closed) |
-| [PHASE-2A-RELEASE-READINESS.md](./PHASE-2A-RELEASE-READINESS.md) | Operational rollout lane (flag dark → verify → enable) |
+| [PHASE-2A-RELEASE-READINESS.md](./PHASE-2A-RELEASE-READINESS.md) | Operational packaging (flag dark → verify → enable) |
+| [PHASE-2A-OPS-ROLLOUT.md](./PHASE-2A-OPS-ROLLOUT.md) | Ops rollout checklist (tracker; no 2A reopen) |
 | [PHASE-2-SCOPING.md](./PHASE-2-SCOPING.md) | Historical candidate list (superseded for planning) |
 
 **Gate before Phase 2B+:** separate ADRs/slices. Phase 2A may proceed per [PHASE-2A-SLICES.md](./PHASE-2A-SLICES.md).
