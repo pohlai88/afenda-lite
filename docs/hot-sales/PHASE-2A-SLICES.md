@@ -148,6 +148,7 @@ Slices 2A-5 and 2A-6 may be parallelized **after** 2A-4; both must complete befo
 - Sensitive permission grants audited (seed + role updates)
 - UI: `/admin/rbac`, `/admin/events/new`
 - **Not started:** Phase 2B / 2C / 2D
+- **Next lane:** [PHASE-2A-RELEASE-READINESS.md](./PHASE-2A-RELEASE-READINESS.md) — operational rollout only (no new product scope)
 
 ---
 
