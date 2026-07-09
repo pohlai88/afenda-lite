@@ -31,6 +31,7 @@
 debug-storybook.log
 /*.tgz
 .env.vercel.*
+_reference/
 
 # debug
 npm-debug.log*

@@ -150,6 +150,7 @@ Commands: `npm run test:unit`, `test:interaction`, `verify:storybook`, `test:e2e
 | `config/neon-auth.manifest.json` | `lib/auth/neon-auth.manifest.json` |
 | `registry/icons/` | `components/svg/icon-placeholder.tsx` |
 | `hooks/` (root) | `components/hooks/` |
+| `_reference/guardian_auth_reusable_components/` | [docs/legacy/guardian-auth-reference-kit.md](../legacy/guardian-auth-reference-kit.md) |
 
 ---
 
