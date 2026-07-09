@@ -54,6 +54,8 @@ PA-P10 Auth integration readiness (adapter wired — E2E + CSS purge pending)
 
 **Remaining gaps (no omission):** [pa-closure-register.md](./pa-closure-register.md) — canonical inventory of open visual, manual, doc, migration, perf, and DX items; Stability-First work packages WP-0–WP-4.
 
+**Guardian Auth (ADR-Auth-UI-001):** [pa-guardian-auth-reference-gaps.md](./pa-guardian-auth-reference-gaps.md) · **[pa-guardian-module-remaining.md](./pa-guardian-module-remaining.md)** — post-merge completion checklist (design sign-off, viewport tests, Lane C stash).
+
 ## Public API vs fixtures
 
 | Import path | Purpose |

@@ -2,7 +2,7 @@
 
 | Field | Value |
 |-------|--------|
-| **Status** | In progress — [ADR-Auth-UI-001](../adr/ADR-Auth-UI-001-guardian-shell-neon-form.md) Accepted |
+| **Status** | Shipped (functional) — visual sign-off + viewport tests remain · see [pa-guardian-module-remaining.md](../slices/portal-atmosphere/pa-guardian-module-remaining.md) |
 | **Date** | 2026-07-09 |
 | **Mode** | Technical specification (with migration / validation / rollback) |
 | **Audience** | Engineers implementing auth UI unification; operators validating sign-in |
