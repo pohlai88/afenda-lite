@@ -21,7 +21,10 @@ env:
   SHARED_ADMIN_NAME: Portal Operator
   E2E_SURVEY_SLUG: ${{ secrets.E2E_SURVEY_SLUG }}
   E2E_INVITE_TOKEN: ${{ secrets.E2E_INVITE_TOKEN }}
-  APP_URL: http://localhost:3000
+  APP_URL: https://iam-check.vercel.app
+  PLAYGROUND_SURVEY_SLUG: ${{ secrets.E2E_SURVEY_SLUG }}
+  PLAYGROUND_SURVEY_ID: ${{ secrets.PLAYGROUND_SURVEY_ID }}
+  PLAYGROUND_ASSIGNMENT_ID: ${{ secrets.PLAYGROUND_ASSIGNMENT_ID }}
 
 jobs:
   quality:
