@@ -1,8 +1,13 @@
 # PRD-V2 — Hot Sales Event Engine (Phase 1 build contract)
 
-**Status:** Authoritative Phase 1 implementation contract  
+**Status:** **Accepted** — Phase 1 closed  
+**Baseline commit:** `1bc1294` (`feat(trade): close Hot Sales Phase 1 event engine`)  
+**Baseline tag:** `hot-sales-phase-1`  
+**Accepted:** 2026-07-09  
+
 **Vision archive:** [PRD.md](./PRD.md)  
-**First variant seed:** [hot-sales.md](./hot-sales.md) (GP2 piglet — template data only)
+**First variant seed:** [hot-sales.md](./hot-sales.md) (GP2 piglet — template data only)  
+**Phase 2:** [PHASE-2-SCOPING.md](./PHASE-2-SCOPING.md) — planning only until explicit approval. Do not implement.
 
 ## Objective
 
@@ -131,8 +136,14 @@ npx playwright test --project=journey --grep "Trade Hot Sales"
 
 Smoke auth redirect is the Phase 1 gate; journey is optional post-closure verification.
 
+## Next safe actions
+
+1. Baseline is tagged `hot-sales-phase-1` at `1bc1294` — use for bisect / rollback reference.
+2. Run journey e2e only when operator credentials are available (command above).
+3. Keep unrelated layout / repo-migration WIP on separate commits from Hot Sales history.
+
 ## Phase 2 (later)
 
-Scoping note: [PHASE-2-SCOPING.md](./PHASE-2-SCOPING.md). Do not implement until a Phase 2 build contract is approved.
+Scoping note: [PHASE-2-SCOPING.md](./PHASE-2-SCOPING.md) — **planning only**. Do not implement until explicitly approved.
 
 Candidates: 7-role RBAC, finance/deposit tables, pickup/ops, ERP sync, notifications, Excel imports, dedicated `/admin/events/new`.
