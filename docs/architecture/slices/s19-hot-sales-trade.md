@@ -1,5 +1,7 @@
 # S19 — Hot Sales Trade Event Engine (Phase 1)
 
+**Status:** Accepted  
+**Baseline:** commit `1bc1294` · tag `hot-sales-phase-1` (2026-07-09)  
 **Contract:** [docs/hot-sales/PRD-V2.md](../../hot-sales/PRD-V2.md)  
 **Vision archive:** [docs/hot-sales/PRD.md](../../hot-sales/PRD.md)
 
@@ -15,15 +17,19 @@ Reusable Hot Sales event engine under `/trade` in the same Next.js app:
 
 ## Acceptance
 
-See PRD-V2 checklist. Phase 1 engine is implemented under `/trade`:
+Phase 1 accepted at `1bc1294`. Checklist in PRD-V2. Shipped under `/trade`:
 
 - Schema `013_hot_sales.sql` + domain (`lib/domain/trade`)
 - Admin setup / clone / open-close / allocation / export / audit
 - Sales order + transfer lite + countdown
 - Open-event field locks (products, required columns, support/closes override)
 - Playwright: `@smoke` auth redirect (Phase 1 gate)
-- Playwright `@journey` (create → order → allocate → export) is **post-closure verification** — needs operator creds; not a Phase 1 blocker
+- Playwright `@journey` (create → order → allocate → export) is **post-closure verification** — run only when operator credentials are available; not a Phase 1 blocker
+
+## Hygiene
+
+Keep unrelated layout / repo-migration WIP off Hot Sales history. Do not fold portal layout renames into trade commits.
 
 ## Out of scope (Phase 2)
 
-See [docs/hot-sales/PHASE-2-SCOPING.md](../../hot-sales/PHASE-2-SCOPING.md): 7-role RBAC, finance/deposit, pickup/ops, ERP sync, notifications, Excel imports, dedicated admin create route.
+See [docs/hot-sales/PHASE-2-SCOPING.md](../../hot-sales/PHASE-2-SCOPING.md) — **planning only** until explicit approval. No Phase 2 implementation from this slice.

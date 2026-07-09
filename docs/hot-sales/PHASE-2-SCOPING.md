@@ -1,10 +1,10 @@
 # Hot Sales — Phase 2 scoping note
 
-**Status:** Scoping only — not approved for implementation  
-**Phase 1 contract (closed):** [PRD-V2.md](./PRD-V2.md)  
+**Status:** Planning only — **not approved for implementation**  
+**Phase 1 accepted baseline:** commit `1bc1294` · tag `hot-sales-phase-1` · [PRD-V2.md](./PRD-V2.md)  
 **Vision archive:** [PRD.md](./PRD.md)
 
-Do **not** start Phase 2 coding until this note is reviewed and a Phase 2 build contract is approved.
+Do **not** start Phase 2 coding until this note is reviewed and a Phase 2 build contract is **explicitly approved**. This file is a planning artifact only.
 
 ---
 
