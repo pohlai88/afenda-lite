@@ -44,6 +44,14 @@ const preview: Preview = {
           name: "Desktop 1440",
           styles: { width: "1440px", height: "900px" },
         },
+        laptop1366: {
+          name: "Laptop 1366×768",
+          styles: { width: "1366px", height: "768px" },
+        },
+        laptop1280: {
+          name: "Laptop 1280×720",
+          styles: { width: "1280px", height: "720px" },
+        },
         wide1920: {
           name: "Wide 1920",
           styles: { width: "1920px", height: "1080px" },

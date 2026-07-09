@@ -7,16 +7,24 @@ import { portalCopy } from "@/lib/copy/portal-copy";
 import { PORTAL_NAME } from "@/lib/copy/portal-name";
 import { ORG_SIGN_IN_FROM_PARAM } from "@/lib/auth/auth-entry-params";
 
-/** Editorial copy SSOT for GuardianAuthFacade — maps portal sharp owl contract to Guardian modes. */
+/**
+ * Poster seal under sky-cycle sentences.
+ * Period form matches hero comps; sharp seal is the readable support line.
+ */
+export const GUARDIAN_CLASSIC_SEAL = "SECURE. CONFIDENTIAL. VERIFIED.";
+
+/** Editorial copy SSOT — readable sky-cycle sentences (no flipped lockup). */
 export function resolveGuardianEditorialCopy(): Record<GuardianMode, GuardianCopy> {
   return {
     night: {
+      variant: "sentence",
       eyebrow: PORTAL_NAME,
       headline: SHARP_OWL_EDITORIAL_BY_THEME.dark.headline,
       subheadline: SHARP_OWL_EDITORIAL_BY_THEME.dark.subtitle,
       proofline: SHARP_OWL_EDITORIAL_BY_THEME.dark.seal ?? SHARP_OWL_SEAL,
     },
     day: {
+      variant: "sentence",
       eyebrow: PORTAL_NAME,
       headline: SHARP_OWL_EDITORIAL_BY_THEME.light.headline,
       subheadline: SHARP_OWL_EDITORIAL_BY_THEME.light.subtitle,
@@ -48,6 +56,7 @@ export function resolveGuardianAuthCopyOverride(input: {
   const base = resolveGuardianEditorialCopy();
 
   const orgPoster: GuardianCopy = {
+    variant: "sentence",
     eyebrow: product.portalEyebrow,
     headline: orgSignIn.heroTitle,
     subheadline: orgSignIn.heroDescription,
@@ -68,6 +77,7 @@ export function resolveGuardianJoinCopyOverride(): Partial<
   const base = resolveGuardianEditorialCopy();
 
   const joinPoster: GuardianCopy = {
+    variant: "sentence",
     eyebrow: product.secureAccessEyebrow,
     headline: clientInvitationJoin.heroTitle,
     subheadline: clientInvitationJoin.heroDescription,

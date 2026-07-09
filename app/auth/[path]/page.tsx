@@ -75,6 +75,7 @@ export default async function AuthPage({
     <PortalAuthFormIntro
       {...shellCopy}
       showVaultHeading={resolveShowVaultHeading({ path, from })}
+      compact={useGuardianShell}
     />
   );
 

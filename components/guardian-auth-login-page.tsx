@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useRef, type ReactNode } from "react";
 import {
   GuardianAuthFacade,
@@ -54,11 +53,6 @@ export function GuardianAuthLoginPage({
       onModeChange={(next) => setTheme(portalThemeFromGuardianMode(next))}
       assets={GUARDIAN_AUTH_ASSET_SET}
       copy={copyOverride}
-      orgLink={
-        <Link href="/org/login" className="guardian-auth__org-link">
-          Organization sign-in
-        </Link>
-      }
     >
       <div
         ref={panelRef}

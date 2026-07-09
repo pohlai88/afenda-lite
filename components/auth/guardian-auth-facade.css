@@ -61,7 +61,7 @@
   --scene-shield: var(--guardian-blue);
   --scene-shield-soft: rgba(127, 178, 255, .12);
   --scene-stars: rgba(200, 210, 230, .35);
-  --guardian-sky-duration: 48s;
+  --guardian-sky-duration: 24s;
   --guardian-sky-ease: ease-in-out;
 
   /* Director frame — laptop cinematic (1024–1440); media queries override tokens only */
@@ -232,10 +232,9 @@
 */
 
 .guardian-corner-panel {
-  position: absolute;
-  top: var(--g-pad-y, clamp(18px, 3vw, 40px));
-  right: var(--g-pad-x, clamp(18px, 3vw, 40px));
-  z-index: 20;
+  /* In-flow, not absolute — anchored to the card-zone flex column so it never drifts */
+  position: relative;
+  align-self: flex-end;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -338,9 +337,13 @@
   max-width: 380px;
   min-height: 0;
   max-height: calc(100dvh - 2 * var(--g-pad-y));
-  /* Clip any child paint that could show as grey box-in-box behind chamber */
-  overflow: hidden;
-  border-radius: var(--g-chamber-radius);
+  /* Flex column: corner panel (toggle) stacks above the chamber card in one anchored unit */
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: stretch;
+  /* visible so the timer-ring ::after pseudo can bleed outside the panel bounds */
+  overflow: visible;
 }
 
 .guardian-auth__access-panel {
@@ -1458,7 +1461,7 @@
   }
 }
 
-/* ---------- Living sky cycle (48s ambient) ---------- */
+/* ---------- Living sky cycle (24s ambient) ---------- */
 
 .guardian-auth--ambient .owl-scene__atmosphere--day {
   animation: guardianSkyDayLayer var(--guardian-sky-duration) var(--guardian-sky-ease) infinite;
@@ -1587,6 +1590,52 @@
   }
 }
 
+/* ---------- Ambient timer ring ----------
+   Conic-gradient drain on the corner panel.
+   Uses @property so CSS can interpolate a percentage in @keyframes.
+   Ring drains clockwise from top over var(--guardian-sky-duration) = 48s.
+   Themed with var(--scene-shield): gold (day) or blue (night).
+*/
+
+@property --guardian-timer-pct {
+  syntax: '<percentage>';
+  inherits: false;
+  initial-value: 100%;
+}
+
+@keyframes guardianTimerDrain {
+  from { --guardian-timer-pct: 100%; }
+  to   { --guardian-timer-pct: 0%; }
+}
+
+.guardian-auth--ambient .guardian-corner-panel::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: 18px;
+  background: conic-gradient(
+    from -90deg,
+    color-mix(in srgb, var(--scene-shield), transparent 28%) var(--guardian-timer-pct),
+    transparent var(--guardian-timer-pct)
+  );
+  /* Mask the interior — only the outer stroke ring is visible */
+  mask-image: radial-gradient(
+    ellipse calc(100% - 5px) calc(100% - 5px) at 50% 50%,
+    transparent 99%,
+    black 100%
+  );
+  opacity: .72;
+  pointer-events: none;
+  animation: guardianTimerDrain var(--guardian-sky-duration) linear infinite;
+  transition: opacity 600ms ease;
+}
+
+/* Dim ring when paused */
+.guardian-auth--ambient-paused .guardian-corner-panel::after {
+  animation-play-state: paused;
+  opacity: .28;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .guardian-auth--ambient .owl-scene__atmosphere--day,
   .guardian-auth--ambient .owl-scene__atmosphere--night,
@@ -1595,6 +1644,11 @@
   .guardian-auth--ambient .editorial-copy__set--day,
   .guardian-auth--ambient .editorial-copy__set--night {
     animation: none !important;
+  }
+
+  .guardian-auth--ambient .guardian-corner-panel::after {
+    animation: none !important;
+    opacity: 0 !important;
   }
 
   *, *::before, *::after {
