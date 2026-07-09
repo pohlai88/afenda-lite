@@ -10,9 +10,11 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  DATABASE_URL: ${{ secrets.DATABASE_URL }}
-  NEON_AUTH_BASE_URL: ${{ secrets.NEON_AUTH_BASE_URL }}
-  NEON_AUTH_COOKIE_SECRET: ${{ secrets.NEON_AUTH_COOKIE_SECRET }}
+  DATABASE_URL: ${{ secrets.E2E_DATABASE_URL }}
+  NEON_AUTH_BASE_URL: ${{ secrets.E2E_NEON_AUTH_BASE_URL }}
+  NEON_AUTH_COOKIE_SECRET: ${{ secrets.E2E_NEON_AUTH_COOKIE_SECRET }}
+  NEON_AUTH_MANIFEST_PROFILE: ci
+  APP_URL: http://localhost:3000
   SHARED_ADMIN_EMAIL: ${{ secrets.SHARED_ADMIN_EMAIL }}
   SHARED_ADMIN_PASSWORD: ${{ secrets.SHARED_ADMIN_PASSWORD }}
   CLIENT_DEFAULT_PASSWORD: ${{ secrets.CLIENT_DEFAULT_PASSWORD }}
@@ -21,7 +23,6 @@ env:
   SHARED_ADMIN_NAME: Portal Operator
   E2E_SURVEY_SLUG: ${{ secrets.E2E_SURVEY_SLUG }}
   E2E_INVITE_TOKEN: ${{ secrets.E2E_INVITE_TOKEN }}
-  APP_URL: https://iam-check.vercel.app
   PLAYGROUND_SURVEY_SLUG: ${{ secrets.E2E_SURVEY_SLUG }}
   PLAYGROUND_SURVEY_ID: ${{ secrets.PLAYGROUND_SURVEY_ID }}
   PLAYGROUND_ASSIGNMENT_ID: ${{ secrets.PLAYGROUND_ASSIGNMENT_ID }}
@@ -69,7 +70,6 @@ jobs:
         run: npm run test:e2e:smoke
 
   journey:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
 
     steps:

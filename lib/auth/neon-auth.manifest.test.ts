@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
+import ciManifest from "@/lib/auth/neon-auth.manifest.ci.json";
 import manifest from "@/lib/auth/neon-auth.manifest.json";
 import {
   assertNeonAuthManifestMatchesEnv,
   getNeonAuthManifest,
+  getNeonAuthManifestProfile,
 } from "@/lib/auth/neon-auth.manifest";
 import {
   neonAuthUiAccount,
@@ -15,9 +17,19 @@ import { neonAuthSocialConfigFromManifest } from "@/lib/auth/neon-auth-oauth";
 
 describe("neon-auth manifest", () => {
   it("loads committed manifest snapshot", () => {
-    const loaded = getNeonAuthManifest();
-    expect(loaded.integration.baseUrl).toBe(manifest.integration.baseUrl);
-    expect(loaded.ui.basePath).toBe("/auth");
+    const previous = process.env.NEON_AUTH_MANIFEST_PROFILE;
+    delete process.env.NEON_AUTH_MANIFEST_PROFILE;
+    try {
+      const loaded = getNeonAuthManifest();
+      expect(loaded.integration.baseUrl).toBe(manifest.integration.baseUrl);
+      expect(loaded.ui.basePath).toBe("/auth");
+    } finally {
+      if (previous === undefined) {
+        delete process.env.NEON_AUTH_MANIFEST_PROFILE;
+      } else {
+        process.env.NEON_AUTH_MANIFEST_PROFILE = previous;
+      }
+    }
   });
 
   it("aligns UI feature flags with provider defaults", () => {
@@ -58,5 +70,24 @@ describe("neon-auth manifest", () => {
       return;
     }
     expect(() => assertNeonAuthManifestMatchesEnv()).not.toThrow();
+  });
+
+  it("loads CI manifest profile when NEON_AUTH_MANIFEST_PROFILE=ci", () => {
+    const previous = process.env.NEON_AUTH_MANIFEST_PROFILE;
+    process.env.NEON_AUTH_MANIFEST_PROFILE = "ci";
+    try {
+      expect(getNeonAuthManifestProfile()).toBe("ci");
+      expect(getNeonAuthManifest().integration.baseUrl).toBe(
+        ciManifest.integration.baseUrl,
+      );
+      expect(getNeonAuthManifest().allowLocalhost).toBe(true);
+      expect(getNeonAuthManifest().project.branchName).toBe("ci");
+    } finally {
+      if (previous === undefined) {
+        delete process.env.NEON_AUTH_MANIFEST_PROFILE;
+      } else {
+        process.env.NEON_AUTH_MANIFEST_PROFILE = previous;
+      }
+    }
   });
 });

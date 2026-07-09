@@ -43,10 +43,12 @@ function resolveValue(key, env) {
 function main() {
   const env = composeEnv({ write: false });
   console.log("Syncing GitHub Actions CI secrets from env.config + env.secret…\n");
-  console.log(
-    "WARNING: NEON_AUTH_* must match the Neon branch behind DATABASE_URL on GitHub.",
+  console.warn(
+    "DEPRECATED for CI: use npm run sync:github-actions-secrets:ci (dedicated ci Neon branch).",
   );
-  console.log("Use production-aligned env before sync if CI targets production DB.\n");
+  console.log(
+    "This script sets legacy DATABASE_URL / NEON_AUTH_* — not used by ci.yml after S17 Option 1.\n",
+  );
 
   let synced = 0;
   let skipped = 0;

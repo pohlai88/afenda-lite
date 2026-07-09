@@ -54,10 +54,36 @@
 
 ### CI / release authority
 
-- [ ] `quality` job green on `main` (after secrets sync + push)
-- [ ] `journey` job green on `main`
+- [ ] `quality` job green on PR / `main`
+- [ ] `journey` job green on PR / `main` (localhost + dedicated `ci` Neon branch)
 - [ ] Spot-check operator login → dashboard
 - [ ] Spot-check client cannot access `/dashboard`
+
+---
+
+## CI Option 1 — dedicated Neon branch (2026-07-10)
+
+Production sign-off stays manual on `https://iam-check.vercel.app`. CI Playwright uses a **separate Neon branch** (`ci`, `br-noisy-field-ao7og20e`) with localhost allowed — never production auth.
+
+| Item | Status |
+|------|--------|
+| Neon branch `ci` created | **DONE** |
+| `allow_localhost: true` on `ci` | **DONE** (`npm run configure:neon-auth-ci`) |
+| `lib/auth/neon-auth.manifest.ci.json` | **DONE** |
+| GitHub `E2E_*` secrets | **DONE** (`npm run sync:github-actions-secrets:ci`) |
+| `ci.yml` maps `E2E_*` → env + `NEON_AUTH_MANIFEST_PROFILE=ci` | **DONE** (PR `fix/s17-ci-authority`) |
+| Legacy `DATABASE_URL` / `NEON_AUTH_*` on GitHub | Optional — unused by ci.yml |
+
+**Setup / refresh:**
+
+```bash
+npm run configure:neon-auth-ci
+npm run sync:neon-auth-manifest:ci
+npm run sync:github-actions-secrets:ci
+npm run audit:github-actions-secrets
+```
+
+**Do not** point CI at production Neon Auth or mutate production data from journey tests.
 
 ---
 
