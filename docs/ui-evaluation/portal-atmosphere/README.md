@@ -21,6 +21,12 @@ On viewports below 1024px the layout order is **access-first**:
 
 ## Capture workflow
 
+**Quality benchmark (required reading):** [`docs/architecture/slices/portal-atmosphere/pa-hero-quality-benchmark.md`](../../architecture/slices/portal-atmosphere/pa-hero-quality-benchmark.md)
+
+Comp-aligned laptop hero stories: `stories/ui-evaluation/portal-atmosphere-comp-laptop.stories.tsx` — compare `ReferenceComparisonDark` / `ReferenceComparisonLight` at 1024px against `public/brand/heroes/auth-hero-*.png`.
+
+Fade Owl (Storybook only): `stories/ui-evaluation/portal-atmosphere-fade-owl.stories.tsx` — variants `dual` (light/night PNG cross-fade) and `morpho` (single `guardian-dramatic-iso.png`); no prod wiring.
+
 1. Run `npm run storybook`
 2. Open **Portal Atmosphere / Design Review**
 3. Capture each story at the viewport below

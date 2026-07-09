@@ -1,0 +1,29 @@
+---
+description: Agent workflow — rejections, scope, and when not to implement
+alwaysApply: true
+---
+
+# Agent workflow
+
+## Rejected work is permanent until the user reopens it
+
+- If the user calls work **poison**, **dog shit**, or asks to **remove completely**, treat it as **rejected**.
+- Do **not** re-implement rejected approaches in later turns — including when an old plan file is attached again.
+- Before coding from an attached plan, scan the conversation for rejections and superseding instructions.
+
+## Help only when asked
+
+- Do not proactively implement, refactor, or "fix forward" unless the user explicitly requests implementation.
+- Questions and reviews get answers only — no drive-by code changes.
+
+## Visual / hero / atmosphere work
+
+- Default mode: **Plan first** → user approves → then implement.
+- Default surface for atmosphere experiments: **Storybook fixtures** (`stories/ui-evaluation/`, `components/portal-atmosphere/fixtures/`).
+- Do **not** wire experimental hero/atmosphere layouts into `PortalAuthLayout`, auth routes, or production entry points unless the user explicitly asks.
+
+## Quality bar before shipping UI
+
+- Name the **reference PNG** and **layout zones** (editorial | owl | access card) before writing CSS.
+- If the approach is a shortcut (one asset + filters, paste PNG, invert hack), **stop and plan** — do not ship.
+- See `docs/architecture/slices/portal-atmosphere/pa-rejected-approaches.md` for banned patterns.

@@ -1,4 +1,4 @@
-import { PORTAL_NAME } from "@/lib/portal-copy";
+import { PORTAL_NAME } from "./portal-name";
 
 /** Immutable theme masters (`public/brand/identity/iam-*.png`) — never overwritten by icons:generate. */
 export const BRAND_MASTER_LIGHT_PATH = "/brand/identity/iam-light.png";
@@ -14,13 +14,100 @@ export const BRAND_DRAMATIC_OWL_BACKGROUND_PATH = "/brand/owls/guardian-dramatic
 export const BRAND_DRAMATIC_OWL_BACKGROUND_WIDTH = 524;
 export const BRAND_DRAMATIC_OWL_BACKGROUND_HEIGHT = 561;
 
-/** Sharp owl guardian — extracted from `public/brand/heroes/auth-hero-dual.png`. */
+/**
+ * Dual Guardian Facade base units — curated `owl-variants/allowed-base/`
+ * removebg PNGs. Both owls render together (night + light guardians in one
+ * cinematic poster); atmosphere is CSS-only (`PortalDualGuardianDeco`).
+ */
+export const BRAND_DUAL_GUARDIAN_OWL_DARK_PATH =
+  "/owl-variants/allowed-base/darkbg-removebg-preview2.png";
+export const BRAND_DUAL_GUARDIAN_OWL_LIGHT_PATH =
+  "/owl-variants/allowed-base/whitebg-removebg-preview2.png";
+export const BRAND_DUAL_GUARDIAN_OWL_DARK_WIDTH = 408;
+export const BRAND_DUAL_GUARDIAN_OWL_DARK_HEIGHT = 297;
+export const BRAND_DUAL_GUARDIAN_OWL_LIGHT_WIDTH = 408;
+export const BRAND_DUAL_GUARDIAN_OWL_LIGHT_HEIGHT = 315;
+
+/** Comp-laptop guardian base units (transparent removebg) — CSS deco layers on top. */
+export const BRAND_COMP_OWL_DARK_PATH = BRAND_DUAL_GUARDIAN_OWL_DARK_PATH;
+export const BRAND_COMP_OWL_LIGHT_PATH = BRAND_DUAL_GUARDIAN_OWL_LIGHT_PATH;
+export const BRAND_COMP_OWL_WIDTH = BRAND_DUAL_GUARDIAN_OWL_DARK_WIDTH;
+export const BRAND_COMP_OWL_HEIGHT = BRAND_DUAL_GUARDIAN_OWL_DARK_HEIGHT;
+
+/** Sharp owl guardian — comp reference + allowed-base stand-ins until extracted PNGs return. */
 export const BRAND_SHARP_OWL_REFERENCE_PATH = "/brand/heroes/auth-hero-dual.png";
-export const BRAND_SHARP_OWL_DARK_PATH = "/brand/owls/guardian-sharp-dark.png";
-export const BRAND_SHARP_OWL_LIGHT_PATH = "/brand/owls/guardian-sharp-light.png";
-export const BRAND_SHARP_OWL_GUARDIAN_PATH = "/brand/owls/guardian-sharp-full.png";
-export const BRAND_SHARP_OWL_WIDTH = 435;
-export const BRAND_SHARP_OWL_HEIGHT = 405;
+export const BRAND_SHARP_OWL_DARK_PATH = BRAND_DUAL_GUARDIAN_OWL_DARK_PATH;
+export const BRAND_SHARP_OWL_LIGHT_PATH = BRAND_DUAL_GUARDIAN_OWL_LIGHT_PATH;
+export const BRAND_SHARP_OWL_GUARDIAN_PATH = BRAND_DUAL_GUARDIAN_OWL_DARK_PATH;
+export const BRAND_SHARP_OWL_WIDTH = BRAND_DUAL_GUARDIAN_OWL_DARK_WIDTH;
+export const BRAND_SHARP_OWL_HEIGHT = BRAND_DUAL_GUARDIAN_OWL_DARK_HEIGHT;
+
+/**
+ * Single guardian core — day/night are CSS presentations of the same dramatic iso
+ * (base state vs nocturnal glow), not separate bird PNGs.
+ */
+export const GUARDIAN_DRAMATIC_OWL_CORE_PATH = BRAND_DRAMATIC_OWL_BACKGROUND_PATH;
+
+/** @deprecated Alias — use GUARDIAN_DRAMATIC_OWL_CORE_PATH; kept for owlNight slot compat. */
+export const GUARDIAN_AUTH_OWL_NIGHT_PATH = GUARDIAN_DRAMATIC_OWL_CORE_PATH;
+/** @deprecated Alias — use GUARDIAN_DRAMATIC_OWL_CORE_PATH; kept for owlDay slot compat. */
+export const GUARDIAN_AUTH_OWL_DAY_PATH = GUARDIAN_DRAMATIC_OWL_CORE_PATH;
+
+export const GUARDIAN_AUTH_ASSET_SET = {
+  owlNight: GUARDIAN_AUTH_OWL_NIGHT_PATH,
+  owlDay: GUARDIAN_AUTH_OWL_DAY_PATH,
+} as const;
+
+/**
+ * Fade Owl experiment (Storybook fixture only).
+ * Dual PNG cross-fade: light-guardian ↔ night-guardian (2s opacity).
+ * Morpho iso kept as legacy reference only.
+ */
+export const FADE_OWL_ASSETS_LIGHT_PATH = "/assets/light-guardian.png";
+export const FADE_OWL_ASSETS_NIGHT_PATH = "/assets/night-guardian.png";
+/** Optional Vault Threshold emblem — not required for dual owl cross-fade. */
+export const FADE_OWL_ASSETS_VAULT_THRESHOLD_PATH = "/assets/vault-threshold.png";
+
+/** @deprecated Use FADE_OWL_ASSETS_LIGHT_PATH / FADE_OWL_RENDER_LIGHT_PATH. */
+export const FADE_OWL_LIGHT_GUARDIAN_PATH = "/fade-owl/light-guardian.png";
+/** @deprecated Use FADE_OWL_ASSETS_NIGHT_PATH / FADE_OWL_RENDER_NIGHT_PATH. */
+export const FADE_OWL_NIGHT_GUARDIAN_PATH = "/fade-owl/night-guardian.png";
+/** @deprecated Mirror path — prefer FADE_OWL_ASSETS_VAULT_THRESHOLD_PATH. */
+export const FADE_OWL_VAULT_THRESHOLD_PATH = "/fade-owl/vault-threshold.png";
+
+/** @deprecated Auth cutouts unused by fade-owl dual path. */
+export const FADE_OWL_AUTH_DAY_CUTOUT_PATH = "/auth/owls/owl-day-cutout.png";
+/** @deprecated Auth cutouts unused by fade-owl dual path. */
+export const FADE_OWL_AUTH_NIGHT_CUTOUT_PATH = "/auth/owls/owl-night-cutout.png";
+/** @deprecated Auth cutouts unused by fade-owl dual path. */
+export const FADE_OWL_AUTH_DAY_GHOST_PATH = "/auth/owls/owl-day-ghost.png";
+/** @deprecated Auth cutouts unused by fade-owl dual path. */
+export const FADE_OWL_AUTH_NIGHT_GHOST_PATH = "/auth/owls/owl-night-ghost.png";
+
+/** Morpho variant — single dramatic iso (`guardian-dramatic-iso.png`). */
+export const FADE_OWL_GUARDIAN_OWL_PATH = GUARDIAN_DRAMATIC_OWL_CORE_PATH;
+
+/** Dual variant render paths (light ↔ night PNG cross-fade). */
+export const FADE_OWL_RENDER_LIGHT_PATH = FADE_OWL_ASSETS_LIGHT_PATH;
+export const FADE_OWL_RENDER_NIGHT_PATH = FADE_OWL_ASSETS_NIGHT_PATH;
+/** Optional threshold overlay path (fixture may omit). */
+export const FADE_OWL_RENDER_VAULT_THRESHOLD_PATH =
+  FADE_OWL_ASSETS_VAULT_THRESHOLD_PATH;
+
+export const FADE_OWL_OWL_WIDTH = BRAND_DRAMATIC_OWL_BACKGROUND_WIDTH;
+export const FADE_OWL_OWL_HEIGHT = BRAND_DRAMATIC_OWL_BACKGROUND_HEIGHT;
+
+export const FADE_OWL_ASSET_MANIFEST = {
+  light: FADE_OWL_RENDER_LIGHT_PATH,
+  night: FADE_OWL_RENDER_NIGHT_PATH,
+  owlCore: FADE_OWL_GUARDIAN_OWL_PATH,
+  lightStandIn: FADE_OWL_RENDER_LIGHT_PATH,
+  nightStandIn: FADE_OWL_RENDER_NIGHT_PATH,
+  vaultThreshold: FADE_OWL_ASSETS_VAULT_THRESHOLD_PATH,
+  vaultThresholdRender: FADE_OWL_RENDER_VAULT_THRESHOLD_PATH,
+} as const;
+
+export type FadeOwlMode = "light" | "night";
 
 export type PortalGuardianOwlPreset = "dramatic" | "sharp";
 

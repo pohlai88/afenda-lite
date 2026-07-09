@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { authViewPaths } from "@neondatabase/auth-ui/server";
+import { GuardianAuthLoginPage } from "@/components/guardian-auth-login-page";
 import { PortalAccessDeniedNotice } from "@/components/portal-access-denied-notice";
 import { PortalAuthFormIntro } from "@/components/portal-auth-form-intro";
 import { PortalAuthLayout } from "@/components/portal-auth-layout";
@@ -117,6 +118,10 @@ export default async function AuthPage({
       ) : null}
     </>
   );
+
+  if (path === "sign-in" && !embed) {
+    return <GuardianAuthLoginPage />;
+  }
 
   const shellCopy = resolveAuthShellCopy({ path, from });
 

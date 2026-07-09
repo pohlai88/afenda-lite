@@ -61,6 +61,7 @@
   top: clamp(2rem, 8vh, 7rem);
   opacity: 0.74;
   transform: translateZ(0);
+  overflow: hidden;
 }
 
 .portal-guardian-owl__image {

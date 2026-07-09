@@ -233,16 +233,37 @@
 }
 
 @layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
   * {
     @apply border-border outline-ring/50;
   }
 
   html {
     @apply overflow-x-clip font-sans;
+    width: 100%;
+    min-height: 100%;
+    margin: 0;
   }
 
   body {
     @apply min-h-dvh min-w-0 overflow-x-clip bg-background text-base leading-relaxed text-foreground antialiased;
+    width: 100%;
+    min-height: 100%;
+    margin: 0;
+  }
+
+  /* Guardian cinematic sign-in — desktop is one locked screen, no accidental scroll */
+  @media (min-width: 981px) {
+    html:has(.guardian-auth),
+    html:has(.guardian-auth) body {
+      height: 100%;
+      overflow: hidden;
+    }
   }
 
   h1,

@@ -6,6 +6,9 @@ const dirname = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(dirname, "..");
 const nextLinkMock = path.resolve(dirname, "./mocks/next-link.tsx");
 const nextImageMock = path.resolve(dirname, "./mocks/next-image.tsx");
+const serverOnlyMock = path.resolve(dirname, "./mocks/server-only.ts");
+const dbMock = path.resolve(dirname, "./mocks/db.ts");
+const pgMock = path.resolve(dirname, "./mocks/pg.ts");
 
 const config: StorybookConfig = {
   stories: ["../stories/**/*.stories.@(ts|tsx)"],
@@ -15,13 +18,29 @@ const config: StorybookConfig = {
 
   viteFinal: async (viteConfig) => {
     viteConfig.resolve = viteConfig.resolve ?? {};
+    const existingAliases = Array.isArray(viteConfig.resolve.alias)
+      ? viteConfig.resolve.alias
+      : Object.entries(viteConfig.resolve.alias ?? {}).map(([find, replacement]) => ({
+          find,
+          replacement,
+        }));
+
     viteConfig.resolve.alias = [
-      ...(Array.isArray(viteConfig.resolve.alias)
-        ? viteConfig.resolve.alias
-        : Object.entries(viteConfig.resolve.alias ?? {}).map(([find, replacement]) => ({
-            find,
-            replacement,
-          }))),
+      // Specific mocks must precede the broad `@` alias.
+      { find: "server-only", replacement: serverOnlyMock },
+      { find: /^@\/lib\/db(?:\.ts)?$/, replacement: dbMock },
+      { find: /[/\\]lib[/\\]db(?:\.ts)?$/, replacement: dbMock },
+      { find: "pg", replacement: pgMock },
+      ...existingAliases.filter((alias) => {
+        const find = typeof alias.find === "string" ? alias.find : alias.find.toString();
+        return (
+          find !== "@" &&
+          find !== "server-only" &&
+          find !== "pg" &&
+          !find.includes("lib/db") &&
+          !find.includes("lib\\db")
+        );
+      }),
       { find: "@", replacement: projectRoot },
       { find: /^next\/link$/, replacement: nextLinkMock },
       { find: /^next\/image$/, replacement: nextImageMock },
