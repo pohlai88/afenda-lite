@@ -2,9 +2,10 @@
 
 **Updated:** 2026-07-10  
 **For:** You (human reader) — not agents.  
+**Evidence log:** [runbooks/s17-production-signoff.md](./runbooks/s17-production-signoff.md)  
 **Agent docs:** [TRACKING.md](./TRACKING.md) · [architecture/remaining-development.md](./architecture/remaining-development.md)
 
-Tick boxes as you complete items. Edit this file when status changes.
+Tick boxes as you complete items.
 
 ---
 
@@ -16,7 +17,7 @@ Tick boxes as you complete items. Edit this file when status changes.
 - [x] Phase 2A RBAC code shipped (`hot-sales-phase-2a`)
 - [x] Ops Gates 1–7 complete (production RBAC on, DB cutover done)
 - [x] GitHub issue [#1](https://github.com/pohlai88/iam-check/issues/1) closed
-- [x] Hot Sales docs consolidated under `docs/hot-sales/` ([RUNTIME.md](./hot-sales/RUNTIME.md) = agent entry)
+- [x] Hot Sales docs under `docs/hot-sales/` ([RUNTIME.md](./hot-sales/RUNTIME.md))
 
 ### Guardian Auth
 
@@ -24,12 +25,14 @@ Tick boxes as you complete items. Edit this file when status changes.
 - [x] Guardian PR merged to `main`
 - [x] Interaction tests passing (4/4)
 
-### Platform / code health
+### Platform / automated gates
 
-- [x] Architecture checks green (`npm run checks`)
-- [x] Unit + interaction test suites green (last known: 391 + 58)
-- [x] Production build passes
-- [x] Neon Auth config synced (Backlog BL-01, BL-04, BL-08, BL-09 closed)
+- [x] Production liveness + readiness (`/api/health/*`)
+- [x] `npm run verify:production` exit 0 (2026-07-10)
+- [x] Join OTP step visible on prod (`check-production-join-ui.mjs`)
+- [x] **Branch protection** on `main` (requires `quality` + `journey`)
+- [x] **GitHub CI secrets** synced (was missing 6 keys — fixed 2026-07-10)
+- [x] Architecture checks green locally (except `check:ui-sync` sandbox token on dev DB — CI-only concern if DB seeded)
 
 ---
 
@@ -37,77 +40,71 @@ Tick boxes as you complete items. Edit this file when status changes.
 
 ### 1. Production sign-off (S17) — blocks “fully production-ready”
 
-- [ ] **Branch protection** on `main` (required CI checks) — repo admin
-- [ ] **Vercel liveness monitor** on `/api/health/liveness` — ops
-- [ ] Run **[post-deploy-verification.md](./backlogs/post-deploy-verification.md)** Phases 1–3 on live prod
+- [x] Branch protection on `main` — **done** 2026-07-10 (`npm run protect:main`)
+- [ ] **Vercel liveness monitor** on `/api/health/liveness` — [setup steps](./runbooks/s17-production-signoff.md#vercel-liveness-monitor-manual-setup)
+- [ ] Run **[post-deploy-verification.md](./backlogs/post-deploy-verification.md)** Phases 1–3 on live prod (manual)
   - [ ] Phase 1: operator invite email + preview client (BL-02, BL-03)
-  - [ ] Phase 2: client join journey (BL-06)
-  - [ ] Phase 3: email branding console + account self-service (BL-05, BL-07)
-- [ ] Confirm **CI journey** green on `main` (GitHub Actions)
+  - [ ] Phase 2: client join with **real OTP** + full journey (BL-06)
+  - [ ] Phase 3: Neon Console app name (BL-05) + account flows (BL-07)
+- [ ] Confirm **CI `quality` + `journey` green** on `main` after secrets sync (push pending)
 - [ ] Spot-check: operator login → dashboard; client scoped correctly
 
-**When all checked:** Backlog-01 can close · S17 acceptance complete.
+**When all checked:** Backlog-01 closes · S17 acceptance complete.
 
 ---
 
 ### 2. Guardian Auth — visual closeout (not blocking prod traffic)
 
-- [ ] **Design sign-off** @ 1024px vs `public/brand/heroes/auth-hero-dark.png` / `auth-hero-light.png` (Storybook)
-- [ ] **Viewport containment** — no scroll @ 100svh (Storybook story)
-- [ ] Fix **4 failing** viewport unit tests (`lib/guardian-auth-facade.viewport.test.ts`)
-- [ ] Resolve **Lane C** git stashes (`git stash list` → drop or cleanup branch)
-
-**When all checked:** Guardian module = **complete** (not just functional).
+- [ ] Design sign-off @ 1024px vs hero PNGs (Storybook)
+- [ ] Viewport containment — no scroll @ 100svh
+- [ ] Fix **4 failing** viewport unit tests
+- [ ] Resolve Lane C git stashes
 
 ---
 
-### 3. Portal Atmosphere — design acceptance (parallel, lower urgency)
+### 3. Portal Atmosphere — design acceptance (parallel)
 
-- [ ] Capture visual baselines in `docs/ui-evaluation/portal-atmosphere/` (Storybook)
-- [ ] Manual viewport matrix 320–1920 (overflow, contrast)
-- [ ] Legacy `.portal-auth-*` CSS purge (after visual parity)
-
-Detail: [pa-closure-register.md](./architecture/slices/portal-atmosphere/pa-closure-register.md)
+- [ ] Visual baseline captures (Storybook → `docs/ui-evaluation/portal-atmosphere/`)
+- [ ] Manual viewport matrix + contrast
+- [ ] Legacy CSS purge after parity
 
 ---
 
-## 🚫 Blocked / later (do not start without new decision)
+## 🚫 Blocked / later
 
-| Item | Why blocked |
-|------|-------------|
-| Hot Sales **2B–2D** (finance, pickup, Excel, ERP) | Needs new ADR + slice approval |
-| **S12 tenancy** / multi-operator SaaS | Blocked until S17 closes |
-| Repo `lib/` / `components/` normalization | Separate lane — not mixed with above |
-| Dual owl / Fade Owl prod experiments | Explicitly deferred per Guardian gap register |
-
----
-
-## Quick “where am I?” summary
-
-| Area | Status in one line |
-|------|-------------------|
-| **Hot Sales** | **Done** — live with RBAC; no more ops work unless you reopen scope |
-| **Guardian Auth** | **Live but not finished** — works in prod; design + 4 tests remain |
-| **Declaration portal core** | **Shipped** — acceptance proof (S17 + post-deploy) still open |
-| **Portal Atmosphere** | **Code mostly done** — visual sign-off and cleanup remain |
-| **Next product work** | **Nothing authorized** until S17 closes and you approve 2B or S12 |
+| Item | Why |
+|------|-----|
+| Hot Sales 2B–2D | New ADR required |
+| S12 tenancy | After S17 |
+| Repo normalization | Separate lane |
 
 ---
 
-## Handy commands (when you verify)
+## Quick “where am I?”
+
+| Area | One line |
+|------|----------|
+| **Hot Sales** | **Done** — live with RBAC |
+| **Guardian** | **Live** — design + 4 tests remain |
+| **S17 / Backlog-01** | **In progress** — infra fixed; manual journeys + CI re-run remain |
+| **New product** | **Nothing authorized** until S17 closes |
+
+---
+
+## Handy commands
 
 ```bash
-npm run test:e2e:smoke          # quick prod-path smoke
-npm run test:e2e:journey        # full journeys (needs creds)
-npm run verify:production       # production probe
-npm run storybook               # Guardian / PA visual review
-npm run gh -- issue list        # GitHub (uses keyring auth)
+npm run verify:production
+npm run audit:github-actions-secrets
+node scripts/check-production-join-ui.mjs
+npm run test:e2e:journey          # after CI secrets + local creds
+npm run gh -- run list -b main -L 3
 ```
 
 ---
 
 ## If you only have 30 minutes
 
-1. Open [post-deploy-verification.md](./backlogs/post-deploy-verification.md) → run **Phase 1** manually on prod.
-2. Open Storybook → Guardian auth stories → compare to hero PNGs @ 1024px.
-3. Check GitHub → Settings → Branches → is `main` protected?
+1. **Vercel Dashboard** → add liveness monitor (link above).
+2. **post-deploy Phase 1** — invite a test client on prod, confirm email.
+3. **GitHub Actions** — confirm latest `main` CI run is green after push.

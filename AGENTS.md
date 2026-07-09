@@ -90,6 +90,8 @@ npm run gh -- pr create --base main --head my-branch
 
 **Manual override (PowerShell):** `Remove-Item Env:GITHUB_TOKEN` then run `gh` directly.
 
+**CI secrets (GitHub Actions):** `npm run audit:github-actions-secrets` · `npm run sync:github-actions-secrets` (from `env.config` + `env.secret` after `env:compose`). `NEON_AUTH_*` must match the Neon branch behind `DATABASE_URL` on GitHub.
+
 ---
 
 ## Neon Auth
