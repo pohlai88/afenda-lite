@@ -64,12 +64,12 @@ Functional shell is shipped; **module complete** requires design sign-off and gr
 |---|------|-------|----------------|
 | 2a | Design sign-off @ 1024px | Design | `ReferenceComparisonNight` / `ReferenceComparisonDay` match `public/brand/heroes/auth-hero-*.png` |
 | 2b | Viewport containment | Design + eng | `guardian-auth-viewport-containment.stories.tsx` — 100svh, no scroll |
-| 2c | Viewport unit tests | Engineering | **4 failing** / 14 total in `lib/guardian-auth-facade.viewport.test.ts` (2026-07-10) — align CSS or test contracts |
+| 2c | Viewport unit tests | Engineering | **14/14 pass** in `lib/guardian-auth-facade.viewport.test.ts` (2026-07-10) — CSS contract aligned (sunrise plate `#f8efe0`, `--guardian-sky-duration: 48s`, Neon slot max-height, day vault glass) |
 | 2d | Lane C stash hygiene | Engineering | `git stash list` → drop or branch `ui/guardian-lane-c-cleanup` |
 
 ```bash
 npm run test:interaction -- components/auth/guardian-auth-facade.interaction.test.tsx   # 4/4 pass
-npm run test:unit -- lib/guardian-auth-facade.viewport.test.ts                        # fix 4 failures
+npm run test:unit -- lib/guardian-auth-facade.viewport.test.ts                        # 14/14 pass
 npm run storybook
 # stories/ui-evaluation/guardian-auth-facade.stories.tsx
 ```
@@ -211,7 +211,7 @@ Future — New ADR required
 | Hero PNGs remain visual SSOT | Supersession requires design ADR addendum |
 | `TRACKING.md` may lag this doc on gate counts | Prefer lane SSOT + this file for 2026-07-10 state |
 
-**Unknowns (label only):** S17 branch protection may already be configured — verify live GitHub settings before scheduling repo-admin work.
+**Unknowns (label only):** S17 branch protection is **verified configured** on `main` (2026-07-10) — strict required checks `quality` + `journey`, force-push/deletion disabled (`npm run gh -- api repos/pohlai88/iam-check/branches/main/protection`). No repo-admin work required.
 
 ---
 

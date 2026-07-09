@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { deleteSurveyAction } from "@/app/actions/surveys";
 import { ConfirmDialog } from "@/components/confirm-dialog";
@@ -8,6 +9,7 @@ import { portalCopy } from "@/lib/copy/portal-copy";
 
 export function DeclarationRowDeleteAction({ surveyId }: { surveyId: string }) {
   const { manage } = portalCopy.declarationDetail;
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
 
@@ -30,10 +32,12 @@ export function DeclarationRowDeleteAction({ surveyId }: { surveyId: string }) {
         destructive
         onCancel={() => setOpen(false)}
         onConfirm={() => {
+          setOpen(false);
           const formData = new FormData();
           formData.set("id", surveyId);
           startTransition(async () => {
             await deleteSurveyAction(formData);
+            router.refresh();
           });
         }}
       />

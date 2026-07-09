@@ -32,9 +32,10 @@ Re-run after meaningful changes. CI runs the same on PR + `main`.
 | Architecture bundle | `npm run checks` | **Pass** (12 gates) |
 | Unit (L0) | `npm run test:unit` | **391** pass |
 | Interaction (L2) | `npm run test:interaction` | **58** pass |
+| Guardian viewport (L0) | `npm run test:unit -- lib/guardian-auth-facade.viewport.test.ts` | **14/14** pass (2026-07-10) |
 | Production build | `npm run build` | Pass |
-| E2E smoke | `npm run test:e2e:smoke` | CI authority |
-| E2E journey | `npm run test:e2e:journey` | CI `main` job authority |
+| E2E smoke | `npm run test:e2e:smoke` | **15/15** pass (2026-07-10) |
+| E2E journey | `npm run test:e2e:journey` | CI `main` job authority (fresh DB); local full-suite needs reseed between runs |
 | Production probe | `npm run verify:production` | Pass (2026-07-10) |
 
 Registry drift: `npm run check:reliance-mapping-drift` · `check:reliance-coverage` · `check:reliance-graph-drift`.
@@ -111,9 +112,13 @@ Master brief: [backlog-01-neon-auth-closure.md](./backlogs/backlog-01-neon-auth-
 | --- | --- | --- |
 | S17 post-deploy Phases 1–3 (manual) | Release owner | [post-deploy-verification.md](./backlogs/post-deploy-verification.md) · [s17-production-signoff.md](./runbooks/s17-production-signoff.md) |
 | S17 Vercel liveness monitor | Ops | [s17 runbook § monitor](./runbooks/s17-production-signoff.md#vercel-liveness-monitor-manual-setup) |
-| CI journey green on `main` | Engineering | Secrets synced 2026-07-10 — verify after push |
-| Guardian viewport unit tests (4 failing) | Engineering | `lib/guardian-auth-facade.viewport.test.ts` |
+| CI journey green on `main` | Engineering | Journey e2e fixes applied 2026-07-10 (delete-row `router.refresh()`; trade spec `/admin/events/new` + open-state wait) — verify after push |
 | S1 operator login → dashboard (prod) | Engineering | Manual or `@journey` after CI green |
+
+**Resolved 2026-07-10:**
+
+- Branch protection on `main` — **verified configured** via `npm run gh -- api repos/pohlai88/iam-check/branches/main/protection`: strict required checks `quality` + `journey`, force-push and deletion disabled.
+- Guardian viewport unit tests — **14/14 pass** (was 4 failing); Guardian auth CSS contract aligned.
 
 ---
 

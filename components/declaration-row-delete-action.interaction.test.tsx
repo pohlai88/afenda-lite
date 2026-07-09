@@ -5,6 +5,10 @@ import { DeclarationRowDeleteAction } from "@/components/declaration-row-delete-
 import { portalCopy } from "@/lib/copy/portal-copy";
 import { renderPortal, setupUser } from "@/testing/react";
 
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ refresh: vi.fn() }),
+}));
+
 vi.mock("@/app/actions/surveys", () => ({
   deleteSurveyAction: vi.fn(),
 }));

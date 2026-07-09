@@ -61,7 +61,7 @@
   --scene-shield: var(--guardian-blue);
   --scene-shield-soft: rgba(127, 178, 255, .12);
   --scene-stars: rgba(200, 210, 230, .35);
-  --guardian-sky-duration: 24s;
+  --guardian-sky-duration: 48s;
   --guardian-sky-ease: ease-in-out;
 
   /* Director frame — laptop cinematic (1024–1440); media queries override tokens only */
@@ -130,7 +130,7 @@
  */
 .guardian-auth--day {
   /* Sunrise atmosphere palette */
-  --guardian-plate: #f8ead6;
+  --guardian-plate: #f8efe0;
   --scene-bg-1: #f8ead6;
   --scene-bg-2: #eef3f7;
   --scene-bg-3: #cfdce8;
@@ -364,6 +364,7 @@
 /* Vault object — black glass night / warm ivory day (no SaaS blue fill glow) */
 .guardian-auth__access-panel .bg-card {
   min-height: 0;
+  max-height: calc(100dvh - 2 * var(--g-pad-y));
   width: 100%;
   max-width: none;
   padding: var(--g-chamber-pad);
@@ -982,7 +983,7 @@
   background:
     linear-gradient(180deg, rgba(255, 255, 255, .86) 0%, rgba(255, 249, 236, .68) 100%),
     rgba(255, 250, 238, .76);
-  border-color: rgba(132, 103, 61, .20);
+  border-color: rgba(139, 112, 70, .20);
   box-shadow:
     0 34px 90px rgba(79, 89, 105, .16),
     0 12px 34px rgba(184, 135, 54, .08),

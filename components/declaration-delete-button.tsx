@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { Trash2Icon } from "lucide-react";
 import { deleteSurveyAction } from "@/app/actions/surveys";
@@ -9,6 +10,7 @@ import { Button } from "@/components/ui/button";
 
 export function DeclarationDeleteButton({ surveyId }: { surveyId: string }) {
   const { manage } = portalCopy.declarationDetail;
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
 
@@ -41,6 +43,7 @@ export function DeclarationDeleteButton({ surveyId }: { surveyId: string }) {
           formData.set("id", surveyId);
           startTransition(async () => {
             await deleteSurveyAction(formData);
+            router.refresh();
           });
         }}
       />
