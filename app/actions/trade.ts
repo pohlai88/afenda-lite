@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireTradeAccess, requireTradeAdmin, requireTradePermission } from "@/lib/auth/trade-session";
+import { requireTradeAdmin, requireTradePermission } from "@/lib/auth/trade-session";
 import {
   HOT_SALES_SCOPE_TYPES,
   type HotSalesScopeType,
@@ -724,10 +724,13 @@ export async function requestTransferAction(
   formData: FormData,
 ) {
   if (!isTradeLocale(locale)) throw new Error("invalid_locale");
-  const access = await requireTradeAccess();
 
   const order = await getOrderById(orderId);
   if (!order) return { error: "not_found" };
+
+  const access = await requireTradePermission("transfer.request", {
+    eventId: order.eventId,
+  });
   if (!access.isAdmin && order.salespersonUserId !== access.userId) {
     return { error: "forbidden" };
   }
