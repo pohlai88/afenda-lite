@@ -57,9 +57,9 @@ Operational gates map to [PHASE-2A-RELEASE-READINESS.md](./PHASE-2A-RELEASE-READ
 | **4B** | Phase 1 sales allowlist matrix (flag off) | ✅ **PASS** — rows 6–10 passed on live app (2026-07-10) |
 | **5** | `requestTransferAction` / transfer-lite triage | ✅ Complete — flag=false no patch; pre-Gate-6 permission alignment recorded |
 | **6** | Controlled `HOT_SALES_RBAC_ENABLED=true` | ✅ **PASS** — local controlled matrix 17/17 (2026-07-10); production flag stays **false** |
-| **7** | Production RBAC enable | ⏸ Blocked — requires Gate 6 ✅ + DB cutover + explicit promotion |
+| **7** | Production RBAC enable | ⏸ Blocked — DB cutover ✅ (2026-07-10); explicit `HOT_SALES_RBAC_ENABLED=true` promotion not done |
 
-**Gate 4 overall:** admin ✅, sales allowlist matrix rows 6–10 ✅ (2026-07-10). **Gate 5** triage ✅ complete (no flag=false patch). **Gate 6** controlled RBAC matrix ✅ **PASS** (local `flag=true`, 17/17, 2026-07-10). **Gate 7** production RBAC enable ⏸ blocked. **Open ops gap:** live Vercel `DATABASE_URL` still points at `dev-spec-b`; production branch `br-tiny-hill-ao82jp6f` has matching allowlist + event data but is not the live deploy DB until cutover.
+**Gate 4 overall:** admin ✅, sales allowlist matrix rows 6–10 ✅ (2026-07-10). **Gate 5** triage ✅ complete (no flag=false patch). **Gate 6** controlled RBAC matrix ✅ **PASS** (local `flag=true`, 17/17, 2026-07-10). **Gate 7 DB cutover** ✅ complete (2026-07-10) — live Vercel `DATABASE_URL` + `NEON_AUTH_BASE_URL` on `br-tiny-hill-ao82jp6f` / `ep-dawn-bird`. **Gate 7 production RBAC enable** ⏸ blocked until explicit promotion checklist.
 
 ---
 
@@ -138,16 +138,15 @@ Row 6–10: pass (5/5)
 Gate 4B: PASS
 ```
 
-**DB drift caveat (must stay visible):**
+**DB drift caveat (historical — resolved 2026-07-10):**
 
 ```text
-Runtime DB for this run: dev-spec-b / br-super-hill-aojc9a4p
-Gate SSOT production branch: br-tiny-hill-ao82jp6f
-SSOT branch has matching allowlist + GATE-4B-PROD-20260709 data
-DB cutover remains a separate ops step
+Pre-cutover runtime DB: dev-spec-b / br-super-hill-aojc9a4p (ep-curly-sky)
+Post-cutover runtime DB: production / br-tiny-hill-ao82jp6f (ep-dawn-bird)
+Gate 4B matrix rows 6–10 were run on pre-cutover DB; post-cutover flag=false smoke re-verified trade ingress.
 ```
 
-**Remaining ops (not matrix):** align live Vercel `DATABASE_URL` to `br-tiny-hill-ao82jp6f` when Neon Auth cutover is ready.
+**Remaining ops (not matrix):** ~~align live Vercel `DATABASE_URL` to `br-tiny-hill-ao82jp6f`~~ ✅ done — see [Gate 7 DB cutover](#gate-7--production-db-cutover-complete).
 
 ### Event/product prerequisite (rows 7–8)
 
@@ -289,7 +288,71 @@ DB: br-super-hill-aojc9a4p
 
 - **Do not** set `HOT_SALES_RBAC_ENABLED=true` on Vercel until Gate 7 promotion checklist.
 - **Do not** start Phase 2B–2D.
-- DB cutover (`br-tiny-hill-ao82jp6f` as live deploy DB) remains a **separate** ops step.
+- ~~DB cutover (`br-tiny-hill-ao82jp6f` as live deploy DB) remains a **separate** ops step.~~ ✅ Complete — see Gate 7 DB cutover section.
+
+---
+
+## Gate 7 — production DB cutover (complete)
+
+**Status:** ✅ **PASS** — Vercel production runtime aligned to canonical Neon branch. **Production RBAC flag remains `false`**; explicit enable is a separate Gate 7 promotion step.
+
+**Date:** 2026-07-10  
+**Lane:** Ops only — no app code, no migrations, no RBAC enable.
+
+### Pre-cutover drift (confirmed)
+
+| Item | Before | Canonical target |
+|------|--------|------------------|
+| Vercel `DATABASE_URL` host | `ep-curly-sky-aojpc61y-pooler` (`br-super-hill-aojc9a4p` / `dev-spec-b`) | `ep-dawn-bird-aofi3f7j-pooler` (`br-tiny-hill-ao82jp6f`) |
+| Vercel `NEON_AUTH_BASE_URL` | `ep-curly-sky` (dev-spec-b) | `ep-dawn-bird` (production) |
+| Committed `neon-auth.manifest.json` | `dev-spec-b` / `ep-curly-sky` | Must match production auth URL |
+
+**Incident:** First env sync without manifest update caused production **500** (`assertNeonAuthManifestMatchesEnv` fail-closed). Recovery: sync manifest to production branch + redeploy from `main`.
+
+### Canonical branch data (`br-tiny-hill-ao82jp6f`)
+
+| Check | Result |
+|-------|--------|
+| Migrations `013_hot_sales.sql` + `014_hot_sales_rbac.sql` | ✅ Applied |
+| Sales allowlist | ✅ `preview-client@iam-check.com` (`active=true`) |
+| RBAC seed / assignments | ✅ 11 roles; assignments: `admin@iam-check.com` → Client Admin (`platform`); `preview-client@iam-check.com` → Sales Executive (`own`) |
+| Open event (smoke) | ✅ `GATE-4B-PROD-20260709` — Gate 4B Production Event 20260709 |
+
+### Cutover actions
+
+1. `npm run env:compose` + `npm run sync:vercel` — `DATABASE_URL`, `NEON_AUTH_BASE_URL`, `HOT_SALES_RBAC_ENABLED=false` (+ 10 other canonical keys).
+2. `lib/auth/neon-auth.manifest.json` → production branch (`d05eae2`).
+3. `vercel deploy --prod --yes` from `main` → `dpl_8btf19EFofKLQmcswLJQWNXfGEVV`.
+4. Local dev restored to `dev-spec-b` (`ep-curly-sky`) in `env.config` / `env.secret`.
+
+### Post-cutover smoke (`HOT_SALES_RBAC_ENABLED=false`)
+
+Target: `https://iam-check.vercel.app`  
+Runner: `node --env-file=.env scripts/gate-7-cutover-smoke.mjs`
+
+| Check | Result | Evidence |
+|-------|--------|----------|
+| Health liveness | ✅ PASS | `GET /api/health/liveness` → `status: alive` |
+| Health readiness | ✅ PASS | `GET /api/health/readiness` → `status: ready`, pooler connected |
+| Sales `/trade/vi/events` (allowlisted) | ✅ PASS | No `/client` bounce |
+| Admin `/trade/vi/admin/events` | ✅ PASS | Admin events page loads |
+
+**Verdict:**
+
+```text
+Gate 7 DB cutover: PASS
+Runtime DB: br-tiny-hill-ao82jp6f / ep-dawn-bird
+Deploy: dpl_8btf19EFofKLQmcswLJQWNXfGEVV
+Manifest: d05eae2
+HOT_SALES_RBAC_ENABLED (Vercel): false
+Production RBAC enable: NOT DONE (explicit promotion still required)
+```
+
+### Gate 7 promotion blockers (RBAC enable — still open)
+
+- `HOT_SALES_RBAC_ENABLED=true` on Vercel — **not set**
+- Production Neon `allow_localhost: true` on `br-tiny-hill-ao82jp6f` — review before RBAC cutover (`productionChecklist.requireLocalhostDisabledAtCutover`)
+- Full Gate 7 controlled matrix on production with `flag=true` — not run
 
 ---
 
