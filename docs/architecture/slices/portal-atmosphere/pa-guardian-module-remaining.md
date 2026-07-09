@@ -47,21 +47,22 @@ Authority: [pa-hero-quality-benchmark.md](./pa-hero-quality-benchmark.md)
 
 **Owner:** Design. **Blocker:** None for prod traffic; **blocks** closing “module complete” label.
 
-### 2. Unit test alignment (engineering)
+### 2. Unit test alignment (engineering) — DONE 2026-07-10
 
-`lib/guardian-auth-facade.viewport.test.ts` — **4 failing** / 14 total after merge (CSS contract strings vs sunrise/corner-panel CSS):
+`lib/guardian-auth-facade.viewport.test.ts` — **14/14 pass**. CSS contracts aligned in `components/auth/guardian-auth-facade.css`:
 
-- `uses sunrise day plate and sky atmosphere (not milky white)`
-- `defines living sky cycle ambient animations (48s)`
-- `restrains chamber to vault glass (no blue fill glow on card)`
+- `uses sunrise day plate and sky atmosphere (not milky white)` — day plate set to `#f8efe0`
+- `defines living sky cycle ambient animations (48s)` — `--guardian-sky-duration: 48s`
+- `restrains chamber to vault glass (no blue fill glow on card)` — day `.access-vault` border `rgba(139, 112, 70, .20)`
+- `styles production Neon slot inside access panel` — `.bg-card` `max-height: calc(100dvh - 2 * var(--g-pad-y))`
 
-**Action:** Update test expectations to match shipped CSS **or** adjust CSS if tests encode intentional contracts. Run:
+Verify:
 
 ```bash
 npm run test:unit -- lib/guardian-auth-facade.viewport.test.ts
 ```
 
-**Owner:** Engineering. **Estimate:** One focused commit on a Guardian-only branch.
+**Owner:** Engineering. **Status:** Closed — interaction tests remain 4/4; only design sign-off (§1) and Lane C hygiene (§3) block "module complete".
 
 ### 3. Lane C — local WIP (not in merge)
 

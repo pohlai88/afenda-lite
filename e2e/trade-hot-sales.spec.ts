@@ -26,9 +26,9 @@ test.describe("Trade Hot Sales admin journey @journey", () => {
 
   test("operator creates event, sets supply, opens window", async ({ page }) => {
     await loginAsOperator(page, requireOperatorCreds());
-    await page.goto("/trade/vi/admin/events");
+    await page.goto("/trade/vi/admin/events/new");
     await expect(
-      page.getByRole("heading", { name: /event admin|quản trị sự kiện/i }),
+      page.getByRole("heading", { name: /create event|tạo sự kiện/i }),
     ).toBeVisible({ timeout: 20_000 });
 
     const stamp = Date.now();
@@ -60,7 +60,11 @@ test.describe("Trade Hot Sales admin journey @journey", () => {
     );
 
     await page.getByRole("button", { name: /open \/ schedule event/i }).click();
-    await expect(page.getByText(/\bopen\b/i).first()).toBeVisible({ timeout: 15_000 });
+    // "Close event" only renders once the event has actually persisted status=open,
+    // so this waits for the open action to complete instead of matching the stale button label.
+    await expect(
+      page.getByRole("button", { name: /close event/i }),
+    ).toBeVisible({ timeout: 15_000 });
   });
 
   test("admin places order then runs allocation", async ({ page }) => {
