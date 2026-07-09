@@ -23,6 +23,18 @@ On viewports below 1024px the layout order is **access-first**:
 
 **Quality benchmark (required reading):** [`docs/architecture/slices/portal-atmosphere/pa-hero-quality-benchmark.md`](../../architecture/slices/portal-atmosphere/pa-hero-quality-benchmark.md)
 
+## Storybook experiment index
+
+| Story | Status | Notes |
+|-------|--------|-------|
+| `Portal Atmosphere / Design Review` (`portal-atmosphere.stories.tsx`) | **Authority** | Production `PortalAtmosphere` via preview fixture |
+| `Portal Atmosphere / Comp Laptop` | Active experiment | Side-by-side vs `auth-hero-*.png` at 1024px |
+| `Portal Atmosphere / Fade Owl` | Active experiment | `dual` + `morpho` variants; Storybook only |
+| `Portal Atmosphere / Dual Guardian Facade` | Active experiment | Dual removebg owls + vault; Storybook only |
+| `Portal Atmosphere / Guardian Auth Facade` | Active kit | Wired to `/auth/sign-in` via `GuardianAuthLoginPage` |
+| `UI Evaluation / Auth Brand Scene` | Legacy | Pre-PA `PortalAuthPhantomOwl` path |
+| `UI Evaluation / Owl Dramatic Scene` | Legacy | Dramatic mockup review |
+
 Comp-aligned laptop hero stories: `stories/ui-evaluation/portal-atmosphere-comp-laptop.stories.tsx` — compare `ReferenceComparisonDark` / `ReferenceComparisonLight` at 1024px against `public/brand/heroes/auth-hero-*.png`.
 
 Fade Owl (Storybook only): `stories/ui-evaluation/portal-atmosphere-fade-owl.stories.tsx` — variants `dual` (light/night PNG cross-fade) and `morpho` (single `guardian-dramatic-iso.png`); no prod wiring.

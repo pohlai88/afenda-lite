@@ -58,11 +58,11 @@ Both themes share the same **three-zone laptop layout** at ≥1024px:
 
 **Comp-laptop Storybook (user direction):**
 
-- **Base unit:** removebg PNG per theme — `owl-variants/darkbg-removebg-preview2.png` (dark) · `owl-variants/whitebg-removebg-preview2.png` (light) via `PortalCompLaptopOwl`.
+- **Base unit:** removebg PNG per theme — `owl-variants/allowed-base/darkbg-removebg-preview2.png` (dark) · `owl-variants/allowed-base/whitebg-removebg-preview2.png` (light) via `PortalCompLaptopOwl`.
 - **Deco top-up:** CSS only — `PortalCelestialDeco` (`__wash`, `__rings`, `__glow`). No pasted hero PNG stickers.
 - Integrated behind editorial + vault — tune position/opacity in `portal-atmosphere.comp-laptop.css` until side-by-side matches comp.
 
-**Production auth (until sign-off):** `PortalGuardianOwl preset="sharp"` + `guardian-sharp-*.png`.
+**Production auth (until sign-off):** `PortalGuardianOwl preset="sharp"` + allowed-base removebg PNGs (sharp extract paths alias here until dedicated crops return).
 
 - **Forbidden:** one image + CSS `invert()` / hue-rotate for theme switching.
 
@@ -131,7 +131,7 @@ Run in order. **Stop at first failure.**
 
 ```bash
 # 1. Assets exist
-npm run brand:extract-sharp-owl   # if guardian-sharp-*.png missing
+npm run brand:extract-sharp-owl   # regenerates sharp crops when dual source changes
 npm run test:unit -- lib/portal-brand.assets.test.ts
 
 # 2. Storybook compiles

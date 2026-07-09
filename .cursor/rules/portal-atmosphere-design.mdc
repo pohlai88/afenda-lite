@@ -22,9 +22,9 @@ Layout zones: **editorial left** · **owl + deco center-back** · **access vault
 
 | Role | Path |
 |------|------|
-| Dark owl (prod sharp preset) | `public/brand/owls/guardian-sharp-dark.png` |
-| Light owl (prod sharp preset) | `public/brand/owls/guardian-sharp-light.png` |
-| **Comp-laptop base units** | `public/owl-variants/darkbg-removebg-preview2.png` · `whitebg-removebg-preview2.png` + CSS deco |
+| Dark owl (prod sharp preset) | `public/owl-variants/allowed-base/darkbg-removebg-preview2.png` |
+| Light owl (prod sharp preset) | `public/owl-variants/allowed-base/whitebg-removebg-preview2.png` |
+| **Comp-laptop base units** | same `allowed-base/` removebg PNGs + CSS deco |
 | Variants (experiments) | `public/owl-variants/` |
 | AI mockups (not prod) | `public/ref/` |
 

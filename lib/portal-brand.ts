@@ -60,29 +60,12 @@ export const GUARDIAN_AUTH_ASSET_SET = {
 
 /**
  * Fade Owl experiment (Storybook fixture only).
- * Dual PNG cross-fade: light-guardian ↔ night-guardian (2s opacity).
- * Morpho iso kept as legacy reference only.
+ * Variants: `dual` (light ↔ night PNG) · `morpho` (dramatic iso).
  */
 export const FADE_OWL_ASSETS_LIGHT_PATH = "/assets/light-guardian.png";
 export const FADE_OWL_ASSETS_NIGHT_PATH = "/assets/night-guardian.png";
-/** Optional Vault Threshold emblem — not required for dual owl cross-fade. */
+/** Optional Vault Threshold emblem — fixture may omit overlay. */
 export const FADE_OWL_ASSETS_VAULT_THRESHOLD_PATH = "/assets/vault-threshold.png";
-
-/** @deprecated Use FADE_OWL_ASSETS_LIGHT_PATH / FADE_OWL_RENDER_LIGHT_PATH. */
-export const FADE_OWL_LIGHT_GUARDIAN_PATH = "/fade-owl/light-guardian.png";
-/** @deprecated Use FADE_OWL_ASSETS_NIGHT_PATH / FADE_OWL_RENDER_NIGHT_PATH. */
-export const FADE_OWL_NIGHT_GUARDIAN_PATH = "/fade-owl/night-guardian.png";
-/** @deprecated Mirror path — prefer FADE_OWL_ASSETS_VAULT_THRESHOLD_PATH. */
-export const FADE_OWL_VAULT_THRESHOLD_PATH = "/fade-owl/vault-threshold.png";
-
-/** @deprecated Auth cutouts unused by fade-owl dual path. */
-export const FADE_OWL_AUTH_DAY_CUTOUT_PATH = "/auth/owls/owl-day-cutout.png";
-/** @deprecated Auth cutouts unused by fade-owl dual path. */
-export const FADE_OWL_AUTH_NIGHT_CUTOUT_PATH = "/auth/owls/owl-night-cutout.png";
-/** @deprecated Auth cutouts unused by fade-owl dual path. */
-export const FADE_OWL_AUTH_DAY_GHOST_PATH = "/auth/owls/owl-day-ghost.png";
-/** @deprecated Auth cutouts unused by fade-owl dual path. */
-export const FADE_OWL_AUTH_NIGHT_GHOST_PATH = "/auth/owls/owl-night-ghost.png";
 
 /** Morpho variant — single dramatic iso (`guardian-dramatic-iso.png`). */
 export const FADE_OWL_GUARDIAN_OWL_PATH = GUARDIAN_DRAMATIC_OWL_CORE_PATH;
@@ -90,7 +73,6 @@ export const FADE_OWL_GUARDIAN_OWL_PATH = GUARDIAN_DRAMATIC_OWL_CORE_PATH;
 /** Dual variant render paths (light ↔ night PNG cross-fade). */
 export const FADE_OWL_RENDER_LIGHT_PATH = FADE_OWL_ASSETS_LIGHT_PATH;
 export const FADE_OWL_RENDER_NIGHT_PATH = FADE_OWL_ASSETS_NIGHT_PATH;
-/** Optional threshold overlay path (fixture may omit). */
 export const FADE_OWL_RENDER_VAULT_THRESHOLD_PATH =
   FADE_OWL_ASSETS_VAULT_THRESHOLD_PATH;
 
