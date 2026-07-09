@@ -86,16 +86,25 @@ export const SURFACE_ENTRY_POINTS: Readonly<
   "client-onboarding": {
     files: [
       "app/client/(workspace)/onboarding/page.tsx",
-      "components/client-onboarding-form.tsx",
+      "lib/client-onboarding-page.tsx",
+      "components/client-onboarding-wizard.tsx",
+      "lib/client-onboarding.server.ts",
     ],
   },
   "client-profile": {
-    files: ["app/client/(workspace)/profile/page.tsx"],
+    files: [
+      "app/client/(workspace)/profile/page.tsx",
+      "lib/client-profile-page.tsx",
+      "components/client-declarant-profile-view.tsx",
+    ],
   },
   "client-dashboard": {
     files: [
       "app/client/(workspace)/page.tsx",
+      "lib/client-dashboard-page.tsx",
       "components/client-dashboard-acknowledgement.tsx",
+      "components/client-dashboard-assignments.tsx",
+      "components/client-dashboard-summary.tsx",
     ],
   },
   "client-acknowledgement": {
@@ -104,9 +113,11 @@ export const SURFACE_ENTRY_POINTS: Readonly<
   "client-declare": {
     files: [
       "app/client/(workspace)/declare/[id]/page.tsx",
+      "lib/client-declare-page.tsx",
+      "lib/client-declare-page.logic.ts",
+      "components/client-declare-workspace.tsx",
       "components/client-declaration-form.tsx",
       "components/declaration-form.tsx",
-      "components/declaration-question-field.tsx",
       "app/api/client/declaration-draft/route.ts",
     ],
   },
@@ -116,7 +127,12 @@ export const SURFACE_ENTRY_POINTS: Readonly<
   "admin-declaration-detail": {
     files: [
       "app/dashboard/[id]/page.tsx",
+      "lib/operator-declaration-detail.tsx",
+      "lib/operator-declaration-detail.logic.ts",
       "components/operator-declaration-detail-view.tsx",
+      "components/declaration-manage-form.tsx",
+      "components/declaration-share-panel.tsx",
+      "components/org-declaration-submissions-table.tsx",
     ],
   },
   "admin-clients": {
@@ -151,7 +167,11 @@ export const SURFACE_ENTRY_POINTS: Readonly<
     ],
   },
   "client-preview-banner": {
-    files: ["components/portal-preview-banner.tsx"],
+    files: [
+      "app/client/(workspace)/layout.tsx",
+      "lib/client-workspace-layout.tsx",
+      "components/portal-preview-banner.tsx",
+    ],
   },
 };
 
@@ -206,10 +226,17 @@ export const LIB_IMPORT_DOMAIN_MAP: ReadonlyArray<{
   { prefix: "@/lib/operator-dashboard-page", domainId: "domain:operator-dashboard-page" },
   { prefix: "@/lib/operator-clients-page", domainId: "domain:operator-clients-page" },
   { prefix: "@/lib/operator-declaration-detail", domainId: "domain:operator-declaration-detail" },
+  { prefix: "@/lib/operator-declaration-detail.logic", domainId: "domain:questions" },
   { prefix: "@/lib/declaration-share-links", domainId: "domain:surveys" },
   { prefix: "@/lib/preview-client", domainId: "domain:preview-client" },
   { prefix: "@/lib/portal-session-routing", domainId: "domain:auth" },
   { prefix: "@/lib/client-sign-in-entry", domainId: "domain:auth" },
+  { prefix: "@/lib/client-dashboard-page", domainId: "domain:clients" },
+  { prefix: "@/lib/client-onboarding-page", domainId: "domain:client-onboarding" },
+  { prefix: "@/lib/client-profile-page", domainId: "domain:clients" },
+  { prefix: "@/lib/client-declare-page", domainId: "domain:clients" },
+  { prefix: "@/lib/client-declare-page.logic", domainId: "domain:clients" },
+  { prefix: "@/lib/client-workspace-layout", domainId: "domain:preview-client" },
   { prefix: "@/lib/survey-submission", domainId: "domain:surveys" },
   { prefix: "@/lib/delete-client-auth-user", domainId: "domain:auth" },
 ];

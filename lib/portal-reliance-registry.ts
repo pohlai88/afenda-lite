@@ -87,6 +87,7 @@ export const SURFACE_RELIANCE: ReadonlyArray<{
       { kind: "server-action", actionId: "action:saveClientOnboardingAction" },
       { kind: "domain-loader", domainId: "domain:auth" },
       { kind: "domain-loader", domainId: "domain:client-onboarding" },
+      { kind: "domain-loader", domainId: "domain:clients" },
     ],
   },
   {
@@ -142,6 +143,7 @@ export const SURFACE_RELIANCE: ReadonlyArray<{
       { kind: "server-action", actionId: "action:regenerateInviteTokenAction" },
       { kind: "domain-loader", domainId: "domain:operator-declaration-detail" },
       { kind: "domain-loader", domainId: "domain:surveys" },
+      { kind: "domain-loader", domainId: "domain:questions" },
       { kind: "domain-loader", domainId: "domain:survey-package" },
       { kind: "domain-loader", domainId: "domain:auth" },
     ],
@@ -339,7 +341,7 @@ export const DOMAIN_MODULE_DEFINITIONS: ReadonlyArray<{
   { id: "domain:secure-link-entry", label: "Secure link entry", path: "lib/secure-link-entry.ts" },
   { id: "domain:operator-dashboard-page", label: "Operator dashboard", path: "lib/operator-dashboard-page.ts" },
   { id: "domain:operator-clients-page", label: "Operator clients", path: "lib/operator-clients-page.ts" },
-  { id: "domain:operator-declaration-detail", label: "Operator declaration detail", path: "lib/operator-declaration-detail.ts" },
+  { id: "domain:operator-declaration-detail", label: "Operator declaration detail", path: "lib/operator-declaration-detail.tsx" },
   { id: "domain:preview-client", label: "Preview client", path: "lib/preview-client.ts" },
 ];
 

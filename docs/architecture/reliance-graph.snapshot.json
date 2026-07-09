@@ -386,6 +386,11 @@
       "type": "consumes"
     },
     {
+      "source": "surface:client-onboarding",
+      "target": "domain:clients",
+      "type": "consumes"
+    },
+    {
       "source": "surface:client-profile",
       "target": "action:requireClientSession",
       "type": "consumes"
@@ -518,6 +523,11 @@
     {
       "source": "surface:admin-declaration-detail",
       "target": "domain:surveys",
+      "type": "consumes"
+    },
+    {
+      "source": "surface:admin-declaration-detail",
+      "target": "domain:questions",
       "type": "consumes"
     },
     {
@@ -966,8 +976,8 @@
       "type": "validates"
     }
   ],
-  "fingerprint": "ec087bcee9c79821",
-  "generatedAt": "2026-07-09T08:23:33.105Z",
+  "fingerprint": "73d2ed7966e33da5",
+  "generatedAt": "2026-07-09T09:23:48.799Z",
   "nodes": [
     {
       "id": "surface:auth-sign-in",
@@ -1535,7 +1545,7 @@
       "id": "domain:operator-declaration-detail",
       "label": "Operator declaration detail",
       "metadata": {
-        "path": "lib/operator-declaration-detail.ts"
+        "path": "lib/operator-declaration-detail.tsx"
       },
       "type": "domain-module"
     },

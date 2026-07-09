@@ -1,0 +1,45 @@
+import type { EvidenceRecord, SurveyQuestion } from "@/lib/questions";
+import type { SurveyResponse } from "@/lib/surveys";
+
+export function collectSubmissionFileEvidenceIds(
+  responses: SurveyResponse[],
+  questions: SurveyQuestion[],
+) {
+  const evidenceIds = new Set<string>();
+
+  for (const response of responses) {
+    if (!response.answers) continue;
+
+    for (const question of questions) {
+      if (question.type !== "file") continue;
+
+      const value = response.answers[question.id];
+      if (typeof value === "string" && value) {
+        evidenceIds.add(value);
+      }
+    }
+  }
+
+  return [...evidenceIds];
+}
+
+export function mapOperatorDeclarationQuestionDrafts(
+  questions: SurveyQuestion[],
+) {
+  return questions.map((question) => ({
+    prompt: question.prompt,
+    type: question.type,
+    required: question.required,
+    config: question.config,
+  }));
+}
+
+export type OperatorDeclarationQuestionDraft = ReturnType<
+  typeof mapOperatorDeclarationQuestionDrafts
+>[number];
+
+export function indexEvidenceRecordsById(
+  records: EvidenceRecord[],
+): Map<string, EvidenceRecord> {
+  return new Map(records.map((record) => [record.id, record]));
+}

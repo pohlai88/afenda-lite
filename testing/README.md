@@ -41,6 +41,7 @@ testing/
     client-flows.ts      # loginAsClient
     onboarding-flows.ts  # completeClientOnboardingWizard
     declaration-flows.ts # submitDefaultDeclarationAnswers, …
+    client-declare-gates.ts # declare gate assertions + portal ack fixtures
 e2e/
   **/*.spec.ts           # L4 specs — import from @/testing/e2e/*
   helpers/               # thin re-exports (deprecated — prefer @/testing/e2e)
@@ -69,7 +70,7 @@ e2e/
 | `PREVIEW_CLIENT_EMAIL` / `CLIENT_DEFAULT_PASSWORD` | Preview client journeys |
 | `E2E_CLIENT_EMAIL` / `E2E_CLIENT_PASSWORD` | Client override |
 | `E2E_SURVEY_SLUG` / `E2E_INVITE_TOKEN` | Public link smoke without operator create |
-| `PLAYWRIGHT_REUSE_SERVER` | Reuse running dev server locally |
+| `PLAYWRIGHT_REUSE_SERVER` | Reuse running dev server locally (`true` when port 3000 is already up) |
 
 Run `npm run env:compose` before local E2E.
 

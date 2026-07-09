@@ -1,6 +1,8 @@
 import "server-only";
 
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+import { OperatorDeclarationDetailView } from "@/components/operator-declaration-detail-view";
 import { cache } from "react";
 import {
   getEvidenceRecordsByIds,
@@ -8,6 +10,11 @@ import {
   type EvidenceRecord,
   type SurveyQuestion,
 } from "@/lib/questions";
+import {
+  collectSubmissionFileEvidenceIds,
+  mapOperatorDeclarationQuestionDrafts,
+  type OperatorDeclarationQuestionDraft,
+} from "@/lib/operator-declaration-detail.logic";
 import { PORTAL_NAME, portalCopy } from "@/lib/portal-copy";
 import { surveyIdParamSchema } from "@/lib/schemas/surveys";
 import { buildSurveyFieldsKey } from "@/lib/survey-form-key";
@@ -18,12 +25,11 @@ import {
   type SurveyResponse,
 } from "@/lib/surveys";
 
-export type OperatorDeclarationQuestionDraft = {
-  prompt: string;
-  type: SurveyQuestion["type"];
-  required: boolean;
-  config?: SurveyQuestion["config"];
-};
+export type { OperatorDeclarationQuestionDraft } from "@/lib/operator-declaration-detail.logic";
+export {
+  collectSubmissionFileEvidenceIds,
+  mapOperatorDeclarationQuestionDrafts,
+} from "@/lib/operator-declaration-detail.logic";
 
 export type OperatorDeclarationDetail = {
   survey: Survey;
@@ -33,28 +39,6 @@ export type OperatorDeclarationDetail = {
   questionDrafts: OperatorDeclarationQuestionDraft[];
   fieldsKey: string;
 };
-
-function collectEvidenceIds(
-  responses: SurveyResponse[],
-  questions: SurveyQuestion[],
-) {
-  const evidenceIds = new Set<string>();
-
-  for (const response of responses) {
-    if (!response.answers) continue;
-
-    for (const question of questions) {
-      if (question.type !== "file") continue;
-
-      const value = response.answers[question.id];
-      if (typeof value === "string" && value) {
-        evidenceIds.add(value);
-      }
-    }
-  }
-
-  return evidenceIds;
-}
 
 export const loadOperatorDeclarationDetail = cache(
   async (rawId: string): Promise<OperatorDeclarationDetail | null> => {
@@ -74,17 +58,11 @@ export const loadOperatorDeclarationDetail = cache(
     ]);
 
     const evidenceById = await getEvidenceRecordsByIds(
-      [...collectEvidenceIds(responses, questions)],
+      collectSubmissionFileEvidenceIds(responses, questions),
       survey.id,
     );
 
-    const questionDrafts = questions.map((question) => ({
-      prompt: question.prompt,
-      type: question.type,
-      required: question.required,
-      config: question.config,
-    }));
-
+    const questionDrafts = mapOperatorDeclarationQuestionDrafts(questions);
     const fieldsKey = buildSurveyFieldsKey({
       title: survey.title,
       description: survey.question,
@@ -122,4 +100,20 @@ export async function operatorDeclarationDetailMetadata({
     title: `${PORTAL_NAME} — ${detail.survey.title}`,
     description: detail.survey.question,
   };
+}
+
+/** Shared page handler for `/dashboard/[id]`. */
+export async function runOperatorDeclarationDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const detail = await loadOperatorDeclarationDetail(id);
+
+  if (!detail) {
+    notFound();
+  }
+
+  return <OperatorDeclarationDetailView detail={detail} />;
 }

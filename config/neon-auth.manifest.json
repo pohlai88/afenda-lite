@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "syncedAt": "2026-07-09T08:47:46.950Z",
+  "syncedAt": "2026-07-09T09:32:41.206Z",
   "project": {
     "projectId": "young-hat-54755363",
     "projectName": "iam-check",
@@ -11,8 +11,8 @@
   "integration": {
     "authProvider": "better_auth",
     "authProviderProjectId": "67e0b6e5-986c-4e9b-9a47-e186cf69b5e1",
-    "baseUrl": "https://ep-dawn-bird-aofi3f7j.neonauth.c-2.ap-southeast-1.aws.neon.tech/neondb/auth",
-    "jwksUrl": "https://ep-dawn-bird-aofi3f7j.neonauth.c-2.ap-southeast-1.aws.neon.tech/neondb/auth/.well-known/jwks.json",
+    "baseUrl": "https://ep-curly-sky-aojpc61y.neonauth.c-2.ap-southeast-1.aws.neon.tech/neondb/auth",
+    "jwksUrl": "https://ep-curly-sky-aojpc61y.neonauth.c-2.ap-southeast-1.aws.neon.tech/neondb/auth/.well-known/jwks.json",
     "dbName": "neondb"
   },
   "emailPassword": {
@@ -47,14 +47,13 @@
     {
       "id": "google",
       "type": "shared",
-      "providerRedirectUri": "https://ep-dawn-bird-aofi3f7j.neonauth.c-2.ap-southeast-1.aws.neon.tech/neondb/auth/callback/google"
+      "providerRedirectUri": "https://ep-curly-sky-aojpc61y.neonauth.c-2.ap-southeast-1.aws.neon.tech/neondb/auth/callback/google"
     }
   ],
   "trustedDomains": [
     "https://iam-check.vercel.app",
     "https://iam-check-1gir3cbrt-jacks-projects-7b3cfe94.vercel.app/",
-    "https://iam-check-h3pvi0dme-jacks-projects-7b3cfe94.vercel.app/",
-    "https://*.vercel.app"
+    "https://iam-check-h3pvi0dme-jacks-projects-7b3cfe94.vercel.app/"
   ],
   "allowLocalhost": false,
   "productionChecklist": {

@@ -78,46 +78,83 @@ export async function setNeonAuthUserRole(pool, userId, role) {
 }
 
 export async function signUpEmail({ email, password, name }) {
-  const response = await fetch(`${getAuthBaseUrl()}/sign-up/email`, {
-    method: "POST",
-    headers: authRequestHeaders(),
-    body: JSON.stringify({ email, password, name }),
-  });
+  return withRateLimitRetry("Neon Auth sign-up", async () => {
+    const response = await fetch(`${getAuthBaseUrl()}/sign-up/email`, {
+      method: "POST",
+      headers: authRequestHeaders(),
+      body: JSON.stringify({ email, password, name }),
+    });
 
-  const body = await readJson(response);
-  if (!response.ok) {
-    throw new Error(
-      body?.message ??
-        body?.error ??
-        `Neon Auth sign-up failed (${response.status})`,
-    );
+    const body = await readJson(response);
+    if (!response.ok) {
+      throw new Error(
+        body?.message ??
+          body?.error ??
+          `Neon Auth sign-up failed (${response.status})`,
+      );
+    }
+
+    return body;
+  });
+}
+
+function isRateLimitError(message) {
+  return /too many requests/i.test(String(message ?? ""));
+}
+
+async function sleep(ms) {
+  await new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function withRateLimitRetry(label, fn, { attempts = 6, baseDelayMs = 1500 } = {}) {
+  let lastError;
+
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error;
+      const message = error instanceof Error ? error.message : String(error);
+      if (!isRateLimitError(message) || attempt === attempts - 1) {
+        throw error;
+      }
+      const delayMs = baseDelayMs * (attempt + 1);
+      console.warn(
+        `${label} rate limited; retrying in ${delayMs}ms (${attempt + 1}/${attempts})`,
+      );
+      await sleep(delayMs);
+    }
   }
 
-  return body;
+  throw lastError;
 }
 
 export async function signInEmail({ email, password }) {
-  const response = await fetch(`${getAuthBaseUrl()}/sign-in/email`, {
-    method: "POST",
-    headers: authRequestHeaders(),
-    body: JSON.stringify({ email, password }),
+  return withRateLimitRetry("Neon Auth sign-in", async () => {
+    const response = await fetch(`${getAuthBaseUrl()}/sign-in/email`, {
+      method: "POST",
+      headers: authRequestHeaders(),
+      body: JSON.stringify({ email, password }),
+    });
+
+    const body = await readJson(response);
+    if (!response.ok) {
+      throw new Error(
+        body?.message ??
+          body?.error ??
+          `Neon Auth sign-in failed (${response.status})`,
+      );
+    }
+
+    const cookie = extractCookieHeader(response);
+    if (!cookie) {
+      throw new Error(
+        "Neon Auth sign-in succeeded but no session cookie was returned",
+      );
+    }
+
+    return { cookie, body };
   });
-
-  const body = await readJson(response);
-  if (!response.ok) {
-    throw new Error(
-      body?.message ??
-        body?.error ??
-        `Neon Auth sign-in failed (${response.status})`,
-    );
-  }
-
-  const cookie = extractCookieHeader(response);
-  if (!cookie) {
-    throw new Error("Neon Auth sign-in succeeded but no session cookie was returned");
-  }
-
-  return { cookie, body };
 }
 
 async function authJsonRequest(cookie, path, { method = "POST", body } = {}) {

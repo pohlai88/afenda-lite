@@ -21,7 +21,9 @@ Provision client Neon Auth users via operator invitation and onboarding.
 - `app/invite/[token]/page.tsx` — legacy redirect to client sign-in
 - `lib/legacy-invite-entry.ts`
 - `lib/client-sign-in-entry.ts` — reason codes + session dispatch
-- `app/client/(workspace)/onboarding/page.tsx`
+- `lib/client-onboarding-page.tsx` — onboarding page handler
+- `lib/client-profile-page.tsx` — profile page handler
+- `app/client/(workspace)/onboarding/page.tsx`, `app/client/(workspace)/profile/page.tsx`
 - `app/actions/client.ts` — `saveClientOnboardingAction`, `issueClientInviteAction`, session helpers
 - `lib/clients.ts`, `lib/client-onboarding.ts`, `lib/client-onboarding.server.ts`
 - `components/client-onboarding-wizard.tsx`, `components/client-onboarding-form.tsx`, `components/client-onboarding-context.tsx`, `components/client-onboarding-progress.tsx`

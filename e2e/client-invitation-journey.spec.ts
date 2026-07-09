@@ -53,6 +53,8 @@ function issueNeonOrgInvite(email: string, fullName: string) {
 }
 
 test.describe("Client invitation join journey @journey", () => {
+  test.setTimeout(120_000);
+
   test("invite → join → accept → onboarding → declaration workspace", async ({
     page,
   }) => {

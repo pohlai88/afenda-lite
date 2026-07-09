@@ -19,9 +19,10 @@ Operator assigns declaration to client email; client submits with confirmation r
 ## Owned files
 
 - `app/client/(workspace)/page.tsx`, `app/client/(workspace)/declare/[id]/page.tsx`
+- `lib/client-dashboard-page.tsx`, `lib/client-declare-page.tsx`, `lib/client-declare-page.logic.ts`, `lib/client-workspace-layout.tsx`
 - `app/client/error.tsx` — segment error boundary (covers `(workspace)` and `(gate)`)
 - `app/client/(workspace)/layout.tsx`, `app/client/(workspace)/loading.tsx`
-- `components/client-declaration-form.tsx`
+- `components/client-declare-workspace.tsx`, `components/client-declaration-form.tsx`
 - `app/actions/client.ts`
 
 ## Critical control points
@@ -40,6 +41,8 @@ Operator assigns declaration to client email; client submits with confirmation r
 - Assign on invite flow
 - Client-only access to own assignments
 - Receipt displayed after submit
+- Declare gate branches (`e2e/client-declare-gates.spec.ts`) — not-found, acknowledgement redirect, submitted receipt
+- Page handler orchestration (`lib/client-dashboard-page.test.ts`, `lib/client-declare-page.test.ts`)
 
 ## Acceptance proof
 

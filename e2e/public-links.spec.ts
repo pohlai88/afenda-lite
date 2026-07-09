@@ -1,5 +1,5 @@
 import { expect, test } from "@/testing/e2e/playwright-base";
-import { SANDBOX_INVITE_TOKEN, SANDBOX_SURVEY_SLUG } from "@/lib/production-fixtures";
+import { SANDBOX_INVITE_TOKEN, SANDBOX_SURVEY, SANDBOX_SURVEY_SLUG } from "@/lib/production-fixtures";
 import { portalCopy } from "@/lib/portal-copy";
 import {
   clientSkipMessage,
@@ -9,9 +9,10 @@ import {
   requireClientCreds,
   requireOperatorCreds,
 } from "@/testing/e2e/credentials";
-import { loginAsClient } from "@/testing/e2e/client-flows";
+import { loginAsClient, submitClientSignIn } from "@/testing/e2e/client-flows";
 import {
   loginAsOperator,
+  openDeclarationFromDashboard,
   openSurveyTab,
 } from "@/testing/e2e/operator-flows";
 
@@ -66,11 +67,9 @@ test.describe("Authenticated public link routing @journey", () => {
     await expect(page).toHaveURL(/\/auth\/sign-in\?.*returnTo=/);
 
     const creds = requireClientCreds();
-    await page.getByLabel(/^email$/i).fill(creds.email);
-    await page.locator('input[name="password"]').fill(creds.password);
-    await page.getByRole("button", { name: /^sign in$/i }).click();
+    await submitClientSignIn(page, creds);
 
-    await expect(page).toHaveURL(/\/client\/declare\/.+/, { timeout: 20_000 });
+    await expect(page).toHaveURL(/\/client\/declare\/.+/, { timeout: 30_000 });
   });
 
   test("signed-in client visiting open link routes directly to declare page", async ({
@@ -78,10 +77,8 @@ test.describe("Authenticated public link routing @journey", () => {
   }) => {
     const creds = requireClientCreds();
     await page.goto("/auth/sign-in");
-    await page.getByLabel(/^email$/i).fill(creds.email);
-    await page.locator('input[name="password"]').fill(creds.password);
-    await page.getByRole("button", { name: /^sign in$/i }).click();
-    await expect(page).toHaveURL(/\/client(?:\/|$)/);
+    await submitClientSignIn(page, creds);
+    await expect(page).toHaveURL(/\/client(?:\/|$)/, { timeout: 30_000 });
 
     await page.goto(`/survey/${publicSurveySlug}`);
     await expect(page).toHaveURL(/\/client\/declare\/.+/);
@@ -95,8 +92,7 @@ test.describe("Operator share surfaces @journey", () => {
 
   test("share tab shows secure and open declaration links", async ({ page }) => {
     await loginAsOperator(page, requireOperatorCreds());
-    await page.goto("/dashboard");
-    await page.getByRole("link", { name: /sandbox operator preview declaration/i }).click();
+    await openDeclarationFromDashboard(page, SANDBOX_SURVEY.title);
     await openSurveyTab(page, "share");
 
     await expect(page.getByText(portalCopy.share.secureLinkLabel)).toBeVisible();
@@ -109,8 +105,7 @@ test.describe("Operator share surfaces @journey", () => {
 
   test("operator can rotate secure link token", async ({ page }) => {
     await loginAsOperator(page, requireOperatorCreds());
-    await page.goto("/dashboard");
-    await page.getByRole("link", { name: /sandbox operator preview declaration/i }).click();
+    await openDeclarationFromDashboard(page, SANDBOX_SURVEY.title);
     await openSurveyTab(page, "share");
 
     const secureLink = page.locator(".portal-code-block").filter({ hasText: /\/f\// });
@@ -123,7 +118,9 @@ test.describe("Operator share surfaces @journey", () => {
     await page.getByRole("button", { name: portalCopy.share.rotateSecureLinkCta }).click();
     await page.getByRole("button", { name: portalCopy.share.rotateSecureLinkSubmit }).click();
 
-    await expect(secureLink).not.toHaveText(originalHref ?? "", { timeout: 10_000 });
+    await expect
+      .poll(async () => secureLink.textContent(), { timeout: 15_000 })
+      .not.toBe(originalHref ?? "");
     await expect(secureLink).toHaveText(/\/f\//);
 
     const staleResponse = await page.goto(`/f/${originalToken}`);

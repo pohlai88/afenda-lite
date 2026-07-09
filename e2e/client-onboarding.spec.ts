@@ -6,7 +6,7 @@ import {
   operatorSkipMessage,
   requireOperatorCreds,
 } from "@/testing/e2e/credentials";
-import { loginAsOperator, registerClient } from "@/testing/e2e/operator-flows";
+import { loginAsOperator, expectClientRegisteredToast, registerClient } from "@/testing/e2e/operator-flows";
 
 const operatorCreds = getOperatorCreds();
 const clientPassword = getClientDefaultPasswordFromEnv();
@@ -27,6 +27,6 @@ test.describe("Client onboarding wizard @journey", () => {
 
     await loginAsOperator(page, requireOperatorCreds());
     await registerClient(page, { fullName, email });
-    await expect(page.getByText(/Client registered/i)).toBeVisible();
+    await expectClientRegisteredToast(page);
   });
 });

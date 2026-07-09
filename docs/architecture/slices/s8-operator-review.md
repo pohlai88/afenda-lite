@@ -19,6 +19,8 @@ View submissions and per-question answer breakdown for operators.
 ## Owned files
 
 - `app/dashboard/[id]/page.tsx`
+- `lib/operator-declaration-detail.tsx`, `lib/operator-declaration-detail.logic.ts`
+- `components/operator-declaration-detail-view.tsx`, `components/org-declaration-submissions-table.tsx`
 - `components/submission-answers.tsx`
 
 ## Critical control points
@@ -32,6 +34,7 @@ View submissions and per-question answer breakdown for operators.
 ## Required tests
 
 - Render all question types including file filename display
+- `lib/operator-declaration-detail.logic.test.ts`, `lib/operator-declaration-detail.test.tsx`
 
 ## Acceptance proof
 

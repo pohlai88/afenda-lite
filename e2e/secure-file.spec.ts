@@ -1,8 +1,10 @@
 import { expect, test } from "@/testing/e2e/playwright-base";
 import { portalCopy } from "@/lib/portal-copy";
 import {
+  answerFirstYesNoQuestion,
   expectDeclarationReceived,
-  fillDefaultDeclarationAnswers,
+  openFirstClientAssignment,
+  submitClientDeclaration,
 } from "@/testing/e2e/declaration-flows";
 import { evidenceFixturePath } from "@/testing/e2e/fixtures";
 import {
@@ -16,8 +18,10 @@ import {
 import { loginAsClient } from "@/testing/e2e/client-flows";
 import {
   createDeclaration,
+  expectClientRegisteredToast,
   loginAsOperator,
   openSurveyTab,
+  registerClient,
 } from "@/testing/e2e/operator-flows";
 
 const operatorCreds = getOperatorCreds();
@@ -44,26 +48,25 @@ test.describe("Client assignment and file evidence @journey", () => {
     declarationTitle = created.title;
     surveyDetailUrl = created.detailUrl;
 
+    await openSurveyTab(page, "manage");
     await page.getByRole("button", { name: /add question/i }).click();
-    await page.locator("select").last().selectOption("file");
+    await page.getByLabel(/question \d+ type/i).last().selectOption("file");
     await page
-      .locator('input[name="questionPrompt"]')
+      .getByRole("textbox", { name: /question \d+ prompt/i })
       .last()
       .fill("Attach supporting document");
     await page.getByRole("button", { name: /save changes/i }).click();
-    await expect(page.getByText("Attach supporting document")).toBeVisible();
+    await expect(
+      page.getByRole("textbox", { name: /question \d+ prompt/i }).last(),
+    ).toHaveValue("Attach supporting document");
 
     const previewClient = requireClientCreds();
-    await page.goto("/dashboard/clients");
-    await page.getByLabel(/full name/i).fill("Preview Client");
-    await page.getByLabel(/recipient email/i).fill(previewClient.email);
-    await page.getByLabel(/assign declaration/i).selectOption({
-      label: declarationTitle,
+    await registerClient(page, {
+      fullName: "Preview Client",
+      email: previewClient.email,
+      declarationLabel: declarationTitle,
     });
-    await page.getByRole("button", { name: /register client/i }).click();
-    await expect(
-      page.getByText(/Client registered/i),
-    ).toBeVisible();
+    await expectClientRegisteredToast(page);
   });
 
   test("signed-in client submits assignment with file metadata", async ({
@@ -72,18 +75,20 @@ test.describe("Client assignment and file evidence @journey", () => {
     test.skip(!clientCreds, clientSkipMessage);
 
     await loginAsClient(page, requireClientCreds());
-    await page.getByRole("link", { name: /complete declaration/i }).click();
-    await expect(page).toHaveURL(/\/client\/declare\/.+/);
+    await openFirstClientAssignment(page, declarationTitle);
 
-    await fillDefaultDeclarationAnswers(
-      page,
-      "E2E secure file submission context",
-    );
+    await answerFirstYesNoQuestion(page);
+    await page.getByRole("button", { name: /^continue$/i }).click();
+    await page
+      .getByPlaceholder(/enter your response/i)
+      .fill("E2E secure file submission context");
+    await page.getByRole("button", { name: /^continue$/i }).click();
 
     await page.locator('input[type="file"]').setInputFiles(evidenceFixturePath);
     await expect(page.getByText("sample-evidence.pdf")).toBeVisible();
 
-    await page.getByRole("button", { name: /submit declaration/i }).click();
+    await page.getByRole("button", { name: /^continue$/i }).click();
+    await submitClientDeclaration(page);
     await expectDeclarationReceived(page, "client");
   });
 

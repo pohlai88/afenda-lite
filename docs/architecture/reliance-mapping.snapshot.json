@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generatedAt": "2026-07-09T08:23:29.346Z",
+  "generatedAt": "2026-07-09T09:23:43.851Z",
   "summary": {
     "surfaces": {
       "total": 26,
@@ -465,29 +465,36 @@
           "action:requireClientSession",
           "action:saveClientOnboardingAction",
           "domain:auth",
-          "domain:client-onboarding"
+          "domain:client-onboarding",
+          "domain:clients"
         ],
         "discovered": [
           "action:requireClientSession",
           "action:saveClientOnboardingAction",
           "domain:auth",
-          "domain:client-onboarding"
+          "domain:client-onboarding",
+          "domain:clients"
         ],
         "aligned": [
           "action:requireClientSession",
           "action:saveClientOnboardingAction",
           "domain:auth",
-          "domain:client-onboarding"
+          "domain:client-onboarding",
+          "domain:clients"
         ],
         "declaredOnly": [],
         "discoveredOnly": [],
-        "inherited": [],
+        "inherited": [
+          "domain:client-onboarding"
+        ],
         "status": "aligned"
       },
       "evidence": {
         "entryFiles": [
           "app/client/(workspace)/onboarding/page.tsx",
-          "components/client-onboarding-form.tsx"
+          "lib/client-onboarding-page.tsx",
+          "components/client-onboarding-wizard.tsx",
+          "lib/client-onboarding.server.ts"
         ],
         "scannedFiles": [
           "app/client/(workspace)/onboarding/page.tsx",
@@ -524,7 +531,9 @@
           "components/ui/skeleton.tsx",
           "components/ui/textarea.tsx",
           "components/ui/timeline.tsx",
-          "components/ui/tooltip.tsx"
+          "components/ui/tooltip.tsx",
+          "lib/client-onboarding-page.tsx",
+          "lib/client-onboarding.server.ts"
         ]
       }
     },
@@ -555,7 +564,9 @@
       },
       "evidence": {
         "entryFiles": [
-          "app/client/(workspace)/profile/page.tsx"
+          "app/client/(workspace)/profile/page.tsx",
+          "lib/client-profile-page.tsx",
+          "components/client-declarant-profile-view.tsx"
         ],
         "scannedFiles": [
           "app/client/(workspace)/profile/page.tsx",
@@ -583,7 +594,8 @@
           "components/ui/sheet.tsx",
           "components/ui/sidebar.tsx",
           "components/ui/skeleton.tsx",
-          "components/ui/tooltip.tsx"
+          "components/ui/tooltip.tsx",
+          "lib/client-profile-page.tsx"
         ]
       }
     },
@@ -618,7 +630,10 @@
       "evidence": {
         "entryFiles": [
           "app/client/(workspace)/page.tsx",
-          "components/client-dashboard-acknowledgement.tsx"
+          "lib/client-dashboard-page.tsx",
+          "components/client-dashboard-acknowledgement.tsx",
+          "components/client-dashboard-assignments.tsx",
+          "components/client-dashboard-summary.tsx"
         ],
         "scannedFiles": [
           "app/client/(workspace)/page.tsx",
@@ -659,7 +674,8 @@
           "components/ui/sheet.tsx",
           "components/ui/sidebar.tsx",
           "components/ui/skeleton.tsx",
-          "components/ui/tooltip.tsx"
+          "components/ui/tooltip.tsx",
+          "lib/client-dashboard-page.tsx"
         ]
       }
     },
@@ -740,9 +756,11 @@
       "evidence": {
         "entryFiles": [
           "app/client/(workspace)/declare/[id]/page.tsx",
+          "lib/client-declare-page.tsx",
+          "lib/client-declare-page.logic.ts",
+          "components/client-declare-workspace.tsx",
           "components/client-declaration-form.tsx",
           "components/declaration-form.tsx",
-          "components/declaration-question-field.tsx",
           "app/api/client/declaration-draft/route.ts"
         ],
         "scannedFiles": [
@@ -780,7 +798,9 @@
           "components/ui/skeleton.tsx",
           "components/ui/switch.tsx",
           "components/ui/textarea.tsx",
-          "components/ui/tooltip.tsx"
+          "components/ui/tooltip.tsx",
+          "lib/client-declare-page.logic.ts",
+          "lib/client-declare-page.tsx"
         ]
       }
     },
@@ -864,6 +884,7 @@
           "action:updateSurveyAction",
           "domain:auth",
           "domain:operator-declaration-detail",
+          "domain:questions",
           "domain:survey-package",
           "domain:surveys"
         ],
@@ -876,6 +897,7 @@
           "action:updateSurveyAction",
           "domain:auth",
           "domain:operator-declaration-detail",
+          "domain:questions",
           "domain:survey-package",
           "domain:surveys"
         ],
@@ -888,20 +910,27 @@
           "action:updateSurveyAction",
           "domain:auth",
           "domain:operator-declaration-detail",
+          "domain:questions",
           "domain:survey-package",
           "domain:surveys"
         ],
         "declaredOnly": [],
         "discoveredOnly": [],
         "inherited": [
-          "action:requireAdminSession"
+          "action:requireAdminSession",
+          "domain:operator-declaration-detail"
         ],
         "status": "aligned"
       },
       "evidence": {
         "entryFiles": [
           "app/dashboard/[id]/page.tsx",
-          "components/operator-declaration-detail-view.tsx"
+          "lib/operator-declaration-detail.tsx",
+          "lib/operator-declaration-detail.logic.ts",
+          "components/operator-declaration-detail-view.tsx",
+          "components/declaration-manage-form.tsx",
+          "components/declaration-share-panel.tsx",
+          "components/org-declaration-submissions-table.tsx"
         ],
         "scannedFiles": [
           "app/dashboard/[id]/page.tsx",
@@ -958,7 +987,9 @@
           "components/ui/table.tsx",
           "components/ui/tabs.tsx",
           "components/ui/textarea.tsx",
-          "components/ui/tooltip.tsx"
+          "components/ui/tooltip.tsx",
+          "lib/operator-declaration-detail.logic.ts",
+          "lib/operator-declaration-detail.tsx"
         ]
       }
     },
@@ -1329,12 +1360,33 @@
       },
       "evidence": {
         "entryFiles": [
+          "app/client/(workspace)/layout.tsx",
+          "lib/client-workspace-layout.tsx",
           "components/portal-preview-banner.tsx"
         ],
         "scannedFiles": [
+          "app/client/(workspace)/layout.tsx",
+          "components/client-route-shell.tsx",
+          "components/client-shell.tsx",
+          "components/client-sidebar.tsx",
+          "components/portal-brand-mark.tsx",
+          "components/portal-member-context.tsx",
+          "components/portal-member-menu.tsx",
           "components/portal-preview-banner.tsx",
+          "components/portal-theme-toggle.tsx",
+          "components/theme-provider.tsx",
           "components/ui/alert.tsx",
-          "components/ui/button.tsx"
+          "components/ui/avatar.tsx",
+          "components/ui/badge.tsx",
+          "components/ui/button.tsx",
+          "components/ui/dropdown-menu.tsx",
+          "components/ui/input.tsx",
+          "components/ui/separator.tsx",
+          "components/ui/sheet.tsx",
+          "components/ui/sidebar.tsx",
+          "components/ui/skeleton.tsx",
+          "components/ui/tooltip.tsx",
+          "lib/client-workspace-layout.tsx"
         ]
       }
     }

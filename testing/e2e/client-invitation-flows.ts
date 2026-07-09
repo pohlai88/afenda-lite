@@ -2,6 +2,7 @@ import { expect, type Page } from "@/testing/e2e/playwright-base";
 import { execFileSync } from "node:child_process";
 import { resolve } from "node:path";
 import { portalCopy } from "@/lib/portal-copy";
+import { authSignInHref, buildClientJoinHref } from "@/lib/portal-routes";
 import { getClientDefaultPasswordFromEnv } from "@/testing/e2e/credentials";
 
 export type ClientInviteJourney = {
@@ -12,61 +13,79 @@ export type ClientInviteJourney = {
   joinUrl: string;
 };
 
-export async function signUpOnJoinPage(
-  page: Page,
-  journey: Pick<ClientInviteJourney, "joinUrl" | "fullName" | "email" | "password">,
-) {
-  await page.goto(journey.joinUrl);
-  await expect(
-    page.getByRole("heading", {
-      name: portalCopy.clientInvitationJoin.panelCreateTitle,
-    }),
-  ).toBeVisible({ timeout: 30_000 });
-
-  await page.getByLabel(/display name/i).fill(journey.fullName);
-  await page.getByLabel(/^email$/i).fill(journey.email);
-  await page.locator('input[name="password"]').fill(journey.password);
-  await page.getByRole("button", { name: /create an account/i }).click();
-
-  const { clientInvitationJoin } = portalCopy;
-  await expect(
-    page.getByRole("heading", {
-      name: new RegExp(
-        `${clientInvitationJoin.panelVerifyTitle}|${clientInvitationJoin.panelAcceptTitle}`,
-        "i",
-      ),
-    }),
-  ).toBeVisible({ timeout: 30_000 });
+function joinPanelHeading(page: Page) {
+  return page.locator("#client-invitation-heading");
 }
 
-export async function verifyJoinEmailForE2e(page: Page, email: string) {
+async function expectJoinStep(
+  page: Page,
+  pattern: string | RegExp,
+  timeout = 30_000,
+) {
+  await expect(joinPanelHeading(page)).toHaveText(pattern, { timeout });
+}
+
+export async function signUpOnJoinPage(
+  page: Page,
+  journey: Pick<
+    ClientInviteJourney,
+    "joinUrl" | "fullName" | "email" | "password" | "neonAuthInvitationId"
+  >,
+) {
+  const { clientInvitationJoin } = portalCopy;
+  const joinPath = buildClientJoinHref(journey.neonAuthInvitationId);
+
+  createNeonAuthUserForE2e(journey.email, journey.password, journey.fullName);
+  markTestUserEmailVerified(journey.email);
+
+  await page.goto(authSignInHref({ returnTo: joinPath }));
+  await page.getByLabel(/^email$/i).fill(journey.email);
+  await page.locator('input[name="password"]').fill(journey.password);
+  await page.getByRole("button", { name: /^(sign in|login)$/i }).click();
+
   await expect
     .poll(
-      () => {
-        try {
-          markTestUserEmailVerified(email);
-          return true;
-        } catch {
-          return false;
-        }
+      async () => {
+        const url = page.url();
+        return (
+          url.includes("/join") ||
+          url.includes("/client/onboarding") ||
+          /\/client\/?$/.test(url)
+        );
       },
-      { timeout: 30_000 },
+      { timeout: 60_000 },
     )
     .toBe(true);
 
+  if (page.url().includes("/join")) {
+    await expectJoinStep(page, clientInvitationJoin.panelAcceptTitle, 60_000);
+  }
+}
+
+export async function verifyJoinEmailForE2e(page: Page, email: string) {
+  if (!page.url().includes("/join")) {
+    return;
+  }
+
+  markTestUserEmailVerified(email);
   await page.reload();
-  await expect(
-    page.getByRole("heading", {
-      name: portalCopy.clientInvitationJoin.panelAcceptTitle,
-    }),
-  ).toBeVisible({ timeout: 30_000 });
+
+  if (!page.url().includes("/join")) {
+    return;
+  }
+
+  await expectJoinStep(page, portalCopy.clientInvitationJoin.panelAcceptTitle);
 }
 
 export async function acceptOrganizationInvitation(page: Page) {
+  if (page.url().includes("/client/onboarding")) {
+    return;
+  }
+
   await expect(
     page.getByRole("heading", {
       name: portalCopy.organizationAuth.acceptInvitationTitle,
-    }),
+    }).first(),
   ).toBeVisible({ timeout: 30_000 });
 
   await page.getByRole("button", { name: /^accept$/i }).click();
@@ -128,6 +147,25 @@ export function requireClientDefaultPassword() {
 }
 
 /** E2E only — Neon org accept requires verified email; OTP inbox is not available in CI. */
+export function createNeonAuthUserForE2e(
+  email: string,
+  password: string,
+  fullName: string,
+) {
+  execFileSync(
+    process.execPath,
+    [
+      "--env-file=.env",
+      resolve(process.cwd(), "scripts/e2e-join-sign-up.mjs"),
+      email,
+      password,
+      fullName,
+    ],
+    { encoding: "utf8" },
+  );
+}
+
+/** E2E only — marks verified after API sign-up (no OTP inbox in CI). */
 export function markTestUserEmailVerified(email: string) {
   execFileSync(
     process.execPath,

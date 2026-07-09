@@ -2,6 +2,7 @@ import { expect, test } from "@/testing/e2e/playwright-base";
 import { portalCopy } from "@/lib/portal-copy";
 import {
   answerFirstYesNoQuestion,
+  ensureAttestationsStep,
   expectDeclarationReceived,
   openFirstClientAssignment,
   submitDefaultDeclarationAnswers,
@@ -17,7 +18,9 @@ import {
 import { loginAsClient } from "@/testing/e2e/client-flows";
 import {
   createDeclaration,
+  expectClientRegisteredToast,
   loginAsOperator,
+  openDeclarationFromDashboard,
   openSurveyTab,
   registerClient,
 } from "@/testing/e2e/operator-flows";
@@ -70,7 +73,7 @@ test.describe("Client journey @journey", () => {
       declarationLabel: declarationTitle,
     });
 
-    await expect(page.getByText(/Client registered/i)).toBeVisible();
+    await expectClientRegisteredToast(page);
   });
 
   test("client draft is restored after reload", async ({ page }) => {
@@ -79,16 +82,18 @@ test.describe("Client journey @journey", () => {
     await loginAsClient(page, requireClientCreds());
     await acknowledgePortalIfNeeded(page);
 
-    await openFirstClientAssignment(page);
+    await openFirstClientAssignment(page, declarationTitle);
 
     await answerFirstYesNoQuestion(page);
-    await page.getByRole("button", { name: /^continue$/i }).click();
     await expect(page.getByText(/progress saved/i)).toBeVisible({
       timeout: 15_000,
     });
 
     await page.reload();
-    await expect(page.getByRole("radio", { name: /^yes$/i }).first()).toBeChecked();
+    await ensureAttestationsStep(page);
+    await expect(page.getByRole("radio", { name: /^yes$/i }).first()).toBeChecked({
+      timeout: 15_000,
+    });
   });
 
   test("client draft survives navigate away without Continue @journey", async ({
@@ -99,13 +104,14 @@ test.describe("Client journey @journey", () => {
     await loginAsClient(page, requireClientCreds());
     await acknowledgePortalIfNeeded(page);
 
-    await openFirstClientAssignment(page);
+    await openFirstClientAssignment(page, declarationTitle);
     await answerFirstYesNoQuestion(page);
 
     await page.goto("/client");
     await expect(page).toHaveURL(/\/client$/);
 
-    await openFirstClientAssignment(page);
+    await openFirstClientAssignment(page, declarationTitle);
+    await ensureAttestationsStep(page);
     await expect(
       page.getByRole("radio", { name: /^yes$/i }).first(),
     ).toBeChecked({ timeout: 15_000 });
@@ -117,7 +123,7 @@ test.describe("Client journey @journey", () => {
     await loginAsClient(page, requireClientCreds());
     await acknowledgePortalIfNeeded(page);
 
-    await openFirstClientAssignment(page);
+    await openFirstClientAssignment(page, declarationTitle);
     await answerFirstYesNoQuestion(page);
 
     await expect(page.getByText(/progress saved/i)).toBeVisible({
@@ -125,7 +131,8 @@ test.describe("Client journey @journey", () => {
     });
 
     await page.goto("/client");
-    await openFirstClientAssignment(page);
+    await openFirstClientAssignment(page, declarationTitle);
+    await ensureAttestationsStep(page);
     await expect(
       page.getByRole("radio", { name: /^yes$/i }).first(),
     ).toBeChecked();
@@ -137,8 +144,7 @@ test.describe("Client journey @journey", () => {
     await loginAsClient(page, requireClientCreds());
     await acknowledgePortalIfNeeded(page);
 
-    await page.getByRole("link", { name: /continue declaration|complete declaration/i }).click();
-    await expect(page).toHaveURL(/\/client\/declare\/.+/);
+    await openFirstClientAssignment(page, declarationTitle);
 
     await submitDefaultDeclarationAnswers(page, attestationContext);
     await expectDeclarationReceived(page, "client");
@@ -162,7 +168,7 @@ test.describe("Client journey @journey", () => {
 
     await expect(page.getByText(attestationContext)).toBeVisible();
     if (submittedConfirmationCode) {
-      await expect(page.getByText(submittedConfirmationCode)).toBeVisible();
+      await expect(page.getByText(submittedConfirmationCode).first()).toBeVisible();
     }
     await expect(page.getByRole("link", { name: /download/i })).toHaveCount(0);
   });

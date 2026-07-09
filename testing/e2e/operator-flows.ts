@@ -3,13 +3,34 @@ import { portalCopy } from "@/lib/portal-copy";
 import type { OperatorCreds } from "@/testing/e2e/credentials";
 import { selectRadixOption } from "@/testing/e2e/radix-select";
 
+async function fillOperatorSignInForm(page: Page, creds: OperatorCreds) {
+  await page.getByLabel(/^email$/i).fill(creds.email);
+  await page.getByLabel(/^password$/i).fill(creds.password);
+}
+
+export async function submitOperatorSignIn(page: Page, creds: OperatorCreds) {
+  await fillOperatorSignInForm(page, creds);
+  const signInButton = page.getByRole("button", { name: /^(sign in|login)$/i });
+
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    await signInButton.click();
+    try {
+      await expect(page).toHaveURL(/\/dashboard/, { timeout: 20_000 });
+      return;
+    } catch (error) {
+      if (attempt === 2) {
+        throw error;
+      }
+      await page.waitForTimeout(1_500 * (attempt + 1));
+      await fillOperatorSignInForm(page, creds);
+    }
+  }
+}
+
 export async function loginAsOperator(page: Page, creds: OperatorCreds) {
   await page.goto("/org/login");
   await page.waitForURL(/\/auth\/sign-in/);
-  await page.getByLabel(/^email$/i).fill(creds.email);
-  await page.locator('input[name="password"]').fill(creds.password);
-  await page.getByRole("button", { name: /^(sign in|login)$/i }).click();
-  await expect(page).toHaveURL(/\/dashboard/, { timeout: 30_000 });
+  await submitOperatorSignIn(page, creds);
   await expect(
     page.getByRole("heading", { name: /declaration management/i }),
   ).toBeVisible();
@@ -39,7 +60,43 @@ export async function registerClient(
     await firstOption.click();
   }
 
-  await page.getByRole("button", { name: /register client/i }).click();
+  const { issueSubmit, issueSubmitWithEmail } = portalCopy.clientInvite;
+  await page
+    .getByRole("button", {
+      name: new RegExp(`${issueSubmit}|${issueSubmitWithEmail}`, "i"),
+    })
+    .click();
+}
+
+export async function expectClientRegisteredToast(page: Page) {
+  const { issued, issuedAndEmailed, issuedEmailFailed } = portalCopy.clientInvite;
+  const pattern = new RegExp(
+    `(${[issued, issuedAndEmailed, issuedEmailFailed]
+      .map((message) => message.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+      .join("|")})`,
+    "i",
+  );
+  await expect(page.getByText(pattern).first()).toBeVisible({ timeout: 15_000 });
+}
+
+export async function openDeclarationFromDashboard(page: Page, title: string) {
+  await page.goto("/dashboard");
+  const link = page.getByRole("link", { name: title, exact: true });
+
+  for (let attempt = 0; attempt < 10; attempt += 1) {
+    if ((await link.count()) > 0) {
+      await link.first().click();
+      return;
+    }
+
+    const next = page.getByRole("button", { name: /go to next page/i });
+    if (!(await next.isEnabled().catch(() => false))) {
+      break;
+    }
+    await next.click();
+  }
+
+  throw new Error(`Declaration not found on dashboard: ${title}`);
 }
 
 export async function createDeclaration(page: Page, title: string) {
@@ -101,7 +158,7 @@ export async function openSurveyTab(
       : tab === "share"
         ? new RegExp(labels.share, "i")
         : new RegExp(labels.submissions, "i");
-  await page.getByRole("tab", { name: pattern }).click();
+  await page.getByRole("tab", { name: pattern }).first().click();
 }
 
 export async function expectDeclarationListed(page: Page, title: string) {
