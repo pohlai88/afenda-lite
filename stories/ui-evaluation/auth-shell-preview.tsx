@@ -1,7 +1,6 @@
 import { PortalAuthLayout } from "@/components/portal/portal-auth-layout";
 import { PortalAuthEmailTrustNotice } from "@/components/portal/portal-auth-email-trust-notice";
-import { GuardianAuthFacade } from "@/components/auth";
-import { GUARDIAN_AUTH_ASSET_SET } from "@/lib/copy/portal-brand";
+import { GuardianAuthNeonSlotPreview } from "@/components/auth/fixtures/guardian-auth-facade.fixture";
 import { PortalInvitationJoinBrandPanel } from "@/components/portal/portal-invitation-join-brand-panel";
 import { PortalInvitationJoinSteps } from "@/components/portal/portal-invitation-join-steps";
 import { productionSeedFixtures } from "@/lib/production-fixtures";
@@ -85,13 +84,9 @@ function MockNeonOtpCard() {
   );
 }
 
-/** Production iam-check auth shell — Guardian cinematic facade + Neon Auth card slot. */
+/** Production Guardian shell + mock Neon slot — SSOT with guardian-auth-facade fixture. */
 export function IamCheckGuardianAuthShellPreview() {
-  return (
-    <GuardianAuthFacade mode="night" assets={GUARDIAN_AUTH_ASSET_SET}>
-      <MockNeonAuthCard />
-    </GuardianAuthFacade>
-  );
+  return <GuardianAuthNeonSlotPreview />;
 }
 
 /** Legacy PortalAuthLayout shell — rollback path when GUARDIAN_AUTH_SHELL=false. */

@@ -1,6 +1,6 @@
 # Hot Sales — documentation index
 
-**Application phase (2026-07-09):** Phase 2A **implementation closed** · **operational rollout only** · **no 2B–2D**
+**Application phase (2026-07-10):** Phase 2A **implementation + ops rollout closed** · **no 2B–2D** without new ADR
 
 Read this index before any Hot Sales work. Agents: see also [AGENTS.md](../../AGENTS.md) § Hot Sales Phase 2A.
 

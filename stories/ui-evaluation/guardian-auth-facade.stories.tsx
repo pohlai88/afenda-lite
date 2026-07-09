@@ -34,11 +34,13 @@ const meta = {
       description: {
         component: [
           "Reusable cinematic auth system — `GuardianAuthFacade` composes",
-          "`OwlScene`, `EditorialPosterCopy`, `GuardianShield`, and `ThemeToggle`.",
+          "`OwlScene` (morpho hero + night fade-ghost), sky-cycle `EditorialPosterCopy`,",
+          "`GuardianShield`, `GuardianCornerPanel` (org link + theme toggle), and access slot.",
           "Production `/auth/*` mounts `PortalAuthNeonView` in the access slot (ADR-Auth-UI-001).",
-          "Living sky cycle: 48s ambient morning→dusk→night→dawn (pauses on focus / theme prefer).",
-          "Readable sentence copy crossfade (no flip). Day = sunrise ivory/peach; night = moonlit black glass. Identity + Neon 2-path chamber.",
-          "Layout target: auth-hero-dark / auth-hero-light @1024. `AccessVaultCard` is Storybook mock only.",
+          "Living sky: class-driven day/night crossfade; auto-flips every 12s (pauses on toggle prefer / focus).",
+          "Readable sentence copy per mode (no mirrored lockup). Night = moonlit black glass; day = sunrise ivory.",
+          "Layout target: auth-hero-dark / auth-hero-light @1024. No inner scroll on access panel.",
+          "`AccessVaultCard` is Storybook mock only.",
           `Assets: ${Object.values(GUARDIAN_AUTH_ASSET_SET).join(", ")}.`,
         ].join(" "),
       },
@@ -136,17 +138,31 @@ export const NeonSlotProdWiring: Story = {
 };
 
 export const Interactive: Story = {
-  name: "interactive — mode toggle + state toolbar",
+  name: "interactive — ambient cycle + state toolbar",
   parameters: {
     ...LAPTOP_1024,
     docs: {
       description: {
         story:
-          "Click ☾/☼ top-right for day/night cross-fade. Use the bottom-left toolbar to preview GuardianState variants.",
+          "Living sky auto-flips day/night every 12s. Click ☾/☼ (Prefer … sky) to pause ambient. Bottom-left toolbar previews GuardianState variants.",
       },
     },
   },
   render: () => <GuardianAuthFacadeInteractive />,
+};
+
+export const AmbientLivingSky: Story = {
+  name: "ambient — auto day/night cycle @1024",
+  parameters: {
+    ...LAPTOP_1024,
+    docs: {
+      description: {
+        story:
+          "Prod-like ambient on: 12s auto theme flip with countdown ring on corner panel. Wait ~12s to see crossfade.",
+      },
+    },
+  },
+  render: () => <GuardianAuthNeonSlotPreview ambient />,
 };
 
 const REFERENCE_DARK = "/brand/heroes/auth-hero-dark.png";
@@ -162,8 +178,8 @@ export const ReferenceComparisonNight: Story = {
     docs: {
       description: {
         story: [
-          `Side-by-side: live Guardian (classic TRUTH/IS/PROTECTED + Neon chamber) vs ${REFERENCE_DARK}.`,
-          "Sign-off bar: one poster composition — stacked lockup, center-back owl, glass vault. Pixel match is human.",
+          `Side-by-side: live Guardian (sentence copy + mock Neon chamber) vs ${REFERENCE_DARK}.`,
+          "Sign-off bar: morpho owl, night fade-ghost, glass vault, no viewport scroll. Pixel match is human.",
         ].join(" "),
       },
     },
@@ -202,8 +218,8 @@ export const ReferenceComparisonDay: Story = {
     docs: {
       description: {
         story: [
-          `Side-by-side: live Guardian (classic lockup + Access Vault mock) vs ${REFERENCE_LIGHT}.`,
-          "Sign-off bar: TRUTH inverted on day, gold PROTECTED, seal, center-back owl. Pixel match is human.",
+          `Side-by-side: live Guardian (day sentence copy + Access Vault mock) vs ${REFERENCE_LIGHT}.`,
+          "Sign-off bar: pearl sky, readable navy headline, gold subhead, center-back owl. Pixel match is human.",
         ].join(" "),
       },
     },

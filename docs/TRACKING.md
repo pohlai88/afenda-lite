@@ -1,7 +1,9 @@
 # Program tracking — Client Declaration Portal
 
-**Updated:** 2026-07-09  
-**Program:** Backlog-01 **not closed** · S17 **in progress** · S12 **planned** (blocked on S17) · Hot Sales Phase 2A **ops rollout** (Gate 4B)
+**Updated:** 2026-07-10  
+**Program:** Backlog-01 **not closed** · S17 **in progress** · S12 **planned** (blocked on S17) · Hot Sales Phase 2A **closed** · Guardian **functional ship / visual closeout**
+
+**Remaining work SSOT:** [architecture/remaining-development.md](./architecture/remaining-development.md)
 
 ---
 
@@ -93,13 +95,12 @@ Master brief: [backlog-01-neon-auth-closure.md](./backlogs/backlog-01-neon-auth-
 | --- | --- |
 | Phase 1 (`hot-sales-phase-1` → `1bc1294`) | **Closed** |
 | Phase 2A implementation (`hot-sales-phase-2a` → `8e650ff`) | **Closed** |
-| Post-tag hotfix (`4d203a7` TradeShell) | Deployed — **merge to `main` required** |
-| Gates 1–3, 4 repair/fix/admin | **Passed** |
-| **Gate 4B** sales allowlist matrix | **Active — next** |
-| Gates 5–7 (transfer triage, RBAC enable) | **Blocked** |
+| Post-tag hotfix (`4d203a7` TradeShell) | **Merged** to `main` |
+| Gates 1–7 (allowlist, transfer, RBAC enable) | **Closed** 2026-07-10 |
+| GitHub issue [#1](https://github.com/pohlai88/iam-check/issues/1) | **Closed** |
 | Phase 2B–2D | **Blocked** — separate ADR/slice approval |
 
-**Frozen:** `HOT_SALES_RBAC_ENABLED=false` until Gate 6. No new permissions, UI, schema, or repo normalization in Hot Sales commits.
+**Production:** `HOT_SALES_RBAC_ENABLED=true` · DB `br-tiny-hill-ao82jp6f`.
 
 ---
 
@@ -107,7 +108,7 @@ Master brief: [backlog-01-neon-auth-closure.md](./backlogs/backlog-01-neon-auth-
 
 | Gap | Owner | Evidence / next step |
 | --- | --- | --- |
-| Hot Sales Gate 4B sales allowlist | Ops / release | [PHASE-2A-OPS-GATE-REGISTER.md](./hot-sales/PHASE-2A-OPS-GATE-REGISTER.md) § Gate 4B |
+| Guardian viewport unit tests (4 failing) | Engineering | [remaining-development.md](./architecture/remaining-development.md) Lane 2 · `lib/guardian-auth-facade.viewport.test.ts` |
 | Post-deploy Phases 1–3 | Release owner | [post-deploy-verification.md](./backlogs/post-deploy-verification.md) |
 | S17 branch protection on `main` | Repo admin | GitHub Settings → Branches |
 | S17 Vercel liveness monitor | Ops | Dashboard → `/api/health/liveness` |

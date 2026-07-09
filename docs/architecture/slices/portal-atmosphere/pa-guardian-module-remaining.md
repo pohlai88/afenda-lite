@@ -49,7 +49,7 @@ Authority: [pa-hero-quality-benchmark.md](./pa-hero-quality-benchmark.md)
 
 ### 2. Unit test alignment (engineering)
 
-`lib/guardian-auth-facade.viewport.test.ts` — **3 failing** after merge (CSS contract strings vs sunrise/corner-panel CSS):
+`lib/guardian-auth-facade.viewport.test.ts` — **4 failing** / 14 total after merge (CSS contract strings vs sunrise/corner-panel CSS):
 
 - `uses sunrise day plate and sky atmosphere (not milky white)`
 - `defines living sky cycle ambient animations (48s)`
@@ -78,10 +78,11 @@ Two stashes may exist on developer machines:
 
 | Item | Notes |
 |------|-------|
-| Delete remote branch | `ui/guardian-sunrise-corner-panel` after `main` push |
+| Remote branch `ui/guardian-sunrise-corner-panel` | **Deleted** after merge to `main` |
 | Orphan `public/auth/owls/*-cutout.png` | Archive or delete per gap register |
-| Close GitHub issue #1 | Hot Sales Phase 2A ops — manual (token may block `gh`) |
-| SPEC-B status line | Update to **Shipped (functional)** when sign-off + viewport tests green |
+| GitHub issue #1 (Hot Sales 2A ops) | **Closed** 2026-07-10 |
+| GitHub CLI for future issues/PRs | `npm run gh -- …` — see [AGENTS.md](../../../AGENTS.md) § GitHub CLI |
+| SPEC-B status line | **Shipped (functional)** — bump to full complete when sign-off + viewport tests green |
 
 ---
 

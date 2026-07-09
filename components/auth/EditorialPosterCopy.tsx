@@ -39,7 +39,7 @@ function EditorialCopySet({
 
 /**
  * Sky-cycle poster — dual readable sentence layers (no flip / mirror).
- * Active set follows mode; ambient CSS crossfades both layers over 48s.
+ * Active set follows mode; class-driven crossfade when ambient toggles day/night.
  */
 export function EditorialPosterCopy({ copyByMode, mode }: Props) {
   const active = copyByMode[mode];
