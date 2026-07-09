@@ -7,7 +7,7 @@
 
 **Vision archive:** [PRD.md](./PRD.md)  
 **First variant seed:** [hot-sales.md](./hot-sales.md) (GP2 piglet — template data only)  
-**Phase 2:** [PHASE-2-SCOPING.md](./PHASE-2-SCOPING.md) — planning only until explicit approval. Do not implement.
+**Phase 2:** Authoritative planning — [PHASE-2-FEEDBACK.md](./PHASE-2-FEEDBACK.md). Build contract — [PRD-V2-Phase2.md](./PRD-V2-Phase2.md) (**Accepted**). RBAC — [ADR-001-phase-2-rbac.md](./ADR-001-phase-2-rbac.md) (**Accepted**). Slice plan — [PHASE-2A-SLICES.md](./PHASE-2A-SLICES.md) (**Proposed**). Candidate list — [PHASE-2-SCOPING.md](./PHASE-2-SCOPING.md) (superseded for planning). No implementation until Phase 2A slices are explicitly approved.
 
 ## Objective
 
@@ -88,14 +88,21 @@ See `db/migrations/013_hot_sales.sql`.
 
 ## Routes
 
+**Phase 1 (shipped):**
+
 ```text
-/trade/[locale]/admin/events
-/trade/[locale]/admin/events/new
+/trade/[locale]/admin/events          — list + create-on-list
 /trade/[locale]/admin/events/[id]/setup
 /trade/[locale]/admin/events/[id]/allocation
 /trade/[locale]/events
 /trade/[locale]/events/[id]/order
 /trade/[locale]/my-orders
+```
+
+**Phase 2A (not Phase 1):**
+
+```text
+/trade/[locale]/admin/events/new      — dedicated create wizard (slice 2A-8)
 ```
 
 Default locale: `vi`.
@@ -122,9 +129,9 @@ Default locale: `vi`.
 
 ### Notes
 
-- Dedicated `/admin/events/new` route deferred — create lives on `/admin/events`.
+- Dedicated `/admin/events/new` is **Phase 2A** (not Phase 1). Phase 1 create lives on `/admin/events`.
 - Trade UI copy is mostly inline `vi`/`en` ternaries; `messages/trade/*` powers the shell nav.
-- Full Excel import suite remains Phase 2.
+- Full Excel import suite remains Phase 2C.
 
 ### Post-closure verification (not a Phase 1 blocker)
 
@@ -144,6 +151,14 @@ Smoke auth redirect is the Phase 1 gate; journey is optional post-closure verifi
 
 ## Phase 2 (later)
 
-Scoping note: [PHASE-2-SCOPING.md](./PHASE-2-SCOPING.md) — **planning only**. Do not implement until explicitly approved.
+| Doc | Role |
+|-----|------|
+| [PHASE-2-FEEDBACK.md](./PHASE-2-FEEDBACK.md) | Authoritative planning direction |
+| [PRD-V2-Phase2.md](./PRD-V2-Phase2.md) | Build contract (**Accepted**) |
+| [ADR-001-phase-2-rbac.md](./ADR-001-phase-2-rbac.md) | RBAC decision (**Accepted**) |
+| [PHASE-2A-SLICES.md](./PHASE-2A-SLICES.md) | Phase 2A slice plan (**Proposed** — approve before code) |
+| [PHASE-2-SCOPING.md](./PHASE-2-SCOPING.md) | Historical candidate list (superseded for planning) |
 
-Candidates: 7-role RBAC, finance/deposit tables, pickup/ops, ERP sync, notifications, Excel imports, dedicated `/admin/events/new`.
+**Gate before any Phase 2 code or schema:** explicit approval of [PHASE-2A-SLICES.md](./PHASE-2A-SLICES.md).
+
+**Adopted packaging:** 2A RBAC + `/admin/events/new` → 2B Finance + Pickup/Ops → 2C Excel + notifications → 2D ERP sync.
