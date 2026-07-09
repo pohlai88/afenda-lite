@@ -11,6 +11,12 @@ import {
   mapSalesMemberRow,
   resolvePriorityForCustomer,
 } from "@/lib/domain/trade/mappers";
+import {
+  HOT_SALES_PERMISSION_CATALOG,
+  HOT_SALES_ROLE_TEMPLATES,
+  isSensitivePermission,
+  type HotSalesScopeType,
+} from "@/lib/domain/trade/rbac-catalog";
 import { buildGp2PigletTemplate } from "@/lib/domain/trade/templates";
 import type {
   HotSalesAllocationMode,
@@ -1026,4 +1032,204 @@ export function ordersToCsv(orders: HotSalesOrder[]): string {
     );
   }
   return lines.join("\n");
+}
+
+// —— Phase 2A RBAC ——
+
+export async function recordRbacAudit(input: {
+  action: string;
+  actorId?: string;
+  actorRole?: string;
+  targetUserId?: string;
+  roleId?: string;
+  permissionCode?: string;
+  oldValue?: Record<string, unknown>;
+  newValue?: Record<string, unknown>;
+  reason?: string;
+}) {
+  await pool.query(
+    `INSERT INTO hot_sales_rbac_audit
+      (action, actor_id, actor_role, target_user_id, role_id, permission_code, old_value, new_value, reason)
+     VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8::jsonb, $9)`,
+    [
+      input.action,
+      input.actorId ?? null,
+      input.actorRole ?? null,
+      input.targetUserId ?? null,
+      input.roleId ?? null,
+      input.permissionCode ?? null,
+      JSON.stringify(input.oldValue ?? {}),
+      JSON.stringify(input.newValue ?? {}),
+      input.reason ?? null,
+    ],
+  );
+}
+
+export async function seedHotSalesRbacCatalog(actorId?: string) {
+  for (const perm of HOT_SALES_PERMISSION_CATALOG) {
+    await pool.query(
+      `INSERT INTO hot_sales_permission (code, description, sensitive)
+       VALUES ($1, $2, $3)
+       ON CONFLICT (code) DO UPDATE SET
+         description = EXCLUDED.description,
+         sensitive = EXCLUDED.sensitive`,
+      [perm.code, perm.description, perm.sensitive],
+    );
+  }
+
+  for (const template of HOT_SALES_ROLE_TEMPLATES) {
+    const roleResult = await pool.query(
+      `INSERT INTO hot_sales_role (name, description, active, is_system_template, template_key, created_by)
+       VALUES ($1, $2, TRUE, TRUE, $3, $4)
+       ON CONFLICT (template_key) DO UPDATE SET
+         name = EXCLUDED.name,
+         description = EXCLUDED.description,
+         active = TRUE,
+         is_system_template = TRUE,
+         updated_at = NOW()
+       RETURNING id`,
+      [template.name, template.description, template.templateKey, actorId ?? null],
+    );
+    const roleId = roleResult.rows[0].id as string;
+
+    await pool.query(`DELETE FROM hot_sales_role_permission WHERE role_id = $1`, [
+      roleId,
+    ]);
+    for (const code of template.permissionCodes) {
+      await pool.query(
+        `INSERT INTO hot_sales_role_permission (role_id, permission_code, granted_by)
+         VALUES ($1, $2, $3)
+         ON CONFLICT DO NOTHING`,
+        [roleId, code, actorId ?? null],
+      );
+      if (isSensitivePermission(code)) {
+        await recordRbacAudit({
+          action: "role.permission_grant",
+          actorId,
+          actorRole: "system_seed",
+          roleId,
+          permissionCode: code,
+          newValue: { templateKey: template.templateKey, sensitive: true },
+          reason: "template_seed",
+        });
+      }
+    }
+  }
+}
+
+export async function listRoleAssignmentsForUser(userId: string) {
+  const result = await pool.query(
+    `SELECT a.id, a.user_id, a.role_id, a.scope_type, a.scope_id, a.active,
+            COALESCE(
+              (SELECT array_agg(rp.permission_code ORDER BY rp.permission_code)
+               FROM hot_sales_role_permission rp WHERE rp.role_id = a.role_id),
+              ARRAY[]::text[]
+            ) AS permission_codes
+     FROM hot_sales_role_assignment a
+     INNER JOIN hot_sales_role r ON r.id = a.role_id AND r.active = TRUE
+     WHERE a.user_id = $1 AND a.active = TRUE`,
+    [userId],
+  );
+  return result.rows.map((row) => ({
+    id: row.id as string,
+    userId: row.user_id as string,
+    roleId: row.role_id as string,
+    scopeType: row.scope_type as HotSalesScopeType,
+    scopeId: (row.scope_id as string | null) ?? null,
+    active: Boolean(row.active),
+    permissionCodes: (row.permission_codes as string[]) ?? [],
+  }));
+}
+
+export async function getRoleIdByTemplateKey(templateKey: string): Promise<string | null> {
+  const result = await pool.query(
+    `SELECT id FROM hot_sales_role WHERE template_key = $1 LIMIT 1`,
+    [templateKey],
+  );
+  return result.rows[0]?.id ?? null;
+}
+
+export async function ensureRoleAssignment(input: {
+  userId: string;
+  userEmail?: string;
+  roleId: string;
+  scopeType: HotSalesScopeType;
+  scopeId?: string | null;
+  actorId?: string;
+}) {
+  const existing = await pool.query(
+    `SELECT id FROM hot_sales_role_assignment
+     WHERE user_id = $1 AND role_id = $2 AND scope_type = $3
+       AND COALESCE(scope_id, '') = COALESCE($4, '')
+       AND active = TRUE
+     LIMIT 1`,
+    [input.userId, input.roleId, input.scopeType, input.scopeId ?? null],
+  );
+  if (existing.rows[0]) return existing.rows[0].id as string;
+
+  const result = await pool.query(
+    `INSERT INTO hot_sales_role_assignment
+      (user_id, user_email, role_id, scope_type, scope_id, active, created_by)
+     VALUES ($1, $2, $3, $4, $5, TRUE, $6)
+     RETURNING id`,
+    [
+      input.userId,
+      input.userEmail?.trim().toLowerCase() ?? null,
+      input.roleId,
+      input.scopeType,
+      input.scopeId ?? null,
+      input.actorId ?? null,
+    ],
+  );
+  await recordRbacAudit({
+    action: "assignment.create",
+    actorId: input.actorId,
+    targetUserId: input.userId,
+    roleId: input.roleId,
+    newValue: {
+      scopeType: input.scopeType,
+      scopeId: input.scopeId ?? null,
+    },
+  });
+  return result.rows[0].id as string;
+}
+
+/** Bootstrap Phase 1 admin / allowlisted sales into template assignments (idempotent). */
+export async function bootstrapPhase1RbacAssignments(input: {
+  userId: string;
+  email: string;
+  isAdmin: boolean;
+}) {
+  await seedHotSalesRbacCatalog(input.userId);
+
+  if (input.isAdmin) {
+    const roleId = await getRoleIdByTemplateKey("client_admin");
+    if (roleId) {
+      await ensureRoleAssignment({
+        userId: input.userId,
+        userEmail: input.email,
+        roleId,
+        scopeType: "platform",
+        actorId: input.userId,
+      });
+    }
+    return;
+  }
+
+  const members = await listSalesMembers();
+  const onAllowlist = members.some(
+    (m) => m.active && m.email.trim().toLowerCase() === input.email.trim().toLowerCase(),
+  );
+  if (!onAllowlist) return;
+
+  const roleId = await getRoleIdByTemplateKey("sales_executive");
+  if (roleId) {
+    await ensureRoleAssignment({
+      userId: input.userId,
+      userEmail: input.email,
+      roleId,
+      scopeType: "own",
+      actorId: input.userId,
+    });
+  }
 }

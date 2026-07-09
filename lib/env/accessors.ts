@@ -50,6 +50,13 @@ export function isGuardianAuthShellEnabled(
   return true;
 }
 
+/** Hot Sales Phase 2A RBAC cutover. Default off = Phase 1 Admin + allowlist. */
+export function isHotSalesRbacEnabled(
+  env: Pick<ServerEnv, "HOT_SALES_RBAC_ENABLED"> = getServerEnv(),
+) {
+  return env.HOT_SALES_RBAC_ENABLED === "true";
+}
+
 export function getSharedAdminEmail(
   env: Pick<ServerEnv, "SHARED_ADMIN_EMAIL"> = getServerEnv(),
 ) {

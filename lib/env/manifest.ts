@@ -114,6 +114,12 @@ export const ENV_VAR_MANIFEST = [
     runtime: true,
   },
   {
+    key: "HOT_SALES_RBAC_ENABLED",
+    kind: "optionalBooleanFlag",
+    vercelProduction: true,
+    runtime: true,
+  },
+  {
     key: "PORTAL_ORG_SLUG",
     kind: "optionalString",
     runtime: true,
