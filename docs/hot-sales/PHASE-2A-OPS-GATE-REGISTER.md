@@ -55,11 +55,11 @@ Operational gates map to [PHASE-2A-RELEASE-READINESS.md](./PHASE-2A-RELEASE-READ
 | **4 fix** | next-intl TradeShell SSR crash (`4d203a7`) | ✅ Merged to `main` (`ee14f10`) |
 | **4 admin** | Phase 1 admin matrix (flag off) | ✅ Passed |
 | **4B** | Phase 1 sales allowlist matrix (flag off) | ✅ **PASS** — rows 6–10 passed on live app (2026-07-10) |
-| **5** | `requestTransferAction` / transfer-lite triage | ⏸ Next — unblocked by matrix; triage still required |
-| **6** | Controlled `HOT_SALES_RBAC_ENABLED=true` | ⏸ Blocked |
+| **5** | `requestTransferAction` / transfer-lite triage | ✅ Complete — flag=false no patch; pre-Gate-6 permission alignment recorded |
+| **6** | Controlled `HOT_SALES_RBAC_ENABLED=true` | ⏸ Blocked — requires pre-enable matrix + `requestTransferAction` permission alignment |
 | **7** | Production RBAC enable | ⏸ Blocked |
 
-**Gate 4 overall:** admin ✅, sales allowlist matrix rows 6–10 ✅ (2026-07-10). **Gate 5** may proceed to transfer-lite triage. **Open ops gap:** live Vercel `DATABASE_URL` still points at `dev-spec-b`; production branch `br-tiny-hill-ao82jp6f` has matching allowlist + event data but is not the live deploy DB until cutover.
+**Gate 4 overall:** admin ✅, sales allowlist matrix rows 6–10 ✅ (2026-07-10). **Gate 5** triage ✅ complete (no flag=false patch). **Gate 6** blocked until pre-enable matrix + `transfer.request` alignment. **Open ops gap:** live Vercel `DATABASE_URL` still points at `dev-spec-b`; production branch `br-tiny-hill-ao82jp6f` has matching allowlist + event data but is not the live deploy DB until cutover.
 
 ---
 
@@ -179,6 +179,53 @@ Active open event + product: yes|no
 Row 6–10: pass|fail + notes
 Gate 4B: PASS | FAIL
 ```
+
+---
+
+## Gate 5 — `requestTransferAction` / transfer-lite triage
+
+**Status:** ✅ Complete — triage only; no flag=false code patch.
+
+**Date:** 2026-07-10  
+**Runtime flag:** `HOT_SALES_RBAC_ENABLED=false`
+
+### Finding
+
+`requestTransferAction` currently uses:
+
+```ts
+const access = await requireTradeAccess();
+```
+
+It does not currently call:
+
+```ts
+requireTradePermission("transfer.request")
+```
+
+### Flag=false verdict
+
+No production patch is required while RBAC remains dark.
+
+Under the current Phase 1 path:
+
+- trade entry is gated by Phase 1 admin or `hot_sales_sales_member` allowlist;
+- non-admin users can only request transfer for their own orders;
+- business validity is still checked by `canTransferOrder(order, event)`.
+
+This is sufficient for Phase 1 transfer-lite with `HOT_SALES_RBAC_ENABLED=false`.
+
+### Pre-Gate-6 note
+
+Before any controlled `HOT_SALES_RBAC_ENABLED=true` run, `requestTransferAction` must be aligned with the RBAC permission path, preferably:
+
+```ts
+requireTradePermission("transfer.request", ...)
+```
+
+or otherwise proven to enforce `transfer.request` on the RBAC-enabled path.
+
+This is a Gate 6 prep item, not a Phase 2B/2C/2D expansion. See [ADR-001](./ADR-001-phase-2-rbac.md) (server-side permission checks for sensitive trade actions).
 
 ---
 
