@@ -19,7 +19,7 @@ This document is the **single operational SSOT** for Phase 2A rollout status, ga
 |------|--------|
 | **Product boundary** | Tag `hot-sales-phase-2a` → commit `8e650ff` (**immutable**). Do not retag. |
 | **Post-boundary fixes** | Fix-lane only (e.g. `4d203a7` next-intl TradeShell). **Merge to `main`** before the next production deploy. No new product tag. |
-| **RBAC flag** | `HOT_SALES_RBAC_ENABLED=false` (unset = false) until **Gate 6** evidence exists. |
+| **RBAC flag** | `HOT_SALES_RBAC_ENABLED=false` in production until **Gate 7**. Gate 6 controlled local `flag=true` matrix **passed** (2026-07-10); production enable remains blocked. |
 | **Schema** | Migrations `013` (Phase 1) + `014` (RBAC) applied on production. **No new migrations** in this phase unless production-blocking. |
 | **No 2B–2D** | Finance, pickup, Excel, notifications, ERP — **blocked** until separate ADR/slice approval. |
 | **No product expansion** | No new permissions, roles, RBAC UI, or trade features. |
@@ -56,10 +56,10 @@ Operational gates map to [PHASE-2A-RELEASE-READINESS.md](./PHASE-2A-RELEASE-READ
 | **4 admin** | Phase 1 admin matrix (flag off) | ✅ Passed |
 | **4B** | Phase 1 sales allowlist matrix (flag off) | ✅ **PASS** — rows 6–10 passed on live app (2026-07-10) |
 | **5** | `requestTransferAction` / transfer-lite triage | ✅ Complete — flag=false no patch; pre-Gate-6 permission alignment recorded |
-| **6** | Controlled `HOT_SALES_RBAC_ENABLED=true` | ⏸ Blocked — requires pre-enable matrix + `requestTransferAction` permission alignment |
-| **7** | Production RBAC enable | ⏸ Blocked |
+| **6** | Controlled `HOT_SALES_RBAC_ENABLED=true` | ✅ **PASS** — local controlled matrix 17/17 (2026-07-10); production flag stays **false** |
+| **7** | Production RBAC enable | ⏸ Blocked — requires Gate 6 ✅ + DB cutover + explicit promotion |
 
-**Gate 4 overall:** admin ✅, sales allowlist matrix rows 6–10 ✅ (2026-07-10). **Gate 5** triage ✅ complete (no flag=false patch). **Gate 6** blocked until pre-enable matrix + `transfer.request` alignment. **Open ops gap:** live Vercel `DATABASE_URL` still points at `dev-spec-b`; production branch `br-tiny-hill-ao82jp6f` has matching allowlist + event data but is not the live deploy DB until cutover.
+**Gate 4 overall:** admin ✅, sales allowlist matrix rows 6–10 ✅ (2026-07-10). **Gate 5** triage ✅ complete (no flag=false patch). **Gate 6** controlled RBAC matrix ✅ **PASS** (local `flag=true`, 17/17, 2026-07-10). **Gate 7** production RBAC enable ⏸ blocked. **Open ops gap:** live Vercel `DATABASE_URL` still points at `dev-spec-b`; production branch `br-tiny-hill-ao82jp6f` has matching allowlist + event data but is not the live deploy DB until cutover.
 
 ---
 
@@ -226,6 +226,70 @@ requireTradePermission("transfer.request", ...)
 or otherwise proven to enforce `transfer.request` on the RBAC-enabled path.
 
 This is a Gate 6 prep item, not a Phase 2B/2C/2D expansion. See [ADR-001](./ADR-001-phase-2-rbac.md) (server-side permission checks for sensitive trade actions).
+
+**Code alignment:** ✅ Complete — `requestTransferAction` enforces `requireTradePermission("transfer.request", { eventId })` @ `51e9a5b`.
+
+---
+
+## Gate 6 — controlled RBAC matrix (local only)
+
+**Status:** ✅ **PASS** — controlled local run with `HOT_SALES_RBAC_ENABLED=true`. **Production flag remains `false`** until Gate 7.
+
+**Date:** 2026-07-10  
+**Lane:** Ops verification only — not production RBAC enable, not 2B–2D.
+
+### Preconditions
+
+| Item | Value |
+|------|--------|
+| Code | `51e9a5b` — `requestTransferAction` → `requireTradePermission("transfer.request")` |
+| Local flag | `HOT_SALES_RBAC_ENABLED=true` in `env.config` → `npm run env:compose` → restart `npm run dev` |
+| DB branch | `dev-spec-b` / `br-super-hill-aojc9a4p` (matches live Vercel deploy DB) |
+| Sales RBAC | Platform `sales_executive` assignment for preview client (`f83b7908-…`) |
+| Deny fixture | Role `Gate6 No Transfer` (`a1111111-…`) — `event.view`, `order.create`, `order.view_own` only |
+| Harness | `scripts/gate-6-controlled-matrix.mjs` (ops-only, not committed) |
+
+### Matrix results (17/17 PASS)
+
+| Check | Result | Evidence |
+|-------|--------|----------|
+| Unknown team denies | PASS | `lib/domain/trade/rbac.test.ts` |
+| Unknown BU denies | PASS | `rbac.test.ts` |
+| Sensitive missing grant denies | PASS | `rbac.test.ts` |
+| Sensitive explicit grant allows | PASS | `rbac.test.ts` |
+| RBAC unit baseline | PASS | `rbac.test.ts` full pass |
+| RBAC admin page (admin) | PASS | `/trade/vi/admin/rbac` |
+| Event create page (admin) | PASS | `/trade/vi/admin/events/new` |
+| Event create action (admin) | PASS | setup redirect after create |
+| Event create action (sales replay) | PASS | HTTP 303 |
+| Sales events / order create / my-orders | PASS | Playwright journey |
+| Transfer with `transfer.request` | PASS | UI submit + DB `transfer_status=requested` |
+| Transfer without `transfer.request` | PASS | Action replay HTTP 303 after RBAC-only role swap |
+| RBAC admin page (sales) | PASS | Redirect `/trade/vi/events` |
+| Sensitive action denied | PASS | `allocation.override` — unit tests + action replay policy |
+| Sensitive grant audit row | PASS | `hot_sales_rbac_audit` `role.permission_grant` rows present |
+
+**Verdict template:**
+
+```
+Gate 6: PASS (17/17)
+Runtime: local localhost:3000, HOT_SALES_RBAC_ENABLED=true (not Vercel production)
+Commit: 51e9a5b
+DB: br-super-hill-aojc9a4p
+```
+
+### Harness notes (failures resolved)
+
+1. **Stale dev server** — matrix hit old `flag=false` process; fix: kill port 3000, `env:compose`, restart dev.
+2. **Transfer allow check** — RSC action replay does not reconstruct `FormData`; use UI submit + DB poll (not pending-approval text).
+3. **Transfer deny** — requires allowlist off + `Gate6 No Transfer` role; integrated in harness with `restoreSalesRbacBaseline()`.
+4. **Role assignment upsert** — partial unique index on active assignments; use SELECT-then-UPDATE, not blind INSERT.
+
+### Post-Gate-6 constraints
+
+- **Do not** set `HOT_SALES_RBAC_ENABLED=true` on Vercel until Gate 7 promotion checklist.
+- **Do not** start Phase 2B–2D.
+- DB cutover (`br-tiny-hill-ao82jp6f` as live deploy DB) remains a **separate** ops step.
 
 ---
 
