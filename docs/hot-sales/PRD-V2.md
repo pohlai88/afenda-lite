@@ -7,7 +7,7 @@
 
 **Vision archive:** [PRD.md](./PRD.md)  
 **First variant seed:** [hot-sales.md](./hot-sales.md) (GP2 piglet — template data only)  
-**Phase 2:** Authoritative planning — [PHASE-2-FEEDBACK.md](./PHASE-2-FEEDBACK.md). Build contract — [PRD-V2-Phase2.md](./PRD-V2-Phase2.md) (**Accepted**). RBAC — [ADR-001-phase-2-rbac.md](./ADR-001-phase-2-rbac.md) (**Accepted**). Slice plan — [PHASE-2A-SLICES.md](./PHASE-2A-SLICES.md) (**Proposed**). Candidate list — [PHASE-2-SCOPING.md](./PHASE-2-SCOPING.md) (superseded for planning). No implementation until Phase 2A slices are explicitly approved.
+**Phase 2:** Authoritative planning — [PHASE-2-FEEDBACK.md](./PHASE-2-FEEDBACK.md). Build contract — [PRD-V2-Phase2.md](./PRD-V2-Phase2.md) (**Accepted**). RBAC — [ADR-001-phase-2-rbac.md](./ADR-001-phase-2-rbac.md) (**Accepted**). Slice plan — [PHASE-2A-SLICES.md](./PHASE-2A-SLICES.md) (**Approved**). Candidate list — [PHASE-2-SCOPING.md](./PHASE-2-SCOPING.md) (superseded for planning). Implement 2A only per approved slices; not 2B–2D.
 
 ## Objective
 
@@ -156,9 +156,9 @@ Smoke auth redirect is the Phase 1 gate; journey is optional post-closure verifi
 | [PHASE-2-FEEDBACK.md](./PHASE-2-FEEDBACK.md) | Authoritative planning direction |
 | [PRD-V2-Phase2.md](./PRD-V2-Phase2.md) | Build contract (**Accepted**) |
 | [ADR-001-phase-2-rbac.md](./ADR-001-phase-2-rbac.md) | RBAC decision (**Accepted**) |
-| [PHASE-2A-SLICES.md](./PHASE-2A-SLICES.md) | Phase 2A slice plan (**Proposed** — approve before code) |
+| [PHASE-2A-SLICES.md](./PHASE-2A-SLICES.md) | Phase 2A slice plan (**Approved**) |
 | [PHASE-2-SCOPING.md](./PHASE-2-SCOPING.md) | Historical candidate list (superseded for planning) |
 
-**Gate before any Phase 2 code or schema:** explicit approval of [PHASE-2A-SLICES.md](./PHASE-2A-SLICES.md).
+**Gate before Phase 2B+:** separate ADRs/slices. Phase 2A may proceed per [PHASE-2A-SLICES.md](./PHASE-2A-SLICES.md).
 
 **Adopted packaging:** 2A RBAC + `/admin/events/new` → 2B Finance + Pickup/Ops → 2C Excel + notifications → 2D ERP sync.
