@@ -1,6 +1,4 @@
 import { test } from "@/testing/e2e/playwright-base";
-import { execFileSync } from "node:child_process";
-import { resolve } from "node:path";
 import {
   acceptOrganizationInvitation,
   acknowledgeClientDashboard,
@@ -11,36 +9,20 @@ import {
   verifyJoinEmailForE2e,
 } from "@/testing/e2e/client-invitation-flows";
 import { createE2eClientEmail } from "@/testing/e2e/credentials";
+import { runNodeScriptJson } from "@/testing/e2e/run-node-script";
 
 function issueNeonOrgInvite(email: string, fullName: string) {
-  const output = execFileSync(
-    process.execPath,
-    [
-      "--env-file=.env",
-      resolve("scripts/live-org-invite.mjs"),
-      email,
-      fullName,
-    ],
-    { cwd: process.cwd(), encoding: "utf8" },
-  );
-
-  const start = output.indexOf("{");
-  const end = output.lastIndexOf("}");
-  if (start === -1 || end === -1 || end <= start) {
-    throw new Error(`live-org-invite did not return JSON:\n${output}`);
-  }
-
-  const payload = JSON.parse(output.slice(start, end + 1)) as {
+  const payload = runNodeScriptJson<{
     success: boolean;
     recipientEmail: string;
     fullName: string;
     neonAuthInvitationId?: string;
     joinUrl?: string;
     error?: string;
-  };
+  }>("scripts/live-org-invite.mjs", [email, fullName]);
 
   if (!payload.success || !payload.neonAuthInvitationId || !payload.joinUrl) {
-    throw new Error(`live-org-invite failed: ${output}`);
+    throw new Error(`live-org-invite failed: ${JSON.stringify(payload)}`);
   }
 
   return {
