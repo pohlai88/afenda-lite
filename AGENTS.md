@@ -150,6 +150,25 @@ MCP endpoint: `http://localhost:6006/mcp`
 
 ---
 
+## Portal Atmosphere — agent constraints
+
+Authority: [ADR-Portal-BG-001](docs/architecture/adr/ADR-Portal-BG-001-portal-atmosphere-system.md) · **[Hero quality benchmark](docs/architecture/slices/portal-atmosphere/pa-hero-quality-benchmark.md)** · [Rejected approaches register](docs/architecture/slices/portal-atmosphere/pa-rejected-approaches.md) · Cursor rules: `.cursor/rules/portal-atmosphere-design.mdc`, `.cursor/rules/agent-workflow.mdc`
+
+**Design references:** `public/brand/heroes/auth-hero-dark.png`, `public/brand/heroes/auth-hero-light.png`
+
+| Rule | Detail |
+|------|--------|
+| **Comp is the bar** | Storybook at 1024px must match hero PNGs side-by-side; tests passing ≠ done |
+| Plan before visual work | Hero/atmosphere changes: Plan mode → user approval → implement |
+| Storybook first | Experiments live in `stories/ui-evaluation/` and `components/portal-atmosphere/fixtures/` until user asks to wire prod |
+| Dual owl assets | Dark: `public/brand/owls/guardian-sharp-dark.png` · Light: `public/brand/owls/guardian-sharp-light.png` |
+| Forbidden | CSS invert on owls; single PNG sticker heroes; reintroducing rejected approaches in `pa-rejected-approaches.md` |
+| Prod wiring | `PortalAuthLayout` / auth routes only when user explicitly requests — not as default for design experiments |
+
+Storybook server mocks: `.storybook/mocks/server-only.ts`, `.storybook/mocks/db.ts` (see `.storybook/main.ts`).
+
+---
+
 ## Testing
 
 Authority: [`testing/README.md`](testing/README.md). Gap analysis: `/afenda-test` + [`.agents/subagents/afenda-test-engineer.md`](.agents/subagents/afenda-test-engineer.md).

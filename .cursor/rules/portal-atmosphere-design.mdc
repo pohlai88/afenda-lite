@@ -1,0 +1,50 @@
+---
+description: Portal atmosphere hero design — references, assets, forbidden shortcuts
+globs: components/portal-atmosphere/**,stories/ui-evaluation/portal-atmosphere*.tsx,stories/ui-evaluation/auth-*.tsx,public/brand/**
+alwaysApply: false
+---
+
+# Portal atmosphere design
+
+## Visual authority
+
+| Theme | Reference |
+|-------|-----------|
+| Dark | `public/brand/heroes/auth-hero-dark.png` |
+| Light | `public/brand/heroes/auth-hero-light.png` |
+| Dual comp | `public/brand/heroes/auth-hero-dual.png` |
+
+**Done = matches PNG at 1024px side-by-side in Storybook.** See [`docs/architecture/slices/portal-atmosphere/pa-hero-quality-benchmark.md`](docs/architecture/slices/portal-atmosphere/pa-hero-quality-benchmark.md).
+
+Layout zones: **editorial left** · **owl + deco center-back** · **access vault right**. Laptop target: balanced 3-column, `100svh`, no scroll.
+
+## Assets (production)
+
+| Role | Path |
+|------|------|
+| Dark owl (prod sharp preset) | `public/brand/owls/guardian-sharp-dark.png` |
+| Light owl (prod sharp preset) | `public/brand/owls/guardian-sharp-light.png` |
+| **Comp-laptop base units** | `public/owl-variants/darkbg-removebg-preview2.png` · `whitebg-removebg-preview2.png` + CSS deco |
+| Variants (experiments) | `public/owl-variants/` |
+| AI mockups (not prod) | `public/ref/` |
+
+Use **separate dark/light owl assets**. Never fake light theme by inverting the dark owl.
+
+## Forbidden without explicit user approval
+
+- CSS `filter: invert()` / hue-rotate hacks on owl images for theme switching
+- `preset="single"` or one PNG pasted as the hero (black-box sticker on page)
+- Thin CSS circles as stand-in for celestial geometry / marble atmosphere from comps
+- Wiring new hero experiments into `PortalAuthLayout` or `app/auth/**`
+- Reintroducing anything listed in `pa-rejected-approaches.md`
+
+## Allowed experiment path
+
+1. Storybook story under `stories/ui-evaluation/`
+2. Fixture under `components/portal-atmosphere/fixtures/`
+3. CSS in `components/portal-atmosphere/styles/` — layered deco, real dual assets, comp-aligned grid
+4. User reviews in Storybook at laptop viewport before any prod wiring
+
+## Storybook server boundary
+
+Server modules are mocked in `.storybook/mocks/` (`server-only`, `lib/db`). Do not import `@/lib/clients` value exports in stories — use fixtures and type-only imports.

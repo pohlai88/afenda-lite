@@ -14,7 +14,9 @@ import {
   SURVEY_TEXT_ANSWER_MAX,
 } from "@/lib/form-constraints";
 
-export const PORTAL_NAME = "Client Declaration Portal";
+import { PORTAL_NAME } from "./portal-name";
+
+export { PORTAL_NAME };
 export const CLIENT_PORTAL_ACK_VERSION = "2026-01";
 const CLIENT_PORTAL_EYEBROW = "Client portal";
 const ORG_EYEBROW = "Organization";

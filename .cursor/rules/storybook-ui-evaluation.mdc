@@ -1,0 +1,32 @@
+---
+description: Storybook UI evaluation stories — boundaries and mocks
+globs: stories/**/*.stories.tsx,.storybook/**,components/portal-atmosphere/fixtures/**
+alwaysApply: false
+---
+
+# Storybook UI evaluation
+
+## Scope
+
+- Stories under `stories/ui-evaluation/` are **design review only** — not production routes.
+- Portal atmosphere authority: `PortalAtmospherePreview` fixture; see `npm run check:storybook-auth-boundary`.
+
+## Do not import in portal-atmosphere stories/fixtures
+
+- `@neondatabase/*`, `AuthView`, `PortalAuthNeonView`, `PortalAuthLayout` (portal-atmosphere slice boundary)
+- `@/app/actions/*`, session providers, server actions
+
+## Server code in Vite
+
+Storybook aliases (`.storybook/main.ts`):
+
+- `server-only` → `.storybook/mocks/server-only.ts`
+- `lib/db` → `.storybook/mocks/db.ts`
+
+If a new story pulls server modules, add a mock or refactor the import chain — do not bundle `pg` / real DB.
+
+## Before adding stories
+
+- `parameters.layout: "fullscreen"` for shells
+- Use existing fixtures; mock access slot only
+- Run `npm run build-storybook` to verify compile

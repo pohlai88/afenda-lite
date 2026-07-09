@@ -1,0 +1,1 @@
+Add owl-night-cutout.png, owl-day-cutout.png, owl-night-ghost.png, owl-day-ghost.png here.

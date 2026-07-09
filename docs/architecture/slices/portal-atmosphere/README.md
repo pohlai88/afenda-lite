@@ -6,6 +6,8 @@ Execution briefs for [ADR-Portal-BG-001: Portal Atmosphere System](../../adr/ADR
 
 **Design references:** [`public/brand/heroes/auth-hero-dark.png`](../../../../public/brand/heroes/auth-hero-dark.png) · [`public/brand/heroes/auth-hero-light.png`](../../../../public/brand/heroes/auth-hero-light.png)
 
+**Rejected experiments:** [`pa-rejected-approaches.md`](./pa-rejected-approaches.md) — agents must not reintroduce listed approaches.
+
 ## Dependency order
 
 ```txt

@@ -1,0 +1,13 @@
+{
+  "files.associations": {
+    "*.stories.tsx": "typescriptreact"
+  },
+  "search.exclude": {
+    "**/storybook-static": true,
+    "**/.next": true,
+    "**/node_modules": true
+  },
+  "files.watcherExclude": {
+    "**/storybook-static/**": true
+  }
+}

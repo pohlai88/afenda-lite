@@ -39,6 +39,7 @@
     "verify:architecture": "npm run checks",
     "verify:vercel-db": "node scripts/validate-vercel-database-url.mjs",
     "icons:generate": "node scripts/generate-brand-icons.mjs",
+    "brand:extract-sharp-owl": "python scripts/extract-sharp-owl-assets.py",
     "check:brand-icons": "node scripts/check-brand-icons.mjs",
     "validate:brand-icon-bounds": "node scripts/validate-brand-icon-bounds.mjs",
     "test": "playwright test --project all",
@@ -61,7 +62,7 @@
     "studio:mcp": "node scripts/shadcn-studio-mcp.mjs",
     "studio:install-block": "npm run env:compose && node scripts/install-studio-block.mjs",
     "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "build-storybook": "node -e \"require('node:fs').rmSync('storybook-static',{recursive:true,force:true})\" && storybook build"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",
