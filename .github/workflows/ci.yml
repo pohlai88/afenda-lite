@@ -94,6 +94,9 @@ jobs:
           npm run seed:admin
           npm run seed:preview-client
 
+      - name: Materialize .env for E2E scripts
+        run: npm run write:ci-env
+
       - name: Install Playwright
         run: npx playwright install --with-deps chromium
 

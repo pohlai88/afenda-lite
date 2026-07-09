@@ -46,8 +46,15 @@ Tick boxes as you complete items.
   - [ ] Phase 1: operator invite email + preview client (BL-02, BL-03)
   - [ ] Phase 2: client join with **real OTP** + full journey (BL-06)
   - [ ] Phase 3: Neon Console app name (BL-05) + account flows (BL-07)
-- [ ] Confirm **CI `quality` + `journey` green** on `main` after secrets sync (push pending)
-- [ ] Spot-check: operator login → dashboard; client scoped correctly
+### CI / release authority
+
+- [x] GitHub Actions secrets present (`npm run audit:github-actions-secrets`)
+- [x] Production-aligned Neon secrets (`npm run sync:github-actions-secrets:production`)
+- [x] Branch protection requires `quality` + `journey`
+- [x] CI **portal checks** green (2026-07-10)
+- [ ] CI **`quality` job** green — **4 guardian viewport unit tests** failing
+- [ ] CI **`journey` job** green — E2E uses `localhost:3000` but production Neon has `allow_localhost: false` (design gap; needs CI Neon branch or auth policy)
+- [ ] Spot-check operator login → dashboard on prod (manual)
 
 **When all checked:** Backlog-01 closes · S17 acceptance complete.
 
