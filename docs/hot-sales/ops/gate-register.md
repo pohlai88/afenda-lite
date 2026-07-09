@@ -2,14 +2,16 @@
 
 | Field | Value |
 |-------|-------|
+| **Doc type** | `OPS` — gate history and drift rules (historical; phase closed) |
 | **Status** | **Closed** — Gate 7 complete; operational rollout finished 2026-07-10 |
+| **Agent entry** | [../RUNTIME.md](../RUNTIME.md) |
 | **Date** | 2026-07-09 (gates closed 2026-07-10) |
-| **Authority** | [PRD-V2-Phase2.md](./PRD-V2-Phase2.md) · [PHASE-2A-RELEASE-READINESS.md](./PHASE-2A-RELEASE-READINESS.md) · [PHASE-2A-OPS-ROLLOUT.md](./PHASE-2A-OPS-ROLLOUT.md) |
+| **Authority** | [../spec/phase-2a-prd.md](../spec/phase-2a-prd.md) · [./release-readiness.md](./release-readiness.md) · [./rollout.md](./rollout.md) |
 | **GitHub issue** | [#1](https://github.com/pohlai88/iam-check/issues/1) — **closed** (completed) |
 
 This document is the **single operational SSOT** for Phase 2A rollout status, gate sequencing, and drift prevention. Agents and operators must read this before any Hot Sales production work.
 
-**PRD “implementation gate” (ADR + PRD + slices approved) is closed.** The active phase is **ops rollout**, not new 2A product work.
+**PRD “implementation gate” (ADR + PRD + slices approved) is closed.** Ops rollout **finished** 2026-07-10 — historical reference only.
 
 ---
 
@@ -44,7 +46,7 @@ This document is the **single operational SSOT** for Phase 2A rollout status, ga
 
 ## Gate status (2026-07-09)
 
-Operational gates map to [PHASE-2A-RELEASE-READINESS.md](./PHASE-2A-RELEASE-READINESS.md) promotion order. They are **rollout tracking labels**, not a second PRD implementation gate.
+Operational gates map to [./release-readiness.md](./release-readiness.md) promotion order. They are **rollout tracking labels**, not a second PRD implementation gate.
 
 | Gate | Description | Status |
 |------|-------------|--------|
@@ -168,7 +170,7 @@ Admin create-event → setup flow already passed; use that path for minimal test
 | 9 | Allowlisted sales `/trade/vi/admin/events` | Redirected / denied (non-admin) |
 | 10 | Allowlisted sales `/trade/vi/admin/events/new` | Denied server-side / not allowed |
 
-Row 10: prefer **server action guard** evidence over UI-only routing checks ([ADR-001](./ADR-001-phase-2-rbac.md) server-side enforcement).
+Row 10: prefer **server action guard** evidence over UI-only routing checks ([ADR-001](../adr/001-rbac.md) server-side enforcement).
 
 ### Gate 4B verdict template
 
@@ -224,7 +226,7 @@ requireTradePermission("transfer.request", ...)
 
 or otherwise proven to enforce `transfer.request` on the RBAC-enabled path.
 
-This is a Gate 6 prep item, not a Phase 2B/2C/2D expansion. See [ADR-001](./ADR-001-phase-2-rbac.md) (server-side permission checks for sensitive trade actions).
+This is a Gate 6 prep item, not a Phase 2B/2C/2D expansion. See [ADR-001](../adr/001-rbac.md) (server-side permission checks for sensitive trade actions).
 
 **Code alignment:** ✅ Complete — `requestTransferAction` enforces `requireTradePermission("transfer.request", { eventId })` @ `51e9a5b`.
 
@@ -472,7 +474,7 @@ Forbidden: RBAC enable, schema change, new permissions/UI, 2B–2D, lib/componen
 | Doc | Role |
 |-----|------|
 | [README.md](./README.md) | Documentation index |
-| [PHASE-2A-OPS-ROLLOUT.md](./PHASE-2A-OPS-ROLLOUT.md) | Checklist items |
-| [PHASE-2A-RELEASE-READINESS.md](./PHASE-2A-RELEASE-READINESS.md) | Promotion order + matrix |
-| [PHASE-2A-SLICES.md](./PHASE-2A-SLICES.md) | Implementation **closed** |
-| [PRD-V2-Phase2.md](./PRD-V2-Phase2.md) | Product contract (Accepted) |
+| [./rollout.md](./rollout.md) | Checklist items |
+| [./release-readiness.md](./release-readiness.md) | Promotion order + matrix |
+| [../spec/phase-2a-slices.md](../spec/phase-2a-slices.md) | Implementation **closed** |
+| [../spec/phase-2a-prd.md](../spec/phase-2a-prd.md) | Product contract (Accepted) |

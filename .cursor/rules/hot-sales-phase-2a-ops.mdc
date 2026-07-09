@@ -1,38 +1,36 @@
 ---
-description: Hot Sales Phase 2A — ops rollout only; block 2B–2D and product drift
+description: Hot Sales — read RUNTIME.md first; Phase 2A closed; block 2B–2D
 globs: app/trade/**,components/trade/**,lib/domain/trade/**,docs/hot-sales/**
 alwaysApply: true
 ---
 
-# Hot Sales Phase 2A — operational lane (drift stop)
+# Hot Sales — agent lane
 
-**Authority:** [docs/hot-sales/PHASE-2A-OPS-GATE-REGISTER.md](docs/hot-sales/PHASE-2A-OPS-GATE-REGISTER.md) · [AGENTS.md](AGENTS.md) § Hot Sales Phase 2A
+**Read first:** [docs/hot-sales/RUNTIME.md](docs/hot-sales/RUNTIME.md) · Index: [docs/hot-sales/README.md](docs/hot-sales/README.md)
 
-## Active phase
+## Phase state
 
-Phase 2A **implementation is closed** (tag `hot-sales-phase-2a` → `8e650ff`). Only **operational rollout** is in scope — primarily **Gate 4B** sales allowlist verification.
+Phase 2A **implementation + ops closed** (2026-07-10). Gates 1–7 complete. Production `HOT_SALES_RBAC_ENABLED=true`.
 
 ## Forbidden without explicit user approval
 
 - Phase **2B, 2C, 2D** (finance, pickup, Excel, notifications, ERP)
 - New Hot Sales permissions, roles, RBAC UI, schema migrations, or trade features
-- Enabling `HOT_SALES_RBAC_ENABLED=true` (Gates 6–7)
-- Repo normalization: `lib/`, `components/`, layout, declaration refactors mixed into Hot Sales work
-- Guardian Auth / portal atmosphere changes framed as Hot Sales rollout
+- Disabling production RBAC except documented rollback in RUNTIME.md
+- Repo normalization mixed into Hot Sales commits
+- Guardian Auth / portal atmosphere framed as Hot Sales work
 
-## Allowed (Ops lane)
+## Allowed
 
-- Gate 4B production data setup (`hot_sales_sales_member`, open events/products)
-- Merge hotfix `4d203a7` (`fix/hot-sales-next-intl-trade-shell`) to `main`
-- Production-blocking emergency fixes on the frozen boundary
-- Test-lane commits **after** Gate 4B closes (separate from deploy)
+- Production-blocking emergency fixes on frozen boundary (merge to `main`, redeploy)
+- Test-lane commits separate from unrelated refactors
 
 ## Test identity (do not conflate)
 
-- `SHARED_ADMIN_EMAIL` — admin matrix, not sales allowlist tests
-- `PREVIEW_CLIENT_EMAIL` — S16 declaration preview client; **not** auto-seeded into `hot_sales_sales_member`
-- Redirect to `/client` after `/trade` for non-allowlisted users is **expected**, not RBAC regression
+- `SHARED_ADMIN_EMAIL` — admin matrix, not sales allowlist
+- `PREVIEW_CLIENT_EMAIL` — not auto-seeded into `hot_sales_sales_member`
+- Redirect to `/client` for non-allowlisted `/trade` users is **expected**
 
 ## Before coding
 
-Read the gate register. If the task is not Gate 4B, hotfix merge, or production-blocking fix — **stop and ask** whether scope changed.
+If the task is not a production-blocking fix — **stop and ask** whether scope reopened. Depth: [ops/gate-register.md](docs/hot-sales/ops/gate-register.md).

@@ -4,14 +4,14 @@
 
 ## Hot Sales Phase 2A — operational lane (**closed**)
 
-**Phase 2A ops rollout finished 2026-07-10** (Gate 7, issue [#1](https://github.com/pohlai88/iam-check/issues/1) closed). Do not start new Hot Sales ops work unless the user explicitly reopens scope.
+**Agent entry:** [docs/hot-sales/RUNTIME.md](docs/hot-sales/RUNTIME.md) · Index: [docs/hot-sales/README.md](docs/hot-sales/README.md)
 
 | Authority | Doc |
 |-----------|-----|
-| Doc index | [docs/hot-sales/README.md](docs/hot-sales/README.md) |
-| Gate SSOT | [docs/hot-sales/PHASE-2A-OPS-GATE-REGISTER.md](docs/hot-sales/PHASE-2A-OPS-GATE-REGISTER.md) |
-| Checklists | [PHASE-2A-OPS-ROLLOUT.md](docs/hot-sales/PHASE-2A-OPS-ROLLOUT.md) · [PHASE-2A-RELEASE-READINESS.md](docs/hot-sales/PHASE-2A-RELEASE-READINESS.md) |
-| Product contract | [PRD-V2-Phase2.md](docs/hot-sales/PRD-V2-Phase2.md) |
+| Runtime SSOT | [docs/hot-sales/RUNTIME.md](docs/hot-sales/RUNTIME.md) |
+| Ops gates | [docs/hot-sales/ops/gate-register.md](docs/hot-sales/ops/gate-register.md) |
+| Checklists | [ops/rollout.md](docs/hot-sales/ops/rollout.md) · [ops/release-readiness.md](docs/hot-sales/ops/release-readiness.md) |
+| Product contract | [spec/phase-2a-prd.md](docs/hot-sales/spec/phase-2a-prd.md) |
 
 **Production state:** tag `hot-sales-phase-2a` → `8e650ff`; `HOT_SALES_RBAC_ENABLED=true` on Vercel; DB branch `br-tiny-hill-ao82jp6f`. **Blocked without explicit approval:** 2B–2D, new RBAC/schema/UI expansion, Hot Sales commits mixed with unrelated refactors.
 

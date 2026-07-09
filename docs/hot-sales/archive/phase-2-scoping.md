@@ -1,17 +1,17 @@
 # Hot Sales — Phase 2 scoping note
 
 **Status:** Historical candidate-list note — **not** the Phase 2 build contract  
-**Phase 1 accepted baseline:** commit `1bc1294` · tag `hot-sales-phase-1` · [PRD-V2.md](./PRD-V2.md)  
-**Vision archive:** [PRD.md](./PRD.md)  
-**Authoritative Phase 2 planning direction:** [PHASE-2-FEEDBACK.md](./PHASE-2-FEEDBACK.md) (adopted 2026-07-09)  
-**Build contract draft:** [PRD-V2-Phase2.md](./PRD-V2-Phase2.md) (**Accepted**)  
-**RBAC ADR draft:** [ADR-001-phase-2-rbac.md](./ADR-001-phase-2-rbac.md) (**Accepted**)  
-**Phase 2A slice plan:** [PHASE-2A-SLICES.md](./PHASE-2A-SLICES.md) (**closed**)  
-**Ops gate SSOT:** [PHASE-2A-OPS-GATE-REGISTER.md](./PHASE-2A-OPS-GATE-REGISTER.md) (**active**)
+**Phase 1 accepted baseline:** commit `1bc1294` · tag `hot-sales-phase-1` · [../spec/phase-1-prd.md](../spec/phase-1-prd.md)  
+**Vision archive:** [../archive/vision.md](../archive/vision.md)  
+**Authoritative Phase 2 planning direction:** [./phase-2-feedback.md](./phase-2-feedback.md) (adopted 2026-07-09)  
+**Build contract draft:** [../spec/phase-2a-prd.md](../spec/phase-2a-prd.md) (**Accepted**)  
+**RBAC ADR draft:** [../adr/001-rbac.md](../adr/001-rbac.md) (**Accepted**)  
+**Phase 2A slice plan:** [../spec/phase-2a-slices.md](../spec/phase-2a-slices.md) (**closed**)  
+**Ops gate SSOT:** [../ops/gate-register.md](../ops/gate-register.md) (**closed**)
 
-Phase 2A **implementation is closed** (tag `hot-sales-phase-2a` → `8e650ff`). **Operational rollout only** — follow the gate register. Do **not** start 2B–2D from this file.
+Phase 2A **implementation is closed** (tag `hot-sales-phase-2a` → `8e650ff`). **operational rollout closed** — follow the gate register. Do **not** start 2B–2D from this file.
 
-This file remains as the original **candidate list**. It is **superseded for Phase 2 planning** by [PHASE-2-FEEDBACK.md](./PHASE-2-FEEDBACK.md) and the Accepted PRD/ADR above. Its **sequencing** and **“7-role RBAC” framing** must not be used as the build contract.
+This file remains as the original **candidate list**. It is **superseded for Phase 2 planning** by [./phase-2-feedback.md](./phase-2-feedback.md) and the Accepted PRD/ADR above. Its **sequencing** and **“7-role RBAC” framing** must not be used as the build contract.
 
 ---
 
@@ -40,7 +40,7 @@ Phase 1 shipped a reusable Hot Sales event engine under `/trade` (admin + sales 
 |-------|-------|
 | Problem | Phase 1 is Admin (`isAdminSession`) + Sales allowlist only |
 | Original sketch | Map fixed PRD job titles onto Neon Auth / `hot_sales_role` |
-| **Superseded by** | Fixed permission catalog + client-customisable roles + default templates + scoped assignments + audit — see [PHASE-2-FEEDBACK.md](./PHASE-2-FEEDBACK.md) Phase 2A |
+| **Superseded by** | Fixed permission catalog + client-customisable roles + default templates + scoped assignments + audit — see [./phase-2-feedback.md](./phase-2-feedback.md) Phase 2A |
 | Depends on | ADR-001 + PRD-V2-Phase2 approval before any schema |
 
 ### 2. Finance / deposit tables
@@ -101,7 +101,7 @@ Phase 1 shipped a reusable Hot Sales event engine under `/trade` (admin + sales 
 
 ## Suggested sequencing (draft) — **SUPERSEDED**
 
-The linear list below is retained for history only. **Use 2A → 2B → 2C → 2D** from [PHASE-2-FEEDBACK.md](./PHASE-2-FEEDBACK.md).
+The linear list below is retained for history only. **Use 2A → 2B → 2C → 2D** from [./phase-2-feedback.md](./phase-2-feedback.md).
 
 ```text
 1. RBAC model ADR          → unlocks finance/ops UI safely
@@ -126,5 +126,5 @@ The linear list below is retained for history only. **Use 2A → 2B → 2C → 2
 
 ## Next step
 
-1. Follow [PHASE-2A-OPS-GATE-REGISTER.md](./PHASE-2A-OPS-GATE-REGISTER.md) — **Gate 4B** sales allowlist is active  
+1. Follow [../ops/gate-register.md](../ops/gate-register.md) — **Gate 4B** sales allowlist is active  
 2. Keep 2B–2D blocked until separate ADR/slice approval

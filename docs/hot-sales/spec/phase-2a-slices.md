@@ -5,13 +5,13 @@
 | **Status** | **Closed** — implementation complete; ops rollout active |
 | **Approved** | 2026-07-09 |
 | **Date** | 2026-07-09 |
-| **Contract** | [PRD-V2-Phase2.md](./PRD-V2-Phase2.md) (**Accepted**) |
-| **RBAC ADR** | [ADR-001-phase-2-rbac.md](./ADR-001-phase-2-rbac.md) (**Accepted**) |
+| **Contract** | [./phase-2a-prd.md](./phase-2a-prd.md) (**Accepted**) |
+| **RBAC ADR** | [../adr/001-rbac.md](../adr/001-rbac.md) (**Accepted**) |
 | **Phase 1 baseline** | `1bc1294` · tag `hot-sales-phase-1` |
 
 ### Gate
 
-This slice plan is **Approved** and **implementation closed** (tag `hot-sales-phase-2a` → `8e650ff`). **Active work:** operational rollout — [PHASE-2A-OPS-GATE-REGISTER.md](./PHASE-2A-OPS-GATE-REGISTER.md). Do **not** start Phase 2B, 2C, or 2D or reopen 2A product scope.
+This slice plan is **Approved** and **implementation closed** (tag `hot-sales-phase-2a` → `8e650ff`). **Active work:** operational rollout — [../ops/gate-register.md](../ops/gate-register.md). Do **not** start Phase 2B, 2C, or 2D or reopen 2A product scope.
 
 ---
 
@@ -148,9 +148,9 @@ Slices 2A-5 and 2A-6 may be parallelized **after** 2A-4; both must complete befo
 - Sensitive permission grants audited (seed + role updates)
 - UI: `/admin/rbac`, `/admin/events/new`
 - **Not started:** Phase 2B / 2C / 2D
-- **Next lane:** [PHASE-2A-RELEASE-READINESS.md](./PHASE-2A-RELEASE-READINESS.md) — operational packaging  
-- **Ops tracker:** [PHASE-2A-OPS-ROLLOUT.md](./PHASE-2A-OPS-ROLLOUT.md) — rollout checklist  
-- **Gate SSOT:** [PHASE-2A-OPS-GATE-REGISTER.md](./PHASE-2A-OPS-GATE-REGISTER.md) — **active**; Gate 4B next; stop drift
+- **Next lane:** [../ops/release-readiness.md](../ops/release-readiness.md) — operational packaging  
+- **Ops tracker:** [../ops/rollout.md](../ops/rollout.md) — rollout checklist  
+- **Gate SSOT:** [../ops/gate-register.md](../ops/gate-register.md) — **active**; Gates 1–7 closed; stop drift
 
 ---
 
@@ -176,5 +176,5 @@ Slices 2A-5 and 2A-6 may be parallelized **after** 2A-4; both must complete befo
 
 ```text
 Status: Approved (2026-07-09) · Implementation closed (tag hot-sales-phase-2a @ 8e650ff)
-Active: operational rollout per PHASE-2A-OPS-GATE-REGISTER.md (Gate 4B next)
+Active: operational rollout per ../ops/gate-register.md (Gates 1–7 closed)
 ```

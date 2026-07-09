@@ -2,13 +2,13 @@
 
 **Status:** Adopted as authoritative Phase 2 **planning** direction (2026-07-09)  
 **Phase 1 baseline:** commit `1bc1294` · tag `hot-sales-phase-1`  
-**Candidate-list note (superseded for sequencing / 7-role framing):** [PHASE-2-SCOPING.md](./PHASE-2-SCOPING.md)
+**Candidate-list note (superseded for sequencing / 7-role framing):** [./phase-2-scoping.md](./phase-2-scoping.md)
 
-**Phase 2A implementation closed** at tag `hot-sales-phase-2a` → `8e650ff`. **Active:** [PHASE-2A-OPS-GATE-REGISTER.md](./PHASE-2A-OPS-GATE-REGISTER.md) (ops rollout only; Gate 4B next). Checklists: [PHASE-2A-RELEASE-READINESS.md](./PHASE-2A-RELEASE-READINESS.md) · [PHASE-2A-OPS-ROLLOUT.md](./PHASE-2A-OPS-ROLLOUT.md). Do not start 2B–2D.
+**Phase 2A implementation closed** at tag `hot-sales-phase-2a` → `8e650ff`. **Active:** [../ops/gate-register.md](../ops/gate-register.md) (ops rollout only; Gates 1–7 closed). Checklists: [../ops/release-readiness.md](../ops/release-readiness.md) · [../ops/rollout.md](../ops/rollout.md). Do not start 2B–2D.
 
-1. ~~[ADR-001-phase-2-rbac.md](./ADR-001-phase-2-rbac.md)~~ Accepted  
-2. ~~[PRD-V2-Phase2.md](./PRD-V2-Phase2.md)~~ Accepted  
-3. ~~[PHASE-2A-SLICES.md](./PHASE-2A-SLICES.md)~~ Approved  
+1. ~~[../adr/001-rbac.md](../adr/001-rbac.md)~~ Accepted  
+2. ~~[../spec/phase-2a-prd.md](../spec/phase-2a-prd.md)~~ Accepted  
+3. ~~[../spec/phase-2a-slices.md](../spec/phase-2a-slices.md)~~ Approved  
 
 **Adopted packaging:** 2A (RBAC + `/admin/events/new`) → 2B (Finance + Pickup/Ops) → 2C (Excel + notifications) → 2D (ERP sync)
 
@@ -663,8 +663,8 @@ Keep commits clean.
 ## Required
 
 ```text
-docs/hot-sales/ADR-001-phase-2-rbac.md
-docs/hot-sales/PRD-V2-Phase2.md
+docs/hot-sales/../adr/001-rbac.md
+docs/hot-sales/../spec/phase-2a-prd.md
 ```
 
 ## Recommended additional ADRs
@@ -720,8 +720,8 @@ Our proposed roles should be seeded as templates only:
 Super Admin, Client Admin, Business Unit Manager, Sales Executive, Sales Supervisor, Sales Manager, Sales Operations, Account/Finance, Viewer, Commercial Operation & Governance, General Manager.
 
 Before implementation, please write:
-1. docs/hot-sales/ADR-001-phase-2-rbac.md
-2. docs/hot-sales/PRD-V2-Phase2.md
+1. docs/hot-sales/../adr/001-rbac.md
+2. docs/hot-sales/../spec/phase-2a-prd.md
 
 Also include these cross-cutting rules:
 - Preserve Phase 1 baseline at tag hot-sales-phase-1.

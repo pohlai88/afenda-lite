@@ -1,3 +1,6 @@
+| **Doc type** | `ADR` — Phase 2A RBAC (**Accepted**) |
+| **Agent entry** | [../RUNTIME.md](../RUNTIME.md) |
+
 # ADR-001: Hot Sales Phase 2 — SaaS-style configurable RBAC
 
 | Field | Value |
@@ -9,9 +12,9 @@
 | **Scope** | Access control for `/trade` Hot Sales Event Engine (Phase 2A foundation) |
 | **Out of scope** | Finance settlement SoT, pickup ops schema, ERP sync, notification provider, declaration-portal IAM |
 
-**Related:** [PHASE-2-FEEDBACK.md](./PHASE-2-FEEDBACK.md) (authoritative planning) · [PRD-V2-Phase2.md](./PRD-V2-Phase2.md) · [PRD-V2.md](./PRD-V2.md) (Phase 1 accepted @ `1bc1294` / `hot-sales-phase-1`) · [PHASE-2-SCOPING.md](./PHASE-2-SCOPING.md) (candidate list; 7-role framing superseded)
+**Related:** [../archive/phase-2-feedback.md](../archive/phase-2-feedback.md) (authoritative planning) · [../spec/phase-2a-prd.md](../spec/phase-2a-prd.md) · [../spec/phase-1-prd.md](../spec/phase-1-prd.md) (Phase 1 accepted @ `1bc1294` / `hot-sales-phase-1`) · [../archive/phase-2-scoping.md](../archive/phase-2-scoping.md) (candidate list; 7-role framing superseded)
 
-**Gate:** This ADR, [PRD-V2-Phase2.md](./PRD-V2-Phase2.md), and [PHASE-2A-SLICES.md](./PHASE-2A-SLICES.md) are **Accepted / closed**. **Operational rollout** — [PHASE-2A-OPS-GATE-REGISTER.md](./PHASE-2A-OPS-GATE-REGISTER.md). Do not start 2B–2D or reopen 2A product scope.
+**Gate:** This ADR, [../spec/phase-2a-prd.md](../spec/phase-2a-prd.md), and [../spec/phase-2a-slices.md](../spec/phase-2a-slices.md) are **Accepted / closed**. **Operational rollout** — [../ops/gate-register.md](../ops/gate-register.md). Do not start 2B–2D or reopen 2A product scope.
 
 ---
 

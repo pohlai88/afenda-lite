@@ -5,12 +5,12 @@
 | **Status** | **Active** — operational rollout lane (not a product phase) |
 | **Date** | 2026-07-09 |
 | **Scope** | Phase 2A only. **No 2B / 2C / 2D.** No new permissions, roles, UI surfaces, or schema expansion except emergency fixes. |
-| **Contract** | [PRD-V2-Phase2.md](./PRD-V2-Phase2.md) · [ADR-001-phase-2-rbac.md](./ADR-001-phase-2-rbac.md) · [PHASE-2A-SLICES.md](./PHASE-2A-SLICES.md) |
+| **Contract** | [../spec/phase-2a-prd.md](../spec/phase-2a-prd.md) · [../adr/001-rbac.md](../adr/001-rbac.md) · [../spec/phase-2a-slices.md](../spec/phase-2a-slices.md) |
 
 ## Related
 
-- Ops checklist: [PHASE-2A-OPS-ROLLOUT.md](./PHASE-2A-OPS-ROLLOUT.md)
-- **Gate SSOT:** [PHASE-2A-OPS-GATE-REGISTER.md](./PHASE-2A-OPS-GATE-REGISTER.md)
+- Ops checklist: [./rollout.md](./rollout.md)
+- **Gate SSOT:** [./gate-register.md](./gate-register.md)
 - Product boundary: tag `hot-sales-phase-2a` → `8e650ff`
 - Post-tag hotfix: `4d203a7` on `fix/hot-sales-next-intl-trade-shell` — merge to `main` before next deploy
 - Readiness docs commit: `0fd22f4`
@@ -168,7 +168,7 @@ Do **not** plan migration rollback for RBAC logic mistakes.
 
 - [ ] Tag `hot-sales-phase-2a` protected as approved boundary
 - [ ] Migration `014` applied in target env; flag still **false**
-- [ ] App deployed; Phase 1 admin smoke OK; **sales allowlist Gate 4B** — see [gate register](./PHASE-2A-OPS-GATE-REGISTER.md)
+- [ ] App deployed; Phase 1 admin smoke OK; **sales allowlist Gate 4B** — see [gate register](./gate-register.md)
 - [ ] Pre-enable matrix completed (UI + actions)
 - [ ] Roles seeded/assigned for pilot users
 - [ ] Flag enabled in controlled env; smoke clean

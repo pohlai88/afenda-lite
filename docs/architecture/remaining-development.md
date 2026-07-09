@@ -22,7 +22,7 @@ Choose the **next PR or verification sprint** without re-deriving scope from par
 
 | Lane | Closed | Evidence |
 |------|--------|----------|
-| Hot Sales Phase 2A ops | 2026-07-10 | Gates 1–7 ✅ · [PHASE-2A-OPS-GATE-REGISTER.md](../hot-sales/PHASE-2A-OPS-GATE-REGISTER.md) · GitHub [#1](https://github.com/pohlai88/iam-check/issues/1) closed |
+| Hot Sales Phase 2A ops | 2026-07-10 | Gates 1–7 ✅ · [hot-sales/ops/gate-register.md](../hot-sales/ops/gate-register.md) · GitHub [#1](https://github.com/pohlai88/iam-check/issues/1) closed |
 | Hot Sales Phase 2A implementation | Tag `hot-sales-phase-2a` → `8e650ff` | [hot-sales/README.md](../hot-sales/README.md) |
 | Guardian Auth functional ship | 2026-07-10 | Merge to `main` · `GUARDIAN_AUTH_SHELL=true` on prod · [ADR-Auth-UI-001](./adr/ADR-Auth-UI-001-guardian-shell-neon-form.md) |
 | Architecture automated gates | Ongoing green | `npm run checks` · reliance drift · portal-atmosphere unit/interaction |
@@ -116,7 +116,7 @@ Code complete; **production journey proof** for operator invite, client join, ac
 
 ### Hot Sales Phase 2B–2D
 
-**Authority:** [PHASE-2-FEEDBACK.md](../hot-sales/PHASE-2-FEEDBACK.md) (planning only) · [PRD-V2-Phase2.md](../hot-sales/PRD-V2-Phase2.md)
+**Authority:** [PHASE-2-FEEDBACK.md](../hot-sales/archive/phase-2-feedback.md) (planning only) · [phase-2a-prd.md](../hot-sales/spec/phase-2a-prd.md)
 
 Finance, pickup, Excel, notifications, ERP — **no implementation** without new ADR and slice approval. Phase 2A RBAC is live; expanding permissions/UI/schema is a **new program**, not ops rollout.
 
@@ -223,5 +223,6 @@ Future — New ADR required
 | [pa-guardian-module-remaining.md](./slices/portal-atmosphere/pa-guardian-module-remaining.md) | Guardian-only checklist |
 | [pa-closure-register.md](./slices/portal-atmosphere/pa-closure-register.md) | PA gap IDs + work packages |
 | [s17-production-acceptance-closure.md](./slices/s17-production-acceptance-closure.md) | S17 evidence matrix |
-| [hot-sales/README.md](../hot-sales/README.md) | Hot Sales index (2A closed) |
+| [hot-sales/RUNTIME.md](../hot-sales/RUNTIME.md) | Hot Sales agent entry (2A closed) |
+| [hot-sales/README.md](../hot-sales/README.md) | Hot Sales doc index + types |
 | [SPEC-B](./specs/SPEC-B-guardian-auth-canonical-refactor.md) | Guardian functional spec |

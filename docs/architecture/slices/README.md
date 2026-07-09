@@ -26,7 +26,7 @@ When implementing a slice, complete its **Acceptance proof** checklist, then upd
 - [s15-e2e-journeys.md](./s15-e2e-journeys.md) — S15
 - [s16-admin-client-preview.md](./s16-admin-client-preview.md) — S16 (admin client preview + operator app shell)
 - [s17-production-acceptance-closure.md](./s17-production-acceptance-closure.md) — S17 (**in progress** — evidence log in spec · [TRACKING.md](../../TRACKING.md))
-- [s19-hot-sales-trade.md](./s19-hot-sales-trade.md) — S19 Hot Sales Phase 1 (**closed**) · Phase 2A ops — [PHASE-2A-OPS-GATE-REGISTER.md](../../hot-sales/PHASE-2A-OPS-GATE-REGISTER.md)
+- [s19-hot-sales-trade.md](./s19-hot-sales-trade.md) — S19 Hot Sales Phase 1 (**closed**) · [hot-sales/RUNTIME.md](../../hot-sales/RUNTIME.md)
 
 **Portal atmosphere (ADR-Portal-BG-001):** [portal-atmosphere/](./portal-atmosphere/README.md) — PA-P0–PA-P10
 

@@ -3,7 +3,8 @@
 **Updated:** 2026-07-10  
 **Program:** Backlog-01 **not closed** · S17 **in progress** · S12 **planned** (blocked on S17) · Hot Sales Phase 2A **closed** · Guardian **functional ship / visual closeout**
 
-**Remaining work SSOT:** [architecture/remaining-development.md](./architecture/remaining-development.md)
+**Remaining work SSOT:** [architecture/remaining-development.md](./architecture/remaining-development.md)  
+**Human checklist:** [HUMAN-CHECKLIST.md](./HUMAN-CHECKLIST.md) ← start here if unsure what's left
 
 ---
 
@@ -89,7 +90,7 @@ Master brief: [backlog-01-neon-auth-closure.md](./backlogs/backlog-01-neon-auth-
 
 ## Hot Sales Phase 2A (ops rollout)
 
-**Index:** [hot-sales/README.md](./hot-sales/README.md) · **Gate SSOT:** [PHASE-2A-OPS-GATE-REGISTER.md](./hot-sales/PHASE-2A-OPS-GATE-REGISTER.md)
+**Index:** [hot-sales/README.md](./hot-sales/README.md) · **Runtime:** [hot-sales/RUNTIME.md](./hot-sales/RUNTIME.md) · **Gates:** [hot-sales/ops/gate-register.md](./hot-sales/ops/gate-register.md)
 
 | Item | Status |
 | --- | --- |

@@ -1,3 +1,6 @@
+| **Doc type** | `SPEC` — Phase 2A build contract (**closed**) |
+| **Agent entry** | [../RUNTIME.md](../RUNTIME.md) |
+
 # PRD-V2 Phase 2 — Hot Sales Event Engine (build contract)
 
 | Field | Value |
@@ -5,20 +8,20 @@
 | **Status** | **Accepted** |
 | **Accepted** | 2026-07-09 |
 | **Date** | 2026-07-09 |
-| **Phase 1 baseline** | commit `1bc1294` · tag `hot-sales-phase-1` · [PRD-V2.md](./PRD-V2.md) |
-| **Authoritative planning input** | [PHASE-2-FEEDBACK.md](./PHASE-2-FEEDBACK.md) |
-| **Candidate-list note** | [PHASE-2-SCOPING.md](./PHASE-2-SCOPING.md) — sequencing / 7-role framing **superseded** |
-| **Normative RBAC ADR** | [ADR-001-phase-2-rbac.md](./ADR-001-phase-2-rbac.md) (**Accepted**) |
-| **Phase 2A slice plan** | [PHASE-2A-SLICES.md](./PHASE-2A-SLICES.md) (**closed**) |
-| **Ops gate SSOT** | [PHASE-2A-OPS-GATE-REGISTER.md](./PHASE-2A-OPS-GATE-REGISTER.md) (**active**) |
+| **Phase 1 baseline** | commit `1bc1294` · tag `hot-sales-phase-1` · [./phase-1-prd.md](./phase-1-prd.md) |
+| **Authoritative planning input** | [../archive/phase-2-feedback.md](../archive/phase-2-feedback.md) |
+| **Candidate-list note** | [../archive/phase-2-scoping.md](../archive/phase-2-scoping.md) — sequencing / 7-role framing **superseded** |
+| **Normative RBAC ADR** | [../adr/001-rbac.md](../adr/001-rbac.md) (**Accepted**) |
+| **Phase 2A slice plan** | [./phase-2a-slices.md](./phase-2a-slices.md) (**closed**) |
+| **Ops gate SSOT** | [../ops/gate-register.md](../ops/gate-register.md) (**closed**) |
 
-**Vision archive:** [PRD.md](./PRD.md)
+**Vision archive:** [../archive/vision.md](../archive/vision.md)
 
 ### Implementation gate
 
-ADR-001, this PRD, and [PHASE-2A-SLICES.md](./PHASE-2A-SLICES.md) are **Accepted / Approved**. **Implementation is closed** (tag `hot-sales-phase-2a` → `8e650ff`).
+ADR-001, this PRD, and [./phase-2a-slices.md](./phase-2a-slices.md) are **Accepted / Approved**. **Implementation is closed** (tag `hot-sales-phase-2a` → `8e650ff`).
 
-**Active phase:** operational rollout only — [PHASE-2A-OPS-GATE-REGISTER.md](./PHASE-2A-OPS-GATE-REGISTER.md). Do not start 2B–2D or reopen 2A product scope.
+**Ops rollout:** **closed** 2026-07-10 — [../ops/gate-register.md](../ops/gate-register.md). Do not start 2B–2D or reopen 2A product scope.
 
 ---
 
@@ -205,7 +208,7 @@ Prefer **additive** migrations: add → backfill → switch reads → switch wri
 
 ## 9. Permission model
 
-Normative detail: [ADR-001-phase-2-rbac.md](./ADR-001-phase-2-rbac.md).
+Normative detail: [../adr/001-rbac.md](../adr/001-rbac.md).
 
 Server-side checks required for: event create/edit/open-close; order create/view; allocation run/override; transfer approve; deposit update; pickup confirm; exports; role.manage.
 
@@ -271,9 +274,9 @@ Per-release AC in sections 4–7. Cross-cutting:
 
 | Doc | Status |
 |-----|--------|
-| [ADR-001-phase-2-rbac.md](./ADR-001-phase-2-rbac.md) | **Accepted** (2026-07-09) |
+| [../adr/001-rbac.md](../adr/001-rbac.md) | **Accepted** (2026-07-09) |
 | This PRD | **Accepted** (2026-07-09) |
-| [PHASE-2A-SLICES.md](./PHASE-2A-SLICES.md) | **Approved** (2026-07-09) |
+| [./phase-2a-slices.md](./phase-2a-slices.md) | **Approved** (2026-07-09) |
 | ADR-002 finance SoT | Before 2B settlement claims |
 | ADR-003 notifications provider | Before 2C mail |
 | ADR-004 ERP sync contract | Before 2D |
@@ -282,9 +285,9 @@ Per-release AC in sections 4–7. Cross-cutting:
 
 ## Next step
 
-**Implementation (2A-1 → 2A-9) is closed.** Active work is **operational rollout only**.
+**Implementation (2A-1 → 2A-9) is closed.** Active work is **operational rollout closed**.
 
-1. Follow [PHASE-2A-OPS-GATE-REGISTER.md](./PHASE-2A-OPS-GATE-REGISTER.md) — **gate SSOT**; Gate 4B is next  
-2. [PHASE-2A-OPS-ROLLOUT.md](./PHASE-2A-OPS-ROLLOUT.md) + [PHASE-2A-RELEASE-READINESS.md](./PHASE-2A-RELEASE-READINESS.md) — checklists  
+1. Follow [../ops/gate-register.md](../ops/gate-register.md) — **gate SSOT**; Gate 4B is next  
+2. [../ops/rollout.md](../ops/rollout.md) + [../ops/release-readiness.md](../ops/release-readiness.md) — checklists  
 3. Do **not** start 2B–2D until separate ADR/slice approval  
 4. Do **not** reopen 2A product scope (permissions, UI, schema) in this application phase

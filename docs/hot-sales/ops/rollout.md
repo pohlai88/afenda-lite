@@ -6,14 +6,14 @@
 | **Date** | 2026-07-10 (Gate 7 production RBAC enable) |
 | **GitHub issue** | [#1](https://github.com/pohlai88/iam-check/issues/1) — **closed** |
 | **Product boundary** | Tag `hot-sales-phase-2a` → `8e650ff` (**immutable**) |
-| **Readiness docs** | Commit `0fd22f4` · [PHASE-2A-RELEASE-READINESS.md](./PHASE-2A-RELEASE-READINESS.md) |
-| **Gate SSOT** | [PHASE-2A-OPS-GATE-REGISTER.md](./PHASE-2A-OPS-GATE-REGISTER.md) — **read first** |
+| **Readiness docs** | Commit `0fd22f4` · [./release-readiness.md](./release-readiness.md) |
+| **Gate SSOT** | [./gate-register.md](./gate-register.md) — **read first** |
 
 ## Scope statement
 
 This tracker covers **operational rollout** of Phase 2A RBAC after the product boundary tag `hot-sales-phase-2a`.
 
-**Gate status and drift rules:** [PHASE-2A-OPS-GATE-REGISTER.md](./PHASE-2A-OPS-GATE-REGISTER.md) (canonical).
+**Gate status and drift rules:** [./gate-register.md](./gate-register.md) (canonical).
 
 It does **not** reopen 2A design and does **not** authorize 2B–2D scope.
 
@@ -38,7 +38,7 @@ It does **not** reopen 2A design and does **not** authorize 2B–2D scope.
 
 - [x] Product boundary confirmed: `hot-sales-phase-2a` → `8e650ff`
 - [x] Readiness docs confirmed: `0fd22f4`
-- [x] [PHASE-2A-RELEASE-READINESS.md](./PHASE-2A-RELEASE-READINESS.md) reviewed
+- [x] [./release-readiness.md](./release-readiness.md) reviewed
 - [x] Cross-links verified from slices / PRD-V2 / feedback / S19
 
 ## Migration
@@ -52,19 +52,19 @@ It does **not** reopen 2A design and does **not** authorize 2B–2D scope.
 **Critical checkpoint — do not skip or compress.**
 
 - [x] Deploy with RBAC disabled
-- [x] Admin matrix passed (Gate 4 admin) — see [gate register](./PHASE-2A-OPS-GATE-REGISTER.md)
-- [x] **Gate 4B:** Sales allowlist matrix — **closed as data/setup** (see [gate register](./PHASE-2A-OPS-GATE-REGISTER.md#gate-4b--sales-allowlist-matrix-closed--datasetup))
+- [x] Admin matrix passed (Gate 4 admin) — see [gate register](./gate-register.md)
+- [x] **Gate 4B:** Sales allowlist matrix — **closed as data/setup** (see [gate register](./gate-register.md#gate-4b--sales-allowlist-matrix-closed--datasetup))
 - [x] Confirm legacy/Phase 1 admin path still works (Gate 4 admin)
 - [x] Confirm no RBAC-only behavior is active (production `HOT_SALES_RBAC_ENABLED=false`)
 
 ### Gate 4B — sales allowlist (flag off)
 
-See [PHASE-2A-OPS-GATE-REGISTER.md § Gate 4B](./PHASE-2A-OPS-GATE-REGISTER.md#gate-4b--sales-allowlist-matrix-active-work).
+See [./gate-register.md § Gate 4B](./gate-register.md#gate-4b--sales-allowlist-matrix-active-work).
 
 - [x] Production DB checked (`br-tiny-hill-ao82jp6f`): allowlist row added (data-ops)
 - [x] Sales test account allowlisted on live deploy DB (`br-super-hill-aojc9a4p`) for matrix
 - [x] Open event + product exists for order-create test — live + production branch
-- [x] Rows 6–10 re-run (2026-07-10) — **5/5 pass** — see [gate register](./PHASE-2A-OPS-GATE-REGISTER.md#production-evidence-2026-07-09-data-setup--2026-07-10-matrix)
+- [x] Rows 6–10 re-run (2026-07-10) — **5/5 pass** — see [gate register](./gate-register.md#production-evidence-2026-07-09-data-setup--2026-07-10-matrix)
 
 ## Seed / assignment
 
@@ -94,7 +94,7 @@ Verify **UI and action-level** access (UI hiding alone is not enough):
 - [x] Run `npm run env:compose`
 - [x] Deploy controlled environment (`localhost:3000` dev server)
 - [x] Re-run UI + action matrix — **17/17 PASS** (2026-07-10)
-- [x] Capture evidence — [gate register § Gate 6](./PHASE-2A-OPS-GATE-REGISTER.md#gate-6--controlled-rbac-matrix-local-only); code under test `51e9a5b`; register closeout `25c3891`; local `.env` restored to `HOT_SALES_RBAC_ENABLED=false`
+- [x] Capture evidence — [gate register § Gate 6](./gate-register.md#gate-6--controlled-rbac-matrix-local-only); code under test `51e9a5b`; register closeout `25c3891`; local `.env` restored to `HOT_SALES_RBAC_ENABLED=false`
 
 ## Production enable
 
@@ -132,7 +132,7 @@ Primary lever (not DB rollback):
 → production enable ✅ Gate 7 PASS (2026-07-10)
 ```
 
-Post-tag hotfix `4d203a7` (TradeShell next-intl) must be on `main` before the next production deploy — see [gate register](./PHASE-2A-OPS-GATE-REGISTER.md#hotfix-merge-requirement).
+Post-tag hotfix `4d203a7` (TradeShell next-intl) must be on `main` before the next production deploy — see [gate register](./gate-register.md#hotfix-merge-requirement).
 
 ---
 
@@ -141,7 +141,7 @@ Post-tag hotfix `4d203a7` (TradeShell next-intl) must be on `main` before the ne
 **DB cutover:** ✅ `br-tiny-hill-ao82jp6f` live on Vercel.  
 **Auth hygiene:** ✅ `allow_localhost: false` on production branch.  
 **Production RBAC:** ✅ `HOT_SALES_RBAC_ENABLED=true`; compact smoke **17/17 PASS**.  
-Evidence: [gate register § Gate 7](./PHASE-2A-OPS-GATE-REGISTER.md#gate-7--production-rbac-enable-complete).
+Evidence: [gate register § Gate 7](./gate-register.md#gate-7--production-rbac-enable-complete).
 
 **Rollback:** `HOT_SALES_RBAC_ENABLED=false` → `env:compose` → `sync:vercel` → `vercel deploy --prod`.
 
