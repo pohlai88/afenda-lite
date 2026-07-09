@@ -26,12 +26,13 @@ Read this index before any Hot Sales work. Agents: see also [AGENTS.md](../../AG
 | Phase 1 tag | `hot-sales-phase-1` → `1bc1294` |
 | Phase 2A tag | `hot-sales-phase-2a` → `8e650ff` (**immutable**) |
 | Post-tag hotfix | `4d203a7` merged to `main` (`ee14f10`) |
-| RBAC flag | `HOT_SALES_RBAC_ENABLED=false` until **Gate 6** |
+| RBAC flag | `HOT_SALES_RBAC_ENABLED=false` in production until **Gate 7** (Gate 6 controlled local pass recorded) |
 | Production URL | `https://iam-check.vercel.app` |
 | Production DB branch | `br-tiny-hill-ao82jp6f` only |
 
-**Gate 4B:** **PASS** — matrix rows 6–10 passed on live app (2026-07-10).  
-**Next:** Gate 5 transfer-lite triage. **Still open:** Vercel DB cutover to `br-tiny-hill-ao82jp6f`. **Blocked:** Gate 6–7, 2B–2D, RBAC enable.
+**Gates 1–6:** ✅ complete (2026-07-10).  
+**Gate 6:** controlled local `HOT_SALES_RBAC_ENABLED=true` matrix **17/17 PASS** — commit under test `51e9a5b`; gate-register closeout on `main` @ `25c3891`. Production flag remains **false**; local `.env` restored to `HOT_SALES_RBAC_ENABLED=false`.  
+**Next:** Gate 7 production RBAC enable — **blocked** until Vercel DB cutover (`dev-spec-b` / `br-super-hill-aojc9a4p` → canonical `br-tiny-hill-ao82jp6f`). **Blocked:** 2B–2D, production RBAC enable.
 
 ---
 

@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|-------|
 | **Status** | **Open** — operational tracker only |
-| **Date** | 2026-07-09 |
+| **Date** | 2026-07-10 (Gate 6 sync) |
 | **GitHub issue** | [#1](https://github.com/pohlai88/iam-check/issues/1) |
 | **Product boundary** | Tag `hot-sales-phase-2a` → `8e650ff` (**immutable**) |
 | **Readiness docs** | Commit `0fd22f4` · [PHASE-2A-RELEASE-READINESS.md](./PHASE-2A-RELEASE-READINESS.md) |
@@ -36,16 +36,16 @@ It does **not** reopen 2A design and does **not** authorize 2B–2D scope.
 
 ## Fixed refs
 
-- [ ] Product boundary confirmed: `hot-sales-phase-2a` → `8e650ff`
-- [ ] Readiness docs confirmed: `0fd22f4`
-- [ ] [PHASE-2A-RELEASE-READINESS.md](./PHASE-2A-RELEASE-READINESS.md) reviewed
-- [ ] Cross-links verified from slices / PRD-V2 / feedback / S19
+- [x] Product boundary confirmed: `hot-sales-phase-2a` → `8e650ff`
+- [x] Readiness docs confirmed: `0fd22f4`
+- [x] [PHASE-2A-RELEASE-READINESS.md](./PHASE-2A-RELEASE-READINESS.md) reviewed
+- [x] Cross-links verified from slices / PRD-V2 / feedback / S19
 
 ## Migration
 
-- [ ] Apply `014_hot_sales_rbac.sql`
-- [ ] Confirm migration applied successfully
-- [ ] Confirm app still runs with `HOT_SALES_RBAC_ENABLED=false`
+- [x] Apply `014_hot_sales_rbac.sql`
+- [x] Confirm migration applied successfully
+- [x] Confirm app still runs with `HOT_SALES_RBAC_ENABLED=false`
 
 ## Flag=false smoke
 
@@ -54,8 +54,8 @@ It does **not** reopen 2A design and does **not** authorize 2B–2D scope.
 - [x] Deploy with RBAC disabled
 - [x] Admin matrix passed (Gate 4 admin) — see [gate register](./PHASE-2A-OPS-GATE-REGISTER.md)
 - [x] **Gate 4B:** Sales allowlist matrix — **closed as data/setup** (see [gate register](./PHASE-2A-OPS-GATE-REGISTER.md#gate-4b--sales-allowlist-matrix-closed--datasetup))
-- [ ] Confirm legacy/Phase 1 admin path still works (ongoing)
-- [ ] Confirm no RBAC-only behavior is active
+- [x] Confirm legacy/Phase 1 admin path still works (Gate 4 admin)
+- [x] Confirm no RBAC-only behavior is active (production `HOT_SALES_RBAC_ENABLED=false`)
 
 ### Gate 4B — sales allowlist (flag off)
 
@@ -68,41 +68,41 @@ See [PHASE-2A-OPS-GATE-REGISTER.md § Gate 4B](./PHASE-2A-OPS-GATE-REGISTER.md#g
 
 ## Seed / assignment
 
-- [ ] Seed/update roles
-- [ ] Assign initial users
-- [ ] Confirm sensitive permissions require explicit grants
-- [ ] Confirm sensitive grant seed/update writes `hot_sales_rbac_audit`
+- [x] Seed/update roles (Gate 6 controlled local run on `dev-spec-b`)
+- [x] Assign initial users (platform `sales_executive` for matrix)
+- [x] Confirm sensitive permissions require explicit grants (`rbac.test.ts`)
+- [x] Confirm sensitive grant seed/update writes `hot_sales_rbac_audit`
 
 ## Pre-enable matrix
 
 Verify **UI and action-level** access (UI hiding alone is not enough):
 
-- [ ] `/trade/[locale]/admin/rbac` loads for intended admin
-- [ ] `/trade/[locale]/admin/rbac` denies unauthorized user
-- [ ] `/trade/[locale]/admin/events/new` loads for authorized user
-- [ ] Event create action allows authorized user
-- [ ] Event create action denies unauthorized user
-- [ ] Unknown team denies with `team_scope_unresolved`
-- [ ] Unknown BU denies with `bu_scope_unresolved`
-- [ ] Sensitive permission without explicit grant denies
-- [ ] Sensitive permission with explicit grant allows
-- [ ] Action guards verified independently of UI visibility
+- [x] `/trade/[locale]/admin/rbac` loads for intended admin
+- [x] `/trade/[locale]/admin/rbac` denies unauthorized user
+- [x] `/trade/[locale]/admin/events/new` loads for authorized user
+- [x] Event create action allows authorized user
+- [x] Event create action denies unauthorized user
+- [x] Unknown team denies with `team_scope_unresolved`
+- [x] Unknown BU denies with `bu_scope_unresolved`
+- [x] Sensitive permission without explicit grant denies
+- [x] Sensitive permission with explicit grant allows
+- [x] Action guards verified independently of UI visibility
 
 ## Controlled enable
 
-- [ ] Set `HOT_SALES_RBAC_ENABLED=true`
-- [ ] Run `npm run env:compose`
-- [ ] Deploy controlled environment
-- [ ] Re-run UI + action matrix
-- [ ] Capture evidence
+- [x] Set `HOT_SALES_RBAC_ENABLED=true` (local controlled run only)
+- [x] Run `npm run env:compose`
+- [x] Deploy controlled environment (`localhost:3000` dev server)
+- [x] Re-run UI + action matrix — **17/17 PASS** (2026-07-10)
+- [x] Capture evidence — [gate register § Gate 6](./PHASE-2A-OPS-GATE-REGISTER.md#gate-6--controlled-rbac-matrix-local-only); code under test `51e9a5b`; register closeout `25c3891`; local `.env` restored to `HOT_SALES_RBAC_ENABLED=false`
 
 ## Production enable
 
-- [ ] Confirm controlled environment evidence is clean
-- [ ] Enable production flag
-- [ ] Run smoke
+- [x] Confirm controlled environment evidence is clean (Gate 6)
+- [ ] Enable production flag — **not done**; blocked until Gate 7
+- [ ] Run smoke (production, `flag=true`)
 - [ ] Monitor denial reasons
-- [ ] Confirm rollback path remains available
+- [ ] Confirm rollback path remains available (production drill)
 
 ## Rollback
 
@@ -125,13 +125,27 @@ Primary lever (not DB rollback):
 → merge hotfix 4d203a7 to main ✅
 → operator: production allowlist + event data
 → re-run sales matrix rows 6–10
-→ matrix: UI + actions
-→ flag=true in controlled env   ← Gate 6 blocked until 4B passes
-→ evidence
-→ production enable             ← Gate 7 blocked
+→ matrix: UI + actions ✅ (Gate 6 local 17/17 · `51e9a5b`)
+→ flag=true in controlled env ✅ (local only; production flag stays false)
+→ evidence ✅ (`25c3891` gate register)
+→ DB cutover (Vercel `dev-spec-b` → `br-tiny-hill-ao82jp6f`) ⏸
+→ production enable ⏸ Gate 7 blocked
 ```
 
 Post-tag hotfix `4d203a7` (TradeShell next-intl) must be on `main` before the next production deploy — see [gate register](./PHASE-2A-OPS-GATE-REGISTER.md#hotfix-merge-requirement).
+
+---
+
+## Gate 7 blocker — DB cutover
+
+Production RBAC enable is **not done**. Gate 7 remains blocked until Vercel `DATABASE_URL` cutover:
+
+| Branch | Role |
+|--------|------|
+| `br-super-hill-aojc9a4p` (`dev-spec-b`) | Current live Vercel deploy DB |
+| `br-tiny-hill-ao82jp6f` | Canonical production branch (gate SSOT) |
+
+Allowlist + event data exist on both; cutover is a separate ops step before `HOT_SALES_RBAC_ENABLED=true` on Vercel.
 
 ---
 
