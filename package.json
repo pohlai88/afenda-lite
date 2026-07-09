@@ -42,6 +42,7 @@
     "audit:vercel": "node scripts/audit-vercel-env.mjs production",
     "audit:github-actions-secrets": "node scripts/audit-github-actions-secrets.mjs",
     "sync:github-actions-secrets": "node scripts/sync-github-actions-secrets.mjs",
+    "sync:github-actions-secrets:production": "node scripts/sync-github-actions-secrets-production.mjs",
     "protect:main": "node scripts/enable-main-branch-protection.mjs",
     "gh": "node scripts/gh-cli.mjs",
     "db:backfill": "node scripts/db-backfill-migrations.mjs",

@@ -77,13 +77,15 @@ Build failed with `Invalid server environment` during `next build`. Journey job 
 **Fix:**
 
 ```bash
-npm run env:compose
-npm run sync:github-actions-secrets
-npm run audit:github-actions-secrets
-git push origin main   # triggers CI
+# Local dev env is dev-spec-b — use production profile for CI:
+$env:CI_PRODUCTION_DATABASE_URL="<production pooler URL from Neon Console>"
+npm run sync:github-actions-secrets:production
+
+# Or align env.config + env.secret to production branch first, then:
+npm run sync:github-actions-secrets:production
 ```
 
-**Note:** Sync used local `env.config` + `env.secret`. Ensure `DATABASE_URL` on GitHub matches the same Neon branch as `NEON_AUTH_*`. Re-sync with production-aligned env if CI DB branch differs.
+**Do not** use `npm run sync:github-actions-secrets` alone when `env.config` points at `dev-spec-b` — it overwrites GitHub with dev Neon Auth and breaks manifest validation.
 
 **Stale GitHub secrets (remove manually):** `NEXT_PUBLIC_SUPABASE_*`, `SUPABASE_SERVICE_ROLE_KEY`
 
