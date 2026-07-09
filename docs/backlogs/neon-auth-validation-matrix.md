@@ -83,7 +83,7 @@ npm run test:unit -- lib/auth/neon-auth.manifest.test.ts
 
 | Setting | Live | Manifest | UI |
 | --- | --- | --- | --- |
-| Google (shared) | on branch | listed | `social: false` — **intentionally hidden** |
+| Google (shared) | on branch | listed | `social: true` — AuthView shows Google (Guardian 2-path chamber) |
 
 ---
 

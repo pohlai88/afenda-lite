@@ -36,7 +36,9 @@ const meta = {
           "Reusable cinematic auth system — `GuardianAuthFacade` composes",
           "`OwlScene`, `EditorialPosterCopy`, `GuardianShield`, and `ThemeToggle`.",
           "Production `/auth/*` mounts `PortalAuthNeonView` in the access slot (ADR-Auth-UI-001).",
-          "`AccessVaultCard` is Storybook mock only.",
+          "Living sky cycle: 48s ambient morning→dusk→night→dawn (pauses on focus / theme prefer).",
+          "Readable sentence copy crossfade (no flip). Day = sunrise ivory/peach; night = moonlit black glass. Identity + Neon 2-path chamber.",
+          "Layout target: auth-hero-dark / auth-hero-light @1024. `AccessVaultCard` is Storybook mock only.",
           `Assets: ${Object.values(GUARDIAN_AUTH_ASSET_SET).join(", ")}.`,
         ].join(" "),
       },
@@ -47,7 +49,7 @@ const meta = {
     mode: {
       control: "inline-radio",
       options: GUARDIAN_MODES,
-      description: "Day/night owl cross-fade",
+      description: "Day/night morpho CSS presentation (single iso PNG)",
     },
     state: {
       control: "select",
@@ -156,26 +158,32 @@ export const ReferenceComparisonNight: Story = {
   parameters: {
     ...LAPTOP_1024,
     layout: "fullscreen",
+    globals: { theme: "dark" },
     docs: {
       description: {
-        story: `Live Guardian prod wiring vs ${REFERENCE_DARK}. Functional parity done; pixel match is human sign-off.`,
+        story: [
+          `Side-by-side: live Guardian (classic TRUTH/IS/PROTECTED + Neon chamber) vs ${REFERENCE_DARK}.`,
+          "Sign-off bar: one poster composition — stacked lockup, center-back owl, glass vault. Pixel match is human.",
+        ].join(" "),
       },
     },
   },
   render: () => (
-    <div className="grid min-h-svh grid-cols-1 bg-black lg:grid-cols-2">
-      <div className="relative min-h-svh min-w-0">
+    <div className="grid min-h-[100dvh] grid-cols-1 bg-black lg:grid-cols-2">
+      <div className="relative min-h-[100dvh] min-w-0 overflow-hidden">
+        <p className="pointer-events-none absolute top-2 left-3 z-30 font-[family-name:var(--font-ui)] text-[10px] tracking-[0.18em] text-white/50 uppercase">
+          Live Guardian
+        </p>
         <GuardianAuthNeonSlotPreview />
       </div>
-      <div className="flex min-h-svh min-w-0 flex-col border-l border-white/10">
-        <p className="shrink-0 px-4 py-2 font-[family-name:var(--font-ui)] text-xs tracking-wide text-white/60 uppercase">
-          Reference comp
+      <div className="relative flex min-h-[100dvh] min-w-0 flex-col border-l border-white/10 bg-black">
+        <p className="shrink-0 px-4 py-2 font-[family-name:var(--font-ui)] text-[10px] tracking-[0.18em] text-white/50 uppercase">
+          Reference — auth-hero-dark
         </p>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          alt=""
-          aria-hidden="true"
-          className="h-auto w-full object-contain object-top"
+          alt="Auth hero dark reference composition"
+          className="h-full w-full flex-1 object-cover object-center"
           height={900}
           src={REFERENCE_DARK}
           width={1024}
@@ -193,24 +201,29 @@ export const ReferenceComparisonDay: Story = {
     globals: { theme: "light" },
     docs: {
       description: {
-        story: `Live Guardian prod wiring vs ${REFERENCE_LIGHT}. Toggle Storybook theme to day before compare.`,
+        story: [
+          `Side-by-side: live Guardian (classic lockup + Access Vault mock) vs ${REFERENCE_LIGHT}.`,
+          "Sign-off bar: TRUTH inverted on day, gold PROTECTED, seal, center-back owl. Pixel match is human.",
+        ].join(" "),
       },
     },
   },
   render: () => (
-    <div className="grid min-h-svh grid-cols-1 bg-[color:var(--portal-bg)] lg:grid-cols-2">
-      <div className="relative min-h-svh min-w-0">
+    <div className="grid min-h-[100dvh] grid-cols-1 bg-[color:var(--portal-bg)] lg:grid-cols-2">
+      <div className="relative min-h-[100dvh] min-w-0 overflow-hidden">
+        <p className="pointer-events-none absolute top-2 left-3 z-30 font-[family-name:var(--font-ui)] text-[10px] tracking-[0.18em] text-[color:var(--portal-muted)] uppercase">
+          Live Guardian
+        </p>
         <GuardianAuthFacadePreview mode="day" state="idle" />
       </div>
-      <div className="flex min-h-svh min-w-0 flex-col border-l border-[color:var(--portal-border)]">
-        <p className="shrink-0 px-4 py-2 font-[family-name:var(--font-ui)] text-xs tracking-wide text-[color:var(--portal-muted)] uppercase">
-          Reference comp
+      <div className="relative flex min-h-[100dvh] min-w-0 flex-col border-l border-[color:var(--portal-border)]">
+        <p className="shrink-0 px-4 py-2 font-[family-name:var(--font-ui)] text-[10px] tracking-[0.18em] text-[color:var(--portal-muted)] uppercase">
+          Reference — auth-hero-light
         </p>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          alt=""
-          aria-hidden="true"
-          className="h-auto w-full object-contain object-top"
+          alt="Auth hero light reference composition"
+          className="h-full w-full flex-1 object-cover object-center"
           height={900}
           src={REFERENCE_LIGHT}
           width={1024}

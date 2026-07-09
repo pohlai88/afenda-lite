@@ -41,6 +41,7 @@ Two methods were considered:
 5. **Theme:** Guardian `night`/`day` syncs to portal `useThemeControls` (`dark`/`light`); no orphan local theme store.
 6. **`/join`:** `GuardianInvitationJoinPage` uses the same Guardian shell with `leftPanel` + invitation stepper (no longer `PortalAuthLayout`). Rollback via `GUARDIAN_AUTH_SHELL=false`.
 7. **Atmosphere experiments:** Fade Owl, Dual Guardian, Comp Laptop stay Storybook-only (ADR-Portal-BG-001 boundary preserved).
+8. **Owl asset (morpho final):** Production uses a **single** painterly iso — `public/brand/owls/guardian-dramatic-iso.png` — with CSS day/night presentation (`.owl-scene__owl--morpho`). The reference kit’s dual PNG cross-fade (`/public/auth/owls/owl-*-cutout.png`) is **not** production canon. Gap register: [pa-guardian-auth-reference-gaps.md](../slices/portal-atmosphere/pa-guardian-auth-reference-gaps.md).
 
 ### AuthView mounting contract
 
@@ -63,7 +64,7 @@ Do **not** nest a second `NeonAuthUIProvider`. Do **not** reimplement email/pass
 | Method A (PortalAuthLayout on sign-in) | Abandons approved cinematic Guardian direction; dual brand on auth ingress |
 | Custom credential form POST | Violates Neon Auth as SoT |
 | Studio `login-page-02` LoginForm in prod | Replaces Neon; layout reference only per studio-canonical-kit |
-| Mock Google SSO in vault | Contradicts manifest `ui.features.social: false` |
+| Mock Google SSO in vault | Fake CTA forbidden; real Google via AuthView when `ui.features.social: true` |
 
 ---
 

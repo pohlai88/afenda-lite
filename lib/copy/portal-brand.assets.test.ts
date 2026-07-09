@@ -72,6 +72,7 @@ describe("guardian auth facade owl cutouts", () => {
     }
     expect(GUARDIAN_AUTH_ASSET_SET.owlDay).toBe(GUARDIAN_DRAMATIC_OWL_CORE_PATH);
     expect(GUARDIAN_AUTH_ASSET_SET.owlNight).toBe(GUARDIAN_DRAMATIC_OWL_CORE_PATH);
+    expect(GUARDIAN_AUTH_ASSET_SET.owlNightGhost).toBe(GUARDIAN_DRAMATIC_OWL_CORE_PATH);
     expect(GUARDIAN_AUTH_ASSET_SET.owlDay).toBe(GUARDIAN_AUTH_ASSET_SET.owlNight);
   });
 });

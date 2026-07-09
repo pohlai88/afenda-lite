@@ -3,6 +3,7 @@
  */
 import { describe, expect, it } from "vitest";
 import {
+  GUARDIAN_CLASSIC_SEAL,
   guardianModeFromPortalTheme,
   portalThemeFromGuardianMode,
   resolveGuardianAuthCopyOverride,
@@ -17,11 +18,15 @@ import {
 } from "@/components/portal-atmosphere/contracts/portal-editorial.contract";
 
 describe("guardian-editorial-copy", () => {
-  it("maps portal sharp editorial contract to Guardian modes", () => {
+  it("defaults Guardian facade to readable sky-cycle sentences", () => {
     const copy = resolveGuardianEditorialCopy();
+    expect(copy.night.variant).toBe("sentence");
+    expect(copy.day.variant).toBe("sentence");
     expect(copy.night.eyebrow).toBe(PORTAL_NAME);
     expect(copy.night.headline).toBe(SHARP_OWL_EDITORIAL_BY_THEME.dark.headline);
+    expect(copy.day.headline).toBe(SHARP_OWL_EDITORIAL_BY_THEME.light.headline);
     expect(copy.day.proofline).toBe(SHARP_OWL_SEAL);
+    expect(GUARDIAN_CLASSIC_SEAL).toContain("SECURE");
   });
 
   it("maps portal theme to Guardian mode bidirectionally", () => {
@@ -30,21 +35,23 @@ describe("guardian-editorial-copy", () => {
     expect(portalThemeFromGuardianMode("day")).toBe("light");
   });
 
-  it("overrides poster copy for join invitation hero", () => {
+  it("overrides poster copy for join invitation as sentence mode", () => {
     const override = resolveGuardianJoinCopyOverride();
 
+    expect(override?.night?.variant).toBe("sentence");
     expect(override?.night?.headline).toBe(portalCopy.clientInvitationJoin.heroTitle);
     expect(override?.day?.subheadline).toBe(
       portalCopy.clientInvitationJoin.heroDescription,
     );
   });
 
-  it("overrides poster copy for org operator sign-in", () => {
+  it("overrides poster copy for org operator sign-in as sentence mode", () => {
     const override = resolveGuardianAuthCopyOverride({
       path: "sign-in",
       from: "org",
     });
 
+    expect(override?.night?.variant).toBe("sentence");
     expect(override?.night?.headline).toBe(portalCopy.orgSignIn.heroTitle);
     expect(override?.day?.subheadline).toBe(portalCopy.orgSignIn.heroDescription);
     expect(

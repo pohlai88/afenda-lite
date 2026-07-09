@@ -74,7 +74,7 @@
         "forgotPassword": true
       },
       "signUp": true,
-      "social": false
+      "social": true
     }
   }
 }

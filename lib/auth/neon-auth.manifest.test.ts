@@ -34,17 +34,17 @@ describe("neon-auth manifest", () => {
     expect(neonAuthUiProviderDefaults.changeEmail).toBe(false);
   });
 
-  it("keeps social login off unless product enables it in manifest", () => {
-    expect(neonAuthUiFeatures.social).toBe(false);
-    expect(neonAuthUiProviderDefaults.social).toBeUndefined();
+  it("enables social login from materialized OAuth (Google shared)", () => {
+    expect(neonAuthUiFeatures.social).toBe(true);
+    expect(neonAuthUiProviderDefaults.social).toEqual({ providers: ["google"] });
+    expect(neonAuthUiFeatures.magicLink).toBe(true);
   });
 
   it("derives social providers from materialized oauth config when enabled", () => {
-    if (manifest.ui.features.social !== true || !manifest.oauthProviders?.length) {
-      return;
-    }
+    expect(manifest.ui.features.social).toBe(true);
+    expect(manifest.oauthProviders?.length).toBeGreaterThan(0);
     const social = neonAuthSocialConfigFromManifest(manifest);
-    expect(social?.providers.length).toBeGreaterThan(0);
+    expect(social?.providers).toContain("google");
   });
 
   it("declares organization plugin policy in manifest", () => {

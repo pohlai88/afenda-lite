@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode, useCallback, useState } from "react";
+import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import type { GuardianAssetSet, GuardianCopy, GuardianMode, GuardianState } from "./types";
 import { OwlScene } from "./OwlScene";
 import { EditorialPosterCopy } from "./EditorialPosterCopy";
@@ -48,6 +48,11 @@ export function GuardianAuthFacade({
   const [ambientPaused, setAmbientPaused] = useState(false);
   const [typingPaused, setTypingPaused] = useState(false);
 
+  // Track current mode via ref so the auto-cycle interval doesn't become stale
+  // without mode being an interval dependency (which would restart the timer on each switch).
+  const currentModeRef = useRef(mode);
+  useEffect(() => { currentModeRef.current = mode; }, [mode]);
+
   const resolvedCopy = {
     day: { ...defaultCopy.day, ...copy?.day },
     night: { ...defaultCopy.night, ...copy?.night },
@@ -62,6 +67,18 @@ export function GuardianAuthFacade({
   );
 
   const skyAmbient = ambient && !ambientPaused;
+
+  // Auto-cycle: switch app theme every half sky-duration (12s = 24s / 2).
+  // Uses ref so mode reads stay fresh without restarting the interval on each switch.
+  // When the user clicks the toggle, ambientPaused = true → skyAmbient = false → interval clears.
+  useEffect(() => {
+    if (!skyAmbient) return;
+    const HALF_CYCLE_MS = 12_000;
+    const id = setInterval(() => {
+      onModeChange?.(currentModeRef.current === "day" ? "night" : "day");
+    }, HALF_CYCLE_MS);
+    return () => clearInterval(id);
+  }, [skyAmbient, onModeChange]); // mode intentionally excluded — read via ref
 
   return (
     <main
@@ -85,8 +102,6 @@ export function GuardianAuthFacade({
         <span>{resolvedCopy[mode].eyebrow}</span>
       </header>
 
-      <GuardianCornerPanel mode={mode} orgLink={orgLink} onChange={handleModeChange} />
-
       <section className="guardian-auth__left-panel">
         {leftPanel ?? (
           <EditorialPosterCopy copyByMode={resolvedCopy} mode={mode} />
@@ -97,12 +112,14 @@ export function GuardianAuthFacade({
         <GuardianShield state={state} mode={mode} />
       </section>
 
-      {/* onFocusCapture/onBlurCapture pause ambient only when the vault is active */}
+      {/* Card-zone is a flex column: corner panel (toggle) + chamber card stacked together.
+          This keeps the toggle anchored to the column — no viewport-coordinate drift. */}
       <section
         className="guardian-auth__card-zone"
         onFocusCapture={() => setTypingPaused(true)}
         onBlurCapture={() => setTypingPaused(false)}
       >
+        <GuardianCornerPanel mode={mode} orgLink={orgLink} onChange={handleModeChange} />
         {children ?? <AccessVaultCard mode={mode} state={state} />}
       </section>
     </main>

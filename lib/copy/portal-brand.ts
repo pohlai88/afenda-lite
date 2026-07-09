@@ -46,14 +46,18 @@ export const BRAND_SHARP_OWL_WIDTH = BRAND_DUAL_GUARDIAN_OWL_DARK_WIDTH;
 export const BRAND_SHARP_OWL_HEIGHT = BRAND_DUAL_GUARDIAN_OWL_DARK_HEIGHT;
 
 /**
- * Guardian Auth facade — single dramatic iso; day/night are CSS presentations (morpho).
+ * Guardian Auth facade — morpho final (ADR-Auth-UI-001 §8).
+ * Single `guardian-dramatic-iso.png` for hero + night fade-ghost.
+ * Day/night presentation and ghost fade are CSS-owned (not dual cutout PNGs).
  */
 export const GUARDIAN_AUTH_OWL_DAY_PATH = GUARDIAN_DRAMATIC_OWL_CORE_PATH;
 export const GUARDIAN_AUTH_OWL_NIGHT_PATH = GUARDIAN_DRAMATIC_OWL_CORE_PATH;
 
+/** Production asset set — morpho hero + night fade-ghost (same PNG, offset CSS echo). */
 export const GUARDIAN_AUTH_ASSET_SET = {
   owlDay: GUARDIAN_AUTH_OWL_DAY_PATH,
   owlNight: GUARDIAN_AUTH_OWL_NIGHT_PATH,
+  owlNightGhost: GUARDIAN_DRAMATIC_OWL_CORE_PATH,
 } as const;
 
 /**
