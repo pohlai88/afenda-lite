@@ -50,9 +50,14 @@ export async function TradeShell({
                 {resolvedLocale === "vi" ? "Đơn của tôi" : "My orders"}
               </Link>
               {isAdmin ? (
-                <Link href={tradeHref(resolvedLocale, "/admin/events")}>
-                  {resolvedLocale === "vi" ? "Quản trị" : "Admin"}
-                </Link>
+                <>
+                  <Link href={tradeHref(resolvedLocale, "/admin/events")}>
+                    {resolvedLocale === "vi" ? "Quản trị" : "Admin"}
+                  </Link>
+                  <Link href={tradeHref(resolvedLocale, "/admin/rbac")}>
+                    {resolvedLocale === "vi" ? "Vai trò" : "Roles"}
+                  </Link>
+                </>
               ) : null}
               <TradeLocaleSwitcher locale={resolvedLocale} />
             </nav>

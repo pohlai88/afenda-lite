@@ -137,7 +137,17 @@ Slices 2A-5 and 2A-6 may be parallelized **after** 2A-4; both must complete befo
 | | |
 |--|--|
 | **Goal** | Evidence + closure note; optional tag `hot-sales-phase-2a` |
+| **Status** | **Closed** (2026-07-09) |
+| **Evidence** | `014` applied; 35 trade unit tests; smoke e2e pass; flag defaults off |
 | **Depends on** | 2A-8 |
+
+### Closure notes
+
+- `HOT_SALES_RBAC_ENABLED` — rollback switch (default off = Phase 1 path)
+- Unknown team/BU → deny (`team_scope_unresolved` / `bu_scope_unresolved`)
+- Sensitive permission grants audited (seed + role updates)
+- UI: `/admin/rbac`, `/admin/events/new`
+- **Not started:** Phase 2B / 2C / 2D
 
 ---
 
