@@ -2,9 +2,9 @@
 
 | Field | Value |
 |-------|-------|
-| **Status** | **Open** — operational tracker only |
-| **Date** | 2026-07-10 (Gate 6 sync) |
-| **GitHub issue** | [#1](https://github.com/pohlai88/iam-check/issues/1) |
+| **Status** | **Closed** — Gate 7 complete; issue #1 closed 2026-07-10 |
+| **Date** | 2026-07-10 (Gate 7 production RBAC enable) |
+| **GitHub issue** | [#1](https://github.com/pohlai88/iam-check/issues/1) — **closed** |
 | **Product boundary** | Tag `hot-sales-phase-2a` → `8e650ff` (**immutable**) |
 | **Readiness docs** | Commit `0fd22f4` · [PHASE-2A-RELEASE-READINESS.md](./PHASE-2A-RELEASE-READINESS.md) |
 | **Gate SSOT** | [PHASE-2A-OPS-GATE-REGISTER.md](./PHASE-2A-OPS-GATE-REGISTER.md) — **read first** |

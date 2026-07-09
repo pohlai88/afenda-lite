@@ -2,10 +2,10 @@
 
 | Field | Value |
 |-------|-------|
-| **Status** | **Active** — operational rollout only; **implementation closed** |
-| **Date** | 2026-07-09 |
+| **Status** | **Closed** — Gate 7 complete; operational rollout finished 2026-07-10 |
+| **Date** | 2026-07-09 (gates closed 2026-07-10) |
 | **Authority** | [PRD-V2-Phase2.md](./PRD-V2-Phase2.md) · [PHASE-2A-RELEASE-READINESS.md](./PHASE-2A-RELEASE-READINESS.md) · [PHASE-2A-OPS-ROLLOUT.md](./PHASE-2A-OPS-ROLLOUT.md) |
-| **GitHub issue** | [#1](https://github.com/pohlai88/iam-check/issues/1) |
+| **GitHub issue** | [#1](https://github.com/pohlai88/iam-check/issues/1) — **closed** (completed) |
 
 This document is the **single operational SSOT** for Phase 2A rollout status, gate sequencing, and drift prevention. Agents and operators must read this before any Hot Sales production work.
 

@@ -40,6 +40,7 @@
     "sync:vercel": "node scripts/sync-vercel-env.mjs production",
     "cleanup:vercel": "node scripts/cleanup-vercel-env.mjs",
     "audit:vercel": "node scripts/audit-vercel-env.mjs production",
+    "gh": "node scripts/gh-cli.mjs",
     "db:backfill": "node scripts/db-backfill-migrations.mjs",
     "check:copy": "node scripts/check-portal-terminology.mjs",
     "check:nav": "node scripts/check-portal-nav.mjs",

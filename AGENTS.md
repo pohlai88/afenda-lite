@@ -2,18 +2,18 @@
 
 **Repository layout:** [docs/architecture/repo-layout.md](docs/architecture/repo-layout.md) — Root = bootstrap, L1 = concern, L2 = bounded context. Migration closed: [repo-migration-map.md](docs/architecture/repo-migration-map.md).
 
-## Hot Sales Phase 2A — operational lane (active)
+## Hot Sales Phase 2A — operational lane (**closed**)
 
-**Default agent mission for Hot Sales production work:** Ops rollout only — not Normalize, not new product, not 2B–2D.
+**Phase 2A ops rollout finished 2026-07-10** (Gate 7, issue [#1](https://github.com/pohlai88/iam-check/issues/1) closed). Do not start new Hot Sales ops work unless the user explicitly reopens scope.
 
 | Authority | Doc |
 |-----------|-----|
 | Doc index | [docs/hot-sales/README.md](docs/hot-sales/README.md) |
-| Gate SSOT (read first) | [docs/hot-sales/PHASE-2A-OPS-GATE-REGISTER.md](docs/hot-sales/PHASE-2A-OPS-GATE-REGISTER.md) |
+| Gate SSOT | [docs/hot-sales/PHASE-2A-OPS-GATE-REGISTER.md](docs/hot-sales/PHASE-2A-OPS-GATE-REGISTER.md) |
 | Checklists | [PHASE-2A-OPS-ROLLOUT.md](docs/hot-sales/PHASE-2A-OPS-ROLLOUT.md) · [PHASE-2A-RELEASE-READINESS.md](docs/hot-sales/PHASE-2A-RELEASE-READINESS.md) |
 | Product contract | [PRD-V2-Phase2.md](docs/hot-sales/PRD-V2-Phase2.md) |
 
-**Frozen:** tag `hot-sales-phase-2a` → `8e650ff`; `HOT_SALES_RBAC_ENABLED=false` until Gate 6; merge hotfix `4d203a7` to `main`. **Next:** Gate 4B sales allowlist. **Blocked:** Gate 5–7, 2B–2D, RBAC enable, schema/permission/UI expansion, `lib/`/`components/` cleanup in Hot Sales commits.
+**Production state:** tag `hot-sales-phase-2a` → `8e650ff`; `HOT_SALES_RBAC_ENABLED=true` on Vercel; DB branch `br-tiny-hill-ao82jp6f`. **Blocked without explicit approval:** 2B–2D, new RBAC/schema/UI expansion, Hot Sales commits mixed with unrelated refactors.
 
 ## Environment variables
 
@@ -73,6 +73,22 @@ After `sync:vercel`, redeploy: `vercel deploy --prod --yes`.
 - Do not overwrite `env.config` / `env.secret` from Vercel.
 
 Use `npm run audit:vercel` for key-name validation instead.
+
+### GitHub CLI (issues / PRs)
+
+**Problem:** Cursor and some shells set `GITHUB_TOKEN` to a fine-grained PAT. `gh` prefers that env var over `gh auth login` keyring credentials. Fine-grained tokens often lack `issues:write` / PR create scope → HTTP 403 on `gh issue comment`, `gh pr create`, `gh issue close`.
+
+**Fix — use the wrapper (drops `GITHUB_TOKEN` for the child process):**
+
+```bash
+npm run gh -- auth status          # should show keyring; scopes include repo
+npm run gh -- issue close 1 --reason completed
+npm run gh -- pr create --base main --head my-branch
+```
+
+**Do not** add `GITHUB_TOKEN` to `env.secret` or `env.config` — it is not app runtime config. One-time setup: `gh auth login` with a classic or keyring token that has **`repo`** scope (covers issues and PRs on private repos).
+
+**Manual override (PowerShell):** `Remove-Item Env:GITHUB_TOKEN` then run `gh` directly.
 
 ---
 
