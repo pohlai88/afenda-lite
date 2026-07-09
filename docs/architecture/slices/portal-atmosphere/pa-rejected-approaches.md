@@ -13,7 +13,7 @@ Permanent register of atmosphere/hero experiments the user rejected. Agents must
 
 1. Read **[`pa-hero-quality-benchmark.md`](./pa-hero-quality-benchmark.md)** — sole definition of "done".
 2. Match `public/brand/heroes/auth-hero-dark.png` and `auth-hero-light.png` at **1024px side-by-side** in Storybook.
-3. Use `guardian-sharp-dark.png` and `guardian-sharp-light.png` — not one image + filters.
+3. Use separate dark/light owl assets (`owl-variants/allowed-base/*` or dedicated sharp crops) — not one image + filters.
 4. Build layered CSS atmosphere (marble / celestial, geometry, typography) — not a pasted PNG.
 5. Storybook fixtures first; **human sign-off** before any prod wiring.
 
