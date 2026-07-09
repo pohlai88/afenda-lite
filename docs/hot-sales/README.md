@@ -30,8 +30,8 @@ Read this index before any Hot Sales work. Agents: see also [AGENTS.md](../../AG
 | Production URL | `https://iam-check.vercel.app` |
 | Production DB branch | `br-tiny-hill-ao82jp6f` only |
 
-**Gate 4B:** closed as **data/setup** (not code). Production has **0** `hot_sales_sales_member` rows — `/client` bounce is expected for non-allowlisted sessions.  
-**Next:** operator adds allowlist + open event, then re-run matrix rows 6–10. **Blocked until matrix passes:** Gate 5–7, 2B–2D, RBAC enable.
+**Gate 4B:** **PASS** — matrix rows 6–10 passed on live app (2026-07-10).  
+**Next:** Gate 5 transfer-lite triage. **Still open:** Vercel DB cutover to `br-tiny-hill-ao82jp6f`. **Blocked:** Gate 6–7, 2B–2D, RBAC enable.
 
 ---
 
