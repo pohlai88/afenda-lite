@@ -1,0 +1,66 @@
+{
+  "Trade": {
+    "title": "Hot Sales",
+    "subtitle": "Spot-selling event portal",
+    "nav": {
+      "events": "Events",
+      "myOrders": "My orders",
+      "admin": "Admin"
+    },
+    "events": {
+      "title": "Hot Sales events",
+      "empty": "No events yet.",
+      "open": "Open",
+      "closed": "Closed",
+      "draft": "Draft",
+      "countdown": "Time remaining",
+      "placeOrder": "Place order",
+      "viewOrders": "View my orders"
+    },
+    "order": {
+      "title": "Register order",
+      "customerName": "Customer name",
+      "customerCode": "Customer code",
+      "product": "Product category",
+      "quantity": "Requested quantity",
+      "remarks": "Remarks",
+      "submit": "Submit order",
+      "depositNotice": "Deposit status is tracking only — not finance settlement.",
+      "success": "Order registered.",
+      "blocked": "Ordering is closed for this event."
+    },
+    "myOrders": {
+      "title": "My orders",
+      "empty": "You have no orders yet.",
+      "status": "Status",
+      "requested": "Requested",
+      "confirmed": "Confirmed"
+    },
+    "admin": {
+      "title": "Event admin",
+      "newEvent": "New event",
+      "cloneTemplate": "Clone GP2 piglet template",
+      "setup": "Setup",
+      "allocation": "Allocation",
+      "openEvent": "Open event",
+      "closeEvent": "Close event",
+      "products": "Products",
+      "priority": "Customer priority",
+      "customFields": "Custom columns",
+      "salesAllowlist": "Sales allowlist",
+      "exportOrders": "Export orders",
+      "runAllocation": "Run allocation",
+      "auditLog": "Audit log",
+      "depositLite": "Deposit tracking only — not finance settlement"
+    },
+    "form": {
+      "save": "Save",
+      "cancel": "Cancel",
+      "reason": "Reason (required for override)"
+    },
+    "locale": {
+      "vi": "Tiếng Việt",
+      "en": "English"
+    }
+  }
+}

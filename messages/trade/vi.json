@@ -1,0 +1,66 @@
+{
+  "Trade": {
+    "title": "Bán Hot Sales",
+    "subtitle": "Cổng sự kiện bán spot",
+    "nav": {
+      "events": "Sự kiện",
+      "myOrders": "Đơn của tôi",
+      "admin": "Quản trị"
+    },
+    "events": {
+      "title": "Sự kiện Hot Sales",
+      "empty": "Chưa có sự kiện.",
+      "open": "Đang mở",
+      "closed": "Đã đóng",
+      "draft": "Nháp",
+      "countdown": "Thời gian còn lại",
+      "placeOrder": "Đăng ký đơn",
+      "viewOrders": "Xem đơn của tôi"
+    },
+    "order": {
+      "title": "Đăng ký đơn hàng",
+      "customerName": "Tên khách hàng",
+      "customerCode": "Mã khách hàng",
+      "product": "Danh mục sản phẩm",
+      "quantity": "Số lượng yêu cầu",
+      "remarks": "Ghi chú",
+      "submit": "Gửi đơn",
+      "depositNotice": "Trạng thái đặt cọc chỉ để theo dõi — không phải thanh toán.",
+      "success": "Đã đăng ký đơn hàng.",
+      "blocked": "Sự kiện đã đóng đăng ký."
+    },
+    "myOrders": {
+      "title": "Đơn của tôi",
+      "empty": "Bạn chưa có đơn hàng.",
+      "status": "Trạng thái",
+      "requested": "Yêu cầu",
+      "confirmed": "Xác nhận"
+    },
+    "admin": {
+      "title": "Quản trị sự kiện",
+      "newEvent": "Tạo sự kiện",
+      "cloneTemplate": "Sao chép mẫu GP2 heo con",
+      "setup": "Thiết lập",
+      "allocation": "Phân bổ",
+      "openEvent": "Mở sự kiện",
+      "closeEvent": "Đóng sự kiện",
+      "products": "Sản phẩm",
+      "priority": "Ưu tiên khách hàng",
+      "customFields": "Cột tùy chỉnh",
+      "salesAllowlist": "Danh sách Sales",
+      "exportOrders": "Xuất đơn hàng",
+      "runAllocation": "Chạy phân bổ",
+      "auditLog": "Nhật ký kiểm toán",
+      "depositLite": "Theo dõi đặt cọc — không phải thanh toán"
+    },
+    "form": {
+      "save": "Lưu",
+      "cancel": "Hủy",
+      "reason": "Lý do (bắt buộc khi ghi đè)"
+    },
+    "locale": {
+      "vi": "Tiếng Việt",
+      "en": "English"
+    }
+  }
+}

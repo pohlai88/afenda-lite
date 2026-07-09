@@ -39,6 +39,7 @@ export const config = {
     "/account/:path*",
     "/dashboard/:path*",
     "/client/:path*",
+    "/trade/:path*",
     "/playground/:path*",
   ],
 };
