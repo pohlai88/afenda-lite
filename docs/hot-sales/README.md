@@ -32,7 +32,8 @@ Read this index before any Hot Sales work. Agents: see also [AGENTS.md](../../AG
 
 **Gates 1–6:** ✅ complete (2026-07-10).  
 **Gate 6:** controlled local `HOT_SALES_RBAC_ENABLED=true` matrix **17/17 PASS** — commit under test `51e9a5b`; gate-register closeout on `main` @ `25c3891`. Production flag remains **false**; local `.env` restored to `HOT_SALES_RBAC_ENABLED=false`.  
-**Next:** Gate 7 production RBAC enable — **blocked** until Vercel DB cutover (`dev-spec-b` / `br-super-hill-aojc9a4p` → canonical `br-tiny-hill-ao82jp6f`). **Blocked:** 2B–2D, production RBAC enable.
+**Gate 7 DB cutover:** ✅ complete (2026-07-10) — Vercel runtime on `br-tiny-hill-ao82jp6f`; manifest `d05eae2`; deploy `dpl_8btf19EFofKLQmcswLJQWNXfGEVV`; flag=false smoke passed.  
+**Next:** Gate 7 **production RBAC enable** — **blocked** until explicit promotion (`HOT_SALES_RBAC_ENABLED=true` on Vercel). **Blocked:** 2B–2D.
 
 ---
 

@@ -128,24 +128,24 @@ Primary lever (not DB rollback):
 → matrix: UI + actions ✅ (Gate 6 local 17/17 · `51e9a5b`)
 → flag=true in controlled env ✅ (local only; production flag stays false)
 → evidence ✅ (`25c3891` gate register)
-→ DB cutover (Vercel `dev-spec-b` → `br-tiny-hill-ao82jp6f`) ⏸
-→ production enable ⏸ Gate 7 blocked
+→ DB cutover (Vercel `dev-spec-b` → `br-tiny-hill-ao82jp6f`) ✅ (2026-07-10 · `d05eae2` + `dpl_8btf19EFofKLQmcswLJQWNXfGEVV`)
+→ production enable ⏸ Gate 7 RBAC promotion blocked
 ```
 
 Post-tag hotfix `4d203a7` (TradeShell next-intl) must be on `main` before the next production deploy — see [gate register](./PHASE-2A-OPS-GATE-REGISTER.md#hotfix-merge-requirement).
 
 ---
 
-## Gate 7 blocker — DB cutover
+## Gate 7 — DB cutover (complete) / RBAC enable (blocked)
 
-Production RBAC enable is **not done**. Gate 7 remains blocked until Vercel `DATABASE_URL` cutover:
+**DB cutover:** ✅ Complete (2026-07-10). Vercel `DATABASE_URL` + `NEON_AUTH_BASE_URL` on canonical branch `br-tiny-hill-ao82jp6f` (`ep-dawn-bird`). Post-cutover flag=false smoke passed. Evidence: [gate register § Gate 7](./PHASE-2A-OPS-GATE-REGISTER.md#gate-7--production-db-cutover-complete).
+
+**Production RBAC enable:** ⏸ **not done**. Gate 7 promotion (`HOT_SALES_RBAC_ENABLED=true` on Vercel) remains blocked until explicit checklist — DB cutover prerequisite is satisfied.
 
 | Branch | Role |
 |--------|------|
-| `br-super-hill-aojc9a4p` (`dev-spec-b`) | Current live Vercel deploy DB |
-| `br-tiny-hill-ao82jp6f` | Canonical production branch (gate SSOT) |
-
-Allowlist + event data exist on both; cutover is a separate ops step before `HOT_SALES_RBAC_ENABLED=true` on Vercel.
+| `br-super-hill-aojc9a4p` (`dev-spec-b`) | Local dev / Gate 6 matrix DB |
+| `br-tiny-hill-ao82jp6f` | **Live** Vercel production DB (gate SSOT) |
 
 ---
 
