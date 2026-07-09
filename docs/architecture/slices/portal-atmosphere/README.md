@@ -56,6 +56,8 @@ PA-P10 Auth integration readiness (adapter wired — E2E + CSS purge pending)
 
 **Guardian Auth (ADR-Auth-UI-001):** [pa-guardian-auth-reference-gaps.md](./pa-guardian-auth-reference-gaps.md) · **[pa-guardian-module-remaining.md](./pa-guardian-module-remaining.md)** — post-merge completion checklist (design sign-off, viewport tests, Lane C stash).
 
+**Program inventory:** [remaining-development.md](../remaining-development.md) — all active lanes (S17, Guardian, PA, Backlog-01).
+
 ## Public API vs fixtures
 
 | Import path | Purpose |

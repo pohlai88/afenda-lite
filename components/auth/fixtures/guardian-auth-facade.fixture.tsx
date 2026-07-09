@@ -18,12 +18,15 @@ import { portalCopy } from "@/lib/copy/portal-copy";
 export type GuardianAuthFacadePreviewProps = {
   mode?: GuardianMode;
   state?: GuardianState;
+  /** Static stories default false — pauses the 12s auto sky flip. */
+  ambient?: boolean;
 };
 
 /** Static Storybook surface — theme toggle wired like production. */
 export function GuardianAuthFacadePreview({
   mode: modeArg,
   state = "idle",
+  ambient = false,
 }: GuardianAuthFacadePreviewProps) {
   const { resolvedTheme, setTheme } = useThemeControls();
   const mode = guardianModeFromPortalTheme(resolvedTheme);
@@ -38,6 +41,7 @@ export function GuardianAuthFacadePreview({
     <GuardianAuthFacade
       mode={mode}
       state={state}
+      ambient={ambient}
       onModeChange={(next) => setTheme(portalThemeFromGuardianMode(next))}
       assets={GUARDIAN_AUTH_ASSET_SET}
     />
@@ -117,13 +121,18 @@ function MockNeonSignInSlot({ mode }: { mode: GuardianMode }) {
 }
 
 /** Prod wiring preview — Guardian shell + mock Neon slot (AuthView not mounted in Storybook). */
-export function GuardianAuthNeonSlotPreview() {
+export function GuardianAuthNeonSlotPreview({
+  ambient = false,
+}: {
+  ambient?: boolean;
+} = {}) {
   const { resolvedTheme, setTheme } = useThemeControls();
   const mode = guardianModeFromPortalTheme(resolvedTheme);
 
   return (
     <GuardianAuthFacade
       mode={mode}
+      ambient={ambient}
       onModeChange={(next) => setTheme(portalThemeFromGuardianMode(next))}
       assets={GUARDIAN_AUTH_ASSET_SET}
     >
@@ -186,6 +195,7 @@ export function GuardianAuthFacadeInteractive() {
       <GuardianAuthFacade
         mode={mode}
         state={state}
+        ambient
         onModeChange={(next) => setTheme(portalThemeFromGuardianMode(next))}
         assets={GUARDIAN_AUTH_ASSET_SET}
       />

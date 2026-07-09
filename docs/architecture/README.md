@@ -5,6 +5,7 @@ Internal technical architecture for the Client Declaration Portal ([iam-check](h
 | Document | Purpose |
 |----------|---------|
 | [TRACKING.md](../TRACKING.md) | **Program status SSOT** — gates, BL/S slice status, open P0 gaps |
+| [remaining-development.md](./remaining-development.md) | **Remaining work inventory** — active lanes, sprint sequence, completion definitions |
 | [iam-check-doctrine.md](./iam-check-doctrine.md) | Full-stack doctrine, pipeline, CCP register, roadmap, acceptance checklist |
 | [reliance-mapping.snapshot.json](./reliance-mapping.snapshot.json) | **Primary SSOT** — declared vs discovered vs aligned compare per surface/action |
 | [reliance-graph.snapshot.json](./reliance-graph.snapshot.json) | Derived force-graph materialization (nodes/edges for gates and CCPs) |
@@ -44,4 +45,4 @@ When adding or changing a product surface / server action:
 
 **Audience:** engineers and execution agents implementing slice-by-slice without drift.
 
-**Last updated:** 2026-07-08
+**Last updated:** 2026-07-10

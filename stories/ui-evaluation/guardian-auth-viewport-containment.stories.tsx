@@ -10,8 +10,8 @@ import {
  *
  * Acceptance (desktop ≥981px):
  * - No horizontal scrollbar
- * - No vertical scrollbar on the facade root
- * - Card, brand, theme toggle, headline, and owl all visible
+ * - No vertical scrollbar on the facade root or access panel
+ * - Card, brand, corner panel, headline, and owl all visible
  *
  * Mobile may scroll vertically.
  */
@@ -25,7 +25,8 @@ const CONTAINMENT_DOCS = {
   description: {
     story: [
       "Viewport lock test at 100% Storybook zoom.",
-      "Desktop: `.guardian-auth` must be `height: 100dvh; overflow: hidden`.",
+      "Desktop: `.guardian-auth` is `height: 100dvh; overflow: hidden`.",
+      "`.guardian-auth__access-panel` is `overflow: visible` — no inner chamber scrollbar.",
       "Compare to reference screenshots — composition should not require 50% browser zoom.",
     ].join(" "),
   },
@@ -123,6 +124,12 @@ export const VaultMobile390: Story = {
 
 /* ---------- Production wiring (Guardian + mock Neon slot) ---------- */
 
+export const NeonProdNight1024: Story = {
+  name: "prod neon — night @1024×768",
+  parameters: { ...VIEWPORT_1024, docs: CONTAINMENT_DOCS },
+  render: () => <GuardianAuthNeonSlotPreview />,
+};
+
 export const NeonProdNight1366: Story = {
   name: "prod neon — night @1366×768",
   parameters: { ...VIEWPORT_1366, docs: CONTAINMENT_DOCS },
@@ -132,6 +139,16 @@ export const NeonProdNight1366: Story = {
 export const NeonProdNight1280: Story = {
   name: "prod neon — night @1280×720",
   parameters: { ...VIEWPORT_1280, docs: CONTAINMENT_DOCS },
+  render: () => <GuardianAuthNeonSlotPreview />,
+};
+
+export const NeonProdDay1024: Story = {
+  name: "prod neon — day @1024×768",
+  parameters: {
+    ...VIEWPORT_1024,
+    globals: { theme: "light" },
+    docs: CONTAINMENT_DOCS,
+  },
   render: () => <GuardianAuthNeonSlotPreview />,
 };
 
