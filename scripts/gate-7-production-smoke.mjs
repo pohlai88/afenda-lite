@@ -197,20 +197,31 @@ async function main() {
       customer,
     );
 
+    await adminPage.goto(`${BASE}/trade/${LOCALE}/admin/events/${OPEN_EVENT_ID}/allocation`);
+    await adminPage.getByRole("button", { name: /run allocation/i }).click();
+    await adminPage.waitForTimeout(3_000);
+
+    await salesPage.goto(`${BASE}/trade/${LOCALE}/my-orders`);
+    await salesPage.waitForLoadState("networkidle", { timeout: 30_000 }).catch(() => {});
+
     let transferActionId;
     transferActionId = await captureActionId(salesPage, "/my-orders", async () => {
-      const row = salesPage.getByText(customer).first();
-      await row.scrollIntoViewIfNeeded();
-      const form = salesPage.locator("form").filter({ hasText: customer }).first();
-      await form.getByLabel(/new customer name/i).fill(`Gate7 Transfer ${stamp}`);
+      const card = salesPage
+        .locator("div.rounded-lg.border")
+        .filter({ hasText: customer })
+        .first();
+      await card.scrollIntoViewIfNeeded();
+      const form = card.locator("form");
+      await form.getByPlaceholder("New customer name").fill(`Gate7 Transfer ${stamp}`);
       await form.locator('input[name="transferQuantity"]').fill("2");
-      await form.getByLabel(/reason/i).fill("Gate7 smoke transfer");
+      await form.getByPlaceholder("Reason").fill("Gate7 smoke transfer");
       await form.getByRole("button", { name: /request transfer/i }).click();
+      await salesPage.waitForTimeout(2_000);
     });
     setResult(
       "sales own transfer request",
       Boolean(transferActionId),
-      transferActionId ? "action captured" : "no action id",
+      transferActionId ? "action captured" : "transfer form/action missing",
     );
 
     await salesPage.goto(`${BASE}/trade/${LOCALE}/admin/rbac`);
@@ -252,23 +263,14 @@ async function main() {
       setResult("sales event.create replay denied", false, "missing action id");
     }
 
-    if (transferActionId) {
-      const sensitiveReplay = await salesPage.request.post(
-        `${BASE}/trade/${LOCALE}/admin/events/${OPEN_EVENT_ID}/allocation`,
-        {
-          headers: {
-            "content-type": "application/x-www-form-urlencoded",
-            "next-action": transferActionId,
-          },
-          data: "1_$ACTION_KEY=invalid",
-        },
-      );
-      setResult(
-        "sensitive permission path reachable only for admin",
-        sensitiveReplay.status() >= 300 || sensitiveReplay.status() === 403,
-        `status=${sensitiveReplay.status()}`,
-      );
-    }
+    await salesPage.goto(`${BASE}/trade/${LOCALE}/admin/events/${OPEN_EVENT_ID}/allocation`);
+    await salesPage.waitForLoadState("networkidle", { timeout: 30_000 }).catch(() => {});
+    setResult(
+      "sales sensitive admin allocation denied",
+      !salesPage.url().includes("/allocation") ||
+        salesPage.url().includes("/trade/vi/events"),
+      salesPage.url(),
+    );
 
     await adminContext.close();
     await salesContext.close();

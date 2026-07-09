@@ -26,14 +26,13 @@ Read this index before any Hot Sales work. Agents: see also [AGENTS.md](../../AG
 | Phase 1 tag | `hot-sales-phase-1` → `1bc1294` |
 | Phase 2A tag | `hot-sales-phase-2a` → `8e650ff` (**immutable**) |
 | Post-tag hotfix | `4d203a7` merged to `main` (`ee14f10`) |
-| RBAC flag | `HOT_SALES_RBAC_ENABLED=false` in production until **Gate 7** (Gate 6 controlled local pass recorded) |
+| RBAC flag | `HOT_SALES_RBAC_ENABLED=true` on Vercel production (Gate 7 · 2026-07-10) |
 | Production URL | `https://iam-check.vercel.app` |
 | Production DB branch | `br-tiny-hill-ao82jp6f` only |
 
-**Gates 1–6:** ✅ complete (2026-07-10).  
-**Gate 6:** controlled local `HOT_SALES_RBAC_ENABLED=true` matrix **17/17 PASS** — commit under test `51e9a5b`; gate-register closeout on `main` @ `25c3891`. Production flag remains **false**; local `.env` restored to `HOT_SALES_RBAC_ENABLED=false`.  
-**Gate 7 DB cutover:** ✅ complete (2026-07-10) — Vercel runtime on `br-tiny-hill-ao82jp6f`; manifest `d05eae2`; deploy `dpl_8btf19EFofKLQmcswLJQWNXfGEVV`; flag=false smoke passed.  
-**Next:** Gate 7 **production RBAC enable** — **blocked** until explicit promotion (`HOT_SALES_RBAC_ENABLED=true` on Vercel). **Blocked:** 2B–2D.
+**Gates 1–7:** ✅ complete (2026-07-10). Phase 2A **operational rollout closed**.  
+**Gate 7:** production `HOT_SALES_RBAC_ENABLED=true`; compact smoke **17/17 PASS**; deploy `dpl_BCqJqHsjQ8z2Tih1684Gp11ThreK`; hotfix `930dde0`. Local `.env` restored to `HOT_SALES_RBAC_ENABLED=false` + `dev-spec-b`.  
+**Blocked without new ADR:** 2B–2D, new permissions/UI/schema.
 
 ---
 
