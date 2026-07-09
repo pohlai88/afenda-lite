@@ -1,10 +1,27 @@
 # Hot Sales — Phase 2 scoping note
 
-**Status:** Planning only — **not approved for implementation**  
+**Status:** Historical candidate-list note — **not** the Phase 2 build contract  
 **Phase 1 accepted baseline:** commit `1bc1294` · tag `hot-sales-phase-1` · [PRD-V2.md](./PRD-V2.md)  
-**Vision archive:** [PRD.md](./PRD.md)
+**Vision archive:** [PRD.md](./PRD.md)  
+**Authoritative Phase 2 planning direction:** [PHASE-2-FEEDBACK.md](./PHASE-2-FEEDBACK.md) (adopted 2026-07-09)  
+**Build contract draft:** [PRD-V2-Phase2.md](./PRD-V2-Phase2.md) (**Accepted**)  
+**RBAC ADR draft:** [ADR-001-phase-2-rbac.md](./ADR-001-phase-2-rbac.md) (**Accepted**)  
+**Phase 2A slice plan:** [PHASE-2A-SLICES.md](./PHASE-2A-SLICES.md) (**Proposed** — approve before code)
 
-Do **not** start Phase 2 coding until this note is reviewed and a Phase 2 build contract is **explicitly approved**. This file is a planning artifact only.
+Do **not** start Phase 2 coding, schema migrations, or implementation slices until [PHASE-2A-SLICES.md](./PHASE-2A-SLICES.md) is **explicitly approved**.
+
+This file remains as the original **candidate list**. It is **superseded for Phase 2 planning** by [PHASE-2-FEEDBACK.md](./PHASE-2-FEEDBACK.md) and the Accepted PRD/ADR above. Its **sequencing** and **“7-role RBAC” framing** must not be used as the build contract.
+
+---
+
+## Adopted Phase 2 packaging (from feedback)
+
+```text
+2A — SaaS-style configurable RBAC + dedicated /admin/events/new
+2B — Finance/deposit tables + Pickup/Ops module
+2C — Excel imports + notifications
+2D — ERP sync
+```
 
 ---
 
@@ -14,16 +31,16 @@ Phase 1 shipped a reusable Hot Sales event engine under `/trade` (admin + sales 
 
 ---
 
-## Candidate workstreams
+## Candidate workstreams (historical)
 
-### 1. 7-role RBAC
+### 1. 7-role RBAC — **SUPERSEDED**
 
 | Topic | Notes |
 |-------|-------|
 | Problem | Phase 1 is Admin (`isAdminSession`) + Sales allowlist only |
-| Scope sketch | Map PRD roles (e.g. Client Admin, Sales, Finance, Ops/Pickup, Viewer, …) onto Neon Auth org roles or a `hot_sales_role` assignment table |
-| Open questions | Which roles are org-wide vs event-scoped? How do they interact with portal operator admin? |
-| Depends on | Auth model decision before schema |
+| Original sketch | Map fixed PRD job titles onto Neon Auth / `hot_sales_role` |
+| **Superseded by** | Fixed permission catalog + client-customisable roles + default templates + scoped assignments + audit — see [PHASE-2-FEEDBACK.md](./PHASE-2-FEEDBACK.md) Phase 2A |
+| Depends on | ADR-001 + PRD-V2-Phase2 approval before any schema |
 
 ### 2. Finance / deposit tables
 
@@ -81,7 +98,9 @@ Phase 1 shipped a reusable Hot Sales event engine under `/trade` (admin + sales 
 
 ---
 
-## Suggested sequencing (draft)
+## Suggested sequencing (draft) — **SUPERSEDED**
+
+The linear list below is retained for history only. **Use 2A → 2B → 2C → 2D** from [PHASE-2-FEEDBACK.md](./PHASE-2-FEEDBACK.md).
 
 ```text
 1. RBAC model ADR          → unlocks finance/ops UI safely
@@ -97,12 +116,14 @@ Phase 1 shipped a reusable Hot Sales event engine under `/trade` (admin + sales 
 
 ## Explicit non-goals until approved
 
-- No Phase 2 schema migrations in the Phase 1 closure commit
+- No Phase 2 schema migrations or application code
 - No piglet-specific hardcoding in schema
-- No coupling Hot Sales Phase 2 to `/playground` or declaration domain refactors
+- No coupling Hot Sales Phase 2 to `/playground`, declaration domain, or layout/repo-migration WIP
+- No treating fixed job titles (Sales Manager, GM, …) as hardcoded app role enums
 
 ---
 
-## Next step
+## Next step (planning only)
 
-Review this note → pick workstream order → write `PRD-V2-Phase2.md` (or extend PRD-V2) as the build contract → then implement.
+1. Review/approve [PHASE-2A-SLICES.md](./PHASE-2A-SLICES.md) (**Proposed**)
+2. Only then implement Phase 2A slice-by-slice (start 2A-1)

@@ -1,0 +1,288 @@
+# PRD-V2 Phase 2 — Hot Sales Event Engine (build contract)
+
+| Field | Value |
+|-------|-------|
+| **Status** | **Accepted** |
+| **Accepted** | 2026-07-09 |
+| **Date** | 2026-07-09 |
+| **Phase 1 baseline** | commit `1bc1294` · tag `hot-sales-phase-1` · [PRD-V2.md](./PRD-V2.md) |
+| **Authoritative planning input** | [PHASE-2-FEEDBACK.md](./PHASE-2-FEEDBACK.md) |
+| **Candidate-list note** | [PHASE-2-SCOPING.md](./PHASE-2-SCOPING.md) — sequencing / 7-role framing **superseded** |
+| **Normative RBAC ADR** | [ADR-001-phase-2-rbac.md](./ADR-001-phase-2-rbac.md) (**Accepted**) |
+| **Phase 2A slice plan** | [PHASE-2A-SLICES.md](./PHASE-2A-SLICES.md) (**Proposed** — not approved for implementation) |
+
+**Vision archive:** [PRD.md](./PRD.md)
+
+### Implementation gate
+
+ADR-001 and this PRD are **Accepted**. No Phase 2 **code** or **schema migrations** may start until **Phase 2A implementation slices** are explicitly approved:
+
+1. ~~[ADR-001-phase-2-rbac.md](./ADR-001-phase-2-rbac.md)~~ Accepted  
+2. ~~This document (`PRD-V2-Phase2.md`)~~ Accepted  
+3. [PHASE-2A-SLICES.md](./PHASE-2A-SLICES.md) — **review and approve before any 2A code**
+
+---
+
+## 1. Phase 1 baseline
+
+Phase 1 delivered a reusable Hot Sales engine under `/trade`:
+
+- Generic events, products, custom columns, priority CSV, sales allowlist
+- Sales order registration with server timestamp and deadline gate
+- Priority → FCFS → `order_id` allocation with `hot_sales_allocation_run`
+- Deposit/transfer **lite** (status only), audit, CSV export, vi/en
+- GP2 piglet as **cloneable template data only**
+- Open-event field locks; smoke e2e as Phase 1 gate
+
+Rollback / bisect reference: tag `hot-sales-phase-1`.
+
+---
+
+## 2. Phase 2 objective
+
+Expand Hot Sales toward multi-role operations, finance/ops workflows, productivity imports, notifications, and eventually ERP sync — **without** breaking Phase 1 compatibility or hardcoding piglet/org-chart specifics into schema or authorization code.
+
+---
+
+## 3. Release packaging (normative)
+
+Do **not** ship Phase 2 as one release.
+
+| Release | Scope | Purpose |
+|---------|--------|---------|
+| **Phase 2A** | SaaS-style configurable RBAC + dedicated `/admin/events/new` | Sustainable access + admin create UX |
+| **Phase 2B** | Finance/deposit tables + Pickup/Ops module | Operational control |
+| **Phase 2C** | Excel imports + notifications | Productivity + communication |
+| **Phase 2D** | ERP sync | External integration after internal models stabilize |
+
+---
+
+## 4. Phase 2A — RBAC + admin create route
+
+### 4.1 RBAC (normative: ADR-001)
+
+```text
+Fixed permission catalog
++ Client-customisable roles
++ Seeded role templates
++ Scoped assignments (own / team / event / BU / company / platform)
++ Audit
+```
+
+**Do not** hardcode job titles as fixed app role enums. Seed as **templates only**:
+
+- Super Admin  
+- Client Admin  
+- Business Unit Manager  
+- Sales Executive  
+- Sales Supervisor  
+- Sales Manager  
+- Sales Operations  
+- Account/Finance  
+- Viewer  
+- Commercial Operation & Governance  
+- General Manager  
+
+Authorization checks **permission codes**, never role display names. See ADR-001 for catalog examples and acceptance criteria.
+
+### 4.2 Dedicated create route
+
+```text
+/trade/[locale]/admin/events/new
+```
+
+Flow: blank or clone template → name → open/close window → timezone → create **draft** → redirect to setup. Existing create-on-list may remain or redirect here.
+
+### 4.3 In / out of 2A
+
+| Include | Exclude |
+|---------|---------|
+| RBAC ADR + catalog + roles + templates + assignments + scopes + guards + role UI + audit | Finance tables |
+| `/admin/events/new` | Pickup module |
+| Phase 1 Admin/Sales compatibility path | ERP sync, notifications, Excel |
+
+### 4.4 2A acceptance (draft)
+
+```text
+- Phase 1 Admin and Sales allowlist behavior still works through cutover
+- Client Admin can create, rename, duplicate, disable roles
+- Client Admin can assign users to roles with scope
+- Sales Executive template sees own orders only (via permissions + scope)
+- Viewer cannot mutate
+- Sensitive permissions protected; role changes audited
+- No code depends on role display names
+- Admin can create blank or clone template via /admin/events/new → setup
+```
+
+---
+
+## 5. Phase 2B — Finance / deposit + Pickup / Ops
+
+### 5.1 Finance / deposit
+
+**Decision required before coding (future ADR-002):** Is Hot Sales or ERP/Finance the settlement source of truth?
+
+**Planning recommendation (from feedback):** Until ERP sync is approved, Hot Sales deposit records are **operational only**; ERP/Finance remains official settlement SoT. No payment settlement engine inside Hot Sales in 2B.
+
+Keep `hot_sales_order.deposit_status` as a **projection** from deposit records.
+
+Suggested tables (planning):
+
+```text
+hot_sales_deposit
+hot_sales_deposit_receipt
+hot_sales_deposit_adjustment
+hot_sales_finance_audit
+```
+
+Statuses (planning): `not_required | pending | paid | partially_paid | waived | forfeited | refunded | cancelled`
+
+AC (draft): amounts/receipts/dates/actors recorded; non-refundable supported; waive/refund/forfeit require reason + audit; order projection updates; Phase 1 orders compatible.
+
+### 5.2 Pickup / Ops
+
+Move beyond bare `fulfilled_quantity` to ops workflow.
+
+Suggested modules/tables (planning): pickup windows, assignments, fulfillment records, exceptions.
+
+States (planning): `pending_schedule | scheduled | ready_for_pickup | partially_picked_up | picked_up | no_show | cancelled | exception`
+
+Rules: final support from fulfilled qty; partial pickup + no-show; ops confirm with user + timestamp; post-complete changes need reason + audit.
+
+Depends on 2A permissions (`pickup.view` / `pickup.manage`).
+
+---
+
+## 6. Phase 2C — Excel imports + notifications
+
+### 6.1 Excel imports
+
+Upgrade Phase 1 priority CSV to structured Excel with:
+
+```text
+upload → dry-run validation → error report → admin confirm → write → audit batch
+```
+
+Import priorities: customer priority & product/supply (high); bulk orders, deposits, pickup confirm (medium); custom field values (later).
+
+Suggested: `hot_sales_import_batch`, `hot_sales_import_row`. Controls: templates, max rows, required columns, unknown customer warnings, duplicates, dry-run, error export, audit.
+
+### 6.2 Notifications
+
+Email only first. **Do not** mix into declaration-portal mail without **ADR-003**.
+
+Triggers (planning): event open/closing/closed; order submitted; allocation results; transfer request/decision; deposit pending/confirmed; pickup scheduled/completed.
+
+Design: templates + events + delivery log; enable/disable per event; vi/en; failed delivery must not break order/allocation transactions; no silent duplicate sends.
+
+---
+
+## 7. Phase 2D — ERP sync
+
+**Last.** Requires stable event/order/allocation/deposit/pickup IDs and state machines.
+
+Decisions (future **ADR-004**): which ERP; push/pull/both; customer/product/supply masters; finance SoT; timing; retry/DLQ.
+
+Controls: idempotency key, retry, DLQ, manual retry, external mapping, sync status, audit, staging ERP.
+
+Suggested tables: `hot_sales_external_mapping`, `hot_sales_sync_job`, `hot_sales_sync_attempt`, `hot_sales_sync_error`.
+
+AC (draft): idempotent outbound; no duplicate ERP orders; failures visible + manually retryable; local Hot Sales ops not blocked unless configured.
+
+---
+
+## 8. Data model changes (summary)
+
+| Phase | Additive direction |
+|-------|--------------------|
+| 2A | Permission, role, role_permission, role_assignment, rbac_audit; migrate from sales allowlist |
+| 2B | Deposit + finance audit; pickup window/assignment/fulfillment/exception; project `deposit_status` |
+| 2C | Import batch/row; notification template/event/delivery_log |
+| 2D | External mapping + sync job/attempt/error |
+
+Prefer **additive** migrations: add → backfill → switch reads → switch writes → deprecate later. Avoid drop/rename of Phase 1 core fields in the first cut.
+
+---
+
+## 9. Permission model
+
+Normative detail: [ADR-001-phase-2-rbac.md](./ADR-001-phase-2-rbac.md).
+
+Server-side checks required for: event create/edit/open-close; order create/view; allocation run/override; transfer approve; deposit update; pickup confirm; exports; role.manage.
+
+---
+
+## 10. Migration strategy
+
+1. Preserve Phase 1 behavior under dual-read where needed  
+2. Additive schema only in first pass  
+3. Seed permission catalog + default role templates  
+4. Map existing admins + allowlisted sales into assignments  
+5. Cut over guards action-by-action  
+6. Deprecate allowlist-only path only after acceptance  
+
+---
+
+## 11. Backward compatibility
+
+```text
+Phase 2 must not break existing Phase 1 events, orders, allocation, exports,
+or the hot-sales-phase-1 rollback reference.
+```
+
+Piglet / GP2 / weight / month labels remain **template data only** — never schema or role logic.
+
+---
+
+## 12. Acceptance criteria (cross-phase)
+
+Per-release AC in sections 4–7. Cross-cutting:
+
+- [ ] Phase 1 baseline preserved  
+- [ ] Additive migrations preferred  
+- [ ] Piglet = template data only  
+- [ ] Server-side permission checks  
+- [ ] Sensitive changes audited (roles, rules, deadlines, qty, allocation override, deposit, pickup exception, ERP retry, notification resend)  
+- [ ] Hot Sales Phase 2 commits stay separate from layout / declaration / playground WIP  
+
+---
+
+## 13. Explicit non-goals (until later approval)
+
+- Phase 2 implementation before ADR-001 + this PRD + 2A slices are Accepted  
+- Hardcoded job-title role enums  
+- Live ERP sync before 2A–2C internal models are stable  
+- In-app payment settlement as finance SoT (default planning stance)  
+- Zalo / WhatsApp / Teams / SMS notifications in first notification slice  
+- Coupling to `/playground` or declaration-domain refactors  
+
+---
+
+## 14. Rollback plan
+
+| Layer | Action |
+|-------|--------|
+| Pre-code | Reject Proposed docs; no schema shipped |
+| After 2A partial | Leave new RBAC tables unused; keep Phase 1 Admin + allowlist; tag `hot-sales-phase-1` |
+| After later phases | Feature-flag modules; stop sync jobs; retain additive tables |
+
+---
+
+## Documents still required before coding
+
+| Doc | Status |
+|-----|--------|
+| [ADR-001-phase-2-rbac.md](./ADR-001-phase-2-rbac.md) | **Accepted** (2026-07-09) |
+| This PRD | **Accepted** (2026-07-09) |
+| [PHASE-2A-SLICES.md](./PHASE-2A-SLICES.md) | **Proposed** — must be approved before 2A code |
+| ADR-002 finance SoT | Before 2B settlement claims |
+| ADR-003 notifications provider | Before 2C mail |
+| ADR-004 ERP sync contract | Before 2D |
+
+---
+
+## Next step
+
+1. Review and **explicitly approve** [PHASE-2A-SLICES.md](./PHASE-2A-SLICES.md)  
+2. Only after that approval: implement Phase 2A slice-by-slice  
+3. Do not start 2B–2D until their ADRs / slices are approved separately 

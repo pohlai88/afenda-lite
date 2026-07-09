@@ -32,4 +32,12 @@ Keep unrelated layout / repo-migration WIP off Hot Sales history. Do not fold po
 
 ## Out of scope (Phase 2)
 
-See [docs/hot-sales/PHASE-2-SCOPING.md](../../hot-sales/PHASE-2-SCOPING.md) — **planning only** until explicit approval. No Phase 2 implementation from this slice.
+| Doc | Role |
+|-----|------|
+| [PHASE-2-FEEDBACK.md](../../hot-sales/PHASE-2-FEEDBACK.md) | Authoritative planning |
+| [PRD-V2-Phase2.md](../../hot-sales/PRD-V2-Phase2.md) | Build contract (**Accepted**) |
+| [ADR-001-phase-2-rbac.md](../../hot-sales/ADR-001-phase-2-rbac.md) | RBAC (**Accepted**) |
+| [PHASE-2A-SLICES.md](../../hot-sales/PHASE-2A-SLICES.md) | 2A slices (**Proposed**) |
+| [PHASE-2-SCOPING.md](../../hot-sales/PHASE-2-SCOPING.md) | Candidate list (superseded for planning) |
+
+**No Phase 2 implementation** until [PHASE-2A-SLICES.md](../../hot-sales/PHASE-2A-SLICES.md) is explicitly approved.
