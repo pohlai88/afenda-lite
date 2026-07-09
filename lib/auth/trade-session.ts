@@ -121,7 +121,25 @@ export async function requireTradePermission(
   }
 
   const assignments = await loadAssignments(access.userId);
-  const result = canPermission(access.userId, permissionCode, assignments, ctx);
+  const selfServicePermissions = new Set([
+    "event.view",
+    "order.create",
+    "order.view_own",
+    "transfer.request",
+    "deposit.view",
+  ]);
+  const permissionCtx: HotSalesScopeContext = {
+    ...ctx,
+    resourceOwnerUserId:
+      ctx.resourceOwnerUserId ??
+      (selfServicePermissions.has(permissionCode) ? access.userId : undefined),
+  };
+  const result = canPermission(
+    access.userId,
+    permissionCode,
+    assignments,
+    permissionCtx,
+  );
   if (!result.allowed) {
     redirect("/trade/vi/events");
   }
