@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   GuardianAuthFacade,
+  GuardianIdentityMark,
   type GuardianMode,
   type GuardianState,
 } from "@/components/auth";
@@ -19,58 +20,96 @@ export type GuardianAuthFacadePreviewProps = {
   state?: GuardianState;
 };
 
-/** Static Storybook surface — mode/state driven by args. */
+/** Static Storybook surface — theme toggle wired like production. */
 export function GuardianAuthFacadePreview({
-  mode = "night",
+  mode: modeArg,
   state = "idle",
 }: GuardianAuthFacadePreviewProps) {
+  const { resolvedTheme, setTheme } = useThemeControls();
+  const mode = guardianModeFromPortalTheme(resolvedTheme);
+
+  useEffect(() => {
+    if (modeArg != null) {
+      setTheme(portalThemeFromGuardianMode(modeArg));
+    }
+  }, [modeArg, setTheme]);
+
   return (
     <GuardianAuthFacade
       mode={mode}
       state={state}
+      onModeChange={(next) => setTheme(portalThemeFromGuardianMode(next))}
       assets={GUARDIAN_AUTH_ASSET_SET}
     />
   );
 }
 
-/** Mock Neon sign-in slot for Storybook — mirrors prod Guardian + Neon wiring. */
-function MockNeonSignInSlot() {
+/** Mock Neon sign-in slot — credentials + magic link + Google (manifest social). */
+function MockNeonSignInSlot({ mode }: { mode: GuardianMode }) {
   return (
-    <div className="guardian-auth__access-panel flex w-full flex-col gap-4">
+    <div className="guardian-auth__access-panel flex w-full flex-col gap-3">
       <div className="portal-neon-view w-full">
-        <div className="bg-card text-card-foreground flex w-full flex-col gap-6 rounded-xl border py-6 shadow-sm">
-        <div className="grid auto-rows-min grid-rows-[auto_auto] gap-1.5 px-6">
-          <div className="font-semibold text-lg md:text-xl">
-            {portalCopy.signIn.title}
+        {/* No rounded-xl/shadow-sm — Guardian CSS owns chamber radius/shadow */}
+        <div className="bg-card text-card-foreground flex w-full flex-col gap-4 border py-5">
+          <div className="access-vault__emblem mx-auto" aria-hidden="true">
+            <GuardianIdentityMark mode={mode} surface="emblem" />
           </div>
-          <div className="text-muted-foreground text-xs md:text-sm">
-            {portalCopy.signIn.description}
+          <div className="grid auto-rows-min grid-rows-[auto_auto] gap-1 px-6 text-center">
+            <div className="font-semibold text-lg font-[family-name:var(--font-editorial)] tracking-tight md:text-xl">
+              {portalCopy.signIn.title}
+            </div>
+            <div className="text-muted-foreground text-[0.7rem] tracking-[0.12em] uppercase">
+              {portalCopy.signIn.description}
+            </div>
           </div>
-        </div>
-        <div className="grid gap-4 px-6">
-          <label className="grid gap-2 text-sm">
-            <span className="font-medium">{portalCopy.signIn.emailLabel}</span>
-            <input
-              className="border-input flex h-9 w-full rounded-md border bg-transparent px-3 py-1 text-sm"
-              placeholder={portalCopy.signIn.emailPlaceholder}
-              readOnly
-            />
-          </label>
-          <label className="grid gap-2 text-sm">
-            <span className="font-medium">{portalCopy.signIn.passwordLabel}</span>
-            <input
-              className="border-input flex h-9 w-full rounded-md border bg-transparent px-3 py-1 text-sm"
-              type="password"
-              readOnly
-            />
-          </label>
-          <button
-            type="button"
-            className="bg-primary text-primary-foreground inline-flex h-9 w-full items-center justify-center rounded-md text-sm font-medium"
-          >
-            {portalCopy.signIn.submit}
-          </button>
-        </div>
+          <div className="grid gap-3 px-6">
+            <label className="grid gap-1.5 text-sm">
+              <span className="text-[0.72rem] font-medium tracking-[0.22em] uppercase">
+                {portalCopy.signIn.emailLabel}
+              </span>
+              <input
+                className="border-input flex h-9 w-full rounded-md border bg-transparent px-3 py-1 text-sm"
+                placeholder={portalCopy.signIn.emailPlaceholder}
+                readOnly
+              />
+            </label>
+            <label className="grid gap-1.5 text-sm">
+              <span className="text-[0.72rem] font-medium tracking-[0.22em] uppercase">
+                {portalCopy.signIn.passwordLabel}
+              </span>
+              <input
+                className="border-input flex h-9 w-full rounded-md border bg-transparent px-3 py-1 text-sm"
+                type="password"
+                readOnly
+              />
+            </label>
+            <button
+              type="button"
+              className="bg-primary text-primary-foreground inline-flex h-9 w-full items-center justify-center rounded-md text-sm font-medium"
+            >
+              {portalCopy.signIn.submit}
+            </button>
+            <div className="text-muted-foreground flex items-center gap-3 text-[0.65rem] tracking-[0.12em] uppercase">
+              <span className="bg-border h-px flex-1" />
+              or continue with
+              <span className="bg-border h-px flex-1" />
+            </div>
+            <button
+              type="button"
+              className="border-input inline-flex h-9 w-full items-center justify-center rounded-md border text-sm font-medium"
+            >
+              {portalCopy.magicLink.sendLinkAction}
+            </button>
+            <button
+              type="button"
+              className="border-input inline-flex h-9 w-full items-center justify-center gap-2 rounded-md border text-sm font-medium"
+            >
+              <span aria-hidden="true" className="font-bold text-[#4285f4]">
+                G
+              </span>
+              Continue with Google
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -88,7 +127,7 @@ export function GuardianAuthNeonSlotPreview() {
       onModeChange={(next) => setTheme(portalThemeFromGuardianMode(next))}
       assets={GUARDIAN_AUTH_ASSET_SET}
     >
-      <MockNeonSignInSlot />
+      <MockNeonSignInSlot mode={mode} />
     </GuardianAuthFacade>
   );
 }

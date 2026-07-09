@@ -1,42 +1,51 @@
 "use client";
 
 import type { FormEvent } from "react";
-import type { GuardianState } from "./types";
+import { GuardianIdentityMark } from "./GuardianIdentityMark";
+import type { GuardianMode, GuardianState } from "./types";
+import { portalCopy } from "@/lib/copy/portal-copy";
 
 type Props = {
+  mode?: GuardianMode;
   state?: GuardianState;
   onSubmit?: (event: FormEvent<HTMLFormElement>) => void;
 };
 
 /**
  * Mock vault form — Storybook / design review only.
+ * Mirrors Neon 2-path conveniences (credentials + magic link + Google).
  * Production auth uses PortalAuthNeonView inside GuardianAuthFacade (ADR-Auth-UI-001).
  */
-export function AccessVaultCard({ state = "idle", onSubmit }: Props) {
+export function AccessVaultCard({
+  mode = "night",
+  state = "idle",
+  onSubmit,
+}: Props) {
   const disabled = state === "loading" || state === "locked";
+  const { signIn, magicLink } = portalCopy;
 
   return (
     <form className="access-vault" data-state={state} onSubmit={onSubmit}>
       <div className="access-vault__emblem" aria-hidden="true">
-        <span>⌑</span>
+        <GuardianIdentityMark mode={mode} surface="emblem" />
       </div>
 
-      <h2 className="access-vault__title">Access Vault</h2>
-      <p className="access-vault__subtitle">Enter your credentials to continue</p>
+      <h2 className="access-vault__title">{signIn.title}</h2>
+      <p className="access-vault__subtitle">{signIn.description}</p>
 
       <label className="access-vault__field">
-        <span>Email</span>
+        <span>{signIn.emailLabel}</span>
         <input
           type="email"
           name="email"
-          placeholder="you@example.com"
+          placeholder={signIn.emailPlaceholder}
           autoComplete="email"
           disabled={disabled}
         />
       </label>
 
       <label className="access-vault__field">
-        <span>Password</span>
+        <span>{signIn.passwordLabel}</span>
         <input
           type="password"
           name="password"
@@ -48,12 +57,20 @@ export function AccessVaultCard({ state = "idle", onSubmit }: Props) {
 
       <button className="access-vault__submit" type="submit" disabled={disabled}>
         <span aria-hidden="true">{state === "loading" ? "◌" : "▣"}</span>
-        {state === "loading" ? "Unlocking..." : "Unlock"}
+        {state === "loading" ? "Unlocking..." : signIn.submit}
       </button>
 
       <div className="access-vault__divider">
         <span>or continue with</span>
       </div>
+
+      <button
+        className="access-vault__magic"
+        type="button"
+        disabled={disabled}
+      >
+        {magicLink.sendLinkAction}
+      </button>
 
       <button className="access-vault__google" type="button" disabled={disabled}>
         <span aria-hidden="true">G</span>
@@ -61,7 +78,7 @@ export function AccessVaultCard({ state = "idle", onSubmit }: Props) {
       </button>
 
       <p className="access-vault__footer">
-        New here? <a href="/create-account">Create account</a>
+        New here? <a href="/auth/sign-up">Create account</a>
       </p>
 
       {state === "error" && (

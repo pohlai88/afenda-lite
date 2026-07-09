@@ -3,6 +3,8 @@ export * from "./GuardianAuthFacade";
 export * from "./OwlScene";
 export * from "./EditorialPosterCopy";
 export * from "./AccessVaultCard";
+export * from "./GuardianIdentityMark";
+export * from "./GuardianCornerPanel";
 export * from "./ThemeToggle";
 export * from "./GuardianShield";
 export * from "./use-guardian-neon-auth-state";

@@ -14,7 +14,8 @@ export function ThemeToggle({ mode, onChange }: Props) {
     <button
       className="theme-toggle"
       type="button"
-      aria-label={`Switch to ${nextMode} mode`}
+      aria-label={`Prefer ${nextMode} sky (pauses ambient cycle)`}
+      title={`Prefer ${nextMode} — pauses the living sky cycle`}
       onClick={() => onChange?.(nextMode)}
     >
       <span aria-hidden="true">{mode === "night" ? "☾" : "☼"}</span>
