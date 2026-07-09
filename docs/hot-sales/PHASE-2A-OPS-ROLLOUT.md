@@ -99,7 +99,7 @@ Verify **UI and action-level** access (UI hiding alone is not enough):
 ## Production enable
 
 - [x] Confirm controlled environment evidence is clean (Gate 6)
-- [ ] Enable production flag — **not done**; blocked until Gate 7
+- [x] Enable production flag — **done** (Gate 7 · 2026-07-10 · `HOT_SALES_RBAC_ENABLED=true` on Vercel)
 - [ ] Run smoke (production, `flag=true`)
 - [ ] Monitor denial reasons
 - [ ] Confirm rollback path remains available (production drill)
@@ -129,18 +129,21 @@ Primary lever (not DB rollback):
 → flag=true in controlled env ✅ (local only; production flag stays false)
 → evidence ✅ (`25c3891` gate register)
 → DB cutover (Vercel `dev-spec-b` → `br-tiny-hill-ao82jp6f`) ✅ (2026-07-10 · `d05eae2` + `dpl_8btf19EFofKLQmcswLJQWNXfGEVV`)
-→ production enable ⏸ Gate 7 RBAC promotion blocked
+→ production enable ✅ Gate 7 PASS (2026-07-10)
 ```
 
 Post-tag hotfix `4d203a7` (TradeShell next-intl) must be on `main` before the next production deploy — see [gate register](./PHASE-2A-OPS-GATE-REGISTER.md#hotfix-merge-requirement).
 
 ---
 
-## Gate 7 — DB cutover (complete) / RBAC enable (blocked)
+## Gate 7 — complete (2026-07-10)
 
-**DB cutover:** ✅ Complete (2026-07-10). Vercel `DATABASE_URL` + `NEON_AUTH_BASE_URL` on canonical branch `br-tiny-hill-ao82jp6f` (`ep-dawn-bird`). Post-cutover flag=false smoke passed. Evidence: [gate register § Gate 7](./PHASE-2A-OPS-GATE-REGISTER.md#gate-7--production-db-cutover-complete).
+**DB cutover:** ✅ `br-tiny-hill-ao82jp6f` live on Vercel.  
+**Auth hygiene:** ✅ `allow_localhost: false` on production branch.  
+**Production RBAC:** ✅ `HOT_SALES_RBAC_ENABLED=true`; compact smoke **17/17 PASS**.  
+Evidence: [gate register § Gate 7](./PHASE-2A-OPS-GATE-REGISTER.md#gate-7--production-rbac-enable-complete).
 
-**Production RBAC enable:** ⏸ **not done**. Gate 7 promotion (`HOT_SALES_RBAC_ENABLED=true` on Vercel) remains blocked until explicit checklist — DB cutover prerequisite is satisfied.
+**Rollback:** `HOT_SALES_RBAC_ENABLED=false` → `env:compose` → `sync:vercel` → `vercel deploy --prod`.
 
 | Branch | Role |
 |--------|------|

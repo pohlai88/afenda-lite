@@ -19,7 +19,7 @@ This document is the **single operational SSOT** for Phase 2A rollout status, ga
 |------|--------|
 | **Product boundary** | Tag `hot-sales-phase-2a` → commit `8e650ff` (**immutable**). Do not retag. |
 | **Post-boundary fixes** | Fix-lane only (e.g. `4d203a7` next-intl TradeShell). **Merge to `main`** before the next production deploy. No new product tag. |
-| **RBAC flag** | `HOT_SALES_RBAC_ENABLED=false` in production until **Gate 7**. Gate 6 controlled local `flag=true` matrix **passed** (2026-07-10); production enable remains blocked. |
+| **RBAC flag** | `HOT_SALES_RBAC_ENABLED=true` on Vercel production since **Gate 7** (2026-07-10). Local dev stays `false` unless running controlled matrix. Rollback = set flag `false` → `sync:vercel` → redeploy. |
 | **Schema** | Migrations `013` (Phase 1) + `014` (RBAC) applied on production. **No new migrations** in this phase unless production-blocking. |
 | **No 2B–2D** | Finance, pickup, Excel, notifications, ERP — **blocked** until separate ADR/slice approval. |
 | **No product expansion** | No new permissions, roles, RBAC UI, or trade features. |
@@ -56,10 +56,10 @@ Operational gates map to [PHASE-2A-RELEASE-READINESS.md](./PHASE-2A-RELEASE-READ
 | **4 admin** | Phase 1 admin matrix (flag off) | ✅ Passed |
 | **4B** | Phase 1 sales allowlist matrix (flag off) | ✅ **PASS** — rows 6–10 passed on live app (2026-07-10) |
 | **5** | `requestTransferAction` / transfer-lite triage | ✅ Complete — flag=false no patch; pre-Gate-6 permission alignment recorded |
-| **6** | Controlled `HOT_SALES_RBAC_ENABLED=true` | ✅ **PASS** — local controlled matrix 17/17 (2026-07-10); production flag stays **false** |
-| **7** | Production RBAC enable | ⏸ Blocked — DB cutover ✅ (2026-07-10); explicit `HOT_SALES_RBAC_ENABLED=true` promotion not done |
+| **6** | Controlled `HOT_SALES_RBAC_ENABLED=true` | ✅ **PASS** — local controlled matrix 17/17 (2026-07-10) |
+| **7** | Production RBAC enable | ✅ **PASS** — DB cutover + `allow_localhost` hardened + production `flag=true` + compact smoke 17/17 (2026-07-10) |
 
-**Gate 4 overall:** admin ✅, sales allowlist matrix rows 6–10 ✅ (2026-07-10). **Gate 5** triage ✅ complete (no flag=false patch). **Gate 6** controlled RBAC matrix ✅ **PASS** (local `flag=true`, 17/17, 2026-07-10). **Gate 7 DB cutover** ✅ complete (2026-07-10) — live Vercel `DATABASE_URL` + `NEON_AUTH_BASE_URL` on `br-tiny-hill-ao82jp6f` / `ep-dawn-bird`. **Gate 7 production RBAC enable** ⏸ blocked until explicit promotion checklist.
+**Phase 2A ops rollout:** Gates **1–7** ✅ complete (2026-07-10). Production runtime: `br-tiny-hill-ao82jp6f` / `ep-dawn-bird`, `HOT_SALES_RBAC_ENABLED=true` on Vercel. **No 2B–2D** without new ADR/slice approval.
 
 ---
 
@@ -284,11 +284,10 @@ DB: br-super-hill-aojc9a4p
 3. **Transfer deny** — requires allowlist off + `Gate6 No Transfer` role; integrated in harness with `restoreSalesRbacBaseline()`.
 4. **Role assignment upsert** — partial unique index on active assignments; use SELECT-then-UPDATE, not blind INSERT.
 
-### Post-Gate-6 constraints
+### Post-Gate-6 constraints (historical)
 
-- **Do not** set `HOT_SALES_RBAC_ENABLED=true` on Vercel until Gate 7 promotion checklist.
-- **Do not** start Phase 2B–2D.
-- ~~DB cutover (`br-tiny-hill-ao82jp6f` as live deploy DB) remains a **separate** ops step.~~ ✅ Complete — see Gate 7 DB cutover section.
+- Gate 7 production enable is **complete** (2026-07-10).
+- **Do not** start Phase 2B–2D without new ADR/slice approval.
 
 ---
 
@@ -348,11 +347,81 @@ HOT_SALES_RBAC_ENABLED (Vercel): false
 Production RBAC enable: NOT DONE (explicit promotion still required)
 ```
 
-### Gate 7 promotion blockers (RBAC enable — still open)
+### Gate 7 promotion blockers (RBAC enable — closed)
 
-- `HOT_SALES_RBAC_ENABLED=true` on Vercel — **not set**
-- Production Neon `allow_localhost: true` on `br-tiny-hill-ao82jp6f` — review before RBAC cutover (`productionChecklist.requireLocalhostDisabledAtCutover`)
-- Full Gate 7 controlled matrix on production with `flag=true` — not run
+| Item | Resolution |
+|------|------------|
+| `allow_localhost: true` on production | ✅ Disabled via `configure:neon-auth-production --disable-localhost`; manifest `allowLocalhost: false` (`da34fdc`); MCP verified `allow_localhost: false` |
+| `HOT_SALES_RBAC_ENABLED=true` on Vercel | ✅ Synced + redeployed (`dpl_Eyi4bNeaw9yE8m31pWSBVY3pCaWg`) |
+| Production compact matrix `flag=true` | ✅ **17/17 PASS** (`dpl_BCqJqHsjQ8z2Tih1684Gp11ThreK` after hotfix `930dde0`) |
+
+### Gate 7 — production RBAC enable (complete)
+
+**Status:** ✅ **PASS** — production `HOT_SALES_RBAC_ENABLED=true` with UI + action-level smoke evidence.
+
+**Date:** 2026-07-10  
+**Lane:** Ops rollout + production-blocking hotfix on frozen boundary (`930dde0` — own-scope self-service permission context).
+
+#### Pre-enable hygiene
+
+```text
+allow_localhost: disabled on br-tiny-hill-ao82jp6f (Neon CLI)
+manifest allowLocalhost: false (da34fdc)
+pre-enable deploy: dpl_6hxsWFKNhnngVSx2xJu9zopSH6Yv (flag=false health smoke PASS)
+```
+
+#### Enable sequence
+
+1. `HOT_SALES_RBAC_ENABLED=true` in production env (`npm run env:compose` → `npm run sync:vercel`).
+2. `vercel deploy --prod --yes` → `dpl_Eyi4bNeaw9yE8m31pWSBVY3pCaWg`.
+3. Production-blocking hotfix `930dde0` — `requireTradePermission` supplies `resourceOwnerUserId` for sales self-service codes when RBAC `own` scope is active.
+4. Redeploy → `dpl_BCqJqHsjQ8z2Tih1684Gp11ThreK`.
+
+#### Compact production smoke (`flag=true`)
+
+Target: `https://iam-check.vercel.app`  
+Runner: `node --env-file=.env scripts/gate-7-production-smoke.mjs`
+
+| Check | Result |
+|-------|--------|
+| Health liveness / readiness | ✅ PASS |
+| Unknown team / BU denies (unit) | ✅ PASS |
+| Sensitive missing grant denies (unit) | ✅ PASS |
+| Admin RBAC / events / events/new | ✅ PASS |
+| Admin event create action | ✅ PASS |
+| Sales events (no `/client` bounce) | ✅ PASS |
+| Sales order create + my-orders | ✅ PASS |
+| Sales own transfer request | ✅ PASS (post-allocation) |
+| Sales admin RBAC denied | ✅ PASS |
+| Sales events/new denied (RSC) | ✅ PASS |
+| Sales event.create replay denied | ✅ PASS |
+| Sales allocation admin denied | ✅ PASS |
+
+**Verdict:**
+
+```text
+Gate 7 production RBAC enable: PASS (17/17)
+Runtime DB: br-tiny-hill-ao82jp6f / ep-dawn-bird
+HOT_SALES_RBAC_ENABLED (Vercel): true
+Deploy: dpl_BCqJqHsjQ8z2Tih1684Gp11ThreK
+Hotfix: 930dde0
+```
+
+#### Rollback path (verified policy)
+
+```bash
+# env.config: HOT_SALES_RBAC_ENABLED=false
+# env.secret: production DATABASE_URL (ep-dawn-bird) for sync only
+npm run env:compose
+npm run sync:vercel
+vercel deploy --prod --yes
+```
+
+Phase 1 allowlist + admin path resumes immediately when flag is `false` (dual-read not active).
+
+#### Brief monitoring (post-enable)
+
+No unexpected 500s, `/client` bounces, `team_scope_unresolved`, `bu_scope_unresolved`, or incorrect admin/sales denials observed during smoke window.
 
 ---
 
