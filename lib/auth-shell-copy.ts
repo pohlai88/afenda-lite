@@ -6,7 +6,7 @@ import {
 import {
   isOrgSignInFrom,
   ORG_SIGN_IN_FROM_PARAM,
-} from "@/lib/org-sign-in-entry";
+} from "@/lib/auth/auth-entry-params";
 
 export type AuthShellCopy = {
   eyebrow: string;

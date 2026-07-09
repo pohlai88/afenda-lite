@@ -24,7 +24,10 @@ test.describe("Org sidebar navigation @journey", () => {
       .click();
     await expect(page).toHaveURL(/\/dashboard\/clients$/);
 
-    await page.getByRole("link", { name: nav.declarations, exact: true }).click();
+    await page
+      .locator('[data-sidebar="sidebar"]')
+      .getByRole("link", { name: nav.declarations, exact: true })
+      .click();
     await expect(page).toHaveURL(/\/dashboard$/);
 
     await page.goto("/dashboard/clients");

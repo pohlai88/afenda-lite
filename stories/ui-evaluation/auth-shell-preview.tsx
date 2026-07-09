@@ -1,5 +1,7 @@
 import { PortalAuthLayout } from "@/components/portal-auth-layout";
 import { PortalAuthEmailTrustNotice } from "@/components/portal-auth-email-trust-notice";
+import { GuardianAuthFacade } from "@/components/auth";
+import { GUARDIAN_AUTH_ASSET_SET } from "@/lib/portal-brand";
 import { PortalInvitationJoinBrandPanel } from "@/components/portal-invitation-join-brand-panel";
 import { PortalInvitationJoinSteps } from "@/components/portal-invitation-join-steps";
 import { productionSeedFixtures } from "@/lib/production-fixtures";
@@ -83,7 +85,16 @@ function MockNeonOtpCard() {
   );
 }
 
-/** Production iam-check auth shell — editorial poster + Neon Auth card slot. */
+/** Production iam-check auth shell — Guardian cinematic facade + Neon Auth card slot. */
+export function IamCheckGuardianAuthShellPreview() {
+  return (
+    <GuardianAuthFacade mode="night" assets={GUARDIAN_AUTH_ASSET_SET}>
+      <MockNeonAuthCard />
+    </GuardianAuthFacade>
+  );
+}
+
+/** Legacy PortalAuthLayout shell — rollback path when GUARDIAN_AUTH_SHELL=false. */
 export function IamCheckAuthShellPreview() {
   return (
     <PortalAuthLayout>
@@ -368,7 +379,7 @@ export function RejectedStudioAuthPanel() {
       </ul>
       <p className="mt-6 text-sm text-foreground">
         Matrix winner:{" "}
-        <span className="font-medium">PortalAuthLayout + Neon AuthView</span>
+        <span className="font-medium">GuardianAuthFacade + Neon AuthView</span>
       </p>
     </div>
   );

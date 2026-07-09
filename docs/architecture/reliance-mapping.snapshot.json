@@ -1,20 +1,18 @@
 {
   "version": "1.0.0",
-  "generatedAt": "2026-07-08T15:49:32.951Z",
+  "generatedAt": "2026-07-09T08:23:29.346Z",
   "summary": {
     "surfaces": {
-      "total": 23,
-      "aligned": 22,
-      "drift": 1
-    },
-    "actions": {
-      "total": 18,
-      "aligned": 18,
+      "total": 26,
+      "aligned": 26,
       "drift": 0
     },
-    "orphanActions": [
-      "action:saveClientDeclarationDraftAction"
-    ],
+    "actions": {
+      "total": 21,
+      "aligned": 21,
+      "drift": 0
+    },
+    "orphanActions": [],
     "internalActions": [
       "action:adminSignInAction",
       "action:validateSurveyPackageAction"
@@ -53,11 +51,14 @@
       "evidence": {
         "entryFiles": [
           "app/join/page.tsx",
+          "components/guardian-invitation-join-page.tsx",
           "components/portal-invitation-join-panel.tsx",
           "lib/client-invitation-join-auth.ts"
         ],
         "scannedFiles": [
           "app/join/page.tsx",
+          "components/auth/use-guardian-neon-auth-state.ts",
+          "components/guardian-invitation-join-page.tsx",
           "components/portal-auth-email-trust-notice.tsx",
           "components/portal-auth-layout.tsx",
           "components/portal-auth-neon-view.tsx",
@@ -99,22 +100,22 @@
       },
       "evidence": {
         "entryFiles": [
-          "app/auth/[path]/page.tsx"
+          "app/auth/[path]/page.tsx",
+          "lib/auth/auth-page-trust.ts"
         ],
         "scannedFiles": [
           "app/auth/[path]/page.tsx",
-          "components/portal-access-denied-notice.tsx",
-          "components/portal-auth-email-trust-notice.tsx",
+          "components/auth/use-guardian-neon-auth-state.ts",
+          "components/guardian-auth-login-page.tsx",
           "components/portal-auth-form-intro.tsx",
           "components/portal-auth-layout.tsx",
           "components/portal-auth-neon-view.tsx",
-          "components/portal-auth-reason-notice.tsx",
           "components/portal-brand-mark.tsx",
           "components/portal-theme-toggle.tsx",
           "components/theme-provider.tsx",
-          "components/ui/alert.tsx",
           "components/ui/button.tsx",
-          "components/ui/skeleton.tsx"
+          "components/ui/skeleton.tsx",
+          "lib/auth/auth-page-trust.ts"
         ]
       }
     },
@@ -139,22 +140,22 @@
       },
       "evidence": {
         "entryFiles": [
-          "app/auth/[path]/page.tsx"
+          "app/auth/[path]/page.tsx",
+          "lib/auth/auth-page-trust.ts"
         ],
         "scannedFiles": [
           "app/auth/[path]/page.tsx",
-          "components/portal-access-denied-notice.tsx",
-          "components/portal-auth-email-trust-notice.tsx",
+          "components/auth/use-guardian-neon-auth-state.ts",
+          "components/guardian-auth-login-page.tsx",
           "components/portal-auth-form-intro.tsx",
           "components/portal-auth-layout.tsx",
           "components/portal-auth-neon-view.tsx",
-          "components/portal-auth-reason-notice.tsx",
           "components/portal-brand-mark.tsx",
           "components/portal-theme-toggle.tsx",
           "components/theme-provider.tsx",
-          "components/ui/alert.tsx",
           "components/ui/button.tsx",
-          "components/ui/skeleton.tsx"
+          "components/ui/skeleton.tsx",
+          "lib/auth/auth-page-trust.ts"
         ]
       }
     },
@@ -179,22 +180,22 @@
       },
       "evidence": {
         "entryFiles": [
-          "app/auth/[path]/page.tsx"
+          "app/auth/[path]/page.tsx",
+          "lib/auth/auth-page-trust.ts"
         ],
         "scannedFiles": [
           "app/auth/[path]/page.tsx",
-          "components/portal-access-denied-notice.tsx",
-          "components/portal-auth-email-trust-notice.tsx",
+          "components/auth/use-guardian-neon-auth-state.ts",
+          "components/guardian-auth-login-page.tsx",
           "components/portal-auth-form-intro.tsx",
           "components/portal-auth-layout.tsx",
           "components/portal-auth-neon-view.tsx",
-          "components/portal-auth-reason-notice.tsx",
           "components/portal-brand-mark.tsx",
           "components/portal-theme-toggle.tsx",
           "components/theme-provider.tsx",
-          "components/ui/alert.tsx",
           "components/ui/button.tsx",
-          "components/ui/skeleton.tsx"
+          "components/ui/skeleton.tsx",
+          "lib/auth/auth-page-trust.ts"
         ]
       }
     },
@@ -219,22 +220,22 @@
       },
       "evidence": {
         "entryFiles": [
-          "app/auth/[path]/page.tsx"
+          "app/auth/[path]/page.tsx",
+          "lib/auth/auth-page-trust.ts"
         ],
         "scannedFiles": [
           "app/auth/[path]/page.tsx",
-          "components/portal-access-denied-notice.tsx",
-          "components/portal-auth-email-trust-notice.tsx",
+          "components/auth/use-guardian-neon-auth-state.ts",
+          "components/guardian-auth-login-page.tsx",
           "components/portal-auth-form-intro.tsx",
           "components/portal-auth-layout.tsx",
           "components/portal-auth-neon-view.tsx",
-          "components/portal-auth-reason-notice.tsx",
           "components/portal-brand-mark.tsx",
           "components/portal-theme-toggle.tsx",
           "components/theme-provider.tsx",
-          "components/ui/alert.tsx",
           "components/ui/button.tsx",
-          "components/ui/skeleton.tsx"
+          "components/ui/skeleton.tsx",
+          "lib/auth/auth-page-trust.ts"
         ]
       }
     },
@@ -259,22 +260,22 @@
       },
       "evidence": {
         "entryFiles": [
-          "app/auth/[path]/page.tsx"
+          "app/auth/[path]/page.tsx",
+          "lib/auth/auth-page-trust.ts"
         ],
         "scannedFiles": [
           "app/auth/[path]/page.tsx",
-          "components/portal-access-denied-notice.tsx",
-          "components/portal-auth-email-trust-notice.tsx",
+          "components/auth/use-guardian-neon-auth-state.ts",
+          "components/guardian-auth-login-page.tsx",
           "components/portal-auth-form-intro.tsx",
           "components/portal-auth-layout.tsx",
           "components/portal-auth-neon-view.tsx",
-          "components/portal-auth-reason-notice.tsx",
           "components/portal-brand-mark.tsx",
           "components/portal-theme-toggle.tsx",
           "components/theme-provider.tsx",
-          "components/ui/alert.tsx",
           "components/ui/button.tsx",
-          "components/ui/skeleton.tsx"
+          "components/ui/skeleton.tsx",
+          "lib/auth/auth-page-trust.ts"
         ]
       }
     },
@@ -285,13 +286,16 @@
       "compare": {
         "declared": [
           "auth:organization/accept-invitation",
+          "domain:auth",
           "domain:client-invitation-entry"
         ],
         "discovered": [
+          "domain:auth",
           "domain:client-invitation-entry"
         ],
         "aligned": [
           "auth:organization/accept-invitation",
+          "domain:auth",
           "domain:client-invitation-entry"
         ],
         "declaredOnly": [],
@@ -309,19 +313,146 @@
         ],
         "scannedFiles": [
           "app/auth/[path]/page.tsx",
-          "components/portal-access-denied-notice.tsx",
-          "components/portal-auth-email-trust-notice.tsx",
+          "components/auth/use-guardian-neon-auth-state.ts",
+          "components/guardian-auth-login-page.tsx",
           "components/portal-auth-form-intro.tsx",
           "components/portal-auth-layout.tsx",
           "components/portal-auth-neon-view.tsx",
-          "components/portal-auth-reason-notice.tsx",
           "components/portal-brand-mark.tsx",
           "components/portal-theme-toggle.tsx",
           "components/theme-provider.tsx",
-          "components/ui/alert.tsx",
           "components/ui/button.tsx",
           "components/ui/skeleton.tsx",
           "lib/client-invitation-entry.ts"
+        ]
+      }
+    },
+    {
+      "surfaceId": "client-login",
+      "route": "/client/login",
+      "mode": "auth-pathname",
+      "compare": {
+        "declared": [
+          "auth:sign-in/email"
+        ],
+        "discovered": [
+          "auth:sign-in/email"
+        ],
+        "aligned": [
+          "auth:sign-in/email"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [],
+        "inherited": [],
+        "status": "aligned"
+      },
+      "evidence": {
+        "entryFiles": [
+          "app/client/(gate)/login/page.tsx",
+          "lib/client-sign-in-entry.ts",
+          "lib/portal-routes.ts"
+        ],
+        "scannedFiles": [
+          "app/client/(gate)/login/page.tsx",
+          "lib/client-sign-in-entry.ts",
+          "lib/portal-routes.ts"
+        ]
+      }
+    },
+    {
+      "surfaceId": "client-home-redirect",
+      "route": "/",
+      "mode": "source-scan",
+      "compare": {
+        "declared": [
+          "auth:sign-in/email",
+          "domain:auth",
+          "domain:client-invitation-entry"
+        ],
+        "discovered": [
+          "domain:auth",
+          "domain:client-invitation-entry"
+        ],
+        "aligned": [
+          "auth:sign-in/email",
+          "domain:auth",
+          "domain:client-invitation-entry"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [],
+        "inherited": [
+          "auth:sign-in/email",
+          "domain:client-invitation-entry"
+        ],
+        "status": "aligned"
+      },
+      "evidence": {
+        "entryFiles": [
+          "app/page.tsx",
+          "lib/client-sign-in-entry.ts",
+          "lib/client-invitation-entry.ts",
+          "lib/portal-routes.ts"
+        ],
+        "scannedFiles": [
+          "app/page.tsx",
+          "lib/client-invitation-entry.ts",
+          "lib/client-sign-in-entry.ts",
+          "lib/portal-routes.ts"
+        ]
+      }
+    },
+    {
+      "surfaceId": "client-preview-unavailable",
+      "route": "/client/preview-unavailable",
+      "mode": "source-scan",
+      "compare": {
+        "declared": [
+          "domain:preview-client"
+        ],
+        "discovered": [
+          "domain:preview-client"
+        ],
+        "aligned": [
+          "domain:preview-client"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [],
+        "inherited": [
+          "domain:preview-client"
+        ],
+        "status": "aligned"
+      },
+      "evidence": {
+        "entryFiles": [
+          "app/client/(gate)/preview-unavailable/page.tsx",
+          "lib/client-preview-unavailable-page.tsx",
+          "components/client-preview-unavailable-view.tsx",
+          "lib/preview-client.ts"
+        ],
+        "scannedFiles": [
+          "app/client/(gate)/preview-unavailable/page.tsx",
+          "components/client-preview-unavailable-view.tsx",
+          "components/client-sign-out-button.tsx",
+          "components/portal-brand-mark.tsx",
+          "components/portal-breadcrumb-list.tsx",
+          "components/portal-customer-shell.tsx",
+          "components/portal-empty-state.tsx",
+          "components/portal-eyebrow.tsx",
+          "components/portal-page-header.tsx",
+          "components/portal-theme-toggle.tsx",
+          "components/theme-provider.tsx",
+          "components/ui/badge.tsx",
+          "components/ui/breadcrumb.tsx",
+          "components/ui/button.tsx",
+          "components/ui/card.tsx",
+          "components/ui/input.tsx",
+          "components/ui/separator.tsx",
+          "components/ui/sheet.tsx",
+          "components/ui/sidebar.tsx",
+          "components/ui/skeleton.tsx",
+          "components/ui/tooltip.tsx",
+          "lib/client-preview-unavailable-page.tsx",
+          "lib/preview-client.ts"
         ]
       }
     },
@@ -333,16 +464,19 @@
         "declared": [
           "action:requireClientSession",
           "action:saveClientOnboardingAction",
+          "domain:auth",
           "domain:client-onboarding"
         ],
         "discovered": [
           "action:requireClientSession",
           "action:saveClientOnboardingAction",
+          "domain:auth",
           "domain:client-onboarding"
         ],
         "aligned": [
           "action:requireClientSession",
           "action:saveClientOnboardingAction",
+          "domain:auth",
           "domain:client-onboarding"
         ],
         "declaredOnly": [],
@@ -401,14 +535,17 @@
       "compare": {
         "declared": [
           "action:requireClientSession",
+          "domain:auth",
           "domain:clients"
         ],
         "discovered": [
           "action:requireClientSession",
+          "domain:auth",
           "domain:clients"
         ],
         "aligned": [
           "action:requireClientSession",
+          "domain:auth",
           "domain:clients"
         ],
         "declaredOnly": [],
@@ -458,16 +595,19 @@
         "declared": [
           "action:acknowledgeClientPortalAction",
           "action:requireClientSession",
+          "domain:auth",
           "domain:clients"
         ],
         "discovered": [
           "action:acknowledgeClientPortalAction",
           "action:requireClientSession",
+          "domain:auth",
           "domain:clients"
         ],
         "aligned": [
           "action:acknowledgeClientPortalAction",
           "action:requireClientSession",
+          "domain:auth",
           "domain:clients"
         ],
         "declaredOnly": [],
@@ -563,41 +703,50 @@
       "mode": "source-scan",
       "compare": {
         "declared": [
-          "action:registerEvidenceAction",
-          "action:requireClientSession",
-          "action:submitClientDeclarationAction",
-          "domain:clients",
-          "domain:questions"
-        ],
-        "discovered": [
+          "action:postClientDeclarationDraftApi",
           "action:registerEvidenceAction",
           "action:requireClientSession",
           "action:saveClientDeclarationDraftAction",
           "action:submitClientDeclarationAction",
+          "domain:auth",
+          "domain:clients",
+          "domain:questions"
+        ],
+        "discovered": [
+          "action:postClientDeclarationDraftApi",
+          "action:registerEvidenceAction",
+          "action:requireClientSession",
+          "action:saveClientDeclarationDraftAction",
+          "action:submitClientDeclarationAction",
+          "domain:auth",
           "domain:clients",
           "domain:questions"
         ],
         "aligned": [
+          "action:postClientDeclarationDraftApi",
           "action:registerEvidenceAction",
           "action:requireClientSession",
+          "action:saveClientDeclarationDraftAction",
           "action:submitClientDeclarationAction",
+          "domain:auth",
           "domain:clients",
           "domain:questions"
         ],
         "declaredOnly": [],
-        "discoveredOnly": [
-          "action:saveClientDeclarationDraftAction"
-        ],
+        "discoveredOnly": [],
         "inherited": [],
-        "status": "drift"
+        "status": "aligned"
       },
       "evidence": {
         "entryFiles": [
           "app/client/(workspace)/declare/[id]/page.tsx",
           "components/client-declaration-form.tsx",
-          "components/declaration-question-field.tsx"
+          "components/declaration-form.tsx",
+          "components/declaration-question-field.tsx",
+          "app/api/client/declaration-draft/route.ts"
         ],
         "scannedFiles": [
+          "app/api/client/declaration-draft/route.ts",
           "app/client/(workspace)/declare/[id]/page.tsx",
           "components/client-assignment-deadline-notice.tsx",
           "components/client-declaration-form.tsx",
@@ -1102,18 +1251,21 @@
           "action:requireAdminSession",
           "action:startClientPreviewAction",
           "domain:auth",
+          "domain:clients",
           "domain:preview-client"
         ],
         "discovered": [
           "action:requireAdminSession",
           "action:startClientPreviewAction",
           "domain:auth",
+          "domain:clients",
           "domain:preview-client"
         ],
         "aligned": [
           "action:requireAdminSession",
           "action:startClientPreviewAction",
           "domain:auth",
+          "domain:clients",
           "domain:preview-client"
         ],
         "declaredOnly": [],
@@ -1157,14 +1309,17 @@
       "compare": {
         "declared": [
           "action:exitClientPreviewAction",
+          "domain:clients",
           "domain:preview-client"
         ],
         "discovered": [
           "action:exitClientPreviewAction",
+          "domain:clients",
           "domain:preview-client"
         ],
         "aligned": [
           "action:exitClientPreviewAction",
+          "domain:clients",
           "domain:preview-client"
         ],
         "declaredOnly": [],
@@ -1220,7 +1375,7 @@
     },
     {
       "actionId": "action:requireAdminSession",
-      "file": "lib/auth/session.ts",
+      "file": "app/actions/admin.ts",
       "compare": {
         "declared": [
           "domain:auth"
@@ -1228,7 +1383,6 @@
         "discovered": [
           "domain:audit",
           "domain:auth",
-          "domain:clients",
           "domain:preview-client"
         ],
         "aligned": [
@@ -1237,9 +1391,30 @@
         "declaredOnly": [],
         "discoveredOnly": [
           "domain:audit",
-          "domain:clients",
           "domain:preview-client"
         ],
+        "inherited": [],
+        "status": "aligned"
+      }
+    },
+    {
+      "actionId": "action:requireAccountSession",
+      "file": "lib/account-session.ts",
+      "compare": {
+        "declared": [
+          "domain:auth",
+          "domain:clients"
+        ],
+        "discovered": [
+          "domain:auth",
+          "domain:clients"
+        ],
+        "aligned": [
+          "domain:auth",
+          "domain:clients"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [],
         "inherited": [],
         "status": "aligned"
       }
@@ -1378,6 +1553,65 @@
           "domain:client-onboarding",
           "domain:email"
         ],
+        "inherited": [],
+        "status": "aligned"
+      }
+    },
+    {
+      "actionId": "action:saveClientDeclarationDraftAction",
+      "file": "app/actions/client.ts",
+      "compare": {
+        "declared": [
+          "domain:clients",
+          "domain:questions",
+          "domain:surveys"
+        ],
+        "discovered": [
+          "domain:audit",
+          "domain:auth",
+          "domain:client-onboarding",
+          "domain:clients",
+          "domain:email",
+          "domain:questions",
+          "domain:surveys"
+        ],
+        "aligned": [
+          "domain:clients",
+          "domain:questions",
+          "domain:surveys"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [
+          "domain:audit",
+          "domain:auth",
+          "domain:client-onboarding",
+          "domain:email"
+        ],
+        "inherited": [],
+        "status": "aligned"
+      }
+    },
+    {
+      "actionId": "action:postClientDeclarationDraftApi",
+      "file": "app/api/client/declaration-draft/route.ts",
+      "compare": {
+        "declared": [
+          "domain:auth",
+          "domain:clients",
+          "domain:questions"
+        ],
+        "discovered": [
+          "domain:auth",
+          "domain:clients",
+          "domain:questions"
+        ],
+        "aligned": [
+          "domain:auth",
+          "domain:clients",
+          "domain:questions"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [],
         "inherited": [],
         "status": "aligned"
       }

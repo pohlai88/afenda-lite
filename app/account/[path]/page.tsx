@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { requireAccountSession } from "@/lib/account-session";
 import { PortalAccountSectionNav } from "@/components/portal-account-section-nav";
 import { PortalAccountShell } from "@/components/portal-account-shell";
@@ -9,9 +9,11 @@ import {
   accountCopyKey,
   isPortalAccountPath,
   PORTAL_ACCOUNT_PATHS,
+  resolveAccountPathAccess,
 } from "@/lib/account-paths";
 import { portalCopy, PORTAL_NAME } from "@/lib/portal-copy";
 
+export const dynamic = "force-dynamic";
 export const dynamicParams = false;
 
 export function generateStaticParams() {
@@ -50,6 +52,11 @@ export default async function AccountPage({
   }
 
   const member = await requireAccountSession();
+  const access = resolveAccountPathAccess(member.context, path);
+  if (!access.allowed) {
+    redirect(access.redirectHref);
+  }
+
   const copy = portalCopy.account[accountCopyKey(path)];
 
   return (
@@ -61,7 +68,7 @@ export default async function AccountPage({
       >
         <PortalAccountNeonView pathname={path} />
       </PortalFormSection>
-      <PortalAccountSectionNav activePath={path} />
+      <PortalAccountSectionNav activePath={path} context={member.context} />
     </PortalAccountShell>
   );
 }

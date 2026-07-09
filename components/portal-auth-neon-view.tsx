@@ -34,10 +34,12 @@ export function PortalAuthNeonView({
   }
 
   return (
-    <AuthView
-      pathname={pathname}
-      redirectTo={redirectTo}
-      callbackURL={callbackURL}
-    />
+    <div className="portal-neon-view w-full">
+      <AuthView
+        pathname={pathname}
+        redirectTo={redirectTo}
+        callbackURL={callbackURL}
+      />
+    </div>
   );
 }

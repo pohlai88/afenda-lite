@@ -5,7 +5,7 @@
 
 **Decision:** **Option A** — dedicated dev Neon branch with localhost allowed. Never enable localhost on production.
 
-Runbook cross-links: [preview-branch-setup.md](./preview-branch-setup.md) (CI/preview branch topology) · [BL-09](../backlogs/slices/bl-09-local-dev-auth.md)
+Runbook cross-links: [preview-branch-setup.md](./preview-branch-setup.md) (CI/preview branch topology) · [SPEC-B local/preview](./spec-b-local-preview-env.md) (`npm run bootstrap:spec-b`) · [BL-09](../backlogs/slices/bl-09-local-dev-auth.md)
 
 ---
 

@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { ClientOnboardingWizard } from "@/components/client-onboarding-wizard";
 import { PortalCustomerShell } from "@/components/portal-customer-shell";
 import { PortalTrustNotice } from "@/components/portal-trust-notice";
-import { requireClientSession } from "@/app/actions/client";
+import { requireClientSession } from "@/lib/auth/session";
 import { loadClientOnboardingPageData } from "@/lib/client-onboarding.server";
 import { isPlaygroundEmbedRequest } from "@/lib/playground";
 import { CLIENT_HOME_HREF } from "@/lib/portal-routes";

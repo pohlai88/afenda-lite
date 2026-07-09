@@ -61,13 +61,31 @@ export const SURFACE_RELIANCE: ReadonlyArray<{
     consumes: [
       { kind: "auth-operation", operationId: "auth:organization/accept-invitation" },
       { kind: "domain-loader", domainId: "domain:client-invitation-entry" },
+      { kind: "domain-loader", domainId: "domain:auth" },
     ],
+  },
+  {
+    surfaceId: "client-login",
+    consumes: [{ kind: "auth-operation", operationId: "auth:sign-in/email" }],
+  },
+  {
+    surfaceId: "client-home-redirect",
+    consumes: [
+      { kind: "auth-operation", operationId: "auth:sign-in/email" },
+      { kind: "domain-loader", domainId: "domain:client-invitation-entry" },
+      { kind: "domain-loader", domainId: "domain:auth" },
+    ],
+  },
+  {
+    surfaceId: "client-preview-unavailable",
+    consumes: [{ kind: "domain-loader", domainId: "domain:preview-client" }],
   },
   {
     surfaceId: "client-onboarding",
     consumes: [
       { kind: "server-action", actionId: "action:requireClientSession" },
       { kind: "server-action", actionId: "action:saveClientOnboardingAction" },
+      { kind: "domain-loader", domainId: "domain:auth" },
       { kind: "domain-loader", domainId: "domain:client-onboarding" },
     ],
   },
@@ -75,6 +93,7 @@ export const SURFACE_RELIANCE: ReadonlyArray<{
     surfaceId: "client-profile",
     consumes: [
       { kind: "server-action", actionId: "action:requireClientSession" },
+      { kind: "domain-loader", domainId: "domain:auth" },
       { kind: "domain-loader", domainId: "domain:clients" },
     ],
   },
@@ -83,6 +102,7 @@ export const SURFACE_RELIANCE: ReadonlyArray<{
     consumes: [
       { kind: "server-action", actionId: "action:requireClientSession" },
       { kind: "server-action", actionId: "action:acknowledgeClientPortalAction" },
+      { kind: "domain-loader", domainId: "domain:auth" },
       { kind: "domain-loader", domainId: "domain:clients" },
     ],
   },
@@ -95,7 +115,10 @@ export const SURFACE_RELIANCE: ReadonlyArray<{
     consumes: [
       { kind: "server-action", actionId: "action:requireClientSession" },
       { kind: "server-action", actionId: "action:submitClientDeclarationAction" },
+      { kind: "server-action", actionId: "action:saveClientDeclarationDraftAction" },
+      { kind: "server-action", actionId: "action:postClientDeclarationDraftApi" },
       { kind: "server-action", actionId: "action:registerEvidenceAction" },
+      { kind: "domain-loader", domainId: "domain:auth" },
       { kind: "domain-loader", domainId: "domain:clients" },
       { kind: "domain-loader", domainId: "domain:questions" },
     ],
@@ -172,6 +195,7 @@ export const SURFACE_RELIANCE: ReadonlyArray<{
       { kind: "server-action", actionId: "action:startClientPreviewAction" },
       { kind: "domain-loader", domainId: "domain:preview-client" },
       { kind: "domain-loader", domainId: "domain:auth" },
+      { kind: "domain-loader", domainId: "domain:clients" },
     ],
   },
   {
@@ -179,6 +203,7 @@ export const SURFACE_RELIANCE: ReadonlyArray<{
     consumes: [
       { kind: "server-action", actionId: "action:exitClientPreviewAction" },
       { kind: "domain-loader", domainId: "domain:preview-client" },
+      { kind: "domain-loader", domainId: "domain:clients" },
     ],
   },
 ];
@@ -196,8 +221,13 @@ export const ACTION_DOMAIN_MATERIALIZATION: ReadonlyArray<{
   },
   {
     actionId: "action:requireAdminSession",
-    file: "lib/auth/session.ts",
+    file: "app/actions/admin.ts",
     domains: ["domain:auth"],
+  },
+  {
+    actionId: "action:requireAccountSession",
+    file: "lib/account-session.ts",
+    domains: ["domain:auth", "domain:clients"],
   },
   {
     actionId: "action:saveClientOnboardingAction",
@@ -218,6 +248,16 @@ export const ACTION_DOMAIN_MATERIALIZATION: ReadonlyArray<{
     actionId: "action:submitClientDeclarationAction",
     file: "app/actions/client.ts",
     domains: ["domain:surveys", "domain:questions", "domain:clients", "domain:audit"],
+  },
+  {
+    actionId: "action:saveClientDeclarationDraftAction",
+    file: "app/actions/client.ts",
+    domains: ["domain:clients", "domain:surveys", "domain:questions"],
+  },
+  {
+    actionId: "action:postClientDeclarationDraftApi",
+    file: "app/api/client/declaration-draft/route.ts",
+    domains: ["domain:clients", "domain:questions", "domain:auth"],
   },
   {
     actionId: "action:deleteClientAssignmentAction",

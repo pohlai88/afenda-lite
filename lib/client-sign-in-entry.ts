@@ -3,6 +3,13 @@ import "server-only";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import {
+  CLIENT_CHECK_EMAIL_REASON,
+  CLIENT_INVITE_EXPIRED_REASON,
+  CLIENT_INVITE_INVALID_REASON,
+  CLIENT_LOGIN_REQUIRED_REASON,
+  resolveClientAuthReasonNotice,
+} from "@/lib/auth/auth-entry-params";
+import {
   appendPlaygroundEmbedQuery,
   resolvePlaygroundEmbedActive,
 } from "@/lib/playground";
@@ -15,10 +22,13 @@ import {
 } from "@/lib/portal-routes";
 import { getAuthenticatedLandingHref } from "@/lib/portal-session-routing";
 
-export const CLIENT_LOGIN_REQUIRED_REASON = "login-required" as const;
-export const CLIENT_CHECK_EMAIL_REASON = "check-email" as const;
-export const CLIENT_INVITE_EXPIRED_REASON = "invite-expired" as const;
-export const CLIENT_INVITE_INVALID_REASON = "invite-invalid" as const;
+export {
+  CLIENT_CHECK_EMAIL_REASON,
+  CLIENT_INVITE_EXPIRED_REASON,
+  CLIENT_INVITE_INVALID_REASON,
+  CLIENT_LOGIN_REQUIRED_REASON,
+  resolveClientAuthReasonNotice,
+} from "@/lib/auth/auth-entry-params";
 
 export const clientLoginPageMetadata: Metadata = {
   title: `${PORTAL_NAME} — ${portalCopy.metadata.home.title}`,
@@ -49,26 +59,6 @@ export function clientSignInAuthHref(reason?: string, returnTo?: string) {
   }
 
   return authSignInHref(params);
-}
-
-export function resolveClientAuthReasonNotice(reason?: string) {
-  if (reason === CLIENT_LOGIN_REQUIRED_REASON) {
-    return portalCopy.signIn.loginRequiredHint;
-  }
-
-  if (reason === CLIENT_CHECK_EMAIL_REASON) {
-    return portalCopy.signIn.checkEmailHint;
-  }
-
-  if (reason === CLIENT_INVITE_EXPIRED_REASON) {
-    return portalCopy.signIn.inviteExpiredHint;
-  }
-
-  if (reason === CLIENT_INVITE_INVALID_REASON) {
-    return portalCopy.signIn.inviteInvalidHint;
-  }
-
-  return null;
 }
 
 /** Named client sign-in entry — session dispatch then Neon Auth UI. */

@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense } from "react";
+import { GuardianInvitationJoinPage } from "@/components/guardian-invitation-join-page";
 import { PortalAuthLayout } from "@/components/portal-auth-layout";
 import { PortalAuthEmailTrustNotice } from "@/components/portal-auth-email-trust-notice";
 import { PortalInvitationJoinBrandPanel } from "@/components/portal-invitation-join-brand-panel";
@@ -9,7 +10,11 @@ import { authClient } from "@/lib/auth/client";
 import { resolveJoinInvitationAuthView } from "@/lib/client-invitation-join-auth";
 import { portalCopy } from "@/lib/portal-copy";
 
-function PortalInvitationJoinPageInner() {
+function PortalInvitationJoinPageInner({
+  useGuardianShell,
+}: {
+  useGuardianShell: boolean;
+}) {
   const { data: session, isPending } = authClient.useSession();
   const { organizationAuth, emailOtp } = portalCopy;
   const authView = resolveJoinInvitationAuthView({
@@ -18,30 +23,47 @@ function PortalInvitationJoinPageInner() {
     emailVerified: Boolean(session?.user.emailVerified),
   });
 
-  const headerNotice =
-    authView.pathname === "email-otp"
-      ? emailOtp.trustNotice
-      : organizationAuth.trustNotice;
+  const headerExtra = (
+    <PortalAuthEmailTrustNotice
+      message={
+        authView.pathname === "email-otp"
+          ? emailOtp.trustNotice
+          : organizationAuth.trustNotice
+      }
+      variant="email"
+    />
+  );
+
+  if (useGuardianShell) {
+    return (
+      <GuardianInvitationJoinPage
+        activeStep={authView.activeStep}
+        headerExtra={headerExtra}
+      />
+    );
+  }
 
   return (
     <PortalAuthLayout
-      brandPanel={<PortalInvitationJoinBrandPanel activeStep={authView.activeStep} />}
-      headerExtra={
-        <PortalAuthEmailTrustNotice
-          message={headerNotice}
-          variant={authView.pathname === "email-otp" ? "email" : "email"}
-        />
+      brandPanel={
+        <PortalInvitationJoinBrandPanel activeStep={authView.activeStep} />
       }
+      headerExtra={headerExtra}
     >
       <PortalInvitationJoinPanel />
     </PortalAuthLayout>
   );
 }
 
-export function PortalInvitationJoinPage() {
+export function PortalInvitationJoinPage({
+  useGuardianShell = true,
+}: {
+  /** Set from server via `isGuardianAuthShellEnabled()` — not a public env var. */
+  useGuardianShell?: boolean;
+}) {
   return (
     <Suspense fallback={null}>
-      <PortalInvitationJoinPageInner />
+      <PortalInvitationJoinPageInner useGuardianShell={useGuardianShell} />
     </Suspense>
   );
 }

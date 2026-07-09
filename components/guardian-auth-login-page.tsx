@@ -1,27 +1,67 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, type ReactNode } from "react";
 import {
   GuardianAuthFacade,
   type GuardianMode,
-  type GuardianState,
 } from "@/components/auth";
+import { PortalAuthFormIntro } from "@/components/portal-auth-form-intro";
+import { useGuardianNeonAuthState } from "@/components/auth/use-guardian-neon-auth-state";
+import { PortalAuthNeonView } from "@/components/portal-auth-neon-view";
+import { useThemeControls } from "@/components/theme-provider";
+import type { AuthShellCopy } from "@/lib/auth-shell-copy";
+import {
+  guardianModeFromPortalTheme,
+  portalThemeFromGuardianMode,
+  resolveGuardianAuthCopyOverride,
+} from "@/lib/guardian-editorial-copy";
 import { GUARDIAN_AUTH_ASSET_SET } from "@/lib/portal-brand";
 
+export type GuardianAuthLoginPageProps = {
+  pathname: string;
+  from?: string;
+  redirectTo?: string;
+  shellCopy: AuthShellCopy;
+  headerExtra?: ReactNode;
+  /** Pre-rendered intro from server — kept for Storybook parity when omitted. */
+  formIntro?: ReactNode;
+};
+
 /**
- * Cinematic sign-in shell — composes reusable Guardian Auth components.
- * Neon Auth wiring lands in AccessVaultCard / card-zone children in a follow-up.
+ * Production cinematic auth shell — Guardian presentation + Neon AuthView in access slot.
+ * PortalAuthFormIntro supplies path/org-specific headings; Neon AuthView owns credential fields.
+ * @see ADR-Auth-UI-001 · SPEC-B Method B
  */
-export function GuardianAuthLoginPage() {
-  const [mode, setMode] = useState<GuardianMode>("night");
-  const [state, setState] = useState<GuardianState>("idle");
+export function GuardianAuthLoginPage({
+  pathname,
+  from,
+  redirectTo,
+  shellCopy,
+  headerExtra,
+  formIntro,
+}: GuardianAuthLoginPageProps) {
+  const panelRef = useRef<HTMLDivElement>(null);
+  const { resolvedTheme, setTheme } = useThemeControls();
+  const mode: GuardianMode = guardianModeFromPortalTheme(resolvedTheme);
+  const state = useGuardianNeonAuthState(panelRef);
+  const copyOverride = resolveGuardianAuthCopyOverride({ path: pathname, from });
 
   return (
     <GuardianAuthFacade
       mode={mode}
       state={state}
-      onModeChange={setMode}
+      onModeChange={(next) => setTheme(portalThemeFromGuardianMode(next))}
       assets={GUARDIAN_AUTH_ASSET_SET}
-    />
+      copy={copyOverride}
+    >
+      <div
+        ref={panelRef}
+        className="guardian-auth__access-panel flex w-full flex-col gap-4"
+      >
+        {headerExtra}
+        {formIntro ?? <PortalAuthFormIntro {...shellCopy} />}
+        <PortalAuthNeonView pathname={pathname} redirectTo={redirectTo} />
+      </div>
+    </GuardianAuthFacade>
   );
 }

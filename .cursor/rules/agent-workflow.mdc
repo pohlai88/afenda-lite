@@ -20,7 +20,7 @@ alwaysApply: true
 
 - Default mode: **Plan first** → user approves → then implement.
 - Default surface for atmosphere experiments: **Storybook fixtures** (`stories/ui-evaluation/`, `components/portal-atmosphere/fixtures/`).
-- Do **not** wire experimental hero/atmosphere layouts into `PortalAuthLayout`, auth routes, or production entry points unless the user explicitly asks.
+- Do **not** wire experimental hero/atmosphere layouts into production auth routes unless the user explicitly asks — **except** the approved Guardian Auth shell on `/auth/*` ([ADR-Auth-UI-001](docs/architecture/adr/ADR-Auth-UI-001-guardian-shell-neon-form.md), Method B).
 
 ## Quality bar before shipping UI
 

@@ -66,12 +66,12 @@ describe("portal brand dual guardian facade owl base units", () => {
 });
 
 describe("guardian auth facade owl cutouts", () => {
-  it("uses single dramatic iso core for day and night slots", () => {
+  it("uses single dramatic iso for day and night slots (morpho CSS)", () => {
     for (const urlPath of Object.values(GUARDIAN_AUTH_ASSET_SET)) {
       expect(existsSync(publicPath(urlPath)), urlPath).toBe(true);
     }
-    expect(GUARDIAN_AUTH_ASSET_SET.owlNight).toBe(GUARDIAN_DRAMATIC_OWL_CORE_PATH);
     expect(GUARDIAN_AUTH_ASSET_SET.owlDay).toBe(GUARDIAN_DRAMATIC_OWL_CORE_PATH);
+    expect(GUARDIAN_AUTH_ASSET_SET.owlNight).toBe(GUARDIAN_DRAMATIC_OWL_CORE_PATH);
     expect(GUARDIAN_AUTH_ASSET_SET.owlDay).toBe(GUARDIAN_AUTH_ASSET_SET.owlNight);
   });
 });

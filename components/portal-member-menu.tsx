@@ -3,13 +3,17 @@
 import { useTransition } from "react";
 import Link from "next/link";
 import { LogOutIcon, SettingsIcon, ShieldIcon } from "lucide-react";
-import { authClient } from "@/lib/auth/client";
+import { authClient, signOutToAuthEntry } from "@/lib/auth/client";
 import {
   PORTAL_ACCOUNT_SECURITY_HREF,
-  PORTAL_ACCOUNT_SETTINGS_HREF,
+  resolveAccountSettingsHref,
+  resolveAccountSettingsLabel,
 } from "@/lib/account-paths";
-import { CLIENT_PROFILE_HREF } from "@/lib/portal-routes";
-import { fallbackOperatorMember, memberInitials, type PortalMember } from "@/lib/portal-member-types";
+import {
+  memberInitials,
+  resolvePortalMemberFromSession,
+  type PortalMember,
+} from "@/lib/portal-member-types";
 import { usePortalMember } from "@/components/portal-member-context";
 import { portalCopy } from "@/lib/portal-copy";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -25,31 +29,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-function resolveMember(
-  synced: PortalMember | null | undefined,
-  sessionUser: { name?: string | null; email?: string | null; role?: string | null; id?: string } | undefined,
-): PortalMember | null {
-  if (synced) {
-    return synced;
-  }
-
-  if (!sessionUser?.id || !sessionUser.email) {
-    return null;
-  }
-
-  return {
-    userId: sessionUser.id,
-    email: sessionUser.email,
-    authName: sessionUser.name ?? null,
-    displayName: sessionUser.name?.trim() || sessionUser.email,
-    subtitle: sessionUser.role === "admin" ? portalCopy.nav.organization : portalCopy.clientDashboard.eyebrow,
-    role: sessionUser.role ?? null,
-    context: sessionUser.role === "admin" ? "operator" : "client",
-    isPreviewSession: false,
-    profile: null,
-  };
-}
-
 /** Account menu — display name/email from server-synced Neon Auth + portal profile. */
 export function PortalMemberMenu({
   member: memberProp,
@@ -61,14 +40,13 @@ export function PortalMemberMenu({
   const { data: session } = authClient.useSession();
   const [isPending, startTransition] = useTransition();
 
-  const member = resolveMember(synced, session?.user);
+  const member = resolvePortalMemberFromSession(synced, session?.user);
   if (!member) {
     return null;
   }
 
   const initials = memberInitials(member.displayName, member.email);
-  const settingsHref =
-    member.context === "client" ? CLIENT_PROFILE_HREF : PORTAL_ACCOUNT_SETTINGS_HREF;
+  const settingsHref = resolveAccountSettingsHref(member.context);
   const securityHref = PORTAL_ACCOUNT_SECURITY_HREF;
 
   return (
@@ -122,9 +100,7 @@ export function PortalMemberMenu({
         <DropdownMenuSeparator />
         <DropdownMenuItem render={<Link href={settingsHref} />}>
           <SettingsIcon aria-hidden="true" />
-          {member.context === "client"
-            ? portalCopy.clientNav.declarantProfile
-            : userMenu.accountSettings}
+          {resolveAccountSettingsLabel(member.context)}
         </DropdownMenuItem>
         <DropdownMenuItem render={<Link href={securityHref} />}>
           <ShieldIcon aria-hidden="true" />
@@ -133,9 +109,8 @@ export function PortalMemberMenu({
         <DropdownMenuSeparator />
         <DropdownMenuItem
           onClick={() => {
-            startTransition(async () => {
-              await authClient.signOut();
-              window.location.href = "/auth/sign-in";
+            startTransition(() => {
+              void signOutToAuthEntry();
             });
           }}
         >

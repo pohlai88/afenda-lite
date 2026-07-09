@@ -10,6 +10,7 @@ import {
   AUTH_PATHNAME_TO_OPERATION,
   INTERNAL_ACTION_ALLOWLIST,
   LAYOUT_PROTECTED_ADMIN_SURFACES,
+  AUTH_REDIRECT_ENTRY_SURFACES,
   SERVER_SIDE_AUTH_BY_SURFACE,
   SURFACE_ENTRY_POINTS,
   domainLoaderSatisfiedByEntryFile,
@@ -137,6 +138,14 @@ function inheritedSurfaceTargets(surfaceId: string, declared: readonly string[])
   if (LAYOUT_PROTECTED_ADMIN_SURFACES.has(surfaceId)) {
     for (const target of declared) {
       if (target === "action:requireAdminSession") {
+        inherited.push(target);
+      }
+    }
+  }
+
+  if (AUTH_REDIRECT_ENTRY_SURFACES.has(surfaceId)) {
+    for (const target of declared) {
+      if (target.startsWith("auth:")) {
         inherited.push(target);
       }
     }

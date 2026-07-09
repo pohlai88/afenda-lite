@@ -1,34 +1,20 @@
 import Link from "next/link";
 import {
-  PORTAL_ACCOUNT_SECURITY_HREF,
-  PORTAL_ACCOUNT_SETTINGS_HREF,
+  resolveAccountSectionNavItems,
   type PortalAccountPath,
 } from "@/lib/account-paths";
-import { accountViewPaths } from "@neondatabase/auth-ui/server";
+import type { PortalMemberContext } from "@/lib/portal-member-types";
 import { portalCopy } from "@/lib/portal-copy";
-
-const accountNavItems: {
-  path: PortalAccountPath;
-  href: string;
-  label: string;
-}[] = [
-  {
-    path: accountViewPaths.SETTINGS,
-    href: PORTAL_ACCOUNT_SETTINGS_HREF,
-    label: portalCopy.userMenu.accountSettings,
-  },
-  {
-    path: accountViewPaths.SECURITY,
-    href: PORTAL_ACCOUNT_SECURITY_HREF,
-    label: portalCopy.userMenu.accountSecurity,
-  },
-];
 
 export function PortalAccountSectionNav({
   activePath,
+  context,
 }: {
   activePath: PortalAccountPath;
+  context: PortalMemberContext;
 }) {
+  const accountNavItems = resolveAccountSectionNavItems(context);
+
   return (
     <nav aria-label={portalCopy.account.sectionNavLabel} className="flex gap-3">
       {accountNavItems.map(({ path, href, label }) => (

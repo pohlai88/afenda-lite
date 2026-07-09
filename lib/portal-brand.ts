@@ -14,6 +14,9 @@ export const BRAND_DRAMATIC_OWL_BACKGROUND_PATH = "/brand/owls/guardian-dramatic
 export const BRAND_DRAMATIC_OWL_BACKGROUND_WIDTH = 524;
 export const BRAND_DRAMATIC_OWL_BACKGROUND_HEIGHT = 561;
 
+/** Single guardian core — morpho / Fade Owl variant (not prod dual cutouts). */
+export const GUARDIAN_DRAMATIC_OWL_CORE_PATH = BRAND_DRAMATIC_OWL_BACKGROUND_PATH;
+
 /**
  * Dual Guardian Facade base units — curated `owl-variants/allowed-base/`
  * removebg PNGs. Both owls render together (night + light guardians in one
@@ -43,19 +46,14 @@ export const BRAND_SHARP_OWL_WIDTH = BRAND_DUAL_GUARDIAN_OWL_DARK_WIDTH;
 export const BRAND_SHARP_OWL_HEIGHT = BRAND_DUAL_GUARDIAN_OWL_DARK_HEIGHT;
 
 /**
- * Single guardian core — day/night are CSS presentations of the same dramatic iso
- * (base state vs nocturnal glow), not separate bird PNGs.
+ * Guardian Auth facade — single dramatic iso; day/night are CSS presentations (morpho).
  */
-export const GUARDIAN_DRAMATIC_OWL_CORE_PATH = BRAND_DRAMATIC_OWL_BACKGROUND_PATH;
-
-/** @deprecated Alias — use GUARDIAN_DRAMATIC_OWL_CORE_PATH; kept for owlNight slot compat. */
-export const GUARDIAN_AUTH_OWL_NIGHT_PATH = GUARDIAN_DRAMATIC_OWL_CORE_PATH;
-/** @deprecated Alias — use GUARDIAN_DRAMATIC_OWL_CORE_PATH; kept for owlDay slot compat. */
 export const GUARDIAN_AUTH_OWL_DAY_PATH = GUARDIAN_DRAMATIC_OWL_CORE_PATH;
+export const GUARDIAN_AUTH_OWL_NIGHT_PATH = GUARDIAN_DRAMATIC_OWL_CORE_PATH;
 
 export const GUARDIAN_AUTH_ASSET_SET = {
-  owlNight: GUARDIAN_AUTH_OWL_NIGHT_PATH,
   owlDay: GUARDIAN_AUTH_OWL_DAY_PATH,
+  owlNight: GUARDIAN_AUTH_OWL_NIGHT_PATH,
 } as const;
 
 /**

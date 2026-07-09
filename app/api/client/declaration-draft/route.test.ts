@@ -3,22 +3,21 @@ import { portalCopy } from "@/lib/portal-copy";
 
 vi.mock("server-only", () => ({}));
 
-const mockGetAuthSession = vi.fn();
-const mockToClientAuthenticatedSession = vi.fn();
+const mockGuardClientSession = vi.fn();
 const mockPersistClientDeclarationDraft = vi.fn();
 
-vi.mock("@/lib/auth/get-session", () => ({
-  getAuthSession: () => mockGetAuthSession(),
-}));
-
-vi.mock("@/lib/client-session", () => ({
-  toClientAuthenticatedSession: (session: unknown) =>
-    mockToClientAuthenticatedSession(session),
+vi.mock("@/lib/auth/session", () => ({
+  guardClientSession: (...args: unknown[]) => mockGuardClientSession(...args),
 }));
 
 vi.mock("@/lib/client-declaration-draft", () => ({
   persistClientDeclarationDraft: (...args: unknown[]) =>
     mockPersistClientDeclarationDraft(...args),
+}));
+
+vi.mock("@/lib/observability", () => ({
+  runLoggedAction: (_name: string, _userId: string | undefined, fn: () => unknown) =>
+    fn(),
 }));
 
 import { POST } from "@/app/api/client/declaration-draft/route";
@@ -29,14 +28,17 @@ const questionId = "550e8400-e29b-41d4-a716-446655440003";
 describe("POST /api/client/declaration-draft", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockGetAuthSession.mockResolvedValue({ user: { id: "u1", email: "c@ex.com" } });
-    mockToClientAuthenticatedSession.mockReturnValue({
-      user: { id: "u1", email: "c@ex.com" },
+    mockGuardClientSession.mockResolvedValue({
+      allowed: true,
+      session: { user: { id: "u1", email: "c@ex.com", name: null } },
     });
   });
 
-  it("returns 401 when the client session is missing", async () => {
-    mockToClientAuthenticatedSession.mockReturnValue(null);
+  it("returns 401 when the client session guard rejects unauthenticated access", async () => {
+    mockGuardClientSession.mockResolvedValue({
+      allowed: false,
+      reason: "unauthenticated",
+    });
 
     const response = await POST(
       new Request("http://localhost/api/client/declaration-draft", {
@@ -52,6 +54,31 @@ describe("POST /api/client/declaration-draft", () => {
 
     expect(response.status).toBe(401);
     expect(mockPersistClientDeclarationDraft).not.toHaveBeenCalled();
+    expect(mockGuardClientSession).toHaveBeenCalledWith({
+      requireOnboarding: true,
+    });
+  });
+
+  it("returns 403 when an operator session hits the client draft API", async () => {
+    mockGuardClientSession.mockResolvedValue({
+      allowed: false,
+      reason: "operator",
+    });
+
+    const response = await POST(
+      new Request("http://localhost/api/client/declaration-draft", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          assignmentId,
+          answers: { [questionId]: true },
+          stepIndex: 0,
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toEqual({ error: "Forbidden" });
   });
 
   it("returns 400 for invalid JSON body", async () => {

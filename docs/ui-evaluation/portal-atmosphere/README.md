@@ -28,10 +28,10 @@ On viewports below 1024px the layout order is **access-first**:
 | Story | Status | Notes |
 |-------|--------|-------|
 | `Portal Atmosphere / Design Review` (`portal-atmosphere.stories.tsx`) | **Authority** | Production `PortalAtmosphere` via preview fixture |
-| `Portal Atmosphere / Comp Laptop` | Active experiment | Side-by-side vs `auth-hero-*.png` at 1024px |
-| `Portal Atmosphere / Fade Owl` | Active experiment | `dual` + `morpho` variants; Storybook only |
-| `Portal Atmosphere / Dual Guardian Facade` | Active experiment | Dual removebg owls + vault; Storybook only |
-| `Portal Atmosphere / Guardian Auth Facade` | Active kit | Wired to `/auth/sign-in` via `GuardianAuthLoginPage` |
+| `Portal Atmosphere / Guardian Auth Facade` | **Prod shell** | `/auth/*` via `GuardianAuthLoginPage` + Neon (ADR-Auth-UI-001); mock `AccessVaultCard` Storybook-only |
+| `Portal Atmosphere / Comp Laptop` | Active experiment | Storybook only — CSS not in prod globals |
+| `Portal Atmosphere / Fade Owl` | Active experiment | Storybook only |
+| `Portal Atmosphere / Dual Guardian Facade` | Active experiment | Storybook only |
 | `UI Evaluation / Auth Brand Scene` | Legacy | Pre-PA `PortalAuthPhantomOwl` path |
 | `UI Evaluation / Owl Dramatic Scene` | Legacy | Dramatic mockup review |
 

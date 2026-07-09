@@ -8,6 +8,10 @@ type Props = {
   onSubmit?: (event: FormEvent<HTMLFormElement>) => void;
 };
 
+/**
+ * Mock vault form — Storybook / design review only.
+ * Production auth uses PortalAuthNeonView inside GuardianAuthFacade (ADR-Auth-UI-001).
+ */
 export function AccessVaultCard({ state = "idle", onSubmit }: Props) {
   const disabled = state === "loading" || state === "locked";
 

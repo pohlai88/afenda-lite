@@ -88,14 +88,18 @@ npm run studio:install-block -- statistics-component-03
 | `form-layout-01` | **Installed** | `components/shadcn-studio/blocks/form-layout-01/form-layout-section.tsx` → `portal-form-section.tsx` |
 | `form-layout-02` | **Installed** | `components/shadcn-studio/blocks/form-layout-02/form-layout-section.tsx` → `declaration-settings-section.tsx` |
 | `form-layout-08` | **Installed** | `components/shadcn-studio/blocks/form-layout-08/form-layout-wizard-shell.tsx` → `declaration-form.tsx` |
+| `login-page-02` | **Installed (layout ref)** | `components/shadcn-studio/blocks/login-page-02/` — Storybook only; prod = Guardian + Neon |
+| `empty-state-01` | **Installed + wrapper** | Studio block + `components/portal-empty-state.tsx` |
+| `account-settings-01` | **Installed (chrome ref)** | `components/shadcn-studio/blocks/account-settings-01/` — Neon AccountView stays form owner |
 | `dashboard-shell-05` | **Pattern** | `components/portal-declaration-workspace.tsx` → KPI row + tabbed workspace |
-| `empty-state-01` | Wrapper | `components/portal-empty-state.tsx` |
 | `empty-state-02` | Wrapper | `components/portal-empty-state-cta.tsx` |
 | `error-page-02` | Wrapper | `components/portal-not-found-page.tsx` |
 
+**Canonical kit SSOT:** `lib/studio-canonical-kit.ts` · Storybook: `UI Evaluation/Studio Canonical Kit`.
+
 ## Auth & account (keep Neon)
 
-All 7 auth/account surfaces **keep Neon `AuthView` / `AccountView`**. Studio login/register blocks are layout references only.
+All auth/account surfaces **keep Neon `AuthView` / `AccountView`**. Studio `login-page-02` / `account-settings-01` are layout/chrome references only — never replace Neon credential forms.
 
 ## Storybook comparisons
 

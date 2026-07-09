@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { requireClientSession } from "@/app/actions/client";
+import { requireClientSession } from "@/lib/auth/session";
 import { ClientDeclarantProfileView } from "@/components/client-declarant-profile-view";
 import { PortalCustomerShell } from "@/components/portal-customer-shell";
 import { clientProfileBreadcrumbs } from "@/lib/client-breadcrumbs";

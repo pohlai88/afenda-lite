@@ -8,7 +8,7 @@ import {
  * Cinematic guardian owl — full-bleed background scene for the auth vault.
  * Mounted directly inside portal-auth-vault (position: relative, isolate).
  *
- * Tuning lives in globals.css (.portal-auth-phantom-*, .portal-auth-cinematic-scrim).
+ * Tuning lives in portal-auth-phantom.storybook.css (Storybook-only import).
  */
 export function PortalAuthPhantomOwl() {
   return (

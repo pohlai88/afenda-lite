@@ -61,3 +61,56 @@ export function fallbackOperatorMember(displayName: string): PortalMember {
     profile: null,
   };
 }
+
+export type AuthSessionUser = {
+  id?: string;
+  email?: string | null;
+  name?: string | null;
+  role?: string | null;
+};
+
+/** Client-safe context inference — mirrors server `resolvePortalMember` when profile is unavailable. */
+export function resolvePortalMemberContext(
+  role: string | null | undefined,
+): PortalMemberContext {
+  return role === "admin" ? "operator" : "client";
+}
+
+export function resolvePortalMemberSubtitle(
+  context: PortalMemberContext,
+): string {
+  return context === "operator"
+    ? portalCopy.nav.organization
+    : portalCopy.clientDashboard.eyebrow;
+}
+
+/** Fallback member for menus when server-synced `PortalMember` is not in context yet. */
+export function resolvePortalMemberFromSession(
+  synced: PortalMember | null | undefined,
+  sessionUser: AuthSessionUser | undefined,
+): PortalMember | null {
+  if (synced) {
+    return synced;
+  }
+
+  if (!sessionUser?.id || !sessionUser.email) {
+    return null;
+  }
+
+  const context = resolvePortalMemberContext(sessionUser.role);
+
+  return {
+    userId: sessionUser.id,
+    email: sessionUser.email,
+    authName: sessionUser.name ?? null,
+    displayName: pickDisplayName({
+      authName: sessionUser.name,
+      email: sessionUser.email,
+    }),
+    subtitle: resolvePortalMemberSubtitle(context),
+    role: sessionUser.role ?? null,
+    context,
+    isPreviewSession: false,
+    profile: null,
+  };
+}

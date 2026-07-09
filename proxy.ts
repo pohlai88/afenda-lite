@@ -5,6 +5,7 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth/server";
+import { CLIENT_PREVIEW_UNAVAILABLE_HREF } from "@/lib/portal-routes";
 
 const neonMiddleware = auth.middleware({
   loginUrl: "/auth/sign-in",
@@ -13,7 +14,7 @@ const neonMiddleware = auth.middleware({
 export default async function proxy(request: NextRequest) {
   const isEmbed = request.nextUrl.searchParams.get("embed") === "1";
   const isPreviewUnavailableGate =
-    request.nextUrl.pathname === "/client/preview-unavailable";
+    request.nextUrl.pathname === CLIENT_PREVIEW_UNAVAILABLE_HREF;
 
   if (isEmbed || isPreviewUnavailableGate) {
     const requestHeaders = new Headers(request.headers);

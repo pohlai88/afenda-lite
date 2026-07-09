@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { requireClientSession } from "@/app/actions/client";
+import { requireClientSession } from "@/lib/auth/session";
 import { ClientDashboardAcknowledgement } from "@/components/client-dashboard-acknowledgement";
 import { ClientDashboardAssignments } from "@/components/client-dashboard-assignments";
 import { ClientDashboardContext } from "@/components/client-dashboard-context";

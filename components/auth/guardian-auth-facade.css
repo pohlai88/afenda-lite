@@ -8,8 +8,8 @@
 */
 
 :root {
-  --guardian-font-serif: Georgia, "Times New Roman", serif;
-  --guardian-font-sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --guardian-font-serif: var(--font-editorial);
+  --guardian-font-sans: var(--font-ui);
 
   --guardian-gold: #d6a557;
   --guardian-gold-soft: rgba(214, 165, 87, .28);
@@ -38,12 +38,12 @@
   --scene-stars: rgba(127, 178, 255, .65);
 
   position: relative;
+  box-sizing: border-box;
   width: 100%;
   height: 100dvh;
   min-height: 620px;
   overflow: hidden;
   isolation: isolate;
-  box-sizing: border-box;
   display: grid;
   grid-template-columns: minmax(0, 1.08fr) minmax(320px, 0.56fr);
   align-items: center;
@@ -56,6 +56,9 @@
   background:
     radial-gradient(circle at 42% 30%, var(--scene-shield-soft), transparent 32rem),
     linear-gradient(130deg, var(--scene-bg-1), var(--scene-bg-2));
+  transition:
+    background 1000ms var(--guardian-ease),
+    color 1000ms var(--guardian-ease);
 }
 
 .guardian-auth--day {
@@ -75,18 +78,25 @@
 .guardian-auth--state-success {
   --scene-shield: var(--guardian-green);
   --scene-shield-soft: rgba(95, 242, 163, .24);
+  --scene-stars: rgba(95, 242, 163, .72);
 }
 
 .guardian-auth--state-error {
   --scene-shield: var(--guardian-red);
   --scene-shield-soft: rgba(255, 77, 77, .25);
-  --scene-stars: rgba(255, 184, 77, .70);
+  --scene-stars: rgba(255, 77, 77, .62);
 }
 
 .guardian-auth--state-warning {
   --scene-shield: var(--guardian-amber);
   --scene-shield-soft: rgba(255, 184, 77, .25);
   --scene-stars: rgba(255, 184, 77, .74);
+}
+
+.guardian-auth--state-typing {
+  --scene-shield: var(--guardian-gold);
+  --scene-shield-soft: var(--guardian-gold-soft);
+  --scene-stars: rgba(214, 165, 87, .62);
 }
 
 .guardian-auth--state-locked {
@@ -123,6 +133,10 @@
   border-radius: 12px;
   color: var(--scene-shield);
   box-shadow: 0 0 24px var(--scene-shield-soft);
+  transition:
+    color 900ms var(--guardian-ease),
+    box-shadow 900ms var(--guardian-ease),
+    border-color 900ms var(--guardian-ease);
 }
 
 .theme-toggle {
@@ -138,7 +152,20 @@
   place-items: center;
   cursor: pointer;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08), 0 0 24px rgba(0,0,0,.16);
-  transition: transform .4s var(--guardian-ease), box-shadow .4s var(--guardian-ease);
+  transition:
+    transform .4s var(--guardian-ease),
+    box-shadow .4s var(--guardian-ease),
+    border-color 900ms var(--guardian-ease),
+    background 900ms var(--guardian-ease);
+}
+
+.theme-toggle span {
+  display: inline-block;
+  transition: transform 700ms var(--guardian-ease), opacity 700ms var(--guardian-ease);
+}
+
+.guardian-auth--day .theme-toggle span {
+  transform: rotate(180deg);
 }
 
 .theme-toggle:hover {
@@ -153,17 +180,73 @@
   z-index: 10;
   max-width: 620px;
   min-width: 0;
-  align-self: center;
-  padding-bottom: clamp(0px, 2vh, 24px);
+  align-self: end;
+  padding-bottom: clamp(16px, 4vh, 48px);
 }
 
 .guardian-auth__card-zone {
   position: relative;
   z-index: 12;
   justify-self: end;
+  align-self: center;
   width: min(35vw, 440px);
   min-width: 320px;
   max-width: 440px;
+  min-height: 0;
+  max-height: calc(100dvh - 2 * clamp(22px, 3.2vw, 52px));
+}
+
+.guardian-auth__access-panel {
+  position: relative;
+  z-index: 13;
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  max-height: 100%;
+  gap: clamp(0.5rem, 1.2vh, 1rem);
+}
+
+/* Production Neon slot — vault-density chrome (not Storybook access-vault mock) */
+.guardian-auth__access-panel .bg-card {
+  min-height: 0;
+  width: 100%;
+  max-width: none;
+  padding-block: clamp(1rem, 2.2vh, 1.5rem);
+  gap: clamp(0.75rem, 1.5vh, 1.5rem);
+  border-radius: 1.625rem;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .08), transparent),
+    var(--scene-card);
+  border-color: var(--scene-card-border);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .10),
+    0 30px 110px rgba(0, 0, 0, .36),
+    0 0 34px var(--scene-shield-soft);
+  backdrop-filter: blur(26px);
+  transition:
+    background 1000ms var(--guardian-ease),
+    border-color 1000ms var(--guardian-ease),
+    box-shadow 1000ms var(--guardian-ease);
+}
+
+.guardian-auth--day .guardian-auth__access-panel .bg-card {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .42), transparent),
+    var(--scene-card);
+}
+
+.guardian-auth__access-panel .bg-card [class*="px-6"] {
+  padding-inline: clamp(1rem, 2vw, 1.5rem);
+}
+
+.guardian-auth__access-panel .bg-card [class*="gap-6"] {
+  gap: clamp(0.75rem, 1.5vh, 1.5rem);
+}
+
+.guardian-auth__access-panel .bg-card input:not([type="checkbox"]):not([type="radio"]),
+.guardian-auth__access-panel .bg-card button[type="submit"] {
+  min-height: 44px;
 }
 
 .guardian-auth__threshold {
@@ -183,7 +266,7 @@
   inset: 0;
   z-index: -1;
   overflow: hidden;
-  contain: layout paint;
+  contain: paint;
   background:
     radial-gradient(circle at 50% 42%, var(--scene-shield-soft), transparent 34rem),
     linear-gradient(130deg, var(--scene-bg-1), var(--scene-bg-2));
@@ -222,38 +305,96 @@
   opacity: 1;
 }
 
-.owl-scene__owl {
+.owl-scene__owl,
+.owl-scene__ghost {
   position: absolute;
   user-select: none;
   pointer-events: none;
-  width: clamp(560px, 58vw, 920px);
-  left: 36%;
-  top: 49%;
-  transform: translate(-50%, -50%);
   max-width: none;
-  object-fit: contain;
-  opacity: 0.86;
-  filter: drop-shadow(0 20px 70px rgba(0, 0, 0, .72)) brightness(.82) contrast(1.06);
   transition:
     opacity 1000ms var(--guardian-ease),
     transform 1300ms var(--guardian-ease),
     filter 1200ms var(--guardian-ease);
 }
 
-.guardian-auth--day .owl-scene__owl {
-  opacity: 0.78;
-  filter: drop-shadow(0 22px 70px rgba(87, 111, 148, .26)) brightness(1.08) contrast(1);
-  transform: translate(-50%, -50%);
+.owl-scene__owl {
+  width: clamp(560px, 58vw, 920px);
+  left: 36%;
+  top: 49%;
+  transform: translate(-50%, -50%) scale(1);
+  object-fit: contain;
 }
 
-.guardian-auth--night .owl-scene__owl {
-  opacity: 0.86;
-  filter:
-    drop-shadow(0 20px 70px rgba(0, 0, 0, .72))
-    brightness(.82)
-    contrast(1.06)
-    drop-shadow(0 0 28px rgba(93, 142, 219, .32));
+.owl-scene__owl--night {
+  opacity: .86;
+  filter: drop-shadow(0 20px 70px rgba(0, 0, 0, .72)) brightness(.82) contrast(1.06);
 }
+
+.owl-scene__owl--day {
+  opacity: 0;
+  filter: blur(10px) brightness(1.05);
+  transform: translate(-48%, -50%) scale(1.06);
+}
+
+.guardian-auth--day .owl-scene__owl--night {
+  opacity: .08;
+  filter: blur(12px) brightness(.65);
+  transform: translate(-54%, -50%) scale(1.1);
+}
+
+.guardian-auth--day .owl-scene__owl--day {
+  opacity: .76;
+  filter: drop-shadow(0 22px 70px rgba(87, 111, 148, .26)) brightness(1.03);
+  transform: translate(-50%, -50%) scale(1);
+}
+
+/* Single iso (morpho) — one PNG, CSS day/night presentation */
+.owl-scene__owl--morpho {
+  width: clamp(560px, 58vw, 920px);
+  left: 36%;
+  top: 49%;
+  height: auto;
+  max-height: min(92dvh, 820px);
+  object-fit: contain;
+  opacity: 1;
+  transition:
+    opacity 1000ms var(--guardian-ease),
+    transform 1300ms var(--guardian-ease),
+    filter 1200ms var(--guardian-ease);
+}
+
+.guardian-auth--night .owl-scene__owl--morpho,
+.guardian-auth:not(.guardian-auth--day) .owl-scene__owl--morpho {
+  mix-blend-mode: normal;
+  filter:
+    saturate(1)
+    brightness(1.08)
+    contrast(1.08)
+    drop-shadow(0 0 32px rgba(59, 130, 246, .4))
+    drop-shadow(0 24px 80px rgba(0, 0, 0, .55));
+  transform: translate(-50%, -50%) scale(1.02);
+}
+
+.guardian-auth--day .owl-scene__owl--morpho {
+  mix-blend-mode: multiply;
+  filter: saturate(1.1) brightness(1.12) contrast(1.05);
+  opacity: .95;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.owl-scene__ghost {
+  width: min(74vw, 1100px);
+  left: 46%;
+  top: 43%;
+  opacity: .16;
+  transform: translate(-50%, -50%) scale(1.12);
+  filter: blur(1px) contrast(1.05);
+  mix-blend-mode: screen;
+}
+
+.owl-scene__ghost--day { opacity: 0; }
+.guardian-auth--day .owl-scene__ghost--day { opacity: .24; }
+.guardian-auth--day .owl-scene__ghost--night { opacity: .05; }
 
 .owl-scene__geometry {
   position: absolute;
@@ -285,7 +426,7 @@
 
 .guardian-auth--state-loading .owl-scene__geometry--outer,
 .guardian-auth--state-loading .owl-scene__geometry--inner {
-  animation: guardianSpin 18s linear infinite;
+  animation: guardianGeometrySpin 18s linear infinite;
   opacity: .72;
 }
 
@@ -299,10 +440,23 @@
     radial-gradient(circle at 44% 84%, var(--scene-stars) 0 1px, transparent 2px);
   opacity: .7;
   filter: drop-shadow(0 0 8px var(--scene-shield));
+  transition:
+    opacity 900ms var(--guardian-ease),
+    filter 1000ms var(--guardian-ease);
 }
 
 .guardian-auth--state-success .owl-scene__particles {
   animation: guardianCelebrate 1600ms ease-in-out infinite;
+}
+
+.guardian-auth--state-warning .owl-scene__particles,
+.guardian-auth--state-error .owl-scene__particles {
+  animation: guardianPulseSoft 2200ms ease-in-out infinite;
+}
+
+.guardian-auth--state-typing .owl-scene__geometry--inner {
+  opacity: .62;
+  animation: guardianGeometrySpin 28s linear infinite reverse;
 }
 
 .owl-scene__vignette {
@@ -341,8 +495,8 @@
   font-family: var(--guardian-font-serif);
   font-weight: 500;
   font-size: clamp(3.8rem, 7.2vw, 7.8rem);
-  line-height: 0.92;
-  letter-spacing: -0.055em;
+  line-height: .92;
+  letter-spacing: -.055em;
   color: var(--scene-ink);
   text-wrap: balance;
   text-shadow: 0 10px 36px rgba(0,0,0,.40);
@@ -377,6 +531,11 @@
   border: 1px solid var(--scene-line);
   border-radius: 11px;
   color: var(--scene-shield);
+  transition:
+    color 900ms var(--guardian-ease),
+    border-color 900ms var(--guardian-ease),
+    box-shadow 900ms var(--guardian-ease);
+  box-shadow: 0 0 18px color-mix(in srgb, var(--scene-shield-soft), transparent 35%);
 }
 
 /* ---------- Access Vault ---------- */
@@ -486,7 +645,8 @@
 
 .access-vault[data-state="loading"] .access-vault__submit span {
   display: inline-block;
-  animation: guardianSpin 900ms linear infinite;
+  transform-origin: center;
+  animation: guardianGlyphSpin 900ms linear infinite;
 }
 
 .access-vault__divider {
@@ -548,6 +708,7 @@
   filter:
     drop-shadow(0 0 20px var(--scene-shield))
     drop-shadow(0 0 50px var(--scene-shield-soft));
+  transition: filter 1000ms var(--guardian-ease), transform 1000ms var(--guardian-ease);
 }
 
 .guardian-shield__rings {
@@ -559,6 +720,7 @@
     repeating-conic-gradient(from 0deg, color-mix(in srgb, var(--guardian-gold), transparent 48%) 0deg 1deg, transparent 1deg 12deg);
   mask-image: radial-gradient(circle, transparent 43%, black 44%, black 59%, transparent 61%);
   opacity: .8;
+  transform-origin: center;
 }
 
 .guardian-shield__core {
@@ -570,6 +732,7 @@
     linear-gradient(180deg, color-mix(in srgb, var(--scene-shield), #111 35%), #07111d);
   clip-path: polygon(50% 0, 92% 16%, 84% 74%, 50% 100%, 16% 74%, 8% 16%);
   border: 1px solid var(--guardian-gold);
+  transition: background 1000ms var(--guardian-ease), border-color 900ms var(--guardian-ease);
 }
 
 .guardian-shield__symbol {
@@ -630,12 +793,27 @@
 }
 
 .guardian-auth--state-loading .guardian-shield__rings {
-  animation: guardianSpin 18s linear infinite;
+  animation: guardianRingSpin 18s linear infinite;
 }
 
 /* ---------- Motion ---------- */
 
 @keyframes guardianSpin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes guardianRingSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes guardianGeometrySpin {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+@keyframes guardianGlyphSpin {
+  from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
 
@@ -655,11 +833,73 @@
   50% { transform: translateY(-18px); opacity: 1; }
 }
 
+@keyframes guardianPulseSoft {
+  0%, 100% { opacity: .58; filter: drop-shadow(0 0 6px var(--scene-shield)); }
+  50% { opacity: .92; filter: drop-shadow(0 0 14px var(--scene-shield)); }
+}
+
 /* ---------- Responsive ---------- */
 
+/* Short laptop — compress poster elements inside one viewport */
 @media (max-height: 760px) and (min-width: 981px) {
   .guardian-auth__card-zone {
     width: min(33vw, 400px);
+  }
+
+  .guardian-auth__left-panel {
+    padding-bottom: clamp(8px, 2vh, 24px);
+  }
+
+  .editorial-copy__headline {
+    font-size: clamp(3.3rem, 6.2vw, 6.4rem);
+  }
+
+  .editorial-copy__subheadline {
+    margin-top: 18px;
+  }
+
+  .editorial-copy__proofline {
+    margin-top: 44px;
+  }
+
+  .owl-scene__owl--morpho,
+  .owl-scene__owl {
+    width: clamp(500px, 52vw, 760px);
+    top: 50%;
+    max-height: min(88dvh, 700px);
+  }
+
+  .guardian-auth__access-panel {
+    gap: 0.5rem;
+  }
+
+  .guardian-auth__access-panel .bg-card {
+    padding-block: 1rem;
+    gap: 0.875rem;
+    border-radius: 1.375rem;
+  }
+
+  .guardian-auth__access-panel .bg-card [class*="px-6"] {
+    padding-inline: 1.125rem;
+  }
+
+  .guardian-auth__access-panel .bg-card [class*="gap-6"] {
+    gap: 0.875rem;
+  }
+
+  .guardian-auth__access-panel .bg-card input:not([type="checkbox"]):not([type="radio"]),
+  .guardian-auth__access-panel .bg-card button[type="submit"] {
+    min-height: 42px;
+  }
+
+  .guardian-auth__access-panel .bg-card .font-semibold.text-lg {
+    font-size: 1rem;
+    line-height: 1.2;
+  }
+
+  .guardian-auth__access-panel .bg-card .text-xs {
+    font-size: 0.6875rem;
+    line-height: 1.3;
   }
 
   .access-vault {
@@ -693,29 +933,8 @@
     height: 48px;
   }
 
-  .access-vault__submit {
-    margin-top: 18px;
-  }
-
   .access-vault__divider {
     margin: 18px 0 14px;
-  }
-
-  .editorial-copy__headline {
-    font-size: clamp(3.3rem, 6.2vw, 6.4rem);
-  }
-
-  .editorial-copy__subheadline {
-    margin-top: 18px;
-  }
-
-  .editorial-copy__proofline {
-    margin-top: 44px;
-  }
-
-  .owl-scene__owl {
-    width: clamp(500px, 52vw, 760px);
-    top: 50%;
   }
 }
 
@@ -727,7 +946,7 @@
     overflow-y: auto;
     grid-template-columns: 1fr;
     align-items: end;
-    padding-top: 96px;
+    padding-top: clamp(72px, 12vw, 96px);
   }
 
   .guardian-auth__left-panel {
@@ -746,14 +965,25 @@
     opacity: .72;
   }
 
-  .owl-scene__owl {
+  .owl-scene__owl:not(.owl-scene__owl--morpho) {
     width: min(106vw, 760px);
     left: 52%;
     top: 32%;
     opacity: .28;
   }
 
-  .guardian-auth--day .owl-scene__owl {
+  .owl-scene__owl--morpho {
+    width: min(92vw, 720px);
+    left: 50%;
+    top: 36%;
+    opacity: .9;
+  }
+
+  .guardian-auth--day .owl-scene__owl--morpho {
+    opacity: .82;
+  }
+
+  .guardian-auth--day .owl-scene__owl--day {
     opacity: .34;
   }
 

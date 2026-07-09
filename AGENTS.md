@@ -103,6 +103,16 @@ Production branch has `allow_localhost: false`. **Do not re-enable localhost on 
 
 **Strategy (Option A):** use a dedicated **dev** Neon branch per feature via the branch-first workflow. Allow localhost only on that dev branch.
 
+**SPEC-B / Guardian local (preferred wrapper):**
+
+```bash
+npm run hooks:install          # once — pre-push auto-repairs before GitHub push
+npm run dev:spec-b             # diagnose → repair → migrate → seed → next dev
+# stepwise: npm run bootstrap:spec-b:repair && npm run bootstrap:spec-b:check
+```
+
+Guidelines: [docs/runbooks/spec-b-local-preview-env.md](docs/runbooks/spec-b-local-preview-env.md). Generic `dev-*` flow: [docs/runbooks/local-dev-auth.md](docs/runbooks/local-dev-auth.md).
+
 1. `neon link` once per machine; then `neon checkout dev-<feature>` (creates or selects the branch; updates `.neon` only).
 2. Copy branch-scoped values into `env.secret` (`DATABASE_URL`) and `env.config` (`NEON_AUTH_BASE_URL`, `NEON_BRANCH_ID`) from Neon Console or `neon neon-auth status`.
 3. On the **checked-out dev branch only:** `neon neon-auth domain allow-localhost`.
@@ -152,7 +162,7 @@ MCP endpoint: `http://localhost:6006/mcp`
 
 ## Portal Atmosphere — agent constraints
 
-Authority: [ADR-Portal-BG-001](docs/architecture/adr/ADR-Portal-BG-001-portal-atmosphere-system.md) · **[Hero quality benchmark](docs/architecture/slices/portal-atmosphere/pa-hero-quality-benchmark.md)** · [Rejected approaches register](docs/architecture/slices/portal-atmosphere/pa-rejected-approaches.md) · Cursor rules: `.cursor/rules/portal-atmosphere-design.mdc`, `.cursor/rules/agent-workflow.mdc`
+Authority: [ADR-Portal-BG-001](docs/architecture/adr/ADR-Portal-BG-001-portal-atmosphere-system.md) · [ADR-Auth-UI-001](docs/architecture/adr/ADR-Auth-UI-001-guardian-shell-neon-form.md) · **[Hero quality benchmark](docs/architecture/slices/portal-atmosphere/pa-hero-quality-benchmark.md)** · [Rejected approaches register](docs/architecture/slices/portal-atmosphere/pa-rejected-approaches.md) · Cursor rules: `.cursor/rules/portal-atmosphere-design.mdc`, `.cursor/rules/agent-workflow.mdc`
 
 **Design references:** `public/brand/heroes/auth-hero-dark.png`, `public/brand/heroes/auth-hero-light.png`
 
@@ -163,7 +173,7 @@ Authority: [ADR-Portal-BG-001](docs/architecture/adr/ADR-Portal-BG-001-portal-at
 | Storybook first | Experiments live in `stories/ui-evaluation/` and `components/portal-atmosphere/fixtures/` until user asks to wire prod |
 | Dual owl assets | Dark: `public/owl-variants/allowed-base/darkbg-removebg-preview2.png` · Light: `public/owl-variants/allowed-base/whitebg-removebg-preview2.png` |
 | Forbidden | CSS invert on owls; single PNG sticker heroes; reintroducing rejected approaches in `pa-rejected-approaches.md` |
-| Prod wiring | `PortalAuthLayout` / auth routes only when user explicitly requests — not as default for design experiments |
+| Prod wiring | **Guardian Auth** on `/auth/*` is approved prod shell ([ADR-Auth-UI-001](docs/architecture/adr/ADR-Auth-UI-001-guardian-shell-neon-form.md), Method B). Fade Owl / Dual / Comp Laptop experiments stay Storybook-only |
 
 Storybook server mocks: `.storybook/mocks/server-only.ts`, `.storybook/mocks/db.ts` (see `.storybook/main.ts`).
 

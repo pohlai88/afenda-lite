@@ -60,9 +60,20 @@ export async function rejectNonOperatorSignIn(signedInEmail: string) {
   return { error: portalCopy.orgSignIn.accessDenied };
 }
 
-export async function requireClientSession(options?: {
+export type ClientSessionGuardReason =
+  | "unauthenticated"
+  | "operator"
+  | "onboarding_incomplete"
+  | "preview_unavailable";
+
+export type ClientSessionGuardResult =
+  | { allowed: true; session: ClientAuthenticatedSession }
+  | { allowed: false; reason: ClientSessionGuardReason };
+
+/** Non-redirecting client session gate — shared by pages and JSON API routes. */
+export async function guardClientSession(options?: {
   requireOnboarding?: boolean;
-}): Promise<ClientAuthenticatedSession> {
+}): Promise<ClientSessionGuardResult> {
   const session = await getAuthSession();
   const embed = await isPlaygroundEmbedRequest();
 
@@ -74,7 +85,7 @@ export async function requireClientSession(options?: {
   ) {
     const previewUser = await getPreviewClientUser();
     if (!previewUser) {
-      redirect(clientPreviewUnavailableHref({ embed: true }));
+      return { allowed: false, reason: "preview_unavailable" };
     }
 
     const previewSession = toPreviewClientSession(previewUser);
@@ -82,20 +93,20 @@ export async function requireClientSession(options?: {
     if (options?.requireOnboarding) {
       const profile = await getClientProfile(previewSession.user.id);
       if (!profile?.onboardingComplete) {
-        redirect(CLIENT_ONBOARDING_HREF);
+        return { allowed: false, reason: "onboarding_incomplete" };
       }
     }
 
-    return previewSession;
+    return { allowed: true, session: previewSession };
   }
 
   const authenticated = toClientAuthenticatedSession(session);
   if (!authenticated) {
-    redirect(AUTH_SIGN_IN_HREF);
+    return { allowed: false, reason: "unauthenticated" };
   }
 
   if (isAdminSession(authenticated)) {
-    redirect(OPERATOR_DASHBOARD_HREF);
+    return { allowed: false, reason: "operator" };
   }
 
   await bootstrapClientAfterAuth({
@@ -106,9 +117,30 @@ export async function requireClientSession(options?: {
   if (options?.requireOnboarding) {
     const profile = await getClientProfile(authenticated.user.id);
     if (!profile?.onboardingComplete) {
-      redirect(CLIENT_ONBOARDING_HREF);
+      return { allowed: false, reason: "onboarding_incomplete" };
     }
   }
 
-  return authenticated;
+  return { allowed: true, session: authenticated };
+}
+
+export async function requireClientSession(options?: {
+  requireOnboarding?: boolean;
+}): Promise<ClientAuthenticatedSession> {
+  const guard = await guardClientSession(options);
+
+  if (!guard.allowed) {
+    switch (guard.reason) {
+      case "unauthenticated":
+        redirect(AUTH_SIGN_IN_HREF);
+      case "operator":
+        redirect(OPERATOR_DASHBOARD_HREF);
+      case "onboarding_incomplete":
+        redirect(CLIENT_ONBOARDING_HREF);
+      case "preview_unavailable":
+        redirect(clientPreviewUnavailableHref({ embed: true }));
+    }
+  }
+
+  return guard.session;
 }

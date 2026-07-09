@@ -8,10 +8,12 @@ import { execFileSync } from "node:child_process";
 import { loadComposedEnv, getEnvValue } from "./lib/env-files.mjs";
 
 const env = loadComposedEnv();
-const apiKey = getEnvValue("NEON_API_KEY", env);
-const orgId = getEnvValue("NEON_ORG_ID", env);
-const projectId = getEnvValue("NEON_PROJECT_ID", env);
-const branchId = getEnvValue("NEON_BRANCH_ID", env);
+// Prefer composed files over shell exports — stale NEON_BRANCH_ID in the
+// process environment must not override env.config after bootstrap:spec-b.
+const apiKey = env.NEON_API_KEY || getEnvValue("NEON_API_KEY", env);
+const orgId = env.NEON_ORG_ID || getEnvValue("NEON_ORG_ID", env);
+const projectId = env.NEON_PROJECT_ID || getEnvValue("NEON_PROJECT_ID", env);
+const branchId = env.NEON_BRANCH_ID || getEnvValue("NEON_BRANCH_ID", env);
 
 const neonFile = JSON.parse(readFileSync(".neon", "utf8"));
 
@@ -40,13 +42,17 @@ function record(ok) {
 
 console.log("=== Neon env validation ===\n");
 
+const PRODUCTION_BRANCH_ID = "br-tiny-hill-ao82jp6f";
 record(
   check(
     "env.config composition",
     orgId === "org-royal-bar-40022480" &&
       projectId === "young-hat-54755363" &&
-      branchId === "br-tiny-hill-ao82jp6f",
-    `org=${orgId}, project=${projectId}, branch=${branchId}`,
+      Boolean(branchId),
+    `org=${orgId}, project=${projectId}, branch=${branchId}` +
+      (branchId === PRODUCTION_BRANCH_ID
+        ? " (production)"
+        : " (dev/preview — localhost OK on this branch only)"),
   ),
 );
 

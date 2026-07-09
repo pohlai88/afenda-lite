@@ -3,6 +3,7 @@ import type { GuardianMode, GuardianState } from "@/components/auth";
 import {
   GuardianAuthFacadeInteractive,
   GuardianAuthFacadePreview,
+  GuardianAuthNeonSlotPreview,
 } from "@/components/auth/fixtures/guardian-auth-facade.fixture";
 import { GUARDIAN_AUTH_ASSET_SET } from "@/lib/portal-brand";
 
@@ -33,13 +34,10 @@ const meta = {
       description: {
         component: [
           "Reusable cinematic auth system — `GuardianAuthFacade` composes",
-          "`OwlScene`, `EditorialPosterCopy`, `AccessVaultCard`,",
-          "`GuardianShield`, and `ThemeToggle`. Owl markup lives only in",
-          "OwlScene; card markup only in AccessVaultCard. CSS state classes:",
-          "`.guardian-auth--day|night` and `.guardian-auth--state-*`.",
+          "`OwlScene`, `EditorialPosterCopy`, `GuardianShield`, and `ThemeToggle`.",
+          "Production `/auth/*` mounts `PortalAuthNeonView` in the access slot (ADR-Auth-UI-001).",
+          "`AccessVaultCard` is Storybook mock only.",
           `Assets: ${Object.values(GUARDIAN_AUTH_ASSET_SET).join(", ")}.`,
-          "Storybook design review — prod sign-in uses the same kit at",
-          "/auth/sign-in until Neon Auth is wired into AccessVaultCard.",
         ].join(" "),
       },
     },
@@ -86,6 +84,24 @@ export const NightError: Story = {
   parameters: LAPTOP_1024,
 };
 
+export const NightSuccess: Story = {
+  name: "static — night success (green)",
+  args: { state: "success" },
+  parameters: LAPTOP_1024,
+};
+
+export const NightWarning: Story = {
+  name: "static — night warning (amber)",
+  args: { state: "warning" },
+  parameters: LAPTOP_1024,
+};
+
+export const NightTyping: Story = {
+  name: "static — night typing (gold)",
+  args: { state: "typing" },
+  parameters: LAPTOP_1024,
+};
+
 export const DaySuccess: Story = {
   name: "static — day success",
   args: { mode: "day", state: "success" },
@@ -103,6 +119,20 @@ export const Desktop1440: Story = {
   parameters: DESKTOP_1440,
 };
 
+export const NeonSlotProdWiring: Story = {
+  name: "prod wiring — Guardian + mock Neon slot",
+  parameters: {
+    ...LAPTOP_1024,
+    docs: {
+      description: {
+        story:
+          "Mirrors production: GuardianAuthFacade + PortalAuthFormIntro + Neon AuthView in the access slot. Live AuthView requires NeonAuthUIProvider (app route only).",
+      },
+    },
+  },
+  render: () => <GuardianAuthNeonSlotPreview />,
+};
+
 export const Interactive: Story = {
   name: "interactive — mode toggle + state toolbar",
   parameters: {
@@ -115,4 +145,77 @@ export const Interactive: Story = {
     },
   },
   render: () => <GuardianAuthFacadeInteractive />,
+};
+
+const REFERENCE_DARK = "/brand/heroes/auth-hero-dark.png";
+const REFERENCE_LIGHT = "/brand/heroes/auth-hero-light.png";
+
+/** Production Guardian shell vs comp PNG — human sign-off at 1024px (pa-hero-quality-benchmark). */
+export const ReferenceComparisonNight: Story = {
+  name: "benchmark — night vs auth-hero-dark @1024",
+  parameters: {
+    ...LAPTOP_1024,
+    layout: "fullscreen",
+    docs: {
+      description: {
+        story: `Live Guardian prod wiring vs ${REFERENCE_DARK}. Functional parity done; pixel match is human sign-off.`,
+      },
+    },
+  },
+  render: () => (
+    <div className="grid min-h-svh grid-cols-1 bg-black lg:grid-cols-2">
+      <div className="relative min-h-svh min-w-0">
+        <GuardianAuthNeonSlotPreview />
+      </div>
+      <div className="flex min-h-svh min-w-0 flex-col border-l border-white/10">
+        <p className="shrink-0 px-4 py-2 font-[family-name:var(--font-ui)] text-xs tracking-wide text-white/60 uppercase">
+          Reference comp
+        </p>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          alt=""
+          aria-hidden="true"
+          className="h-auto w-full object-contain object-top"
+          height={900}
+          src={REFERENCE_DARK}
+          width={1024}
+        />
+      </div>
+    </div>
+  ),
+};
+
+export const ReferenceComparisonDay: Story = {
+  name: "benchmark — day vs auth-hero-light @1024",
+  parameters: {
+    ...LAPTOP_1024,
+    layout: "fullscreen",
+    globals: { theme: "light" },
+    docs: {
+      description: {
+        story: `Live Guardian prod wiring vs ${REFERENCE_LIGHT}. Toggle Storybook theme to day before compare.`,
+      },
+    },
+  },
+  render: () => (
+    <div className="grid min-h-svh grid-cols-1 bg-[color:var(--portal-bg)] lg:grid-cols-2">
+      <div className="relative min-h-svh min-w-0">
+        <GuardianAuthFacadePreview mode="day" state="idle" />
+      </div>
+      <div className="flex min-h-svh min-w-0 flex-col border-l border-[color:var(--portal-border)]">
+        <p className="shrink-0 px-4 py-2 font-[family-name:var(--font-ui)] text-xs tracking-wide text-[color:var(--portal-muted)] uppercase">
+          Reference comp
+        </p>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          alt=""
+          aria-hidden="true"
+          className="h-auto w-full object-contain object-top"
+          height={900}
+          src={REFERENCE_LIGHT}
+          width={1024}
+        />
+      </div>
+    </div>
+  ),
 };

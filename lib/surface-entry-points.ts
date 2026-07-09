@@ -18,33 +18,34 @@ export const SURFACE_ENTRY_POINTS: Readonly<
   "client-join": {
     files: [
       "app/join/page.tsx",
+      "components/guardian-invitation-join-page.tsx",
       "components/portal-invitation-join-panel.tsx",
       "lib/client-invitation-join-auth.ts",
     ],
     authPathnames: ["sign-up", "email-otp", "accept-invitation"],
   },
   "auth-sign-in": {
-    files: ["app/auth/[path]/page.tsx"],
+    files: ["app/auth/[path]/page.tsx", "lib/auth/auth-page-trust.ts"],
     authPathnames: ["sign-in"],
     authPageOnly: true,
   },
   "auth-sign-up": {
-    files: ["app/auth/[path]/page.tsx"],
+    files: ["app/auth/[path]/page.tsx", "lib/auth/auth-page-trust.ts"],
     authPathnames: ["sign-up"],
     authPageOnly: true,
   },
   "auth-email-otp": {
-    files: ["app/auth/[path]/page.tsx"],
+    files: ["app/auth/[path]/page.tsx", "lib/auth/auth-page-trust.ts"],
     authPathnames: ["email-otp"],
     authPageOnly: true,
   },
   "auth-forgot-password": {
-    files: ["app/auth/[path]/page.tsx"],
+    files: ["app/auth/[path]/page.tsx", "lib/auth/auth-page-trust.ts"],
     authPathnames: ["forgot-password"],
     authPageOnly: true,
   },
   "auth-reset-password": {
-    files: ["app/auth/[path]/page.tsx"],
+    files: ["app/auth/[path]/page.tsx", "lib/auth/auth-page-trust.ts"],
     authPathnames: ["reset-password"],
     authPageOnly: true,
   },
@@ -56,6 +57,31 @@ export const SURFACE_ENTRY_POINTS: Readonly<
     files: ["lib/org-sign-in-entry.ts", "lib/portal-routes.ts"],
     authPathnames: ["sign-in"],
     authPageOnly: true,
+  },
+  "client-login": {
+    files: [
+      "app/client/(gate)/login/page.tsx",
+      "lib/client-sign-in-entry.ts",
+      "lib/portal-routes.ts",
+    ],
+    authPathnames: ["sign-in"],
+    authPageOnly: true,
+  },
+  "client-home-redirect": {
+    files: [
+      "app/page.tsx",
+      "lib/client-sign-in-entry.ts",
+      "lib/client-invitation-entry.ts",
+      "lib/portal-routes.ts",
+    ],
+  },
+  "client-preview-unavailable": {
+    files: [
+      "app/client/(gate)/preview-unavailable/page.tsx",
+      "lib/client-preview-unavailable-page.tsx",
+      "components/client-preview-unavailable-view.tsx",
+      "lib/preview-client.ts",
+    ],
   },
   "client-onboarding": {
     files: [
@@ -79,7 +105,9 @@ export const SURFACE_ENTRY_POINTS: Readonly<
     files: [
       "app/client/(workspace)/declare/[id]/page.tsx",
       "components/client-declaration-form.tsx",
+      "components/declaration-form.tsx",
       "components/declaration-question-field.tsx",
+      "app/api/client/declaration-draft/route.ts",
     ],
   },
   "admin-dashboard": {
@@ -160,8 +188,11 @@ export const LIB_IMPORT_DOMAIN_MAP: ReadonlyArray<{
   { prefix: "@/lib/surveys", domainId: "domain:surveys" },
   { prefix: "@/lib/questions", domainId: "domain:questions" },
   { prefix: "@/lib/clients", domainId: "domain:clients" },
+  { prefix: "@/lib/portal-member", domainId: "domain:clients" },
+  { prefix: "@/lib/client-declaration-draft", domainId: "domain:clients" },
   { prefix: "@/lib/audit", domainId: "domain:audit" },
   { prefix: "@/lib/auth/session", domainId: "domain:auth" },
+  { prefix: "@/lib/auth/get-session", domainId: "domain:auth" },
   { prefix: "@/lib/auth/server", domainId: "domain:auth" },
   { prefix: "@/lib/auth/admin", domainId: "domain:auth" },
   { prefix: "@/lib/auth/env", domainId: "domain:auth" },
@@ -177,6 +208,8 @@ export const LIB_IMPORT_DOMAIN_MAP: ReadonlyArray<{
   { prefix: "@/lib/operator-declaration-detail", domainId: "domain:operator-declaration-detail" },
   { prefix: "@/lib/declaration-share-links", domainId: "domain:surveys" },
   { prefix: "@/lib/preview-client", domainId: "domain:preview-client" },
+  { prefix: "@/lib/portal-session-routing", domainId: "domain:auth" },
+  { prefix: "@/lib/client-sign-in-entry", domainId: "domain:auth" },
   { prefix: "@/lib/survey-submission", domainId: "domain:surveys" },
   { prefix: "@/lib/delete-client-auth-user", domainId: "domain:auth" },
 ];
@@ -185,6 +218,11 @@ export const LIB_IMPORT_DOMAIN_MAP: ReadonlyArray<{
 export const SERVER_SIDE_AUTH_BY_SURFACE: Readonly<Record<string, readonly string[]>> = {
   "admin-issue-invite": ["auth:organization/invite-member"],
 };
+
+/** Surfaces that redirect into Neon Auth without embedding pathname literals in scanned sources. */
+export const AUTH_REDIRECT_ENTRY_SURFACES = new Set([
+  "client-home-redirect",
+]);
 
 /** Admin route surfaces inherit operator session enforcement from dashboard layout. */
 export const LAYOUT_PROTECTED_ADMIN_SURFACES = new Set([
@@ -200,6 +238,7 @@ export const LAYOUT_PROTECTED_ADMIN_SURFACES = new Set([
 export const SESSION_HELPER_ACTIONS: Readonly<Record<string, string>> = {
   requireClientSession: "action:requireClientSession",
   requireAdminSession: "action:requireAdminSession",
+  requireAccountSession: "action:requireAccountSession",
 };
 
 export function domainLoaderSatisfiedByEntryFile(

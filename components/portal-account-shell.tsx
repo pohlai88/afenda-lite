@@ -6,8 +6,8 @@ import { PortalMemberMenu } from "@/components/portal-member-menu";
 import { PortalThemeToggle } from "@/components/portal-theme-toggle";
 import { Button } from "@/components/ui/button";
 import type { PortalMember } from "@/lib/portal-member-types";
+import { resolveAccountShellBack } from "@/lib/account-paths";
 import { portalCopy, PORTAL_NAME } from "@/lib/portal-copy";
-import { OPERATOR_DASHBOARD_HREF } from "@/lib/portal-routes";
 import { cn } from "@/lib/utils";
 
 export function PortalAccountShell({
@@ -17,7 +17,13 @@ export function PortalAccountShell({
   member: PortalMember;
   children: ReactNode;
 }) {
-  const { account, org } = portalCopy;
+  const { account, clientDashboard, org } = portalCopy;
+  const isOperator = member.context === "operator";
+  const shellEyebrow = isOperator ? org.eyebrow : clientDashboard.eyebrow;
+  const shellTitle = isOperator ? org.title : clientDashboard.title;
+  const { href: backHref, label: backLabel } = resolveAccountShellBack(
+    member.context,
+  );
 
   return (
     <PortalMemberProvider member={member}>
@@ -32,18 +38,18 @@ export function PortalAccountShell({
               <p className="text-xs text-muted-foreground" translate="no">
                 {PORTAL_NAME}
               </p>
-              <PortalEyebrow className="mb-1">{org.eyebrow}</PortalEyebrow>
-              <p className="portal-toolbar-title">{org.title}</p>
+              <PortalEyebrow className="mb-1">{shellEyebrow}</PortalEyebrow>
+              <p className="portal-toolbar-title">{shellTitle}</p>
             </div>
             <div className="flex shrink-0 items-center gap-1">
               <Button
                 variant="ghost"
                 size="sm"
                 className="hidden sm:inline-flex"
-                render={<Link href={OPERATOR_DASHBOARD_HREF} />}
+                render={<Link href={backHref} />}
                 nativeButton={false}
               >
-                {account.backToDashboard}
+                {backLabel}
               </Button>
               <PortalThemeToggle />
               <PortalMemberMenu />

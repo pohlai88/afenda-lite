@@ -9,8 +9,9 @@ import { parseClientOnboardingFormData } from "@/lib/client-onboarding.server";
 import {
   CLIENT_HOME_HREF,
   CLIENT_ONBOARDING_HREF,
+  OPERATOR_CLIENTS_HREF,
   OPERATOR_DASHBOARD_HREF,
-} from "@/lib/client-session";
+} from "@/lib/portal-routes";
 import {
   acknowledgeClientPortal,
   createClientInvitation,
@@ -32,7 +33,6 @@ import { deleteClientAuthUserByEmail } from "@/lib/delete-client-auth-user";
 import { isClientEmailDeliveryEnabled } from "@/lib/email/client-email-delivery";
 import { sendClientOnboardingEmail } from "@/lib/email/send-client-onboarding-email";
 import { runLoggedAction } from "@/lib/observability";
-import { OPERATOR_CLIENTS_HREF } from "@/lib/portal-routes";
 import { portalCopy, CLIENT_PORTAL_ACK_VERSION } from "@/lib/portal-copy";
 import type { SurveyAnswers } from "@/lib/questions";
 import { parseSchema } from "@/lib/schemas/common";
@@ -46,8 +46,6 @@ import {
 import { getSurveyBySlug, getSurveyForAdmin } from "@/lib/surveys";
 import { submitClientDeclaration } from "@/lib/survey-submission";
 import { formString } from "@/lib/server-actions/form-data";
-
-export { requireClientSession };
 
 export async function saveClientOnboardingAction(formData: FormData) {
   const session = await requireClientSession();

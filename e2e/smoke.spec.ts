@@ -1,4 +1,8 @@
 import { expect, test } from "@/testing/e2e/playwright-base";
+import {
+  HEALTH_LIVENESS_API_HREF,
+  HEALTH_READINESS_API_HREF,
+} from "@/lib/api/routes";
 import { portalCopy } from "@/lib/portal-copy";
 import {
   getOperatorCreds,
@@ -16,7 +20,7 @@ const operatorCreds = getOperatorCreds();
 
 test.describe("Portal smoke @smoke", () => {
   test("liveness endpoint returns alive", async ({ request }) => {
-    const response = await request.get("/api/health/liveness");
+    const response = await request.get(HEALTH_LIVENESS_API_HREF);
     expect(response.ok()).toBeTruthy();
 
     const body = await response.json();
@@ -29,7 +33,7 @@ test.describe("Portal smoke @smoke", () => {
   });
 
   test("readiness endpoint returns JSON", async ({ request }) => {
-    const response = await request.get("/api/health/readiness");
+    const response = await request.get(HEALTH_READINESS_API_HREF);
     expect(response.ok()).toBeTruthy();
 
     const body = await response.json();

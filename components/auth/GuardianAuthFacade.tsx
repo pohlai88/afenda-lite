@@ -7,6 +7,7 @@ import { EditorialPosterCopy } from "./EditorialPosterCopy";
 import { AccessVaultCard } from "./AccessVaultCard";
 import { ThemeToggle } from "./ThemeToggle";
 import { GuardianShield } from "./GuardianShield";
+import { resolveGuardianEditorialCopy } from "@/lib/guardian-editorial-copy";
 import "./guardian-auth-facade.css";
 
 type Props = {
@@ -14,30 +15,20 @@ type Props = {
   state?: GuardianState;
   assets: GuardianAssetSet;
   copy?: Partial<Record<GuardianMode, GuardianCopy>>;
+  /** Replaces default editorial poster (e.g. join invitation brand panel). */
+  leftPanel?: ReactNode;
   onModeChange?: (mode: GuardianMode) => void;
   children?: ReactNode;
 };
 
-const defaultCopy: Record<GuardianMode, GuardianCopy> = {
-  night: {
-    eyebrow: "Client Declaration Portal",
-    headline: "Truth, held quietly.",
-    subheadline: "Guarded for trusted declarations.",
-    proofline: "Confidential. Secure. Always.",
-  },
-  day: {
-    eyebrow: "Client Declaration Portal",
-    headline: "Protected by clarity.",
-    subheadline: "Guarded for trusted declarations.",
-    proofline: "Secure. Confidential. Verified.",
-  },
-};
+const defaultCopy = resolveGuardianEditorialCopy();
 
 export function GuardianAuthFacade({
   mode,
   state = "idle",
   assets,
   copy,
+  leftPanel,
   onModeChange,
   children,
 }: Props) {
@@ -62,7 +53,7 @@ export function GuardianAuthFacade({
       <ThemeToggle mode={mode} onChange={onModeChange} />
 
       <section className="guardian-auth__left-panel">
-        <EditorialPosterCopy copy={resolvedCopy[mode]} />
+        {leftPanel ?? <EditorialPosterCopy copy={resolvedCopy[mode]} />}
       </section>
 
       <section className="guardian-auth__threshold" aria-hidden="true">

@@ -78,6 +78,7 @@ export const LightDesktop1440: Story = {
 
 /** Static PNG reference — avoids duplicate h1/landmarks from side-by-side live panels. */
 export const ReferenceComparisonDark: Story = {
+  args: { theme: "dark" },
   parameters: {
     viewport: { defaultViewport: "laptop1024" },
     layout: "fullscreen",
@@ -111,6 +112,7 @@ export const ReferenceComparisonDark: Story = {
 };
 
 export const ReferenceComparisonLight: Story = {
+  args: { theme: "light" },
   parameters: {
     viewport: { defaultViewport: "laptop1024" },
     layout: "fullscreen",

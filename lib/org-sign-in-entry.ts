@@ -2,6 +2,11 @@ import "server-only";
 
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+import {
+  isOrgAccessDeniedReason,
+  ORG_ACCESS_DENIED_REASON,
+  ORG_SIGN_IN_FROM_PARAM,
+} from "@/lib/auth/auth-entry-params";
 import { ORG_SIGN_IN_HREF } from "@/lib/admin";
 import {
   appendPlaygroundEmbedQuery,
@@ -14,8 +19,12 @@ import {
 } from "@/lib/portal-routes";
 import { getAuthenticatedLandingHref } from "@/lib/portal-session-routing";
 
-export const ORG_SIGN_IN_FROM_PARAM = "org" as const;
-export const ORG_ACCESS_DENIED_REASON = "access-denied" as const;
+export {
+  isOrgAccessDeniedReason,
+  isOrgSignInFrom,
+  ORG_ACCESS_DENIED_REASON,
+  ORG_SIGN_IN_FROM_PARAM,
+} from "@/lib/auth/auth-entry-params";
 
 /** Legacy operator sign-in URL — forwards through the canonical org entry flow. */
 export const AUTH_ADMIN_LEGACY_HREF = "/auth/admin" as const;
@@ -30,14 +39,6 @@ export type OrgSignInEntrySearchParams = {
   returnTo?: string;
   embed?: string;
 };
-
-export function isOrgSignInFrom(value: string | undefined) {
-  return value === ORG_SIGN_IN_FROM_PARAM;
-}
-
-export function isOrgAccessDeniedReason(value: string | undefined) {
-  return value === ORG_ACCESS_DENIED_REASON;
-}
 
 /** Named operator sign-in entry URL (before Neon Auth redirect). */
 export function orgSignInEntryHref(options?: OrgSignInEntrySearchParams) {

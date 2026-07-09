@@ -24,6 +24,7 @@ import {
   WIZARD_SIDEBAR_STEP_LIMIT,
   type DeclarationWizardStep,
 } from "@/lib/declaration-steps";
+import { CLIENT_DECLARATION_DRAFT_API_HREF } from "@/lib/api/routes";
 import { portalCopy } from "@/lib/portal-copy";
 import { formatDateTime } from "@/lib/format";
 import type { SurveyAnswers, SurveyQuestion } from "@/lib/question-models";
@@ -237,7 +238,7 @@ export function DeclarationForm({
         return;
       }
 
-      void fetch("/api/client/declaration-draft", {
+      void fetch(CLIENT_DECLARATION_DRAFT_API_HREF, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

@@ -5,6 +5,7 @@ import {
   LIB_IMPORT_DOMAIN_MAP,
   SESSION_HELPER_ACTIONS,
 } from "@/lib/surface-entry-points";
+import { API_ROUTE_ACTION_IDS } from "@/lib/api/routes";
 
 export type RelianceCoverageIssue = {
   code:
@@ -164,6 +165,18 @@ export function libImportToDomainIds(specifier: string): string[] {
   return [...new Set(matches.map((entry) => entry.domainId))];
 }
 
+function extractApiRouteTargets(content: string): string[] {
+  const targets: string[] = [];
+
+  for (const [constant, actionId] of Object.entries(API_ROUTE_ACTION_IDS)) {
+    if (content.includes(constant)) {
+      targets.push(actionId);
+    }
+  }
+
+  return targets;
+}
+
 function discoveredTargetsFromFile(content: string): Set<string> {
   const targets = new Set<string>();
 
@@ -176,6 +189,10 @@ function discoveredTargetsFromFile(content: string): Set<string> {
     if (actionId) {
       targets.add(actionId);
     }
+  }
+
+  for (const actionId of extractApiRouteTargets(content)) {
+    targets.add(actionId);
   }
 
   for (const libSpec of extractLibImports(content)) {
@@ -218,6 +235,20 @@ export function listExportedActionIds(repoRoot: string): string[] {
           exports.push(SESSION_HELPER_ACTIONS[name]);
         }
       }
+    }
+  }
+
+  for (const [helperName, actionId] of Object.entries(SESSION_HELPER_ACTIONS)) {
+    const libPath =
+      helperName === "requireAccountSession"
+        ? "lib/account-session.ts"
+        : "lib/auth/session.ts";
+    const libSource = readSource(repoRoot, libPath);
+    const exported =
+      libSource.includes(`export async function ${helperName}`) ||
+      libSource.includes(`export const ${helperName}`);
+    if (exported) {
+      exports.push(actionId);
     }
   }
 

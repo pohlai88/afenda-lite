@@ -16,6 +16,16 @@
       "type": "materializes"
     },
     {
+      "source": "action:requireAccountSession",
+      "target": "domain:auth",
+      "type": "materializes"
+    },
+    {
+      "source": "action:requireAccountSession",
+      "target": "domain:clients",
+      "type": "materializes"
+    },
+    {
       "source": "action:saveClientOnboardingAction",
       "target": "domain:clients",
       "type": "materializes"
@@ -83,6 +93,36 @@
     {
       "source": "action:submitClientDeclarationAction",
       "target": "domain:audit",
+      "type": "materializes"
+    },
+    {
+      "source": "action:saveClientDeclarationDraftAction",
+      "target": "domain:clients",
+      "type": "materializes"
+    },
+    {
+      "source": "action:saveClientDeclarationDraftAction",
+      "target": "domain:surveys",
+      "type": "materializes"
+    },
+    {
+      "source": "action:saveClientDeclarationDraftAction",
+      "target": "domain:questions",
+      "type": "materializes"
+    },
+    {
+      "source": "action:postClientDeclarationDraftApi",
+      "target": "domain:clients",
+      "type": "materializes"
+    },
+    {
+      "source": "action:postClientDeclarationDraftApi",
+      "target": "domain:questions",
+      "type": "materializes"
+    },
+    {
+      "source": "action:postClientDeclarationDraftApi",
+      "target": "domain:auth",
       "type": "materializes"
     },
     {
@@ -296,6 +336,36 @@
       "type": "consumes"
     },
     {
+      "source": "surface:auth-accept-invitation",
+      "target": "domain:auth",
+      "type": "consumes"
+    },
+    {
+      "source": "surface:client-login",
+      "target": "auth:sign-in/email",
+      "type": "consumes"
+    },
+    {
+      "source": "surface:client-home-redirect",
+      "target": "auth:sign-in/email",
+      "type": "consumes"
+    },
+    {
+      "source": "surface:client-home-redirect",
+      "target": "domain:client-invitation-entry",
+      "type": "consumes"
+    },
+    {
+      "source": "surface:client-home-redirect",
+      "target": "domain:auth",
+      "type": "consumes"
+    },
+    {
+      "source": "surface:client-preview-unavailable",
+      "target": "domain:preview-client",
+      "type": "consumes"
+    },
+    {
       "source": "surface:client-onboarding",
       "target": "action:requireClientSession",
       "type": "consumes"
@@ -307,12 +377,22 @@
     },
     {
       "source": "surface:client-onboarding",
+      "target": "domain:auth",
+      "type": "consumes"
+    },
+    {
+      "source": "surface:client-onboarding",
       "target": "domain:client-onboarding",
       "type": "consumes"
     },
     {
       "source": "surface:client-profile",
       "target": "action:requireClientSession",
+      "type": "consumes"
+    },
+    {
+      "source": "surface:client-profile",
+      "target": "domain:auth",
       "type": "consumes"
     },
     {
@@ -328,6 +408,11 @@
     {
       "source": "surface:client-dashboard",
       "target": "action:acknowledgeClientPortalAction",
+      "type": "consumes"
+    },
+    {
+      "source": "surface:client-dashboard",
+      "target": "domain:auth",
       "type": "consumes"
     },
     {
@@ -352,7 +437,22 @@
     },
     {
       "source": "surface:client-declare",
+      "target": "action:saveClientDeclarationDraftAction",
+      "type": "consumes"
+    },
+    {
+      "source": "surface:client-declare",
+      "target": "action:postClientDeclarationDraftApi",
+      "type": "consumes"
+    },
+    {
+      "source": "surface:client-declare",
       "target": "action:registerEvidenceAction",
+      "type": "consumes"
+    },
+    {
+      "source": "surface:client-declare",
+      "target": "domain:auth",
       "type": "consumes"
     },
     {
@@ -526,6 +626,11 @@
       "type": "consumes"
     },
     {
+      "source": "surface:shell-dashboard",
+      "target": "domain:clients",
+      "type": "consumes"
+    },
+    {
       "source": "surface:client-preview-banner",
       "target": "action:exitClientPreviewAction",
       "type": "consumes"
@@ -533,6 +638,11 @@
     {
       "source": "surface:client-preview-banner",
       "target": "domain:preview-client",
+      "type": "consumes"
+    },
+    {
+      "source": "surface:client-preview-banner",
+      "target": "domain:clients",
       "type": "consumes"
     },
     {
@@ -683,6 +793,11 @@
     {
       "source": "gate:evaluate:ui-matrix",
       "target": "surface:client-acknowledgement",
+      "type": "validates"
+    },
+    {
+      "source": "gate:evaluate:ui-matrix",
+      "target": "surface:client-login",
       "type": "validates"
     },
     {
@@ -851,8 +966,8 @@
       "type": "validates"
     }
   ],
-  "fingerprint": "e2933f75d3de7ef2",
-  "generatedAt": "2026-07-08T09:59:34.678Z",
+  "fingerprint": "ec087bcee9c79821",
+  "generatedAt": "2026-07-09T08:23:33.105Z",
   "nodes": [
     {
       "id": "surface:auth-sign-in",
@@ -860,7 +975,7 @@
       "metadata": {
         "domain": "auth",
         "route": "/auth/sign-in",
-        "currentComponent": "PortalAuthLayout + PortalNeonAuthView"
+        "currentComponent": "GuardianAuthLoginPage + PortalAuthNeonView"
       },
       "type": "ui-surface"
     },
@@ -870,7 +985,7 @@
       "metadata": {
         "domain": "auth",
         "route": "/auth/sign-up",
-        "currentComponent": "PortalAuthLayout + PortalNeonAuthView"
+        "currentComponent": "GuardianAuthLoginPage + PortalAuthNeonView"
       },
       "type": "ui-surface"
     },
@@ -880,7 +995,7 @@
       "metadata": {
         "domain": "auth",
         "route": "/auth/forgot-password",
-        "currentComponent": "PortalAuthLayout + PortalNeonAuthView"
+        "currentComponent": "GuardianAuthLoginPage + PortalAuthNeonView"
       },
       "type": "ui-surface"
     },
@@ -890,7 +1005,7 @@
       "metadata": {
         "domain": "auth",
         "route": "/auth/reset-password",
-        "currentComponent": "PortalAuthLayout + PortalNeonAuthView"
+        "currentComponent": "GuardianAuthLoginPage + PortalAuthNeonView"
       },
       "type": "ui-surface"
     },
@@ -910,7 +1025,7 @@
       "metadata": {
         "domain": "auth",
         "route": "/auth/email-otp",
-        "currentComponent": "NeonAuthPageShell + PortalAuthNeonView"
+        "currentComponent": "GuardianAuthLoginPage + PortalAuthNeonView"
       },
       "type": "ui-surface"
     },
@@ -920,7 +1035,7 @@
       "metadata": {
         "domain": "auth",
         "route": "/auth/magic-link",
-        "currentComponent": "NeonAuthPageShell + PortalAuthNeonView"
+        "currentComponent": "GuardianAuthLoginPage + PortalAuthNeonView"
       },
       "type": "ui-surface"
     },
@@ -930,7 +1045,7 @@
       "metadata": {
         "domain": "auth",
         "route": "/auth/accept-invitation",
-        "currentComponent": "NeonAuthPageShell + PortalAuthNeonView (redirects to /join when invitationId present)"
+        "currentComponent": "GuardianAuthLoginPage + PortalAuthNeonView (redirects to /join when invitationId present)"
       },
       "type": "ui-surface"
     },
@@ -950,7 +1065,7 @@
       "metadata": {
         "domain": "auth",
         "route": "/account/settings",
-        "currentComponent": "PortalNeonAccountView"
+        "currentComponent": "PortalAccountNeonView"
       },
       "type": "ui-surface"
     },
@@ -960,7 +1075,7 @@
       "metadata": {
         "domain": "auth",
         "route": "/account/security",
-        "currentComponent": "PortalNeonAccountView"
+        "currentComponent": "PortalAccountNeonView"
       },
       "type": "ui-surface"
     },
@@ -1035,6 +1150,16 @@
       "type": "ui-surface"
     },
     {
+      "id": "surface:client-login",
+      "label": "client-login",
+      "metadata": {
+        "domain": "client",
+        "route": "/client/login",
+        "currentComponent": "runClientSignInEntryPage → /auth/sign-in"
+      },
+      "type": "ui-surface"
+    },
+    {
       "id": "surface:client-preview-unavailable",
       "label": "client-preview-unavailable",
       "metadata": {
@@ -1060,7 +1185,7 @@
       "metadata": {
         "domain": "client",
         "route": "/",
-        "currentComponent": "Redirect to /auth/sign-in"
+        "currentComponent": "runClientSignInEntryPage → /auth/sign-in"
       },
       "type": "ui-surface"
     },
@@ -1139,8 +1264,8 @@
       "label": "shell-auth",
       "metadata": {
         "domain": "shared",
-        "route": "PortalAuthLayout",
-        "currentComponent": "PortalAuthLayout"
+        "route": "GuardianAuthFacade",
+        "currentComponent": "GuardianAuthFacade + PortalAuthNeonView"
       },
       "type": "ui-surface"
     },
@@ -1497,7 +1622,15 @@
       "id": "action:requireAdminSession",
       "label": "requireAdminSession",
       "metadata": {
-        "file": "lib/auth/session.ts"
+        "file": "app/actions/admin.ts"
+      },
+      "type": "server-action"
+    },
+    {
+      "id": "action:requireAccountSession",
+      "label": "requireAccountSession",
+      "metadata": {
+        "file": "lib/account-session.ts"
       },
       "type": "server-action"
     },
@@ -1530,6 +1663,22 @@
       "label": "submitClientDeclarationAction",
       "metadata": {
         "file": "app/actions/client.ts"
+      },
+      "type": "server-action"
+    },
+    {
+      "id": "action:saveClientDeclarationDraftAction",
+      "label": "saveClientDeclarationDraftAction",
+      "metadata": {
+        "file": "app/actions/client.ts"
+      },
+      "type": "server-action"
+    },
+    {
+      "id": "action:postClientDeclarationDraftApi",
+      "label": "postClientDeclarationDraftApi",
+      "metadata": {
+        "file": "app/api/client/declaration-draft/route.ts"
       },
       "type": "server-action"
     },

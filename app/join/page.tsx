@@ -3,6 +3,7 @@ import {
   clientInvitationJoinMetadata,
   runClientInvitationJoinPage,
 } from "@/lib/client-invitation-entry";
+import { isGuardianAuthShellEnabled } from "@/lib/auth/guardian-auth-shell";
 
 export const metadata = clientInvitationJoinMetadata;
 export const dynamic = "force-dynamic";
@@ -14,5 +15,9 @@ export default async function ClientInvitationJoinPage({
   searchParams: Promise<{ invitationId?: string }>;
 }) {
   await runClientInvitationJoinPage({ searchParams });
-  return <PortalInvitationJoinPage />;
+  return (
+    <PortalInvitationJoinPage
+      useGuardianShell={isGuardianAuthShellEnabled()}
+    />
+  );
 }

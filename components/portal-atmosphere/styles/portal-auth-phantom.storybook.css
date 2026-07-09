@@ -1,0 +1,352 @@
+/* Storybook-only phantom owl scene — not loaded in production */
+@layer components {
+  .portal-auth-vault {
+    @apply relative isolate flex min-h-dvh flex-col overflow-x-clip bg-vault-floor text-foreground;
+  }
+
+  .dark .portal-auth-vault {
+    --vault-floor: oklch(0.095 0.022 255);
+    --vault-glow: var(--glow-primary, oklch(0.60 0.14 255 / 0.32));
+    background:
+      radial-gradient(
+        circle at 44% 30%,
+        oklch(0.34 0.08 255 / 0.34),
+        transparent 30%
+      ),
+      radial-gradient(
+        circle at 22% 48%,
+        oklch(0.24 0.07 255 / 0.28),
+        transparent 38%
+      ),
+      linear-gradient(
+        90deg,
+        oklch(0.10 0.026 255) 0%,
+        oklch(0.145 0.035 255) 44%,
+        oklch(0.055 0.018 255) 100%
+      );
+  }
+
+  /* ── Atmosphere — large radial primary blooms ──────────────────────── */
+  .portal-auth-atmosphere {
+    @apply pointer-events-none absolute inset-0 -z-10;
+    background:
+      radial-gradient(
+        ellipse 68% 58% at 38% 24%,
+        color-mix(in oklch, var(--info) 16%, transparent),
+        transparent 58%
+      ),
+      radial-gradient(
+        circle at 36% 30%,
+        color-mix(in oklch, var(--primary) 18%, transparent),
+        transparent 32rem
+      ),
+      radial-gradient(
+        ellipse 55% 42% at 12% 8%,
+        color-mix(in oklch, var(--primary) 12%, transparent),
+        transparent 52%
+      ),
+      radial-gradient(
+        ellipse 50% 40% at 100% 96%,
+        color-mix(in oklch, var(--primary) 6%, transparent),
+        transparent 48%
+      );
+  }
+
+  .dark .portal-auth-atmosphere {
+    background:
+      radial-gradient(
+        circle at 44% 30%,
+        var(--glow-primary, oklch(0.60 0.14 255 / 0.32)),
+        transparent 36%
+      ),
+      radial-gradient(
+        circle at 22% 48%,
+        var(--glow-soft, oklch(0.42 0.09 255 / 0.24)),
+        transparent 40%
+      );
+  }
+
+  /* ── Blueprint grid ─────────────────────────────────────────────────── */
+  .portal-auth-gridlines {
+    @apply pointer-events-none absolute inset-0 -z-10 opacity-[0.22];
+    background-image:
+      linear-gradient(to right, color-mix(in oklch, var(--info) 22%, transparent) 1px, transparent 1px),
+      linear-gradient(to bottom, color-mix(in oklch, var(--info) 22%, transparent) 1px, transparent 1px);
+    background-size: 56px 56px;
+    mask-image: radial-gradient(ellipse 78% 72% at 38% 32%, black 20%, transparent 78%);
+  }
+
+  .dark .portal-auth-gridlines {
+    @apply opacity-[0.08];
+    background-image:
+      linear-gradient(to right, rgba(96, 165, 250, 0.38) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(96, 165, 250, 0.38) 1px, transparent 1px);
+    mask-image: radial-gradient(ellipse 90% 80% at 28% 42%, black 15%, transparent 72%);
+  }
+
+  /* ── Cinematic owl — full-bleed background guardian ─────────────────── */
+
+  .portal-auth-phantom-glow {
+    @apply pointer-events-none absolute z-[1];
+    left: 34%;
+    top: clamp(4rem, 14vh, 9rem);
+    width: clamp(34rem, 72vw, 60rem);
+    height: clamp(34rem, 72vw, 60rem);
+    transform: translateX(-46%);
+    border-radius: 9999px;
+    background:
+      radial-gradient(
+        circle,
+        color-mix(in oklch, var(--info) 28%, transparent) 0%,
+        color-mix(in oklch, var(--primary) 18%, transparent) 38%,
+        transparent 70%
+      );
+    filter: blur(100px);
+  }
+
+  .portal-auth-phantom-keylight {
+    @apply pointer-events-none absolute z-[1];
+    left: 34%;
+    top: clamp(12rem, 34vh, 20rem);
+    width: clamp(10rem, 20vw, 16rem);
+    height: clamp(10rem, 20vw, 16rem);
+    transform: translateX(-46%);
+    border-radius: 9999px;
+    background: radial-gradient(
+      circle,
+      color-mix(in oklch, var(--info) 32%, transparent) 0%,
+      transparent 72%
+    );
+    filter: blur(52px);
+  }
+
+  .dark .portal-auth-phantom-glow {
+    left: 32%;
+    top: clamp(3rem, 10vh, 7rem);
+    width: clamp(38rem, 78vw, 68rem);
+    height: clamp(38rem, 78vw, 68rem);
+    transform: translateX(-40%);
+    background:
+      radial-gradient(
+        circle at 50% 44%,
+        var(--glow-primary, oklch(0.60 0.14 255 / 0.32)) 0%,
+        var(--glow-soft, oklch(0.42 0.09 255 / 0.24)) 38%,
+        transparent 68%
+      );
+    filter: blur(140px);
+  }
+
+  .dark .portal-auth-phantom-keylight {
+    left: 32%;
+    top: clamp(10rem, 30vh, 18rem);
+    width: clamp(11rem, 22vw, 18rem);
+    height: clamp(11rem, 22vw, 18rem);
+    transform: translateX(-40%);
+    background: radial-gradient(
+      circle,
+      var(--glow-primary, oklch(0.60 0.14 255 / 0.32)) 0%,
+      transparent 62%
+    );
+    filter: blur(60px);
+  }
+
+  .portal-auth-phantom-owl {
+    @apply pointer-events-none absolute z-[2];
+    left: 34%;
+    top: clamp(1rem, 4vh, 3rem);
+    width: min(92vw, 44rem);
+    height: min(94vh, 58rem);
+    transform: translateX(-44%);
+    transform-origin: center top;
+    -webkit-mask-image:
+      radial-gradient(
+        ellipse 84% 78% at 48% 40%,
+        black 0%,
+        rgb(0 0 0 / 0.92) 48%,
+        rgb(0 0 0 / 0.52) 72%,
+        transparent 96%
+      );
+    mask-image:
+      radial-gradient(
+        ellipse 84% 78% at 48% 40%,
+        black 0%,
+        rgb(0 0 0 / 0.92) 48%,
+        rgb(0 0 0 / 0.52) 72%,
+        transparent 96%
+      );
+  }
+
+  .dark .portal-auth-phantom-owl {
+    left: 32%;
+    top: clamp(0.5rem, 2vh, 2rem);
+    width: min(90vw, 46rem);
+    height: min(96vh, 60rem);
+    transform: translateX(-38%);
+    -webkit-mask-image:
+      radial-gradient(
+        ellipse 90% 84% at 46% 42%,
+        black 0%,
+        rgb(0 0 0 / 0.94) 54%,
+        rgb(0 0 0 / 0.45) 78%,
+        transparent 98%
+      );
+    mask-image:
+      radial-gradient(
+        ellipse 90% 84% at 46% 42%,
+        black 0%,
+        rgb(0 0 0 / 0.94) 54%,
+        rgb(0 0 0 / 0.45) 78%,
+        transparent 98%
+      );
+  }
+
+  .portal-auth-phantom-owl-img {
+    height: 100%;
+    width: 100%;
+    object-fit: contain;
+    object-position: center 20%;
+    mix-blend-mode: screen;
+    opacity: 0.42;
+    filter:
+      saturate(1.18)
+      contrast(1.12)
+      brightness(1.08)
+      drop-shadow(0 0 36px color-mix(in oklch, var(--info) 32%, transparent))
+      drop-shadow(0 0 80px color-mix(in oklch, var(--primary) 22%, transparent))
+      drop-shadow(0 48px 96px color-mix(in oklch, var(--primary) 16%, transparent));
+  }
+
+  /*
+   * Dark: moonlit owl — screen blend lifts it against the dark navy sky.
+   * Partial desaturation keeps the cold-blue moonlit cast without oversaturating.
+   * drop-shadow layers add depth + the glow-soft atmosphere corona.
+   */
+  .dark .portal-auth-phantom-owl-img {
+    mix-blend-mode: screen;
+    opacity: 0.62;
+    filter:
+      saturate(0.55)
+      brightness(0.72)
+      contrast(1.08)
+      drop-shadow(0 0 42px var(--glow-soft, oklch(0.42 0.09 255 / 0.24)))
+      drop-shadow(0 22px 80px oklch(0.04 0.02 255 / 0.80));
+  }
+
+  .portal-auth-cinematic-scrim {
+    @apply pointer-events-none absolute inset-0 z-[3];
+    background:
+      linear-gradient(
+        to top,
+        var(--vault-floor) 0%,
+        color-mix(in oklch, var(--vault-floor) 88%, transparent) 14%,
+        transparent 36%
+      ),
+      linear-gradient(
+        to right,
+        transparent 0%,
+        color-mix(in oklch, var(--vault-floor) 35%, transparent) 52%,
+        color-mix(in oklch, var(--vault-floor) 72%, transparent) 78%,
+        color-mix(in oklch, var(--vault-floor) 88%, transparent) 100%
+      ),
+      radial-gradient(
+        ellipse 70% 55% at 78% 48%,
+        color-mix(in oklch, var(--vault-floor) 68%, transparent) 0%,
+        transparent 58%
+      );
+  }
+
+  .dark .portal-auth-cinematic-scrim {
+    background:
+      linear-gradient(
+        to top,
+        var(--vault-floor) 0%,
+        color-mix(in oklch, var(--vault-floor) 88%, transparent) 16%,
+        transparent 44%
+      ),
+      linear-gradient(
+        to right,
+        transparent 0%,
+        transparent 46%,
+        color-mix(in oklch, var(--vault-floor) 42%, transparent) 68%,
+        color-mix(in oklch, var(--vault-floor) 78%, transparent) 88%,
+        color-mix(in oklch, var(--vault-floor) 92%, transparent) 100%
+      ),
+      radial-gradient(
+        ellipse 48% 42% at 86% 50%,
+        color-mix(in oklch, var(--vault-floor) 72%, transparent) 0%,
+        transparent 58%
+      );
+  }
+
+  @media (max-width: 1023px) {
+    .portal-auth-phantom-glow {
+      left: 50%;
+      top: clamp(3rem, 8vh, 6rem);
+      width: clamp(22rem, 92vw, 34rem);
+      height: clamp(22rem, 48vh, 30rem);
+      transform: translateX(-50%);
+      filter: blur(80px);
+    }
+
+    .portal-auth-phantom-owl {
+      left: 50%;
+      top: clamp(1.5rem, 4vh, 3rem);
+      width: min(98vw, 38rem);
+      height: min(54vh, 28rem);
+      transform: translateX(-50%);
+      -webkit-mask-image:
+        radial-gradient(
+          ellipse 82% 76% at 50% 34%,
+          black 0%,
+          rgb(0 0 0 / 0.62) 46%,
+          transparent 88%
+        );
+      mask-image:
+        radial-gradient(
+          ellipse 82% 76% at 50% 34%,
+          black 0%,
+          rgb(0 0 0 / 0.62) 46%,
+          transparent 88%
+        );
+    }
+
+    .portal-auth-phantom-owl-img {
+      opacity: 0.28;
+    }
+
+    .dark .portal-auth-phantom-owl-img {
+      opacity: 0.55;
+    }
+
+    .portal-auth-cinematic-scrim {
+      background:
+        linear-gradient(
+          to top,
+          var(--vault-floor) 0%,
+          color-mix(in oklch, var(--vault-floor) 92%, transparent) 22%,
+          transparent 50%
+        ),
+        radial-gradient(
+          ellipse 92% 78% at 50% 28%,
+          color-mix(in oklch, var(--vault-floor) 55%, transparent) 0%,
+          transparent 68%
+        );
+    }
+
+    .dark .portal-auth-cinematic-scrim {
+      background:
+        linear-gradient(
+          to top,
+          var(--vault-floor) 0%,
+          color-mix(in oklch, var(--vault-floor) 96%, transparent) 28%,
+          transparent 55%
+        ),
+        radial-gradient(
+          ellipse 90% 75% at 50% 30%,
+          color-mix(in oklch, var(--vault-floor) 70%, transparent) 0%,
+          transparent 65%
+        );
+    }
+  }
+
+}

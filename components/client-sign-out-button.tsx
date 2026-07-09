@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useTransition } from "react";
 import { SettingsIcon } from "lucide-react";
-import { authClient } from "@/lib/auth/client";
+import { signOutToAuthEntry } from "@/lib/auth/client";
 import { PORTAL_ACCOUNT_SECURITY_HREF } from "@/lib/account-paths";
 import { portalCopy } from "@/lib/portal-copy";
 import { Button } from "@/components/ui/button";
@@ -32,9 +32,8 @@ export function ClientSignOutButton() {
         className="w-full touch-manipulation"
         disabled={isPending}
         onClick={() => {
-          startTransition(async () => {
-            await authClient.signOut();
-            window.location.href = "/auth/sign-in";
+          startTransition(() => {
+            void signOutToAuthEntry();
           });
         }}
       >

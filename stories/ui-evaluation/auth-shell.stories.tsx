@@ -9,6 +9,7 @@ import {
   IamCheckClientJoinAcceptShellPreview,
   IamCheckClientJoinOtpShellPreview,
   IamCheckClientJoinSignupShellPreview,
+  IamCheckGuardianAuthShellPreview,
   RejectedStudioAuthPanel,
 } from "./auth-shell-preview";
 
@@ -26,11 +27,11 @@ export const IamCheckVaultShell: Story = {
   name: "iam-check vault shell (winner)",
   render: () => (
     <ComparisonGrid
-      left={<IamCheckAuthShellPreview />}
+      left={<IamCheckGuardianAuthShellPreview />}
       right={<RejectedStudioAuthPanel />}
       annotation={
         <ScoreAnnotation
-          winner="keep-current (PortalAuthLayout)"
+          winner="keep-current (GuardianAuthFacade + Neon)"
           runnerUp="login-page-02"
           winnerScore={5}
           runnerUpScore={3.6}
@@ -48,6 +49,11 @@ export const IamCheckVaultShell: Story = {
 
 export const IamCheckAuthShellOnly: Story = {
   name: "iam-check auth shell only",
+  render: () => <IamCheckGuardianAuthShellPreview />,
+};
+
+export const IamCheckLegacyPortalAuthShell: Story = {
+  name: "legacy — PortalAuthLayout rollback",
   render: () => <IamCheckAuthShellPreview />,
 };
 

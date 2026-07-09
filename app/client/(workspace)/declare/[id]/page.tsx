@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
-import { requireClientSession } from "@/app/actions/client";
+import { requireClientSession } from "@/lib/auth/session";
 import { ClientDeclareWorkspace } from "@/components/client-declare-workspace";
 import { assignmentDeadlineExpired } from "@/lib/client-dashboard-metrics";
 import {
