@@ -9,17 +9,17 @@
 | **Authoritative planning input** | [PHASE-2-FEEDBACK.md](./PHASE-2-FEEDBACK.md) |
 | **Candidate-list note** | [PHASE-2-SCOPING.md](./PHASE-2-SCOPING.md) — sequencing / 7-role framing **superseded** |
 | **Normative RBAC ADR** | [ADR-001-phase-2-rbac.md](./ADR-001-phase-2-rbac.md) (**Accepted**) |
-| **Phase 2A slice plan** | [PHASE-2A-SLICES.md](./PHASE-2A-SLICES.md) (**Proposed** — not approved for implementation) |
+| **Phase 2A slice plan** | [PHASE-2A-SLICES.md](./PHASE-2A-SLICES.md) (**Approved**) |
 
 **Vision archive:** [PRD.md](./PRD.md)
 
 ### Implementation gate
 
-ADR-001 and this PRD are **Accepted**. No Phase 2 **code** or **schema migrations** may start until **Phase 2A implementation slices** are explicitly approved:
+ADR-001, this PRD, and [PHASE-2A-SLICES.md](./PHASE-2A-SLICES.md) are **Accepted / Approved**. Implement Phase 2A per the approved slice plan only. Do not start 2B–2D from this gate.
 
 1. ~~[ADR-001-phase-2-rbac.md](./ADR-001-phase-2-rbac.md)~~ Accepted  
 2. ~~This document (`PRD-V2-Phase2.md`)~~ Accepted  
-3. [PHASE-2A-SLICES.md](./PHASE-2A-SLICES.md) — **review and approve before any 2A code**
+3. ~~[PHASE-2A-SLICES.md](./PHASE-2A-SLICES.md)~~ Approved
 
 ---
 
@@ -274,7 +274,7 @@ Per-release AC in sections 4–7. Cross-cutting:
 |-----|--------|
 | [ADR-001-phase-2-rbac.md](./ADR-001-phase-2-rbac.md) | **Accepted** (2026-07-09) |
 | This PRD | **Accepted** (2026-07-09) |
-| [PHASE-2A-SLICES.md](./PHASE-2A-SLICES.md) | **Proposed** — must be approved before 2A code |
+| [PHASE-2A-SLICES.md](./PHASE-2A-SLICES.md) | **Approved** (2026-07-09) |
 | ADR-002 finance SoT | Before 2B settlement claims |
 | ADR-003 notifications provider | Before 2C mail |
 | ADR-004 ERP sync contract | Before 2D |
@@ -283,6 +283,5 @@ Per-release AC in sections 4–7. Cross-cutting:
 
 ## Next step
 
-1. Review and **explicitly approve** [PHASE-2A-SLICES.md](./PHASE-2A-SLICES.md)  
-2. Only after that approval: implement Phase 2A slice-by-slice  
-3. Do not start 2B–2D until their ADRs / slices are approved separately 
+1. Implement Phase 2A per [PHASE-2A-SLICES.md](./PHASE-2A-SLICES.md) (2A-1 → 2A-9)  
+2. Do not start 2B–2D until their ADRs / slices are approved separately 

@@ -4,11 +4,11 @@
 **Phase 1 baseline:** commit `1bc1294` · tag `hot-sales-phase-1`  
 **Candidate-list note (superseded for sequencing / 7-role framing):** [PHASE-2-SCOPING.md](./PHASE-2-SCOPING.md)
 
-**Not approved for implementation until Phase 2A slices are approved.** ADR-001 and PRD-V2-Phase2 are **Accepted**.
+**Phase 2A slices Approved.** Implement 2A only per [PHASE-2A-SLICES.md](./PHASE-2A-SLICES.md). Do not start 2B–2D.
 
 1. ~~[ADR-001-phase-2-rbac.md](./ADR-001-phase-2-rbac.md)~~ Accepted  
 2. ~~[PRD-V2-Phase2.md](./PRD-V2-Phase2.md)~~ Accepted  
-3. [PHASE-2A-SLICES.md](./PHASE-2A-SLICES.md) — **Proposed**; approve before any 2A code  
+3. ~~[PHASE-2A-SLICES.md](./PHASE-2A-SLICES.md)~~ Approved  
 
 **Adopted packaging:** 2A (RBAC + `/admin/events/new`) → 2B (Finance + Pickup/Ops) → 2C (Excel + notifications) → 2D (ERP sync)
 

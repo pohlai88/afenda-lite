@@ -11,7 +11,7 @@
 
 **Related:** [PHASE-2-FEEDBACK.md](./PHASE-2-FEEDBACK.md) (authoritative planning) · [PRD-V2-Phase2.md](./PRD-V2-Phase2.md) · [PRD-V2.md](./PRD-V2.md) (Phase 1 accepted @ `1bc1294` / `hot-sales-phase-1`) · [PHASE-2-SCOPING.md](./PHASE-2-SCOPING.md) (candidate list; 7-role framing superseded)
 
-**Gate:** This ADR and [PRD-V2-Phase2.md](./PRD-V2-Phase2.md) are **Accepted**. No Phase 2 schema or code until **Phase 2A implementation slices** are explicitly approved.
+**Gate:** This ADR, [PRD-V2-Phase2.md](./PRD-V2-Phase2.md), and [PHASE-2A-SLICES.md](./PHASE-2A-SLICES.md) are **Accepted / Approved**. Implement Phase 2A per the approved slices only.
 
 ---
 
