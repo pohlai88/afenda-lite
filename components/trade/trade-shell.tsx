@@ -3,14 +3,12 @@ import type { ReactNode } from "react";
 import { TradeLocaleSwitcher } from "@/components/trade/trade-locale-switcher";
 import {
   defaultTradeLocale,
-  getTradeMessages,
   isTradeLocale,
   tradeHref,
   type TradeLocale,
 } from "@/lib/i18n/trade";
-import { NextIntlClientProvider } from "next-intl";
 
-export async function TradeShell({
+export function TradeShell({
   locale,
   children,
   isAdmin,
@@ -22,11 +20,9 @@ export async function TradeShell({
   const resolvedLocale: TradeLocale = isTradeLocale(locale)
     ? locale
     : defaultTradeLocale;
-  const messages = await getTradeMessages(resolvedLocale);
 
   return (
-    <NextIntlClientProvider locale={resolvedLocale} messages={messages}>
-      <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background">
         <header className="border-b">
           <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
             <div>
@@ -65,6 +61,5 @@ export async function TradeShell({
         </header>
         <main className="mx-auto max-w-6xl px-4 py-6">{children}</main>
       </div>
-    </NextIntlClientProvider>
   );
 }
