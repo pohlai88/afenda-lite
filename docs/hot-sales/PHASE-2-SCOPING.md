@@ -6,9 +6,10 @@
 **Authoritative Phase 2 planning direction:** [PHASE-2-FEEDBACK.md](./PHASE-2-FEEDBACK.md) (adopted 2026-07-09)  
 **Build contract draft:** [PRD-V2-Phase2.md](./PRD-V2-Phase2.md) (**Accepted**)  
 **RBAC ADR draft:** [ADR-001-phase-2-rbac.md](./ADR-001-phase-2-rbac.md) (**Accepted**)  
-**Phase 2A slice plan:** [PHASE-2A-SLICES.md](./PHASE-2A-SLICES.md) (**Approved**)
+**Phase 2A slice plan:** [PHASE-2A-SLICES.md](./PHASE-2A-SLICES.md) (**closed**)  
+**Ops gate SSOT:** [PHASE-2A-OPS-GATE-REGISTER.md](./PHASE-2A-OPS-GATE-REGISTER.md) (**active**)
 
-Phase 2A implementation may proceed per the approved slice plan. Do **not** start 2B–2D from this file.
+Phase 2A **implementation is closed** (tag `hot-sales-phase-2a` → `8e650ff`). **Operational rollout only** — follow the gate register. Do **not** start 2B–2D from this file.
 
 This file remains as the original **candidate list**. It is **superseded for Phase 2 planning** by [PHASE-2-FEEDBACK.md](./PHASE-2-FEEDBACK.md) and the Accepted PRD/ADR above. Its **sequencing** and **“7-role RBAC” framing** must not be used as the build contract.
 
@@ -125,5 +126,5 @@ The linear list below is retained for history only. **Use 2A → 2B → 2C → 2
 
 ## Next step
 
-1. Implement Phase 2A per [PHASE-2A-SLICES.md](./PHASE-2A-SLICES.md)  
-2. Keep 2B–2D blocked until separate approval
+1. Follow [PHASE-2A-OPS-GATE-REGISTER.md](./PHASE-2A-OPS-GATE-REGISTER.md) — **Gate 4B** sales allowlist is active  
+2. Keep 2B–2D blocked until separate ADR/slice approval

@@ -7,10 +7,13 @@
 | **GitHub issue** | [#1](https://github.com/pohlai88/iam-check/issues/1) |
 | **Product boundary** | Tag `hot-sales-phase-2a` → `8e650ff` (**immutable**) |
 | **Readiness docs** | Commit `0fd22f4` · [PHASE-2A-RELEASE-READINESS.md](./PHASE-2A-RELEASE-READINESS.md) |
+| **Gate SSOT** | [PHASE-2A-OPS-GATE-REGISTER.md](./PHASE-2A-OPS-GATE-REGISTER.md) — **read first** |
 
 ## Scope statement
 
 This tracker covers **operational rollout** of Phase 2A RBAC after the product boundary tag `hot-sales-phase-2a`.
+
+**Gate status and drift rules:** [PHASE-2A-OPS-GATE-REGISTER.md](./PHASE-2A-OPS-GATE-REGISTER.md) (canonical).
 
 It does **not** reopen 2A design and does **not** authorize 2B–2D scope.
 
@@ -48,10 +51,20 @@ It does **not** reopen 2A design and does **not** authorize 2B–2D scope.
 
 **Critical checkpoint — do not skip or compress.**
 
-- [ ] Deploy with RBAC disabled
-- [ ] Run Phase 1 Admin + allowlist smoke
-- [ ] Confirm legacy/Phase 1 admin path still works
+- [x] Deploy with RBAC disabled
+- [x] Admin matrix passed (Gate 4 admin) — see [gate register](./PHASE-2A-OPS-GATE-REGISTER.md)
+- [x] **Gate 4B:** Sales allowlist matrix — **closed as data/setup** (see [gate register](./PHASE-2A-OPS-GATE-REGISTER.md#gate-4b--sales-allowlist-matrix-closed--datasetup))
+- [ ] Confirm legacy/Phase 1 admin path still works (ongoing)
 - [ ] Confirm no RBAC-only behavior is active
+
+### Gate 4B — sales allowlist (flag off)
+
+See [PHASE-2A-OPS-GATE-REGISTER.md § Gate 4B](./PHASE-2A-OPS-GATE-REGISTER.md#gate-4b--sales-allowlist-matrix-active-work).
+
+- [x] Production DB checked (`br-tiny-hill-ao82jp6f`): `hot_sales_sales_member` has **0 active rows**
+- [x] `PREVIEW_CLIENT_EMAIL` **not** allowlisted — confirmed by empty table (do not use for sales matrix)
+- [x] Open event + product exists for order-create test — **production branch** `GATE-4B-PROD-20260709`
+- [ ] Rows 6–10 re-run after data setup; matrix pass recorded
 
 ## Seed / assignment
 
@@ -108,13 +121,17 @@ Primary lever (not DB rollback):
 014 migrate
 → flag=false
 → deploy
-→ Phase 1 smoke          ← critical checkpoint
-→ seed/assign
+→ Phase 1 smoke (admin ✅ · sales Gate 4B closed — data/setup)
+→ merge hotfix 4d203a7 to main ✅
+→ operator: production allowlist + event data
+→ re-run sales matrix rows 6–10
 → matrix: UI + actions
-→ flag=true in controlled env
+→ flag=true in controlled env   ← Gate 6 blocked until 4B passes
 → evidence
-→ production enable
+→ production enable             ← Gate 7 blocked
 ```
+
+Post-tag hotfix `4d203a7` (TradeShell next-intl) must be on `main` before the next production deploy — see [gate register](./PHASE-2A-OPS-GATE-REGISTER.md#hotfix-merge-requirement).
 
 ---
 

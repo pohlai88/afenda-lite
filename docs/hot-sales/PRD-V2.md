@@ -7,7 +7,7 @@
 
 **Vision archive:** [PRD.md](./PRD.md)  
 **First variant seed:** [hot-sales.md](./hot-sales.md) (GP2 piglet — template data only)  
-**Phase 2:** Authoritative planning — [PHASE-2-FEEDBACK.md](./PHASE-2-FEEDBACK.md). Build contract — [PRD-V2-Phase2.md](./PRD-V2-Phase2.md) (**Accepted**). RBAC — [ADR-001-phase-2-rbac.md](./ADR-001-phase-2-rbac.md) (**Accepted**). Slice plan — [PHASE-2A-SLICES.md](./PHASE-2A-SLICES.md) (**Approved**). Candidate list — [PHASE-2-SCOPING.md](./PHASE-2-SCOPING.md) (superseded for planning). Implement 2A only per approved slices; not 2B–2D.
+**Phase 2:** Authoritative planning — [PHASE-2-FEEDBACK.md](./PHASE-2-FEEDBACK.md). Build contract — [PRD-V2-Phase2.md](./PRD-V2-Phase2.md) (**Accepted**). RBAC — [ADR-001-phase-2-rbac.md](./ADR-001-phase-2-rbac.md) (**Accepted**). Slice plan — [PHASE-2A-SLICES.md](./PHASE-2A-SLICES.md) (**closed**). **Ops rollout** — [PHASE-2A-OPS-GATE-REGISTER.md](./PHASE-2A-OPS-GATE-REGISTER.md) (**active**). Candidate list — [PHASE-2-SCOPING.md](./PHASE-2-SCOPING.md) (superseded). **Not 2B–2D** in this phase.
 
 ## Objective
 
@@ -156,11 +156,13 @@ Smoke auth redirect is the Phase 1 gate; journey is optional post-closure verifi
 | [PHASE-2-FEEDBACK.md](./PHASE-2-FEEDBACK.md) | Authoritative planning direction |
 | [PRD-V2-Phase2.md](./PRD-V2-Phase2.md) | Build contract (**Accepted**) |
 | [ADR-001-phase-2-rbac.md](./ADR-001-phase-2-rbac.md) | RBAC decision (**Accepted**) |
-| [PHASE-2A-SLICES.md](./PHASE-2A-SLICES.md) | Phase 2A slice plan (**Approved** / closed) |
+| [PHASE-2A-SLICES.md](./PHASE-2A-SLICES.md) | Phase 2A slice plan (**closed**) |
+| [PHASE-2A-OPS-GATE-REGISTER.md](./PHASE-2A-OPS-GATE-REGISTER.md) | Ops gate SSOT (**active**) |
 | [PHASE-2A-RELEASE-READINESS.md](./PHASE-2A-RELEASE-READINESS.md) | Operational packaging (flag dark → verify → enable) |
 | [PHASE-2A-OPS-ROLLOUT.md](./PHASE-2A-OPS-ROLLOUT.md) | Ops rollout checklist (tracker; no 2A reopen) |
 | [PHASE-2-SCOPING.md](./PHASE-2-SCOPING.md) | Historical candidate list (superseded for planning) |
+| [README.md](./README.md) | Documentation index |
 
-**Gate before Phase 2B+:** separate ADRs/slices. Phase 2A may proceed per [PHASE-2A-SLICES.md](./PHASE-2A-SLICES.md).
+**This phase:** operational rollout only — [PHASE-2A-OPS-GATE-REGISTER.md](./PHASE-2A-OPS-GATE-REGISTER.md). **Gate before Phase 2B+:** separate ADRs/slices. Do **not** reopen 2A product scope.
 
 **Adopted packaging:** 2A RBAC + `/admin/events/new` → 2B Finance + Pickup/Ops → 2C Excel + notifications → 2D ERP sync.

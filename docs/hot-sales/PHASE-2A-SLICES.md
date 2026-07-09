@@ -2,7 +2,7 @@
 
 | Field | Value |
 |-------|-------|
-| **Status** | **Approved** |
+| **Status** | **Closed** — implementation complete; ops rollout active |
 | **Approved** | 2026-07-09 |
 | **Date** | 2026-07-09 |
 | **Contract** | [PRD-V2-Phase2.md](./PRD-V2-Phase2.md) (**Accepted**) |
@@ -11,7 +11,7 @@
 
 ### Gate
 
-This slice plan is **Approved**. Implement **one slice at a time** (implement → test → verify → commit), in order **2A-1 → … → 2A-9**. Do **not** start Phase 2B, 2C, or 2D from this approval.
+This slice plan is **Approved** and **implementation closed** (tag `hot-sales-phase-2a` → `8e650ff`). **Active work:** operational rollout — [PHASE-2A-OPS-GATE-REGISTER.md](./PHASE-2A-OPS-GATE-REGISTER.md). Do **not** start Phase 2B, 2C, or 2D or reopen 2A product scope.
 
 ---
 
@@ -149,7 +149,8 @@ Slices 2A-5 and 2A-6 may be parallelized **after** 2A-4; both must complete befo
 - UI: `/admin/rbac`, `/admin/events/new`
 - **Not started:** Phase 2B / 2C / 2D
 - **Next lane:** [PHASE-2A-RELEASE-READINESS.md](./PHASE-2A-RELEASE-READINESS.md) — operational packaging  
-- **Ops tracker:** [PHASE-2A-OPS-ROLLOUT.md](./PHASE-2A-OPS-ROLLOUT.md) — rollout checklist (no product reopen)
+- **Ops tracker:** [PHASE-2A-OPS-ROLLOUT.md](./PHASE-2A-OPS-ROLLOUT.md) — rollout checklist  
+- **Gate SSOT:** [PHASE-2A-OPS-GATE-REGISTER.md](./PHASE-2A-OPS-GATE-REGISTER.md) — **active**; Gate 4B next; stop drift
 
 ---
 
@@ -174,7 +175,6 @@ Slices 2A-5 and 2A-6 may be parallelized **after** 2A-4; both must complete befo
 ## Approval
 
 ```text
-Status: Approved (2026-07-09)
-Clarifications: feature flag; unknown team/BU deny; sensitive grant + audit
-Then: implement 2A-1 → 2A-9 per incremental-implementation
+Status: Approved (2026-07-09) · Implementation closed (tag hot-sales-phase-2a @ 8e650ff)
+Active: operational rollout per PHASE-2A-OPS-GATE-REGISTER.md (Gate 4B next)
 ```

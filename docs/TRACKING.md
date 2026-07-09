@@ -1,7 +1,7 @@
 # Program tracking — Client Declaration Portal
 
 **Updated:** 2026-07-09  
-**Program:** Backlog-01 **not closed** · S17 **in progress** · S12 **planned** (blocked on S17)
+**Program:** Backlog-01 **not closed** · S17 **in progress** · S12 **planned** (blocked on S17) · Hot Sales Phase 2A **ops rollout** (Gate 4B)
 
 ---
 
@@ -85,10 +85,29 @@ Master brief: [backlog-01-neon-auth-closure.md](./backlogs/backlog-01-neon-auth-
 
 ---
 
+## Hot Sales Phase 2A (ops rollout)
+
+**Index:** [hot-sales/README.md](./hot-sales/README.md) · **Gate SSOT:** [PHASE-2A-OPS-GATE-REGISTER.md](./hot-sales/PHASE-2A-OPS-GATE-REGISTER.md)
+
+| Item | Status |
+| --- | --- |
+| Phase 1 (`hot-sales-phase-1` → `1bc1294`) | **Closed** |
+| Phase 2A implementation (`hot-sales-phase-2a` → `8e650ff`) | **Closed** |
+| Post-tag hotfix (`4d203a7` TradeShell) | Deployed — **merge to `main` required** |
+| Gates 1–3, 4 repair/fix/admin | **Passed** |
+| **Gate 4B** sales allowlist matrix | **Active — next** |
+| Gates 5–7 (transfer triage, RBAC enable) | **Blocked** |
+| Phase 2B–2D | **Blocked** — separate ADR/slice approval |
+
+**Frozen:** `HOT_SALES_RBAC_ENABLED=false` until Gate 6. No new permissions, UI, schema, or repo normalization in Hot Sales commits.
+
+---
+
 ## Open gaps (P0)
 
 | Gap | Owner | Evidence / next step |
 | --- | --- | --- |
+| Hot Sales Gate 4B sales allowlist | Ops / release | [PHASE-2A-OPS-GATE-REGISTER.md](./hot-sales/PHASE-2A-OPS-GATE-REGISTER.md) § Gate 4B |
 | Post-deploy Phases 1–3 | Release owner | [post-deploy-verification.md](./backlogs/post-deploy-verification.md) |
 | S17 branch protection on `main` | Repo admin | GitHub Settings → Branches |
 | S17 Vercel liveness monitor | Ops | Dashboard → `/api/health/liveness` |

@@ -10,7 +10,9 @@
 ## Related
 
 - Ops checklist: [PHASE-2A-OPS-ROLLOUT.md](./PHASE-2A-OPS-ROLLOUT.md)
+- **Gate SSOT:** [PHASE-2A-OPS-GATE-REGISTER.md](./PHASE-2A-OPS-GATE-REGISTER.md)
 - Product boundary: tag `hot-sales-phase-2a` → `8e650ff`
+- Post-tag hotfix: `4d203a7` on `fix/hot-sales-next-intl-trade-shell` — merge to `main` before next deploy
 - Readiness docs commit: `0fd22f4`
 
 ---
@@ -37,6 +39,7 @@ Do **not** mix this lane with `lib/` / `components/` repo normalization or layou
 | Implementation 2A-1–4 | `a49e68a` |
 | Implementation 2A-5–9 | `8e650ff` |
 | Tag | `hot-sales-phase-2a` → `8e650ff` |
+| Post-tag hotfix (Fix lane) | `4d203a7` — merge to `main`; no new tag |
 | Phase 1 baseline | tag `hot-sales-phase-1` → `1bc1294` |
 
 Suggested branch names if further commits are needed: `release/hot-sales-phase-2a` or `hardening/hot-sales-phase-2a`.  
@@ -165,7 +168,7 @@ Do **not** plan migration rollback for RBAC logic mistakes.
 
 - [ ] Tag `hot-sales-phase-2a` protected as approved boundary
 - [ ] Migration `014` applied in target env; flag still **false**
-- [ ] App deployed; Phase 1 admin + allowlist smoke OK
+- [ ] App deployed; Phase 1 admin smoke OK; **sales allowlist Gate 4B** — see [gate register](./PHASE-2A-OPS-GATE-REGISTER.md)
 - [ ] Pre-enable matrix completed (UI + actions)
 - [ ] Roles seeded/assigned for pilot users
 - [ ] Flag enabled in controlled env; smoke clean

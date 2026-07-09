@@ -2,6 +2,19 @@
 
 **Repository layout:** [docs/architecture/repo-layout.md](docs/architecture/repo-layout.md) — Root = bootstrap, L1 = concern, L2 = bounded context. Migration closed: [repo-migration-map.md](docs/architecture/repo-migration-map.md).
 
+## Hot Sales Phase 2A — operational lane (active)
+
+**Default agent mission for Hot Sales production work:** Ops rollout only — not Normalize, not new product, not 2B–2D.
+
+| Authority | Doc |
+|-----------|-----|
+| Doc index | [docs/hot-sales/README.md](docs/hot-sales/README.md) |
+| Gate SSOT (read first) | [docs/hot-sales/PHASE-2A-OPS-GATE-REGISTER.md](docs/hot-sales/PHASE-2A-OPS-GATE-REGISTER.md) |
+| Checklists | [PHASE-2A-OPS-ROLLOUT.md](docs/hot-sales/PHASE-2A-OPS-ROLLOUT.md) · [PHASE-2A-RELEASE-READINESS.md](docs/hot-sales/PHASE-2A-RELEASE-READINESS.md) |
+| Product contract | [PRD-V2-Phase2.md](docs/hot-sales/PRD-V2-Phase2.md) |
+
+**Frozen:** tag `hot-sales-phase-2a` → `8e650ff`; `HOT_SALES_RBAC_ENABLED=false` until Gate 6; merge hotfix `4d203a7` to `main`. **Next:** Gate 4B sales allowlist. **Blocked:** Gate 5–7, 2B–2D, RBAC enable, schema/permission/UI expansion, `lib/`/`components/` cleanup in Hot Sales commits.
+
 ## Environment variables
 
 ### Source of truth (local dev)
