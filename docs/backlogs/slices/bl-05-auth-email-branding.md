@@ -4,7 +4,7 @@
 **Priority:** P2  
 **Journeys:** J1, J2, J3, J4  
 **Depends on:** BL-04  
-**Status:** Manual — Neon Console only (no SDK prop for application name)
+**Status:** Manual (Neon Console) — [post-deploy-verification.md](../post-deploy-verification.md#bl-05--email-branding-console-not-deploy)
 
 ---
 
@@ -45,6 +45,8 @@ Clients recognize invitation, verification, and password-reset emails as coming 
 ---
 
 ## Definition of done
+
+Console verification — checklist: [post-deploy-verification.md](../post-deploy-verification.md#bl-05--email-branding-console-not-deploy).
 
 - [ ] Neon Console application name matches `PORTAL_NAME` / manifest checklist.
 - [ ] Sample invitation, OTP, and reset emails reviewed for display name and link targets.

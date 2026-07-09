@@ -1,4 +1,6 @@
-# Fade Owl — asset drop zone (Storybook)
+# Fade Owl — static assets (Storybook)
+
+Next.js serves these from `/fade-owl/*` (`public/fade-owl/` on disk).
 
 | File | Role | Used by |
 |------|------|---------|
@@ -7,6 +9,6 @@
 | `vault-threshold.png` | Shield / keyhole emblem | optional — not in current fixture |
 | Morpho iso | `../brand/owls/guardian-dramatic-iso.png` | `variant="morpho"` |
 
-Paths: `FADE_OWL_RENDER_LIGHT_PATH` / `FADE_OWL_RENDER_NIGHT_PATH` / `FADE_OWL_GUARDIAN_OWL_PATH` in `lib/portal-brand.ts`.
+Paths: `FADE_OWL_RENDER_*` in `lib/portal-brand.ts`.
 
 Storybook: **Portal Atmosphere / Fade Owl**

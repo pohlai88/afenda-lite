@@ -99,7 +99,7 @@ function main() {
     pass("client-default-password", "CLIENT_DEFAULT_PASSWORD length OK");
   }
 
-  for (const key of ["SHARED_ADMIN_EMAIL", "PREVIEW_CLIENT_EMAIL", "MAILERSEND_FROM_EMAIL"]) {
+  for (const key of ["SHARED_ADMIN_EMAIL", "PREVIEW_CLIENT_EMAIL"]) {
     const r = validateEmail(key);
     if (r.ok) pass(key, "valid email");
     else fail(key, r.reason ?? "invalid");
@@ -134,7 +134,7 @@ function main() {
   if (staleOnVercel.length) {
     fail("vercel-stale", `Stale keys on Vercel: ${staleOnVercel.join(", ")}`);
   } else {
-    pass("vercel-stale", "No stale Supabase/SMTP keys on Vercel");
+    pass("vercel-stale", "No stale Supabase/SMTP/MailerSend keys on Vercel");
   }
 
   const playgroundOnVercel = [...LOCAL_ONLY_KEYS].filter(

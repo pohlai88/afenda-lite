@@ -163,6 +163,8 @@ npm run test:unit -- lib/auth/neon-auth.manifest.test.ts
 
 ## Backlog cross-reference
 
+**Post-deploy production sign-off (all slices):** [post-deploy-verification.md](./post-deploy-verification.md)
+
 | Matrix area | Backlog slice |
 | --- | --- |
 | Sync & audit | [BL-01](./slices/bl-01-config-truth-audit.md) |

@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generatedAt": "2026-07-09T09:23:43.851Z",
+  "generatedAt": "2026-07-09T10:44:35.478Z",
   "summary": {
     "surfaces": {
       "total": 26,
@@ -28,15 +28,18 @@
           "auth:email-otp",
           "auth:organization/accept-invitation",
           "auth:sign-up/email",
+          "domain:auth",
           "domain:client-invitation-entry"
         ],
         "discovered": [
+          "domain:auth",
           "domain:client-invitation-entry"
         ],
         "aligned": [
           "auth:email-otp",
           "auth:organization/accept-invitation",
           "auth:sign-up/email",
+          "domain:auth",
           "domain:client-invitation-entry"
         ],
         "declaredOnly": [],
@@ -44,15 +47,19 @@
         "inherited": [
           "auth:email-otp",
           "auth:organization/accept-invitation",
-          "auth:sign-up/email"
+          "auth:sign-up/email",
+          "domain:client-invitation-entry"
         ],
         "status": "aligned"
       },
       "evidence": {
         "entryFiles": [
           "app/join/page.tsx",
+          "lib/client-invitation-entry.ts",
+          "components/portal-invitation-join-page.tsx",
           "components/guardian-invitation-join-page.tsx",
           "components/portal-invitation-join-panel.tsx",
+          "components/use-join-invitation-auth-view.ts",
           "lib/client-invitation-join-auth.ts"
         ],
         "scannedFiles": [
@@ -75,6 +82,8 @@
           "components/ui/button.tsx",
           "components/ui/skeleton.tsx",
           "components/ui/timeline.tsx",
+          "components/use-join-invitation-auth-view.ts",
+          "lib/client-invitation-entry.ts",
           "lib/client-invitation-join-auth.ts"
         ]
       }
@@ -812,29 +821,42 @@
         "declared": [
           "action:createDraftSurveyAction",
           "action:deleteSurveyAction",
-          "domain:operator-dashboard-page"
+          "domain:clients",
+          "domain:operator-dashboard-page",
+          "domain:surveys"
         ],
         "discovered": [
           "action:createDraftSurveyAction",
           "action:deleteSurveyAction",
-          "domain:operator-dashboard-page"
+          "domain:clients",
+          "domain:operator-dashboard-page",
+          "domain:surveys"
         ],
         "aligned": [
           "action:createDraftSurveyAction",
           "action:deleteSurveyAction",
-          "domain:operator-dashboard-page"
+          "domain:clients",
+          "domain:operator-dashboard-page",
+          "domain:surveys"
         ],
         "declaredOnly": [],
         "discoveredOnly": [],
-        "inherited": [],
+        "inherited": [
+          "domain:operator-dashboard-page"
+        ],
         "status": "aligned"
       },
       "evidence": {
         "entryFiles": [
           "app/dashboard/page.tsx",
+          "app/dashboard/loading.tsx",
+          "lib/operator-dashboard-page.ts",
+          "lib/operator-dashboard-types.ts",
+          "components/operator-dashboard-page-view.tsx",
           "components/org-declarations-table.tsx"
         ],
         "scannedFiles": [
+          "app/dashboard/loading.tsx",
           "app/dashboard/page.tsx",
           "components/confirm-dialog.tsx",
           "components/dashboard-page.tsx",
@@ -866,7 +888,9 @@
           "components/ui/sidebar.tsx",
           "components/ui/skeleton.tsx",
           "components/ui/table.tsx",
-          "components/ui/tooltip.tsx"
+          "components/ui/tooltip.tsx",
+          "lib/operator-dashboard-page.ts",
+          "lib/operator-dashboard-types.ts"
         ]
       }
     },
@@ -925,14 +949,17 @@
       "evidence": {
         "entryFiles": [
           "app/dashboard/[id]/page.tsx",
+          "app/dashboard/[id]/loading.tsx",
           "lib/operator-declaration-detail.tsx",
           "lib/operator-declaration-detail.logic.ts",
           "components/operator-declaration-detail-view.tsx",
           "components/declaration-manage-form.tsx",
           "components/declaration-share-panel.tsx",
+          "components/client-access-share-panel.tsx",
           "components/org-declaration-submissions-table.tsx"
         ],
         "scannedFiles": [
+          "app/dashboard/[id]/loading.tsx",
           "app/dashboard/[id]/page.tsx",
           "components/cdp-ai-prompt-instructions.tsx",
           "components/client-access-share-panel.tsx",
@@ -1002,34 +1029,49 @@
           "action:deleteClientAssignmentAction",
           "action:issueClientInviteAction",
           "action:removeClientRegistrationAction",
+          "domain:clients",
           "domain:email",
-          "domain:operator-clients-page"
+          "domain:operator-clients-page",
+          "domain:surveys"
         ],
         "discovered": [
           "action:deleteClientAssignmentAction",
           "action:issueClientInviteAction",
           "action:removeClientRegistrationAction",
+          "domain:clients",
           "domain:email",
-          "domain:operator-clients-page"
+          "domain:operator-clients-page",
+          "domain:surveys"
         ],
         "aligned": [
           "action:deleteClientAssignmentAction",
           "action:issueClientInviteAction",
           "action:removeClientRegistrationAction",
+          "domain:clients",
           "domain:email",
-          "domain:operator-clients-page"
+          "domain:operator-clients-page",
+          "domain:surveys"
         ],
         "declaredOnly": [],
         "discoveredOnly": [],
-        "inherited": [],
+        "inherited": [
+          "domain:operator-clients-page"
+        ],
         "status": "aligned"
       },
       "evidence": {
         "entryFiles": [
           "app/dashboard/clients/page.tsx",
-          "components/org-client-tables.tsx"
+          "app/dashboard/clients/loading.tsx",
+          "lib/operator-clients-page.ts",
+          "lib/operator-clients-types.ts",
+          "lib/email/client-email-delivery.ts",
+          "components/operator-clients-page-view.tsx",
+          "components/org-client-tables.tsx",
+          "components/issue-client-invite-form.tsx"
         ],
         "scannedFiles": [
+          "app/dashboard/clients/loading.tsx",
           "app/dashboard/clients/page.tsx",
           "components/client-assignment-delete-button.tsx",
           "components/client-email-delivery-banner.tsx",
@@ -1066,7 +1108,10 @@
           "components/ui/sidebar.tsx",
           "components/ui/skeleton.tsx",
           "components/ui/table.tsx",
-          "components/ui/tooltip.tsx"
+          "components/ui/tooltip.tsx",
+          "lib/email/client-email-delivery.ts",
+          "lib/operator-clients-page.ts",
+          "lib/operator-clients-types.ts"
         ]
       }
     },
@@ -1077,6 +1122,7 @@
       "compare": {
         "declared": [
           "action:issueClientInviteAction",
+          "action:requireAdminSession",
           "auth:organization/invite-member"
         ],
         "discovered": [
@@ -1084,11 +1130,13 @@
         ],
         "aligned": [
           "action:issueClientInviteAction",
+          "action:requireAdminSession",
           "auth:organization/invite-member"
         ],
         "declaredOnly": [],
         "discoveredOnly": [],
         "inherited": [
+          "action:requireAdminSession",
           "auth:organization/invite-member"
         ],
         "status": "aligned"
@@ -1174,7 +1222,8 @@
       "evidence": {
         "entryFiles": [
           "components/declaration-share-panel.tsx",
-          "components/secure-link-rotate-button.tsx"
+          "components/secure-link-rotate-button.tsx",
+          "lib/declaration-share-links.ts"
         ],
         "scannedFiles": [
           "components/client-access-share-panel.tsx",
@@ -1183,63 +1232,78 @@
           "components/declaration-share-panel.tsx",
           "components/secure-link-rotate-button.tsx",
           "components/ui/alert-dialog.tsx",
-          "components/ui/button.tsx"
+          "components/ui/button.tsx",
+          "lib/declaration-share-links.ts"
         ]
       }
     },
     {
       "surfaceId": "public-survey-link",
-      "route": null,
+      "route": "/survey/[slug]",
       "mode": "source-scan",
       "compare": {
         "declared": [
-          "domain:open-link-entry"
+          "domain:open-link-entry",
+          "domain:surveys"
         ],
         "discovered": [
-          "domain:open-link-entry"
+          "domain:open-link-entry",
+          "domain:surveys"
         ],
         "aligned": [
-          "domain:open-link-entry"
+          "domain:open-link-entry",
+          "domain:surveys"
         ],
         "declaredOnly": [],
         "discoveredOnly": [],
-        "inherited": [],
+        "inherited": [
+          "domain:open-link-entry"
+        ],
         "status": "aligned"
       },
       "evidence": {
         "entryFiles": [
-          "app/survey/[slug]/page.tsx"
+          "app/survey/[slug]/page.tsx",
+          "lib/open-link-entry.ts"
         ],
         "scannedFiles": [
-          "app/survey/[slug]/page.tsx"
+          "app/survey/[slug]/page.tsx",
+          "lib/open-link-entry.ts"
         ]
       }
     },
     {
       "surfaceId": "public-secure-link",
-      "route": null,
+      "route": "/f/[token]",
       "mode": "source-scan",
       "compare": {
         "declared": [
-          "domain:secure-link-entry"
+          "domain:secure-link-entry",
+          "domain:surveys"
         ],
         "discovered": [
-          "domain:secure-link-entry"
+          "domain:secure-link-entry",
+          "domain:surveys"
         ],
         "aligned": [
-          "domain:secure-link-entry"
+          "domain:secure-link-entry",
+          "domain:surveys"
         ],
         "declaredOnly": [],
         "discoveredOnly": [],
-        "inherited": [],
+        "inherited": [
+          "domain:secure-link-entry"
+        ],
         "status": "aligned"
       },
       "evidence": {
         "entryFiles": [
-          "app/f/[token]/page.tsx"
+          "app/f/[token]/page.tsx",
+          "lib/secure-link-entry.ts"
         ],
         "scannedFiles": [
-          "app/f/[token]/page.tsx"
+          "app/f/[token]/page.tsx",
+          "lib/secure-link-entry.ts"
         ]
       }
     },
@@ -1307,6 +1371,7 @@
       "evidence": {
         "entryFiles": [
           "app/dashboard/layout.tsx",
+          "lib/operator-shell-members.ts",
           "components/app-sidebar.tsx",
           "components/team-switcher.tsx"
         ],
@@ -1329,7 +1394,8 @@
           "components/ui/sheet.tsx",
           "components/ui/sidebar.tsx",
           "components/ui/skeleton.tsx",
-          "components/ui/tooltip.tsx"
+          "components/ui/tooltip.tsx",
+          "lib/operator-shell-members.ts"
         ]
       }
     },

@@ -83,7 +83,9 @@ export const UI_SURFACE_REGISTRY: UiSurfaceMeta[] = [
   { surfaceId: "client-preview-unavailable", domain: "client", route: "/client/preview-unavailable", currentComponent: "ClientPreviewUnavailableView" },
   { surfaceId: "client-preview-banner", domain: "client", route: "/client (preview mode)", currentComponent: "PortalPreviewBanner" },
   { surfaceId: "client-home-redirect", domain: "client", route: "/", currentComponent: "runClientSignInEntryPage → /auth/sign-in" },
-  { surfaceId: "client-join", domain: "client", route: "/join", currentComponent: "PortalInvitationJoinPage" },
+  { surfaceId: "client-join", domain: "client", route: "/join", currentComponent: "PortalInvitationJoinPage → GuardianInvitationJoinPage (default)" },
+  { surfaceId: "public-survey-link", domain: "client", route: "/survey/[slug]", currentComponent: "runOpenLinkPage (redirect-only)" },
+  { surfaceId: "public-secure-link", domain: "client", route: "/f/[token]", currentComponent: "runSecureLinkPage (redirect-only)" },
   // Admin (6)
   { surfaceId: "admin-dashboard", domain: "admin", route: "/dashboard", currentComponent: "OrgDeclarationsTable" },
   { surfaceId: "admin-clients", domain: "admin", route: "/dashboard/clients", currentComponent: "OrgClientTables" },

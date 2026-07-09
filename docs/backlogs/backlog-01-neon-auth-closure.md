@@ -1,7 +1,7 @@
 # Backlog-01 — Neon Auth end-to-end closure (iam-check)
 
-**Status:** Active — code closure complete; production verification pending  
-**Completeness report:** [implementation-completeness.md](./implementation-completeness.md)
+**Status:** Active — code complete; **production verification:** [post-deploy-verification.md](./post-deploy-verification.md)  
+**Completeness snapshot:** [implementation-completeness.md](./implementation-completeness.md)
 **Audience:** Engineers, operators, release owner  
 **Lifecycle:** Maintenance / pre-launch closure  
 **Source of truth:** Live Neon Auth branch (`production`) ↔ materialized manifest ↔ portal UI  
@@ -75,8 +75,8 @@ This backlog is **outcome-focused**. Implementation detail lives in individual s
 | Risk | Impact | Owner slice |
 | --- | --- | --- |
 | Materialized manifest out of date with live branch | False audit passes; wrong operator guidance | BL-01 |
-| Invitation email fails silently in operator UI | Clients never onboard | BL-02 — **fix in repo; deploy pending** |
-| Preview-as-client fails with session mismatch | Operators cannot validate client UX | BL-03 — **fix in repo; deploy pending** |
+| Invitation email fails silently in operator UI | Clients never onboard | BL-02 — verify [post-deploy Phase 1](./post-deploy-verification.md#phase-1--operator-flows-bl-02-bl-03) |
+| Preview-as-client fails with session mismatch | Operators cannot validate client UX | BL-03 — verify [post-deploy Phase 1](./post-deploy-verification.md#phase-1--operator-flows-bl-02-bl-03) |
 | Local dev blocked after localhost disabled on prod branch | Developer velocity | BL-09 — **closed** |
 | Email sender shows generic Neon name | Client trust / confusion | BL-05 — **Console manual** |
 | Auth surfaces missing from registry | Future UI drift undetected | BL-08 — **closed** |
@@ -85,18 +85,14 @@ This backlog is **outcome-focused**. Implementation detail lives in individual s
 
 ## Program definition of done
 
-Backlog-01 is **closed** when:
-
-1. All slice DoD checklists are complete.
-2. J1–J8 have been exercised in production (or documented exception with owner sign-off).
-3. `npm run audit:neon-auth-production` reflects live branch state (via fresh manifest sync).
-4. No open P0/P1 items remain in the cross-cutting risks table.
+Backlog-01 is **closed** when [post-deploy-verification.md](./post-deploy-verification.md) sign-off is complete (all required phases pass).
 
 ---
 
 ## Related documents
 
-- [implementation-completeness.md](./implementation-completeness.md) — plan ↔ codebase gap report
+- [post-deploy-verification.md](./post-deploy-verification.md) — **single post-deploy checklist (SSOT)**
+- [implementation-completeness.md](./implementation-completeness.md) — plan ↔ codebase status
 - [neon-auth-validation-matrix.md](./neon-auth-validation-matrix.md) — live ↔ manifest ↔ UI (MCP-validated)
 - [AGENTS.md](../../AGENTS.md) — Neon Auth env and MCP workflow
 - [production-go-live.md](../runbooks/production-go-live.md) — launch runbook

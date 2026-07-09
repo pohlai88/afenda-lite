@@ -41,9 +41,6 @@ const serverEnvSchema = z.object({
   CLIENT_DEFAULT_PASSWORD: z
     .string()
     .min(8, "CLIENT_DEFAULT_PASSWORD must be at least 8 characters"),
-  MAILERSEND_API_KEY: optionalString(),
-  MAILERSEND_FROM_EMAIL: optionalEmail(),
-  MAILERSEND_FROM_NAME: optionalString(),
   NEON_AUTH_BASE_URL: z.string().url("NEON_AUTH_BASE_URL must be a valid URL"),
   NEON_AUTH_COOKIE_SECRET: z
     .string()

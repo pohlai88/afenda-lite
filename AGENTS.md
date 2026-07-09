@@ -41,9 +41,9 @@ Templates (committed): `env.config.example`, `env.secret.example`.
 | `npm run env:compose` | Merge config + secret → `.env` |
 | `npm run audit:vercel` | Compare key **names** on Vercel (no values) |
 | `npm run sync:vercel` | Push canonical production keys to Vercel |
-| `npm run cleanup:vercel` | Remove stale Supabase/SMTP keys from Vercel |
+| `npm run cleanup:vercel` | Remove stale Supabase/SMTP/MailerSend keys from Vercel |
 
-**Keys synced to Vercel production:** Neon (`DATABASE_URL`, `NEON_AUTH_*`), admin/preview client, `APP_URL`, MailerSend.
+**Keys synced to Vercel production:** Neon (`DATABASE_URL`, `NEON_AUTH_*`), admin/preview client, `APP_URL`.
 
 **Keys never synced:** `PLAYGROUND_*`, `NEON_API_KEY`, `NEON_ORG_ID`, `NEON_PROJECT_ID`, `NEON_BRANCH_ID`, Shadcn Studio (`SHADCN_STUDIO_*`, `LICENSE_KEY`, `EMAIL`).
 
@@ -67,8 +67,8 @@ Authority: [`.agents/skills/neon/SKILL.md`](.agents/skills/neon/SKILL.md), [`.ag
 
 ### Email — default Neon shared provider only
 
-- Neon Auth transactional mail uses the **shared provider** (`auth@mail.myneon.app`). Do **not** configure custom SMTP / MailerSend for Neon Auth.
-- **MailerSend** is for app-sent access emails only (`MAILERSEND_API_KEY`), not Neon Auth verification or org-invite mail.
+- Neon Auth transactional mail uses the **shared provider** (`auth@mail.myneon.app`). Do **not** configure custom SMTP for Neon Auth.
+- Client onboarding invites use **Neon Auth organization invitations** (`sendClientOnboardingEmail` → `inviteClientOrganizationMember`), not a separate app email provider.
 - Before advising on auth email, read live config via Neon MCP `get_neon_auth_config`.
 
 ### Trusted domains

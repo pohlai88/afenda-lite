@@ -20,7 +20,7 @@ Distribute declarations via open and secure links. Links resolve to the authenti
 
 - `components/client-access-share-panel.tsx`, `components/declaration-share-panel.tsx`, `components/secure-link-rotate-button.tsx`
 - `lib/declaration-share-links.ts`, `lib/public-link-routing.ts`
-- `lib/open-link-entry.ts`, `lib/secure-link-entry.ts`, `lib/public-link-routing.ts`
+- `lib/open-link-entry.ts`, `lib/secure-link-entry.ts`, `lib/public-link-page.ts`, `lib/public-link-routing.ts`
 - `lib/invite.ts`, `lib/tokens.ts`, `lib/surveys.ts` (`getOrCreateInviteToken`)
 - `app/survey/[slug]/page.tsx`, `app/f/[token]/page.tsx`
 
@@ -54,6 +54,17 @@ Distribute declarations via open and secure links. Links resolve to the authenti
 
 Resolving secure links by slug instead of `survey_invite_tokens`.
 
+## Route boundaries (do not merge)
+
+| Route | Slice | Token table | Handler |
+|-------|-------|-------------|---------|
+| `/f/[token]` | S5 | `survey_invite_tokens` | `lib/secure-link-entry.ts` |
+| `/survey/[slug]` | S5 | `surveys.slug` | `lib/open-link-entry.ts` |
+| `/invite/[token]` | S6 legacy | `client_invitations` | `lib/legacy-invite-entry.ts` |
+| `/join?invitationId=` | S6 | Neon org invitation | `lib/client-invitation-entry.ts` |
+
+Shared session dispatch for S5 only: `lib/public-link-routing.ts` (via `lib/public-link-page.ts`).
+
 ## Drift risk
 
-Restoring anonymous submit without assignment scope; adding slug-based secure URLs.
+Restoring anonymous submit without assignment scope; adding slug-based secure URLs; routing `/invite/*` through `public-link-routing.ts`.

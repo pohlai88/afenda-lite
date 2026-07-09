@@ -1,7 +1,6 @@
 import "server-only";
 
 import { getServerEnv } from "@/lib/env/server";
-import { getMailerSendConfig } from "@/lib/email/mailersend-config";
 import { PORTAL_NAME, portalCopy } from "@/lib/portal-copy";
 
 /** Neon Auth shared SMTP sender when using the managed email provider. */
@@ -11,12 +10,6 @@ export type ClientEmailDeliveryStatus =
   | {
       enabled: true;
       provider: "neon-auth-organization";
-      fromName: string;
-      fromEmail: string;
-    }
-  | {
-      enabled: true;
-      provider: "mailersend";
       fromName: string;
       fromEmail: string;
     }
@@ -38,16 +31,6 @@ export function getClientEmailDeliveryStatus(): ClientEmailDeliveryStatus {
       provider: "neon-auth-organization",
       fromName: portalCopy.invite.sender || PORTAL_NAME,
       fromEmail: NEON_AUTH_SHARED_SENDER_EMAIL,
-    };
-  }
-
-  const mailerSend = getMailerSendConfig();
-  if (mailerSend) {
-    return {
-      enabled: true,
-      provider: "mailersend",
-      fromName: mailerSend.fromName,
-      fromEmail: mailerSend.fromEmail,
     };
   }
 

@@ -136,6 +136,7 @@ test.describe("Operator declaration routes @journey", () => {
   });
 });
 
+/** S6 legacy client invitation URL — separate from S5 `/f/[token]` in `e2e/public-links.spec.ts`. */
 test.describe("Client invite path @smoke", () => {
   test("legacy invite token redirects to client sign in with reason", async ({
     page,

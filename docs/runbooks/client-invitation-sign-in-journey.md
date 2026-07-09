@@ -2,9 +2,9 @@
 
 **Audience:** operators, support, engineers  
 **Environment:** production — `https://iam-check.vercel.app`  
-**Last verified:** 2026-07-08 — production journey Phases 1–3 and 5–8 (Playwright `@journey` + `capture-client-journey-screenshots.mjs`)
+**Last verified:** 2026-07-08 — Phases 1–3 and 5–8 (Playwright `@journey` + capture script; Phase 4 pending production OTP UI)
 
-**Related:** [BL-06](../backlogs/slices/bl-06-client-join-journey.md) · [neon-auth-validation-matrix.md](../backlogs/neon-auth-validation-matrix.md)
+**Related:** [BL-06](../backlogs/slices/bl-06-client-join-journey.md) · [post-deploy-verification.md](../backlogs/post-deploy-verification.md) (production sign-off) · [neon-auth-validation-matrix.md](../backlogs/neon-auth-validation-matrix.md)
 
 ---
 
@@ -13,30 +13,15 @@
 | Phase | What happens | Verification |
 | --- | --- | --- |
 | 1 | Operator issues org invite → Neon email | `live-org-invite.mjs` / dashboard · `neon_auth.invitation` pending |
-| 2 | Client opens `/join?invitationId=<neon_auth.id>` | PNG · sign-up shell |
-| 3 | Client signs up with invited email | PNG · session created |
-| 4 | Client verifies email (OTP) | **Required before accept** · Phase 4 PNG pending join-panel deploy |
-| 5 | Client accepts org invitation | PNG · status → `accepted` |
-| 6 | Client completes onboarding wizard | PNG · `onboardingComplete` |
-| 7 | Client dashboard + acknowledgement | PNG · assignments visible |
-| 8 | Client opens declaration workspace | PNG · `/client/declare/[id]` |
+| 2 | Client opens `/join?invitationId=<neon_auth.id>` | Sign-up shell · Guardian default |
+| 3 | Client signs up with invited email | Session created |
+| 4 | Client verifies email (OTP) on `/join` | Required before accept · see [post-deploy Phase 2](../backlogs/post-deploy-verification.md#2a--join-ui-otp-step-on-join) |
+| 5 | Client accepts org invitation | status → `accepted` · `/client/onboarding` |
+| 6 | Client completes onboarding wizard | `onboardingComplete` |
+| 7 | Client dashboard + acknowledgement | assignments visible |
+| 8 | Client opens declaration workspace | `/client/declare/[id]` |
 
----
-
-## Root cause fixed (2026-07-08)
-
-Accept invitation returned **403** until email was verified:
-
-```json
-{
-  "code": "EMAIL_VERIFICATION_REQUIRED_BEFORE_ACCEPTING_OR_REJECTING_INVITATION",
-  "message": "Email verification required before accepting or rejecting invitation"
-}
-```
-
-**Fix (local, not yet on `main`):** `PortalInvitationJoinPanel` routes authenticated but unverified users to `AuthView` **`email-otp`** before `accept-invitation` (`lib/client-invitation-join-auth.ts`).
-
-**Production today:** app is live on Vercel; full journey passes when email is verified (E2E/capture scripts use `mark-neon-auth-email-verified.mjs`). Live join UI still shows **Step 2 — Accept invitation** and compact step **Sign in** — the OTP step ships after the join-panel commit is pushed and redeployed. Until then, real clients must verify at `/auth/email-otp` before accept or accept returns 403.
+**OTP before accept:** Neon returns 403 (`EMAIL_VERIFICATION_REQUIRED_BEFORE_ACCEPTING_OR_REJECTING_INVITATION`) if accept runs before verify. The join panel routes unverified users to embedded `email-otp` (`lib/client-invitation-join-auth.ts`). Confirm on production after deploy via [post-deploy-verification.md](../backlogs/post-deploy-verification.md).
 
 ---
 
@@ -79,13 +64,13 @@ Client submits Display name, **invited email**, password.
 
 ## Phase 4 — Verify email (OTP)
 
-Neon sends six-digit code to invited email. Client enters code on `/join` (embedded `email-otp` after deploy).
+Neon sends six-digit code to invited email. Client enters code on **`/join`** (embedded `email-otp`).
 
 ![Phase 4 — Verify email](./assets/phase-04-verify-email.png)
 
-> `phase-04-verify-email.png` is not on production yet. Re-run capture after join-panel deploy; script saves this PNG when heading **Step 2 — Verify your email** appears post sign-up.
+**Checks:** heading **Step 2 — Verify your email** · `session.user.emailVerified === true` before accept.
 
-**Checks:** `session.user.emailVerified === true` before accept.
+Regenerate PNG after production deploy: `node scripts/capture-client-journey-screenshots.mjs`
 
 ---
 
@@ -145,7 +130,7 @@ npm run test:unit -- lib/client-invitation-join-auth.test.ts
 npm run audit:neon-auth-production
 ```
 
-**E2E note:** tests mark test-user email verified via `scripts/mark-neon-auth-email-verified.mjs` when OTP inbox is unavailable. Real clients must complete Phase 4 in the product.
+**E2E note:** tests may mark test-user email verified via `scripts/mark-neon-auth-email-verified.mjs` when OTP inbox is unavailable. Production sign-off requires real OTP completion — see [post-deploy-verification.md](../backlogs/post-deploy-verification.md).
 
 ---
 
@@ -153,19 +138,9 @@ npm run audit:neon-auth-production
 
 | Concern | Location |
 | --- | --- |
-| Join auth state (sign-up → OTP → accept) | `lib/client-invitation-join-auth.ts` |
+| Join auth state (sign-up → OTP → accept) | `lib/client-invitation-join-auth.ts`, `components/use-join-invitation-auth-view.ts` |
 | Join panel | `components/portal-invitation-join-panel.tsx` |
 | Invite API + join URL | `scripts/live-org-invite.mjs` → `joinUrl`, `neonAuthInvitationId` |
 | Bootstrap after auth | `lib/auth/bootstrap-client-invite.ts` |
 | E2E flows | `testing/e2e/client-invitation-flows.ts` |
 | E2E spec | `e2e/client-invitation-journey.spec.ts` |
-
----
-
-## Deploy checklist (join-panel OTP routing)
-
-- [ ] Commit and push `lib/client-invitation-join-auth.ts`, join panel/page, `lib/portal-copy.ts`
-- [ ] `vercel deploy --prod --yes`
-- [ ] Confirm live join shows **Verify email** (compact step 2) after sign-up: `node scripts/check-production-join-ui.mjs`
-- [ ] Re-run `node scripts/capture-client-journey-screenshots.mjs` → `phase-04-verify-email.png`
-- [ ] Confirm production accept works without `mark-neon-auth-email-verified.mjs`

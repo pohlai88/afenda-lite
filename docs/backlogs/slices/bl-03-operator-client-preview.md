@@ -4,7 +4,7 @@
 **Priority:** P1  
 **Journeys:** J6  
 **Depends on:** BL-01  
-**Status:** Fix implemented — **deploy and verify in production**
+**Status:** Code complete — verify on production → [post-deploy-verification.md](../post-deploy-verification.md#bl-03--operator-client-portal-preview-j6)
 
 ---
 
@@ -44,6 +44,8 @@ Signed-in operator clicks preview → lands on client home as preview sandbox us
 ---
 
 ## Definition of done
+
+Production verification only — checklist: [post-deploy-verification.md](../post-deploy-verification.md#bl-03--operator-client-portal-preview-j6).
 
 - [ ] Operator preview on production: lands on `/client` without `/client/preview-unavailable`.
 - [ ] Audit shows `admin.client_preview_started` (not `session_mismatch`).

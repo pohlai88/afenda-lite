@@ -5,39 +5,41 @@ import { GuardianInvitationJoinPage } from "@/components/guardian-invitation-joi
 import { PortalAuthLayout } from "@/components/portal-auth-layout";
 import { PortalAuthEmailTrustNotice } from "@/components/portal-auth-email-trust-notice";
 import { PortalInvitationJoinBrandPanel } from "@/components/portal-invitation-join-brand-panel";
-import { PortalInvitationJoinPanel } from "@/components/portal-invitation-join-panel";
-import { authClient } from "@/lib/auth/client";
-import { resolveJoinInvitationAuthView } from "@/lib/client-invitation-join-auth";
-import { portalCopy } from "@/lib/portal-copy";
+import {
+  PortalInvitationJoinPanel,
+  PortalInvitationJoinPanelSkeleton,
+} from "@/components/portal-invitation-join-panel";
+import { useJoinInvitationAuthView } from "@/components/use-join-invitation-auth-view";
+import { resolveJoinInvitationTrustNotice } from "@/lib/client-invitation-join-auth";
 
 function PortalInvitationJoinPageInner({
   useGuardianShell,
 }: {
   useGuardianShell: boolean;
 }) {
-  const { data: session, isPending } = authClient.useSession();
-  const { organizationAuth, emailOtp } = portalCopy;
-  const authView = resolveJoinInvitationAuthView({
-    isPending,
-    isAuthenticated: Boolean(session?.session),
-    emailVerified: Boolean(session?.user.emailVerified),
-  });
+  const { isPending, isAuthenticated, authView } = useJoinInvitationAuthView();
 
   const headerExtra = (
     <PortalAuthEmailTrustNotice
-      message={
-        authView.pathname === "email-otp"
-          ? emailOtp.trustNotice
-          : organizationAuth.trustNotice
-      }
+      message={resolveJoinInvitationTrustNotice(authView)}
       variant="email"
     />
   );
+
+  if (isPending) {
+    return (
+      <div className="flex min-h-dvh items-center justify-center p-6">
+        <PortalInvitationJoinPanelSkeleton />
+      </div>
+    );
+  }
 
   if (useGuardianShell) {
     return (
       <GuardianInvitationJoinPage
         activeStep={authView.activeStep}
+        authView={authView}
+        isAuthenticated={isAuthenticated}
         headerExtra={headerExtra}
       />
     );
@@ -50,7 +52,10 @@ function PortalInvitationJoinPageInner({
       }
       headerExtra={headerExtra}
     >
-      <PortalInvitationJoinPanel />
+      <PortalInvitationJoinPanel
+        authView={authView}
+        isAuthenticated={isAuthenticated}
+      />
     </PortalAuthLayout>
   );
 }
@@ -62,7 +67,7 @@ export function PortalInvitationJoinPage({
   useGuardianShell?: boolean;
 }) {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<PortalInvitationJoinPanelSkeleton />}>
       <PortalInvitationJoinPageInner useGuardianShell={useGuardianShell} />
     </Suspense>
   );

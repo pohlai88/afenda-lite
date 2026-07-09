@@ -5,7 +5,7 @@ import { Separator } from '@/components/ui/separator'
 import { BorderBeam } from '@/components/ui/border-beam'
 
 import Logo from '@/components/shadcn-studio/logo'
-import AuthFullBackgroundShape from '@/assets/svg/auth-full-background-shape'
+import AuthFullBackgroundShape from '@/components/svg/auth-full-background-shape'
 import LoginForm from '@/components/shadcn-studio/blocks/login-page-02/login-form'
 
 const Login = () => {

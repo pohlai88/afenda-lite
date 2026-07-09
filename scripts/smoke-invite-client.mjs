@@ -93,20 +93,22 @@ async function main() {
       JSON.stringify(
         {
           success: true,
-          channel: "provision_no_email",
+          channel: "neon_auth_provision_smoke",
           recipientEmail,
           invitationId: invitation.id,
           surveyId: survey.id,
-          signInUrl: appUrl,
-          temporaryPassword: defaultPassword,
+          joinUrl: `${appUrl}/join?invitationId=${invitation.id}`,
+          signInUrl: `${appUrl}/client/login`,
+          note:
+            "Production invites use Neon Auth organization email. This smoke script seeds auth user + DB rows for local testing only.",
           accessMessage: [
             "Client Declaration Portal",
             "",
-            `Sign in: ${appUrl}`,
+            `Sign in: ${appUrl}/client/login`,
             `Email: ${recipientEmail}`,
-            `Temporary password: ${defaultPassword}`,
             "",
-            "First visit: complete onboarding, then open your assigned declaration.",
+            "New clients: register under Client invitations — use the organization invitation email to set your password.",
+            "Returning clients: sign in, then open your assigned declaration.",
           ].join("\n"),
         },
         null,

@@ -3,7 +3,6 @@ import Link from "next/link";
 import { CopyAccessMessage } from "@/components/copy-access-message";
 import { Button } from "@/components/ui/button";
 import { buildClientAccessMessage } from "@/lib/client-access-message";
-import { getClientDefaultPassword } from "@/lib/client-default-password";
 import { buildQrCodeUrl } from "@/lib/invite";
 import { portalCopy } from "@/lib/portal-copy";
 
@@ -19,11 +18,9 @@ export function ClientAccessSharePanel({
   secureLinkUrl,
 }: ClientAccessSharePanelProps) {
   const { share, clientAccess } = portalCopy;
-  const temporaryPassword = getClientDefaultPassword();
   const generalMessage = buildClientAccessMessage({
     portalUrl: loginUrl,
     clientEmail: clientAccess.generalPlaceholderEmail,
-    temporaryPassword,
   });
 
   return (

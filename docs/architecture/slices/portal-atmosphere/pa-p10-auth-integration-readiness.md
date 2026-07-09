@@ -122,7 +122,7 @@ PA-P10 slice status may move to **accepted** when all below are true — **witho
 - [x] `PortalAuthLayout` consumes `PortalAtmosphere` (PA-P8 slots)
 - [x] Auth card renders in `PortalAccessSlot`
 - [x] No auth logic inside atmosphere components
-- [ ] E2E smoke passes — operator verify after deploy
+- [ ] E2E smoke passes — [post-deploy-verification.md](../../../backlogs/post-deploy-verification.md) Phase 0–2
 - [ ] Visual regression with real auth approved
 - [ ] Migrated unused `.portal-auth-*` / `.portal-hero-*` visual rules removed (legacy phantom CSS retained for Storybook evaluation stories until retired)
 

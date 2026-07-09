@@ -21,17 +21,12 @@ import { StudioDataTable } from "@/components/shadcn-studio/blocks/datatable-tra
 import { DeclarationRowDeleteAction } from "@/components/declaration-row-delete-action";
 import { displaySurveyTitle } from "@/lib/survey-display";
 import { isDraftSurveyTitle } from "@/lib/survey-draft";
+import type { OrgDeclarationRow } from "@/lib/operator-dashboard-types";
 import { portalCopy } from "@/lib/portal-copy";
 import { EllipsisVerticalIcon } from "lucide-react";
 
 /** datatable-component-01 — declaration rows on Shadcn Studio table shell. */
-export type OrgDeclarationRow = {
-  id: string;
-  title: string;
-  description: string;
-  caseNumber: string | null;
-  responseCount: number;
-};
+export type { OrgDeclarationRow };
 
 type OrgDeclarationsTableProps = {
   rows: OrgDeclarationRow[];

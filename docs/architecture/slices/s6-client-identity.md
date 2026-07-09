@@ -62,3 +62,16 @@ Removed (superseded): `clientSignInAction`, `acceptClientInviteAction`, `compone
 ## Drift risk
 
 Skipping onboarding gate for new client routes.
+
+## Legacy `/invite/[token]` deprecation
+
+S6 keeps `/invite/[token]` as a **compatibility redirect** to client sign-in with reason copy (`legacy-invite-entry.ts`). It is **not** the same as S5 `/f/[token]` declaration share links.
+
+**Deprecation path (when traffic is negligible):**
+
+1. Log or metric hits on `/invite/*` for one release cycle.
+2. Redirect invalid/unknown tokens to `/auth/sign-in?reason=invite-invalid` (current behavior).
+3. Redirect known valid tokens to `/join` or `/auth/sign-in?reason=check-email` without maintaining a separate route file.
+4. Remove `app/invite/[token]/page.tsx` only after operator comms confirm no printed legacy URLs remain.
+
+Until then: keep smoke coverage in `e2e/smoke.spec.ts` (`Client invite path @smoke`), separate from `e2e/public-links.spec.ts` (S5).

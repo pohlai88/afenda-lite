@@ -486,6 +486,16 @@
       "type": "consumes"
     },
     {
+      "source": "surface:admin-dashboard",
+      "target": "domain:surveys",
+      "type": "consumes"
+    },
+    {
+      "source": "surface:admin-dashboard",
+      "target": "domain:clients",
+      "type": "consumes"
+    },
+    {
       "source": "surface:admin-declaration-detail",
       "target": "action:requireAdminSession",
       "type": "consumes"
@@ -566,8 +576,23 @@
       "type": "consumes"
     },
     {
+      "source": "surface:admin-clients",
+      "target": "domain:surveys",
+      "type": "consumes"
+    },
+    {
+      "source": "surface:admin-clients",
+      "target": "domain:clients",
+      "type": "consumes"
+    },
+    {
       "source": "surface:admin-issue-invite",
       "target": "action:issueClientInviteAction",
+      "type": "consumes"
+    },
+    {
+      "source": "surface:admin-issue-invite",
+      "target": "action:requireAdminSession",
       "type": "consumes"
     },
     {
@@ -606,8 +631,18 @@
       "type": "consumes"
     },
     {
+      "source": "surface:public-survey-link",
+      "target": "domain:surveys",
+      "type": "consumes"
+    },
+    {
       "source": "surface:public-secure-link",
       "target": "domain:secure-link-entry",
+      "type": "consumes"
+    },
+    {
+      "source": "surface:public-secure-link",
+      "target": "domain:surveys",
       "type": "consumes"
     },
     {
@@ -832,6 +867,16 @@
     },
     {
       "source": "gate:evaluate:ui-matrix",
+      "target": "surface:public-survey-link",
+      "type": "validates"
+    },
+    {
+      "source": "gate:evaluate:ui-matrix",
+      "target": "surface:public-secure-link",
+      "type": "validates"
+    },
+    {
+      "source": "gate:evaluate:ui-matrix",
       "target": "surface:admin-dashboard",
       "type": "validates"
     },
@@ -976,8 +1021,8 @@
       "type": "validates"
     }
   ],
-  "fingerprint": "73d2ed7966e33da5",
-  "generatedAt": "2026-07-09T09:23:48.799Z",
+  "fingerprint": "63b6551be841e83e",
+  "generatedAt": "2026-07-09T10:44:14.647Z",
   "nodes": [
     {
       "id": "surface:auth-sign-in",
@@ -1205,7 +1250,27 @@
       "metadata": {
         "domain": "client",
         "route": "/join",
-        "currentComponent": "PortalInvitationJoinPage"
+        "currentComponent": "PortalInvitationJoinPage → GuardianInvitationJoinPage (default)"
+      },
+      "type": "ui-surface"
+    },
+    {
+      "id": "surface:public-survey-link",
+      "label": "public-survey-link",
+      "metadata": {
+        "domain": "client",
+        "route": "/survey/[slug]",
+        "currentComponent": "runOpenLinkPage (redirect-only)"
+      },
+      "type": "ui-surface"
+    },
+    {
+      "id": "surface:public-secure-link",
+      "label": "public-secure-link",
+      "metadata": {
+        "domain": "client",
+        "route": "/f/[token]",
+        "currentComponent": "runSecureLinkPage (redirect-only)"
       },
       "type": "ui-surface"
     },
@@ -1386,22 +1451,6 @@
         "domain": "shared",
         "route": "PortalMemberMenu",
         "currentComponent": "PortalMemberMenu"
-      },
-      "type": "ui-surface"
-    },
-    {
-      "id": "surface:public-survey-link",
-      "label": "public-survey-link",
-      "metadata": {
-        "synthetic": true
-      },
-      "type": "ui-surface"
-    },
-    {
-      "id": "surface:public-secure-link",
-      "label": "public-secure-link",
-      "metadata": {
-        "synthetic": true
       },
       "type": "ui-surface"
     },

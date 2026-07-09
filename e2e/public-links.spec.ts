@@ -1,4 +1,5 @@
 import { expect, test } from "@/testing/e2e/playwright-base";
+/** S5 share access — `/survey/[slug]` and `/f/[token]` only (not S6 `/invite/[token]`). */
 import { SANDBOX_INVITE_TOKEN, SANDBOX_SURVEY, SANDBOX_SURVEY_SLUG } from "@/lib/production-fixtures";
 import { portalCopy } from "@/lib/portal-copy";
 import {
@@ -58,6 +59,30 @@ test.describe("Public declaration links @smoke", () => {
 test.describe("Authenticated public link routing @journey", () => {
   test.beforeEach(() => {
     test.skip(!clientCreds, clientSkipMessage);
+  });
+
+  test("secure link sign-in with returnTo routes assigned client to declare page", async ({
+    page,
+  }) => {
+    await page.goto(`/f/${publicSecureToken}`);
+    await expect(page).toHaveURL(/\/auth\/sign-in\?.*returnTo=/);
+
+    const creds = requireClientCreds();
+    await submitClientSignIn(page, creds);
+
+    await expect(page).toHaveURL(/\/client\/declare\/.+/, { timeout: 30_000 });
+  });
+
+  test("signed-in client visiting secure link routes directly to declare page", async ({
+    page,
+  }) => {
+    const creds = requireClientCreds();
+    await page.goto("/auth/sign-in");
+    await submitClientSignIn(page, creds);
+    await expect(page).toHaveURL(/\/client(?:\/|$)/, { timeout: 30_000 });
+
+    await page.goto(`/f/${publicSecureToken}`);
+    await expect(page).toHaveURL(/\/client\/declare\/.+/);
   });
 
   test("open link sign-in with returnTo routes assigned client to declare page", async ({

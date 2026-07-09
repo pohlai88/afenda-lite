@@ -4,7 +4,7 @@
 **Priority:** P2  
 **Journeys:** J3, J5, J7  
 **Depends on:** BL-01  
-**Status:** Code complete — manual production verification pending
+**Status:** Code complete — verify on production → [post-deploy-verification.md](../post-deploy-verification.md#bl-07--account--credential-self-service-j3-j5-j7)
 
 ---
 
@@ -60,6 +60,8 @@ Users can recover access and manage name/password through familiar auth and acco
 ---
 
 ## Definition of done
+
+Production verification only — checklist: [post-deploy-verification.md](../post-deploy-verification.md#bl-07--account--credential-self-service-j3-j5-j7).
 
 - [ ] Forgot → email → reset link → new password → sign-in works on production.
 - [ ] Magic link sign-in works for existing user; new client directed to join flow (copy hint present).

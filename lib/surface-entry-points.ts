@@ -18,8 +18,11 @@ export const SURFACE_ENTRY_POINTS: Readonly<
   "client-join": {
     files: [
       "app/join/page.tsx",
+      "lib/client-invitation-entry.ts",
+      "components/portal-invitation-join-page.tsx",
       "components/guardian-invitation-join-page.tsx",
       "components/portal-invitation-join-panel.tsx",
+      "components/use-join-invitation-auth-view.ts",
       "lib/client-invitation-join-auth.ts",
     ],
     authPathnames: ["sign-up", "email-otp", "accept-invitation"],
@@ -122,21 +125,39 @@ export const SURFACE_ENTRY_POINTS: Readonly<
     ],
   },
   "admin-dashboard": {
-    files: ["app/dashboard/page.tsx", "components/org-declarations-table.tsx"],
+    files: [
+      "app/dashboard/page.tsx",
+      "app/dashboard/loading.tsx",
+      "lib/operator-dashboard-page.ts",
+      "lib/operator-dashboard-types.ts",
+      "components/operator-dashboard-page-view.tsx",
+      "components/org-declarations-table.tsx",
+    ],
   },
   "admin-declaration-detail": {
     files: [
       "app/dashboard/[id]/page.tsx",
+      "app/dashboard/[id]/loading.tsx",
       "lib/operator-declaration-detail.tsx",
       "lib/operator-declaration-detail.logic.ts",
       "components/operator-declaration-detail-view.tsx",
       "components/declaration-manage-form.tsx",
       "components/declaration-share-panel.tsx",
+      "components/client-access-share-panel.tsx",
       "components/org-declaration-submissions-table.tsx",
     ],
   },
   "admin-clients": {
-    files: ["app/dashboard/clients/page.tsx", "components/org-client-tables.tsx"],
+    files: [
+      "app/dashboard/clients/page.tsx",
+      "app/dashboard/clients/loading.tsx",
+      "lib/operator-clients-page.ts",
+      "lib/operator-clients-types.ts",
+      "lib/email/client-email-delivery.ts",
+      "components/operator-clients-page-view.tsx",
+      "components/org-client-tables.tsx",
+      "components/issue-client-invite-form.tsx",
+    ],
   },
   "admin-issue-invite": {
     files: ["components/issue-client-invite-form.tsx"],
@@ -151,17 +172,25 @@ export const SURFACE_ENTRY_POINTS: Readonly<
     files: [
       "components/declaration-share-panel.tsx",
       "components/secure-link-rotate-button.tsx",
+      "lib/declaration-share-links.ts",
     ],
   },
   "public-survey-link": {
-    files: ["app/survey/[slug]/page.tsx"],
+    files: [
+      "app/survey/[slug]/page.tsx",
+      "lib/open-link-entry.ts",
+    ],
   },
   "public-secure-link": {
-    files: ["app/f/[token]/page.tsx"],
+    files: [
+      "app/f/[token]/page.tsx",
+      "lib/secure-link-entry.ts",
+    ],
   },
   "shell-dashboard": {
     files: [
       "app/dashboard/layout.tsx",
+      "lib/operator-shell-members.ts",
       "components/app-sidebar.tsx",
       "components/team-switcher.tsx",
     ],
@@ -229,6 +258,7 @@ export const LIB_IMPORT_DOMAIN_MAP: ReadonlyArray<{
   { prefix: "@/lib/operator-declaration-detail.logic", domainId: "domain:questions" },
   { prefix: "@/lib/declaration-share-links", domainId: "domain:surveys" },
   { prefix: "@/lib/preview-client", domainId: "domain:preview-client" },
+  { prefix: "@/lib/operator-shell-members", domainId: "domain:preview-client" },
   { prefix: "@/lib/portal-session-routing", domainId: "domain:auth" },
   { prefix: "@/lib/client-sign-in-entry", domainId: "domain:auth" },
   { prefix: "@/lib/client-dashboard-page", domainId: "domain:clients" },

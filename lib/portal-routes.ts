@@ -88,6 +88,11 @@ export function playgroundScreenHref(screenId: string) {
   return `/playground/${screenId}`;
 }
 
+export {
+  PLAYGROUND_HREF,
+  PLAYGROUND_HITL_REVIEW_HREF,
+} from "@/lib/playground-nav";
+
 export function authSignInHref(params?: Record<string, string>) {
   if (!params || Object.keys(params).length === 0) {
     return AUTH_SIGN_IN_HREF;

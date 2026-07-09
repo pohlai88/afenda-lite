@@ -5,7 +5,7 @@ import { cache } from "react";
 import type {
   OrgClientAssignmentRow,
   OrgClientInvitationRow,
-} from "@/components/org-client-tables";
+} from "@/lib/operator-clients-types";
 import {
   listClientAssignmentsForAdmin,
   listClientInvitationsForAdmin,
@@ -51,6 +51,12 @@ function toAssignmentRows(
     dueDate: assignment.dueDate ? formatDate(assignment.dueDate) : null,
   }));
 }
+
+/** @internal Exported for unit tests — maps DB invitations to datatable rows. */
+export const mapOperatorClientInvitationRows = toInvitationRows;
+
+/** @internal Exported for unit tests — maps DB assignments to datatable rows. */
+export const mapOperatorClientAssignmentRows = toAssignmentRows;
 
 export const loadOperatorClientsPage = cache(
   async (): Promise<OperatorClientsPageData> => {

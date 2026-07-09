@@ -13,6 +13,12 @@ import {
 import { StudioFilterDataTable } from "@/components/shadcn-studio/blocks/datatable-user";
 import { ClientRegistrationDeleteButton } from "@/components/client-registration-delete-button";
 import { ClientAssignmentDeleteButton } from "@/components/client-assignment-delete-button";
+import type {
+  OrgClientAssignmentRow,
+  OrgClientInvitationRow,
+} from "@/lib/operator-clients-types";
+
+export type { OrgClientAssignmentRow, OrgClientInvitationRow };
 
 function initials(name: string) {
   return name
@@ -24,14 +30,6 @@ function initials(name: string) {
 }
 
 /** datatable-component-04 — client rows with avatar, status badge, actions. */
-export type OrgClientInvitationRow = {
-  id: string;
-  token: string;
-  fullName: string;
-  email: string;
-  status: "pending" | "accepted" | "expired";
-};
-
 type OrgClientInvitationsTableProps = {
   rows: OrgClientInvitationRow[];
   title?: string;
@@ -163,15 +161,6 @@ export function OrgClientInvitationsTable({
     </Card>
   );
 }
-
-export type OrgClientAssignmentRow = {
-  id: string;
-  surveyId: string;
-  surveyTitle: string;
-  clientEmail: string;
-  status: "pending" | "submitted";
-  dueDate: string | null;
-};
 
 type OrgClientAssignmentsTableProps = {
   rows: OrgClientAssignmentRow[];

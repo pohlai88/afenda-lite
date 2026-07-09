@@ -20,6 +20,10 @@ import {
 } from "@/components/ui/sidebar";
 import { PORTAL_BRAND_SHELL } from "@/lib/portal-brand";
 import type { PlaygroundScreen } from "@/lib/playground";
+import {
+  PLAYGROUND_HREF,
+  PLAYGROUND_HITL_REVIEW_HREF,
+} from "@/lib/playground-nav";
 import { playgroundScreenHref } from "@/lib/portal-routes";
 
 function PlaygroundNavGroup({
@@ -75,7 +79,7 @@ export function PlaygroundSidebar({
           <SidebarMenuItem>
             <SidebarMenuButton
               size="lg"
-              render={<Link href="/playground" />}
+              render={<Link href={PLAYGROUND_HREF} />}
               tooltip="Playground"
             >
               <div className={PORTAL_BRAND_SHELL.slot}>
@@ -99,8 +103,8 @@ export function PlaygroundSidebar({
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton
-                  isActive={pathname === "/playground/hitl-review"}
-                  render={<Link href="/playground/hitl-review" />}
+                  isActive={pathname === PLAYGROUND_HITL_REVIEW_HREF}
+                  render={<Link href={PLAYGROUND_HITL_REVIEW_HREF} />}
                   tooltip="HITL route checklist"
                 >
                   <span>HITL route checklist</span>

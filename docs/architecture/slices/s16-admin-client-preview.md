@@ -19,7 +19,7 @@ Operators preview the **real** client portal (`/client/*`) using a seeded sandbo
 
 During **local development only**, `/playground` can iframe client routes with `?embed=1` for UI review. If the preview user is not seeded, `requireClientSession` may redirect embed requests to `/client/preview-unavailable?embed=1`. This behaviour is **developer tooling** — clients never use `/playground` in production.
 
-**Registry:** `lib/playground-registry.ts` is the single source of truth for screen ids, embed paths, route file bindings, and nav groups. `scripts/check-playground-bindings-runner.ts` and `lib/playground-e2e-fixtures.ts` must stay in parity with the registry (enforced by `npm run check:playground`).
+**Registry:** `lib/playground-registry.ts` is the single source of truth for screen ids, embed paths, route file bindings, and nav groups. `scripts/check-playground-bindings-runner.ts` and `lib/playground-e2e-fixtures.ts` must stay in parity with the registry (enforced by `npm run check:playground`). See [S18 — Playground UI review harness](s18-playground-ui-review.md).
 
 ## Owned routes
 

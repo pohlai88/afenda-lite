@@ -9,6 +9,7 @@ import { useGuardianNeonAuthState } from "@/components/auth/use-guardian-neon-au
 import { PortalInvitationJoinBrandPanel } from "@/components/portal-invitation-join-brand-panel";
 import { PortalInvitationJoinPanel } from "@/components/portal-invitation-join-panel";
 import { useThemeControls } from "@/components/theme-provider";
+import type { JoinInvitationAuthView } from "@/lib/client-invitation-join-auth";
 import {
   guardianModeFromPortalTheme,
   portalThemeFromGuardianMode,
@@ -18,6 +19,8 @@ import { GUARDIAN_AUTH_ASSET_SET } from "@/lib/portal-brand";
 
 export type GuardianInvitationJoinPageProps = {
   activeStep: number;
+  authView: JoinInvitationAuthView;
+  isAuthenticated: boolean;
   headerExtra?: ReactNode;
 };
 
@@ -27,6 +30,8 @@ export type GuardianInvitationJoinPageProps = {
  */
 export function GuardianInvitationJoinPage({
   activeStep,
+  authView,
+  isAuthenticated,
   headerExtra,
 }: GuardianInvitationJoinPageProps) {
   const panelRef = useRef<HTMLDivElement>(null);
@@ -48,7 +53,10 @@ export function GuardianInvitationJoinPage({
         className="guardian-auth__access-panel flex w-full flex-col gap-4"
       >
         {headerExtra}
-        <PortalInvitationJoinPanel />
+        <PortalInvitationJoinPanel
+          authView={authView}
+          isAuthenticated={isAuthenticated}
+        />
       </div>
     </GuardianAuthFacade>
   );

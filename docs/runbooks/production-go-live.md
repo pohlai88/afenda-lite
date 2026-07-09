@@ -88,6 +88,8 @@ npm test
 | Share links | Public `/survey/{slug}` and secure `/f/{token}` visible on detail page |
 | CI | GitHub Actions green on PR / main |
 
+**After deploy — Backlog-01 auth closure:** complete [post-deploy-verification.md](../backlogs/post-deploy-verification.md) (invite email, client preview, join OTP journey, account flows).
+
 Automated E2E (CI and local with `.env` creds):
 
 - `e2e/smoke.spec.ts` — liveness, readiness, operator create, public submit

@@ -4,7 +4,7 @@
 **Priority:** P0  
 **Journeys:** J2, J4  
 **Depends on:** BL-02  
-**Status:** Code complete — production E2E blocked on BL-02 deploy
+**Status:** Code complete — verify on production → [post-deploy-verification.md](../post-deploy-verification.md#phase-2--client-invitation-join-bl-06)
 
 ---
 
@@ -50,17 +50,20 @@ Invited client completes registration and organization acceptance in one guided 
 | Requirement | Implementation |
 | --- | --- |
 | Canonical `/join?invitationId=` | `app/join/page.tsx`, `lib/client-invitation-entry.ts` |
+| Guardian shell (default) + rollback | `PortalInvitationJoinPage` → `GuardianInvitationJoinPage`; `GUARDIAN_AUTH_SHELL=false` → `PortalAuthLayout` |
+| Auth step machine (sign-up → OTP → accept) | `lib/client-invitation-join-auth.ts`, `components/use-join-invitation-auth-view.ts` |
 | Legacy accept-invitation redirect | `app/auth/[path]/page.tsx` → `redirectAuthAcceptInvitationToJoin` |
 | Missing invitation error | `components/portal-invitation-join-panel.tsx` |
-| Sign-up vs accept step | `PortalInvitationJoinPanel` switches AuthView path by session |
-| OTP trust at sign-up | `app/auth/[path]/page.tsx` trust notices |
+| OTP before accept | `resolveJoinInvitationAuthView` routes unverified users to `email-otp` |
 | No pre-provision at invite | `ensureClientAuthUser` removed |
 
 ---
 
 ## Definition of done
 
-- [ ] End-to-end: invite email → `/join` → sign-up → accept invitation → `/client/onboarding` (**after BL-02 deploy**).
+Production verification only — checklist: [post-deploy-verification.md](../post-deploy-verification.md#phase-2--client-invitation-join-bl-06).
+
+- [ ] End-to-end: invite email → `/join` → sign-up → OTP → accept → `/client/onboarding`.
 - [ ] `audit_events.invite.accepted` recorded for new client.
 - [ ] Pending org invitation moves to accepted in Neon Auth.
 - [x] Missing `invitationId` shows `clientInvitationJoin.missingInvitationError`.

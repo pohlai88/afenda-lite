@@ -5,8 +5,8 @@ This project uses **Neon Auth’s default shared email provider** (`auth@mail.my
 ## Policy
 
 - Read live config with Neon MCP `get_neon_auth_config` before advising on auth email behavior.
-- **MailerSend** (`MAILERSEND_API_KEY`) is for **portal access emails** sent by the app (`lib/email/send-client-access-email.ts`), not for Neon Auth transactional mail.
-- Do not add `NEON_AUTH_SMTP_*` env vars or scripts to push MailerSend into Neon Auth.
+- **Client onboarding** uses Neon Auth **organization invitations** (`lib/email/send-client-onboarding-email.ts` → `inviteClientOrganizationMember`). There is no separate app email provider.
+- Do not add `NEON_AUTH_SMTP_*` env vars unless explicitly requested.
 
 ## Neon shared email + verification
 

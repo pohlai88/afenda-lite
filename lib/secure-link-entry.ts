@@ -1,50 +1,48 @@
 import "server-only";
 
-import type { Metadata } from "next";
-import { notFound, redirect } from "next/navigation";
-import { cache } from "react";
-import { PORTAL_NAME, portalCopy } from "@/lib/portal-copy";
-import {
-  publicLinkPageRobots,
-  resolvePublicLinkLandingHref,
-} from "@/lib/public-link-routing";
+/**
+ * S5 secure declaration link entry (`/f/[token]`).
+ *
+ * Resolves `survey_invite_tokens` only — never `surveys.slug` or `client_invitations`.
+ * Redirect-only: session dispatch lives in `public-link-routing.ts`.
+ *
+ * **Not** S6 legacy `/invite/[token]` (see `legacy-invite-entry.ts`).
+ *
+ * @see docs/architecture/slices/s5-share-access.md
+ */
+import { portalCopy } from "@/lib/portal-copy";
 import { secureLinkHref } from "@/lib/portal-routes";
+import {
+  buildPublicLinkMetadata,
+  createCachedPublicLinkSurveyLoader,
+  resolvePublicLinkReturnTo,
+  runPublicLinkRedirect,
+} from "@/lib/public-link-page";
 import { surveyInviteTokenParamSchema } from "@/lib/schemas/surveys";
 import { getSurveyByInviteToken } from "@/lib/surveys";
 
-export const loadSecureLinkSurvey = cache(async (rawToken: string) => {
-  const parsed = surveyInviteTokenParamSchema.safeParse(rawToken);
-  if (!parsed.success) {
-    return null;
-  }
+export const loadSecureLinkSurvey = createCachedPublicLinkSurveyLoader(
+  surveyInviteTokenParamSchema,
+  getSurveyByInviteToken,
+);
 
-  return getSurveyByInviteToken(parsed.data);
-});
-
-/** Doctrine alias (S5) — secure token resolves to survey via `survey_invite_tokens`. */
+/** Doctrine alias (S5) — name is historical; loads `survey_invite_tokens`, not S6 `client_invitations`. */
 export const loadAnonymousInviteLinkForSurvey = loadSecureLinkSurvey;
 
 export async function secureLinkPageMetadata({
   params,
 }: {
   params: Promise<{ token: string }>;
-}): Promise<Metadata> {
+}) {
   const { token } = await params;
-  const survey = await loadSecureLinkSurvey(token);
 
-  if (!survey) {
-    return {
-      title: `${PORTAL_NAME} — ${portalCopy.metadata.secureLink.title}`,
-      description: portalCopy.declarationPage.secureDescription,
-      robots: publicLinkPageRobots,
-    };
-  }
-
-  return {
-    title: `${PORTAL_NAME} — ${survey.title}`,
-    description: portalCopy.declarationPage.secureDescription,
-    robots: publicLinkPageRobots,
-  };
+  return buildPublicLinkMetadata({
+    rawValue: token,
+    loadSurvey: loadSecureLinkSurvey,
+    missingTitle: portalCopy.metadata.secureLink.title,
+    missingDescription: portalCopy.declarationPage.secureDescription,
+    surveyDescription: portalCopy.declarationPage.secureDescription,
+  });
 }
 
 /** Resolves a secure invite token and routes to the correct authenticated landing. */
@@ -54,19 +52,17 @@ export async function runSecureLinkPage({
   params: Promise<{ token: string }>;
 }): Promise<never> {
   const { token } = await params;
-  const survey = await loadSecureLinkSurvey(token);
 
-  if (!survey) {
-    notFound();
-  }
-
-  const parsed = surveyInviteTokenParamSchema.safeParse(token);
-  const returnTo =
-    parsed.success ? secureLinkHref(parsed.data) : secureLinkHref(token.trim());
-
-  redirect(
-    await resolvePublicLinkLandingHref(survey, {
-      returnTo,
-    }),
-  );
+  return runPublicLinkRedirect({
+    rawValue: token,
+    loadSurvey: loadSecureLinkSurvey,
+    resolveReturnTo: (survey) =>
+      resolvePublicLinkReturnTo(
+        token,
+        survey,
+        surveyInviteTokenParamSchema,
+        secureLinkHref,
+        (rawValue) => secureLinkHref(rawValue.trim()),
+      ),
+  });
 }

@@ -74,6 +74,16 @@ describe("resolvePublicLinkLandingHref", () => {
     );
   });
 
+  it("redirects unauthenticated users to sign-in with secure link returnTo", async () => {
+    getAuthSession.mockResolvedValue(null);
+
+    await expect(
+      resolvePublicLinkLandingHref(survey, { returnTo: "/f/secure-token-abc" }),
+    ).resolves.toBe(
+      "/auth/sign-in?reason=login-required&returnTo=%2Ff%2Fsecure-token-abc",
+    );
+  });
+
   it("redirects unauthenticated users to sign-in without returnTo", async () => {
     getAuthSession.mockResolvedValue(null);
 

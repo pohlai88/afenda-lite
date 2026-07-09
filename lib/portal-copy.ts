@@ -716,9 +716,10 @@ export const portalCopy = {
 
   share: {
     title: "Client access",
-    description: "Share the sign-in page and temporary password with invited clients.",
+    description:
+      "Share declaration links and direct clients to register under Client invitations.",
     clientAccessDescription:
-      "Register clients under Client invitations. When MailerSend is configured, access details are emailed automatically; otherwise copy the message below.",
+      "Register clients under Client invitations. When Neon Auth is configured, an organization invitation email with a join link is sent automatically; otherwise use the backup message below.",
     secureLinkLabel: "Secure declaration link",
     secureLinkHint:
       "Tokenized link that does not expose the declaration slug. Prefer for controlled distribution.",
@@ -734,7 +735,8 @@ export const portalCopy = {
     clientLoginLabel: "Client sign-in URL",
     inviteClientCta: "Register client",
     qrAlt: "QR code for client sign-in",
-    qrHint: "Scan to open the client sign-in page. Use the registered email and temporary password.",
+    qrHint:
+      "Scan to open the client sign-in page. New clients complete registration via the organization invitation email.",
   },
 
   clientAccess: {
@@ -747,23 +749,19 @@ export const portalCopy = {
     message: ({
       portalUrl,
       clientEmail,
-      temporaryPassword,
     }: {
       portalUrl: string;
       clientEmail: string;
-      temporaryPassword: string;
     }) =>
       [
         "Client Declaration Portal",
         "",
         `Sign in: ${portalUrl}`,
         `Email: ${clientEmail}`,
-        `Temporary password: ${temporaryPassword}`,
         "",
-        "First visit: complete onboarding, then open your assigned declaration.",
-        "Change your password after your first sign-in.",
+        "New clients: register under Client invitations — use the organization invitation email to set your password.",
+        "Returning clients: sign in, then open your assigned declaration.",
       ].join("\n"),
-    emailSubject: "Your client portal access",
   },
 
   invite: {
@@ -802,10 +800,10 @@ export const portalCopy = {
     eyebrow: ORG_EYEBROW,
     title: "Client registrations",
     description:
-      "Register clients with a temporary password and required declaration assignment. Access email sends automatically when MailerSend is configured.",
+      "Register clients with a required declaration assignment. Neon Auth sends an organization invitation email when configured.",
     recentTitle: "Registered clients",
     recentDescription:
-      "Portal accounts created by your team. Access email is sent on registration when MailerSend is active.",
+      "Portal registrations created by your team. Invitation email is sent on registration when Neon Auth is active.",
     assignmentsTitle: "Assignments",
     assignmentsDescription: "Declarations linked to client emails.",
     assignmentsEmpty: "No assignments yet.",
@@ -832,7 +830,7 @@ export const portalCopy = {
     removeRegistration: "Remove",
     removeRegistrationTitle: "Remove client registration?",
     removeRegistrationConfirm:
-      "Deletes this registration, assignments for this email, the client profile, and the Supabase login. This cannot be undone.",
+      "Deletes this registration, assignments for this email, the client profile, and the Neon Auth account. This cannot be undone.",
     removeRegistrationSubmit: "Remove client",
     removeRegistrationCancel: "Cancel",
     removeSuccess: "Client registration removed.",
@@ -858,14 +856,14 @@ export const portalCopy = {
   clientInvite: {
     eyebrow: "Registration",
     title: "Check your email",
-    description: "Use the access message from your organization to sign in.",
+    description: "Use the organization invitation email to create your account and join.",
     issueTitle: "Register client",
     issueDescription:
-      "Create a Supabase account with the shared temporary password and assign at least one declaration.",
+      "Creates the portal registration and declaration assignment. The client completes sign-up via Neon Auth after accepting the organization invitation.",
     issueDescriptionWithEmail:
-      "Creates the client account, assigns the declaration, and emails portal access from your MailerSend sender.",
+      "Creates the portal registration and assignment, then emails a Neon Auth organization invitation with a join link.",
     issueDescriptionWithoutEmail:
-      "Creates the client account and assignment. Copy the access message manually until MailerSend is configured.",
+      "Creates the portal registration and assignment. Configure NEON_AUTH_BASE_URL to send organization invitation emails automatically.",
     fullNameLabel: "Full name",
     fullNamePlaceholder: "Alex Morgan",
     fullNameHint: `Up to ${CLIENT_INVITE.fullNameMax} characters.`,
@@ -883,18 +881,18 @@ export const portalCopy = {
     assignRequired: "Select a declaration to assign.",
     noDeclarations: "Create a declaration before registering clients.",
     dueDateLabel: "Due date (optional)",
-    issued: "Client registered. Copy the access message below.",
-    issuedAndEmailed: "Client registered and access email sent.",
+    issued: "Client registered in the portal.",
+    issuedAndEmailed: "Client registered and organization invitation email sent.",
     issuedEmailFailed:
-      "Client registered, but the email could not be sent. Copy the access message below.",
+      "Client registered, but the invitation email could not be sent. Check Neon Auth configuration and retry.",
     emailNotConfigured:
-      "Access email is not configured. Copy the access message below after registration.",
-    backupAccessLabel: "Backup access message (if email did not arrive)",
-    provisionFailed: "Could not create the client account. Check Supabase configuration.",
+      "Neon Auth is not configured. Client registered without an invitation email.",
+    backupAccessLabel: "Backup access message (if invitation email did not arrive)",
+    provisionFailed: "Could not complete client registration. Check Neon Auth configuration.",
   },
 
   emailDelivery: {
-    enabledTitle: "Access email is active",
+    enabledTitle: "Invitation email is active",
     enabledDescription: ({
       fromName,
       fromEmail,
@@ -902,10 +900,10 @@ export const portalCopy = {
       fromName: string;
       fromEmail: string;
     }) =>
-      `New registrations email portal access automatically from ${fromName} <${fromEmail}>. You can still copy the message below as a backup.`,
-    disabledTitle: "Access email is not configured",
+      `New registrations send a Neon Auth organization invitation from ${fromName} <${fromEmail}>. Declaration share tab still provides a backup access message.`,
+    disabledTitle: "Invitation email is not configured",
     disabledDescription:
-      "Set MAILERSEND_API_KEY and MAILERSEND_FROM_EMAIL in Vercel to send access emails automatically. Until then, copy the access message after each registration.",
+      "Set NEON_AUTH_BASE_URL on this deployment (dev branch: allow localhost) to send organization invitation emails automatically when you register a client.",
   },
 
   clientOnboarding: {
@@ -1226,7 +1224,7 @@ export const portalCopy = {
     clientInvitations: {
       title: "Client registrations",
       description:
-        "Register clients with a temporary password and required declaration assignment.",
+        "Register clients with a required declaration assignment and Neon Auth organization invitation.",
     },
     clientProfile: {
       title: "Declarant profile",

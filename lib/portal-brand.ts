@@ -60,10 +60,10 @@ export const GUARDIAN_AUTH_ASSET_SET = {
  * Fade Owl experiment (Storybook fixture only).
  * Variants: `dual` (light ↔ night PNG) · `morpho` (dramatic iso).
  */
-export const FADE_OWL_ASSETS_LIGHT_PATH = "/assets/light-guardian.png";
-export const FADE_OWL_ASSETS_NIGHT_PATH = "/assets/night-guardian.png";
+export const FADE_OWL_ASSETS_LIGHT_PATH = "/fade-owl/light-guardian.png";
+export const FADE_OWL_ASSETS_NIGHT_PATH = "/fade-owl/night-guardian.png";
 /** Optional Vault Threshold emblem — fixture may omit overlay. */
-export const FADE_OWL_ASSETS_VAULT_THRESHOLD_PATH = "/assets/vault-threshold.png";
+export const FADE_OWL_ASSETS_VAULT_THRESHOLD_PATH = "/fade-owl/vault-threshold.png";
 
 /** Morpho variant — single dramatic iso (`guardian-dramatic-iso.png`). */
 export const FADE_OWL_GUARDIAN_OWL_PATH = GUARDIAN_DRAMATIC_OWL_CORE_PATH;

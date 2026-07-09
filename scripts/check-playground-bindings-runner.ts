@@ -124,18 +124,38 @@ if (!firstScreen) {
 } else {
   const indexSource = readFileSync(join(ROOT, "app/playground/page.tsx"), "utf8");
   const redirectsToFirstScreen =
-    indexSource.includes("playgroundScreens[0]") &&
-    indexSource.includes("playgroundScreenHref(firstScreen.id)");
+    indexSource.includes("runPlaygroundIndexPage") ||
+    (indexSource.includes("playgroundScreens[0]") &&
+      indexSource.includes("playgroundScreenHref(firstScreen.id)"));
   if (!redirectsToFirstScreen) {
     fail(
-      `/playground index should redirect to playgroundScreens[0] (${firstScreen.id}).`,
+      `/playground index should redirect via runPlaygroundIndexPage (${firstScreen.id}).`,
     );
   }
 }
 
+if (!existsSync(join(ROOT, "app/playground/hitl-review/page.tsx"))) {
+  fail("Missing app/playground/hitl-review/page.tsx");
+} else {
+  const hitlSource = readFileSync(
+    join(ROOT, "app/playground/hitl-review/page.tsx"),
+    "utf8",
+  );
+  if (!hitlSource.includes("runPlaygroundHitlReviewPage")) {
+    fail("app/playground/hitl-review/page.tsx must use runPlaygroundHitlReviewPage.");
+  }
+}
+
 const layoutSource = readFileSync(join(ROOT, "app/playground/layout.tsx"), "utf8");
-if (!layoutSource.includes("isPlaygroundEnabled()")) {
-  fail("app/playground/layout.tsx must gate on isPlaygroundEnabled().");
+const layoutHandlerSource = readFileSync(
+  join(ROOT, "lib/playground-layout.tsx"),
+  "utf8",
+);
+if (!layoutSource.includes("runPlaygroundLayout")) {
+  fail("app/playground/layout.tsx must use runPlaygroundLayout.");
+}
+if (!layoutHandlerSource.includes("isPlaygroundEnabled()")) {
+  fail("runPlaygroundLayout must gate on isPlaygroundEnabled().");
 }
 
 if (playgroundE2eFixtures.length !== playgroundScreens.length) {

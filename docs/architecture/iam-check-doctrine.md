@@ -133,7 +133,7 @@ These routes are scaffolding only. Product routes and mutations remain under `/`
 
 ### Server action → slice map
 
-Mutations and public entry points only. Session helpers (`requireAdminSession`, `requireClientSession`, `loadOpenLinkSurvey`, `loadAnonymousInviteLinkForSurvey`) are internal — not Zod targets.
+Mutations and public entry points only. Session helpers (`requireAdminSession`, `requireClientSession`, `loadOpenLinkSurvey`, `loadAnonymousInviteLinkForSurvey` — S5 `survey_invite_tokens`, not S6 `/invite`) are internal — not Zod targets.
 
 | Action file | Function | Slice |
 |-------------|----------|-------|

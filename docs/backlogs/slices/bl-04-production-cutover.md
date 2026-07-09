@@ -50,7 +50,7 @@ Production Neon Auth accepts redirects/CSRF only from `APP_URL`. Release owner s
 - [x] Live MCP: `allow_localhost: false`.
 - [x] Trusted origins include `APP_URL`.
 - [x] Manifest synced; audit items 1 and 6 pass.
-- [ ] Release owner sign-off recorded.
+- [ ] Release owner sign-off recorded — [post-deploy-verification.md](../post-deploy-verification.md#phase-4--program-closure-backlog-01).
 - [x] BL-09 local dev strategy documented.
 
 ---

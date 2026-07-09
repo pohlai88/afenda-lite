@@ -4,7 +4,7 @@
 **Priority:** P0  
 **Journeys:** J1  
 **Depends on:** BL-01  
-**Status:** Fix in repo — **deploy and verify on production**
+**Status:** Code complete — verify on production → [post-deploy-verification.md](../post-deploy-verification.md#bl-02--operator-client-invitation-email-j1)
 
 **Validation matrix:** [neon-auth-validation-matrix.md](../neon-auth-validation-matrix.md) (Server-side org invite section)
 
@@ -49,8 +49,7 @@ Operator issues invite → Neon Auth creates org invitation → email sent → a
 
 ## Do
 
-- Deploy fix before closing slice.
-- Verify on `https://iam-check.vercel.app` (trusted origin; localhost disabled on branch).
+- Verify on production per [post-deploy-verification.md](../post-deploy-verification.md#bl-02--operator-client-invitation-email-j1).
 - Use `/join?invitationId=…` in all client comms.
 - On failure, check audit for `neonAuthStatus` (HTTP code).
 
@@ -65,7 +64,8 @@ Operator issues invite → Neon Auth creates org invitation → email sent → a
 
 ## Definition of done
 
-- [ ] Fix deployed to production.
+Production verification only — checklist: [post-deploy-verification.md](../post-deploy-verification.md#bl-02--operator-client-invitation-email-j1).
+
 - [ ] Operator UI invite: `audit_events.invite.issued` → `emailSent: true`.
 - [ ] Recipient email received from `auth@mail.myneon.app`.
 - [ ] `neon_auth.invitation` row `pending` for recipient.

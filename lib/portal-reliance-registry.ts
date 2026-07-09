@@ -34,6 +34,7 @@ export const SURFACE_RELIANCE: ReadonlyArray<{
       { kind: "auth-operation", operationId: "auth:email-otp" },
       { kind: "auth-operation", operationId: "auth:organization/accept-invitation" },
       { kind: "domain-loader", domainId: "domain:client-invitation-entry" },
+      { kind: "domain-loader", domainId: "domain:auth" },
     ],
   },
   {
@@ -130,6 +131,8 @@ export const SURFACE_RELIANCE: ReadonlyArray<{
       { kind: "server-action", actionId: "action:createDraftSurveyAction" },
       { kind: "server-action", actionId: "action:deleteSurveyAction" },
       { kind: "domain-loader", domainId: "domain:operator-dashboard-page" },
+      { kind: "domain-loader", domainId: "domain:surveys" },
+      { kind: "domain-loader", domainId: "domain:clients" },
     ],
   },
   {
@@ -156,12 +159,15 @@ export const SURFACE_RELIANCE: ReadonlyArray<{
       { kind: "server-action", actionId: "action:deleteClientAssignmentAction" },
       { kind: "domain-loader", domainId: "domain:operator-clients-page" },
       { kind: "domain-loader", domainId: "domain:email" },
+      { kind: "domain-loader", domainId: "domain:surveys" },
+      { kind: "domain-loader", domainId: "domain:clients" },
     ],
   },
   {
     surfaceId: "admin-issue-invite",
     consumes: [
       { kind: "server-action", actionId: "action:issueClientInviteAction" },
+      { kind: "server-action", actionId: "action:requireAdminSession" },
       { kind: "auth-operation", operationId: "auth:organization/invite-member" },
     ],
   },
@@ -180,11 +186,17 @@ export const SURFACE_RELIANCE: ReadonlyArray<{
   },
   {
     surfaceId: "public-survey-link",
-    consumes: [{ kind: "domain-loader", domainId: "domain:open-link-entry" }],
+    consumes: [
+      { kind: "domain-loader", domainId: "domain:open-link-entry" },
+      { kind: "domain-loader", domainId: "domain:surveys" },
+    ],
   },
   {
     surfaceId: "public-secure-link",
-    consumes: [{ kind: "domain-loader", domainId: "domain:secure-link-entry" }],
+    consumes: [
+      { kind: "domain-loader", domainId: "domain:secure-link-entry" },
+      { kind: "domain-loader", domainId: "domain:surveys" },
+    ],
   },
   {
     surfaceId: "org-login",

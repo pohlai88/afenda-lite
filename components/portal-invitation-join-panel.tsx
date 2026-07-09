@@ -6,13 +6,12 @@ import { useSearchParams } from "next/navigation";
 import { PortalAuthNeonView } from "@/components/portal-auth-neon-view";
 import { PortalInvitationJoinSteps } from "@/components/portal-invitation-join-steps";
 import { Skeleton } from "@/components/ui/skeleton";
-import { authClient } from "@/lib/auth/client";
-import { resolveJoinInvitationAuthView } from "@/lib/client-invitation-join-auth";
+import type { JoinInvitationAuthView } from "@/lib/client-invitation-join-auth";
 import { CLIENT_ONBOARDING_HREF } from "@/lib/client-session";
 import { portalCopy } from "@/lib/portal-copy";
 import { authSignInHref, buildClientJoinHref } from "@/lib/portal-routes";
 
-function PortalInvitationJoinPanelSkeleton() {
+export function PortalInvitationJoinPanelSkeleton() {
   return (
     <div
       aria-busy="true"
@@ -26,10 +25,15 @@ function PortalInvitationJoinPanelSkeleton() {
   );
 }
 
-function PortalInvitationJoinPanelInner() {
+function PortalInvitationJoinPanelInner({
+  authView,
+  isAuthenticated,
+}: {
+  authView: JoinInvitationAuthView;
+  isAuthenticated: boolean;
+}) {
   const searchParams = useSearchParams();
   const invitationId = searchParams.get("invitationId")?.trim() ?? "";
-  const { data: session, isPending } = authClient.useSession();
   const { clientInvitationJoin } = portalCopy;
 
   if (!invitationId) {
@@ -43,18 +47,7 @@ function PortalInvitationJoinPanelInner() {
     );
   }
 
-  if (isPending) {
-    return <PortalInvitationJoinPanelSkeleton />;
-  }
-
   const joinHref = buildClientJoinHref(invitationId);
-  const isAuthenticated = Boolean(session?.session);
-  const emailVerified = Boolean(session?.user.emailVerified);
-  const authView = resolveJoinInvitationAuthView({
-    isPending,
-    isAuthenticated,
-    emailVerified,
-  });
   const panelTitle = clientInvitationJoin[authView.panelTitleKey];
   const panelDescription = clientInvitationJoin[authView.panelDescriptionKey];
   const redirectTo =
@@ -110,10 +103,19 @@ function PortalInvitationJoinPanelInner() {
   );
 }
 
-export function PortalInvitationJoinPanel() {
+export function PortalInvitationJoinPanel({
+  authView,
+  isAuthenticated = false,
+}: {
+  authView: JoinInvitationAuthView;
+  isAuthenticated?: boolean;
+}) {
   return (
     <Suspense fallback={<PortalInvitationJoinPanelSkeleton />}>
-      <PortalInvitationJoinPanelInner />
+      <PortalInvitationJoinPanelInner
+        authView={authView}
+        isAuthenticated={isAuthenticated}
+      />
     </Suspense>
   );
 }
