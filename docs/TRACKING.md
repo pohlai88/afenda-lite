@@ -35,7 +35,7 @@ Re-run after meaningful changes. CI runs the same on PR + `main`.
 | Production build | `npm run build` | Pass |
 | E2E smoke | `npm run test:e2e:smoke` | CI authority |
 | E2E journey | `npm run test:e2e:journey` | CI `main` job authority |
-| Production probe | `npm run verify:production` | Pass (2026-07-08) |
+| Production probe | `npm run verify:production` | Pass (2026-07-10) |
 
 Registry drift: `npm run check:reliance-mapping-drift` · `check:reliance-coverage` · `check:reliance-graph-drift`.
 
@@ -109,12 +109,11 @@ Master brief: [backlog-01-neon-auth-closure.md](./backlogs/backlog-01-neon-auth-
 
 | Gap | Owner | Evidence / next step |
 | --- | --- | --- |
-| Guardian viewport unit tests (4 failing) | Engineering | [remaining-development.md](./architecture/remaining-development.md) Lane 2 · `lib/guardian-auth-facade.viewport.test.ts` |
-| Post-deploy Phases 1–3 | Release owner | [post-deploy-verification.md](./backlogs/post-deploy-verification.md) |
-| S17 branch protection on `main` | Repo admin | GitHub Settings → Branches |
-| S17 Vercel liveness monitor | Ops | Dashboard → `/api/health/liveness` |
-| S1 operator login → dashboard (prod) | Engineering | `@journey` or manual after deploy |
-| CI journey green on `main` | Engineering | GitHub Actions `journey` job |
+| S17 post-deploy Phases 1–3 (manual) | Release owner | [post-deploy-verification.md](./backlogs/post-deploy-verification.md) · [s17-production-signoff.md](./runbooks/s17-production-signoff.md) |
+| S17 Vercel liveness monitor | Ops | [s17 runbook § monitor](./runbooks/s17-production-signoff.md#vercel-liveness-monitor-manual-setup) |
+| CI journey green on `main` | Engineering | Secrets synced 2026-07-10 — verify after push |
+| Guardian viewport unit tests (4 failing) | Engineering | `lib/guardian-auth-facade.viewport.test.ts` |
+| S1 operator login → dashboard (prod) | Engineering | Manual or `@journey` after CI green |
 
 ---
 

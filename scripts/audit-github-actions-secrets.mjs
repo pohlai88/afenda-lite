@@ -1,0 +1,64 @@
+/**
+ * Audit GitHub Actions secret *names* (no values) vs CI workflow requirements.
+ *
+ * Usage: npm run audit:github-actions-secrets
+ */
+import { spawnSync } from "node:child_process";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+import {
+  GITHUB_ACTIONS_CI_KEYS,
+  GITHUB_ACTIONS_STALE_KEYS,
+} from "./lib/github-actions-ci-keys.mjs";
+
+function ghJson(args) {
+  const result = spawnSync("gh", args, {
+    encoding: "utf8",
+    shell: false,
+    env: { ...process.env, GITHUB_TOKEN: undefined },
+  });
+  if (result.status !== 0) {
+    console.error(result.stderr || result.stdout);
+    process.exit(result.status ?? 1);
+  }
+  return JSON.parse(result.stdout);
+}
+
+function main() {
+  const raw = ghJson([
+    "api",
+    "repos/pohlai88/iam-check/actions/secrets",
+    "--jq",
+    ".secrets | map(.name)",
+  ]);
+  const presentSet = new Set(Array.isArray(raw) ? raw : []);
+  const missing = GITHUB_ACTIONS_CI_KEYS.filter((k) => !presentSet.has(k));
+  const stale = GITHUB_ACTIONS_STALE_KEYS.filter((k) => presentSet.has(k));
+
+  console.log("GitHub Actions secrets audit (iam-check)\n");
+  console.log(`Present (${presentSet.size}): ${[...presentSet].sort().join(", ") || "(none)"}`);
+  console.log(`Required for CI (${GITHUB_ACTIONS_CI_KEYS.length}): ${GITHUB_ACTIONS_CI_KEYS.join(", ")}\n`);
+
+  if (missing.length === 0) {
+    console.log("OK — all required CI secret names present.");
+  } else {
+    console.log(`MISSING (${missing.length}): ${missing.join(", ")}`);
+    console.log("Fix: npm run sync:github-actions-secrets");
+    console.log("Note: NEON_AUTH_* must match the Neon branch used by DATABASE_URL on GitHub.");
+  }
+
+  if (stale.length > 0) {
+    console.log(`\nSTALE (remove manually): ${stale.join(", ")}`);
+  }
+
+  process.exit(missing.length > 0 ? 1 : 0);
+}
+
+const isMain =
+  process.argv[1] &&
+  path.resolve(fileURLToPath(import.meta.url)) === path.resolve(process.argv[1]);
+
+if (isMain) {
+  main();
+}
