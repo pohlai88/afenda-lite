@@ -13,7 +13,7 @@
 | Phase | What happens | Verification |
 | --- | --- | --- |
 | 1 | Operator issues org invite → Neon email | `live-org-invite.mjs` / dashboard · `neon_auth.invitation` pending |
-| 2 | Client opens `/join?invitationId=<neon_auth.id>` | Sign-up shell · Guardian default |
+| 2 | Client opens `/join?invitationId=<neon_auth.id>` | Sign-up shell · Studio + Neon (`StudioInvitationJoinPage`) |
 | 3 | Client signs up with invited email | Session created |
 | 4 | Client verifies email (OTP) on `/join` | Required before accept · see [post-deploy Phase 2](../backlogs/post-deploy-verification.md#2a--join-ui-otp-step-on-join) |
 | 5 | Client accepts org invitation | status → `accepted` · `/client/onboarding` |
@@ -138,8 +138,8 @@ npm run audit:neon-auth-production
 
 | Concern | Location |
 | --- | --- |
-| Join auth state (sign-up → OTP → accept) | `lib/client-invitation-join-auth.ts`, `components/use-join-invitation-auth-view.ts` |
-| Join panel | `components/portal-invitation-join-panel.tsx` |
+| Join auth state (sign-up → OTP → accept) | `lib/client-invitation-join-auth.ts`, `features/auth/use-join-invitation-auth-view.ts` |
+| Join panel | `features/auth/invitation-join-panel.tsx` |
 | Operator invite email | `lib/email/send-client-onboarding-email.ts` → `lib/portal-organization.ts` |
 | Invite delivery status UI | `lib/email/client-email-delivery.ts`, `components/client-email-delivery-banner.tsx` |
 | Invite API + join URL | `scripts/live-org-invite.mjs` → `joinUrl`, `neonAuthInvitationId` |

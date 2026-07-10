@@ -1,17 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { Suspense } from "react";
-import { useSearchParams } from "next/navigation";
-import { PortalAuthNeonView } from "@/components/portal/portal-auth-neon-view";
-import { PortalInvitationJoinSteps } from "@/components/portal/portal-invitation-join-steps";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Skeleton } from "@/components-V2/platform-components/ui/skeleton";
+import { PortalAuthNeonView } from "@/features/auth/portal-auth-neon-view";
+import { InvitationJoinSteps } from "@/features/auth/invitation-join-steps";
 import type { JoinInvitationAuthView } from "@/lib/client-invitation-join-auth";
 import { CLIENT_ONBOARDING_HREF } from "@/lib/client-session";
 import { portalCopy } from "@/lib/copy/portal-copy";
 import { authSignInHref, buildClientJoinHref } from "@/lib/routing/portal-routes";
 
-export function PortalInvitationJoinPanelSkeleton() {
+export function InvitationJoinPanelSkeleton() {
   return (
     <div
       aria-busy="true"
@@ -25,18 +23,20 @@ export function PortalInvitationJoinPanelSkeleton() {
   );
 }
 
-function PortalInvitationJoinPanelInner({
+export function InvitationJoinPanel({
+  invitationId,
   authView,
-  isAuthenticated,
+  isAuthenticated = false,
 }: {
+  /** Server-resolved from `/join?invitationId=` — avoids useSearchParams CSR bailout. */
+  invitationId: string | null;
   authView: JoinInvitationAuthView;
-  isAuthenticated: boolean;
+  isAuthenticated?: boolean;
 }) {
-  const searchParams = useSearchParams();
-  const invitationId = searchParams.get("invitationId")?.trim() ?? "";
   const { clientInvitationJoin } = portalCopy;
+  const trimmedId = invitationId?.trim() ?? "";
 
-  if (!invitationId) {
+  if (!trimmedId) {
     return (
       <div
         className="rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive"
@@ -47,7 +47,7 @@ function PortalInvitationJoinPanelInner({
     );
   }
 
-  const joinHref = buildClientJoinHref(invitationId);
+  const joinHref = buildClientJoinHref(trimmedId);
   const panelTitle = clientInvitationJoin[authView.panelTitleKey];
   const panelDescription = clientInvitationJoin[authView.panelDescriptionKey];
   const redirectTo =
@@ -57,27 +57,26 @@ function PortalInvitationJoinPanelInner({
 
   return (
     <div className="flex w-full flex-col gap-4">
-      <PortalInvitationJoinSteps
+      <InvitationJoinSteps
         activeStep={authView.activeStep}
-        variant="compact"
         className="lg:hidden"
       />
 
-      <div className="space-y-1 text-center lg:text-right">
+      <div className="space-y-1 text-center sm:text-left">
         <h2
           id="client-invitation-heading"
-          className="font-heading text-base font-semibold tracking-tight text-balance sm:text-lg"
+          className="font-heading text-2xl font-semibold tracking-tight text-balance"
         >
           {panelTitle}
         </h2>
-        <p className="text-body text-muted-foreground text-pretty">{panelDescription}</p>
+        <p className="text-muted-foreground text-pretty">{panelDescription}</p>
         {authView.pathname === "sign-up" ? (
-          <p className="text-caption text-muted-foreground text-pretty">
+          <p className="text-sm text-muted-foreground text-pretty">
             {portalCopy.signUp.passwordRequirements}
           </p>
         ) : null}
         {authView.pathname === "email-otp" ? (
-          <p className="text-caption text-muted-foreground text-pretty">
+          <p className="text-sm text-muted-foreground text-pretty">
             {portalCopy.emailOtp.codeExpiryHint}
           </p>
         ) : null}
@@ -90,7 +89,7 @@ function PortalInvitationJoinPanelInner({
       />
 
       {!isAuthenticated ? (
-        <p className="text-center text-caption text-muted-foreground lg:text-right">
+        <p className="text-center text-sm text-muted-foreground sm:text-left">
           <Link
             href={authSignInHref({ returnTo: joinHref })}
             className="portal-auth-alt-link"
@@ -100,22 +99,5 @@ function PortalInvitationJoinPanelInner({
         </p>
       ) : null}
     </div>
-  );
-}
-
-export function PortalInvitationJoinPanel({
-  authView,
-  isAuthenticated = false,
-}: {
-  authView: JoinInvitationAuthView;
-  isAuthenticated?: boolean;
-}) {
-  return (
-    <Suspense fallback={<PortalInvitationJoinPanelSkeleton />}>
-      <PortalInvitationJoinPanelInner
-        authView={authView}
-        isAuthenticated={isAuthenticated}
-      />
-    </Suspense>
   );
 }

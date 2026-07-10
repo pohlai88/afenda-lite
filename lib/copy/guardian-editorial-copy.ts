@@ -68,24 +68,3 @@ export function resolveGuardianAuthCopyOverride(input: {
     day: { ...base.day, ...orgPoster },
   };
 }
-
-/** Join invitation editorial — maps clientInvitationJoin hero to Guardian poster. */
-export function resolveGuardianJoinCopyOverride(): Partial<
-  Record<GuardianMode, GuardianCopy>
-> {
-  const { clientInvitationJoin, product } = portalCopy;
-  const base = resolveGuardianEditorialCopy();
-
-  const joinPoster: GuardianCopy = {
-    variant: "sentence",
-    eyebrow: product.secureAccessEyebrow,
-    headline: clientInvitationJoin.heroTitle,
-    subheadline: clientInvitationJoin.heroDescription,
-    proofline: clientInvitationJoin.trustNotice,
-  };
-
-  return {
-    night: { ...base.night, ...joinPoster },
-    day: { ...base.day, ...joinPoster },
-  };
-}

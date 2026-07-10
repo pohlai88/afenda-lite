@@ -8,7 +8,6 @@ import {
   portalThemeFromGuardianMode,
   resolveGuardianAuthCopyOverride,
   resolveGuardianEditorialCopy,
-  resolveGuardianJoinCopyOverride,
 } from "@/lib/copy/guardian-editorial-copy";
 import { PORTAL_NAME } from "@/lib/copy/portal-name";
 import { portalCopy } from "@/lib/copy/portal-copy";
@@ -33,16 +32,6 @@ describe("guardian-editorial-copy", () => {
     expect(guardianModeFromPortalTheme("dark")).toBe("night");
     expect(portalThemeFromGuardianMode("night")).toBe("dark");
     expect(portalThemeFromGuardianMode("day")).toBe("light");
-  });
-
-  it("overrides poster copy for join invitation as sentence mode", () => {
-    const override = resolveGuardianJoinCopyOverride();
-
-    expect(override?.night?.variant).toBe("sentence");
-    expect(override?.night?.headline).toBe(portalCopy.clientInvitationJoin.heroTitle);
-    expect(override?.day?.subheadline).toBe(
-      portalCopy.clientInvitationJoin.heroDescription,
-    );
   });
 
   it("overrides poster copy for org operator sign-in as sentence mode", () => {

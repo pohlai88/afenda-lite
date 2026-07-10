@@ -58,6 +58,16 @@ export const portalCopy = {
           "We could not load account settings. Try again or return to sign in.",
         backLabel: "Back to sign in",
       },
+      join: {
+        description:
+          "We could not load the invitation join page. Try again, or reopen your invitation link.",
+        backLabel: "Join entry",
+      },
+      onboarding: {
+        description:
+          "We could not load the onboarding page. Try again, or sign out and reopen your invitation link.",
+        backLabel: "Onboarding",
+      },
     },
     globalBoundary: {
       title: "Application error",
@@ -322,6 +332,12 @@ export const portalCopy = {
     title: "Declaration management",
     description:
       "Create declarations, invite clients, share access links, and review submissions.",
+    detailUnavailable: {
+      title: "Declaration detail is paused",
+      description:
+        "You can create declarations and manage clients from the dashboard. The case detail, submissions review, and package tools are being rebuilt into AdminCN portal-views. Backend loaders and actions remain in place.",
+      backLabel: "Back to declarations",
+    },
     stats: {
       declarations: {
         title: "Declarations",
@@ -693,6 +709,7 @@ export const portalCopy = {
     heroTitle: "You're invited to declare.",
     heroDescription:
       "Your organization registered you for the Client Declaration Portal. Create your account with the same email they used, then accept the invitation.",
+    backLabel: "Back to home",
     panelCreateTitle: "Step 1 — Create your account",
     panelCreateDescription:
       "Sign up with the email address from your invitation. If you already have an account, sign in instead.",
@@ -1075,6 +1092,19 @@ export const portalCopy = {
     formPreviousStep: "Back",
     requiredError:
       "Complete all required identity, passport, entity, and contact fields and confirm the accuracy statement.",
+    unavailableTitle: "Declarant profile setup is paused",
+    unavailableDescription:
+      "You are signed in, but the onboarding wizard is being rebuilt. Your organization will notify you when profile setup is available again. Backend save contracts remain in place for the rebuild slice.",
+    unavailableSignOutLabel: "Sign out",
+  },
+
+  /** Shared copy for tombstoned `/client`, `/client/profile`, `/client/declare/*`. */
+  clientWorkspace: {
+    eyebrow: CLIENT_PORTAL_EYEBROW,
+    unavailableTitle: "Declaration workspace is paused",
+    unavailableDescription:
+      "You are signed in, but the client declaration workspace is being rebuilt. Assigned declarations and confirmation receipts will return when the rebuild slice ships. Submission and acknowledgement contracts remain in place.",
+    unavailableSignOutLabel: "Sign out",
   },
 
   clientProfile: {
@@ -1232,9 +1262,9 @@ export const portalCopy = {
         "Review the identity and entity details linked to your declaration submissions.",
     },
     clientOnboarding: {
-      title: "Establish your declarant identity",
+      title: "Declarant profile setup is paused",
       description:
-        "Confirm the legal entity and jurisdiction under which you attest before completing declarations.",
+        "You are signed in, but the onboarding wizard is being rebuilt. Profile setup will return with the rebuild slice.",
     },
     clientDeclare: {
       title: "Complete declaration",

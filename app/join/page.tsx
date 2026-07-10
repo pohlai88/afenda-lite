@@ -1,23 +1,18 @@
-import { PortalInvitationJoinPage } from "@/components/portal/portal-invitation-join-page";
+import { StudioInvitationJoinPage } from "@/features/auth";
 import {
   clientInvitationJoinMetadata,
   runClientInvitationJoinPage,
 } from "@/lib/entry/client-invitation-entry";
-import { isGuardianAuthShellEnabled } from "@/lib/auth/guardian-auth-shell";
 
 export const metadata = clientInvitationJoinMetadata;
 export const dynamic = "force-dynamic";
 
-/** Dedicated client invitation entry — Neon Auth UI sign-up, then accept invitation. */
+/** Canonical client invitation entry — Studio shell + Neon Auth UI. */
 export default async function ClientInvitationJoinPage({
   searchParams,
 }: {
   searchParams: Promise<{ invitationId?: string }>;
 }) {
-  await runClientInvitationJoinPage({ searchParams });
-  return (
-    <PortalInvitationJoinPage
-      useGuardianShell={isGuardianAuthShellEnabled()}
-    />
-  );
+  const { invitationId } = await runClientInvitationJoinPage({ searchParams });
+  return <StudioInvitationJoinPage invitationId={invitationId} />;
 }

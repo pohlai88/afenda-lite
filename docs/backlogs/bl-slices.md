@@ -83,8 +83,8 @@ Each section: problem, key files, verify anchor. Checkboxes and deploy steps liv
 | Requirement | Implementation |
 | --- | --- |
 | Canonical `/join?invitationId=` | `app/join/page.tsx`, `lib/client-invitation-entry.ts` |
-| Auth step machine | `lib/client-invitation-join-auth.ts`, `components/use-join-invitation-auth-view.ts` |
-| Join UI | `components/portal-invitation-join-page.tsx`, `portal-invitation-join-panel.tsx`, `guardian-invitation-join-page.tsx` |
+| Auth step machine | `lib/client-invitation-join-auth.ts`, `features/auth/use-join-invitation-auth-view.ts` |
+| Join UI | `features/auth/studio-invitation-join-page.tsx`, `features/auth/invitation-join-panel.tsx` |
 | Legacy redirect | `app/auth/[path]/page.tsx` → `/join` |
 
 **Spec:** [s6-client-identity.md](../architecture/slices/s6-client-identity.md). **Runbook:** [client-invitation-sign-in-journey.md](../runbooks/client-invitation-sign-in-journey.md).

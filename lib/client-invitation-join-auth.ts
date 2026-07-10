@@ -5,7 +5,7 @@ export type JoinInvitationAuthView =
   | { activeStep: 1; pathname: "email-otp"; panelTitleKey: "panelVerifyTitle"; panelDescriptionKey: "panelVerifyDescription" }
   | { activeStep: 2; pathname: "accept-invitation"; panelTitleKey: "panelAcceptTitle"; panelDescriptionKey: "panelAcceptDescription" };
 
-/** Trust notice SSOT for the join surface (Guardian poster + form header). */
+/** Trust notice SSOT for the `/join` Studio + Neon surface. */
 export function resolveJoinInvitationTrustNotice(
   authView: JoinInvitationAuthView,
 ): string {

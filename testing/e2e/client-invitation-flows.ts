@@ -91,32 +91,10 @@ export async function acceptOrganizationInvitation(page: Page) {
   await expect(page).toHaveURL(/\/client\/onboarding/, { timeout: 30_000 });
 }
 
-export async function completeClientOnboardingWizard(page: Page, fullName: string) {
-  const { clientOnboarding } = portalCopy;
-
-  await expect(
-    page.getByRole("heading", { name: clientOnboarding.title }),
-  ).toBeVisible({ timeout: 30_000 });
-
-  await page.getByLabel(/full legal name/i).fill(fullName);
-  await page.locator('select[name="nationality"]').selectOption("SG");
-  await page.locator('select[name="countryOfResidence"]').selectOption("SG");
-  await page.getByRole("button", { name: /^continue$/i }).click();
-
-  await page.locator('select[name="passportIssuingCountry"]').selectOption("SG");
-  await page.locator('input[name="passportNumber"]').fill("E1234567A");
-  await page.getByRole("button", { name: /^continue$/i }).click();
-
-  await page.locator('input[name="entityName"]').fill("E2E Test Entity Pte Ltd");
-  await page.locator('input[name="jurisdiction"]').fill("Singapore");
-  await page.getByRole("button", { name: /^continue$/i }).click();
-
-  await page.locator('input[name="phone"]').fill("+65 9123 4567");
-  await page.getByRole("checkbox").check();
-  await page.getByRole("button", { name: /save and continue/i }).click();
-
-  await expect(page).toHaveURL(/\/client(?:\/|$)/, { timeout: 30_000 });
-}
+export {
+  completeClientOnboardingWizard,
+  expectClientOnboardingUnavailable,
+} from "@/testing/e2e/onboarding-flows";
 
 export async function acknowledgeClientDashboard(page: Page) {
   const { clientDashboard } = portalCopy;
