@@ -7,7 +7,6 @@ import { GITHUB_ACTIONS_CI_KEYS } from "./lib/github-actions-ci-keys.mjs";
 const extra = [
   "APP_URL",
   "SHARED_ADMIN_NAME",
-  "NEON_AUTH_MANIFEST_PROFILE",
   "PLAYGROUND_SURVEY_SLUG",
   "PLAYGROUND_SURVEY_ID",
   "PLAYGROUND_ASSIGNMENT_ID",

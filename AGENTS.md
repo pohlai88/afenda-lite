@@ -2,7 +2,7 @@
 
 **Repository layout:** [docs/architecture/repo-layout.md](docs/architecture/repo-layout.md) — Root = bootstrap, L1 = concern, L2 = bounded context. Migration closed: [repo-migration-map.md](docs/architecture/repo-migration-map.md).
 
-## Hot Sales Phase 2A — operational lane (**closed**)
+## Hot Sales — Phase 2A closed · 2B–2D ADRs Accepted
 
 **Agent entry:** [docs/hot-sales/RUNTIME.md](docs/hot-sales/RUNTIME.md) · Index: [docs/hot-sales/README.md](docs/hot-sales/README.md)
 
@@ -11,9 +11,11 @@
 | Runtime SSOT | [docs/hot-sales/RUNTIME.md](docs/hot-sales/RUNTIME.md) |
 | Ops gates | [docs/hot-sales/ops/gate-register.md](docs/hot-sales/ops/gate-register.md) |
 | Checklists | [ops/rollout.md](docs/hot-sales/ops/rollout.md) · [ops/release-readiness.md](docs/hot-sales/ops/release-readiness.md) |
-| Product contract | [spec/phase-2a-prd.md](docs/hot-sales/spec/phase-2a-prd.md) |
+| Phase 2A contract | [spec/phase-2a-prd.md](docs/hot-sales/spec/phase-2a-prd.md) |
+| Phase 2B–2D ADRs | [adr/002](docs/hot-sales/adr/002-finance-deposit-pickup-ops.md) · [003](docs/hot-sales/adr/003-imports-notifications.md) · [004](docs/hot-sales/adr/004-erp-sync.md) |
+| 2B–2D slices | [spec/phase-2bcd-slices.md](docs/hot-sales/spec/phase-2bcd-slices.md) (**Proposed**) |
 
-**Production state:** tag `hot-sales-phase-2a` → `8e650ff`; `HOT_SALES_RBAC_ENABLED=true` on Vercel; DB branch `br-tiny-hill-ao82jp6f`. **Blocked without explicit approval:** 2B–2D, new RBAC/schema/UI expansion, Hot Sales commits mixed with unrelated refactors.
+**Production state:** tag `hot-sales-phase-2a` → `8e650ff`; `HOT_SALES_RBAC_ENABLED=true` on Vercel; DB branch `br-tiny-hill-ao82jp6f`. **2B–2D code blocked** until slice group Approved in phase-2bcd-slices + explicit program reopen. No Hot Sales commits mixed with unrelated refactors.
 
 ## Environment variables
 
@@ -35,6 +37,16 @@ Templates (committed): `env.config.example`, `env.secret.example`.
 3. Run `npm run dev`.
 
 `.env` is **generated** — do not edit it by hand.
+
+**Do not use `.env.local` for this repo.** Next.js loads `.env.local` after `.env` and overrides composed values. Vercel CLI (`vercel env pull`, `vercel integration add`) writes `.env.local` automatically — that reintroduces stale Supabase/SMTP keys and wrong `DATABASE_URL` for local Neon dev.
+
+| Command | Purpose |
+|---------|---------|
+| `npm run env:guard` | Fail if `.env.local` exists (lists key **names** only) |
+| `npm run env:guard:fix` | Move `.env.local` → `.env.local.vercel-backup` |
+| `npm run dev` | Runs `env:compose` + `env:guard:fix` before `next dev` |
+
+Optional ops keys (Checkly): add `CHECKLY_*` to `env.secret` only — never pull from Vercel into local files.
 
 **Runtime SSOT (Next.js server):** `lib/env/` — manifest in `manifest.ts` (single source for schema + Vercel/sync policy), Zod schema in `schema.ts`, startup validation in `server.ts` (via `instrumentation.ts`), typed accessors in `accessors.ts`. App code should read config through accessors or `getServerEnv()`, not scattered `process.env` reads. Scripts import compose policy from `scripts/lib/env-manifest.generated.mjs` (`npm run env:manifest:sync` after manifest edits). Pre-sync validation: `npm run validate:env-sync`.
 
@@ -69,6 +81,7 @@ After `sync:vercel`, redeploy: `vercel deploy --prod --yes`.
 ### Blocked commands (do not run)
 
 - **`vercel env pull`** — Vercel redacts secrets as empty strings on pull, which causes false audit mismatches and agent errors. Blocked by `scripts/vercel-env-guard.mjs`.
+- **`vercel integration add`** — auto-writes `.env.local`; run `npm run env:guard:fix` after any marketplace install.
 - Do not create scripts that pull Vercel env into local files.
 - Do not overwrite `env.config` / `env.secret` from Vercel.
 
@@ -134,28 +147,17 @@ Authority: [`.agents/skills/neon-postgres/references/neon-auth/portal-password-r
 
 ### Local development auth
 
-Production branch has `allow_localhost: false`. **Do not re-enable localhost on production.**
-
-**Strategy (Option A):** use a dedicated **dev** Neon branch per feature via the branch-first workflow. Allow localhost only on that dev branch.
-
-**SPEC-B / Guardian local (preferred wrapper):**
+**Single branch policy:** local dev uses the **production** Neon branch (`br-tiny-hill-ao82jp6f`) — no dev/CI branch switching.
 
 ```bash
-npm run hooks:install          # once — pre-push auto-repairs before GitHub push
-npm run dev:spec-b             # diagnose → repair → migrate → seed → next dev
-# stepwise: npm run bootstrap:spec-b:repair && npm run bootstrap:spec-b:check
+npm run env:neon-production   # align env.config, env.secret, .neon → production
+npm run env:compose
+npm run dev                   # http://localhost:3000
 ```
 
-Guidelines: [docs/runbooks/spec-b-local-preview-env.md](docs/runbooks/spec-b-local-preview-env.md). Generic `dev-*` flow: [docs/runbooks/local-dev-auth.md](docs/runbooks/local-dev-auth.md).
+Localhost is allowed on production Neon Auth for `http://localhost:3000` sign-in. Keep `APP_URL` as the production URL in `env.config` — server-side org invites still emit production links (see `lib/auth/neon-auth-request.ts`). For layout-only UI work without auth, use Storybook or `/playground` embed.
 
-1. `neon link` once per machine; then `neon checkout dev-<feature>` (creates or selects the branch; updates `.neon` only).
-2. Copy branch-scoped values into `env.secret` (`DATABASE_URL`) and `env.config` (`NEON_AUTH_BASE_URL`, `NEON_BRANCH_ID`) from Neon Console or `neon neon-auth status`.
-3. On the **checked-out dev branch only:** `neon neon-auth domain allow-localhost`.
-4. `npm run env:compose` → `npm run dev` → sign in at `http://localhost:3000`.
-
-Keep `APP_URL` as the production URL in `env.config` — server-side org invites still emit production links (see `lib/auth/neon-auth-request.ts`). For layout-only UI work without auth, use Storybook or `/playground` embed.
-
-Runbook: [docs/runbooks/local-dev-auth.md](docs/runbooks/local-dev-auth.md). Context: [docs/backlogs/bl-slices.md](docs/backlogs/bl-slices.md#bl-09).
+Runbook: [docs/runbooks/local-dev-auth.md](docs/runbooks/local-dev-auth.md).
 
 ---
 

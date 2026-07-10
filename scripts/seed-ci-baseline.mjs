@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 /**
- * Idempotent CI Neon branch baseline — migrate, admin, sandbox fixtures, preview client.
- * Ensures check:ui-sync and journey E2E prerequisites on the dedicated ci branch.
+ * Idempotent CI baseline — migrate, admin, sandbox fixtures on production branch.
  *
  * Usage: npm run seed:ci-baseline
  */

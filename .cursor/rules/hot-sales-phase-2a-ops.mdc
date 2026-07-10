@@ -29,7 +29,7 @@ Phase 2A **implementation + ops closed** (2026-07-10). Gates 1–7 complete. Pro
 
 - Production-blocking emergency fixes on frozen boundary (merge to `main`, redeploy)
 - Test-lane commits separate from unrelated refactors
-- Local dev with phase flags on (`dev-spec-b` branch)
+- Local dev uses production Neon branch (`npm run dev`)
 
 ## Test identity (do not conflate)
 
