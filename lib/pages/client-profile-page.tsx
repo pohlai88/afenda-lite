@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { requireClientSession } from "@/lib/auth/session";
 import { ClientDeclarantProfileView } from "@/components/client/client-declarant-profile-view";
-import { PortalCustomerShell } from "@/components/portal/portal-customer-shell";
+import { PortalWorkspacePage } from "@/components/portal/portal-application-shell";
 import { clientProfileBreadcrumbs } from "@/lib/client-breadcrumbs";
 import { getClientProfile } from "@/lib/domain/clients";
 import { CLIENT_ONBOARDING_HREF } from "@/lib/routing/portal-routes";
@@ -26,8 +26,7 @@ export async function runClientProfilePage() {
   }
 
   return (
-    <PortalCustomerShell
-      variant="app"
+    <PortalWorkspacePage
       eyebrow={copy.eyebrow}
       title={copy.title}
       description={copy.description}
@@ -37,6 +36,6 @@ export async function runClientProfilePage() {
         email={session.user.email}
         profile={profile}
       />
-    </PortalCustomerShell>
+    </PortalWorkspacePage>
   );
 }

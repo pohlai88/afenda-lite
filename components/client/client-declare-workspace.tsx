@@ -2,8 +2,8 @@ import Link from "next/link";
 import { ClientAssignmentDeadlineNotice } from "@/components/client/client-assignment-deadline-notice";
 import { ClientDeclarationForm } from "@/components/client/client-declaration-form";
 import { ConfirmationReceipt } from "@/components/confirmation-receipt";
-import { PortalCustomerShell } from "@/components/portal/portal-customer-shell";
 import { PortalEmptyState } from "@/components/portal/portal-empty-state";
+import { PortalWorkspacePage } from "@/components/portal/portal-application-shell";
 import { clientDeclarationBreadcrumbs } from "@/lib/client-breadcrumbs";
 import { CLIENT_HOME_HREF } from "@/lib/routing/portal-routes";
 import { portalCopy } from "@/lib/copy/portal-copy";
@@ -56,8 +56,7 @@ export function ClientDeclareWorkspace(props: ClientDeclareWorkspaceProps) {
 
   if (props.kind === "receipt") {
     return (
-      <PortalCustomerShell
-        variant="app"
+      <PortalWorkspacePage
         eyebrow={clientDashboard.eyebrow}
         title={props.title}
         description={clientDashboard.receiptDescription}
@@ -69,14 +68,13 @@ export function ClientDeclareWorkspace(props: ClientDeclareWorkspaceProps) {
           description={clientDashboard.receiptDescription}
           variant="inline"
         />
-      </PortalCustomerShell>
+      </PortalWorkspacePage>
     );
   }
 
   if (props.kind === "empty-questions") {
     return (
-      <PortalCustomerShell
-        variant="app"
+      <PortalWorkspacePage
         eyebrow={product.declarationEyebrow}
         title={props.title}
         description={declarationPage.questionsNotConfigured}
@@ -85,14 +83,13 @@ export function ClientDeclareWorkspace(props: ClientDeclareWorkspaceProps) {
         <PortalEmptyState>
           {declarationPage.questionsNotConfigured}
         </PortalEmptyState>
-      </PortalCustomerShell>
+      </PortalWorkspacePage>
     );
   }
 
   if (props.kind === "expired") {
     return (
-      <PortalCustomerShell
-        variant="app"
+      <PortalWorkspacePage
         eyebrow={product.declarationEyebrow}
         title={props.title}
         description={declarationPage.secureFormNote}
@@ -112,13 +109,12 @@ export function ClientDeclareWorkspace(props: ClientDeclareWorkspaceProps) {
             {clientDashboard.backToAssignments}
           </Button>
         </div>
-      </PortalCustomerShell>
+      </PortalWorkspacePage>
     );
   }
 
   return (
-    <PortalCustomerShell
-      variant="app"
+    <PortalWorkspacePage
       eyebrow={product.declarationEyebrow}
       title={props.title}
       description={declarationPage.secureFormNote}
@@ -139,6 +135,6 @@ export function ClientDeclareWorkspace(props: ClientDeclareWorkspaceProps) {
           initialDraftSavedAt={props.form.initialDraftSavedAt}
         />
       </div>
-    </PortalCustomerShell>
+    </PortalWorkspacePage>
   );
 }

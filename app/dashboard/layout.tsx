@@ -1,30 +1,11 @@
-import { requireAdminSession } from "@/lib/auth/session";
-import { DashboardShell } from "@/components/dashboard-shell";
-import { isPlaygroundEmbedRequest, isPlaygroundEnabled } from "@/lib/playground/playground";
-import { loadOperatorShellMembers } from "@/lib/operator-shell-members";
+import { requireAdminSession } from '@/lib/auth/session'
+import { AdminCnShell } from '@/components-V2/platform-components/AdminCnShell'
 
 export default async function DashboardLayout({
   children,
 }: {
-  children: React.ReactNode;
+  children: React.ReactNode
 }) {
-  await requireAdminSession();
-
-  if (await isPlaygroundEmbedRequest()) {
-    return children;
-  }
-
-  const { operatorMember, teams, showPreviewClient } =
-    await loadOperatorShellMembers();
-
-  return (
-    <DashboardShell
-      operatorMember={operatorMember}
-      dashboardTeams={teams}
-      showPreviewClient={showPreviewClient}
-      showPlayground={isPlaygroundEnabled()}
-    >
-      {children}
-    </DashboardShell>
-  );
+  await requireAdminSession()
+  return <AdminCnShell>{children}</AdminCnShell>
 }

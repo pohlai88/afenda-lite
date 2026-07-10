@@ -63,19 +63,19 @@ function assertDashboardNavUsesContract() {
   }
 }
 
-function assertAppSidebarUsesContract() {
-  const sidebar = readFileSync(
-    join(ROOT, "components", "app-sidebar.tsx"),
+function assertShellAdaptersUseContract() {
+  const adapters = readFileSync(
+    join(ROOT, "components", "portal", "portal-application-shell", "application-shell-05-adapters.tsx"),
     "utf8",
   );
-  if (!sidebar.includes("getOrgOperatorSidebarItems")) {
+  if (!adapters.includes("getOrgOperatorSidebarItems")) {
     throw new Error(
-      "components/app-sidebar.tsx must use getOrgOperatorSidebarItems().",
+      "components/portal/portal-application-shell/application-shell-05-adapters.tsx must use getOrgOperatorSidebarItems().",
     );
   }
-  if (sidebar.includes("NavMain")) {
+  if (!adapters.includes("getClientNavItems")) {
     throw new Error(
-      "components/app-sidebar.tsx must not use NavMain — use flat org sidebar items only.",
+      "components/portal/portal-application-shell/application-shell-05-adapters.tsx must use getClientNavItems().",
     );
   }
 }
@@ -113,7 +113,7 @@ function main() {
   assertForbiddenAliases(routes);
   assertClientNavUsesContract();
   assertDashboardNavUsesContract();
-  assertAppSidebarUsesContract();
+  assertShellAdaptersUseContract();
 
   for (const route of routes) {
     assertPageExists(route);

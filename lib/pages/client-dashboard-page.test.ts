@@ -17,8 +17,8 @@ vi.mock("@/components/client/client-dashboard-context", () => ({
 vi.mock("@/components/client/client-dashboard-summary", () => ({
   ClientDashboardSummary: () => null,
 }));
-vi.mock("@/components/portal/portal-customer-shell", () => ({
-  PortalCustomerShell: ({ children }: { children: React.ReactNode }) => children,
+vi.mock("@/components/portal/portal-application-shell", () => ({
+  PortalWorkspacePage: ({ children }: { children: React.ReactNode }) => children,
 }));
 vi.mock("@/components/portal/portal-trust-notice", () => ({
   PortalTrustNotice: () => null,

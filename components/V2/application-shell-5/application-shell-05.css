@@ -1,0 +1,222 @@
+/**
+ * Application Shell 05 — scoped design tokens + Tailwind v4 variants.
+ * Authority: tailwind-design-system (semantic tokens, .dark overrides on component scope).
+ */
+
+@theme inline {
+  --color-app-shell-canvas: var(--app-shell-canvas);
+  --color-app-shell-hero: var(--app-shell-hero);
+}
+
+@custom-variant data-panel-open {
+  &:where([data-panel-open]:not([data-panel-open="false"])) {
+    @slot;
+  }
+}
+
+@custom-variant group-data-open {
+  &:is(:where(.group\/collapsible)[data-open]:not([data-open="false"]) *) {
+    @slot;
+  }
+}
+
+/* ── Light (Studio default) ── */
+.application-shell-05 {
+  --app-shell-canvas: var(--muted);
+  --app-shell-hero: var(--primary);
+  --app-shell-hero-height: 26.25rem;
+  --app-shell-hero-gradient: linear-gradient(
+    180deg,
+    var(--app-shell-hero) 0%,
+    color-mix(in oklch, var(--app-shell-hero) 72%, var(--app-shell-canvas)) 55%,
+    var(--app-shell-canvas) 100%
+  );
+  /* Dark floating sidebar on light canvas (Studio) */
+  --sidebar: oklch(0.208 0.04 265.8);
+  --sidebar-foreground: oklch(0.964 0.01 248.1);
+  --sidebar-primary: oklch(0.546 0.215 262.9);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.279 0.037 260);
+  --sidebar-accent-foreground: oklch(0.964 0.01 248.1);
+  --sidebar-border: oklch(0.372 0.039 257.3);
+  --sidebar-ring: oklch(0.546 0.215 262.9);
+  position: relative;
+  background-color: var(--app-shell-canvas);
+}
+
+.application-shell-05::before {
+  content: "";
+  position: fixed;
+  inset-inline: 0;
+  top: 0;
+  z-index: 0;
+  height: var(--app-shell-hero-height);
+  pointer-events: none;
+  background: var(--app-shell-hero-gradient);
+}
+
+/* ── Dark: light-blue canvas gradient (shell-specific; not portal chrome) ── */
+.dark .application-shell-05 {
+  --app-shell-canvas: oklch(0.9 0.042 256);
+  --app-shell-hero: oklch(0.52 0.12 254);
+  --app-shell-hero-gradient: linear-gradient(
+    180deg,
+    oklch(0.56 0.13 254) 0%,
+    oklch(0.62 0.11 252) 32%,
+    color-mix(in oklch, oklch(0.78 0.07 250) 45%, var(--app-shell-canvas)) 68%,
+    var(--app-shell-canvas) 100%
+  );
+  /* White floating card sidebar on dark canvas (Studio) */
+  --sidebar: oklch(1 0 0);
+  --sidebar-foreground: oklch(0.208 0.04 265.8);
+  --sidebar-primary: oklch(0.379 0.138 265.5);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.947 0.011 256.7);
+  --sidebar-accent-foreground: oklch(0.208 0.04 265.8);
+  --sidebar-border: oklch(0.869 0.02 252.9);
+  --sidebar-ring: oklch(0.379 0.138 265.5);
+  background: linear-gradient(
+    165deg,
+    oklch(0.97 0.018 248) 0%,
+    oklch(0.94 0.032 252) 38%,
+    oklch(0.9 0.042 256) 72%,
+    oklch(0.88 0.038 258) 100%
+  );
+}
+
+/* Nav chevron rotation (Base UI data-panel-open on trigger) */
+.application-shell-05 [data-sidebar="menu-button"][data-panel-open] svg.lucide-chevron-right {
+  rotate: 90deg;
+}
+
+/* Collapsed sidebar — logo + footer avatar (Studio icon rail) */
+.application-shell-05 [data-collapsible="icon"] [data-slot="sidebar-header"] [data-sidebar="menu-button"] {
+  justify-content: center;
+  gap: 0;
+  padding: 0;
+}
+
+.application-shell-05 [data-collapsible="icon"] [data-slot="sidebar-header"] [data-sidebar="menu-button"] > span {
+  display: none;
+}
+
+.application-shell-05 [data-collapsible="icon"] [data-slot="sidebar-header"] [data-sidebar="menu-button"] > svg {
+  width: 2rem;
+  height: 2rem;
+}
+
+.application-shell-05 [data-collapsible="icon"] [data-slot="sidebar-footer"] [data-sidebar="menu-button"] {
+  justify-content: center;
+  gap: 0;
+  padding: 0;
+  background: transparent;
+}
+
+.application-shell-05 [data-collapsible="icon"] [data-slot="sidebar-footer"] [data-sidebar="menu-button"] > div,
+.application-shell-05 [data-collapsible="icon"] [data-slot="sidebar-footer"] [data-sidebar="menu-button"] > svg {
+  display: none;
+}
+
+.application-shell-05 [data-collapsible="icon"] [data-slot="sidebar-footer"] [data-slot="avatar"] {
+  border-radius: 9999px;
+}
+
+/* Typography — UI sans only (Studio); no heading serif in shell chrome */
+.application-shell-05,
+.application-shell-05 [data-sidebar="sidebar"],
+.application-shell-05 [data-slot="app-shell-hero"] {
+  font-family: var(--font-sans);
+}
+
+.application-shell-05 [data-sidebar="group-label"] {
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.25;
+}
+
+.application-shell-05 [data-sidebar="menu-button"] {
+  font-size: 0.875rem;
+  font-weight: 400;
+  line-height: 1.25;
+}
+
+.application-shell-05 [data-sidebar="menu-sub-button"] {
+  font-size: 0.875rem;
+  font-weight: 400;
+}
+
+/* Hero application header — user greeting + breadcrumb trail */
+.application-shell-05 [data-slot="app-shell-hero"] [data-app-greeting] {
+  font-size: 1.125rem;
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--primary-foreground);
+}
+
+.application-shell-05 [data-slot="app-shell-hero"] [data-slot="breadcrumb-list"] {
+  font-size: 0.875rem;
+  font-weight: 400;
+  line-height: 1.25;
+  color: color-mix(in oklch, var(--primary-foreground) 55%, transparent);
+}
+
+.application-shell-05 [data-slot="app-shell-hero"] [data-slot="breadcrumb-link"] {
+  color: inherit;
+}
+
+.application-shell-05 [data-slot="app-shell-hero"] [data-slot="breadcrumb-link"]:hover {
+  color: var(--primary-foreground);
+}
+
+.application-shell-05 [data-slot="app-shell-hero"] [data-slot="breadcrumb-page"] {
+  font-weight: 400;
+  color: var(--primary-foreground);
+}
+
+.application-shell-05 [data-slot="app-shell-hero"] [data-slot="breadcrumb-separator"] svg {
+  color: color-mix(in oklch, var(--primary-foreground) 45%, transparent);
+}
+
+/* Hero icon cluster: borderless ghost controls (Studio — no icon box lines) */
+.application-shell-05 [data-slot="app-shell-hero"] [data-icon-cluster] :is(
+  button,
+  [data-slot="button"],
+  [data-slot="dropdown-menu-trigger"],
+  [data-slot="sheet-trigger"]
+) {
+  border: none !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  color: inherit;
+}
+
+.application-shell-05 [data-slot="app-shell-hero"] [data-icon-cluster] :is(
+  button,
+  [data-slot="button"],
+  [data-slot="dropdown-menu-trigger"],
+  [data-slot="sheet-trigger"]
+):hover,
+.application-shell-05 [data-slot="app-shell-hero"] [data-icon-cluster] :is(
+  button,
+  [data-slot="button"],
+  [data-slot="dropdown-menu-trigger"],
+  [data-slot="sheet-trigger"]
+)[aria-expanded="true"] {
+  border: none !important;
+  background-color: color-mix(in oklch, var(--primary-foreground) 10%, transparent) !important;
+  color: inherit;
+}
+
+.application-shell-05 [data-slot="app-shell-hero"] [data-icon-cluster] :is(
+  button,
+  [data-slot="button"],
+  [data-slot="dropdown-menu-trigger"],
+  [data-slot="sheet-trigger"]
+) svg {
+  stroke-width: 2;
+}
+
+/* Sub-nav trail — card-surface border in dark theme */
+.dark .application-shell-05 [data-sidebar="menu-sub"] {
+  border-color: var(--sidebar-border);
+}

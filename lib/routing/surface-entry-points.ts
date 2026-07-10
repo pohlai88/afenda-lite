@@ -201,7 +201,11 @@ export const SURFACE_ENTRY_POINTS: Readonly<
     files: [
       "app/dashboard/layout.tsx",
       "lib/operator-shell-members.ts",
-      "components/app-sidebar.tsx",
+      "components/portal/portal-application-shell/index.ts",
+      "components/portal/portal-application-shell/application-shell-05-adapters.tsx",
+      "components/portal/portal-application-shell/portal-shell-footer.tsx",
+      "components/V2/application-shell-5/application-shell-05-footer.tsx",
+      "components/V2/application-shell-5/application-shell-05-breadcrumb.tsx",
       "components/team-switcher.tsx",
     ],
   },

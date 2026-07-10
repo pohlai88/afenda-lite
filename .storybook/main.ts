@@ -9,6 +9,8 @@ const nextImageMock = path.resolve(dirname, "./mocks/next-image.tsx");
 const serverOnlyMock = path.resolve(dirname, "./mocks/server-only.ts");
 const dbMock = path.resolve(dirname, "./mocks/db.ts");
 const pgMock = path.resolve(dirname, "./mocks/pg.ts");
+const adminActionsMock = path.resolve(dirname, "./mocks/app-actions-admin.ts");
+const nextNavigationMock = path.resolve(dirname, "./mocks/next-navigation.ts");
 
 const config: StorybookConfig = {
   stories: ["../stories/**/*.stories.@(ts|tsx)"],
@@ -28,6 +30,9 @@ const config: StorybookConfig = {
     viteConfig.resolve.alias = [
       // Specific mocks must precede the broad `@` alias.
       { find: "server-only", replacement: serverOnlyMock },
+      { find: /^@\/app\/actions\/admin(?:\.ts)?$/, replacement: adminActionsMock },
+      { find: /[/\\]app[/\\]actions[/\\]admin(?:\.ts)?$/, replacement: adminActionsMock },
+      { find: /^next\/navigation$/, replacement: nextNavigationMock },
       { find: /^@\/lib\/db(?:\.ts)?$/, replacement: dbMock },
       { find: /[/\\]lib[/\\]db(?:\.ts)?$/, replacement: dbMock },
       { find: "pg", replacement: pgMock },
@@ -37,6 +42,9 @@ const config: StorybookConfig = {
           find !== "@" &&
           find !== "server-only" &&
           find !== "pg" &&
+          find !== "next/navigation" &&
+          !find.includes("app/actions/admin") &&
+          !find.includes("app\\actions\\admin") &&
           !find.includes("lib/db") &&
           !find.includes("lib\\db")
         );

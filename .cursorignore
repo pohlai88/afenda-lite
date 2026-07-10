@@ -1,0 +1,15 @@
+node_modules/
+.next/
+.next-ui/
+.next-workflow/
+.turbo/
+coverage/
+test-results/
+playwright-report/
+storybook-static/
+out/
+dist/
+build/
+.artifacts/
+*.tsbuildinfo
+_reference/

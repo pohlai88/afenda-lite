@@ -1,6 +1,13 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { getEvaluationRow } from "@/lib/governance/ui-decision-matrix";
+import { ApplicationShell05Page } from "@/components/V2/application-shell-5";
 import { ComparisonGrid, ScoreAnnotation } from "./evaluation-primitives";
+import {
+  ApplicationShell05Placeholder,
+  applicationShell05DemoHeader,
+  applicationShell05DemoUser,
+  buildDemoSidebarConfig,
+} from "./application-shell-05.fixtures";
 
 const row = getEvaluationRow("shell-dashboard")!;
 
@@ -17,18 +24,14 @@ function CurrentDashboardShell() {
 
 function DashboardShell05Mock() {
   return (
-    <div className="flex min-h-[400px] rounded-lg border">
-      <aside className="w-56 border-r bg-card p-4 text-sm">
-        <p className="font-medium">dashboard-shell-05</p>
-        <p className="mt-2 text-xs text-muted-foreground">
-          Breadcrumb header · collapsible sidebar
-        </p>
-      </aside>
-      <main className="flex-1 space-y-3 p-4">
-        <div className="text-xs text-muted-foreground">Breadcrumb / header</div>
-        <div className="rounded border p-4">Tabbed detail region</div>
-      </main>
-    </div>
+    <ApplicationShell05Page
+      sidebarConfig={buildDemoSidebarConfig()}
+      profileUser={applicationShell05DemoUser}
+      header={applicationShell05DemoHeader}
+      showStudioChrome
+    >
+      <ApplicationShell05Placeholder />
+    </ApplicationShell05Page>
   );
 }
 

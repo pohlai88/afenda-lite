@@ -2,8 +2,7 @@ import "server-only";
 
 import { notFound } from "next/navigation";
 import { requireAdminSession } from "@/lib/auth/session";
-import { DashboardShell } from "@/components/dashboard-shell";
-import { PlaygroundSidebar } from "@/components/playground-sidebar";
+import { PortalApplicationShell } from "@/components/portal/portal-application-shell";
 import { isPlaygroundEnabled, playgroundNav } from "@/lib/playground/playground";
 import { loadOperatorShellMembers } from "@/lib/operator-shell-members";
 
@@ -23,20 +22,14 @@ export async function runPlaygroundLayout({
     await loadOperatorShellMembers();
 
   return (
-    <DashboardShell
-      operatorMember={operatorMember}
-      dashboardTeams={teams}
+    <PortalApplicationShell
+      navVariant="developer"
+      member={operatorMember}
+      teams={teams}
       showPreviewClient={showPreviewClient}
-      showPlayground={false}
-      sidebar={
-        <PlaygroundSidebar
-          adminScreens={playgroundNav.admin}
-          clientScreens={playgroundNav.client}
-          dynamicScreens={playgroundNav.dynamic}
-        />
-      }
+      developerScreens={playgroundNav}
     >
       {children}
-    </DashboardShell>
+    </PortalApplicationShell>
   );
 }

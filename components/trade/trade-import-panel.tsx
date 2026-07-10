@@ -11,6 +11,7 @@ import {
 } from "@/app/actions/trade";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { getTradeActionError } from "@/lib/domain/trade/trade-action-result";
 import type { HotSalesImportType } from "@/lib/domain/trade/import-types";
 import type { TradeLocale } from "@/lib/i18n/trade";
 import { tradeHref } from "@/lib/i18n/trade";
@@ -144,7 +145,7 @@ export function TradeImportPanel({
               startTransition(async () => {
                 const result = await getImportTemplateAction(locale, importType);
                 if ("error" in result) {
-                  setError(result.error ?? "unknown_error");
+                  setError(result.error);
                   return;
                 }
                 downloadBase64File(result.dataBase64, result.filename);
@@ -165,8 +166,8 @@ export function TradeImportPanel({
             formData.set("importType", importType);
             startTransition(async () => {
               const result = await uploadImportDryRunAction(locale, eventId, formData);
-              if ("error" in result) {
-                setError(result.error ?? "unknown_error");
+              if (!result || !("ok" in result) || result.ok !== true) {
+                setError(getTradeActionError(result) ?? "Import dry-run failed");
                 setDryRun(null);
                 return;
               }
@@ -248,8 +249,9 @@ export function TradeImportPanel({
                     eventId,
                     dryRun.batchId,
                   );
-                  if ("error" in result) {
-                    setError(result.error ?? "unknown_error");
+                  const err = getTradeActionError(result);
+                  if (err) {
+                    setError(err);
                     return;
                   }
                   setDryRun(null);
@@ -271,8 +273,9 @@ export function TradeImportPanel({
                     eventId,
                     dryRun.batchId,
                   );
-                  if ("error" in result) {
-                    setError(result.error ?? "unknown_error");
+                  const err = getTradeActionError(result);
+                  if (err) {
+                    setError(err);
                     return;
                   }
                   setDryRun(null);

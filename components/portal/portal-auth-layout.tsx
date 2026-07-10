@@ -50,7 +50,7 @@ export function PortalAuthLayout({
   const theme = resolveAtmosphereTheme(resolvedTheme);
 
   return (
-    <>
+    <div className="auth-surface min-h-dvh">
       <a href="#neon-auth-view" className="portal-skip-link">
         Skip to sign in
       </a>
@@ -94,6 +94,6 @@ export function PortalAuthLayout({
           </PortalAccessSlot>
         }
       />
-    </>
+    </div>
   );
 }

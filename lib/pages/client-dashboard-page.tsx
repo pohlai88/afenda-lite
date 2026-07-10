@@ -6,7 +6,7 @@ import { ClientDashboardAcknowledgement } from "@/components/client/client-dashb
 import { ClientDashboardAssignments } from "@/components/client/client-dashboard-assignments";
 import { ClientDashboardContext } from "@/components/client/client-dashboard-context";
 import { ClientDashboardSummary } from "@/components/client/client-dashboard-summary";
-import { PortalCustomerShell } from "@/components/portal/portal-customer-shell";
+import { PortalWorkspacePage } from "@/components/portal/portal-application-shell";
 import { PortalTrustNotice } from "@/components/portal/portal-trust-notice";
 import { buildClientDashboardView } from "@/lib/client-dashboard.presenter";
 import { getClientProfile, listClientAssignments } from "@/lib/domain/clients";
@@ -29,8 +29,7 @@ export async function runClientDashboardPage() {
   const view = buildClientDashboardView({ assignments, profile });
 
   return (
-    <PortalCustomerShell
-      variant="app"
+    <PortalWorkspacePage
       eyebrow={clientDashboard.eyebrow}
       title={clientDashboard.title}
       description={clientDashboard.description}
@@ -60,6 +59,6 @@ export async function runClientDashboardPage() {
           </aside>
         </div>
       </div>
-    </PortalCustomerShell>
+    </PortalWorkspacePage>
   );
 }

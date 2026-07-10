@@ -1,5 +1,6 @@
 import type { Preview } from "@storybook/react";
 import "../app/globals.css";
+import "./fonts.css";
 import "../components/portal-atmosphere/styles/portal-atmosphere.storybook-experiments.css";
 import { withPortalTheme } from "./decorators";
 // Guard for any dependency that reads `process` in the browser bundle.

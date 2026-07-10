@@ -1,9 +1,10 @@
 import type { ReactNode } from "react";
 import {
-  PortalPageHeader,
-  type PortalBreadcrumb,
-} from "@/components/portal/portal-page-header";
+  PortalShellHeader,
+  toShellBreadcrumbs,
+} from "@/components/portal/portal-application-shell";
 import { PortalEyebrow } from "@/components/portal/portal-eyebrow";
+import type { PortalBreadcrumb } from "@/components/portal/portal-breadcrumb-list";
 import { isPlaygroundEmbedRequest } from "@/lib/playground/playground";
 
 async function DashboardPageContent({
@@ -44,17 +45,22 @@ async function DashboardPageContent({
       <a href="#portal-main" className="portal-skip-link">
         Skip to main content
       </a>
-      <PortalPageHeader breadcrumbs={breadcrumbs} actions={actions} sticky />
+      <PortalShellHeader breadcrumbs={toShellBreadcrumbs(breadcrumbs)} />
       <main
         id="portal-main"
         className="v-stack mx-auto w-full min-w-0 flex-1 gap-6 overflow-x-clip p-4 md:p-6 lg:max-w-5xl"
       >
-        <header className="space-y-1">
-          <PortalEyebrow className="mb-2">{eyebrow}</PortalEyebrow>
-          <h1 className="portal-page-title">{title}</h1>
-          {description ? (
-            <p className="portal-page-description mt-1">{description}</p>
-          ) : null}
+        <header className="space-y-3">
+          <PortalEyebrow>{eyebrow}</PortalEyebrow>
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="space-y-1">
+              <h1 className="portal-page-title">{title}</h1>
+              {description ? (
+                <p className="portal-page-description">{description}</p>
+              ) : null}
+            </div>
+            {actions ? <div className="shrink-0">{actions}</div> : null}
+          </div>
         </header>
         {children}
       </main>
@@ -128,10 +134,7 @@ export function DashboardPageSkeleton({
 
   return (
     <>
-      <a href="#portal-main" className="portal-skip-link">
-        Skip to main content
-      </a>
-      <PortalPageHeader breadcrumbs={breadcrumbs} showSidebarTrigger={false} />
+      <PortalShellHeader breadcrumbs={toShellBreadcrumbs(breadcrumbs)} />
       <main
         id="portal-main"
         className="v-stack mx-auto w-full min-w-0 flex-1 gap-6 overflow-x-clip p-4 md:p-6 lg:max-w-5xl"

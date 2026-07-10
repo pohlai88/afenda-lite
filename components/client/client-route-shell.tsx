@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import { usePathname } from "next/navigation";
-import { ClientShell } from "@/components/client/client-shell";
+import { PortalApplicationShell } from "@/components/portal/portal-application-shell";
 import { clientRouteUsesSidebar } from "@/lib/client-nav";
 import type { PortalMember } from "@/lib/portal-member-types";
 
@@ -19,8 +19,12 @@ export function ClientRouteShell({
   const useSidebar = !embed && clientRouteUsesSidebar(pathname);
 
   if (!useSidebar) {
-    return children;
+    return <>{children}</>;
   }
 
-  return <ClientShell member={member}>{children}</ClientShell>;
+  return (
+    <PortalApplicationShell navVariant="orgUser" member={member} embed={embed}>
+      {children}
+    </PortalApplicationShell>
+  );
 }

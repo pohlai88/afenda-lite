@@ -3,7 +3,7 @@ import "server-only";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { ClientOnboardingWizard } from "@/components/client/client-onboarding-wizard";
-import { PortalCustomerShell } from "@/components/portal/portal-customer-shell";
+import { PortalPageIntro } from "@/components/portal/portal-page-intro";
 import { PortalTrustNotice } from "@/components/portal/portal-trust-notice";
 import { requireClientSession } from "@/lib/auth/session";
 import { loadClientOnboardingPageData } from "@/lib/client-onboarding.server";
@@ -29,16 +29,16 @@ export async function runClientOnboardingPage() {
   }
 
   return (
-    <PortalCustomerShell
-      variant="app"
-      eyebrow={clientOnboarding.eyebrow}
-      title={clientOnboarding.title}
-      description={clientOnboarding.description}
-    >
+    <div className="v-stack mx-auto w-full min-w-0 flex-1 gap-6 p-4 md:max-w-3xl md:p-6">
+      <PortalPageIntro
+        eyebrow={clientOnboarding.eyebrow}
+        title={clientOnboarding.title}
+        description={clientOnboarding.description}
+      />
       <div className="v-stack gap-6">
         <ClientOnboardingWizard email={email} defaults={formDefaults} />
         <PortalTrustNotice />
       </div>
-    </PortalCustomerShell>
+    </div>
   );
 }
