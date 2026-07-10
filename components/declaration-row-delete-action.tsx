@@ -36,8 +36,10 @@ export function DeclarationRowDeleteAction({ surveyId }: { surveyId: string }) {
           const formData = new FormData();
           formData.set("id", surveyId);
           startTransition(async () => {
-            await deleteSurveyAction(formData);
-            router.refresh();
+            const result = await deleteSurveyAction(formData);
+            if (result && "success" in result && result.success) {
+              router.refresh();
+            }
           });
         }}
       />
