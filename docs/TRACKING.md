@@ -128,8 +128,8 @@ Master brief: [backlog-01-neon-auth-closure.md](./backlogs/backlog-01-neon-auth-
 | --- | --- |
 | Join route | `app/join/page.tsx` |
 | Join entry / redirects | `lib/client-invitation-entry.ts` |
-| Auth step machine | `lib/client-invitation-join-auth.ts`, `components/use-join-invitation-auth-view.ts` |
-| Join UI | `components/portal-invitation-join-page.tsx`, `portal-invitation-join-panel.tsx`, `guardian-invitation-join-page.tsx` |
+| Auth step machine | `lib/client-invitation-join-auth.ts`, `features/auth/use-join-invitation-auth-view.ts` |
+| Join UI | `features/auth/studio-invitation-join-page.tsx`, `features/auth/invitation-join-panel.tsx` |
 | Org invite 401 fix | `lib/auth/neon-auth-request.ts` |
 | Operator invite email | `lib/email/send-client-onboarding-email.ts`, `lib/email/client-email-delivery.ts` |
 | Preview session | `app/actions/admin.ts` |

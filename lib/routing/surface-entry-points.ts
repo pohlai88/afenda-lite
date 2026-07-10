@@ -18,42 +18,67 @@ export const SURFACE_ENTRY_POINTS: Readonly<
   "client-join": {
     files: [
       "app/join/page.tsx",
-      "lib/entry/client-invitation-entry.ts",
-      "components/portal/portal-invitation-join-page.tsx",
-      "components/guardian-invitation-join-page.tsx",
-      "components/portal/portal-invitation-join-panel.tsx",
-      "components/use-join-invitation-auth-view.ts",
+      "features/auth/studio-invitation-join-page.tsx",
+      "features/auth/invitation-join-panel.tsx",
+      "features/auth/invitation-join-steps.tsx",
+      "features/auth/use-join-invitation-auth-view.ts",
       "lib/client-invitation-join-auth.ts",
+      "lib/entry/client-invitation-entry.ts",
     ],
     authPathnames: ["sign-up", "email-otp", "accept-invitation"],
   },
   "auth-sign-in": {
-    files: ["app/auth/[path]/page.tsx", "lib/auth/auth-page-trust.ts"],
+    files: [
+      "app/auth/[path]/page.tsx",
+      "features/auth/studio-auth-login-page.tsx",
+      "features/auth/studio-auth-shell.tsx",
+      "lib/auth/auth-page-trust.ts",
+    ],
     authPathnames: ["sign-in"],
     authPageOnly: true,
   },
   "auth-sign-up": {
-    files: ["app/auth/[path]/page.tsx", "lib/auth/auth-page-trust.ts"],
+    files: [
+      "app/auth/[path]/page.tsx",
+      "features/auth/studio-auth-login-page.tsx",
+      "lib/auth/auth-page-trust.ts",
+    ],
     authPathnames: ["sign-up"],
     authPageOnly: true,
   },
   "auth-email-otp": {
-    files: ["app/auth/[path]/page.tsx", "lib/auth/auth-page-trust.ts"],
+    files: [
+      "app/auth/[path]/page.tsx",
+      "features/auth/studio-auth-login-page.tsx",
+      "lib/auth/auth-page-trust.ts",
+    ],
     authPathnames: ["email-otp"],
     authPageOnly: true,
   },
   "auth-forgot-password": {
-    files: ["app/auth/[path]/page.tsx", "lib/auth/auth-page-trust.ts"],
+    files: [
+      "app/auth/[path]/page.tsx",
+      "features/auth/studio-auth-login-page.tsx",
+      "lib/auth/auth-page-trust.ts",
+    ],
     authPathnames: ["forgot-password"],
     authPageOnly: true,
   },
   "auth-reset-password": {
-    files: ["app/auth/[path]/page.tsx", "lib/auth/auth-page-trust.ts"],
+    files: [
+      "app/auth/[path]/page.tsx",
+      "features/auth/studio-auth-login-page.tsx",
+      "lib/auth/auth-page-trust.ts",
+    ],
     authPathnames: ["reset-password"],
     authPageOnly: true,
   },
   "auth-accept-invitation": {
-    files: ["app/auth/[path]/page.tsx", "lib/entry/client-invitation-entry.ts"],
+    files: [
+      "app/auth/[path]/page.tsx",
+      "features/auth/studio-auth-login-page.tsx",
+      "lib/entry/client-invitation-entry.ts",
+    ],
     authPathnames: ["accept-invitation"],
   },
   "org-login": {
@@ -73,6 +98,8 @@ export const SURFACE_ENTRY_POINTS: Readonly<
   "client-home-redirect": {
     files: [
       "app/page.tsx",
+      "features/landing/lynx-landing-page.tsx",
+      "features/landing/lynx-landing.css",
       "lib/entry/client-sign-in-entry.ts",
       "lib/entry/client-invitation-entry.ts",
       "lib/routing/portal-routes.ts",
@@ -82,7 +109,6 @@ export const SURFACE_ENTRY_POINTS: Readonly<
     files: [
       "app/client/(gate)/preview-unavailable/page.tsx",
       "lib/pages/client-preview-unavailable-page.tsx",
-      "components/client/client-preview-unavailable-view.tsx",
       "lib/preview-client.ts",
     ],
   },
@@ -90,43 +116,34 @@ export const SURFACE_ENTRY_POINTS: Readonly<
     files: [
       "app/client/(workspace)/onboarding/page.tsx",
       "lib/pages/client-onboarding-page.tsx",
-      "components/client/client-onboarding-wizard.tsx",
-      "components/client/client-onboarding-form.tsx",
-      "lib/client-onboarding.server.ts",
-      "lib/server-actions/form-data.ts",
+      "lib/pages/client-workspace-unavailable.tsx",
     ],
   },
   "client-profile": {
     files: [
       "app/client/(workspace)/profile/page.tsx",
       "lib/pages/client-profile-page.tsx",
-      "components/client/client-declarant-profile-view.tsx",
+      "lib/pages/client-workspace-unavailable.tsx",
     ],
   },
   "client-dashboard": {
     files: [
       "app/client/(workspace)/page.tsx",
       "lib/pages/client-dashboard-page.tsx",
-      "components/client/client-dashboard-acknowledgement.tsx",
-      "components/client/client-dashboard-assignments.tsx",
-      "components/client/client-dashboard-summary.tsx",
+      "lib/pages/client-workspace-unavailable.tsx",
     ],
   },
   "client-acknowledgement": {
-    files: ["components/client/client-dashboard-acknowledgement.tsx"],
+    files: [
+      "lib/pages/client-dashboard-page.tsx",
+      "lib/pages/client-workspace-unavailable.tsx",
+    ],
   },
   "client-declare": {
     files: [
       "app/client/(workspace)/declare/[id]/page.tsx",
       "lib/pages/client-declare-page.tsx",
-      "lib/pages/client-declare-page.logic.ts",
-      "components/client/client-declare-workspace.tsx",
-      "components/client/client-declaration-form.tsx",
-      "components/declaration-form.tsx",
-      "app/api/client/declaration-draft/route.ts",
-      "lib/api/client-declaration-draft-route.ts",
-      "lib/api/client-declaration-draft-route.logic.ts",
-      "lib/server-actions/register-evidence-form.ts",
+      "lib/pages/client-workspace-unavailable.tsx",
     ],
   },
   "admin-dashboard": {
@@ -135,8 +152,9 @@ export const SURFACE_ENTRY_POINTS: Readonly<
       "app/dashboard/loading.tsx",
       "lib/pages/operator-dashboard-page.ts",
       "lib/pages/operator-dashboard-types.ts",
-      "components/operator/operator-dashboard-page-view.tsx",
-      "components/operator/org-declarations-table.tsx",
+      "components-V2/platform-views/portal-views/operator-declarations-dashboard.tsx",
+      "components-V2/platform-views/portal-views/portal-declarations-table.tsx",
+      "components-V2/platform-views/portal-views/portal-create-declaration-button.tsx",
     ],
   },
   "admin-declaration-detail": {
@@ -145,11 +163,15 @@ export const SURFACE_ENTRY_POINTS: Readonly<
       "app/dashboard/[id]/loading.tsx",
       "lib/pages/operator-declaration-detail.tsx",
       "lib/pages/operator-declaration-detail.logic.ts",
-      "components/operator/operator-declaration-detail-view.tsx",
+      "components-V2/platform-views/portal-views/operator-declaration-detail.tsx",
+      "components-V2/platform-views/portal-views/portal-declaration-submissions-table.tsx",
+      "components-V2/platform-views/portal-views/portal-access-share-panel.tsx",
       "components/declaration-manage-form.tsx",
       "components/declaration-share-panel.tsx",
-      "components/client/client-access-share-panel.tsx",
-      "components/operator/org-declaration-submissions-table.tsx",
+      "components/declaration-danger-zone.tsx",
+      "components/declaration-delete-button.tsx",
+      "components/secure-link-rotate-button.tsx",
+      "components/submission-answers.tsx",
     ],
   },
   "admin-clients": {
@@ -160,9 +182,10 @@ export const SURFACE_ENTRY_POINTS: Readonly<
       "lib/pages/operator-clients-types.ts",
       "lib/email/client-email-delivery.ts",
       "lib/email/send-client-onboarding-email.ts",
-      "components/operator/operator-clients-page-view.tsx",
-      "components/client/client-email-delivery-banner.tsx",
-      "components/operator/org-client-tables.tsx",
+      "components-V2/platform-views/portal-views/operator-clients-list.tsx",
+      "components-V2/platform-views/portal-views/portal-client-tables.tsx",
+      "components-V2/platform-views/portal-views/portal-client-delete-buttons.tsx",
+      "components-V2/platform-views/portal-views/portal-invite-client-link.tsx",
       "components/issue-client-invite-form.tsx",
     ],
   },
@@ -174,14 +197,15 @@ export const SURFACE_ENTRY_POINTS: Readonly<
   },
   "admin-create-declaration": {
     files: [
+      "components-V2/platform-views/portal-views/portal-create-declaration-button.tsx",
       "components/declaration-create-button.tsx",
-      "components/operator/org-create-declaration-link.tsx",
     ],
   },
   "admin-access-share": {
     files: [
       "components/declaration-share-panel.tsx",
       "components/secure-link-rotate-button.tsx",
+      "components-V2/platform-views/portal-views/portal-access-share-panel.tsx",
       "lib/domain/declaration-share-links.ts",
     ],
   },
@@ -200,19 +224,15 @@ export const SURFACE_ENTRY_POINTS: Readonly<
   "shell-dashboard": {
     files: [
       "app/dashboard/layout.tsx",
-      "lib/operator-shell-members.ts",
-      "components/portal/portal-application-shell/index.ts",
-      "components/portal/portal-application-shell/application-shell-05-adapters.tsx",
-      "components/portal/portal-application-shell/portal-shell-footer.tsx",
-      "components/V2/application-shell-5/application-shell-05-footer.tsx",
-      "components/V2/application-shell-5/application-shell-05-breadcrumb.tsx",
-      "components/team-switcher.tsx",
+      "components-V2/platform-components/AdminCnShell.tsx",
+      "components-V2/platform-components/layout/PagesLayout.tsx",
+      "components-V2/platform-config/navConfig.tsx",
+      "components-V2/platform-config/themeConfig.ts",
     ],
   },
   "client-preview-banner": {
     files: [
       "app/client/(workspace)/layout.tsx",
-      "lib/client-workspace-layout.tsx",
       "components/portal/portal-preview-banner.tsx",
     ],
   },
@@ -280,12 +300,7 @@ export const LIB_IMPORT_DOMAIN_MAP: ReadonlyArray<{
   { prefix: "@/lib/operator-shell-members", domainId: "domain:preview-client" },
   { prefix: "@/lib/routing/portal-session-routing", domainId: "domain:auth" },
   { prefix: "@/lib/entry/client-sign-in-entry", domainId: "domain:auth" },
-  { prefix: "@/lib/pages/client-dashboard-page", domainId: "domain:clients" },
-  { prefix: "@/lib/pages/client-onboarding-page", domainId: "domain:client-onboarding" },
-  { prefix: "@/lib/pages/client-profile-page", domainId: "domain:clients" },
-  { prefix: "@/lib/pages/client-declare-page", domainId: "domain:clients" },
   { prefix: "@/lib/pages/client-declare-page.logic", domainId: "domain:clients" },
-  { prefix: "@/lib/client-workspace-layout", domainId: "domain:preview-client" },
   { prefix: "@/lib/domain/survey-submission", domainId: "domain:surveys" },
   { prefix: "@/lib/delete-client-auth-user", domainId: "domain:auth" },
 ];

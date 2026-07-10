@@ -2,7 +2,7 @@
 
 | Field | Value |
 |-------|-------|
-| **Status** | shipped |
+| **Status** | shipped (join live; onboarding wizard tombstoned — unavailable stub 2026-07-10) |
 | **Sequence** | 7 |
 | **Depends on** | S0, S1 |
 | **Feeds into** | S7 |
@@ -19,21 +19,24 @@ Provision client Neon Auth users via operator invitation and onboarding.
 ## Owned files
 
 - `app/join/page.tsx` — canonical org invitation entry (`/join?invitationId=…`)
-- `lib/client-invitation-entry.ts`, `lib/client-invitation-join-auth.ts`
-- `components/portal-invitation-join-page.tsx`, `components/portal-invitation-join-panel.tsx`, `components/guardian-invitation-join-page.tsx`, `components/use-join-invitation-auth-view.ts`
+- `app/join/loading.tsx`, `app/join/error.tsx`
+- `lib/entry/client-invitation-entry.ts`, `lib/client-invitation-join-auth.ts`
+- `features/auth/studio-invitation-join-page.tsx`, `features/auth/invitation-join-panel.tsx`, `features/auth/invitation-join-steps.tsx`, `features/auth/use-join-invitation-auth-view.ts`
+- Storybook-only join chrome: `components/portal/portal-invitation-join-brand-panel.tsx`, `components/portal/portal-invitation-join-steps.tsx` (compact delegates to features)
+- `lib/auth/bootstrap-client-invite.ts` — post-auth invitation + profile linking
 - `app/invite/[token]/page.tsx` — legacy redirect to client sign-in
-- `lib/legacy-invite-entry.ts`
-- `lib/client-sign-in-entry.ts` — reason codes + session dispatch
-- `lib/client-onboarding-page.tsx` — onboarding page handler
-- `lib/client-profile-page.tsx` — profile page handler
+- `lib/entry/legacy-invite-entry.ts`
+- `lib/entry/client-sign-in-entry.ts` — reason codes + session dispatch
+- `lib/pages/client-onboarding-page.tsx` — onboarding page handler
+- `lib/pages/client-profile-page.tsx` — profile page handler
 - `app/client/(workspace)/onboarding/page.tsx`, `app/client/(workspace)/profile/page.tsx`
 - `app/actions/client.ts` — `saveClientOnboardingAction`, `issueClientInviteAction`, session helpers
-- `lib/clients.ts`, `lib/client-onboarding.ts`, `lib/client-onboarding.server.ts`
-- `components/client-onboarding-wizard.tsx`, `components/client-onboarding-form.tsx`, `components/client-onboarding-context.tsx`, `components/client-onboarding-progress.tsx`
+- `lib/domain/clients.ts`, `lib/client-onboarding.ts`, `lib/client-onboarding.server.ts`
+- Client workspace UI — tombstoned under `components/client/` until a dedicated rebuild slice; `/client/onboarding` renders unavailable stub via `lib/pages/client-onboarding-page.tsx` (no redirect loop)
 - `app/dashboard/clients/page.tsx`, `app/dashboard/clients/loading.tsx`
 - `lib/operator-clients-page.ts`, `components/operator-clients-page-view.tsx`
 - `lib/email/client-email-delivery.ts`, `lib/email/send-client-onboarding-email.ts` — Neon Auth org invitation (not MailerSend)
-- `e2e/client-onboarding.spec.ts`
+- `e2e/client-onboarding.spec.ts`, `e2e/client-invitation-journey.spec.ts`
 
 ## Auth model (Neon Auth)
 

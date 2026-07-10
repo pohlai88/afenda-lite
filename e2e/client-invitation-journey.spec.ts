@@ -1,13 +1,11 @@
-import { test } from "@/testing/e2e/playwright-base";
+import { test, expect } from "@/testing/e2e/playwright-base";
 import {
   acceptOrganizationInvitation,
-  acknowledgeClientDashboard,
-  completeClientOnboardingWizard,
-  openFirstAssignedDeclaration,
   requireClientDefaultPassword,
   signUpOnJoinPage,
   verifyJoinEmailForE2e,
 } from "@/testing/e2e/client-invitation-flows";
+import { portalCopy } from "@/lib/copy/portal-copy";
 import { createE2eClientEmail } from "@/testing/e2e/credentials";
 import { runNodeScriptJson } from "@/testing/e2e/run-node-script";
 
@@ -37,7 +35,7 @@ function issueNeonOrgInvite(email: string, fullName: string) {
 test.describe("Client invitation join journey @journey", () => {
   test.setTimeout(120_000);
 
-  test("invite → join → accept → onboarding → declaration workspace", async ({
+  test("invite → join → accept → onboarding unavailable (wizard rebuild deferred)", async ({
     page,
   }) => {
     const email = createE2eClientEmail("invite-journey");
@@ -48,8 +46,12 @@ test.describe("Client invitation join journey @journey", () => {
     await signUpOnJoinPage(page, { ...journey, password });
     await verifyJoinEmailForE2e(page, journey.email);
     await acceptOrganizationInvitation(page);
-    await completeClientOnboardingWizard(page, fullName);
-    await acknowledgeClientDashboard(page);
-    await openFirstAssignedDeclaration(page);
+
+    await expect(page).toHaveURL(/\/client\/onboarding/, { timeout: 30_000 });
+    await expect(
+      page.getByRole("heading", {
+        name: portalCopy.clientOnboarding.unavailableTitle,
+      }),
+    ).toBeVisible();
   });
 });

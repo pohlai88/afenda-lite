@@ -98,7 +98,7 @@ Depends on **BL-02** (working invite email).
 
 ### 2a — Join UI (OTP step on `/join`)
 
-Code routes unverified users to embedded **`email-otp`** before **`accept-invitation`** (`lib/client-invitation-join-auth.ts`, `components/use-join-invitation-auth-view.ts`).
+Code routes unverified users to embedded **`email-otp`** before **`accept-invitation`** (`lib/client-invitation-join-auth.ts`, `features/auth/use-join-invitation-auth-view.ts`).
 
 | Step | Action | Pass criteria |
 | --- | --- | --- |

@@ -60,41 +60,41 @@ export type UiEvaluationRow = {
 /** Master registry — 41 active surfaces (orphan auth components removed 2026-07). */
 export const UI_SURFACE_REGISTRY: UiSurfaceMeta[] = [
   // Auth & account (11)
-  { surfaceId: "auth-sign-in", domain: "auth", route: "/auth/sign-in", currentComponent: "GuardianAuthLoginPage + PortalAuthNeonView" },
-  { surfaceId: "auth-sign-up", domain: "auth", route: "/auth/sign-up", currentComponent: "GuardianAuthLoginPage + PortalAuthNeonView" },
-  { surfaceId: "auth-forgot-password", domain: "auth", route: "/auth/forgot-password", currentComponent: "GuardianAuthLoginPage + PortalAuthNeonView" },
-  { surfaceId: "auth-reset-password", domain: "auth", route: "/auth/reset-password", currentComponent: "GuardianAuthLoginPage + PortalAuthNeonView" },
-  { surfaceId: "auth-sign-out", domain: "auth", route: "/auth/sign-out", currentComponent: "PortalNeonAuthView" },
-  { surfaceId: "auth-email-otp", domain: "auth", route: "/auth/email-otp", currentComponent: "GuardianAuthLoginPage + PortalAuthNeonView" },
-  { surfaceId: "auth-magic-link", domain: "auth", route: "/auth/magic-link", currentComponent: "GuardianAuthLoginPage + PortalAuthNeonView" },
-  { surfaceId: "auth-accept-invitation", domain: "auth", route: "/auth/accept-invitation", currentComponent: "GuardianAuthLoginPage + PortalAuthNeonView (redirects to /join when invitationId present)" },
+  { surfaceId: "auth-sign-in", domain: "auth", route: "/auth/sign-in", currentComponent: "StudioAuthLoginPage + PortalAuthNeonView" },
+  { surfaceId: "auth-sign-up", domain: "auth", route: "/auth/sign-up", currentComponent: "StudioAuthLoginPage + PortalAuthNeonView" },
+  { surfaceId: "auth-forgot-password", domain: "auth", route: "/auth/forgot-password", currentComponent: "StudioAuthLoginPage + PortalAuthNeonView" },
+  { surfaceId: "auth-reset-password", domain: "auth", route: "/auth/reset-password", currentComponent: "StudioAuthLoginPage + PortalAuthNeonView" },
+  { surfaceId: "auth-sign-out", domain: "auth", route: "/auth/sign-out", currentComponent: "PortalAuthNeonView" },
+  { surfaceId: "auth-email-otp", domain: "auth", route: "/auth/email-otp", currentComponent: "StudioAuthLoginPage + PortalAuthNeonView" },
+  { surfaceId: "auth-magic-link", domain: "auth", route: "/auth/magic-link", currentComponent: "StudioAuthLoginPage + PortalAuthNeonView" },
+  { surfaceId: "auth-accept-invitation", domain: "auth", route: "/auth/accept-invitation", currentComponent: "StudioAuthLoginPage + PortalAuthNeonView (redirects to /join when invitationId present)" },
   { surfaceId: "org-login", domain: "auth", route: "/org/login", currentComponent: "runOrgSignInEntryPage → /auth/sign-in?from=org" },
   { surfaceId: "account-settings", domain: "auth", route: "/account/settings", currentComponent: "PortalAccountNeonView" },
   { surfaceId: "account-security", domain: "auth", route: "/account/security", currentComponent: "PortalAccountNeonView" },
   // Client portal (11)
-  { surfaceId: "client-dashboard", domain: "client", route: "/client", currentComponent: "PortalCustomerShell + inline cards" },
-  { surfaceId: "client-onboarding", domain: "client", route: "/client/onboarding", currentComponent: "PortalFormSection" },
-  { surfaceId: "client-profile", domain: "client", route: "/client/profile", currentComponent: "ClientDeclarantProfileView" },
-  { surfaceId: "client-declare", domain: "client", route: "/client/declare/[id]", currentComponent: "Declaration form (inline)" },
-  { surfaceId: "client-declare-receipt", domain: "client", route: "/client/declare/[id] (submitted)", currentComponent: "Inline receipt state" },
-  { surfaceId: "client-declare-empty", domain: "client", route: "/client/declare/[id] (no data)", currentComponent: "Inline empty state" },
-  { surfaceId: "client-acknowledgement", domain: "client", route: "/client", currentComponent: "ClientDashboardAcknowledgement" },
+  { surfaceId: "client-dashboard", domain: "client", route: "/client", currentComponent: "Workspace unavailable (product UI tombstoned)" },
+  { surfaceId: "client-onboarding", domain: "client", route: "/client/onboarding", currentComponent: "Onboarding unavailable (wizard tombstoned)" },
+  { surfaceId: "client-profile", domain: "client", route: "/client/profile", currentComponent: "Workspace unavailable (product UI tombstoned)" },
+  { surfaceId: "client-declare", domain: "client", route: "/client/declare/[id]", currentComponent: "Workspace unavailable (product UI tombstoned); gate logic retained" },
+  { surfaceId: "client-declare-receipt", domain: "client", route: "/client/declare/[id] (submitted)", currentComponent: "Deferred with declare rebuild (logic retained)" },
+  { surfaceId: "client-declare-empty", domain: "client", route: "/client/declare/[id] (no data)", currentComponent: "Deferred with declare rebuild (logic retained)" },
+  { surfaceId: "client-acknowledgement", domain: "client", route: "/client", currentComponent: "Deferred with dashboard rebuild (acknowledgeClientPortalAction retained)" },
   { surfaceId: "client-login", domain: "client", route: "/client/login", currentComponent: "runClientSignInEntryPage → /auth/sign-in" },
   { surfaceId: "client-preview-unavailable", domain: "client", route: "/client/preview-unavailable", currentComponent: "ClientPreviewUnavailableView" },
-  { surfaceId: "client-preview-banner", domain: "client", route: "/client (preview mode)", currentComponent: "PortalPreviewBanner" },
-  { surfaceId: "client-home-redirect", domain: "client", route: "/", currentComponent: "runClientSignInEntryPage → /auth/sign-in" },
-  { surfaceId: "client-join", domain: "client", route: "/join", currentComponent: "PortalInvitationJoinPage → GuardianInvitationJoinPage (default)" },
+  { surfaceId: "client-preview-banner", domain: "client", route: "/client (preview mode)", currentComponent: "PortalPreviewBanner (dormant — workspace shell deferred)" },
+  { surfaceId: "client-home-redirect", domain: "client", route: "/", currentComponent: "LynxLandingPage → Sign in CTA /auth/sign-in" },
+  { surfaceId: "client-join", domain: "client", route: "/join", currentComponent: "StudioInvitationJoinPage + Neon" },
   { surfaceId: "public-survey-link", domain: "client", route: "/survey/[slug]", currentComponent: "runOpenLinkPage (redirect-only)" },
   { surfaceId: "public-secure-link", domain: "client", route: "/f/[token]", currentComponent: "runSecureLinkPage (redirect-only)" },
   // Admin (6)
-  { surfaceId: "admin-dashboard", domain: "admin", route: "/dashboard", currentComponent: "OrgDeclarationsTable" },
-  { surfaceId: "admin-clients", domain: "admin", route: "/dashboard/clients", currentComponent: "OrgClientTables" },
-  { surfaceId: "admin-declaration-detail", domain: "admin", route: "/dashboard/[id]", currentComponent: "Tabbed detail page" },
+  { surfaceId: "admin-dashboard", domain: "admin", route: "/dashboard", currentComponent: "PortalDeclarationsTable" },
+  { surfaceId: "admin-clients", domain: "admin", route: "/dashboard/clients", currentComponent: "PortalClientInvitationsTable" },
+  { surfaceId: "admin-declaration-detail", domain: "admin", route: "/dashboard/[id]", currentComponent: "operator-declaration-detail (portal-views)" },
   { surfaceId: "admin-create-declaration", domain: "admin", route: "/dashboard/[id] (create)", currentComponent: "Inline create form" },
   { surfaceId: "admin-issue-invite", domain: "admin", route: "/dashboard/clients (invite)", currentComponent: "IssueClientInviteForm" },
-  { surfaceId: "admin-access-share", domain: "admin", route: "/dashboard/[id] (share)", currentComponent: "ClientAccessSharePanel" },
+  { surfaceId: "admin-access-share", domain: "admin", route: "/dashboard/[id] (share)", currentComponent: "PortalAccessSharePanel" },
   // Shared (12)
-  { surfaceId: "shell-auth", domain: "shared", route: "GuardianAuthFacade", currentComponent: "GuardianAuthFacade + PortalAuthNeonView" },
+  { surfaceId: "shell-auth", domain: "shared", route: "/auth/* + /join", currentComponent: "StudioAuthShell + PortalAuthNeonView" },
   { surfaceId: "shell-customer", domain: "shared", route: "PortalCustomerShell", currentComponent: "PortalCustomerShell" },
   { surfaceId: "shell-dashboard", domain: "shared", route: "/dashboard layout", currentComponent: "Dashboard sidebar layout" },
   { surfaceId: "sidebar-client", domain: "shared", route: "ClientSidebar", currentComponent: "ClientSidebar" },
@@ -150,13 +150,13 @@ const byId = (id: string) => S.find((s) => s.surfaceId === id)!;
 
 /** Scored evaluation for every UI_SURFACE_REGISTRY entry. */
 export const uiEvaluationMatrix: UiEvaluationRow[] = [
-  // ── Auth (GuardianAuthFacade + Neon AuthView) ─────────────────────────────
+  // ── Auth (Studio login-page-02 chrome + Neon AuthView) ─────────────────────
   row(byId("auth-sign-in"), [
-    c("keep-current", { PatternFit: 5, BrandFit: 5, PortalCompat: 5, A11yMobile: 5, ImplCost: 5, Consistency: 5 }, "GuardianAuthFacade + Neon AuthView — Method B (ADR-Auth-UI-001)."),
-    c("login-page-02", { PatternFit: 4, BrandFit: 4, PortalCompat: 3, A11yMobile: 4, ImplCost: 2, Consistency: 4 }, "Two-column split mirrors Guardian access column; layout reference only."),
+    c("keep-current", { PatternFit: 5, BrandFit: 5, PortalCompat: 5, A11yMobile: 5, ImplCost: 5, Consistency: 5 }, "Studio login-page-02 chrome + Neon AuthView (ADR-Auth-UI-001 amended)."),
+    c("login-page-02", { PatternFit: 4, BrandFit: 4, PortalCompat: 3, A11yMobile: 4, ImplCost: 2, Consistency: 4 }, "login-page-02 is production chrome SSOT; Neon in form slot."),
     c("login-page-01", { PatternFit: 3, BrandFit: 3, PortalCompat: 3, A11yMobile: 4, ImplCost: 2, Consistency: 3 }, "Centered card loses trust-hero column; social-login slots unused."),
     c("login-page-03", { PatternFit: 2, BrandFit: 2, PortalCompat: 2, A11yMobile: 4, ImplCost: 2, Consistency: 2 }, "Testimonial/avatar strip is consumer SaaS, not legal vault."),
-  ], "keep-current", "Guardian cinematic shell + Neon AuthView (Method B). login-page-02 informs access-column density only.", "validated", ["Social login slots in studio blocks unused"]),
+  ], "keep-current", "Studio login-page-02 chrome + Neon AuthView.", "validated", ["Social login slots in studio blocks unused"]),
 
   row(byId("auth-sign-up"), [
     c("keep-current", { PatternFit: 5, BrandFit: 5, PortalCompat: 5, A11yMobile: 5, ImplCost: 5, Consistency: 5 }, "Neon sign-up flow with shared auth shell."),
@@ -165,7 +165,7 @@ export const uiEvaluationMatrix: UiEvaluationRow[] = [
   ], "keep-current", "register-01 scores 2.85 vs keep-current 5.0 — Neon handles provisioning; studio block is layout-only reference.", "validated"),
 
   row(byId("auth-forgot-password"), [
-    c("keep-current", { PatternFit: 5, BrandFit: 5, PortalCompat: 5, A11yMobile: 5, ImplCost: 5, Consistency: 5 }, "Neon forgot-password inside Guardian shell."),
+    c("keep-current", { PatternFit: 5, BrandFit: 5, PortalCompat: 5, A11yMobile: 5, ImplCost: 5, Consistency: 5 }, "Neon forgot-password inside Studio auth shell."),
     c("forgot-password-01", { PatternFit: 4, BrandFit: 4, PortalCompat: 3, A11yMobile: 4, ImplCost: 3, Consistency: 4 }, "Standalone marketing forgot-password; good pattern reference."),
     c("login-page-02", { PatternFit: 3, BrandFit: 4, PortalCompat: 3, A11yMobile: 4, ImplCost: 2, Consistency: 3 }, "Generic login shell, not forgot-password specific."),
   ], "keep-current", "forgot-password-01 PatternFit 4.0 but PortalCompat 3.0 — cannot replace Neon token flow.", "validated"),
@@ -183,28 +183,28 @@ export const uiEvaluationMatrix: UiEvaluationRow[] = [
 
   row(byId("auth-email-otp"), [
     c("keep-current", { PatternFit: 5, BrandFit: 5, PortalCompat: 5, A11yMobile: 5, ImplCost: 5, Consistency: 5 }, "Neon AuthView email-otp inside NeonAuthPageShell; PortalAuthEmailTrustNotice on sign-up and OTP paths."),
-    c("login-page-02", { PatternFit: 4, BrandFit: 4, PortalCompat: 3, A11yMobile: 4, ImplCost: 2, Consistency: 4 }, "Two-column split mirrors Guardian access column; layout reference only."),
+    c("login-page-02", { PatternFit: 4, BrandFit: 4, PortalCompat: 3, A11yMobile: 4, ImplCost: 2, Consistency: 4 }, "login-page-02 is production chrome SSOT; Neon in form slot."),
     c("login-page-01", { PatternFit: 3, BrandFit: 3, PortalCompat: 3, A11yMobile: 4, ImplCost: 2, Consistency: 3 }, "Centered card loses trust-hero column; social-login slots unused."),
     c("login-page-03", { PatternFit: 2, BrandFit: 2, PortalCompat: 2, A11yMobile: 4, ImplCost: 2, Consistency: 2 }, "Testimonial/avatar strip is consumer SaaS, not legal vault."),
-  ], "keep-current", "Guardian cinematic shell + Neon AuthView (Method B). login-page-02 informs access-column density only.", "validated", ["Social login slots in studio blocks unused"]),
+  ], "keep-current", "Studio login-page-02 chrome + Neon AuthView.", "validated", ["Social login slots in studio blocks unused"]),
 
   row(byId("auth-magic-link"), [
     c("keep-current", { PatternFit: 5, BrandFit: 5, PortalCompat: 5, A11yMobile: 5, ImplCost: 5, Consistency: 5 }, "Neon AuthView magic-link inside NeonAuthPageShell; PortalAuthEmailTrustNotice on magic-link path."),
-    c("login-page-02", { PatternFit: 4, BrandFit: 4, PortalCompat: 3, A11yMobile: 4, ImplCost: 2, Consistency: 4 }, "Two-column split mirrors Guardian access column; layout reference only."),
+    c("login-page-02", { PatternFit: 4, BrandFit: 4, PortalCompat: 3, A11yMobile: 4, ImplCost: 2, Consistency: 4 }, "login-page-02 is production chrome SSOT; Neon in form slot."),
     c("login-page-01", { PatternFit: 3, BrandFit: 3, PortalCompat: 3, A11yMobile: 4, ImplCost: 2, Consistency: 3 }, "Centered card loses trust-hero column; social-login slots unused."),
     c("login-page-03", { PatternFit: 2, BrandFit: 2, PortalCompat: 2, A11yMobile: 4, ImplCost: 2, Consistency: 2 }, "Testimonial/avatar strip is consumer SaaS, not legal vault."),
-  ], "keep-current", "Guardian cinematic shell + Neon AuthView (Method B). login-page-02 informs access-column density only.", "validated", ["Social login slots in studio blocks unused"]),
+  ], "keep-current", "Studio login-page-02 chrome + Neon AuthView.", "validated", ["Social login slots in studio blocks unused"]),
 
   row(byId("auth-accept-invitation"), [
     c("keep-current", { PatternFit: 5, BrandFit: 5, PortalCompat: 5, A11yMobile: 5, ImplCost: 5, Consistency: 5 }, "Neon AuthView accept-invitation; canonical client entry is /join with invitationId."),
-    c("login-page-02", { PatternFit: 4, BrandFit: 4, PortalCompat: 3, A11yMobile: 4, ImplCost: 2, Consistency: 4 }, "Two-column split mirrors Guardian access column; layout reference only."),
+    c("login-page-02", { PatternFit: 4, BrandFit: 4, PortalCompat: 3, A11yMobile: 4, ImplCost: 2, Consistency: 4 }, "login-page-02 is production chrome SSOT; Neon in form slot."),
     c("login-page-01", { PatternFit: 3, BrandFit: 3, PortalCompat: 3, A11yMobile: 4, ImplCost: 2, Consistency: 3 }, "Centered card loses trust-hero column; social-login slots unused."),
     c("login-page-03", { PatternFit: 2, BrandFit: 2, PortalCompat: 2, A11yMobile: 4, ImplCost: 2, Consistency: 2 }, "Testimonial/avatar strip is consumer SaaS, not legal vault."),
   ], "keep-current", "Beats login-page-02 on PortalCompat (+2) and ImplCost (+3) because Neon AuthView is integrated; prefer /join for org invites.", "validated", ["Redirects to /join when invitationId query param is present"]),
 
   row(byId("org-login"), [
     c("keep-current", { PatternFit: 5, BrandFit: 5, PortalCompat: 5, A11yMobile: 5, ImplCost: 5, Consistency: 5 }, "Server redirect entry dispatches session then Neon Auth org sign-in shell."),
-    c("login-page-02", { PatternFit: 4, BrandFit: 4, PortalCompat: 3, A11yMobile: 4, ImplCost: 2, Consistency: 4 }, "Two-column split mirrors Guardian access column; layout reference only."),
+    c("login-page-02", { PatternFit: 4, BrandFit: 4, PortalCompat: 3, A11yMobile: 4, ImplCost: 2, Consistency: 4 }, "login-page-02 is production chrome SSOT; Neon in form slot."),
     c("login-page-01", { PatternFit: 3, BrandFit: 3, PortalCompat: 3, A11yMobile: 4, ImplCost: 2, Consistency: 3 }, "Centered card loses trust-hero column; social-login slots unused."),
     c("login-page-03", { PatternFit: 2, BrandFit: 2, PortalCompat: 2, A11yMobile: 4, ImplCost: 2, Consistency: 2 }, "Testimonial/avatar strip is consumer SaaS, not legal vault."),
   ], "keep-current", "Beats login-page-02 on PortalCompat (+2) and ImplCost (+3) — org entry is redirect-only; Neon AuthView renders at /auth/sign-in?from=org.", "validated"),
@@ -283,13 +283,13 @@ export const uiEvaluationMatrix: UiEvaluationRow[] = [
   ], "keep-current", "Inline banner is correct UX for preview mode; studio empty-state is layout reference only.", "validated"),
 
   row(byId("client-home-redirect"), [
-    c("keep-current", { PatternFit: 5, BrandFit: 5, PortalCompat: 5, A11yMobile: 5, ImplCost: 5, Consistency: 5 }, "Server redirect to sign-in."),
-    c("login-page-02", { PatternFit: 2, BrandFit: 3, PortalCompat: 2, A11yMobile: 3, ImplCost: 1, Consistency: 2 }, "Landing page not needed; redirect is correct."),
-  ], "keep-current", "Session router at / — same dispatch as /client/login plus invitationId→/join.", "validated"),
+    c("keep-current", { PatternFit: 5, BrandFit: 5, PortalCompat: 5, A11yMobile: 5, ImplCost: 5, Consistency: 5 }, "Lynx Morphor guest landing; Sign in CTA → /auth/sign-in; authed session-skip."),
+    c("login-page-02", { PatternFit: 3, BrandFit: 3, PortalCompat: 2, A11yMobile: 3, ImplCost: 2, Consistency: 3 }, "Auth chrome is for /auth/* — not the public brand landing."),
+  ], "keep-current", "Public `/` landing (proxy matcher excludes `/`); invitationId→/join; named /client/login still redirects to Neon.", "validated"),
 
   row(byId("client-join"), [
-    c("keep-current", { PatternFit: 5, BrandFit: 5, PortalCompat: 5, A11yMobile: 5, ImplCost: 5, Consistency: 5 }, "GuardianAuthFacade + invitation stepper; GUARDIAN_AUTH_SHELL=false rolls back to PortalAuthLayout."),
-    c("login-page-02", { PatternFit: 4, BrandFit: 4, PortalCompat: 3, A11yMobile: 4, ImplCost: 2, Consistency: 4 }, "Two-column split mirrors PortalAuthLayout; layout reference only."),
+    c("keep-current", { PatternFit: 5, BrandFit: 5, PortalCompat: 5, A11yMobile: 5, ImplCost: 5, Consistency: 5 }, "StudioInvitationJoinPage + Neon join panel."),
+    c("login-page-02", { PatternFit: 4, BrandFit: 4, PortalCompat: 3, A11yMobile: 4, ImplCost: 2, Consistency: 4 }, "login-page-02 chrome SSOT for /join."),
     c("login-page-01", { PatternFit: 3, BrandFit: 3, PortalCompat: 3, A11yMobile: 4, ImplCost: 2, Consistency: 3 }, "Centered card loses invitation stepper and trust hero."),
   ], "keep-current", "Primary client invitation entry; Neon accept-invitation embedded in join panel.", "validated"),
 
@@ -305,13 +305,13 @@ export const uiEvaluationMatrix: UiEvaluationRow[] = [
 
   // ── Admin ─────────────────────────────────────────────────────────────────
   row(byId("admin-dashboard"), [
-    c("datatable-component-01", { PatternFit: 5, BrandFit: 4, PortalCompat: 5, A11yMobile: 4, ImplCost: 5, Consistency: 5 }, "StudioDataTable installed from @ss-blocks; OrgDeclarationsTable supplies portal columns."),
+    c("datatable-component-01", { PatternFit: 5, BrandFit: 4, PortalCompat: 5, A11yMobile: 4, ImplCost: 5, Consistency: 5 }, "AdminCN Table in portal-views; PortalDeclarationsTable supplies portal columns."),
     c("statistics-component-03", { PatternFit: 5, BrandFit: 5, PortalCompat: 5, A11yMobile: 5, ImplCost: 5, Consistency: 5 }, "StudioStatisticsCard installed for admin + client KPI rows."),
     c("keep-current", { PatternFit: 2, BrandFit: 4, PortalCompat: 4, A11yMobile: 4, ImplCost: 2, Consistency: 2 }, "Superseded: custom FilteredDataTable removed 2026-07."),
   ], "datatable-component-01", "datatable-component-01 installed; weighted 4.75 vs runner-up statistics KPI row 3.75 on same page.", "validated", ["KPI row: install statistics-component-03"]),
 
   row(byId("admin-clients"), [
-    c("datatable-component-04", { PatternFit: 5, BrandFit: 4, PortalCompat: 5, A11yMobile: 5, ImplCost: 5, Consistency: 5 }, "StudioFilterDataTable installed; org-client-tables supplies portal columns."),
+    c("datatable-component-04", { PatternFit: 5, BrandFit: 4, PortalCompat: 5, A11yMobile: 5, ImplCost: 5, Consistency: 5 }, "AdminCN Table in portal-views; portal-client-tables supplies portal columns."),
     c("datatable-component-01", { PatternFit: 4, BrandFit: 4, PortalCompat: 5, A11yMobile: 4, ImplCost: 4, Consistency: 4 }, "Transaction table; less role/filter fit."),
     c("keep-current", { PatternFit: 2, BrandFit: 4, PortalCompat: 4, A11yMobile: 4, ImplCost: 2, Consistency: 2 }, "Superseded: custom FilteredDataTable removed 2026-07."),
   ], "datatable-component-04", "datatable-component-04 installed; PatternFit (+3) and A11yMobile (+1) over superseded custom table.", "validated"),
@@ -335,17 +335,17 @@ export const uiEvaluationMatrix: UiEvaluationRow[] = [
   ], "form-layout-01", "form-layout-01 Consistency 5.0 with other admin forms; dialog optional enhancement.", "validated"),
 
   row(byId("admin-access-share"), [
-    c("form-layout-02", { PatternFit: 4, BrandFit: 4, PortalCompat: 4, A11yMobile: 4, ImplCost: 3, Consistency: 4 }, "Multi-section with copy/share fields."),
+    c("keep-current", { PatternFit: 5, BrandFit: 5, PortalCompat: 5, A11yMobile: 4, ImplCost: 5, Consistency: 5 }, "PortalAccessSharePanel in portal-views via DeclarationSharePanel."),
+    c("form-layout-02", { PatternFit: 4, BrandFit: 4, PortalCompat: 4, A11yMobile: 4, ImplCost: 3, Consistency: 4 }, "Multi-section with copy/share fields — layout DNA only."),
     c("empty-state-02", { PatternFit: 3, BrandFit: 4, PortalCompat: 4, A11yMobile: 4, ImplCost: 3, Consistency: 3 }, "CTA pattern partial fit."),
-    c("keep-current", { PatternFit: 4, BrandFit: 5, PortalCompat: 5, A11yMobile: 4, ImplCost: 5, Consistency: 4 }, "ClientAccessSharePanel."),
-  ], "form-layout-02", "form-layout-02 multi-section fits share + copy panels; keep-current viable until install.", "validated"),
+  ], "keep-current", "PortalAccessSharePanel shipped in AdminCN portal-views; form-layout-02 remains layout reference.", "validated"),
 
   // ── Shared ────────────────────────────────────────────────────────────────
   row(byId("shell-auth"), [
-    c("keep-current", { PatternFit: 5, BrandFit: 5, PortalCompat: 5, A11yMobile: 5, ImplCost: 5, Consistency: 5 }, "GuardianAuthFacade vault split with trust notice on /auth/* and /join."),
+    c("keep-current", { PatternFit: 5, BrandFit: 5, PortalCompat: 5, A11yMobile: 5, ImplCost: 5, Consistency: 5 }, "StudioAuthShell + trust notices on /auth/* and /join."),
     c("login-page-02", { PatternFit: 4, BrandFit: 4, PortalCompat: 3, A11yMobile: 4, ImplCost: 2, Consistency: 4 }, "Two-column reference; motion dependency."),
     c("login-page-01", { PatternFit: 3, BrandFit: 3, PortalCompat: 3, A11yMobile: 4, ImplCost: 2, Consistency: 3 }, "Centered card loses brand hero."),
-  ], "keep-current", "GuardianAuthFacade BrandFit 5.0 for cinematic vault; login-page-02 layout reference only.", "validated"),
+  ], "keep-current", "StudioAuthShell + Neon; Guardian Storybook-only.", "validated"),
 
   row(byId("shell-customer"), [
     c("dashboard-shell-05", { PatternFit: 4, BrandFit: 4, PortalCompat: 4, A11yMobile: 4, ImplCost: 3, Consistency: 5 }, "Client app shell with sidebar."),
@@ -415,48 +415,48 @@ export const STUDIO_IMPLEMENTATION_BY_SURFACE: Record<
   string,
   StudioSurfaceImplementation
 > = {
-  // Auth — Guardian shell + Neon integrated (studio blocks are layout reference only)
-  "auth-sign-in": { kind: "neon-integrated", component: "guardian-auth-login-page.tsx + portal-auth-neon-view.tsx", blockSlug: "login-page-02", notes: "Guardian + Neon (ADR-Auth-UI-001); GUARDIAN_AUTH_SHELL=false rolls back to PortalAuthLayout" },
-  "auth-sign-up": { kind: "neon-integrated", component: "guardian-auth-login-page.tsx + portal-auth-neon-view.tsx", blockSlug: "login-page-02", notes: "Guardian + Neon" },
-  "auth-forgot-password": { kind: "neon-integrated", component: "guardian-auth-login-page.tsx + portal-auth-neon-view.tsx", blockSlug: "login-page-02", notes: "Guardian + Neon" },
-  "auth-reset-password": { kind: "neon-integrated", component: "guardian-auth-login-page.tsx + portal-auth-neon-view.tsx", blockSlug: "login-page-02", notes: "Guardian + Neon" },
-  "auth-sign-out": { kind: "neon-integrated", component: "portal-neon-view.tsx" },
-  "auth-email-otp": { kind: "neon-integrated", component: "guardian-auth-login-page.tsx + portal-auth-neon-view.tsx", blockSlug: "login-page-02", notes: "Guardian + Neon" },
-  "auth-magic-link": { kind: "neon-integrated", component: "guardian-auth-login-page.tsx + portal-auth-neon-view.tsx", blockSlug: "login-page-02", notes: "Guardian + Neon" },
-  "auth-accept-invitation": { kind: "neon-integrated", component: "guardian-auth-login-page.tsx + portal-auth-neon-view.tsx", blockSlug: "login-page-02", notes: "Prefer /join?invitationId= for client org invites" },
-  "org-login": { kind: "neon-integrated", component: "app/org/login/page.tsx → lib/org-sign-in-entry.ts", notes: "Redirect-only entry; Neon AuthView at /auth/sign-in?from=org" },
-  "account-settings": { kind: "neon-integrated", component: "portal-neon-view.tsx (AccountView)", blockSlug: "account-settings-01", notes: "Studio block installed as chrome reference only — see lib/studio-canonical-kit.ts" },
-  "account-security": { kind: "neon-integrated", component: "portal-neon-view.tsx (AccountView)", blockSlug: "account-settings-01", notes: "Chrome reference; Neon owns security forms" },
+  // Auth — Studio login-page-02 chrome + Neon AuthView
+  "auth-sign-in": { kind: "neon-integrated", component: "features/auth/studio-auth-login-page.tsx + portal-auth-neon-view.tsx", blockSlug: "login-page-02", notes: "Studio login-page-02 + Neon (ADR-Auth-UI-001 amended)" },
+  "auth-sign-up": { kind: "neon-integrated", component: "features/auth/studio-auth-login-page.tsx + portal-auth-neon-view.tsx", blockSlug: "login-page-02", notes: "Studio login-page-02 + Neon (ADR-Auth-UI-001 amended)" },
+  "auth-forgot-password": { kind: "neon-integrated", component: "features/auth/studio-auth-login-page.tsx + portal-auth-neon-view.tsx", blockSlug: "login-page-02", notes: "Studio login-page-02 + Neon (ADR-Auth-UI-001 amended)" },
+  "auth-reset-password": { kind: "neon-integrated", component: "features/auth/studio-auth-login-page.tsx + portal-auth-neon-view.tsx", blockSlug: "login-page-02", notes: "Studio login-page-02 + Neon (ADR-Auth-UI-001 amended)" },
+  "auth-sign-out": { kind: "neon-integrated", component: "features/auth/portal-auth-neon-view.tsx" },
+  "auth-email-otp": { kind: "neon-integrated", component: "features/auth/studio-auth-login-page.tsx + portal-auth-neon-view.tsx", blockSlug: "login-page-02", notes: "Studio login-page-02 + Neon (ADR-Auth-UI-001 amended)" },
+  "auth-magic-link": { kind: "neon-integrated", component: "features/auth/studio-auth-login-page.tsx + portal-auth-neon-view.tsx", blockSlug: "login-page-02", notes: "Studio login-page-02 + Neon (ADR-Auth-UI-001 amended)" },
+  "auth-accept-invitation": { kind: "neon-integrated", component: "features/auth/studio-auth-login-page.tsx + portal-auth-neon-view.tsx", blockSlug: "login-page-02", notes: "Prefer /join?invitationId= for client org invites" },
+  "org-login": { kind: "neon-integrated", component: "app/org/login/page.tsx → lib/entry/org-sign-in-entry.ts", notes: "Redirect-only entry; Neon AuthView at /auth/sign-in?from=org" },
+  "account-settings": { kind: "neon-integrated", component: "features/auth/portal-auth-neon-view.tsx (AccountView)", blockSlug: "account-settings-01", notes: "Studio block installed as chrome reference only — see lib/studio-canonical-kit.ts" },
+  "account-security": { kind: "neon-integrated", component: "features/auth/portal-auth-neon-view.tsx (AccountView)", blockSlug: "account-settings-01", notes: "Chrome reference; Neon owns security forms" },
   // Client
-  "client-dashboard": { kind: "studio-installed", component: "client-dashboard-summary.tsx → statistics-card-03.tsx", blockSlug: "statistics-component-03" },
-  "client-onboarding": { kind: "hardcoded", component: "client-onboarding-progress.tsx", blockSlug: "multi-step-form-01", notes: "Custom timeline; stepper block not installed" },
-  "client-profile": { kind: "studio-installed", component: "client-declarant-profile-view.tsx → form-layout-section.tsx + portal-profile-field.tsx", blockSlug: "form-layout-01", notes: "Summary card inspired by account-settings-01 personal-info chrome; read-only Field+Input rows" },
-  "client-declare": { kind: "studio-installed", component: "declaration-form.tsx → form-layout-wizard-shell.tsx", blockSlug: "form-layout-08" },
-  "client-declare-receipt": { kind: "hardcoded", component: "confirmation-receipt.tsx", blockSlug: "empty-state-01", notes: "Studio empty-state-01 installed; prefer PortalEmptyStateCard" },
-  "client-declare-empty": { kind: "portal-wrapper", component: "portal-empty-state.tsx", blockSlug: "empty-state-02" },
-  "client-acknowledgement": { kind: "hardcoded", component: "client-dashboard-summary.tsx", blockSlug: "form-layout-01" },
-  "client-preview-unavailable": { kind: "hardcoded", component: "client-preview-unavailable-view.tsx", blockSlug: "empty-state-01", notes: "Studio empty-state-01 installed; prefer PortalEmptyStateCard" },
+  "client-dashboard": { kind: "hardcoded", component: "lib/pages/client-dashboard-page.tsx (unavailable stub)", notes: "Product UI tombstoned; rebuild deferred — acknowledge/submit contracts retained" },
+  "client-onboarding": { kind: "hardcoded", component: "lib/pages/client-onboarding-page.tsx (unavailable stub)", notes: "Wizard tombstoned; rebuild deferred — backend saveClientOnboardingAction retained" },
+  "client-profile": { kind: "hardcoded", component: "lib/pages/client-profile-page.tsx (unavailable stub)", notes: "Product UI tombstoned; rebuild deferred" },
+  "client-declare": { kind: "hardcoded", component: "lib/pages/client-declare-page.tsx (unavailable stub)", notes: "Product UI tombstoned; client-declare-page.logic.ts + submit/draft contracts retained for rebuild" },
+  "client-declare-receipt": { kind: "hardcoded", component: "client-declare-page.logic.ts (receipt branch)", blockSlug: "empty-state-01", notes: "UI deferred with declare rebuild; prefer PortalEmptyStateCard on restore" },
+  "client-declare-empty": { kind: "hardcoded", component: "client-declare-page.logic.ts (empty-questions branch)", blockSlug: "empty-state-02", notes: "UI deferred with declare rebuild" },
+  "client-acknowledgement": { kind: "hardcoded", component: "acknowledgeClientPortalAction (unwired)", blockSlug: "form-layout-01", notes: "ACK UI deferred with dashboard rebuild; action + domain retained" },
+  "client-preview-unavailable": { kind: "hardcoded", component: "lib/pages/client-preview-unavailable-page.tsx", blockSlug: "empty-state-01", notes: "Gate path retained; Studio empty-state-01 chrome reference" },
   "client-preview-banner": {
     kind: "hardcoded",
     component: "portal-preview-banner.tsx",
-    notes: "Preview-mode exit banner; consumed by PortalCustomerShell",
+    notes: "Preview-mode exit banner; dormant until client workspace shell rebuild",
   },
-  "client-home-redirect": { kind: "neon-integrated", component: "app/page.tsx redirect" },
+  "client-home-redirect": { kind: "hardcoded", component: "features/landing/lynx-landing-page.tsx", notes: "Guest Lynx Morphor landing; authed still session-skips" },
   "client-login": { kind: "neon-integrated", component: "app/client/(gate)/login/page.tsx redirect" },
-  "client-join": { kind: "neon-integrated", component: "guardian-invitation-join-page.tsx + portal-invitation-join-panel.tsx", notes: "Guardian + Neon join stepper (ADR-Auth-UI-001); GUARDIAN_AUTH_SHELL=false rolls back to PortalAuthLayout" },
+  "client-join": { kind: "neon-integrated", component: "features/auth/studio-invitation-join-page.tsx", notes: "Studio shell + Neon join (ADR-Auth-UI-001 amended)" },
   "public-survey-link": { kind: "neon-integrated", component: "lib/entry/open-link-entry.ts → app/survey/[slug]/page.tsx", notes: "Redirect-only open link entry (S5)" },
   "public-secure-link": { kind: "neon-integrated", component: "lib/entry/secure-link-entry.ts → app/f/[token]/page.tsx", notes: "Redirect-only secure link entry (S5)" },
   // Admin
-  "admin-dashboard": { kind: "studio-installed", component: "operator-dashboard-page-view.tsx", blockSlug: "datatable-component-01", notes: "StudioDataTable + StudioStatisticsCard KPI row" },
-  "admin-clients": { kind: "studio-installed", component: "org-client-tables.tsx", blockSlug: "datatable-component-04", notes: "StudioFilterDataTable" },
-  "admin-declaration-detail": { kind: "studio-installed", component: "operator-declaration-detail-view.tsx → portal-declaration-workspace.tsx", blockSlug: "dashboard-shell-05", notes: "form-layout-02 settings + statistics KPI row + datatable submissions + danger footer" },
-  "admin-create-declaration": { kind: "studio-installed", component: "operator-dashboard-page-view.tsx → form-layout-section.tsx", blockSlug: "form-layout-01" },
-  "admin-issue-invite": { kind: "studio-installed", component: "operator-clients-page-view.tsx → form-layout-section.tsx", blockSlug: "form-layout-01" },
-  "admin-access-share": { kind: "hardcoded", component: "client-access-share-panel.tsx", blockSlug: "form-layout-02" },
+  "admin-dashboard": { kind: "studio-installed", component: "operator-declarations-dashboard.tsx", blockSlug: "datatable-component-01", notes: "AdminCN portal-views + KPI cards + PortalDeclarationsTable" },
+  "admin-clients": { kind: "studio-installed", component: "operator-clients-list.tsx", blockSlug: "datatable-component-04", notes: "AdminCN portal-views client invitations/assignments tables" },
+  "admin-declaration-detail": { kind: "studio-installed", component: "operator-declaration-detail.tsx", blockSlug: "dashboard-shell-05", notes: "AdminCN portal-views: manage / share / submissions tabs + package tools" },
+  "admin-create-declaration": { kind: "studio-installed", component: "portal-create-declaration-button.tsx", blockSlug: "form-layout-01", notes: "Create draft CTA in portal-views" },
+  "admin-issue-invite": { kind: "studio-installed", component: "operator-clients-list.tsx → IssueClientInviteForm", blockSlug: "form-layout-01" },
+  "admin-access-share": { kind: "studio-installed", component: "portal-access-share-panel.tsx", blockSlug: "form-layout-02", notes: "DeclarationSharePanel loads links; PortalAccessSharePanel renders share UI" },
   // Shared
-  "shell-auth": { kind: "portal-wrapper", component: "components/auth/GuardianAuthFacade.tsx + portal-auth-neon-view.tsx", blockSlug: "login-page-02", notes: "Guardian shell on /auth/* and /join; GUARDIAN_AUTH_SHELL=false rolls back join + auth to PortalAuthLayout" },
+  "shell-auth": { kind: "portal-wrapper", component: "features/auth/studio-auth-shell.tsx + portal-auth-neon-view.tsx", blockSlug: "login-page-02", notes: "Studio login-page-02 chrome on /auth/* and /join" },
   "shell-customer": { kind: "hardcoded", component: "portal-customer-shell.tsx", blockSlug: "dashboard-shell-05" },
-  "shell-dashboard": { kind: "hardcoded", component: "dashboard-shell.tsx + app-sidebar.tsx", blockSlug: "dashboard-shell-05" },
+  "shell-dashboard": { kind: "hardcoded", component: "AdminCnShell.tsx + PagesLayout", blockSlug: "dashboard-shell-05" },
   "sidebar-client": { kind: "hardcoded", component: "client-sidebar.tsx", blockSlug: "dashboard-sidebar" },
   "sidebar-playground": { kind: "hardcoded", component: "playground-sidebar.tsx", blockSlug: "dashboard-sidebar" },
   "error-route": { kind: "portal-wrapper", component: "portal-route-error.tsx", blockSlug: "empty-state-01" },

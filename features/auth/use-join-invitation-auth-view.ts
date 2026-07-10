@@ -13,7 +13,7 @@ export type JoinInvitationAuthState = {
   readonly authView: JoinInvitationAuthView;
 };
 
-/** Single session + step resolver for `/join` (page + panel share this). */
+/** Single session + step resolver for `/join`. */
 export function useJoinInvitationAuthView(): JoinInvitationAuthState {
   const { data: session, isPending } = authClient.useSession();
   const isAuthenticated = Boolean(session?.session);
