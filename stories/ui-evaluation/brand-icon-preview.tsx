@@ -4,7 +4,7 @@ import {
   BrandLogo,
   BrandMark,
   SidebarBrandIcon,
-} from "@/components/portal/portal-brand-mark";
+} from "@/features/portal-chrome/portal-brand-mark";
 import { PortalAuthPhantomOwl } from "@/components/portal/portal-auth-brand-scene";
 import {
   PORTAL_BRAND_ICON,

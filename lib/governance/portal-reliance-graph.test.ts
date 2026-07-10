@@ -62,7 +62,7 @@ describe("portal reliance coverage scan", () => {
 
   it("walks component imports transitively from a page entry", () => {
     const files = collectTransitiveSourceFiles([
-      "components/client-dashboard-acknowledgement.tsx",
+      "components/client/client-dashboard-acknowledgement.tsx",
     ]);
 
     expect(files.some((file) => file.includes("client-dashboard-acknowledgement.tsx"))).toBe(

@@ -83,6 +83,9 @@ export const clientOnboardingSchema = z.object({
   ),
 });
 
+/** Serializable onboarding form payload (FormData → Zod → action → domain). */
+export type ClientOnboardingInput = z.infer<typeof clientOnboardingSchema>;
+
 export const submitClientDeclarationSchema = z.object({
   assignmentId: uuidSchema,
   slug: slugSchema,

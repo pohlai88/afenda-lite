@@ -1,5 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { SidebarBrandIcon } from "@/components/portal/portal-brand-mark";
+import { SidebarBrandIcon } from "@/features/portal-chrome/portal-brand-mark";
 import LogoSvg from "@/assets/svg/logo";
 import type {
   ApplicationShell05BreadcrumbItem,

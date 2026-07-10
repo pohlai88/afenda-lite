@@ -170,12 +170,15 @@ export function collectTransitiveSourceFiles(
       continue;
     }
 
-    seen.add(current.file);
     const absolute = join(repoRoot, current.file);
 
+    // Missing entry files (e.g. wiped app/**/page.tsx under frontend-pages-gitkeep)
+    // must not enter the scanned set — downstream readers assume files exist.
     if (!existsSync(absolute)) {
       continue;
     }
+
+    seen.add(current.file);
 
     const content = readFileSync(absolute, "utf8");
 
@@ -297,6 +300,9 @@ export function scanDiscoveredTargetsForFiles(
   const discovered = new Set<string>();
 
   for (const file of files) {
+    if (!existsSync(join(repoRoot, file))) {
+      continue;
+    }
     discoveredTargetsFromFile(readSource(repoRoot, file)).forEach((target) => {
       discovered.add(target);
     });

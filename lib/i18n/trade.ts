@@ -8,6 +8,11 @@ export function isTradeLocale(value: string): value is TradeLocale {
   return tradeLocales.includes(value as TradeLocale);
 }
 
+/** Canonical trade href using the default locale. */
+export function tradeDefaultHref(path: string) {
+  return tradeHref(defaultTradeLocale, path);
+}
+
 export async function getTradeMessages(locale: TradeLocale) {
   switch (locale) {
     case "en":

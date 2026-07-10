@@ -9,7 +9,7 @@ import { isPlaygroundEnabled as readPlaygroundEnabled } from "@/lib/env/accessor
 
 export type PlaygroundScreen = {
   id: string;
-  category: "admin" | "client" | "dynamic";
+  category: "admin" | "client" | "dynamic" | "hot-sales" | "auto";
   label: string;
   path: string;
   routeFile?: string;
@@ -35,6 +35,10 @@ export const playgroundNav = {
   admin: playgroundScreens.filter((screen) => screen.category === "admin"),
   client: playgroundScreens.filter((screen) => screen.category === "client"),
   dynamic: playgroundScreens.filter((screen) => screen.category === "dynamic"),
+  "hot-sales": playgroundScreens.filter(
+    (screen) => screen.category === "hot-sales",
+  ),
+  auto: playgroundScreens.filter((screen) => screen.category === "auto"),
 };
 
 export function isPlaygroundEnabled() {

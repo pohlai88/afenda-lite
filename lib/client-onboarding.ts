@@ -11,9 +11,13 @@ export type ClientOnboardingFormDefaults = {
   notes: string | null;
 };
 
-/** Wizard sub-steps inside the declarant profile timeline stage. */
+/**
+ * Wizard sub-steps for the rebuild-retained profile form.
+ * UI is tombstoned — constant kept for rebuild slice + copy helpers.
+ */
 export const CLIENT_ONBOARDING_FORM_STEPS = 4;
 
+/** Prefill order: saved profile → invitation name → auth display name. */
 export function buildClientOnboardingFormDefaults(input: {
   profile: {
     fullLegalName?: string | null;

@@ -28,7 +28,9 @@ describe("studio-canonical-kit", () => {
     const login = getCanonicalStudioEntry("login-page-02");
     expect(login?.portalAdoption).toMatch(/PortalAuthNeonView|Neon/i);
     expect(login?.role).toBe("layout-reference");
-    expect(login?.portalAdoption.toLowerCase()).toMatch(/do not mount/);
+    expect(login?.portalAdoption.toLowerCase()).toMatch(
+      /loginpage02chrome|demo loginform removed/,
+    );
   });
 
   it("keeps kit entries unique by blockSlug", () => {

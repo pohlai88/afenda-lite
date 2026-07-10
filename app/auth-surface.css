@@ -1,22 +1,30 @@
 /*
- * Auth / portal login surface styles.
+ * Auth / portal login surface styles — PRESERVE CONTRACT
+ * -------------------------------------------------------
  * Isolated from AdminCN app/globals.css — tokens only apply under
  * .auth-surface | .guardian-auth | .neon-auth-page | .portal-shell
- * Backup of pre-migration globals: app/globals.portal-backup.css
+ *
+ * DO NOT:
+ * - Remove @import "@neondatabase/auth-ui/tailwind"
+ * - Move these tokens into AdminCN :root (breaks CSS split)
+ * - Strip .portal-neon-view / OTP slot rules used by Neon AuthView
+ *
+ * Production Studio shell: .auth-surface + data-auth-island="studio"
+ * Application-shell-05 CSS is NOT imported here — Studio auth does not use
+ * that shell; Storybook/Guardian fixtures import atmosphere CSS from their own
+ * entry if needed (root `components/` was removed).
+ * Backup of pre-migration globals: app/globals.portal-backup.css.txt
+ * Skill: .cursor/skills/admincn-customization/SKILL.md
  */
 
 @import "@neondatabase/auth-ui/tailwind";
-@import "../components/portal-atmosphere/tokens/portal-atmosphere.css";
-@import "../components/V2/application-shell-5/application-shell-05.css";
 @plugin "@tailwindcss/typography";
 
 /* Portal/login token island — does not touch AdminCN :root on dashboard */
 .auth-surface,
 .guardian-auth,
 .neon-auth-page,
-.portal-shell,
-.portal-atmosphere,
-[data-portal-atmosphere] {
+.portal-shell {
   --background: oklch(0.984 0.003 248.2);
   --foreground: oklch(0.208 0.040 265.8);
   --card: oklch(1 0 0);
@@ -72,8 +80,6 @@
 .dark .guardian-auth,
 .dark .neon-auth-page,
 .dark .portal-shell,
-.dark .portal-atmosphere,
-.dark [data-portal-atmosphere],
 html.dark:has(.guardian-auth) .guardian-auth,
 html.dark:has(.auth-surface) .auth-surface,
 html.dark:has(.portal-shell) .portal-shell {

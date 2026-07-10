@@ -10,6 +10,8 @@ describe("playgroundScreenCategoryLabel", () => {
     expect(playgroundScreenCategoryLabel("admin")).toBe("Admin");
     expect(playgroundScreenCategoryLabel("client")).toBe("Client");
     expect(playgroundScreenCategoryLabel("dynamic")).toBe("Dynamic route");
+    expect(playgroundScreenCategoryLabel("hot-sales")).toBe("Hot Sales");
+    expect(playgroundScreenCategoryLabel("auto")).toBe("Auto-discovered");
   });
 });
 

@@ -6,7 +6,7 @@ import "server-only";
  * **Not** S5 secure declaration links (`/f/[token]` → `survey_invite_tokens`).
  * **Not** org join (`/join?invitationId=` → Neon Auth accept-invitation).
  *
- * @see lib/secure-link-entry.ts for declaration share tokens (S5)
+ * @see lib/entry/secure-link-entry.ts for declaration share tokens (S5)
  * @see docs/architecture/slices/s6-client-identity.md
  */
 import type { Metadata } from "next";

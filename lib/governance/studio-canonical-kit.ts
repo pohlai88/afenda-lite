@@ -36,7 +36,7 @@ export const CANONICAL_STUDIO_KIT: readonly StudioKitEntry[] = [
     role: "layout-reference",
     localPath: "components/shadcn-studio/blocks/login-page-02/",
     portalAdoption:
-      "GuardianAuthFacade access column + PortalAuthNeonView (SPEC-B). Do not mount LoginForm in prod.",
+      "Studio `LoginPage02Chrome` + `PortalAuthNeonView` (`features/auth`). Demo LoginForm removed.",
     surfaces: [
       "auth-sign-in",
       "auth-sign-up",
@@ -122,7 +122,7 @@ export const CANONICAL_STUDIO_KIT: readonly StudioKitEntry[] = [
     blockSlug: "datatable-component-04",
     role: "data-surface",
     localPath: "components/shadcn-studio/blocks/datatable-user.tsx",
-    portalAdoption: "org-client-tables.tsx",
+    portalAdoption: "portal-client-tables.tsx",
     surfaces: ["admin-clients"],
     notes: "Already installed.",
   },

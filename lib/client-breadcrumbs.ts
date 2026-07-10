@@ -1,5 +1,5 @@
 import { portalCopy } from "@/lib/copy/portal-copy";
-import type { PortalBreadcrumb } from "@/components/portal/portal-breadcrumb-list";
+import type { PortalBreadcrumb } from "@/lib/portal-breadcrumb";
 
 export function clientDashboardBreadcrumb(): PortalBreadcrumb {
   return {

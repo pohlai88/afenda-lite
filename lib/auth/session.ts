@@ -9,6 +9,7 @@ import "server-only";
  *
  * Operator role check: `lib/admin.ts` (`isAdminSession`). Neon Admin APIs: `lib/auth/admin.ts`.
  */
+import { cache } from "react";
 import { redirect } from "next/navigation";
 import {
   isAdminSession,
@@ -41,16 +42,18 @@ import {
   getPreviewClientUser,
 } from "@/lib/preview-client";
 
-export async function requireAdminSession(): Promise<AdminAuthenticatedSession> {
-  const session = await getAuthSession();
-  const authenticated = toAdminAuthenticatedSession(session);
+export const requireAdminSession = cache(
+  async (): Promise<AdminAuthenticatedSession> => {
+    const session = await getAuthSession();
+    const authenticated = toAdminAuthenticatedSession(session);
 
-  if (!authenticated || !isAdminSession(authenticated)) {
-    redirect(ORG_ACCESS_DENIED_HREF);
-  }
+    if (!authenticated || !isAdminSession(authenticated)) {
+      redirect(ORG_ACCESS_DENIED_HREF);
+    }
 
-  return authenticated;
-}
+    return authenticated;
+  },
+);
 
 export async function rejectNonOperatorSignIn(signedInEmail: string) {
   const session = await getAuthSession();

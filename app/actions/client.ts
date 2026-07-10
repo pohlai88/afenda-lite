@@ -48,7 +48,8 @@ import { submitClientDeclaration } from "@/lib/domain/survey-submission";
 import { formString } from "@/lib/server-actions/form-data";
 
 export async function saveClientOnboardingAction(formData: FormData) {
-  const session = await requireClientSession();
+  // Incomplete clients must reach this action — do not require onboarding.
+  const session = await requireClientSession({ requireOnboarding: false });
 
   return runLoggedAction(
     "saveClientOnboardingAction",

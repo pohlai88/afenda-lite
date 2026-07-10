@@ -210,7 +210,7 @@ Authority: [ADR-Portal-BG-001](docs/architecture/adr/ADR-Portal-BG-001-portal-at
 | Storybook first | Experiments live in `stories/ui-evaluation/` and `components/portal-atmosphere/fixtures/` until user asks to wire prod |
 | Dual owl assets | Dark: `public/owl-variants/allowed-base/darkbg-removebg-preview2.png` · Light: `public/owl-variants/allowed-base/whitebg-removebg-preview2.png` |
 | Forbidden | CSS invert on owls; single PNG sticker heroes; reintroducing rejected approaches in `pa-rejected-approaches.md` |
-| Prod wiring | **Guardian Auth** on `/auth/*` is approved prod shell ([ADR-Auth-UI-001](docs/architecture/adr/ADR-Auth-UI-001-guardian-shell-neon-form.md), Method B). Fade Owl / Dual / Comp Laptop experiments stay Storybook-only |
+| Prod wiring | **Studio login-page-02 + Neon** on `/auth/*` is the production shell ([ADR-Auth-UI-001](docs/architecture/adr/ADR-Auth-UI-001-guardian-shell-neon-form.md) amended 2026-07-10). Guardian Auth, Fade Owl / Dual / Comp Laptop stay Storybook-only |
 
 Storybook server mocks: `.storybook/mocks/server-only.ts`, `.storybook/mocks/db.ts` (see `.storybook/main.ts`).
 

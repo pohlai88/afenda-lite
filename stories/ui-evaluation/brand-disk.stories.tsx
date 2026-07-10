@@ -2,7 +2,7 @@
  * @deprecated Prefer UI Evaluation / Brand Icon — kept for bookmark compatibility.
  */
 import type { Meta, StoryObj } from "@storybook/react";
-import { BrandThemeIcon } from "@/components/portal/portal-brand-mark";
+import { BrandThemeIcon } from "@/features/portal-chrome/portal-brand-mark";
 import { BRAND_CONTEXT } from "@/lib/copy/portal-brand";
 
 const meta: Meta = {

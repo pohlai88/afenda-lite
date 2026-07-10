@@ -1,5 +1,13 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+vi.mock("server-only", () => ({}));
+
+import { portalCopy } from "@/lib/copy/portal-copy";
 import type { ClientAssignment } from "@/lib/domain/clients";
+import {
+  clientDeclarePageMetadata,
+  runClientDeclarePage,
+} from "@/lib/pages/client-declare-page";
 import {
   resolveClientDeclarePageGate,
   resolveClientDeclareWorkspaceProps,
@@ -9,6 +17,31 @@ import {
   makeClientProfile,
   makeYesNoQuestion,
 } from "@/testing/unit/domain-fixtures";
+
+describe("clientDeclarePageMetadata", () => {
+  it("exports unavailable stub metadata from portal copy", () => {
+    expect(clientDeclarePageMetadata.title).toContain(
+      portalCopy.clientWorkspace.unavailableTitle,
+    );
+    expect(clientDeclarePageMetadata.description).toBe(
+      portalCopy.clientWorkspace.unavailableDescription,
+    );
+  });
+});
+
+describe("runClientDeclarePage", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("renders the shared unavailable panel without exercising gates", async () => {
+    const ui = await runClientDeclarePage();
+    expect(ui.props.copy.title).toBe(
+      portalCopy.clientWorkspace.unavailableTitle,
+    );
+  });
+});
+
 
 const baseAssignment = makeClientAssignment();
 const acknowledgedProfile = makeClientProfile();
@@ -107,9 +140,7 @@ describe("resolveClientDeclareWorkspaceProps", () => {
     expect(expired.kind).toBe("expired");
     if (expired.kind === "expired") {
       expect(expired.title).toBe("Annual declaration");
-      expect(expired.deadline.submitBefore).toEqual(
-        new Date("2020-01-01T00:00:00.000Z"),
-      );
+      expect(expired.deadline.submitBefore).toBe("2020-01-01T00:00:00.000Z");
     }
   });
 
@@ -143,7 +174,7 @@ describe("resolveClientDeclareWorkspaceProps", () => {
         initialAnswers: { q1: true },
         initialStepIndex: 2,
         initialEvidenceNames: { q1: "passport.pdf" },
-        initialDraftSavedAt: new Date("2026-07-08T12:00:00.000Z"),
+        initialDraftSavedAt: "2026-07-08T12:00:00.000Z",
       },
     });
   });

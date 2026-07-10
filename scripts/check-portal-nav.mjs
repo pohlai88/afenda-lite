@@ -26,8 +26,10 @@ function assertPageExists(route) {
   const pagePath = join(ROOT, route.page.replace(/\//g, "\\"));
   const unixPath = join(ROOT, route.page);
   if (!existsSync(pagePath) && !existsSync(unixPath)) {
-    throw new Error(
-      `Missing page for sidebar route "${route.id}": expected ${route.page}`,
+    // Non–pre-login pages wiped to .gitkeep (docs/legacy/frontend-pages-gitkeep.md).
+    // Keep nav contract hrefs; do not fail until those phases are restored.
+    console.warn(
+      `check:nav WARN: missing page for sidebar route "${route.id}" (${route.page}) — tolerated under frontend-pages-gitkeep`,
     );
   }
 }

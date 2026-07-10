@@ -1,6 +1,6 @@
 "use client";
 
-import { PortalRouteError } from "@/components/portal/portal-route-error";
+import { PortalRouteError } from "@/features/portal-chrome/portal-route-error";
 import { portalCopy } from "@/lib/copy/portal-copy";
 import { CLIENT_HOME_HREF } from "@/lib/routing/portal-routes";
 

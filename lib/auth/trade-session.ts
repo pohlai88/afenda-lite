@@ -3,6 +3,7 @@ import { isAdminSession } from "@/lib/admin";
 import { getAuthSession } from "@/lib/auth/get-session";
 import { isHotSalesRbacEnabled } from "@/lib/env/accessors";
 import { AUTH_SIGN_IN_HREF } from "@/lib/routing/portal-routes";
+import { tradeDefaultHref } from "@/lib/i18n/trade";
 import { canSalesAccessTrade } from "@/lib/domain/trade/access";
 import { canPermission } from "@/lib/domain/trade/rbac";
 import type { HotSalesScopeContext } from "@/lib/domain/trade/rbac";
@@ -75,7 +76,7 @@ export async function requireTradeAdmin(): Promise<{
   const access = await requireTradeAccess();
   if (!access.rbacEnabled) {
     if (!access.isAdmin) {
-      redirect("/trade/vi/events");
+      redirect(tradeDefaultHref("/events"));
     }
     return { userId: access.userId, email: access.email };
   }
@@ -89,7 +90,7 @@ export async function requireTradeAdmin(): Promise<{
     // Platform/company scoped admin templates match without event id.
   }).allowed;
   if (!ok) {
-    redirect("/trade/vi/events");
+    redirect(tradeDefaultHref("/events"));
   }
   return { userId: access.userId, email: access.email };
 }
@@ -111,7 +112,7 @@ export async function requireTradePermission(
       "deposit.view",
     ]);
     if (!salesAllowed.has(permissionCode)) {
-      redirect("/trade/vi/events");
+      redirect(tradeDefaultHref("/events"));
     }
     return access;
   }
@@ -141,7 +142,7 @@ export async function requireTradePermission(
     permissionCtx,
   );
   if (!result.allowed) {
-    redirect("/trade/vi/events");
+    redirect(tradeDefaultHref("/events"));
   }
   return access;
 }

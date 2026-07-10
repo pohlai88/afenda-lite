@@ -177,6 +177,7 @@ export const HOT_SALES_ROLE_TEMPLATES: readonly HotSalesRoleTemplateDef[] = [
       "priority.manage",
       "export.orders",
       "pickup.view",
+      "pickup.manage",
     ],
   },
   {

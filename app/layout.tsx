@@ -1,10 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { portalFontClassName } from "./fonts";
-import { BrandFaviconSync } from "@/components/brand-favicon-sync";
-import { PortalAuthProvider } from "@/components/portal/portal-auth-provider";
-import { ThemeProvider } from "@/components/theme-provider";
-import { Toaster } from "@/components/ui/sonner";
+import { BrandFaviconSync } from "@/features/portal-chrome/brand-favicon-sync";
+import { PortalAuthProvider } from "@/features/auth/portal-auth-provider";
+import { ThemeProvider } from "@/features/portal-chrome/theme-provider";
+import { Toaster } from "@/components-V2/platform-components/ui/sonner";
 import { getAppBaseUrl } from "@/lib/app-url";
 import {
   BRAND_OG_IMAGE_HEIGHT,

@@ -1,16 +1,13 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { authViewPaths } from "@neondatabase/auth-ui/server";
-import { GuardianAuthLoginPage } from "@/components/guardian-auth-login-page";
-import { PortalAuthFormIntro } from "@/components/portal/portal-auth-form-intro";
-import { PortalAuthLayout } from "@/components/portal/portal-auth-layout";
-import { PortalAuthNeonView } from "@/components/portal/portal-auth-neon-view";
 import {
-  AUTH_ENTRY_PATHS,
   AuthPageNotices,
-} from "@/lib/auth/auth-page-notices";
+  AUTH_ENTRY_PATHS,
+  PortalAuthFormIntro,
+  StudioAuthLoginPage,
+} from "@/features/auth";
 import { resolveShowVaultHeading } from "@/lib/auth/auth-form-intro-visibility";
-import { isGuardianAuthShellEnabled } from "@/lib/auth/guardian-auth-shell";
 import { resolveAuthShellCopy } from "@/lib/copy/auth-shell-copy";
 import { portalAuthMetadata } from "@/lib/auth-metadata";
 import { redirectAuthAcceptInvitationToJoin } from "@/lib/entry/client-invitation-entry";
@@ -67,7 +64,6 @@ export default async function AuthPage({
 
   const shellCopy = resolveAuthShellCopy({ path, from });
   const redirectTo = returnTo ?? undefined;
-  const useGuardianShell = isGuardianAuthShellEnabled() && !embed;
   const headerExtra = (
     <AuthPageNotices path={path} from={from} reason={reason} />
   );
@@ -75,29 +71,16 @@ export default async function AuthPage({
     <PortalAuthFormIntro
       {...shellCopy}
       showVaultHeading={resolveShowVaultHeading({ path, from })}
-      compact={useGuardianShell}
     />
   );
 
-  if (useGuardianShell) {
-    return (
-      <GuardianAuthLoginPage
-        pathname={path}
-        from={from}
-        redirectTo={redirectTo}
-        shellCopy={shellCopy}
-        headerExtra={headerExtra}
-        formIntro={formIntro}
-      />
-    );
-  }
-
   return (
-    <PortalAuthLayout headerExtra={headerExtra}>
-      <div className="flex w-full flex-col gap-4">
-        {formIntro}
-        <PortalAuthNeonView pathname={path} redirectTo={redirectTo} />
-      </div>
-    </PortalAuthLayout>
+    <StudioAuthLoginPage
+      pathname={path}
+      redirectTo={redirectTo}
+      shellCopy={shellCopy}
+      headerExtra={headerExtra}
+      formIntro={formIntro}
+    />
   );
 }

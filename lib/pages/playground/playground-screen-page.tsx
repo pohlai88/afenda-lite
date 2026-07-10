@@ -3,7 +3,11 @@ import "server-only";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { PlaygroundScreenPreview } from "@/components/playground-screen-preview";
-import { getPlaygroundScreen, getPlaygroundScreenIds } from "@/lib/playground/playground";
+import { getPlaygroundScreenIds } from "@/lib/playground/playground";
+import {
+  getPlaygroundScreenWithAutoDiscovery,
+  hasUnresolvedPlaygroundPlaceholders,
+} from "@/lib/playground/playground-auto-discovery";
 import { PORTAL_NAME } from "@/lib/copy/portal-copy";
 import {
   buildPlaygroundScreenViewModel,
@@ -20,7 +24,7 @@ export async function playgroundScreenPageMetadata({
   params: Promise<{ screenId: string }>;
 }): Promise<Metadata> {
   const { screenId } = await params;
-  const screen = getPlaygroundScreen(screenId);
+  const screen = getPlaygroundScreenWithAutoDiscovery(screenId);
 
   return {
     title: resolvePlaygroundScreenMetadataTitle(screen, PORTAL_NAME),
@@ -36,20 +40,26 @@ export async function runPlaygroundScreenPage({
   params: Promise<{ screenId: string }>;
 }) {
   const { screenId } = await params;
-  const screen = getPlaygroundScreen(screenId);
+  const screen = getPlaygroundScreenWithAutoDiscovery(screenId);
 
   if (!screen) {
     notFound();
   }
 
   const view = buildPlaygroundScreenViewModel(screen);
+  const needsRegistryEntry = screen.category === "auto";
+  const unresolved =
+    needsRegistryEntry && hasUnresolvedPlaygroundPlaceholders(screen.path);
 
   return (
     <PlaygroundScreenPreview
       screen={view.screen}
       embedUrl={view.embedUrl}
-      pathConfigured={view.pathConfigured}
+      pathConfigured={
+        view.pathConfigured && !needsRegistryEntry && !unresolved
+      }
       categoryLabel={view.categoryLabel}
+      needsRegistryEntry={needsRegistryEntry}
     />
   );
 }

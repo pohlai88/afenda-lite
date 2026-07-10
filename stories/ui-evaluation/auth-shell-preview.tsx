@@ -1,5 +1,5 @@
 import { PortalAuthLayout } from "@/components/portal/portal-auth-layout";
-import { PortalAuthEmailTrustNotice } from "@/components/portal/portal-auth-email-trust-notice";
+import { PortalAuthEmailTrustNotice } from "@/features/auth/notices";
 import { GuardianAuthNeonSlotPreview } from "@/components/auth/fixtures/guardian-auth-facade.fixture";
 import { PortalInvitationJoinBrandPanel } from "@/components/portal/portal-invitation-join-brand-panel";
 import { PortalInvitationJoinSteps } from "@/components/portal/portal-invitation-join-steps";

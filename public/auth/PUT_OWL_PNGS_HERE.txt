@@ -1,7 +1,0 @@
-Production Guardian Auth uses morpho owl only:
-  /brand/owls/guardian-dramatic-iso.png
-
-Legacy reference-kit paths (not wired in prod):
-  owl-day-cutout.png, owl-night-cutout.png, owl-*-ghost.png
-
-Dual PNG cross-fade experiments: Fade Owl / Dual Guardian Storybook fixtures only.

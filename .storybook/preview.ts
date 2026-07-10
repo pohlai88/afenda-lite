@@ -1,7 +1,7 @@
 import type { Preview } from "@storybook/react";
 import "../app/globals.css";
 import "./fonts.css";
-import "../components/portal-atmosphere/styles/portal-atmosphere.storybook-experiments.css";
+// Atmosphere experiment CSS removed with `components/` — Storybook PA stories stay closed until reopened.
 import { withPortalTheme } from "./decorators";
 // Guard for any dependency that reads `process` in the browser bundle.
 if (typeof globalThis.process === "undefined") {

@@ -55,7 +55,7 @@ testing/
     fixtures.ts             # evidence path, playground fixtures
     operator-flows.ts       # loginAsOperator, createDeclaration, …
     client-flows.ts         # loginAsClient
-    onboarding-flows.ts     # completeClientOnboardingWizard
+    onboarding-flows.ts     # expectClientOnboardingUnavailable (wizard blocked)
     declaration-flows.ts    # submitDefaultDeclarationAnswers, …
     client-declare-gates.ts # ack gate + assignment lookup via scripts
     client-invitation-flows.ts # join journey + Neon test-user helpers

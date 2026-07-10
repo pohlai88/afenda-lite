@@ -3,6 +3,7 @@ import type { SurveyQuestion } from "@/lib/domain/questions";
 import type { SurveyResponse } from "@/lib/domain/surveys";
 import {
   collectSubmissionFileEvidenceIds,
+  indexEvidenceRecordsById,
   mapOperatorDeclarationQuestionDrafts,
 } from "@/lib/pages/operator-declaration-detail.logic";
 
@@ -77,5 +78,23 @@ describe("mapOperatorDeclarationQuestionDrafts", () => {
         config: {},
       },
     ]);
+  });
+});
+
+describe("indexEvidenceRecordsById", () => {
+  it("indexes evidence rows as a plain record", () => {
+    const record = {
+      id: "evidence-1",
+      surveyId: fileQuestion.surveyId,
+      questionId: fileQuestion.id,
+      fileName: "passport.pdf",
+      mimeType: "application/pdf",
+      sizeBytes: 1024,
+      createdAt: new Date("2026-07-01T00:00:00.000Z"),
+    };
+
+    expect(indexEvidenceRecordsById([record])).toEqual({
+      "evidence-1": record,
+    });
   });
 });

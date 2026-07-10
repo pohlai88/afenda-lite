@@ -1,4 +1,4 @@
-import { PortalNotFoundPage } from "@/components/portal/portal-not-found-page";
+import { PortalNotFoundPage } from "@/features/portal-chrome/portal-not-found-page";
 import {
   notFoundPageMetadata,
   resolveNotFoundDestination,

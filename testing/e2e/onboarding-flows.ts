@@ -12,46 +12,22 @@ export type OnboardingProfileInput = {
   phone?: string;
 };
 
-export async function completeClientOnboardingWizard(
-  page: Page,
-  input: OnboardingProfileInput = {},
-) {
-  const copy = portalCopy.clientOnboarding;
-
+/** @deprecated Wizard UI tombstoned — assert unavailable page until rebuild. */
+export async function expectClientOnboardingUnavailable(page: Page) {
   await expect(page).toHaveURL(/\/client\/onboarding/);
+  await expect(
+    page.getByRole("heading", {
+      name: portalCopy.clientOnboarding.unavailableTitle,
+    }),
+  ).toBeVisible({ timeout: 30_000 });
+}
 
-  await page
-    .getByLabel(new RegExp(copy.fullLegalNameLabel, "i"))
-    .fill(input.fullLegalName ?? "E2E Onboarding Declarant");
-  await page.locator('select[name="nationality"]').selectOption(
-    input.nationality ?? "SG",
+/** @deprecated Throws — wizard removed. Use `expectClientOnboardingUnavailable`. */
+export async function completeClientOnboardingWizard(
+  _page: Page,
+  _input: OnboardingProfileInput = {},
+) {
+  throw new Error(
+    "completeClientOnboardingWizard is blocked: onboarding wizard UI is tombstoned. Use expectClientOnboardingUnavailable.",
   );
-  await page.locator('select[name="countryOfResidence"]').selectOption(
-    input.countryOfResidence ?? "SG",
-  );
-  await page.getByRole("button", { name: new RegExp(copy.formNextStep, "i") }).click();
-
-  await page.locator('select[name="passportIssuingCountry"]').selectOption(
-    input.passportIssuingCountry ?? "SG",
-  );
-  await page
-    .getByLabel(new RegExp(copy.passportNumberLabel, "i"))
-    .fill(input.passportNumber ?? "E1234567");
-  await page.getByRole("button", { name: new RegExp(copy.formNextStep, "i") }).click();
-
-  await page
-    .getByLabel(new RegExp(copy.entityLabel, "i"))
-    .fill(input.entityName ?? "E2E Holdings Pte. Ltd.");
-  await page
-    .getByLabel(new RegExp(copy.jurisdictionLabel, "i"))
-    .fill(input.jurisdiction ?? "Singapore");
-  await page.getByRole("button", { name: new RegExp(copy.formNextStep, "i") }).click();
-
-  await page
-    .getByLabel(new RegExp(copy.phoneLabel, "i"))
-    .fill(input.phone ?? "+65 9123 4567");
-  await page.getByRole("checkbox").check();
-  await page.getByRole("button", { name: new RegExp(copy.submit, "i") }).click();
-
-  await expect(page).toHaveURL(/\/client\/?$/);
 }

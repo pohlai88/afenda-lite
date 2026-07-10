@@ -1,7 +1,7 @@
 "use client";
 
 import "./globals.css";
-import { PortalRouteError } from "@/components/portal/portal-route-error";
+import { PortalRouteError } from "@/features/portal-chrome/portal-route-error";
 import { portalFontClassName } from "@/app/fonts";
 import { portalCopy } from "@/lib/copy/portal-copy";
 import { AUTH_SIGN_IN_HREF } from "@/lib/routing/portal-routes";

@@ -1,8 +1,57 @@
-import type { ClientDeclareWorkspaceProps } from "@/components/client/client-declare-workspace";
 import { assignmentDeadlineExpired } from "@/lib/client-dashboard-metrics";
 import type { ClientAssignment, ClientProfile } from "@/lib/domain/clients";
 import { isClientPortalAcknowledged } from "@/lib/domain/clients";
 import type { SurveyQuestion } from "@/lib/question-models";
+
+/** ISO-8601 instant or null — safe across server/client boundaries. */
+export type IsoDateString = string;
+
+function toIsoDateString(value: Date | string | null | undefined): IsoDateString | null {
+  if (value == null) {
+    return null;
+  }
+  if (typeof value === "string") {
+    return value;
+  }
+  return value.toISOString();
+}
+
+/**
+ * Workspace props shape retained for rebuild.
+ * All dates are ISO strings so the contract stays JSON-serializable.
+ */
+export type ClientDeclareWorkspaceProps =
+  | { kind: "receipt"; title: string; confirmationCode: string }
+  | { kind: "empty-questions"; title: string }
+  | {
+      kind: "expired";
+      title: string;
+      deadline: {
+        status: "pending";
+        dueDate: IsoDateString | null;
+        submitBefore: IsoDateString | null;
+      };
+    }
+  | {
+      kind: "form";
+      title: string;
+      description?: string;
+      deadline: {
+        status: "pending";
+        dueDate: IsoDateString | null;
+        submitBefore: IsoDateString | null;
+      };
+      form: {
+        assignmentId: string;
+        surveyId: string;
+        slug: string;
+        questions: SurveyQuestion[];
+        initialAnswers?: unknown;
+        initialStepIndex?: number;
+        initialEvidenceNames?: Record<string, string>;
+        initialDraftSavedAt?: IsoDateString | null;
+      };
+    };
 
 export type ClientDeclarePageGate =
   | "not-found"
@@ -38,8 +87,8 @@ export function resolveClientDeclareWorkspaceProps(input: {
   const title = assignment.surveyTitle ?? declarationEyebrow;
   const deadline = {
     status: "pending" as const,
-    dueDate: assignment.dueDate,
-    submitBefore: assignment.submitBefore,
+    dueDate: toIsoDateString(assignment.dueDate),
+    submitBefore: toIsoDateString(assignment.submitBefore),
   };
   const draftAnswers = assignment.draftAnswers ?? undefined;
 
@@ -72,7 +121,7 @@ export function resolveClientDeclareWorkspaceProps(input: {
       initialAnswers: draftAnswers,
       initialStepIndex: assignment.draftStepIndex ?? undefined,
       initialEvidenceNames,
-      initialDraftSavedAt: assignment.draftSavedAt ?? undefined,
+      initialDraftSavedAt: toIsoDateString(assignment.draftSavedAt),
     },
   };
 }

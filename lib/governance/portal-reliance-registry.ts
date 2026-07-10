@@ -83,47 +83,23 @@ export const SURFACE_RELIANCE: ReadonlyArray<{
   },
   {
     surfaceId: "client-onboarding",
-    consumes: [
-      { kind: "server-action", actionId: "action:requireClientSession" },
-      { kind: "server-action", actionId: "action:saveClientOnboardingAction" },
-      { kind: "domain-loader", domainId: "domain:auth" },
-      { kind: "domain-loader", domainId: "domain:client-onboarding" },
-      { kind: "domain-loader", domainId: "domain:clients" },
-    ],
+    consumes: [],
   },
   {
     surfaceId: "client-profile",
-    consumes: [
-      { kind: "server-action", actionId: "action:requireClientSession" },
-      { kind: "domain-loader", domainId: "domain:auth" },
-      { kind: "domain-loader", domainId: "domain:clients" },
-    ],
+    consumes: [],
   },
   {
     surfaceId: "client-dashboard",
-    consumes: [
-      { kind: "server-action", actionId: "action:requireClientSession" },
-      { kind: "server-action", actionId: "action:acknowledgeClientPortalAction" },
-      { kind: "domain-loader", domainId: "domain:auth" },
-      { kind: "domain-loader", domainId: "domain:clients" },
-    ],
+    consumes: [],
   },
   {
     surfaceId: "client-acknowledgement",
-    consumes: [{ kind: "server-action", actionId: "action:acknowledgeClientPortalAction" }],
+    consumes: [],
   },
   {
     surfaceId: "client-declare",
-    consumes: [
-      { kind: "server-action", actionId: "action:requireClientSession" },
-      { kind: "server-action", actionId: "action:submitClientDeclarationAction" },
-      { kind: "server-action", actionId: "action:saveClientDeclarationDraftAction" },
-      { kind: "server-action", actionId: "action:postClientDeclarationDraftApi" },
-      { kind: "server-action", actionId: "action:registerEvidenceAction" },
-      { kind: "domain-loader", domainId: "domain:auth" },
-      { kind: "domain-loader", domainId: "domain:clients" },
-      { kind: "domain-loader", domainId: "domain:questions" },
-    ],
+    consumes: [],
   },
   {
     surfaceId: "admin-dashboard",
@@ -181,6 +157,7 @@ export const SURFACE_RELIANCE: ReadonlyArray<{
       { kind: "server-action", actionId: "action:requireAdminSession" },
       { kind: "server-action", actionId: "action:regenerateInviteTokenAction" },
       { kind: "domain-loader", domainId: "domain:surveys" },
+      { kind: "domain-loader", domainId: "domain:declaration-share-links" },
       { kind: "domain-loader", domainId: "domain:auth" },
     ],
   },
@@ -206,10 +183,7 @@ export const SURFACE_RELIANCE: ReadonlyArray<{
     surfaceId: "shell-dashboard",
     consumes: [
       { kind: "server-action", actionId: "action:requireAdminSession" },
-      { kind: "server-action", actionId: "action:startClientPreviewAction" },
-      { kind: "domain-loader", domainId: "domain:preview-client" },
       { kind: "domain-loader", domainId: "domain:auth" },
-      { kind: "domain-loader", domainId: "domain:clients" },
     ],
   },
   {
@@ -354,6 +328,7 @@ export const DOMAIN_MODULE_DEFINITIONS: ReadonlyArray<{
   { id: "domain:operator-dashboard-page", label: "Operator dashboard", path: "lib/pages/operator-dashboard-page.ts" },
   { id: "domain:operator-clients-page", label: "Operator clients", path: "lib/pages/operator-clients-page.ts" },
   { id: "domain:operator-declaration-detail", label: "Operator declaration detail", path: "lib/pages/operator-declaration-detail.tsx" },
+  { id: "domain:declaration-share-links", label: "Declaration share links", path: "lib/domain/declaration-share-links.ts" },
   { id: "domain:preview-client", label: "Preview client", path: "lib/preview-client.ts" },
 ];
 

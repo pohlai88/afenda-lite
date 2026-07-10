@@ -30,6 +30,7 @@ const nextConfig: NextConfig = {
       "lucide-react",
       "@base-ui/react",
       "@tanstack/react-table",
+      "@neondatabase/auth-ui",
     ],
     serverActions: {
       allowedOrigins: DEV_IP_ORIGINS,
@@ -45,6 +46,10 @@ const nextConfig: NextConfig = {
       {
         protocol: "https",
         hostname: "api.qrserver.com",
+      },
+      {
+        protocol: "https",
+        hostname: "cdn.shadcnstudio.com",
       },
     ],
   },

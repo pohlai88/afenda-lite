@@ -1,0 +1,99 @@
+---
+description: Journey-phase operating protocol — preflight + auto-enrichment + one-pass vibe coding
+alwaysApply: true
+---
+
+# Journey-phase operating protocol
+
+**SSOT:** [docs/architecture/journey-phase-playbook.md](docs/architecture/journey-phase-playbook.md)
+
+Before writing any product code, run this seven-step gate:
+
+---
+
+## Step 1 — Name the phase
+
+Pick exactly one:
+
+| Phase ID              | Canonical routes                                                                           |
+| --------------------- | ------------------------------------------------------------------------------------------ |
+| `pre-login`           | `/` `/auth/*` `/org/login` `/client/login` `/invite/[token]` `/f/[token]` `/survey/[slug]` |
+| `join`                | `/join?invitationId=`                                                                      |
+| `onboarding`          | `/client/onboarding`                                                                       |
+| `client-post-login`   | `/client` `/client/profile` `/client/declare/[id]`                                         |
+| `operator-post-login` | `/dashboard` `/dashboard/clients` `/dashboard/[id]`                                        |
+| `hot-sales`           | `/trade/*` — **stop and confirm gate-register before touching**                            |
+
+If the task spans more than one phase, stop and ask the user which one to take first.
+
+---
+
+## Step 2 — Run preflight
+
+Confirm every item in the phase's preflight checklist in [docs/architecture/journey-phase-playbook.md](docs/architecture/journey-phase-playbook.md#c-preflight-checklist).
+
+For `operator-post-login`, also run [docs/architecture/admincn-frontend-preflight.md](docs/architecture/admincn-frontend-preflight.md).
+
+---
+
+## Step 3 — Check three perspectives (`fullstack-guardian`)
+
+Before writing a single file, confirm these three layers are covered:
+
+**Frontend**
+Route → `lib/entry/*` or `lib/pages/*` → `features/` or `portal-views/` → `loading.tsx` present
+
+**Backend**
+`app/actions/*.ts` → Zod schema in `lib/schemas/` → `requireSession` guard → `lib/domain/*.ts` → Neon
+
+**Security**
+`proxy.ts` matcher/bypass correct · session guard at layout · `sanitizeReturnToPath` on any `returnTo` · parameterized queries only in `lib/domain/`
+
+---
+
+## Step 4 — Auto-enrich
+
+Before implementing, scan for gaps and fill them in the same pass:
+
+- UI page without a server action → add action + Zod schema
+- Server action without UI → add feature component + page delegation
+- Action without `lib/domain/` function → add domain function
+- Doc references deleted file → update doc
+- `loading.tsx` missing on route → add skeleton file
+- Governance registry out of sync → run `npm run export:reliance-mapping`
+
+**Never commit a half-stack slice.**
+
+---
+
+## Step 5 — One phase only
+
+Do not pull in adjacent phases, Hot Sales 2B–2D, portal atmosphere experiments, or the client-workspace rebuild unless the user explicitly reopens scope in this turn.
+
+---
+
+## Step 6 — Implement once
+
+After preflight, implement the full vertical slice in one pass. Do not write partial stubs expecting a follow-up turn.
+
+---
+
+## Step 7 — Verify or replan
+
+Run phase verify commands from the playbook. On any failure:
+1. Stop immediately
+2. State the exact command output and error
+3. Propose a concrete replan
+
+**Do not enter an open-ended debug exploration loop.**
+
+---
+
+## Definition of Done (applies to every phase)
+
+| Perspective     | Pass criteria                                                                                                                              |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Frontend**    | Route delegates to entry/page runner; feature component mounts; `loading.tsx` present; no inline business logic in `app/` page file        |
+| **Backend**     | Zod-validated input; `requireSession` guard; domain-only DB access; no raw SQL in action layer                                             |
+| **Security**    | `proxy.ts` matcher correct; session guard at layout for workspace routes; `sanitizeReturnToPath` on `returnTo`; parameterized queries only |
+| **Integration** | `tsc --noEmit` clean; relevant unit test passes; `npm run checks` passes; no half-stack residue                                            |

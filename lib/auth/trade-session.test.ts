@@ -39,6 +39,9 @@ import {
   requireTradeAdmin,
   requireTradePermission,
 } from "@/lib/auth/trade-session";
+import { tradeDefaultHref } from "@/lib/i18n/trade";
+
+const salesEventsRedirect = `REDIRECT:${tradeDefaultHref("/events")}`;
 
 const salesMembers = [
   {
@@ -121,7 +124,7 @@ describe("HOT_SALES_RBAC_ENABLED=false — Phase 1 Admin + allowlist", () => {
       mockSignedIn("sales@example.com", "sales-1");
 
       await expect(requireTradeAdmin()).rejects.toThrow(
-        "REDIRECT:/trade/vi/events",
+        salesEventsRedirect,
       );
     });
   });
@@ -143,7 +146,7 @@ describe("HOT_SALES_RBAC_ENABLED=false — Phase 1 Admin + allowlist", () => {
       mockSignedIn("sales@example.com", "sales-1");
 
       await expect(requireTradePermission("event.create")).rejects.toThrow(
-        "REDIRECT:/trade/vi/events",
+        salesEventsRedirect,
       );
     });
 
@@ -162,7 +165,7 @@ describe("HOT_SALES_RBAC_ENABLED=false — Phase 1 Admin + allowlist", () => {
       mockSignedIn("sales@example.com", "sales-1");
 
       await expect(requireTradePermission("role.manage")).rejects.toThrow(
-        "REDIRECT:/trade/vi/events",
+        salesEventsRedirect,
       );
     });
   });
@@ -240,7 +243,7 @@ describe("HOT_SALES_RBAC_ENABLED=true — action guards", () => {
       ]);
 
       await expect(requireTradePermission("allocation.run")).rejects.toThrow(
-        "REDIRECT:/trade/vi/events",
+        salesEventsRedirect,
       );
     });
 
@@ -278,7 +281,7 @@ describe("HOT_SALES_RBAC_ENABLED=true — action guards", () => {
       ]);
 
       await expect(requireTradePermission("role.manage")).rejects.toThrow(
-        "REDIRECT:/trade/vi/events",
+        salesEventsRedirect,
       );
     });
 
@@ -313,7 +316,7 @@ describe("HOT_SALES_RBAC_ENABLED=true — action guards", () => {
 
       await expect(
         requireTradePermission("allocation.run", { eventId: "event-1" }),
-      ).rejects.toThrow("REDIRECT:/trade/vi/events");
+      ).rejects.toThrow(salesEventsRedirect);
     });
 
     it("allows team-scoped permission when actor belongs to the team", async () => {
@@ -349,7 +352,7 @@ describe("HOT_SALES_RBAC_ENABLED=true — action guards", () => {
       ]);
 
       await expect(requireTradePermission("event.edit")).rejects.toThrow(
-        "REDIRECT:/trade/vi/events",
+        salesEventsRedirect,
       );
     });
 
@@ -413,7 +416,7 @@ describe("HOT_SALES_RBAC_ENABLED=true — action guards", () => {
       ]);
 
       await expect(requireTradeAdmin()).rejects.toThrow(
-        "REDIRECT:/trade/vi/events",
+        salesEventsRedirect,
       );
     });
   });

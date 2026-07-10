@@ -56,7 +56,7 @@ describe("projectDepositStatus", () => {
       depositRequired: true,
       hasDepositRecord: true,
       depositAmount: 100,
-      terminalAdjustment: null as const,
+      terminalAdjustment: null,
     };
     expect(
       projectDepositStatus({ ...base, totalReceiptAmount: 0 }),

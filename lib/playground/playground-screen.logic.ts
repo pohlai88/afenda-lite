@@ -13,6 +13,10 @@ export function playgroundScreenCategoryLabel(
       return "Admin";
     case "client":
       return "Client";
+    case "hot-sales":
+      return "Hot Sales";
+    case "auto":
+      return "Auto-discovered";
     default:
       return "Dynamic route";
   }

@@ -19,11 +19,38 @@ alwaysApply: true
 ## Visual / hero / atmosphere work
 
 - Default mode: **Plan first** → user approves → then implement.
-- Default surface for atmosphere experiments: **Storybook fixtures** (`stories/ui-evaluation/`, `components/portal-atmosphere/fixtures/`).
-- Do **not** wire experimental hero/atmosphere layouts into production auth routes unless the user explicitly asks — **except** the approved Guardian Auth shell on `/auth/*` ([ADR-Auth-UI-001](docs/architecture/adr/ADR-Auth-UI-001-guardian-shell-neon-form.md), Method B).
+- Default surface for atmosphere experiments: Storybook fixtures under `stories/` (Guardian / PA experiments stay Storybook-only unless explicitly reopened).
+- Production `/auth/*` uses Studio login-page-02 + Neon (`features/auth/`). See [`doc/frontend/05-ui-surfaces.md`](doc/frontend/05-ui-surfaces.md) and [`doc/frontend/06-admincn-alignment.md`](doc/frontend/06-admincn-alignment.md).
 
 ## Quality bar before shipping UI
 
-- Name the **reference PNG** and **layout zones** (editorial | owl | access card) before writing CSS.
+- Name the **reference asset** and **layout zones** before writing CSS.
 - If the approach is a shortcut (one asset + filters, paste PNG, invert hack), **stop and plan** — do not ship.
-- See `docs/architecture/slices/portal-atmosphere/pa-rejected-approaches.md` for banned patterns.
+- Rebuild SSOT: [`doc/README.md`](doc/README.md).
+
+## Frontend pages gitkeep (2026-07-11)
+
+- Non–pre-login `app/**/page.tsx` were **wiped** (folders may keep `.gitkeep` only).
+- **Reopened:** `operator-post-login` (`/dashboard`, `/dashboard/clients`, `/dashboard/[id]`) — [`doc/frontend/08-operator-phase1-tasks.md`](doc/frontend/08-operator-phase1-tasks.md).
+- **Reopened:** `join` (`/join`) — [`doc/frontend/10-join-phase2-tasks.md`](doc/frontend/10-join-phase2-tasks.md).
+- **Reopened:** `account` (`/account`, `/account/[path]`) — [`doc/frontend/09-account-phase3-tasks.md`](doc/frontend/09-account-phase3-tasks.md).
+- **Still closed** (do not restore without explicit reopen): `/client` workspace, `/playground`, `/trade/**`.
+- Pre-login keep set: `/`, `/auth/*`, `/org/login`, `/client/login`, `/invite/[token]`, `/f/[token]`, `/survey/[slug]`.
+
+## `components/` hard-delete (2026-07-11)
+
+- Entire `components/` **directory removed**.
+- **Do not** recreate `components/` or `git checkout` the whole tree. Named migrates only: `features/operator/`, `features/auth/studio/`, `features/account/`. New UI → `features/` or `components-V2/` per [`doc/frontend/02-folder-map.md`](doc/frontend/02-folder-map.md).
+
+## Operator / account rebuild noise bans
+
+- No Guardian / PA / owl / brand `public/` restore in these phases
+- No AdminCN demo prune or `platform-fake-db` product wiring
+- No new REST for dashboard/account reads
+- No cross-phase route restores mixed into the same PR (join / client / playground / trade stay closed)
+
+## Frontend / API rebuild SSOT (2026-07-11)
+
+- Design docs live under [`doc/`](doc/README.md) (singular).
+- **Sole framework:** Next.js Modular Monolith + Hexagonal — [`doc/backend/adr/001-modular-monolith-hexagonal.md`](doc/backend/adr/001-modular-monolith-hexagonal.md).
+- Follow Next.js decision tree in `doc/frontend/04-bff-and-data.md` (identical in `doc/backend/01`) and contract rules in `doc/backend/05-contract-rules.md` / `doc/api/`.

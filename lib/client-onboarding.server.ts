@@ -2,14 +2,23 @@ import "server-only";
 
 import { buildClientOnboardingFormDefaults } from "@/lib/client-onboarding";
 import { getClientInvitationByEmail, getClientProfile } from "@/lib/domain/clients";
-import { clientOnboardingSchema } from "@/lib/schemas/client";
+import {
+  clientOnboardingSchema,
+  type ClientOnboardingInput,
+} from "@/lib/schemas/client";
 import {
   formBooleanLiteral,
   formString,
   formStringList,
 } from "@/lib/server-actions/form-data";
 
-export function parseClientOnboardingFormData(formData: FormData) {
+export type ParseClientOnboardingResult =
+  | { success: true; data: ClientOnboardingInput }
+  | { success: false; error: string };
+
+export function parseClientOnboardingFormData(
+  formData: FormData,
+): ParseClientOnboardingResult {
   const result = clientOnboardingSchema.safeParse({
     fullLegalName: formString(formData, "fullLegalName"),
     nationality: formString(formData, "nationality"),
@@ -29,14 +38,18 @@ export function parseClientOnboardingFormData(formData: FormData) {
 
   if (!result.success) {
     return {
-      success: false as const,
+      success: false,
       error: result.error.issues[0]?.message ?? "Check your entries and try again.",
     };
   }
 
-  return { success: true as const, data: result.data };
+  return { success: true, data: result.data };
 }
 
+/**
+ * Rebuild-retained loader for the tombstoned wizard UI.
+ * Not called by the unavailable stub — keep until `client-workspace rebuild slice approved`.
+ */
 export async function loadClientOnboardingPageData(user: {
   id: string;
   email: string;

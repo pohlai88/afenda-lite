@@ -30,6 +30,13 @@ describe("rbac-catalog", () => {
     expect(HOT_SALES_PERMISSION_CATALOG.length).toBeGreaterThan(10);
   });
 
+  it("grants pickup.manage to sales_operations template", () => {
+    const ops = HOT_SALES_ROLE_TEMPLATES.find(
+      (t) => t.templateKey === "sales_operations",
+    )!;
+    expect(ops.permissionCodes).toContain("pickup.manage");
+  });
+
   it("does not grant allocation.override to sales_executive template", () => {
     const exec = HOT_SALES_ROLE_TEMPLATES.find(
       (t) => t.templateKey === "sales_executive",

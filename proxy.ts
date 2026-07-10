@@ -5,7 +5,10 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth/server";
-import { CLIENT_PREVIEW_UNAVAILABLE_HREF } from "@/lib/routing/portal-routes";
+import {
+  CLIENT_PREVIEW_UNAVAILABLE_HREF,
+  CLIENT_SIGN_IN_ENTRY_HREF,
+} from "@/lib/routing/portal-routes";
 
 const neonMiddleware = auth.middleware({
   loginUrl: "/auth/sign-in",
@@ -13,10 +16,12 @@ const neonMiddleware = auth.middleware({
 
 export default async function proxy(request: NextRequest) {
   const isEmbed = request.nextUrl.searchParams.get("embed") === "1";
-  const isPreviewUnavailableGate =
-    request.nextUrl.pathname === CLIENT_PREVIEW_UNAVAILABLE_HREF;
+  const pathname = request.nextUrl.pathname;
+  const isPreviewUnavailableGate = pathname === CLIENT_PREVIEW_UNAVAILABLE_HREF;
+  // Named client sign-in must stay public so reason/returnTo survive to the page.
+  const isClientSignInEntry = pathname === CLIENT_SIGN_IN_ENTRY_HREF;
 
-  if (isEmbed || isPreviewUnavailableGate) {
+  if (isEmbed || isPreviewUnavailableGate || isClientSignInEntry) {
     const requestHeaders = new Headers(request.headers);
     requestHeaders.set("x-playground-embed", "1");
     return NextResponse.next({ request: { headers: requestHeaders } });
@@ -32,10 +37,9 @@ export default async function proxy(request: NextRequest) {
   return neonMiddleware(request);
 }
 
-/** Session-gated routes only. Public entries: `/auth/*`, `/join`, `/org/login`, `/invite/*`, `/api/*`, `/survey/*`, `/f/*` (page-level session routing with returnTo). Auth embed uses `?embed=1` in-page (see resolvePlaygroundEmbedActive). */
+/** Session-gated routes only. Public: `/` (Lynx landing), `/auth/*`, `/join`, `/org/login`, `/invite/*`, `/api/*`, `/survey/*`, `/f/*`. Auth embed uses `?embed=1` in-page (see resolvePlaygroundEmbedActive). */
 export const config = {
   matcher: [
-    "/",
     "/account/:path*",
     "/dashboard/:path*",
     "/client/:path*",

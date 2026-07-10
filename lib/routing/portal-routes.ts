@@ -30,6 +30,7 @@ export function buildClientJoinHref(invitationId: string) {
 export const AUTH_SIGN_IN_HREF = "/auth/sign-in" as const;
 export const AUTH_FORGOT_PASSWORD_HREF = "/auth/forgot-password" as const;
 export const AUTH_RESET_PASSWORD_HREF = "/auth/reset-password" as const;
+export const AUTH_SIGN_OUT_HREF = "/auth/sign-out" as const;
 
 export const CLIENT_PROFILE_HREF = "/client/profile" as const;
 export const OPERATOR_CLIENTS_HREF = "/dashboard/clients" as const;

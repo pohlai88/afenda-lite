@@ -76,6 +76,10 @@ function DialogHeader({ className, ...props }: React.ComponentProps<'div'>) {
   return <div data-slot='dialog-header' className={cn('flex flex-col gap-2', className)} {...props} />
 }
 
+function DialogBody({ className, ...props }: React.ComponentProps<'div'>) {
+  return <div data-slot='dialog-body' className={cn('portal-dialog-body', className)} {...props} />
+}
+
 function DialogFooter({
   className,
   showCloseButton = false,
@@ -121,6 +125,7 @@ function DialogDescription({ className, ...props }: DialogPrimitive.Description.
 
 export {
   Dialog,
+  DialogBody,
   DialogClose,
   DialogContent,
   DialogDescription,

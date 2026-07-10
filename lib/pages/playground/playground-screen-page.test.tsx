@@ -6,7 +6,11 @@ vi.mock("@/components/playground-screen-preview", () => ({
 }));
 
 vi.mock("@/lib/playground/playground", () => ({
-  getPlaygroundScreen: (id: string) =>
+  getPlaygroundScreenIds: () => ["admin-dashboard"],
+}));
+
+vi.mock("@/lib/playground/playground-auto-discovery", () => ({
+  getPlaygroundScreenWithAutoDiscovery: (id: string) =>
     id === "admin-dashboard"
       ? {
           id: "admin-dashboard",
@@ -15,7 +19,7 @@ vi.mock("@/lib/playground/playground", () => ({
           path: "/dashboard",
         }
       : undefined,
-  getPlaygroundScreenIds: () => ["admin-dashboard"],
+  hasUnresolvedPlaygroundPlaceholders: () => false,
 }));
 
 import { playgroundScreenPageMetadata } from "@/lib/pages/playground/playground-screen-page";

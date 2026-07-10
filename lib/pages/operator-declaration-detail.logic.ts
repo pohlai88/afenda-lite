@@ -38,8 +38,9 @@ export type OperatorDeclarationQuestionDraft = ReturnType<
   typeof mapOperatorDeclarationQuestionDrafts
 >[number];
 
+/** Index evidence rows for client-boundary props (plain object, not Map). */
 export function indexEvidenceRecordsById(
   records: EvidenceRecord[],
-): Map<string, EvidenceRecord> {
-  return new Map(records.map((record) => [record.id, record]));
+): Record<string, EvidenceRecord> {
+  return Object.fromEntries(records.map((record) => [record.id, record]));
 }

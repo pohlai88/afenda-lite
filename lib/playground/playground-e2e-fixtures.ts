@@ -46,19 +46,19 @@ const e2eAssertions: Record<
     iframeMarker: new RegExp(portalCopy.accessDenied.title, "i"),
   },
   "client-dashboard": {
-    iframeMarker: /declaration workspace/i,
+    iframeMarker: new RegExp(portalCopy.clientWorkspace.unavailableTitle, "i"),
   },
   "client-onboarding": {
-    iframeMarker: /establish your declarant identity|complete your profile/i,
+    iframeMarker: new RegExp(portalCopy.clientOnboarding.unavailableTitle, "i"),
   },
   "client-profile": {
-    iframeMarker: /declarant profile/i,
+    iframeMarker: new RegExp(portalCopy.clientWorkspace.unavailableTitle, "i"),
   },
   "client-preview-unavailable": {
     iframeMarker: /preview not available|preview unavailable/i,
   },
   "client-declare": {
-    iframeMarker: /submit|declaration|assignment/i,
+    iframeMarker: new RegExp(portalCopy.clientWorkspace.unavailableTitle, "i"),
   },
   "auth-sign-in": {
     iframeMarker: /sign in/i,
@@ -74,7 +74,7 @@ const e2eAssertions: Record<
     iframeMarker: /submissions|share access|declaration/i,
   },
   "dynamic-declare-id": {
-    iframeMarker: /submit|declaration|assignment/i,
+    iframeMarker: new RegExp(portalCopy.clientWorkspace.unavailableTitle, "i"),
   },
   "dynamic-auth-sign-up": {
     iframeMarker: /sign up|create account/i,
@@ -114,6 +114,48 @@ const e2eAssertions: Record<
   },
   "dynamic-client-join": {
     iframeMarker: /join|invitation|sign up|organization/i,
+  },
+  "account-index": {
+    iframeMarker: /account|settings|security/i,
+  },
+  "hot-sales-trade-index": {
+    iframeMarker: /trade|events|sign in|declaration workspace/i,
+  },
+  "hot-sales-events": {
+    iframeMarker: /event|trade|sign in|declaration workspace/i,
+  },
+  "hot-sales-my-orders": {
+    iframeMarker: /order|trade|sign in|declaration workspace/i,
+  },
+  "hot-sales-event-order": {
+    iframeMarker: /order|trade|sign in|declaration workspace/i,
+  },
+  "hot-sales-admin-events": {
+    iframeMarker: /event|admin|trade|sign in|declaration workspace/i,
+  },
+  "hot-sales-admin-events-new": {
+    iframeMarker: /event|admin|trade|sign in|declaration workspace/i,
+  },
+  "hot-sales-admin-event-setup": {
+    iframeMarker: /setup|event|trade|sign in|declaration workspace/i,
+  },
+  "hot-sales-admin-event-allocation": {
+    iframeMarker: /allocation|event|trade|sign in|declaration workspace/i,
+  },
+  "hot-sales-admin-event-deposits": {
+    iframeMarker: /deposit|event|trade|sign in|declaration workspace/i,
+  },
+  "hot-sales-admin-event-imports": {
+    iframeMarker: /import|event|trade|sign in|declaration workspace/i,
+  },
+  "hot-sales-admin-event-pickup": {
+    iframeMarker: /pickup|event|trade|sign in|declaration workspace/i,
+  },
+  "hot-sales-admin-erp-sync": {
+    iframeMarker: /erp|sync|trade|sign in|declaration workspace/i,
+  },
+  "hot-sales-admin-rbac": {
+    iframeMarker: /rbac|role|trade|sign in|declaration workspace/i,
   },
 };
 

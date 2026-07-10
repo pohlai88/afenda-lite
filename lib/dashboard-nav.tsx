@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { SidebarBrandMark } from "@/components/portal/portal-brand-mark";
+import { SidebarBrandMark } from "@/features/portal-chrome/portal-brand-mark";
 import { PORTAL_BRAND_SHELL } from "@/lib/copy/portal-brand";
 import type { PortalMember } from "@/lib/portal-member-types";
 import {

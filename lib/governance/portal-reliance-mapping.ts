@@ -325,7 +325,10 @@ export function issuesFromRelianceMapping(
     if (row.mode === "auth-pathname") {
       const entry = SURFACE_ENTRY_POINTS[row.surfaceId];
       if (entry?.authPathnames) {
-        const authSources = entry.files.map((file) => readSource(repoRoot, file)).join("\n");
+        const authSources = entry.files
+          .filter((file) => existsSync(join(repoRoot, file)))
+          .map((file) => readSource(repoRoot, file))
+          .join("\n");
         for (const pathname of entry.authPathnames) {
           if (!authPathnamePresent(authSources, pathname)) {
             issues.push({
@@ -338,7 +341,11 @@ export function issuesFromRelianceMapping(
     } else if (entryAuthPathnames(row.surfaceId)) {
       const entry = SURFACE_ENTRY_POINTS[row.surfaceId];
       const authSources = entry.files
-        .filter((file) => file.includes("auth") || file.includes("join"))
+        .filter(
+          (file) =>
+            (file.includes("auth") || file.includes("join")) &&
+            existsSync(join(repoRoot, file)),
+        )
         .map((file) => readSource(repoRoot, file))
         .join("\n");
 

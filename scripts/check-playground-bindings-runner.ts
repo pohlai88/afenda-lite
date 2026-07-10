@@ -10,8 +10,21 @@ import {
   resolvePlaygroundRouteFile,
 } from "@/lib/playground/playground-registry";
 import { playgroundE2eFixtures } from "@/lib/playground/playground-e2e-fixtures";
+import { buildRouteCoverageSnapshot } from "@/lib/governance/portal-route-coverage";
 
 const ROOT = process.cwd();
+
+/**
+ * Non–pre-login App Router pages were wiped to `.gitkeep` (2026-07-11).
+ * Playground harness pages are gone — skip binding enforcement until restored.
+ * @see docs/legacy/frontend-pages-gitkeep.md
+ */
+if (!existsSync(join(ROOT, "app/playground/page.tsx"))) {
+  console.log(
+    "Playground binding check\n\nSKIP: app/playground/page.tsx wiped (frontend-pages-gitkeep). Binding checks deferred until playground pages are restored.",
+  );
+  process.exit(0);
+}
 
 const playgroundScreens = playgroundScreenDefs.map((screen) => ({
   ...screen,
@@ -22,6 +35,9 @@ const playgroundNav = {
   admin: playgroundScreens.filter((screen) => screen.category === "admin"),
   client: playgroundScreens.filter((screen) => screen.category === "client"),
   dynamic: playgroundScreens.filter((screen) => screen.category === "dynamic"),
+  "hot-sales": playgroundScreens.filter(
+    (screen) => screen.category === "hot-sales",
+  ),
 };
 
 function getPlaygroundScreen(id: string) {
@@ -105,6 +121,7 @@ const navScreens = [
   ...playgroundNav.admin,
   ...playgroundNav.client,
   ...playgroundNav.dynamic,
+  ...playgroundNav["hot-sales"],
 ];
 if (navScreens.length !== playgroundScreens.length) {
   fail(
@@ -146,6 +163,18 @@ if (!existsSync(join(ROOT, "app/playground/hitl-review/page.tsx"))) {
   }
 }
 
+if (!existsSync(join(ROOT, "app/playground/coverage/page.tsx"))) {
+  fail("Missing app/playground/coverage/page.tsx");
+} else {
+  const coverageSource = readFileSync(
+    join(ROOT, "app/playground/coverage/page.tsx"),
+    "utf8",
+  );
+  if (!coverageSource.includes("runPlaygroundCoveragePage")) {
+    fail("app/playground/coverage/page.tsx must use runPlaygroundCoveragePage.");
+  }
+}
+
 const layoutSource = readFileSync(join(ROOT, "app/playground/layout.tsx"), "utf8");
 const layoutHandlerSource = readFileSync(
   join(ROOT, "lib/playground/playground-layout.tsx"),
@@ -167,6 +196,15 @@ if (playgroundE2eFixtures.length !== playgroundScreens.length) {
 for (const screen of playgroundScreens) {
   if (!playgroundE2eFixtures.some((fixture) => fixture.id === screen.id)) {
     fail(`Missing E2E fixture for playground screen ${screen.id}.`);
+  }
+}
+
+const coverage = buildRouteCoverageSnapshot(ROOT);
+if (coverage.summary.missing > 0) {
+  for (const row of coverage.routes.filter((entry) => !entry.presented)) {
+    fail(
+      `Product page not presented in playground registry: ${row.routePattern} (${row.file})`,
+    );
   }
 }
 

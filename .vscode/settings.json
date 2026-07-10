@@ -2,12 +2,52 @@
   "files.associations": {
     "*.stories.tsx": "typescriptreact"
   },
-  "search.exclude": {
-    "**/storybook-static": true,
+  "files.exclude": {
+    "**/node_modules": true,
     "**/.next": true,
-    "**/node_modules": true
+    "**/.next-ui": true,
+    "**/.next-workflow": true,
+    "**/.turbo": true,
+    "**/dist": true,
+    "**/build": true,
+    "**/coverage": true,
+    "**/test-results": true,
+    "**/playwright-report": true,
+    "**/storybook-static": true,
+    "**/out": true,
+    "**/.artifacts": true
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/.next": true,
+    "**/.next-ui": true,
+    "**/.next-workflow": true,
+    "**/.turbo": true,
+    "**/dist": true,
+    "**/build": true,
+    "**/coverage": true,
+    "**/test-results": true,
+    "**/playwright-report": true,
+    "**/storybook-static": true,
+    "**/out": true,
+    "**/.artifacts": true,
+    "**/.git": true
   },
   "files.watcherExclude": {
-    "**/storybook-static/**": true
-  }
+    "**/node_modules/**": true,
+    "**/.next/**": true,
+    "**/.next-ui/**": true,
+    "**/.next-workflow/**": true,
+    "**/.turbo/**": true,
+    "**/dist/**": true,
+    "**/build/**": true,
+    "**/coverage/**": true,
+    "**/test-results/**": true,
+    "**/playwright-report/**": true,
+    "**/storybook-static/**": true,
+    "**/out/**": true,
+    "**/.artifacts/**": true,
+    "**/.git/**": true
+  },
+  "git.openRepositoryInParentFolders": "never"
 }

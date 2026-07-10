@@ -57,11 +57,13 @@ test.describe("Portal smoke @smoke", () => {
     ).toBeVisible();
   });
 
-  test("client portal home renders sign in", async ({ page }) => {
+  test("client portal home renders lynx landing sign in", async ({ page }) => {
     await page.goto("/");
+    await expect(page).toHaveURL(/\/$/);
     await expect(
-      page.getByRole("link", { name: /organization sign in/i }),
+      page.getByRole("heading", { name: /lynx morphor/i }),
     ).toBeVisible();
+    await expect(page.getByRole("link", { name: /^sign in$/i })).toBeVisible();
   });
 
   test("organization login page renders", async ({ page }) => {

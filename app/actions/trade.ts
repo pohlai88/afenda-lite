@@ -5,6 +5,7 @@ import { requireTradeAdmin, requireTradePermission } from "@/lib/auth/trade-sess
 import { assertImportRowLimit } from "@/lib/domain/trade/import-validators";
 import { enqueueErpSyncJob } from "@/lib/domain/trade/erp-sync-store";
 import { notifyDepositPending, notifyTradeStakeholder } from "@/lib/domain/trade/trade-notify";
+import { toTradeActionErrorMessage } from "@/lib/domain/trade/trade-action-result";
 import { isHotSalesErpSyncEnabled, isHotSalesDepositEnabled, isHotSalesPickupOpsEnabled } from "@/lib/env/accessors";
 import {
   assertHotSalesDepositFeatureAction,
@@ -101,7 +102,37 @@ import {
   upsertProduct,
   upsertSalesMember,
 } from "@/lib/domain/trade/store";
-import { isTradeLocale, type TradeLocale } from "@/lib/i18n/trade";
+import { type TradeLocale } from "@/lib/i18n/trade";
+import {
+  parseTradeEventId,
+  parseTradeLocale,
+  parseTradeOrderId,
+} from "@/lib/schemas/trade";
+
+/** Zod-backed locale gate — returns action error shape (no throws). */
+function gateTradeLocale(
+  locale: string,
+): TradeLocale | { error: "invalid_locale" } {
+  const parsed = parseTradeLocale(locale);
+  if (!parsed.success) return { error: "invalid_locale" };
+  return parsed.data;
+}
+
+function gateTradeEventId(
+  eventId: string,
+): string | { error: "invalid_event_id" } {
+  const parsed = parseTradeEventId(eventId);
+  if (!parsed.success) return { error: "invalid_event_id" };
+  return parsed.data;
+}
+
+function gateTradeOrderId(
+  orderId: string,
+): string | { error: "invalid_order_id" } {
+  const parsed = parseTradeOrderId(orderId);
+  if (!parsed.success) return { error: "invalid_order_id" };
+  return parsed.data;
+}
 
 function revalidateTrade(locale: TradeLocale, eventId?: string) {
   revalidatePath(`/trade/${locale}/events`);
@@ -121,7 +152,9 @@ export async function createTradeEventAction(
   locale: string,
   formData: FormData,
 ) {
-  if (!isTradeLocale(locale)) throw new Error("invalid_locale");
+  const gatedLocale = gateTradeLocale(locale);
+  if (typeof gatedLocale === "object") return gatedLocale;
+  
   const access = await requireTradePermission("event.create");
 
   const eventName = String(formData.get("eventName") ?? "").trim();
@@ -153,20 +186,24 @@ export async function createTradeEventAction(
     newValue: { eventName: event.eventName },
   });
 
-  revalidateTrade(locale);
+  revalidateTrade(gatedLocale);
   return { eventId: event.id };
 }
 
 export async function ensurePigletTemplateAction(locale: string) {
-  if (!isTradeLocale(locale)) throw new Error("invalid_locale");
+  const gatedLocale = gateTradeLocale(locale);
+  if (typeof gatedLocale === "object") return gatedLocale;
+  
   const admin = await requireTradeAdmin();
   const event = await ensureGp2PigletTemplate(admin.userId);
-  revalidateTrade(locale);
+  revalidateTrade(gatedLocale);
   return { eventId: event.id };
 }
 
 export async function cloneTradeEventAction(locale: string, sourceEventId: string) {
-  if (!isTradeLocale(locale)) throw new Error("invalid_locale");
+  const gatedLocale = gateTradeLocale(locale);
+  if (typeof gatedLocale === "object") return gatedLocale;
+  
   const admin = await requireTradeAdmin();
   const event = await cloneEventFromTemplate(sourceEventId, admin.userId);
   await recordHotSalesAudit({
@@ -176,14 +213,19 @@ export async function cloneTradeEventAction(locale: string, sourceEventId: strin
     actorRole: "admin",
     newValue: { clonedFromId: sourceEventId },
   });
-  revalidateTrade(locale, event.id);
+  revalidateTrade(gatedLocale, event.id);
   return { eventId: event.id };
 }
 
 export async function openTradeEventAction(locale: string, eventId: string) {
-  if (!isTradeLocale(locale)) throw new Error("invalid_locale");
-  const admin = await requireTradePermission("event.open_close", { eventId });
-  const event = await getEventById(eventId);
+  const gatedLocale = gateTradeLocale(locale);
+  if (typeof gatedLocale === "object") return gatedLocale;
+  const gatedEventId = gateTradeEventId(eventId);
+  if (typeof gatedEventId === "object") return gatedEventId;
+  const admin = await requireTradePermission("event.open_close", {
+    eventId: gatedEventId,
+  });
+  const event = await getEventById(gatedEventId);
   if (!event) return { error: "not_found" };
 
   const check = canOpenEvent(event);
@@ -193,23 +235,23 @@ export async function openTradeEventAction(locale: string, eventId: string) {
   const nextStatus =
     Date.now() < event.opensAt.getTime() ? "scheduled" : "open";
 
-  await updateEvent(eventId, { status: nextStatus }, admin.userId);
+  await updateEvent(gatedEventId, { status: nextStatus }, admin.userId);
   await recordHotSalesAudit({
-    eventId,
+    eventId: gatedEventId,
     action: nextStatus === "scheduled" ? "event.scheduled" : "event.opened",
     actorId: admin.userId,
     actorRole: "admin",
     newValue: { status: nextStatus },
   });
   if (nextStatus === "open") {
-    notifyTradeStakeholder(locale, {
+    notifyTradeStakeholder(gatedLocale, {
       eventKey: "event.opened",
-      entityId: eventId,
+      entityId: gatedEventId,
       recipientEmail: admin.email,
       vars: { eventName: event.eventName },
     });
   }
-  revalidateTrade(locale, eventId);
+  revalidateTrade(gatedLocale, gatedEventId);
   return { ok: true };
 }
 
@@ -218,7 +260,9 @@ export async function activateScheduledTradeEventAction(
   locale: string,
   eventId: string,
 ) {
-  if (!isTradeLocale(locale)) throw new Error("invalid_locale");
+  const gatedLocale = gateTradeLocale(locale);
+  if (typeof gatedLocale === "object") return gatedLocale;
+  
   const admin = await requireTradePermission("event.open_close", { eventId });
   const event = await getEventById(eventId);
   if (!event) return { error: "not_found" };
@@ -234,18 +278,20 @@ export async function activateScheduledTradeEventAction(
     actorId: admin.userId,
     actorRole: "admin",
   });
-  notifyTradeStakeholder(locale, {
+  notifyTradeStakeholder(gatedLocale, {
     eventKey: "event.opened",
     entityId: eventId,
     recipientEmail: admin.email,
     vars: { eventName: event.eventName },
   });
-  revalidateTrade(locale, eventId);
+  revalidateTrade(gatedLocale, eventId);
   return { ok: true };
 }
 
 export async function closeTradeEventAction(locale: string, eventId: string) {
-  if (!isTradeLocale(locale)) throw new Error("invalid_locale");
+  const gatedLocale = gateTradeLocale(locale);
+  if (typeof gatedLocale === "object") return gatedLocale;
+  
   const admin = await requireTradePermission("event.open_close", { eventId });
   const event = await getEventById(eventId);
   if (!event) return { error: "not_found" };
@@ -260,13 +306,13 @@ export async function closeTradeEventAction(locale: string, eventId: string) {
     actorId: admin.userId,
     actorRole: "admin",
   });
-  notifyTradeStakeholder(locale, {
+  notifyTradeStakeholder(gatedLocale, {
     eventKey: "event.closed",
     entityId: eventId,
     recipientEmail: admin.email,
     vars: { eventName: event.eventName },
   });
-  revalidateTrade(locale, eventId);
+  revalidateTrade(gatedLocale, eventId);
   return { ok: true };
 }
 
@@ -275,7 +321,9 @@ export async function saveTradeEventSetupAction(
   eventId: string,
   formData: FormData,
 ) {
-  if (!isTradeLocale(locale)) throw new Error("invalid_locale");
+  const gatedLocale = gateTradeLocale(locale);
+  if (typeof gatedLocale === "object") return gatedLocale;
+  
   const admin = await requireTradeAdmin();
   const event = await getEventById(eventId);
   if (!event) return { error: "not_found" };
@@ -354,7 +402,7 @@ export async function saveTradeEventSetupAction(
   }
 
   await updateEvent(eventId, patch, admin.userId);
-  revalidateTrade(locale, eventId);
+  revalidateTrade(gatedLocale, eventId);
   return { ok: true };
 }
 
@@ -363,7 +411,9 @@ export async function saveTradeProductAction(
   eventId: string,
   formData: FormData,
 ) {
-  if (!isTradeLocale(locale)) throw new Error("invalid_locale");
+  const gatedLocale = gateTradeLocale(locale);
+  if (typeof gatedLocale === "object") return gatedLocale;
+  
   const admin = await requireTradeAdmin();
   const event = await getEventById(eventId);
   if (!event) return { error: "not_found" };
@@ -409,7 +459,7 @@ export async function saveTradeProductAction(
       newValue: { productId: id, finalConfirmedQuantity },
       reason: "final_confirmed_quantity_update",
     });
-    revalidateTrade(locale, eventId);
+    revalidateTrade(gatedLocale, eventId);
     return { ok: true };
   }
 
@@ -446,7 +496,7 @@ export async function saveTradeProductAction(
       actorRole: "admin",
       newValue: { productId: id, finalConfirmedQuantity },
     });
-    revalidateTrade(locale, eventId);
+    revalidateTrade(gatedLocale, eventId);
     return { ok: true };
   }
 
@@ -472,7 +522,7 @@ export async function saveTradeProductAction(
     pickupLocation: String(formData.get("pickupLocation") ?? "") || undefined,
   });
 
-  revalidateTrade(locale, eventId);
+  revalidateTrade(gatedLocale, eventId);
   return { ok: true };
 }
 
@@ -481,7 +531,9 @@ export async function saveTradeFieldDefAction(
   eventId: string,
   formData: FormData,
 ) {
-  if (!isTradeLocale(locale)) throw new Error("invalid_locale");
+  const gatedLocale = gateTradeLocale(locale);
+  if (typeof gatedLocale === "object") return gatedLocale;
+  
   const admin = await requireTradeAdmin();
   const event = await getEventById(eventId);
   if (!event) return { error: "not_found" };
@@ -533,7 +585,7 @@ export async function saveTradeFieldDefAction(
     newValue: { fieldKey },
   });
 
-  revalidateTrade(locale, eventId);
+  revalidateTrade(gatedLocale, eventId);
   return { ok: true };
 }
 
@@ -542,7 +594,9 @@ export async function importPriorityCsvAction(
   eventId: string,
   csvText: string,
 ) {
-  if (!isTradeLocale(locale)) throw new Error("invalid_locale");
+  const gatedLocale = gateTradeLocale(locale);
+  if (typeof gatedLocale === "object") return gatedLocale;
+  
   const admin = await requireTradeAdmin();
 
   const lines = csvText.trim().split(/\r?\n/).slice(1);
@@ -565,15 +619,17 @@ export async function importPriorityCsvAction(
     newValue: { count: rows.length },
   });
 
-  revalidateTrade(locale, eventId);
+  revalidateTrade(gatedLocale, eventId);
   return { ok: true, count: rows.length };
 }
 
 export async function addSalesMemberAction(locale: string, email: string) {
-  if (!isTradeLocale(locale)) throw new Error("invalid_locale");
+  const gatedLocale = gateTradeLocale(locale);
+  if (typeof gatedLocale === "object") return gatedLocale;
+  
   await requireTradeAdmin();
   await upsertSalesMember(email);
-  revalidateTrade(locale);
+  revalidateTrade(gatedLocale);
   return { ok: true };
 }
 
@@ -582,7 +638,9 @@ export async function submitTradeOrderAction(
   eventId: string,
   formData: FormData,
 ) {
-  if (!isTradeLocale(locale)) throw new Error("invalid_locale");
+  const gatedLocale = gateTradeLocale(locale);
+  if (typeof gatedLocale === "object") return gatedLocale;
+  
   const access = await requireTradePermission("order.create", { eventId });
   const event = await getEventById(eventId);
   if (!event) return { error: "not_found" };
@@ -635,7 +693,7 @@ export async function submitTradeOrderAction(
       depositRequired: true,
       createdBy: access.userId,
     });
-    notifyDepositPending(locale, order);
+    notifyDepositPending(gatedLocale, order);
   }
 
   await recordHotSalesAudit({
@@ -647,7 +705,7 @@ export async function submitTradeOrderAction(
     newValue: { orderNumber: order.orderNumber },
   });
 
-  notifyTradeStakeholder(locale, {
+  notifyTradeStakeholder(gatedLocale, {
     eventKey: "order.submitted",
     entityId: order.id,
     recipientEmail: access.email,
@@ -661,7 +719,7 @@ export async function submitTradeOrderAction(
     await enqueueErpSyncJob({ jobType: "order", entityId: order.id, actorId: access.userId });
   }
 
-  revalidateTrade(locale, eventId);
+  revalidateTrade(gatedLocale, eventId);
   return { ok: true, orderId: order.id };
 }
 
@@ -670,7 +728,9 @@ export async function runTradeAllocationAction(
   eventId: string,
   reason?: string,
 ) {
-  if (!isTradeLocale(locale)) throw new Error("invalid_locale");
+  const gatedLocale = gateTradeLocale(locale);
+  if (typeof gatedLocale === "object") return gatedLocale;
+  
   const admin = await requireTradePermission("allocation.run", { eventId });
 
   const [event, products, orders] = await Promise.all([
@@ -733,7 +793,7 @@ export async function runTradeAllocationAction(
           ? "allocation.partial"
           : "order.rejected";
     if (r.status === "rejected" || r.confirmedQuantity > 0) {
-      notifyTradeStakeholder(locale, {
+      notifyTradeStakeholder(gatedLocale, {
         eventKey,
         entityId: order.id,
         recipientEmail: order.salespersonEmail,
@@ -746,7 +806,7 @@ export async function runTradeAllocationAction(
     }
   }
 
-  revalidateTrade(locale, eventId);
+  revalidateTrade(gatedLocale, eventId);
   return { ok: true, summary };
 }
 
@@ -754,7 +814,9 @@ export async function previewTradeAllocationAction(
   locale: string,
   eventId: string,
 ) {
-  if (!isTradeLocale(locale)) throw new Error("invalid_locale");
+  const gatedLocale = gateTradeLocale(locale);
+  if (typeof gatedLocale === "object") return gatedLocale;
+  
   await requireTradeAdmin();
 
   const [products, orders] = await Promise.all([
@@ -770,7 +832,9 @@ export async function manualAdjustTradeOrderAction(
   confirmedQuantity: number,
   reason: string,
 ) {
-  if (!isTradeLocale(locale)) throw new Error("invalid_locale");
+  const gatedLocale = gateTradeLocale(locale);
+  if (typeof gatedLocale === "object") return gatedLocale;
+  
   const admin = await requireTradePermission("allocation.override");
   if (!reason.trim()) return { error: "reason_required" };
 
@@ -818,7 +882,7 @@ export async function manualAdjustTradeOrderAction(
     actorId: admin.userId,
   });
 
-  revalidateTrade(locale, eventId);
+  revalidateTrade(gatedLocale, eventId);
   return { ok: true };
 }
 
@@ -827,7 +891,9 @@ export async function requestTransferAction(
   orderId: string,
   formData: FormData,
 ) {
-  if (!isTradeLocale(locale)) throw new Error("invalid_locale");
+  const gatedLocale = gateTradeLocale(locale);
+  if (typeof gatedLocale === "object") return gatedLocale;
+  
 
   const order = await getOrderById(orderId);
   if (!order) return { error: "not_found" };
@@ -866,14 +932,14 @@ export async function requestTransferAction(
     reason,
   });
 
-  notifyTradeStakeholder(locale, {
+  notifyTradeStakeholder(gatedLocale, {
     eventKey: "transfer.requested",
     entityId: orderId,
     recipientEmail: order.salespersonEmail,
     vars: { orderNumber: order.orderNumber },
   });
 
-  revalidateTrade(locale, event.id);
+  revalidateTrade(gatedLocale, event.id);
   return { ok: true };
 }
 
@@ -882,7 +948,9 @@ export async function approveTransferAction(
   orderId: string,
   transferId: string,
 ) {
-  if (!isTradeLocale(locale)) throw new Error("invalid_locale");
+  const gatedLocale = gateTradeLocale(locale);
+  if (typeof gatedLocale === "object") return gatedLocale;
+  
   const admin = await requireTradeAdmin();
   const order = await getOrderById(orderId);
   if (!order) return { error: "not_found" };
@@ -900,13 +968,13 @@ export async function approveTransferAction(
     actorRole: "admin",
     newValue: { transferId },
   });
-  notifyTradeStakeholder(locale, {
+  notifyTradeStakeholder(gatedLocale, {
     eventKey: "transfer.approved",
     entityId: orderId,
     recipientEmail: order.salespersonEmail,
     vars: { orderNumber: order.orderNumber },
   });
-  revalidateTrade(locale, order.eventId);
+  revalidateTrade(gatedLocale, order.eventId);
   return { ok: true };
 }
 
@@ -915,7 +983,9 @@ export async function rejectTransferAction(
   orderId: string,
   transferId: string,
 ) {
-  if (!isTradeLocale(locale)) throw new Error("invalid_locale");
+  const gatedLocale = gateTradeLocale(locale);
+  if (typeof gatedLocale === "object") return gatedLocale;
+  
   const admin = await requireTradeAdmin();
   const order = await getOrderById(orderId);
   if (!order) return { error: "not_found" };
@@ -933,39 +1003,51 @@ export async function rejectTransferAction(
     actorRole: "admin",
     newValue: { transferId },
   });
-  notifyTradeStakeholder(locale, {
+  notifyTradeStakeholder(gatedLocale, {
     eventKey: "transfer.rejected",
     entityId: orderId,
     recipientEmail: order.salespersonEmail,
     vars: { orderNumber: order.orderNumber },
   });
-  revalidateTrade(locale, order.eventId);
+  revalidateTrade(gatedLocale, order.eventId);
   return { ok: true };
 }
 
 export async function exportOrdersCsvAction(locale: string, eventId: string) {
-  if (!isTradeLocale(locale)) throw new Error("invalid_locale");
+  const gatedLocale = gateTradeLocale(locale);
+  if (typeof gatedLocale === "object") return gatedLocale;
+  const gatedEventId = gateTradeEventId(eventId);
+  if (typeof gatedEventId === "object") return gatedEventId;
+
   await requireTradeAdmin();
-  const orders = await listOrdersForEvent(eventId);
+  const orders = await listOrdersForEvent(gatedEventId);
   return ordersToCsv(orders);
 }
 
 export async function exportEventSummaryCsvAction(locale: string, eventId: string) {
-  if (!isTradeLocale(locale)) throw new Error("invalid_locale");
+  const gatedLocale = gateTradeLocale(locale);
+  if (typeof gatedLocale === "object") return gatedLocale;
+  const gatedEventId = gateTradeEventId(eventId);
+  if (typeof gatedEventId === "object") return gatedEventId;
+
   await requireTradeAdmin();
   const [event, products, orders] = await Promise.all([
-    getEventById(eventId),
-    listProductsForEvent(eventId),
-    listOrdersForEvent(eventId),
+    getEventById(gatedEventId),
+    listProductsForEvent(gatedEventId),
+    listOrdersForEvent(gatedEventId),
   ]);
-  if (!event) throw new Error("not_found");
+  if (!event) return { error: "not_found" as const };
   return eventSummaryToCsv(buildEventSummary(event, products, orders));
 }
 
 export async function exportAllocationCsvAction(locale: string, eventId: string) {
-  if (!isTradeLocale(locale)) throw new Error("invalid_locale");
+  const gatedLocale = gateTradeLocale(locale);
+  if (typeof gatedLocale === "object") return gatedLocale;
+  const gatedEventId = gateTradeEventId(eventId);
+  if (typeof gatedEventId === "object") return gatedEventId;
+
   await requireTradeAdmin();
-  const orders = await listOrdersForEvent(eventId);
+  const orders = await listOrdersForEvent(gatedEventId);
   return allocationToCsv(orders);
 }
 
@@ -974,9 +1056,12 @@ export async function completeTradeOrderAction(
   orderId: string,
   fulfilledQuantity: number,
 ) {
-  if (!isTradeLocale(locale)) throw new Error("invalid_locale");
+  const gatedLocale = gateTradeLocale(locale);
+  if (typeof gatedLocale === "object") return gatedLocale;
+  const gatedOrderId = gateTradeOrderId(orderId);
+  if (typeof gatedOrderId === "object") return gatedOrderId;
 
-  const order = await getOrderById(orderId);
+  const order = await getOrderById(gatedOrderId);
   if (!order) return { error: "not_found" };
 
   const gate = canCompleteOrder({
@@ -1008,7 +1093,7 @@ export async function completeTradeOrderAction(
         absoluteQuantity: fulfilledQuantity,
       });
     } catch (err) {
-      const message = err instanceof Error ? err.message : "fulfillment_failed";
+      const message = toTradeActionErrorMessage(err, "fulfillment_failed");
       return { error: message };
     }
     await recordHotSalesAudit({
@@ -1036,21 +1121,25 @@ export async function completeTradeOrderAction(
     });
   }
 
-  revalidateTrade(locale, order.eventId);
+  revalidateTrade(gatedLocale, order.eventId);
   return { ok: true };
 }
 
 export async function listEventTransfersAction(locale: string, eventId: string) {
-  if (!isTradeLocale(locale)) throw new Error("invalid_locale");
+  const gatedLocale = gateTradeLocale(locale);
+  if (typeof gatedLocale === "object") return gatedLocale;
+  
   await requireTradeAdmin();
   return listTransfersForEvent(eventId);
 }
 
 export async function seedTradeRbacCatalogAction(locale: string) {
-  if (!isTradeLocale(locale)) throw new Error("invalid_locale");
+  const gatedLocale = gateTradeLocale(locale);
+  if (typeof gatedLocale === "object") return gatedLocale;
+  
   const access = await requireTradePermission("role.manage");
   await seedHotSalesRbacCatalog(access.userId);
-  revalidateTrade(locale);
+  revalidateTrade(gatedLocale);
   return { ok: true };
 }
 
@@ -1059,7 +1148,9 @@ export async function createTradeRoleAction(
   name: string,
   permissionCodes: string[],
 ) {
-  if (!isTradeLocale(locale)) throw new Error("invalid_locale");
+  const gatedLocale = gateTradeLocale(locale);
+  if (typeof gatedLocale === "object") return gatedLocale;
+  
   const access = await requireTradePermission("role.manage");
   if (!name.trim()) return { error: "invalid_name" };
   const roleId = await createCustomRole({
@@ -1067,7 +1158,7 @@ export async function createTradeRoleAction(
     permissionCodes,
     actorId: access.userId,
   });
-  revalidateTrade(locale);
+  revalidateTrade(gatedLocale);
   return { ok: true, roleId };
 }
 
@@ -1076,14 +1167,16 @@ export async function setTradeRolePermissionsAction(
   roleId: string,
   permissionCodes: string[],
 ) {
-  if (!isTradeLocale(locale)) throw new Error("invalid_locale");
+  const gatedLocale = gateTradeLocale(locale);
+  if (typeof gatedLocale === "object") return gatedLocale;
+  
   const access = await requireTradePermission("role.manage");
   await setRolePermissions({
     roleId,
     permissionCodes,
     actorId: access.userId,
   });
-  revalidateTrade(locale);
+  revalidateTrade(gatedLocale);
   return { ok: true };
 }
 
@@ -1092,10 +1185,12 @@ export async function setTradeRoleActiveAction(
   roleId: string,
   active: boolean,
 ) {
-  if (!isTradeLocale(locale)) throw new Error("invalid_locale");
+  const gatedLocale = gateTradeLocale(locale);
+  if (typeof gatedLocale === "object") return gatedLocale;
+  
   const access = await requireTradePermission("role.manage");
   await setRoleActive({ roleId, active, actorId: access.userId });
-  revalidateTrade(locale);
+  revalidateTrade(gatedLocale);
   return { ok: true };
 }
 
@@ -1104,14 +1199,16 @@ export async function duplicateTradeRoleAction(
   sourceRoleId: string,
   name: string,
 ) {
-  if (!isTradeLocale(locale)) throw new Error("invalid_locale");
+  const gatedLocale = gateTradeLocale(locale);
+  if (typeof gatedLocale === "object") return gatedLocale;
+  
   const access = await requireTradePermission("role.manage");
   const roleId = await duplicateRole({
     sourceRoleId,
     name,
     actorId: access.userId,
   });
-  revalidateTrade(locale);
+  revalidateTrade(gatedLocale);
   return { ok: true, roleId };
 }
 
@@ -1125,7 +1222,9 @@ export async function assignTradeRoleAction(
     scopeId?: string | null;
   },
 ) {
-  if (!isTradeLocale(locale)) throw new Error("invalid_locale");
+  const gatedLocale = gateTradeLocale(locale);
+  if (typeof gatedLocale === "object") return gatedLocale;
+  
   const access = await requireTradePermission("role.manage");
   if (!input.userId || !input.roleId) return { error: "invalid_input" };
   if (!HOT_SALES_SCOPE_TYPES.includes(input.scopeType)) {
@@ -1147,7 +1246,7 @@ export async function assignTradeRoleAction(
     scopeId: input.scopeId,
     actorId: access.userId,
   });
-  revalidateTrade(locale);
+  revalidateTrade(gatedLocale);
   return { ok: true };
 }
 
@@ -1155,18 +1254,22 @@ export async function revokeTradeRoleAssignmentAction(
   locale: string,
   assignmentId: string,
 ) {
-  if (!isTradeLocale(locale)) throw new Error("invalid_locale");
+  const gatedLocale = gateTradeLocale(locale);
+  if (typeof gatedLocale === "object") return gatedLocale;
+  
   const access = await requireTradePermission("role.manage");
   await revokeRoleAssignment({
     assignmentId,
     actorId: access.userId,
   });
-  revalidateTrade(locale);
+  revalidateTrade(gatedLocale);
   return { ok: true };
 }
 
 export async function listEventDepositsAction(locale: string, eventId: string) {
-  if (!isTradeLocale(locale)) throw new Error("invalid_locale");
+  const gatedLocale = gateTradeLocale(locale);
+  if (typeof gatedLocale === "object") return gatedLocale;
+  
   const disabled = assertHotSalesDepositFeatureAction();
   if (disabled) return disabled;
   await requireTradePermission("deposit.view", { eventId });
@@ -1182,7 +1285,9 @@ export async function recordDepositReceiptAction(
   eventId: string,
   formData: FormData,
 ) {
-  if (!isTradeLocale(locale)) throw new Error("invalid_locale");
+  const gatedLocale = gateTradeLocale(locale);
+  if (typeof gatedLocale === "object") return gatedLocale;
+  
   const disabled = assertHotSalesDepositFeatureAction();
   if (disabled) return disabled;
   const access = await requireTradePermission("deposit.manage", { eventId });
@@ -1201,7 +1306,7 @@ export async function recordDepositReceiptAction(
   });
   const order = await getOrderById(orderId);
   if (order) {
-    notifyTradeStakeholder(locale, {
+    notifyTradeStakeholder(gatedLocale, {
       eventKey: "deposit.confirmed",
       entityId: orderId,
       recipientEmail: order.salespersonEmail,
@@ -1218,7 +1323,7 @@ export async function recordDepositReceiptAction(
       });
     }
   }
-  revalidateTrade(locale, eventId);
+  revalidateTrade(gatedLocale, eventId);
   return { ok: true };
 }
 
@@ -1227,7 +1332,9 @@ export async function recordDepositAdjustmentAction(
   eventId: string,
   formData: FormData,
 ) {
-  if (!isTradeLocale(locale)) throw new Error("invalid_locale");
+  const gatedLocale = gateTradeLocale(locale);
+  if (typeof gatedLocale === "object") return gatedLocale;
+  
   const disabled = assertHotSalesDepositFeatureAction();
   if (disabled) return disabled;
   const access = await requireTradePermission("deposit.manage", { eventId });
@@ -1253,10 +1360,10 @@ export async function recordDepositAdjustmentAction(
       actorId: access.userId,
     });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "adjustment_failed";
+    const message = toTradeActionErrorMessage(err, "adjustment_failed");
     return { error: message };
   }
-  revalidateTrade(locale, eventId);
+  revalidateTrade(gatedLocale, eventId);
   return { ok: true };
 }
 
@@ -1265,7 +1372,9 @@ export async function updateDepositDetailsAction(
   eventId: string,
   formData: FormData,
 ) {
-  if (!isTradeLocale(locale)) throw new Error("invalid_locale");
+  const gatedLocale = gateTradeLocale(locale);
+  if (typeof gatedLocale === "object") return gatedLocale;
+  
   const disabled = assertHotSalesDepositFeatureAction();
   if (disabled) return disabled;
   const access = await requireTradePermission("deposit.manage", { eventId });
@@ -1279,7 +1388,7 @@ export async function updateDepositDetailsAction(
     nonRefundable: formData.get("nonRefundable") === "on",
     actorId: access.userId,
   });
-  revalidateTrade(locale, eventId);
+  revalidateTrade(gatedLocale, eventId);
   return { ok: true };
 }
 
@@ -1288,7 +1397,9 @@ export async function createPickupWindowAction(
   eventId: string,
   formData: FormData,
 ) {
-  if (!isTradeLocale(locale)) throw new Error("invalid_locale");
+  const gatedLocale = gateTradeLocale(locale);
+  if (typeof gatedLocale === "object") return gatedLocale;
+  
   const disabled = assertHotSalesPickupFeatureAction();
   if (disabled) return disabled;
   await requireTradePermission("pickup.manage", { eventId });
@@ -1304,7 +1415,7 @@ export async function createPickupWindowAction(
     location: String(formData.get("location") ?? "").trim() || undefined,
     capacity: formData.get("capacity") ? Number(formData.get("capacity")) : undefined,
   });
-  revalidateTrade(locale, eventId);
+  revalidateTrade(gatedLocale, eventId);
   return { ok: true };
 }
 
@@ -1313,7 +1424,9 @@ export async function schedulePickupAction(
   eventId: string,
   formData: FormData,
 ) {
-  if (!isTradeLocale(locale)) throw new Error("invalid_locale");
+  const gatedLocale = gateTradeLocale(locale);
+  if (typeof gatedLocale === "object") return gatedLocale;
+  
   const disabled = assertHotSalesPickupFeatureAction();
   if (disabled) return disabled;
   const access = await requireTradePermission("pickup.manage", { eventId });
@@ -1323,14 +1436,14 @@ export async function schedulePickupAction(
   await schedulePickup({ orderId, windowId, actorId: access.userId });
   const order = await getOrderById(orderId);
   if (order) {
-    notifyTradeStakeholder(locale, {
+    notifyTradeStakeholder(gatedLocale, {
       eventKey: "pickup.scheduled",
       entityId: orderId,
       recipientEmail: order.salespersonEmail,
       vars: { orderNumber: order.orderNumber },
     });
   }
-  revalidateTrade(locale, eventId);
+  revalidateTrade(gatedLocale, eventId);
   return { ok: true };
 }
 
@@ -1339,7 +1452,9 @@ export async function recordPickupFulfillmentAction(
   eventId: string,
   formData: FormData,
 ) {
-  if (!isTradeLocale(locale)) throw new Error("invalid_locale");
+  const gatedLocale = gateTradeLocale(locale);
+  if (typeof gatedLocale === "object") return gatedLocale;
+  
   const disabled = assertHotSalesPickupFeatureAction();
   if (disabled) return disabled;
   const access = await requireTradePermission("pickup.manage", { eventId });
@@ -1356,7 +1471,7 @@ export async function recordPickupFulfillmentAction(
     });
     const order = await getOrderById(orderId);
     if (order) {
-      notifyTradeStakeholder(locale, {
+      notifyTradeStakeholder(gatedLocale, {
         eventKey: "pickup.completed",
         entityId: orderId,
         recipientEmail: order.salespersonEmail,
@@ -1374,10 +1489,10 @@ export async function recordPickupFulfillmentAction(
       }
     }
   } catch (err) {
-    const message = err instanceof Error ? err.message : "fulfillment_failed";
+    const message = toTradeActionErrorMessage(err, "fulfillment_failed");
     return { error: message };
   }
-  revalidateTrade(locale, eventId);
+  revalidateTrade(gatedLocale, eventId);
   return { ok: true };
 }
 
@@ -1386,7 +1501,9 @@ export async function recordPickupExceptionAction(
   eventId: string,
   formData: FormData,
 ) {
-  if (!isTradeLocale(locale)) throw new Error("invalid_locale");
+  const gatedLocale = gateTradeLocale(locale);
+  if (typeof gatedLocale === "object") return gatedLocale;
+  
   const disabled = assertHotSalesPickupFeatureAction();
   if (disabled) return disabled;
   const access = await requireTradePermission("pickup.manage", { eventId });
@@ -1406,10 +1523,10 @@ export async function recordPickupExceptionAction(
       actorId: access.userId,
     });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "exception_failed";
+    const message = toTradeActionErrorMessage(err, "exception_failed");
     return { error: message };
   }
-  revalidateTrade(locale, eventId);
+  revalidateTrade(gatedLocale, eventId);
   return { ok: true };
 }
 
@@ -1417,7 +1534,9 @@ export async function getImportTemplateAction(
   locale: string,
   importType: string,
 ) {
-  if (!isTradeLocale(locale)) throw new Error("invalid_locale");
+  const gatedLocale = gateTradeLocale(locale);
+  if (typeof gatedLocale === "object") return gatedLocale;
+  
   const parsed = parseImportType(importType);
   if (!parsed) return { error: "invalid_import_type" as const };
   const featureGate = assertImportFeatureGate(parsed);
@@ -1439,7 +1558,9 @@ export async function uploadImportDryRunAction(
   eventId: string,
   formData: FormData,
 ) {
-  if (!isTradeLocale(locale)) throw new Error("invalid_locale");
+  const gatedLocale = gateTradeLocale(locale);
+  if (typeof gatedLocale === "object") return gatedLocale;
+  
   const importTypeRaw = String(formData.get("importType") ?? "");
   const parsed = parseImportType(importTypeRaw);
   if (!parsed) return { error: "invalid_import_type" as const };
@@ -1504,7 +1625,9 @@ export async function confirmImportBatchAction(
   eventId: string,
   batchId: string,
 ) {
-  if (!isTradeLocale(locale)) throw new Error("invalid_locale");
+  const gatedLocale = gateTradeLocale(locale);
+  if (typeof gatedLocale === "object") return gatedLocale;
+  
   const batch = await getImportBatchById(batchId);
   if (!batch || batch.eventId !== eventId) {
     return { error: "batch_not_found" as const };
@@ -1521,7 +1644,7 @@ export async function confirmImportBatchAction(
 
   const result = await commitImportBatch(batchId, {
     actorEmail: access.email,
-    onDepositPending: (order) => notifyDepositPending(locale, order),
+    onDepositPending: (order) => notifyDepositPending(gatedLocale, order),
   });
 
   await recordHotSalesAudit({
@@ -1536,7 +1659,7 @@ export async function confirmImportBatchAction(
     },
   });
 
-  revalidateTrade(locale, eventId);
+  revalidateTrade(gatedLocale, eventId);
   return { ok: true as const, ...result };
 }
 
@@ -1545,7 +1668,9 @@ export async function cancelImportBatchAction(
   eventId: string,
   batchId: string,
 ) {
-  if (!isTradeLocale(locale)) throw new Error("invalid_locale");
+  const gatedLocale = gateTradeLocale(locale);
+  if (typeof gatedLocale === "object") return gatedLocale;
+  
   const batch = await getImportBatchById(batchId);
   if (!batch || batch.eventId !== eventId) {
     return { error: "batch_not_found" as const };
@@ -1571,7 +1696,9 @@ export async function getImportBatchDetailAction(
   eventId: string,
   batchId: string,
 ) {
-  if (!isTradeLocale(locale)) throw new Error("invalid_locale");
+  const gatedLocale = gateTradeLocale(locale);
+  if (typeof gatedLocale === "object") return gatedLocale;
+  
   const batch = await getImportBatchById(batchId);
   if (!batch || batch.eventId !== eventId) {
     return { error: "batch_not_found" as const };
@@ -1594,7 +1721,9 @@ export async function getImportBatchDetailAction(
 }
 
 export async function retryErpSyncJobAction(locale: string, jobId: string) {
-  if (!isTradeLocale(locale)) throw new Error("invalid_locale");
+  const gatedLocale = gateTradeLocale(locale);
+  if (typeof gatedLocale === "object") return gatedLocale;
+  
   const access = await requireTradePermission("sync.retry");
   const { getSyncJobById, retrySyncJob } = await import(
     "@/lib/domain/trade/erp-sync-store"
@@ -1634,7 +1763,9 @@ export async function retryErpSyncJobAction(locale: string, jobId: string) {
 }
 
 export async function processErpSyncJobsAction(locale: string) {
-  if (!isTradeLocale(locale)) throw new Error("invalid_locale");
+  const gatedLocale = gateTradeLocale(locale);
+  if (typeof gatedLocale === "object") return gatedLocale;
+  
   await requireTradePermission("export.finance");
   const { processPendingSyncJobs } = await import("@/lib/domain/trade/erp-sync-store");
   const result = await processPendingSyncJobs();

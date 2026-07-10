@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import {
   applyThemeToDocument,
   ThemeProvider,
-} from "@/components/theme-provider";
+} from "@/features/portal-chrome/theme-provider";
 
 /** Portal theme + layout wrapper for all stories. */
 export const withPortalTheme: Decorator = (Story, context) => {

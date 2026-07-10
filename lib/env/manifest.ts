@@ -207,6 +207,18 @@ export const ENV_VAR_MANIFEST = [
     localOnly: true,
     runtime: true,
   },
+  {
+    key: "PLAYGROUND_HOT_SALES_EVENT_ID",
+    kind: "optionalUuid",
+    localOnly: true,
+    runtime: true,
+  },
+  {
+    key: "PLAYGROUND_TRADE_LOCALE",
+    kind: "optionalString",
+    localOnly: true,
+    runtime: true,
+  },
 
   // —— Script / tooling only (not in serverEnvSchema) ——
   { key: "NEON_API_KEY", kind: "optionalString", secret: true, localOnly: true },

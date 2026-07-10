@@ -2,8 +2,8 @@ import "server-only";
 
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { OperatorDeclarationDetailView } from "@/components/operator/operator-declaration-detail-view";
 import { cache } from "react";
+import OperatorDeclarationDetailView from "@/components-V2/platform-views/portal-views/operator-declaration-detail";
 import {
   getEvidenceRecordsByIds,
   listQuestionsForSurvey,
@@ -35,7 +35,8 @@ export type OperatorDeclarationDetail = {
   survey: Survey;
   responses: SurveyResponse[];
   questions: SurveyQuestion[];
-  evidenceById: Map<string, EvidenceRecord>;
+  /** Plain record for RSC → client boundary (Map is not serializable). */
+  evidenceById: Record<string, EvidenceRecord>;
   questionDrafts: OperatorDeclarationQuestionDraft[];
   fieldsKey: string;
 };
@@ -57,7 +58,7 @@ export const loadOperatorDeclarationDetail = cache(
       listQuestionsForSurvey(survey.id),
     ]);
 
-    const evidenceById = await getEvidenceRecordsByIds(
+    const evidenceMap = await getEvidenceRecordsByIds(
       collectSubmissionFileEvidenceIds(responses, questions),
       survey.id,
     );
@@ -74,7 +75,7 @@ export const loadOperatorDeclarationDetail = cache(
       survey,
       responses,
       questions,
-      evidenceById,
+      evidenceById: Object.fromEntries(evidenceMap),
       questionDrafts,
       fieldsKey,
     };

@@ -43,8 +43,8 @@ export const navItems: NavItem[] = [
     groupLabel: 'Dashboard',
     items: [
       {
-        icon: 'TrendingUp',
-        label: 'Sales',
+        icon: 'ClipboardList',
+        label: 'Declarations',
         href: '/dashboard',
       },
     ],

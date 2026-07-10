@@ -7,7 +7,6 @@ const PROXY_FILE = join(ROOT, "proxy.ts");
 const ORG_LOGIN_PAGE = join(ROOT, "app", "org", "login", "page.tsx");
 
 const REQUIRED_MATCHERS = [
-  '"/"',
   '"/account/:path*"',
   '"/dashboard/:path*"',
   '"/client/:path*"',
@@ -26,6 +25,12 @@ const PUBLIC_ROUTE_PREFIXES = [
   "/invite/",
 ];
 
+/** Session matcher bypasses — must remain public even under `/client/:path*`. */
+const REQUIRED_CLIENT_BYPASSES = [
+  "CLIENT_SIGN_IN_ENTRY_HREF",
+  "CLIENT_PREVIEW_UNAVAILABLE_HREF",
+];
+
 const FORBIDDEN_MATCHERS = ['"/org/:path*"'];
 
 function main() {
@@ -41,6 +46,11 @@ function main() {
   const matcherBlock = source.match(/matcher:\s*\[([\s\S]*?)\]/);
   const matcherSource = matcherBlock?.[1] ?? source;
 
+  // Guest Lynx Morphor landing at `/` must remain public (Sign in CTA → /auth/sign-in).
+  if (/^\s*"\/"\s*,?\s*$/m.test(matcherSource)) {
+    throw new Error('proxy.ts must not match public guest landing "/"');
+  }
+
   for (const prefix of PUBLIC_ROUTE_PREFIXES) {
     if (
       matcherSource.includes(`"${prefix}`) ||
@@ -50,6 +60,32 @@ function main() {
         `proxy.ts must not match public route prefix ${prefix}`,
       );
     }
+  }
+
+  // Page-guarded public link prefixes must stay out of the session matcher.
+  for (const prefix of PAGE_GUARDED_PUBLIC_PREFIXES) {
+    if (
+      matcherSource.includes(`"${prefix}`) ||
+      matcherSource.includes(`'${prefix}`)
+    ) {
+      throw new Error(
+        `proxy.ts must not match page-guarded public prefix ${prefix}`,
+      );
+    }
+  }
+
+  for (const bypass of REQUIRED_CLIENT_BYPASSES) {
+    if (!source.includes(bypass)) {
+      throw new Error(
+        `proxy.ts must bypass ${bypass} so named client entries stay public`,
+      );
+    }
+  }
+
+  if (!source.includes("isClientSignInEntry")) {
+    throw new Error(
+      "proxy.ts must short-circuit CLIENT_SIGN_IN_ENTRY_HREF (/client/login)",
+    );
   }
 
   for (const forbidden of FORBIDDEN_MATCHERS) {
@@ -71,7 +107,7 @@ function main() {
   const orgLoginSource = readFileSync(ORG_LOGIN_PAGE, "utf8");
   if (!orgLoginSource.includes("runOrgSignInEntryPage")) {
     throw new Error(
-      "app/org/login/page.tsx must delegate to runOrgSignInEntryPage from lib/org-sign-in-entry.ts",
+      "app/org/login/page.tsx must delegate to runOrgSignInEntryPage from lib/entry/org-sign-in-entry.ts",
     );
   }
 
@@ -79,8 +115,19 @@ function main() {
     throw new Error("app/org/login/page.tsx must export dynamic = force-dynamic");
   }
 
+  const surveyPage = join(ROOT, "app", "survey", "[slug]", "page.tsx");
+  if (!existsSync(surveyPage)) {
+    throw new Error("Missing open-link page at app/survey/[slug]/page.tsx");
+  }
+  const surveySource = readFileSync(surveyPage, "utf8");
+  if (!surveySource.includes("runOpenLinkPage")) {
+    throw new Error(
+      "app/survey/[slug]/page.tsx must delegate to runOpenLinkPage (S5 open link)",
+    );
+  }
+
   console.log(
-    `check:proxy OK (${REQUIRED_MATCHERS.length} protected matchers, ${PUBLIC_ROUTE_PREFIXES.length} public prefixes excluded, ${PAGE_GUARDED_PUBLIC_PREFIXES.length} page-guarded link prefixes)`,
+    `check:proxy OK (${REQUIRED_MATCHERS.length} protected matchers, ${PUBLIC_ROUTE_PREFIXES.length} public prefixes excluded, ${PAGE_GUARDED_PUBLIC_PREFIXES.length} page-guarded link prefixes, ${REQUIRED_CLIENT_BYPASSES.length} client bypasses)`,
   );
 }
 

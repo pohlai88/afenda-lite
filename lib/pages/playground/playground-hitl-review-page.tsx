@@ -20,6 +20,7 @@ const categoryNav = [
   { id: "admin", label: "Admin" },
   { id: "client", label: "Client" },
   { id: "dynamic", label: "Dynamic" },
+  { id: "hot-sales", label: "Hot Sales" },
 ] as const;
 
 /** Shared page handler for `/playground/hitl-review`. */
