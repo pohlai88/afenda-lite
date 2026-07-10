@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { Loader2Icon } from "lucide-react";
 import { acknowledgeClientPortalAction } from "@/app/actions/client";
 import { FormErrorAlert } from "@/components/form-error-alert";
@@ -41,6 +42,7 @@ export function ClientDashboardAcknowledgement({
 
 function ClientDashboardAcknowledgementForm() {
   const copy = portalCopy.clientDashboard.acknowledgement;
+  const router = useRouter();
   const [confirmed, setConfirmed] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -53,7 +55,10 @@ function ClientDashboardAcknowledgementForm() {
 
     setError(null);
     startTransition(async () => {
-      await acknowledgeClientPortalAction();
+      const result = await acknowledgeClientPortalAction();
+      if (result && "success" in result && result.success) {
+        router.refresh();
+      }
     });
   }
 

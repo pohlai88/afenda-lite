@@ -54,8 +54,8 @@
 
 ### CI / release authority
 
-- [ ] `quality` job green on PR / `main`
-- [ ] `journey` job green on PR / `main` (localhost + dedicated `ci` Neon branch)
+- [x] `quality` job green on `main` (2026-07-10 — `seed:ci-baseline` before checks)
+- [ ] `journey` job green on `main`
 - [ ] Spot-check operator login → dashboard
 - [ ] Spot-check client cannot access `/dashboard`
 

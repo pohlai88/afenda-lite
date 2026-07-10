@@ -51,8 +51,8 @@ Tick boxes as you complete items.
 - [x] GitHub Actions secrets present (`npm run audit:github-actions-secrets`)
 - [x] **CI Neon branch** (`ci`) + E2E secrets (`npm run sync:github-actions-secrets:ci`)
 - [x] Branch protection requires `quality` + `journey`
-- [ ] CI **`quality` job** green on PR / `main`
-- [ ] CI **`journey` job** green on PR / `main` (localhost + `ci` branch — not production Neon)
+- [x] CI **`quality` job** green on `main` (2026-07-10, after `seed:ci-baseline`)
+- [ ] CI **`journey` job** green on `main` (hotfix: acknowledgement refresh + ci baseline)
 - [ ] Spot-check operator login → dashboard on prod (manual)
 
 **When all checked:** Backlog-01 closes · S17 acceptance complete.
@@ -92,7 +92,7 @@ Tick boxes as you complete items.
 |------|----------|
 | **Hot Sales** | **Done** — live with RBAC |
 | **Guardian** | **Live** — design + 4 tests remain |
-| **S17 / Backlog-01** | **In progress** — infra fixed; manual journeys + CI re-run remain |
+| **S17 / Backlog-01** | **In progress** — CI quality green; journey + manual prod sign-off remain |
 | **New product** | **Nothing authorized** until S17 closes |
 
 ---
