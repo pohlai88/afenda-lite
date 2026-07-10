@@ -12,10 +12,14 @@ export function TradeShell({
   locale,
   children,
   isAdmin,
+  portalHomeHref,
+  portalHomeLabel,
 }: {
   locale: string;
   children: ReactNode;
   isAdmin: boolean;
+  portalHomeHref: string;
+  portalHomeLabel: string;
 }) {
   const resolvedLocale: TradeLocale = isTradeLocale(locale)
     ? locale
@@ -55,6 +59,9 @@ export function TradeShell({
                   </Link>
                 </>
               ) : null}
+              <Link href={portalHomeHref} className="text-muted-foreground">
+                {portalHomeLabel}
+              </Link>
               <TradeLocaleSwitcher locale={resolvedLocale} />
             </nav>
           </div>

@@ -5,6 +5,7 @@ import { useState, useTransition } from "react";
 import {
   activateScheduledTradeEventAction,
   closeTradeEventAction,
+  importPriorityCsvAction,
   openTradeEventAction,
   runTradeAllocationAction,
   saveTradeEventSetupAction,
@@ -508,7 +509,6 @@ export function TradePriorityImportForm({
         const form = e.currentTarget;
         const csvText = (form.elements.namedItem("csv") as HTMLTextAreaElement).value;
         startTransition(async () => {
-          const { importPriorityCsvAction } = await import("@/app/actions/trade");
           await importPriorityCsvAction(locale, eventId, csvText);
           router.refresh();
         });

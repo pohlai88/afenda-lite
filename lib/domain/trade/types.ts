@@ -29,7 +29,11 @@ export const HOT_SALES_DEPOSIT_STATUSES = [
   "not_required",
   "pending",
   "paid",
+  "partially_paid",
   "waived",
+  "forfeited",
+  "refunded",
+  "cancelled",
 ] as const;
 
 export type HotSalesDepositStatus = (typeof HOT_SALES_DEPOSIT_STATUSES)[number];
@@ -181,6 +185,99 @@ export type HotSalesSalesMember = {
   userId: string | null;
   email: string;
   active: boolean;
+};
+
+export type HotSalesDepositRecord = {
+  id: string;
+  orderId: string;
+  amount: number | null;
+  currency: string;
+  dueAt: Date | null;
+  status: string;
+  nonRefundable: boolean;
+  createdBy: string;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export type HotSalesDepositReceipt = {
+  id: string;
+  depositId: string;
+  reference: string | null;
+  paidAt: Date;
+  amount: number;
+  recordedBy: string;
+  createdAt: Date;
+};
+
+export type HotSalesDepositAdjustment = {
+  id: string;
+  depositId: string;
+  adjustmentType: string;
+  reason: string;
+  amount: number | null;
+  actorId: string;
+  createdAt: Date;
+};
+
+export type HotSalesDepositListItem = HotSalesDepositRecord & {
+  orderNumber: string;
+  customerName: string;
+  customerCode: string | null;
+  orderDepositStatus: HotSalesDepositStatus;
+};
+
+export type HotSalesFinanceAuditEntry = {
+  id: string;
+  depositId: string | null;
+  orderId: string | null;
+  action: string;
+  actorId: string | null;
+  oldValue: Record<string, unknown> | null;
+  newValue: Record<string, unknown> | null;
+  reason: string | null;
+  createdAt: Date;
+};
+
+export type HotSalesPickupWindow = {
+  id: string;
+  eventId: string;
+  startsAt: Date;
+  endsAt: Date;
+  location: string | null;
+  capacity: number | null;
+  createdAt: Date;
+};
+
+export type HotSalesPickupAssignment = {
+  id: string;
+  orderId: string;
+  windowId: string | null;
+  status: string;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export type HotSalesPickupListItem = {
+  orderId: string;
+  orderNumber: string;
+  customerName: string;
+  confirmedQuantity: number | null;
+  fulfilledQuantity: number | null;
+  pickupStatus: string;
+  orderStatus: string;
+  assignmentId: string | null;
+  assignmentStatus: string | null;
+  windowId: string | null;
+};
+
+export type HotSalesFulfillmentRecord = {
+  id: string;
+  assignmentId: string;
+  orderId: string;
+  quantity: number;
+  actorId: string;
+  recordedAt: Date;
 };
 
 export type AllocationInputOrder = Pick<

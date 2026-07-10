@@ -1,6 +1,6 @@
 # Hot Sales — documentation index
 
-**Status (2026-07-10):** Phase 2A implementation + ops **closed**. Phase 2B–2D **blocked** without new ADR.
+**Status (2026-07-10):** Phase 2A closed. Phase 2B **implemented** (flags default off). Phase 2C–2D **Proposed**.
 
 **Agents — read order:**
 
@@ -49,12 +49,16 @@ Use the **type** to pick the right doc. Do not read the whole tree for every tas
 | [spec/phase-1-prd.md](./spec/phase-1-prd.md) | Phase 1 trade engine (**closed**) |
 | [spec/phase-2a-prd.md](./spec/phase-2a-prd.md) | Phase 2A RBAC contract (**closed**) |
 | [spec/phase-2a-slices.md](./spec/phase-2a-slices.md) | Phase 2A slice plan (**closed**) |
+| [spec/phase-2bcd-slices.md](./spec/phase-2bcd-slices.md) | Phase 2B–2D slice plan (**Proposed**) |
 
 ### ADR (decisions)
 
 | Doc | Role |
 |-----|------|
 | [adr/001-rbac.md](./adr/001-rbac.md) | Phase 2A RBAC (**Accepted**) |
+| [adr/002-finance-deposit-pickup-ops.md](./adr/002-finance-deposit-pickup-ops.md) | Phase 2B finance + pickup (**Accepted**) |
+| [adr/003-imports-notifications.md](./adr/003-imports-notifications.md) | Phase 2C Excel + mail (**Accepted**) |
+| [adr/004-erp-sync.md](./adr/004-erp-sync.md) | Phase 2D ERP sync (**Accepted**) |
 
 ### ARCHITECTURE (slice)
 

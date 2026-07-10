@@ -97,4 +97,14 @@ test.describe("Trade Hot Sales admin journey @journey", () => {
       { timeout: 15_000 },
     );
   });
+
+  test("admin can open Excel imports page for event", async ({ page }) => {
+    test.skip(!eventId, "Requires created event");
+    await loginAsOperator(page, requireOperatorCreds());
+    await page.goto(`/trade/vi/admin/events/${eventId}/imports`);
+    await expect(page.getByRole("heading", { name: /excel imports/i })).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(page.getByLabel(/import type/i)).toBeVisible();
+  });
 });

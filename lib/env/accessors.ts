@@ -57,6 +57,60 @@ export function isHotSalesRbacEnabled(
   return env.HOT_SALES_RBAC_ENABLED === "true";
 }
 
+/** Hot Sales Phase 2B operational deposit records (ADR-002). */
+export function isHotSalesDepositEnabled(
+  env: Pick<ServerEnv, "HOT_SALES_DEPOSIT_ENABLED"> = getServerEnv(),
+) {
+  return env.HOT_SALES_DEPOSIT_ENABLED === "true";
+}
+
+/** Hot Sales Phase 2B pickup/ops workflow (ADR-002). */
+export function isHotSalesPickupOpsEnabled(
+  env: Pick<ServerEnv, "HOT_SALES_PICKUP_OPS_ENABLED"> = getServerEnv(),
+) {
+  return env.HOT_SALES_PICKUP_OPS_ENABLED === "true";
+}
+
+/** Hot Sales Phase 2C outbound notifications (ADR-003). Default off until prod checklist. */
+export function isHotSalesNotificationsEnabled(
+  env: Pick<ServerEnv, "HOT_SALES_NOTIFICATIONS_ENABLED"> = getServerEnv(),
+) {
+  return env.HOT_SALES_NOTIFICATIONS_ENABLED === "true";
+}
+
+export function getHotSalesEmailFrom(
+  env: Pick<ServerEnv, "HOT_SALES_EMAIL_FROM"> = getServerEnv(),
+) {
+  return env.HOT_SALES_EMAIL_FROM?.trim() ?? "";
+}
+
+/** Hot Sales Phase 2D ERP sync (ADR-004). Default off until integration checklist. */
+export function isHotSalesErpSyncEnabled(
+  env: Pick<ServerEnv, "HOT_SALES_ERP_SYNC_ENABLED"> = getServerEnv(),
+) {
+  return env.HOT_SALES_ERP_SYNC_ENABLED === "true";
+}
+
+export function getHotSalesErpVendor(
+  env: Pick<ServerEnv, "HOT_SALES_ERP_VENDOR"> = getServerEnv(),
+) {
+  return env.HOT_SALES_ERP_VENDOR?.trim().toLowerCase() ?? "";
+}
+
+export function getHotSalesErpBaseUrl(
+  env: Pick<ServerEnv, "HOT_SALES_ERP_BASE_URL"> = getServerEnv(),
+) {
+  return env.HOT_SALES_ERP_BASE_URL?.trim() ?? "";
+}
+
+export function getHotSalesErpApiKey(): string {
+  return process.env.HOT_SALES_ERP_API_KEY?.trim() ?? "";
+}
+
+export function getResendApiKey(): string {
+  return process.env.RESEND_API_KEY?.trim() ?? "";
+}
+
 export function getSharedAdminEmail(
   env: Pick<ServerEnv, "SHARED_ADMIN_EMAIL"> = getServerEnv(),
 ) {

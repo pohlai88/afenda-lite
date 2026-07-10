@@ -122,9 +122,7 @@ Flow: blank or clone template → name → open/close window → timezone → cr
 
 ### 5.1 Finance / deposit
 
-**Decision required before coding (future ADR-002):** Is Hot Sales or ERP/Finance the settlement source of truth?
-
-**Planning recommendation (from feedback):** Until ERP sync is approved, Hot Sales deposit records are **operational only**; ERP/Finance remains official settlement SoT. No payment settlement engine inside Hot Sales in 2B.
+**Decision (ADR-002 Accepted 2026-07-10):** Hot Sales deposit records are **operational only**; ERP/Finance remains official settlement SoT until ADR-004. No payment settlement engine inside Hot Sales in 2B.
 
 Keep `hot_sales_order.deposit_status` as a **projection** from deposit records.
 
@@ -171,7 +169,7 @@ Suggested: `hot_sales_import_batch`, `hot_sales_import_row`. Controls: templates
 
 ### 6.2 Notifications
 
-Email only first. **Do not** mix into declaration-portal mail without **ADR-003**.
+Email only first. **ADR-003 Accepted** — dedicated Hot Sales mail lane; not declaration-portal or Neon Auth mail.
 
 Triggers (planning): event open/closing/closed; order submitted; allocation results; transfer request/decision; deposit pending/confirmed; pickup scheduled/completed.
 
@@ -183,7 +181,7 @@ Design: templates + events + delivery log; enable/disable per event; vi/en; fail
 
 **Last.** Requires stable event/order/allocation/deposit/pickup IDs and state machines.
 
-Decisions (future **ADR-004**): which ERP; push/pull/both; customer/product/supply masters; finance SoT; timing; retry/DLQ.
+**ADR-004 Accepted 2026-07-10.** Push-first async sync; ERP remains settlement SoT; adapter interface + noop default. See [../adr/004-erp-sync.md](../adr/004-erp-sync.md).
 
 Controls: idempotency key, retry, DLQ, manual retry, external mapping, sync status, audit, staging ERP.
 
@@ -277,9 +275,10 @@ Per-release AC in sections 4–7. Cross-cutting:
 | [../adr/001-rbac.md](../adr/001-rbac.md) | **Accepted** (2026-07-09) |
 | This PRD | **Accepted** (2026-07-09) |
 | [./phase-2a-slices.md](./phase-2a-slices.md) | **Approved** (2026-07-09) |
-| ADR-002 finance SoT | Before 2B settlement claims |
-| ADR-003 notifications provider | Before 2C mail |
-| ADR-004 ERP sync contract | Before 2D |
+| [../adr/002-finance-deposit-pickup-ops.md](../adr/002-finance-deposit-pickup-ops.md) | **Accepted** (2026-07-10) |
+| [../adr/003-imports-notifications.md](../adr/003-imports-notifications.md) | **Accepted** (2026-07-10) |
+| [../adr/004-erp-sync.md](../adr/004-erp-sync.md) | **Accepted** (2026-07-10) |
+| [./phase-2bcd-slices.md](./phase-2bcd-slices.md) | **Proposed** — approve per phase before code |
 
 ---
 
@@ -287,7 +286,7 @@ Per-release AC in sections 4–7. Cross-cutting:
 
 **Implementation (2A-1 → 2A-9) is closed.** Active work is **operational rollout closed**.
 
-1. Follow [../ops/gate-register.md](../ops/gate-register.md) — **gate SSOT**; Gate 4B is next  
-2. [../ops/rollout.md](../ops/rollout.md) + [../ops/release-readiness.md](../ops/release-readiness.md) — checklists  
-3. Do **not** start 2B–2D until separate ADR/slice approval  
-4. Do **not** reopen 2A product scope (permissions, UI, schema) in this application phase
+1. **2A + ops closed** — [../ops/gate-register.md](../ops/gate-register.md)  
+2. **2B–2D ADRs Accepted** — [../adr/002-finance-deposit-pickup-ops.md](../adr/002-finance-deposit-pickup-ops.md) · [003](../adr/003-imports-notifications.md) · [004](../adr/004-erp-sync.md)  
+3. **Next for implementation:** approve [./phase-2bcd-slices.md](./phase-2bcd-slices.md) per phase (2B → 2C → 2D); explicit program reopen  
+4. Do **not** reopen 2A product scope (permissions, UI, schema) without a new ADR

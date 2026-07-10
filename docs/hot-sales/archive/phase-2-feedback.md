@@ -670,9 +670,10 @@ docs/hot-sales/../spec/phase-2a-prd.md
 ## Recommended additional ADRs
 
 ```text
-docs/hot-sales/ADR-002-finance-source-of-truth.md
-docs/hot-sales/ADR-003-notifications-provider.md
-docs/hot-sales/ADR-004-erp-sync-contract.md
+docs/hot-sales/adr/002-finance-deposit-pickup-ops.md
+docs/hot-sales/adr/003-imports-notifications.md
+docs/hot-sales/adr/004-erp-sync.md
+docs/hot-sales/spec/phase-2bcd-slices.md
 ```
 
 ## PRD-V2-Phase2 structure

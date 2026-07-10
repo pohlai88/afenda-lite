@@ -135,11 +135,12 @@ Exact columns, Neon Auth user id linkage, and migration from `hot_sales_sales_me
 - Requires careful Phase 1 → 2A migration and dual-read period
 - Scope model (team/BU) needs clear definitions before coding
 
-### Follow-ups (not this ADR)
+### Follow-ups (accepted separately)
 
-- ADR-002 finance source of truth (before 2B settlement claims)
-- ADR-003 notifications provider (before 2C mail)
-- ADR-004 ERP sync contract (before 2D)
+- [ADR-002](./002-finance-deposit-pickup-ops.md) finance + pickup ops — **Accepted** 2026-07-10
+- [ADR-003](./003-imports-notifications.md) notifications provider — **Accepted** 2026-07-10
+- [ADR-004](./004-erp-sync.md) ERP sync contract — **Accepted** 2026-07-10
+- Implementation: [../spec/phase-2bcd-slices.md](../spec/phase-2bcd-slices.md) (**Proposed**)
 
 ---
 

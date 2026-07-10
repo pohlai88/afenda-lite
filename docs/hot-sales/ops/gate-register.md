@@ -23,7 +23,7 @@ This document is the **single operational SSOT** for Phase 2A rollout status, ga
 | **Post-boundary fixes** | Fix-lane only (e.g. `4d203a7` next-intl TradeShell). **Merge to `main`** before the next production deploy. No new product tag. |
 | **RBAC flag** | `HOT_SALES_RBAC_ENABLED=true` on Vercel production since **Gate 7** (2026-07-10). Local dev stays `false` unless running controlled matrix. Rollback = set flag `false` → `sync:vercel` → redeploy. |
 | **Schema** | Migrations `013` (Phase 1) + `014` (RBAC) applied on production. **No new migrations** in this phase unless production-blocking. |
-| **No 2B–2D** | Finance, pickup, Excel, notifications, ERP — **blocked** until separate ADR/slice approval. |
+| **No 2C–2D code** | ADRs Accepted; slices **Proposed** until per-phase approval. **2B** implemented — flags default off. |
 | **No product expansion** | No new permissions, roles, RBAC UI, or trade features. |
 | **No repo normalization** | `lib/` / `components/` / layout / declaration refactors — **separate lane**, not mixed into Hot Sales commits. |
 | **No conflation** | Guardian Auth, portal atmosphere, declaration domain — **out of scope** for this rollout. |
@@ -61,7 +61,7 @@ Operational gates map to [./release-readiness.md](./release-readiness.md) promot
 | **6** | Controlled `HOT_SALES_RBAC_ENABLED=true` | ✅ **PASS** — local controlled matrix 17/17 (2026-07-10) |
 | **7** | Production RBAC enable | ✅ **PASS** — DB cutover + `allow_localhost` hardened + production `flag=true` + compact smoke 17/17 (2026-07-10) |
 
-**Phase 2A ops rollout:** Gates **1–7** ✅ complete (2026-07-10). Production runtime: `br-tiny-hill-ao82jp6f` / `ep-dawn-bird`, `HOT_SALES_RBAC_ENABLED=true` on Vercel. **No 2B–2D** without new ADR/slice approval.
+**Phase 2A ops rollout:** Gates **1–7** ✅ complete (2026-07-10). Production runtime: `br-tiny-hill-ao82jp6f` / `ep-dawn-bird`, `HOT_SALES_RBAC_ENABLED=true` on Vercel. **2B–2D:** ADRs Accepted; implementation gated on [../spec/phase-2bcd-slices.md](../spec/phase-2bcd-slices.md) approval.
 
 ---
 
@@ -466,6 +466,132 @@ Tasks:
 
 Forbidden: RBAC enable, schema change, new permissions/UI, 2B–2D, lib/components cleanup.
 ```
+
+---
+
+## Phase 2B — deposit + pickup ops (implementation landed 2026-07-10)
+
+**Status:** Code complete; **production flags default off**.
+
+| Item | Value |
+|------|-------|
+| Migrations | `015_hot_sales_deposit.sql`, `016_hot_sales_pickup_ops.sql` |
+| Flags | `HOT_SALES_DEPOSIT_ENABLED`, `HOT_SALES_PICKUP_OPS_ENABLED` — default `false` on Vercel |
+| Admin routes | `/trade/[locale]/admin/events/[id]/deposits`, `.../pickup` |
+| Rollback | Set flags `false`; Phase 1 column writes resume via dual-read paths |
+
+### Dev promotion checklist
+
+1. `npm run db:migrate` on target branch (`dev-spec-b` first).
+2. Set flags `true` in `env.config` → `npm run env:compose`.
+3. `npm run test:unit -- lib/domain/trade/deposit lib/domain/trade/pickup`.
+4. Manual smoke: deposit receipt → projection; pickup fulfillment → rollup qty.
+5. Production: migrate prod branch → enable flags via `sync:vercel` → redeploy → smoke.
+
+**Not in 2B:** 2C Excel/notifications, 2D ERP sync.
+
+### Phase 2B closure tag
+
+Cut **`hot-sales-phase-2b`** on `main` after:
+
+1. Migrations `015`–`016` applied on prod branch.
+2. Unit tests pass: `npm run test:unit -- lib/domain/trade/deposit lib/domain/trade/pickup`.
+3. Dev smoke: deposit receipt → projection; pickup fulfillment → rollup.
+4. Prod promotion (flags still default off until checklist below passes).
+
+---
+
+## Phase 2C — Excel import + notifications (implementation landed 2026-07-10)
+
+**Status:** Code complete; **production flags default off**.
+
+| Item | Value |
+|------|-------|
+| Migrations | `017_hot_sales_import.sql`, `018_hot_sales_notifications.sql`, `020_hot_sales_notification_extended.sql`, `023_hot_sales_notification_deferred_triggers.sql` |
+| Flags | `HOT_SALES_NOTIFICATIONS_ENABLED`, `HOT_SALES_EMAIL_FROM`, `RESEND_API_KEY` — default off/unset on Vercel |
+| Admin routes | `/trade/[locale]/admin/events/[id]/imports` |
+| Domain | `lib/domain/trade/import-store.ts`, `notification-send.ts`, `notification-store.ts` |
+| Rollback | Set `HOT_SALES_NOTIFICATIONS_ENABLED=false`; imports remain gated by RBAC only |
+
+### Dev promotion checklist
+
+1. `npm run db:migrate` on target branch (`dev-spec-b` first).
+2. Import smoke: upload → dry-run → confirm (product + priority types minimum).
+3. Set `HOT_SALES_NOTIFICATIONS_ENABLED=true`, `HOT_SALES_EMAIL_FROM`, `RESEND_API_KEY` in `env.secret` → `npm run env:compose`.
+4. `npm run test:unit -- lib/domain/trade/import-validators lib/domain/trade/notification-render`.
+5. Trigger one notification (e.g. order submit) — verify Resend delivery + `hot_sales_notification_log` row.
+6. Production: migrate prod branch → add Resend keys to Vercel (not via `env pull`) → enable flag → redeploy → smoke.
+7. Schedule `npm run process:trade-closing-soon` (cron) when notifications enabled.
+
+**Triggers:** all ADR-003 keys wired including `event.closing_soon` (cron) and `deposit.pending` (order + bulk import).
+
+**Not in 2C:** 2D ERP sync, custom SMTP for Neon Auth.
+
+### Phase 2C closure tag
+
+Cut **`hot-sales-phase-2c`** on `main` after:
+
+1. Migrations `017`–`018`, `020` applied on prod branch.
+2. Import + notification unit tests pass (see above).
+3. Notification smoke with flag on in dev; idempotency verified on duplicate trigger.
+4. E2E imports step green in `e2e/trade-hot-sales.spec.ts`.
+
+---
+
+## Phase 2D — ERP sync framework + DLQ (2D-1/2D-2 landed 2026-07-10)
+
+**Status:** Framework + ops UI complete; **vendor adapter (2D-3) per customer**; flag default off.
+
+| Item | Value |
+|------|-------|
+| Migration | `019_hot_sales_erp_sync.sql` |
+| Flag | `HOT_SALES_ERP_SYNC_ENABLED` — default `false` |
+| Admin route | `/trade/[locale]/admin/erp-sync` (linked from events admin nav when flag on) |
+| Permissions | `export.finance` (view/process), `sync.retry` (manual DLQ retry — audited) |
+| Runner | `npm run process:erp-sync` or admin “Process pending jobs” |
+| Rollback | Set flag `false` — enqueue stops; noop adapter when disabled |
+
+### Dev promotion checklist
+
+1. `npm run db:migrate` on target branch.
+2. Set `HOT_SALES_ERP_SYNC_ENABLED=true` in `env.config` → `npm run env:compose`.
+3. `npm run test:unit -- lib/domain/trade/erp-sync-store`.
+4. Submit order/deposit/pickup → verify job enqueued; run `npm run process:erp-sync`.
+5. DLQ: force failure (noop adapter off) → expand detail panel → manual retry → verify `hot_sales_audit` row `erp_sync.retry`.
+
+**Not in 2D-2:** Customer vendor pack (`lib/domain/trade/erp/<vendor>/`).
+
+---
+
+## Prod flag promotion — 2B / 2C / 2D (ordered)
+
+Enable **one phase at a time** on production; never enable all flags in a single deploy without smoke between each.
+
+| Step | Action | Verify |
+|------|--------|--------|
+| 0 | `npm run audit:hot-sales-promotion` | JSON `{ ok: true }` |
+| 1 | Apply migrations `015`–`023` on `br-tiny-hill-ao82jp6f` | `\d hot_sales_*` tables present |
+| 2 | Deploy app with all phase flags **false** | Phase 1 + 2A paths unchanged |
+| 3 | `HOT_SALES_DEPOSIT_ENABLED=true`, `HOT_SALES_PICKUP_OPS_ENABLED=true` | Deposit + pickup admin smoke |
+| 4 | `HOT_SALES_NOTIFICATIONS_ENABLED=true` + Resend sender | One mail + log row |
+| 5 | `HOT_SALES_ERP_SYNC_ENABLED=true` | Job enqueue + process smoke (noop ok) |
+
+Rollback any step: set affected flag(s) `false` → `npm run sync:vercel` → redeploy. RBAC flag stays `true`.
+
+Tag after promotion evidence (human — on `main` after smoke):
+
+```bash
+git tag -a hot-sales-phase-2b -m "Phase 2B deposit + pickup ops"
+git tag -a hot-sales-phase-2c -m "Phase 2C import + notifications"
+git tag -a hot-sales-phase-2d -m "Phase 2D ERP sync framework + DLQ"
+git push origin hot-sales-phase-2b hot-sales-phase-2c hot-sales-phase-2d
+```
+
+| Tag | When |
+|-----|------|
+| `hot-sales-phase-2b` | After step 3 smoke on prod (or dev-only if prod promotion deferred) |
+| `hot-sales-phase-2c` | After step 4 smoke |
+| `hot-sales-phase-2d` | After step 5 smoke (2D-3 optional per customer) |
 
 ---
 

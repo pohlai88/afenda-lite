@@ -54,6 +54,7 @@ export const HOT_SALES_PERMISSION_CATALOG: readonly HotSalesPermissionDef[] = [
   { code: "pickup.manage", description: "Manage pickup fulfillment", sensitive: false },
   { code: "export.orders", description: "Export orders / event summary", sensitive: false },
   { code: "export.finance", description: "Export finance reports", sensitive: false },
+  { code: "sync.retry", description: "Retry ERP sync jobs", sensitive: true },
   { code: "audit.view", description: "View audit logs", sensitive: false },
   {
     code: "role.manage",
@@ -189,6 +190,7 @@ export const HOT_SALES_ROLE_TEMPLATES: readonly HotSalesRoleTemplateDef[] = [
       "deposit.manage",
       "export.orders",
       "export.finance",
+      "sync.retry",
       "audit.view",
     ],
   },

@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { TradeErpSyncNavLink } from "@/components/trade/trade-erp-sync-panel";
 import {
   TradeEnsureTemplateButton,
   TradeNewEventForm,
 } from "@/components/trade/trade-admin-forms";
 import { TradeCloneEventButton } from "@/components/trade/trade-clone-button";
 import { requireTradeAdmin } from "@/lib/auth/trade-session";
+import { isHotSalesErpSyncFeatureActive } from "@/lib/auth/trade-phase2d";
 import { listEvents } from "@/lib/domain/trade/store";
 import { isTradeLocale, tradeHref, type TradeLocale } from "@/lib/i18n/trade";
 
@@ -20,6 +22,7 @@ export default async function TradeAdminEventsPage({
 
   await requireTradeAdmin();
   const events = await listEvents();
+  const erpSyncActive = isHotSalesErpSyncFeatureActive();
 
   return (
     <div className="space-y-8">
@@ -45,6 +48,14 @@ export default async function TradeAdminEventsPage({
         >
           {locale === "vi" ? "Vai trò" : "Roles"}
         </Link>
+        {erpSyncActive ? (
+          <Link
+            href={tradeHref(locale, "/admin/erp-sync")}
+            className="rounded-md border px-3 py-1.5 text-sm"
+          >
+            ERP sync
+          </Link>
+        ) : null}
         <TradeEnsureTemplateButton locale={locale} />
       </div>
 

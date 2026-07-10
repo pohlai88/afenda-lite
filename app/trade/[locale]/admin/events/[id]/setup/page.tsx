@@ -9,6 +9,15 @@ import {
 } from "@/components/trade/trade-setup-forms";
 import { TradeAddSalesMemberForm } from "@/components/trade/trade-sales-member-form";
 import { TradeExportPanel } from "@/components/trade/trade-export-panel";
+import { TradeDepositsNavLink } from "@/components/trade/trade-deposit-forms";
+import { TradeErpSyncNavLink } from "@/components/trade/trade-erp-sync-panel";
+import { TradeImportNavLink } from "@/components/trade/trade-import-panel";
+import { TradePickupNavLink } from "@/components/trade/trade-pickup-forms";
+import {
+  isHotSalesDepositFeatureActive,
+  isHotSalesPickupFeatureActive,
+} from "@/lib/auth/trade-phase2b";
+import { isHotSalesErpSyncFeatureActive } from "@/lib/auth/trade-phase2d";
 import { requireTradeAdmin } from "@/lib/auth/trade-session";
 import {
   getEventById,
@@ -55,6 +64,18 @@ export default async function TradeAdminSetupPage({
           <p className="text-muted-foreground text-sm">{event.status}</p>
         </div>
         <TradeEventStatusActions locale={locale} eventId={id} status={event.status} />
+        <div className="flex flex-wrap gap-3 text-sm">
+          {isHotSalesDepositFeatureActive() ? (
+            <TradeDepositsNavLink locale={locale} eventId={id} />
+          ) : null}
+          {isHotSalesPickupFeatureActive() ? (
+            <TradePickupNavLink locale={locale} eventId={id} />
+          ) : null}
+          <TradeImportNavLink locale={locale} eventId={id} />
+          {isHotSalesErpSyncFeatureActive() ? (
+            <TradeErpSyncNavLink locale={locale} />
+          ) : null}
+        </div>
       </div>
 
       <section className="space-y-3">

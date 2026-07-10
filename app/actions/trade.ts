@@ -2,6 +2,42 @@
 
 import { revalidatePath } from "next/cache";
 import { requireTradeAdmin, requireTradePermission } from "@/lib/auth/trade-session";
+import { assertImportRowLimit } from "@/lib/domain/trade/import-validators";
+import { enqueueErpSyncJob } from "@/lib/domain/trade/erp-sync-store";
+import { notifyDepositPending, notifyTradeStakeholder } from "@/lib/domain/trade/trade-notify";
+import { isHotSalesErpSyncEnabled, isHotSalesDepositEnabled, isHotSalesPickupOpsEnabled } from "@/lib/env/accessors";
+import {
+  assertHotSalesDepositFeatureAction,
+  assertHotSalesPickupFeatureAction,
+} from "@/lib/auth/trade-phase2b";
+import {
+  ensureDepositForOrder,
+  listDepositsForEvent,
+  listFinanceAuditForEvent,
+  recordDepositAdjustment,
+  recordDepositReceipt,
+  updateDepositDetails,
+} from "@/lib/domain/trade/deposit-store";
+import {
+  cancelImportBatch,
+  commitImportBatch,
+  createImportBatch,
+  getImportBatchById,
+  listImportRowsForBatch,
+} from "@/lib/domain/trade/import-store";
+import { buildImportTemplateWorkbook, parseImportWorkbook } from "@/lib/domain/trade/import-parse";
+import { validateImportRowsForDryRun } from "@/lib/domain/trade/import-dry-run";
+import {
+  assertImportFeatureGate,
+  importPermissionForType,
+  parseImportType,
+} from "@/lib/domain/trade/import-guards";
+import {
+  createPickupWindow,
+  recordFulfillment,
+  recordPickupException,
+  schedulePickup,
+} from "@/lib/domain/trade/pickup-store";
 import {
   HOT_SALES_SCOPE_TYPES,
   type HotSalesScopeType,
@@ -76,6 +112,7 @@ function revalidateTrade(locale: TradeLocale, eventId?: string) {
   if (eventId) {
     revalidatePath(`/trade/${locale}/admin/events/${eventId}/setup`);
     revalidatePath(`/trade/${locale}/admin/events/${eventId}/allocation`);
+    revalidatePath(`/trade/${locale}/admin/events/${eventId}/imports`);
     revalidatePath(`/trade/${locale}/events/${eventId}/order`);
   }
 }
@@ -164,6 +201,14 @@ export async function openTradeEventAction(locale: string, eventId: string) {
     actorRole: "admin",
     newValue: { status: nextStatus },
   });
+  if (nextStatus === "open") {
+    notifyTradeStakeholder(locale, {
+      eventKey: "event.opened",
+      entityId: eventId,
+      recipientEmail: admin.email,
+      vars: { eventName: event.eventName },
+    });
+  }
   revalidateTrade(locale, eventId);
   return { ok: true };
 }
@@ -189,6 +234,12 @@ export async function activateScheduledTradeEventAction(
     actorId: admin.userId,
     actorRole: "admin",
   });
+  notifyTradeStakeholder(locale, {
+    eventKey: "event.opened",
+    entityId: eventId,
+    recipientEmail: admin.email,
+    vars: { eventName: event.eventName },
+  });
   revalidateTrade(locale, eventId);
   return { ok: true };
 }
@@ -208,6 +259,12 @@ export async function closeTradeEventAction(locale: string, eventId: string) {
     action: "event.closed",
     actorId: admin.userId,
     actorRole: "admin",
+  });
+  notifyTradeStakeholder(locale, {
+    eventKey: "event.closed",
+    entityId: eventId,
+    recipientEmail: admin.email,
+    vars: { eventName: event.eventName },
   });
   revalidateTrade(locale, eventId);
   return { ok: true };
@@ -572,6 +629,15 @@ export async function submitTradeOrderAction(
     registeredAt: now,
   });
 
+  if (isHotSalesDepositEnabled() && event.depositRequired) {
+    await ensureDepositForOrder({
+      orderId: order.id,
+      depositRequired: true,
+      createdBy: access.userId,
+    });
+    notifyDepositPending(locale, order);
+  }
+
   await recordHotSalesAudit({
     eventId,
     orderId: order.id,
@@ -580,6 +646,20 @@ export async function submitTradeOrderAction(
     actorRole: access.isAdmin ? "admin" : "sales",
     newValue: { orderNumber: order.orderNumber },
   });
+
+  notifyTradeStakeholder(locale, {
+    eventKey: "order.submitted",
+    entityId: order.id,
+    recipientEmail: access.email,
+    vars: {
+      orderNumber: order.orderNumber,
+      customerName: order.customerName,
+    },
+  });
+
+  if (isHotSalesErpSyncEnabled()) {
+    await enqueueErpSyncJob({ jobType: "order", entityId: order.id, actorId: access.userId });
+  }
 
   revalidateTrade(locale, eventId);
   return { ok: true, orderId: order.id };
@@ -641,6 +721,30 @@ export async function runTradeAllocationAction(
     reason,
     newValue: summary,
   });
+
+  for (const r of results) {
+    const order = orders.find((o) => o.id === r.orderId);
+    if (!order?.salespersonEmail) continue;
+    if (r.status !== "rejected" && r.confirmedQuantity <= 0) continue;
+    const eventKey =
+      r.status === "full"
+        ? "allocation.completed"
+        : r.status === "partial"
+          ? "allocation.partial"
+          : "order.rejected";
+    if (r.status === "rejected" || r.confirmedQuantity > 0) {
+      notifyTradeStakeholder(locale, {
+        eventKey,
+        entityId: order.id,
+        recipientEmail: order.salespersonEmail,
+        vars: {
+          orderNumber: order.orderNumber,
+          confirmedQuantity: r.confirmedQuantity,
+        },
+        version: r.status,
+      });
+    }
+  }
 
   revalidateTrade(locale, eventId);
   return { ok: true, summary };
@@ -762,6 +866,13 @@ export async function requestTransferAction(
     reason,
   });
 
+  notifyTradeStakeholder(locale, {
+    eventKey: "transfer.requested",
+    entityId: orderId,
+    recipientEmail: order.salespersonEmail,
+    vars: { orderNumber: order.orderNumber },
+  });
+
   revalidateTrade(locale, event.id);
   return { ok: true };
 }
@@ -789,6 +900,12 @@ export async function approveTransferAction(
     actorRole: "admin",
     newValue: { transferId },
   });
+  notifyTradeStakeholder(locale, {
+    eventKey: "transfer.approved",
+    entityId: orderId,
+    recipientEmail: order.salespersonEmail,
+    vars: { orderNumber: order.orderNumber },
+  });
   revalidateTrade(locale, order.eventId);
   return { ok: true };
 }
@@ -815,6 +932,12 @@ export async function rejectTransferAction(
     actorId: admin.userId,
     actorRole: "admin",
     newValue: { transferId },
+  });
+  notifyTradeStakeholder(locale, {
+    eventKey: "transfer.rejected",
+    entityId: orderId,
+    recipientEmail: order.salespersonEmail,
+    vars: { orderNumber: order.orderNumber },
   });
   revalidateTrade(locale, order.eventId);
   return { ok: true };
@@ -852,7 +975,6 @@ export async function completeTradeOrderAction(
   fulfilledQuantity: number,
 ) {
   if (!isTradeLocale(locale)) throw new Error("invalid_locale");
-  const admin = await requireTradeAdmin();
 
   const order = await getOrderById(orderId);
   if (!order) return { error: "not_found" };
@@ -871,19 +993,48 @@ export async function completeTradeOrderAction(
   if (!event || !product) return { error: "not_found" };
 
   const rate = getSupportRate(product, event);
-  await completeOrder({
-    orderId,
-    fulfilledQuantity,
-    finalSupport: calculateFinalSupport(fulfilledQuantity, rate) ?? 0,
-  });
-  await recordHotSalesAudit({
-    eventId: order.eventId,
-    orderId,
-    action: "order.completed",
-    actorId: admin.userId,
-    actorRole: "admin",
-    newValue: { fulfilledQuantity },
-  });
+  const finalSupport = calculateFinalSupport(fulfilledQuantity, rate) ?? 0;
+
+  if (isHotSalesPickupOpsEnabled()) {
+    const access = await requireTradePermission("pickup.manage", {
+      eventId: order.eventId,
+    });
+    try {
+      await recordFulfillment({
+        orderId,
+        quantity: fulfilledQuantity,
+        actorId: access.userId,
+        finalSupport,
+        absoluteQuantity: fulfilledQuantity,
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "fulfillment_failed";
+      return { error: message };
+    }
+    await recordHotSalesAudit({
+      eventId: order.eventId,
+      orderId,
+      action: "order.completed",
+      actorId: access.userId,
+      actorRole: access.isAdmin ? "admin" : "ops",
+      newValue: { fulfilledQuantity },
+    });
+  } else {
+    const admin = await requireTradeAdmin();
+    await completeOrder({
+      orderId,
+      fulfilledQuantity,
+      finalSupport,
+    });
+    await recordHotSalesAudit({
+      eventId: order.eventId,
+      orderId,
+      action: "order.completed",
+      actorId: admin.userId,
+      actorRole: "admin",
+      newValue: { fulfilledQuantity },
+    });
+  }
 
   revalidateTrade(locale, order.eventId);
   return { ok: true };
@@ -1012,4 +1163,481 @@ export async function revokeTradeRoleAssignmentAction(
   });
   revalidateTrade(locale);
   return { ok: true };
+}
+
+export async function listEventDepositsAction(locale: string, eventId: string) {
+  if (!isTradeLocale(locale)) throw new Error("invalid_locale");
+  const disabled = assertHotSalesDepositFeatureAction();
+  if (disabled) return disabled;
+  await requireTradePermission("deposit.view", { eventId });
+  const [deposits, audit] = await Promise.all([
+    listDepositsForEvent(eventId),
+    listFinanceAuditForEvent(eventId),
+  ]);
+  return { deposits, audit };
+}
+
+export async function recordDepositReceiptAction(
+  locale: string,
+  eventId: string,
+  formData: FormData,
+) {
+  if (!isTradeLocale(locale)) throw new Error("invalid_locale");
+  const disabled = assertHotSalesDepositFeatureAction();
+  if (disabled) return disabled;
+  const access = await requireTradePermission("deposit.manage", { eventId });
+  const depositId = String(formData.get("depositId") ?? "");
+  const orderId = String(formData.get("orderId") ?? "");
+  const amount = Number(formData.get("amount"));
+  if (!depositId || !orderId || !Number.isFinite(amount) || amount <= 0) {
+    return { error: "invalid_input" };
+  }
+  await recordDepositReceipt({
+    depositId,
+    orderId,
+    reference: String(formData.get("reference") ?? "").trim() || undefined,
+    amount,
+    recordedBy: access.userId,
+  });
+  const order = await getOrderById(orderId);
+  if (order) {
+    notifyTradeStakeholder(locale, {
+      eventKey: "deposit.confirmed",
+      entityId: orderId,
+      recipientEmail: order.salespersonEmail,
+      vars: {
+        orderNumber: order.orderNumber,
+        amount,
+      },
+    });
+    if (isHotSalesErpSyncEnabled()) {
+      await enqueueErpSyncJob({
+        jobType: "deposit_summary",
+        entityId: orderId,
+        actorId: access.userId,
+      });
+    }
+  }
+  revalidateTrade(locale, eventId);
+  return { ok: true };
+}
+
+export async function recordDepositAdjustmentAction(
+  locale: string,
+  eventId: string,
+  formData: FormData,
+) {
+  if (!isTradeLocale(locale)) throw new Error("invalid_locale");
+  const disabled = assertHotSalesDepositFeatureAction();
+  if (disabled) return disabled;
+  const access = await requireTradePermission("deposit.manage", { eventId });
+  const depositId = String(formData.get("depositId") ?? "");
+  const orderId = String(formData.get("orderId") ?? "");
+  const adjustmentType = String(formData.get("adjustmentType") ?? "") as
+    | "waive"
+    | "refund"
+    | "forfeit"
+    | "correction"
+    | "cancelled";
+  const reason = String(formData.get("reason") ?? "").trim();
+  if (!depositId || !orderId || !adjustmentType) {
+    return { error: "invalid_input" };
+  }
+  try {
+    await recordDepositAdjustment({
+      depositId,
+      orderId,
+      adjustmentType,
+      reason,
+      amount: formData.get("amount") ? Number(formData.get("amount")) : null,
+      actorId: access.userId,
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "adjustment_failed";
+    return { error: message };
+  }
+  revalidateTrade(locale, eventId);
+  return { ok: true };
+}
+
+export async function updateDepositDetailsAction(
+  locale: string,
+  eventId: string,
+  formData: FormData,
+) {
+  if (!isTradeLocale(locale)) throw new Error("invalid_locale");
+  const disabled = assertHotSalesDepositFeatureAction();
+  if (disabled) return disabled;
+  const access = await requireTradePermission("deposit.manage", { eventId });
+  const depositId = String(formData.get("depositId") ?? "");
+  const orderId = String(formData.get("orderId") ?? "");
+  if (!depositId || !orderId) return { error: "invalid_input" };
+  await updateDepositDetails({
+    depositId,
+    orderId,
+    amount: formData.get("amount") ? Number(formData.get("amount")) : undefined,
+    nonRefundable: formData.get("nonRefundable") === "on",
+    actorId: access.userId,
+  });
+  revalidateTrade(locale, eventId);
+  return { ok: true };
+}
+
+export async function createPickupWindowAction(
+  locale: string,
+  eventId: string,
+  formData: FormData,
+) {
+  if (!isTradeLocale(locale)) throw new Error("invalid_locale");
+  const disabled = assertHotSalesPickupFeatureAction();
+  if (disabled) return disabled;
+  await requireTradePermission("pickup.manage", { eventId });
+  const startsAt = new Date(String(formData.get("startsAt") ?? ""));
+  const endsAt = new Date(String(formData.get("endsAt") ?? ""));
+  if (Number.isNaN(startsAt.getTime()) || Number.isNaN(endsAt.getTime())) {
+    return { error: "invalid_dates" };
+  }
+  await createPickupWindow({
+    eventId,
+    startsAt,
+    endsAt,
+    location: String(formData.get("location") ?? "").trim() || undefined,
+    capacity: formData.get("capacity") ? Number(formData.get("capacity")) : undefined,
+  });
+  revalidateTrade(locale, eventId);
+  return { ok: true };
+}
+
+export async function schedulePickupAction(
+  locale: string,
+  eventId: string,
+  formData: FormData,
+) {
+  if (!isTradeLocale(locale)) throw new Error("invalid_locale");
+  const disabled = assertHotSalesPickupFeatureAction();
+  if (disabled) return disabled;
+  const access = await requireTradePermission("pickup.manage", { eventId });
+  const orderId = String(formData.get("orderId") ?? "");
+  const windowId = String(formData.get("windowId") ?? "");
+  if (!orderId || !windowId) return { error: "invalid_input" };
+  await schedulePickup({ orderId, windowId, actorId: access.userId });
+  const order = await getOrderById(orderId);
+  if (order) {
+    notifyTradeStakeholder(locale, {
+      eventKey: "pickup.scheduled",
+      entityId: orderId,
+      recipientEmail: order.salespersonEmail,
+      vars: { orderNumber: order.orderNumber },
+    });
+  }
+  revalidateTrade(locale, eventId);
+  return { ok: true };
+}
+
+export async function recordPickupFulfillmentAction(
+  locale: string,
+  eventId: string,
+  formData: FormData,
+) {
+  if (!isTradeLocale(locale)) throw new Error("invalid_locale");
+  const disabled = assertHotSalesPickupFeatureAction();
+  if (disabled) return disabled;
+  const access = await requireTradePermission("pickup.manage", { eventId });
+  const orderId = String(formData.get("orderId") ?? "");
+  const quantity = Number(formData.get("quantity"));
+  if (!orderId || !Number.isFinite(quantity) || quantity <= 0) {
+    return { error: "invalid_input" };
+  }
+  try {
+    await recordFulfillment({
+      orderId,
+      quantity,
+      actorId: access.userId,
+    });
+    const order = await getOrderById(orderId);
+    if (order) {
+      notifyTradeStakeholder(locale, {
+        eventKey: "pickup.completed",
+        entityId: orderId,
+        recipientEmail: order.salespersonEmail,
+        vars: {
+          orderNumber: order.orderNumber,
+          fulfilledQuantity: quantity,
+        },
+      });
+      if (isHotSalesErpSyncEnabled()) {
+        await enqueueErpSyncJob({
+          jobType: "fulfillment_summary",
+          entityId: orderId,
+          actorId: access.userId,
+        });
+      }
+    }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "fulfillment_failed";
+    return { error: message };
+  }
+  revalidateTrade(locale, eventId);
+  return { ok: true };
+}
+
+export async function recordPickupExceptionAction(
+  locale: string,
+  eventId: string,
+  formData: FormData,
+) {
+  if (!isTradeLocale(locale)) throw new Error("invalid_locale");
+  const disabled = assertHotSalesPickupFeatureAction();
+  if (disabled) return disabled;
+  const access = await requireTradePermission("pickup.manage", { eventId });
+  const orderId = String(formData.get("orderId") ?? "");
+  const exceptionType = String(formData.get("exceptionType") ?? "") as
+    | "no_show"
+    | "partial"
+    | "cancel"
+    | "override";
+  const reason = String(formData.get("reason") ?? "").trim();
+  if (!orderId || !exceptionType) return { error: "invalid_input" };
+  try {
+    await recordPickupException({
+      orderId,
+      exceptionType,
+      reason,
+      actorId: access.userId,
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "exception_failed";
+    return { error: message };
+  }
+  revalidateTrade(locale, eventId);
+  return { ok: true };
+}
+
+export async function getImportTemplateAction(
+  locale: string,
+  importType: string,
+) {
+  if (!isTradeLocale(locale)) throw new Error("invalid_locale");
+  const parsed = parseImportType(importType);
+  if (!parsed) return { error: "invalid_import_type" as const };
+  const featureGate = assertImportFeatureGate(parsed);
+  if (featureGate) return featureGate;
+
+  const permission = importPermissionForType(parsed);
+  await requireTradePermission(permission);
+
+  const buffer = buildImportTemplateWorkbook(parsed);
+  return {
+    ok: true as const,
+    filename: `${parsed}-template.xlsx`,
+    dataBase64: buffer.toString("base64"),
+  };
+}
+
+export async function uploadImportDryRunAction(
+  locale: string,
+  eventId: string,
+  formData: FormData,
+) {
+  if (!isTradeLocale(locale)) throw new Error("invalid_locale");
+  const importTypeRaw = String(formData.get("importType") ?? "");
+  const parsed = parseImportType(importTypeRaw);
+  if (!parsed) return { error: "invalid_import_type" as const };
+  const featureGate = assertImportFeatureGate(parsed);
+  if (featureGate) return featureGate;
+
+  const permission = importPermissionForType(parsed);
+  const access = await requireTradePermission(permission, { eventId });
+
+  const file = formData.get("file");
+  if (!(file instanceof File) || file.size === 0) {
+    return { error: "file_required" as const };
+  }
+
+  const buffer = Buffer.from(await file.arrayBuffer());
+  const parsedRows = parseImportWorkbook(buffer, parsed);
+  const limit = assertImportRowLimit(parsed, parsedRows.length);
+  if (!limit.ok) {
+    return { error: limit.error, maxRows: limit.maxRows };
+  }
+
+  const validated = await validateImportRowsForDryRun(eventId, parsed, parsedRows);
+
+  const batch = await createImportBatch({
+    eventId,
+    importType: parsed,
+    filename: file.name,
+    actorId: access.userId,
+    rows: validated,
+  });
+
+  await recordHotSalesAudit({
+    eventId,
+    action: "import.dry_run",
+    actorId: access.userId,
+    actorRole: access.isAdmin ? "admin" : "operator",
+    newValue: {
+      batchId: batch.id,
+      importType: parsed,
+      rowCount: batch.rowCount,
+      validCount: batch.validCount,
+      errorCount: batch.errorCount,
+    },
+  });
+
+  return {
+    ok: true as const,
+    batchId: batch.id,
+    rowCount: batch.rowCount,
+    validCount: batch.validCount,
+    errorCount: batch.errorCount,
+    rows: validated.map((r) => ({
+      rowNumber: r.rowNumber,
+      validationErrors: r.validationErrors,
+      payload: r.payload,
+    })),
+  };
+}
+
+export async function confirmImportBatchAction(
+  locale: string,
+  eventId: string,
+  batchId: string,
+) {
+  if (!isTradeLocale(locale)) throw new Error("invalid_locale");
+  const batch = await getImportBatchById(batchId);
+  if (!batch || batch.eventId !== eventId) {
+    return { error: "batch_not_found" as const };
+  }
+  const featureGate = assertImportFeatureGate(batch.importType);
+  if (featureGate) return featureGate;
+
+  const permission = importPermissionForType(batch.importType);
+  const access = await requireTradePermission(permission, { eventId });
+
+  if (batch.validCount === 0) {
+    return { error: "no_valid_rows" as const };
+  }
+
+  const result = await commitImportBatch(batchId, {
+    actorEmail: access.email,
+    onDepositPending: (order) => notifyDepositPending(locale, order),
+  });
+
+  await recordHotSalesAudit({
+    eventId,
+    action: "import.committed",
+    actorId: access.userId,
+    actorRole: access.isAdmin ? "admin" : "operator",
+    newValue: {
+      batchId,
+      importType: batch.importType,
+      ...result,
+    },
+  });
+
+  revalidateTrade(locale, eventId);
+  return { ok: true as const, ...result };
+}
+
+export async function cancelImportBatchAction(
+  locale: string,
+  eventId: string,
+  batchId: string,
+) {
+  if (!isTradeLocale(locale)) throw new Error("invalid_locale");
+  const batch = await getImportBatchById(batchId);
+  if (!batch || batch.eventId !== eventId) {
+    return { error: "batch_not_found" as const };
+  }
+
+  const permission = importPermissionForType(batch.importType);
+  const access = await requireTradePermission(permission, { eventId });
+
+  await cancelImportBatch(batchId);
+  await recordHotSalesAudit({
+    eventId,
+    action: "import.cancelled",
+    actorId: access.userId,
+    actorRole: access.isAdmin ? "admin" : "operator",
+    newValue: { batchId },
+  });
+
+  return { ok: true as const };
+}
+
+export async function getImportBatchDetailAction(
+  locale: string,
+  eventId: string,
+  batchId: string,
+) {
+  if (!isTradeLocale(locale)) throw new Error("invalid_locale");
+  const batch = await getImportBatchById(batchId);
+  if (!batch || batch.eventId !== eventId) {
+    return { error: "batch_not_found" as const };
+  }
+
+  const permission = importPermissionForType(batch.importType);
+  await requireTradePermission(permission, { eventId });
+
+  const rows = await listImportRowsForBatch(batchId);
+  return {
+    ok: true as const,
+    batch,
+    rows: rows.map((r) => ({
+      rowNumber: r.rowNumber,
+      validationErrors: r.validationErrors,
+      writeStatus: r.writeStatus,
+      payload: r.payloadJson,
+    })),
+  };
+}
+
+export async function retryErpSyncJobAction(locale: string, jobId: string) {
+  if (!isTradeLocale(locale)) throw new Error("invalid_locale");
+  const access = await requireTradePermission("sync.retry");
+  const { getSyncJobById, retrySyncJob } = await import(
+    "@/lib/domain/trade/erp-sync-store"
+  );
+  const before = await getSyncJobById(jobId);
+  if (!before) {
+    return { ok: false as const, error: "job_not_found" };
+  }
+  if (before.status !== "failed" && before.status !== "dead") {
+    return { ok: false as const, error: "job_not_retryable" };
+  }
+  const after = await retrySyncJob(jobId);
+  if (!after) {
+    return { ok: false as const, error: "retry_failed" };
+  }
+  await recordHotSalesAudit({
+    action: "erp_sync.retry",
+    actorId: access.userId,
+    actorRole: access.isAdmin ? "admin" : "operator",
+    oldValue: {
+      jobId: before.id,
+      jobType: before.jobType,
+      entityId: before.entityId,
+      status: before.status,
+      attemptCount: before.attemptCount,
+      lastError: before.lastError,
+    },
+    newValue: {
+      jobId: after.id,
+      status: after.status,
+      attemptCount: after.attemptCount,
+    },
+    reason: "manual_dlq_retry",
+  });
+  revalidatePath(`/trade/${locale}/admin/erp-sync`);
+  return { ok: true as const };
+}
+
+export async function processErpSyncJobsAction(locale: string) {
+  if (!isTradeLocale(locale)) throw new Error("invalid_locale");
+  await requireTradePermission("export.finance");
+  const { processPendingSyncJobs } = await import("@/lib/domain/trade/erp-sync-store");
+  const result = await processPendingSyncJobs();
+  revalidatePath(`/trade/${locale}/admin/erp-sync`);
+  return { ok: true as const, ...result };
 }

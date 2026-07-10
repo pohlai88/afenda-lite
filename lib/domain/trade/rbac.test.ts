@@ -14,12 +14,13 @@ import {
 } from "@/lib/domain/trade/rbac";
 
 describe("rbac-catalog", () => {
-  it("marks allocation.override, deposit.manage, role.manage as sensitive", () => {
+  it("marks allocation.override, deposit.manage, role.manage, sync.retry as sensitive", () => {
     expect(isSensitivePermission("allocation.override")).toBe(true);
     expect(isSensitivePermission("deposit.manage")).toBe(true);
     expect(isSensitivePermission("role.manage")).toBe(true);
+    expect(isSensitivePermission("sync.retry")).toBe(true);
     expect(isSensitivePermission("order.create")).toBe(false);
-    expect(SENSITIVE_PERMISSION_CODES.size).toBe(3);
+    expect(SENSITIVE_PERMISSION_CODES.size).toBe(4);
   });
 
   it("seeds job titles as templates without requiring role-name enums in guards", () => {
