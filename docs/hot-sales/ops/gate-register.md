@@ -35,7 +35,7 @@ This document is the **single operational SSOT** for Phase 2A rollout status, ga
 | Item | Value |
 |------|--------|
 | Production URL | `https://iam-check.vercel.app` |
-| Production Neon branch | `br-tiny-hill-ao82jp6f` (**only** — not `dev-spec-b`) |
+| Production Neon branch | `br-tiny-hill-ao82jp6f` (**only**) |
 | Phase 1 tag | `hot-sales-phase-1` → `1bc1294` |
 | Phase 2A tag | `hot-sales-phase-2a` → `8e650ff` |
 | Post-tag hotfix branch | `fix/hot-sales-next-intl-trade-shell` |
@@ -324,7 +324,7 @@ DB: br-super-hill-aojc9a4p
 1. `npm run env:compose` + `npm run sync:vercel` — `DATABASE_URL`, `NEON_AUTH_BASE_URL`, `HOT_SALES_RBAC_ENABLED=false` (+ 10 other canonical keys).
 2. `lib/auth/neon-auth.manifest.json` → production branch (`d05eae2`).
 3. `vercel deploy --prod --yes` from `main` → `dpl_8btf19EFofKLQmcswLJQWNXfGEVV`.
-4. Local dev restored to `dev-spec-b` (`ep-curly-sky`) in `env.config` / `env.secret`.
+4. Local dev uses production branch (`ep-dawn-bird`) in `env.config` / `env.secret`.
 
 ### Post-cutover smoke (`HOT_SALES_RBAC_ENABLED=false`)
 
@@ -482,7 +482,7 @@ Forbidden: RBAC enable, schema change, new permissions/UI, 2B–2D, lib/componen
 
 ### Dev promotion checklist
 
-1. `npm run db:migrate` on target branch (`dev-spec-b` first).
+1. `npm run db:migrate` on production branch.
 2. Set flags `true` in `env.config` → `npm run env:compose`.
 3. `npm run test:unit -- lib/domain/trade/deposit lib/domain/trade/pickup`.
 4. Manual smoke: deposit receipt → projection; pickup fulfillment → rollup qty.
@@ -515,7 +515,7 @@ Cut **`hot-sales-phase-2b`** on `main` after:
 
 ### Dev promotion checklist
 
-1. `npm run db:migrate` on target branch (`dev-spec-b` first).
+1. `npm run db:migrate` on production branch.
 2. Import smoke: upload → dry-run → confirm (product + priority types minimum).
 3. Set `HOT_SALES_NOTIFICATIONS_ENABLED=true`, `HOT_SALES_EMAIL_FROM`, `RESEND_API_KEY` in `env.secret` → `npm run env:compose`.
 4. `npm run test:unit -- lib/domain/trade/import-validators lib/domain/trade/notification-render`.
@@ -573,8 +573,32 @@ Enable **one phase at a time** on production; never enable all flags in a single
 | 1 | Apply migrations `015`–`023` on `br-tiny-hill-ao82jp6f` | `\d hot_sales_*` tables present |
 | 2 | Deploy app with all phase flags **false** | Phase 1 + 2A paths unchanged |
 | 3 | `HOT_SALES_DEPOSIT_ENABLED=true`, `HOT_SALES_PICKUP_OPS_ENABLED=true` | Deposit + pickup admin smoke |
-| 4 | `HOT_SALES_NOTIFICATIONS_ENABLED=true` + Resend sender | One mail + log row |
+| 4 | `HOT_SALES_NOTIFICATIONS_ENABLED=true` + Resend sender | One mail + log row — **Resend deferred** (see below) |
 | 5 | `HOT_SALES_ERP_SYNC_ENABLED=true` | Job enqueue + process smoke (noop ok) |
+
+### Deferred — Resend provider (Phase 2C outbound mail)
+
+**Decision:** 2026-07-10 — proceed with prod promotion; **defer** Resend API key and verified sender until a later ops window.
+
+| Item | Production state |
+|------|------------------|
+| `HOT_SALES_NOTIFICATIONS_ENABLED` | `true` (triggers run; no outbound mail until provider keys exist) |
+| `RESEND_API_KEY` | **Deferred** — not on Vercel; not in `env.secret` |
+| `HOT_SALES_EMAIL_FROM` | **Deferred** — verified Resend from-address TBD |
+| Excel import admin (`/trade/.../imports`) | **Live** — does not require Resend |
+| `npm run process:trade-closing-soon` | **Do not schedule** until Resend defer is closed |
+
+**Runtime while deferred:** `lib/domain/trade/notification-send.ts` writes `hot_sales_notification_delivery` rows with `status: skipped`, `error: provider_not_configured` when the flag is on but `RESEND_API_KEY` or `HOT_SALES_EMAIL_FROM` is unset.
+
+**Close defer (human):**
+
+1. Provision Resend API key + verify sender domain (distinct from Neon Auth / MailerSend).
+2. Add `RESEND_API_KEY` to `env.secret`; add `HOT_SALES_EMAIL_FROM` to `env.config` → `npm run env:compose`.
+3. Push to Vercel production via `setVercelEnvKey` (see `scripts/lib/vercel-env.mjs`) — **not** `vercel env pull`; `RESEND_API_KEY` is local-only in manifest.
+4. `vercel deploy --prod --yes`
+5. Smoke: one trade notification → delivery row `sent`; then schedule closing-soon cron.
+
+**Not blocked by defer:** Steps 3, 5, and 2C import paths. Step 4 mail verification remains open until the checklist above passes.
 
 Rollback any step: set affected flag(s) `false` → `npm run sync:vercel` → redeploy. RBAC flag stays `true`.
 

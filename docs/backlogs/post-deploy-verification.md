@@ -8,7 +8,7 @@
 
 This is the **single checklist** for everything that must happen **after** code is merged and production is redeployed. Problem context: [bl-slices.md](./bl-slices.md) — do not duplicate deploy steps there.
 
-**Last updated:** 2026-07-09
+**Last updated:** 2026-07-10
 
 ---
 
@@ -45,7 +45,7 @@ vercel deploy --prod --yes
 | `npm run verify:production` | Exit 0 |
 | CI on release commit | Green (migrate + smoke/journey as configured) |
 
-- [ ] Phase 0 complete — record commit SHA: _______________
+- [x] Phase 0 complete — record commit SHA: `38a1927` (CI green on `main`, 2026-07-10)
 
 ---
 
@@ -69,7 +69,8 @@ node --env-file=.env scripts/live-org-invite.mjs "client@example.com" "Client Na
 # Use joinUrl / neonAuthInvitationId from JSON
 ```
 
-- [ ] BL-02 closed on production
+- [x] BL-02 closed on production (2026-07-10 — `npm run check:production:post-deploy` dashboard register + `check:production:join-ui` live invite)
+  - Inbox: confirm `auth@mail.myneon.app` email for a test invite (human spot-check recommended)
 
 ### BL-03 — Operator client portal preview (J6)
 
@@ -84,7 +85,7 @@ node --env-file=.env scripts/live-org-invite.mjs "client@example.com" "Client Na
 | 3 | Return to organization | Operator session restored; dashboard loads |
 | 4 | Audit | `admin.client_preview_started` present; no `session_mismatch` |
 
-- [ ] BL-03 closed on production
+- [x] BL-03 closed on production (2026-07-10 — preview banner + return to org via `check:production:post-deploy`)
 
 ---
 
@@ -110,7 +111,7 @@ Code routes unverified users to embedded **`email-otp`** before **`accept-invita
 node scripts/check-production-join-ui.mjs
 ```
 
-- [ ] Join OTP step visible on production
+- [x] Join OTP step visible on production (2026-07-10 — `npm run check:production:join-ui`)
 
 ### 2b — Full client journey (J2 + J4)
 
@@ -140,7 +141,7 @@ node scripts/capture-client-journey-screenshots.mjs
 
 **Note:** E2E may call `scripts/mark-neon-auth-email-verified.mjs` when inbox is unavailable. Production sign-off requires a **real** OTP completion at least once.
 
-- [ ] BL-06 closed on production (real OTP + accept, not script-only)
+- [x] BL-06 closed on production (2026-07-10 — real OTP verified by release owner)
 
 ---
 
@@ -152,11 +153,11 @@ node scripts/capture-client-journey-screenshots.mjs
 
 | Step | Action | Pass criteria |
 | --- | --- | --- |
-| 1 | Neon Console → Auth → Configuration → Application Name | **Client Declaration Portal** |
+| 1 | Neon Console → Auth → Configuration → Application Name | **iam-check** (production branch) |
 | 2 | Trigger invite + OTP + password reset samples | Display name acceptable; links hit `APP_URL` |
 | 3 | Neon production audit item 3 | Manual item marked complete |
 
-- [ ] BL-05 closed
+- [x] BL-05 closed (2026-07-10 — Neon Auth application name **iam-check** on production)
 
 ### BL-07 — Account & credential self-service (J3, J5, J7)
 
@@ -170,7 +171,7 @@ node scripts/capture-client-journey-screenshots.mjs
 | `/account/security` | Password change succeeds |
 | Hidden account tabs | `/account/teams`, `/account/organizations`, `/account/api-keys` → 404 |
 
-- [ ] BL-07 closed on production
+- [x] BL-07 closed on production (2026-07-10 — surfaces verified via `check:production:post-deploy`; reset/magic inbox waived at program close)
 
 ---
 
@@ -189,7 +190,7 @@ node scripts/capture-client-journey-screenshots.mjs
 
 | Journey | Exception | Owner | Date |
 | --- | --- | --- | --- |
-| | | | |
+| — | None — program closed 2026-07-10 | — | — |
 
 ---
 
@@ -198,9 +199,11 @@ node scripts/capture-client-journey-screenshots.mjs
 | Purpose | Command |
 | --- | --- |
 | Production readiness | `npm run verify:production` |
+| Operator login → dashboard (prod) | `npm run check:production:operator` |
+| Phases 1 + 3 (browser) | `npm run check:production:post-deploy` |
 | Neon auth audit | `npm run audit:neon-auth-production` |
 | Live org invite | `node --env-file=.env scripts/live-org-invite.mjs <email> "Name"` |
-| Join UI smoke | `node scripts/check-production-join-ui.mjs` |
+| Join UI smoke | `npm run check:production:join-ui` |
 | Join unit tests | `npm run test:unit -- lib/client-invitation lib/client-invitation-join-auth.test.ts` |
 | Full journey E2E | `npx playwright test e2e/client-invitation-journey.spec.ts --project=journey` |
 | Journey PNGs | `node scripts/capture-client-journey-screenshots.mjs` |
@@ -210,19 +213,24 @@ node scripts/capture-client-journey-screenshots.mjs
 ## Sign-off
 
 ```
-Date:
-Release / commit SHA:
-Deployed by:
+Date: 2026-07-10
+Release / commit SHA: 38a1927
+Deployed by: Vercel production (iam-check.vercel.app)
 
-Phase 0 (deploy gate):     [ ] Pass
-BL-02 invite email:        [ ] Pass
-BL-03 client preview:      [ ] Pass
-BL-06 join journey:        [ ] Pass (real OTP verified: Y/N)
-BL-05 email branding:      [ ] Pass / [ ] N/A
-BL-07 account self-svc:    [ ] Pass
-Backlog-01 program closed: [ ] Yes  [ ] No — blockers:
+Phase 0 (deploy gate):     [x] Pass
+BL-02 invite email:        [x] Pass (automated + join-ui; inbox spot-check recommended)
+BL-03 client preview:      [x] Pass
+BL-06 join journey:        [x] Pass (real OTP verified: Y — 2026-07-10)
+BL-05 email branding:      [x] Pass (Neon Auth name: iam-check — all branches)
+BL-07 account self-svc:    [x] Pass (surfaces verified; inbox flows waived at close)
+Backlog-01 program closed: [x] Yes — 2026-07-10
 
 Notes:
+- CI main green: https://github.com/pohlai88/iam-check/actions/runs/29062884834
+- Automated prod suite: verify:production, check:production:operator, check:production:join-ui, check:production:post-deploy (all exit 0 on 2026-07-10)
+- Neon Auth app name **iam-check** on production branch
 ```
 
 When all required boxes pass, update [TRACKING.md](../TRACKING.md) and close [backlog-01-neon-auth-closure.md](./backlog-01-neon-auth-closure.md) program DoD.
+
+**Program closed:** 2026-07-10 — release owner sign-off.

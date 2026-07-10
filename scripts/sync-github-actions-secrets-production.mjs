@@ -63,9 +63,9 @@ function main() {
   }
 
   const values = {
-    DATABASE_URL: databaseUrl,
-    NEON_AUTH_BASE_URL: authBaseUrl,
-    NEON_AUTH_COOKIE_SECRET: cookieSecret,
+    E2E_DATABASE_URL: databaseUrl,
+    E2E_NEON_AUTH_BASE_URL: authBaseUrl,
+    E2E_NEON_AUTH_COOKIE_SECRET: cookieSecret,
     SHARED_ADMIN_EMAIL: getEnvValue("SHARED_ADMIN_EMAIL", env),
     SHARED_ADMIN_PASSWORD: getEnvValue("SHARED_ADMIN_PASSWORD", env),
     CLIENT_DEFAULT_PASSWORD: getEnvValue("CLIENT_DEFAULT_PASSWORD", env),
@@ -81,8 +81,8 @@ function main() {
       console.error(`Missing ${key} — cannot sync production CI secrets.`);
       process.exit(1);
     }
-    if (key === "DATABASE_URL" && !value.includes("ep-dawn-bird")) {
-      console.warn(`WARN: DATABASE_URL does not look like production pooler (ep-dawn-bird).`);
+    if (key === "E2E_DATABASE_URL" && !value.includes("ep-dawn-bird")) {
+      console.warn(`WARN: E2E_DATABASE_URL does not look like production pooler (ep-dawn-bird).`);
     }
     console.log(`Setting ${key}…`);
     gh(["secret", "set", key, "--body", value]);

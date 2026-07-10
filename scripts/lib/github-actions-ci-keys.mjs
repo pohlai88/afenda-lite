@@ -1,13 +1,13 @@
 /** Keys referenced in .github/workflows/ci.yml */
 
-/** CI-only Neon branch secrets — localhost Playwright; never production auth. */
+/** E2E Neon secrets — same production branch as local dev and Vercel. */
 export const GITHUB_ACTIONS_E2E_NEON_KEYS = [
   "E2E_DATABASE_URL",
   "E2E_NEON_AUTH_BASE_URL",
   "E2E_NEON_AUTH_COOKIE_SECRET",
 ];
 
-/** Shared test credentials and fixture tokens (same across Neon branches). */
+/** Shared test credentials and fixture tokens. */
 export const GITHUB_ACTIONS_CI_CREDENTIAL_KEYS = [
   "SHARED_ADMIN_EMAIL",
   "SHARED_ADMIN_PASSWORD",

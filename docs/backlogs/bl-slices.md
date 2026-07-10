@@ -111,7 +111,7 @@ Each section: problem, key files, verify anchor. Checkboxes and deploy steps liv
 
 **Problem:** Auth routes (`/join`, email-otp, magic-link) were missing from UI surface registry.
 
-**Registry:** `lib/ui-decision-matrix.ts`, `lib/portal-reliance-registry.ts`. **Gate:** `npm run evaluate:ui-matrix` (43 surfaces).
+**Registry:** `lib/governance/ui-decision-matrix.ts`, `lib/governance/portal-reliance-registry.ts`. **Gate:** `npm run evaluate:ui-matrix` (52 surfaces).
 
 Surfaces added: `client-join`, `auth-email-otp`, `auth-magic-link`, `auth-accept-invitation`, `org-login`.
 
@@ -125,6 +125,6 @@ Surfaces added: `client-join`, `auth-email-otp`, `auth-magic-link`, `auth-accept
 
 **Decision (Option A):** Feature dev branches with `neon neon-auth domain allow-localhost` on **dev branch only**; production stays hardened.
 
-**Docs:** [AGENTS.md](../AGENTS.md) · [local-dev-auth.md](../runbooks/local-dev-auth.md) · [spec-b-local-preview-env.md](../runbooks/spec-b-local-preview-env.md).
+**Docs:** [AGENTS.md](../AGENTS.md) · [local-dev-auth.md](../runbooks/local-dev-auth.md).
 
 **Don't:** Re-enable localhost on production; use production DB for destructive experiments.

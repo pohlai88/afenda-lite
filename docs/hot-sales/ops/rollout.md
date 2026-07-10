@@ -147,7 +147,7 @@ Evidence: [gate register § Gate 7](./gate-register.md#gate-7--production-rbac-e
 
 | Branch | Role |
 |--------|------|
-| `br-super-hill-aojc9a4p` (`dev-spec-b`) | Local dev / Gate 6 matrix DB |
+| `br-tiny-hill-ao82jp6f` (`production`) | Vercel production · local dev · CI E2E |
 | `br-tiny-hill-ao82jp6f` | **Live** Vercel production DB (gate SSOT) |
 
 ---

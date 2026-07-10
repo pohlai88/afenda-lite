@@ -46,8 +46,8 @@ function main() {
     console.log("OK — all required CI secret names present.");
   } else {
     console.log(`MISSING (${missing.length}): ${missing.join(", ")}`);
-    console.log("Fix: npm run sync:github-actions-secrets:ci");
-    console.log("Note: E2E_NEON_* must match the dedicated ci Neon branch (localhost allowed).");
+    console.log("Fix: npm run sync:github-actions-secrets:production");
+    console.log("Note: E2E_* must match production Neon branch (lib/auth/neon-auth.manifest.json).");
   }
 
   if (legacyPresent.length > 0) {

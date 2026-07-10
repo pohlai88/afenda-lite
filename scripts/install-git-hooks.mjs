@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Install local git hooks so SPEC-B bootstrap runs before `git push`.
+ * Install local git hooks so Neon env is validated before `git push`.
  *
  * Usage: npm run hooks:install
  *
@@ -22,15 +22,15 @@ mkdirSync(dirname(hookPath), { recursive: true });
 
 const hook = `#!/bin/sh
 # Installed by: npm run hooks:install
-# Runs SPEC-B diagnose → auto-repair → verify before every push to GitHub.
+# Runs Neon env validation before every push to GitHub.
 # Skip once:  git push --no-verify
 # Disable:    rm .git/hooks/pre-push
 
 set -e
 cd "$(git rev-parse --show-toplevel)"
 
-echo "→ pre-push: npm run bootstrap:spec-b:pre-push"
-npm run bootstrap:spec-b:pre-push
+echo "→ pre-push: npm run validate:neon-env"
+npm run validate:neon-env
 `;
 
 writeFileSync(hookPath, hook, "utf8");
@@ -41,5 +41,5 @@ try {
 }
 
 console.log(`Installed ${hookPath}`);
-console.log("Every \`git push\` will run bootstrap repair+verify first.");
+console.log("Every \`git push\` will run Neon env validation first.");
 console.log("Skip once: git push --no-verify");

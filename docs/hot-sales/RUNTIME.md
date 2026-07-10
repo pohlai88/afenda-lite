@@ -36,9 +36,9 @@ Answer in one pass: **Is this change allowed?** **What is production state?** **
 | Item | Value |
 |------|-------|
 | URL | `https://iam-check.vercel.app` |
-| Neon branch | `br-tiny-hill-ao82jp6f` only (not `dev-spec-b`) |
+| Neon branch | `br-tiny-hill-ao82jp6f` only |
 | `HOT_SALES_RBAC_ENABLED` | `true` on Vercel production |
-| Local dev default | `false` + `dev-spec-b` branch |
+| Local dev | Same production branch — `npm run dev` |
 | Migrations | `013`–`023` Hot Sales lane (`023` deferred notification triggers) |
 | `HOT_SALES_ERP_SYNC_ENABLED` | `false` | Phase 2D — async ERP push |
 | Last Gate 7 deploy | `dpl_BCqJqHsjQ8z2Tih1684Gp11ThreK` |
@@ -68,7 +68,7 @@ Full gate history: [ops/gate-register.md](./ops/gate-register.md).
 | `HOT_SALES_ERP_SYNC_ENABLED` | `false` | `false` | Phase 2D — async ERP push |
 | `HOT_SALES_ERP_VENDOR` | unset | unset | `http-rest` for reference pack |
 | `HOT_SALES_ERP_BASE_URL` | unset | unset | Customer ERP API base |
-| `DATABASE_URL` | `br-tiny-hill-ao82jp6f` | `dev-spec-b` | `env.secret` → `npm run env:compose` |
+| `DATABASE_URL` | `br-tiny-hill-ao82jp6f` | `br-tiny-hill-ao82jp6f` | `env.secret` → `npm run env:compose` |
 
 Never edit `.env` by hand. Never `vercel env pull`.
 

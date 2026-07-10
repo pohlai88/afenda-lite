@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "syncedAt": "2026-07-10T03:10:00.000Z",
+  "syncedAt": "2026-07-10T03:46:33.629Z",
   "project": {
     "projectId": "young-hat-54755363",
     "projectName": "iam-check",
@@ -46,7 +46,7 @@
   "oauthProviders": [
     {
       "id": "google",
-      "type": "shared",
+      "type": "standard",
       "providerRedirectUri": "https://ep-dawn-bird-aofi3f7j.neonauth.c-2.ap-southeast-1.aws.neon.tech/neondb/auth/callback/google"
     }
   ],
@@ -56,7 +56,7 @@
     "https://iam-check-h3pvi0dme-jacks-projects-7b3cfe94.vercel.app/",
     "https://*.vercel.app"
   ],
-  "allowLocalhost": false,
+  "allowLocalhost": true,
   "productionChecklist": {
     "applicationName": "Client Declaration Portal",
     "emailProviderPolicy": "shared-otp-waiver",
@@ -74,7 +74,10 @@
         "forgotPassword": true
       },
       "signUp": true,
-      "social": true
+      "social": true,
+      "socialProviders": [
+        "google"
+      ]
     }
   }
 }

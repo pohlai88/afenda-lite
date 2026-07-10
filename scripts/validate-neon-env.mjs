@@ -9,7 +9,7 @@ import { loadComposedEnv, getEnvValue } from "./lib/env-files.mjs";
 
 const env = loadComposedEnv();
 // Prefer composed files over shell exports — stale NEON_BRANCH_ID in the
-// process environment must not override env.config after bootstrap:spec-b.
+// process environment must not override env.config.
 const apiKey = env.NEON_API_KEY || getEnvValue("NEON_API_KEY", env);
 const orgId = env.NEON_ORG_ID || getEnvValue("NEON_ORG_ID", env);
 const projectId = env.NEON_PROJECT_ID || getEnvValue("NEON_PROJECT_ID", env);
@@ -51,8 +51,8 @@ record(
       Boolean(branchId),
     `org=${orgId}, project=${projectId}, branch=${branchId}` +
       (branchId === PRODUCTION_BRANCH_ID
-        ? " (production)"
-        : " (dev/preview — localhost OK on this branch only)"),
+        ? " (production — single branch policy)"
+        : " (expected production only — run npm run env:neon-production)"),
   ),
 );
 
