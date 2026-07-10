@@ -1,0 +1,83 @@
+{
+  "version": 1,
+  "syncedAt": "2026-07-09T22:29:45.315Z",
+  "project": {
+    "projectId": "young-hat-54755363",
+    "projectName": "iam-check",
+    "branchId": "br-noisy-field-ao7og20e",
+    "branchName": "ci",
+    "orgId": "org-royal-bar-40022480"
+  },
+  "integration": {
+    "authProvider": "better_auth",
+    "authProviderProjectId": "67e0b6e5-986c-4e9b-9a47-e186cf69b5e1",
+    "baseUrl": "https://ep-royal-silence-ao4j5bqp.neonauth.c-2.ap-southeast-1.aws.neon.tech/neondb/auth",
+    "jwksUrl": "https://ep-royal-silence-ao4j5bqp.neonauth.c-2.ap-southeast-1.aws.neon.tech/neondb/auth/.well-known/jwks.json",
+    "dbName": "neondb"
+  },
+  "emailPassword": {
+    "enabled": true,
+    "emailVerificationMethod": "otp",
+    "requireEmailVerification": false,
+    "autoSignInAfterVerification": true,
+    "sendVerificationEmailOnSignUp": true,
+    "sendVerificationEmailOnSignIn": false,
+    "disableSignUp": false
+  },
+  "emailProvider": {
+    "type": "shared",
+    "senderEmail": "auth@mail.myneon.app",
+    "senderName": "Neon Auth"
+  },
+  "plugins": {
+    "magicLink": {
+      "enabled": true,
+      "expiresInMinutes": 15,
+      "disableSignUp": true
+    },
+    "organization": {
+      "enabled": true,
+      "organizationLimit": 10,
+      "membershipLimit": 100,
+      "creatorRole": "owner",
+      "sendInvitationEmail": true
+    }
+  },
+  "oauthProviders": [
+    {
+      "id": "google",
+      "type": "shared",
+      "providerRedirectUri": "https://ep-royal-silence-ao4j5bqp.neonauth.c-2.ap-southeast-1.aws.neon.tech/neondb/auth/callback/google"
+    }
+  ],
+  "trustedDomains": [
+    "https://iam-check.vercel.app",
+    "https://iam-check-1gir3cbrt-jacks-projects-7b3cfe94.vercel.app/",
+    "https://iam-check-h3pvi0dme-jacks-projects-7b3cfe94.vercel.app/",
+    "https://*.vercel.app"
+  ],
+  "allowLocalhost": true,
+  "productionChecklist": {
+    "applicationName": "Client Declaration Portal",
+    "emailProviderPolicy": "shared-otp-waiver",
+    "requireLocalhostDisabledAtCutover": false
+  },
+  "ui": {
+    "basePath": "/auth",
+    "accountBasePath": "/account",
+    "features": {
+      "organization": true,
+      "emailOTP": true,
+      "emailVerification": true,
+      "magicLink": true,
+      "credentials": {
+        "forgotPassword": true
+      },
+      "signUp": true,
+      "social": true,
+      "socialProviders": [
+        "google"
+      ]
+    }
+  }
+}

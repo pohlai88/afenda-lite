@@ -49,11 +49,10 @@ Tick boxes as you complete items.
 ### CI / release authority
 
 - [x] GitHub Actions secrets present (`npm run audit:github-actions-secrets`)
-- [x] Production-aligned Neon secrets (`npm run sync:github-actions-secrets:production`)
+- [x] **CI Neon branch** (`ci`) + E2E secrets (`npm run sync:github-actions-secrets:ci`)
 - [x] Branch protection requires `quality` + `journey`
-- [x] CI **portal checks** green (2026-07-10)
-- [ ] CI **`quality` job** green — **4 guardian viewport unit tests** failing
-- [ ] CI **`journey` job** green — E2E uses `localhost:3000` but production Neon has `allow_localhost: false` (design gap; needs CI Neon branch or auth policy)
+- [ ] CI **`quality` job** green on PR / `main`
+- [ ] CI **`journey` job** green on PR / `main` (localhost + `ci` branch — not production Neon)
 - [ ] Spot-check operator login → dashboard on prod (manual)
 
 **When all checked:** Backlog-01 closes · S17 acceptance complete.

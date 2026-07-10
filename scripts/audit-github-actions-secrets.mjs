@@ -9,6 +9,7 @@ import { fileURLToPath } from "node:url";
 
 import {
   GITHUB_ACTIONS_CI_KEYS,
+  GITHUB_ACTIONS_LEGACY_NEON_KEYS,
   GITHUB_ACTIONS_STALE_KEYS,
 } from "./lib/github-actions-ci-keys.mjs";
 
@@ -35,6 +36,7 @@ function main() {
   const presentSet = new Set(Array.isArray(raw) ? raw : []);
   const missing = GITHUB_ACTIONS_CI_KEYS.filter((k) => !presentSet.has(k));
   const stale = GITHUB_ACTIONS_STALE_KEYS.filter((k) => presentSet.has(k));
+  const legacyPresent = GITHUB_ACTIONS_LEGACY_NEON_KEYS.filter((k) => presentSet.has(k));
 
   console.log("GitHub Actions secrets audit (iam-check)\n");
   console.log(`Present (${presentSet.size}): ${[...presentSet].sort().join(", ") || "(none)"}`);
@@ -44,8 +46,14 @@ function main() {
     console.log("OK — all required CI secret names present.");
   } else {
     console.log(`MISSING (${missing.length}): ${missing.join(", ")}`);
-    console.log("Fix: npm run sync:github-actions-secrets");
-    console.log("Note: NEON_AUTH_* must match the Neon branch used by DATABASE_URL on GitHub.");
+    console.log("Fix: npm run sync:github-actions-secrets:ci");
+    console.log("Note: E2E_NEON_* must match the dedicated ci Neon branch (localhost allowed).");
+  }
+
+  if (legacyPresent.length > 0) {
+    console.log(
+      `\nLEGACY (optional — ci.yml uses E2E_* instead): ${legacyPresent.join(", ")}`,
+    );
   }
 
   if (stale.length > 0) {
