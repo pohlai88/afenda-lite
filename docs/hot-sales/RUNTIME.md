@@ -23,9 +23,9 @@ Answer in one pass: **Is this change allowed?** **What is production state?** **
 | Phase 2A RBAC | `hot-sales-phase-2a` → `8e650ff` | **Closed** (immutable — do not retag) |
 | Phase 2A ops Gates 1–7 | — | **Closed** 2026-07-10 |
 | Phase 2B–2D ADRs | 002 · 003 · 004 | **Accepted** 2026-07-10 |
-| Phase 2B implementation | [spec/phase-2bcd-slices.md](./spec/phase-2bcd-slices.md) | **Approved** — code landed 2026-07-10; flags default off |
-| Phase 2C implementation | [spec/phase-2bcd-slices.md](./spec/phase-2bcd-slices.md) | **Implemented** — flags default off |
-| Phase 2D implementation | [spec/phase-2bcd-slices.md](./spec/phase-2bcd-slices.md) | **2D-1 + 2D-2 landed** — 2D-3 per customer; flag default off |
+| Phase 2B implementation | [spec/phase-2bcd-slices.md](./spec/phase-2bcd-slices.md) | **Approved** — tag `hot-sales-phase-2b` → `0c8b76b` (dev sign-off) |
+| Phase 2C implementation | [spec/phase-2bcd-slices.md](./spec/phase-2bcd-slices.md) | **Implemented** — tag `hot-sales-phase-2c` → `0c8b76b` (dev sign-off) |
+| Phase 2D implementation | [spec/phase-2bcd-slices.md](./spec/phase-2bcd-slices.md) | **2D-1 + 2D-2 landed** — tag `hot-sales-phase-2d` → `0c8b76b` (dev sign-off) |
 
 **GitHub:** [#1](https://github.com/pohlai88/iam-check/issues/1) closed (ops rollout checklist).
 
