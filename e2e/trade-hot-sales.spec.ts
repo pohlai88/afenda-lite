@@ -19,6 +19,7 @@ test.describe("Trade Hot Sales admin journey @journey", () => {
   test.describe.configure({ mode: "serial", timeout: 180_000 });
 
   let eventId: string | undefined;
+  let eventName: string | undefined;
 
   test.beforeEach(() => {
     test.skip(!operatorCreds, operatorSkipMessage);
@@ -32,8 +33,8 @@ test.describe("Trade Hot Sales admin journey @journey", () => {
     ).toBeVisible({ timeout: 20_000 });
 
     const stamp = Date.now();
-    const name = `E2E Hot Sales ${stamp}`;
-    await page.getByLabel(/event name/i).fill(name);
+    eventName = `E2E Hot Sales ${stamp}`;
+    await page.getByLabel(/event name/i).fill(eventName);
 
     const opens = new Date(Date.now() - 60_000);
     const closes = new Date(Date.now() + 60 * 60_000);
@@ -77,7 +78,7 @@ test.describe("Trade Hot Sales admin journey @journey", () => {
     await page.getByLabel(/requested quantity/i).fill("25");
     await page.getByRole("button", { name: /submit order/i }).click();
     await expect(page).toHaveURL(/\/my-orders/, { timeout: 20_000 });
-    await expect(page.getByText(/E2E Customer/i)).toBeVisible();
+    await expect(page.getByText(new RegExp(eventName ?? "E2E Hot Sales"))).toBeVisible();
 
     await page.goto(`/trade/vi/admin/events/${eventId}/allocation`);
     await page.getByRole("button", { name: /run allocation/i }).click();

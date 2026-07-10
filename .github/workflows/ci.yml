@@ -24,8 +24,6 @@ env:
   E2E_SURVEY_SLUG: ${{ secrets.E2E_SURVEY_SLUG }}
   E2E_INVITE_TOKEN: ${{ secrets.E2E_INVITE_TOKEN }}
   PLAYGROUND_SURVEY_SLUG: ${{ secrets.E2E_SURVEY_SLUG }}
-  PLAYGROUND_SURVEY_ID: ${{ secrets.PLAYGROUND_SURVEY_ID }}
-  PLAYGROUND_ASSIGNMENT_ID: ${{ secrets.PLAYGROUND_ASSIGNMENT_ID }}
 
 jobs:
   quality:
@@ -42,6 +40,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Prepare CI database baseline
+        run: |
+          npm run seed:ci-baseline 2>&1 | tee seed.log
+          echo "PLAYGROUND_SURVEY_ID=$(grep '^PLAYGROUND_SURVEY_ID=' seed.log | tail -1 | cut -d= -f2)" >> "$GITHUB_ENV"
+          echo "PLAYGROUND_ASSIGNMENT_ID=$(grep '^PLAYGROUND_ASSIGNMENT_ID=' seed.log | tail -1 | cut -d= -f2)" >> "$GITHUB_ENV"
+
       - name: Portal checks
         run: npm run checks
 
@@ -54,14 +58,8 @@ jobs:
       - name: Storybook static build
         run: npm run verify:storybook
 
-      - name: Apply database migrations
-        run: npm run db:migrate
-
       - name: Build
         run: npm run build
-
-      - name: Seed shared operator account
-        run: npm run seed:admin
 
       - name: Install Playwright
         run: npx playwright install --with-deps chromium
@@ -83,16 +81,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Apply database migrations
-        run: npm run db:migrate
+      - name: Prepare CI database baseline
+        run: |
+          npm run seed:ci-baseline 2>&1 | tee seed.log
+          echo "PLAYGROUND_SURVEY_ID=$(grep '^PLAYGROUND_SURVEY_ID=' seed.log | tail -1 | cut -d= -f2)" >> "$GITHUB_ENV"
+          echo "PLAYGROUND_ASSIGNMENT_ID=$(grep '^PLAYGROUND_ASSIGNMENT_ID=' seed.log | tail -1 | cut -d= -f2)" >> "$GITHUB_ENV"
 
       - name: Build
         run: npm run build
-
-      - name: Seed operator and preview client
-        run: |
-          npm run seed:admin
-          npm run seed:preview-client
 
       - name: Materialize .env for E2E scripts
         run: npm run write:ci-env

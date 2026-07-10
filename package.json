@@ -31,6 +31,7 @@
     "configure:neon-auth-production": "node scripts/configure-neon-auth-production.mjs",
     "seed:admin": "node scripts/seed-admin.mjs",
     "seed:preview-client": "node scripts/seed-preview-client.mjs",
+    "seed:ci-baseline": "node scripts/seed-ci-baseline.mjs",
     "db:migrate": "node scripts/db-migrate.mjs",
     "db:inspect": "node scripts/db-inspect.mjs",
     "db:reset": "node --env-file=.env scripts/db-reset.mjs",
