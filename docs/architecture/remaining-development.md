@@ -169,7 +169,7 @@ Future — New ADR required
 
 | Assumption | Risk if wrong |
 |------------|---------------|
-| `main` @ `18a037a` includes Guardian merge + Gate 7 docs | Re-verify `git log -1` before sprint planning |
+| `main` @ `fc2a883` includes production-only Neon consolidation | Re-verify `git log -1` before sprint planning |
 | Hero PNGs remain visual SSOT | Supersession requires design ADR addendum |
 | `TRACKING.md` may lag this doc on gate counts | Prefer lane SSOT + this file for 2026-07-10 state |
 

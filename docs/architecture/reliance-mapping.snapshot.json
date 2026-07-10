@@ -1,20 +1,22 @@
 {
   "version": "1.0.0",
-  "generatedAt": "2026-07-09T13:30:38.104Z",
+  "generatedAt": "2026-07-10T03:54:45.369Z",
   "summary": {
     "surfaces": {
-      "total": 26,
-      "aligned": 26,
-      "drift": 0
+      "total": 35,
+      "aligned": 31,
+      "drift": 4
     },
     "actions": {
-      "total": 21,
-      "aligned": 21,
+      "total": 71,
+      "aligned": 71,
       "drift": 0
     },
     "orphanActions": [],
     "internalActions": [
       "action:adminSignInAction",
+      "action:getImportBatchDetailAction",
+      "action:listEventDepositsAction",
       "action:validateSurveyPackageAction"
     ]
   },
@@ -33,7 +35,8 @@
         ],
         "discovered": [
           "domain:auth",
-          "domain:client-invitation-entry"
+          "domain:client-invitation-entry",
+          "domain:client-onboarding"
         ],
         "aligned": [
           "auth:email-otp",
@@ -43,14 +46,16 @@
           "domain:client-invitation-entry"
         ],
         "declaredOnly": [],
-        "discoveredOnly": [],
+        "discoveredOnly": [
+          "domain:client-onboarding"
+        ],
         "inherited": [
           "auth:email-otp",
           "auth:organization/accept-invitation",
           "auth:sign-up/email",
           "domain:client-invitation-entry"
         ],
-        "status": "aligned"
+        "status": "drift"
       },
       "evidence": {
         "entryFiles": [
@@ -59,6 +64,8 @@
           "components/portal/portal-invitation-join-page.tsx",
           "components/guardian-invitation-join-page.tsx",
           "components/portal/portal-invitation-join-panel.tsx",
+          "components/portal/portal-invitation-join-brand-panel.tsx",
+          "components/portal/portal-invitation-join-steps.tsx",
           "components/use-join-invitation-auth-view.ts",
           "lib/client-invitation-join-auth.ts"
         ],
@@ -450,6 +457,7 @@
           "components/client/client-preview-unavailable-view.tsx",
           "components/client/client-sign-out-button.tsx",
           "components/hooks/use-mobile.ts",
+          "components/portal/portal-app-page.tsx",
           "components/portal/portal-brand-mark.tsx",
           "components/portal/portal-breadcrumb-list.tsx",
           "components/portal/portal-customer-shell.tsx",
@@ -480,21 +488,21 @@
       "compare": {
         "declared": [
           "action:requireClientSession",
-          "action:saveClientOnboardingAction",
+          "action:saveClientQuickOnboardingAction",
           "domain:auth",
           "domain:client-onboarding",
           "domain:clients"
         ],
         "discovered": [
           "action:requireClientSession",
-          "action:saveClientOnboardingAction",
+          "action:saveClientQuickOnboardingAction",
           "domain:auth",
           "domain:client-onboarding",
           "domain:clients"
         ],
         "aligned": [
           "action:requireClientSession",
-          "action:saveClientOnboardingAction",
+          "action:saveClientQuickOnboardingAction",
           "domain:auth",
           "domain:client-onboarding",
           "domain:clients"
@@ -510,38 +518,40 @@
         "entryFiles": [
           "app/client/(workspace)/onboarding/page.tsx",
           "lib/pages/client-onboarding-page.tsx",
+          "components/client/client-quick-onboarding-form.tsx",
           "components/client/client-onboarding-wizard.tsx",
-          "components/client/client-onboarding-form.tsx",
+          "components/client/portal-onboarding-legal-panel.tsx",
+          "components/portal/portal-org-context-notice.tsx",
           "lib/client-onboarding.server.ts",
+          "lib/client-org-context.server.ts",
           "lib/server-actions/form-data.ts"
         ],
         "scannedFiles": [
           "app/client/(workspace)/onboarding/page.tsx",
-          "components/client/client-onboarding-context.tsx",
-          "components/client/client-onboarding-form.tsx",
-          "components/client/client-onboarding-progress.tsx",
+          "components/client/client-declarant-profile-fields.tsx",
           "components/client/client-onboarding-wizard.tsx",
+          "components/client/client-quick-onboarding-form.tsx",
           "components/client/client-sign-out-button.tsx",
+          "components/client/portal-onboarding-legal-panel.tsx",
           "components/form-error-alert.tsx",
           "components/hooks/use-mobile.ts",
+          "components/portal/portal-app-page.tsx",
           "components/portal/portal-brand-mark.tsx",
           "components/portal/portal-breadcrumb-list.tsx",
           "components/portal/portal-customer-shell.tsx",
           "components/portal/portal-eyebrow.tsx",
           "components/portal/portal-form-field.tsx",
-          "components/portal/portal-form-section.tsx",
-          "components/portal/portal-legal-notice-section.tsx",
+          "components/portal/portal-org-context-notice.tsx",
           "components/portal/portal-page-header.tsx",
           "components/portal/portal-theme-toggle.tsx",
           "components/portal/portal-trust-notice.tsx",
-          "components/shadcn-studio/blocks/form-layout-01/form-layout-section.tsx",
           "components/theme-provider.tsx",
           "components/ui/alert.tsx",
           "components/ui/badge.tsx",
           "components/ui/breadcrumb.tsx",
           "components/ui/button.tsx",
-          "components/ui/card.tsx",
           "components/ui/checkbox.tsx",
+          "components/ui/collapsible.tsx",
           "components/ui/field.tsx",
           "components/ui/input.tsx",
           "components/ui/label.tsx",
@@ -550,9 +560,9 @@
           "components/ui/sidebar.tsx",
           "components/ui/skeleton.tsx",
           "components/ui/textarea.tsx",
-          "components/ui/timeline.tsx",
           "components/ui/tooltip.tsx",
           "lib/client-onboarding.server.ts",
+          "lib/client-org-context.server.ts",
           "lib/pages/client-onboarding-page.tsx",
           "lib/server-actions/form-data.ts"
         ]
@@ -565,17 +575,23 @@
       "compare": {
         "declared": [
           "action:requireClientSession",
+          "action:saveClientProfileAction",
           "domain:auth",
+          "domain:client-onboarding",
           "domain:clients"
         ],
         "discovered": [
           "action:requireClientSession",
+          "action:saveClientProfileAction",
           "domain:auth",
+          "domain:client-onboarding",
           "domain:clients"
         ],
         "aligned": [
           "action:requireClientSession",
+          "action:saveClientProfileAction",
           "domain:auth",
+          "domain:client-onboarding",
           "domain:clients"
         ],
         "declaredOnly": [],
@@ -587,28 +603,34 @@
         "entryFiles": [
           "app/client/(workspace)/profile/page.tsx",
           "lib/pages/client-profile-page.tsx",
-          "components/client/client-declarant-profile-view.tsx"
+          "components/client/client-profile-form.tsx",
+          "components/client/client-declarant-profile-fields.tsx",
+          "components/portal/portal-org-context-notice.tsx",
+          "lib/client-org-context.server.ts",
+          "lib/client-onboarding.ts"
         ],
         "scannedFiles": [
           "app/client/(workspace)/profile/page.tsx",
-          "components/client/client-declarant-profile-view.tsx",
+          "components/client/client-declarant-profile-fields.tsx",
+          "components/client/client-profile-form.tsx",
           "components/client/client-sign-out-button.tsx",
+          "components/form-error-alert.tsx",
           "components/hooks/use-mobile.ts",
+          "components/portal/portal-app-page.tsx",
           "components/portal/portal-brand-mark.tsx",
           "components/portal/portal-breadcrumb-list.tsx",
           "components/portal/portal-customer-shell.tsx",
           "components/portal/portal-eyebrow.tsx",
-          "components/portal/portal-form-section.tsx",
+          "components/portal/portal-form-field.tsx",
+          "components/portal/portal-org-context-notice.tsx",
           "components/portal/portal-page-header.tsx",
-          "components/portal/portal-profile-field.tsx",
           "components/portal/portal-theme-toggle.tsx",
-          "components/shadcn-studio/blocks/form-layout-01/form-layout-section.tsx",
           "components/theme-provider.tsx",
           "components/ui/alert.tsx",
           "components/ui/badge.tsx",
           "components/ui/breadcrumb.tsx",
           "components/ui/button.tsx",
-          "components/ui/card.tsx",
+          "components/ui/checkbox.tsx",
           "components/ui/field.tsx",
           "components/ui/input.tsx",
           "components/ui/label.tsx",
@@ -616,7 +638,10 @@
           "components/ui/sheet.tsx",
           "components/ui/sidebar.tsx",
           "components/ui/skeleton.tsx",
+          "components/ui/textarea.tsx",
           "components/ui/tooltip.tsx",
+          "lib/client-onboarding.ts",
+          "lib/client-org-context.server.ts",
           "lib/pages/client-profile-page.tsx"
         ]
       }
@@ -636,6 +661,7 @@
           "action:acknowledgeClientPortalAction",
           "action:requireClientSession",
           "domain:auth",
+          "domain:client-onboarding",
           "domain:clients"
         ],
         "aligned": [
@@ -645,9 +671,11 @@
           "domain:clients"
         ],
         "declaredOnly": [],
-        "discoveredOnly": [],
+        "discoveredOnly": [
+          "domain:client-onboarding"
+        ],
         "inherited": [],
-        "status": "aligned"
+        "status": "drift"
       },
       "evidence": {
         "entryFiles": [
@@ -655,6 +683,7 @@
           "lib/pages/client-dashboard-page.tsx",
           "components/client/client-dashboard-acknowledgement.tsx",
           "components/client/client-dashboard-assignments.tsx",
+          "components/client/client-dashboard-profile-nudge.tsx",
           "components/client/client-dashboard-summary.tsx"
         ],
         "scannedFiles": [
@@ -663,11 +692,13 @@
           "components/client/client-dashboard-acknowledgement.tsx",
           "components/client/client-dashboard-assignments.tsx",
           "components/client/client-dashboard-context.tsx",
+          "components/client/client-dashboard-profile-nudge.tsx",
           "components/client/client-dashboard-summary.tsx",
           "components/client/client-sign-out-button.tsx",
           "components/confirmation-receipt.tsx",
           "components/form-error-alert.tsx",
           "components/hooks/use-mobile.ts",
+          "components/portal/portal-app-page.tsx",
           "components/portal/portal-brand-mark.tsx",
           "components/portal/portal-breadcrumb-list.tsx",
           "components/portal/portal-customer-shell.tsx",
@@ -801,6 +832,7 @@
           "components/declaration-question-field.tsx",
           "components/form-error-alert.tsx",
           "components/hooks/use-mobile.ts",
+          "components/portal/portal-app-page.tsx",
           "components/portal/portal-brand-mark.tsx",
           "components/portal/portal-breadcrumb-list.tsx",
           "components/portal/portal-customer-shell.tsx",
@@ -888,6 +920,7 @@
           "components/operator/operator-dashboard-page-view.tsx",
           "components/operator/org-create-declaration-link.tsx",
           "components/operator/org-declarations-table.tsx",
+          "components/portal/portal-app-page.tsx",
           "components/portal/portal-breadcrumb-list.tsx",
           "components/portal/portal-empty-state-cta.tsx",
           "components/portal/portal-eyebrow.tsx",
@@ -999,6 +1032,7 @@
           "components/hooks/use-pagination.ts",
           "components/operator/operator-declaration-detail-view.tsx",
           "components/operator/org-declaration-submissions-table.tsx",
+          "components/portal/portal-app-page.tsx",
           "components/portal/portal-breadcrumb-list.tsx",
           "components/portal/portal-declaration-workspace.tsx",
           "components/portal/portal-empty-state.tsx",
@@ -1063,6 +1097,7 @@
           "action:deleteClientAssignmentAction",
           "action:issueClientInviteAction",
           "action:removeClientRegistrationAction",
+          "domain:client-onboarding",
           "domain:clients",
           "domain:email",
           "domain:operator-clients-page",
@@ -1078,11 +1113,13 @@
           "domain:surveys"
         ],
         "declaredOnly": [],
-        "discoveredOnly": [],
+        "discoveredOnly": [
+          "domain:client-onboarding"
+        ],
         "inherited": [
           "domain:operator-clients-page"
         ],
-        "status": "aligned"
+        "status": "drift"
       },
       "evidence": {
         "entryFiles": [
@@ -1113,6 +1150,7 @@
           "components/operator/operator-clients-page-view.tsx",
           "components/operator/org-client-tables.tsx",
           "components/operator/org-invite-client-link.tsx",
+          "components/portal/portal-app-page.tsx",
           "components/portal/portal-breadcrumb-list.tsx",
           "components/portal/portal-empty-state-cta.tsx",
           "components/portal/portal-eyebrow.tsx",
@@ -1156,7 +1194,8 @@
           "auth:organization/invite-member"
         ],
         "discovered": [
-          "action:issueClientInviteAction"
+          "action:issueClientInviteAction",
+          "domain:client-onboarding"
         ],
         "aligned": [
           "action:issueClientInviteAction",
@@ -1164,12 +1203,14 @@
           "auth:organization/invite-member"
         ],
         "declaredOnly": [],
-        "discoveredOnly": [],
+        "discoveredOnly": [
+          "domain:client-onboarding"
+        ],
         "inherited": [
           "action:requireAdminSession",
           "auth:organization/invite-member"
         ],
-        "status": "aligned"
+        "status": "drift"
       },
       "evidence": {
         "entryFiles": [
@@ -1414,6 +1455,7 @@
           "components/dashboard-shell.tsx",
           "components/hooks/use-mobile.ts",
           "components/hooks/use-mounted.ts",
+          "components/portal/portal-app-shell.tsx",
           "components/portal/portal-member-context.tsx",
           "components/portal/portal-member-menu.tsx",
           "components/portal/portal-theme-toggle.tsx",
@@ -1470,6 +1512,8 @@
           "components/client/client-shell.tsx",
           "components/client/client-sidebar.tsx",
           "components/hooks/use-mobile.ts",
+          "components/hooks/use-mounted.ts",
+          "components/portal/portal-app-shell.tsx",
           "components/portal/portal-brand-mark.tsx",
           "components/portal/portal-member-context.tsx",
           "components/portal/portal-member-menu.tsx",
@@ -1488,6 +1532,488 @@
           "components/ui/skeleton.tsx",
           "components/ui/tooltip.tsx",
           "lib/client-workspace-layout.tsx"
+        ]
+      }
+    },
+    {
+      "surfaceId": "shell-trade",
+      "route": "/trade/[locale] layout",
+      "mode": "source-scan",
+      "compare": {
+        "declared": [
+          "action:requireTradeAccess",
+          "domain:trade"
+        ],
+        "discovered": [
+          "action:requireTradeAccess",
+          "domain:trade"
+        ],
+        "aligned": [
+          "action:requireTradeAccess",
+          "domain:trade"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [],
+        "inherited": [],
+        "status": "aligned"
+      },
+      "evidence": {
+        "entryFiles": [
+          "app/trade/[locale]/layout.tsx",
+          "components/trade/trade-shell.tsx"
+        ],
+        "scannedFiles": [
+          "app/trade/[locale]/layout.tsx",
+          "components/trade/trade-locale-switcher.tsx",
+          "components/trade/trade-shell.tsx"
+        ]
+      }
+    },
+    {
+      "surfaceId": "trade-events",
+      "route": "/trade/[locale]/events",
+      "mode": "source-scan",
+      "compare": {
+        "declared": [
+          "domain:trade"
+        ],
+        "discovered": [
+          "domain:trade"
+        ],
+        "aligned": [
+          "domain:trade"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [],
+        "inherited": [],
+        "status": "aligned"
+      },
+      "evidence": {
+        "entryFiles": [
+          "app/trade/[locale]/events/page.tsx",
+          "components/trade/trade-countdown.tsx"
+        ],
+        "scannedFiles": [
+          "app/trade/[locale]/events/page.tsx",
+          "components/trade/trade-countdown.tsx",
+          "components/ui/badge.tsx"
+        ]
+      }
+    },
+    {
+      "surfaceId": "trade-order",
+      "route": "/trade/[locale]/events/[id]/order",
+      "mode": "source-scan",
+      "compare": {
+        "declared": [
+          "action:submitTradeOrderAction",
+          "domain:trade"
+        ],
+        "discovered": [
+          "action:submitTradeOrderAction",
+          "domain:trade"
+        ],
+        "aligned": [
+          "action:submitTradeOrderAction",
+          "domain:trade"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [],
+        "inherited": [],
+        "status": "aligned"
+      },
+      "evidence": {
+        "entryFiles": [
+          "app/trade/[locale]/events/[id]/order/page.tsx",
+          "components/trade/trade-order-form.tsx"
+        ],
+        "scannedFiles": [
+          "app/trade/[locale]/events/[id]/order/page.tsx",
+          "components/trade/trade-order-form.tsx",
+          "components/ui/button.tsx",
+          "components/ui/input.tsx",
+          "components/ui/label.tsx",
+          "components/ui/textarea.tsx"
+        ]
+      }
+    },
+    {
+      "surfaceId": "trade-my-orders",
+      "route": "/trade/[locale]/my-orders",
+      "mode": "source-scan",
+      "compare": {
+        "declared": [
+          "action:approveTransferAction",
+          "action:rejectTransferAction",
+          "action:requestTransferAction",
+          "action:requireTradeAccess",
+          "domain:trade"
+        ],
+        "discovered": [
+          "action:approveTransferAction",
+          "action:rejectTransferAction",
+          "action:requestTransferAction",
+          "action:requireTradeAccess",
+          "domain:trade"
+        ],
+        "aligned": [
+          "action:approveTransferAction",
+          "action:rejectTransferAction",
+          "action:requestTransferAction",
+          "action:requireTradeAccess",
+          "domain:trade"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [],
+        "inherited": [],
+        "status": "aligned"
+      },
+      "evidence": {
+        "entryFiles": [
+          "app/trade/[locale]/my-orders/page.tsx",
+          "components/trade/trade-transfer-forms.tsx"
+        ],
+        "scannedFiles": [
+          "app/trade/[locale]/my-orders/page.tsx",
+          "components/trade/trade-transfer-forms.tsx",
+          "components/ui/button.tsx",
+          "components/ui/input.tsx"
+        ]
+      }
+    },
+    {
+      "surfaceId": "trade-admin-events",
+      "route": "/trade/[locale]/admin/events",
+      "mode": "source-scan",
+      "compare": {
+        "declared": [
+          "action:cloneTradeEventAction",
+          "action:createTradeEventAction",
+          "action:ensurePigletTemplateAction",
+          "action:processErpSyncJobsAction",
+          "action:requireTradeAdmin",
+          "action:retryErpSyncJobAction",
+          "domain:trade"
+        ],
+        "discovered": [
+          "action:cloneTradeEventAction",
+          "action:createTradeEventAction",
+          "action:ensurePigletTemplateAction",
+          "action:processErpSyncJobsAction",
+          "action:requireTradeAdmin",
+          "action:retryErpSyncJobAction",
+          "domain:trade"
+        ],
+        "aligned": [
+          "action:cloneTradeEventAction",
+          "action:createTradeEventAction",
+          "action:ensurePigletTemplateAction",
+          "action:processErpSyncJobsAction",
+          "action:requireTradeAdmin",
+          "action:retryErpSyncJobAction",
+          "domain:trade"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [],
+        "inherited": [],
+        "status": "aligned"
+      },
+      "evidence": {
+        "entryFiles": [
+          "app/trade/[locale]/admin/events/page.tsx",
+          "components/trade/trade-admin-forms.tsx",
+          "components/trade/trade-clone-button.tsx",
+          "components/trade/trade-erp-sync-panel.tsx"
+        ],
+        "scannedFiles": [
+          "app/trade/[locale]/admin/events/page.tsx",
+          "components/trade/trade-admin-forms.tsx",
+          "components/trade/trade-clone-button.tsx",
+          "components/trade/trade-erp-sync-panel.tsx",
+          "components/ui/button.tsx",
+          "components/ui/input.tsx",
+          "components/ui/label.tsx"
+        ]
+      }
+    },
+    {
+      "surfaceId": "trade-admin-events-new",
+      "route": "/trade/[locale]/admin/events/new",
+      "mode": "source-scan",
+      "compare": {
+        "declared": [
+          "action:createTradeEventAction",
+          "action:ensurePigletTemplateAction",
+          "action:requireTradePermission",
+          "domain:trade"
+        ],
+        "discovered": [
+          "action:createTradeEventAction",
+          "action:ensurePigletTemplateAction",
+          "action:requireTradePermission",
+          "domain:trade"
+        ],
+        "aligned": [
+          "action:createTradeEventAction",
+          "action:ensurePigletTemplateAction",
+          "action:requireTradePermission",
+          "domain:trade"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [],
+        "inherited": [],
+        "status": "aligned"
+      },
+      "evidence": {
+        "entryFiles": [
+          "app/trade/[locale]/admin/events/new/page.tsx",
+          "components/trade/trade-admin-forms.tsx"
+        ],
+        "scannedFiles": [
+          "app/trade/[locale]/admin/events/new/page.tsx",
+          "components/trade/trade-admin-forms.tsx",
+          "components/ui/button.tsx",
+          "components/ui/input.tsx",
+          "components/ui/label.tsx"
+        ]
+      }
+    },
+    {
+      "surfaceId": "trade-admin-setup",
+      "route": "/trade/[locale]/admin/events/[id]/setup",
+      "mode": "source-scan",
+      "compare": {
+        "declared": [
+          "action:activateScheduledTradeEventAction",
+          "action:addSalesMemberAction",
+          "action:cancelImportBatchAction",
+          "action:closeTradeEventAction",
+          "action:confirmImportBatchAction",
+          "action:createPickupWindowAction",
+          "action:exportAllocationCsvAction",
+          "action:exportEventSummaryCsvAction",
+          "action:exportOrdersCsvAction",
+          "action:getImportTemplateAction",
+          "action:importPriorityCsvAction",
+          "action:openTradeEventAction",
+          "action:processErpSyncJobsAction",
+          "action:recordDepositAdjustmentAction",
+          "action:recordDepositReceiptAction",
+          "action:recordPickupExceptionAction",
+          "action:recordPickupFulfillmentAction",
+          "action:requireTradeAdmin",
+          "action:retryErpSyncJobAction",
+          "action:runTradeAllocationAction",
+          "action:saveTradeEventSetupAction",
+          "action:saveTradeFieldDefAction",
+          "action:saveTradeProductAction",
+          "action:schedulePickupAction",
+          "action:updateDepositDetailsAction",
+          "action:uploadImportDryRunAction",
+          "domain:trade"
+        ],
+        "discovered": [
+          "action:activateScheduledTradeEventAction",
+          "action:addSalesMemberAction",
+          "action:cancelImportBatchAction",
+          "action:closeTradeEventAction",
+          "action:confirmImportBatchAction",
+          "action:createPickupWindowAction",
+          "action:exportAllocationCsvAction",
+          "action:exportEventSummaryCsvAction",
+          "action:exportOrdersCsvAction",
+          "action:getImportTemplateAction",
+          "action:importPriorityCsvAction",
+          "action:openTradeEventAction",
+          "action:processErpSyncJobsAction",
+          "action:recordDepositAdjustmentAction",
+          "action:recordDepositReceiptAction",
+          "action:recordPickupExceptionAction",
+          "action:recordPickupFulfillmentAction",
+          "action:requireTradeAdmin",
+          "action:retryErpSyncJobAction",
+          "action:runTradeAllocationAction",
+          "action:saveTradeEventSetupAction",
+          "action:saveTradeFieldDefAction",
+          "action:saveTradeProductAction",
+          "action:schedulePickupAction",
+          "action:updateDepositDetailsAction",
+          "action:uploadImportDryRunAction",
+          "domain:trade"
+        ],
+        "aligned": [
+          "action:activateScheduledTradeEventAction",
+          "action:addSalesMemberAction",
+          "action:cancelImportBatchAction",
+          "action:closeTradeEventAction",
+          "action:confirmImportBatchAction",
+          "action:createPickupWindowAction",
+          "action:exportAllocationCsvAction",
+          "action:exportEventSummaryCsvAction",
+          "action:exportOrdersCsvAction",
+          "action:getImportTemplateAction",
+          "action:importPriorityCsvAction",
+          "action:openTradeEventAction",
+          "action:processErpSyncJobsAction",
+          "action:recordDepositAdjustmentAction",
+          "action:recordDepositReceiptAction",
+          "action:recordPickupExceptionAction",
+          "action:recordPickupFulfillmentAction",
+          "action:requireTradeAdmin",
+          "action:retryErpSyncJobAction",
+          "action:runTradeAllocationAction",
+          "action:saveTradeEventSetupAction",
+          "action:saveTradeFieldDefAction",
+          "action:saveTradeProductAction",
+          "action:schedulePickupAction",
+          "action:updateDepositDetailsAction",
+          "action:uploadImportDryRunAction",
+          "domain:trade"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [],
+        "inherited": [],
+        "status": "aligned"
+      },
+      "evidence": {
+        "entryFiles": [
+          "app/trade/[locale]/admin/events/[id]/setup/page.tsx",
+          "components/trade/trade-setup-forms.tsx",
+          "components/trade/trade-sales-member-form.tsx",
+          "components/trade/trade-export-panel.tsx",
+          "components/trade/trade-import-panel.tsx",
+          "components/trade/trade-deposit-forms.tsx",
+          "components/trade/trade-pickup-forms.tsx",
+          "components/trade/trade-erp-sync-panel.tsx"
+        ],
+        "scannedFiles": [
+          "app/trade/[locale]/admin/events/[id]/setup/page.tsx",
+          "components/trade/trade-deposit-forms.tsx",
+          "components/trade/trade-erp-sync-panel.tsx",
+          "components/trade/trade-export-panel.tsx",
+          "components/trade/trade-import-panel.tsx",
+          "components/trade/trade-pickup-forms.tsx",
+          "components/trade/trade-sales-member-form.tsx",
+          "components/trade/trade-setup-forms.tsx",
+          "components/ui/button.tsx",
+          "components/ui/input.tsx",
+          "components/ui/label.tsx",
+          "components/ui/textarea.tsx"
+        ]
+      }
+    },
+    {
+      "surfaceId": "trade-admin-allocation",
+      "route": "/trade/[locale]/admin/events/[id]/allocation",
+      "mode": "source-scan",
+      "compare": {
+        "declared": [
+          "action:approveTransferAction",
+          "action:completeTradeOrderAction",
+          "action:manualAdjustTradeOrderAction",
+          "action:previewTradeAllocationAction",
+          "action:rejectTransferAction",
+          "action:requestTransferAction",
+          "action:requireTradeAdmin",
+          "action:runTradeAllocationAction",
+          "domain:trade"
+        ],
+        "discovered": [
+          "action:approveTransferAction",
+          "action:completeTradeOrderAction",
+          "action:manualAdjustTradeOrderAction",
+          "action:previewTradeAllocationAction",
+          "action:rejectTransferAction",
+          "action:requestTransferAction",
+          "action:requireTradeAdmin",
+          "action:runTradeAllocationAction",
+          "domain:trade"
+        ],
+        "aligned": [
+          "action:approveTransferAction",
+          "action:completeTradeOrderAction",
+          "action:manualAdjustTradeOrderAction",
+          "action:previewTradeAllocationAction",
+          "action:rejectTransferAction",
+          "action:requestTransferAction",
+          "action:requireTradeAdmin",
+          "action:runTradeAllocationAction",
+          "domain:trade"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [],
+        "inherited": [],
+        "status": "aligned"
+      },
+      "evidence": {
+        "entryFiles": [
+          "app/trade/[locale]/admin/events/[id]/allocation/page.tsx",
+          "components/trade/trade-allocation-controls.tsx",
+          "components/trade/trade-transfer-forms.tsx"
+        ],
+        "scannedFiles": [
+          "app/trade/[locale]/admin/events/[id]/allocation/page.tsx",
+          "components/trade/trade-allocation-controls.tsx",
+          "components/trade/trade-transfer-forms.tsx",
+          "components/ui/button.tsx",
+          "components/ui/input.tsx"
+        ]
+      }
+    },
+    {
+      "surfaceId": "trade-admin-rbac",
+      "route": "/trade/[locale]/admin/rbac",
+      "mode": "source-scan",
+      "compare": {
+        "declared": [
+          "action:assignTradeRoleAction",
+          "action:createTradeRoleAction",
+          "action:duplicateTradeRoleAction",
+          "action:requireTradePermission",
+          "action:revokeTradeRoleAssignmentAction",
+          "action:seedTradeRbacCatalogAction",
+          "action:setTradeRoleActiveAction",
+          "action:setTradeRolePermissionsAction",
+          "domain:trade"
+        ],
+        "discovered": [
+          "action:assignTradeRoleAction",
+          "action:createTradeRoleAction",
+          "action:duplicateTradeRoleAction",
+          "action:requireTradePermission",
+          "action:revokeTradeRoleAssignmentAction",
+          "action:seedTradeRbacCatalogAction",
+          "action:setTradeRoleActiveAction",
+          "action:setTradeRolePermissionsAction",
+          "domain:trade"
+        ],
+        "aligned": [
+          "action:assignTradeRoleAction",
+          "action:createTradeRoleAction",
+          "action:duplicateTradeRoleAction",
+          "action:requireTradePermission",
+          "action:revokeTradeRoleAssignmentAction",
+          "action:seedTradeRbacCatalogAction",
+          "action:setTradeRoleActiveAction",
+          "action:setTradeRolePermissionsAction",
+          "domain:trade"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [],
+        "inherited": [],
+        "status": "aligned"
+      },
+      "evidence": {
+        "entryFiles": [
+          "app/trade/[locale]/admin/rbac/page.tsx",
+          "components/trade/trade-rbac-admin.tsx"
+        ],
+        "scannedFiles": [
+          "app/trade/[locale]/admin/rbac/page.tsx",
+          "components/trade/trade-rbac-admin.tsx",
+          "components/ui/button.tsx",
+          "components/ui/input.tsx",
+          "components/ui/label.tsx"
         ]
       }
     }
@@ -1564,6 +2090,74 @@
         ],
         "declaredOnly": [],
         "discoveredOnly": [],
+        "inherited": [],
+        "status": "aligned"
+      }
+    },
+    {
+      "actionId": "action:saveClientQuickOnboardingAction",
+      "file": "app/actions/client.ts",
+      "compare": {
+        "declared": [
+          "domain:audit",
+          "domain:auth",
+          "domain:clients"
+        ],
+        "discovered": [
+          "domain:audit",
+          "domain:auth",
+          "domain:client-onboarding",
+          "domain:clients",
+          "domain:email",
+          "domain:questions",
+          "domain:surveys"
+        ],
+        "aligned": [
+          "domain:audit",
+          "domain:auth",
+          "domain:clients"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [
+          "domain:client-onboarding",
+          "domain:email",
+          "domain:questions",
+          "domain:surveys"
+        ],
+        "inherited": [],
+        "status": "aligned"
+      }
+    },
+    {
+      "actionId": "action:saveClientProfileAction",
+      "file": "app/actions/client.ts",
+      "compare": {
+        "declared": [
+          "domain:audit",
+          "domain:auth",
+          "domain:clients"
+        ],
+        "discovered": [
+          "domain:audit",
+          "domain:auth",
+          "domain:client-onboarding",
+          "domain:clients",
+          "domain:email",
+          "domain:questions",
+          "domain:surveys"
+        ],
+        "aligned": [
+          "domain:audit",
+          "domain:auth",
+          "domain:clients"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [
+          "domain:client-onboarding",
+          "domain:email",
+          "domain:questions",
+          "domain:surveys"
+        ],
         "inherited": [],
         "status": "aligned"
       }
@@ -2127,6 +2721,927 @@
         "discoveredOnly": [
           "domain:auth"
         ],
+        "inherited": [],
+        "status": "aligned"
+      }
+    },
+    {
+      "actionId": "action:requireTradeAccess",
+      "file": "lib/auth/trade-session.ts",
+      "compare": {
+        "declared": [
+          "domain:auth",
+          "domain:trade"
+        ],
+        "discovered": [
+          "domain:auth",
+          "domain:trade"
+        ],
+        "aligned": [
+          "domain:auth",
+          "domain:trade"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [],
+        "inherited": [],
+        "status": "aligned"
+      }
+    },
+    {
+      "actionId": "action:requireTradeAdmin",
+      "file": "lib/auth/trade-session.ts",
+      "compare": {
+        "declared": [
+          "domain:auth",
+          "domain:trade"
+        ],
+        "discovered": [
+          "domain:auth",
+          "domain:trade"
+        ],
+        "aligned": [
+          "domain:auth",
+          "domain:trade"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [],
+        "inherited": [],
+        "status": "aligned"
+      }
+    },
+    {
+      "actionId": "action:requireTradePermission",
+      "file": "lib/auth/trade-session.ts",
+      "compare": {
+        "declared": [
+          "domain:auth",
+          "domain:trade"
+        ],
+        "discovered": [
+          "domain:auth",
+          "domain:trade"
+        ],
+        "aligned": [
+          "domain:auth",
+          "domain:trade"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [],
+        "inherited": [],
+        "status": "aligned"
+      }
+    },
+    {
+      "actionId": "action:createTradeEventAction",
+      "file": "app/actions/trade.ts",
+      "compare": {
+        "declared": [
+          "domain:trade"
+        ],
+        "discovered": [
+          "domain:trade"
+        ],
+        "aligned": [
+          "domain:trade"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [],
+        "inherited": [],
+        "status": "aligned"
+      }
+    },
+    {
+      "actionId": "action:ensurePigletTemplateAction",
+      "file": "app/actions/trade.ts",
+      "compare": {
+        "declared": [
+          "domain:trade"
+        ],
+        "discovered": [
+          "domain:trade"
+        ],
+        "aligned": [
+          "domain:trade"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [],
+        "inherited": [],
+        "status": "aligned"
+      }
+    },
+    {
+      "actionId": "action:cloneTradeEventAction",
+      "file": "app/actions/trade.ts",
+      "compare": {
+        "declared": [
+          "domain:trade"
+        ],
+        "discovered": [
+          "domain:trade"
+        ],
+        "aligned": [
+          "domain:trade"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [],
+        "inherited": [],
+        "status": "aligned"
+      }
+    },
+    {
+      "actionId": "action:openTradeEventAction",
+      "file": "app/actions/trade.ts",
+      "compare": {
+        "declared": [
+          "domain:trade"
+        ],
+        "discovered": [
+          "domain:trade"
+        ],
+        "aligned": [
+          "domain:trade"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [],
+        "inherited": [],
+        "status": "aligned"
+      }
+    },
+    {
+      "actionId": "action:activateScheduledTradeEventAction",
+      "file": "app/actions/trade.ts",
+      "compare": {
+        "declared": [
+          "domain:trade"
+        ],
+        "discovered": [
+          "domain:trade"
+        ],
+        "aligned": [
+          "domain:trade"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [],
+        "inherited": [],
+        "status": "aligned"
+      }
+    },
+    {
+      "actionId": "action:closeTradeEventAction",
+      "file": "app/actions/trade.ts",
+      "compare": {
+        "declared": [
+          "domain:trade"
+        ],
+        "discovered": [
+          "domain:trade"
+        ],
+        "aligned": [
+          "domain:trade"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [],
+        "inherited": [],
+        "status": "aligned"
+      }
+    },
+    {
+      "actionId": "action:saveTradeEventSetupAction",
+      "file": "app/actions/trade.ts",
+      "compare": {
+        "declared": [
+          "domain:trade"
+        ],
+        "discovered": [
+          "domain:trade"
+        ],
+        "aligned": [
+          "domain:trade"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [],
+        "inherited": [],
+        "status": "aligned"
+      }
+    },
+    {
+      "actionId": "action:saveTradeProductAction",
+      "file": "app/actions/trade.ts",
+      "compare": {
+        "declared": [
+          "domain:trade"
+        ],
+        "discovered": [
+          "domain:trade"
+        ],
+        "aligned": [
+          "domain:trade"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [],
+        "inherited": [],
+        "status": "aligned"
+      }
+    },
+    {
+      "actionId": "action:saveTradeFieldDefAction",
+      "file": "app/actions/trade.ts",
+      "compare": {
+        "declared": [
+          "domain:trade"
+        ],
+        "discovered": [
+          "domain:trade"
+        ],
+        "aligned": [
+          "domain:trade"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [],
+        "inherited": [],
+        "status": "aligned"
+      }
+    },
+    {
+      "actionId": "action:importPriorityCsvAction",
+      "file": "app/actions/trade.ts",
+      "compare": {
+        "declared": [
+          "domain:trade"
+        ],
+        "discovered": [
+          "domain:trade"
+        ],
+        "aligned": [
+          "domain:trade"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [],
+        "inherited": [],
+        "status": "aligned"
+      }
+    },
+    {
+      "actionId": "action:addSalesMemberAction",
+      "file": "app/actions/trade.ts",
+      "compare": {
+        "declared": [
+          "domain:trade"
+        ],
+        "discovered": [
+          "domain:trade"
+        ],
+        "aligned": [
+          "domain:trade"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [],
+        "inherited": [],
+        "status": "aligned"
+      }
+    },
+    {
+      "actionId": "action:submitTradeOrderAction",
+      "file": "app/actions/trade.ts",
+      "compare": {
+        "declared": [
+          "domain:trade"
+        ],
+        "discovered": [
+          "domain:trade"
+        ],
+        "aligned": [
+          "domain:trade"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [],
+        "inherited": [],
+        "status": "aligned"
+      }
+    },
+    {
+      "actionId": "action:runTradeAllocationAction",
+      "file": "app/actions/trade.ts",
+      "compare": {
+        "declared": [
+          "domain:trade"
+        ],
+        "discovered": [
+          "domain:trade"
+        ],
+        "aligned": [
+          "domain:trade"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [],
+        "inherited": [],
+        "status": "aligned"
+      }
+    },
+    {
+      "actionId": "action:previewTradeAllocationAction",
+      "file": "app/actions/trade.ts",
+      "compare": {
+        "declared": [
+          "domain:trade"
+        ],
+        "discovered": [
+          "domain:trade"
+        ],
+        "aligned": [
+          "domain:trade"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [],
+        "inherited": [],
+        "status": "aligned"
+      }
+    },
+    {
+      "actionId": "action:manualAdjustTradeOrderAction",
+      "file": "app/actions/trade.ts",
+      "compare": {
+        "declared": [
+          "domain:trade"
+        ],
+        "discovered": [
+          "domain:trade"
+        ],
+        "aligned": [
+          "domain:trade"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [],
+        "inherited": [],
+        "status": "aligned"
+      }
+    },
+    {
+      "actionId": "action:requestTransferAction",
+      "file": "app/actions/trade.ts",
+      "compare": {
+        "declared": [
+          "domain:trade"
+        ],
+        "discovered": [
+          "domain:trade"
+        ],
+        "aligned": [
+          "domain:trade"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [],
+        "inherited": [],
+        "status": "aligned"
+      }
+    },
+    {
+      "actionId": "action:approveTransferAction",
+      "file": "app/actions/trade.ts",
+      "compare": {
+        "declared": [
+          "domain:trade"
+        ],
+        "discovered": [
+          "domain:trade"
+        ],
+        "aligned": [
+          "domain:trade"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [],
+        "inherited": [],
+        "status": "aligned"
+      }
+    },
+    {
+      "actionId": "action:rejectTransferAction",
+      "file": "app/actions/trade.ts",
+      "compare": {
+        "declared": [
+          "domain:trade"
+        ],
+        "discovered": [
+          "domain:trade"
+        ],
+        "aligned": [
+          "domain:trade"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [],
+        "inherited": [],
+        "status": "aligned"
+      }
+    },
+    {
+      "actionId": "action:exportOrdersCsvAction",
+      "file": "app/actions/trade.ts",
+      "compare": {
+        "declared": [
+          "domain:trade"
+        ],
+        "discovered": [
+          "domain:trade"
+        ],
+        "aligned": [
+          "domain:trade"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [],
+        "inherited": [],
+        "status": "aligned"
+      }
+    },
+    {
+      "actionId": "action:exportEventSummaryCsvAction",
+      "file": "app/actions/trade.ts",
+      "compare": {
+        "declared": [
+          "domain:trade"
+        ],
+        "discovered": [
+          "domain:trade"
+        ],
+        "aligned": [
+          "domain:trade"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [],
+        "inherited": [],
+        "status": "aligned"
+      }
+    },
+    {
+      "actionId": "action:exportAllocationCsvAction",
+      "file": "app/actions/trade.ts",
+      "compare": {
+        "declared": [
+          "domain:trade"
+        ],
+        "discovered": [
+          "domain:trade"
+        ],
+        "aligned": [
+          "domain:trade"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [],
+        "inherited": [],
+        "status": "aligned"
+      }
+    },
+    {
+      "actionId": "action:completeTradeOrderAction",
+      "file": "app/actions/trade.ts",
+      "compare": {
+        "declared": [
+          "domain:trade"
+        ],
+        "discovered": [
+          "domain:trade"
+        ],
+        "aligned": [
+          "domain:trade"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [],
+        "inherited": [],
+        "status": "aligned"
+      }
+    },
+    {
+      "actionId": "action:listEventTransfersAction",
+      "file": "app/actions/trade.ts",
+      "compare": {
+        "declared": [
+          "domain:trade"
+        ],
+        "discovered": [
+          "domain:trade"
+        ],
+        "aligned": [
+          "domain:trade"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [],
+        "inherited": [],
+        "status": "aligned"
+      }
+    },
+    {
+      "actionId": "action:seedTradeRbacCatalogAction",
+      "file": "app/actions/trade.ts",
+      "compare": {
+        "declared": [
+          "domain:trade"
+        ],
+        "discovered": [
+          "domain:trade"
+        ],
+        "aligned": [
+          "domain:trade"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [],
+        "inherited": [],
+        "status": "aligned"
+      }
+    },
+    {
+      "actionId": "action:createTradeRoleAction",
+      "file": "app/actions/trade.ts",
+      "compare": {
+        "declared": [
+          "domain:trade"
+        ],
+        "discovered": [
+          "domain:trade"
+        ],
+        "aligned": [
+          "domain:trade"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [],
+        "inherited": [],
+        "status": "aligned"
+      }
+    },
+    {
+      "actionId": "action:setTradeRolePermissionsAction",
+      "file": "app/actions/trade.ts",
+      "compare": {
+        "declared": [
+          "domain:trade"
+        ],
+        "discovered": [
+          "domain:trade"
+        ],
+        "aligned": [
+          "domain:trade"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [],
+        "inherited": [],
+        "status": "aligned"
+      }
+    },
+    {
+      "actionId": "action:setTradeRoleActiveAction",
+      "file": "app/actions/trade.ts",
+      "compare": {
+        "declared": [
+          "domain:trade"
+        ],
+        "discovered": [
+          "domain:trade"
+        ],
+        "aligned": [
+          "domain:trade"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [],
+        "inherited": [],
+        "status": "aligned"
+      }
+    },
+    {
+      "actionId": "action:duplicateTradeRoleAction",
+      "file": "app/actions/trade.ts",
+      "compare": {
+        "declared": [
+          "domain:trade"
+        ],
+        "discovered": [
+          "domain:trade"
+        ],
+        "aligned": [
+          "domain:trade"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [],
+        "inherited": [],
+        "status": "aligned"
+      }
+    },
+    {
+      "actionId": "action:assignTradeRoleAction",
+      "file": "app/actions/trade.ts",
+      "compare": {
+        "declared": [
+          "domain:trade"
+        ],
+        "discovered": [
+          "domain:trade"
+        ],
+        "aligned": [
+          "domain:trade"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [],
+        "inherited": [],
+        "status": "aligned"
+      }
+    },
+    {
+      "actionId": "action:revokeTradeRoleAssignmentAction",
+      "file": "app/actions/trade.ts",
+      "compare": {
+        "declared": [
+          "domain:trade"
+        ],
+        "discovered": [
+          "domain:trade"
+        ],
+        "aligned": [
+          "domain:trade"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [],
+        "inherited": [],
+        "status": "aligned"
+      }
+    },
+    {
+      "actionId": "action:listEventDepositsAction",
+      "file": "app/actions/trade.ts",
+      "compare": {
+        "declared": [
+          "domain:trade"
+        ],
+        "discovered": [
+          "domain:trade"
+        ],
+        "aligned": [
+          "domain:trade"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [],
+        "inherited": [],
+        "status": "aligned"
+      }
+    },
+    {
+      "actionId": "action:recordDepositReceiptAction",
+      "file": "app/actions/trade.ts",
+      "compare": {
+        "declared": [
+          "domain:trade"
+        ],
+        "discovered": [
+          "domain:trade"
+        ],
+        "aligned": [
+          "domain:trade"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [],
+        "inherited": [],
+        "status": "aligned"
+      }
+    },
+    {
+      "actionId": "action:recordDepositAdjustmentAction",
+      "file": "app/actions/trade.ts",
+      "compare": {
+        "declared": [
+          "domain:trade"
+        ],
+        "discovered": [
+          "domain:trade"
+        ],
+        "aligned": [
+          "domain:trade"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [],
+        "inherited": [],
+        "status": "aligned"
+      }
+    },
+    {
+      "actionId": "action:updateDepositDetailsAction",
+      "file": "app/actions/trade.ts",
+      "compare": {
+        "declared": [
+          "domain:trade"
+        ],
+        "discovered": [
+          "domain:trade"
+        ],
+        "aligned": [
+          "domain:trade"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [],
+        "inherited": [],
+        "status": "aligned"
+      }
+    },
+    {
+      "actionId": "action:createPickupWindowAction",
+      "file": "app/actions/trade.ts",
+      "compare": {
+        "declared": [
+          "domain:trade"
+        ],
+        "discovered": [
+          "domain:trade"
+        ],
+        "aligned": [
+          "domain:trade"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [],
+        "inherited": [],
+        "status": "aligned"
+      }
+    },
+    {
+      "actionId": "action:schedulePickupAction",
+      "file": "app/actions/trade.ts",
+      "compare": {
+        "declared": [
+          "domain:trade"
+        ],
+        "discovered": [
+          "domain:trade"
+        ],
+        "aligned": [
+          "domain:trade"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [],
+        "inherited": [],
+        "status": "aligned"
+      }
+    },
+    {
+      "actionId": "action:recordPickupFulfillmentAction",
+      "file": "app/actions/trade.ts",
+      "compare": {
+        "declared": [
+          "domain:trade"
+        ],
+        "discovered": [
+          "domain:trade"
+        ],
+        "aligned": [
+          "domain:trade"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [],
+        "inherited": [],
+        "status": "aligned"
+      }
+    },
+    {
+      "actionId": "action:recordPickupExceptionAction",
+      "file": "app/actions/trade.ts",
+      "compare": {
+        "declared": [
+          "domain:trade"
+        ],
+        "discovered": [
+          "domain:trade"
+        ],
+        "aligned": [
+          "domain:trade"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [],
+        "inherited": [],
+        "status": "aligned"
+      }
+    },
+    {
+      "actionId": "action:getImportTemplateAction",
+      "file": "app/actions/trade.ts",
+      "compare": {
+        "declared": [
+          "domain:trade"
+        ],
+        "discovered": [
+          "domain:trade"
+        ],
+        "aligned": [
+          "domain:trade"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [],
+        "inherited": [],
+        "status": "aligned"
+      }
+    },
+    {
+      "actionId": "action:uploadImportDryRunAction",
+      "file": "app/actions/trade.ts",
+      "compare": {
+        "declared": [
+          "domain:trade"
+        ],
+        "discovered": [
+          "domain:trade"
+        ],
+        "aligned": [
+          "domain:trade"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [],
+        "inherited": [],
+        "status": "aligned"
+      }
+    },
+    {
+      "actionId": "action:confirmImportBatchAction",
+      "file": "app/actions/trade.ts",
+      "compare": {
+        "declared": [
+          "domain:trade"
+        ],
+        "discovered": [
+          "domain:trade"
+        ],
+        "aligned": [
+          "domain:trade"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [],
+        "inherited": [],
+        "status": "aligned"
+      }
+    },
+    {
+      "actionId": "action:cancelImportBatchAction",
+      "file": "app/actions/trade.ts",
+      "compare": {
+        "declared": [
+          "domain:trade"
+        ],
+        "discovered": [
+          "domain:trade"
+        ],
+        "aligned": [
+          "domain:trade"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [],
+        "inherited": [],
+        "status": "aligned"
+      }
+    },
+    {
+      "actionId": "action:getImportBatchDetailAction",
+      "file": "app/actions/trade.ts",
+      "compare": {
+        "declared": [
+          "domain:trade"
+        ],
+        "discovered": [
+          "domain:trade"
+        ],
+        "aligned": [
+          "domain:trade"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [],
+        "inherited": [],
+        "status": "aligned"
+      }
+    },
+    {
+      "actionId": "action:retryErpSyncJobAction",
+      "file": "app/actions/trade.ts",
+      "compare": {
+        "declared": [
+          "domain:trade"
+        ],
+        "discovered": [
+          "domain:trade"
+        ],
+        "aligned": [
+          "domain:trade"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [],
+        "inherited": [],
+        "status": "aligned"
+      }
+    },
+    {
+      "actionId": "action:processErpSyncJobsAction",
+      "file": "app/actions/trade.ts",
+      "compare": {
+        "declared": [
+          "domain:trade"
+        ],
+        "discovered": [
+          "domain:trade"
+        ],
+        "aligned": [
+          "domain:trade"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [],
         "inherited": [],
         "status": "aligned"
       }
