@@ -6,6 +6,7 @@ import { Trash2Icon } from "lucide-react";
 import { deleteSurveyAction } from "@/app/actions/surveys";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { portalCopy } from "@/lib/copy/portal-copy";
+import { OPERATOR_DASHBOARD_HREF } from "@/lib/routing/portal-routes";
 import { Button } from "@/components/ui/button";
 
 export function DeclarationDeleteButton({ surveyId }: { surveyId: string }) {
@@ -42,8 +43,10 @@ export function DeclarationDeleteButton({ surveyId }: { surveyId: string }) {
           const formData = new FormData();
           formData.set("id", surveyId);
           startTransition(async () => {
-            await deleteSurveyAction(formData);
-            router.refresh();
+            const result = await deleteSurveyAction(formData);
+            if (result && "success" in result && result.success) {
+              router.push(OPERATOR_DASHBOARD_HREF);
+            }
           });
         }}
       />

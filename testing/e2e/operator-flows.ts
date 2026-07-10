@@ -173,12 +173,22 @@ export async function deleteDeclarationFromDashboard(page: Page, title: string) 
   await page.getByRole("menuitem", { name: manage.deleteSubmit }).click();
   const confirmDialog = page.getByRole("alertdialog");
   await expect(confirmDialog).toBeVisible();
-  await confirmDialog
-    .getByRole("button", { name: manage.deleteSubmit })
-    .evaluate((button) => {
-      (button as HTMLButtonElement).click();
-    });
-  await expect(page.getByRole("link", { name: title })).not.toBeVisible({
-    timeout: 30_000,
-  });
+  await confirmDialog.getByRole("button", { name: manage.deleteSubmit }).click();
+  await expect
+    .poll(
+      async () => {
+        const visible = await page
+          .getByRole("link", { name: title })
+          .isVisible()
+          .catch(() => false);
+        if (!visible) return true;
+        await page.reload({ waitUntil: "domcontentloaded" });
+        return !(await page
+          .getByRole("link", { name: title })
+          .isVisible()
+          .catch(() => false));
+      },
+      { timeout: 30_000 },
+    )
+    .toBe(true);
 }

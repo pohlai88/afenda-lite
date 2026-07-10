@@ -250,7 +250,7 @@ export async function deleteSurveyAction(formData: FormData) {
     });
 
     revalidateOperatorDashboard();
-    redirect(OPERATOR_DASHBOARD_HREF);
+    return { success: true as const };
   });
 }
 
