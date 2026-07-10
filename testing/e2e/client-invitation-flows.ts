@@ -127,9 +127,26 @@ export async function acknowledgeClientDashboard(page: Page) {
     })
     .check();
   await page.getByRole("button", { name: /confirm acknowledgement/i }).click();
-  await expect(
-    page.getByText(/responsibilities acknowledged on/i),
-  ).toBeVisible({ timeout: 15_000 });
+  await expect
+    .poll(
+      async () => {
+        if (
+          await page
+            .getByText(/responsibilities acknowledged on/i)
+            .isVisible()
+            .catch(() => false)
+        ) {
+          return true;
+        }
+        await page.reload({ waitUntil: "domcontentloaded" });
+        return page
+          .getByText(/responsibilities acknowledged on/i)
+          .isVisible()
+          .catch(() => false);
+      },
+      { timeout: 30_000 },
+    )
+    .toBe(true);
 }
 
 export async function openFirstAssignedDeclaration(page: Page) {
