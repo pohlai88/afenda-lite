@@ -4,7 +4,7 @@ import "server-only";
  * S5 secure declaration link entry (`/f/[token]`).
  *
  * Resolves `survey_invite_tokens` only — never `surveys.slug` or `client_invitations`.
- * Redirect-only: session dispatch lives in `public-link-routing.ts`.
+ * Redirect-only: session dispatch lives in `features/auth/public-link-routing.ts`.
  *
  * **Not** S6 legacy `/invite/[token]` (see `legacy-invite-entry.ts`).
  *

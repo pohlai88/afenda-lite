@@ -4,7 +4,7 @@ import "server-only";
  * S5 open declaration link entry (`/survey/[slug]`).
  *
  * Resolves `surveys.slug` only — not secure tokens (`/f/[token]`).
- * Redirect-only: session dispatch lives in `public-link-routing.ts`.
+ * Redirect-only: session dispatch lives in `features/auth/public-link-routing.ts`.
  *
  * @see docs/architecture/slices/s5-share-access.md
  */
