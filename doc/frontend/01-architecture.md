@@ -60,3 +60,5 @@ Mirror AdminCN `(blank)` vs `(pages)` without copying demo auth:
 - [04-bff-and-data.md](04-bff-and-data.md) — decision tree  
 - [07-nextjs-conventions.md](07-nextjs-conventions.md) — special files, async APIs, RSC boundaries  
 - [../api/01-boundaries.md](../api/01-boundaries.md) — trust boundaries  
+- [adr/001A-feed-farm-trade-architecture.md](adr/001A-feed-farm-trade-architecture.md) — Feed Farm Trade module architecture  
+ 
