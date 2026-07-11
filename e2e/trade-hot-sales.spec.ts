@@ -46,7 +46,7 @@ test.describe("Trade Hot Sales admin journey @journey", () => {
     await page.locator("#closesAt").fill(toLocal(closes));
     await page.getByRole("button", { name: /create event/i }).click();
 
-    await expect(page).toHaveURL(/\/trade\/vi\/admin\/events\/[^/]+\/setup/, {
+    await expect(page).toHaveURL(/\/trade\/admin\/events\/[^/]+\/setup/, {
       timeout: 30_000,
     });
     eventId = page.url().match(/events\/([^/]+)\/setup/)?.[1];

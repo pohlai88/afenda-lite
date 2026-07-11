@@ -18,13 +18,13 @@ Legend: `done` · `partial` · `missing` · `residue`
 | `docs/hot-sales/` G0 | done | Restored |
 | Domain + `app/actions/trade.ts` | done | Engine present |
 | P1 FE wire (events/setup/order/alloc) | done | Thin pages → `features/trade` |
-| G1–G6 FE surfaces | done | Wired; AC evidence still open |
+| G1–G6 FE surfaces | done | Wired; permission codes on mutations; audit.view on setup panel |
 | TradeShell / locale switcher | done | Do not remount |
 | API catalog locale-free | done | `doc/api/02-rest-resources.md` |
 | Skill pack (guardrails only) | superseded | Replaced by delivery pack below |
 | Skill pack (enterprise delivery) | done | playbook + action-map + rbac + verify + example |
 | P3 deposits/pickup/imports/ERP | partial | Placeholder; flag-gated |
-| Enterprise MVP claimable | partial | **Blocked on AC evidence** per [verify.md](verify.md) |
+| Enterprise MVP claimable | partial | Gate drift closed for G1–G6/G8–G9 codes; remaining: full `@journey` cycle + order team/all scope |
 
 Actions still accept `TradeLocale` (`TRADE_UI_LOCALE`); paths are locale-free.
 
