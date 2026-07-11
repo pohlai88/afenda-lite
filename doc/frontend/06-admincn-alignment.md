@@ -30,7 +30,7 @@ Every primitive and block under `components-V2` used as DNA must carry an `ACN-U
 - `platform-config/` (`navConfig` with module tags, `themeConfig`)  
 - `platform-views/portal-views/` (declarations dashboard, clients, detail, share/invite widgets)  
 - Optional dashboard **atoms** under `platform-views/dashboards/{statistics,charts,widgets}` when composed by portal-views  
-- Shell entitlement: `modules/platform/shell/access.ts`
+- Shell entitlement: `features/portal-chrome/resolve-shell-access.ts`
 
 ## Drop / never wire to product routes
 

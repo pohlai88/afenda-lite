@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generatedAt": "2026-07-11T22:45:08.603Z",
+  "generatedAt": "2026-07-11T23:08:31.505Z",
   "summary": {
     "surfaces": {
       "total": 26,
@@ -577,7 +577,6 @@
           "action:regenerateInviteTokenAction",
           "action:requireAdminSession",
           "action:updateSurveyAction",
-          "domain:auth",
           "domain:operator-declaration-detail",
           "domain:questions",
           "domain:survey-package",
@@ -587,7 +586,6 @@
           "action:deleteSurveyAction",
           "action:regenerateInviteTokenAction",
           "action:updateSurveyAction",
-          "domain:auth",
           "domain:questions",
           "domain:survey-package",
           "domain:surveys"
@@ -597,7 +595,6 @@
           "action:regenerateInviteTokenAction",
           "action:requireAdminSession",
           "action:updateSurveyAction",
-          "domain:auth",
           "domain:operator-declaration-detail",
           "domain:questions",
           "domain:survey-package",
@@ -784,18 +781,15 @@
         "declared": [
           "action:regenerateInviteTokenAction",
           "action:requireAdminSession",
-          "domain:auth",
           "domain:surveys"
         ],
         "discovered": [
           "action:regenerateInviteTokenAction",
-          "domain:auth",
           "domain:surveys"
         ],
         "aligned": [
           "action:regenerateInviteTokenAction",
           "action:requireAdminSession",
-          "domain:auth",
           "domain:surveys"
         ],
         "declaredOnly": [],
@@ -1242,7 +1236,7 @@
     },
     {
       "actionId": "action:writeClientDeclarationDraftApi",
-      "file": "modules/platform/api/client-declaration-draft-route.ts",
+      "file": "modules/declarations/api/client-declaration-draft-route.ts",
       "compare": {
         "declared": [
           "domain:auth",

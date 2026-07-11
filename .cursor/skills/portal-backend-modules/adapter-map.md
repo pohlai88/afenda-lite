@@ -34,7 +34,7 @@ import { parseSchema } from "@/modules/platform/schemas/common"
 | GET | `/api/health/liveness` | `modules/platform/api/*` |
 | GET | `/api/health/readiness` | `modules/platform/api/*` |
 | ALL | `/api/auth/[...path]` | Neon via `modules/identity/auth` |
-| GET/PUT/PATCH | `/api/client/declaration-draft` | Declarations draft domain + `modules/platform/api` draft route logic |
+| GET/PUT/PATCH | `/api/client/declaration-draft` | `modules/declarations/api/client-declaration-draft-route` |
 
 **No other Route Handlers exist today.** Do not add web-UI list/read handlers for declarations/clients — use RSC → module domain.
 

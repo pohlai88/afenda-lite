@@ -35,7 +35,7 @@ Each product surface: journey phase, route, rebuild owner module, data adapter.
 | `fft` | B2B **feed & farm trade sales** for 3F businesses (Feed · Farm · Food customers — not portal org admins); downstream customer portal is a later branch | `/fft/*` | `requireFftAccess` | Feed Farm Trade |
 | Admin routes | Org-admin tools | playground (local), … | `isAdminSession` | `kind: "admin"` |
 
-Entitlement resolver: `modules/platform/shell/access.ts`. Org admin ≠ Feed Farm Trade permission.
+Entitlement resolver: `features/portal-chrome/resolve-shell-access.ts`. Org admin ≠ Feed Farm Trade permission.
 
 ## Client workspace decision
 

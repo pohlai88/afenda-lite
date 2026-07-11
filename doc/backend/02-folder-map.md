@@ -28,7 +28,7 @@ Adapters stay thin and **outside** modules:
 | `modules/platform/schemas/common.ts` | Shared Zod primitives (`parseSchema`, uuid, email, …) |
 | `modules/platform/db.ts`, `db-config.ts` | Pool / connection config |
 | `modules/platform/routing/*` | Portal hrefs, public-link landing, surface registry |
-| `modules/platform/shell/*` | Shared AdminCN entitlements (`resolveShellAccess`) |
+| `modules/platform/shell/*` | Shared shell types (`ShellModuleId`); resolve in `features/portal-chrome/resolve-shell-access` |
 | `modules/platform/governance/*` | Reliance graph, route coverage |
 | `modules/identity/auth/*` | Neon Auth, session, admin, oauth, manifests |
 | `modules/identity/schemas/auth.ts` | Sign-in schema |

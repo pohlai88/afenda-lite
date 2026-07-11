@@ -3,7 +3,7 @@ import "server-only";
 import {
   parseDeclarationDraftJsonBody,
   parseDeclarationDraftQuery,
-} from "@/modules/platform/api/client-declaration-draft-route.logic";
+} from "@/modules/declarations/api/client-declaration-draft-route.logic";
 import {
   apiData,
   apiError,

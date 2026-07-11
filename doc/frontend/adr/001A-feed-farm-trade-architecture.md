@@ -57,7 +57,7 @@ flowchart LR
 | UI | `features/fft/*` | Forms/panels; no shell chrome |
 | Actions | `app/actions/fft.ts` | Zod + session/permission → domain → `ActionResult` |
 | Domain | `modules/fft/**` | SQL, allocation rules, RBAC codes |
-| Entitlement | `modules/platform/shell/access.ts` | Nav module visibility |
+| Entitlement | `features/portal-chrome/resolve-shell-access.ts` | Nav module visibility |
 | Session | `modules/fft/auth/trade-session.ts` | Trade access resolution |
 | Nav | `components-V2/platform-config/navConfig.tsx` | `moduleId: feed-farm-trade` |
 | Ops SSOT | `docs/fft/` | RUNTIME, gate-register, engine ADRs |
@@ -68,7 +68,7 @@ flowchart LR
 | Concern | Path |
 |---------|------|
 | Layout gate | `app/fft/layout.tsx` |
-| Entitlement | `modules/platform/shell/access.ts` |
+| Entitlement | `features/portal-chrome/resolve-shell-access.ts` |
 | Session | `modules/fft/auth/trade-session.ts` |
 | Permissions | `modules/fft/domain/rbac-catalog.ts` |
 | Store / rules | `modules/fft/domain/store.ts` |

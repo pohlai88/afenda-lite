@@ -26,7 +26,7 @@ Do **not** wire more demo views into product routes while freeze holds. Refine e
 Product purpose: B2B feed & farm trade sales ([doc/frontend/adr/001-feed-farm-trade.md](../../doc/frontend/adr/001-feed-farm-trade.md)).
 | Admin routes | playground (local), future org-admin links | `isAdminSession` |
 
-Nav is filtered by `modules/platform/shell/access.ts` via `navConfig` `kind` + `moduleId`.
+Nav is filtered by `features/portal-chrome/resolve-shell-access.ts` via `navConfig` `kind` + `moduleId`.
 
 ## Customization levers (in order)
 

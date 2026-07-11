@@ -9,18 +9,21 @@ Plan authority: this skill + `api-now.md` + `doc/api/*`.
 | ActionResult / APIErrorBody | Contract | Used at Action / Route edges | **Done** |
 | `parseSchema` from Platform | Shared Zod | Actions import Platform common | **Done** |
 | Branded IDs one-version | Param = brand = Zod | `DeclarationId` / `UserId` / `AssignmentId` … | **Done** |
+| Draft Route Handler compose | Declarations owns | `modules/declarations/api/client-declaration-draft-route` + thin `app/api/client/declaration-draft` | **Done** |
 | FFT HTTP catalog | Contract-only | Not implemented as Route Handlers | **Intentional** |
 | Shared `PaginatedResult` Zod | Named gap until HTTP lists | Deferred | **Deferred** |
 | Divergent Action vs HTTP for same use-case | Forbidden | Draft Action + draft Route share domain | **Done** |
 
 ## Stabilization (latest)
 
-- Confirmed api-now inventory matches disk
+- Draft API runner moved out of Platform into Declarations (boundary + one-version Action/HTTP still share domain + schemas)
 - Org-admin RBAC mutations stay on Server Actions (`admin.ts`), not new `/api` routes
+- Reliance actions **38/38** aligned
 
 ## Verify
 
 ```bash
 # Only three API trees under app/api
 npx tsc --noEmit
+npm run check:reliance-mapping-drift
 ```

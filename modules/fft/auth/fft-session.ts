@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { isAdminSession } from "@/modules/identity/admin";
 import { getAuthSession } from "@/modules/identity/auth/get-session";
 import { isFftRbacEnabled } from "@/modules/platform/env/accessors";
-import { hasFftModuleAccess } from "@/modules/platform/shell/access";
+import { hasFftModuleAccess } from "@/modules/fft/auth/fft-module-access";
 import { AUTH_SIGN_IN_HREF } from "@/modules/platform/routing/portal-routes";
 import { fftDefaultHref } from "@/modules/fft/i18n/fft-i18n";
 import { canPermission } from "@/modules/fft/domain/rbac";

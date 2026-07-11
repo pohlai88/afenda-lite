@@ -20,13 +20,13 @@ modules/
 
 | Area | Paths |
 |------|-------|
-| API helpers | `api/*` (health, draft route logic, json-response) |
+| API helpers | `api/*` (health, json-response, readiness) — no product draft compose |
 | Env | `env/*` |
 | Schemas | `schemas/api-error.ts`, `schemas/common.ts` (**shared** Zod primitives + `parseSchema`) |
 | Email | `normalize-email.ts` |
 | DB | `db.ts`, `db-config.ts` |
 | Routing | `routing/*` |
-| Shell | `shell/*` (`resolveShellAccess`) |
+| Shell | `shell/*` (`ShellModuleId` / `ShellAccess` types only; resolve in `features/portal-chrome`) |
 | Governance | `governance/*` |
 | Shared | `utils.ts`, `format.ts`, `breakpoints.ts`, `pagination-range.ts`, `form-constraints.ts`, `evidence-acceptance.ts`, `clipboard.ts`, `app-url.ts`, `audit.ts`, `observability.ts`, `playground-embed.ts` |
 | Copy | `copy/{portal-copy,portal-name}.ts` (product copy SSOT) |
@@ -52,6 +52,7 @@ modules/
 |------|-------|
 | Domain | `domain/**` (surveys, clients, drafts, evidence, submissions, share links, …) |
 | Schemas | `schemas/common.ts` (re-exports Platform + `surveyAnswersSchema`), `{client,surveys,declarations,questions}.ts` |
+| API (draft) | `api/client-declaration-draft-route*` — owns draft Route Handler compose (uses Platform json helpers + Identity session) |
 | Server helpers | `server-actions/*` |
 | Other | `client-onboarding*`, `client-dashboard-metrics.ts`, `client-access-message.ts`, `question-*.ts`, `countries.ts`, `cdp-ai-prompt.ts` |
 
@@ -92,7 +93,7 @@ There is **no** `app/actions/trade.ts`.
 | `health/liveness` | Platform |
 | `health/readiness` | Platform |
 | `auth/[...path]` | Identity |
-| `client/declaration-draft` | Declarations (+ Platform route helper) |
+| `client/declaration-draft` | Declarations `api/client-declaration-draft-route` |
 
 See `/portal-api-contract` → `api-now.md` for the prohibition on scaffolding contract-only list handlers for web UI.
 
