@@ -309,9 +309,9 @@ export const DOMAIN_MODULE_DEFINITIONS: ReadonlyArray<{
   { id: "domain:client-invitation-entry", label: "Invitation entry", path: "lib/entry/client-invitation-entry.ts" },
   { id: "domain:open-link-entry", label: "Open link entry", path: "lib/entry/open-link-entry.ts" },
   { id: "domain:secure-link-entry", label: "Secure link entry", path: "lib/entry/secure-link-entry.ts" },
-  { id: "domain:operator-dashboard-page", label: "Operator dashboard", path: "lib/pages/operator-dashboard-page.ts" },
-  { id: "domain:operator-clients-page", label: "Operator clients", path: "lib/pages/operator-clients-page.ts" },
-  { id: "domain:operator-declaration-detail", label: "Operator declaration detail", path: "lib/pages/operator-declaration-detail.tsx" },
+  { id: "domain:operator-dashboard-page", label: "Operator dashboard", path: "lib/pages/organization-admin-dashboard-page.ts" },
+  { id: "domain:operator-clients-page", label: "Operator clients", path: "lib/pages/organization-admin-clients-page.ts" },
+  { id: "domain:operator-declaration-detail", label: "Operator declaration detail", path: "lib/pages/organization-admin-declaration-detail.tsx" },
   { id: "domain:declaration-share-links", label: "Declaration share links", path: "modules/declarations/domain/declaration-share-links.ts" },
   { id: "domain:preview-client", label: "Preview client", path: "modules/identity/preview-client.ts" },
 ];

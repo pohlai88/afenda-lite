@@ -8,17 +8,20 @@ import {
 import type { PlaygroundScreen } from "@/lib/playground/playground";
 
 /**
- * Convert a route pattern like `/trade/events/[eventId]/order` into a path template
+ * Convert a route pattern like `/fft/events/[eventId]/order` into a path template
  * suitable for playground embedding (keeps brackets when no fixture exists).
  */
 function routePatternToPathTemplate(routePattern: string): string {
   return routePattern
-    .replaceAll("[eventId]", "{PLAYGROUND_HOT_SALES_EVENT_ID}")
+    .replaceAll("[eventId]", "{PLAYGROUND_FFT_EVENT_ID}")
+    .replaceAll("[userId]", "user-001")
+    .replaceAll("[declarationId]", "{PLAYGROUND_SURVEY_ID}")
     .replaceAll("[id]", "{PLAYGROUND_UNRESOLVED_ID}")
     .replaceAll("[path]", "{PLAYGROUND_UNRESOLVED_PATH}")
     .replaceAll("[slug]", "{PLAYGROUND_UNRESOLVED_SLUG}")
     .replaceAll("[token]", "{PLAYGROUND_UNRESOLVED_TOKEN}")
-    .replaceAll("[assignmentId]", "{PLAYGROUND_ASSIGNMENT_ID}");
+    .replaceAll("[assignmentId]", "{PLAYGROUND_ASSIGNMENT_ID}")
+    .replaceAll("[screenId]", "{PLAYGROUND_UNRESOLVED_PATH}");
 }
 
 function slugFromFile(file: string): string {

@@ -7,7 +7,7 @@ import {
   deleteClientAssignmentAction,
   removeClientRegistrationAction,
 } from "@/app/actions/client";
-import { ConfirmDialog } from "@/features/operator/confirm-dialog";
+import { ConfirmDialog } from "@/features/organization-admin/confirm-dialog";
 import { Button } from "@/components-V2/platform-components/ui/button";
 import { portalCopy } from "@/modules/declarations/copy/portal-copy";
 

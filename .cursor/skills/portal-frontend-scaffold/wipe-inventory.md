@@ -1,6 +1,6 @@
 # Complete wipe inventory (scaffold pass)
 
-> **Superseded for Hot Sales routes (2026-07-11):** `/trade/[locale]/*` and `features/trade/*` UI listed below were wiped. Live tree is locale-free under `/trade/*` with **AdminCN shell** (not `TradeShell`). Treat locale/TradeShell rows as historical only — see [doc/frontend/03-routes.md](../../../doc/frontend/03-routes.md).
+> **Superseded for Feed Farm Trade routes (2026-07-11):** `/fft/[locale]/*` and `features/fft/*` UI listed below were wiped. Live tree is locale-free under `/fft/*` with **AdminCN shell** (not `FftShell`). Treat locale/FftShell rows as historical only — see [doc/frontend/03-routes.md](../../../doc/frontend/03-routes.md).
 
 **Generated from disk.** This is what `/portal-frontend-scaffold` deletes or replaces when you say go.
 
@@ -56,35 +56,38 @@ Legend:
 - `features/auth/use-join-invitation-auth-view.ts`
 - `features/auth/use-mounted.ts`
 
-### landing (3)
+### landing (6)
 - `features/landing/index.ts`
 - `features/landing/lynx-landing-page.tsx`
 - `features/landing/lynx-landing.css`
+- `features/landing/ritual-engine.ts`
+- `features/landing/vanguard-landing.interaction.test.tsx`
+- `features/landing/vanguard-landing.tsx`
 
 ### operator (24)
-- `features/operator/cdp-ai-prompt-instructions.tsx`
-- `features/operator/client/client-access-share-panel.tsx`
-- `features/operator/confirm-dialog.tsx`
-- `features/operator/copy-access-message.tsx`
-- `features/operator/declaration-danger-zone.tsx`
-- `features/operator/declaration-delete-button.tsx`
-- `features/operator/declaration-manage-form.tsx`
-- `features/operator/declaration-settings-section.tsx`
-- `features/operator/declaration-share-panel.tsx`
-- `features/operator/form-error-alert.tsx`
-- `features/operator/issue-client-invite-form.tsx`
-- `features/operator/portal/portal-declaration-workspace.tsx`
-- `features/operator/portal/portal-statistics-card.tsx`
-- `features/operator/question-fields-editor.tsx`
-- `features/operator/question-sequence-badge.tsx`
-- `features/operator/secure-link-rotate-button.tsx`
-- `features/operator/shadcn-studio/blocks/form-layout-02/form-layout-section.tsx`
-- `features/operator/shadcn-studio/blocks/statistics-card-03.tsx`
-- `features/operator/submission-answers.tsx`
-- `features/operator/survey-detail-tabs.tsx`
-- `features/operator/survey-metadata-fields.tsx`
-- `features/operator/survey-package-ingest-dialog.tsx`
-- `features/operator/survey-package-panel.tsx`
+- `features/organization-admin/cdp-ai-prompt-instructions.tsx`
+- `features/organization-admin/client/client-access-share-panel.tsx`
+- `features/organization-admin/confirm-dialog.tsx`
+- `features/organization-admin/copy-access-message.tsx`
+- `features/organization-admin/declaration-danger-zone.tsx`
+- `features/organization-admin/declaration-delete-button.tsx`
+- `features/organization-admin/declaration-manage-form.tsx`
+- `features/organization-admin/declaration-settings-section.tsx`
+- `features/organization-admin/declaration-share-panel.tsx`
+- `features/organization-admin/form-error-alert.tsx`
+- `features/organization-admin/issue-client-invite-form.tsx`
+- `features/organization-admin/portal/portal-declaration-workspace.tsx`
+- `features/organization-admin/portal/portal-statistics-card.tsx`
+- `features/organization-admin/question-fields-editor.tsx`
+- `features/organization-admin/question-sequence-badge.tsx`
+- `features/organization-admin/secure-link-rotate-button.tsx`
+- `features/organization-admin/shadcn-studio/blocks/form-layout-02/form-layout-section.tsx`
+- `features/organization-admin/shadcn-studio/blocks/statistics-card-03.tsx`
+- `features/organization-admin/submission-answers.tsx`
+- `features/organization-admin/survey-detail-tabs.tsx`
+- `features/organization-admin/survey-metadata-fields.tsx`
+- `features/organization-admin/survey-package-ingest-dialog.tsx`
+- `features/organization-admin/survey-package-panel.tsx`
 
 ### portal-chrome (5)
 - `features/portal-chrome/brand-favicon-sync.tsx`
@@ -94,26 +97,26 @@ Legend:
 - `features/portal-chrome/theme-provider.tsx`
 
 ### trade (18)
-- `features/trade/trade-admin-forms.tsx`
-- `features/trade/trade-allocation-controls.tsx`
-- `features/trade/trade-clone-button.tsx`
-- `features/trade/trade-countdown.tsx`
-- `features/trade/trade-deposit-forms.interaction.test.tsx`
-- `features/trade/trade-deposit-forms.tsx`
-- `features/trade/trade-erp-sync-panel.interaction.test.tsx`
-- `features/trade/trade-erp-sync-panel.tsx`
-- `features/trade/trade-export-panel.tsx`
-- `features/trade/trade-import-panel.interaction.test.tsx`
-- `features/trade/trade-import-panel.tsx`
-- `features/trade/trade-locale-switcher.tsx`
-- `features/trade/trade-order-form.tsx`
-- `features/trade/trade-pickup-forms.interaction.test.tsx`
-- `features/trade/trade-pickup-forms.tsx`
-- `features/trade/trade-rbac-admin.tsx`
-- `features/trade/trade-sales-member-form.tsx`
-- `features/trade/trade-setup-forms.tsx`
-- `features/trade/trade-shell.tsx`
-- `features/trade/trade-transfer-forms.tsx`
+- `features/fft/trade-admin-forms.tsx`
+- `features/fft/trade-allocation-controls.tsx`
+- `features/fft/trade-clone-button.tsx`
+- `features/fft/trade-countdown.tsx`
+- `features/fft/trade-deposit-forms.interaction.test.tsx`
+- `features/fft/trade-deposit-forms.tsx`
+- `features/fft/trade-erp-sync-panel.interaction.test.tsx`
+- `features/fft/trade-erp-sync-panel.tsx`
+- `features/fft/trade-export-panel.tsx`
+- `features/fft/trade-import-panel.interaction.test.tsx`
+- `features/fft/trade-import-panel.tsx`
+- `features/fft/trade-locale-switcher.tsx`
+- `features/fft/trade-order-form.tsx`
+- `features/fft/trade-pickup-forms.interaction.test.tsx`
+- `features/fft/trade-pickup-forms.tsx`
+- `features/fft/trade-rbac-admin.tsx`
+- `features/fft/trade-sales-member-form.tsx`
+- `features/fft/trade-setup-forms.tsx`
+- `features/fft/trade-shell.tsx`
+- `features/fft/trade-transfer-forms.tsx`
 
 After delete: recreate empty `features/{landing,auth,account,operator,client-workspace,portal-chrome,trade}/` with `.gitkeep` only.
 
@@ -190,16 +193,16 @@ After delete: recreate empty `features/{landing,auth,account,operator,client-wor
 - `app/playground/hitl-review/page.tsx` — REPLACE
 
 ### trade
-- `app/trade/page.tsx` — REPLACE
-- `app/trade/[locale]/layout.tsx` — REPLACE
-- `app/trade/[locale]/events/page.tsx` — REPLACE
-- `app/trade/[locale]/my-orders/page.tsx` — REPLACE
-- `app/trade/[locale]/admin/events/page.tsx` — REPLACE
-- `app/trade/[locale]/admin/events/new/page.tsx` — REPLACE
-- `app/trade/[locale]/admin/erp-sync/page.tsx` — REPLACE
-- `app/trade/[locale]/admin/rbac/page.tsx` — REPLACE
-- **`app/trade/[locale]/events/[id]/`** — DELETE folder → `[eventId]/`
-- **`app/trade/[locale]/admin/events/[id]/`** — DELETE folder → `[eventId]/`
+- `app/fft/page.tsx` — REPLACE
+- `app/fft/[locale]/layout.tsx` — REPLACE
+- `app/fft/[locale]/events/page.tsx` — REPLACE
+- `app/fft/[locale]/my-orders/page.tsx` — REPLACE
+- `app/fft/[locale]/admin/events/page.tsx` — REPLACE
+- `app/fft/[locale]/admin/events/new/page.tsx` — REPLACE
+- `app/fft/[locale]/admin/erp-sync/page.tsx` — REPLACE
+- `app/fft/[locale]/admin/rbac/page.tsx` — REPLACE
+- **`app/fft/[locale]/events/[id]/`** — DELETE folder → `[eventId]/`
+- **`app/fft/[locale]/admin/events/[id]/`** — DELETE folder → `[eventId]/`
   - setup / allocation / deposits / imports / pickup `page.tsx` + `.gitkeep` each
 
 ### `.gitkeep` under wiped trees
@@ -225,7 +228,7 @@ All `app/**/.gitkeep` under product routes above — DELETE with folders; scaffo
 - `app/actions/client.ts`
 - `app/actions/declarations.ts`
 - `app/actions/surveys.ts`
-- `app/actions/trade.ts`
+- `app/actions/fft.ts`
 
 ### app assets / global style (keep; layout re-imports)
 - `app/globals.css`
@@ -249,5 +252,5 @@ All `app/**/.gitkeep` under product routes above — DELETE with folders; scaffo
 |-------------|------------------|
 | `app/dashboard/[id]/` | `app/dashboard/[declarationId]/` |
 | `app/client/(workspace)/declare/[id]/` | `…/declare/[assignmentId]/` |
-| `app/trade/[locale]/events/[id]/` | `…/events/[eventId]/` |
-| `app/trade/[locale]/admin/events/[id]/` | `…/admin/events/[eventId]/` |
+| `app/fft/[locale]/events/[id]/` | `…/events/[eventId]/` |
+| `app/fft/[locale]/admin/events/[id]/` | `…/admin/events/[eventId]/` |

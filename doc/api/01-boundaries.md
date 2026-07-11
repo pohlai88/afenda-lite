@@ -8,8 +8,8 @@ Contract-first, one version, validate at the edge. Aligns with API & interface d
 flowchart LR
   external[Browser / probes / Neon]
   adapter[Adapter: Server Action or Route Handler]
-  zod[lib/schemas]
-  domain[lib/domain]
+  zod[modules schemas]
+  domain[modules domain]
   db[(Neon)]
 
   external -->|untrusted input| adapter
@@ -21,16 +21,16 @@ flowchart LR
 | Layer | May | Must not |
 |-------|-----|----------|
 | Adapter (`app/actions`, `app/api`) | Session guard, Zod parse, map errors, `revalidatePath` | Raw SQL, business rules duplication |
-| `lib/schemas` | Shape + refine | DB access |
-| `lib/domain` | Parameterized queries, domain rules | Read `Request` / cookies directly |
-| UI / RSC | Call domain (reads) or Actions (mutations) | Import `pg` / build SQL strings |
+| `modules/*/schemas` | Shape + refine | DB access |
+| `modules/*/domain` | Parameterized queries, domain rules | Read `Request` / cookies directly |
+| UI / RSC | Call module domain (reads) or Actions (mutations) | Import `pg` / build SQL strings |
 
 ## Adapter choice
 
 | Need | Adapter |
 |------|---------|
 | Same-origin UI mutation | **Server Action** |
-| Same-origin UI read | **RSC → domain** (no HTTP) |
+| Same-origin UI read | **RSC → module domain** (no HTTP) |
 | Health / Auth proxy / draft XHR / external REST | **Route Handler** under `/api` |
 
 One domain function can serve both Action and Route Handler — DRY.
@@ -42,7 +42,7 @@ One domain function can serve both Action and Route Handler — DRY.
 | `requireAdminSession` | Operator Actions |
 | `requireClientSession` / client helpers | Client Actions |
 | `requireAccountSession` | Account routes/actions |
-| Trade access helpers | `app/actions/trade` |
+| Trade access helpers | `app/actions/fft` |
 
 Route Handlers that mutate must authenticate equivalently (cookie session), not rely on “public `/api`” alone except health and Neon Auth proxy.
 
@@ -61,3 +61,4 @@ Do not ship `/api/v1` and `/api/v2` in parallel. Extend resources additively (op
 - [02-rest-resources.md](02-rest-resources.md)  
 - [03-error-contract.md](03-error-contract.md)  
 - [../frontend/04-bff-and-data.md](../frontend/04-bff-and-data.md)  
+- [../backend/07-conventions.md](../backend/07-conventions.md)  

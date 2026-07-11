@@ -55,9 +55,7 @@ export async function runPlaygroundScreenPage({
     <PlaygroundScreenPreview
       screen={view.screen}
       embedUrl={view.embedUrl}
-      pathConfigured={
-        view.pathConfigured && !needsRegistryEntry && !unresolved
-      }
+      pathConfigured={view.pathConfigured && !unresolved}
       categoryLabel={view.categoryLabel}
       shape={view.shape}
       needsRegistryEntry={needsRegistryEntry}

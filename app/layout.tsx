@@ -17,9 +17,9 @@ import {
   BRAND_WEB_MANIFEST_PATH,
   BRAND_ICON_ALT,
   PORTAL_BRAND_ICON,
-} from "@/lib/copy/portal-brand";
-import { PORTAL_NAME, portalCopy } from "@/lib/copy/portal-copy";
-import { PORTAL_THEME_BOOT_SCRIPT } from "@/lib/copy/portal-theme";
+} from "@/features/portal-chrome/portal-brand";
+import { PORTAL_NAME, portalCopy } from "@/modules/declarations/copy/portal-copy";
+import { PORTAL_THEME_BOOT_SCRIPT } from "@/features/portal-chrome/portal-theme";
 import { cn } from "@/modules/platform/utils";
 
 // Auth, cookies, and session-aware UI run on every route — opt out of static prerender.

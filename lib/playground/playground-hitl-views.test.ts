@@ -51,9 +51,9 @@ const sampleRows: PlaygroundHitlRow[] = [
     shape: "stub",
   }),
   row({
-    id: "hot-sales-events",
-    category: "hot-sales",
-    path: "/trade/events",
+    id: "fft-events",
+    category: "fft",
+    path: "/fft/events",
     shape: "closed",
   }),
   row({
@@ -194,13 +194,13 @@ describe("filterHitlRows", () => {
   it("filters trade category", () => {
     const filtered = filterHitlRows(sampleRows, {
       view: "static",
-      cat: "hot-sales",
+      cat: "fft",
       shape: "all",
       attention: "all",
       present: "list",
       screen: null,
     });
-    expect(filtered.map((r) => r.id)).toEqual(["hot-sales-events"]);
+    expect(filtered.map((r) => r.id)).toEqual(["fft-events"]);
   });
 
   it("applies live default shapes when liveShapeFocus", () => {
@@ -235,7 +235,7 @@ describe("filterHitlRows", () => {
 
     expect(filtered.map((row) => row.id)).toEqual([
       "client-dashboard",
-      "hot-sales-events",
+      "fft-events",
       "gap",
     ]);
   });

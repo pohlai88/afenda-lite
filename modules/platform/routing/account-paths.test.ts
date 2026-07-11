@@ -31,28 +31,28 @@ describe("account-paths", () => {
     expect(accountCopyKey(accountViewPaths.SECURITY)).toBe("security");
   });
 
-  it("routes account index by persona", () => {
-    expect(resolvePortalAccountIndexHref("operator")).toBe(
+  it("routes account index by organization member kind", () => {
+    expect(resolvePortalAccountIndexHref("organizationAdmin")).toBe(
       PORTAL_ACCOUNT_SETTINGS_HREF,
     );
     expect(resolvePortalAccountIndexHref("client")).toBe(CLIENT_PROFILE_HREF);
   });
 
-  it("routes settings by persona", () => {
-    expect(resolveAccountSettingsHref("operator")).toBe(
+  it("routes settings by organization member kind", () => {
+    expect(resolveAccountSettingsHref("organizationAdmin")).toBe(
       PORTAL_ACCOUNT_SETTINGS_HREF,
     );
     expect(resolveAccountSettingsHref("client")).toBe(CLIENT_PROFILE_HREF);
   });
 
-  it("labels settings nav by persona", () => {
-    expect(resolveAccountSettingsLabel("operator")).toBe("Account settings");
+  it("labels settings nav by organization member kind", () => {
+    expect(resolveAccountSettingsLabel("organizationAdmin")).toBe("Account settings");
     expect(resolveAccountSettingsLabel("client")).toBe("Declarant profile");
   });
 
-  it("builds section nav with persona-specific settings target", () => {
-    const operatorNav = resolveAccountSectionNavItems("operator");
-    expect(operatorNav).toEqual([
+  it("builds section nav with kind-specific settings target", () => {
+    const organizationAdminNav = resolveAccountSectionNavItems("organizationAdmin");
+    expect(organizationAdminNav).toEqual([
       {
         path: "settings",
         href: PORTAL_ACCOUNT_SETTINGS_HREF,
@@ -85,12 +85,12 @@ describe("account-paths", () => {
       resolveAccountPathAccess("client", accountViewPaths.SECURITY),
     ).toEqual({ allowed: true });
     expect(
-      resolveAccountPathAccess("operator", accountViewPaths.SETTINGS),
+      resolveAccountPathAccess("organizationAdmin", accountViewPaths.SETTINGS),
     ).toEqual({ allowed: true });
   });
 
-  it("resolves account shell back navigation by persona", () => {
-    expect(resolveAccountShellBack("operator")).toEqual({
+  it("resolves account shell back navigation by organization member kind", () => {
+    expect(resolveAccountShellBack("organizationAdmin")).toEqual({
       href: "/dashboard",
       label: "Declaration management",
     });

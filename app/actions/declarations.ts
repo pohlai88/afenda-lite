@@ -9,7 +9,7 @@ import { isEvidencePolicyFailureReason } from "@/modules/declarations/domain/evi
 import { listQuestionsForSurvey, registerEvidence } from "@/modules/declarations/domain/questions";
 import { runLoggedAction } from "@/modules/platform/observability";
 import { portalCopy } from "@/modules/declarations/copy/portal-copy";
-import { parseSchema } from "@/modules/declarations/schemas/common";
+import { parseSchema } from "@/modules/platform/schemas/common";
 import { registerEvidenceSchema } from "@/modules/declarations/schemas/declarations";
 import { getSurveyBySlug, getSurveyForAdmin } from "@/modules/declarations/domain/surveys";
 import { readRegisterEvidenceFromFormData } from "@/modules/declarations/server-actions/register-evidence-form";

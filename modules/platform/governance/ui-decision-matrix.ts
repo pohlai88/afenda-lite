@@ -308,7 +308,7 @@ export const uiEvaluationMatrix: UiEvaluationRow[] = [
     c("datatable-component-05", { PatternFit: 5, BrandFit: 4, PortalCompat: 5, A11yMobile: 4, ImplCost: 5, Consistency: 5 }, "AdminCN DataTable 05 (invoice) forked as PortalDeclarationsDatatable; stats from statistics-card-05 DNA."),
     c("statistics-component-03", { PatternFit: 5, BrandFit: 5, PortalCompat: 5, A11yMobile: 5, ImplCost: 5, Consistency: 5 }, "StudioStatisticsCard installed for admin + client KPI rows."),
     c("keep-current", { PatternFit: 2, BrandFit: 4, PortalCompat: 4, A11yMobile: 4, ImplCost: 2, Consistency: 2 }, "Superseded: custom FilteredDataTable removed 2026-07."),
-  ], "datatable-component-05", "datatable-component-05 (invoice) forked for declarations; statistics-card-05 DNA for KPI strip.", "validated", ["KPI row: statistics-card-05 DNA via PortalOperatorStatisticsCard"]),
+  ], "datatable-component-05", "datatable-component-05 (invoice) forked for declarations; statistics-card-05 DNA for KPI strip.", "validated", ["KPI row: statistics-card-05 DNA via PortalOrganizationAdminStatisticsCard"]),
 
   row(byId("admin-clients"), [
     c("datatable-component-04", { PatternFit: 5, BrandFit: 4, PortalCompat: 5, A11yMobile: 5, ImplCost: 5, Consistency: 5 }, "AdminCN Table in portal-views; portal-client-tables supplies portal columns."),

@@ -1,13 +1,13 @@
-import OperatorDeclarationsDashboard from "@/components-V2/platform-views/portal-views/operator-declarations-dashboard";
+import OrganizationAdminDeclarationsDashboard from "@/components-V2/platform-views/portal-views/organization-admin-declarations-dashboard";
 import {
-  loadOperatorDashboardPage,
-  operatorDashboardPageMetadata,
-} from "@/lib/pages/operator-dashboard-page";
+  loadOrganizationAdminDashboardPage,
+  organizationAdminDashboardPageMetadata,
+} from "@/lib/pages/organization-admin-dashboard-page";
 
-export const metadata = operatorDashboardPageMetadata;
+export const metadata = organizationAdminDashboardPageMetadata;
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
-  const data = await loadOperatorDashboardPage();
-  return <OperatorDeclarationsDashboard data={data} />;
+  const data = await loadOrganizationAdminDashboardPage();
+  return <OrganizationAdminDeclarationsDashboard data={data} />;
 }

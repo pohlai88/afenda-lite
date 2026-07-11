@@ -10,7 +10,7 @@ describe("playgroundScreenCategoryLabel", () => {
     expect(playgroundScreenCategoryLabel("admin")).toBe("Admin");
     expect(playgroundScreenCategoryLabel("client")).toBe("Client");
     expect(playgroundScreenCategoryLabel("dynamic")).toBe("Dynamic route");
-    expect(playgroundScreenCategoryLabel("hot-sales")).toBe("Feed Farm Trade");
+    expect(playgroundScreenCategoryLabel("fft")).toBe("Feed Farm Trade");
     expect(playgroundScreenCategoryLabel("auto")).toBe("Auto-discovered");
   });
 });

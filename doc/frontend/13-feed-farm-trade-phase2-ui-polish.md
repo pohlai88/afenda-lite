@@ -31,9 +31,9 @@ Elevate the thin AdminCN pages shipped in P1 into full-fidelity operator screens
 
 **Out (hard bans — do not reopen implicitly by working on P2):**
 
-- Any new permission code in `modules/trade/domain/rbac-catalog.ts`
+- Any new permission code in `modules/fft/domain/rbac-catalog.ts`
 - Any new domain capability beyond what P1 already exposes
-- `TradeShell`, locale switcher, or any `/trade/[locale]` segment
+- `FftShell`, locale switcher, or any `/fft/[locale]` segment
 - Customer portal work
 - P3 surfaces (deposits, pickup, imports, ERP sync, notifications)
 - Regressing any P1 AC row (see [12](12-feed-farm-trade-phase1-core-mvp.md))
@@ -49,7 +49,7 @@ Elevate the thin AdminCN pages shipped in P1 into full-fidelity operator screens
 |---------|-----------|
 | Components | Reuse `components-V2/platform-components/ui/*` primitives — do not introduce a parallel UI kit |
 | Layout | Follow the AdminCN `(pages)` route-group pattern already used by Declarations/Account (see [06-admincn-alignment.md](06-admincn-alignment.md)) |
-| Copy | **Feed Farm Trade** only — never "Hot Sales" in visible UI |
+| Copy | **Feed Farm Trade** only — never "Feed Farm Trade" in visible UI |
 | Templates | Treat as data (seeded rows / JSON), never as code branches per template |
 | Chrome | `AdminCnShell` only — reaffirm, do not relax, the P0 shell rule |
 
@@ -73,7 +73,7 @@ These are **proposed** for when P2 is reopened. They are not authoritative until
 | P1 regression | Re-run the full P1 evaluation checklist from [12](12-feed-farm-trade-phase1-core-mvp.md) — all rows must still pass |
 | Visual comp match | Side-by-side screenshot review against agreed AdminCN reference screens, per the portal's visual-work protocol (Plan mode → approval → implement) |
 | Component reuse | `rg` for any new UI primitive introduced outside `components-V2/platform-components/ui` |
-| No RBAC drift | Diff `modules/trade/domain/rbac-catalog.ts` — must be unchanged by a P2-only PR |
+| No RBAC drift | Diff `modules/fft/domain/rbac-catalog.ts` — must be unchanged by a P2-only PR |
 
 ## Evaluation checklist
 
@@ -86,13 +86,13 @@ Until a named P2-AC slice is tasked after reopen, expect every row to evaluate a
 | P2-AC-03 | Filterable audit trail | Actor/date filter on audit panel | **PASS** — `trade-audit-filter-model` + actor/from/to on `TradeAuditPanel` (setup); no new RBAC (2026-07-11) |
 | P2-AC-04 | Explicit empty/loading/error states | Skeletons + empty-state components per P1 form | **PASS** — `trade-form-feedback` + setup/allocation empty + route `loading.tsx` (2026-07-11) |
 | P2-AC-05 | Visual comp parity | Screenshot diff review recorded | **PASS** — Declarations AdminCN form DNA: `trade-form-controls` (Input-parity native fields + `TradeFormCheckbox`); P1 surfaces (setup/order/transfer/events/audit/allocation/rbac); P3 panels skipped (2026-07-11) |
-| P2-AC-06 | No P1 regression | P1 evaluation checklist re-run, all pass | **PASS** — `modules/trade` unit 173/173; focused gates+P2 models 102/102; P1 AC rows re-verified in phase 12; no RBAC drift. Pre-existing `[locale]`/TradeShell residue noted, not P2-caused (2026-07-11) |
+| P2-AC-06 | No P1 regression | P1 evaluation checklist re-run, all pass | **PASS** — `modules/fft` unit 173/173; focused gates+P2 models 102/102; P1 AC rows re-verified in phase 12; no RBAC drift. Pre-existing `[locale]`/FftShell residue noted, not P2-caused (2026-07-11) |
 
 ## Risks and open questions
 
 - **Reopen trigger is undefined:** this document does not define what "explicit reopen" looks like procedurally — confirm with the user before treating any P2 work as authorized.
 - **Design asset gap:** no AdminCN/Figma reference screens for Feed Farm Trade are cited in the ADR trio; visual work needs an agreed comp before implementation, per the portal's atmosphere/visual-work protocol.
-- **Scope-creep risk:** "polish" is easy to stretch into new domain features — every P2 PR should diff-check that `rbac-catalog.ts` and `app/actions/trade.ts` domain calls are unchanged.
+- **Scope-creep risk:** "polish" is easy to stretch into new domain features — every P2 PR should diff-check that `rbac-catalog.ts` and `app/actions/fft.ts` domain calls are unchanged.
 
 ## References
 

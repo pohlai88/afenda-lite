@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { ChevronDownIcon, ChevronUpIcon, InboxIcon } from "lucide-react";
-import { SubmissionAnswers } from "@/features/operator/submission-answers";
+import { SubmissionAnswers } from "@/features/organization-admin/submission-answers";
 import { Button } from "@/components-V2/platform-components/ui/button";
 import {
   Card,

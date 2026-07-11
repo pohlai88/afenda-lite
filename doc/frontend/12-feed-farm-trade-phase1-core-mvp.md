@@ -21,18 +21,18 @@ Deliver the full operator program cycle for entitled sales/ops staff: **setup �
 
 ## Scope
 
-**In:** all capability groups below, thin AdminCN pages, Server-Action mutations, `modules/trade` domain reads.
+**In:** all capability groups below, thin AdminCN pages, Server-Action mutations, `modules/fft` domain reads.
 
-**Out:** full AdminCn visual polish (P2), deposits/pickup/imports/ERP sync/notifications (P3), customer portal, `TradeShell`, locale switcher, inventing new permission codes, renaming `HOT_SALES_*`.
+**Out:** full AdminCn visual polish (P2), deposits/pickup/imports/ERP sync/notifications (P3), customer portal, `FftShell`, locale switcher, inventing new permission codes, renaming `FFT_*`.
 
 ## Preconditions
 
 - Phase 0 shell gate passes (see [11](11-feed-farm-trade-phase0-shell.md)).
-- Engine domain and RBAC catalog already exist (`modules/trade/domain/rbac-catalog.ts`, `modules/trade/domain/store.ts`, `app/actions/trade.ts`) — this phase wires FE to them; it does not invent new domain rules.
+- Engine domain and RBAC catalog already exist (`modules/fft/domain/rbac-catalog.ts`, `modules/fft/domain/store.ts`, `app/actions/fft.ts`) — this phase wires FE to them; it does not invent new domain rules.
 
 ## Actors and permission model
 
-Permission codes are defined once in `modules/trade/domain/rbac-catalog.ts` and enforced in `app/actions/trade.ts`. UI must never infer permission from role display name — always check the code. Default role **sales_executive** includes `transfer.request` (relevant to G3 below).
+Permission codes are defined once in `modules/fft/domain/rbac-catalog.ts` and enforced in `app/actions/fft.ts`. UI must never infer permission from role display name — always check the code. Default role **sales_executive** includes `transfer.request` (relevant to G3 below).
 
 ---
 
@@ -46,7 +46,7 @@ Permission codes are defined once in `modules/trade/domain/rbac-catalog.ts` and 
 | F-EVT-05 | Missing-permission attempts on any event mutation are rejected, not silently ignored |
 | F-EVT-06 (**G7**) | Clone an existing event, ensure/seed the piglet template, and activate a scheduled event via `cloneTradeEventAction`, `ensurePigletTemplateAction`, `activateScheduledTradeEventAction` |
 
-**Surface:** `event.*` permission codes. **Route:** `/trade/events`, `/trade/admin/events`, `/trade/admin/events/new`, `/trade/admin/events/[eventId]/setup`.
+**Surface:** `event.*` permission codes. **Route:** `/fft/events`, `/fft/admin/events`, `/fft/admin/events/new`, `/fft/admin/events/[eventId]/setup`.
 
 ### 2. Supply
 
@@ -54,7 +54,7 @@ Permission codes are defined once in `modules/trade/domain/rbac-catalog.ts` and 
 |----|-------------|
 | F-SUP-01 (**G2**) | Ops/sales with `supply.manage` can set and edit supply quantities per product on an event; allocation without a supply cap is not a valid MVP state |
 
-**Surface:** `supply.manage`. **Route:** `/trade/admin/events/[eventId]/setup`.
+**Surface:** `supply.manage`. **Route:** `/fft/admin/events/[eventId]/setup`.
 
 ### 3. Custom fields
 
@@ -62,15 +62,15 @@ Permission codes are defined once in `modules/trade/domain/rbac-catalog.ts` and 
 |----|-------------|
 | F-FLD-01 (**G5**) | Users with `custom_field.manage` can define custom fields on an event (template-driven farm programs need this; it is not optional) |
 
-**Surface:** `custom_field.manage`. **Route:** `/trade/admin/events/[eventId]/setup`.
+**Surface:** `custom_field.manage`. **Route:** `/fft/admin/events/[eventId]/setup`.
 
 ### 4. Priority
 
 | ID | Requirement |
 |----|-------------|
-| F-PRI-01 (**G1**) | Users with `priority.manage` can manage and CSV-import customer priority for an event (`importPriorityCsvAction`, `hot_sales_customer_priority`); allocation is priority-ranked, so this is load-bearing, not decorative |
+| F-PRI-01 (**G1**) | Users with `priority.manage` can manage and CSV-import customer priority for an event (`importPriorityCsvAction`, `fft_customer_priority`); allocation is priority-ranked, so this is load-bearing, not decorative |
 
-**Surface:** `priority.manage`. **Route:** `/trade/admin/events/[eventId]/setup`.
+**Surface:** `priority.manage`. **Route:** `/fft/admin/events/[eventId]/setup`.
 
 ### 5. Orders
 
@@ -79,7 +79,7 @@ Permission codes are defined once in `modules/trade/domain/rbac-catalog.ts` and 
 | F-ORD-01..04 | Create an order only inside the event's open window; list own orders, team orders, or all orders depending on scope; reject creation attempts outside the window or without permission |
 | F-ORD-05 (**G4**) | Complete an order after its allocation path via `completeTradeOrderAction` — the cycle must close, not stay open indefinitely |
 
-**Surface:** `order.*`. **Route:** `/trade/events/[eventId]/order` (create), `/trade/my-orders` (own list + complete).
+**Surface:** `order.*`. **Route:** `/fft/events/[eventId]/order` (create), `/fft/my-orders` (own list + complete).
 
 ### 6. Transfer
 
@@ -88,7 +88,7 @@ Permission codes are defined once in `modules/trade/domain/rbac-catalog.ts` and 
 | F-XFR-01 (**G3**) | A user with `transfer.request` can request an order transfer |
 | F-XFR-02 (**G3**) | A user with `transfer.approve` can approve or reject a transfer request |
 
-**Surface:** `transfer.request`, `transfer.approve`. **Route:** `/trade/my-orders`.
+**Surface:** `transfer.request`, `transfer.approve`. **Route:** `/fft/my-orders`.
 
 ### 7. Allocation
 
@@ -97,15 +97,15 @@ Permission codes are defined once in `modules/trade/domain/rbac-catalog.ts` and 
 | F-ALC-01..02 | Preview and run allocation, respecting priority and supply caps, gated by `allocation.*` codes |
 | F-ALC-03 (**G9**, sensitive) | Manual override of an allocation result requires the distinct `allocation.override` permission — never bundled into preview/run |
 
-**Surface:** `allocation.*`, `allocation.override`. **Route:** `/trade/admin/events/[eventId]/allocation`.
+**Surface:** `allocation.*`, `allocation.override`. **Route:** `/fft/admin/events/[eventId]/allocation`.
 
 ### 8. Audit
 
 | ID | Requirement |
 |----|-------------|
-| F-AUD-01 (**G6**) | Users with `audit.view` can view an event's audit trail (`listAuditForEvent` / `recordHotSalesAudit`) — minimum enterprise governance, not optional |
+| F-AUD-01 (**G6**) | Users with `audit.view` can view an event's audit trail (`listAuditForEvent` / `recordFftAudit`) — minimum enterprise governance, not optional |
 
-**Surface:** `audit.view`. **Route:** `/trade/admin/events/[eventId]/setup` (audit panel).
+**Surface:** `audit.view`. **Route:** `/fft/admin/events/[eventId]/setup` (audit panel).
 
 ### 9. Admin
 
@@ -115,7 +115,7 @@ Permission codes are defined once in `modules/trade/domain/rbac-catalog.ts` and 
 | F-ADM-02 | Manage role assignments (`role.manage`) |
 | F-ADM-03 (**G8**) | Export orders/summary with `export.orders` when permitted |
 
-**Surface:** sales-member management, `role.manage`, `export.orders`. **Route:** `/trade/admin/rbac`.
+**Surface:** sales-member management, `role.manage`, `export.orders`. **Route:** `/fft/admin/rbac`.
 
 ---
 
@@ -123,14 +123,14 @@ Permission codes are defined once in `modules/trade/domain/rbac-catalog.ts` and 
 
 | Route | Capability |
 |-------|------------|
-| `/trade` | Redirect → `/trade/events` |
-| `/trade/events` | List events |
-| `/trade/admin/events`, `/trade/admin/events/new`, `/trade/admin/events/[eventId]/setup` | Create / setup / open-close / supply / fields / priority / audit / export |
-| `/trade/events/[eventId]/order` | Submit order in window |
-| `/trade/my-orders` | Own orders, transfer, complete |
-| `/trade/admin/events/[eventId]/allocation` | Preview / run / override |
-| `/trade/admin/rbac` | Sales-member / RBAC admin |
-| `/trade/admin/events/[eventId]/{deposits,pickup,imports}`, `/trade/admin/erp-sync` | **Out of scope for P1** — P3 placeholders, see [14-feed-farm-trade-phase3-ops-flags.md](14-feed-farm-trade-phase3-ops-flags.md) |
+| `/fft` | Redirect → `/fft/events` |
+| `/fft/events` | List events |
+| `/fft/admin/events`, `/fft/admin/events/new`, `/fft/admin/events/[eventId]/setup` | Create / setup / open-close / supply / fields / priority / audit / export |
+| `/fft/events/[eventId]/order` | Submit order in window |
+| `/fft/my-orders` | Own orders, transfer, complete |
+| `/fft/admin/events/[eventId]/allocation` | Preview / run / override |
+| `/fft/admin/rbac` | Sales-member / RBAC admin |
+| `/fft/admin/events/[eventId]/{deposits,pickup,imports}`, `/fft/admin/erp-sync` | **Out of scope for P1** — P3 placeholders, see [14-feed-farm-trade-phase3-ops-flags.md](14-feed-farm-trade-phase3-ops-flags.md) |
 
 ## Acceptance criteria
 
@@ -151,10 +151,10 @@ Permission codes are defined once in `modules/trade/domain/rbac-catalog.ts` and 
 
 ## Definition of Done (target — not a status claim)
 
-- [ ] Every mutation above goes through `app/actions/trade.ts` with Zod validation and a session/permission check; no raw SQL in the action layer
-- [ ] All domain logic lives only in `modules/trade`
+- [ ] Every mutation above goes through `app/actions/fft.ts` with Zod validation and a session/permission check; no raw SQL in the action layer
+- [ ] All domain logic lives only in `modules/fft`
 - [ ] G1–G6 are reachable through setup, my-orders, allocation, and rbac pages — not hidden behind undocumented flags
-- [ ] No `TradeShell` or locale switcher is mounted anywhere in `features/trade`; no live `app/trade/[locale]` tree
+- [ ] No `FftShell` or locale switcher is mounted anywhere in `features/fft`; no live `app/fft/[locale]` tree
 - [ ] `doc/api/02-rest-resources.md` trade rows stay locale-free
 - [ ] Every AC row above has recorded evidence (unit test and/or `@journey` E2E) — this is the blocking condition for claiming "enterprise MVP," not code presence alone
 
@@ -162,10 +162,10 @@ Permission codes are defined once in `modules/trade/domain/rbac-catalog.ts` and 
 
 | Check | Method |
 |-------|--------|
-| Domain + RBAC unit coverage | `modules/trade/domain/rbac-catalog.ts`, `modules/trade/domain/store.ts`, and any `modules/trade/**/*.test.ts` |
-| Action-layer contract | `app/actions/trade.ts` — confirm Zod schema + permission check precede every domain call |
-| Page composition | Each `app/trade/**/page.tsx` is thin (params await, no business logic, delegates to `features/trade/*`) |
-| No shell residue | `rg "TradeShell|locale" features/trade app/trade` reviewed for false positives (locale arg in action calls is expected; UI chrome is not) |
+| Domain + RBAC unit coverage | `modules/fft/domain/rbac-catalog.ts`, `modules/fft/domain/store.ts`, and any `modules/fft/**/*.test.ts` |
+| Action-layer contract | `app/actions/fft.ts` — confirm Zod schema + permission check precede every domain call |
+| Page composition | Each `app/fft/**/page.tsx` is thin (params await, no business logic, delegates to `features/fft/*`) |
+| No shell residue | `rg "FftShell|locale" features/fft app/fft` reviewed for false positives (locale arg in action calls is expected; UI chrome is not) |
 | Journey coverage | `@journey` Playwright spec covering setup → order → transfer → allocate → complete → audit, when operator credentials are available |
 
 ## Evaluation checklist
@@ -185,8 +185,8 @@ Use this table to grade the live codebase against every P1 AC. Leave **Result** 
 | F-ALC-01..03 / AC-ALC-01..03 (G9) | Allocation preview/run/override | `allocation.*` + distinct `allocation.override` check | **PASS** — re-verified P2-AC-06: `trade-p1-ac-gates` (2026-07-11) |
 | F-AUD-01 / AC-AUD-01 (G6) | Audit view | `audit.view` gate + `listAuditForEvent` wired | **PASS** — re-verified P2-AC-06: `trade-p1-ac-gates` (2026-07-11) |
 | F-ADM-01..03 / AC-ADM-01 (G8) | Sales-member, roles, exports | `role.manage`, `export.orders` gates on rbac admin page | **PASS** — re-verified P2-AC-06: `trade-p1-ac-gates` (2026-07-11) |
-| DoD | No shell/locale residue | Confirmed absent under `features/trade`, `app/trade` | **PASS** — product pages locale-free; only thin redirect shim `app/trade/[locale]/[[...path]]` (no TradeShell) (2026-07-11) |
-| DoD | AC test evidence | Unit and/or `@journey` tests exist and pass for each row above | **PASS** — `npm run test:unit -- modules/trade` 173/173 (2026-07-11 P2-AC-06) |
+| DoD | No shell/locale residue | Confirmed absent under `features/fft`, `app/fft` | **PASS** — product pages locale-free; only thin redirect shim `app/fft/[locale]/[[...path]]` (no FftShell) (2026-07-11) |
+| DoD | AC test evidence | Unit and/or `@journey` tests exist and pass for each row above | **PASS** — `npm run test:unit -- modules/fft` 173/173 (2026-07-11 P2-AC-06) |
 
 ## Risks and open questions
 

@@ -88,12 +88,14 @@ export function PlaygroundSidebar({
   clientScreens,
   dynamicScreens,
   hotSalesScreens = [],
+  autoScreens = [],
   ...props
 }: React.ComponentProps<typeof Sidebar> & {
   adminScreens: PlaygroundScreen[];
   clientScreens: PlaygroundScreen[];
   dynamicScreens: PlaygroundScreen[];
   hotSalesScreens?: PlaygroundScreen[];
+  autoScreens?: PlaygroundScreen[];
 }) {
   const pathname = usePathname();
   const { settings } = useSettings();
@@ -113,6 +115,7 @@ export function PlaygroundSidebar({
       client: filterScreens(clientScreens, query),
       dynamic: filterScreens(dynamicScreens, query),
       hotSales: filterScreens(hotSalesScreens, query),
+      auto: filterScreens(autoScreens, query),
       routeReview: matchesPlaygroundQuery(
         query,
         "Route review",
@@ -134,14 +137,22 @@ export function PlaygroundSidebar({
         "/dashboard",
       ),
     }),
-    [adminScreens, clientScreens, dynamicScreens, hotSalesScreens, query],
+    [
+      adminScreens,
+      clientScreens,
+      dynamicScreens,
+      hotSalesScreens,
+      autoScreens,
+      query,
+    ],
   );
 
   const hasScreenMatches =
     filtered.admin.length +
       filtered.client.length +
       filtered.dynamic.length +
-      filtered.hotSales.length >
+      filtered.hotSales.length +
+      filtered.auto.length >
     0;
   const hasReviewMatches =
     filtered.routeReview || filtered.routeCoverage || filtered.operatorDashboard;
@@ -259,8 +270,13 @@ export function PlaygroundSidebar({
           activeId={activeId}
         />
         <PlaygroundNavGroup
-          label="Hot Sales"
+          label="Feed Farm Trade"
           screens={filtered.hotSales}
+          activeId={activeId}
+        />
+        <PlaygroundNavGroup
+          label="All other routes"
+          screens={filtered.auto}
           activeId={activeId}
         />
       </SidebarContent>

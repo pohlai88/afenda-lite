@@ -63,7 +63,7 @@ async function replayAction(page, actionId, formEntries) {
   for (const [index, value] of formEntries) {
     body.set(String(index), value);
   }
-  const response = await page.request.post(`${BASE}/trade/${LOCALE}/admin/events`, {
+  const response = await page.request.post(`${BASE}/fft/${LOCALE}/admin/events`, {
     headers: {
       "content-type": "application/x-www-form-urlencoded",
       "next-action": actionId,
@@ -106,7 +106,7 @@ async function main() {
   }
 
   try {
-    execSync("npm run test:unit -- lib/domain/trade/rbac.test.ts", {
+    execSync("npm run test:unit -- modules/fft/domain/rbac.test.ts", {
       stdio: "pipe",
       encoding: "utf8",
     });
@@ -125,7 +125,7 @@ async function main() {
     const adminPage = await adminContext.newPage();
     await signIn(adminPage, adminEmail, adminPassword);
 
-    await adminPage.goto(`${BASE}/trade/${LOCALE}/admin/rbac`);
+    await adminPage.goto(`${BASE}/fft/${LOCALE}/admin/rbac`);
     await adminPage.waitForLoadState("networkidle", { timeout: 30_000 }).catch(() => {});
     setResult(
       "admin rbac page",
@@ -133,7 +133,7 @@ async function main() {
       adminPage.url(),
     );
 
-    await adminPage.goto(`${BASE}/trade/${LOCALE}/admin/events`);
+    await adminPage.goto(`${BASE}/fft/${LOCALE}/admin/events`);
     await adminPage.waitForLoadState("networkidle", { timeout: 30_000 }).catch(() => {});
     setResult(
       "admin events page",
@@ -141,7 +141,7 @@ async function main() {
       adminPage.url(),
     );
 
-    await adminPage.goto(`${BASE}/trade/${LOCALE}/admin/events/new`);
+    await adminPage.goto(`${BASE}/fft/${LOCALE}/admin/events/new`);
     await adminPage.waitForLoadState("networkidle", { timeout: 30_000 }).catch(() => {});
     setResult(
       "admin events/new page",
@@ -160,7 +160,7 @@ async function main() {
     setResult("admin event create action", true, adminPage.url());
 
     let createActionId;
-    await adminPage.goto(`${BASE}/trade/${LOCALE}/admin/events/new`);
+    await adminPage.goto(`${BASE}/fft/${LOCALE}/admin/events/new`);
     createActionId = await captureActionId(adminPage, "/admin/events", async () => {
       await adminPage.getByLabel(/event name/i).fill(`Gate7 probe ${stamp}`);
       await adminPage.locator("#opensAt").fill(toLocalInput(opens));
@@ -172,14 +172,14 @@ async function main() {
     const salesPage = await salesContext.newPage();
     await signIn(salesPage, salesEmail, salesPassword);
 
-    await salesPage.goto(`${BASE}/trade/${LOCALE}/events`);
+    await salesPage.goto(`${BASE}/fft/${LOCALE}/events`);
     await salesPage.waitForLoadState("networkidle", { timeout: 30_000 }).catch(() => {});
     const salesEventsPass =
-      salesPage.url().includes("/trade/vi/events") &&
+      salesPage.url().includes("/fft/vi/events") &&
       !salesPage.url().includes("/client");
     setResult("sales events page", salesEventsPass, salesPage.url());
 
-    await salesPage.goto(`${BASE}/trade/${LOCALE}/events/${OPEN_EVENT_ID}/order`);
+    await salesPage.goto(`${BASE}/fft/${LOCALE}/events/${OPEN_EVENT_ID}/order`);
     const customer = `Gate7 Customer ${stamp}`;
     await salesPage.getByLabel(/customer name/i).fill(customer);
     await salesPage.locator("#productId").selectOption("54e7f4b8-43a5-4ac1-b4db-116e1ea0e58e");
@@ -188,7 +188,7 @@ async function main() {
     await salesPage.waitForURL(/\/my-orders/, { timeout: 60_000 });
     setResult("sales order create", true, salesPage.url());
 
-    await salesPage.goto(`${BASE}/trade/${LOCALE}/my-orders`);
+    await salesPage.goto(`${BASE}/fft/${LOCALE}/my-orders`);
     await salesPage.waitForLoadState("networkidle", { timeout: 30_000 }).catch(() => {});
     const myOrdersText = await salesPage.locator("body").innerText();
     setResult(
@@ -197,11 +197,11 @@ async function main() {
       customer,
     );
 
-    await adminPage.goto(`${BASE}/trade/${LOCALE}/admin/events/${OPEN_EVENT_ID}/allocation`);
+    await adminPage.goto(`${BASE}/fft/${LOCALE}/admin/events/${OPEN_EVENT_ID}/allocation`);
     await adminPage.getByRole("button", { name: /run allocation/i }).click();
     await adminPage.waitForTimeout(3_000);
 
-    await salesPage.goto(`${BASE}/trade/${LOCALE}/my-orders`);
+    await salesPage.goto(`${BASE}/fft/${LOCALE}/my-orders`);
     await salesPage.waitForLoadState("networkidle", { timeout: 30_000 }).catch(() => {});
 
     let transferActionId;
@@ -224,16 +224,16 @@ async function main() {
       transferActionId ? "action captured" : "transfer form/action missing",
     );
 
-    await salesPage.goto(`${BASE}/trade/${LOCALE}/admin/rbac`);
+    await salesPage.goto(`${BASE}/fft/${LOCALE}/admin/rbac`);
     await salesPage.waitForLoadState("networkidle", { timeout: 30_000 }).catch(() => {});
     setResult(
       "sales admin rbac denied",
       !salesPage.url().includes("/admin/rbac") &&
-        salesPage.url().includes("/trade/vi/events"),
+        salesPage.url().includes("/fft/vi/events"),
       salesPage.url(),
     );
 
-    await salesPage.goto(`${BASE}/trade/${LOCALE}/admin/events/new`);
+    await salesPage.goto(`${BASE}/fft/${LOCALE}/admin/events/new`);
     await salesPage.waitForLoadState("networkidle", { timeout: 30_000 }).catch(() => {});
     setResult(
       "sales events/new denied (RSC)",
@@ -263,12 +263,12 @@ async function main() {
       setResult("sales event.create replay denied", false, "missing action id");
     }
 
-    await salesPage.goto(`${BASE}/trade/${LOCALE}/admin/events/${OPEN_EVENT_ID}/allocation`);
+    await salesPage.goto(`${BASE}/fft/${LOCALE}/admin/events/${OPEN_EVENT_ID}/allocation`);
     await salesPage.waitForLoadState("networkidle", { timeout: 30_000 }).catch(() => {});
     setResult(
       "sales sensitive admin allocation denied",
       !salesPage.url().includes("/allocation") ||
-        salesPage.url().includes("/trade/vi/events"),
+        salesPage.url().includes("/fft/vi/events"),
       salesPage.url(),
     );
 

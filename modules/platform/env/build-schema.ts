@@ -7,6 +7,7 @@ import type { EnvVarDef, EnvVarKind } from "@/modules/platform/env/manifest";
 import {
   optionalBooleanStringFlag,
   optionalEmail,
+  optionalEmailFrom,
   optionalString,
   optionalUrl,
   optionalUuid,
@@ -36,6 +37,8 @@ export function zodFieldForEnvKind(kind: EnvVarKind, key: string) {
       return optionalString();
     case "optionalEmail":
       return optionalEmail();
+    case "optionalEmailFrom":
+      return optionalEmailFrom();
     case "optionalUrl":
       return optionalUrl();
     case "optionalUuid":

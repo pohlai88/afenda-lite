@@ -5,7 +5,7 @@
 | **Status** | Accepted |
 | **Date** | 2026-07-11 |
 | **Mode** | Architecture (structure + boundaries) |
-| **Audience** | Engineers + agents implementing `/trade` |
+| **Audience** | Engineers + agents implementing `/fft` |
 | **Decision locks** | [001-feed-farm-trade.md](001-feed-farm-trade.md) |
 | **Roadmap / MVP** | [001R-feed-farm-trade-roadmap.md](001R-feed-farm-trade-roadmap.md) |
 | **Agent skill** | [`.cursor/skills/feed-farm-trade`](../../../.cursor/skills/feed-farm-trade/SKILL.md) |
@@ -19,9 +19,11 @@ SKIP: product locks → 001 · phase AC / gap IDs → 001R
 
 ## Context
 
-Feed Farm Trade is the **product** module for B2B feed & farm trade sales. The **engine** remains Hot Sales (`HOT_SALES_*`, `docs/hot-sales/`). UI must share the portal AdminCN shell and stay locale-free under `/trade/*`.
+**Platform model:** one SaaS platform, two product modules — **Declarations** and **Feed Farm Trade** — plus shared Platform + Identity. Same deployable, shell, auth, DB, env, proxy, CI. Module boundaries are domain/RBAC/UI homes only; **infra and platform changes are shared and updated together**.
 
-This document records the durable structure after the Phase A+B gap-close (skill pack + AdminCN P1 wire). It does not reopen Hot Sales 2B–2D flag promotion.
+Feed Farm Trade is the **product** module for B2B feed & farm trade sales. The **engine** remains Feed Farm Trade (`FFT_*`, `docs/fft/`). UI uses the shared AdminCN shell under locale-free `/fft/*`.
+
+This document records the durable structure after the Phase A+B gap-close (skill pack + AdminCN P1 wire). It does not reopen Feed Farm Trade 2B–2D flag promotion.
 
 ## Responsibilities and boundaries
 
@@ -39,93 +41,95 @@ flowchart LR
 
 | Boundary | Rule |
 |----------|------|
-| Trade ↛ Declarations | No domain imports either direction; compose at adapter if both needed |
-| Product vs engine | UI/nav = **Feed Farm Trade**; flags/ops ADRs/domain slang = **Hot Sales** |
-| Shell entitlement | `feed-farm-trade` via `requireTradeAccess` — org admin alone does not grant |
-| Chrome | `AdminCnShell` only — never `TradeShell` or locale switcher |
-| Paths | Locale-free `/trade/**` — no live `app/trade/[locale]` |
+| Platform vs modules | Shared Platform/Identity/AdminCN/env/CI — not FFT-only infra |
+| Module domains | No domain imports Trade ↔ Declarations; compose at adapter if both needed |
+| Product vs engine | UI/nav = **Feed Farm Trade**; flags/ops ADRs/domain slang = **Feed Farm Trade** |
+| Shell entitlement | `fft` via `requireFftAccess` — org admin alone does not grant (module gate, not a second platform) |
+| Chrome | `AdminCnShell` only — never `FftShell` or locale switcher |
+| Paths | Locale-free `/fft/**` — no live `app/fft/[locale]` |
 
 ## Components
 
 | Layer | Path | Responsibility |
 |-------|------|----------------|
-| Routes | `app/trade/**` | Thin RSC: await `params`; compose only |
-| Layout | `app/trade/layout.tsx` | `requireTradeAccess` + `AdminCnShell` |
-| UI | `features/trade/*` | Forms/panels; no shell chrome |
-| Actions | `app/actions/trade.ts` | Zod + session/permission → domain → `ActionResult` |
-| Domain | `modules/trade/**` | SQL, allocation rules, RBAC codes |
+| Routes | `app/fft/**` | Thin RSC: await `params`; compose only |
+| Layout | `app/fft/layout.tsx` | `requireFftAccess` + `AdminCnShell` |
+| UI | `features/fft/*` | Forms/panels; no shell chrome |
+| Actions | `app/actions/fft.ts` | Zod + session/permission → domain → `ActionResult` |
+| Domain | `modules/fft/**` | SQL, allocation rules, RBAC codes |
 | Entitlement | `modules/platform/shell/access.ts` | Nav module visibility |
-| Session | `modules/trade/auth/trade-session.ts` | Trade access resolution |
+| Session | `modules/fft/auth/trade-session.ts` | Trade access resolution |
 | Nav | `components-V2/platform-config/navConfig.tsx` | `moduleId: feed-farm-trade` |
-| Ops SSOT | `docs/hot-sales/` | RUNTIME, gate-register, engine ADRs |
-| REST contract | `doc/api/02-rest-resources.md` | Locale-free `/api/trade/...` — contract-only |
+| Ops SSOT | `docs/fft/` | RUNTIME, gate-register, engine ADRs |
+| REST contract | `doc/api/02-rest-resources.md` | Locale-free `/api/fft/...` — contract-only |
 
 ### Trusted files
 
 | Concern | Path |
 |---------|------|
-| Layout gate | `app/trade/layout.tsx` |
+| Layout gate | `app/fft/layout.tsx` |
 | Entitlement | `modules/platform/shell/access.ts` |
-| Session | `modules/trade/auth/trade-session.ts` |
-| Permissions | `modules/trade/domain/rbac-catalog.ts` |
-| Store / rules | `modules/trade/domain/store.ts` |
-| Actions | `app/actions/trade.ts` |
-| Default UI locale arg | `features/trade/trade-ui-locale.ts` (`TRADE_UI_LOCALE`) |
-| Routes helpers | `modules/platform/routing/portal-routes.ts` · `modules/trade/i18n/trade.ts` (`tradeHref`) |
+| Session | `modules/fft/auth/trade-session.ts` |
+| Permissions | `modules/fft/domain/rbac-catalog.ts` |
+| Store / rules | `modules/fft/domain/store.ts` |
+| Actions | `app/actions/fft.ts` |
+| Default UI locale arg | `features/fft/trade-ui-locale.ts` (`FFT_UI_LOCALE`) |
+| Routes helpers | `modules/platform/routing/portal-routes.ts` · `modules/fft/i18n/trade.ts` (`tradeHref`) |
 
 ## Data / request flow
 
 ```text
-app/trade/**/page.tsx          → thin RSC (params await; no business logic)
-  → features/trade/*           → UI (NO TradeShell / locale switcher)
-  → app/actions/trade.ts       → Zod + requireTradeAccess / permission
-  → modules/trade/domain/*     → SQL / rules
-layout: requireTradeAccess + AdminCnShell only
+app/fft/**/page.tsx          → thin RSC (params await; no business logic)
+  → features/fft/*           → UI (NO FftShell / locale switcher)
+  → app/actions/fft.ts       → Zod + requireFftAccess / permission
+  → modules/fft/domain/*     → SQL / rules
+layout: requireFftAccess + AdminCnShell only
 ```
 
 | Need | Path |
 |------|------|
-| RSC read | Call `modules/trade` domain directly — never fetch own `/api/trade` |
+| RSC read | Call `modules/fft` domain directly — never fetch own `/api/fft` |
 | Client mutation | Server Action `trade.ts` → Zod → session/perm → domain → `ActionResult` |
 | External HTTP | Route Handler per `doc/api` — contract-only until a consumer needs it |
 
-**Locale note:** Actions still accept a `TradeLocale` argument for copy/domain i18n. URL paths are locale-free; pages pass `TRADE_UI_LOCALE` from `features/trade/trade-ui-locale.ts`.
+**Locale note:** Actions still accept a `TradeLocale` argument for copy/domain i18n. URL paths are locale-free; pages pass `FFT_UI_LOCALE` from `features/fft/trade-ui-locale.ts`.
 
 ## Key decisions
 
 | Decision | Rationale |
 |----------|-----------|
-| AdminCN only | One SaaS shell with Declarations / Account |
-| Kill `/trade/[locale]` + TradeShell | Residue fought platform shell; i18n deferred to action arg |
+| One platform, two modules | SaaS multi-module — Declarations + FFT share infra; do not invent a separate FFT stack |
+| AdminCN only | One SaaS shell with Declarations / Account / FFT |
+| Kill `/fft/[locale]` + FftShell | Residue fought platform shell; i18n deferred to action arg |
 | Actions-first UI | Matches portal BFF decision tree; REST stays contract-only |
-| Keep `HOT_SALES_*` | Gate-register and prod ops already keyed to those names |
-| Permission codes, not role names | Stable RBAC; see `rbac-catalog.ts` |
+| Keep `FFT_*` | Gate-register and prod ops already keyed to those names |
+| Permission codes, not role names | Stable **module** RBAC; see `rbac-catalog.ts` |
 
 ## Failure modes
 
 | Failure | Expected behavior |
 |---------|-------------------|
-| No session on `/trade` | Sign-in redirect (proxy + layout) |
+| No session on `/fft` | Sign-in redirect (proxy + layout) |
 | Session without trade permission | Denied; FFT nav hidden |
-| Org admin without trade allowlist/RBAC | Declarations OK; `/trade` denied |
+| Org admin without trade allowlist/RBAC | Declarations OK; `/fft` denied |
 | P3 ops flags off | Deposits/pickup/imports/ERP writes blocked; P1 cycle still works |
 | Missing permission on mutation | Action returns deny / error — never silent success |
 
 ## Operational considerations
 
-- **P3 promotion:** flags + [gate-register](../../../docs/hot-sales/ops/gate-register.md) only — do not invent checklists in FE ADRs.
-- **G0:** `docs/hot-sales/` is present (restored). Cite RUNTIME / gate-register as living authority.
-- **Verify slice:** `requireTradeAccess` / permission · Zod at action edge · no TradeShell · update [completeness.md](../../../.cursor/skills/feed-farm-trade/completeness.md) when status changes.
-- **Engine lane:** Hot Sales 2B–2D product UI / flag work still requires gate-register + explicit reopen — this architecture doc does not reopen them.
+- **P3 promotion:** flags + [gate-register](../../../docs/fft/ops/gate-register.md) only — do not invent checklists in FE ADRs.
+- **G0:** `docs/fft/` is present (restored). Cite RUNTIME / gate-register as living authority.
+- **Verify slice:** `requireFftAccess` / permission · Zod at action edge · no FftShell · update [completeness.md](../../../.cursor/skills/feed-farm-trade/completeness.md) when status changes.
+- **Engine lane:** Feed Farm Trade 2B–2D product UI / flag work still requires gate-register + explicit reopen — this architecture doc does not reopen them.
 
 ## Known limits / future changes
 
 | Limit | Notes |
 |-------|-------|
 | P2 UI polish | Closed until explicit reopen — thin AdminCN pages are MVP-OK |
-| P3 ops surfaces | Placeholder / flag-gated pages under `/trade/admin/...` |
+| P3 ops surfaces | Placeholder / flag-gated pages under `/fft/admin/...` |
 | Customer portal | Later series branch — wrong actor for this module |
-| `HOT_SALES_*` / `/trade` rename | Requires new ADR + migration |
+| `FFT_*` / `/fft` rename | Requires new ADR + migration |
 | Full e2e AC journey | Recommended before claiming enterprise MVP (see 001R DoD) |
 
 ## Related
@@ -134,5 +138,5 @@ layout: requireTradeAccess + AdminCnShell only
 - [001R-feed-farm-trade-roadmap.md](001R-feed-farm-trade-roadmap.md) — P0–P3 + gaps
 - [../01-architecture.md](../01-architecture.md) — portal FE layers
 - [../03-routes.md](../03-routes.md) — route table
-- [../../backend/02-bounded-contexts.md](../../backend/02-bounded-contexts.md) — Trade context
-- [docs/hot-sales/architecture/s19-trade-slice.md](../../../docs/hot-sales/architecture/s19-trade-slice.md) — Phase 1 engine slice (historical)
+- [../../backend/03-bounded-contexts.md](../../backend/03-bounded-contexts.md) — Trade context
+- [docs/fft/architecture/s19-trade-slice.md](../../../docs/fft/architecture/s19-trade-slice.md) — Phase 1 engine slice (historical)

@@ -105,6 +105,15 @@ describe("VanguardLanding", () => {
     expect(
       screen.getByRole("link", { name: "Create Account" }),
     ).toHaveAttribute("href", props.signUpHref);
+    expect(document.querySelector(".sovereign-vault-shell")).toHaveAttribute(
+      "data-state",
+      "open",
+    );
+    expect(document.querySelector(".sovereign-sky")).toBeInTheDocument();
+    expect(document.querySelector(".sovereign-vault__art")).toHaveAttribute(
+      "src",
+      "/lynx/lynx-auth-popup.png",
+    );
   });
 
   it("unlocks from the keyboard and moves focus to Sign In", async () => {
@@ -130,6 +139,32 @@ describe("VanguardLanding", () => {
     expect(screen.getByRole("link", { name: "Sign In" })).toBe(
       document.activeElement,
     );
+    vi.useRealTimers();
+  });
+
+  it("traps keyboard focus between the two vault actions", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    renderPortal(<VanguardLanding {...props} />);
+
+    await user.click(
+      screen.getByRole("button", { name: "Unlock authentication options" }),
+    );
+    await act(async () => {
+      vi.advanceTimersByTime(500);
+    });
+
+    const signIn = screen.getByRole("link", { name: "Sign In" });
+    const createAccount = screen.getByRole("link", {
+      name: "Create Account",
+    });
+    expect(signIn).toBe(document.activeElement);
+
+    await user.tab();
+    expect(createAccount).toBe(document.activeElement);
+
+    await user.tab();
+    expect(signIn).toBe(document.activeElement);
     vi.useRealTimers();
   });
 
@@ -273,6 +308,29 @@ describe("VanguardLanding", () => {
 
     expect(push).toHaveBeenCalledTimes(1);
     expect(push).toHaveBeenCalledWith(props.signInHref);
+    vi.useRealTimers();
+  });
+
+  it("cancels delayed navigation when the landing unmounts", async () => {
+    push.mockClear();
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    const { unmount } = renderPortal(<VanguardLanding {...props} />);
+
+    await user.click(
+      screen.getByRole("button", { name: "Unlock authentication options" }),
+    );
+    await act(async () => {
+      vi.advanceTimersByTime(500);
+    });
+    await user.click(screen.getByRole("link", { name: "Sign In" }));
+
+    unmount();
+    await act(async () => {
+      vi.advanceTimersByTime(500);
+    });
+
+    expect(push).not.toHaveBeenCalled();
     vi.useRealTimers();
   });
 

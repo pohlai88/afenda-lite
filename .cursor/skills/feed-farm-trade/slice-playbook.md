@@ -6,14 +6,14 @@
 
 ## When to use
 
-Any multi-file change under `/trade`, `features/trade`, `app/actions/trade.ts`, or `modules/trade`.
+Any multi-file change under `/fft`, `features/fft`, `app/actions/fft.ts`, or `modules/fft`.
 
 ## When to stop
 
 | Situation | Action |
 |-----------|--------|
 | Task is P2 polish | Stop — need explicit reopen |
-| Task enables prod `HOT_SALES_*` flag | Stop — gate-register required |
+| Task enables prod `FFT_*` flag | Stop — gate-register required |
 | Spec vs code conflict | Surface confusion; do not guess |
 | AC ID not in phase doc | Ask — do not invent requirements |
 
@@ -46,9 +46,9 @@ Out of scope this PR: …
 
 | Layer | Do |
 |-------|-----|
-| Domain | Prefer existing `modules/trade/domain/*` — no Declarations imports |
+| Domain | Prefer existing `modules/fft/domain/*` — no Declarations domain imports (module boundary; shared platform OK) |
 | Action | Zod + `requireTradePermission(code)` or existing admin helper — no raw SQL |
-| Feature | Client form/panel; use `getTradeActionError`; pass `TRADE_UI_LOCALE` |
+| Feature | Client form/panel; use `getTradeActionError`; pass `FFT_UI_LOCALE` |
 | Page | Thin RSC: await params, domain reads, compose features |
 
 ### 4 — Verify
@@ -73,7 +73,7 @@ If wire status changed, update [completeness.md](completeness.md).
 
 - Prefer ≤1 capability group per PR when AC evidence is the goal.  
 - Do not mix P1 AC work with P3 flag enablement.  
-- Do not restore `TradeShell` / `[locale]` “for convenience.”
+- Do not restore `FftShell` / `[locale]` “for convenience.”
 
 ## Done means
 

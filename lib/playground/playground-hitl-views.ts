@@ -22,7 +22,8 @@ export const HITL_CATEGORY_FILTERS = [
   "admin",
   "client",
   "dynamic",
-  "hot-sales",
+  "fft",
+  "auto",
 ] as const;
 export type HitlCategoryFilter = (typeof HITL_CATEGORY_FILTERS)[number];
 
@@ -73,7 +74,8 @@ export const HITL_CATEGORY_FILTER_LABEL: Record<HitlCategoryFilter, string> = {
   admin: "Admin",
   client: "Client",
   dynamic: "Dynamic",
-  "hot-sales": "Feed Farm Trade",
+  "fft": "Feed Farm Trade",
+  auto: "Auto-discovered",
 };
 
 export const HITL_SHAPE_FILTER_LABEL: Record<HitlShapeFilter, string> = {

@@ -2,13 +2,13 @@ import { ORG_ACCESS_DENIED_HREF, ORG_SIGN_IN_HREF } from "@/modules/identity/adm
 import {
   CLIENT_HOME_HREF,
   CLIENT_ONBOARDING_HREF,
-  OPERATOR_DASHBOARD_HREF,
+  ORGANIZATION_ADMIN_DASHBOARD_HREF,
 } from "@/modules/identity/client-session";
 
 export {
   CLIENT_HOME_HREF,
   CLIENT_ONBOARDING_HREF,
-  OPERATOR_DASHBOARD_HREF,
+  ORGANIZATION_ADMIN_DASHBOARD_HREF,
   ORG_ACCESS_DENIED_HREF,
   ORG_SIGN_IN_HREF,
 };
@@ -34,27 +34,32 @@ export const AUTH_RESET_PASSWORD_HREF = "/auth/reset-password" as const;
 export const AUTH_SIGN_OUT_HREF = "/auth/sign-out" as const;
 
 export const CLIENT_PROFILE_HREF = "/client/profile" as const;
-export const OPERATOR_CLIENTS_HREF = "/dashboard/clients" as const;
+export const ORGANIZATION_ADMIN_CLIENTS_HREF = "/dashboard/clients" as const;
+export const ORGANIZATION_ADMIN_USERS_HREF = "/dashboard/users" as const;
 export const CLIENT_PREVIEW_UNAVAILABLE_HREF = "/client/preview-unavailable" as const;
 
-/** Feed Farm Trade event engine (locale deferred — flat /trade paths). */
-export const TRADE_HOME_HREF = "/trade/events" as const;
+export function organizationAdminUserHref(userId: string) {
+  return `${ORGANIZATION_ADMIN_USERS_HREF}/${encodeURIComponent(userId)}`;
+}
 
-/** @deprecated Locale ignored; use TRADE_HOME_HREF or tradeHref(path). */
-export function tradeHrefForLocale(_locale: "vi" | "en", path = "/events") {
+/** Feed Farm Trade event engine (locale deferred — flat /fft paths). */
+export const FFT_HOME_HREF = "/fft/events" as const;
+
+/** @deprecated Locale ignored; use FFT_HOME_HREF or fftHref(path). */
+export function fftHrefForLocale(_locale: "vi" | "en", path = "/events") {
   const normalized = path.startsWith("/") ? path : `/${path}`;
-  return `/trade${normalized}`;
+  return `/fft${normalized}`;
 }
 
 export function clientPostAuthHref(onboardingComplete: boolean) {
   return onboardingComplete ? CLIENT_HOME_HREF : CLIENT_ONBOARDING_HREF;
 }
 
-export function operatorDeclarationHref(id: string) {
+export function organizationAdminDeclarationHref(id: string) {
   return `/dashboard/${id}`;
 }
 
-export function operatorDeclarationManageHref(id: string) {
+export function organizationAdminDeclarationManageHref(id: string) {
   return `/dashboard/${id}?tab=manage`;
 }
 
@@ -75,7 +80,6 @@ const RETURN_TO_PREFIXES = [
   "/survey/",
   "/client/",
   "/invite/",
-  "/join",
 ] as const;
 
 export function sanitizeReturnToPath(value: string | undefined) {
@@ -88,7 +92,12 @@ export function sanitizeReturnToPath(value: string | undefined) {
     return null;
   }
 
-  if (!RETURN_TO_PREFIXES.some((prefix) => trimmed.startsWith(prefix))) {
+  const isJoinEntry = trimmed === CLIENT_JOIN_HREF ||
+    trimmed.startsWith(`${CLIENT_JOIN_HREF}?`);
+  if (
+    !isJoinEntry &&
+    !RETURN_TO_PREFIXES.some((prefix) => trimmed.startsWith(prefix))
+  ) {
     return null;
   }
 
@@ -146,6 +155,21 @@ export function clientSignInAuthHref(reason?: string, returnTo?: string) {
   }
 
   return authSignInHref(params);
+}
+
+/**
+ * Playground embed of `/client/login` → Neon sign-in with embed preserved.
+ * Used by proxy for a hard HTTP redirect (avoids streaming soft-redirect).
+ */
+export function buildClientSignInEmbedRedirectPath(options?: {
+  reason?: string | null;
+}): string {
+  const params = new URLSearchParams();
+  if (options?.reason) {
+    params.set("reason", options.reason);
+  }
+  params.set("embed", "1");
+  return `${AUTH_SIGN_IN_HREF}?${params.toString()}`;
 }
 
 /** Neon Auth sign-up with the same safe query policy as sign-in. */

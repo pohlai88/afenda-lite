@@ -1,10 +1,10 @@
 import {
   operatorDeclarationDetailMetadata,
-  runOperatorDeclarationDetailPage,
-} from "@/lib/pages/operator-declaration-detail";
+  runOrganizationAdminDeclarationDetailPage,
+} from "@/lib/pages/organization-admin-declaration-detail";
 
 export const dynamic = "force-dynamic";
 
 export const generateMetadata = operatorDeclarationDetailMetadata;
 
-export default runOperatorDeclarationDetailPage;
+export default runOrganizationAdminDeclarationDetailPage;

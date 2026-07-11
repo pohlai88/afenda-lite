@@ -9,7 +9,7 @@ describe("mapClientSessionGuardToHttp", () => {
       code: "UNAUTHORIZED",
       message: "Unauthorized",
     });
-    expect(mapClientSessionGuardToHttp("operator")).toEqual({
+    expect(mapClientSessionGuardToHttp("organizationAdmin")).toEqual({
       status: 403,
       code: "FORBIDDEN",
       message: "Forbidden",

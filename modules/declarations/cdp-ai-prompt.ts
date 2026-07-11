@@ -8,7 +8,7 @@ import {
 export function buildCdpAiAssistantPrompt(): string {
   const templateJson = serializeCdpPackage(createCdpStarterTemplate());
 
-  return `You are helping me produce a Client Declaration Portal (CDP) package — a single JSON file I will upload to my declaration portal.
+  return `You are helping me produce an Afenda-Lite declaration package (CDP JSON) — a single JSON file I will upload into the Declarations module.
 
 ## Your output
 - Return ONLY valid JSON (no markdown fences, no comments, no trailing prose).

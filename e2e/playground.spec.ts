@@ -9,7 +9,7 @@ import {
   playgroundScreenFixtures,
   playgroundSkipMessage,
 } from "@/testing/e2e/fixtures";
-import { loginAsOperator } from "@/testing/e2e/operator-flows";
+import { loginAsOperator } from "@/testing/e2e/organization-admin-flows";
 
 const operatorCreds = getOperatorCreds();
 const playgroundEnabled = isPlaygroundEnabledForTests();

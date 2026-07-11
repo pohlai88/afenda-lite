@@ -18,17 +18,17 @@ Studio MCP does **not** install the AdminCN template as one unit. It exposes **b
 
 **Every AdminCN primitive and block must appear in `ui-registry.json`** as `ACN-UI-*` or `ACN-BLK-*`. Agents must not invent IDs. Product FFT surfaces use `FFT-UI-*`. See registry HITL before creating or wiring UI.
 
-Do **not** wire more demo views into product routes while freeze holds. Refine existing surfaces only. Do **not** import `platform-views` from `features/trade` — adapt via HITL product `FFT-UI-*` that cites `studioSource`.
+Do **not** wire more demo views into product routes while freeze holds. Refine existing surfaces only. Do **not** import `platform-views` from `features/fft` — adapt via HITL product `FFT-UI-*` that cites `studioSource`.
 
 ## Shared shell modules
 
 | Module | Routes | Gate |
 |--------|--------|------|
 | Declarations | `/dashboard/*`, `/account/*` | `requireMemberSession` |
-| Feed Farm Trade | `/trade/*` | `requireTradeAccess` |
+| Feed Farm Trade | `/fft/*` | `requireFftAccess` |
 | Admin routes | playground (local), etc. | `isAdminSession` |
 
-Entitlements: `modules/platform/shell/access.ts`. Nav: module-tagged `navConfig`. No separate `TradeShell`.
+Entitlements: `modules/platform/shell/access.ts`. Nav: module-tagged `navConfig`. No separate `FftShell`.
 
 ## Customization levers (in order)
 
@@ -36,7 +36,7 @@ Entitlements: `modules/platform/shell/access.ts`. Nav: module-tagged `navConfig`
 |-------|------|--------|
 | Theme / branding | `components-V2/platform-config/themeConfig.ts` + presets + Header ThemeCustomizer | Put portal navy into AdminCN `:root` |
 | Dark mode | Root `features/portal-chrome/theme-provider` (next-themes + portal storage key) | Nest a second ThemeProvider inside AdminCN shell |
-| Navigation | `components-V2/platform-config/navConfig.tsx` (module-tagged) | Hardcode nav in layout JSX; resurrect TradeShell |
+| Navigation | `components-V2/platform-config/navConfig.tsx` (module-tagged) | Hardcode nav in layout JSX; resurrect FftShell |
 | Screen content | `components-V2/platform-views/*` (thin `app/**/page.tsx`) | Grow route files |
 | Data | Domain + `app/actions/*` | Invent UI before data contract; `platform-fake-db` |
 | Auth island | Keep Studio shell (`features/auth`) + Neon + `app/auth-surface.css` + route-scoped `app/auth/neon-auth-ui.css` | Theme login via AdminCN customizer; import Neon CSS into `globals.css` |
@@ -74,11 +74,11 @@ Product orientation: ThemeConfig + live Theme Customizer; presets for mode, font
 ## Forbidden without explicit reopen
 
 - Bulk-wiring more AdminCN demos into product routes  
-- Restoring Feed Farm Trade **product UI** (stubs OK; no `TradeShell` / locale switcher)  
+- Restoring Feed Farm Trade **product UI** (stubs OK; no `FftShell` / locale switcher)  
 - Replacing Neon credential paths with Studio account-settings blocks  
 - Mixing portal auth tokens into AdminCN `:root`  
 - Inventing UI IDs or agent-editing [`ui-registry.json`](../feed-farm-trade/ui-registry.json) to pass Vitest  
-- Importing `@/components-V2/platform-views/**` from `features/trade` without a HITL `FFT-UI-*` wrap  
+- Importing `@/components-V2/platform-views/**` from `features/fft` without a HITL `FFT-UI-*` wrap  
 
 ## Refine checklist (per page)
 
@@ -87,8 +87,8 @@ Full gate: [admincn-frontend-preflight.md](../../../docs/architecture/admincn-fr
 1. Confirm target `ACN-UI-*` / `ACN-BLK-*` / `FFT-UI-*` IDs in [ui-registry.json](../feed-farm-trade/ui-registry.json) — **STOP** if missing (human HITL)  
 2. Brand (`themePreset` / tokens) — verify login island unchanged  
 3. Nav — real destinations only; module entitlements correct  
-4. Edit one `platform-views` composition (product → `portal-views/` or FFT `features/trade` via product ID)  
+4. Edit one `platform-views` composition (product → `portal-views/` or FFT `features/fft` via product ID)  
 5. Swap fake-db for that page  
 6. Sync governance (`surface-entry-points`, `ui-decision-matrix`, reliance registry, **ui-registry**)  
 7. Optional: one MCP block → adapt into `portal-views/` or FFT feature (new `FFT-UI-*` if FFT)  
-8. Verify: `npm run test:unit -- features/trade/ui-registry` + relevant unit tests + `npx tsc --noEmit` on touched paths  
+8. Verify: `npm run test:unit -- features/fft/ui-registry` + relevant unit tests + `npx tsc --noEmit` on touched paths  

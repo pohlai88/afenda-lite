@@ -1,6 +1,6 @@
 -- Extended notification templates for event + transfer triggers (2C-4 gap close)
 
-INSERT INTO hot_sales_notification_event (event_key, channel, enabled) VALUES
+INSERT INTO fft_notification_event (event_key, channel, enabled) VALUES
   ('event.opened', 'email', TRUE),
   ('event.closed', 'email', TRUE),
   ('transfer.requested', 'email', TRUE),
@@ -8,13 +8,13 @@ INSERT INTO hot_sales_notification_event (event_key, channel, enabled) VALUES
   ('transfer.rejected', 'email', TRUE)
 ON CONFLICT (event_key, channel) DO NOTHING;
 
-INSERT INTO hot_sales_notification_template (event_key, locale, subject, body_markdown) VALUES
+INSERT INTO fft_notification_template (event_key, locale, subject, body_markdown) VALUES
   ('event.opened', 'en', 'Event {{eventName}} is open',
-   'Hot Sales event **{{eventName}}** is now open for orders.'),
+   'Feed Farm Trade event **{{eventName}}** is now open for orders.'),
   ('event.opened', 'vi', 'Sự kiện {{eventName}} đã mở',
    'Sự kiện **{{eventName}}** đã mở đăng ký đơn hàng.'),
   ('event.closed', 'en', 'Event {{eventName}} closed',
-   'Hot Sales event **{{eventName}}** has closed.'),
+   'Feed Farm Trade event **{{eventName}}** has closed.'),
   ('event.closed', 'vi', 'Sự kiện {{eventName}} đã đóng',
    'Sự kiện **{{eventName}}** đã đóng.'),
   ('transfer.requested', 'en', 'Transfer requested for {{orderNumber}}',
@@ -35,6 +35,6 @@ INSERT INTO hot_sales_notification_template (event_key, locale, subject, body_ma
    'Đơn **{{orderNumber}}** không được phân bổ trong lần chạy mới nhất.')
 ON CONFLICT (event_key, locale) DO NOTHING;
 
-INSERT INTO hot_sales_notification_event (event_key, channel, enabled) VALUES
+INSERT INTO fft_notification_event (event_key, channel, enabled) VALUES
   ('order.rejected', 'email', TRUE)
 ON CONFLICT (event_key, channel) DO NOTHING;

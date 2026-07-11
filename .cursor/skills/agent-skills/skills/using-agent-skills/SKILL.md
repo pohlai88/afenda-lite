@@ -49,6 +49,8 @@ Task arrives
     ├── Committing/branching? ─────────→ git-workflow-and-versioning
     ├── CI/CD pipeline work? ──────────→ ci-cd-and-automation
     ├── Deprecating/migrating? ────────→ deprecation-and-migration
+    │   └── Afenda-Lite: compulsory for already-replaced residue — see skill + reference.md register
+    │       (Client Declaration Portal→Afenda-Lite, Hot Sales→FFT, FftShell, /trade, separate-infra framing)
     ├── Writing docs/ADRs? ───────────→ documentation-and-adrs
     ├── Adding logs/metrics/alerts? ───→ observability-and-instrumentation
     └── Deploying/launching? ─────────→ shipping-and-launch
@@ -200,7 +202,7 @@ Not every task needs every skill. A bug fix might only need: `debugging-and-erro
 | Review | performance-optimization | Measure first, optimize only what matters |
 | Ship | git-workflow-and-versioning | Atomic commits, clean history |
 | Ship | ci-cd-and-automation | Automated quality gates on every change |
-| Ship | deprecation-and-migration | Remove old systems and migrate users safely |
+| Ship | deprecation-and-migration | Compulsory removal of replaced residue; Afenda-Lite register in `reference.md` |
 | Ship | documentation-and-adrs | Document the why, not just the what |
 | Ship | observability-and-instrumentation | Structured logs, RED metrics, traces, symptom-based alerts |
 | Ship | shipping-and-launch | Pre-launch checklist, monitoring, rollback plan |

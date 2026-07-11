@@ -10,7 +10,7 @@ import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { cache } from "react";
 import type { z } from "zod";
-import { PORTAL_NAME } from "@/lib/copy/portal-copy";
+import { PORTAL_NAME } from "@/modules/declarations/copy/portal-copy";
 import {
   publicLinkPageRobots,
   resolvePublicLinkLandingHref,

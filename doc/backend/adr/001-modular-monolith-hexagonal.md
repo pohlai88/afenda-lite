@@ -5,6 +5,7 @@
 | **Status** | Accepted |
 | **Date** | 2026-07-11 |
 | **Deciders** | Portal rebuild program |
+| **Amended** | 2026-07-12 — domain/Zod paths → `modules/*` (relocate complete) |
 
 ## Context
 
@@ -20,9 +21,9 @@ Adopt **one framework version** and **one contract version**:
 |------|--------|
 | Deployable | Single Next.js app |
 | Persistence | Single Neon database |
-| Domain | Bounded contexts in `lib/domain` |
+| Domain | Bounded contexts in `modules/{platform,identity,declarations,fft}` |
 | Driving adapters | RSC / Server Actions / `app/api` Route Handlers |
-| Validation | Zod in `lib/schemas` at adapter edge only |
+| Validation | Zod in `modules/*/schemas` at adapter edge only |
 | Public HTTP | One REST catalog (`doc/api`) — extend additively |
 | Action results | Same error `code` vocabulary as HTTP |
 
@@ -49,10 +50,11 @@ Adopt **one framework version** and **one contract version**:
 | Edge runtime as default | Neon/DB drivers and session model assume Node |
 | RSC `fetch('/api/...')` for ordinary reads | Extra hop; duplicates domain; anti-pattern in Next.js data patterns |
 | Hand-written DTOs parallel to Zod | Drift; two sources of truth |
+| Fat catch-all `lib/domain` as permanent home | Relocated to bounded `modules/*` |
 
 ## References
 
-- [../01-modular-hexagonal.md](../01-modular-hexagonal.md)  
-- [../05-contract-rules.md](../05-contract-rules.md)  
+- [../01-architecture.md](../01-architecture.md)  
+- [../07-conventions.md](../07-conventions.md)  
 - [../../frontend/04-bff-and-data.md](../../frontend/04-bff-and-data.md)  
 - [../../api/01-boundaries.md](../../api/01-boundaries.md)  

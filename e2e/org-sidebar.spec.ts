@@ -5,7 +5,7 @@ import {
   operatorSkipMessage,
   requireOperatorCreds,
 } from "@/testing/e2e/credentials";
-import { loginAsOperator } from "@/testing/e2e/operator-flows";
+import { loginAsOperator } from "@/testing/e2e/organization-admin-flows";
 
 const operatorCreds = getOperatorCreds();
 const { nav } = portalCopy;

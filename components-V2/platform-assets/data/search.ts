@@ -153,12 +153,12 @@ export const searchData: SearchData[] = [
       {
         icon: UsersIcon,
         name: 'User List',
-        href: '/apps/users/list'
+        href: '/dashboard/users'
       },
       {
         icon: UserIcon,
         name: 'User View',
-        href: '/apps/users/view/user-001'
+        href: '/dashboard/users/user-001'
       },
       {
         icon: ShieldCheckIcon,

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { AuthShellCopy } from "@/lib/copy/auth-shell-copy";
+import type { AuthShellCopy } from "@/features/auth/auth-shell-copy";
 import { cn } from "@/modules/platform/utils";
 
 type PortalAuthFormIntroProps = Pick<

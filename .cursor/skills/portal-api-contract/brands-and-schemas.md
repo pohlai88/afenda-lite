@@ -16,11 +16,12 @@ Do not pass raw `string` across domain boundaries when a brand exists.
 | `AssignmentId` | `uuidSchema` via domain lookup | `[assignmentId]` | `/client/declare/[assignmentId]` |
 | `ShareToken` | token schema in domain | `[token]` | `/f/[token]` |
 | `InviteToken` | `surveyInviteTokenParamSchema` | `[token]` | `/invite/[token]` |
-| `TradeEventId` | `tradeEventIdSchema` | `[eventId]` | `/trade/[locale]/events/[eventId]/…` |
-| `TradeOrderId` | `tradeOrderIdSchema` | — | Hot Sales only |
-| `TradeLocale` | `tradeLocaleSchema` (`'vi' \| 'en'`) | `[locale]` | `/trade/[locale]/…` |
+| `TradeEventId` | `tradeEventIdSchema` | `[eventId]` | `/fft/…/events/[eventId]/…` (locale-free P1) |
+| `TradeOrderId` | `tradeOrderIdSchema` | — | Feed Farm Trade only |
+| `TradeLocale` | `tradeLocaleSchema` (`'vi' \| 'en'`) | — | i18n / messages; not a live `/fft/[locale]` segment on P1 |
 | `SurveySlug` | `slugSchema` | `[slug]` | `/survey/[slug]` |
 | `InvitationId` | `uuidSchema` | `invitationId` (searchParams) | `/join?invitationId=` |
+| `UserId` | `userIdSchema` (`modules/identity/schemas/users.ts`) | `[userId]` | `/dashboard/users/[userId]` — Neon Auth user directory |
 
 **Construction pattern:**
 
@@ -47,17 +48,20 @@ function asDeclarationId(id: string): DeclarationId {
 
 ---
 
-## `lib/schemas/` module map
+## `modules/*/schemas` module map
 
-| Module | Primary resources / flows | Notable exports |
-|--------|---------------------------|-----------------|
-| `common.ts` | Shared primitives | `uuidSchema`, `emailSchema`, `passwordSchema`, `slugSchema`, `surveyAnswersSchema`, **`parseSchema`** |
-| `auth.ts` | Sign-in boundary | `signInSchema` |
-| `client.ts` | Onboarding, declare submit/draft, invites, deletes | `clientOnboardingSchema`, `submitClientDeclarationSchema`, `saveClientDeclarationDraftSchema`, `issueClientInviteSchema`, `removeClientRegistrationSchema`, `deleteClientAssignmentSchema` |
-| `surveys.ts` | Declarations (surveys) CRUD + public submit | `surveyMetadataFormSchema`, `updateSurveySchema`, `deleteSurveySchema`, `submitSurveyResponseSchema`, param schemas |
-| `declarations.ts` | Evidence registration | `registerEvidenceSchema` |
-| `questions.ts` | Question drafts / CDP | `questionDraftSchema`, `cdpQuestionSchema`, `questionConfigSchema` |
-| `trade.ts` | Hot Sales inputs | `tradeLocaleSchema`, `tradeEventIdSchema`, `tradeOrderIdSchema`, locale/event/order input objects |
+| Module path | Primary resources / flows | Notable exports |
+|-------------|---------------------------|-----------------|
+| `modules/platform/schemas/common.ts` | Shared primitives | `uuidSchema`, `emailSchema`, `passwordSchema`, `slugSchema`, **`parseSchema`** |
+| `modules/platform/schemas/api-error.ts` | Shared HTTP error body | `APIErrorBody` / codes |
+| `modules/declarations/schemas/common.ts` | Re-exports platform + declarations-only | `surveyAnswersSchema` (+ re-exports) |
+| `modules/identity/schemas/auth.ts` | Sign-in boundary | `signInSchema` |
+| `modules/identity/schemas/users.ts` | Organization-admin users | `userIdSchema`, `UserId`, set-role / ban schemas |
+| `modules/declarations/schemas/client.ts` | Onboarding, declare submit/draft, invites, deletes | `clientOnboardingSchema`, `submitClientDeclarationSchema`, `saveClientDeclarationDraftSchema`, `issueClientInviteSchema`, `removeClientRegistrationSchema`, `deleteClientAssignmentSchema` |
+| `modules/declarations/schemas/surveys.ts` | Declarations (surveys) CRUD + public submit | `surveyMetadataFormSchema`, `updateSurveySchema`, `deleteSurveySchema`, `submitSurveyResponseSchema`, param schemas |
+| `modules/declarations/schemas/declarations.ts` | Evidence registration | `registerEvidenceSchema` |
+| `modules/declarations/schemas/questions.ts` | Question drafts / CDP | `questionDraftSchema`, `cdpQuestionSchema`, `questionConfigSchema` |
+| `modules/fft/schemas/fft-schemas.ts` | Feed Farm Trade inputs | `tradeLocaleSchema`, `tradeEventIdSchema`, `tradeOrderIdSchema`, locale/event/order input objects |
 
 ---
 
@@ -73,16 +77,17 @@ function asDeclarationId(id: string): DeclarationId {
 | Assignments / submissions | `submitClientDeclarationSchema`, draft schema | `uuidSchema` |
 | Public survey | `submitSurveyResponseSchema` | `openSurveySlugParamSchema` |
 | Secure link | submit schemas + token | `surveyInviteTokenParamSchema` / token schemas in domain |
-| Trade | `lib/schemas/trade.ts` (+ action-local objects) | `tradeLocaleSchema`, event/order ids |
+| Users (org admin) | `setOrganizationUserRoleSchema`, `banOrganizationUserSchema` | `userIdSchema` |
+| Trade | `modules/fft/schemas/fft-schemas.ts` (+ action-local objects) | `tradeLocaleSchema`, event/order ids |
 
 ---
 
 ## `parseSchema` usage pattern
 
-Always import `parseSchema` from `common.ts` at adapter boundaries:
+Always import `parseSchema` from platform common at adapter boundaries:
 
 ```typescript
-import { parseSchema } from '@/modules/declarations/schemas/common'
+import { parseSchema } from '@/modules/platform/schemas/common'
 import { updateSurveySchema } from '@/modules/declarations/schemas/surveys'
 
 const parsed = parseSchema(updateSurveySchema, input)
@@ -102,10 +107,10 @@ These are **named gaps** from `doc/api/05-schema-map.md` — do not invent ad-ho
 
 | Gap | Condition to add |
 |-----|-----------------|
-| Shared `APIErrorBody` Zod schema | **Landed** — `lib/schemas/api-error.ts` |
+| Shared `APIErrorBody` Zod schema | **Landed** — `modules/platform/schemas/api-error.ts` |
 | Shared `PaginatedResult` schema helper | When first contract-only list endpoint is exposed over HTTP |
 | Account PATCH schema | Only if portal-owned fields exist beyond Neon AccountView |
-| Trade REST surface schemas | Keep in `trade.ts`; split files only if module grows unwieldy |
+| Trade REST surface schemas | Keep in `fft-schemas.ts`; split files only if module grows unwieldy |
 
 ---
 
@@ -117,4 +122,4 @@ These are **named gaps** from `doc/api/05-schema-map.md` — do not invent ad-ho
 | Add optional fields when extending | Change existing field types or remove fields |
 | Brand IDs at the boundary | Use `any` / untyped `Record<string, unknown>` in adapters |
 | Keep dates as ISO `string` on the wire | Pass `Date` across RSC → client without serialization |
-| One schema per resource concern in `lib/schemas/` | Duplicate schema in `app/actions/` or inline |
+| One schema per resource concern in `modules/*/schemas` | Duplicate schema in `app/actions/` or inline; recreate `lib/schemas/` |

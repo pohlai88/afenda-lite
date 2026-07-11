@@ -2,15 +2,15 @@ import "server-only";
 
 import { isAdminSession } from "@/modules/identity/admin";
 import { getAuthSession } from "@/modules/identity/auth/get-session";
-import { isHotSalesRbacEnabled } from "@/modules/platform/env/accessors";
-import { isSalesMemberActive } from "@/modules/trade/domain/access";
+import { isFftRbacEnabled } from "@/modules/platform/env/accessors";
+import { isSalesMemberActive } from "@/modules/fft/domain/access";
 import {
   listRoleAssignmentsForUser,
   listSalesMembers,
-} from "@/modules/trade/domain/store";
+} from "@/modules/fft/domain/store";
 
-/** Product modules hosted in the shared AdminCN shell. */
-export type ShellModuleId = "declarations" | "feed-farm-trade";
+/** SaaS product modules on the shared AdminCN platform (not separate apps). */
+export type ShellModuleId = "declarations" | "fft";
 
 export type ShellNavKind = "module" | "admin";
 
@@ -25,7 +25,7 @@ export type ShellAccess = {
  * Feed Farm Trade module entry — allowlist or RBAC assignment.
  * Organization admin alone does **not** grant Feed Farm Trade.
  */
-export async function hasHotSalesModuleAccess(input: {
+export async function hasFftModuleAccess(input: {
   userId: string;
   email: string;
 }): Promise<boolean> {
@@ -34,7 +34,7 @@ export async function hasHotSalesModuleAccess(input: {
     return true;
   }
 
-  if (!isHotSalesRbacEnabled()) {
+  if (!isFftRbacEnabled()) {
     return false;
   }
 
@@ -51,8 +51,8 @@ export async function resolveShellAccess(): Promise<ShellAccess | null> {
   }
 
   const modules: ShellModuleId[] = ["declarations"];
-  if (await hasHotSalesModuleAccess({ userId: user.id, email: user.email })) {
-    modules.push("feed-farm-trade");
+  if (await hasFftModuleAccess({ userId: user.id, email: user.email })) {
+    modules.push("fft");
   }
 
   return {

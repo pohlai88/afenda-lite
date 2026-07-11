@@ -1,8 +1,8 @@
 ---
-description: FFT + AdminCN UI registry — ACN-UI/ACN-BLK/FFT-UI IDs; human HITL for new product IDs
+description: FFT + AdminCN UI registry — ACN-UI/ACN-BLK/FFT-UI IDs; Layer A inventory + Layer B DNA
 globs:
-  - features/trade/**
-  - app/trade/**
+  - features/fft/**
+  - app/fft/**
   - components-V2/platform-components/ui/**
   - components-V2/platform-views/**
 alwaysApply: false
@@ -12,8 +12,17 @@ alwaysApply: false
 
 **SSOT:** `.cursor/skills/feed-farm-trade/ui-registry.json`  
 **HITL:** `.cursor/skills/feed-farm-trade/ui-registry.md`  
-**Enforcer:** `features/trade/ui-registry.test.ts`  
+**Audit SSOT:** `scripts/lib/fft-ui-registry-inventory.mjs`  
+**Enforcers:** `npm run check:fft-ui-registry` · `features/fft/ui-registry.test.ts`  
 **AdminCN playbook:** `docs/architecture/admincn-customization.md` · skill `admincn-customization`
+
+## Layers
+
+| Layer | Enforced by | Bar |
+|-------|-------------|-----|
+| A Inventory | Script + Vitest | Disk ↔ registry |
+| B DNA | Script + Vitest (`dna` / `surfaces` / `requiredBlockId`) | Studio/AdminCN patterns |
+| C Visual | Human HITL | Screenshots |
 
 ## Namespaces
 
@@ -21,21 +30,23 @@ alwaysApply: false
 |--------|-----|
 | `ACN-UI-*` | Primitives under `components-V2/platform-components/ui` — import if on `primitiveAllowlist` |
 | `ACN-BLK-*` | Blocks under `components-V2/platform-views` — catalog DNA only |
-| `FFT-UI-*` | Product modules under `features/trade` — approved = auto-use |
+| `FFT-UI-*` | Product modules under `features/fft` — approved = auto-use |
 
 ## Priority (agents)
 
 1. Compose approved `FFT-UI-*` + allowlisted `ACN-UI-*`.
-2. Adapt `ACN-BLK-*` → **STOP** — request new `FFT-UI-*` with `studioSource` pointing at the block.
+2. Adapt `ACN-BLK-*` → **STOP** — request new `FFT-UI-*` with `requiredBlockId` + `studioSource` + `dna`.
 3. New product file / invent ID → **STOP** — human HITL.
-4. **Do not edit** `ui-registry.json` to pass Vitest.
-5. Vitest is backstop, not a license to invent.
+4. **Do not edit** `ui-registry.json` to pass Vitest or `check:fft-ui-registry`.
+5. When Layer B fails → remediate product/route code; do not dilute contracts.
+6. Vitest/script are backstops, not a license to invent.
 
 ## Forbidden
 
 - Inventing `FFT-UI-*` / `FFT-QA-*` / `ACN-UI-*` / `ACN-BLK-*` / `ACN-QA-*`
-- Importing `components-V2/platform-views/**` from `features/trade`
+- Importing `components-V2/platform-views/**` from `features/fft`
 - Bulk-wiring AdminCN demos into product routes
 - Replacing Neon Auth with `ACN-BLK-PAGES-AUTH-*`
-- Hand-written visual CSS / `style=` / hex under `features/trade`
-- Claiming registry pass = TanStack/AdminCN visual quality
+- Hand-written visual CSS / `style=` / hex under `features/fft`
+- Claiming Layer A pass = TanStack/AdminCN DNA quality
+- Claiming Layer B pass = visual QA

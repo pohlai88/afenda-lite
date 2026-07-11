@@ -18,10 +18,10 @@ export type AdminAuthenticatedSession = {
   };
 };
 
-/** Canonical redirect when a non-operator hits an operator-only boundary. */
+/** Canonical redirect when a non–organization-admin hits an admin-only boundary. */
 export const ORG_ACCESS_DENIED_HREF = "/org/login?reason=access-denied" as const;
 
-/** Operator re-authentication entry (forwards to Neon Auth sign-in). */
+/** Organization-admin re-authentication entry (forwards to Neon Auth sign-in). */
 export const ORG_SIGN_IN_HREF = "/org/login" as const;
 
 export function getSharedAdminEmail() {

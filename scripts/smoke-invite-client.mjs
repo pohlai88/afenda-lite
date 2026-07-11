@@ -102,7 +102,7 @@ async function main() {
           note:
             "Production invites use Neon Auth organization email. This smoke script seeds auth user + DB rows for local testing only.",
           accessMessage: [
-            "Client Declaration Portal",
+            "Afenda-Lite",
             "",
             `Sign in: ${appUrl}/client/login`,
             `Email: ${recipientEmail}`,

@@ -1,10 +1,13 @@
 import { accountViewPaths } from "@neondatabase/auth-ui/server";
-import type { PortalMemberContext } from "@/modules/identity/portal-member-types";
+import type { OrganizationMemberKind } from "@/modules/identity/portal-member-types";
 import { portalCopy } from "@/modules/declarations/copy/portal-copy";
 import { CLIENT_PROFILE_HREF } from "@/modules/platform/routing/portal-routes";
-import { CLIENT_HOME_HREF, OPERATOR_DASHBOARD_HREF } from "@/modules/identity/client-session";
+import {
+  CLIENT_HOME_HREF,
+  ORGANIZATION_ADMIN_DASHBOARD_HREF,
+} from "@/modules/identity/client-session";
 
-/** Operator account tabs exposed in the portal (Neon teams/org paths omitted). */
+/** Organization-admin account tabs exposed in the portal (Neon teams/org paths omitted). */
 export const PORTAL_ACCOUNT_PATHS = [
   accountViewPaths.SETTINGS,
   accountViewPaths.SECURITY,
@@ -32,29 +35,29 @@ export function accountCopyKey(path: PortalAccountPath): "settings" | "security"
   return path === accountViewPaths.SECURITY ? "security" : "settings";
 }
 
-/** Default landing route for `/account` — operators use settings; clients use declarant profile. */
-export function resolvePortalAccountIndexHref(context: PortalMemberContext) {
-  return context === "operator"
+/** Default landing route for `/account` — organization admins use settings; clients use declarant profile. */
+export function resolvePortalAccountIndexHref(context: OrganizationMemberKind) {
+  return context === "organizationAdmin"
     ? PORTAL_ACCOUNT_SETTINGS_HREF
     : CLIENT_PROFILE_HREF;
 }
 
-/** Clients manage profile at `/client/profile`; operators use Neon AccountView settings. */
-export function resolveAccountSettingsHref(context: PortalMemberContext) {
-  return context === "operator"
+/** Clients manage profile at `/client/profile`; organization admins use Neon AccountView settings. */
+export function resolveAccountSettingsHref(context: OrganizationMemberKind) {
+  return context === "organizationAdmin"
     ? PORTAL_ACCOUNT_SETTINGS_HREF
     : CLIENT_PROFILE_HREF;
 }
 
-export function resolveAccountSettingsLabel(context: PortalMemberContext) {
-  return context === "operator"
+export function resolveAccountSettingsLabel(context: OrganizationMemberKind) {
+  return context === "organizationAdmin"
     ? portalCopy.userMenu.accountSettings
     : portalCopy.clientNav.declarantProfile;
 }
 
-/** Section nav for `/account/[path]` — settings href/label varies by persona (BL-07). */
+/** Section nav for `/account/[path]` — settings href/label varies by member kind (BL-07). */
 export function resolveAccountSectionNavItems(
-  context: PortalMemberContext,
+  context: OrganizationMemberKind,
 ): AccountSectionNavItem[] {
   return [
     {
@@ -74,9 +77,9 @@ export type AccountPathAccess =
   | { allowed: true }
   | { allowed: false; redirectHref: string };
 
-/** Enforce persona-specific account routes before rendering AccountView. */
+/** Enforce member-kind account routes before rendering AccountView. */
 export function resolveAccountPathAccess(
-  context: PortalMemberContext,
+  context: OrganizationMemberKind,
   path: PortalAccountPath,
 ): AccountPathAccess {
   if (context === "client" && path === accountViewPaths.SETTINGS) {
@@ -86,10 +89,10 @@ export function resolveAccountPathAccess(
   return { allowed: true };
 }
 
-export function resolveAccountShellBack(context: PortalMemberContext) {
-  return context === "operator"
+export function resolveAccountShellBack(context: OrganizationMemberKind) {
+  return context === "organizationAdmin"
     ? {
-        href: OPERATOR_DASHBOARD_HREF,
+        href: ORGANIZATION_ADMIN_DASHBOARD_HREF,
         label: portalCopy.account.backToDashboard,
       }
     : {

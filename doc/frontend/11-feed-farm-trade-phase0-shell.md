@@ -22,7 +22,7 @@ Establish the platform entry gate and shared AdminCN chrome for Feed Farm Trade 
 
 **In:** layout-level access gate, entitlement resolution, nav visibility, locale-free routing, deny behavior for anonymous / unentitled / org-admin-only users.
 
-**Out:** any event/order/allocation feature (P1), UI polish beyond AdminCN defaults (P2), ops flags (P3), customer portal, `TradeShell`, locale switcher, `/trade/[locale]`.
+**Out:** any event/order/allocation feature (P1), UI polish beyond AdminCN defaults (P2), ops flags (P3), customer portal, `FftShell`, locale switcher, `/fft/[locale]`.
 
 ## Preconditions
 
@@ -32,55 +32,55 @@ None — this is the first phase. It depends only on Identity (session) and Plat
 
 | Actor | Expected outcome |
 |-------|-------------------|
-| Anonymous visitor | Redirected to sign-in before reaching `/trade/*` |
-| Signed-in user without trade entitlement | Session valid elsewhere in the portal; `/trade/*` denied; Feed Farm Trade nav item hidden |
-| Signed-in user with trade entitlement (`feed-farm-trade`) | `/trade/*` renders under AdminCN; nav item visible |
-| Org admin without trade entitlement | Declarations/Account still work; `/trade/*` still denied — **org admin alone never grants trade access** |
+| Anonymous visitor | Redirected to sign-in before reaching `/fft/*` |
+| Signed-in user without trade entitlement | Session valid elsewhere in the portal; `/fft/*` denied; Feed Farm Trade nav item hidden |
+| Signed-in user with trade entitlement (`fft`) | `/fft/*` renders under AdminCN; nav item visible |
+| Org admin without trade entitlement | Declarations/Account still work; `/fft/*` still denied — **org admin alone never grants trade access** |
 
-Entitlement code: `feed-farm-trade`, resolved by `modules/platform/shell/access.ts`. Session/permission resolution: `modules/trade/auth/trade-session.ts` (`requireTradeAccess`).
+Entitlement code: `fft`, resolved by `modules/platform/shell/access.ts`. Session/permission resolution: `modules/fft/auth/trade-session.ts` (`requireFftAccess`).
 
 ## Architecture touchpoints
 
 | Concern | Path | Responsibility |
 |---------|------|-----------------|
-| Layout gate | `app/trade/layout.tsx` | Calls `requireTradeAccess`, wraps children in `AdminCnShell` |
+| Layout gate | `app/fft/layout.tsx` | Calls `requireFftAccess`, wraps children in `AdminCnShell` |
 | Entitlement | `modules/platform/shell/access.ts` | Resolves module visibility for nav + guards |
-| Session | `modules/trade/auth/trade-session.ts` | Trade access resolution / deny |
+| Session | `modules/fft/auth/trade-session.ts` | Trade access resolution / deny |
 | Nav | `components-V2/platform-config/navConfig.tsx` | `moduleId: feed-farm-trade` entry |
-| Chrome | `components-V2/platform-components/AdminCnShell` | Shared shell — never `TradeShell` |
-| Route root | `app/trade/page.tsx` | Redirect to `/trade/events` |
+| Chrome | `components-V2/platform-components/AdminCnShell` | Shared shell — never `FftShell` |
+| Route root | `app/fft/page.tsx` | Redirect to `/fft/events` |
 
 ## Functional requirements
 
 | ID | Requirement |
 |----|-------------|
-| F-ACC-01 | `/trade/*` is reachable only through `requireTradeAccess`; no route bypasses the layout gate |
-| F-ACC-02 | The Feed Farm Trade nav entry renders only when the signed-in user is entitled (`feed-farm-trade`) |
-| F-ACC-03 | Every `/trade/*` page renders inside the shared `AdminCnShell` — no bespoke chrome |
+| F-ACC-01 | `/fft/*` is reachable only through `requireFftAccess`; no route bypasses the layout gate |
+| F-ACC-02 | The Feed Farm Trade nav entry renders only when the signed-in user is entitled (`fft`) |
+| F-ACC-03 | Every `/fft/*` page renders inside the shared `AdminCnShell` — no bespoke chrome |
 | F-ACC-04 | A request with no session is redirected to sign-in before any trade data loads |
-| F-ACC-05 | All `/trade` URLs are locale-free — no `/trade/[locale]/...` segment exists or is reachable |
+| F-ACC-05 | All `/fft` URLs are locale-free — no `/fft/[locale]/...` segment exists or is reachable |
 
 ## Acceptance criteria
 
 | AC | Pass when |
 |----|-----------|
-| AC-ACC-01 | User without trade permission hits `/trade` → denied, and the Feed Farm Trade nav item is not rendered anywhere in the shell |
-| AC-ACC-02 | User with trade permission hits `/trade` → AdminCN shell renders with the Feed Farm Trade nav item visible and highlighted |
-| AC-ACC-03 | Org admin without trade allowlist/RBAC: Declarations (`/dashboard`) still accessible; `/trade` still denied |
-| AC-ACC-04 | Anonymous request to any `/trade/*` path → redirected to sign-in, not a 500 or blank page |
-| AC-SH-01 | No component under `features/trade` or `app/trade/**` imports or renders `TradeShell` |
-| AC-SH-02 | No component under `features/trade` or `app/trade/**` imports or renders a locale switcher |
-| AC-SH-03 | Nav and page copy read **"Feed Farm Trade"**, never "Hot Sales", and there is no visual/DOM bleed from Declarations chrome |
+| AC-ACC-01 | User without trade permission hits `/fft` → denied, and the Feed Farm Trade nav item is not rendered anywhere in the shell |
+| AC-ACC-02 | User with trade permission hits `/fft` → AdminCN shell renders with the Feed Farm Trade nav item visible and highlighted |
+| AC-ACC-03 | Org admin without trade allowlist/RBAC: Declarations (`/dashboard`) still accessible; `/fft` still denied |
+| AC-ACC-04 | Anonymous request to any `/fft/*` path → redirected to sign-in, not a 500 or blank page |
+| AC-SH-01 | No component under `features/fft` or `app/fft/**` imports or renders `FftShell` |
+| AC-SH-02 | No component under `features/fft` or `app/fft/**` imports or renders a locale switcher |
+| AC-SH-03 | Nav and page copy read **"Feed Farm Trade"**, never "Feed Farm Trade", and there is no visual/DOM bleed from Declarations chrome |
 
 ## Verification plan
 
 | Check | Method |
 |-------|--------|
 | Entitlement resolution | Unit tests on `modules/platform/shell/access.ts` (`resolveShellAccess`) |
-| Trade session deny paths | Unit tests on `modules/trade/auth/trade-session.ts` |
-| No locale residue on disk | `Get-ChildItem -Recurse app/trade` (or `find app/trade`) must contain no `[locale]` segment |
-| No `TradeShell` / locale switcher references | `rg "TradeShell|locale-switcher" features/trade app/trade` returns no matches |
-| Manual QA — denied path | Sign in as a non-entitled user; confirm `/trade` denies and nav item is absent |
+| Trade session deny paths | Unit tests on `modules/fft/auth/trade-session.ts` |
+| No locale residue on disk | `Get-ChildItem -Recurse app/fft` (or `find app/fft`) must contain no `[locale]` segment |
+| No `FftShell` / locale switcher references | `rg "FftShell|locale-switcher" features/fft app/fft` returns no matches |
+| Manual QA — denied path | Sign in as a non-entitled user; confirm `/fft` denies and nav item is absent |
 | Manual QA — allowed path | Sign in as an entitled user; confirm AdminCN renders with Feed Farm Trade nav highlighted |
 
 ## Evaluation checklist
@@ -89,16 +89,16 @@ Use this table to grade the live codebase. Leave **Result** blank until evaluate
 
 | AC / Req ID | Requirement | Expected evidence | Result |
 |-------------|-------------|--------------------|--------|
-| F-ACC-01 / AC-ACC-01..02 | Layout gate enforced | `app/trade/layout.tsx` calls `requireTradeAccess` before rendering children | **PASS** — `requireTradeAccess` + `AdminCnShell` (EVALUATE_P1_MVP 2026-07-11) |
-| F-ACC-02 | Nav visibility gated | `navConfig.tsx` entry conditioned on `feed-farm-trade` entitlement | **PASS** — `moduleId: feed-farm-trade` |
-| F-ACC-03 / AC-SH-03 | AdminCN-only chrome | No custom shell component in `app/trade/**` or `features/trade` | **PASS** — AdminCN only; no TradeShell product mount |
+| F-ACC-01 / AC-ACC-01..02 | Layout gate enforced | `app/fft/layout.tsx` calls `requireFftAccess` before rendering children | **PASS** — `requireFftAccess` + `AdminCnShell` (EVALUATE_P1_MVP 2026-07-11) |
+| F-ACC-02 | Nav visibility gated | `navConfig.tsx` entry conditioned on `fft` entitlement | **PASS** — `moduleId: feed-farm-trade` |
+| F-ACC-03 / AC-SH-03 | AdminCN-only chrome | No custom shell component in `app/fft/**` or `features/fft` | **PASS** — AdminCN only; no FftShell product mount |
 | F-ACC-04 / AC-ACC-04 | Anonymous deny | Proxy/session guard redirects before data fetch | **PASS** — `trade-session` unit + layout gate |
-| F-ACC-05 / AC-SH-01..02 | Locale-free, no residue | No `app/trade/[locale]` directory; no `TradeShell` / locale switcher imports | **PASS** — product locale-free; redirect-only `[locale]/[[...path]]` shim (no TradeShell) |
-| AC-ACC-03 | Org admin ≠ trade access | `requireTradeAccess` does not accept admin role alone | **PASS** — entitlement / allowlist / RBAC paths in `trade-session` (not org-admin alone) |
+| F-ACC-05 / AC-SH-01..02 | Locale-free, no residue | No `app/fft/[locale]` directory; no `FftShell` / locale switcher imports | **PASS** — product locale-free; redirect-only `[locale]/[[...path]]` shim (no FftShell) |
+| AC-ACC-03 | Org admin ≠ trade access | `requireFftAccess` does not accept admin role alone | **PASS** — entitlement / allowlist / RBAC paths in `trade-session` (not org-admin alone) |
 
 ## Risks and open questions
 
-- **Regression risk:** reintroducing `app/trade/[locale]` or `TradeShell` during unrelated refactors — guard with the `rg` check above in CI or pre-merge review.
+- **Regression risk:** reintroducing `app/fft/[locale]` or `FftShell` during unrelated refactors — guard with the `rg` check above in CI or pre-merge review.
 - **Nav leak risk:** entitlement check duplicated in both layout and nav config can drift if one is updated without the other — confirm both read from `modules/platform/shell/access.ts`.
 - No open product questions for this phase; it is a hard platform gate, not a design decision.
 

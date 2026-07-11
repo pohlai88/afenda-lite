@@ -1,7 +1,7 @@
 import "server-only";
 
 import { pool } from "@/modules/platform/db";
-import { normalizeEmail } from "@/modules/declarations/domain/clients";
+import { normalizeEmail } from "@/modules/platform/normalize-email";
 
 export type NeonAuthUserRow = {
   id: string;

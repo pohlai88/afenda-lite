@@ -71,7 +71,7 @@ Ops | Fix | Docs | Test | Normalize
 - Commit recommendation
 ```
 
-Adapt Fixed boundaries, Target files, and checks per lane and task. For repo-specific defaults (current active lane, Hot Sales ops authority), see [reference.md](reference.md).
+Adapt Fixed boundaries, Target files, and checks per lane and task. For repo-specific defaults (current active lane, Feed Farm Trade ops authority), see [reference.md](reference.md).
 
 ## Lane selection
 
@@ -115,4 +115,4 @@ End every bounded mission with:
 
 ## Additional resources
 
-- Current active lane and Hot Sales 2A ops defaults: [reference.md](reference.md)
+- Current active lane and Feed Farm Trade 2A ops defaults: [reference.md](reference.md)

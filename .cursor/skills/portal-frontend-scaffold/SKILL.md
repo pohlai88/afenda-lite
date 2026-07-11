@@ -1,7 +1,7 @@
 ---
 name: portal-frontend-scaffold
 description: >-
-  Greenfield Next.js App Router frontend scaffold for Client Declaration Portal.
+  Greenfield Next.js App Router frontend scaffold for Afenda-Lite.
   Enforces Next.js 15+/16 conventions, async params, hardened route/API boundaries,
   branded resource IDs, wipe rules, and stub-only pages. Use when scaffolding
   frontend, wiping product UI, adding app/ routes, naming [param] segments,
@@ -20,20 +20,21 @@ description: >-
 | [boundaries.md](boundaries.md)         | FE↔BE contracts, branded IDs, validation edges |
 | [wipe-inventory.md](wipe-inventory.md) | Complete DELETE / REPLACE / KEEP file list     |
 | [doc/api/](../../../doc/api/)          | Error shape, REST catalog, types               |
+| [doc/frontend/](../../../doc/frontend/) | UI architecture, routes, BFF tree              |
 
 ## Agent operating rules
 
 1. **Surface assumptions** before wipe/scaffold if anything conflicts with this skill — stop and ask.
-2. **Scope:** scaffold PR = tree + stubs only. No domain wiring, no e2e fixes, no `lib/` relocate, no AdminCN demos.
+2. **Scope:** scaffold PR = tree + stubs only. No domain wiring, no e2e fixes, no `lib/` residue prune, no AdminCN demos.
 3. **Simplicity:** thin `page.tsx`; UI in `features/*`; no clever route abstractions.
 4. **Verify** with the checklist below — “looks right” is not done.
-5. **Push back** on overloaded `[id]`, `fetch('/api')` for RSC reads, or growing `lib/`.
+5. **Push back** on overloaded `[id]`, `fetch('/api')` for RSC reads, or growing `lib/` with domain code.
 
 ## Hard rules
 
-1. **Scaffold ≠ wire.** No `@/lib/**`, `@/app/actions`, `@/lib/pages`, `@/lib/entry`, `@/lib/domain` in stub pages.
+1. **Scaffold ≠ wire.** No `@/lib/**`, `@/app/actions`, `@/lib/pages`, `@/lib/entry`, `@/modules/**` domain in stub pages.
 2. **Descriptive params only** — never overloaded `[id]` (table below).
-3. **`lib/` is a bin.** Not Next.js best practice. Post-FE → `modules/{identity,declarations,trade,platform}`.
+3. **`lib/` is transitional.** Domain/Zod/env live under `modules/{platform,identity,declarations,fft}`. Do not recreate `lib/domain` or `lib/schemas`. See `/portal-backend-modules`.
 4. **No root `components/` restore.** Product UI → `features/*`.
 5. **Next 16:** `proxy.ts` only — never new `middleware.ts`.
 6. **Never** `page.tsx` + `route.ts` in the same segment.
@@ -46,8 +47,8 @@ description: >-
 | Wipe / replace                                  | Leave (stubs must not import)                      |
 | ----------------------------------------------- | -------------------------------------------------- |
 | Product `app/**` pages, layouts, loading, error | `app/api/**`, `app/actions/**`                     |
-| `features/**` implementations                   | entire `lib/**` until modules pass                 |
-| `portal-views/**` product screens               | `db/**`, `proxy.ts`, `messages/trade/**`, `doc/**` |
+| `features/**` implementations                   | `modules/**` (wire pass); transitional `lib/**` runners |
+| `portal-views/**` product screens               | `db/**`, `proxy.ts`, `messages/fft/**`, `doc/**` |
 
 ## Next.js conventions (scaffold)
 
@@ -73,6 +74,8 @@ Draft XHR / auth / health / webhook? → Route Handler
 External/mobile REST?  → Route Handler per doc/api (contract-only until needed)
 ```
 
+Decision tree SSOT: [doc/frontend/04-bff-and-data.md](../../../doc/frontend/04-bff-and-data.md).
+
 ## Dynamic params (exact)
 
 | Segment / query   | Path                              | Brand (wire)               |
@@ -84,17 +87,19 @@ External/mobile REST?  → Route Handler per doc/api (contract-only until needed
 | `[slug]`          | `/survey/[slug]`                  | SurveySlug                 |
 | `[declarationId]` | `/dashboard/[declarationId]`      | DeclarationId              |
 | `[assignmentId]`  | `/client/declare/[assignmentId]`  | AssignmentId               |
-| `[locale]`        | `/trade/[locale]/…`               | TradeLocale (`vi` \| `en`) |
-| `[eventId]`       | `…/events/[eventId]/…`            | TradeEventId               |
+| `[eventId]`       | `/fft/…/events/[eventId]/…`       | TradeEventId               |
 | `[screenId]`      | `/playground/[screenId]`          | PlaygroundScreenId         |
+| `[userId]`        | `/dashboard/users/[userId]`       | UserId (wire pass)         |
 | `invitationId`    | `/join` searchParams              | InvitationId               |
+
+**P1 FFT routes are locale-free** under `/fft/*` (no `/fft/[locale]` product segment). `TradeLocale` remains an i18n brand, not a live App Router param on P1.
 
 **Forbidden:** `/dashboard/[id]`, `/client/declare/[id]`, mixing brands as raw `string` across ports when wiring.
 
 ## `features/` modules
 
 ```text
-features/{landing,auth,account,operator,client-workspace,portal-chrome,trade}/
+features/{landing,auth,account,organization-admin,portal-chrome,fft,playground}/
 ```
 
 `app/**/page.tsx` composes only. Prefer `features/` over `app/_components/` for product UI.
@@ -103,8 +108,8 @@ features/{landing,auth,account,operator,client-workspace,portal-chrome,trade}/
 
 1. **Scaffold** — this skill (tree + stubs)
 2. **UI** — `features/*` shells
-3. **Wire** — boundaries.md + Zod + ActionResult
-4. **Decompose `lib/`** → `modules/*`
+3. **Wire** — boundaries.md + Zod + ActionResult + `/portal-api-contract`
+4. **Modules** — relocate **complete**; residue Pass 2 via `/portal-backend-modules`
 
 ## Forbidden
 
@@ -112,8 +117,16 @@ features/{landing,auth,account,operator,client-workspace,portal-chrome,trade}/
 - RSC `fetch('/api/...')` for ordinary product reads
 - New REST list endpoints for web UI (use RSC → port)
 - Sync params, server `error.tsx`, Edge product pages
-- Growing fat `lib/` as the architecture
+- Growing fat `lib/` as the architecture (domain belongs in `modules/*`)
 - Divergent param names vs schema fields vs brands
+- Creating `modules/trade/` (use `modules/fft`)
+
+## Cross-skills
+
+| Need | Skill |
+|------|-------|
+| ActionResult / brands / api-now | `/portal-api-contract` |
+| Modules / ports / residue | `/portal-backend-modules` |
 
 ## Verify scaffold
 
@@ -122,6 +135,6 @@ features/{landing,auth,account,operator,client-workspace,portal-chrome,trade}/
 - [ ] All dynamic pages: `params: Promise<{…}>` + await
 - [ ] `/join` types invitationId searchParams
 - [ ] No overloaded `[id]`; names match brand table
-- [ ] No stub imports from `@/lib/**` or `@/app/actions`
+- [ ] No stub imports from `@/lib/**`, `@/app/actions`, or `@/modules/**`
 - [ ] No page+route colocation; api/actions untouched
 - [ ] Typecheck clean; no `runtime = 'edge'` on pages

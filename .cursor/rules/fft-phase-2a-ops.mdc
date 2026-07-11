@@ -1,0 +1,42 @@
+---
+description: Feed Farm Trade — read RUNTIME.md first; Phase 2A closed; 2B–2C landed; 2D-2 landed; flags default off
+globs: app/fft/**,components/fft/**,modules/fft/domain/**,docs/fft/**
+alwaysApply: true
+---
+
+# Feed Farm Trade — agent lane
+
+**Read first:** [docs/fft/RUNTIME.md](docs/fft/RUNTIME.md) · Index: [docs/fft/README.md](docs/fft/README.md)
+
+## Phase state
+
+Phase 2A **implementation + ops closed** (2026-07-10). Gates 1–7 complete. Production `FFT_RBAC_ENABLED=true`.
+
+**2B–2C:** Code **landed**; prod flags default off. Tag criteria: [ops/gate-register.md](docs/fft/ops/gate-register.md).
+
+**2D:** 2D-1 framework + **2D-2 DLQ UI landed**. **2D-3** vendor pack per customer only.
+
+## Forbidden without explicit user approval
+
+- Phase **2D-3** customer ERP vendor adapter (until integration contract)
+- New Feed Farm Trade permissions, roles, RBAC UI, or schema migrations beyond approved slices
+- Enabling prod flags without gate-register promotion checklist
+- Disabling production RBAC except documented rollback in RUNTIME.md
+- Repo normalization mixed into Feed Farm Trade commits
+- Guardian Auth / portal atmosphere framed as Feed Farm Trade work
+
+## Allowed
+
+- Production-blocking emergency fixes on frozen boundary (merge to `main`, redeploy)
+- Test-lane commits separate from unrelated refactors
+- Local dev uses production Neon branch (`npm run dev`)
+
+## Test identity (do not conflate)
+
+- `SHARED_ADMIN_EMAIL` — admin matrix, not sales allowlist
+- `PREVIEW_CLIENT_EMAIL` — not auto-seeded into `fft_sales_member`
+- Redirect to `/client` for non-allowlisted `/fft` users is **expected**
+
+## Before coding
+
+If the task is not a production-blocking fix — **stop and ask** whether scope reopened. Depth: [ops/gate-register.md](docs/fft/ops/gate-register.md).

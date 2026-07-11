@@ -39,13 +39,13 @@ async function main() {
     const salesContext = await browser.newContext();
     const salesPage = await salesContext.newPage();
     await signIn(salesPage, salesEmail, salesPassword);
-    await salesPage.goto(`${BASE}/trade/vi/events`);
+    await salesPage.goto(`${BASE}/fft/vi/events`);
     await salesPage.waitForLoadState("networkidle", { timeout: 30_000 }).catch(() => {});
     const salesUrl = salesPage.url();
     const salesPass =
-      salesUrl.includes("/trade/vi/events") && !salesUrl.includes("/client");
+      salesUrl.includes("/fft/vi/events") && !salesUrl.includes("/client");
     results.push({
-      check: "sales /trade/vi/events (no /client bounce)",
+      check: "sales /fft/vi/events (no /client bounce)",
       pass: salesPass,
       url: salesUrl,
     });
@@ -53,12 +53,12 @@ async function main() {
     const adminContext = await browser.newContext();
     const adminPage = await adminContext.newPage();
     await signIn(adminPage, adminEmail, adminPassword);
-    await adminPage.goto(`${BASE}/trade/vi/admin/events`);
+    await adminPage.goto(`${BASE}/fft/vi/admin/events`);
     await adminPage.waitForLoadState("networkidle", { timeout: 30_000 }).catch(() => {});
     const adminUrl = adminPage.url();
-    const adminPass = adminUrl.includes("/trade/vi/admin/events");
+    const adminPass = adminUrl.includes("/fft/vi/admin/events");
     results.push({
-      check: "admin /trade/vi/admin/events",
+      check: "admin /fft/vi/admin/events",
       pass: adminPass,
       url: adminUrl,
     });

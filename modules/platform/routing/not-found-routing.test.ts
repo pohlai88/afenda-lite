@@ -17,7 +17,7 @@ import { resolveNotFoundDestination } from "@/modules/platform/routing/not-found
 import {
   AUTH_SIGN_IN_HREF,
   CLIENT_HOME_HREF,
-  OPERATOR_DASHBOARD_HREF,
+  ORGANIZATION_ADMIN_DASHBOARD_HREF,
 } from "@/modules/platform/routing/portal-routes";
 
 describe("resolveNotFoundDestination", () => {
@@ -26,14 +26,14 @@ describe("resolveNotFoundDestination", () => {
     isAdminSession.mockReset();
   });
 
-  it("routes operators back to dashboard", async () => {
+  it("routes organization admins back to dashboard", async () => {
     getAuthSession.mockResolvedValue({
       user: { id: "op-1", email: "admin@example.com" },
     });
     isAdminSession.mockReturnValue(true);
 
     await expect(resolveNotFoundDestination()).resolves.toEqual({
-      backHref: OPERATOR_DASHBOARD_HREF,
+      backHref: ORGANIZATION_ADMIN_DASHBOARD_HREF,
       backLabel: expect.any(String),
     });
   });

@@ -12,7 +12,7 @@ import {
   appendPlaygroundEmbedQuery,
   resolvePlaygroundEmbedActive,
 } from "@/modules/platform/playground-embed";
-import { PORTAL_NAME, portalCopy } from "@/lib/copy/portal-copy";
+import { PORTAL_NAME, portalCopy } from "@/modules/declarations/copy/portal-copy";
 import {
   authSignInHref,
   sanitizeReturnToPath,

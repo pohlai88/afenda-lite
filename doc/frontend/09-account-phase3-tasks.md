@@ -29,7 +29,7 @@ Restore `/account` and `/account/[path]` (settings + security) with AdminCN shel
 ## Slices
 
 1. **Layout** — `requireAccountSession` + `AdminCnShell` + `error.tsx`
-2. **Index** — `/account` → `resolvePortalAccountIndexHref` (operators → settings; clients → `/client/profile` still rebuild)
+2. **Index** — `/account` → `resolvePortalAccountIndexHref` (organization admins → settings; clients → `/client/profile` still rebuild)
 3. **Path** — `/account/settings` + `/account/security` Neon AccountView + section nav
 4. **Form section leaf** — migrate Studio form-layout-01 section to `features/account/`
 
@@ -41,7 +41,7 @@ Restore `/account` and `/account/[path]` (settings + security) with AdminCN shel
 
 ## Definition of Done
 
-- `/account` redirects operators to `/account/settings`
+- `/account` redirects organization admins to `/account/settings`
 - `/account/settings` and `/account/security` render under AdminCN + Neon
 - Zero `@/components/` under `features/account` + `app/account`
 - `account-paths` unit tests green

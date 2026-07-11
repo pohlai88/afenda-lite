@@ -4,11 +4,11 @@
 **Product home:** `components-V2/`  
 **Playbook:** [docs/architecture/admincn-customization.md](../../docs/architecture/admincn-customization.md)  
 **Preflight:** [docs/architecture/admincn-frontend-preflight.md](../../docs/architecture/admincn-frontend-preflight.md)  
-**UI registry (compulsory):** [`.cursor/skills/feed-farm-trade/ui-registry.md`](../../.cursor/skills/feed-farm-trade/ui-registry.md) · [`ui-registry.json`](../../.cursor/skills/feed-farm-trade/ui-registry.json)
+**UI registry (compulsory):** [`.cursor/skills/feed-farm-trade/ui-registry.md`](../../.cursor/skills/feed-farm-trade/ui-registry.md) · [`ui-registry.json`](../../.cursor/skills/feed-farm-trade/ui-registry.json) · `npm run check:fft-ui-registry`
 
 AdminCN is the **shared platform shell** for Declarations, Account, and Feed Farm Trade. It is **not** the auth product and not a license to ship demo apps.
 
-Every primitive and block under `components-V2` used as DNA must carry an `ACN-UI-*` or `ACN-BLK-*` ID in the registry. Product FFT modules use `FFT-UI-*`. See [fft-ui-registry.mdc](../../.cursor/rules/fft-ui-registry.mdc).
+Every primitive and block under `components-V2` used as DNA must carry an `ACN-UI-*` or `ACN-BLK-*` ID in the registry. Product FFT modules use `FFT-UI-*`. Layer B (`dna` / `surfaces` / `requiredBlockId`) enforces Studio pattern contracts (e.g. Events → TanStack datatable). See [fft-ui-registry.mdc](../../.cursor/rules/fft-ui-registry.mdc).
 
 ## Template → portal map
 
@@ -18,7 +18,7 @@ Every primitive and block under `components-V2` used as DNA must carry an `ACN-U
 | `components/ui` | `platform-components/ui` | Primitives |
 | `configs` (nav/theme) | `platform-config/navConfig.tsx`, `themeConfig.ts` | Nav + theme |
 | `views/*` product-like | `platform-views/portal-views/*` | Declarations screens |
-| `app/(pages)` | `app/dashboard/*`, `app/account/*`, `app/trade/*` | Shell routes |
+| `app/(pages)` | `app/dashboard/*`, `app/account/*`, `app/fft/*` | Shell routes |
 | `app/(blank)/pages/auth/*` | **Do not copy** | Portal uses `features/auth` + Neon |
 | `fake-db` | `platform-fake-db` | **Do not import for product** |
 | `views/apps/*` (mail, chat, kanban, …) | `platform-views/apps/*` | **Prune candidates** |
@@ -39,16 +39,16 @@ Every primitive and block under `components-V2` used as DNA must carry an `ACN-U
 - Blank auth login/register/forgot/reset/two-steps demos  
 - Extra `*-dashboard.tsx` demos not used by portal-views  
 - Gallery `forms/` and `datatables/` once patterns are copied into portal-views  
-- Separate Feed Farm Trade chrome (`TradeShell`, locale switcher) — **removed**; use AdminCN only  
+- Separate Feed Farm Trade chrome (`FftShell`, locale switcher) — **removed**; use AdminCN only  
 
 ## SaaS modules in one shell
 
 | Module | Routes | Layout gate | Nav `moduleId` |
 |--------|--------|-------------|----------------|
 | Declarations | `/dashboard/*`, `/account/*` | `requireMemberSession` | `declarations` |
-| Feed Farm Trade | `/trade/*` | `requireTradeAccess` | `feed-farm-trade` |
+| Feed Farm Trade | `/fft/*` | `requireFftAccess` | `fft` |
 
-Purpose: B2B feed & farm trade sales for 3F operators — [adr/001-feed-farm-trade.md](adr/001-feed-farm-trade.md) · [001A](adr/001A-feed-farm-trade-architecture.md) · [001R](adr/001R-feed-farm-trade-roadmap.md). Downstream customer portal is out of scope for this module.
+Purpose: B2B feed & farm trade sales for 3F businesses (industry customers — not portal organization admins) — [adr/001-feed-farm-trade.md](adr/001-feed-farm-trade.md) · [001A](adr/001A-feed-farm-trade-architecture.md) · [001R](adr/001R-feed-farm-trade-roadmap.md). Downstream customer portal is out of scope for this module.
 | Admin routes | e.g. playground (local) | `isAdminSession` | `kind: "admin"` |
 
 ## Customization order (Studio / AdminCN skill)

@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { StudioAuthShell } from "@/features/auth/studio-auth-shell";
 import { PortalAuthFormIntro } from "@/features/auth/portal-auth-form-intro";
 import { PortalAuthNeonView } from "@/features/auth/portal-auth-neon-view";
-import type { AuthShellCopy } from "@/lib/copy/auth-shell-copy";
+import type { AuthShellCopy } from "@/features/auth/auth-shell-copy";
 
 /** Production auth page — Studio login-page-02 chrome + Neon AuthView. */
 export function StudioAuthLoginPage({

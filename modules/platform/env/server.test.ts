@@ -56,6 +56,29 @@ describe("validateServerEnv", () => {
       expect(() => validateServerEnv()).toThrow(/NEON_AUTH_COOKIE_SECRET/i);
     });
   });
+
+  it("accepts Resend-style FFT_EMAIL_FROM display name", () => {
+    withEnv(
+      { FFT_EMAIL_FROM: "Afenda <no-reply@nexuscanon.com>" },
+      () => {
+        expect(validateServerEnv().FFT_EMAIL_FROM).toBe(
+          "Afenda <no-reply@nexuscanon.com>",
+        );
+      },
+    );
+  });
+
+  it("accepts bare FFT_EMAIL_FROM email", () => {
+    withEnv({ FFT_EMAIL_FROM: "ops@example.com" }, () => {
+      expect(validateServerEnv().FFT_EMAIL_FROM).toBe("ops@example.com");
+    });
+  });
+
+  it("rejects invalid FFT_EMAIL_FROM", () => {
+    withEnv({ FFT_EMAIL_FROM: "not-an-email" }, () => {
+      expect(() => validateServerEnv()).toThrow(/FFT_EMAIL_FROM/i);
+    });
+  });
 });
 
 describe("env accessors", () => {

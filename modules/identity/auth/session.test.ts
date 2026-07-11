@@ -65,7 +65,7 @@ vi.mock("@/modules/declarations/copy/portal-copy", () => ({
 
 import {
   guardClientSession,
-  rejectNonOperatorSignIn,
+  rejectNonOrganizationAdminSignIn,
 } from "@/modules/identity/auth/session";
 
 const clientSession = {
@@ -92,7 +92,7 @@ describe("guardClientSession", () => {
     });
   });
 
-  it("denies operator sessions on client routes", async () => {
+  it("denies organization-admin sessions on client routes", async () => {
     mocks.getAuthSession.mockResolvedValue({
       user: { id: "op-1", email: "admin@example.com", role: "admin" },
     });
@@ -101,7 +101,7 @@ describe("guardClientSession", () => {
 
     await expect(guardClientSession()).resolves.toEqual({
       allowed: false,
-      reason: "operator",
+      reason: "organizationAdmin",
     });
   });
 
@@ -170,7 +170,7 @@ describe("guardClientSession", () => {
   });
 });
 
-describe("rejectNonOperatorSignIn", () => {
+describe("rejectNonOrganizationAdminSignIn", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.authSignOut.mockResolvedValue(undefined);
@@ -183,17 +183,17 @@ describe("rejectNonOperatorSignIn", () => {
     });
     mocks.isAdminSession.mockReturnValue(true);
 
-    await expect(rejectNonOperatorSignIn("admin@example.com")).resolves.toBeNull();
+    await expect(rejectNonOrganizationAdminSignIn("admin@example.com")).resolves.toBeNull();
     expect(mocks.authSignOut).not.toHaveBeenCalled();
   });
 
-  it("signs out and returns access denied for non-operators", async () => {
+  it("signs out and returns access denied for non–organization-admins", async () => {
     mocks.getAuthSession.mockResolvedValue({
       user: { email: "client@example.com" },
     });
     mocks.isAdminSession.mockReturnValue(false);
 
-    await expect(rejectNonOperatorSignIn("client@example.com")).resolves.toEqual({
+    await expect(rejectNonOrganizationAdminSignIn("client@example.com")).resolves.toEqual({
       error: "Access denied.",
     });
 

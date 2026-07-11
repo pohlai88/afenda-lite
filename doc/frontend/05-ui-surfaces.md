@@ -12,27 +12,27 @@ Each product surface: journey phase, route, rebuild owner module, data adapter.
 | auth-email-otp | pre-login | `/auth/email-otp` | `features/auth` | Neon UI | Neon |
 | org-login | pre-login | `/org/login` | `lib/entry` + auth | session redirect | — |
 | client-login | pre-login | `/client/login` | `features/auth` / entry | — | Neon |
-| public-survey | pre-login | `/survey/[slug]` | page runner + form feature | domain | Action submit |
-| public-secure-link | pre-login | `/f/[token]` | page runner | domain | Action submit |
+| public-survey | pre-login | `/survey/[slug]` | redirect-only page runner | domain | — |
+| public-secure-link | pre-login | `/f/[token]` | redirect-only page runner | domain | — |
 | legacy-invite | pre-login | `/invite/[token]` | `lib/entry` | redirect | — |
 | client-join | join | `/join` | `features/auth` invitation | Neon | Neon accept |
 | client-onboarding | onboarding | `/client/onboarding` | `features/client-workspace` TBD | domain | `saveClientOnboardingAction` |
 | client-home | client-post-login | `/client` | client-workspace TBD | domain | ACK Action |
 | client-profile | client-post-login | `/client/profile` | client-workspace TBD | domain | profile Action |
 | client-declare | client-post-login | `/client/declare/[id]` | client-workspace TBD | domain | draft API + submit Action |
-| admin-dashboard | declarations module | `/dashboard` | `portal-views/operator-declarations-dashboard` | domain | create/delete Actions (admin mutations) |
-| admin-clients | declarations module | `/dashboard/clients` | `portal-views/operator-clients-list` | domain | invite/delete Actions (admin mutations) |
-| admin-declaration-detail | declarations module | `/dashboard/[id]` | `portal-views/operator-declaration-detail` | domain | survey/share Actions (admin mutations) |
+| admin-dashboard | declarations module | `/dashboard` | `portal-views/organization-admin-declarations-dashboard` | domain | create/delete Actions (admin mutations) |
+| admin-clients | declarations module | `/dashboard/clients` | `portal-views/organization-admin-clients-list` | domain | invite/delete Actions (admin mutations) |
+| admin-declaration-detail | declarations module | `/dashboard/[id]` | `portal-views/organization-admin-declaration-detail` | domain | survey/share Actions (admin mutations) |
 | account-settings | declarations module | `/account/settings` | `features/account` + Neon | Neon | Neon |
 | account-security | declarations module | `/account/security` | `features/account` + Neon | Neon | Neon |
-| trade-* | Feed Farm Trade | `/trade/...` (locale-free) | AdminCN + `features/trade` (P1 wired; P3 placeholders); [001](adr/001-feed-farm-trade.md) · [001A](adr/001A-feed-farm-trade-architecture.md) · [001R](adr/001R-feed-farm-trade-roadmap.md) | `modules/trade` | `app/actions/trade` |
+| trade-* | Feed Farm Trade | `/fft/...` (locale-free) | AdminCN + `features/fft` (P1 wired; P3 placeholders); [001](adr/001-feed-farm-trade.md) · [001A](adr/001A-feed-farm-trade-architecture.md) · [001R](adr/001R-feed-farm-trade-roadmap.md) | `modules/fft` | `app/actions/fft` |
 
 ## Shell modules (SaaS)
 
 | Module | Purpose | Routes | Entry gate | Nav |
 |--------|---------|--------|------------|-----|
 | `declarations` | Compliance declarations | `/dashboard/*`, `/account/*` | `requireMemberSession` | Declarations |
-| `feed-farm-trade` | B2B **feed & farm trade sales** for 3F operators (Feed · Farm · Food); downstream customer portal is a later branch | `/trade/*` | `requireTradeAccess` | Feed Farm Trade |
+| `fft` | B2B **feed & farm trade sales** for 3F businesses (Feed · Farm · Food customers — not portal org admins); downstream customer portal is a later branch | `/fft/*` | `requireFftAccess` | Feed Farm Trade |
 | Admin routes | Org-admin tools | playground (local), … | `isAdminSession` | `kind: "admin"` |
 
 Entitlement resolver: `modules/platform/shell/access.ts`. Org admin ≠ Feed Farm Trade permission.
@@ -51,4 +51,4 @@ Do not resurrect deleted root `components/client/*`.
 - Shell / nav / theme: `components-V2/platform-components` + `platform-config`  
 - Screen bodies: `platform-views/portal-views/*` only  
 - Auth island stays on `features/auth` + `app/auth-surface.css` — never ThemeCustomizer  
-- Hot Sales shares the same AdminCN shell as product **Feed Farm Trade**; do not resurrect `TradeShell` / locale switcher
+- Feed Farm Trade shares the same AdminCN shell as product **Feed Farm Trade**; do not resurrect `FftShell` / locale switcher

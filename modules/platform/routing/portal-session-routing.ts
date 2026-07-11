@@ -7,7 +7,7 @@ import { bootstrapClientAfterAuth } from "@/modules/identity/auth/bootstrap-clie
 import { getClientProfile } from "@/modules/declarations/domain/clients";
 import {
   clientPostAuthHref,
-  OPERATOR_DASHBOARD_HREF,
+  ORGANIZATION_ADMIN_DASHBOARD_HREF,
 } from "@/modules/platform/routing/portal-routes";
 
 export async function resolveClientLandingHref(userId: string) {
@@ -26,7 +26,7 @@ export async function getAuthenticatedLandingHref(options?: {
   }
 
   if (isAdminSession(session)) {
-    return OPERATOR_DASHBOARD_HREF;
+    return ORGANIZATION_ADMIN_DASHBOARD_HREF;
   }
 
   if (session.user.email) {

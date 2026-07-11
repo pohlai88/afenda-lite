@@ -10,6 +10,7 @@ export type EnvVarKind =
   | "requiredMinCookieSecret"
   | "optionalString"
   | "optionalEmail"
+  | "optionalEmailFrom"
   | "optionalUrl"
   | "optionalUuid"
   | "optionalBooleanFlag";
@@ -114,32 +115,32 @@ export const ENV_VAR_MANIFEST = [
     runtime: true,
   },
   {
-    key: "HOT_SALES_RBAC_ENABLED",
+    key: "FFT_RBAC_ENABLED",
     kind: "optionalBooleanFlag",
     vercelProduction: true,
     runtime: true,
   },
   {
-    key: "HOT_SALES_DEPOSIT_ENABLED",
+    key: "FFT_DEPOSIT_ENABLED",
     kind: "optionalBooleanFlag",
     vercelProduction: true,
     runtime: true,
   },
   {
-    key: "HOT_SALES_PICKUP_OPS_ENABLED",
+    key: "FFT_PICKUP_OPS_ENABLED",
     kind: "optionalBooleanFlag",
     vercelProduction: true,
     runtime: true,
   },
   {
-    key: "HOT_SALES_NOTIFICATIONS_ENABLED",
+    key: "FFT_NOTIFICATIONS_ENABLED",
     kind: "optionalBooleanFlag",
     vercelProduction: true,
     runtime: true,
   },
   {
-    key: "HOT_SALES_EMAIL_FROM",
-    kind: "optionalEmail",
+    key: "FFT_EMAIL_FROM",
+    kind: "optionalEmailFrom",
     vercelProduction: true,
     runtime: true,
   },
@@ -150,25 +151,25 @@ export const ENV_VAR_MANIFEST = [
     localOnly: true,
   },
   {
-    key: "HOT_SALES_ERP_SYNC_ENABLED",
+    key: "FFT_ERP_SYNC_ENABLED",
     kind: "optionalBooleanFlag",
     vercelProduction: true,
     runtime: true,
   },
   {
-    key: "HOT_SALES_ERP_VENDOR",
+    key: "FFT_ERP_VENDOR",
     kind: "optionalString",
     vercelProduction: true,
     runtime: true,
   },
   {
-    key: "HOT_SALES_ERP_BASE_URL",
+    key: "FFT_ERP_BASE_URL",
     kind: "optionalString",
     vercelProduction: true,
     runtime: true,
   },
   {
-    key: "HOT_SALES_ERP_API_KEY",
+    key: "FFT_ERP_API_KEY",
     kind: "optionalString",
     secret: true,
     localOnly: true,
@@ -208,13 +209,13 @@ export const ENV_VAR_MANIFEST = [
     runtime: true,
   },
   {
-    key: "PLAYGROUND_HOT_SALES_EVENT_ID",
+    key: "PLAYGROUND_FFT_EVENT_ID",
     kind: "optionalUuid",
     localOnly: true,
     runtime: true,
   },
   {
-    key: "PLAYGROUND_TRADE_LOCALE",
+    key: "PLAYGROUND_FFT_LOCALE",
     kind: "optionalString",
     localOnly: true,
     runtime: true,
@@ -267,6 +268,7 @@ type InferEnvValue<K extends EnvVarKind> =
     : K extends
         | "optionalString"
         | "optionalEmail"
+        | "optionalEmailFrom"
         | "optionalUrl"
         | "optionalUuid"
         | "optionalBooleanFlag"
@@ -340,6 +342,10 @@ export function deriveSyncRequiredEmailKeys(
   manifest: readonly EnvVarDef[] = ENV_VAR_MANIFEST,
 ) {
   return manifest
-    .filter((entry) => entry.vercelProduction && entry.kind === "optionalEmail")
+    .filter(
+      (entry) =>
+        entry.vercelProduction &&
+        (entry.kind === "optionalEmail" || entry.kind === "optionalEmailFrom"),
+    )
     .map((entry) => entry.key);
 }

@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   getAuthSession: vi.fn(),
   isAdminSession: vi.fn(),
-  isHotSalesRbacEnabled: vi.fn(),
+  isFftRbacEnabled: vi.fn(),
   listSalesMembers: vi.fn(),
   listRoleAssignmentsForUser: vi.fn(),
 }));
@@ -17,23 +17,23 @@ vi.mock("@/modules/identity/admin", () => ({
 }));
 
 vi.mock("@/modules/platform/env/accessors", () => ({
-  isHotSalesRbacEnabled: mocks.isHotSalesRbacEnabled,
+  isFftRbacEnabled: mocks.isFftRbacEnabled,
 }));
 
-vi.mock("@/modules/trade/domain/store", () => ({
+vi.mock("@/modules/fft/domain/store", () => ({
   listSalesMembers: mocks.listSalesMembers,
   listRoleAssignmentsForUser: mocks.listRoleAssignmentsForUser,
 }));
 
 import {
-  hasHotSalesModuleAccess,
+  hasFftModuleAccess,
   resolveShellAccess,
 } from "@/modules/platform/shell/access";
 
 describe("resolveShellAccess", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.isHotSalesRbacEnabled.mockReturnValue(false);
+    mocks.isFftRbacEnabled.mockReturnValue(false);
     mocks.listSalesMembers.mockResolvedValue([]);
     mocks.listRoleAssignmentsForUser.mockResolvedValue([]);
   });
@@ -64,7 +64,7 @@ describe("resolveShellAccess", () => {
     ]);
 
     await expect(resolveShellAccess()).resolves.toEqual({
-      modules: ["declarations", "feed-farm-trade"],
+      modules: ["declarations", "fft"],
       isOrgAdmin: false,
     });
   });
@@ -82,10 +82,10 @@ describe("resolveShellAccess", () => {
   });
 });
 
-describe("hasHotSalesModuleAccess", () => {
+describe("hasFftModuleAccess", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.isHotSalesRbacEnabled.mockReturnValue(false);
+    mocks.isFftRbacEnabled.mockReturnValue(false);
     mocks.listSalesMembers.mockResolvedValue([]);
   });
 
@@ -99,7 +99,7 @@ describe("hasHotSalesModuleAccess", () => {
       },
     ]);
     await expect(
-      hasHotSalesModuleAccess({
+      hasFftModuleAccess({
         userId: "u1",
         email: "sales@example.com",
       }),
@@ -107,7 +107,7 @@ describe("hasHotSalesModuleAccess", () => {
   });
 
   it("allows RBAC assignment when flag on", async () => {
-    mocks.isHotSalesRbacEnabled.mockReturnValue(true);
+    mocks.isFftRbacEnabled.mockReturnValue(true);
     mocks.listRoleAssignmentsForUser.mockResolvedValue([
       {
         roleId: "r1",
@@ -118,7 +118,7 @@ describe("hasHotSalesModuleAccess", () => {
       },
     ]);
     await expect(
-      hasHotSalesModuleAccess({
+      hasFftModuleAccess({
         userId: "u1",
         email: "rbac@example.com",
       }),

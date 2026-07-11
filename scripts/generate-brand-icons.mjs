@@ -138,7 +138,7 @@ async function main() {
   await writeFile(MANIFEST_PATH, `${JSON.stringify(manifest, null, 2)}\n`);
 
   const webManifest = {
-    name: "Client Declaration Portal",
+    name: "Afenda-Lite",
     short_name: "CDP",
     icons: [
       {

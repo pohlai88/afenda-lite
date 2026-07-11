@@ -2,7 +2,7 @@ import "server-only";
 
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { PORTAL_NAME, portalCopy } from "@/lib/copy/portal-copy";
+import { PORTAL_NAME, portalCopy } from "@/modules/declarations/copy/portal-copy";
 import {
   buildClientJoinHref,
 } from "@/modules/platform/routing/portal-routes";

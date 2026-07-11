@@ -11,6 +11,7 @@ type AssignmentId = string & { readonly __brand: 'AssignmentId' }
 type ShareToken = string & { readonly __brand: 'ShareToken' }
 type TradeEventId = string & { readonly __brand: 'TradeEventId' }
 type TradeOrderId = string & { readonly __brand: 'TradeOrderId' }
+type UserId = string & { readonly __brand: 'UserId' } // /dashboard/users/[userId] — modules/identity/schemas/users.ts
 
 // Construct only after uuidSchema / domain lookup succeeds
 function asDeclarationId(id: string): DeclarationId {

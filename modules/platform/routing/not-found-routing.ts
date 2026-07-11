@@ -7,7 +7,7 @@ import { PORTAL_NAME, portalCopy } from "@/modules/declarations/copy/portal-copy
 import {
   AUTH_SIGN_IN_HREF,
   CLIENT_HOME_HREF,
-  OPERATOR_DASHBOARD_HREF,
+  ORGANIZATION_ADMIN_DASHBOARD_HREF,
 } from "@/modules/platform/routing/portal-routes";
 
 export const notFoundPageMetadata: Metadata = {
@@ -20,11 +20,11 @@ export async function resolveNotFoundDestination() {
   const { notFound } = portalCopy;
   const session = await getAuthSession();
   const isClient = Boolean(session?.user?.id && !isAdminSession(session));
-  const isOperator = isAdminSession(session);
+  const isOrganizationAdmin = isAdminSession(session);
 
-  if (isOperator) {
+  if (isOrganizationAdmin) {
     return {
-      backHref: OPERATOR_DASHBOARD_HREF,
+      backHref: ORGANIZATION_ADMIN_DASHBOARD_HREF,
       backLabel: notFound.backLabelOrg,
     };
   }

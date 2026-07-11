@@ -2,13 +2,19 @@ import "server-only";
 
 import type { ReactNode } from "react";
 
-import OperatorClientsList from "@/components-V2/platform-views/portal-views/operator-clients-list";
-import OperatorDeclarationDetailView from "@/components-V2/platform-views/portal-views/operator-declaration-detail";
-import OperatorDeclarationsDashboard from "@/components-V2/platform-views/portal-views/operator-declarations-dashboard";
+import OrganizationAdminClientsList from "@/components-V2/platform-views/portal-views/organization-admin-clients-list";
+import OrganizationAdminDeclarationDetailView from "@/components-V2/platform-views/portal-views/organization-admin-declaration-detail";
+import OrganizationAdminDeclarationsDashboard from "@/components-V2/platform-views/portal-views/organization-admin-declarations-dashboard";
+import OrganizationAdminUsersList from "@/components-V2/platform-views/portal-views/organization-admin-users-list";
+import OrganizationAdminUsersView from "@/components-V2/platform-views/portal-views/organization-admin-users-view";
 import { LynxLandingPage } from "@/features/landing";
-import { loadOperatorClientsPage } from "@/lib/pages/operator-clients-page";
-import { loadOperatorDashboardPage } from "@/lib/pages/operator-dashboard-page";
-import { loadOperatorDeclarationDetail } from "@/lib/pages/operator-declaration-detail";
+import { loadOrganizationAdminClientsPage } from "@/lib/pages/organization-admin-clients-page";
+import { loadOrganizationAdminDashboardPage } from "@/lib/pages/organization-admin-dashboard-page";
+import { loadOrganizationAdminDeclarationDetail } from "@/lib/pages/organization-admin-declaration-detail";
+import {
+  loadOrganizationAdminUsersPage,
+  loadOrganizationAdminUserViewPage,
+} from "@/lib/pages/organization-admin-users-page";
 import {
   isPlaygroundStaticCompositionId,
   type PlaygroundStaticCompositionId,
@@ -97,25 +103,57 @@ export async function loadPlaygroundStaticComposition(
 
   switch (screenId) {
     case "admin-dashboard": {
-      const data = await loadOperatorDashboardPage();
+      const data = await loadOrganizationAdminDashboardPage();
       return {
         status: "ready",
         screenId,
         kind: "page",
         title: "Operator dashboard",
         shape: "live",
-        node: <OperatorDeclarationsDashboard data={data} />,
+        node: <OrganizationAdminDeclarationsDashboard data={data} />,
       };
     }
     case "admin-clients": {
-      const data = await loadOperatorClientsPage();
+      const data = await loadOrganizationAdminClientsPage();
       return {
         status: "ready",
         screenId,
         kind: "page",
         title: "Clients",
         shape: "live",
-        node: <OperatorClientsList data={data} />,
+        node: <OrganizationAdminClientsList data={data} />,
+      };
+    }
+    case "admin-users-list": {
+      const data = await loadOrganizationAdminUsersPage();
+      return {
+        status: "ready",
+        screenId,
+        kind: "page",
+        title: "Users",
+        shape: "live",
+        node: <OrganizationAdminUsersList data={data} />,
+      };
+    }
+    case "admin-users-view": {
+      const data = await loadOrganizationAdminUserViewPage("user-001");
+      if (!data.user) {
+        return {
+          status: "live-embed-only",
+          screenId,
+          label: gate.label,
+          path: gate.path,
+          shape: "live",
+          reason: "Fixture user-001 is missing from organization-admin users page data.",
+        };
+      }
+      return {
+        status: "ready",
+        screenId,
+        kind: "page",
+        title: data.user.name,
+        shape: "live",
+        node: <OrganizationAdminUsersView user={data.user} />,
       };
     }
     case "admin-survey-detail":
@@ -132,7 +170,7 @@ export async function loadPlaygroundStaticComposition(
             "PLAYGROUND_SURVEY_ID is not set — cannot load declaration detail in-shell. Use Live/Preview once the fixture is set.",
         };
       }
-      const detail = await loadOperatorDeclarationDetail(surveyId);
+      const detail = await loadOrganizationAdminDeclarationDetail(surveyId);
       if (!detail) {
         return {
           status: "live-embed-only",
@@ -149,7 +187,7 @@ export async function loadPlaygroundStaticComposition(
         kind: "page",
         title: detail.survey.title || "Declaration detail",
         shape: "live",
-        node: <OperatorDeclarationDetailView detail={detail} />,
+        node: <OrganizationAdminDeclarationDetailView detail={detail} />,
       };
     }
     case "client-home-login": {

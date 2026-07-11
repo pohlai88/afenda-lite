@@ -2,11 +2,10 @@ import { pool } from "@/modules/platform/db";
 import { createInviteTokenValue } from "@/modules/identity/domain/tokens";
 import { CLIENT_PORTAL_ACK_VERSION } from "@/modules/declarations/copy/portal-copy";
 import type { SurveyAnswers } from "@/modules/declarations/question-models";
+import { normalizeEmail } from "@/modules/platform/normalize-email";
 import type { PoolClient } from "pg";
 
-export function normalizeEmail(email: string | null | undefined) {
-  return email?.trim().toLowerCase() ?? "";
-}
+export { normalizeEmail } from "@/modules/platform/normalize-email";
 
 export type ClientInvitation = {
   id: string;

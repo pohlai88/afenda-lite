@@ -21,7 +21,7 @@ describe("portal-route-coverage", () => {
     expect(snapshot.summary.totalPresented).toBeGreaterThan(0);
     expect(
       snapshot.summary.byPhase.some(
-        (phase) => phase.phase === "hot-sales" && phase.available > 0,
+        (phase) => phase.phase === "fft" && phase.available > 0,
       ),
     ).toBe(true);
   });

@@ -1,13 +1,13 @@
-import OperatorClientsList from "@/components-V2/platform-views/portal-views/operator-clients-list";
+import OrganizationAdminClientsList from "@/components-V2/platform-views/portal-views/organization-admin-clients-list";
 import {
-  loadOperatorClientsPage,
+  loadOrganizationAdminClientsPage,
   operatorClientsPageMetadata,
-} from "@/lib/pages/operator-clients-page";
+} from "@/lib/pages/organization-admin-clients-page";
 
 export const metadata = operatorClientsPageMetadata;
 export const dynamic = "force-dynamic";
 
 export default async function DashboardClientsPage() {
-  const data = await loadOperatorClientsPage();
-  return <OperatorClientsList data={data} />;
+  const data = await loadOrganizationAdminClientsPage();
+  return <OrganizationAdminClientsList data={data} />;
 }

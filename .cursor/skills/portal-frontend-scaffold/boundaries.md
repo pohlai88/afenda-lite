@@ -30,6 +30,7 @@ Route folder name = TypeScript brand = Zod field = Action/REST field. **One name
 | `token` on `/f` | `ShareToken` | token schema |
 | `token` on `/invite` | `InviteToken` | token schema (different resource — do not mix) |
 | `invitationId` | `InvitationId` | uuid schema |
+| `userId` | `UserId` (wire pass) | uuid / identity lookup — `/dashboard/users/[userId]` |
 | `locale` | `TradeLocale` | `vi` \| `en` enum |
 
 ```typescript
@@ -50,17 +51,19 @@ app/**/page.tsx          → await params; call runner/feature (thin)
 features/*               → present UI (RSC + small client islands)
 app/actions/*.ts         → 'use server'; Zod; session; port; revalidatePath
 app/api/**/route.ts      → HTTP only; Zod; same error body
-modules/<context>/*      → ports + persistence (post-lib relocate)
+modules/<context>/*      → ports + persistence (SSOT — relocate complete)
 ```
 
 ### Reads vs mutations
 
 | Need | Adapter | Anti-pattern |
 |------|---------|--------------|
-| RSC read | Call module port | `fetch('/api/declarations')` from RSC |
+| RSC read | Call `modules/*/domain` port | `fetch('/api/declarations')` from RSC |
 | Client mutation | Server Action | Ad-hoc Route Handler for same-origin form POST |
 | Draft keepalive XHR | Existing `/api/client/declaration-draft` | Duplicating as Action + Handler without reason |
 | Health / Neon Auth | Route Handler | Embedding in page |
+
+Trade code path: `modules/fft` (never `modules/trade`). Schema map: `/portal-api-contract` · modules layout: `/portal-backend-modules`.
 
 ### Input / Output split (wire)
 

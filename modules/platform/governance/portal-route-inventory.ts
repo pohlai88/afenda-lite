@@ -11,7 +11,7 @@ export type JourneyPhaseId =
   | "onboarding"
   | "client-post-login"
   | "operator-post-login"
-  | "hot-sales";
+  | "fft";
 
 export type PortalRouteInventoryEntry = {
   /** Posix-style path relative to repo root, e.g. `app/dashboard/page.tsx`. */
@@ -27,7 +27,7 @@ const JOURNEY_PHASES: readonly JourneyPhaseId[] = [
   "onboarding",
   "client-post-login",
   "operator-post-login",
-  "hot-sales",
+  "fft",
 ] as const;
 
 export function listJourneyPhases(): readonly JourneyPhaseId[] {
@@ -94,8 +94,8 @@ export function tagRoutePhase(routePattern: string): JourneyPhaseId {
     return "operator-post-login";
   }
 
-  if (path === "/trade" || path.startsWith("/trade/")) {
-    return "hot-sales";
+  if (path === "/fft" || path.startsWith("/fft/")) {
+    return "fft";
   }
 
   // `/`, `/auth/*`, `/org/login`, `/client/login`, `/invite/*`, `/f/*`,

@@ -22,7 +22,7 @@ import {
   loginAsOperator,
   openSurveyTab,
   registerClient,
-} from "@/testing/e2e/operator-flows";
+} from "@/testing/e2e/organization-admin-flows";
 
 const operatorCreds = getOperatorCreds();
 const clientCreds = getClientCreds();

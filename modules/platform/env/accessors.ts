@@ -50,61 +50,61 @@ export function isGuardianAuthShellEnabled(
   return true;
 }
 
-/** Hot Sales Phase 2A RBAC cutover. Default off = Phase 1 Admin + allowlist. */
-export function isHotSalesRbacEnabled(
-  env: Pick<ServerEnv, "HOT_SALES_RBAC_ENABLED"> = getServerEnv(),
+/** Feed Farm Trade Phase 2A RBAC cutover. Default off = Phase 1 Admin + allowlist. */
+export function isFftRbacEnabled(
+  env: Pick<ServerEnv, "FFT_RBAC_ENABLED"> = getServerEnv(),
 ) {
-  return env.HOT_SALES_RBAC_ENABLED === "true";
+  return env.FFT_RBAC_ENABLED === "true";
 }
 
-/** Hot Sales Phase 2B operational deposit records (ADR-002). */
-export function isHotSalesDepositEnabled(
-  env: Pick<ServerEnv, "HOT_SALES_DEPOSIT_ENABLED"> = getServerEnv(),
+/** Feed Farm Trade Phase 2B operational deposit records (ADR-002). */
+export function isFftDepositEnabled(
+  env: Pick<ServerEnv, "FFT_DEPOSIT_ENABLED"> = getServerEnv(),
 ) {
-  return env.HOT_SALES_DEPOSIT_ENABLED === "true";
+  return env.FFT_DEPOSIT_ENABLED === "true";
 }
 
-/** Hot Sales Phase 2B pickup/ops workflow (ADR-002). */
-export function isHotSalesPickupOpsEnabled(
-  env: Pick<ServerEnv, "HOT_SALES_PICKUP_OPS_ENABLED"> = getServerEnv(),
+/** Feed Farm Trade Phase 2B pickup/ops workflow (ADR-002). */
+export function isFftPickupOpsEnabled(
+  env: Pick<ServerEnv, "FFT_PICKUP_OPS_ENABLED"> = getServerEnv(),
 ) {
-  return env.HOT_SALES_PICKUP_OPS_ENABLED === "true";
+  return env.FFT_PICKUP_OPS_ENABLED === "true";
 }
 
-/** Hot Sales Phase 2C outbound notifications (ADR-003). Default off until prod checklist. */
-export function isHotSalesNotificationsEnabled(
-  env: Pick<ServerEnv, "HOT_SALES_NOTIFICATIONS_ENABLED"> = getServerEnv(),
+/** Feed Farm Trade Phase 2C outbound notifications (ADR-003). Default off until prod checklist. */
+export function isFftNotificationsEnabled(
+  env: Pick<ServerEnv, "FFT_NOTIFICATIONS_ENABLED"> = getServerEnv(),
 ) {
-  return env.HOT_SALES_NOTIFICATIONS_ENABLED === "true";
+  return env.FFT_NOTIFICATIONS_ENABLED === "true";
 }
 
-export function getHotSalesEmailFrom(
-  env: Pick<ServerEnv, "HOT_SALES_EMAIL_FROM"> = getServerEnv(),
+export function getFftEmailFrom(
+  env: Pick<ServerEnv, "FFT_EMAIL_FROM"> = getServerEnv(),
 ) {
-  return env.HOT_SALES_EMAIL_FROM?.trim() ?? "";
+  return env.FFT_EMAIL_FROM?.trim() ?? "";
 }
 
-/** Hot Sales Phase 2D ERP sync (ADR-004). Default off until integration checklist. */
-export function isHotSalesErpSyncEnabled(
-  env: Pick<ServerEnv, "HOT_SALES_ERP_SYNC_ENABLED"> = getServerEnv(),
+/** Feed Farm Trade Phase 2D ERP sync (ADR-004). Default off until integration checklist. */
+export function isFftErpSyncEnabled(
+  env: Pick<ServerEnv, "FFT_ERP_SYNC_ENABLED"> = getServerEnv(),
 ) {
-  return env.HOT_SALES_ERP_SYNC_ENABLED === "true";
+  return env.FFT_ERP_SYNC_ENABLED === "true";
 }
 
-export function getHotSalesErpVendor(
-  env: Pick<ServerEnv, "HOT_SALES_ERP_VENDOR"> = getServerEnv(),
+export function getFftErpVendor(
+  env: Pick<ServerEnv, "FFT_ERP_VENDOR"> = getServerEnv(),
 ) {
-  return env.HOT_SALES_ERP_VENDOR?.trim().toLowerCase() ?? "";
+  return env.FFT_ERP_VENDOR?.trim().toLowerCase() ?? "";
 }
 
-export function getHotSalesErpBaseUrl(
-  env: Pick<ServerEnv, "HOT_SALES_ERP_BASE_URL"> = getServerEnv(),
+export function getFftErpBaseUrl(
+  env: Pick<ServerEnv, "FFT_ERP_BASE_URL"> = getServerEnv(),
 ) {
-  return env.HOT_SALES_ERP_BASE_URL?.trim() ?? "";
+  return env.FFT_ERP_BASE_URL?.trim() ?? "";
 }
 
-export function getHotSalesErpApiKey(): string {
-  return process.env.HOT_SALES_ERP_API_KEY?.trim() ?? "";
+export function getFftErpApiKey(): string {
+  return process.env.FFT_ERP_API_KEY?.trim() ?? "";
 }
 
 export function getResendApiKey(): string {

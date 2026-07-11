@@ -1,5 +1,5 @@
 {
-  "name": "client-declaration-portal",
+  "name": "afenda-lite",
   "version": "0.1.0",
   "private": true,
   "engines": {
@@ -31,8 +31,8 @@
     "seed:ci-baseline": "node scripts/seed-ci-baseline.mjs",
     "db:migrate": "node scripts/db-migrate.mjs",
     "process:erp-sync": "npx tsx --env-file=.env scripts/process-erp-sync-jobs.mts",
-    "process:trade-closing-soon": "npx tsx --env-file=.env scripts/process-trade-closing-soon.mts",
-    "audit:hot-sales-promotion": "node scripts/audit-hot-sales-prod-promotion.mjs",
+    "process:fft-closing-soon": "npx tsx --env-file=.env scripts/process-fft-closing-soon.mts",
+    "audit:fft-promotion": "node scripts/audit-fft-prod-promotion.mjs",
     "db:inspect": "node scripts/db-inspect.mjs",
     "db:reset": "node --env-file=.env scripts/db-reset.mjs",
     "db:reset:preview": "node --env-file=.env scripts/db-reset.mjs --keep-preview-client",
@@ -78,6 +78,9 @@
     "test:e2e:journey": "playwright test --project journey",
     "evaluate:ui-matrix": "node scripts/evaluate-ui-matrix.mjs",
     "check:ui-sync": "node scripts/validate-ui-sync.mjs",
+    "check:fft-ui-registry": "node scripts/check-fft-ui-registry.mjs",
+    "check:fft-ui-registry:expect-fail": "node scripts/demo-fft-ui-registry-violation.mjs",
+    "generate:fft-ui-registry-admincn": "node scripts/generate-fft-ui-registry-admincn.mjs",
     "export:reliance-graph": "npx tsx scripts/governance/export-reliance-graph.mts",
     "export:reliance-mapping": "npx tsx scripts/governance/export-reliance-mapping.mts",
     "export:route-coverage": "npx tsx scripts/governance/export-route-coverage.mts",

@@ -85,7 +85,7 @@ describe("/api/client/declaration-draft", () => {
   it("PUT returns 403 for operator with contract error body", async () => {
     mockGuardClientSession.mockResolvedValue({
       allowed: false,
-      reason: "operator",
+      reason: "organizationAdmin",
     });
 
     const response = await PUT(

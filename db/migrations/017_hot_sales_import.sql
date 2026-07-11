@@ -1,8 +1,8 @@
--- Hot Sales Phase 2C — Excel import pipeline (ADR-003)
+-- Feed Farm Trade Phase 2C — Excel import pipeline (ADR-003)
 
-CREATE TABLE IF NOT EXISTS hot_sales_import_batch (
+CREATE TABLE IF NOT EXISTS fft_import_batch (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  event_id UUID NOT NULL REFERENCES hot_sales_event(id) ON DELETE CASCADE,
+  event_id UUID NOT NULL REFERENCES fft_event(id) ON DELETE CASCADE,
   import_type TEXT NOT NULL
     CHECK (import_type IN (
       'customer_priority',
@@ -22,15 +22,15 @@ CREATE TABLE IF NOT EXISTS hot_sales_import_batch (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS hot_sales_import_batch_event_id_idx
-  ON hot_sales_import_batch (event_id);
+CREATE INDEX IF NOT EXISTS fft_import_batch_event_id_idx
+  ON fft_import_batch (event_id);
 
-CREATE INDEX IF NOT EXISTS hot_sales_import_batch_status_idx
-  ON hot_sales_import_batch (event_id, status);
+CREATE INDEX IF NOT EXISTS fft_import_batch_status_idx
+  ON fft_import_batch (event_id, status);
 
-CREATE TABLE IF NOT EXISTS hot_sales_import_row (
+CREATE TABLE IF NOT EXISTS fft_import_row (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  batch_id UUID NOT NULL REFERENCES hot_sales_import_batch(id) ON DELETE CASCADE,
+  batch_id UUID NOT NULL REFERENCES fft_import_batch(id) ON DELETE CASCADE,
   row_number INTEGER NOT NULL,
   payload_json JSONB NOT NULL DEFAULT '{}'::jsonb,
   validation_errors JSONB NOT NULL DEFAULT '[]'::jsonb,
@@ -40,5 +40,5 @@ CREATE TABLE IF NOT EXISTS hot_sales_import_row (
   UNIQUE (batch_id, row_number)
 );
 
-CREATE INDEX IF NOT EXISTS hot_sales_import_row_batch_id_idx
-  ON hot_sales_import_row (batch_id);
+CREATE INDEX IF NOT EXISTS fft_import_row_batch_id_idx
+  ON fft_import_row (batch_id);

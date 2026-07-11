@@ -45,7 +45,7 @@ describe("ENV_VAR_MANIFEST", () => {
     expect(deriveSyncRequiredEmailKeys()).toEqual([
       "SHARED_ADMIN_EMAIL",
       "PREVIEW_CLIENT_EMAIL",
-      "HOT_SALES_EMAIL_FROM",
+      "FFT_EMAIL_FROM",
     ]);
   });
 

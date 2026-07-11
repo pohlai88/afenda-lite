@@ -1,15 +1,15 @@
 import "server-only";
 
 /**
- * S1 session guards — operator, member, and client route enforcement.
+ * S1 session guards — organization admin, member, and client route enforcement.
  *
  * - `requireMemberSession` — Declarations module / shared AdminCN shell
  * - `requireAdminSession` — organization admin routes and mutations
  * - `requireClientSession` — redirecting client workspace guards
  * - `guardClientSession` — non-redirecting gate for JSON APIs (`declaration-draft`)
- * - `rejectNonOperatorSignIn` — org login boundary (sign-out + audit on denial)
+ * - `rejectNonOrganizationAdminSignIn` — org login boundary (sign-out + audit on denial)
  *
- * Operator role check: `modules/identity/admin` (`isAdminSession`).
+ * Organization-admin check: `modules/identity/admin` (`isAdminSession`).
  */
 import { cache } from "react";
 import { redirect } from "next/navigation";
@@ -32,7 +32,7 @@ import {
 import { getClientProfile } from "@/modules/declarations/domain/clients";
 import {
   AUTH_SIGN_IN_HREF,
-  OPERATOR_DASHBOARD_HREF,
+  ORGANIZATION_ADMIN_DASHBOARD_HREF,
 } from "@/modules/platform/routing/portal-routes";
 import {
   isPlaygroundEmbedRequest,
@@ -78,7 +78,7 @@ export const requireMemberSession = cache(async () => {
   };
 });
 
-export async function rejectNonOperatorSignIn(signedInEmail: string) {
+export async function rejectNonOrganizationAdminSignIn(signedInEmail: string) {
   const session = await getAuthSession();
 
   if (isAdminSession(session, signedInEmail)) {
@@ -97,7 +97,7 @@ export async function rejectNonOperatorSignIn(signedInEmail: string) {
 
 export type ClientSessionGuardReason =
   | "unauthenticated"
-  | "operator"
+  | "organizationAdmin"
   | "onboarding_incomplete"
   | "preview_unavailable";
 
@@ -141,7 +141,7 @@ export async function guardClientSession(options?: {
   }
 
   if (isAdminSession(authenticated)) {
-    return { allowed: false, reason: "operator" };
+    return { allowed: false, reason: "organizationAdmin" };
   }
 
   await bootstrapClientAfterAuth({
@@ -168,8 +168,8 @@ export async function requireClientSession(options?: {
     switch (guard.reason) {
       case "unauthenticated":
         redirect(AUTH_SIGN_IN_HREF);
-      case "operator":
-        redirect(OPERATOR_DASHBOARD_HREF);
+      case "organizationAdmin":
+        redirect(ORGANIZATION_ADMIN_DASHBOARD_HREF);
       case "onboarding_incomplete":
         redirect(CLIENT_ONBOARDING_HREF);
       case "preview_unavailable":

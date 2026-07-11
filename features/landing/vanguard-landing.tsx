@@ -85,9 +85,16 @@ export function VanguardLanding({
   const shieldPathRef = useRef<SVGPathElement | null>(null);
   const shieldButtonRef = useRef<HTMLButtonElement | null>(null);
   const dialogRef = useRef<HTMLDialogElement | null>(null);
+  const createDoorRef = useRef<HTMLAnchorElement | null>(null);
   const firstDoorRef = useRef<HTMLAnchorElement | null>(null);
 
   const shieldRef = useRef<ShieldMetrics>({ x: 0, y: 0, radius: 96 });
+  const landingBoundsRef = useRef({
+    left: 0,
+    top: 0,
+    width: 0,
+    height: 0,
+  });
   const pointerRef = useRef({ x: 0, y: 0, active: false });
   const trailHistoryRef = useRef<TrailPoint[]>([]);
   const lastTrailPointRef = useRef<TrailPoint | null>(null);
@@ -97,10 +104,10 @@ export function VanguardLanding({
   );
   const beadCursorRef = useRef(0);
   const phaseRef = useRef<RitualPhase>(ritual.phase);
-  const focusChooserRef = useRef(false);
   const departLockRef = useRef(false);
   const rafRef = useRef<number | null>(null);
   const sequenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const navigationTimerRef = useRef<number | null>(null);
   const reducedRef = useRef(false);
 
   phaseRef.current = ritual.phase;
@@ -109,6 +116,13 @@ export function VanguardLanding({
     if (sequenceTimerRef.current) {
       clearTimeout(sequenceTimerRef.current);
       sequenceTimerRef.current = null;
+    }
+  }, []);
+
+  const clearNavigationTimer = useCallback(() => {
+    if (navigationTimerRef.current) {
+      clearTimeout(navigationTimerRef.current);
+      navigationTimerRef.current = null;
     }
   }, []);
 
@@ -127,12 +141,11 @@ export function VanguardLanding({
   );
 
   const writeParallax = useCallback((pointerX: number, pointerY: number) => {
-    const landing = landingRef.current;
     const parallax = parallaxRef.current;
-    if (!landing || !parallax) {
+    const bounds = landingBoundsRef.current;
+    if (!parallax) {
       return;
     }
-    const bounds = landing.getBoundingClientRect();
     const nx = bounds.width ? (pointerX / bounds.width - 0.5) * 2 : 0;
     const ny = bounds.height ? (pointerY / bounds.height - 0.5) * 2 : 0;
     parallax.style.setProperty("--parallax-x", `${nx * 6}px`);
@@ -304,6 +317,12 @@ export function VanguardLanding({
     const updateShieldMetrics = () => {
       const landingRect = landing.getBoundingClientRect();
       const shieldRect = shieldPath.getBoundingClientRect();
+      landingBoundsRef.current = {
+        left: landingRect.left,
+        top: landingRect.top,
+        width: landingRect.width,
+        height: landingRect.height,
+      };
       const x = shieldRect.left - landingRect.left + shieldRect.width / 2;
       const y = shieldRect.top - landingRect.top + shieldRect.height / 2;
       const radius = Math.max(72, Math.max(shieldRect.width, shieldRect.height));
@@ -348,7 +367,6 @@ export function VanguardLanding({
 
     if (phase === "inserted") {
       if (reducedRef.current || prefersReducedMotion()) {
-        focusChooserRef.current = true;
         dispatch({ type: "UNLOCK_DIRECT" });
         return;
       }
@@ -365,7 +383,6 @@ export function VanguardLanding({
 
     if (phase === "vaultOpening") {
       sequenceTimerRef.current = setTimeout(() => {
-        focusChooserRef.current = true;
         dispatch({ type: "SET_PHASE", phase: "vaultOpen" });
       }, VAULT_OPEN_DURATION_MS);
     }
@@ -388,22 +405,42 @@ export function VanguardLanding({
         // Non-modal so the key cursor plane can stack above the vault art.
         dialog.show();
       }
-      if (ritual.phase === "vaultOpen" && focusChooserRef.current) {
-        focusChooserRef.current = false;
+      if (ritual.phase === "vaultOpen") {
         firstDoorRef.current?.focus();
       }
 
-      const onEscape = (e: KeyboardEvent) => {
+      const onDialogKeyDown = (e: KeyboardEvent) => {
         if (e.key === "Escape" && ritual.phase !== "departing") {
           e.preventDefault();
           clearSequenceTimer();
           departLockRef.current = false;
           dispatch({ type: "DISMISS" });
           shieldButtonRef.current?.focus();
+          return;
+        }
+
+        if (e.key === "Tab" && ritual.phase !== "departing") {
+          const doors = [firstDoorRef.current, createDoorRef.current].filter(
+            (door): door is HTMLAnchorElement => door !== null,
+          );
+          if (doors.length === 0) {
+            return;
+          }
+
+          e.preventDefault();
+          const activeIndex = doors.indexOf(
+            document.activeElement as HTMLAnchorElement,
+          );
+          const offset = e.shiftKey ? -1 : 1;
+          const nextIndex =
+            activeIndex < 0
+              ? 0
+              : (activeIndex + offset + doors.length) % doors.length;
+          doors[nextIndex]?.focus();
         }
       };
-      document.addEventListener("keydown", onEscape);
-      return () => document.removeEventListener("keydown", onEscape);
+      document.addEventListener("keydown", onDialogKeyDown);
+      return () => document.removeEventListener("keydown", onDialogKeyDown);
     }
 
     if (dialog.open) {
@@ -418,8 +455,9 @@ export function VanguardLanding({
         cancelAnimationFrame(rafRef.current);
       }
       clearSequenceTimer();
+      clearNavigationTimer();
     };
-  }, [clearSequenceTimer]);
+  }, [clearNavigationTimer, clearSequenceTimer]);
 
   const handlePointerMove = (event: React.PointerEvent<HTMLElement>) => {
     if (event.pointerType === "touch") {
@@ -429,7 +467,7 @@ export function VanguardLanding({
     if (!landing) {
       return;
     }
-    const bounds = landing.getBoundingClientRect();
+    const bounds = landingBoundsRef.current;
     pointerRef.current = {
       x: event.clientX - bounds.left,
       y: event.clientY - bounds.top,
@@ -456,12 +494,11 @@ export function VanguardLanding({
     }
   };
 
-  const unlockDirect = (focusChooser: boolean) => {
+  const unlockDirect = () => {
     if (isRitualLocked(phaseRef.current)) {
       return;
     }
     clearSequenceTimer();
-    focusChooserRef.current = focusChooser;
     if (reducedRef.current || prefersReducedMotion()) {
       dispatch({ type: "UNLOCK_DIRECT" });
       return;
@@ -491,6 +528,16 @@ export function VanguardLanding({
   const handleDoorClick =
     (intent: Exclude<RouteIntent, "none">, href: string) =>
     (event: React.MouseEvent<HTMLAnchorElement>) => {
+      if (
+        event.button !== 0 ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.shiftKey ||
+        event.altKey
+      ) {
+        return;
+      }
+
       event.preventDefault();
       if (departLockRef.current || ritual.phase === "departing") {
         return;
@@ -498,7 +545,9 @@ export function VanguardLanding({
       departLockRef.current = true;
       dispatch({ type: "DEPART", intent });
       const delay = departDelayMs(intent, prefersReducedMotion());
-      window.setTimeout(() => {
+      clearNavigationTimer();
+      navigationTimerRef.current = window.setTimeout(() => {
+        navigationTimerRef.current = null;
         router.push(href);
       }, delay);
     };
@@ -552,7 +601,7 @@ export function VanguardLanding({
         aria-controls="lynx-vault-dialog"
         aria-expanded={vaultExpanded}
         data-landing-shield=""
-        onClick={(event) => unlockDirect(event.detail === 0)}
+        onClick={unlockDirect}
       />
 
       <div className="lynx-landing__shield-art" aria-hidden="true">
@@ -615,6 +664,7 @@ export function VanguardLanding({
               draggable={false}
             />
             <a
+              ref={createDoorRef}
               href={signUpHref}
               aria-label="Create Account"
               className="sovereign-vault__create"

@@ -1,15 +1,16 @@
 ---
 name: feed-farm-trade
 description: >-
-  Feed Farm Trade (FFT) enterprise delivery skill for /trade on AdminCN +
-  modules/trade + app/actions/trade. Use when coding, verifying, or evaluating
-  Feed Farm Trade / Hot Sales engine work, trade RBAC, events/orders/allocation,
+  Feed Farm Trade (FFT) enterprise delivery skill for /fft on AdminCN +
+  modules/fft + app/actions/fft. Use when coding, verifying, or evaluating
+  Feed Farm Trade / Feed Farm Trade engine work, trade RBAC, events/orders/allocation,
   P0–P3 slices, G1–G6 MVP gaps, or AC evidence for enterprise MVP claims.
 ---
 
 # Feed Farm Trade
 
-**Product:** Feed Farm Trade · **Shell id:** `feed-farm-trade` · **Engine:** Hot Sales (`HOT_SALES_*`)
+**Product module:** Feed Farm Trade · **Host product:** Afenda-Lite · **Shell id:** `fft` · **Engine:** Feed Farm Trade (`FFT_*`)  
+**Platform:** one Afenda-Lite SaaS · two modules (`declarations` | `fft`) · shared infra — do not invent a separate FFT stack
 
 ## Borrowed workflows (do not re-invent)
 
@@ -19,7 +20,8 @@ description: >-
 | Proof before done | `test-driven-development` | AC evidence required — see [verify.md](verify.md) |
 | Right context | `context-engineering` | Load card below — max focused files |
 | Adapter / ActionResult | `portal-api-contract` | Trade returns `TradeActionResult` + `getTradeActionError` |
-| Route / UI homes | `portal-frontend-scaffold` + `admincn-customization` | Thin `app/trade` + `features/trade` |
+| Route / UI homes | `portal-frontend-scaffold` + `admincn-customization` | Thin `app/fft` + `features/fft` |
+| Modules / ports | `portal-backend-modules` | Domain under `modules/fft` — never `modules/trade` |
 
 External ecosystem (`deliver-acceptance-criteria`) patterns are **folded into** [verify.md](verify.md) — do not install a second skill for AC.
 
@@ -37,9 +39,9 @@ External ecosystem (`deliver-acceptance-criteria`) patterns are **folded into** 
 | Verify + AC evidence | [verify.md](verify.md) |
 | Worked example | [example-slice.md](example-slice.md) |
 | Completeness matrix | [completeness.md](completeness.md) |
-| Copy-paste command sheet | [command-sheet.md](command-sheet.md) |
-| UI registry (HITL IDs) | [ui-registry.md](ui-registry.md) · [ui-registry.json](ui-registry.json) · rule [`fft-ui-registry.mdc`](../../rules/fft-ui-registry.mdc) — **compulsory** `ACN-UI-*` / `ACN-BLK-*` / `FFT-UI-*` |
-| Ops flags | [docs/hot-sales/RUNTIME.md](../../../docs/hot-sales/RUNTIME.md) · gate-register |
+| Copy-paste command sheet | [command-sheet.md](command-sheet.md) (post-MVP A–J) · [command-sheet-V2.md](command-sheet-V2.md) (P3 ops series) |
+| UI registry (HITL IDs) | [ui-registry.md](ui-registry.md) · [ui-registry.json](ui-registry.json) · rule [`fft-ui-registry.mdc`](../../rules/fft-ui-registry.mdc) — Layer A inventory + Layer B DNA; `npm run check:fft-ui-registry` |
+| Ops flags | [docs/fft/RUNTIME.md](../../../docs/fft/RUNTIME.md) · gate-register |
 
 ## Load card (coding)
 
@@ -54,8 +56,10 @@ External ecosystem (`deliver-acceptance-criteria`) patterns are **folded into** 
 | P3 ops / flags | [14](../../../doc/frontend/14-feed-farm-trade-phase3-ops-flags.md) + RUNTIME — **no prod flag without gate-register** |
 
 ```text
-DO NOT: TradeShell, /trade/[locale], customer portal, invent permission codes,
-  rename HOT_SALES_*, org-admin⇒trade, Trade↛Declarations imports,
+DO NOT: FftShell, /fft/[locale], customer portal, invent permission codes,
+  rename FFT_*, org-admin⇒trade, cross-module domain imports (Trade↔Declarations),
+  treat FFT infra/auth/deploy as a different course from Declarations,
+  soft-deprecate Hot Sales / /trade / FftShell (compulsory retire — deprecation register),
   claim enterprise MVP without AC evidence, mix P3 writes into P1 PRs
 MVP = P0 + P1 including G1–G6 + recorded AC evidence
 ```
@@ -80,24 +84,26 @@ Full steps: [slice-playbook.md](slice-playbook.md).
 ## Architecture (one screen)
 
 ```text
-Identity ──► Trade (modules/trade)     Trade ↛ Declarations
-Platform shell: feed-farm-trade via requireTradeAccess
-UI chrome: AdminCnShell only · nav moduleId feed-farm-trade
+Platform (shared) + Identity (shared)
+  ├── Declarations module
+  └── Trade / FFT module (modules/fft) — module domain only; no Declarations imports
+Shell: AdminCnShell · entitlement fft via requireFftAccess · nav moduleId feed-farm-trade
+Infra/env/CI/deploy: same as Declarations — update together
 ```
 
 | Layer | Path |
 |-------|------|
-| Routes | `app/trade/**` thin RSC, locale-free |
-| UI | `features/trade/*` |
-| Actions | `app/actions/trade.ts` |
-| Domain | `modules/trade/**` |
-| RBAC | `modules/trade/domain/rbac-catalog.ts` |
-| Session | `requireTradeAccess` / `requireTradePermission` |
+| Routes | `app/fft/**` thin RSC, locale-free |
+| UI | `features/fft/*` |
+| Actions | `app/actions/fft.ts` |
+| Domain | `modules/fft/**` |
+| RBAC | `modules/fft/domain/rbac-catalog.ts` |
+| Session | `requireFftAccess` / `requireTradePermission` |
 
 ## Vertical slice
 
 ```text
-RSC read?        → modules/trade domain (never fetch own /api)
+RSC read?        → modules/fft domain (never fetch own /api)
 Client mutation? → trade.ts → Zod → requireTradePermission(code) → domain → TradeActionResult
 HTTP external?   → Route Handler per doc/api (contract-only)
 ```
@@ -105,10 +111,10 @@ HTTP external?   → Route Handler per doc/api (contract-only)
 ## FE / BE / API rules
 
 1. Thin `page.tsx` — await `params`; no business logic  
-2. AdminCN from `app/trade/layout.tsx` only  
-3. Never mount `TradeShell` / locale switcher  
-4. Copy: **Feed Farm Trade**; paths locale-free; pass `TRADE_UI_LOCALE`  
-5. Domain SQL only in `modules/trade`; parameterized queries  
+2. AdminCN from `app/fft/layout.tsx` only  
+3. Never mount `FftShell` / locale switcher  
+4. Copy: **Feed Farm Trade**; paths locale-free; pass `FFT_UI_LOCALE`  
+5. Domain SQL only in `modules/fft`; parameterized queries  
 6. Authorize with **permission codes** via `requireTradePermission`  
 7. Portal UI → Actions first; branded ids align route + Zod  
 
@@ -117,7 +123,7 @@ HTTP external?   → Route Handler per doc/api (contract-only)
 - Customer portal in FFT PRs  
 - Org admin alone grants trade  
 - Inventing RBAC codes  
-- Renaming `HOT_SALES_*` without new ADR  
+- Renaming `FFT_*` without new ADR  
 - P3 prod enable without gate-register  
 - Claiming enterprise MVP without P0+P1 AC evidence (G1–G6)  
 - Wiring deposit/pickup/ERP/notification **writes** into a P1-only PR  
@@ -126,7 +132,7 @@ HTTP external?   → Route Handler per doc/api (contract-only)
 
 - [portal-frontend-scaffold](../portal-frontend-scaffold/SKILL.md)  
 - [portal-api-contract](../portal-api-contract/SKILL.md)  
-- [portal-lib-ownership](../portal-lib-ownership/SKILL.md)  
+- [portal-backend-modules](../portal-backend-modules/SKILL.md)  
 - [admincn-customization](../admincn-customization/SKILL.md)  
 - [incremental-implementation](../agent-skills/skills/incremental-implementation/SKILL.md)  
 - [test-driven-development](../agent-skills/skills/test-driven-development/SKILL.md)  

@@ -1,28 +1,22 @@
 /**
  * One-shot / maintainable generator for FFT ui-registry AdminCN catalog.
  * Usage: node scripts/generate-fft-ui-registry-admincn.mjs
- * Does NOT invent product FFT-UI rows — merges existing components from current JSON.
+ * Does NOT invent product FFT-UI rows — merges existing components + surfaces from current JSON.
  */
 import fs from "node:fs";
 import path from "node:path";
+import {
+  isBlockEntry,
+  registryFile,
+  toPosix,
+  walkTsx,
+} from "./lib/fft-ui-registry-inventory.mjs";
 
 const ROOT = process.cwd();
-const REGISTRY = path.join(
-  ROOT,
-  ".cursor/skills/feed-farm-trade/ui-registry.json",
-);
-
-function walk(dir, acc = []) {
-  for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
-    const p = path.join(dir, e.name);
-    if (e.isDirectory()) walk(p, acc);
-    else if (e.name.endsWith(".tsx")) acc.push(p);
-  }
-  return acc;
-}
+const REGISTRY = registryFile(ROOT);
 
 function posix(p) {
-  return p.split(path.sep).join("/");
+  return toPosix(p);
 }
 
 function slugSegment(rel, stripPrefix) {
@@ -62,24 +56,15 @@ const primitives = uiFiles
       path: rel,
       studioSource: rel,
       notes:
-        "AdminCN UI primitive — auto-import OK from features/trade when on primitiveAllowlist",
+        "AdminCN UI primitive — auto-import OK from features/fft when on primitiveAllowlist",
     };
   })
   .sort((a, b) => a.reusableId.localeCompare(b.reusableId));
 
 const viewsRoot = path.join(ROOT, "components-V2/platform-views");
-const allTsx = walk(viewsRoot).map((abs) =>
+const allTsx = walkTsx(viewsRoot).map((abs) =>
   posix(path.relative(ROOT, abs)),
 );
-
-function isBlockEntry(rel) {
-  const base = path.posix.basename(rel);
-  if (base === "index.tsx") return true;
-  if (base.startsWith("datatable-")) return true;
-  if (rel.includes("/dashboards/") && base.endsWith(".tsx")) return true;
-  if (rel.includes("/portal-views/") && base.endsWith(".tsx")) return true;
-  return false;
-}
 
 const idSeen = new Set();
 const blocks = [];
@@ -134,33 +119,36 @@ const components = (existing.components ?? []).map((c) => ({
   kind: c.kind || "product",
 }));
 
+const surfaces = existing.surfaces ?? [];
+
 const out = {
-  version: 2,
+  version: Math.max(3, existing.version ?? 3),
   updated: "2026-07-11",
-  notes: [
-    "Human-only edits for approved/forbidden rows.",
-    "Agents must not invent reusableIds or self-approve to green Vitest.",
-    "ACN-UI-* primitives: import from components-V2/platform-components/ui when on primitiveAllowlist.",
-    "ACN-BLK-* blocks: catalog DNA — do not import platform-views from features/trade; wrap via product FFT-UI-* HITL.",
-    "Registry pass ≠ visual quality claim.",
-    "TRADE_NATIVE_* tech-debt (P2-AC-05); not failed by Vitest in v1.",
-    "Regenerate AdminCN catalog: node scripts/generate-fft-ui-registry-admincn.mjs (preserves components[]).",
-  ],
+  notes: existing.notes?.length
+    ? existing.notes
+    : [
+        "Human-only edits for approved/forbidden rows and dna/surfaces contracts.",
+        "Layer A inventory + Layer B dna/surfaces; npm run check:fft-ui-registry.",
+        "Regenerate AdminCN catalog preserves components[] + surfaces[].",
+      ],
   primitiveAllowlist: primitives
     .map((p) => path.basename(p.path, ".tsx"))
     .sort(),
   primitives,
   blocks,
   components,
+  surfaces,
 };
 
 fs.writeFileSync(REGISTRY, `${JSON.stringify(out, null, 2)}\n`);
 console.log(
   JSON.stringify(
     {
+      version: out.version,
       primitives: primitives.length,
       blocks: blocks.length,
       components: components.length,
+      surfaces: surfaces.length,
       allowlist: out.primitiveAllowlist.length,
     },
     null,
