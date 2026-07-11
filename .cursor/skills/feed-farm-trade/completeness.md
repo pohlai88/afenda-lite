@@ -24,7 +24,7 @@ Legend: `done` · `partial` · `missing` · `residue`
 | Skill pack (guardrails only) | superseded | Replaced by delivery pack below |
 | Skill pack (enterprise delivery) | done | playbook + action-map + rbac + verify + example |
 | P3 deposits/pickup/imports/ERP | partial | Placeholder; flag-gated |
-| Enterprise MVP claimable | partial | Gate drift closed for G1–G6/G8–G9 codes; remaining: full `@journey` cycle + order team/all scope |
+| Enterprise MVP claimable | done | Unit AC gates + `@journey` G1–G8 green (2026-07-11); team/all order scopes still later |
 
 Actions still accept `TradeLocale` (`TRADE_UI_LOCALE`); paths are locale-free.
 

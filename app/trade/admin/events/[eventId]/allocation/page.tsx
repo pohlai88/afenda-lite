@@ -43,16 +43,18 @@ export default async function TradeAllocationPage({ params }: Props) {
         orders={orders}
       />
 
-      <section className="space-y-3">
+      <section className="space-y-3" data-testid="trade-transfer-requests">
         <h2 className="font-medium">Transfer requests</h2>
         {transfers.length === 0 ? (
           <p className="text-muted-foreground text-sm">None</p>
         ) : (
           <ul className="space-y-3">
             {transfers.map((transfer) => (
-              <li key={transfer.id}>
-                <TradeTransferAdminRow locale={TRADE_UI_LOCALE} transfer={transfer} />
-              </li>
+              <TradeTransferAdminRow
+                key={transfer.id}
+                locale={TRADE_UI_LOCALE}
+                transfer={transfer}
+              />
             ))}
           </ul>
         )}

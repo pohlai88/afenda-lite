@@ -17,6 +17,7 @@ import type {
 import { formatCountdown, getCountdownParts } from "@/modules/trade/domain/countdown";
 import { buildEventSummary, eventSummaryToCsv } from "@/modules/trade/domain/export";
 import { calculateEstimatedSupport, canCompleteOrder } from "@/modules/trade/domain/support";
+import { canTransferOrder } from "@/modules/trade/domain/transfer";
 
 function makeOrder(
   partial: Partial<AllocationInputOrder> & Pick<AllocationInputOrder, "id">,
@@ -256,6 +257,38 @@ describe("support", () => {
     expect(canCompleteOrder({ fulfilledQuantity: null, status: "confirmed" }).allowed).toBe(
       false,
     );
+  });
+
+  it("allows completion with fulfilled quantity (G4)", () => {
+    expect(
+      canCompleteOrder({ fulfilledQuantity: 25, status: "full" }).allowed,
+    ).toBe(true);
+  });
+});
+
+describe("transfer (G3)", () => {
+  it("allows transfer when event permits and order is allocated", () => {
+    expect(
+      canTransferOrder(
+        { status: "full", transferStatus: null },
+        { transferAllowed: true },
+      ).allowed,
+    ).toBe(true);
+  });
+
+  it("denies transfer when event disallows or order is not allocated", () => {
+    expect(
+      canTransferOrder(
+        { status: "full", transferStatus: null },
+        { transferAllowed: false },
+      ).reason,
+    ).toBe("transfer_not_allowed");
+    expect(
+      canTransferOrder(
+        { status: "registered", transferStatus: null },
+        { transferAllowed: true },
+      ).reason,
+    ).toBe("order_not_transferable");
   });
 });
 

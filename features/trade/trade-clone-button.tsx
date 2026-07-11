@@ -24,6 +24,7 @@ export function TradeCloneEventButton({
         variant="outline"
         size="sm"
         disabled={pending}
+        data-testid="trade-clone-event"
         onClick={() =>
           startTransition(async () => {
             setError(null);

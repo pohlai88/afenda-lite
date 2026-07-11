@@ -8,7 +8,6 @@ import {
   requestTransferAction,
 } from "@/app/actions/trade";
 import { Button } from "@/components-V2/platform-components/ui/button";
-import { Input } from "@/components-V2/platform-components/ui/input";
 import { getTradeActionError } from "@/modules/trade/domain/trade-action-result";
 import type { HotSalesOrder } from "@/modules/trade/domain/types";
 import type { TradeLocale } from "@/modules/trade/i18n/trade";
@@ -26,7 +25,12 @@ export function TradeTransferRequestForm({
 
   if (order.transferStatus === "requested") {
     return (
-      <p className="text-muted-foreground text-xs">Transfer pending approval</p>
+      <p
+        className="text-muted-foreground text-xs"
+        data-testid="trade-transfer-pending"
+      >
+        Transfer pending approval
+      </p>
     );
   }
 
@@ -46,22 +50,45 @@ export function TradeTransferRequestForm({
         });
       }}
     >
-      <Input name="newCustomerName" placeholder="New customer name" required />
-      <Input name="newCustomerCode" placeholder="New customer code" />
-      <Input
+      {/* Native inputs so FormData includes names under Base UI Input gaps. */}
+      <input
+        className="border-input bg-background rounded-md border px-2 py-1 text-sm"
+        name="newCustomerName"
+        placeholder="New customer name"
+        required
+        data-testid="trade-transfer-new-customer"
+      />
+      <input
+        className="border-input bg-background rounded-md border px-2 py-1 text-sm"
+        name="newCustomerCode"
+        placeholder="New customer code"
+      />
+      <input
+        className="border-input bg-background rounded-md border px-2 py-1 text-sm"
         name="transferQuantity"
         type="number"
         min={1}
         defaultValue={order.confirmedQuantity ?? order.requestedQuantity}
         required
+        data-testid="trade-transfer-qty"
       />
-      <Input name="reason" placeholder="Reason" required />
+      <input
+        className="border-input bg-background rounded-md border px-2 py-1 text-sm"
+        name="reason"
+        placeholder="Reason"
+        required
+        data-testid="trade-transfer-reason"
+      />
       <div className="md:col-span-2">
-        <Button type="submit" size="sm" disabled={pending}>
+        <Button type="submit" size="sm" disabled={pending} data-testid="trade-transfer-request">
           Request transfer
         </Button>
       </div>
-      {error ? <p className="text-destructive md:col-span-2 text-xs">{error}</p> : null}
+      {error ? (
+        <p className="text-destructive md:col-span-2 text-xs" data-testid="trade-transfer-error">
+          {error}
+        </p>
+      ) : null}
     </form>
   );
 }
@@ -105,6 +132,7 @@ export function TradeTransferAdminRow({
         type="button"
         size="sm"
         disabled={pending}
+        data-testid="trade-transfer-approve"
         onClick={() =>
           startTransition(async () => {
             await approveTransferAction(locale, transfer.orderId, transfer.id);
@@ -119,6 +147,7 @@ export function TradeTransferAdminRow({
         size="sm"
         variant="outline"
         disabled={pending}
+        data-testid="trade-transfer-reject"
         onClick={() =>
           startTransition(async () => {
             await rejectTransferAction(locale, transfer.orderId, transfer.id);

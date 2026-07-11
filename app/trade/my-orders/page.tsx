@@ -35,8 +35,15 @@ export default async function TradeMyOrdersPage() {
       ) : (
         <ul className="space-y-4">
           {orders.map((order) => (
-            <li key={order.id} className="space-y-2 rounded-lg border p-4">
-              <div className="flex flex-wrap justify-between gap-2 text-sm">
+            <li
+              key={order.id}
+              className="space-y-2 rounded-lg border p-4"
+              data-testid="trade-my-order-row"
+              data-order-id={order.id}
+              data-status={order.status}
+              data-transfer-status={order.transferStatus ?? ""}
+              data-customer={order.customerName}
+            >              <div className="flex flex-wrap justify-between gap-2 text-sm">
                 <div>
                   <p className="font-medium">{order.orderNumber}</p>
                   <p className="text-muted-foreground">
