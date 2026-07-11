@@ -63,9 +63,9 @@ import {
   resolvePlaygroundHitlMark,
   type PlaygroundHitlMark,
   type PlaygroundHitlRow
-} from '@/lib/playground/playground-hitl-rows'
-import { buildHitlReviewHref } from '@/lib/playground/playground-hitl-views'
-import type { PlaygroundPageShape } from '@/lib/playground/playground-page-shape'
+} from '@/features/playground/playground-hitl-rows'
+import { buildHitlReviewHref } from '@/features/playground/playground-hitl-views'
+import type { PlaygroundPageShape } from '@/features/playground/playground-page-shape'
 
 export type HitlItem = {
   id: string

@@ -39,7 +39,7 @@ import themeConfig from '@/components-V2/platform-config/themeConfig'
 import { useOrganizationAdminShellFlags } from '@/components-V2/platform-context/organizationAdminShellFlagsContext'
 import { useSettings } from '@/components-V2/platform-hooks/use-settings'
 import { ORG_OPERATOR_PLAYGROUND_ROUTE } from '@/modules/platform/routing/portal-nav-routes'
-import { portalCopy } from '@/modules/declarations/copy/portal-copy'
+import { portalCopy } from '@/modules/platform/copy/portal-copy'
 
 // Util Imports
 import { cn } from '@/components-V2/lib/utils'

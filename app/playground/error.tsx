@@ -1,7 +1,7 @@
 "use client";
 
 import { PortalRouteError } from "@/features/portal-chrome/portal-route-error";
-import { portalCopy } from "@/modules/declarations/copy/portal-copy";
+import { portalCopy } from "@/modules/platform/copy/portal-copy";
 import { ORGANIZATION_ADMIN_DASHBOARD_HREF } from "@/modules/platform/routing/portal-routes";
 
 export default function PlaygroundError({

@@ -1,4 +1,4 @@
-import { runPlaygroundLayout } from "@/lib/playground/playground-layout";
+import { runPlaygroundLayout } from "@/features/playground/playground-layout";
 
 export const dynamic = "force-dynamic";
 

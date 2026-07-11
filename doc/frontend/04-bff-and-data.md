@@ -30,7 +30,7 @@ Need data?
 
 ```text
 app/**/page.tsx          → await params; call runner
-lib/pages/* or lib/entry/* → session + load model (transitional runners)
+lib/pages/* or features/auth/entry/* → session + load model (transitional runners)
 features/* or portal-views → present UI (RSC + small client islands)
 app/actions/*.ts         → 'use server'; Zod; requireSession; module domain; revalidatePath
 modules/*/schemas/*.ts   → boundary schemas (owning context)

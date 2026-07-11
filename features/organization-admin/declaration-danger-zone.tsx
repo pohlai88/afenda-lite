@@ -6,7 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components-V2/platform-components/ui/card";
-import { portalCopy } from "@/modules/declarations/copy/portal-copy";
+import { portalCopy } from "@/modules/platform/copy/portal-copy";
 
 /** account-settings-03 danger-zone pattern — destructive actions below settings, not a tab. */
 export function DeclarationDangerZone({ surveyId }: { surveyId: string }) {

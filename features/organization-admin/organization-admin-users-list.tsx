@@ -73,7 +73,7 @@ import type {
   OrganizationAdminUserRole,
   OrganizationAdminUsersPageData,
   OrganizationAdminUserStatus,
-} from "@/lib/pages/organization-admin-users-page";
+} from "@/features/organization-admin/organization-admin-users-page";
 import { organizationAdminUserHref } from "@/modules/platform/routing/portal-routes";
 import {
   downloadOrganizationAdminUsersFile,

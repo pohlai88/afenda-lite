@@ -2,13 +2,13 @@ import "server-only";
 
 import { isAdminSession } from "@/modules/identity/admin";
 import { getAuthSession } from "@/modules/identity/auth/get-session";
-import { getClientProfile } from "@/modules/declarations/domain/clients";
+import { getClientProfile } from "@/modules/identity/domain/client-profile";
 import {
   getPreviewClientName,
   getPreviewClientUser,
   isPreviewClientSession,
 } from "@/modules/identity/preview-client";
-import { portalCopy } from "@/modules/declarations/copy/portal-copy";
+import { portalCopy } from "@/modules/platform/copy/portal-copy";
 import {
   pickDisplayName,
   type OrganizationMemberKind,

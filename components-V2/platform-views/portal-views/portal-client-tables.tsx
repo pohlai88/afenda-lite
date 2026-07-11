@@ -25,8 +25,8 @@ import {
 import type {
   OrgClientAssignmentRow,
   OrgClientInvitationRow,
-} from "@/lib/pages/organization-admin-clients-types";
-import { portalCopy } from "@/modules/declarations/copy/portal-copy";
+} from "@/features/organization-admin/organization-admin-clients-types";
+import { portalCopy } from "@/modules/platform/copy/portal-copy";
 
 function initials(name: string) {
   return name

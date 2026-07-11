@@ -9,7 +9,7 @@ import {
 } from "@/features/auth/invitation-join-panel";
 import { useJoinInvitationAuthView } from "@/features/auth/use-join-invitation-auth-view";
 import { resolveJoinInvitationTrustNotice } from "@/modules/identity/client-invitation-join-auth";
-import { portalCopy } from "@/modules/declarations/copy/portal-copy";
+import { portalCopy } from "@/modules/platform/copy/portal-copy";
 
 function JoinStudioShell({ children }: { children: ReactNode }) {
   const { clientInvitationJoin } = portalCopy;

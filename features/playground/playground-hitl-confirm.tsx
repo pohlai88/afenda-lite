@@ -48,9 +48,9 @@ import {
   type PlaygroundHitlMark,
   type PlaygroundHitlReviews,
   type PlaygroundHitlVerdict
-} from '@/lib/playground/playground-hitl-rows'
-import type { PlaygroundPageShape } from '@/lib/playground/playground-page-shape'
-import type { PlaygroundRouteReviewDefinition } from '@/lib/playground/playground-route-review'
+} from '@/features/playground/playground-hitl-rows'
+import type { PlaygroundPageShape } from '@/features/playground/playground-page-shape'
+import type { PlaygroundRouteReviewDefinition } from '@/features/playground/playground-route-review'
 import { PlaygroundPageShapeBadge } from '@/features/playground/playground-page-shape-badge'
 
 const MARK_LABEL: Record<PlaygroundHitlMark, string> = {

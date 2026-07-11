@@ -22,7 +22,7 @@ import {
 import { formatDateTime } from "@/modules/platform/format";
 import type { EvidenceRecord, SurveyQuestion } from "@/modules/declarations/question-models";
 import type { SurveyResponse } from "@/modules/declarations/domain/surveys";
-import { portalCopy } from "@/modules/declarations/copy/portal-copy";
+import { portalCopy } from "@/modules/platform/copy/portal-copy";
 
 type PortalDeclarationSubmissionsTableProps = {
   responses: SurveyResponse[];

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { issueClientInviteAction } from "@/app/actions/client";
-import { portalCopy } from "@/modules/declarations/copy/portal-copy";
+import { portalCopy } from "@/modules/platform/copy/portal-copy";
 import { CLIENT_INVITE } from "@/modules/platform/form-constraints";
 import { FormErrorAlert } from "@/features/organization-admin/form-error-alert";
 import { Button } from "@/components-V2/platform-components/ui/button";

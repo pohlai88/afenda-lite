@@ -10,10 +10,10 @@ One **Afenda-Lite** SaaS · two product modules (Declarations + Feed Farm Trade)
 
 | Context | May depend on | Must not import |
 |---------|---------------|-----------------|
-| Identity | Neon Auth, Platform; **narrow:** `modules/declarations/copy` (product strings) + `getClientProfile` for session gates only | Declarations domain business rules (invites/CRUD), Trade |
+| Identity | Neon Auth, Platform | Declarations (any), Trade |
 | Declarations | Identity (actor / org ids), Platform | Trade (`modules/fft`) |
 | Trade (`modules/fft`) | Identity (allowlist / RBAC), Platform | Declarations (**any** path — schemas included) |
-| Platform | nothing product-specific | — |
+| Platform | nothing product-domain-specific | Declarations / Identity / Trade domain trees |
 
 ### Shared primitives (Platform only)
 
@@ -22,18 +22,12 @@ One **Afenda-Lite** SaaS · two product modules (Declarations + Feed Farm Trade)
 | uuid / email / password / slug / `parseSchema` | `modules/platform/schemas/common.ts` |
 | Email normalize | `modules/platform/normalize-email.ts` |
 | API error body | `modules/platform/schemas/api-error.ts` |
+| Product copy / `PORTAL_NAME` | `modules/platform/copy/*` |
+| Evidence acceptance labels | `modules/platform/evidence-acceptance.ts` |
 
 Declarations `schemas/common.ts` **re-exports** Platform common and owns Declarations-only `surveyAnswersSchema`. Trade and Identity must import shared Zod from **Platform**, not from Declarations.
 
-**Approved narrow Identity→Declarations edges (tracked debt):**
-
-| Edge | Why it exists | Do not expand to |
-|------|---------------|------------------|
-| `portalCopy` / `PORTAL_NAME` | Product strings until Platform copy port | Declarations domain CRUD |
-| `getClientProfile` | Session / member gates | Invite CRUD, survey writes |
-| `bootstrapClientAfterAuth` → `ensureClientProfileRow` / invitation accept | Auth session must finish client invite bootstrap | New Identity→Declarations domain imports |
-
-Until a ClientProfile + invite-bootstrap port lands on Identity/Platform — **do not add** further Identity→Declarations domain imports.
+**Closed (2026-07-12):** ClientProfile port (`modules/identity/domain/client-profile` + `client-invitation-bootstrap`); Platform copy port (`modules/platform/copy`). Identity has **zero** Declarations imports.
 
 Compose at the **adapter** (page / Server Action / Route Handler) if a screen needs two contexts — do not merge domain trees.
 
@@ -63,4 +57,4 @@ Compose at the **adapter** (page / Server Action / Route Handler) if a screen ne
 - [ ] Adapter-only composition when two contexts needed
 - [ ] Port has no Next.js / React imports
 - [ ] Product schema lives in owning context’s `schemas/`
-- [ ] No new Identity→Declarations domain imports beyond the narrow list above
+- [ ] No new Identity→Declarations imports (Platform copy port closed)

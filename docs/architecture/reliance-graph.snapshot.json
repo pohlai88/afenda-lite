@@ -1349,7 +1349,7 @@
       "id": "domain:client-invitation-entry",
       "label": "Invitation entry",
       "metadata": {
-        "path": "lib/entry/client-invitation-entry.ts"
+        "path": "features/auth/entry/client-invitation-entry.ts"
       },
       "type": "domain-module"
     },
@@ -1357,7 +1357,7 @@
       "id": "domain:open-link-entry",
       "label": "Open link entry",
       "metadata": {
-        "path": "lib/entry/open-link-entry.ts"
+        "path": "features/auth/entry/open-link-entry.ts"
       },
       "type": "domain-module"
     },
@@ -1365,7 +1365,7 @@
       "id": "domain:secure-link-entry",
       "label": "Secure link entry",
       "metadata": {
-        "path": "lib/entry/secure-link-entry.ts"
+        "path": "features/auth/entry/secure-link-entry.ts"
       },
       "type": "domain-module"
     },

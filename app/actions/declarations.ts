@@ -8,7 +8,7 @@ import { listClientAssignments } from "@/modules/declarations/domain/clients";
 import { isEvidencePolicyFailureReason } from "@/modules/declarations/domain/evidence-policy";
 import { listQuestionsForSurvey, registerEvidence } from "@/modules/declarations/domain/questions";
 import { runLoggedAction } from "@/modules/platform/observability";
-import { portalCopy } from "@/modules/declarations/copy/portal-copy";
+import { portalCopy } from "@/modules/platform/copy/portal-copy";
 import { parseSchema } from "@/modules/platform/schemas/common";
 import { registerEvidenceSchema } from "@/modules/declarations/schemas/declarations";
 import { getSurveyBySlug, getSurveyForAdmin } from "@/modules/declarations/domain/surveys";

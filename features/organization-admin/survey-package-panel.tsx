@@ -21,7 +21,7 @@ import { Badge } from "@/components-V2/platform-components/ui/badge";
 import { Button } from "@/components-V2/platform-components/ui/button";
 import { Checkbox } from "@/components-V2/platform-components/ui/checkbox";
 import { Progress } from "@/components-V2/platform-components/ui/progress";
-import { portalCopy } from "@/modules/declarations/copy/portal-copy";
+import { portalCopy } from "@/modules/platform/copy/portal-copy";
 import type { PackageAnalysis } from "@/modules/declarations/domain/survey-package-analyze";
 import { cn } from "@/modules/platform/utils";
 

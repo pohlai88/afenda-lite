@@ -3,7 +3,7 @@ import OrganizationAdminUsersView from "@/components-V2/platform-views/portal-vi
 import {
   loadOrganizationAdminUserViewPage,
   organizationAdminUserViewPageMetadata,
-} from "@/lib/pages/organization-admin-users-page";
+} from "@/features/organization-admin/organization-admin-users-page";
 
 export const metadata = organizationAdminUserViewPageMetadata;
 export const dynamic = "force-dynamic";

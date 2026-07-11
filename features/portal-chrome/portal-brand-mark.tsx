@@ -7,7 +7,7 @@ import {
   PORTAL_BRAND_SHELL,
   type BrandContext,
 } from "@/features/portal-chrome/portal-brand";
-import { PORTAL_NAME } from "@/modules/declarations/copy/portal-copy";
+import { PORTAL_NAME } from "@/modules/platform/copy/portal-copy";
 import { cn } from "@/modules/platform/utils";
 
 type BrandMarkProps = {

@@ -1,7 +1,7 @@
 import {
   operatorDeclarationDetailMetadata,
   runOrganizationAdminDeclarationDetailPage,
-} from "@/lib/pages/organization-admin-declaration-detail";
+} from "@/features/organization-admin/organization-admin-declaration-detail";
 
 export const dynamic = "force-dynamic";
 

@@ -1,7 +1,7 @@
 import {
   playgroundHitlReviewPageMetadata,
   runPlaygroundHitlReviewPage,
-} from "@/lib/pages/playground/playground-hitl-review-page";
+} from "@/features/playground/playground-hitl-review-page";
 
 export const dynamic = "force-dynamic";
 

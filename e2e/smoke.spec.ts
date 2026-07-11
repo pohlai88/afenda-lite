@@ -3,7 +3,7 @@ import {
   HEALTH_LIVENESS_API_HREF,
   HEALTH_READINESS_API_HREF,
 } from "@/modules/platform/api/routes";
-import { portalCopy } from "@/modules/declarations/copy/portal-copy";
+import { portalCopy } from "@/modules/platform/copy/portal-copy";
 import {
   getOperatorCreds,
   operatorSkipMessage,

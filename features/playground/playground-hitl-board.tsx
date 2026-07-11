@@ -31,16 +31,16 @@ import { cn } from "@/components-V2/lib/utils";
 import {
   countPlaygroundHitlAttention,
   type PlaygroundHitlRow,
-} from "@/lib/playground/playground-hitl-rows";
+} from "@/features/playground/playground-hitl-rows";
 import {
   PLAYGROUND_HITL_REVIEW_HREF,
   playgroundReviewNavLinks,
-} from "@/lib/playground/playground-nav";
+} from "@/features/playground/playground-nav";
 import {
   buildHitlReviewHref,
   filterHitlRows,
   parseHitlViewFilters,
-} from "@/lib/playground/playground-hitl-views";
+} from "@/features/playground/playground-hitl-views";
 
 function KpiCard({
   icon,

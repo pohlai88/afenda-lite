@@ -7,7 +7,7 @@ import {
   PLAYGROUND_PAGE_SHAPE_LABEL,
   isPlaygroundPageOutOfShape,
   type PlaygroundPageShape,
-} from "@/lib/playground/playground-page-shape";
+} from "@/features/playground/playground-page-shape";
 
 const SHAPE_BADGE_CLASS: Record<PlaygroundPageShape, string> = {
   live: "bg-emerald-600/10 text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-400",

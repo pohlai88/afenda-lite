@@ -3,7 +3,7 @@
  *
  * Shared by client (`client-sign-in-entry`), org (`org-sign-in-entry`), and Guardian trust notices.
  */
-import { portalCopy } from "@/modules/declarations/copy/portal-copy";
+import { portalCopy } from "@/modules/platform/copy/portal-copy";
 
 export const ORG_SIGN_IN_FROM_PARAM = "org" as const;
 export const ORG_ACCESS_DENIED_REASON = "access-denied" as const;

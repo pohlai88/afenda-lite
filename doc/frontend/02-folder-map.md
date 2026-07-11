@@ -8,7 +8,7 @@ Target layout after rebuild. Status reflects disk after 2026-07-11 cleanup + mod
 | `features/` | Product feature modules (auth, landing, account, fft, portal-chrome) | **Keep / extend** | Primary home for non-AdminCN UI |
 | `components-V2/` | AdminCN shell, ui, portal-views | **Keep product paths** | Prune demos — see [06-admincn-alignment.md](06-admincn-alignment.md) |
 | `modules/` | Domain, schemas, env, auth, routing (runtime SSOT) | **Keep** | Bounded contexts — see [../backend/02-folder-map.md](../backend/02-folder-map.md) |
-| `lib/` | Transitional runners + FE residue | **Keep / shrink** | entry/pages/playground; shims only for utils/format — not domain |
+| `lib/` | Former runners | **Removed** | Do not recreate — runners under `features/` |
 | `db/` | Migrations | **Keep** | |
 | `public/` | Static assets | **Keep `lynx/` only** | Other brand/owl assets removed |
 | `proxy.ts` | Next.js 16 request proxy | **Keep** | Not `middleware.ts` |
@@ -38,14 +38,13 @@ Target layout after rebuild. Status reflects disk after 2026-07-11 cleanup + mod
 | `app/fft/` | Feed Farm Trade module (AdminCN shell, permission gate; locale-free P1 pages) |
 | `app/playground/` | Local UI harness (dev only) |
 
-## `lib/` L2 (runners only)
+## `lib/` — gone
 
-| Path | Role |
-|------|------|
-| `lib/entry/`, `lib/pages/` | Page runners / entry orchestration (do not grow for greenfield) |
-| `lib/playground/`, `lib/pages/playground/` | Local harness policies and thin page runners |
+Do **not** recreate `lib/`. Product + playground runners live under `features/`.
 
-**Gone (do not recreate):** `lib/domain/`, `lib/schemas/`, `lib/env/`, `lib/routing/`, `lib/auth/`, `lib/copy/`, `lib/utils.ts`, `lib/format.ts` — live under `modules/` or `features/`.
+**Product / harness runners:** `features/auth/entry/`, `features/organization-admin/organization-admin-*`, `features/auth/public-link-page*`, `features/playground/**`
+
+**Gone (do not recreate):** entire `lib/` tree (`domain`, `schemas`, `env`, `routing`, `auth`, `copy`, `entry`, `pages`, `playground`, `utils`, `format`).
 
 ## `features/` L2
 

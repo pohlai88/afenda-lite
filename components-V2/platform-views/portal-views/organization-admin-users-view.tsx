@@ -2,7 +2,7 @@ import { OrganizationAdminUsersView as OrganizationAdminUsersViewFeature } from 
 import type {
   OrganizationAdminUserDisplay,
   OrganizationAdminUserSessionDisplay,
-} from "@/lib/pages/organization-admin-users-page";
+} from "@/features/organization-admin/organization-admin-users-page";
 
 export default function OrganizationAdminUsersView({
   user,

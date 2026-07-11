@@ -43,15 +43,14 @@ Adapters stay thin and **outside** modules:
 
 **Forbidden:** create `modules/trade/` — use `modules/fft/`.
 
-## Remaining `lib/` (runners only — Pass 2 complete)
+## `lib/` — gone (full absorb complete)
 
 | Disposition | Paths |
 |-------------|-------|
-| **Keep (runners)** | `lib/entry/**`, `lib/pages/**` (org-admin, public-link, playground) — do not grow for greenfield |
-| **Keep (harness)** | `lib/playground/**` |
-| **Gone** | `lib/domain/`, `lib/schemas/`, `lib/env/`, `lib/routing/`, `lib/auth/`, `lib/copy/`, `lib/utils.ts`, `lib/format.ts` |
+| **Runners / harness** | `features/auth/entry/**`, `features/organization-admin/organization-admin-*`, `features/auth/public-link-page*`, `features/playground/**` |
+| **Gone** | Entire `lib/` tree — do not recreate |
 
-Pass 2 relocates: FE trust → `features/auth/`; brand/theme → `features/portal-chrome/`; product copy SSOT → `modules/declarations/copy/`; shell members → `modules/identity/`. See [06-modules-ownership.md](06-modules-ownership.md) and skill [`residue-inventory.md`](../../.cursor/skills/portal-backend-modules/residue-inventory.md).
+Pass 2 + absorb: FE trust → `features/auth/`; brand/theme → `features/portal-chrome/`; product copy SSOT → `modules/platform/copy/`; shell members → `modules/identity/`; entry / org-admin / playground runners → `features/`. See [06-modules-ownership.md](06-modules-ownership.md) and skill [`residue-inventory.md`](../../.cursor/skills/portal-backend-modules/residue-inventory.md).
 
 ## Related
 

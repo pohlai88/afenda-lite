@@ -5,7 +5,7 @@ import {
   signUpOnJoinPage,
   verifyJoinEmailForE2e,
 } from "@/testing/e2e/client-invitation-flows";
-import { portalCopy } from "@/modules/declarations/copy/portal-copy";
+import { portalCopy } from "@/modules/platform/copy/portal-copy";
 import { createE2eClientEmail } from "@/testing/e2e/credentials";
 import { runNodeScriptJson } from "@/testing/e2e/run-node-script";
 

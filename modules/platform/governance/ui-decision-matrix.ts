@@ -424,7 +424,7 @@ export const STUDIO_IMPLEMENTATION_BY_SURFACE: Record<
   "auth-email-otp": { kind: "neon-integrated", component: "features/auth/studio-auth-login-page.tsx + portal-auth-neon-view.tsx", blockSlug: "login-page-02", notes: "Studio login-page-02 + Neon (ADR-Auth-UI-001 amended)" },
   "auth-magic-link": { kind: "neon-integrated", component: "features/auth/studio-auth-login-page.tsx + portal-auth-neon-view.tsx", blockSlug: "login-page-02", notes: "Studio login-page-02 + Neon (ADR-Auth-UI-001 amended)" },
   "auth-accept-invitation": { kind: "neon-integrated", component: "features/auth/studio-auth-login-page.tsx + portal-auth-neon-view.tsx", blockSlug: "login-page-02", notes: "Prefer /join?invitationId= for client org invites" },
-  "org-login": { kind: "neon-integrated", component: "app/org/login/page.tsx → lib/entry/org-sign-in-entry.ts", notes: "Redirect-only entry; Neon AuthView at /auth/sign-in?from=org" },
+  "org-login": { kind: "neon-integrated", component: "app/org/login/page.tsx → features/auth/entry/org-sign-in-entry.ts", notes: "Redirect-only entry; Neon AuthView at /auth/sign-in?from=org" },
   "account-settings": { kind: "neon-integrated", component: "features/auth/portal-auth-neon-view.tsx (AccountView)", blockSlug: "account-settings-01", notes: "Studio block installed as chrome reference only — see lib/studio-canonical-kit.ts" },
   "account-security": { kind: "neon-integrated", component: "features/auth/portal-auth-neon-view.tsx (AccountView)", blockSlug: "account-settings-01", notes: "Chrome reference; Neon owns security forms" },
   // Client
@@ -444,8 +444,8 @@ export const STUDIO_IMPLEMENTATION_BY_SURFACE: Record<
   "client-home-redirect": { kind: "hardcoded", component: "features/landing/lynx-landing-page.tsx", notes: "Guest Vanguard unlock landing; authed still session-skips" },
   "client-login": { kind: "neon-integrated", component: "app/client/(gate)/login/page.tsx redirect" },
   "client-join": { kind: "neon-integrated", component: "features/auth/studio-invitation-join-page.tsx", notes: "Studio shell + Neon join (ADR-Auth-UI-001 amended)" },
-  "public-survey-link": { kind: "neon-integrated", component: "lib/entry/open-link-entry.ts → app/survey/[slug]/page.tsx", notes: "Redirect-only open link entry (S5)" },
-  "public-secure-link": { kind: "neon-integrated", component: "lib/entry/secure-link-entry.ts → app/f/[token]/page.tsx", notes: "Redirect-only secure link entry (S5)" },
+  "public-survey-link": { kind: "neon-integrated", component: "features/auth/entry/open-link-entry.ts → app/survey/[slug]/page.tsx", notes: "Redirect-only open link entry (S5)" },
+  "public-secure-link": { kind: "neon-integrated", component: "features/auth/entry/secure-link-entry.ts → app/f/[token]/page.tsx", notes: "Redirect-only secure link entry (S5)" },
   // Admin
   "admin-dashboard": { kind: "studio-installed", component: "operator-declarations-dashboard.tsx", blockSlug: "datatable-component-05", notes: "AdminCN sales-dashboard composition: statistics-card-05 DNA + DataTable 05 fork" },
   "admin-clients": { kind: "studio-installed", component: "operator-clients-list.tsx", blockSlug: "datatable-component-04", notes: "AdminCN portal-views client invitations/assignments tables" },

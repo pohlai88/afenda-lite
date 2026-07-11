@@ -5,7 +5,7 @@ import { ChevronDownIcon, PlusIcon, Trash2Icon } from "lucide-react";
 import type { QuestionType } from "@/modules/declarations/question-models";
 import type { QuestionConfig } from "@/modules/declarations/domain/survey-package";
 import { SURVEY_EDITOR } from "@/modules/platform/form-constraints";
-import { portalCopy } from "@/modules/declarations/copy/portal-copy";
+import { portalCopy } from "@/modules/platform/copy/portal-copy";
 import { Button } from "@/components-V2/platform-components/ui/button";
 import { Checkbox } from "@/components-V2/platform-components/ui/checkbox";
 import {

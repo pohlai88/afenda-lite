@@ -4,7 +4,7 @@ import { useFormStatus } from "react-dom";
 import { Loader2Icon, SettingsIcon } from "lucide-react";
 import { createDraftSurveyAction } from "@/app/actions/surveys";
 import { Button } from "@/components-V2/platform-components/ui/button";
-import { portalCopy } from "@/modules/declarations/copy/portal-copy";
+import { portalCopy } from "@/modules/platform/copy/portal-copy";
 
 function CreateDraftSubmitButton() {
   const { create } = portalCopy.org;

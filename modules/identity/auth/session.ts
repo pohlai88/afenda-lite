@@ -29,7 +29,7 @@ import {
   toPreviewClientSession,
   type ClientAuthenticatedSession,
 } from "@/modules/identity/client-session";
-import { getClientProfile } from "@/modules/declarations/domain/clients";
+import { getClientProfile } from "@/modules/identity/domain/client-profile";
 import {
   AUTH_SIGN_IN_HREF,
   ORGANIZATION_ADMIN_DASHBOARD_HREF,
@@ -38,7 +38,7 @@ import {
   isPlaygroundEmbedRequest,
   isPlaygroundEnabled,
 } from "@/modules/platform/playground-embed";
-import { portalCopy } from "@/modules/declarations/copy/portal-copy";
+import { portalCopy } from "@/modules/platform/copy/portal-copy";
 import {
   clientPreviewUnavailableHref,
   getPreviewClientUser,

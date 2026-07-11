@@ -1,7 +1,7 @@
 import { expect, test } from "@/testing/e2e/playwright-base";
 /** S5 share access — `/survey/[slug]` and `/f/[token]` only (not S6 `/invite/[token]`). */
 import { SANDBOX_INVITE_TOKEN, SANDBOX_SURVEY, SANDBOX_SURVEY_SLUG } from "@/modules/identity/production-fixtures";
-import { portalCopy } from "@/modules/declarations/copy/portal-copy";
+import { portalCopy } from "@/modules/platform/copy/portal-copy";
 import {
   clientSkipMessage,
   getClientCreds,

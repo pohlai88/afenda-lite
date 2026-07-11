@@ -1,4 +1,4 @@
-import { PORTAL_NAME } from "@/modules/declarations/copy/portal-name";
+import { PORTAL_NAME } from "@/modules/platform/copy/portal-name";
 
 /** Immutable theme masters (`public/brand/identity/iam-*.png`) — never overwritten by icons:generate. */
 export const BRAND_MASTER_LIGHT_PATH = "/brand/identity/iam-light.png";

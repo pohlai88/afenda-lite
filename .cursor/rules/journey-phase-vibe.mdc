@@ -43,7 +43,7 @@ For `organization-admin-post-login`, also run [docs/architecture/admincn-fronten
 Before writing a single file, confirm these three layers are covered:
 
 **Frontend**
-Route → `lib/entry/*` or `lib/pages/*` → `features/` or `portal-views/` → `loading.tsx` present
+Route → `features/auth/entry/*` or `lib/pages/*` → `features/` or `portal-views/` → `loading.tsx` present
 
 **Backend**
 `app/actions/*.ts` → Zod schema in `modules/*/schemas/` → `requireSession` guard → `modules/*/domain/*.ts` → Neon

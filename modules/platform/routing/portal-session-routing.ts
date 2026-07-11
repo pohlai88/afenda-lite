@@ -4,7 +4,7 @@ import "server-only";
 import { isAdminSession } from "@/modules/identity/admin";
 import { getAuthSession } from "@/modules/identity/auth/get-session";
 import { bootstrapClientAfterAuth } from "@/modules/identity/auth/bootstrap-client-invite";
-import { getClientProfile } from "@/modules/declarations/domain/clients";
+import { getClientProfile } from "@/modules/identity/domain/client-profile";
 import {
   clientPostAuthHref,
   ORGANIZATION_ADMIN_DASHBOARD_HREF,

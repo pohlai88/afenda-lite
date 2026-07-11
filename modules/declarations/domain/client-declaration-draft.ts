@@ -5,7 +5,7 @@ import {
   isClientPortalAcknowledged,
   saveClientAssignmentDraft,
 } from "@/modules/declarations/domain/clients";
-import { portalCopy } from "@/modules/declarations/copy/portal-copy";
+import { portalCopy } from "@/modules/platform/copy/portal-copy";
 import type { SurveyAnswers } from "@/modules/declarations/question-models";
 import type { z } from "zod";
 import type { saveClientDeclarationDraftSchema } from "@/modules/declarations/schemas/client";

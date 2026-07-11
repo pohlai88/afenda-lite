@@ -6,7 +6,7 @@ import { PortalAuthNeonView } from "@/features/auth/portal-auth-neon-view";
 import { InvitationJoinSteps } from "@/features/auth/invitation-join-steps";
 import type { JoinInvitationAuthView } from "@/modules/identity/client-invitation-join-auth";
 import { CLIENT_ONBOARDING_HREF } from "@/modules/identity/client-session";
-import { portalCopy } from "@/modules/declarations/copy/portal-copy";
+import { portalCopy } from "@/modules/platform/copy/portal-copy";
 import { authSignInHref, buildClientJoinHref } from "@/modules/platform/routing/portal-routes";
 
 export function InvitationJoinPanelSkeleton() {

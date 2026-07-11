@@ -7,12 +7,12 @@ import { Badge } from "@/components-V2/platform-components/ui/badge";
 import { Button } from "@/components-V2/platform-components/ui/button";
 import { PlaygroundPageShapeBadge } from "@/features/playground/playground-page-shape-badge";
 import { usePlaygroundHitlReviews } from "@/features/playground/playground-hitl-confirm";
-import { buildPlaygroundHitlRepairPrompt } from "@/lib/playground/playground-hitl-repair-prompt";
+import { buildPlaygroundHitlRepairPrompt } from "@/features/playground/playground-hitl-repair-prompt";
 import {
   buildPlaygroundHitlFingerprint,
   resolvePlaygroundHitlMark,
   type PlaygroundHitlRow,
-} from "@/lib/playground/playground-hitl-rows";
+} from "@/features/playground/playground-hitl-rows";
 import { copyText } from "@/modules/platform/clipboard";
 
 const ACTION_LABEL = {

@@ -3,7 +3,7 @@ import {
   organizationAdminUsersToCsv,
   organizationAdminUsersToJson,
 } from "@/features/organization-admin/organization-admin-users-export";
-import type { OrganizationAdminUserDisplay } from "@/lib/pages/organization-admin-users-map";
+import type { OrganizationAdminUserDisplay } from "@/features/organization-admin/organization-admin-users-map";
 
 const sample: OrganizationAdminUserDisplay = {
   id: "11111111-1111-4111-8111-111111111111",

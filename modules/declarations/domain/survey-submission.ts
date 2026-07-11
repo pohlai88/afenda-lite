@@ -9,7 +9,7 @@ import {
   validateAnswers,
   type SurveyAnswers,
 } from "@/modules/declarations/domain/questions";
-import { portalCopy } from "@/modules/declarations/copy/portal-copy";
+import { portalCopy } from "@/modules/platform/copy/portal-copy";
 import { submitSurveyResponse } from "@/modules/declarations/domain/surveys";
 
 async function validateSubmissionAnswers(input: {

@@ -7,7 +7,7 @@ import {
   resolveAuthPageTrustNoticeFlags,
   type AuthPageNoticeInput,
 } from "@/features/auth/auth-page-trust";
-import { portalCopy } from "@/modules/declarations/copy/portal-copy";
+import { portalCopy } from "@/modules/platform/copy/portal-copy";
 
 export { AUTH_ENTRY_PATHS } from "@/features/auth/auth-page-trust";
 export type { AuthPageNoticeInput } from "@/features/auth/auth-page-trust";

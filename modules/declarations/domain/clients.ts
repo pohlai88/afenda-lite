@@ -1,6 +1,11 @@
 import { pool } from "@/modules/platform/db";
 import { createInviteTokenValue } from "@/modules/identity/domain/tokens";
-import { CLIENT_PORTAL_ACK_VERSION } from "@/modules/declarations/copy/portal-copy";
+import { expirePendingClientInvitationIfNeeded } from "@/modules/identity/domain/client-invitation-bootstrap";
+import {
+  mapClientProfileRow,
+  type ClientProfile,
+} from "@/modules/identity/domain/client-profile";
+import { CLIENT_PORTAL_ACK_VERSION } from "@/modules/platform/copy/portal-copy";
 import type { SurveyAnswers } from "@/modules/declarations/question-models";
 import { normalizeEmail } from "@/modules/platform/normalize-email";
 import type { PoolClient } from "pg";
@@ -16,25 +21,6 @@ export type ClientInvitation = {
   status: "pending" | "accepted" | "expired";
   expiresAt: Date;
   createdAt: Date;
-};
-
-export type ClientProfile = {
-  userId: string;
-  fullLegalName: string | null;
-  nationality: string | null;
-  countryOfResidence: string | null;
-  additionalResidenceCountries: string[];
-  passportIssuingCountry: string | null;
-  passportNumber: string | null;
-  phone: string | null;
-  entityName: string | null;
-  jurisdiction: string | null;
-  notes: string | null;
-  identityConsentAt: Date | null;
-  onboardingComplete: boolean;
-  portalAckAt: Date | null;
-  portalAckVersion: string | null;
-  updatedAt: Date;
 };
 
 export type ClientAssignment = {
@@ -55,6 +41,13 @@ export type ClientAssignment = {
   draftSavedAt?: Date | null;
 };
 
+export type { ClientProfile } from "@/modules/identity/domain/client-profile";
+export {
+  ensureClientProfileRow,
+  getClientProfile,
+} from "@/modules/identity/domain/client-profile";
+export { markClientInvitationAccepted } from "@/modules/identity/domain/client-invitation-bootstrap";
+
 function mapInvitation(row: Record<string, unknown>): ClientInvitation {
   return {
     id: String(row.id),
@@ -65,55 +58,6 @@ function mapInvitation(row: Record<string, unknown>): ClientInvitation {
     status: String(row.status) as ClientInvitation["status"],
     expiresAt: new Date(String(row.expires_at)),
     createdAt: new Date(String(row.created_at)),
-  };
-}
-
-async function expirePendingInvitationIfNeeded(
-  invitation: ClientInvitation,
-): Promise<ClientInvitation> {
-  if (
-    invitation.status === "pending" &&
-    invitation.expiresAt.getTime() < Date.now()
-  ) {
-    await pool.query(
-      `UPDATE client_invitations SET status = 'expired' WHERE id = $1`,
-      [invitation.id],
-    );
-    return { ...invitation, status: "expired" as const };
-  }
-
-  return invitation;
-}
-
-function mapProfile(row: Record<string, unknown>): ClientProfile {
-  const additional = row.additional_residence_countries;
-  return {
-    userId: String(row.user_id),
-    fullLegalName: row.full_legal_name ? String(row.full_legal_name) : null,
-    nationality: row.nationality ? String(row.nationality) : null,
-    countryOfResidence: row.country_of_residence
-      ? String(row.country_of_residence)
-      : null,
-    additionalResidenceCountries: Array.isArray(additional)
-      ? additional.map(String)
-      : [],
-    passportIssuingCountry: row.passport_issuing_country
-      ? String(row.passport_issuing_country)
-      : null,
-    passportNumber: row.passport_number ? String(row.passport_number) : null,
-    phone: row.phone ? String(row.phone) : null,
-    entityName: row.entity_name ? String(row.entity_name) : null,
-    jurisdiction: row.jurisdiction ? String(row.jurisdiction) : null,
-    notes: row.notes ? String(row.notes) : null,
-    identityConsentAt: row.identity_consent_at
-      ? new Date(String(row.identity_consent_at))
-      : null,
-    onboardingComplete: Boolean(row.onboarding_complete),
-    portalAckAt: row.portal_ack_at ? new Date(String(row.portal_ack_at)) : null,
-    portalAckVersion: row.portal_ack_version
-      ? String(row.portal_ack_version)
-      : null,
-    updatedAt: new Date(String(row.updated_at)),
   };
 }
 
@@ -256,14 +200,7 @@ export async function getClientInvitationByToken(token: string) {
     return null;
   }
 
-  return expirePendingInvitationIfNeeded(mapInvitation(result.rows[0]));
-}
-
-export async function markClientInvitationAccepted(id: string) {
-  await pool.query(
-    `UPDATE client_invitations SET status = 'accepted' WHERE id = $1`,
-    [id],
-  );
+  return expirePendingClientInvitationIfNeeded(mapInvitation(result.rows[0]));
 }
 
 export async function getClientInvitationByEmail(email: string) {
@@ -280,26 +217,7 @@ export async function getClientInvitationByEmail(email: string) {
     return null;
   }
 
-  return expirePendingInvitationIfNeeded(mapInvitation(result.rows[0]));
-}
-
-export async function getClientProfile(userId: string) {
-  const result = await pool.query(
-    `SELECT user_id, full_legal_name, nationality, country_of_residence,
-            additional_residence_countries, passport_issuing_country, passport_number,
-            phone, entity_name, jurisdiction, notes, identity_consent_at,
-            onboarding_complete, portal_ack_at, portal_ack_version, updated_at
-     FROM client_profiles
-     WHERE user_id = $1
-     LIMIT 1`,
-    [userId],
-  );
-
-  if (!result.rows[0]) {
-    return null;
-  }
-
-  return mapProfile(result.rows[0]);
+  return expirePendingClientInvitationIfNeeded(mapInvitation(result.rows[0]));
 }
 
 /** Slim profiles for org-admin user directory enrichment (adapter composition). */
@@ -341,15 +259,6 @@ export async function listClientProfileSummariesByUserIds(
   }
 
   return summaries;
-}
-
-export async function ensureClientProfileRow(userId: string) {
-  await pool.query(
-    `INSERT INTO client_profiles (user_id, onboarding_complete, updated_at)
-     VALUES ($1, false, NOW())
-     ON CONFLICT (user_id) DO NOTHING`,
-    [userId],
-  );
 }
 
 export async function upsertClientProfile(input: {
@@ -410,7 +319,7 @@ export async function upsertClientProfile(input: {
     ],
   );
 
-  return mapProfile(result.rows[0]);
+  return mapClientProfileRow(result.rows[0]);
 }
 
 export function isClientPortalAcknowledged(profile: ClientProfile | null) {

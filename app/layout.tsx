@@ -18,7 +18,7 @@ import {
   BRAND_ICON_ALT,
   PORTAL_BRAND_ICON,
 } from "@/features/portal-chrome/portal-brand";
-import { PORTAL_NAME, portalCopy } from "@/modules/declarations/copy/portal-copy";
+import { PORTAL_NAME, portalCopy } from "@/modules/platform/copy/portal-copy";
 import { PORTAL_THEME_BOOT_SCRIPT } from "@/features/portal-chrome/portal-theme";
 import { cn } from "@/modules/platform/utils";
 

@@ -10,7 +10,7 @@ import {
   playgroundRouteFiles,
   playgroundScreenDefs,
   resolvePlaygroundRouteFile,
-} from "@/lib/playground/playground-registry";
+} from "@/features/playground/playground-registry";
 
 export const ROUTE_COVERAGE_SNAPSHOT_VERSION = "1.0.0" as const;
 

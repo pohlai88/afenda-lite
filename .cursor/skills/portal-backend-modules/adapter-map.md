@@ -45,7 +45,7 @@ import { parseSchema } from "@/modules/platform/schemas/common"
 | Surface | Pattern |
 |---------|---------|
 | Prefer | `app/**/page.tsx` → features / thin runner → `modules/*/domain` |
-| Transitional | `lib/pages/*`, `lib/entry/*` — keep while wired; do not grow for greenfield |
+| Transitional | `lib/pages/*`, `features/auth/entry/*` — keep while wired; do not grow for greenfield |
 | Forbidden | RSC `fetch('/api/...')` for ordinary product reads |
 
 ---

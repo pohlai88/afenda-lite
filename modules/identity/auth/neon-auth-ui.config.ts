@@ -2,7 +2,7 @@ import manifest from "@/modules/identity/auth/neon-auth.manifest.json";
 import { authLocalization } from "@neondatabase/auth-ui";
 import { CLIENT_ONBOARDING_HREF } from "@/modules/identity/client-session";
 import { neonAuthSocialConfigFromManifest } from "@/modules/identity/auth/neon-auth-oauth";
-import { PORTAL_NAME, portalCopy } from "@/modules/declarations/copy/portal-copy";
+import { PORTAL_NAME, portalCopy } from "@/modules/platform/copy/portal-copy";
 
 /** Neon Auth UI routes — must match `app/auth/[path]` and proxy loginUrl. */
 export const NEON_AUTH_UI_BASE_PATH = manifest.ui.basePath;

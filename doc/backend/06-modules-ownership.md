@@ -15,7 +15,7 @@
 2. New **product** file → pick **exactly one** module context. No “utils” orphans at `lib/` root. Platform/infra files live under `modules/platform/` and serve both modules.  
 3. Ports never import `Request`, `next/headers`, or UI.  
 4. Zod lives with the owning context (`schemas/`); validate at adapter edge.  
-5. Do not grow `lib/pages`, `lib/entry`, `lib/playground`, or Guardian/`copy` atmosphere for greenfield FE — UI → `features/*`.  
+5. Do not grow or recreate `lib/` — UI and runners live under `features/*`. Platform/infra under `modules/platform/`.  
 6. Never create `modules/trade/` — use `modules/fft/`.  
 
 ---
@@ -34,6 +34,8 @@
 | `modules/platform/app-url.ts` | Canonical app URL |
 | `modules/platform/utils.ts`, `format.ts`, `breakpoints.ts` (+ test) | Shared primitives |
 | `modules/platform/form-constraints.ts` | Shared field limits |
+| `modules/platform/evidence-acceptance.ts` | Shared evidence file acceptance labels |
+| `modules/platform/copy/{portal-copy,portal-name}.ts` | Product copy SSOT (`portalCopy`, `PORTAL_NAME`) |
 | `modules/platform/clipboard.ts` | Clipboard helper |
 | `modules/platform/pagination-range.ts` (+ test) | Pagination math |
 | `modules/platform/governance/*` | Reliance graph, route coverage, studio kit |
@@ -93,7 +95,8 @@ Remaining `lib/auth/*` files are **FE trust-UI helpers only** (not Neon Auth sta
 | `modules/declarations/countries.ts` | Country lists |
 | `modules/declarations/cdp-ai-prompt.ts` | CDP prompt text |
 | `modules/declarations/server-actions/*` | FormData / evidence form helpers |
-| `modules/declarations/copy/{portal-copy,portal-name}.ts` | Shared product copy |
+
+Product copy lives under **Platform** (`modules/platform/copy/*`), not Declarations.
 
 ---
 
@@ -107,20 +110,20 @@ Remaining `lib/auth/*` files are **FE trust-UI helpers only** (not Neon Auth sta
 | `modules/fft/auth/fft-phase2b.ts`, `fft-phase2d.ts` | Phase flag helpers |
 | `modules/fft/i18n/*` | Trade i18n |
 
-`lib/domain`, `lib/schemas`, and `lib/i18n` drawers are **gone** (empty after move).
+`lib/` is **gone** (do not recreate). Domain/schemas live under `modules/`.
 
 ---
 
-## 5. FE runners (remaining `lib/`)
+## 5. FE runners (`features/`)
 
 | Path | Role |
 |------|------|
-| `lib/pages/playground/**`, `lib/playground/**` | Local harness runners / policies |
-| `features/playground/**` | Playground UI |
-| `lib/pages/organization-admin-*`, `public-link-page*` | Reopened operator / public-link runners |
-| `lib/entry/**` | Login / invite / secure-link entry — do not grow |
+| `features/playground/**` | Local harness UI + registry + page runners (absorbed from `lib/playground` + `lib/pages/playground`) |
+| `features/organization-admin/organization-admin-*` | Operator page runners (absorbed from `lib/pages`) |
+| `features/auth/public-link-page*` | Public-link runner (absorbed) |
+| `features/auth/entry/**` | Login / invite / secure-link entry (absorbed from `lib/entry`) |
 
-### Pass 2 relocates (2026-07-12) — done
+### Pass 2 + absorb relocates (2026-07-12) — done
 
 | Former | Now |
 |--------|-----|
@@ -128,8 +131,14 @@ Remaining `lib/auth/*` files are **FE trust-UI helpers only** (not Neon Auth sta
 | `lib/auth/auth-page-trust*`, `auth-form-intro-visibility*` | `features/auth/*` |
 | `lib/copy/auth-shell-copy.ts` | `features/auth/auth-shell-copy.ts` |
 | `lib/copy/portal-brand*`, `portal-theme.ts` | `features/portal-chrome/*` |
-| `lib/copy/portal-copy.ts`, `portal-name.ts` | Deleted — SSOT `modules/declarations/copy/*` |
+| `lib/copy/portal-copy.ts`, `portal-name.ts` | Deleted — SSOT `modules/platform/copy/*` |
+| `modules/declarations/copy/*` | Moved → `modules/platform/copy/*` |
 | `lib/organization-admin-shell-members.ts` | `modules/identity/organization-admin-shell-members.ts` |
+| `lib/entry/**` | `features/auth/entry/**` |
+| `lib/pages/organization-admin-*` | `features/organization-admin/` |
+| `lib/pages/public-link-page*` | `features/auth/public-link-page*` |
+| `lib/pages/playground/**`, `lib/playground/**` | `features/playground/` |
+| `lib/` (empty) | Removed |
 
 ---
 
@@ -137,7 +146,8 @@ Remaining `lib/auth/*` files are **FE trust-UI helpers only** (not Neon Auth sta
 
 1. Platform → 2. Identity → 3. Declarations → 4. Trade (`modules/fft`) — **complete 2026-07-11**.  
 2. Empty `lib/domain|schemas|env|routing` deleted.  
-3. **Pass 2 residue** — auth/copy/shims/shell-members — **complete 2026-07-12** ([residue-inventory](../../.cursor/skills/portal-backend-modules/residue-inventory.md)).
+3. **Pass 2 residue** — auth/copy/shims/shell-members — **complete 2026-07-12**.  
+4. **Full runner absorb** (entry, org-admin pages, playground) — **complete 2026-07-12** ([residue-inventory](../../.cursor/skills/portal-backend-modules/residue-inventory.md)).
 
 ---
 

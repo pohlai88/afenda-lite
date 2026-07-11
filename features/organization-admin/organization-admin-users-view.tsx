@@ -45,7 +45,7 @@ import {
 import type {
   OrganizationAdminUserDisplay,
   OrganizationAdminUserSessionDisplay,
-} from "@/lib/pages/organization-admin-users-page";
+} from "@/features/organization-admin/organization-admin-users-page";
 import { ORGANIZATION_ADMIN_USERS_HREF } from "@/modules/platform/routing/portal-routes";
 import { organizationAdminUserInitials } from "./organization-admin-user-display";
 import { OrganizationAdminUserForm } from "./organization-admin-user-form";

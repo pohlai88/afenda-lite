@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { Suspense } from "react";
 
 import { PlaygroundHitlBoard } from "@/features/playground/playground-hitl-board";
-import type { PlaygroundHitlRow } from "@/lib/playground/playground-hitl-rows";
+import type { PlaygroundHitlRow } from "@/features/playground/playground-hitl-rows";
 
 export type PlaygroundHitlChecklistProps = {
   rows: PlaygroundHitlRow[];

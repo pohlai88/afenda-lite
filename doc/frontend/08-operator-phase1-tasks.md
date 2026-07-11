@@ -14,8 +14,8 @@ Restore `/dashboard`, `/dashboard/clients`, `/dashboard/[id]` with real domain d
 
 | Keep (do not rewrite) | Fix / migrate |
 |-----------------------|---------------|
-| `lib/pages/organization-admin-dashboard-page.ts` (+ tests) | Broken `@/components/*` imports in portal-views |
-| `lib/pages/organization-admin-clients-page.ts` (+ tests) | Leaf widgets → `features/organization-admin/*` |
+| `features/organization-admin/organization-admin-dashboard-page.ts` (+ tests) | Broken `@/components/*` imports in portal-views |
+| `features/organization-admin/organization-admin-clients-page.ts` (+ tests) | Leaf widgets → `features/organization-admin/*` |
 | `loadOrganizationAdminDeclarationDetail` + `.logic.ts` | `runOrganizationAdminDeclarationDetailPage` after view graph fixed |
 | `components-V2/.../portal-views/organization-admin-*.tsx` composition | Remap imports to `@/features/organization-admin/*` |
 | `AdminCnShell` layout | Thin `app/dashboard/**` pages |

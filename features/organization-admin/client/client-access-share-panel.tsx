@@ -4,7 +4,7 @@ import { CopyAccessMessage } from "@/features/organization-admin/copy-access-mes
 import { Button } from "@/components-V2/platform-components/ui/button";
 import { buildClientAccessMessage } from "@/modules/declarations/client-access-message";
 import { buildQrCodeUrl } from "@/modules/identity/domain/invite";
-import { portalCopy } from "@/modules/declarations/copy/portal-copy";
+import { portalCopy } from "@/modules/platform/copy/portal-copy";
 
 export type ClientAccessSharePanelProps = {
   loginUrl: string;

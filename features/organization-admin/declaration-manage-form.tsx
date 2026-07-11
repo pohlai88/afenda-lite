@@ -10,7 +10,7 @@ import { QuestionFieldsEditor } from "@/features/organization-admin/question-fie
 import { SurveyMetadataFields } from "@/features/organization-admin/survey-metadata-fields";
 import { SurveyPackagePanel } from "@/features/organization-admin/survey-package-panel";
 import { FormErrorAlert } from "@/features/organization-admin/form-error-alert";
-import { portalCopy } from "@/modules/declarations/copy/portal-copy";
+import { portalCopy } from "@/modules/platform/copy/portal-copy";
 import { SURVEY_EDITOR } from "@/modules/platform/form-constraints";
 import { Button } from "@/components-V2/platform-components/ui/button";
 import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components-V2/platform-components/ui/field";

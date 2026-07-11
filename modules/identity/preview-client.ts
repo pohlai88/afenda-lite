@@ -8,7 +8,7 @@ import {
   isPreviewClientConfigured as readPreviewClientConfigured,
 } from "@/modules/platform/env/accessors";
 import { isPlaygroundEmbedRequest } from "@/modules/platform/playground-embed";
-import { PORTAL_NAME, portalCopy } from "@/modules/declarations/copy/portal-copy";
+import { PORTAL_NAME, portalCopy } from "@/modules/platform/copy/portal-copy";
 import { getNeonAuthUserByEmail } from "@/modules/identity/domain/neon-auth-users";
 import {
   CLIENT_HOME_HREF,

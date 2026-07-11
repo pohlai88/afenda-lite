@@ -36,7 +36,7 @@ import {
   clientPreviewUnavailableHref,
   PREVIEW_UNAVAILABLE_FAILED_REASON,
 } from "@/modules/identity/preview-client";
-import { portalCopy } from "@/modules/declarations/copy/portal-copy";
+import { portalCopy } from "@/modules/platform/copy/portal-copy";
 import { parseSchema } from "@/modules/platform/schemas/common";
 import { signInSchema } from "@/modules/identity/schemas/auth";
 import {

@@ -20,7 +20,7 @@ vi.mock("@/modules/identity/auth/bootstrap-client-invite", () => ({
   bootstrapClientAfterAuth,
 }));
 
-vi.mock("@/modules/declarations/domain/clients", () => ({
+vi.mock("@/modules/identity/domain/client-profile", () => ({
   getClientProfile,
 }));
 

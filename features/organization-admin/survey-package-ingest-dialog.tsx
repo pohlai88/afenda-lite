@@ -24,7 +24,7 @@ import {
 } from "@/components-V2/platform-components/ui/dialog";
 import { FormErrorAlert } from "@/features/organization-admin/form-error-alert";
 import { Progress } from "@/components-V2/platform-components/ui/progress";
-import { portalCopy } from "@/modules/declarations/copy/portal-copy";
+import { portalCopy } from "@/modules/platform/copy/portal-copy";
 import {
   analyzeCdpPackageInput,
   confidenceLabel,

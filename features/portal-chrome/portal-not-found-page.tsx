@@ -3,7 +3,7 @@ import { FileQuestionIcon } from "lucide-react";
 import {
   buttonVariants,
 } from "@/components-V2/platform-components/ui/button";
-import { PORTAL_NAME } from "@/modules/declarations/copy/portal-copy";
+import { PORTAL_NAME } from "@/modules/platform/copy/portal-copy";
 import { cn } from "@/modules/platform/utils";
 
 /** Centered 404 with icon, message, and home CTA. */

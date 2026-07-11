@@ -35,7 +35,7 @@ vi.mock("@/modules/identity/auth/bootstrap-client-invite", () => ({
   bootstrapClientAfterAuth: mocks.bootstrapClientAfterAuth,
 }));
 
-vi.mock("@/modules/declarations/domain/clients", () => ({
+vi.mock("@/modules/identity/domain/client-profile", () => ({
   getClientProfile: mocks.getClientProfile,
 }));
 
@@ -57,7 +57,7 @@ vi.mock("@/modules/platform/audit", () => ({
   recordAuditEvent: mocks.recordAuditEvent,
 }));
 
-vi.mock("@/modules/declarations/copy/portal-copy", () => ({
+vi.mock("@/modules/platform/copy/portal-copy", () => ({
   portalCopy: {
     orgSignIn: { accessDenied: "Access denied." },
   },

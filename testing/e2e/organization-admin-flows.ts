@@ -1,5 +1,5 @@
 import { expect, type Page } from "@/testing/e2e/playwright-base";
-import { portalCopy } from "@/modules/declarations/copy/portal-copy";
+import { portalCopy } from "@/modules/platform/copy/portal-copy";
 import type { OperatorCreds } from "@/testing/e2e/credentials";
 import { selectRadixOption } from "@/testing/e2e/radix-select";
 

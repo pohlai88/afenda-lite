@@ -3,7 +3,7 @@ import "server-only";
 import type { Metadata } from "next";
 import { isAdminSession } from "@/modules/identity/admin";
 import { getAuthSession } from "@/modules/identity/auth/get-session";
-import { PORTAL_NAME, portalCopy } from "@/modules/declarations/copy/portal-copy";
+import { PORTAL_NAME, portalCopy } from "@/modules/platform/copy/portal-copy";
 import {
   AUTH_SIGN_IN_HREF,
   CLIENT_HOME_HREF,

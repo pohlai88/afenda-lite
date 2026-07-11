@@ -8,7 +8,7 @@ import {
   Card,
   CardContent,
 } from "@/components-V2/platform-components/ui/card";
-import { PORTAL_NAME, portalCopy } from "@/modules/declarations/copy/portal-copy";
+import { PORTAL_NAME, portalCopy } from "@/modules/platform/copy/portal-copy";
 import { AUTH_SIGN_IN_HREF } from "@/modules/platform/routing/portal-routes";
 import { cn } from "@/modules/platform/utils";
 

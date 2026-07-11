@@ -1,5 +1,5 @@
 import { expect, test } from "@/testing/e2e/playwright-base";
-import { portalCopy } from "@/modules/declarations/copy/portal-copy";
+import { portalCopy } from "@/modules/platform/copy/portal-copy";
 import { loginAsClient } from "@/testing/e2e/client-flows";
 import {
   clientSkipMessage,

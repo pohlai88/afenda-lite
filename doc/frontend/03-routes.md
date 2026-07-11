@@ -83,7 +83,7 @@ Never place `route.ts` beside a `page.tsx` in the same segment.
 | `/playground/hitl-review` | Source-backed HITL route review | yes | live |
 
 Gated by `PLAYGROUND_ENABLED`. Not a client product surface.
-Curated route bindings live in `lib/playground/playground-registry.ts`;
+Curated route bindings live in `features/playground/playground-registry.ts`;
 `npm run check:playground` enforces route, review-definition, evidence, and E2E
 fixture parity.
 

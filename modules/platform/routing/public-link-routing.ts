@@ -6,10 +6,8 @@ import { bootstrapClientAfterAuth } from "@/modules/identity/auth/bootstrap-clie
 import {
   CLIENT_LOGIN_REQUIRED_REASON,
 } from "@/modules/identity/auth/auth-entry-params";
-import {
-  getActiveClientAssignmentForSurvey,
-  getClientProfile,
-} from "@/modules/declarations/domain/clients";
+import { getActiveClientAssignmentForSurvey } from "@/modules/declarations/domain/clients";
+import { getClientProfile } from "@/modules/identity/domain/client-profile";
 import {
   CLIENT_HOME_HREF,
   clientDeclareHref,

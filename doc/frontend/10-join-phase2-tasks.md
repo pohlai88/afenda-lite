@@ -20,7 +20,7 @@ route repair.
 | Keep | Restore |
 |------|---------|
 | `features/auth/studio-invitation-join-page.tsx` (+ panel/steps) | Thin `app/join/page.tsx` |
-| `lib/entry/client-invitation-entry.ts` (+ tests) | `loading.tsx` / `error.tsx` |
+| `features/auth/entry/client-invitation-entry.ts` (+ tests) | `loading.tsx` / `error.tsx` |
 | `StudioAuthShell` / auth island CSS | Docs + agent-workflow reopen |
 
 ## Hard bans

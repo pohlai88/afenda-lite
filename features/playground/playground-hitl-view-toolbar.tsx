@@ -20,10 +20,10 @@ import {
   type HitlStaticPresent,
   type HitlViewFilters,
   type HitlViewMode,
-} from "@/lib/playground/playground-hitl-views";
-import type { PlaygroundHitlRow } from "@/lib/playground/playground-hitl-rows";
-import { PLAYGROUND_PAGE_SHAPE_LABEL } from "@/lib/playground/playground-page-shape";
-import { isPlaygroundStaticCompositionId } from "@/lib/playground/playground-static-composition-ids";
+} from "@/features/playground/playground-hitl-views";
+import type { PlaygroundHitlRow } from "@/features/playground/playground-hitl-rows";
+import { PLAYGROUND_PAGE_SHAPE_LABEL } from "@/features/playground/playground-page-shape";
+import { isPlaygroundStaticCompositionId } from "@/features/playground/playground-static-composition-ids";
 
 function Chip({
   active,

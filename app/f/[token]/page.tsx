@@ -1,7 +1,7 @@
 import {
   runSecureLinkPage,
   secureLinkPageMetadata,
-} from "@/lib/entry/secure-link-entry";
+} from "@/features/auth/entry/secure-link-entry";
 
 export const dynamic = "force-dynamic";
 

@@ -86,7 +86,7 @@ describe("isEvidencePolicyFailureReason", () => {
 
 describe("portalCopy.declarationForm.filePolicyError", () => {
   it("returns specific messages for each policy failure", async () => {
-    const { portalCopy } = await import("@/modules/declarations/copy/portal-copy");
+    const { portalCopy } = await import("@/modules/platform/copy/portal-copy");
     expect(portalCopy.declarationForm.filePolicyError("size")).toContain(
       EVIDENCE_ACCEPTANCE.maxSizeLabel,
     );

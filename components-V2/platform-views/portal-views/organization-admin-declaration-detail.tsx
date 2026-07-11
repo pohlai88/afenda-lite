@@ -14,8 +14,8 @@ import {
   CardTitle,
 } from "@/components-V2/platform-components/ui/card";
 import { PortalDeclarationSubmissionsTable } from "@/components-V2/platform-views/portal-views/portal-declaration-submissions-table";
-import type { OrganizationAdminDeclarationDetail } from "@/lib/pages/organization-admin-declaration-detail";
-import { portalCopy } from "@/modules/declarations/copy/portal-copy";
+import type { OrganizationAdminDeclarationDetail } from "@/features/organization-admin/organization-admin-declaration-detail";
+import { portalCopy } from "@/modules/platform/copy/portal-copy";
 import { ORGANIZATION_ADMIN_DASHBOARD_HREF } from "@/modules/platform/routing/portal-routes";
 import { displaySurveyTitle } from "@/modules/declarations/domain/survey-display";
 

@@ -1,4 +1,4 @@
-import type { OrganizationAdminUserDisplay } from "@/lib/pages/organization-admin-users-map";
+import type { OrganizationAdminUserDisplay } from "@/features/organization-admin/organization-admin-users-map";
 
 const EXPORT_COLUMNS = [
   "id",

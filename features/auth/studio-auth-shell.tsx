@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { LoginPage02Chrome } from "@/features/auth/studio/login-page-02-chrome";
-import { PORTAL_NAME } from "@/modules/declarations/copy/portal-copy";
+import { PORTAL_NAME } from "@/modules/platform/copy/portal-copy";
 
 /**
  * Production auth chrome — Studio login-page-02 kit + `.auth-surface` island.

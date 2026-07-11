@@ -1,12 +1,11 @@
-export const MAX_EVIDENCE_BYTES = 1 * 1024 * 1024;
-
-export const EVIDENCE_ACCEPTANCE = {
-  maxBytes: MAX_EVIDENCE_BYTES,
-  maxSizeLabel: "1 MB",
-  format: "PDF",
-  extension: ".pdf",
-  mimeType: "application/pdf",
-} as const;
+export {
+  EVIDENCE_ACCEPTANCE,
+  MAX_EVIDENCE_BYTES,
+} from "@/modules/platform/evidence-acceptance";
+import {
+  EVIDENCE_ACCEPTANCE,
+  MAX_EVIDENCE_BYTES,
+} from "@/modules/platform/evidence-acceptance";
 
 export const ALLOWED_EVIDENCE_MIME_TYPES = new Set([
   EVIDENCE_ACCEPTANCE.mimeType,

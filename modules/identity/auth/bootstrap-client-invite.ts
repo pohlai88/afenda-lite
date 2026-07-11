@@ -1,10 +1,10 @@
 import { recordAuditEvent } from "@/modules/platform/audit";
 import type { BootstrapClientAuthInput } from "@/modules/identity/auth/types";
 import {
-  ensureClientProfileRow,
-  getClientInvitationByEmail,
+  getClientInvitationBootstrapByEmail,
   markClientInvitationAccepted,
-} from "@/modules/declarations/domain/clients";
+} from "@/modules/identity/domain/client-invitation-bootstrap";
+import { ensureClientProfileRow } from "@/modules/identity/domain/client-profile";
 
 export function resolveMetadataInvitationId(
   userMetadata?: Record<string, unknown> | null,
@@ -56,7 +56,7 @@ export async function bootstrapClientAfterAuth(
     return;
   }
 
-  const invitation = await getClientInvitationByEmail(email);
+  const invitation = await getClientInvitationBootstrapByEmail(email);
   if (!invitation || invitation.status !== "pending") {
     return;
   }

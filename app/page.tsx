@@ -1,5 +1,5 @@
-import { runClientHomeEntryPage } from "@/lib/entry/client-home-entry";
-import { clientLoginPageMetadata } from "@/lib/entry/client-sign-in-entry";
+import { runClientHomeEntryPage } from "@/features/auth/entry/client-home-entry";
+import { clientLoginPageMetadata } from "@/features/auth/entry/client-sign-in-entry";
 
 export const metadata = clientLoginPageMetadata;
 export const dynamic = "force-dynamic";

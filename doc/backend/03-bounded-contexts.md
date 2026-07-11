@@ -12,8 +12,8 @@ flowchart LR
   Identity[Identity]
   Declarations[Declarations]
   Trade[Trade]
-  Identity --> Declarations
-  Identity --> Trade
+  Declarations --> Identity
+  Trade --> Identity
   Platform -.-> Identity
   Platform -.-> Declarations
   Platform -.-> Trade
@@ -21,8 +21,8 @@ flowchart LR
 
 | Context | Owns | Code today | May depend on | Must not depend on |
 | ------- | ---- | ---------- | ------------- | ------------------ |
-| **Identity** | Session, org membership, invites, account | `modules/identity/**` | Neon Auth | Declarations, Trade |
-| **Declarations** | Surveys/declarations, questions, clients list, assignments, submissions, share links, drafts | `modules/declarations/**` | Identity (actor / org ids) | Trade |
+| **Identity** | Session, org membership, Neon Auth users, client profile session gates + auth invite bootstrap | `modules/identity/**` | Neon Auth, Platform | Declarations domain, Trade |
+| **Declarations** | Surveys/declarations, questions, clients list, assignments, submissions, share links, drafts, profile upsert/CRUD | `modules/declarations/**` | Identity (actor / org ids, profile port) | Trade |
 | **Trade** | Events, orders, allocation, deposits, pickup, imports, ERP sync, RBAC (product: **Feed Farm Trade**) | `modules/fft/**`, `app/actions/fft`, `features/fft`, `app/fft` | Identity (allowlist / RBAC) | **Declarations** |
 | **Platform** | Health, env, observability, shared API error helpers, shared shell access | `modules/platform/**`, `app/api/health/*` | nothing product-specific | — |
 
@@ -33,7 +33,7 @@ flowchart LR
 3. Shared primitives: `modules/platform/schemas/common` (uuid/email/`parseSchema`); Declarations-only extras stay in `modules/declarations/schemas/common`.  
 4. New **product** feature → pick **one** module context; if it needs both Trade and Declarations data, compose at the **adapter** (page/action) by calling two ports — do not merge domains.  
 5. Schema/migrations: prefer table prefixes or clear ownership comments per context when adding tables.  
-6. Do not grow `lib/pages` / `lib/entry` for greenfield UI — use `features/*`.  
+6. Do not recreate `lib/` — use `features/*` for UI and runners. Entry / org-admin / playground live under `features/auth/entry`, `features/organization-admin`, and `features/playground`.  
 7. Never create `modules/trade/` — Trade code lives under `modules/fft/`.  
 
 ## Scaling path (later, needs new ADR)

@@ -13,12 +13,12 @@ import {
   CardTitle,
 } from "@/components-V2/platform-components/ui/card";
 import { PlaygroundPageShapeBadge } from "@/features/playground/playground-page-shape-badge";
-import type { PlaygroundHitlRow } from "@/lib/playground/playground-hitl-rows";
+import type { PlaygroundHitlRow } from "@/features/playground/playground-hitl-rows";
 import {
   HITL_LIVE_BATCH_SIZE,
   HITL_LIVE_HARD_CAP,
   hitlRowsEligibleForLiveEmbed,
-} from "@/lib/playground/playground-hitl-views";
+} from "@/features/playground/playground-hitl-views";
 
 export function PlaygroundHitlLiveStrip({
   rows,

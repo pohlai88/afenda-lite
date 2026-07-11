@@ -8,12 +8,12 @@ import {
   playgroundScreenDefs,
   resolvePlaygroundPathTemplate,
   resolvePlaygroundRouteFile,
-} from "@/lib/playground/playground-registry";
-import { playgroundE2eFixtures } from "@/lib/playground/playground-e2e-fixtures";
+} from "@/features/playground/playground-registry";
+import { playgroundE2eFixtures } from "@/features/playground/playground-e2e-fixtures";
 import {
   getPlaygroundRouteReview,
   playgroundRouteReviewById,
-} from "@/lib/playground/playground-route-review";
+} from "@/features/playground/playground-route-review";
 import { buildRouteCoverageSnapshot } from "@/modules/platform/governance/portal-route-coverage";
 
 const ROOT = process.cwd();
@@ -204,7 +204,7 @@ if (!existsSync(join(ROOT, "app/playground/coverage/page.tsx"))) {
 
 const layoutSource = readFileSync(join(ROOT, "app/playground/layout.tsx"), "utf8");
 const layoutHandlerSource = readFileSync(
-  join(ROOT, "lib/playground/playground-layout.tsx"),
+  join(ROOT, "features/playground/playground-layout.tsx"),
   "utf8",
 );
 if (!layoutSource.includes("runPlaygroundLayout")) {

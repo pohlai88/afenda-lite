@@ -1,5 +1,5 @@
 import type { ClientAssignment, ClientInvitation, ClientProfile } from "@/modules/declarations/domain/clients";
-import { CLIENT_PORTAL_ACK_VERSION } from "@/modules/declarations/copy/portal-copy";
+import { CLIENT_PORTAL_ACK_VERSION } from "@/modules/platform/copy/portal-copy";
 import type { SurveyQuestion } from "@/modules/declarations/question-models";
 import type { SurveyWithStats } from "@/modules/declarations/domain/surveys";
 

@@ -1,4 +1,4 @@
-import { portalCopy } from "@/modules/declarations/copy/portal-copy";
+import { portalCopy } from "@/modules/platform/copy/portal-copy";
 import {
   AUTH_SIGN_IN_HREF,
   ORG_SIGN_IN_HREF,

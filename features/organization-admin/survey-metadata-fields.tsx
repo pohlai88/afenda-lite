@@ -5,7 +5,7 @@ import { Input } from "@/components-V2/platform-components/ui/input";
 import { Label } from "@/components-V2/platform-components/ui/label";
 import { Textarea } from "@/components-V2/platform-components/ui/textarea";
 import { SURVEY_EDITOR } from "@/modules/platform/form-constraints";
-import { portalCopy } from "@/modules/declarations/copy/portal-copy";
+import { portalCopy } from "@/modules/platform/copy/portal-copy";
 import { formatCategoriesInput } from "@/modules/declarations/domain/survey-package";
 import type { SurveyMetadata } from "@/modules/declarations/domain/surveys";
 

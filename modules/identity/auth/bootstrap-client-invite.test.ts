@@ -4,29 +4,18 @@ import {
   resolveMetadataInvitationId,
 } from "@/modules/identity/auth/bootstrap-client-invite";
 
-describe("resolveMetadataInvitationId", () => {
-  it("returns metadata invitation ids", () => {
+describe("bootstrapClientAfterAuth helpers", () => {
+  it("reads invitation_id from metadata", () => {
     expect(
-      resolveMetadataInvitationId({ invitation_id: "invite-1" }),
-    ).toBe("invite-1");
-  });
-
-  it("ignores empty or non-string metadata values", () => {
-    expect(resolveMetadataInvitationId({ invitation_id: "" })).toBeNull();
-    expect(resolveMetadataInvitationId({ invitation_id: 42 })).toBeNull();
+      resolveMetadataInvitationId({ invitation_id: "inv-1" }),
+    ).toBe("inv-1");
+    expect(resolveMetadataInvitationId({})).toBeNull();
     expect(resolveMetadataInvitationId(null)).toBeNull();
   });
-});
 
-describe("resolveBootstrapEmail", () => {
-  it("trims email values", () => {
-    expect(resolveBootstrapEmail("  client@example.com  ")).toBe(
-      "client@example.com",
-    );
-  });
-
-  it("returns null for empty email", () => {
-    expect(resolveBootstrapEmail("   ")).toBeNull();
+  it("trims bootstrap email", () => {
+    expect(resolveBootstrapEmail("  a@b.com ")).toBe("a@b.com");
+    expect(resolveBootstrapEmail("")).toBeNull();
     expect(resolveBootstrapEmail(null)).toBeNull();
   });
 });

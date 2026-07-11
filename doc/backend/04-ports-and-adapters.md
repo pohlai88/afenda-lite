@@ -70,6 +70,9 @@ interface IdentityPort {
   unbanOrganizationUser(userId: UserId): Promise<void>
   listOrganizationUserSessions(userId: UserId): Promise<OrganizationUserSession[]>
   revokeOrganizationUserSessions(userId: UserId): Promise<void>
+  getClientProfile(userId: string): Promise<ClientProfile | null>
+  ensureClientProfileRow(userId: string): Promise<void>
+  bootstrapClientAfterAuth(input: BootstrapClientAuthInput): Promise<void>
   saveOnboarding(input: OnboardingInput): Promise<void>
   acknowledgePortal(actorId: string): Promise<void>
   // Neon-owned self-service password/email stay on Neon Auth UI + /api/auth/*
@@ -78,10 +81,12 @@ interface IdentityPort {
 
 | Port op | Domain / module | Adapters |
 |---------|-----------------|----------|
-| list / get users | `modules/identity/domain/organization-users.ts` | RSC `lib/pages/organization-admin-users-page` (+ profile summaries composed from Declarations) |
+| list / get users | `modules/identity/domain/organization-users.ts` | RSC `features/organization-admin/organization-admin-users-page` (+ profile summaries composed from Declarations) |
 | create / update / remove | `modules/identity/auth/admin.ts` (`neonAdmin*`) | `createOrganizationUserAction`, `importOrganizationUsersAction`, `updateOrganizationUserAction`, `removeOrganizationUserAction`, `removeOrganizationUsersAction` |
 | set role / ban / unban | `modules/identity/auth/admin.ts` | `setOrganizationUserRoleAction`, `banOrganizationUserAction`, `banOrganizationUsersAction`, `unbanOrganizationUserAction` |
 | password / sessions | `modules/identity/auth/admin.ts` | `setOrganizationUserPasswordAction`, view loader + `revokeOrganizationUserSessionsAction` |
+| client profile read / ensure | `modules/identity/domain/client-profile.ts` | session gates, portal-member, landing/public-link routing; Declarations re-exports |
+| auth invite bootstrap | `modules/identity/domain/client-invitation-bootstrap.ts` + `auth/bootstrap-client-invite.ts` | `bootstrapClientAfterAuth` from session / landing |
 | onboarding | `modules/declarations/client-onboarding*` | `saveClientOnboardingAction` |
 | ACK | `modules/identity/client-session` | `acknowledgeClientPortalAction` |
 | preview | `modules/identity/preview-client` | `startClientPreviewAction`, `exitClientPreviewAction` |

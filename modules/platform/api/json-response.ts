@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { ClientSessionGuardReason } from "@/modules/identity/auth/session";
-import { portalCopy } from "@/modules/declarations/copy/portal-copy";
+import { portalCopy } from "@/modules/platform/copy/portal-copy";
 import {
   apiErrorCodeForStatus,
   type ApiErrorCode,

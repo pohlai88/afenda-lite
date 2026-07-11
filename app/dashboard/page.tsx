@@ -2,7 +2,7 @@ import OrganizationAdminDeclarationsDashboard from "@/components-V2/platform-vie
 import {
   loadOrganizationAdminDashboardPage,
   organizationAdminDashboardPageMetadata,
-} from "@/lib/pages/organization-admin-dashboard-page";
+} from "@/features/organization-admin/organization-admin-dashboard-page";
 
 export const metadata = organizationAdminDashboardPageMetadata;
 export const dynamic = "force-dynamic";

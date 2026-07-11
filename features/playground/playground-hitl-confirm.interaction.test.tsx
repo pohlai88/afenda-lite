@@ -10,8 +10,8 @@ import {
   parsePlaygroundHitlReviews,
   readPlaygroundHitlReviews,
   writePlaygroundHitlReviews,
-} from "@/lib/playground/playground-hitl-rows";
-import { getPlaygroundRouteReview } from "@/lib/playground/playground-route-review";
+} from "@/features/playground/playground-hitl-rows";
+import { getPlaygroundRouteReview } from "@/features/playground/playground-route-review";
 import { renderPortal, setupUser } from "@/testing/react";
 
 describe("PlaygroundHitlConfirm", () => {

@@ -5,7 +5,7 @@ import { useState, useTransition } from "react";
 import { Trash2Icon } from "lucide-react";
 import { deleteSurveyAction } from "@/app/actions/surveys";
 import { ConfirmDialog } from "@/features/organization-admin/confirm-dialog";
-import { portalCopy } from "@/modules/declarations/copy/portal-copy";
+import { portalCopy } from "@/modules/platform/copy/portal-copy";
 import { ORGANIZATION_ADMIN_DASHBOARD_HREF } from "@/modules/platform/routing/portal-routes";
 import { Button } from "@/components-V2/platform-components/ui/button";
 

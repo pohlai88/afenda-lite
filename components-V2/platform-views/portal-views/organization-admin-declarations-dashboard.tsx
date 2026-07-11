@@ -9,8 +9,8 @@ import { Button } from '@/components-V2/platform-components/ui/button'
 import { Card } from '@/components-V2/platform-components/ui/card'
 import { PortalDeclarationsDatatable } from '@/components-V2/platform-views/portal-views/portal-declarations-datatable'
 import PortalOrganizationAdminStatisticsCard from '@/components-V2/platform-views/portal-views/portal-organization-admin-statistics-card'
-import type { OrganizationAdminDashboardPageData } from '@/lib/pages/organization-admin-dashboard-page'
-import { portalCopy } from '@/modules/declarations/copy/portal-copy'
+import type { OrganizationAdminDashboardPageData } from '@/features/organization-admin/organization-admin-dashboard-page'
+import { portalCopy } from '@/modules/platform/copy/portal-copy'
 import { ORGANIZATION_ADMIN_CLIENTS_HREF } from '@/modules/platform/routing/portal-routes'
 
 /**

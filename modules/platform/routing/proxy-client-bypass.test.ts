@@ -38,7 +38,7 @@ describe("proxy client sign-in bypass", () => {
       join(REPO_ROOT, "app/survey/[slug]/page.tsx"),
       "utf8",
     );
-    expect(source).toContain('from "@/lib/entry/open-link-entry"');
+    expect(source).toContain('from "@/features/auth/entry/open-link-entry"');
     expect(source).toContain("openLinkPageMetadata");
     expect(source).toContain("export default runOpenLinkPage");
   });

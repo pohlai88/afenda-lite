@@ -13,9 +13,9 @@ import {
   PlaygroundHitlConfirm,
   PlaygroundHitlReviewsProvider,
 } from "@/features/playground/playground-hitl-confirm";
-import type { PlaygroundScreen } from "@/lib/playground/playground";
-import type { PlaygroundPageShape } from "@/lib/playground/playground-page-shape";
-import { getPlaygroundRouteReview } from "@/lib/playground/playground-route-review";
+import type { PlaygroundScreen } from "@/features/playground/playground";
+import type { PlaygroundPageShape } from "@/features/playground/playground-page-shape";
+import { getPlaygroundRouteReview } from "@/features/playground/playground-route-review";
 
 type PlaygroundScreenPreviewProps = {
   screen: PlaygroundScreen;

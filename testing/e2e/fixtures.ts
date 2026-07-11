@@ -11,4 +11,4 @@ export {
   playgroundE2eFixtures as playgroundScreenFixtures,
   playgroundSkipMessage,
   type PlaygroundE2eFixture as PlaygroundScreenFixture,
-} from "@/lib/playground/playground-e2e-fixtures";
+} from "@/features/playground/playground-e2e-fixtures";

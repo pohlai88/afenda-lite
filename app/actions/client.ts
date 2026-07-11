@@ -33,7 +33,7 @@ import { deleteClientAuthUserByEmail } from "@/modules/identity/delete-client-au
 import { isClientEmailDeliveryEnabled } from "@/modules/identity/email/client-email-delivery";
 import { sendClientOnboardingEmail } from "@/modules/identity/email/send-client-onboarding-email";
 import { runLoggedAction } from "@/modules/platform/observability";
-import { portalCopy, CLIENT_PORTAL_ACK_VERSION } from "@/modules/declarations/copy/portal-copy";
+import { portalCopy, CLIENT_PORTAL_ACK_VERSION } from "@/modules/platform/copy/portal-copy";
 import type { SurveyAnswers } from "@/modules/declarations/domain/questions";
 import { parseSchema } from "@/modules/platform/schemas/common";
 import {

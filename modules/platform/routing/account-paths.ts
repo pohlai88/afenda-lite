@@ -1,6 +1,6 @@
 import { accountViewPaths } from "@neondatabase/auth-ui/server";
 import type { OrganizationMemberKind } from "@/modules/identity/portal-member-types";
-import { portalCopy } from "@/modules/declarations/copy/portal-copy";
+import { portalCopy } from "@/modules/platform/copy/portal-copy";
 import { CLIENT_PROFILE_HREF } from "@/modules/platform/routing/portal-routes";
 import {
   CLIENT_HOME_HREF,

@@ -3,7 +3,7 @@ import "server-only";
 import { auth } from "@/modules/identity/auth/server";
 import { neonAuthServerFetch } from "@/modules/identity/auth/neon-auth-request";
 import { getServerEnv } from "@/modules/platform/env/server";
-import { PORTAL_NAME } from "@/modules/declarations/copy/portal-copy";
+import { PORTAL_NAME } from "@/modules/platform/copy/portal-copy";
 
 export type PortalOrganization = {
   id: string;

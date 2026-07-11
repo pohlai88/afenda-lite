@@ -21,8 +21,8 @@ import {
   PortalInviteClientLink,
 } from "@/components-V2/platform-views/portal-views/portal-invite-client-link";
 import { getClientEmailDeliveryStatus } from "@/modules/identity/email/client-email-delivery";
-import type { OrganizationAdminClientsPageData } from "@/lib/pages/organization-admin-clients-page";
-import { portalCopy } from "@/modules/declarations/copy/portal-copy";
+import type { OrganizationAdminClientsPageData } from "@/features/organization-admin/organization-admin-clients-page";
+import { portalCopy } from "@/modules/platform/copy/portal-copy";
 
 function EmailDeliveryBanner() {
   const status = getClientEmailDeliveryStatus();

@@ -1,7 +1,7 @@
 import "server-only";
 
 import { getServerEnv } from "@/modules/platform/env/server";
-import { portalCopy } from "@/modules/declarations/copy/portal-copy";
+import { portalCopy } from "@/modules/platform/copy/portal-copy";
 
 /**
  * Operator client registration email — Neon Auth organization invitations only.

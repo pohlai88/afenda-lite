@@ -7,7 +7,7 @@ import {
 import { PortalStatisticsCard } from "@/features/organization-admin/portal/portal-statistics-card";
 import { SurveyDetailTabs } from "@/features/organization-admin/survey-detail-tabs";
 import { formatDate } from "@/modules/platform/format";
-import { portalCopy } from "@/modules/declarations/copy/portal-copy";
+import { portalCopy } from "@/modules/platform/copy/portal-copy";
 import type { Survey } from "@/modules/declarations/domain/surveys";
 
 /** dashboard-shell-05 — declaration workspace overview + tabbed panels. */

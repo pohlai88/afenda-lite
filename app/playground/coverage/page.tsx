@@ -1,7 +1,7 @@
 import {
   playgroundCoveragePageMetadata,
   runPlaygroundCoveragePage,
-} from "@/lib/pages/playground/playground-coverage-page";
+} from "@/features/playground/playground-coverage-page";
 
 export const dynamic = "force-dynamic";
 

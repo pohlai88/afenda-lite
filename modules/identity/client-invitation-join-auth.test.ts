@@ -3,7 +3,7 @@ import {
   resolveJoinInvitationAuthView,
   resolveJoinInvitationTrustNotice,
 } from "@/modules/identity/client-invitation-join-auth";
-import { portalCopy } from "@/modules/declarations/copy/portal-copy";
+import { portalCopy } from "@/modules/platform/copy/portal-copy";
 
 describe("resolveJoinInvitationAuthView", () => {
   it("shows sign-up while session is pending", () => {

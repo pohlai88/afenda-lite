@@ -9,7 +9,7 @@ import {
   CardTitle,
 } from "@/components-V2/platform-components/ui/card";
 import { cn } from "@/modules/platform/utils";
-import { playgroundReviewNavLinks } from "@/lib/playground/playground-nav";
+import { playgroundReviewNavLinks } from "@/features/playground/playground-nav";
 
 type PlaygroundPageShellProps = {
   title: string;

@@ -5,12 +5,12 @@ import { useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
 import { LayoutGridIcon, SearchIcon } from "lucide-react";
 
-import type { PlaygroundScreen } from "@/lib/playground/playground";
+import type { PlaygroundScreen } from "@/features/playground/playground";
 import {
   PLAYGROUND_COVERAGE_HREF,
   PLAYGROUND_HREF,
   PLAYGROUND_HITL_REVIEW_HREF,
-} from "@/lib/playground/playground-nav";
+} from "@/features/playground/playground-nav";
 import { playgroundScreenHref } from "@/modules/platform/routing/portal-routes";
 import { useSettings } from "@/components-V2/platform-hooks/use-settings";
 import {

@@ -21,7 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components-V2/platform-components/ui/select";
-import type { OrganizationAdminUserDisplay } from "@/lib/pages/organization-admin-users-page";
+import type { OrganizationAdminUserDisplay } from "@/features/organization-admin/organization-admin-users-page";
 import { getActionError } from "./use-organization-admin-user-action";
 
 type NeonRole = "user" | "admin";

@@ -18,7 +18,7 @@ import {
   type SurveyAnswers,
 } from "@/modules/declarations/domain/questions";
 import { runLoggedAction } from "@/modules/platform/observability";
-import { portalCopy } from "@/modules/declarations/copy/portal-copy";
+import { portalCopy } from "@/modules/platform/copy/portal-copy";
 import { parseSchema } from "@/modules/platform/schemas/common";
 import {
   deleteSurveySchema,
