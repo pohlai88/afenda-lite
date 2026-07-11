@@ -23,13 +23,13 @@ Legend: `done` · `partial` · `missing` · `residue`
 | F-EVT-06 / G7 | done | Clone→draft; piglet template ensure; activate scheduled; admin + setup UI |
 | F-ALC-03 / G9 | done | `allocation.override` distinct from preview/run; override form gated on allocation page |
 | P2 UI polish | done | P2-AC-01..06 evidenced; legacy `/fft/{vi\|en}/**` → locale-free redirect shim (no FftShell) |
-| P3 ops flags | partial | Local flags all `true` + authenticated ops smoke PASS 2026-07-11; prod flags stay `false`; AC-OPS-02 BLOCKED |
+| P3 ops flags (code behind flags) | partial | Local smoke may use flags on; **prod promotion Closed (registered)** — [closed-scope-register](../../../doc/architecture/closed-scope-register.md) · [gate-register](../../../docs/fft/ops/gate-register.md) |
 | FftShell / locale switcher | done | Do not remount |
 | API catalog locale-free | done | `doc/api/02-rest-resources.md` |
 | Skill pack (guardrails only) | superseded | Replaced by delivery pack below |
 | Skill pack (enterprise delivery) | done | playbook + action-map + rbac + verify + example |
 | UI registry governance | done | v2: 51 `ACN-UI-*` + 153 `ACN-BLK-*` + 21 `FFT-UI-*`; Vitest fail-fast; human HITL; ≠ visual quality |
-| P3 deposits/pickup/imports/ERP | partial | Local admin sees real panels + setup nav; flag-off fallback and server gates retained; prod promotion closed |
+| P3 deposits/pickup/imports/ERP surfaces | partial | Flag-gated UI OK; **prod flag enablement Closed (registered)** |
 | Enterprise MVP claimable | done | Unit AC gates + `@journey` G1–G8 green (2026-07-11); team/all order scopes still later |
 
 Actions still accept `TradeLocale` (`FFT_UI_LOCALE`); paths are locale-free.

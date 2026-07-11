@@ -209,12 +209,16 @@ export const SURFACE_ENTRY_POINTS: Readonly<
     files: [
       "app/survey/[slug]/page.tsx",
       "features/auth/entry/open-link-entry.ts",
+      "features/auth/public-link-page.ts",
+      "features/auth/public-link-routing.ts",
     ],
   },
   "public-secure-link": {
     files: [
       "app/f/[token]/page.tsx",
       "features/auth/entry/secure-link-entry.ts",
+      "features/auth/public-link-page.ts",
+      "features/auth/public-link-routing.ts",
     ],
   },
   "shell-dashboard": {

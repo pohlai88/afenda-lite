@@ -65,6 +65,18 @@ Declarations is not “deprecated.” Treating FFT and Declarations as two platf
 | Guardian Auth / PA hero shortcuts listed in PA rejected docs | Studio login-page-02 + Neon on `/auth/*` | Rejected — see portal-atmosphere rules |
 | CSS invert owls / sticker heroes | Dual assets + approved comps | Rejected |
 
+## Closed product phases (not deprecations)
+
+See [doc/architecture/closed-scope-register.md](../../../../doc/architecture/closed-scope-register.md):
+
+| Item | Disposition |
+|------|-------------|
+| `/client` workspace product restore | Closed — stubs only; reopen checklist required |
+| FFT P3 **prod** flag promotion | Closed — gate-register only |
+| SaaS billing / 2FA chrome | Intentional deferred — not Identity product |
+
+---
+
 ## How agents must behave
 
 1. **Refuse** to remount or re-teach anything **Retired** / **Hard-deleted** / **Rejected framing**.

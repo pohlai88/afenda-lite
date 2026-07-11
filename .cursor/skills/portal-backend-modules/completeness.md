@@ -1,6 +1,6 @@
 # Portal backend modules — completeness (2026-07-12)
 
-Plan authority: this skill + `doc/backend/` + org-admin users + ClientProfile + copy port + runner absorb + ADR-002 RBAC.
+Plan authority: this skill + `doc/backend/` + [closed-scope-register](../../../doc/architecture/closed-scope-register.md).
 
 | Slice | Plan | Code | Status |
 |-------|------|------|--------|
@@ -10,30 +10,32 @@ Plan authority: this skill + `doc/backend/` + org-admin users + ClientProfile + 
 | Shared Zod + `parseSchema` on Platform | Trade/Identity import Platform | Actions use Platform common | **Done** |
 | Trade ↛ Declarations imports | Ban | No matches under `modules/fft` | **Done** |
 | Identity ↛ Declarations (any) | Zero imports | 0 matches under `modules/identity` | **Done** |
+| Platform ↛ Declarations product compose | Public-link landing at adapter | `features/auth/public-link-routing.ts` | **Done** |
 | api-now Route Handlers (4 trees) | Only health/auth/draft | Disk matches | **Done** |
 | Actions map (`account/admin/client/declarations/surveys/fft`) | adapter-map | Disk matches; no `trade.ts` | **Done** |
 | Org users full stack | CRUD/export/import/bulk | Wired | **Done** |
 | ClientProfile port | Identity owns read/ensure + invite bootstrap | Done | **Done** |
 | Platform copy port | `modules/platform/copy/*` | Done | **Done** |
 | Absorb entry / org-admin / playground runners | → `features/*` | Done | **Done** |
-| Platform RBAC catalog + domain + schemas | ADR-002 | `modules/identity/domain/platform-rbac*` | **Done** |
-| Org-admin Roles / Permissions UI | `/dashboard/roles` `/permissions` | Pages + features wired | **Done** |
-| Declarations / FFT `organization_id` scope | Tenancy | `organization-scope` + migrations `025`/`026` | **Done (code)** |
-| Apply migrations on Neon | Ops | Run `npm run db:migrate` when promoting | **Ops pending** |
-| Platform routing still imports Declarations for public-link | Compose at adapter ideal | Pre-existing narrow edge | **Deferred** |
-| `/client` workspace restore | Closed | Closed | **Out of scope** |
-| FFT P3 flag promotion | gate-register | Closed | **Out of scope** |
-| SaaS plan/billing / 2FA product | Not Identity | Chrome defaults | **Intentional** |
+| Platform RBAC catalog + domain + schemas | ADR-002 | Wired | **Done** |
+| Org-admin Roles / Permissions UI | `/dashboard/roles` `/permissions` | Wired | **Done** |
+| Declarations / FFT `organization_id` scope | Tenancy | Code landed | **Done (code)** |
+| Apply migrations on Neon | Ops | `npm run db:migrate` when promoting | **Ops pending** |
+| `/client` workspace restore | Closed + reopen checklist | Stubs only | **Closed (registered)** |
+| FFT P3 flag promotion | gate-register | Prod flags off | **Closed (registered)** |
+| SaaS billing / 2FA product | Deferred chrome | Coming-soon + plan defaults | **Intentional (registered)** |
 
 ## Stabilization (latest)
 
-- Closed declarationId brand rename end-to-end
-- Documented RBAC/tenancy slice against ADR-002
-- Cross-skill completeness matrices added for scaffold + api-contract
+- Closed-scope register: `doc/architecture/closed-scope-register.md`
+- Public-link landing moved out of Platform into `features/auth` (no Platform→Declarations compose)
+- Governance drift green (reliance 26/26 · route coverage 36/36)
 
 ## Verify
 
 ```bash
 npx tsc --noEmit
-npm run test:unit -- modules/identity/domain/platform-rbac-catalog features/organization-admin/organization-admin-declaration-detail features/auth/entry
+npm run test:unit -- features/auth/public-link-routing features/auth/public-link-page modules/platform/governance
+npm run check:reliance-mapping-drift
+npm run check:route-coverage-drift
 ```

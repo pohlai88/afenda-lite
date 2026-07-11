@@ -12,7 +12,7 @@ Plan authority: this skill + `route-tree.md` + `doc/frontend/03-routes.md`.
 | `lib/` runners | Absorb | `lib/` gone | **Done** |
 | Root + segment `error.tsx` client | Convention | Present on product trees | **Done** |
 | api/actions untouched by scaffold | Keep | api-now only | **Done** |
-| `/client` workspace product rebuild | Closed | Closed | **Out of scope** |
+| `/client` workspace product rebuild | Closed + reopen checklist | Stubs only | **Closed (registered)** — [closed-scope-register](../../../doc/architecture/closed-scope-register.md) |
 | Wipe inventory historical FFT locale rows | Superseded note | Documented | **Intentional** |
 
 ## Stabilization (latest)
