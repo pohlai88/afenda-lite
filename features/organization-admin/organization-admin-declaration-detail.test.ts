@@ -41,6 +41,16 @@ vi.mock("@/modules/declarations/domain/questions", async (importOriginal) => {
   };
 });
 
+vi.mock("@/features/organization-admin/organization-admin-tenancy", () => ({
+  bootstrapOrganizationAdminTenancy: vi.fn(async () => ({
+    org: {
+      organizationId: "org-1",
+      organizationName: "Test Org",
+    },
+    session: { user: { id: "user-1" } },
+  })),
+}));
+
 import {
   operatorDeclarationDetailMetadata,
   runOrganizationAdminDeclarationDetailPage,
@@ -72,7 +82,7 @@ describe("operatorDeclarationDetailMetadata", () => {
     mockGetSurveyForAdmin.mockResolvedValue(null);
 
     const metadata = await operatorDeclarationDetailMetadata({
-      params: Promise.resolve({ id: "not-a-uuid" }),
+      params: Promise.resolve({ declarationId: "not-a-uuid" }),
     });
 
     expect(metadata.title).toMatch(/declaration|portal|management/i);
@@ -83,7 +93,7 @@ describe("operatorDeclarationDetailMetadata", () => {
     mockGetSurveyForAdmin.mockResolvedValue(survey);
 
     const metadata = await operatorDeclarationDetailMetadata({
-      params: Promise.resolve({ id: surveyId }),
+      params: Promise.resolve({ declarationId: surveyId }),
     });
 
     expect(metadata.title).toContain("Annual declaration");
@@ -104,7 +114,7 @@ describe("runOrganizationAdminDeclarationDetailPage", () => {
 
     await expect(
       runOrganizationAdminDeclarationDetailPage({
-        params: Promise.resolve({ id: surveyId }),
+        params: Promise.resolve({ declarationId: surveyId }),
       }),
     ).rejects.toThrow("NOT_FOUND");
     expect(mockNotFound).toHaveBeenCalled();
@@ -114,7 +124,7 @@ describe("runOrganizationAdminDeclarationDetailPage", () => {
     mockGetSurveyForAdmin.mockResolvedValue(survey);
 
     const ui = await runOrganizationAdminDeclarationDetailPage({
-      params: Promise.resolve({ id: surveyId }),
+      params: Promise.resolve({ declarationId: surveyId }),
     });
 
     expect(ui).toBeTruthy();

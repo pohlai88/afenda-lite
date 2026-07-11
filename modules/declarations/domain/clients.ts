@@ -126,12 +126,20 @@ export function createConfirmationCode(assignmentId: string) {
   return `CDP-${assignmentId.slice(0, 8).toUpperCase()}-${suffix}`;
 }
 
-export async function countPendingClientAssignments() {
-  const result = await pool.query(
-    `SELECT COUNT(*)::int AS count
-     FROM client_assignments
-     WHERE status = 'pending'`,
-  );
+export async function countPendingClientAssignments(organizationId?: string) {
+  const result = organizationId
+    ? await pool.query(
+        `SELECT COUNT(*)::int AS count
+         FROM client_assignments
+         WHERE status = 'pending'
+           AND (organization_id IS NULL OR organization_id = $1)`,
+        [organizationId],
+      )
+    : await pool.query(
+        `SELECT COUNT(*)::int AS count
+         FROM client_assignments
+         WHERE status = 'pending'`,
+      );
 
   return Number(result.rows[0]?.count ?? 0);
 }
@@ -143,6 +151,7 @@ export async function createClientInvitation(input: {
   surveyId?: string;
   dueDate?: Date;
   expiresInDays?: number;
+  organizationId?: string;
 }) {
   const email = normalizeEmail(input.email);
   const token = createInviteTokenValue();
@@ -154,8 +163,8 @@ export async function createClientInvitation(input: {
     await dbClient.query("BEGIN");
 
     const result = await dbClient.query(
-      `INSERT INTO client_invitations (token, email, full_name, invited_by, expires_at)
-       VALUES ($1, $2, $3, $4, $5)
+      `INSERT INTO client_invitations (token, email, full_name, invited_by, expires_at, organization_id)
+       VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING id, token, email, full_name, invited_by, status, expires_at, created_at`,
       [
         token,
@@ -163,6 +172,7 @@ export async function createClientInvitation(input: {
         input.fullName.trim(),
         input.invitedBy,
         expiresAt.toISOString(),
+        input.organizationId ?? null,
       ],
     );
 
@@ -174,6 +184,7 @@ export async function createClientInvitation(input: {
         clientEmail: email,
         assignedBy: input.invitedBy,
         dueDate: input.dueDate,
+        organizationId: input.organizationId,
       });
     }
 
@@ -275,15 +286,16 @@ export async function upsertClientProfile(input: {
   notes?: string;
   identityConsentAt?: Date;
   onboardingComplete?: boolean;
+  organizationId?: string;
 }) {
   const result = await pool.query(
     `INSERT INTO client_profiles (
        user_id, full_legal_name, nationality, country_of_residence,
        additional_residence_countries, passport_issuing_country, passport_number,
        phone, entity_name, jurisdiction, notes, identity_consent_at,
-       onboarding_complete, updated_at
+       onboarding_complete, organization_id, updated_at
      )
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW())
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW())
      ON CONFLICT (user_id) DO UPDATE SET
        full_legal_name = EXCLUDED.full_legal_name,
        nationality = EXCLUDED.nationality,
@@ -297,6 +309,10 @@ export async function upsertClientProfile(input: {
        notes = EXCLUDED.notes,
        identity_consent_at = EXCLUDED.identity_consent_at,
        onboarding_complete = EXCLUDED.onboarding_complete,
+       organization_id = COALESCE(
+         client_profiles.organization_id,
+         EXCLUDED.organization_id
+       ),
        updated_at = NOW()
      RETURNING user_id, full_legal_name, nationality, country_of_residence,
                additional_residence_countries, passport_issuing_country, passport_number,
@@ -316,6 +332,7 @@ export async function upsertClientProfile(input: {
       input.notes?.trim() || null,
       input.identityConsentAt?.toISOString() ?? null,
       input.onboardingComplete ?? true,
+      input.organizationId ?? null,
     ],
   );
 
@@ -348,17 +365,19 @@ async function insertClientAssignment(
     clientEmail: string;
     assignedBy: string;
     dueDate?: Date;
+    organizationId?: string;
   },
 ) {
   const result = await dbClient.query(
-    `INSERT INTO client_assignments (survey_id, client_email, assigned_by, due_date)
-     VALUES ($1, $2, $3, $4)
+    `INSERT INTO client_assignments (survey_id, client_email, assigned_by, due_date, organization_id)
+     VALUES ($1, $2, $3, $4, $5)
      RETURNING id, survey_id, client_email, assigned_by, status, due_date, confirmation_code, created_at`,
     [
       input.surveyId,
       normalizeEmail(input.clientEmail),
       input.assignedBy,
       input.dueDate?.toISOString() ?? null,
+      input.organizationId ?? null,
     ],
   );
 
@@ -370,6 +389,7 @@ export async function createClientAssignment(input: {
   clientEmail: string;
   assignedBy: string;
   dueDate?: Date;
+  organizationId?: string;
 }) {
   const dbClient = await pool.connect();
   try {
@@ -491,25 +511,44 @@ export async function completeClientAssignment(input: {
   return Boolean(result.rows[0]);
 }
 
-export async function listClientInvitationsForAdmin() {
-  const result = await pool.query(
-    `SELECT id, token, email, full_name, invited_by, status, expires_at, created_at
-     FROM client_invitations
-     ORDER BY created_at DESC
-     LIMIT 50`,
-  );
+export async function listClientInvitationsForAdmin(organizationId?: string) {
+  const result = organizationId
+    ? await pool.query(
+        `SELECT id, token, email, full_name, invited_by, status, expires_at, created_at
+         FROM client_invitations
+         WHERE (organization_id IS NULL OR organization_id = $1)
+         ORDER BY created_at DESC
+         LIMIT 50`,
+        [organizationId],
+      )
+    : await pool.query(
+        `SELECT id, token, email, full_name, invited_by, status, expires_at, created_at
+         FROM client_invitations
+         ORDER BY created_at DESC
+         LIMIT 50`,
+      );
 
   return result.rows.map(mapInvitation);
 }
 
-export async function listClientAssignmentsForAdmin() {
-  const result = await pool.query(
-    `SELECT ${ASSIGNMENT_SELECT}
-     FROM client_assignments a
-     JOIN surveys s ON s.id = a.survey_id
-     ORDER BY a.created_at DESC
-     LIMIT 50`,
-  );
+export async function listClientAssignmentsForAdmin(organizationId?: string) {
+  const result = organizationId
+    ? await pool.query(
+        `SELECT ${ASSIGNMENT_SELECT}
+         FROM client_assignments a
+         JOIN surveys s ON s.id = a.survey_id
+         WHERE (a.organization_id IS NULL OR a.organization_id = $1)
+         ORDER BY a.created_at DESC
+         LIMIT 50`,
+        [organizationId],
+      )
+    : await pool.query(
+        `SELECT ${ASSIGNMENT_SELECT}
+         FROM client_assignments a
+         JOIN surveys s ON s.id = a.survey_id
+         ORDER BY a.created_at DESC
+         LIMIT 50`,
+      );
 
   return result.rows.map(mapAssignment);
 }

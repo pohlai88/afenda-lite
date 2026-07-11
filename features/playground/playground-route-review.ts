@@ -199,7 +199,7 @@ export const playgroundRouteReviewById = {
   "admin-survey-detail": rendered(
     "Operator declaration detail.",
     "The selected declaration detail renders.",
-    ["app/dashboard/[id]/page.tsx"],
+    ["app/dashboard/[declarationId]/page.tsx"],
     [
       {
         label: "Unknown declaration id",
@@ -315,7 +315,7 @@ export const playgroundRouteReviewById = {
   "dynamic-dashboard-id": rendered(
     "Dynamic operator declaration detail fixture.",
     "The selected declaration detail renders.",
-    ["app/dashboard/[id]/page.tsx"],
+    ["app/dashboard/[declarationId]/page.tsx"],
     [
       {
         label: "Unknown declaration id",

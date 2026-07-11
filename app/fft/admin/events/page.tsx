@@ -17,6 +17,7 @@ import {
 import { Separator } from "@/components-V2/platform-components/ui/separator";
 import { listEvents, listSalesMembers } from "@/modules/fft/domain/store";
 import { fftHref } from "@/modules/fft/i18n/fft-i18n";
+import { resolveFftOrganizationContext } from "@/features/fft/fft-organization-context";
 
 export const dynamic = "force-dynamic";
 
@@ -25,9 +26,13 @@ export const dynamic = "force-dynamic";
  * (ACN-BLK-FORMS-FORM-LAYOUTS-VERTICAL + FFT-UI-EVT-LIST).
  */
 export default async function FftAdminEventsPage() {
+  const org = await resolveFftOrganizationContext();
   const [events, members] = await Promise.all([
-    listEvents({ includeTemplates: true }),
-    listSalesMembers(),
+    listEvents({
+      includeTemplates: true,
+      organizationId: org.organizationId,
+    }),
+    listSalesMembers(org.organizationId),
   ]);
 
   return (

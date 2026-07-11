@@ -28,7 +28,9 @@ export const playgroundRouteFiles: Record<string, string> = {
   "/dashboard/clients": "app/dashboard/clients/page.tsx",
   "/dashboard/users": "app/dashboard/users/page.tsx",
   "/dashboard/users/{userId}": "app/dashboard/users/[userId]/page.tsx",
-  "/dashboard/{id}": "app/dashboard/[id]/page.tsx",
+  "/dashboard/roles": "app/dashboard/roles/page.tsx",
+  "/dashboard/permissions": "app/dashboard/permissions/page.tsx",
+  "/dashboard/{declarationId}": "app/dashboard/[declarationId]/page.tsx",
   "/": "app/page.tsx",
   "/org/login": "app/org/login/page.tsx",
   "/auth/admin": "app/auth/admin/page.tsx",
@@ -110,6 +112,20 @@ export const playgroundScreenDefs: PlaygroundScreenDef[] = [
     label: "User view",
     path: "/dashboard/users/user-001",
     routeFile: "app/dashboard/users/[userId]/page.tsx",
+  },
+  {
+    id: "admin-roles",
+    category: "admin",
+    label: "Roles",
+    path: "/dashboard/roles",
+    routeFile: "app/dashboard/roles/page.tsx",
+  },
+  {
+    id: "admin-permissions",
+    category: "admin",
+    label: "Permissions",
+    path: "/dashboard/permissions",
+    routeFile: "app/dashboard/permissions/page.tsx",
   },
   {
     id: "admin-survey-detail",
@@ -208,14 +224,14 @@ export const playgroundScreenDefs: PlaygroundScreenDef[] = [
   {
     id: "dynamic-dashboard-id",
     category: "dynamic",
-    label: "Dashboard [id]",
+    label: "Dashboard [declarationId]",
     path: "/dashboard/{PLAYGROUND_SURVEY_ID}",
-    routeFile: "app/dashboard/[id]/page.tsx",
+    routeFile: "app/dashboard/[declarationId]/page.tsx",
   },
   {
     id: "dynamic-declare-id",
     category: "dynamic",
-    label: "Declare [id]",
+    label: "Declare [assignmentId]",
     path: "/client/declare/{PLAYGROUND_ASSIGNMENT_ID}",
     routeFile: "app/client/(workspace)/declare/[assignmentId]/page.tsx",
   },
@@ -438,7 +454,7 @@ export function resolvePlaygroundPathTemplate(template: string) {
 
 export function resolvePlaygroundRouteFile(pathOrTemplate: string) {
   if (pathOrTemplate.includes("{PLAYGROUND_SURVEY_ID}")) {
-    return playgroundRouteFiles["/dashboard/{id}"];
+    return playgroundRouteFiles["/dashboard/{declarationId}"];
   }
 
   if (pathOrTemplate.includes("{PLAYGROUND_ASSIGNMENT_ID}")) {
@@ -473,7 +489,7 @@ export function resolvePlaygroundRouteFile(pathOrTemplate: string) {
   }
 
   if (/^\/dashboard\/[^/]+$/.test(pathname)) {
-    return playgroundRouteFiles["/dashboard/{id}"];
+    return playgroundRouteFiles["/dashboard/{declarationId}"];
   }
 
   if (/^\/client\/declare\/[^/]+$/.test(pathname)) {

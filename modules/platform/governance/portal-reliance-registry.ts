@@ -114,17 +114,22 @@ export const SURFACE_RELIANCE: ReadonlyArray<{
   },
   {
     surfaceId: "admin-declaration-detail",
-    // Detail UI rebuilt under AdminCN; package/share actions re-declare when panel remounts.
     consumes: [
       { kind: "server-action", actionId: "action:requireAdminSession" },
+      { kind: "server-action", actionId: "action:updateSurveyAction" },
+      { kind: "server-action", actionId: "action:deleteSurveyAction" },
+      { kind: "server-action", actionId: "action:regenerateInviteTokenAction" },
       { kind: "domain-loader", domainId: "domain:operator-declaration-detail" },
       { kind: "domain-loader", domainId: "domain:surveys" },
       { kind: "domain-loader", domainId: "domain:questions" },
+      { kind: "domain-loader", domainId: "domain:auth" },
+      { kind: "domain-loader", domainId: "domain:survey-package" },
     ],
   },
   {
     surfaceId: "admin-clients",
     consumes: [
+      { kind: "server-action", actionId: "action:issueClientInviteAction" },
       { kind: "server-action", actionId: "action:removeClientRegistrationAction" },
       { kind: "server-action", actionId: "action:deleteClientAssignmentAction" },
       { kind: "domain-loader", domainId: "domain:operator-clients-page" },
@@ -137,6 +142,7 @@ export const SURFACE_RELIANCE: ReadonlyArray<{
     surfaceId: "admin-issue-invite",
     consumes: [
       { kind: "server-action", actionId: "action:requireAdminSession" },
+      { kind: "server-action", actionId: "action:issueClientInviteAction" },
       { kind: "auth-operation", operationId: "auth:organization/invite-member" },
     ],
   },
@@ -146,9 +152,11 @@ export const SURFACE_RELIANCE: ReadonlyArray<{
   },
   {
     surfaceId: "admin-access-share",
-    // Share panel not remounted on detail yet — keep layout admin session only.
     consumes: [
       { kind: "server-action", actionId: "action:requireAdminSession" },
+      { kind: "server-action", actionId: "action:regenerateInviteTokenAction" },
+      { kind: "domain-loader", domainId: "domain:auth" },
+      { kind: "domain-loader", domainId: "domain:surveys" },
     ],
   },
   {
@@ -189,7 +197,7 @@ export const ACTION_DOMAIN_MATERIALIZATION: ReadonlyArray<{
   {
     actionId: "action:requireClientSession",
     file: "modules/identity/auth/session.ts",
-    domains: ["domain:auth", "domain:clients"],
+    domains: ["domain:auth"],
   },
   {
     actionId: "action:requireAdminSession",
@@ -290,6 +298,91 @@ export const ACTION_DOMAIN_MATERIALIZATION: ReadonlyArray<{
     actionId: "action:exitClientPreviewAction",
     file: "app/actions/admin.ts",
     domains: ["domain:preview-client", "domain:audit"],
+  },
+  {
+    actionId: "action:setOrganizationUserRoleAction",
+    file: "app/actions/admin.ts",
+    domains: ["domain:auth", "domain:audit"],
+  },
+  {
+    actionId: "action:banOrganizationUserAction",
+    file: "app/actions/admin.ts",
+    domains: ["domain:auth", "domain:audit"],
+  },
+  {
+    actionId: "action:unbanOrganizationUserAction",
+    file: "app/actions/admin.ts",
+    domains: ["domain:auth", "domain:audit"],
+  },
+  {
+    actionId: "action:createOrganizationUserAction",
+    file: "app/actions/admin.ts",
+    domains: ["domain:auth", "domain:audit"],
+  },
+  {
+    actionId: "action:importOrganizationUsersAction",
+    file: "app/actions/admin.ts",
+    domains: ["domain:auth", "domain:audit"],
+  },
+  {
+    actionId: "action:updateOrganizationUserAction",
+    file: "app/actions/admin.ts",
+    domains: ["domain:auth", "domain:audit"],
+  },
+  {
+    actionId: "action:setOrganizationUserPasswordAction",
+    file: "app/actions/admin.ts",
+    domains: ["domain:auth", "domain:audit"],
+  },
+  {
+    actionId: "action:removeOrganizationUserAction",
+    file: "app/actions/admin.ts",
+    domains: ["domain:auth", "domain:audit"],
+  },
+  {
+    actionId: "action:removeOrganizationUsersAction",
+    file: "app/actions/admin.ts",
+    domains: ["domain:auth", "domain:audit"],
+  },
+  {
+    actionId: "action:banOrganizationUsersAction",
+    file: "app/actions/admin.ts",
+    domains: ["domain:auth", "domain:audit"],
+  },
+  {
+    actionId: "action:revokeOrganizationUserSessionsAction",
+    file: "app/actions/admin.ts",
+    domains: ["domain:auth", "domain:audit"],
+  },
+  {
+    actionId: "action:createPlatformRoleAction",
+    file: "app/actions/admin.ts",
+    domains: ["domain:auth", "domain:audit"],
+  },
+  {
+    actionId: "action:updatePlatformRoleAction",
+    file: "app/actions/admin.ts",
+    domains: ["domain:auth", "domain:audit"],
+  },
+  {
+    actionId: "action:deletePlatformRoleAction",
+    file: "app/actions/admin.ts",
+    domains: ["domain:auth", "domain:audit"],
+  },
+  {
+    actionId: "action:setPlatformRolePermissionAction",
+    file: "app/actions/admin.ts",
+    domains: ["domain:auth", "domain:audit"],
+  },
+  {
+    actionId: "action:assignPlatformRoleAction",
+    file: "app/actions/admin.ts",
+    domains: ["domain:auth", "domain:audit"],
+  },
+  {
+    actionId: "action:revokePlatformRoleAssignmentAction",
+    file: "app/actions/admin.ts",
+    domains: ["domain:auth", "domain:audit"],
   },
 ];
 

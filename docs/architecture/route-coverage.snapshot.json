@@ -1,10 +1,10 @@
 {
   "version": "1.0.0",
-  "generatedAt": "2026-07-11T15:08:27.376Z",
+  "generatedAt": "2026-07-11T22:41:36.193Z",
   "summary": {
-    "totalAvailable": 33,
-    "totalPresented": 32,
-    "missing": 1,
+    "totalAvailable": 36,
+    "totalPresented": 36,
+    "missing": 0,
     "byPhase": [
       {
         "phase": "pre-login",
@@ -32,15 +32,15 @@
       },
       {
         "phase": "operator-post-login",
-        "available": 3,
-        "presented": 3,
+        "available": 7,
+        "presented": 7,
         "missing": 0
       },
       {
         "phase": "fft",
-        "available": 14,
+        "available": 13,
         "presented": 13,
-        "missing": 1
+        "missing": 0
       }
     ]
   },
@@ -186,8 +186,8 @@
       "relianceEdges": []
     },
     {
-      "file": "app/dashboard/[id]/page.tsx",
-      "routePattern": "/dashboard/[id]",
+      "file": "app/dashboard/[declarationId]/page.tsx",
+      "routePattern": "/dashboard/[declarationId]",
       "phase": "operator-post-login",
       "presented": true,
       "screenIds": [
@@ -203,6 +203,18 @@
         },
         {
           "type": "consumes",
+          "target": "action:updateSurveyAction"
+        },
+        {
+          "type": "consumes",
+          "target": "action:deleteSurveyAction"
+        },
+        {
+          "type": "consumes",
+          "target": "action:regenerateInviteTokenAction"
+        },
+        {
+          "type": "consumes",
           "target": "domain:operator-declaration-detail"
         },
         {
@@ -212,6 +224,14 @@
         {
           "type": "consumes",
           "target": "domain:questions"
+        },
+        {
+          "type": "consumes",
+          "target": "domain:auth"
+        },
+        {
+          "type": "consumes",
+          "target": "domain:survey-package"
         }
       ]
     },
@@ -226,6 +246,10 @@
       "surfaceId": "admin-clients",
       "relianceStatus": "wired",
       "relianceEdges": [
+        {
+          "type": "consumes",
+          "target": "action:issueClientInviteAction"
+        },
         {
           "type": "consumes",
           "target": "action:removeClientRegistrationAction"
@@ -286,6 +310,165 @@
       ]
     },
     {
+      "file": "app/dashboard/permissions/page.tsx",
+      "routePattern": "/dashboard/permissions",
+      "phase": "operator-post-login",
+      "presented": true,
+      "screenIds": [
+        "admin-permissions"
+      ],
+      "surfaceId": "admin-declaration-detail",
+      "relianceStatus": "wired",
+      "relianceEdges": [
+        {
+          "type": "consumes",
+          "target": "action:requireAdminSession"
+        },
+        {
+          "type": "consumes",
+          "target": "action:updateSurveyAction"
+        },
+        {
+          "type": "consumes",
+          "target": "action:deleteSurveyAction"
+        },
+        {
+          "type": "consumes",
+          "target": "action:regenerateInviteTokenAction"
+        },
+        {
+          "type": "consumes",
+          "target": "domain:operator-declaration-detail"
+        },
+        {
+          "type": "consumes",
+          "target": "domain:surveys"
+        },
+        {
+          "type": "consumes",
+          "target": "domain:questions"
+        },
+        {
+          "type": "consumes",
+          "target": "domain:auth"
+        },
+        {
+          "type": "consumes",
+          "target": "domain:survey-package"
+        }
+      ]
+    },
+    {
+      "file": "app/dashboard/roles/page.tsx",
+      "routePattern": "/dashboard/roles",
+      "phase": "operator-post-login",
+      "presented": true,
+      "screenIds": [
+        "admin-roles"
+      ],
+      "surfaceId": "admin-declaration-detail",
+      "relianceStatus": "wired",
+      "relianceEdges": [
+        {
+          "type": "consumes",
+          "target": "action:requireAdminSession"
+        },
+        {
+          "type": "consumes",
+          "target": "action:updateSurveyAction"
+        },
+        {
+          "type": "consumes",
+          "target": "action:deleteSurveyAction"
+        },
+        {
+          "type": "consumes",
+          "target": "action:regenerateInviteTokenAction"
+        },
+        {
+          "type": "consumes",
+          "target": "domain:operator-declaration-detail"
+        },
+        {
+          "type": "consumes",
+          "target": "domain:surveys"
+        },
+        {
+          "type": "consumes",
+          "target": "domain:questions"
+        },
+        {
+          "type": "consumes",
+          "target": "domain:auth"
+        },
+        {
+          "type": "consumes",
+          "target": "domain:survey-package"
+        }
+      ]
+    },
+    {
+      "file": "app/dashboard/users/[userId]/page.tsx",
+      "routePattern": "/dashboard/users/[userId]",
+      "phase": "operator-post-login",
+      "presented": true,
+      "screenIds": [
+        "admin-users-view"
+      ],
+      "surfaceId": null,
+      "relianceStatus": "untracked",
+      "relianceEdges": []
+    },
+    {
+      "file": "app/dashboard/users/page.tsx",
+      "routePattern": "/dashboard/users",
+      "phase": "operator-post-login",
+      "presented": true,
+      "screenIds": [
+        "admin-users-list"
+      ],
+      "surfaceId": "admin-declaration-detail",
+      "relianceStatus": "wired",
+      "relianceEdges": [
+        {
+          "type": "consumes",
+          "target": "action:requireAdminSession"
+        },
+        {
+          "type": "consumes",
+          "target": "action:updateSurveyAction"
+        },
+        {
+          "type": "consumes",
+          "target": "action:deleteSurveyAction"
+        },
+        {
+          "type": "consumes",
+          "target": "action:regenerateInviteTokenAction"
+        },
+        {
+          "type": "consumes",
+          "target": "domain:operator-declaration-detail"
+        },
+        {
+          "type": "consumes",
+          "target": "domain:surveys"
+        },
+        {
+          "type": "consumes",
+          "target": "domain:questions"
+        },
+        {
+          "type": "consumes",
+          "target": "domain:auth"
+        },
+        {
+          "type": "consumes",
+          "target": "domain:survey-package"
+        }
+      ]
+    },
+    {
       "file": "app/f/[token]/page.tsx",
       "routePattern": "/f/[token]",
       "phase": "pre-login",
@@ -305,125 +488,6 @@
           "target": "domain:surveys"
         }
       ]
-    },
-    {
-      "file": "app/invite/[token]/page.tsx",
-      "routePattern": "/invite/[token]",
-      "phase": "pre-login",
-      "presented": true,
-      "screenIds": [
-        "dynamic-legacy-invite-token"
-      ],
-      "surfaceId": null,
-      "relianceStatus": "untracked",
-      "relianceEdges": []
-    },
-    {
-      "file": "app/join/page.tsx",
-      "routePattern": "/join",
-      "phase": "join",
-      "presented": true,
-      "screenIds": [
-        "dynamic-client-join"
-      ],
-      "surfaceId": "client-join",
-      "relianceStatus": "wired",
-      "relianceEdges": [
-        {
-          "type": "consumes",
-          "target": "auth:sign-up/email"
-        },
-        {
-          "type": "consumes",
-          "target": "auth:email-otp"
-        },
-        {
-          "type": "consumes",
-          "target": "auth:organization/accept-invitation"
-        },
-        {
-          "type": "consumes",
-          "target": "domain:client-invitation-entry"
-        },
-        {
-          "type": "consumes",
-          "target": "domain:auth"
-        }
-      ]
-    },
-    {
-      "file": "app/org/login/page.tsx",
-      "routePattern": "/org/login",
-      "phase": "pre-login",
-      "presented": true,
-      "screenIds": [
-        "client-org-login",
-        "client-org-access-denied"
-      ],
-      "surfaceId": "org-login",
-      "relianceStatus": "wired",
-      "relianceEdges": [
-        {
-          "type": "consumes",
-          "target": "auth:sign-in/email"
-        }
-      ]
-    },
-    {
-      "file": "app/page.tsx",
-      "routePattern": "/",
-      "phase": "pre-login",
-      "presented": true,
-      "screenIds": [
-        "client-home-login"
-      ],
-      "surfaceId": "client-home-redirect",
-      "relianceStatus": "wired",
-      "relianceEdges": [
-        {
-          "type": "consumes",
-          "target": "auth:sign-in/email"
-        },
-        {
-          "type": "consumes",
-          "target": "domain:client-invitation-entry"
-        },
-        {
-          "type": "consumes",
-          "target": "domain:auth"
-        }
-      ]
-    },
-    {
-      "file": "app/survey/[slug]/page.tsx",
-      "routePattern": "/survey/[slug]",
-      "phase": "pre-login",
-      "presented": true,
-      "screenIds": [
-        "dynamic-public-survey-slug"
-      ],
-      "surfaceId": "public-survey-link",
-      "relianceStatus": "wired",
-      "relianceEdges": [
-        {
-          "type": "consumes",
-          "target": "domain:open-link-entry"
-        },
-        {
-          "type": "consumes",
-          "target": "domain:surveys"
-        }
-      ]
-    },
-    {
-      "file": "app/fft/[locale]/[[...path]]/page.tsx",
-      "routePattern": "/fft/[locale]/[[...path]]",
-      "phase": "fft",
-      "presented": false,
-      "screenIds": [],
-      "surfaceId": null,
-      "relianceStatus": "untracked",
-      "relianceEdges": []
     },
     {
       "file": "app/fft/admin/erp-sync/page.tsx",
@@ -580,6 +644,115 @@
       "surfaceId": null,
       "relianceStatus": "untracked",
       "relianceEdges": []
+    },
+    {
+      "file": "app/invite/[token]/page.tsx",
+      "routePattern": "/invite/[token]",
+      "phase": "pre-login",
+      "presented": true,
+      "screenIds": [
+        "dynamic-legacy-invite-token"
+      ],
+      "surfaceId": null,
+      "relianceStatus": "untracked",
+      "relianceEdges": []
+    },
+    {
+      "file": "app/join/page.tsx",
+      "routePattern": "/join",
+      "phase": "join",
+      "presented": true,
+      "screenIds": [
+        "dynamic-client-join"
+      ],
+      "surfaceId": "client-join",
+      "relianceStatus": "wired",
+      "relianceEdges": [
+        {
+          "type": "consumes",
+          "target": "auth:sign-up/email"
+        },
+        {
+          "type": "consumes",
+          "target": "auth:email-otp"
+        },
+        {
+          "type": "consumes",
+          "target": "auth:organization/accept-invitation"
+        },
+        {
+          "type": "consumes",
+          "target": "domain:client-invitation-entry"
+        },
+        {
+          "type": "consumes",
+          "target": "domain:auth"
+        }
+      ]
+    },
+    {
+      "file": "app/org/login/page.tsx",
+      "routePattern": "/org/login",
+      "phase": "pre-login",
+      "presented": true,
+      "screenIds": [
+        "client-org-login",
+        "client-org-access-denied"
+      ],
+      "surfaceId": "org-login",
+      "relianceStatus": "wired",
+      "relianceEdges": [
+        {
+          "type": "consumes",
+          "target": "auth:sign-in/email"
+        }
+      ]
+    },
+    {
+      "file": "app/page.tsx",
+      "routePattern": "/",
+      "phase": "pre-login",
+      "presented": true,
+      "screenIds": [
+        "client-home-login"
+      ],
+      "surfaceId": "client-home-redirect",
+      "relianceStatus": "wired",
+      "relianceEdges": [
+        {
+          "type": "consumes",
+          "target": "auth:sign-in/email"
+        },
+        {
+          "type": "consumes",
+          "target": "domain:client-invitation-entry"
+        },
+        {
+          "type": "consumes",
+          "target": "domain:auth"
+        }
+      ]
+    },
+    {
+      "file": "app/survey/[slug]/page.tsx",
+      "routePattern": "/survey/[slug]",
+      "phase": "pre-login",
+      "presented": true,
+      "screenIds": [
+        "dynamic-public-survey-slug"
+      ],
+      "surfaceId": "public-survey-link",
+      "relianceStatus": "wired",
+      "relianceEdges": [
+        {
+          "type": "consumes",
+          "target": "domain:open-link-entry"
+        },
+        {
+          "type": "consumes",
+          "target": "domain:surveys"
+        }
+      ]
     }
   ]
 }

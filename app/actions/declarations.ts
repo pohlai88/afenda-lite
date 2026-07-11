@@ -13,6 +13,7 @@ import { parseSchema } from "@/modules/platform/schemas/common";
 import { registerEvidenceSchema } from "@/modules/declarations/schemas/declarations";
 import { getSurveyBySlug, getSurveyForAdmin } from "@/modules/declarations/domain/surveys";
 import { readRegisterEvidenceFromFormData } from "@/modules/declarations/server-actions/register-evidence-form";
+import { resolvePlatformOrgContext } from "@/modules/identity/domain/platform-rbac-access";
 
 type EvidenceAccess = {
   actorId?: string;
@@ -32,7 +33,11 @@ async function resolveEvidenceAccess(input: {
   const { data: session } = await auth.getSession();
 
   if (isAdminSession(session)) {
-    const survey = await getSurveyForAdmin(input.surveyId);
+    const { organizationId } = await resolvePlatformOrgContext({
+      userId: session?.user?.id,
+      ensureOrgAdminAssignment: false,
+    });
+    const survey = await getSurveyForAdmin(input.surveyId, organizationId);
     if (!survey) {
       return { error: portalCopy.errors.declarationNotFound };
     }

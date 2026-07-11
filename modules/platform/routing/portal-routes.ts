@@ -36,6 +36,9 @@ export const AUTH_SIGN_OUT_HREF = "/auth/sign-out" as const;
 export const CLIENT_PROFILE_HREF = "/client/profile" as const;
 export const ORGANIZATION_ADMIN_CLIENTS_HREF = "/dashboard/clients" as const;
 export const ORGANIZATION_ADMIN_USERS_HREF = "/dashboard/users" as const;
+export const ORGANIZATION_ADMIN_ROLES_HREF = "/dashboard/roles" as const;
+export const ORGANIZATION_ADMIN_PERMISSIONS_HREF =
+  "/dashboard/permissions" as const;
 export const CLIENT_PREVIEW_UNAVAILABLE_HREF = "/client/preview-unavailable" as const;
 
 export function organizationAdminUserHref(userId: string) {

@@ -6,7 +6,7 @@ import {
 } from "@/components-V2/platform-components/ui/field";
 import { cn } from "@/modules/platform/utils";
 
-/** form-layout-02 — titled section shell from Shadcn Studio multi-section form block. */
+/** Adapted from Studio form-layout-02 — titled section shell for org-admin forms. */
 export type StudioFormLayout02SectionProps = {
   title: string;
   description?: string;

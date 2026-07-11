@@ -6,11 +6,6 @@
       "type": "materializes"
     },
     {
-      "source": "action:requireClientSession",
-      "target": "domain:clients",
-      "type": "materializes"
-    },
-    {
       "source": "action:requireAdminSession",
       "target": "domain:auth",
       "type": "materializes"
@@ -276,6 +271,176 @@
       "type": "materializes"
     },
     {
+      "source": "action:setOrganizationUserRoleAction",
+      "target": "domain:auth",
+      "type": "materializes"
+    },
+    {
+      "source": "action:setOrganizationUserRoleAction",
+      "target": "domain:audit",
+      "type": "materializes"
+    },
+    {
+      "source": "action:banOrganizationUserAction",
+      "target": "domain:auth",
+      "type": "materializes"
+    },
+    {
+      "source": "action:banOrganizationUserAction",
+      "target": "domain:audit",
+      "type": "materializes"
+    },
+    {
+      "source": "action:unbanOrganizationUserAction",
+      "target": "domain:auth",
+      "type": "materializes"
+    },
+    {
+      "source": "action:unbanOrganizationUserAction",
+      "target": "domain:audit",
+      "type": "materializes"
+    },
+    {
+      "source": "action:createOrganizationUserAction",
+      "target": "domain:auth",
+      "type": "materializes"
+    },
+    {
+      "source": "action:createOrganizationUserAction",
+      "target": "domain:audit",
+      "type": "materializes"
+    },
+    {
+      "source": "action:importOrganizationUsersAction",
+      "target": "domain:auth",
+      "type": "materializes"
+    },
+    {
+      "source": "action:importOrganizationUsersAction",
+      "target": "domain:audit",
+      "type": "materializes"
+    },
+    {
+      "source": "action:updateOrganizationUserAction",
+      "target": "domain:auth",
+      "type": "materializes"
+    },
+    {
+      "source": "action:updateOrganizationUserAction",
+      "target": "domain:audit",
+      "type": "materializes"
+    },
+    {
+      "source": "action:setOrganizationUserPasswordAction",
+      "target": "domain:auth",
+      "type": "materializes"
+    },
+    {
+      "source": "action:setOrganizationUserPasswordAction",
+      "target": "domain:audit",
+      "type": "materializes"
+    },
+    {
+      "source": "action:removeOrganizationUserAction",
+      "target": "domain:auth",
+      "type": "materializes"
+    },
+    {
+      "source": "action:removeOrganizationUserAction",
+      "target": "domain:audit",
+      "type": "materializes"
+    },
+    {
+      "source": "action:removeOrganizationUsersAction",
+      "target": "domain:auth",
+      "type": "materializes"
+    },
+    {
+      "source": "action:removeOrganizationUsersAction",
+      "target": "domain:audit",
+      "type": "materializes"
+    },
+    {
+      "source": "action:banOrganizationUsersAction",
+      "target": "domain:auth",
+      "type": "materializes"
+    },
+    {
+      "source": "action:banOrganizationUsersAction",
+      "target": "domain:audit",
+      "type": "materializes"
+    },
+    {
+      "source": "action:revokeOrganizationUserSessionsAction",
+      "target": "domain:auth",
+      "type": "materializes"
+    },
+    {
+      "source": "action:revokeOrganizationUserSessionsAction",
+      "target": "domain:audit",
+      "type": "materializes"
+    },
+    {
+      "source": "action:createPlatformRoleAction",
+      "target": "domain:auth",
+      "type": "materializes"
+    },
+    {
+      "source": "action:createPlatformRoleAction",
+      "target": "domain:audit",
+      "type": "materializes"
+    },
+    {
+      "source": "action:updatePlatformRoleAction",
+      "target": "domain:auth",
+      "type": "materializes"
+    },
+    {
+      "source": "action:updatePlatformRoleAction",
+      "target": "domain:audit",
+      "type": "materializes"
+    },
+    {
+      "source": "action:deletePlatformRoleAction",
+      "target": "domain:auth",
+      "type": "materializes"
+    },
+    {
+      "source": "action:deletePlatformRoleAction",
+      "target": "domain:audit",
+      "type": "materializes"
+    },
+    {
+      "source": "action:setPlatformRolePermissionAction",
+      "target": "domain:auth",
+      "type": "materializes"
+    },
+    {
+      "source": "action:setPlatformRolePermissionAction",
+      "target": "domain:audit",
+      "type": "materializes"
+    },
+    {
+      "source": "action:assignPlatformRoleAction",
+      "target": "domain:auth",
+      "type": "materializes"
+    },
+    {
+      "source": "action:assignPlatformRoleAction",
+      "target": "domain:audit",
+      "type": "materializes"
+    },
+    {
+      "source": "action:revokePlatformRoleAssignmentAction",
+      "target": "domain:auth",
+      "type": "materializes"
+    },
+    {
+      "source": "action:revokePlatformRoleAssignmentAction",
+      "target": "domain:audit",
+      "type": "materializes"
+    },
+    {
       "source": "surface:client-join",
       "target": "auth:sign-up/email",
       "type": "consumes"
@@ -392,6 +557,21 @@
     },
     {
       "source": "surface:admin-declaration-detail",
+      "target": "action:updateSurveyAction",
+      "type": "consumes"
+    },
+    {
+      "source": "surface:admin-declaration-detail",
+      "target": "action:deleteSurveyAction",
+      "type": "consumes"
+    },
+    {
+      "source": "surface:admin-declaration-detail",
+      "target": "action:regenerateInviteTokenAction",
+      "type": "consumes"
+    },
+    {
+      "source": "surface:admin-declaration-detail",
       "target": "domain:operator-declaration-detail",
       "type": "consumes"
     },
@@ -403,6 +583,21 @@
     {
       "source": "surface:admin-declaration-detail",
       "target": "domain:questions",
+      "type": "consumes"
+    },
+    {
+      "source": "surface:admin-declaration-detail",
+      "target": "domain:auth",
+      "type": "consumes"
+    },
+    {
+      "source": "surface:admin-declaration-detail",
+      "target": "domain:survey-package",
+      "type": "consumes"
+    },
+    {
+      "source": "surface:admin-clients",
+      "target": "action:issueClientInviteAction",
       "type": "consumes"
     },
     {
@@ -442,6 +637,11 @@
     },
     {
       "source": "surface:admin-issue-invite",
+      "target": "action:issueClientInviteAction",
+      "type": "consumes"
+    },
+    {
+      "source": "surface:admin-issue-invite",
       "target": "auth:organization/invite-member",
       "type": "consumes"
     },
@@ -453,6 +653,21 @@
     {
       "source": "surface:admin-access-share",
       "target": "action:requireAdminSession",
+      "type": "consumes"
+    },
+    {
+      "source": "surface:admin-access-share",
+      "target": "action:regenerateInviteTokenAction",
+      "type": "consumes"
+    },
+    {
+      "source": "surface:admin-access-share",
+      "target": "domain:auth",
+      "type": "consumes"
+    },
+    {
+      "source": "surface:admin-access-share",
+      "target": "domain:surveys",
       "type": "consumes"
     },
     {
@@ -816,8 +1031,8 @@
       "type": "validates"
     }
   ],
-  "fingerprint": "c2a15dcc0da16955",
-  "generatedAt": "2026-07-11T12:07:34.873Z",
+  "fingerprint": "60c2058e7b5d8cfc",
+  "generatedAt": "2026-07-11T22:34:59.095Z",
   "nodes": [
     {
       "id": "surface:auth-sign-in",
@@ -1094,8 +1309,8 @@
       "label": "admin-declaration-detail",
       "metadata": {
         "domain": "admin",
-        "route": "/dashboard/[id]",
-        "currentComponent": "operator-declaration-detail (portal-views)"
+        "route": "/dashboard/[declarationId]",
+        "currentComponent": "organization-admin-declaration-detail (portal-views)"
       },
       "type": "ui-surface"
     },
@@ -1104,7 +1319,7 @@
       "label": "admin-create-declaration",
       "metadata": {
         "domain": "admin",
-        "route": "/dashboard/[id] (create)",
+        "route": "/dashboard/[declarationId] (create)",
         "currentComponent": "Inline create form"
       },
       "type": "ui-surface"
@@ -1124,7 +1339,7 @@
       "label": "admin-access-share",
       "metadata": {
         "domain": "admin",
-        "route": "/dashboard/[id] (share)",
+        "route": "/dashboard/[declarationId] (share)",
         "currentComponent": "PortalAccessSharePanel"
       },
       "type": "ui-surface"
@@ -1373,7 +1588,7 @@
       "id": "domain:operator-dashboard-page",
       "label": "Operator dashboard",
       "metadata": {
-        "path": "lib/pages/operator-dashboard-page.ts"
+        "path": "features/organization-admin/organization-admin-dashboard-page.ts"
       },
       "type": "domain-module"
     },
@@ -1381,7 +1596,7 @@
       "id": "domain:operator-clients-page",
       "label": "Operator clients",
       "metadata": {
-        "path": "lib/pages/operator-clients-page.ts"
+        "path": "features/organization-admin/organization-admin-clients-page.ts"
       },
       "type": "domain-module"
     },
@@ -1389,7 +1604,7 @@
       "id": "domain:operator-declaration-detail",
       "label": "Operator declaration detail",
       "metadata": {
-        "path": "lib/pages/operator-declaration-detail.tsx"
+        "path": "features/organization-admin/organization-admin-declaration-detail.tsx"
       },
       "type": "domain-module"
     },
@@ -1635,6 +1850,142 @@
     {
       "id": "action:exitClientPreviewAction",
       "label": "exitClientPreviewAction",
+      "metadata": {
+        "file": "app/actions/admin.ts"
+      },
+      "type": "server-action"
+    },
+    {
+      "id": "action:setOrganizationUserRoleAction",
+      "label": "setOrganizationUserRoleAction",
+      "metadata": {
+        "file": "app/actions/admin.ts"
+      },
+      "type": "server-action"
+    },
+    {
+      "id": "action:banOrganizationUserAction",
+      "label": "banOrganizationUserAction",
+      "metadata": {
+        "file": "app/actions/admin.ts"
+      },
+      "type": "server-action"
+    },
+    {
+      "id": "action:unbanOrganizationUserAction",
+      "label": "unbanOrganizationUserAction",
+      "metadata": {
+        "file": "app/actions/admin.ts"
+      },
+      "type": "server-action"
+    },
+    {
+      "id": "action:createOrganizationUserAction",
+      "label": "createOrganizationUserAction",
+      "metadata": {
+        "file": "app/actions/admin.ts"
+      },
+      "type": "server-action"
+    },
+    {
+      "id": "action:importOrganizationUsersAction",
+      "label": "importOrganizationUsersAction",
+      "metadata": {
+        "file": "app/actions/admin.ts"
+      },
+      "type": "server-action"
+    },
+    {
+      "id": "action:updateOrganizationUserAction",
+      "label": "updateOrganizationUserAction",
+      "metadata": {
+        "file": "app/actions/admin.ts"
+      },
+      "type": "server-action"
+    },
+    {
+      "id": "action:setOrganizationUserPasswordAction",
+      "label": "setOrganizationUserPasswordAction",
+      "metadata": {
+        "file": "app/actions/admin.ts"
+      },
+      "type": "server-action"
+    },
+    {
+      "id": "action:removeOrganizationUserAction",
+      "label": "removeOrganizationUserAction",
+      "metadata": {
+        "file": "app/actions/admin.ts"
+      },
+      "type": "server-action"
+    },
+    {
+      "id": "action:removeOrganizationUsersAction",
+      "label": "removeOrganizationUsersAction",
+      "metadata": {
+        "file": "app/actions/admin.ts"
+      },
+      "type": "server-action"
+    },
+    {
+      "id": "action:banOrganizationUsersAction",
+      "label": "banOrganizationUsersAction",
+      "metadata": {
+        "file": "app/actions/admin.ts"
+      },
+      "type": "server-action"
+    },
+    {
+      "id": "action:revokeOrganizationUserSessionsAction",
+      "label": "revokeOrganizationUserSessionsAction",
+      "metadata": {
+        "file": "app/actions/admin.ts"
+      },
+      "type": "server-action"
+    },
+    {
+      "id": "action:createPlatformRoleAction",
+      "label": "createPlatformRoleAction",
+      "metadata": {
+        "file": "app/actions/admin.ts"
+      },
+      "type": "server-action"
+    },
+    {
+      "id": "action:updatePlatformRoleAction",
+      "label": "updatePlatformRoleAction",
+      "metadata": {
+        "file": "app/actions/admin.ts"
+      },
+      "type": "server-action"
+    },
+    {
+      "id": "action:deletePlatformRoleAction",
+      "label": "deletePlatformRoleAction",
+      "metadata": {
+        "file": "app/actions/admin.ts"
+      },
+      "type": "server-action"
+    },
+    {
+      "id": "action:setPlatformRolePermissionAction",
+      "label": "setPlatformRolePermissionAction",
+      "metadata": {
+        "file": "app/actions/admin.ts"
+      },
+      "type": "server-action"
+    },
+    {
+      "id": "action:assignPlatformRoleAction",
+      "label": "assignPlatformRoleAction",
+      "metadata": {
+        "file": "app/actions/admin.ts"
+      },
+      "type": "server-action"
+    },
+    {
+      "id": "action:revokePlatformRoleAssignmentAction",
+      "label": "revokePlatformRoleAssignmentAction",
       "metadata": {
         "file": "app/actions/admin.ts"
       },

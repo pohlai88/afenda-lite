@@ -22,7 +22,7 @@ Each product surface: journey phase, route, rebuild owner module, data adapter.
 | client-declare | client-post-login | `/client/declare/[id]` | client-workspace TBD | domain | draft API + submit Action |
 | admin-dashboard | declarations module | `/dashboard` | `portal-views/organization-admin-declarations-dashboard` | domain | create/delete Actions (admin mutations) |
 | admin-clients | declarations module | `/dashboard/clients` | `portal-views/organization-admin-clients-list` | domain | invite/delete Actions (admin mutations) |
-| admin-declaration-detail | declarations module | `/dashboard/[id]` | `portal-views/organization-admin-declaration-detail` | domain | survey/share Actions (admin mutations) |
+| admin-declaration-detail | declarations module | `/dashboard/[declarationId]` | `portal-views/organization-admin-declaration-detail` | domain | survey/share Actions (admin mutations) |
 | account-settings | declarations module | `/account/settings` | `features/account` + Neon | Neon | Neon |
 | account-security | declarations module | `/account/security` | `features/account` + Neon | Neon | Neon |
 | trade-* | Feed Farm Trade | `/fft/...` (locale-free) | AdminCN + `features/fft` (P1 wired; P3 placeholders); [001](adr/001-feed-farm-trade.md) · [001A](adr/001A-feed-farm-trade-architecture.md) · [001R](adr/001R-feed-farm-trade-roadmap.md) | `modules/fft` | `app/actions/fft` |

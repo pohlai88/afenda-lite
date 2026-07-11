@@ -140,24 +140,26 @@ export async function createSurvey(input: {
   title: string;
   question: string;
   userId: string;
+  organizationId?: string;
   metadata?: Partial<SurveyMetadata>;
 }) {
   const slug = createSlug(input.title);
   const metadata = input.metadata;
   const result = await pool.query(
     `INSERT INTO surveys (
-       slug, title, question, user_id,
+       slug, title, question, user_id, organization_id,
        reference_number, case_number, effective_date, submit_before,
        surveyor_name, surveyor_org, surveyee_individual, surveyee_org,
        purpose, categories
      )
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
      RETURNING ${SURVEY_SELECT_COLUMNS}`,
     [
       slug,
       input.title.trim(),
       input.question.trim(),
       input.userId,
+      input.organizationId ?? null,
       metadata?.referenceNumber ?? null,
       metadata?.caseNumber ?? null,
       metadata?.effectiveDate?.toISOString().slice(0, 10) ?? null,
@@ -174,31 +176,58 @@ export async function createSurvey(input: {
   return mapSurvey(result.rows[0]);
 }
 
-export async function listSurveysForAdmin() {
-  const result = await pool.query(
-    `SELECT
-       s.id,
-       s.slug,
-       s.title,
-       s.question,
-       s.user_id,
-       s.created_at,
-       s.reference_number,
-       s.case_number,
-       s.effective_date,
-       s.submit_before,
-       s.surveyor_name,
-       s.surveyor_org,
-       s.surveyee_individual,
-       s.surveyee_org,
-       s.purpose,
-       s.categories,
-       COUNT(r.id)::int AS response_count
-     FROM surveys s
-     LEFT JOIN survey_responses r ON r.survey_id = s.id
-     GROUP BY s.id
-     ORDER BY s.created_at DESC`,
-  );
+export async function listSurveysForAdmin(organizationId?: string) {
+  const result = organizationId
+    ? await pool.query(
+        `SELECT
+           s.id,
+           s.slug,
+           s.title,
+           s.question,
+           s.user_id,
+           s.created_at,
+           s.reference_number,
+           s.case_number,
+           s.effective_date,
+           s.submit_before,
+           s.surveyor_name,
+           s.surveyor_org,
+           s.surveyee_individual,
+           s.surveyee_org,
+           s.purpose,
+           s.categories,
+           COUNT(r.id)::int AS response_count
+         FROM surveys s
+         LEFT JOIN survey_responses r ON r.survey_id = s.id
+         WHERE (s.organization_id IS NULL OR s.organization_id = $1)
+         GROUP BY s.id
+         ORDER BY s.created_at DESC`,
+        [organizationId],
+      )
+    : await pool.query(
+        `SELECT
+           s.id,
+           s.slug,
+           s.title,
+           s.question,
+           s.user_id,
+           s.created_at,
+           s.reference_number,
+           s.case_number,
+           s.effective_date,
+           s.submit_before,
+           s.surveyor_name,
+           s.surveyor_org,
+           s.surveyee_individual,
+           s.surveyee_org,
+           s.purpose,
+           s.categories,
+           COUNT(r.id)::int AS response_count
+         FROM surveys s
+         LEFT JOIN survey_responses r ON r.survey_id = s.id
+         GROUP BY s.id
+         ORDER BY s.created_at DESC`,
+      );
 
   return result.rows.map((row) => ({
     ...mapSurvey(row),
@@ -222,14 +251,23 @@ export async function getSurveyBySlug(slug: string) {
   return mapSurvey(result.rows[0]);
 }
 
-export async function getSurveyForAdmin(id: string) {
-  const result = await pool.query(
-    `SELECT ${SURVEY_SELECT_COLUMNS}
-     FROM surveys
-     WHERE id = $1
-     LIMIT 1`,
-    [id],
-  );
+export async function getSurveyForAdmin(id: string, organizationId?: string) {
+  const result = organizationId
+    ? await pool.query(
+        `SELECT ${SURVEY_SELECT_COLUMNS}
+         FROM surveys
+         WHERE id = $1
+           AND (organization_id IS NULL OR organization_id = $2)
+         LIMIT 1`,
+        [id, organizationId],
+      )
+    : await pool.query(
+        `SELECT ${SURVEY_SELECT_COLUMNS}
+         FROM surveys
+         WHERE id = $1
+         LIMIT 1`,
+        [id],
+      );
 
   if (!result.rows[0]) {
     return null;

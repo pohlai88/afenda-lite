@@ -11,12 +11,17 @@ import {
 } from "@/components-V2/platform-components/ui/card";
 import { listEvents } from "@/modules/fft/domain/store";
 import { fftHref } from "@/modules/fft/i18n/fft-i18n";
+import { resolveFftOrganizationContext } from "@/features/fft/fft-organization-context";
 
 export const dynamic = "force-dynamic";
 
 /** Sales events — FFT-UI-EVT-LIST datatable DNA composition. */
 export default async function FftEventsPage() {
-  const events = await listEvents({ includeTemplates: false });
+  const org = await resolveFftOrganizationContext();
+  const events = await listEvents({
+    includeTemplates: false,
+    organizationId: org.organizationId,
+  });
 
   return (
     <main className="space-y-6 p-6">

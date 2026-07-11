@@ -32,7 +32,7 @@ alwaysApply: true
 ## Frontend pages gitkeep (2026-07-11)
 
 - Non–pre-login `app/**/page.tsx` were **wiped** (folders may keep `.gitkeep` only).
-- **Reopened:** `organization-admin-post-login` (`/dashboard`, `/dashboard/clients`, `/dashboard/[id]`) — [`doc/frontend/08-operator-phase1-tasks.md`](doc/frontend/08-operator-phase1-tasks.md).
+- **Reopened:** `organization-admin-post-login` (`/dashboard`, `/dashboard/clients`, `/dashboard/[declarationId]`, `/dashboard/users`, `/dashboard/roles`, `/dashboard/permissions`) — [`doc/frontend/08-operator-phase1-tasks.md`](doc/frontend/08-operator-phase1-tasks.md) · [`doc/frontend/14-org-admin-rbac-tenancy-tasks.md`](doc/frontend/14-org-admin-rbac-tenancy-tasks.md).
 - **Reopened:** `join` (`/join`) — [`doc/frontend/10-join-phase2-tasks.md`](doc/frontend/10-join-phase2-tasks.md).
 - **Reopened:** `account` (`/account`, `/account/[path]`) — [`doc/frontend/09-account-phase3-tasks.md`](doc/frontend/09-account-phase3-tasks.md).
 - **Reopened:** `/playground` (local-only quality harness; `PLAYGROUND_ENABLED=true` in `env.config`, never Vercel).

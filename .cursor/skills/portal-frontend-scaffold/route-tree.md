@@ -7,7 +7,7 @@ Generate this tree for greenfield scaffold. Every `page.tsx` is a stub RSC.
 - Root `layout.tsx` / `global-error.tsx` include `<html>` + `<body>`
 - Every `error.tsx` / `global-error.tsx` is `'use client'` (see [stubs.md](stubs.md))
 - Dynamic folders use descriptive names — never `[id]` — names match [boundaries.md](boundaries.md) identity map
-- Nested trade pages receive **all** parent dynamic params in `params` (`locale` + `eventId`)
+- Nested FFT event pages receive parent dynamic params (`eventId`) — P1 routes are locale-free under `/fft/*`
 - `/join` uses `searchParams`, not a dynamic segment
 - Do not add `route.ts` beside any `page.tsx`
 - Do not add `@slot`, `(.)` interceptors, `template.tsx`, or `default.tsx` in v1
@@ -95,10 +95,17 @@ app/
         page.tsx
         loading.tsx
         not-found.tsx
+    roles/
+      page.tsx
+      loading.tsx
+    permissions/
+      page.tsx
+      loading.tsx
     [declarationId]/
       page.tsx
       loading.tsx
       not-found.tsx
+      # brand: DeclarationId — never overloaded [id]
 
   account/
     layout.tsx
@@ -110,37 +117,39 @@ app/
       loading.tsx
       not-found.tsx
 
-  trade/
+  fft/
     page.tsx
-    [locale]/
-      layout.tsx
+    layout.tsx
+    events/
+      page.tsx
+      [eventId]/
+        order/
+          page.tsx
+    my-orders/
+      page.tsx
+    admin/
       events/
         page.tsx
+        new/
+          page.tsx
         [eventId]/
-          order/
+          setup/
             page.tsx
-      my-orders/
+          allocation/
+            page.tsx
+          deposits/
+            page.tsx
+          imports/
+            page.tsx
+          pickup/
+            page.tsx
+      erp-sync/
         page.tsx
-      admin/
-        events/
-          page.tsx
-          new/
-            page.tsx
-          [eventId]/
-            setup/
-              page.tsx
-            allocation/
-              page.tsx
-            deposits/
-              page.tsx
-            imports/
-              page.tsx
-            pickup/
-              page.tsx
-        erp-sync/
-          page.tsx
-        rbac/
-          page.tsx
+      rbac/
+        page.tsx
+    [locale]/
+      [[...path]]/
+        page.tsx   # legacy redirect shim only — not product UI
 
   playground/
     page.tsx
@@ -163,7 +172,7 @@ app/
     client.ts
     declarations.ts
     surveys.ts
-    trade.ts
+    fft.ts
 ```
 
 ## URL checklist
@@ -188,22 +197,25 @@ app/
 | `/dashboard/clients` | `app/dashboard/clients/page.tsx` |
 | `/dashboard/users` | `app/dashboard/users/page.tsx` |
 | `/dashboard/users/:userId` | `app/dashboard/users/[userId]/page.tsx` |
+| `/dashboard/roles` | `app/dashboard/roles/page.tsx` |
+| `/dashboard/permissions` | `app/dashboard/permissions/page.tsx` |
 | `/dashboard/:declarationId` | `app/dashboard/[declarationId]/page.tsx` |
 | `/account` | `app/account/page.tsx` |
 | `/account/:path` | `app/account/[path]/page.tsx` |
 | `/fft` | `app/fft/page.tsx` |
-| `/fft/:locale/events` | `app/fft/[locale]/events/page.tsx` |
-| `/fft/:locale/events/:eventId/order` | `…/events/[eventId]/order/page.tsx` |
-| `/fft/:locale/my-orders` | `…/my-orders/page.tsx` |
-| `/fft/:locale/admin/events` | `…/admin/events/page.tsx` |
-| `/fft/:locale/admin/events/new` | `…/admin/events/new/page.tsx` |
-| `/fft/:locale/admin/events/:eventId/setup` | `…/[eventId]/setup/page.tsx` |
-| `/fft/:locale/admin/events/:eventId/allocation` | `…/allocation/page.tsx` |
-| `/fft/:locale/admin/events/:eventId/deposits` | `…/deposits/page.tsx` |
-| `/fft/:locale/admin/events/:eventId/imports` | `…/imports/page.tsx` |
-| `/fft/:locale/admin/events/:eventId/pickup` | `…/pickup/page.tsx` |
-| `/fft/:locale/admin/erp-sync` | `…/admin/erp-sync/page.tsx` |
-| `/fft/:locale/admin/rbac` | `…/admin/rbac/page.tsx` |
+| `/fft/events` | `app/fft/events/page.tsx` |
+| `/fft/events/:eventId/order` | `app/fft/events/[eventId]/order/page.tsx` |
+| `/fft/my-orders` | `app/fft/my-orders/page.tsx` |
+| `/fft/admin/events` | `app/fft/admin/events/page.tsx` |
+| `/fft/admin/events/new` | `app/fft/admin/events/new/page.tsx` |
+| `/fft/admin/events/:eventId/setup` | `app/fft/admin/events/[eventId]/setup/page.tsx` |
+| `/fft/admin/events/:eventId/allocation` | `…/allocation/page.tsx` |
+| `/fft/admin/events/:eventId/deposits` | `…/deposits/page.tsx` |
+| `/fft/admin/events/:eventId/imports` | `…/imports/page.tsx` |
+| `/fft/admin/events/:eventId/pickup` | `…/pickup/page.tsx` |
+| `/fft/admin/erp-sync` | `app/fft/admin/erp-sync/page.tsx` |
+| `/fft/admin/rbac` | `app/fft/admin/rbac/page.tsx` |
+| `/fft/:locale/*` | `app/fft/[locale]/[[...path]]/page.tsx` (redirect shim) |
 | `/playground` | `app/playground/page.tsx` |
 | `/playground/:screenId` | `app/playground/[screenId]/page.tsx` |
 | `/playground/coverage` | `app/playground/coverage/page.tsx` |

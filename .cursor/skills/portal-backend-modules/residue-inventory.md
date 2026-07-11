@@ -70,4 +70,12 @@ Do **not** recreate `lib/` for architecture. New UI → `features/*` or `compone
 
 ## Optional next (needs approve)
 
-None for residue. Product phases (`/client`, FFT P3 flags, SaaS billing/2FA) stay out of this lane.
+- [ ] Refresh reliance/route-coverage snapshots after surface-entry-points edits (`npm run export:reliance-mapping` · `export:route-coverage`) when governance checks fail
+- Product phases (`/client` workspace restore, FFT P3 flags, SaaS billing/2FA) stay out of this lane
+
+## Closed this pass (2026-07-12)
+
+- Overloaded `app/dashboard/[id]` → `[declarationId]`
+- Adapter ERP tests under `app/actions/`
+- Studio shells flattened under `features/organization-admin/`
+- `surface-entry-points` remapped off deleted `lib/*` / `components/*`

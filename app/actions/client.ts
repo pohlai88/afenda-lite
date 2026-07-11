@@ -46,6 +46,7 @@ import {
 import { getSurveyBySlug, getSurveyForAdmin } from "@/modules/declarations/domain/surveys";
 import { submitClientDeclaration } from "@/modules/declarations/domain/survey-submission";
 import { formString } from "@/modules/declarations/server-actions/form-data";
+import { requirePlatformPermission } from "@/modules/identity/domain/platform-rbac-access";
 
 export async function saveClientOnboardingAction(formData: FormData) {
   // Incomplete clients must reach this action — do not require onboarding.
@@ -272,7 +273,15 @@ export async function issueClientInviteAction(formData: FormData) {
       const { email, fullName, surveyId, dueDate: dueDateRaw } = parsed.data;
       const dueDate = dueDateRaw ? new Date(dueDateRaw) : undefined;
 
-      const survey = await getSurveyForAdmin(surveyId);
+      const { organizationId, check } = await requirePlatformPermission({
+        userId: session.user.id,
+        code: "clients.invite",
+        isNeonAdmin: true,
+      });
+      if (!check.allowed) {
+        return { error: portalCopy.accessDenied.description };
+      }
+      const survey = await getSurveyForAdmin(surveyId, organizationId);
       if (!survey) {
         return { error: portalCopy.errors.declarationNotFound };
       }
@@ -284,6 +293,7 @@ export async function issueClientInviteAction(formData: FormData) {
         surveyId: survey.id,
         dueDate:
           dueDate && !Number.isNaN(dueDate.getTime()) ? dueDate : undefined,
+        organizationId,
       });
 
       let emailSent = false;

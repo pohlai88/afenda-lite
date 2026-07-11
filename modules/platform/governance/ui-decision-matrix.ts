@@ -89,10 +89,10 @@ export const UI_SURFACE_REGISTRY: UiSurfaceMeta[] = [
   // Admin (6)
   { surfaceId: "admin-dashboard", domain: "admin", route: "/dashboard", currentComponent: "PortalDeclarationsDatatable" },
   { surfaceId: "admin-clients", domain: "admin", route: "/dashboard/clients", currentComponent: "PortalClientInvitationsTable" },
-  { surfaceId: "admin-declaration-detail", domain: "admin", route: "/dashboard/[id]", currentComponent: "operator-declaration-detail (portal-views)" },
-  { surfaceId: "admin-create-declaration", domain: "admin", route: "/dashboard/[id] (create)", currentComponent: "Inline create form" },
+  { surfaceId: "admin-declaration-detail", domain: "admin", route: "/dashboard/[declarationId]", currentComponent: "organization-admin-declaration-detail (portal-views)" },
+  { surfaceId: "admin-create-declaration", domain: "admin", route: "/dashboard/[declarationId] (create)", currentComponent: "Inline create form" },
   { surfaceId: "admin-issue-invite", domain: "admin", route: "/dashboard/clients (invite)", currentComponent: "IssueClientInviteForm" },
-  { surfaceId: "admin-access-share", domain: "admin", route: "/dashboard/[id] (share)", currentComponent: "PortalAccessSharePanel" },
+  { surfaceId: "admin-access-share", domain: "admin", route: "/dashboard/[declarationId] (share)", currentComponent: "PortalAccessSharePanel" },
   // Shared (12)
   { surfaceId: "shell-auth", domain: "shared", route: "/auth/* + /join", currentComponent: "StudioAuthShell + PortalAuthNeonView" },
   { surfaceId: "shell-customer", domain: "shared", route: "PortalCustomerShell", currentComponent: "PortalCustomerShell" },

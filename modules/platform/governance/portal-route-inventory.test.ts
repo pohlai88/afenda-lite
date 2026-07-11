@@ -10,15 +10,17 @@ describe("portal-route-inventory", () => {
   it("converts page files to route patterns and strips route groups", () => {
     expect(filePathToRoutePattern("app/page.tsx")).toBe("/");
     expect(filePathToRoutePattern("app/dashboard/page.tsx")).toBe("/dashboard");
-    expect(filePathToRoutePattern("app/dashboard/[id]/page.tsx")).toBe(
-      "/dashboard/[id]",
+    expect(filePathToRoutePattern("app/dashboard/[declarationId]/page.tsx")).toBe(
+      "/dashboard/[declarationId]",
     );
     expect(
-      filePathToRoutePattern("app/client/(workspace)/declare/[id]/page.tsx"),
-    ).toBe("/client/declare/[id]");
-    expect(
-      filePathToRoutePattern("app/fft/[locale]/admin/events/page.tsx"),
-    ).toBe("/fft/[locale]/admin/events");
+      filePathToRoutePattern(
+        "app/client/(workspace)/declare/[assignmentId]/page.tsx",
+      ),
+    ).toBe("/client/declare/[assignmentId]");
+    expect(filePathToRoutePattern("app/fft/admin/events/page.tsx")).toBe(
+      "/fft/admin/events",
+    );
   });
 
   it("tags journey phases from route patterns", () => {
@@ -27,21 +29,31 @@ describe("portal-route-inventory", () => {
     expect(tagRoutePhase("/join")).toBe("join");
     expect(tagRoutePhase("/client/onboarding")).toBe("onboarding");
     expect(tagRoutePhase("/client")).toBe("client-post-login");
-    expect(tagRoutePhase("/client/declare/[id]")).toBe("client-post-login");
+    expect(tagRoutePhase("/client/declare/[assignmentId]")).toBe(
+      "client-post-login",
+    );
     expect(tagRoutePhase("/dashboard")).toBe("operator-post-login");
-    expect(tagRoutePhase("/fft/[locale]/events")).toBe("fft");
+    expect(tagRoutePhase("/fft/events")).toBe("fft");
   });
 
-  it("scans product pages and excludes playground meta routes", () => {
+  it("scans product pages and excludes playground + FFT locale shim", () => {
     const inventory = scanAppPageRoutes();
 
     expect(inventory.length).toBeGreaterThan(20);
-    expect(inventory.every((entry) => !entry.file.startsWith("app/playground/"))).toBe(
-      true,
-    );
+    expect(
+      inventory.every((entry) => !entry.file.startsWith("app/playground/")),
+    ).toBe(true);
+    expect(
+      inventory.every((entry) => !entry.file.startsWith("app/fft/[locale]/")),
+    ).toBe(true);
     expect(inventory.some((entry) => entry.file === "app/page.tsx")).toBe(true);
     expect(
-      inventory.some((entry) => entry.file === "app/fft/[locale]/events/page.tsx"),
+      inventory.some((entry) => entry.file === "app/fft/admin/events/page.tsx"),
+    ).toBe(true);
+    expect(
+      inventory.some(
+        (entry) => entry.file === "app/dashboard/[declarationId]/page.tsx",
+      ),
     ).toBe(true);
   });
 });

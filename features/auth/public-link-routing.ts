@@ -23,7 +23,7 @@ export const publicLinkPageRobots = { index: false, follow: false } as const;
  * Session-aware landing for S5 open (`/survey/[slug]`) and secure (`/f/[token]`) links.
  *
  * Authenticated clients without an active assignment fall back to `/client` (by design).
- * Operators route to `/dashboard/[surveyId]`. Unauthenticated users get sign-in + `returnTo`.
+ * Operators route to `/dashboard/[declarationId]`. Unauthenticated users get sign-in + `returnTo`.
  *
  * **Not** for S6 legacy `/invite/[token]` — use `legacy-invite-entry.ts`.
  */

@@ -20,8 +20,8 @@ Pick exactly one:
 | `pre-login`           | `/` `/auth/*` `/org/login` `/client/login` `/invite/[token]` `/f/[token]` `/survey/[slug]` |
 | `join`                | `/join?invitationId=`                                                                      |
 | `onboarding`          | `/client/onboarding`                                                                       |
-| `client-post-login`   | `/client` `/client/profile` `/client/declare/[id]`                                         |
-| `organization-admin-post-login` | `/dashboard` `/dashboard/clients` `/dashboard/[id]` |
+| `client-post-login`   | `/client` `/client/profile` `/client/declare/[assignmentId]`                                         |
+| `organization-admin-post-login` | `/dashboard` `/dashboard/clients` `/dashboard/[declarationId]` `/dashboard/users` `/dashboard/roles` `/dashboard/permissions` |
 | `fft`           | `/fft/*` (Feed Farm Trade **module**) — AdminCN + P1 MVP claimable; **P2 polish AC-01..06 done**; **confirm gate-register before P3 flag work** |
 
 If the task spans more than one **product** phase, stop and ask the user which one to take first.
@@ -43,7 +43,7 @@ For `organization-admin-post-login`, also run [docs/architecture/admincn-fronten
 Before writing a single file, confirm these three layers are covered:
 
 **Frontend**
-Route → `features/auth/entry/*` or `lib/pages/*` → `features/` or `portal-views/` → `loading.tsx` present
+Route → `features/auth/entry/*` or `features/organization-admin/*` / `features/playground/*` runners → `features/` or `portal-views/` → `loading.tsx` present
 
 **Backend**
 `app/actions/*.ts` → Zod schema in `modules/*/schemas/` → `requireSession` guard → `modules/*/domain/*.ts` → Neon

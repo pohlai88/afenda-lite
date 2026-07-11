@@ -6,7 +6,7 @@
 
 ## Goal
 
-Restore `/dashboard`, `/dashboard/clients`, `/dashboard/[id]` with real domain data. Keep `loadOrganizationAdmin*` loaders. UI in `features/organization-admin/` + `components-V2/.../portal-views/organization-admin-*`. Do not recreate root `components/`.
+Restore `/dashboard`, `/dashboard/clients`, `/dashboard/[declarationId]` with real domain data. Keep `loadOrganizationAdmin*` loaders. UI in `features/organization-admin/` + `components-V2/.../portal-views/organization-admin-*`. Do not recreate root `components/`.
 
 **Also reopened:** local `/playground` harness (dev-only) for page quality review.
 
@@ -48,7 +48,7 @@ Restore `/dashboard`, `/dashboard/clients`, `/dashboard/[id]` with real domain d
 
 ### Slice 4 — Declaration detail
 
-- Restore `app/dashboard/[id]/page.tsx` + `loading.tsx`
+- Restore `app/dashboard/[declarationId]/page.tsx` + `loading.tsx`
 - Migrate detail leaf closure into `features/organization-admin/` (manage / share / danger / workspace + transitive widgets)
 - Retarget portal-views imports; keep `runOrganizationAdminDeclarationDetailPage` or thin page calling `load*` + view
 

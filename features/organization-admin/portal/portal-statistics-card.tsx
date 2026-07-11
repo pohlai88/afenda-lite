@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { StudioStatisticsCard } from "@/features/organization-admin/shadcn-studio/blocks/statistics-card-03";
+import { StudioStatisticsCard } from "@/features/organization-admin/statistics-card";
 import { cn } from "@/modules/platform/utils";
 
 /** statistics-component-03 — portal adapter for Studio KPI card. */

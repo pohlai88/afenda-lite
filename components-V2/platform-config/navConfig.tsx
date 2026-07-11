@@ -68,9 +68,12 @@ export const navItems: NavItem[] = [
             href: '/dashboard/users',
           },
           {
-            label: 'View',
-            href: '/dashboard/users/user-001',
-            activePath: '/dashboard/users/',
+            label: 'Roles',
+            href: '/dashboard/roles',
+          },
+          {
+            label: 'Permissions',
+            href: '/dashboard/permissions',
           },
         ],
       },

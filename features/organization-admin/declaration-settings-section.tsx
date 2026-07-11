@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { StudioFormLayout02Section } from "@/features/organization-admin/shadcn-studio/blocks/form-layout-02/form-layout-section";
+import { StudioFormLayout02Section } from "@/features/organization-admin/form-layout-section";
 import { Separator } from "@/components-V2/platform-components/ui/separator";
 
 /** form-layout-02 — portal adapter for declaration workspace settings sections. */

@@ -22,6 +22,9 @@ Do not pass raw `string` across domain boundaries when a brand exists.
 | `SurveySlug` | `slugSchema` | `[slug]` | `/survey/[slug]` |
 | `InvitationId` | `uuidSchema` | `invitationId` (searchParams) | `/join?invitationId=` |
 | `UserId` | `userIdSchema` (`modules/identity/schemas/users.ts`) | `[userId]` | `/dashboard/users/[userId]` — Neon Auth user directory |
+| `OrganizationId` | `organizationIdSchema` (`modules/identity/schemas/platform-rbac.ts`) | — | Neon Auth organization id (tenant) |
+| `PlatformRoleId` | `platformRoleIdSchema` | — | Platform RBAC role |
+| `PermissionCode` | `permissionCodeSchema` | — | Platform permission catalog code |
 
 **Construction pattern:**
 
@@ -57,6 +60,8 @@ function asDeclarationId(id: string): DeclarationId {
 | `modules/declarations/schemas/common.ts` | Re-exports platform + declarations-only | `surveyAnswersSchema` (+ re-exports) |
 | `modules/identity/schemas/auth.ts` | Sign-in boundary | `signInSchema` |
 | `modules/identity/schemas/users.ts` | Organization-admin users | `userIdSchema`, `UserId`, create/import/update/role/ban/bulk/password schemas |
+| `modules/identity/schemas/platform-rbac.ts` | Platform RBAC | `OrganizationId`, `PlatformRoleId`, `PermissionCode`, create/update/assign schemas |
+| `modules/platform/schemas/action-result.ts` | Shared Action contract | `ActionResult<T>`, `actionOk`, `actionFail` (doc/api/03-error-contract) |
 | `modules/declarations/schemas/client.ts` | Onboarding, declare submit/draft, invites, deletes | `clientOnboardingSchema`, `submitClientDeclarationSchema`, `saveClientDeclarationDraftSchema`, `issueClientInviteSchema`, `removeClientRegistrationSchema`, `deleteClientAssignmentSchema` |
 | `modules/declarations/schemas/surveys.ts` | Declarations (surveys) CRUD + public submit | `surveyMetadataFormSchema`, `updateSurveySchema`, `deleteSurveySchema`, `submitSurveyResponseSchema`, param schemas |
 | `modules/declarations/schemas/declarations.ts` | Evidence registration | `registerEvidenceSchema` |

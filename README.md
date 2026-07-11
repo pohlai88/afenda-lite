@@ -122,13 +122,13 @@ Optional E2E: `E2E_SURVEY_SLUG` only if you skip the operator-create → public 
 | `/org/login` | Operator | Organization sign in |
 | `/dashboard` | Operator | Manage declarations |
 | `/dashboard/clients` | Operator | Invite clients |
-| `/dashboard/[id]` | Operator | View submissions |
+| `/dashboard/[declarationId]` | Operator | View submissions |
 | `/fft/*` | Operator (entitled) | Feed Farm Trade module |
 | `/survey/[slug]` | Public | Open declaration link |
 | `/f/[token]` | Public | Secure declaration link |
 | `/client` | Client | Assigned declarations |
 | `/client/onboarding` | Client | Declarant profile setup |
-| `/client/declare/[id]` | Client | Complete assignment |
+| `/client/declare/[assignmentId]` | Client | Complete assignment |
 | `/invite/[token]` | Public | Legacy invite URL → client sign-in |
 
 **Local developer only:** `/playground` iframes routes for UI review (`PLAYGROUND_ENABLED` in `env.config`). Not a product entry — see [AGENTS.md](./AGENTS.md).
