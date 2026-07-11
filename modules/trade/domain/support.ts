@@ -34,6 +34,12 @@ export function calculateFinalSupport(
 export function canCompleteOrder(
   order: Pick<HotSalesOrder, "fulfilledQuantity" | "status">,
 ): { allowed: boolean; reason?: string } {
+  if (order.status === "cancelled") {
+    return { allowed: false, reason: "order_cancelled" };
+  }
+  if (order.status === "completed") {
+    return { allowed: false, reason: "order_already_completed" };
+  }
   if (
     order.fulfilledQuantity === null ||
     order.fulfilledQuantity === undefined ||
@@ -43,9 +49,6 @@ export function canCompleteOrder(
   }
   if (order.fulfilledQuantity < 0) {
     return { allowed: false, reason: "negative_fulfilled_quantity" };
-  }
-  if (order.status === "cancelled") {
-    return { allowed: false, reason: "order_cancelled" };
   }
   return { allowed: true };
 }

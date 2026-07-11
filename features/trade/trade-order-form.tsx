@@ -7,10 +7,13 @@ import { getTradeActionError } from "@/modules/trade/domain/trade-action-result"
 import type { HotSalesFieldDef, HotSalesProduct } from "@/modules/trade/domain/types";
 import { Button } from "@/components-V2/platform-components/ui/button";
 import { Label } from "@/components-V2/platform-components/ui/label";
+import {
+  TRADE_NATIVE_FIELD_CLASS,
+  TRADE_NATIVE_SELECT_CLASS,
+  TRADE_NATIVE_TEXTAREA_CLASS,
+  TradeFormCheckbox,
+} from "@/features/trade/trade-form-controls";
 import { tradeHref, type TradeLocale } from "@/modules/trade/i18n/trade";
-
-const fieldClassName =
-  "border-input bg-background w-full rounded-md border px-3 py-2 text-sm";
 
 export function TradeOrderForm({
   locale,
@@ -18,16 +21,31 @@ export function TradeOrderForm({
   products,
   fieldDefs,
   depositRequired,
+  eventStatus = "open",
 }: {
   locale: TradeLocale;
   eventId: string;
   products: HotSalesProduct[];
   fieldDefs: HotSalesFieldDef[];
   depositRequired: boolean;
+  eventStatus?: string;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const windowOpen = eventStatus === "open";
+
+  if (!windowOpen) {
+    return (
+      <p
+        className="text-muted-foreground rounded-lg border p-4 text-sm"
+        data-testid="trade-order-window-closed"
+      >
+        Orders can only be submitted while the event window is open (status:{" "}
+        {eventStatus}).
+      </p>
+    );
+  }
 
   return (
     <form
@@ -52,18 +70,22 @@ export function TradeOrderForm({
     >
       <div className="space-y-2">
         <Label htmlFor="customerName">Customer name</Label>
-        {/* Native inputs — Base UI Input can omit names from FormData. */}
+        {/* Native + TRADE_NATIVE_* — Base UI Input can omit names from FormData. */}
         <input
           id="customerName"
           name="customerName"
           required
-          className={fieldClassName}
+          className={TRADE_NATIVE_FIELD_CLASS}
           data-testid="trade-order-customer-name"
         />
       </div>
       <div className="space-y-2">
         <Label htmlFor="customerCode">Customer code</Label>
-        <input id="customerCode" name="customerCode" className={fieldClassName} />
+        <input
+          id="customerCode"
+          name="customerCode"
+          className={TRADE_NATIVE_FIELD_CLASS}
+        />
       </div>
       <div className="space-y-2">
         <Label htmlFor="productId">Product</Label>
@@ -71,7 +93,7 @@ export function TradeOrderForm({
           id="productId"
           name="productId"
           required
-          className={fieldClassName}
+          className={TRADE_NATIVE_SELECT_CLASS}
           data-testid="trade-order-product"
         >
           <option value="">Select product</option>
@@ -90,7 +112,7 @@ export function TradeOrderForm({
           type="number"
           min={1}
           required
-          className={fieldClassName}
+          className={TRADE_NATIVE_FIELD_CLASS}
           data-testid="trade-order-qty"
         />
       </div>
@@ -100,7 +122,7 @@ export function TradeOrderForm({
           <select
             id="depositStatus"
             name="depositStatus"
-            className={fieldClassName}
+            className={TRADE_NATIVE_SELECT_CLASS}
             defaultValue="pending"
           >
             <option value="pending">pending</option>
@@ -121,14 +143,14 @@ export function TradeOrderForm({
               id={`attr_${def.fieldKey}`}
               name={`attr_${def.fieldKey}`}
               required={def.required}
-              className={fieldClassName}
+              className={TRADE_NATIVE_TEXTAREA_CLASS}
               data-testid={`trade-order-attr-${def.fieldKey}`}
             />
           ) : def.fieldType === "select" ? (
             <select
               id={`attr_${def.fieldKey}`}
               name={`attr_${def.fieldKey}`}
-              className={fieldClassName}
+              className={TRADE_NATIVE_SELECT_CLASS}
               required={def.required}
               data-testid={`trade-order-attr-${def.fieldKey}`}
             >
@@ -140,10 +162,9 @@ export function TradeOrderForm({
               ))}
             </select>
           ) : def.fieldType === "boolean" ? (
-            <input
+            <TradeFormCheckbox
               id={`attr_${def.fieldKey}`}
               name={`attr_${def.fieldKey}`}
-              type="checkbox"
               value="true"
               data-testid={`trade-order-attr-${def.fieldKey}`}
             />
@@ -161,7 +182,7 @@ export function TradeOrderForm({
                       : "text"
               }
               required={def.required}
-              className={fieldClassName}
+              className={TRADE_NATIVE_FIELD_CLASS}
               data-testid={`trade-order-attr-${def.fieldKey}`}
             />
           )}
@@ -169,7 +190,12 @@ export function TradeOrderForm({
       ))}
       <div className="space-y-2">
         <Label htmlFor="remarks">Remarks</Label>
-        <textarea id="remarks" name="remarks" rows={3} className={fieldClassName} />
+        <textarea
+          id="remarks"
+          name="remarks"
+          rows={3}
+          className={TRADE_NATIVE_TEXTAREA_CLASS}
+        />
       </div>
       <p className="text-muted-foreground text-xs">
         Deposit status is tracking only — not finance settlement.

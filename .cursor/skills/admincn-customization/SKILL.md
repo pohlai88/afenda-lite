@@ -8,6 +8,7 @@ description: Customizes the landed AdminCN shell in components-V2 via themeConfi
 **SSOT playbook:** [docs/architecture/admincn-customization.md](../../../docs/architecture/admincn-customization.md)  
 **Frontend preflight (before new screens):** [docs/architecture/admincn-frontend-preflight.md](../../../docs/architecture/admincn-frontend-preflight.md)  
 **Alignment:** [doc/frontend/06-admincn-alignment.md](../../../doc/frontend/06-admincn-alignment.md)  
+**UI registry (compulsory IDs):** [../feed-farm-trade/ui-registry.md](../feed-farm-trade/ui-registry.md) · [../feed-farm-trade/ui-registry.json](../feed-farm-trade/ui-registry.json) · rule [`.cursor/rules/fft-ui-registry.mdc`](../../rules/fft-ui-registry.mdc)  
 **Product home:** `components-V2/`  
 **Auth island:** `features/auth/` — preserve `app/auth-surface.css` + route-scoped `app/auth/neon-auth-ui.css`
 
@@ -15,7 +16,9 @@ description: Customizes the landed AdminCN shell in components-V2 via themeConfi
 
 Studio MCP does **not** install the AdminCN template as one unit. It exposes **blocks** under `dashboard-and-application` (shells, charts, widgets, account-settings, form-layout, empty-state, …). The full template already lives in `components-V2/`.
 
-Do **not** wire more demo views into product routes while freeze holds. Refine existing surfaces only.
+**Every AdminCN primitive and block must appear in `ui-registry.json`** as `ACN-UI-*` or `ACN-BLK-*`. Agents must not invent IDs. Product FFT surfaces use `FFT-UI-*`. See registry HITL before creating or wiring UI.
+
+Do **not** wire more demo views into product routes while freeze holds. Refine existing surfaces only. Do **not** import `platform-views` from `features/trade` — adapt via HITL product `FFT-UI-*` that cites `studioSource`.
 
 ## Shared shell modules
 
@@ -74,15 +77,18 @@ Product orientation: ThemeConfig + live Theme Customizer; presets for mode, font
 - Restoring Feed Farm Trade **product UI** (stubs OK; no `TradeShell` / locale switcher)  
 - Replacing Neon credential paths with Studio account-settings blocks  
 - Mixing portal auth tokens into AdminCN `:root`  
+- Inventing UI IDs or agent-editing [`ui-registry.json`](../feed-farm-trade/ui-registry.json) to pass Vitest  
+- Importing `@/components-V2/platform-views/**` from `features/trade` without a HITL `FFT-UI-*` wrap  
 
 ## Refine checklist (per page)
 
 Full gate: [admincn-frontend-preflight.md](../../../docs/architecture/admincn-frontend-preflight.md).
 
-1. Brand (`themePreset` / tokens) — verify login island unchanged  
-2. Nav — real destinations only; module entitlements correct  
-3. Edit one `platform-views` composition (product → `portal-views/`)  
-4. Swap fake-db for that page  
-5. Sync governance (`surface-entry-points`, `ui-decision-matrix`, reliance registry)  
-6. Optional: one MCP block → adapt into `portal-views/`  
-7. Verify: relevant unit tests + `npx tsc --noEmit` on touched paths  
+1. Confirm target `ACN-UI-*` / `ACN-BLK-*` / `FFT-UI-*` IDs in [ui-registry.json](../feed-farm-trade/ui-registry.json) — **STOP** if missing (human HITL)  
+2. Brand (`themePreset` / tokens) — verify login island unchanged  
+3. Nav — real destinations only; module entitlements correct  
+4. Edit one `platform-views` composition (product → `portal-views/` or FFT `features/trade` via product ID)  
+5. Swap fake-db for that page  
+6. Sync governance (`surface-entry-points`, `ui-decision-matrix`, reliance registry, **ui-registry**)  
+7. Optional: one MCP block → adapt into `portal-views/` or FFT feature (new `FFT-UI-*` if FFT)  
+8. Verify: `npm run test:unit -- features/trade/ui-registry` + relevant unit tests + `npx tsc --noEmit` on touched paths  

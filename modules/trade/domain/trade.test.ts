@@ -6,9 +6,12 @@ import {
 } from "@/modules/trade/domain/allocation";
 import {
   assertEventFieldEditable,
+  canActivateScheduledEvent,
+  canCloseEvent,
+  canOpenEvent,
   canSubmitOrder,
 } from "@/modules/trade/domain/events";
-import { validateOrderAttrs } from "@/modules/trade/domain/fields";
+import { validateOrderAttrs, sanitizeFieldKey } from "@/modules/trade/domain/fields";
 import type {
   AllocationInputOrder,
   HotSalesFieldDef,
@@ -143,6 +146,82 @@ describe("canSubmitOrder", () => {
       canSubmitOrder(base, new Date("2026-07-09T14:00:00Z")).allowed,
     ).toBe(false);
   });
+
+  it("AC-ORD-01..04: blocks before window start", () => {
+    expect(
+      canSubmitOrder(base, new Date("2026-07-09T07:00:00Z")).reason,
+    ).toBe("event_not_started");
+  });
+
+  it("AC-ORD-01..04: blocks when event not open", () => {
+    expect(
+      canSubmitOrder(
+        { ...base, status: "draft" },
+        new Date("2026-07-09T10:00:00Z"),
+      ).reason,
+    ).toBe("event_not_open");
+  });
+});
+
+describe("canOpenEvent / canCloseEvent (AC-EVT-01..04)", () => {
+  const window = {
+    opensAt: new Date("2026-07-09T08:00:00Z"),
+    closesAt: new Date("2026-07-09T13:30:00Z"),
+  };
+
+  it("allows open from draft with valid window", () => {
+    expect(canOpenEvent({ status: "draft", ...window }).allowed).toBe(true);
+  });
+
+  it("rejects open from open status", () => {
+    expect(canOpenEvent({ status: "open", ...window }).allowed).toBe(false);
+  });
+
+  it("rejects invalid window", () => {
+    expect(
+      canOpenEvent({
+        status: "draft",
+        opensAt: window.closesAt,
+        closesAt: window.opensAt,
+      }).reason,
+    ).toBe("invalid_window");
+  });
+
+  it("allows close only when open", () => {
+    expect(canCloseEvent({ status: "open" }).allowed).toBe(true);
+    expect(canCloseEvent({ status: "draft" }).allowed).toBe(false);
+  });
+});
+
+describe("canActivateScheduledEvent (AC-EVT-05 / G7)", () => {
+  const opensAt = new Date("2026-07-09T08:00:00Z");
+
+  it("allows activate when scheduled and window started", () => {
+    expect(
+      canActivateScheduledEvent(
+        { status: "scheduled", opensAt },
+        new Date("2026-07-09T08:00:00Z"),
+      ).allowed,
+    ).toBe(true);
+  });
+
+  it("rejects non-scheduled status", () => {
+    expect(
+      canActivateScheduledEvent(
+        { status: "draft", opensAt },
+        new Date("2026-07-09T09:00:00Z"),
+      ).reason,
+    ).toBe("not_scheduled");
+  });
+
+  it("rejects before opensAt", () => {
+    expect(
+      canActivateScheduledEvent(
+        { status: "scheduled", opensAt },
+        new Date("2026-07-09T07:59:59Z"),
+      ).reason,
+    ).toBe("window_not_started");
+  });
 });
 
 describe("assertEventFieldEditable", () => {
@@ -182,11 +261,27 @@ describe("assertEventFieldEditable", () => {
     ).toBe(false);
   });
 
+  it("AC-SUP-01 / G2: final confirmed qty stays editable after close", () => {
+    const result = assertEventFieldEditable(
+      { status: "closed" },
+      "finalConfirmedQuantity",
+    );
+    expect(result.allowed).toBe(true);
+    expect(result.reason).toBe("audit_required");
+  });
+
   it("locks required custom fields while open", () => {
     expect(
       assertEventFieldEditable({ status: "open" }, "requiredCustomFields")
         .allowed,
     ).toBe(false);
+  });
+
+  it("AC-FLD-01 / G5: required custom fields locked after close", () => {
+    expect(
+      assertEventFieldEditable({ status: "closed" }, "requiredCustomFields")
+        .reason,
+    ).toBe("locked_after_close");
   });
 
   it("locks support after close", () => {
@@ -196,7 +291,7 @@ describe("assertEventFieldEditable", () => {
   });
 });
 
-describe("validateManualAllocationQuantity", () => {
+describe("validateManualAllocationQuantity (AC-ALC-03 / G9)", () => {
   it("rejects oversell beyond remaining supply", () => {
     const result = validateManualAllocationQuantity({
       confirmedQuantity: 200,
@@ -216,6 +311,17 @@ describe("validateManualAllocationQuantity", () => {
       otherOrdersAllocatedOnProduct: 400,
     });
     expect(result.valid).toBe(true);
+  });
+
+  it("rejects negative quantity", () => {
+    const result = validateManualAllocationQuantity({
+      confirmedQuantity: -1,
+      productFinalSupply: 500,
+      productAlreadyAllocated: 0,
+      otherOrdersAllocatedOnProduct: 0,
+    });
+    expect(result.valid).toBe(false);
+    expect(result.reason).toBe("negative_quantity");
   });
 });
 
@@ -248,6 +354,18 @@ describe("validateOrderAttrs", () => {
   });
 });
 
+describe("sanitizeFieldKey (AC-FLD-01 / G5)", () => {
+  it("accepts snake_case keys", () => {
+    expect(sanitizeFieldKey("Farm_Code")).toBe("farm_code");
+  });
+
+  it("rejects invalid keys", () => {
+    expect(sanitizeFieldKey("1bad")).toBeNull();
+    expect(sanitizeFieldKey("has-dash")).toBeNull();
+    expect(sanitizeFieldKey("")).toBeNull();
+  });
+});
+
 describe("support", () => {
   it("calculates estimated support from confirmed qty", () => {
     expect(calculateEstimatedSupport(300, 100_000)).toBe(30_000_000);
@@ -263,6 +381,21 @@ describe("support", () => {
     expect(
       canCompleteOrder({ fulfilledQuantity: 25, status: "full" }).allowed,
     ).toBe(true);
+  });
+
+  it("AC-ORD-05 / G4: rejects cancelled or already completed", () => {
+    expect(
+      canCompleteOrder({ fulfilledQuantity: 10, status: "cancelled" }).reason,
+    ).toBe("order_cancelled");
+    expect(
+      canCompleteOrder({ fulfilledQuantity: 10, status: "completed" }).reason,
+    ).toBe("order_already_completed");
+  });
+
+  it("AC-ORD-05 / G4: rejects negative fulfilled qty", () => {
+    expect(
+      canCompleteOrder({ fulfilledQuantity: -1, status: "full" }).reason,
+    ).toBe("negative_fulfilled_quantity");
   });
 });
 
@@ -289,6 +422,15 @@ describe("transfer (G3)", () => {
         { transferAllowed: true },
       ).reason,
     ).toBe("order_not_transferable");
+  });
+
+  it("AC-XFR-01: denies when a transfer is already pending", () => {
+    expect(
+      canTransferOrder(
+        { status: "full", transferStatus: "requested" },
+        { transferAllowed: true },
+      ).reason,
+    ).toBe("transfer_pending");
   });
 });
 

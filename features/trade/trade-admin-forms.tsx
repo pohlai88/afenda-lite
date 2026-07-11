@@ -69,25 +69,38 @@ export function TradeEnsureTemplateButton({ locale }: { locale: TradeLocale }) {
         type="button"
         variant="outline"
         disabled={pending}
+        data-testid="trade-ensure-template"
         onClick={() => {
           setError(null);
           startTransition(async () => {
-            const result = await ensurePigletTemplateAction(locale);
-            if ("error" in result && result.error) {
-              setError(result.error);
-              return;
-            }
-            if ("eventId" in result && result.eventId) {
-              router.push(
-                tradeHref(`/admin/events/${result.eventId}/setup`),
-              );
+            try {
+              const result = await ensurePigletTemplateAction(locale);
+              const err = getTradeActionError(result);
+              if (err) {
+                setError(err);
+                return;
+              }
+              if ("eventId" in result && result.eventId) {
+                router.push(
+                  tradeHref(`/admin/events/${result.eventId}/setup`),
+                );
+              }
+            } catch {
+              setError("template_ensure_failed");
             }
           });
         }}
       >
         {pending ? "Loading…" : "Ensure GP2 piglet template"}
       </Button>
-      {error ? <p className="text-destructive text-sm">{error}</p> : null}
+      {error ? (
+        <p
+          className="text-destructive text-sm"
+          data-testid="trade-ensure-template-error"
+        >
+          {error}
+        </p>
+      ) : null}
     </div>
   );
 }

@@ -14,18 +14,24 @@ Legend: `done` · `partial` · `missing` · `residue`
 |------|--------|-------|
 | P0 AdminCN + `requireTradeAccess` | done | `app/trade/layout.tsx` |
 | P0 nav `feed-farm-trade` | done | `navConfig.tsx` |
-| Locale-free `/trade` routes | done | No live `app/trade/[locale]` |
+| Locale-free `/trade` routes | done | Product paths locale-free; redirect-only shim `app/trade/[locale]/[[...path]]` (no TradeShell) |
 | `docs/hot-sales/` G0 | done | Restored |
 | Domain + `app/actions/trade.ts` | done | Engine present |
 | P1 FE wire (events/setup/order/alloc) | done | Thin pages → `features/trade` |
 | G1–G6 FE surfaces | done | Wired; permission codes on mutations; audit.view on setup panel |
+| F-ADM-01..03 / G8 | done | Sales-member admin form; `role.manage` rbac page; `export.orders` panel + gates |
+| F-EVT-06 / G7 | done | Clone→draft; piglet template ensure; activate scheduled; admin + setup UI |
+| F-ALC-03 / G9 | done | `allocation.override` distinct from preview/run; override form gated on allocation page |
+| P2 UI polish | done | P2-AC-01..06 evidenced; legacy `/trade/{vi\|en}/**` → locale-free redirect shim (no TradeShell) |
+| P3 ops flags | reviewed | Gate-register only 2026-07-11 — prod flags stay `false`; FE placeholders; step 0 audit green |
 | TradeShell / locale switcher | done | Do not remount |
 | API catalog locale-free | done | `doc/api/02-rest-resources.md` |
 | Skill pack (guardrails only) | superseded | Replaced by delivery pack below |
 | Skill pack (enterprise delivery) | done | playbook + action-map + rbac + verify + example |
-| P3 deposits/pickup/imports/ERP | partial | Placeholder; flag-gated |
+| UI registry governance | done | v2: 51 `ACN-UI-*` + 153 `ACN-BLK-*` + 21 `FFT-UI-*`; Vitest fail-fast; human HITL; ≠ visual quality |
+| P3 deposits/pickup/imports/ERP | partial | Placeholder FE; deposit/pickup + ERP retry writes flag-gated (retrySyncJob + retryErpSyncJobAction 2026-07-11) |
 | Enterprise MVP claimable | done | Unit AC gates + `@journey` G1–G8 green (2026-07-11); team/all order scopes still later |
 
 Actions still accept `TradeLocale` (`TRADE_UI_LOCALE`); paths are locale-free.
 
-**Note:** `docs/hot-sales/RUNTIME.md` code map may still cite legacy `[locale]` / `TradeShell` / `lib/domain/trade` paths — prefer this skill + 001A for FE/module paths; raise RUNTIME drift to Hot Sales ops lane separately.
+**Note:** `docs/hot-sales/RUNTIME.md` code map updated 2026-07-11 to `modules/trade` + locale-free `/trade` (legacy trees called out as non-entry).

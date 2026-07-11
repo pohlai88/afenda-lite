@@ -148,6 +148,8 @@ export async function listSyncJobsWithDetails(
 }
 
 export async function retrySyncJob(jobId: string): Promise<HotSalesSyncJob | null> {
+  if (!isHotSalesErpSyncEnabled()) return null;
+
   const result = await pool.query(
     `UPDATE hot_sales_sync_job
      SET status = 'pending', scheduled_at = NOW(), updated_at = NOW()

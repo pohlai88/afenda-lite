@@ -105,3 +105,17 @@ export function canCloseEvent(
   }
   return { allowed: true };
 }
+
+/** Promote scheduled → open once the ordering window has started (G7). */
+export function canActivateScheduledEvent(
+  event: Pick<HotSalesEvent, "status" | "opensAt">,
+  now: Date = new Date(),
+): { allowed: boolean; reason?: string } {
+  if (event.status !== "scheduled") {
+    return { allowed: false, reason: "not_scheduled" };
+  }
+  if (now.getTime() < event.opensAt.getTime()) {
+    return { allowed: false, reason: "window_not_started" };
+  }
+  return { allowed: true };
+}

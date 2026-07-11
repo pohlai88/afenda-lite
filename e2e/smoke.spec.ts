@@ -57,12 +57,21 @@ test.describe("Portal smoke @smoke", () => {
     ).toBeVisible();
   });
 
-  test("client portal home renders lynx landing sign in", async ({ page }) => {
+  test("client portal home unlocks Neon auth entries", async ({ page }) => {
     await page.goto("/");
     await expect(page).toHaveURL(/\/$/);
-    const authLink = page.getByRole("link", { name: /open authentication/i });
-    await expect(authLink).toBeVisible();
-    await expect(authLink).toHaveAttribute("href", /\/auth\/sign-in/);
+
+    await page
+      .getByRole("button", { name: /unlock authentication options/i })
+      .click();
+
+    await expect(page.getByRole("link", { name: /^sign in$/i })).toHaveAttribute(
+      "href",
+      /\/auth\/sign-in/,
+    );
+    await expect(
+      page.getByRole("link", { name: /^create account$/i }),
+    ).toHaveAttribute("href", /\/auth\/sign-up/);
   });
 
   test("organization login page renders", async ({ page }) => {

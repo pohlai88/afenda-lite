@@ -163,13 +163,21 @@ This inventory is orientation only — it is not a completion claim. Use the Eva
 
 | AC / Req ID | Requirement | Expected evidence | Result |
 |-------------|-------------|--------------------|--------|
-| F-OPS-DEP-01..03 | Deposits FE + flag gate | Deposits page respects `HOT_SALES_DEPOSIT_ENABLED` + `deposit.*` codes | |
-| F-OPS-PICK-01..03 | Pickup ops FE + flag gate | Pickup page respects `HOT_SALES_PICKUP_OPS_ENABLED` + `pickup.*` codes | |
-| F-OPS-IMP-01..04 | Import pipeline | Dry-run → error report → confirm → write → audit, all present | |
-| F-OPS-NOTIF-01..03 | Notification triggers | `HOT_SALES_NOTIFICATIONS_ENABLED` gate; failure isolation from trade txn | |
-| F-OPS-ERP-01..04 | ERP sync framework | `HOT_SALES_ERP_SYNC_ENABLED` gate; no vendor adapter without contract | |
-| AC-OPS-01 | Flags off → P1 unaffected | P1 evaluation checklist still passes with all P3 flags off | |
-| AC-OPS-02 | Flag on → permission honored | Gate-register promotion record exists before any flag is `true` in prod | |
+| F-OPS-DEP-01..03 | Deposits FE + flag gate | Deposits page respects `HOT_SALES_DEPOSIT_ENABLED` + `deposit.*` codes | **Partial** — actions use `assertHotSalesDepositFeatureAction` + `deposit.*`; FE = `TradeOpsPlaceholder` only (REVIEW_P3 2026-07-11) |
+| F-OPS-PICK-01..03 | Pickup ops FE + flag gate | Pickup page respects `HOT_SALES_PICKUP_OPS_ENABLED` + `pickup.*` codes | **Partial** — actions gated; FE placeholder |
+| F-OPS-IMP-01..04 | Import pipeline | Dry-run → error report → confirm → write → audit, all present | **Partial** — domain/actions present; deposit/pickup import types flag-gated; priority/supply/bulk allowed flag-off (RUNTIME); FE placeholder |
+| F-OPS-NOTIF-01..03 | Notification triggers | `HOT_SALES_NOTIFICATIONS_ENABLED` gate; failure isolation from trade txn | **Partial** — send path skips when flag off; Resend deferred per gate-register |
+| F-OPS-ERP-01..04 | ERP sync framework | `HOT_SALES_ERP_SYNC_ENABLED` gate; no customer vendor without contract | **Partial** — enqueue/process + **`retryErpSyncJobAction` / `retrySyncJob` flag-gated** (IMPLEMENT_P3_FLAG_GATE 2026-07-11); FE placeholder; 2D-3 still forbidden |
+| AC-OPS-01 | Flags off → P1 unaffected | P1 evaluation checklist still passes with all P3 flags off | **PASS** — defaults `false`; deposit/pickup + ERP retry writes blocked (action + domain tests green); P1 cycle independent; FE ops placeholders |
+| AC-OPS-02 | Flag on → permission honored | Gate-register promotion record exists before any flag is `true` in prod | **BLOCKED** — prod promotion **not** started; follow [gate-register § Prod flag promotion](../../docs/hot-sales/ops/gate-register.md#prod-flag-promotion--2b--2c--2d-ordered) only |
+
+**Gate-register review (REVIEW_P3 2026-07-11 — no flag changes):**
+
+| Step | Status |
+|------|--------|
+| 0 `npm run audit:hot-sales-promotion` | **PASS** (`ok:true`, Ready for ordered flag promotion) |
+| 1–5 prod enable | **Not run** (explicit: evaluation only) |
+| Resend defer | Still open — do not schedule closing-soon cron |
 
 ## Risks and open questions
 

@@ -16,7 +16,10 @@ import {
 import { playgroundEnv } from "@/lib/playground/playground-registry";
 import { resolvePlaygroundStaticInspectGate } from "@/lib/playground/playground-static-inspect";
 import type { PlaygroundPageShape } from "@/lib/playground/playground-page-shape";
-import { AUTH_SIGN_IN_HREF } from "@/modules/platform/routing/portal-routes";
+import {
+  AUTH_SIGN_IN_HREF,
+  AUTH_SIGN_UP_HREF,
+} from "@/modules/platform/routing/portal-routes";
 
 export {
   PLAYGROUND_STATIC_COMPOSITION_IDS,
@@ -154,9 +157,14 @@ export async function loadPlaygroundStaticComposition(
         status: "ready",
         screenId,
         kind: "page",
-        title: "Lynx pixel landing",
+        title: "Lynx laptop landing",
         shape: "live",
-        node: <LynxLandingPage signInHref={AUTH_SIGN_IN_HREF} />,
+        node: (
+          <LynxLandingPage
+            signInHref={AUTH_SIGN_IN_HREF}
+            signUpHref={AUTH_SIGN_UP_HREF}
+          />
+        ),
       };
     }
     default: {

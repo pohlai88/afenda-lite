@@ -76,21 +76,23 @@ Never edit `.env` by hand. Never `vercel env pull`.
 
 ## Code map
 
+Canonical FE / module paths (Feed Farm Trade AdminCN restructure). Legacy `[locale]` / `TradeShell` / `lib/domain/trade` trees are **not** product entry points.
+
 | Area | Path |
 |------|------|
-| Routes | `app/trade/[locale]/**` |
-| Trade shell | `components/trade/trade-shell.tsx` |
-| Domain / store | `lib/domain/trade/` (`import-store.ts`, `notification-send.ts`, `deposit-store.ts`, …) |
-| Session + RBAC gate | `lib/auth/trade-session.ts` |
-| Phase 2B feature gates | `lib/auth/trade-phase2b.ts` |
-| Phase 2D ERP gate | `lib/auth/trade-phase2d.ts` |
-| ERP sync store | `lib/domain/trade/erp-sync-store.ts` |
+| Routes | `app/trade/**` (locale-free); legacy bookmarks → `app/trade/[locale]/[[...path]]` redirect shim only |
+| UI | `features/trade/*` under `AdminCnShell` (`app/trade/layout.tsx`) — **no** `TradeShell` |
+| Domain / store | `modules/trade/domain/` |
+| Session + RBAC gate | `modules/trade/auth/trade-session.ts` |
+| Phase 2B feature gates | `modules/trade/auth/trade-phase2b.ts` |
+| Phase 2D ERP gate | `modules/trade/auth/trade-phase2d.ts` |
+| ERP sync store | `modules/trade/domain/erp-sync-store.ts` |
 | Server actions | `app/actions/trade.ts` |
 | Schema | `db/migrations/013_hot_sales.sql`, `014_hot_sales_rbac.sql` |
 | E2E | `e2e/trade-hot-sales.spec.ts` (`@smoke`, `@journey`) |
 | Gate smokes | `scripts/gate-7-cutover-smoke.mjs`, `scripts/gate-7-production-smoke.mjs` |
 
-Architecture slice: [architecture/s19-trade-slice.md](./architecture/s19-trade-slice.md).
+Architecture slice: [architecture/s19-trade-slice.md](./architecture/s19-trade-slice.md). FE ADR trio: [001](../../doc/frontend/adr/001-feed-farm-trade.md) · [001A](../../doc/frontend/adr/001A-feed-farm-trade-architecture.md) · [001R](../../doc/frontend/adr/001R-feed-farm-trade-roadmap.md).
 
 ---
 
@@ -98,7 +100,7 @@ Architecture slice: [architecture/s19-trade-slice.md](./architecture/s19-trade-s
 
 ```bash
 # Unit (domain + RBAC)
-npm run test:unit -- lib/domain/trade lib/auth/trade-session
+npm run test:unit -- modules/trade
 
 # E2E
 npm run test:e2e:smoke          # auth redirect / trade ingress

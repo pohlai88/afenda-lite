@@ -19,9 +19,14 @@ import {
   CLIENT_LOGIN_REQUIRED_REASON,
   clientSignInAuthHref,
   clientSignInEntryHref,
+  clientSignUpAuthHref,
   resolveClientAuthReasonNotice,
 } from "@/lib/entry/client-sign-in-entry";
-import { AUTH_SIGN_IN_HREF, CLIENT_SIGN_IN_ENTRY_HREF } from "@/modules/platform/routing/portal-routes";
+import {
+  AUTH_SIGN_IN_HREF,
+  AUTH_SIGN_UP_HREF,
+  CLIENT_SIGN_IN_ENTRY_HREF,
+} from "@/modules/platform/routing/portal-routes";
 
 describe("client sign-in entry href builders", () => {
   it("builds named client login entry with optional reason", () => {
@@ -43,6 +48,16 @@ describe("client sign-in entry href builders", () => {
 
   it("rejects unsafe returnTo on client auth href", () => {
     expect(clientSignInAuthHref(undefined, "//evil.example")).toBe(AUTH_SIGN_IN_HREF);
+  });
+
+  it("builds sign-up href with the same safe query policy", () => {
+    expect(clientSignUpAuthHref()).toBe(AUTH_SIGN_UP_HREF);
+    expect(clientSignUpAuthHref(undefined, "/client/onboarding")).toBe(
+      `${AUTH_SIGN_UP_HREF}?returnTo=%2Fclient%2Fonboarding`,
+    );
+    expect(clientSignUpAuthHref(undefined, "//evil.example")).toBe(
+      AUTH_SIGN_UP_HREF,
+    );
   });
 
   it("resolves client auth reason notices", () => {

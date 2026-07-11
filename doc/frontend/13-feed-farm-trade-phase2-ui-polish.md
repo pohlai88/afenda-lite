@@ -4,14 +4,14 @@
 |-------|-------|
 | **Doc type** | Technical spec (phase-scoped) — write-first, evaluation baseline |
 | **Phase** | P2 — UI reopen, not MVP, per [001R](adr/001R-feed-farm-trade-roadmap.md) |
-| **Build authorization** | **Closed until explicit user reopen.** This document is forward-looking scope definition only — it does not authorize implementation. |
+| **Build authorization** | **Reopened 2026-07-11** (user: “P2 polish (reopen only)”). Implementation still requires an explicit per-slice task (e.g. P2-AC-01) + Plan→approve for visual work — this reopen alone does not ship polish code. |
 | **Decision locks** | [001-feed-farm-trade.md](adr/001-feed-farm-trade.md) |
 | **Architecture** | [001A-feed-farm-trade-architecture.md](adr/001A-feed-farm-trade-architecture.md) |
 | **Roadmap / gaps** | [001R-feed-farm-trade-roadmap.md](adr/001R-feed-farm-trade-roadmap.md) |
 | **Agent skill** | [`.cursor/skills/feed-farm-trade`](../../.cursor/skills/feed-farm-trade/SKILL.md) |
 | **Precondition** | [12-feed-farm-trade-phase1-core-mvp.md](12-feed-farm-trade-phase1-core-mvp.md) AC all green |
 
-> **How to use this document:** Written independent of current implementation status, so it can serve as a fixed evaluation baseline. Fill in the **Evaluation checklist** at the end against the live codebase — do not edit the requirement rows to match what exists; record findings only in the **Result** column. Do not begin implementation from this document alone — it is closed pending explicit reopen (see Build authorization above).
+> **How to use this document:** Written independent of current implementation status, so it can serve as a fixed evaluation baseline. Fill in the **Evaluation checklist** at the end against the live codebase — do not edit the requirement rows to match what exists; record findings only in the **Result** column. **Phase reopened 2026-07-11** — implement only when the user names a candidate AC (P2-AC-01..06); visual slices still use Plan → approval → implement.
 
 ---
 
@@ -77,16 +77,16 @@ These are **proposed** for when P2 is reopened. They are not authoritative until
 
 ## Evaluation checklist
 
-Until P2 is reopened, expect every row to evaluate as **Not started**. Do not backfill a "Pass" based on P1 polish that happened incidentally — confirm intentional P2 scope first.
+Until a named P2-AC slice is tasked after reopen, expect every row to evaluate as **Not started**. Do not backfill a "Pass" based on P1 polish that happened incidentally — confirm intentional P2 slice scope first.
 
 | Candidate AC | Requirement | Expected evidence | Result |
 |--------------|-------------|--------------------|--------|
-| P2-AC-01 | Sortable/filterable events list | Table component with sort/filter controls | |
-| P2-AC-02 | Paginated order lists | Pagination control on my-orders / admin orders | |
-| P2-AC-03 | Filterable audit trail | Actor/date filter on audit panel | |
-| P2-AC-04 | Explicit empty/loading/error states | Skeletons + empty-state components per P1 form | |
-| P2-AC-05 | Visual comp parity | Screenshot diff review recorded | |
-| P2-AC-06 | No P1 regression | P1 evaluation checklist re-run, all pass | |
+| P2-AC-01 | Sortable/filterable events list | Table component with sort/filter controls | **PASS** — `TradeEventsList` client sort/filter on admin + sales lists (2026-07-11) |
+| P2-AC-02 | Paginated order lists | Pagination control on my-orders / admin orders | **PASS** — `paginateItems` + my-orders + allocation order pages (2026-07-11) |
+| P2-AC-03 | Filterable audit trail | Actor/date filter on audit panel | **PASS** — `trade-audit-filter-model` + actor/from/to on `TradeAuditPanel` (setup); no new RBAC (2026-07-11) |
+| P2-AC-04 | Explicit empty/loading/error states | Skeletons + empty-state components per P1 form | **PASS** — `trade-form-feedback` + setup/allocation empty + route `loading.tsx` (2026-07-11) |
+| P2-AC-05 | Visual comp parity | Screenshot diff review recorded | **PASS** — Declarations AdminCN form DNA: `trade-form-controls` (Input-parity native fields + `TradeFormCheckbox`); P1 surfaces (setup/order/transfer/events/audit/allocation/rbac); P3 panels skipped (2026-07-11) |
+| P2-AC-06 | No P1 regression | P1 evaluation checklist re-run, all pass | **PASS** — `modules/trade` unit 173/173; focused gates+P2 models 102/102; P1 AC rows re-verified in phase 12; no RBAC drift. Pre-existing `[locale]`/TradeShell residue noted, not P2-caused (2026-07-11) |
 
 ## Risks and open questions
 
@@ -96,7 +96,7 @@ Until P2 is reopened, expect every row to evaluate as **Not started**. Do not ba
 
 ## References
 
-- [001-feed-farm-trade.md](adr/001-feed-farm-trade.md) — decision locks (P2 = closed until reopen)
+- [001-feed-farm-trade.md](adr/001-feed-farm-trade.md) — decision locks (P2 polish complete 2026-07-11; further polish needs named AC)
 - [001A-feed-farm-trade-architecture.md](adr/001A-feed-farm-trade-architecture.md) — architecture detail
 - [001R-feed-farm-trade-roadmap.md](adr/001R-feed-farm-trade-roadmap.md) — P2 section
 - [12-feed-farm-trade-phase1-core-mvp.md](12-feed-farm-trade-phase1-core-mvp.md) — precondition phase

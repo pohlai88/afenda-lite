@@ -15,6 +15,7 @@ import { getTradeActionError } from "@/modules/trade/domain/trade-action-result"
 import { Button } from "@/components-V2/platform-components/ui/button";
 import { Input } from "@/components-V2/platform-components/ui/input";
 import { Label } from "@/components-V2/platform-components/ui/label";
+import { TRADE_NATIVE_SELECT_CLASS, TradeFormCheckbox } from "@/features/trade/trade-form-controls";
 import { HOT_SALES_PERMISSION_CATALOG } from "@/modules/trade/domain/rbac-catalog";
 import type { TradeLocale } from "@/modules/trade/i18n/trade";
 
@@ -61,10 +62,21 @@ export function TradeRbacAdminPanel({
           variant="outline"
           size="sm"
           disabled={pending}
+          data-testid="trade-rbac-seed"
           onClick={() =>
             startTransition(async () => {
-              await seedTradeRbacCatalogAction(locale);
-              router.refresh();
+              setError(null);
+              try {
+                const result = await seedTradeRbacCatalogAction(locale);
+                const err = getTradeActionError(result);
+                if (err) {
+                  setError(err);
+                  return;
+                }
+                router.refresh();
+              } catch {
+                setError("rbac_seed_failed");
+              }
             })
           }
         >
@@ -121,8 +133,7 @@ export function TradeRbacAdminPanel({
             <div className="grid max-h-64 gap-1 overflow-auto text-sm sm:grid-cols-2">
               {HOT_SALES_PERMISSION_CATALOG.map((p) => (
                 <label key={p.code} className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
+                  <TradeFormCheckbox
                     name={`perm_${p.code}`}
                     defaultChecked={selected.permissionCodes.includes(p.code)}
                   />
@@ -147,12 +158,22 @@ export function TradeRbacAdminPanel({
                 disabled={pending}
                 onClick={() =>
                   startTransition(async () => {
-                    await setTradeRoleActiveAction(
-                      locale,
-                      selected.id,
-                      !selected.active,
-                    );
-                    router.refresh();
+                    setError(null);
+                    try {
+                      const result = await setTradeRoleActiveAction(
+                        locale,
+                        selected.id,
+                        !selected.active,
+                      );
+                      const err = getTradeActionError(result);
+                      if (err) {
+                        setError(err);
+                        return;
+                      }
+                      router.refresh();
+                    } catch {
+                      setError("rbac_role_active_failed");
+                    }
                   })
                 }
               >
@@ -165,12 +186,22 @@ export function TradeRbacAdminPanel({
                 disabled={pending}
                 onClick={() =>
                   startTransition(async () => {
-                    await duplicateTradeRoleAction(
-                      locale,
-                      selected.id,
-                      `${selected.name} (copy)`,
-                    );
-                    router.refresh();
+                    setError(null);
+                    try {
+                      const result = await duplicateTradeRoleAction(
+                        locale,
+                        selected.id,
+                        `${selected.name} (copy)`,
+                      );
+                      const err = getTradeActionError(result);
+                      if (err) {
+                        setError(err);
+                        return;
+                      }
+                      router.refresh();
+                    } catch {
+                      setError("rbac_duplicate_failed");
+                    }
                   })
                 }
               >
@@ -241,7 +272,7 @@ export function TradeRbacAdminPanel({
           <Input name="userEmail" placeholder="User email (optional)" type="email" />
           <select
             name="roleId"
-            className="border-input bg-background rounded-md border px-3 py-2 text-sm"
+            className={TRADE_NATIVE_SELECT_CLASS}
             required
             defaultValue={roles[0]?.id}
           >
@@ -253,7 +284,7 @@ export function TradeRbacAdminPanel({
           </select>
           <select
             name="scopeType"
-            className="border-input bg-background rounded-md border px-3 py-2 text-sm"
+            className={TRADE_NATIVE_SELECT_CLASS}
             defaultValue="own"
           >
             <option value="own">own</option>
@@ -290,8 +321,21 @@ export function TradeRbacAdminPanel({
                 disabled={pending}
                 onClick={() =>
                   startTransition(async () => {
-                    await revokeTradeRoleAssignmentAction(locale, a.id);
-                    router.refresh();
+                    setError(null);
+                    try {
+                      const result = await revokeTradeRoleAssignmentAction(
+                        locale,
+                        a.id,
+                      );
+                      const err = getTradeActionError(result);
+                      if (err) {
+                        setError(err);
+                        return;
+                      }
+                      router.refresh();
+                    } catch {
+                      setError("rbac_revoke_failed");
+                    }
                   })
                 }
               >
@@ -302,7 +346,15 @@ export function TradeRbacAdminPanel({
         </ul>
       </section>
 
-      {error ? <p className="text-destructive text-sm">{error}</p> : null}
+      {error ? (
+        <p
+          className="text-destructive text-sm"
+          role="alert"
+          data-testid="trade-rbac-error"
+        >
+          {error}
+        </p>
+      ) : null}
     </div>
   );
 }

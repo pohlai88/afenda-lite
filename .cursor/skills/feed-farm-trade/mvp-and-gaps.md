@@ -10,11 +10,13 @@ Locks: [001](../../../doc/frontend/adr/001-feed-farm-trade.md) · Architecture: 
 
 **P0 + P1** (including G1–G6) + AC evidence. Not P2 polish. Not P3 flag-gated ops.
 
+**Status (2026-07-11):** **Claimable** — unit AC gates + `@journey` evidence in [verify.md](verify.md) (`EVALUATE_P1_MVP: YES`).
+
 ### P0 Shell — done
 
-F-ACC-01..05 · AC-ACC · AC-SH — AdminCN + trade gate + FFT nav · locale-free `/trade` · no `[locale]` tree
+F-ACC-01..05 · AC-ACC · AC-SH — AdminCN + trade gate + FFT nav · locale-free `/trade` · redirect-only legacy `[locale]` shim (no TradeShell)
 
-### P1 Core (must exit) — FE wired; AC evidence pending
+### P1 Core (must exit) — FE wired; AC evidence recorded
 
 | Group | IDs |
 |-------|-----|
@@ -28,19 +30,14 @@ F-ACC-01..05 · AC-ACC · AC-SH — AdminCN + trade gate + FFT nav · locale-fre
 | Audit | F-AUD-01 (**G6**) |
 | Admin | F-ADM-01..03 (**G8** exports) |
 
-### Not MVP
+### Not MVP (optional / later)
 
 | Phase | Content |
 |-------|---------|
-| P2 | UI polish reopen |
+| P2 | UI polish — **done** (AC-01..06); further polish needs named AC |
 | P3 | Deposits / pickup / imports / ERP — flags + gate-register |
 | Later | Customer portal, locale URLs, `HOT_SALES_*` rename, 2D-3 packs |
 
 ### Gap tags (001R)
 
-| ID | Tag |
-|----|-----|
-| G0 | Ops docs tree — **resolved** (restored) |
-| G1–G6 | In P1 — FE surfaces wired |
-| G7–G9 | AC tighten |
-| Industry booth/ERP/VFD | Keep out |
+See 001R critical gap register (G0–G9). G1–G9 FE surfaces wired with permission-code evidence.

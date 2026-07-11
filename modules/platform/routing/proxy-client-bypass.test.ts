@@ -12,12 +12,15 @@ describe("proxy client sign-in bypass", () => {
     expect(source).toContain('pathname === CLIENT_SIGN_IN_ENTRY_HREF');
   });
 
-  it("keeps open-link survey route present as an app page stub", () => {
+  it("keeps the open-link survey route delegated to its entry runner", () => {
     const source = readFileSync(
       join(REPO_ROOT, "app/survey/[slug]/page.tsx"),
       "utf8",
     );
-    expect(source).toContain("Survey");
-    expect(source).toContain("slug");
+    expect(source).toContain(
+      'from "@/lib/entry/open-link-entry"',
+    );
+    expect(source).toContain("openLinkPageMetadata");
+    expect(source).toContain("export default runOpenLinkPage");
   });
 });

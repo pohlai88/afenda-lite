@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { TradeAllocationControls } from "@/features/trade/trade-allocation-controls";
-import {
-  TradeTransferAdminRow,
-} from "@/features/trade/trade-transfer-forms";
+import { TradeTransferAdminRow } from "@/features/trade/trade-transfer-forms";
 import { TRADE_UI_LOCALE } from "@/features/trade/trade-ui-locale";
+import { hasTradeEventManagePermission } from "@/modules/trade/auth/trade-phase2b";
+import { requireTradeAccess } from "@/modules/trade/auth/trade-session";
 import {
   getEventById,
   listOrdersForEvent,
@@ -18,8 +18,15 @@ type Props = { params: Promise<{ eventId: string }> };
 
 export default async function TradeAllocationPage({ params }: Props) {
   const { eventId } = await params;
+  const access = await requireTradeAccess();
   const event = await getEventById(eventId);
   if (!event) notFound();
+
+  const canOverride = await hasTradeEventManagePermission(
+    access,
+    "allocation.override",
+    eventId,
+  );
 
   const [orders, transfers] = await Promise.all([
     listOrdersForEvent(eventId),
@@ -41,6 +48,7 @@ export default async function TradeAllocationPage({ params }: Props) {
         locale={TRADE_UI_LOCALE}
         eventId={eventId}
         orders={orders}
+        canOverride={canOverride}
       />
 
       <section className="space-y-3" data-testid="trade-transfer-requests">

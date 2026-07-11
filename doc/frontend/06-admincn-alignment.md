@@ -3,9 +3,12 @@
 **Reference:** `_reference/shadcn-nextjs-admincn-admin-template-1.0.0/.../src`  
 **Product home:** `components-V2/`  
 **Playbook:** [docs/architecture/admincn-customization.md](../../docs/architecture/admincn-customization.md)  
-**Preflight:** [docs/architecture/admincn-frontend-preflight.md](../../docs/architecture/admincn-frontend-preflight.md)
+**Preflight:** [docs/architecture/admincn-frontend-preflight.md](../../docs/architecture/admincn-frontend-preflight.md)  
+**UI registry (compulsory):** [`.cursor/skills/feed-farm-trade/ui-registry.md`](../../.cursor/skills/feed-farm-trade/ui-registry.md) · [`ui-registry.json`](../../.cursor/skills/feed-farm-trade/ui-registry.json)
 
 AdminCN is the **shared platform shell** for Declarations, Account, and Feed Farm Trade. It is **not** the auth product and not a license to ship demo apps.
+
+Every primitive and block under `components-V2` used as DNA must carry an `ACN-UI-*` or `ACN-BLK-*` ID in the registry. Product FFT modules use `FFT-UI-*`. See [fft-ui-registry.mdc](../../.cursor/rules/fft-ui-registry.mdc).
 
 ## Template → portal map
 

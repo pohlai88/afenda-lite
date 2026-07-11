@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { cloneTradeEventAction } from "@/app/actions/trade";
 import { Button } from "@/components-V2/platform-components/ui/button";
+import { getTradeActionError } from "@/modules/trade/domain/trade-action-result";
 import { tradeHref, type TradeLocale } from "@/modules/trade/i18n/trade";
 
 export function TradeCloneEventButton({
@@ -28,22 +29,34 @@ export function TradeCloneEventButton({
         onClick={() =>
           startTransition(async () => {
             setError(null);
-            const result = await cloneTradeEventAction(locale, eventId);
-            if ("error" in result && result.error) {
-              setError(result.error);
-              return;
-            }
-            if ("eventId" in result && result.eventId) {
-              router.push(
-                tradeHref(`/admin/events/${result.eventId}/setup`),
-              );
+            try {
+              const result = await cloneTradeEventAction(locale, eventId);
+              const err = getTradeActionError(result);
+              if (err) {
+                setError(err);
+                return;
+              }
+              if ("eventId" in result && result.eventId) {
+                router.push(
+                  tradeHref(`/admin/events/${result.eventId}/setup`),
+                );
+              }
+            } catch {
+              setError("clone_failed");
             }
           })
         }
       >
         Clone
       </Button>
-      {error ? <p className="text-destructive text-xs">{error}</p> : null}
+      {error ? (
+        <p
+          className="text-destructive text-xs"
+          data-testid="trade-clone-error"
+        >
+          {error}
+        </p>
+      ) : null}
     </div>
   );
 }

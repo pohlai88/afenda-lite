@@ -49,7 +49,11 @@ async function checkMigrations() {
 }
 
 async function checkManifest() {
-  const manifest = await readFile(path.join(root, "lib", "env", "manifest.ts"), "utf8");
+  // Feed Farm Trade / modular monolith: env SSOT is modules/platform/env (not legacy lib/env).
+  const manifest = await readFile(
+    path.join(root, "modules", "platform", "env", "manifest.ts"),
+    "utf8",
+  );
   for (const key of requiredFlags) {
     if (!manifest.includes(`key: "${key}"`)) {
       issues.push(`manifest missing env key: ${key}`);

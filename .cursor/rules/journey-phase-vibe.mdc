@@ -22,7 +22,7 @@ Pick exactly one:
 | `onboarding`          | `/client/onboarding`                                                                       |
 | `client-post-login`   | `/client` `/client/profile` `/client/declare/[id]`                                         |
 | `operator-post-login` | `/dashboard` `/dashboard/clients` `/dashboard/[id]`                                        |
-| `hot-sales`           | `/trade/*` (Feed Farm Trade) — AdminCN + P1 wired; **confirm gate-register before P3 flag work**; P2 polish closed until reopen |
+| `hot-sales`           | `/trade/*` (Feed Farm Trade) — AdminCN + P1 MVP claimable; **P2 polish AC-01..06 done**; **confirm gate-register before P3 flag work** |
 
 If the task spans more than one phase, stop and ask the user which one to take first.
 

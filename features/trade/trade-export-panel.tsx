@@ -28,21 +28,26 @@ export function TradeExportPanel({
     startTransition(async () => {
       setActive(kind);
       setError(null);
-      const result =
-        kind === "orders"
-          ? await exportOrdersCsvAction(locale, eventId)
-          : kind === "summary"
-            ? await exportEventSummaryCsvAction(locale, eventId)
-            : await exportAllocationCsvAction(locale, eventId);
-      const actionError = getTradeActionError(
-        typeof result === "string" ? null : result,
-      );
-      if (actionError) {
+      try {
+        const result =
+          kind === "orders"
+            ? await exportOrdersCsvAction(locale, eventId)
+            : kind === "summary"
+              ? await exportEventSummaryCsvAction(locale, eventId)
+              : await exportAllocationCsvAction(locale, eventId);
+        const actionError = getTradeActionError(
+          typeof result === "string" ? null : result,
+        );
+        if (actionError) {
+          setCsv("");
+          setError(actionError);
+          return;
+        }
+        setCsv(typeof result === "string" ? result : "");
+      } catch {
         setCsv("");
-        setError(actionError);
-        return;
+        setError("export_failed");
       }
-      setCsv(typeof result === "string" ? result : "");
     });
   }
 
@@ -56,6 +61,7 @@ export function TradeExportPanel({
           variant={active === "orders" ? "default" : "outline"}
           disabled={pending}
           onClick={() => load("orders")}
+          data-testid="trade-export-orders"
         >
           Orders
         </Button>
@@ -81,7 +87,11 @@ export function TradeExportPanel({
         </Button>
       </div>
       {error ? (
-        <p className="text-destructive text-sm" role="alert">
+        <p
+          className="text-destructive text-sm"
+          role="alert"
+          data-testid="trade-export-error"
+        >
           {error}
         </p>
       ) : null}

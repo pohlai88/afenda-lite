@@ -18,6 +18,14 @@ import { Button } from "@/components-V2/platform-components/ui/button";
 import { Input } from "@/components-V2/platform-components/ui/input";
 import { Label } from "@/components-V2/platform-components/ui/label";
 import { Textarea } from "@/components-V2/platform-components/ui/textarea";
+import {
+  TRADE_NATIVE_SELECT_CLASS,
+  TradeFormCheckbox,
+} from "@/features/trade/trade-form-controls";
+import {
+  TradeFormError,
+  TradeFormPending,
+} from "@/features/trade/trade-form-feedback";
 import type { TradeLocale } from "@/modules/trade/i18n/trade";
 
 function toLocalInputValue(date: Date) {
@@ -125,24 +133,28 @@ export function TradeEventSetupForm({
         </div>
       </div>
       <label className="flex items-center gap-2 text-sm">
-        <input type="checkbox" name="transferAllowed" defaultChecked={event.transferAllowed} />
+        <TradeFormCheckbox
+          name="transferAllowed"
+          defaultChecked={event.transferAllowed}
+        />
         Transfer allowed
       </label>
       <label className="flex items-center gap-2 text-sm">
-        <input type="checkbox" name="depositRequired" defaultChecked={event.depositRequired} />
+        <TradeFormCheckbox
+          name="depositRequired"
+          defaultChecked={event.depositRequired}
+        />
         Deposit required
       </label>
       <label className="flex items-center gap-2 text-sm">
-        <input
-          type="checkbox"
+        <TradeFormCheckbox
           name="depositRefundable"
           defaultChecked={event.depositRefundable}
         />
         Deposit refundable
       </label>
       <label className="flex items-center gap-2 text-sm">
-        <input
-          type="checkbox"
+        <TradeFormCheckbox
           name="standaloneProgram"
           defaultChecked={event.standaloneProgram}
         />
@@ -161,9 +173,10 @@ export function TradeEventSetupForm({
       <p className="text-muted-foreground text-xs">
         Deposit tracking only — not finance settlement.
       </p>
-      {error ? <p className="text-destructive text-sm">{error}</p> : null}
+      <TradeFormError message={error} testId="trade-setup-error" />
+      <TradeFormPending pending={pending} />
       <Button type="submit" disabled={pending}>
-        Save setup
+        {pending ? "Saving…" : "Save setup"}
       </Button>
     </form>
   );
@@ -180,52 +193,83 @@ export function TradeEventStatusActions({
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
 
   return (
-    <div className="flex flex-wrap gap-2">
-      {status === "draft" ? (
-        <Button
-          type="button"
-          disabled={pending}
-          onClick={() =>
-            startTransition(async () => {
-              await openTradeEventAction(locale, eventId);
-              router.refresh();
-            })
-          }
-        >
-          Open / schedule event
-        </Button>
+    <div className="space-y-2">
+      <div className="flex flex-wrap gap-2">
+        {status === "draft" ? (
+          <Button
+            type="button"
+            disabled={pending}
+            data-testid="trade-open-event"
+            onClick={() =>
+              startTransition(async () => {
+                setError(null);
+                const result = await openTradeEventAction(locale, eventId);
+                const err = getTradeActionError(result);
+                if (err) {
+                  setError(err);
+                  return;
+                }
+                router.refresh();
+              })
+            }
+          >
+            Open / schedule event
+          </Button>
+        ) : null}
+        {status === "scheduled" ? (
+          <Button
+            type="button"
+            disabled={pending}
+            data-testid="trade-activate-event"
+            onClick={() =>
+              startTransition(async () => {
+                setError(null);
+                const result = await activateScheduledTradeEventAction(
+                  locale,
+                  eventId,
+                );
+                const err = getTradeActionError(result);
+                if (err) {
+                  setError(err);
+                  return;
+                }
+                router.refresh();
+              })
+            }
+          >
+            Activate (open now)
+          </Button>
+        ) : null}
+        {status === "open" ? (
+          <Button
+            type="button"
+            variant="secondary"
+            disabled={pending}
+            data-testid="trade-close-event"
+            onClick={() =>
+              startTransition(async () => {
+                setError(null);
+                const result = await closeTradeEventAction(locale, eventId);
+                const err = getTradeActionError(result);
+                if (err) {
+                  setError(err);
+                  return;
+                }
+                router.refresh();
+              })
+            }
+          >
+            Close event
+          </Button>
+        ) : null}
+      </div>
+      {error ? (
+        <TradeFormError message={error} testId="trade-event-status-error" />
       ) : null}
-      {status === "scheduled" ? (
-        <Button
-          type="button"
-          disabled={pending}
-          onClick={() =>
-            startTransition(async () => {
-              await activateScheduledTradeEventAction(locale, eventId);
-              router.refresh();
-            })
-          }
-        >
-          Activate (open now)
-        </Button>
-      ) : null}
-      {status === "open" ? (
-        <Button
-          type="button"
-          variant="secondary"
-          disabled={pending}
-          onClick={() =>
-            startTransition(async () => {
-              await closeTradeEventAction(locale, eventId);
-              router.refresh();
-            })
-          }
-        >
-          Close event
-        </Button>
-      ) : null}
+      <TradeFormPending pending={pending} label="Updating event status…" />
     </div>
   );
 }
@@ -284,6 +328,7 @@ export function TradeProductForm({
         defaultValue={product?.productName}
         required
         disabled={catalogLocked}
+        data-testid="trade-product-name"
       />
       <Input
         name="productCode"
@@ -327,12 +372,14 @@ export function TradeProductForm({
         placeholder="Tentative qty"
         defaultValue={product?.tentativeQuantity ?? ""}
         disabled={catalogLocked}
+        data-testid="trade-product-tentative-qty"
       />
       <Input
         name="finalConfirmedQuantity"
         type="number"
         placeholder="Final confirmed qty"
         defaultValue={product?.finalConfirmedQuantity ?? ""}
+        data-testid="trade-product-final-qty"
       />
       <Input
         name="supportAmountPerUnit"
@@ -348,7 +395,12 @@ export function TradeProductForm({
         disabled={catalogLocked}
       />
       <div className="md:col-span-2 flex items-center gap-2">
-        <Button type="submit" size="sm" disabled={pending}>
+        <Button
+          type="submit"
+          size="sm"
+          disabled={pending}
+          data-testid="trade-product-save"
+        >
           {catalogLocked
             ? "Update final qty"
             : product
@@ -361,7 +413,8 @@ export function TradeProductForm({
           </span>
         ) : null}
       </div>
-      {error ? <p className="text-destructive md:col-span-2 text-xs">{error}</p> : null}
+      <TradeFormError message={error} testId="trade-product-error" />
+      <TradeFormPending pending={pending} />
     </form>
   );
 }
@@ -413,12 +466,14 @@ export function TradeFieldDefForm({
         defaultValue={field?.fieldKey}
         required
         disabled={Boolean(field?.id)}
+        data-testid="trade-field-key"
       />
       <select
         name="fieldType"
         defaultValue={field?.fieldType ?? "text"}
-        className="border-input bg-background rounded-md border px-3 py-2 text-sm disabled:opacity-60"
+        className={TRADE_NATIVE_SELECT_CLASS}
         disabled={requiredLocked && Boolean(field?.required)}
+        data-testid="trade-field-type"
       >
         <option value="text">text</option>
         <option value="number">number</option>
@@ -429,8 +484,20 @@ export function TradeFieldDefForm({
         <option value="boolean">boolean</option>
         <option value="long_text">long_text</option>
       </select>
-      <Input name="labelEn" placeholder="Label EN" defaultValue={field?.labelEn} required />
-      <Input name="labelVi" placeholder="Label VI" defaultValue={field?.labelVi} required />
+      <Input
+        name="labelEn"
+        placeholder="Label EN"
+        defaultValue={field?.labelEn}
+        required
+        data-testid="trade-field-label-en"
+      />
+      <Input
+        name="labelVi"
+        placeholder="Label VI"
+        defaultValue={field?.labelVi}
+        required
+        data-testid="trade-field-label-vi"
+      />
       <Input
         name="dropdownOptions"
         placeholder="Options (comma-separated)"
@@ -441,11 +508,11 @@ export function TradeFieldDefForm({
         {requiredLocked && field?.required ? (
           <input type="hidden" name="required" value="on" />
         ) : null}
-        <input
-          type="checkbox"
+        <TradeFormCheckbox
           name={requiredLocked ? undefined : "required"}
           defaultChecked={field?.required}
           disabled={requiredLocked}
+          data-testid="trade-field-required"
         />
         Required
         {requiredLocked ? (
@@ -460,11 +527,19 @@ export function TradeFieldDefForm({
         </p>
       ) : null}
       <div className="md:col-span-2">
-        <Button type="submit" size="sm" disabled={pending}>
+        <Button
+          type="submit"
+          size="sm"
+          disabled={pending}
+          data-testid="trade-field-save"
+        >
           {field ? "Update column" : "Add column"}
         </Button>
       </div>
-      {error ? <p className="text-destructive md:col-span-2 text-xs">{error}</p> : null}
+      <div className="md:col-span-2 space-y-1">
+        <TradeFormError message={error} testId="trade-field-error" />
+        <TradeFormPending pending={pending} />
+      </div>
     </form>
   );
 }
@@ -478,20 +553,36 @@ export function TradeRunAllocationButton({
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
 
   return (
-    <Button
-      type="button"
-      disabled={pending}
-      onClick={() =>
-        startTransition(async () => {
-          await runTradeAllocationAction(locale, eventId);
-          router.refresh();
-        })
-      }
-    >
-      Run allocation
-    </Button>
+    <div className="space-y-2">
+      <Button
+        type="button"
+        disabled={pending}
+        data-testid="trade-run-allocation-setup"
+        onClick={() =>
+          startTransition(async () => {
+            setError(null);
+            try {
+              const result = await runTradeAllocationAction(locale, eventId);
+              const err = getTradeActionError(result);
+              if (err) {
+                setError(err);
+                return;
+              }
+              router.refresh();
+            } catch {
+              setError("allocation_run_failed");
+            }
+          })
+        }
+      >
+        {pending ? "Running…" : "Run allocation"}
+      </Button>
+      <TradeFormError message={error} testId="trade-run-allocation-error" />
+      <TradeFormPending pending={pending} label="Running allocation…" />
+    </div>
   );
 }
 
@@ -504,6 +595,7 @@ export function TradePriorityImportForm({
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
 
   return (
     <form
@@ -511,23 +603,42 @@ export function TradePriorityImportForm({
       onSubmit={(e) => {
         e.preventDefault();
         const form = e.currentTarget;
-        const csvText = (form.elements.namedItem("csv") as HTMLTextAreaElement).value;
+        const csvText = (form.elements.namedItem("csv") as HTMLTextAreaElement)
+          .value;
+        setError(null);
         startTransition(async () => {
-          await importPriorityCsvAction(locale, eventId, csvText);
+          const result = await importPriorityCsvAction(locale, eventId, csvText);
+          const err = getTradeActionError(result);
+          if (err) {
+            setError(err);
+            return;
+          }
           router.refresh();
         });
       }}
     >
-      <Label htmlFor="csv">Priority CSV (customer_name, customer_code, priority_rank, priority_group)</Label>
+      <Label htmlFor="csv">
+        Priority CSV (customer_name, customer_code, priority_rank, priority_group)
+      </Label>
       <Textarea
         id="csv"
         name="csv"
         rows={6}
-        placeholder={"customer_name,customer_code,priority_rank,priority_group\nCustomer A,C001,1,P1"}
+        data-testid="trade-priority-csv"
+        placeholder={
+          "customer_name,customer_code,priority_rank,priority_group\nCustomer A,C001,1,P1"
+        }
       />
-      <Button type="submit" size="sm" disabled={pending}>
-        Import priority CSV
+      <Button
+        type="submit"
+        size="sm"
+        disabled={pending}
+        data-testid="trade-priority-import"
+      >
+        {pending ? "Importing…" : "Import priority CSV"}
       </Button>
+      <TradeFormError message={error} testId="trade-priority-error" />
+      <TradeFormPending pending={pending} label="Importing priority CSV…" />
     </form>
   );
 }

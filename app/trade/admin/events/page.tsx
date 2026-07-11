@@ -4,6 +4,8 @@ import {
   TradeNewEventForm,
 } from "@/features/trade/trade-admin-forms";
 import { TradeAddSalesMemberForm } from "@/features/trade/trade-sales-member-form";
+import { TradeEventsList } from "@/features/trade/trade-events-list";
+import { toTradeEventListItems } from "@/features/trade/trade-events-list-model";
 import { TRADE_UI_LOCALE } from "@/features/trade/trade-ui-locale";
 import { listEvents, listSalesMembers } from "@/modules/trade/domain/store";
 import { tradeHref } from "@/modules/trade/i18n/trade";
@@ -47,30 +49,11 @@ export default async function TradeAdminEventsPage() {
 
       <section className="space-y-2">
         <h2 className="font-medium">All events</h2>
-        <ul className="divide-border divide-y rounded-lg border">
-          {events.map((event) => (
-            <li key={event.id} className="flex flex-wrap justify-between gap-2 p-3 text-sm">
-              <span>
-                {event.eventName}{" "}
-                <span className="text-muted-foreground">
-                  ({event.status}
-                  {event.isTemplate ? " · template" : ""})
-                </span>
-              </span>
-              <span className="flex gap-3">
-                <Link className="underline" href={tradeHref(`/admin/events/${event.id}/setup`)}>
-                  Setup
-                </Link>
-                <Link
-                  className="underline"
-                  href={tradeHref(`/admin/events/${event.id}/allocation`)}
-                >
-                  Allocation
-                </Link>
-              </span>
-            </li>
-          ))}
-        </ul>
+        <TradeEventsList
+          events={toTradeEventListItems(events)}
+          locale={TRADE_UI_LOCALE}
+          variant="admin"
+        />
       </section>
     </main>
   );

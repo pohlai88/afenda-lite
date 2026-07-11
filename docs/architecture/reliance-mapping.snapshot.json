@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generatedAt": "2026-07-11T09:52:19.985Z",
+  "generatedAt": "2026-07-11T12:07:32.157Z",
   "summary": {
     "surfaces": {
       "total": 26,
@@ -336,7 +336,10 @@
         "entryFiles": [
           "app/page.tsx",
           "features/landing/lynx-landing-page.tsx",
+          "features/landing/vanguard-landing.tsx",
           "features/landing/lynx-landing.css",
+          "public/lynx/lynx-laptop.png",
+          "public/lynx/lynx-laptop.webp",
           "lib/entry/client-sign-in-entry.ts",
           "lib/entry/client-invitation-entry.ts",
           "modules/platform/routing/portal-routes.ts"
@@ -345,9 +348,12 @@
           "app/page.tsx",
           "features/landing/lynx-landing-page.tsx",
           "features/landing/lynx-landing.css",
+          "features/landing/vanguard-landing.tsx",
           "lib/entry/client-invitation-entry.ts",
           "lib/entry/client-sign-in-entry.ts",
-          "modules/platform/routing/portal-routes.ts"
+          "modules/platform/routing/portal-routes.ts",
+          "public/lynx/lynx-laptop.png",
+          "public/lynx/lynx-laptop.webp"
         ]
       }
     },

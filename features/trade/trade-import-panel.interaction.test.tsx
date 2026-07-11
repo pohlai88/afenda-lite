@@ -16,6 +16,7 @@ vi.mock("@/app/actions/trade", () => ({
   })),
   getImportTemplateAction: vi.fn(),
   uploadImportDryRunAction: vi.fn(async () => ({
+    ok: true,
     batchId: "batch-1",
     rowCount: 2,
     validCount: 2,

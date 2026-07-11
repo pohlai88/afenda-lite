@@ -44,6 +44,15 @@ describe("rbac-catalog", () => {
     expect(exec.permissionCodes).not.toContain("allocation.override");
     expect(exec.permissionCodes).not.toContain("role.manage");
   });
+
+  it("G9: business_unit_manager has preview/run but not allocation.override", () => {
+    const bu = HOT_SALES_ROLE_TEMPLATES.find(
+      (t) => t.templateKey === "business_unit_manager",
+    )!;
+    expect(bu.permissionCodes).toContain("allocation.preview");
+    expect(bu.permissionCodes).toContain("allocation.run");
+    expect(bu.permissionCodes).not.toContain("allocation.override");
+  });
 });
 
 describe("assignmentScopeMatches", () => {

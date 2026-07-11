@@ -35,6 +35,7 @@ export default async function TradeEventOrderPage({ params }: Props) {
         products={products}
         fieldDefs={fieldDefs}
         depositRequired={Boolean(event.depositRequired)}
+        eventStatus={event.status}
       />
     </main>
   );

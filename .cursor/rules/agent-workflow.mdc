@@ -35,7 +35,7 @@ alwaysApply: true
 - **Reopened:** `join` (`/join`) — [`doc/frontend/10-join-phase2-tasks.md`](doc/frontend/10-join-phase2-tasks.md).
 - **Reopened:** `account` (`/account`, `/account/[path]`) — [`doc/frontend/09-account-phase3-tasks.md`](doc/frontend/09-account-phase3-tasks.md).
 - **Reopened:** `/playground` (local-only quality harness; `PLAYGROUND_ENABLED=true` in `env.config`, never Vercel).
-- **Reopened (P1 wired):** Feed Farm Trade on `/trade/*` — AdminCN + `features/trade` (locale-free; no `TradeShell`). SSOT: [`doc/frontend/adr/001`](doc/frontend/adr/001-feed-farm-trade.md) · [`001A`](doc/frontend/adr/001A-feed-farm-trade-architecture.md) · [`001R`](doc/frontend/adr/001R-feed-farm-trade-roadmap.md). **Still closed without reopen:** P2 UI polish; P3 flag promotion (gate-register); customer portal.
+- **Reopened:** Feed Farm Trade on `/trade/*` — AdminCN + `features/trade` (locale-free; no `TradeShell`). SSOT: [`doc/frontend/adr/001`](doc/frontend/adr/001-feed-farm-trade.md) · [`001A`](doc/frontend/adr/001A-feed-farm-trade-architecture.md) · [`001R`](doc/frontend/adr/001R-feed-farm-trade-roadmap.md). **P1 enterprise MVP claimable** (AC evidence in skill `verify.md`). **P2 UI polish complete 2026-07-11** (AC-01..06); further polish only with a named P2-AC + Plan for visual. **Still closed without reopen:** P3 flag promotion (gate-register); customer portal.
 - **Still closed** (do not restore without explicit reopen): `/client` workspace.
 - Pre-login keep set: `/`, `/auth/*`, `/org/login`, `/client/login`, `/invite/[token]`, `/f/[token]`, `/survey/[slug]`.
 
@@ -49,7 +49,7 @@ alwaysApply: true
 - No Guardian / PA / owl / brand `public/` restore in these phases
 - No AdminCN demo prune or `platform-fake-db` product wiring
 - No new REST for dashboard/account reads
-- No cross-phase route restores mixed into the same PR (client stays closed; Feed Farm Trade P2 polish / P3 flags stay closed; playground is reopened local-only)
+- No cross-phase route restores mixed into the same PR (client stays closed; Feed Farm Trade **P3 prod flag promotion** stays closed without gate-register; playground is reopened local-only)
 
 ## Frontend / API rebuild SSOT (2026-07-11)
 
