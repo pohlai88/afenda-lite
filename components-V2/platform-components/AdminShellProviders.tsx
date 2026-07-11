@@ -3,7 +3,7 @@
 import type { ReactNode } from 'react'
 import { SidebarProvider } from '@/components-V2/platform-components/ui/sidebar'
 import { TooltipProvider } from '@/components-V2/platform-components/ui/tooltip'
-import { OperatorShellFlagsProvider } from '@/components-V2/platform-context/operatorShellFlagsContext'
+import { OrganizationAdminShellFlagsProvider } from '@/components-V2/platform-context/organizationAdminShellFlagsContext'
 import type { Settings } from '@/components-V2/platform-context/settingsContext'
 import { SettingsProvider } from '@/components-V2/platform-context/settingsContext'
 import type { ShellModuleId } from '@/modules/platform/shell/access'
@@ -33,7 +33,7 @@ export function AdminShellProviders({
 }: Props) {
   return (
     <SettingsProvider settingsCookie={settingsCookie}>
-      <OperatorShellFlagsProvider
+      <OrganizationAdminShellFlagsProvider
         showPlayground={showPlayground}
         entitledModules={entitledModules}
         isOrgAdmin={isOrgAdmin}
@@ -41,7 +41,7 @@ export function AdminShellProviders({
         <TooltipProvider>
           <SidebarProvider defaultOpen={sidebarDefaultOpen}>{children}</SidebarProvider>
         </TooltipProvider>
-      </OperatorShellFlagsProvider>
+      </OrganizationAdminShellFlagsProvider>
     </SettingsProvider>
   )
 }

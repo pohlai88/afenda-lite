@@ -3,7 +3,7 @@ import {
   notFoundPageMetadata,
   resolveNotFoundDestination,
 } from "@/modules/platform/routing/not-found-routing";
-import { portalCopy } from "@/lib/copy/portal-copy";
+import { portalCopy } from "@/modules/declarations/copy/portal-copy";
 
 export const metadata = notFoundPageMetadata;
 

@@ -6,6 +6,8 @@
 export const PLAYGROUND_STATIC_COMPOSITION_IDS = [
   "admin-dashboard",
   "admin-clients",
+  "admin-users-list",
+  "admin-users-view",
   "admin-survey-detail",
   "dynamic-dashboard-id",
   "client-home-login",

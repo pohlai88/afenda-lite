@@ -6,11 +6,11 @@ import {
 import {
   resolveAuthPageTrustNoticeFlags,
   type AuthPageNoticeInput,
-} from "@/lib/auth/auth-page-trust";
-import { portalCopy } from "@/lib/copy/portal-copy";
+} from "@/features/auth/auth-page-trust";
+import { portalCopy } from "@/modules/declarations/copy/portal-copy";
 
-export { AUTH_ENTRY_PATHS } from "@/lib/auth/auth-page-trust";
-export type { AuthPageNoticeInput } from "@/lib/auth/auth-page-trust";
+export { AUTH_ENTRY_PATHS } from "@/features/auth/auth-page-trust";
+export type { AuthPageNoticeInput } from "@/features/auth/auth-page-trust";
 
 /** Portal-owned trust and reason notices above Neon AuthView. */
 export function AuthPageNotices(input: AuthPageNoticeInput) {

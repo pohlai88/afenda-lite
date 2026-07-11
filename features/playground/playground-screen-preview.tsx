@@ -58,7 +58,7 @@ function PlaygroundScreenPreviewContent({
         variant="card"
       />
 
-      <Card id="playground-main" className="min-w-0 overflow-hidden shadow-none">
+      <Card id="playground-main" className="min-w-0 shadow-none">
         <CardHeader className="border-b">
           <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">
             <div className="min-w-0 flex-1 space-y-1">
@@ -86,7 +86,7 @@ function PlaygroundScreenPreviewContent({
               nativeButton={false}
               render={
                 <Link
-                  href={screen.path}
+                  href={pathConfigured ? embedUrl : screen.path}
                   target="_blank"
                   rel="noopener noreferrer"
                 />
@@ -123,6 +123,7 @@ function PlaygroundScreenPreviewContent({
             </div>
           ) : null}
 
+          {/* Match auth `h-dvh` — fill the content column, do not tile at 70vh. */}
           <iframe
             key={screen.id}
             title={`${screen.label} preview`}
@@ -130,7 +131,7 @@ function PlaygroundScreenPreviewContent({
             data-playground-screen-id={screen.id}
             data-playground-target-path={screen.path}
             data-playground-embed-url={embedUrl}
-            className="bg-background h-[70vh] w-full min-w-0 max-w-full rounded-lg border"
+            className="bg-background block h-[calc(100dvh-6rem)] min-h-[56rem] w-full min-w-0 max-w-none rounded-lg border"
           />
         </CardContent>
       </Card>

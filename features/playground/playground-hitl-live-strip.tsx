@@ -76,11 +76,12 @@ export function PlaygroundHitlLiveStrip({
         ) : null}
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      {/* Full-width embeds — no 2-col / 420px tile that crops auth h-dvh layouts. */}
+      <div className="grid gap-4">
         {mounted.map((row) => (
           <Card
             key={row.id}
-            className="min-w-0 overflow-hidden shadow-none"
+            className="min-w-0 shadow-none"
             data-playground-shape={row.shape}
             data-screen-id={row.id}
           >
@@ -112,7 +113,7 @@ export function PlaygroundHitlLiveStrip({
               <iframe
                 title={`${row.label} live embed`}
                 src={row.embedHref}
-                className="bg-background h-[420px] w-full min-w-0 border-0"
+                className="bg-background block h-[calc(100dvh-6rem)] min-h-[56rem] w-full min-w-0 border-0"
               />
             </CardContent>
           </Card>

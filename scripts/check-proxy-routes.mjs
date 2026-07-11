@@ -10,7 +10,7 @@ const REQUIRED_MATCHERS = [
   '"/account/:path*"',
   '"/dashboard/:path*"',
   '"/client/:path*"',
-  '"/trade/:path*"',
+  '"/fft/:path*"',
   '"/playground/:path*"',
 ];
 
@@ -46,7 +46,7 @@ function main() {
   const matcherBlock = source.match(/matcher:\s*\[([\s\S]*?)\]/);
   const matcherSource = matcherBlock?.[1] ?? source;
 
-  // Guest Lynx Morphor landing at `/` must remain public (Sign in CTA → /auth/sign-in).
+  // Guest Vanguard landing at `/` stays public and unlocks both Neon auth entries.
   if (/^\s*"\/"\s*,?\s*$/m.test(matcherSource)) {
     throw new Error('proxy.ts must not match public guest landing "/"');
   }

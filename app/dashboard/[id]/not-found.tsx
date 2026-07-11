@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Button } from "@/components-V2/platform-components/ui/button";
-import { OPERATOR_DASHBOARD_HREF } from "@/modules/platform/routing/portal-routes";
+import { ORGANIZATION_ADMIN_DASHBOARD_HREF } from "@/modules/platform/routing/portal-routes";
 import { portalCopy } from "@/modules/declarations/copy/portal-copy";
 
 export default function DashboardNotFound() {
@@ -13,7 +13,7 @@ export default function DashboardNotFound() {
       <Button
         variant="outline"
         size="sm"
-        render={<Link href={OPERATOR_DASHBOARD_HREF} />}
+        render={<Link href={ORGANIZATION_ADMIN_DASHBOARD_HREF} />}
         nativeButton={false}
       >
         {copy.backLabel}

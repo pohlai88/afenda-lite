@@ -4,6 +4,6 @@ export type {
   ShellNavKind,
 } from "@/modules/platform/shell/access";
 export {
-  hasHotSalesModuleAccess,
+  hasFftModuleAccess,
   resolveShellAccess,
 } from "@/modules/platform/shell/access";

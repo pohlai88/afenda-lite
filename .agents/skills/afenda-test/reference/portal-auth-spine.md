@@ -1,6 +1,6 @@
 # Portal auth spine declaration table
 
-SSOT for L4 gap analysis on Client Declaration Portal auth ingress. Cross-check when diffs touch `lib/org-sign-in-entry.ts`, `lib/portal-session-routing.ts`, `lib/public-link-routing.ts`, or `proxy.ts`.
+SSOT for L4 gap analysis on Afenda-Lite auth ingress. Cross-check when diffs touch `lib/org-sign-in-entry.ts`, `lib/portal-session-routing.ts`, `lib/public-link-routing.ts`, or `proxy.ts`.
 
 | ID | Condition | Route | Surface | Options popout | Min layer |
 | --- | --- | --- | --- | --- | --- |

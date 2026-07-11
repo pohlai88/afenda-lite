@@ -1,6 +1,7 @@
 import { portalCopy } from "@/modules/declarations/copy/portal-copy";
 
-export type PortalMemberContext = "operator" | "client";
+/** Organization member kind — organization admin vs client (declarant). */
+export type OrganizationMemberKind = "organizationAdmin" | "client";
 
 export type PortalMemberProfile = {
   fullLegalName: string | null;
@@ -15,7 +16,7 @@ export type PortalMember = {
   displayName: string;
   subtitle: string;
   role: string | null;
-  context: PortalMemberContext;
+  context: OrganizationMemberKind;
   isPreviewSession: boolean;
   profile: PortalMemberProfile | null;
 };
@@ -48,7 +49,9 @@ export function memberInitials(name: string, email: string | null) {
     .join("");
 }
 
-export function fallbackOperatorMember(displayName: string): PortalMember {
+export function fallbackOrganizationAdminMember(
+  displayName: string,
+): PortalMember {
   return {
     userId: "",
     email: "",
@@ -56,7 +59,7 @@ export function fallbackOperatorMember(displayName: string): PortalMember {
     displayName,
     subtitle: portalCopy.nav.organization,
     role: "admin",
-    context: "operator",
+    context: "organizationAdmin",
     isPreviewSession: false,
     profile: null,
   };
@@ -69,22 +72,22 @@ export type AuthSessionUser = {
   role?: string | null;
 };
 
-/** Client-safe context inference — mirrors server `resolvePortalMember` when profile is unavailable. */
-export function resolvePortalMemberContext(
+/** Client-safe kind inference — mirrors server `resolvePortalMember` when profile is unavailable. */
+export function resolveOrganizationMemberKind(
   role: string | null | undefined,
-): PortalMemberContext {
-  return role === "admin" ? "operator" : "client";
+): OrganizationMemberKind {
+  return role === "admin" ? "organizationAdmin" : "client";
 }
 
 export function resolvePortalMemberSubtitle(
-  context: PortalMemberContext,
+  context: OrganizationMemberKind,
 ): string {
-  return context === "operator"
+  return context === "organizationAdmin"
     ? portalCopy.nav.organization
     : portalCopy.clientDashboard.eyebrow;
 }
 
-/** Fallback member for menus when server-synced `PortalMember` is not in context yet. */
+/** Fallback member for menus when server-synced `PortalMember` is not available yet. */
 export function resolvePortalMemberFromSession(
   synced: PortalMember | null | undefined,
   sessionUser: AuthSessionUser | undefined,
@@ -97,7 +100,7 @@ export function resolvePortalMemberFromSession(
     return null;
   }
 
-  const context = resolvePortalMemberContext(sessionUser.role);
+  const context = resolveOrganizationMemberKind(sessionUser.role);
 
   return {
     userId: sessionUser.id,

@@ -3,7 +3,7 @@ import "server-only";
 import { redirect } from "next/navigation";
 import { playgroundScreens } from "@/lib/playground/playground";
 import {
-  OPERATOR_DASHBOARD_HREF,
+  ORGANIZATION_ADMIN_DASHBOARD_HREF,
   playgroundScreenHref,
 } from "@/modules/platform/routing/portal-routes";
 
@@ -11,7 +11,7 @@ import {
 export function runPlaygroundIndexPage(): never {
   const firstScreen = playgroundScreens[0];
   if (!firstScreen) {
-    redirect(OPERATOR_DASHBOARD_HREF);
+    redirect(ORGANIZATION_ADMIN_DASHBOARD_HREF);
   }
 
   redirect(playgroundScreenHref(firstScreen.id));

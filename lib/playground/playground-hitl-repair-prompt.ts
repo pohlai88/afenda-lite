@@ -74,7 +74,7 @@ export function buildPlaygroundHitlRepairPrompt(options: {
     ...(evidence.length ? evidence.map((path) => `- ${path}`) : ["- No evidence registered; stop and investigate."]),
     "",
     "GUARDRAILS",
-    "- Do not restore or change /join, /client/onboarding, the client workspace, or /trade/** unless the human explicitly reopens that phase.",
+    "- Do not restore or change /join, /client/onboarding, the client workspace, or /fft/** unless the human explicitly reopens that phase.",
     "- Do not treat a redirect as intentional without proving its condition and final destination.",
     "- Keep app/**/page.tsx thin; use the existing lib/entry or lib/pages and features/components-V2 boundaries.",
     "- Do not mark HITL verified automatically. Human review is the final gate.",

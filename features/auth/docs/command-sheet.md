@@ -23,10 +23,10 @@ ROOT: C:\JackProject\afenda-bolt\client-declaration-portal
 EXPERIENCE: Lynx Sovereign Landing
 PURPOSE: cinematic entry surface for sign-in and sign-up
 PRIMARY HERO: public/lynx/lynx-laptop.png or optimized equivalent
-VAULT ART: public/lynx/dua-lynx.png
+VAULT ART: public/lynx/lynx-auth-popup.png
 BROWSER ASSET PATHS:
 - /lynx/lynx-laptop.png
-- /lynx/dua-lynx.png
+- /lynx/lynx-auth-popup.png
 
 CORE IDEA:
 The Lynx is the interface.
@@ -101,7 +101,7 @@ The agent must inspect these in order before changing code or claiming completio
 6. authentication route definitions
 7. authentication dialog/component implementation, if separate
 8. public/lynx/lynx-laptop.png
-9. public/lynx/dua-lynx.png
+9. public/lynx/lynx-auth-popup.png
 10. any existing particle, cursor, theme, reduced-motion, or portal utilities
 ```
 
@@ -213,7 +213,7 @@ It must:
 - originate visually from the shield/keyhole
 - provide visible Sign In and Create Account actions
 - use the dual light/dark philosophy
-- use dua-lynx.png as meaningful artwork, not only a faint watermark
+- use lynx-auth-popup.png as the authoritative foreground vault artwork
 - avoid presenting baked image typography as functional interface
 - remain usable on mobile
 - maintain correct dialog semantics
@@ -276,7 +276,7 @@ A Lynx slice is **done** only when all applicable items are true:
 [ ] Vault is substantially redesigned beyond the previous 34rem card
 [ ] Sign In and Create Account remain explicit and discoverable
 [ ] Sign In and Sign Up use distinguishable departure choreography
-[ ] dua-lynx.png is used intentionally without fake interactive controls
+[ ] lynx-auth-popup.png is paired with semantic auth links over its visible CTAs
 [ ] Hero artwork remains authoritative and legible
 [ ] Particles enhance only selected regions
 [ ] Mobile layout preserves face, eyes, shield, and actions
@@ -413,7 +413,7 @@ READ:
 5. current Lynx stylesheet
 6. verified auth routes
 7. public/lynx/lynx-laptop.png
-8. public/lynx/dua-lynx.png
+8. public/lynx/lynx-auth-popup.png
 9. existing animation/particle utilities
 
 OBJECTIVE:
@@ -445,7 +445,7 @@ DO:
 10. Turn the key after insertion.
 11. Open the portal from the measured keyhole location.
 12. Replace the current small modal with a large Sovereign Vault.
-13. Use /lynx/dua-lynx.png as meaningful vault artwork.
+13. Use /lynx/lynx-auth-popup.png as the foreground vault artwork.
 14. Do not expose baked image controls as real interface.
 15. Provide explicit visible actions:
    - Sign In
@@ -654,9 +654,9 @@ PREREQUISITE:
 Portal/vault-open state must already be available or clearly stubbed.
 
 ASSET:
-C:\JackProject\afenda-bolt\client-declaration-portal\public\lynx\dua-lynx.png
+C:\JackProject\afenda-bolt\client-declaration-portal\public\lynx\lynx-auth-popup.png
 Runtime URL:
-/lynx/dua-lynx.png
+/lynx/lynx-auth-popup.png
 
 SCOPE:
 - vault structure
@@ -671,9 +671,8 @@ DO:
 1. Verify live sign-in and create-account routes.
 2. Replace the current small generic dialog presentation.
 3. Build a large cinematic Sovereign Vault responsive to viewport size.
-4. Use dua-lynx.png as meaningful art, not only a low-opacity watermark.
-5. Mask/crop the asset so baked text and fake controls do not compete
-   with real interface.
+4. Use lynx-auth-popup.png as the authoritative foreground vault art.
+5. Align semantic auth links with the artwork's visible CTA regions.
 6. Provide two unmistakable real actions:
    - Sign In
    - Create Account

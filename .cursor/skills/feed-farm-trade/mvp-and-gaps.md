@@ -14,7 +14,7 @@ Locks: [001](../../../doc/frontend/adr/001-feed-farm-trade.md) · Architecture: 
 
 ### P0 Shell — done
 
-F-ACC-01..05 · AC-ACC · AC-SH — AdminCN + trade gate + FFT nav · locale-free `/trade` · redirect-only legacy `[locale]` shim (no TradeShell)
+F-ACC-01..05 · AC-ACC · AC-SH — AdminCN + trade gate + FFT nav · locale-free `/fft` · redirect-only legacy `[locale]` shim (no FftShell)
 
 ### P1 Core (must exit) — FE wired; AC evidence recorded
 
@@ -36,7 +36,7 @@ F-ACC-01..05 · AC-ACC · AC-SH — AdminCN + trade gate + FFT nav · locale-fre
 |-------|---------|
 | P2 | UI polish — **done** (AC-01..06); further polish needs named AC |
 | P3 | Deposits / pickup / imports / ERP — flags + gate-register |
-| Later | Customer portal, locale URLs, `HOT_SALES_*` rename, 2D-3 packs |
+| Later | Customer portal, locale URLs, `FFT_*` rename, 2D-3 packs |
 
 ### Gap tags (001R)
 

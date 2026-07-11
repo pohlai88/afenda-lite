@@ -60,6 +60,21 @@ export const navItems: NavItem[] = [
         href: '/dashboard/clients',
       },
       {
+        icon: 'UserRoundCogIcon',
+        label: 'Users',
+        childItems: [
+          {
+            label: 'List',
+            href: '/dashboard/users',
+          },
+          {
+            label: 'View',
+            href: '/dashboard/users/user-001',
+            activePath: '/dashboard/users/',
+          },
+        ],
+      },
+      {
         icon: 'UserCogIcon',
         label: 'Account',
         href: '/account/settings',
@@ -69,24 +84,24 @@ export const navItems: NavItem[] = [
   {
     groupLabel: 'Feed Farm Trade',
     kind: 'module',
-    moduleId: 'feed-farm-trade',
+    moduleId: 'fft',
     items: [
       {
         icon: 'Store',
         label: 'Events',
-        href: '/trade/events',
-        activePath: '/trade/events',
+        href: '/fft/events',
+        activePath: '/fft/events',
       },
       {
         icon: 'ShoppingBag',
         label: 'My orders',
-        href: '/trade/my-orders',
+        href: '/fft/my-orders',
       },
       {
         icon: 'Settings2',
         label: 'Admin events',
-        href: '/trade/admin/events',
-        activePath: '/trade/admin/events',
+        href: '/fft/admin/events',
+        activePath: '/fft/admin/events',
       },
     ],
   },

@@ -13,10 +13,10 @@ import {
   surveyInviteTokenParamSchema,
 } from "@/modules/declarations/schemas/surveys";
 import {
-  parseTradeEventId,
-  parseTradeLocale,
-  parseTradeOrderId,
-} from "@/modules/trade/schemas/trade";
+  parseFftEventId,
+  parseFftLocale,
+  parseFftOrderId,
+} from "@/modules/fft/schemas/fft-schemas";
 
 const assignmentId = "550e8400-e29b-41d4-a716-446655440001";
 const surveyId = "550e8400-e29b-41d4-a716-446655440002";
@@ -114,11 +114,11 @@ describe("lib/schemas contracts", () => {
   });
 
   it("validates trade locale and id schemas", () => {
-    expect(parseTradeLocale("vi").success).toBe(true);
-    expect(parseTradeLocale("en").success).toBe(true);
-    expect(parseTradeLocale("fr").success).toBe(false);
-    expect(parseTradeEventId(surveyId).success).toBe(true);
-    expect(parseTradeEventId("not-a-uuid").success).toBe(false);
-    expect(parseTradeOrderId(assignmentId).success).toBe(true);
+    expect(parseFftLocale("vi").success).toBe(true);
+    expect(parseFftLocale("en").success).toBe(true);
+    expect(parseFftLocale("fr").success).toBe(false);
+    expect(parseFftEventId(surveyId).success).toBe(true);
+    expect(parseFftEventId("not-a-uuid").success).toBe(false);
+    expect(parseFftOrderId(assignmentId).success).toBe(true);
   });
 });

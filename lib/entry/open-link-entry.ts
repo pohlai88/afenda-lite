@@ -8,7 +8,7 @@ import "server-only";
  *
  * @see docs/architecture/slices/s5-share-access.md
  */
-import { portalCopy } from "@/lib/copy/portal-copy";
+import { portalCopy } from "@/modules/declarations/copy/portal-copy";
 import { openSurveyHref } from "@/modules/platform/routing/portal-routes";
 import {
   buildPublicLinkMetadata,

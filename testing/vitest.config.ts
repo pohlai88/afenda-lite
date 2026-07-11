@@ -23,8 +23,8 @@ export default defineConfig({
           include: [
             "lib/**/*.test.ts",
             "modules/**/*.test.ts",
-            "features/trade/**/*.test.ts",
-            "features/trade/**/*.test.tsx",
+            "features/**/*.test.ts",
+            "features/**/*.test.tsx",
             "app/api/**/*.test.ts",
             "components/portal-atmosphere/**/*.test.ts",
           ],

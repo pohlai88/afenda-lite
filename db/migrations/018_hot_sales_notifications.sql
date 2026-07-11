@@ -1,6 +1,6 @@
--- Hot Sales Phase 2C — notification lane (ADR-003)
+-- Feed Farm Trade Phase 2C — notification lane (ADR-003)
 
-CREATE TABLE IF NOT EXISTS hot_sales_notification_template (
+CREATE TABLE IF NOT EXISTS fft_notification_template (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   event_key TEXT NOT NULL,
   locale TEXT NOT NULL CHECK (locale IN ('vi', 'en')),
@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS hot_sales_notification_template (
   UNIQUE (event_key, locale)
 );
 
-CREATE TABLE IF NOT EXISTS hot_sales_notification_event (
+CREATE TABLE IF NOT EXISTS fft_notification_event (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   event_key TEXT NOT NULL,
   channel TEXT NOT NULL DEFAULT 'email',
@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS hot_sales_notification_event (
   UNIQUE (event_key, channel)
 );
 
-CREATE TABLE IF NOT EXISTS hot_sales_notification_delivery (
+CREATE TABLE IF NOT EXISTS fft_notification_delivery (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   event_key TEXT NOT NULL,
   entity_id TEXT NOT NULL,
@@ -37,11 +37,11 @@ CREATE TABLE IF NOT EXISTS hot_sales_notification_delivery (
   UNIQUE (idempotency_key)
 );
 
-CREATE INDEX IF NOT EXISTS hot_sales_notification_delivery_entity_idx
-  ON hot_sales_notification_delivery (event_key, entity_id);
+CREATE INDEX IF NOT EXISTS fft_notification_delivery_entity_idx
+  ON fft_notification_delivery (event_key, entity_id);
 
 -- Seed core templates (vi/en) + default enabled events
-INSERT INTO hot_sales_notification_event (event_key, channel, enabled) VALUES
+INSERT INTO fft_notification_event (event_key, channel, enabled) VALUES
   ('order.submitted', 'email', TRUE),
   ('allocation.completed', 'email', TRUE),
   ('allocation.partial', 'email', TRUE),
@@ -50,7 +50,7 @@ INSERT INTO hot_sales_notification_event (event_key, channel, enabled) VALUES
   ('pickup.completed', 'email', TRUE)
 ON CONFLICT (event_key, channel) DO NOTHING;
 
-INSERT INTO hot_sales_notification_template (event_key, locale, subject, body_markdown) VALUES
+INSERT INTO fft_notification_template (event_key, locale, subject, body_markdown) VALUES
   ('order.submitted', 'en', 'Order {{orderNumber}} registered',
    'Your order **{{orderNumber}}** for {{customerName}} has been registered.'),
   ('order.submitted', 'vi', 'Đơn hàng {{orderNumber}} đã đăng ký',

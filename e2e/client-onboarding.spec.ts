@@ -6,7 +6,7 @@ import {
   operatorSkipMessage,
   requireOperatorCreds,
 } from "@/testing/e2e/credentials";
-import { loginAsOperator, expectClientRegisteredToast, registerClient } from "@/testing/e2e/operator-flows";
+import { loginAsOperator, expectClientRegisteredToast, registerClient } from "@/testing/e2e/organization-admin-flows";
 
 const operatorCreds = getOperatorCreds();
 const clientPassword = getClientDefaultPasswordFromEnv();

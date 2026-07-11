@@ -11,14 +11,14 @@ import {
 import { portalCopy } from "@/modules/declarations/copy/portal-copy";
 import {
   pickDisplayName,
+  type OrganizationMemberKind,
   type PortalMember,
-  type PortalMemberContext,
   type PortalMemberProfile,
 } from "@/modules/identity/portal-member-types";
 
 export type {
+  OrganizationMemberKind,
   PortalMember,
-  PortalMemberContext,
   PortalMemberProfile,
 } from "@/modules/identity/portal-member-types";
 
@@ -45,8 +45,10 @@ export async function resolvePortalMember(
   }
 
   const isPreview = isPreviewClientSession(session);
-  const isOperator = isAdminSession(session) && !isPreview;
-  const context: PortalMemberContext = isOperator ? "operator" : "client";
+  const isOrganizationAdmin = isAdminSession(session) && !isPreview;
+  const context: OrganizationMemberKind = isOrganizationAdmin
+    ? "organizationAdmin"
+    : "client";
 
   const profileRow = await getClientProfile(user.id);
   const profile: PortalMemberProfile | null = profileRow
@@ -64,7 +66,7 @@ export async function resolvePortalMember(
   });
 
   const subtitle =
-    context === "operator"
+    context === "organizationAdmin"
       ? portalCopy.nav.organization
       : (profile?.entityName?.trim() ||
           portalCopy.clientDashboard.eyebrow);
@@ -82,7 +84,7 @@ export async function resolvePortalMember(
   };
 }
 
-/** Preview client identity for operator team switcher (may differ from signed-in admin). */
+/** Preview client identity for organization-admin team switcher (may differ from signed-in admin). */
 export async function resolvePreviewClientMember(): Promise<PortalMember | null> {
   const previewUser = await getPreviewClientUser();
   if (!previewUser) {

@@ -1,4 +1,4 @@
-# L4 Playwright (Client Declaration Portal)
+# L4 Playwright (Afenda-Lite)
 
 On-demand reference for `/afenda-test` and `afenda-test-engineer`. Authority: [`testing/README.md`](../../../../testing/README.md)
 
@@ -26,7 +26,7 @@ On-demand reference for `/afenda-test` and `afenda-test-engineer`. Authority: [`
 
 | App | Spec location | Config | Port |
 | --- | --- | --- | --- |
-| Client Declaration Portal | `e2e/**/*.spec.ts` | `playwright.config.ts` | 3000 |
+| Afenda-Lite | `e2e/**/*.spec.ts` | `playwright.config.ts` | 3000 |
 
 Extend shared fixtures in `testing/e2e/` only.
 

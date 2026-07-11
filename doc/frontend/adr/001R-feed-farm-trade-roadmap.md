@@ -25,12 +25,12 @@
 | Code vs arch status | [completeness.md](../../../.cursor/skills/feed-farm-trade/completeness.md) |
 
 ```text
-DO NOT: TradeShell, /trade/[locale], customer portal, invent permission codes, rename HOT_SALES_*
+DO NOT: FftShell, /fft/[locale], customer portal, invent permission codes, rename FFT_*
 MVP ≠ events/orders/alloc alone — see P1 promoted gaps G1–G6
-TRUSTED: modules/trade/domain/rbac-catalog.ts · app/actions/trade.ts · modules/trade/domain/store.ts
+TRUSTED: modules/fft/domain/rbac-catalog.ts · app/actions/fft.ts · modules/fft/domain/store.ts
 ```
 
-**Code pack (P1):** `rbac-catalog.ts` · `app/actions/trade.ts` · `modules/trade/domain/store.ts` · shell/access · `app/trade/layout.tsx` · `navConfig.tsx` · `features/trade/*`
+**Code pack (P1):** `rbac-catalog.ts` · `app/actions/fft.ts` · `modules/fft/domain/store.ts` · shell/access · `app/fft/layout.tsx` · `navConfig.tsx` · `features/fft/*`
 
 ---
 
@@ -45,7 +45,7 @@ TRUSTED: modules/trade/domain/rbac-catalog.ts · app/actions/trade.ts · modules
 | **Enterprise MVP** | **P0 + P1** (includes G1–G6) + AC evidence |
 | UI polish | P2 — **complete 2026-07-11** (P2-AC-01..06 evidenced; optional further polish needs named AC) |
 | Ops handoff | P3 — flags + gate-register (ops docs present — G0 resolved) |
-| Customer portal / locale URLs / `HOT_SALES_*` rename | Later |
+| Customer portal / locale URLs / `FFT_*` rename | Later |
 
 ```mermaid
 flowchart LR
@@ -57,7 +57,7 @@ flowchart LR
   P1 --> P3[P3 Ops optional]
 ```
 
-**Program status (2026-07-11):** P0 done; P1 engine+FE wired with AC evidence recorded (`EVALUATE_P1_MVP: YES` in skill `verify.md`); **enterprise MVP claimable**. P2 UI polish AC-01..06 done. P3 = flag-off placeholders + gate-register for any prod `HOT_SALES_*` enable. See [completeness.md](../../../.cursor/skills/feed-farm-trade/completeness.md).
+**Program status (2026-07-11):** P0 done; P1 engine+FE wired with AC evidence recorded (`EVALUATE_P1_MVP: YES` in skill `verify.md`); **enterprise MVP claimable**. P2 UI polish AC-01..06 done. P3 = flag-off placeholders + gate-register for any prod `FFT_*` enable. See [completeness.md](../../../.cursor/skills/feed-farm-trade/completeness.md).
 
 ---
 
@@ -69,8 +69,8 @@ Evidence: engine RBAC + actions + domain + AdminCN pages (2026-07-11). External 
 
 | | |
 |--|--|
-| **Finding (was)** | Working tree briefly had **no** `docs/hot-sales/` after `f479d5a`. |
-| **Resolution** | Restored from `f479d5a^`. Living SSOT: [RUNTIME](../../../docs/hot-sales/RUNTIME.md) · [gate-register](../../../docs/hot-sales/ops/gate-register.md). |
+| **Finding (was)** | Working tree briefly had **no** `docs/fft/` after `f479d5a`. |
+| **Resolution** | Restored from `f479d5a^`. Living SSOT: [RUNTIME](../../../docs/fft/RUNTIME.md) · [gate-register](../../../docs/fft/ops/gate-register.md). |
 | **Impact now** | P3 may cite ops docs. **Flag promotion** still requires gate-register checklist — not “docs missing.” |
 | **Tag** | Closed for doc presence |
 
@@ -78,12 +78,12 @@ Evidence: engine RBAC + actions + domain + AdminCN pages (2026-07-11). External 
 
 | ID | Capability | Surface | Why MVP | FE status |
 |----|------------|---------|---------|-----------|
-| **G1** | Customer priority | `priority.manage`, `importPriorityCsvAction`, `hot_sales_customer_priority` | Allocation is priority-ranked | Setup page — wired |
+| **G1** | Customer priority | `priority.manage`, `importPriorityCsvAction`, `fft_customer_priority` | Allocation is priority-ranked | Setup page — wired |
 | **G2** | Supply caps | `supply.manage`, product supply in setup | Allocation without supply is unconstrained | Setup — wired |
 | **G3** | Order transfer | `transfer.request` / `transfer.approve` (+ reject) | Default **sales_executive** includes `transfer.request` | My-orders — wired |
 | **G4** | Order complete | `completeTradeOrderAction` / `completeOrder` | Cycle must close after allocate | My-orders / allocation — wired |
 | **G5** | Custom field defs | `custom_field.manage`, field-def actions | Template-driven farm programs | Setup — wired |
-| **G6** | Audit view | `audit.view`, `listAuditForEvent` / `recordHotSalesAudit` | Minimum enterprise governance | Setup — wired |
+| **G6** | Audit view | `audit.view`, `listAuditForEvent` / `recordFftAudit` | Minimum enterprise governance | Setup — wired |
 
 ### Fix as AC (already partly named)
 
@@ -107,21 +107,21 @@ Offline booth · barcode · floor plans · full feed ERP / formulation · VFD ·
 
 | ID | Must hold |
 |----|-----------|
-| F-ACC-01 | Entry only via `requireTradeAccess` |
-| F-ACC-02 | FFT nav only when entitled (`feed-farm-trade`) |
-| F-ACC-03 | AdminCN on `/trade/*` |
+| F-ACC-01 | Entry only via `requireFftAccess` |
+| F-ACC-02 | FFT nav only when entitled (`fft`) |
+| F-ACC-03 | AdminCN on `/fft/*` |
 | F-ACC-04 | No session → sign-in |
-| F-ACC-05 | Locale-free `/trade` |
+| F-ACC-05 | Locale-free `/fft` |
 
 | AC | Pass when |
 |----|-----------|
 | AC-ACC-01 | No trade perm → denied + nav hidden |
 | AC-ACC-02 | Trade perm → AdminCN + FFT nav |
-| AC-ACC-03 | Org admin without trade → Declarations OK, `/trade` denied |
+| AC-ACC-03 | Org admin without trade → Declarations OK, `/fft` denied |
 | AC-ACC-04 | Anonymous → sign-in |
-| AC-SH-01..03 | No TradeShell / locale segment; label **Feed Farm Trade**; no portal/Declarations bleed |
+| AC-SH-01..03 | No FftShell / locale segment; label **Feed Farm Trade**; no Declarations **domain** bleed (same AdminCN platform) |
 
-**DoD:** [x] layout gate + AdminCN · [x] `resolveShellAccess` + tests · [x] nav `moduleId` · [x] trade-session deny tests · [x] pair in `doc/README.md` · [x] no live `app/trade/[locale]`
+**DoD:** [x] layout gate + AdminCN · [x] `resolveShellAccess` + tests · [x] nav `moduleId` · [x] trade-session deny tests · [x] pair in `doc/README.md` · [x] no live `app/fft/[locale]`
 
 ---
 
@@ -154,14 +154,14 @@ Thin AdminCN pages OK. Full screens = P2.
 
 | Route | Capability |
 |-------|------------|
-| `/trade` | Redirect → events |
-| `/trade/events` | List events |
-| `/trade/admin/events`, `/new`, `/[eventId]/setup` | Create / setup / open-close / supply / fields / priority / audit / export |
-| `/trade/events/[eventId]/order` | Submit order in window |
-| `/trade/my-orders` | Own orders + transfer + complete |
-| `/trade/admin/events/[eventId]/allocation` | Preview / run / override |
-| `/trade/admin/rbac` | Sales-member / RBAC admin |
-| `/trade/admin/.../deposits\|pickup\|imports`, `/erp-sync` | **P3** placeholders — flag-gated |
+| `/fft` | Redirect → events |
+| `/fft/events` | List events |
+| `/fft/admin/events`, `/new`, `/[eventId]/setup` | Create / setup / open-close / supply / fields / priority / audit / export |
+| `/fft/events/[eventId]/order` | Submit order in window |
+| `/fft/my-orders` | Own orders + transfer + complete |
+| `/fft/admin/events/[eventId]/allocation` | Preview / run / override |
+| `/fft/admin/rbac` | Sales-member / RBAC admin |
+| `/fft/admin/.../deposits\|pickup\|imports`, `/erp-sync` | **P3** placeholders — flag-gated |
 
 ### Acceptance
 
@@ -182,14 +182,14 @@ Thin AdminCN pages OK. Full screens = P2.
 
 ### DoD
 
-- [x] Mutations via `app/actions/trade.ts` + Zod + session/permission; no raw SQL in actions
-- [x] Domain only in `modules/trade`
+- [x] Mutations via `app/actions/fft.ts` + Zod + session/permission; no raw SQL in actions
+- [x] Domain only in `modules/fft`
 - [x] G1–G6 covered by setup / my-orders / allocation / rbac pages
-- [x] No TradeShell / locale switcher mounted; no live `[locale]` App Router tree
+- [x] No FftShell / locale switcher mounted; no live `[locale]` App Router tree
 - [x] API catalog locale-free for trade (`doc/api/02-rest-resources.md`)
 - [x] AC above green (unit and/or e2e `@journey` as available) — evidenced 2026-07-11; see skill `verify.md`
 
-**Verify:** `modules/trade/domain/rbac-catalog.ts` · `app/actions/trade.ts` · `modules/trade/domain/store.ts` · `modules/trade/**/*.test.ts` · thin pages under `app/trade/**`
+**Verify:** `modules/fft/domain/rbac-catalog.ts` · `app/actions/fft.ts` · `modules/fft/domain/store.ts` · `modules/fft/**/*.test.ts` · thin pages under `app/fft/**`
 
 ---
 
@@ -197,7 +197,7 @@ Thin AdminCN pages OK. Full screens = P2.
 
 **Dev spec:** [13-feed-farm-trade-phase2-ui-polish.md](../13-feed-farm-trade-phase2-ui-polish.md)
 
-**P2 complete 2026-07-11** (P2-AC-01..06 PASS in [13](../13-feed-farm-trade-phase2-ui-polish.md)). Further polish only with a named P2-AC + Plan for visual. `features/trade` + thin pages; Feed Farm Trade copy; P1 AC stay green; templates as data; no TradeShell.
+**P2 complete 2026-07-11** (P2-AC-01..06 PASS in [13](../13-feed-farm-trade-phase2-ui-polish.md)). Further polish only with a named P2-AC + Plan for visual. `features/fft` + thin pages; Feed Farm Trade copy; P1 AC stay green; templates as data; no FftShell.
 
 ---
 
@@ -205,9 +205,9 @@ Thin AdminCN pages OK. Full screens = P2.
 
 **Dev spec (scope-only, not authorization):** [14-feed-farm-trade-phase3-ops-flags.md](../14-feed-farm-trade-phase3-ops-flags.md)
 
-Deposits / pickup / imports / ERP (`F-OPS-*`) only when `HOT_SALES_*` on **and** gate-register allows.
+Deposits / pickup / imports / ERP (`F-OPS-*`) only when `FFT_*` on **and** gate-register allows.
 
-**G0 docs restored.** Do not invent promotion checklists here — use [ops/gate-register.md](../../../docs/hot-sales/ops/gate-register.md).
+**G0 docs restored.** Do not invent promotion checklists here — use [ops/gate-register.md](../../../docs/fft/ops/gate-register.md).
 
 | AC | Pass when |
 |----|-----------|
@@ -218,13 +218,13 @@ Deposits / pickup / imports / ERP (`F-OPS-*`) only when `HOT_SALES_*` on **and**
 
 ## Later
 
-Customer portal · locale URLs · ERP vendor packs (2D-3) · renaming `HOT_SALES_*` / `/trade` · AdminCN demo prune · offline/mobile/trade-show booth features · VFD / full mill ERP.
+Customer portal · locale URLs · ERP vendor packs (2D-3) · renaming `FFT_*` / `/fft` · AdminCN demo prune · offline/mobile/trade-show booth features · VFD / full mill ERP.
 
 ---
 
 ## Builder rules
 
-1. Prefer 001 + 001A + 001R over locale trees / TradeShell.
+1. Prefer 001 + 001A + 001R over locale trees / FftShell.
 2. Do not claim enterprise MVP without **P0 + P1 including G1–G6** and AC evidence.
 3. No customer-portal bleed into FFT PRs.
 4. P3 needs living gate-register SSOT (present) + checklist — not FE invention.

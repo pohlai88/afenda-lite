@@ -1,8 +1,8 @@
--- Hot Sales Phase 2B — operational deposit records (ADR-002)
+-- Feed Farm Trade Phase 2B — operational deposit records (ADR-002)
 
-CREATE TABLE IF NOT EXISTS hot_sales_deposit (
+CREATE TABLE IF NOT EXISTS fft_deposit (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  order_id UUID NOT NULL REFERENCES hot_sales_order(id) ON DELETE CASCADE,
+  order_id UUID NOT NULL REFERENCES fft_order(id) ON DELETE CASCADE,
   amount NUMERIC(18, 2),
   currency TEXT NOT NULL DEFAULT 'VND',
   due_at TIMESTAMPTZ,
@@ -15,12 +15,12 @@ CREATE TABLE IF NOT EXISTS hot_sales_deposit (
   UNIQUE (order_id)
 );
 
-CREATE INDEX IF NOT EXISTS hot_sales_deposit_order_id_idx
-  ON hot_sales_deposit (order_id);
+CREATE INDEX IF NOT EXISTS fft_deposit_order_id_idx
+  ON fft_deposit (order_id);
 
-CREATE TABLE IF NOT EXISTS hot_sales_deposit_receipt (
+CREATE TABLE IF NOT EXISTS fft_deposit_receipt (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  deposit_id UUID NOT NULL REFERENCES hot_sales_deposit(id) ON DELETE CASCADE,
+  deposit_id UUID NOT NULL REFERENCES fft_deposit(id) ON DELETE CASCADE,
   reference TEXT,
   paid_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   amount NUMERIC(18, 2) NOT NULL,
@@ -28,12 +28,12 @@ CREATE TABLE IF NOT EXISTS hot_sales_deposit_receipt (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS hot_sales_deposit_receipt_deposit_id_idx
-  ON hot_sales_deposit_receipt (deposit_id);
+CREATE INDEX IF NOT EXISTS fft_deposit_receipt_deposit_id_idx
+  ON fft_deposit_receipt (deposit_id);
 
-CREATE TABLE IF NOT EXISTS hot_sales_deposit_adjustment (
+CREATE TABLE IF NOT EXISTS fft_deposit_adjustment (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  deposit_id UUID NOT NULL REFERENCES hot_sales_deposit(id) ON DELETE CASCADE,
+  deposit_id UUID NOT NULL REFERENCES fft_deposit(id) ON DELETE CASCADE,
   adjustment_type TEXT NOT NULL
     CHECK (adjustment_type IN ('waive', 'refund', 'forfeit', 'correction', 'cancelled')),
   reason TEXT NOT NULL,
@@ -42,13 +42,13 @@ CREATE TABLE IF NOT EXISTS hot_sales_deposit_adjustment (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS hot_sales_deposit_adjustment_deposit_id_idx
-  ON hot_sales_deposit_adjustment (deposit_id);
+CREATE INDEX IF NOT EXISTS fft_deposit_adjustment_deposit_id_idx
+  ON fft_deposit_adjustment (deposit_id);
 
-CREATE TABLE IF NOT EXISTS hot_sales_finance_audit (
+CREATE TABLE IF NOT EXISTS fft_finance_audit (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  deposit_id UUID REFERENCES hot_sales_deposit(id) ON DELETE SET NULL,
-  order_id UUID REFERENCES hot_sales_order(id) ON DELETE SET NULL,
+  deposit_id UUID REFERENCES fft_deposit(id) ON DELETE SET NULL,
+  order_id UUID REFERENCES fft_order(id) ON DELETE SET NULL,
   action TEXT NOT NULL,
   actor_id UUID,
   old_value JSONB,
@@ -57,15 +57,15 @@ CREATE TABLE IF NOT EXISTS hot_sales_finance_audit (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS hot_sales_finance_audit_order_id_idx
-  ON hot_sales_finance_audit (order_id);
+CREATE INDEX IF NOT EXISTS fft_finance_audit_order_id_idx
+  ON fft_finance_audit (order_id);
 
-CREATE INDEX IF NOT EXISTS hot_sales_finance_audit_deposit_id_idx
-  ON hot_sales_finance_audit (deposit_id);
+CREATE INDEX IF NOT EXISTS fft_finance_audit_deposit_id_idx
+  ON fft_finance_audit (deposit_id);
 
 -- Extend order deposit_status projection enum (additive)
-ALTER TABLE hot_sales_order DROP CONSTRAINT IF EXISTS hot_sales_order_deposit_status_check;
-ALTER TABLE hot_sales_order ADD CONSTRAINT hot_sales_order_deposit_status_check
+ALTER TABLE fft_order DROP CONSTRAINT IF EXISTS fft_order_deposit_status_check;
+ALTER TABLE fft_order ADD CONSTRAINT fft_order_deposit_status_check
   CHECK (deposit_status IN (
     'not_required', 'pending', 'paid', 'partially_paid',
     'waived', 'forfeited', 'refunded', 'cancelled'

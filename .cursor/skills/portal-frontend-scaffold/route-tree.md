@@ -88,6 +88,13 @@ app/
     clients/
       page.tsx
       loading.tsx
+    users/
+      page.tsx
+      loading.tsx
+      [userId]/
+        page.tsx
+        loading.tsx
+        not-found.tsx
     [declarationId]/
       page.tsx
       loading.tsx
@@ -179,22 +186,24 @@ app/
 | `/client/declare/:assignmentId` | `app/client/(workspace)/declare/[assignmentId]/page.tsx` |
 | `/dashboard` | `app/dashboard/page.tsx` |
 | `/dashboard/clients` | `app/dashboard/clients/page.tsx` |
+| `/dashboard/users` | `app/dashboard/users/page.tsx` |
+| `/dashboard/users/:userId` | `app/dashboard/users/[userId]/page.tsx` |
 | `/dashboard/:declarationId` | `app/dashboard/[declarationId]/page.tsx` |
 | `/account` | `app/account/page.tsx` |
 | `/account/:path` | `app/account/[path]/page.tsx` |
-| `/trade` | `app/trade/page.tsx` |
-| `/trade/:locale/events` | `app/trade/[locale]/events/page.tsx` |
-| `/trade/:locale/events/:eventId/order` | `…/events/[eventId]/order/page.tsx` |
-| `/trade/:locale/my-orders` | `…/my-orders/page.tsx` |
-| `/trade/:locale/admin/events` | `…/admin/events/page.tsx` |
-| `/trade/:locale/admin/events/new` | `…/admin/events/new/page.tsx` |
-| `/trade/:locale/admin/events/:eventId/setup` | `…/[eventId]/setup/page.tsx` |
-| `/trade/:locale/admin/events/:eventId/allocation` | `…/allocation/page.tsx` |
-| `/trade/:locale/admin/events/:eventId/deposits` | `…/deposits/page.tsx` |
-| `/trade/:locale/admin/events/:eventId/imports` | `…/imports/page.tsx` |
-| `/trade/:locale/admin/events/:eventId/pickup` | `…/pickup/page.tsx` |
-| `/trade/:locale/admin/erp-sync` | `…/admin/erp-sync/page.tsx` |
-| `/trade/:locale/admin/rbac` | `…/admin/rbac/page.tsx` |
+| `/fft` | `app/fft/page.tsx` |
+| `/fft/:locale/events` | `app/fft/[locale]/events/page.tsx` |
+| `/fft/:locale/events/:eventId/order` | `…/events/[eventId]/order/page.tsx` |
+| `/fft/:locale/my-orders` | `…/my-orders/page.tsx` |
+| `/fft/:locale/admin/events` | `…/admin/events/page.tsx` |
+| `/fft/:locale/admin/events/new` | `…/admin/events/new/page.tsx` |
+| `/fft/:locale/admin/events/:eventId/setup` | `…/[eventId]/setup/page.tsx` |
+| `/fft/:locale/admin/events/:eventId/allocation` | `…/allocation/page.tsx` |
+| `/fft/:locale/admin/events/:eventId/deposits` | `…/deposits/page.tsx` |
+| `/fft/:locale/admin/events/:eventId/imports` | `…/imports/page.tsx` |
+| `/fft/:locale/admin/events/:eventId/pickup` | `…/pickup/page.tsx` |
+| `/fft/:locale/admin/erp-sync` | `…/admin/erp-sync/page.tsx` |
+| `/fft/:locale/admin/rbac` | `…/admin/rbac/page.tsx` |
 | `/playground` | `app/playground/page.tsx` |
 | `/playground/:screenId` | `app/playground/[screenId]/page.tsx` |
 | `/playground/coverage` | `app/playground/coverage/page.tsx` |

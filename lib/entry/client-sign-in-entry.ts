@@ -10,12 +10,12 @@ import {
   resolveClientAuthReasonNotice,
 } from "@/modules/identity/auth/auth-entry-params";
 import {
-  appendPlaygroundEmbedQuery,
   resolvePlaygroundEmbedActive,
 } from "@/modules/platform/playground-embed";
-import { PORTAL_NAME, portalCopy } from "@/lib/copy/portal-copy";
+import { PORTAL_NAME, portalCopy } from "@/modules/declarations/copy/portal-copy";
 import {
   CLIENT_SIGN_IN_ENTRY_HREF,
+  buildClientSignInEmbedRedirectPath,
   clientSignInAuthHref,
   clientSignUpAuthHref,
 } from "@/modules/platform/routing/portal-routes";
@@ -57,11 +57,14 @@ export async function redirectClientSignInEntry(options?: {
     redirect(landing);
   }
 
-  const target = clientSignInAuthHref(options?.reason);
-  redirect(options?.embed ? appendPlaygroundEmbedQuery(target) : target);
+  if (options?.embed) {
+    redirect(buildClientSignInEmbedRedirectPath({ reason: options.reason }));
+  }
+
+  redirect(clientSignInAuthHref(options?.reason));
 }
 
-/** Shared page handler for `/client/login` and the root session router at `/`. */
+/** Page handler for the named `/client/login` entry. */
 export async function runClientSignInEntryPage({
   searchParams,
 }: {

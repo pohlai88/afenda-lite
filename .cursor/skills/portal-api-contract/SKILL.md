@@ -1,10 +1,10 @@
 ---
 name: portal-api-contract
 description: >-
-  Portal API contract enforcement layer for Client Declaration Portal. Encodes
+  Portal API contract enforcement layer for Afenda-Lite. Encodes
   adapter choice (Server Action vs Route Handler), error shapes, branded IDs,
   Zod schema map, one-version rules, and the exact api-now vs contract-only
-  split. Apply when writing app/actions, app/api route handlers, lib/schemas,
+  split. Apply when writing app/actions, app/api route handlers, modules/*/schemas,
   or any adapter wiring; when the user mentions API contract, schema map,
   ActionResult, error codes, branded IDs, or REST resources.
 ---
@@ -19,12 +19,13 @@ description: >-
 | [doc/api/02-rest-resources.md](../../../doc/api/02-rest-resources.md) | api-now vs contract-only catalog, naming, pagination |
 | [doc/api/03-error-contract.md](../../../doc/api/03-error-contract.md) | Wire shape, HTTP→code map, ActionResult |
 | [doc/api/04-types.md](../../../doc/api/04-types.md) | Branded IDs, Input/Output split, discriminated unions |
-| [doc/api/05-schema-map.md](../../../doc/api/05-schema-map.md) | `lib/schemas/` module map, resource→schema cross-ref |
-| [doc/backend/05-contract-rules.md](../../../doc/backend/05-contract-rules.md) | One-version philosophy, contract-first order, red flags |
+| [doc/api/05-schema-map.md](../../../doc/api/05-schema-map.md) | `modules/*/schemas` map, resource→schema cross-ref |
+| [doc/backend/07-conventions.md](../../../doc/backend/07-conventions.md) | Backend conventions + one-version pointers |
 
 **Cross-skill links**
 
 - Frontend route params and brand names → [../portal-frontend-scaffold/boundaries.md](../portal-frontend-scaffold/boundaries.md)
+- Modules / ports / residue → [../portal-backend-modules/SKILL.md](../portal-backend-modules/SKILL.md)
 - Hyrum's Law / one-version principles → [../agent-skills/skills/api-and-interface-design/SKILL.md](../agent-skills/skills/api-and-interface-design/SKILL.md)
 
 ---
@@ -35,12 +36,14 @@ description: >-
 Need                                                Adapter
 ─────────────────────────────────────────────────────────────
 Same-origin UI mutation                          → Server Action
-Same-origin UI read                              → RSC → domain (no HTTP round-trip)
+Same-origin UI read                              → RSC → modules/*/domain (no HTTP)
 Health / Neon Auth proxy / draft XHR             → Route Handler under /api
 External REST / mobile consumer                  → Route Handler per doc/api contract
 ```
 
 One domain function can serve both Action **and** Route Handler — keep it DRY.
+
+Full tree SSOT: [doc/frontend/04-bff-and-data.md](../../../doc/frontend/04-bff-and-data.md).
 
 ---
 
@@ -49,9 +52,9 @@ One domain function can serve both Action **and** Route Handler — keep it DRY.
 | Layer | May | Must not |
 |-------|-----|----------|
 | Adapter (`app/actions`, `app/api`) | Session guard, Zod parse, map errors, `revalidatePath` | Raw SQL, business rules |
-| `lib/schemas` | Shape + refine | DB access |
-| `lib/domain` | Parameterized queries, domain rules | Read `Request` / cookies |
-| UI / RSC | Call domain (reads) or Actions (mutations) | Import `pg` / build SQL |
+| `modules/*/schemas` | Shape + refine | DB access |
+| `modules/*/domain` | Parameterized queries, domain rules | Read `Request` / cookies |
+| UI / RSC | Call module domain (reads) or Actions (mutations) | Import `pg` / build SQL |
 
 **Validation rule:** `parseSchema` / `safeParse` at the adapter boundary once. Do not re-validate inside domain helpers.
 
@@ -102,7 +105,7 @@ type ActionResult<T> =
 | `requireAdminSession` | Operator Actions |
 | `requireClientSession` / client helpers | Client Actions |
 | `requireAccountSession` | Account routes / actions |
-| Trade access helpers | `app/actions/trade` |
+| Trade access helpers | `app/actions/fft` |
 
 Route Handlers that mutate must authenticate equivalently (cookie session). `public` exceptions: health endpoints and Neon Auth proxy only.
 
@@ -121,7 +124,7 @@ Route Handlers that mutate must authenticate equivalently (cookie session). `pub
 
 See [api-now.md](api-now.md) for the exact current Route Handler inventory and the prohibition on scaffolding contract-only list/read handlers for web UI.
 
-Key rule: **Do not add same-origin "list declarations" GETs under `/api` for the dashboard — use RSC → domain.**
+Key rule: **Do not add same-origin "list declarations" GETs under `/api` for the dashboard — use RSC → module domain.**
 
 ---
 
@@ -129,7 +132,7 @@ Key rule: **Do not add same-origin "list declarations" GETs under `/api` for the
 
 See [brands-and-schemas.md](brands-and-schemas.md) for:
 - Complete branded ID table (`DeclarationId`, `AssignmentId`, `ShareToken`, `InviteToken`, `TradeEventId`, etc.)
-- `lib/schemas/` module map with notable exports
+- `modules/*/schemas` map with notable exports
 - Resource → schema cross-reference
 - `parseSchema` usage pattern
 - Known schema gaps
@@ -154,7 +157,7 @@ Before writing any adapter, schema, or domain function:
 
 - [ ] Checked adapter decision tree — correct adapter chosen
 - [ ] Session guard identified and applied at adapter layer
-- [ ] Zod schema in `lib/schemas/` referenced or created (not inline)
+- [ ] Zod schema in owning `modules/*/schemas` referenced or created (not inline)
 - [ ] `parseSchema` used at boundary; domain trusts typed value
 - [ ] `ActionResult<T>` or `APIErrorBody` returned on failure (no throw for expected failures)
 - [ ] Error `code` from the standard set (`VALIDATION_ERROR`, `NOT_FOUND`, etc.)
@@ -167,8 +170,8 @@ Before writing any adapter, schema, or domain function:
 
 ## Out of scope for this skill
 
-- Hot Sales feature flags, RBAC, or 2B–2D slice gating — see `hot-sales-phase-2a-ops.mdc` and `docs/hot-sales/`
+- Feed Farm Trade feature flags, RBAC, or 2B–2D slice gating — see `fft-phase-2a-ops.mdc` and `docs/fft/`
 - UI scaffold, route stubs, `loading.tsx` — see [../portal-frontend-scaffold/SKILL.md](../portal-frontend-scaffold/SKILL.md)
-- `lib/` → `modules/` decomposition — separate refactor pass
+- Modules layout / residue Pass 2 — see [../portal-backend-modules/SKILL.md](../portal-backend-modules/SKILL.md) (`lib/` → `modules/` relocate is **complete**)
 - Playground routes or environment config — see `AGENTS.md`
 - Neon Auth internals beyond "use `/api/auth/[...path]`; do not duplicate" — see `.agents/skills/neon/SKILL.md`

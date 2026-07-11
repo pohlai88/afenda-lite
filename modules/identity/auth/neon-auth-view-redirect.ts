@@ -1,5 +1,5 @@
 import { isOrgSignInFrom } from "@/modules/identity/auth/auth-entry-params";
-import { OPERATOR_DASHBOARD_HREF } from "@/modules/identity/client-session";
+import { ORGANIZATION_ADMIN_DASHBOARD_HREF } from "@/modules/identity/client-session";
 
 /**
  * AuthView `redirectTo` after Neon sign-in.
@@ -15,7 +15,7 @@ export function resolveNeonAuthViewRedirectTo(input: {
   }
 
   if (isOrgSignInFrom(input.from)) {
-    return OPERATOR_DASHBOARD_HREF;
+    return ORGANIZATION_ADMIN_DASHBOARD_HREF;
   }
 
   return undefined;

@@ -16,7 +16,7 @@ describe("playground static composition allowlist", () => {
   });
 
   it("rejects unknown screen ids", () => {
-    expect(isPlaygroundStaticCompositionId("hot-sales-events")).toBe(false);
+    expect(isPlaygroundStaticCompositionId("fft-events")).toBe(false);
     expect(isPlaygroundStaticCompositionId("client-dashboard")).toBe(false);
   });
 

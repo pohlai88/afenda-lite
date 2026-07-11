@@ -3,7 +3,8 @@ import "server-only";
 /**
  * Neon Auth Admin API wrappers (user CRUD, sessions, impersonation).
  *
- * **Not** operator session guards — those live in `lib/auth/session.ts` + `lib/admin.ts`.
+ * **Not** organization-admin session guards — those live in
+ * `modules/identity/auth/session.ts` + `modules/identity/admin.ts`.
  */
 import { isAdminSession } from "@/modules/identity/admin";
 import { getAuthSession } from "@/modules/identity/auth/get-session";

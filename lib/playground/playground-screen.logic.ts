@@ -17,7 +17,7 @@ export function playgroundScreenCategoryLabel(
       return "Admin";
     case "client":
       return "Client";
-    case "hot-sales":
+    case "fft":
       return "Feed Farm Trade";
     case "auto":
       return "Auto-discovered";

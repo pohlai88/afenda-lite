@@ -9,8 +9,8 @@ import { parseClientOnboardingFormData } from "@/modules/declarations/client-onb
 import {
   CLIENT_HOME_HREF,
   CLIENT_ONBOARDING_HREF,
-  OPERATOR_CLIENTS_HREF,
-  OPERATOR_DASHBOARD_HREF,
+  ORGANIZATION_ADMIN_CLIENTS_HREF,
+  ORGANIZATION_ADMIN_DASHBOARD_HREF,
 } from "@/modules/platform/routing/portal-routes";
 import {
   acknowledgeClientPortal,
@@ -35,7 +35,7 @@ import { sendClientOnboardingEmail } from "@/modules/identity/email/send-client-
 import { runLoggedAction } from "@/modules/platform/observability";
 import { portalCopy, CLIENT_PORTAL_ACK_VERSION } from "@/modules/declarations/copy/portal-copy";
 import type { SurveyAnswers } from "@/modules/declarations/domain/questions";
-import { parseSchema } from "@/modules/declarations/schemas/common";
+import { parseSchema } from "@/modules/platform/schemas/common";
 import {
   deleteClientAssignmentSchema,
   issueClientInviteSchema,
@@ -208,7 +208,7 @@ export async function submitClientDeclarationAction(input: {
       });
 
       revalidatePath(CLIENT_HOME_HREF);
-      revalidatePath(OPERATOR_DASHBOARD_HREF);
+      revalidatePath(ORGANIZATION_ADMIN_DASHBOARD_HREF);
 
       return { success: true, confirmationCode };
     },
@@ -316,7 +316,7 @@ export async function issueClientInviteAction(formData: FormData) {
         },
       });
 
-      revalidatePath(OPERATOR_CLIENTS_HREF);
+      revalidatePath(ORGANIZATION_ADMIN_CLIENTS_HREF);
 
       return {
         success: true,
@@ -370,7 +370,7 @@ export async function removeClientRegistrationAction(formData: FormData) {
         metadata: { email, authUserRemoved: authResult.deleted === true },
       });
 
-      revalidatePath(OPERATOR_CLIENTS_HREF);
+      revalidatePath(ORGANIZATION_ADMIN_CLIENTS_HREF);
       return { success: true };
     },
   );
@@ -405,7 +405,7 @@ export async function deleteClientAssignmentAction(formData: FormData) {
         resourceId: assignment.id,
       });
 
-      revalidatePath(OPERATOR_CLIENTS_HREF);
+      revalidatePath(ORGANIZATION_ADMIN_CLIENTS_HREF);
       return { success: true };
     },
   );

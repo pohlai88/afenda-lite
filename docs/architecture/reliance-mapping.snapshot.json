@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generatedAt": "2026-07-11T12:07:32.157Z",
+  "generatedAt": "2026-07-11T15:17:06.560Z",
   "summary": {
     "surfaces": {
       "total": 26,
@@ -93,6 +93,7 @@
       "evidence": {
         "entryFiles": [
           "app/auth/[path]/page.tsx",
+          "lib/entry/auth-view-entry.tsx",
           "features/auth/studio-auth-login-page.tsx",
           "features/auth/studio-auth-shell.tsx",
           "lib/auth/auth-page-trust.ts"
@@ -101,7 +102,8 @@
           "app/auth/[path]/page.tsx",
           "features/auth/studio-auth-login-page.tsx",
           "features/auth/studio-auth-shell.tsx",
-          "lib/auth/auth-page-trust.ts"
+          "lib/auth/auth-page-trust.ts",
+          "lib/entry/auth-view-entry.tsx"
         ]
       }
     },
@@ -127,13 +129,15 @@
       "evidence": {
         "entryFiles": [
           "app/auth/[path]/page.tsx",
+          "lib/entry/auth-view-entry.tsx",
           "features/auth/studio-auth-login-page.tsx",
           "lib/auth/auth-page-trust.ts"
         ],
         "scannedFiles": [
           "app/auth/[path]/page.tsx",
           "features/auth/studio-auth-login-page.tsx",
-          "lib/auth/auth-page-trust.ts"
+          "lib/auth/auth-page-trust.ts",
+          "lib/entry/auth-view-entry.tsx"
         ]
       }
     },
@@ -159,13 +163,15 @@
       "evidence": {
         "entryFiles": [
           "app/auth/[path]/page.tsx",
+          "lib/entry/auth-view-entry.tsx",
           "features/auth/studio-auth-login-page.tsx",
           "lib/auth/auth-page-trust.ts"
         ],
         "scannedFiles": [
           "app/auth/[path]/page.tsx",
           "features/auth/studio-auth-login-page.tsx",
-          "lib/auth/auth-page-trust.ts"
+          "lib/auth/auth-page-trust.ts",
+          "lib/entry/auth-view-entry.tsx"
         ]
       }
     },
@@ -191,13 +197,15 @@
       "evidence": {
         "entryFiles": [
           "app/auth/[path]/page.tsx",
+          "lib/entry/auth-view-entry.tsx",
           "features/auth/studio-auth-login-page.tsx",
           "lib/auth/auth-page-trust.ts"
         ],
         "scannedFiles": [
           "app/auth/[path]/page.tsx",
           "features/auth/studio-auth-login-page.tsx",
-          "lib/auth/auth-page-trust.ts"
+          "lib/auth/auth-page-trust.ts",
+          "lib/entry/auth-view-entry.tsx"
         ]
       }
     },
@@ -223,13 +231,15 @@
       "evidence": {
         "entryFiles": [
           "app/auth/[path]/page.tsx",
+          "lib/entry/auth-view-entry.tsx",
           "features/auth/studio-auth-login-page.tsx",
           "lib/auth/auth-page-trust.ts"
         ],
         "scannedFiles": [
           "app/auth/[path]/page.tsx",
           "features/auth/studio-auth-login-page.tsx",
-          "lib/auth/auth-page-trust.ts"
+          "lib/auth/auth-page-trust.ts",
+          "lib/entry/auth-view-entry.tsx"
         ]
       }
     },
@@ -263,12 +273,14 @@
       "evidence": {
         "entryFiles": [
           "app/auth/[path]/page.tsx",
+          "lib/entry/auth-view-entry.tsx",
           "features/auth/studio-auth-login-page.tsx",
           "lib/entry/client-invitation-entry.ts"
         ],
         "scannedFiles": [
           "app/auth/[path]/page.tsx",
           "features/auth/studio-auth-login-page.tsx",
+          "lib/entry/auth-view-entry.tsx",
           "lib/entry/client-invitation-entry.ts"
         ]
       }
@@ -335,11 +347,14 @@
       "evidence": {
         "entryFiles": [
           "app/page.tsx",
+          "lib/entry/client-home-entry.tsx",
           "features/landing/lynx-landing-page.tsx",
           "features/landing/vanguard-landing.tsx",
+          "features/landing/ritual-engine.ts",
           "features/landing/lynx-landing.css",
           "public/lynx/lynx-laptop.png",
           "public/lynx/lynx-laptop.webp",
+          "public/lynx/lynx-auth-popup.png",
           "lib/entry/client-sign-in-entry.ts",
           "lib/entry/client-invitation-entry.ts",
           "modules/platform/routing/portal-routes.ts"
@@ -348,10 +363,13 @@
           "app/page.tsx",
           "features/landing/lynx-landing-page.tsx",
           "features/landing/lynx-landing.css",
+          "features/landing/ritual-engine.ts",
           "features/landing/vanguard-landing.tsx",
+          "lib/entry/client-home-entry.tsx",
           "lib/entry/client-invitation-entry.ts",
           "lib/entry/client-sign-in-entry.ts",
           "modules/platform/routing/portal-routes.ts",
+          "public/lynx/lynx-auth-popup.png",
           "public/lynx/lynx-laptop.png",
           "public/lynx/lynx-laptop.webp"
         ]

@@ -17,7 +17,7 @@ export type ClientAuthenticatedSession = {
 export const CLIENT_ONBOARDING_HREF = "/client/onboarding" as const;
 /** Legacy home router alias — session dispatch only, not the auth form. */
 export const CLIENT_HOME_HREF = "/client" as const;
-export const OPERATOR_DASHBOARD_HREF = "/dashboard" as const;
+export const ORGANIZATION_ADMIN_DASHBOARD_HREF = "/dashboard" as const;
 
 export function toClientAuthenticatedSession(
   session: ClientSession,

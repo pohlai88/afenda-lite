@@ -11,7 +11,7 @@ import {
   ThemeProvider as NextThemesProvider,
   useTheme as useNextTheme,
 } from "next-themes";
-import { PORTAL_THEME_STORAGE_KEY } from "@/lib/copy/portal-theme";
+import { PORTAL_THEME_STORAGE_KEY } from "@/features/portal-chrome/portal-theme";
 
 type Theme = "light" | "dark" | "system";
 type ResolvedTheme = "light" | "dark";

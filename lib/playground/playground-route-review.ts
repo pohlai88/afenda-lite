@@ -150,12 +150,12 @@ function closedTrade(
       label: "Registered playground URL",
       outcome: "unavailable",
       summary:
-        "The Hot Sales phase is closed for this task; runtime output is not product-review evidence.",
+        "The Feed Farm Trade phase is closed for this task; runtime output is not product-review evidence.",
     },
     action: {
       kind: "blocked",
       label: "Do not change or verify as product UI until the phase is reopened.",
-      owner: "Hot Sales gate register",
+      owner: "Feed Farm Trade gate register",
     },
     evidence,
   };
@@ -165,12 +165,36 @@ export const playgroundRouteReviewById = {
   "admin-dashboard": rendered(
     "Operator declaration overview.",
     "The AdminCN operator dashboard renders.",
-    ["app/dashboard/page.tsx", "lib/pages/operator-dashboard-page.ts"],
+    ["app/dashboard/page.tsx", "lib/pages/organization-admin-dashboard-page.ts"],
   ),
   "admin-clients": rendered(
     "Operator client directory.",
     "The AdminCN clients list renders.",
     ["app/dashboard/clients/page.tsx"],
+  ),
+  "admin-users-list": rendered(
+    "Organization user directory.",
+    "The Users list renders with placeholder fixtures until org-member wiring lands.",
+    [
+      "app/dashboard/users/page.tsx",
+      "lib/pages/organization-admin-users-page.ts",
+    ],
+  ),
+  "admin-users-view": rendered(
+    "Organization user detail.",
+    "The User view renders for fixture user-001.",
+    [
+      "app/dashboard/users/[userId]/page.tsx",
+      "lib/pages/organization-admin-users-page.ts",
+    ],
+    [
+      {
+        label: "Unknown user id",
+        outcome: "not-found",
+        summary: "An unknown userId returns not found.",
+        when: "userId is not in the placeholder fixture set",
+      },
+    ],
   ),
   "admin-survey-detail": rendered(
     "Operator declaration detail.",
@@ -395,56 +419,56 @@ export const playgroundRouteReviewById = {
         "A bare join placeholder renders; the existing Studio invitation runner is not wired.",
     },
   ),
-  "hot-sales-trade-index": closedTrade("Hot Sales locale entry.", [
-    "app/trade/page.tsx",
+  "fft-trade-index": closedTrade("Feed Farm Trade locale entry.", [
+    "app/fft/page.tsx",
     "doc/frontend/adr/001-feed-farm-trade.md",
   ]),
-  "hot-sales-events": closedTrade("Hot Sales event catalogue.", [
-    "app/trade/events/page.tsx",
+  "fft-events": closedTrade("Feed Farm Trade event catalogue.", [
+    "app/fft/events/page.tsx",
     "doc/frontend/adr/001-feed-farm-trade.md",
   ]),
-  "hot-sales-my-orders": closedTrade("Hot Sales buyer order history.", [
-    "app/trade/my-orders/page.tsx",
+  "fft-my-orders": closedTrade("Feed Farm Trade buyer order history.", [
+    "app/fft/my-orders/page.tsx",
     "doc/frontend/adr/001-feed-farm-trade.md",
   ]),
-  "hot-sales-event-order": closedTrade("Hot Sales event order flow.", [
-    "app/trade/events/[eventId]/order/page.tsx",
+  "fft-event-order": closedTrade("Feed Farm Trade event order flow.", [
+    "app/fft/events/[eventId]/order/page.tsx",
     "doc/frontend/adr/001-feed-farm-trade.md",
   ]),
-  "hot-sales-admin-events": closedTrade("Hot Sales event administration.", [
-    "app/trade/admin/events/page.tsx",
+  "fft-admin-events": closedTrade("Feed Farm Trade event administration.", [
+    "app/fft/admin/events/page.tsx",
     "doc/frontend/adr/001-feed-farm-trade.md",
   ]),
-  "hot-sales-admin-events-new": closedTrade("Hot Sales event creation.", [
-    "app/trade/admin/events/new/page.tsx",
+  "fft-admin-events-new": closedTrade("Feed Farm Trade event creation.", [
+    "app/fft/admin/events/new/page.tsx",
     "doc/frontend/adr/001-feed-farm-trade.md",
   ]),
-  "hot-sales-admin-event-setup": closedTrade("Hot Sales event setup.", [
-    "app/trade/admin/events/[eventId]/setup/page.tsx",
+  "fft-admin-event-setup": closedTrade("Feed Farm Trade event setup.", [
+    "app/fft/admin/events/[eventId]/setup/page.tsx",
     "doc/frontend/adr/001-feed-farm-trade.md",
   ]),
-  "hot-sales-admin-event-allocation": closedTrade("Hot Sales allocation operations.", [
-    "app/trade/admin/events/[eventId]/allocation/page.tsx",
+  "fft-admin-event-allocation": closedTrade("Feed Farm Trade allocation operations.", [
+    "app/fft/admin/events/[eventId]/allocation/page.tsx",
     "doc/frontend/adr/001-feed-farm-trade.md",
   ]),
-  "hot-sales-admin-event-deposits": closedTrade("Hot Sales deposit operations.", [
-    "app/trade/admin/events/[eventId]/deposits/page.tsx",
+  "fft-admin-event-deposits": closedTrade("Feed Farm Trade deposit operations.", [
+    "app/fft/admin/events/[eventId]/deposits/page.tsx",
     "doc/frontend/adr/001-feed-farm-trade.md",
   ]),
-  "hot-sales-admin-event-imports": closedTrade("Hot Sales import operations.", [
-    "app/trade/admin/events/[eventId]/imports/page.tsx",
+  "fft-admin-event-imports": closedTrade("Feed Farm Trade import operations.", [
+    "app/fft/admin/events/[eventId]/imports/page.tsx",
     "doc/frontend/adr/001-feed-farm-trade.md",
   ]),
-  "hot-sales-admin-event-pickup": closedTrade("Hot Sales pickup operations.", [
-    "app/trade/admin/events/[eventId]/pickup/page.tsx",
+  "fft-admin-event-pickup": closedTrade("Feed Farm Trade pickup operations.", [
+    "app/fft/admin/events/[eventId]/pickup/page.tsx",
     "doc/frontend/adr/001-feed-farm-trade.md",
   ]),
-  "hot-sales-admin-erp-sync": closedTrade("Hot Sales ERP synchronization.", [
-    "app/trade/admin/erp-sync/page.tsx",
+  "fft-admin-erp-sync": closedTrade("Feed Farm Trade ERP synchronization.", [
+    "app/fft/admin/erp-sync/page.tsx",
     "doc/frontend/adr/001-feed-farm-trade.md",
   ]),
-  "hot-sales-admin-rbac": closedTrade("Hot Sales role and access administration.", [
-    "app/trade/admin/rbac/page.tsx",
+  "fft-admin-rbac": closedTrade("Feed Farm Trade role and access administration.", [
+    "app/fft/admin/rbac/page.tsx",
     "doc/frontend/adr/001-feed-farm-trade.md",
   ]),
 } as const satisfies Record<string, PlaygroundRouteReviewDefinition>;

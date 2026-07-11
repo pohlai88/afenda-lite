@@ -1,6 +1,6 @@
 # FFT — RBAC card
 
-**SSOT:** `modules/trade/domain/rbac-catalog.ts` — if this file disagrees with the table below, **trust the TypeScript catalog**.
+**SSOT:** `modules/fft/domain/rbac-catalog.ts` — if this file disagrees with the table below, **trust the TypeScript catalog**.
 
 ## Hard rule
 
@@ -15,11 +15,11 @@ Role templates are seed data only.
 
 | Helper | Use |
 |--------|-----|
-| `requireTradeAccess` | Layout / entry — module entitlement |
+| `requireFftAccess` | Layout / entry — module entitlement |
 | `requireTradePermission(code, opts?)` | Mutations — preferred |
-| `requireTradeAdmin` | Legacy/admin-heavy actions still in `trade.ts` — prefer migrating to codes when touching |
+| `requireFftAdmin` | Legacy/admin-heavy actions still in `trade.ts` — prefer migrating to codes when touching |
 
-Org admin alone does **not** grant `feed-farm-trade`.
+Org admin alone does **not** grant `fft`.
 
 ## Permission catalog (product-owned)
 

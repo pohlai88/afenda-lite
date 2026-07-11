@@ -125,7 +125,7 @@ export function buildNeonAuthManifest({
     trustedDomains: domainsJson.map((entry) => entry.domain),
     allowLocalhost: resolveAllowLocalhost(statusJson, domainsJson),
     productionChecklist: existing.productionChecklist ?? {
-      applicationName: "Client Declaration Portal",
+      applicationName: "Afenda-Lite",
       emailProviderPolicy: "shared-otp-waiver",
       requireLocalhostDisabledAtCutover: true,
     },

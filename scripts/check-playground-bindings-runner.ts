@@ -27,8 +27,8 @@ const playgroundNav = {
   admin: playgroundScreens.filter((screen) => screen.category === "admin"),
   client: playgroundScreens.filter((screen) => screen.category === "client"),
   dynamic: playgroundScreens.filter((screen) => screen.category === "dynamic"),
-  "hot-sales": playgroundScreens.filter(
-    (screen) => screen.category === "hot-sales",
+  "fft": playgroundScreens.filter(
+    (screen) => screen.category === "fft",
   ),
 };
 
@@ -146,7 +146,7 @@ const navScreens = [
   ...playgroundNav.admin,
   ...playgroundNav.client,
   ...playgroundNav.dynamic,
-  ...playgroundNav["hot-sales"],
+  ...playgroundNav["fft"],
 ];
 if (navScreens.length !== playgroundScreens.length) {
   fail(

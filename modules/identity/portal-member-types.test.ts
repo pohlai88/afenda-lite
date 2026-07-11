@@ -1,70 +1,60 @@
 import { describe, expect, it } from "vitest";
 import {
-  pickDisplayName,
-  resolvePortalMemberContext,
+  fallbackOrganizationAdminMember,
+  resolveOrganizationMemberKind,
   resolvePortalMemberFromSession,
   resolvePortalMemberSubtitle,
 } from "@/modules/identity/portal-member-types";
 
-describe("portal-member-types", () => {
-  it("infers operator context from admin role", () => {
-    expect(resolvePortalMemberContext("admin")).toBe("operator");
-    expect(resolvePortalMemberContext("user")).toBe("client");
-    expect(resolvePortalMemberContext(null)).toBe("client");
+describe("resolveOrganizationMemberKind", () => {
+  it("maps Neon admin role to organizationAdmin", () => {
+    expect(resolveOrganizationMemberKind("admin")).toBe("organizationAdmin");
+    expect(resolveOrganizationMemberKind("user")).toBe("client");
+    expect(resolveOrganizationMemberKind(null)).toBe("client");
   });
+});
 
-  it("labels subtitles by persona", () => {
-    expect(resolvePortalMemberSubtitle("operator")).toBe("Organization");
-    expect(resolvePortalMemberSubtitle("client")).toBe("Client portal");
+describe("resolvePortalMemberSubtitle", () => {
+  it("uses organization label for organization admins", () => {
+    expect(resolvePortalMemberSubtitle("organizationAdmin")).toBe(
+      "Organization",
+    );
+    expect(resolvePortalMemberSubtitle("client")).toBe("Client");
   });
+});
 
-  it("prefers server-synced member over session fallback", () => {
-    const synced = {
-      userId: "synced",
-      email: "synced@example.com",
-      authName: "Synced User",
-      displayName: "Synced User",
-      subtitle: "Entity",
-      role: "user",
-      context: "client" as const,
-      isPreviewSession: false,
-      profile: null,
-    };
+describe("fallbackOrganizationAdminMember", () => {
+  it("builds an organization-admin member shell", () => {
+    const member = fallbackOrganizationAdminMember("Portal Operator");
+    expect(member.context).toBe("organizationAdmin");
+    expect(member.role).toBe("admin");
+    expect(member.displayName).toBe("Portal Operator");
+  });
+});
 
+describe("resolvePortalMemberFromSession", () => {
+  it("prefers synced member when present", () => {
+    const synced = fallbackOrganizationAdminMember("Synced");
     expect(
       resolvePortalMemberFromSession(synced, {
         id: "other",
         email: "other@example.com",
-        role: "admin",
       }),
     ).toBe(synced);
   });
 
-  it("builds fallback member from auth session user", () => {
+  it("infers organizationAdmin from Neon admin role", () => {
     const member = resolvePortalMemberFromSession(null, {
       id: "user-1",
-      email: "client@example.com",
-      name: "Client User",
-      role: "user",
+      email: "admin@example.com",
+      name: "Admin",
+      role: "admin",
     });
-
-    expect(member).toEqual({
-      userId: "user-1",
-      email: "client@example.com",
-      authName: "Client User",
-      displayName: pickDisplayName({
-        authName: "Client User",
-        email: "client@example.com",
-      }),
-      subtitle: "Client portal",
-      role: "user",
-      context: "client",
-      isPreviewSession: false,
-      profile: null,
-    });
+    expect(member?.context).toBe("organizationAdmin");
+    expect(member?.displayName).toBe("Admin");
   });
 
-  it("returns null when session user is incomplete", () => {
+  it("returns null without id or email", () => {
     expect(resolvePortalMemberFromSession(null, { id: "user-1" })).toBeNull();
     expect(resolvePortalMemberFromSession(null, undefined)).toBeNull();
   });

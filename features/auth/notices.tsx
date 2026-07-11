@@ -5,7 +5,7 @@ import {
   AlertDescription,
   AlertTitle,
 } from "@/components-V2/platform-components/ui/alert";
-import { portalCopy } from "@/lib/copy/portal-copy";
+import { portalCopy } from "@/modules/declarations/copy/portal-copy";
 
 export function PortalAuthEmailTrustNotice({
   message,

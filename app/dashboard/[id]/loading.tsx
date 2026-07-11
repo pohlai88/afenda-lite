@@ -1,6 +1,6 @@
 import { Skeleton } from "@/components-V2/platform-components/ui/skeleton";
 
-export default function OperatorDeclarationDetailLoading() {
+export default function OrganizationAdminDeclarationDetailLoading() {
   return (
     <div className="flex flex-col gap-6">
       <Skeleton className="h-36 w-full rounded-xl" />

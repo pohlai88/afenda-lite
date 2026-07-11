@@ -21,7 +21,7 @@ import {
   CLIENT_LOGIN_REQUIRED_REASON,
   redirectClientSignInEntry,
 } from "@/lib/entry/client-sign-in-entry";
-import { PORTAL_NAME, portalCopy } from "@/lib/copy/portal-copy";
+import { PORTAL_NAME, portalCopy } from "@/modules/declarations/copy/portal-copy";
 
 export const legacyInvitePageMetadata: Metadata = {
   title: `${PORTAL_NAME} — ${portalCopy.metadata.inviteRedirect.title}`,

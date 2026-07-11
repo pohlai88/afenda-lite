@@ -9,7 +9,8 @@ import PagesLayout from "@/components-V2/platform-components/layout/PagesLayout"
 import themeConfig from "@/components-V2/platform-config/themeConfig";
 import type { Settings } from "@/components-V2/platform-context/settingsContext";
 import { PlaygroundSidebar } from "@/features/playground/playground-sidebar";
-import { isPlaygroundEnabled, playgroundNav } from "@/lib/playground/playground";
+import { buildPlaygroundScreensWithAutoDiscovery } from "@/lib/playground/playground-auto-discovery";
+import { groupPlaygroundNav, isPlaygroundEnabled } from "@/lib/playground/playground";
 import { requireAdminSession } from "@/modules/identity/auth/session";
 
 /**
@@ -41,6 +42,10 @@ export async function runPlaygroundLayout({
   const sidebarDefaultOpen =
     settingsCookie?.sidebarOpen ?? themeConfig.sidebarOpen;
 
+  const playgroundNav = groupPlaygroundNav(
+    buildPlaygroundScreensWithAutoDiscovery(),
+  );
+
   return (
     <AdminShellProviders
       settingsCookie={settingsCookie}
@@ -53,7 +58,8 @@ export async function runPlaygroundLayout({
             adminScreens={playgroundNav.admin}
             clientScreens={playgroundNav.client}
             dynamicScreens={playgroundNav.dynamic}
-            hotSalesScreens={playgroundNav["hot-sales"]}
+            hotSalesScreens={playgroundNav.fft}
+            autoScreens={playgroundNav.auto}
           />
         }
       >

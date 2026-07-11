@@ -39,7 +39,7 @@ export function mapClientSessionGuardToHttp(reason: ClientSessionGuardReason): {
   switch (reason) {
     case "unauthenticated":
       return { status: 401, code: "UNAUTHORIZED", message: "Unauthorized" };
-    case "operator":
+    case "organizationAdmin":
       return { status: 403, code: "FORBIDDEN", message: "Forbidden" };
     case "onboarding_incomplete":
       return {

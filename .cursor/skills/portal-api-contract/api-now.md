@@ -21,7 +21,7 @@ This file is the canonical reference for what **is implemented today** as `app/a
 
 ## Prohibition — do not scaffold these as Route Handlers for web UI
 
-The resources below have a defined REST contract but **web UI adapters call the same domain functions without HTTP**. Do not create Route Handlers for these routes to serve the dashboard, client workspace, or account surfaces:
+The resources below have a defined REST contract but **web UI adapters call the same `modules/*/domain` functions without HTTP**. Do not create Route Handlers for these routes to serve the dashboard, client workspace, or account surfaces:
 
 ### Clients
 
@@ -70,23 +70,23 @@ The resources below have a defined REST contract but **web UI adapters call the 
 
 ---
 
-## Hot Sales appendix (contract-only, gated)
+## Feed Farm Trade appendix (contract-only, gated)
 
-**Do not implement as Route Handlers until an external consumer is confirmed.** Web UI continues via `app/actions/trade.ts`.
+**Do not implement as Route Handlers until an external consumer is confirmed.** Web UI continues via `app/actions/fft.ts`.
 
 | Method | Path | Purpose |
 |--------|------|---------|
-| GET/POST | `/api/trade/:locale/events` | List / create events |
-| GET/PATCH | `/api/trade/:locale/events/:eventId` | Detail / setup |
-| POST | `/api/trade/:locale/events/:eventId/orders` | Submit order |
-| POST | `/api/trade/:locale/events/:eventId/allocations` | Run allocation |
-| GET/POST | `/api/trade/:locale/events/:eventId/deposits` | Deposits |
-| GET/POST | `/api/trade/:locale/events/:eventId/pickups` | Pickup windows / fulfill |
-| POST | `/api/trade/:locale/events/:eventId/imports` | Import dry-run / apply |
-| GET/POST | `/api/trade/:locale/rbac/...` | Roles / assignments |
-| POST | `/api/trade/:locale/erp-sync/...` | Sync jobs |
+| GET/POST | `/api/fft/:locale/events` | List / create events |
+| GET/PATCH | `/api/fft/:locale/events/:eventId` | Detail / setup |
+| POST | `/api/fft/:locale/events/:eventId/orders` | Submit order |
+| POST | `/api/fft/:locale/events/:eventId/allocations` | Run allocation |
+| GET/POST | `/api/fft/:locale/events/:eventId/deposits` | Deposits |
+| GET/POST | `/api/fft/:locale/events/:eventId/pickups` | Pickup windows / fulfill |
+| POST | `/api/fft/:locale/events/:eventId/imports` | Import dry-run / apply |
+| GET/POST | `/api/fft/:locale/rbac/...` | Roles / assignments |
+| POST | `/api/fft/:locale/erp-sync/...` | Sync jobs |
 
-See `hot-sales-phase-2a-ops.mdc` and `docs/hot-sales/` before touching any of these.
+See `fft-phase-2a-ops.mdc` and `docs/fft/` before touching any of these.
 
 ---
 

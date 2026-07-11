@@ -30,7 +30,7 @@ import {
 } from "@/modules/platform/routing/portal-session-routing";
 import {
   CLIENT_ONBOARDING_HREF,
-  OPERATOR_DASHBOARD_HREF,
+  ORGANIZATION_ADMIN_DASHBOARD_HREF,
 } from "@/modules/platform/routing/portal-routes";
 
 describe("resolveClientLandingHref", () => {
@@ -76,14 +76,14 @@ describe("getAuthenticatedLandingHref", () => {
     await expect(getAuthenticatedLandingHref({ embed: true })).resolves.toBeNull();
   });
 
-  it("routes operators to dashboard", async () => {
+  it("routes organization admins to dashboard", async () => {
     getAuthSession.mockResolvedValue({
       user: { id: "op-1", email: "admin@example.com" },
     });
     isAdminSession.mockReturnValue(true);
 
     await expect(getAuthenticatedLandingHref()).resolves.toBe(
-      OPERATOR_DASHBOARD_HREF,
+      ORGANIZATION_ADMIN_DASHBOARD_HREF,
     );
   });
 

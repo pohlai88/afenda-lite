@@ -2,9 +2,11 @@
 
 ## Next.js data-pattern decision tree (mandatory)
 
+**SSOT** for this tree — every other doc links here; do not paste a second copy.
+
 ```text
 Need data?
-├── Server Component read?     → lib/domain (or page runner) directly
+├── Server Component read?     → modules/*/domain (or page runner) directly
 ├── Client mutation?           → Server Action ('use server')
 ├── Client read that cannot be passed from parent?
 │     → prefer lift fetch to Server parent; else Route Handler
@@ -28,20 +30,20 @@ Need data?
 
 ```text
 app/**/page.tsx          → await params; call runner
-lib/pages/* or lib/entry/* → session + load model
+lib/pages/* or lib/entry/* → session + load model (transitional runners)
 features/* or portal-views → present UI (RSC + small client islands)
-app/actions/*.ts         → 'use server'; Zod; requireSession; domain; revalidatePath
-lib/schemas/*.ts         → boundary schemas
-lib/domain/*.ts          → parameterized queries only
+app/actions/*.ts         → 'use server'; Zod; requireSession; module domain; revalidatePath
+modules/*/schemas/*.ts   → boundary schemas (owning context)
+modules/*/domain/*.ts    → parameterized queries only
 ```
 
 ### Reads
 
 ```tsx
 // page.tsx (Server Component) — preferred
-export default async function Page({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params
-  const model = await loadDeclarationPage(id) // → lib/domain
+export default async function Page({ params }: { params: Promise<{ declarationId: string }> }) {
+  const { declarationId } = await params
+  const model = await loadDeclarationPage(declarationId) // → modules/declarations/domain
   return <DeclarationView model={model} />
 }
 ```
@@ -70,7 +72,7 @@ Use when the browser (or probe) must speak HTTP:
 - Declaration draft autosave (frequent XHR)  
 - Future external REST consumers (implement contract in `doc/api`)
 
-Shared path: Zod → domain — same as Actions.
+Shared path: Zod → module domain — same as Actions.
 
 ## Waterfalls
 
@@ -84,3 +86,4 @@ Shared path: Zod → domain — same as Actions.
 - [07-nextjs-conventions.md](07-nextjs-conventions.md)  
 - [../api/01-boundaries.md](../api/01-boundaries.md)  
 - [../api/02-rest-resources.md](../api/02-rest-resources.md)  
+- [../backend/01-architecture.md](../backend/01-architecture.md)  

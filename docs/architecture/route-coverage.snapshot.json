@@ -1,10 +1,10 @@
 {
   "version": "1.0.0",
-  "generatedAt": "2026-07-11T09:52:22.436Z",
+  "generatedAt": "2026-07-11T15:08:27.376Z",
   "summary": {
-    "totalAvailable": 32,
+    "totalAvailable": 33,
     "totalPresented": 32,
-    "missing": 0,
+    "missing": 1,
     "byPhase": [
       {
         "phase": "pre-login",
@@ -37,10 +37,10 @@
         "missing": 0
       },
       {
-        "phase": "hot-sales",
-        "available": 13,
+        "phase": "fft",
+        "available": 14,
         "presented": 13,
-        "missing": 0
+        "missing": 1
       }
     ]
   },
@@ -416,156 +416,166 @@
       ]
     },
     {
-      "file": "app/trade/admin/erp-sync/page.tsx",
-      "routePattern": "/trade/admin/erp-sync",
-      "phase": "hot-sales",
+      "file": "app/fft/[locale]/[[...path]]/page.tsx",
+      "routePattern": "/fft/[locale]/[[...path]]",
+      "phase": "fft",
+      "presented": false,
+      "screenIds": [],
+      "surfaceId": null,
+      "relianceStatus": "untracked",
+      "relianceEdges": []
+    },
+    {
+      "file": "app/fft/admin/erp-sync/page.tsx",
+      "routePattern": "/fft/admin/erp-sync",
+      "phase": "fft",
       "presented": true,
       "screenIds": [
-        "hot-sales-admin-erp-sync"
+        "fft-admin-erp-sync"
       ],
       "surfaceId": null,
       "relianceStatus": "untracked",
       "relianceEdges": []
     },
     {
-      "file": "app/trade/admin/events/[eventId]/allocation/page.tsx",
-      "routePattern": "/trade/admin/events/[eventId]/allocation",
-      "phase": "hot-sales",
+      "file": "app/fft/admin/events/[eventId]/allocation/page.tsx",
+      "routePattern": "/fft/admin/events/[eventId]/allocation",
+      "phase": "fft",
       "presented": true,
       "screenIds": [
-        "hot-sales-admin-event-allocation"
+        "fft-admin-event-allocation"
       ],
       "surfaceId": null,
       "relianceStatus": "untracked",
       "relianceEdges": []
     },
     {
-      "file": "app/trade/admin/events/[eventId]/deposits/page.tsx",
-      "routePattern": "/trade/admin/events/[eventId]/deposits",
-      "phase": "hot-sales",
+      "file": "app/fft/admin/events/[eventId]/deposits/page.tsx",
+      "routePattern": "/fft/admin/events/[eventId]/deposits",
+      "phase": "fft",
       "presented": true,
       "screenIds": [
-        "hot-sales-admin-event-deposits"
+        "fft-admin-event-deposits"
       ],
       "surfaceId": null,
       "relianceStatus": "untracked",
       "relianceEdges": []
     },
     {
-      "file": "app/trade/admin/events/[eventId]/imports/page.tsx",
-      "routePattern": "/trade/admin/events/[eventId]/imports",
-      "phase": "hot-sales",
+      "file": "app/fft/admin/events/[eventId]/imports/page.tsx",
+      "routePattern": "/fft/admin/events/[eventId]/imports",
+      "phase": "fft",
       "presented": true,
       "screenIds": [
-        "hot-sales-admin-event-imports"
+        "fft-admin-event-imports"
       ],
       "surfaceId": null,
       "relianceStatus": "untracked",
       "relianceEdges": []
     },
     {
-      "file": "app/trade/admin/events/[eventId]/pickup/page.tsx",
-      "routePattern": "/trade/admin/events/[eventId]/pickup",
-      "phase": "hot-sales",
+      "file": "app/fft/admin/events/[eventId]/pickup/page.tsx",
+      "routePattern": "/fft/admin/events/[eventId]/pickup",
+      "phase": "fft",
       "presented": true,
       "screenIds": [
-        "hot-sales-admin-event-pickup"
+        "fft-admin-event-pickup"
       ],
       "surfaceId": null,
       "relianceStatus": "untracked",
       "relianceEdges": []
     },
     {
-      "file": "app/trade/admin/events/[eventId]/setup/page.tsx",
-      "routePattern": "/trade/admin/events/[eventId]/setup",
-      "phase": "hot-sales",
+      "file": "app/fft/admin/events/[eventId]/setup/page.tsx",
+      "routePattern": "/fft/admin/events/[eventId]/setup",
+      "phase": "fft",
       "presented": true,
       "screenIds": [
-        "hot-sales-admin-event-setup"
+        "fft-admin-event-setup"
       ],
       "surfaceId": null,
       "relianceStatus": "untracked",
       "relianceEdges": []
     },
     {
-      "file": "app/trade/admin/events/new/page.tsx",
-      "routePattern": "/trade/admin/events/new",
-      "phase": "hot-sales",
+      "file": "app/fft/admin/events/new/page.tsx",
+      "routePattern": "/fft/admin/events/new",
+      "phase": "fft",
       "presented": true,
       "screenIds": [
-        "hot-sales-admin-events-new"
+        "fft-admin-events-new"
       ],
       "surfaceId": null,
       "relianceStatus": "untracked",
       "relianceEdges": []
     },
     {
-      "file": "app/trade/admin/events/page.tsx",
-      "routePattern": "/trade/admin/events",
-      "phase": "hot-sales",
+      "file": "app/fft/admin/events/page.tsx",
+      "routePattern": "/fft/admin/events",
+      "phase": "fft",
       "presented": true,
       "screenIds": [
-        "hot-sales-admin-events"
+        "fft-admin-events"
       ],
       "surfaceId": null,
       "relianceStatus": "untracked",
       "relianceEdges": []
     },
     {
-      "file": "app/trade/admin/rbac/page.tsx",
-      "routePattern": "/trade/admin/rbac",
-      "phase": "hot-sales",
+      "file": "app/fft/admin/rbac/page.tsx",
+      "routePattern": "/fft/admin/rbac",
+      "phase": "fft",
       "presented": true,
       "screenIds": [
-        "hot-sales-admin-rbac"
+        "fft-admin-rbac"
       ],
       "surfaceId": null,
       "relianceStatus": "untracked",
       "relianceEdges": []
     },
     {
-      "file": "app/trade/events/[eventId]/order/page.tsx",
-      "routePattern": "/trade/events/[eventId]/order",
-      "phase": "hot-sales",
+      "file": "app/fft/events/[eventId]/order/page.tsx",
+      "routePattern": "/fft/events/[eventId]/order",
+      "phase": "fft",
       "presented": true,
       "screenIds": [
-        "hot-sales-event-order"
+        "fft-event-order"
       ],
       "surfaceId": null,
       "relianceStatus": "untracked",
       "relianceEdges": []
     },
     {
-      "file": "app/trade/events/page.tsx",
-      "routePattern": "/trade/events",
-      "phase": "hot-sales",
+      "file": "app/fft/events/page.tsx",
+      "routePattern": "/fft/events",
+      "phase": "fft",
       "presented": true,
       "screenIds": [
-        "hot-sales-events"
+        "fft-events"
       ],
       "surfaceId": null,
       "relianceStatus": "untracked",
       "relianceEdges": []
     },
     {
-      "file": "app/trade/my-orders/page.tsx",
-      "routePattern": "/trade/my-orders",
-      "phase": "hot-sales",
+      "file": "app/fft/my-orders/page.tsx",
+      "routePattern": "/fft/my-orders",
+      "phase": "fft",
       "presented": true,
       "screenIds": [
-        "hot-sales-my-orders"
+        "fft-my-orders"
       ],
       "surfaceId": null,
       "relianceStatus": "untracked",
       "relianceEdges": []
     },
     {
-      "file": "app/trade/page.tsx",
-      "routePattern": "/trade",
-      "phase": "hot-sales",
+      "file": "app/fft/page.tsx",
+      "routePattern": "/fft",
+      "phase": "fft",
       "presented": true,
       "screenIds": [
-        "hot-sales-trade-index"
+        "fft-trade-index"
       ],
       "surfaceId": null,
       "relianceStatus": "untracked",

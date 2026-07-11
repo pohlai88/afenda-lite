@@ -125,7 +125,7 @@ describe("playground page shape", () => {
     );
     expect(declaredPlaygroundPageShape("admin-dashboard")).toBe("live");
     expect(declaredPlaygroundPageShape("client-dashboard")).toBe("stub");
-    expect(declaredPlaygroundPageShape("hot-sales-events")).toBe("closed");
+    expect(declaredPlaygroundPageShape("fft-events")).toBe("closed");
   });
 });
 

@@ -1,11 +1,12 @@
-# Operator post-login — phase-1 task breakdown
+# Organization admin post-login — phase-1 task breakdown
 
-**Status:** reopened + restored 2026-07-11 (after greenfield wipe; loaders under `lib/pages`, UI under `features/operator` + portal-views)  
+**Status:** reopened + restored 2026-07-11 (after greenfield wipe; loaders under `lib/pages`, UI under `features/organization-admin` + portal-views)  
+**Phase ID:** `organization-admin-post-login` (formerly `operator-post-login`; IAM vocabulary is organization admin)  
 **SSOT:** [03-routes.md](03-routes.md) · [02-folder-map.md](02-folder-map.md) · [04-bff-and-data.md](04-bff-and-data.md) · [06-admincn-alignment.md](06-admincn-alignment.md)
 
 ## Goal
 
-Restore `/dashboard`, `/dashboard/clients`, `/dashboard/[id]` with real domain data. Keep `loadOperator*` loaders. UI in `features/operator/` + `components-V2/.../portal-views/`. Do not recreate root `components/`.
+Restore `/dashboard`, `/dashboard/clients`, `/dashboard/[id]` with real domain data. Keep `loadOrganizationAdmin*` loaders. UI in `features/organization-admin/` + `components-V2/.../portal-views/organization-admin-*`. Do not recreate root `components/`.
 
 **Also reopened:** local `/playground` harness (dev-only) for page quality review.
 
@@ -13,10 +14,10 @@ Restore `/dashboard`, `/dashboard/clients`, `/dashboard/[id]` with real domain d
 
 | Keep (do not rewrite) | Fix / migrate |
 |-----------------------|---------------|
-| `lib/pages/operator-dashboard-page.ts` (+ tests) | Broken `@/components/*` imports in portal-views |
-| `lib/pages/operator-clients-page.ts` (+ tests) | Leaf widgets → `features/operator/*` |
-| `loadOperatorDeclarationDetail` + `.logic.ts` | `runOperatorDeclarationDetailPage` after view graph fixed |
-| `components-V2/.../portal-views/operator-*.tsx` composition | Remap imports to `@/features/operator/*` |
+| `lib/pages/organization-admin-dashboard-page.ts` (+ tests) | Broken `@/components/*` imports in portal-views |
+| `lib/pages/organization-admin-clients-page.ts` (+ tests) | Leaf widgets → `features/organization-admin/*` |
+| `loadOrganizationAdminDeclarationDetail` + `.logic.ts` | `runOrganizationAdminDeclarationDetailPage` after view graph fixed |
+| `components-V2/.../portal-views/organization-admin-*.tsx` composition | Remap imports to `@/features/organization-admin/*` |
 | `AdminCnShell` layout | Thin `app/dashboard/**` pages |
 
 ## Slices (dependency order)
@@ -32,7 +33,7 @@ Restore `/dashboard`, `/dashboard/clients`, `/dashboard/[id]` with real domain d
 ### Slice 2 — Declarations list
 
 - Restore `app/dashboard/page.tsx` + `loading.tsx`
-- Wire `loadOperatorDashboardPage` → `OperatorDeclarationsDashboard`
+- Wire `loadOrganizationAdminDashboardPage` → `OrganizationAdminDeclarationsDashboard`
 - Ensure `PortalDeclarationsTable` / create button have no broken imports (migrate `ConfirmDialog` if needed)
 
 **Verify:** `operator-dashboard-page` unit tests; `tsc` on dashboard page
@@ -41,15 +42,15 @@ Restore `/dashboard`, `/dashboard/clients`, `/dashboard/[id]` with real domain d
 
 - Restore `app/dashboard/clients/page.tsx` + `loading.tsx`
 - Migrate `issue-client-invite-form`, `confirm-dialog` (+ `alert-dialog` into V2 ui)
-- Wire `loadOperatorClientsPage` → `OperatorClientsList`
+- Wire `loadOrganizationAdminClientsPage` → `OrganizationAdminClientsList`
 
 **Verify:** `operator-clients-page` unit tests
 
 ### Slice 4 — Declaration detail
 
 - Restore `app/dashboard/[id]/page.tsx` + `loading.tsx`
-- Migrate detail leaf closure into `features/operator/` (manage / share / danger / workspace + transitive widgets)
-- Retarget portal-views imports; keep `runOperatorDeclarationDetailPage` or thin page calling `load*` + view
+- Migrate detail leaf closure into `features/organization-admin/` (manage / share / danger / workspace + transitive widgets)
+- Retarget portal-views imports; keep `runOrganizationAdminDeclarationDetailPage` or thin page calling `load*` + view
 
 **Verify:** detail logic/page tests; `rg "@/components/" components-V2/platform-views/portal-views features/operator app/dashboard` empty
 
@@ -71,11 +72,11 @@ Restore `/dashboard`, `/dashboard/clients`, `/dashboard/[id]` with real domain d
 - No resurrected root `components/` directory
 - Existing operator `lib/pages` tests green
 - Decision tree respected; no new REST
-- No join/client/trade/account/playground changes
+- No join/client/fft/account/playground changes
 
 ## PR checklist (noise ban)
 
-- [ ] Diff touches only `app/dashboard/**`, `features/operator/**`, portal-views import remaps, V2 ui gaps (`alert-dialog` / `DialogBody`), and `doc/frontend` phase-1 docs
+- [ ] Diff touches only `app/dashboard/**`, `features/organization-admin/**`, portal-views import remaps, V2 ui gaps (`alert-dialog` / `DialogBody`), and `doc/frontend` phase-1 docs
 - [ ] No restore of root `components/` or bulk `git checkout components/`
 - [ ] No join / client workspace / account / playground / trade pages
 - [ ] No Guardian / PA / owl / brand `public/` restore

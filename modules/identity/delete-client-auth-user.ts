@@ -2,7 +2,7 @@ import "server-only";
 
 import { getSharedAdminEmail } from "@/modules/identity/admin";
 import { neonAdminRemoveUser } from "@/modules/identity/auth/admin";
-import { normalizeEmail } from "@/modules/declarations/domain/clients";
+import { normalizeEmail } from "@/modules/platform/normalize-email";
 import { getNeonAuthUserByEmail } from "@/modules/identity/domain/neon-auth-users";
 
 export async function deleteClientAuthUserByEmail(email: string) {

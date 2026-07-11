@@ -13,7 +13,7 @@ describe("resolvePlaygroundStaticInspectGate", () => {
   });
 
   it("returns condition for closed trade screens", () => {
-    const result = resolvePlaygroundStaticInspectGate("hot-sales-trade-index");
+    const result = resolvePlaygroundStaticInspectGate("fft-trade-index");
     expect(result.kind).toBe("condition");
     if (result.kind === "condition") {
       // Declared closed; fixture-gap wins if trade path tokens are unset.

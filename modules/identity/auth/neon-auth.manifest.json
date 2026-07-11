@@ -58,7 +58,7 @@
   ],
   "allowLocalhost": true,
   "productionChecklist": {
-    "applicationName": "Client Declaration Portal",
+    "applicationName": "Afenda-Lite",
     "emailProviderPolicy": "shared-otp-waiver",
     "requireLocalhostDisabledAtCutover": true
   },

@@ -1,6 +1,8 @@
-# Portal design docs (`doc/`)
+# Afenda-Lite design docs (`doc/`)
 
-Target-state frontend, API, and backend blueprint for the Client Declaration Portal.
+Target-state frontend, API, and backend blueprint for **Afenda-Lite** (beta of Afenda ERP).
+
+**Product identity:** [adr/001-afenda-lite-product-identity.md](adr/001-afenda-lite-product-identity.md) — **Client Declaration Portal** is retired.
 
 **Status:** Active design SSOT for rebuild (2026-07-11).  
 
@@ -10,28 +12,37 @@ Target-state frontend, API, and backend blueprint for the Client Declaration Por
 
 Frontend + API + backend describe **one system**, not three architectures.
 
+**Agent skills:** `/portal-frontend-scaffold` · `/portal-api-contract` · `/portal-backend-modules`
+
 ## How to read
 
 1. [backend/README.md](backend/README.md) — framework + contract version  
-2. [frontend/04-bff-and-data.md](frontend/04-bff-and-data.md) — **Next.js data-pattern decision tree** (mandatory; identical in backend/01)  
+2. [frontend/04-bff-and-data.md](frontend/04-bff-and-data.md) — **Next.js data-pattern decision tree** (mandatory SSOT)  
 3. [frontend/01-architecture.md](frontend/01-architecture.md) — UI layers  
 4. [api/01-boundaries.md](api/01-boundaries.md) + [api/02-rest-resources.md](api/02-rest-resources.md) — HTTP/contracts  
-5. [backend/05-contract-rules.md](backend/05-contract-rules.md) — one-version API rules  
+5. [backend/07-conventions.md](backend/07-conventions.md) — backend conventions + pointers to `doc/api`  
 6. [frontend/07-nextjs-conventions.md](frontend/07-nextjs-conventions.md) — App Router conventions  
 
 ## Index
+
+### Product
+
+| Doc | Purpose |
+|-----|---------|
+| [adr/001-afenda-lite-product-identity.md](adr/001-afenda-lite-product-identity.md) | Product name Afenda-Lite; deprecate Client Declaration Portal |
 
 ### Backend
 
 | Doc | Purpose |
 |-----|---------|
 | [backend/README.md](backend/README.md) | Sole framework + contract version |
-| [backend/01-modular-hexagonal.md](backend/01-modular-hexagonal.md) | Method + decision tree |
-| [backend/02-bounded-contexts.md](backend/02-bounded-contexts.md) | Identity / Declarations / Trade / Platform |
-| [backend/03-ports-and-adapters.md](backend/03-ports-and-adapters.md) | Contract-first ports ↔ files |
-| [backend/04-nextjs-adapter-map.md](backend/04-nextjs-adapter-map.md) | App Router ↔ hexagon |
-| [backend/05-contract-rules.md](backend/05-contract-rules.md) | One-version, errors, Zod, REST naming |
-| [backend/06-lib-ownership.md](backend/06-lib-ownership.md) | `lib/` → `modules/` ownership map |
+| [backend/01-architecture.md](backend/01-architecture.md) | Layers + hexagon (links decision tree) |
+| [backend/02-folder-map.md](backend/02-folder-map.md) | `modules/*` L2 + remaining `lib/` |
+| [backend/03-bounded-contexts.md](backend/03-bounded-contexts.md) | Identity / Declarations / Trade / Platform |
+| [backend/04-ports-and-adapters.md](backend/04-ports-and-adapters.md) | Contract-first ports ↔ files |
+| [backend/05-nextjs-adapter-map.md](backend/05-nextjs-adapter-map.md) | App Router ↔ hexagon |
+| [backend/06-modules-ownership.md](backend/06-modules-ownership.md) | Modules inventory + residue |
+| [backend/07-conventions.md](backend/07-conventions.md) | Runtime, SQL, contract pointers |
 | [backend/adr/001-…](backend/adr/001-modular-monolith-hexagonal.md) | Accepted ADR |
 
 ### Frontend
@@ -68,9 +79,11 @@ Frontend + API + backend describe **one system**, not three architectures.
 
 ## Next.js decision tree (summary)
 
+Authority: [frontend/04-bff-and-data.md](frontend/04-bff-and-data.md). Do not maintain a divergent paste.
+
 ```text
 Need data?
-├── Server Component read?     → lib/domain (or page runner) directly
+├── Server Component read?     → modules/*/domain (or page runner) directly
 ├── Client mutation?           → Server Action ('use server')
 ├── Client read that cannot be passed from parent?
 │     → prefer lift fetch to Server parent; else Route Handler
@@ -99,4 +112,4 @@ Docs follow:
 - Duplicating every domain read as a REST GET for the web app
 - Parallel/intercepting routes in v1
 - Microservices / GraphQL / tRPC / `/api/v2`
-- Hot Sales 2D-3 vendor adapters
+- Feed Farm Trade 2D-3 vendor adapters

@@ -13,7 +13,7 @@ import { getNeonAuthUserByEmail } from "@/modules/identity/domain/neon-auth-user
 import {
   CLIENT_HOME_HREF,
   CLIENT_PREVIEW_UNAVAILABLE_HREF,
-  OPERATOR_DASHBOARD_HREF,
+  ORGANIZATION_ADMIN_DASHBOARD_HREF,
 } from "@/modules/platform/routing/portal-routes";
 
 type PreviewSession = {
@@ -152,7 +152,7 @@ export async function resolvePreviewUnavailableLandingHref(options?: {
     return null;
   }
 
-  return OPERATOR_DASHBOARD_HREF;
+  return ORGANIZATION_ADMIN_DASHBOARD_HREF;
 }
 
 /** Shared page handler for `/client/preview-unavailable`. */

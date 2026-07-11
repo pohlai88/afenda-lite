@@ -41,15 +41,17 @@ Target route map. Columns: path, page file, layout group, special files, proxy g
 | `/client/declare/[id]` | `app/client/(workspace)/declare/[id]/page.tsx` | workspace | yes | yes | yes | declare form | placeholder · scope closed |
 | `/client/preview-unavailable` | `app/client/(gate)/preview-unavailable/page.tsx` | gate | yes | — | bypass | preview gate | placeholder · scope closed |
 
-## Operator post-login
+## Organization admin post-login
 
-Shared AdminCN shell (`AdminCnShell`). Layout gate: **authenticated member** (`requireMemberSession`) — Declarations module is open to every org member. Organization admin is a separate gate for admin-route nav and mutating actions (`requireAdminSession`), not the Declarations module entry.
+Shared AdminCN shell (`AdminCnShell`). Layout gate: **authenticated member** (`requireMemberSession`) — Declarations module is open to every org member. Organization admin (`isAdminSession` / `OrganizationMemberKind = "organizationAdmin"`) is a separate gate for admin-route nav and mutating actions (`requireAdminSession`), not the Declarations module entry. There is no separate “portal persona” type — use organization admin vs client.
 
 | Path | Page | Layout | loading | error | Proxy | Owner | Status |
 |------|------|--------|---------|-------|-------|-------|--------|
-| `/dashboard` | `app/dashboard/page.tsx` | dashboard AdminCN | yes | yes | yes | `portal-views/operator-declarations-dashboard` | live |
-| `/dashboard/clients` | `app/dashboard/clients/page.tsx` | dashboard | yes | yes | yes | `portal-views/operator-clients-list` | live |
-| `/dashboard/[id]` | `app/dashboard/[id]/page.tsx` | dashboard | yes | yes | yes | `portal-views/operator-declaration-detail` | live |
+| `/dashboard` | `app/dashboard/page.tsx` | dashboard AdminCN | yes | yes | yes | `portal-views/organization-admin-declarations-dashboard` | live |
+| `/dashboard/clients` | `app/dashboard/clients/page.tsx` | dashboard | yes | yes | yes | `portal-views/organization-admin-clients-list` | live |
+| `/dashboard/users` | `app/dashboard/users/page.tsx` | dashboard | yes | yes | yes | `portal-views/organization-admin-users-list` | live |
+| `/dashboard/users/[userId]` | `app/dashboard/users/[userId]/page.tsx` | dashboard | yes | yes | yes | `portal-views/organization-admin-users-view` | live |
+| `/dashboard/[id]` | `app/dashboard/[id]/page.tsx` | dashboard | yes | yes | yes | `portal-views/organization-admin-declaration-detail` | live |
 
 ## Account
 
@@ -90,35 +92,35 @@ registered fixture contract backed by route/entry files; **Human verdict** is
 the locally stored runtime observation. Notes and copied repair prompts never
 mark a route verified.
 
-## Hot Sales / Feed Farm Trade (gated appendix)
+## Feed Farm Trade / Feed Farm Trade (gated appendix)
 
-**Product purpose:** B2B **feed & farm trade sales** for 3F operators (feedmills, farmers, Feed · Farm · Food) — see [adr/001-feed-farm-trade.md](adr/001-feed-farm-trade.md). Downstream **customer portal** is a future series branch. Architecture: [adr/001A-feed-farm-trade-architecture.md](adr/001A-feed-farm-trade-architecture.md). Roadmap: [adr/001R-feed-farm-trade-roadmap.md](adr/001R-feed-farm-trade-roadmap.md).
-**Shell id:** `feed-farm-trade`. Same AdminCN shell as Declarations. Layout gate: **Feed Farm Trade permission** (`requireTradeAccess` — allowlist / HS RBAC). Organization admin alone does **not** unlock `/trade`. Locale URL segment removed (i18n deferred to action arg); paths are flat under `/trade/*`.
+**Product purpose:** B2B **feed & farm trade sales** for 3F businesses (feedmills, farmers, Feed · Farm · Food — industry customers, not portal organization admins) — see [adr/001-feed-farm-trade.md](adr/001-feed-farm-trade.md). Downstream **customer portal** is a future series branch. Architecture: [adr/001A-feed-farm-trade-architecture.md](adr/001A-feed-farm-trade-architecture.md). Roadmap: [adr/001R-feed-farm-trade-roadmap.md](adr/001R-feed-farm-trade-roadmap.md).
+**Shell id:** `fft`. Same AdminCN shell as Declarations. Layout gate: **Feed Farm Trade permission** (`requireFftAccess` — allowlist / HS RBAC). Organization admin alone does **not** unlock `/fft`. Locale URL segment removed (i18n deferred to action arg); paths are flat under `/fft/*`.
 
-Sidebar entitlement: `modules/platform/shell/access.ts` (`declarations` for all members; `feed-farm-trade` only with permission).
+Sidebar entitlement: `modules/platform/shell/access.ts` (`declarations` for all members; `fft` only with permission).
 
 | Path pattern | Role | Proxy | Status |
 |--------------|------|-------|--------|
-| `/trade` | Redirect → `/trade/events` | yes | live (shell) |
-| `/trade/events` | Sales events list | yes | P1 wired |
-| `/trade/events/[eventId]/order` | Order | yes | P1 wired |
-| `/trade/my-orders` | My orders (+ transfer / complete) | yes | P1 wired |
-| `/trade/admin/events` | Admin events | yes | P1 wired |
-| `/trade/admin/events/new` | Create event | yes | P1 wired |
-| `/trade/admin/events/[eventId]/setup` | Setup (+ supply / fields / priority / audit / export) | yes | P1 wired |
-| `/trade/admin/events/[eventId]/allocation` | Allocation | yes | P1 wired |
-| `/trade/admin/rbac` | RBAC / sales-member | yes | P1 wired |
-| `/trade/admin/events/[eventId]/deposits` | Deposits | yes | P3 placeholder · flag-gated |
-| `/trade/admin/events/[eventId]/imports` | Imports | yes | P3 placeholder · flag-gated |
-| `/trade/admin/events/[eventId]/pickup` | Pickup | yes | P3 placeholder · flag-gated |
-| `/trade/admin/erp-sync` | ERP sync | yes | P3 placeholder · flag-gated |
+| `/fft` | Redirect → `/fft/events` | yes | live (shell) |
+| `/fft/events` | Sales events list | yes | P1 wired |
+| `/fft/events/[eventId]/order` | Order | yes | P1 wired |
+| `/fft/my-orders` | My orders (+ transfer / complete) | yes | P1 wired |
+| `/fft/admin/events` | Admin events | yes | P1 wired |
+| `/fft/admin/events/new` | Create event | yes | P1 wired |
+| `/fft/admin/events/[eventId]/setup` | Setup (+ supply / fields / priority / audit / export) | yes | P1 wired |
+| `/fft/admin/events/[eventId]/allocation` | Allocation | yes | P1 wired |
+| `/fft/admin/rbac` | RBAC / sales-member | yes | P1 wired |
+| `/fft/admin/events/[eventId]/deposits` | Deposits | yes | P3 placeholder · flag-gated |
+| `/fft/admin/events/[eventId]/imports` | Imports | yes | P3 placeholder · flag-gated |
+| `/fft/admin/events/[eventId]/pickup` | Pickup | yes | P3 placeholder · flag-gated |
+| `/fft/admin/erp-sync` | ERP sync | yes | P3 placeholder · flag-gated |
 
-Promotion and flags: follow Hot Sales [gate-register](../../docs/hot-sales/ops/gate-register.md) — not this doc. Do **not** restore a separate `TradeShell` / locale switcher; chrome is AdminCN only.
+Promotion and flags: follow Feed Farm Trade [gate-register](../../docs/fft/ops/gate-register.md) — not this doc. Do **not** restore a separate `FftShell` / locale switcher; chrome is AdminCN only.
 
 ## Proxy matcher (authoritative)
 
 From `proxy.ts`:
 
-- Matched: `/account/*`, `/dashboard/*`, `/client/*`, `/trade/*`, `/playground/*`
+- Matched: `/account/*`, `/dashboard/*`, `/client/*`, `/fft/*`, `/playground/*`
 - Public (not matched): `/`, `/auth/*`, `/join`, `/org/login`, `/invite/*`, `/api/*`, `/survey/*`, `/f/*`
 - Bypasses inside matcher: `?embed=1`, client login, preview-unavailable, `next-action` header

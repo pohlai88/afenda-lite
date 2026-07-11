@@ -2,8 +2,9 @@
 
 | Field | Value |
 |-------|-------|
-| **Status** | Accepted |
+| **Status** | Accepted (amended 2026-07-12 — Hot Sales / trade identity retired → FFT) |
 | **Date** | 2026-07-11 |
+| **Amended** | 2026-07-12 |
 | **Deciders** | Portal rebuild program |
 | **Namespace** | `doc/frontend/adr/` (not Backend ADR-001) |
 | **Pair** | [001A architecture](001A-feed-farm-trade-architecture.md) · [001R roadmap](001R-feed-farm-trade-roadmap.md) |
@@ -18,65 +19,48 @@ SKIP: folder/flow detail → 001A · phase checklists / gap IDs → 001R
 
 ## Context
 
-3F operators (feedmills, farmers, Feed · Farm · Food) need a **trade-sales** lane beside Declarations: time-boxed events, orders, allocation, ops handoff — one portal, not a second app, and not an end-customer storefront yet.
+3F businesses (feedmills, farmers, Feed · Farm · Food — industry operators, **not** organization admins alone) need a **feed & farm sales** module beside Declarations inside **Afenda-Lite** (beta of Afenda ERP): time-boxed events, orders, allocation, ops handoff — one SaaS product, not a second app, and not an end-customer storefront yet.
 
-The engine is already **Hot Sales**. Product identity and shell drifted (`TradeShell`, `/trade/[locale]`) away from shared AdminCN. We need a durable product decision without renaming ops flags.
+The engine was historically named **Hot Sales** with technical paths under `/trade`. Module identity is **Feed Farm Trade (FFT)**. Dual naming is retired.
 
 ## Decision
 
-**Feed Farm Trade** is the product module for B2B feed & farm trade sales inside the operator portal.
+**Feed Farm Trade (FFT)** is the module name + engine + path identity on **Afenda-Lite** (Declarations | FFT — shared AdminCN/auth/DB/env/CI; not a second app or infra course). Product name SSOT: [doc/adr/001-afenda-lite-product-identity.md](../../adr/001-afenda-lite-product-identity.md).
 
 | Lock | Choice |
 |------|--------|
+| Host product | **Afenda-Lite** (not “Client Declaration Portal”) |
+| Platform model | One SaaS · two modules (`declarations` \| `fft`) · infra updated together |
 | UI / nav name | Feed Farm Trade |
-| Engine / env / ops docs | Hot Sales — keep `HOT_SALES_*`; living SSOT `docs/hot-sales/` ([RUNTIME](../../../docs/hot-sales/RUNTIME.md), [gate-register](../../../docs/hot-sales/ops/gate-register.md)); rename only via new ADR |
-| Actors | Operator sales + ops (not the operator’s end customers) |
-| Shell | Shared AdminCN on `/trade/*`; entitlement `feed-farm-trade` |
-| Paths | Locale-free `/trade` (no `/trade/[locale]`) |
-| Entry | `requireTradeAccess` — org admin alone does **not** grant |
-| Permissions | Codes in `modules/trade/domain/rbac-catalog.ts` |
-| Domain | `modules/trade` + `app/actions/trade.ts` |
-| UI home | `features/trade/*` under AdminCN layout — never mount `TradeShell` / locale switcher |
-| Out of scope | Declarations; Neon Auth chrome; ERP as ledger; **customer portal**; pixel polish beyond MVP |
+| Engine / env / ops docs | FFT — `FFT_*` env keys; living SSOT `docs/fft/` ([RUNTIME](../../../docs/fft/RUNTIME.md), [gate-register](../../../docs/fft/ops/gate-register.md)) |
+| DB | `fft_*` tables (migration `024_fft_rename_hot_sales_tables.sql`) |
+| Actors | Organization-admin sales + ops (not end customers) |
+| Shell | Shared AdminCN on `/fft/*`; entitlement `fft` |
+| Paths | Locale-free `/fft` (308 redirect from legacy `/trade/*`) |
+| Entry | `requireFftAccess` — org admin alone does **not** grant |
+| Permissions | Codes in `modules/fft/domain/rbac-catalog.ts` |
+| Domain | `modules/fft` + `app/actions/fft.ts` |
+| UI home | `features/fft/*` under AdminCN layout — never mount `FftShell` / locale switcher |
+| Deprecation | Hot Sales / `/trade` product identity / `FftShell` = **compulsory** retire — [register](../../../.cursor/skills/agent-skills/skills/deprecation-and-migration/reference.md) |
+| Out of scope | Declarations **feature** ownership; Neon Auth chrome; ERP as ledger; **customer portal**; pixel polish beyond MVP |
+
+**Historical tags** (`hot-sales-phase-*`) remain immutable footnotes only — do not retag.
 
 **MVP bar (satisfactory enterprise grade):** P0 + P1 in [001R](001R-feed-farm-trade-roadmap.md).
 
-That is a **working** cycle for entitled staff — not documentation theater, not P2 UI polish, not P3 flag-gated ops. P1 is **not** “events + orders + allocate” alone; it includes engine-backed **priority, supply, custom fields, transfers, order complete, and audit** (001R G1–G6).
-
 ## Consequences
 
-**Positive:** Clear product vs engine names; shared shell; hard module gate; Hot Sales domain/RBAC stay valid; MVP matches how allocation sales actually run.
+**Positive:** One name across UI, code, env, DB, and ops docs; clear multi-module SaaS model.
 
-**Costs:** Dual naming until a rename ADR; `/trade` URL stays technical; full AdminCN polish waits for P2; P3 prod flag enable still requires gate-register (ops authority is restored — see 001R G0).
+**Costs:** Redirect matrix for `/trade`; Vercel env key migration `HOT_SALES_*` → `FFT_*`; Neon table rename on prod branch.
 
-## Alternatives rejected
+## Rejected
 
-| Alternative | Why rejected |
-|-------------|--------------|
-| Separate trade app | Premature; shared auth/DB |
-| Keep “Hot Sales” in product UI | Wrong 3F positioning |
-| Rename `HOT_SALES_*` now | Breaks gate-register / prod ops |
-| Fold into Declarations | Compliance ≠ commercial windows |
-| Org admin ⇒ module access | Over-grants sales |
-| Restore TradeShell / locale URLs | Breaks AdminCN platform shell |
-| Customer portal in same slice | Wrong actor / series branch |
-| MVP = events/orders/alloc only | Omits priority/supply/transfer/complete/fields/audit already in engine |
-
-## Follow-up
-
-| Item | Where |
-|------|-------|
-| Structure, vertical slice, trusted files | [001A](001A-feed-farm-trade-architecture.md) |
-| Phases, gaps G0–G9, DoD | [001R](001R-feed-farm-trade-roadmap.md) |
-| Code vs arch matrix | [skill completeness](../../../.cursor/skills/feed-farm-trade/completeness.md) |
-| Engine ops / flags | [docs/hot-sales/RUNTIME.md](../../../docs/hot-sales/RUNTIME.md) |
-
-## References
-
-- [001A-feed-farm-trade-architecture.md](001A-feed-farm-trade-architecture.md)
-- [001R-feed-farm-trade-roadmap.md](001R-feed-farm-trade-roadmap.md)
-- [../06-admincn-alignment.md](../06-admincn-alignment.md)
-- `docs/hot-sales/RUNTIME.md` · `docs/hot-sales/ops/gate-register.md`
-- `modules/platform/shell/access.ts` · `modules/trade/domain/access.ts` · `app/trade/layout.tsx`
-- `modules/trade/domain/rbac-catalog.ts` · `app/actions/trade.ts`
-- `components-V2/platform-config/navConfig.tsx`
+| Option | Why |
+|--------|-----|
+| Keep Hot Sales as engine name forever | Confuses agents and ops; product already FFT |
+| Keep `/trade` as permanent URL | Technical nickname conflicts with product FFT branding |
+| Soft-deprecate Hot Sales / FftShell “for convenience” | Compulsory retire — agents remount soft leftovers |
+| Treat FFT as separate infra course from Declarations | Same platform; module domain only |
+| `FEED_FARM_TRADE_*` env prefix | Too long; FFT matches existing registry tooling |
+| Remount `FftShell` / live `/fft/[locale]` | Breaks AdminCN platform shell |

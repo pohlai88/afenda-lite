@@ -1,23 +1,26 @@
-# Agent instructions — Client Declaration Portal
+# Agent instructions — Afenda-Lite
 
-**Repository layout:** [docs/architecture/repo-layout.md](docs/architecture/repo-layout.md) — Root = bootstrap, L1 = concern, L2 = bounded context. Migration closed: [repo-migration-map.md](docs/architecture/repo-migration-map.md).
+**Product:** **Afenda-Lite** — beta / lite edition of official **Afenda ERP** (multi-module SaaS).  
+**Retired product name:** Client Declaration Portal — compulsory; see [doc/adr/001-afenda-lite-product-identity.md](doc/adr/001-afenda-lite-product-identity.md) · [deprecation register](.cursor/skills/agent-skills/skills/deprecation-and-migration/reference.md).
 
-## Hot Sales — Phase 2A closed · 2B–2D ADRs Accepted
+**Repository layout:** [docs/architecture/repo-layout.md](docs/architecture/repo-layout.md) — Root = bootstrap, L1 = concern, L2 = bounded context. Migration closed: [repo-migration-map.md](docs/architecture/repo-migration-map.md). Hosting: GitHub `pohlai88/afenda-lite` · Vercel `afenda-lite` · `APP_URL=https://afenda-lite.vercel.app`.
+
+## Feed Farm Trade — Phase 2A closed · 2B–2D ADRs Accepted
 
 **Product module (UI / shell):** Feed Farm Trade — agent skill [`.cursor/skills/feed-farm-trade`](.cursor/skills/feed-farm-trade/SKILL.md) · ADR [001](doc/frontend/adr/001-feed-farm-trade.md) · architecture [001A](doc/frontend/adr/001A-feed-farm-trade-architecture.md) · roadmap [001R](doc/frontend/adr/001R-feed-farm-trade-roadmap.md).
 
-**Agent entry (engine ops):** [docs/hot-sales/RUNTIME.md](docs/hot-sales/RUNTIME.md) · Index: [docs/hot-sales/README.md](docs/hot-sales/README.md)
+**Agent entry (engine ops):** [docs/fft/RUNTIME.md](docs/fft/RUNTIME.md) · Index: [docs/fft/README.md](docs/fft/README.md)
 
 | Authority | Doc |
 |-----------|-----|
-| Runtime SSOT | [docs/hot-sales/RUNTIME.md](docs/hot-sales/RUNTIME.md) |
-| Ops gates | [docs/hot-sales/ops/gate-register.md](docs/hot-sales/ops/gate-register.md) |
-| Checklists | [ops/rollout.md](docs/hot-sales/ops/rollout.md) · [ops/release-readiness.md](docs/hot-sales/ops/release-readiness.md) |
-| Phase 2A contract | [spec/phase-2a-prd.md](docs/hot-sales/spec/phase-2a-prd.md) |
-| Phase 2B–2D ADRs | [adr/002](docs/hot-sales/adr/002-finance-deposit-pickup-ops.md) · [003](docs/hot-sales/adr/003-imports-notifications.md) · [004](docs/hot-sales/adr/004-erp-sync.md) |
-| 2B–2D slices | [spec/phase-2bcd-slices.md](docs/hot-sales/spec/phase-2bcd-slices.md) (**Proposed**) |
+| Runtime SSOT | [docs/fft/RUNTIME.md](docs/fft/RUNTIME.md) |
+| Ops gates | [docs/fft/ops/gate-register.md](docs/fft/ops/gate-register.md) |
+| Checklists | [ops/rollout.md](docs/fft/ops/rollout.md) · [ops/release-readiness.md](docs/fft/ops/release-readiness.md) |
+| Phase 2A contract | [spec/phase-2a-prd.md](docs/fft/spec/phase-2a-prd.md) |
+| Phase 2B–2D ADRs | [adr/002](docs/fft/adr/002-finance-deposit-pickup-ops.md) · [003](docs/fft/adr/003-imports-notifications.md) · [004](docs/fft/adr/004-erp-sync.md) |
+| 2B–2D slices | [spec/phase-2bcd-slices.md](docs/fft/spec/phase-2bcd-slices.md) (**Proposed**) |
 
-**Production state:** tag `hot-sales-phase-2a` → `8e650ff`; `HOT_SALES_RBAC_ENABLED=true` on Vercel; DB branch `br-tiny-hill-ao82jp6f`. **2B–2D code blocked** until slice group Approved in phase-2bcd-slices + explicit program reopen. No Hot Sales commits mixed with unrelated refactors.
+**Production state:** tag `fft-phase-2a` → `8e650ff`; `FFT_RBAC_ENABLED=true` on Vercel; DB branch `br-tiny-hill-ao82jp6f`. **2B–2D code blocked** until slice group Approved in phase-2bcd-slices + explicit program reopen. No Feed Farm Trade commits mixed with unrelated refactors.
 
 ## Environment variables
 
@@ -126,7 +129,7 @@ Authority: [`.agents/skills/neon/SKILL.md`](.agents/skills/neon/SKILL.md), [`.ag
 When `APP_URL` or preview URLs change, add them to Neon Auth trusted origins:
 
 ```bash
-neon neon-auth domain add https://iam-check.vercel.app
+neon neon-auth domain add https://afenda-lite.vercel.app
 neon neon-auth domain list
 ```
 

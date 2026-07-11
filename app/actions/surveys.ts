@@ -6,10 +6,10 @@ import { requireAdminSession } from "@/modules/identity/auth/session";
 import { recordAuditEvent } from "@/modules/platform/audit";
 import { createClientAssignment } from "@/modules/declarations/domain/clients";
 import {
-  OPERATOR_CLIENTS_HREF,
-  OPERATOR_DASHBOARD_HREF,
-  operatorDeclarationHref,
-  operatorDeclarationManageHref,
+  ORGANIZATION_ADMIN_CLIENTS_HREF,
+  ORGANIZATION_ADMIN_DASHBOARD_HREF,
+  organizationAdminDeclarationHref,
+  organizationAdminDeclarationManageHref,
 } from "@/modules/platform/routing/portal-routes";
 import {
   listQuestionsForSurvey,
@@ -19,7 +19,7 @@ import {
 } from "@/modules/declarations/domain/questions";
 import { runLoggedAction } from "@/modules/platform/observability";
 import { portalCopy } from "@/modules/declarations/copy/portal-copy";
-import { parseSchema } from "@/modules/declarations/schemas/common";
+import { parseSchema } from "@/modules/platform/schemas/common";
 import {
   deleteSurveySchema,
   rawUpdateSurveyFromFormData,
@@ -51,9 +51,9 @@ import {
 import { formString } from "@/modules/declarations/server-actions/form-data";
 
 function revalidateOperatorDashboard(surveyId?: string) {
-  revalidatePath(OPERATOR_DASHBOARD_HREF);
+  revalidatePath(ORGANIZATION_ADMIN_DASHBOARD_HREF);
   if (surveyId) {
-    revalidatePath(operatorDeclarationHref(surveyId));
+    revalidatePath(organizationAdminDeclarationHref(surveyId));
   }
 }
 
@@ -167,7 +167,7 @@ export async function createDraftSurveyAction() {
     });
 
     revalidateOperatorDashboard();
-    redirect(operatorDeclarationManageHref(survey.id));
+    redirect(organizationAdminDeclarationManageHref(survey.id));
   });
 }
 
@@ -217,7 +217,7 @@ export async function updateSurveyAction(formData: FormData) {
     });
 
     revalidateOperatorDashboard(id);
-    redirect(operatorDeclarationHref(id));
+    redirect(organizationAdminDeclarationHref(id));
   });
 }
 
@@ -355,7 +355,7 @@ export async function importSurveyPackageAction(input: {
     });
 
     revalidateOperatorDashboard(survey.id);
-    revalidatePath(OPERATOR_CLIENTS_HREF);
+    revalidatePath(ORGANIZATION_ADMIN_CLIENTS_HREF);
 
     return {
       success: true as const,

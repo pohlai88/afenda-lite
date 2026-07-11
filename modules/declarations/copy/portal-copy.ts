@@ -18,7 +18,7 @@ import { PORTAL_NAME } from "./portal-name";
 
 export { PORTAL_NAME };
 export const CLIENT_PORTAL_ACK_VERSION = "2026-01";
-const CLIENT_PORTAL_EYEBROW = "Client portal";
+const CLIENT_PORTAL_EYEBROW = "Client";
 const ORG_EYEBROW = "Organization";
 
 export const portalCopy = {
@@ -280,11 +280,12 @@ export const portalCopy = {
 
   trust: {
     meta: {
-      titleSuffix: "Secure declaration portal",
+      titleSuffix: "Afenda-Lite",
       defaultDescription:
-        "Sign in, complete assigned declarations, and submit attestations through a secure client portal with organization-managed access.",
+        "Sign in, complete assigned declarations, and submit attestations in Afenda-Lite — the beta edition of Afenda ERP — with organization-managed access.",
       keywords: [
-        "declaration portal",
+        "Afenda-Lite",
+        "Afenda ERP",
         "client attestations",
         "secure submissions",
         "compliance",
@@ -299,7 +300,7 @@ export const portalCopy = {
       {
         title: "Metadata-only file evidence",
         detail:
-          "File questions record filename and type only. Original files are not uploaded to the portal.",
+          "File questions record filename and type only. Original files are not uploaded.",
       },
       {
         title: "Audit trail",
@@ -308,7 +309,7 @@ export const portalCopy = {
       },
     ] as const,
     footer: {
-      line: "Secure declaration portal",
+      line: "Afenda-Lite",
       complianceNote:
         "Protected access · Encrypted transport · Organization-managed declarations",
     },
@@ -708,7 +709,7 @@ export const portalCopy = {
   clientInvitationJoin: {
     heroTitle: "You're invited to declare.",
     heroDescription:
-      "Your organization registered you for the Client Declaration Portal. Create your account with the same email they used, then accept the invitation.",
+      "Your organization registered you for Afenda-Lite. Create your account with the same email they used, then accept the invitation.",
     backLabel: "Back to home",
     panelCreateTitle: "Step 1 — Create your account",
     panelCreateDescription:
@@ -771,7 +772,7 @@ export const portalCopy = {
       clientEmail: string;
     }) =>
       [
-        "Client Declaration Portal",
+        "Afenda-Lite",
         "",
         `Sign in: ${portalUrl}`,
         `Email: ${clientEmail}`,
@@ -782,7 +783,7 @@ export const portalCopy = {
   },
 
   invite: {
-    sender: "Client Declaration Portal",
+    sender: "Afenda-Lite",
     emailSubject: "Declaration request",
     emailLabel: "Recipient email",
     emailPlaceholder: "client@company.com",
@@ -862,7 +863,7 @@ export const portalCopy = {
     assignmentRemoveError: "Could not remove this assignment.",
     assignmentRemoveMissing: "Assignment not found.",
     managementNote:
-      "Full admin user management (roles, bulk actions) will be added after deploy.",
+      "Create/edit forms, import/export, and bulk delete remain deferred. Role and suspend/activate use Neon Auth admin APIs.",
     status: {
       pending: "Pending",
       accepted: "Active",

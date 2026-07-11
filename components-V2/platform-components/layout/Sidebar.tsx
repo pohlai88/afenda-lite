@@ -36,7 +36,7 @@ import {
 // Config Imports
 import { navItems, type NavItem } from '@/components-V2/platform-config/navConfig'
 import themeConfig from '@/components-V2/platform-config/themeConfig'
-import { useOperatorShellFlags } from '@/components-V2/platform-context/operatorShellFlagsContext'
+import { useOrganizationAdminShellFlags } from '@/components-V2/platform-context/organizationAdminShellFlagsContext'
 import { useSettings } from '@/components-V2/platform-hooks/use-settings'
 import { ORG_OPERATOR_PLAYGROUND_ROUTE } from '@/modules/platform/routing/portal-nav-routes'
 import { portalCopy } from '@/modules/declarations/copy/portal-copy'
@@ -258,7 +258,7 @@ const SidebarLayout = () => {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const { settings } = useSettings()
-  const { showPlayground, entitledModules, isOrgAdmin } = useOperatorShellFlags()
+  const { showPlayground, entitledModules, isOrgAdmin } = useOrganizationAdminShellFlags()
   const withPlayground = showPlayground ? [...navItems, playgroundNavGroup] : navItems
   const resolvedNavItems = withPlayground.filter((item) =>
     isNavGroupVisible(item, entitledModules, isOrgAdmin),

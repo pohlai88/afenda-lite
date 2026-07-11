@@ -15,7 +15,7 @@ import {
   clientDeclareHref,
   clientPostAuthHref,
   clientSignInAuthHref,
-  operatorDeclarationHref,
+  organizationAdminDeclarationHref,
 } from "@/modules/platform/routing/portal-routes";
 import type { Survey } from "@/modules/declarations/domain/surveys";
 
@@ -40,7 +40,7 @@ export async function resolvePublicLinkLandingHref(
   }
 
   if (isAdminSession(session)) {
-    return operatorDeclarationHref(survey.id);
+    return organizationAdminDeclarationHref(survey.id);
   }
 
   if (session.user.email) {

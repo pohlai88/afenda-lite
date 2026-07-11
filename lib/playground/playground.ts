@@ -8,7 +8,7 @@ import {
 
 export type PlaygroundScreen = {
   id: string;
-  category: "admin" | "client" | "dynamic" | "hot-sales" | "auto";
+  category: "admin" | "client" | "dynamic" | "fft" | "auto";
   label: string;
   path: string;
   routeFile?: string;
@@ -37,15 +37,19 @@ export const playgroundScreens: PlaygroundScreen[] = playgroundScreenDefs.map(
   }),
 );
 
-export const playgroundNav = {
-  admin: playgroundScreens.filter((screen) => screen.category === "admin"),
-  client: playgroundScreens.filter((screen) => screen.category === "client"),
-  dynamic: playgroundScreens.filter((screen) => screen.category === "dynamic"),
-  "hot-sales": playgroundScreens.filter(
-    (screen) => screen.category === "hot-sales",
-  ),
-  auto: playgroundScreens.filter((screen) => screen.category === "auto"),
-};
+/** Group curated and/or auto-discovered screens for playground chrome. */
+export function groupPlaygroundNav(screens: PlaygroundScreen[]) {
+  return {
+    admin: screens.filter((screen) => screen.category === "admin"),
+    client: screens.filter((screen) => screen.category === "client"),
+    dynamic: screens.filter((screen) => screen.category === "dynamic"),
+    fft: screens.filter((screen) => screen.category === "fft"),
+    auto: screens.filter((screen) => screen.category === "auto"),
+  };
+}
+
+/** @deprecated Prefer groupPlaygroundNav(buildPlaygroundScreensWithAutoDiscovery()). */
+export const playgroundNav = groupPlaygroundNav(playgroundScreens);
 
 export function getPlaygroundScreen(id: string) {
   return playgroundScreens.find((screen) => screen.id === id);

@@ -17,8 +17,8 @@ describe("portal-route-inventory", () => {
       filePathToRoutePattern("app/client/(workspace)/declare/[id]/page.tsx"),
     ).toBe("/client/declare/[id]");
     expect(
-      filePathToRoutePattern("app/trade/[locale]/admin/events/page.tsx"),
-    ).toBe("/trade/[locale]/admin/events");
+      filePathToRoutePattern("app/fft/[locale]/admin/events/page.tsx"),
+    ).toBe("/fft/[locale]/admin/events");
   });
 
   it("tags journey phases from route patterns", () => {
@@ -29,7 +29,7 @@ describe("portal-route-inventory", () => {
     expect(tagRoutePhase("/client")).toBe("client-post-login");
     expect(tagRoutePhase("/client/declare/[id]")).toBe("client-post-login");
     expect(tagRoutePhase("/dashboard")).toBe("operator-post-login");
-    expect(tagRoutePhase("/trade/[locale]/events")).toBe("hot-sales");
+    expect(tagRoutePhase("/fft/[locale]/events")).toBe("fft");
   });
 
   it("scans product pages and excludes playground meta routes", () => {
@@ -41,7 +41,7 @@ describe("portal-route-inventory", () => {
     );
     expect(inventory.some((entry) => entry.file === "app/page.tsx")).toBe(true);
     expect(
-      inventory.some((entry) => entry.file === "app/trade/[locale]/events/page.tsx"),
+      inventory.some((entry) => entry.file === "app/fft/[locale]/events/page.tsx"),
     ).toBe(true);
   });
 });

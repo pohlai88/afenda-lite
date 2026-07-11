@@ -27,7 +27,7 @@ describe("client email delivery (operator register)", () => {
     expect(getClientEmailDeliveryStatus()).toEqual({
       enabled: true,
       provider: "neon-auth-organization",
-      fromName: "Client Declaration Portal",
+      fromName: "Afenda-Lite",
       fromEmail: NEON_AUTH_SHARED_SENDER_EMAIL,
     });
   });

@@ -81,12 +81,12 @@ import {
 } from '@/components-V2/platform-components/ui/tooltip'
 import { usePagination } from '@/components-V2/platform-hooks/use-pagination'
 import { cn } from '@/components-V2/lib/utils'
-import { ConfirmDialog } from '@/features/operator/confirm-dialog'
-import type { OrgDeclarationRow } from '@/lib/pages/operator-dashboard-types'
+import { ConfirmDialog } from '@/features/organization-admin/confirm-dialog'
+import type { OrgDeclarationRow } from '@/lib/pages/organization-admin-dashboard-types'
 import { portalCopy } from '@/modules/declarations/copy/portal-copy'
 import { displaySurveyTitle } from '@/modules/declarations/domain/survey-display'
 import { isDraftSurveyTitle } from '@/modules/declarations/domain/survey-draft'
-import { operatorDeclarationHref } from '@/modules/platform/routing/portal-routes'
+import { organizationAdminDeclarationHref } from '@/modules/platform/routing/portal-routes'
 
 declare module '@tanstack/react-table' {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -207,7 +207,7 @@ function buildColumns(): ColumnDef<DeclarationItem>[] {
           </div>
           <div className='flex min-w-0 flex-col'>
             <Link
-              href={operatorDeclarationHref(row.original.id)}
+              href={organizationAdminDeclarationHref(row.original.id)}
               className='hover:underline focus-visible:ring-ring truncate font-medium outline-none focus-visible:ring-2'
             >
               {row.getValue('title')}
@@ -276,7 +276,7 @@ function buildColumns(): ColumnDef<DeclarationItem>[] {
                   size='icon'
                   aria-label={copy.viewSubmissions}
                   nativeButton={false}
-                  render={<Link href={operatorDeclarationHref(row.original.id)} />}
+                  render={<Link href={organizationAdminDeclarationHref(row.original.id)} />}
                 />
               }
             >

@@ -1,6 +1,6 @@
--- Hot Sales Event Engine (Phase 1) — generic, reusable schema
+-- Feed Farm Trade Event Engine (Phase 1) — generic, reusable schema
 
-CREATE TABLE IF NOT EXISTS hot_sales_event (
+CREATE TABLE IF NOT EXISTS fft_event (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   event_code TEXT NOT NULL,
   event_name TEXT NOT NULL,
@@ -26,22 +26,22 @@ CREATE TABLE IF NOT EXISTS hot_sales_event (
   support_amount_per_unit NUMERIC(18, 2),
   support_unit_label TEXT,
   is_template BOOLEAN NOT NULL DEFAULT FALSE,
-  cloned_from_id UUID REFERENCES hot_sales_event(id) ON DELETE SET NULL,
+  cloned_from_id UUID REFERENCES fft_event(id) ON DELETE SET NULL,
   created_by UUID NOT NULL,
   updated_by UUID,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS hot_sales_event_code_idx
-  ON hot_sales_event (event_code);
+CREATE UNIQUE INDEX IF NOT EXISTS fft_event_code_idx
+  ON fft_event (event_code);
 
-CREATE INDEX IF NOT EXISTS hot_sales_event_status_idx
-  ON hot_sales_event (status);
+CREATE INDEX IF NOT EXISTS fft_event_status_idx
+  ON fft_event (status);
 
-CREATE TABLE IF NOT EXISTS hot_sales_product (
+CREATE TABLE IF NOT EXISTS fft_product (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  event_id UUID NOT NULL REFERENCES hot_sales_event(id) ON DELETE CASCADE,
+  event_id UUID NOT NULL REFERENCES fft_event(id) ON DELETE CASCADE,
   product_name TEXT NOT NULL,
   product_code TEXT,
   source TEXT,
@@ -61,12 +61,12 @@ CREATE TABLE IF NOT EXISTS hot_sales_product (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS hot_sales_product_event_id_idx
-  ON hot_sales_product (event_id);
+CREATE INDEX IF NOT EXISTS fft_product_event_id_idx
+  ON fft_product (event_id);
 
-CREATE TABLE IF NOT EXISTS hot_sales_customer_priority (
+CREATE TABLE IF NOT EXISTS fft_customer_priority (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  event_id UUID NOT NULL REFERENCES hot_sales_event(id) ON DELETE CASCADE,
+  event_id UUID NOT NULL REFERENCES fft_event(id) ON DELETE CASCADE,
   customer_name TEXT NOT NULL,
   customer_code TEXT,
   priority_rank INTEGER NOT NULL DEFAULT 999,
@@ -77,15 +77,15 @@ CREATE TABLE IF NOT EXISTS hot_sales_customer_priority (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS hot_sales_customer_priority_event_id_idx
-  ON hot_sales_customer_priority (event_id);
+CREATE INDEX IF NOT EXISTS fft_customer_priority_event_id_idx
+  ON fft_customer_priority (event_id);
 
-CREATE INDEX IF NOT EXISTS hot_sales_customer_priority_lookup_idx
-  ON hot_sales_customer_priority (event_id, customer_code);
+CREATE INDEX IF NOT EXISTS fft_customer_priority_lookup_idx
+  ON fft_customer_priority (event_id, customer_code);
 
-CREATE TABLE IF NOT EXISTS hot_sales_field_def (
+CREATE TABLE IF NOT EXISTS fft_field_def (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  event_id UUID NOT NULL REFERENCES hot_sales_event(id) ON DELETE CASCADE,
+  event_id UUID NOT NULL REFERENCES fft_event(id) ON DELETE CASCADE,
   entity_type TEXT NOT NULL DEFAULT 'order'
     CHECK (entity_type IN ('event', 'product', 'order', 'customer', 'pickup')),
   field_key TEXT NOT NULL,
@@ -109,10 +109,10 @@ CREATE TABLE IF NOT EXISTS hot_sales_field_def (
   UNIQUE (event_id, field_key)
 );
 
-CREATE INDEX IF NOT EXISTS hot_sales_field_def_event_id_idx
-  ON hot_sales_field_def (event_id);
+CREATE INDEX IF NOT EXISTS fft_field_def_event_id_idx
+  ON fft_field_def (event_id);
 
-CREATE TABLE IF NOT EXISTS hot_sales_sales_member (
+CREATE TABLE IF NOT EXISTS fft_sales_member (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID,
   email TEXT NOT NULL,
@@ -121,9 +121,9 @@ CREATE TABLE IF NOT EXISTS hot_sales_sales_member (
   UNIQUE (email)
 );
 
-CREATE TABLE IF NOT EXISTS hot_sales_allocation_run (
+CREATE TABLE IF NOT EXISTS fft_allocation_run (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  event_id UUID NOT NULL REFERENCES hot_sales_event(id) ON DELETE CASCADE,
+  event_id UUID NOT NULL REFERENCES fft_event(id) ON DELETE CASCADE,
   run_by UUID NOT NULL,
   run_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   mode TEXT NOT NULL CHECK (mode IN ('auto', 'manual', 'rerun')),
@@ -131,12 +131,12 @@ CREATE TABLE IF NOT EXISTS hot_sales_allocation_run (
   result_summary JSONB NOT NULL DEFAULT '{}'::jsonb
 );
 
-CREATE INDEX IF NOT EXISTS hot_sales_allocation_run_event_id_idx
-  ON hot_sales_allocation_run (event_id);
+CREATE INDEX IF NOT EXISTS fft_allocation_run_event_id_idx
+  ON fft_allocation_run (event_id);
 
-CREATE TABLE IF NOT EXISTS hot_sales_order (
+CREATE TABLE IF NOT EXISTS fft_order (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  event_id UUID NOT NULL REFERENCES hot_sales_event(id) ON DELETE CASCADE,
+  event_id UUID NOT NULL REFERENCES fft_event(id) ON DELETE CASCADE,
   order_number TEXT NOT NULL,
   salesperson_user_id UUID NOT NULL,
   salesperson_email TEXT NOT NULL,
@@ -144,7 +144,7 @@ CREATE TABLE IF NOT EXISTS hot_sales_order (
   customer_code TEXT,
   priority_rank INTEGER NOT NULL DEFAULT 999,
   priority_group TEXT,
-  product_id UUID NOT NULL REFERENCES hot_sales_product(id) ON DELETE RESTRICT,
+  product_id UUID NOT NULL REFERENCES fft_product(id) ON DELETE RESTRICT,
   requested_quantity NUMERIC(18, 2) NOT NULL,
   confirmed_quantity NUMERIC(18, 2),
   fulfilled_quantity NUMERIC(18, 2),
@@ -162,25 +162,25 @@ CREATE TABLE IF NOT EXISTS hot_sales_order (
     CHECK (pickup_status IN ('pending', 'ready', 'picked_up', 'no_show', 'cancelled')),
   transfer_status TEXT NOT NULL DEFAULT 'none'
     CHECK (transfer_status IN ('none', 'requested', 'approved', 'rejected')),
-  allocation_run_id UUID REFERENCES hot_sales_allocation_run(id) ON DELETE SET NULL,
+  allocation_run_id UUID REFERENCES fft_allocation_run(id) ON DELETE SET NULL,
   attrs JSONB NOT NULL DEFAULT '{}'::jsonb,
   remarks TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS hot_sales_order_event_id_idx
-  ON hot_sales_order (event_id);
+CREATE INDEX IF NOT EXISTS fft_order_event_id_idx
+  ON fft_order (event_id);
 
-CREATE INDEX IF NOT EXISTS hot_sales_order_salesperson_idx
-  ON hot_sales_order (salesperson_user_id);
+CREATE INDEX IF NOT EXISTS fft_order_salesperson_idx
+  ON fft_order (salesperson_user_id);
 
-CREATE UNIQUE INDEX IF NOT EXISTS hot_sales_order_number_idx
-  ON hot_sales_order (event_id, order_number);
+CREATE UNIQUE INDEX IF NOT EXISTS fft_order_number_idx
+  ON fft_order (event_id, order_number);
 
-CREATE TABLE IF NOT EXISTS hot_sales_transfer (
+CREATE TABLE IF NOT EXISTS fft_transfer (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  order_id UUID NOT NULL REFERENCES hot_sales_order(id) ON DELETE CASCADE,
+  order_id UUID NOT NULL REFERENCES fft_order(id) ON DELETE CASCADE,
   original_customer_name TEXT NOT NULL,
   original_customer_code TEXT,
   new_customer_name TEXT NOT NULL,
@@ -195,13 +195,13 @@ CREATE TABLE IF NOT EXISTS hot_sales_transfer (
   approved_at TIMESTAMPTZ
 );
 
-CREATE INDEX IF NOT EXISTS hot_sales_transfer_order_id_idx
-  ON hot_sales_transfer (order_id);
+CREATE INDEX IF NOT EXISTS fft_transfer_order_id_idx
+  ON fft_transfer (order_id);
 
-CREATE TABLE IF NOT EXISTS hot_sales_audit (
+CREATE TABLE IF NOT EXISTS fft_audit (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  event_id UUID REFERENCES hot_sales_event(id) ON DELETE SET NULL,
-  order_id UUID REFERENCES hot_sales_order(id) ON DELETE SET NULL,
+  event_id UUID REFERENCES fft_event(id) ON DELETE SET NULL,
+  order_id UUID REFERENCES fft_order(id) ON DELETE SET NULL,
   action TEXT NOT NULL,
   actor_id UUID,
   actor_role TEXT,
@@ -211,8 +211,8 @@ CREATE TABLE IF NOT EXISTS hot_sales_audit (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS hot_sales_audit_event_id_idx
-  ON hot_sales_audit (event_id);
+CREATE INDEX IF NOT EXISTS fft_audit_event_id_idx
+  ON fft_audit (event_id);
 
-CREATE INDEX IF NOT EXISTS hot_sales_audit_order_id_idx
-  ON hot_sales_audit (order_id);
+CREATE INDEX IF NOT EXISTS fft_audit_order_id_idx
+  ON fft_audit (order_id);

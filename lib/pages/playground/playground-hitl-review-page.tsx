@@ -13,7 +13,7 @@ import { Button } from "@/components-V2/platform-components/ui/button";
 import { PlaygroundPageShapeBadge } from "@/features/playground/playground-page-shape-badge";
 import { buildPlaygroundHitlRows } from "@/lib/playground/playground-hitl-rows";
 import { parseHitlViewFilters } from "@/lib/playground/playground-hitl-views";
-import { playgroundScreens } from "@/lib/playground/playground";
+import { buildPlaygroundScreensWithAutoDiscovery } from "@/lib/playground/playground-auto-discovery";
 import { loadPlaygroundStaticComposition } from "@/lib/playground/playground-static-compositions";
 import { PORTAL_NAME } from "@/modules/declarations/copy/portal-copy";
 import { playgroundScreenHref } from "@/modules/platform/routing/portal-routes";
@@ -117,7 +117,9 @@ export async function runPlaygroundHitlReviewPage({
 } = {}) {
   const params = searchParams ? await searchParams : {};
   const filters = parseHitlViewFilters(params);
-  const rows = buildPlaygroundHitlRows(playgroundScreens);
+  const rows = buildPlaygroundHitlRows(
+    buildPlaygroundScreensWithAutoDiscovery(),
+  );
   const staticComposition = await resolveStaticInspectSlot(filters);
 
   return (

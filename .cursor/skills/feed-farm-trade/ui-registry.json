@@ -1,14 +1,17 @@
 {
-  "version": 2,
+  "version": 3,
   "updated": "2026-07-11",
   "notes": [
-    "Human-only edits for approved/forbidden rows.",
-    "Agents must not invent reusableIds or self-approve to green Vitest.",
-    "ACN-UI-* primitives: import from components-V2/platform-components/ui when on primitiveAllowlist.",
-    "ACN-BLK-* blocks: catalog DNA — do not import platform-views from features/trade; wrap via product FFT-UI-* HITL.",
-    "Registry pass ≠ visual quality claim.",
-    "TRADE_NATIVE_* tech-debt (P2-AC-05); not failed by Vitest in v1.",
-    "Regenerate AdminCN catalog: node scripts/generate-fft-ui-registry-admincn.mjs (preserves components[])."
+    "Human-only edits for approved/forbidden rows and dna/surfaces contracts.",
+    "Agents must not invent reusableIds or self-approve to green Vitest/check:fft-ui-registry.",
+    "Layer A: inventory (primitives/blocks/products ↔ disk).",
+    "Layer B: product dna.requiredPatterns/bannedPatterns + surfaces[]; requiredBlockId must match studioSource block path.",
+    "ACN-UI-* primitives: import when on primitiveAllowlist.",
+    "ACN-BLK-* blocks: catalog DNA — do not import platform-views from features/fft without HITL wrap via product FFT-UI-* HITL.",
+    "Registry pass ≠ visual QA; DNA pass ≠ screenshot parity.",
+    "FFT_NATIVE_* allowed only where a product row does not ban it (forms tech-debt P2-AC-05).",
+    "Regenerate AdminCN catalog: node scripts/generate-fft-ui-registry-admincn.mjs (preserves components[] + surfaces[]).",
+    "Audit: npm run check:fft-ui-registry (complements Vitest)."
   ],
   "primitiveAllowlist": [
     "accordion",
@@ -74,7 +77,7 @@
       "kind": "primitive",
       "path": "components-V2/platform-components/ui/accordion.tsx",
       "studioSource": "components-V2/platform-components/ui/accordion.tsx",
-      "notes": "AdminCN UI primitive — auto-import OK from features/trade when on primitiveAllowlist"
+      "notes": "AdminCN UI primitive — auto-import OK from features/fft when on primitiveAllowlist"
     },
     {
       "reusableId": "ACN-UI-ALERT",
@@ -86,7 +89,7 @@
       "kind": "primitive",
       "path": "components-V2/platform-components/ui/alert.tsx",
       "studioSource": "components-V2/platform-components/ui/alert.tsx",
-      "notes": "AdminCN UI primitive — auto-import OK from features/trade when on primitiveAllowlist"
+      "notes": "AdminCN UI primitive — auto-import OK from features/fft when on primitiveAllowlist"
     },
     {
       "reusableId": "ACN-UI-ALERT-DIALOG",
@@ -98,7 +101,7 @@
       "kind": "primitive",
       "path": "components-V2/platform-components/ui/alert-dialog.tsx",
       "studioSource": "components-V2/platform-components/ui/alert-dialog.tsx",
-      "notes": "AdminCN UI primitive — auto-import OK from features/trade when on primitiveAllowlist"
+      "notes": "AdminCN UI primitive — auto-import OK from features/fft when on primitiveAllowlist"
     },
     {
       "reusableId": "ACN-UI-AVATAR",
@@ -110,7 +113,7 @@
       "kind": "primitive",
       "path": "components-V2/platform-components/ui/avatar.tsx",
       "studioSource": "components-V2/platform-components/ui/avatar.tsx",
-      "notes": "AdminCN UI primitive — auto-import OK from features/trade when on primitiveAllowlist"
+      "notes": "AdminCN UI primitive — auto-import OK from features/fft when on primitiveAllowlist"
     },
     {
       "reusableId": "ACN-UI-BACKGROUND-RIPPLE",
@@ -122,7 +125,7 @@
       "kind": "primitive",
       "path": "components-V2/platform-components/ui/background-ripple.tsx",
       "studioSource": "components-V2/platform-components/ui/background-ripple.tsx",
-      "notes": "AdminCN UI primitive — auto-import OK from features/trade when on primitiveAllowlist"
+      "notes": "AdminCN UI primitive — auto-import OK from features/fft when on primitiveAllowlist"
     },
     {
       "reusableId": "ACN-UI-BADGE",
@@ -134,7 +137,7 @@
       "kind": "primitive",
       "path": "components-V2/platform-components/ui/badge.tsx",
       "studioSource": "components-V2/platform-components/ui/badge.tsx",
-      "notes": "AdminCN UI primitive — auto-import OK from features/trade when on primitiveAllowlist"
+      "notes": "AdminCN UI primitive — auto-import OK from features/fft when on primitiveAllowlist"
     },
     {
       "reusableId": "ACN-UI-BG-DOT-GRID",
@@ -146,7 +149,7 @@
       "kind": "primitive",
       "path": "components-V2/platform-components/ui/bg-dot-grid.tsx",
       "studioSource": "components-V2/platform-components/ui/bg-dot-grid.tsx",
-      "notes": "AdminCN UI primitive — auto-import OK from features/trade when on primitiveAllowlist"
+      "notes": "AdminCN UI primitive — auto-import OK from features/fft when on primitiveAllowlist"
     },
     {
       "reusableId": "ACN-UI-BG-SILK",
@@ -158,7 +161,7 @@
       "kind": "primitive",
       "path": "components-V2/platform-components/ui/bg-silk.tsx",
       "studioSource": "components-V2/platform-components/ui/bg-silk.tsx",
-      "notes": "AdminCN UI primitive — auto-import OK from features/trade when on primitiveAllowlist"
+      "notes": "AdminCN UI primitive — auto-import OK from features/fft when on primitiveAllowlist"
     },
     {
       "reusableId": "ACN-UI-BORDER-BEAM",
@@ -170,7 +173,7 @@
       "kind": "primitive",
       "path": "components-V2/platform-components/ui/border-beam.tsx",
       "studioSource": "components-V2/platform-components/ui/border-beam.tsx",
-      "notes": "AdminCN UI primitive — auto-import OK from features/trade when on primitiveAllowlist"
+      "notes": "AdminCN UI primitive — auto-import OK from features/fft when on primitiveAllowlist"
     },
     {
       "reusableId": "ACN-UI-BUTTON",
@@ -182,7 +185,7 @@
       "kind": "primitive",
       "path": "components-V2/platform-components/ui/button.tsx",
       "studioSource": "components-V2/platform-components/ui/button.tsx",
-      "notes": "AdminCN UI primitive — auto-import OK from features/trade when on primitiveAllowlist"
+      "notes": "AdminCN UI primitive — auto-import OK from features/fft when on primitiveAllowlist"
     },
     {
       "reusableId": "ACN-UI-BUTTON-GROUP",
@@ -194,7 +197,7 @@
       "kind": "primitive",
       "path": "components-V2/platform-components/ui/button-group.tsx",
       "studioSource": "components-V2/platform-components/ui/button-group.tsx",
-      "notes": "AdminCN UI primitive — auto-import OK from features/trade when on primitiveAllowlist"
+      "notes": "AdminCN UI primitive — auto-import OK from features/fft when on primitiveAllowlist"
     },
     {
       "reusableId": "ACN-UI-CALENDAR",
@@ -206,7 +209,7 @@
       "kind": "primitive",
       "path": "components-V2/platform-components/ui/calendar.tsx",
       "studioSource": "components-V2/platform-components/ui/calendar.tsx",
-      "notes": "AdminCN UI primitive — auto-import OK from features/trade when on primitiveAllowlist"
+      "notes": "AdminCN UI primitive — auto-import OK from features/fft when on primitiveAllowlist"
     },
     {
       "reusableId": "ACN-UI-CARD",
@@ -218,7 +221,7 @@
       "kind": "primitive",
       "path": "components-V2/platform-components/ui/card.tsx",
       "studioSource": "components-V2/platform-components/ui/card.tsx",
-      "notes": "AdminCN UI primitive — auto-import OK from features/trade when on primitiveAllowlist"
+      "notes": "AdminCN UI primitive — auto-import OK from features/fft when on primitiveAllowlist"
     },
     {
       "reusableId": "ACN-UI-CHART",
@@ -230,7 +233,7 @@
       "kind": "primitive",
       "path": "components-V2/platform-components/ui/chart.tsx",
       "studioSource": "components-V2/platform-components/ui/chart.tsx",
-      "notes": "AdminCN UI primitive — auto-import OK from features/trade when on primitiveAllowlist"
+      "notes": "AdminCN UI primitive — auto-import OK from features/fft when on primitiveAllowlist"
     },
     {
       "reusableId": "ACN-UI-CHECKBOX",
@@ -242,7 +245,7 @@
       "kind": "primitive",
       "path": "components-V2/platform-components/ui/checkbox.tsx",
       "studioSource": "components-V2/platform-components/ui/checkbox.tsx",
-      "notes": "AdminCN UI primitive — auto-import OK from features/trade when on primitiveAllowlist"
+      "notes": "AdminCN UI primitive — auto-import OK from features/fft when on primitiveAllowlist"
     },
     {
       "reusableId": "ACN-UI-CIRCULAR-PROGRESS",
@@ -254,7 +257,7 @@
       "kind": "primitive",
       "path": "components-V2/platform-components/ui/circular-progress.tsx",
       "studioSource": "components-V2/platform-components/ui/circular-progress.tsx",
-      "notes": "AdminCN UI primitive — auto-import OK from features/trade when on primitiveAllowlist"
+      "notes": "AdminCN UI primitive — auto-import OK from features/fft when on primitiveAllowlist"
     },
     {
       "reusableId": "ACN-UI-COLLAPSIBLE",
@@ -266,7 +269,7 @@
       "kind": "primitive",
       "path": "components-V2/platform-components/ui/collapsible.tsx",
       "studioSource": "components-V2/platform-components/ui/collapsible.tsx",
-      "notes": "AdminCN UI primitive — auto-import OK from features/trade when on primitiveAllowlist"
+      "notes": "AdminCN UI primitive — auto-import OK from features/fft when on primitiveAllowlist"
     },
     {
       "reusableId": "ACN-UI-COMBOBOX",
@@ -278,7 +281,7 @@
       "kind": "primitive",
       "path": "components-V2/platform-components/ui/combobox.tsx",
       "studioSource": "components-V2/platform-components/ui/combobox.tsx",
-      "notes": "AdminCN UI primitive — auto-import OK from features/trade when on primitiveAllowlist"
+      "notes": "AdminCN UI primitive — auto-import OK from features/fft when on primitiveAllowlist"
     },
     {
       "reusableId": "ACN-UI-COMMAND",
@@ -290,7 +293,7 @@
       "kind": "primitive",
       "path": "components-V2/platform-components/ui/command.tsx",
       "studioSource": "components-V2/platform-components/ui/command.tsx",
-      "notes": "AdminCN UI primitive — auto-import OK from features/trade when on primitiveAllowlist"
+      "notes": "AdminCN UI primitive — auto-import OK from features/fft when on primitiveAllowlist"
     },
     {
       "reusableId": "ACN-UI-DIALOG",
@@ -302,7 +305,7 @@
       "kind": "primitive",
       "path": "components-V2/platform-components/ui/dialog.tsx",
       "studioSource": "components-V2/platform-components/ui/dialog.tsx",
-      "notes": "AdminCN UI primitive — auto-import OK from features/trade when on primitiveAllowlist"
+      "notes": "AdminCN UI primitive — auto-import OK from features/fft when on primitiveAllowlist"
     },
     {
       "reusableId": "ACN-UI-DROPDOWN-MENU",
@@ -314,7 +317,7 @@
       "kind": "primitive",
       "path": "components-V2/platform-components/ui/dropdown-menu.tsx",
       "studioSource": "components-V2/platform-components/ui/dropdown-menu.tsx",
-      "notes": "AdminCN UI primitive — auto-import OK from features/trade when on primitiveAllowlist"
+      "notes": "AdminCN UI primitive — auto-import OK from features/fft when on primitiveAllowlist"
     },
     {
       "reusableId": "ACN-UI-FIELD",
@@ -326,7 +329,7 @@
       "kind": "primitive",
       "path": "components-V2/platform-components/ui/field.tsx",
       "studioSource": "components-V2/platform-components/ui/field.tsx",
-      "notes": "AdminCN UI primitive — auto-import OK from features/trade when on primitiveAllowlist"
+      "notes": "AdminCN UI primitive — auto-import OK from features/fft when on primitiveAllowlist"
     },
     {
       "reusableId": "ACN-UI-INPUT",
@@ -338,7 +341,7 @@
       "kind": "primitive",
       "path": "components-V2/platform-components/ui/input.tsx",
       "studioSource": "components-V2/platform-components/ui/input.tsx",
-      "notes": "AdminCN UI primitive — auto-import OK from features/trade when on primitiveAllowlist"
+      "notes": "AdminCN UI primitive — auto-import OK from features/fft when on primitiveAllowlist"
     },
     {
       "reusableId": "ACN-UI-INPUT-GROUP",
@@ -350,7 +353,7 @@
       "kind": "primitive",
       "path": "components-V2/platform-components/ui/input-group.tsx",
       "studioSource": "components-V2/platform-components/ui/input-group.tsx",
-      "notes": "AdminCN UI primitive — auto-import OK from features/trade when on primitiveAllowlist"
+      "notes": "AdminCN UI primitive — auto-import OK from features/fft when on primitiveAllowlist"
     },
     {
       "reusableId": "ACN-UI-INPUT-OTP",
@@ -362,7 +365,7 @@
       "kind": "primitive",
       "path": "components-V2/platform-components/ui/input-otp.tsx",
       "studioSource": "components-V2/platform-components/ui/input-otp.tsx",
-      "notes": "AdminCN UI primitive — auto-import OK from features/trade when on primitiveAllowlist"
+      "notes": "AdminCN UI primitive — auto-import OK from features/fft when on primitiveAllowlist"
     },
     {
       "reusableId": "ACN-UI-KANBAN",
@@ -374,7 +377,7 @@
       "kind": "primitive",
       "path": "components-V2/platform-components/ui/kanban.tsx",
       "studioSource": "components-V2/platform-components/ui/kanban.tsx",
-      "notes": "AdminCN UI primitive — auto-import OK from features/trade when on primitiveAllowlist"
+      "notes": "AdminCN UI primitive — auto-import OK from features/fft when on primitiveAllowlist"
     },
     {
       "reusableId": "ACN-UI-KBD",
@@ -386,7 +389,7 @@
       "kind": "primitive",
       "path": "components-V2/platform-components/ui/kbd.tsx",
       "studioSource": "components-V2/platform-components/ui/kbd.tsx",
-      "notes": "AdminCN UI primitive — auto-import OK from features/trade when on primitiveAllowlist"
+      "notes": "AdminCN UI primitive — auto-import OK from features/fft when on primitiveAllowlist"
     },
     {
       "reusableId": "ACN-UI-LABEL",
@@ -398,7 +401,7 @@
       "kind": "primitive",
       "path": "components-V2/platform-components/ui/label.tsx",
       "studioSource": "components-V2/platform-components/ui/label.tsx",
-      "notes": "AdminCN UI primitive — auto-import OK from features/trade when on primitiveAllowlist"
+      "notes": "AdminCN UI primitive — auto-import OK from features/fft when on primitiveAllowlist"
     },
     {
       "reusableId": "ACN-UI-MORPHING-TEXT",
@@ -410,7 +413,7 @@
       "kind": "primitive",
       "path": "components-V2/platform-components/ui/morphing-text.tsx",
       "studioSource": "components-V2/platform-components/ui/morphing-text.tsx",
-      "notes": "AdminCN UI primitive — auto-import OK from features/trade when on primitiveAllowlist"
+      "notes": "AdminCN UI primitive — auto-import OK from features/fft when on primitiveAllowlist"
     },
     {
       "reusableId": "ACN-UI-NUMBER-TICKER",
@@ -422,7 +425,7 @@
       "kind": "primitive",
       "path": "components-V2/platform-components/ui/number-ticker.tsx",
       "studioSource": "components-V2/platform-components/ui/number-ticker.tsx",
-      "notes": "AdminCN UI primitive — auto-import OK from features/trade when on primitiveAllowlist"
+      "notes": "AdminCN UI primitive — auto-import OK from features/fft when on primitiveAllowlist"
     },
     {
       "reusableId": "ACN-UI-PAGINATION",
@@ -434,7 +437,7 @@
       "kind": "primitive",
       "path": "components-V2/platform-components/ui/pagination.tsx",
       "studioSource": "components-V2/platform-components/ui/pagination.tsx",
-      "notes": "AdminCN UI primitive — auto-import OK from features/trade when on primitiveAllowlist"
+      "notes": "AdminCN UI primitive — auto-import OK from features/fft when on primitiveAllowlist"
     },
     {
       "reusableId": "ACN-UI-POPOVER",
@@ -446,7 +449,7 @@
       "kind": "primitive",
       "path": "components-V2/platform-components/ui/popover.tsx",
       "studioSource": "components-V2/platform-components/ui/popover.tsx",
-      "notes": "AdminCN UI primitive — auto-import OK from features/trade when on primitiveAllowlist"
+      "notes": "AdminCN UI primitive — auto-import OK from features/fft when on primitiveAllowlist"
     },
     {
       "reusableId": "ACN-UI-PROGRESS",
@@ -458,7 +461,7 @@
       "kind": "primitive",
       "path": "components-V2/platform-components/ui/progress.tsx",
       "studioSource": "components-V2/platform-components/ui/progress.tsx",
-      "notes": "AdminCN UI primitive — auto-import OK from features/trade when on primitiveAllowlist"
+      "notes": "AdminCN UI primitive — auto-import OK from features/fft when on primitiveAllowlist"
     },
     {
       "reusableId": "ACN-UI-RADIO-GROUP",
@@ -470,7 +473,7 @@
       "kind": "primitive",
       "path": "components-V2/platform-components/ui/radio-group.tsx",
       "studioSource": "components-V2/platform-components/ui/radio-group.tsx",
-      "notes": "AdminCN UI primitive — auto-import OK from features/trade when on primitiveAllowlist"
+      "notes": "AdminCN UI primitive — auto-import OK from features/fft when on primitiveAllowlist"
     },
     {
       "reusableId": "ACN-UI-RATING",
@@ -482,7 +485,7 @@
       "kind": "primitive",
       "path": "components-V2/platform-components/ui/rating.tsx",
       "studioSource": "components-V2/platform-components/ui/rating.tsx",
-      "notes": "AdminCN UI primitive — auto-import OK from features/trade when on primitiveAllowlist"
+      "notes": "AdminCN UI primitive — auto-import OK from features/fft when on primitiveAllowlist"
     },
     {
       "reusableId": "ACN-UI-RESIZABLE",
@@ -494,7 +497,7 @@
       "kind": "primitive",
       "path": "components-V2/platform-components/ui/resizable.tsx",
       "studioSource": "components-V2/platform-components/ui/resizable.tsx",
-      "notes": "AdminCN UI primitive — auto-import OK from features/trade when on primitiveAllowlist"
+      "notes": "AdminCN UI primitive — auto-import OK from features/fft when on primitiveAllowlist"
     },
     {
       "reusableId": "ACN-UI-SCROLL-AREA",
@@ -506,7 +509,7 @@
       "kind": "primitive",
       "path": "components-V2/platform-components/ui/scroll-area.tsx",
       "studioSource": "components-V2/platform-components/ui/scroll-area.tsx",
-      "notes": "AdminCN UI primitive — auto-import OK from features/trade when on primitiveAllowlist"
+      "notes": "AdminCN UI primitive — auto-import OK from features/fft when on primitiveAllowlist"
     },
     {
       "reusableId": "ACN-UI-SELECT",
@@ -518,7 +521,7 @@
       "kind": "primitive",
       "path": "components-V2/platform-components/ui/select.tsx",
       "studioSource": "components-V2/platform-components/ui/select.tsx",
-      "notes": "AdminCN UI primitive — auto-import OK from features/trade when on primitiveAllowlist"
+      "notes": "AdminCN UI primitive — auto-import OK from features/fft when on primitiveAllowlist"
     },
     {
       "reusableId": "ACN-UI-SEPARATOR",
@@ -530,7 +533,7 @@
       "kind": "primitive",
       "path": "components-V2/platform-components/ui/separator.tsx",
       "studioSource": "components-V2/platform-components/ui/separator.tsx",
-      "notes": "AdminCN UI primitive — auto-import OK from features/trade when on primitiveAllowlist"
+      "notes": "AdminCN UI primitive — auto-import OK from features/fft when on primitiveAllowlist"
     },
     {
       "reusableId": "ACN-UI-SHEET",
@@ -542,7 +545,7 @@
       "kind": "primitive",
       "path": "components-V2/platform-components/ui/sheet.tsx",
       "studioSource": "components-V2/platform-components/ui/sheet.tsx",
-      "notes": "AdminCN UI primitive — auto-import OK from features/trade when on primitiveAllowlist"
+      "notes": "AdminCN UI primitive — auto-import OK from features/fft when on primitiveAllowlist"
     },
     {
       "reusableId": "ACN-UI-SIDEBAR",
@@ -554,7 +557,7 @@
       "kind": "primitive",
       "path": "components-V2/platform-components/ui/sidebar.tsx",
       "studioSource": "components-V2/platform-components/ui/sidebar.tsx",
-      "notes": "AdminCN UI primitive — auto-import OK from features/trade when on primitiveAllowlist"
+      "notes": "AdminCN UI primitive — auto-import OK from features/fft when on primitiveAllowlist"
     },
     {
       "reusableId": "ACN-UI-SKELETON",
@@ -566,7 +569,7 @@
       "kind": "primitive",
       "path": "components-V2/platform-components/ui/skeleton.tsx",
       "studioSource": "components-V2/platform-components/ui/skeleton.tsx",
-      "notes": "AdminCN UI primitive — auto-import OK from features/trade when on primitiveAllowlist"
+      "notes": "AdminCN UI primitive — auto-import OK from features/fft when on primitiveAllowlist"
     },
     {
       "reusableId": "ACN-UI-SONNER",
@@ -578,7 +581,7 @@
       "kind": "primitive",
       "path": "components-V2/platform-components/ui/sonner.tsx",
       "studioSource": "components-V2/platform-components/ui/sonner.tsx",
-      "notes": "AdminCN UI primitive — auto-import OK from features/trade when on primitiveAllowlist"
+      "notes": "AdminCN UI primitive — auto-import OK from features/fft when on primitiveAllowlist"
     },
     {
       "reusableId": "ACN-UI-SWITCH",
@@ -590,7 +593,7 @@
       "kind": "primitive",
       "path": "components-V2/platform-components/ui/switch.tsx",
       "studioSource": "components-V2/platform-components/ui/switch.tsx",
-      "notes": "AdminCN UI primitive — auto-import OK from features/trade when on primitiveAllowlist"
+      "notes": "AdminCN UI primitive — auto-import OK from features/fft when on primitiveAllowlist"
     },
     {
       "reusableId": "ACN-UI-TABLE",
@@ -602,7 +605,7 @@
       "kind": "primitive",
       "path": "components-V2/platform-components/ui/table.tsx",
       "studioSource": "components-V2/platform-components/ui/table.tsx",
-      "notes": "AdminCN UI primitive — auto-import OK from features/trade when on primitiveAllowlist"
+      "notes": "AdminCN UI primitive — auto-import OK from features/fft when on primitiveAllowlist"
     },
     {
       "reusableId": "ACN-UI-TABS",
@@ -614,7 +617,7 @@
       "kind": "primitive",
       "path": "components-V2/platform-components/ui/tabs.tsx",
       "studioSource": "components-V2/platform-components/ui/tabs.tsx",
-      "notes": "AdminCN UI primitive — auto-import OK from features/trade when on primitiveAllowlist"
+      "notes": "AdminCN UI primitive — auto-import OK from features/fft when on primitiveAllowlist"
     },
     {
       "reusableId": "ACN-UI-TEXTAREA",
@@ -626,7 +629,7 @@
       "kind": "primitive",
       "path": "components-V2/platform-components/ui/textarea.tsx",
       "studioSource": "components-V2/platform-components/ui/textarea.tsx",
-      "notes": "AdminCN UI primitive — auto-import OK from features/trade when on primitiveAllowlist"
+      "notes": "AdminCN UI primitive — auto-import OK from features/fft when on primitiveAllowlist"
     },
     {
       "reusableId": "ACN-UI-TIMELINE",
@@ -638,7 +641,7 @@
       "kind": "primitive",
       "path": "components-V2/platform-components/ui/timeline.tsx",
       "studioSource": "components-V2/platform-components/ui/timeline.tsx",
-      "notes": "AdminCN UI primitive — auto-import OK from features/trade when on primitiveAllowlist"
+      "notes": "AdminCN UI primitive — auto-import OK from features/fft when on primitiveAllowlist"
     },
     {
       "reusableId": "ACN-UI-TOGGLE",
@@ -650,7 +653,7 @@
       "kind": "primitive",
       "path": "components-V2/platform-components/ui/toggle.tsx",
       "studioSource": "components-V2/platform-components/ui/toggle.tsx",
-      "notes": "AdminCN UI primitive — auto-import OK from features/trade when on primitiveAllowlist"
+      "notes": "AdminCN UI primitive — auto-import OK from features/fft when on primitiveAllowlist"
     },
     {
       "reusableId": "ACN-UI-TOGGLE-GROUP",
@@ -662,7 +665,7 @@
       "kind": "primitive",
       "path": "components-V2/platform-components/ui/toggle-group.tsx",
       "studioSource": "components-V2/platform-components/ui/toggle-group.tsx",
-      "notes": "AdminCN UI primitive — auto-import OK from features/trade when on primitiveAllowlist"
+      "notes": "AdminCN UI primitive — auto-import OK from features/fft when on primitiveAllowlist"
     },
     {
       "reusableId": "ACN-UI-TOOLTIP",
@@ -674,7 +677,7 @@
       "kind": "primitive",
       "path": "components-V2/platform-components/ui/tooltip.tsx",
       "studioSource": "components-V2/platform-components/ui/tooltip.tsx",
-      "notes": "AdminCN UI primitive — auto-import OK from features/trade when on primitiveAllowlist"
+      "notes": "AdminCN UI primitive — auto-import OK from features/fft when on primitiveAllowlist"
     }
   ],
   "blocks": [
@@ -2354,8 +2357,8 @@
       "approvedAt": "2026-07-11",
       "status": "approved",
       "kind": "block",
-      "path": "components-V2/platform-views/portal-views/operator-clients-list.tsx",
-      "studioSource": "components-V2/platform-views/portal-views/operator-clients-list.tsx",
+      "path": "components-V2/platform-views/portal-views/organization-admin-clients-list.tsx",
+      "studioSource": "components-V2/platform-views/portal-views/organization-admin-clients-list.tsx",
       "notes": "Product portal-view — Declarations surfaces; FFT must not import without HITL product id"
     },
     {
@@ -2366,8 +2369,8 @@
       "approvedAt": "2026-07-11",
       "status": "approved",
       "kind": "block",
-      "path": "components-V2/platform-views/portal-views/operator-declaration-detail.tsx",
-      "studioSource": "components-V2/platform-views/portal-views/operator-declaration-detail.tsx",
+      "path": "components-V2/platform-views/portal-views/organization-admin-declaration-detail.tsx",
+      "studioSource": "components-V2/platform-views/portal-views/organization-admin-declaration-detail.tsx",
       "notes": "Product portal-view — Declarations surfaces; FFT must not import without HITL product id"
     },
     {
@@ -2378,8 +2381,32 @@
       "approvedAt": "2026-07-11",
       "status": "approved",
       "kind": "block",
-      "path": "components-V2/platform-views/portal-views/operator-declarations-dashboard.tsx",
-      "studioSource": "components-V2/platform-views/portal-views/operator-declarations-dashboard.tsx",
+      "path": "components-V2/platform-views/portal-views/organization-admin-declarations-dashboard.tsx",
+      "studioSource": "components-V2/platform-views/portal-views/organization-admin-declarations-dashboard.tsx",
+      "notes": "Product portal-view — Declarations surfaces; FFT must not import without HITL product id"
+    },
+    {
+      "reusableId": "ACN-BLK-PORTAL-VIEWS-ORGANIZATION-ADMIN-USERS-LIST",
+      "qaId": "ACN-QA-2026-07-12-PORTAL-VIEWS-ORGANIZATION-ADMIN-USERS-LIST",
+      "evidenceRef": "Organization-admin users surface — disk inventory sync 2026-07-12",
+      "approvedBy": "owner",
+      "approvedAt": "2026-07-12",
+      "status": "approved",
+      "kind": "block",
+      "path": "components-V2/platform-views/portal-views/organization-admin-users-list.tsx",
+      "studioSource": "components-V2/platform-views/portal-views/organization-admin-users-list.tsx",
+      "notes": "Product portal-view — Declarations surfaces; FFT must not import without HITL product id"
+    },
+    {
+      "reusableId": "ACN-BLK-PORTAL-VIEWS-ORGANIZATION-ADMIN-USERS-VIEW",
+      "qaId": "ACN-QA-2026-07-12-PORTAL-VIEWS-ORGANIZATION-ADMIN-USERS-VIEW",
+      "evidenceRef": "Organization-admin users surface — disk inventory sync 2026-07-12",
+      "approvedBy": "owner",
+      "approvedAt": "2026-07-12",
+      "status": "approved",
+      "kind": "block",
+      "path": "components-V2/platform-views/portal-views/organization-admin-users-view.tsx",
+      "studioSource": "components-V2/platform-views/portal-views/organization-admin-users-view.tsx",
       "notes": "Product portal-view — Declarations surfaces; FFT must not import without HITL product id"
     },
     {
@@ -2510,8 +2537,8 @@
       "approvedAt": "2026-07-11",
       "status": "approved",
       "kind": "block",
-      "path": "components-V2/platform-views/portal-views/portal-operator-statistics-card.tsx",
-      "studioSource": "components-V2/platform-views/portal-views/portal-operator-statistics-card.tsx",
+      "path": "components-V2/platform-views/portal-views/portal-organization-admin-statistics-card.tsx",
+      "studioSource": "components-V2/platform-views/portal-views/portal-organization-admin-statistics-card.tsx",
       "notes": "Product portal-view — Declarations surfaces; FFT must not import without HITL product id"
     }
   ],
@@ -2523,10 +2550,21 @@
       "approvedBy": "owner",
       "approvedAt": "2026-07-11",
       "status": "approved",
-      "path": "features/trade/trade-admin-forms.tsx",
-      "studioSource": "components-V2/platform-components/ui/button+input+label",
-      "notes": "New event / ensure template",
-      "kind": "product"
+      "path": "features/fft/fft-admin-forms.tsx",
+      "studioSource": "components-V2/platform-views/forms/form-layouts/vertical/index.tsx",
+      "notes": "Form-layout DNA from ACN-BLK-FORMS-FORM-LAYOUTS-VERTICAL (FieldGroup)",
+      "kind": "product",
+      "requiredBlockId": "ACN-BLK-FORMS-FORM-LAYOUTS-VERTICAL",
+      "dna": {
+        "requiredPatterns": [
+          "FieldGroup",
+          "FieldLabel",
+          "@/components-V2/platform-components/ui/field"
+        ],
+        "bannedPatterns": [
+          "FFT_NATIVE_"
+        ]
+      }
     },
     {
       "reusableId": "FFT-UI-ALC-CONTROLS",
@@ -2535,7 +2573,7 @@
       "approvedBy": "owner",
       "approvedAt": "2026-07-11",
       "status": "approved",
-      "path": "features/trade/trade-allocation-controls.tsx",
+      "path": "features/fft/fft-allocation-controls.tsx",
       "studioSource": "components-V2/platform-components/ui/button+input",
       "notes": null,
       "kind": "product"
@@ -2547,7 +2585,7 @@
       "approvedBy": "owner",
       "approvedAt": "2026-07-11",
       "status": "approved",
-      "path": "features/trade/trade-audit-panel.tsx",
+      "path": "features/fft/fft-audit-panel.tsx",
       "studioSource": "components-V2/platform-components/ui/input",
       "notes": null,
       "kind": "product"
@@ -2559,7 +2597,7 @@
       "approvedBy": "owner",
       "approvedAt": "2026-07-11",
       "status": "approved",
-      "path": "features/trade/trade-clone-button.tsx",
+      "path": "features/fft/fft-clone-button.tsx",
       "studioSource": "components-V2/platform-components/ui/button",
       "notes": null,
       "kind": "product"
@@ -2571,7 +2609,7 @@
       "approvedBy": "owner",
       "approvedAt": "2026-07-11",
       "status": "approved",
-      "path": "features/trade/trade-countdown.tsx",
+      "path": "features/fft/fft-countdown.tsx",
       "studioSource": null,
       "notes": "Display-only countdown",
       "kind": "product"
@@ -2583,7 +2621,7 @@
       "approvedBy": "owner",
       "approvedAt": "2026-07-11",
       "status": "approved",
-      "path": "features/trade/trade-deposit-forms.tsx",
+      "path": "features/fft/fft-deposit-forms.tsx",
       "studioSource": "components-V2/platform-components/ui/button+input+label",
       "notes": "P3 panel on disk; live route placeholder",
       "kind": "product"
@@ -2595,7 +2633,7 @@
       "approvedBy": "owner",
       "approvedAt": "2026-07-11",
       "status": "approved",
-      "path": "features/trade/trade-erp-sync-panel.tsx",
+      "path": "features/fft/fft-erp-sync-panel.tsx",
       "studioSource": "components-V2/platform-components/ui/button",
       "notes": "P3 panel on disk; live route placeholder",
       "kind": "product"
@@ -2607,10 +2645,31 @@
       "approvedBy": "owner",
       "approvedAt": "2026-07-11",
       "status": "approved",
-      "path": "features/trade/trade-events-list.tsx",
-      "studioSource": "components-V2/platform-components/ui/table+input+button",
-      "notes": "Not TanStack datatable DNA yet",
-      "kind": "product"
+      "path": "features/fft/fft-events-list.tsx",
+      "studioSource": "components-V2/platform-views/datatables/datatable-user.tsx",
+      "notes": "TanStack datatable DNA from ACN-BLK-DATATABLES-DATATABLE-USER (filter grid + pagination footer)",
+      "kind": "product",
+      "requiredBlockId": "ACN-BLK-DATATABLES-DATATABLE-USER",
+      "dna": {
+        "requiredPatterns": [
+          "useReactTable",
+          "flexRender",
+          "getSortedRowModel",
+          "getFilteredRowModel",
+          "getPaginationRowModel",
+          "usePagination",
+          "PaginationContent",
+          "border-b",
+          "@/components-V2/platform-components/ui/select",
+          "@/components-V2/platform-components/ui/pagination"
+        ],
+        "bannedPatterns": [
+          "FFT_NATIVE_",
+          "<select",
+          "toggleSort",
+          "applyTradeEventListView"
+        ]
+      }
     },
     {
       "reusableId": "FFT-UI-EXPORT-PANEL",
@@ -2619,7 +2678,7 @@
       "approvedBy": "owner",
       "approvedAt": "2026-07-11",
       "status": "approved",
-      "path": "features/trade/trade-export-panel.tsx",
+      "path": "features/fft/fft-export-panel.tsx",
       "studioSource": "components-V2/platform-components/ui/button",
       "notes": null,
       "kind": "product"
@@ -2631,9 +2690,9 @@
       "approvedBy": "owner",
       "approvedAt": "2026-07-11",
       "status": "approved",
-      "path": "features/trade/trade-form-controls.tsx",
+      "path": "features/fft/fft-form-controls.tsx",
       "studioSource": "components-V2/platform-components/ui/checkbox",
-      "notes": "TRADE_NATIVE_* tech-debt for FormData names",
+      "notes": "FFT_NATIVE_* tech-debt for FormData names",
       "kind": "product"
     },
     {
@@ -2643,7 +2702,7 @@
       "approvedBy": "owner",
       "approvedAt": "2026-07-11",
       "status": "approved",
-      "path": "features/trade/trade-form-feedback.tsx",
+      "path": "features/fft/fft-form-feedback.tsx",
       "studioSource": "components-V2/platform-components/ui/skeleton",
       "notes": null,
       "kind": "product"
@@ -2655,7 +2714,7 @@
       "approvedBy": "owner",
       "approvedAt": "2026-07-11",
       "status": "approved",
-      "path": "features/trade/trade-import-panel.tsx",
+      "path": "features/fft/fft-import-panel.tsx",
       "studioSource": "components-V2/platform-components/ui/button+label",
       "notes": "P3 panel on disk; live route placeholder",
       "kind": "product"
@@ -2667,7 +2726,7 @@
       "approvedBy": "owner",
       "approvedAt": "2026-07-11",
       "status": "approved",
-      "path": "features/trade/trade-list-pagination.tsx",
+      "path": "features/fft/fft-list-pagination.tsx",
       "studioSource": "components-V2/platform-components/ui/button",
       "notes": null,
       "kind": "product"
@@ -2679,7 +2738,7 @@
       "approvedBy": "owner",
       "approvedAt": "2026-07-11",
       "status": "approved",
-      "path": "features/trade/trade-my-orders-list.tsx",
+      "path": "features/fft/fft-my-orders-list.tsx",
       "studioSource": "components-V2/platform-components/ui",
       "notes": null,
       "kind": "product"
@@ -2691,7 +2750,7 @@
       "approvedBy": "owner",
       "approvedAt": "2026-07-11",
       "status": "approved",
-      "path": "features/trade/trade-ops-placeholder.tsx",
+      "path": "features/fft/fft-ops-placeholder.tsx",
       "studioSource": null,
       "notes": "P3 route shells",
       "kind": "product"
@@ -2703,9 +2762,9 @@
       "approvedBy": "owner",
       "approvedAt": "2026-07-11",
       "status": "approved",
-      "path": "features/trade/trade-order-form.tsx",
+      "path": "features/fft/fft-order-form.tsx",
       "studioSource": "components-V2/platform-components/ui/button+label",
-      "notes": "Uses TRADE_NATIVE_*",
+      "notes": "Uses FFT_NATIVE_*",
       "kind": "product"
     },
     {
@@ -2715,7 +2774,7 @@
       "approvedBy": "owner",
       "approvedAt": "2026-07-11",
       "status": "approved",
-      "path": "features/trade/trade-pickup-forms.tsx",
+      "path": "features/fft/fft-pickup-forms.tsx",
       "studioSource": "components-V2/platform-components/ui/button+input+label",
       "notes": "P3 panel on disk; live route placeholder",
       "kind": "product"
@@ -2727,7 +2786,7 @@
       "approvedBy": "owner",
       "approvedAt": "2026-07-11",
       "status": "approved",
-      "path": "features/trade/trade-rbac-admin.tsx",
+      "path": "features/fft/fft-rbac-admin.tsx",
       "studioSource": "components-V2/platform-components/ui/button+input+label",
       "notes": null,
       "kind": "product"
@@ -2739,10 +2798,21 @@
       "approvedBy": "owner",
       "approvedAt": "2026-07-11",
       "status": "approved",
-      "path": "features/trade/trade-sales-member-form.tsx",
-      "studioSource": "components-V2/platform-components/ui/button+input",
-      "notes": null,
-      "kind": "product"
+      "path": "features/fft/fft-sales-member-form.tsx",
+      "studioSource": "components-V2/platform-views/forms/form-layouts/vertical/index.tsx",
+      "notes": "Form-layout DNA from ACN-BLK-FORMS-FORM-LAYOUTS-VERTICAL (FieldGroup)",
+      "kind": "product",
+      "requiredBlockId": "ACN-BLK-FORMS-FORM-LAYOUTS-VERTICAL",
+      "dna": {
+        "requiredPatterns": [
+          "FieldGroup",
+          "FieldLabel",
+          "@/components-V2/platform-components/ui/field"
+        ],
+        "bannedPatterns": [
+          "FFT_NATIVE_"
+        ]
+      }
     },
     {
       "reusableId": "FFT-UI-SETUP-FORMS",
@@ -2751,7 +2821,7 @@
       "approvedBy": "owner",
       "approvedAt": "2026-07-11",
       "status": "approved",
-      "path": "features/trade/trade-setup-forms.tsx",
+      "path": "features/fft/fft-setup-forms.tsx",
       "studioSource": "components-V2/platform-components/ui/button+input+label+textarea",
       "notes": null,
       "kind": "product"
@@ -2763,10 +2833,39 @@
       "approvedBy": "owner",
       "approvedAt": "2026-07-11",
       "status": "approved",
-      "path": "features/trade/trade-transfer-forms.tsx",
+      "path": "features/fft/fft-transfer-forms.tsx",
       "studioSource": "components-V2/platform-components/ui/button",
       "notes": null,
       "kind": "product"
+    }
+  ],
+  "surfaces": [
+    {
+      "path": "app/fft/events/page.tsx",
+      "label": "sales-events",
+      "requiredPatterns": [
+        "FftEventsList",
+        "@/components-V2/platform-components/ui/card",
+        "CardHeader",
+        "CardTitle",
+        "overflow-hidden"
+      ],
+      "bannedPatterns": []
+    },
+    {
+      "path": "app/fft/admin/events/page.tsx",
+      "label": "admin-events",
+      "requiredPatterns": [
+        "FftEventsList",
+        "@/components-V2/platform-components/ui/card",
+        "@/components-V2/platform-components/ui/separator",
+        "CardHeader",
+        "CardTitle",
+        "Separator"
+      ],
+      "bannedPatterns": [
+        "<ul"
+      ]
     }
   ]
 }

@@ -18,7 +18,7 @@ const appUrl = (getEnvValue("APP_URL", env) ?? "https://iam-check.vercel.app").r
   "",
 );
 const portalApplicationName =
-  getEnvValue("NEON_AUTH_APPLICATION_NAME", env) ?? "Client Declaration Portal";
+  getEnvValue("NEON_AUTH_APPLICATION_NAME", env) ?? "Afenda-Lite";
 
 const manifest = JSON.parse(
   readFileSync("modules/identity/auth/neon-auth.manifest.json", "utf8"),
@@ -99,7 +99,7 @@ record(
   "Customize application name",
   "manual",
   `Portal UI name: "${portalApplicationName}". Neon project name: "${liveSnapshot.neonProjectName}". Set Application Name in Neon Console → Auth → Configuration if they should match.`,
-  "Neon Console → Auth → Configuration → Application Name → Client Declaration Portal",
+  "Neon Console → Auth → Configuration → Application Name → Afenda-Lite",
 );
 
 // 4. OAuth — branch may have shared providers; UI social login is product-controlled

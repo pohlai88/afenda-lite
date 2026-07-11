@@ -6,7 +6,7 @@ Run before adding or refining an AdminCN-hosted screen.
 
 | Question | Answer |
 |----------|--------|
-| Module? | `declarations` \| `feed-farm-trade` \| admin-route |
+| Module? | `declarations` \| `fft` \| admin-route |
 | Route? | Must match [doc/frontend/03-routes.md](../../doc/frontend/03-routes.md) |
 | Layout gate? | Member / HS permission / org admin — never conflate |
 | Owner? | `portal-views/*` or `features/*` — thin `app/**/page.tsx` |
@@ -16,7 +16,7 @@ Run before adding or refining an AdminCN-hosted screen.
 
 - [ ] Page mounts under `AdminCnShell` (dashboard / account / trade layouts)  
 - [ ] No nested ThemeProvider inside AdminCN  
-- [ ] No `TradeShell` / locale switcher  
+- [ ] No `FftShell` / locale switcher  
 - [ ] Nav entry tagged with `kind` + `moduleId` (or `kind: "admin"`)  
 - [ ] Auth island CSS untouched (`auth-surface.css`, `neon-auth-ui.css`)  
 - [ ] UI IDs registered; no agent-edit of `ui-registry.json`  
@@ -29,14 +29,14 @@ Run before adding or refining an AdminCN-hosted screen.
 
 ## 4 — Feed Farm Trade extras
 
-- [ ] Route is locale-free (`/trade/...`)  
-- [ ] Entry uses `requireTradeAccess` (org admin alone is insufficient)  
+- [ ] Route is locale-free (`/fft/...`)  
+- [ ] Entry uses `requireFftAccess` (org admin alone is insufficient)  
 - [ ] Product UI restore is an explicit reopen — stubs are OK  
-- [ ] No `@/components-V2/platform-views` imports from `features/trade` (use HITL `FFT-UI-*` + `studioSource`)  
+- [ ] No `@/components-V2/platform-views` imports from `features/fft` (use HITL `FFT-UI-*` + `studioSource`)  
 
 ## 5 — Verify
 
-- [ ] `npm run test:unit -- features/trade/ui-registry`  
+- [ ] `npm run test:unit -- features/fft/ui-registry`  
 - [ ] Unit tests for shell/access or route helpers if touched  
 - [ ] Manual: entitled nav matches session (member / HS / org admin)  
 - [ ] Login island still renders without AdminCN tokens  

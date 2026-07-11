@@ -82,7 +82,7 @@ const categoryLabels: Record<string, string> = {
   admin: 'Admin',
   client: 'Client',
   dynamic: 'Dynamic',
-  'hot-sales': 'Feed Farm Trade',
+  'fft': 'Feed Farm Trade',
   auto: 'Auto'
 }
 

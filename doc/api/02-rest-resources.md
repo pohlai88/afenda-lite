@@ -87,21 +87,21 @@ GET /api/declarations?page=1&pageSize=20&sortBy=createdAt&sortOrder=desc
 
 ## Feed Farm Trade appendix (contract-only, gated)
 
-Web UI uses `app/actions/trade.ts` on locale-free `/trade/*` (AdminCN). HTTP below is contract-only until an external consumer needs it — **no `:locale` segment**.
+Web UI uses `app/actions/fft.ts` on locale-free `/fft/*` (AdminCN). HTTP below is contract-only until an external consumer needs it — **no `:locale` segment**.
 
 | Method | Path | Purpose |
 |--------|------|---------|
-| GET/POST | `/api/trade/events` | List / create events |
-| GET/PATCH | `/api/trade/events/:eventId` | Detail / setup |
-| POST | `/api/trade/events/:eventId/orders` | Submit order |
-| POST | `/api/trade/events/:eventId/allocations` | Run allocation |
-| GET/POST | `/api/trade/events/:eventId/deposits` | Deposits |
-| GET/POST | `/api/trade/events/:eventId/pickups` | Pickup windows / fulfill |
-| POST | `/api/trade/events/:eventId/imports` | Import dry-run / apply |
-| GET/POST | `/api/trade/rbac/...` | Roles / assignments |
-| POST | `/api/trade/erp-sync/...` | Sync jobs |
+| GET/POST | `/api/fft/events` | List / create events |
+| GET/PATCH | `/api/fft/events/:eventId` | Detail / setup |
+| POST | `/api/fft/events/:eventId/orders` | Submit order |
+| POST | `/api/fft/events/:eventId/allocations` | Run allocation |
+| GET/POST | `/api/fft/events/:eventId/deposits` | Deposits |
+| GET/POST | `/api/fft/events/:eventId/pickups` | Pickup windows / fulfill |
+| POST | `/api/fft/events/:eventId/imports` | Import dry-run / apply |
+| GET/POST | `/api/fft/rbac/...` | Roles / assignments |
+| POST | `/api/fft/erp-sync/...` | Sync jobs |
 
-Web UI continues via `app/actions/trade.ts` until an external consumer needs HTTP.
+Web UI continues via `app/actions/fft.ts` until an external consumer needs HTTP.
 
 ## Naming
 

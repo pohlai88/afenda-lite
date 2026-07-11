@@ -14,7 +14,7 @@ import {
   deleteDeclarationFromDashboard,
   expectDeclarationListed,
   loginAsOperator,
-} from "@/testing/e2e/operator-flows";
+} from "@/testing/e2e/organization-admin-flows";
 
 const operatorCreds = getOperatorCreds();
 
@@ -89,7 +89,7 @@ test.describe("Portal smoke @smoke", () => {
   });
 
   test("trade routes require authentication", async ({ page }) => {
-    await page.goto("/trade/events");
+    await page.goto("/fft/events");
     await expect(page).toHaveURL(/\/auth\/sign-in/);
   });
 

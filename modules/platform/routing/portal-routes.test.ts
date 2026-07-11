@@ -5,6 +5,7 @@ import {
   authSignInHref,
   authSignUpHref,
   buildClientJoinHref,
+  buildClientSignInEmbedRedirectPath,
   clientPostAuthHref,
   clientSignInAuthHref,
   clientSignUpAuthHref,
@@ -27,6 +28,8 @@ describe("sanitizeReturnToPath", () => {
   it("rejects protocol-relative and off-prefix paths", () => {
     expect(sanitizeReturnToPath("//evil.example")).toBeNull();
     expect(sanitizeReturnToPath("/dashboard")).toBeNull();
+    expect(sanitizeReturnToPath("/joined")).toBeNull();
+    expect(sanitizeReturnToPath("/join-evil")).toBeNull();
     expect(sanitizeReturnToPath("https://evil.example")).toBeNull();
   });
 
@@ -88,5 +91,14 @@ describe("clientPostAuthHref", () => {
   it("routes incomplete onboarding to wizard", () => {
     expect(clientPostAuthHref(false)).toBe("/client/onboarding");
     expect(clientPostAuthHref(true)).toBe("/client");
+  });
+});
+
+describe("buildClientSignInEmbedRedirectPath", () => {
+  it("builds the playground Neon destination with embed=1", () => {
+    expect(buildClientSignInEmbedRedirectPath()).toBe("/auth/sign-in?embed=1");
+    expect(buildClientSignInEmbedRedirectPath({ reason: "login-required" })).toBe(
+      "/auth/sign-in?reason=login-required&embed=1",
+    );
   });
 });
