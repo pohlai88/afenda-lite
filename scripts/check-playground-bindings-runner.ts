@@ -10,21 +10,13 @@ import {
   resolvePlaygroundRouteFile,
 } from "@/lib/playground/playground-registry";
 import { playgroundE2eFixtures } from "@/lib/playground/playground-e2e-fixtures";
-import { buildRouteCoverageSnapshot } from "@/lib/governance/portal-route-coverage";
+import {
+  getPlaygroundRouteReview,
+  playgroundRouteReviewById,
+} from "@/lib/playground/playground-route-review";
+import { buildRouteCoverageSnapshot } from "@/modules/platform/governance/portal-route-coverage";
 
 const ROOT = process.cwd();
-
-/**
- * Non–pre-login App Router pages were wiped to `.gitkeep` (2026-07-11).
- * Playground harness pages are gone — skip binding enforcement until restored.
- * @see docs/legacy/frontend-pages-gitkeep.md
- */
-if (!existsSync(join(ROOT, "app/playground/page.tsx"))) {
-  console.log(
-    "Playground binding check\n\nSKIP: app/playground/page.tsx wiped (frontend-pages-gitkeep). Binding checks deferred until playground pages are restored.",
-  );
-  process.exit(0);
-}
 
 const playgroundScreens = playgroundScreenDefs.map((screen) => ({
   ...screen,
@@ -52,6 +44,23 @@ function fail(message: string) {
 
 console.log("Playground binding check\n");
 
+const requiredHarnessFiles = [
+  "app/playground/page.tsx",
+  "app/playground/layout.tsx",
+  "app/playground/loading.tsx",
+  "app/playground/error.tsx",
+  "app/playground/[screenId]/page.tsx",
+  "app/playground/coverage/page.tsx",
+  "app/playground/hitl-review/page.tsx",
+  "app/playground/hitl-review/loading.tsx",
+] as const;
+
+for (const file of requiredHarnessFiles) {
+  if (!existsSync(join(ROOT, file))) {
+    fail(`Missing playground harness file ${file}`);
+  }
+}
+
 for (const legacy of legacyFlatClientRouteFiles) {
   if (existsSync(join(ROOT, legacy))) {
     fail(
@@ -70,6 +79,11 @@ const ids = playgroundScreens.map((screen) => screen.id);
 if (new Set(ids).size !== ids.length) {
   fail("Duplicate playground screen ids detected.");
 }
+if (Object.keys(playgroundRouteReviewById).length !== playgroundScreens.length) {
+  fail(
+    `Route review parity mismatch: ${Object.keys(playgroundRouteReviewById).length} definitions vs ${playgroundScreens.length} registry screens.`,
+  );
+}
 
 for (const screen of playgroundScreens) {
   const navHref = `/playground/${screen.id}`;
@@ -78,6 +92,17 @@ for (const screen of playgroundScreens) {
   if (!resolved) {
     fail(`Nav href ${navHref} does not resolve to a screen.`);
     continue;
+  }
+
+  const review = getPlaygroundRouteReview(screen.id);
+  if (!review) {
+    fail(`${screen.id}: missing route-review definition.`);
+  } else {
+    for (const evidencePath of review.evidence) {
+      if (!existsSync(join(ROOT, evidencePath))) {
+        fail(`${screen.id}: route-review evidence missing at ${evidencePath}`);
+      }
+    }
   }
 
   const routeFile =
@@ -138,6 +163,8 @@ for (const screen of navScreens) {
 const firstScreen = playgroundScreens[0];
 if (!firstScreen) {
   fail("playgroundScreens is empty.");
+} else if (!existsSync(join(ROOT, "app/playground/page.tsx"))) {
+  fail("Missing app/playground/page.tsx");
 } else {
   const indexSource = readFileSync(join(ROOT, "app/playground/page.tsx"), "utf8");
   const redirectsToFirstScreen =
@@ -185,6 +212,9 @@ if (!layoutSource.includes("runPlaygroundLayout")) {
 }
 if (!layoutHandlerSource.includes("isPlaygroundEnabled()")) {
   fail("runPlaygroundLayout must gate on isPlaygroundEnabled().");
+}
+if (!layoutHandlerSource.includes("requireAdminSession()")) {
+  fail("runPlaygroundLayout must require an authenticated admin session.");
 }
 
 if (playgroundE2eFixtures.length !== playgroundScreens.length) {

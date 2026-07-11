@@ -9,8 +9,8 @@ import {
   CardContent,
 } from "@/components-V2/platform-components/ui/card";
 import { PORTAL_NAME, portalCopy } from "@/lib/copy/portal-copy";
-import { AUTH_SIGN_IN_HREF } from "@/lib/routing/portal-routes";
-import { cn } from "@/lib/utils";
+import { AUTH_SIGN_IN_HREF } from "@/modules/platform/routing/portal-routes";
+import { cn } from "@/modules/platform/utils";
 
 type PortalRouteErrorProps = {
   error: Error & { digest?: string };

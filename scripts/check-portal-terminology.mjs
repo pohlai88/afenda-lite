@@ -1,8 +1,13 @@
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 
 const ROOT = process.cwd();
-const COMPONENTS_DIR = join(ROOT, "components");
+/** Prefer legacy `components/` when present; otherwise scan production UI surfaces. */
+const SCAN_DIRS = [
+  join(ROOT, "components"),
+  join(ROOT, "features"),
+  join(ROOT, "components-V2", "platform-views", "portal-views"),
+].filter((dir) => existsSync(dir));
 
 const ALLOWED_LITERALS = new Set([
   "survey-title",
@@ -78,7 +83,12 @@ function checkFile(path) {
   return null;
 }
 
-const files = walk(COMPONENTS_DIR);
+if (SCAN_DIRS.length === 0) {
+  console.log("Portal terminology OK (no UI scan roots present — skipped).");
+  process.exit(0);
+}
+
+const files = SCAN_DIRS.flatMap((dir) => walk(dir));
 const results = files.map(checkFile).filter(Boolean);
 
 if (results.length > 0) {
@@ -92,4 +102,6 @@ if (results.length > 0) {
   process.exit(1);
 }
 
-console.log(`Portal terminology OK (${files.length} component files scanned).`);
+console.log(
+  `Portal terminology OK (${files.length} files scanned across ${SCAN_DIRS.length} root(s)).`,
+);

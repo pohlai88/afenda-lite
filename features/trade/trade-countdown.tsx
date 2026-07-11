@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 import {
   formatCountdown,
   getCountdownParts,
-} from "@/lib/domain/trade/countdown";
-import type { TradeLocale } from "@/lib/i18n/trade";
+} from "@/modules/trade/domain/countdown";
+import type { TradeLocale } from "@/modules/trade/i18n/trade";
 
 export function TradeCountdown({
   closesAtIso,

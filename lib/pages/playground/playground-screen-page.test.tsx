@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
-vi.mock("@/components/playground-screen-preview", () => ({
+vi.mock("@/features/playground/playground-screen-preview", () => ({
   PlaygroundScreenPreview: () => null,
 }));
 

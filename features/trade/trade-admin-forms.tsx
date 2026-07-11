@@ -9,8 +9,8 @@ import {
 import { Button } from "@/components-V2/platform-components/ui/button";
 import { Input } from "@/components-V2/platform-components/ui/input";
 import { Label } from "@/components-V2/platform-components/ui/label";
-import { getTradeActionError } from "@/lib/domain/trade/trade-action-result";
-import { tradeHref, type TradeLocale } from "@/lib/i18n/trade";
+import { getTradeActionError } from "@/modules/trade/domain/trade-action-result";
+import { tradeHref, type TradeLocale } from "@/modules/trade/i18n/trade";
 
 export function TradeNewEventForm({ locale }: { locale: TradeLocale }) {
   const router = useRouter();
@@ -27,7 +27,7 @@ export function TradeNewEventForm({ locale }: { locale: TradeLocale }) {
         return;
       }
       if ("eventId" in result && result.eventId) {
-        router.push(tradeHref(locale, `/admin/events/${result.eventId}/setup`));
+        router.push(tradeHref(`/admin/events/${result.eventId}/setup`));
       }
     });
   }
@@ -79,7 +79,7 @@ export function TradeEnsureTemplateButton({ locale }: { locale: TradeLocale }) {
             }
             if ("eventId" in result && result.eventId) {
               router.push(
-                tradeHref(locale, `/admin/events/${result.eventId}/setup`),
+                tradeHref(`/admin/events/${result.eventId}/setup`),
               );
             }
           });

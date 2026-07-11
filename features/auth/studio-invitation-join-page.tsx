@@ -8,7 +8,7 @@ import {
   InvitationJoinPanelSkeleton,
 } from "@/features/auth/invitation-join-panel";
 import { useJoinInvitationAuthView } from "@/features/auth/use-join-invitation-auth-view";
-import { resolveJoinInvitationTrustNotice } from "@/lib/client-invitation-join-auth";
+import { resolveJoinInvitationTrustNotice } from "@/modules/identity/client-invitation-join-auth";
 import { portalCopy } from "@/lib/copy/portal-copy";
 
 function JoinStudioShell({ children }: { children: ReactNode }) {

@@ -23,7 +23,7 @@ const RULES = [
   ["@/utils/", "@/components-V2/platform-utils/"],
   ["@/assets/", "@/components-V2/platform-assets/"],
   ["@/fake-db/", "@/components-V2/platform-fake-db/"],
-  ["@/lib/utils", "@/components-V2/lib/utils"],
+  ["@/modules/platform/utils", "@/components-V2/lib/utils"],
 ];
 
 function walk(dir, out = []) {

@@ -12,7 +12,6 @@ Single source of truth for test commands, pyramid placement, and shared helpers.
 | --- | --- | --- | --- |
 | L0 | Vitest node | `lib/**/*.test.ts`, `app/api/**/*.test.ts`, `components/portal-atmosphere/**/*.test.ts` | `npm run test:unit` |
 | L2 | Vitest jsdom | `**/*.interaction.test.tsx`, `**/*.a11y.test.tsx` | `npm run test:interaction` |
-| L3 | Storybook | `stories/**` | `npm run verify:storybook` |
 | Registry | Node scripts | `npm run checks` | Every PR |
 | L4 smoke | Playwright `@smoke` | `e2e/**/*.spec.ts` | `npm run test:e2e:smoke` |
 | L4 journey | Playwright `@journey` | `e2e/**/*.spec.ts` | `npm run test:e2e:journey` (main push) |

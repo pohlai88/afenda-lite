@@ -20,9 +20,9 @@ import {
   PortalInviteClientHashHandler,
   PortalInviteClientLink,
 } from "@/components-V2/platform-views/portal-views/portal-invite-client-link";
-import { getClientEmailDeliveryStatus } from "@/lib/email/client-email-delivery";
+import { getClientEmailDeliveryStatus } from "@/modules/identity/email/client-email-delivery";
 import type { OperatorClientsPageData } from "@/lib/pages/operator-clients-page";
-import { portalCopy } from "@/lib/copy/portal-copy";
+import { portalCopy } from "@/modules/declarations/copy/portal-copy";
 
 function EmailDeliveryBanner() {
   const status = getClientEmailDeliveryStatus();

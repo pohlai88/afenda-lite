@@ -1,4 +1,4 @@
-import { scanAppPageRoutes } from "@/lib/governance/portal-route-inventory";
+import { scanAppPageRoutes } from "@/modules/platform/governance/portal-route-inventory";
 import {
   playgroundScreenDefs,
   resolvePlaygroundPathTemplate,
@@ -8,16 +8,17 @@ import {
 import type { PlaygroundScreen } from "@/lib/playground/playground";
 
 /**
- * Convert a route pattern like `/trade/[locale]/events` into a path template
+ * Convert a route pattern like `/trade/events/[eventId]/order` into a path template
  * suitable for playground embedding (keeps brackets when no fixture exists).
  */
 function routePatternToPathTemplate(routePattern: string): string {
   return routePattern
-    .replaceAll("[locale]", "{PLAYGROUND_TRADE_LOCALE}")
+    .replaceAll("[eventId]", "{PLAYGROUND_HOT_SALES_EVENT_ID}")
     .replaceAll("[id]", "{PLAYGROUND_UNRESOLVED_ID}")
     .replaceAll("[path]", "{PLAYGROUND_UNRESOLVED_PATH}")
     .replaceAll("[slug]", "{PLAYGROUND_UNRESOLVED_SLUG}")
-    .replaceAll("[token]", "{PLAYGROUND_UNRESOLVED_TOKEN}");
+    .replaceAll("[token]", "{PLAYGROUND_UNRESOLVED_TOKEN}")
+    .replaceAll("[assignmentId]", "{PLAYGROUND_ASSIGNMENT_ID}");
 }
 
 function slugFromFile(file: string): string {

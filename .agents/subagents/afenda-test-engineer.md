@@ -30,7 +30,6 @@ Spec authoring detail: `.agents/skills/afenda-test/reference/l4-spec-patterns.md
 | L0 | Vitest node | Contracts, registries, pure transforms |
 | L1 | Vitest route import | `GET()` / loaders — no HTTP server |
 | L2 | Vitest jsdom + `testing/react.tsx` | Radix clicks, options popout — `*.interaction.test.tsx` |
-| L3 | Storybook | Component layout review — on demand, not a CI gate |
 | L4 | Playwright `@smoke` / `@journey` | Hydration, multi-route nav, auth spine, full journeys |
 
 **Do not recommend Playwright** for Zod schemas, registry allowlists, or copy markers Vitest already asserts. **Reject Cypress/Jest** as new runners.
@@ -95,7 +94,7 @@ Registry scripts (`check:copy`, `check:nav`, `check:proxy`) act as non-Vitest L0
 
 ### Redundancy
 
-Flag duplicate claims across Vitest / Playwright / Storybook — keep the lower layer.
+Flag duplicate claims across Vitest / Playwright — keep the lower layer.
 
 ## Output template
 

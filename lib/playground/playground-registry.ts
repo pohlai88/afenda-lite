@@ -3,8 +3,7 @@
  * Imported by lib/playground.ts, check scripts, and E2E helpers.
  */
 
-import { SANDBOX_INVITE_TOKEN, SANDBOX_SURVEY_SLUG } from "@/lib/production-fixtures";
-import { defaultTradeLocale } from "@/lib/i18n/trade";
+import { SANDBOX_INVITE_TOKEN, SANDBOX_SURVEY_SLUG } from "@/modules/identity/production-fixtures";
 
 export type PlaygroundScreenCategory =
   | "admin"
@@ -35,7 +34,8 @@ export const playgroundRouteFiles: Record<string, string> = {
   "/client": "app/client/(workspace)/page.tsx",
   "/client/onboarding": "app/client/(workspace)/onboarding/page.tsx",
   "/client/profile": "app/client/(workspace)/profile/page.tsx",
-  "/client/declare/{id}": "app/client/(workspace)/declare/[id]/page.tsx",
+  "/client/declare/{id}":
+    "app/client/(workspace)/declare/[assignmentId]/page.tsx",
   "/client/preview-unavailable": "app/client/(gate)/preview-unavailable/page.tsx",
   "/auth/sign-in": "app/auth/[path]/page.tsx",
   "/auth/{path}": "app/auth/[path]/page.tsx",
@@ -48,25 +48,23 @@ export const playgroundRouteFiles: Record<string, string> = {
   "/join": "app/join/page.tsx",
   "/playground-404-preview": "app/not-found.tsx",
   "/trade": "app/trade/page.tsx",
-  "/trade/{locale}/events": "app/trade/[locale]/events/page.tsx",
-  "/trade/{locale}/my-orders": "app/trade/[locale]/my-orders/page.tsx",
-  "/trade/{locale}/events/{id}/order":
-    "app/trade/[locale]/events/[id]/order/page.tsx",
-  "/trade/{locale}/admin/events": "app/trade/[locale]/admin/events/page.tsx",
-  "/trade/{locale}/admin/events/new":
-    "app/trade/[locale]/admin/events/new/page.tsx",
-  "/trade/{locale}/admin/events/{id}/setup":
-    "app/trade/[locale]/admin/events/[id]/setup/page.tsx",
-  "/trade/{locale}/admin/events/{id}/allocation":
-    "app/trade/[locale]/admin/events/[id]/allocation/page.tsx",
-  "/trade/{locale}/admin/events/{id}/deposits":
-    "app/trade/[locale]/admin/events/[id]/deposits/page.tsx",
-  "/trade/{locale}/admin/events/{id}/imports":
-    "app/trade/[locale]/admin/events/[id]/imports/page.tsx",
-  "/trade/{locale}/admin/events/{id}/pickup":
-    "app/trade/[locale]/admin/events/[id]/pickup/page.tsx",
-  "/trade/{locale}/admin/erp-sync": "app/trade/[locale]/admin/erp-sync/page.tsx",
-  "/trade/{locale}/admin/rbac": "app/trade/[locale]/admin/rbac/page.tsx",
+  "/trade/events": "app/trade/events/page.tsx",
+  "/trade/my-orders": "app/trade/my-orders/page.tsx",
+  "/trade/events/{id}/order": "app/trade/events/[eventId]/order/page.tsx",
+  "/trade/admin/events": "app/trade/admin/events/page.tsx",
+  "/trade/admin/events/new": "app/trade/admin/events/new/page.tsx",
+  "/trade/admin/events/{id}/setup":
+    "app/trade/admin/events/[eventId]/setup/page.tsx",
+  "/trade/admin/events/{id}/allocation":
+    "app/trade/admin/events/[eventId]/allocation/page.tsx",
+  "/trade/admin/events/{id}/deposits":
+    "app/trade/admin/events/[eventId]/deposits/page.tsx",
+  "/trade/admin/events/{id}/imports":
+    "app/trade/admin/events/[eventId]/imports/page.tsx",
+  "/trade/admin/events/{id}/pickup":
+    "app/trade/admin/events/[eventId]/pickup/page.tsx",
+  "/trade/admin/erp-sync": "app/trade/admin/erp-sync/page.tsx",
+  "/trade/admin/rbac": "app/trade/admin/rbac/page.tsx",
 };
 
 /** Flat `app/client/*` pages conflict with `(workspace)` / `(gate)` route groups. */
@@ -203,7 +201,7 @@ export const playgroundScreenDefs: PlaygroundScreenDef[] = [
     category: "dynamic",
     label: "Declare [id]",
     path: "/client/declare/{PLAYGROUND_ASSIGNMENT_ID}",
-    routeFile: "app/client/(workspace)/declare/[id]/page.tsx",
+    routeFile: "app/client/(workspace)/declare/[assignmentId]/page.tsx",
   },
   {
     id: "dynamic-auth-sign-up",
@@ -297,8 +295,9 @@ export const playgroundScreenDefs: PlaygroundScreenDef[] = [
     routeFile: "app/join/page.tsx",
   },
   // ── Hot Sales (`/trade/*`) ─────────────────────────────────────────────────
-  // These iframe the real requireTradeAccess() gate. Redirect to /client for
-  // non-allowlisted sessions is expected — no allowlist / RBAC changes here.
+  // Phase closed for HITL. Current route pages are holding stubs and do not
+  // prove requireTradeAccess() redirect behavior. Do not infer or change RBAC
+  // from these fixtures; use the Hot Sales gate register when scope reopens.
   {
     id: "hot-sales-trade-index",
     category: "hot-sales",
@@ -310,85 +309,85 @@ export const playgroundScreenDefs: PlaygroundScreenDef[] = [
     id: "hot-sales-events",
     category: "hot-sales",
     label: "Trade events",
-    path: "/trade/{PLAYGROUND_TRADE_LOCALE}/events",
-    routeFile: "app/trade/[locale]/events/page.tsx",
+    path: "/trade/events",
+    routeFile: "app/trade/events/page.tsx",
   },
   {
     id: "hot-sales-my-orders",
     category: "hot-sales",
     label: "My orders",
-    path: "/trade/{PLAYGROUND_TRADE_LOCALE}/my-orders",
-    routeFile: "app/trade/[locale]/my-orders/page.tsx",
+    path: "/trade/my-orders",
+    routeFile: "app/trade/my-orders/page.tsx",
   },
   {
     id: "hot-sales-event-order",
     category: "hot-sales",
     label: "Event order",
-    path: "/trade/{PLAYGROUND_TRADE_LOCALE}/events/{PLAYGROUND_HOT_SALES_EVENT_ID}/order",
-    routeFile: "app/trade/[locale]/events/[id]/order/page.tsx",
+    path: "/trade/events/{PLAYGROUND_HOT_SALES_EVENT_ID}/order",
+    routeFile: "app/trade/events/[eventId]/order/page.tsx",
   },
   {
     id: "hot-sales-admin-events",
     category: "hot-sales",
     label: "Admin events",
-    path: "/trade/{PLAYGROUND_TRADE_LOCALE}/admin/events",
-    routeFile: "app/trade/[locale]/admin/events/page.tsx",
+    path: "/trade/admin/events",
+    routeFile: "app/trade/admin/events/page.tsx",
   },
   {
     id: "hot-sales-admin-events-new",
     category: "hot-sales",
     label: "Admin events · new",
-    path: "/trade/{PLAYGROUND_TRADE_LOCALE}/admin/events/new",
-    routeFile: "app/trade/[locale]/admin/events/new/page.tsx",
+    path: "/trade/admin/events/new",
+    routeFile: "app/trade/admin/events/new/page.tsx",
   },
   {
     id: "hot-sales-admin-event-setup",
     category: "hot-sales",
     label: "Admin event · setup",
-    path: "/trade/{PLAYGROUND_TRADE_LOCALE}/admin/events/{PLAYGROUND_HOT_SALES_EVENT_ID}/setup",
-    routeFile: "app/trade/[locale]/admin/events/[id]/setup/page.tsx",
+    path: "/trade/admin/events/{PLAYGROUND_HOT_SALES_EVENT_ID}/setup",
+    routeFile: "app/trade/admin/events/[eventId]/setup/page.tsx",
   },
   {
     id: "hot-sales-admin-event-allocation",
     category: "hot-sales",
     label: "Admin event · allocation",
-    path: "/trade/{PLAYGROUND_TRADE_LOCALE}/admin/events/{PLAYGROUND_HOT_SALES_EVENT_ID}/allocation",
-    routeFile: "app/trade/[locale]/admin/events/[id]/allocation/page.tsx",
+    path: "/trade/admin/events/{PLAYGROUND_HOT_SALES_EVENT_ID}/allocation",
+    routeFile: "app/trade/admin/events/[eventId]/allocation/page.tsx",
   },
   {
     id: "hot-sales-admin-event-deposits",
     category: "hot-sales",
     label: "Admin event · deposits",
-    path: "/trade/{PLAYGROUND_TRADE_LOCALE}/admin/events/{PLAYGROUND_HOT_SALES_EVENT_ID}/deposits",
-    routeFile: "app/trade/[locale]/admin/events/[id]/deposits/page.tsx",
+    path: "/trade/admin/events/{PLAYGROUND_HOT_SALES_EVENT_ID}/deposits",
+    routeFile: "app/trade/admin/events/[eventId]/deposits/page.tsx",
   },
   {
     id: "hot-sales-admin-event-imports",
     category: "hot-sales",
     label: "Admin event · imports",
-    path: "/trade/{PLAYGROUND_TRADE_LOCALE}/admin/events/{PLAYGROUND_HOT_SALES_EVENT_ID}/imports",
-    routeFile: "app/trade/[locale]/admin/events/[id]/imports/page.tsx",
+    path: "/trade/admin/events/{PLAYGROUND_HOT_SALES_EVENT_ID}/imports",
+    routeFile: "app/trade/admin/events/[eventId]/imports/page.tsx",
   },
   {
     id: "hot-sales-admin-event-pickup",
     category: "hot-sales",
     label: "Admin event · pickup",
-    path: "/trade/{PLAYGROUND_TRADE_LOCALE}/admin/events/{PLAYGROUND_HOT_SALES_EVENT_ID}/pickup",
-    routeFile: "app/trade/[locale]/admin/events/[id]/pickup/page.tsx",
+    path: "/trade/admin/events/{PLAYGROUND_HOT_SALES_EVENT_ID}/pickup",
+    routeFile: "app/trade/admin/events/[eventId]/pickup/page.tsx",
   },
   {
     id: "hot-sales-admin-erp-sync",
     category: "hot-sales",
     label: "Admin ERP sync",
-    path: "/trade/{PLAYGROUND_TRADE_LOCALE}/admin/erp-sync",
-    routeFile: "app/trade/[locale]/admin/erp-sync/page.tsx",
+    path: "/trade/admin/erp-sync",
+    routeFile: "app/trade/admin/erp-sync/page.tsx",
   },
   {
     id: "hot-sales-admin-rbac",
     category: "hot-sales",
     label: "Admin RBAC",
-    path: "/trade/{PLAYGROUND_TRADE_LOCALE}/admin/rbac",
-    routeFile: "app/trade/[locale]/admin/rbac/page.tsx",
+    path: "/trade/admin/rbac",
+    routeFile: "app/trade/admin/rbac/page.tsx",
   },
 ];
 
@@ -416,10 +415,6 @@ export function resolvePlaygroundPathTemplate(template: string) {
       playgroundEnv("PLAYGROUND_LEGACY_INVITE_TOKEN") || "invalid-preview-token",
     )
     .replace(
-      "{PLAYGROUND_TRADE_LOCALE}",
-      playgroundEnv("PLAYGROUND_TRADE_LOCALE") || defaultTradeLocale,
-    )
-    .replace(
       "{PLAYGROUND_HOT_SALES_EVENT_ID}",
       playgroundEnv("PLAYGROUND_HOT_SALES_EVENT_ID"),
     );
@@ -436,46 +431,22 @@ export function resolvePlaygroundRouteFile(pathOrTemplate: string) {
 
   if (pathOrTemplate.includes("{PLAYGROUND_HOT_SALES_EVENT_ID}")) {
     if (pathOrTemplate.includes("/order")) {
-      return playgroundRouteFiles["/trade/{locale}/events/{id}/order"];
+      return playgroundRouteFiles["/trade/events/{id}/order"];
     }
     if (pathOrTemplate.includes("/setup")) {
-      return playgroundRouteFiles["/trade/{locale}/admin/events/{id}/setup"];
+      return playgroundRouteFiles["/trade/admin/events/{id}/setup"];
     }
     if (pathOrTemplate.includes("/allocation")) {
-      return playgroundRouteFiles["/trade/{locale}/admin/events/{id}/allocation"];
+      return playgroundRouteFiles["/trade/admin/events/{id}/allocation"];
     }
     if (pathOrTemplate.includes("/deposits")) {
-      return playgroundRouteFiles["/trade/{locale}/admin/events/{id}/deposits"];
+      return playgroundRouteFiles["/trade/admin/events/{id}/deposits"];
     }
     if (pathOrTemplate.includes("/imports")) {
-      return playgroundRouteFiles["/trade/{locale}/admin/events/{id}/imports"];
+      return playgroundRouteFiles["/trade/admin/events/{id}/imports"];
     }
     if (pathOrTemplate.includes("/pickup")) {
-      return playgroundRouteFiles["/trade/{locale}/admin/events/{id}/pickup"];
-    }
-  }
-
-  if (pathOrTemplate.includes("{PLAYGROUND_TRADE_LOCALE}")) {
-    if (pathOrTemplate.includes("/admin/events/new")) {
-      return playgroundRouteFiles["/trade/{locale}/admin/events/new"];
-    }
-    if (pathOrTemplate.includes("/admin/events")) {
-      return playgroundRouteFiles["/trade/{locale}/admin/events"];
-    }
-    if (pathOrTemplate.includes("/admin/erp-sync")) {
-      return playgroundRouteFiles["/trade/{locale}/admin/erp-sync"];
-    }
-    if (pathOrTemplate.includes("/admin/rbac")) {
-      return playgroundRouteFiles["/trade/{locale}/admin/rbac"];
-    }
-    if (pathOrTemplate.includes("/my-orders")) {
-      return playgroundRouteFiles["/trade/{locale}/my-orders"];
-    }
-    if (
-      pathOrTemplate.includes("/events") &&
-      !pathOrTemplate.includes("/admin/")
-    ) {
-      return playgroundRouteFiles["/trade/{locale}/events"];
+      return playgroundRouteFiles["/trade/admin/events/{id}/pickup"];
     }
   }
 
@@ -525,52 +496,52 @@ export function resolvePlaygroundRouteFile(pathOrTemplate: string) {
     return playgroundRouteFiles["/trade"];
   }
 
-  if (/^\/trade\/[^/]+\/events$/.test(pathname)) {
-    return playgroundRouteFiles["/trade/{locale}/events"];
+  if (pathname === "/trade/events") {
+    return playgroundRouteFiles["/trade/events"];
   }
 
-  if (/^\/trade\/[^/]+\/my-orders$/.test(pathname)) {
-    return playgroundRouteFiles["/trade/{locale}/my-orders"];
+  if (pathname === "/trade/my-orders") {
+    return playgroundRouteFiles["/trade/my-orders"];
   }
 
-  if (/^\/trade\/[^/]+\/events\/[^/]+\/order$/.test(pathname)) {
-    return playgroundRouteFiles["/trade/{locale}/events/{id}/order"];
+  if (/^\/trade\/events\/[^/]+\/order$/.test(pathname)) {
+    return playgroundRouteFiles["/trade/events/{id}/order"];
   }
 
-  if (/^\/trade\/[^/]+\/admin\/events$/.test(pathname)) {
-    return playgroundRouteFiles["/trade/{locale}/admin/events"];
+  if (pathname === "/trade/admin/events") {
+    return playgroundRouteFiles["/trade/admin/events"];
   }
 
-  if (/^\/trade\/[^/]+\/admin\/events\/new$/.test(pathname)) {
-    return playgroundRouteFiles["/trade/{locale}/admin/events/new"];
+  if (pathname === "/trade/admin/events/new") {
+    return playgroundRouteFiles["/trade/admin/events/new"];
   }
 
-  if (/^\/trade\/[^/]+\/admin\/events\/[^/]+\/setup$/.test(pathname)) {
-    return playgroundRouteFiles["/trade/{locale}/admin/events/{id}/setup"];
+  if (/^\/trade\/admin\/events\/[^/]+\/setup$/.test(pathname)) {
+    return playgroundRouteFiles["/trade/admin/events/{id}/setup"];
   }
 
-  if (/^\/trade\/[^/]+\/admin\/events\/[^/]+\/allocation$/.test(pathname)) {
-    return playgroundRouteFiles["/trade/{locale}/admin/events/{id}/allocation"];
+  if (/^\/trade\/admin\/events\/[^/]+\/allocation$/.test(pathname)) {
+    return playgroundRouteFiles["/trade/admin/events/{id}/allocation"];
   }
 
-  if (/^\/trade\/[^/]+\/admin\/events\/[^/]+\/deposits$/.test(pathname)) {
-    return playgroundRouteFiles["/trade/{locale}/admin/events/{id}/deposits"];
+  if (/^\/trade\/admin\/events\/[^/]+\/deposits$/.test(pathname)) {
+    return playgroundRouteFiles["/trade/admin/events/{id}/deposits"];
   }
 
-  if (/^\/trade\/[^/]+\/admin\/events\/[^/]+\/imports$/.test(pathname)) {
-    return playgroundRouteFiles["/trade/{locale}/admin/events/{id}/imports"];
+  if (/^\/trade\/admin\/events\/[^/]+\/imports$/.test(pathname)) {
+    return playgroundRouteFiles["/trade/admin/events/{id}/imports"];
   }
 
-  if (/^\/trade\/[^/]+\/admin\/events\/[^/]+\/pickup$/.test(pathname)) {
-    return playgroundRouteFiles["/trade/{locale}/admin/events/{id}/pickup"];
+  if (/^\/trade\/admin\/events\/[^/]+\/pickup$/.test(pathname)) {
+    return playgroundRouteFiles["/trade/admin/events/{id}/pickup"];
   }
 
-  if (/^\/trade\/[^/]+\/admin\/erp-sync$/.test(pathname)) {
-    return playgroundRouteFiles["/trade/{locale}/admin/erp-sync"];
+  if (pathname === "/trade/admin/erp-sync") {
+    return playgroundRouteFiles["/trade/admin/erp-sync"];
   }
 
-  if (/^\/trade\/[^/]+\/admin\/rbac$/.test(pathname)) {
-    return playgroundRouteFiles["/trade/{locale}/admin/rbac"];
+  if (pathname === "/trade/admin/rbac") {
+    return playgroundRouteFiles["/trade/admin/rbac"];
   }
 
   return null;

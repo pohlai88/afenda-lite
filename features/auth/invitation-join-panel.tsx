@@ -4,10 +4,10 @@ import Link from "next/link";
 import { Skeleton } from "@/components-V2/platform-components/ui/skeleton";
 import { PortalAuthNeonView } from "@/features/auth/portal-auth-neon-view";
 import { InvitationJoinSteps } from "@/features/auth/invitation-join-steps";
-import type { JoinInvitationAuthView } from "@/lib/client-invitation-join-auth";
-import { CLIENT_ONBOARDING_HREF } from "@/lib/client-session";
+import type { JoinInvitationAuthView } from "@/modules/identity/client-invitation-join-auth";
+import { CLIENT_ONBOARDING_HREF } from "@/modules/identity/client-session";
 import { portalCopy } from "@/lib/copy/portal-copy";
-import { authSignInHref, buildClientJoinHref } from "@/lib/routing/portal-routes";
+import { authSignInHref, buildClientJoinHref } from "@/modules/platform/routing/portal-routes";
 
 export function InvitationJoinPanelSkeleton() {
   return (

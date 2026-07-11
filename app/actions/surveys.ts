@@ -2,32 +2,32 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { requireAdminSession } from "@/lib/auth/session";
-import { recordAuditEvent } from "@/lib/domain/audit";
-import { createClientAssignment } from "@/lib/domain/clients";
+import { requireAdminSession } from "@/modules/identity/auth/session";
+import { recordAuditEvent } from "@/modules/platform/audit";
+import { createClientAssignment } from "@/modules/declarations/domain/clients";
 import {
   OPERATOR_CLIENTS_HREF,
   OPERATOR_DASHBOARD_HREF,
   operatorDeclarationHref,
   operatorDeclarationManageHref,
-} from "@/lib/routing/portal-routes";
+} from "@/modules/platform/routing/portal-routes";
 import {
   listQuestionsForSurvey,
   replaceSurveyQuestions,
   SurveyHasResponsesError,
   type SurveyAnswers,
-} from "@/lib/domain/questions";
-import { runLoggedAction } from "@/lib/observability";
-import { portalCopy } from "@/lib/copy/portal-copy";
-import { parseSchema } from "@/lib/schemas/common";
+} from "@/modules/declarations/domain/questions";
+import { runLoggedAction } from "@/modules/platform/observability";
+import { portalCopy } from "@/modules/declarations/copy/portal-copy";
+import { parseSchema } from "@/modules/declarations/schemas/common";
 import {
   deleteSurveySchema,
   rawUpdateSurveyFromFormData,
   submitSurveyResponseSchema,
   surveyIdParamSchema,
   updateSurveySchema,
-} from "@/lib/schemas/surveys";
-import { DRAFT_SURVEY_TITLE } from "@/lib/domain/survey-draft";
+} from "@/modules/declarations/schemas/surveys";
+import { DRAFT_SURVEY_TITLE } from "@/modules/declarations/domain/survey-draft";
 import {
   buildCdpPackageForExport,
   cdpQuestionsToDrafts,
@@ -35,11 +35,11 @@ import {
   parseCdpPackage,
   serializeCdpPackage,
   type CdpPackage,
-} from "@/lib/domain/survey-package";
+} from "@/modules/declarations/domain/survey-package";
 import {
   analyzeCdpPackageInput,
   type PackageAnalysis,
-} from "@/lib/domain/survey-package-analyze";
+} from "@/modules/declarations/domain/survey-package-analyze";
 import {
   createSurvey,
   deleteSurvey,
@@ -47,8 +47,8 @@ import {
   pickSurveyMetadata,
   regenerateInviteToken,
   updateSurvey,
-} from "@/lib/domain/surveys";
-import { formString } from "@/lib/server-actions/form-data";
+} from "@/modules/declarations/domain/surveys";
+import { formString } from "@/modules/declarations/server-actions/form-data";
 
 function revalidateOperatorDashboard(surveyId?: string) {
   revalidatePath(OPERATOR_DASHBOARD_HREF);

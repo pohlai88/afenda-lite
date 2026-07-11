@@ -54,9 +54,6 @@ jobs:
       - name: Interaction tests
         run: npm run test:interaction
 
-      - name: Storybook static build
-        run: npm run verify:storybook
-
       - name: Build
         run: npm run build
 

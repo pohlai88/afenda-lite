@@ -1,11 +1,9 @@
-import { isOrgSignInFrom } from "@/lib/auth/auth-entry-params";
-
-/** Paths where portal-owned h2 copy differs from the Neon AuthView card title. */
-const PATHS_WITH_DISTINCT_PORTAL_HEADING = new Set(["email-otp", "magic-link"]);
+import { isOrgSignInFrom } from "@/modules/identity/auth/auth-entry-params";
 
 /**
- * When false, PortalAuthFormIntro still renders alternate links and hints but
- * skips the vault h2/description Neon already shows in the AuthView card.
+ * When false, PortalAuthFormIntro returns null on Studio routes — Neon AuthView
+ * already owns title, description, expiry hints, and auth-method links.
+ * Only org operator sign-in keeps a portal-owned heading (distinct from Neon).
  */
 export function resolveShowVaultHeading(input: {
   path: string;
@@ -15,5 +13,5 @@ export function resolveShowVaultHeading(input: {
     return true;
   }
 
-  return PATHS_WITH_DISTINCT_PORTAL_HEADING.has(input.path);
+  return false;
 }

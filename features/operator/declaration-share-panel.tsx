@@ -1,10 +1,10 @@
-import { requireAdminSession } from "@/lib/auth/session";
+import { requireAdminSession } from "@/modules/identity/auth/session";
 import {
   ClientAccessSharePanel,
   type ClientAccessSharePanelProps,
 } from "@/features/operator/client/client-access-share-panel";
 import { SecureLinkRotateButton } from "@/features/operator/secure-link-rotate-button";
-import { loadDeclarationShareLinks } from "@/lib/domain/declaration-share-links";
+import { loadDeclarationShareLinks } from "@/modules/declarations/domain/declaration-share-links";
 
 export async function DeclarationSharePanel({
   surveyId,

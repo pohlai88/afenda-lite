@@ -4,7 +4,7 @@ import {
   FieldLegend,
   FieldSet,
 } from "@/components-V2/platform-components/ui/field";
-import { cn } from "@/lib/utils";
+import { cn } from "@/modules/platform/utils";
 
 /** form-layout-02 — titled section shell from Shadcn Studio multi-section form block. */
 export type StudioFormLayout02SectionProps = {

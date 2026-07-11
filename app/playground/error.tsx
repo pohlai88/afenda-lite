@@ -1,8 +1,8 @@
 "use client";
 
-import { PortalRouteError } from "@/components/portal/portal-route-error";
-import { portalCopy } from "@/lib/copy/portal-copy";
-import { OPERATOR_DASHBOARD_HREF } from "@/lib/routing/portal-routes";
+import { PortalRouteError } from "@/features/portal-chrome/portal-route-error";
+import { portalCopy } from "@/modules/declarations/copy/portal-copy";
+import { OPERATOR_DASHBOARD_HREF } from "@/modules/platform/routing/portal-routes";
 
 export default function PlaygroundError({
   error,

@@ -7,6 +7,10 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import {
+  ThemeProvider as NextThemesProvider,
+  useTheme as useNextTheme,
+} from "next-themes";
 import { PORTAL_THEME_STORAGE_KEY } from "@/lib/copy/portal-theme";
 
 type Theme = "light" | "dark" | "system";
@@ -18,7 +22,49 @@ type ThemeContextValue = {
   setTheme: (theme: Theme) => void;
 };
 
+/**
+ * Single dark-mode owner for the app (auth + AdminCN).
+ * Uses next-themes with the portal storage key so boot script, auth, and
+ * dashboard ModeToggle share one `html.dark` source of truth.
+ */
+export function ThemeProvider({
+  children,
+  defaultTheme = "system",
+  storageKey = PORTAL_THEME_STORAGE_KEY,
+}: {
+  children: ReactNode;
+  defaultTheme?: Theme;
+  storageKey?: string;
+}) {
+  return (
+    <NextThemesProvider
+      attribute="class"
+      defaultTheme={defaultTheme}
+      enableSystem
+      storageKey={storageKey}
+      disableTransitionOnChange
+    >
+      <PortalThemeBridge>{children}</PortalThemeBridge>
+    </NextThemesProvider>
+  );
+}
+
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
+
+function PortalThemeBridge({ children }: { children: ReactNode }) {
+  const { theme, setTheme, resolvedTheme } = useNextTheme();
+  const value: ThemeContextValue = {
+    theme: (theme === "light" || theme === "dark" || theme === "system"
+      ? theme
+      : "system") as Theme,
+    resolvedTheme: resolvedTheme === "dark" ? "dark" : "light",
+    setTheme: (next) => setTheme(next),
+  };
+
+  return (
+    <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
+  );
+}
 
 function getSystemTheme(): ResolvedTheme {
   if (typeof window === "undefined") {
@@ -30,6 +76,7 @@ function getSystemTheme(): ResolvedTheme {
     : "light";
 }
 
+/** Imperative apply for Storybook toolbar / non-React callers. */
 export function readResolvedThemeFromDocument(): ResolvedTheme {
   if (typeof document === "undefined") {
     return "light";
@@ -53,64 +100,6 @@ export function persistThemePreference(
   if (typeof window !== "undefined") {
     window.localStorage.setItem(storageKey, theme);
   }
-}
-
-function applyTheme(theme: Theme) {
-  applyThemeToDocument(theme);
-}
-
-export function ThemeProvider({
-  children,
-  defaultTheme = "system",
-  storageKey = PORTAL_THEME_STORAGE_KEY,
-}: {
-  children: ReactNode;
-  defaultTheme?: Theme;
-  storageKey?: string;
-}) {
-  const [theme, setThemeState] = useState<Theme>(defaultTheme);
-  const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>("light");
-
-  useEffect(() => {
-    const stored = window.localStorage.getItem(storageKey) as Theme | null;
-    const nextTheme = stored ?? defaultTheme;
-    setThemeState(nextTheme);
-    applyTheme(nextTheme);
-    setResolvedTheme(nextTheme === "system" ? getSystemTheme() : nextTheme);
-  }, [defaultTheme, storageKey]);
-
-  useEffect(() => {
-    applyTheme(theme);
-    setResolvedTheme(theme === "system" ? getSystemTheme() : theme);
-
-    if (theme !== "system") {
-      return;
-    }
-
-    const media = window.matchMedia("(prefers-color-scheme: dark)");
-    const onChange = () => {
-      applyTheme("system");
-      setResolvedTheme(getSystemTheme());
-    };
-
-    media.addEventListener("change", onChange);
-    return () => media.removeEventListener("change", onChange);
-  }, [theme]);
-
-  return (
-    <ThemeContext.Provider
-      value={{
-        theme,
-        resolvedTheme,
-        setTheme: (nextTheme) => {
-          window.localStorage.setItem(storageKey, nextTheme);
-          setThemeState(nextTheme);
-        },
-      }}
-    >
-      {children}
-    </ThemeContext.Provider>
-  );
 }
 
 export function useTheme() {

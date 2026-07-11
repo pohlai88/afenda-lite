@@ -3,36 +3,36 @@
 import { redirect } from "next/navigation";
 import {
   ORG_SIGN_IN_HREF,
-} from "@/lib/admin";
-import { recordAuditEvent } from "@/lib/domain/audit";
-import { auth } from "@/lib/auth/server";
+} from "@/modules/identity/admin";
+import { recordAuditEvent } from "@/modules/platform/audit";
+import { auth } from "@/modules/identity/auth/server";
 import {
   neonAdminImpersonateUser,
   neonAdminStopImpersonating,
-} from "@/lib/auth/admin";
+} from "@/modules/identity/auth/admin";
 import {
   rejectNonOperatorSignIn,
   requireAdminSession,
-} from "@/lib/auth/session";
-import { runLoggedAction } from "@/lib/observability";
+} from "@/modules/identity/auth/session";
+import { runLoggedAction } from "@/modules/platform/observability";
 import {
   CLIENT_HOME_HREF,
   OPERATOR_DASHBOARD_HREF,
-} from "@/lib/routing/portal-routes";
+} from "@/modules/platform/routing/portal-routes";
 import {
   getPreviewClientUser,
   isPreviewClientConfigured,
   isPreviewClientSession,
   clientPreviewUnavailableHref,
   PREVIEW_UNAVAILABLE_FAILED_REASON,
-} from "@/lib/preview-client";
-import { portalCopy } from "@/lib/copy/portal-copy";
-import { parseSchema } from "@/lib/schemas/common";
-import { signInSchema } from "@/lib/schemas/auth";
+} from "@/modules/identity/preview-client";
+import { portalCopy } from "@/modules/declarations/copy/portal-copy";
+import { parseSchema } from "@/modules/declarations/schemas/common";
+import { signInSchema } from "@/modules/identity/schemas/auth";
 import {
   formPassword,
   formString,
-} from "@/lib/server-actions/form-data";
+} from "@/modules/declarations/server-actions/form-data";
 
 export async function adminSignInAction(formData: FormData) {
   return runLoggedAction("adminSignInAction", undefined, async () => {

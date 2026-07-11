@@ -20,8 +20,8 @@ vi.mock("next/navigation", () => ({
   notFound: () => mockNotFound(),
 }));
 
-vi.mock("@/lib/domain/surveys", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/lib/domain/surveys")>();
+vi.mock("@/modules/declarations/domain/surveys", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/modules/declarations/domain/surveys")>();
   return {
     ...actual,
     getSurveyForAdmin: (...args: unknown[]) => mockGetSurveyForAdmin(...args),
@@ -30,8 +30,8 @@ vi.mock("@/lib/domain/surveys", async (importOriginal) => {
   };
 });
 
-vi.mock("@/lib/domain/questions", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/lib/domain/questions")>();
+vi.mock("@/modules/declarations/domain/questions", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/modules/declarations/domain/questions")>();
   return {
     ...actual,
     listQuestionsForSurvey: (...args: unknown[]) =>

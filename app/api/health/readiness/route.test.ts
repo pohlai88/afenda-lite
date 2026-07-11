@@ -3,10 +3,10 @@ import { GET } from "@/app/api/health/readiness/route";
 import {
   HEALTH_NO_STORE_HEADERS,
   type HealthEnvelope,
-} from "@/lib/api/health-response";
-import { collectReadinessSnapshot } from "@/lib/api/readiness";
+} from "@/modules/platform/api/health-response";
+import { collectReadinessSnapshot } from "@/modules/platform/api/readiness";
 
-vi.mock("@/lib/api/readiness", () => ({
+vi.mock("@/modules/platform/api/readiness", () => ({
   collectReadinessSnapshot: vi.fn(),
 }));
 

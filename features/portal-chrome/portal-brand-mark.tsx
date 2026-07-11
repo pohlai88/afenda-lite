@@ -8,7 +8,7 @@ import {
   type BrandContext,
 } from "@/lib/copy/portal-brand";
 import { PORTAL_NAME } from "@/lib/copy/portal-copy";
-import { cn } from "@/lib/utils";
+import { cn } from "@/modules/platform/utils";
 
 type BrandMarkProps = {
   context?: BrandContext;

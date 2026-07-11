@@ -22,6 +22,7 @@ export default defineConfig({
           environment: "node",
           include: [
             "lib/**/*.test.ts",
+            "modules/**/*.test.ts",
             "app/api/**/*.test.ts",
             "components/portal-atmosphere/**/*.test.ts",
           ],

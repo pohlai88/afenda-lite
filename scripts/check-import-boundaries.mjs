@@ -118,7 +118,7 @@ function scanCollapsedLegacyFolders() {
     ["hooks", "use components/hooks/"],
     ["registry", "use components/svg/"],
     ["supabase", "see docs/legacy/supabase.md"],
-    ["config/neon-auth.manifest.json", "use lib/auth/neon-auth.manifest.json"],
+    ["config/neon-auth.manifest.json", "use modules/identity/auth/neon-auth.manifest.json"],
   ];
 
   for (const [path, hint] of forbidden) {

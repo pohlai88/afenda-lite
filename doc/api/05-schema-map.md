@@ -30,7 +30,7 @@ Existing modules under [`lib/schemas/`](../../lib/schemas/). Extend additively; 
 
 | Gap | Notes |
 |-----|-------|
-| Shared `APIErrorBody` Zod schema | Add when Route Handlers standardize JSON errors |
+| Shared `APIErrorBody` Zod schema | **Landed** in `lib/schemas/api-error.ts` |
 | Shared `PaginatedResult` schema helper | Add when first contract-only list is exposed over HTTP |
 | Account PATCH schema | Only if portal-owned fields exist beyond Neon AccountView |
 | Trade REST surface schemas | Keep in `trade.ts`; split files only if module grows unwieldy |
@@ -38,8 +38,8 @@ Existing modules under [`lib/schemas/`](../../lib/schemas/). Extend additively; 
 ## Adapter usage
 
 ```typescript
-import { parseSchema } from '@/lib/schemas/common'
-import { updateSurveySchema } from '@/lib/schemas/surveys'
+import { parseSchema } from '@/modules/declarations/schemas/common'
+import { updateSurveySchema } from '@/modules/declarations/schemas/surveys'
 
 const parsed = parseSchema(updateSurveySchema, input)
 if (!parsed.success) {

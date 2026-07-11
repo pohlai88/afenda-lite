@@ -13,6 +13,7 @@ Frontend + API + backend docs describe **one system**. See [ADR-001](adr/001-mod
 3. [04-nextjs-adapter-map.md](04-nextjs-adapter-map.md) — App Router ↔ hexagon  
 4. [05-contract-rules.md](05-contract-rules.md) — one-version API rules  
 5. [02-bounded-contexts.md](02-bounded-contexts.md) + [03-ports-and-adapters.md](03-ports-and-adapters.md)  
+6. [06-lib-ownership.md](06-lib-ownership.md) — `lib/` → `modules/` ownership map  
 
 ## Index
 
@@ -23,6 +24,7 @@ Frontend + API + backend docs describe **one system**. See [ADR-001](adr/001-mod
 | [03-ports-and-adapters.md](03-ports-and-adapters.md) | Contract-first ports ↔ files |
 | [04-nextjs-adapter-map.md](04-nextjs-adapter-map.md) | Next.js primitives as adapters |
 | [05-contract-rules.md](05-contract-rules.md) | Errors, Zod edge, I/O, REST naming |
+| [06-lib-ownership.md](06-lib-ownership.md) | Full `lib/` inventory → `modules/` relocate |
 | [adr/001-…](adr/001-modular-monolith-hexagonal.md) | Accepted ADR |
 
 ## Alignment (must not diverge)

@@ -167,7 +167,7 @@ Client components using `useSession()` need the `"use client"` directive.
 
 ```typescript
 // Missing directive - will cause hydration errors
-import { authClient } from "@/lib/auth/client";
+import { authClient } from "@/modules/identity/auth/client";
 
 function AuthStatus() {
   const session = authClient.useSession();
@@ -180,7 +180,7 @@ function AuthStatus() {
 ```typescript
 "use client";
 
-import { authClient } from "@/lib/auth/client";
+import { authClient } from "@/modules/identity/auth/client";
 
 function AuthStatus() {
   const session = authClient.useSession();

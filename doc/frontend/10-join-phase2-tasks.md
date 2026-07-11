@@ -1,11 +1,19 @@
 # Join — phase-2 task breakdown
 
-**Status:** complete (reopened + implemented 2026-07-11)  
+**Status:** repair pending — route present, Studio join runner not wired (audited 2026-07-11)
 **SSOT:** [03-routes.md](03-routes.md) · [05-ui-surfaces.md](05-ui-surfaces.md) · [features/auth/README.md](../../features/auth/README.md)
 
 ## Goal
 
 Restore `/join?invitationId=` using **Studio + Neon** (`StudioInvitationJoinPage`). Do not restore Guardian / `PortalInvitationJoinPage`.
+
+## Current truth
+
+`app/join/page.tsx` currently renders a bare `Join` placeholder and echoes the
+query value. It does not call `runClientInvitationJoinPage` or mount
+`StudioInvitationJoinPage`. The route therefore remains visible in playground
+HITL as frontend repair work until a human explicitly authorizes the product
+route repair.
 
 ## Keep vs fix
 

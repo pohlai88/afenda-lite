@@ -4,15 +4,15 @@ vi.mock("next/navigation", () => ({
   redirect: vi.fn(),
 }));
 
-vi.mock("@/lib/domain/clients", () => ({
+vi.mock("@/modules/declarations/domain/clients", () => ({
   getClientInvitationByToken: vi.fn(),
 }));
 
-vi.mock("@/lib/routing/portal-session-routing", () => ({
+vi.mock("@/modules/platform/routing/portal-session-routing", () => ({
   getAuthenticatedLandingHref: vi.fn(),
 }));
 
-vi.mock("@/lib/playground/playground", () => ({
+vi.mock("@/modules/platform/playground-embed", () => ({
   appendPlaygroundEmbedQuery: vi.fn((href: string) => href),
   resolvePlaygroundEmbedActive: vi.fn(),
 }));
@@ -21,13 +21,13 @@ import {
   resolveLegacyInviteRedirectReason,
   type LegacyInviteRedirectReason,
 } from "@/lib/entry/legacy-invite-entry";
-import type { ClientInvitation } from "@/lib/domain/clients";
+import type { ClientInvitation } from "@/modules/declarations/domain/clients";
 import {
   CLIENT_CHECK_EMAIL_REASON,
   CLIENT_INVITE_EXPIRED_REASON,
   CLIENT_INVITE_INVALID_REASON,
   CLIENT_LOGIN_REQUIRED_REASON,
-} from "@/lib/auth/auth-entry-params";
+} from "@/modules/identity/auth/auth-entry-params";
 
 function invitation(
   status: ClientInvitation["status"],

@@ -1,18 +1,18 @@
 "use server";
 
-import { isAdminSession } from "@/lib/admin";
-import { recordAuditEvent } from "@/lib/domain/audit";
-import { auth } from "@/lib/auth/server";
-import { toClientAuthenticatedSession } from "@/lib/client-session";
-import { listClientAssignments } from "@/lib/domain/clients";
-import { isEvidencePolicyFailureReason } from "@/lib/domain/evidence-policy";
-import { listQuestionsForSurvey, registerEvidence } from "@/lib/domain/questions";
-import { runLoggedAction } from "@/lib/observability";
-import { portalCopy } from "@/lib/copy/portal-copy";
-import { parseSchema } from "@/lib/schemas/common";
-import { registerEvidenceSchema } from "@/lib/schemas/declarations";
-import { getSurveyBySlug, getSurveyForAdmin } from "@/lib/domain/surveys";
-import { readRegisterEvidenceFromFormData } from "@/lib/server-actions/register-evidence-form";
+import { isAdminSession } from "@/modules/identity/admin";
+import { recordAuditEvent } from "@/modules/platform/audit";
+import { auth } from "@/modules/identity/auth/server";
+import { toClientAuthenticatedSession } from "@/modules/identity/client-session";
+import { listClientAssignments } from "@/modules/declarations/domain/clients";
+import { isEvidencePolicyFailureReason } from "@/modules/declarations/domain/evidence-policy";
+import { listQuestionsForSurvey, registerEvidence } from "@/modules/declarations/domain/questions";
+import { runLoggedAction } from "@/modules/platform/observability";
+import { portalCopy } from "@/modules/declarations/copy/portal-copy";
+import { parseSchema } from "@/modules/declarations/schemas/common";
+import { registerEvidenceSchema } from "@/modules/declarations/schemas/declarations";
+import { getSurveyBySlug, getSurveyForAdmin } from "@/modules/declarations/domain/surveys";
+import { readRegisterEvidenceFromFormData } from "@/modules/declarations/server-actions/register-evidence-form";
 
 type EvidenceAccess = {
   actorId?: string;

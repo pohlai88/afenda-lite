@@ -6,25 +6,25 @@ import {
   isOrgAccessDeniedReason,
   ORG_ACCESS_DENIED_REASON,
   ORG_SIGN_IN_FROM_PARAM,
-} from "@/lib/auth/auth-entry-params";
-import { ORG_SIGN_IN_HREF } from "@/lib/admin";
+} from "@/modules/identity/auth/auth-entry-params";
+import { ORG_SIGN_IN_HREF } from "@/modules/identity/admin";
 import {
   appendPlaygroundEmbedQuery,
   resolvePlaygroundEmbedActive,
-} from "@/lib/playground/playground";
+} from "@/modules/platform/playground-embed";
 import { PORTAL_NAME, portalCopy } from "@/lib/copy/portal-copy";
 import {
   authSignInHref,
   sanitizeReturnToPath,
-} from "@/lib/routing/portal-routes";
-import { getAuthenticatedLandingHref } from "@/lib/routing/portal-session-routing";
+} from "@/modules/platform/routing/portal-routes";
+import { getAuthenticatedLandingHref } from "@/modules/platform/routing/portal-session-routing";
 
 export {
   isOrgAccessDeniedReason,
   isOrgSignInFrom,
   ORG_ACCESS_DENIED_REASON,
   ORG_SIGN_IN_FROM_PARAM,
-} from "@/lib/auth/auth-entry-params";
+} from "@/modules/identity/auth/auth-entry-params";
 
 /** Legacy operator sign-in URL — forwards through the canonical org entry flow. */
 export const AUTH_ADMIN_LEGACY_HREF = "/auth/admin" as const;

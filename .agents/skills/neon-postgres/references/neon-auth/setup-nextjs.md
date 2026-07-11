@@ -66,7 +66,7 @@ export const authClient = createAuthClient();
 ```typescript
 "use client";
 
-import { authClient } from "@/lib/auth/client";
+import { authClient } from "@/modules/identity/auth/client";
 
 function AuthStatus() {
   const session = authClient.useSession();

@@ -2,7 +2,7 @@ import {
   isOrgAccessDeniedReason,
   isOrgSignInFrom,
   resolveClientAuthReasonNotice,
-} from "@/lib/auth/auth-entry-params";
+} from "@/modules/identity/auth/auth-entry-params";
 
 /** Auth paths that redirect authenticated users before rendering the form. */
 export const AUTH_ENTRY_PATHS = new Set([

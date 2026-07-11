@@ -11,9 +11,9 @@ import {
 import { Button } from "@/components-V2/platform-components/ui/button";
 import { Input } from "@/components-V2/platform-components/ui/input";
 import { Label } from "@/components-V2/platform-components/ui/label";
-import { getTradeActionError } from "@/lib/domain/trade/trade-action-result";
-import type { HotSalesDepositListItem, HotSalesFinanceAuditEntry } from "@/lib/domain/trade/types";
-import { tradeHref, type TradeLocale } from "@/lib/i18n/trade";
+import { getTradeActionError } from "@/modules/trade/domain/trade-action-result";
+import type { HotSalesDepositListItem, HotSalesFinanceAuditEntry } from "@/modules/trade/domain/types";
+import { tradeHref, type TradeLocale } from "@/modules/trade/i18n/trade";
 
 export function TradeDepositPanel({
   locale,
@@ -333,7 +333,7 @@ export function TradeDepositsNavLink({
 }) {
   return (
     <Link
-      href={tradeHref(locale, `/admin/events/${eventId}/deposits`)}
+      href={tradeHref(`/admin/events/${eventId}/deposits`)}
       className="text-sm underline-offset-4 hover:underline"
     >
       {locale === "vi" ? "Tiền cọc" : "Deposits"}

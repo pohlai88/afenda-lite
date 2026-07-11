@@ -3,7 +3,7 @@ node_modules/
 .next-ui/
 .next-workflow/
 .turbo/
-coverage/
+/coverage/
 test-results/
 playwright-report/
 storybook-static/

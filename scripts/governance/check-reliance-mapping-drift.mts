@@ -6,7 +6,7 @@ import {
   buildRelianceMappingSnapshot,
   compareRelianceMappingSnapshots,
   type RelianceMappingSnapshot,
-} from "../../lib/governance/portal-reliance-mapping";
+} from "../../modules/platform/governance/portal-reliance-mapping";
 
 const repoRoot = join(import.meta.dirname, "../..");
 const snapshotPath = join(repoRoot, "docs/architecture/reliance-mapping.snapshot.json");

@@ -1,6 +1,6 @@
 /**
  * Pre-sync validation: local env.config + env.secret vs production requirements.
- * Runtime rules use lib/env/schema.ts (same Zod schema as instrumentation.ts).
+ * Runtime rules use modules/platform/env/schema.ts (same Zod schema as instrumentation.ts).
  *
  * Usage: npm run validate:env-sync
  */
@@ -12,8 +12,8 @@ import {
   VERCEL_PRODUCTION_KEYS,
 } from "./lib/env-files.mjs";
 import { listVercelEnvKeys } from "./lib/vercel-env.mjs";
-import { parseServerEnv } from "../lib/env/schema.ts";
-import { deriveSyncRequiredEmailKeys } from "../lib/env/manifest.ts";
+import { parseServerEnv } from "../modules/platform/env/schema.ts";
+import { deriveSyncRequiredEmailKeys } from "../modules/platform/env/manifest.ts";
 
 const env = composeEnv({ write: false });
 const checks = [];
@@ -34,7 +34,7 @@ function main() {
   // 1. Zod schema (shared with Next.js instrumentation)
   const parsed = parseServerEnv(env);
   if (parsed.success) {
-    pass("runtime-schema", "Composed env passes lib/env/serverEnvSchema");
+    pass("runtime-schema", "Composed env passes modules/platform/env serverEnvSchema");
   } else {
     fail(
       "runtime-schema",

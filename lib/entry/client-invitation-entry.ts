@@ -5,8 +5,8 @@ import { redirect } from "next/navigation";
 import { PORTAL_NAME, portalCopy } from "@/lib/copy/portal-copy";
 import {
   buildClientJoinHref,
-} from "@/lib/routing/portal-routes";
-import { getAuthenticatedLandingHref } from "@/lib/routing/portal-session-routing";
+} from "@/modules/platform/routing/portal-routes";
+import { getAuthenticatedLandingHref } from "@/modules/platform/routing/portal-session-routing";
 
 export const clientInvitationJoinMetadata: Metadata = {
   title: `${PORTAL_NAME} — ${portalCopy.metadata.clientInvitationJoin.title}`,

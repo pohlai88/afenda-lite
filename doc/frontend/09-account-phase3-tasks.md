@@ -1,9 +1,17 @@
 # Account — phase-3 task breakdown
 
-**Status:** complete (reopened + implemented 2026-07-11)  
+**Status:** repair pending — route files are bare placeholders (audited 2026-07-11)
 **SSOT:** [03-routes.md](03-routes.md) · [05-ui-surfaces.md](05-ui-surfaces.md) · [06-admincn-alignment.md](06-admincn-alignment.md)
 
-**Note:** Strategy order was join → account. Phase 2 (`/join`) stays **closed** until explicitly reopened. This phase is **account only**.
+**Note:** Strategy order was join → account. Both route families are reopened,
+but neither placeholder is evidence of completed product wiring. This phase is
+**account only**.
+
+## Current truth
+
+`app/account/page.tsx` renders only `Account`.
+`app/account/[path]/page.tsx` renders `Account` plus the path segment. Neither
+route currently delegates to the account runner or mounts Neon `AccountView`.
 
 ## Goal
 

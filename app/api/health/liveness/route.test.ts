@@ -3,7 +3,7 @@ import { GET } from "@/app/api/health/liveness/route";
 import {
   HEALTH_NO_STORE_HEADERS,
   type HealthEnvelope,
-} from "@/lib/api/health-response";
+} from "@/modules/platform/api/health-response";
 
 describe("GET /api/health/liveness", () => {
   it("returns an alive envelope with no-store cache headers", async () => {

@@ -2,11 +2,11 @@ import { portalCopy } from "@/lib/copy/portal-copy";
 import {
   AUTH_SIGN_IN_HREF,
   ORG_SIGN_IN_HREF,
-} from "@/lib/routing/portal-routes";
+} from "@/modules/platform/routing/portal-routes";
 import {
   isOrgSignInFrom,
   ORG_SIGN_IN_FROM_PARAM,
-} from "@/lib/auth/auth-entry-params";
+} from "@/modules/identity/auth/auth-entry-params";
 
 export type AuthShellCopy = {
   eyebrow: string;

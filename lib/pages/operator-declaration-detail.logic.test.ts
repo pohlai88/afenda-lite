@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { SurveyQuestion } from "@/lib/domain/questions";
-import type { SurveyResponse } from "@/lib/domain/surveys";
+import type { SurveyQuestion } from "@/modules/declarations/domain/questions";
+import type { SurveyResponse } from "@/modules/declarations/domain/surveys";
 import {
   collectSubmissionFileEvidenceIds,
   indexEvidenceRecordsById,

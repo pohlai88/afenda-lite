@@ -4,9 +4,9 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { NeonAuthUIProvider } from "@neondatabase/auth-ui";
-import { authClient } from "@/lib/auth/client";
-import { useNeonAuthUiBaseUrl } from "@/lib/auth/neon-auth-ui-base-url";
-import { neonAuthUiProviderDefaults } from "@/lib/auth/neon-auth-ui.config";
+import { authClient } from "@/modules/identity/auth/client";
+import { useNeonAuthUiBaseUrl } from "@/modules/identity/auth/neon-auth-ui-base-url";
+import { neonAuthUiProviderDefaults } from "@/modules/identity/auth/neon-auth-ui.config";
 
 export function PortalAuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();

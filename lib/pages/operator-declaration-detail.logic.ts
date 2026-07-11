@@ -1,5 +1,5 @@
-import type { EvidenceRecord, SurveyQuestion } from "@/lib/domain/questions";
-import type { SurveyResponse } from "@/lib/domain/surveys";
+import type { EvidenceRecord, SurveyQuestion } from "@/modules/declarations/domain/questions";
+import type { SurveyResponse } from "@/modules/declarations/domain/surveys";
 
 export function collectSubmissionFileEvidenceIds(
   responses: SurveyResponse[],

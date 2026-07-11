@@ -8,7 +8,7 @@ vi.mock("next/navigation", () => ({
   redirect,
 }));
 
-vi.mock("@/lib/routing/portal-session-routing", () => ({
+vi.mock("@/modules/platform/routing/portal-session-routing", () => ({
   getAuthenticatedLandingHref: vi.fn(),
 }));
 
@@ -17,7 +17,7 @@ import {
   redirectInvitationIdToJoin,
   runClientInvitationJoinPage,
 } from "@/lib/entry/client-invitation-entry";
-import { getAuthenticatedLandingHref } from "@/lib/routing/portal-session-routing";
+import { getAuthenticatedLandingHref } from "@/modules/platform/routing/portal-session-routing";
 
 describe("client invitation entry", () => {
   it("redirects authenticated users without invitationId to their landing", async () => {

@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { cloneTradeEventAction } from "@/app/actions/trade";
 import { Button } from "@/components-V2/platform-components/ui/button";
-import { tradeHref, type TradeLocale } from "@/lib/i18n/trade";
+import { tradeHref, type TradeLocale } from "@/modules/trade/i18n/trade";
 
 export function TradeCloneEventButton({
   locale,
@@ -34,7 +34,7 @@ export function TradeCloneEventButton({
             }
             if ("eventId" in result && result.eventId) {
               router.push(
-                tradeHref(locale, `/admin/events/${result.eventId}/setup`),
+                tradeHref(`/admin/events/${result.eventId}/setup`),
               );
             }
           })

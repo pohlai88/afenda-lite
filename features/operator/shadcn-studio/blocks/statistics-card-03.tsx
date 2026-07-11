@@ -3,7 +3,7 @@ import { ChevronDownIcon, ChevronUpIcon } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components-V2/platform-components/ui/avatar";
 import { Badge } from "@/components-V2/platform-components/ui/badge";
 import { Card, CardContent, CardHeader } from "@/components-V2/platform-components/ui/card";
-import { cn } from "@/lib/utils";
+import { cn } from "@/modules/platform/utils";
 
 /** statistics-component-03 — Shadcn Studio KPI card shell. */
 export type StudioStatisticsCardProps = {

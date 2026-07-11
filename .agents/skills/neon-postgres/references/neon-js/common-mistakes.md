@@ -99,7 +99,7 @@ VITE_NEON_DATA_API_URL=https://ep-xxx.apirest.c-2.us-east-2.aws.neon.build/dbnam
 ```typescript
 "use client"; // Required!
 
-import { authClient } from "@/lib/auth/client";
+import { authClient } from "@/modules/identity/auth/client";
 
 function AuthStatus() {
   const session = authClient.useSession();

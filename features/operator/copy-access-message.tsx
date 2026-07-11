@@ -2,8 +2,8 @@
 
 import { useTransition } from "react";
 import { toast } from "sonner";
-import { copyText } from "@/lib/clipboard";
-import { portalCopy } from "@/lib/copy/portal-copy";
+import { copyText } from "@/modules/platform/clipboard";
+import { portalCopy } from "@/modules/declarations/copy/portal-copy";
 import { Button } from "@/components-V2/platform-components/ui/button";
 
 export function CopyAccessMessage({

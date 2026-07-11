@@ -1,9 +1,9 @@
-import { runHealthLivenessGet } from "@/lib/api/health-liveness-route";
+import { runHealthLivenessGet } from "@/modules/platform/api/health-liveness-route";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-/** Lightweight uptime probe — no env validation or dependency checks. */
+/** GET /api/health/liveness — public process uptime probe. */
 export async function GET() {
   return runHealthLivenessGet();
 }

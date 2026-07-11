@@ -2,8 +2,8 @@ import { expect, test } from "@/testing/e2e/playwright-base";
 import {
   HEALTH_LIVENESS_API_HREF,
   HEALTH_READINESS_API_HREF,
-} from "@/lib/api/routes";
-import { portalCopy } from "@/lib/copy/portal-copy";
+} from "@/modules/platform/api/routes";
+import { portalCopy } from "@/modules/declarations/copy/portal-copy";
 import {
   getOperatorCreds,
   operatorSkipMessage,
@@ -60,10 +60,9 @@ test.describe("Portal smoke @smoke", () => {
   test("client portal home renders lynx landing sign in", async ({ page }) => {
     await page.goto("/");
     await expect(page).toHaveURL(/\/$/);
-    await expect(
-      page.getByRole("heading", { name: /lynx morphor/i }),
-    ).toBeVisible();
-    await expect(page.getByRole("link", { name: /^sign in$/i })).toBeVisible();
+    const authLink = page.getByRole("link", { name: /open authentication/i });
+    await expect(authLink).toBeVisible();
+    await expect(authLink).toHaveAttribute("href", /\/auth\/sign-in/);
   });
 
   test("organization login page renders", async ({ page }) => {
@@ -81,7 +80,7 @@ test.describe("Portal smoke @smoke", () => {
   });
 
   test("trade routes require authentication", async ({ page }) => {
-    await page.goto("/trade/vi/events");
+    await page.goto("/trade/events");
     await expect(page).toHaveURL(/\/auth\/sign-in/);
   });
 

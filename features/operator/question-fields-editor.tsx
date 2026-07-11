@@ -2,10 +2,10 @@
 
 import { useMemo, useState } from "react";
 import { ChevronDownIcon, PlusIcon, Trash2Icon } from "lucide-react";
-import type { QuestionType } from "@/lib/question-models";
-import type { QuestionConfig } from "@/lib/domain/survey-package";
-import { SURVEY_EDITOR } from "@/lib/form-constraints";
-import { portalCopy } from "@/lib/copy/portal-copy";
+import type { QuestionType } from "@/modules/declarations/question-models";
+import type { QuestionConfig } from "@/modules/declarations/domain/survey-package";
+import { SURVEY_EDITOR } from "@/modules/platform/form-constraints";
+import { portalCopy } from "@/modules/declarations/copy/portal-copy";
 import { Button } from "@/components-V2/platform-components/ui/button";
 import { Checkbox } from "@/components-V2/platform-components/ui/checkbox";
 import {

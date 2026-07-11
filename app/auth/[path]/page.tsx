@@ -9,11 +9,12 @@ import {
 } from "@/features/auth";
 import { resolveShowVaultHeading } from "@/lib/auth/auth-form-intro-visibility";
 import { resolveAuthShellCopy } from "@/lib/copy/auth-shell-copy";
-import { portalAuthMetadata } from "@/lib/auth-metadata";
+import { portalAuthMetadata } from "@/modules/identity/auth-metadata";
 import { redirectAuthAcceptInvitationToJoin } from "@/lib/entry/client-invitation-entry";
-import { resolvePlaygroundEmbedActive } from "@/lib/playground/playground";
-import { sanitizeReturnToPath } from "@/lib/routing/portal-routes";
-import { getAuthenticatedLandingHref } from "@/lib/routing/portal-session-routing";
+import { resolvePlaygroundEmbedActive } from "@/modules/platform/playground-embed";
+import { resolveNeonAuthViewRedirectTo } from "@/modules/identity/auth/neon-auth-view-redirect";
+import { sanitizeReturnToPath } from "@/modules/platform/routing/portal-routes";
+import { getAuthenticatedLandingHref } from "@/modules/platform/routing/portal-session-routing";
 
 export const dynamic = "force-dynamic";
 export const dynamicParams = false;
@@ -63,14 +64,15 @@ export default async function AuthPage({
   }
 
   const shellCopy = resolveAuthShellCopy({ path, from });
-  const redirectTo = returnTo ?? undefined;
+  const showVaultHeading = resolveShowVaultHeading({ path, from });
+  const redirectTo = resolveNeonAuthViewRedirectTo({ from, returnTo });
   const headerExtra = (
     <AuthPageNotices path={path} from={from} reason={reason} />
   );
   const formIntro = (
     <PortalAuthFormIntro
       {...shellCopy}
-      showVaultHeading={resolveShowVaultHeading({ path, from })}
+      showVaultHeading={showVaultHeading}
     />
   );
 

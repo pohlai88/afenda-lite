@@ -9,21 +9,21 @@ import {
   listQuestionsForSurvey,
   type EvidenceRecord,
   type SurveyQuestion,
-} from "@/lib/domain/questions";
+} from "@/modules/declarations/domain/questions";
 import {
   collectSubmissionFileEvidenceIds,
   mapOperatorDeclarationQuestionDrafts,
   type OperatorDeclarationQuestionDraft,
 } from "@/lib/pages/operator-declaration-detail.logic";
-import { PORTAL_NAME, portalCopy } from "@/lib/copy/portal-copy";
-import { surveyIdParamSchema } from "@/lib/schemas/surveys";
-import { buildSurveyFieldsKey } from "@/lib/domain/survey-form-key";
+import { PORTAL_NAME, portalCopy } from "@/modules/declarations/copy/portal-copy";
+import { surveyIdParamSchema } from "@/modules/declarations/schemas/surveys";
+import { buildSurveyFieldsKey } from "@/modules/declarations/domain/survey-form-key";
 import {
   getSurveyForAdmin,
   listResponsesForSurvey,
   type Survey,
   type SurveyResponse,
-} from "@/lib/domain/surveys";
+} from "@/modules/declarations/domain/surveys";
 
 export type { OperatorDeclarationQuestionDraft } from "@/lib/pages/operator-declaration-detail.logic";
 export {

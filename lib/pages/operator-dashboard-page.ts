@@ -2,10 +2,10 @@ import "server-only";
 
 import type { Metadata } from "next";
 import { cache } from "react";
-import { countPendingClientAssignments } from "@/lib/domain/clients";
+import { countPendingClientAssignments } from "@/modules/declarations/domain/clients";
 import type { OrgDeclarationRow } from "@/lib/pages/operator-dashboard-types";
-import { PORTAL_NAME, portalCopy } from "@/lib/copy/portal-copy";
-import { listSurveysForAdmin, type SurveyWithStats } from "@/lib/domain/surveys";
+import { PORTAL_NAME, portalCopy } from "@/modules/declarations/copy/portal-copy";
+import { listSurveysForAdmin, type SurveyWithStats } from "@/modules/declarations/domain/surveys";
 
 export type OperatorDashboardPageData = {
   declarationRows: OrgDeclarationRow[];

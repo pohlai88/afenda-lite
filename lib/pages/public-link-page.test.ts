@@ -9,12 +9,12 @@ const { getSurveyBySlug, getSurveyByInviteToken, resolvePublicLinkLandingHref, n
     redirect: vi.fn(),
   }));
 
-vi.mock("@/lib/domain/surveys", () => ({
+vi.mock("@/modules/declarations/domain/surveys", () => ({
   getSurveyBySlug,
   getSurveyByInviteToken,
 }));
 
-vi.mock("@/lib/routing/public-link-routing", () => ({
+vi.mock("@/modules/platform/routing/public-link-routing", () => ({
   publicLinkPageRobots: { index: false, follow: false },
   resolvePublicLinkLandingHref,
 }));
@@ -33,9 +33,9 @@ import {
   createCachedPublicLinkSurveyLoader,
   resolvePublicLinkReturnTo,
 } from "@/lib/pages/public-link-page";
-import { openSurveyHref, secureLinkHref } from "@/lib/routing/portal-routes";
-import { openSurveySlugParamSchema, surveyInviteTokenParamSchema } from "@/lib/schemas/surveys";
-import type { Survey } from "@/lib/domain/surveys";
+import { openSurveyHref, secureLinkHref } from "@/modules/platform/routing/portal-routes";
+import { openSurveySlugParamSchema, surveyInviteTokenParamSchema } from "@/modules/declarations/schemas/surveys";
+import type { Survey } from "@/modules/declarations/domain/surveys";
 
 const survey = {
   id: "survey-1",

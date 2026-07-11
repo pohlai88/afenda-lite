@@ -1,10 +1,14 @@
-export const PLAYGROUND_HREF = "/playground" as const;
-export const PLAYGROUND_HITL_REVIEW_HREF = "/playground/hitl-review" as const;
-export const PLAYGROUND_COVERAGE_HREF = "/playground/coverage" as const;
+import {
+  PLAYGROUND_COVERAGE_HREF,
+  PLAYGROUND_HITL_REVIEW_HREF,
+  playgroundScreenHref,
+} from "@/modules/platform/routing/portal-routes";
 
-function playgroundScreenHref(screenId: string) {
-  return `/playground/${screenId}`;
-}
+export {
+  PLAYGROUND_COVERAGE_HREF,
+  PLAYGROUND_HITL_REVIEW_HREF,
+  PLAYGROUND_HREF,
+} from "@/modules/platform/routing/portal-routes";
 
 export const playgroundReviewNavLinks = [
   {
@@ -14,7 +18,7 @@ export const playgroundReviewNavLinks = [
   },
   {
     href: PLAYGROUND_HITL_REVIEW_HREF,
-    label: "HITL checklist",
+    label: "Route review",
     id: "hitl-review",
   },
   {

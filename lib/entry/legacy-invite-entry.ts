@@ -13,7 +13,7 @@ import type { Metadata } from "next";
 import {
   getClientInvitationByToken,
   type ClientInvitation,
-} from "@/lib/domain/clients";
+} from "@/modules/declarations/domain/clients";
 import {
   CLIENT_CHECK_EMAIL_REASON,
   CLIENT_INVITE_EXPIRED_REASON,

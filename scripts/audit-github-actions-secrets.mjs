@@ -47,7 +47,7 @@ function main() {
   } else {
     console.log(`MISSING (${missing.length}): ${missing.join(", ")}`);
     console.log("Fix: npm run sync:github-actions-secrets:production");
-    console.log("Note: E2E_* must match production Neon branch (lib/auth/neon-auth.manifest.json).");
+    console.log("Note: E2E_* must match production Neon branch (modules/identity/auth/neon-auth.manifest.json).");
   }
 
   if (legacyPresent.length > 0) {

@@ -5,7 +5,7 @@ import { playgroundScreens } from "@/lib/playground/playground";
 import {
   OPERATOR_DASHBOARD_HREF,
   playgroundScreenHref,
-} from "@/lib/routing/portal-routes";
+} from "@/modules/platform/routing/portal-routes";
 
 /** Shared page handler for `/playground`. */
 export function runPlaygroundIndexPage(): never {
