@@ -36,6 +36,7 @@ Env: `npm run env:compose` before E2E. Identities: see `AGENTS.md` / RUNTIME —
 | Area | Tests |
 |------|-------|
 | Session / deny | `modules/trade/auth/trade-session.test.ts` |
+| P1 AC permission gates | `modules/trade/auth/trade-p1-ac-gates.test.ts` (G1–G6 / G8–G9 codes) |
 | Access | `modules/trade/domain/access.test.ts` |
 | RBAC catalog / roles | `modules/trade/domain/rbac.test.ts` · `rbac-audit.test.ts` |
 | Core trade domain | `modules/trade/domain/trade.test.ts` |

@@ -23,19 +23,19 @@ Locale: all actions take `locale` first; UI passes `TRADE_UI_LOCALE` from `featu
 | F-EVT-03 setup | `saveTradeEventSetupAction` | admin / setup | `/trade/admin/events/[eventId]/setup` | `trade-setup-forms` |
 | F-EVT-04 open/close | `openTradeEventAction` · `closeTradeEventAction` | `event.open_close` | setup | `TradeEventStatusActions` |
 | F-EVT-06 / G7 | `cloneTradeEventAction` · `ensurePigletTemplateAction` · `activateScheduledTradeEventAction` | admin / `event.open_close` | setup / admin | `trade-clone-button` · setup forms |
-| F-SUP-01 / G2 | `saveTradeProductAction` (supply fields) | admin + `supply.manage` intent | setup | `TradeProductForm` |
-| F-FLD-01 / G5 | `saveTradeFieldDefAction` | admin | setup | `TradeFieldDefForm` |
-| F-PRI-01 / G1 | `importPriorityCsvAction` (+ list via RSC) | admin / `priority.manage` | setup | `TradePriorityImportForm` |
+| F-SUP-01 / G2 | `saveTradeProductAction` (supply fields) | **`supply.manage`** | setup | `TradeProductForm` |
+| F-FLD-01 / G5 | `saveTradeFieldDefAction` | **`custom_field.manage`** | setup | `TradeFieldDefForm` |
+| F-PRI-01 / G1 | `importPriorityCsvAction` (+ list via RSC) | **`priority.manage`** | setup | `TradePriorityImportForm` |
 | F-ORD-01..04 | `submitTradeOrderAction` · RSC lists | `order.create` / view scopes | `/trade/events/[eventId]/order` · `/trade/my-orders` | `trade-order-form` |
 | F-ORD-05 / G4 | `completeTradeOrderAction` | admin or `pickup.manage` path — see action body | my-orders / allocation | page forms · `trade-allocation-controls` |
 | F-XFR-01 / G3 | `requestTransferAction` | `transfer.request` | `/trade/my-orders` | `trade-transfer-forms` |
-| F-XFR-02 / G3 | `approveTransferAction` · `rejectTransferAction` | admin | my-orders / admin | `trade-transfer-forms` |
-| F-ALC-01..02 | `previewTradeAllocationAction` · `runTradeAllocationAction` | admin / `allocation.run` | `/trade/admin/events/[eventId]/allocation` | `trade-allocation-controls` |
+| F-XFR-02 / G3 | `approveTransferAction` · `rejectTransferAction` | **`transfer.approve`** | my-orders / admin | `trade-transfer-forms` |
+| F-ALC-01..02 | `previewTradeAllocationAction` · `runTradeAllocationAction` | **`allocation.preview`** / **`allocation.run`** | `/trade/admin/events/[eventId]/allocation` | `trade-allocation-controls` |
 | F-ALC-03 / G9 | `manualAdjustTradeOrderAction` | **`allocation.override`** (sensitive) | allocation | `trade-allocation-controls` |
-| F-AUD-01 / G6 | RSC `listAuditForEvent` | `audit.view` (enforce in UI/action if wrapped) | setup | audit section on setup page |
+| F-AUD-01 / G6 | RSC `listAuditForEvent` | **`audit.view`** (setup panel via `hasTradeEventManagePermission`) | setup | audit section on setup page |
 | F-ADM-01 | `addSalesMemberAction` | admin | `/trade/admin/rbac` | `trade-sales-member-form` |
 | F-ADM-02 | `seedTradeRbacCatalogAction` · `createTradeRoleAction` · `setTradeRolePermissionsAction` · `assignTradeRoleAction` · … | **`role.manage`** (sensitive) | rbac | `trade-rbac-admin` |
-| F-ADM-03 / G8 | `exportOrdersCsvAction` · `exportEventSummaryCsvAction` · `exportAllocationCsvAction` | admin / `export.orders` | setup | `trade-export-panel` |
+| F-ADM-03 / G8 | `exportOrdersCsvAction` · `exportEventSummaryCsvAction` · `exportAllocationCsvAction` | **`export.orders`** | setup | `trade-export-panel` |
 
 ---
 

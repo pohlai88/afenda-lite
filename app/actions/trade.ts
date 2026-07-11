@@ -414,7 +414,7 @@ export async function saveTradeProductAction(
   const gatedLocale = gateTradeLocale(locale);
   if (typeof gatedLocale === "object") return gatedLocale;
   
-  const admin = await requireTradeAdmin();
+  const access = await requireTradePermission("supply.manage", { eventId });
   const event = await getEventById(eventId);
   if (!event) return { error: "not_found" };
 
@@ -454,8 +454,8 @@ export async function saveTradeProductAction(
     await recordHotSalesAudit({
       eventId,
       action: "product.final_qty_updated",
-      actorId: admin.userId,
-      actorRole: "admin",
+      actorId: access.userId,
+      actorRole: access.isAdmin ? "admin" : "ops",
       newValue: { productId: id, finalConfirmedQuantity },
       reason: "final_confirmed_quantity_update",
     });
@@ -492,8 +492,8 @@ export async function saveTradeProductAction(
     await recordHotSalesAudit({
       eventId,
       action: "product.final_qty_updated",
-      actorId: admin.userId,
-      actorRole: "admin",
+      actorId: access.userId,
+      actorRole: access.isAdmin ? "admin" : "ops",
       newValue: { productId: id, finalConfirmedQuantity },
     });
     revalidateTrade(gatedLocale, eventId);
@@ -534,7 +534,7 @@ export async function saveTradeFieldDefAction(
   const gatedLocale = gateTradeLocale(locale);
   if (typeof gatedLocale === "object") return gatedLocale;
   
-  const admin = await requireTradeAdmin();
+  const access = await requireTradePermission("custom_field.manage", { eventId });
   const event = await getEventById(eventId);
   if (!event) return { error: "not_found" };
 
@@ -580,8 +580,8 @@ export async function saveTradeFieldDefAction(
   await recordHotSalesAudit({
     eventId,
     action: "field_def.saved",
-    actorId: admin.userId,
-    actorRole: "admin",
+    actorId: access.userId,
+    actorRole: access.isAdmin ? "admin" : "ops",
     newValue: { fieldKey },
   });
 
@@ -597,7 +597,7 @@ export async function importPriorityCsvAction(
   const gatedLocale = gateTradeLocale(locale);
   if (typeof gatedLocale === "object") return gatedLocale;
   
-  const admin = await requireTradeAdmin();
+  const access = await requireTradePermission("priority.manage", { eventId });
 
   const lines = csvText.trim().split(/\r?\n/).slice(1);
   const rows = lines
@@ -614,8 +614,8 @@ export async function importPriorityCsvAction(
   await recordHotSalesAudit({
     eventId,
     action: "priority.imported",
-    actorId: admin.userId,
-    actorRole: "admin",
+    actorId: access.userId,
+    actorRole: access.isAdmin ? "admin" : "ops",
     newValue: { count: rows.length },
   });
 
@@ -817,7 +817,7 @@ export async function previewTradeAllocationAction(
   const gatedLocale = gateTradeLocale(locale);
   if (typeof gatedLocale === "object") return gatedLocale;
   
-  await requireTradeAdmin();
+  await requireTradePermission("allocation.preview", { eventId });
 
   const [products, orders] = await Promise.all([
     listProductsForEvent(eventId),
@@ -951,21 +951,24 @@ export async function approveTransferAction(
   const gatedLocale = gateTradeLocale(locale);
   if (typeof gatedLocale === "object") return gatedLocale;
   
-  const admin = await requireTradeAdmin();
   const order = await getOrderById(orderId);
   if (!order) return { error: "not_found" };
+
+  const access = await requireTradePermission("transfer.approve", {
+    eventId: order.eventId,
+  });
 
   await approveTransfer({
     orderId,
     transferId,
-    approvedBy: admin.userId,
+    approvedBy: access.userId,
   });
   await recordHotSalesAudit({
     eventId: order.eventId,
     orderId,
     action: "transfer.approved",
-    actorId: admin.userId,
-    actorRole: "admin",
+    actorId: access.userId,
+    actorRole: access.isAdmin ? "admin" : "ops",
     newValue: { transferId },
   });
   notifyTradeStakeholder(gatedLocale, {
@@ -986,21 +989,24 @@ export async function rejectTransferAction(
   const gatedLocale = gateTradeLocale(locale);
   if (typeof gatedLocale === "object") return gatedLocale;
   
-  const admin = await requireTradeAdmin();
   const order = await getOrderById(orderId);
   if (!order) return { error: "not_found" };
+
+  const access = await requireTradePermission("transfer.approve", {
+    eventId: order.eventId,
+  });
 
   await rejectTransfer({
     orderId,
     transferId,
-    approvedBy: admin.userId,
+    approvedBy: access.userId,
   });
   await recordHotSalesAudit({
     eventId: order.eventId,
     orderId,
     action: "transfer.rejected",
-    actorId: admin.userId,
-    actorRole: "admin",
+    actorId: access.userId,
+    actorRole: access.isAdmin ? "admin" : "ops",
     newValue: { transferId },
   });
   notifyTradeStakeholder(gatedLocale, {
@@ -1019,7 +1025,7 @@ export async function exportOrdersCsvAction(locale: string, eventId: string) {
   const gatedEventId = gateTradeEventId(eventId);
   if (typeof gatedEventId === "object") return gatedEventId;
 
-  await requireTradeAdmin();
+  await requireTradePermission("export.orders", { eventId: gatedEventId });
   const orders = await listOrdersForEvent(gatedEventId);
   return ordersToCsv(orders);
 }
@@ -1030,7 +1036,7 @@ export async function exportEventSummaryCsvAction(locale: string, eventId: strin
   const gatedEventId = gateTradeEventId(eventId);
   if (typeof gatedEventId === "object") return gatedEventId;
 
-  await requireTradeAdmin();
+  await requireTradePermission("export.orders", { eventId: gatedEventId });
   const [event, products, orders] = await Promise.all([
     getEventById(gatedEventId),
     listProductsForEvent(gatedEventId),
@@ -1046,7 +1052,7 @@ export async function exportAllocationCsvAction(locale: string, eventId: string)
   const gatedEventId = gateTradeEventId(eventId);
   if (typeof gatedEventId === "object") return gatedEventId;
 
-  await requireTradeAdmin();
+  await requireTradePermission("export.orders", { eventId: gatedEventId });
   const orders = await listOrdersForEvent(gatedEventId);
   return allocationToCsv(orders);
 }

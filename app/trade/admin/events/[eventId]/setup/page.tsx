@@ -10,6 +10,8 @@ import {
   TradeProductForm,
 } from "@/features/trade/trade-setup-forms";
 import { TRADE_UI_LOCALE } from "@/features/trade/trade-ui-locale";
+import { hasTradeEventManagePermission } from "@/modules/trade/auth/trade-phase2b";
+import { requireTradeAccess } from "@/modules/trade/auth/trade-session";
 import {
   getEventById,
   listAuditForEvent,
@@ -25,14 +27,21 @@ type Props = { params: Promise<{ eventId: string }> };
 
 export default async function TradeEventSetupPage({ params }: Props) {
   const { eventId } = await params;
+  const access = await requireTradeAccess();
   const event = await getEventById(eventId);
   if (!event) notFound();
+
+  const canViewAudit = await hasTradeEventManagePermission(
+    access,
+    "audit.view",
+    eventId,
+  );
 
   const [products, fieldDefs, priorities, audit] = await Promise.all([
     listProductsForEvent(eventId),
     listFieldDefsForEvent(eventId),
     listPrioritiesForEvent(eventId),
-    listAuditForEvent(eventId),
+    canViewAudit ? listAuditForEvent(eventId) : Promise.resolve([]),
   ]);
 
   return (
@@ -126,17 +135,19 @@ export default async function TradeEventSetupPage({ params }: Props) {
         <TradeExportPanel locale={TRADE_UI_LOCALE} eventId={eventId} />
       </section>
 
-      <section className="space-y-2">
-        <h2 className="font-medium">Audit</h2>
-        <ul className="text-muted-foreground max-h-64 overflow-auto text-xs">
-          {audit.map((row) => (
-            <li key={String(row.id)}>
-              {String(row.created_at)} · {String(row.action)} ·{" "}
-              {String(row.actor_id ?? "")}
-            </li>
-          ))}
-        </ul>
-      </section>
+      {canViewAudit ? (
+        <section className="space-y-2">
+          <h2 className="font-medium">Audit</h2>
+          <ul className="text-muted-foreground max-h-64 overflow-auto text-xs">
+            {audit.map((row) => (
+              <li key={String(row.id)}>
+                {String(row.created_at)} · {String(row.action)} ·{" "}
+                {String(row.actor_id ?? "")}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
     </main>
   );
 }
