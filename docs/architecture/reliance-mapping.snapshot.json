@@ -1,11 +1,11 @@
 {
   "version": "1.0.0",
-  "generatedAt": "2026-07-11T22:34:55.357Z",
+  "generatedAt": "2026-07-11T22:42:52.652Z",
   "summary": {
     "surfaces": {
       "total": 26,
-      "aligned": 26,
-      "drift": 0
+      "aligned": 24,
+      "drift": 2
     },
     "actions": {
       "total": 38,
@@ -830,6 +830,8 @@
           "domain:surveys"
         ],
         "discovered": [
+          "domain:auth",
+          "domain:clients",
           "domain:surveys"
         ],
         "aligned": [
@@ -837,20 +839,27 @@
           "domain:surveys"
         ],
         "declaredOnly": [],
-        "discoveredOnly": [],
+        "discoveredOnly": [
+          "domain:auth",
+          "domain:clients"
+        ],
         "inherited": [
           "domain:open-link-entry"
         ],
-        "status": "aligned"
+        "status": "drift"
       },
       "evidence": {
         "entryFiles": [
           "app/survey/[slug]/page.tsx",
-          "features/auth/entry/open-link-entry.ts"
+          "features/auth/entry/open-link-entry.ts",
+          "features/auth/public-link-page.ts",
+          "features/auth/public-link-routing.ts"
         ],
         "scannedFiles": [
           "app/survey/[slug]/page.tsx",
-          "features/auth/entry/open-link-entry.ts"
+          "features/auth/entry/open-link-entry.ts",
+          "features/auth/public-link-page.ts",
+          "features/auth/public-link-routing.ts"
         ]
       }
     },
@@ -864,6 +873,8 @@
           "domain:surveys"
         ],
         "discovered": [
+          "domain:auth",
+          "domain:clients",
           "domain:surveys"
         ],
         "aligned": [
@@ -871,20 +882,27 @@
           "domain:surveys"
         ],
         "declaredOnly": [],
-        "discoveredOnly": [],
+        "discoveredOnly": [
+          "domain:auth",
+          "domain:clients"
+        ],
         "inherited": [
           "domain:secure-link-entry"
         ],
-        "status": "aligned"
+        "status": "drift"
       },
       "evidence": {
         "entryFiles": [
           "app/f/[token]/page.tsx",
-          "features/auth/entry/secure-link-entry.ts"
+          "features/auth/entry/secure-link-entry.ts",
+          "features/auth/public-link-page.ts",
+          "features/auth/public-link-routing.ts"
         ],
         "scannedFiles": [
           "app/f/[token]/page.tsx",
-          "features/auth/entry/secure-link-entry.ts"
+          "features/auth/entry/secure-link-entry.ts",
+          "features/auth/public-link-page.ts",
+          "features/auth/public-link-routing.ts"
         ]
       }
     },
