@@ -281,40 +281,76 @@ export async function updateSurvey(input: {
   title: string;
   question: string;
   metadata?: SurveyMetadata;
+  organizationId?: string;
 }) {
   const metadata = input.metadata;
-  const result = await pool.query(
-    `UPDATE surveys
-     SET title = $2,
-         question = $3,
-         reference_number = $4,
-         case_number = $5,
-         effective_date = $6,
-         submit_before = $7,
-         surveyor_name = $8,
-         surveyor_org = $9,
-         surveyee_individual = $10,
-         surveyee_org = $11,
-         purpose = $12,
-         categories = $13
-     WHERE id = $1
-     RETURNING ${SURVEY_SELECT_COLUMNS}`,
-    [
-      input.id,
-      input.title.trim(),
-      input.question.trim(),
-      metadata?.referenceNumber ?? null,
-      metadata?.caseNumber ?? null,
-      metadata?.effectiveDate?.toISOString().slice(0, 10) ?? null,
-      metadata?.submitBefore?.toISOString() ?? null,
-      metadata?.surveyorName ?? null,
-      metadata?.surveyorOrg ?? null,
-      metadata?.surveyeeIndividual ?? null,
-      metadata?.surveyeeOrg ?? null,
-      metadata?.purpose ?? null,
-      metadata?.categories ?? [],
-    ],
-  );
+  const result = input.organizationId
+    ? await pool.query(
+        `UPDATE surveys
+         SET title = $2,
+             question = $3,
+             reference_number = $4,
+             case_number = $5,
+             effective_date = $6,
+             submit_before = $7,
+             surveyor_name = $8,
+             surveyor_org = $9,
+             surveyee_individual = $10,
+             surveyee_org = $11,
+             purpose = $12,
+             categories = $13
+         WHERE id = $1
+           AND (organization_id IS NULL OR organization_id = $14)
+         RETURNING ${SURVEY_SELECT_COLUMNS}`,
+        [
+          input.id,
+          input.title.trim(),
+          input.question.trim(),
+          metadata?.referenceNumber ?? null,
+          metadata?.caseNumber ?? null,
+          metadata?.effectiveDate?.toISOString().slice(0, 10) ?? null,
+          metadata?.submitBefore?.toISOString() ?? null,
+          metadata?.surveyorName ?? null,
+          metadata?.surveyorOrg ?? null,
+          metadata?.surveyeeIndividual ?? null,
+          metadata?.surveyeeOrg ?? null,
+          metadata?.purpose ?? null,
+          metadata?.categories ?? [],
+          input.organizationId,
+        ],
+      )
+    : await pool.query(
+        `UPDATE surveys
+         SET title = $2,
+             question = $3,
+             reference_number = $4,
+             case_number = $5,
+             effective_date = $6,
+             submit_before = $7,
+             surveyor_name = $8,
+             surveyor_org = $9,
+             surveyee_individual = $10,
+             surveyee_org = $11,
+             purpose = $12,
+             categories = $13
+         WHERE id = $1
+         RETURNING ${SURVEY_SELECT_COLUMNS}`,
+        [
+          input.id,
+          input.title.trim(),
+          input.question.trim(),
+          metadata?.referenceNumber ?? null,
+          metadata?.caseNumber ?? null,
+          metadata?.effectiveDate?.toISOString().slice(0, 10) ?? null,
+          metadata?.submitBefore?.toISOString() ?? null,
+          metadata?.surveyorName ?? null,
+          metadata?.surveyorOrg ?? null,
+          metadata?.surveyeeIndividual ?? null,
+          metadata?.surveyeeOrg ?? null,
+          metadata?.purpose ?? null,
+          metadata?.categories ?? [],
+        ],
+      );
 
   if (!result.rows[0]) {
     return null;
@@ -323,11 +359,16 @@ export async function updateSurvey(input: {
   return mapSurvey(result.rows[0]);
 }
 
-export async function deleteSurvey(id: string) {
-  const result = await pool.query(
-    `DELETE FROM surveys WHERE id = $1 RETURNING id`,
-    [id],
-  );
+export async function deleteSurvey(id: string, organizationId?: string) {
+  const result = organizationId
+    ? await pool.query(
+        `DELETE FROM surveys
+         WHERE id = $1
+           AND (organization_id IS NULL OR organization_id = $2)
+         RETURNING id`,
+        [id, organizationId],
+      )
+    : await pool.query(`DELETE FROM surveys WHERE id = $1 RETURNING id`, [id]);
 
   return Boolean(result.rows[0]);
 }

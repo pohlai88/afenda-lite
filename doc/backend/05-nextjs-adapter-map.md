@@ -6,7 +6,7 @@ Maps Hexagonal roles to **App Router primitives only**. No second BFF framework.
 
 | Hexagonal role | Next.js primitive | Optimize |
 |----------------|-------------------|----------|
-| Driving adapter (query) | RSC `page.tsx` → `lib/pages` / `lib/entry` / features | Call `modules/*/domain` directly |
+| Driving adapter (query) | RSC `page.tsx` → `features/*` runners | Call `modules/*/domain` directly |
 | Driving adapter (command) | Server Action (`'use server'` in `app/actions`) | Zod + `require*Session` + `revalidatePath` / `revalidateTag` |
 | Driving adapter (HTTP) | `app/api/**/route.ts` | Health, Neon Auth proxy, draft XHR, external clients |
 | Inbound DTO validation | `modules/*/schemas` | Validate once at adapter |

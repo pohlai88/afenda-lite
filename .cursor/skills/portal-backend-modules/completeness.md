@@ -19,23 +19,24 @@ Plan authority: this skill + `doc/backend/` + [closed-scope-register](../../../d
 | Absorb entry / org-admin / playground runners | → `features/*` | Done | **Done** |
 | Platform RBAC catalog + domain + schemas | ADR-002 | Wired | **Done** |
 | Org-admin Roles / Permissions UI | `/dashboard/roles` `/permissions` | Wired | **Done** |
-| Declarations / FFT `organization_id` scope | Tenancy | Code landed | **Done (code)** |
-| Apply migrations on Neon | Ops | `npm run db:migrate` when promoting | **Ops pending** |
+| Declarations / FFT `organization_id` scope | Tenancy | Code landed | **Done** |
+| Apply migrations `025`/`026` on Neon | Ops | Applied on `br-tiny-hill-ao82jp6f` (`schema_migrations` + `organization_id` columns) | **Done** |
 | `/client` workspace restore | Closed + reopen checklist | Stubs only | **Closed (registered)** |
 | FFT P3 flag promotion | gate-register | Prod flags off | **Closed (registered)** |
 | SaaS billing / 2FA product | Deferred chrome | Coming-soon + plan defaults | **Intentional (registered)** |
 
 ## Stabilization (latest)
 
-- Closed-scope register: `doc/architecture/closed-scope-register.md`
-- Public-link landing moved out of Platform into `features/auth` (no Platform→Declarations compose)
-- Governance drift green (reliance 26/26 · route coverage 36/36)
+- Neon tenancy migrations `025`/`026` verified applied on production branch
+- Doc paths: `lib/entry` → `features/auth/entry` in routes/surfaces SSOT
+- Closed-scope items remain registered (no reopen)
+- Governance: reliance 26/26 · actions 38/38 · route coverage 36/36
 
 ## Verify
 
 ```bash
 npx tsc --noEmit
-npm run test:unit -- features/auth/public-link-routing features/auth/public-link-page modules/platform/governance
 npm run check:reliance-mapping-drift
 npm run check:route-coverage-drift
+# Neon: schema_migrations includes 025_platform_rbac_tenancy.sql + 026_fft_organization_id.sql
 ```

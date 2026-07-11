@@ -10,16 +10,16 @@ Each product surface: journey phase, route, rebuild owner module, data adapter.
 | auth-forgot-password | pre-login | `/auth/forgot-password` | `features/auth` | Neon UI | Neon |
 | auth-reset-password | pre-login | `/auth/reset-password` | `features/auth` | Neon UI | Neon |
 | auth-email-otp | pre-login | `/auth/email-otp` | `features/auth` | Neon UI | Neon |
-| org-login | pre-login | `/org/login` | `lib/entry` + auth | session redirect | — |
+| org-login | pre-login | `/org/login` | `features/auth/entry` + auth | session redirect | — |
 | client-login | pre-login | `/client/login` | `features/auth` / entry | — | Neon |
 | public-survey | pre-login | `/survey/[slug]` | redirect-only page runner | domain | — |
 | public-secure-link | pre-login | `/f/[token]` | redirect-only page runner | domain | — |
-| legacy-invite | pre-login | `/invite/[token]` | `lib/entry` | redirect | — |
+| legacy-invite | pre-login | `/invite/[token]` | `features/auth/entry` | redirect | — |
 | client-join | join | `/join` | `features/auth` invitation | Neon | Neon accept |
-| client-onboarding | onboarding | `/client/onboarding` | `features/client-workspace` TBD | domain | `saveClientOnboardingAction` |
-| client-home | client-post-login | `/client` | client-workspace TBD | domain | ACK Action |
-| client-profile | client-post-login | `/client/profile` | client-workspace TBD | domain | profile Action |
-| client-declare | client-post-login | `/client/declare/[id]` | client-workspace TBD | domain | draft API + submit Action |
+| client-onboarding | onboarding | `/client/onboarding` | stub only — [closed-scope-register](../architecture/closed-scope-register.md) | — | closed |
+| client-home | client-post-login | `/client` | stub only — closed-scope-register | — | closed |
+| client-profile | client-post-login | `/client/profile` | stub only — closed-scope-register | — | closed |
+| client-declare | client-post-login | `/client/declare/[assignmentId]` | stub only — closed-scope-register | — | closed |
 | admin-dashboard | declarations module | `/dashboard` | `portal-views/organization-admin-declarations-dashboard` | domain | create/delete Actions (admin mutations) |
 | admin-clients | declarations module | `/dashboard/clients` | `portal-views/organization-admin-clients-list` | domain | invite/delete Actions (admin mutations) |
 | admin-declaration-detail | declarations module | `/dashboard/[declarationId]` | `portal-views/organization-admin-declaration-detail` | domain | survey/share Actions (admin mutations) |
@@ -39,12 +39,13 @@ Entitlement resolver: `modules/platform/shell/access.ts`. Org admin ≠ Feed Far
 
 ## Client workspace decision
 
-Until an explicit rebuild slice chooses:
+**Closed (registered)** — see [closed-scope-register](../architecture/closed-scope-register.md).  
+Holding stubs under `app/client/(workspace)/**` only. Do not create `features/client-workspace/` or resurrect deleted root `components/client/*` until reopen.
+
+On reopen, choose one owner:
 
 1. `features/client-workspace/` (own shell), **or**  
 2. `components-V2/platform-views/portal-views/client-*` (AdminCN chrome)
-
-Do not resurrect deleted root `components/client/*`.
 
 ## Operator chrome
 

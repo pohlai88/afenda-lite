@@ -2,7 +2,13 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { requireAdminSession, requireClientSession } from "@/modules/identity/auth/session";
+import { requireClientSession } from "@/modules/identity/auth/session";
+import { requirePlatformOperatorSession } from "@/modules/identity/auth/platform-operator-session";
+import { isAdminSession } from "@/modules/identity/admin";
+import {
+  requireAnyPlatformPermission,
+  requirePlatformPermission,
+} from "@/modules/identity/domain/platform-rbac-access";
 import { recordAuditEvent } from "@/modules/platform/audit";
 import { auth } from "@/modules/identity/auth/server";
 import { parseClientOnboardingFormData } from "@/modules/declarations/client-onboarding.server";
@@ -46,7 +52,6 @@ import {
 import { getSurveyBySlug, getSurveyForAdmin } from "@/modules/declarations/domain/surveys";
 import { submitClientDeclaration } from "@/modules/declarations/domain/survey-submission";
 import { formString } from "@/modules/declarations/server-actions/form-data";
-import { requirePlatformPermission } from "@/modules/identity/domain/platform-rbac-access";
 
 export async function saveClientOnboardingAction(formData: FormData) {
   // Incomplete clients must reach this action — do not require onboarding.
@@ -253,7 +258,9 @@ export async function saveClientDeclarationDraftAction(input: {
 }
 
 export async function issueClientInviteAction(formData: FormData) {
-  const session = await requireAdminSession();
+  const session = await requirePlatformOperatorSession({
+    anyOf: ["clients.invite"],
+  });
 
   return runLoggedAction(
     "issueClientInviteAction",
@@ -276,7 +283,7 @@ export async function issueClientInviteAction(formData: FormData) {
       const { organizationId, check } = await requirePlatformPermission({
         userId: session.user.id,
         code: "clients.invite",
-        isNeonAdmin: true,
+        isNeonAdmin: isAdminSession(session),
       });
       if (!check.allowed) {
         return { error: portalCopy.accessDenied.description };
@@ -339,12 +346,23 @@ export async function issueClientInviteAction(formData: FormData) {
 }
 
 export async function removeClientRegistrationAction(formData: FormData) {
-  const session = await requireAdminSession();
+  const session = await requirePlatformOperatorSession({
+    anyOf: ["clients.invite"],
+  });
 
   return runLoggedAction(
     "removeClientRegistrationAction",
     session.user.id,
     async () => {
+      const { check } = await requirePlatformPermission({
+        userId: session.user.id,
+        code: "clients.invite",
+        isNeonAdmin: isAdminSession(session),
+      });
+      if (!check.allowed) {
+        return { error: portalCopy.accessDenied.description };
+      }
+
       const parsed = parseSchema(removeClientRegistrationSchema, {
         invitationId: formString(formData, "invitationId"),
       });
@@ -387,12 +405,23 @@ export async function removeClientRegistrationAction(formData: FormData) {
 }
 
 export async function deleteClientAssignmentAction(formData: FormData) {
-  const session = await requireAdminSession();
+  const session = await requirePlatformOperatorSession({
+    anyOf: ["clients.invite", "declarations.manage"],
+  });
 
   return runLoggedAction(
     "deleteClientAssignmentAction",
     session.user.id,
     async () => {
+      const gate = await requireAnyPlatformPermission({
+        userId: session.user.id,
+        codes: ["clients.invite", "declarations.manage"],
+        isNeonAdmin: isAdminSession(session),
+      });
+      if (!gate.check.allowed) {
+        return { error: portalCopy.accessDenied.description };
+      }
+
       const parsed = parseSchema(deleteClientAssignmentSchema, {
         assignmentId: formString(formData, "assignmentId"),
       });

@@ -2,6 +2,8 @@ import "server-only";
 
 import { isAdminSession } from "@/modules/identity/admin";
 import { getAuthSession } from "@/modules/identity/auth/get-session";
+import { requireAnyPlatformPermission } from "@/modules/identity/domain/platform-rbac-access";
+import { resolvePlatformOrgContext } from "@/modules/identity/domain/platform-rbac-access";
 import { isFftRbacEnabled } from "@/modules/platform/env/accessors";
 import { isSalesMemberActive } from "@/modules/fft/domain/access";
 import {
@@ -28,8 +30,9 @@ export type ShellAccess = {
 export async function hasFftModuleAccess(input: {
   userId: string;
   email: string;
+  organizationId?: string;
 }): Promise<boolean> {
-  const members = await listSalesMembers();
+  const members = await listSalesMembers(input.organizationId);
   if (isSalesMemberActive(members, input.email)) {
     return true;
   }
@@ -50,13 +53,39 @@ export async function resolveShellAccess(): Promise<ShellAccess | null> {
     return null;
   }
 
+  const neonAdmin = isAdminSession(session);
+  const org = await resolvePlatformOrgContext({
+    userId: user.id,
+    ensureOrgAdminAssignment: neonAdmin,
+  });
+
+  const operator = neonAdmin
+    ? { check: { allowed: true as const } }
+    : await requireAnyPlatformPermission({
+        userId: user.id,
+        codes: [
+          "declarations.read",
+          "declarations.manage",
+          "org.users.manage",
+          "org.roles.manage",
+          "clients.invite",
+        ],
+        isNeonAdmin: false,
+      });
+
   const modules: ShellModuleId[] = ["declarations"];
-  if (await hasFftModuleAccess({ userId: user.id, email: user.email })) {
+  if (
+    await hasFftModuleAccess({
+      userId: user.id,
+      email: user.email,
+      organizationId: org.organizationId,
+    })
+  ) {
     modules.push("fft");
   }
 
   return {
     modules,
-    isOrgAdmin: isAdminSession(session),
+    isOrgAdmin: neonAdmin || operator.check.allowed,
   };
 }

@@ -5,7 +5,8 @@ import { useTransition, useState } from "react";
 
 type ActionResult = {
   error?: string;
-  ok?: true;
+  ok?: boolean;
+  message?: string;
   removed?: number;
   banned?: number;
   created?: number;
@@ -16,7 +17,11 @@ type ActionResult = {
 export function getActionError(
   result: ActionResult | null | undefined,
 ): string | null {
-  if (result && typeof result.error === "string" && result.error.length > 0) {
+  if (!result) return null;
+  if (result.ok === false && typeof result.message === "string" && result.message) {
+    return result.message;
+  }
+  if (typeof result.error === "string" && result.error.length > 0) {
     return result.error;
   }
   return null;

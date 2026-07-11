@@ -1,6 +1,6 @@
 # Organization admin post-login — phase-1 task breakdown
 
-**Status:** reopened + restored 2026-07-11 (after greenfield wipe; loaders under `lib/pages`, UI under `features/organization-admin` + portal-views)  
+**Status:** reopened + restored 2026-07-11 (loaders under `features/organization-admin/`, UI under portal-views + feature leaf widgets)  
 **Phase ID:** `organization-admin-post-login` (formerly `operator-post-login`; IAM vocabulary is organization admin)  
 **SSOT:** [03-routes.md](03-routes.md) · [02-folder-map.md](02-folder-map.md) · [04-bff-and-data.md](04-bff-and-data.md) · [06-admincn-alignment.md](06-admincn-alignment.md)
 
@@ -70,7 +70,7 @@ Restore `/dashboard`, `/dashboard/clients`, `/dashboard/[declarationId]` with re
 - Three operator routes render with real loaders
 - Zero `@/components/` imports under portal-views + `features/operator` + `app/dashboard`
 - No resurrected root `components/` directory
-- Existing operator `lib/pages` tests green
+- Existing organization-admin feature unit tests green
 - Decision tree respected; no new REST
 - No join/client/fft/account/playground changes
 
@@ -82,4 +82,4 @@ Restore `/dashboard`, `/dashboard/clients`, `/dashboard/[declarationId]` with re
 - [ ] No Guardian / PA / owl / brand `public/` restore
 - [ ] No new REST for dashboard reads
 - [ ] `rg "@/components/" components-V2/platform-views/portal-views features/operator app/dashboard` is empty
-- [ ] Operator `lib/pages` unit tests pass
+- [ ] Organization-admin feature unit tests pass

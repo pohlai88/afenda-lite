@@ -25,12 +25,12 @@ import {
 import { isFftErpSyncFeatureActive } from "@/modules/fft/auth/fft-phase2d";
 import { requireFftAccess } from "@/modules/fft/auth/fft-session";
 import {
-  getEventById,
   listAuditForEvent,
   listFieldDefsForEvent,
   listPrioritiesForEvent,
   listProductsForEvent,
 } from "@/modules/fft/domain/store";
+import { getFftEventForOrganization } from "@/features/fft/fft-organization-context";
 import { fftHref } from "@/modules/fft/i18n/fft-i18n";
 
 export const dynamic = "force-dynamic";
@@ -40,7 +40,7 @@ type Props = { params: Promise<{ eventId: string }> };
 export default async function FftEventSetupPage({ params }: Props) {
   const { eventId } = await params;
   const access = await requireFftAccess();
-  const event = await getEventById(eventId);
+  const event = await getFftEventForOrganization(eventId);
   if (!event) notFound();
 
   const canViewAudit = await hasFftEventManagePermission(

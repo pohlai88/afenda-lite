@@ -2,10 +2,10 @@ import { notFound } from "next/navigation";
 import { FftOrderForm } from "@/features/fft/fft-order-form";
 import { FFT_UI_LOCALE } from "@/features/fft/fft-ui-locale";
 import {
-  getEventById,
   listFieldDefsForEvent,
   listProductsForEvent,
 } from "@/modules/fft/domain/store";
+import { getFftEventForOrganization } from "@/features/fft/fft-organization-context";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +13,7 @@ type Props = { params: Promise<{ eventId: string }> };
 
 export default async function FftEventOrderPage({ params }: Props) {
   const { eventId } = await params;
-  const event = await getEventById(eventId);
+  const event = await getFftEventForOrganization(eventId);
   if (!event) notFound();
 
   const [products, fieldDefs] = await Promise.all([

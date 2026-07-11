@@ -6,10 +6,10 @@ import { FFT_UI_LOCALE } from "@/features/fft/fft-ui-locale";
 import { hasFftEventManagePermission } from "@/modules/fft/auth/fft-phase2b";
 import { requireFftAccess } from "@/modules/fft/auth/fft-session";
 import {
-  getEventById,
   listOrdersForEvent,
   listTransfersForEvent,
 } from "@/modules/fft/domain/store";
+import { getFftEventForOrganization } from "@/features/fft/fft-organization-context";
 import { fftHref } from "@/modules/fft/i18n/fft-i18n";
 
 export const dynamic = "force-dynamic";
@@ -19,7 +19,7 @@ type Props = { params: Promise<{ eventId: string }> };
 export default async function FftAllocationPage({ params }: Props) {
   const { eventId } = await params;
   const access = await requireFftAccess();
-  const event = await getEventById(eventId);
+  const event = await getFftEventForOrganization(eventId);
   if (!event) notFound();
 
   const canOverride = await hasFftEventManagePermission(

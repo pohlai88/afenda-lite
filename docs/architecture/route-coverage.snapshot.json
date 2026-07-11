@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generatedAt": "2026-07-11T22:41:36.193Z",
+  "generatedAt": "2026-07-11T22:48:01.047Z",
   "summary": {
     "totalAvailable": 36,
     "totalPresented": 36,
@@ -486,6 +486,14 @@
         {
           "type": "consumes",
           "target": "domain:surveys"
+        },
+        {
+          "type": "consumes",
+          "target": "domain:auth"
+        },
+        {
+          "type": "consumes",
+          "target": "domain:clients"
         }
       ]
     },
@@ -751,6 +759,14 @@
         {
           "type": "consumes",
           "target": "domain:surveys"
+        },
+        {
+          "type": "consumes",
+          "target": "domain:auth"
+        },
+        {
+          "type": "consumes",
+          "target": "domain:clients"
         }
       ]
     }

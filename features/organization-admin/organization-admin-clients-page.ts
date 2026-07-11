@@ -61,7 +61,9 @@ export const mapOperatorClientAssignmentRows = toAssignmentRows;
 
 export const loadOrganizationAdminClientsPage = cache(
   async (): Promise<OrganizationAdminClientsPageData> => {
-    const { org } = await bootstrapOrganizationAdminTenancy();
+    const { org } = await bootstrapOrganizationAdminTenancy({
+      anyOf: ["declarations.read", "declarations.manage", "clients.invite"],
+    });
     const [invitations, surveys, assignments] = await Promise.all([
       listClientInvitationsForAdmin(org.organizationId),
       listSurveysForAdmin(org.organizationId),

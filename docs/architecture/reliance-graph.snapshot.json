@@ -681,6 +681,16 @@
       "type": "consumes"
     },
     {
+      "source": "surface:public-survey-link",
+      "target": "domain:auth",
+      "type": "consumes"
+    },
+    {
+      "source": "surface:public-survey-link",
+      "target": "domain:clients",
+      "type": "consumes"
+    },
+    {
       "source": "surface:public-secure-link",
       "target": "domain:secure-link-entry",
       "type": "consumes"
@@ -688,6 +698,16 @@
     {
       "source": "surface:public-secure-link",
       "target": "domain:surveys",
+      "type": "consumes"
+    },
+    {
+      "source": "surface:public-secure-link",
+      "target": "domain:auth",
+      "type": "consumes"
+    },
+    {
+      "source": "surface:public-secure-link",
+      "target": "domain:clients",
       "type": "consumes"
     },
     {
@@ -1032,7 +1052,7 @@
     }
   ],
   "fingerprint": "60c2058e7b5d8cfc",
-  "generatedAt": "2026-07-11T22:42:55.341Z",
+  "generatedAt": "2026-07-11T22:45:10.489Z",
   "nodes": [
     {
       "id": "surface:auth-sign-in",

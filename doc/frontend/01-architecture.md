@@ -10,7 +10,7 @@ flowchart TD
   browser[Browser]
   proxy[proxy.ts Neon session]
   page[app/**/page.tsx thin RSC]
-  entry[lib/entry or lib/pages]
+  entry[features/auth/entry or organization-admin runners]
   feature[features/* or components-V2 portal-views]
   action[app/actions Server Actions]
   api[app/api Route Handlers]

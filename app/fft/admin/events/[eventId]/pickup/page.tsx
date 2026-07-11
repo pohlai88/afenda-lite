@@ -13,6 +13,7 @@ import {
   listPickupWindowsForEvent,
 } from "@/modules/fft/domain/pickup-store";
 import { getEventById } from "@/modules/fft/domain/store";
+import { getFftEventForOrganization } from "@/features/fft/fft-organization-context";
 import { fftHref } from "@/modules/fft/i18n/fft-i18n";
 
 export const dynamic = "force-dynamic";
@@ -26,7 +27,7 @@ export default async function FftPickupPage({ params }: Props) {
 
   const { eventId } = await params;
   const access = await requireFftAccess();
-  const event = await getEventById(eventId);
+  const event = await getFftEventForOrganization(eventId);
   if (!event) notFound();
 
   const canView = await hasTradePermission(

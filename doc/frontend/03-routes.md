@@ -17,9 +17,9 @@ Target route map. Columns: path, page file, layout group, special files, proxy g
 | `/` | `app/page.tsx` | root | optional | root | no | `features/landing` |
 | `/auth/[path]` | `app/auth/[path]/page.tsx` | root | yes | yes | no | `features/auth` |
 | `/auth/admin` | `app/auth/admin/page.tsx` | root | yes | — | no | `features/auth` / entry |
-| `/org/login` | `app/org/login/page.tsx` | root | yes | — | no | `lib/entry` org sign-in |
+| `/org/login` | `app/org/login/page.tsx` | root | yes | — | no | `features/auth/entry` org sign-in |
 | `/client/login` | `app/client/(gate)/login/page.tsx` | `(gate)` | yes | — | no* | `features/auth` / client entry |
-| `/invite/[token]` | `app/invite/[token]/page.tsx` | root | yes | — | no | `lib/entry` legacy invite |
+| `/invite/[token]` | `app/invite/[token]/page.tsx` | root | yes | — | no | `features/auth/entry` legacy invite |
 | `/f/[token]` | `app/f/[token]/page.tsx` | root | yes | — | no | share access |
 | `/survey/[slug]` | `app/survey/[slug]/page.tsx` | root | yes | — | no | open link |
 
@@ -35,15 +35,15 @@ Target route map. Columns: path, page file, layout group, special files, proxy g
 
 | Path | Page | Layout | loading | error | Proxy | Owner | Status |
 |------|------|--------|---------|-------|-------|-------|--------|
-| `/client/onboarding` | `app/client/(workspace)/onboarding/page.tsx` | workspace | yes | yes | yes | `features/client-workspace` (TBD) or portal-views | placeholder · scope closed |
-| `/client` | `app/client/(workspace)/page.tsx` | workspace | yes | yes | yes | client home | placeholder · scope closed |
-| `/client/profile` | `app/client/(workspace)/profile/page.tsx` | workspace | yes | yes | yes | profile | placeholder · scope closed |
-| `/client/declare/[assignmentId]` | `app/client/(workspace)/declare/[assignmentId]/page.tsx` | workspace | yes | yes | yes | declare form | placeholder · scope closed |
-| `/client/preview-unavailable` | `app/client/(gate)/preview-unavailable/page.tsx` | gate | yes | — | bypass | preview gate | placeholder · scope closed |
+| `/client/onboarding` | `app/client/(workspace)/onboarding/page.tsx` | workspace | yes | yes | yes | stub — closed-scope-register | placeholder · **Closed (registered)** |
+| `/client` | `app/client/(workspace)/page.tsx` | workspace | yes | yes | yes | stub — closed-scope-register | placeholder · **Closed (registered)** |
+| `/client/profile` | `app/client/(workspace)/profile/page.tsx` | workspace | yes | yes | yes | stub — closed-scope-register | placeholder · **Closed (registered)** |
+| `/client/declare/[assignmentId]` | `app/client/(workspace)/declare/[assignmentId]/page.tsx` | workspace | yes | yes | yes | stub — closed-scope-register | placeholder · **Closed (registered)** |
+| `/client/preview-unavailable` | `app/client/(gate)/preview-unavailable/page.tsx` | gate | yes | — | bypass | preview gate stub | placeholder · **Closed (registered)** |
 
 ## Organization admin post-login
 
-Shared AdminCN shell (`AdminCnShell`). Layout gate: **authenticated member** (`requireMemberSession`) — Declarations module is open to every org member. Organization admin (`isAdminSession` / `OrganizationMemberKind = "organizationAdmin"`) is a separate gate for admin-route nav and mutating actions (`requireAdminSession`), not the Declarations module entry. There is no separate “portal persona” type — use organization admin vs client.
+Shared AdminCN shell (`AdminCnShell`). Layout gate: **authenticated member** (`requireMemberSession`) — Declarations module is open to every org member. Admin-route ops (dashboard lists, roles, users, invites) use `requirePlatformOperatorSession` (Neon admin **or** matching platform permission codes). Neon `requireAdminSession` remains for impersonation/preview bootstrap only. There is no separate “portal persona” type — use organization admin vs client.
 
 | Path | Page | Layout | loading | error | Proxy | Owner | Status |
 |------|------|--------|---------|-------|-------|-------|--------|

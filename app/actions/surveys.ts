@@ -2,7 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { requireAdminSession } from "@/modules/identity/auth/session";
+import { requirePlatformOperatorSession } from "@/modules/identity/auth/platform-operator-session";
+import { isAdminSession } from "@/modules/identity/admin";
 import { requirePlatformPermission } from "@/modules/identity/domain/platform-rbac-access";
 import { recordAuditEvent } from "@/modules/platform/audit";
 import { createClientAssignment } from "@/modules/declarations/domain/clients";
@@ -58,11 +59,11 @@ function revalidateOperatorDashboard(surveyId?: string) {
   }
 }
 
-async function requireDeclarationsManageOrg(userId: string) {
+async function requireDeclarationsManageOrg(userId: string, isNeonAdmin: boolean) {
   const { organizationId, check } = await requirePlatformPermission({
     userId,
     code: "declarations.manage",
-    isNeonAdmin: true,
+    isNeonAdmin,
   });
   return { organizationId, allowed: check.allowed };
 }
@@ -161,11 +162,12 @@ function parseValidatedPackage(
 }
 
 export async function createDraftSurveyAction() {
-  const session = await requireAdminSession();
+  const session = await requirePlatformOperatorSession({ anyOf: ["declarations.manage"] });
 
   return runLoggedAction("createDraftSurveyAction", session.user.id, async () => {
     const { organizationId, allowed } = await requireDeclarationsManageOrg(
       session.user.id,
+      isAdminSession(session),
     );
     if (!allowed) {
       redirect(ORGANIZATION_ADMIN_DASHBOARD_HREF);
@@ -191,7 +193,7 @@ export async function createDraftSurveyAction() {
 }
 
 export async function updateSurveyAction(formData: FormData) {
-  const session = await requireAdminSession();
+  const session = await requirePlatformOperatorSession({ anyOf: ["declarations.manage"] });
 
   return runLoggedAction("updateSurveyAction", session.user.id, async () => {
     const parsed = parseSchema(
@@ -207,6 +209,7 @@ export async function updateSurveyAction(formData: FormData) {
 
     const { organizationId, allowed } = await requireDeclarationsManageOrg(
       session.user.id,
+      isAdminSession(session),
     );
     if (!allowed) {
       return { error: portalCopy.accessDenied.description };
@@ -222,6 +225,7 @@ export async function updateSurveyAction(formData: FormData) {
       title,
       question: question || title,
       metadata: metadata ?? pickSurveyMetadata(existing),
+      organizationId,
     });
 
     if (questions.length > 0) {
@@ -248,7 +252,7 @@ export async function updateSurveyAction(formData: FormData) {
 }
 
 export async function deleteSurveyAction(formData: FormData) {
-  const session = await requireAdminSession();
+  const session = await requirePlatformOperatorSession({ anyOf: ["declarations.manage"] });
 
   return runLoggedAction("deleteSurveyAction", session.user.id, async () => {
     const parsed = parseSchema(deleteSurveySchema, {
@@ -263,6 +267,7 @@ export async function deleteSurveyAction(formData: FormData) {
 
     const { organizationId, allowed } = await requireDeclarationsManageOrg(
       session.user.id,
+      isAdminSession(session),
     );
     if (!allowed) {
       return { error: portalCopy.accessDenied.description };
@@ -273,7 +278,7 @@ export async function deleteSurveyAction(formData: FormData) {
       return { error: portalCopy.errors.declarationNotFound };
     }
 
-    await deleteSurvey(id);
+    await deleteSurvey(id, organizationId);
 
     await recordAuditEvent({
       actorId: session.user.id,
@@ -303,7 +308,7 @@ export async function submitSurveyResponseAction(input: {
 }
 
 export async function exportSurveyPackageAction(surveyId: string) {
-  const session = await requireAdminSession();
+  const session = await requirePlatformOperatorSession({ anyOf: ["declarations.manage"] });
 
   return runLoggedAction("exportSurveyPackageAction", session.user.id, async () => {
     const parsed = parseSchema(surveyIdParamSchema, surveyId);
@@ -313,6 +318,7 @@ export async function exportSurveyPackageAction(surveyId: string) {
 
     const { organizationId, allowed } = await requireDeclarationsManageOrg(
       session.user.id,
+      isAdminSession(session),
     );
     if (!allowed) {
       return { error: portalCopy.accessDenied.description };
@@ -333,7 +339,7 @@ export async function validateSurveyPackageAction(input: {
   packageJson: string;
   fileName?: string;
 }) {
-  const session = await requireAdminSession();
+  const session = await requirePlatformOperatorSession({ anyOf: ["declarations.manage"] });
 
   return runLoggedAction(
     "validateSurveyPackageAction",
@@ -347,7 +353,7 @@ export async function importSurveyPackageAction(input: {
   packageJson: string;
   createAssignment?: boolean;
 }) {
-  const session = await requireAdminSession();
+  const session = await requirePlatformOperatorSession({ anyOf: ["declarations.manage"] });
 
   return runLoggedAction("importSurveyPackageAction", session.user.id, async () => {
     const parsedSurveyId = parseSchema(surveyIdParamSchema, input.surveyId);
@@ -357,6 +363,7 @@ export async function importSurveyPackageAction(input: {
 
     const { organizationId, allowed } = await requireDeclarationsManageOrg(
       session.user.id,
+      isAdminSession(session),
     );
     if (!allowed) {
       return { error: portalCopy.accessDenied.description };
@@ -414,7 +421,7 @@ export async function importSurveyPackageAction(input: {
 }
 
 export async function regenerateInviteTokenAction(formData: FormData) {
-  const session = await requireAdminSession();
+  const session = await requirePlatformOperatorSession({ anyOf: ["declarations.manage"] });
 
   return runLoggedAction(
     "regenerateInviteTokenAction",
@@ -430,6 +437,7 @@ export async function regenerateInviteTokenAction(formData: FormData) {
 
       const { organizationId, allowed } = await requireDeclarationsManageOrg(
         session.user.id,
+        isAdminSession(session),
       );
       if (!allowed) {
         return { error: portalCopy.accessDenied.description };

@@ -86,8 +86,18 @@ export async function listEvents(options?: {
   return result.rows.map(mapEventRow);
 }
 
-export async function getEventById(id: string): Promise<FftEvent | null> {
-  const result = await pool.query(`SELECT * FROM fft_event WHERE id = $1`, [id]);
+export async function getEventById(
+  id: string,
+  organizationId?: string,
+): Promise<FftEvent | null> {
+  const result = organizationId
+    ? await pool.query(
+        `SELECT * FROM fft_event
+         WHERE id = $1
+           AND (organization_id IS NULL OR organization_id = $2)`,
+        [id, organizationId],
+      )
+    : await pool.query(`SELECT * FROM fft_event WHERE id = $1`, [id]);
   return result.rows[0] ? mapEventRow(result.rows[0]) : null;
 }
 

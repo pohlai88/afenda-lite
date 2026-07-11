@@ -49,7 +49,9 @@ export const loadOrganizationAdminDeclarationDetail = cache(
       return null;
     }
 
-    const { org } = await bootstrapOrganizationAdminTenancy();
+    const { org } = await bootstrapOrganizationAdminTenancy({
+      anyOf: ["declarations.read", "declarations.manage"],
+    });
     const survey = await getSurveyForAdmin(parsed.data, org.organizationId);
     if (!survey) {
       return null;

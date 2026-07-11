@@ -43,12 +43,15 @@ import {
   TabsTrigger,
 } from "@/components-V2/platform-components/ui/tabs";
 import type {
+  OrganizationAdminPlatformAssignmentDisplay,
+  OrganizationAdminPlatformRoleOption,
   OrganizationAdminUserDisplay,
   OrganizationAdminUserSessionDisplay,
 } from "@/features/organization-admin/organization-admin-users-page";
 import { ORGANIZATION_ADMIN_USERS_HREF } from "@/modules/platform/routing/portal-routes";
 import { organizationAdminUserInitials } from "./organization-admin-user-display";
 import { OrganizationAdminUserForm } from "./organization-admin-user-form";
+import { OrganizationAdminUserPlatformRoles } from "./organization-admin-user-platform-roles";
 import {
   getActionError,
   useOrganizationAdminUserAction,
@@ -61,9 +64,13 @@ import {
 export function OrganizationAdminUsersView({
   user,
   sessions = [],
+  platformAssignments = [],
+  platformRoleOptions = [],
 }: {
   user: OrganizationAdminUserDisplay;
   sessions?: OrganizationAdminUserSessionDisplay[];
+  platformAssignments?: OrganizationAdminPlatformAssignmentDisplay[];
+  platformRoleOptions?: OrganizationAdminPlatformRoleOption[];
 }) {
   const [comingSoon, setComingSoon] = useState<string | null>(null);
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -197,6 +204,13 @@ export function OrganizationAdminUsersView({
           </div>
 
           <TabsContent value="account" className="space-y-6">
+            <SectionCard title="Platform roles">
+              <OrganizationAdminUserPlatformRoles
+                userId={user.id}
+                assignments={platformAssignments}
+                roleOptions={platformRoleOptions}
+              />
+            </SectionCard>
             <SectionCard title="Projects List">
               <ComingSoonPanel title="Projects List" />
             </SectionCard>

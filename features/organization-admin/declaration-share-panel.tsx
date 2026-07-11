@@ -1,4 +1,4 @@
-import { requireAdminSession } from "@/modules/identity/auth/session";
+import { requirePlatformOperatorSession } from "@/modules/identity/auth/platform-operator-session";
 import {
   ClientAccessSharePanel,
   type ClientAccessSharePanelProps,
@@ -13,7 +13,9 @@ export async function DeclarationSharePanel({
   surveyId: string;
   slug: string;
 }) {
-  const session = await requireAdminSession();
+  const session = await requirePlatformOperatorSession({
+    anyOf: ["declarations.read", "declarations.manage"],
+  });
   const links = await loadDeclarationShareLinks({
     surveyId,
     slug,

@@ -164,6 +164,8 @@ export const SURFACE_RELIANCE: ReadonlyArray<{
     consumes: [
       { kind: "domain-loader", domainId: "domain:open-link-entry" },
       { kind: "domain-loader", domainId: "domain:surveys" },
+      { kind: "domain-loader", domainId: "domain:auth" },
+      { kind: "domain-loader", domainId: "domain:clients" },
     ],
   },
   {
@@ -171,6 +173,8 @@ export const SURFACE_RELIANCE: ReadonlyArray<{
     consumes: [
       { kind: "domain-loader", domainId: "domain:secure-link-entry" },
       { kind: "domain-loader", domainId: "domain:surveys" },
+      { kind: "domain-loader", domainId: "domain:auth" },
+      { kind: "domain-loader", domainId: "domain:clients" },
     ],
   },
   {

@@ -56,3 +56,33 @@ export async function requirePlatformPermission(input: {
 
   return { organizationId, check };
 }
+
+/** True if the user has at least one of the listed platform permissions. */
+export async function requireAnyPlatformPermission(input: {
+  userId: string;
+  codes: readonly PlatformPermissionCode[];
+  isNeonAdmin: boolean;
+}) {
+  const org = await resolvePlatformOrgContext({
+    userId: input.userId,
+    ensureOrgAdminAssignment: input.isNeonAdmin,
+  });
+
+  for (const code of input.codes) {
+    const check = await hasPlatformPermission({
+      userId: input.userId,
+      organizationId: org.organizationId,
+      code,
+      neonAdminBootstrap: input.isNeonAdmin,
+    });
+    if (check.allowed) {
+      return { ...org, check, matchedCode: code };
+    }
+  }
+
+  return {
+    ...org,
+    check: { allowed: false as const, reason: "missing_permission" as const },
+    matchedCode: input.codes[0],
+  };
+}

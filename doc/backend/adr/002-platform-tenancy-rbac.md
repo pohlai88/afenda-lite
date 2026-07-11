@@ -7,7 +7,7 @@
 | **Owners** | Platform / Identity |
 | **Scope** | Multi-tenant boundary + app-owned permission-catalog RBAC for Afenda-Lite modules |
 | **Out of scope** | Neon RLS; Neon Auth custom roles (unsupported); merging FFT + platform catalogs |
-| **Follow-up done** | FFT `organization_id` (migration `026`, list/create stamp) — catalogs remain separate |
+| **Follow-up done** | FFT `organization_id` (migration `026`); operator session beyond Neon admin; org-scoped Declarations/FFT reads |
 
 **Related:** [001-modular-monolith-hexagonal.md](./001-modular-monolith-hexagonal.md) · [docs/fft/adr/001-rbac.md](../../docs/fft/adr/001-rbac.md) · Neon Auth Organization plugin (owner/admin/member fixed)
 
@@ -15,7 +15,7 @@
 
 ## Context
 
-Afenda-Lite is an ERP-to-be. Declarations and Feed Farm Trade are pilot modules on one SaaS shell. Neon Auth provides identity and organizations with **fixed** roles (`owner` | `admin` | `member`) and cannot define product permission codes. FFT already ships a permission-catalog RBAC; Declarations still gates on Neon `user.role === "admin"`. Those must converge on one platform pattern without inventing a second auth system.
+Afenda-Lite is an ERP-to-be. Declarations and Feed Farm Trade are pilot modules on one SaaS shell. Neon Auth provides identity and organizations with **fixed** roles (`owner` | `admin` | `member`) and cannot define product permission codes. FFT already ships a permission-catalog RBAC; Declarations product authorization uses platform permission codes via `requirePlatformOperatorSession` / `requirePlatformPermission` (Neon `admin` bootstraps until assignments exist). Those converge on one platform pattern without inventing a second auth system.
 
 ## Decision
 

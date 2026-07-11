@@ -113,6 +113,11 @@ import {
   parseFftOrderId,
 } from "@/modules/fft/schemas/fft-schemas";
 
+async function getScopedEvent(eventId: string, userId?: string) {
+  const org = await resolveFftOrganizationContext(userId);
+  return getEventById(eventId, org.organizationId);
+}
+
 /** Zod-backed locale gate — returns action error shape (no throws). */
 function gateFftLocale(
   locale: string,
@@ -240,7 +245,7 @@ export async function openFftEventAction(locale: string, eventId: string) {
   const admin = await requireTradePermission("event.open_close", {
     eventId: gatedEventId,
   });
-  const event = await getEventById(gatedEventId);
+  const event = await getScopedEvent(gatedEventId);
   if (!event) return { error: "not_found" };
 
   const check = canOpenEvent(event);
@@ -283,7 +288,7 @@ export async function activateScheduledFftEventAction(
   const admin = await requireTradePermission("event.open_close", {
     eventId: gatedEventId,
   });
-  const event = await getEventById(gatedEventId);
+  const event = await getScopedEvent(gatedEventId);
   if (!event) return { error: "not_found" };
 
   const check = canActivateScheduledEvent(event);
@@ -315,7 +320,7 @@ export async function closeFftEventAction(locale: string, eventId: string) {
   const admin = await requireTradePermission("event.open_close", {
     eventId: gatedEventId,
   });
-  const event = await getEventById(gatedEventId);
+  const event = await getScopedEvent(gatedEventId);
   if (!event) return { error: "not_found" };
 
   const check = canCloseEvent(event);
@@ -351,7 +356,7 @@ export async function saveFftEventSetupAction(
   const admin = await requireTradePermission("event.edit", {
     eventId: gatedEventId,
   });
-  const event = await getEventById(gatedEventId);
+  const event = await getScopedEvent(gatedEventId);
   if (!event) return { error: "not_found" };
 
   const overrideReason = String(formData.get("overrideReason") ?? "").trim();
@@ -445,7 +450,7 @@ export async function saveTradeProductAction(
   const access = await requireTradePermission("supply.manage", {
     eventId: gatedEventId,
   });
-  const event = await getEventById(gatedEventId);
+  const event = await getScopedEvent(gatedEventId);
   if (!event) return { error: "not_found" };
 
   const id = String(formData.get("id") ?? "") || undefined;
@@ -598,7 +603,7 @@ export async function saveTradeFieldDefAction(
   const access = await requireTradePermission("custom_field.manage", {
     eventId: gatedEventId,
   });
-  const event = await getEventById(gatedEventId);
+  const event = await getScopedEvent(gatedEventId);
   if (!event) return { error: "not_found" };
 
   const fieldKey = sanitizeFieldKey(String(formData.get("fieldKey") ?? ""));
@@ -688,7 +693,7 @@ export async function importPriorityCsvAction(
   const access = await requireTradePermission("priority.manage", {
     eventId: gatedEventId,
   });
-  const event = await getEventById(gatedEventId);
+  const event = await getScopedEvent(gatedEventId);
   if (!event) return { error: "not_found" };
 
   const parsed = parseAndValidatePriorityCsv(csvText);
@@ -737,7 +742,7 @@ export async function submitFftOrderAction(
   const access = await requireTradePermission("order.create", {
     eventId: gatedEventId,
   });
-  const event = await getEventById(gatedEventId);
+  const event = await getScopedEvent(gatedEventId);
   if (!event) return { error: "not_found" };
 
   const now = new Date();
@@ -854,7 +859,7 @@ export async function runFftAllocationAction(
   });
 
   const [event, products, orders] = await Promise.all([
-    getEventById(gatedEventId),
+    getScopedEvent(gatedEventId),
     listProductsForEvent(gatedEventId),
     listOrdersForEvent(gatedEventId),
   ]);
@@ -944,7 +949,7 @@ export async function previewFftAllocationAction(
   });
 
   const [event, products, orders] = await Promise.all([
-    getEventById(gatedEventId),
+    getScopedEvent(gatedEventId),
     listProductsForEvent(gatedEventId),
     listOrdersForEvent(gatedEventId),
   ]);
@@ -978,7 +983,7 @@ export async function manualAdjustFftOrderAction(
   });
 
   const [event, products, siblingOrders] = await Promise.all([
-    getEventById(order.eventId),
+    getScopedEvent(order.eventId),
     listProductsForEvent(order.eventId),
     listOrdersForEvent(order.eventId),
   ]);
@@ -1041,7 +1046,7 @@ export async function requestTransferAction(
     return { error: "forbidden" };
   }
 
-  const event = await getEventById(order.eventId);
+  const event = await getScopedEvent(order.eventId);
   if (!event) return { error: "not_found" };
 
   const check = canTransferOrder(order, event);
@@ -1190,7 +1195,7 @@ export async function exportEventSummaryCsvAction(locale: string, eventId: strin
 
   await requireTradePermission("export.orders", { eventId: gatedEventId });
   const [event, products, orders] = await Promise.all([
-    getEventById(gatedEventId),
+    getScopedEvent(gatedEventId),
     listProductsForEvent(gatedEventId),
     listOrdersForEvent(gatedEventId),
   ]);
@@ -1240,7 +1245,7 @@ export async function completeFftOrderAction(
   if (!gate.allowed) return { error: gate.reason };
 
   const [event, products] = await Promise.all([
-    getEventById(order.eventId),
+    getScopedEvent(order.eventId),
     listProductsForEvent(order.eventId),
   ]);
   const product = products.find((p) => p.id === order.productId);

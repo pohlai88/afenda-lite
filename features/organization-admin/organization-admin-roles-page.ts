@@ -43,7 +43,9 @@ function mapRole(role: PlatformRoleRow): OrganizationAdminRoleDisplay {
 
 export const loadOrganizationAdminRolesPage = cache(
   async (): Promise<OrganizationAdminRolesPageData> => {
-    const { org } = await bootstrapOrganizationAdminTenancy();
+    const { org } = await bootstrapOrganizationAdminTenancy({
+      anyOf: ["org.roles.manage"],
+    });
     const [roles, permissions] = await Promise.all([
       listPlatformRoles(org.organizationId),
       Promise.resolve(listPlatformPermissionCatalog()),

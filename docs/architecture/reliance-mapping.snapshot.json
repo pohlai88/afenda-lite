@@ -1,11 +1,11 @@
 {
   "version": "1.0.0",
-  "generatedAt": "2026-07-11T22:42:52.652Z",
+  "generatedAt": "2026-07-11T22:45:08.603Z",
   "summary": {
     "surfaces": {
       "total": 26,
-      "aligned": 24,
-      "drift": 2
+      "aligned": 26,
+      "drift": 0
     },
     "actions": {
       "total": 38,
@@ -826,6 +826,8 @@
       "mode": "source-scan",
       "compare": {
         "declared": [
+          "domain:auth",
+          "domain:clients",
           "domain:open-link-entry",
           "domain:surveys"
         ],
@@ -835,18 +837,17 @@
           "domain:surveys"
         ],
         "aligned": [
+          "domain:auth",
+          "domain:clients",
           "domain:open-link-entry",
           "domain:surveys"
         ],
         "declaredOnly": [],
-        "discoveredOnly": [
-          "domain:auth",
-          "domain:clients"
-        ],
+        "discoveredOnly": [],
         "inherited": [
           "domain:open-link-entry"
         ],
-        "status": "drift"
+        "status": "aligned"
       },
       "evidence": {
         "entryFiles": [
@@ -869,6 +870,8 @@
       "mode": "source-scan",
       "compare": {
         "declared": [
+          "domain:auth",
+          "domain:clients",
           "domain:secure-link-entry",
           "domain:surveys"
         ],
@@ -878,18 +881,17 @@
           "domain:surveys"
         ],
         "aligned": [
+          "domain:auth",
+          "domain:clients",
           "domain:secure-link-entry",
           "domain:surveys"
         ],
         "declaredOnly": [],
-        "discoveredOnly": [
-          "domain:auth",
-          "domain:clients"
-        ],
+        "discoveredOnly": [],
         "inherited": [
           "domain:secure-link-entry"
         ],
-        "status": "drift"
+        "status": "aligned"
       },
       "evidence": {
         "entryFiles": [

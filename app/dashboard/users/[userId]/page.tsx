@@ -20,5 +20,12 @@ export default async function DashboardUserViewPage({
     notFound();
   }
 
-  return <OrganizationAdminUsersView user={data.user} sessions={data.sessions} />;
+  return (
+    <OrganizationAdminUsersView
+      user={data.user}
+      sessions={data.sessions}
+      platformAssignments={data.platformAssignments}
+      platformRoleOptions={data.platformRoleOptions}
+    />
+  );
 }

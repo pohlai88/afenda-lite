@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import {
+  isAdminSession,
   ORG_SIGN_IN_HREF,
 } from "@/modules/identity/admin";
 import { recordAuditEvent } from "@/modules/platform/audit";
@@ -22,6 +23,7 @@ import {
   rejectNonOrganizationAdminSignIn,
   requireAdminSession,
 } from "@/modules/identity/auth/session";
+import { requirePlatformOperatorSession } from "@/modules/identity/auth/platform-operator-session";
 import { runLoggedAction } from "@/modules/platform/observability";
 import {
   CLIENT_HOME_HREF,
@@ -296,7 +298,11 @@ export async function setOrganizationUserRoleAction(input: {
     "setOrganizationUserRoleAction",
     undefined,
     async () => {
-      const session = await requireAdminSession();
+      const session = await requirePlatformOperatorSession({
+        anyOf: ["org.users.manage"],
+      });
+      const denied = await assertUsersManageAllowed(session);
+      if (denied) return denied;
       const parsed = parseSchema(setOrganizationUserRoleSchema, input);
       if (!parsed.success) {
         return { error: parsed.error };
@@ -335,7 +341,11 @@ export async function banOrganizationUserAction(input: {
   banReason?: string;
 }) {
   return runLoggedAction("banOrganizationUserAction", undefined, async () => {
-    const session = await requireAdminSession();
+    const session = await requirePlatformOperatorSession({
+        anyOf: ["org.users.manage"],
+      });
+      const denied = await assertUsersManageAllowed(session);
+      if (denied) return denied;
     const parsed = parseSchema(banOrganizationUserSchema, input);
     if (!parsed.success) {
       return { error: parsed.error };
@@ -355,7 +365,11 @@ export async function banOrganizationUserAction(input: {
 
 export async function unbanOrganizationUserAction(input: { userId: string }) {
   return runLoggedAction("unbanOrganizationUserAction", undefined, async () => {
-    const session = await requireAdminSession();
+    const session = await requirePlatformOperatorSession({
+        anyOf: ["org.users.manage"],
+      });
+      const denied = await assertUsersManageAllowed(session);
+      if (denied) return denied;
     const parsed = parseSchema(organizationUserIdSchema, input);
     if (!parsed.success) {
       return { error: parsed.error };
@@ -422,7 +436,11 @@ export async function createOrganizationUserAction(input: {
   role?: "user" | "admin";
 }) {
   return runLoggedAction("createOrganizationUserAction", undefined, async () => {
-    const session = await requireAdminSession();
+    const session = await requirePlatformOperatorSession({
+        anyOf: ["org.users.manage"],
+      });
+      const denied = await assertUsersManageAllowed(session);
+      if (denied) return denied;
     const parsed = parseSchema(createOrganizationUserSchema, input);
     if (!parsed.success) {
       return { error: parsed.error };
@@ -454,7 +472,11 @@ export async function importOrganizationUsersAction(input: {
   }>;
 }) {
   return runLoggedAction("importOrganizationUsersAction", undefined, async () => {
-    const session = await requireAdminSession();
+    const session = await requirePlatformOperatorSession({
+        anyOf: ["org.users.manage"],
+      });
+      const denied = await assertUsersManageAllowed(session);
+      if (denied) return denied;
     const parsed = parseSchema(importOrganizationUsersSchema, input);
     if (!parsed.success) {
       return { error: parsed.error };
@@ -495,7 +517,11 @@ export async function updateOrganizationUserAction(input: {
   role?: "user" | "admin";
 }) {
   return runLoggedAction("updateOrganizationUserAction", undefined, async () => {
-    const session = await requireAdminSession();
+    const session = await requirePlatformOperatorSession({
+        anyOf: ["org.users.manage"],
+      });
+      const denied = await assertUsersManageAllowed(session);
+      if (denied) return denied;
     const parsed = parseSchema(updateOrganizationUserSchema, input);
     if (!parsed.success) {
       return { error: parsed.error };
@@ -547,7 +573,11 @@ export async function setOrganizationUserPasswordAction(input: {
     "setOrganizationUserPasswordAction",
     undefined,
     async () => {
-      const session = await requireAdminSession();
+      const session = await requirePlatformOperatorSession({
+        anyOf: ["org.users.manage"],
+      });
+      const denied = await assertUsersManageAllowed(session);
+      if (denied) return denied;
       const parsed = parseSchema(setOrganizationUserPasswordSchema, input);
       if (!parsed.success) {
         return { error: parsed.error };
@@ -575,7 +605,11 @@ export async function setOrganizationUserPasswordAction(input: {
 
 export async function removeOrganizationUserAction(input: { userId: string }) {
   return runLoggedAction("removeOrganizationUserAction", undefined, async () => {
-    const session = await requireAdminSession();
+    const session = await requirePlatformOperatorSession({
+        anyOf: ["org.users.manage"],
+      });
+      const denied = await assertUsersManageAllowed(session);
+      if (denied) return denied;
     const parsed = parseSchema(organizationUserIdSchema, input);
     if (!parsed.success) {
       return { error: parsed.error };
@@ -599,7 +633,11 @@ export async function removeOrganizationUsersAction(input: {
     "removeOrganizationUsersAction",
     undefined,
     async () => {
-      const session = await requireAdminSession();
+      const session = await requirePlatformOperatorSession({
+        anyOf: ["org.users.manage"],
+      });
+      const denied = await assertUsersManageAllowed(session);
+      if (denied) return denied;
       const parsed = parseSchema(organizationUserIdsSchema, input);
       if (!parsed.success) {
         return { error: parsed.error };
@@ -618,7 +656,11 @@ export async function banOrganizationUsersAction(input: {
   banReason?: string;
 }) {
   return runLoggedAction("banOrganizationUsersAction", undefined, async () => {
-    const session = await requireAdminSession();
+    const session = await requirePlatformOperatorSession({
+        anyOf: ["org.users.manage"],
+      });
+      const denied = await assertUsersManageAllowed(session);
+      if (denied) return denied;
     const parsed = parseSchema(banOrganizationUsersSchema, input);
     if (!parsed.success) {
       return { error: parsed.error };
@@ -639,7 +681,11 @@ export async function revokeOrganizationUserSessionsAction(input: {
     "revokeOrganizationUserSessionsAction",
     undefined,
     async () => {
-      const session = await requireAdminSession();
+      const session = await requirePlatformOperatorSession({
+        anyOf: ["org.users.manage"],
+      });
+      const denied = await assertUsersManageAllowed(session);
+      if (denied) return denied;
       const parsed = parseSchema(organizationUserIdSchema, input);
       if (!parsed.success) {
         return { error: parsed.error };
@@ -673,9 +719,30 @@ async function requireRolesManageGate(session: {
   return requirePlatformPermission({
     userId: session.user.id,
     code: "org.roles.manage",
-    // requireAdminSession already passed — bootstrap until assignments exist
-    isNeonAdmin: true,
+    isNeonAdmin: isAdminSession(session),
   });
+}
+
+async function requireUsersManageGate(session: {
+  user: { id: string; role?: string | null };
+}) {
+  return requirePlatformPermission({
+    userId: session.user.id,
+    code: "org.users.manage",
+    isNeonAdmin: isAdminSession(session),
+  });
+}
+
+async function assertUsersManageAllowed(session: {
+  user: { id: string; role?: string | null };
+}) {
+  const { check } = await requireUsersManageGate(session);
+  if (!check.allowed) {
+    return {
+      error: "You do not have permission to manage users.",
+    } as const;
+  }
+  return null;
 }
 
 export async function createPlatformRoleAction(input: {
@@ -684,7 +751,9 @@ export async function createPlatformRoleAction(input: {
   permissionCodes: string[];
 }): Promise<ActionResult<{ roleId: string }>> {
   return runLoggedAction("createPlatformRoleAction", undefined, async () => {
-    const session = await requireAdminSession();
+    const session = await requirePlatformOperatorSession({
+      anyOf: ["org.roles.manage"],
+    });
     const parsed = parseSchema(createPlatformRoleSchema, input);
     if (!parsed.success) {
       return actionFail("VALIDATION_ERROR", parsed.error);
@@ -715,7 +784,9 @@ export async function updatePlatformRoleAction(input: {
   permissionCodes: string[];
 }): Promise<ActionResult<{ roleId: string }>> {
   return runLoggedAction("updatePlatformRoleAction", undefined, async () => {
-    const session = await requireAdminSession();
+    const session = await requirePlatformOperatorSession({
+      anyOf: ["org.roles.manage"],
+    });
     const parsed = parseSchema(updatePlatformRoleSchema, input);
     if (!parsed.success) {
       return actionFail("VALIDATION_ERROR", parsed.error);
@@ -754,7 +825,9 @@ export async function deletePlatformRoleAction(input: {
   roleId: string;
 }): Promise<ActionResult<{ roleId: string }>> {
   return runLoggedAction("deletePlatformRoleAction", undefined, async () => {
-    const session = await requireAdminSession();
+    const session = await requirePlatformOperatorSession({
+      anyOf: ["org.roles.manage"],
+    });
     const parsed = parseSchema(deletePlatformRoleSchema, input);
     if (!parsed.success) {
       return actionFail("VALIDATION_ERROR", parsed.error);
@@ -796,7 +869,9 @@ export async function setPlatformRolePermissionAction(input: {
     "setPlatformRolePermissionAction",
     undefined,
     async () => {
-      const session = await requireAdminSession();
+      const session = await requirePlatformOperatorSession({
+        anyOf: ["org.roles.manage"],
+      });
       const parsed = parseSchema(setPlatformRolePermissionSchema, input);
       if (!parsed.success) {
         return actionFail("VALIDATION_ERROR", parsed.error);
@@ -838,7 +913,9 @@ export async function assignPlatformRoleAction(input: {
   scopeType?: "organization" | "platform";
 }): Promise<ActionResult<{ assignmentId?: string }>> {
   return runLoggedAction("assignPlatformRoleAction", undefined, async () => {
-    const session = await requireAdminSession();
+    const session = await requirePlatformOperatorSession({
+      anyOf: ["org.roles.manage"],
+    });
     const parsed = parseSchema(assignPlatformRoleSchema, input);
     if (!parsed.success) {
       return actionFail("VALIDATION_ERROR", parsed.error);
@@ -865,6 +942,7 @@ export async function assignPlatformRoleAction(input: {
 
     revalidatePlatformRbacPaths();
     revalidatePath(ORGANIZATION_ADMIN_USERS_HREF);
+    revalidatePath(organizationAdminUserHref(parsed.data.userId));
     return actionOk({ assignmentId: result.assignmentId });
   });
 }
@@ -876,7 +954,9 @@ export async function revokePlatformRoleAssignmentAction(input: {
     "revokePlatformRoleAssignmentAction",
     undefined,
     async () => {
-      const session = await requireAdminSession();
+      const session = await requirePlatformOperatorSession({
+        anyOf: ["org.roles.manage"],
+      });
       const parsed = parseSchema(revokePlatformRoleAssignmentSchema, input);
       if (!parsed.success) {
         return actionFail("VALIDATION_ERROR", parsed.error);
@@ -900,6 +980,7 @@ export async function revokePlatformRoleAssignmentAction(input: {
       }
 
       revalidatePlatformRbacPaths();
+      revalidatePath(ORGANIZATION_ADMIN_USERS_HREF);
       return actionOk({ assignmentId: parsed.data.assignmentId });
     },
   );

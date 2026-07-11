@@ -480,6 +480,11 @@ export async function hasPlatformPermission(input: {
     return { allowed: true };
   }
 
+  // No assignments yet: allow self-service account access for any signed-in member.
+  if (matching.length === 0 && input.code === "account.self") {
+    return { allowed: true, reason: "self_bootstrap" };
+  }
+
   if (matching.length === 0 && input.neonAdminBootstrap) {
     return { allowed: true, reason: "neon_admin_bootstrap" };
   }

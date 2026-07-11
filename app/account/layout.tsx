@@ -1,12 +1,12 @@
-import { requireMemberSession } from "@/modules/identity/auth/session";
+import { requireAccountSession } from "@/modules/identity/account-session";
 import { AdminCnShell } from "@/components-V2/platform-components/AdminCnShell";
 
-/** Account chrome — Declarations module (member session + shared AdminCN shell). */
+/** Account chrome — `account.self` gated member session + shared AdminCN shell. */
 export default async function AccountLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  await requireMemberSession();
+  await requireAccountSession();
   return <AdminCnShell>{children}</AdminCnShell>;
 }

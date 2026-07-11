@@ -21,7 +21,7 @@ interface DeclarationsPort {
 
 | Port op | Domain (approx) | Driving adapters |
 |---------|-----------------|------------------|
-| list / get | `modules/declarations/domain/surveys.ts`, display helpers | RSC `lib/pages` / dashboard runners |
+| list / get | `modules/declarations/domain/surveys.ts`, display helpers | RSC `features/organization-admin/*` / dashboard runners |
 | create / update / delete | `surveys.ts` | `createDraftSurveyAction`, `updateSurveyAction`, `deleteSurveyAction` |
 | submit assignment | `survey-submission.ts`, client submit | `submitClientDeclarationAction`, `submitSurveyResponseAction` |
 | save draft | `client-declaration-draft.ts` | `saveClientDeclarationDraftAction`, `PUT/PATCH /api/client/declaration-draft` |

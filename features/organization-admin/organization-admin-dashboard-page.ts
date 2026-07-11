@@ -34,7 +34,9 @@ export const mapOperatorDeclarationRows = toDeclarationRows;
 
 export const loadOrganizationAdminDashboardPage = cache(
   async (): Promise<OrganizationAdminDashboardPageData> => {
-    const { org } = await bootstrapOrganizationAdminTenancy();
+    const { org } = await bootstrapOrganizationAdminTenancy({
+      anyOf: ["declarations.read", "declarations.manage"],
+    });
     const [surveys, pendingAssignments] = await Promise.all([
       listSurveysForAdmin(org.organizationId),
       countPendingClientAssignments(org.organizationId),
