@@ -863,7 +863,7 @@ export const portalCopy = {
     assignmentRemoveError: "Could not remove this assignment.",
     assignmentRemoveMissing: "Assignment not found.",
     managementNote:
-      "Create/edit forms, import/export, and bulk delete remain deferred. Role and suspend/activate use Neon Auth admin APIs.",
+      "Import/export and bulk delete remain deferred. Create/edit, role, suspend, password, and session revoke use Neon Auth admin APIs.",
     status: {
       pending: "Pending",
       accepted: "Active",

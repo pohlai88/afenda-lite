@@ -8,10 +8,15 @@ import { recordAuditEvent } from "@/modules/platform/audit";
 import { auth } from "@/modules/identity/auth/server";
 import {
   neonAdminBanUser,
+  neonAdminCreateUser,
   neonAdminImpersonateUser,
+  neonAdminRemoveUser,
+  neonAdminRevokeUserSessions,
   neonAdminSetRole,
+  neonAdminSetUserPassword,
   neonAdminStopImpersonating,
   neonAdminUnbanUser,
+  neonAdminUpdateUser,
 } from "@/modules/identity/auth/admin";
 import {
   rejectNonOrganizationAdminSignIn,
@@ -36,8 +41,13 @@ import { parseSchema } from "@/modules/platform/schemas/common";
 import { signInSchema } from "@/modules/identity/schemas/auth";
 import {
   banOrganizationUserSchema,
+  banOrganizationUsersSchema,
+  createOrganizationUserSchema,
   organizationUserIdSchema,
+  organizationUserIdsSchema,
+  setOrganizationUserPasswordSchema,
   setOrganizationUserRoleSchema,
+  updateOrganizationUserSchema,
 } from "@/modules/identity/schemas/users";
 import {
   formPassword,
@@ -179,6 +189,78 @@ function revalidateOrganizationUsers(userId?: string) {
   }
 }
 
+const organizationAdminUserErrors = {
+  selfDelete: "You cannot delete your own account.",
+  selfSuspend: "You cannot suspend your own account.",
+  selfDemote: "You cannot remove your own admin role.",
+} as const;
+
+async function removeOrganizationUsersForAdmin(input: {
+  actorId: string;
+  userIds: string[];
+}): Promise<{ error: string } | { ok: true; removed: number }> {
+  if (input.userIds.some((userId) => userId === input.actorId)) {
+    return { error: organizationAdminUserErrors.selfDelete };
+  }
+
+  let removed = 0;
+  for (const userId of input.userIds) {
+    const result = await neonAdminRemoveUser(userId);
+    if ("error" in result) {
+      return {
+        error: `Stopped after ${removed} removal(s): ${result.error}`,
+      };
+    }
+    await recordAuditEvent({
+      actorId: input.actorId,
+      eventType: "admin.user_removed",
+      resourceType: "user",
+      resourceId: userId,
+    });
+    removed += 1;
+  }
+
+  revalidateOrganizationUsers();
+  return { ok: true as const, removed };
+}
+
+async function banOrganizationUsersForAdmin(input: {
+  actorId: string;
+  userIds: string[];
+  banReason?: string;
+}): Promise<{ error: string } | { ok: true; banned: number }> {
+  if (input.userIds.some((userId) => userId === input.actorId)) {
+    return { error: organizationAdminUserErrors.selfSuspend };
+  }
+
+  let banned = 0;
+  for (const userId of input.userIds) {
+    const result = await neonAdminBanUser({
+      userId,
+      banReason: input.banReason,
+    });
+    if ("error" in result) {
+      return {
+        error: `Stopped after ${banned} suspend(s): ${result.error}`,
+      };
+    }
+    await recordAuditEvent({
+      actorId: input.actorId,
+      eventType: "admin.user_banned",
+      resourceType: "user",
+      resourceId: userId,
+      metadata: { banReason: input.banReason ?? null },
+    });
+    banned += 1;
+  }
+
+  revalidatePath(ORGANIZATION_ADMIN_USERS_HREF);
+  for (const userId of input.userIds) {
+    revalidatePath(organizationAdminUserHref(userId));
+  }
+  return { ok: true as const, banned };
+}
+
 export async function setOrganizationUserRoleAction(input: {
   userId: string;
   role: "user" | "admin";
@@ -197,7 +279,7 @@ export async function setOrganizationUserRoleAction(input: {
         parsed.data.userId === session.user.id &&
         parsed.data.role !== "admin"
       ) {
-        return { error: "You cannot remove your own admin role." };
+        return { error: organizationAdminUserErrors.selfDemote };
       }
 
       const result = await neonAdminSetRole({
@@ -232,26 +314,14 @@ export async function banOrganizationUserAction(input: {
       return { error: parsed.error };
     }
 
-    if (parsed.data.userId === session.user.id) {
-      return { error: "You cannot suspend your own account." };
-    }
-
-    const result = await neonAdminBanUser({
-      userId: parsed.data.userId,
+    const result = await banOrganizationUsersForAdmin({
+      actorId: session.user.id,
+      userIds: [parsed.data.userId],
       banReason: parsed.data.banReason,
     });
     if ("error" in result) {
       return { error: result.error };
     }
-
-    await recordAuditEvent({
-      actorId: session.user.id,
-      eventType: "admin.user_banned",
-      resourceType: "user",
-      resourceId: parsed.data.userId,
-      metadata: { banReason: parsed.data.banReason ?? null },
-    });
-    revalidateOrganizationUsers(parsed.data.userId);
     return { ok: true as const };
   });
 }
@@ -278,4 +348,217 @@ export async function unbanOrganizationUserAction(input: { userId: string }) {
     revalidateOrganizationUsers(parsed.data.userId);
     return { ok: true as const };
   });
+}
+
+export async function createOrganizationUserAction(input: {
+  email: string;
+  password: string;
+  name: string;
+  role?: "user" | "admin";
+}) {
+  return runLoggedAction("createOrganizationUserAction", undefined, async () => {
+    const session = await requireAdminSession();
+    const parsed = parseSchema(createOrganizationUserSchema, input);
+    if (!parsed.success) {
+      return { error: parsed.error };
+    }
+
+    const result = await neonAdminCreateUser({
+      email: parsed.data.email,
+      password: parsed.data.password,
+      name: parsed.data.name,
+      role: parsed.data.role,
+    });
+    if ("error" in result) {
+      return { error: result.error };
+    }
+
+    const createdId =
+      result.user && typeof result.user === "object" && "id" in result.user
+        ? String((result.user as { id: string }).id)
+        : undefined;
+
+    await recordAuditEvent({
+      actorId: session.user.id,
+      eventType: "admin.user_created",
+      resourceType: "user",
+      resourceId: createdId,
+      metadata: { email: parsed.data.email, role: parsed.data.role },
+    });
+    revalidateOrganizationUsers(createdId);
+    return { ok: true as const, userId: createdId };
+  });
+}
+
+export async function updateOrganizationUserAction(input: {
+  userId: string;
+  name: string;
+  role?: "user" | "admin";
+}) {
+  return runLoggedAction("updateOrganizationUserAction", undefined, async () => {
+    const session = await requireAdminSession();
+    const parsed = parseSchema(updateOrganizationUserSchema, input);
+    if (!parsed.success) {
+      return { error: parsed.error };
+    }
+
+    if (
+      parsed.data.userId === session.user.id &&
+      parsed.data.role &&
+      parsed.data.role !== "admin"
+    ) {
+      return { error: organizationAdminUserErrors.selfDemote };
+    }
+
+    const updated = await neonAdminUpdateUser({
+      userId: parsed.data.userId,
+      data: { name: parsed.data.name },
+    });
+    if ("error" in updated) {
+      return { error: updated.error };
+    }
+
+    if (parsed.data.role) {
+      const roleResult = await neonAdminSetRole({
+        userId: parsed.data.userId,
+        role: parsed.data.role,
+      });
+      if ("error" in roleResult) {
+        return { error: roleResult.error };
+      }
+    }
+
+    await recordAuditEvent({
+      actorId: session.user.id,
+      eventType: "admin.user_updated",
+      resourceType: "user",
+      resourceId: parsed.data.userId,
+      metadata: { name: parsed.data.name, role: parsed.data.role ?? null },
+    });
+    revalidateOrganizationUsers(parsed.data.userId);
+    return { ok: true as const };
+  });
+}
+
+export async function setOrganizationUserPasswordAction(input: {
+  userId: string;
+  newPassword: string;
+}) {
+  return runLoggedAction(
+    "setOrganizationUserPasswordAction",
+    undefined,
+    async () => {
+      const session = await requireAdminSession();
+      const parsed = parseSchema(setOrganizationUserPasswordSchema, input);
+      if (!parsed.success) {
+        return { error: parsed.error };
+      }
+
+      const result = await neonAdminSetUserPassword({
+        userId: parsed.data.userId,
+        newPassword: parsed.data.newPassword,
+      });
+      if ("error" in result) {
+        return { error: result.error };
+      }
+
+      await recordAuditEvent({
+        actorId: session.user.id,
+        eventType: "admin.user_password_set",
+        resourceType: "user",
+        resourceId: parsed.data.userId,
+      });
+      revalidateOrganizationUsers(parsed.data.userId);
+      return { ok: true as const };
+    },
+  );
+}
+
+export async function removeOrganizationUserAction(input: { userId: string }) {
+  return runLoggedAction("removeOrganizationUserAction", undefined, async () => {
+    const session = await requireAdminSession();
+    const parsed = parseSchema(organizationUserIdSchema, input);
+    if (!parsed.success) {
+      return { error: parsed.error };
+    }
+
+    const result = await removeOrganizationUsersForAdmin({
+      actorId: session.user.id,
+      userIds: [parsed.data.userId],
+    });
+    if ("error" in result) {
+      return { error: result.error };
+    }
+    return { ok: true as const };
+  });
+}
+
+export async function removeOrganizationUsersAction(input: {
+  userIds: string[];
+}) {
+  return runLoggedAction(
+    "removeOrganizationUsersAction",
+    undefined,
+    async () => {
+      const session = await requireAdminSession();
+      const parsed = parseSchema(organizationUserIdsSchema, input);
+      if (!parsed.success) {
+        return { error: parsed.error };
+      }
+
+      return removeOrganizationUsersForAdmin({
+        actorId: session.user.id,
+        userIds: parsed.data.userIds,
+      });
+    },
+  );
+}
+
+export async function banOrganizationUsersAction(input: {
+  userIds: string[];
+  banReason?: string;
+}) {
+  return runLoggedAction("banOrganizationUsersAction", undefined, async () => {
+    const session = await requireAdminSession();
+    const parsed = parseSchema(banOrganizationUsersSchema, input);
+    if (!parsed.success) {
+      return { error: parsed.error };
+    }
+
+    return banOrganizationUsersForAdmin({
+      actorId: session.user.id,
+      userIds: parsed.data.userIds,
+      banReason: parsed.data.banReason,
+    });
+  });
+}
+
+export async function revokeOrganizationUserSessionsAction(input: {
+  userId: string;
+}) {
+  return runLoggedAction(
+    "revokeOrganizationUserSessionsAction",
+    undefined,
+    async () => {
+      const session = await requireAdminSession();
+      const parsed = parseSchema(organizationUserIdSchema, input);
+      if (!parsed.success) {
+        return { error: parsed.error };
+      }
+
+      const result = await neonAdminRevokeUserSessions(parsed.data.userId);
+      if ("error" in result) {
+        return { error: result.error };
+      }
+
+      await recordAuditEvent({
+        actorId: session.user.id,
+        eventType: "admin.user_sessions_revoked",
+        resourceType: "user",
+        resourceId: parsed.data.userId,
+      });
+      revalidateOrganizationUsers(parsed.data.userId);
+      return { ok: true as const };
+    },
+  );
 }

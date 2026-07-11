@@ -21,6 +21,9 @@ import {
 } from "lucide-react";
 import {
   banOrganizationUserAction,
+  banOrganizationUsersAction,
+  removeOrganizationUserAction,
+  removeOrganizationUsersAction,
   setOrganizationUserRoleAction,
   unbanOrganizationUserAction,
 } from "@/app/actions/admin";
@@ -72,12 +75,20 @@ import type {
   OrganizationAdminUserStatus,
 } from "@/lib/pages/organization-admin-users-page";
 import { organizationAdminUserHref } from "@/modules/platform/routing/portal-routes";
-import { organizationAdminUserInitials } from "./organization-admin-user-display";
-import { useOrganizationAdminUserAction } from "./use-organization-admin-user-action";
 import {
-  ComingSoonPanel,
-  UserManagementComingSoon,
-} from "./user-management-coming-soon";
+  downloadOrganizationAdminUsersFile,
+  organizationAdminUsersToCsv,
+  organizationAdminUsersToJson,
+} from "./organization-admin-users-export";
+import { organizationAdminUserInitials } from "./organization-admin-user-display";
+import { OrganizationAdminUserForm } from "./organization-admin-user-form";
+import {
+  getActionError,
+  useOrganizationAdminUserAction,
+} from "./use-organization-admin-user-action";
+import { UserManagementComingSoon } from "./user-management-coming-soon";
+
+const PAGE_SIZE_OPTIONS = [10, 25, 50, 100] as const;
 
 const ROLES: OrganizationAdminUserRole[] = [
   "Admin",
@@ -187,8 +198,14 @@ export function OrganizationAdminUsersList({
     "all",
   );
   const [selected, setSelected] = useState<string[]>([]);
+  const [pageSize, setPageSize] = useState<(typeof PAGE_SIZE_OPTIONS)[number]>(
+    10,
+  );
+  const [pageIndex, setPageIndex] = useState(0);
   const [comingSoon, setComingSoon] = useState<string | null>(null);
   const [sheetMode, setSheetMode] = useState<SheetMode>(null);
+  const [editingUser, setEditingUser] =
+    useState<OrganizationAdminUserDisplay | null>(null);
   const { actionError, isPending, runUserAction } =
     useOrganizationAdminUserAction();
 
@@ -204,9 +221,85 @@ export function OrganizationAdminUsersList({
     );
   });
 
+  const pageCount = Math.max(1, Math.ceil(users.length / pageSize));
+  const safePageIndex = Math.min(pageIndex, pageCount - 1);
+  const pageUsers = users.slice(
+    safePageIndex * pageSize,
+    safePageIndex * pageSize + pageSize,
+  );
+
   const allSelected =
-    users.length > 0 && users.every((user) => selected.includes(user.id));
+    pageUsers.length > 0 &&
+    pageUsers.every((user) => selected.includes(user.id));
   const showSoon = (feature: string) => setComingSoon(feature);
+  const exportStamp = () =>
+    new Date().toISOString().slice(0, 19).replaceAll(":", "-");
+  const exportUsers = (format: "csv" | "json") => {
+    const stamp = exportStamp();
+    if (format === "csv") {
+      downloadOrganizationAdminUsersFile({
+        filename: `organization-users-${stamp}.csv`,
+        content: organizationAdminUsersToCsv(users),
+        mimeType: "text/csv;charset=utf-8",
+      });
+      return;
+    }
+    downloadOrganizationAdminUsersFile({
+      filename: `organization-users-${stamp}.json`,
+      content: organizationAdminUsersToJson(users),
+      mimeType: "application/json;charset=utf-8",
+    });
+  };
+  const confirmDeleteUser = (user: OrganizationAdminUserDisplay) =>
+    window.confirm(
+      `Delete ${user.name} (${user.email})? This cannot be undone.`,
+    );
+  const deleteUser = (user: OrganizationAdminUserDisplay) => {
+    if (!confirmDeleteUser(user)) {
+      return;
+    }
+    runUserAction(() => removeOrganizationUserAction({ userId: user.id }));
+  };
+  const deleteSelectedUsers = () => {
+    if (selected.length === 0) {
+      return;
+    }
+    if (
+      !window.confirm(
+        `Delete ${selected.length} selected user${selected.length === 1 ? "" : "s"}? This cannot be undone.`,
+      )
+    ) {
+      return;
+    }
+    runUserAction(async () => {
+      const result = await removeOrganizationUsersAction({
+        userIds: selected,
+      });
+      if (!getActionError(result)) {
+        setSelected([]);
+      }
+      return result;
+    });
+  };
+  const suspendSelectedUsers = () => {
+    if (selected.length === 0) {
+      return;
+    }
+    if (
+      !window.confirm(
+        `Suspend ${selected.length} selected user${selected.length === 1 ? "" : "s"}?`,
+      )
+    ) {
+      return;
+    }
+    runUserAction(async () => {
+      const result = await banOrganizationUsersAction({ userIds: selected });
+      if (!getActionError(result)) {
+        setSelected([]);
+      }
+      return result;
+    });
+  };
 
   return (
     <>
@@ -221,27 +314,30 @@ export function OrganizationAdminUsersList({
                 label="Select Role"
                 value={role}
                 options={ROLES}
-                onValueChange={(value) =>
-                  setRole(value as OrganizationAdminUserRole | "all")
-                }
+                onValueChange={(value) => {
+                  setPageIndex(0);
+                  setRole(value as OrganizationAdminUserRole | "all");
+                }}
               />
               <FilterSelect
                 id="filter-plan"
                 label="Select Plan"
                 value={plan}
                 options={PLANS}
-                onValueChange={(value) =>
-                  setPlan(value as OrganizationAdminUserPlan | "all")
-                }
+                onValueChange={(value) => {
+                  setPageIndex(0);
+                  setPlan(value as OrganizationAdminUserPlan | "all");
+                }}
               />
               <FilterSelect
                 id="filter-status"
                 label="Select Status"
                 value={status}
                 options={STATUSES}
-                onValueChange={(value) =>
-                  setStatus(value as OrganizationAdminUserStatus | "all")
-                }
+                onValueChange={(value) => {
+                  setPageIndex(0);
+                  setStatus(value as OrganizationAdminUserStatus | "all");
+                }}
               />
             </div>
           </div>
@@ -258,25 +354,37 @@ export function OrganizationAdminUsersList({
                 <InputGroupInput
                   id="search-user"
                   value={search}
-                  onChange={(event) => setSearch(event.target.value)}
+                  onChange={(event) => {
+                    setPageIndex(0);
+                    setSearch(event.target.value);
+                  }}
                   placeholder="Search user"
                 />
               </InputGroup>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <Select
-                items={[10, 25, 50, 100].map((value) => ({
+                items={PAGE_SIZE_OPTIONS.map((value) => ({
                   label: String(value),
                   value: String(value),
                 }))}
-                defaultValue="10"
+                value={String(pageSize)}
+                onValueChange={(value: string | null) => {
+                  if (!value) {
+                    return;
+                  }
+                  setPageIndex(0);
+                  setPageSize(
+                    Number(value) as (typeof PAGE_SIZE_OPTIONS)[number],
+                  );
+                }}
               >
                 <SelectTrigger aria-label="Rows per page" className="w-fit">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectGroup>
-                    {[10, 25, 50, 100].map((value) => (
+                    {PAGE_SIZE_OPTIONS.map((value) => (
                       <SelectItem key={value} value={String(value)}>
                         {value}
                       </SelectItem>
@@ -294,14 +402,10 @@ export function OrganizationAdminUsersList({
                   <span className="max-lg:hidden">Export</span>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => showSoon("CSV export")}>
-                    <FileTextIcon /> Export as CSV
+                  <DropdownMenuItem onClick={() => exportUsers("csv")}>
+                    <FileSpreadsheetIcon /> Export as CSV
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => showSoon("Excel export")}>
-                    <FileSpreadsheetIcon /> Export as Excel
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => showSoon("JSON export")}>
+                  <DropdownMenuItem onClick={() => exportUsers("json")}>
                     <FileTextIcon /> Export as JSON
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -310,7 +414,12 @@ export function OrganizationAdminUsersList({
                 <DownloadIcon />
                 <span className="max-lg:hidden">Import</span>
               </Button>
-              <Button onClick={() => setSheetMode("add")}>
+              <Button
+                onClick={() => {
+                  setEditingUser(null);
+                  setSheetMode("add");
+                }}
+              >
                 <PlusIcon />
                 <span className="max-lg:hidden">Add New User</span>
               </Button>
@@ -326,14 +435,16 @@ export function OrganizationAdminUsersList({
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => showSoon("Bulk status update")}
+                  disabled={isPending}
+                  onClick={suspendSelectedUsers}
                 >
-                  Change Status
+                  Suspend
                 </Button>
                 <Button
                   size="sm"
                   variant="destructive"
-                  onClick={() => showSoon("Bulk delete")}
+                  disabled={isPending}
+                  onClick={deleteSelectedUsers}
                 >
                   <Trash2Icon /> Delete
                 </Button>
@@ -347,17 +458,13 @@ export function OrganizationAdminUsersList({
             </p>
           ) : null}
 
-          {data.isPlaceholder ? (
-            <p className="text-muted-foreground border-b px-6 py-3 text-xs">
-              Preview data — live organization users are coming soon.
-            </p>
-          ) : (
-            <p className="text-muted-foreground border-b px-6 py-3 text-xs">
-              Live Neon Auth users
-              {isPending ? " · updating…" : ""}. Plan/billing columns are
-              AdminCN chrome until product plans exist.
-            </p>
-          )}
+          <p className="text-muted-foreground border-b px-6 py-3 text-xs">
+            Live Neon Auth users
+            {isPending ? " · updating…" : ""} · showing{" "}
+            {pageUsers.length} of {users.length}
+            {pageCount > 1 ? ` · page ${safePageIndex + 1}/${pageCount}` : ""}.
+            Plan/billing columns are AdminCN chrome until product plans exist.
+          </p>
 
           <Table>
             <TableHeader>
@@ -367,7 +474,9 @@ export function OrganizationAdminUsersList({
                     aria-label="Select all users"
                     checked={allSelected}
                     onCheckedChange={(checked) =>
-                      setSelected(checked ? users.map((user) => user.id) : [])
+                      setSelected(
+                        checked ? pageUsers.map((user) => user.id) : [],
+                      )
                     }
                   />
                 </TableHead>
@@ -381,7 +490,7 @@ export function OrganizationAdminUsersList({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {users.map((user) => (
+              {pageUsers.map((user) => (
                 <TableRow key={user.id}>
                   <TableCell>
                     <Checkbox
@@ -450,7 +559,8 @@ export function OrganizationAdminUsersList({
                         variant="ghost"
                         size="icon"
                         aria-label={`Delete ${user.name}`}
-                        onClick={() => showSoon("Delete user")}
+                        disabled={isPending}
+                        onClick={() => deleteUser(user)}
                       >
                         <Trash2Icon />
                       </Button>
@@ -468,7 +578,10 @@ export function OrganizationAdminUsersList({
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem
-                            onClick={() => setSheetMode("edit")}
+                            onClick={() => {
+                              setEditingUser(user);
+                              setSheetMode("edit");
+                            }}
                           >
                             <PencilIcon /> Edit User
                           </DropdownMenuItem>
@@ -534,7 +647,8 @@ export function OrganizationAdminUsersList({
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
                             variant="destructive"
-                            onClick={() => showSoon("Delete user")}
+                            disabled={isPending}
+                            onClick={() => deleteUser(user)}
                           >
                             <Trash2Icon /> Delete
                           </DropdownMenuItem>
@@ -556,14 +670,29 @@ export function OrganizationAdminUsersList({
 
           <div className="flex items-center justify-between gap-4 border-t p-6 text-sm">
             <span className="text-muted-foreground">
-              Showing {users.length === 0 ? 0 : 1} to {users.length} of{" "}
-              {users.length} users
+              {users.length === 0
+                ? "Showing 0 users"
+                : `Showing ${safePageIndex * pageSize + 1} to ${safePageIndex * pageSize + pageUsers.length} of ${users.length} users`}
             </span>
             <div className="flex gap-2">
-              <Button size="sm" variant="outline" disabled>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={safePageIndex <= 0}
+                onClick={() => setPageIndex((current) => Math.max(0, current - 1))}
+              >
                 Previous
               </Button>
-              <Button size="sm" variant="outline" disabled>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={safePageIndex >= pageCount - 1}
+                onClick={() =>
+                  setPageIndex((current) =>
+                    Math.min(pageCount - 1, current + 1),
+                  )
+                }
+              >
                 Next
               </Button>
             </div>
@@ -573,7 +702,12 @@ export function OrganizationAdminUsersList({
 
       <Sheet
         open={sheetMode !== null}
-        onOpenChange={(open) => !open && setSheetMode(null)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSheetMode(null);
+            setEditingUser(null);
+          }
+        }}
       >
         <SheetContent className="sm:max-w-md">
           <SheetHeader>
@@ -582,10 +716,14 @@ export function OrganizationAdminUsersList({
             </SheetTitle>
           </SheetHeader>
           <div className="mt-6">
-            <ComingSoonPanel
-              title={
-                sheetMode === "edit" ? "Edit user form" : "Add user form"
-              }
+            <OrganizationAdminUserForm
+              key={editingUser?.id ?? "add"}
+              mode={sheetMode === "edit" ? "edit" : "add"}
+              user={editingUser}
+              onSuccess={() => {
+                setSheetMode(null);
+                setEditingUser(null);
+              }}
             />
           </div>
         </SheetContent>

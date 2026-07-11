@@ -1,13 +1,29 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useTransition, useState } from "react";
 
-type ActionResult = { error?: string; ok?: true };
+type ActionResult = {
+  error?: string;
+  ok?: true;
+  removed?: number;
+  banned?: number;
+};
+
+export function getActionError(
+  result: ActionResult | null | undefined,
+): string | null {
+  if (result && typeof result.error === "string" && result.error.length > 0) {
+    return result.error;
+  }
+  return null;
+}
 
 /**
  * Shared pending/error wrapper for organization-admin user mutations.
  */
 export function useOrganizationAdminUserAction() {
+  const router = useRouter();
   const [actionError, setActionError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -15,9 +31,12 @@ export function useOrganizationAdminUserAction() {
     setActionError(null);
     startTransition(async () => {
       const result = await action();
-      if (result && "error" in result && result.error) {
-        setActionError(result.error);
+      const error = getActionError(result);
+      if (error) {
+        setActionError(error);
+        return;
       }
+      router.refresh();
     });
   };
 

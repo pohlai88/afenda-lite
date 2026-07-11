@@ -30,6 +30,7 @@
 /*.tgz
 .env.vercel.*
 _reference/
+.tmp/
 
 # debug
 npm-debug.log*
@@ -49,7 +50,3 @@ env.secret
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-
-.vercel
-
-.vercel

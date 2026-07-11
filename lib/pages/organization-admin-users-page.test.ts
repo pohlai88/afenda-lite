@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { asUserId } from "@/modules/identity/schemas/users";
-import { mapOrganizationUserToDisplay } from "@/lib/pages/organization-admin-users-page";
+import { mapOrganizationUserToDisplay } from "@/lib/pages/organization-admin-users-map";
 import {
   ORGANIZATION_ADMIN_USERS_HREF,
   organizationAdminUserHref,
@@ -28,6 +28,7 @@ describe("mapOrganizationUserToDisplay", () => {
       status: "Active",
       plan: "Basic",
       billing: "Manual",
+      company: "—",
       joinedDate: "2026-05-18T08:00:00.000Z",
     });
     expect(organizationAdminUserHref(display.id)).toBe(
@@ -35,9 +36,9 @@ describe("mapOrganizationUserToDisplay", () => {
     );
   });
 
-  it("maps banned → Suspended and unverified → Pending", () => {
-    expect(
-      mapOrganizationUserToDisplay({
+  it("enriches company/country/contact from client profile summary", () => {
+    const display = mapOrganizationUserToDisplay(
+      {
         id: asUserId("22222222-2222-4222-8222-222222222222"),
         email: "minh@example.com",
         name: null,
@@ -46,13 +47,27 @@ describe("mapOrganizationUserToDisplay", () => {
         banned: false,
         banReason: null,
         createdAt: new Date("2026-06-24T08:00:00.000Z"),
-      }),
-    ).toMatchObject({
-      name: "minh@example.com",
+      },
+      {
+        userId: "22222222-2222-4222-8222-222222222222",
+        fullLegalName: "Minh Nguyen",
+        entityName: "Viet Farm Trading",
+        countryOfResidence: "Vietnam",
+        phone: "+84 28 3822 1000",
+      },
+    );
+
+    expect(display).toMatchObject({
+      name: "Minh Nguyen",
       role: "Guest",
       status: "Pending",
+      company: "Viet Farm Trading",
+      country: "Vietnam",
+      contact: "+84 28 3822 1000",
     });
+  });
 
+  it("maps banned → Suspended", () => {
     expect(
       mapOrganizationUserToDisplay({
         id: asUserId("33333333-3333-4333-8333-333333333333"),

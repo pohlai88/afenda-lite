@@ -18,6 +18,7 @@ description: >-
 | [context-boundaries.md](context-boundaries.md) | Trade ↛ Declarations, port isolation, narrow edges |
 | [adapter-map.md](adapter-map.md) | Action / Route Handler → module entrypoints |
 | [residue-inventory.md](residue-inventory.md) | Pass 2 done — runners only under `lib/` |
+| [completeness.md](completeness.md) | Plan ↔ codebase matrix for this program |
 | [doc/backend/](../../../doc/backend/) | Architecture, ownership, conventions |
 | [doc/api/](../../../doc/api/) | Error shape, REST catalog, types |
 
@@ -81,7 +82,10 @@ External/mobile REST?  → Route Handler per doc/api (contract-only until needed
 | Tests asserting old copy strings | Follow live `portalCopy` SSOT (`"Client"` not `"Client portal"`) |
 | Pass 2 ≠ delete runners | Keep `lib/entry\|pages\|playground` until a named migrate; do not mix with FFT flags |
 | Users list was fixture-only | Wire `modules/identity/domain/organization-users` + `UserId` schemas; RSC loader maps display; role/ban via `app/actions/admin` → `neonAdmin*` |
+| Users export / bulk | Client CSV/JSON from filtered list; bulk remove/ban actions with Zod `userIds` array; import stays deferred |
 | AdminCN plan/billing columns | Keep as chrome defaults (`Basic` / `Manual`); do not invent SaaS billing in Identity |
+| Users create/edit/password/sessions | Actions in `admin.ts`; forms in `features/organization-admin`; enrich company/phone/country from Declarations profile summaries **at the RSC adapter only** |
+| Mapper tests pulled Neon Auth Next entry | Keep pure mappers in `lib/pages/organization-admin-users-map.ts` — do not import `neonAdmin*` into unit-tested map modules |
 | Identity bootstrap still calls Declarations invite/profile | Documented narrow edge only — do not add more Identity→Declarations domain imports without ClientProfile port |
 | Grep ghosts for deleted `lib/*` / `components/` | Trust disk (`Test-Path` / `Get-ChildItem`); git may still list deleted `app/actions/trade.ts` until committed |
 
