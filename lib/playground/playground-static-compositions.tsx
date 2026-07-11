@@ -154,7 +154,7 @@ export async function loadPlaygroundStaticComposition(
         status: "ready",
         screenId,
         kind: "page",
-        title: "Lynx Morphor landing",
+        title: "Lynx pixel landing",
         shape: "live",
         node: <LynxLandingPage signInHref={AUTH_SIGN_IN_HREF} />,
       };

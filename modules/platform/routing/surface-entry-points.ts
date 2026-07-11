@@ -99,6 +99,8 @@ export const SURFACE_ENTRY_POINTS: Readonly<
     files: [
       "app/page.tsx",
       "features/landing/lynx-landing-page.tsx",
+      "features/landing/vanguard-landing.tsx",
+      "features/landing/lynx-pixel-canvas.client.tsx",
       "features/landing/lynx-landing.css",
       "lib/entry/client-sign-in-entry.ts",
       "lib/entry/client-invitation-entry.ts",
