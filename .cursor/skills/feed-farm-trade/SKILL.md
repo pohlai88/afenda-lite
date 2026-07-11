@@ -38,6 +38,7 @@ External ecosystem (`deliver-acceptance-criteria`) patterns are **folded into** 
 | Worked example | [example-slice.md](example-slice.md) |
 | Completeness matrix | [completeness.md](completeness.md) |
 | Copy-paste command sheet | [command-sheet.md](command-sheet.md) |
+| UI registry (HITL IDs) | [ui-registry.md](ui-registry.md) · [ui-registry.json](ui-registry.json) · rule [`fft-ui-registry.mdc`](../../rules/fft-ui-registry.mdc) — **compulsory** `ACN-UI-*` / `ACN-BLK-*` / `FFT-UI-*` |
 | Ops flags | [docs/hot-sales/RUNTIME.md](../../../docs/hot-sales/RUNTIME.md) · gate-register |
 
 ## Load card (coding)
@@ -49,7 +50,7 @@ External ecosystem (`deliver-acceptance-criteria`) patterns are **folded into** 
 | Coding a P0 gate | Phase [11](../../../doc/frontend/11-feed-farm-trade-phase0-shell.md) + [verify.md](verify.md) |
 | Coding a P1 capability | Phase [12](../../../doc/frontend/12-feed-farm-trade-phase1-core-mvp.md) + [action-map.md](action-map.md) + [rbac-card.md](rbac-card.md) + [example-slice.md](example-slice.md) |
 | Claiming MVP done | [verify.md](verify.md) AC evidence protocol — **required** |
-| P2 polish | **STOP** — closed until user reopen ([13](../../../doc/frontend/13-feed-farm-trade-phase2-ui-polish.md)) |
+| P2 polish | **Complete 2026-07-11** (AC-01..06) — further polish only with named P2-AC + Plan for visual ([13](../../../doc/frontend/13-feed-farm-trade-phase2-ui-polish.md)) |
 | P3 ops / flags | [14](../../../doc/frontend/14-feed-farm-trade-phase3-ops-flags.md) + RUNTIME — **no prod flag without gate-register** |
 
 ```text
@@ -65,10 +66,10 @@ Copy and track:
 
 ```text
 FFT slice:
-- [ ] 1. Name phase (P0 | P1 | P2-closed | P3) + F-* / AC-* IDs from phase doc
+- [ ] 1. Name phase (P0 | P1 | P2 | P3) + F-* / AC-* / P2-AC-* IDs from phase doc
 - [ ] 2. Load action-map row + rbac-card codes (never role names)
-- [ ] 3. Confirm P3? → flag + permission; else stay on P1 actions only
-- [ ] 4. Implement vertical slice (page → feature → action → domain)
+- [ ] 3. Confirm P3? → flag + permission; P2? → named P2-AC only (no new domain/RBAC); else stay on P1 actions only
+- [ ] 4. Implement vertical slice (page → feature → action → domain) — P2: UI only
 - [ ] 5. Run verify.md commands for touched AC
 - [ ] 6. Record evidence (test path or journey) before claiming done
 - [ ] 7. Update completeness.md if status changed

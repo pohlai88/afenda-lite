@@ -86,6 +86,9 @@ describe("P1 AC permission gates (RBAC on)", () => {
   });
 
   const cases: Array<{ ac: string; code: string }> = [
+    { ac: "AC-EVT-02", code: "event.create" },
+    { ac: "AC-EVT-03", code: "event.edit" },
+    { ac: "AC-EVT-04", code: "event.open_close" },
     { ac: "AC-SUP-01 / G2", code: "supply.manage" },
     { ac: "AC-FLD-01 / G5", code: "custom_field.manage" },
     { ac: "AC-PRI-01 / G1", code: "priority.manage" },
@@ -95,6 +98,7 @@ describe("P1 AC permission gates (RBAC on)", () => {
     { ac: "AC-ALC-03 / G9", code: "allocation.override" },
     { ac: "AC-AUD-01 / G6", code: "audit.view" },
     { ac: "AC-ADM-01 / G8", code: "export.orders" },
+    { ac: "AC-ADM-02", code: "role.manage" },
   ];
 
   for (const { ac, code } of cases) {
@@ -153,6 +157,107 @@ describe("P1 AC permission gates (RBAC on)", () => {
       requireTradePermission("order.create", { eventId: "e1" }),
     ).rejects.toThrow(salesEventsRedirect);
   });
+
+  it("AC-ORD-02..04: order.view_own allow/deny", async () => {
+    mockSignedIn("sales@example.com", "sales-1");
+    mocks.listRoleAssignmentsForUser.mockResolvedValue(
+      assignment(["order.view_own"]),
+    );
+
+    await expect(
+      requireTradePermission("order.view_own", {
+        eventId: "e1",
+        resourceOwnerUserId: "sales-1",
+      }),
+    ).resolves.toMatchObject({ userId: "sales-1" });
+
+    mocks.listRoleAssignmentsForUser.mockResolvedValue(
+      assignment(["order.create"]),
+    );
+
+    await expect(
+      requireTradePermission("order.view_own", {
+        eventId: "e1",
+        resourceOwnerUserId: "sales-1",
+      }),
+    ).rejects.toThrow(salesEventsRedirect);
+  });
+
+  it("AC-ORD-05 / G4: pickup.manage allow/deny (pickup-ops complete path)", async () => {
+    mockSignedIn("ops@example.com", "ops-1");
+    mocks.listRoleAssignmentsForUser.mockResolvedValue(
+      assignment(["pickup.manage"]),
+    );
+
+    await expect(
+      requireTradePermission("pickup.manage", { eventId: "e1" }),
+    ).resolves.toMatchObject({ userId: "ops-1" });
+
+    mocks.listRoleAssignmentsForUser.mockResolvedValue(
+      assignment(["order.view_own"]),
+    );
+
+    await expect(
+      requireTradePermission("pickup.manage", { eventId: "e1" }),
+    ).rejects.toThrow(salesEventsRedirect);
+  });
+
+  it("AC-ALC-03 / G9: allocation.preview|run alone do not grant override", async () => {
+    mockSignedIn("ops@example.com", "ops-1");
+    mocks.listRoleAssignmentsForUser.mockResolvedValue(
+      assignment(["allocation.preview", "allocation.run"]),
+    );
+
+    await expect(
+      requireTradePermission("allocation.preview", { eventId: "e1" }),
+    ).resolves.toMatchObject({ userId: "ops-1" });
+    await expect(
+      requireTradePermission("allocation.run", { eventId: "e1" }),
+    ).resolves.toMatchObject({ userId: "ops-1" });
+
+    await expect(
+      requireTradePermission("allocation.override", { eventId: "e1" }),
+    ).rejects.toThrow(salesEventsRedirect);
+  });
+});
+
+describe("P1 AC-ALC-03 override panel helper (no full-page redirect)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.isHotSalesRbacEnabled.mockReturnValue(true);
+    mocks.listSalesMembers.mockResolvedValue([]);
+    mocks.bootstrapPhase1RbacAssignments.mockResolvedValue(undefined);
+  });
+
+  it("hides override when user has preview/run only", async () => {
+    const access: TradeAccess = {
+      userId: "ops-1",
+      email: "ops@example.com",
+      isAdmin: false,
+      rbacEnabled: true,
+    };
+    mocks.listRoleAssignmentsForUser.mockResolvedValue(
+      assignment(["allocation.preview", "allocation.run"]),
+    );
+    await expect(
+      hasTradeEventManagePermission(access, "allocation.override", "e1"),
+    ).resolves.toBe(false);
+  });
+
+  it("shows override when user has allocation.override", async () => {
+    const access: TradeAccess = {
+      userId: "ops-1",
+      email: "ops@example.com",
+      isAdmin: false,
+      rbacEnabled: true,
+    };
+    mocks.listRoleAssignmentsForUser.mockResolvedValue(
+      assignment(["allocation.override"]),
+    );
+    await expect(
+      hasTradeEventManagePermission(access, "allocation.override", "e1"),
+    ).resolves.toBe(true);
+  });
 });
 
 describe("P1 AC-AUD-01 setup panel helper (no full-page redirect)", () => {
@@ -202,6 +307,28 @@ describe("P1 AC-AUD-01 setup panel helper (no full-page redirect)", () => {
     ).resolves.toBe(true);
     expect(mocks.listRoleAssignmentsForUser).not.toHaveBeenCalled();
   });
+
+  it("AC-AUD-01 / G6: RBAC off — admin sees audit, sales allowlist does not", async () => {
+    const sales: TradeAccess = {
+      userId: "sales-1",
+      email: "sales@example.com",
+      isAdmin: false,
+      rbacEnabled: false,
+    };
+    await expect(
+      hasTradeEventManagePermission(sales, "audit.view", "e1"),
+    ).resolves.toBe(false);
+
+    const admin: TradeAccess = {
+      userId: "admin-1",
+      email: "admin@example.com",
+      isAdmin: true,
+      rbacEnabled: false,
+    };
+    await expect(
+      hasTradeEventManagePermission(admin, "audit.view", "e1"),
+    ).resolves.toBe(true);
+  });
 });
 
 describe("P1 AC gates (RBAC off — admin vs sales allowlist)", () => {
@@ -216,12 +343,17 @@ describe("P1 AC gates (RBAC off — admin vs sales allowlist)", () => {
     mockSignedIn("sales@example.com", "sales-1");
 
     for (const code of [
+      "event.create",
+      "event.edit",
+      "event.open_close",
       "supply.manage",
       "priority.manage",
       "custom_field.manage",
       "export.orders",
+      "role.manage",
       "transfer.approve",
       "allocation.preview",
+      "allocation.override",
     ] as const) {
       await expect(requireTradePermission(code, { eventId: "e1" })).rejects.toThrow(
         salesEventsRedirect,

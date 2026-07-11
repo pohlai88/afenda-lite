@@ -15,7 +15,7 @@ describe("playgroundE2eFixtures", () => {
   });
 
   it.each([
-    ["client-home-login", "Open authentication"],
+    ["client-home-login", "Sign in"],
     ["client-dashboard", "Client Workspace"],
     ["client-onboarding", "Onboarding"],
     ["client-profile", "Profile"],

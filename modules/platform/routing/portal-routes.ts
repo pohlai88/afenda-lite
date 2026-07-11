@@ -28,6 +28,7 @@ export function buildClientJoinHref(invitationId: string) {
 
 /** Neon Auth UI (matches `proxy.ts` loginUrl). */
 export const AUTH_SIGN_IN_HREF = "/auth/sign-in" as const;
+export const AUTH_SIGN_UP_HREF = "/auth/sign-up" as const;
 export const AUTH_FORGOT_PASSWORD_HREF = "/auth/forgot-password" as const;
 export const AUTH_RESET_PASSWORD_HREF = "/auth/reset-password" as const;
 export const AUTH_SIGN_OUT_HREF = "/auth/sign-out" as const;
@@ -103,17 +104,27 @@ export const PLAYGROUND_HREF = "/playground" as const;
 export const PLAYGROUND_HITL_REVIEW_HREF = "/playground/hitl-review" as const;
 export const PLAYGROUND_COVERAGE_HREF = "/playground/coverage" as const;
 
-export function authSignInHref(params?: Record<string, string>) {
+function authHref(
+  pathname: typeof AUTH_SIGN_IN_HREF | typeof AUTH_SIGN_UP_HREF,
+  params?: Record<string, string>,
+) {
   if (!params || Object.keys(params).length === 0) {
-    return AUTH_SIGN_IN_HREF;
+    return pathname;
   }
 
   const query = new URLSearchParams(params);
-  return `${AUTH_SIGN_IN_HREF}?${query.toString()}`;
+  return `${pathname}?${query.toString()}`;
 }
 
-/** Neon Auth sign-in with optional reason + sanitized returnTo. */
-export function clientSignInAuthHref(reason?: string, returnTo?: string) {
+export function authSignInHref(params?: Record<string, string>) {
+  return authHref(AUTH_SIGN_IN_HREF, params);
+}
+
+export function authSignUpHref(params?: Record<string, string>) {
+  return authHref(AUTH_SIGN_UP_HREF, params);
+}
+
+function clientAuthParams(reason?: string, returnTo?: string) {
   const params: Record<string, string> = {};
   if (reason) {
     params.reason = reason;
@@ -124,9 +135,25 @@ export function clientSignInAuthHref(reason?: string, returnTo?: string) {
     params.returnTo = safeReturnTo;
   }
 
+  return params;
+}
+
+/** Neon Auth sign-in with optional reason + sanitized returnTo. */
+export function clientSignInAuthHref(reason?: string, returnTo?: string) {
+  const params = clientAuthParams(reason, returnTo);
   if (Object.keys(params).length === 0) {
     return AUTH_SIGN_IN_HREF;
   }
 
   return authSignInHref(params);
+}
+
+/** Neon Auth sign-up with the same safe query policy as sign-in. */
+export function clientSignUpAuthHref(reason?: string, returnTo?: string) {
+  const params = clientAuthParams(reason, returnTo);
+  if (Object.keys(params).length === 0) {
+    return AUTH_SIGN_UP_HREF;
+  }
+
+  return authSignUpHref(params);
 }

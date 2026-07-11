@@ -104,7 +104,7 @@ export const playgroundScreenDefs: PlaygroundScreenDef[] = [
   {
     id: "client-home-login",
     category: "client",
-    label: "Lynx pixel landing",
+    label: "Lynx laptop landing",
     path: "/",
   },
   {

@@ -1,4 +1,7 @@
 import Link from "next/link";
+import { TradeEventsList } from "@/features/trade/trade-events-list";
+import { toTradeEventListItems } from "@/features/trade/trade-events-list-model";
+import { TRADE_UI_LOCALE } from "@/features/trade/trade-ui-locale";
 import { listEvents } from "@/modules/trade/domain/store";
 import { tradeHref } from "@/modules/trade/i18n/trade";
 
@@ -17,10 +20,7 @@ export default async function TradeEventsPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Link
-            className="text-sm underline"
-            href={tradeHref("/admin/events")}
-          >
+          <Link className="text-sm underline" href={tradeHref("/admin/events")}>
             Admin events
           </Link>
           <Link className="text-sm underline" href={tradeHref("/my-orders")}>
@@ -29,33 +29,11 @@ export default async function TradeEventsPage() {
         </div>
       </div>
 
-      {events.length === 0 ? (
-        <p className="text-muted-foreground text-sm">No events yet.</p>
-      ) : (
-        <ul className="divide-border divide-y rounded-lg border">
-          {events.map((event) => (
-            <li key={event.id} className="flex flex-wrap items-center justify-between gap-2 p-4">
-              <div>
-                <p className="font-medium">{event.eventName}</p>
-                <p className="text-muted-foreground text-xs">
-                  {event.status} · {event.eventCode}
-                </p>
-              </div>
-              <div className="flex gap-3 text-sm">
-                <Link className="underline" href={tradeHref(`/events/${event.id}/order`)}>
-                  Order
-                </Link>
-                <Link
-                  className="underline"
-                  href={tradeHref(`/admin/events/${event.id}/setup`)}
-                >
-                  Setup
-                </Link>
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
+      <TradeEventsList
+        events={toTradeEventListItems(events)}
+        locale={TRADE_UI_LOCALE}
+        variant="sales"
+      />
     </main>
   );
 }

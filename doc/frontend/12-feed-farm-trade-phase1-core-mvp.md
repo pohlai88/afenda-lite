@@ -174,19 +174,19 @@ Use this table to grade the live codebase against every P1 AC. Leave **Result** 
 
 | AC / Req ID | Requirement | Expected evidence | Result |
 |-------------|-------------|--------------------|--------|
-| F-EVT-01..05 / AC-EVT-01..04 | Event lifecycle | `event.*` actions + setup/open-close pages | |
-| F-EVT-06 / AC-EVT-05 (G7) | Clone / template / schedule activate | `cloneTradeEventAction`, `ensurePigletTemplateAction`, `activateScheduledTradeEventAction` wired to a UI control | |
-| F-SUP-01 / AC-SUP-01 (G2) | Supply management | `supply.manage` gate on setup form | |
-| F-FLD-01 / AC-FLD-01 (G5) | Custom field defs | `custom_field.manage` gate on setup form | |
-| F-PRI-01 / AC-PRI-01 (G1) | Priority + CSV import | `priority.manage` gate + `importPriorityCsvAction` wired | |
-| F-ORD-01..04 / AC-ORD-01..04 | Order create/list/scope | In-window enforcement in action; my-orders scoping | |
-| F-ORD-05 / AC-ORD-05 (G4) | Order complete | `completeTradeOrderAction` wired with permission check | |
-| F-XFR-01..02 / AC-XFR-01..02 (G3) | Transfer request/approve | `transfer.request` / `transfer.approve` gates | |
-| F-ALC-01..03 / AC-ALC-01..03 (G9) | Allocation preview/run/override | `allocation.*` + distinct `allocation.override` check | |
-| F-AUD-01 / AC-AUD-01 (G6) | Audit view | `audit.view` gate + `listAuditForEvent` wired | |
-| F-ADM-01..03 / AC-ADM-01 (G8) | Sales-member, roles, exports | `role.manage`, `export.orders` gates on rbac admin page | |
-| DoD | No shell/locale residue | Confirmed absent under `features/trade`, `app/trade` | |
-| DoD | AC test evidence | Unit and/or `@journey` tests exist and pass for each row above | |
+| F-EVT-01..05 / AC-EVT-01..04 | Event lifecycle | `event.*` actions + setup/open-close pages | **PASS** — re-verified P2-AC-06: `trade-p1-ac-gates` + `trade.test.ts` (2026-07-11) |
+| F-EVT-06 / AC-EVT-05 (G7) | Clone / template / schedule activate | `cloneTradeEventAction`, `ensurePigletTemplateAction`, `activateScheduledTradeEventAction` wired to a UI control | **PASS** — re-verified P2-AC-06: domain + prior evidence (2026-07-11) |
+| F-SUP-01 / AC-SUP-01 (G2) | Supply management | `supply.manage` gate on setup form | **PASS** — re-verified P2-AC-06: `trade-p1-ac-gates` (2026-07-11) |
+| F-FLD-01 / AC-FLD-01 (G5) | Custom field defs | `custom_field.manage` gate on setup form | **PASS** — re-verified P2-AC-06: `trade-p1-ac-gates` (2026-07-11) |
+| F-PRI-01 / AC-PRI-01 (G1) | Priority + CSV import | `priority.manage` gate + `importPriorityCsvAction` wired | **PASS** — re-verified P2-AC-06: gates + `priority-csv` (2026-07-11) |
+| F-ORD-01..04 / AC-ORD-01..04 | Order create/list/scope | In-window enforcement in action; my-orders scoping | **PASS** — re-verified P2-AC-06: `trade-p1-ac-gates` (2026-07-11) |
+| F-ORD-05 / AC-ORD-05 (G4) | Order complete | `completeTradeOrderAction` wired with permission check | **PASS** — re-verified P2-AC-06: `trade-p1-ac-gates` (2026-07-11) |
+| F-XFR-01..02 / AC-XFR-01..02 (G3) | Transfer request/approve | `transfer.request` / `transfer.approve` gates | **PASS** — re-verified P2-AC-06: `trade-p1-ac-gates` (2026-07-11) |
+| F-ALC-01..03 / AC-ALC-01..03 (G9) | Allocation preview/run/override | `allocation.*` + distinct `allocation.override` check | **PASS** — re-verified P2-AC-06: `trade-p1-ac-gates` (2026-07-11) |
+| F-AUD-01 / AC-AUD-01 (G6) | Audit view | `audit.view` gate + `listAuditForEvent` wired | **PASS** — re-verified P2-AC-06: `trade-p1-ac-gates` (2026-07-11) |
+| F-ADM-01..03 / AC-ADM-01 (G8) | Sales-member, roles, exports | `role.manage`, `export.orders` gates on rbac admin page | **PASS** — re-verified P2-AC-06: `trade-p1-ac-gates` (2026-07-11) |
+| DoD | No shell/locale residue | Confirmed absent under `features/trade`, `app/trade` | **PASS** — product pages locale-free; only thin redirect shim `app/trade/[locale]/[[...path]]` (no TradeShell) (2026-07-11) |
+| DoD | AC test evidence | Unit and/or `@journey` tests exist and pass for each row above | **PASS** — `npm run test:unit -- modules/trade` 173/173 (2026-07-11 P2-AC-06) |
 
 ## Risks and open questions
 

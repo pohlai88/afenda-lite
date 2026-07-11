@@ -11,6 +11,7 @@ import {
   assertHotSalesDepositFeatureAction,
   assertHotSalesPickupFeatureAction,
 } from "@/modules/trade/auth/trade-phase2b";
+import { assertHotSalesErpSyncFeatureAction } from "@/modules/trade/auth/trade-phase2d";
 import {
   ensureDepositForOrder,
   listDepositsForEvent,
@@ -49,6 +50,7 @@ import {
 } from "@/modules/trade/domain/allocation";
 import {
   assertEventFieldEditable,
+  canActivateScheduledEvent,
   canCloseEvent,
   canOpenEvent,
   canSubmitOrder,
@@ -58,6 +60,7 @@ import {
   sanitizeFieldKey,
   validateOrderAttrs,
 } from "@/modules/trade/domain/fields";
+import { parseAndValidatePriorityCsv } from "@/modules/trade/domain/priority-csv";
 import {
   allocationToCsv,
   buildEventSummary,
@@ -203,18 +206,27 @@ export async function ensurePigletTemplateAction(locale: string) {
 export async function cloneTradeEventAction(locale: string, sourceEventId: string) {
   const gatedLocale = gateTradeLocale(locale);
   if (typeof gatedLocale === "object") return gatedLocale;
-  
+  const gatedSourceId = gateTradeEventId(sourceEventId);
+  if (typeof gatedSourceId === "object") return gatedSourceId;
+
   const admin = await requireTradeAdmin();
-  const event = await cloneEventFromTemplate(sourceEventId, admin.userId);
-  await recordHotSalesAudit({
-    eventId: event.id,
-    action: "event.cloned",
-    actorId: admin.userId,
-    actorRole: "admin",
-    newValue: { clonedFromId: sourceEventId },
-  });
-  revalidateTrade(gatedLocale, event.id);
-  return { eventId: event.id };
+  try {
+    const event = await cloneEventFromTemplate(gatedSourceId, admin.userId);
+    await recordHotSalesAudit({
+      eventId: event.id,
+      action: "event.cloned",
+      actorId: admin.userId,
+      actorRole: "admin",
+      newValue: { clonedFromId: gatedSourceId },
+    });
+    revalidateTrade(gatedLocale, event.id);
+    return { eventId: event.id };
+  } catch (error) {
+    if (error instanceof Error && error.message === "source_event_not_found") {
+      return { error: "not_found" as const };
+    }
+    throw error;
+  }
 }
 
 export async function openTradeEventAction(locale: string, eventId: string) {
@@ -255,64 +267,71 @@ export async function openTradeEventAction(locale: string, eventId: string) {
   return { ok: true };
 }
 
-/** Promote scheduled → open once the window has started (admin-triggered). */
+/** Promote scheduled → open once the window has started (admin-triggered / G7). */
 export async function activateScheduledTradeEventAction(
   locale: string,
   eventId: string,
 ) {
   const gatedLocale = gateTradeLocale(locale);
   if (typeof gatedLocale === "object") return gatedLocale;
-  
-  const admin = await requireTradePermission("event.open_close", { eventId });
-  const event = await getEventById(eventId);
-  if (!event) return { error: "not_found" };
-  if (event.status !== "scheduled") return { error: "not_scheduled" };
-  if (Date.now() < event.opensAt.getTime()) {
-    return { error: "window_not_started" };
-  }
+  const gatedEventId = gateTradeEventId(eventId);
+  if (typeof gatedEventId === "object") return gatedEventId;
 
-  await updateEvent(eventId, { status: "open" }, admin.userId);
+  const admin = await requireTradePermission("event.open_close", {
+    eventId: gatedEventId,
+  });
+  const event = await getEventById(gatedEventId);
+  if (!event) return { error: "not_found" };
+
+  const check = canActivateScheduledEvent(event);
+  if (!check.allowed) return { error: check.reason };
+
+  await updateEvent(gatedEventId, { status: "open" }, admin.userId);
   await recordHotSalesAudit({
-    eventId,
+    eventId: gatedEventId,
     action: "event.opened",
     actorId: admin.userId,
     actorRole: "admin",
   });
   notifyTradeStakeholder(gatedLocale, {
     eventKey: "event.opened",
-    entityId: eventId,
+    entityId: gatedEventId,
     recipientEmail: admin.email,
     vars: { eventName: event.eventName },
   });
-  revalidateTrade(gatedLocale, eventId);
+  revalidateTrade(gatedLocale, gatedEventId);
   return { ok: true };
 }
 
 export async function closeTradeEventAction(locale: string, eventId: string) {
   const gatedLocale = gateTradeLocale(locale);
   if (typeof gatedLocale === "object") return gatedLocale;
-  
-  const admin = await requireTradePermission("event.open_close", { eventId });
-  const event = await getEventById(eventId);
+  const gatedEventId = gateTradeEventId(eventId);
+  if (typeof gatedEventId === "object") return gatedEventId;
+
+  const admin = await requireTradePermission("event.open_close", {
+    eventId: gatedEventId,
+  });
+  const event = await getEventById(gatedEventId);
   if (!event) return { error: "not_found" };
 
   const check = canCloseEvent(event);
   if (!check.allowed) return { error: check.reason };
 
-  await updateEvent(eventId, { status: "closed" }, admin.userId);
+  await updateEvent(gatedEventId, { status: "closed" }, admin.userId);
   await recordHotSalesAudit({
-    eventId,
+    eventId: gatedEventId,
     action: "event.closed",
     actorId: admin.userId,
     actorRole: "admin",
   });
   notifyTradeStakeholder(gatedLocale, {
     eventKey: "event.closed",
-    entityId: eventId,
+    entityId: gatedEventId,
     recipientEmail: admin.email,
     vars: { eventName: event.eventName },
   });
-  revalidateTrade(gatedLocale, eventId);
+  revalidateTrade(gatedLocale, gatedEventId);
   return { ok: true };
 }
 
@@ -323,9 +342,13 @@ export async function saveTradeEventSetupAction(
 ) {
   const gatedLocale = gateTradeLocale(locale);
   if (typeof gatedLocale === "object") return gatedLocale;
-  
-  const admin = await requireTradeAdmin();
-  const event = await getEventById(eventId);
+  const gatedEventId = gateTradeEventId(eventId);
+  if (typeof gatedEventId === "object") return gatedEventId;
+
+  const admin = await requireTradePermission("event.edit", {
+    eventId: gatedEventId,
+  });
+  const event = await getEventById(gatedEventId);
   if (!event) return { error: "not_found" };
 
   const overrideReason = String(formData.get("overrideReason") ?? "").trim();
@@ -358,7 +381,7 @@ export async function saveTradeEventSetupAction(
           return { error: lock.reason ?? "support_locked" };
         }
         await recordHotSalesAudit({
-          eventId,
+          eventId: gatedEventId,
           action: "event.support_override",
           actorId: admin.userId,
           actorRole: "admin",
@@ -389,7 +412,7 @@ export async function saveTradeEventSetupAction(
     if (lock.reason === "admin_override_required") {
       if (!overrideReason) return { error: "override_reason_required" };
       await recordHotSalesAudit({
-        eventId,
+        eventId: gatedEventId,
         action: "event.closes_at_override",
         actorId: admin.userId,
         actorRole: "admin",
@@ -401,8 +424,8 @@ export async function saveTradeEventSetupAction(
     patch.closesAt = new Date(String(closesAtRaw));
   }
 
-  await updateEvent(eventId, patch, admin.userId);
-  revalidateTrade(gatedLocale, eventId);
+  await updateEvent(gatedEventId, patch, admin.userId);
+  revalidateTrade(gatedLocale, gatedEventId);
   return { ok: true };
 }
 
@@ -413,9 +436,13 @@ export async function saveTradeProductAction(
 ) {
   const gatedLocale = gateTradeLocale(locale);
   if (typeof gatedLocale === "object") return gatedLocale;
-  
-  const access = await requireTradePermission("supply.manage", { eventId });
-  const event = await getEventById(eventId);
+  const gatedEventId = gateTradeEventId(eventId);
+  if (typeof gatedEventId === "object") return gatedEventId;
+
+  const access = await requireTradePermission("supply.manage", {
+    eventId: gatedEventId,
+  });
+  const event = await getEventById(gatedEventId);
   if (!event) return { error: "not_found" };
 
   const id = String(formData.get("id") ?? "") || undefined;
@@ -434,10 +461,15 @@ export async function saveTradeProductAction(
     if (finalConfirmedQuantity === undefined || Number.isNaN(finalConfirmedQuantity)) {
       return { error: "final_confirmed_quantity_required" };
     }
-    const existing = (await listProductsForEvent(eventId)).find((p) => p.id === id);
+    if (finalConfirmedQuantity < 0) {
+      return { error: "invalid_supply_quantity" };
+    }
+    const existing = (await listProductsForEvent(gatedEventId)).find(
+      (p) => p.id === id,
+    );
     if (!existing) return { error: "product_not_found" };
     await upsertProduct({
-      eventId,
+      eventId: gatedEventId,
       id,
       productName: existing.productName,
       productCode: existing.productCode ?? undefined,
@@ -452,14 +484,14 @@ export async function saveTradeProductAction(
       pickupLocation: existing.pickupLocation ?? undefined,
     });
     await recordHotSalesAudit({
-      eventId,
+      eventId: gatedEventId,
       action: "product.final_qty_updated",
       actorId: access.userId,
       actorRole: access.isAdmin ? "admin" : "ops",
       newValue: { productId: id, finalConfirmedQuantity },
       reason: "final_confirmed_quantity_update",
     });
-    revalidateTrade(gatedLocale, eventId);
+    revalidateTrade(gatedLocale, gatedEventId);
     return { ok: true };
   }
 
@@ -469,13 +501,21 @@ export async function saveTradeProductAction(
     const finalConfirmedQuantity = formData.get("finalConfirmedQuantity")
       ? Number(formData.get("finalConfirmedQuantity"))
       : undefined;
-    if (finalConfirmedQuantity === undefined) {
+    if (
+      finalConfirmedQuantity === undefined ||
+      Number.isNaN(finalConfirmedQuantity)
+    ) {
       return { error: "final_confirmed_quantity_required" };
     }
-    const existing = (await listProductsForEvent(eventId)).find((p) => p.id === id);
+    if (finalConfirmedQuantity < 0) {
+      return { error: "invalid_supply_quantity" };
+    }
+    const existing = (await listProductsForEvent(gatedEventId)).find(
+      (p) => p.id === id,
+    );
     if (!existing) return { error: "product_not_found" };
     await upsertProduct({
-      eventId,
+      eventId: gatedEventId,
       id,
       productName: existing.productName,
       productCode: existing.productCode ?? undefined,
@@ -490,39 +530,55 @@ export async function saveTradeProductAction(
       pickupLocation: existing.pickupLocation ?? undefined,
     });
     await recordHotSalesAudit({
-      eventId,
+      eventId: gatedEventId,
       action: "product.final_qty_updated",
       actorId: access.userId,
       actorRole: access.isAdmin ? "admin" : "ops",
       newValue: { productId: id, finalConfirmedQuantity },
     });
-    revalidateTrade(gatedLocale, eventId);
+    revalidateTrade(gatedLocale, gatedEventId);
     return { ok: true };
   }
 
+  const productName = String(formData.get("productName") ?? "").trim();
+  if (!productName) {
+    return { error: "product_name_required" };
+  }
+
+  const tentativeQuantity = formData.get("tentativeQuantity")
+    ? Number(formData.get("tentativeQuantity"))
+    : undefined;
+  const finalConfirmedQuantity = formData.get("finalConfirmedQuantity")
+    ? Number(formData.get("finalConfirmedQuantity"))
+    : undefined;
+  if (
+    (tentativeQuantity !== undefined &&
+      (Number.isNaN(tentativeQuantity) || tentativeQuantity < 0)) ||
+    (finalConfirmedQuantity !== undefined &&
+      (Number.isNaN(finalConfirmedQuantity) || finalConfirmedQuantity < 0))
+  ) {
+    return { error: "invalid_supply_quantity" };
+  }
+
   await upsertProduct({
-    eventId,
+    eventId: gatedEventId,
     id,
-    productName: String(formData.get("productName") ?? ""),
+    productName,
     productCode: String(formData.get("productCode") ?? "") || undefined,
     source: String(formData.get("source") ?? "") || undefined,
     batch: String(formData.get("batch") ?? "") || undefined,
     category: String(formData.get("category") ?? "") || undefined,
     weight: String(formData.get("weight") ?? "") || undefined,
     unit: String(formData.get("unit") ?? "piece"),
-    tentativeQuantity: formData.get("tentativeQuantity")
-      ? Number(formData.get("tentativeQuantity"))
-      : undefined,
-    finalConfirmedQuantity: formData.get("finalConfirmedQuantity")
-      ? Number(formData.get("finalConfirmedQuantity"))
-      : undefined,
+    tentativeQuantity,
+    finalConfirmedQuantity,
     supportAmountPerUnit: formData.get("supportAmountPerUnit")
       ? Number(formData.get("supportAmountPerUnit"))
       : undefined,
     pickupLocation: String(formData.get("pickupLocation") ?? "") || undefined,
   });
 
-  revalidateTrade(gatedLocale, eventId);
+  revalidateTrade(gatedLocale, gatedEventId);
   return { ok: true };
 }
 
@@ -533,29 +589,56 @@ export async function saveTradeFieldDefAction(
 ) {
   const gatedLocale = gateTradeLocale(locale);
   if (typeof gatedLocale === "object") return gatedLocale;
-  
-  const access = await requireTradePermission("custom_field.manage", { eventId });
-  const event = await getEventById(eventId);
+  const gatedEventId = gateTradeEventId(eventId);
+  if (typeof gatedEventId === "object") return gatedEventId;
+
+  const access = await requireTradePermission("custom_field.manage", {
+    eventId: gatedEventId,
+  });
+  const event = await getEventById(gatedEventId);
   if (!event) return { error: "not_found" };
 
   const fieldKey = sanitizeFieldKey(String(formData.get("fieldKey") ?? ""));
   if (!fieldKey) return { error: "invalid_field_key" };
 
+  const allowedFieldTypes = new Set([
+    "text",
+    "number",
+    "currency",
+    "date",
+    "datetime",
+    "select",
+    "boolean",
+    "long_text",
+  ]);
+  const fieldType = String(formData.get("fieldType") ?? "text");
+  if (!allowedFieldTypes.has(fieldType)) {
+    return { error: "invalid_field_type" };
+  }
+
+  const labelEn = String(formData.get("labelEn") ?? "").trim() || fieldKey;
+  const labelVi = String(formData.get("labelVi") ?? "").trim() || fieldKey;
+
   const fieldId = String(formData.get("id") ?? "") || undefined;
   const required = formData.get("required") === "on";
-  const fieldType = String(formData.get("fieldType") ?? "text");
-  const existingDefs = await listFieldDefsForEvent(eventId);
+  const existingDefs = await listFieldDefsForEvent(gatedEventId);
   const existing = fieldId
     ? existingDefs.find((f) => f.id === fieldId)
     : existingDefs.find((f) => f.fieldKey === fieldKey);
 
-  if (event.status === "open" || event.status === "closed" || event.status === "allocating") {
+  if (
+    event.status === "open" ||
+    event.status === "closed" ||
+    event.status === "allocating"
+  ) {
     const lock = assertEventFieldEditable(event, "requiredCustomFields");
     if (!lock.allowed) {
       // New required field while open/closed
       if (!existing && required) return { error: lock.reason };
       // Promote optional → required
-      if (existing && !existing.required && required) return { error: lock.reason };
+      if (existing && !existing.required && required) {
+        return { error: lock.reason };
+      }
       // Change type of an existing required field
       if (existing?.required && existing.fieldType !== fieldType) {
         return { error: lock.reason };
@@ -564,13 +647,13 @@ export async function saveTradeFieldDefAction(
   }
 
   await upsertFieldDef({
-    eventId,
+    eventId: gatedEventId,
     id: fieldId,
     fieldKey,
     fieldType,
     required,
-    labelEn: String(formData.get("labelEn") ?? fieldKey),
-    labelVi: String(formData.get("labelVi") ?? fieldKey),
+    labelEn,
+    labelVi,
     dropdownOptions: String(formData.get("dropdownOptions") ?? "")
       .split(",")
       .map((s) => s.trim())
@@ -578,14 +661,14 @@ export async function saveTradeFieldDefAction(
   });
 
   await recordHotSalesAudit({
-    eventId,
+    eventId: gatedEventId,
     action: "field_def.saved",
     actorId: access.userId,
     actorRole: access.isAdmin ? "admin" : "ops",
     newValue: { fieldKey },
   });
 
-  revalidateTrade(gatedLocale, eventId);
+  revalidateTrade(gatedLocale, gatedEventId);
   return { ok: true };
 }
 
@@ -596,39 +679,43 @@ export async function importPriorityCsvAction(
 ) {
   const gatedLocale = gateTradeLocale(locale);
   if (typeof gatedLocale === "object") return gatedLocale;
-  
-  const access = await requireTradePermission("priority.manage", { eventId });
+  const gatedEventId = gateTradeEventId(eventId);
+  if (typeof gatedEventId === "object") return gatedEventId;
 
-  const lines = csvText.trim().split(/\r?\n/).slice(1);
-  const rows = lines
-    .map((line) => line.split(",").map((c) => c.trim().replace(/^"|"$/g, "")))
-    .filter((cols) => cols.length >= 2)
-    .map((cols) => ({
-      customerName: cols[0] ?? "",
-      customerCode: cols[1] || undefined,
-      priorityRank: Number(cols[2] ?? 999),
-      priorityGroup: cols[3] || undefined,
-    }));
+  const access = await requireTradePermission("priority.manage", {
+    eventId: gatedEventId,
+  });
+  const event = await getEventById(gatedEventId);
+  if (!event) return { error: "not_found" };
 
-  await importPriorityCsv(eventId, rows);
+  const parsed = parseAndValidatePriorityCsv(csvText);
+  if (!parsed.ok) {
+    return { error: parsed.error };
+  }
+
+  await importPriorityCsv(gatedEventId, parsed.rows);
   await recordHotSalesAudit({
-    eventId,
+    eventId: gatedEventId,
     action: "priority.imported",
     actorId: access.userId,
     actorRole: access.isAdmin ? "admin" : "ops",
-    newValue: { count: rows.length },
+    newValue: { count: parsed.rows.length },
   });
 
-  revalidateTrade(gatedLocale, eventId);
-  return { ok: true, count: rows.length };
+  revalidateTrade(gatedLocale, gatedEventId);
+  return { ok: true, count: parsed.rows.length };
 }
 
 export async function addSalesMemberAction(locale: string, email: string) {
   const gatedLocale = gateTradeLocale(locale);
   if (typeof gatedLocale === "object") return gatedLocale;
-  
+
   await requireTradeAdmin();
-  await upsertSalesMember(email);
+  const normalized = email.trim().toLowerCase();
+  if (!normalized || !normalized.includes("@")) {
+    return { error: "invalid_email" };
+  }
+  await upsertSalesMember(normalized);
   revalidateTrade(gatedLocale);
   return { ok: true };
 }
@@ -640,16 +727,34 @@ export async function submitTradeOrderAction(
 ) {
   const gatedLocale = gateTradeLocale(locale);
   if (typeof gatedLocale === "object") return gatedLocale;
-  
-  const access = await requireTradePermission("order.create", { eventId });
-  const event = await getEventById(eventId);
+  const gatedEventId = gateTradeEventId(eventId);
+  if (typeof gatedEventId === "object") return gatedEventId;
+
+  const access = await requireTradePermission("order.create", {
+    eventId: gatedEventId,
+  });
+  const event = await getEventById(gatedEventId);
   if (!event) return { error: "not_found" };
 
   const now = new Date();
   const gate = canSubmitOrder(event, now);
   if (!gate.allowed) return { error: gate.reason };
 
-  const fieldDefs = await listFieldDefsForEvent(eventId);
+  const customerName = String(formData.get("customerName") ?? "").trim();
+  const productId = String(formData.get("productId") ?? "").trim();
+  const requestedQuantity = Number(formData.get("requestedQuantity"));
+  if (!customerName) return { error: "customer_name_required" };
+  if (!productId) return { error: "product_required" };
+  if (!Number.isFinite(requestedQuantity) || requestedQuantity < 1) {
+    return { error: "invalid_quantity" };
+  }
+
+  const products = await listProductsForEvent(gatedEventId);
+  if (!products.some((p) => p.id === productId)) {
+    return { error: "product_not_found" };
+  }
+
+  const fieldDefs = await listFieldDefsForEvent(gatedEventId);
   const attrs: Record<string, unknown> = {};
   for (const def of fieldDefs) {
     const raw = formData.get(`attr_${def.fieldKey}`);
@@ -666,21 +771,24 @@ export async function submitTradeOrderAction(
 
   const validatedAttrs = applyFieldDefaults(fieldDefs, attrs);
   const validation = validateOrderAttrs(fieldDefs, validatedAttrs);
-  if (!validation.valid) return { error: "validation_failed", details: validation.errors };
+  if (!validation.valid) {
+    return { error: "validation_failed", details: validation.errors };
+  }
 
   const depositStatus = resolveDepositStatusForEvent(
     event,
-    (formData.get("depositStatus") as "pending" | "paid" | "waived") ?? undefined,
+    (formData.get("depositStatus") as "pending" | "paid" | "waived") ??
+      undefined,
   );
 
   const order = await createOrder({
-    eventId,
+    eventId: gatedEventId,
     salespersonUserId: access.userId,
     salespersonEmail: access.email,
-    customerName: String(formData.get("customerName") ?? "").trim(),
+    customerName,
     customerCode: String(formData.get("customerCode") ?? "").trim() || undefined,
-    productId: String(formData.get("productId") ?? ""),
-    requestedQuantity: Number(formData.get("requestedQuantity")),
+    productId,
+    requestedQuantity,
     attrs: validatedAttrs,
     remarks: String(formData.get("remarks") ?? "").trim() || undefined,
     depositStatus,
@@ -697,7 +805,7 @@ export async function submitTradeOrderAction(
   }
 
   await recordHotSalesAudit({
-    eventId,
+    eventId: gatedEventId,
     orderId: order.id,
     action: "order.registered",
     actorId: access.userId,
@@ -716,10 +824,14 @@ export async function submitTradeOrderAction(
   });
 
   if (isHotSalesErpSyncEnabled()) {
-    await enqueueErpSyncJob({ jobType: "order", entityId: order.id, actorId: access.userId });
+    await enqueueErpSyncJob({
+      jobType: "order",
+      entityId: order.id,
+      actorId: access.userId,
+    });
   }
 
-  revalidateTrade(gatedLocale, eventId);
+  revalidateTrade(gatedLocale, gatedEventId);
   return { ok: true, orderId: order.id };
 }
 
@@ -730,13 +842,17 @@ export async function runTradeAllocationAction(
 ) {
   const gatedLocale = gateTradeLocale(locale);
   if (typeof gatedLocale === "object") return gatedLocale;
-  
-  const admin = await requireTradePermission("allocation.run", { eventId });
+  const gatedEventId = gateTradeEventId(eventId);
+  if (typeof gatedEventId === "object") return gatedEventId;
+
+  const admin = await requireTradePermission("allocation.run", {
+    eventId: gatedEventId,
+  });
 
   const [event, products, orders] = await Promise.all([
-    getEventById(eventId),
-    listProductsForEvent(eventId),
-    listOrdersForEvent(eventId),
+    getEventById(gatedEventId),
+    listProductsForEvent(gatedEventId),
+    listOrdersForEvent(gatedEventId),
   ]);
   if (!event) return { error: "not_found" };
 
@@ -761,7 +877,7 @@ export async function runTradeAllocationAction(
   });
 
   await runAllocationForEvent({
-    eventId,
+    eventId: gatedEventId,
     runBy: admin.userId,
     mode: reason ? "rerun" : "auto",
     reason,
@@ -774,7 +890,7 @@ export async function runTradeAllocationAction(
   });
 
   await recordHotSalesAudit({
-    eventId,
+    eventId: gatedEventId,
     action: "allocation.run",
     actorId: admin.userId,
     actorRole: "admin",
@@ -806,7 +922,7 @@ export async function runTradeAllocationAction(
     }
   }
 
-  revalidateTrade(gatedLocale, eventId);
+  revalidateTrade(gatedLocale, gatedEventId);
   return { ok: true, summary };
 }
 
@@ -816,13 +932,20 @@ export async function previewTradeAllocationAction(
 ) {
   const gatedLocale = gateTradeLocale(locale);
   if (typeof gatedLocale === "object") return gatedLocale;
-  
-  await requireTradePermission("allocation.preview", { eventId });
+  const gatedEventId = gateTradeEventId(eventId);
+  if (typeof gatedEventId === "object") return gatedEventId;
 
-  const [products, orders] = await Promise.all([
-    listProductsForEvent(eventId),
-    listOrdersForEvent(eventId),
+  await requireTradePermission("allocation.preview", {
+    eventId: gatedEventId,
+  });
+
+  const [event, products, orders] = await Promise.all([
+    getEventById(gatedEventId),
+    listProductsForEvent(gatedEventId),
+    listOrdersForEvent(gatedEventId),
   ]);
+  if (!event) return { error: "not_found" };
+
   return calculateAllocation(products, orders);
 }
 
@@ -834,18 +957,26 @@ export async function manualAdjustTradeOrderAction(
 ) {
   const gatedLocale = gateTradeLocale(locale);
   if (typeof gatedLocale === "object") return gatedLocale;
-  
-  const admin = await requireTradePermission("allocation.override");
+  const gatedOrderId = gateTradeOrderId(orderId);
+  if (typeof gatedOrderId === "object") return gatedOrderId;
+
+  if (!Number.isFinite(confirmedQuantity)) {
+    return { error: "confirmed_quantity_required" };
+  }
   if (!reason.trim()) return { error: "reason_required" };
 
-  const order = await getOrderById(orderId);
+  const order = await getOrderById(gatedOrderId);
   if (!order) return { error: "not_found" };
-  const eventId = order.eventId;
+
+  // G9: distinct from allocation.preview / allocation.run — never substitute those codes.
+  const admin = await requireTradePermission("allocation.override", {
+    eventId: order.eventId,
+  });
 
   const [event, products, siblingOrders] = await Promise.all([
-    getEventById(eventId),
-    listProductsForEvent(eventId),
-    listOrdersForEvent(eventId),
+    getEventById(order.eventId),
+    listProductsForEvent(order.eventId),
+    listOrdersForEvent(order.eventId),
   ]);
   if (!event) return { error: "not_found" };
 
@@ -853,14 +984,14 @@ export async function manualAdjustTradeOrderAction(
   if (!product) return { error: "product_not_found" };
 
   const otherAllocated = siblingOrders
-    .filter((o) => o.productId === order.productId && o.id !== orderId)
+    .filter((o) => o.productId === order.productId && o.id !== gatedOrderId)
     .reduce((sum, o) => sum + (o.confirmedQuantity ?? 0), 0);
 
   const cap = validateManualAllocationQuantity({
     confirmedQuantity,
     productFinalSupply: product.finalConfirmedQuantity ?? 0,
     productAlreadyAllocated: product.allocatedQuantity,
-    excludingOrderId: orderId,
+    excludingOrderId: gatedOrderId,
     otherOrdersAllocatedOnProduct: otherAllocated,
   });
   if (!cap.valid) return { error: cap.reason };
@@ -874,15 +1005,15 @@ export async function manualAdjustTradeOrderAction(
         : "partial";
 
   await manualAdjustOrder({
-    orderId,
+    orderId: gatedOrderId,
     confirmedQuantity,
     status,
     estimatedSupport: calculateEstimatedSupport(confirmedQuantity, rate),
-    reason,
+    reason: reason.trim(),
     actorId: admin.userId,
   });
 
-  revalidateTrade(gatedLocale, eventId);
+  revalidateTrade(gatedLocale, order.eventId);
   return { ok: true };
 }
 
@@ -893,9 +1024,10 @@ export async function requestTransferAction(
 ) {
   const gatedLocale = gateTradeLocale(locale);
   if (typeof gatedLocale === "object") return gatedLocale;
-  
+  const gatedOrderId = gateTradeOrderId(orderId);
+  if (typeof gatedOrderId === "object") return gatedOrderId;
 
-  const order = await getOrderById(orderId);
+  const order = await getOrderById(gatedOrderId);
   if (!order) return { error: "not_found" };
 
   const access = await requireTradePermission("transfer.request", {
@@ -911,21 +1043,33 @@ export async function requestTransferAction(
   const check = canTransferOrder(order, event);
   if (!check.allowed) return { error: check.reason };
 
+  const newCustomerName = String(formData.get("newCustomerName") ?? "").trim();
   const reason = String(formData.get("reason") ?? "").trim();
+  const transferQuantity = Number(formData.get("transferQuantity"));
+  if (!newCustomerName) return { error: "new_customer_name_required" };
   if (!reason) return { error: "reason_required" };
+  if (!Number.isFinite(transferQuantity) || transferQuantity < 1) {
+    return { error: "invalid_transfer_quantity" };
+  }
+
+  const maxQty = order.confirmedQuantity ?? order.requestedQuantity;
+  if (transferQuantity > maxQty) {
+    return { error: "transfer_quantity_exceeds_order" };
+  }
 
   await createTransferRequest({
-    orderId,
-    newCustomerName: String(formData.get("newCustomerName") ?? "").trim(),
-    newCustomerCode: String(formData.get("newCustomerCode") ?? "").trim() || undefined,
-    transferQuantity: Number(formData.get("transferQuantity")),
+    orderId: gatedOrderId,
+    newCustomerName,
+    newCustomerCode:
+      String(formData.get("newCustomerCode") ?? "").trim() || undefined,
+    transferQuantity,
     reason,
     requestedBy: access.userId,
   });
 
   await recordHotSalesAudit({
     eventId: event.id,
-    orderId,
+    orderId: gatedOrderId,
     action: "transfer.requested",
     actorId: access.userId,
     actorRole: access.isAdmin ? "admin" : "sales",
@@ -934,7 +1078,7 @@ export async function requestTransferAction(
 
   notifyTradeStakeholder(gatedLocale, {
     eventKey: "transfer.requested",
-    entityId: orderId,
+    entityId: gatedOrderId,
     recipientEmail: order.salespersonEmail,
     vars: { orderNumber: order.orderNumber },
   });
@@ -950,8 +1094,10 @@ export async function approveTransferAction(
 ) {
   const gatedLocale = gateTradeLocale(locale);
   if (typeof gatedLocale === "object") return gatedLocale;
-  
-  const order = await getOrderById(orderId);
+  const gatedOrderId = gateTradeOrderId(orderId);
+  if (typeof gatedOrderId === "object") return gatedOrderId;
+
+  const order = await getOrderById(gatedOrderId);
   if (!order) return { error: "not_found" };
 
   const access = await requireTradePermission("transfer.approve", {
@@ -959,13 +1105,13 @@ export async function approveTransferAction(
   });
 
   await approveTransfer({
-    orderId,
+    orderId: gatedOrderId,
     transferId,
     approvedBy: access.userId,
   });
   await recordHotSalesAudit({
     eventId: order.eventId,
-    orderId,
+    orderId: gatedOrderId,
     action: "transfer.approved",
     actorId: access.userId,
     actorRole: access.isAdmin ? "admin" : "ops",
@@ -973,7 +1119,7 @@ export async function approveTransferAction(
   });
   notifyTradeStakeholder(gatedLocale, {
     eventKey: "transfer.approved",
-    entityId: orderId,
+    entityId: gatedOrderId,
     recipientEmail: order.salespersonEmail,
     vars: { orderNumber: order.orderNumber },
   });
@@ -988,8 +1134,10 @@ export async function rejectTransferAction(
 ) {
   const gatedLocale = gateTradeLocale(locale);
   if (typeof gatedLocale === "object") return gatedLocale;
-  
-  const order = await getOrderById(orderId);
+  const gatedOrderId = gateTradeOrderId(orderId);
+  if (typeof gatedOrderId === "object") return gatedOrderId;
+
+  const order = await getOrderById(gatedOrderId);
   if (!order) return { error: "not_found" };
 
   const access = await requireTradePermission("transfer.approve", {
@@ -997,13 +1145,13 @@ export async function rejectTransferAction(
   });
 
   await rejectTransfer({
-    orderId,
+    orderId: gatedOrderId,
     transferId,
     approvedBy: access.userId,
   });
   await recordHotSalesAudit({
     eventId: order.eventId,
-    orderId,
+    orderId: gatedOrderId,
     action: "transfer.rejected",
     actorId: access.userId,
     actorRole: access.isAdmin ? "admin" : "ops",
@@ -1011,7 +1159,7 @@ export async function rejectTransferAction(
   });
   notifyTradeStakeholder(gatedLocale, {
     eventKey: "transfer.rejected",
-    entityId: orderId,
+    entityId: gatedOrderId,
     recipientEmail: order.salespersonEmail,
     vars: { orderNumber: order.orderNumber },
   });
@@ -1067,8 +1215,19 @@ export async function completeTradeOrderAction(
   const gatedOrderId = gateTradeOrderId(orderId);
   if (typeof gatedOrderId === "object") return gatedOrderId;
 
+  if (!Number.isFinite(fulfilledQuantity)) {
+    return { error: "fulfilled_quantity_required" };
+  }
+
   const order = await getOrderById(gatedOrderId);
   if (!order) return { error: "not_found" };
+
+  const pickupOps = isHotSalesPickupOpsEnabled();
+  const access = pickupOps
+    ? await requireTradePermission("pickup.manage", {
+        eventId: order.eventId,
+      })
+    : await requireTradeAdmin();
 
   const gate = canCompleteOrder({
     fulfilledQuantity,
@@ -1086,13 +1245,10 @@ export async function completeTradeOrderAction(
   const rate = getSupportRate(product, event);
   const finalSupport = calculateFinalSupport(fulfilledQuantity, rate) ?? 0;
 
-  if (isHotSalesPickupOpsEnabled()) {
-    const access = await requireTradePermission("pickup.manage", {
-      eventId: order.eventId,
-    });
+  if (pickupOps) {
     try {
       await recordFulfillment({
-        orderId,
+        orderId: gatedOrderId,
         quantity: fulfilledQuantity,
         actorId: access.userId,
         finalSupport,
@@ -1102,30 +1258,27 @@ export async function completeTradeOrderAction(
       const message = toTradeActionErrorMessage(err, "fulfillment_failed");
       return { error: message };
     }
-    await recordHotSalesAudit({
-      eventId: order.eventId,
-      orderId,
-      action: "order.completed",
-      actorId: access.userId,
-      actorRole: access.isAdmin ? "admin" : "ops",
-      newValue: { fulfilledQuantity },
-    });
   } else {
-    const admin = await requireTradeAdmin();
     await completeOrder({
-      orderId,
+      orderId: gatedOrderId,
       fulfilledQuantity,
       finalSupport,
     });
-    await recordHotSalesAudit({
-      eventId: order.eventId,
-      orderId,
-      action: "order.completed",
-      actorId: admin.userId,
-      actorRole: "admin",
-      newValue: { fulfilledQuantity },
-    });
   }
+
+  await recordHotSalesAudit({
+    eventId: order.eventId,
+    orderId: gatedOrderId,
+    action: "order.completed",
+    actorId: access.userId,
+    actorRole:
+      "isAdmin" in access && access.isAdmin
+        ? "admin"
+        : pickupOps
+          ? "ops"
+          : "admin",
+    newValue: { fulfilledQuantity },
+  });
 
   revalidateTrade(gatedLocale, order.eventId);
   return { ok: true };
@@ -1729,7 +1882,10 @@ export async function getImportBatchDetailAction(
 export async function retryErpSyncJobAction(locale: string, jobId: string) {
   const gatedLocale = gateTradeLocale(locale);
   if (typeof gatedLocale === "object") return gatedLocale;
-  
+
+  const disabled = assertHotSalesErpSyncFeatureAction();
+  if (disabled) return disabled;
+
   const access = await requireTradePermission("sync.retry");
   const { getSyncJobById, retrySyncJob } = await import(
     "@/modules/trade/domain/erp-sync-store"

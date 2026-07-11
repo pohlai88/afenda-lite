@@ -2,12 +2,15 @@
 
 **Frontend alignment:** [doc/frontend/06-admincn-alignment.md](../../doc/frontend/06-admincn-alignment.md)  
 **Preflight before new screens:** [admincn-frontend-preflight.md](admincn-frontend-preflight.md)  
+**UI registry (compulsory):** [`.cursor/skills/feed-farm-trade/ui-registry.md`](../../.cursor/skills/feed-farm-trade/ui-registry.md) · [`ui-registry.json`](../../.cursor/skills/feed-farm-trade/ui-registry.json) · rule [`fft-ui-registry.mdc`](../../.cursor/rules/fft-ui-registry.mdc)  
 **Product home:** `components-V2/`  
 **Auth island:** `features/auth/` — preserve `app/auth-surface.css` + route-scoped `app/auth/neon-auth-ui.css`
 
 ## Critical constraint
 
 Studio MCP does **not** install the AdminCN template as one unit. It exposes **blocks** under `dashboard-and-application`. The full template already lives in `components-V2/`.
+
+**Compulsory:** every AdminCN UI primitive (`ACN-UI-*`) and platform-views block (`ACN-BLK-*`) must be registered in `ui-registry.json`. Feed Farm Trade product modules use `FFT-UI-*`. Agents must not invent IDs or edit the registry to pass Vitest. Direct `platform-views` imports from `features/trade` are forbidden — wrap via HITL product ID.
 
 Do **not** wire more demo views into product routes while freeze holds. Refine existing surfaces only.
 
@@ -54,6 +57,8 @@ Nav is filtered by `modules/platform/shell/access.ts` via `navConfig` `kind` + `
 - Replacing Neon credential paths with Studio account-settings blocks  
 - Mixing portal auth tokens into AdminCN `:root`  
 - Enabling Hot Sales prod flags without gate-register  
+- Inventing `ACN-*` / `FFT-UI-*` IDs or agent-editing `ui-registry.json` to pass tests  
+- Importing `@/components-V2/platform-views/**` from `features/trade` without HITL product wrap  
 
 Allowed (shell already landed): shared AdminCN on `/trade/*` with Feed Farm Trade permission gate; thin stubs until UI restore is reopened.
 
@@ -61,9 +66,10 @@ Allowed (shell already landed): shared AdminCN on `/trade/*` with Feed Farm Trad
 
 Full gate: [admincn-frontend-preflight.md](admincn-frontend-preflight.md).
 
-1. Brand (`themePreset` / tokens) — login island unchanged  
-2. Nav — real destinations only; module entitlements correct  
-3. Edit one `portal-views` composition (or trade stub owner)  
-4. Swap fake-db for that page  
-5. Sync governance if surface IDs change  
-6. Verify: relevant unit tests + `npx tsc --noEmit` on touched paths  
+1. Confirm registry IDs (`ACN-UI-*` / `ACN-BLK-*` / `FFT-UI-*`) — HITL if missing  
+2. Brand (`themePreset` / tokens) — login island unchanged  
+3. Nav — real destinations only; module entitlements correct  
+4. Edit one `portal-views` composition (or trade feature with approved `FFT-UI-*`)  
+5. Swap fake-db for that page  
+6. Sync governance if surface IDs change (include **ui-registry**)  
+7. Verify: `npm run test:unit -- features/trade/ui-registry` + relevant unit tests + `npx tsc --noEmit` on touched paths  

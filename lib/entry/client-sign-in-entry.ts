@@ -15,10 +15,9 @@ import {
 } from "@/modules/platform/playground-embed";
 import { PORTAL_NAME, portalCopy } from "@/lib/copy/portal-copy";
 import {
-  AUTH_SIGN_IN_HREF,
   CLIENT_SIGN_IN_ENTRY_HREF,
-  authSignInHref,
-  sanitizeReturnToPath,
+  clientSignInAuthHref,
+  clientSignUpAuthHref,
 } from "@/modules/platform/routing/portal-routes";
 import { getAuthenticatedLandingHref } from "@/modules/platform/routing/portal-session-routing";
 
@@ -29,6 +28,10 @@ export {
   CLIENT_LOGIN_REQUIRED_REASON,
   resolveClientAuthReasonNotice,
 } from "@/modules/identity/auth/auth-entry-params";
+export {
+  clientSignInAuthHref,
+  clientSignUpAuthHref,
+} from "@/modules/platform/routing/portal-routes";
 
 export const clientLoginPageMetadata: Metadata = {
   title: `${PORTAL_NAME} — ${portalCopy.metadata.home.title}`,
@@ -41,24 +44,6 @@ export function clientSignInEntryHref(reason?: string) {
   }
 
   return `${CLIENT_SIGN_IN_ENTRY_HREF}?reason=${encodeURIComponent(reason)}`;
-}
-
-export function clientSignInAuthHref(reason?: string, returnTo?: string) {
-  const params: Record<string, string> = {};
-  if (reason) {
-    params.reason = reason;
-  }
-
-  const safeReturnTo = sanitizeReturnToPath(returnTo);
-  if (safeReturnTo) {
-    params.returnTo = safeReturnTo;
-  }
-
-  if (Object.keys(params).length === 0) {
-    return AUTH_SIGN_IN_HREF;
-  }
-
-  return authSignInHref(params);
 }
 
 /** Named client sign-in entry — session dispatch then Neon Auth UI. */

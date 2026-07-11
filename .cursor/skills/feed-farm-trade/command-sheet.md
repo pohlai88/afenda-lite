@@ -4,7 +4,7 @@
 
 **How to use**
 
-1. Copy **exactly one** command block (A / B / C / D / E).  
+1. Copy **exactly one** command block (A / B / C / D / E / F / G).  
 2. Paste as the **first** user message (or attach `/feed-farm-trade` and paste the block).  
 3. Do not edit the locked sections unless you intentionally change program policy.  
 4. Optional: append a short **TASK** line under the block (one sentence).
@@ -16,13 +16,15 @@
 ```text
 PRODUCT: Feed Farm Trade (UI/nav) · ENGINE: Hot Sales (HOT_SALES_*) · SHELL: feed-farm-trade
 MVP BAR: P0 + P1 including G1–G6 + recorded AC evidence
-NOT MVP: P2 polish (closed) · P3 flag enable (gate-register) · customer portal
-FORBID: TradeShell · /trade/[locale] · invent permission codes · rename HOT_SALES_* ·
+NOT MVP: P2 further polish (named P2-AC only; AC-01..06 done) · P3 flag enable (gate-register) · customer portal
+FORBID: TradeShell · /trade/[locale] product chrome · invent permission codes · rename HOT_SALES_* ·
          org-admin⇒trade · Trade↛Declarations · claim MVP without AC evidence ·
-         mix P3 writes into P1 PRs
+         mix P3 writes into P1 PRs · invent FFT-UI / FFT-QA ids · agent-edit ui-registry.json
 AUTH: permission codes via requireTradePermission — never role display names
 SLICE: app/trade thin RSC → features/trade → app/actions/trade.ts → modules/trade
 CHROME: AdminCnShell only · TRADE_UI_LOCALE for action locale arg · paths locale-free
+UI: compose approved FFT-UI-* + allowlisted ACN-UI-* from ui-registry.json; ACN-BLK-* = catalog DNA only;
+    new product ID = human HITL; never agent-edit registry; Vitest backstop
 ```
 
 ---
@@ -41,7 +43,7 @@ Agent must read in this order before coding or claiming results:
 7. Phase doc matching the command:
    - P0 → doc/frontend/11-feed-farm-trade-phase0-shell.md
    - P1 → doc/frontend/12-feed-farm-trade-phase1-core-mvp.md
-   - P2 → doc/frontend/13-feed-farm-trade-phase2-ui-polish.md  (STOP unless reopen)
+   - P2 → doc/frontend/13-feed-farm-trade-phase2-ui-polish.md  (AC-01..06 done; further polish = named AC + Plan for visual)
    - P3 → doc/frontend/14-feed-farm-trade-phase3-ops-flags.md
 8. If locks unclear: doc/frontend/adr/001-feed-farm-trade.md
 9. If structure unclear: doc/frontend/adr/001A-feed-farm-trade-architecture.md
@@ -227,6 +229,26 @@ OUT: Output contract. Drift list ranked P0/P1.
 
 ---
 
+## Command G — UI registry / Studio-only (governance)
+
+```text
+/feed-farm-trade
+
+COMMAND: UI_REGISTRY
+MODE: governance — no product redesign unless TASK names a reusableId grant
+FOLLOW: Feed Farm Trade agent command sheet (locked context + load order + DoD + output contract)
+READ: ui-registry.md + ui-registry.json + .cursor/rules/fft-ui-registry.mdc + admincn-customization skill
+DO:
+1. Compose only approved FFT-UI-* and allowlisted ACN-UI-*; ACN-BLK-* requires HITL product wrap (studioSource).
+2. Do not edit ui-registry.json (human HITL only). Do not invent ACN-* / FFT-UI-* IDs.
+3. Run: npm run test:unit -- features/trade/ui-registry
+4. SHADCN_STUDIO_ONLY: no hand-written visual CSS; no platform-views imports from features/trade.
+5. Do not claim registry pass = TanStack/AdminCN visual quality.
+OUT: Output contract. Explicit: no prod HOT_SALES_* flag changes.
+```
+
+---
+
 ## Anti-variance rules (paste with any command if the agent drifts)
 
 ```text
@@ -237,7 +259,8 @@ HARD RULES:
 4. Do not restore TradeShell or /trade/[locale].
 5. Do not start P2/P3 implementation from a P0/P1 command.
 6. Do not claim done without Evidence block matching verify.md.
-7. If unsure: STOP and ask — do not invent F-*/AC-* IDs or permission codes.
+7. If unsure: STOP and ask — do not invent F-*/AC-* IDs, permission codes, or FFT-UI/FFT-QA ids.
+8. Do not edit ui-registry.json to green Vitest — human HITL only.
 ```
 
 ---
@@ -252,6 +275,7 @@ HARD RULES:
 | Add missing tests/evidence | **Command D** (+ set `TARGET_ACS`) |
 | Review ops flags surfaces | **Command E** |
 | Check docs/skill sync | **Command F** |
+| UI registry / Studio-only | **Command G** |
 
 **Skill home:** `.cursor/skills/feed-farm-trade/`  
 **Phase specs:** `doc/frontend/11`–`14-feed-farm-trade-*.md`

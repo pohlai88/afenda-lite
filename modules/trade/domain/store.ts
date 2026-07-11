@@ -258,14 +258,15 @@ export async function cloneEventFromTemplate(
     }
     const src = source.rows[0];
 
+    // Clones are always editable drafts (AC-EVT-05 / G7) — never inherit source status/template flag.
     const newEvent = await client.query(
       `INSERT INTO hot_sales_event
         (event_code, event_name, event_type, description_en, description_vi,
-         opens_at, closes_at, timezone, source_location, allocation_method,
+         opens_at, closes_at, timezone, status, source_location, allocation_method,
          standalone_program, combination_allowed, transfer_allowed,
          deposit_required, deposit_refundable, support_type, support_amount_per_unit,
          support_unit_label, is_template, cloned_from_id, created_by, updated_by)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, FALSE, $19, $20, $20)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'draft', $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, FALSE, $19, $20, $20)
        RETURNING *`,
       [
         generateEventCode(overrides?.eventName ?? `${src.event_name} Copy`),

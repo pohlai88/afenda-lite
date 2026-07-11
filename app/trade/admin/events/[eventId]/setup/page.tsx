@@ -1,7 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { TradeAuditPanel } from "@/features/trade/trade-audit-panel";
+import { toTradeAuditListItems } from "@/features/trade/trade-audit-filter-model";
 import { TradeCloneEventButton } from "@/features/trade/trade-clone-button";
 import { TradeExportPanel } from "@/features/trade/trade-export-panel";
+import { TradeEmptyState } from "@/features/trade/trade-form-feedback";
 import {
   TradeEventSetupForm,
   TradeEventStatusActions,
@@ -82,18 +85,26 @@ export default async function TradeEventSetupPage({ params }: Props) {
           eventId={eventId}
           eventStatus={event.status}
         />
-        <ul className="space-y-4">
-          {products.map((product) => (
-            <li key={product.id}>
-              <TradeProductForm
-                locale={TRADE_UI_LOCALE}
-                eventId={eventId}
-                product={product}
-                eventStatus={event.status}
-              />
-            </li>
-          ))}
-        </ul>
+        {products.length === 0 ? (
+          <TradeEmptyState
+            title="No products yet"
+            description="Add a product above to define supply for this event."
+            testId="trade-products-empty"
+          />
+        ) : (
+          <ul className="space-y-4">
+            {products.map((product) => (
+              <li key={product.id}>
+                <TradeProductForm
+                  locale={TRADE_UI_LOCALE}
+                  eventId={eventId}
+                  product={product}
+                  eventStatus={event.status}
+                />
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
 
       <section className="space-y-4">
@@ -103,31 +114,47 @@ export default async function TradeEventSetupPage({ params }: Props) {
           eventId={eventId}
           eventStatus={event.status}
         />
-        <ul className="space-y-4">
-          {fieldDefs.map((field) => (
-            <li key={field.id}>
-              <TradeFieldDefForm
-                locale={TRADE_UI_LOCALE}
-                eventId={eventId}
-                field={field}
-                eventStatus={event.status}
-              />
-            </li>
-          ))}
-        </ul>
+        {fieldDefs.length === 0 ? (
+          <TradeEmptyState
+            title="No custom fields yet"
+            description="Optional columns for order forms — add one above."
+            testId="trade-fields-empty"
+          />
+        ) : (
+          <ul className="space-y-4">
+            {fieldDefs.map((field) => (
+              <li key={field.id}>
+                <TradeFieldDefForm
+                  locale={TRADE_UI_LOCALE}
+                  eventId={eventId}
+                  field={field}
+                  eventStatus={event.status}
+                />
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
 
       <section className="space-y-4">
         <h2 className="font-medium">Customer priority</h2>
         <TradePriorityImportForm locale={TRADE_UI_LOCALE} eventId={eventId} />
-        <ul className="text-muted-foreground text-sm">
-          {priorities.map((row) => (
-            <li key={`${row.customerName}-${row.priorityRank}`}>
-              #{row.priorityRank} {row.customerName}
-              {row.customerCode ? ` (${row.customerCode})` : ""}
-            </li>
-          ))}
-        </ul>
+        {priorities.length === 0 ? (
+          <TradeEmptyState
+            title="No priority rows imported"
+            description="Paste CSV above to rank customers for allocation."
+            testId="trade-priority-empty"
+          />
+        ) : (
+          <ul className="text-muted-foreground text-sm">
+            {priorities.map((row) => (
+              <li key={`${row.customerName}-${row.priorityRank}`}>
+                #{row.priorityRank} {row.customerName}
+                {row.customerCode ? ` (${row.customerCode})` : ""}
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
 
       <section className="space-y-2">
@@ -136,17 +163,7 @@ export default async function TradeEventSetupPage({ params }: Props) {
       </section>
 
       {canViewAudit ? (
-        <section className="space-y-2">
-          <h2 className="font-medium">Audit</h2>
-          <ul className="text-muted-foreground max-h-64 overflow-auto text-xs">
-            {audit.map((row) => (
-              <li key={String(row.id)}>
-                {String(row.created_at)} · {String(row.action)} ·{" "}
-                {String(row.actor_id ?? "")}
-              </li>
-            ))}
-          </ul>
-        </section>
+        <TradeAuditPanel rows={toTradeAuditListItems(audit)} />
       ) : null}
     </main>
   );

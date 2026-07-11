@@ -53,7 +53,7 @@ Frontend + API + backend describe **one system**, not three architectures.
 | [adr/001R-feed-farm-trade-roadmap.md](frontend/adr/001R-feed-farm-trade-roadmap.md) | Frontend ADR-001R — FFT MVP roadmap + critical gap register (P0+P1 incl. G1–G6) |
 | [11-feed-farm-trade-phase0-shell.md](frontend/11-feed-farm-trade-phase0-shell.md) | FFT Phase 0 development spec + evaluation checklist (Shell) |
 | [12-feed-farm-trade-phase1-core-mvp.md](frontend/12-feed-farm-trade-phase1-core-mvp.md) | FFT Phase 1 development spec + evaluation checklist (Core cycle MVP, G1–G9) |
-| [13-feed-farm-trade-phase2-ui-polish.md](frontend/13-feed-farm-trade-phase2-ui-polish.md) | FFT Phase 2 development spec (UI polish — closed until reopen) |
+| [13-feed-farm-trade-phase2-ui-polish.md](frontend/13-feed-farm-trade-phase2-ui-polish.md) | FFT Phase 2 development spec (UI polish — reopened 2026-07-11; AC-01..06 PASS) |
 | [14-feed-farm-trade-phase3-ops-flags.md](frontend/14-feed-farm-trade-phase3-ops-flags.md) | FFT Phase 3 development spec (deposits/pickup/imports/notifications/ERP — flag-gated) |
 
 ### API

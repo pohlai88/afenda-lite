@@ -43,7 +43,7 @@ TRUSTED: modules/trade/domain/rbac-catalog.ts · app/actions/trade.ts · modules
 | Claim | Required |
 |-------|----------|
 | **Enterprise MVP** | **P0 + P1** (includes G1–G6) + AC evidence |
-| UI polish | P2 — closed until reopen |
+| UI polish | P2 — **complete 2026-07-11** (P2-AC-01..06 evidenced; optional further polish needs named AC) |
 | Ops handoff | P3 — flags + gate-register (ops docs present — G0 resolved) |
 | Customer portal / locale URLs / `HOT_SALES_*` rename | Later |
 
@@ -57,7 +57,7 @@ flowchart LR
   P1 --> P3[P3 Ops optional]
 ```
 
-**Program status (2026-07-11):** Phase A skill + Phase B wire per plan — P0 done; P1 engine+FE wired (G1–G6 surfaces reachable); enterprise MVP **not fully claimable** until AC row evidence (unit and/or `@journey`) is recorded. See completeness matrix.
+**Program status (2026-07-11):** P0 done; P1 engine+FE wired with AC evidence recorded (`EVALUATE_P1_MVP: YES` in skill `verify.md`); **enterprise MVP claimable**. P2 UI polish AC-01..06 done. P3 = flag-off placeholders + gate-register for any prod `HOT_SALES_*` enable. See [completeness.md](../../../.cursor/skills/feed-farm-trade/completeness.md).
 
 ---
 
@@ -187,7 +187,7 @@ Thin AdminCN pages OK. Full screens = P2.
 - [x] G1–G6 covered by setup / my-orders / allocation / rbac pages
 - [x] No TradeShell / locale switcher mounted; no live `[locale]` App Router tree
 - [x] API catalog locale-free for trade (`doc/api/02-rest-resources.md`)
-- [ ] AC above green (unit and/or e2e `@journey` as available) — **blocking for enterprise MVP claim**
+- [x] AC above green (unit and/or e2e `@journey` as available) — evidenced 2026-07-11; see skill `verify.md`
 
 **Verify:** `modules/trade/domain/rbac-catalog.ts` · `app/actions/trade.ts` · `modules/trade/domain/store.ts` · `modules/trade/**/*.test.ts` · thin pages under `app/trade/**`
 
@@ -195,9 +195,9 @@ Thin AdminCN pages OK. Full screens = P2.
 
 ## P2 — UI reopen (not MVP)
 
-**Dev spec (scope-only, not authorization):** [13-feed-farm-trade-phase2-ui-polish.md](../13-feed-farm-trade-phase2-ui-polish.md)
+**Dev spec:** [13-feed-farm-trade-phase2-ui-polish.md](../13-feed-farm-trade-phase2-ui-polish.md)
 
-**Closed** until explicit reopen. `features/trade` + thin pages; Feed Farm Trade copy; P1 AC stay green; templates as data; no TradeShell.
+**P2 complete 2026-07-11** (P2-AC-01..06 PASS in [13](../13-feed-farm-trade-phase2-ui-polish.md)). Further polish only with a named P2-AC + Plan for visual. `features/trade` + thin pages; Feed Farm Trade copy; P1 AC stay green; templates as data; no TradeShell.
 
 ---
 

@@ -817,7 +817,7 @@
     }
   ],
   "fingerprint": "c2a15dcc0da16955",
-  "generatedAt": "2026-07-11T09:52:17.642Z",
+  "generatedAt": "2026-07-11T12:07:34.873Z",
   "nodes": [
     {
       "id": "surface:auth-sign-in",
@@ -1035,7 +1035,7 @@
       "metadata": {
         "domain": "client",
         "route": "/",
-        "currentComponent": "LynxLandingPage → Sign in CTA /auth/sign-in"
+        "currentComponent": "LynxLandingPage → Vanguard unlock → Neon Auth"
       },
       "type": "ui-surface"
     },

@@ -82,7 +82,7 @@ export const UI_SURFACE_REGISTRY: UiSurfaceMeta[] = [
   { surfaceId: "client-login", domain: "client", route: "/client/login", currentComponent: "runClientSignInEntryPage → /auth/sign-in" },
   { surfaceId: "client-preview-unavailable", domain: "client", route: "/client/preview-unavailable", currentComponent: "ClientPreviewUnavailableView" },
   { surfaceId: "client-preview-banner", domain: "client", route: "/client (preview mode)", currentComponent: "PortalPreviewBanner (dormant — workspace shell deferred)" },
-  { surfaceId: "client-home-redirect", domain: "client", route: "/", currentComponent: "LynxLandingPage → Sign in CTA /auth/sign-in" },
+  { surfaceId: "client-home-redirect", domain: "client", route: "/", currentComponent: "LynxLandingPage → Vanguard unlock → Neon Auth" },
   { surfaceId: "client-join", domain: "client", route: "/join", currentComponent: "StudioInvitationJoinPage + Neon" },
   { surfaceId: "public-survey-link", domain: "client", route: "/survey/[slug]", currentComponent: "runOpenLinkPage (redirect-only)" },
   { surfaceId: "public-secure-link", domain: "client", route: "/f/[token]", currentComponent: "runSecureLinkPage (redirect-only)" },
@@ -283,7 +283,7 @@ export const uiEvaluationMatrix: UiEvaluationRow[] = [
   ], "keep-current", "Inline banner is correct UX for preview mode; studio empty-state is layout reference only.", "validated"),
 
   row(byId("client-home-redirect"), [
-    c("keep-current", { PatternFit: 5, BrandFit: 5, PortalCompat: 5, A11yMobile: 5, ImplCost: 5, Consistency: 5 }, "Lynx pixel particle guest landing; Sign in CTA → /auth/sign-in; authed session-skip."),
+    c("keep-current", { PatternFit: 5, BrandFit: 5, PortalCompat: 5, A11yMobile: 5, ImplCost: 5, Consistency: 5 }, "Lynx Vanguard unlock; shield reveals Sign in + Sign up; authed session-skip."),
     c("login-page-02", { PatternFit: 3, BrandFit: 3, PortalCompat: 2, A11yMobile: 3, ImplCost: 2, Consistency: 3 }, "Auth chrome is for /auth/* — not the public brand landing."),
   ], "keep-current", "Public `/` landing (proxy matcher excludes `/`); invitationId→/join; named /client/login still redirects to Neon.", "validated"),
 
@@ -441,7 +441,7 @@ export const STUDIO_IMPLEMENTATION_BY_SURFACE: Record<
     component: "portal-preview-banner.tsx",
     notes: "Preview-mode exit banner; dormant until client workspace shell rebuild",
   },
-  "client-home-redirect": { kind: "hardcoded", component: "features/landing/lynx-landing-page.tsx", notes: "Guest Lynx pixel particle landing; authed still session-skips" },
+  "client-home-redirect": { kind: "hardcoded", component: "features/landing/lynx-landing-page.tsx", notes: "Guest Vanguard unlock landing; authed still session-skips" },
   "client-login": { kind: "neon-integrated", component: "app/client/(gate)/login/page.tsx redirect" },
   "client-join": { kind: "neon-integrated", component: "features/auth/studio-invitation-join-page.tsx", notes: "Studio shell + Neon join (ADR-Auth-UI-001 amended)" },
   "public-survey-link": { kind: "neon-integrated", component: "lib/entry/open-link-entry.ts → app/survey/[slug]/page.tsx", notes: "Redirect-only open link entry (S5)" },

@@ -1,0 +1,41 @@
+---
+description: FFT + AdminCN UI registry — ACN-UI/ACN-BLK/FFT-UI IDs; human HITL for new product IDs
+globs:
+  - features/trade/**
+  - app/trade/**
+  - components-V2/platform-components/ui/**
+  - components-V2/platform-views/**
+alwaysApply: false
+---
+
+# FFT + AdminCN UI registry (compulsory)
+
+**SSOT:** `.cursor/skills/feed-farm-trade/ui-registry.json`  
+**HITL:** `.cursor/skills/feed-farm-trade/ui-registry.md`  
+**Enforcer:** `features/trade/ui-registry.test.ts`  
+**AdminCN playbook:** `docs/architecture/admincn-customization.md` · skill `admincn-customization`
+
+## Namespaces
+
+| Prefix | Use |
+|--------|-----|
+| `ACN-UI-*` | Primitives under `components-V2/platform-components/ui` — import if on `primitiveAllowlist` |
+| `ACN-BLK-*` | Blocks under `components-V2/platform-views` — catalog DNA only |
+| `FFT-UI-*` | Product modules under `features/trade` — approved = auto-use |
+
+## Priority (agents)
+
+1. Compose approved `FFT-UI-*` + allowlisted `ACN-UI-*`.
+2. Adapt `ACN-BLK-*` → **STOP** — request new `FFT-UI-*` with `studioSource` pointing at the block.
+3. New product file / invent ID → **STOP** — human HITL.
+4. **Do not edit** `ui-registry.json` to pass Vitest.
+5. Vitest is backstop, not a license to invent.
+
+## Forbidden
+
+- Inventing `FFT-UI-*` / `FFT-QA-*` / `ACN-UI-*` / `ACN-BLK-*` / `ACN-QA-*`
+- Importing `components-V2/platform-views/**` from `features/trade`
+- Bulk-wiring AdminCN demos into product routes
+- Replacing Neon Auth with `ACN-BLK-PAGES-AUTH-*`
+- Hand-written visual CSS / `style=` / hex under `features/trade`
+- Claiming registry pass = TanStack/AdminCN visual quality

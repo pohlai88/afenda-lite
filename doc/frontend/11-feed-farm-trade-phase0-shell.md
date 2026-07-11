@@ -89,12 +89,12 @@ Use this table to grade the live codebase. Leave **Result** blank until evaluate
 
 | AC / Req ID | Requirement | Expected evidence | Result |
 |-------------|-------------|--------------------|--------|
-| F-ACC-01 / AC-ACC-01..02 | Layout gate enforced | `app/trade/layout.tsx` calls `requireTradeAccess` before rendering children | |
-| F-ACC-02 | Nav visibility gated | `navConfig.tsx` entry conditioned on `feed-farm-trade` entitlement | |
-| F-ACC-03 / AC-SH-03 | AdminCN-only chrome | No custom shell component in `app/trade/**` or `features/trade` | |
-| F-ACC-04 / AC-ACC-04 | Anonymous deny | Proxy/session guard redirects before data fetch | |
-| F-ACC-05 / AC-SH-01..02 | Locale-free, no residue | No `app/trade/[locale]` directory; no `TradeShell` / locale switcher imports | |
-| AC-ACC-03 | Org admin ≠ trade access | `requireTradeAccess` does not accept admin role alone | |
+| F-ACC-01 / AC-ACC-01..02 | Layout gate enforced | `app/trade/layout.tsx` calls `requireTradeAccess` before rendering children | **PASS** — `requireTradeAccess` + `AdminCnShell` (EVALUATE_P1_MVP 2026-07-11) |
+| F-ACC-02 | Nav visibility gated | `navConfig.tsx` entry conditioned on `feed-farm-trade` entitlement | **PASS** — `moduleId: feed-farm-trade` |
+| F-ACC-03 / AC-SH-03 | AdminCN-only chrome | No custom shell component in `app/trade/**` or `features/trade` | **PASS** — AdminCN only; no TradeShell product mount |
+| F-ACC-04 / AC-ACC-04 | Anonymous deny | Proxy/session guard redirects before data fetch | **PASS** — `trade-session` unit + layout gate |
+| F-ACC-05 / AC-SH-01..02 | Locale-free, no residue | No `app/trade/[locale]` directory; no `TradeShell` / locale switcher imports | **PASS** — product locale-free; redirect-only `[locale]/[[...path]]` shim (no TradeShell) |
+| AC-ACC-03 | Org admin ≠ trade access | `requireTradeAccess` does not accept admin role alone | **PASS** — entitlement / allowlist / RBAC paths in `trade-session` (not org-admin alone) |
 
 ## Risks and open questions
 
