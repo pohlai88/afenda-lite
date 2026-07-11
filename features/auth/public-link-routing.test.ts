@@ -34,7 +34,7 @@ vi.mock("@/modules/declarations/domain/clients", () => ({
   getActiveClientAssignmentForSurvey,
 }));
 
-import { resolvePublicLinkLandingHref } from "@/modules/platform/routing/public-link-routing";
+import { resolvePublicLinkLandingHref } from "@/features/auth/public-link-routing";
 import { AUTH_SIGN_IN_HREF, CLIENT_ONBOARDING_HREF } from "@/modules/platform/routing/portal-routes";
 import type { Survey } from "@/modules/declarations/domain/surveys";
 

@@ -3,7 +3,7 @@
 **Status:** Active — 2026-07-12  
 **Purpose:** Formally dispose items that are **not** incompleteness. Agents must not treat these as open gaps.
 
-Related: [deprecation register](../../.cursor/skills/agent-skills/skills/deprecation-and-migration/reference.md) · [portal-backend-modules completeness](../../.cursor/skills/portal-backend-modules/completeness.md) · [FFT gate-register](../docs/fft/ops/gate-register.md)
+Related: [deprecation register](../../.cursor/skills/agent-skills/skills/deprecation-and-migration/reference.md) · [portal-backend-modules completeness](../../.cursor/skills/portal-backend-modules/completeness.md) · [FFT gate-register](../../docs/fft/ops/gate-register.md)
 
 ---
 
@@ -32,7 +32,7 @@ Related: [deprecation register](../../.cursor/skills/agent-skills/skills/depreca
 | Field | Value |
 |-------|-------|
 | **Disposition** | **Closed** — leave flags default off in production |
-| **Authority** | [docs/fft/ops/gate-register.md](../docs/fft/ops/gate-register.md) § Prod flag promotion · [doc/frontend/14](../doc/frontend/14-feed-farm-trade-phase3-ops-flags.md) |
+| **Authority** | [docs/fft/ops/gate-register.md](../../docs/fft/ops/gate-register.md) § Prod flag promotion · [doc/frontend/14](../frontend/14-feed-farm-trade-phase3-ops-flags.md) |
 | **Code** | P3 surfaces may exist behind flags; **prod enablement** is ops, not a scaffold gap |
 | **Forbidden** | Enabling prod `FFT_DEPOSIT_*` / pickup / notifications / ERP flags without gate-register checklist + explicit approval |
 

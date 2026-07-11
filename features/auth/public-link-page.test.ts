@@ -14,7 +14,7 @@ vi.mock("@/modules/declarations/domain/surveys", () => ({
   getSurveyByInviteToken,
 }));
 
-vi.mock("@/modules/platform/routing/public-link-routing", () => ({
+vi.mock("@/features/auth/public-link-routing", () => ({
   publicLinkPageRobots: { index: false, follow: false },
   resolvePublicLinkLandingHref,
 }));
