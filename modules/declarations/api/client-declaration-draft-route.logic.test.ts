@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   parseDeclarationDraftJsonBody,
   parseDeclarationDraftQuery,
-} from "@/modules/platform/api/client-declaration-draft-route.logic";
+} from "@/modules/declarations/api/client-declaration-draft-route.logic";
 
 const assignmentId = "550e8400-e29b-41d4-a716-446655440001";
 const questionId = "550e8400-e29b-41d4-a716-446655440003";

@@ -273,7 +273,7 @@ export const LIB_IMPORT_DOMAIN_MAP: ReadonlyArray<{
   { prefix: "@/modules/identity/domain/platform-rbac", domainId: "domain:auth" },
   { prefix: "@/modules/identity/domain/organization-users", domainId: "domain:auth" },
   { prefix: "@/modules/declarations/domain/client-declaration-draft", domainId: "domain:clients" },
-  { prefix: "@/modules/platform/api/client-declaration-draft-route", domainId: "domain:clients" },
+  { prefix: "@/modules/declarations/api/client-declaration-draft-route", domainId: "domain:clients" },
   { prefix: "@/modules/platform/audit", domainId: "domain:audit" },
   { prefix: "@/modules/identity/auth/session", domainId: "domain:auth" },
   { prefix: "@/modules/identity/auth/get-session", domainId: "domain:auth" },

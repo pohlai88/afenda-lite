@@ -5,7 +5,7 @@ import PagesLayout from '@/components-V2/platform-components/layout/PagesLayout'
 import themeConfig from '@/components-V2/platform-config/themeConfig'
 import type { Settings } from '@/components-V2/platform-context/settingsContext'
 import { isPlaygroundEnabled } from '@/modules/platform/env/accessors'
-import { resolveShellAccess } from '@/modules/platform/shell/access'
+import { resolveShellAccess } from '@/features/portal-chrome/resolve-shell-access'
 
 /** Shared AdminCN chrome for Declarations + Feed Farm Trade modules (/dashboard, /trade). */
 export async function AdminCnShell({ children }: { children: ReactNode }) {

@@ -122,7 +122,6 @@ export const SURFACE_RELIANCE: ReadonlyArray<{
       { kind: "domain-loader", domainId: "domain:operator-declaration-detail" },
       { kind: "domain-loader", domainId: "domain:surveys" },
       { kind: "domain-loader", domainId: "domain:questions" },
-      { kind: "domain-loader", domainId: "domain:auth" },
       { kind: "domain-loader", domainId: "domain:survey-package" },
     ],
   },
@@ -155,7 +154,6 @@ export const SURFACE_RELIANCE: ReadonlyArray<{
     consumes: [
       { kind: "server-action", actionId: "action:requireAdminSession" },
       { kind: "server-action", actionId: "action:regenerateInviteTokenAction" },
-      { kind: "domain-loader", domainId: "domain:auth" },
       { kind: "domain-loader", domainId: "domain:surveys" },
     ],
   },
@@ -240,7 +238,7 @@ export const ACTION_DOMAIN_MATERIALIZATION: ReadonlyArray<{
   },
   {
     actionId: "action:writeClientDeclarationDraftApi",
-    file: "modules/platform/api/client-declaration-draft-route.ts",
+    file: "modules/declarations/api/client-declaration-draft-route.ts",
     domains: ["domain:clients", "domain:auth"],
   },
   {

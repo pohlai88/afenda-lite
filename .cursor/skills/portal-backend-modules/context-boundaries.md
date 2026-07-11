@@ -13,7 +13,7 @@ One **Afenda-Lite** SaaS · two product modules (Declarations + Feed Farm Trade)
 | Identity | Neon Auth, Platform | Declarations (any), Trade |
 | Declarations | Identity (actor / org ids), Platform | Trade (`modules/fft`) |
 | Trade (`modules/fft`) | Identity (allowlist / RBAC), Platform | Declarations (**any** path — schemas included) |
-| Platform | nothing product-domain-specific | Declarations / Identity / Trade domain trees |
+| Platform | Shared infra only | Product domain trees (`declarations` / `fft`); Identity session helpers used by routing are a known narrow edge — shell **compose** lives in `features/portal-chrome/resolve-shell-access` |
 
 ### Shared primitives (Platform only)
 

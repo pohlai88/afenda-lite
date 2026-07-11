@@ -99,7 +99,7 @@ mark a route verified.
 **Product purpose:** B2B **feed & farm trade sales** for 3F businesses (feedmills, farmers, Feed · Farm · Food — industry customers, not portal organization admins) — see [adr/001-feed-farm-trade.md](adr/001-feed-farm-trade.md). Downstream **customer portal** is a future series branch. Architecture: [adr/001A-feed-farm-trade-architecture.md](adr/001A-feed-farm-trade-architecture.md). Roadmap: [adr/001R-feed-farm-trade-roadmap.md](adr/001R-feed-farm-trade-roadmap.md).
 **Shell id:** `fft`. Same AdminCN shell as Declarations. Layout gate: **Feed Farm Trade permission** (`requireFftAccess` — allowlist / HS RBAC). Organization admin alone does **not** unlock `/fft`. Locale URL segment removed (i18n deferred to action arg); paths are flat under `/fft/*`.
 
-Sidebar entitlement: `modules/platform/shell/access.ts` (`declarations` for all members; `fft` only with permission).
+Sidebar entitlement: `features/portal-chrome/resolve-shell-access.ts` (`declarations` for all members; `fft` only with permission). Types: `modules/platform/shell/access.ts`.
 
 | Path pattern | Role | Proxy | Status |
 |--------------|------|-------|--------|

@@ -27,7 +27,7 @@ Ship platform permission-catalog RBAC (Identity) + AdminCN Roles/Permissions pro
 | Permission gate `declarations.read` on read surfaces | **Done** | Dashboard / detail / clients / share panel via `anyOf` |
 | Permission gate `account.self` | **Done** | `requireAccountSession` + `/account` layout; self-bootstrap when no assignments |
 | Operator session beyond Neon admin | **Done** | `requirePlatformOperatorSession` — Editor/Viewer with platform codes can enter ops surfaces |
-| Shell `isOrgAdmin` includes platform operators | **Done** | `modules/platform/shell/access.ts` |
+| Shell `isOrgAdmin` includes platform operators | **Done** | `features/portal-chrome/resolve-shell-access.ts` |
 | FFT list/create stamp + backfill | **Done** | `fft-organization-context` + store + pages |
 | FFT `getEventById` org-scoped on product pages + actions | **Done** | `getFftEventForOrganization` · `getScopedEvent` in `app/actions/fft.ts` |
 | Route brand `[declarationId]` (not `[id]`) | **Done** | `app/dashboard/[declarationId]` |

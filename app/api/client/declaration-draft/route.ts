@@ -1,7 +1,7 @@
 import {
   runGetClientDeclarationDraft,
   runWriteClientDeclarationDraft,
-} from "@/modules/platform/api/client-declaration-draft-route";
+} from "@/modules/declarations/api/client-declaration-draft-route";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

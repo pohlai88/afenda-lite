@@ -28,7 +28,7 @@ Do **not** wire more demo views into product routes while freeze holds. Refine e
 | Feed Farm Trade | `/fft/*` | `requireFftAccess` |
 | Admin routes | playground (local), etc. | `isAdminSession` |
 
-Entitlements: `modules/platform/shell/access.ts`. Nav: module-tagged `navConfig`. No separate `FftShell`.
+Entitlements: `features/portal-chrome/resolve-shell-access.ts`. Nav: module-tagged `navConfig`. No separate `FftShell`.
 
 ## Customization levers (in order)
 
