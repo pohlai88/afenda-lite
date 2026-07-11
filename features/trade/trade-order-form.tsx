@@ -6,10 +6,11 @@ import { submitTradeOrderAction } from "@/app/actions/trade";
 import { getTradeActionError } from "@/modules/trade/domain/trade-action-result";
 import type { HotSalesFieldDef, HotSalesProduct } from "@/modules/trade/domain/types";
 import { Button } from "@/components-V2/platform-components/ui/button";
-import { Input } from "@/components-V2/platform-components/ui/input";
 import { Label } from "@/components-V2/platform-components/ui/label";
-import { Textarea } from "@/components-V2/platform-components/ui/textarea";
 import { tradeHref, type TradeLocale } from "@/modules/trade/i18n/trade";
+
+const fieldClassName =
+  "border-input bg-background w-full rounded-md border px-3 py-2 text-sm";
 
 export function TradeOrderForm({
   locale,
@@ -34,24 +35,35 @@ export function TradeOrderForm({
       action={(formData) => {
         setError(null);
         startTransition(async () => {
-          const result = await submitTradeOrderAction(locale, eventId, formData);
-          const err = getTradeActionError(result);
-          if (err) {
-            setError(err);
-            return;
+          try {
+            const result = await submitTradeOrderAction(locale, eventId, formData);
+            const err = getTradeActionError(result);
+            if (err) {
+              setError(err);
+              return;
+            }
+            router.push(tradeHref("/my-orders"));
+            router.refresh();
+          } catch {
+            setError("order_submit_failed");
           }
-          router.push(tradeHref("/my-orders"));
-          router.refresh();
         });
       }}
     >
       <div className="space-y-2">
         <Label htmlFor="customerName">Customer name</Label>
-        <Input id="customerName" name="customerName" required />
+        {/* Native inputs — Base UI Input can omit names from FormData. */}
+        <input
+          id="customerName"
+          name="customerName"
+          required
+          className={fieldClassName}
+          data-testid="trade-order-customer-name"
+        />
       </div>
       <div className="space-y-2">
         <Label htmlFor="customerCode">Customer code</Label>
-        <Input id="customerCode" name="customerCode" />
+        <input id="customerCode" name="customerCode" className={fieldClassName} />
       </div>
       <div className="space-y-2">
         <Label htmlFor="productId">Product</Label>
@@ -59,7 +71,8 @@ export function TradeOrderForm({
           id="productId"
           name="productId"
           required
-          className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
+          className={fieldClassName}
+          data-testid="trade-order-product"
         >
           <option value="">Select product</option>
           {products.map((p) => (
@@ -71,7 +84,15 @@ export function TradeOrderForm({
       </div>
       <div className="space-y-2">
         <Label htmlFor="requestedQuantity">Requested quantity</Label>
-        <Input id="requestedQuantity" name="requestedQuantity" type="number" min={1} required />
+        <input
+          id="requestedQuantity"
+          name="requestedQuantity"
+          type="number"
+          min={1}
+          required
+          className={fieldClassName}
+          data-testid="trade-order-qty"
+        />
       </div>
       {depositRequired ? (
         <div className="space-y-2">
@@ -79,7 +100,7 @@ export function TradeOrderForm({
           <select
             id="depositStatus"
             name="depositStatus"
-            className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
+            className={fieldClassName}
             defaultValue="pending"
           >
             <option value="pending">pending</option>
@@ -96,17 +117,20 @@ export function TradeOrderForm({
             {def.required ? " *" : ""}
           </Label>
           {def.fieldType === "long_text" ? (
-            <Textarea
+            <textarea
               id={`attr_${def.fieldKey}`}
               name={`attr_${def.fieldKey}`}
               required={def.required}
+              className={fieldClassName}
+              data-testid={`trade-order-attr-${def.fieldKey}`}
             />
           ) : def.fieldType === "select" ? (
             <select
               id={`attr_${def.fieldKey}`}
               name={`attr_${def.fieldKey}`}
-              className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
+              className={fieldClassName}
               required={def.required}
+              data-testid={`trade-order-attr-${def.fieldKey}`}
             >
               <option value="">—</option>
               {def.dropdownOptions?.map((opt) => (
@@ -121,9 +145,10 @@ export function TradeOrderForm({
               name={`attr_${def.fieldKey}`}
               type="checkbox"
               value="true"
+              data-testid={`trade-order-attr-${def.fieldKey}`}
             />
           ) : (
-            <Input
+            <input
               id={`attr_${def.fieldKey}`}
               name={`attr_${def.fieldKey}`}
               type={
@@ -136,19 +161,25 @@ export function TradeOrderForm({
                       : "text"
               }
               required={def.required}
+              className={fieldClassName}
+              data-testid={`trade-order-attr-${def.fieldKey}`}
             />
           )}
         </div>
       ))}
       <div className="space-y-2">
         <Label htmlFor="remarks">Remarks</Label>
-        <Textarea id="remarks" name="remarks" rows={3} />
+        <textarea id="remarks" name="remarks" rows={3} className={fieldClassName} />
       </div>
       <p className="text-muted-foreground text-xs">
         Deposit status is tracking only — not finance settlement.
       </p>
-      {error ? <p className="text-destructive text-sm">{error}</p> : null}
-      <Button type="submit" disabled={pending}>
+      {error ? (
+        <p className="text-destructive text-sm" data-testid="trade-order-error">
+          {error}
+        </p>
+      ) : null}
+      <Button type="submit" disabled={pending} data-testid="trade-order-submit">
         Submit order
       </Button>
     </form>

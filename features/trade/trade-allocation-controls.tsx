@@ -53,6 +53,7 @@ export function TradeAllocationControls({
         <Button
           type="button"
           disabled={pending}
+          data-testid="trade-run-allocation"
           onClick={() =>
             startTransition(async () => {
               setError(null);
@@ -63,8 +64,7 @@ export function TradeAllocationControls({
           }
         >
           Run allocation
-        </Button>
-      </div>
+        </Button>      </div>
 
       {preview ? (
         <div className="rounded-lg border p-3 text-sm">
@@ -112,7 +112,13 @@ function TradeOrderAdjustRow({
   const [error, setError] = useState<string | null>(null);
 
   return (
-    <div className="grid gap-2 rounded-lg border p-3 text-sm md:grid-cols-6">
+    <div
+      className="grid gap-2 rounded-lg border p-3 text-sm md:grid-cols-6"
+      data-testid="trade-order-row"
+      data-order-id={order.id}
+      data-status={order.status}
+      data-customer={order.customerName}
+    >
       <div className="md:col-span-2">
         <p className="font-medium">{order.orderNumber}</p>
         <p className="text-muted-foreground">
@@ -178,7 +184,7 @@ function TradeOrderAdjustRow({
           defaultValue={order.fulfilledQuantity ?? order.confirmedQuantity ?? ""}
           placeholder="Fulfilled qty"
         />
-        <Button type="submit" size="sm" variant="secondary" disabled={pending}>
+        <Button type="submit" size="sm" variant="secondary" disabled={pending} data-testid="trade-complete-order">
           Complete (final support)
         </Button>
       </form>

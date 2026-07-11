@@ -77,6 +77,15 @@ Fill phase-doc **Result** columns when evaluating: [11](../../../doc/frontend/11
 
 **Forbidden:** marking completeness `Enterprise MVP claimable = done` without evidence block above.
 
+## Evidence log (Enterprise MVP — 2026-07-11)
+
+```text
+AC-G1..G8 cycle: PASS | e2e/trade-hot-sales.spec.ts @journey (3/3) | 2026-07-11
+AC permission gates: PASS | modules/trade/auth/trade-p1-ac-gates.test.ts | 2026-07-11
+AC transfer/complete domain: PASS | modules/trade/domain/trade.test.ts | 2026-07-11
+Unit suite: PASS | npm run test:unit -- modules/trade (138) | 2026-07-11
+```
+
 ## Quick pre-merge checklist
 
 - [ ] `requireTradePermission` / layout gate on mutations  
