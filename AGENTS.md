@@ -4,7 +4,9 @@
 
 ## Hot Sales — Phase 2A closed · 2B–2D ADRs Accepted
 
-**Agent entry:** [docs/hot-sales/RUNTIME.md](docs/hot-sales/RUNTIME.md) · Index: [docs/hot-sales/README.md](docs/hot-sales/README.md)
+**Product module (UI / shell):** Feed Farm Trade — agent skill [`.cursor/skills/feed-farm-trade`](.cursor/skills/feed-farm-trade/SKILL.md) · ADR [001](doc/frontend/adr/001-feed-farm-trade.md) · architecture [001A](doc/frontend/adr/001A-feed-farm-trade-architecture.md) · roadmap [001R](doc/frontend/adr/001R-feed-farm-trade-roadmap.md).
+
+**Agent entry (engine ops):** [docs/hot-sales/RUNTIME.md](docs/hot-sales/RUNTIME.md) · Index: [docs/hot-sales/README.md](docs/hot-sales/README.md)
 
 | Authority | Doc |
 |-----------|-----|
@@ -59,7 +61,7 @@ Optional ops keys (Checkly): add `CHECKLY_*` to `env.secret` only — never pull
 - `/playground` is a **developer harness** — not a client entry point, not documented in client journeys, and not used in production.
 - Client routes (`/`, `/client/login`, `/client/*`) are accessed **directly** by clients. Playground may iframe those URLs locally with `?embed=1` for layout review only.
 - Do **not** add product features, auth flows, or architecture that depend on `PLAYGROUND_*` or `/playground/*`.
-- Do **not** suggest playground screens or bindings when implementing client gate routes, onboarding, or sign-in — use Storybook (`stories/**`) or E2E for client UI validation instead.
+- Do **not** suggest playground screens or bindings when implementing client gate routes, onboarding, or sign-in — use E2E or local `/playground` embed for client UI validation instead.
 
 ### Vercel production sync
 
@@ -155,45 +157,9 @@ npm run env:compose
 npm run dev                   # http://localhost:3000
 ```
 
-Localhost is allowed on production Neon Auth for `http://localhost:3000` sign-in. Keep `APP_URL` as the production URL in `env.config` — server-side org invites still emit production links (see `lib/auth/neon-auth-request.ts`). For layout-only UI work without auth, use Storybook or `/playground` embed.
+Localhost is allowed on production Neon Auth for `http://localhost:3000` sign-in. Keep `APP_URL` as the production URL in `env.config` — server-side org invites still emit production links (see `lib/auth/neon-auth-request.ts`). For layout-only UI work without auth, use `/playground` embed.
 
 Runbook: [docs/runbooks/local-dev-auth.md](docs/runbooks/local-dev-auth.md).
-
----
-
-## Storybook MCP (`client-declaration-portal-sb-mcp`)
-
-When working on UI components or stories, use the **`client-declaration-portal-sb-mcp`** MCP tools. Storybook must be running first:
-
-```bash
-npm run storybook
-```
-
-MCP endpoint: `http://localhost:6006/mcp`
-
-### Rules
-
-- **Never hallucinate component properties.** Before using any prop on a portal or shadcn component, query MCP documentation.
-- Call `list-all-documentation` to discover documented components.
-- Call `get-documentation` for props, examples, and usage.
-- Call `get-storybook-story-instructions` before creating or updating stories (CSF3, interaction tests).
-- Validate work with `run-story-tests` when Storybook Test is configured.
-- Only use props shown in documentation or example stories.
-
-### Portal conventions
-
-- Stories live in `stories/**/*.stories.tsx` (UI evaluation comparisons).
-- Import app styles via `.storybook/preview.ts` (`app/globals.css`).
-- `next/link` and `next/image` are mocked in `.storybook/mocks/` for Vite.
-- Brand assets are served from `public/` via Storybook `staticDirs`.
-- Prefer existing portal wrappers (`portal-*` components) over raw shadcn-studio blocks.
-
-### Story authoring (CSF3)
-
-- One story file per surface group; descriptive story names.
-- Use `parameters.layout: "fullscreen"` for shells and page layouts.
-- Use `render` only when composing multiple components; prefer `args` for simple variants.
-- Add `tags: ['autodocs']` when documenting reusable components with a `component` meta field.
 
 ---
 
@@ -205,14 +171,12 @@ Authority: [ADR-Portal-BG-001](docs/architecture/adr/ADR-Portal-BG-001-portal-at
 
 | Rule | Detail |
 |------|--------|
-| **Comp is the bar** | Storybook at 1024px must match hero PNGs side-by-side; tests passing ≠ done |
+| **Comp is the bar** | Visual match to hero PNGs at 1024px side-by-side; tests passing ≠ done |
 | Plan before visual work | Hero/atmosphere changes: Plan mode → user approval → implement |
-| Storybook first | Experiments live in `stories/ui-evaluation/` and `components/portal-atmosphere/fixtures/` until user asks to wire prod |
+| Experiment surface | Fixtures under `components/portal-atmosphere/fixtures/` until user asks to wire prod — Storybook removed |
 | Dual owl assets | Dark: `public/owl-variants/allowed-base/darkbg-removebg-preview2.png` · Light: `public/owl-variants/allowed-base/whitebg-removebg-preview2.png` |
 | Forbidden | CSS invert on owls; single PNG sticker heroes; reintroducing rejected approaches in `pa-rejected-approaches.md` |
-| Prod wiring | **Studio login-page-02 + Neon** on `/auth/*` is the production shell ([ADR-Auth-UI-001](docs/architecture/adr/ADR-Auth-UI-001-guardian-shell-neon-form.md) amended 2026-07-10). Guardian Auth, Fade Owl / Dual / Comp Laptop stay Storybook-only |
-
-Storybook server mocks: `.storybook/mocks/server-only.ts`, `.storybook/mocks/db.ts` (see `.storybook/main.ts`).
+| Prod wiring | **Studio login-page-02 + Neon** on `/auth/*` is the production shell ([ADR-Auth-UI-001](docs/architecture/adr/ADR-Auth-UI-001-guardian-shell-neon-form.md) amended 2026-07-10). Guardian Auth, Fade Owl / Dual / Comp Laptop stay experiment-only |
 
 ---
 

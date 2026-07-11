@@ -31,6 +31,7 @@ Frontend + API + backend describe **one system**, not three architectures.
 | [backend/03-ports-and-adapters.md](backend/03-ports-and-adapters.md) | Contract-first ports ↔ files |
 | [backend/04-nextjs-adapter-map.md](backend/04-nextjs-adapter-map.md) | App Router ↔ hexagon |
 | [backend/05-contract-rules.md](backend/05-contract-rules.md) | One-version, errors, Zod, REST naming |
+| [backend/06-lib-ownership.md](backend/06-lib-ownership.md) | `lib/` → `modules/` ownership map |
 | [backend/adr/001-…](backend/adr/001-modular-monolith-hexagonal.md) | Accepted ADR |
 
 ### Frontend
@@ -47,6 +48,13 @@ Frontend + API + backend describe **one system**, not three architectures.
 | [08-operator-phase1-tasks.md](frontend/08-operator-phase1-tasks.md) | Operator post-login phase-1 breakdown (reopened) |
 | [09-account-phase3-tasks.md](frontend/09-account-phase3-tasks.md) | Account phase-3 breakdown (reopened) |
 | [10-join-phase2-tasks.md](frontend/10-join-phase2-tasks.md) | Join phase-2 breakdown (reopened) |
+| [adr/001-feed-farm-trade.md](frontend/adr/001-feed-farm-trade.md) | Frontend ADR-001 — Feed Farm Trade (locks) |
+| [adr/001A-feed-farm-trade-architecture.md](frontend/adr/001A-feed-farm-trade-architecture.md) | Frontend ADR-001A — FFT architecture (boundaries, folders, flow) |
+| [adr/001R-feed-farm-trade-roadmap.md](frontend/adr/001R-feed-farm-trade-roadmap.md) | Frontend ADR-001R — FFT MVP roadmap + critical gap register (P0+P1 incl. G1–G6) |
+| [11-feed-farm-trade-phase0-shell.md](frontend/11-feed-farm-trade-phase0-shell.md) | FFT Phase 0 development spec + evaluation checklist (Shell) |
+| [12-feed-farm-trade-phase1-core-mvp.md](frontend/12-feed-farm-trade-phase1-core-mvp.md) | FFT Phase 1 development spec + evaluation checklist (Core cycle MVP, G1–G9) |
+| [13-feed-farm-trade-phase2-ui-polish.md](frontend/13-feed-farm-trade-phase2-ui-polish.md) | FFT Phase 2 development spec (UI polish — closed until reopen) |
+| [14-feed-farm-trade-phase3-ops-flags.md](frontend/14-feed-farm-trade-phase3-ops-flags.md) | FFT Phase 3 development spec (deposits/pickup/imports/notifications/ERP — flag-gated) |
 
 ### API
 

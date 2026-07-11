@@ -13,8 +13,8 @@ Target layout after rebuild. Status reflects disk after 2026-07-11 cleanup.
 | `proxy.ts` | Next.js 16 request proxy | **Keep** | Not `middleware.ts` |
 | `messages/` | i18n message catalogs | **Keep** | Trade locales |
 | `e2e/`, `testing/` | Playwright / Vitest | **Keep** | |
-| `stories/`, `.storybook/` | Storybook | **Keep** | Dev-only UI review |
 | `scripts/` | Ops / checks | **Keep** | |
+| `stories/`, `.storybook/` | Storybook | **Removed** | Do not recreate |
 | `doc/` | This design suite | **Keep** | Replaces deleted `docs/` for rebuild SSOT |
 | `components/` | Legacy portal UI dump | **Removed** | Do **not** recreate wholesale |
 | `docs/` | Former architecture docs | **Removed** | Content superseded here for FE/API rebuild |
@@ -30,11 +30,11 @@ Target layout after rebuild. Status reflects disk after 2026-07-11 cleanup.
 | `app/auth/` | Neon Auth UI routes |
 | `app/client/(gate)/` | Client login (and gates) |
 | `app/client/(workspace)/` | Client post-login (rebuild target) |
-| `app/dashboard/` | Operator AdminCN routes (rebuild target) |
-| `app/account/` | Neon AccountView under AdminCN (rebuild target) |
+| `app/dashboard/` | Declarations module (AdminCN shell, member gate) |
+| `app/account/` | Account under same AdminCN shell (member gate) |
 | `app/join/`, `app/invite/`, `app/f/`, `app/survey/` | Join + public/secure links |
 | `app/org/login/` | Operator entry alias |
-| `app/trade/` | Hot Sales (gated appendix) |
+| `app/trade/` | Feed Farm Trade module (AdminCN shell, permission gate; locale-free P1 pages) |
 | `app/playground/` | Local UI harness (dev only) |
 
 ## `lib/` L2 (product-critical)
@@ -48,6 +48,7 @@ Target layout after rebuild. Status reflects disk after 2026-07-11 cleanup.
 | `lib/routing/` | Hrefs, nav contracts, path helpers |
 | `lib/env/` | Typed env accessors |
 | `lib/copy/` | Portal copy |
+| `lib/playground/`, `lib/pages/playground/` | Local harness policies and thin page runners |
 
 ## `features/` L2
 
@@ -57,8 +58,18 @@ Target layout after rebuild. Status reflects disk after 2026-07-11 cleanup.
 | `features/landing/` | Lynx landing |
 | `features/account/` | Account section chrome |
 | `features/operator/` | Operator leaf widgets migrated from deleted `components/` |
+| `features/playground/` | Local-only route review, preview, and coverage UI |
 | `features/portal-chrome/` | Shared chrome helpers |
-| `features/trade/` | Trade UI feature module |
+| `features/trade/` | Feed Farm Trade UI (P1 forms/panels under AdminCN; no TradeShell) |
+
+## `modules/` L2 (runtime SSOT)
+
+| Path | Role |
+|------|------|
+| `modules/platform/shell/` | Shared AdminCN entitlements (`resolveShellAccess`) |
+| `modules/trade/` | Feed Farm Trade domain, auth, i18n helpers |
+| `modules/declarations/` | Declaration domain + copy |
+| `modules/identity/` | Session guards (`requireMemberSession`, `requireAdminSession`) |
 
 ## `components-V2/` L2
 

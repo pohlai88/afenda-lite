@@ -4,7 +4,7 @@ Each product surface: journey phase, route, rebuild owner module, data adapter.
 
 | Surface ID | Phase | Route | Owner (rebuild) | Read | Mutate |
 |------------|-------|-------|-----------------|------|--------|
-| lynx-landing | pre-login | `/` | `features/landing` | static / copy | — |
+| lynx-landing | pre-login | `/` | `features/landing` (Vanguard wide head stage; face link → `/auth/sign-in`) | static | — |
 | auth-sign-in | pre-login | `/auth/sign-in` | `features/auth` | Neon UI | Neon |
 | auth-sign-up | pre-login | `/auth/sign-up` | `features/auth` | Neon UI | Neon |
 | auth-forgot-password | pre-login | `/auth/forgot-password` | `features/auth` | Neon UI | Neon |
@@ -20,12 +20,22 @@ Each product surface: journey phase, route, rebuild owner module, data adapter.
 | client-home | client-post-login | `/client` | client-workspace TBD | domain | ACK Action |
 | client-profile | client-post-login | `/client/profile` | client-workspace TBD | domain | profile Action |
 | client-declare | client-post-login | `/client/declare/[id]` | client-workspace TBD | domain | draft API + submit Action |
-| admin-dashboard | operator | `/dashboard` | `portal-views/operator-declarations-dashboard` | domain | create/delete Actions |
-| admin-clients | operator | `/dashboard/clients` | `portal-views/operator-clients-list` | domain | invite/delete Actions |
-| admin-declaration-detail | operator | `/dashboard/[id]` | `portal-views/operator-declaration-detail` | domain | survey/share Actions |
-| account-settings | account | `/account/settings` | `features/account` + Neon | Neon | Neon |
-| account-security | account | `/account/security` | `features/account` + Neon | Neon | Neon |
-| trade-* | hot-sales | `/trade/[locale]/...` | `features/trade` | domain/trade | `app/actions/trade` |
+| admin-dashboard | declarations module | `/dashboard` | `portal-views/operator-declarations-dashboard` | domain | create/delete Actions (admin mutations) |
+| admin-clients | declarations module | `/dashboard/clients` | `portal-views/operator-clients-list` | domain | invite/delete Actions (admin mutations) |
+| admin-declaration-detail | declarations module | `/dashboard/[id]` | `portal-views/operator-declaration-detail` | domain | survey/share Actions (admin mutations) |
+| account-settings | declarations module | `/account/settings` | `features/account` + Neon | Neon | Neon |
+| account-security | declarations module | `/account/security` | `features/account` + Neon | Neon | Neon |
+| trade-* | Feed Farm Trade | `/trade/...` (locale-free) | AdminCN + `features/trade` (P1 wired; P3 placeholders); [001](adr/001-feed-farm-trade.md) · [001A](adr/001A-feed-farm-trade-architecture.md) · [001R](adr/001R-feed-farm-trade-roadmap.md) | `modules/trade` | `app/actions/trade` |
+
+## Shell modules (SaaS)
+
+| Module | Purpose | Routes | Entry gate | Nav |
+|--------|---------|--------|------------|-----|
+| `declarations` | Compliance declarations | `/dashboard/*`, `/account/*` | `requireMemberSession` | Declarations |
+| `feed-farm-trade` | B2B **feed & farm trade sales** for 3F operators (Feed · Farm · Food); downstream customer portal is a later branch | `/trade/*` | `requireTradeAccess` | Feed Farm Trade |
+| Admin routes | Org-admin tools | playground (local), … | `isAdminSession` | `kind: "admin"` |
+
+Entitlement resolver: `modules/platform/shell/access.ts`. Org admin ≠ Feed Farm Trade permission.
 
 ## Client workspace decision
 
@@ -40,4 +50,5 @@ Do not resurrect deleted root `components/client/*`.
 
 - Shell / nav / theme: `components-V2/platform-components` + `platform-config`  
 - Screen bodies: `platform-views/portal-views/*` only  
-- Auth island stays on `features/auth` + `app/auth-surface.css` — never ThemeCustomizer
+- Auth island stays on `features/auth` + `app/auth-surface.css` — never ThemeCustomizer  
+- Hot Sales shares the same AdminCN shell as product **Feed Farm Trade**; do not resurrect `TradeShell` / locale switcher

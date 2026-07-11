@@ -6,7 +6,9 @@ Target route map. Columns: path, page file, layout group, special files, proxy g
 
 - **Proxy:** matched by [`proxy.ts`](../../proxy.ts) session gate  
 - **loading / error:** required on authenticated product segments after rebuild  
-- **Status:** `live` = page present on disk (2026-07-11); `rebuild` = folder may exist as `.gitkeep` / needs `page.tsx` restored
+- **Status:** `live` = product composition is wired; `placeholder` = route file
+  exists but only exposes wipe/holding UI; `rebuild` = route needs restoration.
+  File presence alone is not evidence of product completeness.
 
 ## Pre-login (live)
 
@@ -27,19 +29,21 @@ Target route map. Columns: path, page file, layout group, special files, proxy g
 
 | Path | Page | Layout | loading | error | Proxy | Owner | Status |
 |------|------|--------|---------|-------|-------|-------|--------|
-| `/join` | `app/join/page.tsx` | root | yes | yes | no | `features/auth` invitation join | live |
+| `/join` | `app/join/page.tsx` | root | yes | yes | no | `features/auth` invitation join | placeholder |
 
 ## Onboarding + client post-login
 
 | Path | Page | Layout | loading | error | Proxy | Owner | Status |
 |------|------|--------|---------|-------|-------|-------|--------|
-| `/client/onboarding` | `app/client/(workspace)/onboarding/page.tsx` | workspace | yes | yes | yes | `features/client-workspace` (TBD) or portal-views | rebuild |
-| `/client` | `app/client/(workspace)/page.tsx` | workspace | yes | yes | yes | client home | rebuild |
-| `/client/profile` | `app/client/(workspace)/profile/page.tsx` | workspace | yes | yes | yes | profile | rebuild |
-| `/client/declare/[id]` | `app/client/(workspace)/declare/[id]/page.tsx` | workspace | yes | yes | yes | declare form | rebuild |
-| `/client/preview-unavailable` | `app/client/(gate)/preview-unavailable/page.tsx` | gate | yes | — | bypass | preview gate | rebuild |
+| `/client/onboarding` | `app/client/(workspace)/onboarding/page.tsx` | workspace | yes | yes | yes | `features/client-workspace` (TBD) or portal-views | placeholder · scope closed |
+| `/client` | `app/client/(workspace)/page.tsx` | workspace | yes | yes | yes | client home | placeholder · scope closed |
+| `/client/profile` | `app/client/(workspace)/profile/page.tsx` | workspace | yes | yes | yes | profile | placeholder · scope closed |
+| `/client/declare/[id]` | `app/client/(workspace)/declare/[id]/page.tsx` | workspace | yes | yes | yes | declare form | placeholder · scope closed |
+| `/client/preview-unavailable` | `app/client/(gate)/preview-unavailable/page.tsx` | gate | yes | — | bypass | preview gate | placeholder · scope closed |
 
 ## Operator post-login
+
+Shared AdminCN shell (`AdminCnShell`). Layout gate: **authenticated member** (`requireMemberSession`) — Declarations module is open to every org member. Organization admin is a separate gate for admin-route nav and mutating actions (`requireAdminSession`), not the Declarations module entry.
 
 | Path | Page | Layout | loading | error | Proxy | Owner | Status |
 |------|------|--------|---------|-------|-------|-------|--------|
@@ -49,10 +53,12 @@ Target route map. Columns: path, page file, layout group, special files, proxy g
 
 ## Account
 
+Same AdminCN shell as dashboard. Layout gate: `requireMemberSession`.
+
 | Path | Page | Layout | loading | error | Proxy | Owner | Status |
 |------|------|--------|---------|-------|-------|-------|--------|
-| `/account` | `app/account/page.tsx` | account AdminCN | yes | yes | yes | `features/account` | live |
-| `/account/[path]` | `app/account/[path]/page.tsx` | account | yes | yes | yes | Neon AccountView wrapper | live |
+| `/account` | `app/account/page.tsx` | account AdminCN | yes | yes | yes | `features/account` | placeholder |
+| `/account/[path]` | `app/account/[path]/page.tsx` | account | yes | yes | yes | Neon AccountView wrapper | placeholder |
 
 ## Public API (Route Handlers — not pages)
 
@@ -69,32 +75,45 @@ Never place `route.ts` beside a `page.tsx` in the same segment.
 
 | Path | Role | Proxy | Status |
 |------|------|-------|--------|
-| `/playground` | Harness index | yes | rebuild / local-only |
-| `/playground/[screenId]` | Screen iframe host | yes | rebuild |
-| `/playground/coverage` | Route coverage | yes | rebuild |
-| `/playground/hitl-review` | HITL review | yes | rebuild |
+| `/playground` | Harness index | yes | live / local-only |
+| `/playground/[screenId]` | Screen iframe host | yes | live |
+| `/playground/coverage` | Route coverage | yes | live |
+| `/playground/hitl-review` | Source-backed HITL route review | yes | live |
 
 Gated by `PLAYGROUND_ENABLED`. Not a client product surface.
+Curated route bindings live in `lib/playground/playground-registry.ts`;
+`npm run check:playground` enforces route, review-definition, evidence, and E2E
+fixture parity.
 
-## Hot Sales (gated appendix)
+HITL route review keeps two facts separate: **Expected from source** is the
+registered fixture contract backed by route/entry files; **Human verdict** is
+the locally stored runtime observation. Notes and copied repair prompts never
+mark a route verified.
+
+## Hot Sales / Feed Farm Trade (gated appendix)
+
+**Product purpose:** B2B **feed & farm trade sales** for 3F operators (feedmills, farmers, Feed · Farm · Food) — see [adr/001-feed-farm-trade.md](adr/001-feed-farm-trade.md). Downstream **customer portal** is a future series branch. Architecture: [adr/001A-feed-farm-trade-architecture.md](adr/001A-feed-farm-trade-architecture.md). Roadmap: [adr/001R-feed-farm-trade-roadmap.md](adr/001R-feed-farm-trade-roadmap.md).
+**Shell id:** `feed-farm-trade`. Same AdminCN shell as Declarations. Layout gate: **Feed Farm Trade permission** (`requireTradeAccess` — allowlist / HS RBAC). Organization admin alone does **not** unlock `/trade`. Locale URL segment removed (i18n deferred to action arg); paths are flat under `/trade/*`.
+
+Sidebar entitlement: `modules/platform/shell/access.ts` (`declarations` for all members; `feed-farm-trade` only with permission).
 
 | Path pattern | Role | Proxy | Status |
 |--------------|------|-------|--------|
-| `/trade` | Locale redirect / entry | yes | rebuild |
-| `/trade/[locale]/events` | Sales events list | yes | rebuild |
-| `/trade/[locale]/events/[id]/order` | Order | yes | rebuild |
-| `/trade/[locale]/my-orders` | My orders | yes | rebuild |
-| `/trade/[locale]/admin/events` | Admin events | yes | rebuild |
-| `/trade/[locale]/admin/events/new` | Create event | yes | rebuild |
-| `/trade/[locale]/admin/events/[id]/setup` | Setup | yes | rebuild |
-| `/trade/[locale]/admin/events/[id]/allocation` | Allocation | yes | rebuild |
-| `/trade/[locale]/admin/events/[id]/deposits` | Deposits | yes | rebuild |
-| `/trade/[locale]/admin/events/[id]/imports` | Imports | yes | rebuild |
-| `/trade/[locale]/admin/events/[id]/pickup` | Pickup | yes | rebuild |
-| `/trade/[locale]/admin/erp-sync` | ERP sync | yes | rebuild |
-| `/trade/[locale]/admin/rbac` | RBAC | yes | rebuild |
+| `/trade` | Redirect → `/trade/events` | yes | live (shell) |
+| `/trade/events` | Sales events list | yes | P1 wired |
+| `/trade/events/[eventId]/order` | Order | yes | P1 wired |
+| `/trade/my-orders` | My orders (+ transfer / complete) | yes | P1 wired |
+| `/trade/admin/events` | Admin events | yes | P1 wired |
+| `/trade/admin/events/new` | Create event | yes | P1 wired |
+| `/trade/admin/events/[eventId]/setup` | Setup (+ supply / fields / priority / audit / export) | yes | P1 wired |
+| `/trade/admin/events/[eventId]/allocation` | Allocation | yes | P1 wired |
+| `/trade/admin/rbac` | RBAC / sales-member | yes | P1 wired |
+| `/trade/admin/events/[eventId]/deposits` | Deposits | yes | P3 placeholder · flag-gated |
+| `/trade/admin/events/[eventId]/imports` | Imports | yes | P3 placeholder · flag-gated |
+| `/trade/admin/events/[eventId]/pickup` | Pickup | yes | P3 placeholder · flag-gated |
+| `/trade/admin/erp-sync` | ERP sync | yes | P3 placeholder · flag-gated |
 
-Promotion and flags: follow Hot Sales gate register (ops) — not this doc.
+Promotion and flags: follow Hot Sales [gate-register](../../docs/hot-sales/ops/gate-register.md) — not this doc. Do **not** restore a separate `TradeShell` / locale switcher; chrome is AdminCN only.
 
 ## Proxy matcher (authoritative)
 

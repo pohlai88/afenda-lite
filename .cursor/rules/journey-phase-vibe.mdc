@@ -5,7 +5,7 @@ alwaysApply: true
 
 # Journey-phase operating protocol
 
-**SSOT:** [docs/architecture/journey-phase-playbook.md](docs/architecture/journey-phase-playbook.md)
+**SSOT:** [docs/architecture/admincn-frontend-preflight.md](docs/architecture/admincn-frontend-preflight.md) for AdminCN-hosted phases; Hot Sales ops: [docs/hot-sales/RUNTIME.md](docs/hot-sales/RUNTIME.md). Route map: [doc/frontend/03-routes.md](doc/frontend/03-routes.md).
 
 Before writing any product code, run this seven-step gate:
 
@@ -22,7 +22,7 @@ Pick exactly one:
 | `onboarding`          | `/client/onboarding`                                                                       |
 | `client-post-login`   | `/client` `/client/profile` `/client/declare/[id]`                                         |
 | `operator-post-login` | `/dashboard` `/dashboard/clients` `/dashboard/[id]`                                        |
-| `hot-sales`           | `/trade/*` — **stop and confirm gate-register before touching**                            |
+| `hot-sales`           | `/trade/*` (Feed Farm Trade) — AdminCN + P1 wired; **confirm gate-register before P3 flag work**; P2 polish closed until reopen |
 
 If the task spans more than one phase, stop and ask the user which one to take first.
 
