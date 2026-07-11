@@ -15,9 +15,9 @@ import {
 } from "@/components-V2/platform-components/ui/card";
 import { PortalDeclarationSubmissionsTable } from "@/components-V2/platform-views/portal-views/portal-declaration-submissions-table";
 import type { OperatorDeclarationDetail } from "@/lib/pages/operator-declaration-detail";
-import { portalCopy } from "@/lib/copy/portal-copy";
-import { OPERATOR_DASHBOARD_HREF } from "@/lib/routing/portal-routes";
-import { displaySurveyTitle } from "@/lib/domain/survey-display";
+import { portalCopy } from "@/modules/declarations/copy/portal-copy";
+import { OPERATOR_DASHBOARD_HREF } from "@/modules/platform/routing/portal-routes";
+import { displaySurveyTitle } from "@/modules/declarations/domain/survey-display";
 
 export default function OperatorDeclarationDetailView({
   detail,

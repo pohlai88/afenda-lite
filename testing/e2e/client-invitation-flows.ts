@@ -1,6 +1,6 @@
 import { expect, type Page } from "@/testing/e2e/playwright-base";
-import { portalCopy } from "@/lib/copy/portal-copy";
-import { authSignInHref, buildClientJoinHref } from "@/lib/routing/portal-routes";
+import { portalCopy } from "@/modules/declarations/copy/portal-copy";
+import { authSignInHref, buildClientJoinHref } from "@/modules/platform/routing/portal-routes";
 import { getClientDefaultPasswordFromEnv } from "@/testing/e2e/credentials";
 import { runNodeScript } from "@/testing/e2e/run-node-script";
 

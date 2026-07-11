@@ -2,7 +2,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { pathToFileURL } from "node:url";
 
-import { buildRouteCoverageSnapshot } from "../../lib/governance/portal-route-coverage";
+import { buildRouteCoverageSnapshot } from "../../modules/platform/governance/portal-route-coverage";
 
 const repoRoot = join(import.meta.dirname, "../..");
 const snapshotPath = join(repoRoot, "docs/architecture/route-coverage.snapshot.json");

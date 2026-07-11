@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { screen, waitFor } from "@testing-library/react";
 import { TradeErpSyncPanel } from "@/features/trade/trade-erp-sync-panel";
-import type { HotSalesSyncJobDetailDto } from "@/lib/domain/trade/erp/types";
+import type { HotSalesSyncJobDetailDto } from "@/modules/trade/domain/erp/types";
 import { renderPortal, setupUser } from "@/testing/react";
 
 vi.mock("next/navigation", () => ({

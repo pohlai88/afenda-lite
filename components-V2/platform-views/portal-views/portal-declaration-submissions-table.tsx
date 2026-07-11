@@ -19,10 +19,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components-V2/platform-components/ui/table";
-import { formatDateTime } from "@/lib/format";
-import type { EvidenceRecord, SurveyQuestion } from "@/lib/question-models";
-import type { SurveyResponse } from "@/lib/domain/surveys";
-import { portalCopy } from "@/lib/copy/portal-copy";
+import { formatDateTime } from "@/modules/platform/format";
+import type { EvidenceRecord, SurveyQuestion } from "@/modules/declarations/question-models";
+import type { SurveyResponse } from "@/modules/declarations/domain/surveys";
+import { portalCopy } from "@/modules/declarations/copy/portal-copy";
 
 type PortalDeclarationSubmissionsTableProps = {
   responses: SurveyResponse[];

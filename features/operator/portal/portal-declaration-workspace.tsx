@@ -6,9 +6,9 @@ import {
 } from "lucide-react";
 import { PortalStatisticsCard } from "@/features/operator/portal/portal-statistics-card";
 import { SurveyDetailTabs } from "@/features/operator/survey-detail-tabs";
-import { formatDate } from "@/lib/format";
-import { portalCopy } from "@/lib/copy/portal-copy";
-import type { Survey } from "@/lib/domain/surveys";
+import { formatDate } from "@/modules/platform/format";
+import { portalCopy } from "@/modules/declarations/copy/portal-copy";
+import type { Survey } from "@/modules/declarations/domain/surveys";
 
 /** dashboard-shell-05 — declaration workspace overview + tabbed panels. */
 export function PortalDeclarationWorkspace({

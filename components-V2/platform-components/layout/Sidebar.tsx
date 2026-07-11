@@ -34,12 +34,39 @@ import {
 } from '@/components-V2/platform-components/ui/sidebar'
 
 // Config Imports
-import { navItems } from '@/components-V2/platform-config/navConfig'
+import { navItems, type NavItem } from '@/components-V2/platform-config/navConfig'
 import themeConfig from '@/components-V2/platform-config/themeConfig'
+import { useOperatorShellFlags } from '@/components-V2/platform-context/operatorShellFlagsContext'
 import { useSettings } from '@/components-V2/platform-hooks/use-settings'
+import { ORG_OPERATOR_PLAYGROUND_ROUTE } from '@/modules/platform/routing/portal-nav-routes'
+import { portalCopy } from '@/modules/declarations/copy/portal-copy'
 
 // Util Imports
 import { cn } from '@/components-V2/lib/utils'
+
+const playgroundNavGroup: NavItem = {
+  groupLabel: 'Developer',
+  kind: 'admin',
+  items: [
+    {
+      icon: 'LayoutGrid',
+      label: portalCopy.nav.playground,
+      href: ORG_OPERATOR_PLAYGROUND_ROUTE.href,
+      activePath: '/playground',
+    },
+  ],
+}
+
+function isNavGroupVisible(
+  navItem: NavItem,
+  entitledModules: readonly string[],
+  isOrgAdmin: boolean,
+): boolean {
+  if (navItem.kind === 'admin') {
+    return isOrgAdmin
+  }
+  return Boolean(navItem.moduleId && entitledModules.includes(navItem.moduleId))
+}
 
 const isSubGroup = (item: MenuSubItem): item is MenuGroupSubItem => 'childItems' in item
 
@@ -52,7 +79,7 @@ function isLinkActive(
   searchParams: Pick<URLSearchParams, 'get'>
 ): boolean {
   if (activePath) {
-    return pathname.startsWith(activePath)
+    return pathname === activePath || pathname.startsWith(`${activePath}/`)
   }
 
   if (href.includes('?')) {
@@ -202,7 +229,7 @@ const SidebarGroupedMenuItems = ({
                 <SidebarMenuButton
                   tooltip={item.label}
                   render={<Link href={item.href} target={item.target} />}
-                  isActive={pathname === item.href}
+                  isActive={isLinkActive(item.href, item.activePath, pathname, searchParams)}
                   className='data-active:bg-primary/10!'
                 >
                   {Tag && <Tag />}
@@ -231,6 +258,11 @@ const SidebarLayout = () => {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const { settings } = useSettings()
+  const { showPlayground, entitledModules, isOrgAdmin } = useOperatorShellFlags()
+  const withPlayground = showPlayground ? [...navItems, playgroundNavGroup] : navItems
+  const resolvedNavItems = withPlayground.filter((item) =>
+    isNavGroupVisible(item, entitledModules, isOrgAdmin),
+  )
 
   // Use 'icon' as default collapsible behavior when sidebarOpen is true
   // This ensures the sidebar trigger still works
@@ -256,7 +288,7 @@ const SidebarLayout = () => {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent className='group-data-[collapsible=icon]:overflow-y-auto'>
-        {navItems.map((navItem, index) => {
+        {resolvedNavItems.map((navItem, index) => {
           return (
             <SidebarGroupedMenuItems
               key={navItem.groupLabel || index}

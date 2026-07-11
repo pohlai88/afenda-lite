@@ -4,7 +4,7 @@ import {
   buttonVariants,
 } from "@/components-V2/platform-components/ui/button";
 import { PORTAL_NAME } from "@/lib/copy/portal-copy";
-import { cn } from "@/lib/utils";
+import { cn } from "@/modules/platform/utils";
 
 /** Centered 404 with icon, message, and home CTA. */
 export function PortalNotFoundPage({

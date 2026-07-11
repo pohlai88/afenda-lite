@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { AuthShellCopy } from "@/lib/copy/auth-shell-copy";
-import { cn } from "@/lib/utils";
+import { cn } from "@/modules/platform/utils";
 
 type PortalAuthFormIntroProps = Pick<
   AuthShellCopy,
@@ -15,7 +15,13 @@ type PortalAuthFormIntroProps = Pick<
   compact?: boolean;
 };
 
-/** Portal-owned headings above Neon AuthView — restores copy smoke/E2E and a11y targets. */
+/**
+ * Portal-owned headings above Neon AuthView.
+ * When `showVaultHeading` is false (Studio + Neon default), return null —
+ * AuthView already owns title, description, expiry copy, and method links.
+ * Org operator sign-in sets `showVaultHeading` true for distinct portal copy.
+ * `compact` keeps Guardian/Storybook intro chrome.
+ */
 export function PortalAuthFormIntro({
   signInTitle,
   signInDescription,
@@ -26,6 +32,10 @@ export function PortalAuthFormIntro({
   showVaultHeading = true,
   compact = false,
 }: PortalAuthFormIntroProps) {
+  if (!showVaultHeading && !compact) {
+    return null;
+  }
+
   return (
     <div className={cn("flex w-full flex-col", compact ? "gap-2" : "gap-4")}>
       {showVaultHeading ? (
@@ -46,10 +56,6 @@ export function PortalAuthFormIntro({
             <p className="text-sm text-muted-foreground text-pretty">{constraintHint}</p>
           ) : null}
         </div>
-      ) : constraintHint ? (
-        <p className="text-center text-sm text-muted-foreground text-pretty sm:text-left">
-          {constraintHint}
-        </p>
       ) : null}
 
       <p className="text-center text-sm text-muted-foreground sm:text-left">

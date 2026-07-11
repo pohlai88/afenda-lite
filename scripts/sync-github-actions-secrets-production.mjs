@@ -34,7 +34,7 @@ function gh(args) {
 }
 
 function loadManifest() {
-  const path = resolve("lib/auth/neon-auth.manifest.json");
+  const path = resolve("modules/identity/auth/neon-auth.manifest.json");
   return JSON.parse(readFileSync(path, "utf8"));
 }
 

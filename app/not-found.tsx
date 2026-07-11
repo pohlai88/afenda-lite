@@ -2,7 +2,7 @@ import { PortalNotFoundPage } from "@/features/portal-chrome/portal-not-found-pa
 import {
   notFoundPageMetadata,
   resolveNotFoundDestination,
-} from "@/lib/routing/not-found-routing";
+} from "@/modules/platform/routing/not-found-routing";
 import { portalCopy } from "@/lib/copy/portal-copy";
 
 export const metadata = notFoundPageMetadata;

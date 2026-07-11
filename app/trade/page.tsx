@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
-import { defaultTradeLocale } from "@/lib/i18n/trade";
+import { TRADE_HOME_HREF } from "@/modules/platform/routing/portal-routes";
 
-export default function TradeRootPage() {
-  redirect(`/trade/${defaultTradeLocale}/events`);
+export default function TradeIndexPage() {
+  redirect(TRADE_HOME_HREF);
 }

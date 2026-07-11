@@ -2,13 +2,13 @@ import "server-only";
 
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { PlaygroundScreenPreview } from "@/components/playground-screen-preview";
+import { PlaygroundScreenPreview } from "@/features/playground/playground-screen-preview";
 import { getPlaygroundScreenIds } from "@/lib/playground/playground";
 import {
   getPlaygroundScreenWithAutoDiscovery,
   hasUnresolvedPlaygroundPlaceholders,
 } from "@/lib/playground/playground-auto-discovery";
-import { PORTAL_NAME } from "@/lib/copy/portal-copy";
+import { PORTAL_NAME } from "@/modules/declarations/copy/portal-copy";
 import {
   buildPlaygroundScreenViewModel,
   resolvePlaygroundScreenMetadataTitle,
@@ -59,6 +59,7 @@ export async function runPlaygroundScreenPage({
         view.pathConfigured && !needsRegistryEntry && !unresolved
       }
       categoryLabel={view.categoryLabel}
+      shape={view.shape}
       needsRegistryEntry={needsRegistryEntry}
     />
   );

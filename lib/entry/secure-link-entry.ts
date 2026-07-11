@@ -11,15 +11,15 @@ import "server-only";
  * @see docs/architecture/slices/s5-share-access.md
  */
 import { portalCopy } from "@/lib/copy/portal-copy";
-import { secureLinkHref } from "@/lib/routing/portal-routes";
+import { secureLinkHref } from "@/modules/platform/routing/portal-routes";
 import {
   buildPublicLinkMetadata,
   createCachedPublicLinkSurveyLoader,
   resolvePublicLinkReturnTo,
   runPublicLinkRedirect,
 } from "@/lib/pages/public-link-page";
-import { surveyInviteTokenParamSchema } from "@/lib/schemas/surveys";
-import { getSurveyByInviteToken } from "@/lib/domain/surveys";
+import { surveyInviteTokenParamSchema } from "@/modules/declarations/schemas/surveys";
+import { getSurveyByInviteToken } from "@/modules/declarations/domain/surveys";
 
 export const loadSecureLinkSurvey = createCachedPublicLinkSurveyLoader(
   surveyInviteTokenParamSchema,

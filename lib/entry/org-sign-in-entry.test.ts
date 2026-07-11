@@ -4,11 +4,11 @@ vi.mock("next/navigation", () => ({
   redirect: vi.fn(),
 }));
 
-vi.mock("@/lib/routing/portal-session-routing", () => ({
+vi.mock("@/modules/platform/routing/portal-session-routing", () => ({
   getAuthenticatedLandingHref: vi.fn(),
 }));
 
-vi.mock("@/lib/playground/playground", () => ({
+vi.mock("@/modules/platform/playground-embed", () => ({
   isPlaygroundEmbedRequest: vi.fn(),
 }));
 

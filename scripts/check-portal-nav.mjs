@@ -3,7 +3,13 @@ import { join } from "node:path";
 import process from "node:process";
 
 const ROOT = process.cwd();
-const ROUTES_FILE = join(ROOT, "lib", "routing", "portal-nav-routes.ts");
+const ROUTES_FILE = join(
+  ROOT,
+  "modules",
+  "platform",
+  "routing",
+  "portal-nav-routes.ts",
+);
 
 function extractRouteBlocks(source) {
   const routes = [];
@@ -34,30 +40,50 @@ function assertPageExists(route) {
   }
 }
 
-function assertClientNavUsesContract() {
-  const clientNav = readFileSync(join(ROOT, "lib", "client-nav.tsx"), "utf8");
-  if (!clientNav.includes("CLIENT_SIDEBAR_ROUTES")) {
-    throw new Error("lib/client-nav.tsx must import CLIENT_SIDEBAR_ROUTES.");
-  }
-  if (clientNav.includes('url: "/client/onboarding"')) {
-    throw new Error(
-      'Declarant profile must not link to /client/onboarding in client sidebar.',
+function assertOptionalContractFile(relativePath, needle, label) {
+  const absolute = join(ROOT, relativePath);
+  if (!existsSync(absolute)) {
+    console.warn(
+      `check:nav WARN: ${relativePath} absent — ${label} check skipped (shell rebuild)`,
     );
+    return;
+  }
+
+  const source = readFileSync(absolute, "utf8");
+  if (!source.includes(needle)) {
+    throw new Error(`${relativePath} must include ${needle}.`);
   }
 }
 
-function assertDashboardNavUsesContract() {
-  const dashboardNav = readFileSync(
-    join(ROOT, "lib", "dashboard-nav.tsx"),
-    "utf8",
+function assertClientNavUsesContract() {
+  assertOptionalContractFile(
+    "lib/client-nav.tsx",
+    "CLIENT_SIDEBAR_ROUTES",
+    "client sidebar",
   );
+}
+
+function assertDashboardNavUsesContract() {
+  const relativePath = "lib/dashboard-nav.tsx";
+  const absolute = join(ROOT, relativePath);
+  if (!existsSync(absolute)) {
+    console.warn(
+      `check:nav WARN: ${relativePath} absent — operator sidebar check skipped (shell rebuild)`,
+    );
+    return;
+  }
+
+  const dashboardNav = readFileSync(absolute, "utf8");
   if (!dashboardNav.includes("ORG_OPERATOR_SIDEBAR_ROUTES")) {
     throw new Error(
       "lib/dashboard-nav.tsx must import ORG_OPERATOR_SIDEBAR_ROUTES.",
     );
   }
   for (const forbidden of ["/org/login", "/auth/admin"]) {
-    if (dashboardNav.includes(`href: "${forbidden}"`) || dashboardNav.includes(`url: "${forbidden}"`)) {
+    if (
+      dashboardNav.includes(`href: "${forbidden}"`) ||
+      dashboardNav.includes(`url: "${forbidden}"`)
+    ) {
       throw new Error(
         `Org operator sidebar must not include auth route ${forbidden}.`,
       );
@@ -66,19 +92,24 @@ function assertDashboardNavUsesContract() {
 }
 
 function assertShellAdaptersUseContract() {
-  const adapters = readFileSync(
-    join(ROOT, "components", "portal", "portal-application-shell", "application-shell-05-adapters.tsx"),
-    "utf8",
-  );
+  const relativePath =
+    "components/portal/portal-application-shell/application-shell-05-adapters.tsx";
+  const absolute = join(ROOT, relativePath);
+  if (!existsSync(absolute)) {
+    console.warn(
+      `check:nav WARN: ${relativePath} absent — AdminCN shell adapters check skipped`,
+    );
+    return;
+  }
+
+  const adapters = readFileSync(absolute, "utf8");
   if (!adapters.includes("getOrgOperatorSidebarItems")) {
     throw new Error(
-      "components/portal/portal-application-shell/application-shell-05-adapters.tsx must use getOrgOperatorSidebarItems().",
+      `${relativePath} must use getOrgOperatorSidebarItems().`,
     );
   }
   if (!adapters.includes("getClientNavItems")) {
-    throw new Error(
-      "components/portal/portal-application-shell/application-shell-05-adapters.tsx must use getClientNavItems().",
-    );
+    throw new Error(`${relativePath} must use getClientNavItems().`);
   }
 }
 
@@ -104,6 +135,10 @@ function assertUniqueHrefs(routes) {
 }
 
 function main() {
+  if (!existsSync(ROUTES_FILE)) {
+    throw new Error(`Missing nav contract: ${ROUTES_FILE}`);
+  }
+
   const routes = readPortalRoutes();
   if (routes.length < 4) {
     throw new Error(

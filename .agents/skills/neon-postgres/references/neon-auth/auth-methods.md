@@ -122,7 +122,7 @@ import "@neondatabase/auth/ui/css";
 ```tsx
 "use client";
 import { NeonAuthUIProvider } from "@neondatabase/auth/react/ui";
-import { authClient } from "@/lib/auth/client";
+import { authClient } from "@/modules/identity/auth/client";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 

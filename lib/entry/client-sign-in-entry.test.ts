@@ -4,11 +4,11 @@ vi.mock("next/navigation", () => ({
   redirect: vi.fn(),
 }));
 
-vi.mock("@/lib/routing/portal-session-routing", () => ({
+vi.mock("@/modules/platform/routing/portal-session-routing", () => ({
   getAuthenticatedLandingHref: vi.fn(),
 }));
 
-vi.mock("@/lib/playground/playground", () => ({
+vi.mock("@/modules/platform/playground-embed", () => ({
   appendPlaygroundEmbedQuery: vi.fn((href: string) => href),
   resolvePlaygroundEmbedActive: vi.fn(),
 }));
@@ -21,7 +21,7 @@ import {
   clientSignInEntryHref,
   resolveClientAuthReasonNotice,
 } from "@/lib/entry/client-sign-in-entry";
-import { AUTH_SIGN_IN_HREF, CLIENT_SIGN_IN_ENTRY_HREF } from "@/lib/routing/portal-routes";
+import { AUTH_SIGN_IN_HREF, CLIENT_SIGN_IN_ENTRY_HREF } from "@/modules/platform/routing/portal-routes";
 
 describe("client sign-in entry href builders", () => {
   it("builds named client login entry with optional reason", () => {

@@ -1,6 +1,6 @@
 import { pathToFileURL } from "node:url";
 
-import { validateRelianceCoverage } from "../../lib/governance/portal-reliance-mapping";
+import { validateRelianceCoverage } from "../../modules/platform/governance/portal-reliance-mapping";
 
 function printMappingTable(report: ReturnType<typeof validateRelianceCoverage>) {
   console.log("\nDeclared vs discovered (what we know):\n");

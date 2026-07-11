@@ -1,31 +1,34 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { portalCopy } from "@/lib/copy/portal-copy";
+import { portalCopy } from "@/modules/declarations/copy/portal-copy";
 
 vi.mock("server-only", () => ({}));
 
 const mockGuardClientSession = vi.fn();
 const mockPersistClientDeclarationDraft = vi.fn();
+const mockLoadClientDeclarationDraft = vi.fn();
 
-vi.mock("@/lib/auth/session", () => ({
+vi.mock("@/modules/identity/auth/session", () => ({
   guardClientSession: (...args: unknown[]) => mockGuardClientSession(...args),
 }));
 
-vi.mock("@/lib/domain/client-declaration-draft", () => ({
+vi.mock("@/modules/declarations/domain/client-declaration-draft", () => ({
   persistClientDeclarationDraft: (...args: unknown[]) =>
     mockPersistClientDeclarationDraft(...args),
+  loadClientDeclarationDraft: (...args: unknown[]) =>
+    mockLoadClientDeclarationDraft(...args),
 }));
 
-vi.mock("@/lib/observability", () => ({
+vi.mock("@/modules/platform/observability", () => ({
   runLoggedAction: (_name: string, _userId: string | undefined, fn: () => unknown) =>
     fn(),
 }));
 
-import { POST } from "@/app/api/client/declaration-draft/route";
+import { GET, POST, PUT } from "@/app/api/client/declaration-draft/route";
 
 const assignmentId = "550e8400-e29b-41d4-a716-446655440001";
 const questionId = "550e8400-e29b-41d4-a716-446655440003";
 
-describe("POST /api/client/declaration-draft", () => {
+describe("/api/client/declaration-draft", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockGuardClientSession.mockResolvedValue({
@@ -34,40 +37,60 @@ describe("POST /api/client/declaration-draft", () => {
     });
   });
 
-  it("returns 401 when the client session guard rejects unauthenticated access", async () => {
+  it("GET returns 401 when unauthenticated", async () => {
     mockGuardClientSession.mockResolvedValue({
       allowed: false,
       reason: "unauthenticated",
     });
 
-    const response = await POST(
-      new Request("http://localhost/api/client/declaration-draft", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          assignmentId,
-          answers: { [questionId]: true },
-          stepIndex: 0,
-        }),
-      }),
+    const response = await GET(
+      new Request(
+        `http://localhost/api/client/declaration-draft?assignmentId=${assignmentId}`,
+      ),
     );
 
     expect(response.status).toBe(401);
-    expect(mockPersistClientDeclarationDraft).not.toHaveBeenCalled();
-    expect(mockGuardClientSession).toHaveBeenCalledWith({
-      requireOnboarding: true,
+    await expect(response.json()).resolves.toEqual({
+      error: { code: "UNAUTHORIZED", message: "Unauthorized" },
+    });
+    expect(mockLoadClientDeclarationDraft).not.toHaveBeenCalled();
+  });
+
+  it("GET returns draft data envelope", async () => {
+    mockLoadClientDeclarationDraft.mockResolvedValue({
+      success: true,
+      assignmentId,
+      answers: { [questionId]: true },
+      stepIndex: 2,
+      savedAt: "2026-07-08T12:00:00.000Z",
+    });
+
+    const response = await GET(
+      new Request(
+        `http://localhost/api/client/declaration-draft?assignmentId=${assignmentId}`,
+      ),
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      data: {
+        assignmentId,
+        answers: { [questionId]: true },
+        stepIndex: 2,
+        savedAt: "2026-07-08T12:00:00.000Z",
+      },
     });
   });
 
-  it("returns 403 when an operator session hits the client draft API", async () => {
+  it("PUT returns 403 for operator with contract error body", async () => {
     mockGuardClientSession.mockResolvedValue({
       allowed: false,
       reason: "operator",
     });
 
-    const response = await POST(
+    const response = await PUT(
       new Request("http://localhost/api/client/declaration-draft", {
-        method: "POST",
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           assignmentId,
@@ -78,31 +101,36 @@ describe("POST /api/client/declaration-draft", () => {
     );
 
     expect(response.status).toBe(403);
-    await expect(response.json()).resolves.toEqual({ error: "Forbidden" });
+    await expect(response.json()).resolves.toEqual({
+      error: { code: "FORBIDDEN", message: "Forbidden" },
+    });
   });
 
-  it("returns 400 for invalid JSON body", async () => {
-    const response = await POST(
+  it("PUT returns 400 for invalid JSON", async () => {
+    const response = await PUT(
       new Request("http://localhost/api/client/declaration-draft", {
-        method: "POST",
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: "{",
       }),
     );
 
     expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+      error: { code: "BAD_REQUEST", message: "Invalid JSON" },
+    });
     expect(mockPersistClientDeclarationDraft).not.toHaveBeenCalled();
   });
 
-  it("delegates to persistClientDeclarationDraft and returns savedAt", async () => {
+  it("PUT persists draft and returns data.savedAt", async () => {
     mockPersistClientDeclarationDraft.mockResolvedValue({
       success: true,
       savedAt: "2026-07-08T12:00:00.000Z",
     });
 
-    const response = await POST(
+    const response = await PUT(
       new Request("http://localhost/api/client/declaration-draft", {
-        method: "POST",
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           assignmentId,
@@ -114,8 +142,7 @@ describe("POST /api/client/declaration-draft", () => {
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({
-      success: true,
-      savedAt: "2026-07-08T12:00:00.000Z",
+      data: { savedAt: "2026-07-08T12:00:00.000Z" },
     });
     expect(mockPersistClientDeclarationDraft).toHaveBeenCalledWith({
       assignmentId,
@@ -126,11 +153,10 @@ describe("POST /api/client/declaration-draft", () => {
     });
   });
 
-  it("returns persist error status from shared draft helper", async () => {
+  it("POST keepalive alias uses the same write path", async () => {
     mockPersistClientDeclarationDraft.mockResolvedValue({
-      success: false,
-      error: portalCopy.clientDashboard.deadlineExpiredAssignment,
-      status: 403,
+      success: true,
+      savedAt: "2026-07-08T12:00:00.000Z",
     });
 
     const response = await POST(
@@ -145,9 +171,35 @@ describe("POST /api/client/declaration-draft", () => {
       }),
     );
 
+    expect(response.status).toBe(200);
+    expect(mockPersistClientDeclarationDraft).toHaveBeenCalledOnce();
+  });
+
+  it("maps domain persist failures to contract error body", async () => {
+    mockPersistClientDeclarationDraft.mockResolvedValue({
+      success: false,
+      error: portalCopy.clientDashboard.deadlineExpiredAssignment,
+      status: 403,
+    });
+
+    const response = await PUT(
+      new Request("http://localhost/api/client/declaration-draft", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          assignmentId,
+          answers: { [questionId]: true },
+          stepIndex: 0,
+        }),
+      }),
+    );
+
     expect(response.status).toBe(403);
     await expect(response.json()).resolves.toEqual({
-      error: portalCopy.clientDashboard.deadlineExpiredAssignment,
+      error: {
+        code: "FORBIDDEN",
+        message: portalCopy.clientDashboard.deadlineExpiredAssignment,
+      },
     });
   });
 });

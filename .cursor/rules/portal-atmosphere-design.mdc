@@ -1,6 +1,6 @@
 ---
 description: Portal atmosphere hero design — references, assets, forbidden shortcuts
-globs: components/portal-atmosphere/**,stories/ui-evaluation/portal-atmosphere*.tsx,stories/ui-evaluation/auth-*.tsx,public/brand/**
+globs: components/portal-atmosphere/**,public/brand/**
 alwaysApply: false
 ---
 
@@ -14,7 +14,7 @@ alwaysApply: false
 | Light | `public/brand/heroes/auth-hero-light.png` |
 | Dual comp | `public/brand/heroes/auth-hero-dual.png` |
 
-**Done = matches PNG at 1024px side-by-side in Storybook.** See [`docs/architecture/slices/portal-atmosphere/pa-hero-quality-benchmark.md`](docs/architecture/slices/portal-atmosphere/pa-hero-quality-benchmark.md).
+**Done = matches PNG at 1024px side-by-side.** See [`docs/architecture/slices/portal-atmosphere/pa-hero-quality-benchmark.md`](docs/architecture/slices/portal-atmosphere/pa-hero-quality-benchmark.md).
 
 Layout zones: **editorial left** · **owl + deco center-back** · **access vault right**. Laptop target: balanced 3-column, `100svh`, no scroll.
 
@@ -40,11 +40,8 @@ Use **separate dark/light owl assets**. Never fake light theme by inverting the 
 
 ## Allowed experiment path
 
-1. Storybook story under `stories/ui-evaluation/`
-2. Fixture under `components/portal-atmosphere/fixtures/`
-3. CSS in `components/portal-atmosphere/styles/` — layered deco, real dual assets, comp-aligned grid
-4. User reviews in Storybook at laptop viewport before any prod wiring
+1. Fixture under `components/portal-atmosphere/fixtures/`
+2. CSS in `components/portal-atmosphere/styles/` — layered deco, real dual assets, comp-aligned grid
+3. User reviews via `/playground` embed or local route before any prod wiring
 
-## Storybook server boundary
-
-Server modules are mocked in `.storybook/mocks/` (`server-only`, `lib/db`). Do not import `@/lib/clients` value exports in stories — use fixtures and type-only imports.
+Storybook has been removed from this repo — do not recreate `.storybook/` or `stories/`.

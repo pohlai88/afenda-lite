@@ -7,8 +7,9 @@ description: Customizes the landed AdminCN shell in components-V2 via themeConfi
 
 **SSOT playbook:** [docs/architecture/admincn-customization.md](../../../docs/architecture/admincn-customization.md)  
 **Frontend preflight (before new screens):** [docs/architecture/admincn-frontend-preflight.md](../../../docs/architecture/admincn-frontend-preflight.md)  
-**Components home:** [components/README.md](../../../components/README.md)  
-**Auth island:** [features/auth/README.md](../../../features/auth/README.md) — preserve `app/auth-surface.css`
+**Alignment:** [doc/frontend/06-admincn-alignment.md](../../../doc/frontend/06-admincn-alignment.md)  
+**Product home:** `components-V2/`  
+**Auth island:** `features/auth/` — preserve `app/auth-surface.css` + route-scoped `app/auth/neon-auth-ui.css`
 
 ## Critical constraint
 
@@ -16,19 +17,30 @@ Studio MCP does **not** install the AdminCN template as one unit. It exposes **b
 
 Do **not** wire more demo views into product routes while freeze holds. Refine existing surfaces only.
 
+## Shared shell modules
+
+| Module | Routes | Gate |
+|--------|--------|------|
+| Declarations | `/dashboard/*`, `/account/*` | `requireMemberSession` |
+| Feed Farm Trade | `/trade/*` | `requireTradeAccess` |
+| Admin routes | playground (local), etc. | `isAdminSession` |
+
+Entitlements: `modules/platform/shell/access.ts`. Nav: module-tagged `navConfig`. No separate `TradeShell`.
+
 ## Customization levers (in order)
 
 | Lever | Edit | Do not |
 |-------|------|--------|
 | Theme / branding | `components-V2/platform-config/themeConfig.ts` + presets + Header ThemeCustomizer | Put portal navy into AdminCN `:root` |
-| Navigation | `components-V2/platform-config/navConfig.tsx` | Hardcode nav in layout JSX |
+| Dark mode | Root `features/portal-chrome/theme-provider` (next-themes + portal storage key) | Nest a second ThemeProvider inside AdminCN shell |
+| Navigation | `components-V2/platform-config/navConfig.tsx` (module-tagged) | Hardcode nav in layout JSX; resurrect TradeShell |
 | Screen content | `components-V2/platform-views/*` (thin `app/**/page.tsx`) | Grow route files |
-| Data | `app/server/actions.ts` → real portal queries | Invent UI before data contract |
-| Auth island | Keep Studio shell (`features/auth`) + Neon + `app/auth-surface.css` | Theme login via AdminCN customizer |
+| Data | Domain + `app/actions/*` | Invent UI before data contract; `platform-fake-db` |
+| Auth island | Keep Studio shell (`features/auth`) + Neon + `app/auth-surface.css` + route-scoped `app/auth/neon-auth-ui.css` | Theme login via AdminCN customizer; import Neon CSS into `globals.css` |
 
-**Cookie caveat:** `settingsCookieName` overrides `themeConfig`. Reset ThemeCustomizer or clear the cookie to see config changes.
+**Cookie caveat:** `settingsCookieName` overrides `themeConfig`. Reset ThemeCustomizer or clear the cookie to see config changes. Preset inline styles clear when AdminCN shell unmounts.
 
-**CSS split:** AdminCN tokens → `app/globals.css`. Login → scoped `app/auth-surface.css`.
+**CSS split:** AdminCN tokens → `app/globals.css`. Login island → `app/auth-surface.css`. Neon Auth UI sheet → `app/auth/neon-auth-ui.css` (auth layout only, never globals).
 
 ## Official Studio order (verified)
 
@@ -59,18 +71,18 @@ Product orientation: ThemeConfig + live Theme Customizer; presets for mode, font
 ## Forbidden without explicit reopen
 
 - Bulk-wiring more AdminCN demos into product routes  
-- Hot Sales `app/trade/**`  
+- Restoring Feed Farm Trade **product UI** (stubs OK; no `TradeShell` / locale switcher)  
 - Replacing Neon credential paths with Studio account-settings blocks  
-- Mixing portal auth tokens into AdminCN `:root`
+- Mixing portal auth tokens into AdminCN `:root`  
 
 ## Refine checklist (per page)
 
 Full gate: [admincn-frontend-preflight.md](../../../docs/architecture/admincn-frontend-preflight.md).
 
 1. Brand (`themePreset` / tokens) — verify login island unchanged  
-2. Nav — real destinations only  
+2. Nav — real destinations only; module entitlements correct  
 3. Edit one `platform-views` composition (product → `portal-views/`)  
 4. Swap fake-db for that page  
 5. Sync governance (`surface-entry-points`, `ui-decision-matrix`, reliance registry)  
 6. Optional: one MCP block → adapt into `portal-views/`  
-7. Verify: `npm run checks` + `npx tsc --noEmit`
+7. Verify: relevant unit tests + `npx tsc --noEmit` on touched paths  

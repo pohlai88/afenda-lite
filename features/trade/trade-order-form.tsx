@@ -3,13 +3,13 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { submitTradeOrderAction } from "@/app/actions/trade";
-import { getTradeActionError } from "@/lib/domain/trade/trade-action-result";
-import type { HotSalesFieldDef, HotSalesProduct } from "@/lib/domain/trade/types";
+import { getTradeActionError } from "@/modules/trade/domain/trade-action-result";
+import type { HotSalesFieldDef, HotSalesProduct } from "@/modules/trade/domain/types";
 import { Button } from "@/components-V2/platform-components/ui/button";
 import { Input } from "@/components-V2/platform-components/ui/input";
 import { Label } from "@/components-V2/platform-components/ui/label";
 import { Textarea } from "@/components-V2/platform-components/ui/textarea";
-import { tradeHref, type TradeLocale } from "@/lib/i18n/trade";
+import { tradeHref, type TradeLocale } from "@/modules/trade/i18n/trade";
 
 export function TradeOrderForm({
   locale,
@@ -40,7 +40,7 @@ export function TradeOrderForm({
             setError(err);
             return;
           }
-          router.push(tradeHref(locale, "/my-orders"));
+          router.push(tradeHref("/my-orders"));
           router.refresh();
         });
       }}

@@ -2,8 +2,8 @@ import {
   formatAnswerForDisplay,
   type EvidenceRecord,
   type SurveyQuestion,
-} from "@/lib/question-models";
-import type { SurveyResponse } from "@/lib/domain/surveys";
+} from "@/modules/declarations/question-models";
+import type { SurveyResponse } from "@/modules/declarations/domain/surveys";
 import { QuestionSequenceBadge } from "@/features/operator/question-sequence-badge";
 
 export function SubmissionAnswers({

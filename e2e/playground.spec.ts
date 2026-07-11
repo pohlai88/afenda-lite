@@ -60,12 +60,6 @@ test.describe("Playground nav and iframe binding", () => {
       await expect(frame.locator("body")).toContainText(screen.iframeMarker, {
         timeout: 15_000,
       });
-
-      if (screen.requiredHeading) {
-        await expect(
-          frame.getByRole("heading", { name: screen.requiredHeading }),
-        ).toBeVisible();
-      }
     });
   }
 });

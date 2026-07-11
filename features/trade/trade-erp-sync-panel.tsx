@@ -8,14 +8,14 @@ import {
   retryErpSyncJobAction,
 } from "@/app/actions/trade";
 import { Button } from "@/components-V2/platform-components/ui/button";
-import type { HotSalesSyncJobDetailDto } from "@/lib/domain/trade/erp/types";
-import { getTradeActionError } from "@/lib/domain/trade/trade-action-result";
-import { tradeHref, type TradeLocale } from "@/lib/i18n/trade";
+import type { HotSalesSyncJobDetailDto } from "@/modules/trade/domain/erp/types";
+import { getTradeActionError } from "@/modules/trade/domain/trade-action-result";
+import { tradeHref, type TradeLocale } from "@/modules/trade/i18n/trade";
 
 export function TradeErpSyncNavLink({ locale }: { locale: TradeLocale }) {
   return (
     <Link
-      href={tradeHref(locale, "/admin/erp-sync")}
+      href={tradeHref("/admin/erp-sync")}
       className="text-primary underline-offset-4 hover:underline"
     >
       ERP sync

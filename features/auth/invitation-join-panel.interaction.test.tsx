@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { screen } from "@testing-library/react";
 import { InvitationJoinPanel } from "@/features/auth/invitation-join-panel";
-import type { JoinInvitationAuthView } from "@/lib/client-invitation-join-auth";
+import type { JoinInvitationAuthView } from "@/modules/identity/client-invitation-join-auth";
 import { renderPortal } from "@/testing/react";
 
 vi.mock("@/features/auth/portal-auth-neon-view", () => ({

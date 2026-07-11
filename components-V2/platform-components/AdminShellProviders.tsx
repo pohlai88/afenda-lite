@@ -1,39 +1,47 @@
 'use client'
 
 import type { ReactNode } from 'react'
-import { ThemeProvider } from '@/components-V2/platform-components/ThemeProvider'
 import { SidebarProvider } from '@/components-V2/platform-components/ui/sidebar'
 import { TooltipProvider } from '@/components-V2/platform-components/ui/tooltip'
+import { OperatorShellFlagsProvider } from '@/components-V2/platform-context/operatorShellFlagsContext'
 import type { Settings } from '@/components-V2/platform-context/settingsContext'
 import { SettingsProvider } from '@/components-V2/platform-context/settingsContext'
+import type { ShellModuleId } from '@/modules/platform/shell/access'
 
 type Props = {
   children: ReactNode
   settingsCookie?: Settings
   sidebarDefaultOpen?: boolean
+  /** Local-only developer harness — never true in production Vercel. */
+  showPlayground?: boolean
+  entitledModules?: ShellModuleId[]
+  isOrgAdmin?: boolean
 }
 
 /**
- * AdminCN shell providers for /dashboard (and later workspace).
- * Includes next-themes so ModeToggle/ThemeCustomizer work — isolated from
- * the portal root custom ThemeProvider used on auth routes.
+ * AdminCN shell providers for /dashboard and /trade.
+ * Dark mode is owned by the root portal ThemeProvider (next-themes +
+ * `client-declaration-theme`) — do not nest a second ThemeProvider here.
  */
 export function AdminShellProviders({
   children,
   settingsCookie,
   sidebarDefaultOpen,
+  showPlayground = false,
+  entitledModules = ['declarations'],
+  isOrgAdmin = false,
 }: Props) {
   return (
-    <ThemeProvider
-      attribute='class'
-      defaultTheme={settingsCookie?.mode ?? 'system'}
-      enableSystem
-    >
-      <SettingsProvider settingsCookie={settingsCookie}>
+    <SettingsProvider settingsCookie={settingsCookie}>
+      <OperatorShellFlagsProvider
+        showPlayground={showPlayground}
+        entitledModules={entitledModules}
+        isOrgAdmin={isOrgAdmin}
+      >
         <TooltipProvider>
           <SidebarProvider defaultOpen={sidebarDefaultOpen}>{children}</SidebarProvider>
         </TooltipProvider>
-      </SettingsProvider>
-    </ThemeProvider>
+      </OperatorShellFlagsProvider>
+    </SettingsProvider>
   )
 }

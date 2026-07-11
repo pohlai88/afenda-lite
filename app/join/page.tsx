@@ -1,18 +1,13 @@
-import { StudioInvitationJoinPage } from "@/features/auth";
-import {
-  clientInvitationJoinMetadata,
-  runClientInvitationJoinPage,
-} from "@/lib/entry/client-invitation-entry";
+type Props = {
+  searchParams: Promise<{ invitationId?: string }>
+}
 
-export const metadata = clientInvitationJoinMetadata;
-export const dynamic = "force-dynamic";
-
-/** Canonical client invitation entry — Studio shell + Neon Auth UI. */
-export default async function ClientInvitationJoinPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ invitationId?: string }>;
-}) {
-  const { invitationId } = await runClientInvitationJoinPage({ searchParams });
-  return <StudioInvitationJoinPage invitationId={invitationId} />;
+export default async function Page({ searchParams }: Props) {
+  const { invitationId } = await searchParams
+  return (
+    <main>
+      <h1>Join</h1>
+      <p>{invitationId ?? '(no invitationId)'}</p>
+    </main>
+  )
 }

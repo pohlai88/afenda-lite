@@ -297,6 +297,18 @@ export const SettingsProvider = (props: Props) => {
     }
   }, [settings.font])
 
+  // Clear AdminCN :root inline styles when leaving the shell (auth / landing).
+  useEffect(() => {
+    return () => {
+      const root = document.documentElement
+      PRESET_CSS_VARS.forEach(key => root.style.removeProperty(`--${key}`))
+      root.style.removeProperty('--radius')
+      root.style.removeProperty('font-family')
+      root.style.removeProperty('--font-sans')
+      root.removeAttribute('data-theme-scale')
+    }
+  }, [])
+
   return (
     <SettingsContext.Provider
       value={{

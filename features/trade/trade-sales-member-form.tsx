@@ -4,7 +4,7 @@ import { useTransition } from "react";
 import { addSalesMemberAction } from "@/app/actions/trade";
 import { Button } from "@/components-V2/platform-components/ui/button";
 import { Input } from "@/components-V2/platform-components/ui/input";
-import type { TradeLocale } from "@/lib/i18n/trade";
+import type { TradeLocale } from "@/modules/trade/i18n/trade";
 
 export function TradeAddSalesMemberForm({ locale }: { locale: TradeLocale }) {
   const [pending, startTransition] = useTransition();

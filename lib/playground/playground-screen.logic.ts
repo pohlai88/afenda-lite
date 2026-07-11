@@ -1,9 +1,13 @@
-import type { PlaygroundScreenCategory } from "@/lib/playground/playground-registry";
 import {
   buildPlaygroundEmbedUrl,
   isPlaygroundScreenPathConfigured,
 } from "@/lib/playground/playground-registry";
+import {
+  declaredPlaygroundPageShape,
+  resolvePlaygroundPageShape,
+} from "@/lib/playground/playground-page-shape";
 import type { PlaygroundScreen } from "@/lib/playground/playground";
+import type { PlaygroundScreenCategory } from "@/lib/playground/playground-registry";
 
 export function playgroundScreenCategoryLabel(
   category: PlaygroundScreenCategory,
@@ -14,7 +18,7 @@ export function playgroundScreenCategoryLabel(
     case "client":
       return "Client";
     case "hot-sales":
-      return "Hot Sales";
+      return "Feed Farm Trade";
     case "auto":
       return "Auto-discovered";
     default:
@@ -23,10 +27,17 @@ export function playgroundScreenCategoryLabel(
 }
 
 export function buildPlaygroundScreenViewModel(screen: PlaygroundScreen) {
+  const pathConfigured = isPlaygroundScreenPathConfigured(screen.path);
+  const shape = resolvePlaygroundPageShape(
+    declaredPlaygroundPageShape(screen.id),
+    pathConfigured,
+  );
+
   return {
     screen,
     embedUrl: buildPlaygroundEmbedUrl(screen.path),
-    pathConfigured: isPlaygroundScreenPathConfigured(screen.path),
+    pathConfigured,
+    shape,
     categoryLabel: playgroundScreenCategoryLabel(screen.category),
   };
 }

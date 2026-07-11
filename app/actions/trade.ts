@@ -1,16 +1,16 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireTradeAdmin, requireTradePermission } from "@/lib/auth/trade-session";
-import { assertImportRowLimit } from "@/lib/domain/trade/import-validators";
-import { enqueueErpSyncJob } from "@/lib/domain/trade/erp-sync-store";
-import { notifyDepositPending, notifyTradeStakeholder } from "@/lib/domain/trade/trade-notify";
-import { toTradeActionErrorMessage } from "@/lib/domain/trade/trade-action-result";
-import { isHotSalesErpSyncEnabled, isHotSalesDepositEnabled, isHotSalesPickupOpsEnabled } from "@/lib/env/accessors";
+import { requireTradeAdmin, requireTradePermission } from "@/modules/trade/auth/trade-session";
+import { assertImportRowLimit } from "@/modules/trade/domain/import-validators";
+import { enqueueErpSyncJob } from "@/modules/trade/domain/erp-sync-store";
+import { notifyDepositPending, notifyTradeStakeholder } from "@/modules/trade/domain/trade-notify";
+import { toTradeActionErrorMessage } from "@/modules/trade/domain/trade-action-result";
+import { isHotSalesErpSyncEnabled, isHotSalesDepositEnabled, isHotSalesPickupOpsEnabled } from "@/modules/platform/env/accessors";
 import {
   assertHotSalesDepositFeatureAction,
   assertHotSalesPickupFeatureAction,
-} from "@/lib/auth/trade-phase2b";
+} from "@/modules/trade/auth/trade-phase2b";
 import {
   ensureDepositForOrder,
   listDepositsForEvent,
@@ -18,58 +18,58 @@ import {
   recordDepositAdjustment,
   recordDepositReceipt,
   updateDepositDetails,
-} from "@/lib/domain/trade/deposit-store";
+} from "@/modules/trade/domain/deposit-store";
 import {
   cancelImportBatch,
   commitImportBatch,
   createImportBatch,
   getImportBatchById,
   listImportRowsForBatch,
-} from "@/lib/domain/trade/import-store";
-import { buildImportTemplateWorkbook, parseImportWorkbook } from "@/lib/domain/trade/import-parse";
-import { validateImportRowsForDryRun } from "@/lib/domain/trade/import-dry-run";
+} from "@/modules/trade/domain/import-store";
+import { buildImportTemplateWorkbook, parseImportWorkbook } from "@/modules/trade/domain/import-parse";
+import { validateImportRowsForDryRun } from "@/modules/trade/domain/import-dry-run";
 import {
   assertImportFeatureGate,
   importPermissionForType,
   parseImportType,
-} from "@/lib/domain/trade/import-guards";
+} from "@/modules/trade/domain/import-guards";
 import {
   createPickupWindow,
   recordFulfillment,
   recordPickupException,
   schedulePickup,
-} from "@/lib/domain/trade/pickup-store";
+} from "@/modules/trade/domain/pickup-store";
 import {
   HOT_SALES_SCOPE_TYPES,
   type HotSalesScopeType,
-} from "@/lib/domain/trade/rbac-catalog";
+} from "@/modules/trade/domain/rbac-catalog";
 import {
   calculateAllocation,
   validateManualAllocationQuantity,
-} from "@/lib/domain/trade/allocation";
+} from "@/modules/trade/domain/allocation";
 import {
   assertEventFieldEditable,
   canCloseEvent,
   canOpenEvent,
   canSubmitOrder,
-} from "@/lib/domain/trade/events";
+} from "@/modules/trade/domain/events";
 import {
   applyFieldDefaults,
   sanitizeFieldKey,
   validateOrderAttrs,
-} from "@/lib/domain/trade/fields";
+} from "@/modules/trade/domain/fields";
 import {
   allocationToCsv,
   buildEventSummary,
   eventSummaryToCsv,
-} from "@/lib/domain/trade/export";
+} from "@/modules/trade/domain/export";
 import {
   calculateEstimatedSupport,
   calculateFinalSupport,
   canCompleteOrder,
   getSupportRate,
-} from "@/lib/domain/trade/support";
-import { canTransferOrder, resolveDepositStatusForEvent } from "@/lib/domain/trade/transfer";
+} from "@/modules/trade/domain/support";
+import { canTransferOrder, resolveDepositStatusForEvent } from "@/modules/trade/domain/transfer";
 import {
   approveTransfer,
   cloneEventFromTemplate,
@@ -101,13 +101,13 @@ import {
   upsertFieldDef,
   upsertProduct,
   upsertSalesMember,
-} from "@/lib/domain/trade/store";
-import { type TradeLocale } from "@/lib/i18n/trade";
+} from "@/modules/trade/domain/store";
+import { type TradeLocale } from "@/modules/trade/i18n/trade";
 import {
   parseTradeEventId,
   parseTradeLocale,
   parseTradeOrderId,
-} from "@/lib/schemas/trade";
+} from "@/modules/trade/schemas/trade";
 
 /** Zod-backed locale gate — returns action error shape (no throws). */
 function gateTradeLocale(
@@ -134,17 +134,17 @@ function gateTradeOrderId(
   return parsed.data;
 }
 
-function revalidateTrade(locale: TradeLocale, eventId?: string) {
-  revalidatePath(`/trade/${locale}/events`);
-  revalidatePath(`/trade/${locale}/my-orders`);
-  revalidatePath(`/trade/${locale}/admin/events`);
-  revalidatePath(`/trade/${locale}/admin/rbac`);
-  revalidatePath(`/trade/${locale}/admin/events/new`);
+function revalidateTrade(_locale: TradeLocale | string, eventId?: string) {
+  revalidatePath("/trade/events");
+  revalidatePath("/trade/my-orders");
+  revalidatePath("/trade/admin/events");
+  revalidatePath("/trade/admin/rbac");
+  revalidatePath("/trade/admin/events/new");
   if (eventId) {
-    revalidatePath(`/trade/${locale}/admin/events/${eventId}/setup`);
-    revalidatePath(`/trade/${locale}/admin/events/${eventId}/allocation`);
-    revalidatePath(`/trade/${locale}/admin/events/${eventId}/imports`);
-    revalidatePath(`/trade/${locale}/events/${eventId}/order`);
+    revalidatePath(`/trade/admin/events/${eventId}/setup`);
+    revalidatePath(`/trade/admin/events/${eventId}/allocation`);
+    revalidatePath(`/trade/admin/events/${eventId}/imports`);
+    revalidatePath(`/trade/events/${eventId}/order`);
   }
 }
 
@@ -1726,7 +1726,7 @@ export async function retryErpSyncJobAction(locale: string, jobId: string) {
   
   const access = await requireTradePermission("sync.retry");
   const { getSyncJobById, retrySyncJob } = await import(
-    "@/lib/domain/trade/erp-sync-store"
+    "@/modules/trade/domain/erp-sync-store"
   );
   const before = await getSyncJobById(jobId);
   if (!before) {
@@ -1758,7 +1758,7 @@ export async function retryErpSyncJobAction(locale: string, jobId: string) {
     },
     reason: "manual_dlq_retry",
   });
-  revalidatePath(`/trade/${locale}/admin/erp-sync`);
+  revalidatePath(`/trade/admin/erp-sync`);
   return { ok: true as const };
 }
 
@@ -1767,8 +1767,8 @@ export async function processErpSyncJobsAction(locale: string) {
   if (typeof gatedLocale === "object") return gatedLocale;
   
   await requireTradePermission("export.finance");
-  const { processPendingSyncJobs } = await import("@/lib/domain/trade/erp-sync-store");
+  const { processPendingSyncJobs } = await import("@/modules/trade/domain/erp-sync-store");
   const result = await processPendingSyncJobs();
-  revalidatePath(`/trade/${locale}/admin/erp-sync`);
+  revalidatePath(`/trade/admin/erp-sync`);
   return { ok: true as const, ...result };
 }

@@ -14,7 +14,7 @@ Plural nouns, HTTP methods as verbs. Query params `camelCase`. One version.
 | GET | `/api/health/liveness` | Process up | public |
 | GET | `/api/health/readiness` | DB / deps ready | public |
 | ALL | `/api/auth/[...path]` | Neon Auth proxy | Neon |
-| GET/PUT/PATCH | `/api/client/declaration-draft` | Draft autosave | client session |
+| GET/PUT/PATCH | `/api/client/declaration-draft` | Draft autosave (POST = keepalive alias) | client session |
 
 Do not add same-origin “list declarations” GETs under `/api` for the dashboard — use RSC → domain.
 
@@ -85,19 +85,21 @@ GET /api/declarations?page=1&pageSize=20&sortBy=createdAt&sortOrder=desc
 }
 ```
 
-## Hot Sales appendix (contract-only, gated)
+## Feed Farm Trade appendix (contract-only, gated)
+
+Web UI uses `app/actions/trade.ts` on locale-free `/trade/*` (AdminCN). HTTP below is contract-only until an external consumer needs it — **no `:locale` segment**.
 
 | Method | Path | Purpose |
 |--------|------|---------|
-| GET/POST | `/api/trade/:locale/events` | List / create events |
-| GET/PATCH | `/api/trade/:locale/events/:eventId` | Detail / setup |
-| POST | `/api/trade/:locale/events/:eventId/orders` | Submit order |
-| POST | `/api/trade/:locale/events/:eventId/allocations` | Run allocation |
-| GET/POST | `/api/trade/:locale/events/:eventId/deposits` | Deposits |
-| GET/POST | `/api/trade/:locale/events/:eventId/pickups` | Pickup windows / fulfill |
-| POST | `/api/trade/:locale/events/:eventId/imports` | Import dry-run / apply |
-| GET/POST | `/api/trade/:locale/rbac/...` | Roles / assignments |
-| POST | `/api/trade/:locale/erp-sync/...` | Sync jobs |
+| GET/POST | `/api/trade/events` | List / create events |
+| GET/PATCH | `/api/trade/events/:eventId` | Detail / setup |
+| POST | `/api/trade/events/:eventId/orders` | Submit order |
+| POST | `/api/trade/events/:eventId/allocations` | Run allocation |
+| GET/POST | `/api/trade/events/:eventId/deposits` | Deposits |
+| GET/POST | `/api/trade/events/:eventId/pickups` | Pickup windows / fulfill |
+| POST | `/api/trade/events/:eventId/imports` | Import dry-run / apply |
+| GET/POST | `/api/trade/rbac/...` | Roles / assignments |
+| POST | `/api/trade/erp-sync/...` | Sync jobs |
 
 Web UI continues via `app/actions/trade.ts` until an external consumer needs HTTP.
 

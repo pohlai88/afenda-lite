@@ -9,11 +9,11 @@ import type {
 import {
   listClientAssignmentsForAdmin,
   listClientInvitationsForAdmin,
-} from "@/lib/domain/clients";
-import { isClientEmailDeliveryEnabled } from "@/lib/email/client-email-delivery";
-import { formatDate } from "@/lib/format";
-import { PORTAL_NAME, portalCopy } from "@/lib/copy/portal-copy";
-import { listSurveysForAdmin } from "@/lib/domain/surveys";
+} from "@/modules/declarations/domain/clients";
+import { isClientEmailDeliveryEnabled } from "@/modules/identity/email/client-email-delivery";
+import { formatDate } from "@/modules/platform/format";
+import { PORTAL_NAME, portalCopy } from "@/modules/declarations/copy/portal-copy";
+import { listSurveysForAdmin } from "@/modules/declarations/domain/surveys";
 
 export type OperatorClientsPageData = {
   emailDeliveryEnabled: boolean;

@@ -24,15 +24,15 @@ import {
 } from "@/components-V2/platform-components/ui/dialog";
 import { FormErrorAlert } from "@/features/operator/form-error-alert";
 import { Progress } from "@/components-V2/platform-components/ui/progress";
-import { portalCopy } from "@/lib/copy/portal-copy";
+import { portalCopy } from "@/modules/declarations/copy/portal-copy";
 import {
   analyzeCdpPackageInput,
   confidenceLabel,
   INGEST_STEPS,
   type DodCheck,
   type PackageAnalysis,
-} from "@/lib/domain/survey-package-analyze";
-import { cn } from "@/lib/utils";
+} from "@/modules/declarations/domain/survey-package-analyze";
+import { cn } from "@/modules/platform/utils";
 
 type Phase = "preview" | "ingesting" | "complete" | "error";
 

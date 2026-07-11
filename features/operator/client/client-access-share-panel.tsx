@@ -2,9 +2,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { CopyAccessMessage } from "@/features/operator/copy-access-message";
 import { Button } from "@/components-V2/platform-components/ui/button";
-import { buildClientAccessMessage } from "@/lib/client-access-message";
-import { buildQrCodeUrl } from "@/lib/domain/invite";
-import { portalCopy } from "@/lib/copy/portal-copy";
+import { buildClientAccessMessage } from "@/modules/declarations/client-access-message";
+import { buildQrCodeUrl } from "@/modules/identity/domain/invite";
+import { portalCopy } from "@/modules/declarations/copy/portal-copy";
 
 export type ClientAccessSharePanelProps = {
   loginUrl: string;

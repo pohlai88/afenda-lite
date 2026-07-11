@@ -1,74 +1,13 @@
-import type { Metadata } from "next";
-import { notFound, redirect } from "next/navigation";
-import { requireAccountSession } from "@/lib/account-session";
-import { PortalAccountSectionNav } from "@/features/account/portal-account-section-nav";
-import { PortalFormSection } from "@/features/account/portal-form-section";
-import { PortalAccountNeonView } from "@/features/account/portal-account-neon-view";
-import {
-  accountCopyKey,
-  isPortalAccountPath,
-  PORTAL_ACCOUNT_PATHS,
-  resolveAccountPathAccess,
-} from "@/lib/routing/account-paths";
-import { portalCopy, PORTAL_NAME } from "@/lib/copy/portal-copy";
-
-export const dynamic = "force-dynamic";
-export const dynamicParams = false;
-
-export function generateStaticParams() {
-  return PORTAL_ACCOUNT_PATHS.map((path) => ({ path }));
+type Props = {
+  params: Promise<{ path: string }>
 }
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ path: string }>;
-}): Promise<Metadata> {
-  const { path } = await params;
-
-  if (path === "security") {
-    return {
-      title: `${PORTAL_NAME} — ${portalCopy.metadata.accountSecurity.title}`,
-      description: portalCopy.metadata.accountSecurity.description,
-    };
-  }
-
-  return {
-    title: `${PORTAL_NAME} — ${portalCopy.metadata.accountSettings.title}`,
-    description: portalCopy.metadata.accountSettings.description,
-  };
-}
-
-/** Neon AccountView under AdminCN shell (layout). */
-export default async function AccountPathPage({
-  params,
-}: {
-  params: Promise<{ path: string }>;
-}) {
-  const { path } = await params;
-
-  if (!isPortalAccountPath(path)) {
-    notFound();
-  }
-
-  const member = await requireAccountSession();
-  const access = resolveAccountPathAccess(member.context, path);
-  if (!access.allowed) {
-    redirect(access.redirectHref);
-  }
-
-  const copy = portalCopy.account[accountCopyKey(path)];
-
+export default async function Page({ params }: Props) {
+  const { path } = await params
   return (
-    <div className="flex flex-col gap-8">
-      <PortalFormSection
-        headingLevel={1}
-        title={copy.title}
-        description={copy.description}
-      >
-        <PortalAccountNeonView pathname={path} />
-      </PortalFormSection>
-      <PortalAccountSectionNav activePath={path} context={member.context} />
-    </div>
-  );
+    <main>
+      <h1>Account</h1>
+      <p>{path}</p>
+    </main>
+  )
 }

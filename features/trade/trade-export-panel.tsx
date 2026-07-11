@@ -7,8 +7,8 @@ import {
   exportOrdersCsvAction,
 } from "@/app/actions/trade";
 import { Button } from "@/components-V2/platform-components/ui/button";
-import { getTradeActionError } from "@/lib/domain/trade/trade-action-result";
-import type { TradeLocale } from "@/lib/i18n/trade";
+import { getTradeActionError } from "@/modules/trade/domain/trade-action-result";
+import type { TradeLocale } from "@/modules/trade/i18n/trade";
 
 export function TradeExportPanel({
   locale,

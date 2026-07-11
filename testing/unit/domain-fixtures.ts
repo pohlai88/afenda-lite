@@ -1,7 +1,7 @@
-import type { ClientAssignment, ClientInvitation, ClientProfile } from "@/lib/domain/clients";
-import { CLIENT_PORTAL_ACK_VERSION } from "@/lib/copy/portal-copy";
-import type { SurveyQuestion } from "@/lib/question-models";
-import type { SurveyWithStats } from "@/lib/domain/surveys";
+import type { ClientAssignment, ClientInvitation, ClientProfile } from "@/modules/declarations/domain/clients";
+import { CLIENT_PORTAL_ACK_VERSION } from "@/modules/declarations/copy/portal-copy";
+import type { SurveyQuestion } from "@/modules/declarations/question-models";
+import type { SurveyWithStats } from "@/modules/declarations/domain/surveys";
 
 const DEFAULT_USER_ID = "550e8400-e29b-41d4-a716-446655440003";
 const DEFAULT_SURVEY_ID = "550e8400-e29b-41d4-a716-446655440002";

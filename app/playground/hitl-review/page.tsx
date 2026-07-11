@@ -7,4 +7,10 @@ export const dynamic = "force-dynamic";
 
 export const metadata = playgroundHitlReviewPageMetadata;
 
-export default runPlaygroundHitlReviewPage;
+export default async function PlaygroundHitlReviewPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  return runPlaygroundHitlReviewPage({ searchParams });
+}

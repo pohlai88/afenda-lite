@@ -11,10 +11,10 @@ import {
 } from "@/app/actions/trade";
 import { Button } from "@/components-V2/platform-components/ui/button";
 import { Label } from "@/components-V2/platform-components/ui/label";
-import { getTradeActionError } from "@/lib/domain/trade/trade-action-result";
-import type { HotSalesImportType } from "@/lib/domain/trade/import-types";
-import type { TradeLocale } from "@/lib/i18n/trade";
-import { tradeHref } from "@/lib/i18n/trade";
+import { getTradeActionError } from "@/modules/trade/domain/trade-action-result";
+import type { HotSalesImportType } from "@/modules/trade/domain/import-types";
+import type { TradeLocale } from "@/modules/trade/i18n/trade";
+import { tradeHref } from "@/modules/trade/i18n/trade";
 
 type DryRunRow = {
   rowNumber: number;
@@ -59,7 +59,7 @@ export function TradeImportNavLink({
 }) {
   return (
     <Link
-      href={tradeHref(locale, `/admin/events/${eventId}/imports`)}
+      href={tradeHref(`/admin/events/${eventId}/imports`)}
       className="text-primary underline-offset-4 hover:underline"
     >
       Excel imports

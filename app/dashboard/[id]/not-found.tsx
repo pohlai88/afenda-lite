@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Button } from "@/components-V2/platform-components/ui/button";
-import { OPERATOR_DASHBOARD_HREF } from "@/lib/routing/portal-routes";
-import { portalCopy } from "@/lib/copy/portal-copy";
+import { OPERATOR_DASHBOARD_HREF } from "@/modules/platform/routing/portal-routes";
+import { portalCopy } from "@/modules/declarations/copy/portal-copy";
 
 export default function DashboardNotFound() {
   const copy = portalCopy.errors.routeBoundary.operator;

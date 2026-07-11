@@ -10,7 +10,7 @@ const operatorCreds = getOperatorCreds();
 
 test.describe("Trade Hot Sales auth @smoke", () => {
   test("unauthenticated /trade redirects to sign-in", async ({ page }) => {
-    await page.goto("/trade/vi/events");
+    await page.goto("/trade/events");
     await expect(page).toHaveURL(/\/auth\/sign-in/);
   });
 });
@@ -27,7 +27,7 @@ test.describe("Trade Hot Sales admin journey @journey", () => {
 
   test("operator creates event, sets supply, opens window", async ({ page }) => {
     await loginAsOperator(page, requireOperatorCreds());
-    await page.goto("/trade/vi/admin/events/new");
+    await page.goto("/trade/admin/events/new");
     await expect(
       page.getByRole("heading", { name: /create event|tạo sự kiện/i }),
     ).toBeVisible({ timeout: 20_000 });
@@ -72,7 +72,7 @@ test.describe("Trade Hot Sales admin journey @journey", () => {
     test.skip(!eventId, "Requires created event");
     await loginAsOperator(page, requireOperatorCreds());
 
-    await page.goto(`/trade/vi/events/${eventId}/order`);
+    await page.goto(`/trade/events/${eventId}/order`);
     await page.getByLabel(/customer name/i).fill("E2E Customer");
     await page.locator("#productId").selectOption({ index: 1 });
     await page.getByLabel(/requested quantity/i).fill("25");
@@ -80,7 +80,7 @@ test.describe("Trade Hot Sales admin journey @journey", () => {
     await expect(page).toHaveURL(/\/my-orders/, { timeout: 20_000 });
     await expect(page.getByText(new RegExp(eventName ?? "E2E Hot Sales"))).toBeVisible();
 
-    await page.goto(`/trade/vi/admin/events/${eventId}/allocation`);
+    await page.goto(`/trade/admin/events/${eventId}/allocation`);
     await page.getByRole("button", { name: /run allocation/i }).click();
     await expect(page.getByText(/full|partial/i).first()).toBeVisible({
       timeout: 20_000,
@@ -90,7 +90,7 @@ test.describe("Trade Hot Sales admin journey @journey", () => {
   test("operator can export event summary CSV", async ({ page }) => {
     test.skip(!eventId, "Requires created event");
     await loginAsOperator(page, requireOperatorCreds());
-    await page.goto(`/trade/vi/admin/events/${eventId}/setup`);
+    await page.goto(`/trade/admin/events/${eventId}/setup`);
     await page.getByTestId("trade-export-summary").click();
     await expect(page.getByTestId("trade-export-csv")).toContainText(
       "event_name",
@@ -101,7 +101,7 @@ test.describe("Trade Hot Sales admin journey @journey", () => {
   test("admin can open Excel imports page for event", async ({ page }) => {
     test.skip(!eventId, "Requires created event");
     await loginAsOperator(page, requireOperatorCreds());
-    await page.goto(`/trade/vi/admin/events/${eventId}/imports`);
+    await page.goto(`/trade/admin/events/${eventId}/imports`);
     await expect(page.getByRole("heading", { name: /excel imports/i })).toBeVisible({
       timeout: 15_000,
     });

@@ -11,12 +11,12 @@ import {
   setTradeRolePermissionsAction,
   assignTradeRoleAction,
 } from "@/app/actions/trade";
-import { getTradeActionError } from "@/lib/domain/trade/trade-action-result";
+import { getTradeActionError } from "@/modules/trade/domain/trade-action-result";
 import { Button } from "@/components-V2/platform-components/ui/button";
 import { Input } from "@/components-V2/platform-components/ui/input";
 import { Label } from "@/components-V2/platform-components/ui/label";
-import { HOT_SALES_PERMISSION_CATALOG } from "@/lib/domain/trade/rbac-catalog";
-import type { TradeLocale } from "@/lib/i18n/trade";
+import { HOT_SALES_PERMISSION_CATALOG } from "@/modules/trade/domain/rbac-catalog";
+import type { TradeLocale } from "@/modules/trade/i18n/trade";
 
 type RoleRow = {
   id: string;

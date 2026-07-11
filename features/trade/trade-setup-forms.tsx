@@ -12,13 +12,13 @@ import {
   saveTradeFieldDefAction,
   saveTradeProductAction,
 } from "@/app/actions/trade";
-import type { HotSalesEvent, HotSalesFieldDef, HotSalesProduct } from "@/lib/domain/trade/types";
-import { getTradeActionError } from "@/lib/domain/trade/trade-action-result";
+import type { HotSalesEvent, HotSalesFieldDef, HotSalesProduct } from "@/modules/trade/domain/types";
+import { getTradeActionError } from "@/modules/trade/domain/trade-action-result";
 import { Button } from "@/components-V2/platform-components/ui/button";
 import { Input } from "@/components-V2/platform-components/ui/input";
 import { Label } from "@/components-V2/platform-components/ui/label";
 import { Textarea } from "@/components-V2/platform-components/ui/textarea";
-import type { TradeLocale } from "@/lib/i18n/trade";
+import type { TradeLocale } from "@/modules/trade/i18n/trade";
 
 function toLocalInputValue(date: Date) {
   const pad = (n: number) => String(n).padStart(2, "0");

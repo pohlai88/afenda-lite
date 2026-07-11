@@ -5,7 +5,7 @@ import { IconPlaceholder } from "@/features/auth/studio/icon-placeholder";
 import { BorderBeam } from "@/components-V2/platform-components/ui/border-beam";
 import AuthFullBackgroundShape from "@/features/auth/studio/auth-full-background-shape";
 import LogoSvg from "@/features/auth/studio/logo-svg";
-import { cn } from "@/lib/utils";
+import { cn } from "@/modules/platform/utils";
 
 const AUTH_PREVIEW_LIGHT =
   "https://cdn.shadcnstudio.com/ss-assets/blocks/marketing/auth/image-1.png";

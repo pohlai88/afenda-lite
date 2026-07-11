@@ -6,7 +6,8 @@ import {
   clientLoginPageMetadata,
   clientSignInAuthHref,
 } from "@/lib/entry/client-sign-in-entry";
-import { getAuthenticatedLandingHref } from "@/lib/routing/portal-session-routing";
+import { resolvePlaygroundEmbedActive } from "@/modules/platform/playground-embed";
+import { getAuthenticatedLandingHref } from "@/modules/platform/routing/portal-session-routing";
 
 export const metadata = clientLoginPageMetadata;
 export const dynamic = "force-dynamic";
@@ -14,19 +15,25 @@ export const dynamic = "force-dynamic";
 /**
  * Guest landing (Lynx Morphor) + session skip for authenticated users.
  * Named client entry `/client/login` still redirects straight to Neon sign-in.
+ * Playground `?embed=1` must keep the landing visible (operator session is expected).
  */
 export default async function HomePage({
   searchParams,
 }: {
-  searchParams: Promise<{ reason?: string; invitationId?: string }>;
+  searchParams: Promise<{
+    reason?: string;
+    invitationId?: string;
+    embed?: string;
+  }>;
 }) {
   await redirectInvitationIdToJoin({ searchParams });
 
-  const landing = await getAuthenticatedLandingHref();
+  const params = await searchParams;
+  const embed = await resolvePlaygroundEmbedActive(params);
+  const landing = await getAuthenticatedLandingHref({ embed });
   if (landing) {
     redirect(landing);
   }
 
-  const params = await searchParams;
   return <LynxLandingPage signInHref={clientSignInAuthHref(params.reason)} />;
 }

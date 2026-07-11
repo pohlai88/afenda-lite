@@ -2,16 +2,16 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { requireAdminSession, requireClientSession } from "@/lib/auth/session";
-import { recordAuditEvent } from "@/lib/domain/audit";
-import { auth } from "@/lib/auth/server";
-import { parseClientOnboardingFormData } from "@/lib/client-onboarding.server";
+import { requireAdminSession, requireClientSession } from "@/modules/identity/auth/session";
+import { recordAuditEvent } from "@/modules/platform/audit";
+import { auth } from "@/modules/identity/auth/server";
+import { parseClientOnboardingFormData } from "@/modules/declarations/client-onboarding.server";
 import {
   CLIENT_HOME_HREF,
   CLIENT_ONBOARDING_HREF,
   OPERATOR_CLIENTS_HREF,
   OPERATOR_DASHBOARD_HREF,
-} from "@/lib/routing/portal-routes";
+} from "@/modules/platform/routing/portal-routes";
 import {
   acknowledgeClientPortal,
   createClientInvitation,
@@ -27,25 +27,25 @@ import {
   isClientPortalAcknowledged,
   normalizeEmail,
   upsertClientProfile,
-} from "@/lib/domain/clients";
-import { persistClientDeclarationDraft } from "@/lib/domain/client-declaration-draft";
-import { deleteClientAuthUserByEmail } from "@/lib/delete-client-auth-user";
-import { isClientEmailDeliveryEnabled } from "@/lib/email/client-email-delivery";
-import { sendClientOnboardingEmail } from "@/lib/email/send-client-onboarding-email";
-import { runLoggedAction } from "@/lib/observability";
-import { portalCopy, CLIENT_PORTAL_ACK_VERSION } from "@/lib/copy/portal-copy";
-import type { SurveyAnswers } from "@/lib/domain/questions";
-import { parseSchema } from "@/lib/schemas/common";
+} from "@/modules/declarations/domain/clients";
+import { persistClientDeclarationDraft } from "@/modules/declarations/domain/client-declaration-draft";
+import { deleteClientAuthUserByEmail } from "@/modules/identity/delete-client-auth-user";
+import { isClientEmailDeliveryEnabled } from "@/modules/identity/email/client-email-delivery";
+import { sendClientOnboardingEmail } from "@/modules/identity/email/send-client-onboarding-email";
+import { runLoggedAction } from "@/modules/platform/observability";
+import { portalCopy, CLIENT_PORTAL_ACK_VERSION } from "@/modules/declarations/copy/portal-copy";
+import type { SurveyAnswers } from "@/modules/declarations/domain/questions";
+import { parseSchema } from "@/modules/declarations/schemas/common";
 import {
   deleteClientAssignmentSchema,
   issueClientInviteSchema,
   removeClientRegistrationSchema,
   saveClientDeclarationDraftSchema,
   submitClientDeclarationSchema,
-} from "@/lib/schemas/client";
-import { getSurveyBySlug, getSurveyForAdmin } from "@/lib/domain/surveys";
-import { submitClientDeclaration } from "@/lib/domain/survey-submission";
-import { formString } from "@/lib/server-actions/form-data";
+} from "@/modules/declarations/schemas/client";
+import { getSurveyBySlug, getSurveyForAdmin } from "@/modules/declarations/domain/surveys";
+import { submitClientDeclaration } from "@/modules/declarations/domain/survey-submission";
+import { formString } from "@/modules/declarations/server-actions/form-data";
 
 export async function saveClientOnboardingAction(formData: FormData) {
   // Incomplete clients must reach this action — do not require onboarding.

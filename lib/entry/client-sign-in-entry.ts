@@ -8,19 +8,19 @@ import {
   CLIENT_INVITE_INVALID_REASON,
   CLIENT_LOGIN_REQUIRED_REASON,
   resolveClientAuthReasonNotice,
-} from "@/lib/auth/auth-entry-params";
+} from "@/modules/identity/auth/auth-entry-params";
 import {
   appendPlaygroundEmbedQuery,
   resolvePlaygroundEmbedActive,
-} from "@/lib/playground/playground";
+} from "@/modules/platform/playground-embed";
 import { PORTAL_NAME, portalCopy } from "@/lib/copy/portal-copy";
 import {
   AUTH_SIGN_IN_HREF,
   CLIENT_SIGN_IN_ENTRY_HREF,
   authSignInHref,
   sanitizeReturnToPath,
-} from "@/lib/routing/portal-routes";
-import { getAuthenticatedLandingHref } from "@/lib/routing/portal-session-routing";
+} from "@/modules/platform/routing/portal-routes";
+import { getAuthenticatedLandingHref } from "@/modules/platform/routing/portal-session-routing";
 
 export {
   CLIENT_CHECK_EMAIL_REASON,
@@ -28,7 +28,7 @@ export {
   CLIENT_INVITE_INVALID_REASON,
   CLIENT_LOGIN_REQUIRED_REASON,
   resolveClientAuthReasonNotice,
-} from "@/lib/auth/auth-entry-params";
+} from "@/modules/identity/auth/auth-entry-params";
 
 export const clientLoginPageMetadata: Metadata = {
   title: `${PORTAL_NAME} — ${portalCopy.metadata.home.title}`,

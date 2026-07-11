@@ -1,11 +1,13 @@
 # Operator post-login — phase-1 task breakdown
 
-**Status:** complete (reopened + implemented 2026-07-11)  
+**Status:** reopened + restored 2026-07-11 (after greenfield wipe; loaders under `lib/pages`, UI under `features/operator` + portal-views)  
 **SSOT:** [03-routes.md](03-routes.md) · [02-folder-map.md](02-folder-map.md) · [04-bff-and-data.md](04-bff-and-data.md) · [06-admincn-alignment.md](06-admincn-alignment.md)
 
 ## Goal
 
-Restore `/dashboard`, `/dashboard/clients`, `/dashboard/[id]` with real domain data. Keep `loadOperator*` loaders. Migrate only the broken `@/components/*` leaves used by `portal-views` into `features/operator/`. Do not recreate root `components/`.
+Restore `/dashboard`, `/dashboard/clients`, `/dashboard/[id]` with real domain data. Keep `loadOperator*` loaders. UI in `features/operator/` + `components-V2/.../portal-views/`. Do not recreate root `components/`.
+
+**Also reopened:** local `/playground` harness (dev-only) for page quality review.
 
 ## Keep vs fix
 

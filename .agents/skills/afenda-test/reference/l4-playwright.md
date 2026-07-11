@@ -9,7 +9,6 @@ On-demand reference for `/afenda-test` and `afenda-test-engineer`. Authority: [`
 | Zod schema, registry allowlist, pure transform | L0 | Never Playwright |
 | Route handler `GET()` / loader | L1 | Vitest import — no HTTP server |
 | Radix click, menu, dialog, membership option list | L2 | `*.interaction.test.tsx` + `testing/react.tsx` |
-| Component layout review | L3 | Storybook — on demand, not CI gate |
 | Hydration, multi-route nav, viewport overflow, full auth journey | L4 | Playwright `@smoke` / `@journey` |
 
 **Reject:** Cypress · Jest as new runners · Playwright for claims Vitest already proves.

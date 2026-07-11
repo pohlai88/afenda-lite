@@ -3,11 +3,11 @@
 import { useState, useTransition } from "react";
 import { CheckIcon, CopyIcon, SparklesIcon } from "lucide-react";
 import { toast } from "sonner";
-import { copyText } from "@/lib/clipboard";
-import { buildCdpAiAssistantPrompt } from "@/lib/cdp-ai-prompt";
-import { portalCopy } from "@/lib/copy/portal-copy";
+import { copyText } from "@/modules/platform/clipboard";
+import { buildCdpAiAssistantPrompt } from "@/modules/declarations/cdp-ai-prompt";
+import { portalCopy } from "@/modules/declarations/copy/portal-copy";
 import { Button } from "@/components-V2/platform-components/ui/button";
-import { cn } from "@/lib/utils";
+import { cn } from "@/modules/platform/utils";
 
 export function CdpAiPromptInstructions({ className }: { className?: string }) {
   const { package: copy } = portalCopy.declarationDetail;

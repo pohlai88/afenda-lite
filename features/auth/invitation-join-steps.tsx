@@ -1,7 +1,7 @@
 "use client";
 
 import { portalCopy } from "@/lib/copy/portal-copy";
-import { cn } from "@/lib/utils";
+import { cn } from "@/modules/platform/utils";
 
 type StepStatus = "done" | "current" | "default";
 

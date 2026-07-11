@@ -1,3 +1,5 @@
-import { runClientWorkspaceLayout } from "@/lib/client-workspace-layout";
+import type { ReactNode } from 'react'
 
-export default runClientWorkspaceLayout;
+export default function Layout({ children }: { children: ReactNode }) {
+  return <div data-segment="client-workspace">{children}</div>
+}

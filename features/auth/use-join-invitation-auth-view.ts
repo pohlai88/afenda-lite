@@ -1,10 +1,10 @@
 "use client";
 
-import { authClient } from "@/lib/auth/client";
+import { authClient } from "@/modules/identity/auth/client";
 import {
   resolveJoinInvitationAuthView,
   type JoinInvitationAuthView,
-} from "@/lib/client-invitation-join-auth";
+} from "@/modules/identity/client-invitation-join-auth";
 
 export type JoinInvitationAuthState = {
   readonly isPending: boolean;

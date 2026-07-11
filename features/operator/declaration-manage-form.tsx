@@ -10,15 +10,15 @@ import { QuestionFieldsEditor } from "@/features/operator/question-fields-editor
 import { SurveyMetadataFields } from "@/features/operator/survey-metadata-fields";
 import { SurveyPackagePanel } from "@/features/operator/survey-package-panel";
 import { FormErrorAlert } from "@/features/operator/form-error-alert";
-import { portalCopy } from "@/lib/copy/portal-copy";
-import { SURVEY_EDITOR } from "@/lib/form-constraints";
+import { portalCopy } from "@/modules/declarations/copy/portal-copy";
+import { SURVEY_EDITOR } from "@/modules/platform/form-constraints";
 import { Button } from "@/components-V2/platform-components/ui/button";
 import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components-V2/platform-components/ui/field";
 import { Input } from "@/components-V2/platform-components/ui/input";
 import { Textarea } from "@/components-V2/platform-components/ui/textarea";
-import type { QuestionType } from "@/lib/question-models";
-import type { QuestionConfig } from "@/lib/domain/survey-package";
-import type { SurveyMetadata } from "@/lib/domain/surveys";
+import type { QuestionType } from "@/modules/declarations/question-models";
+import type { QuestionConfig } from "@/modules/declarations/domain/survey-package";
+import type { SurveyMetadata } from "@/modules/declarations/domain/surveys";
 
 export function DeclarationManageForm({
   surveyId,

@@ -4,10 +4,10 @@ import { FieldGroup } from "@/components-V2/platform-components/ui/field";
 import { Input } from "@/components-V2/platform-components/ui/input";
 import { Label } from "@/components-V2/platform-components/ui/label";
 import { Textarea } from "@/components-V2/platform-components/ui/textarea";
-import { SURVEY_EDITOR } from "@/lib/form-constraints";
-import { portalCopy } from "@/lib/copy/portal-copy";
-import { formatCategoriesInput } from "@/lib/domain/survey-package";
-import type { SurveyMetadata } from "@/lib/domain/surveys";
+import { SURVEY_EDITOR } from "@/modules/platform/form-constraints";
+import { portalCopy } from "@/modules/declarations/copy/portal-copy";
+import { formatCategoriesInput } from "@/modules/declarations/domain/survey-package";
+import type { SurveyMetadata } from "@/modules/declarations/domain/surveys";
 
 function toDateInputValue(value: Date | null) {
   if (!value) return "";

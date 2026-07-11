@@ -5,9 +5,13 @@
  * .auth-surface | .guardian-auth | .neon-auth-page | .portal-shell
  *
  * DO NOT:
- * - Remove @import "@neondatabase/auth-ui/tailwind"
  * - Move these tokens into AdminCN :root (breaks CSS split)
  * - Strip .portal-neon-view / OTP slot rules used by Neon AuthView
+ * - Redefine AdminCN @theme --font-heading globally (use island vars below)
+ *
+ * Neon Auth UI stylesheet: imported from `app/auth/layout.tsx` (and join when
+ * restored) via `app/auth/neon-auth-ui.css` — NOT here — so AdminCN dashboard
+ * does not load Neon’s global :root / utility sheet.
  *
  * Production Studio shell: .auth-surface + data-auth-island="studio"
  * Application-shell-05 CSS is NOT imported here — Studio auth does not use
@@ -17,7 +21,6 @@
  * Skill: .cursor/skills/admincn-customization/SKILL.md
  */
 
-@import "@neondatabase/auth-ui/tailwind";
 @plugin "@tailwindcss/typography";
 
 /* Portal/login token island — does not touch AdminCN :root on dashboard */
@@ -25,6 +28,10 @@
 .guardian-auth,
 .neon-auth-page,
 .portal-shell {
+  /* Island heading fonts — do not put these in @theme (would overwrite AdminCN) */
+  --font-heading: var(--font-cormorant), ui-serif, Georgia, serif;
+  --font-editorial: var(--font-cormorant), ui-serif, Georgia, serif;
+  --font-ui: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --background: oklch(0.984 0.003 248.2);
   --foreground: oklch(0.208 0.040 265.8);
   --card: oklch(1 0 0);
@@ -133,6 +140,7 @@ html.dark:has(.portal-shell) .portal-shell {
   --sidebar-ring: oklch(0.62 0.11 254);
 }
 
+/* Additive theme tokens only — never overwrite AdminCN --font-heading / --font-sans */
 @theme inline {
   --color-brand: var(--brand);
   --color-brand-hover: var(--brand-hover);
@@ -149,7 +157,6 @@ html.dark:has(.portal-shell) .portal-shell {
   --color-warning-foreground: var(--warning-foreground);
   --color-info: var(--info);
   --color-info-foreground: var(--info-foreground);
-  --font-heading: var(--font-cormorant), ui-serif, Georgia, serif;
   --font-editorial: var(--font-cormorant), ui-serif, Georgia, serif;
   --font-ui: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --text-display: 2rem;

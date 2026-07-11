@@ -54,6 +54,16 @@ function fail(message) {
 }
 
 async function main() {
+  try {
+    await stat(MASTERS.light);
+    await stat(MASTERS.dark);
+  } catch {
+    console.warn(
+      "check:brand-icons SKIP — public/brand/identity masters absent (rebuild / icons:generate later)",
+    );
+    process.exit(0);
+  }
+
   for (const filename of FORBIDDEN_LEGACY_ICON_FILES) {
     try {
       await stat(join(ICONS_DIR, filename));

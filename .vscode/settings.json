@@ -1,7 +1,4 @@
 {
-  "files.associations": {
-    "*.stories.tsx": "typescriptreact"
-  },
   "files.exclude": {
     "**/node_modules": true,
     "**/.next": true,
@@ -13,7 +10,6 @@
     "**/coverage": true,
     "**/test-results": true,
     "**/playwright-report": true,
-    "**/storybook-static": true,
     "**/out": true,
     "**/.artifacts": true
   },
@@ -28,7 +24,6 @@
     "**/coverage": true,
     "**/test-results": true,
     "**/playwright-report": true,
-    "**/storybook-static": true,
     "**/out": true,
     "**/.artifacts": true,
     "**/.git": true
@@ -44,7 +39,6 @@
     "**/coverage/**": true,
     "**/test-results/**": true,
     "**/playwright-report/**": true,
-    "**/storybook-static/**": true,
     "**/out/**": true,
     "**/.artifacts/**": true,
     "**/.git/**": true

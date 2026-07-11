@@ -4,11 +4,11 @@
  * Playground embed requests bypass auth and receive the x-playground-embed header.
  */
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth/server";
+import { auth } from "@/modules/identity/auth/server";
 import {
   CLIENT_PREVIEW_UNAVAILABLE_HREF,
   CLIENT_SIGN_IN_ENTRY_HREF,
-} from "@/lib/routing/portal-routes";
+} from "@/modules/platform/routing/portal-routes";
 
 const neonMiddleware = auth.middleware({
   loginUrl: "/auth/sign-in",
@@ -21,10 +21,14 @@ export default async function proxy(request: NextRequest) {
   // Named client sign-in must stay public so reason/returnTo survive to the page.
   const isClientSignInEntry = pathname === CLIENT_SIGN_IN_ENTRY_HREF;
 
-  if (isEmbed || isPreviewUnavailableGate || isClientSignInEntry) {
+  if (isEmbed) {
     const requestHeaders = new Headers(request.headers);
     requestHeaders.set("x-playground-embed", "1");
     return NextResponse.next({ request: { headers: requestHeaders } });
+  }
+
+  if (isPreviewUnavailableGate || isClientSignInEntry) {
+    return NextResponse.next();
   }
 
   // Server Actions authenticate in the action (requireAdminSession). Neon Auth

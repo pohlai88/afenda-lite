@@ -14,8 +14,8 @@ import { PORTAL_NAME } from "@/lib/copy/portal-copy";
 import {
   publicLinkPageRobots,
   resolvePublicLinkLandingHref,
-} from "@/lib/routing/public-link-routing";
-import type { Survey } from "@/lib/domain/surveys";
+} from "@/modules/platform/routing/public-link-routing";
+import type { Survey } from "@/modules/declarations/domain/surveys";
 
 /** Cached survey lookup for open slug or secure token public link routes. */
 export function createCachedPublicLinkSurveyLoader<T>(

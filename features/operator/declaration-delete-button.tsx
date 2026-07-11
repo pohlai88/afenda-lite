@@ -5,8 +5,8 @@ import { useState, useTransition } from "react";
 import { Trash2Icon } from "lucide-react";
 import { deleteSurveyAction } from "@/app/actions/surveys";
 import { ConfirmDialog } from "@/features/operator/confirm-dialog";
-import { portalCopy } from "@/lib/copy/portal-copy";
-import { OPERATOR_DASHBOARD_HREF } from "@/lib/routing/portal-routes";
+import { portalCopy } from "@/modules/declarations/copy/portal-copy";
+import { OPERATOR_DASHBOARD_HREF } from "@/modules/platform/routing/portal-routes";
 import { Button } from "@/components-V2/platform-components/ui/button";
 
 export function DeclarationDeleteButton({ surveyId }: { surveyId: string }) {

@@ -5,7 +5,11 @@ import { BrandFaviconSync } from "@/features/portal-chrome/brand-favicon-sync";
 import { PortalAuthProvider } from "@/features/auth/portal-auth-provider";
 import { ThemeProvider } from "@/features/portal-chrome/theme-provider";
 import { Toaster } from "@/components-V2/platform-components/ui/sonner";
-import { getAppBaseUrl } from "@/lib/app-url";
+import {
+  fontGeist,
+  fontGeistMono,
+} from "@/components-V2/platform-utils/fonts";
+import { getAppBaseUrl } from "@/modules/platform/app-url";
 import {
   BRAND_OG_IMAGE_HEIGHT,
   BRAND_OG_IMAGE_PATH,
@@ -16,7 +20,7 @@ import {
 } from "@/lib/copy/portal-brand";
 import { PORTAL_NAME, portalCopy } from "@/lib/copy/portal-copy";
 import { PORTAL_THEME_BOOT_SCRIPT } from "@/lib/copy/portal-theme";
-import { cn } from "@/lib/utils";
+import { cn } from "@/modules/platform/utils";
 
 // Auth, cookies, and session-aware UI run on every route — opt out of static prerender.
 export const dynamic = "force-dynamic";
@@ -95,7 +99,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html suppressHydrationWarning lang="en" className={cn(portalFontClassName)}>
+    <html
+      suppressHydrationWarning
+      lang="en"
+      className={cn(
+        portalFontClassName,
+        fontGeist.variable,
+        fontGeistMono.variable,
+      )}
+    >
       <body className="min-w-0 overflow-x-clip">
         <script
           dangerouslySetInnerHTML={{ __html: PORTAL_THEME_BOOT_SCRIPT }}

@@ -12,9 +12,9 @@ import {
 import { Button } from "@/components-V2/platform-components/ui/button";
 import { Input } from "@/components-V2/platform-components/ui/input";
 import { Label } from "@/components-V2/platform-components/ui/label";
-import { getTradeActionError } from "@/lib/domain/trade/trade-action-result";
-import type { HotSalesPickupListItem, HotSalesPickupWindow } from "@/lib/domain/trade/types";
-import { tradeHref, type TradeLocale } from "@/lib/i18n/trade";
+import { getTradeActionError } from "@/modules/trade/domain/trade-action-result";
+import type { HotSalesPickupListItem, HotSalesPickupWindow } from "@/modules/trade/domain/types";
+import { tradeHref, type TradeLocale } from "@/modules/trade/i18n/trade";
 
 export function TradePickupNavLink({
   locale,
@@ -25,7 +25,7 @@ export function TradePickupNavLink({
 }) {
   return (
     <Link
-      href={tradeHref(locale, `/admin/events/${eventId}/pickup`)}
+      href={tradeHref(`/admin/events/${eventId}/pickup`)}
       className="text-sm underline-offset-4 hover:underline"
     >
       {locale === "vi" ? "Giao hàng / lấy hàng" : "Pickup ops"}

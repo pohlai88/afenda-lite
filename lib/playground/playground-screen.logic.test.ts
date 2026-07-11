@@ -10,7 +10,7 @@ describe("playgroundScreenCategoryLabel", () => {
     expect(playgroundScreenCategoryLabel("admin")).toBe("Admin");
     expect(playgroundScreenCategoryLabel("client")).toBe("Client");
     expect(playgroundScreenCategoryLabel("dynamic")).toBe("Dynamic route");
-    expect(playgroundScreenCategoryLabel("hot-sales")).toBe("Hot Sales");
+    expect(playgroundScreenCategoryLabel("hot-sales")).toBe("Feed Farm Trade");
     expect(playgroundScreenCategoryLabel("auto")).toBe("Auto-discovered");
   });
 });
@@ -27,11 +27,12 @@ describe("buildPlaygroundScreenViewModel", () => {
     expect(view).toMatchObject({
       categoryLabel: "Admin",
       pathConfigured: true,
+      shape: "live",
       embedUrl: "/dashboard?embed=1",
     });
   });
 
-  it("marks unresolved template paths as unconfigured", () => {
+  it("marks unresolved template paths as unconfigured fixture-gap", () => {
     const view = buildPlaygroundScreenViewModel({
       id: "client-declare",
       category: "client",
@@ -40,6 +41,7 @@ describe("buildPlaygroundScreenViewModel", () => {
     });
 
     expect(view.pathConfigured).toBe(false);
+    expect(view.shape).toBe("fixture-gap");
   });
 });
 

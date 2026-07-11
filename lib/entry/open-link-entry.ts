@@ -9,15 +9,15 @@ import "server-only";
  * @see docs/architecture/slices/s5-share-access.md
  */
 import { portalCopy } from "@/lib/copy/portal-copy";
-import { openSurveyHref } from "@/lib/routing/portal-routes";
+import { openSurveyHref } from "@/modules/platform/routing/portal-routes";
 import {
   buildPublicLinkMetadata,
   createCachedPublicLinkSurveyLoader,
   resolvePublicLinkReturnTo,
   runPublicLinkRedirect,
 } from "@/lib/pages/public-link-page";
-import { openSurveySlugParamSchema } from "@/lib/schemas/surveys";
-import { getSurveyBySlug } from "@/lib/domain/surveys";
+import { openSurveySlugParamSchema } from "@/modules/declarations/schemas/surveys";
+import { getSurveyBySlug } from "@/modules/declarations/domain/surveys";
 
 export const loadOpenLinkSurvey = createCachedPublicLinkSurveyLoader(
   openSurveySlugParamSchema,

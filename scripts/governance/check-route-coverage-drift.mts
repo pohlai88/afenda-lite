@@ -6,7 +6,7 @@ import {
   buildRouteCoverageSnapshot,
   compareRouteCoverageSnapshots,
   type RouteCoverageSnapshot,
-} from "../../lib/governance/portal-route-coverage";
+} from "../../modules/platform/governance/portal-route-coverage";
 
 const repoRoot = join(import.meta.dirname, "../..");
 const snapshotPath = join(repoRoot, "docs/architecture/route-coverage.snapshot.json");

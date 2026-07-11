@@ -11,13 +11,10 @@ describe("auth-form-intro-visibility", () => {
     ).toBe(true);
   });
 
-  it("hides duplicate client vault heading on default sign-in", () => {
+  it("hides duplicate vault heading when Neon AuthView owns the card title", () => {
     expect(resolveShowVaultHeading({ path: "sign-in" })).toBe(false);
-  });
-
-  it("shows distinct headings on email-otp and magic-link", () => {
-    expect(resolveShowVaultHeading({ path: "email-otp" })).toBe(true);
-    expect(resolveShowVaultHeading({ path: "magic-link" })).toBe(true);
+    expect(resolveShowVaultHeading({ path: "email-otp" })).toBe(false);
+    expect(resolveShowVaultHeading({ path: "magic-link" })).toBe(false);
     expect(resolveShowVaultHeading({ path: "sign-up" })).toBe(false);
   });
 });

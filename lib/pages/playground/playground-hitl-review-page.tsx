@@ -1,102 +1,129 @@
-import Link from "next/link";
 import type { Metadata } from "next";
-import { PlaygroundHitlRouteTable } from "@/components/playground-hitl-route-table";
-import { buildPlaygroundHitlRows } from "@/lib/playground/playground-hitl-rows";
+import type { ReactNode } from "react";
+import Link from "next/link";
+
+import PlaygroundHitlChecklist from "@/components-V2/platform-views/portal-views/playground-hitl-checklist";
 import {
-  PLAYGROUND_HITL_REVIEW_HREF,
-  playgroundReviewNavLinks,
-} from "@/lib/playground/playground-nav";
+  Card,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components-V2/platform-components/ui/card";
+import { Button } from "@/components-V2/platform-components/ui/button";
+import { PlaygroundPageShapeBadge } from "@/features/playground/playground-page-shape-badge";
+import { buildPlaygroundHitlRows } from "@/lib/playground/playground-hitl-rows";
+import { parseHitlViewFilters } from "@/lib/playground/playground-hitl-views";
 import { playgroundScreens } from "@/lib/playground/playground";
-import { PORTAL_NAME } from "@/lib/copy/portal-copy";
+import { loadPlaygroundStaticComposition } from "@/lib/playground/playground-static-compositions";
+import { PORTAL_NAME } from "@/modules/declarations/copy/portal-copy";
+import { playgroundScreenHref } from "@/modules/platform/routing/portal-routes";
 
 export const playgroundHitlReviewPageMetadata: Metadata = {
-  title: `${PORTAL_NAME} — Playground · HITL route checklist`,
+  title: `${PORTAL_NAME} — Playground · Route review`,
   description:
-    "Human-in-the-loop review checklist for playground routes, paths, and page files.",
+    "Source-backed route expectations with explicit human verdicts, notes, and repair handoff.",
   robots: { index: false, follow: false },
 };
 
-const categoryNav = [
-  { id: "admin", label: "Admin" },
-  { id: "client", label: "Client" },
-  { id: "dynamic", label: "Dynamic" },
-  { id: "hot-sales", label: "Hot Sales" },
-] as const;
+async function resolveStaticInspectSlot(options: {
+  present: string;
+  screen: string | null;
+  view: string;
+}): Promise<ReactNode> {
+  if (options.view !== "static" || options.present !== "inspect") {
+    return null;
+  }
 
-/** Shared page handler for `/playground/hitl-review`. */
-export function runPlaygroundHitlReviewPage() {
-  const rows = buildPlaygroundHitlRows(playgroundScreens);
+  const screenId = options.screen ?? "admin-dashboard";
+  const result = await loadPlaygroundStaticComposition(screenId);
+
+  if (result.status === "ready") {
+    return (
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="text-sm font-medium">{result.title}</p>
+          <span className="text-muted-foreground text-xs uppercase">
+            {result.kind}
+          </span>
+          <PlaygroundPageShapeBadge shape={result.shape} />
+        </div>
+        <div className="bg-background min-w-0 overflow-hidden rounded-xl border">
+          {result.node}
+        </div>
+      </div>
+    );
+  }
+
+  if (result.status === "condition") {
+    return (
+      <Card className="shadow-none" data-playground-static-condition={result.shape}>
+        <CardHeader className="gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <CardTitle className="text-base">{result.label}</CardTitle>
+            <PlaygroundPageShapeBadge shape={result.shape} />
+          </div>
+          <CardDescription className="text-pretty">
+            {result.reason}
+          </CardDescription>
+          <p className="text-muted-foreground text-xs">
+            Path: <code>{result.path}</code>
+          </p>
+          <div>
+            <Button
+              variant="outline"
+              size="sm"
+              nativeButton={false}
+              render={<Link href={playgroundScreenHref(result.screenId)} />}
+            >
+              Open Preview
+            </Button>
+          </div>
+        </CardHeader>
+      </Card>
+    );
+  }
 
   return (
-    <div className="v-stack min-w-0 gap-6 overflow-x-clip p-4 md:p-6">
-      <a href="#playground-hitl-main" className="portal-skip-link">
-        Skip to checklist
-      </a>
-
-      <header className="v-stack gap-4">
-        <div className="v-stack gap-2">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            Playground · local dev only
-          </p>
-          <h1 className="text-2xl font-semibold tracking-tight">
-            HITL route checklist
-          </h1>
-          <p className="max-w-3xl text-sm text-muted-foreground">
-            Check each row after you manually open and verify the page. Progress
-            is saved in this browser (
-            <code className="text-xs">localStorage</code>).
-          </p>
+    <Card className="shadow-none" data-playground-static-live-embed-only>
+      <CardHeader className="gap-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <CardTitle className="text-base">{result.label}</CardTitle>
+          <PlaygroundPageShapeBadge shape={result.shape} />
         </div>
+        <CardDescription className="text-pretty">{result.reason}</CardDescription>
+        <p className="text-muted-foreground text-xs">
+          Path: <code>{result.path}</code>
+        </p>
+        <div>
+          <Button
+            variant="outline"
+            size="sm"
+            nativeButton={false}
+            render={<Link href={playgroundScreenHref(result.screenId)} />}
+          >
+            Open Preview
+          </Button>
+        </div>
+      </CardHeader>
+    </Card>
+  );
+}
 
-        <nav
-          aria-label="Playground review modes"
-          className="flex flex-wrap gap-2"
-        >
-          {playgroundReviewNavLinks.map((item) => {
-            const active =
-              item.href === PLAYGROUND_HITL_REVIEW_HREF
-                ? item.id === "hitl-review"
-                : false;
+/** Shared page handler for `/playground/hitl-review` — thin loader → AdminCN portal-view. */
+export async function runPlaygroundHitlReviewPage({
+  searchParams,
+}: {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+} = {}) {
+  const params = searchParams ? await searchParams : {};
+  const filters = parseHitlViewFilters(params);
+  const rows = buildPlaygroundHitlRows(playgroundScreens);
+  const staticComposition = await resolveStaticInspectSlot(filters);
 
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                aria-current={active ? "page" : undefined}
-                className={
-                  active
-                    ? "rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground"
-                    : "rounded-md border px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                }
-              >
-                {item.label}
-              </Link>
-            );
-          })}
-        </nav>
-
-        <nav
-          aria-label="Route categories"
-          className="flex flex-wrap gap-2 border-t pt-4"
-        >
-          {categoryNav.map((item) => (
-            <span
-              key={item.id}
-              className="rounded-md bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground"
-            >
-              {item.label}:{" "}
-              {rows.filter((row) => row.category === item.id).length}
-            </span>
-          ))}
-          <span className="rounded-md bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
-            Total: {rows.length}
-          </span>
-        </nav>
-      </header>
-
-      <section id="playground-hitl-main" className="min-w-0">
-        <PlaygroundHitlRouteTable rows={rows} />
-      </section>
-    </div>
+  return (
+    <PlaygroundHitlChecklist
+      rows={rows}
+      staticComposition={staticComposition}
+    />
   );
 }

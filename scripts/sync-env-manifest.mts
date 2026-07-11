@@ -1,5 +1,5 @@
 /**
- * Generates scripts/lib/env-manifest.generated.mjs from lib/env/manifest.ts.
+ * Generates scripts/lib/env-manifest.generated.mjs from modules/platform/env/manifest.ts.
  *
  * Usage:
  *   npx tsx scripts/sync-env-manifest.mts          # write
@@ -13,7 +13,7 @@ import {
   deriveSecretKeys,
   deriveStaleVercelKeys,
   deriveVercelProductionKeys,
-} from "../lib/env/manifest.ts";
+} from "../modules/platform/env/manifest.ts";
 
 const OUT_PATH = resolve("scripts/lib/env-manifest.generated.mjs");
 
@@ -28,7 +28,7 @@ function generateContent() {
   const staleVercelKeys = deriveStaleVercelKeys();
   const runtimeEnvKeys = deriveRuntimeEnvKeys();
 
-  return `/** AUTO-GENERATED from lib/env/manifest.ts — do not edit. Run: npm run env:manifest:sync */
+  return `/** AUTO-GENERATED from modules/platform/env/manifest.ts — do not edit. Run: npm run env:manifest:sync */
 export const SECRET_KEYS = new Set([${quoteList(secretKeys)}]);
 export const LOCAL_ONLY_KEYS = new Set([${quoteList(localOnlyKeys)}]);
 export const VERCEL_PRODUCTION_KEYS = [${quoteList(vercelProductionKeys)}];

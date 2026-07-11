@@ -11,10 +11,6 @@
       "command": "node",
       "args": ["scripts/shadcn-studio-mcp.mjs"]
     },
-    "client-declaration-portal-sb-mcp": {
-      "type": "http",
-      "url": "http://localhost:6006/mcp"
-    },
     "chrome-devtools": {
       "command": "npx",
       "args": ["-y", "chrome-devtools-mcp@latest"],

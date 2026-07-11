@@ -4,8 +4,10 @@ import { AdminShellProviders } from '@/components-V2/platform-components/AdminSh
 import PagesLayout from '@/components-V2/platform-components/layout/PagesLayout'
 import themeConfig from '@/components-V2/platform-config/themeConfig'
 import type { Settings } from '@/components-V2/platform-context/settingsContext'
+import { isPlaygroundEnabled } from '@/modules/platform/env/accessors'
+import { resolveShellAccess } from '@/modules/platform/shell/access'
 
-/** Shared AdminCN chrome for operator surfaces (/dashboard, /account). */
+/** Shared AdminCN chrome for Declarations + Feed Farm Trade modules (/dashboard, /trade). */
 export async function AdminCnShell({ children }: { children: ReactNode }) {
   const cookieStore = await cookies()
   const raw = cookieStore.get(themeConfig.settingsCookieName)?.value
@@ -19,11 +21,16 @@ export async function AdminCnShell({ children }: { children: ReactNode }) {
   }
 
   const sidebarDefaultOpen = settingsCookie?.sidebarOpen ?? themeConfig.sidebarOpen
+  const showPlayground = isPlaygroundEnabled()
+  const shellAccess = await resolveShellAccess()
 
   return (
     <AdminShellProviders
       settingsCookie={settingsCookie}
       sidebarDefaultOpen={sidebarDefaultOpen}
+      showPlayground={showPlayground}
+      entitledModules={shellAccess?.modules ?? ['declarations']}
+      isOrgAdmin={shellAccess?.isOrgAdmin ?? false}
     >
       <PagesLayout>{children}</PagesLayout>
     </AdminShellProviders>
