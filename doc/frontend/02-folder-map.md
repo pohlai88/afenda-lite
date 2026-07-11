@@ -53,7 +53,7 @@ Do **not** recreate `lib/`. Product + playground runners live under `features/`.
 | `features/auth/` | Studio login shell + Neon forms |
 | `features/landing/` | Lynx landing |
 | `features/account/` | Account section chrome |
-| `features/organization-admin/` | Organization-admin Declarations leaf widgets |
+| `features/organization-admin/` | Organization-admin Declarations leaf widgets + promoted Studio shells (`form-layout-section`, `statistics-card`) |
 | `features/playground/` | Local-only route review, preview, and coverage UI |
 | `features/portal-chrome/` | Shared chrome helpers |
 | `features/fft/` | Feed Farm Trade UI (P1 forms/panels under AdminCN; no FftShell) |

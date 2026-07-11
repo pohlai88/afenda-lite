@@ -24,6 +24,7 @@ import {
   type Survey,
   type SurveyResponse,
 } from "@/modules/declarations/domain/surveys";
+import { bootstrapOrganizationAdminTenancy } from "@/features/organization-admin/organization-admin-tenancy";
 
 export type { OperatorDeclarationQuestionDraft } from "@/features/organization-admin/organization-admin-declaration-detail.logic";
 export {
@@ -48,7 +49,8 @@ export const loadOrganizationAdminDeclarationDetail = cache(
       return null;
     }
 
-    const survey = await getSurveyForAdmin(parsed.data);
+    const { org } = await bootstrapOrganizationAdminTenancy();
+    const survey = await getSurveyForAdmin(parsed.data, org.organizationId);
     if (!survey) {
       return null;
     }
@@ -85,10 +87,10 @@ export const loadOrganizationAdminDeclarationDetail = cache(
 export async function operatorDeclarationDetailMetadata({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ declarationId: string }>;
 }): Promise<Metadata> {
-  const { id } = await params;
-  const detail = await loadOrganizationAdminDeclarationDetail(id);
+  const { declarationId } = await params;
+  const detail = await loadOrganizationAdminDeclarationDetail(declarationId);
 
   if (!detail) {
     return {
@@ -103,14 +105,14 @@ export async function operatorDeclarationDetailMetadata({
   };
 }
 
-/** Shared page handler for `/dashboard/[id]`. */
+/** Shared page handler for `/dashboard/[declarationId]`. */
 export async function runOrganizationAdminDeclarationDetailPage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ declarationId: string }>;
 }) {
-  const { id } = await params;
-  const detail = await loadOrganizationAdminDeclarationDetail(id);
+  const { declarationId } = await params;
+  const detail = await loadOrganizationAdminDeclarationDetail(declarationId);
 
   if (!detail) {
     notFound();

@@ -38,6 +38,11 @@ import {
 } from "@/modules/identity/preview-client";
 import { portalCopy } from "@/modules/platform/copy/portal-copy";
 import { parseSchema } from "@/modules/platform/schemas/common";
+import {
+  actionFail,
+  actionOk,
+  type ActionResult,
+} from "@/modules/platform/schemas/action-result";
 import { signInSchema } from "@/modules/identity/schemas/auth";
 import {
   banOrganizationUserSchema,
@@ -51,10 +56,31 @@ import {
   updateOrganizationUserSchema,
 } from "@/modules/identity/schemas/users";
 import {
+  assignPlatformRoleSchema,
+  createPlatformRoleSchema,
+  deletePlatformRoleSchema,
+  revokePlatformRoleAssignmentSchema,
+  setPlatformRolePermissionSchema,
+  updatePlatformRoleSchema,
+} from "@/modules/identity/schemas/platform-rbac";
+import {
+  assignPlatformRole,
+  createPlatformRole,
+  deletePlatformRole,
+  revokePlatformRoleAssignment,
+  setPlatformRolePermission,
+  updatePlatformRole,
+} from "@/modules/identity/domain/platform-rbac";
+import { requirePlatformPermission } from "@/modules/identity/domain/platform-rbac-access";
+import {
   formPassword,
   formString,
 } from "@/modules/declarations/server-actions/form-data";
 import { revalidatePath } from "next/cache";
+import {
+  ORGANIZATION_ADMIN_PERMISSIONS_HREF,
+  ORGANIZATION_ADMIN_ROLES_HREF,
+} from "@/modules/platform/routing/portal-routes";
 
 export async function adminSignInAction(formData: FormData) {
   return runLoggedAction("adminSignInAction", undefined, async () => {
@@ -632,6 +658,249 @@ export async function revokeOrganizationUserSessionsAction(input: {
       });
       revalidateOrganizationUsers(parsed.data.userId);
       return { ok: true as const };
+    },
+  );
+}
+
+function revalidatePlatformRbacPaths() {
+  revalidatePath(ORGANIZATION_ADMIN_ROLES_HREF);
+  revalidatePath(ORGANIZATION_ADMIN_PERMISSIONS_HREF);
+}
+
+async function requireRolesManageGate(session: {
+  user: { id: string; role?: string | null };
+}) {
+  return requirePlatformPermission({
+    userId: session.user.id,
+    code: "org.roles.manage",
+    // requireAdminSession already passed — bootstrap until assignments exist
+    isNeonAdmin: true,
+  });
+}
+
+export async function createPlatformRoleAction(input: {
+  name: string;
+  description?: string;
+  permissionCodes: string[];
+}): Promise<ActionResult<{ roleId: string }>> {
+  return runLoggedAction("createPlatformRoleAction", undefined, async () => {
+    const session = await requireAdminSession();
+    const parsed = parseSchema(createPlatformRoleSchema, input);
+    if (!parsed.success) {
+      return actionFail("VALIDATION_ERROR", parsed.error);
+    }
+
+    const { organizationId, check } = await requireRolesManageGate(session);
+    if (!check.allowed) {
+      return actionFail(
+        "FORBIDDEN",
+        "You do not have permission to manage roles.",
+      );
+    }
+
+    const role = await createPlatformRole({
+      organizationId,
+      data: parsed.data,
+      actorUserId: session.user.id,
+    });
+    revalidatePlatformRbacPaths();
+    return actionOk({ roleId: role?.id ?? "" });
+  });
+}
+
+export async function updatePlatformRoleAction(input: {
+  roleId: string;
+  name: string;
+  description?: string;
+  permissionCodes: string[];
+}): Promise<ActionResult<{ roleId: string }>> {
+  return runLoggedAction("updatePlatformRoleAction", undefined, async () => {
+    const session = await requireAdminSession();
+    const parsed = parseSchema(updatePlatformRoleSchema, input);
+    if (!parsed.success) {
+      return actionFail("VALIDATION_ERROR", parsed.error);
+    }
+
+    const { organizationId, check } = await requireRolesManageGate(session);
+    if (!check.allowed) {
+      return actionFail(
+        "FORBIDDEN",
+        "You do not have permission to manage roles.",
+      );
+    }
+
+    const result = await updatePlatformRole({
+      organizationId,
+      data: parsed.data,
+      actorUserId: session.user.id,
+    });
+    if ("error" in result && result.error) {
+      return actionFail(
+        result.error,
+        "message" in result && typeof result.message === "string"
+          ? result.message
+          : "Could not update role.",
+      );
+    }
+
+    revalidatePlatformRbacPaths();
+    return actionOk({
+      roleId: String(result.role?.id ?? parsed.data.roleId),
+    });
+  });
+}
+
+export async function deletePlatformRoleAction(input: {
+  roleId: string;
+}): Promise<ActionResult<{ roleId: string }>> {
+  return runLoggedAction("deletePlatformRoleAction", undefined, async () => {
+    const session = await requireAdminSession();
+    const parsed = parseSchema(deletePlatformRoleSchema, input);
+    if (!parsed.success) {
+      return actionFail("VALIDATION_ERROR", parsed.error);
+    }
+
+    const { organizationId, check } = await requireRolesManageGate(session);
+    if (!check.allowed) {
+      return actionFail(
+        "FORBIDDEN",
+        "You do not have permission to manage roles.",
+      );
+    }
+
+    const result = await deletePlatformRole({
+      organizationId,
+      roleId: parsed.data.roleId,
+      actorUserId: session.user.id,
+    });
+    if ("error" in result && result.error) {
+      return actionFail(
+        result.error,
+        "message" in result && typeof result.message === "string"
+          ? result.message
+          : "Could not delete role.",
+      );
+    }
+
+    revalidatePlatformRbacPaths();
+    return actionOk({ roleId: parsed.data.roleId });
+  });
+}
+
+export async function setPlatformRolePermissionAction(input: {
+  roleId: string;
+  permissionCode: string;
+  granted: boolean;
+}): Promise<ActionResult<{ roleId: string }>> {
+  return runLoggedAction(
+    "setPlatformRolePermissionAction",
+    undefined,
+    async () => {
+      const session = await requireAdminSession();
+      const parsed = parseSchema(setPlatformRolePermissionSchema, input);
+      if (!parsed.success) {
+        return actionFail("VALIDATION_ERROR", parsed.error);
+      }
+
+      const { organizationId, check } = await requireRolesManageGate(session);
+      if (!check.allowed) {
+        return actionFail(
+          "FORBIDDEN",
+          "You do not have permission to manage roles.",
+        );
+      }
+
+      const result = await setPlatformRolePermission({
+        organizationId,
+        roleId: parsed.data.roleId,
+        permissionCode: parsed.data.permissionCode,
+        granted: parsed.data.granted,
+        actorUserId: session.user.id,
+      });
+      if ("error" in result && result.error) {
+        return actionFail(
+          result.error,
+          "message" in result && typeof result.message === "string"
+            ? result.message
+            : "Could not update permission.",
+        );
+      }
+
+      revalidatePlatformRbacPaths();
+      return actionOk({ roleId: parsed.data.roleId });
+    },
+  );
+}
+
+export async function assignPlatformRoleAction(input: {
+  userId: string;
+  roleId: string;
+  scopeType?: "organization" | "platform";
+}): Promise<ActionResult<{ assignmentId?: string }>> {
+  return runLoggedAction("assignPlatformRoleAction", undefined, async () => {
+    const session = await requireAdminSession();
+    const parsed = parseSchema(assignPlatformRoleSchema, input);
+    if (!parsed.success) {
+      return actionFail("VALIDATION_ERROR", parsed.error);
+    }
+
+    const { organizationId, check } = await requireRolesManageGate(session);
+    if (!check.allowed) {
+      return actionFail(
+        "FORBIDDEN",
+        "You do not have permission to manage roles.",
+      );
+    }
+
+    const result = await assignPlatformRole({
+      userId: parsed.data.userId,
+      organizationId,
+      roleId: parsed.data.roleId,
+      scopeType: parsed.data.scopeType,
+      actorUserId: session.user.id,
+    });
+    if ("error" in result && result.error) {
+      return actionFail(result.error, "Could not assign role.");
+    }
+
+    revalidatePlatformRbacPaths();
+    revalidatePath(ORGANIZATION_ADMIN_USERS_HREF);
+    return actionOk({ assignmentId: result.assignmentId });
+  });
+}
+
+export async function revokePlatformRoleAssignmentAction(input: {
+  assignmentId: string;
+}): Promise<ActionResult<{ assignmentId: string }>> {
+  return runLoggedAction(
+    "revokePlatformRoleAssignmentAction",
+    undefined,
+    async () => {
+      const session = await requireAdminSession();
+      const parsed = parseSchema(revokePlatformRoleAssignmentSchema, input);
+      if (!parsed.success) {
+        return actionFail("VALIDATION_ERROR", parsed.error);
+      }
+
+      const { organizationId, check } = await requireRolesManageGate(session);
+      if (!check.allowed) {
+        return actionFail(
+          "FORBIDDEN",
+          "You do not have permission to manage roles.",
+        );
+      }
+
+      const result = await revokePlatformRoleAssignment({
+        assignmentId: parsed.data.assignmentId,
+        organizationId,
+        actorUserId: session.user.id,
+      });
+      if ("error" in result && result.error) {
+        return actionFail(result.error, "Could not revoke assignment.");
+      }
+
+      revalidatePlatformRbacPaths();
+      return actionOk({ assignmentId: parsed.data.assignmentId });
     },
   );
 }

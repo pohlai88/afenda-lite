@@ -5,7 +5,7 @@ import { Badge } from "@/components-V2/platform-components/ui/badge";
 import { Card, CardContent, CardHeader } from "@/components-V2/platform-components/ui/card";
 import { cn } from "@/modules/platform/utils";
 
-/** statistics-component-03 — Shadcn Studio KPI card shell. */
+/** Adapted from Studio statistics-component-03 — KPI card shell for org-admin. */
 export type StudioStatisticsCardProps = {
   icon: ReactNode;
   value: string;

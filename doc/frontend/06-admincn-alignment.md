@@ -35,11 +35,13 @@ Every primitive and block under `components-V2` used as DNA must carry an `ACN-U
 ## Drop / never wire to product routes
 
 - `platform-fake-db/`  
-- `platform-views/apps/{mail,chat,kanban,calendar,contact,roles,permissions,users}`  
+- `platform-views/apps/{mail,chat,kanban,calendar,contact}` (demo apps)  
 - Blank auth login/register/forgot/reset/two-steps demos  
 - Extra `*-dashboard.tsx` demos not used by portal-views  
 - Gallery `forms/` and `datatables/` once patterns are copied into portal-views  
 - Separate Feed Farm Trade chrome (`FftShell`, locale switcher) — **removed**; use AdminCN only  
+
+**Adopt (product, not demo wire):** `platform-views/apps/{roles,permissions}` DNA → `features/organization-admin` Roles/Permissions (ADR-002). Keep zustand stores as DNA only — never import on product routes. `apps/users` remains DNA; live users are `portal-views/organization-admin-users-*`.
 
 ## SaaS modules in one shell
 
@@ -57,6 +59,9 @@ Purpose: B2B feed & farm trade sales for 3F businesses (industry customers — n
 2. Brand via `themeConfig` + nav via `navConfig` (module-tagged)  
 3. Replace fake-db with domain / actions  
 4. Prune unused demos  
+5. Promote MCP Studio installs out of scratch paths into `features/` / `portal-views/` (never keep `shadcn-studio/blocks/` nesting)
+
+**Org-admin Studio shells (live):** `features/organization-admin/form-layout-section.tsx`, `statistics-card.tsx`.
 
 ## Auth island (hard split)
 

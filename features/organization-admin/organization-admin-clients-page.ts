@@ -14,6 +14,7 @@ import { isClientEmailDeliveryEnabled } from "@/modules/identity/email/client-em
 import { formatDate } from "@/modules/platform/format";
 import { PORTAL_NAME, portalCopy } from "@/modules/platform/copy/portal-copy";
 import { listSurveysForAdmin } from "@/modules/declarations/domain/surveys";
+import { bootstrapOrganizationAdminTenancy } from "@/features/organization-admin/organization-admin-tenancy";
 
 export type OrganizationAdminClientsPageData = {
   emailDeliveryEnabled: boolean;
@@ -60,10 +61,11 @@ export const mapOperatorClientAssignmentRows = toAssignmentRows;
 
 export const loadOrganizationAdminClientsPage = cache(
   async (): Promise<OrganizationAdminClientsPageData> => {
+    const { org } = await bootstrapOrganizationAdminTenancy();
     const [invitations, surveys, assignments] = await Promise.all([
-      listClientInvitationsForAdmin(),
-      listSurveysForAdmin(),
-      listClientAssignmentsForAdmin(),
+      listClientInvitationsForAdmin(org.organizationId),
+      listSurveysForAdmin(org.organizationId),
+      listClientAssignmentsForAdmin(org.organizationId),
     ]);
     const emailDeliveryEnabled = isClientEmailDeliveryEnabled();
 

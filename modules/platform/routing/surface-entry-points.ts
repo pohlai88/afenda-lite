@@ -22,7 +22,7 @@ export const SURFACE_ENTRY_POINTS: Readonly<
       "features/auth/invitation-join-panel.tsx",
       "features/auth/invitation-join-steps.tsx",
       "features/auth/use-join-invitation-auth-view.ts",
-      "lib/client-invitation-join-auth.ts",
+      "modules/identity/client-invitation-join-auth.ts",
       "features/auth/entry/client-invitation-entry.ts",
     ],
     authPathnames: ["sign-up", "email-otp", "accept-invitation"],
@@ -120,42 +120,26 @@ export const SURFACE_ENTRY_POINTS: Readonly<
   "client-preview-unavailable": {
     files: [
       "app/client/(gate)/preview-unavailable/page.tsx",
-      "lib/pages/client-preview-unavailable-page.tsx",
-      "lib/preview-client.ts",
+      "modules/identity/preview-client.ts",
     ],
   },
   "client-onboarding": {
-    files: [
-      "app/client/(workspace)/onboarding/page.tsx",
-      "lib/pages/client-onboarding-page.tsx",
-      "lib/pages/client-workspace-unavailable.tsx",
-    ],
+    files: ["app/client/(workspace)/onboarding/page.tsx"],
   },
   "client-profile": {
-    files: [
-      "app/client/(workspace)/profile/page.tsx",
-      "lib/pages/client-profile-page.tsx",
-      "lib/pages/client-workspace-unavailable.tsx",
-    ],
+    files: ["app/client/(workspace)/profile/page.tsx"],
   },
   "client-dashboard": {
-    files: [
-      "app/client/(workspace)/page.tsx",
-      "lib/pages/client-dashboard-page.tsx",
-      "lib/pages/client-workspace-unavailable.tsx",
-    ],
+    files: ["app/client/(workspace)/page.tsx"],
   },
   "client-acknowledgement": {
-    files: [
-      "lib/pages/client-dashboard-page.tsx",
-      "lib/pages/client-workspace-unavailable.tsx",
-    ],
+    files: ["app/client/(workspace)/page.tsx"],
   },
   "client-declare": {
     files: [
-      "app/client/(workspace)/declare/[id]/page.tsx",
-      "lib/pages/client-declare-page.tsx",
-      "lib/pages/client-workspace-unavailable.tsx",
+      "app/client/(workspace)/declare/[assignmentId]/page.tsx",
+      "app/client/(workspace)/declare/[assignmentId]/loading.tsx",
+      "app/client/(workspace)/declare/[assignmentId]/not-found.tsx",
     ],
   },
   "admin-dashboard": {
@@ -172,19 +156,19 @@ export const SURFACE_ENTRY_POINTS: Readonly<
   },
   "admin-declaration-detail": {
     files: [
-      "app/dashboard/[id]/page.tsx",
-      "app/dashboard/[id]/loading.tsx",
+      "app/dashboard/[declarationId]/page.tsx",
+      "app/dashboard/[declarationId]/loading.tsx",
       "features/organization-admin/organization-admin-declaration-detail.tsx",
       "features/organization-admin/organization-admin-declaration-detail.logic.ts",
       "components-V2/platform-views/portal-views/organization-admin-declaration-detail.tsx",
       "components-V2/platform-views/portal-views/portal-declaration-submissions-table.tsx",
       "components-V2/platform-views/portal-views/portal-access-share-panel.tsx",
-      "components/declaration-manage-form.tsx",
-      "components/declaration-share-panel.tsx",
-      "components/declaration-danger-zone.tsx",
-      "components/declaration-delete-button.tsx",
-      "components/secure-link-rotate-button.tsx",
-      "components/submission-answers.tsx",
+      "features/organization-admin/declaration-manage-form.tsx",
+      "features/organization-admin/declaration-share-panel.tsx",
+      "features/organization-admin/declaration-danger-zone.tsx",
+      "features/organization-admin/declaration-delete-button.tsx",
+      "features/organization-admin/secure-link-rotate-button.tsx",
+      "features/organization-admin/submission-answers.tsx",
     ],
   },
   "admin-clients": {
@@ -199,27 +183,26 @@ export const SURFACE_ENTRY_POINTS: Readonly<
       "components-V2/platform-views/portal-views/portal-client-tables.tsx",
       "components-V2/platform-views/portal-views/portal-client-delete-buttons.tsx",
       "components-V2/platform-views/portal-views/portal-invite-client-link.tsx",
-      "components/issue-client-invite-form.tsx",
+      "features/organization-admin/issue-client-invite-form.tsx",
     ],
   },
   "admin-issue-invite": {
     files: [
-      "components/issue-client-invite-form.tsx",
+      "features/organization-admin/issue-client-invite-form.tsx",
       "modules/identity/email/send-client-onboarding-email.ts",
     ],
   },
   "admin-create-declaration": {
     files: [
       "components-V2/platform-views/portal-views/portal-create-declaration-button.tsx",
-      "components/declaration-create-button.tsx",
     ],
   },
   "admin-access-share": {
     files: [
-      "components/declaration-share-panel.tsx",
-      "components/secure-link-rotate-button.tsx",
+      "features/organization-admin/declaration-share-panel.tsx",
+      "features/organization-admin/secure-link-rotate-button.tsx",
       "components-V2/platform-views/portal-views/portal-access-share-panel.tsx",
-      "lib/domain/declaration-share-links.ts",
+      "modules/declarations/domain/declaration-share-links.ts",
     ],
   },
   "public-survey-link": {
@@ -244,10 +227,7 @@ export const SURFACE_ENTRY_POINTS: Readonly<
     ],
   },
   "client-preview-banner": {
-    files: [
-      "app/client/(workspace)/layout.tsx",
-      "components/portal/portal-preview-banner.tsx",
-    ],
+    files: ["app/client/(workspace)/layout.tsx"],
   },
 };
 
@@ -285,6 +265,9 @@ export const LIB_IMPORT_DOMAIN_MAP: ReadonlyArray<{
   { prefix: "@/modules/declarations/domain/questions", domainId: "domain:questions" },
   { prefix: "@/modules/declarations/domain/clients", domainId: "domain:clients" },
   { prefix: "@/modules/identity/portal-member", domainId: "domain:clients" },
+  { prefix: "@/modules/identity/domain/client-profile", domainId: "domain:auth" },
+  { prefix: "@/modules/identity/domain/platform-rbac", domainId: "domain:auth" },
+  { prefix: "@/modules/identity/domain/organization-users", domainId: "domain:auth" },
   { prefix: "@/modules/declarations/domain/client-declaration-draft", domainId: "domain:clients" },
   { prefix: "@/modules/platform/api/client-declaration-draft-route", domainId: "domain:clients" },
   { prefix: "@/modules/platform/audit", domainId: "domain:audit" },
@@ -292,6 +275,7 @@ export const LIB_IMPORT_DOMAIN_MAP: ReadonlyArray<{
   { prefix: "@/modules/identity/auth/get-session", domainId: "domain:auth" },
   { prefix: "@/modules/identity/auth/server", domainId: "domain:auth" },
   { prefix: "@/modules/identity/auth/admin", domainId: "domain:auth" },
+  { prefix: "@/modules/identity/admin", domainId: "domain:auth" },
   { prefix: "@/modules/identity/auth/env", domainId: "domain:auth" },
   { prefix: "@/modules/identity/auth/neon-auth-request", domainId: "domain:auth" },
   { prefix: "@/modules/identity/auth/bootstrap-client-invite", domainId: "domain:auth" },
@@ -313,7 +297,6 @@ export const LIB_IMPORT_DOMAIN_MAP: ReadonlyArray<{
   { prefix: "@/modules/identity/organization-admin-shell-members", domainId: "domain:preview-client" },
   { prefix: "@/modules/platform/routing/portal-session-routing", domainId: "domain:auth" },
   { prefix: "@/features/auth/entry/client-sign-in-entry", domainId: "domain:auth" },
-  { prefix: "@/lib/pages/client-declare-page.logic", domainId: "domain:clients" },
   { prefix: "@/modules/declarations/domain/survey-submission", domainId: "domain:surveys" },
   { prefix: "@/modules/identity/delete-client-auth-user", domainId: "domain:auth" },
 ];

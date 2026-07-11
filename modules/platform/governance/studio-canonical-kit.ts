@@ -65,10 +65,10 @@ export const CANONICAL_STUDIO_KIT: readonly StudioKitEntry[] = [
   {
     blockSlug: "form-layout-02",
     role: "portal-pattern",
-    localPath: "components/shadcn-studio/blocks/form-layout-02/",
+    localPath: "features/organization-admin/form-layout-section.tsx",
     portalAdoption: "declaration-settings-section / multi-section settings",
     surfaces: ["admin-declaration-detail", "admin-access-share"],
-    notes: "Multi-section settings; use when one form-layout-01 section is insufficient.",
+    notes: "Promoted 2026-07-12 — flattened out of shadcn-studio/blocks nesting.",
   },
   {
     blockSlug: "form-layout-08",
@@ -129,10 +129,10 @@ export const CANONICAL_STUDIO_KIT: readonly StudioKitEntry[] = [
   {
     blockSlug: "statistics-component-03",
     role: "data-surface",
-    localPath: "components/shadcn-studio/blocks/statistics-card-03.tsx",
-    portalAdoption: "portal-statistics-card.tsx",
+    localPath: "features/organization-admin/statistics-card.tsx",
+    portalAdoption: "features/organization-admin/portal/portal-statistics-card.tsx",
     surfaces: ["client-dashboard", "admin-dashboard", "admin-declaration-detail"],
-    notes: "Already installed.",
+    notes: "Promoted 2026-07-12 — flattened out of shadcn-studio/blocks nesting.",
   },
 ] as const;
 

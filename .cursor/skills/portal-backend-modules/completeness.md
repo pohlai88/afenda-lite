@@ -1,6 +1,6 @@
 # Portal backend modules — completeness (2026-07-12)
 
-Plan authority: this skill + `doc/backend/` + org-admin users + ClientProfile + copy port + runner absorb.
+Plan authority: this skill + `doc/backend/` + org-admin users + ClientProfile + copy port + runner absorb + ADR-002 RBAC.
 
 | Slice | Plan | Code | Status |
 |-------|------|------|--------|
@@ -12,34 +12,28 @@ Plan authority: this skill + `doc/backend/` + org-admin users + ClientProfile + 
 | Identity ↛ Declarations (any) | Zero imports | 0 matches under `modules/identity` | **Done** |
 | api-now Route Handlers (4 trees) | Only health/auth/draft | Disk matches | **Done** |
 | Actions map (`account/admin/client/declarations/surveys/fft`) | adapter-map | Disk matches; no `trade.ts` | **Done** |
-| Org users list/get domain | IdentityPort | `organization-users.ts` | **Done** |
-| Org users RSC + profile compose at adapter | Compose only at page | `organization-admin-users-page.ts` | **Done** |
-| Pure display mapper (no Neon Next in unit tests) | Map module | `organization-admin-users-map.ts` | **Done** |
-| Create / update / remove / role / ban / unban | Actions | `admin.ts` + shared cores | **Done** |
-| Bulk remove / bulk ban | Same Zod edge | `organizationUserIdsSchema` / `banOrganizationUsersSchema` | **Done** |
-| Password set / revoke sessions | Actions + view | Wired | **Done** |
-| CSV / JSON export | Client filtered list | `organization-admin-users-export.ts` | **Done** |
-| Client page size + prev/next | AdminCN chrome live | List pagination wired | **Done** |
-| User import | CSV/JSON → create users | `importOrganizationUsersAction` + import dialog | **Done** |
-| ClientProfile port | Identity owns read/ensure + invite bootstrap | `client-profile.ts` + `client-invitation-bootstrap.ts`; Declarations re-exports | **Done** |
-| Shared profile row mapper / invite expiry | One implementation | `mapClientProfileRow` + `expirePendingClientInvitationIfNeeded` | **Done** |
-| Platform copy port | `portalCopy` / `PORTAL_NAME` on Platform | `modules/platform/copy/*`; Identity 0 Declarations imports | **Done** |
-| Absorb `lib/entry` + org-admin/public-link pages | → `features/*` | `features/auth/entry`, `features/organization-admin`, `features/auth/public-link-page*` | **Done** |
-| Absorb playground harness | → `features/playground` | Registry + page runners + UI colocated | **Done** |
+| Org users full stack | CRUD/export/import/bulk | Wired | **Done** |
+| ClientProfile port | Identity owns read/ensure + invite bootstrap | Done | **Done** |
+| Platform copy port | `modules/platform/copy/*` | Done | **Done** |
+| Absorb entry / org-admin / playground runners | → `features/*` | Done | **Done** |
+| Platform RBAC catalog + domain + schemas | ADR-002 | `modules/identity/domain/platform-rbac*` | **Done** |
+| Org-admin Roles / Permissions UI | `/dashboard/roles` `/permissions` | Pages + features wired | **Done** |
+| Declarations / FFT `organization_id` scope | Tenancy | `organization-scope` + migrations `025`/`026` | **Done (code)** |
+| Apply migrations on Neon | Ops | Run `npm run db:migrate` when promoting | **Ops pending** |
+| Platform routing still imports Declarations for public-link | Compose at adapter ideal | Pre-existing narrow edge | **Deferred** |
 | `/client` workspace restore | Closed | Closed | **Out of scope** |
 | FFT P3 flag promotion | gate-register | Closed | **Out of scope** |
-| SaaS plan/billing product fields | Not Identity | Chrome defaults `Basic`/`Manual` | **Intentional** |
-| Billing / 2FA / projects / social tabs | AdminCN “Coming soon” | Unchanged | **Deferred chrome** |
+| SaaS plan/billing / 2FA product | Not Identity | Chrome defaults | **Intentional** |
 
 ## Stabilization (latest)
 
-- Playground harness absorbed; `lib/` removed
-- Platform copy port + entry/org-admin runners under `features/`
-- Identity has **zero** Declarations imports
+- Closed declarationId brand rename end-to-end
+- Documented RBAC/tenancy slice against ADR-002
+- Cross-skill completeness matrices added for scaffold + api-contract
 
 ## Verify
 
 ```bash
 npx tsc --noEmit
-npm run test:unit -- features/playground modules/identity/auth/session features/auth/entry
+npm run test:unit -- modules/identity/domain/platform-rbac-catalog features/organization-admin/organization-admin-declaration-detail features/auth/entry
 ```

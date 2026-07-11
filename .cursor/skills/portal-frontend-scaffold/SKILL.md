@@ -15,6 +15,7 @@ description: >-
 
 | Doc                                    | Purpose                                        |
 | -------------------------------------- | ---------------------------------------------- |
+| [completeness.md](completeness.md) | Plan ↔ codebase matrix |
 | [route-tree.md](route-tree.md)         | Exact folders + URL checklist                  |
 | [stubs.md](stubs.md)                   | Stub templates (layout / error / page)         |
 | [boundaries.md](boundaries.md)         | FE↔BE contracts, branded IDs, validation edges |
@@ -34,7 +35,7 @@ description: >-
 
 1. **Scaffold ≠ wire.** No `@/lib/**`, `@/app/actions`, `@/lib/pages`, `@/lib/entry`, `@/modules/**` domain in stub pages.
 2. **Descriptive params only** — never overloaded `[id]` (table below).
-3. **`lib/` is transitional.** Domain/Zod/env live under `modules/{platform,identity,declarations,fft}`. Do not recreate `lib/domain` or `lib/schemas`. See `/portal-backend-modules`.
+3. **`lib/` is gone.** Domain/Zod/env live under `modules/{platform,identity,declarations,fft}`. Runners live under `features/`. Do not recreate `lib/`. See `/portal-backend-modules`.
 4. **No root `components/` restore.** Product UI → `features/*`.
 5. **Next 16:** `proxy.ts` only — never new `middleware.ts`.
 6. **Never** `page.tsx` + `route.ts` in the same segment.
@@ -47,7 +48,7 @@ description: >-
 | Wipe / replace                                  | Leave (stubs must not import)                      |
 | ----------------------------------------------- | -------------------------------------------------- |
 | Product `app/**` pages, layouts, loading, error | `app/api/**`, `app/actions/**`                     |
-| `features/**` implementations                   | `modules/**` (wire pass); transitional `lib/**` runners |
+| `features/**` implementations                   | `modules/**` (wire pass) |
 | `portal-views/**` product screens               | `db/**`, `proxy.ts`, `messages/fft/**`, `doc/**` |
 
 ## Next.js conventions (scaffold)

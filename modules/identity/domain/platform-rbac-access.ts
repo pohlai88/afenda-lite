@@ -1,0 +1,58 @@
+/**
+ * Adapter-facing helper: resolve active portal org + platform permission gate.
+ * Declarations backfill is composed at RSC/action adapters — Identity must not import Declarations.
+ */
+
+import "server-only";
+
+import { ensurePortalOrganization } from "@/modules/identity/portal-organization";
+import {
+  ensureNeonAdminOrgAdminAssignment,
+  hasPlatformPermission,
+  seedPlatformRbacCatalog,
+} from "@/modules/identity/domain/platform-rbac";
+import { asOrganizationId } from "@/modules/identity/schemas/platform-rbac";
+import type { PlatformPermissionCode } from "@/modules/identity/domain/platform-rbac-catalog";
+
+export async function resolvePlatformOrgContext(input?: {
+  userId?: string;
+  ensureOrgAdminAssignment?: boolean;
+}) {
+  await seedPlatformRbacCatalog(input?.userId);
+  const org = await ensurePortalOrganization();
+  const organizationId = asOrganizationId(org.id);
+
+  if (input?.userId && input.ensureOrgAdminAssignment) {
+    await ensureNeonAdminOrgAdminAssignment({
+      userId: input.userId,
+      organizationId,
+      actorUserId: input.userId,
+    });
+  }
+
+  return {
+    organizationId,
+    organizationName: org.name,
+    organizationSlug: org.slug,
+  };
+}
+
+export async function requirePlatformPermission(input: {
+  userId: string;
+  code: PlatformPermissionCode;
+  /** Neon admin|user bootstrap when no assignments yet */
+  isNeonAdmin: boolean;
+}) {
+  const { organizationId } = await resolvePlatformOrgContext({
+    userId: input.userId,
+    ensureOrgAdminAssignment: input.isNeonAdmin,
+  });
+  const check = await hasPlatformPermission({
+    userId: input.userId,
+    organizationId,
+    code: input.code,
+    neonAdminBootstrap: input.isNeonAdmin,
+  });
+
+  return { organizationId, check };
+}

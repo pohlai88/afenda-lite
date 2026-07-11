@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireFftAdmin, requireTradePermission } from "@/modules/fft/auth/fft-session";
+import { resolveFftOrganizationContext } from "@/features/fft/fft-organization-context";
 import { assertImportRowLimit } from "@/modules/fft/domain/import-validators";
 import { enqueueErpSyncJob } from "@/modules/fft/domain/erp-sync-store";
 import { notifyDepositPending, notifyTradeStakeholder } from "@/modules/fft/domain/fft-notify";
@@ -171,6 +172,7 @@ export async function createFftEventAction(
     return { error: "invalid_input" };
   }
 
+  const org = await resolveFftOrganizationContext(access.userId);
   const event = await createEvent({
     eventName,
     eventType,
@@ -179,6 +181,7 @@ export async function createFftEventAction(
     timezone,
     sourceLocation,
     createdBy: access.userId,
+    organizationId: org.organizationId,
   });
 
   await recordFftAudit({
@@ -715,7 +718,8 @@ export async function addSalesMemberAction(locale: string, email: string) {
   if (!normalized || !normalized.includes("@")) {
     return { error: "invalid_email" };
   }
-  await upsertSalesMember(normalized);
+  const org = await resolveFftOrganizationContext();
+  await upsertSalesMember(normalized, undefined, org.organizationId);
   revalidateFft(gatedLocale);
   return { ok: true };
 }

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdminSession } from "@/modules/identity/auth/session";
+import { requirePlatformPermission } from "@/modules/identity/domain/platform-rbac-access";
 import { recordAuditEvent } from "@/modules/platform/audit";
 import { createClientAssignment } from "@/modules/declarations/domain/clients";
 import {
@@ -57,6 +58,15 @@ function revalidateOperatorDashboard(surveyId?: string) {
   }
 }
 
+async function requireDeclarationsManageOrg(userId: string) {
+  const { organizationId, check } = await requirePlatformPermission({
+    userId,
+    code: "declarations.manage",
+    isNeonAdmin: true,
+  });
+  return { organizationId, allowed: check.allowed };
+}
+
 function mapUpdateSurveyError(error: string) {
   return error.includes("id")
     ? portalCopy.errors.declarationNotFound
@@ -68,6 +78,7 @@ async function applyCdpPackageToSurvey(
   pkg: CdpPackage,
   actorId: string,
   createAssignment: boolean,
+  organizationId?: string,
 ): Promise<
   | { assignmentCreated: boolean }
   | { error: string; assignmentCreated: false }
@@ -108,6 +119,7 @@ async function applyCdpPackageToSurvey(
       dueDate: pkg.assignment.dueDate
         ? new Date(`${pkg.assignment.dueDate}T23:59:59.000Z`)
         : metadata.submitBefore ?? undefined,
+      organizationId,
     });
     assignmentCreated = true;
   }
@@ -152,10 +164,17 @@ export async function createDraftSurveyAction() {
   const session = await requireAdminSession();
 
   return runLoggedAction("createDraftSurveyAction", session.user.id, async () => {
+    const { organizationId, allowed } = await requireDeclarationsManageOrg(
+      session.user.id,
+    );
+    if (!allowed) {
+      redirect(ORGANIZATION_ADMIN_DASHBOARD_HREF);
+    }
     const survey = await createSurvey({
       title: DRAFT_SURVEY_TITLE,
       question: "",
       userId: session.user.id,
+      organizationId,
     });
 
     await recordAuditEvent({
@@ -186,7 +205,14 @@ export async function updateSurveyAction(formData: FormData) {
 
     const { id, title, question, questions, metadata } = parsed.data;
 
-    const existing = await getSurveyForAdmin(id);
+    const { organizationId, allowed } = await requireDeclarationsManageOrg(
+      session.user.id,
+    );
+    if (!allowed) {
+      return { error: portalCopy.accessDenied.description };
+    }
+
+    const existing = await getSurveyForAdmin(id, organizationId);
     if (!existing) {
       return { error: portalCopy.errors.declarationNotFound };
     }
@@ -235,7 +261,14 @@ export async function deleteSurveyAction(formData: FormData) {
 
     const { id } = parsed.data;
 
-    const existing = await getSurveyForAdmin(id);
+    const { organizationId, allowed } = await requireDeclarationsManageOrg(
+      session.user.id,
+    );
+    if (!allowed) {
+      return { error: portalCopy.accessDenied.description };
+    }
+
+    const existing = await getSurveyForAdmin(id, organizationId);
     if (!existing) {
       return { error: portalCopy.errors.declarationNotFound };
     }
@@ -278,7 +311,14 @@ export async function exportSurveyPackageAction(surveyId: string) {
       return { error: portalCopy.errors.declarationNotFound };
     }
 
-    const survey = await getSurveyForAdmin(parsed.data);
+    const { organizationId, allowed } = await requireDeclarationsManageOrg(
+      session.user.id,
+    );
+    if (!allowed) {
+      return { error: portalCopy.accessDenied.description };
+    }
+
+    const survey = await getSurveyForAdmin(parsed.data, organizationId);
     if (!survey) {
       return { error: portalCopy.errors.declarationNotFound };
     }
@@ -315,7 +355,14 @@ export async function importSurveyPackageAction(input: {
       return { error: portalCopy.errors.declarationNotFound };
     }
 
-    const survey = await getSurveyForAdmin(parsedSurveyId.data);
+    const { organizationId, allowed } = await requireDeclarationsManageOrg(
+      session.user.id,
+    );
+    if (!allowed) {
+      return { error: portalCopy.accessDenied.description };
+    }
+
+    const survey = await getSurveyForAdmin(parsedSurveyId.data, organizationId);
     if (!survey) {
       return { error: portalCopy.errors.declarationNotFound };
     }
@@ -334,6 +381,7 @@ export async function importSurveyPackageAction(input: {
       pkg,
       session.user.id,
       input.createAssignment ?? true,
+      organizationId,
     );
 
     if ("error" in applied) {
@@ -380,7 +428,14 @@ export async function regenerateInviteTokenAction(formData: FormData) {
         return { error: portalCopy.errors.declarationNotFound };
       }
 
-      const survey = await getSurveyForAdmin(parsed.data);
+      const { organizationId, allowed } = await requireDeclarationsManageOrg(
+        session.user.id,
+      );
+      if (!allowed) {
+        return { error: portalCopy.accessDenied.description };
+      }
+
+      const survey = await getSurveyForAdmin(parsed.data, organizationId);
       if (!survey) {
         return { error: portalCopy.errors.declarationNotFound };
       }

@@ -38,7 +38,7 @@ Target route map. Columns: path, page file, layout group, special files, proxy g
 | `/client/onboarding` | `app/client/(workspace)/onboarding/page.tsx` | workspace | yes | yes | yes | `features/client-workspace` (TBD) or portal-views | placeholder · scope closed |
 | `/client` | `app/client/(workspace)/page.tsx` | workspace | yes | yes | yes | client home | placeholder · scope closed |
 | `/client/profile` | `app/client/(workspace)/profile/page.tsx` | workspace | yes | yes | yes | profile | placeholder · scope closed |
-| `/client/declare/[id]` | `app/client/(workspace)/declare/[id]/page.tsx` | workspace | yes | yes | yes | declare form | placeholder · scope closed |
+| `/client/declare/[assignmentId]` | `app/client/(workspace)/declare/[assignmentId]/page.tsx` | workspace | yes | yes | yes | declare form | placeholder · scope closed |
 | `/client/preview-unavailable` | `app/client/(gate)/preview-unavailable/page.tsx` | gate | yes | — | bypass | preview gate | placeholder · scope closed |
 
 ## Organization admin post-login
@@ -51,7 +51,9 @@ Shared AdminCN shell (`AdminCnShell`). Layout gate: **authenticated member** (`r
 | `/dashboard/clients` | `app/dashboard/clients/page.tsx` | dashboard | yes | yes | yes | `portal-views/organization-admin-clients-list` | live |
 | `/dashboard/users` | `app/dashboard/users/page.tsx` | dashboard | yes | yes | yes | `portal-views/organization-admin-users-list` | live |
 | `/dashboard/users/[userId]` | `app/dashboard/users/[userId]/page.tsx` | dashboard | yes | yes | yes | `portal-views/organization-admin-users-view` | live |
-| `/dashboard/[id]` | `app/dashboard/[id]/page.tsx` | dashboard | yes | yes | yes | `portal-views/organization-admin-declaration-detail` | live |
+| `/dashboard/roles` | `app/dashboard/roles/page.tsx` | dashboard | yes | yes | yes | `features/organization-admin/organization-admin-roles-list` | live |
+| `/dashboard/permissions` | `app/dashboard/permissions/page.tsx` | dashboard | yes | yes | yes | `features/organization-admin` permissions matrix | live |
+| `/dashboard/[declarationId]` | `app/dashboard/[declarationId]/page.tsx` | dashboard | yes | yes | yes | `portal-views/organization-admin-declaration-detail` | live |
 
 ## Account
 

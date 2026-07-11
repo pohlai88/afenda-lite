@@ -38,8 +38,8 @@ modules/
 | Area | Paths |
 |------|-------|
 | Neon Auth | `auth/*` |
-| Schemas | `schemas/auth.ts`, `schemas/users.ts` (`UserId`, create/import/update/role/ban/bulk/password/`userIds`) |
-| Domain | `domain/{neon-auth-users,organization-users,invite,tokens,client-profile,client-invitation-bootstrap}.ts` |
+| Domain | `domain/{neon-auth-users,organization-users,invite,tokens,client-profile,client-invitation-bootstrap,platform-rbac,platform-rbac-catalog,platform-rbac-access}.ts` |
+| Schemas | `schemas/auth.ts`, `schemas/users.ts` (`UserId`, create/import/update/role/ban/bulk/password/`userIds`), `schemas/platform-rbac.ts` (`OrganizationId`, `PlatformRoleId`, `PermissionCode`) |
 | Session | `account-session.ts`, `client-session.ts` |
 | Email | `email/*` |
 | Other | `preview-client.ts`, `portal-member*.ts`, `portal-organization.ts`, `admin.ts`, `production-fixtures.ts`, `client-invitation-join-auth.ts`, `delete-client-auth-user.ts`, `auth-metadata.ts`, `organization-admin-shell-members.ts` |

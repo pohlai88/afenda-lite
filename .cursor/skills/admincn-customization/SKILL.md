@@ -18,7 +18,7 @@ Studio MCP does **not** install the AdminCN template as one unit. It exposes **b
 
 **Every AdminCN primitive and block must appear in `ui-registry.json`** as `ACN-UI-*` or `ACN-BLK-*`. Agents must not invent IDs. Product FFT surfaces use `FFT-UI-*`. See registry HITL before creating or wiring UI.
 
-Do **not** wire more demo views into product routes while freeze holds. Refine existing surfaces only. Do **not** import `platform-views` from `features/fft` — adapt via HITL product `FFT-UI-*` that cites `studioSource`.
+Do **not** wire more demo views into product routes while freeze holds. Refine existing surfaces only. **Exception (ADR-002):** Roles/Permissions → `features/organization-admin` on `/dashboard/roles` + `/dashboard/permissions` (no zustand product IAM). Do **not** import `platform-views` from `features/fft` — adapt via HITL product `FFT-UI-*` that cites `studioSource`.
 
 ## Shared shell modules
 
@@ -37,7 +37,8 @@ Entitlements: `modules/platform/shell/access.ts`. Nav: module-tagged `navConfig`
 | Theme / branding | `components-V2/platform-config/themeConfig.ts` + presets + Header ThemeCustomizer | Put portal navy into AdminCN `:root` |
 | Dark mode | Root `features/portal-chrome/theme-provider` (next-themes + portal storage key) | Nest a second ThemeProvider inside AdminCN shell |
 | Navigation | `components-V2/platform-config/navConfig.tsx` (module-tagged) | Hardcode nav in layout JSX; resurrect FftShell |
-| Screen content | `components-V2/platform-views/*` (thin `app/**/page.tsx`) | Grow route files |
+| Screen content | `components-V2/platform-views/*` or `features/organization-admin/*` (thin `app/**/page.tsx`) | Grow route files |
+| Studio block adapt | Flatten into owning feature (e.g. `features/organization-admin/form-layout-section.tsx`) | Keep `shadcn-studio/blocks/...` marketplace path nesting in product |
 | Data | Domain + `app/actions/*` | Invent UI before data contract; `platform-fake-db` |
 | Auth island | Keep Studio shell (`features/auth`) + Neon + `app/auth-surface.css` + route-scoped `app/auth/neon-auth-ui.css` | Theme login via AdminCN customizer; import Neon CSS into `globals.css` |
 
@@ -61,8 +62,24 @@ Product orientation: ThemeConfig + live Theme Customizer; presets for mode, font
 | Discover | `get-blocks-metadata` → category `dashboard-and-application` |
 | Installable variants | `get-block-meta-content` with registry path (e.g. `/dashboard-and-application/account-settings/registry`) |
 | Layout DNA only | `get-inspiration-block-content` + `iuiPath` (e.g. `application-shell-5`) |
-| Install into `components/shadcn-studio/` | create-ui: collect → `get_add_command_for_items` |
+| Stage MCP install (scratch only) | create-ui: collect → `get_add_command_for_items` → then **promote** out of install path |
 | Theme generator | `install-theme` (**/rui only**) — prefer local presets first |
+
+### Studio block promotion (compulsory)
+
+MCP installs may land under a temporary kit path. **Product code must not keep** `components/shadcn-studio/` or `features/*/shadcn-studio/blocks/...`.
+
+| After MCP | Do |
+|-----------|-----|
+| Declarations / org-admin leaf | Flatten to `features/organization-admin/<role>.tsx` (e.g. `form-layout-section.tsx`, `statistics-card.tsx`) |
+| Shell / portal-views DNA | Adapt into `components-V2/platform-views/portal-views/` or `platform-components/` |
+| FFT product surface | Adapt into `features/fft/fft-*.tsx` with HITL `FFT-UI-*` |
+| Provenance | One-line file comment (`Adapted from Studio form-layout-02`) — not marketplace folder nesting |
+
+**Live product shells (2026-07-12):**
+
+- `features/organization-admin/form-layout-section.tsx` ← Studio form-layout-02  
+- `features/organization-admin/statistics-card.tsx` ← Studio statistics-component-03  
 
 ### High-value families (freeze set)
 
@@ -79,6 +96,7 @@ Product orientation: ThemeConfig + live Theme Customizer; presets for mode, font
 - Mixing portal auth tokens into AdminCN `:root`  
 - Inventing UI IDs or agent-editing [`ui-registry.json`](../feed-farm-trade/ui-registry.json) to pass Vitest  
 - Importing `@/components-V2/platform-views/**` from `features/fft` without a HITL `FFT-UI-*` wrap  
+- Recreating `components/shadcn-studio/` or nesting `features/*/shadcn-studio/blocks/` as product homes  
 
 ## Refine checklist (per page)
 
@@ -90,5 +108,5 @@ Full gate: [admincn-frontend-preflight.md](../../../docs/architecture/admincn-fr
 4. Edit one `platform-views` composition (product → `portal-views/` or FFT `features/fft` via product ID)  
 5. Swap fake-db for that page  
 6. Sync governance (`surface-entry-points`, `ui-decision-matrix`, reliance registry, **ui-registry**)  
-7. Optional: one MCP block → adapt into `portal-views/` or FFT feature (new `FFT-UI-*` if FFT)  
+7. Optional: one MCP block → **promote** into `features/organization-admin/`, `portal-views/`, or FFT feature (new `FFT-UI-*` if FFT); delete install-path residue  
 8. Verify: `npm run test:unit -- features/fft/ui-registry` + relevant unit tests + `npx tsc --noEmit` on touched paths  

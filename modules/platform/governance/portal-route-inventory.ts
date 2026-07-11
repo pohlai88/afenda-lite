@@ -122,8 +122,12 @@ function walkPageFiles(dir: string, rootDir: string, out: string[]): void {
 
     if (stats.isDirectory()) {
       // Skip playground harness meta-routes — not product pages.
+      // Skip FFT locale catch-all — legacy redirect shim only.
       const rel = relative(rootDir, full).replaceAll("\\", "/");
       if (rel === "app/playground" || rel.startsWith("app/playground/")) {
+        continue;
+      }
+      if (rel === "app/fft/[locale]" || rel.startsWith("app/fft/[locale]/")) {
         continue;
       }
       walkPageFiles(full, rootDir, out);

@@ -15,6 +15,7 @@ description: >-
 
 | Doc | Focus |
 |-----|-------|
+| [completeness.md](completeness.md) | Plan ↔ codebase matrix |
 | [doc/api/01-boundaries.md](../../../doc/api/01-boundaries.md) | Trust boundary, adapter choice, session guards, validation rule |
 | [doc/api/02-rest-resources.md](../../../doc/api/02-rest-resources.md) | api-now vs contract-only catalog, naming, pagination |
 | [doc/api/03-error-contract.md](../../../doc/api/03-error-contract.md) | Wire shape, HTTP→code map, ActionResult |

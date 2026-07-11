@@ -23,7 +23,7 @@ Legend:
 | `components/**` (legacy root) | **0 — already absent on disk** | N/A |
 | `app/api/**` | keep | KEEP |
 | `app/actions/**` | keep | KEEP |
-| `lib/**` | keep | KEEP (bin until later) |
+| Former `lib/**` runners | absorbed | **Gone** — live under `features/*` (see `/portal-backend-modules` residue) |
 
 ---
 
@@ -81,8 +81,8 @@ Legend:
 - `features/organization-admin/question-fields-editor.tsx`
 - `features/organization-admin/question-sequence-badge.tsx`
 - `features/organization-admin/secure-link-rotate-button.tsx`
-- `features/organization-admin/shadcn-studio/blocks/form-layout-02/form-layout-section.tsx`
-- `features/organization-admin/shadcn-studio/blocks/statistics-card-03.tsx`
+- `features/organization-admin/form-layout-section.tsx`
+- `features/organization-admin/statistics-card.tsx`
 - `features/organization-admin/submission-answers.tsx`
 - `features/organization-admin/survey-detail-tabs.tsx`
 - `features/organization-admin/survey-metadata-fields.tsx`

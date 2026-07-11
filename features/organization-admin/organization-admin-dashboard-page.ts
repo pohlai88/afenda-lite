@@ -6,6 +6,7 @@ import { countPendingClientAssignments } from "@/modules/declarations/domain/cli
 import type { OrgDeclarationRow } from "@/features/organization-admin/organization-admin-dashboard-types";
 import { PORTAL_NAME, portalCopy } from "@/modules/platform/copy/portal-copy";
 import { listSurveysForAdmin, type SurveyWithStats } from "@/modules/declarations/domain/surveys";
+import { bootstrapOrganizationAdminTenancy } from "@/features/organization-admin/organization-admin-tenancy";
 
 export type OrganizationAdminDashboardPageData = {
   declarationRows: OrgDeclarationRow[];
@@ -33,9 +34,10 @@ export const mapOperatorDeclarationRows = toDeclarationRows;
 
 export const loadOrganizationAdminDashboardPage = cache(
   async (): Promise<OrganizationAdminDashboardPageData> => {
+    const { org } = await bootstrapOrganizationAdminTenancy();
     const [surveys, pendingAssignments] = await Promise.all([
-      listSurveysForAdmin(),
-      countPendingClientAssignments(),
+      listSurveysForAdmin(org.organizationId),
+      countPendingClientAssignments(org.organizationId),
     ]);
 
     const totalResponses = surveys.reduce(

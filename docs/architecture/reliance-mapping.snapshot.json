@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generatedAt": "2026-07-11T15:17:06.560Z",
+  "generatedAt": "2026-07-11T22:34:55.357Z",
   "summary": {
     "surfaces": {
       "total": 26,
@@ -8,8 +8,8 @@
       "drift": 0
     },
     "actions": {
-      "total": 21,
-      "aligned": 21,
+      "total": 38,
+      "aligned": 38,
       "drift": 0
     },
     "orphanActions": [],
@@ -58,16 +58,17 @@
           "features/auth/invitation-join-panel.tsx",
           "features/auth/invitation-join-steps.tsx",
           "features/auth/use-join-invitation-auth-view.ts",
-          "lib/client-invitation-join-auth.ts",
+          "modules/identity/client-invitation-join-auth.ts",
           "features/auth/entry/client-invitation-entry.ts"
         ],
         "scannedFiles": [
           "app/join/page.tsx",
+          "features/auth/entry/client-invitation-entry.ts",
           "features/auth/invitation-join-panel.tsx",
           "features/auth/invitation-join-steps.tsx",
           "features/auth/studio-invitation-join-page.tsx",
           "features/auth/use-join-invitation-auth-view.ts",
-          "features/auth/entry/client-invitation-entry.ts"
+          "modules/identity/client-invitation-join-auth.ts"
         ]
       }
     },
@@ -96,14 +97,14 @@
           "features/auth/entry/auth-view-entry.tsx",
           "features/auth/studio-auth-login-page.tsx",
           "features/auth/studio-auth-shell.tsx",
-          "lib/auth/auth-page-trust.ts"
+          "features/auth/auth-page-trust.ts"
         ],
         "scannedFiles": [
           "app/auth/[path]/page.tsx",
+          "features/auth/auth-page-trust.ts",
+          "features/auth/entry/auth-view-entry.tsx",
           "features/auth/studio-auth-login-page.tsx",
-          "features/auth/studio-auth-shell.tsx",
-          "lib/auth/auth-page-trust.ts",
-          "features/auth/entry/auth-view-entry.tsx"
+          "features/auth/studio-auth-shell.tsx"
         ]
       }
     },
@@ -131,13 +132,13 @@
           "app/auth/[path]/page.tsx",
           "features/auth/entry/auth-view-entry.tsx",
           "features/auth/studio-auth-login-page.tsx",
-          "lib/auth/auth-page-trust.ts"
+          "features/auth/auth-page-trust.ts"
         ],
         "scannedFiles": [
           "app/auth/[path]/page.tsx",
-          "features/auth/studio-auth-login-page.tsx",
-          "lib/auth/auth-page-trust.ts",
-          "features/auth/entry/auth-view-entry.tsx"
+          "features/auth/auth-page-trust.ts",
+          "features/auth/entry/auth-view-entry.tsx",
+          "features/auth/studio-auth-login-page.tsx"
         ]
       }
     },
@@ -165,13 +166,13 @@
           "app/auth/[path]/page.tsx",
           "features/auth/entry/auth-view-entry.tsx",
           "features/auth/studio-auth-login-page.tsx",
-          "lib/auth/auth-page-trust.ts"
+          "features/auth/auth-page-trust.ts"
         ],
         "scannedFiles": [
           "app/auth/[path]/page.tsx",
-          "features/auth/studio-auth-login-page.tsx",
-          "lib/auth/auth-page-trust.ts",
-          "features/auth/entry/auth-view-entry.tsx"
+          "features/auth/auth-page-trust.ts",
+          "features/auth/entry/auth-view-entry.tsx",
+          "features/auth/studio-auth-login-page.tsx"
         ]
       }
     },
@@ -199,13 +200,13 @@
           "app/auth/[path]/page.tsx",
           "features/auth/entry/auth-view-entry.tsx",
           "features/auth/studio-auth-login-page.tsx",
-          "lib/auth/auth-page-trust.ts"
+          "features/auth/auth-page-trust.ts"
         ],
         "scannedFiles": [
           "app/auth/[path]/page.tsx",
-          "features/auth/studio-auth-login-page.tsx",
-          "lib/auth/auth-page-trust.ts",
-          "features/auth/entry/auth-view-entry.tsx"
+          "features/auth/auth-page-trust.ts",
+          "features/auth/entry/auth-view-entry.tsx",
+          "features/auth/studio-auth-login-page.tsx"
         ]
       }
     },
@@ -233,13 +234,13 @@
           "app/auth/[path]/page.tsx",
           "features/auth/entry/auth-view-entry.tsx",
           "features/auth/studio-auth-login-page.tsx",
-          "lib/auth/auth-page-trust.ts"
+          "features/auth/auth-page-trust.ts"
         ],
         "scannedFiles": [
           "app/auth/[path]/page.tsx",
-          "features/auth/studio-auth-login-page.tsx",
-          "lib/auth/auth-page-trust.ts",
-          "features/auth/entry/auth-view-entry.tsx"
+          "features/auth/auth-page-trust.ts",
+          "features/auth/entry/auth-view-entry.tsx",
+          "features/auth/studio-auth-login-page.tsx"
         ]
       }
     },
@@ -254,8 +255,7 @@
           "domain:client-invitation-entry"
         ],
         "discovered": [
-          "domain:auth",
-          "domain:client-invitation-entry"
+          "domain:auth"
         ],
         "aligned": [
           "auth:organization/accept-invitation",
@@ -279,9 +279,9 @@
         ],
         "scannedFiles": [
           "app/auth/[path]/page.tsx",
-          "features/auth/studio-auth-login-page.tsx",
           "features/auth/entry/auth-view-entry.tsx",
-          "features/auth/entry/client-invitation-entry.ts"
+          "features/auth/entry/client-invitation-entry.ts",
+          "features/auth/studio-auth-login-page.tsx"
         ]
       }
     },
@@ -328,8 +328,7 @@
           "domain:client-invitation-entry"
         ],
         "discovered": [
-          "domain:auth",
-          "domain:client-invitation-entry"
+          "domain:auth"
         ],
         "aligned": [
           "auth:sign-in/email",
@@ -361,13 +360,13 @@
         ],
         "scannedFiles": [
           "app/page.tsx",
+          "features/auth/entry/client-home-entry.tsx",
+          "features/auth/entry/client-invitation-entry.ts",
+          "features/auth/entry/client-sign-in-entry.ts",
           "features/landing/lynx-landing-page.tsx",
           "features/landing/lynx-landing.css",
           "features/landing/ritual-engine.ts",
           "features/landing/vanguard-landing.tsx",
-          "features/auth/entry/client-home-entry.tsx",
-          "features/auth/entry/client-invitation-entry.ts",
-          "features/auth/entry/client-sign-in-entry.ts",
           "modules/platform/routing/portal-routes.ts",
           "public/lynx/lynx-auth-popup.png",
           "public/lynx/lynx-laptop.png",
@@ -391,11 +390,11 @@
       "evidence": {
         "entryFiles": [
           "app/client/(gate)/preview-unavailable/page.tsx",
-          "lib/pages/client-preview-unavailable-page.tsx",
-          "lib/preview-client.ts"
+          "modules/identity/preview-client.ts"
         ],
         "scannedFiles": [
-          "app/client/(gate)/preview-unavailable/page.tsx"
+          "app/client/(gate)/preview-unavailable/page.tsx",
+          "modules/identity/preview-client.ts"
         ]
       }
     },
@@ -414,9 +413,7 @@
       },
       "evidence": {
         "entryFiles": [
-          "app/client/(workspace)/onboarding/page.tsx",
-          "lib/pages/client-onboarding-page.tsx",
-          "lib/pages/client-workspace-unavailable.tsx"
+          "app/client/(workspace)/onboarding/page.tsx"
         ],
         "scannedFiles": [
           "app/client/(workspace)/onboarding/page.tsx"
@@ -438,9 +435,7 @@
       },
       "evidence": {
         "entryFiles": [
-          "app/client/(workspace)/profile/page.tsx",
-          "lib/pages/client-profile-page.tsx",
-          "lib/pages/client-workspace-unavailable.tsx"
+          "app/client/(workspace)/profile/page.tsx"
         ],
         "scannedFiles": [
           "app/client/(workspace)/profile/page.tsx"
@@ -462,9 +457,7 @@
       },
       "evidence": {
         "entryFiles": [
-          "app/client/(workspace)/page.tsx",
-          "lib/pages/client-dashboard-page.tsx",
-          "lib/pages/client-workspace-unavailable.tsx"
+          "app/client/(workspace)/page.tsx"
         ],
         "scannedFiles": [
           "app/client/(workspace)/page.tsx"
@@ -486,10 +479,11 @@
       },
       "evidence": {
         "entryFiles": [
-          "lib/pages/client-dashboard-page.tsx",
-          "lib/pages/client-workspace-unavailable.tsx"
+          "app/client/(workspace)/page.tsx"
         ],
-        "scannedFiles": []
+        "scannedFiles": [
+          "app/client/(workspace)/page.tsx"
+        ]
       }
     },
     {
@@ -507,11 +501,15 @@
       },
       "evidence": {
         "entryFiles": [
-          "app/client/(workspace)/declare/[id]/page.tsx",
-          "lib/pages/client-declare-page.tsx",
-          "lib/pages/client-workspace-unavailable.tsx"
+          "app/client/(workspace)/declare/[assignmentId]/page.tsx",
+          "app/client/(workspace)/declare/[assignmentId]/loading.tsx",
+          "app/client/(workspace)/declare/[assignmentId]/not-found.tsx"
         ],
-        "scannedFiles": []
+        "scannedFiles": [
+          "app/client/(workspace)/declare/[assignmentId]/loading.tsx",
+          "app/client/(workspace)/declare/[assignmentId]/not-found.tsx",
+          "app/client/(workspace)/declare/[assignmentId]/page.tsx"
+        ]
       }
     },
     {
@@ -530,7 +528,6 @@
           "action:createDraftSurveyAction",
           "action:deleteSurveyAction",
           "domain:clients",
-          "domain:operator-dashboard-page",
           "domain:surveys"
         ],
         "aligned": [
@@ -551,45 +548,59 @@
         "entryFiles": [
           "app/dashboard/page.tsx",
           "app/dashboard/loading.tsx",
-          "lib/pages/operator-dashboard-page.ts",
-          "lib/pages/operator-dashboard-types.ts",
-          "components-V2/platform-views/portal-views/operator-declarations-dashboard.tsx",
+          "features/organization-admin/organization-admin-dashboard-page.ts",
+          "features/organization-admin/organization-admin-dashboard-types.ts",
+          "components-V2/platform-views/portal-views/organization-admin-declarations-dashboard.tsx",
           "components-V2/platform-views/portal-views/portal-declarations-datatable.tsx",
-          "components-V2/platform-views/portal-views/portal-operator-statistics-card.tsx",
+          "components-V2/platform-views/portal-views/portal-organization-admin-statistics-card.tsx",
           "components-V2/platform-views/portal-views/portal-declarations-table.tsx"
         ],
         "scannedFiles": [
           "app/dashboard/loading.tsx",
           "app/dashboard/page.tsx",
-          "components-V2/platform-views/portal-views/operator-declarations-dashboard.tsx",
+          "components-V2/platform-views/portal-views/organization-admin-declarations-dashboard.tsx",
           "components-V2/platform-views/portal-views/portal-declarations-datatable.tsx",
           "components-V2/platform-views/portal-views/portal-declarations-table.tsx",
-          "components-V2/platform-views/portal-views/portal-operator-statistics-card.tsx",
-          "lib/pages/operator-dashboard-page.ts",
-          "lib/pages/operator-dashboard-types.ts"
+          "components-V2/platform-views/portal-views/portal-organization-admin-statistics-card.tsx",
+          "features/organization-admin/organization-admin-dashboard-page.ts",
+          "features/organization-admin/organization-admin-dashboard-types.ts"
         ]
       }
     },
     {
       "surfaceId": "admin-declaration-detail",
-      "route": "/dashboard/[id]",
+      "route": "/dashboard/[declarationId]",
       "mode": "source-scan",
       "compare": {
         "declared": [
+          "action:deleteSurveyAction",
+          "action:regenerateInviteTokenAction",
           "action:requireAdminSession",
+          "action:updateSurveyAction",
+          "domain:auth",
           "domain:operator-declaration-detail",
           "domain:questions",
+          "domain:survey-package",
           "domain:surveys"
         ],
         "discovered": [
-          "domain:operator-declaration-detail",
+          "action:deleteSurveyAction",
+          "action:regenerateInviteTokenAction",
+          "action:updateSurveyAction",
+          "domain:auth",
           "domain:questions",
+          "domain:survey-package",
           "domain:surveys"
         ],
         "aligned": [
+          "action:deleteSurveyAction",
+          "action:regenerateInviteTokenAction",
           "action:requireAdminSession",
+          "action:updateSurveyAction",
+          "domain:auth",
           "domain:operator-declaration-detail",
           "domain:questions",
+          "domain:survey-package",
           "domain:surveys"
         ],
         "declaredOnly": [],
@@ -602,28 +613,34 @@
       },
       "evidence": {
         "entryFiles": [
-          "app/dashboard/[id]/page.tsx",
-          "app/dashboard/[id]/loading.tsx",
-          "lib/pages/operator-declaration-detail.tsx",
-          "lib/pages/operator-declaration-detail.logic.ts",
-          "components-V2/platform-views/portal-views/operator-declaration-detail.tsx",
+          "app/dashboard/[declarationId]/page.tsx",
+          "app/dashboard/[declarationId]/loading.tsx",
+          "features/organization-admin/organization-admin-declaration-detail.tsx",
+          "features/organization-admin/organization-admin-declaration-detail.logic.ts",
+          "components-V2/platform-views/portal-views/organization-admin-declaration-detail.tsx",
           "components-V2/platform-views/portal-views/portal-declaration-submissions-table.tsx",
           "components-V2/platform-views/portal-views/portal-access-share-panel.tsx",
-          "components/declaration-manage-form.tsx",
-          "components/declaration-share-panel.tsx",
-          "components/declaration-danger-zone.tsx",
-          "components/declaration-delete-button.tsx",
-          "components/secure-link-rotate-button.tsx",
-          "components/submission-answers.tsx"
+          "features/organization-admin/declaration-manage-form.tsx",
+          "features/organization-admin/declaration-share-panel.tsx",
+          "features/organization-admin/declaration-danger-zone.tsx",
+          "features/organization-admin/declaration-delete-button.tsx",
+          "features/organization-admin/secure-link-rotate-button.tsx",
+          "features/organization-admin/submission-answers.tsx"
         ],
         "scannedFiles": [
-          "app/dashboard/[id]/loading.tsx",
-          "app/dashboard/[id]/page.tsx",
-          "components-V2/platform-views/portal-views/operator-declaration-detail.tsx",
+          "app/dashboard/[declarationId]/loading.tsx",
+          "app/dashboard/[declarationId]/page.tsx",
+          "components-V2/platform-views/portal-views/organization-admin-declaration-detail.tsx",
           "components-V2/platform-views/portal-views/portal-access-share-panel.tsx",
           "components-V2/platform-views/portal-views/portal-declaration-submissions-table.tsx",
-          "lib/pages/operator-declaration-detail.logic.ts",
-          "lib/pages/operator-declaration-detail.tsx"
+          "features/organization-admin/declaration-danger-zone.tsx",
+          "features/organization-admin/declaration-delete-button.tsx",
+          "features/organization-admin/declaration-manage-form.tsx",
+          "features/organization-admin/declaration-share-panel.tsx",
+          "features/organization-admin/organization-admin-declaration-detail.logic.ts",
+          "features/organization-admin/organization-admin-declaration-detail.tsx",
+          "features/organization-admin/secure-link-rotate-button.tsx",
+          "features/organization-admin/submission-answers.tsx"
         ]
       }
     },
@@ -634,6 +651,7 @@
       "compare": {
         "declared": [
           "action:deleteClientAssignmentAction",
+          "action:issueClientInviteAction",
           "action:removeClientRegistrationAction",
           "domain:clients",
           "domain:email",
@@ -642,14 +660,15 @@
         ],
         "discovered": [
           "action:deleteClientAssignmentAction",
+          "action:issueClientInviteAction",
           "action:removeClientRegistrationAction",
           "domain:clients",
           "domain:email",
-          "domain:operator-clients-page",
           "domain:surveys"
         ],
         "aligned": [
           "action:deleteClientAssignmentAction",
+          "action:issueClientInviteAction",
           "action:removeClientRegistrationAction",
           "domain:clients",
           "domain:email",
@@ -667,25 +686,26 @@
         "entryFiles": [
           "app/dashboard/clients/page.tsx",
           "app/dashboard/clients/loading.tsx",
-          "lib/pages/operator-clients-page.ts",
-          "lib/pages/operator-clients-types.ts",
+          "features/organization-admin/organization-admin-clients-page.ts",
+          "features/organization-admin/organization-admin-clients-types.ts",
           "modules/identity/email/client-email-delivery.ts",
           "modules/identity/email/send-client-onboarding-email.ts",
-          "components-V2/platform-views/portal-views/operator-clients-list.tsx",
+          "components-V2/platform-views/portal-views/organization-admin-clients-list.tsx",
           "components-V2/platform-views/portal-views/portal-client-tables.tsx",
           "components-V2/platform-views/portal-views/portal-client-delete-buttons.tsx",
           "components-V2/platform-views/portal-views/portal-invite-client-link.tsx",
-          "components/issue-client-invite-form.tsx"
+          "features/organization-admin/issue-client-invite-form.tsx"
         ],
         "scannedFiles": [
           "app/dashboard/clients/loading.tsx",
           "app/dashboard/clients/page.tsx",
-          "components-V2/platform-views/portal-views/operator-clients-list.tsx",
+          "components-V2/platform-views/portal-views/organization-admin-clients-list.tsx",
           "components-V2/platform-views/portal-views/portal-client-delete-buttons.tsx",
           "components-V2/platform-views/portal-views/portal-client-tables.tsx",
           "components-V2/platform-views/portal-views/portal-invite-client-link.tsx",
-          "lib/pages/operator-clients-page.ts",
-          "lib/pages/operator-clients-types.ts",
+          "features/organization-admin/issue-client-invite-form.tsx",
+          "features/organization-admin/organization-admin-clients-page.ts",
+          "features/organization-admin/organization-admin-clients-types.ts",
           "modules/identity/email/client-email-delivery.ts",
           "modules/identity/email/send-client-onboarding-email.ts"
         ]
@@ -697,11 +717,15 @@
       "mode": "source-scan",
       "compare": {
         "declared": [
+          "action:issueClientInviteAction",
           "action:requireAdminSession",
           "auth:organization/invite-member"
         ],
-        "discovered": [],
+        "discovered": [
+          "action:issueClientInviteAction"
+        ],
         "aligned": [
+          "action:issueClientInviteAction",
           "action:requireAdminSession",
           "auth:organization/invite-member"
         ],
@@ -715,17 +739,18 @@
       },
       "evidence": {
         "entryFiles": [
-          "components/issue-client-invite-form.tsx",
+          "features/organization-admin/issue-client-invite-form.tsx",
           "modules/identity/email/send-client-onboarding-email.ts"
         ],
         "scannedFiles": [
+          "features/organization-admin/issue-client-invite-form.tsx",
           "modules/identity/email/send-client-onboarding-email.ts"
         ]
       }
     },
     {
       "surfaceId": "admin-create-declaration",
-      "route": "/dashboard/[id] (create)",
+      "route": "/dashboard/[declarationId] (create)",
       "mode": "source-scan",
       "compare": {
         "declared": [
@@ -744,8 +769,7 @@
       },
       "evidence": {
         "entryFiles": [
-          "components-V2/platform-views/portal-views/portal-create-declaration-button.tsx",
-          "components/declaration-create-button.tsx"
+          "components-V2/platform-views/portal-views/portal-create-declaration-button.tsx"
         ],
         "scannedFiles": [
           "components-V2/platform-views/portal-views/portal-create-declaration-button.tsx"
@@ -754,15 +778,25 @@
     },
     {
       "surfaceId": "admin-access-share",
-      "route": "/dashboard/[id] (share)",
+      "route": "/dashboard/[declarationId] (share)",
       "mode": "source-scan",
       "compare": {
         "declared": [
-          "action:requireAdminSession"
+          "action:regenerateInviteTokenAction",
+          "action:requireAdminSession",
+          "domain:auth",
+          "domain:surveys"
         ],
-        "discovered": [],
+        "discovered": [
+          "action:regenerateInviteTokenAction",
+          "domain:auth",
+          "domain:surveys"
+        ],
         "aligned": [
-          "action:requireAdminSession"
+          "action:regenerateInviteTokenAction",
+          "action:requireAdminSession",
+          "domain:auth",
+          "domain:surveys"
         ],
         "declaredOnly": [],
         "discoveredOnly": [],
@@ -773,13 +807,16 @@
       },
       "evidence": {
         "entryFiles": [
-          "components/declaration-share-panel.tsx",
-          "components/secure-link-rotate-button.tsx",
+          "features/organization-admin/declaration-share-panel.tsx",
+          "features/organization-admin/secure-link-rotate-button.tsx",
           "components-V2/platform-views/portal-views/portal-access-share-panel.tsx",
-          "lib/domain/declaration-share-links.ts"
+          "modules/declarations/domain/declaration-share-links.ts"
         ],
         "scannedFiles": [
-          "components-V2/platform-views/portal-views/portal-access-share-panel.tsx"
+          "components-V2/platform-views/portal-views/portal-access-share-panel.tsx",
+          "features/organization-admin/declaration-share-panel.tsx",
+          "features/organization-admin/secure-link-rotate-button.tsx",
+          "modules/declarations/domain/declaration-share-links.ts"
         ]
       }
     },
@@ -793,7 +830,6 @@
           "domain:surveys"
         ],
         "discovered": [
-          "domain:open-link-entry",
           "domain:surveys"
         ],
         "aligned": [
@@ -828,7 +864,6 @@
           "domain:surveys"
         ],
         "discovered": [
-          "domain:secure-link-entry",
           "domain:surveys"
         ],
         "aligned": [
@@ -934,8 +969,7 @@
       },
       "evidence": {
         "entryFiles": [
-          "app/client/(workspace)/layout.tsx",
-          "components/portal/portal-preview-banner.tsx"
+          "app/client/(workspace)/layout.tsx"
         ],
         "scannedFiles": [
           "app/client/(workspace)/layout.tsx"
@@ -949,18 +983,15 @@
       "file": "modules/identity/auth/session.ts",
       "compare": {
         "declared": [
-          "domain:auth",
-          "domain:clients"
+          "domain:auth"
         ],
         "discovered": [
           "domain:audit",
           "domain:auth",
-          "domain:clients",
           "domain:preview-client"
         ],
         "aligned": [
-          "domain:auth",
-          "domain:clients"
+          "domain:auth"
         ],
         "declaredOnly": [],
         "discoveredOnly": [
@@ -981,7 +1012,6 @@
         "discovered": [
           "domain:audit",
           "domain:auth",
-          "domain:clients",
           "domain:preview-client"
         ],
         "aligned": [
@@ -990,7 +1020,6 @@
         "declaredOnly": [],
         "discoveredOnly": [
           "domain:audit",
-          "domain:clients",
           "domain:preview-client"
         ],
         "inherited": [],
@@ -1577,6 +1606,431 @@
         "declaredOnly": [],
         "discoveredOnly": [
           "domain:auth"
+        ],
+        "inherited": [],
+        "status": "aligned"
+      }
+    },
+    {
+      "actionId": "action:setOrganizationUserRoleAction",
+      "file": "app/actions/admin.ts",
+      "compare": {
+        "declared": [
+          "domain:audit",
+          "domain:auth"
+        ],
+        "discovered": [
+          "domain:audit",
+          "domain:auth",
+          "domain:preview-client"
+        ],
+        "aligned": [
+          "domain:audit",
+          "domain:auth"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [
+          "domain:preview-client"
+        ],
+        "inherited": [],
+        "status": "aligned"
+      }
+    },
+    {
+      "actionId": "action:banOrganizationUserAction",
+      "file": "app/actions/admin.ts",
+      "compare": {
+        "declared": [
+          "domain:audit",
+          "domain:auth"
+        ],
+        "discovered": [
+          "domain:audit",
+          "domain:auth",
+          "domain:preview-client"
+        ],
+        "aligned": [
+          "domain:audit",
+          "domain:auth"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [
+          "domain:preview-client"
+        ],
+        "inherited": [],
+        "status": "aligned"
+      }
+    },
+    {
+      "actionId": "action:unbanOrganizationUserAction",
+      "file": "app/actions/admin.ts",
+      "compare": {
+        "declared": [
+          "domain:audit",
+          "domain:auth"
+        ],
+        "discovered": [
+          "domain:audit",
+          "domain:auth",
+          "domain:preview-client"
+        ],
+        "aligned": [
+          "domain:audit",
+          "domain:auth"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [
+          "domain:preview-client"
+        ],
+        "inherited": [],
+        "status": "aligned"
+      }
+    },
+    {
+      "actionId": "action:createOrganizationUserAction",
+      "file": "app/actions/admin.ts",
+      "compare": {
+        "declared": [
+          "domain:audit",
+          "domain:auth"
+        ],
+        "discovered": [
+          "domain:audit",
+          "domain:auth",
+          "domain:preview-client"
+        ],
+        "aligned": [
+          "domain:audit",
+          "domain:auth"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [
+          "domain:preview-client"
+        ],
+        "inherited": [],
+        "status": "aligned"
+      }
+    },
+    {
+      "actionId": "action:importOrganizationUsersAction",
+      "file": "app/actions/admin.ts",
+      "compare": {
+        "declared": [
+          "domain:audit",
+          "domain:auth"
+        ],
+        "discovered": [
+          "domain:audit",
+          "domain:auth",
+          "domain:preview-client"
+        ],
+        "aligned": [
+          "domain:audit",
+          "domain:auth"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [
+          "domain:preview-client"
+        ],
+        "inherited": [],
+        "status": "aligned"
+      }
+    },
+    {
+      "actionId": "action:updateOrganizationUserAction",
+      "file": "app/actions/admin.ts",
+      "compare": {
+        "declared": [
+          "domain:audit",
+          "domain:auth"
+        ],
+        "discovered": [
+          "domain:audit",
+          "domain:auth",
+          "domain:preview-client"
+        ],
+        "aligned": [
+          "domain:audit",
+          "domain:auth"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [
+          "domain:preview-client"
+        ],
+        "inherited": [],
+        "status": "aligned"
+      }
+    },
+    {
+      "actionId": "action:setOrganizationUserPasswordAction",
+      "file": "app/actions/admin.ts",
+      "compare": {
+        "declared": [
+          "domain:audit",
+          "domain:auth"
+        ],
+        "discovered": [
+          "domain:audit",
+          "domain:auth",
+          "domain:preview-client"
+        ],
+        "aligned": [
+          "domain:audit",
+          "domain:auth"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [
+          "domain:preview-client"
+        ],
+        "inherited": [],
+        "status": "aligned"
+      }
+    },
+    {
+      "actionId": "action:removeOrganizationUserAction",
+      "file": "app/actions/admin.ts",
+      "compare": {
+        "declared": [
+          "domain:audit",
+          "domain:auth"
+        ],
+        "discovered": [
+          "domain:audit",
+          "domain:auth",
+          "domain:preview-client"
+        ],
+        "aligned": [
+          "domain:audit",
+          "domain:auth"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [
+          "domain:preview-client"
+        ],
+        "inherited": [],
+        "status": "aligned"
+      }
+    },
+    {
+      "actionId": "action:removeOrganizationUsersAction",
+      "file": "app/actions/admin.ts",
+      "compare": {
+        "declared": [
+          "domain:audit",
+          "domain:auth"
+        ],
+        "discovered": [
+          "domain:audit",
+          "domain:auth",
+          "domain:preview-client"
+        ],
+        "aligned": [
+          "domain:audit",
+          "domain:auth"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [
+          "domain:preview-client"
+        ],
+        "inherited": [],
+        "status": "aligned"
+      }
+    },
+    {
+      "actionId": "action:banOrganizationUsersAction",
+      "file": "app/actions/admin.ts",
+      "compare": {
+        "declared": [
+          "domain:audit",
+          "domain:auth"
+        ],
+        "discovered": [
+          "domain:audit",
+          "domain:auth",
+          "domain:preview-client"
+        ],
+        "aligned": [
+          "domain:audit",
+          "domain:auth"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [
+          "domain:preview-client"
+        ],
+        "inherited": [],
+        "status": "aligned"
+      }
+    },
+    {
+      "actionId": "action:revokeOrganizationUserSessionsAction",
+      "file": "app/actions/admin.ts",
+      "compare": {
+        "declared": [
+          "domain:audit",
+          "domain:auth"
+        ],
+        "discovered": [
+          "domain:audit",
+          "domain:auth",
+          "domain:preview-client"
+        ],
+        "aligned": [
+          "domain:audit",
+          "domain:auth"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [
+          "domain:preview-client"
+        ],
+        "inherited": [],
+        "status": "aligned"
+      }
+    },
+    {
+      "actionId": "action:createPlatformRoleAction",
+      "file": "app/actions/admin.ts",
+      "compare": {
+        "declared": [
+          "domain:audit",
+          "domain:auth"
+        ],
+        "discovered": [
+          "domain:audit",
+          "domain:auth",
+          "domain:preview-client"
+        ],
+        "aligned": [
+          "domain:audit",
+          "domain:auth"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [
+          "domain:preview-client"
+        ],
+        "inherited": [],
+        "status": "aligned"
+      }
+    },
+    {
+      "actionId": "action:updatePlatformRoleAction",
+      "file": "app/actions/admin.ts",
+      "compare": {
+        "declared": [
+          "domain:audit",
+          "domain:auth"
+        ],
+        "discovered": [
+          "domain:audit",
+          "domain:auth",
+          "domain:preview-client"
+        ],
+        "aligned": [
+          "domain:audit",
+          "domain:auth"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [
+          "domain:preview-client"
+        ],
+        "inherited": [],
+        "status": "aligned"
+      }
+    },
+    {
+      "actionId": "action:deletePlatformRoleAction",
+      "file": "app/actions/admin.ts",
+      "compare": {
+        "declared": [
+          "domain:audit",
+          "domain:auth"
+        ],
+        "discovered": [
+          "domain:audit",
+          "domain:auth",
+          "domain:preview-client"
+        ],
+        "aligned": [
+          "domain:audit",
+          "domain:auth"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [
+          "domain:preview-client"
+        ],
+        "inherited": [],
+        "status": "aligned"
+      }
+    },
+    {
+      "actionId": "action:setPlatformRolePermissionAction",
+      "file": "app/actions/admin.ts",
+      "compare": {
+        "declared": [
+          "domain:audit",
+          "domain:auth"
+        ],
+        "discovered": [
+          "domain:audit",
+          "domain:auth",
+          "domain:preview-client"
+        ],
+        "aligned": [
+          "domain:audit",
+          "domain:auth"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [
+          "domain:preview-client"
+        ],
+        "inherited": [],
+        "status": "aligned"
+      }
+    },
+    {
+      "actionId": "action:assignPlatformRoleAction",
+      "file": "app/actions/admin.ts",
+      "compare": {
+        "declared": [
+          "domain:audit",
+          "domain:auth"
+        ],
+        "discovered": [
+          "domain:audit",
+          "domain:auth",
+          "domain:preview-client"
+        ],
+        "aligned": [
+          "domain:audit",
+          "domain:auth"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [
+          "domain:preview-client"
+        ],
+        "inherited": [],
+        "status": "aligned"
+      }
+    },
+    {
+      "actionId": "action:revokePlatformRoleAssignmentAction",
+      "file": "app/actions/admin.ts",
+      "compare": {
+        "declared": [
+          "domain:audit",
+          "domain:auth"
+        ],
+        "discovered": [
+          "domain:audit",
+          "domain:auth",
+          "domain:preview-client"
+        ],
+        "aligned": [
+          "domain:audit",
+          "domain:auth"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [
+          "domain:preview-client"
         ],
         "inherited": [],
         "status": "aligned"
