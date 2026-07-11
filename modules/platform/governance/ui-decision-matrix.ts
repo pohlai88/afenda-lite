@@ -283,7 +283,7 @@ export const uiEvaluationMatrix: UiEvaluationRow[] = [
   ], "keep-current", "Inline banner is correct UX for preview mode; studio empty-state is layout reference only.", "validated"),
 
   row(byId("client-home-redirect"), [
-    c("keep-current", { PatternFit: 5, BrandFit: 5, PortalCompat: 5, A11yMobile: 5, ImplCost: 5, Consistency: 5 }, "Lynx Morphor guest landing; Sign in CTA → /auth/sign-in; authed session-skip."),
+    c("keep-current", { PatternFit: 5, BrandFit: 5, PortalCompat: 5, A11yMobile: 5, ImplCost: 5, Consistency: 5 }, "Lynx pixel particle guest landing; Sign in CTA → /auth/sign-in; authed session-skip."),
     c("login-page-02", { PatternFit: 3, BrandFit: 3, PortalCompat: 2, A11yMobile: 3, ImplCost: 2, Consistency: 3 }, "Auth chrome is for /auth/* — not the public brand landing."),
   ], "keep-current", "Public `/` landing (proxy matcher excludes `/`); invitationId→/join; named /client/login still redirects to Neon.", "validated"),
 
@@ -441,7 +441,7 @@ export const STUDIO_IMPLEMENTATION_BY_SURFACE: Record<
     component: "portal-preview-banner.tsx",
     notes: "Preview-mode exit banner; dormant until client workspace shell rebuild",
   },
-  "client-home-redirect": { kind: "hardcoded", component: "features/landing/lynx-landing-page.tsx", notes: "Guest Lynx Morphor landing; authed still session-skips" },
+  "client-home-redirect": { kind: "hardcoded", component: "features/landing/lynx-landing-page.tsx", notes: "Guest Lynx pixel particle landing; authed still session-skips" },
   "client-login": { kind: "neon-integrated", component: "app/client/(gate)/login/page.tsx redirect" },
   "client-join": { kind: "neon-integrated", component: "features/auth/studio-invitation-join-page.tsx", notes: "Studio shell + Neon join (ADR-Auth-UI-001 amended)" },
   "public-survey-link": { kind: "neon-integrated", component: "lib/entry/open-link-entry.ts → app/survey/[slug]/page.tsx", notes: "Redirect-only open link entry (S5)" },
