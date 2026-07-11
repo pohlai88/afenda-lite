@@ -8,7 +8,7 @@ export function TradeOpsPlaceholder({ title }: { title: string }) {
       <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
       <p className="text-muted-foreground text-sm">
         Ops handoff lane (deposits / pickup / imports / ERP) is Phase P3 — enable
-        only when Hot Sales feature flags and gate-register allow.
+        only when Feed Farm Trade ops flags and gate-register allow.
       </p>
       <Link className="text-sm underline" href={tradeHref("/admin/events")}>
         Back to admin events
