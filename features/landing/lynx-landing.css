@@ -1,12 +1,11 @@
 /**
- * Vanguard gateway — background-only hero.
- * Asset: /lynx/lynx-landing-wide-bg.png (1817×866).
- * Auth: lynx face / shield hotspot → canonical /auth/sign-in.
+ * Lynx pixel gateway — full-bleed particle stage (afenda-Xerp treatment).
+ * Asset: /lynx/afenda-lynx-pixel.png (1672×941).
+ * Auth: lynx face hotspot → canonical /auth/sign-in.
  */
 
 .lynx-landing {
   --lynx-void: #000000;
-  --lynx-hero: url("/lynx/lynx-landing-wide-bg.png");
 
   position: relative;
   isolation: isolate;
@@ -18,10 +17,6 @@
   overscroll-behavior: none;
   color-scheme: dark;
   background-color: var(--lynx-void);
-  background-image: var(--lynx-hero);
-  background-position: center;
-  background-repeat: no-repeat;
-  background-size: cover;
 }
 
 /* Prevent document scroll while the gateway is mounted */
@@ -31,10 +26,25 @@ body:has(.lynx-landing) {
   overscroll-behavior: none;
 }
 
-/* Hotspot: irregular SVG hit regions only (empty letterbox is not clickable) */
+.lynx-landing__stage {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.lynx-landing__canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Hotspot: face hit region only (letterbox / void is not clickable) */
 .lynx-landing__hotspot {
   position: absolute;
   inset: 0;
+  z-index: 1;
   display: block;
   color: inherit;
   text-decoration: none;
@@ -60,4 +70,10 @@ body:has(.lynx-landing) {
 .lynx-landing__hotspot:focus-visible .lynx-landing__hit-region {
   outline: 2px solid rgb(180 220 255 / 70%);
   outline-offset: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lynx-landing__canvas {
+    filter: none;
+  }
 }

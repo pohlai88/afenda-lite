@@ -4,7 +4,7 @@ Each product surface: journey phase, route, rebuild owner module, data adapter.
 
 | Surface ID | Phase | Route | Owner (rebuild) | Read | Mutate |
 |------------|-------|-------|-----------------|------|--------|
-| lynx-landing | pre-login | `/` | `features/landing` (Vanguard wide head stage; face link → `/auth/sign-in`) | static | — |
+| lynx-landing | pre-login | `/` | `features/landing` (Lynx pixel particle stage; face link → `/auth/sign-in`) | static | — |
 | auth-sign-in | pre-login | `/auth/sign-in` | `features/auth` | Neon UI | Neon |
 | auth-sign-up | pre-login | `/auth/sign-up` | `features/auth` | Neon UI | Neon |
 | auth-forgot-password | pre-login | `/auth/forgot-password` | `features/auth` | Neon UI | Neon |

@@ -8,7 +8,7 @@ export type LynxLandingPageProps = {
 };
 
 /**
- * Guest landing — background-only Vanguard hero; face hotspot opens `/auth/sign-in`.
+ * Guest landing — Lynx pixel particle stage; face hotspot opens `/auth/sign-in`.
  */
 export function LynxLandingPage({ signInHref }: LynxLandingPageProps) {
   return <VanguardLanding signInHref={signInHref} />;
