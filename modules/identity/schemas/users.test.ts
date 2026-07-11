@@ -2,7 +2,11 @@ import { describe, expect, it } from "vitest";
 import {
   asUserId,
   banOrganizationUserSchema,
+  banOrganizationUsersSchema,
+  createOrganizationUserSchema,
+  organizationUserIdsSchema,
   setOrganizationUserRoleSchema,
+  updateOrganizationUserSchema,
   userIdSchema,
 } from "@/modules/identity/schemas/users";
 
@@ -21,7 +25,32 @@ describe("identity user schemas", () => {
     expect(userIdSchema.safeParse("user-001").success).toBe(false);
   });
 
-  it("accepts set-role and ban payloads", () => {
+  it("accepts create / update / set-role / ban payloads", () => {
+    expect(
+      createOrganizationUserSchema.safeParse({
+        email: "ava@example.com",
+        password: "password1",
+        name: "Ava",
+        role: "admin",
+      }).success,
+    ).toBe(true);
+
+    expect(
+      createOrganizationUserSchema.safeParse({
+        email: "ava@example.com",
+        password: "short",
+        name: "Ava",
+      }).success,
+    ).toBe(false);
+
+    expect(
+      updateOrganizationUserSchema.safeParse({
+        userId: "11111111-1111-4111-8111-111111111111",
+        name: "Ava Rodriguez",
+        role: "user",
+      }).success,
+    ).toBe(true);
+
     expect(
       setOrganizationUserRoleSchema.safeParse({
         userId: "11111111-1111-4111-8111-111111111111",
@@ -33,6 +62,25 @@ describe("identity user schemas", () => {
       banOrganizationUserSchema.safeParse({
         userId: "11111111-1111-4111-8111-111111111111",
         banReason: "Suspended by organization admin",
+      }).success,
+    ).toBe(true);
+
+    expect(
+      organizationUserIdsSchema.safeParse({
+        userIds: ["11111111-1111-4111-8111-111111111111"],
+      }).success,
+    ).toBe(true);
+
+    expect(
+      organizationUserIdsSchema.safeParse({
+        userIds: [],
+      }).success,
+    ).toBe(false);
+
+    expect(
+      banOrganizationUsersSchema.safeParse({
+        userIds: ["11111111-1111-4111-8111-111111111111"],
+        banReason: "Bulk suspend",
       }).success,
     ).toBe(true);
   });

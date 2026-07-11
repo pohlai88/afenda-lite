@@ -56,7 +56,7 @@ function asDeclarationId(id: string): DeclarationId {
 | `modules/platform/schemas/api-error.ts` | Shared HTTP error body | `APIErrorBody` / codes |
 | `modules/declarations/schemas/common.ts` | Re-exports platform + declarations-only | `surveyAnswersSchema` (+ re-exports) |
 | `modules/identity/schemas/auth.ts` | Sign-in boundary | `signInSchema` |
-| `modules/identity/schemas/users.ts` | Organization-admin users | `userIdSchema`, `UserId`, set-role / ban schemas |
+| `modules/identity/schemas/users.ts` | Organization-admin users | `userIdSchema`, `UserId`, create/update/role/ban/bulk/password schemas |
 | `modules/declarations/schemas/client.ts` | Onboarding, declare submit/draft, invites, deletes | `clientOnboardingSchema`, `submitClientDeclarationSchema`, `saveClientDeclarationDraftSchema`, `issueClientInviteSchema`, `removeClientRegistrationSchema`, `deleteClientAssignmentSchema` |
 | `modules/declarations/schemas/surveys.ts` | Declarations (surveys) CRUD + public submit | `surveyMetadataFormSchema`, `updateSurveySchema`, `deleteSurveySchema`, `submitSurveyResponseSchema`, param schemas |
 | `modules/declarations/schemas/declarations.ts` | Evidence registration | `registerEvidenceSchema` |
@@ -77,7 +77,7 @@ function asDeclarationId(id: string): DeclarationId {
 | Assignments / submissions | `submitClientDeclarationSchema`, draft schema | `uuidSchema` |
 | Public survey | `submitSurveyResponseSchema` | `openSurveySlugParamSchema` |
 | Secure link | submit schemas + token | `surveyInviteTokenParamSchema` / token schemas in domain |
-| Users (org admin) | `setOrganizationUserRoleSchema`, `banOrganizationUserSchema` | `userIdSchema` |
+| Users (org admin) | `createOrganizationUserSchema`, `updateOrganizationUserSchema`, `setOrganizationUserRoleSchema`, `banOrganizationUserSchema`, `setOrganizationUserPasswordSchema` | `userIdSchema` |
 | Trade | `modules/fft/schemas/fft-schemas.ts` (+ action-local objects) | `tradeLocaleSchema`, event/order ids |
 
 ---

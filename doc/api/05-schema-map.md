@@ -8,7 +8,7 @@ Schemas live under the **owning module** (`modules/*/schemas/`). Extend additive
 | `modules/platform/schemas/api-error.ts` | Shared HTTP error body | `APIErrorBody` / error codes |
 | `modules/declarations/schemas/common.ts` | Re-exports platform common + declarations-only | `surveyAnswersSchema` (+ re-exports) |
 | `modules/identity/schemas/auth.ts` | Sign-in boundary | `signInSchema` |
-| `modules/identity/schemas/users.ts` | Org-admin users | `userIdSchema`, set-role / ban schemas |
+| `modules/identity/schemas/users.ts` | Org-admin users | `userIdSchema`, create/update/role/ban/bulk/password/`userIds` schemas |
 | `modules/declarations/schemas/client.ts` | Onboarding, declare submit/draft, invites, deletes | `clientOnboardingSchema`, `submitClientDeclarationSchema`, `saveClientDeclarationDraftSchema`, `issueClientInviteSchema`, `removeClientRegistrationSchema`, `deleteClientAssignmentSchema` |
 | `modules/declarations/schemas/surveys.ts` | Declarations (surveys) CRUD + public submit | `surveyMetadataFormSchema`, `updateSurveySchema`, `deleteSurveySchema`, `submitSurveyResponseSchema`, param schemas |
 | `modules/declarations/schemas/declarations.ts` | Evidence registration | `registerEvidenceSchema` |
@@ -23,7 +23,7 @@ Schemas live under the **owning module** (`modules/*/schemas/`). Extend additive
 | Auth (Neon) | Neon-owned | — |
 | Declaration draft (api-now) | `saveClientDeclarationDraftSchema` | assignment id via body/query |
 | Clients / invitations | `issueClientInviteSchema`, delete schemas | `uuidSchema` |
-| Organization users | `setOrganizationUserRoleSchema`, `banOrganizationUserSchema` | `userIdSchema` |
+| Organization users | `createOrganizationUserSchema`, `updateOrganizationUserSchema`, `setOrganizationUserRoleSchema`, `banOrganizationUserSchema`, `banOrganizationUsersSchema`, `organizationUserIdsSchema`, `setOrganizationUserPasswordSchema` | `userIdSchema` |
 | Declarations | `surveyMetadataFormSchema`, `updateSurveySchema`, `deleteSurveySchema` | `surveyIdParamSchema` |
 | Assignments / submissions | `submitClientDeclarationSchema`, draft schema | `uuidSchema` |
 | Public survey | `submitSurveyResponseSchema` | `openSurveySlugParamSchema` |

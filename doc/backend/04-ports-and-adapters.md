@@ -54,19 +54,29 @@ interface IdentityPort {
   // session resolution lives in modules/identity/auth — adapters call require*Session
   listOrganizationUsers(): Promise<OrganizationUser[]>
   getOrganizationUser(id: UserId): Promise<OrganizationUser | null>
+  createOrganizationUser(input: CreateOrganizationUserInput): Promise<{ userId: UserId }>
+  updateOrganizationUser(input: UpdateOrganizationUserInput): Promise<void>
+  removeOrganizationUser(userId: UserId): Promise<void>
+  removeOrganizationUsers(userIds: UserId[]): Promise<{ removed: number }>
   setOrganizationUserRole(input: { userId: UserId; role: 'user' | 'admin' }): Promise<void>
+  setOrganizationUserPassword(input: { userId: UserId; newPassword: string }): Promise<void>
   banOrganizationUser(input: { userId: UserId; banReason?: string }): Promise<void>
+  banOrganizationUsers(input: { userIds: UserId[]; banReason?: string }): Promise<{ banned: number }>
   unbanOrganizationUser(userId: UserId): Promise<void>
+  listOrganizationUserSessions(userId: UserId): Promise<OrganizationUserSession[]>
+  revokeOrganizationUserSessions(userId: UserId): Promise<void>
   saveOnboarding(input: OnboardingInput): Promise<void>
   acknowledgePortal(actorId: string): Promise<void>
-  // Neon-owned password/email stay on Neon Auth UI + /api/auth/*
+  // Neon-owned self-service password/email stay on Neon Auth UI + /api/auth/*
 }
 ```
 
 | Port op | Domain / module | Adapters |
 |---------|-----------------|----------|
-| list / get users | `modules/identity/domain/organization-users.ts` | RSC `lib/pages/organization-admin-users-page` |
-| set role / ban / unban | `modules/identity/auth/admin.ts` (`neonAdmin*`) | `setOrganizationUserRoleAction`, `banOrganizationUserAction`, `unbanOrganizationUserAction` |
+| list / get users | `modules/identity/domain/organization-users.ts` | RSC `lib/pages/organization-admin-users-page` (+ profile summaries composed from Declarations) |
+| create / update / remove | `modules/identity/auth/admin.ts` (`neonAdmin*`) | `createOrganizationUserAction`, `updateOrganizationUserAction`, `removeOrganizationUserAction`, `removeOrganizationUsersAction` |
+| set role / ban / unban | `modules/identity/auth/admin.ts` | `setOrganizationUserRoleAction`, `banOrganizationUserAction`, `banOrganizationUsersAction`, `unbanOrganizationUserAction` |
+| password / sessions | `modules/identity/auth/admin.ts` | `setOrganizationUserPasswordAction`, view loader + `revokeOrganizationUserSessionsAction` |
 | onboarding | `modules/declarations/client-onboarding*` | `saveClientOnboardingAction` |
 | ACK | `modules/identity/client-session` | `acknowledgeClientPortalAction` |
 | preview | `modules/identity/preview-client` | `startClientPreviewAction`, `exitClientPreviewAction` |

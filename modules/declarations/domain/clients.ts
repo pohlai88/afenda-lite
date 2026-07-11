@@ -302,6 +302,47 @@ export async function getClientProfile(userId: string) {
   return mapProfile(result.rows[0]);
 }
 
+/** Slim profiles for org-admin user directory enrichment (adapter composition). */
+export type ClientProfileSummary = {
+  userId: string;
+  fullLegalName: string | null;
+  entityName: string | null;
+  countryOfResidence: string | null;
+  phone: string | null;
+};
+
+export async function listClientProfileSummariesByUserIds(
+  userIds: string[],
+): Promise<Map<string, ClientProfileSummary>> {
+  const unique = [...new Set(userIds.filter(Boolean))];
+  const summaries = new Map<string, ClientProfileSummary>();
+  if (unique.length === 0) {
+    return summaries;
+  }
+
+  const result = await pool.query(
+    `SELECT user_id, full_legal_name, entity_name, country_of_residence, phone
+     FROM client_profiles
+     WHERE user_id = ANY($1::uuid[])`,
+    [unique],
+  );
+
+  for (const row of result.rows) {
+    const userId = String(row.user_id);
+    summaries.set(userId, {
+      userId,
+      fullLegalName: row.full_legal_name ? String(row.full_legal_name) : null,
+      entityName: row.entity_name ? String(row.entity_name) : null,
+      countryOfResidence: row.country_of_residence
+        ? String(row.country_of_residence)
+        : null,
+      phone: row.phone ? String(row.phone) : null,
+    });
+  }
+
+  return summaries;
+}
+
 export async function ensureClientProfileRow(userId: string) {
   await pool.query(
     `INSERT INTO client_profiles (user_id, onboarding_complete, updated_at)

@@ -20,5 +20,5 @@ export default async function DashboardUserViewPage({
     notFound();
   }
 
-  return <OrganizationAdminUsersView user={data.user} />;
+  return <OrganizationAdminUsersView user={data.user} sessions={data.sessions} />;
 }

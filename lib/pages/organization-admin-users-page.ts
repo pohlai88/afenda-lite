@@ -1,119 +1,58 @@
 /**
  * Organization-admin Users List / View page data.
- * RSC adapter: Identity `listOrganizationUsers` / `getOrganizationUser` → display DTO.
+ * RSC adapter: Identity users + optional Declarations profile summaries.
  */
 
 import "server-only";
 
 import { cache } from "react";
 import {
+  listClientProfileSummariesByUserIds,
+} from "@/modules/declarations/domain/clients";
+import {
   getOrganizationUser,
   listOrganizationUsers,
-  type OrganizationUserRecord,
 } from "@/modules/identity/domain/organization-users";
+import { neonAdminListUserSessions } from "@/modules/identity/auth/admin";
 import { PORTAL_NAME } from "@/modules/declarations/copy/portal-copy";
+import {
+  mapOrganizationUserSessionRow,
+  mapOrganizationUserToDisplay,
+  type OrganizationAdminUserDisplay,
+  type OrganizationAdminUserSessionDisplay,
+} from "@/lib/pages/organization-admin-users-map";
 
-export type OrganizationAdminUserRole =
-  | "Admin"
-  | "Editor"
-  | "Subscriber"
-  | "Maintainer"
-  | "Guest";
+export type {
+  OrganizationAdminUserBilling,
+  OrganizationAdminUserDisplay,
+  OrganizationAdminUserPlan,
+  OrganizationAdminUserRole,
+  OrganizationAdminUserSessionDisplay,
+  OrganizationAdminUserStatus,
+} from "@/lib/pages/organization-admin-users-map";
 
-export type OrganizationAdminUserPlan = "Basic" | "Team" | "Enterprise";
-
-export type OrganizationAdminUserStatus =
-  | "Active"
-  | "Pending"
-  | "Suspended"
-  | "Inactive";
-
-export type OrganizationAdminUserBilling =
-  | "Auto Debit"
-  | "Manual"
-  | "Credit Card";
-
-/** Display DTO for List / View. Route param is `userId` (UserId brand at domain edge). */
-export interface OrganizationAdminUserDisplay {
-  id: string;
-  name: string;
-  email: string;
-  username: string;
-  role: OrganizationAdminUserRole;
-  plan: OrganizationAdminUserPlan;
-  billing: OrganizationAdminUserBilling;
-  status: OrganizationAdminUserStatus;
-  company: string;
-  country: string;
-  contact: string;
-  joinedDate: string;
-  taxId: string;
-  language: string;
-}
+export { mapOrganizationUserToDisplay } from "@/lib/pages/organization-admin-users-map";
 
 export interface OrganizationAdminUsersPageData {
   users: OrganizationAdminUserDisplay[];
-  isPlaceholder: false;
 }
 
 export interface OrganizationAdminUserViewPageData {
   user: OrganizationAdminUserDisplay | null;
-  isPlaceholder: false;
-}
-
-function mapAuthRole(role: string | null): OrganizationAdminUserRole {
-  return role === "admin" ? "Admin" : "Guest";
-}
-
-function mapAuthStatus(
-  user: Pick<OrganizationUserRecord, "banned" | "emailVerified">,
-): OrganizationAdminUserStatus {
-  if (user.banned) {
-    return "Suspended";
-  }
-  if (!user.emailVerified) {
-    return "Pending";
-  }
-  return "Active";
-}
-
-function usernameFromEmail(email: string): string {
-  const local = email.split("@")[0]?.trim();
-  return local && local.length > 0 ? local : email;
-}
-
-/** @internal Exported for unit tests — maps Neon Auth user → List/View DTO. */
-export function mapOrganizationUserToDisplay(
-  user: OrganizationUserRecord,
-): OrganizationAdminUserDisplay {
-  const email = user.email.trim();
-  const name = user.name?.trim() || email;
-
-  return {
-    id: user.id,
-    name,
-    email,
-    username: usernameFromEmail(email),
-    role: mapAuthRole(user.role),
-    // SaaS plan/billing columns are AdminCN chrome — not product fields yet.
-    plan: "Basic",
-    billing: "Manual",
-    status: mapAuthStatus(user),
-    company: "—",
-    country: "—",
-    contact: "—",
-    joinedDate: user.createdAt.toISOString(),
-    taxId: "—",
-    language: "—",
-  };
+  sessions: OrganizationAdminUserSessionDisplay[];
 }
 
 export const loadOrganizationAdminUsersPage = cache(
   async (): Promise<OrganizationAdminUsersPageData> => {
     const users = await listOrganizationUsers();
+    const profiles = await listClientProfileSummariesByUserIds(
+      users.map((user) => user.id),
+    );
+
     return {
-      users: users.map(mapOrganizationUserToDisplay),
-      isPlaceholder: false,
+      users: users.map((user) =>
+        mapOrganizationUserToDisplay(user, profiles.get(user.id) ?? null),
+      ),
     };
   },
 );
@@ -121,9 +60,27 @@ export const loadOrganizationAdminUsersPage = cache(
 export const loadOrganizationAdminUserViewPage = cache(
   async (userId: string): Promise<OrganizationAdminUserViewPageData> => {
     const user = await getOrganizationUser(userId);
+    if (!user) {
+      return { user: null, sessions: [] };
+    }
+
+    const [profiles, sessionsResult] = await Promise.all([
+      listClientProfileSummariesByUserIds([user.id]),
+      neonAdminListUserSessions(user.id),
+    ]);
+
+    const sessions =
+      "error" in sessionsResult
+        ? []
+        : (sessionsResult.sessions ?? [])
+            .map(mapOrganizationUserSessionRow)
+            .filter((session): session is OrganizationAdminUserSessionDisplay =>
+              Boolean(session),
+            );
+
     return {
-      user: user ? mapOrganizationUserToDisplay(user) : null,
-      isPlaceholder: false,
+      user: mapOrganizationUserToDisplay(user, profiles.get(user.id) ?? null),
+      sessions,
     };
   },
 );

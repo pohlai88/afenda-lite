@@ -10,6 +10,8 @@ import {
 } from "lucide-react";
 import {
   banOrganizationUserAction,
+  revokeOrganizationUserSessionsAction,
+  setOrganizationUserPasswordAction,
   unbanOrganizationUserAction,
 } from "@/app/actions/admin";
 import GithubIcon from "@/components-V2/platform-assets/svg/github-icon";
@@ -40,10 +42,17 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components-V2/platform-components/ui/tabs";
-import type { OrganizationAdminUserDisplay } from "@/lib/pages/organization-admin-users-page";
+import type {
+  OrganizationAdminUserDisplay,
+  OrganizationAdminUserSessionDisplay,
+} from "@/lib/pages/organization-admin-users-page";
 import { ORGANIZATION_ADMIN_USERS_HREF } from "@/modules/platform/routing/portal-routes";
 import { organizationAdminUserInitials } from "./organization-admin-user-display";
-import { useOrganizationAdminUserAction } from "./use-organization-admin-user-action";
+import { OrganizationAdminUserForm } from "./organization-admin-user-form";
+import {
+  getActionError,
+  useOrganizationAdminUserAction,
+} from "./use-organization-admin-user-action";
 import {
   ComingSoonPanel,
   UserManagementComingSoon,
@@ -51,11 +60,16 @@ import {
 
 export function OrganizationAdminUsersView({
   user,
+  sessions = [],
 }: {
   user: OrganizationAdminUserDisplay;
+  sessions?: OrganizationAdminUserSessionDisplay[];
 }) {
   const [comingSoon, setComingSoon] = useState<string | null>(null);
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordError, setPasswordError] = useState<string | null>(null);
   const { actionError, isPending, runUserAction } =
     useOrganizationAdminUserAction();
   const showSoon = (feature: string) => setComingSoon(feature);
@@ -79,6 +93,29 @@ export function OrganizationAdminUsersView({
             banReason: "Suspended by organization admin",
           }),
     );
+  };
+
+  const savePassword = () => {
+    setPasswordError(null);
+    if (newPassword.length < 8) {
+      setPasswordError("Password must be at least 8 characters.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordError("Passwords do not match.");
+      return;
+    }
+    runUserAction(async () => {
+      const result = await setOrganizationUserPasswordAction({
+        userId: user.id,
+        newPassword,
+      });
+      if (!getActionError(result)) {
+        setNewPassword("");
+        setConfirmPassword("");
+      }
+      return result;
+    });
   };
 
   return (
@@ -171,10 +208,37 @@ export function OrganizationAdminUsersView({
           <TabsContent value="security" className="space-y-6">
             <SectionCard title="Change Password">
               <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="New password" type="password" />
-                <Field label="Confirm password" type="password" />
+                <div className="space-y-2">
+                  <Label htmlFor="new-password">New password</Label>
+                  <Input
+                    id="new-password"
+                    type="password"
+                    value={newPassword}
+                    onChange={(event) => setNewPassword(event.target.value)}
+                    autoComplete="new-password"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="confirm-password">Confirm password</Label>
+                  <Input
+                    id="confirm-password"
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(event) => setConfirmPassword(event.target.value)}
+                    autoComplete="new-password"
+                  />
+                </div>
               </div>
-              <Button className="mt-4" onClick={() => showSoon("Password update")}>
+              {passwordError ? (
+                <p className="text-destructive mt-2 text-sm" role="alert">
+                  {passwordError}
+                </p>
+              ) : null}
+              <Button
+                className="mt-4"
+                disabled={isPending}
+                onClick={savePassword}
+              >
                 Save Changes
               </Button>
             </SectionCard>
@@ -193,22 +257,53 @@ export function OrganizationAdminUsersView({
               </div>
             </SectionCard>
             <SectionCard title="Recent Devices">
-              <div className="flex items-center gap-3 rounded-lg border p-4">
-                <ShieldCheckIcon className="text-primary size-5" />
-                <div className="flex-1">
-                  <p className="font-medium">Device history</p>
-                  <p className="text-muted-foreground text-sm">
-                    Recent sessions will appear when session listing is wired.
-                  </p>
+              {sessions.length === 0 ? (
+                <div className="flex items-center gap-3 rounded-lg border p-4">
+                  <ShieldCheckIcon className="text-primary size-5" />
+                  <div className="flex-1">
+                    <p className="font-medium">No active sessions listed</p>
+                    <p className="text-muted-foreground text-sm">
+                      Neon Auth returned no sessions for this user.
+                    </p>
+                  </div>
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => showSoon("Recent devices")}
-                >
-                  Review
-                </Button>
-              </div>
+              ) : (
+                <div className="space-y-3">
+                  {sessions.map((session) => (
+                    <div
+                      key={session.id}
+                      className="flex items-start gap-3 rounded-lg border p-4"
+                    >
+                      <ShieldCheckIcon className="text-primary mt-0.5 size-5" />
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium">
+                          {session.userAgent?.trim() || "Session"}
+                        </p>
+                        <p className="text-muted-foreground text-sm">
+                          {session.ipAddress ?? "Unknown IP"} · created{" "}
+                          {new Intl.DateTimeFormat("en", {
+                            dateStyle: "medium",
+                            timeStyle: "short",
+                          }).format(new Date(session.createdAt))}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                  <Button
+                    variant="outline"
+                    disabled={isPending}
+                    onClick={() =>
+                      runUserAction(() =>
+                        revokeOrganizationUserSessionsAction({
+                          userId: user.id,
+                        }),
+                      )
+                    }
+                  >
+                    Revoke all sessions
+                  </Button>
+                </div>
+              )}
             </SectionCard>
           </TabsContent>
 
@@ -301,7 +396,11 @@ export function OrganizationAdminUsersView({
             <SheetTitle>Edit User</SheetTitle>
           </SheetHeader>
           <div className="mt-6">
-            <ComingSoonPanel title="Edit user form" />
+            <OrganizationAdminUserForm
+              mode="edit"
+              user={user}
+              onSuccess={() => setIsEditOpen(false)}
+            />
           </div>
         </SheetContent>
       </Sheet>
