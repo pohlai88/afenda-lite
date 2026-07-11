@@ -23,7 +23,7 @@ Schemas live under the **owning module** (`modules/*/schemas/`). Extend additive
 | Auth (Neon) | Neon-owned | — |
 | Declaration draft (api-now) | `saveClientDeclarationDraftSchema` | assignment id via body/query |
 | Clients / invitations | `issueClientInviteSchema`, delete schemas | `uuidSchema` |
-| Organization users | `createOrganizationUserSchema`, `updateOrganizationUserSchema`, `setOrganizationUserRoleSchema`, `banOrganizationUserSchema`, `banOrganizationUsersSchema`, `organizationUserIdsSchema`, `setOrganizationUserPasswordSchema` | `userIdSchema` |
+| Organization users | `createOrganizationUserSchema`, `importOrganizationUsersSchema`, `updateOrganizationUserSchema`, `setOrganizationUserRoleSchema`, `banOrganizationUserSchema`, `banOrganizationUsersSchema`, `organizationUserIdsSchema`, `setOrganizationUserPasswordSchema` | `userIdSchema` |
 | Declarations | `surveyMetadataFormSchema`, `updateSurveySchema`, `deleteSurveySchema` | `surveyIdParamSchema` |
 | Assignments / submissions | `submitClientDeclarationSchema`, draft schema | `uuidSchema` |
 | Public survey | `submitSurveyResponseSchema` | `openSurveySlugParamSchema` |

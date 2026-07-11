@@ -43,6 +43,7 @@ import {
   banOrganizationUserSchema,
   banOrganizationUsersSchema,
   createOrganizationUserSchema,
+  importOrganizationUsersSchema,
   organizationUserIdSchema,
   organizationUserIdsSchema,
   setOrganizationUserPasswordSchema,
@@ -350,6 +351,44 @@ export async function unbanOrganizationUserAction(input: { userId: string }) {
   });
 }
 
+async function createOrganizationUserForAdmin(input: {
+  actorId: string;
+  email: string;
+  password: string;
+  name: string;
+  role: "user" | "admin";
+  source?: "form" | "import";
+}): Promise<{ error: string } | { ok: true; userId?: string; email: string }> {
+  const result = await neonAdminCreateUser({
+    email: input.email,
+    password: input.password,
+    name: input.name,
+    role: input.role,
+  });
+  if ("error" in result) {
+    return { error: result.error };
+  }
+
+  const createdId =
+    result.user && typeof result.user === "object" && "id" in result.user
+      ? String((result.user as { id: string }).id)
+      : undefined;
+
+  await recordAuditEvent({
+    actorId: input.actorId,
+    eventType: "admin.user_created",
+    resourceType: "user",
+    resourceId: createdId,
+    metadata: {
+      email: input.email,
+      role: input.role,
+      ...(input.source === "import" ? { source: "import" } : {}),
+    },
+  });
+
+  return { ok: true as const, userId: createdId, email: input.email };
+}
+
 export async function createOrganizationUserAction(input: {
   email: string;
   password: string;
@@ -363,30 +402,64 @@ export async function createOrganizationUserAction(input: {
       return { error: parsed.error };
     }
 
-    const result = await neonAdminCreateUser({
+    const result = await createOrganizationUserForAdmin({
+      actorId: session.user.id,
       email: parsed.data.email,
       password: parsed.data.password,
       name: parsed.data.name,
       role: parsed.data.role,
+      source: "form",
     });
     if ("error" in result) {
       return { error: result.error };
     }
 
-    const createdId =
-      result.user && typeof result.user === "object" && "id" in result.user
-        ? String((result.user as { id: string }).id)
-        : undefined;
+    revalidateOrganizationUsers(result.userId);
+    return { ok: true as const, userId: result.userId };
+  });
+}
 
-    await recordAuditEvent({
-      actorId: session.user.id,
-      eventType: "admin.user_created",
-      resourceType: "user",
-      resourceId: createdId,
-      metadata: { email: parsed.data.email, role: parsed.data.role },
-    });
-    revalidateOrganizationUsers(createdId);
-    return { ok: true as const, userId: createdId };
+export async function importOrganizationUsersAction(input: {
+  users: Array<{
+    email: string;
+    password: string;
+    name: string;
+    role?: "user" | "admin" | string;
+  }>;
+}) {
+  return runLoggedAction("importOrganizationUsersAction", undefined, async () => {
+    const session = await requireAdminSession();
+    const parsed = parseSchema(importOrganizationUsersSchema, input);
+    if (!parsed.success) {
+      return { error: parsed.error };
+    }
+
+    const created: string[] = [];
+    const failures: Array<{ email: string; error: string }> = [];
+
+    for (const user of parsed.data.users) {
+      const result = await createOrganizationUserForAdmin({
+        actorId: session.user.id,
+        email: user.email,
+        password: user.password,
+        name: user.name,
+        role: user.role,
+        source: "import",
+      });
+      if ("error" in result) {
+        failures.push({ email: user.email, error: result.error });
+        continue;
+      }
+      created.push(result.email);
+    }
+
+    revalidateOrganizationUsers();
+    return {
+      ok: true as const,
+      created: created.length,
+      failed: failures.length,
+      failures,
+    };
   });
 }
 

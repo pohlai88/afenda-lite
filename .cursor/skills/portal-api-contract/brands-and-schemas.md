@@ -56,7 +56,7 @@ function asDeclarationId(id: string): DeclarationId {
 | `modules/platform/schemas/api-error.ts` | Shared HTTP error body | `APIErrorBody` / codes |
 | `modules/declarations/schemas/common.ts` | Re-exports platform + declarations-only | `surveyAnswersSchema` (+ re-exports) |
 | `modules/identity/schemas/auth.ts` | Sign-in boundary | `signInSchema` |
-| `modules/identity/schemas/users.ts` | Organization-admin users | `userIdSchema`, `UserId`, create/update/role/ban/bulk/password schemas |
+| `modules/identity/schemas/users.ts` | Organization-admin users | `userIdSchema`, `UserId`, create/import/update/role/ban/bulk/password schemas |
 | `modules/declarations/schemas/client.ts` | Onboarding, declare submit/draft, invites, deletes | `clientOnboardingSchema`, `submitClientDeclarationSchema`, `saveClientDeclarationDraftSchema`, `issueClientInviteSchema`, `removeClientRegistrationSchema`, `deleteClientAssignmentSchema` |
 | `modules/declarations/schemas/surveys.ts` | Declarations (surveys) CRUD + public submit | `surveyMetadataFormSchema`, `updateSurveySchema`, `deleteSurveySchema`, `submitSurveyResponseSchema`, param schemas |
 | `modules/declarations/schemas/declarations.ts` | Evidence registration | `registerEvidenceSchema` |

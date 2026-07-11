@@ -86,7 +86,7 @@ import {
   getActionError,
   useOrganizationAdminUserAction,
 } from "./use-organization-admin-user-action";
-import { UserManagementComingSoon } from "./user-management-coming-soon";
+import { OrganizationAdminUsersImportDialog } from "./organization-admin-users-import-dialog";
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100] as const;
 
@@ -202,7 +202,7 @@ export function OrganizationAdminUsersList({
     10,
   );
   const [pageIndex, setPageIndex] = useState(0);
-  const [comingSoon, setComingSoon] = useState<string | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
   const [sheetMode, setSheetMode] = useState<SheetMode>(null);
   const [editingUser, setEditingUser] =
     useState<OrganizationAdminUserDisplay | null>(null);
@@ -231,7 +231,6 @@ export function OrganizationAdminUsersList({
   const allSelected =
     pageUsers.length > 0 &&
     pageUsers.every((user) => selected.includes(user.id));
-  const showSoon = (feature: string) => setComingSoon(feature);
   const exportStamp = () =>
     new Date().toISOString().slice(0, 19).replaceAll(":", "-");
   const exportUsers = (format: "csv" | "json") => {
@@ -410,7 +409,7 @@ export function OrganizationAdminUsersList({
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-              <Button variant="outline" onClick={() => showSoon("User import")}>
+              <Button variant="outline" onClick={() => setImportOpen(true)}>
                 <DownloadIcon />
                 <span className="max-lg:hidden">Import</span>
               </Button>
@@ -729,9 +728,9 @@ export function OrganizationAdminUsersList({
         </SheetContent>
       </Sheet>
 
-      <UserManagementComingSoon
-        feature={comingSoon}
-        onClose={() => setComingSoon(null)}
+      <OrganizationAdminUsersImportDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
       />
     </>
   );

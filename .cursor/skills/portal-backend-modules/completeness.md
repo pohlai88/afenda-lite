@@ -19,7 +19,7 @@ Plan authority: this skill + `doc/backend/` + org-admin users vertical slice.
 | Password set / revoke sessions | Actions + view | Wired | **Done** |
 | CSV / JSON export | Client filtered list | `organization-admin-users-export.ts` | **Done** |
 | Client page size + prev/next | AdminCN chrome live | List pagination wired | **Done** |
-| User import | Deferred | Coming-soon only | **Deferred** |
+| User import | CSV/JSON → create users | `importOrganizationUsersAction` + import dialog | **Done** |
 | ClientProfile port (drop Identity→Declarations `getClientProfile`) | Optional follow-up | Narrow edges remain | **Deferred** |
 | Absorb `lib/entry\|pages` into features | Explicit approve | Runners kept | **Deferred** |
 | `/client` workspace restore | Closed | Closed | **Out of scope** |
@@ -27,18 +27,17 @@ Plan authority: this skill + `doc/backend/` + org-admin users vertical slice.
 | SaaS plan/billing product fields | Not Identity | Chrome defaults `Basic`/`Manual` | **Intentional** |
 | Billing / 2FA / projects / social tabs | AdminCN “Coming soon” | Unchanged | **Deferred chrome** |
 
-## Stabilization fixes this pass
+## Stabilization (latest)
 
-- DRY ban/remove cores; identical self-harm errors centralized
-- Dead `isPlaceholder` removed
-- Password set revalidates paths; mutations `router.refresh()`
-- Shared `getActionError`
-- Page-size Select + Previous/Next actually paginate
-- Docs/skill schema + IdentityPort rows synced for bulk
+- Shared `createOrganizationUserForAdmin` for form create + CSV/JSON import
+- Shared name/password Zod + `ORGANIZATION_ADMIN_USERS_IMPORT_MAX` (parse + Action + UI)
+- Duplicate-email rejection on import parse
+- IdentityPort / brands / module-tree / schema-map aligned for import
+- Prior: ban/remove cores, `getActionError`, pagination, dead `isPlaceholder` removed
 
 ## Verify
 
 ```bash
 npx tsc --noEmit
-npm run test:unit -- features/organization-admin/organization-admin-users-export modules/identity/schemas/users lib/pages/organization-admin-users-page
+npm run test:unit -- features/organization-admin/organization-admin-users-import features/organization-admin/organization-admin-users-export modules/identity/schemas/users lib/pages/organization-admin-users-page
 ```

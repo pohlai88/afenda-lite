@@ -27,8 +27,7 @@ export function UserManagementComingSoon({
           <DialogDescription>
             {feature ?? "This capability"} is not wired yet. Live user CRUD,
             role, suspend/activate, password reset, session revoke, CSV/JSON
-            export, and bulk suspend/delete are available; import remains
-            deferred.
+            export/import, and bulk suspend/delete are available on Users.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
@@ -44,8 +43,8 @@ export function ComingSoonPanel({ title }: { title: string }) {
     <div className="flex min-h-56 flex-col items-center justify-center gap-2 rounded-lg border border-dashed px-6 text-center">
       <p className="text-base font-semibold">{title}</p>
       <p className="text-muted-foreground max-w-md text-sm">
-        Coming soon. Import stays deferred; create/edit, export, and bulk
-        tools are available on this page.
+        Coming soon. Billing, 2FA, and social-connection chrome stay deferred;
+        create/edit, export/import, and bulk tools are available on Users.
       </p>
     </div>
   );

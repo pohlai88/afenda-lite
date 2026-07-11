@@ -8,6 +8,9 @@ type ActionResult = {
   ok?: true;
   removed?: number;
   banned?: number;
+  created?: number;
+  failed?: number;
+  failures?: Array<{ email: string; error: string }>;
 };
 
 export function getActionError(

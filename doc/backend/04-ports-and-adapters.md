@@ -55,6 +55,11 @@ interface IdentityPort {
   listOrganizationUsers(): Promise<OrganizationUser[]>
   getOrganizationUser(id: UserId): Promise<OrganizationUser | null>
   createOrganizationUser(input: CreateOrganizationUserInput): Promise<{ userId: UserId }>
+  importOrganizationUsers(users: CreateOrganizationUserInput[]): Promise<{
+    created: number
+    failed: number
+    failures: Array<{ email: string; error: string }>
+  }>
   updateOrganizationUser(input: UpdateOrganizationUserInput): Promise<void>
   removeOrganizationUser(userId: UserId): Promise<void>
   removeOrganizationUsers(userIds: UserId[]): Promise<{ removed: number }>
@@ -74,7 +79,7 @@ interface IdentityPort {
 | Port op | Domain / module | Adapters |
 |---------|-----------------|----------|
 | list / get users | `modules/identity/domain/organization-users.ts` | RSC `lib/pages/organization-admin-users-page` (+ profile summaries composed from Declarations) |
-| create / update / remove | `modules/identity/auth/admin.ts` (`neonAdmin*`) | `createOrganizationUserAction`, `updateOrganizationUserAction`, `removeOrganizationUserAction`, `removeOrganizationUsersAction` |
+| create / update / remove | `modules/identity/auth/admin.ts` (`neonAdmin*`) | `createOrganizationUserAction`, `importOrganizationUsersAction`, `updateOrganizationUserAction`, `removeOrganizationUserAction`, `removeOrganizationUsersAction` |
 | set role / ban / unban | `modules/identity/auth/admin.ts` | `setOrganizationUserRoleAction`, `banOrganizationUserAction`, `banOrganizationUsersAction`, `unbanOrganizationUserAction` |
 | password / sessions | `modules/identity/auth/admin.ts` | `setOrganizationUserPasswordAction`, view loader + `revokeOrganizationUserSessionsAction` |
 | onboarding | `modules/declarations/client-onboarding*` | `saveClientOnboardingAction` |

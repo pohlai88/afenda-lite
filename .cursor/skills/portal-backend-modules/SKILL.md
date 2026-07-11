@@ -82,7 +82,8 @@ External/mobile REST?  → Route Handler per doc/api (contract-only until needed
 | Tests asserting old copy strings | Follow live `portalCopy` SSOT (`"Client"` not `"Client portal"`) |
 | Pass 2 ≠ delete runners | Keep `lib/entry\|pages\|playground` until a named migrate; do not mix with FFT flags |
 | Users list was fixture-only | Wire `modules/identity/domain/organization-users` + `UserId` schemas; RSC loader maps display; role/ban via `app/actions/admin` → `neonAdmin*` |
-| Users export / bulk | Client CSV/JSON from filtered list; bulk remove/ban actions with Zod `userIds` array; import stays deferred |
+| Users export / bulk | Client CSV/JSON from filtered list; bulk remove/ban actions with Zod `userIds` array; import via CSV/JSON template (`email,name,password,role`) |
+
 | AdminCN plan/billing columns | Keep as chrome defaults (`Basic` / `Manual`); do not invent SaaS billing in Identity |
 | Users create/edit/password/sessions | Actions in `admin.ts`; forms in `features/organization-admin`; enrich company/phone/country from Declarations profile summaries **at the RSC adapter only** |
 | Mapper tests pulled Neon Auth Next entry | Keep pure mappers in `lib/pages/organization-admin-users-map.ts` — do not import `neonAdmin*` into unit-tested map modules |

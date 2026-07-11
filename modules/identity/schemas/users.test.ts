@@ -4,6 +4,7 @@ import {
   banOrganizationUserSchema,
   banOrganizationUsersSchema,
   createOrganizationUserSchema,
+  importOrganizationUsersSchema,
   organizationUserIdsSchema,
   setOrganizationUserRoleSchema,
   updateOrganizationUserSchema,
@@ -83,5 +84,29 @@ describe("identity user schemas", () => {
         banReason: "Bulk suspend",
       }).success,
     ).toBe(true);
+
+    expect(
+      importOrganizationUsersSchema.safeParse({
+        users: [
+          {
+            email: "ava@example.com",
+            name: "Ava",
+            password: "password1",
+            role: "Admin",
+          },
+        ],
+      }).success,
+    ).toBe(true);
+
+    expect(
+      importOrganizationUsersSchema.safeParse({
+        users: Array.from({ length: 51 }, (_, index) => ({
+          email: `user${index}@example.com`,
+          name: `User ${index}`,
+          password: "password1",
+          role: "user",
+        })),
+      }).success,
+    ).toBe(false);
   });
 });

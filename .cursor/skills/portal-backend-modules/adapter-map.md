@@ -10,7 +10,7 @@
 | File | Module entrypoints (typical) | Notes |
 |------|------------------------------|-------|
 | `account.ts` | `modules/identity/*` | Account session / Neon-owned fields |
-| `admin.ts` | `modules/identity/*`, platform helpers | Operator admin + org users (create/update/remove/bulk-remove/role/ban/bulk-ban/password/sessions); `parseSchema` from Platform |
+| `admin.ts` | `modules/identity/*`, platform helpers | Operator admin + org users (create/import/update/remove/bulk-remove/role/ban/bulk-ban/password/sessions); `parseSchema` from Platform |
 | `client.ts` | `modules/identity/*`, `modules/declarations/*` | Compose at adapter — do not merge domains; `parseSchema` from Platform |
 | `declarations.ts` | `modules/declarations/domain/**`, product schemas | `parseSchema` from Platform |
 | `surveys.ts` | `modules/declarations/domain/**`, product schemas | `parseSchema` from Platform |

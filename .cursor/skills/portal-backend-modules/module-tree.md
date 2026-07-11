@@ -37,7 +37,7 @@ modules/
 | Area | Paths |
 |------|-------|
 | Neon Auth | `auth/*` |
-| Schemas | `schemas/auth.ts`, `schemas/users.ts` (`UserId`, create/update/role/ban/bulk-ban/password/`userIds`) |
+| Schemas | `schemas/auth.ts`, `schemas/users.ts` (`UserId`, create/import/update/role/ban/bulk/password/`userIds`) |
 | Domain | `domain/{neon-auth-users,organization-users,invite,tokens}.ts` |
 | Session | `account-session.ts`, `client-session.ts` |
 | Email | `email/*` |
