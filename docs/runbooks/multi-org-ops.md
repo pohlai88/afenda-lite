@@ -1,6 +1,6 @@
 # Multi-org operations runbook (M4)
 
-**Authority:** [doc/architecture/multi-tenant-ecosystem.md](../../doc/architecture/multi-tenant-ecosystem.md) (architecture SSOT — Neon shared-schema posture + §6 production efficiency)  
+**Authority:** [docs/architecture/multi-tenant-ecosystem.md](../architecture/multi-tenant-ecosystem.md) (architecture SSOT — Neon shared-schema posture + §6 production efficiency)  
 **Audience:** operators applying tenancy backfills after M1–M3.
 
 ## Rules

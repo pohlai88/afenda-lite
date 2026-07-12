@@ -1,10 +1,10 @@
 # Feed Farm Trade — MVP and gaps
 
-**SSOT:** [doc/frontend/adr/001R-feed-farm-trade-roadmap.md](../../../doc/frontend/adr/001R-feed-farm-trade-roadmap.md)
+**SSOT:** [docs/frontend/adr/001R-feed-farm-trade-roadmap.md](../../../docs/frontend/adr/001R-feed-farm-trade-roadmap.md)
 
-Locks: [001](../../../doc/frontend/adr/001-feed-farm-trade.md) · Architecture: [001A](../../../doc/frontend/adr/001A-feed-farm-trade-architecture.md)
+Locks: [001](../../../docs/frontend/adr/001-feed-farm-trade.md) · Architecture: [001A](../../../docs/frontend/adr/001A-feed-farm-trade-architecture.md)
 
-**Coding / verify:** [slice-playbook.md](slice-playbook.md) · [action-map.md](action-map.md) · [verify.md](verify.md) · phase [12](../../../doc/frontend/12-feed-farm-trade-phase1-core-mvp.md)
+**Coding / verify:** [slice-playbook.md](slice-playbook.md) · [action-map.md](action-map.md) · [verify.md](verify.md) · phase [12](../../../docs/frontend/12-feed-farm-trade-phase1-core-mvp.md)
 
 ## Enterprise MVP
 

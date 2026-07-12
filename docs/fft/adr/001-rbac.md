@@ -10,7 +10,7 @@
 | **Date** | 2026-07-09 |
 | **Owners** | Feed Farm Trade / Trade |
 | **Scope** | Access control for `/fft` Feed Farm Trade Event Engine (Phase 2A foundation) |
-| **Out of scope** | Finance settlement SoT, pickup ops schema, ERP sync, notification provider, declaration-portal IAM; **platform** hard tenancy / `fft.access` entry (see [ADR-002](../../../doc/backend/adr/002-platform-tenancy-rbac.md) · [multi-tenant-ecosystem.md](../../../doc/architecture/multi-tenant-ecosystem.md)) |
+| **Out of scope** | Finance settlement SoT, pickup ops schema, ERP sync, notification provider, declaration-portal IAM; **platform** hard tenancy / `fft.access` entry (see [ADR-002](../../backend/adr/002-platform-tenancy-rbac.md) · [multi-tenant-ecosystem.md](../../architecture/multi-tenant-ecosystem.md)) |
 
 **Related:** [../archive/phase-2-feedback.md](../archive/phase-2-feedback.md) (authoritative planning) · [../spec/phase-2a-prd.md](../spec/phase-2a-prd.md) · [../spec/phase-1-prd.md](../spec/phase-1-prd.md) (Phase 1 accepted @ `1bc1294` / `fft-phase-1`) · [../archive/phase-2-scoping.md](../archive/phase-2-scoping.md) (candidate list; 7-role framing superseded)
 

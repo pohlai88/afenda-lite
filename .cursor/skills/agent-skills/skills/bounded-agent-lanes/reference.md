@@ -8,7 +8,7 @@ Updatable defaults for this repository. The skill core in [SKILL.md](SKILL.md) s
 
 **Feed Farm Trade Ops — closed** (2026-07-10)
 
-Default agent mission is **not** Feed Farm Trade. See [docs/architecture/remaining-development.md](../../../../docs/architecture/remaining-development.md).
+Default agent mission is **not** Feed Farm Trade. See [docs/architecture/closed-scope-register.md](../../../../docs/architecture/closed-scope-register.md) · [doc/architecture/afenda-elite-skills-architecture.md](../../../../doc/architecture/afenda-elite-skills-architecture.md).
 
 ---
 
@@ -74,4 +74,4 @@ Evidence template: [rollout.md § Evidence report template](../../../../docs/fft
 |------|-------|
 | Remaining development | [remaining-development.md](../../../../docs/architecture/remaining-development.md) |
 | Guardian Auth closeout | [pa-guardian-module-remaining.md](../../../../docs/architecture/slices/portal-atmosphere/pa-guardian-module-remaining.md) |
-| Program tracking | [gate-register.md](../../../../docs/fft/ops/gate-register.md) · [closed-scope-register.md](../../../../doc/architecture/closed-scope-register.md) |
+| Program tracking | [gate-register.md](../../../../docs/fft/ops/gate-register.md) · [closed-scope-register.md](../../../../docs/architecture/closed-scope-register.md) |

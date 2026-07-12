@@ -5,9 +5,22 @@ description: Discovers and invokes agent skills. Use when starting a session or 
 
 # Using Agent Skills
 
-## Afenda ERP monorepo (read first)
+## Afenda Elite (this repo — read first)
 
-In **afenda-Xerp**, invoke **`/using-afenda-skills`** before this skill for:
+In **this repository**, **`/using-afenda-elite-skills` is the only product entry.** Then use phase skills below as a **method library** (TDD, review, incremental implement, …) — do not treat this file as a parallel product router.
+
+Elite overlay covers:
+
+- Farm routing (glossary `term.*`, documentation types, monorepo, Fumadocs Day-1 mirror)
+- Skill catalog + cleanup waves — `doc/architecture/afenda-elite-skills-architecture.md`
+- Housekeeping → Slice D refactor handoff
+- Non-goals: Lite-as-ceiling, hand glossary twin, Fumadocs-as-authority, fork-all-vendor-to-elite
+
+Overlay: `.cursor/skills/using-afenda-elite-skills/`
+
+## Afenda ERP monorepo (afenda-Xerp — other repo only)
+
+In **afenda-Xerp only**, invoke **`/using-afenda-skills`** before this skill for:
 
 - Bundle routing (`coding-consistency-bundle`, `afenda-editorial-bundle`, PAS authority)
 - Editorial interface rules (Swiss Noir, Verdant, Presentation Lab — not shadcn `/iui`)
@@ -34,7 +47,8 @@ Task arrives
     ├── Have a spec, need tasks? ──────→ planning-and-task-breakdown
     ├── Implementing code? ────────────→ incremental-implementation
     │   ├── UI work? ─────────────────→ frontend-ui-engineering
-    │   │   └── Afenda editorial / noir / not ordinary? → /using-afenda-skills → afenda-editorial-bundle
+    │   │   ├── Afenda Elite (this repo)? → /using-afenda-elite-skills first
+    │   │   └── Afenda editorial / noir / not ordinary (Xerp)? → /using-afenda-skills → afenda-editorial-bundle
     │   ├── API work? ────────────────→ api-and-interface-design
     │   ├── Need better context? ─────→ context-engineering
     │   ├── Need doc-verified code? ───→ source-driven-development

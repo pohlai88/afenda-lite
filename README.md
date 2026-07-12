@@ -2,7 +2,7 @@
 
 **Afenda-Lite** is the beta / lite edition of official **Afenda ERP** — a multi-module SaaS on shared Platform + Identity (Declarations, Feed Farm Trade, and more). Built on **Vercel + Neon Postgres + Neon Auth**.
 
-> **Retired product name:** Client Declaration Portal — compulsory deprecate. See [doc/adr/001-afenda-lite-product-identity.md](doc/adr/001-afenda-lite-product-identity.md).
+> **Retired product name:** Client Declaration Portal — compulsory deprecate. See [docs/adr/001-afenda-lite-product-identity.md](docs/adr/001-afenda-lite-product-identity.md).
 
 **Local disk path:** prefer `C:\JackProject\afenda-bolt\afenda-lite`. If this clone is still named `client-declaration-portal`, close Cursor and run `C:\JackProject\afenda-bolt\rename-afenda-lite.ps1`, then reopen the `afenda-lite` folder.
 
@@ -18,14 +18,14 @@
 
 Internal full-stack doctrine and slice specs for agents and maintainers:
 
-- [doc/adr/001-afenda-lite-product-identity.md](doc/adr/001-afenda-lite-product-identity.md) — **product name SSOT**
-- [doc/architecture/closed-scope-register.md](doc/architecture/closed-scope-register.md) — closed vs open product scope
+- [docs/adr/001-afenda-lite-product-identity.md](docs/adr/001-afenda-lite-product-identity.md) — **product name SSOT**
+- [docs/architecture/closed-scope-register.md](docs/architecture/closed-scope-register.md) — closed vs open product scope
 - [docs/fft/ops/gate-register.md](docs/fft/ops/gate-register.md) · [docs/fft/RUNTIME.md](docs/fft/RUNTIME.md) — Feed Farm Trade ops / program gates
 - [docs/architecture/repo-migration-map.md](docs/architecture/repo-migration-map.md) — **folder migration closed** (Root / L1 / L2)
-- [doc/frontend/02-folder-map.md](doc/frontend/02-folder-map.md) — frontend folder map
-- [docs/architecture/slices/](docs/architecture/slices/) — per-slice acceptance proofs (S0–S18)
-- [docs/backlogs/post-deploy-verification.md](docs/backlogs/post-deploy-verification.md) — production sign-off checklist
-- [doc/README.md](doc/README.md) — frontend / API / backend design index
+- [docs/frontend/02-folder-map.md](docs/frontend/02-folder-map.md) — frontend folder map
+- [docs/architecture/closed-scope-register.md](docs/architecture/closed-scope-register.md) — closed vs open scope (slice proofs retired; do not restore `docs/architecture/slices/`)
+- [docs/README.md](docs/README.md) — unified design + ops index (`api/`, `backend/`, `frontend/`, `architecture/`, `fft/`, `runbooks/`)
+- [doc/README.md](doc/README.md) — Elite controllers only (`afenda-elite-*`)
 - [`.cursor/skills/agent-skills/skills/deprecation-and-migration/reference.md`](.cursor/skills/agent-skills/skills/deprecation-and-migration/reference.md) — compulsory deprecation register
 
 ## Database migrations

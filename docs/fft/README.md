@@ -2,7 +2,7 @@
 
 **Status (2026-07-10):** Phase 2A closed. Phase 2B **implemented** (flags default off). Phase 2C–2D **Proposed**.
 
-**Product module (UI / shell):** **Feed Farm Trade** — not “Feed Farm Trade” in nav/UI. FE SSOT: [doc/frontend/adr/001](../../doc/frontend/adr/001-feed-farm-trade.md) · [001A](../../doc/frontend/adr/001A-feed-farm-trade-architecture.md) · [001R](../../doc/frontend/adr/001R-feed-farm-trade-roadmap.md) · skill [`.cursor/skills/feed-farm-trade`](../../.cursor/skills/feed-farm-trade/SKILL.md).
+**Product module (UI / shell):** **Feed Farm Trade** — not “Feed Farm Trade” in nav/UI. FE SSOT: [docs/frontend/adr/001](../frontend/adr/001-feed-farm-trade.md) · [001A](../frontend/adr/001A-feed-farm-trade-architecture.md) · [001R](../frontend/adr/001R-feed-farm-trade-roadmap.md) · skill [`.cursor/skills/feed-farm-trade`](../../.cursor/skills/feed-farm-trade/SKILL.md).
 
 **Agents — read order:**
 
@@ -10,7 +10,7 @@
 2. For `/fft` product UI / MVP: FE ADR trio above (001 → 001A → 001R)
 3. Depth doc by type (table below) only when behavior or gate evidence is needed
 
-Also: [AGENTS.md](../../AGENTS.md) § Feed Farm Trade · [ops/gate-register.md](./ops/gate-register.md) · [closed-scope-register](../../doc/architecture/closed-scope-register.md)
+Also: [AGENTS.md](../../AGENTS.md) § Feed Farm Trade · [ops/gate-register.md](./ops/gate-register.md) · [closed-scope-register](../architecture/closed-scope-register.md)
 
 ---
 

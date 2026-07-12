@@ -1,8 +1,8 @@
 # AdminCN customization playbook
 
-**Frontend alignment:** [doc/frontend/06-admincn-alignment.md](../../doc/frontend/06-admincn-alignment.md)  
+**Frontend alignment:** [docs/frontend/06-admincn-alignment.md](../frontend/06-admincn-alignment.md)  
 **Preflight before new screens:** [admincn-frontend-preflight.md](admincn-frontend-preflight.md)  
-**UI registry (compulsory):** [`.cursor/skills/feed-farm-trade/ui-registry.md`](../../.cursor/skills/feed-farm-trade/ui-registry.md) · [`ui-registry.json`](../../.cursor/skills/feed-farm-trade/ui-registry.json) · rule [`fft-ui-registry.mdc`](../../.cursor/rules/fft-ui-registry.mdc)  
+**UI registry (compulsory):** [`.cursor/skills/feed-farm-trade/ui-registry.md`](../../.cursor/skills/feed-farm-trade/ui-registry.md) · [`ui-registry.json`](../../.cursor/skills/feed-farm-trade/ui-registry.json) · skill `/feed-farm-trade`  
 **Product home:** `components-V2/`  
 **Auth island:** `features/auth/` — preserve `app/auth-surface.css` + route-scoped `app/auth/neon-auth-ui.css`
 
@@ -23,7 +23,7 @@ Do **not** wire more demo views into product routes while freeze holds. Refine e
 | Declarations | `/dashboard/*`, `/account/*` | `requireMemberSession` |
 | Feed Farm Trade | `/fft/*` | `requireFftAccess` |
 
-Product purpose: B2B feed & farm trade sales ([doc/frontend/adr/001-feed-farm-trade.md](../../doc/frontend/adr/001-feed-farm-trade.md)).
+Product purpose: B2B feed & farm trade sales ([docs/frontend/adr/001-feed-farm-trade.md](../frontend/adr/001-feed-farm-trade.md)).
 | Admin routes | playground (local), future org-admin links | `isAdminSession` |
 
 Nav is filtered by `features/portal-chrome/resolve-shell-access.ts` via `navConfig` `kind` + `moduleId`.

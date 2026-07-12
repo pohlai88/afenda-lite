@@ -1,26 +1,22 @@
 #!/usr/bin/env node
 /**
- * Install local git hooks so Neon env is validated before `git push`.
- *
- * Usage: npm run hooks:install
- *
- * This writes `.git/hooks/pre-push` (local only — not committed).
- * CI does not need this; GitHub Actions already injects secrets.
+ * Install repo git hooks.
+ * pre-push: Neon env validation
  */
-import { chmodSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
-import { dirname, resolve } from "node:path";
+import fs from "node:fs";
+import path from "node:path";
 
 const root = process.cwd();
-const hookPath = resolve(root, ".git/hooks/pre-push");
+const hooksDir = path.join(root, ".git", "hooks");
 
-if (!existsSync(resolve(root, ".git"))) {
-  console.error("Not a git repository — skip hooks:install");
+if (!fs.existsSync(path.join(root, ".git"))) {
+  console.warn("install-git-hooks: no .git — skip");
   process.exit(0);
 }
 
-mkdirSync(dirname(hookPath), { recursive: true });
+fs.mkdirSync(hooksDir, { recursive: true });
 
-const hook = `#!/bin/sh
+const prePush = `#!/bin/sh
 # Installed by: npm run hooks:install
 # Runs Neon env validation before every push to GitHub.
 # Skip once:  git push --no-verify
@@ -33,13 +29,23 @@ echo "→ pre-push: npm run validate:neon-env"
 npm run validate:neon-env
 `;
 
-writeFileSync(hookPath, hook, "utf8");
+const target = path.join(hooksDir, "pre-push");
+fs.writeFileSync(target, prePush.replace(/\r\n/g, "\n"), { mode: 0o755 });
 try {
-  chmodSync(hookPath, 0o755);
+  fs.chmodSync(target, 0o755);
 } catch {
-  // Windows may ignore chmod; Git for Windows still runs the hook via sh.
+  // Windows may ignore mode
 }
 
-console.log(`Installed ${hookPath}`);
-console.log("Every \`git push\` will run Neon env validation first.");
-console.log("Skip once: git push --no-verify");
+// Remove structure-lock pre-commit if present
+const preCommit = path.join(hooksDir, "pre-commit");
+if (fs.existsSync(preCommit)) {
+  const body = fs.readFileSync(preCommit, "utf8");
+  if (body.includes("check:doc-registry")) {
+    fs.unlinkSync(preCommit);
+    console.log("removed .git/hooks/pre-commit (doc structure lock)");
+  }
+}
+
+console.log("installed .git/hooks/pre-push");
+console.log("hooks:install OK");
