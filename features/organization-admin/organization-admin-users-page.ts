@@ -67,10 +67,10 @@ export interface OrganizationAdminUserViewPageData {
 
 export const loadOrganizationAdminUsersPage = cache(
   async (): Promise<OrganizationAdminUsersPageData> => {
-    await bootstrapOrganizationAdminTenancy({
+    const { org } = await bootstrapOrganizationAdminTenancy({
       anyOf: ["org.users.manage"],
     });
-    const users = await listOrganizationUsers();
+    const users = await listOrganizationUsers(org.organizationId);
     const profiles = await listClientProfileSummariesByUserIds(
       users.map((user) => user.id),
     );
@@ -96,7 +96,7 @@ export const loadOrganizationAdminUserViewPage = cache(
     });
     const canManagePlatformRoles = rolesGate.allowed;
 
-    const user = await getOrganizationUser(userId);
+    const user = await getOrganizationUser(userId, org.organizationId);
     if (!user) {
       return {
         user: null,

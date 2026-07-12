@@ -46,7 +46,7 @@ export async function validateImportRowsForDryRun(
   eventId: string,
   importType: FftImportType,
   parsedRows: Array<{ rowNumber: number; payload: ImportRowPayload }>,
-  organizationId?: string,
+  organizationId: string,
 ): Promise<ValidatedImportRowRecord[]> {
   switch (importType) {
     case "customer_priority":

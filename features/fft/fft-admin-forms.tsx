@@ -43,7 +43,7 @@ export function TradeNewEventForm({ locale }: { locale: FftLocale }) {
   }
 
   return (
-    <form action={submit} className="space-y-6" data-testid="trade-new-event-form">
+    <form action={submit} className="space-y-6" data-testid="fft-new-event-form">
       <FieldGroup className="grid grid-cols-1 gap-6 sm:grid-cols-2">
         <Field className="gap-2 sm:col-span-2">
           <FieldLabel htmlFor="eventName">Event name</FieldLabel>
@@ -79,7 +79,7 @@ export function TradeEnsureTemplateButton({ locale }: { locale: FftLocale }) {
         type="button"
         variant="outline"
         disabled={pending}
-        data-testid="trade-ensure-template"
+        data-testid="fft-ensure-template"
         onClick={() => {
           setError(null);
           startTransition(async () => {
@@ -106,7 +106,7 @@ export function TradeEnsureTemplateButton({ locale }: { locale: FftLocale }) {
       {error ? (
         <p
           className="text-destructive text-sm"
-          data-testid="trade-ensure-template-error"
+          data-testid="fft-ensure-template-error"
         >
           {error}
         </p>

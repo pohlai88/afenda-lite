@@ -2,11 +2,14 @@
 
 import { useRouter } from "next/navigation";
 import { useTransition, useState } from "react";
+import type { ActionResult as PlatformActionResult } from "@/modules/platform/schemas/action-result";
 
-type ActionResult = {
+type LegacyActionResult = {
   error?: string;
   ok?: boolean;
   message?: string;
+  code?: string;
+  data?: unknown;
   removed?: number;
   banned?: number;
   created?: number;
@@ -15,13 +18,19 @@ type ActionResult = {
 };
 
 export function getActionError(
-  result: ActionResult | null | undefined,
+  result: PlatformActionResult<unknown> | LegacyActionResult | null | undefined,
 ): string | null {
   if (!result) return null;
-  if (result.ok === false && typeof result.message === "string" && result.message) {
-    return result.message;
+  if ("ok" in result && result.ok === false) {
+    if (typeof result.message === "string" && result.message) {
+      return result.message;
+    }
   }
-  if (typeof result.error === "string" && result.error.length > 0) {
+  if (
+    "error" in result &&
+    typeof result.error === "string" &&
+    result.error.length > 0
+  ) {
     return result.error;
   }
   return null;
@@ -35,7 +44,11 @@ export function useOrganizationAdminUserAction() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  const runUserAction = (action: () => Promise<ActionResult>) => {
+  const runUserAction = (
+    action: () => Promise<
+      PlatformActionResult<unknown> | LegacyActionResult
+    >,
+  ) => {
     setActionError(null);
     startTransition(async () => {
       const result = await action();

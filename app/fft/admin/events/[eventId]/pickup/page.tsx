@@ -5,7 +5,7 @@ import { FftPickupPanel } from "@/features/fft/fft-pickup-forms";
 import { FFT_UI_LOCALE } from "@/features/fft/fft-ui-locale";
 import { isFftPickupFeatureActive } from "@/modules/fft/auth/fft-phase2b";
 import {
-  hasTradePermission,
+  hasFftPermission,
   requireFftAccess,
 } from "@/modules/fft/auth/fft-session";
 import {
@@ -30,7 +30,7 @@ export default async function FftPickupPage({ params }: Props) {
   const event = await getFftEventForOrganization(eventId);
   if (!event) notFound();
 
-  const canView = await hasTradePermission(
+  const canView = await hasFftPermission(
     access,
     "pickup.view",
     { eventId },
@@ -49,7 +49,7 @@ export default async function FftPickupPage({ params }: Props) {
     );
   }
 
-  const canManage = await hasTradePermission(
+  const canManage = await hasFftPermission(
     access,
     "pickup.manage",
     { eventId },

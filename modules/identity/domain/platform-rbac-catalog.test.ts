@@ -55,6 +55,13 @@ describe("platform-rbac-catalog", () => {
     expect(editor?.permissionCodes).not.toContain("fft.access");
     expect(viewer?.permissionCodes).not.toContain("fft.access");
   });
+
+  it("seeds FFT Member with fft.access only (plus account.self)", () => {
+    const member = PLATFORM_ROLE_TEMPLATES.find(
+      (t) => t.templateKey === "fft_member",
+    );
+    expect(member?.permissionCodes).toEqual(["fft.access", "account.self"]);
+  });
 });
 
 describe("platform-rbac schemas", () => {

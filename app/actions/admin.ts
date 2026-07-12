@@ -293,7 +293,7 @@ async function banOrganizationUsersForAdmin(input: {
 export async function setOrganizationUserRoleAction(input: {
   userId: string;
   role: "user" | "admin";
-}) {
+}): Promise<ActionResult<Record<string, never>>> {
   return runLoggedAction(
     "setOrganizationUserRoleAction",
     undefined,
@@ -305,14 +305,14 @@ export async function setOrganizationUserRoleAction(input: {
       if (denied) return denied;
       const parsed = parseSchema(setOrganizationUserRoleSchema, input);
       if (!parsed.success) {
-        return { error: parsed.error };
+        return actionFail("VALIDATION_ERROR", parsed.error);
       }
 
       if (
         parsed.data.userId === session.user.id &&
         parsed.data.role !== "admin"
       ) {
-        return { error: organizationAdminUserErrors.selfDemote };
+        return actionFail("FORBIDDEN", organizationAdminUserErrors.selfDemote);
       }
 
       const result = await neonAdminSetRole({
@@ -320,7 +320,7 @@ export async function setOrganizationUserRoleAction(input: {
         role: parsed.data.role,
       });
       if ("error" in result) {
-        return { error: result.error };
+        return actionFail("ACTION_FAILED", result.error);
       }
 
       await recordAuditEvent({
@@ -331,7 +331,7 @@ export async function setOrganizationUserRoleAction(input: {
         metadata: { role: parsed.data.role },
       });
       revalidateOrganizationUsers(parsed.data.userId);
-      return { ok: true as const };
+      return actionOk({});
     },
   );
 }
@@ -339,7 +339,7 @@ export async function setOrganizationUserRoleAction(input: {
 export async function banOrganizationUserAction(input: {
   userId: string;
   banReason?: string;
-}) {
+}): Promise<ActionResult<Record<string, never>>> {
   return runLoggedAction("banOrganizationUserAction", undefined, async () => {
     const session = await requirePlatformOperatorSession({
         anyOf: ["org.users.manage"],
@@ -348,7 +348,7 @@ export async function banOrganizationUserAction(input: {
       if (denied) return denied;
     const parsed = parseSchema(banOrganizationUserSchema, input);
     if (!parsed.success) {
-      return { error: parsed.error };
+      return actionFail("VALIDATION_ERROR", parsed.error);
     }
 
     const result = await banOrganizationUsersForAdmin({
@@ -357,13 +357,13 @@ export async function banOrganizationUserAction(input: {
       banReason: parsed.data.banReason,
     });
     if ("error" in result) {
-      return { error: result.error };
+      return actionFail("ACTION_FAILED", result.error);
     }
-    return { ok: true as const };
+    return actionOk({});
   });
 }
 
-export async function unbanOrganizationUserAction(input: { userId: string }) {
+export async function unbanOrganizationUserAction(input: { userId: string }): Promise<ActionResult<Record<string, never>>> {
   return runLoggedAction("unbanOrganizationUserAction", undefined, async () => {
     const session = await requirePlatformOperatorSession({
         anyOf: ["org.users.manage"],
@@ -372,12 +372,12 @@ export async function unbanOrganizationUserAction(input: { userId: string }) {
       if (denied) return denied;
     const parsed = parseSchema(organizationUserIdSchema, input);
     if (!parsed.success) {
-      return { error: parsed.error };
+      return actionFail("VALIDATION_ERROR", parsed.error);
     }
 
     const result = await neonAdminUnbanUser(parsed.data.userId);
     if ("error" in result) {
-      return { error: result.error };
+      return actionFail("ACTION_FAILED", result.error);
     }
 
     await recordAuditEvent({
@@ -387,7 +387,7 @@ export async function unbanOrganizationUserAction(input: { userId: string }) {
       resourceId: parsed.data.userId,
     });
     revalidateOrganizationUsers(parsed.data.userId);
-    return { ok: true as const };
+    return actionOk({});
   });
 }
 
@@ -434,7 +434,7 @@ export async function createOrganizationUserAction(input: {
   password: string;
   name: string;
   role?: "user" | "admin";
-}) {
+}): Promise<ActionResult<{ userId?: string }>> {
   return runLoggedAction("createOrganizationUserAction", undefined, async () => {
     const session = await requirePlatformOperatorSession({
         anyOf: ["org.users.manage"],
@@ -443,7 +443,7 @@ export async function createOrganizationUserAction(input: {
       if (denied) return denied;
     const parsed = parseSchema(createOrganizationUserSchema, input);
     if (!parsed.success) {
-      return { error: parsed.error };
+      return actionFail("VALIDATION_ERROR", parsed.error);
     }
 
     const result = await createOrganizationUserForAdmin({
@@ -455,11 +455,11 @@ export async function createOrganizationUserAction(input: {
       source: "form",
     });
     if ("error" in result) {
-      return { error: result.error };
+      return actionFail("ACTION_FAILED", result.error);
     }
 
     revalidateOrganizationUsers(result.userId);
-    return { ok: true as const, userId: result.userId };
+    return actionOk({ userId: result.userId });
   });
 }
 
@@ -470,7 +470,7 @@ export async function importOrganizationUsersAction(input: {
     name: string;
     role?: "user" | "admin" | string;
   }>;
-}) {
+}): Promise<ActionResult<{ created: number; failed: number; failures: Array<{ email: string; error: string }> }>> {
   return runLoggedAction("importOrganizationUsersAction", undefined, async () => {
     const session = await requirePlatformOperatorSession({
         anyOf: ["org.users.manage"],
@@ -479,7 +479,7 @@ export async function importOrganizationUsersAction(input: {
       if (denied) return denied;
     const parsed = parseSchema(importOrganizationUsersSchema, input);
     if (!parsed.success) {
-      return { error: parsed.error };
+      return actionFail("VALIDATION_ERROR", parsed.error);
     }
 
     const created: string[] = [];
@@ -502,12 +502,7 @@ export async function importOrganizationUsersAction(input: {
     }
 
     revalidateOrganizationUsers();
-    return {
-      ok: true as const,
-      created: created.length,
-      failed: failures.length,
-      failures,
-    };
+    return actionOk({ created: created.length, failed: failures.length, failures });
   });
 }
 
@@ -515,7 +510,7 @@ export async function updateOrganizationUserAction(input: {
   userId: string;
   name: string;
   role?: "user" | "admin";
-}) {
+}): Promise<ActionResult<Record<string, never>>> {
   return runLoggedAction("updateOrganizationUserAction", undefined, async () => {
     const session = await requirePlatformOperatorSession({
         anyOf: ["org.users.manage"],
@@ -524,7 +519,7 @@ export async function updateOrganizationUserAction(input: {
       if (denied) return denied;
     const parsed = parseSchema(updateOrganizationUserSchema, input);
     if (!parsed.success) {
-      return { error: parsed.error };
+      return actionFail("VALIDATION_ERROR", parsed.error);
     }
 
     if (
@@ -532,7 +527,7 @@ export async function updateOrganizationUserAction(input: {
       parsed.data.role &&
       parsed.data.role !== "admin"
     ) {
-      return { error: organizationAdminUserErrors.selfDemote };
+      return actionFail("FORBIDDEN", organizationAdminUserErrors.selfDemote);
     }
 
     const updated = await neonAdminUpdateUser({
@@ -540,7 +535,7 @@ export async function updateOrganizationUserAction(input: {
       data: { name: parsed.data.name },
     });
     if ("error" in updated) {
-      return { error: updated.error };
+      return actionFail("ACTION_FAILED", updated.error);
     }
 
     if (parsed.data.role) {
@@ -549,7 +544,7 @@ export async function updateOrganizationUserAction(input: {
         role: parsed.data.role,
       });
       if ("error" in roleResult) {
-        return { error: roleResult.error };
+        return actionFail("ACTION_FAILED", roleResult.error);
       }
     }
 
@@ -561,7 +556,7 @@ export async function updateOrganizationUserAction(input: {
       metadata: { name: parsed.data.name, role: parsed.data.role ?? null },
     });
     revalidateOrganizationUsers(parsed.data.userId);
-    return { ok: true as const };
+    return actionOk({});
   });
 }
 
@@ -580,7 +575,7 @@ export async function setOrganizationUserPasswordAction(input: {
       if (denied) return denied;
       const parsed = parseSchema(setOrganizationUserPasswordSchema, input);
       if (!parsed.success) {
-        return { error: parsed.error };
+        return actionFail("VALIDATION_ERROR", parsed.error);
       }
 
       const result = await neonAdminSetUserPassword({
@@ -588,7 +583,7 @@ export async function setOrganizationUserPasswordAction(input: {
         newPassword: parsed.data.newPassword,
       });
       if ("error" in result) {
-        return { error: result.error };
+        return actionFail("ACTION_FAILED", result.error);
       }
 
       await recordAuditEvent({
@@ -598,7 +593,7 @@ export async function setOrganizationUserPasswordAction(input: {
         resourceId: parsed.data.userId,
       });
       revalidateOrganizationUsers(parsed.data.userId);
-      return { ok: true as const };
+      return actionOk({});
     },
   );
 }
@@ -612,7 +607,7 @@ export async function removeOrganizationUserAction(input: { userId: string }) {
       if (denied) return denied;
     const parsed = parseSchema(organizationUserIdSchema, input);
     if (!parsed.success) {
-      return { error: parsed.error };
+      return actionFail("VALIDATION_ERROR", parsed.error);
     }
 
     const result = await removeOrganizationUsersForAdmin({
@@ -620,15 +615,15 @@ export async function removeOrganizationUserAction(input: { userId: string }) {
       userIds: [parsed.data.userId],
     });
     if ("error" in result) {
-      return { error: result.error };
+      return actionFail("ACTION_FAILED", result.error);
     }
-    return { ok: true as const };
+    return actionOk({});
   });
 }
 
 export async function removeOrganizationUsersAction(input: {
   userIds: string[];
-}) {
+}): Promise<ActionResult<{ removed: number }>> {
   return runLoggedAction(
     "removeOrganizationUsersAction",
     undefined,
@@ -640,13 +635,17 @@ export async function removeOrganizationUsersAction(input: {
       if (denied) return denied;
       const parsed = parseSchema(organizationUserIdsSchema, input);
       if (!parsed.success) {
-        return { error: parsed.error };
+        return actionFail("VALIDATION_ERROR", parsed.error);
       }
 
-      return removeOrganizationUsersForAdmin({
+      const result = await removeOrganizationUsersForAdmin({
         actorId: session.user.id,
         userIds: parsed.data.userIds,
       });
+      if ("error" in result) {
+        return actionFail("ACTION_FAILED", result.error);
+      }
+      return actionOk({ removed: result.removed });
     },
   );
 }
@@ -654,7 +653,7 @@ export async function removeOrganizationUsersAction(input: {
 export async function banOrganizationUsersAction(input: {
   userIds: string[];
   banReason?: string;
-}) {
+}): Promise<ActionResult<{ banned: number }>> {
   return runLoggedAction("banOrganizationUsersAction", undefined, async () => {
     const session = await requirePlatformOperatorSession({
         anyOf: ["org.users.manage"],
@@ -663,14 +662,18 @@ export async function banOrganizationUsersAction(input: {
       if (denied) return denied;
     const parsed = parseSchema(banOrganizationUsersSchema, input);
     if (!parsed.success) {
-      return { error: parsed.error };
+      return actionFail("VALIDATION_ERROR", parsed.error);
     }
 
-    return banOrganizationUsersForAdmin({
+    const result = await banOrganizationUsersForAdmin({
       actorId: session.user.id,
       userIds: parsed.data.userIds,
       banReason: parsed.data.banReason,
     });
+    if ("error" in result) {
+      return actionFail("ACTION_FAILED", result.error);
+    }
+    return actionOk({ banned: result.banned });
   });
 }
 
@@ -688,12 +691,12 @@ export async function revokeOrganizationUserSessionsAction(input: {
       if (denied) return denied;
       const parsed = parseSchema(organizationUserIdSchema, input);
       if (!parsed.success) {
-        return { error: parsed.error };
+        return actionFail("VALIDATION_ERROR", parsed.error);
       }
 
       const result = await neonAdminRevokeUserSessions(parsed.data.userId);
       if ("error" in result) {
-        return { error: result.error };
+        return actionFail("ACTION_FAILED", result.error);
       }
 
       await recordAuditEvent({
@@ -703,7 +706,7 @@ export async function revokeOrganizationUserSessionsAction(input: {
         resourceId: parsed.data.userId,
       });
       revalidateOrganizationUsers(parsed.data.userId);
-      return { ok: true as const };
+      return actionOk({});
     },
   );
 }
@@ -738,9 +741,10 @@ async function assertUsersManageAllowed(session: {
 }) {
   const { check } = await requireUsersManageGate(session);
   if (!check.allowed) {
-    return {
-      error: "You do not have permission to manage users.",
-    } as const;
+    return actionFail(
+      "FORBIDDEN",
+      "You do not have permission to manage users.",
+    );
   }
   return null;
 }

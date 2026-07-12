@@ -4,7 +4,7 @@ import { FFT_UI_LOCALE } from "@/features/fft/fft-ui-locale";
 import { resolveFftOrganizationContext } from "@/features/fft/fft-organization-context";
 import { ORG_ACCESS_DENIED_HREF } from "@/modules/identity/admin";
 import { requirePlatformPermission } from "@/modules/identity/domain/platform-rbac-access";
-import { requireTradePermission } from "@/modules/fft/auth/fft-session";
+import { requireFftPermission } from "@/modules/fft/auth/fft-session";
 import {
   listAllRoleAssignments,
   listFftRoles,
@@ -17,7 +17,7 @@ export const dynamic = "force-dynamic";
  * (control plane) plus FFT role.manage (data plane).
  */
 export default async function FftRbacPage() {
-  const access = await requireTradePermission("role.manage");
+  const access = await requireFftPermission("role.manage");
   const { check } = await requirePlatformPermission({
     userId: access.userId,
     code: "org.roles.manage",
@@ -35,7 +35,7 @@ export default async function FftRbacPage() {
   ]);
 
   return (
-    <main className="space-y-4 p-6" data-testid="trade-rbac-page">
+    <main className="space-y-4 p-6" data-testid="fft-rbac-page">
       <h1 className="text-2xl font-semibold tracking-tight">RBAC</h1>
       <p className="text-muted-foreground text-sm">
         Feed Farm Trade domain roles and assignments. Module entry is

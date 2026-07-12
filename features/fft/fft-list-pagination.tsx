@@ -24,9 +24,9 @@ export function TradeListPagination({
   return (
     <div
       className="flex flex-wrap items-center justify-between gap-3"
-      data-testid="trade-list-pagination"
+      data-testid="fft-list-pagination"
     >
-      <p className="text-muted-foreground text-xs" data-testid="trade-list-pagination-summary">
+      <p className="text-muted-foreground text-xs" data-testid="fft-list-pagination-summary">
         {from}–{to} of {total}
       </p>
       <div className="flex items-center gap-2">
@@ -36,11 +36,11 @@ export function TradeListPagination({
           size="sm"
           disabled={page <= 1}
           onClick={() => onPageChange(page - 1)}
-          data-testid="trade-list-pagination-prev"
+          data-testid="fft-list-pagination-prev"
         >
           Previous
         </Button>
-        <span className="text-muted-foreground text-xs tabular-nums" data-testid="trade-list-pagination-page">
+        <span className="text-muted-foreground text-xs tabular-nums" data-testid="fft-list-pagination-page">
           Page {page} / {pageCount}
         </span>
         <Button
@@ -49,7 +49,7 @@ export function TradeListPagination({
           size="sm"
           disabled={page >= pageCount}
           onClick={() => onPageChange(page + 1)}
-          data-testid="trade-list-pagination-next"
+          data-testid="fft-list-pagination-next"
         >
           Next
         </Button>

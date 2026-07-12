@@ -79,7 +79,7 @@ async function applyCdpPackageToSurvey(
   pkg: CdpPackage,
   actorId: string,
   createAssignment: boolean,
-  organizationId?: string,
+  organizationId: string,
 ): Promise<
   | { assignmentCreated: boolean }
   | { error: string; assignmentCreated: false }

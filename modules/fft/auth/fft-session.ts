@@ -16,10 +16,11 @@ import {
 export type FftAccess = {
   userId: string;
   email: string;
+  /** Neon admin is bootstrap only for Org Admin assignment — not FFT data-plane god-mode when RBAC is on. */
   isAdmin: boolean;
   /** True when FFT_RBAC_ENABLED=true and dual-read path is active. */
   rbacEnabled: boolean;
-  organizationId?: string;
+  organizationId: string;
 };
 
 const PHASE_1_SALES_PERMISSIONS = new Set([
@@ -32,7 +33,7 @@ const PHASE_1_SALES_PERMISSIONS = new Set([
 
 const SELF_SERVICE_PERMISSIONS = new Set(PHASE_1_SALES_PERMISSIONS);
 
-async function loadAssignments(userId: string, organizationId?: string) {
+async function loadAssignments(userId: string, organizationId: string) {
   const rows = await listRoleAssignmentsForUser(userId, organizationId);
   return rows.map((row) => ({
     roleId: row.roleId,
@@ -91,16 +92,14 @@ export async function requireFftAdmin(): Promise<{
 }> {
   const access = await requireFftAccess();
   if (!access.rbacEnabled) {
+    // Phase 1 (RBAC off): Neon admin remains the ops admin path.
     if (!access.isAdmin) {
       redirect(fftDefaultHref("/events"));
     }
     return { userId: access.userId, email: access.email };
   }
 
-  if (access.isAdmin) {
-    return { userId: access.userId, email: access.email };
-  }
-
+  // RBAC on: Neon admin is not a data-plane god-mode — require FFT event.edit.
   const assignments = await loadAssignments(
     access.userId,
     access.organizationId,
@@ -116,19 +115,18 @@ export async function requireFftAdmin(): Promise<{
 
 /**
  * Non-redirecting permission check for RSC composition.
- * Mirrors requireTradePermission so pages can hide write controls without
+ * Mirrors requireFftPermission so pages can hide write controls without
  * weakening the server-action guard.
  */
-export async function hasTradePermission(
+export async function hasFftPermission(
   access: FftAccess,
   permissionCode: string,
   ctx: FftScopeContext = {},
 ): Promise<boolean> {
   if (!access.rbacEnabled) {
+    // Phase 1 (RBAC off): Neon admin = all; sales = limited set.
     return access.isAdmin || PHASE_1_SALES_PERMISSIONS.has(permissionCode);
   }
-
-  if (access.isAdmin) return true;
 
   const assignments = await loadAssignments(
     access.userId,
@@ -149,12 +147,12 @@ export async function hasTradePermission(
 }
 
 /** Server-side permission check. When RBAC flag is off, admin = all; sales = limited set. */
-export async function requireTradePermission(
+export async function requireFftPermission(
   permissionCode: string,
   ctx: FftScopeContext = {},
 ): Promise<FftAccess> {
   const access = await requireFftAccess();
-  if (!(await hasTradePermission(access, permissionCode, ctx))) {
+  if (!(await hasFftPermission(access, permissionCode, ctx))) {
     redirect(fftDefaultHref("/events"));
   }
   return access;

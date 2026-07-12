@@ -213,7 +213,7 @@ export function FftEventsList({
 
   if (events.length === 0) {
     return (
-      <div data-testid="trade-events-list">
+      <div data-testid="fft-events-list">
         <TradeEmptyState
           title="No events yet"
           description="Create an event or ensure the piglet template to get started."
@@ -224,7 +224,7 @@ export function FftEventsList({
   }
 
   return (
-    <div className="w-full" data-testid="trade-events-list">
+    <div className="w-full" data-testid="fft-events-list">
       <div className="border-b">
         <div className="flex flex-col gap-4 p-6">
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 max-md:*:last:col-span-full">
@@ -243,7 +243,7 @@ export function FftEventsList({
                   table.setPageIndex(0);
                 }}
                 placeholder="Name or code"
-                data-testid="trade-events-search"
+                data-testid="fft-events-search"
               />
             </div>
             <div className="space-y-2">
@@ -266,7 +266,7 @@ export function FftEventsList({
                 <SelectTrigger
                   id="trade-events-status"
                   className="w-full min-w-40"
-                  data-testid="trade-events-status-filter"
+                  data-testid="fft-events-status-filter"
                 >
                   <SelectValue />
                 </SelectTrigger>
@@ -291,7 +291,7 @@ export function FftEventsList({
                       setTemplatesOnly(checked === true);
                       table.setPageIndex(0);
                     }}
-                    data-testid="trade-events-templates-only"
+                    data-testid="fft-events-templates-only"
                   />
                   Templates only
                 </label>
@@ -309,7 +309,7 @@ export function FftEventsList({
             />
           </div>
         ) : (
-          <Table data-testid="trade-events-table">
+          <Table data-testid="fft-events-table">
             <TableHeader>
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id} className="h-14 border-t">
@@ -370,7 +370,7 @@ export function FftEventsList({
             </TableHeader>
             <TableBody>
               {filteredRows.map((row) => (
-                <TableRow key={row.id} data-testid="trade-events-row">
+                <TableRow key={row.id} data-testid="fft-events-row">
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id} className="h-14">
                       {flexRender(
@@ -390,7 +390,7 @@ export function FftEventsList({
         <p
           className="text-muted-foreground text-sm whitespace-nowrap"
           aria-live="polite"
-          data-testid="trade-events-count"
+          data-testid="fft-events-count"
         >
           Showing{" "}
           <span>
@@ -425,7 +425,7 @@ export function FftEventsList({
                 onClick={() => table.previousPage()}
                 disabled={!table.getCanPreviousPage()}
                 aria-label="Go to previous page"
-                data-testid="trade-events-page-prev"
+                data-testid="fft-events-page-prev"
               >
                 <ChevronLeftIcon aria-hidden />
                 Previous
@@ -475,7 +475,7 @@ export function FftEventsList({
                 onClick={() => table.nextPage()}
                 disabled={!table.getCanNextPage()}
                 aria-label="Go to next page"
-                data-testid="trade-events-page-next"
+                data-testid="fft-events-page-next"
               >
                 Next
                 <ChevronRightIcon aria-hidden />

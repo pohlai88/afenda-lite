@@ -27,7 +27,7 @@ Answer in one pass: **Is this change allowed?** **What is production state?** **
 | Phase 2C implementation | [spec/phase-2bcd-slices.md](./spec/phase-2bcd-slices.md) | **Implemented** — tag `fft-phase-2c` → `0c8b76b` (dev sign-off) |
 | Phase 2D implementation | [spec/phase-2bcd-slices.md](./spec/phase-2bcd-slices.md) | **2D-1 + 2D-2 landed** — tag `fft-phase-2d` → `0c8b76b` (dev sign-off) |
 
-**GitHub:** [#1](https://github.com/pohlai88/iam-check/issues/1) closed (ops rollout checklist).
+**GitHub:** [#1](https://github.com/pohlai88/afenda-lite/issues/1) closed (ops rollout checklist). Legacy issue URL under `iam-check` redirects.
 
 ---
 
@@ -35,14 +35,14 @@ Answer in one pass: **Is this change allowed?** **What is production state?** **
 
 | Item | Value |
 |------|-------|
-| URL | `https://iam-check.vercel.app` |
+| URL | `https://afenda-lite.vercel.app` (legacy alias `iam-check.vercel.app`) |
 | Neon branch | `br-tiny-hill-ao82jp6f` only |
 | `FFT_RBAC_ENABLED` | `true` on Vercel production |
 | Local dev | Same production branch — `npm run dev` |
 | Migrations | `013`–`023` Feed Farm Trade lane (`023` deferred notification triggers) |
 | `FFT_ERP_SYNC_ENABLED` | `false` | Phase 2D — async ERP push |
 | Last Gate 7 deploy | `dpl_BCqJqHsjQ8z2Tih1684Gp11ThreK` |
-| Gate 7 hotfix | `930dde0` — own-scope `resourceOwnerUserId` in `lib/auth/trade-session.ts` |
+| Gate 7 hotfix | `930dde0` — own-scope `resourceOwnerUserId` in session gate (now `modules/fft/auth/fft-session.ts`) |
 
 ### Rollback (RBAC only)
 
@@ -83,7 +83,7 @@ Canonical FE / module paths (Feed Farm Trade AdminCN restructure). Legacy `[loca
 | Routes | `app/fft/**` (locale-free); legacy bookmarks → `app/fft/[locale]/[[...path]]` redirect shim only |
 | UI | `features/fft/*` under `AdminCnShell` (`app/fft/layout.tsx`) — **no** `FftShell` |
 | Domain / store | `modules/fft/domain/` |
-| Session + RBAC gate | `modules/fft/auth/trade-session.ts` |
+| Session + RBAC gate | `modules/fft/auth/fft-session.ts` |
 | Phase 2B feature gates | `modules/fft/auth/trade-phase2b.ts` |
 | Phase 2D ERP gate | `modules/fft/auth/trade-phase2d.ts` |
 | ERP sync store | `modules/fft/domain/erp-sync-store.ts` |
@@ -127,11 +127,11 @@ npm run process:trade-closing-soon
 |---------|------|---------------|
 | `SHARED_ADMIN_EMAIL` | Operator admin | Platform Org Admin → `fft.access` (module entry SoT); not sales allowlist |
 | `PREVIEW_CLIENT_EMAIL` | Declaration preview client | **Not** auto in `fft_sales_member` |
-| Sales allowlist | `fft_sales_member` row | **Bridge** for `/fft` sales path until `fft.access` backfill |
+| Sales allowlist | `fft_sales_member` row | Ops roster only — entry SoT is platform `fft.access` |
 
-**Module entry (org-scoped):** platform `fft.access` → else allowlist → else FFT role assignment (when `FFT_RBAC_ENABLED`). Do not flip `FFT_RBAC_ENABLED` in control-plane work.
+**Module entry (org-scoped):** platform `fft.access` only. Allowlist / FFT domain assignment do **not** auto-promote on login. Write-time `ensureFftMemberPlatformAccess` runs on sales upsert (when user exists) and FFT role assign. Ops backfill: `npm run backfill:fft-access` (`--dry-run` supported). Tenancy audit: `npm run audit:tenancy-nulls`. Do not flip `FFT_RBAC_ENABLED` in control-plane work.
 
-**Expected:** signed-in user without `fft.access` / allowlist / FFT assignment → `/fft` → `/auth/sign-in?reason=fft-access-denied` → session exists → `/client`. Not an RBAC regression.
+**Expected:** signed-in user without `fft.access` → `/fft` → `/auth/sign-in?reason=fft-access-denied` → session exists → `/client`. Not an RBAC regression.
 
 ---
 

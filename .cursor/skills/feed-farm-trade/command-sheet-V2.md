@@ -20,7 +20,7 @@ Do not invent polish ACs, reopen P1, or enable flags to keep the agent busy.
 PRODUCT: Feed Farm Trade · ENGINE: Feed Farm Trade · PHASE: P3 ops flags
 DEFAULT: every P3 FFT_* ops flag = false (prod and local unless TASK says otherwise)
 ACTIVATION: one named flag at a time · never bundle modules
-AUTH: requireTradePermission(code) only — never role display names
+AUTH: requireFftPermission(code) only — never role display names
 WRITE RULE: flag false → server write fail-closed (UI hide alone = FAIL)
 FRONTEND: placeholder / unavailable while flag false
 ROLLBACK: flag=false → env:compose → sync:vercel (if prod) → redeploy → smoke
@@ -166,7 +166,7 @@ IDS: <existing F-OPS-* / AC-OPS-*>
 DO:
 1. Confirm TARGET/FLAG/IDS/action-map/permission exist — STOP if inventing.
 2. Smallest failing test for flag-off write gap.
-3. Assert feature flag before mutation; keep requireTradePermission.
+3. Assert feature flag before mutation; keep requireFftPermission.
 4. Tests: flag=false→block · flag=true+unauth→deny · flag=true+auth→allow (test env).
 5. No new FE unless TASK names an existing F-OPS-* surface; no registry edits.
 6. Run focused tests + npm run test:unit -- modules/fft.

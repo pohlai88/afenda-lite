@@ -103,6 +103,7 @@ describe("fft_rbac_audit writes", () => {
       name: "Override Operators",
       permissionCodes: ["allocation.override"],
       actorId: "actor-2",
+      organizationId: "org-audit-test",
     });
 
     expect(

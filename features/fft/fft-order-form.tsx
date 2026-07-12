@@ -39,7 +39,7 @@ export function FftOrderForm({
     return (
       <p
         className="text-muted-foreground rounded-lg border p-4 text-sm"
-        data-testid="trade-order-window-closed"
+        data-testid="fft-order-window-closed"
       >
         Orders can only be submitted while the event window is open (status:{" "}
         {eventStatus}).
@@ -76,7 +76,7 @@ export function FftOrderForm({
           name="customerName"
           required
           className={FFT_NATIVE_FIELD_CLASS}
-          data-testid="trade-order-customer-name"
+          data-testid="fft-order-customer-name"
         />
       </div>
       <div className="space-y-2">
@@ -94,7 +94,7 @@ export function FftOrderForm({
           name="productId"
           required
           className={FFT_NATIVE_SELECT_CLASS}
-          data-testid="trade-order-product"
+          data-testid="fft-order-product"
         >
           <option value="">Select product</option>
           {products.map((p) => (
@@ -113,7 +113,7 @@ export function FftOrderForm({
           min={1}
           required
           className={FFT_NATIVE_FIELD_CLASS}
-          data-testid="trade-order-qty"
+          data-testid="fft-order-qty"
         />
       </div>
       {depositRequired ? (
@@ -201,11 +201,11 @@ export function FftOrderForm({
         Deposit status is tracking only — not finance settlement.
       </p>
       {error ? (
-        <p className="text-destructive text-sm" data-testid="trade-order-error">
+        <p className="text-destructive text-sm" data-testid="fft-order-error">
           {error}
         </p>
       ) : null}
-      <Button type="submit" disabled={pending} data-testid="trade-order-submit">
+      <Button type="submit" disabled={pending} data-testid="fft-order-submit">
         Submit order
       </Button>
     </form>

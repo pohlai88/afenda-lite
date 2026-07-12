@@ -7,7 +7,7 @@
 | **Owners** | Platform / Identity |
 | **Scope** | Multi-tenant boundary + app-owned permission-catalog RBAC for Afenda-Lite modules |
 | **Out of scope** | Neon RLS; Neon Auth custom roles (unsupported); merging FFT **domain** permission catalogs into `platform_*` tables |
-| **Follow-up done** | FFT `organization_id` (026); operator session; org-scoped reads; **control-plane** `fft.access` module entry (catalogs remain separate) |
+| **Follow-up done** | FFT `organization_id` (026); hard cutover `027` (`NOT NULL` + hard filters); operator session; org-scoped Users via `neon_auth.member`; **control-plane** `fft.access` module entry (catalogs remain separate) |
 
 **Related:** [001-modular-monolith-hexagonal.md](./001-modular-monolith-hexagonal.md) · [docs/fft/adr/001-rbac.md](../../docs/fft/adr/001-rbac.md) · Neon Auth Organization plugin (owner/admin/member fixed)
 
@@ -31,9 +31,11 @@ Adopt a **three-tier IAM** model:
 2. Neon `user.role` `admin`|`user` bootstraps platform access until assignments exist; product code must prefer permission checks.
 3. Platform catalog is product-owned; adding a code is a release; assigning it to a role is an org-admin action.
 4. Scope v1: `organization` | `platform`. Defer team/BU/event to later ADRs.
-5. FFT keeps its own `fft_*` **domain** catalog (event/order/allocation/…). Do not merge domain codes into `platform_permission`. Platform owns **module entry** via `fft.access` (org-scoped control plane). Additive `organization_id` on FFT tables landed in migration `026`.
+5. FFT keeps its own `fft_*` **domain** catalog (event/order/allocation/…). Do not merge domain codes into `platform_permission`. Platform owns **module entry** via `fft.access` (org-scoped control plane). Additive `organization_id` on FFT tables landed in migration `026`; hard `NOT NULL` + hard SQL filters in `027`.
 6. Reads: RSC → Identity domain. Mutations: Server Actions + Zod + `ActionResult`. No new web-UI REST list endpoints.
 7. AdminCN Roles/Permissions DNA (`ACN-BLK-APPS-ROLES` / `PERMISSIONS`) adapts into `features/organization-admin`; demo zustand stays DNA-only.
+8. **Neon RLS is out of scope** for the product path (Server Actions + explicit org predicates). RLS is required for Neon Data API client queries; this app does not use Data API for tenant data.
+9. Tenant-root reads/writes use hard `organization_id = $org` only — no soft `(NULL OR org)` dual-mode after Gate 0 + `027`.
 
 ### Seed permission codes (v1)
 
@@ -54,9 +56,10 @@ Viewer → declarations.read, account.self
 
 ## Consequences
 
-- Declarations tables gain nullable `organization_id` for progressive tenancy; enforcement filters land with backfill.
-- `/dashboard/roles` and `/dashboard/permissions` become organization-admin product routes.
-- S12 tenancy is **reopened** under this ADR (was frozen pending S17).
+- Declarations + FFT tenant roots are `organization_id NOT NULL` (migration `027`); app filters are hard `= org`.
+- `/dashboard/users` is membership-scoped via `neon_auth.member`.
+- `/dashboard/roles` and `/dashboard/permissions` are organization-admin product routes.
+- S12 tenancy hard cutover is **closed** under this ADR (soft dual-mode deleted).
 - Agents must not invent UI registry IDs; product UI lives under `features/organization-admin` until HITL registers portal-view blocks.
 
 ## Alternatives rejected

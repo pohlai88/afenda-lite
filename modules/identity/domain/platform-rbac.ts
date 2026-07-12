@@ -425,7 +425,7 @@ export async function setPlatformRolePermission(input: {
 
 export async function listPlatformRoleAssignmentsForUser(
   userId: string,
-  organizationId?: string | null,
+  organizationId: string,
 ) {
   const result = await pool.query(
     `SELECT a.id, a.user_id, a.organization_id, a.role_id, a.scope_type, a.scope_id, a.active,
@@ -440,8 +440,8 @@ export async function listPlatformRoleAssignmentsForUser(
      JOIN platform_role r ON r.id = a.role_id
      WHERE a.user_id = $1
        AND a.active = TRUE
-       AND ($2::text IS NULL OR a.organization_id = $2)`,
-    [userId, organizationId ?? null],
+       AND a.organization_id = $2`,
+    [userId, organizationId],
   );
 
   return result.rows.map(
@@ -606,6 +606,44 @@ export async function ensureNeonAdminOrgAdminAssignment(input: {
     userId: input.userId,
     organizationId: input.organizationId,
     roleId: orgAdmin.id,
+    scopeType: "organization",
+    actorUserId: input.actorUserId ?? input.userId,
+  });
+}
+
+/**
+ * Ensure the user holds platform `fft.access` via the FFT Member template.
+ * Idempotent — used by ops backfill and write-time sales/assign paths.
+ */
+export async function ensureFftMemberPlatformAccess(input: {
+  userId: string;
+  organizationId: OrganizationId;
+  actorUserId?: string;
+}) {
+  await seedPlatformRbacCatalog(input.actorUserId ?? input.userId);
+
+  const existing = await listPlatformRoleAssignmentsForUser(
+    input.userId,
+    input.organizationId,
+  );
+  if (
+    existing.some((assignment) =>
+      assignment.permissionCodes.includes("fft.access"),
+    )
+  ) {
+    return { ok: true as const, skipped: true as const };
+  }
+
+  const roles = await listPlatformRoles(input.organizationId);
+  const fftMember = roles.find((role) => role.templateKey === "fft_member");
+  if (!fftMember) {
+    return { error: "NOT_FOUND" as const };
+  }
+
+  return assignPlatformRole({
+    userId: input.userId,
+    organizationId: input.organizationId,
+    roleId: fftMember.id,
     scopeType: "organization",
     actorUserId: input.actorUserId ?? input.userId,
   });

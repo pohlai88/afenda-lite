@@ -20,18 +20,19 @@ Plan authority: this skill + `doc/backend/` + [closed-scope-register](../../../d
 | Platform RBAC catalog + domain + schemas | ADR-002 | Wired + `fft.access` | **Done** |
 | Org-admin Roles / Permissions UI | `/dashboard/roles` `/permissions` | Wired + admin nav entitlement | **Done** |
 | Assign UI gated by `org.roles.manage` | User detail | `canManagePlatformRoles` | **Done** |
-| Declarations / FFT `organization_id` scope | Tenancy | Soft-harden closed | **Done** |
-| Soft-harden IDOR / stamp / session / DRY SQL | ADR-002 progressive | Client deletes + FFT RBAC/session + `organizationScopeSql` | **Done** |
-| FFT module entry control plane | `hasFftModuleAccess` | `fft.access` + allowlist/assignment bridges | **Done** |
-| Apply migrations `025`/`026` on Neon | Ops | Applied on `br-tiny-hill-ao82jp6f` | **Done** |
-| Hard multi-org cutover | Drop `IS NULL OR` | Deferred by design | **Deferred** |
+| Declarations / FFT `organization_id` scope | Tenancy | Hard `= org` + `027` NOT NULL | **Done** |
+| Soft-harden IDOR / stamp / session / DRY SQL | ADR-002 progressive | Superseded by hard cutover | **Superseded** |
+| FFT module entry control plane | `hasFftModuleAccess` | platform `fft.access` only; write-time `ensureFftMember`; ops `backfill:fft-access` | **Done** |
+| Apply migrations `025`/`026`/`027` on Neon | Ops | Child `br-jolly-mountain-ao6ph4od` + prod promote | **Done** |
+| Hard multi-org cutover | Drop `IS NULL OR` + promoteLegacy | Hard scope + membership Users + CI residue | **Done** |
 | `/client` workspace restore | Closed + reopen checklist | Stubs only | **Closed (registered)** |
 | FFT P3 flag promotion | gate-register | Prod flags off | **Closed (registered)** |
 | SaaS billing / 2FA product | Deferred chrome | Coming-soon + plan defaults | **Intentional (registered)** |
 
 ## Stabilization (latest)
 
-- Soft-harden multi-tenancy: org-scoped client invite/assignment mutate-by-id; FFT session allowlist + RBAC lists/stamp/clone/template/import; platform NULL-org role mutation guards; DRY `organizationScopeSql`
+- Hard multi-tenant cutover: `organizationScopeSql` → `col = $n`; required `organizationId` Actions→domain; `027` NOT NULL; delete `promoteLegacy`; Users via `neon_auth.member`; CI `check:tenancy-residue` + `audit:tenancy-nulls`
+- Soft-harden multi-tenancy superseded (no dual-mode)
 - Relocated draft Route Handler compose → `modules/declarations/api/client-declaration-draft-route*` (Platform no longer imports Declarations)
 - Relocated shell entitlement resolve → `features/portal-chrome/resolve-shell-access.ts`; FFT gate → `modules/fft/auth/fft-module-access.ts` (Platform no longer imports FFT)
 - Reliance registry: dropped stale `domain:auth` on admin-declaration-detail / admin-access-share → **26/26** surfaces aligned

@@ -1,6 +1,6 @@
 import { spawn } from "node:child_process";
 
-const checks = ["check:copy", "check:nav", "check:proxy", "check:playground", "check:db-schema", "check:brand-icons", "check:env-manifest-drift", "evaluate:ui-matrix", "check:import-boundaries", "check:repo-migration-map", "check:reliance-mapping-drift", "check:reliance-graph-drift", "check:reliance-coverage", "check:route-coverage-drift", "check:ui-sync", "check:fft-ui-registry"];
+const checks = ["check:copy", "check:nav", "check:proxy", "check:playground", "check:db-schema", "check:brand-icons", "check:env-manifest-drift", "evaluate:ui-matrix", "check:import-boundaries", "check:repo-migration-map", "check:reliance-mapping-drift", "check:reliance-graph-drift", "check:reliance-coverage", "check:route-coverage-drift", "check:ui-sync", "check:fft-ui-registry", "check:tenancy-residue"];
 
 function runCheck(script) {
   return new Promise((resolve, reject) => {

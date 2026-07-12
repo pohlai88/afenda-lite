@@ -5,7 +5,7 @@ import { FftOpsPlaceholder } from "@/features/fft/fft-ops-placeholder";
 import { FFT_UI_LOCALE } from "@/features/fft/fft-ui-locale";
 import { isFftDepositFeatureActive } from "@/modules/fft/auth/fft-phase2b";
 import {
-  hasTradePermission,
+  hasFftPermission,
   requireFftAccess,
 } from "@/modules/fft/auth/fft-session";
 import {
@@ -30,7 +30,7 @@ export default async function FftDepositsPage({ params }: Props) {
   const event = await getFftEventForOrganization(eventId);
   if (!event) notFound();
 
-  const canView = await hasTradePermission(
+  const canView = await hasFftPermission(
     access,
     "deposit.view",
     { eventId },
@@ -49,7 +49,7 @@ export default async function FftDepositsPage({ params }: Props) {
     );
   }
 
-  const canManage = await hasTradePermission(
+  const canManage = await hasFftPermission(
     access,
     "deposit.manage",
     { eventId },

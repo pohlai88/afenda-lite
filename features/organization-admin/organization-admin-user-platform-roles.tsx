@@ -157,6 +157,7 @@ export function OrganizationAdminUserPlatformRoles({
             type="button"
             disabled={pending || !roleId || assignableOptions.length === 0}
             onClick={assignRole}
+            data-testid="platform-role-assign"
           >
             Assign
           </Button>

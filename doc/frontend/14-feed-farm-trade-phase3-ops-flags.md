@@ -181,7 +181,7 @@ This inventory is orientation only — it is not a completion claim. Use the Eva
 
 ## Risks and open questions
 
-- **Doc-drift risk (flag this, do not silently fix):** `docs/fft/RUNTIME.md` § Code map still lists legacy engine paths (`app/fft/[locale]/**`, `components/fft/trade-shell.tsx`, `modules/fft/domain/`, `lib/auth/trade-session.ts`) that predate the Feed Farm Trade AdminCN restructure (`modules/fft/**`, `app/fft/layout.tsx`, no `FftShell`). This is a Feed Farm Trade ops-lane document and is out of scope for this FE ADR set to edit directly — raise it explicitly with the user or the Feed Farm Trade lane owner rather than resolving it here.
+- **Doc-drift risk (resolved 2026-07-12):** `docs/fft/RUNTIME.md` code map now points at `modules/fft/auth/fft-session.ts`, `app/fft/layout.tsx`, and AdminCN — not legacy `trade-session` / `FftShell` paths.
 - **Slice-approval risk:** none of the five capabilities may get schema or write-path code until their slice group is Approved in `docs/fft/spec/phase-2bcd-slices.md` — a P3 evaluation finding "code exists" without a recorded approval is itself a finding to report, not a pass.
 - **2D-3 boundary:** any customer-specific ERP adapter code found during evaluation without a documented integration contract should be flagged as a rule violation, not credited as progress.
 

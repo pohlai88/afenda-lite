@@ -11,11 +11,10 @@ export function isSalesMemberActive(
 }
 
 /**
- * Phase 1 allowlist check for Feed Farm Trade module entry.
- * Organization admin alone does **not** grant access — pass `isAdmin` only for
- * call-site clarity; it is ignored (Feed Farm Trade permission / allowlist required).
+ * Roster helper: active sales-member email match.
+ * Module entry is platform `fft.access` — this is not an entry grant.
  */
-export function canSalesAccessTrade(
+export function canSalesAccessFft(
   members: FftSalesMember[],
   email: string,
   _isAdmin = false,

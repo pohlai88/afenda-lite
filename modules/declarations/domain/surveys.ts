@@ -141,7 +141,7 @@ export async function createSurvey(input: {
   title: string;
   question: string;
   userId: string;
-  organizationId?: string;
+  organizationId: string;
   metadata?: Partial<SurveyMetadata>;
 }) {
   const slug = createSlug(input.title);
@@ -160,7 +160,7 @@ export async function createSurvey(input: {
       input.title.trim(),
       input.question.trim(),
       input.userId,
-      input.organizationId ?? null,
+      input.organizationId,
       metadata?.referenceNumber ?? null,
       metadata?.caseNumber ?? null,
       metadata?.effectiveDate?.toISOString().slice(0, 10) ?? null,
@@ -177,58 +177,33 @@ export async function createSurvey(input: {
   return mapSurvey(result.rows[0]);
 }
 
-export async function listSurveysForAdmin(organizationId?: string) {
-  const result = organizationId
-    ? await pool.query(
-        `SELECT
-           s.id,
-           s.slug,
-           s.title,
-           s.question,
-           s.user_id,
-           s.created_at,
-           s.reference_number,
-           s.case_number,
-           s.effective_date,
-           s.submit_before,
-           s.surveyor_name,
-           s.surveyor_org,
-           s.surveyee_individual,
-           s.surveyee_org,
-           s.purpose,
-           s.categories,
-           COUNT(r.id)::int AS response_count
-         FROM surveys s
-         LEFT JOIN survey_responses r ON r.survey_id = s.id
-         WHERE ${organizationScopeSql("s.organization_id", 1)}
-         GROUP BY s.id
-         ORDER BY s.created_at DESC`,
-        [organizationId],
-      )
-    : await pool.query(
-        `SELECT
-           s.id,
-           s.slug,
-           s.title,
-           s.question,
-           s.user_id,
-           s.created_at,
-           s.reference_number,
-           s.case_number,
-           s.effective_date,
-           s.submit_before,
-           s.surveyor_name,
-           s.surveyor_org,
-           s.surveyee_individual,
-           s.surveyee_org,
-           s.purpose,
-           s.categories,
-           COUNT(r.id)::int AS response_count
-         FROM surveys s
-         LEFT JOIN survey_responses r ON r.survey_id = s.id
-         GROUP BY s.id
-         ORDER BY s.created_at DESC`,
-      );
+export async function listSurveysForAdmin(organizationId: string) {
+  const result = await pool.query(
+    `SELECT
+       s.id,
+       s.slug,
+       s.title,
+       s.question,
+       s.user_id,
+       s.created_at,
+       s.reference_number,
+       s.case_number,
+       s.effective_date,
+       s.submit_before,
+       s.surveyor_name,
+       s.surveyor_org,
+       s.surveyee_individual,
+       s.surveyee_org,
+       s.purpose,
+       s.categories,
+       COUNT(r.id)::int AS response_count
+     FROM surveys s
+     LEFT JOIN survey_responses r ON r.survey_id = s.id
+     WHERE ${organizationScopeSql("s.organization_id", 1)}
+     GROUP BY s.id
+     ORDER BY s.created_at DESC`,
+    [organizationId],
+  );
 
   return result.rows.map((row) => ({
     ...mapSurvey(row),
@@ -252,23 +227,15 @@ export async function getSurveyBySlug(slug: string) {
   return mapSurvey(result.rows[0]);
 }
 
-export async function getSurveyForAdmin(id: string, organizationId?: string) {
-  const result = organizationId
-    ? await pool.query(
-        `SELECT ${SURVEY_SELECT_COLUMNS}
-         FROM surveys
-         WHERE id = $1
-           AND ${organizationScopeSql("organization_id", 2)}
-         LIMIT 1`,
-        [id, organizationId],
-      )
-    : await pool.query(
-        `SELECT ${SURVEY_SELECT_COLUMNS}
-         FROM surveys
-         WHERE id = $1
-         LIMIT 1`,
-        [id],
-      );
+export async function getSurveyForAdmin(id: string, organizationId: string) {
+  const result = await pool.query(
+    `SELECT ${SURVEY_SELECT_COLUMNS}
+     FROM surveys
+     WHERE id = $1
+       AND ${organizationScopeSql("organization_id", 2)}
+     LIMIT 1`,
+    [id, organizationId],
+  );
 
   if (!result.rows[0]) {
     return null;
@@ -282,76 +249,43 @@ export async function updateSurvey(input: {
   title: string;
   question: string;
   metadata?: SurveyMetadata;
-  organizationId?: string;
+  organizationId: string;
 }) {
   const metadata = input.metadata;
-  const result = input.organizationId
-    ? await pool.query(
-        `UPDATE surveys
-         SET title = $2,
-             question = $3,
-             reference_number = $4,
-             case_number = $5,
-             effective_date = $6,
-             submit_before = $7,
-             surveyor_name = $8,
-             surveyor_org = $9,
-             surveyee_individual = $10,
-             surveyee_org = $11,
-             purpose = $12,
-             categories = $13
-         WHERE id = $1
-           AND ${organizationScopeSql("organization_id", 14)}
-         RETURNING ${SURVEY_SELECT_COLUMNS}`,
-        [
-          input.id,
-          input.title.trim(),
-          input.question.trim(),
-          metadata?.referenceNumber ?? null,
-          metadata?.caseNumber ?? null,
-          metadata?.effectiveDate?.toISOString().slice(0, 10) ?? null,
-          metadata?.submitBefore?.toISOString() ?? null,
-          metadata?.surveyorName ?? null,
-          metadata?.surveyorOrg ?? null,
-          metadata?.surveyeeIndividual ?? null,
-          metadata?.surveyeeOrg ?? null,
-          metadata?.purpose ?? null,
-          metadata?.categories ?? [],
-          input.organizationId,
-        ],
-      )
-    : await pool.query(
-        `UPDATE surveys
-         SET title = $2,
-             question = $3,
-             reference_number = $4,
-             case_number = $5,
-             effective_date = $6,
-             submit_before = $7,
-             surveyor_name = $8,
-             surveyor_org = $9,
-             surveyee_individual = $10,
-             surveyee_org = $11,
-             purpose = $12,
-             categories = $13
-         WHERE id = $1
-         RETURNING ${SURVEY_SELECT_COLUMNS}`,
-        [
-          input.id,
-          input.title.trim(),
-          input.question.trim(),
-          metadata?.referenceNumber ?? null,
-          metadata?.caseNumber ?? null,
-          metadata?.effectiveDate?.toISOString().slice(0, 10) ?? null,
-          metadata?.submitBefore?.toISOString() ?? null,
-          metadata?.surveyorName ?? null,
-          metadata?.surveyorOrg ?? null,
-          metadata?.surveyeeIndividual ?? null,
-          metadata?.surveyeeOrg ?? null,
-          metadata?.purpose ?? null,
-          metadata?.categories ?? [],
-        ],
-      );
+  const result = await pool.query(
+    `UPDATE surveys
+     SET title = $2,
+         question = $3,
+         reference_number = $4,
+         case_number = $5,
+         effective_date = $6,
+         submit_before = $7,
+         surveyor_name = $8,
+         surveyor_org = $9,
+         surveyee_individual = $10,
+         surveyee_org = $11,
+         purpose = $12,
+         categories = $13
+     WHERE id = $1
+       AND ${organizationScopeSql("organization_id", 14)}
+     RETURNING ${SURVEY_SELECT_COLUMNS}`,
+    [
+      input.id,
+      input.title.trim(),
+      input.question.trim(),
+      metadata?.referenceNumber ?? null,
+      metadata?.caseNumber ?? null,
+      metadata?.effectiveDate?.toISOString().slice(0, 10) ?? null,
+      metadata?.submitBefore?.toISOString() ?? null,
+      metadata?.surveyorName ?? null,
+      metadata?.surveyorOrg ?? null,
+      metadata?.surveyeeIndividual ?? null,
+      metadata?.surveyeeOrg ?? null,
+      metadata?.purpose ?? null,
+      metadata?.categories ?? [],
+      input.organizationId,
+    ],
+  );
 
   if (!result.rows[0]) {
     return null;
@@ -360,16 +294,14 @@ export async function updateSurvey(input: {
   return mapSurvey(result.rows[0]);
 }
 
-export async function deleteSurvey(id: string, organizationId?: string) {
-  const result = organizationId
-    ? await pool.query(
-        `DELETE FROM surveys
-         WHERE id = $1
-           AND ${organizationScopeSql("organization_id", 2)}
-         RETURNING id`,
-        [id, organizationId],
-      )
-    : await pool.query(`DELETE FROM surveys WHERE id = $1 RETURNING id`, [id]);
+export async function deleteSurvey(id: string, organizationId: string) {
+  const result = await pool.query(
+    `DELETE FROM surveys
+     WHERE id = $1
+       AND ${organizationScopeSql("organization_id", 2)}
+     RETURNING id`,
+    [id, organizationId],
+  );
 
   return Boolean(result.rows[0]);
 }

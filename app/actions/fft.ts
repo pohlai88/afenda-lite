@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireFftAdmin, requireTradePermission } from "@/modules/fft/auth/fft-session";
+import { requireFftAdmin, requireFftPermission } from "@/modules/fft/auth/fft-session";
 import { resolveFftOrganizationContext } from "@/features/fft/fft-organization-context";
 import { assertImportRowLimit } from "@/modules/fft/domain/import-validators";
 import { enqueueErpSyncJob } from "@/modules/fft/domain/erp-sync-store";
@@ -112,6 +112,9 @@ import {
   parseFftLocale,
   parseFftOrderId,
 } from "@/modules/fft/schemas/fft-schemas";
+import { ensureFftMemberPlatformAccess } from "@/modules/identity/domain/platform-rbac";
+import { asOrganizationId } from "@/modules/identity/schemas/platform-rbac";
+import { getNeonAuthUserByEmail } from "@/modules/identity/domain/neon-auth-users";
 
 async function getScopedEvent(eventId: string, userId?: string) {
   const org = await resolveFftOrganizationContext(userId);
@@ -164,7 +167,7 @@ export async function createFftEventAction(
   const gatedLocale = gateFftLocale(locale);
   if (typeof gatedLocale === "object") return gatedLocale;
   
-  const access = await requireTradePermission("event.create");
+  const access = await requireFftPermission("event.create");
 
   const eventName = String(formData.get("eventName") ?? "").trim();
   const eventType = String(formData.get("eventType") ?? "hot_sales").trim();
@@ -252,7 +255,7 @@ export async function openFftEventAction(locale: string, eventId: string) {
   if (typeof gatedLocale === "object") return gatedLocale;
   const gatedEventId = gateFftEventId(eventId);
   if (typeof gatedEventId === "object") return gatedEventId;
-  const admin = await requireTradePermission("event.open_close", {
+  const admin = await requireFftPermission("event.open_close", {
     eventId: gatedEventId,
   });
   const event = await getScopedEvent(gatedEventId);
@@ -295,7 +298,7 @@ export async function activateScheduledFftEventAction(
   const gatedEventId = gateFftEventId(eventId);
   if (typeof gatedEventId === "object") return gatedEventId;
 
-  const admin = await requireTradePermission("event.open_close", {
+  const admin = await requireFftPermission("event.open_close", {
     eventId: gatedEventId,
   });
   const event = await getScopedEvent(gatedEventId);
@@ -327,7 +330,7 @@ export async function closeFftEventAction(locale: string, eventId: string) {
   const gatedEventId = gateFftEventId(eventId);
   if (typeof gatedEventId === "object") return gatedEventId;
 
-  const admin = await requireTradePermission("event.open_close", {
+  const admin = await requireFftPermission("event.open_close", {
     eventId: gatedEventId,
   });
   const event = await getScopedEvent(gatedEventId);
@@ -363,7 +366,7 @@ export async function saveFftEventSetupAction(
   const gatedEventId = gateFftEventId(eventId);
   if (typeof gatedEventId === "object") return gatedEventId;
 
-  const admin = await requireTradePermission("event.edit", {
+  const admin = await requireFftPermission("event.edit", {
     eventId: gatedEventId,
   });
   const event = await getScopedEvent(gatedEventId);
@@ -457,7 +460,7 @@ export async function saveTradeProductAction(
   const gatedEventId = gateFftEventId(eventId);
   if (typeof gatedEventId === "object") return gatedEventId;
 
-  const access = await requireTradePermission("supply.manage", {
+  const access = await requireFftPermission("supply.manage", {
     eventId: gatedEventId,
   });
   const event = await getScopedEvent(gatedEventId);
@@ -610,7 +613,7 @@ export async function saveTradeFieldDefAction(
   const gatedEventId = gateFftEventId(eventId);
   if (typeof gatedEventId === "object") return gatedEventId;
 
-  const access = await requireTradePermission("custom_field.manage", {
+  const access = await requireFftPermission("custom_field.manage", {
     eventId: gatedEventId,
   });
   const event = await getScopedEvent(gatedEventId);
@@ -700,7 +703,7 @@ export async function importPriorityCsvAction(
   const gatedEventId = gateFftEventId(eventId);
   if (typeof gatedEventId === "object") return gatedEventId;
 
-  const access = await requireTradePermission("priority.manage", {
+  const access = await requireFftPermission("priority.manage", {
     eventId: gatedEventId,
   });
   const event = await getScopedEvent(gatedEventId);
@@ -728,13 +731,25 @@ export async function addSalesMemberAction(locale: string, email: string) {
   const gatedLocale = gateFftLocale(locale);
   if (typeof gatedLocale === "object") return gatedLocale;
 
-  await requireFftAdmin();
+  const access = await requireFftAdmin();
   const normalized = email.trim().toLowerCase();
   if (!normalized || !normalized.includes("@")) {
     return { error: "invalid_email" };
   }
-  const org = await resolveFftOrganizationContext();
-  await upsertSalesMember(normalized, undefined, org.organizationId);
+  const org = await resolveFftOrganizationContext(access.userId);
+  const authUser = await getNeonAuthUserByEmail(normalized);
+  await upsertSalesMember(
+    normalized,
+    authUser?.id ?? undefined,
+    org.organizationId,
+  );
+  if (authUser?.id) {
+    await ensureFftMemberPlatformAccess({
+      userId: authUser.id,
+      organizationId: asOrganizationId(org.organizationId),
+      actorUserId: access.userId,
+    });
+  }
   revalidateFft(gatedLocale);
   return { ok: true };
 }
@@ -749,7 +764,7 @@ export async function submitFftOrderAction(
   const gatedEventId = gateFftEventId(eventId);
   if (typeof gatedEventId === "object") return gatedEventId;
 
-  const access = await requireTradePermission("order.create", {
+  const access = await requireFftPermission("order.create", {
     eventId: gatedEventId,
   });
   const event = await getScopedEvent(gatedEventId);
@@ -864,7 +879,7 @@ export async function runFftAllocationAction(
   const gatedEventId = gateFftEventId(eventId);
   if (typeof gatedEventId === "object") return gatedEventId;
 
-  const admin = await requireTradePermission("allocation.run", {
+  const admin = await requireFftPermission("allocation.run", {
     eventId: gatedEventId,
   });
 
@@ -954,7 +969,7 @@ export async function previewFftAllocationAction(
   const gatedEventId = gateFftEventId(eventId);
   if (typeof gatedEventId === "object") return gatedEventId;
 
-  await requireTradePermission("allocation.preview", {
+  await requireFftPermission("allocation.preview", {
     eventId: gatedEventId,
   });
 
@@ -988,7 +1003,7 @@ export async function manualAdjustFftOrderAction(
   if (!order) return { error: "not_found" };
 
   // G9: distinct from allocation.preview / allocation.run — never substitute those codes.
-  const admin = await requireTradePermission("allocation.override", {
+  const admin = await requireFftPermission("allocation.override", {
     eventId: order.eventId,
   });
 
@@ -1049,7 +1064,7 @@ export async function requestTransferAction(
   const order = await getOrderById(gatedOrderId);
   if (!order) return { error: "not_found" };
 
-  const access = await requireTradePermission("transfer.request", {
+  const access = await requireFftPermission("transfer.request", {
     eventId: order.eventId,
   });
   if (!access.isAdmin && order.salespersonUserId !== access.userId) {
@@ -1119,7 +1134,7 @@ export async function approveTransferAction(
   const order = await getOrderById(gatedOrderId);
   if (!order) return { error: "not_found" };
 
-  const access = await requireTradePermission("transfer.approve", {
+  const access = await requireFftPermission("transfer.approve", {
     eventId: order.eventId,
   });
 
@@ -1159,7 +1174,7 @@ export async function rejectTransferAction(
   const order = await getOrderById(gatedOrderId);
   if (!order) return { error: "not_found" };
 
-  const access = await requireTradePermission("transfer.approve", {
+  const access = await requireFftPermission("transfer.approve", {
     eventId: order.eventId,
   });
 
@@ -1192,7 +1207,7 @@ export async function exportOrdersCsvAction(locale: string, eventId: string) {
   const gatedEventId = gateFftEventId(eventId);
   if (typeof gatedEventId === "object") return gatedEventId;
 
-  await requireTradePermission("export.orders", { eventId: gatedEventId });
+  await requireFftPermission("export.orders", { eventId: gatedEventId });
   const orders = await listOrdersForEvent(gatedEventId);
   return ordersToCsv(orders);
 }
@@ -1203,7 +1218,7 @@ export async function exportEventSummaryCsvAction(locale: string, eventId: strin
   const gatedEventId = gateFftEventId(eventId);
   if (typeof gatedEventId === "object") return gatedEventId;
 
-  await requireTradePermission("export.orders", { eventId: gatedEventId });
+  await requireFftPermission("export.orders", { eventId: gatedEventId });
   const [event, products, orders] = await Promise.all([
     getScopedEvent(gatedEventId),
     listProductsForEvent(gatedEventId),
@@ -1219,7 +1234,7 @@ export async function exportAllocationCsvAction(locale: string, eventId: string)
   const gatedEventId = gateFftEventId(eventId);
   if (typeof gatedEventId === "object") return gatedEventId;
 
-  await requireTradePermission("export.orders", { eventId: gatedEventId });
+  await requireFftPermission("export.orders", { eventId: gatedEventId });
   const orders = await listOrdersForEvent(gatedEventId);
   return allocationToCsv(orders);
 }
@@ -1243,7 +1258,7 @@ export async function completeFftOrderAction(
 
   const pickupOps = isFftPickupOpsEnabled();
   const access = pickupOps
-    ? await requireTradePermission("pickup.manage", {
+    ? await requireFftPermission("pickup.manage", {
         eventId: order.eventId,
       })
     : await requireFftAdmin();
@@ -1315,7 +1330,7 @@ export async function seedFftRbacCatalogAction(locale: string) {
   const gatedLocale = gateFftLocale(locale);
   if (typeof gatedLocale === "object") return gatedLocale;
   
-  const access = await requireTradePermission("role.manage");
+  const access = await requireFftPermission("role.manage");
   await seedFftRbacCatalog(access.userId);
   revalidateFft(gatedLocale);
   return { ok: true };
@@ -1329,7 +1344,7 @@ export async function createTradeRoleAction(
   const gatedLocale = gateFftLocale(locale);
   if (typeof gatedLocale === "object") return gatedLocale;
   
-  const access = await requireTradePermission("role.manage");
+  const access = await requireFftPermission("role.manage");
   if (!name.trim()) return { error: "invalid_name" };
   const org = await resolveFftOrganizationContext(access.userId);
   const roleId = await createCustomRole({
@@ -1350,7 +1365,7 @@ export async function setTradeRolePermissionsAction(
   const gatedLocale = gateFftLocale(locale);
   if (typeof gatedLocale === "object") return gatedLocale;
   
-  const access = await requireTradePermission("role.manage");
+  const access = await requireFftPermission("role.manage");
   await setRolePermissions({
     roleId,
     permissionCodes,
@@ -1368,7 +1383,7 @@ export async function setTradeRoleActiveAction(
   const gatedLocale = gateFftLocale(locale);
   if (typeof gatedLocale === "object") return gatedLocale;
   
-  const access = await requireTradePermission("role.manage");
+  const access = await requireFftPermission("role.manage");
   await setRoleActive({ roleId, active, actorId: access.userId });
   revalidateFft(gatedLocale);
   return { ok: true };
@@ -1382,7 +1397,7 @@ export async function duplicateTradeRoleAction(
   const gatedLocale = gateFftLocale(locale);
   if (typeof gatedLocale === "object") return gatedLocale;
   
-  const access = await requireTradePermission("role.manage");
+  const access = await requireFftPermission("role.manage");
   const org = await resolveFftOrganizationContext(access.userId);
   const roleId = await duplicateRole({
     sourceRoleId,
@@ -1407,7 +1422,7 @@ export async function assignTradeRoleAction(
   const gatedLocale = gateFftLocale(locale);
   if (typeof gatedLocale === "object") return gatedLocale;
   
-  const access = await requireTradePermission("role.manage");
+  const access = await requireFftPermission("role.manage");
   if (!input.userId || !input.roleId) return { error: "invalid_input" };
   if (!FFT_SCOPE_TYPES.includes(input.scopeType)) {
     return { error: "invalid_scope" };
@@ -1420,6 +1435,7 @@ export async function assignTradeRoleAction(
   ) {
     return { error: "scope_id_required" };
   }
+  const orgCtx = await resolveFftOrganizationContext(access.userId);
   await ensureRoleAssignment({
     userId: input.userId,
     userEmail: input.userEmail,
@@ -1427,9 +1443,12 @@ export async function assignTradeRoleAction(
     scopeType: input.scopeType,
     scopeId: input.scopeId,
     actorId: access.userId,
-    organizationId: (
-      await resolveFftOrganizationContext(access.userId)
-    ).organizationId,
+    organizationId: orgCtx.organizationId,
+  });
+  await ensureFftMemberPlatformAccess({
+    userId: input.userId,
+    organizationId: asOrganizationId(orgCtx.organizationId),
+    actorUserId: access.userId,
   });
   revalidateFft(gatedLocale);
   return { ok: true };
@@ -1442,7 +1461,7 @@ export async function revokeTradeRoleAssignmentAction(
   const gatedLocale = gateFftLocale(locale);
   if (typeof gatedLocale === "object") return gatedLocale;
   
-  const access = await requireTradePermission("role.manage");
+  const access = await requireFftPermission("role.manage");
   await revokeRoleAssignment({
     assignmentId,
     actorId: access.userId,
@@ -1457,7 +1476,7 @@ export async function listEventDepositsAction(locale: string, eventId: string) {
   
   const disabled = assertFftDepositFeatureAction();
   if (disabled) return disabled;
-  await requireTradePermission("deposit.view", { eventId });
+  await requireFftPermission("deposit.view", { eventId });
   const [deposits, audit] = await Promise.all([
     listDepositsForEvent(eventId),
     listFinanceAuditForEvent(eventId),
@@ -1475,7 +1494,7 @@ export async function recordDepositReceiptAction(
   
   const disabled = assertFftDepositFeatureAction();
   if (disabled) return disabled;
-  const access = await requireTradePermission("deposit.manage", { eventId });
+  const access = await requireFftPermission("deposit.manage", { eventId });
   const depositId = String(formData.get("depositId") ?? "");
   const orderId = String(formData.get("orderId") ?? "");
   const amount = Number(formData.get("amount"));
@@ -1522,7 +1541,7 @@ export async function recordDepositAdjustmentAction(
   
   const disabled = assertFftDepositFeatureAction();
   if (disabled) return disabled;
-  const access = await requireTradePermission("deposit.manage", { eventId });
+  const access = await requireFftPermission("deposit.manage", { eventId });
   const depositId = String(formData.get("depositId") ?? "");
   const orderId = String(formData.get("orderId") ?? "");
   const adjustmentType = String(formData.get("adjustmentType") ?? "") as
@@ -1562,7 +1581,7 @@ export async function updateDepositDetailsAction(
   
   const disabled = assertFftDepositFeatureAction();
   if (disabled) return disabled;
-  const access = await requireTradePermission("deposit.manage", { eventId });
+  const access = await requireFftPermission("deposit.manage", { eventId });
   const depositId = String(formData.get("depositId") ?? "");
   const orderId = String(formData.get("orderId") ?? "");
   if (!depositId || !orderId) return { error: "invalid_input" };
@@ -1587,7 +1606,7 @@ export async function createPickupWindowAction(
   
   const disabled = assertFftPickupFeatureAction();
   if (disabled) return disabled;
-  await requireTradePermission("pickup.manage", { eventId });
+  await requireFftPermission("pickup.manage", { eventId });
   const startsAt = new Date(String(formData.get("startsAt") ?? ""));
   const endsAt = new Date(String(formData.get("endsAt") ?? ""));
   if (Number.isNaN(startsAt.getTime()) || Number.isNaN(endsAt.getTime())) {
@@ -1614,7 +1633,7 @@ export async function schedulePickupAction(
   
   const disabled = assertFftPickupFeatureAction();
   if (disabled) return disabled;
-  const access = await requireTradePermission("pickup.manage", { eventId });
+  const access = await requireFftPermission("pickup.manage", { eventId });
   const orderId = String(formData.get("orderId") ?? "");
   const windowId = String(formData.get("windowId") ?? "");
   if (!orderId || !windowId) return { error: "invalid_input" };
@@ -1642,7 +1661,7 @@ export async function recordPickupFulfillmentAction(
   
   const disabled = assertFftPickupFeatureAction();
   if (disabled) return disabled;
-  const access = await requireTradePermission("pickup.manage", { eventId });
+  const access = await requireFftPermission("pickup.manage", { eventId });
   const orderId = String(formData.get("orderId") ?? "");
   const quantity = Number(formData.get("quantity"));
   if (!orderId || !Number.isFinite(quantity) || quantity <= 0) {
@@ -1691,7 +1710,7 @@ export async function recordPickupExceptionAction(
   
   const disabled = assertFftPickupFeatureAction();
   if (disabled) return disabled;
-  const access = await requireTradePermission("pickup.manage", { eventId });
+  const access = await requireFftPermission("pickup.manage", { eventId });
   const orderId = String(formData.get("orderId") ?? "");
   const exceptionType = String(formData.get("exceptionType") ?? "") as
     | "no_show"
@@ -1728,7 +1747,7 @@ export async function getImportTemplateAction(
   if (featureGate) return featureGate;
 
   const permission = importPermissionForType(parsed);
-  await requireTradePermission(permission);
+  await requireFftPermission(permission);
 
   const buffer = buildImportTemplateWorkbook(parsed);
   return {
@@ -1753,7 +1772,7 @@ export async function uploadImportDryRunAction(
   if (featureGate) return featureGate;
 
   const permission = importPermissionForType(parsed);
-  const access = await requireTradePermission(permission, { eventId });
+  const access = await requireFftPermission(permission, { eventId });
   const scoped = await getScopedEvent(eventId, access.userId);
   if (!scoped) {
     return { error: "not_found" as const };
@@ -1831,7 +1850,7 @@ export async function confirmImportBatchAction(
   if (featureGate) return featureGate;
 
   const permission = importPermissionForType(batch.importType);
-  const access = await requireTradePermission(permission, { eventId });
+  const access = await requireFftPermission(permission, { eventId });
   const scoped = await getScopedEvent(eventId, access.userId);
   if (!scoped) {
     return { error: "not_found" as const };
@@ -1878,7 +1897,7 @@ export async function cancelImportBatchAction(
   }
 
   const permission = importPermissionForType(batch.importType);
-  const access = await requireTradePermission(permission, { eventId });
+  const access = await requireFftPermission(permission, { eventId });
 
   await cancelImportBatch(batchId);
   await recordFftAudit({
@@ -1906,7 +1925,7 @@ export async function getImportBatchDetailAction(
   }
 
   const permission = importPermissionForType(batch.importType);
-  await requireTradePermission(permission, { eventId });
+  await requireFftPermission(permission, { eventId });
 
   const rows = await listImportRowsForBatch(batchId);
   return {
@@ -1928,7 +1947,7 @@ export async function retryErpSyncJobAction(locale: string, jobId: string) {
   const disabled = assertFftErpSyncFeatureAction();
   if (disabled) return disabled;
 
-  const access = await requireTradePermission("sync.retry");
+  const access = await requireFftPermission("sync.retry");
   const { getSyncJobById, retrySyncJob } = await import(
     "@/modules/fft/domain/erp-sync-store"
   );
@@ -1973,7 +1992,7 @@ export async function processErpSyncJobsAction(locale: string) {
   const disabled = assertFftErpSyncFeatureAction();
   if (disabled) return disabled;
 
-  await requireTradePermission("export.finance");
+  await requireFftPermission("export.finance");
   const { processPendingSyncJobs } = await import("@/modules/fft/domain/erp-sync-store");
   const result = await processPendingSyncJobs();
   revalidatePath(`/fft/admin/erp-sync`);

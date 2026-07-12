@@ -36,6 +36,7 @@ vi.mock("@/modules/identity/domain/platform-rbac-access", () => ({
 
 vi.mock("@/modules/identity/domain/platform-rbac", () => ({
   hasPlatformPermission: mocks.hasPlatformPermission,
+  ensureFftMemberPlatformAccess: vi.fn().mockResolvedValue({ ok: true }),
 }));
 
 vi.mock("@/modules/fft/domain/store", () => ({
@@ -45,10 +46,10 @@ vi.mock("@/modules/fft/domain/store", () => ({
 }));
 
 import {
-  hasTradePermission,
+  hasFftPermission,
   requireFftAccess,
   requireFftAdmin,
-  requireTradePermission,
+  requireFftPermission,
 } from "@/modules/fft/auth/fft-session";
 import { fftDefaultHref } from "@/modules/fft/i18n/fft-i18n";
 
@@ -117,6 +118,8 @@ describe("FFT_RBAC_ENABLED=false — Phase 1 Admin + allowlist", () => {
 
     it("allows allowlisted sales without RBAC assignments lookup", async () => {
       mockSignedIn("sales@example.com", "sales-1");
+      // Platform SoT after legacy promote / backfill
+      mocks.hasPlatformPermission.mockResolvedValue({ allowed: true });
 
       await expect(requireFftAccess()).resolves.toEqual({
         userId: "sales-1",
@@ -140,6 +143,7 @@ describe("FFT_RBAC_ENABLED=false — Phase 1 Admin + allowlist", () => {
         },
       ]);
       mockSignedIn("admin@example.com", "admin-1", { isAdmin: true });
+      mocks.hasPlatformPermission.mockResolvedValue({ allowed: true });
 
       await expect(requireFftAccess()).resolves.toEqual({
         userId: "admin-1",
@@ -171,6 +175,7 @@ describe("FFT_RBAC_ENABLED=false — Phase 1 Admin + allowlist", () => {
         },
       ]);
       mockSignedIn("admin@example.com", "admin-1", { isAdmin: true });
+      mocks.hasPlatformPermission.mockResolvedValue({ allowed: true });
 
       await expect(requireFftAdmin()).resolves.toEqual({
         userId: "admin-1",
@@ -180,6 +185,7 @@ describe("FFT_RBAC_ENABLED=false — Phase 1 Admin + allowlist", () => {
 
     it("redirects allowlisted sales away from admin routes", async () => {
       mockSignedIn("sales@example.com", "sales-1");
+      mocks.hasPlatformPermission.mockResolvedValue({ allowed: true });
 
       await expect(requireFftAdmin()).rejects.toThrow(
         salesEventsRedirect,
@@ -187,7 +193,7 @@ describe("FFT_RBAC_ENABLED=false — Phase 1 Admin + allowlist", () => {
     });
   });
 
-  describe("requireTradePermission", () => {
+  describe("requireFftPermission", () => {
     it("allows admin to create events (Phase 1 admin-only create)", async () => {
       mocks.listSalesMembers.mockResolvedValue([
         ...salesMembers,
@@ -199,9 +205,10 @@ describe("FFT_RBAC_ENABLED=false — Phase 1 Admin + allowlist", () => {
         },
       ]);
       mockSignedIn("admin@example.com", "admin-1", { isAdmin: true });
+      mocks.hasPlatformPermission.mockResolvedValue({ allowed: true });
 
       await expect(
-        requireTradePermission("event.create"),
+        requireFftPermission("event.create"),
       ).resolves.toMatchObject({
         userId: "admin-1",
         isAdmin: true,
@@ -211,17 +218,19 @@ describe("FFT_RBAC_ENABLED=false — Phase 1 Admin + allowlist", () => {
 
     it("denies allowlisted sales from event.create", async () => {
       mockSignedIn("sales@example.com", "sales-1");
+      mocks.hasPlatformPermission.mockResolvedValue({ allowed: true });
 
-      await expect(requireTradePermission("event.create")).rejects.toThrow(
+      await expect(requireFftPermission("event.create")).rejects.toThrow(
         salesEventsRedirect,
       );
     });
 
     it("allows allowlisted sales for Phase 1 sales permissions", async () => {
       mockSignedIn("sales@example.com", "sales-1");
+      mocks.hasPlatformPermission.mockResolvedValue({ allowed: true });
 
       await expect(
-        requireTradePermission("order.create", { eventId: "e1" }),
+        requireFftPermission("order.create", { eventId: "e1" }),
       ).resolves.toMatchObject({
         userId: "sales-1",
         rbacEnabled: false,
@@ -230,30 +239,32 @@ describe("FFT_RBAC_ENABLED=false — Phase 1 Admin + allowlist", () => {
 
     it("denies allowlisted sales from sensitive admin permissions", async () => {
       mockSignedIn("sales@example.com", "sales-1");
+      mocks.hasPlatformPermission.mockResolvedValue({ allowed: true });
 
-      await expect(requireTradePermission("role.manage")).rejects.toThrow(
+      await expect(requireFftPermission("role.manage")).rejects.toThrow(
         salesEventsRedirect,
       );
     });
   });
 
-  describe("hasTradePermission", () => {
+  describe("hasFftPermission", () => {
     it("allows sales deposit view but keeps pickup and deposit writes admin-only", async () => {
       const salesAccess = {
         userId: "sales-1",
         email: "sales@example.com",
         isAdmin: false,
         rbacEnabled: false,
+        organizationId: "org-test",
       };
 
       await expect(
-        hasTradePermission(salesAccess, "deposit.view", { eventId: "e1" }),
+        hasFftPermission(salesAccess, "deposit.view", { eventId: "e1" }),
       ).resolves.toBe(true);
       await expect(
-        hasTradePermission(salesAccess, "deposit.manage", { eventId: "e1" }),
+        hasFftPermission(salesAccess, "deposit.manage", { eventId: "e1" }),
       ).resolves.toBe(false);
       await expect(
-        hasTradePermission(salesAccess, "pickup.view", { eventId: "e1" }),
+        hasFftPermission(salesAccess, "pickup.view", { eventId: "e1" }),
       ).resolves.toBe(false);
     });
 
@@ -263,13 +274,14 @@ describe("FFT_RBAC_ENABLED=false — Phase 1 Admin + allowlist", () => {
         email: "admin@example.com",
         isAdmin: true,
         rbacEnabled: false,
+        organizationId: "org-test",
       };
 
       await expect(
-        hasTradePermission(adminAccess, "deposit.manage", { eventId: "e1" }),
+        hasFftPermission(adminAccess, "deposit.manage", { eventId: "e1" }),
       ).resolves.toBe(true);
       await expect(
-        hasTradePermission(adminAccess, "pickup.manage", { eventId: "e1" }),
+        hasFftPermission(adminAccess, "pickup.manage", { eventId: "e1" }),
       ).resolves.toBe(true);
     });
   });
@@ -298,6 +310,7 @@ describe("FFT_RBAC_ENABLED=true — dual-read (sanity)", () => {
       },
     ]);
     mockSignedIn("admin@example.com", "admin-1", { isAdmin: true });
+    mocks.hasPlatformPermission.mockResolvedValue({ allowed: true });
 
     await expect(requireFftAccess()).resolves.toMatchObject({
       rbacEnabled: true,
@@ -308,6 +321,33 @@ describe("FFT_RBAC_ENABLED=true — dual-read (sanity)", () => {
       email: "admin@example.com",
       isAdmin: true,
       organizationId: "org-1",
+    });
+  });
+
+  it("denies neon admin for FFT admin routes without event.edit assignment", async () => {
+    mocks.hasPlatformPermission.mockResolvedValue({ allowed: true });
+    mockSignedIn("admin@example.com", "admin-1", { isAdmin: true });
+    mocks.listRoleAssignmentsForUser.mockResolvedValue([]);
+
+    await expect(requireFftAdmin()).rejects.toThrow(salesEventsRedirect);
+  });
+
+  it("allows neon admin for FFT admin routes when event.edit is assigned", async () => {
+    mocks.hasPlatformPermission.mockResolvedValue({ allowed: true });
+    mockSignedIn("admin@example.com", "admin-1", { isAdmin: true });
+    mocks.listRoleAssignmentsForUser.mockResolvedValue([
+      {
+        roleId: "role-admin",
+        scopeType: "platform",
+        scopeId: null,
+        permissionCodes: ["event.edit", "event.create"],
+        active: true,
+      },
+    ]);
+
+    await expect(requireFftAdmin()).resolves.toEqual({
+      userId: "admin-1",
+      email: "admin@example.com",
     });
   });
 
@@ -336,13 +376,14 @@ describe("FFT_RBAC_ENABLED=true — action guards", () => {
     mocks.isFftRbacEnabled.mockReturnValue(true);
     mocks.listSalesMembers.mockResolvedValue([]);
     mocks.bootstrapPhase1RbacAssignments.mockResolvedValue(undefined);
-    mocks.hasPlatformPermission.mockResolvedValue({ allowed: false });
+    // Entry SoT after promote/backfill — domain codes still gate actions.
+    mocks.hasPlatformPermission.mockResolvedValue({ allowed: true });
     mocks.resolvePlatformOrgContext.mockResolvedValue({
       organizationId: "org-1",
     });
   });
 
-  describe("requireTradePermission", () => {
+  describe("requireFftPermission", () => {
     it("allows authorized user with matching permission", async () => {
       mockSignedIn("rbac-user@example.com", "user-1");
       mocks.listRoleAssignmentsForUser.mockResolvedValue([
@@ -355,7 +396,7 @@ describe("FFT_RBAC_ENABLED=true — action guards", () => {
         },
       ]);
 
-      await expect(requireTradePermission("event.create")).resolves.toMatchObject({
+      await expect(requireFftPermission("event.create")).resolves.toMatchObject({
         userId: "user-1",
         rbacEnabled: true,
       });
@@ -373,7 +414,7 @@ describe("FFT_RBAC_ENABLED=true — action guards", () => {
         },
       ]);
 
-      await expect(requireTradePermission("allocation.run")).rejects.toThrow(
+      await expect(requireFftPermission("allocation.run")).rejects.toThrow(
         salesEventsRedirect,
       );
     });
@@ -392,7 +433,7 @@ describe("FFT_RBAC_ENABLED=true — action guards", () => {
       ]);
 
       await expect(
-        requireTradePermission("order.create", { eventId: "e1" }),
+        requireFftPermission("order.create", { eventId: "e1" }),
       ).resolves.toMatchObject({
         userId: "sales-1",
         rbacEnabled: true,
@@ -411,7 +452,7 @@ describe("FFT_RBAC_ENABLED=true — action guards", () => {
         },
       ]);
 
-      await expect(requireTradePermission("role.manage")).rejects.toThrow(
+      await expect(requireFftPermission("role.manage")).rejects.toThrow(
         salesEventsRedirect,
       );
     });
@@ -428,7 +469,7 @@ describe("FFT_RBAC_ENABLED=true — action guards", () => {
         },
       ]);
 
-      await expect(requireTradePermission("role.manage")).resolves.toMatchObject({
+      await expect(requireFftPermission("role.manage")).resolves.toMatchObject({
         userId: "user-1",
       });
     });
@@ -446,7 +487,7 @@ describe("FFT_RBAC_ENABLED=true — action guards", () => {
       ]);
 
       await expect(
-        requireTradePermission("allocation.run", { eventId: "event-1" }),
+        requireFftPermission("allocation.run", { eventId: "event-1" }),
       ).rejects.toThrow(salesEventsRedirect);
     });
 
@@ -463,7 +504,7 @@ describe("FFT_RBAC_ENABLED=true — action guards", () => {
       ]);
 
       await expect(
-        requireTradePermission("allocation.run", {
+        requireFftPermission("allocation.run", {
           eventId: "event-1",
           actorTeamIds: ["team-1"],
         }),
@@ -482,7 +523,7 @@ describe("FFT_RBAC_ENABLED=true — action guards", () => {
         },
       ]);
 
-      await expect(requireTradePermission("event.edit")).rejects.toThrow(
+      await expect(requireFftPermission("event.edit")).rejects.toThrow(
         salesEventsRedirect,
       );
     });
@@ -500,11 +541,11 @@ describe("FFT_RBAC_ENABLED=true — action guards", () => {
       ]);
 
       await expect(
-        requireTradePermission("event.edit", { actorBuIds: ["bu-1"] }),
+        requireFftPermission("event.edit", { actorBuIds: ["bu-1"] }),
       ).resolves.toMatchObject({ userId: "user-1" });
     });
 
-    it("bypasses assignment checks for platform admin session with Feed Farm Trade access", async () => {
+    it("does not bypass assignment checks for Neon admin when RBAC is on", async () => {
       mocks.listSalesMembers.mockResolvedValue([
         {
           id: "m-admin",
@@ -514,10 +555,28 @@ describe("FFT_RBAC_ENABLED=true — action guards", () => {
         },
       ]);
       mockSignedIn("admin@example.com", "admin-1", { isAdmin: true });
+      mocks.listRoleAssignmentsForUser.mockResolvedValue([]);
 
       await expect(
-        requireTradePermission("allocation.override"),
-      ).resolves.toMatchObject({ isAdmin: true });
+        requireFftPermission("allocation.override"),
+      ).rejects.toThrow(salesEventsRedirect);
+    });
+
+    it("allows Neon admin when FFT assignment grants the permission", async () => {
+      mockSignedIn("admin@example.com", "admin-1", { isAdmin: true });
+      mocks.listRoleAssignmentsForUser.mockResolvedValue([
+        {
+          roleId: "role-admin",
+          scopeType: "platform",
+          scopeId: null,
+          permissionCodes: ["allocation.override"],
+          active: true,
+        },
+      ]);
+
+      await expect(
+        requireFftPermission("allocation.override"),
+      ).resolves.toMatchObject({ isAdmin: true, rbacEnabled: true });
     });
   });
 

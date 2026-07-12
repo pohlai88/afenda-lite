@@ -164,7 +164,7 @@ export async function commitImportBatch(
   batchId: string,
   ctx: {
     actorEmail: string;
-    organizationId?: string;
+    organizationId: string;
     onDepositPending?: (order: {
       id: string;
       orderNumber: string;
@@ -408,7 +408,7 @@ export async function buildOrderLookupForEvent(eventId: string) {
 
 export async function buildBulkOrderValidationContext(
   eventId: string,
-  organizationId?: string,
+  organizationId: string,
 ) {
   const event = await getEventById(eventId, organizationId);
   const productLookup = await buildProductLookupForEvent(eventId);

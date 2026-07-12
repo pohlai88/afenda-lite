@@ -116,4 +116,10 @@ export const PLATFORM_ROLE_TEMPLATES: readonly PlatformRoleTemplateDef[] = [
     description: "Read declarations and manage own account",
     permissionCodes: ["declarations.read", "account.self"],
   },
+  {
+    templateKey: "fft_member",
+    name: "FFT Member",
+    description: "Enter Feed Farm Trade module (platform control plane)",
+    permissionCodes: ["fft.access", "account.self"],
+  },
 ] as const;

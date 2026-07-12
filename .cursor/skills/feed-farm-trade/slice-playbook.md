@@ -47,7 +47,7 @@ Out of scope this PR: …
 | Layer | Do |
 |-------|-----|
 | Domain | Prefer existing `modules/fft/domain/*` — no Declarations domain imports (module boundary; shared platform OK) |
-| Action | Zod + `requireTradePermission(code)` or existing admin helper — no raw SQL |
+| Action | Zod + `requireFftPermission(code)` or existing admin helper — no raw SQL |
 | Feature | Client form/panel; use `getTradeActionError`; pass `FFT_UI_LOCALE` |
 | Page | Thin RSC: await params, domain reads, compose features |
 

@@ -62,7 +62,7 @@ export function FftRbacAdminPanel({
           variant="outline"
           size="sm"
           disabled={pending}
-          data-testid="trade-rbac-seed"
+          data-testid="fft-rbac-seed"
           onClick={() =>
             startTransition(async () => {
               setError(null);
@@ -350,7 +350,7 @@ export function FftRbacAdminPanel({
         <p
           className="text-destructive text-sm"
           role="alert"
-          data-testid="trade-rbac-error"
+          data-testid="fft-rbac-error"
         >
           {error}
         </p>
