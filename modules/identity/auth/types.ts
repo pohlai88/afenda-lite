@@ -6,6 +6,10 @@ export type AuthSession = {
     name?: string | null;
     role?: string | null;
   };
+  /** Better Auth / Neon Organization plugin session fields */
+  session?: {
+    activeOrganizationId?: string | null;
+  };
 } | null;
 
 export type BootstrapClientAuthInput = {

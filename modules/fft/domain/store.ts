@@ -688,7 +688,7 @@ export async function upsertSalesMember(
      ON CONFLICT (email) DO UPDATE SET
        user_id = COALESCE(EXCLUDED.user_id, fft_sales_member.user_id),
        active = TRUE,
-       organization_id = COALESCE(EXCLUDED.organization_id, fft_sales_member.organization_id)`,
+       organization_id = EXCLUDED.organization_id`,
     [email.trim().toLowerCase(), userId ?? null, organizationId],
   );
 }
@@ -1114,7 +1114,10 @@ export async function recordRbacAudit(input: {
   );
 }
 
-export async function seedFftRbacCatalog(actorId?: string) {
+export async function seedFftRbacCatalog(input: {
+  organizationId: string;
+  actorId?: string;
+}) {
   for (const perm of FFT_PERMISSION_CATALOG) {
     await pool.query(
       `INSERT INTO fft_permission (code, description, sensitive)
@@ -1128,16 +1131,23 @@ export async function seedFftRbacCatalog(actorId?: string) {
 
   for (const template of FFT_ROLE_TEMPLATES) {
     const roleResult = await pool.query(
-      `INSERT INTO fft_role (name, description, active, is_system_template, template_key, created_by)
-       VALUES ($1, $2, TRUE, TRUE, $3, $4)
+      `INSERT INTO fft_role (name, description, active, is_system_template, template_key, created_by, organization_id)
+       VALUES ($1, $2, TRUE, TRUE, $3, $4, $5)
        ON CONFLICT (template_key) DO UPDATE SET
          name = EXCLUDED.name,
          description = EXCLUDED.description,
          active = TRUE,
          is_system_template = TRUE,
+         organization_id = EXCLUDED.organization_id,
          updated_at = NOW()
        RETURNING id`,
-      [template.name, template.description, template.templateKey, actorId ?? null],
+      [
+        template.name,
+        template.description,
+        template.templateKey,
+        input.actorId ?? null,
+        input.organizationId,
+      ],
     );
     const roleId = roleResult.rows[0].id as string;
 
@@ -1149,12 +1159,12 @@ export async function seedFftRbacCatalog(actorId?: string) {
         `INSERT INTO fft_role_permission (role_id, permission_code, granted_by)
          VALUES ($1, $2, $3)
          ON CONFLICT DO NOTHING`,
-        [roleId, code, actorId ?? null],
+        [roleId, code, input.actorId ?? null],
       );
       if (isSensitivePermission(code)) {
         await recordRbacAudit({
           action: "role.permission_grant",
-          actorId,
+          actorId: input.actorId,
           actorRole: "system_seed",
           roleId,
           permissionCode: code,
@@ -1194,10 +1204,16 @@ export async function listRoleAssignmentsForUser(
   }));
 }
 
-export async function getRoleIdByTemplateKey(templateKey: string): Promise<string | null> {
+export async function getRoleIdByTemplateKey(
+  templateKey: string,
+  organizationId: string,
+): Promise<string | null> {
   const result = await pool.query(
-    `SELECT id FROM fft_role WHERE template_key = $1 LIMIT 1`,
-    [templateKey],
+    `SELECT id FROM fft_role
+     WHERE template_key = $1
+       AND organization_id = $2
+     LIMIT 1`,
+    [templateKey, organizationId],
   );
   return result.rows[0]?.id ?? null;
 }
@@ -1256,10 +1272,16 @@ export async function bootstrapPhase1RbacAssignments(input: {
   isAdmin: boolean;
   organizationId: string;
 }) {
-  await seedFftRbacCatalog(input.userId);
+  await seedFftRbacCatalog({
+    organizationId: input.organizationId,
+    actorId: input.userId,
+  });
 
   if (input.isAdmin) {
-    const roleId = await getRoleIdByTemplateKey("client_admin");
+    const roleId = await getRoleIdByTemplateKey(
+      "client_admin",
+      input.organizationId,
+    );
     if (roleId) {
       await ensureRoleAssignment({
         userId: input.userId,
@@ -1279,7 +1301,10 @@ export async function bootstrapPhase1RbacAssignments(input: {
   );
   if (!onAllowlist) return;
 
-  const roleId = await getRoleIdByTemplateKey("sales_executive");
+  const roleId = await getRoleIdByTemplateKey(
+    "sales_executive",
+    input.organizationId,
+  );
   if (roleId) {
     await ensureRoleAssignment({
       userId: input.userId,

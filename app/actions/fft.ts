@@ -1331,7 +1331,10 @@ export async function seedFftRbacCatalogAction(locale: string) {
   if (typeof gatedLocale === "object") return gatedLocale;
   
   const access = await requireFftPermission("role.manage");
-  await seedFftRbacCatalog(access.userId);
+  await seedFftRbacCatalog({
+    organizationId: access.organizationId,
+    actorId: access.userId,
+  });
   revalidateFft(gatedLocale);
   return { ok: true };
 }

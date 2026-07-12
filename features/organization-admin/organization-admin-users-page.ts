@@ -73,6 +73,7 @@ export const loadOrganizationAdminUsersPage = cache(
     const users = await listOrganizationUsers(org.organizationId);
     const profiles = await listClientProfileSummariesByUserIds(
       users.map((user) => user.id),
+      org.organizationId,
     );
 
     return {
@@ -108,7 +109,7 @@ export const loadOrganizationAdminUserViewPage = cache(
     }
 
     const [profiles, sessionsResult, assignments, roles] = await Promise.all([
-      listClientProfileSummariesByUserIds([user.id]),
+      listClientProfileSummariesByUserIds([user.id], org.organizationId),
       neonAdminListUserSessions(user.id),
       listPlatformRoleAssignmentsForUser(user.id, org.organizationId),
       listPlatformRoles(org.organizationId),

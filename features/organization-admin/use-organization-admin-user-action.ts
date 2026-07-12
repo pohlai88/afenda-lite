@@ -2,53 +2,28 @@
 
 import { useRouter } from "next/navigation";
 import { useTransition, useState } from "react";
-import type { ActionResult as PlatformActionResult } from "@/modules/platform/schemas/action-result";
-
-type LegacyActionResult = {
-  error?: string;
-  ok?: boolean;
-  message?: string;
-  code?: string;
-  data?: unknown;
-  removed?: number;
-  banned?: number;
-  created?: number;
-  failed?: number;
-  failures?: Array<{ email: string; error: string }>;
-};
+import type { ActionResult } from "@/modules/platform/schemas/action-result";
 
 export function getActionError(
-  result: PlatformActionResult<unknown> | LegacyActionResult | null | undefined,
+  result: ActionResult<unknown> | null | undefined,
 ): string | null {
   if (!result) return null;
-  if ("ok" in result && result.ok === false) {
-    if (typeof result.message === "string" && result.message) {
-      return result.message;
-    }
-  }
-  if (
-    "error" in result &&
-    typeof result.error === "string" &&
-    result.error.length > 0
-  ) {
-    return result.error;
+  if (result.ok === false) {
+    return result.message || null;
   }
   return null;
 }
 
 /**
  * Shared pending/error wrapper for organization-admin user mutations.
+ * Actions return ActionResult only (no legacy `{ error }` dual-parse).
  */
 export function useOrganizationAdminUserAction() {
   const router = useRouter();
   const [actionError, setActionError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  const runUserAction = (
-    action: () => Promise<
-      PlatformActionResult<unknown> | LegacyActionResult
-    >,
-  ) => {
+  const runUserAction = (action: () => Promise<ActionResult<unknown>>) => {
     setActionError(null);
     startTransition(async () => {
       const result = await action();

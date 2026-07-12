@@ -24,14 +24,14 @@ Plan authority: this skill + `doc/backend/` + [closed-scope-register](../../../d
 | Soft-harden IDOR / stamp / session / DRY SQL | ADR-002 progressive | Superseded by hard cutover | **Superseded** |
 | FFT module entry control plane | `hasFftModuleAccess` | platform `fft.access` only; write-time `ensureFftMember`; ops `backfill:fft-access` | **Done** |
 | Apply migrations `025`/`026`/`027` on Neon | Ops | Child `br-jolly-mountain-ao6ph4od` + prod promote | **Done** |
-| Hard multi-org cutover | Drop `IS NULL OR` + promoteLegacy | Hard scope + membership Users + CI residue | **Done** |
+| Hard multi-org cutover | Drop `IS NULL OR` + promoteLegacy | Hard scope + membership Users + CI residue + N1 active org | **Done** |
 | `/client` workspace restore | Closed + reopen checklist | Stubs only | **Closed (registered)** |
 | FFT P3 flag promotion | gate-register | Prod flags off | **Closed (registered)** |
 | SaaS billing / 2FA product | Deferred chrome | Coming-soon + plan defaults | **Intentional (registered)** |
 
 ## Stabilization (latest)
 
-- Hard multi-tenant cutover: `organizationScopeSql` → `col = $n`; required `organizationId` Actions→domain; `027` NOT NULL; delete `promoteLegacy`; Users via `neon_auth.member`; CI `check:tenancy-residue` + `audit:tenancy-nulls`
+- Hard multi-tenant cutover: `organizationScopeSql` → `col = $n`; required `organizationId` Actions→domain; `027` NOT NULL; delete `promoteLegacy`; Users via `neon_auth.member`; N1 prefers `session.activeOrganizationId`; CI `check:tenancy-residue` + `audit:tenancy-nulls`
 - Soft-harden multi-tenancy superseded (no dual-mode)
 - Relocated draft Route Handler compose → `modules/declarations/api/client-declaration-draft-route*` (Platform no longer imports Declarations)
 - Relocated shell entitlement resolve → `features/portal-chrome/resolve-shell-access.ts`; FFT gate → `modules/fft/auth/fft-module-access.ts` (Platform no longer imports FFT)
