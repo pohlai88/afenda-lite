@@ -237,6 +237,7 @@ export type ClientProfileSummary = {
 
 export async function listClientProfileSummariesByUserIds(
   userIds: string[],
+  organizationId: string,
 ): Promise<Map<string, ClientProfileSummary>> {
   const unique = [...new Set(userIds.filter(Boolean))];
   const summaries = new Map<string, ClientProfileSummary>();
@@ -247,8 +248,9 @@ export async function listClientProfileSummariesByUserIds(
   const result = await pool.query(
     `SELECT user_id, full_legal_name, entity_name, country_of_residence, phone
      FROM client_profiles
-     WHERE user_id = ANY($1::uuid[])`,
-    [unique],
+     WHERE user_id = ANY($1::uuid[])
+       AND organization_id = $2`,
+    [unique, organizationId],
   );
 
   for (const row of result.rows) {
@@ -281,7 +283,7 @@ export async function upsertClientProfile(input: {
   notes?: string;
   identityConsentAt?: Date;
   onboardingComplete?: boolean;
-  organizationId?: string;
+  organizationId: string;
 }) {
   const result = await pool.query(
     `INSERT INTO client_profiles (
@@ -304,10 +306,7 @@ export async function upsertClientProfile(input: {
        notes = EXCLUDED.notes,
        identity_consent_at = EXCLUDED.identity_consent_at,
        onboarding_complete = EXCLUDED.onboarding_complete,
-       organization_id = COALESCE(
-         client_profiles.organization_id,
-         EXCLUDED.organization_id
-       ),
+       organization_id = EXCLUDED.organization_id,
        updated_at = NOW()
      RETURNING user_id, full_legal_name, nationality, country_of_residence,
                additional_residence_countries, passport_issuing_country, passport_number,
@@ -327,7 +326,7 @@ export async function upsertClientProfile(input: {
       input.notes?.trim() || null,
       input.identityConsentAt?.toISOString() ?? null,
       input.onboardingComplete ?? true,
-      input.organizationId ?? null,
+      input.organizationId,
     ],
   );
 

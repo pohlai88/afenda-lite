@@ -50,6 +50,18 @@ export async function ensurePortalOrganization(): Promise<PortalOrganization> {
   const slug = getPortalOrganizationSlug();
   const name = getPortalOrganizationName();
 
+  const { data: sessionPayload } = await auth.getSession();
+  const activeOrganizationId =
+    sessionPayload &&
+    typeof sessionPayload === "object" &&
+    "session" in sessionPayload
+      ? ((
+          sessionPayload as {
+            session?: { activeOrganizationId?: string | null };
+          }
+        ).session?.activeOrganizationId ?? null)
+      : null;
+
   const { data: organizations, error: listError } =
     await auth.organization.list();
 
@@ -59,12 +71,22 @@ export async function ensurePortalOrganization(): Promise<PortalOrganization> {
     );
   }
 
+  const byActive = activeOrganizationId
+    ? organizations?.find(
+        (organization) => organization.id === activeOrganizationId,
+      )
+    : undefined;
+
   const existing =
+    byActive ??
     organizations?.find((organization) => organization.slug === slug) ??
     organizations?.[0];
 
   if (existing?.id) {
-    await auth.organization.setActive({ organizationId: existing.id });
+    // Align Tier-1 active org with the resolved portal tenant (no-op when already active).
+    if (existing.id !== activeOrganizationId) {
+      await auth.organization.setActive({ organizationId: existing.id });
+    }
     return {
       id: existing.id,
       name: existing.name,

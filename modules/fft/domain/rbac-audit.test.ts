@@ -61,7 +61,10 @@ describe("fft_rbac_audit writes", () => {
   });
 
   it("records audit rows when seeding sensitive template grants", async () => {
-    await seedFftRbacCatalog("actor-seed");
+    await seedFftRbacCatalog({
+      organizationId: "org-audit-test",
+      actorId: "actor-seed",
+    });
 
     const sensitiveGrants = mocks.auditRows.filter(
       (row) => row.action === "role.permission_grant",

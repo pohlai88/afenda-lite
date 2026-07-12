@@ -17,6 +17,7 @@ Ship platform permission-catalog RBAC (Identity) + AdminCN Roles/Permissions pro
 | Migration `027` hard tenancy | **Done** | `NOT NULL` on eight tenant roots + indexes |
 | Catalog + templates (Org Admin / Editor / Viewer) | **Done** | `platform-rbac-catalog.ts` + unit tests; includes `fft.access` |
 | Platform module entry `fft.access` | **Done** | Org-scoped SoT; write-time ensure + `npm run backfill:fft-access` |
+| N1 active org alignment | **Done** | `ensurePortalOrganization` prefers `session.activeOrganizationId` |
 | `/fft/admin/rbac` + `org.roles.manage` | **Done** | Control plane gate + FFT `role.manage` |
 | Domain CRUD + assign/revoke + audit | **Done** | `modules/identity/domain/platform-rbac.ts` |
 | Idempotent template seed (no wipe+re-audit) | **Done** | Diff sync in `seedPlatformRbacCatalog` |
@@ -50,8 +51,10 @@ Ship platform permission-catalog RBAC (Identity) + AdminCN Roles/Permissions pro
 | FFT import-store `getEventById` org thread | **Done** |
 | Hard cutover (drop `IS NULL OR`) | **Done** |
 | `listOrganizationUsers` via `neon_auth.member` | **Done** |
+| Isolation unit coverage (membership + hard SQL) | **Done** |
+| FFT RBAC seed stamps `organization_id` | **Done** |
 
-**In-scope hard tenancy completeness:** **100%**.
+**In-scope hard tenancy completeness:** **100%** (intentional non-goals: Neon RLS, org-switcher chrome, FFT domain catalog merge, AdminCN plan/billing columns stay `Basic`/`Manual`).
 
 ## Verify
 
