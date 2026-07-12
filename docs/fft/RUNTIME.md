@@ -6,7 +6,7 @@
 | **Status** | Phase 2A **closed** (implementation + ops) · 2026-07-10 |
 | **Audience** | IDE agents, engineers, operators |
 | **Depth docs** | [README.md](./README.md) — typed index |
-| **Platform tenancy** | [ADR-002](../../doc/backend/adr/002-platform-tenancy-rbac.md) · [multi-tenant-ecosystem.md](../../doc/architecture/multi-tenant-ecosystem.md) — hard org filters; do not conflate with `FFT_RBAC_ENABLED` |
+| **Platform tenancy** | [ADR-002](../backend/adr/002-platform-tenancy-rbac.md) · [multi-tenant-ecosystem.md](../architecture/multi-tenant-ecosystem.md) — hard org filters; do not conflate with `FFT_RBAC_ENABLED` |
 
 ---
 
@@ -95,7 +95,7 @@ Canonical FE / module paths (Feed Farm Trade AdminCN restructure). Legacy `[loca
 | E2E | `e2e/trade-fft.spec.ts` (`@smoke`, `@journey`) |
 | Gate smokes | `scripts/gate-7-cutover-smoke.mjs`, `scripts/gate-7-production-smoke.mjs` |
 
-Architecture slice: [architecture/s19-trade-slice.md](./architecture/s19-trade-slice.md). FE ADR trio: [001](../../doc/frontend/adr/001-feed-farm-trade.md) · [001A](../../doc/frontend/adr/001A-feed-farm-trade-architecture.md) · [001R](../../doc/frontend/adr/001R-feed-farm-trade-roadmap.md).
+Architecture slice: [architecture/s19-trade-slice.md](./architecture/s19-trade-slice.md). FE ADR trio: [001](../frontend/adr/001-feed-farm-trade.md) · [001A](../frontend/adr/001A-feed-farm-trade-architecture.md) · [001R](../frontend/adr/001R-feed-farm-trade-roadmap.md).
 
 ---
 
@@ -178,5 +178,5 @@ npm run process:trade-closing-soon
 
 ## Assumptions
 
-1. Program cross-status: [docs/fft/ops/gate-register.md](ops/gate-register.md) · [doc/architecture/closed-scope-register.md](../../doc/architecture/closed-scope-register.md).
+1. Program cross-status: [docs/fft/ops/gate-register.md](ops/gate-register.md) · [docs/architecture/closed-scope-register.md](../architecture/closed-scope-register.md).
 2. Feed Farm Trade is **not** the default agent mission after 2026-07-10 — see [remaining-development.md](../architecture/remaining-development.md).

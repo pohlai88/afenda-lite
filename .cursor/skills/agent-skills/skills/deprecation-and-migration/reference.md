@@ -1,7 +1,7 @@
 # Afenda-Lite deprecation register (compulsory)
 
-**Product:** **Afenda-Lite** (beta of Afenda ERP) — [doc/adr/001-afenda-lite-product-identity.md](../../../../doc/adr/001-afenda-lite-product-identity.md)  
-**Authority:** [SKILL.md](SKILL.md) · always-on `agent-workflow` · FFT ADRs under `doc/frontend/adr/001*`
+**Product:** **Afenda-Lite** (beta of Afenda ERP) — [docs/adr/001-afenda-lite-product-identity.md](../../../../docs/adr/001-afenda-lite-product-identity.md)  
+**Authority:** [SKILL.md](SKILL.md) · `/using-afenda-elite-skills` · FFT ADRs under `docs/frontend/adr/001*`
 
 Status meanings:
 
@@ -18,7 +18,7 @@ Status meanings:
 
 | Retired | Replacement | Status | Notes |
 |---------|-------------|--------|-------|
-| **Client Declaration Portal** | **Afenda-Lite** | Retired | ADR `doc/adr/001` — 2026-07-12 |
+| **Client Declaration Portal** | **Afenda-Lite** | Retired | ADR `docs/adr/001` — 2026-07-12 |
 | Framing the product as “a portal” / “the portal” | Multi-module **Afenda ERP** beta (SaaS) | Rejected framing | Modules ≠ portals |
 | npm `client-declaration-portal` | `afenda-lite` | Retired | `package.json` |
 | GitHub `pohlai88/iam-check` | `pohlai88/afenda-lite` | Retired | Renamed 2026-07-12 |
@@ -64,10 +64,11 @@ Declarations is not “deprecated.” Treating FFT and Declarations as two platf
 |---------|-------------|--------|
 | Guardian Auth / PA hero shortcuts listed in PA rejected docs | Studio login-page-02 + Neon on `/auth/*` | Rejected — see portal-atmosphere rules |
 | CSS invert owls / sticker heroes | Dual assets + approved comps | Rejected |
+| Vanguard keyblade unlock (`vanguard-landing` / `ritual-engine` / `lynx-landing.css`) | **The Machine** — `features/landing/the-machine-landing.*` + `machine-sensor-engine.ts` | Retired — locked 2026-07-12; lab HTML `public/lynx/lynx-the-machine.html` |
 
 ## Closed product phases (not deprecations)
 
-See [doc/architecture/closed-scope-register.md](../../../../doc/architecture/closed-scope-register.md):
+See [docs/architecture/closed-scope-register.md](../../../../docs/architecture/closed-scope-register.md):
 
 | Item | Disposition |
 |------|-------------|
@@ -90,13 +91,26 @@ See [doc/architecture/closed-scope-register.md](../../../../doc/architecture/clo
 | Raising CU / inventing `FFT_ERP_*` placeholders to green env | Fix pooler / nulls / syncOptional policy | Rejected framing | Ecosystem §0 **R7** |
 | FFT child `organization_id` denorm as v1 tenancy fix | Parent `fft_event` + `getEventById(…, org)` | Deferred (M5) | Ecosystem §0 **D4**; not a bug |
 
+## Agent skills (Elite cleanup)
+
+| Retired | Replacement | Status | Notes |
+|---------|-------------|--------|-------|
+| `guardian-css-audit` skill | — (atmosphere dormant; `components/` hard-deleted) | Hard-deleted | Wave 1 — [skills-architecture](../../../../doc/architecture/afenda-elite-skills-architecture.md) |
+| `portal-frontend-scaffold` | `afenda-elite-frontend-scaffold` | Hard-deleted (renamed) | Wave 2 |
+| `portal-backend-modules` | `afenda-elite-backend-modules` | Hard-deleted (renamed) | Wave 2 |
+| `portal-api-contract` | `afenda-elite-api-contract` | Hard-deleted (renamed) | Wave 2 |
+| Invoking vendor/`using-agent-skills` as **product** entry in this repo | `/using-afenda-elite-skills` first | Retired framing | Method library stays subordinate |
+| Forking every vendor phase skill to `afenda-elite-*` | Method library under Elite entry | Rejected framing | Complexity matrix |
+| Afenda-Lite as Elite program ceiling | `term.afenda-elite` + archive Lite | Retired framing | Glossary · Elite ADRs when Accepted |
+
 ---
 
 ## How agents must behave
 
 1. **Refuse** to remount or re-teach anything **Retired** / **Hard-deleted** / **Rejected framing**.
-2. **Say Afenda-Lite** in live SSOT (README, AGENTS, ADRs, new docs) — never “Client Declaration Portal” as current.
+2. **Say Afenda-Lite** in live SSOT (README, AGENTS, ADRs, new docs) — never “Client Declaration Portal” as current. **Elite program docs** cite `term.afenda-elite` per glossary.
 3. **On touch**, strip live docs/code that present retired names as current (archive footnotes OK).
 4. **Redirect-only** paths: keep thin shims; never attach product features.
 5. **New deprecations:** add a row here in the same PR that retires them; link ADR.
 6. Load this register when running `deprecation-and-migration` or when tempted to “leave legacy for convenience.”
+7. **Skills:** enter via `/using-afenda-elite-skills`; do not restore `guardian-css-audit`.

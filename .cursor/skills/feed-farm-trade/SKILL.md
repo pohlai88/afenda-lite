@@ -19,9 +19,9 @@ description: >-
 | Thin vertical slices | `incremental-implementation` | One capability (F-\*) per cycle — see [slice-playbook.md](slice-playbook.md) |
 | Proof before done | `test-driven-development` | AC evidence required — see [verify.md](verify.md) |
 | Right context | `context-engineering` | Load card below — max focused files |
-| Adapter / ActionResult | `portal-api-contract` | Trade returns `TradeActionResult` + `getTradeActionError` |
-| Route / UI homes | `portal-frontend-scaffold` + `admincn-customization` | Thin `app/fft` + `features/fft` |
-| Modules / ports | `portal-backend-modules` | Domain under `modules/fft` — never `modules/trade` |
+| Adapter / ActionResult | `afenda-elite-api-contract` | Trade returns `TradeActionResult` + `getTradeActionError` |
+| Route / UI homes | `afenda-elite-frontend-scaffold` + `admincn-customization` | Thin `app/fft` + `features/fft` |
+| Modules / ports | `afenda-elite-backend-modules` | Domain under `modules/fft` — never `modules/trade` |
 
 External ecosystem (`deliver-acceptance-criteria`) patterns are **folded into** [verify.md](verify.md) — do not install a second skill for AC.
 
@@ -29,10 +29,10 @@ External ecosystem (`deliver-acceptance-criteria`) patterns are **folded into** 
 
 | Need | Path |
 |------|------|
-| Locks | [doc/frontend/adr/001-feed-farm-trade.md](../../../doc/frontend/adr/001-feed-farm-trade.md) |
-| Architecture | [doc/frontend/adr/001A-feed-farm-trade-architecture.md](../../../doc/frontend/adr/001A-feed-farm-trade-architecture.md) |
-| Roadmap | [doc/frontend/adr/001R-feed-farm-trade-roadmap.md](../../../doc/frontend/adr/001R-feed-farm-trade-roadmap.md) |
-| Phase specs (evaluation) | [P0](../../../doc/frontend/11-feed-farm-trade-phase0-shell.md) · [P1](../../../doc/frontend/12-feed-farm-trade-phase1-core-mvp.md) · [P2](../../../doc/frontend/13-feed-farm-trade-phase2-ui-polish.md) · [P3](../../../doc/frontend/14-feed-farm-trade-phase3-ops-flags.md) |
+| Locks | [docs/frontend/adr/001-feed-farm-trade.md](../../../docs/frontend/adr/001-feed-farm-trade.md) |
+| Architecture | [docs/frontend/adr/001A-feed-farm-trade-architecture.md](../../../docs/frontend/adr/001A-feed-farm-trade-architecture.md) |
+| Roadmap | [docs/frontend/adr/001R-feed-farm-trade-roadmap.md](../../../docs/frontend/adr/001R-feed-farm-trade-roadmap.md) |
+| Phase specs (evaluation) | [P0](../../../docs/frontend/11-feed-farm-trade-phase0-shell.md) · [P1](../../../docs/frontend/12-feed-farm-trade-phase1-core-mvp.md) · [P2](../../../docs/frontend/13-feed-farm-trade-phase2-ui-polish.md) · [P3](../../../docs/frontend/14-feed-farm-trade-phase3-ops-flags.md) |
 | Slice playbook | [slice-playbook.md](slice-playbook.md) |
 | F-\* → action map | [action-map.md](action-map.md) |
 | Permission codes | [rbac-card.md](rbac-card.md) |
@@ -40,7 +40,7 @@ External ecosystem (`deliver-acceptance-criteria`) patterns are **folded into** 
 | Worked example | [example-slice.md](example-slice.md) |
 | Completeness matrix | [completeness.md](completeness.md) |
 | Copy-paste command sheet | [command-sheet.md](command-sheet.md) (post-MVP A–J) · [command-sheet-V2.md](command-sheet-V2.md) (P3 ops series) |
-| UI registry (HITL IDs) | [ui-registry.md](ui-registry.md) · [ui-registry.json](ui-registry.json) · rule [`fft-ui-registry.mdc`](../../rules/fft-ui-registry.mdc) — Layer A inventory + Layer B DNA; `npm run check:fft-ui-registry` |
+| UI registry (HITL IDs) | [ui-registry.md](ui-registry.md) · [ui-registry.json](ui-registry.json) — Layer A inventory + Layer B DNA; `npm run check:fft-ui-registry` |
 | Ops flags | [docs/fft/RUNTIME.md](../../../docs/fft/RUNTIME.md) · gate-register |
 
 ## Load card (coding)
@@ -49,11 +49,11 @@ External ecosystem (`deliver-acceptance-criteria`) patterns are **folded into** 
 |------|------------|
 | Locks / naming | **001 only** |
 | Structure | **001A** + [architecture.md](architecture.md) |
-| Coding a P0 gate | Phase [11](../../../doc/frontend/11-feed-farm-trade-phase0-shell.md) + [verify.md](verify.md) |
-| Coding a P1 capability | Phase [12](../../../doc/frontend/12-feed-farm-trade-phase1-core-mvp.md) + [action-map.md](action-map.md) + [rbac-card.md](rbac-card.md) + [example-slice.md](example-slice.md) |
+| Coding a P0 gate | Phase [11](../../../docs/frontend/11-feed-farm-trade-phase0-shell.md) + [verify.md](verify.md) |
+| Coding a P1 capability | Phase [12](../../../docs/frontend/12-feed-farm-trade-phase1-core-mvp.md) + [action-map.md](action-map.md) + [rbac-card.md](rbac-card.md) + [example-slice.md](example-slice.md) |
 | Claiming MVP done | [verify.md](verify.md) AC evidence protocol — **required** |
-| P2 polish | **Complete 2026-07-11** (AC-01..06) — further polish only with named P2-AC + Plan for visual ([13](../../../doc/frontend/13-feed-farm-trade-phase2-ui-polish.md)) |
-| P3 ops / flags | [14](../../../doc/frontend/14-feed-farm-trade-phase3-ops-flags.md) + RUNTIME — **no prod flag without gate-register** |
+| P2 polish | **Complete 2026-07-11** (AC-01..06) — further polish only with named P2-AC + Plan for visual ([13](../../../docs/frontend/13-feed-farm-trade-phase2-ui-polish.md)) |
+| P3 ops / flags | [14](../../../docs/frontend/14-feed-farm-trade-phase3-ops-flags.md) + RUNTIME — **no prod flag without gate-register** |
 
 ```text
 DO NOT: FftShell, /fft/[locale], customer portal, invent permission codes,
@@ -105,7 +105,7 @@ Infra/env/CI/deploy: same as Declarations — update together
 ```text
 RSC read?        → modules/fft domain (never fetch own /api)
 Client mutation? → trade.ts → Zod → requireFftPermission(code) → domain → TradeActionResult
-HTTP external?   → Route Handler per doc/api (contract-only)
+HTTP external?   → Route Handler per docs/api (contract-only)
 ```
 
 ## FE / BE / API rules
@@ -130,9 +130,9 @@ HTTP external?   → Route Handler per doc/api (contract-only)
 
 ## Cross-skills
 
-- [portal-frontend-scaffold](../portal-frontend-scaffold/SKILL.md)  
-- [portal-api-contract](../portal-api-contract/SKILL.md)  
-- [portal-backend-modules](../portal-backend-modules/SKILL.md)  
+- [afenda-elite-frontend-scaffold](../afenda-elite-frontend-scaffold/SKILL.md)  
+- [afenda-elite-api-contract](../afenda-elite-api-contract/SKILL.md)  
+- [afenda-elite-backend-modules](../afenda-elite-backend-modules/SKILL.md)  
 - [admincn-customization](../admincn-customization/SKILL.md)  
 - [incremental-implementation](../agent-skills/skills/incremental-implementation/SKILL.md)  
 - [test-driven-development](../agent-skills/skills/test-driven-development/SKILL.md)  

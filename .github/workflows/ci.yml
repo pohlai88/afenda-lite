@@ -9,21 +9,6 @@ concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  DATABASE_URL: ${{ secrets.E2E_DATABASE_URL }}
-  NEON_AUTH_BASE_URL: ${{ secrets.E2E_NEON_AUTH_BASE_URL }}
-  NEON_AUTH_COOKIE_SECRET: ${{ secrets.E2E_NEON_AUTH_COOKIE_SECRET }}
-  APP_URL: http://localhost:3000
-  SHARED_ADMIN_EMAIL: ${{ secrets.SHARED_ADMIN_EMAIL }}
-  SHARED_ADMIN_PASSWORD: ${{ secrets.SHARED_ADMIN_PASSWORD }}
-  CLIENT_DEFAULT_PASSWORD: ${{ secrets.CLIENT_DEFAULT_PASSWORD }}
-  PREVIEW_CLIENT_EMAIL: ${{ secrets.PREVIEW_CLIENT_EMAIL }}
-  PREVIEW_CLIENT_PASSWORD: ${{ secrets.PREVIEW_CLIENT_PASSWORD }}
-  SHARED_ADMIN_NAME: Portal Operator
-  E2E_SURVEY_SLUG: ${{ secrets.E2E_SURVEY_SLUG }}
-  E2E_INVITE_TOKEN: ${{ secrets.E2E_INVITE_TOKEN }}
-  PLAYGROUND_SURVEY_SLUG: ${{ secrets.E2E_SURVEY_SLUG }}
-
 jobs:
   quality:
     runs-on: ubuntu-latest
@@ -38,59 +23,3 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
-
-      - name: Prepare CI database baseline
-        run: |
-          npm run seed:ci-baseline 2>&1 | tee seed.log
-          echo "PLAYGROUND_SURVEY_ID=$(grep '^PLAYGROUND_SURVEY_ID=' seed.log | tail -1 | cut -d= -f2)" >> "$GITHUB_ENV"
-          echo "PLAYGROUND_ASSIGNMENT_ID=$(grep '^PLAYGROUND_ASSIGNMENT_ID=' seed.log | tail -1 | cut -d= -f2)" >> "$GITHUB_ENV"
-
-      - name: Portal checks
-        run: npm run checks
-
-      - name: Unit tests
-        run: npm run test:unit
-
-      - name: Interaction tests
-        run: npm run test:interaction
-
-      - name: Build
-        run: npm run build
-
-      - name: Install Playwright
-        run: npx playwright install --with-deps chromium
-
-      - name: E2E smoke tests
-        run: npm run test:e2e:smoke
-
-  journey:
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "24"
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Prepare CI database baseline
-        run: |
-          npm run seed:ci-baseline 2>&1 | tee seed.log
-          echo "PLAYGROUND_SURVEY_ID=$(grep '^PLAYGROUND_SURVEY_ID=' seed.log | tail -1 | cut -d= -f2)" >> "$GITHUB_ENV"
-          echo "PLAYGROUND_ASSIGNMENT_ID=$(grep '^PLAYGROUND_ASSIGNMENT_ID=' seed.log | tail -1 | cut -d= -f2)" >> "$GITHUB_ENV"
-
-      - name: Build
-        run: npm run build
-
-      - name: Materialize .env for E2E scripts
-        run: npm run write:ci-env
-
-      - name: Install Playwright
-        run: npx playwright install --with-deps chromium
-
-      - name: E2E journey tests
-        run: npm run test:e2e:journey

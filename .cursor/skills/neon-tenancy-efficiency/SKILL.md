@@ -11,7 +11,7 @@ description: >-
 # Neon tenancy efficiency
 
 **Host product:** Afenda-Lite · **Model:** shared schema + hard `organization_id` (not project-per-tenant)  
-**SSOT:** [doc/architecture/multi-tenant-ecosystem.md](../../../doc/architecture/multi-tenant-ecosystem.md) · **ADR:** [002](../../../doc/backend/adr/002-platform-tenancy-rbac.md) · **Ops:** [multi-org-ops](../../../docs/runbooks/multi-org-ops.md)
+**SSOT:** [docs/architecture/multi-tenant-ecosystem.md](../../../docs/architecture/multi-tenant-ecosystem.md) · **ADR:** [002](../../../docs/backend/adr/002-platform-tenancy-rbac.md) · **Ops:** [multi-org-ops](../../../docs/runbooks/multi-org-ops.md)
 
 ## Coding freeze (read before any tenancy PR)
 
@@ -29,8 +29,8 @@ Do **not** start coding that “closes D5” or “adds RLS for tenancy” witho
 
 ```
 TASK: Neon shared-schema efficiency + anti-drift
-SSOT: doc/architecture/multi-tenant-ecosystem.md (§0 lock + §5–§7)
-ADR:  doc/backend/adr/002-platform-tenancy-rbac.md
+SSOT: docs/architecture/multi-tenant-ecosystem.md (§0 lock + §5–§7)
+ADR:  docs/backend/adr/002-platform-tenancy-rbac.md
 OPS:  docs/runbooks/multi-org-ops.md
 CHEAT: docs/runbooks/post-lock-coding-cheatsheet.md
 CODE: modules/platform/db.ts · db-config.ts · organization-scope.ts

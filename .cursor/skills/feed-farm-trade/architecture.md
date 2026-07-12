@@ -1,6 +1,6 @@
 # Feed Farm Trade — architecture
 
-**SSOT:** [doc/frontend/adr/001A-feed-farm-trade-architecture.md](../../../doc/frontend/adr/001A-feed-farm-trade-architecture.md)
+**SSOT:** [docs/frontend/adr/001A-feed-farm-trade-architecture.md](../../../docs/frontend/adr/001A-feed-farm-trade-architecture.md)
 
 **Platform model:** one SaaS platform · two modules (`declarations` | `fft`) · shared Platform/Identity/AdminCN/env/CI. Infra updates are **together**. Only module domain/RBAC/UI homes differ.
 

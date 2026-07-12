@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generatedAt": "2026-07-12T06:32:09.474Z",
+  "generatedAt": "2026-07-12T12:11:48.842Z",
   "summary": {
     "surfaces": {
       "total": 26,
@@ -349,12 +349,11 @@
           "app/page.tsx",
           "features/auth/entry/client-home-entry.tsx",
           "features/landing/lynx-landing-page.tsx",
-          "features/landing/vanguard-landing.tsx",
-          "features/landing/ritual-engine.ts",
-          "features/landing/lynx-landing.css",
-          "public/lynx/lynx-laptop.png",
-          "public/lynx/lynx-laptop.webp",
-          "public/lynx/lynx-auth-popup.png",
+          "features/landing/the-machine-landing.tsx",
+          "features/landing/the-machine-landing.css",
+          "features/landing/the-machine-fonts.ts",
+          "features/landing/machine-sensor-engine.ts",
+          "public/lynx/lynx-landing-standard.png",
           "features/auth/entry/client-sign-in-entry.ts",
           "features/auth/entry/client-invitation-entry.ts",
           "modules/platform/routing/portal-routes.ts"
@@ -365,13 +364,12 @@
           "features/auth/entry/client-invitation-entry.ts",
           "features/auth/entry/client-sign-in-entry.ts",
           "features/landing/lynx-landing-page.tsx",
-          "features/landing/lynx-landing.css",
-          "features/landing/ritual-engine.ts",
-          "features/landing/vanguard-landing.tsx",
+          "features/landing/machine-sensor-engine.ts",
+          "features/landing/the-machine-fonts.ts",
+          "features/landing/the-machine-landing.css",
+          "features/landing/the-machine-landing.tsx",
           "modules/platform/routing/portal-routes.ts",
-          "public/lynx/lynx-auth-popup.png",
-          "public/lynx/lynx-laptop.png",
-          "public/lynx/lynx-laptop.webp"
+          "public/lynx/lynx-landing-standard.png"
         ]
       }
     },

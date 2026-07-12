@@ -41,7 +41,7 @@ Ask: “How would we remove this in 3 years?” Prefer clean interfaces, flags, 
 
 ### Rejected Work Is Compulsory Deprecation
 
-If the user (or an Accepted ADR) **rejects**, **retires**, or **hard-deletes** an approach, treat it as **compulsory forever until explicit reopen**. Do not soft-deprecate, shim forever, or re-implement from an old plan. See always-on `agent-workflow` + [reference.md](reference.md).
+If the user (or an Accepted ADR) **rejects**, **retires**, or **hard-deletes** an approach, treat it as **compulsory forever until explicit reopen**. Do not soft-deprecate, shim forever, or re-implement from an old plan. See `/using-afenda-elite-skills` + [reference.md](reference.md).
 
 ## The Deprecation Decision
 

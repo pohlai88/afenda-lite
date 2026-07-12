@@ -1,13 +1,15 @@
 # Agent instructions — Afenda-Lite
 
-**Product:** **Afenda-Lite** — beta / lite edition of official **Afenda ERP** (multi-module SaaS).  
-**Retired product name:** Client Declaration Portal — compulsory; see [doc/adr/001-afenda-lite-product-identity.md](doc/adr/001-afenda-lite-product-identity.md) · [deprecation register](.cursor/skills/agent-skills/skills/deprecation-and-migration/reference.md).
+**Product:** **Afenda-Lite** — beta / lite edition of official **Afenda ERP** (multi-module SaaS). 
+**Retired product name:** Client Declaration Portal — compulsory; see [docs/adr/001-afenda-lite-product-identity.md](docs/adr/001-afenda-lite-product-identity.md) · [deprecation register](.cursor/skills/agent-skills/skills/deprecation-and-migration/reference.md).
 
-**Repository layout:** [docs/architecture/repo-migration-map.md](docs/architecture/repo-migration-map.md) (migration closed) · [doc/frontend/02-folder-map.md](doc/frontend/02-folder-map.md). Hosting: GitHub `pohlai88/afenda-lite` · Vercel `afenda-lite` · `APP_URL=https://afenda-lite.vercel.app`.
+**Doc registry (hard):** [doc/architecture/afenda-elite-doc-registry.md](doc/architecture/afenda-elite-doc-registry.md) · types [documentation-types](doc/architecture/afenda-elite-documentation-types.md) · rule `.cursor/rules/doc-registry.mdc` · `npm run check:doc-registry`. `doc/` = Elite controllers only; production SSOT = `docs/`. Violation → stop and fix.
+
+**Repository layout:** [docs/architecture/repo-migration-map.md](docs/architecture/repo-migration-map.md) (migration closed) · [docs/frontend/02-folder-map.md](docs/frontend/02-folder-map.md). Hosting: GitHub `pohlai88/afenda-lite` · Vercel `afenda-lite` · `APP_URL=https://afenda-lite.vercel.app`.
 
 ## Feed Farm Trade — Phase 2A closed · 2B–2D ADRs Accepted
 
-**Product module (UI / shell):** Feed Farm Trade — agent skill [`.cursor/skills/feed-farm-trade`](.cursor/skills/feed-farm-trade/SKILL.md) · ADR [001](doc/frontend/adr/001-feed-farm-trade.md) · architecture [001A](doc/frontend/adr/001A-feed-farm-trade-architecture.md) · roadmap [001R](doc/frontend/adr/001R-feed-farm-trade-roadmap.md).
+**Product module (UI / shell):** Feed Farm Trade — agent skill [`.cursor/skills/feed-farm-trade`](.cursor/skills/feed-farm-trade/SKILL.md) · ADR [001](docs/frontend/adr/001-feed-farm-trade.md) · architecture [001A](docs/frontend/adr/001A-feed-farm-trade-architecture.md) · roadmap [001R](docs/frontend/adr/001R-feed-farm-trade-roadmap.md).
 
 **Agent entry (engine ops):** [docs/fft/RUNTIME.md](docs/fft/RUNTIME.md) · Index: [docs/fft/README.md](docs/fft/README.md)
 
@@ -24,7 +26,7 @@
 
 ## Platform tenancy (hard cutover + multi-org ready)
 
-**Decision:** [doc/backend/adr/002-platform-tenancy-rbac.md](doc/backend/adr/002-platform-tenancy-rbac.md) · **Living inventory:** [doc/architecture/multi-tenant-ecosystem.md](doc/architecture/multi-tenant-ecosystem.md) (shared-schema + Neon production efficiency) · Phase evidence: [doc/frontend/14-org-admin-rbac-tenancy-tasks.md](doc/frontend/14-org-admin-rbac-tenancy-tasks.md).
+**Decision:** [docs/backend/adr/002-platform-tenancy-rbac.md](docs/backend/adr/002-platform-tenancy-rbac.md) · **Living inventory:** [docs/architecture/multi-tenant-ecosystem.md](docs/architecture/multi-tenant-ecosystem.md) (shared-schema + Neon production efficiency) · Phase evidence: [docs/frontend/14-org-admin-rbac-tenancy-tasks.md](docs/frontend/14-org-admin-rbac-tenancy-tasks.md).
 
 | Fact | Detail |
 |------|--------|
@@ -35,7 +37,7 @@
 | Env | `PORTAL_ORG_SLUG` / `PORTAL_ORG_NAME` / `PORTAL_ORG_SWITCHER_ENABLED`; do not confuse with `NEON_ORG_ID` (Neon Cloud) |
 | Ops | `npm run audit:tenancy-nulls` · `npm run check:tenancy-residue` · `backfill:fft-access --organization-id=…` · skill ladder A–E [neon-tenancy-efficiency](.cursor/skills/neon-tenancy-efficiency/reference.md) |
 | Cheat sheet | [docs/runbooks/post-lock-coding-cheatsheet.md](docs/runbooks/post-lock-coding-cheatsheet.md) — post-lock commands + Rejected/Deferred flash card |
-| Decision lock | [ecosystem §0](doc/architecture/multi-tenant-ecosystem.md) — Rejected R1–R7 / Deferred D4·D5; do not reopen without explicit user approval |
+| Decision lock | [ecosystem §0](docs/architecture/multi-tenant-ecosystem.md) — Rejected R1–R7 / Deferred D4·D5; do not reopen without explicit user approval |
 | Accepted constraints | **D4** FFT child denorm deferred (M5); **D5** shared-schema / not project-per-tenant |
 | Anti-claim | Do **not** say multi-DB isolation (D5). `FFT_RBAC_ENABLED` ≠ soft SQL tenancy. Soft dual-mode / first-org stamp are **retired** — see deprecation register |
 
@@ -189,18 +191,16 @@ Runbook: [docs/runbooks/local-dev-auth.md](docs/runbooks/local-dev-auth.md).
 
 ## Portal Atmosphere — agent constraints
 
-Authority: [ADR-Portal-BG-001](docs/architecture/adr/ADR-Portal-BG-001-portal-atmosphere-system.md) · [ADR-Auth-UI-001](docs/architecture/adr/ADR-Auth-UI-001-guardian-shell-neon-form.md) · **[Hero quality benchmark](docs/architecture/slices/portal-atmosphere/pa-hero-quality-benchmark.md)** · [Rejected approaches register](docs/architecture/slices/portal-atmosphere/pa-rejected-approaches.md) · Cursor rules: `.cursor/rules/portal-atmosphere-design.mdc`, `.cursor/rules/agent-workflow.mdc`
+**Status:** Experiment **dormant** — do not remount. Authority for bans: [deprecation register](.cursor/skills/agent-skills/skills/deprecation-and-migration/reference.md) · [closed-scope-register](docs/architecture/closed-scope-register.md) · `/using-afenda-elite-skills`.
 
-**Design references:** `public/brand/heroes/auth-hero-dark.png`, `public/brand/heroes/auth-hero-light.png`
+Former Portal Atmosphere slice ADRs under `docs/architecture/slices/portal-atmosphere/` were retired. Do not restore those paths. Elite controllers live under `doc/architecture/afenda-elite-*` only.
 
 | Rule | Detail |
 |------|--------|
-| **Comp is the bar** | Visual match to hero PNGs at 1024px side-by-side; tests passing ≠ done |
 | Plan before visual work | Hero/atmosphere changes: Plan mode → user approval → implement |
-| Experiment surface | **Dormant** — `components/portal-atmosphere/` hard-deleted; brand refs under `public/brand/`; Storybook removed |
-| Dual owl assets | Dark: `public/owl-variants/allowed-base/darkbg-removebg-preview2.png` · Light: `public/owl-variants/allowed-base/whitebg-removebg-preview2.png` |
-| Forbidden | CSS invert on owls; single PNG sticker heroes; reintroducing rejected approaches in `pa-rejected-approaches.md` |
-| Prod wiring | **Studio login-page-02 + Neon** on `/auth/*` is the production shell ([ADR-Auth-UI-001](docs/architecture/adr/ADR-Auth-UI-001-guardian-shell-neon-form.md) amended 2026-07-10). Guardian Auth, Fade Owl / Dual / Comp Laptop stay experiment-only |
+| Experiment surface | **Dormant** — `components/portal-atmosphere/` hard-deleted; brand refs under `public/brand/` if present; Storybook removed |
+| Forbidden | CSS invert on owls; single PNG sticker heroes; reintroducing rejected Guardian/PA approaches |
+| Prod wiring | **Studio login-page-02 + Neon** on `/auth/*` is the production shell. Guardian Auth stay experiment-only |
 
 ---
 

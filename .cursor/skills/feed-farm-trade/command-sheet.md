@@ -49,17 +49,17 @@ Agent must read in this order before coding or claiming results:
 7. .cursor/skills/feed-farm-trade/rbac-card.md      (if touching auth)
 8. .cursor/skills/feed-farm-trade/example-slice.md  (before any new FE wire)
 9. Phase doc matching the command:
-   - P0 → doc/frontend/11-feed-farm-trade-phase0-shell.md
-   - P1 → doc/frontend/12-feed-farm-trade-phase1-core-mvp.md
-   - P2 → doc/frontend/13-feed-farm-trade-phase2-ui-polish.md
-   - P3 → doc/frontend/14-feed-farm-trade-phase3-ops-flags.md
-10. If locks unclear: doc/frontend/adr/001-feed-farm-trade.md
-11. If structure unclear: doc/frontend/adr/001A-feed-farm-trade-architecture.md
-12. Roadmap/gaps: doc/frontend/adr/001R-feed-farm-trade-roadmap.md
+   - P0 → docs/frontend/11-feed-farm-trade-phase0-shell.md
+   - P1 → docs/frontend/12-feed-farm-trade-phase1-core-mvp.md
+   - P2 → docs/frontend/13-feed-farm-trade-phase2-ui-polish.md
+   - P3 → docs/frontend/14-feed-farm-trade-phase3-ops-flags.md
+10. If locks unclear: docs/frontend/adr/001-feed-farm-trade.md
+11. If structure unclear: docs/frontend/adr/001A-feed-farm-trade-architecture.md
+12. Roadmap/gaps: docs/frontend/adr/001R-feed-farm-trade-roadmap.md
 13. Ops flags / promote: docs/fft/RUNTIME.md + docs/fft/ops/gate-register.md
 ```
 
-Cross-skills only when the playbook says so: `portal-api-contract`, `portal-frontend-scaffold`, `portal-backend-modules`, `admincn-customization`, `incremental-implementation`, `test-driven-development`.
+Cross-skills only when the playbook says so: `afenda-elite-api-contract`, `afenda-elite-frontend-scaffold`, `afenda-elite-backend-modules`, `admincn-customization`, `incremental-implementation`, `test-driven-development`.
 
 ---
 
@@ -149,7 +149,7 @@ OUT: Output contract. Short verdict first. No implementation.
 COMMAND: REVERIFY_P1_MVP
 MODE: evaluation only — do not write product code unless a test is broken and TASK authorizes fix
 FOLLOW: Feed Farm Trade agent command sheet (locked context + load order + DoD + output contract)
-READ: skill pack then doc/frontend/12-feed-farm-trade-phase1-core-mvp.md + verify.md
+READ: skill pack then docs/frontend/12-feed-farm-trade-phase1-core-mvp.md + verify.md
 DO:
 1. Run: npm run test:unit -- modules/fft
 2. Run residue: rg "FftShell|locale-switcher" features/fft app/fft (redirect-only [locale] shim OK)
@@ -210,7 +210,7 @@ TASK: <REPLACE: one sentence>
 COMMAND: IMPLEMENT_P2_AC
 MODE: UI polish only — no new domain/RBAC/actions unless required to keep P1 green
 FOLLOW: Feed Farm Trade agent command sheet (locked context + load order + DoD + output contract)
-READ: doc/frontend/13-feed-farm-trade-phase2-ui-polish.md + ui-registry.md + admincn-customization
+READ: docs/frontend/13-feed-farm-trade-phase2-ui-polish.md + ui-registry.md + admincn-customization
 P2_AC: <REPLACE: e.g. P2-AC-07 — must be named; inventing IDs = STOP>
 DO:
 1. Confirm P2_AC exists in phase 13 or user explicitly opened a new named AC — else STOP.
@@ -232,7 +232,7 @@ TASK: <REPLACE: one sentence>
 COMMAND: REVIEW_P3
 MODE: evaluation / gap report — do not set FFT_* true in production
 FOLLOW: Feed Farm Trade agent command sheet (locked context + load order + DoD + output contract)
-READ: action-map P3 + doc/frontend/14-feed-farm-trade-phase3-ops-flags.md + RUNTIME.md + gate-register.md
+READ: action-map P3 + docs/frontend/14-feed-farm-trade-phase3-ops-flags.md + RUNTIME.md + gate-register.md
 DO:
 1. Grade AC-OPS-01 (flag-off writes blocked; P1 still works).
 2. List F-OPS-* FE: placeholder vs wired; any ungated write = FAIL.
@@ -293,7 +293,7 @@ OUT: Output contract. Ask before any sync:vercel or prod enable.
 COMMAND: UI_REGISTRY
 MODE: governance — no product redesign unless TASK names a reusableId grant
 FOLLOW: Feed Farm Trade agent command sheet (locked context + load order + DoD + output contract)
-READ: ui-registry.md + ui-registry.json + .cursor/rules/fft-ui-registry.mdc + admincn-customization skill
+READ: ui-registry.md + ui-registry.json + admincn-customization skill + docs/fft/RUNTIME.md
 DO:
 1. Compose only approved FFT-UI-* and allowlisted ACN-UI-*; ACN-BLK-* requires HITL product wrap.
 2. Do not edit ui-registry.json (human HITL only). Do not invent ACN-* / FFT-UI-* IDs.
@@ -369,5 +369,5 @@ HARD RULES:
 | Docs/skill drift | **J** `BOOTSTRAP_SYNC_CHECK` |
 
 **Skill home:** `.cursor/skills/feed-farm-trade/`  
-**Phase specs:** `doc/frontend/11`–`14-feed-farm-trade-*.md`  
+**Phase specs:** `docs/frontend/11`–`14-feed-farm-trade-*.md`  
 **Ops SSOT:** `docs/fft/RUNTIME.md` · `docs/fft/ops/gate-register.md`

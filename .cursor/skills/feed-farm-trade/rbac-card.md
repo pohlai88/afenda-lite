@@ -2,7 +2,7 @@
 
 **SSOT (domain codes):** `modules/fft/domain/rbac-catalog.ts` — if this file disagrees with the table below, **trust the TypeScript catalog**.
 
-**Module entry (control plane):** platform permission `fft.access` via `hasFftModuleAccess` / `requireFftAccess` — **not** the sales allowlist and **not** FFT domain assignment alone. Tenancy: [multi-tenant-ecosystem.md](../../../doc/architecture/multi-tenant-ecosystem.md).
+**Module entry (control plane):** platform permission `fft.access` via `hasFftModuleAccess` / `requireFftAccess` — **not** the sales allowlist and **not** FFT domain assignment alone. Tenancy: [multi-tenant-ecosystem.md](../../../docs/architecture/multi-tenant-ecosystem.md).
 
 ## Hard rule
 

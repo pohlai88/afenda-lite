@@ -1,7 +1,50 @@
 {
   "recommendations": [
     "biomejs.biome",
-    "esbenp.prettier-vscode"
+    "esbenp.prettier-vscode",
+    "bradlc.vscode-tailwindcss",
+    "editorconfig.editorconfig",
+    "mikestead.dotenv",
+    "yoavbls.pretty-ts-errors"
   ],
-  "unwantedRecommendations": ["dbaeumer.vscode-eslint"]
+  "unwantedRecommendations": [
+    "dbaeumer.vscode-eslint",
+    "denoland.vscode-deno",
+    "wix.vscode-import-cost",
+    "eamodio.gitlens",
+    "mhutchie.git-graph",
+    "openai.chatgpt",
+    "saoudrizwan.claude-dev",
+    "ms-python.python",
+    "ms-python.vscode-pylance",
+    "ms-python.debugpy",
+    "ms-azuretools.vscode-docker",
+    "ms-azuretools.vscode-containers",
+    "formulahendry.code-runner",
+    "chakrounanas.turbo-console-log",
+    "steoates.autoimport",
+    "dsznajder.es7-react-js-snippets",
+    "pulkitgangwar.nextjs-snippets",
+    "imgildev.vscode-nextjs-generator",
+    "imgildev.vscode-tailwindcss-snippets",
+    "jumail.headwind",
+    "alfredbirk.tailwind-documentation",
+    "rangav.vscode-thunder-client",
+    "humao.rest-client",
+    "supabase.postgrestools",
+    "github.vscode-pull-request-github",
+    "github.vscode-github-actions",
+    "gruntfuggly.todo-tree",
+    "wayou.vscode-todo-highlight",
+    "usernamehw.errorlens",
+    "mattpocock.ts-error-translator",
+    "vitest.explorer",
+    "yzhang.markdown-all-in-one",
+    "christian-kohler.npm-intellisense",
+    "anysphere.remote-ssh",
+    "anysphere.remote-containers",
+    "anysphere.remote-wsl",
+    "ms-vscode.powershell",
+    "ms-vscode.makefile-tools"
+  ]
 }

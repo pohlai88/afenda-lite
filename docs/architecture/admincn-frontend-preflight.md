@@ -7,7 +7,7 @@ Run before adding or refining an AdminCN-hosted screen.
 | Question | Answer |
 |----------|--------|
 | Module? | `declarations` \| `fft` \| admin-route |
-| Route? | Must match [doc/frontend/03-routes.md](../../doc/frontend/03-routes.md) |
+| Route? | Must match [docs/frontend/03-routes.md](../frontend/03-routes.md) |
 | Layout gate? | Member / HS permission / org admin — never conflate |
 | Owner? | `portal-views/*` or `features/*` — thin `app/**/page.tsx` |
 | Registry IDs? | Required: `ACN-UI-*` / `ACN-BLK-*` / `FFT-UI-*` in [ui-registry.json](../../.cursor/skills/feed-farm-trade/ui-registry.json) — **STOP** if inventing |
@@ -45,6 +45,6 @@ Run before adding or refining an AdminCN-hosted screen.
 
 - [admincn-customization.md](admincn-customization.md)  
 - [ui-registry.md](../../.cursor/skills/feed-farm-trade/ui-registry.md)  
-- [fft-ui-registry.mdc](../../.cursor/rules/fft-ui-registry.mdc)  
-- [doc/frontend/06-admincn-alignment.md](../../doc/frontend/06-admincn-alignment.md)  
+- [ui-registry.md](../../.cursor/skills/feed-farm-trade/ui-registry.md) · skill `/feed-farm-trade`  
+- [docs/frontend/06-admincn-alignment.md](../frontend/06-admincn-alignment.md)  
 - [modules/platform/shell/access.ts](../../modules/platform/shell/access.ts)  

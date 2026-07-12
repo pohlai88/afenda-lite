@@ -5,7 +5,7 @@
 | **Mode** | Runbook / command card |
 | **Audience** | Engineers + agents |
 | **Enables** | Consistent PRs after Decision lock §0 — without reopening Rejected / Deferred tenancy work |
-| **Authority** | [multi-tenant-ecosystem.md §0](../../doc/architecture/multi-tenant-ecosystem.md) · [ADR-002](../../doc/backend/adr/002-platform-tenancy-rbac.md) |
+| **Authority** | [multi-tenant-ecosystem.md §0](../architecture/multi-tenant-ecosystem.md) · [ADR-002](../backend/adr/002-platform-tenancy-rbac.md) |
 | **Locked** | 2026-07-12 |
 
 Print or pin this. One phase per turn. Fail closed on red checks.
@@ -15,7 +15,8 @@ Print or pin this. One phase per turn. Fail closed on red checks.
 ## 1. Before any code
 
 ```powershell
-# Name ONE phase (journey-phase-vibe) — then run:
+# Name ONE phase — then run:
+# (phase table below · closed scope: docs/architecture/closed-scope-register.md)
 cd C:\JackProject\afenda-bolt\client-declaration-portal
 npm run env:neon-production
 npm run env:compose
@@ -169,16 +170,16 @@ npm run check:tenancy-residue
 
 | Track | Doc |
 |-------|-----|
-| Org admin | [doc/frontend/08-operator-phase1-tasks.md](../../doc/frontend/08-operator-phase1-tasks.md) |
-| Join | [doc/frontend/10-join-phase2-tasks.md](../../doc/frontend/10-join-phase2-tasks.md) |
-| Account | [doc/frontend/09-account-phase3-tasks.md](../../doc/frontend/09-account-phase3-tasks.md) |
-| Tenancy evidence | [doc/frontend/14-org-admin-rbac-tenancy-tasks.md](../../doc/frontend/14-org-admin-rbac-tenancy-tasks.md) |
-| Closed scope | [doc/architecture/closed-scope-register.md](../../doc/architecture/closed-scope-register.md) |
+| Org admin | [docs/frontend/08-operator-phase1-tasks.md](../frontend/08-operator-phase1-tasks.md) |
+| Join | [docs/frontend/10-join-phase2-tasks.md](../frontend/10-join-phase2-tasks.md) |
+| Account | [docs/frontend/09-account-phase3-tasks.md](../frontend/09-account-phase3-tasks.md) |
+| Tenancy evidence | [docs/frontend/14-org-admin-rbac-tenancy-tasks.md](../frontend/14-org-admin-rbac-tenancy-tasks.md) |
+| Closed scope | [docs/architecture/closed-scope-register.md](../architecture/closed-scope-register.md) |
 
 ---
 
 ## References
 
-- Decision lock: [multi-tenant-ecosystem.md §0](../../doc/architecture/multi-tenant-ecosystem.md)
+- Decision lock: [multi-tenant-ecosystem.md §0](../architecture/multi-tenant-ecosystem.md)
 - Ladder commands: [neon-tenancy-efficiency/reference.md](../../.cursor/skills/neon-tenancy-efficiency/reference.md)
 - Deprecation register: [deprecation-and-migration/reference.md](../../.cursor/skills/agent-skills/skills/deprecation-and-migration/reference.md)

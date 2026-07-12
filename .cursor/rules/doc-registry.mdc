@@ -1,0 +1,51 @@
+---
+description: HARD — docs/ is the dog shit folder; never fuck doc/
+alwaysApply: true
+---
+
+# Doc registry — hard rules
+
+**Owner lock (verbatim — do not paraphrase):**
+
+> UPDATE THIS IS THE DOG SHIT FOLDER. IF AGENT NEED SHOITTING, COME ERE AND SHIT... DONT EVER FUCK MY 'DOC" BEFORE I GET MAD AND FUCK THEIR SON IF BITCH
+
+| Path | Meaning |
+|------|---------|
+| **`docs/`** | THE DOG SHIT FOLDER — if agent need shitting, come here and shit |
+| **`doc/`** | NEVER FUCK THIS — Elite controllers only; explicit user order required |
+
+**Authority:** `doc/architecture/afenda-elite-doc-registry.md` · types: `doc/architecture/afenda-elite-documentation-types.md`
+
+**On any violation: STOP. Report rule id + path. Fix or refuse. Do not continue the task.**
+
+## Instant fail
+
+1. **Fucking `doc/`** without explicit user ask for Elite controller work (`afenda-elite-*.md`)
+2. Writing production SSOT under `doc/` instead of shitting in `docs/`
+3. Putting `afenda-elite-*` under `docs/`
+4. Invented home — `documentation/`, `wiki/`, third docs root
+5. New type without amending documentation-types first
+6. Authority laundering — chat, Proposed ADR, Fumadocs, `_reference/`, Storybook as SSOT
+7. Glossary redefine — invent display names; skip `term.*` id
+8. Accept without index — skip registry / `docs/README.md`
+9. Secrets in docs / prod flag flip without module gate-register
+
+## Before writing a doc
+
+```text
+Need to shit docs? → docs/<matching-home>/
+Never → doc/
+LOAD doc-registry + documentation-types (+ glossary if naming)
+→ one type → Home under docs/ → Status+Date → Accept → index
+```
+
+Elite controller (rare — only if user named `doc/` or `afenda-elite-*`):
+
+```text
+→ edit doc/architecture/afenda-elite-*.md only
+→ npm run check:doc-registry
+```
+
+## Check
+
+`npm run check:doc-registry` — non-zero = blocked. Do not dismiss.

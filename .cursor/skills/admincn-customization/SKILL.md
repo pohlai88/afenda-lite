@@ -7,8 +7,8 @@ description: Customizes the landed AdminCN shell in components-V2 via themeConfi
 
 **SSOT playbook:** [docs/architecture/admincn-customization.md](../../../docs/architecture/admincn-customization.md)  
 **Frontend preflight (before new screens):** [docs/architecture/admincn-frontend-preflight.md](../../../docs/architecture/admincn-frontend-preflight.md)  
-**Alignment:** [doc/frontend/06-admincn-alignment.md](../../../doc/frontend/06-admincn-alignment.md)  
-**UI registry (compulsory IDs):** [../feed-farm-trade/ui-registry.md](../feed-farm-trade/ui-registry.md) · [../feed-farm-trade/ui-registry.json](../feed-farm-trade/ui-registry.json) · rule [`.cursor/rules/fft-ui-registry.mdc`](../../rules/fft-ui-registry.mdc)  
+**Alignment:** [docs/frontend/06-admincn-alignment.md](../../../docs/frontend/06-admincn-alignment.md)  
+**UI registry (compulsory IDs):** [../feed-farm-trade/ui-registry.md](../feed-farm-trade/ui-registry.md) · [../feed-farm-trade/ui-registry.json](../feed-farm-trade/ui-registry.json) · skill `/feed-farm-trade` · `npm run check:fft-ui-registry`  
 **Product home:** `components-V2/`  
 **Auth island:** `features/auth/` — preserve `app/auth-surface.css` + route-scoped `app/auth/neon-auth-ui.css`
 

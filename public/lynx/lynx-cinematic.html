@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <meta content="#05070c" name="theme-color">
+    <title>Afenda — Cinematic</title>
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Inter:wght@300;400&display=swap"
+      rel="stylesheet"
+    >
+    <style>
+    :root {
+      --bg: #05070c;
+      --text: #f5f1e8;
+      --text-soft: #d2cdc2;
+      --muted: #9a9488;
+      --gold: #d4a574;
+      --cyan: #8ec8ff;
+      --ease: cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    html {
+      color-scheme: dark;
+    }
+
+    * {
+      box-sizing: border-box;
+      padding: 0;
+      margin: 0;
+    }
+
+    body {
+      overflow: hidden;
+      font-family: Inter, sans-serif;
+      color: var(--text);
+      background-color: var(--bg);
+    }
+
+    .compare-nav {
+      position: fixed;
+      top: max(16px, env(safe-area-inset-top));
+      left: 50%;
+      z-index: 20;
+      display: flex;
+      gap: 6px;
+      padding: 5px;
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      background: rgba(5, 7, 12, 0.62);
+      border: 1px solid rgba(245, 241, 232, 0.12);
+      border-radius: 999px;
+      backdrop-filter: blur(12px);
+      transform: translateX(-50%);
+    }
+
+    .compare-nav a {
+      padding: 7px 11px;
+      color: rgba(245, 241, 232, 0.5);
+      text-decoration: none;
+      border-radius: 999px;
+      transition:
+        color 0.25s ease,
+        background 0.25s ease;
+    }
+
+    .compare-nav a:hover {
+      color: var(--text);
+    }
+
+    .compare-nav a:focus {
+      outline: none;
+    }
+
+    .compare-nav a:focus-visible {
+      outline: 1px solid var(--gold);
+      outline-offset: 2px;
+    }
+
+    .compare-nav a.is-active {
+      color: var(--bg);
+      background: var(--text);
+    }
+
+    .cinematic-showcase {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .image-wrapper {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+    }
+
+    .hero-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center 42%;
+      animation: cinematicZoom 22s ease-in-out infinite alternate;
+    }
+
+    @keyframes cinematicZoom {
+      from {
+        transform: scale(1);
+      }
+      to {
+        transform: scale(1.07);
+      }
+    }
+
+    /* Edges hold the frame; center stays open for lynx eyes + keyhole */
+    .vignette-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      pointer-events: none;
+      background: radial-gradient(
+        ellipse 70% 65% at 50% 42%,
+        transparent 0%,
+        transparent 32%,
+        rgba(5, 7, 12, 0.35) 58%,
+        rgba(5, 7, 12, 0.78) 82%,
+        rgba(5, 7, 12, 0.94) 100%
+      );
+    }
+
+    /* Soft band behind type — contrast without killing the art */
+    .legibility-wash {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      pointer-events: none;
+      background:
+        linear-gradient(
+          to bottom,
+          rgba(5, 7, 12, 0.45) 0%,
+          transparent 22%,
+          transparent 58%,
+          rgba(5, 7, 12, 0.62) 100%
+        ),
+        radial-gradient(
+          ellipse 55% 40% at 50% 52%,
+          rgba(5, 7, 12, 0.42) 0%,
+          transparent 70%
+        );
+    }
+
+    .editorial-content {
+      position: relative;
+      z-index: 3;
+      max-width: 36rem;
+      padding: 0 28px;
+      text-align: center;
+      opacity: 0;
+      animation: fadeIn 2.6s var(--ease) 0.35s forwards;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(16px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .kicker {
+      margin: 0 0 1.35rem;
+      font-size: 0.7rem;
+      font-weight: 400;
+      color: var(--gold);
+      text-transform: uppercase;
+      letter-spacing: 0.36em;
+    }
+
+    .title {
+      margin: 0 0 0.85rem;
+      font-family: "Cormorant Garamond", serif;
+      font-size: clamp(3.25rem, 9vw, 5.5rem);
+      font-weight: 500;
+      line-height: 0.95;
+      color: var(--text);
+      letter-spacing: 0.08em;
+      text-wrap: balance;
+      text-shadow:
+        0 2px 24px rgba(5, 7, 12, 0.85),
+        0 0 60px rgba(5, 7, 12, 0.45);
+    }
+
+    .subtitle {
+      max-width: 28rem;
+      margin: 0 auto 1.75rem;
+      font-family: "Cormorant Garamond", serif;
+      font-size: clamp(1.15rem, 2.4vw, 1.45rem);
+      font-style: italic;
+      font-weight: 400;
+      line-height: 1.35;
+      color: var(--text-soft);
+      letter-spacing: 0.02em;
+      text-wrap: pretty;
+      text-shadow: 0 2px 18px rgba(5, 7, 12, 0.75);
+    }
+
+    .axis {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+      justify-content: center;
+      margin: 0 0 1.5rem;
+      font-size: 0.65rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.28em;
+    }
+
+    .axis__amber {
+      color: var(--gold);
+    }
+
+    .axis__rule {
+      width: 28px;
+      height: 1px;
+      background: linear-gradient(90deg, var(--gold), var(--cyan));
+      opacity: 0.85;
+    }
+
+    .axis__polaris {
+      color: var(--cyan);
+    }
+
+    .divider {
+      width: 1px;
+      height: 48px;
+      margin: 0 auto;
+      background: linear-gradient(
+        to bottom,
+        transparent,
+        rgba(212, 165, 116, 0.7),
+        transparent
+      );
+    }
+
+    .footer-note {
+      position: absolute;
+      bottom: max(24px, env(safe-area-inset-bottom) + 12px);
+      left: 50%;
+      z-index: 4;
+      font-size: 10px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.22em;
+      transform: translateX(-50%);
+    }
+
+    @media (max-width: 768px) {
+      .title {
+        font-size: clamp(2.6rem, 14vw, 3.4rem);
+        letter-spacing: 0.06em;
+      }
+
+      .subtitle {
+        font-size: 1.1rem;
+      }
+
+      .editorial-content {
+        max-width: 92vw;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .hero-image,
+      .editorial-content {
+        animation: none;
+      }
+
+      .editorial-content {
+        opacity: 1;
+        transform: none;
+      }
+    }
+    </style>
+  </head>
+  <body>
+    <nav aria-label="Presentation comparison" class="compare-nav">
+      <a href="/lynx/lynx-overlay.html">Polaris Grid</a>
+      <a class="is-active" href="/lynx/lynx-cinematic.html">Cinematic</a>
+      <a href="/lynx/lynx-hybrid.html">Hybrid</a>
+      <a href="/lynx/lynx-the-machine.html">Machine</a>
+    </nav>
+
+    <section class="cinematic-showcase">
+      <div class="image-wrapper">
+        <img
+          alt="Afenda dual lynx — amber and polaris"
+          class="hero-image"
+          fetchpriority="high"
+          height="1080"
+          src="lynx-landing-standard.png"
+          width="1920"
+        >
+        <div aria-hidden="true" class="vignette-overlay"></div>
+        <div aria-hidden="true" class="legibility-wash"></div>
+      </div>
+
+      <div class="editorial-content">
+        <p class="kicker" translate="no">Afenda · Sovereign Vault</p>
+        <h1 class="title">Truth</h1>
+        <p class="subtitle">is protected.</p>
+        <p aria-hidden="true" class="axis">
+          <span class="axis__amber">Amber</span>
+          <span class="axis__rule"></span>
+          <span class="axis__polaris">Polaris</span>
+        </p>
+        <div aria-hidden="true" class="divider"></div>
+      </div>
+
+      <p class="footer-note">Guarded quietly. Revealed only by intent.</p>
+    </section>
+  </body>
+</html>

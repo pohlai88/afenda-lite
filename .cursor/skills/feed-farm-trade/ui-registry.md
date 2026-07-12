@@ -5,7 +5,7 @@
 **Generator (AdminCN catalog):** `npm run generate:fft-ui-registry-admincn` (preserves `components[]` + `surfaces[]`)  
 **Script enforcer:** `npm run check:fft-ui-registry`  
 **Vitest enforcer:** [`features/fft/ui-registry.test.ts`](../../../features/fft/ui-registry.test.ts)  
-**Cursor rule:** [`.cursor/rules/fft-ui-registry.mdc`](../../rules/fft-ui-registry.mdc)  
+**Cursor rule:** removed — use this file + [ui-registry.json](ui-registry.json) + skill `/feed-farm-trade` · `npm run check:fft-ui-registry`  
 **AdminCN skill:** [`.cursor/skills/admincn-customization/SKILL.md`](../admincn-customization/SKILL.md)
 
 ## Layers (compulsory)
