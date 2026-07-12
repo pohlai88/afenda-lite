@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "syncedAt": "2026-07-12T08:37:40.178Z",
+  "syncedAt": "2026-07-12T09:25:35.889Z",
   "project": {
     "projectId": "young-hat-54755363",
     "projectName": "Afenda-Lite",
@@ -51,9 +51,6 @@
     }
   ],
   "trustedDomains": [
-    "https://iam-check.vercel.app",
-    "https://iam-check-1gir3cbrt-jacks-projects-7b3cfe94.vercel.app/",
-    "https://iam-check-h3pvi0dme-jacks-projects-7b3cfe94.vercel.app/",
     "https://*.vercel.app",
     "https://afenda-lite.vercel.app"
   ],

@@ -29,12 +29,17 @@ Do **not** start coding that “closes D5” or “adds RLS for tenancy” witho
 
 ```
 TASK: Neon shared-schema efficiency + anti-drift
-SSOT: doc/architecture/multi-tenant-ecosystem.md (§5–§7)
+SSOT: doc/architecture/multi-tenant-ecosystem.md (§0 lock + §5–§7)
 ADR:  doc/backend/adr/002-platform-tenancy-rbac.md
 OPS:  docs/runbooks/multi-org-ops.md
+CHEAT: docs/runbooks/post-lock-coding-cheatsheet.md
 CODE: modules/platform/db.ts · db-config.ts · organization-scope.ts
 BRANCH: br-tiny-hill-ao82jp6f (local = production Neon)
+NEON CLOUD: org-fragrant-lake-90358173 · project young-hat-54755363 (Afenda-Lite)
+AUTH TENANT: slug afenda-lite · id 4587e4c8-8119-4761-91ce-b874d3493aad
+OPERATOR: SHARED_ADMIN_EMAIL=afenda@admin.com (password in env.secret only)
 ANTI-CLAIM: not multi-DB / not project-per-tenant / not RLS on BFF path
+RETIRED: iam-check Auth slug · admin@iam-check.com · @iam-check.com e2e junk (purged)
 ```
 
 Do **not** flood with FFT phase docs or portal-atmosphere rules unless the user reopened that scope.
@@ -43,9 +48,11 @@ Do **not** flood with FFT phase docs or portal-atmosphere rules unless the user 
 
 1. Fail closed: stop the ladder on the first red check; do not “tune CU” over a broken pooler or null org.
 2. App/Vercel runtime = **`-pooler`** `DATABASE_URL`. Migrations / `pg_dump` = **direct** endpoint.
-3. Never stamp first org (`ORDER BY … LIMIT 1`) when multiple Auth orgs exist — require `--organization-id`.
+3. Never stamp first org (`ORDER BY … LIMIT 1`) when multiple Auth orgs exist — require `--organization-id` or `PORTAL_ORGANIZATION_ID`.
 4. Do not propose Neon RLS, Data API tenant tables, or project-per-tenant (D5) as a performance fix.
 5. Neon Console autoscaling / scale-to-zero / protected branch are operator-owned — verify live; do not invent git-tracked CU numbers.
+6. Auth identity SSOT is **afenda-lite** / `afenda@admin.com` — do not reintroduce `iam-check` slug or `admin@iam-check.com`.
+7. Avoid day-to-day `neonctl link` (rewrites `.neon` / can pollute `.env`) — use `npm run env:neon-production` + `env:compose`.
 
 ## Workflow
 
@@ -123,6 +130,8 @@ Full one-liner set: [reference.md](reference.md#weekly-anti-drift-pack).
 - Raise CU before pooler + short transactions + org-leading indexes are green
 - Enable `PORTAL_ORG_SWITCHER_ENABLED` on Vercel without multi-membership + rollback
 - Mix this lane with FFT flag promotion or portal atmosphere work
+- Reintroduce `iam-check` Auth slug / `admin@iam-check.com` / `@iam-check.com` fixture emails
+- Run `neonctl link` as a routine env fix (prefer `env:neon-production` + `env:compose`)
 
 ## Related
 
