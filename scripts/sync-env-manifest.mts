@@ -8,10 +8,12 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import {
+  deriveCanonicalVercelKeys,
   deriveLocalOnlyKeys,
   deriveRuntimeEnvKeys,
   deriveSecretKeys,
   deriveStaleVercelKeys,
+  deriveSyncOptionalKeys,
   deriveVercelProductionKeys,
 } from "../modules/platform/env/manifest.ts";
 
@@ -25,6 +27,8 @@ function generateContent() {
   const secretKeys = [...deriveSecretKeys()].sort();
   const localOnlyKeys = [...deriveLocalOnlyKeys()].sort();
   const vercelProductionKeys = deriveVercelProductionKeys();
+  const canonicalVercelKeys = deriveCanonicalVercelKeys();
+  const syncOptionalKeys = [...deriveSyncOptionalKeys()].sort();
   const staleVercelKeys = deriveStaleVercelKeys();
   const runtimeEnvKeys = deriveRuntimeEnvKeys();
 
@@ -32,6 +36,8 @@ function generateContent() {
 export const SECRET_KEYS = new Set([${quoteList(secretKeys)}]);
 export const LOCAL_ONLY_KEYS = new Set([${quoteList(localOnlyKeys)}]);
 export const VERCEL_PRODUCTION_KEYS = [${quoteList(vercelProductionKeys)}];
+export const CANONICAL_VERCEL_KEYS = [${quoteList(canonicalVercelKeys)}];
+export const SYNC_OPTIONAL_KEYS = new Set([${quoteList(syncOptionalKeys)}]);
 export const STALE_VERCEL_KEYS = [${quoteList(staleVercelKeys)}];
 export const RUNTIME_ENV_KEYS = [${quoteList(runtimeEnvKeys)}];
 `;

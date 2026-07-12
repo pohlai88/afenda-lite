@@ -5,10 +5,12 @@
  * Usage: npm run validate:env-sync
  */
 import {
+  CANONICAL_VERCEL_KEYS,
   composeEnv,
   getEnvValue,
   LOCAL_ONLY_KEYS,
   STALE_VERCEL_KEYS,
+  SYNC_OPTIONAL_KEYS,
   VERCEL_PRODUCTION_KEYS,
 } from "./lib/env-files.mjs";
 import { listVercelEnvKeys } from "./lib/vercel-env.mjs";
@@ -44,8 +46,8 @@ function main() {
     );
   }
 
-  // 2. All Vercel production keys set locally
-  const missingLocal = VERCEL_PRODUCTION_KEYS.filter(
+  // 2. Canonical Vercel production keys set locally (excludes syncOptional tenant keys)
+  const missingLocal = CANONICAL_VERCEL_KEYS.filter(
     (key) => !getEnvValue(key, env)?.trim(),
   );
   if (missingLocal.length) {
@@ -53,8 +55,38 @@ function main() {
   } else {
     pass(
       "local-keys",
-      `All ${VERCEL_PRODUCTION_KEYS.length} production keys set locally`,
+      `All ${CANONICAL_VERCEL_KEYS.length} canonical production keys set locally`,
     );
+  }
+
+  const unsetOptional = [...SYNC_OPTIONAL_KEYS].filter(
+    (key) => !getEnvValue(key, env)?.trim(),
+  );
+  if (unsetOptional.length) {
+    pass(
+      "sync-optional",
+      `Tenant-owned unset (OK): ${unsetOptional.join(", ")}`,
+    );
+  } else {
+    pass("sync-optional", "Tenant-owned syncOptional keys are set locally");
+  }
+
+  // 2b. When ERP sync is enabled, vendor + base URL become required
+  const erpSyncOn = getEnvValue("FFT_ERP_SYNC_ENABLED", env) === "true";
+  if (erpSyncOn) {
+    const missingErp = ["FFT_ERP_VENDOR", "FFT_ERP_BASE_URL"].filter(
+      (key) => !getEnvValue(key, env)?.trim(),
+    );
+    if (missingErp.length) {
+      fail(
+        "fft-erp-config",
+        `FFT_ERP_SYNC_ENABLED=true requires: ${missingErp.join(", ")} (tenant/vendor pack)`,
+      );
+    } else {
+      pass("fft-erp-config", "ERP sync on with vendor + base URL set");
+    }
+  } else {
+    pass("fft-erp-config", "FFT_ERP_SYNC_ENABLED off — vendor/base URL not required");
   }
 
   // 3. Local-only keys not in sync list (sanity)
@@ -97,12 +129,19 @@ function main() {
   }
 
   const appUrl = getEnvValue("APP_URL", env);
-  if (appUrl === "https://iam-check.vercel.app") {
-    pass("app-url", "APP_URL matches production alias");
+  const canonicalAppUrl = "https://afenda-lite.vercel.app";
+  const legacyAppUrlAlias = "https://iam-check.vercel.app";
+  if (appUrl === canonicalAppUrl) {
+    pass("app-url", "APP_URL matches Afenda-Lite production");
+  } else if (appUrl === legacyAppUrlAlias) {
+    warn(
+      "app-url",
+      `APP_URL is legacy alias ${legacyAppUrlAlias} (canonical: ${canonicalAppUrl})`,
+    );
   } else {
     warn(
       "app-url",
-      `APP_URL is ${appUrl ?? "unset"} (expected https://iam-check.vercel.app)`,
+      `APP_URL is ${appUrl ?? "unset"} (expected ${canonicalAppUrl})`,
     );
   }
 
@@ -145,14 +184,14 @@ function main() {
     pass("vercel-playground", "No PLAYGROUND_* keys on Vercel");
   }
 
-  const missingOnVercel = VERCEL_PRODUCTION_KEYS.filter((key) => !remote.has(key));
+  const missingOnVercel = CANONICAL_VERCEL_KEYS.filter((key) => !remote.has(key));
   if (missingOnVercel.length) {
     warn(
       "vercel-missing",
       `Keys absent on Vercel (sync will add): ${missingOnVercel.join(", ")}`,
     );
   } else {
-    pass("vercel-missing", "All production keys present on Vercel");
+    pass("vercel-missing", "All canonical production keys present on Vercel");
   }
 
   console.log("=== Pre-sync validation ===\n");

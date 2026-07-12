@@ -63,6 +63,8 @@ Ship platform permission-catalog RBAC (Identity) + AdminCN Roles/Permissions pro
 
 **Living SSOT:** [multi-tenant-ecosystem.md](../architecture/multi-tenant-ecosystem.md).
 
+**Neon efficiency ladder (2026-07-12):** A–E closed — pooler/env, SQL health, Launch recovery (PITR 7d + snapshots), domain hard-root anti-drift (D7), E1 backfill no-op, D8 e2e org resolve fixed. Accepted constraints (not backlog): **D4** (M5 deferred), **D5** (shared-schema). Ops: [multi-org-ops.md](../../docs/runbooks/multi-org-ops.md).
+
 ## Verify
 
 ```bash

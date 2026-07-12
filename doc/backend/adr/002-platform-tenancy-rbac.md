@@ -8,7 +8,7 @@
 | **Scope** | Multi-tenant boundary + app-owned permission-catalog RBAC for Afenda-Lite modules |
 | **Out of scope** | Neon RLS; Neon Auth custom roles (unsupported); merging FFT **domain** permission catalogs into `platform_*` tables |
 | **Follow-up done** | FFT `organization_id` (026); hard cutover `027` (`NOT NULL` + hard filters); operator session; org-scoped Users via `neon_auth.member`; **control-plane** `fft.access` module entry (catalogs remain separate) |
-| **Living inventory** | [multi-tenant-ecosystem.md](../../architecture/multi-tenant-ecosystem.md) — config inventory, residual debt (D4–D5), multi-org ready M1–M4 |
+| **Living inventory** | [multi-tenant-ecosystem.md](../../architecture/multi-tenant-ecosystem.md) — architecture SSOT: Neon tenancy model choice, config inventory, Neon production efficiency (§6), residual (D4 deferred M5; D5 accepted non-goal; D7–D8 closed), multi-org ready M1–M4 · efficiency ladder A–E closed 2026-07-12 |
 
 **Related:** [001-modular-monolith-hexagonal.md](./001-modular-monolith-hexagonal.md) · [docs/fft/adr/001-rbac.md](../../docs/fft/adr/001-rbac.md) · Neon Auth Organization plugin (owner/admin/member fixed)
 
@@ -72,3 +72,10 @@ Viewer → declarations.read, account.self
 | Only Neon `admin`\|`user` forever | Cannot support ERP multi-module SaaS |
 | Merge FFT **domain** catalogs into platform tables now | Couples FFT gate-register to platform IAM; scopes differ |
 | Ship AdminCN zustand demo as product | Fake data; violates fake-db ban |
+| Soft `(NULL OR org)` dual-mode after Gate 0 | Fail-open; hard-deleted (`027` + residue CI) |
+| Neon RLS as default BFF tenant isolation | Data API concern; product path is Server Actions + hard SQL |
+| Schema-per-tenant | Ops complexity without Neon’s preferred isolation benefits |
+| Project-per-tenant as default / efficiency fix | Conflicts with one Modular Monolith + one Vercel deploy; reopen only for compliance / per-tenant PITR (ecosystem §0 **R5/D5**) |
+| First-org `ORDER BY … LIMIT 1` stamp | Wrong-tenant risk; use active/sole membership or explicit `--organization-id` |
+
+**Coding freeze pointer:** [multi-tenant-ecosystem.md §0](../../architecture/multi-tenant-ecosystem.md) — Rejected / Deferred / Allowed next (2026-07-12).

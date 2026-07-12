@@ -33,7 +33,7 @@ function runNeon(args) {
       console.error(
         [
           "Neon CLI could not read auth config for this project/branch.",
-          "Regenerate NEON_API_KEY for org org-royal-bar-40022480 (Neon Console → Account → API keys),",
+          "Regenerate NEON_API_KEY for org org-fragrant-lake-90358173 (Neon Console → Account → API keys),",
           "update env.secret, run npm run env:compose, then retry.",
           "For a one-off refresh, use Neon MCP get_neon_auth_config and update modules/identity/auth/neon-auth.manifest.json.",
         ].join("\n"),

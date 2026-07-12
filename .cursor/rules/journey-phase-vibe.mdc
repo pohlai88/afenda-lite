@@ -32,9 +32,9 @@ If the task spans more than one **product** phase, stop and ask the user which o
 
 ## Step 2 — Run preflight
 
-Confirm every item in the phase's preflight checklist in [docs/architecture/journey-phase-playbook.md](docs/architecture/journey-phase-playbook.md#c-preflight-checklist).
+Confirm every item in the phase's preflight checklist in [docs/architecture/admincn-frontend-preflight.md](docs/architecture/admincn-frontend-preflight.md) (AdminCN-hosted phases) and [doc/architecture/closed-scope-register.md](doc/architecture/closed-scope-register.md) (closed vs open scope).
 
-For `organization-admin-post-login`, also run [docs/architecture/admincn-frontend-preflight.md](docs/architecture/admincn-frontend-preflight.md).
+For `organization-admin-post-login`, the AdminCN preflight above is required.
 
 ---
 

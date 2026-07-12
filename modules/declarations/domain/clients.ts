@@ -1,15 +1,15 @@
-import { pool } from "@/modules/platform/db";
-import { createInviteTokenValue } from "@/modules/identity/domain/tokens";
+import type { PoolClient } from "pg";
+import { organizationScopeSql } from "@/modules/declarations/domain/organization-scope";
+import type { SurveyAnswers } from "@/modules/declarations/question-models";
 import { expirePendingClientInvitationIfNeeded } from "@/modules/identity/domain/client-invitation-bootstrap";
 import {
-  mapClientProfileRow,
   type ClientProfile,
+  mapClientProfileRow,
 } from "@/modules/identity/domain/client-profile";
+import { createInviteTokenValue } from "@/modules/identity/domain/tokens";
 import { CLIENT_PORTAL_ACK_VERSION } from "@/modules/platform/copy/portal-copy";
-import type { SurveyAnswers } from "@/modules/declarations/question-models";
-import { organizationScopeSql } from "@/modules/declarations/domain/organization-scope";
+import { pool } from "@/modules/platform/db";
 import { normalizeEmail } from "@/modules/platform/normalize-email";
-import type { PoolClient } from "pg";
 
 export { normalizeEmail } from "@/modules/platform/normalize-email";
 
@@ -42,23 +42,23 @@ export type ClientAssignment = {
   draftSavedAt?: Date | null;
 };
 
+export { markClientInvitationAccepted } from "@/modules/identity/domain/client-invitation-bootstrap";
 export type { ClientProfile } from "@/modules/identity/domain/client-profile";
 export {
   ensureClientProfileRow,
   getClientProfile,
 } from "@/modules/identity/domain/client-profile";
-export { markClientInvitationAccepted } from "@/modules/identity/domain/client-invitation-bootstrap";
 
 function mapInvitation(row: Record<string, unknown>): ClientInvitation {
   return {
-    id: String(row.id),
-    token: String(row.token),
+    createdAt: new Date(String(row.created_at)),
     email: String(row.email),
+    expiresAt: new Date(String(row.expires_at)),
     fullName: String(row.full_name),
+    id: String(row.id),
     invitedBy: String(row.invited_by),
     status: String(row.status) as ClientInvitation["status"],
-    expiresAt: new Date(String(row.expires_at)),
-    createdAt: new Date(String(row.created_at)),
+    token: String(row.token),
   };
 }
 
@@ -79,28 +79,32 @@ function mapDraftAnswers(value: unknown): SurveyAnswers | null {
 
 function mapAssignment(row: Record<string, unknown>): ClientAssignment {
   return {
-    id: String(row.id),
-    surveyId: String(row.survey_id),
-    clientEmail: String(row.client_email),
     assignedBy: String(row.assigned_by),
-    status: String(row.status) as ClientAssignment["status"],
-    dueDate: row.due_date ? new Date(String(row.due_date)) : null,
-    submitBefore: row.submit_before
-      ? new Date(String(row.submit_before))
+    clientEmail: String(row.client_email),
+    confirmationCode: row.confirmation_code
+      ? String(row.confirmation_code)
       : null,
-    confirmationCode: row.confirmation_code ? String(row.confirmation_code) : null,
     createdAt: new Date(String(row.created_at)),
-    surveyTitle: row.survey_title ? String(row.survey_title) : undefined,
-    surveyQuestion: row.survey_question ? String(row.survey_question) : undefined,
-    surveySlug: row.survey_slug ? String(row.survey_slug) : undefined,
     draftAnswers: mapDraftAnswers(row.draft_answers),
+    draftSavedAt: row.draft_saved_at
+      ? new Date(String(row.draft_saved_at))
+      : null,
     draftStepIndex:
       row.draft_step_index === null || row.draft_step_index === undefined
         ? null
         : Number(row.draft_step_index),
-    draftSavedAt: row.draft_saved_at
-      ? new Date(String(row.draft_saved_at))
+    dueDate: row.due_date ? new Date(String(row.due_date)) : null,
+    id: String(row.id),
+    status: String(row.status) as ClientAssignment["status"],
+    submitBefore: row.submit_before
+      ? new Date(String(row.submit_before))
       : null,
+    surveyId: String(row.survey_id),
+    surveyQuestion: row.survey_question
+      ? String(row.survey_question)
+      : undefined,
+    surveySlug: row.survey_slug ? String(row.survey_slug) : undefined,
+    surveyTitle: row.survey_title ? String(row.survey_title) : undefined,
   };
 }
 
@@ -133,7 +137,7 @@ export async function countPendingClientAssignments(organizationId: string) {
      FROM client_assignments
      WHERE status = 'pending'
        AND ${organizationScopeSql("organization_id", 1)}`,
-    [organizationId],
+    [organizationId]
   );
 
   return Number(result.rows[0]?.count ?? 0);
@@ -168,18 +172,18 @@ export async function createClientInvitation(input: {
         input.invitedBy,
         expiresAt.toISOString(),
         input.organizationId,
-      ],
+      ]
     );
 
     const invitation = mapInvitation(result.rows[0]);
 
     if (input.surveyId) {
       await insertClientAssignment(dbClient, {
-        surveyId: input.surveyId,
-        clientEmail: email,
         assignedBy: input.invitedBy,
+        clientEmail: email,
         dueDate: input.dueDate,
         organizationId: input.organizationId,
+        surveyId: input.surveyId,
       });
     }
 
@@ -199,7 +203,7 @@ export async function getClientInvitationByToken(token: string) {
      FROM client_invitations
      WHERE token = $1
      LIMIT 1`,
-    [token],
+    [token]
   );
 
   if (!result.rows[0]) {
@@ -216,7 +220,7 @@ export async function getClientInvitationByEmail(email: string) {
      WHERE lower(email) = lower($1)
      ORDER BY created_at DESC
      LIMIT 1`,
-    [email],
+    [email]
   );
 
   if (!result.rows[0]) {
@@ -237,7 +241,7 @@ export type ClientProfileSummary = {
 
 export async function listClientProfileSummariesByUserIds(
   userIds: string[],
-  organizationId: string,
+  organizationId: string
 ): Promise<Map<string, ClientProfileSummary>> {
   const unique = [...new Set(userIds.filter(Boolean))];
   const summaries = new Map<string, ClientProfileSummary>();
@@ -250,19 +254,19 @@ export async function listClientProfileSummariesByUserIds(
      FROM client_profiles
      WHERE user_id = ANY($1::uuid[])
        AND organization_id = $2`,
-    [unique, organizationId],
+    [unique, organizationId]
   );
 
   for (const row of result.rows) {
     const userId = String(row.user_id);
     summaries.set(userId, {
-      userId,
-      fullLegalName: row.full_legal_name ? String(row.full_legal_name) : null,
-      entityName: row.entity_name ? String(row.entity_name) : null,
       countryOfResidence: row.country_of_residence
         ? String(row.country_of_residence)
         : null,
+      entityName: row.entity_name ? String(row.entity_name) : null,
+      fullLegalName: row.full_legal_name ? String(row.full_legal_name) : null,
       phone: row.phone ? String(row.phone) : null,
+      userId,
     });
   }
 
@@ -327,7 +331,7 @@ export async function upsertClientProfile(input: {
       input.identityConsentAt?.toISOString() ?? null,
       input.onboardingComplete ?? true,
       input.organizationId,
-    ],
+    ]
   );
 
   return mapClientProfileRow(result.rows[0]);
@@ -348,7 +352,7 @@ export async function acknowledgeClientPortal(input: {
     `UPDATE client_profiles
      SET portal_ack_at = NOW(), portal_ack_version = $2, updated_at = NOW()
      WHERE user_id = $1`,
-    [input.userId, input.version],
+    [input.userId, input.version]
   );
 }
 
@@ -360,7 +364,7 @@ async function insertClientAssignment(
     assignedBy: string;
     dueDate?: Date;
     organizationId: string;
-  },
+  }
 ) {
   const result = await dbClient.query(
     `INSERT INTO client_assignments (survey_id, client_email, assigned_by, due_date, organization_id)
@@ -372,7 +376,7 @@ async function insertClientAssignment(
       input.assignedBy,
       input.dueDate?.toISOString() ?? null,
       input.organizationId,
-    ],
+    ]
   );
 
   return mapAssignment(result.rows[0]);
@@ -406,7 +410,7 @@ export async function listClientAssignments(email: string) {
      JOIN surveys s ON s.id = a.survey_id
      WHERE lower(a.client_email) = lower($1)
      ORDER BY a.created_at DESC`,
-    [normalizeEmail(email)],
+    [normalizeEmail(email)]
   );
 
   return result.rows.map(mapAssignment);
@@ -414,7 +418,7 @@ export async function listClientAssignments(email: string) {
 
 export async function getActiveClientAssignmentForSurvey(
   email: string,
-  surveyId: string,
+  surveyId: string
 ) {
   const result = await pool.query(
     `SELECT ${ASSIGNMENT_SELECT}
@@ -425,7 +429,7 @@ export async function getActiveClientAssignmentForSurvey(
        AND a.status <> 'submitted'
      ORDER BY a.created_at DESC
      LIMIT 1`,
-    [normalizeEmail(email), surveyId],
+    [normalizeEmail(email), surveyId]
   );
 
   if (!result.rows[0]) {
@@ -437,7 +441,7 @@ export async function getActiveClientAssignmentForSurvey(
 
 export async function getClientAssignmentForUser(
   assignmentId: string,
-  email: string,
+  email: string
 ) {
   const result = await pool.query(
     `SELECT ${ASSIGNMENT_SELECT}
@@ -445,7 +449,7 @@ export async function getClientAssignmentForUser(
      JOIN surveys s ON s.id = a.survey_id
      WHERE a.id = $1 AND lower(a.client_email) = lower($2)
      LIMIT 1`,
-    [assignmentId, normalizeEmail(email)],
+    [assignmentId, normalizeEmail(email)]
   );
 
   if (!result.rows[0]) {
@@ -475,7 +479,7 @@ export async function saveClientAssignmentDraft(input: {
       normalizeEmail(input.clientEmail),
       JSON.stringify(input.answers),
       input.stepIndex,
-    ],
+    ]
   );
 
   const savedAt = result.rows[0]?.draft_saved_at;
@@ -499,7 +503,7 @@ export async function completeClientAssignment(input: {
      SET status = 'submitted', confirmation_code = $2
      WHERE id = $1 AND status <> 'submitted'
      RETURNING id`,
-    [input.assignmentId, input.confirmationCode],
+    [input.assignmentId, input.confirmationCode]
   );
 
   return Boolean(result.rows[0]);
@@ -512,7 +516,7 @@ export async function listClientInvitationsForAdmin(organizationId: string) {
      WHERE ${organizationScopeSql("organization_id", 1)}
      ORDER BY created_at DESC
      LIMIT 50`,
-    [organizationId],
+    [organizationId]
   );
 
   return result.rows.map(mapInvitation);
@@ -526,7 +530,7 @@ export async function listClientAssignmentsForAdmin(organizationId: string) {
      WHERE ${organizationScopeSql("a.organization_id", 1)}
      ORDER BY a.created_at DESC
      LIMIT 50`,
-    [organizationId],
+    [organizationId]
   );
 
   return result.rows.map(mapAssignment);
@@ -534,7 +538,7 @@ export async function listClientAssignmentsForAdmin(organizationId: string) {
 
 export async function getClientInvitationById(
   id: string,
-  organizationId: string,
+  organizationId: string
 ) {
   const result = await pool.query(
     `SELECT id, token, email, full_name, invited_by, status, expires_at, created_at
@@ -542,7 +546,7 @@ export async function getClientInvitationById(
      WHERE id = $1
        AND ${organizationScopeSql("organization_id", 2)}
      LIMIT 1`,
-    [id, organizationId],
+    [id, organizationId]
   );
 
   if (!result.rows[0]) {
@@ -554,38 +558,38 @@ export async function getClientInvitationById(
 
 export async function deleteClientInvitationById(
   id: string,
-  organizationId: string,
+  organizationId: string
 ) {
   await pool.query(
     `DELETE FROM client_invitations
      WHERE id = $1
        AND ${organizationScopeSql("organization_id", 2)}`,
-    [id, organizationId],
+    [id, organizationId]
   );
 }
 
 export async function deleteClientAssignmentsForEmail(
   email: string,
-  organizationId: string,
+  organizationId: string
 ) {
   await pool.query(
     `DELETE FROM client_assignments
      WHERE lower(client_email) = lower($1)
        AND ${organizationScopeSql("organization_id", 2)}`,
-    [normalizeEmail(email), organizationId],
+    [normalizeEmail(email), organizationId]
   );
 }
 
 export async function getClientAssignmentById(
   id: string,
-  organizationId: string,
+  organizationId: string
 ) {
   const result = await pool.query(
     `SELECT id FROM client_assignments
      WHERE id = $1
        AND ${organizationScopeSql("organization_id", 2)}
      LIMIT 1`,
-    [id, organizationId],
+    [id, organizationId]
   );
 
   return result.rows[0] ? { id: result.rows[0].id as string } : null;
@@ -593,16 +597,24 @@ export async function getClientAssignmentById(
 
 export async function deleteClientAssignmentById(
   id: string,
-  organizationId: string,
+  organizationId: string
 ) {
   await pool.query(
     `DELETE FROM client_assignments
      WHERE id = $1
        AND ${organizationScopeSql("organization_id", 2)}`,
-    [id, organizationId],
+    [id, organizationId]
   );
 }
 
-export async function deleteClientProfileByUserId(userId: string) {
-  await pool.query(`DELETE FROM client_profiles WHERE user_id = $1`, [userId]);
+export async function deleteClientProfileByUserId(
+  userId: string,
+  organizationId: string
+) {
+  await pool.query(
+    `DELETE FROM client_profiles
+     WHERE user_id = $1
+       AND ${organizationScopeSql("organization_id", 2)}`,
+    [userId, organizationId]
+  );
 }

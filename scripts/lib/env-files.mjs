@@ -1,13 +1,22 @@
-import { readFileSync, writeFileSync, existsSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import {
+  CANONICAL_VERCEL_KEYS,
   LOCAL_ONLY_KEYS,
   SECRET_KEYS,
   STALE_VERCEL_KEYS,
+  SYNC_OPTIONAL_KEYS,
   VERCEL_PRODUCTION_KEYS,
 } from "./env-manifest.generated.mjs";
 
-export { LOCAL_ONLY_KEYS, SECRET_KEYS, STALE_VERCEL_KEYS, VERCEL_PRODUCTION_KEYS };
+export {
+  CANONICAL_VERCEL_KEYS,
+  LOCAL_ONLY_KEYS,
+  SECRET_KEYS,
+  STALE_VERCEL_KEYS,
+  SYNC_OPTIONAL_KEYS,
+  VERCEL_PRODUCTION_KEYS,
+};
 
 export const ENV_CONFIG_PATH = "env.config";
 export const ENV_SECRET_PATH = "env.secret";
@@ -26,9 +35,13 @@ export function parseEnvContent(content) {
   for (const line of content.split("\n")) {
     lines.push(line);
     const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith("#")) continue;
+    if (!trimmed || trimmed.startsWith("#")) {
+      continue;
+    }
     const index = trimmed.indexOf("=");
-    if (index === -1) continue;
+    if (index === -1) {
+      continue;
+    }
     env[trimmed.slice(0, index)] = trimmed.slice(index + 1);
   }
 
@@ -84,9 +97,9 @@ export function composeEnv({ write = true } = {}) {
   const configPath = resolve(process.cwd(), ENV_CONFIG_PATH);
   const secretPath = resolve(process.cwd(), ENV_SECRET_PATH);
 
-  if (!existsSync(configPath) && !existsSync(secretPath)) {
+  if (!(existsSync(configPath) || existsSync(secretPath))) {
     throw new Error(
-      `Missing ${ENV_CONFIG_PATH} and ${ENV_SECRET_PATH}. Run \`npm run env:split\` from an existing .env, or copy the *.example templates.`,
+      `Missing ${ENV_CONFIG_PATH} and ${ENV_SECRET_PATH}. Run \`npm run env:split\` from an existing .env, or copy the *.example templates.`
     );
   }
 
@@ -101,11 +114,7 @@ export function composeEnv({ write = true } = {}) {
   const secret = parseEnvContent(secretContent).env;
   const merged = { ...config, ...secret };
 
-  const body = [
-    configContent.trimEnd(),
-    "",
-    secretContent.trimEnd(),
-  ]
+  const body = [configContent.trimEnd(), "", secretContent.trimEnd()]
     .filter(Boolean)
     .join("\n");
 
@@ -144,13 +153,16 @@ export function splitEnv(sourcePath = ENV_COMPOSED_PATH) {
   writeFileSync(
     resolve(process.cwd(), ENV_CONFIG_PATH),
     formatEnvFile(configHeader, configEntries),
-    "utf8",
+    "utf8"
   );
   writeFileSync(
     resolve(process.cwd(), ENV_SECRET_PATH),
     formatEnvFile(secretHeader, secretEntries),
-    "utf8",
+    "utf8"
   );
 
-  return { configCount: configEntries.length, secretCount: secretEntries.length };
+  return {
+    configCount: configEntries.length,
+    secretCount: secretEntries.length,
+  };
 }

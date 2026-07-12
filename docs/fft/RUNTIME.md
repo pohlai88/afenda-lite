@@ -66,10 +66,12 @@ Full gate history: [ops/gate-register.md](./ops/gate-register.md).
 | `FFT_NOTIFICATIONS_ENABLED` | `true` | `true` | Phase 2C — outbound trade mail |
 | `FFT_EMAIL_FROM` | `no-reply@nexuscanon.com` | same | Phase 2C — Resend sender (closed 2026-07-11; bare address) |
 | `RESEND_API_KEY` | set (Vercel via `setVercelEnvKey`; not `sync:vercel`) | set | Phase 2C — closed 2026-07-11; XERP Resend key |
-| `FFT_ERP_SYNC_ENABLED` | `false` | `false` | Phase 2D — async ERP push |
-| `FFT_ERP_VENDOR` | unset | unset | `http-rest` for reference pack |
-| `FFT_ERP_BASE_URL` | unset | unset | Customer ERP API base |
+| `FFT_ERP_SYNC_ENABLED` | `false` | `false` | Phase 2D — async ERP push (FFT module only) |
+| `FFT_ERP_VENDOR` | unset | unset | **Tenant/ops configures** per deployment when enabling 2D-3 (`http-rest` or customer id). `syncOptional` — not required for `validate:env-sync` / `audit:vercel` while unset |
+| `FFT_ERP_BASE_URL` | unset | unset | **Tenant/ops configures** customer ERP API base (no trailing slash). Same `syncOptional` policy |
 | `DATABASE_URL` | `br-tiny-hill-ao82jp6f` | `br-tiny-hill-ao82jp6f` | `env.secret` → `npm run env:compose` |
+
+**ERP adapter ownership:** lives under `modules/fft/domain/erp/` (ADR-004). Afenda-Lite is the host SaaS; the vendor adapter is **not** a product-wide Afenda ERP client. Do not invent placeholder `FFT_ERP_VENDOR` / `FFT_ERP_BASE_URL` values to green env checks — set them only when a tenant integration pack is ready. When `FFT_ERP_SYNC_ENABLED=true`, `validate:env-sync` requires both vendor and base URL.
 
 Never edit `.env` by hand. Never `vercel env pull`.
 
@@ -176,5 +178,5 @@ npm run process:trade-closing-soon
 
 ## Assumptions
 
-1. Program cross-status: [docs/TRACKING.md](../TRACKING.md) § Feed Farm Trade.
+1. Program cross-status: [docs/fft/ops/gate-register.md](ops/gate-register.md) · [doc/architecture/closed-scope-register.md](../../doc/architecture/closed-scope-register.md).
 2. Feed Farm Trade is **not** the default agent mission after 2026-07-10 — see [remaining-development.md](../architecture/remaining-development.md).

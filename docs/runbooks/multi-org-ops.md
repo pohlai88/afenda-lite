@@ -1,6 +1,6 @@
 # Multi-org operations runbook (M4)
 
-**Authority:** [doc/architecture/multi-tenant-ecosystem.md](../architecture/multi-tenant-ecosystem.md)  
+**Authority:** [doc/architecture/multi-tenant-ecosystem.md](../../doc/architecture/multi-tenant-ecosystem.md) (architecture SSOT — Neon shared-schema posture + §6 production efficiency)  
 **Audience:** operators applying tenancy backfills after M1–M3.
 
 ## Rules
@@ -39,6 +39,53 @@ npm run audit:tenancy-nulls
 
 Must report zero nulls on the eight hard tenant roots after Gate 0 / migration `027`.
 
+## Auth tenant org (product)
+
+Do not confuse Neon Cloud `NEON_ORG_ID` with Neon Auth organization id.
+
+| Field | Value (prod as of 2026-07-12) |
+|-------|-------------------------------|
+| Auth org id | `4587e4c8-8119-4761-91ce-b874d3493aad` |
+| Slug / name | `afenda-lite` |
+| Count | 1 Auth org on production branch |
+| Operator login | `SHARED_ADMIN_EMAIL=afenda@admin.com` (password in `env.secret`) |
+| Local env | `PORTAL_ORG_SLUG` / `PORTAL_ORG_NAME` / `PORTAL_ORGANIZATION_ID` / `E2E_ORGANIZATION_ID` — see [post-lock cheat sheet](./post-lock-coding-cheatsheet.md) §4 |
+
+## FFT access backfill evidence (E1 — 2026-07-12)
+
+```text
+Dry-run: wouldGrant=0 (no-op — rows already stamped)
+Live write: skipped (nothing to grant)
+Command: node --env-file=.env scripts/backfill-fft-access.mjs --dry-run --organization-id=4587e4c8-8119-4761-91ce-b874d3493aad
+```
+
+## Neon production recovery posture (C-pack)
+
+**Org / project:** `org-fragrant-lake-90358173` (Launch) · `young-hat-54755363` (**Afenda-Lite**) · branch `br-tiny-hill-ao82jp6f` (`production`, protected).
+
+| Control | Target | Notes |
+|---------|--------|-------|
+| PITR / history window | **7 days** (`history_retention_seconds=604800`) | Launch plan **maximum** — 14-day PITR requires Scale. Docs: [history window](https://neon.com/docs/introduction/history-window) |
+| Snapshot schedule | Daily **17:00 UTC**, retain **14 days** | Root branch only. Docs: [backup & restore](https://neon.com/docs/guides/backup-restore) |
+| Manual snapshots | Before migrations / bulk imports / destructive ops | Name: `pre-<change>-YYYY-MM-DD` |
+| Compute | min **0.25** / max **2** / suspend **0** | Do not raise min CU without latency evidence |
+| Region | `aws-ap-southeast-1` | Matches Vercel `sin1` |
+
+**PITR vs snapshots:** history covers “something broke sometime yesterday”; named snapshots cover “known-good before Release X.” Use both.
+
+### Restore drill record (2026-07-12)
+
+```text
+Source restore point: snap-icy-dawn-aoymlta8 (baseline-afenda-lite-cpack-2026-07-12)
+Restored branch:      br-fancy-violet-aovhd2a5 (restore-drill-cpack-2026-07-12)
+Recovery start:       2026-07-12T08:45:06Z
+Recovery completed:   restore_status=restored; SQL ok (surveys=75, fft_event=35, auth_orgs=1, surveys_null_org=0)
+Application smoke:    SQL connectivity + tenant-root counts on drill branch (finalize_restore=false — prod untouched)
+Data validation:      PASS
+Cleanup completed:    drill branch deleted; production remains protected=true default=true
+Operator:             agent + operator approval (C-pack recommendation)
+```
+
 ## Migrations
 
 ```bash
@@ -68,3 +115,15 @@ npm run test:e2e:journey -- e2e/tenancy-isolation.spec.ts
 # Optional foreign fixtures (cross-org):
 # E2E_FOREIGN_SURVEY_ID / E2E_FOREIGN_USER_ID / E2E_FOREIGN_EVENT_ID
 ```
+
+## E2E FFT allowlist org resolve (D8 closed)
+
+`testing/e2e/fft-allowlist.ts` resolves org in this order:
+
+1. `PORTAL_ORGANIZATION_ID` or `E2E_ORGANIZATION_ID` (explicit fixture)
+2. Sole `neon_auth.member` row for the operator user
+3. Fail closed if the user has multiple memberships without an explicit org
+
+## Efficiency ladder
+
+Runnable A→E command set: [`.cursor/skills/neon-tenancy-efficiency/reference.md`](../../.cursor/skills/neon-tenancy-efficiency/reference.md). **Closed 2026-07-12** (A–E). Accepted constraints (not backlog): **D4** deferred M5, **D5** shared-schema non-goal.

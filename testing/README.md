@@ -2,7 +2,7 @@
 
 Single source of truth for test commands, pyramid placement, and shared helpers.
 
-**Program status:** [docs/TRACKING.md](../docs/TRACKING.md) · **Architecture:** [S15](../docs/architecture/slices/s15-e2e-journeys.md)
+**Program status:** [doc/architecture/closed-scope-register.md](../doc/architecture/closed-scope-register.md) · FFT ops: [docs/fft/ops/gate-register.md](../docs/fft/ops/gate-register.md) · **Architecture:** [S15](../docs/architecture/slices/s15-e2e-journeys.md)
 
 ---
 
@@ -10,7 +10,7 @@ Single source of truth for test commands, pyramid placement, and shared helpers.
 
 | Layer | Runner | Location | CI |
 | --- | --- | --- | --- |
-| L0 | Vitest node | `lib/**/*.test.ts`, `app/api/**/*.test.ts`, `components/portal-atmosphere/**/*.test.ts` | `npm run test:unit` |
+| L0 | Vitest node | `lib/**/*.test.ts`, `modules/**/*.test.ts`, `features/**/*.test.ts(x)`, `app/api/**/*.test.ts` | `npm run test:unit` |
 | L2 | Vitest jsdom | `**/*.interaction.test.tsx`, `**/*.a11y.test.tsx` | `npm run test:interaction` |
 | Registry | Node scripts | `npm run checks` | Every PR |
 | L4 smoke | Playwright `@smoke` | `e2e/**/*.spec.ts` | `npm run test:e2e:smoke` |

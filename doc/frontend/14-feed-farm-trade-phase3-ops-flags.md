@@ -114,7 +114,7 @@ Give entitled ops staff deposit tracking, pickup/fulfillment workflow, structure
 | Field | Value |
 |-------|-------|
 | Env flag | `FFT_ERP_SYNC_ENABLED` (default `false`) |
-| Related flags | `FFT_ERP_VENDOR`, `FFT_ERP_BASE_URL` (unset by default) |
+| Related flags | `FFT_ERP_VENDOR`, `FFT_ERP_BASE_URL` — **unset by default**; tenant/ops configure per deployment when enabling 2D-3 (`syncOptional` in env manifest). Adapter code stays under `modules/fft/domain/erp/` |
 | Permission code | Manual retry requires `export.finance` or a dedicated `sync.retry` code (to be added to the catalog only within an approved 2D slice — do not add speculatively) |
 | Tables (engine-owned) | `fft_external_mapping`, `fft_sync_job`, `fft_sync_attempt`, `fft_sync_error` |
 | FE surface | `/fft/admin/erp-sync` |
