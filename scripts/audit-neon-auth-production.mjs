@@ -1,7 +1,7 @@
 /**
  * Neon Auth production checklist audit (Neon docs: auth/guides/production-checklist).
  *
- * Compares live/materialized config against iam-check launch policy.
+ * Compares live/materialized config against Afenda-Lite launch policy.
  * Does not print secrets. Exit 1 when strict mode finds blocking gaps.
  *
  * Usage:
@@ -33,7 +33,7 @@ const liveSnapshot = {
   requireEmailVerification: manifest.emailPassword?.requireEmailVerification ?? false,
   oauthProviders: manifest.oauthProviders ?? [],
   uiSocialEnabled: manifest.ui?.features?.social === true,
-  neonProjectName: manifest.project?.projectName ?? "iam-check",
+  neonProjectName: manifest.project?.projectName ?? "afenda-lite",
 };
 
 const checks = [];
@@ -170,7 +170,7 @@ record(
 const statusOrder = { fail: 0, manual: 1, waived: 2, pass: 3 };
 checks.sort((a, b) => statusOrder[a.status] - statusOrder[b.status]);
 
-console.log("=== Neon Auth production checklist (iam-check) ===\n");
+console.log("=== Neon Auth production checklist (Afenda-Lite) ===\n");
 console.log(`APP_URL: ${appUrl}`);
 console.log(`Branch: ${manifest.project.branchName} (${manifest.project.branchId})`);
 console.log(`Manifest synced: ${manifest.syncedAt}\n`);

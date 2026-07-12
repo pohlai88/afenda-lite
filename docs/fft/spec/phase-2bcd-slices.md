@@ -79,7 +79,7 @@ No 2D-3 vendor adapter until integration contract per customer.
 | | |
 |--|--|
 | **Goal** | Stakeholder approves 2B slices; program explicitly reopens |
-| **AC** | This doc status for 2B-* marked Approved; TRACKING updated |
+| **AC** | This doc status for 2B-* marked Approved; gate-register / RUNTIME updated |
 | **Depends on** | ADR-002 Accepted |
 
 ### 2B-1 — Deposit schema + domain
@@ -241,4 +241,4 @@ No 2D-3 vendor adapter until integration contract per customer.
 | 2C (2C-0 … 2C-4) | **Approved** | Program reopen | 2026-07-10 |
 | 2D (2D-0 … 2D-3) | **Approved** | Program reopen | 2026-07-10 |
 
-To approve: flip row status to **Approved**, add name + date, update [../RUNTIME.md](../RUNTIME.md) and [../../TRACKING.md](../../TRACKING.md).
+To approve: flip row status to **Approved**, add name + date, update [../RUNTIME.md](../RUNTIME.md) and [../ops/gate-register.md](../ops/gate-register.md).

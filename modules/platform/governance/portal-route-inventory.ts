@@ -3,7 +3,7 @@ import { join, relative, sep } from "node:path";
 
 /**
  * Journey-phase tags for product App Router pages.
- * Matches the Phase map in docs/architecture/journey-phase-playbook.md.
+ * Matches the Phase map in `.cursor/rules/journey-phase-vibe.mdc`.
  */
 export type JourneyPhaseId =
   | "pre-login"

@@ -97,12 +97,19 @@ function main() {
   }
 
   const appUrl = getEnvValue("APP_URL", env);
-  if (appUrl === "https://iam-check.vercel.app") {
-    pass("app-url", "APP_URL matches production alias");
+  const canonicalAppUrl = "https://afenda-lite.vercel.app";
+  const legacyAppUrlAlias = "https://iam-check.vercel.app";
+  if (appUrl === canonicalAppUrl) {
+    pass("app-url", "APP_URL matches Afenda-Lite production");
+  } else if (appUrl === legacyAppUrlAlias) {
+    warn(
+      "app-url",
+      `APP_URL is legacy alias ${legacyAppUrlAlias} (canonical: ${canonicalAppUrl})`,
+    );
   } else {
     warn(
       "app-url",
-      `APP_URL is ${appUrl ?? "unset"} (expected https://iam-check.vercel.app)`,
+      `APP_URL is ${appUrl ?? "unset"} (expected ${canonicalAppUrl})`,
     );
   }
 

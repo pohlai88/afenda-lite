@@ -91,7 +91,7 @@ This repo has strong governance in `docs/` but large flat areas in `lib/` and `c
 
 - **Ops / Fix / Test:** Open only files named in the mission or directly required to complete it.
 - **Docs:** Stay under `docs/` unless cross-linking requires a one-line pointer elsewhere.
-- **Normalize:** Dedicated branch only; see [docs/architecture/repo-layout.md](../../../../docs/architecture/repo-layout.md).
+- **Normalize:** Dedicated branch only; see [docs/architecture/repo-migration-map.md](../../../../docs/architecture/repo-migration-map.md).
 
 ## Evidence report format
 

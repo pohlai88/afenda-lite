@@ -26,7 +26,7 @@ npm run test:e2e:smoke    # trade ingress / auth
 npm run test:e2e:journey  # full cycle when creds available — e2e/trade-fft.spec.ts
 
 # Residue guards
-rg "FftShell|locale-switcher|trade/\[locale\]" features/fft app/trade
+rg "FftShell|locale-switcher" features/fft app/fft
 
 # UI registry Layer A + Layer B (inventory + DNA / surfaces)
 npm run check:fft-ui-registry

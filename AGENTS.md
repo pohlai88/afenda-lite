@@ -3,7 +3,7 @@
 **Product:** **Afenda-Lite** — beta / lite edition of official **Afenda ERP** (multi-module SaaS).  
 **Retired product name:** Client Declaration Portal — compulsory; see [doc/adr/001-afenda-lite-product-identity.md](doc/adr/001-afenda-lite-product-identity.md) · [deprecation register](.cursor/skills/agent-skills/skills/deprecation-and-migration/reference.md).
 
-**Repository layout:** [docs/architecture/repo-layout.md](docs/architecture/repo-layout.md) — Root = bootstrap, L1 = concern, L2 = bounded context. Migration closed: [repo-migration-map.md](docs/architecture/repo-migration-map.md). Hosting: GitHub `pohlai88/afenda-lite` · Vercel `afenda-lite` · `APP_URL=https://afenda-lite.vercel.app`.
+**Repository layout:** [docs/architecture/repo-migration-map.md](docs/architecture/repo-migration-map.md) (migration closed) · [doc/frontend/02-folder-map.md](doc/frontend/02-folder-map.md). Hosting: GitHub `pohlai88/afenda-lite` · Vercel `afenda-lite` · `APP_URL=https://afenda-lite.vercel.app`.
 
 ## Feed Farm Trade — Phase 2A closed · 2B–2D ADRs Accepted
 
@@ -187,7 +187,7 @@ Authority: [ADR-Portal-BG-001](docs/architecture/adr/ADR-Portal-BG-001-portal-at
 |------|--------|
 | **Comp is the bar** | Visual match to hero PNGs at 1024px side-by-side; tests passing ≠ done |
 | Plan before visual work | Hero/atmosphere changes: Plan mode → user approval → implement |
-| Experiment surface | Fixtures under `components/portal-atmosphere/fixtures/` until user asks to wire prod — Storybook removed |
+| Experiment surface | **Dormant** — `components/portal-atmosphere/` hard-deleted; brand refs under `public/brand/`; Storybook removed |
 | Dual owl assets | Dark: `public/owl-variants/allowed-base/darkbg-removebg-preview2.png` · Light: `public/owl-variants/allowed-base/whitebg-removebg-preview2.png` |
 | Forbidden | CSS invert on owls; single PNG sticker heroes; reintroducing rejected approaches in `pa-rejected-approaches.md` |
 | Prod wiring | **Studio login-page-02 + Neon** on `/auth/*` is the production shell ([ADR-Auth-UI-001](docs/architecture/adr/ADR-Auth-UI-001-guardian-shell-neon-form.md) amended 2026-07-10). Guardian Auth, Fade Owl / Dual / Comp Laptop stay experiment-only |

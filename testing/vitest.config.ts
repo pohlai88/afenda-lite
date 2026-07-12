@@ -26,7 +26,6 @@ export default defineConfig({
             "features/**/*.test.ts",
             "features/**/*.test.tsx",
             "app/api/**/*.test.ts",
-            "components/portal-atmosphere/**/*.test.ts",
           ],
           exclude: ["**/*.interaction.test.tsx", "**/*.a11y.test.tsx"],
         },
