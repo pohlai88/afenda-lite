@@ -1,6 +1,6 @@
 const productionUrl =
   process.env.PRODUCTION_URL?.replace(/\/$/, "") ??
-  "https://iam-check.vercel.app";
+  "https://afenda-lite.vercel.app";
 
 const MAX_ATTEMPTS = 3;
 const RETRY_MS = 2000;

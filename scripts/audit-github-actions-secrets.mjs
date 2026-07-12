@@ -29,7 +29,7 @@ function ghJson(args) {
 function main() {
   const raw = ghJson([
     "api",
-    "repos/pohlai88/iam-check/actions/secrets",
+    "repos/pohlai88/afenda-lite/actions/secrets",
     "--jq",
     ".secrets | map(.name)",
   ]);
