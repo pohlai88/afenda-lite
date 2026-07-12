@@ -20,7 +20,7 @@ const adminEmail = getEnv("SHARED_ADMIN_EMAIL", env)?.trim().toLowerCase();
 const adminPassword = getEnv("SHARED_ADMIN_PASSWORD", env);
 const authBaseUrl = getEnv("NEON_AUTH_BASE_URL", env);
 const cookieSecret = getEnv("NEON_AUTH_COOKIE_SECRET", env);
-const appUrl = (getEnv("APP_URL", env) ?? "https://iam-check.vercel.app").replace(
+const appUrl = (getEnv("APP_URL", env) ?? "https://afenda-lite.vercel.app").replace(
   /\/$/,
   "",
 );

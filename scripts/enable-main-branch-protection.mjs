@@ -31,7 +31,7 @@ function main() {
       "api",
       "-X",
       "PUT",
-      "repos/pohlai88/iam-check/branches/main/protection",
+      "repos/pohlai88/afenda-lite/branches/main/protection",
       "--input",
       "-",
     ],

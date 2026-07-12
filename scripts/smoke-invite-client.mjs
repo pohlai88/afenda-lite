@@ -15,7 +15,7 @@ const recipientEmail = (process.argv[2] ?? "jackwee2020@gmail.com")
   .trim()
   .toLowerCase();
 const fullName = (process.argv[3] ?? "Jack Wee").trim();
-const appUrl = (getEnv("APP_URL", env) ?? "https://iam-check.vercel.app").replace(
+const appUrl = (getEnv("APP_URL", env) ?? "https://afenda-lite.vercel.app").replace(
   /\/$/,
   "",
 );

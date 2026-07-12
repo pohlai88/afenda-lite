@@ -4,7 +4,7 @@
  */
 import { chromium } from "playwright";
 
-const BASE = process.env.GATE7_SMOKE_BASE_URL ?? "https://iam-check.vercel.app";
+const BASE = process.env.GATE7_SMOKE_BASE_URL ?? "https://afenda-lite.vercel.app";
 const adminEmail = process.env.SHARED_ADMIN_EMAIL;
 const adminPassword = process.env.SHARED_ADMIN_PASSWORD;
 const salesEmail = process.env.PREVIEW_CLIENT_EMAIL;
