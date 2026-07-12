@@ -11,9 +11,11 @@
 | Variable | Purpose |
 |----------|---------|
 | `FFT_ERP_SYNC_ENABLED` | `true` to enqueue/process jobs |
-| `FFT_ERP_VENDOR` | Set to `http-rest` |
-| `FFT_ERP_BASE_URL` | ERP API base (no trailing slash) |
-| `FFT_ERP_API_KEY` | Optional bearer token |
+| `FFT_ERP_VENDOR` | Set to `http-rest` **by the tenant/ops** for this deployment |
+| `FFT_ERP_BASE_URL` | ERP API base (no trailing slash) — tenant-owned |
+| `FFT_ERP_API_KEY` | Optional bearer token (local secret / Vercel secret; not in canonical sync list) |
+
+These vendor keys are `syncOptional`: unset is correct until this pack is enabled. `npm run sync:vercel` pushes them only when set locally; `validate:env-sync` requires them only when `FFT_ERP_SYNC_ENABLED=true`.
 
 ## Outbound contract
 

@@ -79,11 +79,16 @@ See [doc/architecture/closed-scope-register.md](../../../../doc/architecture/clo
 
 | Retired | Replacement | Status | Notes |
 |---------|-------------|--------|-------|
-| Soft SQL `(organization_id IS NULL OR = $org)` dual-mode | Hard `organization_id = $org` + migration `027` | Hard-deleted | CI `check:tenancy-residue`; ADR-002 |
+| Soft SQL `(organization_id IS NULL OR = $org)` dual-mode | Hard `organization_id = $org` + migration `027` | Hard-deleted | CI `check:tenancy-residue`; ADR-002; ecosystem §0 **R1** |
 | `promoteLegacyFftEntry` / login FFT promote | Platform `fft.access` + write-time ensure | Hard-deleted | |
-| Arbitrary `organizations[0]` / first-org DB stamp | Active → slug → sole membership; ops `--organization-id` | Retired | M1 + M4; [multi-tenant-ecosystem.md](../../../../doc/architecture/multi-tenant-ecosystem.md) |
-| Default org slug/name `client-declaration-portal` / `iam-check` | `afenda-lite` (or `PORTAL_ORG_*`) | Retired | Product identity ADR-001 |
+| Arbitrary `organizations[0]` / first-org DB stamp | Active → slug → sole membership; ops `--organization-id` | Retired | M1 + M4; ecosystem §0 **R2**; e2e D8 closed |
+| Default org slug/name `client-declaration-portal` / `iam-check` | `afenda-lite` (or `PORTAL_ORG_*`) | Retired | Product identity ADR-001; Auth org renamed 2026-07-12; operator `afenda@admin.com` |
 | Teaching “multi-org ready **not** claimed” / org-switcher as v1 non-goal | M1–M4 shipped claim in ecosystem SSOT | Retired framing | Do not re-teach soft-harden as current |
+| Neon RLS / Data API as default tenant isolation on BFF | App predicates + hard SQL | Rejected framing | Ecosystem §0 **R3**; reopen only with Data API ADR |
+| Schema-per-tenant tenancy model | Shared schema + `organization_id` | Rejected framing | Ecosystem §0 **R4** |
+| Project-per-tenant framed as efficiency / default path | Shared schema + one Neon project | Rejected framing (D5 non-goal) | Ecosystem §0 **R5**; Neon prefers it for isolation — we do not for this product |
+| Raising CU / inventing `FFT_ERP_*` placeholders to green env | Fix pooler / nulls / syncOptional policy | Rejected framing | Ecosystem §0 **R7** |
+| FFT child `organization_id` denorm as v1 tenancy fix | Parent `fft_event` + `getEventById(…, org)` | Deferred (M5) | Ecosystem §0 **D4**; not a bug |
 
 ---
 

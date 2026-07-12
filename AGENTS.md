@@ -24,13 +24,19 @@
 
 ## Platform tenancy (hard cutover + multi-org ready)
 
-**Decision:** [doc/backend/adr/002-platform-tenancy-rbac.md](doc/backend/adr/002-platform-tenancy-rbac.md) · **Living inventory:** [doc/architecture/multi-tenant-ecosystem.md](doc/architecture/multi-tenant-ecosystem.md) · Phase evidence: [doc/frontend/14-org-admin-rbac-tenancy-tasks.md](doc/frontend/14-org-admin-rbac-tenancy-tasks.md).
+**Decision:** [doc/backend/adr/002-platform-tenancy-rbac.md](doc/backend/adr/002-platform-tenancy-rbac.md) · **Living inventory:** [doc/architecture/multi-tenant-ecosystem.md](doc/architecture/multi-tenant-ecosystem.md) (shared-schema + Neon production efficiency) · Phase evidence: [doc/frontend/14-org-admin-rbac-tenancy-tasks.md](doc/frontend/14-org-admin-rbac-tenancy-tasks.md).
 
 | Fact | Detail |
 |------|--------|
 | Shipped | Hard `organization_id = $org`; migrations `027`/`028`; Users via `neon_auth.member`; FFT entry = platform `fft.access`; M1–M4 multi-org ready (logical) |
+| Neon posture | Shared schema (not project-per-tenant); prod `DATABASE_URL` must be `-pooler`; RLS out of scope on BFF path — see ecosystem §5–§6 |
+| Neon Cloud | Org `org-fragrant-lake-90358173` (Launch) · project `young-hat-54755363` (**Afenda-Lite**) · branch `br-tiny-hill-ao82jp6f` protected |
+| Recovery | PITR 7d (Launch max); daily snapshots; see [multi-org-ops](docs/runbooks/multi-org-ops.md) |
 | Env | `PORTAL_ORG_SLUG` / `PORTAL_ORG_NAME` / `PORTAL_ORG_SWITCHER_ENABLED`; do not confuse with `NEON_ORG_ID` (Neon Cloud) |
-| Ops | `npm run audit:tenancy-nulls` · `npm run check:tenancy-residue` · `backfill:fft-access --organization-id=…` · [docs/runbooks/multi-org-ops.md](docs/runbooks/multi-org-ops.md) |
+| Ops | `npm run audit:tenancy-nulls` · `npm run check:tenancy-residue` · `backfill:fft-access --organization-id=…` · skill ladder A–E [neon-tenancy-efficiency](.cursor/skills/neon-tenancy-efficiency/reference.md) |
+| Cheat sheet | [docs/runbooks/post-lock-coding-cheatsheet.md](docs/runbooks/post-lock-coding-cheatsheet.md) — post-lock commands + Rejected/Deferred flash card |
+| Decision lock | [ecosystem §0](doc/architecture/multi-tenant-ecosystem.md) — Rejected R1–R7 / Deferred D4·D5; do not reopen without explicit user approval |
+| Accepted constraints | **D4** FFT child denorm deferred (M5); **D5** shared-schema / not project-per-tenant |
 | Anti-claim | Do **not** say multi-DB isolation (D5). `FFT_RBAC_ENABLED` ≠ soft SQL tenancy. Soft dual-mode / first-org stamp are **retired** — see deprecation register |
 
 ## Environment variables
@@ -88,7 +94,9 @@ Optional ops keys (Checkly): add `CHECKLY_*` to `env.secret` only — never pull
 | `npm run sync:vercel` | Push canonical production keys to Vercel |
 | `npm run cleanup:vercel` | Remove stale Supabase/SMTP/MailerSend keys from Vercel |
 
-**Keys synced to Vercel production:** Neon (`DATABASE_URL`, `NEON_AUTH_*`), admin/preview client, `APP_URL`.
+**Keys synced to Vercel production:** Neon (`DATABASE_URL`, `NEON_AUTH_*`), admin/preview client, `APP_URL`, FFT feature flags (including `FFT_ERP_SYNC_ENABLED`).
+
+**Tenant-owned (`syncOptional`):** `FFT_ERP_VENDOR`, `FFT_ERP_BASE_URL` — pushed only when set; not required for `validate:env-sync` / `audit:vercel` while unset. Configure per customer when enabling FFT ERP sync (2D-3); adapter lives under `modules/fft/domain/erp/`, not as a product-wide Afenda ERP client.
 
 **Keys never synced:** `PLAYGROUND_*`, `NEON_API_KEY`, `NEON_ORG_ID`, `NEON_PROJECT_ID`, `NEON_BRANCH_ID`, Shadcn Studio (`SHADCN_STUDIO_*`, `LICENSE_KEY`, `EMAIL`).
 
@@ -170,6 +178,8 @@ npm run env:neon-production   # align env.config, env.secret, .neon → producti
 npm run env:compose
 npm run dev                   # http://localhost:3000
 ```
+
+**Neon Cloud org (ops):** `NEON_ORG_ID=org-fragrant-lake-90358173` (Launch) · project `young-hat-54755363` (**Afenda-Lite**). Put org-scoped `NEON_API_KEY` in `env.secret` only. CLI: shell `NEON_API_KEY` or `~/.config/neonctl/credentials.json`. Cursor MCP (`.cursor/mcp.json` / `.vscode/mcp.json`): User env `NEON_API_KEY` so `Bearer ${NEON_API_KEY}` resolves — **restart Cursor** after changing it. Do **not** use `neonctl link` day-to-day here (it can rewrite `.neon` and pull into `.env`); prefer `npm run env:neon-production` then `npm run env:compose`.
 
 Localhost is allowed on production Neon Auth for `http://localhost:3000` sign-in. Keep `APP_URL` as the production URL in `env.config` — server-side org invites still emit production links (see `lib/auth/neon-auth-request.ts`). For layout-only UI work without auth, use `/playground` embed.
 

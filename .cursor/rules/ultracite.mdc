@@ -1,0 +1,53 @@
+---
+description: Ultracite + Biome code standards for AI-generated JS/TS/CSS/JSON
+globs: "**/*.{js,jsx,ts,tsx,mjs,cjs,json,jsonc,css}"
+alwaysApply: false
+---
+
+# Ultracite Code Standards
+
+This project uses **Ultracite** (Biome backend). Formatting and lint auto-fixes come from the repo config — do not invent Prettier/ESLint settings for these languages.
+
+## Commands
+
+- Format / auto-fix: `npm run fix` (or `npm run lint:fix`)
+- Check only: `npm run check` (or `npm run lint`)
+- Diagnose: `npm run lint:doctor`
+
+Markdown/MDX/YAML: use Prettier via editor settings — Biome force-ignores `*.{md,mdx}`.
+
+## Principles
+
+Write code that is accessible, performant, type-safe, and maintainable.
+
+### Type safety
+
+- Prefer `unknown` over `any`
+- Use `as const` for immutable literals
+- Prefer type narrowing over assertions
+
+### Modern JS/TS
+
+- Prefer `const`, `for...of`, optional chaining, nullish coalescing, template literals
+- Always `await` promises in async functions; prefer `async/await` over chains
+
+### React / Next
+
+- Function components; hooks at top level with correct deps
+- Prefer unique IDs for `key` (not array indices)
+- Do not nest component definitions
+- Use semantic HTML + labels / alt text / keyboard handlers
+- Prefer Next.js `<Image>` over raw `<img>`
+
+### Security / hygiene
+
+- No `eval()`, no careless `dangerouslySetInnerHTML`
+- Add `rel="noopener"` with `target="_blank"`
+- Remove `console.log` / `debugger` / `alert` from production paths
+
+### Testing
+
+- No committed `.only` / `.skip`
+- Assertions inside `it()` / `test()`; prefer async/await over done callbacks
+
+Global skill: `ultracite` under agent skills (`npx skills add haydenbleasel/ultracite`).

@@ -1,6 +1,5 @@
 import "server-only";
 
-import { pool } from "@/modules/platform/db";
 import {
   mapAllocationRunRow,
   mapEventRow,
@@ -15,8 +14,8 @@ import { organizationScopeSql } from "@/modules/fft/domain/organization-scope";
 import {
   FFT_PERMISSION_CATALOG,
   FFT_ROLE_TEMPLATES,
-  isSensitivePermission,
   type FftScopeType,
+  isSensitivePermission,
 } from "@/modules/fft/domain/rbac-catalog";
 import { buildGp2PigletTemplate } from "@/modules/fft/domain/templates";
 import type {
@@ -26,6 +25,7 @@ import type {
   FftOrder,
   FftProduct,
 } from "@/modules/fft/domain/types";
+import { pool } from "@/modules/platform/db";
 
 export async function recordFftAudit(input: {
   eventId?: string;
@@ -50,7 +50,7 @@ export async function recordFftAudit(input: {
       JSON.stringify(input.oldValue ?? {}),
       JSON.stringify(input.newValue ?? {}),
       input.reason ?? null,
-    ],
+    ]
   );
 }
 
@@ -66,43 +66,47 @@ export async function listEvents(options: {
         `SELECT * FROM fft_event
          WHERE ${organizationScopeSql("organization_id", 1)}
          ORDER BY created_at DESC`,
-        [organizationId],
+        [organizationId]
       )
     : await pool.query(
         `SELECT * FROM fft_event
          WHERE is_template = FALSE
            AND ${organizationScopeSql("organization_id", 1)}
          ORDER BY created_at DESC`,
-        [organizationId],
+        [organizationId]
       );
   return result.rows.map(mapEventRow);
 }
 
 export async function getEventById(
   id: string,
-  organizationId: string,
+  organizationId: string
 ): Promise<FftEvent | null> {
   const result = await pool.query(
     `SELECT * FROM fft_event
      WHERE id = $1
        AND ${organizationScopeSql("organization_id", 2)}`,
-    [id, organizationId],
+    [id, organizationId]
   );
   return result.rows[0] ? mapEventRow(result.rows[0]) : null;
 }
 
-export async function listProductsForEvent(eventId: string): Promise<FftProduct[]> {
+export async function listProductsForEvent(
+  eventId: string
+): Promise<FftProduct[]> {
   const result = await pool.query(
-    `SELECT * FROM fft_product WHERE event_id = $1 ORDER BY sort_order, product_name`,
-    [eventId],
+    "SELECT * FROM fft_product WHERE event_id = $1 ORDER BY sort_order, product_name",
+    [eventId]
   );
   return result.rows.map(mapProductRow);
 }
 
-export async function listFieldDefsForEvent(eventId: string): Promise<FftFieldDef[]> {
+export async function listFieldDefsForEvent(
+  eventId: string
+): Promise<FftFieldDef[]> {
   const result = await pool.query(
-    `SELECT * FROM fft_field_def WHERE event_id = $1 ORDER BY display_order`,
-    [eventId],
+    "SELECT * FROM fft_field_def WHERE event_id = $1 ORDER BY display_order",
+    [eventId]
   );
   return result.rows.map(mapFieldDefRow);
 }
@@ -113,56 +117,56 @@ export async function listSalesMembers(organizationId: string) {
      WHERE active = TRUE
        AND ${organizationScopeSql("organization_id", 1)}
      ORDER BY email`,
-    [organizationId],
+    [organizationId]
   );
   return result.rows.map(mapSalesMemberRow);
 }
 
 export async function listOrdersForEvent(eventId: string): Promise<FftOrder[]> {
   const result = await pool.query(
-    `SELECT * FROM fft_order WHERE event_id = $1 ORDER BY registered_at ASC`,
-    [eventId],
+    "SELECT * FROM fft_order WHERE event_id = $1 ORDER BY registered_at ASC",
+    [eventId]
   );
   return result.rows.map(mapOrderRow);
 }
 
 export async function listOrdersForSalesperson(
   eventId: string,
-  salespersonUserId: string,
+  salespersonUserId: string
 ): Promise<FftOrder[]> {
   const result = await pool.query(
     `SELECT * FROM fft_order
      WHERE event_id = $1 AND salesperson_user_id = $2
      ORDER BY registered_at DESC`,
-    [eventId, salespersonUserId],
+    [eventId, salespersonUserId]
   );
   return result.rows.map(mapOrderRow);
 }
 
 export async function listAllOrdersForSalesperson(
-  salespersonUserId: string,
+  salespersonUserId: string
 ): Promise<FftOrder[]> {
   const result = await pool.query(
     `SELECT * FROM fft_order
      WHERE salesperson_user_id = $1
      ORDER BY registered_at DESC`,
-    [salespersonUserId],
+    [salespersonUserId]
   );
   return result.rows.map(mapOrderRow);
 }
 
 export async function listPrioritiesForEvent(eventId: string) {
   const result = await pool.query(
-    `SELECT * FROM fft_customer_priority WHERE event_id = $1 ORDER BY priority_rank`,
-    [eventId],
+    "SELECT * FROM fft_customer_priority WHERE event_id = $1 ORDER BY priority_rank",
+    [eventId]
   );
   return result.rows.map(mapPriorityRow);
 }
 
 export async function listAuditForEvent(eventId: string) {
   const result = await pool.query(
-    `SELECT * FROM fft_audit WHERE event_id = $1 ORDER BY created_at DESC LIMIT 200`,
-    [eventId],
+    "SELECT * FROM fft_audit WHERE event_id = $1 ORDER BY created_at DESC LIMIT 200",
+    [eventId]
   );
   return result.rows;
 }
@@ -210,7 +214,7 @@ export async function createEvent(input: {
       input.isTemplate ?? false,
       input.createdBy,
       input.organizationId,
-    ],
+    ]
   );
   return mapEventRow(result.rows[0]);
 }
@@ -232,26 +236,26 @@ export async function updateEvent(
     depositRefundable: boolean;
     standaloneProgram: boolean;
   }>,
-  updatedBy: string,
+  updatedBy: string
 ) {
   const sets: string[] = ["updated_by = $2", "updated_at = NOW()"];
   const values: unknown[] = [id, updatedBy];
   let idx = 3;
 
   const fieldMap: Record<string, string> = {
-    eventName: "event_name",
+    closesAt: "closes_at",
+    depositRefundable: "deposit_refundable",
+    depositRequired: "deposit_required",
     descriptionEn: "description_en",
     descriptionVi: "description_vi",
+    eventName: "event_name",
     opensAt: "opens_at",
-    closesAt: "closes_at",
-    status: "status",
     sourceLocation: "source_location",
+    standaloneProgram: "standalone_program",
+    status: "status",
     supportAmountPerUnit: "support_amount_per_unit",
     supportUnitLabel: "support_unit_label",
     transferAllowed: "transfer_allowed",
-    depositRequired: "deposit_required",
-    depositRefundable: "deposit_refundable",
-    standaloneProgram: "standalone_program",
   };
 
   for (const [key, column] of Object.entries(fieldMap)) {
@@ -264,7 +268,7 @@ export async function updateEvent(
 
   const result = await pool.query(
     `UPDATE fft_event SET ${sets.join(", ")} WHERE id = $1 RETURNING *`,
-    values,
+    values
   );
   return mapEventRow(result.rows[0]);
 }
@@ -272,8 +276,10 @@ export async function updateEvent(
 export async function cloneEventFromTemplate(
   sourceEventId: string,
   createdBy: string,
-  overrides: { eventName?: string; opensAt?: Date; closesAt?: Date } | undefined,
-  organizationId: string,
+  overrides:
+    | { eventName?: string; opensAt?: Date; closesAt?: Date }
+    | undefined,
+  organizationId: string
 ): Promise<FftEvent> {
   const client = await pool.connect();
   try {
@@ -282,7 +288,7 @@ export async function cloneEventFromTemplate(
       `SELECT * FROM fft_event
        WHERE id = $1
          AND ${organizationScopeSql("organization_id", 2)}`,
-      [sourceEventId, organizationId],
+      [sourceEventId, organizationId]
     );
     if (!source.rows[0]) {
       throw new Error("source_event_not_found");
@@ -322,13 +328,13 @@ export async function cloneEventFromTemplate(
         sourceEventId,
         createdBy,
         organizationId,
-      ],
+      ]
     );
     const eventId = newEvent.rows[0].id;
 
     const products = await client.query(
-      `SELECT * FROM fft_product WHERE event_id = $1`,
-      [sourceEventId],
+      "SELECT * FROM fft_product WHERE event_id = $1",
+      [sourceEventId]
     );
     for (const p of products.rows) {
       await client.query(
@@ -351,13 +357,13 @@ export async function cloneEventFromTemplate(
           p.pickup_location,
           p.sort_order,
           JSON.stringify(p.attrs ?? {}),
-        ],
+        ]
       );
     }
 
     const fields = await client.query(
-      `SELECT * FROM fft_field_def WHERE event_id = $1`,
-      [sourceEventId],
+      "SELECT * FROM fft_field_def WHERE event_id = $1",
+      [sourceEventId]
     );
     for (const f of fields.rows) {
       await client.query(
@@ -382,13 +388,13 @@ export async function cloneEventFromTemplate(
           JSON.stringify(f.editable_by_roles),
           f.display_order,
           f.active,
-        ],
+        ]
       );
     }
 
     const priorities = await client.query(
-      `SELECT * FROM fft_customer_priority WHERE event_id = $1`,
-      [sourceEventId],
+      "SELECT * FROM fft_customer_priority WHERE event_id = $1",
+      [sourceEventId]
     );
     for (const pr of priorities.rows) {
       await client.query(
@@ -405,7 +411,7 @@ export async function cloneEventFromTemplate(
           pr.salesperson_user_id,
           pr.max_allocation,
           pr.remarks,
-        ],
+        ]
       );
     }
 
@@ -421,14 +427,14 @@ export async function cloneEventFromTemplate(
 
 export async function ensureGp2PigletTemplate(
   createdBy: string,
-  organizationId: string,
+  organizationId: string
 ): Promise<FftEvent> {
   const existing = await pool.query(
     `SELECT * FROM fft_event
      WHERE is_template = TRUE AND event_code = 'GP2-PIGLET-TEMPLATE'
        AND ${organizationScopeSql("organization_id", 1)}
      LIMIT 1`,
-    [organizationId],
+    [organizationId]
   );
   if (existing.rows[0]) {
     return mapEventRow(existing.rows[0]);
@@ -468,7 +474,7 @@ export async function ensureGp2PigletTemplate(
         template.event.supportUnitLabel,
         createdBy,
         organizationId,
-      ],
+      ]
     );
     const eventId = eventResult.rows[0].id;
 
@@ -491,7 +497,7 @@ export async function ensureGp2PigletTemplate(
           p.supportAmountPerUnit,
           p.pickupLocation,
           p.sortOrder,
-        ],
+        ]
       );
     }
 
@@ -518,7 +524,7 @@ export async function ensureGp2PigletTemplate(
           JSON.stringify(f.editableByRoles),
           f.displayOrder,
           f.active,
-        ],
+        ]
       );
     }
 
@@ -570,7 +576,7 @@ export async function upsertProduct(input: {
         input.pickupLocation ?? null,
         input.sortOrder ?? 0,
         input.eventId,
-      ],
+      ]
     );
     return mapProductRow(result.rows[0]);
   }
@@ -594,7 +600,7 @@ export async function upsertProduct(input: {
       input.supportAmountPerUnit ?? null,
       input.pickupLocation ?? null,
       input.sortOrder ?? 0,
-    ],
+    ]
   );
   return mapProductRow(result.rows[0]);
 }
@@ -626,7 +632,7 @@ export async function upsertFieldDef(input: {
         JSON.stringify(input.dropdownOptions ?? null),
         input.displayOrder ?? 0,
         input.eventId,
-      ],
+      ]
     );
     return mapFieldDefRow(result.rows[0]);
   }
@@ -644,7 +650,7 @@ export async function upsertFieldDef(input: {
       input.labelVi,
       JSON.stringify(input.dropdownOptions ?? null),
       input.displayOrder ?? 0,
-    ],
+    ]
   );
   return mapFieldDefRow(result.rows[0]);
 }
@@ -656,9 +662,9 @@ export async function importPriorityCsv(
     customerCode?: string;
     priorityRank: number;
     priorityGroup?: string;
-  }>,
+  }>
 ) {
-  await pool.query(`DELETE FROM fft_customer_priority WHERE event_id = $1`, [
+  await pool.query("DELETE FROM fft_customer_priority WHERE event_id = $1", [
     eventId,
   ]);
   for (const row of rows) {
@@ -672,7 +678,7 @@ export async function importPriorityCsv(
         row.customerCode ?? null,
         row.priorityRank,
         row.priorityGroup ?? null,
-      ],
+      ]
     );
   }
 }
@@ -680,7 +686,7 @@ export async function importPriorityCsv(
 export async function upsertSalesMember(
   email: string,
   userId: string | undefined,
-  organizationId: string,
+  organizationId: string
 ) {
   await pool.query(
     `INSERT INTO fft_sales_member (email, user_id, active, organization_id)
@@ -689,21 +695,21 @@ export async function upsertSalesMember(
        user_id = COALESCE(EXCLUDED.user_id, fft_sales_member.user_id),
        active = TRUE,
        organization_id = EXCLUDED.organization_id`,
-    [email.trim().toLowerCase(), userId ?? null, organizationId],
+    [email.trim().toLowerCase(), userId ?? null, organizationId]
   );
 }
 
 async function nextOrderNumber(eventId: string): Promise<string> {
   const result = await pool.query(
-    `SELECT COUNT(*)::int AS count FROM fft_order WHERE event_id = $1`,
-    [eventId],
+    "SELECT COUNT(*)::int AS count FROM fft_order WHERE event_id = $1",
+    [eventId]
   );
   const count = (result.rows[0]?.count ?? 0) + 1;
   return `HS-${String(count).padStart(5, "0")}`;
 }
 
 export async function getOrderById(orderId: string): Promise<FftOrder | null> {
-  const result = await pool.query(`SELECT * FROM fft_order WHERE id = $1`, [
+  const result = await pool.query("SELECT * FROM fft_order WHERE id = $1", [
     orderId,
   ]);
   return result.rows[0] ? mapOrderRow(result.rows[0]) : null;
@@ -727,7 +733,7 @@ export type FftTransferRow = {
 };
 
 export async function listTransfersForEvent(
-  eventId: string,
+  eventId: string
 ): Promise<FftTransferRow[]> {
   const result = await pool.query(
     `SELECT t.*, o.order_number
@@ -735,23 +741,23 @@ export async function listTransfersForEvent(
      JOIN fft_order o ON o.id = t.order_id
      WHERE o.event_id = $1
      ORDER BY t.requested_at DESC`,
-    [eventId],
+    [eventId]
   );
   return result.rows.map((row) => ({
-    id: row.id,
-    orderId: row.order_id,
-    originalCustomerName: row.original_customer_name,
-    originalCustomerCode: row.original_customer_code,
-    newCustomerName: row.new_customer_name,
-    newCustomerCode: row.new_customer_code,
-    transferQuantity: Number(row.transfer_quantity),
-    reason: row.reason,
-    status: row.status,
-    requestedBy: row.requested_by,
-    requestedAt: row.requested_at,
-    approvedBy: row.approved_by,
     approvedAt: row.approved_at,
+    approvedBy: row.approved_by,
+    id: row.id,
+    newCustomerCode: row.new_customer_code,
+    newCustomerName: row.new_customer_name,
+    orderId: row.order_id,
     orderNumber: row.order_number,
+    originalCustomerCode: row.original_customer_code,
+    originalCustomerName: row.original_customer_name,
+    reason: row.reason,
+    requestedAt: row.requested_at,
+    requestedBy: row.requested_by,
+    status: row.status,
+    transferQuantity: Number(row.transfer_quantity),
   }));
 }
 
@@ -772,7 +778,7 @@ export async function createOrder(input: {
   const { priorityRank, priorityGroup } = resolvePriorityForCustomer(
     priorities,
     input.customerCode ?? null,
-    input.customerName,
+    input.customerName
   );
 
   const orderNumber = await nextOrderNumber(input.eventId);
@@ -798,7 +804,7 @@ export async function createOrder(input: {
       JSON.stringify(input.attrs),
       input.remarks ?? null,
       input.registeredAt,
-    ],
+    ]
   );
   return mapOrderRow(result.rows[0]);
 }
@@ -829,7 +835,7 @@ export async function runAllocationForEvent(input: {
         input.mode,
         input.reason ?? null,
         JSON.stringify(input.summary),
-      ],
+      ]
     );
     const runId = runResult.rows[0].id;
 
@@ -842,34 +848,34 @@ export async function runAllocationForEvent(input: {
           allocation_run_id = $5,
           updated_at = NOW()
          WHERE id = $1`,
-        [r.orderId, r.confirmedQuantity, r.status, r.estimatedSupport, runId],
+        [r.orderId, r.confirmedQuantity, r.status, r.estimatedSupport, runId]
       );
     }
 
     const productTotals = new Map<string, number>();
     for (const r of input.results) {
       const orderRow = await client.query(
-        `SELECT product_id FROM fft_order WHERE id = $1`,
-        [r.orderId],
+        "SELECT product_id FROM fft_order WHERE id = $1",
+        [r.orderId]
       );
       const productId = orderRow.rows[0]?.product_id as string;
       if (productId) {
         productTotals.set(
           productId,
-          (productTotals.get(productId) ?? 0) + r.confirmedQuantity,
+          (productTotals.get(productId) ?? 0) + r.confirmedQuantity
         );
       }
     }
     for (const [productId, qty] of productTotals) {
       await client.query(
-        `UPDATE fft_product SET allocated_quantity = $2, updated_at = NOW() WHERE id = $1`,
-        [productId, qty],
+        "UPDATE fft_product SET allocated_quantity = $2, updated_at = NOW() WHERE id = $1",
+        [productId, qty]
       );
     }
 
     await client.query(
       `UPDATE fft_event SET status = 'allocating', updated_at = NOW() WHERE id = $1`,
-      [input.eventId],
+      [input.eventId]
     );
 
     await client.query("COMMIT");
@@ -889,12 +895,12 @@ export async function recomputeProductAllocatedQuantity(productId: string) {
      WHERE product_id = $1
        AND status IN ('partial', 'full', 'confirmed', 'completed')
        AND confirmed_quantity IS NOT NULL`,
-    [productId],
+    [productId]
   );
   const total = Number(result.rows[0]?.total ?? 0);
   await pool.query(
-    `UPDATE fft_product SET allocated_quantity = $2, updated_at = NOW() WHERE id = $1`,
-    [productId, total],
+    "UPDATE fft_product SET allocated_quantity = $2, updated_at = NOW() WHERE id = $1",
+    [productId, total]
   );
   return total;
 }
@@ -910,7 +916,7 @@ export async function manualAdjustOrder(input: {
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
-    const before = await client.query(`SELECT * FROM fft_order WHERE id = $1`, [
+    const before = await client.query("SELECT * FROM fft_order WHERE id = $1", [
       input.orderId,
     ]);
     if (!before.rows[0]) {
@@ -920,7 +926,12 @@ export async function manualAdjustOrder(input: {
       `UPDATE fft_order SET
         confirmed_quantity = $2, status = $3, estimated_support = $4, updated_at = NOW()
        WHERE id = $1 RETURNING *`,
-      [input.orderId, input.confirmedQuantity, input.status, input.estimatedSupport],
+      [
+        input.orderId,
+        input.confirmedQuantity,
+        input.status,
+        input.estimatedSupport,
+      ]
     );
     const productId = result.rows[0].product_id as string;
     const sum = await client.query(
@@ -929,11 +940,11 @@ export async function manualAdjustOrder(input: {
        WHERE product_id = $1
          AND status IN ('partial', 'full', 'confirmed', 'completed')
          AND confirmed_quantity IS NOT NULL`,
-      [productId],
+      [productId]
     );
     await client.query(
-      `UPDATE fft_product SET allocated_quantity = $2, updated_at = NOW() WHERE id = $1`,
-      [productId, Number(sum.rows[0]?.total ?? 0)],
+      "UPDATE fft_product SET allocated_quantity = $2, updated_at = NOW() WHERE id = $1",
+      [productId, Number(sum.rows[0]?.total ?? 0)]
     );
     await client.query(
       `INSERT INTO fft_audit
@@ -948,7 +959,7 @@ export async function manualAdjustOrder(input: {
         JSON.stringify(before.rows[0] ?? {}),
         JSON.stringify(result.rows[0]),
         input.reason,
-      ],
+      ]
     );
     await client.query("COMMIT");
     return mapOrderRow(result.rows[0]);
@@ -968,11 +979,14 @@ export async function createTransferRequest(input: {
   reason: string;
   requestedBy: string;
 }) {
-  const orderResult = await pool.query(`SELECT * FROM fft_order WHERE id = $1`, [
-    input.orderId,
-  ]);
+  const orderResult = await pool.query(
+    "SELECT * FROM fft_order WHERE id = $1",
+    [input.orderId]
+  );
   const order = orderResult.rows[0];
-  if (!order) throw new Error("order_not_found");
+  if (!order) {
+    throw new Error("order_not_found");
+  }
 
   await pool.query(
     `INSERT INTO fft_transfer
@@ -988,12 +1002,12 @@ export async function createTransferRequest(input: {
       input.transferQuantity,
       input.reason,
       input.requestedBy,
-    ],
+    ]
   );
 
   await pool.query(
     `UPDATE fft_order SET transfer_status = 'requested', updated_at = NOW() WHERE id = $1`,
-    [input.orderId],
+    [input.orderId]
   );
 }
 
@@ -1002,21 +1016,24 @@ export async function approveTransfer(input: {
   transferId: string;
   approvedBy: string;
 }) {
-  const transfer = await pool.query(`SELECT * FROM fft_transfer WHERE id = $1`, [
-    input.transferId,
-  ]);
+  const transfer = await pool.query(
+    "SELECT * FROM fft_transfer WHERE id = $1",
+    [input.transferId]
+  );
   const t = transfer.rows[0];
-  if (!t) throw new Error("transfer_not_found");
+  if (!t) {
+    throw new Error("transfer_not_found");
+  }
 
   await pool.query(
     `UPDATE fft_transfer SET status = 'approved', approved_by = $2, approved_at = NOW() WHERE id = $1`,
-    [input.transferId, input.approvedBy],
+    [input.transferId, input.approvedBy]
   );
   await pool.query(
     `UPDATE fft_order SET
       customer_name = $2, customer_code = $3, transfer_status = 'approved', updated_at = NOW()
      WHERE id = $1`,
-    [input.orderId, t.new_customer_name, t.new_customer_code],
+    [input.orderId, t.new_customer_name, t.new_customer_code]
   );
 }
 
@@ -1027,11 +1044,11 @@ export async function rejectTransfer(input: {
 }) {
   await pool.query(
     `UPDATE fft_transfer SET status = 'rejected', approved_by = $2, approved_at = NOW() WHERE id = $1`,
-    [input.transferId, input.approvedBy],
+    [input.transferId, input.approvedBy]
   );
   await pool.query(
     `UPDATE fft_order SET transfer_status = 'rejected', updated_at = NOW() WHERE id = $1`,
-    [input.orderId],
+    [input.orderId]
   );
 }
 
@@ -1045,7 +1062,7 @@ export async function completeOrder(input: {
       fulfilled_quantity = $2, final_support = $3, status = 'completed',
       pickup_status = 'picked_up', updated_at = NOW()
      WHERE id = $1 RETURNING *`,
-    [input.orderId, input.fulfilledQuantity, input.finalSupport],
+    [input.orderId, input.fulfilledQuantity, input.finalSupport]
   );
   return mapOrderRow(result.rows[0]);
 }
@@ -1077,7 +1094,7 @@ export function ordersToCsv(orders: FftOrder[]): string {
         o.status,
         o.depositStatus,
         o.registeredAt.toISOString(),
-      ].join(","),
+      ].join(",")
     );
   }
   return lines.join("\n");
@@ -1110,7 +1127,7 @@ export async function recordRbacAudit(input: {
       JSON.stringify(input.oldValue ?? {}),
       JSON.stringify(input.newValue ?? {}),
       input.reason ?? null,
-    ],
+    ]
   );
 }
 
@@ -1125,7 +1142,7 @@ export async function seedFftRbacCatalog(input: {
        ON CONFLICT (code) DO UPDATE SET
          description = EXCLUDED.description,
          sensitive = EXCLUDED.sensitive`,
-      [perm.code, perm.description, perm.sensitive],
+      [perm.code, perm.description, perm.sensitive]
     );
   }
 
@@ -1147,11 +1164,11 @@ export async function seedFftRbacCatalog(input: {
         template.templateKey,
         input.actorId ?? null,
         input.organizationId,
-      ],
+      ]
     );
     const roleId = roleResult.rows[0].id as string;
 
-    await pool.query(`DELETE FROM fft_role_permission WHERE role_id = $1`, [
+    await pool.query("DELETE FROM fft_role_permission WHERE role_id = $1", [
       roleId,
     ]);
     for (const code of template.permissionCodes) {
@@ -1159,17 +1176,17 @@ export async function seedFftRbacCatalog(input: {
         `INSERT INTO fft_role_permission (role_id, permission_code, granted_by)
          VALUES ($1, $2, $3)
          ON CONFLICT DO NOTHING`,
-        [roleId, code, input.actorId ?? null],
+        [roleId, code, input.actorId ?? null]
       );
       if (isSensitivePermission(code)) {
         await recordRbacAudit({
           action: "role.permission_grant",
           actorId: input.actorId,
           actorRole: "system_seed",
-          roleId,
+          newValue: { sensitive: true, templateKey: template.templateKey },
           permissionCode: code,
-          newValue: { templateKey: template.templateKey, sensitive: true },
           reason: "template_seed",
+          roleId,
         });
       }
     }
@@ -1178,7 +1195,7 @@ export async function seedFftRbacCatalog(input: {
 
 export async function listRoleAssignmentsForUser(
   userId: string,
-  organizationId: string,
+  organizationId: string
 ) {
   const result = await pool.query(
     `SELECT a.id, a.user_id, a.role_id, a.scope_type, a.scope_id, a.active,
@@ -1191,29 +1208,29 @@ export async function listRoleAssignmentsForUser(
      INNER JOIN fft_role r ON r.id = a.role_id AND r.active = TRUE
      WHERE a.user_id = $1 AND a.active = TRUE
        AND ${organizationScopeSql("a.organization_id", 2)}`,
-    [userId, organizationId],
+    [userId, organizationId]
   );
   return result.rows.map((row) => ({
-    id: row.id as string,
-    userId: row.user_id as string,
-    roleId: row.role_id as string,
-    scopeType: row.scope_type as FftScopeType,
-    scopeId: (row.scope_id as string | null) ?? null,
     active: Boolean(row.active),
+    id: row.id as string,
     permissionCodes: (row.permission_codes as string[]) ?? [],
+    roleId: row.role_id as string,
+    scopeId: (row.scope_id as string | null) ?? null,
+    scopeType: row.scope_type as FftScopeType,
+    userId: row.user_id as string,
   }));
 }
 
 export async function getRoleIdByTemplateKey(
   templateKey: string,
-  organizationId: string,
+  organizationId: string
 ): Promise<string | null> {
   const result = await pool.query(
     `SELECT id FROM fft_role
      WHERE template_key = $1
        AND organization_id = $2
      LIMIT 1`,
-    [templateKey, organizationId],
+    [templateKey, organizationId]
   );
   return result.rows[0]?.id ?? null;
 }
@@ -1232,10 +1249,19 @@ export async function ensureRoleAssignment(input: {
      WHERE user_id = $1 AND role_id = $2 AND scope_type = $3
        AND COALESCE(scope_id, '') = COALESCE($4, '')
        AND active = TRUE
+       AND ${organizationScopeSql("organization_id", 5)}
      LIMIT 1`,
-    [input.userId, input.roleId, input.scopeType, input.scopeId ?? null],
+    [
+      input.userId,
+      input.roleId,
+      input.scopeType,
+      input.scopeId ?? null,
+      input.organizationId,
+    ]
   );
-  if (existing.rows[0]) return existing.rows[0].id as string;
+  if (existing.rows[0]) {
+    return existing.rows[0].id as string;
+  }
 
   const result = await pool.query(
     `INSERT INTO fft_role_assignment
@@ -1250,17 +1276,17 @@ export async function ensureRoleAssignment(input: {
       input.scopeId ?? null,
       input.actorId ?? null,
       input.organizationId,
-    ],
+    ]
   );
   await recordRbacAudit({
     action: "assignment.create",
     actorId: input.actorId,
-    targetUserId: input.userId,
-    roleId: input.roleId,
     newValue: {
-      scopeType: input.scopeType,
       scopeId: input.scopeId ?? null,
+      scopeType: input.scopeType,
     },
+    roleId: input.roleId,
+    targetUserId: input.userId,
   });
   return result.rows[0].id as string;
 }
@@ -1273,23 +1299,23 @@ export async function bootstrapPhase1RbacAssignments(input: {
   organizationId: string;
 }) {
   await seedFftRbacCatalog({
-    organizationId: input.organizationId,
     actorId: input.userId,
+    organizationId: input.organizationId,
   });
 
   if (input.isAdmin) {
     const roleId = await getRoleIdByTemplateKey(
       "client_admin",
-      input.organizationId,
+      input.organizationId
     );
     if (roleId) {
       await ensureRoleAssignment({
-        userId: input.userId,
-        userEmail: input.email,
-        roleId,
-        scopeType: "platform",
         actorId: input.userId,
         organizationId: input.organizationId,
+        roleId,
+        scopeType: "platform",
+        userEmail: input.email,
+        userId: input.userId,
       });
     }
     return;
@@ -1297,22 +1323,26 @@ export async function bootstrapPhase1RbacAssignments(input: {
 
   const members = await listSalesMembers(input.organizationId);
   const onAllowlist = members.some(
-    (m) => m.active && m.email.trim().toLowerCase() === input.email.trim().toLowerCase(),
+    (m) =>
+      m.active &&
+      m.email.trim().toLowerCase() === input.email.trim().toLowerCase()
   );
-  if (!onAllowlist) return;
+  if (!onAllowlist) {
+    return;
+  }
 
   const roleId = await getRoleIdByTemplateKey(
     "sales_executive",
-    input.organizationId,
+    input.organizationId
   );
   if (roleId) {
     await ensureRoleAssignment({
-      userId: input.userId,
-      userEmail: input.email,
-      roleId,
-      scopeType: "own",
       actorId: input.userId,
       organizationId: input.organizationId,
+      roleId,
+      scopeType: "own",
+      userEmail: input.email,
+      userId: input.userId,
     });
   }
 }
@@ -1328,28 +1358,28 @@ export type FftRoleRow = {
 };
 
 export async function listFftRoles(
-  organizationId: string,
+  organizationId: string
 ): Promise<FftRoleRow[]> {
   const roles = await pool.query(
     `SELECT * FROM fft_role
      WHERE ${organizationScopeSql("organization_id", 1)}
      ORDER BY is_system_template DESC, name ASC`,
-    [organizationId],
+    [organizationId]
   );
   const out: FftRoleRow[] = [];
   for (const row of roles.rows) {
     const perms = await pool.query(
-      `SELECT permission_code FROM fft_role_permission WHERE role_id = $1 ORDER BY permission_code`,
-      [row.id],
+      "SELECT permission_code FROM fft_role_permission WHERE role_id = $1 ORDER BY permission_code",
+      [row.id]
     );
     out.push({
-      id: row.id,
-      name: row.name,
-      description: row.description,
       active: Boolean(row.active),
+      description: row.description,
+      id: row.id,
       isSystemTemplate: Boolean(row.is_system_template),
-      templateKey: row.template_key,
+      name: row.name,
       permissionCodes: perms.rows.map((p) => p.permission_code as string),
+      templateKey: row.template_key,
     });
   }
   return out;
@@ -1371,30 +1401,30 @@ export async function createCustomRole(input: {
       input.description?.trim() || null,
       input.actorId,
       input.organizationId,
-    ],
+    ]
   );
   const roleId = result.rows[0].id as string;
   for (const code of input.permissionCodes) {
     await pool.query(
       `INSERT INTO fft_role_permission (role_id, permission_code, granted_by)
        VALUES ($1, $2, $3)`,
-      [roleId, code, input.actorId],
+      [roleId, code, input.actorId]
     );
     if (isSensitivePermission(code)) {
       await recordRbacAudit({
         action: "role.permission_grant",
         actorId: input.actorId,
-        roleId,
         permissionCode: code,
         reason: "custom_role_create",
+        roleId,
       });
     }
   }
   await recordRbacAudit({
     action: "role.create",
     actorId: input.actorId,
-    roleId,
     newValue: { name: input.name, permissionCodes: input.permissionCodes },
+    roleId,
   });
   return roleId;
 }
@@ -1405,28 +1435,30 @@ export async function setRolePermissions(input: {
   actorId: string;
 }) {
   const before = await pool.query(
-    `SELECT permission_code FROM fft_role_permission WHERE role_id = $1`,
-    [input.roleId],
+    "SELECT permission_code FROM fft_role_permission WHERE role_id = $1",
+    [input.roleId]
   );
-  const beforeCodes = new Set(before.rows.map((r) => r.permission_code as string));
+  const beforeCodes = new Set(
+    before.rows.map((r) => r.permission_code as string)
+  );
   const nextCodes = new Set(input.permissionCodes);
 
-  await pool.query(`DELETE FROM fft_role_permission WHERE role_id = $1`, [
+  await pool.query("DELETE FROM fft_role_permission WHERE role_id = $1", [
     input.roleId,
   ]);
   for (const code of nextCodes) {
     await pool.query(
       `INSERT INTO fft_role_permission (role_id, permission_code, granted_by)
        VALUES ($1, $2, $3)`,
-      [input.roleId, code, input.actorId],
+      [input.roleId, code, input.actorId]
     );
     if (isSensitivePermission(code) && !beforeCodes.has(code)) {
       await recordRbacAudit({
         action: "role.permission_grant",
         actorId: input.actorId,
-        roleId: input.roleId,
         permissionCode: code,
         reason: "role_permission_update",
+        roleId: input.roleId,
       });
     }
   }
@@ -1435,18 +1467,18 @@ export async function setRolePermissions(input: {
       await recordRbacAudit({
         action: "role.permission_revoke",
         actorId: input.actorId,
-        roleId: input.roleId,
         permissionCode: code,
         reason: "role_permission_update",
+        roleId: input.roleId,
       });
     }
   }
   await recordRbacAudit({
     action: "role.permissions_set",
     actorId: input.actorId,
-    roleId: input.roleId,
-    oldValue: { permissionCodes: [...beforeCodes] },
     newValue: { permissionCodes: [...nextCodes] },
+    oldValue: { permissionCodes: [...beforeCodes] },
+    roleId: input.roleId,
   });
 }
 
@@ -1454,10 +1486,14 @@ export async function setRoleActive(input: {
   roleId: string;
   active: boolean;
   actorId: string;
+  organizationId: string;
 }) {
   await pool.query(
-    `UPDATE fft_role SET active = $2, updated_at = NOW(), updated_by = $3 WHERE id = $1`,
-    [input.roleId, input.active, input.actorId],
+    `UPDATE fft_role
+     SET active = $2, updated_at = NOW(), updated_by = $3
+     WHERE id = $1
+       AND ${organizationScopeSql("organization_id", 4)}`,
+    [input.roleId, input.active, input.actorId, input.organizationId]
   );
   await recordRbacAudit({
     action: input.active ? "role.enable" : "role.disable",
@@ -1472,20 +1508,25 @@ export async function duplicateRole(input: {
   actorId: string;
   organizationId: string;
 }) {
-  const source = await pool.query(`SELECT * FROM fft_role WHERE id = $1`, [
-    input.sourceRoleId,
-  ]);
-  if (!source.rows[0]) throw new Error("role_not_found");
+  const source = await pool.query(
+    `SELECT * FROM fft_role
+     WHERE id = $1
+       AND ${organizationScopeSql("organization_id", 2)}`,
+    [input.sourceRoleId, input.organizationId]
+  );
+  if (!source.rows[0]) {
+    throw new Error("role_not_found");
+  }
   const perms = await pool.query(
-    `SELECT permission_code FROM fft_role_permission WHERE role_id = $1`,
-    [input.sourceRoleId],
+    "SELECT permission_code FROM fft_role_permission WHERE role_id = $1",
+    [input.sourceRoleId]
   );
   return createCustomRole({
-    name: input.name,
-    description: source.rows[0].description ?? undefined,
-    permissionCodes: perms.rows.map((p) => p.permission_code as string),
     actorId: input.actorId,
+    description: source.rows[0].description ?? undefined,
+    name: input.name,
     organizationId: input.organizationId,
+    permissionCodes: perms.rows.map((p) => p.permission_code as string),
   });
 }
 
@@ -1498,37 +1539,45 @@ export async function listAllRoleAssignments(organizationId: string) {
        AND ${organizationScopeSql("a.organization_id", 1)}
      ORDER BY a.created_at DESC
      LIMIT 200`,
-    [organizationId],
+    [organizationId]
   );
   return result.rows.map((row) => ({
     id: row.id as string,
-    userId: row.user_id as string,
-    userEmail: (row.user_email as string | null) ?? null,
     roleId: row.role_id as string,
     roleName: row.role_name as string,
-    scopeType: row.scope_type as FftScopeType,
     scopeId: (row.scope_id as string | null) ?? null,
+    scopeType: row.scope_type as FftScopeType,
+    userEmail: (row.user_email as string | null) ?? null,
+    userId: row.user_id as string,
   }));
 }
 
 export async function revokeRoleAssignment(input: {
   assignmentId: string;
   actorId: string;
+  organizationId: string;
 }) {
   const before = await pool.query(
-    `SELECT * FROM fft_role_assignment WHERE id = $1`,
-    [input.assignmentId],
+    `SELECT * FROM fft_role_assignment
+     WHERE id = $1
+       AND ${organizationScopeSql("organization_id", 2)}`,
+    [input.assignmentId, input.organizationId]
   );
-  if (!before.rows[0]) return;
+  if (!before.rows[0]) {
+    return;
+  }
   await pool.query(
-    `UPDATE fft_role_assignment SET active = FALSE, updated_at = NOW() WHERE id = $1`,
-    [input.assignmentId],
+    `UPDATE fft_role_assignment
+     SET active = FALSE, updated_at = NOW()
+     WHERE id = $1
+       AND ${organizationScopeSql("organization_id", 2)}`,
+    [input.assignmentId, input.organizationId]
   );
   await recordRbacAudit({
     action: "assignment.revoke",
     actorId: input.actorId,
-    targetUserId: before.rows[0].user_id,
-    roleId: before.rows[0].role_id,
     oldValue: before.rows[0],
+    roleId: before.rows[0].role_id,
+    targetUserId: before.rows[0].user_id,
   });
 }

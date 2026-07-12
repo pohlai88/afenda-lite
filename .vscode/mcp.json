@@ -2,7 +2,7 @@
   "servers": {
     "neon": {
       "type": "http",
-      "url": "https://mcp.neon.tech/mcp",
+      "url": "https://mcp.neon.tech/mcp?projectId=young-hat-54755363",
       "headers": {
         "Authorization": "Bearer ${NEON_API_KEY}"
       }

@@ -2,22 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { requireClientSession } from "@/modules/identity/auth/session";
-import { requirePlatformOperatorSession } from "@/modules/identity/auth/platform-operator-session";
-import { isAdminSession } from "@/modules/identity/admin";
-import {
-  requireAnyPlatformPermission,
-  requirePlatformPermission,
-} from "@/modules/identity/domain/platform-rbac-access";
-import { recordAuditEvent } from "@/modules/platform/audit";
-import { auth } from "@/modules/identity/auth/server";
 import { parseClientOnboardingFormData } from "@/modules/declarations/client-onboarding.server";
-import {
-  CLIENT_HOME_HREF,
-  CLIENT_ONBOARDING_HREF,
-  ORGANIZATION_ADMIN_CLIENTS_HREF,
-  ORGANIZATION_ADMIN_DASHBOARD_HREF,
-} from "@/modules/platform/routing/portal-routes";
+import { persistClientDeclarationDraft } from "@/modules/declarations/domain/client-declaration-draft";
 import {
   acknowledgeClientPortal,
   createClientInvitation,
@@ -34,15 +20,12 @@ import {
   normalizeEmail,
   upsertClientProfile,
 } from "@/modules/declarations/domain/clients";
-import { persistClientDeclarationDraft } from "@/modules/declarations/domain/client-declaration-draft";
-import { deleteClientAuthUserByEmail } from "@/modules/identity/delete-client-auth-user";
-import { isClientEmailDeliveryEnabled } from "@/modules/identity/email/client-email-delivery";
-import { sendClientOnboardingEmail } from "@/modules/identity/email/send-client-onboarding-email";
-import { ensurePortalOrganization } from "@/modules/identity/portal-organization";
-import { runLoggedAction } from "@/modules/platform/observability";
-import { portalCopy, CLIENT_PORTAL_ACK_VERSION } from "@/modules/platform/copy/portal-copy";
 import type { SurveyAnswers } from "@/modules/declarations/domain/questions";
-import { parseSchema } from "@/modules/platform/schemas/common";
+import { submitClientDeclaration } from "@/modules/declarations/domain/survey-submission";
+import {
+  getSurveyBySlug,
+  getSurveyForAdmin,
+} from "@/modules/declarations/domain/surveys";
 import {
   deleteClientAssignmentSchema,
   issueClientInviteSchema,
@@ -50,9 +33,32 @@ import {
   saveClientDeclarationDraftSchema,
   submitClientDeclarationSchema,
 } from "@/modules/declarations/schemas/client";
-import { getSurveyBySlug, getSurveyForAdmin } from "@/modules/declarations/domain/surveys";
-import { submitClientDeclaration } from "@/modules/declarations/domain/survey-submission";
 import { formString } from "@/modules/declarations/server-actions/form-data";
+import { isAdminSession } from "@/modules/identity/admin";
+import { requirePlatformOperatorSession } from "@/modules/identity/auth/platform-operator-session";
+import { auth } from "@/modules/identity/auth/server";
+import { requireClientSession } from "@/modules/identity/auth/session";
+import { deleteClientAuthUserByEmail } from "@/modules/identity/delete-client-auth-user";
+import {
+  requireAnyPlatformPermission,
+  requirePlatformPermission,
+} from "@/modules/identity/domain/platform-rbac-access";
+import { isClientEmailDeliveryEnabled } from "@/modules/identity/email/client-email-delivery";
+import { sendClientOnboardingEmail } from "@/modules/identity/email/send-client-onboarding-email";
+import { ensurePortalOrganization } from "@/modules/identity/portal-organization";
+import { recordAuditEvent } from "@/modules/platform/audit";
+import {
+  CLIENT_PORTAL_ACK_VERSION,
+  portalCopy,
+} from "@/modules/platform/copy/portal-copy";
+import { runLoggedAction } from "@/modules/platform/observability";
+import {
+  CLIENT_HOME_HREF,
+  CLIENT_ONBOARDING_HREF,
+  ORGANIZATION_ADMIN_CLIENTS_HREF,
+  ORGANIZATION_ADMIN_DASHBOARD_HREF,
+} from "@/modules/platform/routing/portal-routes";
+import { parseSchema } from "@/modules/platform/schemas/common";
 
 export async function saveClientOnboardingAction(formData: FormData) {
   // Incomplete clients must reach this action — do not require onboarding.
@@ -84,20 +90,20 @@ export async function saveClientOnboardingAction(formData: FormData) {
       const portalOrg = await ensurePortalOrganization();
 
       await upsertClientProfile({
-        userId: session.user.id,
-        fullLegalName,
-        nationality,
-        countryOfResidence,
         additionalResidenceCountries,
+        countryOfResidence,
+        entityName,
+        fullLegalName,
+        identityConsentAt: new Date(),
+        jurisdiction,
+        nationality,
+        notes,
+        onboardingComplete: true,
+        organizationId: portalOrg.id,
         passportIssuingCountry,
         passportNumber,
         phone,
-        entityName,
-        jurisdiction,
-        notes,
-        identityConsentAt: new Date(),
-        onboardingComplete: true,
-        organizationId: portalOrg.id,
+        userId: session.user.id,
       });
 
       await auth.updateUser({
@@ -107,13 +113,13 @@ export async function saveClientOnboardingAction(formData: FormData) {
       await recordAuditEvent({
         actorId: session.user.id,
         eventType: "profile.completed",
-        resourceType: "client_profile",
-        resourceId: session.user.id,
         metadata: { surface: "client" },
+        resourceId: session.user.id,
+        resourceType: "client_profile",
       });
 
       redirect(CLIENT_HOME_HREF);
-    },
+    }
   );
 }
 
@@ -132,14 +138,14 @@ export async function acknowledgeClientPortalAction() {
       await recordAuditEvent({
         actorId: session.user.id,
         eventType: "portal.acknowledged",
-        resourceType: "client_profile",
-        resourceId: session.user.id,
         metadata: { version: CLIENT_PORTAL_ACK_VERSION },
+        resourceId: session.user.id,
+        resourceType: "client_profile",
       });
 
       revalidatePath(CLIENT_HOME_HREF);
       return { success: true };
-    },
+    }
   );
 }
 
@@ -164,7 +170,7 @@ export async function submitClientDeclarationAction(input: {
 
       const assignment = await getClientAssignmentForUser(
         assignmentId,
-        session.user.email,
+        session.user.email
       );
 
       if (!assignment) {
@@ -173,8 +179,8 @@ export async function submitClientDeclarationAction(input: {
 
       if (assignment.status === "submitted") {
         return {
-          error: portalCopy.clientDashboard.alreadySubmitted,
           confirmationCode: assignment.confirmationCode ?? undefined,
+          error: portalCopy.clientDashboard.alreadySubmitted,
         };
       }
 
@@ -190,38 +196,36 @@ export async function submitClientDeclarationAction(input: {
 
       const confirmationCode = createConfirmationCode(assignmentId);
       const result = await submitClientDeclaration({
-        assignmentId,
-        surveyId: survey.id,
-        clientEmail: session.user.email,
         answers,
+        assignmentId,
+        clientEmail: session.user.email,
         confirmationCode,
         dueDate: assignment.dueDate,
         submitBefore: survey.submitBefore,
+        surveyId: survey.id,
       });
 
       if ("error" in result && result.error) {
         return {
-          error: result.error,
           confirmationCode:
-            "confirmationCode" in result
-              ? result.confirmationCode
-              : undefined,
+            "confirmationCode" in result ? result.confirmationCode : undefined,
+          error: result.error,
         };
       }
 
       await recordAuditEvent({
         actorId: session.user.id,
         eventType: "declaration.submitted",
-        resourceType: "declaration",
+        metadata: { assignmentId, surface: "client" },
         resourceId: survey.id,
-        metadata: { surface: "client", assignmentId },
+        resourceType: "declaration",
       });
 
       revalidatePath(CLIENT_HOME_HREF);
       revalidatePath(ORGANIZATION_ADMIN_DASHBOARD_HREF);
 
-      return { success: true, confirmationCode };
-    },
+      return { confirmationCode, success: true };
+    }
   );
 }
 
@@ -245,19 +249,19 @@ export async function saveClientDeclarationDraftAction(input: {
       const { assignmentId, answers, stepIndex } = parsed.data;
 
       const result = await persistClientDeclarationDraft({
-        assignmentId,
         answers,
+        assignmentId,
         stepIndex,
-        userId: session.user.id,
         userEmail: session.user.email,
+        userId: session.user.id,
       });
 
       if (!result.success) {
         return { error: result.error };
       }
 
-      return { success: true as const, savedAt: result.savedAt };
-    },
+      return { savedAt: result.savedAt, success: true as const };
+    }
   );
 }
 
@@ -271,10 +275,10 @@ export async function issueClientInviteAction(formData: FormData) {
     session.user.id,
     async () => {
       const parsed = parseSchema(issueClientInviteSchema, {
+        dueDate: formString(formData, "dueDate"),
         email: formString(formData, "email"),
         fullName: formString(formData, "fullName"),
         surveyId: formString(formData, "surveyId"),
-        dueDate: formString(formData, "dueDate"),
       });
 
       if (!parsed.success) {
@@ -285,9 +289,9 @@ export async function issueClientInviteAction(formData: FormData) {
       const dueDate = dueDateRaw ? new Date(dueDateRaw) : undefined;
 
       const { organizationId, check } = await requirePlatformPermission({
-        userId: session.user.id,
         code: "clients.invite",
         isNeonAdmin: isAdminSession(session),
+        userId: session.user.id,
       });
       if (!check.allowed) {
         return { error: portalCopy.accessDenied.description };
@@ -298,13 +302,13 @@ export async function issueClientInviteAction(formData: FormData) {
       }
 
       const invitation = await createClientInvitation({
+        dueDate:
+          dueDate && !Number.isNaN(dueDate.getTime()) ? dueDate : undefined,
         email,
         fullName,
         invitedBy: session.user.id,
-        surveyId: survey.id,
-        dueDate:
-          dueDate && !Number.isNaN(dueDate.getTime()) ? dueDate : undefined,
         organizationId,
+        surveyId: survey.id,
       });
 
       let emailSent = false;
@@ -327,25 +331,25 @@ export async function issueClientInviteAction(formData: FormData) {
       await recordAuditEvent({
         actorId: session.user.id,
         eventType: "invite.issued",
-        resourceType: "client_invitation",
-        resourceId: invitation.id,
         metadata: {
           channel: "neon_auth_organization",
           emailSent,
           ...(emailError ? { emailError } : {}),
-          ...(neonAuthStatus !== undefined ? { neonAuthStatus } : {}),
+          ...(neonAuthStatus === undefined ? {} : { neonAuthStatus }),
         },
+        resourceId: invitation.id,
+        resourceType: "client_invitation",
       });
 
       revalidatePath(ORGANIZATION_ADMIN_CLIENTS_HREF);
 
       return {
-        success: true,
         email: normalizeEmail(email),
-        emailSent,
         emailError,
+        emailSent,
+        success: true,
       };
-    },
+    }
   );
 }
 
@@ -359,9 +363,9 @@ export async function removeClientRegistrationAction(formData: FormData) {
     session.user.id,
     async () => {
       const { organizationId, check } = await requirePlatformPermission({
-        userId: session.user.id,
         code: "clients.invite",
         isNeonAdmin: isAdminSession(session),
+        userId: session.user.id,
       });
       if (!check.allowed) {
         return { error: portalCopy.accessDenied.description };
@@ -377,7 +381,7 @@ export async function removeClientRegistrationAction(formData: FormData) {
 
       const invitation = await getClientInvitationById(
         parsed.data.invitationId,
-        organizationId,
+        organizationId
       );
       if (!invitation) {
         return { error: portalCopy.clientInvitationsPage.removeMissing };
@@ -391,7 +395,7 @@ export async function removeClientRegistrationAction(formData: FormData) {
       }
 
       if (authResult.userId) {
-        await deleteClientProfileByUserId(authResult.userId);
+        await deleteClientProfileByUserId(authResult.userId, organizationId);
       }
 
       await deleteClientAssignmentsForEmail(email, organizationId);
@@ -400,14 +404,14 @@ export async function removeClientRegistrationAction(formData: FormData) {
       await recordAuditEvent({
         actorId: session.user.id,
         eventType: "invite.removed",
-        resourceType: "client_invitation",
+        metadata: { authUserRemoved: authResult.deleted === true, email },
         resourceId: invitation.id,
-        metadata: { email, authUserRemoved: authResult.deleted === true },
+        resourceType: "client_invitation",
       });
 
       revalidatePath(ORGANIZATION_ADMIN_CLIENTS_HREF);
       return { success: true };
-    },
+    }
   );
 }
 
@@ -421,9 +425,9 @@ export async function deleteClientAssignmentAction(formData: FormData) {
     session.user.id,
     async () => {
       const gate = await requireAnyPlatformPermission({
-        userId: session.user.id,
         codes: ["clients.invite", "declarations.manage"],
         isNeonAdmin: isAdminSession(session),
+        userId: session.user.id,
       });
       if (!gate.check.allowed) {
         return { error: portalCopy.accessDenied.description };
@@ -434,15 +438,19 @@ export async function deleteClientAssignmentAction(formData: FormData) {
       });
 
       if (!parsed.success) {
-        return { error: portalCopy.clientInvitationsPage.assignmentRemoveError };
+        return {
+          error: portalCopy.clientInvitationsPage.assignmentRemoveError,
+        };
       }
 
       const assignment = await getClientAssignmentById(
         parsed.data.assignmentId,
-        gate.organizationId,
+        gate.organizationId
       );
       if (!assignment) {
-        return { error: portalCopy.clientInvitationsPage.assignmentRemoveMissing };
+        return {
+          error: portalCopy.clientInvitationsPage.assignmentRemoveMissing,
+        };
       }
 
       await deleteClientAssignmentById(assignment.id, gate.organizationId);
@@ -450,12 +458,12 @@ export async function deleteClientAssignmentAction(formData: FormData) {
       await recordAuditEvent({
         actorId: session.user.id,
         eventType: "assignment.removed",
-        resourceType: "client_assignment",
         resourceId: assignment.id,
+        resourceType: "client_assignment",
       });
 
       revalidatePath(ORGANIZATION_ADMIN_CLIENTS_HREF);
       return { success: true };
-    },
+    }
   );
 }

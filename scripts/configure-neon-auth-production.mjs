@@ -1,6 +1,6 @@
 /**
  * Neon Auth production branch configuration via Neon Management API.
- * Requires NEON_API_KEY with access to the linked project (org org-royal-bar-40022480).
+ * Requires NEON_API_KEY with access to the linked project (org org-fragrant-lake-90358173).
  *
  * Usage:
  *   npm run configure:neon-auth-production -- --sync-trusted-domains

@@ -1,0 +1,56 @@
+{
+  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+  "extends": [
+    "ultracite/biome/core",
+    "ultracite/biome/react",
+    "ultracite/biome/next",
+    "ultracite/biome/vitest"
+  ],
+  "files": {
+    "includes": [
+      // Per https://biomejs.dev/guides/configure-biome/ — positive `**` MUST
+      // precede negated/force-ignore patterns. `!!` excludes from project
+      // indexing (module graph / type scan), not only lint/format.
+      "!!**/node_modules",
+      "!!**/.git",
+      "!!**/.next",
+      "!!**/dist",
+      "!!**/build",
+      "!!**/out",
+      "!!**/coverage",
+      "!!**/.turbo",
+      "!!**/.vercel",
+      "!!**/.cache",
+      // Repo artifacts / harness / generated outputs
+      "!!**/.artifacts",
+      "!!**/.tmp",
+      "!!**/.next-ui",
+      "!!**/.next-workflow",
+      "!!**/test-results",
+      "!!**/playwright-report",
+      "!!**/playwright/.cache",
+      "!!**/scripts/lib/env-manifest.generated.mjs",
+      // Markdown/MDX: Prettier owns these (Biome formatting still in progress)
+      "!!**/*.{md,mdx}"
+    ]
+  },
+  "overrides": [
+    {
+      // Governance snapshots — format ok, skip aggressive lint noise
+      "includes": ["**/docs/architecture/*.snapshot.json"],
+      "linter": {
+        "enabled": false
+      }
+    },
+    {
+      // Keep generated + seed SQL out of format thrash.
+      "includes": ["**/db/migrations/**/*.sql", "**/*.sql"],
+      "formatter": {
+        "enabled": false
+      },
+      "linter": {
+        "enabled": false
+      }
+    }
+  ]
+}

@@ -1,13 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { buildServerEnvSchema } from "@/modules/platform/env/build-schema";
 import {
-  ENV_VAR_MANIFEST,
+  deriveCanonicalVercelKeys,
   deriveLocalOnlyKeys,
   deriveRuntimeEnvKeys,
   deriveSecretKeys,
   deriveStaleVercelKeys,
+  deriveSyncOptionalKeys,
   deriveSyncRequiredEmailKeys,
   deriveVercelProductionKeys,
+  ENV_VAR_MANIFEST,
 } from "@/modules/platform/env/manifest";
 
 describe("ENV_VAR_MANIFEST", () => {
@@ -31,13 +33,13 @@ describe("ENV_VAR_MANIFEST", () => {
   it("builds the same runtime schema as lib/env/schema.ts", () => {
     const builtSchema = buildServerEnvSchema(ENV_VAR_MANIFEST);
     expect(Object.keys(builtSchema.shape).sort()).toEqual(
-      deriveRuntimeEnvKeys().sort(),
+      deriveRuntimeEnvKeys().sort()
     );
   });
 
   it("lists runtime keys matching schema fields", () => {
     expect(deriveRuntimeEnvKeys().sort()).toEqual(
-      Object.keys(buildServerEnvSchema(ENV_VAR_MANIFEST).shape).sort(),
+      Object.keys(buildServerEnvSchema(ENV_VAR_MANIFEST).shape).sort()
     );
   });
 
@@ -47,6 +49,16 @@ describe("ENV_VAR_MANIFEST", () => {
       "PREVIEW_CLIENT_EMAIL",
       "FFT_EMAIL_FROM",
     ]);
+  });
+
+  it("marks FFT ERP vendor/base URL as syncOptional (tenant-owned)", () => {
+    const optional = deriveSyncOptionalKeys();
+    expect(optional.has("FFT_ERP_VENDOR")).toBe(true);
+    expect(optional.has("FFT_ERP_BASE_URL")).toBe(true);
+    expect(optional.has("FFT_ERP_SYNC_ENABLED")).toBe(false);
+    expect(deriveCanonicalVercelKeys()).not.toContain("FFT_ERP_VENDOR");
+    expect(deriveCanonicalVercelKeys()).not.toContain("FFT_ERP_BASE_URL");
+    expect(deriveVercelProductionKeys()).toContain("FFT_ERP_VENDOR");
   });
 
   it("marks credentials as secret", () => {
