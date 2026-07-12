@@ -48,6 +48,8 @@ cd C:\JackProject\afenda-bolt\client-declaration-portal
 
 **Ladder close:** A–E green for Afenda-Lite shared-schema tenancy efficiency. **Decision lock:** [multi-tenant-ecosystem.md §0](../../../doc/architecture/multi-tenant-ecosystem.md) — Rejected R1–R7 / Deferred D4·D5 / Allowed next. Coding must not reopen rejected or deferred rows without explicit user reopen.
 
+**Identity cutover (2026-07-12):** Auth org slug/name **`afenda-lite`** (id `4587e4c8-8119-4761-91ce-b874d3493aad`); operator **`afenda@admin.com`**; `@iam-check.com` e2e junk **purged**. Local fixtures: `PORTAL_ORG_*` + `PORTAL_ORGANIZATION_ID` / `E2E_ORGANIZATION_ID` — see [post-lock cheat sheet](../../../docs/runbooks/post-lock-coding-cheatsheet.md) §4.
+
 ---
 
 ## A — Full npm ladder (copy entire block)
@@ -199,12 +201,12 @@ On project production branch `br-tiny-hill-ao82jp6f`:
 
 **C-pack verdict (2026-07-12):** ACCEPT WITH OPS FOLLOW-UPS completed for C6/C7. Compute unchanged 0.25–2. Sources: [history window](https://neon.com/docs/introduction/history-window) · [backup & restore](https://neon.com/docs/guides/backup-restore). Launch PITR max is **7 days** (not 14 — Scale only).
 
-Optional read-only inspect:
+Optional read-only inspect (**do not** `neonctl link` routinely — it rewrites `.neon` / can pollute `.env`):
 
 ```powershell
 npx neonctl@latest projects list
-npx neonctl@latest branches list --project-id <project-id>
-npx neonctl@latest connection-string br-tiny-hill-ao82jp6f --project-id <project-id> --pooled
+npx neonctl@latest branches list --project-id young-hat-54755363
+npx neonctl@latest connection-string br-tiny-hill-ao82jp6f --project-id young-hat-54755363 --pooled
 ```
 
 After a Console **Restart compute**, smoke:
@@ -230,13 +232,22 @@ Every tenant-root read/write must use hard `organization_id = $org` (via `organi
 
 ## E — Conditional ops (only when needed)
 
-### E1 FFT access backfill (explicit org UUID from B5)
+### E1 FFT access backfill (explicit org UUID)
+
+Auth tenant (product) — **not** Neon Cloud `NEON_ORG_ID`:
+
+```text
+4587e4c8-8119-4761-91ce-b874d3493aad   # slug afenda-lite
+```
 
 ```powershell
 npm run env:compose
-node --env-file=.env scripts/backfill-fft-access.mjs --dry-run --organization-id=<org-uuid>
-node --env-file=.env scripts/backfill-fft-access.mjs --organization-id=<org-uuid>
+node --env-file=.env scripts/backfill-fft-access.mjs --dry-run --organization-id=4587e4c8-8119-4761-91ce-b874d3493aad
+# live write only when dry-run shows wouldGrant > 0:
+node --env-file=.env scripts/backfill-fft-access.mjs --organization-id=4587e4c8-8119-4761-91ce-b874d3493aad
 ```
+
+Or: `$env:PORTAL_ORGANIZATION_ID` already set in composed `.env` after `env:compose`.
 
 ### E2 Migrations (use **direct** `DATABASE_URL`, not pooler)
 
@@ -298,6 +309,8 @@ Rollback / recovery for org ops: [docs/runbooks/multi-org-ops.md](../../../docs/
 - Treat project-per-tenant as a performance optimization (D5)
 - Enable `PORTAL_ORG_SWITCHER_ENABLED` on Vercel without multi-membership + rollback
 - Mix this ladder with FFT flag promotion or portal atmosphere work
+- Reintroduce `iam-check` Auth slug / `admin@iam-check.com` / `@iam-check.com` fixture emails
+- Use `neonctl link` as a routine env fix (prefer `npm run env:neon-production` + `env:compose`)
 
 ---
 
