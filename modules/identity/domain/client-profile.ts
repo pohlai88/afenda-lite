@@ -88,11 +88,19 @@ export async function getClientProfile(
   return mapProfile(result.rows[0]);
 }
 
-export async function ensureClientProfileRow(userId: string): Promise<void> {
+export async function ensureClientProfileRow(
+  userId: string,
+  organizationId: string,
+): Promise<void> {
   await pool.query(
-    `INSERT INTO client_profiles (user_id, onboarding_complete, updated_at)
-     VALUES ($1, false, NOW())
-     ON CONFLICT (user_id) DO NOTHING`,
-    [userId],
+    `INSERT INTO client_profiles (user_id, onboarding_complete, organization_id, updated_at)
+     VALUES ($1, false, $2, NOW())
+     ON CONFLICT (user_id) DO UPDATE SET
+       organization_id = COALESCE(client_profiles.organization_id, EXCLUDED.organization_id),
+       updated_at = CASE
+         WHEN client_profiles.organization_id IS NULL THEN NOW()
+         ELSE client_profiles.updated_at
+       END`,
+    [userId, organizationId],
   );
 }

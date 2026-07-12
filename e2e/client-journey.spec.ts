@@ -9,6 +9,7 @@ import {
 } from "@/testing/e2e/declaration-flows";
 import {
   clientSkipMessage,
+  clientWorkspaceClosedSkipMessage,
   getClientCreds,
   getOperatorCreds,
   operatorSkipMessage,
@@ -77,6 +78,7 @@ test.describe("Client journey @journey", () => {
   });
 
   test("client draft is restored after reload", async ({ page }) => {
+    test.skip(true, clientWorkspaceClosedSkipMessage);
     test.skip(!clientCreds, clientSkipMessage);
 
     await loginAsClient(page, requireClientCreds());
@@ -99,6 +101,7 @@ test.describe("Client journey @journey", () => {
   test("client draft survives navigate away without Continue @journey", async ({
     page,
   }) => {
+    test.skip(true, clientWorkspaceClosedSkipMessage);
     test.skip(!clientCreds, clientSkipMessage);
 
     await loginAsClient(page, requireClientCreds());
@@ -118,6 +121,7 @@ test.describe("Client journey @journey", () => {
   });
 
   test("client draft autosaves without Continue @journey", async ({ page }) => {
+    test.skip(true, clientWorkspaceClosedSkipMessage);
     test.skip(!clientCreds, clientSkipMessage);
 
     await loginAsClient(page, requireClientCreds());
@@ -139,6 +143,7 @@ test.describe("Client journey @journey", () => {
   });
 
   test("client signs in and submits assignment", async ({ page }) => {
+    test.skip(true, clientWorkspaceClosedSkipMessage);
     test.skip(!clientCreds, clientSkipMessage);
 
     await loginAsClient(page, requireClientCreds());
@@ -154,6 +159,7 @@ test.describe("Client journey @journey", () => {
   });
 
   test("operator sees matching submission answers", async ({ page }) => {
+    test.skip(true, clientWorkspaceClosedSkipMessage);
     test.skip(!surveyDetailUrl, "Requires operator setup from prior test");
 
     await loginAsOperator(page, requireOperatorCreds());

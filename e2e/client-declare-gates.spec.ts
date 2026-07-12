@@ -3,6 +3,7 @@ import { portalCopy } from "@/modules/platform/copy/portal-copy";
 import { loginAsClient } from "@/testing/e2e/client-flows";
 import {
   clientSkipMessage,
+  clientWorkspaceClosedSkipMessage,
   getClientCreds,
   requireClientCreds,
 } from "@/testing/e2e/credentials";
@@ -22,6 +23,7 @@ test.describe("Client declare gates @journey", () => {
   test.describe.configure({ mode: "serial" });
 
   test.beforeEach(() => {
+    test.skip(true, clientWorkspaceClosedSkipMessage);
     test.skip(!clientCreds, clientSkipMessage);
   });
 

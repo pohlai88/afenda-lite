@@ -248,6 +248,10 @@ export const INTERNAL_ACTION_ALLOWLIST: ReadonlyArray<{
     actionId: "action:validateSurveyPackageAction",
     reason: "Package analysis helper — import flow uses importSurveyPackageAction directly",
   },
+  {
+    actionId: "action:setActiveOrganizationAction",
+    reason: "Chrome org switcher — shell header Action, not a product surface loader",
+  },
 ];
 
 /** Maps auth pathname literals to Neon Auth operation ids. */

@@ -441,6 +441,11 @@
       "type": "materializes"
     },
     {
+      "source": "action:setActiveOrganizationAction",
+      "target": "domain:auth",
+      "type": "materializes"
+    },
+    {
       "source": "surface:client-join",
       "target": "auth:sign-up/email",
       "type": "consumes"
@@ -587,11 +592,6 @@
     },
     {
       "source": "surface:admin-declaration-detail",
-      "target": "domain:auth",
-      "type": "consumes"
-    },
-    {
-      "source": "surface:admin-declaration-detail",
       "target": "domain:survey-package",
       "type": "consumes"
     },
@@ -658,11 +658,6 @@
     {
       "source": "surface:admin-access-share",
       "target": "action:regenerateInviteTokenAction",
-      "type": "consumes"
-    },
-    {
-      "source": "surface:admin-access-share",
-      "target": "domain:auth",
       "type": "consumes"
     },
     {
@@ -1051,8 +1046,8 @@
       "type": "validates"
     }
   ],
-  "fingerprint": "60c2058e7b5d8cfc",
-  "generatedAt": "2026-07-11T22:45:10.489Z",
+  "fingerprint": "9dc7bb8ceb3568a2",
+  "generatedAt": "2026-07-12T06:32:12.310Z",
   "nodes": [
     {
       "id": "surface:auth-sign-in",
@@ -1775,7 +1770,7 @@
       "id": "action:writeClientDeclarationDraftApi",
       "label": "writeClientDeclarationDraftApi",
       "metadata": {
-        "file": "modules/platform/api/client-declaration-draft-route.ts"
+        "file": "modules/declarations/api/client-declaration-draft-route.ts"
       },
       "type": "server-action"
     },
@@ -2006,6 +2001,14 @@
     {
       "id": "action:revokePlatformRoleAssignmentAction",
       "label": "revokePlatformRoleAssignmentAction",
+      "metadata": {
+        "file": "app/actions/admin.ts"
+      },
+      "type": "server-action"
+    },
+    {
+      "id": "action:setActiveOrganizationAction",
+      "label": "setActiveOrganizationAction",
       "metadata": {
         "file": "app/actions/admin.ts"
       },

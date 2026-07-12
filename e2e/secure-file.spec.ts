@@ -9,6 +9,7 @@ import {
 import { evidenceFixturePath } from "@/testing/e2e/fixtures";
 import {
   clientSkipMessage,
+  clientWorkspaceClosedSkipMessage,
   getClientCreds,
   getOperatorCreds,
   operatorSkipMessage,
@@ -72,6 +73,7 @@ test.describe("Client assignment and file evidence @journey", () => {
   test("signed-in client submits assignment with file metadata", async ({
     page,
   }) => {
+    test.skip(true, clientWorkspaceClosedSkipMessage);
     test.skip(!clientCreds, clientSkipMessage);
 
     await loginAsClient(page, requireClientCreds());
@@ -93,6 +95,7 @@ test.describe("Client assignment and file evidence @journey", () => {
   });
 
   test("operator sees file metadata on submissions tab", async ({ page }) => {
+    test.skip(true, clientWorkspaceClosedSkipMessage);
     test.skip(!surveyDetailUrl, "Requires operator setup from prior test");
 
     await loginAsOperator(page, requireOperatorCreds());

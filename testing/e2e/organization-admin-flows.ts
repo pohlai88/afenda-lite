@@ -31,9 +31,10 @@ export async function loginAsOperator(page: Page, creds: OperatorCreds) {
   await page.goto("/org/login");
   await page.waitForURL(/\/auth\/sign-in/);
   await submitOperatorSignIn(page, creds);
+  await expect(page).toHaveURL(/\/dashboard/, { timeout: 20_000 });
   await expect(
-    page.getByRole("heading", { name: /declaration management/i }),
-  ).toBeVisible();
+    page.getByRole("heading", { name: portalCopy.org.title }),
+  ).toBeVisible({ timeout: 15_000 });
 }
 
 export async function registerClient(

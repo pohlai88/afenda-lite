@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generatedAt": "2026-07-11T23:08:31.505Z",
+  "generatedAt": "2026-07-12T06:32:09.474Z",
   "summary": {
     "surfaces": {
       "total": 26,
@@ -8,13 +8,14 @@
       "drift": 0
     },
     "actions": {
-      "total": 38,
-      "aligned": 38,
+      "total": 39,
+      "aligned": 39,
       "drift": 0
     },
     "orphanActions": [],
     "internalActions": [
       "action:adminSignInAction",
+      "action:setActiveOrganizationAction",
       "action:validateSurveyPackageAction"
     ]
   },
@@ -2044,6 +2045,30 @@
         ],
         "declaredOnly": [],
         "discoveredOnly": [
+          "domain:preview-client"
+        ],
+        "inherited": [],
+        "status": "aligned"
+      }
+    },
+    {
+      "actionId": "action:setActiveOrganizationAction",
+      "file": "app/actions/admin.ts",
+      "compare": {
+        "declared": [
+          "domain:auth"
+        ],
+        "discovered": [
+          "domain:audit",
+          "domain:auth",
+          "domain:preview-client"
+        ],
+        "aligned": [
+          "domain:auth"
+        ],
+        "declaredOnly": [],
+        "discoveredOnly": [
+          "domain:audit",
           "domain:preview-client"
         ],
         "inherited": [],

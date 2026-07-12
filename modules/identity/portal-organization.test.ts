@@ -58,7 +58,7 @@ describe("ensurePortalOrganization N1 active org", () => {
     expect(mocks.setActive).not.toHaveBeenCalled();
   });
 
-  it("falls back to portal slug and setActive when session has no active org", async () => {
+  it("falls back to portal slug without setActive (RSC-safe)", async () => {
     mocks.getSession.mockResolvedValue({ data: { user: { id: "u1" } } });
     mocks.list.mockResolvedValue({
       data: [
@@ -70,12 +70,10 @@ describe("ensurePortalOrganization N1 active org", () => {
 
     const org = await ensurePortalOrganization();
     expect(org.id).toBe("org-slug");
-    expect(mocks.setActive).toHaveBeenCalledWith({
-      organizationId: "org-slug",
-    });
+    expect(mocks.setActive).not.toHaveBeenCalled();
   });
 
-  it("uses sole membership when no active and no slug match", async () => {
+  it("uses sole membership when no active and no slug match without setActive", async () => {
     mocks.getSession.mockResolvedValue({ data: { user: { id: "u1" } } });
     mocks.list.mockResolvedValue({
       data: [{ id: "org-only", name: "Only", slug: "solo" }],
@@ -84,9 +82,7 @@ describe("ensurePortalOrganization N1 active org", () => {
 
     const org = await ensurePortalOrganization();
     expect(org.id).toBe("org-only");
-    expect(mocks.setActive).toHaveBeenCalledWith({
-      organizationId: "org-only",
-    });
+    expect(mocks.setActive).not.toHaveBeenCalled();
   });
 
   it("fails closed when multiple orgs and no active / slug match (M1)", async () => {

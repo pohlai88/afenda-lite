@@ -85,31 +85,12 @@ async function main() {
     }
 
     const surveyResult = await pool.query(
-      `SELECT id, title FROM surveys ORDER BY created_at DESC LIMIT 1`,
+      `SELECT id, title, organization_id FROM surveys ORDER BY created_at DESC LIMIT 1`,
     );
     const survey = surveyResult.rows[0];
     if (!survey) {
       throw new Error("No surveys found — create a declaration first");
     }
-
-    const token = createInviteTokenValue();
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 14);
-
-    const inserted = await pool.query(
-      `INSERT INTO client_invitations (token, email, full_name, invited_by, expires_at)
-       VALUES ($1, $2, $3, $4, $5)
-       RETURNING id, email, full_name, status`,
-      [token, recipientEmail, fullName, adminUser.id, expiresAt.toISOString()],
-    );
-    const invitation = inserted.rows[0];
-
-    await pool.query(
-      `INSERT INTO client_assignments (survey_id, client_email, assigned_by)
-       VALUES ($1, $2, $3)
-       ON CONFLICT DO NOTHING`,
-      [survey.id, recipientEmail, adminUser.id],
-    );
 
     const inviteResult = await withAdminSession(adminEmail, adminPassword, async (cookie) => {
       const organization = await ensurePortalOrganization({ cookie });
@@ -120,6 +101,32 @@ async function main() {
       return { organization, delivery };
     });
 
+    const organizationId = inviteResult.organization.id;
+    const token = createInviteTokenValue();
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 14);
+
+    const inserted = await pool.query(
+      `INSERT INTO client_invitations (token, email, full_name, invited_by, expires_at, organization_id)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       RETURNING id, email, full_name, status`,
+      [
+        token,
+        recipientEmail,
+        fullName,
+        adminUser.id,
+        expiresAt.toISOString(),
+        organizationId,
+      ],
+    );
+    const invitation = inserted.rows[0];
+
+    await pool.query(
+      `INSERT INTO client_assignments (survey_id, client_email, assigned_by, organization_id)
+       VALUES ($1, $2, $3, $4)
+       ON CONFLICT DO NOTHING`,
+      [survey.id, recipientEmail, adminUser.id, organizationId],
+    );
     const neonAuthInvitationId = inviteResult.delivery?.id;
     const joinUrl = neonAuthInvitationId
       ? `${appUrl}/join?invitationId=${encodeURIComponent(neonAuthInvitationId)}`

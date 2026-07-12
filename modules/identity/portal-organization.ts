@@ -107,16 +107,6 @@ async function listMemberOrganizations(): Promise<PortalOrganization[]> {
     );
 }
 
-async function activateOrganization(
-  organization: PortalOrganization,
-  activeOrganizationId: string | null,
-) {
-  if (organization.id !== activeOrganizationId) {
-    await auth.organization.setActive({ organizationId: organization.id });
-  }
-  return organization;
-}
-
 /**
  * Membership list for chrome (org switcher). Does not create or setActive.
  */
@@ -134,6 +124,9 @@ export async function listPortalOrganizations(): Promise<{
  * Fail-closed product resolve (M1 / D1):
  * active → slug → sole membership → create.
  * Never picks arbitrary organizations[0] when the member has more than one org.
+ *
+ * RSC-safe: never calls `organization.setActive` (cookies are Action/Route-only).
+ * Persist active org via `setActivePortalOrganization` / org switcher Action.
  */
 export async function resolveActivePortalOrganization(): Promise<PortalOrganization> {
   const slug = getPortalOrganizationSlug();
@@ -156,11 +149,11 @@ export async function resolveActivePortalOrganization(): Promise<PortalOrganizat
     (organization) => organization.slug === slug,
   );
   if (bySlug) {
-    return activateOrganization(bySlug, activeOrganizationId);
+    return bySlug;
   }
 
   if (organizations.length === 1) {
-    return activateOrganization(organizations[0], activeOrganizationId);
+    return organizations[0];
   }
 
   if (organizations.length > 1) {
@@ -179,8 +172,6 @@ export async function resolveActivePortalOrganization(): Promise<PortalOrganizat
       createError?.message ?? "Could not create the portal organization.",
     );
   }
-
-  await auth.organization.setActive({ organizationId: created.id });
 
   return toPortalOrganization({
     id: created.id,

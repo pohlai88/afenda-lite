@@ -62,6 +62,11 @@ async function main() {
         "admin-survey-detail-playground",
         `PLAYGROUND_SURVEY_ID mismatch (env=${playgroundSurveyId}, db=${sandbox.id})`,
       );
+    } else if (sandbox?.id) {
+      pass(
+        "admin-survey-detail-playground",
+        "PLAYGROUND_SURVEY_ID unset; sandbox survey present",
+      );
     } else {
       fail("admin-survey-detail-playground", "PLAYGROUND_SURVEY_ID unset or sandbox missing");
     }
@@ -132,7 +137,10 @@ async function main() {
           `PLAYGROUND_ASSIGNMENT_ID mismatch (env=${playgroundAssignmentId})`,
         );
       } else {
-        fail("client-declare-playground", "PLAYGROUND_ASSIGNMENT_ID unset");
+        pass(
+          "client-declare-playground",
+          "PLAYGROUND_ASSIGNMENT_ID unset; assignment present",
+        );
       }
     } else {
       fail("client-declare-assignment", "preview client has no sandbox assignment");

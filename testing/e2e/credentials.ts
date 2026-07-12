@@ -20,6 +20,10 @@ export function requireOperatorCreds(): OperatorCreds {
 export const operatorSkipMessage =
   "Set SHARED_ADMIN_* or E2E_OPERATOR_* env vars for operator E2E";
 
+/** Client workspace product UI is stubs-only until phase reopen. */
+export const clientWorkspaceClosedSkipMessage =
+  "Client workspace product UI is closed (stubs only) — see doc/architecture/closed-scope-register.md";
+
 export type ClientCreds = { email: string; password: string };
 
 export function getClientCreds(): ClientCreds | null {

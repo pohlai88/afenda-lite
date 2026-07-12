@@ -386,6 +386,11 @@ export const ACTION_DOMAIN_MATERIALIZATION: ReadonlyArray<{
     file: "app/actions/admin.ts",
     domains: ["domain:auth", "domain:audit"],
   },
+  {
+    actionId: "action:setActiveOrganizationAction",
+    file: "app/actions/admin.ts",
+    domains: ["domain:auth"],
+  },
 ];
 
 export const DOMAIN_MODULE_DEFINITIONS: ReadonlyArray<{
