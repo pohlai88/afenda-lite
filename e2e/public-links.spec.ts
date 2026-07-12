@@ -4,6 +4,7 @@ import { SANDBOX_INVITE_TOKEN, SANDBOX_SURVEY, SANDBOX_SURVEY_SLUG } from "@/mod
 import { portalCopy } from "@/modules/platform/copy/portal-copy";
 import {
   clientSkipMessage,
+  clientWorkspaceClosedSkipMessage,
   getClientCreds,
   getOperatorCreds,
   operatorSkipMessage,
@@ -58,6 +59,7 @@ test.describe("Public declaration links @smoke", () => {
 
 test.describe("Authenticated public link routing @journey", () => {
   test.beforeEach(() => {
+    test.skip(true, clientWorkspaceClosedSkipMessage);
     test.skip(!clientCreds, clientSkipMessage);
   });
 

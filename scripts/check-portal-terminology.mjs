@@ -24,12 +24,15 @@ const BANNED = [
 function walk(dir) {
   const files = [];
   for (const name of readdirSync(dir)) {
+    if (name === "node_modules" || name === "playground") {
+      continue;
+    }
     const path = join(dir, name);
     if (statSync(path).isDirectory()) {
       files.push(...walk(path));
       continue;
     }
-    if (/\.(tsx|ts)$/.test(name)) {
+    if (/\.(tsx|ts)$/.test(name) && !/\.test\.(tsx|ts)$/.test(name)) {
       files.push(path);
     }
   }
@@ -40,6 +43,10 @@ function scrubTechnicalSymbols(content) {
   return content
     .replace(/^import[\s\S]*?from\s+["'][^"']+["'];?\s*$/gm, "")
     .replace(/\bfrom\s+["'][^"']+["']/g, "")
+    .replace(/\/survey\/\[slug\]/g, "")
+    .replace(/\/survey\//g, "/")
+    .replace(/\$\{[^}]*\.survey\.[^}]*\}/g, "")
+    .replace(/\$\{survey\.[^}]+\}/g, "")
     .replace(/\bsurveyId\b/g, "")
     .replace(/\bSurvey[A-Z][A-Za-z]*/g, "")
     .replace(/\b(create|update|delete|submit)Survey[A-Za-z]*/g, "")

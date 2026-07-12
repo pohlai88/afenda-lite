@@ -12,6 +12,7 @@ export type ClientInvitationBootstrapRecord = {
   email: string;
   status: "pending" | "accepted" | "expired";
   expiresAt: Date;
+  organizationId: string | null;
 };
 
 function mapBootstrapInvitation(
@@ -22,6 +23,7 @@ function mapBootstrapInvitation(
     email: String(row.email),
     status: String(row.status) as ClientInvitationBootstrapRecord["status"],
     expiresAt: new Date(String(row.expires_at)),
+    organizationId: row.organization_id ? String(row.organization_id) : null,
   };
 }
 
@@ -61,11 +63,29 @@ export async function markClientInvitationAccepted(id: string): Promise<void> {
   );
 }
 
+export async function getClientInvitationBootstrapById(
+  id: string,
+): Promise<ClientInvitationBootstrapRecord | null> {
+  const result = await pool.query(
+    `SELECT id, email, status, expires_at, organization_id
+     FROM client_invitations
+     WHERE id = $1
+     LIMIT 1`,
+    [id],
+  );
+
+  if (!result.rows[0]) {
+    return null;
+  }
+
+  return expirePendingIfNeeded(mapBootstrapInvitation(result.rows[0]));
+}
+
 export async function getClientInvitationBootstrapByEmail(
   email: string,
 ): Promise<ClientInvitationBootstrapRecord | null> {
   const result = await pool.query(
-    `SELECT id, email, status, expires_at
+    `SELECT id, email, status, expires_at, organization_id
      FROM client_invitations
      WHERE lower(email) = lower($1)
      ORDER BY created_at DESC
