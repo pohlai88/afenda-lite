@@ -7,6 +7,7 @@ import {
 } from "@/modules/identity/domain/client-profile";
 import { CLIENT_PORTAL_ACK_VERSION } from "@/modules/platform/copy/portal-copy";
 import type { SurveyAnswers } from "@/modules/declarations/question-models";
+import { organizationScopeSql } from "@/modules/declarations/domain/organization-scope";
 import { normalizeEmail } from "@/modules/platform/normalize-email";
 import type { PoolClient } from "pg";
 
@@ -126,20 +127,14 @@ export function createConfirmationCode(assignmentId: string) {
   return `CDP-${assignmentId.slice(0, 8).toUpperCase()}-${suffix}`;
 }
 
-export async function countPendingClientAssignments(organizationId?: string) {
-  const result = organizationId
-    ? await pool.query(
-        `SELECT COUNT(*)::int AS count
-         FROM client_assignments
-         WHERE status = 'pending'
-           AND (organization_id IS NULL OR organization_id = $1)`,
-        [organizationId],
-      )
-    : await pool.query(
-        `SELECT COUNT(*)::int AS count
-         FROM client_assignments
-         WHERE status = 'pending'`,
-      );
+export async function countPendingClientAssignments(organizationId: string) {
+  const result = await pool.query(
+    `SELECT COUNT(*)::int AS count
+     FROM client_assignments
+     WHERE status = 'pending'
+       AND ${organizationScopeSql("organization_id", 1)}`,
+    [organizationId],
+  );
 
   return Number(result.rows[0]?.count ?? 0);
 }
@@ -151,7 +146,7 @@ export async function createClientInvitation(input: {
   surveyId?: string;
   dueDate?: Date;
   expiresInDays?: number;
-  organizationId?: string;
+  organizationId: string;
 }) {
   const email = normalizeEmail(input.email);
   const token = createInviteTokenValue();
@@ -172,7 +167,7 @@ export async function createClientInvitation(input: {
         input.fullName.trim(),
         input.invitedBy,
         expiresAt.toISOString(),
-        input.organizationId ?? null,
+        input.organizationId,
       ],
     );
 
@@ -242,6 +237,7 @@ export type ClientProfileSummary = {
 
 export async function listClientProfileSummariesByUserIds(
   userIds: string[],
+  organizationId: string,
 ): Promise<Map<string, ClientProfileSummary>> {
   const unique = [...new Set(userIds.filter(Boolean))];
   const summaries = new Map<string, ClientProfileSummary>();
@@ -252,8 +248,9 @@ export async function listClientProfileSummariesByUserIds(
   const result = await pool.query(
     `SELECT user_id, full_legal_name, entity_name, country_of_residence, phone
      FROM client_profiles
-     WHERE user_id = ANY($1::uuid[])`,
-    [unique],
+     WHERE user_id = ANY($1::uuid[])
+       AND organization_id = $2`,
+    [unique, organizationId],
   );
 
   for (const row of result.rows) {
@@ -286,7 +283,7 @@ export async function upsertClientProfile(input: {
   notes?: string;
   identityConsentAt?: Date;
   onboardingComplete?: boolean;
-  organizationId?: string;
+  organizationId: string;
 }) {
   const result = await pool.query(
     `INSERT INTO client_profiles (
@@ -309,10 +306,7 @@ export async function upsertClientProfile(input: {
        notes = EXCLUDED.notes,
        identity_consent_at = EXCLUDED.identity_consent_at,
        onboarding_complete = EXCLUDED.onboarding_complete,
-       organization_id = COALESCE(
-         client_profiles.organization_id,
-         EXCLUDED.organization_id
-       ),
+       organization_id = EXCLUDED.organization_id,
        updated_at = NOW()
      RETURNING user_id, full_legal_name, nationality, country_of_residence,
                additional_residence_countries, passport_issuing_country, passport_number,
@@ -332,7 +326,7 @@ export async function upsertClientProfile(input: {
       input.notes?.trim() || null,
       input.identityConsentAt?.toISOString() ?? null,
       input.onboardingComplete ?? true,
-      input.organizationId ?? null,
+      input.organizationId,
     ],
   );
 
@@ -365,7 +359,7 @@ async function insertClientAssignment(
     clientEmail: string;
     assignedBy: string;
     dueDate?: Date;
-    organizationId?: string;
+    organizationId: string;
   },
 ) {
   const result = await dbClient.query(
@@ -377,7 +371,7 @@ async function insertClientAssignment(
       normalizeEmail(input.clientEmail),
       input.assignedBy,
       input.dueDate?.toISOString() ?? null,
-      input.organizationId ?? null,
+      input.organizationId,
     ],
   );
 
@@ -389,7 +383,7 @@ export async function createClientAssignment(input: {
   clientEmail: string;
   assignedBy: string;
   dueDate?: Date;
-  organizationId?: string;
+  organizationId: string;
 }) {
   const dbClient = await pool.connect();
   try {
@@ -511,55 +505,44 @@ export async function completeClientAssignment(input: {
   return Boolean(result.rows[0]);
 }
 
-export async function listClientInvitationsForAdmin(organizationId?: string) {
-  const result = organizationId
-    ? await pool.query(
-        `SELECT id, token, email, full_name, invited_by, status, expires_at, created_at
-         FROM client_invitations
-         WHERE (organization_id IS NULL OR organization_id = $1)
-         ORDER BY created_at DESC
-         LIMIT 50`,
-        [organizationId],
-      )
-    : await pool.query(
-        `SELECT id, token, email, full_name, invited_by, status, expires_at, created_at
-         FROM client_invitations
-         ORDER BY created_at DESC
-         LIMIT 50`,
-      );
+export async function listClientInvitationsForAdmin(organizationId: string) {
+  const result = await pool.query(
+    `SELECT id, token, email, full_name, invited_by, status, expires_at, created_at
+     FROM client_invitations
+     WHERE ${organizationScopeSql("organization_id", 1)}
+     ORDER BY created_at DESC
+     LIMIT 50`,
+    [organizationId],
+  );
 
   return result.rows.map(mapInvitation);
 }
 
-export async function listClientAssignmentsForAdmin(organizationId?: string) {
-  const result = organizationId
-    ? await pool.query(
-        `SELECT ${ASSIGNMENT_SELECT}
-         FROM client_assignments a
-         JOIN surveys s ON s.id = a.survey_id
-         WHERE (a.organization_id IS NULL OR a.organization_id = $1)
-         ORDER BY a.created_at DESC
-         LIMIT 50`,
-        [organizationId],
-      )
-    : await pool.query(
-        `SELECT ${ASSIGNMENT_SELECT}
-         FROM client_assignments a
-         JOIN surveys s ON s.id = a.survey_id
-         ORDER BY a.created_at DESC
-         LIMIT 50`,
-      );
+export async function listClientAssignmentsForAdmin(organizationId: string) {
+  const result = await pool.query(
+    `SELECT ${ASSIGNMENT_SELECT}
+     FROM client_assignments a
+     JOIN surveys s ON s.id = a.survey_id
+     WHERE ${organizationScopeSql("a.organization_id", 1)}
+     ORDER BY a.created_at DESC
+     LIMIT 50`,
+    [organizationId],
+  );
 
   return result.rows.map(mapAssignment);
 }
 
-export async function getClientInvitationById(id: string) {
+export async function getClientInvitationById(
+  id: string,
+  organizationId: string,
+) {
   const result = await pool.query(
     `SELECT id, token, email, full_name, invited_by, status, expires_at, created_at
      FROM client_invitations
      WHERE id = $1
+       AND ${organizationScopeSql("organization_id", 2)}
      LIMIT 1`,
-    [id],
+    [id, organizationId],
   );
 
   if (!result.rows[0]) {
@@ -569,28 +552,55 @@ export async function getClientInvitationById(id: string) {
   return mapInvitation(result.rows[0]);
 }
 
-export async function deleteClientInvitationById(id: string) {
-  await pool.query(`DELETE FROM client_invitations WHERE id = $1`, [id]);
-}
-
-export async function deleteClientAssignmentsForEmail(email: string) {
+export async function deleteClientInvitationById(
+  id: string,
+  organizationId: string,
+) {
   await pool.query(
-    `DELETE FROM client_assignments WHERE lower(client_email) = lower($1)`,
-    [normalizeEmail(email)],
+    `DELETE FROM client_invitations
+     WHERE id = $1
+       AND ${organizationScopeSql("organization_id", 2)}`,
+    [id, organizationId],
   );
 }
 
-export async function getClientAssignmentById(id: string) {
+export async function deleteClientAssignmentsForEmail(
+  email: string,
+  organizationId: string,
+) {
+  await pool.query(
+    `DELETE FROM client_assignments
+     WHERE lower(client_email) = lower($1)
+       AND ${organizationScopeSql("organization_id", 2)}`,
+    [normalizeEmail(email), organizationId],
+  );
+}
+
+export async function getClientAssignmentById(
+  id: string,
+  organizationId: string,
+) {
   const result = await pool.query(
-    `SELECT id FROM client_assignments WHERE id = $1 LIMIT 1`,
-    [id],
+    `SELECT id FROM client_assignments
+     WHERE id = $1
+       AND ${organizationScopeSql("organization_id", 2)}
+     LIMIT 1`,
+    [id, organizationId],
   );
 
   return result.rows[0] ? { id: result.rows[0].id as string } : null;
 }
 
-export async function deleteClientAssignmentById(id: string) {
-  await pool.query(`DELETE FROM client_assignments WHERE id = $1`, [id]);
+export async function deleteClientAssignmentById(
+  id: string,
+  organizationId: string,
+) {
+  await pool.query(
+    `DELETE FROM client_assignments
+     WHERE id = $1
+       AND ${organizationScopeSql("organization_id", 2)}`,
+    [id, organizationId],
+  );
 }
 
 export async function deleteClientProfileByUserId(userId: string) {

@@ -15,7 +15,7 @@ const env = loadComposedEnv();
 const apiKey = getEnvValue("NEON_API_KEY", env);
 const projectId = getEnvValue("NEON_PROJECT_ID", env);
 const branchId = getEnvValue("NEON_BRANCH_ID", env);
-const appUrl = (getEnvValue("APP_URL", env) ?? "https://iam-check.vercel.app").replace(
+const appUrl = (getEnvValue("APP_URL", env) ?? "https://afenda-lite.vercel.app").replace(
   /\/$/,
   "",
 );

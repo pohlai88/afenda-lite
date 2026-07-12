@@ -98,13 +98,13 @@ Infra/env/CI/deploy: same as Declarations — update together
 | Actions | `app/actions/fft.ts` |
 | Domain | `modules/fft/**` |
 | RBAC | `modules/fft/domain/rbac-catalog.ts` |
-| Session | `requireFftAccess` / `requireTradePermission` |
+| Session | `requireFftAccess` / `requireFftPermission` |
 
 ## Vertical slice
 
 ```text
 RSC read?        → modules/fft domain (never fetch own /api)
-Client mutation? → trade.ts → Zod → requireTradePermission(code) → domain → TradeActionResult
+Client mutation? → trade.ts → Zod → requireFftPermission(code) → domain → TradeActionResult
 HTTP external?   → Route Handler per doc/api (contract-only)
 ```
 
@@ -115,7 +115,7 @@ HTTP external?   → Route Handler per doc/api (contract-only)
 3. Never mount `FftShell` / locale switcher  
 4. Copy: **Feed Farm Trade**; paths locale-free; pass `FFT_UI_LOCALE`  
 5. Domain SQL only in `modules/fft`; parameterized queries  
-6. Authorize with **permission codes** via `requireTradePermission`  
+6. Authorize with **permission codes** via `requireFftPermission`  
 7. Portal UI → Actions first; branded ids align route + Zod  
 
 ## Forbidden

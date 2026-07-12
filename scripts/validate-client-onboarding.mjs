@@ -8,7 +8,7 @@ import { loadEnvFile, getEnv } from "./lib/load-env.mjs";
 import { findNeonAuthUser } from "./lib/neon-auth-seed.mjs";
 
 const env = loadEnvFile();
-const APP_URL = getEnv("APP_URL", env) ?? "https://iam-check.vercel.app";
+const APP_URL = getEnv("APP_URL", env) ?? "https://afenda-lite.vercel.app";
 const databaseUrl = getEnv("DATABASE_URL", env);
 const authBaseUrl = getEnv("NEON_AUTH_BASE_URL", env);
 const cookieSecret = getEnv("NEON_AUTH_COOKIE_SECRET", env);

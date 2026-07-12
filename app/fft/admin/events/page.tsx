@@ -69,7 +69,7 @@ export default async function FftAdminEventsPage() {
           <CardContent className="space-y-6">
             <TradeAddSalesMemberForm locale={FFT_UI_LOCALE} />
             <Separator />
-            <div className="space-y-1" data-testid="trade-sales-members">
+            <div className="space-y-1" data-testid="fft-sales-members">
               {members.length === 0 ? (
                 <p className="text-muted-foreground text-sm">No members yet.</p>
               ) : (

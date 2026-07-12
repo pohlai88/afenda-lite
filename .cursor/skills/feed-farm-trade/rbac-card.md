@@ -5,7 +5,7 @@
 ## Hard rule
 
 ```text
-Authorize with permission codes via requireTradePermission(code)
+Authorize with permission codes via requireFftPermission(code)
 NEVER: if (roleName === "Sales Manager") …
 NEVER: if (templateKey === "sales_executive") … in business logic
 Role templates are seed data only.
@@ -16,7 +16,7 @@ Role templates are seed data only.
 | Helper | Use |
 |--------|-----|
 | `requireFftAccess` | Layout / entry — module entitlement |
-| `requireTradePermission(code, opts?)` | Mutations — preferred |
+| `requireFftPermission(code, opts?)` | Mutations — preferred |
 | `requireFftAdmin` | Legacy/admin-heavy actions still in `trade.ts` — prefer migrating to codes when touching |
 
 Org admin alone does **not** grant `fft`.
@@ -66,7 +66,7 @@ Sensitive grants require explicit attach + RBAC audit (`isSensitivePermission`).
 
 ## Agent checks
 
-- [ ] New mutation calls `requireTradePermission("<code>")` with a catalog code  
+- [ ] New mutation calls `requireFftPermission("<code>")` with a catalog code  
 - [ ] No new code strings invented in the PR  
 - [ ] Sensitive codes called out in PR notes when granted in UI  
 - [ ] P3 codes not exercised without flag guards  

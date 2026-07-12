@@ -43,20 +43,24 @@ function mapRow(row: OrganizationUserRow): OrganizationUserRecord {
 }
 
 /**
- * Neon Auth user directory for organization-admin `/dashboard/users`.
- * Single-tenant DB — lists auth users (not filtered to neon_auth.member).
+ * Neon Auth membership-scoped user directory for `/dashboard/users`.
+ * SoT: neon_auth.member (organizationId + userId) — Tier 1 membership.
  */
-export async function listOrganizationUsers(): Promise<
-  OrganizationUserRecord[]
-> {
+export async function listOrganizationUsers(
+  organizationId: string,
+): Promise<OrganizationUserRecord[]> {
   const result = await pool.query<OrganizationUserRow>(
-    `SELECT id, email, name, role,
-            "emailVerified" AS "emailVerified",
-            COALESCE(banned, false) AS banned,
-            "banReason" AS "banReason",
-            "createdAt" AS "createdAt"
-     FROM neon_auth."user"
-     ORDER BY "createdAt" DESC`,
+    `SELECT u.id, u.email, u.name, u.role,
+            u."emailVerified" AS "emailVerified",
+            COALESCE(u.banned, false) AS banned,
+            u."banReason" AS "banReason",
+            u."createdAt" AS "createdAt"
+     FROM neon_auth."user" u
+     INNER JOIN neon_auth.member m
+       ON m."userId" = u.id
+      AND m."organizationId" = $1::uuid
+     ORDER BY u."createdAt" DESC`,
+    [organizationId],
   );
 
   return result.rows.map(mapRow);
@@ -64,6 +68,7 @@ export async function listOrganizationUsers(): Promise<
 
 export async function getOrganizationUser(
   userId: string,
+  organizationId: string,
 ): Promise<OrganizationUserRecord | null> {
   const parsed = userIdSchema.safeParse(userId);
   if (!parsed.success) {
@@ -71,15 +76,18 @@ export async function getOrganizationUser(
   }
 
   const result = await pool.query<OrganizationUserRow>(
-    `SELECT id, email, name, role,
-            "emailVerified" AS "emailVerified",
-            COALESCE(banned, false) AS banned,
-            "banReason" AS "banReason",
-            "createdAt" AS "createdAt"
-     FROM neon_auth."user"
-     WHERE id = $1
+    `SELECT u.id, u.email, u.name, u.role,
+            u."emailVerified" AS "emailVerified",
+            COALESCE(u.banned, false) AS banned,
+            u."banReason" AS "banReason",
+            u."createdAt" AS "createdAt"
+     FROM neon_auth."user" u
+     INNER JOIN neon_auth.member m
+       ON m."userId" = u.id
+      AND m."organizationId" = $2::uuid
+     WHERE u.id = $1
      LIMIT 1`,
-    [parsed.data],
+    [parsed.data, organizationId],
   );
 
   const row = result.rows[0];

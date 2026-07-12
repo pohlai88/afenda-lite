@@ -37,7 +37,7 @@ None — this is the first phase. It depends only on Identity (session) and Plat
 | Signed-in user with trade entitlement (`fft`) | `/fft/*` renders under AdminCN; nav item visible |
 | Org admin without trade entitlement | Declarations/Account still work; `/fft/*` still denied — **org admin alone never grants trade access** |
 
-Entitlement code: `fft`, resolved by `modules/platform/shell/access.ts`. Session/permission resolution: `modules/fft/auth/trade-session.ts` (`requireFftAccess`).
+Entitlement code: `fft`, resolved by `features/portal-chrome/resolve-shell-access.ts` (platform `fft.access`). Session/permission resolution: `modules/fft/auth/fft-session.ts` (`requireFftAccess`).
 
 ## Architecture touchpoints
 
@@ -45,7 +45,7 @@ Entitlement code: `fft`, resolved by `modules/platform/shell/access.ts`. Session
 |---------|------|-----------------|
 | Layout gate | `app/fft/layout.tsx` | Calls `requireFftAccess`, wraps children in `AdminCnShell` |
 | Entitlement | `modules/platform/shell/access.ts` | Resolves module visibility for nav + guards |
-| Session | `modules/fft/auth/trade-session.ts` | Trade access resolution / deny |
+| Session | `modules/fft/auth/fft-session.ts` | FFT access resolution / deny |
 | Nav | `components-V2/platform-config/navConfig.tsx` | `moduleId: feed-farm-trade` entry |
 | Chrome | `components-V2/platform-components/AdminCnShell` | Shared shell — never `FftShell` |
 | Route root | `app/fft/page.tsx` | Redirect to `/fft/events` |
@@ -77,7 +77,7 @@ Entitlement code: `fft`, resolved by `modules/platform/shell/access.ts`. Session
 | Check | Method |
 |-------|--------|
 | Entitlement resolution | Unit tests on `modules/platform/shell/access.ts` (`resolveShellAccess`) |
-| Trade session deny paths | Unit tests on `modules/fft/auth/trade-session.ts` |
+| FFT session deny paths | Unit tests on `modules/fft/auth/fft-session.ts` |
 | No locale residue on disk | `Get-ChildItem -Recurse app/fft` (or `find app/fft`) must contain no `[locale]` segment |
 | No `FftShell` / locale switcher references | `rg "FftShell|locale-switcher" features/fft app/fft` returns no matches |
 | Manual QA — denied path | Sign in as a non-entitled user; confirm `/fft` denies and nav item is absent |
@@ -92,9 +92,9 @@ Use this table to grade the live codebase. Leave **Result** blank until evaluate
 | F-ACC-01 / AC-ACC-01..02 | Layout gate enforced | `app/fft/layout.tsx` calls `requireFftAccess` before rendering children | **PASS** — `requireFftAccess` + `AdminCnShell` (EVALUATE_P1_MVP 2026-07-11) |
 | F-ACC-02 | Nav visibility gated | `navConfig.tsx` entry conditioned on `fft` entitlement | **PASS** — `moduleId: feed-farm-trade` |
 | F-ACC-03 / AC-SH-03 | AdminCN-only chrome | No custom shell component in `app/fft/**` or `features/fft` | **PASS** — AdminCN only; no FftShell product mount |
-| F-ACC-04 / AC-ACC-04 | Anonymous deny | Proxy/session guard redirects before data fetch | **PASS** — `trade-session` unit + layout gate |
+| F-ACC-04 / AC-ACC-04 | Anonymous deny | Proxy/session guard redirects before data fetch | **PASS** — `fft-session` unit + layout gate |
 | F-ACC-05 / AC-SH-01..02 | Locale-free, no residue | No `app/fft/[locale]` directory; no `FftShell` / locale switcher imports | **PASS** — product locale-free; redirect-only `[locale]/[[...path]]` shim (no FftShell) |
-| AC-ACC-03 | Org admin ≠ trade access | `requireFftAccess` does not accept admin role alone | **PASS** — entitlement / allowlist / RBAC paths in `trade-session` (not org-admin alone) |
+| AC-ACC-03 | Org admin ≠ FFT access | `requireFftAccess` does not accept admin role alone | **PASS** — entitlement / platform `fft.access` / RBAC paths in `fft-session` (not org-admin alone) |
 
 ## Risks and open questions
 

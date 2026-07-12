@@ -1,6 +1,6 @@
 /**
- * Shared org-admin RSC bootstrap: tenant backfill + optional Org Admin assignment.
- * Composes Identity + Declarations at the adapter (features) layer only.
+ * Shared org-admin RSC bootstrap: session + org context resolution.
+ * Composes Identity at the adapter (features) layer only.
  */
 
 import "server-only";
@@ -9,7 +9,6 @@ import { isAdminSession } from "@/modules/identity/admin";
 import { requirePlatformOperatorSession } from "@/modules/identity/auth/platform-operator-session";
 import { resolvePlatformOrgContext } from "@/modules/identity/domain/platform-rbac-access";
 import type { PlatformPermissionCode } from "@/modules/identity/domain/platform-rbac-catalog";
-import { backfillDeclarationOrganizationIds } from "@/modules/declarations/domain/organization-scope";
 
 const DEFAULT_OPERATOR_CODES = [
   "declarations.read",
@@ -29,6 +28,5 @@ export async function bootstrapOrganizationAdminTenancy(options?: {
     userId: session.user.id,
     ensureOrgAdminAssignment: neonAdmin,
   });
-  await backfillDeclarationOrganizationIds(org.organizationId);
   return { session, org, isNeonAdmin: neonAdmin };
 }

@@ -25,7 +25,7 @@ NOT IN SCOPE: customer portal · locale product URLs · FFT_* rename · 2D-3 ven
 FORBID: invent permission codes · invent FFT-UI / FFT-QA ids · agent-edit ui-registry.json ·
          claim MVP without AC evidence · mix P3 writes into P1 PRs · enable prod flags without gate-register ·
          remount FftShell / locale switcher
-AUTH: permission codes via requireTradePermission — never role display names
+AUTH: permission codes via requireFftPermission — never role display names
 SLICE: app/fft thin RSC → features/fft → app/actions/fft.ts → modules/fft
 CHROME: AdminCnShell only · FFT_UI_LOCALE for action locale arg · paths locale-free
 UI: compose approved FFT-UI-* + allowlisted ACN-UI-* from ui-registry.json; ACN-BLK-* = catalog DNA only;

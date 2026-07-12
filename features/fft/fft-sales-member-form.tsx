@@ -27,7 +27,7 @@ export function TradeAddSalesMemberForm({ locale }: { locale: FftLocale }) {
   return (
     <form
       className="space-y-4"
-      data-testid="trade-sales-member-form"
+      data-testid="fft-sales-member-form"
       action={(formData) => {
         setError(null);
         startTransition(async () => {
@@ -55,20 +55,20 @@ export function TradeAddSalesMemberForm({ locale }: { locale: FftLocale }) {
             type="email"
             placeholder="sales@company.com"
             required
-            data-testid="trade-sales-member-email"
+            data-testid="fft-sales-member-email"
           />
         </Field>
         <Button
           type="submit"
           size="sm"
           disabled={pending}
-          data-testid="trade-sales-member-add"
+          data-testid="fft-sales-member-add"
         >
           Add
         </Button>
       </FieldGroup>
       {error ? (
-        <p className="text-destructive text-xs" data-testid="trade-sales-member-error">
+        <p className="text-destructive text-xs" data-testid="fft-sales-member-error">
           {error}
         </p>
       ) : null}

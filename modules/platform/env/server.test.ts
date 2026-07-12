@@ -85,10 +85,10 @@ describe("env accessors", () => {
   it("resolves APP_URL before VERCEL_URL", () => {
     expect(
       resolveAppBaseUrl({
-        APP_URL: "https://iam-check.vercel.app/",
+        APP_URL: "https://afenda-lite.vercel.app/",
         VERCEL_URL: "preview.vercel.app",
       }),
-    ).toBe("https://iam-check.vercel.app");
+    ).toBe("https://afenda-lite.vercel.app");
   });
 
   it("falls back to localhost when no URL is configured", () => {
@@ -102,12 +102,12 @@ describe("env accessors", () => {
       {
         PLAYGROUND_ENABLED: "true",
         GUARDIAN_AUTH_SHELL: "false",
-        APP_URL: "https://iam-check.vercel.app",
+        APP_URL: "https://afenda-lite.vercel.app",
       },
       () => {
         expect(isPlaygroundEnabled()).toBe(true);
         expect(isGuardianAuthShellEnabled()).toBe(false);
-        expect(getAppBaseUrl()).toBe("https://iam-check.vercel.app");
+        expect(getAppBaseUrl()).toBe("https://afenda-lite.vercel.app");
       },
     );
   });

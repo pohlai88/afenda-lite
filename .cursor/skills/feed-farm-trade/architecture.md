@@ -36,7 +36,7 @@ layout: requireFftAccess + AdminCnShell only
 | Layout gate | `app/fft/layout.tsx` |
 | Entitlement | `features/portal-chrome/resolve-shell-access.ts` |
 | Permissions | `modules/fft/domain/rbac-catalog.ts` |
-| Session | `modules/fft/auth/trade-session.ts` |
+| Session | `modules/fft/auth/fft-session.ts` |
 | Store | `modules/fft/domain/store.ts` |
 | Actions | `app/actions/fft.ts` |
 | UI locale arg | `features/fft/trade-ui-locale.ts` |

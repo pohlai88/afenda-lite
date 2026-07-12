@@ -1,6 +1,6 @@
 /**
  * Adapter-facing helper: resolve active portal org + platform permission gate.
- * Declarations backfill is composed at RSC/action adapters — Identity must not import Declarations.
+ * Prefers Neon Auth session.activeOrganizationId via ensurePortalOrganization (N1).
  */
 
 import "server-only";

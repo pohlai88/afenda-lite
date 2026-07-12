@@ -39,6 +39,7 @@ export type PlatformRoleAssignmentRow = {
   organizationId: string;
   roleId: PlatformRoleId;
   roleName: string;
+  templateKey: string | null;
   scopeType: PlatformScopeType;
   scopeId: string | null;
   active: boolean;
@@ -138,11 +139,28 @@ export async function seedPlatformRbacCatalog(actorUserId?: string) {
       ],
     );
     const roleId = roleResult.rows[0].id as string;
+    const desired = new Set<string>(template.permissionCodes);
 
-    await pool.query(`DELETE FROM platform_role_permission WHERE role_id = $1`, [
-      roleId,
-    ]);
-    for (const code of template.permissionCodes) {
+    const current = await pool.query(
+      `SELECT permission_code FROM platform_role_permission WHERE role_id = $1`,
+      [roleId],
+    );
+    const currentCodes = new Set(
+      current.rows.map((row) => row.permission_code as string),
+    );
+
+    for (const code of currentCodes) {
+      if (!desired.has(code)) {
+        await pool.query(
+          `DELETE FROM platform_role_permission
+           WHERE role_id = $1 AND permission_code = $2`,
+          [roleId, code],
+        );
+      }
+    }
+
+    for (const code of desired) {
+      if (currentCodes.has(code)) continue;
       await pool.query(
         `INSERT INTO platform_role_permission (role_id, permission_code, granted_by)
          VALUES ($1, $2, $3)
@@ -205,6 +223,34 @@ export async function getPlatformRole(roleId: PlatformRoleId) {
   return mapRoleRow(result.rows[0]);
 }
 
+/**
+ * Org operators may mutate only roles stamped to their organization.
+ * NULL-org rows (templates / legacy globals) are read-only at the org edge.
+ */
+function assertOrgOwnedRoleMutable(
+  existing: PlatformRoleRow,
+  organizationId: OrganizationId,
+  options?: { templateMessage?: string },
+): { error: "FORBIDDEN"; message?: string } | null {
+  if (existing.isSystemTemplate) {
+    return {
+      error: "FORBIDDEN",
+      message:
+        options?.templateMessage ?? "System templates are read-only.",
+    };
+  }
+  if (!existing.organizationId) {
+    return {
+      error: "FORBIDDEN",
+      message: "Global roles cannot be mutated from an organization.",
+    };
+  }
+  if (existing.organizationId !== organizationId) {
+    return { error: "FORBIDDEN" };
+  }
+  return null;
+}
+
 export async function createPlatformRole(input: {
   organizationId: OrganizationId;
   data: CreatePlatformRoleInput;
@@ -255,14 +301,9 @@ export async function updatePlatformRole(input: {
   if (!existing) {
     return { error: "NOT_FOUND" as const };
   }
-  if (existing.isSystemTemplate) {
-    return { error: "FORBIDDEN" as const, message: "System templates are read-only." };
-  }
-  if (
-    existing.organizationId &&
-    existing.organizationId !== input.organizationId
-  ) {
-    return { error: "FORBIDDEN" as const };
+  const denied = assertOrgOwnedRoleMutable(existing, input.organizationId);
+  if (denied) {
+    return denied;
   }
 
   await pool.query(
@@ -311,14 +352,11 @@ export async function deletePlatformRole(input: {
   if (!existing) {
     return { error: "NOT_FOUND" as const };
   }
-  if (existing.isSystemTemplate) {
-    return { error: "FORBIDDEN" as const, message: "System templates cannot be deleted." };
-  }
-  if (
-    existing.organizationId &&
-    existing.organizationId !== input.organizationId
-  ) {
-    return { error: "FORBIDDEN" as const };
+  const denied = assertOrgOwnedRoleMutable(existing, input.organizationId, {
+    templateMessage: "System templates cannot be deleted.",
+  });
+  if (denied) {
+    return denied;
   }
 
   await pool.query(
@@ -351,14 +389,9 @@ export async function setPlatformRolePermission(input: {
   if (!existing) {
     return { error: "NOT_FOUND" as const };
   }
-  if (existing.isSystemTemplate) {
-    return { error: "FORBIDDEN" as const, message: "System templates are read-only." };
-  }
-  if (
-    existing.organizationId &&
-    existing.organizationId !== input.organizationId
-  ) {
-    return { error: "FORBIDDEN" as const };
+  const denied = assertOrgOwnedRoleMutable(existing, input.organizationId);
+  if (denied) {
+    return denied;
   }
 
   if (input.granted) {
@@ -392,11 +425,12 @@ export async function setPlatformRolePermission(input: {
 
 export async function listPlatformRoleAssignmentsForUser(
   userId: string,
-  organizationId?: string | null,
+  organizationId: string,
 ) {
   const result = await pool.query(
     `SELECT a.id, a.user_id, a.organization_id, a.role_id, a.scope_type, a.scope_id, a.active,
             r.name AS role_name,
+            r.template_key AS template_key,
             COALESCE(
               (SELECT array_agg(rp.permission_code ORDER BY rp.permission_code)
                FROM platform_role_permission rp WHERE rp.role_id = a.role_id),
@@ -406,8 +440,8 @@ export async function listPlatformRoleAssignmentsForUser(
      JOIN platform_role r ON r.id = a.role_id
      WHERE a.user_id = $1
        AND a.active = TRUE
-       AND ($2::text IS NULL OR a.organization_id = $2)`,
-    [userId, organizationId ?? null],
+       AND a.organization_id = $2`,
+    [userId, organizationId],
   );
 
   return result.rows.map(
@@ -417,6 +451,7 @@ export async function listPlatformRoleAssignmentsForUser(
       organizationId: row.organization_id as string,
       roleId: asPlatformRoleId(row.role_id as string),
       roleName: row.role_name as string,
+      templateKey: (row.template_key as string | null) ?? null,
       scopeType: row.scope_type as PlatformScopeType,
       scopeId: (row.scope_id as string | null) ?? null,
       active: Boolean(row.active),
@@ -544,7 +579,7 @@ export async function assignPlatformRole(input: {
 
 /**
  * Ensure Neon org-admin users hold the Org Admin template assignment.
- * Idempotent — skips when any active assignment already exists for the user+org.
+ * Idempotent — skips when Org Admin template is already assigned (other roles may coexist).
  */
 export async function ensureNeonAdminOrgAdminAssignment(input: {
   userId: string;
@@ -557,7 +592,7 @@ export async function ensureNeonAdminOrgAdminAssignment(input: {
     input.userId,
     input.organizationId,
   );
-  if (existing.length > 0) {
+  if (existing.some((assignment) => assignment.templateKey === "org_admin")) {
     return { ok: true as const, skipped: true as const };
   }
 
@@ -571,6 +606,44 @@ export async function ensureNeonAdminOrgAdminAssignment(input: {
     userId: input.userId,
     organizationId: input.organizationId,
     roleId: orgAdmin.id,
+    scopeType: "organization",
+    actorUserId: input.actorUserId ?? input.userId,
+  });
+}
+
+/**
+ * Ensure the user holds platform `fft.access` via the FFT Member template.
+ * Idempotent — used by ops backfill and write-time sales/assign paths.
+ */
+export async function ensureFftMemberPlatformAccess(input: {
+  userId: string;
+  organizationId: OrganizationId;
+  actorUserId?: string;
+}) {
+  await seedPlatformRbacCatalog(input.actorUserId ?? input.userId);
+
+  const existing = await listPlatformRoleAssignmentsForUser(
+    input.userId,
+    input.organizationId,
+  );
+  if (
+    existing.some((assignment) =>
+      assignment.permissionCodes.includes("fft.access"),
+    )
+  ) {
+    return { ok: true as const, skipped: true as const };
+  }
+
+  const roles = await listPlatformRoles(input.organizationId);
+  const fftMember = roles.find((role) => role.templateKey === "fft_member");
+  if (!fftMember) {
+    return { error: "NOT_FOUND" as const };
+  }
+
+  return assignPlatformRole({
+    userId: input.userId,
+    organizationId: input.organizationId,
+    roleId: fftMember.id,
     scopeType: "organization",
     actorUserId: input.actorUserId ?? input.userId,
   });
@@ -611,7 +684,10 @@ export async function revokePlatformRoleAssignment(input: {
     oldValue: { assignmentId: input.assignmentId },
   });
 
-  return { ok: true as const };
+  return {
+    ok: true as const,
+    userId: existing.rows[0].user_id as string,
+  };
 }
 
 export function listPlatformPermissionCatalog() {

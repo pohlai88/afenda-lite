@@ -39,8 +39,8 @@ export function assertFftPickupFeatureAction(): { error: string } | null {
   return null;
 }
 
-async function loadAssignments(userId: string) {
-  const rows = await listRoleAssignmentsForUser(userId);
+async function loadAssignments(userId: string, organizationId: string) {
+  const rows = await listRoleAssignmentsForUser(userId, organizationId);
   return rows.map((row) => ({
     roleId: row.roleId,
     scopeType: row.scopeType,
@@ -57,9 +57,12 @@ export async function hasFftEventManagePermission(
   eventId: string,
   ctx: FftScopeContext = {},
 ): Promise<boolean> {
-  if (access.isAdmin) return true;
-  if (!access.rbacEnabled) return false;
-  const assignments = await loadAssignments(access.userId);
+  if (!access.rbacEnabled) {
+    // Phase 1 (RBAC off): Neon admin only.
+    return access.isAdmin;
+  }
+
+  const assignments = await loadAssignments(access.userId, access.organizationId);
   return canPermission(access.userId, permissionCode, assignments, {
     eventId,
     ...ctx,

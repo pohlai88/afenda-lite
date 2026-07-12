@@ -34,7 +34,7 @@ export function FftTransferRequestForm({
     return (
       <p
         className="text-muted-foreground text-xs"
-        data-testid="trade-transfer-pending"
+        data-testid="fft-transfer-pending"
       >
         Transfer pending approval
       </p>
@@ -68,7 +68,7 @@ export function FftTransferRequestForm({
         name="newCustomerName"
         placeholder="New customer name"
         required
-        data-testid="trade-transfer-new-customer"
+        data-testid="fft-transfer-new-customer"
       />
       <input
         className={FFT_NATIVE_FIELD_CLASS}
@@ -82,21 +82,21 @@ export function FftTransferRequestForm({
         min={1}
         defaultValue={order.confirmedQuantity ?? order.requestedQuantity}
         required
-        data-testid="trade-transfer-qty"
+        data-testid="fft-transfer-qty"
       />
       <input
         className={FFT_NATIVE_FIELD_CLASS}
         name="reason"
         placeholder="Reason"
         required
-        data-testid="trade-transfer-reason"
+        data-testid="fft-transfer-reason"
       />
       <div className="md:col-span-2">
         <Button
           type="submit"
           size="sm"
           disabled={pending}
-          data-testid="trade-transfer-request"
+          data-testid="fft-transfer-request"
         >
           {pending ? "Submitting…" : "Request transfer"}
         </Button>
@@ -150,7 +150,7 @@ export function FftTransferAdminRow({
           type="button"
           size="sm"
           disabled={pending}
-          data-testid="trade-transfer-approve"
+          data-testid="fft-transfer-approve"
           onClick={() =>
             startTransition(async () => {
               setError(null);
@@ -175,7 +175,7 @@ export function FftTransferAdminRow({
           size="sm"
           variant="outline"
           disabled={pending}
-          data-testid="trade-transfer-reject"
+          data-testid="fft-transfer-reject"
           onClick={() =>
             startTransition(async () => {
               setError(null);

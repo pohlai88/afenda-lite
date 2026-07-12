@@ -14,7 +14,7 @@ import { loadEnvFile, getEnv } from "./lib/load-env.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const assetsDir = resolve(__dirname, "../docs/runbooks/assets");
-const appUrl = (getEnv("APP_URL", loadEnvFile()) ?? "https://iam-check.vercel.app").replace(
+const appUrl = (getEnv("APP_URL", loadEnvFile()) ?? "https://afenda-lite.vercel.app").replace(
   /\/$/,
   "",
 );

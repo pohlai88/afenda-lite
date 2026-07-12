@@ -13,7 +13,7 @@ import { loadComposedEnv, getEnvValue } from "./lib/env-files.mjs";
 
 const strict = process.argv.includes("--strict");
 const env = loadComposedEnv();
-const appUrl = (getEnvValue("APP_URL", env) ?? "https://iam-check.vercel.app").replace(
+const appUrl = (getEnvValue("APP_URL", env) ?? "https://afenda-lite.vercel.app").replace(
   /\/$/,
   "",
 );

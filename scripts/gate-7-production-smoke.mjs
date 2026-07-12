@@ -5,7 +5,7 @@
 import { execSync } from "node:child_process";
 import { chromium } from "playwright";
 
-const BASE = process.env.GATE7_SMOKE_BASE_URL ?? "https://iam-check.vercel.app";
+const BASE = process.env.GATE7_SMOKE_BASE_URL ?? "https://afenda-lite.vercel.app";
 const LOCALE = "vi";
 const OPEN_EVENT_ID =
   process.env.GATE7_OPEN_EVENT_ID ?? "3cf28288-a9be-4a77-8a7a-058c519e900c";

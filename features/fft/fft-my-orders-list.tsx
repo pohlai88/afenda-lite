@@ -96,7 +96,7 @@ export function FftMyOrdersList({
   }
 
   return (
-    <div className="space-y-4" data-testid="trade-my-orders-list">
+    <div className="space-y-4" data-testid="fft-my-orders-list">
       <ul className="space-y-4">
         {slice.items.map((row) => {
           const order = toOrderForForms(row);
@@ -104,7 +104,7 @@ export function FftMyOrdersList({
             <li
               key={row.id}
               className="space-y-2 rounded-lg border p-4"
-              data-testid="trade-my-order-row"
+              data-testid="fft-my-order-row"
               data-order-id={row.id}
               data-status={row.status}
               data-transfer-status={row.transferStatus ?? ""}
