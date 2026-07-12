@@ -54,7 +54,9 @@ Ship platform permission-catalog RBAC (Identity) + AdminCN Roles/Permissions pro
 | Isolation unit coverage (membership + hard SQL) | **Done** |
 | FFT RBAC seed stamps `organization_id` | **Done** |
 
-**In-scope hard tenancy completeness:** **100%** (intentional non-goals: Neon RLS, org-switcher chrome, FFT domain catalog merge, AdminCN plan/billing columns stay `Basic`/`Manual`).
+**In-scope hard tenancy completeness:** **100%** for v1 hard cutover (intentional non-goals: Neon RLS, org-switcher chrome, FFT domain catalog merge, AdminCN plan/billing columns stay `Basic`/`Manual`).
+
+**Next (not this phase):** post-v1 multi-org tracks M1–M5 → [multi-tenant-ecosystem.md](../architecture/multi-tenant-ecosystem.md).
 
 ## Verify
 

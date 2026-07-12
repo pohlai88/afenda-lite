@@ -8,6 +8,7 @@
 | **Scope** | Multi-tenant boundary + app-owned permission-catalog RBAC for Afenda-Lite modules |
 | **Out of scope** | Neon RLS; Neon Auth custom roles (unsupported); merging FFT **domain** permission catalogs into `platform_*` tables |
 | **Follow-up done** | FFT `organization_id` (026); hard cutover `027` (`NOT NULL` + hard filters); operator session; org-scoped Users via `neon_auth.member`; **control-plane** `fft.access` module entry (catalogs remain separate) |
+| **Living inventory** | [multi-tenant-ecosystem.md](../../architecture/multi-tenant-ecosystem.md) — config inventory, residual debt, post-v1 M1–M5 |
 
 **Related:** [001-modular-monolith-hexagonal.md](./001-modular-monolith-hexagonal.md) · [docs/fft/adr/001-rbac.md](../../docs/fft/adr/001-rbac.md) · Neon Auth Organization plugin (owner/admin/member fixed)
 
@@ -60,6 +61,7 @@ Viewer → declarations.read, account.self
 - `/dashboard/users` is membership-scoped via `neon_auth.member`.
 - `/dashboard/roles` and `/dashboard/permissions` are organization-admin product routes.
 - S12 tenancy hard cutover is **closed** under this ADR (soft dual-mode deleted).
+- Post-v1 multi-org requirements live in [multi-tenant-ecosystem.md](../../architecture/multi-tenant-ecosystem.md) — do not claim “multi-org ready” until that DoD.
 - Agents must not invent UI registry IDs; product UI lives under `features/organization-admin` until HITL registers portal-view blocks.
 
 ## Alternatives rejected

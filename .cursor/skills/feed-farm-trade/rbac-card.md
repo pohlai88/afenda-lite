@@ -1,11 +1,14 @@
 # FFT — RBAC card
 
-**SSOT:** `modules/fft/domain/rbac-catalog.ts` — if this file disagrees with the table below, **trust the TypeScript catalog**.
+**SSOT (domain codes):** `modules/fft/domain/rbac-catalog.ts` — if this file disagrees with the table below, **trust the TypeScript catalog**.
+
+**Module entry (control plane):** platform permission `fft.access` via `hasFftModuleAccess` / `requireFftAccess` — **not** the sales allowlist and **not** FFT domain assignment alone. Tenancy: [multi-tenant-ecosystem.md](../../../doc/architecture/multi-tenant-ecosystem.md).
 
 ## Hard rule
 
 ```text
-Authorize with permission codes via requireFftPermission(code)
+Entry:     hasFftModuleAccess → platform fft.access (org-scoped)
+Authorize: requireFftPermission(code) for FFT domain actions
 NEVER: if (roleName === "Sales Manager") …
 NEVER: if (templateKey === "sales_executive") … in business logic
 Role templates are seed data only.
@@ -15,11 +18,11 @@ Role templates are seed data only.
 
 | Helper | Use |
 |--------|-----|
-| `requireFftAccess` | Layout / entry — module entitlement |
-| `requireFftPermission(code, opts?)` | Mutations — preferred |
-| `requireFftAdmin` | Legacy/admin-heavy actions still in `trade.ts` — prefer migrating to codes when touching |
+| `requireFftAccess` | Layout / entry — requires platform `fft.access` |
+| `requireFftPermission(code, opts?)` | Mutations — FFT domain catalog |
+| `requireFftAdmin` | Admin-heavy actions — prefer permission codes when touching |
 
-Org admin alone does **not** grant `fft`.
+Org admin alone does **not** grant `fft` entry. Allowlist (`fft_sales_member`) is ops roster + write-time `ensureFftMemberPlatformAccess` when a user is linked — not login auto-promote.
 
 ## Permission catalog (product-owned)
 

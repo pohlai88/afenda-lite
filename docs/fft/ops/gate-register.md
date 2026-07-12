@@ -11,6 +11,8 @@
 
 This document is the **single operational SSOT** for Phase 2A rollout status, gate sequencing, and drift prevention. Agents and operators must read this before any Feed Farm Trade production work.
 
+**Skim banner:** Gates 1–6 historical evidence may show `FFT_RBAC_ENABLED=false`. **Current production** is Gate 7 — `FFT_RBAC_ENABLED=true`. Platform hard tenancy (ADR-002 / `027`) is separate from this FFT domain flag — see [multi-tenant-ecosystem.md](../../../doc/architecture/multi-tenant-ecosystem.md).
+
 **PRD “implementation gate” (ADR + PRD + slices approved) is closed.** Ops rollout **finished** 2026-07-10 — historical reference only.
 
 ---

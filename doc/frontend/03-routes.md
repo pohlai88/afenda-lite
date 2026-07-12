@@ -97,7 +97,7 @@ mark a route verified.
 ## Feed Farm Trade / Feed Farm Trade (gated appendix)
 
 **Product purpose:** B2B **feed & farm trade sales** for 3F businesses (feedmills, farmers, Feed · Farm · Food — industry customers, not portal organization admins) — see [adr/001-feed-farm-trade.md](adr/001-feed-farm-trade.md). Downstream **customer portal** is a future series branch. Architecture: [adr/001A-feed-farm-trade-architecture.md](adr/001A-feed-farm-trade-architecture.md). Roadmap: [adr/001R-feed-farm-trade-roadmap.md](adr/001R-feed-farm-trade-roadmap.md).
-**Shell id:** `fft`. Same AdminCN shell as Declarations. Layout gate: **Feed Farm Trade permission** (`requireFftAccess` — allowlist / HS RBAC). Organization admin alone does **not** unlock `/fft`. Locale URL segment removed (i18n deferred to action arg); paths are flat under `/fft/*`.
+**Shell id:** `fft`. Same AdminCN shell as Declarations. Layout gate: platform **`fft.access`** via `requireFftAccess` / `hasFftModuleAccess` (hard org-scoped). Organization admin alone does **not** unlock `/fft`. Locale URL segment removed (i18n deferred to action arg); paths are flat under `/fft/*`. Tenancy SSOT: [multi-tenant-ecosystem.md](../architecture/multi-tenant-ecosystem.md).
 
 Sidebar entitlement: `features/portal-chrome/resolve-shell-access.ts` (`declarations` for all members; `fft` only with permission). Types: `modules/platform/shell/access.ts`.
 

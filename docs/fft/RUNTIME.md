@@ -6,6 +6,7 @@
 | **Status** | Phase 2A **closed** (implementation + ops) · 2026-07-10 |
 | **Audience** | IDE agents, engineers, operators |
 | **Depth docs** | [README.md](./README.md) — typed index |
+| **Platform tenancy** | [ADR-002](../../doc/backend/adr/002-platform-tenancy-rbac.md) · [multi-tenant-ecosystem.md](../../doc/architecture/multi-tenant-ecosystem.md) — hard org filters; do not conflate with `FFT_RBAC_ENABLED` |
 
 ---
 

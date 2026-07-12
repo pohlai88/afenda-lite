@@ -10,11 +10,13 @@
 | **Date** | 2026-07-09 |
 | **Owners** | Feed Farm Trade / Trade |
 | **Scope** | Access control for `/fft` Feed Farm Trade Event Engine (Phase 2A foundation) |
-| **Out of scope** | Finance settlement SoT, pickup ops schema, ERP sync, notification provider, declaration-portal IAM |
+| **Out of scope** | Finance settlement SoT, pickup ops schema, ERP sync, notification provider, declaration-portal IAM; **platform** hard tenancy / `fft.access` entry (see [ADR-002](../../../doc/backend/adr/002-platform-tenancy-rbac.md) · [multi-tenant-ecosystem.md](../../../doc/architecture/multi-tenant-ecosystem.md)) |
 
 **Related:** [../archive/phase-2-feedback.md](../archive/phase-2-feedback.md) (authoritative planning) · [../spec/phase-2a-prd.md](../spec/phase-2a-prd.md) · [../spec/phase-1-prd.md](../spec/phase-1-prd.md) (Phase 1 accepted @ `1bc1294` / `fft-phase-1`) · [../archive/phase-2-scoping.md](../archive/phase-2-scoping.md) (candidate list; 7-role framing superseded)
 
 **Gate:** This ADR, [../spec/phase-2a-prd.md](../spec/phase-2a-prd.md), and [../spec/phase-2a-slices.md](../spec/phase-2a-slices.md) are **Accepted / closed**. **Operational rollout** — [../ops/gate-register.md](../ops/gate-register.md). Do not start 2B–2D or reopen 2A product scope.
+
+**History note:** Phase 1 allowlist + Phase 2A domain dual-read (`FFT_RBAC_ENABLED`) remain FFT **domain** concerns. Platform hard tenancy (`organization_id NOT NULL`, hard SQL filters, Users via `neon_auth.member`, module entry `fft.access`) is owned by ADR-002 / migration `027` — not this ADR.
 
 ---
 

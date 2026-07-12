@@ -25,6 +25,7 @@ Plan authority: this skill + `doc/backend/` + [closed-scope-register](../../../d
 | FFT module entry control plane | `hasFftModuleAccess` | platform `fft.access` only; write-time `ensureFftMember`; ops `backfill:fft-access` | **Done** |
 | Apply migrations `025`/`026`/`027` on Neon | Ops | Child `br-jolly-mountain-ao6ph4od` + prod promote | **Done** |
 | Hard multi-org cutover | Drop `IS NULL OR` + promoteLegacy | Hard scope + membership Users + CI residue + N1 active org | **Done** |
+| Post-v1 multi-org ecosystem doc | Living inventory + M1–M5 | [multi-tenant-ecosystem.md](../../../doc/architecture/multi-tenant-ecosystem.md) | **Done** |
 | `/client` workspace restore | Closed + reopen checklist | Stubs only | **Closed (registered)** |
 | FFT P3 flag promotion | gate-register | Prod flags off | **Closed (registered)** |
 | SaaS billing / 2FA product | Deferred chrome | Coming-soon + plan defaults | **Intentional (registered)** |

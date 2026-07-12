@@ -44,7 +44,8 @@ flowchart LR
 | Platform vs modules | Shared Platform/Identity/AdminCN/env/CI — not FFT-only infra |
 | Module domains | No domain imports Trade ↔ Declarations; compose at adapter if both needed |
 | Product vs engine | UI/nav = **Feed Farm Trade**; flags/ops ADRs/domain slang = **Feed Farm Trade** |
-| Shell entitlement | `fft` via `requireFftAccess` — org admin alone does not grant (module gate, not a second platform) |
+| Shell entitlement | `fft` via `requireFftAccess` → platform `fft.access` (org-scoped); org admin alone does not grant |
+| Data tenancy | Hard `organization_id = $org` on FFT tenant roots (ADR-002 / migration `027`) |
 | Chrome | `AdminCnShell` only — never `FftShell` or locale switcher |
 | Paths | Locale-free `/fft/**` — no live `app/fft/[locale]` |
 
@@ -111,7 +112,7 @@ layout: requireFftAccess + AdminCnShell only
 |---------|-------------------|
 | No session on `/fft` | Sign-in redirect (proxy + layout) |
 | Session without trade permission | Denied; FFT nav hidden |
-| Org admin without trade allowlist/RBAC | Declarations OK; `/fft` denied |
+| Org admin without platform `fft.access` | Declarations OK; `/fft` denied |
 | P3 ops flags off | Deposits/pickup/imports/ERP writes blocked; P1 cycle still works |
 | Missing permission on mutation | Action returns deny / error — never silent success |
 

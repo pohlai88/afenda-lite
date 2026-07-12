@@ -22,6 +22,17 @@
 
 **Production state:** tag `fft-phase-2a` → `8e650ff`; `FFT_RBAC_ENABLED=true` on Vercel; DB branch `br-tiny-hill-ao82jp6f`. **2B–2D code blocked** until slice group Approved in phase-2bcd-slices + explicit program reopen. No Feed Farm Trade commits mixed with unrelated refactors.
 
+## Platform tenancy (hard cutover closed)
+
+**Decision:** [doc/backend/adr/002-platform-tenancy-rbac.md](doc/backend/adr/002-platform-tenancy-rbac.md) · **Living inventory / post-v1 backlog:** [doc/architecture/multi-tenant-ecosystem.md](doc/architecture/multi-tenant-ecosystem.md) · Phase evidence: [doc/frontend/14-org-admin-rbac-tenancy-tasks.md](doc/frontend/14-org-admin-rbac-tenancy-tasks.md).
+
+| Fact | Detail |
+|------|--------|
+| v1 shipped | Hard `organization_id = $org`; migration `027` NOT NULL on eight tenant roots; Users via `neon_auth.member`; FFT entry = platform `fft.access` |
+| Env | `PORTAL_ORG_SLUG` / `PORTAL_ORG_NAME` (Auth bootstrap); do not confuse with `NEON_ORG_ID` (Neon Cloud) |
+| Ops | `npm run audit:tenancy-nulls` · `npm run check:tenancy-residue` · `npm run backfill:fft-access` |
+| Anti-claim | Do **not** say “multi-org ready” until ecosystem DoD (M1–M4). `FFT_RBAC_ENABLED` ≠ soft SQL tenancy |
+
 ## Environment variables
 
 ### Source of truth (local dev)

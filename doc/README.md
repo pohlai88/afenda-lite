@@ -31,6 +31,14 @@ Frontend + API + backend describe **one system**, not three architectures.
 |-----|---------|
 | [adr/001-afenda-lite-product-identity.md](adr/001-afenda-lite-product-identity.md) | Product name Afenda-Lite; deprecate Client Declaration Portal |
 
+### Architecture
+
+| Doc | Purpose |
+|-----|---------|
+| [architecture/multi-tenant-ecosystem.md](architecture/multi-tenant-ecosystem.md) | Hard cutover inventory, residual debt, post-v1 M1–M5 (living SSOT) |
+| [backend/adr/002-platform-tenancy-rbac.md](backend/adr/002-platform-tenancy-rbac.md) | Accepted ADR — three-tier IAM + hard filters |
+| [frontend/14-org-admin-rbac-tenancy-tasks.md](frontend/14-org-admin-rbac-tenancy-tasks.md) | Phase 14 evidence (hard cutover closed) |
+
 ### Backend
 
 | Doc | Purpose |
@@ -44,6 +52,7 @@ Frontend + API + backend describe **one system**, not three architectures.
 | [backend/06-modules-ownership.md](backend/06-modules-ownership.md) | Modules inventory + residue |
 | [backend/07-conventions.md](backend/07-conventions.md) | Runtime, SQL, contract pointers |
 | [backend/adr/001-…](backend/adr/001-modular-monolith-hexagonal.md) | Accepted ADR |
+| [backend/adr/002-…](backend/adr/002-platform-tenancy-rbac.md) | Platform tenancy + RBAC |
 
 ### Frontend
 
@@ -66,6 +75,7 @@ Frontend + API + backend describe **one system**, not three architectures.
 | [12-feed-farm-trade-phase1-core-mvp.md](frontend/12-feed-farm-trade-phase1-core-mvp.md) | FFT Phase 1 development spec + evaluation checklist (Core cycle MVP, G1–G9) |
 | [13-feed-farm-trade-phase2-ui-polish.md](frontend/13-feed-farm-trade-phase2-ui-polish.md) | FFT Phase 2 development spec (UI polish — reopened 2026-07-11; AC-01..06 PASS) |
 | [14-feed-farm-trade-phase3-ops-flags.md](frontend/14-feed-farm-trade-phase3-ops-flags.md) | FFT Phase 3 development spec (deposits/pickup/imports/notifications/ERP — flag-gated) |
+| [14-org-admin-rbac-tenancy-tasks.md](frontend/14-org-admin-rbac-tenancy-tasks.md) | Org-admin platform RBAC + hard tenancy (closed) |
 
 ### API
 

@@ -23,7 +23,7 @@ flowchart LR
 | ------- | ---- | ---------- | ------------- | ------------------ |
 | **Identity** | Session, org membership, Neon Auth users, client profile session gates + auth invite bootstrap | `modules/identity/**` | Neon Auth, Platform | Declarations domain, Trade |
 | **Declarations** | Surveys/declarations, questions, clients list, assignments, submissions, share links, drafts, profile upsert/CRUD | `modules/declarations/**` | Identity (actor / org ids, profile port) | Trade |
-| **Trade** | Events, orders, allocation, deposits, pickup, imports, ERP sync, RBAC (product: **Feed Farm Trade**) | `modules/fft/**`, `app/actions/fft`, `features/fft`, `app/fft` | Identity (allowlist / RBAC) | **Declarations** |
+| **Trade** | Events, orders, allocation, deposits, pickup, imports, ERP sync, FFT domain RBAC (product: **Feed Farm Trade**) | `modules/fft/**`, `app/actions/fft`, `features/fft`, `app/fft` | Identity (org id, platform `fft.access`, session) | **Declarations** |
 | **Platform** | Health, env, observability, shared API error helpers, shared shell access | `modules/platform/**`, `app/api/health/*` | nothing product-specific | — |
 
 ## Hard rules

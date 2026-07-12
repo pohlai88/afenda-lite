@@ -18,7 +18,7 @@ Plan authority: this skill + `api-now.md` + `doc/api/*`.
 
 - Draft API runner moved out of Platform into Declarations (boundary + one-version Action/HTTP still share domain + schemas)
 - Org-admin RBAC mutations stay on Server Actions (`admin.ts`), not new `/api` routes
-- Soft-harden: client/FFT/survey Actions pass `organizationId` into domain (no new REST); Reliance actions **38/38** aligned
+- Hard tenancy cutover: Actions pass required `organizationId` into domain (no soft `(NULL OR org)` dual-mode); see [multi-tenant-ecosystem.md](../../../doc/architecture/multi-tenant-ecosystem.md)
 
 ## Verify
 
