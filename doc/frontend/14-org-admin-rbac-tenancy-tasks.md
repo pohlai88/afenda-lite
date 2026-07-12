@@ -17,14 +17,14 @@ Ship platform permission-catalog RBAC (Identity) + AdminCN Roles/Permissions pro
 | Migration `027` hard tenancy | **Done** | `NOT NULL` on eight tenant roots + indexes |
 | Catalog + templates (Org Admin / Editor / Viewer) | **Done** | `platform-rbac-catalog.ts` + unit tests; includes `fft.access` |
 | Platform module entry `fft.access` | **Done** | Org-scoped SoT; write-time ensure + `npm run backfill:fft-access` |
-| N1 active org alignment | **Done** | `ensurePortalOrganization` prefers `session.activeOrganizationId` |
+| N1 active org alignment | **Done** | `resolveActivePortalOrganization` — active → slug → sole membership (M1 fail-closed) |
 | `/fft/admin/rbac` + `org.roles.manage` | **Done** | Control plane gate + FFT `role.manage` |
 | Domain CRUD + assign/revoke + audit | **Done** | `modules/identity/domain/platform-rbac.ts` |
-| Idempotent template seed (no wipe+re-audit) | **Done** | Diff sync in `seedPlatformRbacCatalog` |
+| Idempotent template seed (no wipe+re-audit) | **Done** | Diff sync in `seedPlatformRbacCatalog`; scoped unique `028` |
 | Neon admin → Org Admin template ensure | **Done** | Skips only when `templateKey === org_admin` already present |
 | Operator session (`org.roles.manage`) | **Done** | `requirePlatformOperatorSession` on roles Actions + RSC |
 | Role CRUD + permission matrix Actions (`ActionResult`) | **Done** | `app/actions/admin.ts` |
-| `/dashboard/roles` + `/dashboard/permissions` UI | **Done** | `organization-admin-roles-*` (no zustand) |
+| `/dashboard/roles` + `/permissions` UI | **Done** | `organization-admin-roles-*` (no zustand) |
 | Assign/revoke UI gated by `org.roles.manage` | **Done** | `canManagePlatformRoles` on user detail |
 | Sidebar IAM under `kind: admin` | **Done** | Users/Roles/Permissions in Organization group; Viewer excluded from `isOrgAdmin` |
 | NULL-org / cross-org role mutation guards | **Done** | `assertOrgOwnedRoleMutable` |
@@ -32,10 +32,11 @@ Ship platform permission-catalog RBAC (Identity) + AdminCN Roles/Permissions pro
 | Merge FFT **domain** catalogs into platform tables | **Out of scope** | ADR rejected (entry code is not domain merge) |
 | Hard multi-org cutover | **Done** | Hard `= org`; no soft dual-mode; no login promote |
 | Remove entry bridges after `fft.access` backfill | **Done** | Platform-only decision; promoteLegacy deleted |
+| Multi-org ready M1–M4 | **Done** | [multi-tenant-ecosystem.md](../architecture/multi-tenant-ecosystem.md) |
 | User CRUD `{ error }` → `ActionResult` | **Done** | Exported org user Actions use `actionOk` / `actionFail` |
 | L4 e2e for platform roles assign | **Done** | `e2e/org-roles.spec.ts` (@journey) |
 
-**Roles & Permissions + control-plane completeness:** **100%** for hard cutover (domain catalog merge remains rejected).
+**Roles & Permissions + control-plane completeness:** **100%** for hard cutover + M1–M4 (domain catalog merge remains rejected).
 
 ## Related tenancy (Declarations / FFT)
 
@@ -53,10 +54,14 @@ Ship platform permission-catalog RBAC (Identity) + AdminCN Roles/Permissions pro
 | `listOrganizationUsers` via `neon_auth.member` | **Done** |
 | Isolation unit coverage (membership + hard SQL) | **Done** |
 | FFT RBAC seed stamps `organization_id` | **Done** |
+| Org switcher + fail-closed resolve (M1) | **Done** |
+| Scoped template unique `028` (M2) | **Done** |
+| L4 tenancy isolation journeys (M3) | **Done** |
+| Org-required ops backfill (M4) | **Done** |
 
-**In-scope hard tenancy completeness:** **100%** for v1 hard cutover (intentional non-goals: Neon RLS, org-switcher chrome, FFT domain catalog merge, AdminCN plan/billing columns stay `Basic`/`Manual`).
+**In-scope tenancy completeness:** **100%** for hard cutover + multi-org ready (intentional non-goals: Neon RLS, FFT domain catalog merge, AdminCN plan/billing columns stay `Basic`/`Manual`, M5 child denorm).
 
-**Next (not this phase):** post-v1 multi-org tracks M1–M5 → [multi-tenant-ecosystem.md](../architecture/multi-tenant-ecosystem.md).
+**Living SSOT:** [multi-tenant-ecosystem.md](../architecture/multi-tenant-ecosystem.md).
 
 ## Verify
 

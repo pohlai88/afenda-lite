@@ -10,7 +10,7 @@
 | File | Module entrypoints (typical) | Notes |
 |------|------------------------------|-------|
 | `account.ts` | `modules/identity/*` | Account session / Neon-owned fields |
-| `admin.ts` | `modules/identity/*`, platform helpers | Operator admin + org users (create/import/update/remove/bulk-remove/role/ban/bulk-ban/password/sessions) + **platform RBAC** (create/update/delete role, set permission, assign/revoke); `parseSchema` from Platform |
+| `admin.ts` | `modules/identity/*`, platform helpers | Operator admin + org users (create/import/update/remove/bulk-remove/role/ban/bulk-ban/password/sessions) + **platform RBAC** (create/update/delete role, set permission, assign/revoke) + **`setActiveOrganizationAction`** (M1 org switch); `parseSchema` from Platform |
 | `client.ts` | `modules/identity/*`, `modules/declarations/*`, `resolvePlatformOrgContext` | Invite stamps + scopes survey by org; compose at adapter |
 | `declarations.ts` | `modules/declarations/domain/**`, product schemas | `parseSchema` from Platform |
 | `surveys.ts` | `modules/declarations/domain/**`, product schemas, `resolvePlatformOrgContext` | Draft create stamps `organizationId` |

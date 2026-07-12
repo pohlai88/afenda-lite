@@ -17,8 +17,8 @@ You are right — the command must be an **operational agent command sheet**, no
 ## Locked context — always true
 
 ```text
-PROJECT: client-declaration-portal
-ROOT: C:\JackProject\afenda-bolt\client-declaration-portal
+PROJECT: afenda-lite
+ROOT: C:\JackProject\afenda-bolt\afenda-lite
 
 EXPERIENCE: Lynx Sovereign Landing
 PURPOSE: cinematic entry surface for sign-in and sign-up
@@ -403,7 +403,7 @@ If locked context conflicts with the task, the agent must **STOP** and report th
 COMMAND: IMPLEMENT_HYBRID_UNLOCK_RITUAL
 MODE: implement the complete cinematic landing interaction
 FOLLOW: Lynx Sovereign Landing agent command sheet
-ROOT: C:\JackProject\afenda-bolt\client-declaration-portal
+ROOT: C:\JackProject\afenda-bolt\afenda-lite
 
 READ:
 1. package.json
@@ -486,7 +486,7 @@ Use this before implementation when the repository may contain multiple duplicat
 COMMAND: AUDIT_CURRENT_LYNX_ARCHITECTURE
 MODE: evaluation only — do not write product code
 FOLLOW: Lynx Sovereign Landing agent command sheet
-ROOT: C:\JackProject\afenda-bolt\client-declaration-portal
+ROOT: C:\JackProject\afenda-bolt\afenda-lite
 
 READ:
 1. package.json
@@ -539,7 +539,7 @@ Verdict:
 COMMAND: IMPLEMENT_RITUAL_ENGINE
 MODE: implement interaction architecture only
 FOLLOW: Lynx Sovereign Landing agent command sheet
-ROOT: C:\JackProject\afenda-bolt\client-declaration-portal
+ROOT: C:\JackProject\afenda-bolt\afenda-lite
 
 SCOPE:
 - ritual state model
@@ -592,7 +592,7 @@ Stop after the ritual engine is verified.
 COMMAND: IMPLEMENT_QUAKE_AND_PORTAL
 MODE: implement motion choreography only
 FOLLOW: Lynx Sovereign Landing agent command sheet
-ROOT: C:\JackProject\afenda-bolt\client-declaration-portal
+ROOT: C:\JackProject\afenda-bolt\afenda-lite
 
 PREREQUISITE:
 The ritual engine and insertion state must already exist and pass tests.
@@ -648,13 +648,13 @@ Stop after quake and portal verification.
 COMMAND: IMPLEMENT_SOVEREIGN_VAULT
 MODE: redesign authentication choice surface only
 FOLLOW: Lynx Sovereign Landing agent command sheet
-ROOT: C:\JackProject\afenda-bolt\client-declaration-portal
+ROOT: C:\JackProject\afenda-bolt\afenda-lite
 
 PREREQUISITE:
 Portal/vault-open state must already be available or clearly stubbed.
 
 ASSET:
-C:\JackProject\afenda-bolt\client-declaration-portal\public\lynx\lynx-auth-popup.png
+C:\JackProject\afenda-bolt\afenda-lite\public\lynx\lynx-auth-popup.png
 Runtime URL:
 /lynx/lynx-auth-popup.png
 
@@ -716,7 +716,7 @@ Do not add unrelated particle polish.
 COMMAND: IMPLEMENT_AUTH_DEPARTURES
 MODE: implement sign-in/sign-up departure choreography only
 FOLLOW: Lynx Sovereign Landing agent command sheet
-ROOT: C:\JackProject\afenda-bolt\client-declaration-portal
+ROOT: C:\JackProject\afenda-bolt\afenda-lite
 
 PREREQUISITE:
 Sovereign Vault is implemented and destination selection works.
@@ -773,7 +773,7 @@ Use the required output contract.
 COMMAND: IMPLEMENT_RESTRAINED_PARTICLE_LAYER
 MODE: optional polish after core ritual passes
 FOLLOW: Lynx Sovereign Landing agent command sheet
-ROOT: C:\JackProject\afenda-bolt\client-declaration-portal
+ROOT: C:\JackProject\afenda-bolt\afenda-lite
 
 PREREQUISITES:
 - ritual engine passes
@@ -833,7 +833,7 @@ Use the required output contract.
 COMMAND: VERIFY_LYNX_ACCEPTANCE
 MODE: evaluation only — no product-code changes
 FOLLOW: Lynx Sovereign Landing agent command sheet
-ROOT: C:\JackProject\afenda-bolt\client-declaration-portal
+ROOT: C:\JackProject\afenda-bolt\afenda-lite
 
 DO:
 1. Locate the live landing implementation.

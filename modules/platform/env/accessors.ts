@@ -40,6 +40,13 @@ export function isPlaygroundEnabled(
   return env.PLAYGROUND_ENABLED === "true";
 }
 
+/** M1 org switcher chrome — default off until multi-org operators need it. */
+export function isPortalOrgSwitcherEnabled(
+  env: Pick<ServerEnv, "PORTAL_ORG_SWITCHER_ENABLED"> = getServerEnv(),
+) {
+  return env.PORTAL_ORG_SWITCHER_ENABLED === "true";
+}
+
 export function isGuardianAuthShellEnabled(
   env: Pick<ServerEnv, "GUARDIAN_AUTH_SHELL"> = getServerEnv(),
 ) {

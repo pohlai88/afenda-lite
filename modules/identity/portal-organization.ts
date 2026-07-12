@@ -11,6 +11,15 @@ export type PortalOrganization = {
   slug: string;
 };
 
+export class NoActiveOrganizationError extends Error {
+  readonly code = "NO_ACTIVE_ORGANIZATION" as const;
+
+  constructor(message = "No active organization in session.") {
+    super(message);
+    this.name = "NoActiveOrganizationError";
+  }
+}
+
 function slugifyPortalOrg(value: string) {
   return value
     .trim()
@@ -39,29 +48,45 @@ export function getPortalOrganizationSlug() {
     }
   }
 
-  return slugifyPortalOrg(PORTAL_NAME) || "client-declaration-portal";
+  return slugifyPortalOrg(PORTAL_NAME) || "afenda-lite";
 }
 
 export function getPortalOrganizationName() {
-  return getServerEnv().PORTAL_ORG_NAME?.trim() || "iam-check";
+  return getServerEnv().PORTAL_ORG_NAME?.trim() || "afenda-lite";
 }
 
-export async function ensurePortalOrganization(): Promise<PortalOrganization> {
-  const slug = getPortalOrganizationSlug();
-  const name = getPortalOrganizationName();
+function readActiveOrganizationId(
+  sessionPayload: unknown,
+): string | null {
+  if (
+    !sessionPayload ||
+    typeof sessionPayload !== "object" ||
+    !("session" in sessionPayload)
+  ) {
+    return null;
+  }
+  return (
+    (
+      sessionPayload as {
+        session?: { activeOrganizationId?: string | null };
+      }
+    ).session?.activeOrganizationId ?? null
+  );
+}
 
-  const { data: sessionPayload } = await auth.getSession();
-  const activeOrganizationId =
-    sessionPayload &&
-    typeof sessionPayload === "object" &&
-    "session" in sessionPayload
-      ? ((
-          sessionPayload as {
-            session?: { activeOrganizationId?: string | null };
-          }
-        ).session?.activeOrganizationId ?? null)
-      : null;
+function toPortalOrganization(organization: {
+  id: string;
+  name: string;
+  slug: string;
+}): PortalOrganization {
+  return {
+    id: organization.id,
+    name: organization.name,
+    slug: organization.slug,
+  };
+}
 
+async function listMemberOrganizations(): Promise<PortalOrganization[]> {
   const { data: organizations, error: listError } =
     await auth.organization.list();
 
@@ -71,27 +96,77 @@ export async function ensurePortalOrganization(): Promise<PortalOrganization> {
     );
   }
 
+  return (organizations ?? [])
+    .filter((organization) => Boolean(organization?.id))
+    .map((organization) =>
+      toPortalOrganization({
+        id: organization.id,
+        name: organization.name,
+        slug: organization.slug,
+      }),
+    );
+}
+
+async function activateOrganization(
+  organization: PortalOrganization,
+  activeOrganizationId: string | null,
+) {
+  if (organization.id !== activeOrganizationId) {
+    await auth.organization.setActive({ organizationId: organization.id });
+  }
+  return organization;
+}
+
+/**
+ * Membership list for chrome (org switcher). Does not create or setActive.
+ */
+export async function listPortalOrganizations(): Promise<{
+  organizations: PortalOrganization[];
+  activeOrganizationId: string | null;
+}> {
+  const { data: sessionPayload } = await auth.getSession();
+  const activeOrganizationId = readActiveOrganizationId(sessionPayload);
+  const organizations = await listMemberOrganizations();
+  return { organizations, activeOrganizationId };
+}
+
+/**
+ * Fail-closed product resolve (M1 / D1):
+ * active → slug → sole membership → create.
+ * Never picks arbitrary organizations[0] when the member has more than one org.
+ */
+export async function resolveActivePortalOrganization(): Promise<PortalOrganization> {
+  const slug = getPortalOrganizationSlug();
+  const name = getPortalOrganizationName();
+
+  const { data: sessionPayload } = await auth.getSession();
+  const activeOrganizationId = readActiveOrganizationId(sessionPayload);
+  const organizations = await listMemberOrganizations();
+
   const byActive = activeOrganizationId
-    ? organizations?.find(
+    ? organizations.find(
         (organization) => organization.id === activeOrganizationId,
       )
     : undefined;
+  if (byActive) {
+    return byActive;
+  }
 
-  const existing =
-    byActive ??
-    organizations?.find((organization) => organization.slug === slug) ??
-    organizations?.[0];
+  const bySlug = organizations.find(
+    (organization) => organization.slug === slug,
+  );
+  if (bySlug) {
+    return activateOrganization(bySlug, activeOrganizationId);
+  }
 
-  if (existing?.id) {
-    // Align Tier-1 active org with the resolved portal tenant (no-op when already active).
-    if (existing.id !== activeOrganizationId) {
-      await auth.organization.setActive({ organizationId: existing.id });
-    }
-    return {
-      id: existing.id,
-      name: existing.name,
-      slug: existing.slug,
-    };
+  if (organizations.length === 1) {
+    return activateOrganization(organizations[0], activeOrganizationId);
+  }
+
+  if (organizations.length > 1) {
+    throw new NoActiveOrganizationError(
+      "Session has multiple organizations but no active organization. Use the organization switcher.",
+    );
   }
 
   const { data: created, error: createError } = await auth.organization.create({
@@ -107,11 +182,36 @@ export async function ensurePortalOrganization(): Promise<PortalOrganization> {
 
   await auth.organization.setActive({ organizationId: created.id });
 
-  return {
+  return toPortalOrganization({
     id: created.id,
     name: created.name,
     slug: created.slug,
-  };
+  });
+}
+
+/**
+ * Bootstrap alias — same fail-closed resolve used by product adapters.
+ * Prefer `resolveActivePortalOrganization` in new call sites.
+ */
+export async function ensurePortalOrganization(): Promise<PortalOrganization> {
+  return resolveActivePortalOrganization();
+}
+
+export async function setActivePortalOrganization(organizationId: string) {
+  const { organizations } = await listPortalOrganizations();
+  const match = organizations.find(
+    (organization) => organization.id === organizationId,
+  );
+  if (!match) {
+    return {
+      ok: false as const,
+      code: "FORBIDDEN" as const,
+      message: "Organization is not in your membership list.",
+    };
+  }
+
+  await auth.organization.setActive({ organizationId: match.id });
+  return { ok: true as const, data: match };
 }
 
 export async function inviteClientOrganizationMember(input: {

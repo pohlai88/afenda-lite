@@ -62,9 +62,10 @@ config = config.replace(
   /^# Gate 4B production-branch seed:.*\n/gm,
   "",
 );
-if (!config.includes("Neon project: iam-check")) {
-  config = `# Neon project: iam-check (${PROJECT_ID}) — production branch only\n${config}`;
+if (!config.includes("Neon project: afenda-lite")) {
+  config = `# Neon project: afenda-lite (${PROJECT_ID}) — production branch only\n${config}`;
 }
+config = config.replace(/Neon project: iam-check/g, "Neon project: afenda-lite");
 config = upsertEnvLine(config, "NEON_AUTH_BASE_URL", PRODUCTION_BRANCH.authBaseUrl);
 config = upsertEnvLine(config, "NEON_BRANCH_ID", PRODUCTION_BRANCH.branchId);
 config = upsertEnvLine(config, "NEON_PROJECT_ID", PROJECT_ID);
@@ -91,7 +92,7 @@ writeFileSync(
   `${JSON.stringify(
     {
       projectId: PROJECT_ID,
-      projectName: "iam-check",
+      projectName: "afenda-lite",
       branchId: PRODUCTION_BRANCH.branchId,
       branchName: PRODUCTION_BRANCH.name,
       database: "neondb",

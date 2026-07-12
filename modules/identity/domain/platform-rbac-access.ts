@@ -1,11 +1,11 @@
 /**
  * Adapter-facing helper: resolve active portal org + platform permission gate.
- * Prefers Neon Auth session.activeOrganizationId via ensurePortalOrganization (N1).
+ * Uses fail-closed resolveActivePortalOrganization (M1 / N1).
  */
 
 import "server-only";
 
-import { ensurePortalOrganization } from "@/modules/identity/portal-organization";
+import { resolveActivePortalOrganization } from "@/modules/identity/portal-organization";
 import {
   ensureNeonAdminOrgAdminAssignment,
   hasPlatformPermission,
@@ -19,7 +19,7 @@ export async function resolvePlatformOrgContext(input?: {
   ensureOrgAdminAssignment?: boolean;
 }) {
   await seedPlatformRbacCatalog(input?.userId);
-  const org = await ensurePortalOrganization();
+  const org = await resolveActivePortalOrganization();
   const organizationId = asOrganizationId(org.id);
 
   if (input?.userId && input.ensureOrgAdminAssignment) {

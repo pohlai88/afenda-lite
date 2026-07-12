@@ -204,28 +204,41 @@ export function getPortalOrganizationSlug() {
     }
   }
 
-  return slugifyPortalOrg(process.env.PORTAL_ORG_NAME?.trim() || "iam-check");
+  return slugifyPortalOrg(process.env.PORTAL_ORG_NAME?.trim() || "afenda-lite");
 }
 
 export async function ensurePortalOrganization({ cookie }) {
   const slug = getPortalOrganizationSlug();
-  const name = process.env.PORTAL_ORG_NAME?.trim() || "iam-check";
+  const name = process.env.PORTAL_ORG_NAME?.trim() || "afenda-lite";
 
   const list = await authJsonRequest(cookie, "organization/list", {
     method: "GET",
   });
   const organizations = list?.organizations ?? list?.data ?? list ?? [];
+  const membership = Array.isArray(organizations) ? organizations : [];
 
-  const existing =
-    organizations.find((organization) => organization.slug === slug) ??
-    organizations[0];
-
-  if (existing?.id) {
+  const bySlug = membership.find((organization) => organization.slug === slug);
+  if (bySlug?.id) {
     await authJsonRequest(cookie, "organization/set-active", {
-      body: { organizationId: existing.id },
+      body: { organizationId: bySlug.id },
     });
-    console.log(`Using portal organization: ${existing.slug} (${existing.id})`);
-    return existing;
+    console.log(`Using portal organization: ${bySlug.slug} (${bySlug.id})`);
+    return bySlug;
+  }
+
+  if (membership.length === 1 && membership[0]?.id) {
+    const sole = membership[0];
+    await authJsonRequest(cookie, "organization/set-active", {
+      body: { organizationId: sole.id },
+    });
+    console.log(`Using sole portal organization: ${sole.slug} (${sole.id})`);
+    return sole;
+  }
+
+  if (membership.length > 1) {
+    throw new Error(
+      `Multiple Neon Auth organizations and no slug match for "${slug}". Pass PORTAL_ORG_SLUG or set active org (M1: no first-org fallback).`,
+    );
   }
 
   const created = await authJsonRequest(cookie, "organization/create", {

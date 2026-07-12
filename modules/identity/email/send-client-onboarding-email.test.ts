@@ -22,8 +22,8 @@ describe("sendClientOnboardingEmail", () => {
   it("invites the member via Neon Auth organization API", async () => {
     mockedEnsureOrg.mockResolvedValue({
       id: "org-1",
-      name: "iam-check",
-      slug: "iam-check",
+      name: "afenda-lite",
+      slug: "afenda-lite",
     });
     mockedInvite.mockResolvedValue({ ok: true, data: { id: "inv-1" } });
 
@@ -40,8 +40,8 @@ describe("sendClientOnboardingEmail", () => {
   it("returns invite API errors with status", async () => {
     mockedEnsureOrg.mockResolvedValue({
       id: "org-1",
-      name: "iam-check",
-      slug: "iam-check",
+      name: "afenda-lite",
+      slug: "afenda-lite",
     });
     mockedInvite.mockResolvedValue({
       ok: false,

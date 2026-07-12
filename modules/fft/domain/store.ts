@@ -1133,7 +1133,7 @@ export async function seedFftRbacCatalog(input: {
     const roleResult = await pool.query(
       `INSERT INTO fft_role (name, description, active, is_system_template, template_key, created_by, organization_id)
        VALUES ($1, $2, TRUE, TRUE, $3, $4, $5)
-       ON CONFLICT (template_key) DO UPDATE SET
+       ON CONFLICT (organization_id, template_key) WHERE template_key IS NOT NULL DO UPDATE SET
          name = EXCLUDED.name,
          description = EXCLUDED.description,
          active = TRUE,

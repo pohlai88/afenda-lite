@@ -35,7 +35,7 @@ Frontend + API + backend describe **one system**, not three architectures.
 
 | Doc | Purpose |
 |-----|---------|
-| [architecture/multi-tenant-ecosystem.md](architecture/multi-tenant-ecosystem.md) | Hard cutover inventory, residual debt, post-v1 M1–M5 (living SSOT) |
+| [architecture/multi-tenant-ecosystem.md](architecture/multi-tenant-ecosystem.md) | Hard cutover + multi-org ready (M1–M4) living SSOT |
 | [backend/adr/002-platform-tenancy-rbac.md](backend/adr/002-platform-tenancy-rbac.md) | Accepted ADR — three-tier IAM + hard filters |
 | [frontend/14-org-admin-rbac-tenancy-tasks.md](frontend/14-org-admin-rbac-tenancy-tasks.md) | Phase 14 evidence (hard cutover closed) |
 

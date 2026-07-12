@@ -1,5 +1,5 @@
 /**
- * Validate Neon env composition and API access for iam-check.
+ * Validate Neon env composition and API access for afenda-lite.
  *
  * Usage: npm run validate:neon-env
  */

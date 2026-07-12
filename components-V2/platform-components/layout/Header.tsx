@@ -11,6 +11,7 @@ import ProfileDropdown from '@/components-V2/platform-components/shared/ProfileD
 import { Button } from '@/components-V2/platform-components/ui/button'
 import { Separator } from '@/components-V2/platform-components/ui/separator'
 import { SidebarTrigger, useSidebar } from '@/components-V2/platform-components/ui/sidebar'
+import { OrganizationSwitcher } from '@/features/portal-chrome/organization-switcher'
 import CommandMenu from './CommandMenu'
 import ThemeCustomizer from './ThemeCustomizer'
 
@@ -38,6 +39,7 @@ const Header = () => {
           <CommandMenu />
         </div>
         <div className='flex items-center gap-1.5'>
+          <OrganizationSwitcher />
           <ActivityDialog
             trigger={
               <Button variant='ghost' size='icon'>

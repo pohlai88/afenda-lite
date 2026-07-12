@@ -22,6 +22,7 @@ import {
 import {
   rejectNonOrganizationAdminSignIn,
   requireAdminSession,
+  requireMemberSession,
 } from "@/modules/identity/auth/session";
 import { requirePlatformOperatorSession } from "@/modules/identity/auth/platform-operator-session";
 import { runLoggedAction } from "@/modules/platform/observability";
@@ -62,6 +63,7 @@ import {
   createPlatformRoleSchema,
   deletePlatformRoleSchema,
   revokePlatformRoleAssignmentSchema,
+  setActiveOrganizationSchema,
   setPlatformRolePermissionSchema,
   updatePlatformRoleSchema,
 } from "@/modules/identity/schemas/platform-rbac";
@@ -74,6 +76,7 @@ import {
   updatePlatformRole,
 } from "@/modules/identity/domain/platform-rbac";
 import { requirePlatformPermission } from "@/modules/identity/domain/platform-rbac-access";
+import { setActivePortalOrganization } from "@/modules/identity/portal-organization";
 import {
   formPassword,
   formString,
@@ -991,4 +994,37 @@ export async function revokePlatformRoleAssignmentAction(input: {
       return actionOk({ assignmentId: parsed.data.assignmentId });
     },
   );
+}
+
+/**
+ * M1 — set Neon Auth active organization for the signed-in member.
+ * Any authenticated AdminCN member may switch among their memberships.
+ */
+export async function setActiveOrganizationAction(input: {
+  organizationId: string;
+}): Promise<
+  ActionResult<{ organizationId: string; name: string; slug: string }>
+> {
+  return runLoggedAction("setActiveOrganizationAction", undefined, async () => {
+    await requireMemberSession();
+
+    const parsed = parseSchema(setActiveOrganizationSchema, input);
+    if (!parsed.success) {
+      return actionFail("VALIDATION_ERROR", parsed.error);
+    }
+
+    const result = await setActivePortalOrganization(
+      parsed.data.organizationId,
+    );
+    if (!result.ok) {
+      return actionFail(result.code, result.message);
+    }
+
+    revalidatePath("/", "layout");
+    return actionOk({
+      organizationId: result.data.id,
+      name: result.data.name,
+      slug: result.data.slug,
+    });
+  });
 }

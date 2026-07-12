@@ -4,6 +4,8 @@
 
 > **Retired product name:** Client Declaration Portal — compulsory deprecate. See [doc/adr/001-afenda-lite-product-identity.md](doc/adr/001-afenda-lite-product-identity.md).
 
+**Local disk path:** prefer `C:\JackProject\afenda-bolt\afenda-lite`. If this clone is still named `client-declaration-portal`, close Cursor and run `C:\JackProject\afenda-bolt\rename-afenda-lite.ps1`, then reopen the `afenda-lite` folder.
+
 ## What you get
 
 - Operator sign-in and AdminCN shell for entitled modules

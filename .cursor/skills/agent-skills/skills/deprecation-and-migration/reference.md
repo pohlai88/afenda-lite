@@ -24,7 +24,7 @@ Status meanings:
 | GitHub `pohlai88/iam-check` | `pohlai88/afenda-lite` | Retired | Renamed 2026-07-12 |
 | Vercel project `iam-check` | `afenda-lite` | Retired | Renamed 2026-07-12 |
 | Prod URL `https://iam-check.vercel.app` | `https://afenda-lite.vercel.app` | Redirect-only legacy alias | Keep until cutover; `APP_URL` is Afenda-Lite |
-| Disk folder `client-declaration-portal` | `afenda-lite` | Pending local | Folder locked by Cursor — run `Rename-Item` after closing workspace, then reopen `C:\JackProject\afenda-bolt\afenda-lite` |
+| Disk folder `client-declaration-portal` | `afenda-lite` | **Pending operator** | In-repo residue cleared. Detached waiter: `C:\JackProject\afenda-bolt\rename-afenda-lite.ps1` (polls until unlock). **Close this Cursor workspace**, wait for rename, reopen `C:\JackProject\afenda-bolt\afenda-lite`. Log: `rename-afenda-lite.log`. |
 
 ---
 
@@ -74,6 +74,16 @@ See [doc/architecture/closed-scope-register.md](../../../../doc/architecture/clo
 | `/client` workspace product restore | Closed — stubs only; reopen checklist required |
 | FFT P3 **prod** flag promotion | Closed — gate-register only |
 | SaaS billing / 2FA chrome | Intentional deferred — not Identity product |
+
+## Tenancy (hard cutover + multi-org ready)
+
+| Retired | Replacement | Status | Notes |
+|---------|-------------|--------|-------|
+| Soft SQL `(organization_id IS NULL OR = $org)` dual-mode | Hard `organization_id = $org` + migration `027` | Hard-deleted | CI `check:tenancy-residue`; ADR-002 |
+| `promoteLegacyFftEntry` / login FFT promote | Platform `fft.access` + write-time ensure | Hard-deleted | |
+| Arbitrary `organizations[0]` / first-org DB stamp | Active → slug → sole membership; ops `--organization-id` | Retired | M1 + M4; [multi-tenant-ecosystem.md](../../../../doc/architecture/multi-tenant-ecosystem.md) |
+| Default org slug/name `client-declaration-portal` / `iam-check` | `afenda-lite` (or `PORTAL_ORG_*`) | Retired | Product identity ADR-001 |
+| Teaching “multi-org ready **not** claimed” / org-switcher as v1 non-goal | M1–M4 shipped claim in ecosystem SSOT | Retired framing | Do not re-teach soft-harden as current |
 
 ---
 

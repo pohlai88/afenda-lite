@@ -185,6 +185,11 @@ export const ENV_VAR_MANIFEST = [
     runtime: true,
   },
   {
+    key: "PORTAL_ORG_SWITCHER_ENABLED",
+    kind: "optionalBooleanFlag",
+    runtime: true,
+  },
+  {
     key: "PLAYGROUND_ENABLED",
     kind: "optionalBooleanFlag",
     localOnly: true,

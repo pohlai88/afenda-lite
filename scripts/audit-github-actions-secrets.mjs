@@ -38,7 +38,7 @@ function main() {
   const stale = GITHUB_ACTIONS_STALE_KEYS.filter((k) => presentSet.has(k));
   const legacyPresent = GITHUB_ACTIONS_LEGACY_NEON_KEYS.filter((k) => presentSet.has(k));
 
-  console.log("GitHub Actions secrets audit (iam-check)\n");
+  console.log("GitHub Actions secrets audit (afenda-lite)\n");
   console.log(`Present (${presentSet.size}): ${[...presentSet].sort().join(", ") || "(none)"}`);
   console.log(`Required for CI (${GITHUB_ACTIONS_CI_KEYS.length}): ${GITHUB_ACTIONS_CI_KEYS.join(", ")}\n`);
 

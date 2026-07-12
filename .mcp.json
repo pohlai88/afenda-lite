@@ -19,7 +19,7 @@
       "command": "node",
       "args": ["scripts/shadcn-studio-mcp.mjs"]
     },
-    "client-declaration-portal-sb-mcp": {
+    "afenda-lite-sb-mcp": {
       "type": "http",
       "url": "http://localhost:6006/mcp"
     },

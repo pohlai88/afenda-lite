@@ -8,7 +8,7 @@
 | **Scope** | Multi-tenant boundary + app-owned permission-catalog RBAC for Afenda-Lite modules |
 | **Out of scope** | Neon RLS; Neon Auth custom roles (unsupported); merging FFT **domain** permission catalogs into `platform_*` tables |
 | **Follow-up done** | FFT `organization_id` (026); hard cutover `027` (`NOT NULL` + hard filters); operator session; org-scoped Users via `neon_auth.member`; **control-plane** `fft.access` module entry (catalogs remain separate) |
-| **Living inventory** | [multi-tenant-ecosystem.md](../../architecture/multi-tenant-ecosystem.md) — config inventory, residual debt, post-v1 M1–M5 |
+| **Living inventory** | [multi-tenant-ecosystem.md](../../architecture/multi-tenant-ecosystem.md) — config inventory, residual debt (D4–D5), multi-org ready M1–M4 |
 
 **Related:** [001-modular-monolith-hexagonal.md](./001-modular-monolith-hexagonal.md) · [docs/fft/adr/001-rbac.md](../../docs/fft/adr/001-rbac.md) · Neon Auth Organization plugin (owner/admin/member fixed)
 

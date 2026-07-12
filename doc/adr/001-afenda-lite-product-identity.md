@@ -69,7 +69,7 @@ The product is no longer a portal product. It is the **beta** surface of the off
 |------|------|
 | Remove legacy `iam-check.vercel.app` alias | After bookmarks/clients cut over |
 | Neon Console project display name `iam-check` → `afenda-lite` | Optional console rename |
-| Local disk folder `client-declaration-portal` → `afenda-lite` | Rename + reopen Cursor workspace |
+| Local disk folder `client-declaration-portal` → `afenda-lite` | Close Cursor → `C:\JackProject\afenda-bolt\rename-afenda-lite.ps1` → reopen `afenda-lite` |
 | Archive docs that still say “portal” as product | Footnote or rewrite on touch |
 
 ## Related

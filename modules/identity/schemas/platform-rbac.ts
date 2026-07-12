@@ -78,9 +78,17 @@ export const revokePlatformRoleAssignmentSchema = z.object({
   assignmentId: uuidSchema,
 });
 
+/** M1 — switch Neon Auth session.activeOrganizationId (membership-gated). */
+export const setActiveOrganizationSchema = z.object({
+  organizationId: organizationIdSchema,
+});
+
 export type CreatePlatformRoleInput = z.infer<typeof createPlatformRoleSchema>;
 export type UpdatePlatformRoleInput = z.infer<typeof updatePlatformRoleSchema>;
 export type SetPlatformRolePermissionInput = z.infer<
   typeof setPlatformRolePermissionSchema
 >;
 export type AssignPlatformRoleInput = z.infer<typeof assignPlatformRoleSchema>;
+export type SetActiveOrganizationInput = z.infer<
+  typeof setActiveOrganizationSchema
+>;
