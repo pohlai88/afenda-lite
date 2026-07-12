@@ -20,7 +20,7 @@ alwaysApply: true
 ## Visual / hero / atmosphere work
 
 - Default mode: **Plan first** → user approves → then implement.
-- Default surface for atmosphere experiments: fixtures under `components/portal-atmosphere/fixtures/` (Guardian / PA experiments stay experiment-only unless explicitly reopened). Storybook has been removed.
+- Default surface for atmosphere experiments: **dormant** — `components/portal-atmosphere/` was hard-deleted; do not remount. Brand hero refs live under `public/brand/`. Guardian / PA stay experiment-only unless explicitly reopened. Storybook has been removed.
 - Production `/auth/*` uses Studio login-page-02 + Neon (`features/auth/`). See [`doc/frontend/05-ui-surfaces.md`](doc/frontend/05-ui-surfaces.md) and [`doc/frontend/06-admincn-alignment.md`](doc/frontend/06-admincn-alignment.md).
 
 ## Quality bar before shipping UI

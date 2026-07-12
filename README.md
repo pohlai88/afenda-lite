@@ -19,12 +19,14 @@
 Internal full-stack doctrine and slice specs for agents and maintainers:
 
 - [doc/adr/001-afenda-lite-product-identity.md](doc/adr/001-afenda-lite-product-identity.md) — **product name SSOT**
-- [docs/TRACKING.md](docs/TRACKING.md) — **program status SSOT** (gates, backlog, open gaps)
-- [docs/architecture/iam-check-doctrine.md](docs/architecture/iam-check-doctrine.md) — boundaries, CCP register, roadmap
-- [docs/architecture/repo-layout.md](docs/architecture/repo-layout.md) — **Root / L1 / L2 folder rules** (where code lives)
+- [doc/architecture/closed-scope-register.md](doc/architecture/closed-scope-register.md) — closed vs open product scope
+- [docs/fft/ops/gate-register.md](docs/fft/ops/gate-register.md) · [docs/fft/RUNTIME.md](docs/fft/RUNTIME.md) — Feed Farm Trade ops / program gates
+- [docs/architecture/repo-migration-map.md](docs/architecture/repo-migration-map.md) — **folder migration closed** (Root / L1 / L2)
+- [doc/frontend/02-folder-map.md](doc/frontend/02-folder-map.md) — frontend folder map
 - [docs/architecture/slices/](docs/architecture/slices/) — per-slice acceptance proofs (S0–S18)
 - [docs/backlogs/post-deploy-verification.md](docs/backlogs/post-deploy-verification.md) — production sign-off checklist
 - [doc/README.md](doc/README.md) — frontend / API / backend design index
+- [`.cursor/skills/agent-skills/skills/deprecation-and-migration/reference.md`](.cursor/skills/agent-skills/skills/deprecation-and-migration/reference.md) — compulsory deprecation register
 
 ## Database migrations
 

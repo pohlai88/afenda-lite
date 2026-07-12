@@ -74,4 +74,4 @@ Evidence template: [rollout.md § Evidence report template](../../../../docs/fft
 |------|-------|
 | Remaining development | [remaining-development.md](../../../../docs/architecture/remaining-development.md) |
 | Guardian Auth closeout | [pa-guardian-module-remaining.md](../../../../docs/architecture/slices/portal-atmosphere/pa-guardian-module-remaining.md) |
-| Program tracking | [TRACKING.md](../../../../docs/TRACKING.md) |
+| Program tracking | [gate-register.md](../../../../docs/fft/ops/gate-register.md) · [closed-scope-register.md](../../../../doc/architecture/closed-scope-register.md) |

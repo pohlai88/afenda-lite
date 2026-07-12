@@ -10,7 +10,7 @@
 2. For `/fft` product UI / MVP: FE ADR trio above (001 → 001A → 001R)
 3. Depth doc by type (table below) only when behavior or gate evidence is needed
 
-Also: [AGENTS.md](../../AGENTS.md) § Feed Farm Trade · [TRACKING.md](../TRACKING.md) § Feed Farm Trade
+Also: [AGENTS.md](../../AGENTS.md) § Feed Farm Trade · [ops/gate-register.md](./ops/gate-register.md) · [closed-scope-register](../../doc/architecture/closed-scope-register.md)
 
 ---
 

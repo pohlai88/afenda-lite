@@ -1,10 +1,12 @@
 ---
-description: Portal atmosphere hero design — references, assets, forbidden shortcuts
-globs: components/portal-atmosphere/**,public/brand/**
+description: Portal atmosphere hero design — references, assets, forbidden shortcuts (dormant fixture tree)
+globs: public/brand/**
 alwaysApply: false
 ---
 
 # Portal atmosphere design
+
+**Status:** Fixture tree under `components/portal-atmosphere/` was **hard-deleted** (2026-07-11). Do not remount it. Production `/auth/*` uses Studio login-page-02 + Neon. This rule applies to brand hero assets under `public/brand/**` only until an explicit reopen restores an experiment surface.
 
 ## Visual authority
 
@@ -35,13 +37,12 @@ Use **separate dark/light owl assets**. Never fake light theme by inverting the 
 - CSS `filter: invert()` / hue-rotate hacks on owl images for theme switching
 - `preset="single"` or one PNG pasted as the hero (black-box sticker on page)
 - Thin CSS circles as stand-in for celestial geometry / marble atmosphere from comps
-- Wiring new hero experiments into `PortalAuthLayout` or `app/auth/**`
+- Wiring new hero experiments into production `/auth/**`
 - Reintroducing anything listed in `pa-rejected-approaches.md`
+- Recreating `components/portal-atmosphere/` without an explicit reopen
 
-## Allowed experiment path
+## Experiment path (dormant)
 
-1. Fixture under `components/portal-atmosphere/fixtures/`
-2. CSS in `components/portal-atmosphere/styles/` — layered deco, real dual assets, comp-aligned grid
-3. User reviews via `/playground` embed or local route before any prod wiring
+No on-disk fixture tree. Guardian / PA experiments stay closed until reopen. Local review of brand assets: `/playground` embed only.
 
 Storybook has been removed from this repo — do not recreate `.storybook/` or `stories/`.

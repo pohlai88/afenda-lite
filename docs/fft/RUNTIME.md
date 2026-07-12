@@ -176,5 +176,5 @@ npm run process:trade-closing-soon
 
 ## Assumptions
 
-1. Program cross-status: [docs/TRACKING.md](../TRACKING.md) § Feed Farm Trade.
+1. Program cross-status: [docs/fft/ops/gate-register.md](ops/gate-register.md) · [doc/architecture/closed-scope-register.md](../../doc/architecture/closed-scope-register.md).
 2. Feed Farm Trade is **not** the default agent mission after 2026-07-10 — see [remaining-development.md](../architecture/remaining-development.md).
