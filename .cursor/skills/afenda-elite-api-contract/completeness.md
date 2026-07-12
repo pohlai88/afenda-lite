@@ -1,29 +1,37 @@
-# Portal API contract — completeness (2026-07-12)
+# Portal API contract — completeness (2026-07-13)
 
-Plan authority: this skill + `api-now.md` + `docs/api/*`.
+Plan authority: this skill + `api-now.md` + `docs/api/*` (SSOT: API-001..004, REST-001, OPEN-001).
 
-| Slice | Plan | Code | Status |
-|-------|------|------|--------|
-| api-now handlers only | health / auth / draft | `app/api/{health,auth,client}` | **Done** |
-| No web-UI list REST | RSC → domain | No `/api/declarations` etc. | **Done** |
-| ActionResult / APIErrorBody | Contract | Used at Action / Route edges | **Done** |
-| `parseSchema` from Platform | Shared Zod | Actions import Platform common | **Done** |
-| Branded IDs one-version | Param = brand = Zod | `DeclarationId` / `UserId` / `AssignmentId` … | **Done** |
-| Draft Route Handler compose | Declarations owns | `modules/declarations/api/client-declaration-draft-route` + thin `app/api/client/declaration-draft` | **Done** |
-| FFT HTTP catalog | Contract-only | Not implemented as Route Handlers | **Intentional** |
-| Shared `PaginatedResult` Zod | Named gap until HTTP lists | Deferred | **Deferred** |
-| Divergent Action vs HTTP for same use-case | Forbidden | Draft Action + draft Route share domain | **Done** |
+**Forward writing:** The contract in `docs/api/*` is authoritative now. Missing trees or apps are **recorded** as forward work against those docs — do not soften Status to “wait for checkout.”
+
+| Slice | Plan | Recorded location | Status |
+|-------|------|-------------------|--------|
+| api-now handlers only | health / auth / draft | [REST-001](../../../docs/api/REST-001-rest-resources.md) api-now; paths `app/api/{health,auth,client}` | **Done** (contract) |
+| No web-UI list REST | RSC → domain | [API-001](../../../docs/api/API-001-api-boundaries.md) adapter choice | **Done** (contract) |
+| ActionResult / APIErrorBody | Shared codes | [API-002](../../../docs/api/API-002-error-contract.md) | **Done** (contract) |
+| HTTP success `{ data }` | Envelope | [API-001](../../../docs/api/API-001-api-boundaries.md); OPEN `*Envelope` schemas | **Done** (contract) |
+| `parseSchema` from Platform | Shared Zod | [API-004](../../../docs/api/API-004-schema-map.md) | **Done** (contract) |
+| Branded IDs one-version | Param = brand = Zod | [API-003](../../../docs/api/API-003-api-types.md) | **Done** (contract) |
+| Draft Route Handler compose | Declarations owns | REST-001 + `modules/declarations/api/client-declaration-draft-route` | **Done** (contract) |
+| FFT HTTP catalog | Contract-only, locale-free | REST-001 FFT appendix — not Route Handlers until reopen | **Intentional** |
+| Docs prefix split API/REST/OPEN | DOC-001 + pack | `docs/api/API-*`, `REST-001`, `OPEN-001` | **Done** |
+| Shared `PaginatedResult` Zod | Named gap | [API-004 Gaps](../../../docs/api/API-004-schema-map.md) | **Recorded** (forward) |
+| OpenAPI api-now YAML + gate | OPEN-001 | YAML + `npm run check:openapi` | **Done** |
+| OpenAPI Zod import handoff | Drop inline mirrors | [OPEN-001 Forward — Zod](../../../docs/api/OPEN-001-openapi.md) | **Recorded** (forward) |
+| OpenAPI Fumadocs wire | Docs app consumer | [OPEN-001 Forward — Fumadocs](../../../docs/api/OPEN-001-openapi.md) | **Recorded** (forward) |
+| OpenAPI contract-only expand | `x-afenda-status` | [OPEN-001 Forward — contract-only](../../../docs/api/OPEN-001-openapi.md) | **Recorded** (forward) |
+| Divergent Action vs HTTP for same use-case | Forbidden | Draft Action + draft Route share domain | **Done** (contract) |
 
 ## Stabilization (latest)
 
-- Draft API runner moved out of Platform into Declarations (boundary + one-version Action/HTTP still share domain + schemas)
+- Draft API runner owned by Declarations (one-version Action/HTTP share domain + schemas)
 - Org-admin RBAC mutations stay on Server Actions (`admin.ts`), not new `/api` routes
-- Hard tenancy cutover: Actions pass required `organizationId` into domain (no soft `(NULL OR org)` dual-mode); see [multi-tenant-ecosystem.md](../../../docs/architecture/multi-tenant-ecosystem.md)
+- Hard tenancy cutover: required `organizationId` into domain — see [ARCH-003](../../../docs/architecture/ARCH-003-multi-tenant-ecosystem.md)
+- Pack entry: [docs/api/README.md](../../../docs/api/README.md)
 
 ## Verify
 
 ```bash
-# Only three API trees under app/api
-npx tsc --noEmit
-npm run check:reliance-mapping-drift
+node scripts/check-docs-naming.mjs
+npm run check:openapi
 ```

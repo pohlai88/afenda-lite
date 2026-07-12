@@ -16,7 +16,6 @@
     "env:neon-production": "node scripts/apply-production-neon-env.mjs && npm run env:compose",
     "hooks:install": "node scripts/install-git-hooks.mjs",
     "postinstall": "node scripts/install-git-hooks.mjs",
-    "check:doc-registry": "node scripts/check-doc-registry.mjs",
     "env:split": "node scripts/split-env.mjs",
     "clean:artifacts": "node -e \"const fs=require('fs'); for (const d of ['.next','.turbo','coverage','test-results','playwright-report','.artifacts']) fs.rmSync(d,{recursive:true,force:true})\"",
     "build": "next build",
@@ -55,6 +54,9 @@
     "gh": "node scripts/gh-cli.mjs",
     "db:backfill": "node scripts/db-backfill-migrations.mjs",
     "check:copy": "node scripts/check-portal-terminology.mjs",
+    "check:docs-naming": "node scripts/check-docs-naming.mjs",
+    "openapi:generate": "npx tsx scripts/generate-openapi.mts",
+    "check:openapi": "node scripts/check-openapi.mjs",
     "check:nav": "node scripts/check-portal-nav.mjs",
     "check:proxy": "node scripts/check-proxy-routes.mjs",
     "check:db-schema": "node scripts/check-db-schema.mjs",
@@ -125,7 +127,9 @@
     "zustand": "^5.0.14"
   },
   "devDependencies": {
+    "@asteasolutions/zod-to-openapi": "^8.5.0",
     "@playwright/test": "^1.61.1",
+    "@stoplight/spectral-cli": "^6.16.1",
     "@tailwindcss/postcss": "^4",
     "@tailwindcss/typography": "^0.5.20",
     "@testing-library/jest-dom": "^6.9.1",
@@ -144,7 +148,8 @@
     "tsx": "^4.23.0",
     "typescript": "^5",
     "vite": "^6.4.3",
-    "vitest": "^4.1.10"
+    "vitest": "^4.1.10",
+    "yaml": "^2.9.0"
   },
   "packageManager": "pnpm@10.33.4+sha512.1c67b3b359b2d408119ba1ed289f34b8fc3c6873412bec6fd264fbdc82489e510fcbecb9ce9d22dae7f3b76269d8441046014bdca53b9979cd7a561ad631b800"
 }

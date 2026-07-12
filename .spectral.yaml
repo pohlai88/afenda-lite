@@ -1,0 +1,10 @@
+extends:
+  - spectral:oas
+
+rules:
+  # Info URL is optional for internal docs; keep core OAS rules.
+  info-contact: off
+  info-description: off
+  operation-operationId: off
+  operation-tags: true
+  oas3-api-servers: true

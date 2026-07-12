@@ -1,6 +1,6 @@
 # Branded IDs and schema map
 
-**Sources:** [docs/api/04-types.md](../../../docs/api/04-types.md) · [docs/api/05-schema-map.md](../../../docs/api/05-schema-map.md)  
+**Sources:** [docs/api/API-003-api-types.md](../../../docs/api/API-003-api-types.md) · [docs/api/API-004-schema-map.md](../../../docs/api/API-004-schema-map.md)  
 **Frontend route params:** [../afenda-elite-frontend-scaffold/boundaries.md](../afenda-elite-frontend-scaffold/boundaries.md)
 
 ---
@@ -61,7 +61,7 @@ function asDeclarationId(id: string): DeclarationId {
 | `modules/identity/schemas/auth.ts` | Sign-in boundary | `signInSchema` |
 | `modules/identity/schemas/users.ts` | Organization-admin users | `userIdSchema`, `UserId`, create/import/update/role/ban/bulk/password schemas |
 | `modules/identity/schemas/platform-rbac.ts` | Platform RBAC | `OrganizationId`, `PlatformRoleId`, `PermissionCode`, create/update/assign schemas |
-| `modules/platform/schemas/action-result.ts` | Shared Action contract | `ActionResult<T>`, `actionOk`, `actionFail` (docs/api/03-error-contract) |
+| `modules/platform/schemas/action-result.ts` | Shared Action contract | `ActionResult<T>`, `actionOk`, `actionFail` (docs/api/API-002-error-contract) |
 | `modules/declarations/schemas/client.ts` | Onboarding, declare submit/draft, invites, deletes | `clientOnboardingSchema`, `submitClientDeclarationSchema`, `saveClientDeclarationDraftSchema`, `issueClientInviteSchema`, `removeClientRegistrationSchema`, `deleteClientAssignmentSchema` |
 | `modules/declarations/schemas/surveys.ts` | Declarations (surveys) CRUD + public submit | `surveyMetadataFormSchema`, `updateSurveySchema`, `deleteSurveySchema`, `submitSurveyResponseSchema`, param schemas |
 | `modules/declarations/schemas/declarations.ts` | Evidence registration | `registerEvidenceSchema` |
@@ -108,7 +108,7 @@ Do not re-validate the same shape inside domain helpers.
 
 ## Known schema gaps
 
-These are **named gaps** from `docs/api/05-schema-map.md` — do not invent ad-hoc schemas to fill them; add only when the corresponding feature is promoted:
+These are **named gaps** from `docs/api/API-004-schema-map.md` — do not invent ad-hoc schemas to fill them; add only when the corresponding feature is promoted:
 
 | Gap | Condition to add |
 |-----|-----------------|

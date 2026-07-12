@@ -15,12 +15,16 @@ description: >-
 | Doc | Focus |
 |-----|-------|
 | [completeness.md](completeness.md) | Plan ↔ codebase matrix |
-| [docs/api/01-boundaries.md](../../../docs/api/01-boundaries.md) | Trust boundary, adapter choice, session guards, validation rule |
-| [docs/api/02-rest-resources.md](../../../docs/api/02-rest-resources.md) | api-now vs contract-only catalog, naming, pagination |
-| [docs/api/03-error-contract.md](../../../docs/api/03-error-contract.md) | Wire shape, HTTP→code map, ActionResult |
-| [docs/api/04-types.md](../../../docs/api/04-types.md) | Branded IDs, Input/Output split, discriminated unions |
-| [docs/api/05-schema-map.md](../../../docs/api/05-schema-map.md) | `modules/*/schemas` map, resource→schema cross-ref |
-| [docs/backend/07-conventions.md](../../../docs/backend/07-conventions.md) | Backend conventions + one-version pointers |
+| [docs/api/API-001-api-boundaries.md](../../../docs/api/API-001-api-boundaries.md) | Trust boundary, adapter choice, security pipeline |
+| [docs/api/REST-001-rest-resources.md](../../../docs/api/REST-001-rest-resources.md) | api-now vs contract-only catalog, naming, pagination |
+| [docs/api/API-002-error-contract.md](../../../docs/api/API-002-error-contract.md) | Wire shape, HTTP→code map, ActionResult, three surfaces |
+| [docs/api/API-003-api-types.md](../../../docs/api/API-003-api-types.md) | Branded IDs, Input/Output split, discriminated unions |
+| [docs/api/API-004-schema-map.md](../../../docs/api/API-004-schema-map.md) | `modules/*/schemas` map, resource→schema cross-ref |
+| [docs/api/OPEN-001-openapi.md](../../../docs/api/OPEN-001-openapi.md) | OpenAPI guide (YAML generated separately) |
+| [docs/api/README.md](../../../docs/api/README.md) | Pack entry + Accept/Upgrade/Reject snapshot |
+| [docs/backend/ARCH-010-backend-conventions.md](../../../docs/backend/ARCH-010-backend-conventions.md) | Backend conventions + one-version pointers |
+
+**Prefixes:** `API-` cross-cutting BFF · `REST-` human path catalogs · `OPEN-` OpenAPI (reserved stub).
 
 **Cross-skill links**
 
@@ -43,7 +47,7 @@ External REST / mobile consumer                  → Route Handler per docs/api 
 
 One domain function can serve both Action **and** Route Handler — keep it DRY.
 
-Full tree SSOT: [docs/frontend/04-bff-and-data.md](../../../docs/frontend/04-bff-and-data.md).
+Full tree SSOT: [docs/frontend/ARCH-013-bff-and-data-flow.md](../../../docs/frontend/ARCH-013-bff-and-data-flow.md).
 
 ---
 

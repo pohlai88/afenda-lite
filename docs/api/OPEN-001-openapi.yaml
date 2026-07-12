@@ -1,0 +1,432 @@
+# GENERATED — do not hand-edit.
+# Source: scripts/generate-openapi.mts
+# Guide: docs/api/OPEN-001-openapi.md
+# Regenerate: npm run openapi:generate
+openapi: 3.0.3
+info:
+  title: Afenda-Lite HTTP (api-now)
+  version: 1.0.0
+  description: "Machine OpenAPI for implemented Route Handlers only. Success JSON uses `{ data }`
+    (healthJson / apiData). Errors use APIErrorBody (no data wrapper). Neon Auth `/api/auth/*` is
+    excluded. Contract-only REST lives in REST-001 until handlers exist. One-version rule: no
+    `/api/v1`."
+servers:
+  - url: https://afenda-lite.vercel.app
+    description: Production
+  - url: http://localhost:3000
+    description: Local next dev
+tags:
+  - name: Health
+    description: Public probes
+  - name: DeclarationDraft
+    description: Client autosave XHR (api-now)
+components:
+  securitySchemes:
+    neonAuthSession:
+      type: apiKey
+      in: cookie
+      name: session
+      description: Neon Auth client session cookie (browser same-origin). Cookie name here is illustrative
+        — Neon owns the real name.
+  schemas:
+    APIErrorBody:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              enum:
+                - BAD_REQUEST
+                - UNAUTHORIZED
+                - FORBIDDEN
+                - NOT_FOUND
+                - CONFLICT
+                - VALIDATION_ERROR
+                - INTERNAL_ERROR
+            message:
+              type: string
+              minLength: 1
+            details:
+              nullable: true
+          required:
+            - code
+            - message
+      required:
+        - error
+    LivenessResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+            - alive
+        timestamp:
+          type: string
+          format: date-time
+      required:
+        - status
+        - timestamp
+    ReadinessResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+            - ready
+            - degraded
+        topology:
+          type: string
+        storage:
+          type: string
+        connection:
+          type: object
+          properties:
+            pooler:
+              type: boolean
+            ssl:
+              type: string
+          required:
+            - pooler
+            - ssl
+        auth:
+          type: string
+          enum:
+            - configured
+            - missing
+            - degraded
+        timestamp:
+          type: string
+          format: date-time
+      required:
+        - status
+        - topology
+        - storage
+        - connection
+        - auth
+        - timestamp
+    SaveClientDeclarationDraft:
+      type: object
+      properties:
+        assignmentId:
+          type: string
+          format: uuid
+          description: UUID v4
+          example: 550e8400-e29b-41d4-a716-446655440000
+        answers:
+          type: object
+          additionalProperties:
+            anyOf:
+              - type: boolean
+              - type: string
+                maxLength: 10000
+          description: Map of questionId → answer
+        stepIndex:
+          type: integer
+          minimum: 0
+          maximum: 10000
+      required:
+        - assignmentId
+        - answers
+        - stepIndex
+    DeclarationDraftGetResponse:
+      type: object
+      properties:
+        assignmentId:
+          type: string
+          format: uuid
+          description: UUID v4
+          example: 550e8400-e29b-41d4-a716-446655440000
+        answers:
+          type: object
+          additionalProperties:
+            anyOf:
+              - type: boolean
+              - type: string
+                maxLength: 10000
+          description: Map of questionId → answer
+        stepIndex:
+          type: integer
+          minimum: 0
+        savedAt:
+          type: string
+          nullable: true
+          format: date-time
+      required:
+        - assignmentId
+        - answers
+        - stepIndex
+        - savedAt
+    DeclarationDraftWriteResponse:
+      type: object
+      properties:
+        savedAt:
+          type: string
+          format: date-time
+      required:
+        - savedAt
+    LivenessEnvelope:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/LivenessResponse"
+      required:
+        - data
+    ReadinessEnvelope:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/ReadinessResponse"
+      required:
+        - data
+    DeclarationDraftGetEnvelope:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/DeclarationDraftGetResponse"
+      required:
+        - data
+    DeclarationDraftWriteEnvelope:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/DeclarationDraftWriteResponse"
+      required:
+        - data
+  parameters: {}
+paths:
+  /api/health/liveness:
+    get:
+      summary: Process liveness probe
+      description: Public process-up check. Optional short public CDN cache.
+      tags:
+        - Health
+      responses:
+        "200":
+          description: Process is alive
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LivenessEnvelope"
+  /api/health/readiness:
+    get:
+      summary: Dependency readiness probe
+      description: "DB / auth dependency snapshot. Prefer Cache-Control: no-store."
+      tags:
+        - Health
+      responses:
+        "200":
+          description: Ready or degraded snapshot
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReadinessEnvelope"
+  /api/client/declaration-draft:
+    get:
+      summary: Load client declaration draft
+      description: "Requires client session + onboarding. Cache-Control: private, no-store. Success body
+        uses `{ data }` envelope."
+      tags:
+        - DeclarationDraft
+      security:
+        - neonAuthSession: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: UUID v4
+            example: 550e8400-e29b-41d4-a716-446655440000
+          required: true
+          description: UUID v4
+          name: assignmentId
+          in: query
+      responses:
+        "200":
+          description: Draft loaded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeclarationDraftGetEnvelope"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/APIErrorBody"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/APIErrorBody"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/APIErrorBody"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/APIErrorBody"
+        "422":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/APIErrorBody"
+    put:
+      summary: Persist client declaration draft
+      description: "Full draft replace (saveClientDeclarationDraftSchema). Cache-Control: private, no-store."
+      tags:
+        - DeclarationDraft
+      security:
+        - neonAuthSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SaveClientDeclarationDraft"
+      responses:
+        "200":
+          description: Draft saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeclarationDraftWriteEnvelope"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/APIErrorBody"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/APIErrorBody"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/APIErrorBody"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/APIErrorBody"
+        "422":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/APIErrorBody"
+    patch:
+      summary: Persist client declaration draft
+      description: "Same write body as PUT when partial fields are not split at the schema. Cache-Control:
+        private, no-store."
+      tags:
+        - DeclarationDraft
+      security:
+        - neonAuthSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SaveClientDeclarationDraft"
+      responses:
+        "200":
+          description: Draft saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeclarationDraftWriteEnvelope"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/APIErrorBody"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/APIErrorBody"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/APIErrorBody"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/APIErrorBody"
+        "422":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/APIErrorBody"
+    post:
+      summary: Persist draft (keepalive alias)
+      description: "Keepalive alias of PUT/PATCH with the same body. Cache-Control: private, no-store."
+      tags:
+        - DeclarationDraft
+      security:
+        - neonAuthSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SaveClientDeclarationDraft"
+      responses:
+        "200":
+          description: Draft saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeclarationDraftWriteEnvelope"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/APIErrorBody"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/APIErrorBody"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/APIErrorBody"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/APIErrorBody"
+        "422":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/APIErrorBody"
+
