@@ -9,12 +9,15 @@ export type PlatformScopeType = (typeof PLATFORM_SCOPE_TYPES)[number];
 
 export type PlatformPermissionDef = {
   code: string;
-  module: "org" | "declarations" | "account";
+  module: "org" | "declarations" | "account" | "fft";
   description: string;
   sensitive: boolean;
 };
 
-/** Fixed product-owned permission catalog (ADR-002). FFT codes stay in modules/fft. */
+/**
+ * Fixed product-owned permission catalog (ADR-002).
+ * Module entry codes (e.g. fft.access) live here; FFT domain codes stay in modules/fft.
+ */
 export const PLATFORM_PERMISSION_CATALOG: readonly PlatformPermissionDef[] = [
   {
     code: "org.users.manage",
@@ -52,6 +55,12 @@ export const PLATFORM_PERMISSION_CATALOG: readonly PlatformPermissionDef[] = [
     description: "Manage own account settings",
     sensitive: false,
   },
+  {
+    code: "fft.access",
+    module: "fft",
+    description: "Enter Feed Farm Trade module and see FFT nav",
+    sensitive: false,
+  },
 ] as const;
 
 export type PlatformPermissionCode =
@@ -86,7 +95,8 @@ export const PLATFORM_ROLE_TEMPLATES: readonly PlatformRoleTemplateDef[] = [
   {
     templateKey: "org_admin",
     name: "Org Admin",
-    description: "Full organization administration for Declarations and users",
+    description:
+      "Full organization administration including Feed Farm Trade module entry",
     permissionCodes: ALL_CODES,
   },
   {

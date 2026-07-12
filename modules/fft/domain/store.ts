@@ -11,6 +11,7 @@ import {
   mapSalesMemberRow,
   resolvePriorityForCustomer,
 } from "@/modules/fft/domain/mappers";
+import { organizationScopeSql } from "@/modules/fft/domain/organization-scope";
 import {
   FFT_PERMISSION_CATALOG,
   FFT_ROLE_TEMPLATES,
@@ -64,14 +65,14 @@ export async function listEvents(options?: {
     const result = includeTemplates
       ? await pool.query(
           `SELECT * FROM fft_event
-           WHERE (organization_id IS NULL OR organization_id = $1)
+           WHERE ${organizationScopeSql("organization_id", 1)}
            ORDER BY created_at DESC`,
           [organizationId],
         )
       : await pool.query(
           `SELECT * FROM fft_event
            WHERE is_template = FALSE
-             AND (organization_id IS NULL OR organization_id = $1)
+             AND ${organizationScopeSql("organization_id", 1)}
            ORDER BY created_at DESC`,
           [organizationId],
         );
@@ -94,7 +95,7 @@ export async function getEventById(
     ? await pool.query(
         `SELECT * FROM fft_event
          WHERE id = $1
-           AND (organization_id IS NULL OR organization_id = $2)`,
+           AND ${organizationScopeSql("organization_id", 2)}`,
         [id, organizationId],
       )
     : await pool.query(`SELECT * FROM fft_event WHERE id = $1`, [id]);
@@ -122,7 +123,7 @@ export async function listSalesMembers(organizationId?: string) {
     ? await pool.query(
         `SELECT * FROM fft_sales_member
          WHERE active = TRUE
-           AND (organization_id IS NULL OR organization_id = $1)
+           AND ${organizationScopeSql("organization_id", 1)}
          ORDER BY email`,
         [organizationId],
       )
@@ -287,13 +288,21 @@ export async function cloneEventFromTemplate(
   sourceEventId: string,
   createdBy: string,
   overrides?: { eventName?: string; opensAt?: Date; closesAt?: Date },
+  organizationId?: string,
 ): Promise<FftEvent> {
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
-    const source = await client.query(`SELECT * FROM fft_event WHERE id = $1`, [
-      sourceEventId,
-    ]);
+    const source = organizationId
+      ? await client.query(
+          `SELECT * FROM fft_event
+           WHERE id = $1
+             AND ${organizationScopeSql("organization_id", 2)}`,
+          [sourceEventId, organizationId],
+        )
+      : await client.query(`SELECT * FROM fft_event WHERE id = $1`, [
+          sourceEventId,
+        ]);
     if (!source.rows[0]) {
       throw new Error("source_event_not_found");
     }
@@ -306,8 +315,9 @@ export async function cloneEventFromTemplate(
          opens_at, closes_at, timezone, status, source_location, allocation_method,
          standalone_program, combination_allowed, transfer_allowed,
          deposit_required, deposit_refundable, support_type, support_amount_per_unit,
-         support_unit_label, is_template, cloned_from_id, created_by, updated_by)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'draft', $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, FALSE, $19, $20, $20)
+         support_unit_label, is_template, cloned_from_id, created_by, updated_by,
+         organization_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'draft', $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, FALSE, $19, $20, $20, $21)
        RETURNING *`,
       [
         generateEventCode(overrides?.eventName ?? `${src.event_name} Copy`),
@@ -330,6 +340,7 @@ export async function cloneEventFromTemplate(
         src.support_unit_label,
         sourceEventId,
         createdBy,
+        organizationId ?? src.organization_id ?? null,
       ],
     );
     const eventId = newEvent.rows[0].id;
@@ -427,10 +438,21 @@ export async function cloneEventFromTemplate(
   }
 }
 
-export async function ensureGp2PigletTemplate(createdBy: string): Promise<FftEvent> {
-  const existing = await pool.query(
-    `SELECT * FROM fft_event WHERE is_template = TRUE AND event_code = 'GP2-PIGLET-TEMPLATE' LIMIT 1`,
-  );
+export async function ensureGp2PigletTemplate(
+  createdBy: string,
+  organizationId?: string,
+): Promise<FftEvent> {
+  const existing = organizationId
+    ? await pool.query(
+        `SELECT * FROM fft_event
+         WHERE is_template = TRUE AND event_code = 'GP2-PIGLET-TEMPLATE'
+           AND ${organizationScopeSql("organization_id", 1)}
+         LIMIT 1`,
+        [organizationId],
+      )
+    : await pool.query(
+        `SELECT * FROM fft_event WHERE is_template = TRUE AND event_code = 'GP2-PIGLET-TEMPLATE' LIMIT 1`,
+      );
   if (existing.rows[0]) {
     return mapEventRow(existing.rows[0]);
   }
@@ -445,8 +467,8 @@ export async function ensureGp2PigletTemplate(createdBy: string): Promise<FftEve
          opens_at, closes_at, timezone, status, source_location, allocation_method,
          standalone_program, combination_allowed, transfer_allowed,
          deposit_required, deposit_refundable, support_type, support_amount_per_unit,
-         support_unit_label, is_template, created_by, updated_by)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'draft', $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, TRUE, $19, $19)
+         support_unit_label, is_template, created_by, updated_by, organization_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'draft', $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, TRUE, $19, $19, $20)
        RETURNING *`,
       [
         template.event.eventCode,
@@ -468,6 +490,7 @@ export async function ensureGp2PigletTemplate(createdBy: string): Promise<FftEve
         template.event.supportAmountPerUnit,
         template.event.supportUnitLabel,
         createdBy,
+        organizationId ?? null,
       ],
     );
     const eventId = eventResult.rows[0].id;
@@ -1166,19 +1189,36 @@ export async function seedFftRbacCatalog(actorId?: string) {
   }
 }
 
-export async function listRoleAssignmentsForUser(userId: string) {
-  const result = await pool.query(
-    `SELECT a.id, a.user_id, a.role_id, a.scope_type, a.scope_id, a.active,
+export async function listRoleAssignmentsForUser(
+  userId: string,
+  organizationId?: string,
+) {
+  const result = organizationId
+    ? await pool.query(
+        `SELECT a.id, a.user_id, a.role_id, a.scope_type, a.scope_id, a.active,
             COALESCE(
               (SELECT array_agg(rp.permission_code ORDER BY rp.permission_code)
                FROM fft_role_permission rp WHERE rp.role_id = a.role_id),
               ARRAY[]::text[]
             ) AS permission_codes
-     FROM fft_role_assignment a
-     INNER JOIN fft_role r ON r.id = a.role_id AND r.active = TRUE
-     WHERE a.user_id = $1 AND a.active = TRUE`,
-    [userId],
-  );
+         FROM fft_role_assignment a
+         INNER JOIN fft_role r ON r.id = a.role_id AND r.active = TRUE
+         WHERE a.user_id = $1 AND a.active = TRUE
+           AND ${organizationScopeSql("a.organization_id", 2)}`,
+        [userId, organizationId],
+      )
+    : await pool.query(
+        `SELECT a.id, a.user_id, a.role_id, a.scope_type, a.scope_id, a.active,
+            COALESCE(
+              (SELECT array_agg(rp.permission_code ORDER BY rp.permission_code)
+               FROM fft_role_permission rp WHERE rp.role_id = a.role_id),
+              ARRAY[]::text[]
+            ) AS permission_codes
+         FROM fft_role_assignment a
+         INNER JOIN fft_role r ON r.id = a.role_id AND r.active = TRUE
+         WHERE a.user_id = $1 AND a.active = TRUE`,
+        [userId],
+      );
   return result.rows.map((row) => ({
     id: row.id as string,
     userId: row.user_id as string,
@@ -1250,6 +1290,7 @@ export async function bootstrapPhase1RbacAssignments(input: {
   userId: string;
   email: string;
   isAdmin: boolean;
+  organizationId?: string;
 }) {
   await seedFftRbacCatalog(input.userId);
 
@@ -1262,12 +1303,13 @@ export async function bootstrapPhase1RbacAssignments(input: {
         roleId,
         scopeType: "platform",
         actorId: input.userId,
+        organizationId: input.organizationId,
       });
     }
     return;
   }
 
-  const members = await listSalesMembers();
+  const members = await listSalesMembers(input.organizationId);
   const onAllowlist = members.some(
     (m) => m.active && m.email.trim().toLowerCase() === input.email.trim().toLowerCase(),
   );
@@ -1281,6 +1323,7 @@ export async function bootstrapPhase1RbacAssignments(input: {
       roleId,
       scopeType: "own",
       actorId: input.userId,
+      organizationId: input.organizationId,
     });
   }
 }
@@ -1295,10 +1338,19 @@ export type FftRoleRow = {
   permissionCodes: string[];
 };
 
-export async function listFftRoles(): Promise<FftRoleRow[]> {
-  const roles = await pool.query(
-    `SELECT * FROM fft_role ORDER BY is_system_template DESC, name ASC`,
-  );
+export async function listFftRoles(
+  organizationId?: string,
+): Promise<FftRoleRow[]> {
+  const roles = organizationId
+    ? await pool.query(
+        `SELECT * FROM fft_role
+         WHERE ${organizationScopeSql("organization_id", 1)}
+         ORDER BY is_system_template DESC, name ASC`,
+        [organizationId],
+      )
+    : await pool.query(
+        `SELECT * FROM fft_role ORDER BY is_system_template DESC, name ASC`,
+      );
   const out: FftRoleRow[] = [];
   for (const row of roles.rows) {
     const perms = await pool.query(
@@ -1433,6 +1485,7 @@ export async function duplicateRole(input: {
   sourceRoleId: string;
   name: string;
   actorId: string;
+  organizationId?: string;
 }) {
   const source = await pool.query(`SELECT * FROM fft_role WHERE id = $1`, [
     input.sourceRoleId,
@@ -1447,18 +1500,30 @@ export async function duplicateRole(input: {
     description: source.rows[0].description ?? undefined,
     permissionCodes: perms.rows.map((p) => p.permission_code as string),
     actorId: input.actorId,
+    organizationId: input.organizationId,
   });
 }
 
-export async function listAllRoleAssignments() {
-  const result = await pool.query(
-    `SELECT a.*, r.name AS role_name
-     FROM fft_role_assignment a
-     INNER JOIN fft_role r ON r.id = a.role_id
-     WHERE a.active = TRUE
-     ORDER BY a.created_at DESC
-     LIMIT 200`,
-  );
+export async function listAllRoleAssignments(organizationId?: string) {
+  const result = organizationId
+    ? await pool.query(
+        `SELECT a.*, r.name AS role_name
+         FROM fft_role_assignment a
+         INNER JOIN fft_role r ON r.id = a.role_id
+         WHERE a.active = TRUE
+           AND ${organizationScopeSql("a.organization_id", 1)}
+         ORDER BY a.created_at DESC
+         LIMIT 200`,
+        [organizationId],
+      )
+    : await pool.query(
+        `SELECT a.*, r.name AS role_name
+         FROM fft_role_assignment a
+         INNER JOIN fft_role r ON r.id = a.role_id
+         WHERE a.active = TRUE
+         ORDER BY a.created_at DESC
+         LIMIT 200`,
+      );
   return result.rows.map((row) => ({
     id: row.id as string,
     userId: row.user_id as string,

@@ -206,7 +206,11 @@ export async function ensurePigletTemplateAction(locale: string) {
   if (typeof gatedLocale === "object") return gatedLocale;
   
   const admin = await requireFftAdmin();
-  const event = await ensureGp2PigletTemplate(admin.userId);
+  const org = await resolveFftOrganizationContext(admin.userId);
+  const event = await ensureGp2PigletTemplate(
+    admin.userId,
+    org.organizationId,
+  );
   revalidateFft(gatedLocale);
   return { eventId: event.id };
 }
@@ -218,8 +222,14 @@ export async function cloneFftEventAction(locale: string, sourceEventId: string)
   if (typeof gatedSourceId === "object") return gatedSourceId;
 
   const admin = await requireFftAdmin();
+  const org = await resolveFftOrganizationContext(admin.userId);
   try {
-    const event = await cloneEventFromTemplate(gatedSourceId, admin.userId);
+    const event = await cloneEventFromTemplate(
+      gatedSourceId,
+      admin.userId,
+      undefined,
+      org.organizationId,
+    );
     await recordFftAudit({
       eventId: event.id,
       action: "event.cloned",
@@ -1321,10 +1331,12 @@ export async function createTradeRoleAction(
   
   const access = await requireTradePermission("role.manage");
   if (!name.trim()) return { error: "invalid_name" };
+  const org = await resolveFftOrganizationContext(access.userId);
   const roleId = await createCustomRole({
     name,
     permissionCodes,
     actorId: access.userId,
+    organizationId: org.organizationId,
   });
   revalidateFft(gatedLocale);
   return { ok: true, roleId };
@@ -1371,10 +1383,12 @@ export async function duplicateTradeRoleAction(
   if (typeof gatedLocale === "object") return gatedLocale;
   
   const access = await requireTradePermission("role.manage");
+  const org = await resolveFftOrganizationContext(access.userId);
   const roleId = await duplicateRole({
     sourceRoleId,
     name,
     actorId: access.userId,
+    organizationId: org.organizationId,
   });
   revalidateFft(gatedLocale);
   return { ok: true, roleId };
@@ -1413,6 +1427,9 @@ export async function assignTradeRoleAction(
     scopeType: input.scopeType,
     scopeId: input.scopeId,
     actorId: access.userId,
+    organizationId: (
+      await resolveFftOrganizationContext(access.userId)
+    ).organizationId,
   });
   revalidateFft(gatedLocale);
   return { ok: true };
@@ -1737,6 +1754,11 @@ export async function uploadImportDryRunAction(
 
   const permission = importPermissionForType(parsed);
   const access = await requireTradePermission(permission, { eventId });
+  const scoped = await getScopedEvent(eventId, access.userId);
+  if (!scoped) {
+    return { error: "not_found" as const };
+  }
+  const org = await resolveFftOrganizationContext(access.userId);
 
   const file = formData.get("file");
   if (!(file instanceof File) || file.size === 0) {
@@ -1750,7 +1772,12 @@ export async function uploadImportDryRunAction(
     return { error: limit.error, maxRows: limit.maxRows };
   }
 
-  const validated = await validateImportRowsForDryRun(eventId, parsed, parsedRows);
+  const validated = await validateImportRowsForDryRun(
+    eventId,
+    parsed,
+    parsedRows,
+    org.organizationId,
+  );
 
   const batch = await createImportBatch({
     eventId,
@@ -1805,6 +1832,11 @@ export async function confirmImportBatchAction(
 
   const permission = importPermissionForType(batch.importType);
   const access = await requireTradePermission(permission, { eventId });
+  const scoped = await getScopedEvent(eventId, access.userId);
+  if (!scoped) {
+    return { error: "not_found" as const };
+  }
+  const org = await resolveFftOrganizationContext(access.userId);
 
   if (batch.validCount === 0) {
     return { error: "no_valid_rows" as const };
@@ -1812,6 +1844,7 @@ export async function confirmImportBatchAction(
 
   const result = await commitImportBatch(batchId, {
     actorEmail: access.email,
+    organizationId: org.organizationId,
     onDepositPending: (order) => notifyDepositPending(gatedLocale, order),
   });
 

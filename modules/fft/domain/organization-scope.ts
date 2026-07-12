@@ -29,3 +29,11 @@ export async function backfillFftOrganizationIds(
   }
   return { updated };
 }
+
+/** SQL fragment: row belongs to org or is legacy-unscoped (pre-backfill). */
+export function organizationScopeSql(
+  column: string,
+  paramIndex: number,
+): string {
+  return `(${column} IS NULL OR ${column} = $${paramIndex})`;
+}

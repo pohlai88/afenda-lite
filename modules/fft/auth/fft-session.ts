@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { isAdminSession } from "@/modules/identity/admin";
 import { getAuthSession } from "@/modules/identity/auth/get-session";
+import { resolvePlatformOrgContext } from "@/modules/identity/domain/platform-rbac-access";
 import { isFftRbacEnabled } from "@/modules/platform/env/accessors";
 import { hasFftModuleAccess } from "@/modules/fft/auth/fft-module-access";
 import { AUTH_SIGN_IN_HREF } from "@/modules/platform/routing/portal-routes";
@@ -18,6 +19,7 @@ export type FftAccess = {
   isAdmin: boolean;
   /** True when FFT_RBAC_ENABLED=true and dual-read path is active. */
   rbacEnabled: boolean;
+  organizationId?: string;
 };
 
 const PHASE_1_SALES_PERMISSIONS = new Set([
@@ -30,8 +32,8 @@ const PHASE_1_SALES_PERMISSIONS = new Set([
 
 const SELF_SERVICE_PERMISSIONS = new Set(PHASE_1_SALES_PERMISSIONS);
 
-async function loadAssignments(userId: string) {
-  const rows = await listRoleAssignmentsForUser(userId);
+async function loadAssignments(userId: string, organizationId?: string) {
+  const rows = await listRoleAssignmentsForUser(userId, organizationId);
   return rows.map((row) => ({
     roleId: row.roleId,
     scopeType: row.scopeType,
@@ -50,9 +52,15 @@ export async function requireFftAccess(): Promise<FftAccess> {
 
   const isAdmin = isAdminSession(session);
   const rbacEnabled = isFftRbacEnabled();
+  const { organizationId } = await resolvePlatformOrgContext({
+    userId: user.id,
+    ensureOrgAdminAssignment: isAdmin,
+  });
   const moduleOk = await hasFftModuleAccess({
     userId: user.id,
     email: user.email,
+    organizationId,
+    neonAdminBootstrap: isAdmin,
   });
 
   if (!moduleOk) {
@@ -64,6 +72,7 @@ export async function requireFftAccess(): Promise<FftAccess> {
       userId: user.id,
       email: user.email,
       isAdmin,
+      organizationId,
     });
   }
 
@@ -72,6 +81,7 @@ export async function requireFftAccess(): Promise<FftAccess> {
     email: user.email,
     isAdmin,
     rbacEnabled,
+    organizationId,
   };
 }
 
@@ -91,7 +101,10 @@ export async function requireFftAdmin(): Promise<{
     return { userId: access.userId, email: access.email };
   }
 
-  const assignments = await loadAssignments(access.userId);
+  const assignments = await loadAssignments(
+    access.userId,
+    access.organizationId,
+  );
   const ok = canPermission(access.userId, "event.edit", assignments, {
     // Platform/company scoped admin templates match without event id.
   }).allowed;
@@ -117,7 +130,10 @@ export async function hasTradePermission(
 
   if (access.isAdmin) return true;
 
-  const assignments = await loadAssignments(access.userId);
+  const assignments = await loadAssignments(
+    access.userId,
+    access.organizationId,
+  );
   const permissionCtx: FftScopeContext = {
     ...ctx,
     resourceOwnerUserId:

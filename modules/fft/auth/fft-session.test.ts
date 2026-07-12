@@ -10,6 +10,8 @@ const mocks = vi.hoisted(() => ({
   listSalesMembers: vi.fn(),
   listRoleAssignmentsForUser: vi.fn(),
   bootstrapPhase1RbacAssignments: vi.fn(),
+  resolvePlatformOrgContext: vi.fn(),
+  hasPlatformPermission: vi.fn(),
 }));
 
 vi.mock("next/navigation", () => ({
@@ -26,6 +28,14 @@ vi.mock("@/modules/identity/admin", () => ({
 
 vi.mock("@/modules/platform/env/accessors", () => ({
   isFftRbacEnabled: mocks.isFftRbacEnabled,
+}));
+
+vi.mock("@/modules/identity/domain/platform-rbac-access", () => ({
+  resolvePlatformOrgContext: mocks.resolvePlatformOrgContext,
+}));
+
+vi.mock("@/modules/identity/domain/platform-rbac", () => ({
+  hasPlatformPermission: mocks.hasPlatformPermission,
 }));
 
 vi.mock("@/modules/fft/domain/store", () => ({
@@ -71,11 +81,34 @@ describe("FFT_RBAC_ENABLED=false — Phase 1 Admin + allowlist", () => {
     mocks.listSalesMembers.mockResolvedValue(salesMembers);
     mocks.listRoleAssignmentsForUser.mockResolvedValue([]);
     mocks.bootstrapPhase1RbacAssignments.mockResolvedValue(undefined);
+    mocks.resolvePlatformOrgContext.mockResolvedValue({
+      organizationId: "org-1",
+    });
+    mocks.hasPlatformPermission.mockResolvedValue({ allowed: false });
   });
 
   describe("requireFftAccess", () => {
-    it("denies org admin without Feed Farm Trade allowlist membership", async () => {
+    it("allows neon admin via platform fft.access without allowlist", async () => {
       mockSignedIn("admin@example.com", "admin-1", { isAdmin: true });
+      mocks.hasPlatformPermission.mockResolvedValue({ allowed: true });
+      mocks.listSalesMembers.mockResolvedValue([]);
+
+      await expect(requireFftAccess()).resolves.toEqual({
+        userId: "admin-1",
+        email: "admin@example.com",
+        isAdmin: true,
+        rbacEnabled: false,
+        organizationId: "org-1",
+      });
+      expect(mocks.resolvePlatformOrgContext).toHaveBeenCalledWith({
+        userId: "admin-1",
+        ensureOrgAdminAssignment: true,
+      });
+    });
+
+    it("denies neon admin when platform denies and not allowlisted", async () => {
+      mockSignedIn("admin@example.com", "admin-1", { isAdmin: true });
+      mocks.listSalesMembers.mockResolvedValue([]);
 
       await expect(requireFftAccess()).rejects.toThrow(
         "REDIRECT:/auth/sign-in?reason=fft-access-denied",
@@ -90,6 +123,7 @@ describe("FFT_RBAC_ENABLED=false — Phase 1 Admin + allowlist", () => {
         email: "sales@example.com",
         isAdmin: false,
         rbacEnabled: false,
+        organizationId: "org-1",
       });
 
       expect(mocks.bootstrapPhase1RbacAssignments).not.toHaveBeenCalled();
@@ -112,6 +146,7 @@ describe("FFT_RBAC_ENABLED=false — Phase 1 Admin + allowlist", () => {
         email: "admin@example.com",
         isAdmin: true,
         rbacEnabled: false,
+        organizationId: "org-1",
       });
     });
 
@@ -246,6 +281,10 @@ describe("FFT_RBAC_ENABLED=true — dual-read (sanity)", () => {
     mocks.isFftRbacEnabled.mockReturnValue(true);
     mocks.listSalesMembers.mockResolvedValue(salesMembers);
     mocks.bootstrapPhase1RbacAssignments.mockResolvedValue(undefined);
+    mocks.resolvePlatformOrgContext.mockResolvedValue({
+      organizationId: "org-1",
+    });
+    mocks.hasPlatformPermission.mockResolvedValue({ allowed: false });
   });
 
   it("bootstraps allowlisted admin on dual-read path", async () => {
@@ -268,6 +307,7 @@ describe("FFT_RBAC_ENABLED=true — dual-read (sanity)", () => {
       userId: "admin-1",
       email: "admin@example.com",
       isAdmin: true,
+      organizationId: "org-1",
     });
   });
 
@@ -296,6 +336,10 @@ describe("FFT_RBAC_ENABLED=true — action guards", () => {
     mocks.isFftRbacEnabled.mockReturnValue(true);
     mocks.listSalesMembers.mockResolvedValue([]);
     mocks.bootstrapPhase1RbacAssignments.mockResolvedValue(undefined);
+    mocks.hasPlatformPermission.mockResolvedValue({ allowed: false });
+    mocks.resolvePlatformOrgContext.mockResolvedValue({
+      organizationId: "org-1",
+    });
   });
 
   describe("requireTradePermission", () => {

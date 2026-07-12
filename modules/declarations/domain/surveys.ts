@@ -1,5 +1,6 @@
 import { pool } from "@/modules/platform/db";
 import { createInviteTokenValue } from "@/modules/identity/domain/tokens";
+import { organizationScopeSql } from "@/modules/declarations/domain/organization-scope";
 
 export { DRAFT_SURVEY_TITLE, isDraftSurveyTitle } from "@/modules/declarations/domain/survey-draft";
 
@@ -199,7 +200,7 @@ export async function listSurveysForAdmin(organizationId?: string) {
            COUNT(r.id)::int AS response_count
          FROM surveys s
          LEFT JOIN survey_responses r ON r.survey_id = s.id
-         WHERE (s.organization_id IS NULL OR s.organization_id = $1)
+         WHERE ${organizationScopeSql("s.organization_id", 1)}
          GROUP BY s.id
          ORDER BY s.created_at DESC`,
         [organizationId],
@@ -257,7 +258,7 @@ export async function getSurveyForAdmin(id: string, organizationId?: string) {
         `SELECT ${SURVEY_SELECT_COLUMNS}
          FROM surveys
          WHERE id = $1
-           AND (organization_id IS NULL OR organization_id = $2)
+           AND ${organizationScopeSql("organization_id", 2)}
          LIMIT 1`,
         [id, organizationId],
       )
@@ -300,7 +301,7 @@ export async function updateSurvey(input: {
              purpose = $12,
              categories = $13
          WHERE id = $1
-           AND (organization_id IS NULL OR organization_id = $14)
+           AND ${organizationScopeSql("organization_id", 14)}
          RETURNING ${SURVEY_SELECT_COLUMNS}`,
         [
           input.id,
@@ -364,7 +365,7 @@ export async function deleteSurvey(id: string, organizationId?: string) {
     ? await pool.query(
         `DELETE FROM surveys
          WHERE id = $1
-           AND (organization_id IS NULL OR organization_id = $2)
+           AND ${organizationScopeSql("organization_id", 2)}
          RETURNING id`,
         [id, organizationId],
       )

@@ -26,6 +26,7 @@ export default async function DashboardUserViewPage({
       sessions={data.sessions}
       platformAssignments={data.platformAssignments}
       platformRoleOptions={data.platformRoleOptions}
+      canManagePlatformRoles={data.canManagePlatformRoles}
     />
   );
 }

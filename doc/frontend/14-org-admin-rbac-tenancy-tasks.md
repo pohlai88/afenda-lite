@@ -1,60 +1,62 @@
 # Organization admin — platform RBAC + tenancy (phase 14)
 
-**Status:** Accepted ADR-002 · stabilized 2026-07-12  
+**Status:** Accepted ADR-002 · soft-harden closed 2026-07-12  
 **Phase ID:** `organization-admin-post-login` (IAM expansion)  
 **ADR:** [doc/backend/adr/002-platform-tenancy-rbac.md](../backend/adr/002-platform-tenancy-rbac.md)
 
 ## Goal
 
-Ship platform permission-catalog RBAC (Identity) + AdminCN Roles/Permissions product surfaces under `/dashboard/roles` and `/dashboard/permissions`. Neon Auth remains Tier 1 identity/org membership only.
+Ship platform permission-catalog RBAC (Identity) + AdminCN Roles/Permissions product surfaces under `/dashboard/roles` and `/dashboard/permissions`. Neon Auth remains Tier 1 identity/org membership only. **No product Zustand** — RSC + Server Actions.
 
-## Plan ↔ codebase completeness
+## Roles & Permissions plan ↔ codebase
 
 | Plan item | Status | Evidence |
 |-----------|--------|----------|
 | ADR-002 Accepted | **Done** | `doc/backend/adr/002-platform-tenancy-rbac.md` |
-| Context docs (routes, AdminCN, brands, tasks) | **Done** | `03-routes`, `06-admincn-alignment`, brands, this file |
-| Migration `025` platform RBAC + Declarations `organization_id` | **Done** | `db/migrations/025_platform_rbac_tenancy.sql` |
-| Migration `026` FFT `organization_id` | **Done** | `db/migrations/026_fft_organization_id.sql` |
-| Identity catalog + domain + schemas + access | **Done** | `modules/identity/domain/platform-rbac*` · `schemas/platform-rbac.ts` |
-| Default Org Admin assignment for Neon admins | **Done** | `ensureNeonAdminOrgAdminAssignment` via bootstrap |
-| Role CRUD + assign/revoke Actions (`ActionResult`) | **Done** | `app/actions/admin.ts` + `modules/platform/schemas/action-result.ts` |
-| `/dashboard/roles` + `/dashboard/permissions` UI | **Done** | roles/permissions routes + `organization-admin-roles-*` |
-| Assign/revoke **UI** | **Done** | User detail → Platform roles (`organization-admin-user-platform-roles.tsx`) |
-| Declarations backfill + list/get/mutate org scope | **Done** | `organization-scope` + org-admin loaders + survey/client actions |
-| Permission gates `declarations.manage` / `clients.invite` / `org.roles.manage` | **Done** | survey/client/RBAC actions |
-| Permission gate `org.users.manage` on user Actions | **Done** | Org-user CRUD + `/dashboard/users` RSC |
-| Permission gate `declarations.read` on read surfaces | **Done** | Dashboard / detail / clients / share panel via `anyOf` |
-| Permission gate `account.self` | **Done** | `requireAccountSession` + `/account` layout; self-bootstrap when no assignments |
-| Operator session beyond Neon admin | **Done** | `requirePlatformOperatorSession` — Editor/Viewer with platform codes can enter ops surfaces |
-| Shell `isOrgAdmin` includes platform operators | **Done** | `features/portal-chrome/resolve-shell-access.ts` |
-| FFT list/create stamp + backfill | **Done** | `fft-organization-context` + store + pages |
-| FFT `getEventById` org-scoped on product pages + actions | **Done** | `getFftEventForOrganization` · `getScopedEvent` in `app/actions/fft.ts` |
-| Route brand `[declarationId]` (not `[id]`) | **Done** | `app/dashboard/[declarationId]` |
-| HITL portal-view registry wrappers | **Optional / skipped** | Product UI stays in `features/organization-admin` (AdminCN skill: no invented IDs) |
-| Merge FFT + platform catalogs | **Out of scope** | Catalogs remain separate |
-| Hard multi-org cutover (drop `IS NULL OR`) | **Deferred** | Progressive soft filters intentional until cutover |
-| FFT import-store internal `getEventById` | **Residual** | Called after action-gated event; soft filter at action/RSC boundary |
-| Ghost `/trade` + `lib/domain/trade` | **Residue** | Deprecated Hot Sales paths — not product surface |
+| Migration `025` platform RBAC tables | **Done** | `db/migrations/025_platform_rbac_tenancy.sql` |
+| Catalog + templates (Org Admin / Editor / Viewer) | **Done** | `platform-rbac-catalog.ts` + unit tests; includes `fft.access` |
+| Platform module entry `fft.access` | **Done** | Org-scoped SoT; allowlist + FFT assignment = bridges |
+| `/fft/admin/rbac` + `org.roles.manage` | **Done** | Control plane gate + FFT `role.manage` |
+| Domain CRUD + assign/revoke + audit | **Done** | `modules/identity/domain/platform-rbac.ts` |
+| Idempotent template seed (no wipe+re-audit) | **Done** | Diff sync in `seedPlatformRbacCatalog` |
+| Neon admin → Org Admin template ensure | **Done** | Skips only when `templateKey === org_admin` already present |
+| Operator session (`org.roles.manage`) | **Done** | `requirePlatformOperatorSession` on roles Actions + RSC |
+| Role CRUD + permission matrix Actions (`ActionResult`) | **Done** | `app/actions/admin.ts` |
+| `/dashboard/roles` + `/dashboard/permissions` UI | **Done** | `organization-admin-roles-*` (no zustand) |
+| Assign/revoke UI gated by `org.roles.manage` | **Done** | `canManagePlatformRoles` on user detail |
+| Sidebar IAM under `kind: admin` | **Done** | Users/Roles/Permissions in Organization group; Viewer excluded from `isOrgAdmin` |
+| NULL-org / cross-org role mutation guards | **Done** | `assertOrgOwnedRoleMutable` |
+| HITL portal-view registry wrappers | **Optional / skipped** | Product UI in `features/organization-admin` |
+| Merge FFT **domain** catalogs into platform tables | **Out of scope** | ADR rejected (entry code is not domain merge) |
+| Hard multi-org cutover | **Deferred** | Soft `(NULL OR org)` filters |
+| Remove entry bridges after `fft.access` backfill | **Follow-up** | Sales allowlist + FFT assignment entry |
+| User CRUD `{ error }` → `ActionResult` | **Residual P2** | Roles path already `ActionResult` |
+| L4 e2e for roles assign | **Residual P2** | Catalog unit coverage present |
 
-**In-scope completeness:** ~98% (soft tenancy + optional HITL/catalog merge excluded by design).
+**Roles & Permissions + control-plane completeness:** ~97% (bridges intentional; domain catalog merge rejected).
 
-## Delivered paths (operator + tenancy)
+## Related tenancy (Declarations / FFT)
 
-| Layer | Path |
-|-------|------|
-| Operator session | `modules/identity/auth/platform-operator-session.ts` |
-| Tenancy bootstrap | `features/organization-admin/organization-admin-tenancy.ts` |
-| Assign/revoke UI | `features/organization-admin/organization-admin-user-platform-roles.tsx` |
-| Users manage gate | `assertUsersManageAllowed` → `org.users.manage` + operator session |
-| Account self gate | `modules/identity/account-session.ts` + `app/account/layout.tsx` |
-| FFT org event read | `features/fft/fft-organization-context.ts` |
+| Item | Status |
+|------|--------|
+| Declarations `organization_id` + soft filters | **Done** |
+| Client invite/assignment get+delete org scope | **Done** (soft-harden) |
+| CDP package `updateSurvey` org pass-through | **Done** |
+| Client onboarding profile org stamp | **Done** |
+| DRY `organizationScopeSql` (Declarations + FFT) | **Done** |
+| FFT `organization_id` + scoped event reads | **Done** |
+| FFT session allowlist + RBAC lists/stamp/clone/template | **Done** (soft-harden) |
+| FFT import-store `getEventById` org thread | **Done** |
+| Hard cutover (drop `IS NULL OR`) | **Deferred** |
+| `listOrganizationUsers` Neon directory (not org-membership API) | **Intentional** |
+
+**In-scope soft tenancy completeness:** **100%** (hard cutover still deferred by design).
 
 ## Verify
 
 ```bash
-npm run test:unit -- modules/identity/domain/platform-rbac-catalog features/organization-admin/organization-admin-declaration-detail
+npm run test:unit -- modules/identity/domain/platform-rbac-catalog modules/identity/domain/platform-rbac-org-mutable modules/declarations/domain/organization-scope modules/fft/domain/organization-scope modules/fft/auth
 npx tsc --noEmit
 ```
 
-Manual: `/dashboard/users` requires `org.users.manage` (or Neon admin); `/dashboard/users/[userId]` → Account → Platform roles; `/account` requires `account.self`; FFT event pages 404 for cross-org ids after stamp.
+Manual: Neon admin / Org Admin → Organization → Users / Roles / Permissions. Viewer must not see Organization IAM group. User detail Assign/Revoke only with `org.roles.manage`. Cross-org invitation UUID delete → missing. FFT RBAC page only shows org+NULL roles.

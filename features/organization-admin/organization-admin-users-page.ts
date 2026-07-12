@@ -16,6 +16,7 @@ import {
 import {
   listPlatformRoleAssignmentsForUser,
   listPlatformRoles,
+  hasPlatformPermission,
 } from "@/modules/identity/domain/platform-rbac";
 import { neonAdminListUserSessions } from "@/modules/identity/auth/admin";
 import { PORTAL_NAME } from "@/modules/platform/copy/portal-copy";
@@ -61,6 +62,7 @@ export interface OrganizationAdminUserViewPageData {
   sessions: OrganizationAdminUserSessionDisplay[];
   platformAssignments: OrganizationAdminPlatformAssignmentDisplay[];
   platformRoleOptions: OrganizationAdminPlatformRoleOption[];
+  canManagePlatformRoles: boolean;
 }
 
 export const loadOrganizationAdminUsersPage = cache(
@@ -83,9 +85,17 @@ export const loadOrganizationAdminUsersPage = cache(
 
 export const loadOrganizationAdminUserViewPage = cache(
   async (userId: string): Promise<OrganizationAdminUserViewPageData> => {
-    const { org } = await bootstrapOrganizationAdminTenancy({
+    const { org, session, isNeonAdmin } = await bootstrapOrganizationAdminTenancy({
       anyOf: ["org.users.manage"],
     });
+    const rolesGate = await hasPlatformPermission({
+      userId: session.user.id,
+      organizationId: org.organizationId,
+      code: "org.roles.manage",
+      neonAdminBootstrap: isNeonAdmin,
+    });
+    const canManagePlatformRoles = rolesGate.allowed;
+
     const user = await getOrganizationUser(userId);
     if (!user) {
       return {
@@ -93,6 +103,7 @@ export const loadOrganizationAdminUserViewPage = cache(
         sessions: [],
         platformAssignments: [],
         platformRoleOptions: [],
+        canManagePlatformRoles,
       };
     }
 
@@ -108,8 +119,8 @@ export const loadOrganizationAdminUserViewPage = cache(
         ? []
         : (sessionsResult.sessions ?? [])
             .map(mapOrganizationUserSessionRow)
-            .filter((session): session is OrganizationAdminUserSessionDisplay =>
-              Boolean(session),
+            .filter((sessionRow): sessionRow is OrganizationAdminUserSessionDisplay =>
+              Boolean(sessionRow),
             );
 
     return {
@@ -127,6 +138,7 @@ export const loadOrganizationAdminUserViewPage = cache(
         name: role.name,
         isSystemTemplate: role.isSystemTemplate,
       })),
+      canManagePlatformRoles,
     };
   },
 );

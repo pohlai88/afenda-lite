@@ -981,6 +981,9 @@ export async function revokePlatformRoleAssignmentAction(input: {
 
       revalidatePlatformRbacPaths();
       revalidatePath(ORGANIZATION_ADMIN_USERS_HREF);
+      if ("userId" in result && typeof result.userId === "string") {
+        revalidatePath(organizationAdminUserHref(result.userId));
+      }
       return actionOk({ assignmentId: parsed.data.assignmentId });
     },
   );

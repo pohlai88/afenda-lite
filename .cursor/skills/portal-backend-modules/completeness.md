@@ -17,16 +17,21 @@ Plan authority: this skill + `doc/backend/` + [closed-scope-register](../../../d
 | ClientProfile port | Identity owns read/ensure + invite bootstrap | Done | **Done** |
 | Platform copy port | `modules/platform/copy/*` | Done | **Done** |
 | Absorb entry / org-admin / playground runners | → `features/*` | Done | **Done** |
-| Platform RBAC catalog + domain + schemas | ADR-002 | Wired | **Done** |
-| Org-admin Roles / Permissions UI | `/dashboard/roles` `/permissions` | Wired | **Done** |
-| Declarations / FFT `organization_id` scope | Tenancy | Code landed | **Done** |
+| Platform RBAC catalog + domain + schemas | ADR-002 | Wired + `fft.access` | **Done** |
+| Org-admin Roles / Permissions UI | `/dashboard/roles` `/permissions` | Wired + admin nav entitlement | **Done** |
+| Assign UI gated by `org.roles.manage` | User detail | `canManagePlatformRoles` | **Done** |
+| Declarations / FFT `organization_id` scope | Tenancy | Soft-harden closed | **Done** |
+| Soft-harden IDOR / stamp / session / DRY SQL | ADR-002 progressive | Client deletes + FFT RBAC/session + `organizationScopeSql` | **Done** |
+| FFT module entry control plane | `hasFftModuleAccess` | `fft.access` + allowlist/assignment bridges | **Done** |
 | Apply migrations `025`/`026` on Neon | Ops | Applied on `br-tiny-hill-ao82jp6f` | **Done** |
+| Hard multi-org cutover | Drop `IS NULL OR` | Deferred by design | **Deferred** |
 | `/client` workspace restore | Closed + reopen checklist | Stubs only | **Closed (registered)** |
 | FFT P3 flag promotion | gate-register | Prod flags off | **Closed (registered)** |
 | SaaS billing / 2FA product | Deferred chrome | Coming-soon + plan defaults | **Intentional (registered)** |
 
 ## Stabilization (latest)
 
+- Soft-harden multi-tenancy: org-scoped client invite/assignment mutate-by-id; FFT session allowlist + RBAC lists/stamp/clone/template/import; platform NULL-org role mutation guards; DRY `organizationScopeSql`
 - Relocated draft Route Handler compose → `modules/declarations/api/client-declaration-draft-route*` (Platform no longer imports Declarations)
 - Relocated shell entitlement resolve → `features/portal-chrome/resolve-shell-access.ts`; FFT gate → `modules/fft/auth/fft-module-access.ts` (Platform no longer imports FFT)
 - Reliance registry: dropped stale `domain:auth` on admin-declaration-detail / admin-access-share → **26/26** surfaces aligned
@@ -36,6 +41,7 @@ Plan authority: this skill + `doc/backend/` + [closed-scope-register](../../../d
 
 ```bash
 npx tsc --noEmit
+npm run test:unit -- modules/identity/domain/platform-rbac-org-mutable modules/fft/auth modules/declarations/domain/organization-scope
 npm run check:reliance-mapping-drift
 npm run check:reliance-coverage
 npm run check:route-coverage-drift

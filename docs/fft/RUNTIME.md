@@ -125,11 +125,13 @@ npm run process:trade-closing-soon
 
 | Account | Role | Feed Farm Trade use |
 |---------|------|---------------|
-| `SHARED_ADMIN_EMAIL` | Operator admin | Admin trade matrix — **not** sales allowlist |
+| `SHARED_ADMIN_EMAIL` | Operator admin | Platform Org Admin → `fft.access` (module entry SoT); not sales allowlist |
 | `PREVIEW_CLIENT_EMAIL` | Declaration preview client | **Not** auto in `fft_sales_member` |
-| Sales allowlist | `fft_sales_member` row | Required for `/fft` sales path |
+| Sales allowlist | `fft_sales_member` row | **Bridge** for `/fft` sales path until `fft.access` backfill |
 
-**Expected:** signed-in non-allowlisted user → `/fft` → `/auth/sign-in?reason=fft-access-denied` → session exists → `/client`. Not an RBAC regression.
+**Module entry (org-scoped):** platform `fft.access` → else allowlist → else FFT role assignment (when `FFT_RBAC_ENABLED`). Do not flip `FFT_RBAC_ENABLED` in control-plane work.
+
+**Expected:** signed-in user without `fft.access` / allowlist / FFT assignment → `/fft` → `/auth/sign-in?reason=fft-access-denied` → session exists → `/client`. Not an RBAC regression.
 
 ---
 

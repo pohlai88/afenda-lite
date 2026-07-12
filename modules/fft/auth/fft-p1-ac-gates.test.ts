@@ -11,6 +11,8 @@ const mocks = vi.hoisted(() => ({
   listSalesMembers: vi.fn(),
   listRoleAssignmentsForUser: vi.fn(),
   bootstrapPhase1RbacAssignments: vi.fn(),
+  resolvePlatformOrgContext: vi.fn(),
+  hasPlatformPermission: vi.fn(),
 }));
 
 vi.mock("@/modules/identity/auth/get-session", () => ({
@@ -23,6 +25,14 @@ vi.mock("@/modules/identity/admin", () => ({
 
 vi.mock("@/modules/platform/env/accessors", () => ({
   isFftRbacEnabled: mocks.isFftRbacEnabled,
+}));
+
+vi.mock("@/modules/identity/domain/platform-rbac-access", () => ({
+  resolvePlatformOrgContext: mocks.resolvePlatformOrgContext,
+}));
+
+vi.mock("@/modules/identity/domain/platform-rbac", () => ({
+  hasPlatformPermission: mocks.hasPlatformPermission,
 }));
 
 vi.mock("@/modules/fft/domain/store", () => ({
@@ -83,6 +93,10 @@ describe("P1 AC permission gates (RBAC on)", () => {
     mocks.isFftRbacEnabled.mockReturnValue(true);
     mocks.listSalesMembers.mockResolvedValue([]);
     mocks.bootstrapPhase1RbacAssignments.mockResolvedValue(undefined);
+    mocks.resolvePlatformOrgContext.mockResolvedValue({
+      organizationId: "org-1",
+    });
+    mocks.hasPlatformPermission.mockResolvedValue({ allowed: false });
   });
 
   const cases: Array<{ ac: string; code: string }> = [
@@ -337,6 +351,10 @@ describe("P1 AC gates (RBAC off — admin vs sales allowlist)", () => {
     mocks.isFftRbacEnabled.mockReturnValue(false);
     mocks.listSalesMembers.mockResolvedValue(salesMembers);
     mocks.listRoleAssignmentsForUser.mockResolvedValue([]);
+    mocks.resolvePlatformOrgContext.mockResolvedValue({
+      organizationId: "org-1",
+    });
+    mocks.hasPlatformPermission.mockResolvedValue({ allowed: false });
   });
 
   it("denies allowlisted sales for supply.manage / priority.manage / export.orders", async () => {

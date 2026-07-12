@@ -164,6 +164,7 @@ export async function commitImportBatch(
   batchId: string,
   ctx: {
     actorEmail: string;
+    organizationId?: string;
     onDepositPending?: (order: {
       id: string;
       orderNumber: string;
@@ -229,7 +230,7 @@ export async function commitImportBatch(
       committedRowIds.add(row.id);
     }
   } else if (batch.importType === "bulk_order") {
-    const event = await getEventById(batch.eventId);
+    const event = await getEventById(batch.eventId, ctx.organizationId);
     if (!event) throw new Error("event_not_found");
     const products = await listProductsForEvent(batch.eventId);
     const depositStatus = resolveDepositStatusForEvent(event);
@@ -271,7 +272,7 @@ export async function commitImportBatch(
       committedRowIds.add(row.id);
     }
   } else if (batch.importType === "deposit_record") {
-    const event = await getEventById(batch.eventId);
+    const event = await getEventById(batch.eventId, ctx.organizationId);
     if (!event) throw new Error("event_not_found");
     const orderMap = await buildOrderNumberMap(batch.eventId);
 
@@ -405,8 +406,11 @@ export async function buildOrderLookupForEvent(eventId: string) {
   };
 }
 
-export async function buildBulkOrderValidationContext(eventId: string) {
-  const event = await getEventById(eventId);
+export async function buildBulkOrderValidationContext(
+  eventId: string,
+  organizationId?: string,
+) {
+  const event = await getEventById(eventId, organizationId);
   const productLookup = await buildProductLookupForEvent(eventId);
   const gate = event ? canSubmitOrder(event, new Date()) : { allowed: false };
   return {

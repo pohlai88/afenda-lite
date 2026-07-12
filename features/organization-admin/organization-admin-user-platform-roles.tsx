@@ -26,10 +26,12 @@ export function OrganizationAdminUserPlatformRoles({
   userId,
   assignments,
   roleOptions,
+  canManage = false,
 }: {
   userId: string;
   assignments: OrganizationAdminPlatformAssignmentDisplay[];
   roleOptions: OrganizationAdminPlatformRoleOption[];
+  canManage?: boolean;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -45,7 +47,7 @@ export function OrganizationAdminUserPlatformRoles({
   }));
 
   function assignRole() {
-    if (!roleId) return;
+    if (!roleId || !canManage) return;
     setError(null);
     startTransition(async () => {
       const result = await assignPlatformRoleAction({
@@ -62,6 +64,7 @@ export function OrganizationAdminUserPlatformRoles({
   }
 
   function revokeAssignment(assignmentId: string) {
+    if (!canManage) return;
     setError(null);
     startTransition(async () => {
       const result = await revokePlatformRoleAssignmentAction({ assignmentId });
@@ -76,8 +79,10 @@ export function OrganizationAdminUserPlatformRoles({
   return (
     <div className="space-y-4">
       <p className="text-muted-foreground text-sm">
-        Platform product roles (not Neon Auth owner/admin/member). Assign Org
-        Admin, Editor, Viewer, or a custom role.
+        Platform product roles (not Neon Auth owner/admin/member).
+        {canManage
+          ? " Assign Org Admin, Editor, Viewer, or a custom role."
+          : " You can view assignments; assign/revoke requires org.roles.manage."}
       </p>
 
       {error ? (
@@ -104,55 +109,59 @@ export function OrganizationAdminUserPlatformRoles({
                   {assignment.permissionCodes.join(", ") || "No permissions"}
                 </p>
               </div>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={pending}
-                onClick={() => revokeAssignment(assignment.id)}
-              >
-                Revoke
-              </Button>
+              {canManage ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={pending}
+                  onClick={() => revokeAssignment(assignment.id)}
+                >
+                  Revoke
+                </Button>
+              ) : null}
             </li>
           ))
         )}
       </ul>
 
-      <div className="flex flex-wrap items-end gap-3">
-        <div className="min-w-56 flex-1 space-y-2">
-          <Label htmlFor="platform-role">Assign role</Label>
-          <Select
-            items={selectItems}
-            value={roleId || null}
-            onValueChange={(nextValue: string | null) => {
-              if (nextValue) setRoleId(nextValue);
-            }}
-            disabled={pending || assignableOptions.length === 0}
+      {canManage ? (
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="min-w-56 flex-1 space-y-2">
+            <Label htmlFor="platform-role">Assign role</Label>
+            <Select
+              items={selectItems}
+              value={roleId || null}
+              onValueChange={(nextValue: string | null) => {
+                if (nextValue) setRoleId(nextValue);
+              }}
+              disabled={pending || assignableOptions.length === 0}
+            >
+              <SelectTrigger id="platform-role" className="w-full">
+                <SelectValue placeholder="Select a role" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  {assignableOptions.map((role) => (
+                    <SelectItem key={role.id} value={role.id}>
+                      {role.isSystemTemplate
+                        ? `${role.name} (template)`
+                        : role.name}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </div>
+          <Button
+            type="button"
+            disabled={pending || !roleId || assignableOptions.length === 0}
+            onClick={assignRole}
           >
-            <SelectTrigger id="platform-role" className="w-full">
-              <SelectValue placeholder="Select a role" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                {assignableOptions.map((role) => (
-                  <SelectItem key={role.id} value={role.id}>
-                    {role.isSystemTemplate
-                      ? `${role.name} (template)`
-                      : role.name}
-                  </SelectItem>
-                ))}
-              </SelectGroup>
-            </SelectContent>
-          </Select>
+            Assign
+          </Button>
         </div>
-        <Button
-          type="button"
-          disabled={pending || !roleId || assignableOptions.length === 0}
-          onClick={assignRole}
-        >
-          Assign
-        </Button>
-      </div>
+      ) : null}
     </div>
   );
 }

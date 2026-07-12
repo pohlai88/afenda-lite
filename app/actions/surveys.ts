@@ -91,6 +91,7 @@ async function applyCdpPackageToSurvey(
     title: pkg.declaration.title,
     question: pkg.declaration.intro ?? pkg.declaration.title,
     metadata,
+    organizationId,
   });
 
   const drafts = cdpQuestionsToDrafts(pkg.declaration.questions);

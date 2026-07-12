@@ -6,8 +6,8 @@
 | **Accepted** | 2026-07-12 |
 | **Owners** | Platform / Identity |
 | **Scope** | Multi-tenant boundary + app-owned permission-catalog RBAC for Afenda-Lite modules |
-| **Out of scope** | Neon RLS; Neon Auth custom roles (unsupported); merging FFT + platform catalogs |
-| **Follow-up done** | FFT `organization_id` (migration `026`); operator session beyond Neon admin; org-scoped Declarations/FFT reads |
+| **Out of scope** | Neon RLS; Neon Auth custom roles (unsupported); merging FFT **domain** permission catalogs into `platform_*` tables |
+| **Follow-up done** | FFT `organization_id` (026); operator session; org-scoped reads; **control-plane** `fft.access` module entry (catalogs remain separate) |
 
 **Related:** [001-modular-monolith-hexagonal.md](./001-modular-monolith-hexagonal.md) · [docs/fft/adr/001-rbac.md](../../docs/fft/adr/001-rbac.md) · Neon Auth Organization plugin (owner/admin/member fixed)
 
@@ -31,7 +31,7 @@ Adopt a **three-tier IAM** model:
 2. Neon `user.role` `admin`|`user` bootstraps platform access until assignments exist; product code must prefer permission checks.
 3. Platform catalog is product-owned; adding a code is a release; assigning it to a role is an org-admin action.
 4. Scope v1: `organization` | `platform`. Defer team/BU/event to later ADRs.
-5. FFT keeps its own `fft_*` catalog; do not merge. Additive `organization_id` on FFT tables landed in migration `026` (catalogs still separate).
+5. FFT keeps its own `fft_*` **domain** catalog (event/order/allocation/…). Do not merge domain codes into `platform_permission`. Platform owns **module entry** via `fft.access` (org-scoped control plane). Additive `organization_id` on FFT tables landed in migration `026`.
 6. Reads: RSC → Identity domain. Mutations: Server Actions + Zod + `ActionResult`. No new web-UI REST list endpoints.
 7. AdminCN Roles/Permissions DNA (`ACN-BLK-APPS-ROLES` / `PERMISSIONS`) adapts into `features/organization-admin`; demo zustand stays DNA-only.
 
@@ -41,12 +41,13 @@ Adopt a **three-tier IAM** model:
 org.users.manage | org.roles.manage
 declarations.manage | declarations.read
 clients.invite | account.self
+fft.access
 ```
 
 ### Seed role templates (display names only)
 
 ```text
-Org Admin → all v1 codes
+Org Admin → all v1 codes (includes fft.access)
 Editor → declarations.manage, declarations.read, clients.invite, account.self
 Viewer → declarations.read, account.self
 ```
@@ -64,5 +65,5 @@ Viewer → declarations.read, account.self
 |-------------|--------------|
 | Encode product IAM in Neon Auth roles | Neon forbids custom roles/permissions |
 | Only Neon `admin`\|`user` forever | Cannot support ERP multi-module SaaS |
-| Merge FFT + platform catalogs now | Couples FFT gate-register to platform IAM |
+| Merge FFT **domain** catalogs into platform tables now | Couples FFT gate-register to platform IAM; scopes differ |
 | Ship AdminCN zustand demo as product | Fake data; violates fake-db ban |
