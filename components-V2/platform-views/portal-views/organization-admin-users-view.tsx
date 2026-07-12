@@ -11,11 +11,13 @@ export default function OrganizationAdminUsersView({
   sessions = [],
   platformAssignments = [],
   platformRoleOptions = [],
+  canManagePlatformRoles = false,
 }: {
   user: OrganizationAdminUserDisplay;
   sessions?: OrganizationAdminUserSessionDisplay[];
   platformAssignments?: OrganizationAdminPlatformAssignmentDisplay[];
   platformRoleOptions?: OrganizationAdminPlatformRoleOption[];
+  canManagePlatformRoles?: boolean;
 }) {
   return (
     <OrganizationAdminUsersViewFeature
@@ -23,6 +25,7 @@ export default function OrganizationAdminUsersView({
       sessions={sessions}
       platformAssignments={platformAssignments}
       platformRoleOptions={platformRoleOptions}
+      canManagePlatformRoles={canManagePlatformRoles}
     />
   );
 }

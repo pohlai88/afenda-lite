@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   isFftErpSyncEnabled: vi.fn(),
-  requireTradePermission: vi.fn(),
+  requireFftPermission: vi.fn(),
   processPendingSyncJobs: vi.fn(),
   revalidatePath: vi.fn(),
 }));
@@ -22,7 +22,7 @@ vi.mock("@/modules/platform/env/accessors", () => ({
 }));
 
 vi.mock("@/modules/fft/auth/fft-session", () => ({
-  requireTradePermission: mocks.requireTradePermission,
+  requireFftPermission: mocks.requireFftPermission,
   requireFftAdmin: vi.fn(),
 }));
 
@@ -45,7 +45,7 @@ import { processErpSyncJobsAction } from "@/app/actions/fft";
 describe("processErpSyncJobsAction", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.requireTradePermission.mockResolvedValue({
+    mocks.requireFftPermission.mockResolvedValue({
       userId: "user-1",
       isAdmin: false,
     });
@@ -61,7 +61,7 @@ describe("processErpSyncJobsAction", () => {
     const result = await processErpSyncJobsAction("en");
 
     expect(result).toEqual({ error: "erp_sync_disabled" });
-    expect(mocks.requireTradePermission).not.toHaveBeenCalled();
+    expect(mocks.requireFftPermission).not.toHaveBeenCalled();
     expect(mocks.processPendingSyncJobs).not.toHaveBeenCalled();
     expect(mocks.revalidatePath).not.toHaveBeenCalled();
   });
@@ -72,7 +72,7 @@ describe("processErpSyncJobsAction", () => {
     const result = await processErpSyncJobsAction("en");
 
     expect(result).toEqual({ ok: true, processed: 2, succeeded: 1 });
-    expect(mocks.requireTradePermission).toHaveBeenCalledWith("export.finance");
+    expect(mocks.requireFftPermission).toHaveBeenCalledWith("export.finance");
     expect(mocks.processPendingSyncJobs).toHaveBeenCalled();
     expect(mocks.revalidatePath).toHaveBeenCalledWith("/fft/admin/erp-sync");
   });

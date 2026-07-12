@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  canSalesAccessTrade,
+  canSalesAccessFft,
   canSalesViewOrder,
   isSalesMemberActive,
 } from "@/modules/fft/domain/access";
@@ -21,29 +21,29 @@ const members: FftSalesMember[] = [
   },
 ];
 
-describe("Phase 1 allowlist (canSalesAccessTrade)", () => {
+describe("Phase 1 allowlist (canSalesAccessFft)", () => {
   it("does not grant Feed Farm Trade to org admin without allowlist membership", () => {
-    expect(canSalesAccessTrade(members, "admin@example.com", true)).toBe(false);
+    expect(canSalesAccessFft(members, "admin@example.com", true)).toBe(false);
   });
 
   it("allows active allowlisted sales email", () => {
-    expect(canSalesAccessTrade(members, "sales@example.com", false)).toBe(true);
-    expect(canSalesAccessTrade(members, "  SALES@example.com  ", false)).toBe(
+    expect(canSalesAccessFft(members, "sales@example.com", false)).toBe(true);
+    expect(canSalesAccessFft(members, "  SALES@example.com  ", false)).toBe(
       true,
     );
   });
 
   it("denies inactive or unknown sales email", () => {
-    expect(canSalesAccessTrade(members, "inactive@example.com", false)).toBe(
+    expect(canSalesAccessFft(members, "inactive@example.com", false)).toBe(
       false,
     );
-    expect(canSalesAccessTrade(members, "unknown@example.com", false)).toBe(
+    expect(canSalesAccessFft(members, "unknown@example.com", false)).toBe(
       false,
     );
   });
 
   it("denies when allowlist is empty", () => {
-    expect(canSalesAccessTrade([], "sales@example.com", false)).toBe(false);
+    expect(canSalesAccessFft([], "sales@example.com", false)).toBe(false);
   });
 });
 

@@ -7,7 +7,7 @@ import type { Settings } from '@/components-V2/platform-context/settingsContext'
 import { isPlaygroundEnabled } from '@/modules/platform/env/accessors'
 import { resolveShellAccess } from '@/features/portal-chrome/resolve-shell-access'
 
-/** Shared AdminCN chrome for Declarations + Feed Farm Trade modules (/dashboard, /trade). */
+/** Shared AdminCN chrome for Declarations + Feed Farm Trade modules (/dashboard, /fft). */
 export async function AdminCnShell({ children }: { children: ReactNode }) {
   const cookieStore = await cookies()
   const raw = cookieStore.get(themeConfig.settingsCookieName)?.value

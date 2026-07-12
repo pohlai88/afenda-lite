@@ -202,7 +202,7 @@ export function FftEventStatusActions({
           <Button
             type="button"
             disabled={pending}
-            data-testid="trade-open-event"
+            data-testid="fft-open-event"
             onClick={() =>
               startTransition(async () => {
                 setError(null);
@@ -223,7 +223,7 @@ export function FftEventStatusActions({
           <Button
             type="button"
             disabled={pending}
-            data-testid="trade-activate-event"
+            data-testid="fft-activate-event"
             onClick={() =>
               startTransition(async () => {
                 setError(null);
@@ -248,7 +248,7 @@ export function FftEventStatusActions({
             type="button"
             variant="secondary"
             disabled={pending}
-            data-testid="trade-close-event"
+            data-testid="fft-close-event"
             onClick={() =>
               startTransition(async () => {
                 setError(null);
@@ -328,7 +328,7 @@ export function TradeProductForm({
         defaultValue={product?.productName}
         required
         disabled={catalogLocked}
-        data-testid="trade-product-name"
+        data-testid="fft-product-name"
       />
       <Input
         name="productCode"
@@ -372,14 +372,14 @@ export function TradeProductForm({
         placeholder="Tentative qty"
         defaultValue={product?.tentativeQuantity ?? ""}
         disabled={catalogLocked}
-        data-testid="trade-product-tentative-qty"
+        data-testid="fft-product-tentative-qty"
       />
       <Input
         name="finalConfirmedQuantity"
         type="number"
         placeholder="Final confirmed qty"
         defaultValue={product?.finalConfirmedQuantity ?? ""}
-        data-testid="trade-product-final-qty"
+        data-testid="fft-product-final-qty"
       />
       <Input
         name="supportAmountPerUnit"
@@ -399,7 +399,7 @@ export function TradeProductForm({
           type="submit"
           size="sm"
           disabled={pending}
-          data-testid="trade-product-save"
+          data-testid="fft-product-save"
         >
           {catalogLocked
             ? "Update final qty"
@@ -466,14 +466,14 @@ export function TradeFieldDefForm({
         defaultValue={field?.fieldKey}
         required
         disabled={Boolean(field?.id)}
-        data-testid="trade-field-key"
+        data-testid="fft-field-key"
       />
       <select
         name="fieldType"
         defaultValue={field?.fieldType ?? "text"}
         className={FFT_NATIVE_SELECT_CLASS}
         disabled={requiredLocked && Boolean(field?.required)}
-        data-testid="trade-field-type"
+        data-testid="fft-field-type"
       >
         <option value="text">text</option>
         <option value="number">number</option>
@@ -489,14 +489,14 @@ export function TradeFieldDefForm({
         placeholder="Label EN"
         defaultValue={field?.labelEn}
         required
-        data-testid="trade-field-label-en"
+        data-testid="fft-field-label-en"
       />
       <Input
         name="labelVi"
         placeholder="Label VI"
         defaultValue={field?.labelVi}
         required
-        data-testid="trade-field-label-vi"
+        data-testid="fft-field-label-vi"
       />
       <Input
         name="dropdownOptions"
@@ -512,7 +512,7 @@ export function TradeFieldDefForm({
           name={requiredLocked ? undefined : "required"}
           defaultChecked={field?.required}
           disabled={requiredLocked}
-          data-testid="trade-field-required"
+          data-testid="fft-field-required"
         />
         Required
         {requiredLocked ? (
@@ -531,7 +531,7 @@ export function TradeFieldDefForm({
           type="submit"
           size="sm"
           disabled={pending}
-          data-testid="trade-field-save"
+          data-testid="fft-field-save"
         >
           {field ? "Update column" : "Add column"}
         </Button>
@@ -560,7 +560,7 @@ export function TradeRunAllocationButton({
       <Button
         type="button"
         disabled={pending}
-        data-testid="trade-run-allocation-setup"
+        data-testid="fft-run-allocation-setup"
         onClick={() =>
           startTransition(async () => {
             setError(null);
@@ -624,7 +624,7 @@ export function TradePriorityImportForm({
         id="csv"
         name="csv"
         rows={6}
-        data-testid="trade-priority-csv"
+        data-testid="fft-priority-csv"
         placeholder={
           "customer_name,customer_code,priority_rank,priority_group\nCustomer A,C001,1,P1"
         }
@@ -633,7 +633,7 @@ export function TradePriorityImportForm({
         type="submit"
         size="sm"
         disabled={pending}
-        data-testid="trade-priority-import"
+        data-testid="fft-priority-import"
       >
         {pending ? "Importing…" : "Import priority CSV"}
       </Button>

@@ -33,7 +33,7 @@ export function FftCountdown({
           ? "text-muted-foreground text-xs"
           : "font-mono text-xs tabular-nums"
       }
-      data-testid="trade-countdown"
+      data-testid="fft-countdown"
       suppressHydrationWarning
     >
       {label ? `${label}: ` : null}

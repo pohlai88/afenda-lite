@@ -1,11 +1,14 @@
 /**
- * Declarations tenancy helpers (ADR-002).
- * organization_id is stamped/filtered at the domain edge; adapters pass the Neon org id.
+ * Declarations tenancy helpers (ADR-002 hard cutover).
+ * organization_id is required on tenant roots after migration 027.
+ * backfill* remains for ops scripts only — not RSC forever-backfill.
  */
 
 import "server-only";
 
 import { pool } from "@/modules/platform/db";
+
+export { organizationScopeSql } from "@/modules/platform/db/organization-scope";
 
 const TENANT_TABLES = [
   "surveys",
@@ -14,10 +17,7 @@ const TENANT_TABLES = [
   "client_assignments",
 ] as const;
 
-/**
- * Stamp NULL organization_id rows with the active portal org.
- * Idempotent — safe to call from org-admin RSC loaders.
- */
+/** Ops-only stamp for remaining NULLs before NOT NULL. Idempotent. */
 export async function backfillDeclarationOrganizationIds(
   organizationId: string,
 ): Promise<{ updated: number }> {
@@ -32,12 +32,4 @@ export async function backfillDeclarationOrganizationIds(
     updated += result.rowCount ?? 0;
   }
   return { updated };
-}
-
-/** SQL fragment: row belongs to org or is legacy-unscoped (pre-backfill). */
-export function organizationScopeSql(
-  column: string,
-  paramIndex: number,
-): string {
-  return `(${column} IS NULL OR ${column} = $${paramIndex})`;
 }

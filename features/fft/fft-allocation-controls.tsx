@@ -48,13 +48,13 @@ export function FftAllocationControls({
   );
 
   return (
-    <div className="space-y-4" data-testid="trade-allocation-controls">
+    <div className="space-y-4" data-testid="fft-allocation-controls">
       <div className="flex flex-wrap gap-2">
         <Button
           type="button"
           variant="outline"
           disabled={pending}
-          data-testid="trade-preview-allocation"
+          data-testid="fft-preview-allocation"
           onClick={() =>
             startTransition(async () => {
               setError(null);
@@ -87,7 +87,7 @@ export function FftAllocationControls({
         <Button
           type="button"
           disabled={pending}
-          data-testid="trade-run-allocation"
+          data-testid="fft-run-allocation"
           onClick={() =>
             startTransition(async () => {
               setError(null);
@@ -114,7 +114,7 @@ export function FftAllocationControls({
       {preview ? (
         <div
           className="rounded-lg border p-3 text-sm"
-          data-testid="trade-allocation-preview"
+          data-testid="fft-allocation-preview"
         >
           <p className="font-medium">Preview</p>
           <p>
@@ -184,7 +184,7 @@ function FftOrderAdjustRow({
   return (
     <div
       className="grid gap-2 rounded-lg border p-3 text-sm md:grid-cols-6"
-      data-testid="trade-order-row"
+      data-testid="fft-order-row"
       data-order-id={order.id}
       data-status={order.status}
       data-customer={order.customerName}
@@ -200,7 +200,7 @@ function FftOrderAdjustRow({
       {canOverride ? (
         <form
           className="contents"
-          data-testid="trade-override-form"
+          data-testid="fft-override-form"
           action={(formData) => {
             setError(null);
             startTransition(async () => {
@@ -231,19 +231,19 @@ function FftOrderAdjustRow({
             min={0}
             defaultValue={order.confirmedQuantity ?? order.requestedQuantity}
             placeholder="Confirmed qty"
-            data-testid="trade-override-qty"
+            data-testid="fft-override-qty"
           />
           <Input
             name="reason"
             placeholder="Reason (required)"
             required
-            data-testid="trade-override-reason"
+            data-testid="fft-override-reason"
           />
           <Button
             type="submit"
             size="sm"
             disabled={pending}
-            data-testid="trade-override-adjust"
+            data-testid="fft-override-adjust"
           >
             Override
           </Button>
@@ -251,7 +251,7 @@ function FftOrderAdjustRow({
       ) : (
         <p
           className="text-muted-foreground md:col-span-3 text-xs"
-          data-testid="trade-override-hidden"
+          data-testid="fft-override-hidden"
         >
           Manual override requires allocation.override
         </p>
@@ -288,7 +288,7 @@ function FftOrderAdjustRow({
           size="sm"
           variant="secondary"
           disabled={pending}
-          data-testid="trade-complete-order"
+          data-testid="fft-complete-order"
         >
           Complete (final support)
         </Button>
@@ -343,7 +343,7 @@ export function TradeCompleteOrderForm({
           type="number"
           min={0}
           defaultValue={defaultFulfilledQuantity}
-          data-testid="trade-complete-fulfilled-qty"
+          data-testid="fft-complete-fulfilled-qty"
         />
       </label>
       <Button
@@ -351,7 +351,7 @@ export function TradeCompleteOrderForm({
         variant="outline"
         size="sm"
         disabled={pending}
-        data-testid="trade-complete-order"
+        data-testid="fft-complete-order"
       >
         Complete order
       </Button>

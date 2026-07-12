@@ -33,7 +33,7 @@ export function TradeFormPending({
     <p
       className="text-muted-foreground text-xs"
       aria-live="polite"
-      data-testid="trade-form-pending"
+      data-testid="fft-form-pending"
     >
       {label}
     </p>
@@ -69,7 +69,7 @@ export function TradePageSkeleton({
   rows?: number;
 }) {
   return (
-    <div className="space-y-4 p-6" data-testid="trade-page-skeleton" aria-busy="true">
+    <div className="space-y-4 p-6" data-testid="fft-page-skeleton" aria-busy="true">
       <Skeleton className="h-8 w-64" />
       <Skeleton className="h-4 w-40" />
       {Array.from({ length: rows }, (_, i) => (

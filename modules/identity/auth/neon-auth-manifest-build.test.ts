@@ -12,14 +12,14 @@ describe("resolveAllowLocalhost", () => {
 
   it("infers false when localhost is not a trusted domain", () => {
     expect(
-      resolveAllowLocalhost({}, [{ domain: "https://iam-check.vercel.app" }]),
+      resolveAllowLocalhost({}, [{ domain: "https://afenda-lite.vercel.app" }]),
     ).toBe(false);
   });
 
   it("infers true when localhost is a trusted domain", () => {
     expect(
       resolveAllowLocalhost({}, [
-        { domain: "https://iam-check.vercel.app" },
+        { domain: "https://afenda-lite.vercel.app" },
         { domain: "http://localhost:3000" },
       ]),
     ).toBe(true);

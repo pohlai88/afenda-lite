@@ -38,6 +38,7 @@ import { persistClientDeclarationDraft } from "@/modules/declarations/domain/cli
 import { deleteClientAuthUserByEmail } from "@/modules/identity/delete-client-auth-user";
 import { isClientEmailDeliveryEnabled } from "@/modules/identity/email/client-email-delivery";
 import { sendClientOnboardingEmail } from "@/modules/identity/email/send-client-onboarding-email";
+import { ensurePortalOrganization } from "@/modules/identity/portal-organization";
 import { runLoggedAction } from "@/modules/platform/observability";
 import { portalCopy, CLIENT_PORTAL_ACK_VERSION } from "@/modules/platform/copy/portal-copy";
 import type { SurveyAnswers } from "@/modules/declarations/domain/questions";
@@ -80,6 +81,8 @@ export async function saveClientOnboardingAction(formData: FormData) {
         notes,
       } = parsed.data;
 
+      const portalOrg = await ensurePortalOrganization();
+
       await upsertClientProfile({
         userId: session.user.id,
         fullLegalName,
@@ -94,6 +97,7 @@ export async function saveClientOnboardingAction(formData: FormData) {
         notes,
         identityConsentAt: new Date(),
         onboardingComplete: true,
+        organizationId: portalOrg.id,
       });
 
       await auth.updateUser({
@@ -354,7 +358,7 @@ export async function removeClientRegistrationAction(formData: FormData) {
     "removeClientRegistrationAction",
     session.user.id,
     async () => {
-      const { check } = await requirePlatformPermission({
+      const { organizationId, check } = await requirePlatformPermission({
         userId: session.user.id,
         code: "clients.invite",
         isNeonAdmin: isAdminSession(session),
@@ -371,7 +375,10 @@ export async function removeClientRegistrationAction(formData: FormData) {
         return { error: portalCopy.clientInvitationsPage.removeError };
       }
 
-      const invitation = await getClientInvitationById(parsed.data.invitationId);
+      const invitation = await getClientInvitationById(
+        parsed.data.invitationId,
+        organizationId,
+      );
       if (!invitation) {
         return { error: portalCopy.clientInvitationsPage.removeMissing };
       }
@@ -387,8 +394,8 @@ export async function removeClientRegistrationAction(formData: FormData) {
         await deleteClientProfileByUserId(authResult.userId);
       }
 
-      await deleteClientAssignmentsForEmail(email);
-      await deleteClientInvitationById(invitation.id);
+      await deleteClientAssignmentsForEmail(email, organizationId);
+      await deleteClientInvitationById(invitation.id, organizationId);
 
       await recordAuditEvent({
         actorId: session.user.id,
@@ -430,12 +437,15 @@ export async function deleteClientAssignmentAction(formData: FormData) {
         return { error: portalCopy.clientInvitationsPage.assignmentRemoveError };
       }
 
-      const assignment = await getClientAssignmentById(parsed.data.assignmentId);
+      const assignment = await getClientAssignmentById(
+        parsed.data.assignmentId,
+        gate.organizationId,
+      );
       if (!assignment) {
         return { error: portalCopy.clientInvitationsPage.assignmentRemoveMissing };
       }
 
-      await deleteClientAssignmentById(assignment.id);
+      await deleteClientAssignmentById(assignment.id, gate.organizationId);
 
       await recordAuditEvent({
         actorId: session.user.id,

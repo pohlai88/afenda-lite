@@ -24,7 +24,7 @@ export function FftAuditPanel({ rows }: { rows: FftAuditListItem[] }) {
   );
 
   return (
-    <section className="space-y-3" data-testid="trade-audit-panel">
+    <section className="space-y-3" data-testid="fft-audit-panel">
       <h2 className="font-medium">Audit</h2>
 
       {rows.length === 0 ? (
@@ -45,7 +45,7 @@ export function FftAuditPanel({ rows }: { rows: FftAuditListItem[] }) {
                 className={FFT_NATIVE_SELECT_CLASS}
                 value={actorId}
                 onChange={(e) => setActorId(e.target.value)}
-                data-testid="trade-audit-actor-filter"
+                data-testid="fft-audit-actor-filter"
               >
                 <option value="">All actors</option>
                 {actors.map((id) => (
@@ -64,7 +64,7 @@ export function FftAuditPanel({ rows }: { rows: FftAuditListItem[] }) {
                 type="date"
                 value={fromDate}
                 onChange={(e) => setFromDate(e.target.value)}
-                data-testid="trade-audit-from-date"
+                data-testid="fft-audit-from-date"
               />
             </div>
             <div className="space-y-1">
@@ -76,7 +76,7 @@ export function FftAuditPanel({ rows }: { rows: FftAuditListItem[] }) {
                 type="date"
                 value={toDate}
                 onChange={(e) => setToDate(e.target.value)}
-                data-testid="trade-audit-to-date"
+                data-testid="fft-audit-to-date"
               />
             </div>
           </div>
@@ -90,16 +90,16 @@ export function FftAuditPanel({ rows }: { rows: FftAuditListItem[] }) {
           ) : (
             <ul
               className="text-muted-foreground max-h-64 overflow-auto text-xs"
-              data-testid="trade-audit-list"
+              data-testid="fft-audit-list"
             >
               {view.map((row) => (
-                <li key={row.id} data-testid="trade-audit-row">
+                <li key={row.id} data-testid="fft-audit-row">
                   {row.createdAt} · {row.action} · {row.actorId || "—"}
                 </li>
               ))}
             </ul>
           )}
-          <p className="text-muted-foreground text-xs" data-testid="trade-audit-count">
+          <p className="text-muted-foreground text-xs" data-testid="fft-audit-count">
             Showing {view.length} of {rows.length}
           </p>
         </>

@@ -51,7 +51,7 @@ export default async function FftAllocationPage({ params }: Props) {
         canOverride={canOverride}
       />
 
-      <section className="space-y-3" data-testid="trade-transfer-requests">
+      <section className="space-y-3" data-testid="fft-transfer-requests">
         <h2 className="font-medium">Transfer requests</h2>
         {transfers.length === 0 ? (
           <p className="text-muted-foreground text-sm">None</p>

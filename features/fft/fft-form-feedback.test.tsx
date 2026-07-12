@@ -14,7 +14,7 @@ describe("trade-form-feedback (P2-AC-04)", () => {
     );
     expect(html).toContain('role="alert"');
     expect(html).toContain("reason_required");
-    expect(html).toContain('data-testid="trade-priority-error"');
+    expect(html).toContain('data-testid="fft-priority-error"');
   });
 
   it("renders nothing for empty error", () => {
@@ -27,7 +27,7 @@ describe("trade-form-feedback (P2-AC-04)", () => {
       <TradeFormPending pending label="Importing…" />,
     );
     expect(html).toContain("Importing…");
-    expect(html).toContain('data-testid="trade-form-pending"');
+    expect(html).toContain('data-testid="fft-form-pending"');
   });
 
   it("renders empty state copy", () => {
@@ -39,12 +39,12 @@ describe("trade-form-feedback (P2-AC-04)", () => {
       />,
     );
     expect(html).toContain("No products yet");
-    expect(html).toContain('data-testid="trade-products-empty"');
+    expect(html).toContain('data-testid="fft-products-empty"');
   });
 
   it("renders page skeleton", () => {
     const html = renderToStaticMarkup(<TradePageSkeleton rows={2} />);
-    expect(html).toContain('data-testid="trade-page-skeleton"');
+    expect(html).toContain('data-testid="fft-page-skeleton"');
     expect(html).toContain('aria-busy="true"');
   });
 });

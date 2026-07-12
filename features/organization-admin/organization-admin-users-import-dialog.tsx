@@ -199,12 +199,12 @@ export function OrganizationAdminUsersImportDialog({
                 }
                 if (actionResult && "ok" in actionResult && actionResult.ok) {
                   setResult({
-                    created: actionResult.created,
-                    failed: actionResult.failed,
-                    failures: actionResult.failures,
+                    created: actionResult.data.created,
+                    failed: actionResult.data.failed,
+                    failures: actionResult.data.failures,
                   });
                   router.refresh();
-                  if (actionResult.failed === 0) {
+                  if (actionResult.data.failed === 0) {
                     setPreview([]);
                     setFilename(null);
                   }

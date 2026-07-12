@@ -1,6 +1,6 @@
 /**
  * P1 MVP AC evidence — permission-code gates (G1–G6 / G8–G9 related).
- * Actions call requireTradePermission with these codes; deny/allow here is the AC proof.
+ * Actions call requireFftPermission with these codes; deny/allow here is the AC proof.
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -11,6 +11,8 @@ const mocks = vi.hoisted(() => ({
   listSalesMembers: vi.fn(),
   listRoleAssignmentsForUser: vi.fn(),
   bootstrapPhase1RbacAssignments: vi.fn(),
+  resolvePlatformOrgContext: vi.fn(),
+  hasPlatformPermission: vi.fn(),
 }));
 
 vi.mock("@/modules/identity/auth/get-session", () => ({
@@ -23,6 +25,15 @@ vi.mock("@/modules/identity/admin", () => ({
 
 vi.mock("@/modules/platform/env/accessors", () => ({
   isFftRbacEnabled: mocks.isFftRbacEnabled,
+}));
+
+vi.mock("@/modules/identity/domain/platform-rbac-access", () => ({
+  resolvePlatformOrgContext: mocks.resolvePlatformOrgContext,
+}));
+
+vi.mock("@/modules/identity/domain/platform-rbac", () => ({
+  hasPlatformPermission: mocks.hasPlatformPermission,
+  ensureFftMemberPlatformAccess: vi.fn().mockResolvedValue({ ok: true }),
 }));
 
 vi.mock("@/modules/fft/domain/store", () => ({
@@ -38,7 +49,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 import {
-  requireTradePermission,
+  requireFftPermission,
   type FftAccess,
 } from "@/modules/fft/auth/fft-session";
 import { hasFftEventManagePermission } from "@/modules/fft/auth/fft-phase2b";
@@ -83,6 +94,10 @@ describe("P1 AC permission gates (RBAC on)", () => {
     mocks.isFftRbacEnabled.mockReturnValue(true);
     mocks.listSalesMembers.mockResolvedValue([]);
     mocks.bootstrapPhase1RbacAssignments.mockResolvedValue(undefined);
+    mocks.resolvePlatformOrgContext.mockResolvedValue({
+      organizationId: "org-1",
+    });
+    mocks.hasPlatformPermission.mockResolvedValue({ allowed: true });
   });
 
   const cases: Array<{ ac: string; code: string }> = [
@@ -107,7 +122,7 @@ describe("P1 AC permission gates (RBAC on)", () => {
       mocks.listRoleAssignmentsForUser.mockResolvedValue(assignment([code]));
 
       await expect(
-        requireTradePermission(code, { eventId: "e1" }),
+        requireFftPermission(code, { eventId: "e1" }),
       ).resolves.toMatchObject({ userId: "ops-1", rbacEnabled: true });
 
       mocks.listRoleAssignmentsForUser.mockResolvedValue(
@@ -115,7 +130,7 @@ describe("P1 AC permission gates (RBAC on)", () => {
       );
 
       await expect(
-        requireTradePermission(code, { eventId: "e1" }),
+        requireFftPermission(code, { eventId: "e1" }),
       ).rejects.toThrow(salesEventsRedirect);
     });
   }
@@ -127,7 +142,7 @@ describe("P1 AC permission gates (RBAC on)", () => {
     );
 
     await expect(
-      requireTradePermission("transfer.request", { eventId: "e1" }),
+      requireFftPermission("transfer.request", { eventId: "e1" }),
     ).resolves.toMatchObject({ userId: "sales-1" });
 
     mocks.listRoleAssignmentsForUser.mockResolvedValue(
@@ -135,7 +150,7 @@ describe("P1 AC permission gates (RBAC on)", () => {
     );
 
     await expect(
-      requireTradePermission("transfer.request", { eventId: "e1" }),
+      requireFftPermission("transfer.request", { eventId: "e1" }),
     ).rejects.toThrow(salesEventsRedirect);
   });
 
@@ -146,7 +161,7 @@ describe("P1 AC permission gates (RBAC on)", () => {
     );
 
     await expect(
-      requireTradePermission("order.create", { eventId: "e1" }),
+      requireFftPermission("order.create", { eventId: "e1" }),
     ).resolves.toMatchObject({ userId: "sales-1" });
 
     mocks.listRoleAssignmentsForUser.mockResolvedValue(
@@ -154,7 +169,7 @@ describe("P1 AC permission gates (RBAC on)", () => {
     );
 
     await expect(
-      requireTradePermission("order.create", { eventId: "e1" }),
+      requireFftPermission("order.create", { eventId: "e1" }),
     ).rejects.toThrow(salesEventsRedirect);
   });
 
@@ -165,7 +180,7 @@ describe("P1 AC permission gates (RBAC on)", () => {
     );
 
     await expect(
-      requireTradePermission("order.view_own", {
+      requireFftPermission("order.view_own", {
         eventId: "e1",
         resourceOwnerUserId: "sales-1",
       }),
@@ -176,7 +191,7 @@ describe("P1 AC permission gates (RBAC on)", () => {
     );
 
     await expect(
-      requireTradePermission("order.view_own", {
+      requireFftPermission("order.view_own", {
         eventId: "e1",
         resourceOwnerUserId: "sales-1",
       }),
@@ -190,7 +205,7 @@ describe("P1 AC permission gates (RBAC on)", () => {
     );
 
     await expect(
-      requireTradePermission("pickup.manage", { eventId: "e1" }),
+      requireFftPermission("pickup.manage", { eventId: "e1" }),
     ).resolves.toMatchObject({ userId: "ops-1" });
 
     mocks.listRoleAssignmentsForUser.mockResolvedValue(
@@ -198,7 +213,7 @@ describe("P1 AC permission gates (RBAC on)", () => {
     );
 
     await expect(
-      requireTradePermission("pickup.manage", { eventId: "e1" }),
+      requireFftPermission("pickup.manage", { eventId: "e1" }),
     ).rejects.toThrow(salesEventsRedirect);
   });
 
@@ -209,14 +224,14 @@ describe("P1 AC permission gates (RBAC on)", () => {
     );
 
     await expect(
-      requireTradePermission("allocation.preview", { eventId: "e1" }),
+      requireFftPermission("allocation.preview", { eventId: "e1" }),
     ).resolves.toMatchObject({ userId: "ops-1" });
     await expect(
-      requireTradePermission("allocation.run", { eventId: "e1" }),
+      requireFftPermission("allocation.run", { eventId: "e1" }),
     ).resolves.toMatchObject({ userId: "ops-1" });
 
     await expect(
-      requireTradePermission("allocation.override", { eventId: "e1" }),
+      requireFftPermission("allocation.override", { eventId: "e1" }),
     ).rejects.toThrow(salesEventsRedirect);
   });
 });
@@ -235,6 +250,7 @@ describe("P1 AC-ALC-03 override panel helper (no full-page redirect)", () => {
       email: "ops@example.com",
       isAdmin: false,
       rbacEnabled: true,
+      organizationId: "org-test",
     };
     mocks.listRoleAssignmentsForUser.mockResolvedValue(
       assignment(["allocation.preview", "allocation.run"]),
@@ -250,6 +266,7 @@ describe("P1 AC-ALC-03 override panel helper (no full-page redirect)", () => {
       email: "ops@example.com",
       isAdmin: false,
       rbacEnabled: true,
+      organizationId: "org-test",
     };
     mocks.listRoleAssignmentsForUser.mockResolvedValue(
       assignment(["allocation.override"]),
@@ -267,6 +284,7 @@ describe("P1 AC-AUD-01 setup panel helper (no full-page redirect)", () => {
       email: "sales@example.com",
       isAdmin: false,
       rbacEnabled: true,
+      organizationId: "org-test",
     };
     mocks.listRoleAssignmentsForUser.mockResolvedValue(
       assignment(["order.create", "order.view_own"]),
@@ -283,6 +301,7 @@ describe("P1 AC-AUD-01 setup panel helper (no full-page redirect)", () => {
       email: "viewer@example.com",
       isAdmin: false,
       rbacEnabled: true,
+      organizationId: "org-test",
     };
     mocks.listRoleAssignmentsForUser.mockResolvedValue(
       assignment(["audit.view"]),
@@ -293,19 +312,28 @@ describe("P1 AC-AUD-01 setup panel helper (no full-page redirect)", () => {
     ).resolves.toBe(true);
   });
 
-  it("shows audit for platform admin without reading assignments", async () => {
+  it("shows audit only when assignment grants audit.view (no Neon admin bypass)", async () => {
     vi.clearAllMocks();
     const access: FftAccess = {
       userId: "admin-1",
       email: "admin@example.com",
       isAdmin: true,
       rbacEnabled: true,
+      organizationId: "org-test",
     };
 
+    mocks.listRoleAssignmentsForUser.mockResolvedValue([]);
+    await expect(
+      hasFftEventManagePermission(access, "audit.view", "e1"),
+    ).resolves.toBe(false);
+    expect(mocks.listRoleAssignmentsForUser).toHaveBeenCalled();
+
+    mocks.listRoleAssignmentsForUser.mockResolvedValue(
+      assignment(["audit.view"]),
+    );
     await expect(
       hasFftEventManagePermission(access, "audit.view", "e1"),
     ).resolves.toBe(true);
-    expect(mocks.listRoleAssignmentsForUser).not.toHaveBeenCalled();
   });
 
   it("AC-AUD-01 / G6: RBAC off — admin sees audit, sales allowlist does not", async () => {
@@ -314,6 +342,7 @@ describe("P1 AC-AUD-01 setup panel helper (no full-page redirect)", () => {
       email: "sales@example.com",
       isAdmin: false,
       rbacEnabled: false,
+      organizationId: "org-test",
     };
     await expect(
       hasFftEventManagePermission(sales, "audit.view", "e1"),
@@ -324,6 +353,7 @@ describe("P1 AC-AUD-01 setup panel helper (no full-page redirect)", () => {
       email: "admin@example.com",
       isAdmin: true,
       rbacEnabled: false,
+      organizationId: "org-test",
     };
     await expect(
       hasFftEventManagePermission(admin, "audit.view", "e1"),
@@ -337,10 +367,15 @@ describe("P1 AC gates (RBAC off — admin vs sales allowlist)", () => {
     mocks.isFftRbacEnabled.mockReturnValue(false);
     mocks.listSalesMembers.mockResolvedValue(salesMembers);
     mocks.listRoleAssignmentsForUser.mockResolvedValue([]);
+    mocks.resolvePlatformOrgContext.mockResolvedValue({
+      organizationId: "org-1",
+    });
+    mocks.hasPlatformPermission.mockResolvedValue({ allowed: false });
   });
 
   it("denies allowlisted sales for supply.manage / priority.manage / export.orders", async () => {
     mockSignedIn("sales@example.com", "sales-1");
+    mocks.hasPlatformPermission.mockResolvedValue({ allowed: true });
 
     for (const code of [
       "event.create",
@@ -355,7 +390,7 @@ describe("P1 AC gates (RBAC off — admin vs sales allowlist)", () => {
       "allocation.preview",
       "allocation.override",
     ] as const) {
-      await expect(requireTradePermission(code, { eventId: "e1" })).rejects.toThrow(
+      await expect(requireFftPermission(code, { eventId: "e1" })).rejects.toThrow(
         salesEventsRedirect,
       );
     }
@@ -372,9 +407,10 @@ describe("P1 AC gates (RBAC off — admin vs sales allowlist)", () => {
       },
     ]);
     mockSignedIn("admin@example.com", "admin-1", { isAdmin: true });
+    mocks.hasPlatformPermission.mockResolvedValue({ allowed: true });
 
     await expect(
-      requireTradePermission("supply.manage", { eventId: "e1" }),
+      requireFftPermission("supply.manage", { eventId: "e1" }),
     ).resolves.toMatchObject({ isAdmin: true });
   });
 });

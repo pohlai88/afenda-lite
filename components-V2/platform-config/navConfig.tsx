@@ -60,6 +60,17 @@ export const navItems: NavItem[] = [
         href: '/dashboard/clients',
       },
       {
+        icon: 'UserCogIcon',
+        label: 'Account',
+        href: '/account/settings',
+      },
+    ],
+  },
+  {
+    groupLabel: 'Organization',
+    kind: 'admin',
+    items: [
+      {
         icon: 'UserRoundCogIcon',
         label: 'Users',
         childItems: [
@@ -76,11 +87,6 @@ export const navItems: NavItem[] = [
             href: '/dashboard/permissions',
           },
         ],
-      },
-      {
-        icon: 'UserCogIcon',
-        label: 'Account',
-        href: '/account/settings',
       },
     ],
   },

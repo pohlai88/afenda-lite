@@ -4,7 +4,7 @@
 |-------|-------|
 | **Status** | **Closed** — Gate 7 complete; issue #1 closed 2026-07-10 |
 | **Date** | 2026-07-10 (Gate 7 production RBAC enable) |
-| **GitHub issue** | [#1](https://github.com/pohlai88/iam-check/issues/1) — **closed** |
+| **GitHub issue** | [#1](https://github.com/pohlai88/afenda-lite/issues/1) — **closed** |
 | **Product boundary** | Tag `fft-phase-2a` → `8e650ff` (**immutable**) |
 | **Readiness docs** | Commit `0fd22f4` · [./release-readiness.md](./release-readiness.md) |
 | **Gate SSOT** | [./gate-register.md](./gate-register.md) — **read first** |

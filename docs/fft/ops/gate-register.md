@@ -7,7 +7,7 @@
 | **Agent entry** | [../RUNTIME.md](../RUNTIME.md) |
 | **Date** | 2026-07-09 (gates closed 2026-07-10) |
 | **Authority** | [../spec/phase-2a-prd.md](../spec/phase-2a-prd.md) · [./release-readiness.md](./release-readiness.md) · [./rollout.md](./rollout.md) |
-| **GitHub issue** | [#1](https://github.com/pohlai88/iam-check/issues/1) — **closed** (completed) |
+| **GitHub issue** | [#1](https://github.com/pohlai88/afenda-lite/issues/1) — **closed** (completed) |
 
 This document is the **single operational SSOT** for Phase 2A rollout status, gate sequencing, and drift prevention. Agents and operators must read this before any Feed Farm Trade production work.
 
@@ -34,7 +34,7 @@ This document is the **single operational SSOT** for Phase 2A rollout status, ga
 
 | Item | Value |
 |------|--------|
-| Production URL | `https://iam-check.vercel.app` |
+| Production URL | `https://afenda-lite.vercel.app` (legacy alias `iam-check.vercel.app`) |
 | Production Neon branch | `br-tiny-hill-ao82jp6f` (**only**) |
 | Phase 1 tag | `fft-phase-1` → `1bc1294` |
 | Phase 2A tag | `fft-phase-2a` → `8e650ff` |
@@ -127,7 +127,7 @@ select email, active from fft_sales_member where active = true;
 | 7 | ✅ PASS | Order submit → `/my-orders` with new customer row |
 | 8 | ✅ PASS | Same order visible on `/fft/vi/my-orders` |
 | 9 | ✅ PASS | `/fft/vi/admin/events` → redirected to `/fft/vi/events` |
-| 10 | ✅ PASS | RSC `requireTradePermission("event.create")` redirect; `createTradeEventAction` replay as sales → HTTP **303**, no `eventId` created |
+| 10 | ✅ PASS | RSC `requireFftPermission("event.create")` redirect; `createTradeEventAction` replay as sales → HTTP **303**, no `eventId` created |
 
 Runner: `node scripts/gate-4b-rows-6-10.mjs` (Playwright, production base URL).
 
@@ -201,7 +201,7 @@ const access = await requireFftAccess();
 It does not currently call:
 
 ```ts
-requireTradePermission("transfer.request")
+requireFftPermission("transfer.request")
 ```
 
 ### Flag=false verdict
@@ -221,14 +221,14 @@ This is sufficient for Phase 1 transfer-lite with `FFT_RBAC_ENABLED=false`.
 Before any controlled `FFT_RBAC_ENABLED=true` run, `requestTransferAction` must be aligned with the RBAC permission path, preferably:
 
 ```ts
-requireTradePermission("transfer.request", ...)
+requireFftPermission("transfer.request", ...)
 ```
 
 or otherwise proven to enforce `transfer.request` on the RBAC-enabled path.
 
 This is a Gate 6 prep item, not a Phase 2B/2C/2D expansion. See [ADR-001](../adr/001-rbac.md) (server-side permission checks for sensitive trade actions).
 
-**Code alignment:** ✅ Complete — `requestTransferAction` enforces `requireTradePermission("transfer.request", { eventId })` @ `51e9a5b`.
+**Code alignment:** ✅ Complete — `requestTransferAction` enforces `requireFftPermission("transfer.request", { eventId })` @ `51e9a5b`.
 
 ---
 
@@ -243,7 +243,7 @@ This is a Gate 6 prep item, not a Phase 2B/2C/2D expansion. See [ADR-001](../adr
 
 | Item | Value |
 |------|--------|
-| Code | `51e9a5b` — `requestTransferAction` → `requireTradePermission("transfer.request")` |
+| Code | `51e9a5b` — `requestTransferAction` → `requireFftPermission("transfer.request")` |
 | Local flag | `FFT_RBAC_ENABLED=true` in `env.config` → `npm run env:compose` → restart `npm run dev` |
 | DB branch | `dev-spec-b` / `br-super-hill-aojc9a4p` (matches live Vercel deploy DB) |
 | Sales RBAC | Platform `sales_executive` assignment for preview client (`f83b7908-…`) |
@@ -376,7 +376,7 @@ pre-enable deploy: dpl_6hxsWFKNhnngVSx2xJu9zopSH6Yv (flag=false health smoke PAS
 
 1. `FFT_RBAC_ENABLED=true` in production env (`npm run env:compose` → `npm run sync:vercel`).
 2. `vercel deploy --prod --yes` → `dpl_Eyi4bNeaw9yE8m31pWSBVY3pCaWg`.
-3. Production-blocking hotfix `930dde0` — `requireTradePermission` supplies `resourceOwnerUserId` for sales self-service codes when RBAC `own` scope is active.
+3. Production-blocking hotfix `930dde0` — `requireFftPermission` supplies `resourceOwnerUserId` for sales self-service codes when RBAC `own` scope is active.
 4. Redeploy → `dpl_BCqJqHsjQ8z2Tih1684Gp11ThreK`.
 
 #### Compact production smoke (`flag=true`)

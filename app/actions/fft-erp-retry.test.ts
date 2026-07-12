@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   isFftErpSyncEnabled: vi.fn(),
-  requireTradePermission: vi.fn(),
+  requireFftPermission: vi.fn(),
   getSyncJobById: vi.fn(),
   retrySyncJob: vi.fn(),
   recordFftAudit: vi.fn(),
@@ -24,7 +24,7 @@ vi.mock("@/modules/platform/env/accessors", () => ({
 }));
 
 vi.mock("@/modules/fft/auth/fft-session", () => ({
-  requireTradePermission: mocks.requireTradePermission,
+  requireFftPermission: mocks.requireFftPermission,
   requireFftAdmin: vi.fn(),
 }));
 
@@ -75,7 +75,7 @@ const pendingJob = {
 describe("retryErpSyncJobAction", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.requireTradePermission.mockResolvedValue({
+    mocks.requireFftPermission.mockResolvedValue({
       userId: "user-1",
       isAdmin: false,
     });
@@ -88,7 +88,7 @@ describe("retryErpSyncJobAction", () => {
     const result = await retryErpSyncJobAction("en", "job-1");
 
     expect(result).toEqual({ error: "erp_sync_disabled" });
-    expect(mocks.requireTradePermission).not.toHaveBeenCalled();
+    expect(mocks.requireFftPermission).not.toHaveBeenCalled();
     expect(mocks.getSyncJobById).not.toHaveBeenCalled();
     expect(mocks.retrySyncJob).not.toHaveBeenCalled();
     expect(mocks.recordFftAudit).not.toHaveBeenCalled();
@@ -103,7 +103,7 @@ describe("retryErpSyncJobAction", () => {
     const result = await retryErpSyncJobAction("en", "job-1");
 
     expect(result).toEqual({ ok: true });
-    expect(mocks.requireTradePermission).toHaveBeenCalledWith("sync.retry");
+    expect(mocks.requireFftPermission).toHaveBeenCalledWith("sync.retry");
     expect(mocks.retrySyncJob).toHaveBeenCalledWith("job-1");
     expect(mocks.recordFftAudit).toHaveBeenCalledWith(
       expect.objectContaining({

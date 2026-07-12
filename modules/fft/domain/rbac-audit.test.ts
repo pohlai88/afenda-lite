@@ -61,7 +61,10 @@ describe("fft_rbac_audit writes", () => {
   });
 
   it("records audit rows when seeding sensitive template grants", async () => {
-    await seedFftRbacCatalog("actor-seed");
+    await seedFftRbacCatalog({
+      organizationId: "org-audit-test",
+      actorId: "actor-seed",
+    });
 
     const sensitiveGrants = mocks.auditRows.filter(
       (row) => row.action === "role.permission_grant",
@@ -103,6 +106,7 @@ describe("fft_rbac_audit writes", () => {
       name: "Override Operators",
       permissionCodes: ["allocation.override"],
       actorId: "actor-2",
+      organizationId: "org-audit-test",
     });
 
     expect(

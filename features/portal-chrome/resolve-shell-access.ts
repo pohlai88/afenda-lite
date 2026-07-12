@@ -23,15 +23,15 @@ export async function resolveShellAccess(): Promise<ShellAccess | null> {
     ensureOrgAdminAssignment: neonAdmin,
   });
 
+  /** IAM / mutating org-admin nav — excludes read-only Viewer (declarations.read). */
   const operator = neonAdmin
     ? { check: { allowed: true as const } }
     : await requireAnyPlatformPermission({
         userId: user.id,
         codes: [
-          "declarations.read",
-          "declarations.manage",
           "org.users.manage",
           "org.roles.manage",
+          "declarations.manage",
           "clients.invite",
         ],
         isNeonAdmin: false,
@@ -43,6 +43,7 @@ export async function resolveShellAccess(): Promise<ShellAccess | null> {
       userId: user.id,
       email: user.email,
       organizationId: org.organizationId,
+      neonAdminBootstrap: neonAdmin,
     })
   ) {
     modules.push("fft");

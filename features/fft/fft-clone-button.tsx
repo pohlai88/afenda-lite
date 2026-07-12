@@ -25,7 +25,7 @@ export function FftCloneEventButton({
         variant="outline"
         size="sm"
         disabled={pending}
-        data-testid="trade-clone-event"
+        data-testid="fft-clone-event"
         onClick={() =>
           startTransition(async () => {
             setError(null);
@@ -52,7 +52,7 @@ export function FftCloneEventButton({
       {error ? (
         <p
           className="text-destructive text-xs"
-          data-testid="trade-clone-error"
+          data-testid="fft-clone-error"
         >
           {error}
         </p>

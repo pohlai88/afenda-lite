@@ -44,7 +44,7 @@ describe("resolveShellAccess", () => {
     await expect(resolveShellAccess()).resolves.toBeNull();
   });
 
-  it("grants declarations to every member; Feed Farm Trade only with allowlist", async () => {
+  it("grants declarations to every member; FFT only via hasFftModuleAccess", async () => {
     mocks.getAuthSession.mockResolvedValue({
       user: { id: "u1", email: "member@example.com" },
     });
@@ -53,6 +53,12 @@ describe("resolveShellAccess", () => {
     await expect(resolveShellAccess()).resolves.toEqual({
       modules: ["declarations"],
       isOrgAdmin: false,
+    });
+    expect(mocks.hasFftModuleAccess).toHaveBeenCalledWith({
+      userId: "u1",
+      email: "member@example.com",
+      organizationId: "org-1",
+      neonAdminBootstrap: false,
     });
 
     mocks.hasFftModuleAccess.mockResolvedValue(true);
@@ -72,6 +78,12 @@ describe("resolveShellAccess", () => {
     await expect(resolveShellAccess()).resolves.toEqual({
       modules: ["declarations"],
       isOrgAdmin: true,
+    });
+    expect(mocks.hasFftModuleAccess).toHaveBeenCalledWith({
+      userId: "admin-1",
+      email: "admin@example.com",
+      organizationId: "org-1",
+      neonAdminBootstrap: true,
     });
   });
 });

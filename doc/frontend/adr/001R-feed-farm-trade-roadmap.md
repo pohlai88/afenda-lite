@@ -121,7 +121,7 @@ Offline booth · barcode · floor plans · full feed ERP / formulation · VFD ·
 | AC-ACC-04 | Anonymous → sign-in |
 | AC-SH-01..03 | No FftShell / locale segment; label **Feed Farm Trade**; no Declarations **domain** bleed (same AdminCN platform) |
 
-**DoD:** [x] layout gate + AdminCN · [x] `resolveShellAccess` + tests · [x] nav `moduleId` · [x] trade-session deny tests · [x] pair in `doc/README.md` · [x] no live `app/fft/[locale]`
+**DoD:** [x] layout gate + AdminCN · [x] `resolveShellAccess` + tests · [x] nav `moduleId` · [x] fft-session deny tests · [x] pair in `doc/README.md` · [x] no live `app/fft/[locale]`
 
 ---
 

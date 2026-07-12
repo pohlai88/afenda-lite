@@ -11,7 +11,7 @@
 npm run test:unit -- modules/fft
 
 # Focused examples
-npm run test:unit -- modules/fft/auth/trade-session
+npm run test:unit -- modules/fft/auth/fft-session
 npm run test:unit -- modules/fft/domain/rbac
 npm run test:unit -- modules/fft/domain/trade
 npm run test:unit -- modules/fft/domain/access
@@ -40,7 +40,7 @@ Env: `npm run env:compose` before E2E. Identities: see `AGENTS.md` / RUNTIME —
 
 | Area | Tests |
 |------|-------|
-| Session / deny | `modules/fft/auth/trade-session.test.ts` |
+| Session / deny | `modules/fft/auth/fft-session.test.ts` |
 | P1 AC permission gates | `modules/fft/auth/trade-p1-ac-gates.test.ts` (G1–G6 / G8–G9 codes) |
 | Access | `modules/fft/domain/access.test.ts` |
 | RBAC catalog / roles | `modules/fft/domain/rbac.test.ts` · `rbac-audit.test.ts` |
@@ -86,7 +86,7 @@ Fill phase-doc **Result** columns when evaluating: [11](../../../doc/frontend/11
 
 ```text
 LOCAL_OPS_COMPLETE: PASS | env:compose all four P3 flags=true; admin setup nav + deposits/pickup/imports/ERP real panels; e2e/fft-ops-local.spec.ts @journey 1/1; modules/fft 185/185; UI registry OK; no Vercel/prod sync | 2026-07-11
-LOCAL_OPS_PERMISSION: PASS | hasTradePermission mirrors action guards: RBAC-off admin all; sales deposit.view only; deposit/pickup manage admin-only; trade-session 27/27 | 2026-07-11
+LOCAL_OPS_PERMISSION: PASS | hasFftPermission mirrors action guards: RBAC-off admin all; sales deposit.view only; deposit/pickup manage admin-only; fft-session 27/27 | 2026-07-11
 P3_TODO_EXECUTE: PASS | processErpSyncJobsAction flag assert + FE wire deposits/pickup/imports/ERP (flag-off placeholder); modules/fft 183/183; check:fft-ui-registry OK; no prod flags | 2026-07-11
 AC-OPS-01: PASS | processErpSyncJobsAction erp_sync_disabled before export.finance; deposit/pickup/ERP retry unchanged; FE flag-off placeholders | 2026-07-11
 F-OPS-DEP/PICK/IMP/ERP FE: PASS (local wire) | pages mount panels when flag on; placeholder when off (imports always); setup nav links gated | 2026-07-11
@@ -132,7 +132,7 @@ Unit suite: PASS | npm run test:unit -- modules/fft (138) | 2026-07-11
 
 ## Quick pre-merge checklist
 
-- [ ] `requireTradePermission` / layout gate on mutations  
+- [ ] `requireFftPermission` / layout gate on mutations  
 - [ ] Zod at action edge; no raw SQL in actions  
 - [ ] No FftShell / `[locale]`  
 - [ ] P3 actions not newly enabled without flags  

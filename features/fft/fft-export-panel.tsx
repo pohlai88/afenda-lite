@@ -52,7 +52,7 @@ export function FftExportPanel({
   }
 
   return (
-    <section className="space-y-3" data-testid="trade-export-panel">
+    <section className="space-y-3" data-testid="fft-export-panel">
       <h2 className="font-medium">Exports (CSV)</h2>
       <div className="flex flex-wrap gap-2">
         <Button
@@ -61,7 +61,7 @@ export function FftExportPanel({
           variant={active === "orders" ? "default" : "outline"}
           disabled={pending}
           onClick={() => load("orders")}
-          data-testid="trade-export-orders"
+          data-testid="fft-export-orders"
         >
           Orders
         </Button>
@@ -71,7 +71,7 @@ export function FftExportPanel({
           variant={active === "summary" ? "default" : "outline"}
           disabled={pending}
           onClick={() => load("summary")}
-          data-testid="trade-export-summary"
+          data-testid="fft-export-summary"
         >
           Event summary
         </Button>
@@ -81,7 +81,7 @@ export function FftExportPanel({
           variant={active === "allocation" ? "default" : "outline"}
           disabled={pending}
           onClick={() => load("allocation")}
-          data-testid="trade-export-allocation"
+          data-testid="fft-export-allocation"
         >
           Allocation
         </Button>
@@ -90,7 +90,7 @@ export function FftExportPanel({
         <p
           className="text-destructive text-sm"
           role="alert"
-          data-testid="trade-export-error"
+          data-testid="fft-export-error"
         >
           {error}
         </p>
@@ -98,7 +98,7 @@ export function FftExportPanel({
       {csv ? (
         <pre
           className="max-h-48 overflow-auto rounded border p-2 text-xs"
-          data-testid="trade-export-csv"
+          data-testid="fft-export-csv"
         >
           {csv}
         </pre>

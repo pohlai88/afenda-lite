@@ -14,7 +14,7 @@ Client feature
   → getTradeActionError(result)
   → router.refresh() on success
 Action
-  → requireTradePermission / requireFftAdmin
+  → requireFftPermission / requireFftAdmin
   → Zod / FormData parse
   → modules/fft domain
   → TradeActionResult
@@ -86,7 +86,7 @@ startTransition(async () => {
 |-----|------|
 | `fetch('/api/fft/…')` from RSC | Domain import |
 | Mount locale switcher | `FFT_UI_LOCALE` only |
-| Check `role === "admin"` | `requireTradePermission("event.edit")` |
+| Check `role === "admin"` | `requireFftPermission("event.edit")` |
 | Swallow action errors | `getTradeActionError` + show message |
 | Fat page with FormData parse | Parse in `app/actions/fft.ts` |
 

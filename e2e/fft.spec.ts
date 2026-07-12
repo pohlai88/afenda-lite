@@ -110,10 +110,10 @@ test.describe("Feed Farm Trade core cycle @journey", () => {
     await loginAsOperator(page, requireOperatorCreds());
 
     await page.goto(`/fft/events/${eventId}/order`);
-    await page.getByTestId("trade-order-customer-name").fill(customerName!);
-    await page.getByTestId("trade-order-product").selectOption({ index: 1 });
-    await page.getByTestId("trade-order-qty").fill("25");
-    const farmAttr = page.getByTestId("trade-order-attr-farm_code");
+    await page.getByTestId("fft-order-customer-name").fill(customerName!);
+    await page.getByTestId("fft-order-product").selectOption({ index: 1 });
+    await page.getByTestId("fft-order-qty").fill("25");
+    const farmAttr = page.getByTestId("fft-order-attr-farm_code");
     if (await farmAttr.count()) {
       await farmAttr.fill("FARM-E2E");
     }
@@ -124,35 +124,35 @@ test.describe("Feed Farm Trade core cycle @journey", () => {
           Boolean(res.request().headers()["next-action"]),
         { timeout: 30_000 },
       ),
-      page.getByTestId("trade-order-submit").click(),
+      page.getByTestId("fft-order-submit").click(),
     ]);
-    await expect(page.getByTestId("trade-order-error")).toHaveCount(0);
+    await expect(page.getByTestId("fft-order-error")).toHaveCount(0);
     await expect(page).toHaveURL(/\/my-orders/, { timeout: 20_000 });
     await expect(
-      page.locator(`[data-testid="trade-my-order-row"][data-customer="${customerName}"]`),
+      page.locator(`[data-testid="fft-my-order-row"][data-customer="${customerName}"]`),
     ).toBeVisible({ timeout: 15_000 });
 
     await page.goto(`/fft/admin/events/${eventId}/allocation`);
-    const runBtn = page.getByTestId("trade-run-allocation");
+    const runBtn = page.getByTestId("fft-run-allocation");
     await runBtn.click();
     // Wait for Server Action to finish (button re-enables) before asserting RSC props.
     await expect(runBtn).toBeEnabled({ timeout: 30_000 });
     await expect(
       page.locator(
-        `[data-testid="trade-order-row"][data-customer="${customerName}"][data-status="full"], [data-testid="trade-order-row"][data-customer="${customerName}"][data-status="partial"]`,
+        `[data-testid="fft-order-row"][data-customer="${customerName}"][data-status="full"], [data-testid="fft-order-row"][data-customer="${customerName}"][data-status="partial"]`,
       ),
     ).toBeVisible({ timeout: 30_000 });
 
     await page.goto("/fft/my-orders");
     const orderCard = page.locator(
-      `[data-testid="trade-my-order-row"][data-customer="${customerName}"]`,
+      `[data-testid="fft-my-order-row"][data-customer="${customerName}"]`,
     );
     await expect(orderCard).toHaveAttribute("data-status", /full|partial/, {
       timeout: 15_000,
     });
-    await orderCard.getByTestId("trade-transfer-new-customer").fill(transferName!);
-    await orderCard.getByTestId("trade-transfer-reason").fill("E2E transfer");
-    await orderCard.getByTestId("trade-transfer-qty").fill("25");
+    await orderCard.getByTestId("fft-transfer-new-customer").fill(transferName!);
+    await orderCard.getByTestId("fft-transfer-reason").fill("E2E transfer");
+    await orderCard.getByTestId("fft-transfer-qty").fill("25");
     await Promise.all([
       page.waitForResponse(
         (res) =>
@@ -161,26 +161,26 @@ test.describe("Feed Farm Trade core cycle @journey", () => {
             Boolean(res.request().headers()["next-action"])),
         { timeout: 30_000 },
       ),
-      orderCard.getByTestId("trade-transfer-request").click(),
+      orderCard.getByTestId("fft-transfer-request").click(),
     ]);
 
     await page.goto(`/fft/admin/events/${eventId}/allocation`);
-    const transferSection = page.getByTestId("trade-transfer-requests");
+    const transferSection = page.getByTestId("fft-transfer-requests");
     await expect(transferSection).toContainText(transferName!, { timeout: 30_000 });
-    await transferSection.getByTestId("trade-transfer-approve").click();
+    await transferSection.getByTestId("fft-transfer-approve").click();
     await expect(transferSection.getByText(/approved/i).first()).toBeVisible({
       timeout: 20_000,
     });
 
     const allocatedRow = page.locator(
-      `[data-testid="trade-order-row"][data-customer="${transferName}"]`,
+      `[data-testid="fft-order-row"][data-customer="${transferName}"]`,
     );
     await expect(allocatedRow).toBeVisible({ timeout: 20_000 });
     await allocatedRow.getByPlaceholder("Fulfilled qty").fill("25");
-    await allocatedRow.getByTestId("trade-complete-order").click();
+    await allocatedRow.getByTestId("fft-complete-order").click();
     await expect(
       page.locator(
-        `[data-testid="trade-order-row"][data-customer="${transferName}"][data-status="completed"]`,
+        `[data-testid="fft-order-row"][data-customer="${transferName}"][data-status="completed"]`,
       ),
     ).toBeVisible({ timeout: 30_000 });
   });
@@ -197,14 +197,14 @@ test.describe("Feed Farm Trade core cycle @journey", () => {
       page.getByText(/event\.created|priority\.imported|order\.completed|allocation\.run/i).first(),
     ).toBeVisible({ timeout: 10_000 });
 
-    await page.getByTestId("trade-export-summary").click();
-    await expect(page.getByTestId("trade-export-csv")).toContainText(
+    await page.getByTestId("fft-export-summary").click();
+    await expect(page.getByTestId("fft-export-csv")).toContainText(
       "event_name",
       { timeout: 15_000 },
     );
 
     const sourceEventId = eventId!;
-    await page.getByTestId("trade-clone-event").click();
+    await page.getByTestId("fft-clone-event").click();
     await expect(page).toHaveURL(
       new RegExp(`/fft/admin/events/(?!${sourceEventId})[^/]+/setup`),
       { timeout: 30_000 },

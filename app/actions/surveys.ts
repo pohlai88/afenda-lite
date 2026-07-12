@@ -79,7 +79,7 @@ async function applyCdpPackageToSurvey(
   pkg: CdpPackage,
   actorId: string,
   createAssignment: boolean,
-  organizationId?: string,
+  organizationId: string,
 ): Promise<
   | { assignmentCreated: boolean }
   | { error: string; assignmentCreated: false }
@@ -91,6 +91,7 @@ async function applyCdpPackageToSurvey(
     title: pkg.declaration.title,
     question: pkg.declaration.intro ?? pkg.declaration.title,
     metadata,
+    organizationId,
   });
 
   const drafts = cdpQuestionsToDrafts(pkg.declaration.questions);

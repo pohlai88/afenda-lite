@@ -66,11 +66,13 @@ export function OrganizationAdminUsersView({
   sessions = [],
   platformAssignments = [],
   platformRoleOptions = [],
+  canManagePlatformRoles = false,
 }: {
   user: OrganizationAdminUserDisplay;
   sessions?: OrganizationAdminUserSessionDisplay[];
   platformAssignments?: OrganizationAdminPlatformAssignmentDisplay[];
   platformRoleOptions?: OrganizationAdminPlatformRoleOption[];
+  canManagePlatformRoles?: boolean;
 }) {
   const [comingSoon, setComingSoon] = useState<string | null>(null);
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -209,6 +211,7 @@ export function OrganizationAdminUsersView({
                 userId={user.id}
                 assignments={platformAssignments}
                 roleOptions={platformRoleOptions}
+                canManage={canManagePlatformRoles}
               />
             </SectionCard>
             <SectionCard title="Projects List">
