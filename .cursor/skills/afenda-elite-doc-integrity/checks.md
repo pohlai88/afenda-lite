@@ -61,7 +61,7 @@ Then:
 - [ ] reject an active gate whose sole evidence authority is a Draft that disclaims enforcement
 - [ ] check governance home conflicts and locks before proposing moves
 - [ ] distinguish narrowing specialization and provisional Draft differences from conflicts
-- [ ] describe unimplemented semantic comparison sets as residual risk
+- [ ] describe unimplemented **in-scope** semantic comparison sets as residual risk (never a standing pairwise caveat after exit `0` when all in-scope sets are implemented)
 ```
 
 A spot check is never full semantic coverage.

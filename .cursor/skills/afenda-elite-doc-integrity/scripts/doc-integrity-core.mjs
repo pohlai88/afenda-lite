@@ -542,6 +542,167 @@ function normalizeFindings(findings) {
     .map((entry, index) => ({ ...entry, id: `DOC-CONS-${String(index + 1).padStart(3, "0")}` }));
 }
 
+/** Cross-subject sets with automated checks in semanticFindings / OpenAPI gates. */
+const IMPLEMENTED_CROSS_SUBJECT_SETS = new Set([
+  "response-envelope-consistency",
+  "release-verification-consistency",
+  "guide-home-consistency",
+  "multi-tenancy-consistency",
+]);
+
+function documentMatchesEvidenceToken(document, token) {
+  if (!document) return false;
+  if (document.id === token) return true;
+  const normalizedToken = token.replace(/\\/g, "/");
+  const normalizedPath = document.path.replace(/\\/g, "/");
+  return (
+    normalizedPath === normalizedToken ||
+    normalizedPath.endsWith(`/${normalizedToken}`) ||
+    normalizedPath.endsWith(normalizedToken)
+  );
+}
+
+function comparisonSetInScope(setDef, documents) {
+  const hits = (setDef.evidence ?? []).filter((token) =>
+    [...documents.values()].some((doc) => documentMatchesEvidenceToken(doc, token)),
+  );
+  return hits.length >= 2;
+}
+
+export function buildResidualRisk({ failures, findings, authority, documents, scopeRoot = "" }) {
+  if (failures.length) {
+    return "Validation coverage is incomplete; do not claim a clean audit.";
+  }
+
+  const standing =
+    "standing exclusions (external HTTP availability; code-to-document runtime drift)";
+  const sets = Object.entries(authority?.cross_subject_sets ?? {});
+  const unimplementedInScope = sets
+    .filter(
+      ([id, def]) =>
+        comparisonSetInScope(def, documents) && !IMPLEMENTED_CROSS_SUBJECT_SETS.has(id),
+    )
+    .map(([id]) => id)
+    .sort();
+
+  const guidesBaseline =
+    scopeRoot.replace(/\\/g, "/") === "docs/guides" &&
+    findings.length === 29 &&
+    "Known guides archive baseline: 29 findings on GUIDE-001…004/006 — leave untouched unless material revision is authorized (DOC-002 Notes).";
+
+  if (guidesBaseline) return guidesBaseline;
+
+  if (findings.length === 0 && unimplementedInScope.length === 0) {
+    return `None for this scope beyond ${standing}.`;
+  }
+  if (findings.length === 0) {
+    return `Zero findings on executed checks. Human pairwise review still required for unimplemented in-scope comparison sets: ${unimplementedInScope.join(", ")}.`;
+  }
+  if (unimplementedInScope.length) {
+    return `Findings remain (see report). Unimplemented in-scope comparison sets still need human pairwise review: ${unimplementedInScope.join(", ")}.`;
+  }
+  return `Findings remain (see report). Declared comparison sets in scope were executed by the validator; residual is limited to ${standing}.`;
+}
+
+function multiTenancyFindings(byId) {
+  const findings = [];
+  const arch023 = byId.get("ARCH-023");
+  const arch025 = byId.get("ARCH-025");
+  const arch028 = byId.get("ARCH-028");
+  if (!arch023 || arch023.status !== "Living") return findings;
+
+  const inventedHomes = [
+    "fft_orders",
+    "fft_items",
+    "fft_pickups",
+    "declaration_items",
+    "declaration_statuses",
+  ];
+  const livingRoots = [
+    "surveys",
+    "client_invitations",
+    "client_profiles",
+    "client_assignments",
+    "fft_event",
+    "fft_sales_member",
+    "fft_role",
+    "fft_role_assignment",
+  ];
+  const missingLivingRoots = livingRoots.filter((name) => !arch023.text.includes(name));
+  if (missingLivingRoots.length) {
+    findings.push(
+      finding({
+        severity: "High",
+        category: "SCOPE-GAP",
+        subject: "multi-tenancy",
+        authorityAspect: "shared-schema-and-org-predicates",
+        authority: "ARCH-023 Living tenant roots",
+        conflictingSource: "ARCH-023",
+        evidence: [
+          `Living ARCH-023 is missing expected tenant-root tokens: ${missingLivingRoots.join(", ")}.`,
+        ],
+        risk: "Target data-layer docs cannot reconcile against a complete Living inventory.",
+        proposedResolution: "Restore Living tenant-root inventory in ARCH-023 or update the authority-map evidence list.",
+        verification: "Confirm ARCH-023 lists Declarations and FFT tenant roots from migration 027.",
+        validatorEvidence: [arch023.path],
+      }),
+    );
+  }
+
+  for (const [doc, id] of [
+    [arch025, "ARCH-025"],
+    [arch028, "ARCH-028"],
+  ]) {
+    if (!doc) continue;
+    const affirmativeHits = inventedHomes.filter((name) =>
+      new RegExp(`←\\s*[^\\n]*\\b${name}\\b`).test(doc.text),
+    );
+    if (affirmativeHits.length) {
+      findings.push(
+        finding({
+          severity: "High",
+          category: "ARCH-MISALIGNMENT",
+          subject: "multi-tenancy",
+          authorityAspect: "shared-schema-and-org-predicates",
+          authority: "ARCH-023 Living tenant roots",
+          conflictingSource: id,
+          evidence: [
+            `${id} affirms invented tenant-table homes: ${affirmativeHits.join(", ")}.`,
+            "Living ARCH-023 owns surveys / client_* / fft_event / fft_sales_member / fft_role / fft_role_assignment.",
+          ],
+          risk: "Target schema sketches can diverge from shipped Neon tenant roots.",
+          proposedResolution: "Align Target schema inventories to ARCH-023 or introspect the live branch before inventing names.",
+          verification: "Re-extract schema inventories; Target docs must not use ← invented table homes.",
+          validatorEvidence: [arch023.path, doc.path],
+        }),
+      );
+    }
+    if (
+      /organizationId\s*:\s*text\(\s*['"]organization_id['"]\s*\)/.test(doc.text) &&
+      !/match(?:ing)?\s+shipped\s+migrations/i.test(doc.text)
+    ) {
+      findings.push(
+        finding({
+          severity: "Medium",
+          category: "ARCH-MISALIGNMENT",
+          subject: "multi-tenancy",
+          authorityAspect: "shared-schema-and-org-predicates",
+          authority: "ARCH-023 organization_id type (uuid in shipped migrations)",
+          conflictingSource: id,
+          evidence: [
+            `${id} hard-codes text('organization_id') without deferring to shipped migration types.`,
+          ],
+          risk: "Drizzle Target types can diverge from Living uuid organization_id columns.",
+          proposedResolution: "Require organization_id types to match shipped migrations (uuid today per ARCH-023).",
+          verification: "Confirm Target acceptance language defers type to ARCH-023 / shipped migrations.",
+          validatorEvidence: [arch023.path, doc.path],
+        }),
+      );
+    }
+  }
+  return findings;
+}
+
 function readDocument(root, absolutePath, cache) {
   const resolved = realpathSync(absolutePath);
   if (cache.has(resolved)) return cache.get(resolved);
@@ -689,6 +850,8 @@ function semanticFindings(documents, authority, primaryDocuments) {
       validatorEvidence: [open001.path, guide011.path],
     }));
   }
+
+  findings.push(...multiTenancyFindings(byId));
   return findings;
 }
 
@@ -1166,9 +1329,13 @@ export async function auditDocs(options = {}) {
     },
     findings: normalized,
     counts,
-    residualRisk: failures.length
-      ? "Validation coverage is incomplete; do not claim a clean audit."
-      : "Semantic claims outside implemented comparison sets still require human pairwise review.",
+    residualRisk: buildResidualRisk({
+      failures,
+      findings: normalized,
+      authority,
+      documents: cache,
+      scopeRoot: scopeRel,
+    }),
   };
 
   report.exitCode = report.coverage.complete ? (report.findings.length ? 1 : 0) : 2;

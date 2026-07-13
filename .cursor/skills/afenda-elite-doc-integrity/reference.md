@@ -99,6 +99,18 @@ Every finding must match the validator report schema:
 
 Completion reports must separately list primary scope, dependencies, artifacts, exclusions, and residual semantic coverage.
 
+`residualRisk` is evidence-based:
+
+| Condition | Residual risk text |
+| --- | --- |
+| Coverage incomplete | Validation coverage is incomplete; do not claim a clean audit. |
+| Zero findings; all in-scope comparison sets implemented | None for this scope beyond standing exclusions (external HTTP availability; code-to-document runtime drift). |
+| Zero findings; unimplemented in-scope sets remain | Zero findings on executed checks. Human pairwise review still required for unimplemented in-scope comparison sets: \<ids\>. |
+| Findings remain | Findings remain (see report)… plus unimplemented set ids when applicable. |
+| `docs/guides` with **29** findings | Cite the archive baseline (GUIDE-001…004/006) — leave untouched unless material revision is authorized. |
+
+Do not emit a standing pairwise caveat when coverage is complete, findings are zero, and every in-scope authority-map comparison set is implemented.
+
 ## Known baselines (do not reopen as rename debt)
 
 | Scope | Baseline | Disposition |

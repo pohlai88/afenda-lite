@@ -45,6 +45,105 @@ test("clean structured fixture returns exit 0", async (t) => {
   assert.equal(report.exitCode, 0);
   assert.equal(report.coverage.complete, true);
   assert.equal(report.findings.length, 0);
+  assert.match(
+    report.residualRisk,
+    /^None for this scope beyond standing exclusions/,
+  );
+});
+
+test("residualRisk lists unimplemented in-scope comparison sets when findings are zero", async (t) => {
+  const fx = fixture();
+  t.after(fx.cleanup);
+  fx.write(
+    "docs/architecture/system/ARCH-023-multi-tenancy.md",
+    documentText({
+      id: "ARCH-023",
+      title: "Multi-Tenancy",
+      category: "Architecture",
+      status: "Living",
+      owner: "Platform",
+      body: ["surveys", "client_invitations", "client_profiles", "client_assignments", "fft_event", "fft_sales_member", "fft_role", "fft_role_assignment"].join(" "),
+    }),
+  );
+  fx.write(
+    "docs/architecture/system/ARCH-025-data-layer.md",
+    documentText({
+      id: "ARCH-025",
+      title: "Data Layer",
+      category: "Architecture",
+      status: "Target",
+      owner: "Backend",
+      body: "Schema matches shipped migrations.",
+    }),
+  );
+  setupControl(fx, [
+    ["ARCH-023", "Architecture", "Multi-Tenancy", "1.0.0", "Living", "Platform", "2026-07-13"],
+    ["ARCH-025", "Architecture", "Data Layer", "1.0.0", "Target", "Backend", "2026-07-13"],
+  ]);
+  fx.write(
+    ".cursor/skills/afenda-elite-doc-integrity/authority-map.yaml",
+    `version: 2
+subjects:
+  multi-tenancy:
+    aspects:
+      shared-schema-and-org-predicates:
+        precedence: [ARCH-023, ARCH-025]
+  documentation-governance:
+    aspects:
+      lifecycle-and-folder-policy:
+        precedence: [DOC-001]
+cross_subject_sets:
+  multi-tenancy-consistency:
+    subjects: [multi-tenancy, documentation-governance]
+    evidence: [ARCH-023, ARCH-025]
+  future-unimplemented-set:
+    subjects: [multi-tenancy, documentation-governance]
+    evidence: [ARCH-023, ARCH-025]
+locks: []
+`,
+  );
+  const report = await auditDocs({
+    root: fx.root,
+    scope: "docs/architecture/system",
+    authorityMap: ".cursor/skills/afenda-elite-doc-integrity/authority-map.yaml",
+  });
+  assert.equal(report.exitCode, 0);
+  assert.match(report.residualRisk, /future-unimplemented-set/);
+  assert.doesNotMatch(report.residualRisk, /still require human pairwise review\.$/);
+});
+
+test("multi-tenancy invented schema homes are ARCH-MISALIGNMENT", async (t) => {
+  const fx = fixture();
+  t.after(fx.cleanup);
+  fx.write(
+    "docs/architecture/system/ARCH-023-multi-tenancy.md",
+    documentText({
+      id: "ARCH-023",
+      title: "Multi-Tenancy",
+      category: "Architecture",
+      status: "Living",
+      owner: "Platform",
+      body: ["surveys", "client_invitations", "client_profiles", "client_assignments", "fft_event", "fft_sales_member", "fft_role", "fft_role_assignment"].join(" "),
+    }),
+  );
+  fx.write(
+    "docs/architecture/system/ARCH-025-data-layer.md",
+    documentText({
+      id: "ARCH-025",
+      title: "Data Layer",
+      category: "Architecture",
+      status: "Target",
+      owner: "Backend",
+      body: "├── fft.ts           ← fft_orders, fft_items, fft_pickups, fft_access",
+    }),
+  );
+  setupControl(fx, [
+    ["ARCH-023", "Architecture", "Multi-Tenancy", "1.0.0", "Living", "Platform", "2026-07-13"],
+    ["ARCH-025", "Architecture", "Data Layer", "1.0.0", "Target", "Backend", "2026-07-13"],
+  ]);
+  const report = await auditDocs({ root: fx.root, scope: "docs/architecture/system" });
+  assert.equal(report.exitCode, 1);
+  assert.ok(report.findings.some((entry) => entry.category === "ARCH-MISALIGNMENT"));
 });
 
 test("the final emitted report shape validates including exitCode", async (t) => {
