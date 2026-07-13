@@ -4,7 +4,7 @@
 | ----------------- | ---------- |
 | **ID**            | DOC-002    |
 | **Category**      | Control    |
-| **Version**       | 4.35.0 |
+| **Version**       | 4.36.0 |
 | **Status**        | Living     |
 | **Control State** | Closed     |
 | **Owner**         | Platform   |
@@ -112,7 +112,7 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 | RB-007       | Runbook      | API Incident Response                      | 0.2.0   | Draft  | Backend  | 2026-07-14 |
 | RB-008       | Runbook      | API Contract Rollback                      | 0.2.0   | Draft  | Backend  | 2026-07-14 |
 | ARCH-022     | Architecture | System Overview — Turborepo                | 1.5.0   | Target | Platform | 2026-07-14 |
-| ARCH-023     | Architecture | Multi-Tenancy and Platform RBAC            | 3.0.1   | Living | Platform | 2026-07-14 |
+| ARCH-023     | Architecture | Multi-Tenancy and Platform RBAC            | 3.1.0   | Living | Platform | 2026-07-14 |
 | ARCH-024     | Architecture | Package Boundaries                         | 1.2.0   | Target | Platform | 2026-07-14 |
 | ARCH-025     | Architecture | Data Layer                                 | 1.2.0   | Target | Backend  | 2026-07-14 |
 | ARCH-026     | Architecture | Authentication and Session Model           | 1.2.0   | Target | Platform | 2026-07-14 |
@@ -171,6 +171,7 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 
 | Version | Date       | Summary                                                                                                                                         |
 | ------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| 4.36.0 | 2026-07-14 | ARCH-023 → 3.1.0 DOC-003 six-section retrofit (Decision lock content unchanged); cleared system-pack STRUCTURE-DRIFT residual. |
 | 4.35.0 | 2026-07-14 | System-pack integrity remediation: ARCH-022→1.5.0; ARCH-024…026→1.2.0; ARCH-027→1.3.0; ARCH-028→1.3.0; ARCH-023 structure grandfather retained (DOC-001 §3.8 Review needed until material revision). |
 | 4.34.0 | 2026-07-14 | Registered Living ARCH-031 Technology Stack Catalogue as the derived stack-discovery authority. |
 | 4.33.0 | 2026-07-14 | Synchronized MOD-002 4.0.0 and FFT-MOD-001…010 executable Core/ERP quality-contract retrofit. |
@@ -213,7 +214,7 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 
 # 6. Notes
 
-`ARCH-023` is the current living source of truth for multi-tenancy and platform RBAC. Its pre-DOC-003 section layout remains grandfathered under DOC-001 §3.8 until an explicitly approved material revision; Decision lock R1–R7 / D4·D5 must not be reopened without separate approval.
+`ARCH-023` is the current living source of truth for multi-tenancy and platform RBAC (DOC-003 six-section form from 3.1.0). Decision lock R1–R7 / D4·D5 must not be reopened without separate explicit approval.
 
 `ARCH-029` is the Living parent authority for interface and API architecture. **GUIDE-015** is the locked Phases 1–5 development roadmap (Jack Wee). `API-005`…`API-009`, `REST-002`…`REST-007`, `FFT-REST-001`, `GUIDE-007`…`GUIDE-014`, and `RB-006`…`RB-008` are Draft until expanded / promoted per their owning roadmaps. API guides live under `docs/api/guides/`. API runbooks live under `docs/api/runbooks/`. Non-API guides live under `docs/guides/` when Living. **GUIDE-016** is **Retired** (archived); Module Enterprise Readiness authority is [MOD-002](../modules/MOD-002-modules-index.md) + FFT-MOD-001…010. `ARCH-030` (verification architecture) is deferred while GUIDE-014 remains the API verification Guide.
 

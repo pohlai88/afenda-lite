@@ -4,24 +4,50 @@
 |-------|-------|
 | ID | ARCH-023 |
 | Category | Architecture |
-| Version | 3.0.1 |
+| Version | 3.1.0 |
 | Status | Living |
 | Control State | Closed |
 | Owner | Platform |
 | Updated | 2026-07-14 |
-**Enables:** Correct three-tier IAM; hard `organization_id` predicates; shared-schema Neon ops; Decision lock without reopening Rejected/Deferred rows.
+
+# 1. Purpose
+
+**Sole Living SSOT** for platform tenancy **and** platform RBAC. Enables correct three-tier IAM, hard `organization_id` predicates, shared-schema Neon ops, and Decision lock enforcement without reopening Rejected/Deferred rows.
 
 **Audience:** Engineers and agents before inventing tenancy, IAM, or Neon posture changes.
 
-**Sole Living SSOT** for platform tenancy **and** platform RBAC. Module FFT domain catalogs stay in [FFT-MOD-005](../../modules/feed-farm-trade/FFT-MOD-005-auth-tenancy-rbac.md).
+**Action enabled:** Apply hard org predicates and permission-first IAM; refuse Rejected/Deferred approaches unless the user explicitly reopens that lock ID.
+
+Module FFT domain catalogs stay in [FFT-MOD-005](../../modules/feed-farm-trade/FFT-MOD-005-auth-tenancy-rbac.md).
 
 **Ops:** [RB-001](../../runbooks/RB-001-multi-org-ops.md) · [RB-005](../../runbooks/RB-005-post-lock-coding-cheat-sheet.md) · [neon-tenancy-efficiency](../../../.cursor/skills/neon-tenancy-efficiency/SKILL.md)
 
 **Supersedes:** [ARCH-003](../archive/ARCH-003-multi-tenant-ecosystem.md) (archived stub). Do **not** recreate a separate IAM architecture file.
 
----
+# 2. Scope
 
-## Context
+## 2.1 In Scope
+
+- Shared-schema multi-tenancy with hard `organization_id` predicates
+- Three-tier IAM (Neon Auth / platform RBAC / module permission codes)
+- Tenant-root inventory and query contract (`withOrg` / hard SQL)
+- Org resolve (M1) and multi-org readiness (M1–M4)
+- Decision lock (Shipped / Rejected / Deferred)
+- Neon shared-schema operational posture on the BFF path
+
+## 2.2 Out of Scope
+
+- Neon RLS on the BFF path
+- Neon Auth custom product roles
+- Merging FFT **domain** permission catalogs into `platform_*` tables
+- Project-per-tenant or schema-per-tenant isolation
+- FFT domain RBAC detail (owned by FFT-MOD-005)
+
+**Anti-claim:** Do not say multi-DB isolation or project-per-tenant. **Multi-org ready** means logical tenancy (M1–M4) — not multi-project isolation.
+
+# 3. Multi-Tenancy and Platform RBAC
+
+## 3.1 Context
 
 Afenda-Lite is a multi-module SaaS (Declarations + Feed Farm Trade) on **one** Next.js deployable (`apps/web` Target), **one** Vercel project, and **one** Neon Postgres project. Tenants are Neon Auth **organizations**. Neon Auth provides identity and organizations with **fixed** roles (`owner` | `admin` | `member`) and cannot define product permission codes. Product permissions are **app-owned** (platform RBAC + module catalogs).
 
@@ -34,13 +60,7 @@ Afenda-Lite is a multi-module SaaS (Declarations + Feed Farm Trade) on **one** N
 **Shipped:** hard `organization_id NOT NULL` + application predicates on the BFF path.  
 **Target API:** `@afenda/auth` + `@afenda/db` `withOrg` ([ARCH-022](ARCH-022-system-overview.md)).
 
-**Anti-claim:** Do not say multi-DB isolation or project-per-tenant. **Multi-org ready** means logical tenancy (M1–M4) — not multi-project isolation.
-
-**Out of scope:** Neon RLS on BFF; Neon Auth custom roles; merging FFT **domain** permission catalogs into `platform_*` tables.
-
----
-
-## Three-tier IAM
+## 3.2 Three-tier IAM
 
 ```text
 Tier 1  Neon Auth      who the user is + which organization (organizationId = tenant)
@@ -91,9 +111,7 @@ Viewer → declarations.read, account.self
 - `/dashboard/roles` and `/dashboard/permissions` are organization-admin product routes under `apps/web`.
 - S12 tenancy hard cutover is **closed** (soft dual-mode deleted).
 
----
-
-## Shared-schema decision
+## 3.3 Shared-schema decision
 
 **Decision:** Use **shared schema**. Every tenant table includes `organization_id … NOT NULL`. All reads go through `withOrg(orgId)` in `@afenda/db` (Target) or the equivalent hard SQL helper. Neon Row-Level Security is **not** applied on the BFF path.
 
@@ -125,9 +143,7 @@ Viewer → declarations.read, account.self
 - `orgId` is resolved from session and passed explicitly — never inferred from ambient globals or URL alone
 - Neon RLS stays out of scope on the BFF path until a direct-DB client forces a superseding ARCH decision (**R3**)
 
----
-
-## Responsibilities and boundaries (Target packages)
+## 3.4 Responsibilities and boundaries (Target packages)
 
 | Concern | Target surface |
 |---------|----------------|
@@ -137,9 +153,7 @@ Viewer → declarations.read, account.self
 | Domain | `apps/web/modules/*/domain` — `orgId: string` required |
 | Edge session gate | `apps/web/proxy.ts` (Next.js proxy — **not** `middleware.ts`) |
 
----
-
-## Components
+## 3.5 Components
 
 ### Session
 
@@ -179,9 +193,7 @@ Every tenant-root table includes `organization_id … NOT NULL` (uuid in shipped
 
 Never `organizations[0]` when membership length > 1 → `NO_ACTIVE_ORGANIZATION`.
 
----
-
-## Data / request flow
+## 3.6 Data / request flow
 
 ```text
 Browser
@@ -193,22 +205,18 @@ Browser
        WHERE organization_id = $orgId
 ```
 
----
-
-## Key decisions
+## 3.7 Key decisions
 
 | Decision | Record |
 |----------|--------|
-| Three-tier IAM (Neon Auth / platform RBAC / module codes) | This doc § Three-tier IAM |
-| Shared schema, not project- or schema-per-tenant | This doc § Shared-schema · R4 / R5 / D5 |
-| App predicates on BFF; no Neon RLS by default | This doc § Shared-schema · R3 |
+| Three-tier IAM (Neon Auth / platform RBAC / module codes) | This doc § 3.2 |
+| Shared schema, not project- or schema-per-tenant | This doc § 3.3 · R4 / R5 / D5 |
+| App predicates on BFF; no Neon RLS by default | This doc § 3.3 · R3 |
 | Hard `NOT NULL` + hard filters (no soft dual-mode) | Migration `027` · R1 |
 | `withOrg` / hard scope as the only tenant read entry | This doc · [ARCH-024](ARCH-024-package-boundaries.md) |
 | FFT domain catalogs stay out of `platform_*` | This doc · R6 · [FFT-MOD-005](../../modules/feed-farm-trade/FFT-MOD-005-auth-tenancy-rbac.md) |
 
----
-
-## Decision lock
+## 3.8 Decision lock
 
 **Locked 2026-07-12.** Agents must not reopen **Rejected** or **Deferred** rows unless the user explicitly reopens that ID in the current turn.
 
@@ -219,7 +227,7 @@ Cheat sheet: [RB-005](../../runbooks/RB-005-post-lock-coding-cheat-sheet.md).
 | Invariant | Evidence |
 |-----------|----------|
 | Shared schema + hard `organization_id = $org` | Migrations `026`–`028`; hard scope / Target `withOrg` |
-| App predicates on BFF (not Neon RLS) | This doc § Three-tier IAM; Server Actions path |
+| App predicates on BFF (not Neon RLS) | This doc § 3.2; Server Actions path |
 | Multi-org ready M1–M4 (logical) | Switcher, scoped templates, isolation e2e, org-required ops |
 | Neon prod posture | Protected branch; pooler; PITR 7d; snapshots; restore drill |
 | Efficiency ladder A–E | neon-tenancy skill closed 2026-07-12 |
@@ -253,9 +261,7 @@ Cheat sheet: [RB-005](../../runbooks/RB-005-post-lock-coding-cheat-sheet.md).
 3. Named product slices — not tenancy-model experiments.  
 4. Turborepo package wiring per [ARCH-028](ARCH-028-implementation-slices.md) when explicitly requested.
 
----
-
-## Failure modes
+## 3.9 Failure modes
 
 | Failure | Symptom | Action |
 |---------|---------|--------|
@@ -266,9 +272,7 @@ Cheat sheet: [RB-005](../../runbooks/RB-005-post-lock-coding-cheat-sheet.md).
 | Missing `orgId` in Target API | Empty result / throw | Keep `orgId: string` (never optional) |
 | Session expired | Redirect to login | Normal auth flow |
 
----
-
-## Operational considerations
+## 3.10 Operational considerations
 
 ### Environment
 
@@ -309,9 +313,33 @@ npm run check:tenancy-residue
 npm run backfill:fft-access -- --organization-id=<org-uuid>
 ```
 
----
+# 4. References
 
-## Known limits / future changes
+| ID | Title | Relationship |
+|----|-------|--------------|
+| DOC-001 | Documentation Control Standard | Governance |
+| ARCH-022 | System Overview — Turborepo | System overview + workspace |
+| ARCH-024 | Package Boundaries | Package contracts |
+| ARCH-025 | Data Layer | Drizzle / `withOrg` Target packaging |
+| ARCH-026 | Authentication and Session Model | Session helpers (not Living IAM) |
+| ARCH-028 | Turborepo Implementation Slices | Target package wiring order |
+| FFT-MOD-005 | FFT Auth / Tenancy / RBAC | FFT domain RBAC (separate catalog) |
+| RB-001 | Multi-org ops | Operational procedures |
+| RB-005 | Post-lock coding cheat sheet | Decision lock flash card |
+| ARCH-003 | Multi-tenant Ecosystem | Superseded — archived stub |
+
+# 5. Change Log
+
+| Version | Date | Summary |
+|---------|------|---------|
+| 3.1.0 | 2026-07-14 | DOC-003 six-section retrofit; Decision lock R1–R7 / D4·D5 content unchanged. |
+| 3.0.1 | 2026-07-14 | Added mandatory Control State header field (Closed); lifecycle Status unchanged. |
+| 3.0.0 | 2026-07-13 | Merged platform IAM/RBAC into this doc; deleted separate ARCH-023; Target paths (`apps/web`); no ADR residue |
+| 2.4.0 | 2026-07-13 | Shared-schema decision detail |
+| 2.0.0 | 2026-07-13 | Absorbed ARCH-003; Living SSOT |
+| 1.0.0 | 2026-07-13 | Initial Target sketch |
+
+# 6. Notes
 
 **Non-goals (v1):** Neon RLS on BFF; merging FFT domain catalogs into `platform_*`; FFT P3 prod flags without FFT-MOD-008 reopen; denormalized `organization_id` on every FFT child (D4/M5); project- or schema-per-tenant without closing D5.
 
@@ -330,25 +358,4 @@ After M1–M4, say **multi-org ready** (logical). Never multi-DB / project-per-t
 
 Cross-tenant analytics need a warehouse or replica — not supported in this model.
 
----
-
-## Related sources
-
-| Doc | Role |
-|-----|------|
-| [ARCH-022](ARCH-022-system-overview.md) | System overview + Turborepo workspace |
-| [ARCH-024](ARCH-024-package-boundaries.md) | Package contracts |
-| [ARCH-025](ARCH-025-data-layer.md) | Drizzle / `withOrg` |
-| [ARCH-026](ARCH-026-auth-session.md) | Session helpers |
-| [FFT-MOD-005](../../modules/feed-farm-trade/FFT-MOD-005-auth-tenancy-rbac.md) | FFT domain RBAC (separate catalog) |
-| [ARCH-003](../archive/ARCH-003-multi-tenant-ecosystem.md) | Superseded — archived stub |
-
-## Change Log
-
-| Version | Date | Summary |
-|---------|------|---------|
-| 3.0.1 | 2026-07-14 | Added mandatory Control State header field (Closed); lifecycle Status unchanged. |
-| 3.0.0 | 2026-07-13 | Merged platform IAM/RBAC into this doc; deleted separate ARCH-023; Target paths (`apps/web`); no ADR residue |
-| 2.4.0 | 2026-07-13 | Shared-schema decision detail |
-| 2.0.0 | 2026-07-13 | Absorbed ARCH-003; Living SSOT |
-| 1.0.0 | 2026-07-13 | Initial Target sketch |
+Decision lock rows in § 3.8 remain binding; this Notes section does not reopen them.
