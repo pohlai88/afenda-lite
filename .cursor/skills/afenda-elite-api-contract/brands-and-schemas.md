@@ -56,7 +56,7 @@ function asDeclarationId(id: string): DeclarationId {
 | Module path | Primary resources / flows | Notable exports |
 |-------------|---------------------------|-----------------|
 | `modules/platform/schemas/common.ts` | Shared primitives | `uuidSchema`, `emailSchema`, `passwordSchema`, `slugSchema`, **`parseSchema`** |
-| `modules/platform/schemas/api-error.ts` | Shared HTTP error body | `APIErrorBody` / codes |
+| `modules/platform/schemas/api-error.ts` | Shared HTTP error body | `APIErrorBody` / codes (**Landed**) |
 | `modules/declarations/schemas/common.ts` | Re-exports platform + declarations-only | `surveyAnswersSchema` (+ re-exports) |
 | `modules/identity/schemas/auth.ts` | Sign-in boundary | `signInSchema` |
 | `modules/identity/schemas/users.ts` | Organization-admin users | `userIdSchema`, `UserId`, create/import/update/role/ban/bulk/password schemas |
@@ -112,10 +112,11 @@ These are **named gaps** from `docs/api/API-004-schema-map.md` — do not invent
 
 | Gap | Condition to add |
 |-----|-----------------|
-| Shared `APIErrorBody` Zod schema | **Landed** — `modules/platform/schemas/api-error.ts` |
 | Shared `PaginatedResult` schema helper | When first contract-only list endpoint is exposed over HTTP |
 | Account PATCH schema | Only if portal-owned fields exist beyond Neon AccountView |
 | Trade REST surface schemas | Keep in `fft-schemas.ts`; split files only if module grows unwieldy |
+
+OpenAPI living export: [openapi.md](openapi.md) / [OPEN-001](../../../docs/api/OPEN-001-openapi.md) — not a schema gap.
 
 ---
 

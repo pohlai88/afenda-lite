@@ -1,6 +1,6 @@
 # Portal frontend scaffold — completeness (2026-07-12)
 
-Plan authority: this skill + `route-tree.md` + `docs/frontend/03-routes.md`.
+Plan authority: this skill + `route-tree.md` + `docs/architecture/frontend/ARCH-012-app-router-routes.md`.
 
 | Slice | Plan | Code | Status |
 |-------|------|------|--------|
@@ -13,7 +13,7 @@ Plan authority: this skill + `route-tree.md` + `docs/frontend/03-routes.md`.
 | `lib/` runners | Absorb | `lib/` gone | **Done** |
 | Root + segment `error.tsx` client | Convention | Present on product trees | **Done** |
 | api/actions untouched by scaffold | Keep | api-now only | **Done** |
-| `/client` workspace product rebuild | Closed + reopen checklist | Stubs only | **Closed (registered)** — [closed-scope-register](../../../docs/architecture/closed-scope-register.md) |
+| `/client` workspace product rebuild | Closed + reopen checklist | Stubs only | **Closed (registered)** — [deprecation register](../../../agent-skills/skills/deprecation-and-migration/reference.md) |
 | Wipe inventory historical FFT locale rows | Superseded note | Documented | **Intentional** |
 
 ## Stabilization (latest)

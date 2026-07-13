@@ -1,7 +1,7 @@
 # Adapter map
 
 **Like api-now for backend:** which driving adapters exist and which module they call.  
-**REST catalog / HTTP classification:** [../afenda-elite-api-contract/api-now.md](../afenda-elite-api-contract/api-now.md) · [docs/api/02-rest-resources.md](../../../docs/api/02-rest-resources.md)
+**REST catalog / HTTP classification:** [../afenda-elite-api-contract/api-now.md](../afenda-elite-api-contract/api-now.md) · [docs/api/REST-001-rest-resources.md](../../../docs/api/REST-001-rest-resources.md)
 
 ---
 

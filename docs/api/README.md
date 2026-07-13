@@ -71,6 +71,6 @@ See REST-001 and API-004 Gaps: rate limiting, cursor pagination, Account PATCH s
 
 ## Related
 
-- [../frontend/ARCH-013-bff-and-data-flow.md](../frontend/ARCH-013-bff-and-data-flow.md)
-- [../backend/ARCH-010-backend-conventions.md](../backend/ARCH-010-backend-conventions.md)
+- [../architecture/frontend/ARCH-013-bff-and-data-flow.md](../architecture/frontend/ARCH-013-bff-and-data-flow.md)
+- [../architecture/backend/ARCH-010-backend-conventions.md](../architecture/backend/ARCH-010-backend-conventions.md)
 - [../_control/DOC-001-documentation-control.md](../_control/DOC-001-documentation-control.md)

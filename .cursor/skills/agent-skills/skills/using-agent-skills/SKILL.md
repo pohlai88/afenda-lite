@@ -12,7 +12,8 @@ In **this repository**, **`/using-afenda-elite-skills` is the only product entry
 Elite overlay covers:
 
 - Farm routing (glossary `term.*`, documentation types, monorepo, Fumadocs Day-1 mirror)
-- Skill catalog + cleanup waves — `doc/architecture/afenda-elite-skills-architecture.md`
+- Skill catalog + cleanup waves — `doc/architecture/DOC-004-skills-architecture.md`
+- Documentation create/update/deprecate — `afenda-elite-documentation` (DOC-001 · DOC-002)
 - Housekeeping → Slice D refactor handoff
 - Non-goals: Lite-as-ceiling, hand glossary twin, Fumadocs-as-authority, fork-all-vendor-to-elite
 

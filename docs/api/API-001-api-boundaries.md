@@ -120,8 +120,8 @@ Do not ship `/api/v1` and `/api/v2` in parallel. Extend resources additively (op
 - [API-002 Error Contract](API-002-error-contract.md)
 - [API-003 API Types](API-003-api-types.md)
 - [OPEN-001 OpenAPI](OPEN-001-openapi.md)
-- [../frontend/ARCH-013-bff-and-data-flow.md](../frontend/ARCH-013-bff-and-data-flow.md)
-- [../backend/ARCH-010-backend-conventions.md](../backend/ARCH-010-backend-conventions.md)
+- [../architecture/frontend/ARCH-013-bff-and-data-flow.md](../architecture/frontend/ARCH-013-bff-and-data-flow.md)
+- [../architecture/backend/ARCH-010-backend-conventions.md](../architecture/backend/ARCH-010-backend-conventions.md)
 
 ## Change Log
 

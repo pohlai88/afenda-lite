@@ -215,7 +215,7 @@ Web UI uses `app/actions/fft.ts` on locale-free `/fft/*` (AdminCN). HTTP below i
 - [API-002 Error Contract](API-002-error-contract.md)
 - [API-003 API Types](API-003-api-types.md)
 - [API-004 Schema Map](API-004-schema-map.md)
-- [../frontend/ARCH-013-bff-and-data-flow.md](../frontend/ARCH-013-bff-and-data-flow.md)
+- [../architecture/frontend/ARCH-013-bff-and-data-flow.md](../architecture/frontend/ARCH-013-bff-and-data-flow.md)
 
 ## Change Log
 

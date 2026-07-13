@@ -29,10 +29,10 @@ External ecosystem (`deliver-acceptance-criteria`) patterns are **folded into** 
 
 | Need | Path |
 |------|------|
-| Locks | [docs/frontend/adr/001-feed-farm-trade.md](../../../docs/frontend/adr/001-feed-farm-trade.md) |
-| Architecture | [docs/frontend/adr/001A-feed-farm-trade-architecture.md](../../../docs/frontend/adr/001A-feed-farm-trade-architecture.md) |
-| Roadmap | [docs/frontend/adr/001R-feed-farm-trade-roadmap.md](../../../docs/frontend/adr/001R-feed-farm-trade-roadmap.md) |
-| Phase specs (evaluation) | [P0](../../../docs/frontend/11-feed-farm-trade-phase0-shell.md) · [P1](../../../docs/frontend/12-feed-farm-trade-phase1-core-mvp.md) · [P2](../../../docs/frontend/13-feed-farm-trade-phase2-ui-polish.md) · [P3](../../../docs/frontend/14-feed-farm-trade-phase3-ops-flags.md) |
+| Locks | [docs/adr/frontend/ADR-003-feed-farm-trade-module.md](../../../docs/adr/frontend/ADR-003-feed-farm-trade-module.md) |
+| Architecture | [docs/adr/frontend/ADR-004-feed-farm-trade-architecture.md](../../../docs/adr/frontend/ADR-004-feed-farm-trade-architecture.md) |
+| Roadmap | [docs/adr/frontend/ADR-005-feed-farm-trade-roadmap.md](../../../docs/adr/frontend/ADR-005-feed-farm-trade-roadmap.md) |
+| Phase specs (evaluation) | [P0](../../../docs/guides/GUIDE-010-feed-farm-trade-phase-0-shell.md) · [P1](../../../docs/guides/GUIDE-011-feed-farm-trade-phase-1-core-mvp.md) · [P2](../../../docs/guides/GUIDE-012-feed-farm-trade-phase-2-ui-polish.md) · [P3](../../../docs/guides/GUIDE-013-feed-farm-trade-phase-3-ops-flags.md) |
 | Slice playbook | [slice-playbook.md](slice-playbook.md) |
 | F-\* → action map | [action-map.md](action-map.md) |
 | Permission codes | [rbac-card.md](rbac-card.md) |
@@ -41,7 +41,9 @@ External ecosystem (`deliver-acceptance-criteria`) patterns are **folded into** 
 | Completeness matrix | [completeness.md](completeness.md) |
 | Copy-paste command sheet | [command-sheet.md](command-sheet.md) (post-MVP A–J) · [command-sheet-V2.md](command-sheet-V2.md) (P3 ops series) |
 | UI registry (HITL IDs) | [ui-registry.md](ui-registry.md) · [ui-registry.json](ui-registry.json) — Layer A inventory + Layer B DNA; `npm run check:fft-ui-registry` |
-| Ops flags | [docs/fft/RUNTIME.md](../../../docs/fft/RUNTIME.md) · gate-register |
+| Ops flags | [docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md](../../../docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md) · gate-register |
+| Module docs index | [FFT-MOD-010](../../../docs/modules/feed-farm-trade/FFT-MOD-010-module-docs-index.md) |
+| 10-MOD guideline | [MOD-002](../../../docs/modules/MOD-002-modules-index.md) |
 
 ## Load card (coding)
 
@@ -49,11 +51,11 @@ External ecosystem (`deliver-acceptance-criteria`) patterns are **folded into** 
 |------|------------|
 | Locks / naming | **001 only** |
 | Structure | **001A** + [architecture.md](architecture.md) |
-| Coding a P0 gate | Phase [11](../../../docs/frontend/11-feed-farm-trade-phase0-shell.md) + [verify.md](verify.md) |
-| Coding a P1 capability | Phase [12](../../../docs/frontend/12-feed-farm-trade-phase1-core-mvp.md) + [action-map.md](action-map.md) + [rbac-card.md](rbac-card.md) + [example-slice.md](example-slice.md) |
+| Coding a P0 gate | Phase [11](../../../docs/guides/GUIDE-010-feed-farm-trade-phase-0-shell.md) + [verify.md](verify.md) |
+| Coding a P1 capability | Phase [12](../../../docs/guides/GUIDE-011-feed-farm-trade-phase-1-core-mvp.md) + [action-map.md](action-map.md) + [rbac-card.md](rbac-card.md) + [example-slice.md](example-slice.md) |
 | Claiming MVP done | [verify.md](verify.md) AC evidence protocol — **required** |
-| P2 polish | **Complete 2026-07-11** (AC-01..06) — further polish only with named P2-AC + Plan for visual ([13](../../../docs/frontend/13-feed-farm-trade-phase2-ui-polish.md)) |
-| P3 ops / flags | [14](../../../docs/frontend/14-feed-farm-trade-phase3-ops-flags.md) + RUNTIME — **no prod flag without gate-register** |
+| P2 polish | **Complete 2026-07-11** (AC-01..06) — further polish only with named P2-AC + Plan for visual ([13](../../../docs/guides/GUIDE-012-feed-farm-trade-phase-2-ui-polish.md)) |
+| P3 ops / flags | [14](../../../docs/guides/GUIDE-013-feed-farm-trade-phase-3-ops-flags.md) + [FFT-MOD-008](../../../docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md) — **no prod flag without gate-register** |
 
 ```text
 DO NOT: FftShell, /fft/[locale], customer portal, invent permission codes,

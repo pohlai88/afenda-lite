@@ -1,43 +1,43 @@
 # Agent instructions — Afenda-Lite
 
 **Product:** **Afenda-Lite** — beta / lite edition of official **Afenda ERP** (multi-module SaaS). 
-**Retired product name:** Client Declaration Portal — compulsory; see [docs/adr/001-afenda-lite-product-identity.md](docs/adr/001-afenda-lite-product-identity.md) · [deprecation register](.cursor/skills/agent-skills/skills/deprecation-and-migration/reference.md).
+**Retired product name:** Client Declaration Portal — compulsory; see [deprecation register](.cursor/skills/agent-skills/skills/deprecation-and-migration/reference.md).
 
-**Doc registry (hard):** [doc/architecture/afenda-elite-doc-registry.md](doc/architecture/afenda-elite-doc-registry.md) · types [documentation-types](doc/architecture/afenda-elite-documentation-types.md) · rule `.cursor/rules/doc-registry.mdc` · `npm run check:doc-registry`. `doc/` = Elite controllers only; production SSOT = `docs/`. Violation → stop and fix.
+**Authoritative documentation:** [docs/README.md](docs/README.md) — design SSOT, ADRs, API, runbooks, and module ops under `docs/`. Do **not** recreate `doc/`.
 
-**Repository layout:** [docs/architecture/repo-migration-map.md](docs/architecture/repo-migration-map.md) (migration closed) · [docs/frontend/02-folder-map.md](docs/frontend/02-folder-map.md). Hosting: GitHub `pohlai88/afenda-lite` · Vercel `afenda-lite` · `APP_URL=https://afenda-lite.vercel.app`.
+**Repository layout:** [ARCH-022](docs/architecture/turborepo/ARCH-022-system-overview.md) (Target Turborepo tree) · [ARCH-011](docs/architecture/frontend/ARCH-011-frontend-folder-map.md) (frontend folder map). ARCH-021 migration map archived. Hosting: GitHub `pohlai88/afenda-lite` · Vercel `afenda-lite` · `APP_URL=https://afenda-lite.vercel.app`.
 
 ## Feed Farm Trade — Phase 2A closed · 2B–2D ADRs Accepted
 
-**Product module (UI / shell):** Feed Farm Trade — agent skill [`.cursor/skills/feed-farm-trade`](.cursor/skills/feed-farm-trade/SKILL.md) · ADR [001](docs/frontend/adr/001-feed-farm-trade.md) · architecture [001A](docs/frontend/adr/001A-feed-farm-trade-architecture.md) · roadmap [001R](docs/frontend/adr/001R-feed-farm-trade-roadmap.md).
+**Product module (UI / shell):** Feed Farm Trade — agent skill [`.cursor/skills/feed-farm-trade`](.cursor/skills/feed-farm-trade/SKILL.md) · ADR [001](docs/adr/frontend/ADR-003-feed-farm-trade-module.md) · architecture [001A](docs/adr/frontend/ADR-004-feed-farm-trade-architecture.md) · roadmap [001R](docs/adr/frontend/ADR-005-feed-farm-trade-roadmap.md).
 
-**Agent entry (engine ops):** [docs/fft/RUNTIME.md](docs/fft/RUNTIME.md) · Index: [docs/fft/README.md](docs/fft/README.md)
+**Agent entry (engine ops):** [docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md](docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md) · Index: [docs/modules/feed-farm-trade/FFT-MOD-010-module-docs-index.md](docs/modules/feed-farm-trade/FFT-MOD-010-module-docs-index.md)
 
 | Authority | Doc |
 |-----------|-----|
-| Runtime SSOT | [docs/fft/RUNTIME.md](docs/fft/RUNTIME.md) |
-| Ops gates | [docs/fft/ops/gate-register.md](docs/fft/ops/gate-register.md) |
-| Checklists | [ops/rollout.md](docs/fft/ops/rollout.md) · [ops/release-readiness.md](docs/fft/ops/release-readiness.md) |
-| Phase 2A contract | [spec/phase-2a-prd.md](docs/fft/spec/phase-2a-prd.md) |
-| Phase 2B–2D ADRs | [adr/002](docs/fft/adr/002-finance-deposit-pickup-ops.md) · [003](docs/fft/adr/003-imports-notifications.md) · [004](docs/fft/adr/004-erp-sync.md) |
-| 2B–2D slices | [spec/phase-2bcd-slices.md](docs/fft/spec/phase-2bcd-slices.md) (**Proposed**) |
+| Runtime SSOT | [docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md](docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md) |
+| Ops gates | [docs/modules/feed-farm-trade/ops/RB-002-feed-farm-trade-gate-register.md](docs/modules/feed-farm-trade/ops/RB-002-feed-farm-trade-gate-register.md) |
+| Checklists | [ops/rollout.md](docs/modules/feed-farm-trade/ops/RB-004-feed-farm-trade-ops-rollout.md) · [ops/release-readiness.md](docs/modules/feed-farm-trade/ops/RB-003-feed-farm-trade-release-readiness.md) |
+| Phase 2A contract | [spec/phase-2a-prd.md](docs/modules/feed-farm-trade/spec/GUIDE-016-feed-farm-trade-phase-2a-prd.md) |
+| Phase 2B–2D ADRs | [adr/002](docs/modules/feed-farm-trade/adr/ADR-007-feed-farm-trade-finance-deposit-pickup-ops.md) · [003](docs/modules/feed-farm-trade/adr/ADR-008-feed-farm-trade-imports-notifications.md) · [004](docs/modules/feed-farm-trade/adr/ADR-009-feed-farm-trade-erp-sync.md) |
+| 2B–2D slices | [spec/phase-2bcd-slices.md](docs/modules/feed-farm-trade/spec/GUIDE-018-feed-farm-trade-phase-2b-2d-slices.md) (**Proposed**) |
 
 **Production state:** tag `fft-phase-2a` → `8e650ff`; `FFT_RBAC_ENABLED=true` on Vercel; DB branch `br-tiny-hill-ao82jp6f`. **2B–2D code blocked** until slice group Approved in phase-2bcd-slices + explicit program reopen. No Feed Farm Trade commits mixed with unrelated refactors.
 
 ## Platform tenancy (hard cutover + multi-org ready)
 
-**Decision:** [docs/backend/adr/002-platform-tenancy-rbac.md](docs/backend/adr/002-platform-tenancy-rbac.md) · **Living inventory:** [docs/architecture/multi-tenant-ecosystem.md](docs/architecture/multi-tenant-ecosystem.md) (shared-schema + Neon production efficiency) · Phase evidence: [docs/frontend/14-org-admin-rbac-tenancy-tasks.md](docs/frontend/14-org-admin-rbac-tenancy-tasks.md).
+**Decision:** [docs/adr/backend/ADR-002-platform-tenancy-rbac.md](docs/adr/backend/ADR-002-platform-tenancy-rbac.md) · **Living inventory:** [docs/architecture/turborepo/ARCH-023-multi-tenancy.md](docs/architecture/turborepo/ARCH-023-multi-tenancy.md) (shared-schema + Neon production efficiency; supersedes ARCH-003) · Phase evidence: [docs/guides/GUIDE-014-organization-admin-rbac-tenancy-tasks.md](docs/guides/GUIDE-014-organization-admin-rbac-tenancy-tasks.md).
 
 | Fact | Detail |
 |------|--------|
 | Shipped | Hard `organization_id = $org`; migrations `027`/`028`; Users via `neon_auth.member`; FFT entry = platform `fft.access`; M1–M4 multi-org ready (logical) |
-| Neon posture | Shared schema (not project-per-tenant); prod `DATABASE_URL` must be `-pooler`; RLS out of scope on BFF path — see ecosystem §5–§6 |
+| Neon posture | Shared schema (not project-per-tenant); prod `DATABASE_URL` must be `-pooler`; RLS out of scope on BFF path — see [ARCH-023](docs/architecture/turborepo/ARCH-023-multi-tenancy.md) Operational considerations |
 | Neon Cloud | Org `org-fragrant-lake-90358173` (Launch) · project `young-hat-54755363` (**Afenda-Lite**) · branch `br-tiny-hill-ao82jp6f` protected |
-| Recovery | PITR 7d (Launch max); daily snapshots; see [multi-org-ops](docs/runbooks/multi-org-ops.md) |
+| Recovery | PITR 7d (Launch max); daily snapshots; see [multi-org-ops](docs/runbooks/RB-001-multi-org-ops.md) |
 | Env | `PORTAL_ORG_SLUG` / `PORTAL_ORG_NAME` / `PORTAL_ORG_SWITCHER_ENABLED`; do not confuse with `NEON_ORG_ID` (Neon Cloud) |
 | Ops | `npm run audit:tenancy-nulls` · `npm run check:tenancy-residue` · `backfill:fft-access --organization-id=…` · skill ladder A–E [neon-tenancy-efficiency](.cursor/skills/neon-tenancy-efficiency/reference.md) |
-| Cheat sheet | [docs/runbooks/post-lock-coding-cheatsheet.md](docs/runbooks/post-lock-coding-cheatsheet.md) — post-lock commands + Rejected/Deferred flash card |
-| Decision lock | [ecosystem §0](docs/architecture/multi-tenant-ecosystem.md) — Rejected R1–R7 / Deferred D4·D5; do not reopen without explicit user approval |
+| Cheat sheet | [docs/runbooks/RB-005-post-lock-coding-cheat-sheet.md](docs/runbooks/RB-005-post-lock-coding-cheat-sheet.md) — post-lock commands + Rejected/Deferred flash card |
+| Decision lock | [ARCH-023 Decision lock](docs/architecture/turborepo/ARCH-023-multi-tenancy.md) — Rejected R1–R7 / Deferred D4·D5; do not reopen without explicit user approval |
 | Accepted constraints | **D4** FFT child denorm deferred (M5); **D5** shared-schema / not project-per-tenant |
 | Anti-claim | Do **not** say multi-DB isolation (D5). `FFT_RBAC_ENABLED` ≠ soft SQL tenancy. Soft dual-mode / first-org stamp are **retired** — see deprecation register |
 
@@ -191,9 +191,9 @@ Runbook: [docs/runbooks/local-dev-auth.md](docs/runbooks/local-dev-auth.md).
 
 ## Portal Atmosphere — agent constraints
 
-**Status:** Experiment **dormant** — do not remount. Authority for bans: [deprecation register](.cursor/skills/agent-skills/skills/deprecation-and-migration/reference.md) · [closed-scope-register](docs/architecture/closed-scope-register.md) · `/using-afenda-elite-skills`.
+**Status:** Experiment **dormant** — do not remount. Authority for bans: [deprecation register](.cursor/skills/agent-skills/skills/deprecation-and-migration/reference.md) (Closed product phases) · `/using-afenda-elite-skills`.
 
-Former Portal Atmosphere slice ADRs under `docs/architecture/slices/portal-atmosphere/` were retired. Do not restore those paths. Elite controllers live under `doc/architecture/afenda-elite-*` only.
+Former Portal Atmosphere slice ADRs under `docs/architecture/slices/portal-atmosphere/` were retired. Do not restore those paths. Living docs live under `docs/` only — do not recreate `doc/`.
 
 | Rule | Detail |
 |------|--------|

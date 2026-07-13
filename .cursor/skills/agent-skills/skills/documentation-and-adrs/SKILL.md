@@ -5,6 +5,37 @@ description: Records decisions and documentation. Use when making architectural 
 
 # Documentation and ADRs
 
+## Afenda Elite (this repo)
+
+```text
+LOAD: /using-afenda-elite-skills → afenda-elite-documentation
+      doc/REGISTRY.md
+      doc/register/DOC-002-documentation-system.md
+      doc/register/DOC-003-glossary.md   # when naming
+SKIP: Accepted SSOT under docs/ · inventing types outside DOC-002
+PLACE: doc/adr | doc/register | doc/architecture | doc/runbooks | doc/api
+ACCEPT: DOC-NNN row in doc/REGISTRY.md (header ↔ row)
+VERIFY: npm run check:doc-registry
+OPS: afenda-elite-documentation owns create/update/deprecate procedures
+THIS SKILL: prose craft and ADR reasoning only — not registry SSOT
+```
+
+Do not redefine types or product names — cite `term.*`, [DOC-002](../../../../../doc/register/DOC-002-documentation-system.md), and [DOC-001](../../../../../doc/REGISTRY.md).
+
+### Registry entry
+
+```yaml
+id: DOC-00N
+path: doc/<home>/DOC-00N-<slug>.md
+type: ADR | Register | Architecture | Runbook | API Contract
+version: 0.1.0
+lifecycle: Draft
+owner: Platform
+updated: YYYY-MM-DD
+```
+
+Add the matching table row in `doc/REGISTRY.md` in the same change. Follow [afenda-elite-documentation](../../../afenda-elite-documentation/SKILL.md) for procedures.
+
 ## Overview
 
 Document decisions, not just code. The most valuable documentation captures the *why* — the context, constraints, and trade-offs that led to a decision. Code shows *what* was built; documentation explains *why it was built this way* and *what alternatives were considered*. This context is essential for future humans and agents working in the codebase.
@@ -35,16 +66,15 @@ ADRs capture the reasoning behind significant technical decisions. They're the h
 
 ### ADR Template
 
-Store ADRs in `docs/decisions/` with sequential numbering:
+Store ADRs under `doc/adr/` (never `docs/`). Use REGISTRY lifecycle names in Status (`Draft` · `Review` · `Accepted` · `Superseded` · `Deprecated`).
 
 ```markdown
 # ADR-001: Use PostgreSQL for primary database
 
-## Status
-Accepted | Superseded by ADR-XXX | Deprecated
-
-## Date
-2025-01-15
+| Field | Value |
+|-------|-------|
+| **Status** | Accepted |
+| **Date** | 2026-07-13 |
 
 ## Context
 We need a primary database for the task management application. Key requirements:
@@ -80,14 +110,17 @@ Use PostgreSQL with Prisma ORM.
 - Hosting on managed service (Supabase, Neon, or RDS)
 ```
 
+On Accept: add `DOC-NNN` + Change Log in `doc/REGISTRY.md`. Do **not** put new ADRs under `docs/`.
+
 ### ADR Lifecycle
 
 ```
-PROPOSED → ACCEPTED → (SUPERSEDED or DEPRECATED)
+Draft → Review → Accepted → (Superseded | Deprecated | Archived)
 ```
 
 - **Don't delete old ADRs.** They capture historical context.
 - When a decision changes, write a new ADR that references and supersedes the old one.
+- Canonical lifecycle names: [doc/REGISTRY.md](../../../../../doc/REGISTRY.md).
 
 ## Inline Documentation
 

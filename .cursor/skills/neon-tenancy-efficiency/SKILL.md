@@ -5,17 +5,17 @@ description: >-
   checks and anti-drift gates (pooler, tenancy nulls, residue, pg_stat,
   auth, isolation e2e). Use when optimizing Neon production, preventing
   tenancy drift, auditing DATABASE_URL pooler, or following
-  multi-tenant-ecosystem.md §6 production posture.
+  multi-tenant ARCH-023 Operational considerations.
 ---
 
 # Neon tenancy efficiency
 
 **Host product:** Afenda-Lite · **Model:** shared schema + hard `organization_id` (not project-per-tenant)  
-**SSOT:** [docs/architecture/multi-tenant-ecosystem.md](../../../docs/architecture/multi-tenant-ecosystem.md) · **ADR:** [002](../../../docs/backend/adr/002-platform-tenancy-rbac.md) · **Ops:** [multi-org-ops](../../../docs/runbooks/multi-org-ops.md)
+**SSOT:** [docs/architecture/turborepo/ARCH-023-multi-tenancy.md](../../../docs/architecture/turborepo/ARCH-023-multi-tenancy.md) · **ADR:** [002](../../../docs/adr/backend/ADR-002-platform-tenancy-rbac.md) · **Ops:** [multi-org-ops](../../../docs/runbooks/RB-001-multi-org-ops.md)
 
 ## Coding freeze (read before any tenancy PR)
 
-**Locked 2026-07-12** in ecosystem **§0**:
+**Locked 2026-07-12** in ARCH-023 **Decision lock**:
 
 - **Rejected (R1–R7):** soft dual-mode, first-org stamp, RLS-as-default BFF, schema-per-tenant, project-per-tenant as efficiency fix, FFT domain catalog merge, CU/ERP placeholder hacks.
 - **Deferred:** D4/M5 child denorm; D5 project fleet; prod org switcher; FFT P3 flags.
@@ -23,16 +23,16 @@ description: >-
 
 Do **not** start coding that “closes D5” or “adds RLS for tenancy” without user reopen of that ID.
 
-**Human cheat sheet:** [docs/runbooks/post-lock-coding-cheatsheet.md](../../../docs/runbooks/post-lock-coding-cheatsheet.md)
+**Human cheat sheet:** [docs/runbooks/RB-005-post-lock-coding-cheat-sheet.md](../../../docs/runbooks/RB-005-post-lock-coding-cheat-sheet.md)
 
 ## Context pack (load only these)
 
 ```
 TASK: Neon shared-schema efficiency + anti-drift
-SSOT: docs/architecture/multi-tenant-ecosystem.md (§0 lock + §5–§7)
-ADR:  docs/backend/adr/002-platform-tenancy-rbac.md
-OPS:  docs/runbooks/multi-org-ops.md
-CHEAT: docs/runbooks/post-lock-coding-cheatsheet.md
+SSOT: docs/architecture/turborepo/ARCH-023-multi-tenancy.md (Decision lock + Operational considerations + Failure modes)
+ADR:  docs/adr/backend/ADR-002-platform-tenancy-rbac.md
+OPS:  docs/runbooks/RB-001-multi-org-ops.md
+CHEAT: docs/runbooks/RB-005-post-lock-coding-cheat-sheet.md
 CODE: modules/platform/db.ts · db-config.ts · organization-scope.ts
 BRANCH: br-tiny-hill-ao82jp6f (local = production Neon)
 NEON CLOUD: org-fragrant-lake-90358173 · project young-hat-54755363 (Afenda-Lite)

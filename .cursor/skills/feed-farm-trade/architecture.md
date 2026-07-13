@@ -1,6 +1,6 @@
 # Feed Farm Trade — architecture
 
-**SSOT:** [docs/frontend/adr/001A-feed-farm-trade-architecture.md](../../../docs/frontend/adr/001A-feed-farm-trade-architecture.md)
+**SSOT:** [docs/adr/frontend/ADR-004-feed-farm-trade-architecture.md](../../../docs/adr/frontend/ADR-004-feed-farm-trade-architecture.md)
 
 **Platform model:** one SaaS platform · two modules (`declarations` | `fft`) · shared Platform/Identity/AdminCN/env/CI. Infra updates are **together**. Only module domain/RBAC/UI homes differ.
 
@@ -40,7 +40,7 @@ layout: requireFftAccess + AdminCnShell only
 | Store | `modules/fft/domain/store.ts` |
 | Actions | `app/actions/fft.ts` |
 | UI locale arg | `features/fft/trade-ui-locale.ts` |
-| Ops SSOT | `docs/fft/RUNTIME.md` · gate-register |
+| Ops SSOT | `docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md` · gate-register |
 
 **Dead residue (compulsory retire):** `/fft/[locale]`, `FftShell`, locale switcher, Hot Sales / `/trade` product identity — do not remount. Register: [deprecation-and-migration/reference.md](../agent-skills/skills/deprecation-and-migration/reference.md).
 

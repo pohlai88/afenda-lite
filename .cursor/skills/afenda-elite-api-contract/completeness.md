@@ -26,7 +26,7 @@ Plan authority: this skill + `api-now.md` + `docs/api/*` (SSOT: API-001..004, RE
 
 - Draft API runner owned by Declarations (one-version Action/HTTP share domain + schemas)
 - Org-admin RBAC mutations stay on Server Actions (`admin.ts`), not new `/api` routes
-- Hard tenancy cutover: required `organizationId` into domain — see [ARCH-003](../../../docs/architecture/ARCH-003-multi-tenant-ecosystem.md)
+- Hard tenancy cutover: required `organizationId` into domain — see [ARCH-003](../../../docs/architecture/turborepo/ARCH-023-multi-tenancy.md)
 - Pack entry: [docs/api/README.md](../../../docs/api/README.md)
 
 ## Verify

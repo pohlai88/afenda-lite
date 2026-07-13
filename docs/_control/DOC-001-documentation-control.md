@@ -4,7 +4,7 @@
 |-------|-------|
 | ID | DOC-001 |
 | Category | Control |
-| Version | 1.3.0 |
+| Version | 1.4.0 |
 | Status | Living |
 | Owner | Platform |
 | Updated | 2026-07-13 |
@@ -55,7 +55,7 @@ The living register starts empty of product docs until the user agrees each ID. 
 | OPEN | OPEN | OpenAPI machine-readable exports (YAML/JSON) |
 | Runbook | RB | Operational procedures |
 | Guide | GUIDE | Internal guides |
-| Module | MOD | Module indexes |
+| Module | MOD | Module indexes **and** per-module 10-MOD spine under `docs/modules/<slug>/` (qualified IDs e.g. `FFT-MOD-001`) |
 
 Use the smallest fitting category. Prefer **API** for adapter/error/type vocabulary that also covers Server Actions; **REST** for HTTP path catalogs; **OPEN** for OpenAPI artifacts. Avoid creating further prefixes unless these cannot describe the document.
 
@@ -157,10 +157,10 @@ Keep change logs short. One line per release is enough.
 | `docs/guides/` | Durable internal guides without a narrower owner |
 | `docs/engineering/` | Internal engineering guides |
 | `docs/modules/` | Module-level indexes without a stronger owner |
-| `docs/fft/` | Feed Farm Trade module docs and ops |
+| `docs/modules/` | Product-module 10-MOD spines + depth (`feed-farm-trade/`, …) |
 | `docs/scratch/` | Non-authoritative drafts and temporary notes |
 
-The repository currently uses `docs/engineering/` for guide material instead of `docs/guides/`. Treat `Guide` as the category and `docs/engineering/` as the active folder until a deliberate migration is approved.
+`docs/guides/` holds phase task guides (GUIDE-007…014). Engineering workflow guides remain under `docs/engineering/`.
 
 ## Golden Rule
 
@@ -177,6 +177,7 @@ Everything else belongs inside the document itself.
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.4.0 | 2026-07-13 | Module category owns 10-MOD spines under `docs/modules/<slug>/`; FFT home moved |
 | 1.3.0 | 2026-07-13 | Added REST and OPEN categories for scalable interface docs |
 | 1.2.0 | 2026-07-13 | Document numbers require explicit user agreement before register |
 | 1.1.0 | 2026-07-13 | Added mandatory `{ID}-{kebab-slug}.md` filename rule |

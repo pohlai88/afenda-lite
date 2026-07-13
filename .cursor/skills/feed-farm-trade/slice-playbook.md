@@ -2,7 +2,7 @@
 
 **Borrow:** `incremental-implementation` (vertical slice + verify before next) · `test-driven-development` (proof before done).
 
-**SSOT AC:** phase docs [11](../../../docs/frontend/11-feed-farm-trade-phase0-shell.md) · [12](../../../docs/frontend/12-feed-farm-trade-phase1-core-mvp.md).
+**SSOT AC:** phase docs [11](../../../docs/guides/GUIDE-010-feed-farm-trade-phase-0-shell.md) · [12](../../../docs/guides/GUIDE-011-feed-farm-trade-phase-1-core-mvp.md).
 
 ## When to use
 

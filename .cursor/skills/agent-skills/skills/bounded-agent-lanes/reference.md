@@ -8,7 +8,7 @@ Updatable defaults for this repository. The skill core in [SKILL.md](SKILL.md) s
 
 **Feed Farm Trade Ops — closed** (2026-07-10)
 
-Default agent mission is **not** Feed Farm Trade. See [docs/architecture/closed-scope-register.md](../../../../docs/architecture/closed-scope-register.md) · [doc/architecture/afenda-elite-skills-architecture.md](../../../../doc/architecture/afenda-elite-skills-architecture.md).
+Default agent mission is **not** Feed Farm Trade. See [deprecation register — Closed product phases](../deprecation-and-migration/reference.md) · [doc/architecture/DOC-004-skills-architecture.md](../../../../doc/architecture/DOC-004-skills-architecture.md).
 
 ---
 
@@ -16,13 +16,13 @@ Default agent mission is **not** Feed Farm Trade. See [docs/architecture/closed-
 
 | Doc type | Path |
 |----------|------|
-| **RUNTIME** (read first) | [docs/fft/RUNTIME.md](../../../../docs/fft/RUNTIME.md) |
-| Index + doc types | [docs/fft/README.md](../../../../docs/fft/README.md) |
-| OPS gates (historical) | [docs/fft/ops/gate-register.md](../../../../docs/fft/ops/gate-register.md) |
-| OPS rollout | [docs/fft/ops/rollout.md](../../../../docs/fft/ops/rollout.md) |
-| OPS release readiness | [docs/fft/ops/release-readiness.md](../../../../docs/fft/ops/release-readiness.md) |
-| SPEC 2A (frozen) | [docs/fft/spec/phase-2a-slices.md](../../../../docs/fft/spec/phase-2a-slices.md) |
-| ARCHITECTURE S19 | [docs/fft/architecture/s19-trade-slice.md](../../../../docs/fft/architecture/s19-trade-slice.md) |
+| **RUNTIME** (read first) | [docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md](../../../../docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md) |
+| Index + doc types | [docs/modules/feed-farm-trade/FFT-MOD-010-module-docs-index.md](../../../../docs/modules/feed-farm-trade/FFT-MOD-010-module-docs-index.md) |
+| OPS gates (historical) | [docs/modules/feed-farm-trade/ops/RB-002-feed-farm-trade-gate-register.md](../../../../docs/modules/feed-farm-trade/ops/RB-002-feed-farm-trade-gate-register.md) |
+| OPS rollout | [docs/modules/feed-farm-trade/ops/RB-004-feed-farm-trade-ops-rollout.md](../../../../docs/modules/feed-farm-trade/ops/RB-004-feed-farm-trade-ops-rollout.md) |
+| OPS release readiness | [docs/modules/feed-farm-trade/ops/RB-003-feed-farm-trade-release-readiness.md](../../../../docs/modules/feed-farm-trade/ops/RB-003-feed-farm-trade-release-readiness.md) |
+| SPEC 2A (frozen) | [docs/modules/feed-farm-trade/spec/GUIDE-017-feed-farm-trade-phase-2a-slices.md](../../../../docs/modules/feed-farm-trade/spec/GUIDE-017-feed-farm-trade-phase-2a-slices.md) |
+| ARCHITECTURE S19 | [docs/modules/feed-farm-trade/architecture/ARCH-017-feed-farm-trade-event-engine.md](../../../../docs/modules/feed-farm-trade/architecture/ARCH-017-feed-farm-trade-event-engine.md) |
 
 ### Frozen decisions (do not rename / redesign)
 
@@ -52,9 +52,9 @@ Default agent mission is **not** Feed Farm Trade. See [docs/architecture/closed-
 | Gate 7 prod smoke | `node scripts/gate-7-production-smoke.mjs` |
 | Env compose | `npm run env:compose` |
 
-Pre-enable matrix: [release-readiness.md § Pre-enable verification matrix](../../../../docs/fft/ops/release-readiness.md#pre-enable-verification-matrix).
+Pre-enable matrix: [release-readiness.md § Pre-enable verification matrix](../../../../docs/modules/feed-farm-trade/ops/RB-003-feed-farm-trade-release-readiness.md#pre-enable-verification-matrix).
 
-Evidence template: [rollout.md § Evidence report template](../../../../docs/fft/ops/rollout.md#evidence-report-template).
+Evidence template: [rollout.md § Evidence report template](../../../../docs/modules/feed-farm-trade/ops/RB-004-feed-farm-trade-ops-rollout.md#evidence-report-template).
 
 ---
 
@@ -63,7 +63,7 @@ Evidence template: [rollout.md § Evidence report template](../../../../docs/fft
 | Field | Value |
 |-------|-------|
 | **Lane** | Docs |
-| **Target files** | `docs/fft/**`, this `reference.md` (cross-links only) |
+| **Target files** | `docs/modules/feed-farm-trade/**`, this `reference.md` (cross-links only) |
 | **Forbidden** | Code, schema, permissions, UI |
 
 ---
@@ -74,4 +74,4 @@ Evidence template: [rollout.md § Evidence report template](../../../../docs/fft
 |------|-------|
 | Remaining development | [remaining-development.md](../../../../docs/architecture/remaining-development.md) |
 | Guardian Auth closeout | [pa-guardian-module-remaining.md](../../../../docs/architecture/slices/portal-atmosphere/pa-guardian-module-remaining.md) |
-| Program tracking | [gate-register.md](../../../../docs/fft/ops/gate-register.md) · [closed-scope-register.md](../../../../docs/architecture/closed-scope-register.md) |
+| Program tracking | [gate-register.md](../../../../docs/modules/feed-farm-trade/ops/RB-002-feed-farm-trade-gate-register.md) · [deprecation register — Closed product phases](../deprecation-and-migration/reference.md) |

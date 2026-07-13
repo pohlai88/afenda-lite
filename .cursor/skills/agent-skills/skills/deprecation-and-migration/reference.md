@@ -1,7 +1,7 @@
 # Afenda-Lite deprecation register (compulsory)
 
-**Product:** **Afenda-Lite** (beta of Afenda ERP) — [docs/adr/001-afenda-lite-product-identity.md](../../../../docs/adr/001-afenda-lite-product-identity.md)  
-**Authority:** [SKILL.md](SKILL.md) · `/using-afenda-elite-skills` · FFT ADRs under `docs/frontend/adr/001*`
+**Product:** **Afenda-Lite** (beta of Afenda ERP)  
+**Authority:** [SKILL.md](SKILL.md) · `/using-afenda-elite-skills` · FFT ADRs under `docs/adr/frontend/` (ADR-003…005)
 
 Status meanings:
 
@@ -18,7 +18,7 @@ Status meanings:
 
 | Retired | Replacement | Status | Notes |
 |---------|-------------|--------|-------|
-| **Client Declaration Portal** | **Afenda-Lite** | Retired | ADR `docs/adr/001` — 2026-07-12 |
+| **Client Declaration Portal** | **Afenda-Lite** | Retired | 2026-07-12 |
 | Framing the product as “a portal” / “the portal” | Multi-module **Afenda ERP** beta (SaaS) | Rejected framing | Modules ≠ portals |
 | npm `client-declaration-portal` | `afenda-lite` | Retired | `package.json` |
 | GitHub `pohlai88/iam-check` | `pohlai88/afenda-lite` | Retired | Renamed 2026-07-12 |
@@ -68,21 +68,32 @@ Declarations is not “deprecated.” Treating FFT and Declarations as two platf
 
 ## Closed product phases (not deprecations)
 
-See [docs/architecture/closed-scope-register.md](../../../../docs/architecture/closed-scope-register.md):
+**SSOT:** this section (formerly [ARCH-020](../../../../docs/architecture/archive/ARCH-020-closed-scope-register.md)). Agents must not treat these as open gaps. Completeness matrices must read **Closed (registered)** or **Intentional (registered)** — never “missing” or “TODO”. Reopen requires explicit user approval in the turn.
 
-| Item | Disposition |
-|------|-------------|
-| `/client` workspace product restore | Closed — stubs only; reopen checklist required |
-| FFT P3 **prod** flag promotion | Closed — gate-register only |
-| SaaS billing / 2FA chrome | Intentional deferred — not Identity product |
+| Item | Disposition | Authority / reopen |
+|------|-------------|-------------------|
+| `/client` workspace product restore | **Closed** — stubs only under `app/client/(workspace)/**` | Reopen: explicit user letter + spec slice under `docs/architecture/frontend/` + vertical slice (RSC → modules, Actions, gates). Forbidden: restore `features/client-workspace/` without reopen. |
+| FFT P3 **prod** flag promotion | **Closed** — code may exist behind flags; prod enablement is ops | [RB-002](../../../../docs/modules/feed-farm-trade/ops/RB-002-feed-farm-trade-gate-register.md) · [GUIDE-013](../../../../docs/guides/GUIDE-013-feed-farm-trade-phase-3-ops-flags.md). Forbidden: enable prod `FFT_*` P3 flags without gate-register checklist + approval. |
+| SaaS billing / 2FA chrome | **Intentional deferred** — not product Identity | AdminCN `ComingSoonPanel` / plan columns are chrome only. Forbidden: invent billing fields or 2FA flows without product ADR. Neon Auth owns credential MFA if enabled. |
+| Teaching ARCH-020 as Living SSOT | **Superseded** | This section + archive stub only |
+
+**Agent rule:** Default agent mission is **not** Feed Farm Trade program reopen. Option B (reopen / promote) always needs explicit user direction.
 
 ## Tenancy (hard cutover + multi-org ready)
 
 | Retired | Replacement | Status | Notes |
 |---------|-------------|--------|-------|
-| Soft SQL `(organization_id IS NULL OR = $org)` dual-mode | Hard `organization_id = $org` + migration `027` | Hard-deleted | CI `check:tenancy-residue`; ADR-002; ecosystem §0 **R1** |
+| Teaching ARCH-003 multi-tenant-ecosystem as Living SSOT | [ARCH-023](../../../../docs/architecture/turborepo/ARCH-023-multi-tenancy.md) | Superseded | Compulsory 2026-07-13; archived stub `docs/architecture/archive/ARCH-003-*` |
+| Teaching ARCH-020 closed-scope-register as Living SSOT | [deprecation register — Closed product phases](reference.md) | Superseded | Compulsory 2026-07-13; archived stub `docs/architecture/archive/ARCH-020-*` |
+| Teaching ARCH-021 repository-migration-map as layout SSOT | [ARCH-022](../../../../docs/architecture/turborepo/ARCH-022-system-overview.md) · [ARCH-011](../../../../docs/architecture/frontend/ARCH-011-frontend-folder-map.md) | Superseded | Compulsory 2026-07-13; archived stub `docs/architecture/archive/ARCH-021-*`; campaign closed |
+| Teaching `docs/backend/` as a top-level docs home | [`docs/architecture/backend/`](../../../../docs/architecture/backend/) · [`docs/adr/backend/`](../../../../docs/adr/backend/) | Moved | Compulsory 2026-07-13; ARCH under architecture; ADRs under `adr/backend/` |
+| Teaching `docs/frontend/` as a top-level docs home | [`docs/architecture/frontend/`](../../../../docs/architecture/frontend/) · [`docs/adr/frontend/`](../../../../docs/adr/frontend/) | Moved | Compulsory 2026-07-13; ARCH under architecture; FFT ADRs under `adr/frontend/` |
+| Teaching GUIDE-007…014 under `docs/architecture/frontend/` | [`docs/guides/`](../../../../docs/guides/) | Moved | Compulsory 2026-07-13; phase task guides live with GUIDE-006 index |
+| Teaching top-level `docs/fft/` as FFT docs home | [`docs/modules/feed-farm-trade/`](../../../../docs/modules/feed-farm-trade/) | Moved | Compulsory 2026-07-13; 10-MOD spine FFT-MOD-001…010 |
+| Teaching FFT `MOD-001` / `MOD-003` as Living entry | [FFT-MOD-008](../../../../docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md) · [FFT-MOD-010](../../../../docs/modules/feed-farm-trade/FFT-MOD-010-module-docs-index.md) | Superseded | Compulsory 2026-07-13; stubs remain for path safety |
+| Soft SQL `(organization_id IS NULL OR = $org)` dual-mode | Hard `organization_id = $org` + migration `027` | Hard-deleted | CI `check:tenancy-residue`; ADR-002; ARCH-023 Decision lock **R1** |
 | `promoteLegacyFftEntry` / login FFT promote | Platform `fft.access` + write-time ensure | Hard-deleted | |
-| Arbitrary `organizations[0]` / first-org DB stamp | Active → slug → sole membership; ops `--organization-id` | Retired | M1 + M4; ecosystem §0 **R2**; e2e D8 closed |
+| Arbitrary `organizations[0]` / first-org DB stamp | Active → slug → sole membership; ops `--organization-id` | Retired | M1 + M4; ARCH-023 Decision lock **R2**; e2e D8 closed |
 | Default org slug/name `client-declaration-portal` / `iam-check` | `afenda-lite` (or `PORTAL_ORG_*`) | Retired | Product identity ADR-001; Auth org renamed 2026-07-12; operator `afenda@admin.com` |
 | Teaching “multi-org ready **not** claimed” / org-switcher as v1 non-goal | M1–M4 shipped claim in ecosystem SSOT | Retired framing | Do not re-teach soft-harden as current |
 | Neon RLS / Data API as default tenant isolation on BFF | App predicates + hard SQL | Rejected framing | Ecosystem §0 **R3**; reopen only with Data API ADR |
@@ -95,7 +106,7 @@ See [docs/architecture/closed-scope-register.md](../../../../docs/architecture/c
 
 | Retired | Replacement | Status | Notes |
 |---------|-------------|--------|-------|
-| `guardian-css-audit` skill | — (atmosphere dormant; `components/` hard-deleted) | Hard-deleted | Wave 1 — [skills-architecture](../../../../doc/architecture/afenda-elite-skills-architecture.md) |
+| `guardian-css-audit` skill | — (atmosphere dormant; `components/` hard-deleted) | Hard-deleted | Wave 1 — [skills-architecture](../../../../doc/architecture/DOC-004-skills-architecture.md) |
 | `portal-frontend-scaffold` | `afenda-elite-frontend-scaffold` | Hard-deleted (renamed) | Wave 2 |
 | `portal-backend-modules` | `afenda-elite-backend-modules` | Hard-deleted (renamed) | Wave 2 |
 | `portal-api-contract` | `afenda-elite-api-contract` | Hard-deleted (renamed) | Wave 2 |

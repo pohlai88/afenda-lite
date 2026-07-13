@@ -4,7 +4,7 @@
 |-------|-------|
 | **Status** | Accepted |
 | **Type** | Pointer (not SSOT) |
-| **SSOT** | [doc/architecture/afenda-elite-skills-architecture.md](../../../doc/architecture/afenda-elite-skills-architecture.md) |
+| **SSOT** | [doc/architecture/DOC-004-skills-architecture.md](../../../doc/architecture/DOC-004-skills-architecture.md) |
 
 ```text
 LOAD: architecture skills register (SSOT above)
