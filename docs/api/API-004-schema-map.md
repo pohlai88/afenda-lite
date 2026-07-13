@@ -4,16 +4,21 @@
 |-------|-------|
 | ID | API-004 |
 | Category | API |
-| Version | 1.1.1 |
+| Version | 1.1.3 |
 | Status | Living |
+| Control State | Closed |
 | Owner | Backend |
-| Updated | 2026-07-13 |
+| Updated | 2026-07-14 |
+
+# 1. Purpose
 
 Schemas live under the owning module (`modules/*/schemas/`). Enables maintainers to find the Zod SSOT for each resource without forking duplicates.
 
 **Audience:** backend maintainers. **Action enabled:** import `parseSchema` + owning schema at the adapter boundary.
 
 Relocate from `lib/schemas/` is **complete** — do not recreate that drawer.
+
+# 2. Scope
 
 ## Module map
 
@@ -31,6 +36,8 @@ Relocate from `lib/schemas/` is **complete** — do not recreate that drawer.
 | `modules/declarations/schemas/declarations.ts` | Evidence registration | `registerEvidenceSchema` |
 | `modules/declarations/schemas/questions.ts` | Question drafts / CDP | `questionDraftSchema`, `cdpQuestionSchema`, `questionConfigSchema` |
 | `modules/fft/schemas/fft-schemas.ts` | Feed Farm Trade inputs | `tradeLocaleSchema`, `tradeEventIdSchema`, `tradeOrderIdSchema`, locale/event/order inputs |
+
+# 3. Contract
 
 ## Resource → schema (contract)
 
@@ -68,17 +75,23 @@ if (!parsed.success) {
 // parsed.data is trusted
 ```
 
-## Related
+# 4. References
 
 - [REST-001 Rest Resources](REST-001-rest-resources.md)
 - [API-003 API Types](API-003-api-types.md)
 - [API-001 API Boundaries](API-001-api-boundaries.md)
 - [OPEN-001 OpenAPI](OPEN-001-openapi.md) — generate from Zod; api-now YAML Living
 
-## Change Log
+# 5. Change Log
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.1.3 | 2026-07-14 | Added mandatory Control State header field (Closed); lifecycle Status unchanged. |
+| 1.1.2 | 2026-07-13 | Adopted the DOC-003 six-section controlled-document structure |
 | 1.1.1 | 2026-07-13 | OPEN-001 removed from Gaps (Living); Related pointer |
 | 1.1.0 | 2026-07-13 | Renumbered from API-005; action-result + platform-rbac; OPEN gap named |
 | 1.0.0 | 2026-07-13 | Initial schema map |
+
+# 6. Notes
+
+Named gaps do not authorize parallel schemas outside the owning module.

@@ -4,11 +4,11 @@
 |-------|-------|
 | ID | ARCH-007 |
 | Category | Architecture |
-| Version | 1.0.0 |
+| Version | 1.0.1 |
 | Status | Living |
+| Control State | Closed |
 | Owner | Backend |
-| Updated | 2026-07-13 |
-
+| Updated | 2026-07-14 |
 Contract-first ports (api-and-interface-design). Implementations are `modules/*/domain` exports. Driving adapters: RSC runners, Server Actions, Route Handlers.
 
 Ports **never** import `Request`, `next/headers`, or UI.

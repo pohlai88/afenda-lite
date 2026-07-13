@@ -60,7 +60,7 @@ See `/feed-farm-trade` and `docs/modules/feed-farm-trade/` before touching any o
 
 ## Pagination shape (contract)
 
-All list endpoints (when exposed over HTTP) must return:
+All list endpoints (when exposed over HTTP) must keep success under `{ data: T }` ([API-001](../../../docs/api/API-001-api-boundaries.md)). Prefer ARCH-029 list payloads:
 
 ```http
 GET /api/declarations?page=1&pageSize=20&sortBy=createdAt&sortOrder=desc
@@ -68,17 +68,19 @@ GET /api/declarations?page=1&pageSize=20&sortBy=createdAt&sortOrder=desc
 
 ```json
 {
-  "data": [],
-  "pagination": {
-    "page": 1,
-    "pageSize": 20,
-    "totalItems": 0,
-    "totalPages": 0
+  "data": {
+    "items": [],
+    "pagination": {
+      "page": 1,
+      "pageSize": 20,
+      "totalItems": 0,
+      "totalPages": 0
+    }
   }
 }
 ```
 
-A shared `PaginatedResult` Zod schema helper is a **named gap** — add when the first contract-only list is exposed over HTTP.
+Do **not** introduce new top-level `pagination` beside `data`. Shared list query rules freeze in [API-008](../../../docs/api/API-008-collection-query-contract.md) when Living. A shared `PaginatedResult` Zod helper is a **named gap** — add when the first contract-only list is exposed over HTTP ([API-004 Gaps](../../../docs/api/API-004-schema-map.md)).
 
 ---
 

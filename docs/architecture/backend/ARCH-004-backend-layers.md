@@ -4,13 +4,13 @@
 |-------|-------|
 | ID | ARCH-004 |
 | Category | Architecture |
-| Version | 1.0.0 |
+| Version | 1.0.1 |
 | Status | Living |
+| Control State | Closed |
 | Owner | Backend |
-| Updated | 2026-07-13 |
-
+| Updated | 2026-07-14 |
 **Framework version:** Next.js App Router Modular Monolith + Hexagonal (Ports & Adapters)  
-**System SSOT:** [ARCH-022](../turborepo/ARCH-022-system-overview.md)
+**System SSOT:** [ARCH-022](../system/ARCH-022-system-overview.md)
 
 ## What it means
 

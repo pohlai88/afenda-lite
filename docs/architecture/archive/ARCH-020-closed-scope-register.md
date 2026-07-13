@@ -4,10 +4,11 @@
 |-------|-------|
 | ID | ARCH-020 |
 | Category | Architecture |
-| Version | 2.0.0 |
+| Version | 2.0.1 |
 | Status | Superseded |
+| Control State | Closed |
 | Owner | Platform |
-| Updated | 2026-07-13 |
+| Updated | 2026-07-14 |
 | Location | `docs/architecture/archive/` |
 | Superseded by | [deprecation register](../../../.cursor/skills/agent-skills/skills/deprecation-and-migration/reference.md) — **Closed product phases** |
 | Superseded on | 2026-07-13 |
@@ -27,5 +28,6 @@ Historical body recoverable from git prior to this stub.
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 2.0.1 | 2026-07-14 | Added mandatory Control State header field (Closed); lifecycle Status unchanged. |
 | 2.0.0 | 2026-07-13 | Superseded; nested under `docs/architecture/archive/` |
 | 1.0.0 | 2026-07-13 | Living closed-scope register |

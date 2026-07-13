@@ -4,11 +4,11 @@
 |-------|-------|
 | ID | ARCH-019 |
 | Category | Architecture |
-| Version | 1.0.0 |
+| Version | 1.0.1 |
 | Status | Living |
+| Control State | Closed |
 | Owner | Frontend |
-| Updated | 2026-07-13 |
-
+| Updated | 2026-07-14 |
 Run before adding or refining an AdminCN-hosted screen.
 
 ## 1 — Name the surface
@@ -55,4 +55,4 @@ Run before adding or refining an AdminCN-hosted screen.
 - [ARCH-018](ARCH-018-admincn-customization.md)  
 - [ui-registry.md](../../../.cursor/skills/feed-farm-trade/ui-registry.md) · skill `/feed-farm-trade`  
 - [ARCH-015](../frontend/ARCH-015-admincn-alignment.md)  
-- `modules/platform/shell/access.ts` (when product tree is present — see [GUIDE-004](../../guides/GUIDE-004-engineering-drift-register.md))  
+- `modules/platform/shell/access.ts` (when product tree is present — see [ARCH-028](../system/ARCH-028-implementation-slices.md) § Target vs checkout drift)  

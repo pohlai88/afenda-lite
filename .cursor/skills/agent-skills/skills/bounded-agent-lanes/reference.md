@@ -8,7 +8,7 @@ Updatable defaults for this repository. The skill core in [SKILL.md](SKILL.md) s
 
 **Feed Farm Trade Ops — closed** (2026-07-10)
 
-Default agent mission is **not** Feed Farm Trade. See [deprecation register — Closed product phases](../deprecation-and-migration/reference.md) · [doc/architecture/DOC-004-skills-architecture.md](../../../../doc/architecture/DOC-004-skills-architecture.md).
+Default agent mission is **not** Feed Farm Trade. See [deprecation register — Closed product phases](../deprecation-and-migration/reference.md) · [using-afenda-elite-skills](../../../using-afenda-elite-skills/SKILL.md).
 
 ---
 

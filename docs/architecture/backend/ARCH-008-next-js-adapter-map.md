@@ -4,11 +4,11 @@
 |-------|-------|
 | ID | ARCH-008 |
 | Category | Architecture |
-| Version | 1.0.0 |
+| Version | 1.0.1 |
 | Status | Living |
+| Control State | Closed |
 | Owner | Backend |
-| Updated | 2026-07-13 |
-
+| Updated | 2026-07-14 |
 Maps Hexagonal roles to **App Router primitives only**. No second BFF framework.
 
 ## Role ↔ primitive
@@ -22,7 +22,7 @@ Maps Hexagonal roles to **App Router primitives only**. No second BFF framework.
 | Application port | Named exports in `modules/*/domain` | Shared by Action and/or Route Handler |
 | Driven adapter (DB) | SQL inside module domain | Node runtime |
 | Driven adapter (Auth) | `modules/identity/auth` + `/api/auth/[...path]` | Do not reimplement auth |
-| App edge session gate | `proxy.ts` (Next 16) | Not `middleware.ts`; bypass `next-action` |
+| App edge session gate | `apps/web/proxy.ts` (Next 16) | Not `middleware.ts`; bypass `next-action` |
 
 ## Decision tree (mandatory)
 

@@ -1,19 +1,49 @@
-# REST-001 Rest Resources
+# REST-001 REST Resources
 
 | Field | Value |
 |-------|-------|
 | ID | REST-001 |
 | Category | REST |
-| Version | 1.2.0 |
+| Version | 2.0.1 |
 | Status | Living |
+| Control State | Closed |
 | Owner | Backend |
-| Updated | 2026-07-13 |
+| Updated | 2026-07-14 |
 
-Human REST resource catalog. Plural nouns; HTTP methods as verbs; query params `camelCase`; one version. Enables engineers to classify api-now vs contract-only before scaffolding handlers.
+# 1. Purpose
+
+Human REST **standard and resource index**. Plural nouns; HTTP methods as verbs; query params `camelCase`; one version. Enables engineers to classify api-now vs contract-only before scaffolding handlers.
+
+**Target shape:** REST-001 stays standards + high-level index; domain catalogues move to child docs (Draft placeholders below). Until rows migrate, the full inventory in this file remains Living.
 
 **Audience:** backend maintainers. **Action enabled:** implement only api-now Route Handlers; keep contract-only on RSC + Server Actions until an external consumer exists.
 
-Aligns with Afenda elite API contract + interface-design verification (typed schemas via [API-004](API-004-schema-map.md), single error shape via [API-002](API-002-error-contract.md), validate at boundary via [API-001](API-001-api-boundaries.md)).
+Aligns with Afenda elite API contract + interface-design verification (typed schemas via [API-004](API-004-schema-map.md), single error shape via [API-002](API-002-error-contract.md), validate at boundary via [API-001](API-001-api-boundaries.md)). Parent: [ARCH-029](../architecture/system/ARCH-029-interface-api-architecture.md).
+
+# 2. Scope
+
+### Domain catalogue placeholders (Draft)
+
+```text
+REST-001 REST Standards and Resource Index (this file)
+├── REST-002 Identity and Organization Resources
+├── REST-003 Client Resources
+├── REST-004 Declaration Resources
+├── REST-005 Assignment and Submission Resources
+├── REST-006 Public Survey and Secure-Link Resources
+├── REST-007 Account Resources
+└── module-owned: FFT-REST-001 Feed Farm Trade Resource Index
+```
+
+| ID | Doc | Priority |
+|----|-----|----------|
+| REST-002 | [Identity and Organization](REST-002-identity-organization-resources.md) | High |
+| REST-003 | [Client Resources](REST-003-client-resources.md) | Medium |
+| REST-004 | [Declaration Resources](REST-004-declaration-resources.md) | High |
+| REST-005 | [Assignment and Submission](REST-005-assignment-submission-resources.md) | High |
+| REST-006 | [Public Survey and Secure-Link](REST-006-public-survey-secure-link-resources.md) | High |
+| REST-007 | [Account Resources](REST-007-account-resources.md) | Gate: portal-owned fields |
+| FFT-REST-001 | [FFT Resource Index](../modules/feed-farm-trade/FFT-REST-001-feed-farm-trade-resource-index.md) | Module-owned |
 
 **Columns**
 
@@ -21,6 +51,8 @@ Aligns with Afenda elite API contract + interface-design verification (typed sch
 - **contract-only** — canonical REST shapes; **web UI uses RSC + Server Actions today**
 
 Machine OpenAPI exports (when added) live under **OPEN-**, not here. Do **not** introduce `/api/v1` URL versioning — one-version rule in [API-001](API-001-api-boundaries.md).
+
+# 3. Contract
 
 ## HTTP method semantics
 
@@ -153,12 +185,14 @@ GET /api/declarations?page=1&pageSize=20&sortBy=createdAt&sortOrder=desc&status=
 
 ```json
 {
-  "data": [],
-  "pagination": {
-    "page": 1,
-    "pageSize": 20,
-    "totalItems": 0,
-    "totalPages": 0
+  "data": {
+    "items": [],
+    "pagination": {
+      "page": 1,
+      "pageSize": 20,
+      "totalItems": 0,
+      "totalPages": 0
+    }
   }
 }
 ```
@@ -200,6 +234,8 @@ Web UI uses `app/actions/fft.ts` on locale-free `/fft/*` (AdminCN). HTTP below i
 | Booleans | `is` / `has` / `can` prefixes in JSON |
 | Enums | `UPPER_SNAKE` in JSON wire format |
 
+# 4. References
+
 ## Deferred (named — do not invent here)
 
 | Topic | Notes |
@@ -215,12 +251,21 @@ Web UI uses `app/actions/fft.ts` on locale-free `/fft/*` (AdminCN). HTTP below i
 - [API-002 Error Contract](API-002-error-contract.md)
 - [API-003 API Types](API-003-api-types.md)
 - [API-004 Schema Map](API-004-schema-map.md)
+- [ARCH-029](../architecture/system/ARCH-029-interface-api-architecture.md)
+- [FFT-REST-001](../modules/feed-farm-trade/FFT-REST-001-feed-farm-trade-resource-index.md)
 - [../architecture/frontend/ARCH-013-bff-and-data-flow.md](../architecture/frontend/ARCH-013-bff-and-data-flow.md)
 
-## Change Log
+# 5. Change Log
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 2.0.1 | 2026-07-14 | Added mandatory Control State header field (Closed); lifecycle Status unchanged. |
+| 2.0.0 | 2026-07-13 | Breaking: aligned list responses to `{ data: { items, pagination } }`; corrected title and adopted six-section structure |
+| 1.2.1 | 2026-07-13 | Documented target split to REST-002…007 + FFT-REST-001 placeholders |
 | 1.2.0 | 2026-07-13 | Method semantics, success statuses, auth columns, filters, deferred gaps |
 | 1.1.0 | 2026-07-13 | Renamed from API-002; wire shapes; org-users; FFT paths; cache posture |
 | 1.0.0 | 2026-07-13 | Initial resource catalog |
+
+# 6. Notes
+
+Draft child catalogues do not authorize implementation until promoted through the locked roadmap.

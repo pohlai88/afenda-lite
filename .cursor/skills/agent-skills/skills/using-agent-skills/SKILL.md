@@ -5,17 +5,18 @@ description: Discovers and invokes agent skills. Use when starting a session or 
 
 # Using Agent Skills
 
-## Afenda Elite (this repo — read first)
+## Afenda family (this repo — read first)
 
 In **this repository**, **`/using-afenda-elite-skills` is the only product entry.** Then use phase skills below as a **method library** (TDD, review, incremental implement, …) — do not treat this file as a parallel product router.
 
+**Afenda-Lite** = beta checkout here. **Afenda-Elite** = battle-proven edition. Both share [DOC-001](../../../../../docs/_control/DOC-001-documentation-control-standard.md) documentation control and similar infra aliasing.
+
 Elite overlay covers:
 
-- Farm routing (glossary `term.*`, documentation types, monorepo, Fumadocs Day-1 mirror)
-- Skill catalog + cleanup waves — `doc/architecture/DOC-004-skills-architecture.md`
-- Documentation create/update/deprecate — `afenda-elite-documentation` (DOC-001 · DOC-002)
+- Farm routing (documentation control under `docs/_control`, monorepo, Fumadocs Day-1 mirror when present)
+- Documentation create/update/retire — `afenda-elite-doc-control` ([DOC-001](../../../../../docs/_control/DOC-001-documentation-control-standard.md) · [DOC-002](../../../../../docs/_control/DOC-002-documentation-register.md) · [DOC-003](../../../../../docs/_control/DOC-003-controlled-document-template.md))
 - Housekeeping → Slice D refactor handoff
-- Non-goals: Lite-as-ceiling, hand glossary twin, Fumadocs-as-authority, fork-all-vendor-to-elite
+- Non-goals: recreating `doc/`, divergent Lite/Elite catalogue rules, Fumadocs-as-authority, fork-all-vendor-to-elite
 
 Overlay: `.cursor/skills/using-afenda-elite-skills/`
 

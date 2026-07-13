@@ -4,14 +4,19 @@
 |-------|-------|
 | ID | API-002 |
 | Category | API |
-| Version | 1.2.0 |
+| Version | 1.2.2 |
 | Status | Living |
+| Control State | Closed |
 | Owner | Backend |
-| Updated | 2026-07-13 |
+| Updated | 2026-07-14 |
+
+# 1. Purpose
 
 One error vocabulary across adapters. Enables engineers to return predictable failures without mixing REST JSON, Action results, and RSC navigation helpers.
 
-**Audience:** backend and frontend maintainers. **Action enabled:** pick the correct error surface for the adapter.
+**Parent architecture:** [ARCH-029](../architecture/system/ARCH-029-interface-api-architecture.md). **Audience:** backend and frontend maintainers. **Action enabled:** pick the correct error surface for the adapter.
+
+# 2. Scope
 
 ## Three surfaces (do not mix)
 
@@ -24,6 +29,8 @@ One error vocabulary across adapters. Enables engineers to return predictable fa
 Never expose `process.env`, connection strings, stack traces, or SQL in `message`.
 
 Do not catch-and-swallow `redirect`, `notFound`, `forbidden`, or `unauthorized` inside Server Actions — call them outside `try/catch` or rethrow (`unstable_rethrow`).
+
+# 3. Contract
 
 ## Wire shape (Route Handlers)
 
@@ -75,16 +82,22 @@ type ActionResult<T> =
 
 Map `code` to the same set as HTTP. Return `ActionResult` for **expected** failures (including `UNAUTHORIZED` / `FORBIDDEN` / `VALIDATION_ERROR`). Throw only for truly unexpected bugs (let `error.tsx` handle).
 
-## Related
+# 4. References
 
 - [API-001 API Boundaries](API-001-api-boundaries.md)
 - [API-003 API Types](API-003-api-types.md)
 - [REST-001 Rest Resources](REST-001-rest-resources.md)
 
-## Change Log
+# 5. Change Log
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.2.2 | 2026-07-14 | Added mandatory Control State header field (Closed); lifecycle Status unchanged. |
+| 1.2.1 | 2026-07-13 | Adopted the DOC-003 six-section controlled-document structure |
 | 1.2.0 | 2026-07-13 | Clarify errors are bare (not under `{ data }`); point success to API-001 |
 | 1.1.0 | 2026-07-13 | Renumbered from API-003; three surfaces; navigation-API catch ban |
 | 1.0.0 | 2026-07-13 | Initial error contract |
+
+# 6. Notes
+
+This contract governs failure bodies; success bodies remain governed by API-001.

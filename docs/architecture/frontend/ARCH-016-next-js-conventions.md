@@ -4,11 +4,11 @@
 |-------|-------|
 | ID | ARCH-016 |
 | Category | Architecture |
-| Version | 1.0.0 |
+| Version | 1.0.1 |
 | Status | Living |
+| Control State | Closed |
 | Owner | Frontend |
-| Updated | 2026-07-13 |
-
+| Updated | 2026-07-14 |
 Authority: Next.js App Router best practices (file conventions, RSC, async APIs, data patterns, route handlers, errors, suspense, image/font).
 
 ## Special files
@@ -62,7 +62,7 @@ Also await `cookies()` / `headers()` when used. Do not treat them as sync.
 
 ## Proxy (Next.js 16)
 
-- File: root [`proxy.ts`](../../../proxy.ts) — **not** `middleware.ts`  
+- File: `apps/web/proxy.ts` — **not** `middleware.ts`  
 - Session gate for matched paths; public prefixes stay unmatched  
 - Bypass: `next-action` header, `?embed=1`, client login, preview-unavailable  
 - Server Actions still call `require*Session` inside the action  

@@ -1,6 +1,6 @@
 # Afenda-Lite deprecation register (compulsory)
 
-**Product:** **Afenda-Lite** (beta of Afenda ERP)  
+**Product:** **Afenda-Lite** (beta edition of the Afenda family). **Afenda-Elite** is the battle-proven edition. Both share [DOC-001](../../../../docs/_control/DOC-001-documentation-control-standard.md) documentation control and similar infra aliasing.  
 **Authority:** [SKILL.md](SKILL.md) · `/using-afenda-elite-skills` · FFT locks/roadmap under [`docs/modules/feed-farm-trade/`](../../../../docs/modules/feed-farm-trade/) (FFT-MOD-001 · FFT-MOD-010)
 
 Status meanings:
@@ -19,7 +19,7 @@ Status meanings:
 | Retired | Replacement | Status | Notes |
 |---------|-------------|--------|-------|
 | **Client Declaration Portal** | **Afenda-Lite** | Retired | 2026-07-12 |
-| Framing the product as “a portal” / “the portal” | Multi-module **Afenda ERP** beta (SaaS) | Rejected framing | Modules ≠ portals |
+| Framing the product as “a portal” / “the portal” | Multi-module **Afenda** SaaS (Lite beta · Elite battle-proven) | Rejected framing | Modules ≠ portals |
 | npm `client-declaration-portal` | `afenda-lite` | Retired | `package.json` |
 | GitHub `pohlai88/iam-check` | `pohlai88/afenda-lite` | Retired | Renamed 2026-07-12 |
 | Vercel project `iam-check` | `afenda-lite` | Retired | Renamed 2026-07-12 |
@@ -83,28 +83,25 @@ Declarations is not “deprecated.” Treating FFT and Declarations as two platf
 
 | Retired | Replacement | Status | Notes |
 |---------|-------------|--------|-------|
-| Teaching ARCH-003 multi-tenant-ecosystem as Living SSOT | [ARCH-023](../../../../docs/architecture/turborepo/ARCH-023-multi-tenancy.md) | Superseded | Compulsory 2026-07-13; archived stub `docs/architecture/archive/ARCH-003-*` |
+| Teaching `docs/architecture/turborepo/` as the Target system docs home | [`docs/architecture/system/`](../../../../docs/architecture/system/) | Renamed | Compulsory 2026-07-13; folder is system architecture, not a Turborepo howto |
 | Teaching ARCH-020 closed-scope-register as Living SSOT | [deprecation register — Closed product phases](reference.md) | Superseded | Compulsory 2026-07-13; archived stub `docs/architecture/archive/ARCH-020-*` |
-| Teaching ARCH-021 repository-migration-map as layout SSOT | [ARCH-022](../../../../docs/architecture/turborepo/ARCH-022-system-overview.md) · [ARCH-029](../../../../docs/architecture/frontend/ARCH-029-frontend-folder-map.md) | Superseded | Compulsory 2026-07-13; archived stub `docs/architecture/archive/ARCH-021-*`; campaign closed |
-| Teaching `docs/backend/` as a top-level docs home | [`docs/architecture/backend/`](../../../../docs/architecture/backend/) · ADRs merged to ARCH-022 / ARCH-011 | Moved | Compulsory 2026-07-13; `docs/adr/backend/` deleted |
-| Teaching ADR-001 / ADR-002 files under `docs/adr/backend/` | [ARCH-022](../../../../docs/architecture/turborepo/ARCH-022-system-overview.md) · [ARCH-011](../../../../docs/architecture/ARCH-011-platform-tenancy-rbac.md) | Hard-deleted | Compulsory 2026-07-13; stubs removed after merge |
-| Teaching `docs/frontend/` as a top-level docs home | [`docs/architecture/frontend/`](../../../../docs/architecture/frontend/) · [`docs/modules/feed-farm-trade/`](../../../../docs/modules/feed-farm-trade/) | Moved | Compulsory 2026-07-13; ARCH under architecture; FFT FE ADRs merged into spine |
-| Teaching ADR-003…005 under `docs/adr/frontend/` | [FFT-MOD-001](../../../../docs/modules/feed-farm-trade/FFT-MOD-001-module-architecture.md) · [FFT-MOD-010](../../../../docs/modules/feed-farm-trade/FFT-MOD-010-module-docs-index.md) | Hard-deleted | Compulsory 2026-07-13; `docs/adr/frontend/` removed after merge |
-| Teaching GUIDE-007…014 (phase task guides) | [GUIDE-006](../../../../docs/guides/GUIDE-006-guides-index.md) replacements table · FFT-MOD-010 · ARCH-011/023/026 | Hard-deleted | Compulsory 2026-07-13; do not recreate |
+| Teaching ARCH-021 repository-migration-map as layout SSOT | [ARCH-022](../../../../docs/architecture/system/ARCH-022-system-overview.md) · [ARCH-017](../../../../docs/architecture/frontend/ARCH-017-frontend-folder-map.md) | Superseded | Compulsory 2026-07-13; archived stub `docs/architecture/archive/ARCH-021-*`; campaign closed |
+| Teaching `docs/backend/` as a top-level docs home | [`docs/architecture/backend/`](../../../../docs/architecture/backend/) · [ARCH-022](../../../../docs/architecture/system/ARCH-022-system-overview.md) · [ARCH-023](../../../../docs/architecture/system/ARCH-023-multi-tenancy.md) | Moved | Compulsory 2026-07-13; `docs/adr/` deleted |
+| Teaching any file under `docs/adr/` (backend/frontend/turborepo) | Living/Target ARCH under `docs/architecture/` · FFT spine under `docs/modules/feed-farm-trade/` | Hard-deleted | Compulsory 2026-07-13; **no ADR home** |
+| Teaching `docs/frontend/` as a top-level docs home | [`docs/architecture/frontend/`](../../../../docs/architecture/frontend/) · [`docs/modules/feed-farm-trade/`](../../../../docs/modules/feed-farm-trade/) | Moved | Compulsory 2026-07-13 |
+| Teaching GUIDE-007…014 (phase task guides) | [docs/api/guides/README.md](../../../../docs/api/guides/README.md) · FFT-MOD-010 · ARCH-023/026 | Hard-deleted | Compulsory 2026-07-13; do not recreate |
+| Teaching GUIDE-001…004 / GUIDE-006 Living engineering guides | [docs/README.md](../../../../docs/README.md) · DOC-001/003 · AGENTS.md · [ARCH-028](../../../../docs/architecture/system/ARCH-028-implementation-slices.md) drift · [docs/api/guides](../../../../docs/api/guides/README.md) | Retired | Compulsory 2026-07-14; archived under `docs/guides/archive/`; IDs Retired in DOC-002; do not restore to Living |
 | Teaching top-level `docs/fft/` as FFT docs home | [`docs/modules/feed-farm-trade/`](../../../../docs/modules/feed-farm-trade/) | Moved | Compulsory 2026-07-13; 10-MOD spine FFT-MOD-001…010 |
 | Recreating FFT depth trees (`adr/` `ops/` `spec/` `architecture/` `integrations/` `archive/`) under `docs/modules/feed-farm-trade/` | Spine-only [FFT-MOD-010](../../../../docs/modules/feed-farm-trade/FFT-MOD-010-module-docs-index.md) | Hard-deleted | Compulsory 2026-07-13; do not `git checkout` restore; gates live in FFT-MOD-008 |
 | Teaching FFT `MOD-001` / `MOD-003` as Living entry | [FFT-MOD-008](../../../../docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md) · [FFT-MOD-010](../../../../docs/modules/feed-farm-trade/FFT-MOD-010-module-docs-index.md) | Superseded | Compulsory 2026-07-13; stubs remain for path safety |
-| Teaching `docs/engineering/` as a docs home | [`docs/guides/`](../../../../docs/guides/) (GUIDE-001…004) | Moved | Compulsory 2026-07-13; do not recreate `engineering/` |
-| Teaching ADR-001 Modular Monolith + Hexagonal as a standalone Living ADR | [ARCH-022](../../../../docs/architecture/turborepo/ARCH-022-system-overview.md) § System framework | Hard-deleted | Compulsory 2026-07-13; file removed after merge |
-| Teaching ADR-002 platform tenancy + RBAC as a standalone Living ADR | [ARCH-011](../../../../docs/architecture/ARCH-011-platform-tenancy-rbac.md) | Hard-deleted | Compulsory 2026-07-13; file removed after merge; folder map = ARCH-029 |
-| Teaching ADR-012 shared-schema tenancy as a standalone Living ADR | [ARCH-023](../../../../docs/architecture/turborepo/ARCH-023-multi-tenancy.md) § Shared-schema | Hard-deleted | Compulsory 2026-07-13; stub removed with `docs/adr/` |
-| Teaching ADR-010…014 under `docs/adr/turborepo/` (or tech-stack ADR copies) | [ARCH-022](../../../../docs/architecture/turborepo/ARCH-022-system-overview.md)…[ARCH-027](../../../../docs/architecture/turborepo/ARCH-027-env-model.md) | Hard-deleted | Compulsory 2026-07-13; entire `docs/adr/` removed after merge |
-| Soft SQL `(organization_id IS NULL OR = $org)` dual-mode | Hard `organization_id = $org` + migration `027` | Hard-deleted | CI `check:tenancy-residue`; ADR-002; ARCH-023 Decision lock **R1** |
+| Teaching `docs/engineering/` as a docs home | [`docs/guides/`](../../../../docs/guides/README.md) (DOC-001 Guide home; engineering GUIDE-001…006 Retired) | Moved | Compulsory 2026-07-13; do not recreate `engineering/` |
+| Teaching a separate ARCH-011 IAM file (or any ADR as Living SSOT) | [ARCH-023](../../../../docs/architecture/system/ARCH-023-multi-tenancy.md) (sole tenancy + RBAC) · [ARCH-022](../../../../docs/architecture/system/ARCH-022-system-overview.md) | Hard-deleted | Compulsory 2026-07-13; no ADR home; no dual IAM ARCH |
+| Soft SQL `(organization_id IS NULL OR = $org)` dual-mode | Hard `organization_id = $org` + migration `027` | Hard-deleted | CI `check:tenancy-residue`; ARCH-023 Decision lock **R1** |
 | `promoteLegacyFftEntry` / login FFT promote | Platform `fft.access` + write-time ensure | Hard-deleted | |
 | Arbitrary `organizations[0]` / first-org DB stamp | Active → slug → sole membership; ops `--organization-id` | Retired | M1 + M4; ARCH-023 Decision lock **R2**; e2e D8 closed |
-| Default org slug/name `client-declaration-portal` / `iam-check` | `afenda-lite` (or `PORTAL_ORG_*`) | Retired | Product identity ADR-001; Auth org renamed 2026-07-12; operator `afenda@admin.com` |
+| Default org slug/name `client-declaration-portal` / `iam-check` | `afenda-lite` (or `PORTAL_ORG_*`) | Retired | Product identity in docs/README + deprecation register; Auth org renamed 2026-07-12; operator `afenda@admin.com` |
 | Teaching “multi-org ready **not** claimed” / org-switcher as v1 non-goal | M1–M4 shipped claim in ecosystem SSOT | Retired framing | Do not re-teach soft-harden as current |
-| Neon RLS / Data API as default tenant isolation on BFF | App predicates + hard SQL | Rejected framing | Ecosystem §0 **R3**; reopen only with Data API ADR |
+| Neon RLS / Data API as default tenant isolation on BFF | App predicates + hard SQL | Rejected framing | ARCH-023 **R3**; reopen only with explicit user + superseding ARCH |
 | Schema-per-tenant tenancy model | Shared schema + `organization_id` | Rejected framing | Ecosystem §0 **R4** |
 | Project-per-tenant framed as efficiency / default path | Shared schema + one Neon project | Rejected framing (D5 non-goal) | Ecosystem §0 **R5**; Neon prefers it for isolation — we do not for this product |
 | Raising CU / inventing `FFT_ERP_*` placeholders to green env | Fix pooler / nulls / syncOptional policy | Rejected framing | Ecosystem §0 **R7** |
@@ -114,20 +111,23 @@ Declarations is not “deprecated.” Treating FFT and Declarations as two platf
 
 | Retired | Replacement | Status | Notes |
 |---------|-------------|--------|-------|
-| `guardian-css-audit` skill | — (atmosphere dormant; `components/` hard-deleted) | Hard-deleted | Wave 1 — [skills-architecture](../../../../doc/architecture/DOC-004-skills-architecture.md) |
+| `guardian-css-audit` skill | — (atmosphere dormant; `components/` hard-deleted) | Hard-deleted | Wave 1 — [using-afenda-elite-skills](../../../using-afenda-elite-skills/SKILL.md) |
 | `portal-frontend-scaffold` | `afenda-elite-frontend-scaffold` | Hard-deleted (renamed) | Wave 2 |
 | `portal-backend-modules` | `afenda-elite-backend-modules` | Hard-deleted (renamed) | Wave 2 |
 | `portal-api-contract` | `afenda-elite-api-contract` | Hard-deleted (renamed) | Wave 2 |
+| `afenda-elite-documentation` | `afenda-elite-doc-control` | Hard-deleted (renamed) | Wave 3 |
+| `afenda-elite-docs-consistency` | `afenda-elite-doc-integrity` | Hard-deleted (renamed) | Wave 3 |
+| npm `check\|test\|plan\|fix:docs-consistency` | `*:doc-integrity` | Retired | Wave 3 follow-up — internal scripts renamed `docs-consistency-*.mjs` → `doc-integrity-*.mjs` |
 | Invoking vendor/`using-agent-skills` as **product** entry in this repo | `/using-afenda-elite-skills` first | Retired framing | Method library stays subordinate |
 | Forking every vendor phase skill to `afenda-elite-*` | Method library under Elite entry | Rejected framing | Complexity matrix |
-| Afenda-Lite as Elite program ceiling | `term.afenda-elite` + archive Lite | Retired framing | Glossary · Elite ADRs when Accepted |
+| Afenda-Lite as Elite program ceiling / divergent `doc/` SSOT | Shared DOC-001 control · Lite = beta · Elite = battle-proven | Retired framing | Same structure; maturity differs |
 
 ---
 
 ## How agents must behave
 
 1. **Refuse** to remount or re-teach anything **Retired** / **Hard-deleted** / **Rejected framing**.
-2. **Say Afenda-Lite** in live SSOT (README, AGENTS, ADRs, new docs) — never “Client Declaration Portal” as current. **Elite program docs** cite `term.afenda-elite` per glossary.
+2. **Say Afenda-Lite** in this checkout’s live SSOT (README, AGENTS, new docs) — never “Client Declaration Portal” as current. Treat **Afenda-Elite** as the battle-proven edition that shares DOC-001 documentation control and similar infra — do not invent a parallel `doc/` SSOT.
 3. **On touch**, strip live docs/code that present retired names as current (archive footnotes OK).
 4. **Redirect-only** paths: keep thin shims; never attach product features.
 5. **New deprecations:** add a row here in the same PR that retires them; link ADR.

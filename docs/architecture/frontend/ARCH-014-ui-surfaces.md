@@ -4,11 +4,11 @@
 |-------|-------|
 | ID | ARCH-014 |
 | Category | Architecture |
-| Version | 1.0.0 |
+| Version | 1.0.1 |
 | Status | Living |
+| Control State | Closed |
 | Owner | Frontend |
-| Updated | 2026-07-13 |
-
+| Updated | 2026-07-14 |
 Each product surface: journey phase, route, rebuild owner module, data adapter.
 
 | Surface ID | Phase | Route | Owner (rebuild) | Read | Mutate |

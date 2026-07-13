@@ -17,7 +17,7 @@ Content here is not a source of truth until it is promoted into an authoritative
 
 ## Latest audit
 
-- [AUDIT-2026-07-13-documentation.md](AUDIT-2026-07-13-documentation.md) — docs sync + duplication violations (scratch only)
+- [AUDIT-2026-07-13-documentation.md](AUDIT-2026-07-13-documentation.md) — hard sync: ARCH-023 sole SSOT, no ADRs, Target `apps/web/proxy.ts`
 - Move durable material out of scratch before implementation depends on it.
 - Delete stale scratch documents instead of preserving them indefinitely.
 

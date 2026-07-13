@@ -75,7 +75,7 @@ Compulsory still requires a working replacement (or an Accepted decision that th
 
 ## Afenda-Lite rules (read [reference.md](reference.md))
 
-1. **Product name is Afenda-Lite** (beta of Afenda ERP). **Client Declaration Portal** and “this app is a portal” framing are retired.
+1. **Product name is Afenda-Lite** (beta edition). **Afenda-Elite** is battle-proven; both share DOC-001 docs control. **Client Declaration Portal** and "this app is a portal" framing are retired.
 2. **One SaaS, multiple modules** (`declarations` | `fft` | …). Platform/infra updates are shared — never deprecate “into” a second stack.
 3. **Retired identities stay retired:** Hot Sales, `/trade` product URLs, `HOT_SALES_*`, `FftShell`, live `/fft/[locale]`, Client Declaration Portal.
 4. **Redirects are migration aids**, not permission to rebuild the old tree.

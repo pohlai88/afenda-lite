@@ -4,11 +4,11 @@
 |-------|-------|
 | ID | ARCH-013 |
 | Category | Architecture |
-| Version | 1.0.0 |
+| Version | 1.0.1 |
 | Status | Living |
+| Control State | Closed |
 | Owner | Frontend |
-| Updated | 2026-07-13 |
-
+| Updated | 2026-07-14 |
 ## Next.js data-pattern decision tree (mandatory)
 
 **SSOT** for this tree — every other doc links here; do not paste a second copy.

@@ -324,6 +324,44 @@ const document = generator.generateDocument({
   ],
 });
 
+const operationMetadata = {
+  "/api/health/liveness": {
+    get: { operationId: "getHealthLiveness", status: "api-now" },
+  },
+  "/api/health/readiness": {
+    get: { operationId: "getHealthReadiness", status: "api-now" },
+  },
+  "/api/client/declaration-draft": {
+    get: { operationId: "getClientDeclarationDraft", status: "api-now" },
+    put: { operationId: "putClientDeclarationDraft", status: "api-now" },
+    patch: { operationId: "patchClientDeclarationDraft", status: "api-now" },
+    post: { operationId: "postClientDeclarationDraftKeepalive", status: "api-now" },
+  },
+} as const;
+
+for (const [route, methods] of Object.entries(operationMetadata)) {
+  for (const [method, metadata] of Object.entries(methods)) {
+    const operation = document.paths?.[route]?.[
+      method as keyof (typeof document.paths)[string]
+    ];
+    if (!operation || typeof operation !== "object") {
+      throw new Error(`Missing generated operation ${method.toUpperCase()} ${route}`);
+    }
+    Object.assign(operation, {
+      operationId: metadata.operationId,
+      "x-afenda-status": metadata.status,
+    });
+  }
+}
+
+Object.assign(document, {
+  "x-afenda-document": {
+    id: "OPEN-001",
+    version: "1.1.5",
+    generatedAt: "2026-07-13",
+  },
+});
+
 const header = [
   "# GENERATED — do not hand-edit.",
   "# Source: scripts/generate-openapi.mts",

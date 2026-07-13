@@ -4,11 +4,11 @@
 |-------|-------|
 | ID | ARCH-002 |
 | Category | Architecture |
-| Version | 1.0.0 |
+| Version | 1.0.1 |
 | Status | Living |
+| Control State | Closed |
 | Owner | Frontend |
-| Updated | 2026-07-13 |
-
+| Updated | 2026-07-14 |
 **Audience:** engineers rebuilding product UI after the frontend wipe.  
 **Runtime:** Node.js (default). Edge only as a documented exception.
 
@@ -17,7 +17,7 @@
 ```mermaid
 flowchart TD
   browser[Browser]
-  proxy[proxy.ts Neon session]
+  proxy[apps/web/proxy.ts Neon session]
   page[app/**/page.tsx thin RSC]
   entry[features/auth/entry or organization-admin runners]
   feature[features/* or components-V2 portal-views]
@@ -49,7 +49,7 @@ flowchart TD
 | Mutations | Client forms/buttons call **Server Actions** (`'use server'`) |
 | HTTP adapters | `app/api/**` only for health, Neon Auth proxy, draft autosave, external clients |
 | Validation | Zod at adapter edge (`modules/*/schemas`); domain trusts typed input |
-| Session | `require*Session` in actions/layouts; `proxy.ts` gates document navigations |
+| Session | `require*Session` in actions/layouts; `apps/web/proxy.ts` gates document navigations |
 | UI homes | Auth/landing → `features/`; operator shell screens → `components-V2/.../portal-views/` |
 | Do not recreate | Root `components/` was hard-deleted — do not restore as a dump; place new UI in `features/` or `components-V2/` |
 

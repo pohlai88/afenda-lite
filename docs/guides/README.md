@@ -1,15 +1,16 @@
 # guides
 
-Durable internal guides: coding / docs workflow (GUIDE-001…004) + index (GUIDE-006).
+Navigation only.
 
-**Index:** [GUIDE-006-guides-index.md](./GUIDE-006-guides-index.md)
+Engineering guides **GUIDE-001…004** and **GUIDE-006** are **Retired** and live under [`archive/`](archive/) (not Living SSOT).
 
-| Doc | Purpose |
-|-----|---------|
-| [GUIDE-001](GUIDE-001-engineering-docs-entry.md) | Engineering docs entry |
-| [GUIDE-002](GUIDE-002-coding-engineering-guide.md) | Coding engineering guide |
-| [GUIDE-003](GUIDE-003-engineering-documentation-workflow.md) | Documentation workflow |
-| [GUIDE-004](GUIDE-004-engineering-drift-register.md) | Drift register |
-| [GUIDE-006](GUIDE-006-guides-index.md) | Guides folder index |
+| Need | Authority |
+|------|-----------|
+| Docs control / workflow | [DOC-001](../_control/DOC-001-documentation-control-standard.md) · [DOC-003](../_control/DOC-003-controlled-document-template.md) · [afenda-elite-doc-control](../../.cursor/skills/afenda-elite-doc-control/SKILL.md) |
+| Product / coding invariants | [AGENTS.md](../../AGENTS.md) · Living/Target ARCH |
+| Target vs checkout drift | [ARCH-028](../architecture/system/ARCH-028-implementation-slices.md) § Target vs checkout drift |
+| API implementation guides | [`docs/api/guides/`](../api/guides/README.md) (GUIDE-007…015) |
+| Module Enterprise Readiness (FFT) | [MOD-002](../modules/MOD-002-modules-index.md) · [FFT-MOD-009](../modules/feed-farm-trade/FFT-MOD-009-verification.md) · [FFT-MOD-010](../modules/feed-farm-trade/FFT-MOD-010-module-docs-index.md) |
+| Archived engineering guides | [`archive/`](archive/) (includes Retired GUIDE-016) |
 
-Phase task guides GUIDE-007…014 were **removed**. FFT: [FFT-MOD-010](../modules/feed-farm-trade/FFT-MOD-010-module-docs-index.md). Tenancy: [ARCH-011](../architecture/ARCH-011-platform-tenancy-rbac.md) · [ARCH-023](../architecture/turborepo/ARCH-023-multi-tenancy.md). Auth surfaces: [ARCH-026](../architecture/turborepo/ARCH-026-auth-session.md).
+`docs/guides/` remains the DOC-001 home for **non-API** internal guides when explicitly approved.

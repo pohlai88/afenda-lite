@@ -4,14 +4,19 @@
 |-------|-------|
 | ID | API-003 |
 | Category | API |
-| Version | 1.1.0 |
+| Version | 2.0.1 |
 | Status | Living |
+| Control State | Closed |
 | Owner | Backend |
-| Updated | 2026-07-13 |
+| Updated | 2026-07-14 |
+
+# 1. Purpose
 
 Zod is the source of truth; TypeScript types are `z.infer`. Enables maintainers to keep Input/Output and branded IDs consistent across Actions and REST.
 
 **Audience:** backend maintainers. **Action enabled:** brand IDs at boundaries; extend additively.
+
+# 2. Scope
 
 ## Branded IDs
 
@@ -44,6 +49,8 @@ function asDeclarationId(id: string): DeclarationId {
 Do not pass raw `string` across domain boundaries when a brand exists. Dynamic App Router `params` are `Promise<{ … }>` — await, then brand.
 
 **Forbidden:** `/dashboard/[id]`, mixing brands as raw `string`, param drift (`id` vs `declarationId` vs `surveyId`).
+
+# 3. Contract
 
 ## Input / Output separation
 
@@ -78,12 +85,14 @@ Wire enums as `UPPER_SNAKE` when flattened to JSON.
 
 ```typescript
 type PaginatedResult<T> = {
-  data: T[]
-  pagination: {
-    page: number
-    pageSize: number
-    totalItems: number
-    totalPages: number
+  data: {
+    items: T[]
+    pagination: {
+      page: number
+      pageSize: number
+      totalItems: number
+      totalPages: number
+    }
   }
 }
 ```
@@ -105,15 +114,21 @@ type ActionResult<T> =
 | Brand IDs at the boundary | Use `any` / untyped `Record<string, unknown>` in adapters |
 | Keep Date as ISO `string` on the wire | Pass `Date` across RSC → client without serialization |
 
-## Related
+# 4. References
 
 - [API-004 Schema Map](API-004-schema-map.md)
 - [API-002 Error Contract](API-002-error-contract.md)
 - [REST-001 Rest Resources](REST-001-rest-resources.md)
 
-## Change Log
+# 5. Change Log
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 2.0.1 | 2026-07-14 | Added mandatory Control State header field (Closed); lifecycle Status unchanged. |
+| 2.0.0 | 2026-07-13 | Breaking: aligned paginated HTTP results to `{ data: { items, pagination } }`; adopted six-section structure |
 | 1.1.0 | 2026-07-13 | Renumbered from API-004; full brand table; async params note |
 | 1.0.0 | 2026-07-13 | Initial types |
+
+# 6. Notes
+
+The nested list value preserves API-001's single top-level `{ data: T }` envelope.

@@ -1,0 +1,71 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": ["version", "subjects", "cross_subject_sets", "locks"],
+  "additionalProperties": false,
+  "properties": {
+    "version": { "const": 2 },
+    "subjects": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "object",
+        "required": ["aspects"],
+        "additionalProperties": false,
+        "properties": {
+          "aspects": {
+            "type": "object",
+            "minProperties": 1,
+            "additionalProperties": {
+              "type": "object",
+              "required": ["precedence"],
+              "additionalProperties": false,
+              "properties": {
+                "precedence": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": { "type": "string", "minLength": 1 }
+                },
+                "lifecycle_rule": { "type": "string", "minLength": 1 }
+              }
+            }
+          }
+        }
+      }
+    },
+    "cross_subject_sets": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["subjects", "evidence"],
+        "additionalProperties": false,
+        "properties": {
+          "subjects": {
+            "type": "array",
+            "minItems": 2,
+            "items": { "type": "string" }
+          },
+          "evidence": {
+            "type": "array",
+            "minItems": 2,
+            "items": { "type": "string" }
+          }
+        }
+      }
+    },
+    "locks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "locked_by", "locked_on", "scope"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "pattern": "^[A-Z]+(?:-[A-Z]+)*-[0-9]{3}$" },
+          "locked_by": { "type": "string", "minLength": 1 },
+          "locked_on": { "type": "string", "format": "date" },
+          "scope": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  }
+}

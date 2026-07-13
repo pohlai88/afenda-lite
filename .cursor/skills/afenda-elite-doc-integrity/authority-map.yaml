@@ -1,0 +1,124 @@
+# Aspect-aware authority map for afenda-elite-doc-integrity.
+# Resolve both subject and aspect. Never infer a winner from subject alone.
+version: 2
+
+subjects:
+  documentation-governance:
+    aspects:
+      lifecycle-and-folder-policy:
+        precedence: [DOC-001, category-standard, DOC-003, DOC-002]
+        lifecycle_rule: "A catalogue note cannot silently override DOC-001; conflicting homes are SSOT-AMBIGUOUS until an approved category exception resolves them. Controlled documents are closed outside an explicitly reopened bounded task; reopening does not override named locks."
+      controlled-structure:
+        precedence: [DOC-001, DOC-003, individual-document]
+        lifecycle_rule: "Legacy structure is Review needed when material-revision timing cannot be proven."
+      catalogue-metadata:
+        precedence: [individual-document, DOC-002]
+        lifecycle_rule: "Compare all seven DOC-002 fields; do not guess which side to rewrite."
+
+  interface-architecture:
+    aspects:
+      rationale-and-boundaries:
+        precedence: [ARCH-029, API-001, REST-001, OPEN-001]
+      adapter-execution:
+        precedence: [API-001, ARCH-029, implementation-guides]
+
+  response-envelope:
+    aspects:
+      http-success:
+        precedence: [ARCH-029, API-001, API-003, REST-001, OPEN-001]
+      list-pagination:
+        precedence: [ARCH-029, API-001, API-008, API-003, REST-001, OPEN-001]
+        lifecycle_rule: "Draft API-008 may describe a proposal but cannot silently override Living response contracts."
+      http-error:
+        precedence: [API-002, ARCH-029, REST-001, OPEN-001]
+
+  api-types-and-brands:
+    aspects:
+      wire-and-brands:
+        precedence: [API-003, ARCH-029]
+      schema-ownership:
+        precedence: [API-004, ARCH-029, module-schema-docs]
+
+  authentication-authorization:
+    aspects:
+      architecture-and-pipeline:
+        precedence: [ARCH-029, API-001, API-005]
+        lifecycle_rule: "Draft API-005 remains proposed detail until promoted."
+
+  idempotency-concurrency:
+    aspects:
+      architecture:
+        precedence: [ARCH-029, API-006]
+        lifecycle_rule: "Draft API-006 remains proposed detail until promoted."
+
+  observability-correlation:
+    aspects:
+      architecture:
+        precedence: [ARCH-029, API-007]
+        lifecycle_rule: "Draft API-007 remains proposed detail until promoted."
+
+  compatibility-deprecation:
+    aspects:
+      architecture:
+        precedence: [ARCH-029, API-009]
+        lifecycle_rule: "Draft API-009 remains proposed detail until promoted."
+
+  resource-catalogues:
+    aspects:
+      cross-domain-standard:
+        precedence: [REST-001, REST-002, REST-003, REST-004, REST-005, REST-006, REST-007]
+      module-fft:
+        precedence: [ARCH-029, FFT-REST-001, FFT-REST-children]
+
+  openapi-artifact:
+    aspects:
+      governance-and-provenance:
+        precedence: [ARCH-029, OPEN-001, OPEN-001-openapi.yaml]
+      path-and-schema-projection:
+        precedence: [API-contracts, REST-contracts, owning-Zod, OPEN-001-openapi.yaml]
+
+  verification-gate:
+    aspects:
+      active-evidence-bar:
+        precedence: [ARCH-029, GUIDE-014, GUIDE-012, GUIDE-013]
+        lifecycle_rule: "A Draft placeholder that disclaims enforcement cannot serve as the sole active release authority."
+
+  development-sequence:
+    aspects:
+      phase-order:
+        precedence: [GUIDE-015, implementation-guides]
+
+  navigation:
+    aspects:
+      reading-order:
+        precedence: [governing-authority, README]
+        lifecycle_rule: "README is navigation-only and never normative."
+
+  multi-tenancy:
+    aspects:
+      shared-schema-and-org-predicates:
+        precedence: [ARCH-023, ARCH-025, ARCH-028, ARCH-022]
+        lifecycle_rule: "Living ARCH-023 wins over Target schema sketches; Target docs must not invent parallel tenant-root inventories."
+      platform-iam:
+        precedence: [ARCH-023, ARCH-026, FFT-MOD-005]
+        lifecycle_rule: "ARCH-026 owns session helpers only; permission-first IAM and Decision lock remain ARCH-023."
+
+cross_subject_sets:
+  response-envelope-consistency:
+    subjects: [interface-architecture, response-envelope, api-types-and-brands, openapi-artifact]
+    evidence: [ARCH-029, API-001, API-003, API-008, REST-001, OPEN-001, OPEN-001-openapi.yaml]
+  release-verification-consistency:
+    subjects: [interface-architecture, verification-gate, development-sequence]
+    evidence: [ARCH-029, GUIDE-014, GUIDE-015]
+  guide-home-consistency:
+    subjects: [documentation-governance, development-sequence]
+    evidence: [DOC-001, DOC-002, GUIDE-006, GUIDE-015]
+  multi-tenancy-consistency:
+    subjects: [multi-tenancy, documentation-governance]
+    evidence: [ARCH-023, ARCH-025, ARCH-026, ARCH-028, ARCH-022, DOC-002]
+
+locks:
+  - id: GUIDE-015
+    locked_by: "Jack Wee (jackwee@ai-bos.io / pohlai88)"
+    locked_on: "2026-07-13"
+    scope: "Phases 1-5 order; registered document IDs and paths named in the roadmap"
