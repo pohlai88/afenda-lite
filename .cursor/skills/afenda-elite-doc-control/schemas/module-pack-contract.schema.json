@@ -1,0 +1,235 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": [
+    "contractVersion",
+    "authority",
+    "roles",
+    "requirementColumns",
+    "evidenceColumns",
+    "profilesMarker",
+    "claimPattern",
+    "acIdPattern",
+    "placeholders",
+    "enums",
+    "profiles"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "contractVersion": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "authority": {
+      "type": "object",
+      "required": [
+        "id",
+        "version",
+        "marker"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "const": "MOD-002"
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+        },
+        "marker": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "roles": {
+      "type": "object",
+      "minProperties": 10,
+      "maxProperties": 10,
+      "patternProperties": {
+        "^00[1-9]$|^010$": {
+          "type": "object",
+          "required": [
+            "title",
+            "slug",
+            "requiredTopics"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "title": {
+              "type": "string",
+              "minLength": 1
+            },
+            "slug": {
+              "type": "string",
+              "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+            },
+            "requiredTopics": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "requirementColumns": {
+      "const": [
+        "AC-ID",
+        "Profile",
+        "Quality Dimension",
+        "Applicability",
+        "Criterion"
+      ]
+    },
+    "evidenceColumns": {
+      "const": [
+        "AC-ID",
+        "Owner MOD",
+        "Profile",
+        "Quality Dimension",
+        "Applicability",
+        "Activation",
+        "Evidence",
+        "Evidence Reference",
+        "Evidence Revision",
+        "Evidence Date",
+        "Blocker / Rationale"
+      ]
+    },
+    "profilesMarker": {
+      "type": "string",
+      "minLength": 1
+    },
+    "claimPattern": {
+      "type": "string",
+      "minLength": 1
+    },
+    "acIdPattern": {
+      "type": "string",
+      "minLength": 1
+    },
+    "placeholders": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string"
+      }
+    },
+    "enums": {
+      "type": "object",
+      "required": [
+        "applicability",
+        "activation",
+        "evidence"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "applicability": {
+          "const": [
+            "Core",
+            "Conditional",
+            "Out of Scope"
+          ]
+        },
+        "activation": {
+          "const": [
+            "Enabled",
+            "Disabled",
+            "Uncontracted"
+          ]
+        },
+        "evidence": {
+          "const": [
+            "PASS",
+            "FAIL",
+            "BLOCKED",
+            "NOT EVIDENCED",
+            "NOT ENABLED"
+          ]
+        }
+      }
+    },
+    "profiles": {
+      "type": "object",
+      "required": [
+        "Enterprise Core",
+        "ERP"
+      ],
+      "minProperties": 2,
+      "additionalProperties": {
+        "type": "object",
+        "required": [
+          "mandatory",
+          "dimensions"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "mandatory": {
+            "type": "boolean"
+          },
+          "dimensions": {
+            "type": "object",
+            "minProperties": 1,
+            "additionalProperties": {
+              "type": "string",
+              "pattern": "^00[1-8]$"
+            }
+          }
+        }
+      },
+      "properties": {
+        "Enterprise Core": {
+          "type": "object",
+          "required": [
+            "mandatory",
+            "dimensions"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "mandatory": {
+              "type": "boolean"
+            },
+            "dimensions": {
+              "type": "object",
+              "minProperties": 1,
+              "additionalProperties": {
+                "type": "string",
+                "pattern": "^00[1-8]$"
+              }
+            }
+          }
+        },
+        "ERP": {
+          "type": "object",
+          "required": [
+            "mandatory",
+            "dimensions"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "mandatory": {
+              "type": "boolean"
+            },
+            "dimensions": {
+              "type": "object",
+              "minProperties": 1,
+              "additionalProperties": {
+                "type": "string",
+                "pattern": "^00[1-8]$"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

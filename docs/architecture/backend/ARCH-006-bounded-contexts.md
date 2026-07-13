@@ -4,11 +4,11 @@
 |-------|-------|
 | ID | ARCH-006 |
 | Category | Architecture |
-| Version | 1.0.0 |
+| Version | 1.0.1 |
 | Status | Living |
+| Control State | Closed |
 | Owner | Backend |
-| Updated | 2026-07-13 |
-
+| Updated | 2026-07-14 |
 **Platform model:** one **Afenda-Lite** SaaS · **two product modules** (Declarations + Trade / Feed Farm Trade) on shared Platform + Identity. Module boundaries are domain trees and entitlements — **not** separate apps or infra lanes. Platform/infra changes (env, DB pool, auth, shell, proxy, CI, Vercel) apply to **both modules together**. Product name: Afenda-Lite (see [deprecation register](../../../.cursor/skills/agent-skills/skills/deprecation-and-migration/reference.md)).
 
 Dependencies between product domains are **one-way** and minimal.
@@ -55,5 +55,5 @@ flowchart LR
 - [02-folder-map.md](ARCH-005-backend-folder-map.md)  
 - [06-modules-ownership.md](ARCH-009-modules-ownership-map.md)  
 - [04-ports-and-adapters.md](ARCH-007-ports-and-adapters.md)  
-- [ARCH-022](../turborepo/ARCH-022-system-overview.md)  
+- [ARCH-022](../system/ARCH-022-system-overview.md)  
 - [../modules/feed-farm-trade/FFT-MOD-001-module-architecture.md](../../modules/feed-farm-trade/FFT-MOD-001-module-architecture.md)  

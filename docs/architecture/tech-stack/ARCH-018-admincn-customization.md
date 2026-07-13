@@ -4,11 +4,11 @@
 |-------|-------|
 | ID | ARCH-018 |
 | Category | Architecture |
-| Version | 1.0.0 |
+| Version | 1.0.1 |
 | Status | Living |
+| Control State | Closed |
 | Owner | Frontend |
-| Updated | 2026-07-13 |
-
+| Updated | 2026-07-14 |
 **Frontend alignment:** [ARCH-015](../frontend/ARCH-015-admincn-alignment.md)  
 **Preflight before new screens:** [ARCH-019](ARCH-019-admincn-frontend-preflight.md)  
 **UI registry (compulsory):** [`.cursor/skills/feed-farm-trade/ui-registry.md`](../../../.cursor/skills/feed-farm-trade/ui-registry.md) · [`ui-registry.json`](../../../.cursor/skills/feed-farm-trade/ui-registry.json) · skill `/feed-farm-trade`  
@@ -21,7 +21,7 @@ Studio MCP does **not** install the AdminCN template as one unit. It exposes **b
 
 **Compulsory:** every AdminCN UI primitive (`ACN-UI-*`) and platform-views block (`ACN-BLK-*`) must be registered in `ui-registry.json`. Feed Farm Trade product modules use `FFT-UI-*`. Agents must not invent IDs or edit the registry to pass Vitest. Direct `platform-views` imports from `features/fft` are forbidden — wrap via HITL product ID.
 
-Do **not** wire more demo views into product routes while freeze holds. Refine existing surfaces only. **Exception (ADR-002):** adopt Roles/Permissions DNA into `features/organization-admin` on `/dashboard/roles` and `/dashboard/permissions` — do not mount zustand `use-roles-store` as product IAM.
+Do **not** wire more demo views into product routes while freeze holds. Refine existing surfaces only. **Exception ([ARCH-023](../system/ARCH-023-multi-tenancy.md)):** adopt Roles/Permissions DNA into `features/organization-admin` on `/dashboard/roles` and `/dashboard/permissions` — do not mount zustand `use-roles-store` as product IAM.
 
 ## Shared shell (2026-07-11)
 

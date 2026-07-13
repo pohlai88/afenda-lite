@@ -1,11 +1,11 @@
 # Agent instructions — Afenda-Lite
 
-**Product:** **Afenda-Lite** — beta / lite edition of official **Afenda ERP** (multi-module SaaS). 
+**Product:** **Afenda-Lite** — beta edition of the Afenda family (multi-module SaaS). **Afenda-Elite** is the battle-proven edition: same documentation control and similar infrastructure aliasing — not a parallel product stack or a second docs tree.
 **Retired product name:** Client Declaration Portal — compulsory; see [deprecation register](.cursor/skills/agent-skills/skills/deprecation-and-migration/reference.md).
 
-**Authoritative documentation:** [docs/README.md](docs/README.md) — design SSOT, ADRs, API, runbooks, and module ops under `docs/`. Do **not** recreate `doc/`.
+**Authoritative documentation:** [docs/README.md](docs/README.md) under `docs/` only. Control: [DOC-001](docs/_control/DOC-001-documentation-control-standard.md) (approved shared Lite/Elite standard) · [DOC-002](docs/_control/DOC-002-documentation-register.md) · [DOC-003](docs/_control/DOC-003-controlled-document-template.md). Do **not** recreate `doc/`.
 
-**Repository layout:** [ARCH-022](docs/architecture/turborepo/ARCH-022-system-overview.md) (Target Turborepo tree) · [ARCH-029](docs/architecture/frontend/ARCH-029-frontend-folder-map.md) (frontend folder map). ARCH-021 migration map archived. Hosting: GitHub `pohlai88/afenda-lite` · Vercel `afenda-lite` · `APP_URL=https://afenda-lite.vercel.app`.
+**Repository layout:** [ARCH-022](docs/architecture/system/ARCH-022-system-overview.md) (Target system / monorepo tree) · [ARCH-017](docs/architecture/frontend/ARCH-017-frontend-folder-map.md) (frontend folder map). ARCH-021 migration map archived. Hosting: GitHub `pohlai88/afenda-lite` · Vercel `afenda-lite` · `APP_URL=https://afenda-lite.vercel.app`.
 
 ## Feed Farm Trade — Phase 2A closed · 2B–2D ADRs Accepted
 
@@ -26,18 +26,18 @@
 
 ## Platform tenancy (hard cutover + multi-org ready)
 
-**Decision / Living inventory:** [ARCH-011](docs/architecture/ARCH-011-platform-tenancy-rbac.md) (platform IAM) · [ARCH-023](docs/architecture/turborepo/ARCH-023-multi-tenancy.md) (Neon shared-schema + Decision lock; supersedes ARCH-003).
+**Decision / Living inventory:** [ARCH-023](docs/architecture/system/ARCH-023-multi-tenancy.md) — sole Living SSOT for platform IAM + multi-tenancy + Decision lock (supersedes ARCH-003).
 
 | Fact | Detail |
 |------|--------|
 | Shipped | Hard `organization_id = $org`; migrations `027`/`028`; Users via `neon_auth.member`; FFT entry = platform `fft.access`; M1–M4 multi-org ready (logical) |
-| Neon posture | Shared schema (not project-per-tenant); prod `DATABASE_URL` must be `-pooler`; RLS out of scope on BFF path — see [ARCH-023](docs/architecture/turborepo/ARCH-023-multi-tenancy.md) Operational considerations |
+| Neon posture | Shared schema (not project-per-tenant); prod `DATABASE_URL` must be `-pooler`; RLS out of scope on BFF path — see [ARCH-023](docs/architecture/system/ARCH-023-multi-tenancy.md) Operational considerations |
 | Neon Cloud | Org `org-fragrant-lake-90358173` (Launch) · project `young-hat-54755363` (**Afenda-Lite**) · branch `br-tiny-hill-ao82jp6f` protected |
 | Recovery | PITR 7d (Launch max); daily snapshots; see [multi-org-ops](docs/runbooks/RB-001-multi-org-ops.md) |
 | Env | `PORTAL_ORG_SLUG` / `PORTAL_ORG_NAME` / `PORTAL_ORG_SWITCHER_ENABLED`; do not confuse with `NEON_ORG_ID` (Neon Cloud) |
 | Ops | `npm run audit:tenancy-nulls` · `npm run check:tenancy-residue` · `backfill:fft-access --organization-id=…` · skill ladder A–E [neon-tenancy-efficiency](.cursor/skills/neon-tenancy-efficiency/reference.md) |
 | Cheat sheet | [docs/runbooks/RB-005-post-lock-coding-cheat-sheet.md](docs/runbooks/RB-005-post-lock-coding-cheat-sheet.md) — post-lock commands + Rejected/Deferred flash card |
-| Decision lock | [ARCH-023 Decision lock](docs/architecture/turborepo/ARCH-023-multi-tenancy.md) — Rejected R1–R7 / Deferred D4·D5; do not reopen without explicit user approval |
+| Decision lock | [ARCH-023 Decision lock](docs/architecture/system/ARCH-023-multi-tenancy.md) — Rejected R1–R7 / Deferred D4·D5; do not reopen without explicit user approval |
 | Accepted constraints | **D4** FFT child denorm deferred (M5); **D5** shared-schema / not project-per-tenant |
 | Anti-claim | Do **not** say multi-DB isolation (D5). `FFT_RBAC_ENABLED` ≠ soft SQL tenancy. Soft dual-mode / first-org stamp are **retired** — see deprecation register |
 

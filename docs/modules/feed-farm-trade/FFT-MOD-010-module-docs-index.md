@@ -1,36 +1,72 @@
 # FFT-MOD-010 Module Docs Index + Roadmap
 
-| Field | Value |
-|-------|-------|
-| ID | FFT-MOD-010 |
-| Category | Module |
-| Version | 2.0.0 |
-| Status | Living |
-| Owner | Feed Farm Trade |
-| Updated | 2026-07-13 |
-| Spine | MOD-010 Module Docs Index |
+| Field             | Value                      |
+| ----------------- | -------------------------- |
+| **ID**            | FFT-MOD-010                |
+| **Category**      | Module                     |
+| **Version**       | 2.4.0 |
+| **Status**        | Living                     |
+| **Control State** | Closed                     |
+| **Owner**         | Feed Farm Trade            |
+| **Updated**       | 2026-07-14                 |
+| **Spine**         | MOD-010 Module Docs Index |
 
-**Absorbed:** ADR-005 (roadmap + gap register).  
+---
+
+# 1. Purpose
+
+Module docs index, agent read order, roadmap/gap register, and **Module Enterprise Readiness** claim aggregation for Feed Farm Trade.
+
+**Audience:** engineers and agents joining FFT work.
+**Action enabled:** navigate the spine; distinguish program MVP roadmap from Module Enterprise Readiness; never claim readiness without [FFT-MOD-009](FFT-MOD-009-verification.md) evidence.
+
 **Architecture / locks:** [FFT-MOD-001](FFT-MOD-001-module-architecture.md)  
 **Runtime:** [FFT-MOD-008](FFT-MOD-008-ops-runtime.md)  
+**Evidence ledger:** [FFT-MOD-009](FFT-MOD-009-verification.md)  
+**Category standard:** [MOD-002](../MOD-002-modules-index.md)  
 **Skill:** [`.cursor/skills/feed-farm-trade`](../../../.cursor/skills/feed-farm-trade/SKILL.md)
 
-## Agent read order
+---
+
+# 2. Scope
+
+## 2.1 In Scope
+
+- Agent read order and spine catalog
+- Module Enterprise Readiness aggregation (Applicability · Activation · Evidence)
+- Program roadmap / gap register (P0–P3) — historical and planning context
+- Builder rules and frozen boundaries
+- Directory layout (flat pack only)
+
+## 2.2 Out of Scope
+
+- Product locks detail → [FFT-MOD-001](FFT-MOD-001-module-architecture.md)
+- Production allow/forbid → [FFT-MOD-008](FFT-MOD-008-ops-runtime.md)
+- Evidence rows → [FFT-MOD-009](FFT-MOD-009-verification.md)
+- Recreating `adr/` / `ops/` / `spec/` under this module
+- Afenda-Elite / product / release certification from this module alone
+
+---
+
+# 3. Module Docs Index and Roadmap
+
+## 3.1 Agent read order
 
 1. **[FFT-MOD-008](FFT-MOD-008-ops-runtime.md)** — production state, allowed/forbidden, verify
 2. **[FFT-MOD-001](FFT-MOD-001-module-architecture.md)** — locks + structure
-3. This file — MVP outcome, gaps, P0–P3
-4. Other spine docs as needed (auth → [005](FFT-MOD-005-auth-tenancy-rbac.md), surfaces → [006](FFT-MOD-006-surfaces-and-routes.md), adapters → [007](FFT-MOD-007-api-and-adapters.md))
+3. **[FFT-MOD-009](FFT-MOD-009-verification.md)** — structured evidence
+4. **This file** — readiness claim + roadmap/gaps
+5. Other spine docs as needed (auth → [005](FFT-MOD-005-auth-tenancy-rbac.md), surfaces → [006](FFT-MOD-006-surfaces-and-routes.md), adapters → [007](FFT-MOD-007-api-and-adapters.md), REST index → [FFT-REST-001](FFT-REST-001-feed-farm-trade-resource-index.md) Draft)
 
-Also: [AGENTS.md](../../../AGENTS.md) · [deprecation register](../../../.cursor/skills/agent-skills/skills/deprecation-and-migration/reference.md) · [10-MOD guideline](../MOD-002-modules-index.md)
+Also: [AGENTS.md](../../../AGENTS.md) · [deprecation register](../../../.cursor/skills/agent-skills/skills/deprecation-and-migration/reference.md) · [MOD-002](../MOD-002-modules-index.md)
 
 ```text
 DO NOT: FftShell, /fft/[locale], customer portal, invent permission codes, rename FFT_*
-MVP ≠ events/orders/alloc alone — see P1 promoted gaps G1–G6
 TRUSTED: modules/fft/domain/rbac-catalog.ts · app/actions/fft.ts · modules/fft/domain/store.ts
+READINESS: reconstruct from FFT-MOD-009 — never inherit PASS from historical MVP prose
 ```
 
-## Spine catalog (MOD-001…009)
+## 3.2 Spine catalog (MOD-001…009)
 
 | Spine | Doc |
 |-------|-----|
@@ -44,42 +80,62 @@ TRUSTED: modules/fft/domain/rbac-catalog.ts · app/actions/fft.ts · modules/fft
 | MOD-008 Ops runtime | [FFT-MOD-008](FFT-MOD-008-ops-runtime.md) |
 | MOD-009 Verification | [FFT-MOD-009](FFT-MOD-009-verification.md) |
 
-## Depth folders
+**Depth folders:** removed. Do not recreate `adr/`, `ops/`, `spec/`, etc. under this module.
 
-**Removed.** Do not recreate `adr/`, `ops/`, `spec/`, etc. under this module.
+## 3.3 Module Enterprise Readiness
 
----
+Authority: [MOD-002](../MOD-002-modules-index.md) §3.3. Evidence SSOT: [FFT-MOD-009](FFT-MOD-009-verification.md) §3.5.
 
-## Outcome lock — enterprise MVP (from ADR-005)
+**Quality profiles:** Enterprise Core, ERP
 
-**Satisfactory enterprise grade = P0 + P1 done** (working MVP, not a documentation binder).
+**Module Enterprise Readiness claim:** Not claimable
 
-**Operator outcome:** Entitled sales/ops can run a full program cycle: setup event (products, **supply**, **custom fields**, **customer priority**) → open window → take orders → **transfer** when needed → **allocate** (respecting priority/supply) → **complete** orders → **audit/export** as permitted. Thin AdminCN pages OK. Full AdminCN polish = P2. Deposits/pickup/ERP = P3.
+| Dimension | Aggregation (from FFT-MOD-009 §3.5 @ 764287d) |
+| --------- | ------------------------------ |
+| Profiles | Enterprise Core and ERP active |
+| Applicability | Core and Conditional ACs registered; Out of Scope none |
+| Quality dimensions | All active Core/ERP dimensions have owned ACs; result states remain in FFT-MOD-009 |
+| Activation | Core rows Enabled; Conditional rows Disabled |
+| Evidence | Core/ops rows = `BLOCKED` (product tree absent at HEAD); Conditional Disabled rows = `NOT EVIDENCED` |
 
-| Claim | Required |
-|-------|----------|
-| **Enterprise MVP** | **P0 + P1** (includes G1–G6) + AC evidence |
-| UI polish | P2 — **complete 2026-07-11** |
-| Ops handoff | P3 — flags + [FFT-MOD-008](FFT-MOD-008-ops-runtime.md) |
-| Customer portal / locale URLs / `FFT_*` rename | Later |
+| Gate | Result |
+| ---- | ------ |
+| Every Core = Enabled + PASS | Fail (`BLOCKED`) |
+| Enabled Conditional = PASS | N/A (no Enabled Conditional rows) |
+| Disabled/Uncontracted Conditional = NOT ENABLED with fail-closed evidence | Fail (`NOT EVIDENCED`) |
+| Mandatory FAIL / BLOCKED / NOT EVIDENCED | Blocks claim |
+
+Claim marker left **Not claimable** — not hand-promoted. Re-run verify only after product trees (`app/`, `modules/`, `features/`, `testing/`, `e2e/`) are present on the same checkout as this ledger.
+
+This claim does **not** certify Afenda-Elite, the Afenda product, or a release.
+
+## 3.4 Program roadmap — MVP outcome (not the readiness claim)
+
+Historical program goal: P0 + P1 working cycle (not a documentation binder).
+
+**Operator outcome:** Entitled sales/ops can run: setup event (products, supply, custom fields, customer priority) → open window → take orders → transfer → allocate → complete → audit/export. Thin AdminCN pages OK. Full polish = P2. Deposits/pickup/ERP = P3.
+
+| Program label | Required | Relationship to readiness |
+|---------------|----------|---------------------------|
+| Program MVP (P0+P1 incl. G1–G6) | Roadmap target + observable AC | Necessary input to evidence rows — **not** automatic Claimable |
+| UI polish | P2 — complete 2026-07-11 | Outside Core readiness unless promoted to AC |
+| Ops handoff | P3 — flags + FFT-MOD-008 | Conditional ACs when enabled |
+| Customer portal / locale URLs / `FFT_*` rename | Later | Out of Scope / Later |
 
 ```mermaid
 flowchart LR
   Locks[FFT-MOD-001 locks] --> Arch[FFT-MOD-001 structure]
   Arch --> P0[P0 Shell]
-  P0 --> P1[P1 Core MVP]
-  P1 --> MVP[Enterprise MVP]
-  P1 --> P2[P2 UI optional]
-  P1 --> P3[P3 Ops optional]
+  P0 --> P1[P1 Core cycle]
+  P1 --> Evidence[FFT-MOD-009 ledger]
+  Evidence --> Claim[Module Enterprise Readiness]
 ```
 
-**Program status (2026-07-11):** P0 done; P1 engine+FE wired with AC evidence (`EVALUATE_P1_MVP: YES` in skill `verify.md`); **enterprise MVP claimable**. P2 UI polish AC-01..06 done. P3 = flag-off placeholders + MOD-008 for any prod `FFT_*` enable. See [completeness.md](../../../.cursor/skills/feed-farm-trade/completeness.md).
+**Program status note (historical 2026-07-11):** P0 done; P1 engine+FE wired; P2 polish done; P3 flag-gated. That history is **vacated as a readiness PASS**. See [FFT-MOD-009](FFT-MOD-009-verification.md); skill [completeness.md](../../../.cursor/skills/feed-farm-trade/completeness.md) remains program completeness, not MOD-002 claim authority.
 
----
+## 3.5 Critical gap register
 
-## Critical gap register
-
-### G0 — Ops docs — **resolved** (spine-only home)
+### G0 — Ops docs — resolved (spine-only home)
 
 Living SSOT: [FFT-MOD-008](FFT-MOD-008-ops-runtime.md). Flag promotion still requires MOD-008 checklist.
 
@@ -106,57 +162,48 @@ Living SSOT: [FFT-MOD-008](FFT-MOD-008-ops-runtime.md). Flag promotion still req
 
 Offline booth · barcode · floor plans · full feed ERP · VFD · customer portal · mobile-native · deposits/pickup/imports/ERP sync (→ **P3**) · notification polish (→ P3/Later)
 
----
+## 3.6 P0 — Shell
 
-## P0 — Shell
-
-**Status:** Done. Detail in this document (outcome lock / P0).
+**Status:** Done (program). Readiness still requires FFT-MOD-009 PASS rows.
 
 Must hold: `requireFftAccess` · FFT nav only when entitled · AdminCN on `/fft/*` · no session → sign-in · locale-free `/fft`.
 
----
+## 3.7 P1 — Core cycle (program MVP)
 
-## P1 — Core cycle (MVP)
+**Status:** Wired 2026-07-11 (program). Do not treat as Module Enterprise Readiness Claimable until §3.3 opens.
 
-**Status:** Wired 2026-07-11. Detail in this document (P1 / G1–G6).
+Surfaces: events, setup, order, my-orders, allocation, rbac. P3 surfaces under `/fft/admin/.../deposits|pickup|imports`, `/erp-sync` — flag-gated.
 
-Claim enterprise MVP only with **all** AC evidence including G1–G6. Surfaces: events, setup, order, my-orders, allocation, rbac. P3 placeholders under `/fft/admin/.../deposits|pickup|imports`, `/erp-sync` — flag-gated.
+**DoD highlights:** Mutations via `app/actions/fft.ts` + Zod + session/permission; domain only in `modules/fft`; no FftShell / locale tree; REST locale-free ([REST-001](../../api/REST-001-rest-resources.md)).
 
-**DoD highlights:** Mutations via `app/actions/fft.ts` + Zod + session/permission; domain only in `modules/fft`; no FftShell / locale tree; REST locale-free (`REST-001`).
-
----
-
-## P2 — UI reopen (not MVP)
+## 3.8 P2 — UI reopen (not Core readiness)
 
 **Complete 2026-07-11**. Further polish only with named P2-AC + Plan for visual.
 
----
+## 3.9 P3 — Ops flags (Conditional)
 
-## P3 — Ops flags (not MVP)
-
-Deposits / pickup / imports / ERP only when `FFT_*` on **and** [FFT-MOD-008](FFT-MOD-008-ops-runtime.md) allows.
+Deposits / pickup / imports / ERP only when `FFT_*` on **and** [FFT-MOD-008](FFT-MOD-008-ops-runtime.md) allows. Evidence for fail-closed-when-disabled lives in FFT-MOD-009 Conditional rows.
 
 | AC | Pass when |
 |----|-----------|
 | AC-OPS-01 | Flags off → ops writes blocked; P1 still works |
 | AC-OPS-02 | Flag on + MOD-008 → F-OPS-* honor permissions |
 
----
-
-## Later
+## 3.10 Later
 
 Customer portal · locale URLs · ERP vendor packs (2D-3) · renaming `FFT_*` / `/fft` · offline/mobile/trade-show · VFD / full mill ERP.
 
-## Builder rules
+## 3.11 Builder rules
 
 1. Prefer FFT-MOD-001 + this file over locale trees / FftShell.
-2. Do not claim enterprise MVP without **P0 + P1 including G1–G6** and AC evidence.
+2. Do not mark Module Enterprise Readiness Claimable without FFT-MOD-009 satisfying MOD-002 claim rules.
 3. No customer-portal bleed into FFT PRs.
 4. P3 needs MOD-008 checklist — not FE invention.
 5. Do not pull industry booth/ERP/VFD into P1 because peers have them.
-6. Update [completeness.md](../../../.cursor/skills/feed-farm-trade/completeness.md) when wire status changes.
+6. Update [completeness.md](../../../.cursor/skills/feed-farm-trade/completeness.md) when wire status changes — and refresh FFT-MOD-009 before any claim change.
+7. Do not reopen FFT 2B–2D product code via documentation migration.
 
-## Frozen boundaries
+## 3.12 Frozen boundaries
 
 | Item | Value |
 |------|-------|
@@ -165,18 +212,47 @@ Customer portal · locale URLs · ERP vendor packs (2D-3) · renaming `FFT_*` / 
 | Production RBAC | `FFT_RBAC_ENABLED=true` |
 | Production DB | `br-tiny-hill-ao82jp6f` |
 
-## Directory layout
+## 3.13 Directory layout
 
 ```text
 docs/modules/feed-farm-trade/
   README.md
   FFT-MOD-001 … FFT-MOD-010
+  FFT-REST-001 (Draft)
 ```
 
-## Change Log
+---
 
-| Version | Date | Summary |
-|---------|------|---------|
-| 2.0.0 | 2026-07-13 | Absorbed ADR-005 roadmap; spine-only FE SSOT |
-| 1.1.0 | 2026-07-13 | Depth folders removed |
-| 1.0.0 | 2026-07-13 | Initial index |
+# 4. References
+
+| ID | Title | Relationship |
+| -- | ----- | ------------ |
+| DOC-001 | Documentation Control Standard | Governance |
+| MOD-002 | Modules Index | Module Enterprise Readiness standard |
+| FFT-MOD-001 | Module Architecture | Locks |
+| FFT-MOD-008 | Ops Runtime | Runtime entry |
+| FFT-MOD-009 | Verification | Evidence ledger |
+| FFT-REST-001 | Feed Farm Trade Resource Index | REST index (Draft) |
+| REST-001 | REST Standards and Resource Index | Locale-free FFT HTTP |
+
+---
+
+# 5. Change Log
+
+| Version | Date       | Summary |
+| ------- | ---------- | ------- |
+| 2.4.0 | 2026-07-14 | Activated Enterprise Core + ERP profiles and aggregated the contract ledger; readiness remains Not claimable. |
+| 2.3.0   | 2026-07-14 | Re-aggregated from FFT-MOD-009 1.3.0 reconstruction (`BLOCKED`/`NOT EVIDENCED`); claim remains Not claimable (not hand-promoted). |
+| 2.2.0   | 2026-07-14 | Wave B: Module Enterprise Readiness aggregation; vacated inherited claimable PASS; claim marker Not claimable. |
+| 2.1.1   | 2026-07-14 | Linked Draft GUIDE-016 for enterprise acceptance. |
+| 2.1.0   | 2026-07-14 | DOC-003 six-section retrofit; fixed MVP heading; compact index/roadmap. |
+| 2.0.1   | 2026-07-14 | Added mandatory Control State header field (Closed); lifecycle Status unchanged. |
+| 2.0.0   | 2026-07-13 | Roadmap + gap register recorded in this spine |
+| 1.1.0   | 2026-07-13 | Depth folders removed |
+| 1.0.0   | 2026-07-13 | Initial index |
+
+---
+
+# 6. Notes
+
+**Spine role:** MOD-010 readiness summary, gaps, roadmap, and claims only. Do not copy evidence rows from MOD-009. Document Living status remains independent of Claimable.

@@ -14,7 +14,7 @@ Modular Monolith + Hexagonal — living Architecture SSOT under `docs/architectu
 | [ARCH-008](ARCH-008-next-js-adapter-map.md) | Next.js adapter map |
 | [ARCH-009](ARCH-009-modules-ownership-map.md) | Modules ownership |
 | [ARCH-010](ARCH-010-backend-conventions.md) | Conventions |
-| [ARCH-022](../turborepo/ARCH-022-system-overview.md) | System framework (former ADR-001) |
-| [ARCH-011](../ARCH-011-platform-tenancy-rbac.md) | Platform IAM (former ADR-002) |
+| [ARCH-022](../system/ARCH-022-system-overview.md) | System framework |
+| [ARCH-023](../system/ARCH-023-multi-tenancy.md) | Multi-tenancy + platform RBAC |
 
-Turborepo target layout: [../turborepo/](../turborepo/). Tenancy Living SSOT: [ARCH-023](../turborepo/ARCH-023-multi-tenancy.md).
+Target system layout: [../system/](../system/). Tenancy Living SSOT: [ARCH-023](../system/ARCH-023-multi-tenancy.md).

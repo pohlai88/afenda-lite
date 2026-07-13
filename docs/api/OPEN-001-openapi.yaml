@@ -209,6 +209,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/LivenessEnvelope"
+      operationId: getHealthLiveness
+      x-afenda-status: api-now
   /api/health/readiness:
     get:
       summary: Dependency readiness probe
@@ -222,6 +224,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ReadinessEnvelope"
+      operationId: getHealthReadiness
+      x-afenda-status: api-now
   /api/client/declaration-draft:
     get:
       summary: Load client declaration draft
@@ -278,6 +282,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/APIErrorBody"
+      operationId: getClientDeclarationDraft
+      x-afenda-status: api-now
     put:
       summary: Persist client declaration draft
       description: "Full draft replace (saveClientDeclarationDraftSchema). Cache-Control: private, no-store."
@@ -328,6 +334,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/APIErrorBody"
+      operationId: putClientDeclarationDraft
+      x-afenda-status: api-now
     patch:
       summary: Persist client declaration draft
       description: "Same write body as PUT when partial fields are not split at the schema. Cache-Control:
@@ -379,6 +387,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/APIErrorBody"
+      operationId: patchClientDeclarationDraft
+      x-afenda-status: api-now
     post:
       summary: Persist draft (keepalive alias)
       description: "Keepalive alias of PUT/PATCH with the same body. Cache-Control: private, no-store."
@@ -429,4 +439,10 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/APIErrorBody"
+      operationId: postClientDeclarationDraftKeepalive
+      x-afenda-status: api-now
+x-afenda-document:
+  id: OPEN-001
+  version: 1.1.5
+  generatedAt: 2026-07-13
 

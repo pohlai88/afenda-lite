@@ -1,17 +1,20 @@
 # OpenAPI execution (OPEN-001)
 
 **SSOT:** [docs/api/OPEN-001-openapi.md](../../../docs/api/OPEN-001-openapi.md)  
+**How-to:** [GUIDE-011](../../../docs/api/guides/GUIDE-011-generating-and-validating-openapi.md) (Draft how-to — does not override OPEN-001)  
 **Machine file:** `docs/api/OPEN-001-openapi.yaml` (generated — do not hand-maintain forever)  
-**Paths SSOT:** [REST-001](../../../docs/api/REST-001-rest-resources.md) — do not paste path tables here.
+**Paths SSOT:** [REST-001](../../../docs/api/REST-001-rest-resources.md) — do not paste path tables here.  
+**Parent:** [ARCH-029](../../../docs/architecture/system/ARCH-029-interface-api-architecture.md)
 
 ## Commands
 
 ```bash
 npm run openapi:generate
 npm run check:openapi
+npm run check:doc-integrity
 ```
 
-`check:openapi` fails on missing YAML, regenerate drift, or Spectral errors. Hooked into `npm run checks` via `scripts/run-checks.mjs`.
+`check:openapi` fails on missing YAML, regenerate drift, or Spectral errors. Hooked into `npm run checks` via `scripts/run-checks.mjs`. After OPEN-001 markdown or Living contract changes, also run doc integrity.
 
 ## Artifact split
 

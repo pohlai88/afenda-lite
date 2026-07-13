@@ -7,7 +7,7 @@ Routes, UI surfaces, BFF/data flow — living Architecture SSOT under `docs/arch
 | Doc | Purpose |
 |-----|---------|
 | [ARCH-002](ARCH-002-frontend-architecture.md) | Frontend architecture entry |
-| [ARCH-029](ARCH-029-frontend-folder-map.md) | Folder map |
+| [ARCH-029](ARCH-017-frontend-folder-map.md) | Folder map |
 | [ARCH-012](ARCH-012-app-router-routes.md) | App Router routes |
 | [ARCH-013](ARCH-013-bff-and-data-flow.md) | BFF + data-pattern decision tree |
 | [ARCH-014](ARCH-014-ui-surfaces.md) | UI surfaces |
@@ -16,4 +16,4 @@ Routes, UI surfaces, BFF/data flow — living Architecture SSOT under `docs/arch
 
 **FFT:** [FFT-MOD-001](../../modules/feed-farm-trade/FFT-MOD-001-module-architecture.md) · [FFT-MOD-010](../../modules/feed-farm-trade/FFT-MOD-010-module-docs-index.md). Coding guides: [../../guides/](../../guides/).
 
-Backend maps: [../backend/](../backend/). Turborepo target: [../turborepo/](../turborepo/).
+Backend maps: [../backend/](../backend/). Target system: [../system/](../system/).

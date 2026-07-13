@@ -4,18 +4,18 @@
 |-------|-------|
 | ID | ARCH-010 |
 | Category | Architecture |
-| Version | 1.0.0 |
+| Version | 1.0.1 |
 | Status | Living |
+| Control State | Closed |
 | Owner | Backend |
-| Updated | 2026-07-13 |
-
+| Updated | 2026-07-14 |
 Pointer doc — full contract tables live under [`docs/api/`](../../api/). Decision tree lives under [`docs/architecture/frontend/ARCH-013-bff-and-data-flow.md`](../../architecture/frontend/ARCH-013-bff-and-data-flow.md).
 
 ## Runtime
 
 - **Node.js** default for product pages, Actions, and domain routes.  
 - Edge only as a documented exception (not for Neon/session domain work).  
-- `proxy.ts` (Next 16) for document navigation session gates — never new `middleware.ts`.
+- `apps/web/proxy.ts` (Next 16) for document navigation session gates — never new `middleware.ts`.
 
 ## SQL and domain
 
@@ -57,4 +57,4 @@ Full rules: [../api/API-001-api-boundaries.md](../../api/API-001-api-boundaries.
 - [01-architecture.md](ARCH-004-backend-layers.md)  
 - [05-nextjs-adapter-map.md](ARCH-008-next-js-adapter-map.md)  
 - [../api/REST-001-rest-resources.md](../../api/REST-001-rest-resources.md)  
-- [ARCH-022](../turborepo/ARCH-022-system-overview.md)  
+- [ARCH-022](../system/ARCH-022-system-overview.md)  

@@ -1,0 +1,67 @@
+# afenda-elite-doc-control — quick reference
+
+Afenda-specific controlled workflow only. Deep prose, inline comments, README craft, and JSDoc/OpenAPI examples stay in [documentation-and-adrs](../agent-skills/skills/documentation-and-adrs/SKILL.md). Authority remains DOC-001 · DOC-002 · DOC-003.
+
+## Controlled-document header (DOC-003)
+
+```markdown
+# <ID> <Title>
+
+| Field             | Value               |
+| ----------------- | ------------------- |
+| **ID**            | <ID>                |
+| **Category**      | <Category>          |
+| **Version**       | <major.minor.patch> |
+| **Status**        | <Lifecycle status>  |
+| **Control State** | <Open \| Closed \| Reopened> |
+| **Owner**         | <Team or Function>  |
+| **Updated**       | YYYY-MM-DD          |
+```
+
+When **Control State** is `Reopened`:
+
+```markdown
+**Control-state note:** Reopened by <Name> on YYYY-MM-DD for <bounded purpose>. Automatically returns to Closed after successful verification.
+```
+
+Six sections: Purpose · Scope · Content · References · Change Log · Notes.
+
+## Module-pack scaffold
+
+`module-pack-contract.json` is the executable mirror subordinate to MOD-002. Use `plan:module-pack` for deterministic preview and `scaffold:module-pack -- --apply` only for scratch generation. Never promote placeholders, auto-register provisional IDs, create MOD-011, or create depth folders.
+
+## ADR shape (when category ADR is approved)
+
+Same mandatory header. Prefer home `docs/architecture/decisions/` only when explicitly approved — there is **no** required `docs/adr/` tree. Record Context · Decision · Consequences under Content (or equivalently named subsections). Link successor/predecessor IDs; never recycle Retired or Superseded IDs.
+
+## Workflow checklist
+
+```text
+- [ ] Classify category + home (DOC-001)
+- [ ] LOAD DOC-001 + DOC-002 + DOC-003
+- [ ] ID approved by user (or provisional Draft, not in register)
+- [ ] Create | Update | Move | Supersede/Retire
+- [ ] Explicit reopen: named document(s), bounded scope, intended change
+- [ ] Set Control State to Reopened + control-state note
+- [ ] Header ↔ DOC-002 (seven catalogue fields only)
+- [ ] Filename {ID}-{kebab-slug}.md; Control State in header
+- [ ] Verify, then Closed; remove control-state note
+```
+
+## Version bumps (Accepted / Living / Target)
+
+| Change | Bump |
+| --- | --- |
+| Wording, links, formatting, clarification | Patch |
+| New controlled content, backward-compatible | Minor |
+| Breaking governance, decision, or interpretation | Major |
+
+## Hand-offs
+
+| Need | Owner |
+| --- | --- |
+| Detect / plan / verify doc↔doc conflicts | [afenda-elite-doc-integrity](../afenda-elite-doc-integrity/SKILL.md) |
+| Deep prose / ADR composition craft | [documentation-and-adrs](../agent-skills/skills/documentation-and-adrs/SKILL.md) |
+| Repo hygiene | [afenda-elite-repo-housekeeping](../afenda-elite-repo-housekeeping/SKILL.md) |
+| Code↔doc drift (generic) | global `documentation-audit` |
+| API contract surfaces | [afenda-elite-api-contract](../afenda-elite-api-contract/SKILL.md) |

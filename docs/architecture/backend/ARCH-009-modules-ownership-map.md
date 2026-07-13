@@ -4,11 +4,11 @@
 |-------|-------|
 | ID | ARCH-009 |
 | Category | Architecture |
-| Version | 1.0.0 |
+| Version | 1.0.1 |
 | Status | Living |
+| Control State | Closed |
 | Owner | Backend |
-| Updated | 2026-07-13 |
-
+| Updated | 2026-07-14 |
 **Status:** Context relocate **complete** (2026-07-11). Platform, Identity, Declarations, Trade live under `modules/`. Remaining `lib/` is FE runners + residue + shims.  
 **Agent skill:** [`.cursor/skills/afenda-elite-backend-modules/`](../../../.cursor/skills/afenda-elite-backend-modules/SKILL.md)  
 **Contexts:** [03-bounded-contexts.md](ARCH-006-bounded-contexts.md)  
@@ -166,4 +166,4 @@ Product copy lives under **Platform** (`modules/platform/copy/*`), not Declarati
 - [03-bounded-contexts.md](ARCH-006-bounded-contexts.md)  
 - [04-ports-and-adapters.md](ARCH-007-ports-and-adapters.md)  
 - [05-nextjs-adapter-map.md](ARCH-008-next-js-adapter-map.md)  
-- [ARCH-022](../turborepo/ARCH-022-system-overview.md)  
+- [ARCH-022](../system/ARCH-022-system-overview.md)  

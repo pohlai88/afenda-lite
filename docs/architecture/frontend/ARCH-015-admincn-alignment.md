@@ -4,11 +4,11 @@
 |-------|-------|
 | ID | ARCH-015 |
 | Category | Architecture |
-| Version | 1.0.0 |
+| Version | 1.0.1 |
 | Status | Living |
+| Control State | Closed |
 | Owner | Frontend |
-| Updated | 2026-07-13 |
-
+| Updated | 2026-07-14 |
 **Reference:** `_reference/shadcn-nextjs-admincn-admin-template-1.0.0/.../src`  
 **Product home:** `components-V2/`  
 **Playbook:** [ARCH-018-admincn-customization.md](../tech-stack/ARCH-018-admincn-customization.md)  
@@ -50,7 +50,7 @@ Every primitive and block under `components-V2` used as DNA must carry an `ACN-U
 - Gallery `forms/` and `datatables/` once patterns are copied into portal-views  
 - Separate Feed Farm Trade chrome (`FftShell`, locale switcher) — **removed**; use AdminCN only  
 
-**Adopt (product, not demo wire):** `platform-views/apps/{roles,permissions}` DNA → `features/organization-admin` Roles/Permissions (ADR-002). Keep zustand stores as DNA only — never import on product routes. `apps/users` remains DNA; live users are `portal-views/organization-admin-users-*`.
+**Adopt (product, not demo wire):** `platform-views/apps/{roles,permissions}` DNA → `features/organization-admin` Roles/Permissions ([ARCH-023](../system/ARCH-023-multi-tenancy.md)). Keep zustand stores as DNA only — never import on product routes. `apps/users` remains DNA; live users are `portal-views/organization-admin-users-*`.
 
 ## SaaS modules in one shell
 

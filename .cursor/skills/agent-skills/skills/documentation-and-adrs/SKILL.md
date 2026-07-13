@@ -5,36 +5,27 @@ description: Records decisions and documentation. Use when making architectural 
 
 # Documentation and ADRs
 
-## Afenda Elite (this repo)
+## Afenda family (this repo)
 
 ```text
-LOAD: /using-afenda-elite-skills → afenda-elite-documentation
-      doc/REGISTRY.md
-      doc/register/DOC-002-documentation-system.md
-      doc/register/DOC-003-glossary.md   # when naming
-SKIP: Accepted SSOT under docs/ · inventing types outside DOC-002
-PLACE: doc/adr | doc/register | doc/architecture | doc/runbooks | doc/api
-ACCEPT: DOC-NNN row in doc/REGISTRY.md (header ↔ row)
-VERIFY: npm run check:doc-registry
-OPS: afenda-elite-documentation owns create/update/deprecate procedures
-THIS SKILL: prose craft and ADR reasoning only — not registry SSOT
+LOAD: /using-afenda-elite-skills → afenda-elite-doc-control
+      docs/_control/DOC-001-documentation-control-standard.md
+      docs/_control/DOC-002-documentation-register.md
+      docs/_control/DOC-003-controlled-document-template.md
+SKIP: recreating doc/ · inventing categories outside DOC-001 · auto-register IDs without approval
+      divergent Lite vs Elite catalogue rules (Lite = beta · Elite = battle-proven; same DOC-001)
+PLACE: docs/_control | docs/architecture [| /system | /decisions] | docs/api | docs/runbooks | docs/guides | docs/modules/<slug>
+ACCEPT: approved ID → seven-field row in DOC-002 (header ↔ row; Control State is header-only)
+VERIFY: header ↔ DOC-002; **Control State** in header; filename {ID}-{kebab-slug}.md; DOC-003 six sections
+OPS: afenda-elite-doc-control owns create/update/retire procedures
+THIS SKILL: prose craft and ADR reasoning only — not register SSOT
 ```
 
-Do not redefine types or product names — cite `term.*`, [DOC-002](../../../../../doc/register/DOC-002-documentation-system.md), and [DOC-001](../../../../../doc/REGISTRY.md).
+Do not invent product display names or categories — follow [DOC-001](../../../../../docs/_control/DOC-001-documentation-control-standard.md), [DOC-002](../../../../../docs/_control/DOC-002-documentation-register.md), and [AGENTS.md](../../../../../AGENTS.md).
 
-### Registry entry
+### Register entry
 
-```yaml
-id: DOC-00N
-path: doc/<home>/DOC-00N-<slug>.md
-type: ADR | Register | Architecture | Runbook | API Contract
-version: 0.1.0
-lifecycle: Draft
-owner: Platform
-updated: YYYY-MM-DD
-```
-
-Add the matching table row in `doc/REGISTRY.md` in the same change. Follow [afenda-elite-documentation](../../../afenda-elite-documentation/SKILL.md) for procedures.
+DOC-002 rows have exactly: ID · Category · Title · Version · Status · Owner · Updated (no path column; no Control State column). Document headers also declare **Control State** (`Open` · `Closed` · `Reopened`) per DOC-001 §3.7. Filename `{ID}-{kebab-slug}.md` under the DOC-001 home. Follow [afenda-elite-doc-control](../../../afenda-elite-doc-control/SKILL.md) for procedures.
 
 ## Overview
 
@@ -66,7 +57,7 @@ ADRs capture the reasoning behind significant technical decisions. They're the h
 
 ### ADR Template
 
-Store ADRs under `doc/adr/` (never `docs/`). Use REGISTRY lifecycle names in Status (`Draft` · `Review` · `Accepted` · `Superseded` · `Deprecated`).
+Store ADRs under `docs/architecture/decisions/` when explicitly approved (DOC-001 — no required `docs/adr/` tree; never recreate `doc/`). Use DOC-001 lifecycle names in Status (`Draft` · `Review` · `Accepted` · `Living` · `Target` · `Superseded` · `Retired`). Use **Control State** (`Open` · `Closed` · `Reopened`) for edit authorization — never confuse it with Status.
 
 ```markdown
 # ADR-001: Use PostgreSQL for primary database
@@ -74,6 +65,7 @@ Store ADRs under `doc/adr/` (never `docs/`). Use REGISTRY lifecycle names in Sta
 | Field | Value |
 |-------|-------|
 | **Status** | Accepted |
+| **Control State** | Closed |
 | **Date** | 2026-07-13 |
 
 ## Context
@@ -110,17 +102,17 @@ Use PostgreSQL with Prisma ORM.
 - Hosting on managed service (Supabase, Neon, or RDS)
 ```
 
-On Accept: add `DOC-NNN` + Change Log in `doc/REGISTRY.md`. Do **not** put new ADRs under `docs/`.
+On Accept: after user-approved ID, add the ADR row to [DOC-002](../../../../../docs/_control/DOC-002-documentation-register.md) and keep header ↔ row in sync. Use DOC-003 structure.
 
 ### ADR Lifecycle
 
 ```
-Draft → Review → Accepted → (Superseded | Deprecated | Archived)
+Draft → Review → Accepted → (Superseded | Retired)
 ```
 
 - **Don't delete old ADRs.** They capture historical context.
 - When a decision changes, write a new ADR that references and supersedes the old one.
-- Canonical lifecycle names: [doc/REGISTRY.md](../../../../../doc/REGISTRY.md).
+- Canonical lifecycle names: [DOC-001](../../../../../docs/_control/DOC-001-documentation-control-standard.md).
 
 ## Inline Documentation
 

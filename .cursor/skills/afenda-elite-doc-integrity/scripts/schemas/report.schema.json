@@ -1,0 +1,122 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "mode", "profile", "provenance", "scope", "coverage", "git", "findings", "counts", "residualRisk", "exitCode"],
+  "properties": {
+    "schemaVersion": { "const": "1.0.0" },
+    "mode": { "const": "audit" },
+    "profile": { "enum": ["full", "naming"] },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["parsers", "openapi", "afendaRulesetHash"],
+      "properties": {
+        "parsers": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["markdown", "yaml", "jsonSchema"],
+          "properties": {
+            "markdown": { "type": "string", "minLength": 1 },
+            "yaml": { "type": "string", "minLength": 1 },
+            "jsonSchema": { "type": "string", "minLength": 1 }
+          }
+        },
+        "openapi": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["refResolver", "spectralCore", "spectralRulesets", "jsonpathPlus"],
+          "properties": {
+            "refResolver": { "type": "string", "minLength": 1 },
+            "spectralCore": { "type": "string", "minLength": 1 },
+            "spectralRulesets": { "type": "string", "minLength": 1 },
+            "jsonpathPlus": { "type": "string", "minLength": 1 }
+          }
+        },
+        "afendaRulesetHash": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" }
+      }
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["root", "primaryFiles", "markdownFiles", "artifacts", "dependencies", "exclusions"],
+      "properties": {
+        "root": { "type": "string", "minLength": 1 },
+        "primaryFiles": { "type": "integer", "minimum": 0 },
+        "markdownFiles": { "type": "integer", "minimum": 0 },
+        "artifacts": { "type": "integer", "minimum": 0 },
+        "dependencies": { "type": "array", "items": { "type": "string", "minLength": 1 }, "uniqueItems": true },
+        "exclusions": { "type": "array", "items": { "type": "string", "minLength": 1 }, "uniqueItems": true }
+      }
+    },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["primaryExpected", "primaryInspected", "complete", "failures"],
+      "properties": {
+        "primaryExpected": { "type": "integer", "minimum": 0 },
+        "primaryInspected": { "type": "integer", "minimum": 0 },
+        "complete": { "type": "boolean" },
+        "failures": { "type": "array", "items": { "type": "string", "minLength": 1 }, "uniqueItems": true }
+      }
+    },
+    "git": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["trackedPrimary", "untrackedPrimary"],
+      "properties": {
+        "trackedPrimary": { "type": "integer", "minimum": 0 },
+        "untrackedPrimary": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "severity", "evidenceTier", "category", "subject", "authorityAspect", "authority", "conflictingSource", "evidence", "risk", "fixType", "proposedResolution", "versionImpact", "registerImpact", "lockStatus", "verification", "validatorEvidence"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^DOC-CONS-[0-9]{3}$" },
+          "severity": { "enum": ["Critical", "High", "Medium", "Low", "Info"] },
+          "evidenceTier": { "enum": ["Confirmed", "Supported", "Review needed", "Observation"] },
+          "category": { "type": "string", "minLength": 1 },
+          "subject": { "type": "string", "minLength": 1 },
+          "authorityAspect": { "type": "string", "minLength": 1 },
+          "authority": { "type": "string", "minLength": 1 },
+          "conflictingSource": { "type": "string", "minLength": 1 },
+          "evidence": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+          "risk": { "type": "string", "minLength": 1 },
+          "fixType": { "enum": ["AUTO", "SEMI", "MANUAL", "ASK-LOCK"] },
+          "proposedResolution": { "type": "string", "minLength": 1 },
+          "versionImpact": { "type": "string", "minLength": 1 },
+          "registerImpact": { "type": "string", "minLength": 1 },
+          "lockStatus": { "type": "string", "minLength": 1 },
+          "verification": { "type": "string", "minLength": 1 },
+          "validatorEvidence": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+        }
+      }
+    },
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["bySeverity", "byCategory"],
+      "properties": {
+        "bySeverity": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["Critical", "High", "Medium", "Low", "Info"],
+          "properties": {
+            "Critical": { "type": "integer", "minimum": 0 },
+            "High": { "type": "integer", "minimum": 0 },
+            "Medium": { "type": "integer", "minimum": 0 },
+            "Low": { "type": "integer", "minimum": 0 },
+            "Info": { "type": "integer", "minimum": 0 }
+          }
+        },
+        "byCategory": { "type": "object", "additionalProperties": { "type": "integer", "minimum": 0 } }
+      }
+    },
+    "residualRisk": { "type": "string", "minLength": 1 },
+    "exitCode": { "enum": [0, 1, 2] }
+  }
+}

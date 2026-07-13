@@ -2,7 +2,9 @@
 
 **Borrow:** `test-driven-development` (proof) · ecosystem `deliver-acceptance-criteria` (observable Given/When/Then — folded here, not installed).
 
-**Bar:** Enterprise MVP = P0 + P1 (G1–G6) **with recorded evidence**. Wiring alone ≠ done ([001R](../../../docs/modules/feed-farm-trade/FFT-MOD-010-module-docs-index.md)).
+**Bar:** Module Enterprise Readiness requires FFT-MOD-009 evidence satisfying [MOD-002](../../../docs/modules/MOD-002-modules-index.md) claim rules. Program MVP wiring alone ≠ Claimable ([FFT-MOD-010](../../../docs/modules/feed-farm-trade/FFT-MOD-010-module-docs-index.md)).
+
+**Enterprise requirements + evidence:** owning ACs in [FFT-MOD-001…008](../../../docs/modules/feed-farm-trade/) · ledger [FFT-MOD-009](../../../docs/modules/feed-farm-trade/FFT-MOD-009-verification.md). GUIDE-016 is Retired (archive only).
 
 ## Commands
 

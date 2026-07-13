@@ -4,16 +4,16 @@
 |-------|-------|
 | ID | ARCH-012 |
 | Category | Architecture |
-| Version | 1.0.0 |
+| Version | 1.0.1 |
 | Status | Living |
+| Control State | Closed |
 | Owner | Frontend |
-| Updated | 2026-07-13 |
-
+| Updated | 2026-07-14 |
 Target route map. Columns: path, page file, layout group, special files, proxy gate, owner.
 
 **Legend**
 
-- **Proxy:** matched by [`proxy.ts`](../../../proxy.ts) session gate  
+- **Proxy:** matched by `apps/web/proxy.ts` session gate (Target — not `middleware.ts`)  
 - **loading / error:** required on authenticated product segments after rebuild  
 - **Status:** `live` = product composition is wired; `placeholder` = route file
   exists but only exposes wipe/holding UI; `rebuild` = route needs restoration.
@@ -32,7 +32,7 @@ Target route map. Columns: path, page file, layout group, special files, proxy g
 | `/f/[token]` | `app/f/[token]/page.tsx` | root | yes | — | no | share access |
 | `/survey/[slug]` | `app/survey/[slug]/page.tsx` | root | yes | — | no | open link |
 
-\* `/client/*` is in the proxy matcher; `/client/login` is explicitly bypassed in `proxy.ts`.
+\* `/client/*` is in the proxy matcher; `/client/login` is explicitly bypassed in `apps/web/proxy.ts`.
 
 ## Join
 
@@ -106,7 +106,7 @@ mark a route verified.
 ## Feed Farm Trade / Feed Farm Trade (gated appendix)
 
 **Product purpose:** B2B **feed & farm trade sales** for 3F businesses (feedmills, farmers, Feed · Farm · Food — industry customers, not portal organization admins) — see [adr/001-feed-farm-trade.md](../../modules/feed-farm-trade/FFT-MOD-001-module-architecture.md). Downstream **customer portal** is a future series branch. Architecture: [adr/001A-feed-farm-trade-architecture.md](../../modules/feed-farm-trade/FFT-MOD-001-module-architecture.md). Roadmap: [adr/001R-feed-farm-trade-roadmap.md](../../modules/feed-farm-trade/FFT-MOD-010-module-docs-index.md).
-**Shell id:** `fft`. Same AdminCN shell as Declarations. Layout gate: platform **`fft.access`** via `requireFftAccess` / `hasFftModuleAccess` (hard org-scoped). Organization admin alone does **not** unlock `/fft`. Locale URL segment removed (i18n deferred to action arg); paths are flat under `/fft/*`. Tenancy SSOT: [ARCH-023](../turborepo/ARCH-023-multi-tenancy.md).
+**Shell id:** `fft`. Same AdminCN shell as Declarations. Layout gate: platform **`fft.access`** via `requireFftAccess` / `hasFftModuleAccess` (hard org-scoped). Organization admin alone does **not** unlock `/fft`. Locale URL segment removed (i18n deferred to action arg); paths are flat under `/fft/*`. Tenancy SSOT: [ARCH-023](../system/ARCH-023-multi-tenancy.md).
 
 Sidebar entitlement: `features/portal-chrome/resolve-shell-access.ts` (`declarations` for all members; `fft` only with permission). Types: `modules/platform/shell/access.ts`.
 
@@ -130,7 +130,7 @@ Promotion and flags: follow Feed Farm Trade [gate-register](../../modules/feed-f
 
 ## Proxy matcher (authoritative)
 
-From `proxy.ts`:
+From `apps/web/proxy.ts`:
 
 - Matched: `/account/*`, `/dashboard/*`, `/client/*`, `/fft/*`, `/playground/*`
 - Public (not matched): `/`, `/auth/*`, `/join`, `/org/login`, `/invite/*`, `/api/*`, `/survey/*`, `/f/*`

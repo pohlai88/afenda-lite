@@ -4,11 +4,11 @@
 |-------|-------|
 | ID | ARCH-005 |
 | Category | Architecture |
-| Version | 1.0.0 |
+| Version | 1.0.1 |
 | Status | Living |
+| Control State | Closed |
 | Owner | Backend |
-| Updated | 2026-07-13 |
-
+| Updated | 2026-07-14 |
 Runtime SSOT after `lib/` → `modules/` relocate (complete 2026-07-11). Prose context **Trade** = product Feed Farm Trade; code path **`modules/fft/`**.
 
 ## Target layout
@@ -64,4 +64,4 @@ Pass 2 + absorb: FE trust → `features/auth/`; brand/theme → `features/portal
 ## Related
 
 - [03-bounded-contexts.md](ARCH-006-bounded-contexts.md)  
-- [../architecture/frontend/ARCH-029-frontend-folder-map.md](../../architecture/frontend/ARCH-029-frontend-folder-map.md)  
+- [../architecture/frontend/ARCH-017-frontend-folder-map.md](../../architecture/frontend/ARCH-017-frontend-folder-map.md)  

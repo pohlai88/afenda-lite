@@ -1,0 +1,157 @@
+{
+  "$schema": "./schemas/module-pack-contract.schema.json",
+  "contractVersion": "1.0.0",
+  "authority": {
+    "id": "MOD-002",
+    "version": "4.0.0",
+    "marker": "**Executable module contract:** 1.0.0"
+  },
+  "roles": {
+    "001": {
+      "title": "Module Architecture",
+      "slug": "module-architecture",
+      "requiredTopics": [
+        "Enterprise requirements"
+      ]
+    },
+    "002": {
+      "title": "Domain and Ownership",
+      "slug": "domain-and-ownership",
+      "requiredTopics": [
+        "Enterprise requirements"
+      ]
+    },
+    "003": {
+      "title": "Tech Stack",
+      "slug": "tech-stack",
+      "requiredTopics": [
+        "Enterprise requirements"
+      ]
+    },
+    "004": {
+      "title": "Data Model",
+      "slug": "data-model",
+      "requiredTopics": [
+        "Enterprise requirements"
+      ]
+    },
+    "005": {
+      "title": "Auth, Tenancy and RBAC",
+      "slug": "auth-tenancy-rbac",
+      "requiredTopics": [
+        "Enterprise requirements"
+      ]
+    },
+    "006": {
+      "title": "Surfaces and Routes",
+      "slug": "surfaces-and-routes",
+      "requiredTopics": [
+        "Enterprise requirements"
+      ]
+    },
+    "007": {
+      "title": "API and Adapters",
+      "slug": "api-and-adapters",
+      "requiredTopics": [
+        "Enterprise requirements"
+      ]
+    },
+    "008": {
+      "title": "Ops Runtime",
+      "slug": "ops-runtime",
+      "requiredTopics": [
+        "Enterprise requirements"
+      ]
+    },
+    "009": {
+      "title": "Verification",
+      "slug": "verification",
+      "requiredTopics": [
+        "Structured evidence table"
+      ]
+    },
+    "010": {
+      "title": "Module Docs Index + Roadmap",
+      "slug": "module-docs-index",
+      "requiredTopics": [
+        "Module Enterprise Readiness"
+      ]
+    }
+  },
+  "requirementColumns": [
+    "AC-ID",
+    "Profile",
+    "Quality Dimension",
+    "Applicability",
+    "Criterion"
+  ],
+  "evidenceColumns": [
+    "AC-ID",
+    "Owner MOD",
+    "Profile",
+    "Quality Dimension",
+    "Applicability",
+    "Activation",
+    "Evidence",
+    "Evidence Reference",
+    "Evidence Revision",
+    "Evidence Date",
+    "Blocker / Rationale"
+  ],
+  "profilesMarker": "**Quality profiles:**",
+  "claimPattern": "**Module Enterprise Readiness claim:** Claimable|Not claimable",
+  "acIdPattern": "^([A-Z]+)-AC-(00[1-8])-(\\d{2})$",
+  "placeholders": [
+    "TODO",
+    "TBD",
+    "<criterion>",
+    "<evidence>"
+  ],
+  "enums": {
+    "applicability": [
+      "Core",
+      "Conditional",
+      "Out of Scope"
+    ],
+    "activation": [
+      "Enabled",
+      "Disabled",
+      "Uncontracted"
+    ],
+    "evidence": [
+      "PASS",
+      "FAIL",
+      "BLOCKED",
+      "NOT EVIDENCED",
+      "NOT ENABLED"
+    ]
+  },
+  "profiles": {
+    "Enterprise Core": {
+      "mandatory": true,
+      "dimensions": {
+        "CORE-ARCH": "001",
+        "CORE-PROCESS": "002",
+        "CORE-PLATFORM": "003",
+        "CORE-DATA": "004",
+        "CORE-SECURITY": "005",
+        "CORE-EXPERIENCE": "006",
+        "CORE-INTEGRATION": "007",
+        "CORE-OPERATIONS": "008"
+      }
+    },
+    "ERP": {
+      "mandatory": false,
+      "dimensions": {
+        "ERP-PROCESS-CONTROLS": "002",
+        "ERP-REPORTING": "002",
+        "ERP-CONFIG-ALM": "003",
+        "ERP-MASTER-DATA": "004",
+        "ERP-SOD-COMPLIANCE": "005",
+        "ERP-LOCALIZATION": "006",
+        "ERP-CLEAN-CORE-INTEGRATION": "007",
+        "ERP-CUTOVER-OPERATIONS": "008"
+      }
+    }
+  }
+}

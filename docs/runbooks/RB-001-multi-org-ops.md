@@ -4,12 +4,12 @@
 |-------|-------|
 | ID | RB-001 |
 | Category | Runbook |
-| Version | 1.0.0 |
+| Version | 1.0.1 |
 | Status | Living |
+| Control State | Closed |
 | Owner | Platform |
-| Updated | 2026-07-13 |
-
-**Authority:** [ARCH-023 Multi-Tenancy Model](../architecture/turborepo/ARCH-023-multi-tenancy.md) (architecture SSOT — Neon shared-schema posture + production efficiency)  
+| Updated | 2026-07-14 |
+**Authority:** [ARCH-023 Multi-Tenancy Model](../architecture/system/ARCH-023-multi-tenancy.md) (architecture SSOT — Neon shared-schema posture + production efficiency)  
 **Audience:** operators applying tenancy backfills after M1–M3.
 
 ## Rules

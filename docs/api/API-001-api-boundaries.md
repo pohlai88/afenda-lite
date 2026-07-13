@@ -4,14 +4,19 @@
 |-------|-------|
 | ID | API-001 |
 | Category | API |
-| Version | 1.2.0 |
+| Version | 1.2.3 |
 | Status | Living |
+| Control State | Closed |
 | Owner | Backend |
-| Updated | 2026-07-13 |
+| Updated | 2026-07-14 |
+
+# 1. Purpose
 
 Contract-first, one version, validate at the edge. Enables engineers to choose the correct adapter and security pipeline before writing Actions or Route Handlers.
 
-**Audience:** backend and frontend maintainers. **Action enabled:** pick adapter + apply auth inside the adapter.
+**Parent architecture:** [ARCH-029](../architecture/system/ARCH-029-interface-api-architecture.md). **Audience:** backend and frontend maintainers. **Action enabled:** pick adapter + apply auth inside the adapter.
+
+# 2. Scope
 
 ## Trust boundaries
 
@@ -35,6 +40,8 @@ flowchart LR
 | `modules/*/schemas` | Shape + refine | DB access |
 | `modules/*/domain` | Parameterized queries, domain rules | Read `Request` / cookies directly |
 | UI / RSC | Call module domain (reads) or Actions (mutations) | Import `pg` / build SQL strings |
+
+# 3. Contract
 
 ## Adapter choice
 
@@ -68,7 +75,7 @@ Every Server Action and every **mutating** Route Handler:
 
 Optional: schedule non-blocking audit/side effects with `after()` so they do not delay the response.
 
-**Public exceptions (no portal session):** health probes and Neon Auth proxy only.
+**Public exceptions (no portal session):** explicit allowlist only. Living allowlist: health probes and Neon Auth proxy. Additional public survey / secure-link flows require approved catalogue rows ([REST-006](REST-006-public-survey-secure-link-resources.md)) and still validate token scope and resource state ([ARCH-029](../architecture/system/ARCH-029-interface-api-architecture.md) §3.3; [API-005](API-005-authentication-authorization-contract.md) Draft).
 
 ## Session guards (examples)
 
@@ -110,23 +117,33 @@ Do not ship `/api/v1` and `/api/v2` in parallel. Extend resources additively (op
 
 | Prefix | Owns |
 |--------|------|
-| **API-** | This pack’s cross-cutting contract (boundaries, errors, types, schema map) |
-| **REST-** | Human REST path catalogs |
+| **API-** | Cross-cutting contracts (boundaries, errors, types, schema map, Phase 2 Drafts) |
+| **REST-** | REST standards + domain catalogues |
+| **FFT-REST-** | Feed Farm Trade module REST |
 | **OPEN-** | OpenAPI machine exports — [OPEN-001](OPEN-001-openapi.md) |
 
-## Related
+# 4. References
 
+- [ARCH-029 Interface and API Architecture](../architecture/system/ARCH-029-interface-api-architecture.md) (parent)
 - [REST-001 Rest Resources](REST-001-rest-resources.md)
 - [API-002 Error Contract](API-002-error-contract.md)
 - [API-003 API Types](API-003-api-types.md)
+- [API-004 Schema Map](API-004-schema-map.md)
 - [OPEN-001 OpenAPI](OPEN-001-openapi.md)
 - [../architecture/frontend/ARCH-013-bff-and-data-flow.md](../architecture/frontend/ARCH-013-bff-and-data-flow.md)
 - [../architecture/backend/ARCH-010-backend-conventions.md](../architecture/backend/ARCH-010-backend-conventions.md)
 
-## Change Log
+# 5. Change Log
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.2.3 | 2026-07-14 | Added mandatory Control State header field (Closed); lifecycle Status unchanged. |
+| 1.2.2 | 2026-07-13 | Adopted the DOC-003 six-section controlled-document structure |
+| 1.2.1 | 2026-07-13 | Parent ARCH-029; public-exception allowlist aligned; prefix map synced |
 | 1.2.0 | 2026-07-13 | Success `{ data }` HTTP envelope SSOT; OPEN prefix no longer “reserved” |
 | 1.1.0 | 2026-07-13 | Security pipeline, Next.js/Vercel adapter constraints, prefix map |
 | 1.0.0 | 2026-07-13 | Initial living boundaries |
+
+# 6. Notes
+
+The HTTP success envelope is governed here; resource-specific documents may specialize only the value inside `data`.

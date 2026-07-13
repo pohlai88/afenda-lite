@@ -4,17 +4,22 @@
 |-------|-------|
 | ID | OPEN-001 |
 | Category | OPEN |
-| Version | 1.1.2 |
+| Version | 1.1.6 |
 | Status | Living |
+| Control State | Closed |
 | Owner | Backend |
-| Updated | 2026-07-13 |
+| Updated | 2026-07-14 |
+
+# 1. Purpose
 
 Human guide for the **machine OpenAPI** artifact. Enables maintainers to generate and consume OpenAPI without duplicating [REST-001](REST-001-rest-resources.md) path tables.
 
-**Audience:** backend maintainers and docs (Fumadocs) authors.  
-**Action enabled:** generate `OPEN-001-openapi.yaml` for api-now; follow forward sections below when wiring Zod imports, Fumadocs, or contract-only ops.
+**Parent architecture:** [ARCH-029](../architecture/system/ARCH-029-interface-api-architecture.md). **Audience:** backend maintainers and docs (Fumadocs) authors.
+**Action enabled:** generate `OPEN-001-openapi.yaml` for api-now; follow forward sections below when wiring Zod imports, Fumadocs, or contract-only ops. Recipes: [GUIDE-011](guides/GUIDE-011-generating-and-validating-openapi.md).
 
 **Stage:** documentation / forward writing — recipes below are authoritative for the next code slices. Do not wait for a docs app or a full `modules/` checkout before treating these rules as SSOT.
+
+# 2. Scope
 
 ## Goals
 
@@ -34,7 +39,7 @@ Human guide for the **machine OpenAPI** artifact. Enables maintainers to generat
 
 | Artifact | Path | Owns |
 |----------|------|------|
-| This guide | `docs/api/OPEN-001-openapi.md` | Promote rules, generate how-to, stack pin, forward recipes |
+| This guide | `docs/api/OPEN-001-openapi.md` | Current rules and executable recipes until GUIDE-011 is promoted |
 | Machine OAS | `docs/api/OPEN-001-openapi.yaml` | Generated OpenAPI document only |
 | Generator | `scripts/generate-openapi.mts` | Emit YAML from Zod registries |
 | Spectral | `.spectral.yaml` | Lint rules |
@@ -65,6 +70,8 @@ Living bar (already met for api-now):
 | `GET /api/health/readiness` | FFT HTTP appendix (until FFT reopen + this guide’s contract-only rules) |
 | `GET/PUT/PATCH/POST /api/client/declaration-draft` | Live playground for contract-only ops |
 | Shared `APIErrorBody` + `{ data }` envelopes | |
+
+# 3. Contract and operation
 
 ## Forward work (recorded)
 
@@ -146,18 +153,24 @@ npm run openapi:generate
 npm run check:openapi
 ```
 
-## Related
+# 4. References
 
 - Machine file: [OPEN-001-openapi.yaml](OPEN-001-openapi.yaml)
 - [REST-001 Rest Resources](REST-001-rest-resources.md)
 - [API-002 Error Contract](API-002-error-contract.md)
 - [API-004 Schema Map](API-004-schema-map.md)
+- [GUIDE-011 Generating and Validating OpenAPI](guides/GUIDE-011-generating-and-validating-openapi.md) (Draft planned successor; this file owns executable recipes until promotion)
+- [ARCH-029](../architecture/system/ARCH-029-interface-api-architecture.md)
 - Skills: [openapi-spec-generation](https://skills.sh/wshobson/agents/openapi-spec-generation); Fumadocs: [OpenAPI integration](https://www.fumadocs.dev/docs/integrations/openapi)
 
-## Change Log
+# 5. Change Log
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.1.6 | 2026-07-14 | Added mandatory Control State header field (Closed); lifecycle Status unchanged. |
+| 1.1.5 | 2026-07-13 | Corrected recipe ownership: OPEN-001 remains authoritative until GUIDE-011 promotion; adopted six-section structure |
+| 1.1.4 | 2026-07-13 | Linked GUIDE-011 as the planned recipe successor under `docs/api/guides/` |
+| 1.1.3 | 2026-07-13 | Linked Draft GUIDE-007; recorded deferred OPEN-002…005 split rule |
 | 1.1.2 | 2026-07-13 | Forward writing: record unavailable work; drop “wait for tree” hedges |
 | 1.1.1 | 2026-07-13 | Point success envelope SSOT at API-001 |
 | 1.1.0 | 2026-07-13 | Forward writing: Zod handoff, Fumadocs wire, contract-only expand rules |
@@ -165,3 +178,7 @@ npm run check:openapi
 | 1.0.0 | 2026-07-13 | Living: api-now YAML + generate + Spectral `check:openapi` |
 | 0.2.0 | 2026-07-13 | Renamed from reserved; Fumadocs consumer; artifact split; stack pin |
 | 0.1.0 | 2026-07-13 | Reserved stub; no OpenAPI body |
+
+# 6. Notes
+
+**Deferred artifact splits (not created):** OPEN-002 Public · OPEN-003 Internal/partner · OPEN-004 Webhook · OPEN-005 FFT — only when different consumers, security models, independent releases, or unsafe size require it.

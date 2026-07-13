@@ -11,7 +11,7 @@ Borrowed from Xerp `afenda-monorepo-refactor` (Phase 0 contract · audit/plan/ex
 **Announce:** "I'm using afenda-elite-monorepo-refactor — stating refactor contract before edits."
 
 ```text
-LOAD: doc/architecture/DOC-004-skills-architecture.md · ADR-003 when Accepted
+LOAD: using-afenda-elite-skills · docs/_control (Docs lane) · package DAG ADRs when Accepted
 SKIP: bulk codemods · full-repo lint --fix · _reference/archive · Fumadocs-as-authority edits
 LANE: Normalize (structure) or Fix (single bug) — one lane; housekeeping removals = Normalize
 ```
