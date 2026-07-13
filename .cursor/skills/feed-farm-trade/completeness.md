@@ -2,9 +2,9 @@
 
 **Updated:** 2026-07-11 (skill upgraded to enterprise delivery pack)
 
-**SSOT trio:** [001](../../../docs/adr/frontend/ADR-003-feed-farm-trade-module.md) · [001A](../../../docs/adr/frontend/ADR-004-feed-farm-trade-architecture.md) · [001R](../../../docs/adr/frontend/ADR-005-feed-farm-trade-roadmap.md)
+**SSOT trio:** [001](../../../docs/modules/feed-farm-trade/FFT-MOD-001-module-architecture.md) · [001A](../../../docs/modules/feed-farm-trade/FFT-MOD-001-module-architecture.md) · [001R](../../../docs/modules/feed-farm-trade/FFT-MOD-010-module-docs-index.md)
 
-**Per-phase evaluation:** [P0](../../../docs/guides/GUIDE-010-feed-farm-trade-phase-0-shell.md) · [P1](../../../docs/guides/GUIDE-011-feed-farm-trade-phase-1-core-mvp.md) · [P2](../../../docs/guides/GUIDE-012-feed-farm-trade-phase-2-ui-polish.md) · [P3](../../../docs/guides/GUIDE-013-feed-farm-trade-phase-3-ops-flags.md)
+**Per-phase evaluation:** [P0](../../../docs/modules/feed-farm-trade/FFT-MOD-010-module-docs-index.md) · [P1](../../../docs/modules/feed-farm-trade/FFT-MOD-010-module-docs-index.md) · [P2](../../../docs/modules/feed-farm-trade/FFT-MOD-010-module-docs-index.md) · [P3](../../../docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md)
 
 **Skill delivery pack:** [slice-playbook](slice-playbook.md) · [action-map](action-map.md) · [rbac-card](rbac-card.md) · [verify](verify.md) · [example-slice](example-slice.md)
 
@@ -23,7 +23,7 @@ Legend: `done` · `partial` · `missing` · `residue`
 | F-EVT-06 / G7 | done | Clone→draft; piglet template ensure; activate scheduled; admin + setup UI |
 | F-ALC-03 / G9 | done | `allocation.override` distinct from preview/run; override form gated on allocation page |
 | P2 UI polish | done | P2-AC-01..06 evidenced; legacy `/fft/{vi\|en}/**` → locale-free redirect shim (no FftShell) |
-| P3 ops flags (code behind flags) | partial | Local smoke may use flags on; **prod promotion Closed (registered)** — [deprecation register](../../../agent-skills/skills/deprecation-and-migration/reference.md) · [gate-register](../../../docs/modules/feed-farm-trade/ops/RB-002-feed-farm-trade-gate-register.md) |
+| P3 ops flags (code behind flags) | partial | Local smoke may use flags on; **prod promotion Closed (registered)** — [deprecation register](../../../agent-skills/skills/deprecation-and-migration/reference.md) · [gate-register](../../../docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md) |
 | FftShell / locale switcher | done | Do not remount |
 | API catalog locale-free | done | `docs/api/REST-001-rest-resources.md` |
 | Skill pack (guardrails only) | superseded | Replaced by delivery pack below |

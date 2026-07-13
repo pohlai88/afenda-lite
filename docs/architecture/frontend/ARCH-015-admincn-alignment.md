@@ -11,8 +11,8 @@
 
 **Reference:** `_reference/shadcn-nextjs-admincn-admin-template-1.0.0/.../src`  
 **Product home:** `components-V2/`  
-**Playbook:** [docs/architecture/ARCH-018-admincn-customization.md](../ARCH-018-admincn-customization.md)  
-**Preflight:** [docs/architecture/ARCH-019-admincn-frontend-preflight.md](../ARCH-019-admincn-frontend-preflight.md)  
+**Playbook:** [ARCH-018-admincn-customization.md](../tech-stack/ARCH-018-admincn-customization.md)  
+**Preflight:** [ARCH-019-admincn-frontend-preflight.md](../tech-stack/ARCH-019-admincn-frontend-preflight.md)  
 **UI registry (compulsory):** [`.cursor/skills/feed-farm-trade/ui-registry.md`](../../../.cursor/skills/feed-farm-trade/ui-registry.md) · [`ui-registry.json`](../../../.cursor/skills/feed-farm-trade/ui-registry.json) · `npm run check:fft-ui-registry`
 
 AdminCN is the **shared platform shell** for Declarations, Account, and Feed Farm Trade. It is **not** the auth product and not a license to ship demo apps.
@@ -59,7 +59,7 @@ Every primitive and block under `components-V2` used as DNA must carry an `ACN-U
 | Declarations | `/dashboard/*`, `/account/*` | `requireMemberSession` | `declarations` |
 | Feed Farm Trade | `/fft/*` | `requireFftAccess` | `fft` |
 
-Purpose: B2B feed & farm trade sales for 3F businesses (industry customers — not portal organization admins) — [adr/001-feed-farm-trade.md](../../adr/frontend/ADR-003-feed-farm-trade-module.md) · [001A](../../adr/frontend/ADR-004-feed-farm-trade-architecture.md) · [001R](../../adr/frontend/ADR-005-feed-farm-trade-roadmap.md). Downstream customer portal is out of scope for this module.
+Purpose: B2B feed & farm trade sales for 3F businesses (industry customers — not portal organization admins) — [adr/001-feed-farm-trade.md](../../modules/feed-farm-trade/FFT-MOD-001-module-architecture.md) · [001A](../../modules/feed-farm-trade/FFT-MOD-001-module-architecture.md) · [001R](../../modules/feed-farm-trade/FFT-MOD-010-module-docs-index.md). Downstream customer portal is out of scope for this module.
 | Admin routes | e.g. playground (local) | `isAdminSession` | `kind: "admin"` |
 
 ## Customization order (Studio / AdminCN skill)

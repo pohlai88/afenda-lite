@@ -4,7 +4,7 @@
 |-------|-------|
 | ID | ARCH-027 |
 | Category | Architecture |
-| Version | 1.1.0 |
+| Version | 1.2.0 |
 | Status | Target |
 | Owner | Platform |
 | Updated | 2026-07-13 |
@@ -13,7 +13,32 @@
 
 ## Context
 
-`apps/web` requires both server-only secrets and client-safe public variables. The environment model enforces the server/client split at the type-checker level, validates all variables at startup, and uses standard Next.js loading so Vercel's tooling works without custom scripts. The decision is recorded in ADR-014.
+`apps/web` requires both server-only secrets and client-safe public variables. The environment model enforces the server/client split at the type-checker level, validates all variables at startup, and uses standard Next.js loading so Vercel's tooling works without custom scripts. This document includes the **`@t3-oss/env-nextjs` decision** (former ADR-014).
+
+## Env library decision (from ADR-014)
+
+**Decision:** Use **`@t3-oss/env-nextjs`** in `packages/env/src/web.ts`. Zod schema declares every variable once. Exported `env` is the only way application code reads configuration. After S4.1 cutover: Next.js loads `.env.local` natively — no compose step, no guard script.
+
+| Positive | Accepted cost |
+|----------|---------------|
+| Server/client split enforced by TypeScript | New var → update schema + `runtimeEnv` (same file) |
+| Missing required var → startup Zod error | Validates at module load — no runtime hot-swap |
+| `vercel env pull` → `.env.local` works | |
+| One inventory file for all app env vars | |
+
+| Alternative | Why rejected |
+|-------------|--------------|
+| Raw `process.env` | No validation; convention-only server/client split |
+| `dotenv-cli` | Load step without Zod/types |
+| Custom compose (`env.config` + `env.secret` → `.env`) | Non-standard; fights `vercel env pull` |
+| Manual Zod wrappers | Reinvents `@t3-oss/env-nextjs` without Next integration |
+
+**Constraints that must not be broken:**
+
+- Product code reads config only via `import { env } from '@afenda/env'` — no raw `process.env` for app config
+- Server vars stay in the `server` block; client vars are `NEXT_PUBLIC_*` in the `client` block
+- After S4.1: `.env.local` is the only local runtime env file; compose / `env:guard` are gone
+- `PLAYGROUND_*` stay local-only and are never synced to Vercel
 
 **Living vs Target:** Until slice S4.1 ships, the monolith still uses `env.config` / `env.secret` / `npm run env:compose` → `.env` and forbids `.env.local` (see `AGENTS.md`). That Living model is **retired by S4.1** — do not run both compose and t3-env in parallel.
 
@@ -105,9 +130,9 @@ Vercel build
 
 | Decision | Where recorded |
 |----------|---------------|
-| `@t3-oss/env-nextjs` over raw `process.env` | ADR-014 |
-| `.env.local` as the only env file | ADR-014 |
-| Local-only vars never pushed to Vercel | ADR-014 |
+| `@t3-oss/env-nextjs` over raw `process.env` | This doc § Env library decision |
+| `.env.local` as the only env file | This doc § Env library decision (after S4.1) |
+| Local-only vars never pushed to Vercel | This doc § Env library decision |
 
 ## Failure modes
 

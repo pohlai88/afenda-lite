@@ -1,4 +1,21 @@
 {
   "version": 1,
-  "hooks": {}
+  "hooks": {
+    "beforeShellExecution": [
+      {
+        "command": "node .cursor/hooks/git-no-auto-recover.mjs",
+        "matcher": "\\bgit\\b",
+        "failClosed": true,
+        "timeout": 15
+      }
+    ],
+    "preToolUse": [
+      {
+        "command": "node .cursor/hooks/no-shim-stub-tech-debt.mjs",
+        "matcher": "Write|StrReplace|EditNotebook",
+        "failClosed": true,
+        "timeout": 15
+      }
+    ]
+  }
 }

@@ -166,4 +166,4 @@ Product copy lives under **Platform** (`modules/platform/copy/*`), not Declarati
 - [03-bounded-contexts.md](ARCH-006-bounded-contexts.md)  
 - [04-ports-and-adapters.md](ARCH-007-ports-and-adapters.md)  
 - [05-nextjs-adapter-map.md](ARCH-008-next-js-adapter-map.md)  
-- [adr/001-modular-monolith-hexagonal.md](../../adr/backend/ADR-001-modular-monolith-hexagonal.md)  
+- [ARCH-022](../turborepo/ARCH-022-system-overview.md)  

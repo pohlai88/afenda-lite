@@ -4,7 +4,7 @@
 |-------|-------|
 | ID | ARCH-022 |
 | Category | Architecture |
-| Version | 1.2.0 |
+| Version | 1.4.0 |
 | Status | Target |
 | Owner | Platform |
 | Updated | 2026-07-13 |
@@ -13,7 +13,72 @@
 
 ## Context
 
-Afenda-Lite is a multi-tenant SaaS product hosted on Vercel. **Target:** it will be structured as a **Turborepo multi-package monorepo** with one deployable application (`apps/web`) and shared infrastructure packages (`packages/*`). This document is the entry point. Layer detail lives in sibling ARCH docs; decisions live in `docs/adr/turborepo/`.
+Afenda-Lite is a multi-tenant SaaS product hosted on Vercel. **Target:** it will be structured as a **Turborepo multi-package monorepo** with one deployable application (`apps/web`) and shared infrastructure packages (`packages/*`). This document is the entry point for **system architecture**, including the Modular Monolith + Hexagonal framework and the Turborepo workspace decision (former ADR-010). Layer detail lives in sibling ARCH docs and `docs/architecture/backend/`.
+
+## Workspace decision — Turborepo + pnpm (from ADR-010)
+
+**Decision:** Use **Turborepo** with **pnpm workspaces**. One app (`apps/web`) and six shared packages (`packages/*`). Turborepo orchestrates the task graph. pnpm enforces workspace isolation. The root `package.json` holds devDeps only.
+
+| Positive | Accepted cost |
+|----------|---------------|
+| Build cache boundaries (`@afenda/ui` change ≠ rebuild `@afenda/db`) | pnpm required — npm/yarn not equivalent |
+| `src/` internals unreachable across package lines | New package → update `pnpm-workspace.yaml` |
+| One root command: `turbo run build|test|typecheck` | Stale `dependsOn` → incorrect cache hits |
+| Vercel Turborepo remote cache | |
+
+| Alternative | Why rejected |
+|-------------|--------------|
+| Flat monolith (single `package.json`) | No cache boundaries; infra bleeds into domain |
+| Nx | Higher config overhead than needed |
+| Microservices | No ops justification at this stage |
+| Multi-repo | Coordinated versioning slows infra+product changes |
+
+**Constraints that must not be broken:**
+
+- `apps/web` is the only Vercel deploy target until a superseding architecture decision
+- Packages under `packages/*` are private workspace packages — not published to npm without a separate decision
+- Root `package.json` holds devDeps only — no runtime product deps at root
+- Cross-package imports use `@afenda/*` names only — never relative `../../../packages/`
+
+Package surface detail: [ARCH-024](ARCH-024-package-boundaries.md).
+
+## System framework — Modular Monolith + Hexagonal
+
+**Sole framework version:** Next.js App Router **Modular Monolith + Hexagonal Architecture (Ports & Adapters)** inside one deployable.
+
+**Sole contract version:** one port catalog + one REST catalog (`docs/api`); Server Actions and Route Handlers are adapters of the same ports.
+
+| Rule | Choice |
+|------|--------|
+| Deployable | Single Next.js app (`apps/web` Target; root app until cutover) |
+| Workspace | Turborepo + pnpm — shared infra in `packages/*` (this doc § Workspace) |
+| Persistence | Single Neon database |
+| Domain | Bounded contexts in `modules/{platform,identity,declarations,fft}` (under `apps/web` Target) |
+| Driving adapters | RSC / Server Actions / `app/api` Route Handlers |
+| Validation | Zod in `modules/*/schemas` at adapter edge only |
+| Public HTTP | One REST catalog — extend additively |
+| Action results | Same error `code` vocabulary as HTTP ([API-002](../../api/API-002-error-contract.md)) |
+| Runtime | Node default; Edge only as documented exception |
+
+Absorbed from former ADR-001 (deleted). Backend layer maps remain under [../backend/](../backend/).
+
+### Consequences
+
+**Positive:** scales Identity / Declarations / Trade / Platform without network hops; matches intended code shape; one mental model for BFF + ports.
+
+**Accepted costs:** modules share one DB — schema ownership required; extracting a service later needs an explicit ADR (not accidental).
+
+### Alternatives rejected
+
+| Alternative | Why rejected |
+|-------------|--------------|
+| Microservices (Trade separate deployable) | Premature; doubles ops; shared Neon Auth/session complexity |
+| GraphQL or tRPC beside REST | Second contract version |
+| `/api/v1` + `/api/v2` | Violates one-version rule |
+| Edge runtime as default | Neon/DB drivers and session model assume Node |
+| RSC `fetch('/api/...')` for ordinary reads | Extra hop; duplicates domain ([ARCH-013](../frontend/ARCH-013-bff-and-data-flow.md)) |
+| Hand-written DTOs parallel to Zod | Drift; two sources of truth |
+| Fat catch-all `lib/domain` as permanent home | Relocated to bounded `modules/*` |
 
 ## From current checkout → target
 
@@ -84,9 +149,7 @@ afenda-lite/
 │   └── config/   → @afenda/config
 │
 ├── docs/
-│   ├── architecture/turborepo/  # this set
-│   └── adr/turborepo/           # ADR-010…014
-│
+│   └── architecture/turborepo/  # ARCH-022…028 (system + tenancy + packages)
 └── .github/workflows/
     ├── ci.yml                   # turbo lint typecheck test
     └── deploy.yml               # turbo build --filter=@afenda/web
@@ -129,13 +192,15 @@ Next.js App Router (apps/web)
 
 ## Key decisions
 
-| Decision | ADR |
-|----------|-----|
-| Turborepo monorepo | [ADR-010](../../adr/turborepo/ADR-010-turborepo-monorepo.md) |
-| Drizzle ORM | [ADR-011](../../adr/turborepo/ADR-011-drizzle-orm.md) |
-| Shared-schema tenancy | [ADR-012](../../adr/turborepo/ADR-012-shared-schema-tenancy.md) |
-| Neon Auth | [ADR-013](../../adr/turborepo/ADR-013-neon-auth.md) |
-| `@t3-oss/env-nextjs` | [ADR-014](../../adr/turborepo/ADR-014-t3-env.md) |
+| Decision | Authority |
+|----------|-----------|
+| Modular Monolith + Hexagonal (system framework) | **This doc** (absorbed ADR-001) |
+| Turborepo monorepo | **This doc** § Workspace (absorbed ADR-010) · [ARCH-024](ARCH-024-package-boundaries.md) |
+| Drizzle ORM | [ARCH-025](ARCH-025-data-layer.md) (absorbed ADR-011) |
+| Shared-schema tenancy | [ARCH-023](ARCH-023-multi-tenancy.md) § Shared-schema (absorbed ADR-012) |
+| Neon Auth | [ARCH-026](ARCH-026-auth-session.md) (absorbed ADR-013) |
+| `@t3-oss/env-nextjs` | [ARCH-027](ARCH-027-env-model.md) (absorbed ADR-014) |
+| Platform tenancy + RBAC | [ARCH-011](../ARCH-011-platform-tenancy-rbac.md) · [ARCH-023](ARCH-023-multi-tenancy.md) |
 
 ## Sibling architecture docs
 
@@ -147,6 +212,8 @@ Next.js App Router (apps/web)
 | [ARCH-026](ARCH-026-auth-session.md) | Session + invitations |
 | [ARCH-027](ARCH-027-env-model.md) | Env schema + `.env.local` |
 | [ARCH-028](ARCH-028-implementation-slices.md) | Ordered build slices (docs plan for implementers) |
+| [../backend/](../backend/) | Hexagon layers, ports, module ownership (detail) |
+| [../frontend/ARCH-013-bff-and-data-flow.md](../frontend/ARCH-013-bff-and-data-flow.md) | Next.js data-pattern decision tree |
 
 ## Failure modes
 
@@ -174,7 +241,8 @@ Next.js App Router (apps/web)
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.4.0 | 2026-07-13 | Absorbed ADR-010 Turborepo workspace; ADR folder deleted |
+| 1.3.0 | 2026-07-13 | Absorbed Modular Monolith + Hexagonal system framework (former ADR-001) |
 | 1.2.0 | 2026-07-13 | Gap table (checkout → Target); Living compose vs Target env note |
 | 1.1.0 | 2026-07-13 | Full target stack + turbo.json |
 | 1.0.0 | 2026-07-13 | Initial Target overview |
-|

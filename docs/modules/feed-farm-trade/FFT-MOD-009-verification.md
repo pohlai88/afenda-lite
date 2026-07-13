@@ -12,7 +12,7 @@
 
 ## Purpose
 
-Prove FFT slices with recorded evidence. Wiring alone ≠ done ([ADR-005](../../adr/frontend/ADR-005-feed-farm-trade-roadmap.md)).
+Prove FFT slices with recorded evidence. Wiring alone ≠ done ([FFT-MOD-010](FFT-MOD-010-module-docs-index.md)).
 
 ## Commands
 
@@ -37,11 +37,7 @@ rg "FftShell|locale-switcher" features/fft app/fft
 
 ## Gate evidence
 
-| Need | Doc |
-|------|-----|
-| Gate 1–7 SSOT / SQL | [RB-002](ops/RB-002-feed-farm-trade-gate-register.md) |
-| Rollout checklist | [RB-004](ops/RB-004-feed-farm-trade-ops-rollout.md) |
-| Promotion order | [RB-003](ops/RB-003-feed-farm-trade-release-readiness.md) |
+Use [FFT-MOD-008](FFT-MOD-008-ops-runtime.md) for gate history, rollout, and promotion order.
 
 ## Done definition
 

@@ -1,0 +1,39 @@
+---
+description: Ban shims, stubs, placeholders, and tech-debt carve-outs — ship real implementations only
+alwaysApply: true
+---
+
+# No shims · no stubs · no tech-debt allowances
+
+**NOT ALLOWED. NOT ALLOWED. NOT ALLOWED.**
+
+Agents must not introduce shims, stubs, placeholders, deferred work, or “tech debt OK” carve-outs. Ship the real implementation, or stop and ask — never leave a fake.
+
+## Forbidden (product / app / package / script code)
+
+- Files or modules named / acting as `shim`, `stub`, `placeholder`, `noop`, `fake`, `dummy`, `temp`
+- Empty or throw-only implementations: `notImplemented`, `NotImplementedError`, `throw new Error("TODO")`, `// stub`, `// shim`
+- Comments that excuse incompleteness: `tech debt`, `for now`, `temporary`, `workaround`, `ship later`, `fix later`, `TODO: implement`, `FIXME` as a plan to skip work
+- Dual paths, compatibility layers, or “thin wrappers” that avoid doing the real cutover
+- Docs or ADRs that **authorize** new shims/stubs/tech debt (except recording a ban)
+- Saying “acceptable debt”, “leave a stub”, or “shim for convenience”
+
+## Required behavior
+
+1. Implement the real behavior end-to-end in this change, **or**
+2. Stop, tell the user what is blocked, and wait for an explicit written exception in **this** turn.
+
+Do not invent exceptions. Do not “park” work behind a stub and call the task done.
+
+## Narrow exceptions (only these)
+
+| Exception | Rule |
+|-----------|------|
+| User letter this turn | User explicitly ordered a named temporary exception **in this chat turn** |
+| Test doubles | `*.test.*`, `*.spec.*`, `**/testing/**`, `**/__mocks__/**` only |
+| Deprecation register | Existing **redirect-only** / archive rows already listed — do not add product UI; do not create **new** shim/stub surfaces |
+| Mentioning the ban | Rules/hooks/docs that state this prohibition |
+
+## Hook enforcement
+
+`preToolUse` → `.cursor/hooks/no-shim-stub-tech-debt.mjs` denies Write/StrReplace/EditNotebook payloads that introduce forbidden patterns. Do not rename, encode, or split edits to bypass the hook.

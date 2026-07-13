@@ -46,7 +46,7 @@ Host product: **Afenda-Lite**. Shell id: `fft`. Engine env prefix: `FFT_*`.
 | Ops / prod | [FFT-MOD-008](FFT-MOD-008-ops-runtime.md) |
 | Material decisions | `adr/ADR-006`…`009` |
 | Phase contracts | `spec/GUIDE-015`…`018` |
-| FE product locks | `docs/adr/frontend/ADR-003`…`005` |
+| FE product locks | [FFT-MOD-001](FFT-MOD-001-module-architecture.md) · [FFT-MOD-010](FFT-MOD-010-module-docs-index.md) |
 | Skill | `.cursor/skills/feed-farm-trade` |
 
 ## Forbidden

@@ -105,7 +105,7 @@ mark a route verified.
 
 ## Feed Farm Trade / Feed Farm Trade (gated appendix)
 
-**Product purpose:** B2B **feed & farm trade sales** for 3F businesses (feedmills, farmers, Feed · Farm · Food — industry customers, not portal organization admins) — see [adr/001-feed-farm-trade.md](../../adr/frontend/ADR-003-feed-farm-trade-module.md). Downstream **customer portal** is a future series branch. Architecture: [adr/001A-feed-farm-trade-architecture.md](../../adr/frontend/ADR-004-feed-farm-trade-architecture.md). Roadmap: [adr/001R-feed-farm-trade-roadmap.md](../../adr/frontend/ADR-005-feed-farm-trade-roadmap.md).
+**Product purpose:** B2B **feed & farm trade sales** for 3F businesses (feedmills, farmers, Feed · Farm · Food — industry customers, not portal organization admins) — see [adr/001-feed-farm-trade.md](../../modules/feed-farm-trade/FFT-MOD-001-module-architecture.md). Downstream **customer portal** is a future series branch. Architecture: [adr/001A-feed-farm-trade-architecture.md](../../modules/feed-farm-trade/FFT-MOD-001-module-architecture.md). Roadmap: [adr/001R-feed-farm-trade-roadmap.md](../../modules/feed-farm-trade/FFT-MOD-010-module-docs-index.md).
 **Shell id:** `fft`. Same AdminCN shell as Declarations. Layout gate: platform **`fft.access`** via `requireFftAccess` / `hasFftModuleAccess` (hard org-scoped). Organization admin alone does **not** unlock `/fft`. Locale URL segment removed (i18n deferred to action arg); paths are flat under `/fft/*`. Tenancy SSOT: [ARCH-023](../turborepo/ARCH-023-multi-tenancy.md).
 
 Sidebar entitlement: `features/portal-chrome/resolve-shell-access.ts` (`declarations` for all members; `fft` only with permission). Types: `modules/platform/shell/access.ts`.
@@ -126,7 +126,7 @@ Sidebar entitlement: `features/portal-chrome/resolve-shell-access.ts` (`declarat
 | `/fft/admin/events/[eventId]/pickup` | Pickup | yes | P3 placeholder · flag-gated |
 | `/fft/admin/erp-sync` | ERP sync | yes | P3 placeholder · flag-gated |
 
-Promotion and flags: follow Feed Farm Trade [gate-register](../../modules/feed-farm-trade/ops/RB-002-feed-farm-trade-gate-register.md) — not this doc. Do **not** restore a separate `FftShell` / locale switcher; chrome is AdminCN only.
+Promotion and flags: follow Feed Farm Trade [gate-register](../../modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md) — not this doc. Do **not** restore a separate `FftShell` / locale switcher; chrome is AdminCN only.
 
 ## Proxy matcher (authoritative)
 

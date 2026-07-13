@@ -317,7 +317,7 @@ Rollback / recovery for org ops: [docs/runbooks/RB-001-multi-org-ops.md](../../.
 ## References
 
 - [ARCH-023](../../../docs/architecture/turborepo/ARCH-023-multi-tenancy.md)
-- [ADR-002](../../../docs/adr/backend/ADR-002-platform-tenancy-rbac.md)
+- [ARCH-023](../../../docs/architecture/turborepo/ARCH-023-multi-tenancy.md)
 - [multi-org-ops](../../../docs/runbooks/RB-001-multi-org-ops.md)
 - [post-lock coding cheat sheet](../../../docs/runbooks/RB-005-post-lock-coding-cheat-sheet.md)
 - [Neon multitenancy](https://neon.com/docs/guides/multitenancy)

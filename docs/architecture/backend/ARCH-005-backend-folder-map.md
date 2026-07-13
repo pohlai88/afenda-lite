@@ -64,4 +64,4 @@ Pass 2 + absorb: FE trust → `features/auth/`; brand/theme → `features/portal
 ## Related
 
 - [03-bounded-contexts.md](ARCH-006-bounded-contexts.md)  
-- [../architecture/frontend/ARCH-011-frontend-folder-map.md](../../architecture/frontend/ARCH-011-frontend-folder-map.md)  
+- [../architecture/frontend/ARCH-029-frontend-folder-map.md](../../architecture/frontend/ARCH-029-frontend-folder-map.md)  

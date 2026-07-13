@@ -10,7 +10,7 @@
 | Updated | 2026-07-13 |
 
 **Framework version:** Next.js App Router Modular Monolith + Hexagonal (Ports & Adapters)  
-**ADR:** [adr/001-modular-monolith-hexagonal.md](../../adr/backend/ADR-001-modular-monolith-hexagonal.md)
+**System SSOT:** [ARCH-022](../turborepo/ARCH-022-system-overview.md)
 
 ## What it means
 

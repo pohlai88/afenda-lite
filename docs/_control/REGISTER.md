@@ -28,7 +28,7 @@ Do **not** add a document number (ID) or register row unless the user explicitly
 
 Agents may propose a candidate ID. They must not invent, reuse, or commit a new ID into this register without approval.
 
-**2026-07-13:** User directed forward-writing completion of the Turborepo architecture plan — ARCH-022…028 and ADR-010…014 are registered as Target / Accepted. Plan residuals absorbed into those docs (REGISTER 4.2.0).
+**2026-07-13:** Turborepo plan docs ARCH-022…028 are Living/Target. ADR-010…014 are **Superseded** (absorbed into ARCH-022…027); do not restore `docs/adr/`. Scratch audit: `docs/scratch/AUDIT-2026-07-13-documentation.md`.
 
 ## Register
 
@@ -42,18 +42,18 @@ Agents may propose a candidate ID. They must not invent, reuse, or commit a new 
 | API-004 | API | Schema Map | 1.1.1 | Living | Backend | 2026-07-13 |
 | REST-001 | REST | Rest Resources | 1.2.0 | Living | Backend | 2026-07-13 |
 | OPEN-001 | OPEN | OpenAPI | 1.1.2 | Living | Backend | 2026-07-13 |
-| ARCH-022 | Architecture | System Overview (Turborepo) | 1.2.0 | Target | Platform | 2026-07-13 |
-| ARCH-023 | Architecture | Multi-Tenancy Model (Turborepo) | 2.1.0 | Living | Platform | 2026-07-13 |
-| ARCH-024 | Architecture | Package Boundaries | 1.0.0 | Target | Platform | 2026-07-13 |
-| ARCH-025 | Architecture | Data Layer | 1.0.0 | Target | Backend | 2026-07-13 |
-| ARCH-026 | Architecture | Auth and Session Model | 1.0.0 | Target | Platform | 2026-07-13 |
-| ARCH-027 | Architecture | Environment Variable Model | 1.1.0 | Target | Platform | 2026-07-13 |
+| ARCH-022 | Architecture | System Overview (Turborepo) | 1.4.0 | Target | Platform | 2026-07-13 |
+| ARCH-023 | Architecture | Multi-Tenancy Model (Turborepo) | 2.4.0 | Living | Platform | 2026-07-13 |
+| ARCH-024 | Architecture | Package Boundaries | 1.1.0 | Target | Platform | 2026-07-13 |
+| ARCH-025 | Architecture | Data Layer | 1.1.0 | Target | Backend | 2026-07-13 |
+| ARCH-026 | Architecture | Auth and Session Model | 1.1.0 | Target | Platform | 2026-07-13 |
+| ARCH-027 | Architecture | Environment Variable Model | 1.2.0 | Target | Platform | 2026-07-13 |
 | ARCH-028 | Architecture | Turborepo Implementation Slices | 1.1.0 | Target | Platform | 2026-07-13 |
-| ADR-010 | ADR | Turborepo Multi-Package Monorepo | 1.1.0 | Accepted | Platform | 2026-07-13 |
-| ADR-011 | ADR | Drizzle ORM | 1.1.0 | Accepted | Backend | 2026-07-13 |
-| ADR-012 | ADR | Shared-Schema Multi-Tenancy | 1.1.0 | Accepted | Platform | 2026-07-13 |
-| ADR-013 | ADR | Neon Auth as Identity Provider | 1.1.0 | Accepted | Platform | 2026-07-13 |
-| ADR-014 | ADR | @t3-oss/env-nextjs for Environment Config | 1.1.0 | Accepted | Platform | 2026-07-13 |
+| ADR-010 | ADR | Turborepo Multi-Package Monorepo | — | Superseded | Platform | 2026-07-13 |
+| ADR-011 | ADR | Drizzle ORM | — | Superseded | Backend | 2026-07-13 |
+| ADR-012 | ADR | Shared-Schema Multi-Tenancy | — | Superseded | Platform | 2026-07-13 |
+| ADR-013 | ADR | Neon Auth as Identity Provider | — | Superseded | Platform | 2026-07-13 |
+| ADR-014 | ADR | @t3-oss/env-nextjs for Environment Config | — | Superseded | Platform | 2026-07-13 |
 
 ## Not Registered
 
@@ -65,6 +65,7 @@ Unregistered docs may still use seven-field headers and `{ID}-{slug}.md` filenam
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 4.4.0 | 2026-07-13 | ADR-010…014 absorbed into ARCH-022…027; `docs/adr/` deleted |
 | 4.3.1 | 2026-07-13 | ARCH-023 2.1.0 clarity rewrite (architecture mode) |
 | 4.3.0 | 2026-07-13 | ARCH-023 2.0.0 Living absorbs ARCH-003; ARCH-003 Superseded |
 | 4.2.0 | 2026-07-13 | Plan residual audit absorbed: ARCH-022/027/028 + ADR-010…014 constraints |

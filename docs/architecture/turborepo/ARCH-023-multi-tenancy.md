@@ -4,7 +4,7 @@
 |-------|-------|
 | ID | ARCH-023 |
 | Category | Architecture |
-| Version | 2.1.0 |
+| Version | 2.4.0 |
 | Status | Living |
 | Owner | Platform |
 | Updated | 2026-07-13 |
@@ -13,11 +13,11 @@
 
 **Audience:** Engineers and agents before inventing tenancy features or changing Neon posture.
 
-**ADRs:** [ADR-012](../../adr/turborepo/ADR-012-shared-schema-tenancy.md) (shared schema) · [ADR-002](../../adr/backend/ADR-002-platform-tenancy-rbac.md) (platform RBAC + hard tenancy)
+**Absorbed:** ADR-012 (shared-schema — deleted). Platform IAM: [ARCH-011](../ARCH-011-platform-tenancy-rbac.md) (former ADR-002).
 
 **Ops:** [RB-001](../../runbooks/RB-001-multi-org-ops.md) · [RB-005](../../runbooks/RB-005-post-lock-coding-cheat-sheet.md) · [neon-tenancy-efficiency](../../../.cursor/skills/neon-tenancy-efficiency/SKILL.md)
 
-**Supersedes:** [ARCH-003](../archive/ARCH-003-multi-tenant-ecosystem.md) (archived stub)
+**Supersedes:** [ARCH-003](../archive/ARCH-003-multi-tenant-ecosystem.md) (archived stub) · ADR-012 as Living SSOT
 
 ---
 
@@ -38,13 +38,44 @@ Afenda-Lite is a multi-module SaaS (Declarations + Feed Farm Trade) on **one** N
 
 ---
 
+## Shared-schema decision (from ADR-012)
+
+**Decision:** Use **shared schema**. Every tenant table includes `organization_id … NOT NULL`. All reads go through `withOrg(orgId)` in `@afenda/db` (Target) or the equivalent hard SQL helper. Neon Row-Level Security is **not** applied on the BFF path — session-based scoping via `withOrg` is sufficient.
+
+### Consequences
+
+| Positive | Accepted cost |
+|----------|---------------|
+| Single migration run applies to all tenants | Omitting `organization_id` can leak cross-tenant data — mitigate with `withOrg` as the only read entry + `audit:tenancy-nulls` in CI |
+| Cross-tenant analytics / backfill are ordinary SQL | Large tenants cannot move to dedicated infra without a migration |
+| Shared Neon connection pool — no per-tenant pools | |
+| Schema changes reviewed once, not once per tenant | |
+
+### Alternatives rejected (detail)
+
+| Alternative | Why rejected | Lock ID |
+|-------------|--------------|---------|
+| Schema-per-tenant | Migration fan-out; dynamic schema switching; Drizzle does not natively support it | **R4** |
+| Project-per-tenant (separate Neon project) | Cost + pool overhead; no cross-tenant queries; provisioning needs infra automation | **R5** / **D5** |
+| Neon RLS on the BFF path | Valuable for direct-DB clients; not needed where `withOrg` already enforces isolation with lower overhead | **R3** |
+
+### Constraints that must not be broken
+
+- Shared schema only — no project-per-tenant and no schema-per-tenant without reopening **R4** / **R5** / **D5** (or a superseding ADR)
+- `orgId` is resolved from session and passed explicitly — never inferred from ambient globals or URL alone
+- Neon RLS stays out of scope on the BFF path until a direct-DB client forces a new ADR (**R3**)
+
+---
+
 ## Responsibilities and boundaries
 
 ```text
-Tier 1  Neon Auth      org membership · activeOrganizationId
-Tier 2  Platform RBAC  platform_* · fft.access (module entry)
-Tier 3  Module domain  hard organization_id = $org on tenant roots
+Tier 1  Neon Auth      who the user is + org membership (organizationId = tenant)
+Tier 2  Platform RBAC  fixed permission codes + named roles + scoped assignments (modules/identity)
+Tier 3  Modules         check permission codes only (hasPermission) — never role display names
 ```
+
+**IAM rules, seed catalogs, and rejected IAM alternatives:** [ARCH-011](../ARCH-011-platform-tenancy-rbac.md).
 
 | Layer | Owns | Must not |
 |-------|------|----------|
@@ -60,7 +91,9 @@ Tier 3  Module domain  hard organization_id = $org on tenant roots
 | Tenant read | `@afenda/db` → `withOrg(orgId)` only |
 | Domain | `apps/web/modules/*/domain` — `orgId: string` required |
 
-When the monolith tree is present and packages are not: same invariants via platform org resolve + hard SQL scope helpers under `modules/**` ([GUIDE-004](../../engineering/GUIDE-004-engineering-drift-register.md) if paths are missing).
+When the monolith tree is present and packages are not: same invariants via platform org resolve + hard SQL scope helpers under `modules/**` ([GUIDE-004](../../guides/GUIDE-004-engineering-drift-register.md) if paths are missing).
+
+**Shipped IAM surfaces:** see [ARCH-011](../ARCH-011-platform-tenancy-rbac.md) Consequences.
 
 ---
 
@@ -124,11 +157,12 @@ Browser
 
 | Decision | Record |
 |----------|--------|
-| Shared schema, not project- or schema-per-tenant | ADR-012 · ADR-002 |
-| App predicates on BFF; no Neon RLS by default | ADR-012 · R3 |
+| Three-tier IAM (Neon Auth / platform RBAC / module codes) | [ARCH-011](../ARCH-011-platform-tenancy-rbac.md) |
+| Shared schema, not project- or schema-per-tenant | This doc § Shared-schema · R4 / R5 / D5 |
+| App predicates on BFF; no Neon RLS by default | This doc § Shared-schema · R3 |
 | Hard `NOT NULL` + hard filters (no soft dual-mode) | Migration `027` · R1 |
 | `withOrg` / hard scope as the only tenant read entry | This doc · [ARCH-024](ARCH-024-package-boundaries.md) |
-| FFT domain catalogs stay out of `platform_*` | ADR-002 · R6 |
+| FFT domain catalogs stay out of `platform_*` | [ARCH-011](../ARCH-011-platform-tenancy-rbac.md) · R6 |
 
 ---
 
@@ -143,7 +177,7 @@ Cheat sheet: [RB-005](../../runbooks/RB-005-post-lock-coding-cheat-sheet.md).
 | Invariant | Evidence |
 |-----------|----------|
 | Shared schema + hard `organization_id = $org` | Migrations `026`–`028`; hard scope / Target `withOrg` |
-| App predicates on BFF (not Neon RLS) | ADR-002; Server Actions path |
+| App predicates on BFF (not Neon RLS) | [ARCH-011](../ARCH-011-platform-tenancy-rbac.md); Server Actions path |
 | Multi-org ready M1–M4 (logical) | Switcher, scoped templates, isolation e2e, org-required ops |
 | Neon prod posture | Protected branch; pooler; PITR 7d; snapshots; restore drill |
 | Efficiency ladder A–E | neon-tenancy skill closed 2026-07-12 |
@@ -260,19 +294,21 @@ Cross-tenant analytics need a warehouse or replica — not supported in this mod
 
 | Doc | Role |
 |-----|------|
-| [ADR-012](../../adr/turborepo/ADR-012-shared-schema-tenancy.md) | Shared-schema decision |
-| [ADR-002](../../adr/backend/ADR-002-platform-tenancy-rbac.md) | Platform IAM + hard tenancy |
-| [ARCH-022](ARCH-022-system-overview.md) | System overview |
+| [ARCH-011](../ARCH-011-platform-tenancy-rbac.md) | Platform IAM + hard tenancy rules (former ADR-002) |
+| [ARCH-022](ARCH-022-system-overview.md) | System overview (ex-ADR-010 workspace) |
 | [ARCH-024](ARCH-024-package-boundaries.md) | Package contracts |
-| [ARCH-025](ARCH-025-data-layer.md) | Drizzle / `withOrg` |
-| [ARCH-026](ARCH-026-auth-session.md) | Session / RBAC |
-| [GUIDE-014](../../guides/GUIDE-014-organization-admin-rbac-tenancy-tasks.md) | Phase evidence |
+| [ARCH-025](ARCH-025-data-layer.md) | Drizzle / `withOrg` (ex-ADR-011) |
+| [ARCH-026](ARCH-026-auth-session.md) | Session / RBAC (ex-ADR-013) |
+| [FFT-MOD-005](../../modules/feed-farm-trade/FFT-MOD-005-auth-tenancy-rbac.md) | FFT domain RBAC (separate catalog) |
 | [ARCH-003](../archive/ARCH-003-multi-tenant-ecosystem.md) | Superseded — archived stub |
 
 ## Change Log
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 2.4.0 | 2026-07-13 | Absorbed ADR-012 shared-schema decision (consequences, alternatives, constraints) |
+| 2.3.0 | 2026-07-13 | Platform IAM detail → [ARCH-011](../ARCH-011-platform-tenancy-rbac.md); this doc keeps Neon model + Decision lock |
+| 2.2.0 | 2026-07-13 | Absorbed ADR-002 platform IAM (three-tier rules, seed catalogs, surfaces) |
 | 2.1.0 | 2026-07-13 | Clarity rewrite — architecture mode structure; Decision lock retained |
 | 2.0.0 | 2026-07-13 | Absorbed ARCH-003; Living SSOT |
 | 1.0.0 | 2026-07-13 | Initial Target sketch |

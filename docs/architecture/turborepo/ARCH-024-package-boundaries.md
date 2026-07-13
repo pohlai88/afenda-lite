@@ -4,7 +4,7 @@
 |-------|-------|
 | ID | ARCH-024 |
 | Category | Architecture |
-| Version | 1.0.0 |
+| Version | 1.1.0 |
 | Status | Target |
 | Owner | Platform |
 | Updated | 2026-07-13 |
@@ -13,7 +13,7 @@
 
 ## Context
 
-The Turborepo workspace has six shared packages under `packages/`. Each package has a declared public surface. App code (`apps/web`) and inter-package dependencies may only import from that public surface — never from a package's `src/` internals. This document records what each package owns, what it exports, and what it must not do. The decision rationale is in ADR-010.
+The Turborepo workspace has six shared packages under `packages/`. Each package has a declared public surface. App code (`apps/web`) and inter-package dependencies may only import from that public surface — never from a package's `src/` internals. Workspace decision (Turborepo + pnpm): [ARCH-022](ARCH-022-system-overview.md) § Workspace (absorbed ADR-010).
 
 ## Responsibilities and boundaries
 
@@ -133,9 +133,9 @@ apps/web/modules/declarations/domain/list.ts
 
 | Decision | Where recorded |
 |----------|---------------|
-| Package isolation over shared `lib/` | ADR-010 |
-| `src/` internals unreachable from outside | ADR-010 |
-| No mega-package (`@afenda/shared`) | ADR-010 |
+| Package isolation over shared `lib/` | [ARCH-022](ARCH-022-system-overview.md) § Workspace |
+| `src/` internals unreachable from outside | [ARCH-022](ARCH-022-system-overview.md) § Workspace |
+| No mega-package (`@afenda/shared`) | This doc |
 
 ## Failure modes
 

@@ -1,19 +1,15 @@
 # guides
 
-Durable product and phase task guides.
+Durable internal guides: coding / docs workflow (GUIDE-001…004) + index (GUIDE-006).
 
 **Index:** [GUIDE-006-guides-index.md](./GUIDE-006-guides-index.md)
 
 | Doc | Purpose |
 |-----|---------|
+| [GUIDE-001](GUIDE-001-engineering-docs-entry.md) | Engineering docs entry |
+| [GUIDE-002](GUIDE-002-coding-engineering-guide.md) | Coding engineering guide |
+| [GUIDE-003](GUIDE-003-engineering-documentation-workflow.md) | Documentation workflow |
+| [GUIDE-004](GUIDE-004-engineering-drift-register.md) | Drift register |
 | [GUIDE-006](GUIDE-006-guides-index.md) | Guides folder index |
-| [GUIDE-007](GUIDE-007-organization-admin-phase-1-tasks.md) | Org admin phase 1 tasks |
-| [GUIDE-008](GUIDE-008-account-phase-3-tasks.md) | Account phase 3 tasks |
-| [GUIDE-009](GUIDE-009-join-phase-2-tasks.md) | Join phase 2 tasks |
-| [GUIDE-010](GUIDE-010-feed-farm-trade-phase-0-shell.md) | FFT phase 0 shell |
-| [GUIDE-011](GUIDE-011-feed-farm-trade-phase-1-core-mvp.md) | FFT phase 1 core MVP |
-| [GUIDE-012](GUIDE-012-feed-farm-trade-phase-2-ui-polish.md) | FFT phase 2 UI polish |
-| [GUIDE-013](GUIDE-013-feed-farm-trade-phase-3-ops-flags.md) | FFT phase 3 ops flags |
-| [GUIDE-014](GUIDE-014-organization-admin-rbac-tenancy-tasks.md) | Org admin RBAC / tenancy evidence |
 
-Engineering workflow guides stay under [../engineering/](../engineering/) (GUIDE-001…004).
+Phase task guides GUIDE-007…014 were **removed**. FFT: [FFT-MOD-010](../modules/feed-farm-trade/FFT-MOD-010-module-docs-index.md). Tenancy: [ARCH-011](../architecture/ARCH-011-platform-tenancy-rbac.md) · [ARCH-023](../architecture/turborepo/ARCH-023-multi-tenancy.md). Auth surfaces: [ARCH-026](../architecture/turborepo/ARCH-026-auth-session.md).

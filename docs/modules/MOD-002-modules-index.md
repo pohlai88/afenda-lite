@@ -4,7 +4,7 @@
 |-------|-------|
 | ID | MOD-002 |
 | Category | Module |
-| Version | 2.0.0 |
+| Version | 2.1.0 |
 | Status | Living |
 | Owner | Platform |
 | Updated | 2026-07-13 |
@@ -19,7 +19,7 @@
 |--------|----------|------|-------|---------------|
 | Feed Farm Trade | `fft` | [feed-farm-trade/](feed-farm-trade/) | [FFT-MOD-010](feed-farm-trade/FFT-MOD-010-module-docs-index.md) | [FFT-MOD-008](feed-farm-trade/FFT-MOD-008-ops-runtime.md) |
 
-Platform tenancy / RBAC (not a product-module spine): [ARCH-023](../architecture/turborepo/ARCH-023-multi-tenancy.md) · [ADR-002](../adr/backend/ADR-002-platform-tenancy-rbac.md).
+Platform tenancy / RBAC (not a product-module spine): [ARCH-011](../architecture/ARCH-011-platform-tenancy-rbac.md) · [ARCH-023](../architecture/turborepo/ARCH-023-multi-tenancy.md).
 
 ## Target layout
 
@@ -28,17 +28,18 @@ docs/modules/
   MOD-002-modules-index.md          ← this file (catalog + guideline)
   <module-slug>/
     README.md                       → MOD-010
-    FFT-MOD-001-…md … FFT-MOD-010-…md   ← example: Feed Farm Trade
-    architecture/   adr/   ops/   spec/   integrations/   archive/   ← depth
+    *-MOD-001-…md … *-MOD-010-…md   ← 10-MOD spine only
 ```
 
 **File + header IDs** are module-qualified (`FFT-MOD-001`, …) so every module can implement the same spine roles without ID collision. Indexes may still say “MOD-001 Architecture”.
+
+**No depth folders** under module homes (`adr/`, `ops/`, `spec/`, …). Put gates and contracts in MOD-008 / MOD-005 / guides; platform decisions live under `docs/architecture/`.
 
 ---
 
 ## Guideline — the 10 MOD
 
-Every product module must ship all ten. Status may be Draft until accurate; Living when authoritative. Depth folders (`adr/`, `ops/`, `spec/`, …) hold typed evidence and keep their own prefixes (ADR / RB / GUIDE / ARCH).
+Every product module must ship all ten. Status may be Draft until accurate; Living when authoritative. Do not add typed depth trees under the module slug.
 
 ### MOD-001 Module Architecture
 
@@ -95,20 +96,20 @@ Every product module must ship all ten. Status may be Draft until accurate; Livi
 - **Mode:** runbook / internal-guide
 - **Enables:** operate and change prod safely — **default agent entry**
 - **Required sections:** Production state · Allowed / forbidden · Verify commands · Rollout / rollback pointers · Incident quick checks
-- **Must link:** `ops/RB-*` for gate matrices and checklists
+- **Must include:** production state, allowed/forbidden, verify commands (gate detail lives here — not a separate `ops/` tree)
 
 ### MOD-009 Verification
 
 - **Mode:** internal-guide
 - **Enables:** prove slices with evidence
 - **Required sections:** AC / evidence expectations · Unit / interaction / e2e touchpoints · Gate evidence pointers · “Done” definition
-- **Must link:** testing README, module verify skill card, RB gate-register
+- **Must link:** testing README, module verify skill card, MOD-008 for gate evidence
 
 ### MOD-010 Module Docs Index
 
 - **Mode:** module index
 - **Enables:** navigation + read order
-- **Required sections:** Status snapshot · Agent read order · Catalog of MOD-001…009 · Depth catalog · Links to FE/platform ADRs · Frozen boundaries
+- **Required sections:** Status snapshot · Agent read order · Catalog of MOD-001…009 · Links to FE/platform ADRs · Frozen boundaries
 
 ---
 
@@ -116,12 +117,13 @@ Every product module must ship all ten. Status may be Draft until accurate; Livi
 
 1. Create `docs/modules/<slug>/` with the 10 qualified `*-MOD-001`…`010` files (Draft OK).
 2. Add a row to the module catalog above.
-3. Keep material decisions in `adr/`, ops in `ops/`, phase contracts in `spec/` — do not fold Accepted ADRs into spine prose.
+3. Do not recreate depth folders under the module slug.
 4. Point AGENTS / skills at MOD-008 (runtime) and MOD-010 (index).
 
 ## Change Log
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 2.1.0 | 2026-07-13 | Spine-only module homes — depth folders forbidden |
 | 2.0.0 | 2026-07-13 | 10-MOD spine guideline; FFT under `feed-farm-trade/` |
 | 1.0.0 | 2026-07-13 | Scaffolded modules folder |

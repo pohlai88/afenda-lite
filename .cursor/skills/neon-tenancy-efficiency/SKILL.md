@@ -11,7 +11,7 @@ description: >-
 # Neon tenancy efficiency
 
 **Host product:** Afenda-Lite · **Model:** shared schema + hard `organization_id` (not project-per-tenant)  
-**SSOT:** [docs/architecture/turborepo/ARCH-023-multi-tenancy.md](../../../docs/architecture/turborepo/ARCH-023-multi-tenancy.md) · **ADR:** [002](../../../docs/adr/backend/ADR-002-platform-tenancy-rbac.md) · **Ops:** [multi-org-ops](../../../docs/runbooks/RB-001-multi-org-ops.md)
+**SSOT:** [ARCH-011](../../../docs/architecture/ARCH-011-platform-tenancy-rbac.md) (IAM) · [ARCH-023](../../../docs/architecture/turborepo/ARCH-023-multi-tenancy.md) (Neon / lock) · **Ops:** [multi-org-ops](../../../docs/runbooks/RB-001-multi-org-ops.md)
 
 ## Coding freeze (read before any tenancy PR)
 
@@ -30,7 +30,7 @@ Do **not** start coding that “closes D5” or “adds RLS for tenancy” witho
 ```
 TASK: Neon shared-schema efficiency + anti-drift
 SSOT: docs/architecture/turborepo/ARCH-023-multi-tenancy.md (Decision lock + Operational considerations + Failure modes)
-ADR:  docs/adr/backend/ADR-002-platform-tenancy-rbac.md
+ADR:  docs/architecture/ARCH-011-platform-tenancy-rbac.md (former ADR-002)
 OPS:  docs/runbooks/RB-001-multi-org-ops.md
 CHEAT: docs/runbooks/RB-005-post-lock-coding-cheat-sheet.md
 CODE: modules/platform/db.ts · db-config.ts · organization-scope.ts

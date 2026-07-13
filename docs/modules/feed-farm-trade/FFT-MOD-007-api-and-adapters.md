@@ -30,9 +30,9 @@ Trade actions use module result helpers (`TradeActionResult` / trade action erro
 
 | Port | Location | Notes |
 |------|----------|-------|
-| ERP vendor adapter | `modules/fft/domain/erp/` | Module-local — not a product-wide Afenda ERP client ([ADR-009](adr/ADR-009-feed-farm-trade-erp-sync.md)) |
+| ERP vendor adapter | `modules/fft/domain/erp/` | Module-local — not a product-wide Afenda ERP client |
 | ERP sync store | `modules/fft/domain/erp-sync-store.ts` | Async push when flag on |
-| Generic stub / HTTP pack | [integrations/](integrations/) | [MOD-004](integrations/MOD-004-feed-farm-trade-erp-generic-stub.md) · [MOD-005](integrations/MOD-005-http-rest-erp-vendor-pack.md) |
+| Generic / HTTP packs | `modules/fft/domain/erp/` | Documented here — no separate `integrations/` doc tree |
 
 ## What stays in `docs/api`
 

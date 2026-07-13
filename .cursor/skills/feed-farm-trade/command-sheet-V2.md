@@ -2,7 +2,7 @@
 
 **Purpose:** Run Phase 3 ops safely after Enterprise MVP is claimable — flag-off protection first, promotion only with gate-register + explicit human approval.
 
-**Authority:** [gate-register](../../../docs/modules/feed-farm-trade/ops/RB-002-feed-farm-trade-gate-register.md) · [RUNTIME](../../../docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md) · [phase 14](../../../docs/guides/GUIDE-013-feed-farm-trade-phase-3-ops-flags.md)  
+**Authority:** [gate-register](../../../docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md) · [RUNTIME](../../../docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md) · [phase 14](../../../docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md)  
 **Sibling sheet:** [command-sheet.md](command-sheet.md) (post-MVP A–J). Use `HOTFIX_TRADE` from that sheet for frozen-MVP code defects — not this series.
 
 **Baseline (do not re-litigate):** P0+P1 claimable · P2-AC-01..06 done · trade unit/registry green · P3 prod flags **false** · AC-OPS-02 **BLOCKED** until promotion.
@@ -47,8 +47,8 @@ Suggested promote order (unless gate-register differs): **deposit → pickup →
 ```text
 1. SKILL.md → completeness.md → mvp-and-gaps.md → verify.md
 2. action-map.md (P3) → rbac-card.md
-3. docs/guides/GUIDE-013-feed-farm-trade-phase-3-ops-flags.md
-4. docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md → docs/modules/feed-farm-trade/ops/RB-002-feed-farm-trade-gate-register.md
+3. docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md
+4. docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md → docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md
 5. testing/README.md (identities — SHARED_ADMIN ≠ sales allowlist)
 + FE wire: example-slice.md · ui-registry.md · /feed-farm-trade skill
 ```

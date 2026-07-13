@@ -34,7 +34,7 @@
 
 - Neon Auth for identity and org membership.
 - Platform `fft.access` for module entry.
-- Module RBAC when `FFT_RBAC_ENABLED=true` ([ADR-006](adr/ADR-006-feed-farm-trade-rbac.md)).
+- Module RBAC when `FFT_RBAC_ENABLED=true` ([FFT-MOD-005](FFT-MOD-005-auth-tenancy-rbac.md)).
 
 ## Module feature flags / env keys
 

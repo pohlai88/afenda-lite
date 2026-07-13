@@ -15,9 +15,9 @@
 
 Content here is not a source of truth until it is promoted into an authoritative docs folder. A document number and register row are added only when the user explicitly agrees.
 
-## Rules
+## Latest audit
 
-- Do not cite scratch documents as product, API, architecture, or ops authority.
+- [AUDIT-2026-07-13-documentation.md](AUDIT-2026-07-13-documentation.md) — docs sync + duplication violations (scratch only)
 - Move durable material out of scratch before implementation depends on it.
 - Delete stale scratch documents instead of preserving them indefinitely.
 

@@ -23,7 +23,7 @@ Canonical route inventory: [ARCH-012](../../architecture/frontend/ARCH-012-app-r
 
 ## Layout / shell
 
-- Operator chrome: AdminCN — [ARCH-015](../../architecture/frontend/ARCH-015-admincn-alignment.md) · [ARCH-018](../../architecture/ARCH-018-admincn-customization.md).
+- Operator chrome: AdminCN — [ARCH-015](../../architecture/frontend/ARCH-015-admincn-alignment.md) · [ARCH-018](../../architecture/tech-stack/ARCH-018-admincn-customization.md).
 - UI implementation: `features/fft/*` — **no** `FftShell`.
 
 ## Client vs operator
@@ -39,6 +39,6 @@ Canonical route inventory: [ARCH-012](../../architecture/frontend/ARCH-012-app-r
 
 ## Product locks
 
-[ADR-003](../../adr/frontend/ADR-003-feed-farm-trade-module.md) · [ADR-004](../../adr/frontend/ADR-004-feed-farm-trade-architecture.md) · [ADR-005](../../adr/frontend/ADR-005-feed-farm-trade-roadmap.md).
+[FFT-MOD-001](FFT-MOD-001-module-architecture.md) · [FFT-MOD-010](FFT-MOD-010-module-docs-index.md).
 
-Phase task guides: [GUIDE-010](../../guides/GUIDE-010-feed-farm-trade-phase-0-shell.md)…[GUIDE-013](../../guides/GUIDE-013-feed-farm-trade-phase-3-ops-flags.md).
+Roadmap / phase status: [FFT-MOD-010](FFT-MOD-010-module-docs-index.md). Ops: [FFT-MOD-008](FFT-MOD-008-ops-runtime.md).

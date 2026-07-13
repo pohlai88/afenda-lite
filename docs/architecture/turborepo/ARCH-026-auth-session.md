@@ -4,7 +4,7 @@
 |-------|-------|
 | ID | ARCH-026 |
 | Category | Architecture |
-| Version | 1.0.0 |
+| Version | 1.1.0 |
 | Status | Target |
 | Owner | Platform |
 | Updated | 2026-07-13 |
@@ -13,7 +13,34 @@
 
 ## Context
 
-Afenda-Lite uses Neon Auth as its identity provider. Neon Auth handles user identity, org membership, password flows, and email invitations. The `@afenda/auth` package wraps Neon Auth into three typed helpers used by app code: `getSession()`, `requireRole()`, and `inviteOrgMember()`. The decision to use Neon Auth is recorded in ADR-013.
+Afenda-Lite uses Neon Auth as its identity provider. Neon Auth handles user identity, org membership, password flows, and email invitations. The `@afenda/auth` package wraps Neon Auth into three typed helpers used by app code: `getSession()`, `requireRole()`, and `inviteOrgMember()`. This document includes the **Neon Auth decision** (former ADR-013).
+
+## Neon Auth decision (from ADR-013)
+
+**Decision:** Use **Neon Auth** (`@neondatabase/auth` + `@neondatabase/auth-ui`). Email via Neon shared provider (`auth@mail.myneon.app`) — no custom SMTP. Password reset via Neon Auth UI forms. All SDK usage wrapped in `@afenda/auth`.
+
+| Positive | Accepted cost |
+|----------|---------------|
+| Identity + org co-located with Neon DB | Coupled to Neon Auth availability/roadmap |
+| First-class org invitations | Custom roles not native — app maps `operator`/`client`/`admin` |
+| No custom session table | Social OAuth needs separate Neon config if ever needed |
+| No SMTP to operate | |
+
+| Alternative | Why rejected |
+|-------------|--------------|
+| Auth.js / NextAuth | Custom session table; no built-in org model |
+| Clerk | External paid vendor; does not co-locate with Neon |
+| Custom JWT | Own session/key rotation with no product differentiation |
+| Supabase Auth | Second infra dependency beside Neon |
+
+**Constraints that must not be broken:**
+
+- Neon Auth SDK usage stays inside `@afenda/auth` — no direct SDK calls from `apps/web` features/modules
+- Auth transactional email uses Neon shared provider — no custom SMTP for Neon Auth
+- Client invite entry remains `/join?invitationId=…`
+- `getSession()` never silently defaults a missing `orgId`
+
+Tenancy: [ARCH-023](ARCH-023-multi-tenancy.md) · Platform IAM: [ARCH-011](../ARCH-011-platform-tenancy-rbac.md).
 
 ## Responsibilities and boundaries
 
@@ -118,9 +145,9 @@ Client invitation: operator calls `inviteOrgMember()` → Neon Auth delivers the
 
 | Decision | Where recorded |
 |----------|---------------|
-| Neon Auth over Auth.js, Clerk, custom JWT | ADR-013 |
-| No custom SMTP for auth email | ADR-013 |
-| `orgId` always resolved from session, never from URL param alone | ARCH-023 |
+| Neon Auth over Auth.js, Clerk, custom JWT | This doc § Neon Auth decision |
+| No custom SMTP for auth email | This doc § Neon Auth decision |
+| `orgId` always resolved from session, never from URL param alone | [ARCH-023](ARCH-023-multi-tenancy.md) |
 
 ## Failure modes
 

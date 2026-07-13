@@ -19,9 +19,9 @@
 Internal full-stack doctrine and slice specs for agents and maintainers:
 
 - [deprecation register](.cursor/skills/agent-skills/skills/deprecation-and-migration/reference.md) — **product name SSOT** + **closed product phases** (Afenda-Lite; Client Declaration Portal retired)
-- [docs/modules/feed-farm-trade/ops/RB-002-feed-farm-trade-gate-register.md](docs/modules/feed-farm-trade/ops/RB-002-feed-farm-trade-gate-register.md) · [docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md](docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md) — Feed Farm Trade ops / program gates
+- [docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md](docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md) · [docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md](docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md) — Feed Farm Trade ops / program gates
 - [docs/architecture/turborepo/ARCH-022-system-overview.md](docs/architecture/turborepo/ARCH-022-system-overview.md) — Target workspace layout (ARCH-021 migration map archived)
-- [docs/architecture/frontend/ARCH-011-frontend-folder-map.md](docs/architecture/frontend/ARCH-011-frontend-folder-map.md) — frontend folder map
+- [docs/architecture/frontend/ARCH-029-frontend-folder-map.md](docs/architecture/frontend/ARCH-029-frontend-folder-map.md) — frontend folder map
 - [docs/README.md](docs/README.md) — unified design + ops index (`api/`, `architecture/`, `adr/`, `fft/`, `runbooks/`)
 
 ## Database migrations

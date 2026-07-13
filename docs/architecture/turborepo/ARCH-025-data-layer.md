@@ -4,7 +4,7 @@
 |-------|-------|
 | ID | ARCH-025 |
 | Category | Architecture |
-| Version | 1.0.0 |
+| Version | 1.1.0 |
 | Status | Target |
 | Owner | Backend |
 | Updated | 2026-07-13 |
@@ -13,7 +13,34 @@
 
 ## Context
 
-All product data lives in Neon Postgres. The data layer is owned by `@afenda/db`. It uses Drizzle ORM for schema definition, type generation, and migration management. This document describes the schema structure, the migration lifecycle, and the query contract. The decision to use Drizzle is recorded in ADR-011.
+All product data lives in Neon Postgres. The data layer is owned by `@afenda/db`. It uses Drizzle ORM for schema definition, type generation, and migration management. This document describes the schema structure, the migration lifecycle, the query contract, and the **Drizzle decision** (former ADR-011).
+
+## Drizzle decision (from ADR-011)
+
+**Decision:** Use **Drizzle ORM** (`drizzle-orm` + `drizzle-kit`) with **`@neondatabase/serverless`** as the transport. Schema in `packages/db/src/schema/`. `drizzle-kit generate` / `migrate`. `withOrg(orgId)` is the only authorised path to tenant-scoped reads.
+
+| Positive | Accepted cost |
+|----------|---------------|
+| Types generated from schema — no hand-written row drift | No auto rollback migrations — forward-only |
+| Versioned SQL migrations — auditable | Must run `generate` after every schema change |
+| HTTP transport works on Vercel Edge/serverless | Joins more verbose than Prisma `include` |
+| `withOrg` makes tenancy hard to forget | |
+
+| Alternative | Why rejected |
+|-------------|--------------|
+| Raw SQL via `pg` | No generated types; tenancy by convention; weak migration tooling |
+| Prisma | Separate DSL; large client; slower Edge cold-start |
+| Kysely | No built-in migrations — extra runner |
+| TypeORM / MikroORM | Poor Edge fit / unnecessary complexity |
+
+**Constraints that must not be broken:**
+
+- Every tenant table includes `organization_id … NOT NULL`
+- Tenant reads go through `withOrg(orgId)` — unscoped `db.select()` on tenant tables forbidden in app code
+- Every schema change ships a Drizzle migration — no ad-hoc DDL in production
+- Only `@afenda/db` imports `drizzle-orm` / `@neondatabase/serverless`
+
+Tenancy model: [ARCH-023](ARCH-023-multi-tenancy.md).
 
 ## Responsibilities and boundaries
 
@@ -113,9 +140,9 @@ Writes use `db` directly (not `withOrg`, which is select-only). The `organizatio
 
 | Decision | Where recorded |
 |----------|---------------|
-| Drizzle ORM over raw SQL, Prisma, Kysely | ADR-011 |
-| `@neondatabase/serverless` over `pg` | ADR-011 |
-| `withOrg` as the mandatory read entry point | ARCH-023 |
+| Drizzle ORM over raw SQL, Prisma, Kysely | This doc § Drizzle decision |
+| `@neondatabase/serverless` over `pg` | This doc § Drizzle decision |
+| `withOrg` as the mandatory read entry point | [ARCH-023](ARCH-023-multi-tenancy.md) |
 
 ## Failure modes
 

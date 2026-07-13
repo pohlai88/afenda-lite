@@ -1,10 +1,10 @@
 # Feed Farm Trade — MVP and gaps
 
-**SSOT:** [docs/adr/frontend/ADR-005-feed-farm-trade-roadmap.md](../../../docs/adr/frontend/ADR-005-feed-farm-trade-roadmap.md)
+**SSOT:** [docs/modules/feed-farm-trade/FFT-MOD-010-module-docs-index.md](../../../docs/modules/feed-farm-trade/FFT-MOD-010-module-docs-index.md)
 
-Locks: [001](../../../docs/adr/frontend/ADR-003-feed-farm-trade-module.md) · Architecture: [001A](../../../docs/adr/frontend/ADR-004-feed-farm-trade-architecture.md)
+Locks: [001](../../../docs/modules/feed-farm-trade/FFT-MOD-001-module-architecture.md) · Architecture: [001A](../../../docs/modules/feed-farm-trade/FFT-MOD-001-module-architecture.md)
 
-**Coding / verify:** [slice-playbook.md](slice-playbook.md) · [action-map.md](action-map.md) · [verify.md](verify.md) · phase [12](../../../docs/guides/GUIDE-011-feed-farm-trade-phase-1-core-mvp.md)
+**Coding / verify:** [slice-playbook.md](slice-playbook.md) · [action-map.md](action-map.md) · [verify.md](verify.md) · phase [12](../../../docs/modules/feed-farm-trade/FFT-MOD-010-module-docs-index.md)
 
 ## Enterprise MVP
 

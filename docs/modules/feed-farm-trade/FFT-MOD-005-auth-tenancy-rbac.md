@@ -16,7 +16,7 @@ Neon Auth — session, org membership, invitations. Credential MFA (if any) is N
 
 ## Org resolution
 
-Active → slug → sole membership (platform). Hard fail-closed multi-org. Ops stamps use explicit `--organization-id`. See [ADR-002](../../adr/backend/ADR-002-platform-tenancy-rbac.md) · [ARCH-023](../../architecture/turborepo/ARCH-023-multi-tenancy.md).
+Active → slug → sole membership (platform). Hard fail-closed multi-org. Ops stamps use explicit `--organization-id`. See [ARCH-011](../../architecture/ARCH-011-platform-tenancy-rbac.md) · [ARCH-023](../../architecture/turborepo/ARCH-023-multi-tenancy.md).
 
 ## Platform vs module permissions
 
@@ -41,6 +41,6 @@ Signed-in user without `fft.access` hitting `/fft` → `/auth/sign-in?reason=fft
 
 ## Key decision
 
-[ADR-006](adr/ADR-006-feed-farm-trade-rbac.md) — permission-catalog RBAC (Accepted). Do not hardcode org-chart job titles as enums.
+[FFT-MOD-005](FFT-MOD-005-auth-tenancy-rbac.md) — permission-catalog RBAC. Do not hardcode org-chart job titles as enums.
 
-**Evidence tasks:** [GUIDE-014](../../guides/GUIDE-014-organization-admin-rbac-tenancy-tasks.md).
+**Evidence:** [ARCH-023](../../architecture/turborepo/ARCH-023-multi-tenancy.md).

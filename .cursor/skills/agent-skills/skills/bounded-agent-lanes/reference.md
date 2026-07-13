@@ -18,11 +18,11 @@ Default agent mission is **not** Feed Farm Trade. See [deprecation register — 
 |----------|------|
 | **RUNTIME** (read first) | [docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md](../../../../docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md) |
 | Index + doc types | [docs/modules/feed-farm-trade/FFT-MOD-010-module-docs-index.md](../../../../docs/modules/feed-farm-trade/FFT-MOD-010-module-docs-index.md) |
-| OPS gates (historical) | [docs/modules/feed-farm-trade/ops/RB-002-feed-farm-trade-gate-register.md](../../../../docs/modules/feed-farm-trade/ops/RB-002-feed-farm-trade-gate-register.md) |
-| OPS rollout | [docs/modules/feed-farm-trade/ops/RB-004-feed-farm-trade-ops-rollout.md](../../../../docs/modules/feed-farm-trade/ops/RB-004-feed-farm-trade-ops-rollout.md) |
-| OPS release readiness | [docs/modules/feed-farm-trade/ops/RB-003-feed-farm-trade-release-readiness.md](../../../../docs/modules/feed-farm-trade/ops/RB-003-feed-farm-trade-release-readiness.md) |
-| SPEC 2A (frozen) | [docs/modules/feed-farm-trade/spec/GUIDE-017-feed-farm-trade-phase-2a-slices.md](../../../../docs/modules/feed-farm-trade/spec/GUIDE-017-feed-farm-trade-phase-2a-slices.md) |
-| ARCHITECTURE S19 | [docs/modules/feed-farm-trade/architecture/ARCH-017-feed-farm-trade-event-engine.md](../../../../docs/modules/feed-farm-trade/architecture/ARCH-017-feed-farm-trade-event-engine.md) |
+| OPS gates (historical) | [docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md](../../../../docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md) |
+| OPS rollout | [docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md](../../../../docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md) |
+| OPS release readiness | [docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md](../../../../docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md) |
+| SPEC 2A (frozen) | [docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md](../../../../docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md) |
+| ARCHITECTURE S19 | [docs/modules/feed-farm-trade/FFT-MOD-001-module-architecture.md](../../../../docs/modules/feed-farm-trade/FFT-MOD-001-module-architecture.md) |
 
 ### Frozen decisions (do not rename / redesign)
 
@@ -52,9 +52,9 @@ Default agent mission is **not** Feed Farm Trade. See [deprecation register — 
 | Gate 7 prod smoke | `node scripts/gate-7-production-smoke.mjs` |
 | Env compose | `npm run env:compose` |
 
-Pre-enable matrix: [release-readiness.md § Pre-enable verification matrix](../../../../docs/modules/feed-farm-trade/ops/RB-003-feed-farm-trade-release-readiness.md#pre-enable-verification-matrix).
+Pre-enable matrix: [release-readiness.md § Pre-enable verification matrix](../../../../docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md#pre-enable-verification-matrix).
 
-Evidence template: [rollout.md § Evidence report template](../../../../docs/modules/feed-farm-trade/ops/RB-004-feed-farm-trade-ops-rollout.md#evidence-report-template).
+Evidence template: [rollout.md § Evidence report template](../../../../docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md#evidence-report-template).
 
 ---
 
@@ -74,4 +74,4 @@ Evidence template: [rollout.md § Evidence report template](../../../../docs/mod
 |------|-------|
 | Remaining development | [remaining-development.md](../../../../docs/architecture/remaining-development.md) |
 | Guardian Auth closeout | [pa-guardian-module-remaining.md](../../../../docs/architecture/slices/portal-atmosphere/pa-guardian-module-remaining.md) |
-| Program tracking | [gate-register.md](../../../../docs/modules/feed-farm-trade/ops/RB-002-feed-farm-trade-gate-register.md) · [deprecation register — Closed product phases](../deprecation-and-migration/reference.md) |
+| Program tracking | [gate-register.md](../../../../docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md) · [deprecation register — Closed product phases](../deprecation-and-migration/reference.md) |

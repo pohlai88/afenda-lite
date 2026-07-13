@@ -55,5 +55,5 @@ flowchart LR
 - [02-folder-map.md](ARCH-005-backend-folder-map.md)  
 - [06-modules-ownership.md](ARCH-009-modules-ownership-map.md)  
 - [04-ports-and-adapters.md](ARCH-007-ports-and-adapters.md)  
-- [adr/001-modular-monolith-hexagonal.md](../../adr/backend/ADR-001-modular-monolith-hexagonal.md)  
-- [../adr/frontend/ADR-004-feed-farm-trade-architecture.md](../../adr/frontend/ADR-004-feed-farm-trade-architecture.md)  
+- [ARCH-022](../turborepo/ARCH-022-system-overview.md)  
+- [../modules/feed-farm-trade/FFT-MOD-001-module-architecture.md](../../modules/feed-farm-trade/FFT-MOD-001-module-architecture.md)  

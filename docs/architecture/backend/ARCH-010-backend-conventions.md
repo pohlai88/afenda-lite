@@ -57,4 +57,4 @@ Full rules: [../api/API-001-api-boundaries.md](../../api/API-001-api-boundaries.
 - [01-architecture.md](ARCH-004-backend-layers.md)  
 - [05-nextjs-adapter-map.md](ARCH-008-next-js-adapter-map.md)  
 - [../api/REST-001-rest-resources.md](../../api/REST-001-rest-resources.md)  
-- [adr/001-modular-monolith-hexagonal.md](../../adr/backend/ADR-001-modular-monolith-hexagonal.md)  
+- [ARCH-022](../turborepo/ARCH-022-system-overview.md)  

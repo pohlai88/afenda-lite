@@ -1,7 +1,7 @@
 # Afenda-Lite deprecation register (compulsory)
 
 **Product:** **Afenda-Lite** (beta of Afenda ERP)  
-**Authority:** [SKILL.md](SKILL.md) · `/using-afenda-elite-skills` · FFT ADRs under `docs/adr/frontend/` (ADR-003…005)
+**Authority:** [SKILL.md](SKILL.md) · `/using-afenda-elite-skills` · FFT locks/roadmap under [`docs/modules/feed-farm-trade/`](../../../../docs/modules/feed-farm-trade/) (FFT-MOD-001 · FFT-MOD-010)
 
 Status meanings:
 
@@ -73,7 +73,7 @@ Declarations is not “deprecated.” Treating FFT and Declarations as two platf
 | Item | Disposition | Authority / reopen |
 |------|-------------|-------------------|
 | `/client` workspace product restore | **Closed** — stubs only under `app/client/(workspace)/**` | Reopen: explicit user letter + spec slice under `docs/architecture/frontend/` + vertical slice (RSC → modules, Actions, gates). Forbidden: restore `features/client-workspace/` without reopen. |
-| FFT P3 **prod** flag promotion | **Closed** — code may exist behind flags; prod enablement is ops | [RB-002](../../../../docs/modules/feed-farm-trade/ops/RB-002-feed-farm-trade-gate-register.md) · [GUIDE-013](../../../../docs/guides/GUIDE-013-feed-farm-trade-phase-3-ops-flags.md). Forbidden: enable prod `FFT_*` P3 flags without gate-register checklist + approval. |
+| FFT P3 **prod** flag promotion | **Closed** — code may exist behind flags; prod enablement is ops | [FFT-MOD-008](../../../../docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md). Forbidden: enable prod `FFT_*` P3 flags without MOD-008 checklist + approval. |
 | SaaS billing / 2FA chrome | **Intentional deferred** — not product Identity | AdminCN `ComingSoonPanel` / plan columns are chrome only. Forbidden: invent billing fields or 2FA flows without product ADR. Neon Auth owns credential MFA if enabled. |
 | Teaching ARCH-020 as Living SSOT | **Superseded** | This section + archive stub only |
 
@@ -85,12 +85,20 @@ Declarations is not “deprecated.” Treating FFT and Declarations as two platf
 |---------|-------------|--------|-------|
 | Teaching ARCH-003 multi-tenant-ecosystem as Living SSOT | [ARCH-023](../../../../docs/architecture/turborepo/ARCH-023-multi-tenancy.md) | Superseded | Compulsory 2026-07-13; archived stub `docs/architecture/archive/ARCH-003-*` |
 | Teaching ARCH-020 closed-scope-register as Living SSOT | [deprecation register — Closed product phases](reference.md) | Superseded | Compulsory 2026-07-13; archived stub `docs/architecture/archive/ARCH-020-*` |
-| Teaching ARCH-021 repository-migration-map as layout SSOT | [ARCH-022](../../../../docs/architecture/turborepo/ARCH-022-system-overview.md) · [ARCH-011](../../../../docs/architecture/frontend/ARCH-011-frontend-folder-map.md) | Superseded | Compulsory 2026-07-13; archived stub `docs/architecture/archive/ARCH-021-*`; campaign closed |
-| Teaching `docs/backend/` as a top-level docs home | [`docs/architecture/backend/`](../../../../docs/architecture/backend/) · [`docs/adr/backend/`](../../../../docs/adr/backend/) | Moved | Compulsory 2026-07-13; ARCH under architecture; ADRs under `adr/backend/` |
-| Teaching `docs/frontend/` as a top-level docs home | [`docs/architecture/frontend/`](../../../../docs/architecture/frontend/) · [`docs/adr/frontend/`](../../../../docs/adr/frontend/) | Moved | Compulsory 2026-07-13; ARCH under architecture; FFT ADRs under `adr/frontend/` |
-| Teaching GUIDE-007…014 under `docs/architecture/frontend/` | [`docs/guides/`](../../../../docs/guides/) | Moved | Compulsory 2026-07-13; phase task guides live with GUIDE-006 index |
+| Teaching ARCH-021 repository-migration-map as layout SSOT | [ARCH-022](../../../../docs/architecture/turborepo/ARCH-022-system-overview.md) · [ARCH-029](../../../../docs/architecture/frontend/ARCH-029-frontend-folder-map.md) | Superseded | Compulsory 2026-07-13; archived stub `docs/architecture/archive/ARCH-021-*`; campaign closed |
+| Teaching `docs/backend/` as a top-level docs home | [`docs/architecture/backend/`](../../../../docs/architecture/backend/) · ADRs merged to ARCH-022 / ARCH-011 | Moved | Compulsory 2026-07-13; `docs/adr/backend/` deleted |
+| Teaching ADR-001 / ADR-002 files under `docs/adr/backend/` | [ARCH-022](../../../../docs/architecture/turborepo/ARCH-022-system-overview.md) · [ARCH-011](../../../../docs/architecture/ARCH-011-platform-tenancy-rbac.md) | Hard-deleted | Compulsory 2026-07-13; stubs removed after merge |
+| Teaching `docs/frontend/` as a top-level docs home | [`docs/architecture/frontend/`](../../../../docs/architecture/frontend/) · [`docs/modules/feed-farm-trade/`](../../../../docs/modules/feed-farm-trade/) | Moved | Compulsory 2026-07-13; ARCH under architecture; FFT FE ADRs merged into spine |
+| Teaching ADR-003…005 under `docs/adr/frontend/` | [FFT-MOD-001](../../../../docs/modules/feed-farm-trade/FFT-MOD-001-module-architecture.md) · [FFT-MOD-010](../../../../docs/modules/feed-farm-trade/FFT-MOD-010-module-docs-index.md) | Hard-deleted | Compulsory 2026-07-13; `docs/adr/frontend/` removed after merge |
+| Teaching GUIDE-007…014 (phase task guides) | [GUIDE-006](../../../../docs/guides/GUIDE-006-guides-index.md) replacements table · FFT-MOD-010 · ARCH-011/023/026 | Hard-deleted | Compulsory 2026-07-13; do not recreate |
 | Teaching top-level `docs/fft/` as FFT docs home | [`docs/modules/feed-farm-trade/`](../../../../docs/modules/feed-farm-trade/) | Moved | Compulsory 2026-07-13; 10-MOD spine FFT-MOD-001…010 |
+| Recreating FFT depth trees (`adr/` `ops/` `spec/` `architecture/` `integrations/` `archive/`) under `docs/modules/feed-farm-trade/` | Spine-only [FFT-MOD-010](../../../../docs/modules/feed-farm-trade/FFT-MOD-010-module-docs-index.md) | Hard-deleted | Compulsory 2026-07-13; do not `git checkout` restore; gates live in FFT-MOD-008 |
 | Teaching FFT `MOD-001` / `MOD-003` as Living entry | [FFT-MOD-008](../../../../docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md) · [FFT-MOD-010](../../../../docs/modules/feed-farm-trade/FFT-MOD-010-module-docs-index.md) | Superseded | Compulsory 2026-07-13; stubs remain for path safety |
+| Teaching `docs/engineering/` as a docs home | [`docs/guides/`](../../../../docs/guides/) (GUIDE-001…004) | Moved | Compulsory 2026-07-13; do not recreate `engineering/` |
+| Teaching ADR-001 Modular Monolith + Hexagonal as a standalone Living ADR | [ARCH-022](../../../../docs/architecture/turborepo/ARCH-022-system-overview.md) § System framework | Hard-deleted | Compulsory 2026-07-13; file removed after merge |
+| Teaching ADR-002 platform tenancy + RBAC as a standalone Living ADR | [ARCH-011](../../../../docs/architecture/ARCH-011-platform-tenancy-rbac.md) | Hard-deleted | Compulsory 2026-07-13; file removed after merge; folder map = ARCH-029 |
+| Teaching ADR-012 shared-schema tenancy as a standalone Living ADR | [ARCH-023](../../../../docs/architecture/turborepo/ARCH-023-multi-tenancy.md) § Shared-schema | Hard-deleted | Compulsory 2026-07-13; stub removed with `docs/adr/` |
+| Teaching ADR-010…014 under `docs/adr/turborepo/` (or tech-stack ADR copies) | [ARCH-022](../../../../docs/architecture/turborepo/ARCH-022-system-overview.md)…[ARCH-027](../../../../docs/architecture/turborepo/ARCH-027-env-model.md) | Hard-deleted | Compulsory 2026-07-13; entire `docs/adr/` removed after merge |
 | Soft SQL `(organization_id IS NULL OR = $org)` dual-mode | Hard `organization_id = $org` + migration `027` | Hard-deleted | CI `check:tenancy-residue`; ADR-002; ARCH-023 Decision lock **R1** |
 | `promoteLegacyFftEntry` / login FFT promote | Platform `fft.access` + write-time ensure | Hard-deleted | |
 | Arbitrary `organizations[0]` / first-org DB stamp | Active → slug → sole membership; ops `--organization-id` | Retired | M1 + M4; ARCH-023 Decision lock **R2**; e2e D8 closed |

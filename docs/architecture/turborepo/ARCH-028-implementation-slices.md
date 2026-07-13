@@ -13,15 +13,15 @@
 
 ## Purpose
 
-Gives implementers a complete, ordered checklist derived from ARCH-022…027 and ADR-010…014. Acceptance criteria and verify commands are the gate for each slice.
+Gives implementers a complete, ordered checklist derived from ARCH-022…027 (former ADR-010…014 absorbed). Acceptance criteria and verify commands are the gate for each slice.
 
 **Plan residual:** Content from the Day-1 Turborepo plan (gap analysis, cutover notes, Checkpoint E, post-ship doc retirement, fuller risks) lives here and in sibling ARCH docs — not in the Cursor plan file.
 
 ## Preconditions (docs)
 
 - [x] ARCH-022…027 Status Target (or Living after ship)
-- [x] ADR-010…014 Status Accepted
-- [ ] Package manager cutover decided (pnpm workspaces per ADR-010)
+- [x] Former ADR-010…014 absorbed into ARCH-022…027
+- [ ] Package manager cutover decided (pnpm workspaces per ARCH-022)
 - [ ] Explicit user request to implement (docs-only scope ends here)
 
 ---
@@ -66,7 +66,7 @@ Gives implementers a complete, ordered checklist derived from ARCH-022…027 and
 - [ ] Package typechecks
 - [ ] Public exports: `db`, `schema`, `withOrg`
 
-**Authority:** [ARCH-025](ARCH-025-data-layer.md), [ADR-011](../../adr/turborepo/ADR-011-drizzle-orm.md)
+**Authority:** [ARCH-025](ARCH-025-data-layer.md)
 
 ---
 
@@ -82,7 +82,7 @@ Gives implementers a complete, ordered checklist derived from ARCH-022…027 and
 ### Checkpoint B
 
 - [ ] App code imports DB only from `@afenda/db`
-- [ ] No `pg` as the product DB client (ADR-011)
+- [ ] No `pg` as the product DB client (ARCH-025)
 - [ ] `rg "from 'pg'" apps/` = 0 after web wiring
 
 ---
@@ -94,7 +94,7 @@ Gives implementers a complete, ordered checklist derived from ARCH-022…027 and
 **Acceptance:**
 - [ ] `getSession()` returns `Promise<Session>` — never silent null
 
-**Authority:** [ARCH-026](ARCH-026-auth-session.md), [ADR-013](../../adr/turborepo/ADR-013-neon-auth.md)
+**Authority:** [ARCH-026](ARCH-026-auth-session.md)
 
 **Cutover note:** Consolidate `lib/auth/neon-auth-request.ts`, session helpers, and auth bits of `proxy.ts` / middleware into this package when the monolith tree is present.
 
@@ -125,7 +125,7 @@ Gives implementers a complete, ordered checklist derived from ARCH-022…027 and
 - [ ] Product code does not use raw `process.env` for app config
 - [ ] Compose retired in the same change set — see [ARCH-027 cutover](ARCH-027-env-model.md#cutover-from-compose-s41)
 
-**Authority:** [ARCH-027](ARCH-027-env-model.md), [ADR-014](../../adr/turborepo/ADR-014-t3-env.md)
+**Authority:** [ARCH-027](ARCH-027-env-model.md)
 
 ### Checkpoint D
 
@@ -240,7 +240,7 @@ Gives implementers a complete, ordered checklist derived from ARCH-022…027 and
 ### Checkpoint G — Complete
 
 - [ ] ARCH docs Status can move Target → Living when tree matches ARCH-022
-- [ ] ADR-010…014 remain Accepted
+- [ ] ARCH-022…027 decision sections remain Living/Target
 - [ ] Post-ship doc retirement list below reviewed
 
 ## Post-ship doc retirement (after Checkpoint G)
@@ -250,8 +250,9 @@ Gives implementers a complete, ordered checklist derived from ARCH-022…027 and
 | Doc set | Action after ship | Reason |
 |---------|-------------------|--------|
 | `docs/architecture/backend/ARCH-001`…`ARCH-010` | Review → archive or narrow | Folder maps superseded by `apps/web/modules/` |
-| `docs/architecture/frontend/ARCH-011`…`ARCH-016` | Review → archive or narrow | Folder maps superseded by App Router tree |
-| `docs/guides/GUIDE-007`…`GUIDE-014` | Keep | Product phase tasks |
+| `docs/architecture/frontend/ARCH-012`…`ARCH-016` · [ARCH-029](../frontend/ARCH-029-frontend-folder-map.md) | Review → archive or narrow | Folder maps superseded by App Router tree |
+| `docs/guides/GUIDE-001`…`GUIDE-006` | Keep | Coding / docs workflow guides |
+| Former `GUIDE-007`…`GUIDE-014` | Deleted | Use ARCH-011/023/026 · FFT-MOD-008/010 |
 | `docs/modules/feed-farm-trade/` | Keep | Product / engine SSOT |
 | `docs/runbooks/RB-001`, `RB-005` | Keep | Ops |
 | `docs/architecture/ARCH-021` | **Archived** (`docs/architecture/archive/`) | Migration map closed; Target layout = ARCH-022 |
@@ -276,7 +277,7 @@ Do **not** mass-delete in the scaffold PR. Retirement is a separate docs PR afte
 
 - [ARCH-022 System Overview](ARCH-022-system-overview.md) — gap table + stack
 - [ARCH-027 Env Model](ARCH-027-env-model.md) — compose cutover
-- [ADR-010 Turborepo](../../adr/turborepo/ADR-010-turborepo-monorepo.md)
+- [ARCH-022 System Overview](ARCH-022-system-overview.md) § Workspace
 
 ## Change Log
 

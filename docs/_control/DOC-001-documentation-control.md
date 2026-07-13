@@ -4,7 +4,7 @@
 |-------|-------|
 | ID | DOC-001 |
 | Category | Control |
-| Version | 1.4.0 |
+| Version | 1.4.1 |
 | Status | Living |
 | Owner | Platform |
 | Updated | 2026-07-13 |
@@ -150,17 +150,14 @@ Keep change logs short. One line per release is enough.
 | Folder | Role |
 |--------|------|
 | `docs/_control/` | Catalogue control and register |
-| `docs/adr/` | Product or architecture decision records |
-| `docs/architecture/` | Cross-system architecture and registers |
+| `docs/architecture/` | Cross-system architecture, registers, and absorbed decisions (former `docs/adr/`) |
 | `docs/api/` | API / REST / OPEN interface contracts (cross-cutting, resource catalogs, OpenAPI) |
 | `docs/runbooks/` | Operational procedures |
-| `docs/guides/` | Durable internal guides without a narrower owner |
-| `docs/engineering/` | Internal engineering guides |
-| `docs/modules/` | Module-level indexes without a stronger owner |
+| `docs/guides/` | Internal guides (coding workflow GUIDE-001…004 + GUIDE-006 index) |
 | `docs/modules/` | Product-module 10-MOD spines + depth (`feed-farm-trade/`, …) |
 | `docs/scratch/` | Non-authoritative drafts and temporary notes |
 
-`docs/guides/` holds phase task guides (GUIDE-007…014). Engineering workflow guides remain under `docs/engineering/`.
+Do **not** recreate `docs/engineering/` — absorbed into `docs/guides/`.
 
 ## Golden Rule
 
@@ -177,6 +174,7 @@ Everything else belongs inside the document itself.
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.4.1 | 2026-07-13 | Retired `docs/engineering/`; all GUIDE-* under `docs/guides/` |
 | 1.4.0 | 2026-07-13 | Module category owns 10-MOD spines under `docs/modules/<slug>/`; FFT home moved |
 | 1.3.0 | 2026-07-13 | Added REST and OPEN categories for scalable interface docs |
 | 1.2.0 | 2026-07-13 | Document numbers require explicit user agreement before register |

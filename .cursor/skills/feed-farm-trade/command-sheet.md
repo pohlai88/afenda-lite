@@ -49,14 +49,14 @@ Agent must read in this order before coding or claiming results:
 7. .cursor/skills/feed-farm-trade/rbac-card.md      (if touching auth)
 8. .cursor/skills/feed-farm-trade/example-slice.md  (before any new FE wire)
 9. Phase doc matching the command:
-   - P0 → docs/guides/GUIDE-010-feed-farm-trade-phase-0-shell.md
-   - P1 → docs/guides/GUIDE-011-feed-farm-trade-phase-1-core-mvp.md
-   - P2 → docs/guides/GUIDE-012-feed-farm-trade-phase-2-ui-polish.md
-   - P3 → docs/guides/GUIDE-013-feed-farm-trade-phase-3-ops-flags.md
-10. If locks unclear: docs/adr/frontend/ADR-003-feed-farm-trade-module.md
-11. If structure unclear: docs/adr/frontend/ADR-004-feed-farm-trade-architecture.md
-12. Roadmap/gaps: docs/adr/frontend/ADR-005-feed-farm-trade-roadmap.md
-13. Ops flags / promote: docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md + docs/modules/feed-farm-trade/ops/RB-002-feed-farm-trade-gate-register.md
+   - P0 → docs/modules/feed-farm-trade/FFT-MOD-010-module-docs-index.md
+   - P1 → docs/modules/feed-farm-trade/FFT-MOD-010-module-docs-index.md
+   - P2 → docs/modules/feed-farm-trade/FFT-MOD-010-module-docs-index.md
+   - P3 → docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md
+10. If locks unclear: docs/modules/feed-farm-trade/FFT-MOD-001-module-architecture.md
+11. If structure unclear: docs/modules/feed-farm-trade/FFT-MOD-001-module-architecture.md
+12. Roadmap/gaps: docs/modules/feed-farm-trade/FFT-MOD-010-module-docs-index.md
+13. Ops flags / promote: docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md + docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md
 ```
 
 Cross-skills only when the playbook says so: `afenda-elite-api-contract`, `afenda-elite-frontend-scaffold`, `afenda-elite-backend-modules`, `admincn-customization`, `incremental-implementation`, `test-driven-development`.
@@ -149,7 +149,7 @@ OUT: Output contract. Short verdict first. No implementation.
 COMMAND: REVERIFY_P1_MVP
 MODE: evaluation only — do not write product code unless a test is broken and TASK authorizes fix
 FOLLOW: Feed Farm Trade agent command sheet (locked context + load order + DoD + output contract)
-READ: skill pack then docs/guides/GUIDE-011-feed-farm-trade-phase-1-core-mvp.md + verify.md
+READ: skill pack then docs/modules/feed-farm-trade/FFT-MOD-010-module-docs-index.md + verify.md
 DO:
 1. Run: npm run test:unit -- modules/fft
 2. Run residue: rg "FftShell|locale-switcher" features/fft app/fft (redirect-only [locale] shim OK)
@@ -210,7 +210,7 @@ TASK: <REPLACE: one sentence>
 COMMAND: IMPLEMENT_P2_AC
 MODE: UI polish only — no new domain/RBAC/actions unless required to keep P1 green
 FOLLOW: Feed Farm Trade agent command sheet (locked context + load order + DoD + output contract)
-READ: docs/guides/GUIDE-012-feed-farm-trade-phase-2-ui-polish.md + ui-registry.md + admincn-customization
+READ: docs/modules/feed-farm-trade/FFT-MOD-010-module-docs-index.md + ui-registry.md + admincn-customization
 P2_AC: <REPLACE: e.g. P2-AC-07 — must be named; inventing IDs = STOP>
 DO:
 1. Confirm P2_AC exists in phase 13 or user explicitly opened a new named AC — else STOP.
@@ -232,7 +232,7 @@ TASK: <REPLACE: one sentence>
 COMMAND: REVIEW_P3
 MODE: evaluation / gap report — do not set FFT_* true in production
 FOLLOW: Feed Farm Trade agent command sheet (locked context + load order + DoD + output contract)
-READ: action-map P3 + docs/guides/GUIDE-013-feed-farm-trade-phase-3-ops-flags.md + RUNTIME.md + gate-register.md
+READ: action-map P3 + docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md + RUNTIME.md + gate-register.md
 DO:
 1. Grade AC-OPS-01 (flag-off writes blocked; P1 still works).
 2. List F-OPS-* FE: placeholder vs wired; any ungated write = FAIL.
@@ -273,7 +273,7 @@ TASK: <REPLACE: one sentence>
 COMMAND: PREP_GATE_REGISTER
 MODE: ops checklist prep — no code · no Vercel flag sync unless TASK explicitly says so
 FOLLOW: Feed Farm Trade agent command sheet (locked context + load order + DoD + output contract)
-READ: docs/modules/feed-farm-trade/ops/RB-002-feed-farm-trade-gate-register.md + RUNTIME.md + phase 14
+READ: docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md + RUNTIME.md + phase 14
 FLAGS: <REPLACE: e.g. FFT_DEPOSIT_ENABLED>
 DO:
 1. Extract the living promotion steps for FLAGS from gate-register (do not invent).
@@ -370,4 +370,4 @@ HARD RULES:
 
 **Skill home:** `.cursor/skills/feed-farm-trade/`  
 **Phase specs:** `docs/architecture/frontend/11`–`14-feed-farm-trade-*.md`  
-**Ops SSOT:** `docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md` · `docs/modules/feed-farm-trade/ops/RB-002-feed-farm-trade-gate-register.md`
+**Ops SSOT:** `docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md` · `docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md`

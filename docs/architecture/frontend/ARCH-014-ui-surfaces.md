@@ -34,7 +34,7 @@ Each product surface: journey phase, route, rebuild owner module, data adapter.
 | admin-declaration-detail | declarations module | `/dashboard/[declarationId]` | `portal-views/organization-admin-declaration-detail` | domain | survey/share Actions (admin mutations) |
 | account-settings | declarations module | `/account/settings` | `features/account` + Neon | Neon | Neon |
 | account-security | declarations module | `/account/security` | `features/account` + Neon | Neon | Neon |
-| trade-* | Feed Farm Trade | `/fft/...` (locale-free) | AdminCN + `features/fft` (P1 wired; P3 placeholders); [001](../../adr/frontend/ADR-003-feed-farm-trade-module.md) · [001A](../../adr/frontend/ADR-004-feed-farm-trade-architecture.md) · [001R](../../adr/frontend/ADR-005-feed-farm-trade-roadmap.md) | `modules/fft` | `app/actions/fft` |
+| trade-* | Feed Farm Trade | `/fft/...` (locale-free) | AdminCN + `features/fft` (P1 wired; P3 placeholders); [001](../../modules/feed-farm-trade/FFT-MOD-001-module-architecture.md) · [001A](../../modules/feed-farm-trade/FFT-MOD-001-module-architecture.md) · [001R](../../modules/feed-farm-trade/FFT-MOD-010-module-docs-index.md) | `modules/fft` | `app/actions/fft` |
 
 ## Shell modules (SaaS)
 

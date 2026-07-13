@@ -2,7 +2,7 @@
 
 **Borrow:** `test-driven-development` (proof) · ecosystem `deliver-acceptance-criteria` (observable Given/When/Then — folded here, not installed).
 
-**Bar:** Enterprise MVP = P0 + P1 (G1–G6) **with recorded evidence**. Wiring alone ≠ done ([001R](../../../docs/adr/frontend/ADR-005-feed-farm-trade-roadmap.md)).
+**Bar:** Enterprise MVP = P0 + P1 (G1–G6) **with recorded evidence**. Wiring alone ≠ done ([001R](../../../docs/modules/feed-farm-trade/FFT-MOD-010-module-docs-index.md)).
 
 ## Commands
 
@@ -70,7 +70,7 @@ Also acceptable one-liner for logs:
 AC-PRI-01: PASS | modules/fft/domain/….test.ts | 2026-07-11
 ```
 
-Fill phase-doc **Result** columns when evaluating: [11](../../../docs/guides/GUIDE-010-feed-farm-trade-phase-0-shell.md) · [12](../../../docs/guides/GUIDE-011-feed-farm-trade-phase-1-core-mvp.md).
+Fill phase-doc **Result** columns when evaluating: [11](../../../docs/modules/feed-farm-trade/FFT-MOD-010-module-docs-index.md) · [12](../../../docs/modules/feed-farm-trade/FFT-MOD-010-module-docs-index.md).
 
 ## Claim gates
 

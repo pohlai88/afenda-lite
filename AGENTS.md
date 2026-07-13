@@ -5,28 +5,28 @@
 
 **Authoritative documentation:** [docs/README.md](docs/README.md) — design SSOT, ADRs, API, runbooks, and module ops under `docs/`. Do **not** recreate `doc/`.
 
-**Repository layout:** [ARCH-022](docs/architecture/turborepo/ARCH-022-system-overview.md) (Target Turborepo tree) · [ARCH-011](docs/architecture/frontend/ARCH-011-frontend-folder-map.md) (frontend folder map). ARCH-021 migration map archived. Hosting: GitHub `pohlai88/afenda-lite` · Vercel `afenda-lite` · `APP_URL=https://afenda-lite.vercel.app`.
+**Repository layout:** [ARCH-022](docs/architecture/turborepo/ARCH-022-system-overview.md) (Target Turborepo tree) · [ARCH-029](docs/architecture/frontend/ARCH-029-frontend-folder-map.md) (frontend folder map). ARCH-021 migration map archived. Hosting: GitHub `pohlai88/afenda-lite` · Vercel `afenda-lite` · `APP_URL=https://afenda-lite.vercel.app`.
 
 ## Feed Farm Trade — Phase 2A closed · 2B–2D ADRs Accepted
 
-**Product module (UI / shell):** Feed Farm Trade — agent skill [`.cursor/skills/feed-farm-trade`](.cursor/skills/feed-farm-trade/SKILL.md) · ADR [001](docs/adr/frontend/ADR-003-feed-farm-trade-module.md) · architecture [001A](docs/adr/frontend/ADR-004-feed-farm-trade-architecture.md) · roadmap [001R](docs/adr/frontend/ADR-005-feed-farm-trade-roadmap.md).
+**Product module (UI / shell):** Feed Farm Trade — agent skill [`.cursor/skills/feed-farm-trade`](.cursor/skills/feed-farm-trade/SKILL.md) · locks/architecture [FFT-MOD-001](docs/modules/feed-farm-trade/FFT-MOD-001-module-architecture.md) · roadmap [FFT-MOD-010](docs/modules/feed-farm-trade/FFT-MOD-010-module-docs-index.md).
 
 **Agent entry (engine ops):** [docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md](docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md) · Index: [docs/modules/feed-farm-trade/FFT-MOD-010-module-docs-index.md](docs/modules/feed-farm-trade/FFT-MOD-010-module-docs-index.md)
 
 | Authority | Doc |
 |-----------|-----|
-| Runtime SSOT | [docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md](docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md) |
-| Ops gates | [docs/modules/feed-farm-trade/ops/RB-002-feed-farm-trade-gate-register.md](docs/modules/feed-farm-trade/ops/RB-002-feed-farm-trade-gate-register.md) |
-| Checklists | [ops/rollout.md](docs/modules/feed-farm-trade/ops/RB-004-feed-farm-trade-ops-rollout.md) · [ops/release-readiness.md](docs/modules/feed-farm-trade/ops/RB-003-feed-farm-trade-release-readiness.md) |
-| Phase 2A contract | [spec/phase-2a-prd.md](docs/modules/feed-farm-trade/spec/GUIDE-016-feed-farm-trade-phase-2a-prd.md) |
-| Phase 2B–2D ADRs | [adr/002](docs/modules/feed-farm-trade/adr/ADR-007-feed-farm-trade-finance-deposit-pickup-ops.md) · [003](docs/modules/feed-farm-trade/adr/ADR-008-feed-farm-trade-imports-notifications.md) · [004](docs/modules/feed-farm-trade/adr/ADR-009-feed-farm-trade-erp-sync.md) |
-| 2B–2D slices | [spec/phase-2bcd-slices.md](docs/modules/feed-farm-trade/spec/GUIDE-018-feed-farm-trade-phase-2b-2d-slices.md) (**Proposed**) |
+| Runtime / gates / checklists | [FFT-MOD-008](docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md) |
+| Module index | [FFT-MOD-010](docs/modules/feed-farm-trade/FFT-MOD-010-module-docs-index.md) |
+| Auth / FFT RBAC | [FFT-MOD-005](docs/modules/feed-farm-trade/FFT-MOD-005-auth-tenancy-rbac.md) |
+| API / adapters | [FFT-MOD-007](docs/modules/feed-farm-trade/FFT-MOD-007-api-and-adapters.md) |
+| Locks / architecture | [FFT-MOD-001](docs/modules/feed-farm-trade/FFT-MOD-001-module-architecture.md) |
+| Roadmap / MVP | [FFT-MOD-010](docs/modules/feed-farm-trade/FFT-MOD-010-module-docs-index.md) |
 
-**Production state:** tag `fft-phase-2a` → `8e650ff`; `FFT_RBAC_ENABLED=true` on Vercel; DB branch `br-tiny-hill-ao82jp6f`. **2B–2D code blocked** until slice group Approved in phase-2bcd-slices + explicit program reopen. No Feed Farm Trade commits mixed with unrelated refactors.
+**Production state:** tag `fft-phase-2a` → `8e650ff`; `FFT_RBAC_ENABLED=true` on Vercel; DB branch `br-tiny-hill-ao82jp6f`. **2B–2D code blocked** until explicit program reopen + Approved slice group in [FFT-MOD-008](docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md). No Feed Farm Trade commits mixed with unrelated refactors.
 
 ## Platform tenancy (hard cutover + multi-org ready)
 
-**Decision:** [docs/adr/backend/ADR-002-platform-tenancy-rbac.md](docs/adr/backend/ADR-002-platform-tenancy-rbac.md) · **Living inventory:** [docs/architecture/turborepo/ARCH-023-multi-tenancy.md](docs/architecture/turborepo/ARCH-023-multi-tenancy.md) (shared-schema + Neon production efficiency; supersedes ARCH-003) · Phase evidence: [docs/guides/GUIDE-014-organization-admin-rbac-tenancy-tasks.md](docs/guides/GUIDE-014-organization-admin-rbac-tenancy-tasks.md).
+**Decision / Living inventory:** [ARCH-011](docs/architecture/ARCH-011-platform-tenancy-rbac.md) (platform IAM) · [ARCH-023](docs/architecture/turborepo/ARCH-023-multi-tenancy.md) (Neon shared-schema + Decision lock; supersedes ARCH-003).
 
 | Fact | Detail |
 |------|--------|

@@ -1,0 +1,33 @@
+---
+description: Agents must not auto-recover or discard work via git without explicit user approval
+alwaysApply: true
+---
+
+# Git — no auto-recover without approval
+
+Agents **must not** recover, discard, or rewind work with git unless the user explicitly asked for that exact action in the current turn.
+
+## Blocked without explicit user approval
+
+- `git restore` / `git checkout --` / discarding working-tree or staged changes
+- `git reset` (any mode: `--soft`, `--mixed`, `--hard`)
+- `git clean`
+- `git stash pop` / `apply` / `drop` / `clear`
+- `git switch -f` / `--discard-changes`
+- `git revert` (unless the user asked to revert)
+- Force-push, hard reset, or other destructive history rewrites (also covered by commit safety rules)
+
+## Required behavior
+
+1. **Stop** — do not run the command.
+2. **Explain** what would be recovered/discarded and why you want it.
+3. **Wait** for explicit user approval in chat (or Cursor hook “ask” approval).
+4. Only then run the approved command.
+
+## Allowed without extra approval
+
+Read-only / non-destructive git: `status`, `diff`, `log`, `show`, `branch` (list), `stash list`, creating commits when the user asked to commit, normal `push`/`pull` when the user asked.
+
+## Hook enforcement
+
+Project hook `beforeShellExecution` → `.cursor/hooks/git-no-auto-recover.mjs` returns `permission: "ask"` for recovery commands. Never bypass hooks (`--no-verify` does not apply here). Do not rewrite the command to sneak past the matcher.

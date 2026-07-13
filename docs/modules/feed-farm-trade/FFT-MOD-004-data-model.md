@@ -14,7 +14,7 @@
 
 Trade lane rooted on events and related children (orders, allocation runs, sales members, RBAC assignments, deposits/pickup, notifications, ERP sync jobs). Authoritative migration lane: `013`–`023` (see [FFT-MOD-008](FFT-MOD-008-ops-runtime.md)); RBAC `014_fft_rbac.sql`; hot sales `013_hot_sales.sql`.
 
-Detail matrices and SQL checks: [RB-002](ops/RB-002-feed-farm-trade-gate-register.md).
+Detail matrices and SQL checks: [FFT-MOD-008](FFT-MOD-008-ops-runtime.md).
 
 ## Relationships
 
