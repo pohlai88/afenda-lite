@@ -9,8 +9,8 @@
   "files": {
     "includes": [
       // Per https://biomejs.dev/guides/configure-biome/ — positive `**` MUST
-      // precede negated/force-ignore patterns. `!!` excludes from project
-      // indexing (module graph / type scan), not only lint/format.
+      // precede negated/force-ignore patterns. Without it, `!!` patterns are
+      // ineffective / empty-include → Biome LSP rescans the tree nonstop.
       "!!**/node_modules",
       "!!**/.git",
       "!!**/.next",
@@ -31,17 +31,12 @@
       "!!**/playwright/.cache",
       "!!**/scripts/lib/env-manifest.generated.mjs",
       // Markdown/MDX: Prettier owns these (Biome formatting still in progress)
-      "!!**/*.{md,mdx}"
+      "!!**/*.{md,mdx}",
+      // Dogshit residual + huge JSON snapshots — never index
+      "!!**/docs"
     ]
   },
   "overrides": [
-    {
-      // Governance snapshots — format ok, skip aggressive lint noise
-      "includes": ["**/docs/architecture/*.snapshot.json"],
-      "linter": {
-        "enabled": false
-      }
-    },
     {
       // Keep generated + seed SQL out of format thrash.
       "includes": ["**/db/migrations/**/*.sql", "**/*.sql"],

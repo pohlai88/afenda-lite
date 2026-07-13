@@ -21,7 +21,7 @@ description: >-
 | [boundaries.md](boundaries.md)         | FE↔BE contracts, branded IDs, validation edges |
 | [wipe-inventory.md](wipe-inventory.md) | Complete DELETE / REPLACE / KEEP file list     |
 | [docs/api/](../../../docs/api/)          | Error shape, REST catalog, types               |
-| [docs/frontend/](../../../docs/frontend/) | UI architecture, routes, BFF tree              |
+| [docs/architecture/frontend/](../../../docs/architecture/frontend/) | UI architecture, routes, BFF tree              |
 
 ## Agent operating rules
 
@@ -75,7 +75,7 @@ Draft XHR / auth / health / webhook? → Route Handler
 External/mobile REST?  → Route Handler per docs/api (contract-only until needed)
 ```
 
-Decision tree SSOT: [docs/frontend/04-bff-and-data.md](../../../docs/frontend/04-bff-and-data.md).
+Decision tree SSOT: [docs/architecture/frontend/ARCH-013-bff-and-data-flow.md](../../../docs/architecture/frontend/ARCH-013-bff-and-data-flow.md).
 
 ## Dynamic params (exact)
 

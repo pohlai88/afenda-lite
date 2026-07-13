@@ -1,36 +1,56 @@
 ---
 name: afenda-elite-api-contract
 description: >-
-  Afenda Elite API contract enforcement — adapter choice (Server Action vs Route Handler),
-  error shapes, branded IDs, Zod schema map, one-version rules, and the exact api-now vs
-  contract-only split. Apply when writing app/actions, app/api route handlers,
-  modules/*/schemas, or any adapter wiring; when the user mentions API contract, schema map,
-  ActionResult, error codes, branded IDs, REST resources, or afenda-elite-api-contract.
+  Enforces Afenda-Lite API/REST/OPEN contract from docs/api — adapter choice, security
+  pipeline, { data } success envelope, APIErrorBody/ActionResult, branded IDs, Zod map,
+  api-now vs contract-only, and OpenAPI generate/check. Use when writing app/actions,
+  app/api Route Handlers, modules/*/schemas, OpenAPI YAML, Fumadocs API docs; or when
+  the user mentions API contract, REST-001, OPEN-001, ActionResult, branded IDs,
+  declaration-draft, or afenda-elite-api-contract.
 ---
 
 # Afenda Elite — API contract
 
-**SSOT for this skill:** `docs/api/` (relative to repo root). Cite `term.afenda-elite`.
+**SSOT:** [`docs/api/`](../../../docs/api/) (skill mirrors docs — never invent parallel rules).  
+**Entry:** [`docs/api/README.md`](../../../docs/api/README.md). Cite `term.afenda-elite`.  
+**Forward writing:** Record unavailable work in OPEN-001 / API-004 Gaps; do not soften Living SSOT.
 
-| Doc | Focus |
-|-----|-------|
-| [completeness.md](completeness.md) | Plan ↔ codebase matrix |
-| [docs/api/API-001-api-boundaries.md](../../../docs/api/API-001-api-boundaries.md) | Trust boundary, adapter choice, security pipeline |
-| [docs/api/REST-001-rest-resources.md](../../../docs/api/REST-001-rest-resources.md) | api-now vs contract-only catalog, naming, pagination |
-| [docs/api/API-002-error-contract.md](../../../docs/api/API-002-error-contract.md) | Wire shape, HTTP→code map, ActionResult, three surfaces |
-| [docs/api/API-003-api-types.md](../../../docs/api/API-003-api-types.md) | Branded IDs, Input/Output split, discriminated unions |
-| [docs/api/API-004-schema-map.md](../../../docs/api/API-004-schema-map.md) | `modules/*/schemas` map, resource→schema cross-ref |
-| [docs/api/OPEN-001-openapi.md](../../../docs/api/OPEN-001-openapi.md) | OpenAPI guide (YAML generated separately) |
-| [docs/api/README.md](../../../docs/api/README.md) | Pack entry + Accept/Upgrade/Reject snapshot |
-| [docs/backend/ARCH-010-backend-conventions.md](../../../docs/backend/ARCH-010-backend-conventions.md) | Backend conventions + one-version pointers |
+| Companion / doc | Use when |
+|-----------------|----------|
+| [completeness.md](completeness.md) | Plan ↔ recorded status |
+| [api-now.md](api-now.md) | Exact RH inventory + UI prohibition |
+| [brands-and-schemas.md](brands-and-schemas.md) | Brands + `modules/*/schemas` |
+| [openapi.md](openapi.md) | Generate / expand OPEN-001 YAML |
+| [API-001](../../../docs/api/API-001-api-boundaries.md) | Adapter + pipeline + `{ data }` |
+| [API-002](../../../docs/api/API-002-error-contract.md) | Errors / ActionResult |
+| [REST-001](../../../docs/api/REST-001-rest-resources.md) | Paths + HTTP semantics |
+| [API-003](../../../docs/api/API-003-api-types.md) | Brands / I/O split |
+| [API-004](../../../docs/api/API-004-schema-map.md) | Schema ownership |
+| [OPEN-001](../../../docs/api/OPEN-001-openapi.md) | OpenAPI guide + forward recipes |
 
-**Prefixes:** `API-` cross-cutting BFF · `REST-` human path catalogs · `OPEN-` OpenAPI (reserved stub).
+**Prefixes:** `API-` BFF vocabulary · `REST-` human paths · `OPEN-` OpenAPI (Living guide + generated YAML).
 
-**Cross-skill links**
+**Cross-skill:** [frontend-scaffold/boundaries](../afenda-elite-frontend-scaffold/boundaries.md) · [backend-modules](../afenda-elite-backend-modules/SKILL.md) · [api-and-interface-design](../agent-skills/skills/api-and-interface-design/SKILL.md) · farm via [`/using-afenda-elite-skills`](../using-afenda-elite-skills/SKILL.md).
 
-- Frontend route params and brand names → [../afenda-elite-frontend-scaffold/boundaries.md](../afenda-elite-frontend-scaffold/boundaries.md)
-- Modules / ports / residue → [../afenda-elite-backend-modules/SKILL.md](../afenda-elite-backend-modules/SKILL.md)
-- Hyrum's Law / one-version principles → [../agent-skills/skills/api-and-interface-design/SKILL.md](../agent-skills/skills/api-and-interface-design/SKILL.md)
+---
+
+## Execute — pick a lane
+
+| User / task signal | Do this |
+|--------------------|---------|
+| New Action or Route Handler | §1–§5 + checklist §10; classify api-now vs contract-only (§6) |
+| Change draft / health / auth HTTP | Update code + regenerate OpenAPI ([openapi.md](openapi.md)) |
+| New Zod schema / brand | [brands-and-schemas.md](brands-and-schemas.md); one-version only |
+| OpenAPI / Fumadocs / Spectral | [openapi.md](openapi.md) — never hand-edit YAML forever |
+| List endpoints for dashboard | **Reject** — RSC → domain ([api-now.md](api-now.md)) |
+| FFT HTTP | Contract-only until program reopen; locale-free paths |
+
+**Verify after adapter or OpenAPI changes:**
+
+```bash
+node scripts/check-docs-naming.mjs
+npm run check:openapi
+```
 
 ---
 
@@ -42,38 +62,52 @@ Need                                                Adapter
 Same-origin UI mutation                          → Server Action
 Same-origin UI read                              → RSC → modules/*/domain (no HTTP)
 Health / Neon Auth proxy / draft XHR             → Route Handler under /api
-External REST / mobile consumer                  → Route Handler per docs/api contract
+External REST / mobile consumer                  → Route Handler per REST-001
 ```
 
-One domain function can serve both Action **and** Route Handler — keep it DRY.
-
-Full tree SSOT: [docs/frontend/ARCH-013-bff-and-data-flow.md](../../../docs/frontend/ARCH-013-bff-and-data-flow.md).
+One domain function can serve Action **and** Route Handler.  
+SSOT tree: [ARCH-013](../../../docs/architecture/frontend/ARCH-013-bff-and-data-flow.md).
 
 ---
 
-## 2. Trust boundary layers
+## 2. Trust boundary + security pipeline
 
 | Layer | May | Must not |
 |-------|-----|----------|
 | Adapter (`app/actions`, `app/api`) | Session guard, Zod parse, map errors, `revalidatePath` | Raw SQL, business rules |
 | `modules/*/schemas` | Shape + refine | DB access |
 | `modules/*/domain` | Parameterized queries, domain rules | Read `Request` / cookies |
-| UI / RSC | Call module domain (reads) or Actions (mutations) | Import `pg` / build SQL |
+| UI / RSC | Domain (reads) or Actions (mutations) | Import `pg` / build SQL |
 
-**Validation rule:** `parseSchema` / `safeParse` at the adapter boundary once. Do not re-validate inside domain helpers.
+**Every Action and mutating Route Handler:**
+
+1. `parseSchema` / `safeParse`
+2. `require*Session` **inside** the adapter
+3. Authorization (role / org / ownership / FFT access)
+4. Domain with trusted types
+5. Map failures → `ActionResult` or `APIErrorBody`; revalidate on success when UI-backed
+
+Optional: `after()` for non-blocking audit. Public exceptions: health + Neon Auth proxy only.  
+Default **Node** runtime for DB handlers. No `route.ts` beside `page.tsx`.
 
 ---
 
-## 3. Error shapes (verbatim — do not paraphrase)
+## 3. Success + error wire shapes
 
-**Route Handler (HTTP):**
+**Route Handler success** (API-001) — helpers `healthJson` / `apiData`:
+
+```typescript
+{ data: T } // HTTP 200 / 201
+```
+
+**Route Handler failure** (API-002) — bare body, **not** under `data`:
 
 ```typescript
 interface APIErrorBody {
   error: {
-    code: string      // UPPER_SNAKE, machine-readable
-    message: string   // human-readable, safe to show
-    details?: unknown // e.g. Zod flatten — never stack traces
+    code: string      // UPPER_SNAKE
+    message: string   // safe to show
+    details?: unknown // never stack traces
   }
 }
 ```
@@ -86,19 +120,17 @@ type ActionResult<T> =
   | { ok: false; code: string; message: string; details?: unknown }
 ```
 
-**HTTP status → code map:**
+| HTTP | `code` |
+|------|--------|
+| 400 | `BAD_REQUEST` |
+| 401 | `UNAUTHORIZED` |
+| 403 | `FORBIDDEN` |
+| 404 | `NOT_FOUND` |
+| 409 | `CONFLICT` |
+| 422 | `VALIDATION_ERROR` |
+| 500 | `INTERNAL_ERROR` |
 
-| HTTP | When | `code` |
-|------|------|--------|
-| 400 | Malformed JSON / bad request framing | `BAD_REQUEST` |
-| 401 | Not authenticated | `UNAUTHORIZED` |
-| 403 | Authenticated but not allowed | `FORBIDDEN` |
-| 404 | Resource missing | `NOT_FOUND` |
-| 409 | Conflict (duplicate, version) | `CONFLICT` |
-| 422 | Semantically invalid (Zod / domain) | `VALIDATION_ERROR` |
-| 500 | Unexpected | `INTERNAL_ERROR` |
-
-> Expected failures → return result / JSON body. Throw only for truly unexpected bugs (let `error.tsx` handle). Never expose SQL or internal exception messages in `message`.
+Expected failures → structured result. Throw only for unexpected bugs. Never expose SQL / env in `message`.
 
 ---
 
@@ -107,75 +139,78 @@ type ActionResult<T> =
 | Guard | Used by |
 |-------|---------|
 | `requireAdminSession` | Operator Actions |
-| `requireClientSession` / client helpers | Client Actions |
-| `requireAccountSession` | Account routes / actions |
+| `requireClientSession` / helpers | Client Actions |
+| `requireAccountSession` | Account |
 | Trade access helpers | `app/actions/fft` |
 
-Route Handlers that mutate must authenticate equivalently (cookie session). `public` exceptions: health endpoints and Neon Auth proxy only.
+Mutating RHs authenticate equivalently (cookie session).
 
 ---
 
 ## 5. One-version rule
 
-- No `/api/v1` + `/api/v2` in parallel.
-- Server Action and Route Handler for the same use-case share: Zod schema, output type, error `code` set.
-- Extend **additively** (optional fields only). Deprecate with a written plan (new ADR) before removal.
-- Observable behavior is a commitment: status codes, pagination shape, error codes.
+- No `/api/v1` + `/api/v2`.
+- Same use-case Action + RH share Zod, output type, error `code` set.
+- Additive optional fields only; removal needs ADR.
+- Status codes, pagination shape, error codes are commitments.
 
 ---
 
 ## 6. api-now vs contract-only
 
-See [api-now.md](api-now.md) for the exact current Route Handler inventory and the prohibition on scaffolding contract-only list/read handlers for web UI.
+Inventory + FFT appendix: [api-now.md](api-now.md). SSOT paths: [REST-001](../../../docs/api/REST-001-rest-resources.md).
 
-Key rule: **Do not add same-origin "list declarations" GETs under `/api` for the dashboard — use RSC → module domain.**
-
----
-
-## 7. Branded IDs and schemas
-
-See [brands-and-schemas.md](brands-and-schemas.md) for:
-- Complete branded ID table (`DeclarationId`, `AssignmentId`, `ShareToken`, `InviteToken`, `TradeEventId`, etc.)
-- `modules/*/schemas` map with notable exports
-- Resource → schema cross-reference
-- `parseSchema` usage pattern
-- Known schema gaps
+**api-now only:** `/api/health/*`, `/api/auth/[...path]`, `/api/client/declaration-draft` (POST = keepalive).  
+**Do not** add same-origin list/read GETs under `/api` for dashboard — RSC → domain.
 
 ---
 
-## 8. Naming rules (REST)
+## 7. Brands + schemas
+
+[brands-and-schemas.md](brands-and-schemas.md). Zod SSOT under `modules/*/schemas`. Import `parseSchema` from platform common at the boundary.
+
+---
+
+## 8. REST naming
 
 | Pattern | Convention |
 |---------|------------|
-| Paths | Plural nouns, no verbs (`/api/declarations`, not `/api/createDeclaration`) |
-| IDs | Path params; UUID strings |
-| Query params | `camelCase` (`?page=1&pageSize=20&sortBy=createdAt`) |
-| Booleans | `is` / `has` / `can` prefix in JSON |
-| Enums | `UPPER_SNAKE` in JSON wire format |
+| Paths | Plural nouns (`/api/declarations`) |
+| IDs | Path params; UUID |
+| Query | `camelCase` |
+| Booleans | `is` / `has` / `can` |
+| Enums | `UPPER_SNAKE` on wire |
 
 ---
 
-## 9. Pre-implementation checklist
+## 9. Accept / Reject (do not reopen casually)
 
-Before writing any adapter, schema, or domain function:
+**Accept:** RSC reads; Actions mutate UI; RH for health/auth/draft/external; `{ data }` success; bare errors; Zod SSOT; locale-free FFT contract.
 
-- [ ] Checked adapter decision tree — correct adapter chosen
-- [ ] Session guard identified and applied at adapter layer
-- [ ] Zod schema in owning `modules/*/schemas` referenced or created (not inline)
-- [ ] `parseSchema` used at boundary; domain trusts typed value
-- [ ] `ActionResult<T>` or `APIErrorBody` returned on failure (no throw for expected failures)
-- [ ] Error `code` from the standard set (`VALIDATION_ERROR`, `NOT_FOUND`, etc.)
-- [ ] Branded ID used at boundary (not raw `string`)
-- [ ] Input/Output types split (Create/Patch omit server fields)
-- [ ] api-now vs contract-only classified (no new HTTP list endpoints for web UI reads)
-- [ ] One-version rule: no new parallel version, no field removal without ADR
+**Reject:** Contract-only RH for web UI; dual `01-*` filenames; `/api/fft/:locale/...`; layout-only Action auth; throw for expected auth; Actions as cacheable GET; Edge default for DB; CDN cache on session draft; dumping all contract-only into OpenAPI playground.
 
 ---
 
-## Out of scope for this skill
+## 10. Pre-implementation checklist
 
-- Feed Farm Trade feature flags, RBAC, or 2B–2D slice gating — see `/feed-farm-trade` and `docs/fft/`
-- UI scaffold, route stubs, `loading.tsx` — see [../afenda-elite-frontend-scaffold/SKILL.md](../afenda-elite-frontend-scaffold/SKILL.md)
-- Modules layout / residue Pass 2 — see [../afenda-elite-backend-modules/SKILL.md](../afenda-elite-backend-modules/SKILL.md) (`lib/` → `modules/` relocate is **complete**)
-- Playground routes or environment config — see `AGENTS.md`
-- Neon Auth internals beyond "use `/api/auth/[...path]`; do not duplicate" — see `.agents/skills/neon/SKILL.md`
+- [ ] Adapter tree (§1) — correct adapter
+- [ ] Security pipeline (§2) inside adapter
+- [ ] Zod in owning `modules/*/schemas` (not inline Action)
+- [ ] `parseSchema` at boundary
+- [ ] Success `{ data }` (RH) or `ActionResult` (Action); bare `APIErrorBody` on RH failure
+- [ ] Standard error `code`
+- [ ] Branded ID at boundary
+- [ ] Create/Patch omit server fields
+- [ ] api-now vs contract-only classified
+- [ ] One-version — no parallel URL version / silent field removal
+- [ ] If api-now HTTP shape changed → `npm run openapi:generate` && `npm run check:openapi`
+
+---
+
+## Out of scope
+
+- FFT flags / 2B–2D gates → `/feed-farm-trade` + `docs/modules/feed-farm-trade/`
+- UI scaffold / `loading.tsx` → [frontend-scaffold](../afenda-elite-frontend-scaffold/SKILL.md)
+- Modules residue Pass 2 → [backend-modules](../afenda-elite-backend-modules/SKILL.md)
+- Playground / env → `AGENTS.md`
+- Neon Auth internals → `.agents/skills/neon/SKILL.md` (use `/api/auth/[...path]` only)

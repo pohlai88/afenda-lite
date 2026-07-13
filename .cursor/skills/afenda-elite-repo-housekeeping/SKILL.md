@@ -13,7 +13,7 @@ This skill **orchestrates** discovery and classification. **Removal** always del
 **Announce:** "I'm using afenda-elite-repo-housekeeping — stating housekeeping contract before edits."
 
 ```text
-LOAD: doc/architecture/afenda-elite-skills-architecture.md · this skill
+LOAD: doc/architecture/DOC-004-skills-architecture.md · this skill
 SKIP: bulk knip --fix · deleting _reference/archive · hand glossary twin · Storybook orphan flows
 LANE: Normalize (or Docs for catalog-only align) — never mix with Fix product work
 ```
@@ -116,7 +116,7 @@ Numbered removal slices:
 ```
 
 ### align
-Skill catalog ↔ filesystem: edit [afenda-elite-skills-architecture.md](../../../doc/architecture/afenda-elite-skills-architecture.md) status rows. Glossary: edit seed/YAML then sync. Never silent-delete register rows.
+Skill catalog ↔ filesystem: edit [DOC-004](../../../doc/architecture/DOC-004-skills-architecture.md) status rows. Glossary: edit seed/YAML then sync. Never silent-delete register rows.
 
 ### promote
 Go/no-go for advisory→blocking CI only with explicit user approval.

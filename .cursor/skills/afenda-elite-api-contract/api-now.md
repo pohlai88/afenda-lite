@@ -15,7 +15,9 @@ This file mirrors what **is implemented today** as `app/api/**` Route Handlers v
 | ALL | `/api/auth/[...path]` | Neon Auth proxy | Neon | Neon-owned |
 | GET/PUT/PATCH | `/api/client/declaration-draft` | Draft autosave (POST keepalive alias) | client session | `private, no-store` |
 
-**No other Route Handlers exist today.** Any scaffold or implementation that adds to this list must match an api-now classification from `docs/api/REST-001-rest-resources.md` or a new explicit decision.
+Success JSON for these handlers uses `{ data: T }` ([API-001](../../../docs/api/API-001-api-boundaries.md)). Failures use bare `APIErrorBody` ([API-002](../../../docs/api/API-002-error-contract.md)). OpenAPI: [openapi.md](openapi.md).
+
+**No other Route Handlers exist in the contract’s api-now set.** Any scaffold that adds to this list must match REST-001 api-now or a new explicit decision.
 
 ---
 
@@ -52,7 +54,7 @@ Contract-only — RSC + Server Actions for web UI.
 | POST | `/api/fft/erp-sync/jobs` | Enqueue sync job |
 | GET | `/api/fft/erp-sync/jobs/:jobId` | Sync job status |
 
-See `/feed-farm-trade` and `docs/fft/` before touching any of these.
+See `/feed-farm-trade` and `docs/modules/feed-farm-trade/` before touching any of these.
 
 ---
 

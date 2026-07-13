@@ -1,6 +1,6 @@
 # FFT — action map (F-\* ↔ action ↔ route ↔ feature)
 
-**Trusted source for signatures:** `app/actions/fft.ts` · **Permissions:** [rbac-card.md](rbac-card.md) · **AC:** phase [12](../../../docs/frontend/12-feed-farm-trade-phase1-core-mvp.md).
+**Trusted source for signatures:** `app/actions/fft.ts` · **Permissions:** [rbac-card.md](rbac-card.md) · **AC:** phase [12](../../../docs/guides/GUIDE-011-feed-farm-trade-phase-1-core-mvp.md).
 
 Locale: all actions take `locale` first; UI passes `FFT_UI_LOCALE` from `features/fft/trade-ui-locale.ts`. Paths stay locale-free.
 

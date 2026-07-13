@@ -1,6 +1,6 @@
 # Module tree (exact)
 
-**Authority:** [docs/backend/02-folder-map.md](../../../docs/backend/02-folder-map.md) · [docs/backend/06-modules-ownership.md](../../../docs/backend/06-modules-ownership.md)
+**Authority:** [docs/architecture/backend/ARCH-005-backend-folder-map.md](../../../docs/architecture/backend/ARCH-005-backend-folder-map.md) · [docs/architecture/backend/ARCH-009-modules-ownership-map.md](../../../docs/architecture/backend/ARCH-009-modules-ownership-map.md)
 
 Disk SSOT (verify before editing this file):
 

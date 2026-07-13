@@ -2,7 +2,7 @@
 
 **Afenda-Lite** is the beta / lite edition of official **Afenda ERP** — a multi-module SaaS on shared Platform + Identity (Declarations, Feed Farm Trade, and more). Built on **Vercel + Neon Postgres + Neon Auth**.
 
-> **Retired product name:** Client Declaration Portal — compulsory deprecate. See [docs/adr/001-afenda-lite-product-identity.md](docs/adr/001-afenda-lite-product-identity.md).
+> **Retired product name:** Client Declaration Portal — compulsory deprecate. See [deprecation register](.cursor/skills/agent-skills/skills/deprecation-and-migration/reference.md).
 
 **Local disk path:** prefer `C:\JackProject\afenda-bolt\afenda-lite`. If this clone is still named `client-declaration-portal`, close Cursor and run `C:\JackProject\afenda-bolt\rename-afenda-lite.ps1`, then reopen the `afenda-lite` folder.
 
@@ -18,15 +18,11 @@
 
 Internal full-stack doctrine and slice specs for agents and maintainers:
 
-- [docs/adr/001-afenda-lite-product-identity.md](docs/adr/001-afenda-lite-product-identity.md) — **product name SSOT**
-- [docs/architecture/closed-scope-register.md](docs/architecture/closed-scope-register.md) — closed vs open product scope
-- [docs/fft/ops/gate-register.md](docs/fft/ops/gate-register.md) · [docs/fft/RUNTIME.md](docs/fft/RUNTIME.md) — Feed Farm Trade ops / program gates
-- [docs/architecture/repo-migration-map.md](docs/architecture/repo-migration-map.md) — **folder migration closed** (Root / L1 / L2)
-- [docs/frontend/02-folder-map.md](docs/frontend/02-folder-map.md) — frontend folder map
-- [docs/architecture/closed-scope-register.md](docs/architecture/closed-scope-register.md) — closed vs open scope (slice proofs retired; do not restore `docs/architecture/slices/`)
-- [docs/README.md](docs/README.md) — unified design + ops index (`api/`, `backend/`, `frontend/`, `architecture/`, `fft/`, `runbooks/`)
-- [doc/README.md](doc/README.md) — Elite controllers only (`afenda-elite-*`)
-- [`.cursor/skills/agent-skills/skills/deprecation-and-migration/reference.md`](.cursor/skills/agent-skills/skills/deprecation-and-migration/reference.md) — compulsory deprecation register
+- [deprecation register](.cursor/skills/agent-skills/skills/deprecation-and-migration/reference.md) — **product name SSOT** + **closed product phases** (Afenda-Lite; Client Declaration Portal retired)
+- [docs/modules/feed-farm-trade/ops/RB-002-feed-farm-trade-gate-register.md](docs/modules/feed-farm-trade/ops/RB-002-feed-farm-trade-gate-register.md) · [docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md](docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md) — Feed Farm Trade ops / program gates
+- [docs/architecture/turborepo/ARCH-022-system-overview.md](docs/architecture/turborepo/ARCH-022-system-overview.md) — Target workspace layout (ARCH-021 migration map archived)
+- [docs/architecture/frontend/ARCH-011-frontend-folder-map.md](docs/architecture/frontend/ARCH-011-frontend-folder-map.md) — frontend folder map
+- [docs/README.md](docs/README.md) — unified design + ops index (`api/`, `architecture/`, `adr/`, `fft/`, `runbooks/`)
 
 ## Database migrations
 
