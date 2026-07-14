@@ -4,13 +4,13 @@
 |-------|-------|
 | ID | ARCH-028 |
 | Category | Architecture |
-| Version | 1.4.24 |
+| Version | 1.4.25 |
 | Status | Target |
 | Control State | Closed |
 | Owner | Platform |
 | Updated | 2026-07-15 |
 
-> **Forward-writing / Target.** Ordered implementation plan for the Turborepo system. Through S8.1 this checkout has `apps/web` route groups + `apps/web/modules/*` domain ports + `apps/web/features/{auth,declarations,fft,org-admin}` shells + `@afenda/{config,db,auth,env,ui,emails}` + Target CI (`.github/workflows/ci.yml`) — continue slice-serial only (see Anti-contamination lock below). Each slice is S (1–2 files) or M (3–5 files). L = structural move of **Target trees already on disk** only — never Collapse/legacy recovery from git.
+> **Forward-writing / Target.** Ordered implementation plan for the Turborepo system. Through S8.2 this checkout has `apps/web` route groups + `apps/web/modules/*` domain ports + `apps/web/features/{auth,declarations,fft,org-admin}` shells + `@afenda/{config,db,auth,env,ui,emails}` + Target CI/deploy (`.github/workflows/{ci,deploy}.yml`) — continue slice-serial only (see Anti-contamination lock below). **Checkpoint G** (Target→Living Status + doc retirement) is a separate Docs-lane mission. Each slice is S (1–2 files) or M (3–5 files). L = structural move of **Target trees already on disk** only — never Collapse/legacy recovery from git.
 
 ## Purpose
 
@@ -183,7 +183,7 @@ Operator override for a later **non-baseline** forward migrate only: `AFENDA_ALL
 
 **Checkpoint D evidence (2026-07-14):** merged local compose inventory → `.env.local`; removed `env.config` / `env.secret` / `.env` and committed examples; added `.env.example` + `!.env.example` gitignore; removed `env:compose` / `env:guard*` / compose write-path scripts from root `package.json`; `scripts/lib/env-files.mjs` + `validate-neon-env` load `.env.local` only; AGENTS.md Target env SSOT.
 
-**A–D residue pass (2026-07-14, pre-E):** deleted `env-manifest.generated.mjs` + root Collapse `components.json` (`app/`/`modules/platform` aliases); Living docs/skills retargeted off pre-S4.1 two-state; ARCH-022/AGENTS checkout posture updated for packages through `@afenda/env`. **Superseded by S5.1–S8.1 + Checkpoints E–F (2026-07-15)** — see Acceptance evidence below; next open **S8.2**.
+**A–D residue pass (2026-07-14, pre-E):** deleted `env-manifest.generated.mjs` + root Collapse `components.json` (`app/`/`modules/platform` aliases); Living docs/skills retargeted off pre-S4.1 two-state; ARCH-022/AGENTS checkout posture updated for packages through `@afenda/env`. **Superseded by S5.1–S8.2 + Checkpoints E–F (2026-07-15)** — see Acceptance evidence below; next open **Checkpoint G** (Docs lane).
 
 ---
 
@@ -348,15 +348,26 @@ Operator override for a later **non-baseline** forward migrate only: `AFENDA_ALL
 **Size:** S · **File:** `.github/workflows/deploy.yml` — `turbo run build --filter=@afenda/web` then Vercel prod
 
 **Acceptance:**
-- [ ] Vercel auto-deploy on push disabled if Actions owns deploy
-- [ ] Production deploy succeeds
-- [ ] Vercel: `ENABLE_EXPERIMENTAL_COREPACK=1` (or equivalent) if pnpm via Corepack is required
+- [x] Vercel auto-deploy on push disabled if Actions owns deploy
+- [x] Production deploy succeeds
+- [x] Vercel: `ENABLE_EXPERIMENTAL_COREPACK=1` (or equivalent) if pnpm via Corepack is required
+
+**Implement evidence (2026-07-15):**
+- `.github/workflows/deploy.yml` — Node 24 · pnpm 10.33.4 · `turbo run build --filter=@afenda/web` gate → `vercel deploy --prod` (CLI pin `vercel@51.8.0`); `workflow_dispatch` + push `main`
+- `apps/web/vercel.json` — `installCommand` Corepack+pnpm · `buildCommand` turbo filter `@afenda/web` · `ignoreCommand` skips **production** Git auto-deploys (Actions owns prod; preview Git remains)
+- `turbo.json` `globalPassThroughEnv` — passes Vercel/`@afenda/env` build vars into turbo tasks (fixes Zod fail when Turbo stripped platform env)
+- Vercel project `afenda-lite`: `ENABLE_EXPERIMENTAL_COREPACK=1` (Production · Development · Preview); build log detected Corepack + `packageManager` pin
+- Prod deploy verify (CLI): `dpl_GZNTbTWwNrqeWdBG2UsQNVA7xnHf` · **READY** · aliased `https://afenda-lite.vercel.app`
+- Local verify: `pnpm exec turbo run build --filter=@afenda/web` PASS
+- GH Actions configured: secrets `VERCEL_TOKEN` · `DATABASE_URL` · `NEON_AUTH_BASE_URL` · `NEON_AUTH_COOKIE_SECRET` · `APP_URL` (+ existing `TURBO_TOKEN`); vars `VERCEL_ORG_ID` · `VERCEL_PROJECT_ID` · `TURBO_TEAM`; deploy job uses Environment `production`
 
 ### Checkpoint G — Complete
 
 - [ ] ARCH docs Status can move Target → Living when tree matches ARCH-022
 - [ ] ARCH-022…027 decision sections remain Living/Target
 - [ ] Post-ship doc retirement list below reviewed
+
+> **Lane note:** Checkpoint G is a **separate Docs-lane** mission — do not mass-edit DOC-002 Status in the S8.2 Ops turn.
 
 ## Post-ship doc retirement (after Checkpoint G)
 
@@ -395,7 +406,7 @@ Absorbed from retired GUIDE-004. Records **Target vs checkout** drift for forwar
 
 | Authority | Disk today | Coding impact |
 |-----------|------------|---------------|
-| [ARCH-022…028](.) | S1.1–S8.1 + Checkpoints A–F present: workspace + `@afenda/{config,db,auth,env,ui,emails}` + `apps/web` route groups + modules domain ports + `apps/web/features/{auth,declarations,fft,org-admin}` + Target CI | Continue slice-serial implement — next open **S8.2** |
+| [ARCH-022…028](.) | S1.1–S8.2 + Checkpoints A–F present: workspace + `@afenda/{config,db,auth,env,ui,emails}` + `apps/web` route groups + modules domain ports + `apps/web/features/{auth,declarations,fft,org-admin}` + Target CI/deploy | Docs lane — next open **Checkpoint G** (Status Target→Living + retirement review) |
 | Living maps ARCH-001…010 · 012…019 · 017 | Repo-root `app/`, `modules/`, `features/`, `components-V2/` **absent** after design-SSOT Collapse (`4680c91`) | **Expected · Forbidden to recover** — see Anti-contamination lock below |
 | [ARCH-023](ARCH-023-multi-tenancy.md) | Living tenancy + RBAC rules | Binding now — enforce invariants even before packages exist |
 | `AGENTS.md` env | Target `@afenda/env` + `.env.local` + `.env.example` (S4.1 / Checkpoint D) | Compose retired — do not restore |
@@ -439,6 +450,7 @@ Living ARCH folder/route/adapter maps remain normative for **shape**. They are *
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.4.25 | 2026-07-15 | S8.2 Deploy: `deploy.yml` + Corepack/pnpm knobs + turbo env pass-through; prod READY; next open Checkpoint G (Docs). |
 | 1.4.24 | 2026-07-15 | S8.1 audit gap close: real Biome lint + Vitest package tests under turbo (19 tasks); README Target CI. |
 | 1.4.23 | 2026-07-15 | S8.1 CI: `ci.yml` turbo lint/typecheck/test + `TURBO_TOKEN`/`TURBO_TEAM` remote cache; next open S8.2. |
 | 1.4.22 | 2026-07-15 | S7.4 audit gap close: session-aware feature runners; Target `org-admin` farm honesty; Checkpoint F re-verify. |

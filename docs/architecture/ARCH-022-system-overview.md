@@ -4,13 +4,13 @@
 |-------|-------|
 | ID | ARCH-022 |
 | Category | Architecture |
-| Version | 1.5.10 |
+| Version | 1.5.11 |
 | Status | Target |
 | Control State | Closed |
 | Owner | Platform |
 | Updated | 2026-07-15 |
 
-> **Forward-writing / Target.** Turborepo system SSOT. On disk through S8.1: `@afenda/config|db|auth|env|ui|emails` + `apps/web` route groups + `apps/web/modules/{platform,identity,declarations,fft}` domain ports + `apps/web/features/{auth,declarations,fft,org-admin}` + Target CI — next open [ARCH-028](ARCH-028-implementation-slices.md) **S8.2**.
+> **Forward-writing / Target.** Turborepo system SSOT. On disk through S8.2: `@afenda/config|db|auth|env|ui|emails` + `apps/web` route groups + `apps/web/modules/{platform,identity,declarations,fft}` domain ports + `apps/web/features/{auth,declarations,fft,org-admin}` + Target CI/deploy — next open [ARCH-028](ARCH-028-implementation-slices.md) **Checkpoint G** (Docs lane).
 
 ## Context
 
@@ -244,6 +244,7 @@ Next.js App Router (apps/web)
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.5.11 | 2026-07-15 | Checkout banner: S8.2 Target deploy on disk; next open Checkpoint G (Docs). |
 | 1.5.10 | 2026-07-15 | Checkout banner: S8.1 Target CI on disk; next open S8.2. |
 | 1.5.9 | 2026-07-15 | Checkout banner: S7.4 feature shells + Checkpoint F on disk; next open S8.1. |
 | 1.5.8 | 2026-07-15 | Checkout banner: S7.3 domain modules on disk; next open S7.4+ (feature shells). |

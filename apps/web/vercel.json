@@ -1,5 +1,7 @@
 {
 	"framework": "nextjs",
 	"regions": ["sin1"],
-	"installCommand": "cd ../.. && pnpm install --frozen-lockfile"
+	"installCommand": "cd ../.. && corepack enable && pnpm install --frozen-lockfile",
+	"buildCommand": "cd ../.. && pnpm exec turbo run build --filter=@afenda/web",
+	"ignoreCommand": "bash -c '[[ \"$VERCEL_ENV\" == \"production\" ]] && exit 0 || exit 1'"
 }
