@@ -61,6 +61,16 @@ jobs:
       - name: Install Vercel CLI
         run: npm install -g vercel@51.8.0
 
+      - name: Verify Vercel personal access token
+        # OAuth tokens from `vercel login` / CLI auth.json are rejected here.
+        # Create a classic PAT: https://vercel.com/account/tokens → set GH secret VERCEL_TOKEN
+        run: |
+          code=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer ${VERCEL_TOKEN}" https://api.vercel.com/v2/user)
+          if [ "$code" != "200" ]; then
+            echo "::error::VERCEL_TOKEN is invalid for the API (HTTP ${code}). Create a Personal Access Token at https://vercel.com/account/tokens and run: gh secret set VERCEL_TOKEN"
+            exit 1
+          fi
+
       - name: Pull Vercel production project
         run: vercel pull --yes --environment=production
 
