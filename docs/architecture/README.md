@@ -2,7 +2,7 @@
 
 Living and Target architecture SSOTs for Afenda-Lite (beta). Afenda-Elite shares the same [DOC-001](../_control/DOC-001-documentation-control-standard.md) control model. Material decisions live in Living/Target `ARCH-*` here — ADRs only under [`adr/`](adr/) after ID approval (never top-level `docs/adr/` or any `decisions/` folder). Module spines: [`docs/modules/`](../modules/).
 
-**Layout:** flat `ARCH-*.md` + [`adr/`](adr/) + [`archive/`](archive/) + `*.snapshot.json`. Do **not** recreate `backend/`, `frontend/`, `system/`, or `tech-stack/`. Boundaries = document ID + packs below.
+**Layout:** flat `ARCH-*.md` + [`adr/`](adr/) + `*.snapshot.json`. Do **not** recreate `backend/`, `frontend/`, `system/`, `tech-stack/`, or archive stubs. Boundaries = document ID + packs below.
 
 ## When to use this folder
 
@@ -16,7 +16,7 @@ Living and Target architecture SSOTs for Afenda-Lite (beta). Afenda-Elite shares
 | Interface / API parent | [ARCH-029](ARCH-029-interface-api-architecture.md) · contracts in [`docs/api/`](../api/) |
 | Ordered implement slices | [ARCH-028](ARCH-028-implementation-slices.md) (docs plan — no scaffold without implement letter) |
 
-**When NOT:** invent a second tenancy/IAM doc; paste ARCH-013/010 tables into siblings; recover Collapse `app/`/`modules/`/`features/`/`components-V2/`; treat archive stubs as Living.
+**When NOT:** invent a second tenancy/IAM doc; paste ARCH-013/010 tables into siblings; recover Collapse `app/`/`modules/`/`features/`/`components-V2/`; restore Superseded archive stubs as Living.
 
 ## How to read (first three)
 
@@ -65,7 +65,7 @@ Link the SSOT; do not paste a second copy.
 | 5 | [ARCH-016](ARCH-016-next-js-conventions.md) | Next.js conventions |
 | 6 | [ARCH-017](ARCH-017-frontend-folder-map.md) | Folder map (logical) |
 
-ARCH-014 archived (UI surfaces).
+ARCH-014 is **Superseded** (register-only; stub removed).
 
 ### Tech-stack
 
@@ -75,12 +75,12 @@ ARCH-014 archived (UI surfaces).
 | 2 | [ARCH-018](ARCH-018-admincn-customization.md) | AdminCN customize playbook |
 | 3 | [ARCH-019](ARCH-019-admincn-frontend-preflight.md) | AdminCN preflight |
 
-### Archive · ADR
+### ADR · superseded IDs
 
-| Home | Contents |
+| Home / fact | Contents |
 |------|----------|
-| [`archive/`](archive/) | Superseded ARCH-003, 014, 020, 021 |
 | [`adr/`](adr/) | Approved ADRs (e.g. [ADR-008](adr/ADR-008-cache-components-mode-b.md)) |
+| DOC-002 only | Superseded ARCH-003, 014, 020, 021 — IDs non-recyclable; no `archive/` stubs on disk |
 
 ## Related
 
@@ -93,7 +93,7 @@ ARCH-014 archived (UI surfaces).
 
 ## Rules
 
-1. Prefer Living/Target over archive stubs.  
+1. Prefer Living/Target authorities; Retired/Superseded IDs are DOC-002 register-only (no `archive/` stubs).  
 2. No top-level `docs/adr/` / `decisions/` — ADRs under [`adr/`](adr/) after ID approval.  
 3. Do not reopen ARCH-023 Rejected (R*) / Deferred (D*) without explicit user approval.  
 4. No separate platform-IAM ARCH — IAM is [ARCH-023](ARCH-023-multi-tenancy.md).  

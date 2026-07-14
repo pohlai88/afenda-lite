@@ -4,7 +4,7 @@
 | ----------------- | ------------ |
 | **ID**            | ARCH-019     |
 | **Category**      | Architecture |
-| **Version**       | 1.1.4        |
+| **Version**       | 1.1.5        |
 | **Status**        | Living     |
 | **Control State** | Closed       |
 | **Owner**         | Frontend     |
@@ -76,7 +76,7 @@ Run before adding or refining an AdminCN-hosted screen.
 
 ## 5 — Verify
 
-- [ ] `npm run test:unit -- features/fft/ui-registry`  
+- [ ] `pnpm test:unit -- features/fft/ui-registry`  
 - [ ] Unit tests for shell/access or route helpers if touched  
 - [ ] Manual: entitled nav matches session (member / HS / org admin)  
 - [ ] Login island still renders without AdminCN tokens  
@@ -104,6 +104,7 @@ Additional related links from prior revision:
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 1.1.5 | 2026-07-14 | Bounded reopen: package-manager cutover — document `pnpm` / `pnpm exec` (repo SSOT `packageManager` + `pnpm-lock.yaml`). |
 | 1.1.4 | 2026-07-14 | Preflight: no invented product surfaces; hold ARCH-012 disposition (remove stub-OK wording). |
 | 1.1.3 | 2026-07-14 | Home flattened to docs/architecture/ (trunks removed; pack reading order in README). |
 | 1.1.2 | 2026-07-14 | No AdminCN zip retained under `_reference/`; Studio DNA temporary scratch only. |

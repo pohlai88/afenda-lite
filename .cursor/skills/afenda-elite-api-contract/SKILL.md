@@ -114,7 +114,7 @@ Reading order for conflicts: ARCH-029 → GUIDE-015 → Phase 1 Living → domai
 
 | User / task signal | Do this |
 | ------------------ | ------- |
-| New Action or Route Handler | §1–§5 + checklist §10; classify api-now vs contract-only (§6) |
+| New Action or Route Handler | §1–§5 + Action security checklist + §10; classify api-now vs contract-only (§6) |
 | Change draft / health / auth HTTP | Update code + regenerate OpenAPI ([openapi.md](openapi.md)) |
 | New Zod schema / brand | [brands-and-schemas.md](brands-and-schemas.md); one-version only |
 | OpenAPI / Fumadocs / Spectral | [openapi.md](openapi.md) + GUIDE-011 — never hand-edit YAML forever |
@@ -150,16 +150,32 @@ BFF context: [ARCH-013](../../../docs/architecture/ARCH-013-bff-and-data-flow.md
 | `modules/*/domain` | Parameterized queries, domain rules | Read `Request` / cookies |
 | UI / RSC | Domain (reads) or Actions (mutations) | Import `pg` / build SQL |
 
-**Every Action and mutating Route Handler:**
-
-1. `parseSchema` / `safeParse`
-2. `require*Session` **inside** the adapter
-3. Authorization (role / org / ownership / FFT access)
-4. Domain with trusted types
-5. Map failures → `ActionResult` or `APIErrorBody`; revalidate on success when UI-backed
-
-Optional: `after()` for non-blocking audit. Public exceptions: health + Neon Auth proxy only (API-001).  
+Optional: `after()` for non-blocking audit after the response (does not replace pipeline stage 8). Public exceptions: health + Neon Auth proxy only (API-001).  
 Default **Node** runtime for DB handlers. No `route.ts` beside `page.tsx`.
+
+### Mutating boundary — ARCH-029 §3.3 security pipeline (mandatory)
+
+Treat every Server Action as a **public endpoint**. Layout/`proxy.ts` visibility does **not** replace this pipeline. Every mutating Server Action and Route Handler shall run **in order** ([ARCH-029](../../../docs/architecture/ARCH-029-interface-api-architecture.md) §3.3):
+
+| # | Stage | Notes |
+|---|-------|-------|
+| 1 | Parse and validate input | Zod / `parseSchema` at adapter (API-001 · API-004) |
+| 2 | Establish the authenticated actor | Session re-verify **inside** the adapter (Accelint 2.1) |
+| 3 | Establish organization, tenant, or module scope | Active `organization_id` / module scope; reject omit/forge ([ARCH-023](../../../docs/architecture/ARCH-023-multi-tenancy.md) · neon-tenancy) |
+| 4 | Authorize the requested capability | Permission codes / `fft.access` — not Neon role display names |
+| 5 | Validate resource ownership or state constraints | IDOR / state-machine / ownership before mutation |
+| 6 | Invoke the domain with trusted types | No `Request` / cookies in ports |
+| 7 | Map expected failures to the controlled error vocabulary | `ActionResult` / `APIErrorBody` ([API-002](../../../docs/api/API-002-error-contract.md)) |
+| 8 | Record audit evidence where required | Actor, org, correlation where policy requires |
+| 9 | Revalidate affected UI or cache where applicable | `revalidatePath` / tags; org-scoped cache keys |
+| 10 | Emit a safe response | No secrets, stacks, SQL, or internal exception details |
+
+**Target before merge:** all ten stages applied (or explicitly N/A with rationale for non-mutating/public allowlist paths). Public exceptions are Living API-001 allowlist only (health + Neon Auth proxy) until further approved.
+
+**Supplementary (not a substitute for the ten stages):** same use-case Action + RH share Zod, brands, and error `code` set (§5 one-version). Dedicated `afenda-elite-server-action-security` stays catalog **candidate**.
+
+**Tenant data:** domain queries take explicit `orgId`; hard predicates / Target `withOrg` — [neon-tenancy-efficiency](../neon-tenancy-efficiency/SKILL.md).  
+**Draft API-005…006:** cite only; do not invent Living behavior until GUIDE-015 promotion.
 
 ---
 

@@ -13,9 +13,9 @@ const preferred = [
   "check:openapi",
 ];
 
-function scriptExists(npmScriptName) {
+function scriptExists(scriptName) {
   const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
-  const cmd = pkg.scripts?.[npmScriptName];
+  const cmd = pkg.scripts?.[scriptName];
   if (!cmd) return false;
   if (String(cmd).includes("collapse-script-unavailable.mjs")) return false;
   if (String(cmd).includes(".cursor/skills/")) return true;
@@ -28,7 +28,7 @@ const checks = preferred.filter(scriptExists);
 
 function runCheck(script) {
   return new Promise((resolve, reject) => {
-    const child = spawn("npm", ["run", script], {
+    const child = spawn("pnpm", ["run", script], {
       stdio: "inherit",
       shell: true,
     });

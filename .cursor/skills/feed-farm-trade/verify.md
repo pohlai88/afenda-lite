@@ -36,7 +36,7 @@ npm run check:fft-ui-registry:expect-fail   # intentional red demo
 npm run test:unit -- features/fft/ui-registry
 ```
 
-Env: `npm run env:compose` before E2E. Identities: see `AGENTS.md` / RUNTIME — do not conflate `SHARED_ADMIN_EMAIL` with sales allowlist.
+Env: ARCH-027 two-state — docs-first/pre-S4.1 no `env:compose` / no `.env.local`; Target post-S4.1 `@afenda/env` + `.env.local` before E2E when the app exists. Identities: see `AGENTS.md` / RUNTIME — do not conflate `SHARED_ADMIN_EMAIL` with sales allowlist.
 
 ## Existing test inventory (map loosely to AC)
 
@@ -87,7 +87,7 @@ Fill phase-doc **Result** columns when evaluating: [11](../../../docs/modules/fe
 ## Evidence log (Enterprise MVP — 2026-07-11)
 
 ```text
-LOCAL_OPS_COMPLETE: PASS | env:compose all four P3 flags=true; admin setup nav + deposits/pickup/imports/ERP real panels; e2e/fft-ops-local.spec.ts @journey 1/1; modules/fft 185/185; UI registry OK; no Vercel/prod sync | 2026-07-11
+LOCAL_OPS_COMPLETE: PASS (historical 2026-07-11 pre-Collapse) | then used env:compose with all four P3 flags=true; admin setup nav + deposits/pickup/imports/ERP real panels; e2e/fft-ops-local.spec.ts @journey 1/1; modules/fft 185/185; UI registry OK; no Vercel/prod sync — not a Living compose mandate on docs-first (ARCH-027)
 LOCAL_OPS_PERMISSION: PASS | hasFftPermission mirrors action guards: RBAC-off admin all; sales deposit.view only; deposit/pickup manage admin-only; fft-session 27/27 | 2026-07-11
 P3_TODO_EXECUTE: PASS | processErpSyncJobsAction flag assert + FE wire deposits/pickup/imports/ERP (flag-off placeholder); modules/fft 183/183; check:fft-ui-registry OK; no prod flags | 2026-07-11
 AC-OPS-01: PASS | processErpSyncJobsAction erp_sync_disabled before export.finance; deposit/pickup/ERP retry unchanged; FE flag-off placeholders | 2026-07-11

@@ -2,7 +2,7 @@
 
 Navigation only.
 
-Engineering guides **GUIDE-001…004** and **GUIDE-006** are **Retired** and live under [`archive/`](archive/) (not Living SSOT).
+Engineering guides **GUIDE-001…004**, **GUIDE-006**, and **GUIDE-016** are **Retired** — IDs stay in [DOC-002](../_control/DOC-002-documentation-register.md) (non-recyclable); stub files are **removed** (no Living restore).
 
 | Need | Authority |
 |------|-----------|
@@ -11,6 +11,5 @@ Engineering guides **GUIDE-001…004** and **GUIDE-006** are **Retired** and liv
 | Target vs checkout drift | [ARCH-028](../architecture/ARCH-028-implementation-slices.md) § Target vs checkout drift |
 | API implementation guides | [`docs/api/guides/`](../api/guides/README.md) (GUIDE-007…015) |
 | Module Enterprise Readiness (FFT) | [MOD-002](../modules/MOD-002-modules-index.md) · [FFT-MOD-009](../modules/feed-farm-trade/FFT-MOD-009-verification.md) · [FFT-MOD-010](../modules/feed-farm-trade/FFT-MOD-010-module-docs-index.md) |
-| Archived engineering guides | [`archive/`](archive/) (includes Retired GUIDE-016) |
 
 `docs/guides/` remains the DOC-001 home for **non-API** internal guides when explicitly approved.

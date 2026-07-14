@@ -4,7 +4,7 @@
 |-------|-------|
 | ID | ARCH-026 |
 | Category | Architecture |
-| Version | 1.2.1 |
+| Version | 1.2.2 |
 | Status | Target |
 | Control State | Closed |
 | Owner | Platform |
@@ -170,8 +170,8 @@ Client invitation: operator calls `inviteOrgMember()` → Neon Auth delivers the
 ## Operational considerations
 
 - **Trusted domains:** add any new Vercel preview URL to Neon Auth trusted origins: `neon neon-auth domain add https://…`.
-- **Auth config audit:** `npm run audit:neon-auth-production`.
-- **Plugin configuration:** `npm run configure:neon-auth-production` for magic link and org plugins.
+- **Auth config audit:** `pnpm audit:neon-auth-production`.
+- **Plugin configuration:** `pnpm configure:neon-auth-production` for magic link and org plugins.
 - **Local dev:** `http://localhost:3000` is an allowed Neon Auth origin for sign-in without extra config.
 
 ## Known limits / future changes
@@ -184,6 +184,7 @@ Client invitation: operator calls `inviteOrgMember()` → Neon Auth delivers the
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.2.2 | 2026-07-14 | Bounded reopen: package-manager cutover — document `pnpm` / `pnpm exec` in place of `npm run` / `npx` (repo SSOT `packageManager` + lockfile). |
 | 1.2.1 | 2026-07-14 | Home flattened to docs/architecture/ (trunks removed; pack reading order in README). |
 | 1.2.0 | 2026-07-14 | Integrity remediation: demote role table to session signals; pointer IAM to ARCH-023; Change Log restored. |
 | 1.1.1 | 2026-07-14 | Added mandatory Control State header field (Closed); lifecycle Status unchanged. |

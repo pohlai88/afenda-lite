@@ -585,13 +585,6 @@ export function buildResidualRisk({ failures, findings, authority, documents, sc
     .map(([id]) => id)
     .sort();
 
-  const guidesBaseline =
-    scopeRoot.replace(/\\/g, "/") === "docs/guides" &&
-    findings.length === 29 &&
-    "Known guides archive baseline: 29 findings on GUIDE-001…004/006 — leave untouched unless material revision is authorized (DOC-002 Notes).";
-
-  if (guidesBaseline) return guidesBaseline;
-
   if (findings.length === 0 && unimplementedInScope.length === 0) {
     return `None for this scope beyond ${standing}.`;
   }

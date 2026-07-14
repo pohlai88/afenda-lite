@@ -4,7 +4,7 @@
 |-------|-------|
 | ID | ARCH-023 |
 | Category | Architecture |
-| Version | 3.1.1 |
+| Version | 3.1.3 |
 | Status | Living |
 | Control State | Closed |
 | Owner | Platform |
@@ -22,7 +22,7 @@ Module FFT domain catalogs stay in [FFT-MOD-005](../modules/feed-farm-trade/FFT-
 
 **Ops:** [RB-001](../runbooks/RB-001-multi-org-ops.md) · [RB-005](../runbooks/RB-005-post-lock-coding-cheat-sheet.md) · [neon-tenancy-efficiency](../../.cursor/skills/neon-tenancy-efficiency/SKILL.md)
 
-**Supersedes:** [ARCH-003](archive/ARCH-003-multi-tenant-ecosystem.md) (archived stub). Do **not** recreate a separate IAM architecture file.
+**Supersedes:** ARCH-003 (Superseded in [DOC-002](../_control/DOC-002-documentation-register.md); stub removed — ID non-recyclable). Do **not** recreate a separate IAM architecture file.
 
 # 2. Scope
 
@@ -167,7 +167,7 @@ type Session = {
 
 ### Schema
 
-Every tenant-root table includes `organization_id … NOT NULL` (uuid in shipped migrations). CI: `npm run audit:tenancy-nulls`.
+Every tenant-root table includes `organization_id … NOT NULL` (uuid in shipped migrations). CI: `pnpm audit:tenancy-nulls`.
 
 **Tenant roots (after migration `027`):**
 
@@ -266,7 +266,7 @@ Cheat sheet: [RB-005](../runbooks/RB-005-post-lock-coding-cheat-sheet.md).
 | Failure | Symptom | Action |
 |---------|---------|--------|
 | Cross-tenant leak | Wrong org data | Stop deploy; find unscoped queries; run isolation e2e |
-| Null org on root | `NOT NULL` violation | Fix writer; `npm run audit:tenancy-nulls` |
+| Null org on root | `NOT NULL` violation | Fix writer; `pnpm audit:tenancy-nulls` |
 | Multi-membership, no active org | `NO_ACTIVE_ORGANIZATION` | Switcher / set active |
 | Pool exhaustion | Timeouts | Confirm `-pooler`; shorten transactions |
 | Missing `orgId` in Target API | Empty result / throw | Keep `orgId: string` (never optional) |
@@ -308,9 +308,9 @@ Local auth uses the production Neon branch ([AGENTS.md](../../AGENTS.md)).
 ### Commands
 
 ```bash
-npm run audit:tenancy-nulls
-npm run check:tenancy-residue
-npm run backfill:fft-access -- --organization-id=<org-uuid>
+pnpm audit:tenancy-nulls
+pnpm check:tenancy-residue
+pnpm backfill:fft-access -- --organization-id=<org-uuid>
 ```
 
 # 4. References
@@ -326,12 +326,14 @@ npm run backfill:fft-access -- --organization-id=<org-uuid>
 | FFT-MOD-005 | FFT Auth / Tenancy / RBAC | FFT domain RBAC (separate catalog) |
 | RB-001 | Multi-org ops | Operational procedures |
 | RB-005 | Post-lock coding cheat sheet | Decision lock flash card |
-| ARCH-003 | Multi-tenant Ecosystem | Superseded — archived stub |
+| ARCH-003 | Multi-tenant Ecosystem | Superseded — DOC-002 register-only |
 
 # 5. Change Log
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 3.1.3 | 2026-07-14 | Hard-delete ARCH-003 archive stub; supersession points at DOC-002 register-only. |
+| 3.1.2 | 2026-07-14 | Bounded reopen: package-manager cutover — document `pnpm` / `pnpm exec` (repo SSOT `packageManager` + `pnpm-lock.yaml`). |
 | 3.1.1 | 2026-07-14 | Home flattened to docs/architecture/ (trunks removed; pack reading order in README). |
 | 3.1.0 | 2026-07-14 | DOC-003 six-section retrofit; Decision lock R1–R7 / D4·D5 content unchanged. |
 | 3.0.1 | 2026-07-14 | Added mandatory Control State header field (Closed); lifecycle Status unchanged. |

@@ -4,7 +4,7 @@
 | ----------------- | ---------- |
 | **ID**            | MOD-002    |
 | **Category**      | Module     |
-| **Version**       | 4.0.0 |
+| **Version**       | 4.0.2 |
 | **Status**        | Living     |
 | **Control State** | Closed     |
 | **Owner**         | Platform   |
@@ -214,10 +214,10 @@ MOD-009 may include a cross-cutting view that references sibling ACs without red
 Use the contract-driven dry run first:
 
 ```powershell
-npm run plan:module-pack -- -- --prefix INV --slug inventory --title "Inventory" --owner Platform --profiles "Enterprise Core,ERP"
+pnpm plan:module-pack -- -- --prefix INV --slug inventory --title "Inventory" --owner Platform --profiles "Enterprise Core,ERP"
 ```
 
-`npm run scaffold:module-pack -- -- --prefix INV --slug inventory --title "Inventory" --owner Platform --profiles "Enterprise Core,ERP" --apply` may write only under `docs/scratch/module-packs/<slug>/`, refuses overwrite, and remains non-authoritative. Promotion requires approved IDs, a MOD-002 catalogue update, DOC-002 registration, bounded reopen, movement to `docs/modules/<slug>/`, validation, and closure. Exactly ten spine files remain mandatory; depth folders and MOD-011 are forbidden.
+`pnpm scaffold:module-pack -- -- --prefix INV --slug inventory --title "Inventory" --owner Platform --profiles "Enterprise Core,ERP" --apply` may write only under `docs/scratch/module-packs/<slug>/`, refuses overwrite, and remains non-authoritative. Promotion requires approved IDs, a MOD-002 catalogue update, DOC-002 registration, bounded reopen, movement to `docs/modules/<slug>/`, validation, and closure. Exactly ten spine files remain mandatory; depth folders and MOD-011 are forbidden.
 
 ---
 
@@ -245,6 +245,8 @@ The benchmark inputs are [Microsoft implementation strategy](https://learn.micro
 
 | Version | Date       | Summary |
 | ------- | ---------- | ------- |
+| 4.0.2 | 2026-07-14 | GUIDE-016 Retired = DOC-002 register-only (archive stub removed). |
+| 4.0.1 | 2026-07-14 | Bounded reopen: package-manager cutover — document `pnpm` / `pnpm exec` (repo SSOT `packageManager` + `pnpm-lock.yaml`). |
 | 4.0.0 | 2026-07-14 | Executable contract 1.0.0; Core/ERP profiles; five/eleven-column interfaces; deterministic scaffold and validation rules. |
 | 3.0.0   | 2026-07-14 | Module Enterprise Readiness standard: lifecycle ≠ readiness; fixed 10-MOD role contracts; AC ownership/ID grammar; structured evidence ledger schema; claim rules; DOC-003 six-section retrofit. |
 | 2.1.2   | 2026-07-14 | Added mandatory Control State header field (Closed); lifecycle Status unchanged. |
@@ -257,6 +259,6 @@ The benchmark inputs are [Microsoft implementation strategy](https://learn.micro
 
 # 6. Notes
 
-**Retired acceptance overlays:** module-specific enterprise acceptance guides must not compete with this standard. GUIDE-016 is Retired under `docs/guides/archive/` (ID non-recyclable); active authority is MOD-002 + owning `*-MOD-001`…`010`.
+**Retired acceptance overlays:** module-specific enterprise acceptance guides must not compete with this standard. GUIDE-016 is **Retired** in DOC-002 (ID non-recyclable; stub removed); active authority is MOD-002 + owning `*-MOD-001`…`010`.
 
 **Afenda-Lite vs Afenda-Elite:** this Module category standard is shared. Edition maturity does not change the ten roles, evidence schema, or claim rules. A single module’s readiness claim never certifies an edition release.

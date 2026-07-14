@@ -1,33 +1,26 @@
-# Portal backend modules — completeness (2026-07-12)
+# Portal backend modules — completeness (program history)
 
 Plan authority: this skill + `docs/architecture/` + [deprecation register — Closed product phases](../agent-skills/skills/deprecation-and-migration/reference.md).
 
-| Slice | Plan | Code | Status |
-|-------|------|------|--------|
-| Module tree `platform/identity/declarations/fft` | Exact L2 folders | Disk matches | **Done** |
+**Checkout posture:** Rows marked **Done (historical)** were closed on the pre-Collapse product tree (2026-07-12). This **docs-first** checkout does **not** currently have root `modules/` / `app/` / `features/` — do not read “Done” as “implemented on disk today.” Target re-scaffold lives under `apps/web/…` after ARCH-028 implement authorization. DB/Neon ops rows (migrations, tenancy cutover) remain Living ops facts where still true in production Neon.
+
+| Slice | Plan | Evidence kind | Status |
+|-------|------|---------------|--------|
+| Module tree `platform/identity/declarations/fft` | Exact L2 folders | Historical disk; Target `apps/web/modules` | **Done (historical)** — absent on docs-first |
 | No `modules/trade/` / `features/trade/` product | Forbidden | Absent | **Done** |
-| No `lib/` architecture drawer | Absorb all runners | `lib/` gone; runners under `features/` | **Done** |
-| Shared Zod + `parseSchema` on Platform | Trade/Identity import Platform | Actions use Platform common | **Done** |
-| Trade ↛ Declarations imports | Ban | No matches under `modules/fft` | **Done** |
-| Identity ↛ Declarations (any) | Zero imports | 0 matches under `modules/identity` | **Done** |
-| Platform ↛ Declarations / FFT domain | No product compose in Platform | Draft route in `modules/declarations/api/`; shell resolve in `features/portal-chrome` | **Done** |
-| api-now Route Handlers (4 trees) | Only health/auth/draft | Disk matches | **Done** |
-| Actions map (`account/admin/client/declarations/surveys/fft`) | adapter-map | Disk matches; no `trade.ts` | **Done** |
-| Org users full stack | CRUD/export/import/bulk | Wired | **Done** |
-| ClientProfile port | Identity owns read/ensure + invite bootstrap | Done | **Done** |
-| Platform copy port | `modules/platform/copy/*` | Done | **Done** |
-| Absorb entry / org-admin / playground runners | → `features/*` | Done | **Done** |
-| Platform RBAC catalog + domain + schemas | ADR-002 | Wired + `fft.access` | **Done** |
-| Org-admin Roles / Permissions UI | `/dashboard/roles` `/permissions` | Wired + admin nav entitlement | **Done** |
-| Assign UI gated by `org.roles.manage` | User detail | `canManagePlatformRoles` | **Done** |
-| Declarations / FFT `organization_id` scope | Tenancy | Hard `= org` + `027` NOT NULL | **Done** |
-| FFT module entry control plane | `hasFftModuleAccess` | platform `fft.access` only; write-time `ensureFftMember`; ops `backfill:fft-access` | **Done** |
-| Apply migrations `025`/`026`/`027`/`028` on Neon | Ops | Prod `br-tiny-hill-ao82jp6f` | **Done** |
-| Hard multi-org cutover | Drop `IS NULL OR` + promoteLegacy | Hard scope + membership Users + CI residue + N1 active org | **Done** |
-| Multi-org ready (M1–M4) | Switcher + scoped templates + isolation + ops | [ARCH-023](../../../docs/architecture/ARCH-023-multi-tenancy.md) | **Done** |
-| `/client` workspace restore | Closed + reopen checklist | Stubs only | **Closed (registered)** |
+| No `lib/` architecture drawer | Absorb runners | `lib/` gone; do not recreate | **Done** |
+| Shared Zod + `parseSchema` on Platform | Trade/Identity import Platform | Historical Actions | **Done (historical)** |
+| Trade ↛ Declarations imports | Ban | Rule remains | **Done (rule)** |
+| Identity ↛ Declarations (any) | Zero imports | Rule remains | **Done (rule)** |
+| Platform ↛ Declarations / FFT domain | No product compose in Platform | Rule remains | **Done (rule)** |
+| api-now Route Handlers (4 trees) | Only health/auth/draft | Living allowlist | **Done (contract)** — not docs-first disk inventory |
+| Actions map (`account/admin/client/declarations/surveys/fft`) | adapter-map | Logical map | **Done (historical / Target shape)** |
+| Org users / ClientProfile / Platform copy / runners / RBAC UI | Product slices | Pre-Collapse wiring | **Done (historical)** |
+| Declarations / FFT `organization_id` scope | Tenancy | Prod Neon `027`/`028` | **Done (ops)** |
+| FFT module entry / multi-org M1–M4 | ARCH-023 | Prod + docs | **Done (ops / Living)** |
+| `/client` workspace restore | Closed + reopen checklist | Registered close | **Closed (registered)** |
 | FFT P3 flag promotion | gate-register | Prod flags off | **Closed (registered)** |
-| SaaS billing / 2FA product | Deferred chrome | Coming-soon + plan defaults | **Intentional (registered)** |
+| SaaS billing / 2FA product | Deferred chrome | Registered | **Intentional (registered)** |
 
 ## Stabilization (latest)
 
@@ -39,11 +32,11 @@ Plan authority: this skill + `docs/architecture/` + [deprecation register — Cl
 
 ## Verify
 
+Docs-first: `pnpm checks` (docs gates). Product unit/tsc/reliance scripts require Target tree — report `BLOCKED` if absent; do not recover Collapse scripts.
+
 ```bash
-npx tsc --noEmit
-npm run test:unit -- modules/identity/domain/platform-rbac-org-mutable modules/fft/auth modules/declarations/domain/organization-scope
-npm run check:reliance-mapping-drift
-npm run check:reliance-coverage
-npm run check:route-coverage-drift
-# Platform → declarations|fft imports: none
+pnpm checks
+# Target only, when apps/web/modules exists:
+# pnpm exec tsc --noEmit
+# pnpm test:unit -- apps/web/modules/...
 ```

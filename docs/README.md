@@ -33,8 +33,7 @@ Unified home for Living/Target ARCH, API contracts, guides, and module spines. M
 | [`api/`](api/) | API / REST / OPEN | Interface contracts — see [api/README.md](api/README.md) |
 | [`architecture/`](architecture/) | Architecture | Flat Living/Target `ARCH-*` home · pack reading order in [README](architecture/README.md) (System · Backend · Frontend · Tech-stack) |
 | [`architecture/adr/`](architecture/adr/) | ADR | Approved ADRs only (e.g. ADR-008) — not `decisions/` |
-| [`architecture/archive/`](architecture/archive/) | Architecture archive | Superseded ARCH stubs only |
-| [`guides/`](guides/) | Guide | Home for future non-API guides · engineering GUIDE-001…006 **Retired** · API how-tos in [api/guides](api/guides/README.md) |
+| [`guides/`](guides/) | Guide | Home for future non-API guides · GUIDE-001…006/016 **Retired** (register-only) · API how-tos in [api/guides](api/guides/README.md) |
 | [`modules/`](modules/) | Module | 10-MOD spines + catalog ([MOD-002](modules/MOD-002-modules-index.md)); FFT at [feed-farm-trade/](modules/feed-farm-trade/) |
 | [`runbooks/`](runbooks/) | Runbook / ops | Operate, multi-org, cheatsheets |
 | [`scratch/`](scratch/) | Scratch | Non-authoritative drafts and temporary notes |

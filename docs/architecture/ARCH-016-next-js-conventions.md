@@ -4,7 +4,7 @@
 | ----------------- | ------------ |
 | **ID**            | ARCH-016     |
 | **Category**      | Architecture |
-| **Version**       | 1.2.2        |
+| **Version**       | 1.2.3        |
 | **Status**        | Living       |
 | **Control State** | Closed       |
 | **Owner**         | Frontend     |
@@ -276,7 +276,7 @@ MCP nextjs_index → get_routes → get_errors
 | `get_errors` | Framework health — clean before claim done |
 | Isolation | `get_errors` is **not** tenant-isolation proof (ADR-008 Phase 2 checklist) |
 
-Also: `npx tsc --noEmit` on touched Target paths when code exists.
+Also: `pnpm exec tsc --noEmit` on touched Target paths when code exists.
 
 ---
 
@@ -304,6 +304,7 @@ Method: `.cursor/skills/afenda-elite-nextjs-best-practice/` (`reference/nextjs-c
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 1.2.3 | 2026-07-14 | Bounded reopen: package-manager cutover — document `pnpm` / `pnpm exec` (repo SSOT `packageManager` + `pnpm-lock.yaml`). |
 | 1.2.2 | 2026-07-14 | Home flattened to docs/architecture/ (trunks removed; pack reading order in README). |
 | 1.2.1 | 2026-07-14 | ADR link home → `docs/architecture/adr/` (DOC-001 2.5.0). |
 | 1.2.0 | 2026-07-14 | Numbered mechanics; Afenda overrides; Mode A pages table; bundling; hard stops; RH/cookies samples; fix ARCH-027 link; clarify ARCH-013 as data-tree SSOT. |

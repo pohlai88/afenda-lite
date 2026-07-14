@@ -107,7 +107,6 @@ Completion reports must separately list primary scope, dependencies, artifacts, 
 | Zero findings; all in-scope comparison sets implemented | None for this scope beyond standing exclusions (external HTTP availability; code-to-document runtime drift). |
 | Zero findings; unimplemented in-scope sets remain | Zero findings on executed checks. Human pairwise review still required for unimplemented in-scope comparison sets: \<ids\>. |
 | Findings remain | Findings remain (see report)… plus unimplemented set ids when applicable. |
-| `docs/guides` with **29** findings | Cite the archive baseline (GUIDE-001…004/006) — leave untouched unless material revision is authorized. |
 
 Do not emit a standing pairwise caveat when coverage is complete, findings are zero, and every in-scope authority-map comparison set is implemented.
 
@@ -115,10 +114,7 @@ Do not emit a standing pairwise caveat when coverage is complete, findings are z
 
 | Scope | Baseline | Disposition |
 | --- | --- | --- |
-| `docs/guides` full profile | **29 known findings** on archived GUIDE-001…004/006 only (5 `VERSION-DRIFT` + 24 `REFERENCE-BROKEN`) | Leave untouched unless explicitly authorized material revision. Recorded in DOC-002 Notes (4.31.0+). |
-| Same archives — Control State | Five files omit **Control State** | DOC-001 §3.7 exemption until material revision — not an open gate. |
+| `docs/guides` full profile | **0** findings (navigator only; Retired GUIDE stubs removed) | Register-only Retired IDs in DOC-002; do not restore `docs/guides/archive/`. |
 | `docs/api` full profile | Zero findings when coverage complete | Living rename/verify bar. |
 | `docs/modules/feed-farm-trade` full profile | Zero findings when coverage complete | Living rename/verify bar. |
-
-When reporting residual risk for guides audits, cite **29 known findings (archive baseline)** — not “missing Control State alone.”
 

@@ -4,7 +4,7 @@
 | ----------------- | --------------- |
 | **ID**            | FFT-MOD-003     |
 | **Category**      | Module          |
-| **Version**       | 1.3.0 |
+| **Version**       | 1.3.2 |
 | **Status**        | Living          |
 | **Control State** | Closed        |
 | **Owner**         | Feed Farm Trade |
@@ -47,7 +47,7 @@ Record Feed Farm Trade runtime, framework, data, auth dependencies, and **module
 |---------|--------|
 | Default | Node.js server (Next.js App Router RSC + Server Actions) |
 | Edge | Documented exception only — not FFT default |
-| Host | Afenda-Lite on Vercel (`afenda-lite`); local `npm run dev` against production Neon branch policy |
+| Host | Afenda-Lite on Vercel (`afenda-lite`); local `pnpm dev` against production Neon branch policy |
 
 ## 3.2 Frameworks / UI
 
@@ -82,13 +82,21 @@ Record Feed Farm Trade runtime, framework, data, auth dependencies, and **module
 | `FFT_ERP_SYNC_ENABLED` | `false` | `false` | 2D |
 | `FFT_ERP_VENDOR` / `FFT_ERP_BASE_URL` | unset until tenant pack | unset | `syncOptional` |
 
-Never edit `.env` by hand. Never `vercel env pull`. Platform env model: [ARCH-027](../../architecture/ARCH-027-env-model.md).
+Platform env model is **ARCH-027 two-state** ([ARCH-027](../../architecture/ARCH-027-env-model.md)):
+
+| State | FFT env instruction |
+|-------|---------------------|
+| **Docs-first / pre-S4.1** | No live `env:compose` / `env:guard`. Do not recover Collapse compose or `lib/env/`. Do not create `.env.local` or run `vercel env pull`. Flag **names** and production values stay as tabled; local inventory files (if present) are notes only. |
+| **Target post-S4.1** | `@afenda/env` is the only app config reader; `.env.local` is the only local runtime env file; no compose. Never hand-edit generated env beyond the approved S4.1 init path. |
+
+Historical pre-Collapse “compose then sync:vercel” procedures are **not** Living instructions on this checkout.
 
 ## 3.6 Local vs prod
 
 | Concern | Local | Prod |
 |---------|-------|------|
 | Neon branch | Production branch policy | `br-tiny-hill-ao82jp6f` |
+| Env surface | Docs-first: inventory notes only; Target post-S4.1: `.env.local` via `@afenda/env` | Vercel production keys (audit names; sync only when shipping) |
 | RBAC flag | often `false` | `true` |
 | ERP sync | off unless deliberately enabled | off until 2D-3 ready |
 
@@ -101,7 +109,7 @@ Single-owner ACs for this role. Evidence: [FFT-MOD-009](FFT-MOD-009-verification
 | AC-ID | Profile | Quality Dimension | Applicability | Criterion |
 | --- | --- | --- | --- | --- |
 | FFT-AC-003-01 | Enterprise Core | CORE-PLATFORM | Core | Supported runtime and dependencies are documented: Node default; Edge only as named exception; local vs prod behavior differs only as tabled. |
-| FFT-AC-003-02 | Enterprise Core | CORE-PLATFORM | Core | `FFT_*` flags/env keys match compose/manifest; budgets/constraints for module resources are stated; never hand-edit `.env` or `vercel env pull`. |
+| FFT-AC-003-02 | Enterprise Core | CORE-PLATFORM | Core | `FFT_*` flags/env keys match the Living flag table and platform manifest under the ARCH-027 two-state env model (no docs-first compose; Target `@afenda/env` + `.env.local` after S4.1); budgets/constraints for module resources are stated; never hand-edit runtime env outside the approved surface; never `vercel env pull` before S4.1. |
 | FFT-AC-003-03 | Enterprise Core | CORE-PLATFORM | Conditional | When a Conditional ops/ERP capability is Disabled or Uncontracted, fail-closed behavior is evidenced (otherwise remains `NOT EVIDENCED` on FFT-MOD-009). |
 | FFT-AC-003-04 | ERP | ERP-CONFIG-ALM | Core | Configuration is separated from customization; supported versions, environment promotion, feature/config transport, and rollback ownership are documented and reproducible. |
 ---
@@ -123,6 +131,8 @@ Single-owner ACs for this role. Evidence: [FFT-MOD-009](FFT-MOD-009-verification
 
 | Version | Date       | Summary |
 | ------- | ---------- | ------- |
+| 1.3.2 | 2026-07-14 | Bounded reopen: package-manager cutover — document `pnpm` / `pnpm exec` (repo SSOT `packageManager` + `pnpm-lock.yaml`). |
+| 1.3.2 | 2026-07-14 | ARCH-027 two-state env: retire Living compose guidance; update FFT-AC-003-02 criterion. |
 | 1.3.0 | 2026-07-14 | Executable quality contract: profile/dimension mapping and owned ERP benchmark criteria. |
 | 1.2.0   | 2026-07-14 | Wave C: enterprise requirements FFT-AC-003-01…03 (runtime/flags/conditional). |
 | 1.1.0   | 2026-07-14 | DOC-003 six-section retrofit; flag table confirmed SSOT here. |

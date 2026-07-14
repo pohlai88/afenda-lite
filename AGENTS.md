@@ -7,7 +7,7 @@
 
 **Quality bar (sole):** **Enterprise production.** Do not propose, plan, or ship under a reduced-viability frame. Rule [`.cursor/rules/no-mvp-quality-bar.mdc`](.cursor/rules/no-mvp-quality-bar.mdc) · hook [`.cursor/hooks/no-mvp-quality-bar.mjs`](.cursor/hooks/no-mvp-quality-bar.mjs). Shrink scope with Approved slices / Module Enterprise Readiness evidence — never shrink quality.
 
-**Repository layout:** [ARCH-022](docs/architecture/ARCH-022-system-overview.md) (Target system / monorepo tree) · [ARCH-017](docs/architecture/ARCH-017-frontend-folder-map.md) (frontend folder map — logical Living shape). ARCH-021 migration map archived. Hosting: GitHub `pohlai88/afenda-lite` · Vercel `afenda-lite` · `APP_URL=https://afenda-lite.vercel.app`.
+**Repository layout:** [ARCH-022](docs/architecture/ARCH-022-system-overview.md) (Target system / monorepo tree) · [ARCH-017](docs/architecture/ARCH-017-frontend-folder-map.md) (frontend folder map — logical Living shape). ARCH-021 migration map Superseded (DOC-002 register-only). Hosting: GitHub `pohlai88/afenda-lite` · Vercel `afenda-lite` · `APP_URL=https://afenda-lite.vercel.app`.
 
 ### Checkout posture (Collapse · anti-contamination)
 
@@ -18,7 +18,7 @@ This checkout is **docs-first** after design-SSOT Collapse (`4680c91`). Repo-roo
 | **Forbidden** | Recovering those trees or wiped scripts from git (`f014807`, Collapse parents) — contamination ban |
 | Authority | [ARCH-028 Anti-contamination lock](docs/architecture/ARCH-028-implementation-slices.md) · [deprecation register — Closed product phases](.cursor/skills/agent-skills/skills/deprecation-and-migration/reference.md) |
 | Forward product code | Target greenfield only (`apps/web/**`, `packages/*`) after an **explicit** ARCH-028 implement request — never restore banned roots |
-| Scripts | Many `package.json` scripts gate to `scripts/collapse-script-unavailable.mjs`. Docs-capable: `npm run checks` · `check:docs-naming` · `check:doc-integrity` · `check:module-quality` · `check:openapi` · `validate:neon-env` |
+| Scripts | Many `package.json` scripts gate to `scripts/collapse-script-unavailable.mjs`. Docs-capable: `pnpm checks` · `check:docs-naming` · `check:doc-integrity` · `check:module-quality` · `check:openapi` · `validate:neon-env` |
 
 ## Feed Farm Trade — Phase 2A closed · 2B–2D ADRs Accepted
 
@@ -48,7 +48,7 @@ This checkout is **docs-first** after design-SSOT Collapse (`4680c91`). Repo-roo
 | Neon Cloud | Org `org-fragrant-lake-90358173` (Launch) · project `young-hat-54755363` (**Afenda-Lite**) · branch `br-tiny-hill-ao82jp6f` protected |
 | Recovery | PITR 7d (Launch max); daily snapshots; see [multi-org-ops](docs/runbooks/RB-001-multi-org-ops.md) |
 | Env | `PORTAL_ORG_SLUG` / `PORTAL_ORG_NAME` / `PORTAL_ORG_SWITCHER_ENABLED`; do not confuse with `NEON_ORG_ID` (Neon Cloud) |
-| Ops | Tenancy/ops npm scripts are **gated** on this docs-first checkout (Collapse ban). When a Target product tree exists: `audit:tenancy-nulls` · `check:tenancy-residue` · `backfill:fft-access` — skill ladder A–E [neon-tenancy-efficiency](.cursor/skills/neon-tenancy-efficiency/reference.md) |
+| Ops | Tenancy/ops package scripts are **gated** on this docs-first checkout (Collapse ban). When a Target product tree exists: `audit:tenancy-nulls` · `check:tenancy-residue` · `backfill:fft-access` — skill ladder A–E [neon-tenancy-efficiency](.cursor/skills/neon-tenancy-efficiency/reference.md) |
 | Cheat sheet | [docs/runbooks/RB-005-post-lock-coding-cheat-sheet.md](docs/runbooks/RB-005-post-lock-coding-cheat-sheet.md) — post-lock commands + Rejected/Deferred flash card |
 | Decision lock | [ARCH-023 Decision lock](docs/architecture/ARCH-023-multi-tenancy.md) — Rejected R1–R7 / Deferred D4·D5; do not reopen without explicit user approval |
 | Accepted constraints | **D4** FFT child denorm deferred (M5); **D5** shared-schema / not project-per-tenant |
@@ -70,8 +70,8 @@ Templates (committed): `env.config.example`, `env.secret.example`.
 **Workflow (when env compose tooling exists on a Target checkout)**
 
 1. Edit `env.config` and/or `env.secret`.
-2. Run `npm run env:compose` → regenerates `.env` for Next.js and scripts.
-3. Run `npm run dev`.
+2. Run `pnpm env:compose` → regenerates `.env` for Next.js and scripts.
+3. Run `pnpm dev`.
 
 On **this docs-first checkout**, `env:compose` / `env:guard` / `dev` are **gated** (`collapse-script-unavailable`) until Target scaffold replaces them — do **not** restore Collapse-era compose scripts from git.
 
@@ -81,9 +81,9 @@ On **this docs-first checkout**, `env:compose` / `env:guard` / `dev` are **gated
 
 | Command | Purpose |
 |---------|---------|
-| `npm run env:guard` | Fail if `.env.local` exists (lists key **names** only) — gated here until Target tooling |
-| `npm run env:guard:fix` | Move `.env.local` → `.env.local.vercel-backup` — gated here until Target tooling |
-| `npm run dev` | Gated on this checkout; Target product app lives under `apps/web` after ARCH-028 implement |
+| `pnpm env:guard` | Fail if `.env.local` exists (lists key **names** only) — gated here until Target tooling |
+| `pnpm env:guard:fix` | Move `.env.local` → `.env.local.vercel-backup` — gated here until Target tooling |
+| `pnpm dev` | Gated on this checkout; Target product app lives under `apps/web` after ARCH-028 implement |
 
 Optional ops keys (Checkly): add `CHECKLY_*` to `env.secret` only — never pull from Vercel into local files.
 
@@ -105,10 +105,10 @@ Optional ops keys (Checkly): add `CHECKLY_*` to `env.secret` only — never pull
 
 | Command | Purpose |
 |---------|---------|
-| `npm run env:compose` | Merge config + secret → `.env` |
-| `npm run audit:vercel` | Compare key **names** on Vercel (no values) |
-| `npm run sync:vercel` | Push canonical production keys to Vercel |
-| `npm run cleanup:vercel` | Remove stale Supabase/SMTP/MailerSend keys from Vercel |
+| `pnpm env:compose` | Merge config + secret → `.env` |
+| `pnpm audit:vercel` | Compare key **names** on Vercel (no values) |
+| `pnpm sync:vercel` | Push canonical production keys to Vercel |
+| `pnpm cleanup:vercel` | Remove stale Supabase/SMTP/MailerSend keys from Vercel |
 
 **Keys synced to Vercel production:** Neon (`DATABASE_URL`, `NEON_AUTH_*`), admin/preview client, `APP_URL`, FFT feature flags (including `FFT_ERP_SYNC_ENABLED`).
 
@@ -121,11 +121,11 @@ After `sync:vercel`, redeploy: `vercel deploy --prod --yes`.
 ### Blocked commands (do not run)
 
 - **`vercel env pull`** — Vercel redacts secrets as empty strings on pull, which causes false audit mismatches and agent errors. Blocked by `scripts/vercel-env-guard.mjs`.
-- **`vercel integration add`** — auto-writes `.env.local`; run `npm run env:guard:fix` after any marketplace install.
+- **`vercel integration add`** — auto-writes `.env.local`; run `pnpm env:guard:fix` after any marketplace install.
 - Do not create scripts that pull Vercel env into local files.
 - Do not overwrite `env.config` / `env.secret` from Vercel.
 
-Use `npm run audit:vercel` for key-name validation instead.
+Use `pnpm audit:vercel` for key-name validation instead.
 
 ### GitHub CLI (issues / PRs)
 
@@ -134,16 +134,16 @@ Use `npm run audit:vercel` for key-name validation instead.
 **Fix — use the wrapper (drops `GITHUB_TOKEN` for the child process):**
 
 ```bash
-npm run gh -- auth status          # should show keyring; scopes include repo
-npm run gh -- issue close 1 --reason completed
-npm run gh -- pr create --base main --head my-branch
+pnpm gh -- auth status          # should show keyring; scopes include repo
+pnpm gh -- issue close 1 --reason completed
+pnpm gh -- pr create --base main --head my-branch
 ```
 
 **Do not** add `GITHUB_TOKEN` to `env.secret` or `env.config` — it is not app runtime config. One-time setup: `gh auth login` with a classic or keyring token that has **`repo`** scope (covers issues and PRs on private repos).
 
 **Manual override (PowerShell):** `Remove-Item Env:GITHUB_TOKEN` then run `gh` directly.
 
-**CI secrets (GitHub Actions):** `npm run audit:github-actions-secrets` · `npm run sync:github-actions-secrets` (from `env.config` + `env.secret` after `env:compose`). `NEON_AUTH_*` must match the Neon branch behind `DATABASE_URL` on GitHub.
+**CI secrets (GitHub Actions):** `pnpm audit:github-actions-secrets` · `pnpm sync:github-actions-secrets` (from `env.config` + `env.secret` after `env:compose`). `NEON_AUTH_*` must match the Neon branch behind `DATABASE_URL` on GitHub.
 
 ---
 
@@ -151,7 +151,7 @@ npm run gh -- pr create --base main --head my-branch
 
 Authority: [`.agents/skills/neon/SKILL.md`](.agents/skills/neon/SKILL.md), [`.agents/skills/neon-postgres/references/neon-auth/portal-email-verification.md`](.agents/skills/neon-postgres/references/neon-auth/portal-email-verification.md).
 
-**Setup / audit:** Cursor `setup-neon-auth` may 404 — use MCP `get_neon_auth_config`, then `npm run sync:neon-auth-manifest` and `npm run audit:neon-auth-production`. Cross-check [docs/backlogs/neon-auth-validation-matrix.md](docs/backlogs/neon-auth-validation-matrix.md).
+**Setup / audit:** Cursor `setup-neon-auth` may 404 — use MCP `get_neon_auth_config`, then `pnpm sync:neon-auth-manifest` and `pnpm audit:neon-auth-production`. Cross-check [docs/backlogs/neon-auth-validation-matrix.md](docs/backlogs/neon-auth-validation-matrix.md).
 
 ### Email — default Neon shared provider only
 
@@ -168,9 +168,9 @@ neon neon-auth domain add https://afenda-lite.vercel.app
 neon neon-auth domain list
 ```
 
-Branch plugins (magic link, organization): `npm run configure:neon-auth-production -- --configure-plugins`, then `npm run sync:neon-auth-manifest`.
+Branch plugins (magic link, organization): `pnpm configure:neon-auth-production -- --configure-plugins`, then `pnpm sync:neon-auth-manifest`.
 
-Production checklist: `npm run audit:neon-auth-production`.
+Production checklist: `pnpm audit:neon-auth-production`.
 
 ### Client invitation entry
 
@@ -190,12 +190,12 @@ Authority: [`.agents/skills/neon-postgres/references/neon-auth/portal-password-r
 **Single branch policy:** local dev uses the **production** Neon branch (`br-tiny-hill-ao82jp6f`) — no dev/CI branch switching.
 
 ```bash
-npm run env:neon-production   # align env.config, env.secret, .neon → production
-npm run env:compose
-npm run dev                   # http://localhost:3000
+pnpm env:neon-production   # align env.config, env.secret, .neon → production
+pnpm env:compose
+pnpm dev                   # http://localhost:3000
 ```
 
-**Neon Cloud org (ops):** `NEON_ORG_ID=org-fragrant-lake-90358173` (Launch) · project `young-hat-54755363` (**Afenda-Lite**). Put org-scoped `NEON_API_KEY` in `env.secret` only. CLI: shell `NEON_API_KEY` or `~/.config/neonctl/credentials.json`. Cursor MCP (`.cursor/mcp.json` / `.vscode/mcp.json`): User env `NEON_API_KEY` so `Bearer ${NEON_API_KEY}` resolves — **restart Cursor** after changing it. Do **not** use `neonctl link` day-to-day here (it can rewrite `.neon` and pull into `.env`); prefer `npm run env:neon-production` then `npm run env:compose`.
+**Neon Cloud org (ops):** `NEON_ORG_ID=org-fragrant-lake-90358173` (Launch) · project `young-hat-54755363` (**Afenda-Lite**). Put org-scoped `NEON_API_KEY` in `env.secret` only. CLI: shell `NEON_API_KEY` or `~/.config/neonctl/credentials.json`. Cursor MCP (`.cursor/mcp.json` / `.vscode/mcp.json`): User env `NEON_API_KEY` so `Bearer ${NEON_API_KEY}` resolves — **restart Cursor** after changing it. Do **not** use `neonctl link` day-to-day here (it can rewrite `.neon` and pull into `.env`); prefer `pnpm env:neon-production` then `pnpm env:compose`.
 
 Localhost is allowed on production Neon Auth for `http://localhost:3000` sign-in. Keep `APP_URL` as the production URL in `env.config` — server-side org invites still emit production links (see `lib/auth/neon-auth-request.ts`). For layout-only UI work without auth, use `/playground` embed.
 
@@ -231,7 +231,7 @@ Authority: [`testing/README.md`](testing/README.md). Gap analysis: `/afenda-test
 | L4 smoke | Playwright `@smoke` | `e2e/**/*.spec.ts` |
 | L4 journey | Playwright `@journey` | `e2e/**/*.spec.ts` |
 
-Registry scripts (`npm run checks`) are non-Vitest L0 substitutes for copy, nav, and proxy allowlists.
+Registry scripts (`pnpm checks`) are non-Vitest L0 substitutes for copy, nav, and proxy allowlists.
 
 ### Factory SSOT
 
@@ -241,11 +241,11 @@ Credentials, fixtures, Playwright base, and React test helpers live under **`tes
 
 | Command | When |
 | --- | --- |
-| `npm run test:unit` | Pure lib routing, policy, href builders |
-| `npm run test:interaction` | Radix menus, dialogs, dropdowns |
-| `npm run test:e2e:smoke` | Auth ingress, health, public-link redirects (CI) |
-| `npm run test:e2e:journey` | Full operator/client flows (pre-release) |
-| `npm test` | All Playwright projects locally |
+| `pnpm test:unit` | Pure lib routing, policy, href builders |
+| `pnpm test:interaction` | Radix menus, dialogs, dropdowns |
+| `pnpm test:e2e:smoke` | Auth ingress, health, public-link redirects (CI) |
+| `pnpm test:e2e:journey` | Full operator/client flows (pre-release) |
+| `pnpm test` | All Playwright projects locally |
 
 ### E2E environment
 
@@ -257,4 +257,4 @@ Credentials, fixtures, Playwright base, and React test helpers live under **`tes
 | `E2E_CLIENT_EMAIL` / `E2E_CLIENT_PASSWORD` | Client override |
 | `E2E_SURVEY_SLUG` / `E2E_INVITE_TOKEN` | Public link smoke without operator create |
 
-Run `npm run env:compose` before local E2E. CI injects secrets from GitHub Actions.
+Run `pnpm env:compose` before local E2E. CI injects secrets from GitHub Actions.

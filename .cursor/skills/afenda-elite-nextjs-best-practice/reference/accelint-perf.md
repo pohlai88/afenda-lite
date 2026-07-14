@@ -26,11 +26,9 @@ Upstream lives under `~/.claude/skills/accelint-nextjs-best-practices/` — load
 
 ### 1. Security (Critical)
 
-- [ ] `'use server'` Action re-verifies session (treat as public endpoint)  
-- [ ] Org / FFT / ownership authorization before mutation  
-- [ ] Zod (or Living contract schema) on all inputs  
-- [ ] Safe return shape — no secrets (`afenda-elite-api-contract`)  
+- [ ] Mutating Actions/RHs apply the full ARCH-029 §3.3 **ten-stage** pipeline (`afenda-elite-api-contract`) — parse → authenticate → scope → authorize → ownership/state → domain → error map → audit → revalidate → safe response  
 - [ ] Do **not** rely solely on `proxy.ts` / layout gates  
+- [ ] Safe return shape — no secrets (`afenda-elite-api-contract`) 
 
 ### 2. Waterfalls (High)
 

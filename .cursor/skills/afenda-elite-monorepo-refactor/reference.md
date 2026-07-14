@@ -1,6 +1,6 @@
 # Elite monorepo refactor — types and gates
 
-Borrowed from Xerp `afenda-monorepo-refactor/reference/*`. Elite targets.
+Local Elite refactor types and scoped gates.
 
 ## Refactor types
 

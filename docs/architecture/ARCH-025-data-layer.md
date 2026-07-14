@@ -4,7 +4,7 @@
 |-------|-------|
 | ID | ARCH-025 |
 | Category | Architecture |
-| Version | 1.2.1 |
+| Version | 1.2.2 |
 | Status | Target |
 | Control State | Closed |
 | Owner | Backend |
@@ -156,7 +156,7 @@ Writes use `db` directly (not `withOrg`, which is select-only). The `organizatio
 |---------|--------|-----------|
 | `DATABASE_URL` missing or wrong | Startup Zod error from `@afenda/env` | App refuses to start |
 | Migration applied to wrong branch | Schema mismatch | `drizzle-kit check` in CI |
-| `organization_id` missing from new table | Potential cross-tenant leak | `npm run audit:tenancy-nulls` |
+| `organization_id` missing from new table | Potential cross-tenant leak | `pnpm audit:tenancy-nulls` |
 | Neon pooler unavailable | All DB calls fail | Neon status page; app returns 500 |
 
 ## Operational considerations
@@ -176,6 +176,7 @@ Writes use `db` directly (not `withOrg`, which is select-only). The `organizatio
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.2.2 | 2026-07-14 | Bounded reopen: package-manager cutover — document `pnpm` / `pnpm exec` in place of `npm run` / `npx` (repo SSOT `packageManager` + lockfile). |
 | 1.2.1 | 2026-07-14 | Home flattened to docs/architecture/ (trunks removed; pack reading order in README). |
 | 1.2.0 | 2026-07-14 | Integrity remediation: schema inventory and `organization_id` type defer to ARCH-023 Living roots; Change Log restored; read/write examples use `surveys`. |
 | 1.1.1 | 2026-07-14 | Added mandatory Control State header field (Closed); lifecycle Status unchanged. |

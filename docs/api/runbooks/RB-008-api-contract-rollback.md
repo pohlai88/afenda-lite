@@ -4,7 +4,7 @@
 | ----------------- | ---------- |
 | **ID**            | RB-008     |
 | **Category**      | Runbook    |
-| **Version**       | 0.2.0      |
+| **Version**       | 0.2.1      |
 | **Status**        | Draft      |
 | **Control State** | Closed     |
 | **Owner**         | Backend    |
@@ -44,7 +44,7 @@ Aligns with [ARCH-029](../../architecture/ARCH-029-interface-api-architecture.md
 ## 2.3 Preconditions / access
 
 - Privilege to redeploy / promote prior production revision for Vercel project `afenda-lite`
-- Ability to run `npm run openapi:generate` and `npm run check:openapi` on the restored branch
+- Ability to run `pnpm openapi:generate` and `pnpm check:openapi` on the restored branch
 - Knowledge of which consumers (if any) called changed HTTP shapes
 
 ---
@@ -76,8 +76,8 @@ Aligns with [ARCH-029](../../architecture/ARCH-029-interface-api-architecture.md
 | 1 | Freeze further contract edits on the bad branch | No new breaking commits |
 | 2 | Redeploy **prior known-good** production revision (hosting dashboard or approved CLI) | App serves previous behavior |
 | 3 | Smoke api-now: liveness, readiness, and one session-backed draft path if that surface changed | Health + golden path OK |
-| 4 | On the git revision that matches production: regenerate OpenAPI | `npm run openapi:generate` |
-| 5 | Validate | `npm run check:openapi` exit 0 |
+| 4 | On the git revision that matches production: regenerate OpenAPI | `pnpm openapi:generate` |
+| 5 | Validate | `pnpm check:openapi` exit 0 |
 | 6 | Align docs if Living prose claimed the broken shape — reopen named IDs (DOC-001); do not leave Living docs advertising the rolled-back break | Control State closed after verify |
 | 7 | Notify consumers / owners: what reverted, what remains deferred | Written note without secrets |
 | 8 | Plan forward fix: additive optional fields only; removals need controlled decision (ARCH-029) | Follow-up issue / PR |
@@ -130,6 +130,7 @@ Rollback is complete when **all** are true:
 
 | Version | Date       | Summary                                                                 |
 | ------- | ---------- | ----------------------------------------------------------------------- |
+| 0.2.1 | 2026-07-14 | Bounded reopen: package-manager cutover — document `pnpm` / `pnpm exec` (repo SSOT `packageManager` + `pnpm-lock.yaml`). |
 | 0.2.0   | 2026-07-14 | Composed actionable Draft procedure; relocated to `docs/api/runbooks/`. |
 | 0.1.1   | 2026-07-14 | Added mandatory Control State header field (Closed).                    |
 | 0.1.0   | 2026-07-13 | Draft shell (API ops backlog).                                          |

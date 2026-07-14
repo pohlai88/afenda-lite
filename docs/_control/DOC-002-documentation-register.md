@@ -4,16 +4,11 @@
 | ----------------- | ---------- |
 | **ID**            | DOC-002    |
 | **Category**      | Control    |
-| **Version**       | 4.59.1 |
+| **Version**       | 4.64.0 |
 | **Status**        | Living     |
 | **Control State** | Closed     |
 | **Owner**         | Platform   |
 | **Updated**       | 2026-07-14 |
-
-
-
-
-
 
 ---
 
@@ -75,11 +70,11 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 
 | ID           | Category     | Title                                      | Version | Status | Owner    | Updated    |
 | ------------ | ------------ | ------------------------------------------ | ------- | ------ | -------- | ---------- |
-| DOC-001      | Control      | Documentation Control Standard             | 2.6.0   | Living | Platform | 2026-07-14 |
-| DOC-002      | Control      | Documentation Register                     | 4.59.1 | Living | Platform | 2026-07-14 |
+| DOC-001      | Control      | Documentation Control Standard             | 2.7.0   | Living | Platform | 2026-07-14 |
+| DOC-002      | Control      | Documentation Register                     | 4.64.0 | Living | Platform | 2026-07-14 |
 | DOC-003      | Control      | Controlled Document Template               | 1.4.0   | Living | Platform | 2026-07-14 |
 | ARCH-029     | Architecture | Interface and API Architecture             | 1.2.7   | Living | Platform | 2026-07-14 |
-| ARCH-031     | Architecture | Technology Stack Catalogue                 | 1.1.1   | Living | Platform | 2026-07-14 |
+| ARCH-031     | Architecture | Technology Stack Catalogue                 | 1.2.0   | Living | Platform | 2026-07-14 |
 | API-001      | API          | API Boundaries                             | 1.2.3   | Living | Backend  | 2026-07-14 |
 | API-002      | API          | Error Contract                             | 1.2.2   | Living | Backend  | 2026-07-14 |
 | API-003      | API          | API Types                                  | 2.0.1   | Living | Backend  | 2026-07-14 |
@@ -97,27 +92,27 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 | REST-006     | REST         | Public Survey and Secure-Link Resources    | 0.1.1   | Draft  | Backend  | 2026-07-14 |
 | REST-007     | REST         | Account Resources                          | 0.1.1   | Draft  | Platform | 2026-07-14 |
 | FFT-REST-001 | REST         | Feed Farm Trade Resource Index             | 0.1.1   | Draft  | Backend  | 2026-07-14 |
-| OPEN-001     | OPEN         | OpenAPI                                    | 1.1.6   | Living | Backend  | 2026-07-14 |
+| OPEN-001     | OPEN         | OpenAPI                                    | 1.1.7   | Living | Backend  | 2026-07-14 |
 | GUIDE-007    | Guide        | Implementing a Server Action               | 0.1.1   | Draft  | Backend  | 2026-07-14 |
 | GUIDE-008    | Guide        | Implementing a Route Handler               | 0.1.1   | Draft  | Backend  | 2026-07-14 |
 | GUIDE-009    | Guide        | Adding a REST Resource                     | 0.1.1   | Draft  | Backend  | 2026-07-14 |
 | GUIDE-010    | Guide        | Adding a Zod Contract                      | 0.1.1   | Draft  | Backend  | 2026-07-14 |
-| GUIDE-011    | Guide        | Generating and Validating OpenAPI          | 0.1.2   | Draft  | Backend  | 2026-07-14 |
+| GUIDE-011    | Guide        | Generating and Validating OpenAPI          | 0.1.3   | Draft  | Backend  | 2026-07-14 |
 | GUIDE-012    | Guide        | Testing API Contracts                      | 0.1.2   | Draft  | Backend  | 2026-07-14 |
 | GUIDE-013    | Guide        | API Security Review Checklist              | 0.1.1   | Draft  | Platform | 2026-07-14 |
 | GUIDE-014    | Guide        | API Contract Verification Standard         | 0.1.1   | Draft  | Backend  | 2026-07-14 |
 | GUIDE-015    | Guide        | Interface Pack Development Roadmap         | 1.0.2   | Living | Platform | 2026-07-14 |
 | GUIDE-016    | Guide        | Feed Farm Trade Enterprise Acceptance      | 0.2.0   | Retired | Feed Farm Trade | 2026-07-14 |
-| RB-006       | Runbook      | OpenAPI Drift Detection and Recovery       | 0.2.0   | Draft  | Backend  | 2026-07-14 |
+| RB-006       | Runbook      | OpenAPI Drift Detection and Recovery       | 0.2.1   | Draft  | Backend  | 2026-07-14 |
 | RB-007       | Runbook      | API Incident Response                      | 0.2.0   | Draft  | Backend  | 2026-07-14 |
-| RB-008       | Runbook      | API Contract Rollback                      | 0.2.0   | Draft  | Backend  | 2026-07-14 |
+| RB-008       | Runbook      | API Contract Rollback                      | 0.2.1   | Draft  | Backend  | 2026-07-14 |
 | ARCH-022     | Architecture | System Overview — Turborepo                | 1.5.2   | Target | Platform | 2026-07-14 |
-| ARCH-023     | Architecture | Multi-Tenancy and Platform RBAC            | 3.1.1   | Living | Platform | 2026-07-14 |
+| ARCH-023     | Architecture | Multi-Tenancy and Platform RBAC            | 3.1.3   | Living | Platform | 2026-07-14 |
 | ARCH-024     | Architecture | Package Boundaries                         | 1.2.1   | Target | Platform | 2026-07-14 |
-| ARCH-025     | Architecture | Data Layer                                 | 1.2.1   | Target | Backend  | 2026-07-14 |
-| ARCH-026     | Architecture | Authentication and Session Model           | 1.2.1   | Target | Platform | 2026-07-14 |
+| ARCH-025     | Architecture | Data Layer                                 | 1.2.2   | Target | Backend  | 2026-07-14 |
+| ARCH-026     | Architecture | Authentication and Session Model           | 1.2.2   | Target | Platform | 2026-07-14 |
 | ARCH-027     | Architecture | Environment Variable Model                 | 1.4.2   | Target | Platform | 2026-07-14 |
-| ARCH-028     | Architecture | Turborepo Implementation Slices            | 1.4.1   | Target | Platform | 2026-07-14 |
+| ARCH-028     | Architecture | Turborepo Implementation Slices            | 1.4.3   | Target | Platform | 2026-07-14 |
 | ARCH-001     | Architecture | Backend Architecture                       | 1.2.0   | Living | Backend  | 2026-07-14 |
 | ARCH-002     | Architecture | Frontend Architecture                      | 1.3.3   | Living | Frontend | 2026-07-14 |
 | ADR-008      | ADR          | Cache Components Mode B (Gated)            | 1.0.1   | Accepted | Frontend | 2026-07-14 |
@@ -129,34 +124,34 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 | ARCH-008     | Architecture | Next.js Adapter Map                        | 1.3.0   | Living | Backend  | 2026-07-14 |
 | ARCH-009     | Architecture | Modules Ownership Map                      | 1.1.1   | Living | Backend  | 2026-07-14 |
 | ARCH-010     | Architecture | Backend Conventions                        | 1.3.0   | Living | Backend  | 2026-07-14 |
-| ARCH-012     | Architecture | App Router Routes                          | 1.2.2   | Living | Frontend | 2026-07-14 |
+| ARCH-012     | Architecture | App Router Routes                          | 1.2.3   | Living | Frontend | 2026-07-14 |
 | ARCH-013     | Architecture | BFF and Data Flow                          | 1.1.3   | Living | Frontend | 2026-07-14 |
 | ARCH-014     | Architecture | UI Surfaces                                | 2.0.0   | Superseded | Frontend | 2026-07-14 |
 | ARCH-015     | Architecture | Shadcn Studio / AdminCN Alignment          | 2.0.1   | Living | Frontend | 2026-07-14 |
-| ARCH-016     | Architecture | Next.js Conventions                        | 1.2.2   | Living | Frontend | 2026-07-14 |
+| ARCH-016     | Architecture | Next.js Conventions                        | 1.2.3   | Living | Frontend | 2026-07-14 |
 | ARCH-017     | Architecture | Frontend Folder Map                        | 2.0.1   | Living | Frontend | 2026-07-14 |
-| ARCH-018     | Architecture | AdminCN Customization                      | 1.1.4   | Living | Frontend | 2026-07-14 |
-| ARCH-019     | Architecture | AdminCN Frontend Preflight                 | 1.1.4   | Living | Frontend | 2026-07-14 |
+| ARCH-018     | Architecture | AdminCN Customization                      | 1.1.5   | Living | Frontend | 2026-07-14 |
+| ARCH-019     | Architecture | AdminCN Frontend Preflight                 | 1.1.5   | Living | Frontend | 2026-07-14 |
 | ARCH-020     | Architecture | Closed Scope Register                      | 2.0.1   | Superseded | Platform | 2026-07-14 |
 | ARCH-021     | Architecture | Repository Migration Map                   | 2.0.2   | Superseded | Platform | 2026-07-14 |
 | FFT-MOD-001  | Module       | Module Architecture                        | 2.3.0 | Living | Feed Farm Trade | 2026-07-14 |
 | FFT-MOD-002  | Module       | Domain and Ownership                       | 1.3.0 | Living | Feed Farm Trade | 2026-07-14 |
-| FFT-MOD-003  | Module       | Tech Stack                                 | 1.3.0 | Living | Feed Farm Trade | 2026-07-14 |
+| FFT-MOD-003  | Module       | Tech Stack                                 | 1.3.2 | Living | Feed Farm Trade | 2026-07-14 |
 | FFT-MOD-004  | Module       | Data Model                                 | 1.3.0 | Living | Feed Farm Trade | 2026-07-14 |
-| FFT-MOD-005  | Module       | Auth, Tenancy and RBAC                     | 1.3.0 | Living | Feed Farm Trade | 2026-07-14 |
+| FFT-MOD-005  | Module       | Auth, Tenancy and RBAC                     | 1.3.1 | Living | Feed Farm Trade | 2026-07-14 |
 | FFT-MOD-006  | Module       | Surfaces and Routes                        | 1.3.0 | Living | Feed Farm Trade | 2026-07-14 |
 | FFT-MOD-007  | Module       | API and Adapters                           | 1.3.0 | Living | Feed Farm Trade | 2026-07-14 |
-| FFT-MOD-008  | Module       | Ops Runtime                                | 1.3.0 | Living | Feed Farm Trade | 2026-07-14 |
-| FFT-MOD-009  | Module       | Verification                               | 2.0.0 | Living | Feed Farm Trade | 2026-07-14 |
+| FFT-MOD-008  | Module       | Ops Runtime                                | 1.3.2 | Living | Feed Farm Trade | 2026-07-14 |
+| FFT-MOD-009  | Module       | Verification                               | 2.0.3 | Living | Feed Farm Trade | 2026-07-14 |
 | FFT-MOD-010  | Module       | Module Docs Index + Roadmap                | 2.4.0 | Living | Feed Farm Trade | 2026-07-14 |
 | GUIDE-001    | Guide        | Engineering Docs Entry                     | 1.2.0   | Retired | Platform | 2026-07-14 |
 | GUIDE-002    | Guide        | Coding Engineering Guide                   | 1.2.0   | Retired | Platform | 2026-07-14 |
 | GUIDE-003    | Guide        | Engineering Documentation Workflow         | 1.3.0   | Retired | Platform | 2026-07-14 |
 | GUIDE-004    | Guide        | Engineering Drift Register                 | 1.4.0   | Retired | Platform | 2026-07-14 |
 | GUIDE-006    | Guide        | Guides Index                               | 1.8.0   | Retired | Platform | 2026-07-14 |
-| MOD-002      | Module       | Modules Index                              | 4.0.0 | Living | Platform | 2026-07-14 |
-| RB-001       | Runbook      | Multi-org Ops                              | 1.0.1   | Living | Platform | 2026-07-14 |
-| RB-005       | Runbook      | Post-lock Coding Cheat Sheet               | 1.0.1   | Living | Platform | 2026-07-14 |
+| MOD-002      | Module       | Modules Index                              | 4.0.2 | Living | Platform | 2026-07-14 |
+| RB-001       | Runbook      | Multi-org Ops                              | 1.1.0   | Living | Platform | 2026-07-14 |
+| RB-005       | Runbook      | Post-lock Coding Cheat Sheet               | 1.1.0   | Living | Platform | 2026-07-14 |
 
 ---
 
@@ -172,6 +167,11 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 
 | Version | Date       | Summary                                                                                                                                         |
 | ------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| 4.64.0 | 2026-07-14 | Hard-delete `docs/**/archive/` stubs; DOC-001 → 2.7.0 register-only Retired/Superseded; clear guides archive integrity baseline; ARCH-023→3.1.3, ARCH-028→1.4.3, MOD-002→4.0.2, FFT-MOD-009→2.0.3. |
+| 4.63.0 | 2026-07-14 | RB-001/RB-005 → 1.1.0 DOC-003 six-section retrofit (clears runbooks STRUCTURE-DRIFT). |
+| 4.62.0 | 2026-07-14 | FFT ARCH-027 env reconciliation (FFT-MOD-003/008 → 1.3.2, FFT-MOD-009 → 2.0.2) plus Living/Target pnpm command cutover register sync (MOD-002 → 4.0.1 + executable contract). |
+| 4.61.0 | 2026-07-14 | Bounded reopen: Living/Target package-manager docs cutover to pnpm (ARCH-012/016/018/019/023/025/026/028/031, OPEN-001, GUIDE-011, RB-001/005/006/008, MOD-002, FFT-MOD-003/005/008/009); ARCH-031 → 1.2.0 Living lockfile facts. |
+| 4.60.0 | 2026-07-14 | Bounded reopen (documentation-audit close omitted): added **Control State = Closed** on archived GUIDE-001…004/006; synced `docs/guides` integrity baseline **20** known findings (5 VERSION-DRIFT + 15 REFERENCE-BROKEN — leave body links untouched). |
 | 4.59.1 | 2026-07-14 | Architecture pack consolidate: utilization + pointer-only SSOTs (ARCH-001→1.2.0, 002→1.3.3, 007→1.2.0, 008→1.3.0, 010→1.3.0, 018/019→1.1.4, 022→1.5.2, 027→1.4.2); README when-to-use; drop stub/Living-compose residue. |
 | 4.59.0 | 2026-07-14 | Flatten architecture trunks: Living/Target ARCH-* → docs/architecture/; DOC-001 → 2.6.0 (forbid backend/frontend/system/tech-stack); pack reading order in architecture/README; ARCH patch bumps + ARCH-007 → 1.1.2 (OPEN-001 link); ARCH-015 register title align; ADR home unchanged. |
 | 4.58.0 | 2026-07-14 | ARCH-010 → 1.2.0 (conventions: deploy matrix SSOT; proxy≠authz; lib gone; Alignment). |
@@ -243,7 +243,7 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 
 `ARCH-023` is the current living source of truth for multi-tenancy and platform RBAC (DOC-003 six-section form from 3.1.0). Decision lock R1–R7 / D4·D5 must not be reopened without separate explicit approval.
 
-`ARCH-029` is the Living parent authority for interface and API architecture. **GUIDE-015** is the locked Phases 1–5 development roadmap (Jack Wee). `API-005`…`API-009`, `REST-002`…`REST-007`, `FFT-REST-001`, `GUIDE-007`…`GUIDE-014`, and `RB-006`…`RB-008` are Draft until expanded / promoted per their owning roadmaps. API guides live under `docs/api/guides/`. API runbooks live under `docs/api/runbooks/`. Non-API guides live under `docs/guides/` when Living. **GUIDE-016** is **Retired** (archived); Module Enterprise Readiness authority is [MOD-002](../modules/MOD-002-modules-index.md) + FFT-MOD-001…010. `ARCH-030` (verification architecture) is deferred while GUIDE-014 remains the API verification Guide.
+`ARCH-029` is the Living parent authority for interface and API architecture. **GUIDE-015** is the locked Phases 1–5 development roadmap (Jack Wee). `API-005`…`API-009`, `REST-002`…`REST-007`, `FFT-REST-001`, `GUIDE-007`…`GUIDE-014`, and `RB-006`…`RB-008` are Draft until expanded / promoted per their owning roadmaps. API guides live under `docs/api/guides/`. API runbooks live under `docs/api/runbooks/`. Non-API guides live under `docs/guides/` when Living. **GUIDE-016** is **Retired** (register-only; stub removed); Module Enterprise Readiness authority is [MOD-002](../modules/MOD-002-modules-index.md) + FFT-MOD-001…010. `ARCH-030` (verification architecture) is deferred while GUIDE-014 remains the API verification Guide.
 
 `FFT-REST-002`…`FFT-REST-007`, `OPEN-002`…`OPEN-005`, `ADR-001`…`ADR-007`, `RB-009` (webhook replay), and `ARCH-030` (verification architecture) are **reserved in planning docs only** — not registered until created under the approved derivation / creation gates. **`ADR-008`** is registered (Accepted Phase 1 — Cache Components Mode B; `cacheComponents` enablement still deferred).
 
@@ -251,9 +251,9 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 
 DOC-001 is the shared Afenda documentation control baseline (Lite beta · Elite battle-proven). This register lists documents for the Lite checkout only.
 
-GUIDE-001…004 and GUIDE-006 are **Retired** and archived under `docs/guides/archive/`. GUIDE-016 is **Retired** and archived under the same folder (migration crosswalk complete). IDs must not be recycled. Engineering entry is `docs/README.md` + DOC-001/003 + AGENTS.md; API how-tos remain under `docs/api/guides/`; Target vs checkout drift lives in ARCH-028. Module Enterprise Readiness is MOD-002 + module spines.
+GUIDE-001…004, GUIDE-006, and GUIDE-016 are **Retired** in this register only (IDs non-recyclable; stub files hard-deleted — no `docs/guides/archive/`). ARCH-003, ARCH-014, ARCH-020, and ARCH-021 are **Superseded** in this register only (no `docs/architecture/archive/`). Engineering entry is `docs/README.md` + DOC-001/003 + AGENTS.md; API how-tos remain under `docs/api/guides/`; Target vs checkout drift lives in ARCH-028. Module Enterprise Readiness is MOD-002 + module spines.
 
-**Known integrity baseline (`docs/guides` full audit):** **29 known findings** on archived GUIDE-001…004/006 only (5 `VERSION-DRIFT` header↔Change-Log + 24 `REFERENCE-BROKEN`). Do **not** treat these as open rename or register debt; do **not** “fix” by editing archived guides unless a material revision is explicitly authorized. Missing **Control State** on those five archives remains permitted under DOC-001 §3.7 until material revision. GUIDE-016 archive header matches this register (`0.2.0` / `Retired`).
+**Integrity baseline (`docs/guides`):** expect **0** findings when the Guide home has no Living controlled bodies (navigator README only). Prior archive-stub baselines are vacated by the 4.64.0 hard-delete.
 
 Under DOC-001 §3.5.1 / §3.7, every controlled document header shall declare **Control State** (`Open` · `Closed` · `Reopened`) distinct from lifecycle **Status**. Lifecycle Status remains in this seven-field catalogue; Control State is header-only and must not be added as an eighth register column. The documentation validator requires and validates the header field for `docs/_control/**` and for any document that already declares it.
 

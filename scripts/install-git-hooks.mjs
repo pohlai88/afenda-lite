@@ -17,7 +17,7 @@ if (!fs.existsSync(path.join(root, ".git"))) {
 fs.mkdirSync(hooksDir, { recursive: true });
 
 const prePush = `#!/bin/sh
-# Installed by: npm run hooks:install
+# Installed by: pnpm hooks:install
 # Runs Neon env validation before every push to GitHub.
 # Skip once:  git push --no-verify
 # Disable:    rm .git/hooks/pre-push
@@ -25,8 +25,8 @@ const prePush = `#!/bin/sh
 set -e
 cd "$(git rev-parse --show-toplevel)"
 
-echo "→ pre-push: npm run validate:neon-env"
-npm run validate:neon-env
+echo "→ pre-push: pnpm validate:neon-env"
+pnpm validate:neon-env
 `;
 
 const target = path.join(hooksDir, "pre-push");

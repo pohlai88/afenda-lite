@@ -116,11 +116,11 @@ Docs task:
 MOD-002 is the human authority. The subordinate `module-pack-contract.json` drives both validation and provisional templates.
 
 ```powershell
-npm run plan:module-pack -- -- --prefix INV --slug inventory --title "Inventory" --owner Platform --profiles "Enterprise Core,ERP"
-npm run scaffold:module-pack -- -- --prefix INV --slug inventory --title "Inventory" --owner Platform --profiles "Enterprise Core,ERP" --apply
+pnpm plan:module-pack -- -- --prefix INV --slug inventory --title "Inventory" --owner Platform --profiles "Enterprise Core,ERP"
+pnpm scaffold:module-pack -- -- --prefix INV --slug inventory --title "Inventory" --owner Platform --profiles "Enterprise Core,ERP" --apply
 ```
 
-Dry-run is the default. `--apply` is scratch-only under `docs/scratch/module-packs/<slug>/`, refuses overwrite, and does not approve IDs or create DOC-002 rows. Promotion remains a bounded controlled-document operation under MOD-002. Run `npm run test:module-pack` and `npm run check:module-quality` before closing.
+Dry-run is the default. `--apply` is scratch-only under `docs/scratch/module-packs/<slug>/`, refuses overwrite, and does not approve IDs or create DOC-002 rows. Promotion remains a bounded controlled-document operation under MOD-002. Run `pnpm test:module-pack` and `pnpm check:module-quality` before closing.
 
 ### Create
 
@@ -204,7 +204,7 @@ Six sections: Purpose · Scope · Content (or renamed subject) · References · 
 - [ ] No secrets
 - [ ] Control State returned to `Closed` after verification
 
-Automated `npm run check:doc-registry` is **not** the Lite gate unless restored to validate `docs/_control` — do not invent Elite `doc/` trees to satisfy an old checker.
+Automated `pnpm check:doc-registry` is **not** the Lite gate unless restored to validate `docs/_control` — do not invent Elite `doc/` trees to satisfy an old checker.
 
 ## Additional resources
 

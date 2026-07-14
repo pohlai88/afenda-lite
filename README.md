@@ -29,7 +29,7 @@ Internal full-stack doctrine and slice specs for agents and maintainers:
 Schema is versioned in [`db/migrations/`](db/migrations/). Apply before first run:
 
 ```bash
-npm run db:migrate
+pnpm db:migrate
 ```
 
 Apply against your Neon branch (`DATABASE_URL` in `env.secret`). See [docs/runbooks/local-dev-auth.md](docs/runbooks/local-dev-auth.md).
@@ -58,19 +58,19 @@ Repository: https://github.com/pohlai88/afenda-lite
 | **Production URL** | https://afenda-lite.vercel.app |
 | **Legacy alias** | https://iam-check.vercel.app (same app — do not teach as current) |
 
-Env vars: `DATABASE_URL`, `NEON_AUTH_*`, `SHARED_ADMIN_*`, `APP_URL`. Source of truth: `env.config` + `env.secret` → `npm run env:compose`. Stale Supabase keys: `npm run cleanup:vercel`.
+Env vars: `DATABASE_URL`, `NEON_AUTH_*`, `SHARED_ADMIN_*`, `APP_URL`. Source of truth: `env.config` + `env.secret` → `pnpm env:compose`. Stale Supabase keys: `pnpm cleanup:vercel`.
 
 ## Local development
 
 ```bash
-npm install
+pnpm install
 cp env.config.example env.config
 cp env.secret.example env.secret
 # edit env.config / env.secret, then:
-npm run env:compose
-npm run db:migrate
-npm run seed:admin
-npm run dev
+pnpm env:compose
+pnpm db:migrate
+pnpm seed:admin
+pnpm dev
 ```
 
 Open http://localhost:3000 → operator sign-in → `/dashboard`.
@@ -79,28 +79,28 @@ Open http://localhost:3000 → operator sign-in → `/dashboard`.
 
 GitHub Actions (`.github/workflows/ci.yml`) runs on PRs:
 
-- `npm run check:copy` — terminology gate
-- `npm run build`
-- `npm run db:migrate` (requires `DATABASE_URL` secret)
-- `npm test` — Playwright E2E (`e2e/smoke.spec.ts`, `e2e/secure-file.spec.ts`, `e2e/client-journey.spec.ts`)
+- `pnpm check:copy` — terminology gate
+- `pnpm build`
+- `pnpm db:migrate` (requires `DATABASE_URL` secret)
+- `pnpm test` — Playwright E2E (`e2e/smoke.spec.ts`, `e2e/secure-file.spec.ts`, `e2e/client-journey.spec.ts`)
 
 Local:
 
 ```bash
-npm run check:copy
-npm test
-npm run verify:production
+pnpm check:copy
+pnpm test
+pnpm verify:production
 ```
 
 Health endpoints:
 
 - `GET /api/health/liveness` — Vercel uptime monitors (process up, no dependency checks)
-- `GET /api/health/readiness` — deploy gate (`npm run verify:production`)
+- `GET /api/health/readiness` — deploy gate (`pnpm verify:production`)
 
 Production readiness (no secrets printed):
 
 ```bash
-PRODUCTION_URL=https://afenda-lite.vercel.app npm run verify:production
+PRODUCTION_URL=https://afenda-lite.vercel.app pnpm verify:production
 ```
 
 See [docs/runbooks/production-go-live.md](docs/runbooks/production-go-live.md) for full go-live checklist.
@@ -108,8 +108,8 @@ See [docs/runbooks/production-go-live.md](docs/runbooks/production-go-live.md) f
 **Existing databases** (migrated before tracking): run once, then `db:migrate`:
 
 ```bash
-npm run db:backfill
-npm run db:migrate
+pnpm db:backfill
+pnpm db:migrate
 ```
 
 Optional E2E: `E2E_SURVEY_SLUG` only if you skip the operator-create → public chain test.

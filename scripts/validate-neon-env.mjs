@@ -1,7 +1,7 @@
 /**
  * Validate Neon env composition and API access for afenda-lite.
  *
- * Usage: npm run validate:neon-env
+ * Usage: pnpm validate:neon-env
  */
 import { readFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
@@ -52,7 +52,7 @@ record(
     `org=${orgId}, project=${projectId}, branch=${branchId}` +
       (branchId === PRODUCTION_BRANCH_ID
         ? " (production — single branch policy)"
-        : " (expected production only — run npm run env:neon-production)"),
+        : " (expected production only — run pnpm env:neon-production)"),
   ),
 );
 

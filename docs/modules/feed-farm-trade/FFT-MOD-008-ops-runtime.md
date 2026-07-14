@@ -4,7 +4,7 @@
 | ----------------- | --------------- |
 | **ID**            | FFT-MOD-008     |
 | **Category**      | Module          |
-| **Version**       | 1.3.0 |
+| **Version**       | 1.3.2 |
 | **Status**        | Living          |
 | **Control State** | Closed        |
 | **Owner**         | Feed Farm Trade |
@@ -68,15 +68,18 @@ Flag name table: [FFT-MOD-003](FFT-MOD-003-tech-stack.md). Code map: [FFT-MOD-00
 
 ## 3.2 Immediate checks
 
+Env follows [ARCH-027](../../architecture/ARCH-027-env-model.md) two-state: **docs-first / pre-S4.1** — no `env:compose`, no `.env.local`, no `vercel env pull`; prefer available audits/Console. **Target post-S4.1** — `@afenda/env` + `.env.local` only. Product unit/e2e/scripts below are **Target-gated** (absent on docs-first → report `BLOCKED`, do not recover Collapse trees). Does **not** reopen FFT 2B–2D.
+
 ```bash
-npm run test:unit -- modules/fft
-npm run test:e2e:smoke
-npm run audit:vercel
-npm run env:compose
-npm run audit:fft-promotion
+# Target when product tree + scripts exist:
+pnpm test:unit -- modules/fft
+pnpm test:e2e:smoke
+pnpm audit:vercel
+pnpm audit:fft-promotion
+# Docs-first: pnpm audit:vercel (and Neon MCP) when available; skip gated product scripts
 ```
 
-Production gate smoke: `node scripts/gate-7-production-smoke.mjs`.
+Production gate smoke (when script exists): `node scripts/gate-7-production-smoke.mjs`.
 
 ## 3.3 Standard operating procedure — before coding
 
@@ -111,12 +114,16 @@ Production gate smoke: `node scripts/gate-7-production-smoke.mjs`.
 
 ## 3.5 Rollback / recovery (RBAC only)
 
-```bash
-# env.config: FFT_RBAC_ENABLED=false
-npm run env:compose && npm run sync:vercel && vercel deploy --prod --yes
-```
+Set production `FFT_RBAC_ENABLED=false` via the **approved Vercel env path** for the checkout state, then redeploy and smoke. Do **not** prescribe docs-first `env:compose`.
 
-Gate history, rollout, and readiness stay in this document. Do not recreate a separate `ops/` tree.
+| State | Rollback surface |
+|-------|------------------|
+| Docs-first / pre-S4.1 | Change Vercel production flag directly (or approved sync that does not recover Collapse compose); redeploy; smoke |
+| Target post-S4.1 | Update flag in approved env surface → `@afenda/env` / Vercel sync per ARCH-027 → redeploy → smoke |
+
+**Historical (pre-Collapse, not Living on this checkout):** `env.config` edit → `env:compose` → `sync:vercel` → deploy.
+
+Gate history, rollout, and readiness stay in this document. Do not recreate a separate `ops/` tree. Do not reopen Phase 2B–2D implementation.
 
 ## 3.6 Enterprise requirements
 
@@ -149,6 +156,8 @@ Single-owner ACs for this role. Evidence: [FFT-MOD-009](FFT-MOD-009-verification
 
 | Version | Date       | Summary |
 | ------- | ---------- | ------- |
+| 1.3.2 | 2026-07-14 | Bounded reopen: package-manager cutover — document `pnpm` / `pnpm exec` (repo SSOT `packageManager` + `pnpm-lock.yaml`). |
+| 1.3.2 | 2026-07-14 | ARCH-027 two-state env: remove Living compose from checks/rollback; keep historical note. |
 | 1.3.0 | 2026-07-14 | Executable quality contract: profile/dimension mapping and owned ERP benchmark criteria. |
 | 1.2.0   | 2026-07-14 | Wave C: enterprise requirements FFT-AC-008-01…04 (ops/SLO/recovery/conditional). |
 | 1.1.0   | 2026-07-14 | DOC-003 six-section retrofit; runbook-shaped ops procedure. |

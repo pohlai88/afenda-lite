@@ -17,7 +17,7 @@ function fail(message, code = 1) {
 }
 
 if (!existsSync(yamlPath)) {
-  fail("missing docs/api/OPEN-001-openapi.yaml — run npm run openapi:generate", 2);
+  fail("missing docs/api/OPEN-001-openapi.yaml — run pnpm openapi:generate", 2);
 }
 
 const dir = mkdtempSync(join(tmpdir(), "afenda-openapi-"));
@@ -38,7 +38,7 @@ try {
   const generated = readFileSync(generatedPath, "utf8");
   if (committed !== generated) {
     fail(
-      "OPEN-001-openapi.yaml drifted from scripts/generate-openapi.mts — run npm run openapi:generate and commit",
+      "OPEN-001-openapi.yaml drifted from scripts/generate-openapi.mts — run pnpm openapi:generate and commit",
     );
   }
 } finally {
