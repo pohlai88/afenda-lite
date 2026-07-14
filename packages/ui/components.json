@@ -13,11 +13,11 @@
 	"iconLibrary": "lucide",
 	"rtl": false,
 	"aliases": {
-		"components": "@afenda/ui/components",
-		"utils": "@afenda/ui/lib/utils",
-		"ui": "@afenda/ui/components",
-		"lib": "@afenda/ui/lib",
-		"hooks": "@afenda/ui/hooks"
+		"components": "../../components",
+		"utils": "../../lib/utils",
+		"ui": ".",
+		"lib": "../../lib",
+		"hooks": "../../hooks"
 	},
 	"menuColor": "default",
 	"menuAccent": "subtle",
