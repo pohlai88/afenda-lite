@@ -11,10 +11,10 @@ const repoRoot = path.join(appDir, "../..");
 loadEnvConfig(repoRoot);
 
 const securityHeaders = [
-  { key: "X-DNS-Prefetch-Control", value: "on" },
-  { key: "X-Frame-Options", value: "SAMEORIGIN" },
-  { key: "X-Content-Type-Options", value: "nosniff" },
-  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+	{ key: "X-DNS-Prefetch-Control", value: "on" },
+	{ key: "X-Frame-Options", value: "SAMEORIGIN" },
+	{ key: "X-Content-Type-Options", value: "nosniff" },
+	{ key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
 ];
 
 // When the dev server is accessed via explicit IP (127.0.0.1) rather than the
@@ -24,60 +24,60 @@ const securityHeaders = [
 //   1. allowedDevOrigins  — Turbopack HMR WebSocket connections
 //   2. experimental.serverActions.allowedOrigins — Server Action CSRF check
 const DEV_IP_ORIGINS =
-  process.env.NODE_ENV === "development"
-    ? ["127.0.0.1:3000", "127.0.0.1:3001"]
-    : [];
+	process.env.NODE_ENV === "development"
+		? ["127.0.0.1:3000", "127.0.0.1:3001"]
+		: [];
 
 const nextConfig: NextConfig = {
-  // Monorepo: trace + Turbopack root include packages/* outside apps/web.
-  outputFileTracingRoot: repoRoot,
-  reactCompiler: true,
-  poweredByHeader: false,
-  allowedDevOrigins: ["127.0.0.1"],
-  transpilePackages: [
-    "@afenda/auth",
-    "@afenda/db",
-    "@afenda/emails",
-    "@afenda/env",
-    "@afenda/ui",
-  ],
-  serverExternalPackages: ["@neondatabase/serverless"],
-  experimental: {
-    optimizePackageImports: [
-      "lucide-react",
-      "@base-ui/react",
-      "@tanstack/react-table",
-      "@neondatabase/auth-ui",
-    ],
-    serverActions: {
-      allowedOrigins: DEV_IP_ORIGINS,
-    },
-  },
-  logging: {
-    fetches: {
-      fullUrl: process.env.NODE_ENV === "development",
-    },
-  },
-  images: {
-    remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "api.qrserver.com",
-      },
-      {
-        protocol: "https",
-        hostname: "cdn.shadcnstudio.com",
-      },
-    ],
-  },
-  async headers() {
-    return [
-      {
-        source: "/:path*",
-        headers: securityHeaders,
-      },
-    ];
-  },
+	// Monorepo: trace + Turbopack root include packages/* outside apps/web.
+	outputFileTracingRoot: repoRoot,
+	reactCompiler: true,
+	poweredByHeader: false,
+	allowedDevOrigins: ["127.0.0.1"],
+	transpilePackages: [
+		"@afenda/auth",
+		"@afenda/db",
+		"@afenda/emails",
+		"@afenda/env",
+		"@afenda/ui",
+	],
+	serverExternalPackages: ["@neondatabase/serverless"],
+	experimental: {
+		optimizePackageImports: [
+			"lucide-react",
+			"@base-ui/react",
+			"@tanstack/react-table",
+			"@neondatabase/auth-ui",
+		],
+		serverActions: {
+			allowedOrigins: DEV_IP_ORIGINS,
+		},
+	},
+	logging: {
+		fetches: {
+			fullUrl: process.env.NODE_ENV === "development",
+		},
+	},
+	images: {
+		remotePatterns: [
+			{
+				protocol: "https",
+				hostname: "api.qrserver.com",
+			},
+			{
+				protocol: "https",
+				hostname: "cdn.shadcnstudio.com",
+			},
+		],
+	},
+	async headers() {
+		return [
+			{
+				source: "/:path*",
+				headers: securityHeaders,
+			},
+		];
+	},
 };
 
 export default nextConfig;

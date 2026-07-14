@@ -4,13 +4,13 @@
 |-------|-------|
 | ID | ARCH-028 |
 | Category | Architecture |
-| Version | 1.4.22 |
+| Version | 1.4.24 |
 | Status | Target |
 | Control State | Closed |
 | Owner | Platform |
 | Updated | 2026-07-15 |
 
-> **Forward-writing / Target.** Ordered implementation plan for the Turborepo system. Through S7.4 + Checkpoint F this checkout has `apps/web` route groups + `apps/web/modules/*` domain ports + `apps/web/features/{auth,declarations,fft,org-admin}` shells + `@afenda/{config,db,auth,env,ui,emails}` — continue slice-serial only (see Anti-contamination lock below). Each slice is S (1–2 files) or M (3–5 files). L = structural move of **Target trees already on disk** only — never Collapse/legacy recovery from git.
+> **Forward-writing / Target.** Ordered implementation plan for the Turborepo system. Through S8.1 this checkout has `apps/web` route groups + `apps/web/modules/*` domain ports + `apps/web/features/{auth,declarations,fft,org-admin}` shells + `@afenda/{config,db,auth,env,ui,emails}` + Target CI (`.github/workflows/ci.yml`) — continue slice-serial only (see Anti-contamination lock below). Each slice is S (1–2 files) or M (3–5 files). L = structural move of **Target trees already on disk** only — never Collapse/legacy recovery from git.
 
 ## Purpose
 
@@ -183,7 +183,7 @@ Operator override for a later **non-baseline** forward migrate only: `AFENDA_ALL
 
 **Checkpoint D evidence (2026-07-14):** merged local compose inventory → `.env.local`; removed `env.config` / `env.secret` / `.env` and committed examples; added `.env.example` + `!.env.example` gitignore; removed `env:compose` / `env:guard*` / compose write-path scripts from root `package.json`; `scripts/lib/env-files.mjs` + `validate-neon-env` load `.env.local` only; AGENTS.md Target env SSOT.
 
-**A–D residue pass (2026-07-14, pre-E):** deleted `env-manifest.generated.mjs` + root Collapse `components.json` (`app/`/`modules/platform` aliases); Living docs/skills retargeted off pre-S4.1 two-state; ARCH-022/AGENTS checkout posture updated for packages through `@afenda/env`. **Superseded by S5.1–S7.4 + Checkpoints E–F (2026-07-15)** — see Acceptance evidence below; next open **S8.1**.
+**A–D residue pass (2026-07-14, pre-E):** deleted `env-manifest.generated.mjs` + root Collapse `components.json` (`app/`/`modules/platform` aliases); Living docs/skills retargeted off pre-S4.1 two-state; ARCH-022/AGENTS checkout posture updated for packages through `@afenda/env`. **Superseded by S5.1–S8.1 + Checkpoints E–F (2026-07-15)** — see Acceptance evidence below; next open **S8.2**.
 
 ---
 
@@ -202,7 +202,7 @@ Operator override for a later **non-baseline** forward migrate only: `AFENDA_ALL
 
 **Implement evidence (2026-07-15):**
 - DNA source (user-named local kit, not Collapse git): `_reference/archive/shadcn-pro-dashboard` → promote essentials only (`base-vega` Button · `cn` · `globals.css` · `components.json`)
-- `@afenda/ui` under `packages/ui/` — exports `.` + `./globals.css`; `apps/web` depends on workspace package; `apps/web/styles/globals.css` imports `@afenda/ui/globals.css`; smoke `apps/web/ui-boundary.smoke.ts`
+- `@afenda/ui` under `packages/ui/` — exports `.` + `./globals.css`; `apps/web` depends on workspace package; `apps/web/styles/globals.css` imports `@afenda/ui/globals.css`; boundary covered by `apps/web/ui-boundary.test.ts` (S8.1 audit)
 - Verify: `pnpm --filter @afenda/ui typecheck` PASS · `pnpm --filter @afenda/web exec tsc --noEmit -p tsconfig.json` PASS · `rg "from.*components/ui" apps/web/` = 0 · `apps/web/components/ui` absent
 - Local cleanup (gitignored `_reference/`): removed free/individual dashboards, lite repo tar.gz, `_reference/env.config` / `env.secret`; kept `shadcn-pro-dashboard`
 
@@ -327,7 +327,19 @@ Operator override for a later **non-baseline** forward migrate only: `AFENDA_ALL
 **Size:** S · **File:** `.github/workflows/ci.yml` — `turbo run lint typecheck test`
 
 **Acceptance:**
-- [ ] Green on clean branch; `TURBO_TOKEN` available for remote cache
+- [x] Green on clean branch; `TURBO_TOKEN` available for remote cache
+
+**Implement evidence (2026-07-15):**
+- `.github/workflows/ci.yml` — Node 24 · pnpm 10.33.4 · `pnpm install --frozen-lockfile` · `pnpm exec turbo run lint typecheck test`; job env `TURBO_TOKEN` (secret) + `TURBO_TEAM` (variable)
+- GitHub Actions: secret `TURBO_TOKEN` present; variable `TURBO_TEAM=jacks-projects-7b3cfe94`
+- Verify (initial): `pnpm exec turbo run lint typecheck test` PASS (typecheck only) · with token: **Remote caching enabled**
+
+**Audit gap close (2026-07-15):** Plan claimed real `lint` + `test` turbo gates; disk had neither package scripts nor Biome installed (README still described Collapse CI). Closed by:
+- Root `@biomejs/biome` + `ultracite`; Biome `files.includes` catch-all on root `biome.jsonc`; shared `@afenda/config` biome (`root: false`, Tailwind CSS parser)
+- Package `lint` / `test` scripts on workspace members; Vitest projects in `testing/vitest.config.ts`; contract tests for auth roles · db tenancy columns · env · ui `cn` · emails render · web `@afenda/ui` boundary
+- Exported `roleSatisfies` (`packages/auth/src/roles.ts`); replaced `ui-boundary.smoke.ts` with `ui-boundary.test.ts`
+- Root `pnpm test` → `turbo run test`; Playwright → `pnpm test:e2e`
+- Verify: `pnpm exec turbo run lint typecheck test` PASS (**19 tasks**)
 
 ---
 
@@ -383,7 +395,7 @@ Absorbed from retired GUIDE-004. Records **Target vs checkout** drift for forwar
 
 | Authority | Disk today | Coding impact |
 |-----------|------------|---------------|
-| [ARCH-022…028](.) | S1.1–S7.4 + Checkpoints A–F present: workspace + `@afenda/{config,db,auth,env,ui,emails}` + `apps/web` route groups + modules domain ports + `apps/web/features/{auth,declarations,fft,org-admin}` | Continue slice-serial implement — next open **S8.1** |
+| [ARCH-022…028](.) | S1.1–S8.1 + Checkpoints A–F present: workspace + `@afenda/{config,db,auth,env,ui,emails}` + `apps/web` route groups + modules domain ports + `apps/web/features/{auth,declarations,fft,org-admin}` + Target CI | Continue slice-serial implement — next open **S8.2** |
 | Living maps ARCH-001…010 · 012…019 · 017 | Repo-root `app/`, `modules/`, `features/`, `components-V2/` **absent** after design-SSOT Collapse (`4680c91`) | **Expected · Forbidden to recover** — see Anti-contamination lock below |
 | [ARCH-023](ARCH-023-multi-tenancy.md) | Living tenancy + RBAC rules | Binding now — enforce invariants even before packages exist |
 | `AGENTS.md` env | Target `@afenda/env` + `.env.local` + `.env.example` (S4.1 / Checkpoint D) | Compose retired — do not restore |
@@ -427,6 +439,8 @@ Living ARCH folder/route/adapter maps remain normative for **shape**. They are *
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.4.24 | 2026-07-15 | S8.1 audit gap close: real Biome lint + Vitest package tests under turbo (19 tasks); README Target CI. |
+| 1.4.23 | 2026-07-15 | S8.1 CI: `ci.yml` turbo lint/typecheck/test + `TURBO_TOKEN`/`TURBO_TEAM` remote cache; next open S8.2. |
 | 1.4.22 | 2026-07-15 | S7.4 audit gap close: session-aware feature runners; Target `org-admin` farm honesty; Checkpoint F re-verify. |
 | 1.4.21 | 2026-07-15 | S7.4 feature shells + Checkpoint F; next open S8.1. |
 | 1.4.20 | 2026-07-15 | S7.3 gap close: Identity owns `listOrgRoles`; Platform `listOrgRbacAudit`; evidence + catalogue honesty. |

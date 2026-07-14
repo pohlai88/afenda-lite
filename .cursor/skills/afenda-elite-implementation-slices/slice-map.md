@@ -3,7 +3,7 @@
 Authority body: [ARCH-028](../../../docs/architecture/ARCH-028-implementation-slices.md).  
 Always also load: this skill’s [SKILL.md](SKILL.md).
 
-**Progress hint (checkout):** S1.1–S7.4 + Checkpoints A–F done. Next open: **S8.1**. Re-read ARCH-028 checkboxes before starting — evidence on disk wins over this hint.
+**Progress hint (checkout):** S1.1–S8.1 + Checkpoints A–F done. Next open: **S8.2**. Re-read ARCH-028 checkboxes before starting — evidence on disk wins over this hint.
 
 ## Farm short names
 

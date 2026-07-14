@@ -4,9 +4,9 @@
  * Product code validates config via `import { env } from '@afenda/env'`.
  */
 export function requireDatabaseUrl(): string {
-  const url = process.env.DATABASE_URL;
-  if (!url) {
-    throw new Error("@afenda/db: DATABASE_URL is required");
-  }
-  return url;
+	const url = process.env.DATABASE_URL;
+	if (!url) {
+		throw new Error("@afenda/db: DATABASE_URL is required");
+	}
+	return url;
 }

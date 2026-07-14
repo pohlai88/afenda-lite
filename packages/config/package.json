@@ -13,5 +13,8 @@
   "files": [
     "biome.json",
     "tsconfig"
-  ]
+  ],
+  "scripts": {
+    "lint": "biome check ."
+  }
 }

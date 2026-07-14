@@ -1,14 +1,14 @@
 import { neon } from "@neondatabase/serverless";
 import { eq } from "drizzle-orm";
-import type { AnyPgTable, PgColumn } from "drizzle-orm/pg-core";
 import { drizzle } from "drizzle-orm/neon-http";
+import type { AnyPgTable, PgColumn } from "drizzle-orm/pg-core";
 import { requireDatabaseUrl } from "./env";
 import * as schema from "./schema";
 
 export type DbSchema = typeof schema;
 
 function createDb() {
-  return drizzle(neon(requireDatabaseUrl()), { schema });
+	return drizzle(neon(requireDatabaseUrl()), { schema });
 }
 
 export type Database = ReturnType<typeof createDb>;
@@ -20,16 +20,16 @@ let cached: Database | undefined;
  * Lazy: no connection until first property access.
  */
 export const db: Database = new Proxy({} as Database, {
-  get(_target, property, receiver) {
-    cached ??= createDb();
-    const value = Reflect.get(cached, property, receiver);
-    return typeof value === "function" ? value.bind(cached) : value;
-  },
+	get(_target, property, receiver) {
+		cached ??= createDb();
+		const value = Reflect.get(cached, property, receiver);
+		return typeof value === "function" ? value.bind(cached) : value;
+	},
 });
 
 /** Tables that carry `organization_id` (Living tenant roots + scoped platform rows). */
 export type TenantTable = AnyPgTable & {
-  organizationId: PgColumn;
+	organizationId: PgColumn;
 };
 
 /**
@@ -44,12 +44,12 @@ export type TenantTable = AnyPgTable & {
  * so callers see the concrete table row shape (S7.4 feature shells).
  */
 export async function withOrg<T extends TenantTable>(
-  table: T,
-  orgId: string,
+	table: T,
+	orgId: string,
 ): Promise<T["$inferSelect"][]> {
-  const rows = await db
-    .select()
-    .from(table as unknown as typeof schema.surveys)
-    .where(eq(table.organizationId, orgId));
-  return rows as T["$inferSelect"][];
+	const rows = await db
+		.select()
+		.from(table as unknown as typeof schema.surveys)
+		.where(eq(table.organizationId, orgId));
+	return rows as T["$inferSelect"][];
 }

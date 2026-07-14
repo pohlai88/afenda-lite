@@ -10,29 +10,32 @@ const hook = join(repo, ".cursor/hooks/no-drizzle-baseline-migrate.mjs");
 const guard = join(repo, "packages/db/scripts/db-migrate-guard.mjs");
 
 function runHook(command) {
-  return spawnSync(process.execPath, [hook], {
-    input: JSON.stringify({ command }),
-    encoding: "utf8",
-  });
+	return spawnSync(process.execPath, [hook], {
+		input: JSON.stringify({ command }),
+		encoding: "utf8",
+	});
 }
 
 const deny = runHook("pnpm --filter @afenda/db " + "db" + ":migrate");
 const allowCheck = runHook("pnpm --filter @afenda/db db:check");
 const guardDenied = spawnSync(process.execPath, [guard], {
-  encoding: "utf8",
-  env: { ...process.env, AFENDA_ALLOW_DB_MIGRATE: "" },
+	encoding: "utf8",
+	env: { ...process.env, AFENDA_ALLOW_DB_MIGRATE: "" },
 });
 
 console.log("hook-deny", deny.stdout.trim());
 console.log("hook-allow-check", allowCheck.stdout.trim());
 console.log("guard-exit", guardDenied.status);
 if (guardDenied.stderr) {
-  console.log("guard-stderr-head", guardDenied.stderr.split("\n").slice(0, 6).join("\n"));
+	console.log(
+		"guard-stderr-head",
+		guardDenied.stderr.split("\n").slice(0, 6).join("\n"),
+	);
 }
 
 const ok =
-  deny.stdout.includes('"permission":"deny"') &&
-  allowCheck.stdout.includes('"permission":"allow"') &&
-  guardDenied.status === 1;
+	deny.stdout.includes('"permission":"deny"') &&
+	allowCheck.stdout.includes('"permission":"allow"') &&
+	guardDenied.status === 1;
 
 process.exit(ok ? 0 : 1);

@@ -1,3 +1,5 @@
+# ARCH-028 S8.1 — CI quality gate (turbo lint · typecheck · test)
+# Remote cache: TURBO_TOKEN (Actions secret) + TURBO_TEAM (Actions variable)
 name: CI
 
 on:
@@ -11,10 +13,18 @@ concurrency:
 
 jobs:
   quality:
+    name: Lint · typecheck · test
+    timeout-minutes: 20
     runs-on: ubuntu-latest
+    env:
+      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+      TURBO_TEAM: ${{ vars.TURBO_TEAM }}
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Check out code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
 
       - uses: pnpm/action-setup@v4
         with:
@@ -27,3 +37,6 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Lint · typecheck · test
+        run: pnpm exec turbo run lint typecheck test

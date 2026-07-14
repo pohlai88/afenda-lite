@@ -5,5 +5,5 @@ import { platformRbacAudit, withOrg } from "@afenda/db";
  * Governance/audit surface; product RBAC assignments/roles stay in Identity.
  */
 export async function listOrgRbacAudit(orgId: string) {
-  return withOrg(platformRbacAudit, orgId);
+	return withOrg(platformRbacAudit, orgId);
 }

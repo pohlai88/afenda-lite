@@ -74,20 +74,20 @@ Open http://localhost:3000 → operator sign-in → `/dashboard`.
 
 ## CI and tests
 
-GitHub Actions (`.github/workflows/ci.yml`) runs on PRs:
+GitHub Actions (`.github/workflows/ci.yml`) runs on push to `main` and on PRs:
 
-- `pnpm check:copy` — terminology gate
-- `pnpm build`
-- `pnpm db:migrate` (requires `DATABASE_URL` secret)
-- `pnpm test` — Playwright E2E (`e2e/smoke.spec.ts`, `e2e/secure-file.spec.ts`, `e2e/client-journey.spec.ts`)
+- `pnpm install --frozen-lockfile`
+- `pnpm exec turbo run lint typecheck test` (Biome · `tsc` · Vitest)
+- Remote cache via `TURBO_TOKEN` (secret) + `TURBO_TEAM` (variable)
 
 Local:
 
 ```bash
-pnpm check:copy
-pnpm test
-pnpm verify:production
+pnpm exec turbo run lint typecheck test
+pnpm --filter @afenda/web dev
 ```
+
+E2E (Playwright) is optional/local when specs exist: `pnpm test:e2e`.
 
 Health endpoints:
 
