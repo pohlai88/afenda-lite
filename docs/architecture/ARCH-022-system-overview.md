@@ -4,13 +4,13 @@
 |-------|-------|
 | ID | ARCH-022 |
 | Category | Architecture |
-| Version | 1.5.2 |
+| Version | 1.5.3 |
 | Status | Target |
 | Control State | Closed |
 | Owner | Platform |
 | Updated | 2026-07-14 |
 
-> **Forward-writing / Target.** Describes the intended Turborepo system. Authoritative for new work. Missing `apps/` or `packages/` on disk is expected until implementation ([ARCH-028](ARCH-028-implementation-slices.md)).
+> **Forward-writing / Target.** Turborepo system SSOT. On disk through Checkpoint D: `@afenda/config|db|auth|env` + `apps/web` scaffold — `@afenda/ui|emails` and app routes still open per [ARCH-028](ARCH-028-implementation-slices.md).
 
 ## Context
 
@@ -89,13 +89,13 @@ System framework decision lives in this doc. Backend layer maps: [Backend pack r
 | No Turborepo | Single root `package.json` monolith | `turbo.json` + pnpm workspaces |
 | No ORM | Raw `pg` SQL in domain | Drizzle in `@afenda/db` — schema-first migrations |
 | No package boundary | One `node_modules`, one build cache | Isolated `@afenda/*` packages + Turbo remote cache |
-| Custom env compose | Collapse-era compose **gone** on this docs-first checkout (gated / banned recover) | `@t3-oss/env-nextjs` + `.env.local` after S4.1 ([ARCH-027](ARCH-027-env-model.md)) |
+| Custom env compose | **Retired (S4.1 / Checkpoint D)** — do not recover | `@t3-oss/env-nextjs` + `.env.local` ([ARCH-027](ARCH-027-env-model.md)) |
 | Auth sprawl | Neon Auth + scattered `lib/auth/*` | All Neon Auth SDK use inside `@afenda/auth` |
 | Flat domain at root | `modules/` / `features/` at repo root when present | Domain stays in `apps/web/modules/`; shared infra in `packages/` |
 | No email package | Templates not isolated | `@afenda/emails` (React Email) |
 | Dead shared `lib/` | `lib/env/`, `lib/auth/`, `lib/db/` co-located | Moved into packages or deleted at cutover |
 
-Env forward path is Target `@afenda/env` only — [ARCH-027](ARCH-027-env-model.md) STOP. Do **not** recover Collapse compose/`lib/env`. Do not mix Living-gated and Target models in one change set.
+Env SSOT is `@afenda/env` + `.env.local` — [ARCH-027](ARCH-027-env-model.md). Do **not** recover Collapse compose/`lib/env`.
 
 ## Day-1 technology stack (target)
 
@@ -212,7 +212,7 @@ Next.js App Router (apps/web)
 | [ARCH-024](ARCH-024-package-boundaries.md) | Package public contracts |
 | [ARCH-025](ARCH-025-data-layer.md) | Drizzle / migrations / `withOrg` |
 | [ARCH-026](ARCH-026-auth-session.md) | Session + invitations |
-| [ARCH-027](ARCH-027-env-model.md) | Env schema — Target `@afenda/env` (docs-first STOP) |
+| [ARCH-027](ARCH-027-env-model.md) | Env schema — `@afenda/env` + `.env.local` (compose retired) |
 | [ARCH-028](ARCH-028-implementation-slices.md) | Ordered build slices (docs plan for implementers) |
 | [ARCH-029](ARCH-029-interface-api-architecture.md) | Living interface/API architecture parent |
 | [Backend pack](README.md#packs-reading-order) | Hexagon layers, ports, module ownership (detail) |
@@ -244,6 +244,7 @@ Next.js App Router (apps/web)
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.5.3 | 2026-07-14 | Checkpoint D residue: compose gap marked retired; header reflects packages through `@afenda/env`. |
 | 1.5.2 | 2026-07-14 | Env gap rows: docs-first STOP + Target `@afenda/env` only (no “Living compose until then”). |
 | 1.5.1 | 2026-07-14 | Home flattened to docs/architecture/ (trunks removed; pack reading order in README). |
 | 1.5.0 | 2026-07-14 | Integrity remediation: pointer-only adapter/tenancy; index ARCH-029; Route Handler list deferred to ARCH-013/API-001. |

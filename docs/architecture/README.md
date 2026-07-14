@@ -37,7 +37,7 @@ Link the SSOT; do not paste a second copy.
 | 3 | [ARCH-024](ARCH-024-package-boundaries.md) | Package public contracts |
 | 4 | [ARCH-025](ARCH-025-data-layer.md) | Drizzle / migrations / `withOrg` |
 | 5 | [ARCH-026](ARCH-026-auth-session.md) | Session + invitations |
-| 6 | [ARCH-027](ARCH-027-env-model.md) | Env — Target `@afenda/env` (docs-first STOP) |
+| 6 | [ARCH-027](ARCH-027-env-model.md) | Env — `@afenda/env` + `.env.local` (compose retired) |
 | 7 | [ARCH-028](ARCH-028-implementation-slices.md) | Ordered build slices |
 | 8 | [ARCH-029](ARCH-029-interface-api-architecture.md) | Interface/API architecture parent |
 

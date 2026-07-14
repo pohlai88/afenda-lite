@@ -103,12 +103,11 @@ Full Accelint security/perf checklist: [reference/accelint-perf.md](reference/ac
 
 ### Env / client-secret boundary (ARCH-027)
 
-Dedicated `afenda-elite-env-governance` remains catalog **candidate**. Enforce [ARCH-027](../../../docs/architecture/ARCH-027-env-model.md) two-state rule:
+Dedicated `afenda-elite-env-governance` remains catalog **candidate**. Enforce [ARCH-027](../../../docs/architecture/ARCH-027-env-model.md):
 
 | State | Rule |
 |-------|------|
-| **Docs-first / pre-S4.1 (this checkout)** | No live `env:compose` pipeline. Do **not** restore Collapse compose scripts or `lib/env/`. Do **not** create `.env.local` or run `vercel env pull`. Human `env.config` / `env.secret` files (if present) are inventory notes only — not a compose authority. |
-| **Target post-S4.1** | `@afenda/env` is the only app config reader; `.env.local` is the only local runtime env file; no compose / `env:guard`. |
+| **This checkout (S4.1+)** | `@afenda/env` is the only app config reader; `.env.local` is the only local runtime env file. Do **not** restore Collapse compose / `lib/env` / `env.config` / `env.secret`. |
 
 | Rule | Detail |
 |------|--------|

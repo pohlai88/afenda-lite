@@ -46,10 +46,9 @@ yarn-error.log*
 .cursor/hooks/.mvp-hook-debug.log
 .cursor/hooks/.*-hook-debug.log
 
-# env files (can opt-in for committing if needed)
+# env files — `.env.local` is the only Next runtime file (ARCH-027 / S4.1)
 .env*
-env.config
-env.secret
+!.env.example
 .env.vercel.*
 
 # vercel

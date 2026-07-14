@@ -4,15 +4,15 @@
 |-------|-------|
 | ID | ARCH-027 |
 | Category | Architecture |
-| Version | 1.4.2 |
+| Version | 1.5.0 |
 | Status | Target |
 | Control State | Closed |
 | Owner | Platform |
 | Updated | 2026-07-14 |
 
-> **Forward-writing / Target.** Describes the intended Turborepo system. Authoritative for new work. Missing `apps/` or `packages/` on disk is expected until implementation.
+> **Forward-writing / Target.** Environment SSOT for Turborepo apps. **S4.1 + Checkpoint D shipped** on this checkout (`@afenda/env` present).
 
-> **STOP — docs-first checkout (Collapse):** Runnable Collapse-era `env:compose` / `env:guard` / `lib/env` are **gone and forbidden to recover**. Human `env.config` / `env.secret` files may still exist as inventory notes; they are **not** a live compose pipeline on this checkout. Do **not** create `.env.local` or run `vercel env pull` until S4.1 ships under Target. Forward SSOT = `@afenda/env` + this document.
+> **STOP — compose retired:** Do **not** restore Collapse-era `env:compose` / `env:guard` / `env.config` / `env.secret` / `lib/env`. Local runtime file = `.env.local` only. App config = `import { env } from '@afenda/env'`. Prefer editing a known-good `.env.local` over blind `vercel env pull` (redacts / stale marketplace keys).
 
 ## Context
 
@@ -26,34 +26,32 @@
 |----------|---------------|
 | Server/client split enforced by TypeScript | New var → update schema + `runtimeEnv` (same file) |
 | Missing required var → startup Zod error | Validates at module load — no runtime hot-swap |
-| `vercel env pull` → `.env.local` works **after S4.1** | Forbidden on this docs-first checkout until S4.1 |
+| `vercel env pull` → `.env.local` refresh path | Review redacted/empty + marketplace keys after pull |
 | One inventory file for all app env vars | |
 
 | Alternative | Why rejected |
 |-------------|--------------|
 | Raw `process.env` | No validation; convention-only server/client split |
 | `dotenv-cli` | Load step without Zod/types |
-| Custom compose (`env.config` + `env.secret` → `.env`) | Collapse-era Living model — **retired for this docs-first checkout**; do not recover script bodies; Target replaces it at S4.1 |
+| Custom compose (`env.config` + `env.secret` → `.env`) | **Retired at S4.1 / Checkpoint D** — do not recover |
 | Collapse-era `lib/env/` typed accessors | Banned recover; Target home is `@afenda/env` |
 | Manual Zod wrappers | Reinvents `@t3-oss/env-nextjs` without Next integration |
 
 **Constraints that must not be broken:**
 
-- Product code (when Target app exists) reads config only via `import { env } from '@afenda/env'` — no raw `process.env` for app config
+- Product code reads config only via `import { env } from '@afenda/env'` — no raw `process.env` for app config
 - Server vars stay in the `server` block; client vars are `NEXT_PUBLIC_*` in the `client` block
-- After S4.1: `.env.local` is the only local runtime env file; no compose / `env:guard`
-- On this docs-first checkout: do **not** restore or reinvent compose/`lib/env`; do **not** start a parallel t3-env + compose hybrid
+- `.env.local` is the only local runtime env file; compose / `env:guard` are gone
+- Do **not** restore compose/`lib/env` or run a parallel t3-env + compose hybrid
 - `PLAYGROUND_*` stay local-only and are never synced to Vercel
-
-**Docs-first vs Target:** Collapse removed runnable compose. Historical “Living compose until S4.1” is **not** an instruction to recover tooling. Forward path is Target `@afenda/env` + S4.1 only ([AGENTS.md](../../AGENTS.md) checkout posture · [ARCH-028](ARCH-028-implementation-slices.md) Anti-contamination lock).
 
 ## Responsibilities and boundaries
 
 | Component | Responsibility |
 |-----------|---------------|
 | `packages/env/src/web.ts` | Single Zod schema declaring all variables, their types, and server/client placement |
-| `.env.local` | **Post-S4.1 only.** The only env file loaded at runtime after cutover. Gitignored. Written by `vercel env pull` after compose retirement. |
-| `vercel env pull` | **Post-S4.1 only.** Initialise local `.env.local` after Target cutover. Blocked on this docs-first checkout until S4.1. |
+| `.env.local` | The only env file loaded at runtime for Next + ops. Gitignored. Template: `.env.example`. |
+| `vercel env pull` | Optional refresh into `.env.local` — audit values after pull. |
 | Vercel dashboard / CLI | Canonical store for production env values |
 
 `packages/env` does **not** own: secrets storage (that is Vercel), secrets rotation, or application logic that uses env values.
@@ -112,13 +110,11 @@ const db  = env.DATABASE_URL           // ✗ — TypeScript error: server var i
 
 ## Data / request flow
 
-### Local dev initialisation (post-S4.1 Target only)
-
-> Docs-first / pre-S4.1: compose is gated or absent — do not recover. Never `vercel env pull` until S4.1.
+### Local dev initialisation
 
 ```
-vercel env pull          ← AFTER S4.1 only; writes .env.local from Vercel
-pnpm --filter apps/web dev
+cp .env.example .env.local   ← or refresh carefully (prefer known-good values)
+pnpm --filter @afenda/web dev
   └── Next.js loads .env.local
   └── packages/env/src/web.ts validates all vars at startup
   └── Missing required var → Zod error → process exits with readable message
@@ -152,21 +148,13 @@ Vercel build
 
 ## Operational considerations
 
-- **Local init (docs-first checkout):** compose/`dev` are gated — do not recover Collapse scripts; no product app until Target scaffold.
-- **Local init (Target, post-S4.1 only):** `vercel env pull` then `pnpm --filter apps/web dev`.
-- **Add a new var:** add to `packages/env/src/web.ts` schema + `runtimeEnv` map, add to Vercel dashboard, update this document's variable table.
-- **Audit / sync Vercel:** when Target ops scripts exist — not via Collapse recover. On docs-first checkout those npm scripts are gated.
+- **Local init:** copy `.env.example` → `.env.local`, fill required keys, `pnpm validate:neon-env`, then `pnpm --filter @afenda/web dev`.
+- **Add a new var:** add to `packages/env/src/web.ts` schema + `runtimeEnv` map, update `.env.example` / Vercel, update this document's variable table.
+- **Audit / sync Vercel:** `pnpm audit:vercel` (key names) when tooling is available — never restore compose.
 
-## Cutover from compose (S4.1)
+## Cutover from compose (S4.1) — **done**
 
-Implement in one change set with [ARCH-028](ARCH-028-implementation-slices.md) S4.1:
-
-1. Map every key from `env.config.example` + `env.secret.example` into `packages/env/src/web.ts` (`server` vs `client`).
-2. Confirm `PLAYGROUND_*` stay local-only (`.env.local`, never Vercel sync).
-3. Delete any remaining compose surfaces in the same PR: `env.config`, `env.secret`, examples, and leftover `env:compose` / `env:guard` npm entries (do **not** restore Collapse script bodies first).
-4. Initialise `.env.local` via `vercel env pull` (or copy from a reviewed backup). Remove reliance on generated `.env`.
-5. Update `AGENTS.md` Living env section to match this Target in the same PR.
-6. Verify: `rg "env:compose|env:guard" package.json` = 0; product code uses `import { env } from '@afenda/env'` only.
+Shipped 2026-07-14 with [ARCH-028](ARCH-028-implementation-slices.md) S4.1 + Checkpoint D. Compose surfaces retired; evidence on that document. Do not reopen compose.
 
 ## Known limits / future changes
 
@@ -177,6 +165,7 @@ Implement in one change set with [ARCH-028](ARCH-028-implementation-slices.md) S
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.5.0 | 2026-07-14 | S4.1 shipped: STOP = compose retired; `.env.local` + `@afenda/env` Living ops. |
 | 1.4.2 | 2026-07-14 | Remove residual “Living compose in force” phrasing; docs-first STOP until S4.1. |
 | 1.4.1 | 2026-07-14 | Home flattened to docs/architecture/ (trunks removed; pack reading order in README). |
 | 1.4.0 | 2026-07-14 | Root-cause clean: STOP + Living prose no longer require runnable Collapse compose/`lib/env`; docs-first gated; forward = Target `@afenda/env` only. |

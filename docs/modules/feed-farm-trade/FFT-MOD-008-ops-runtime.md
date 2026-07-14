@@ -68,7 +68,7 @@ Flag name table: [FFT-MOD-003](FFT-MOD-003-tech-stack.md). Code map: [FFT-MOD-00
 
 ## 3.2 Immediate checks
 
-Env follows [ARCH-027](../../architecture/ARCH-027-env-model.md) two-state: **docs-first / pre-S4.1** — no `env:compose`, no `.env.local`, no `vercel env pull`; prefer available audits/Console. **Target post-S4.1** — `@afenda/env` + `.env.local` only. Product unit/e2e/scripts below are **Target-gated** (absent on docs-first → report `BLOCKED`, do not recover Collapse trees). Does **not** reopen FFT 2B–2D.
+Env follows [ARCH-027](../../architecture/ARCH-027-env-model.md): `@afenda/env` + `.env.local` only (compose retired at S4.1). Product unit/e2e/scripts that still gate Collapse tooling → report `BLOCKED`, do not recover. Does **not** reopen FFT 2B–2D.
 
 ```bash
 # Target when product tree + scripts exist:
@@ -118,7 +118,7 @@ Set production `FFT_RBAC_ENABLED=false` via the **approved Vercel env path** for
 
 | State | Rollback surface |
 |-------|------------------|
-| Docs-first / pre-S4.1 | Change Vercel production flag directly (or approved sync that does not recover Collapse compose); redeploy; smoke |
+| Flag rollback | Change Vercel production flag directly (or approved sync); redeploy; smoke — never restore compose |
 | Target post-S4.1 | Update flag in approved env surface → `@afenda/env` / Vercel sync per ARCH-027 → redeploy → smoke |
 
 **Historical (pre-Collapse, not Living on this checkout):** `env.config` edit → `env:compose` → `sync:vercel` → deploy.

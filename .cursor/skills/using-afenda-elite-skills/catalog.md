@@ -54,6 +54,7 @@ Local skills must remain operable if `afenda-Xerp` is absent. Do not edit `agent
 | `afenda-elite-module-readiness` | local-elite-farm | local | keep | Module evidence ledgers · Module Enterprise Readiness claims | MOD-009 / MOD-010 evidence and claim work | MOD-002 · owning `*-MOD-009` / `*-MOD-010` | none | `.cursor/skills/afenda-elite-module-readiness/SKILL.md` | MOD-002/009/010 only — no scratch QG · no edition certification |
 | `afenda-elite-repo-housekeeping` | local-elite-farm | local | keep | Knip/drift discovery; skill-catalog align | Housekeeping / catalog drift | ARCH-024 · ARCH-028 · this catalog | none | `.cursor/skills/afenda-elite-repo-housekeeping/SKILL.md` | Deletes → monorepo-refactor Slice D |
 | `afenda-elite-monorepo-refactor` | local-elite-farm | local | keep | Governed extract/move/Slice D | Cross-package refactor | ARCH-024 · ARCH-028 | none | `.cursor/skills/afenda-elite-monorepo-refactor/SKILL.md` | |
+| `afenda-elite-implementation-slices` | local-elite-farm | local | keep | One ARCH-028 slice implement loop + command sheet | Named S\* slice / ARCH-028 continue | ARCH-028 (+ sibling ARCH per slice) | coding unlock in ARCH-028 | `.cursor/skills/afenda-elite-implementation-slices/SKILL.md` | Routes to farms via slice-map; does not replace scaffold/modules/nextjs |
 
 ### Domain farms
 
@@ -61,7 +62,7 @@ Local skills must remain operable if `afenda-Xerp` is absent. Do not edit `agent
 |-------|--------------|------------|--------|------|------------|----------------------|--------------|----------|-------|
 | `admincn-customization` | local-domain-farm | local | keep | AdminCN shell / theme / studio MCP | AdminCN UI work | ARCH-015 · ARCH-018 · ARCH-019 | none | `.cursor/skills/admincn-customization/SKILL.md` | |
 | `feed-farm-trade` | local-domain-farm | local | keep | FFT module farm / gates | FFT domain work | FFT-MOD-* · FFT-MOD-008 | none | `.cursor/skills/feed-farm-trade/SKILL.md` | 2B–2D blocked until reopen |
-| `neon-tenancy-efficiency` | local-domain-farm | local | keep | Neon shared-schema tenancy + ARCH-023 IAM application | Tenancy / Neon ops | ARCH-023 · ARCH-025 · ARCH-027 | none | `.cursor/skills/neon-tenancy-efficiency/SKILL.md` | Wave 2 extend closed → keep; ARCH-027 two-state env |
+| `neon-tenancy-efficiency` | local-domain-farm | local | keep | Neon shared-schema tenancy + ARCH-023 IAM application | Tenancy / Neon ops | ARCH-023 · ARCH-025 · ARCH-027 | none | `.cursor/skills/neon-tenancy-efficiency/SKILL.md` | Wave 2 extend closed → keep; ARCH-027 `@afenda/env` + `.env.local` |
 | `update-mcp-config` | local-domain-farm | local | keep | Project MCP config updates | MCP wiring | AGENTS.md · `.vscode/mcp.json` | none | `.cursor/skills/update-mcp-config/SKILL.md` | |
 
 ### Vendored method library
@@ -100,7 +101,7 @@ Container folder `.cursor/skills/agent-skills/` has no top-level `SKILL.md` by d
 
 ## Planned (approved backlog — no SKILL.md until authoring mission)
 
-_None. `afenda-elite-module-readiness` authored 2026-07-14 → keep (L3)._
+_None. `afenda-elite-implementation-slices` authored 2026-07-14 → keep (L3)._
 
 ## Candidate gaps (not approved for authoring)
 
@@ -146,10 +147,10 @@ Scratch REQ/response inform discovery only. Prerequisites are controlled-authori
 |---------|------|---------|-------------------|
 | 2.1 | `neon-tenancy-efficiency` | Extended — ARCH-023 IAM + ARCH-027 env reconciliation | **keep** |
 | 2.2 | `afenda-elite-api-contract` | Extended — ARCH-029 §3.3 ten-stage pipeline | **keep** |
-| 2.3 | `afenda-elite-nextjs-best-practice` | Extended — Action mechanics + ARCH-027 two-state env | **keep** |
+| 2.3 | `afenda-elite-nextjs-best-practice` | Extended — Action mechanics + ARCH-027 env (`@afenda/env`) | **keep** |
 | 2.4 | `afenda-elite-backend-modules` | Extended — Target vs docs-first companions | **keep** |
 
-**P1 corrections (same wave):** ten-stage pipeline; retired compose guidance; companions no longer claim deleted trees as disk SSOT; FFT MOD/command sheets reconciled to ARCH-027 two-state; `afenda-elite-module-readiness` authored → **keep**.
+**P1 corrections (same wave):** ten-stage pipeline; retired compose guidance; companions no longer claim deleted trees as disk SSOT; FFT MOD/command sheets reconciled to ARCH-027 (`@afenda/env`); `afenda-elite-module-readiness` authored → **keep**.
 
 ### RBAC absorption note
 

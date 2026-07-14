@@ -116,7 +116,7 @@ Validator exclusions: external HTTP availability and code-to-document runtime dr
 | Tenancy model | One Neon project, hard `organization_id = $org` predicates | Current / Living | Decision Living in [ARCH-023](ARCH-023-multi-tenancy.md); app predicates and tenancy scripts **not** on disk (gated) | [ARCH-023](ARCH-023-multi-tenancy.md), [RB-001](../runbooks/RB-001-multi-org-ops.md) | No multi-database isolation; production pooler required. Do not restore Collapse tenancy scripts. |
 | Identity | Neon Auth (+ `@neondatabase/auth-ui`) | Current / Living; `@afenda/auth` wrapper is Target | Manifest dependencies; app wiring not verifiable | [ARCH-023](ARCH-023-multi-tenancy.md), [ARCH-026](ARCH-026-auth-session.md) | No Auth.js / Clerk / Supabase Auth. |
 | Target ORM and transport | Drizzle ORM, Drizzle Kit, `@neondatabase/serverless` | Target | Documented Target; packages absent | [ARCH-025](ARCH-025-data-layer.md) | Schema-first; tenant reads via approved org-scoped helper (`withOrg` Target). |
-| Environment (forward) | `@t3-oss/env-nextjs`, Zod, `@afenda/env`, native `.env.local` after S4.1 | Target | Documented Target; package absent | [ARCH-027](ARCH-027-env-model.md), [AGENTS.md](../../AGENTS.md) | Sole forward env SSOT. **Removed from this catalogue as Current ops:** Collapse-era `lib/env/`, runnable `env:compose` / `env:guard` (gated; forbidden to recover). |
+| Environment | `@t3-oss/env-nextjs`, Zod, `@afenda/env`, `.env.local` | Target (S4.1 shipped) | `packages/env` present; compose retired | [ARCH-027](ARCH-027-env-model.md), [AGENTS.md](../../AGENTS.md) | Sole env SSOT. Collapse `lib/env` / `env:compose` / `env:guard` banned to recover. |
 
 ## 3.6 Contracts and API tooling
 

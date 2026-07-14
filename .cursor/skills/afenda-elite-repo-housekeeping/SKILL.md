@@ -52,7 +52,7 @@ If the user asks to delete files directly → redirect to `/afenda-elite-monorep
 - Touch `_reference/**` or archive evidence trees  
 - Slice would delete >10 files (split Slice D commands)  
 - `registry-drift` / `catalog-drift` / `skill-catalog-drift` handled as delete instead of **align**  
-- Secrets / `env.secret` / docs-project env deny-list paths  
+- Secrets / `.env.local` / docs-project env deny-list paths  
 - Hand-editing generated glossary farms  
 
 **Never:** invent Knip `"turbo": true` in knip config (Knip 6 rejects it) — turbo tasks only.

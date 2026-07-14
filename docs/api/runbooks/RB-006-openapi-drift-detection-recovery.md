@@ -42,7 +42,7 @@ This procedure does not redefine OpenAPI governance ([OPEN-001](../OPEN-001-open
 
 ## 2.3 Preconditions / access
 
-- Repo checkout with composed env (`pnpm env:compose`) when handlers need DB
+- Repo checkout with `.env.local` (via `@afenda/env`) when handlers need DB
 - Ability to run Node scripts and commit regenerated YAML
 - Read access to Living contracts under `docs/api/`
 

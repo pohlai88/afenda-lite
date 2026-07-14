@@ -57,7 +57,7 @@ pnpm check:fft-ui-registry
 node scripts/gate-7-production-smoke.mjs
 ```
 
-Env: ARCH-027 two-state — docs-first/pre-S4.1 no compose / no `.env.local`; Target post-S4.1 `@afenda/env` + `.env.local` before E2E when the app exists. Identities: [FFT-MOD-008](FFT-MOD-008-ops-runtime.md) — do not conflate admin with sales allowlist.
+Env: ARCH-027 — `@afenda/env` + `.env.local` (compose retired). Ensure `.env.local` before E2E when the app exists. Identities: [FFT-MOD-008](FFT-MOD-008-ops-runtime.md) — do not conflate admin with sales allowlist.
 
 ## 3.2 Residue guards
 
@@ -91,7 +91,7 @@ Schema authority: [MOD-002](../MOD-002-modules-index.md) §3.7. Parser-enforced;
 | FFT-AC-002-01 | FFT-MOD-002 | Enterprise Core | CORE-PROCESS | Core | Enabled | BLOCKED | `pnpm test:unit -- modules/fft/domain/trade` · `pnpm test:e2e:journey` | 764287d | 2026-07-14 | Domain/journey runners absent at HEAD |
 | FFT-AC-002-02 | FFT-MOD-002 | Enterprise Core | CORE-PROCESS | Core | Enabled | BLOCKED | tree check `app/fft` · `features/fft` · `modules/fft` | 764287d | 2026-07-14 | Ownership paths absent at HEAD (`Test-Path` false for all three) |
 | FFT-AC-003-01 | FFT-MOD-003 | Enterprise Core | CORE-PLATFORM | Core | Enabled | BLOCKED | `pnpm test:unit -- modules/fft` | 764287d | 2026-07-14 | Runtime unit suite cannot load (`testing/vitest.config.ts` unresolved) |
-| FFT-AC-003-02 | FFT-MOD-003 | Enterprise Core | CORE-PLATFORM | Core | Enabled | BLOCKED | ARCH-027 two-state flag/manifest cross-check vs Target `@afenda/env` module accessors | 764287d | 2026-07-14 | Docs-first: product env accessors / Target tree absent; cannot prove Living flag↔runtime alignment end-to-end (compose retired — do not use `env:compose` as evidence command) |
+| FFT-AC-003-02 | FFT-MOD-003 | Enterprise Core | CORE-PLATFORM | Core | Enabled | BLOCKED | ARCH-027 `@afenda/env` flag keys vs runtime accessors on product tree | 764287d | 2026-07-14 | `@afenda/env` package present; full FFT product accessors still absent until S7.x domain wire — re-evidence when FFT surfaces mount (compose remains retired) |
 | FFT-AC-003-03 | FFT-MOD-003 | Enterprise Core | CORE-PLATFORM | Conditional | Disabled | NOT EVIDENCED | Living flag table `FFT_ERP_SYNC_ENABLED=false` (FFT-MOD-003) | 764287d | 2026-07-14 | Flag off alone is not fail-closed runtime evidence without product gate tests |
 | FFT-AC-004-01 | FFT-MOD-004 | Enterprise Core | CORE-DATA | Core | Enabled | BLOCKED | `pnpm test:unit -- modules/fft` · tenancy unit paths | 764287d | 2026-07-14 | Hard-tenancy tests not executable; `modules/fft` / `db` absent at HEAD |
 | FFT-AC-004-02 | FFT-MOD-004 | Enterprise Core | CORE-DATA | Core | Enabled | BLOCKED | `pnpm test:unit -- modules/fft/domain/trade` | 764287d | 2026-07-14 | Concurrency/transaction tests not executable at HEAD |

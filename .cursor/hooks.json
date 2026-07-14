@@ -7,6 +7,12 @@
         "matcher": "\\bgit\\b",
         "failClosed": true,
         "timeout": 15
+      },
+      {
+        "command": "node .cursor/hooks/no-drizzle-baseline-migrate.mjs",
+        "matcher": "\\bdb:migrate\\b|drizzle-kit\\s+migrate",
+        "failClosed": true,
+        "timeout": 15
       }
     ],
     "preToolUse": [

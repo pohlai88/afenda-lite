@@ -4,7 +4,7 @@
 |-------|-------|
 | ID | ARCH-025 |
 | Category | Architecture |
-| Version | 1.2.2 |
+| Version | 1.2.4 |
 | Status | Target |
 | Control State | Closed |
 | Owner | Backend |
@@ -36,7 +36,7 @@ All product data lives in Neon Postgres. The data layer is owned by `@afenda/db`
 
 **Constraints that must not be broken:**
 
-- Every tenant table includes `organization_id … NOT NULL` matching **shipped migrations** ([ARCH-023](ARCH-023-multi-tenancy.md) — uuid in current Neon migrations)
+- Every tenant table includes `organization_id … NOT NULL` matching **shipped migrations** ([ARCH-023](ARCH-023-multi-tenancy.md) — `text` on `br-tiny-hill-ao82jp6f` / Neon Auth org ids)
 - Tenant reads go through `withOrg(orgId)` — unscoped `db.select()` on tenant tables forbidden in app code
 - Every schema change ships a Drizzle migration — no ad-hoc DDL in production
 - Only `@afenda/db` imports `drizzle-orm` / `@neondatabase/serverless`
@@ -73,7 +73,7 @@ packages/db/src/schema/
                        fft_role, fft_role_assignment (+ fft.access entry)
 ```
 
-Every tenant table includes `organizationId` mapped to `organization_id` **NOT NULL**, with column type matching shipped migrations (uuid today per ARCH-023). Do not invent `declarations` / `fft_orders` table names that are not on the Living root inventory.
+Every tenant table includes `organizationId` mapped to `organization_id` **NOT NULL**, with column type matching shipped migrations (`text` today per live introspect / ARCH-023). Do not invent `declarations` / `fft_orders` table names that are not on the Living root inventory.
 
 ### Client
 
@@ -113,9 +113,8 @@ This is the **only** authorised path to tenant-scoped reads (Target packaging of
 1. Edit schema file (packages/db/src/schema/*.ts)
 2. pnpm --filter @afenda/db db:generate
    → drizzle-kit generate → writes drizzle/<timestamp>_<name>.sql
-3. Review generated SQL
-4. pnpm --filter @afenda/db db:migrate
-   → drizzle-kit migrate → applies to DATABASE_URL
+3. Review generated SQL — never treat 0000_living-roots-baseline.sql as apply-to-live
+4. Forward migrates only (see Operational ban) — guarded db:migrate; not the baseline CREATE
 5. Commit schema file + migration file together
 ```
 
@@ -162,10 +161,21 @@ Writes use `db` directly (not `withOrg`, which is select-only). The `organizatio
 ## Operational considerations
 
 - **Generate:** `pnpm --filter @afenda/db db:generate` after schema change.
-- **Migrate:** `pnpm --filter @afenda/db db:migrate` to apply to `DATABASE_URL`.
-- **Check:** `pnpm --filter @afenda/db db:check` verifies local schema matches migration history.
+- **Check:** `pnpm --filter @afenda/db db:check` verifies local migration journal consistency.
 - **Introspect:** `pnpm --filter @afenda/db db:introspect` pulls current DB schema as Drizzle types (for cutover audit — reconcile to Living roots before committing as source of truth).
 - Production branch: `br-tiny-hill-ao82jp6f`. PITR 7 days.
+
+### Ban — `0000_living-roots-baseline` migrate
+
+**`packages/db/drizzle/0000_living-roots-baseline.sql` is a journal baseline for forward diffs.** Applying it with `db:migrate` on `br-tiny-hill-ao82jp6f` would try `CREATE` on existing tables — **do not.**
+
+| Control | Path |
+|---------|------|
+| Package guard | `packages/db/scripts/db-migrate-guard.mjs` (wired as `db:migrate`) |
+| Cursor hook | `.cursor/hooks/no-drizzle-baseline-migrate.mjs` |
+| Slice evidence | [ARCH-028](ARCH-028-implementation-slices.md) S2.2 Operational ban |
+
+Default: `db:migrate` fails closed. Override `AFENDA_ALLOW_DB_MIGRATE=1` is only for a later **non-baseline** forward migration; the guard still refuses when `0000_…` is the sole SQL file.
 
 ## Known limits / future changes
 
@@ -176,6 +186,8 @@ Writes use `db` directly (not `withOrg`, which is select-only). The `organizatio
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.2.4 | 2026-07-14 | Operational ban: do not `db:migrate` `0000_living-roots-baseline` onto live Neon; package guard + Cursor hook. |
+| 1.2.3 | 2026-07-14 | Reconcile `organization_id` column type to live `text` (Neon Auth org ids) after S2.1 introspect. |
 | 1.2.2 | 2026-07-14 | Bounded reopen: package-manager cutover — document `pnpm` / `pnpm exec` in place of `npm run` / `npx` (repo SSOT `packageManager` + lockfile). |
 | 1.2.1 | 2026-07-14 | Home flattened to docs/architecture/ (trunks removed; pack reading order in README). |
 | 1.2.0 | 2026-07-14 | Integrity remediation: schema inventory and `organization_id` type defer to ARCH-023 Living roots; Change Log restored; read/write examples use `surveys`. |

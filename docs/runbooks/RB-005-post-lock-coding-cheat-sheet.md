@@ -47,9 +47,8 @@ Print or pin this. One phase per turn. Fail closed on red checks.
 # Name ONE phase — then run:
 # (phase table below · closed scope: deprecation register — Closed product phases)
 cd C:\JackProject\afenda-bolt\client-declaration-portal
-pnpm env:neon-production
-pnpm env:compose
-pnpm env:guard
+# Ensure .env.local has production Neon Auth + pooler DATABASE_URL
+pnpm validate:neon-env
 ```
 
 | Phase ID | When |
@@ -93,10 +92,9 @@ pnpm test:e2e:journey -- e2e/tenancy-isolation.spec.ts
 Full ladder: [neon-tenancy-efficiency/reference.md](../../.cursor/skills/neon-tenancy-efficiency/reference.md)
 
 ```powershell
-# Quick pack
-pnpm env:compose
-pnpm validate:env-sync
-pnpm verify:vercel-db
+# Quick pack (Target env — ARCH-027 / S4.1+)
+pnpm validate:neon-env
+pnpm audit:vercel
 pnpm audit:tenancy-nulls
 pnpm check:tenancy-residue
 pnpm audit:neon-auth-production
@@ -111,9 +109,9 @@ Do **not** raise CU or invent `FFT_ERP_*` to green checks (§0 **R7**).
 # SELECT id, name, slug FROM neon_auth.organization ORDER BY "createdAt";
 
 pnpm audit:tenancy-nulls
-node --env-file=.env scripts/backfill-fft-access.mjs --dry-run --organization-id=<auth-org-uuid>
+node --env-file=.env.local scripts/backfill-fft-access.mjs --dry-run --organization-id=<auth-org-uuid>
 # live write only when dry-run shows work:
-node --env-file=.env scripts/backfill-fft-access.mjs --organization-id=<auth-org-uuid>
+node --env-file=.env.local scripts/backfill-fft-access.mjs --organization-id=<auth-org-uuid>
 ```
 
 E2E allowlist org (D8): `PORTAL_ORGANIZATION_ID` or `E2E_ORGANIZATION_ID` → else sole membership → fail if multi-org.
@@ -129,7 +127,7 @@ E2E_ORGANIZATION_ID=4587e4c8-8119-4761-91ce-b874d3493aad
 SHARED_ADMIN_EMAIL=afenda@admin.com
 ```
 
-Set in `env.config` / `env.secret` → `pnpm env:compose`. Slug must match live `neon_auth.organization` (`afenda-lite`).
+Set in `.env.local`. Schema: `packages/env/src/web.ts`. Slug must match live `neon_auth.organization` (`afenda-lite`).
 
 ## 3.5 Neon prod card (do not reinvent)
 
@@ -146,9 +144,8 @@ Set in `env.config` / `env.secret` → `pnpm env:compose`. Slug must match live 
 Detail: [RB-001](./RB-001-multi-org-ops.md)
 
 ```powershell
-# Avoid day-to-day neonctl link (rewrites .neon / pollutes .env)
-pnpm env:neon-production
-pnpm env:compose
+# Avoid day-to-day neonctl link (rewrites .neon / pollutes local env)
+pnpm validate:neon-env
 ```
 
 ## 3.6 Rejected / deferred flash card

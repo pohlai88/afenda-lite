@@ -4,7 +4,7 @@
 |-------|-------|
 | ID | ARCH-023 |
 | Category | Architecture |
-| Version | 3.1.3 |
+| Version | 3.1.4 |
 | Status | Living |
 | Control State | Closed |
 | Owner | Platform |
@@ -167,7 +167,7 @@ type Session = {
 
 ### Schema
 
-Every tenant-root table includes `organization_id … NOT NULL` (uuid in shipped migrations). CI: `pnpm audit:tenancy-nulls`.
+Every tenant-root table includes `organization_id … NOT NULL`. **Shipped / live type on `br-tiny-hill-ao82jp6f`:** `text` (Neon Auth organization ids) — reconciled 2026-07-14; do not force uuid in Drizzle until a controlled migration changes the column. CI: `pnpm audit:tenancy-nulls`.
 
 **Tenant roots (after migration `027`):**
 
@@ -332,6 +332,7 @@ pnpm backfill:fft-access -- --organization-id=<org-uuid>
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 3.1.4 | 2026-07-14 | Reconcile tenant-root `organization_id` type to live `text` after Neon introspect (S2.1). |
 | 3.1.3 | 2026-07-14 | Hard-delete ARCH-003 archive stub; supersession points at DOC-002 register-only. |
 | 3.1.2 | 2026-07-14 | Bounded reopen: package-manager cutover — document `pnpm` / `pnpm exec` (repo SSOT `packageManager` + `pnpm-lock.yaml`). |
 | 3.1.1 | 2026-07-14 | Home flattened to docs/architecture/ (trunks removed; pack reading order in README). |

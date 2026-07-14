@@ -85,7 +85,7 @@ AUTH TENANT: slug afenda-lite · id 4587e4c8-8119-4761-91ce-b874d3493aad
 OPERATOR: SHARED_ADMIN_EMAIL=afenda@admin.com (secret via approved env surface — see ARCH-027)
 ANTI-CLAIM: not multi-DB / not project-per-tenant / not RLS on BFF path
 RETIRED: iam-check Auth slug · admin@iam-check.com · @iam-check.com e2e junk (purged)
-ENV: ARCH-027 two-state — no compose / no `.env.local` before S4.1; `@afenda/env` + `.env.local` after S4.1
+ENV: ARCH-027 — `@afenda/env` + `.env.local` (compose retired)
 ```
 
 Do **not** flood with FFT phase docs or portal-atmosphere rules unless the user reopened that scope.
@@ -94,8 +94,7 @@ Do **not** flood with FFT phase docs or portal-atmosphere rules unless the user 
 
 | State | Instruction |
 |-------|-------------|
-| **Docs-first / pre-S4.1** | Compose/`env:guard`/`dev`/`audit:tenancy-*` ladders are **gated or absent** ([ARCH-028](../../../docs/architecture/ARCH-028-implementation-slices.md)). Do **not** recover Collapse compose scripts or `lib/env/`. Do **not** create `.env.local` or run `vercel env pull`. Prefer Neon MCP / Console / `validate:neon-env` when available. Historical A–E ladder results (2026-07-12) are evidence history — not a live compose mandate. |
-| **Target post-S4.1** | `@afenda/env` + `.env.local` only; no `env:compose`. Pooler/`DATABASE_URL` checks use Target tooling. |
+| **This checkout (S4.1+)** | `@afenda/env` + `.env.local` only; no `env:compose`. Prefer `validate:neon-env` / Neon MCP / Console. Tenancy ladders that still gate Collapse scripts → report `BLOCKED`, do not recover. |
 
 ## Rules of engagement
 
@@ -105,7 +104,7 @@ Do **not** flood with FFT phase docs or portal-atmosphere rules unless the user 
 4. Do not propose Neon RLS, Data API tenant tables, or project-per-tenant (D5) as a performance fix.
 5. Neon Console autoscaling / scale-to-zero / protected branch are operator-owned — verify live; do not invent git-tracked CU numbers.
 6. Auth identity SSOT is **afenda-lite** / `afenda@admin.com` — do not reintroduce `iam-check` slug or `admin@iam-check.com`.
-7. Avoid day-to-day `neonctl link` (rewrites `.neon` / can pollute env files). Do **not** prescribe `env:compose` on this docs-first checkout.
+7. Avoid day-to-day `neonctl link` (rewrites `.neon` / can pollute env files). Do **not** prescribe `env:compose` (retired).
 
 ## Workflow
 
@@ -126,7 +125,7 @@ Progress:
 
 ### Step 0 — Preconditions
 
-Docs-first: confirm branch/project IDs via Neon MCP/`validate:neon-env` if present. Do **not** run `env:compose` / `env:guard` as Living instructions.
+Confirm branch/project IDs via Neon MCP / `pnpm validate:neon-env`. Do **not** run `env:compose` / `env:guard` (retired).
 
 ### Step 1 — Config / pooler drift
 
@@ -162,7 +161,7 @@ Full one-liner set: [reference.md](reference.md#weekly-anti-drift-pack).
 - Enable `PORTAL_ORG_SWITCHER_ENABLED` on Vercel without multi-membership + rollback
 - Mix this lane with FFT flag promotion or portal atmosphere work
 - Reintroduce `iam-check` Auth slug / `admin@iam-check.com` / `@iam-check.com` fixture emails
-- Run `neonctl link` as a routine env fix, or prescribe `env:compose` / `.env.local` on this docs-first checkout (ARCH-027)
+- Run `neonctl link` as a routine env fix, or restore `env:compose` / `env.config` (ARCH-027 — retired)
 
 ## Related
 

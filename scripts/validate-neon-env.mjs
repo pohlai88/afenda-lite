@@ -1,15 +1,14 @@
 /**
- * Validate Neon env composition and API access for afenda-lite.
+ * Validate Neon env for afenda-lite against `.env.local` (ARCH-027 / S4.1).
  *
  * Usage: pnpm validate:neon-env
  */
 import { readFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
-import { loadComposedEnv, getEnvValue } from "./lib/env-files.mjs";
+import { getEnvValue, loadLocalEnv } from "./lib/env-files.mjs";
 
-const env = loadComposedEnv();
-// Prefer composed files over shell exports — stale NEON_BRANCH_ID in the
-// process environment must not override env.config.
+const env = loadLocalEnv();
+// Prefer `.env.local` over shell exports — stale NEON_BRANCH_ID must not win.
 const apiKey = env.NEON_API_KEY || getEnvValue("NEON_API_KEY", env);
 const orgId = env.NEON_ORG_ID || getEnvValue("NEON_ORG_ID", env);
 const projectId = env.NEON_PROJECT_ID || getEnvValue("NEON_PROJECT_ID", env);
@@ -45,14 +44,14 @@ console.log("=== Neon env validation ===\n");
 const PRODUCTION_BRANCH_ID = "br-tiny-hill-ao82jp6f";
 record(
   check(
-    "env.config composition",
+    ".env.local Neon Cloud ids",
     orgId === "org-fragrant-lake-90358173" &&
       projectId === "young-hat-54755363" &&
       Boolean(branchId),
     `org=${orgId}, project=${projectId}, branch=${branchId}` +
       (branchId === PRODUCTION_BRANCH_ID
         ? " (production — single branch policy)"
-        : " (expected production only — run pnpm env:neon-production)"),
+        : " (expected production branch br-tiny-hill-ao82jp6f)"),
   ),
 );
 
@@ -62,7 +61,7 @@ record(
     neonFile.orgId === orgId &&
       neonFile.projectId === projectId &&
       neonFile.branchId === branchId,
-    `.neon matches env.config`,
+    `.neon matches .env.local`,
   ),
 );
 
@@ -70,7 +69,7 @@ record(
   check(
     "NEON_API_KEY present",
     Boolean(apiKey?.startsWith("napi_")),
-    apiKey ? `key prefix ${apiKey.slice(0, 14)}…` : "missing in env.secret",
+    apiKey ? `key prefix ${apiKey.slice(0, 14)}…` : "missing in .env.local",
   ),
 );
 
