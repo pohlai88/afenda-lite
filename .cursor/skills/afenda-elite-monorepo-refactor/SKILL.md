@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # Afenda Elite — Monorepo Refactor
 
-Borrowed from Xerp `afenda-monorepo-refactor` (Phase 0 contract · audit/plan/execute/stabilize · Slices A–E). **Elite-adapted:** `@repo/*` · Day-1 `apps/app` · `apps/api` · `apps/docs` · no PAS/Storybook/architecture-authority package until Elite owns one.
+Local Elite monorepo refactor: Phase 0 contract · audit/plan/execute/stabilize · Slices A–E. Targets `@repo/*` · Target apps when present · no PAS/Storybook/architecture-authority package until Elite owns one.
 
 **Announce:** "I'm using afenda-elite-monorepo-refactor — stating refactor contract before edits."
 
@@ -23,7 +23,7 @@ LANE: Normalize (structure) or Fix (single bug) — one lane; housekeeping remov
 | Phase | Delegate to |
 |-------|-------------|
 | Dead-code discovery | `/afenda-elite-repo-housekeeping` |
-| Package DAG / new package checklist | `afenda-elite-monorepo` (planned) |
+| Package DAG / new package checklist | [ARCH-024](../../../docs/architecture/ARCH-024-package-boundaries.md) · [ARCH-028](../../../docs/architecture/ARCH-028-implementation-slices.md) |
 | Engineering method | `using-agent-skills` → incremental-implementation |
 | Simplify after move | `code-simplification` |
 | Compulsory bans | `deprecation-and-migration` |
@@ -166,4 +166,4 @@ Full matrix: [reference.md](reference.md).
 ## Related
 
 - [afenda-elite-repo-housekeeping](../afenda-elite-repo-housekeeping/SKILL.md)  
-- Xerp provenance: `afenda-Xerp/.cursor/skills/afenda-monorepo-refactor/`  
+- Skill catalog: [using-afenda-elite-skills/catalog.md](../using-afenda-elite-skills/catalog.md)  

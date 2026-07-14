@@ -14,21 +14,23 @@
 
 **Fail closed:** if any step exits non-zero, stop. Do not raise compute CU or ship until that step is green.
 
+**Env (ARCH-027 two-state):** On this **docs-first** checkout, Collapse `env:compose` / `env:guard` / product e2e ladders are **gated or absent** — do not recover them. Do **not** create `.env.local` or run `vercel env pull` before S4.1. After Target S4.1: `@afenda/env` + `.env.local` only. Blocks A/E/weekly that mention compose are **historical evidence (closed 2026-07-12)** plus Target-gated replay — not Living compose mandates.
+
 ---
 
 ## Purpose
 
-Run the full Afenda-Lite Neon multi-tenant best-practice ladder: env alignment → pooler → tenancy integrity → SQL health → compute posture → auth → isolation proof.
+Run the full Afenda-Lite Neon multi-tenant best-practice ladder when tooling exists: env alignment → pooler → tenancy integrity → SQL health → compute posture → auth → isolation proof. On docs-first, prefer Console + Neon MCP + available non-gated scripts; mark gated steps `BLOCKED`.
 
 ---
 
 ## Preconditions / access
 
 - Repo root: `C:\JackProject\afenda-bolt\client-declaration-portal`
-- `env.config` + `env.secret` present (gitignored)
 - Neon Console access for compute / protected branch / scale-to-zero
 - Optional: `neonctl` auth for read-only inspect
-- Optional: Playwright deps for isolation e2e (`npx playwright install` once)
+- Docs-first: human `env.config` / `env.secret` (if present) are **inventory notes only** — not a live compose pipeline
+- Target post-S4.1: `.env.local` via approved init; product tree under `apps/web`
 
 ```powershell
 cd C:\JackProject\afenda-bolt\client-declaration-portal
@@ -52,65 +54,51 @@ cd C:\JackProject\afenda-bolt\client-declaration-portal
 
 ---
 
-## A — Full npm ladder (copy entire block)
+## A — Full npm ladder (historical closed 2026-07-12 · Target-gated replay)
 
-Stop on first failure.
+**Docs-first:** do **not** run compose/`env:guard` as Living instructions. Prefer `validate:neon-env` (if present), `audit:vercel` (key names), Neon Console pooler check, and MCP auth audits. Report gated steps as `BLOCKED`.
+
+**Target post-S4.1 replay** (when product tooling exists — no `env:compose`):
 
 ```powershell
-# A0 — Preconditions
 cd C:\JackProject\afenda-bolt\client-declaration-portal
-npm run env:neon-production
-npm run env:guard
-npm run validate:neon-env
+# A0 — Preconditions (@afenda/env + .env.local already valid)
+pnpm validate:neon-env   # or successor Target script
 
-# A1 — Config / pooler / Vercel key-name drift
-npm run env:compose
-npm run check:env-manifest-drift
-npm run validate:env-sync
-npm run verify:vercel-db
-npm run audit:vercel
+# A1 — Config / pooler / Vercel key-name drift (no compose)
+pnpm audit:vercel
+pnpm verify:vercel-db    # when present — DATABASE_URL must contain -pooler
 
-# A2 — Tenancy integrity (shared-schema contract)
-npm run audit:tenancy-nulls
-npm run check:tenancy-residue
-npm run check:db-schema
+# A2 — Tenancy integrity
+pnpm audit:tenancy-nulls
+pnpm check:tenancy-residue
+pnpm check:db-schema
 
 # A3 — Neon Auth production
-npm run sync:neon-auth-manifest
-npm run audit:neon-auth-production
+pnpm sync:neon-auth-manifest
+pnpm audit:neon-auth-production
 
-# A4 — Isolation proof (M3)
-npm run test:e2e:journey -- e2e/tenancy-isolation.spec.ts
-
-# A5 — Done when all above exit 0
-Write-Host "A-ladder PASS — continue to SQL pack B and Console pack C"
+# A4 — Isolation proof (M3) — requires Target app
+pnpm test:e2e:journey -- e2e/tenancy-isolation.spec.ts
 ```
 
 ### Pass criteria (A)
 
 | Step | Pass means |
 |------|------------|
-| `env:guard` | No `.env.local` override |
+| Docs-first pre-S4.1 | No `.env.local` created; no compose recovered |
+| Target post-S4.1 | `@afenda/env` boot OK; `.env.local` only local runtime file |
 | `verify:vercel-db` | `DATABASE_URL` contains `-pooler` |
-| `validate:env-sync` | Canonical keys green; `FFT_ERP_VENDOR` / `FFT_ERP_BASE_URL` may be unset (`syncOptional`) |
-| `audit:tenancy-nulls` | Zero nulls on eight hard tenant roots |
+| `audit:tenancy-nulls` | Zero nulls on eight hard tenant roots (when script exists) |
 | `check:tenancy-residue` | No soft `(NULL OR org)` residue |
-| Isolation e2e | Missing-UUID cases green |
+| Isolation e2e | Green only when Target app suite exists |
 
 **Do not** invent placeholder `FFT_ERP_VENDOR` / `FFT_ERP_BASE_URL` to green A1 — those are tenant/ops-owned when enabling FFT ERP sync (2D-3).
 
-### If `verify:vercel-db` fails (pooler)
+### If pooler check fails
 
-1. In Neon Console → Connect → enable **Connection pooling** → copy pooled URL into `env.secret` as `DATABASE_URL`.
-2. Re-run:
-
-```powershell
-npm run env:compose
-npm run verify:vercel-db
-# Ship only when intentional:
-# npm run sync:vercel
-# vercel deploy --prod --yes
-```
+1. Neon Console → Connect → enable **Connection pooling** → set production `DATABASE_URL` to pooled URL via approved Vercel sync (not docs-first compose).
+2. Re-verify pooler; ship only when intentional.
 
 ---
 
@@ -220,11 +208,12 @@ npm run check:production:post-deploy
 
 ```powershell
 cd C:\JackProject\afenda-bolt\client-declaration-portal
-rg -n "FROM (surveys|client_|fft_)" modules --glob "*.ts"
-rg -n "organizationScopeSql|organization_id\s*=\s*\$" modules --glob "*.ts"
+# Target path when present — root modules/ is absent on docs-first (do not recover)
+rg -n "FROM (surveys|client_|fft_)" apps/web/modules modules --glob "*.ts" 2>$null
+rg -n "organizationScopeSql|organization_id\s*=\s*\$" apps/web/modules modules --glob "*.ts" 2>$null
 ```
 
-Every tenant-root read/write must use hard `organization_id = $org` (via `organizationScopeSql` or equivalent). Missing filter = critical stop.
+Every tenant-root read/write must use hard `organization_id = $org` (via `organizationScopeSql` or equivalent). Missing filter = critical stop. On docs-first with no product tree, treat this block as N/A / historical.
 
 **D closed 2026-07-12:** FFT RBAC `duplicateRole` / `ensureRoleAssignment` / `revokeRoleAssignment` / `setRoleActive` hard-scoped; closing-soon cron fans out per Auth org then scopes `fft_event`; `deleteClientProfileByUserId` org-scoped. Allowed unscoped: capability tokens (`slug`/`token`) and session `user_id` identity reads.
 
@@ -241,13 +230,14 @@ Auth tenant (product) — **not** Neon Cloud `NEON_ORG_ID`:
 ```
 
 ```powershell
-npm run env:compose
-node --env-file=.env scripts/backfill-fft-access.mjs --dry-run --organization-id=4587e4c8-8119-4761-91ce-b874d3493aad
+# Target / when backfill script exists — require explicit org; no docs-first compose
+# Use approved env file for the checkout state (post-S4.1: .env.local via @afenda/env)
+node scripts/backfill-fft-access.mjs --dry-run --organization-id=4587e4c8-8119-4761-91ce-b874d3493aad
 # live write only when dry-run shows wouldGrant > 0:
-node --env-file=.env scripts/backfill-fft-access.mjs --organization-id=4587e4c8-8119-4761-91ce-b874d3493aad
+node scripts/backfill-fft-access.mjs --organization-id=4587e4c8-8119-4761-91ce-b874d3493aad
 ```
 
-Or: `$env:PORTAL_ORGANIZATION_ID` already set in composed `.env` after `env:compose`.
+Or set `$env:PORTAL_ORGANIZATION_ID` explicitly in the shell — never rely on Collapse compose.
 
 ### E2 Migrations (use **direct** `DATABASE_URL`, not pooler)
 
@@ -268,20 +258,21 @@ npm run test:e2e:journey -- e2e/tenancy-isolation.spec.ts
 
 ---
 
-## Weekly anti-drift pack (A only)
+## Weekly anti-drift pack
+
+**Docs-first:** Console pooler + Neon MCP auth audit + SQL **B2 + B6**; skip gated product scripts (report `BLOCKED`).
+
+**Target (when scripts exist — no compose):**
 
 ```powershell
 cd C:\JackProject\afenda-bolt\client-declaration-portal
-npm run env:neon-production
-npm run env:guard
-npm run check:env-manifest-drift
-npm run verify:vercel-db
-npm run audit:vercel
-npm run audit:tenancy-nulls
-npm run check:tenancy-residue
-npm run check:db-schema
-npm run audit:neon-auth-production
-npm run test:e2e:journey -- e2e/tenancy-isolation.spec.ts
+pnpm audit:vercel
+pnpm verify:vercel-db
+pnpm audit:tenancy-nulls
+pnpm check:tenancy-residue
+pnpm check:db-schema
+pnpm audit:neon-auth-production
+pnpm test:e2e:journey -- e2e/tenancy-isolation.spec.ts
 ```
 
 Then re-run SQL **B2 + B6** in Neon SQL Editor.
@@ -292,7 +283,7 @@ Then re-run SQL **B2 + B6** in Neon SQL Editor.
 
 | Symptom | Action |
 |---------|--------|
-| Pooler check fails | Fix `DATABASE_URL` → recompose → re-verify; do not raise CU |
+| Pooler check fails | Fix production `DATABASE_URL` pooler via approved Vercel path → re-verify; do not raise CU; do not invent compose |
 | Null org on roots | Fix writers; `audit:tenancy-nulls`; never first-org stamp with multiple Auth orgs |
 | Isolation e2e red | Stop deploy; grep unscoped domain SQL (block D) |
 | Pool timeouts | Confirm `-pooler`; shorten transactions; only then raise max CU |
@@ -310,7 +301,7 @@ Rollback / recovery for org ops: [docs/runbooks/RB-001-multi-org-ops.md](../../.
 - Enable `PORTAL_ORG_SWITCHER_ENABLED` on Vercel without multi-membership + rollback
 - Mix this ladder with FFT flag promotion or portal atmosphere work
 - Reintroduce `iam-check` Auth slug / `admin@iam-check.com` / `@iam-check.com` fixture emails
-- Use `neonctl link` as a routine env fix (prefer `npm run env:neon-production` + `env:compose`)
+- Use `neonctl link` as a routine env fix, or prescribe `env:compose` / create `.env.local` on docs-first pre-S4.1 (ARCH-027)
 
 ---
 

@@ -1,6 +1,8 @@
 # Context boundaries
 
-**Authority:** [docs/architecture/ARCH-006-bounded-contexts.md](../../../docs/architecture/ARCH-006-bounded-contexts.md) · [docs/architecture/ARCH-007-ports-and-adapters.md](../../../docs/architecture/ARCH-007-ports-and-adapters.md)
+**Authority:** [ARCH-006](../../../docs/architecture/ARCH-006-bounded-contexts.md) · [ARCH-007](../../../docs/architecture/ARCH-007-ports-and-adapters.md) · [ARCH-028](../../../docs/architecture/ARCH-028-implementation-slices.md)
+
+Paths like `modules/<context>` are **logical / Target shape** (`apps/web/modules/…` when implemented). On this **docs-first** checkout, root `modules/` / `app/` / `features/` are **absent by design** — import bans still apply to future Target code; do not treat this file as current disk SSOT.
 
 ## Platform model
 
@@ -40,18 +42,20 @@ Compose at the **adapter** (page / Server Action / Route Handler) if a screen ne
 
 ## Naming
 
-| Prose | Code path |
-|-------|-----------|
-| Trade / Feed Farm Trade | `modules/fft/**`, `features/fft/fft-*.tsx`, `app/actions/fft.ts` |
-| Declarations | `modules/declarations/**` |
-| Identity | `modules/identity/**` |
-| Platform | `modules/platform/**` |
+| Prose | Logical path | Target path (when scaffolded) |
+|-------|--------------|-------------------------------|
+| Trade / Feed Farm Trade | `modules/fft/**`, `features/fft/…`, `app/actions/fft.ts` | under `apps/web/` |
+| Declarations | `modules/declarations/**` | under `apps/web/` |
+| Identity | `modules/identity/**` | under `apps/web/` |
+| Platform | `modules/platform/**` | under `apps/web/` |
 
-**Forbidden:** `modules/trade/`, `features/trade/` product UI, growing domain under `lib/`.
+**Forbidden:** `modules/trade/`, `features/trade/` product UI, growing domain under `lib/`, recovering Collapse roots.
 
 ## Checklist
 
-- [ ] New file assigned to exactly one context
+- [ ] New file assigned to exactly one ARCH-006 context
+- [ ] Paths written under Target `apps/web/…` when product tree exists
+- [ ] Docs-first: no claim that absent `modules/` / `app/` are implemented today
 - [ ] No Declarations ↔ Trade domain **or** schema imports
 - [ ] Shared Zod from Platform, not Declarations
 - [ ] Adapter-only composition when two contexts needed

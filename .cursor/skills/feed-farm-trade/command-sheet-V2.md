@@ -23,7 +23,8 @@ ACTIVATION: one named flag at a time · never bundle modules
 AUTH: requireFftPermission(code) only — never role display names
 WRITE RULE: flag false → server write fail-closed (UI hide alone = FAIL)
 FRONTEND: placeholder / unavailable while flag false
-ROLLBACK: flag=false → env:compose → sync:vercel (if prod) → redeploy → smoke
+ROLLBACK: flag=false → approved Vercel env path (ARCH-027; no docs-first compose) → redeploy → smoke
+HISTORICAL_COMPOSE: pre-Collapse env:compose → sync:vercel — not Living on this checkout
 CLOSED: 2D-3 vendor packs · invent flags/perms · FftShell · ui-registry.json agent edits ·
         mix P3 into P1/P2 PRs · customer ERP adapter without contract
 ```
@@ -293,10 +294,10 @@ FLAG: <one FFT_*>
 AUTHORIZATION: <paste approval naming FLAG + production>
 DO:
 1. Confirm P3_PROD_DECISION = GO and AUTHORIZATION is explicit (not "ship it" / "continue").
-2. Record current prod deploy + flag value → set only FLAG=true (env:compose → sync:vercel per RUNTIME).
+2. Record current prod deploy + flag value → set only FLAG=true via approved Vercel env path (ARCH-027; no docs-first env:compose).
 3. Redeploy production; run gate-register post-enable smoke.
 4. Verify: auth write · unauth deny · audit · P1 regression · no cross-module activation.
-5. On critical fail: immediate FLAG=false → sync → redeploy → rollback smoke.
+5. On critical fail: immediate FLAG=false → approved sync/redeploy → rollback smoke.
 6. Record AC-OPS-02 evidence. Do not start a second flag.
 OUT: ENABLED | ROLLED BACK | BLOCKED.
 ```

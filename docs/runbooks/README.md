@@ -29,6 +29,6 @@ Operator and agent procedures for Afenda-Lite **platform** ops. Architecture and
 
 1. Prefer named `RB-*` files — do not recreate slug-only aliases (`multi-org-ops.md`, `post-lock-coding-cheatsheet.md`).
 2. Do not reopen ARCH-023 Rejected (R*) / Deferred (D*) from a runbook without explicit user approval.
-3. Never document secret values; cite env **names** and `npm run` commands only.
+3. Never document secret values; cite env **names** and `pnpm` commands only.
 4. Do not reuse RB IDs already assigned to platform, API-pack, or module runbooks.
 5. Platform runbooks stay under `docs/runbooks/`; API-pack runbooks stay under `docs/api/runbooks/` (DOC-001 exception).

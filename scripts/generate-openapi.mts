@@ -366,7 +366,7 @@ const header = [
   "# GENERATED — do not hand-edit.",
   "# Source: scripts/generate-openapi.mts",
   "# Guide: docs/api/OPEN-001-openapi.md",
-  "# Regenerate: npm run openapi:generate",
+  "# Regenerate: pnpm openapi:generate",
   "",
 ].join("\n");
 

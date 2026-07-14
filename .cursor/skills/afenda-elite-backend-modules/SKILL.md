@@ -14,7 +14,7 @@ description: >-
 
 | Doc | Purpose |
 |-----|---------|
-| [module-tree.md](module-tree.md) | Exact `modules/*` L2 + Actions / API checklist |
+| [module-tree.md](module-tree.md) | Target / logical L2 inventory — not docs-first disk SSOT |
 | [context-boundaries.md](context-boundaries.md) | Trade ↛ Declarations, port isolation, narrow edges |
 | [adapter-map.md](adapter-map.md) | Action / Route Handler → module entrypoints |
 | [residue-inventory.md](residue-inventory.md) | Pass 2 + full runner absorb — `lib/` gone; runners under `features/` |
@@ -22,25 +22,50 @@ description: >-
 | [docs/architecture/](../../../docs/architecture/) | Architecture, ownership, conventions |
 | [docs/api/](../../../docs/api/) | Error shape, REST catalog, types |
 
+## Target tree + docs-first checkout
+
+| Surface | Authority |
+|---------|-------------|
+| Target physical home | `apps/web/modules/{platform,identity,declarations,fft}` ([ARCH-006](../../../docs/architecture/ARCH-006-bounded-contexts.md) · [ARCH-022](../../../docs/architecture/ARCH-022-system-overview.md)) |
+| This checkout | Often **docs-first** after Collapse — root `modules/` / `app/` may be **absent by design** ([ARCH-028](../../../docs/architecture/ARCH-028-implementation-slices.md)) |
+| Packages | Exactly the ARCH-024 named set under Target; no new `packages/*` or `apps/*` without a preceding ADR |
+| Contaminations ban | Do not recover wiped Collapse roots (`app/`, `modules/`, `features/`, `components-V2/`) from git |
+
+Logical Living shape in skill companions may still say `modules/*` — physical Target path is under `apps/web` after an explicit ARCH-028 implement request.
+
+### Bounded contexts (locked)
+
+Only **Platform · Identity · Declarations · Trade (`fft`)**. Inventing Sales/Purchasing/Inventory/Finance/Payments contexts (or `modules/trade/`) requires a controlled ADR first — scratch ERP requirements cannot authorize them.
+
+### AuthZ at module boundary
+
+Domain entrypoints that mutate or read tenant data take explicit `orgId` and rely on adapter-enforced permission codes ([ARCH-023](../../../docs/architecture/ARCH-023-multi-tenancy.md)). Modules must not:
+
+- infer org from ambient state;
+- authorize by Neon Auth role display names; or
+- import another context’s tables/schemas outside published ports.
+
+Adapter checklist → [`afenda-elite-api-contract`](../afenda-elite-api-contract/SKILL.md). Isolation ops → [`neon-tenancy-efficiency`](../neon-tenancy-efficiency/SKILL.md).
+
 ## Agent operating rules
 
 1. **Surface assumptions** if disk and this skill disagree — stop and ask.
-2. **Scope:** new domain/schema/env files go under `modules/<context>/`. Adapters stay in `app/actions` / `app/api`.
+2. **Scope:** new domain/schema/env files go under Target `apps/web/modules/<context>/` (or Living `modules/<context>/` only when that tree exists on disk). Adapters stay thin in App Router Actions / Route Handlers.
 3. **Simplicity:** one context per file; compose two contexts only at the adapter.
 4. **Verify** with the checklist below — “looks right” is not done.
-5. **Push back** on `lib/domain` recreation, RSC `fetch('/api')` for ordinary reads, or `modules/trade/`.
+5. **Push back** on `lib/domain` recreation, RSC `fetch('/api')` for ordinary reads, `modules/trade/`, or new bounded contexts without ADR.
 
 ## Hard rules
 
-1. **Modules are SSOT** — domain / Zod / env / Neon Auth live under `modules/{platform,identity,declarations,fft}`. Do not grow `lib/` as architecture.
-2. **Adapters stay thin** — `app/actions/*`, `app/api/*`, thin `app/**/page.tsx` / runners; no SQL in adapters.
+1. **Modules are SSOT (when product exists)** — domain / Zod / Neon Auth under Target `apps/web/modules/{platform,identity,declarations,fft}` (logical `modules/*`). Do not grow `lib/` as architecture. Docs-first: trees may be absent — do not recover Collapse roots.
+2. **Adapters stay thin** — Target `apps/web/app/actions/*`, `app/api/*`, thin pages / runners; no SQL in adapters.
 3. **Ports never import** `Request`, `next/headers`, or UI.
 4. **One context per new file** — compose two contexts only at the adapter.
-5. **Trade code path = `modules/fft`** — never create `modules/trade/`. Product files under `features/fft/fft-*.tsx` (not `trade-*`, not `features/trade/`).
-6. **Validate once at adapter** — product Zod in owning `modules/*/schemas`; **shared** primitives (`uuidSchema`, `emailSchema`, `passwordSchema`, `slugSchema`, `parseSchema`) from `@/modules/platform/schemas/common` only. Do **not** import shared Zod from Declarations into Trade/Identity. Email normalize: `@/modules/platform/normalize-email`.
-7. **Decision tree** — link [docs/architecture/ARCH-013-bff-and-data-flow.md](../../../docs/architecture/ARCH-013-bff-and-data-flow.md); do not paste a second copy.
+5. **Trade code path = `fft`** — never create `modules/trade/`. Product UI under `features/fft/…` on Target (not `trade-*`).
+6. **Validate once at adapter** — product Zod in owning context schemas; **shared** primitives from Platform `schemas/common` only. Do **not** import shared Zod from Declarations into Trade/Identity.
+7. **Decision tree** — [ARCH-013](../../../docs/architecture/ARCH-013-bff-and-data-flow.md); do not paste a second copy.
 8. **Contract** — errors / brands / REST live in `docs/api` + `/afenda-elite-api-contract`; this skill does not restate error tables.
-9. **Relocate + Pass 2 + full runner absorb are complete** — do not recreate `lib/`; product + playground runners live under `features/` ([residue-inventory.md](residue-inventory.md)).
+9. **Residue program** — do not recreate `lib/`; historical absorb targets are under Target `features/` ([residue-inventory.md](residue-inventory.md)) — not a claim they exist on docs-first disk today.
 
 ## Context cheat sheet
 
@@ -113,10 +138,12 @@ External/mobile REST?  → Route Handler per docs/api (contract-only until neede
 
 ## Verify backend modules
 
-- [ ] [module-tree.md](module-tree.md) matches `Get-ChildItem modules`
+- [ ] On Target checkout: [module-tree.md](module-tree.md) matches `apps/web/modules` (or Living `modules/` only if present on disk)
+- [ ] Docs-first checkout: absent product roots are expected — do not recover Collapse trees
+- [ ] No fifth bounded context / `modules/trade/` without ADR
 - [ ] `lib/` is absent (no `entry|pages|playground|domain|schemas|auth|copy|utils|format`)
-- [ ] New domain/schema file sits in exactly one context
-- [ ] Actions listed in [adapter-map.md](adapter-map.md) match `app/actions/`
+- [ ] New domain/schema file sits in exactly one context; tenant entrypoints take explicit `orgId`
+- [ ] Actions listed in [adapter-map.md](adapter-map.md) match on-disk Actions when present
 - [ ] Route Handlers match api-now (four trees only unless catalog updated)
 - [ ] No `from "@/modules/declarations` inside `modules/fft` (domain or schemas)
 - [ ] Shared Zod / `parseSchema` imported from `@/modules/platform/schemas/common` at Action edge

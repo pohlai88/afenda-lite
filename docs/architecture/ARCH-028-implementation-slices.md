@@ -4,7 +4,7 @@
 |-------|-------|
 | ID | ARCH-028 |
 | Category | Architecture |
-| Version | 1.4.1 |
+| Version | 1.4.3 |
 | Status | Target |
 | Control State | Closed |
 | Owner | Platform |
@@ -38,7 +38,7 @@ Gives implementers a complete, ordered checklist derived from ARCH-022…027 . A
 
 **Verify:** `pnpm install && turbo run build --dry=json`
 
-**Cutover note:** Existing `package-lock.json` / npm root is replaced in this slice. Prefer a dedicated PR for lockfile cutover.
+**Cutover note:** Root package manager is already pnpm (`pnpm-lock.yaml`, `packageManager` pin). S1.1 still lands Turbo + populated `apps/*` / `packages/*` workspace members.
 
 ---
 
@@ -258,7 +258,7 @@ Gives implementers a complete, ordered checklist derived from ARCH-022…027 . A
 | Former `GUIDE-007`…`GUIDE-014` | Deleted | Use ARCH-023/026 · FFT-MOD-008/010 |
 | `docs/modules/feed-farm-trade/` | Keep | Product / engine SSOT |
 | `docs/runbooks/RB-001`, `RB-005` | Keep | Ops |
-| `docs/architecture/ARCH-021` | **Archived** (`docs/architecture/archive/`) | Migration map closed; Target layout = ARCH-022 |
+| `docs/architecture/ARCH-021` | **Superseded** (DOC-002 register-only; stub removed) | Migration map closed; Target layout = ARCH-022 |
 | Turborepo ARCH-022…028 | Status Target → Living | This set becomes Living SSOT |
 | Living compose rules in `AGENTS.md` | Already updated in S4.1 | Must not contradict ARCH-027 |
 
@@ -271,7 +271,7 @@ Do **not** mass-delete in the scaffold PR. Retirement is a separate docs PR afte
 | Schema invented without Neon introspect | Prefer `drizzle-kit introspect` / live branch before first migrate |
 | Existing `.sql` does not map 1:1 to Drizzle | `drizzle-kit check` against `br-tiny-hill-ao82jp6f`; archive old SQL |
 | `neon()` HTTP vs former `pg` pool behaviour | Exercise `withOrg` against production branch before cutting over writes |
-| pnpm vs existing npm lockfile | Dedicated cutover step in S1.1 |
+| Workspace packages empty until implement | Root pnpm cutover done; S1.1 adds Turbo + `apps/web` / `packages/*` |
 | pnpm symlinks break Vercel | Corepack / `installCommand` override; set `ENABLE_EXPERIMENTAL_COREPACK=1` if needed |
 | Env ADR vs old compose scripts | Retire compose in the same change set as S4.1 ([ARCH-027](ARCH-027-env-model.md)) |
 | FFT phase gate violated by refactor commits | Refactor-only commits; no FFT domain logic changes without program reopen |
@@ -323,6 +323,8 @@ Living ARCH folder/route/adapter maps remain normative for **shape**. They are *
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.4.3 | 2026-07-14 | ARCH-021 disposition = Superseded DOC-002 register-only (archive stub removed). |
+| 1.4.2 | 2026-07-14 | Bounded reopen: package-manager cutover — document `pnpm` / `pnpm exec` in place of `npm run` / `npx` (repo SSOT `packageManager` + lockfile). |
 | 1.4.1 | 2026-07-14 | Home flattened to docs/architecture/ (trunks removed; pack reading order in README). |
 | 1.4.0 | 2026-07-14 | Anti-contamination lock: forbid recovering Collapse-era `app/`/`modules/`/`features/`/`components-V2`/ops scripts from git; Living maps = shape only; forward work = Target greenfield after explicit implement. |
 | 1.3.0 | 2026-07-14 | Integrity remediation: Change Log sync; fix ARCH-017 retirement mislabel; S2.1 acceptance aligns to ARCH-023; keep ARCH-029 Living. |

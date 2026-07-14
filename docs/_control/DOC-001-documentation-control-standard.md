@@ -4,12 +4,11 @@
 | ----------------- | ---------- |
 | **ID**            | DOC-001    |
 | **Category**      | Control    |
-| **Version**       | 2.6.0      |
+| **Version**       | 2.7.0      |
 | **Status**        | Living     |
 | **Control State** | Closed     |
 | **Owner**         | Platform   |
 | **Updated**       | 2026-07-14 |
-
 
 ---
 
@@ -292,20 +291,21 @@ Product-module documentation under `docs/modules/` shall additionally obey [MOD-
 | `docs/_control/`               | Documentation governance, template, and register                                |
 | `docs/architecture/`           | Flat home for Living/Target `ARCH-*` files (boundaries by ID + README packs, not sub-trunks) |
 | `docs/architecture/adr/`       | ADR documents when explicitly approved (not `decisions/`; not top-level `docs/adr/`) |
-| `docs/architecture/archive/`   | Superseded Architecture stubs only                                              |
 | `docs/api/`                    | API, REST, and OpenAPI interface contracts                                      |
 | `docs/runbooks/`               | Operational procedures                                                          |
 | `docs/guides/`                 | Internal guides                                                                 |
 | `docs/modules/`                | Module documentation and module-specific spines                                 |
 | `docs/scratch/`                | Non-authoritative drafts and temporary notes                                    |
 
-**Forbidden under `docs/architecture/`:** recreating trunk folders `backend/`, `frontend/`, `system/`, or `tech-stack/`. Pack reading order lives in `docs/architecture/README.md` only. Findability remains `{ID}-` search under `docs/`.
+**Retired / Superseded disposition:** IDs remain in DOC-002 (non-recyclable). Do **not** keep stub files under `docs/**/archive/` or restore Retired/Superseded bodies as Living. Authority after supersession is the successor Living/Target document plus the register row.
+
+**Forbidden under `docs/architecture/`:** recreating trunk folders `backend/`, `frontend/`, `system/`, or `tech-stack/`; recreating `archive/`. Pack reading order lives in `docs/architecture/README.md` only. Findability remains `{ID}-` search under `docs/`.
 
 API-pack implementation and verification guides may be co-located under `docs/api/guides/` when they are registered in DOC-002 and linked from the API pack entry. They remain Guide-category documents subordinate to the governing architecture and API contracts. This category-specific exception does not permit other guides to bypass `docs/guides/`.
 
 API-pack operational runbooks (OpenAPI drift, API incident response, API contract rollback, and future webhook replay) may be co-located under `docs/api/runbooks/` when they are registered in DOC-002 and linked from the API pack entry. They remain Runbook-category documents subordinate to ARCH-029 / OPEN-001 / Living API contracts. Platform runbooks (for example RB-001, RB-005) stay under `docs/runbooks/`. This exception does not permit other runbooks to bypass `docs/runbooks/`.
 
-`docs/engineering/` is retired and shall not be recreated. Its controlled content belongs under `docs/guides/` (or archive).
+`docs/engineering/` is retired and shall not be recreated. Living Guide content belongs under `docs/guides/` (or `docs/api/guides/` when the API co-location exception applies).
 
 ## 3.10 Golden Rule
 
@@ -334,6 +334,7 @@ Everything else belongs inside the controlled document.
 
 | Version | Date       | Summary                                                                                                                                                              |
 | ------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2.7.0   | 2026-07-14 | Remove `docs/**/archive/` stub homes; Retired/Superseded = DOC-002 register-only (IDs non-recyclable; no stub trees). |
 | 2.6.0   | 2026-07-14 | Flat `docs/architecture/` for ARCH files; forbid `backend/`/`frontend/`/`system/`/`tech-stack/` trunks; register `archive/` role. |
 | 2.5.0   | 2026-07-14 | ADR home = `docs/architecture/adr/` only; forbid `decision`/`decisions` directory names and top-level `docs/adr/`. |
 | 2.4.0   | 2026-07-14 | Named MOD-002 as the Module category standard for the fixed 10-MOD spine, AC ownership, evidence semantics, and Module Enterprise Readiness (lifecycle independent of readiness). |

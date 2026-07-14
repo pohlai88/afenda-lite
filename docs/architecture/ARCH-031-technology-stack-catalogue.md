@@ -4,7 +4,7 @@
 | ----------------- | ------------ |
 | **ID**            | ARCH-031     |
 | **Category**      | Architecture |
-| **Version**       | 1.1.1        |
+| **Version**       | 1.2.0        |
 | **Status**        | Living       |
 | **Control State** | Closed       |
 | **Owner**         | Platform     |
@@ -74,15 +74,15 @@ The full documentation-integrity baseline inspected **97/97 primary files**: 93 
 | Evidence group | Inspected evidence | Result |
 | -------------- | ------------------ | ------ |
 | Governed documentation | Entire `docs/` validator scope | Primary evidence for Living/Target decisions |
-| Runtime and dependency manifests | [`package.json`](../../package.json), `package-lock.json` | Dependency declarations present; most Collapse-era npm script bodies are **absent** and gate via [`collapse-script-unavailable.mjs`](../../scripts/collapse-script-unavailable.mjs) |
+| Runtime and dependency manifests | [`package.json`](../../package.json), [`pnpm-lock.yaml`](../../pnpm-lock.yaml), [`pnpm-workspace.yaml`](../../pnpm-workspace.yaml) | Dependency declarations present; most Collapse-era script bodies are **absent** and gate via [`collapse-script-unavailable.mjs`](../../scripts/collapse-script-unavailable.mjs) |
 | Framework configuration | [`next.config.ts`](../../next.config.ts), [`tsconfig.json`](../../tsconfig.json), [`postcss.config.mjs`](../../postcss.config.mjs) | Next.js, React Compiler, TypeScript, and Tailwind configuration present |
 | UI tooling | [`components.json`](../../components.json) | shadcn base-nova and Studio registries configured |
-| Hosting and CI | [`vercel.json`](../../vercel.json), [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) | Vercel `sin1`; GitHub Actions uses Node 24 and `npm ci` |
+| Hosting and CI | [`vercel.json`](../../vercel.json), [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) | Vercel `sin1`; GitHub Actions uses Node 24 and `pnpm install --frozen-lockfile` |
 | Quality and testing | [`biome.jsonc`](../../biome.jsonc), [`playwright.config.ts`](../../playwright.config.ts) | Tooling configuration present; test trees absent |
 | Contract / docs gates | [`OPEN-001-openapi.yaml`](../api/OPEN-001-openapi.yaml), [`generate-openapi.mts`](../../scripts/generate-openapi.mts), docs integrity scripts | Runnable on this docs-first checkout |
 | Product source presence | `app/`, `apps/`, `packages/`, `modules/`, `features/`, `components-V2/`, `testing/`, `e2e/`, `db/`, `lib/` | **Absent by design** (Collapse); do not recover — [ARCH-028](ARCH-028-implementation-slices.md) |
 
-Validator exclusions: external HTTP availability and code-to-document runtime drift. **npm script names are not evidence** that Collapse-era tooling still runs.
+Validator exclusions: external HTTP availability and code-to-document runtime drift. **Package script names are not evidence** that Collapse-era tooling still runs.
 
 ## 3.3 Runtime, application, workspace, and build
 
@@ -93,8 +93,8 @@ Validator exclusions: external HTTP availability and code-to-document runtime dr
 | Rendering and adapters | React Server Components, Server Actions, Route Handlers | Current / Living | Not verifiable in this checkout | [ARCH-013](ARCH-013-bff-and-data-flow.md), [API-001](../api/API-001-api-boundaries.md) | RSC reads domain directly; HTTP is reserved for named cases. |
 | Language and UI runtime | TypeScript 5, React 19 | Target pin with matching manifest | Configured — [`package.json`](../../package.json), [`tsconfig.json`](../../tsconfig.json) | [ARCH-022](ARCH-022-system-overview.md) | Strict TypeScript; versions remain manifest-owned. |
 | React optimization | React Compiler | Target-preferred and currently configured | Configured — [`next.config.ts`](../../next.config.ts) | [ARCH-028](ARCH-028-implementation-slices.md) | Preserve when the Target app is rebuilt. |
-| Docs-first package workflow | npm, `package-lock.json`, `npm ci` for remaining root tooling | Current / Living (docs checkout) | Configured — [`package.json`](../../package.json), [CI](../../.github/workflows/ci.yml) | [ARCH-028](ARCH-028-implementation-slices.md) | Root `packageManager: pnpm@…` foreshadows Target only — **not** a second Living lockfile authority until S1.1. |
-| Target workspace | Turborepo with pnpm workspaces and remote caching | Target | Documented Target; `turbo.json` and `pnpm-workspace.yaml` absent | [ARCH-022](ARCH-022-system-overview.md), [ARCH-024](ARCH-024-package-boundaries.md) | Cut over atomically; never run dual npm+pnpm authorities. |
+| Docs-first package workflow | pnpm (`pnpm-lock.yaml`), Corepack-pinned `packageManager`, `pnpm install --frozen-lockfile` | Current / Living (docs checkout) | Configured — [`package.json`](../../package.json), [`pnpm-workspace.yaml`](../../pnpm-workspace.yaml), [CI](../../.github/workflows/ci.yml) | [ARCH-028](ARCH-028-implementation-slices.md) | npm/yarn lockfiles gitignored; Target `apps/*` / `packages/*` remain empty until ARCH-028 implement. |
+| Target workspace | Turborepo with pnpm workspaces and remote caching | Target | Documented Target; `pnpm-workspace.yaml` present (empty `apps/*` / `packages/*`); `turbo.json` absent | [ARCH-022](ARCH-022-system-overview.md), [ARCH-024](ARCH-024-package-boundaries.md) | Sole package manager is pnpm; S1.1 adds Turbo + populated workspace members. |
 | Target package surface | Private `@afenda/{db,auth,env,ui,emails,config}` packages | Target | Documented Target; `apps/` and `packages/` absent | [ARCH-022](ARCH-022-system-overview.md), [ARCH-024](ARCH-024-package-boundaries.md) | `apps/web` remains the sole deployable. |
 
 ## 3.4 UI and design system
@@ -126,7 +126,7 @@ Validator exclusions: external HTTP availability and code-to-document runtime dr
 | Interface architecture | Shared ports adapted by Server Actions and Route Handlers | Current / Living | Not verifiable in this checkout | [ARCH-029](ARCH-029-interface-api-architecture.md), [API-001](../api/API-001-api-boundaries.md) | REST is additive and shares error/type vocabulary with Actions. |
 | Machine contract | OpenAPI 3.0.3 YAML | Current / Living for api-now | Source verified — [`OPEN-001-openapi.yaml`](../api/OPEN-001-openapi.yaml) | [OPEN-001](../api/OPEN-001-openapi.md) | Contract-only resources must not be presented as live endpoints. |
 | Schema-to-OAS bridge | `@asteasolutions/zod-to-openapi` 8.x | Current / Living tooling | Source verified — [`generate-openapi.mts`](../../scripts/generate-openapi.mts), [`package.json`](../../package.json) | [OPEN-001](../api/OPEN-001-openapi.md) | Generate from owning Zod schemas; do not hand-maintain the YAML as the durable source. |
-| OAS lint and validation | Stoplight Spectral, YAML, JSON Schema/Ajv utilities | Current tooling; Ajv utilities are manifest-only support | Configured / manifest only | [OPEN-001](../api/OPEN-001-openapi.md), [GUIDE-011](../api/guides/GUIDE-011-generating-and-validating-openapi.md) | `npm run check:openapi` is the documented gate. |
+| OAS lint and validation | Stoplight Spectral, YAML, JSON Schema/Ajv utilities | Current tooling; Ajv utilities are manifest-only support | Configured / manifest only | [OPEN-001](../api/OPEN-001-openapi.md), [GUIDE-011](../api/guides/GUIDE-011-generating-and-validating-openapi.md) | `pnpm check:openapi` is the documented gate. |
 
 ## 3.7 Testing, quality, and governance
 
@@ -144,8 +144,8 @@ Validator exclusions: external HTTP availability and code-to-document runtime dr
 | ---------- | ------------------- | ----------------- | ----------------------- | ---------------- | --------------------------- |
 | Application hosting | Vercel, one Next.js deployable, `sin1` region | Current / Living | Configured — [`vercel.json`](../../vercel.json) | [ARCH-022](ARCH-022-system-overview.md), [RB-001](../runbooks/RB-001-multi-org-ops.md) | A second deployable requires a superseding architecture decision. |
 | Database operations | Neon production branch, pooled connection, PITR and daily snapshots | Current / Living | Ops evidence documented; secret values not inspected | [ARCH-023](ARCH-023-multi-tenancy.md), [RB-001](../runbooks/RB-001-multi-org-ops.md) | Keep the shared-schema posture and production pooler invariant. |
-| Continuous integration | GitHub Actions with Node 24 and `npm ci` | Current configuration | Source verified — [CI workflow](../../.github/workflows/ci.yml) | [ARCH-028](ARCH-028-implementation-slices.md) | Product/e2e CI steps may fail or no-op until Target scaffold; Target pipeline moves to Turbo after cutover. |
-| Docs-capable local gates | `check:docs-naming`, doc-integrity, module-quality, OpenAPI, `validate:neon-env` | Current / Living (docs checkout) | Source verified — [`run-checks.mjs`](../../scripts/run-checks.mjs) | [DOC-001](../_control/DOC-001-documentation-control-standard.md), [ARCH-028](ARCH-028-implementation-slices.md) | Collapse-era product/ops npm scripts are gated — not missing “gaps” to restore. |
+| Continuous integration | GitHub Actions with Node 24, `pnpm/action-setup`, and `pnpm install --frozen-lockfile` | Current configuration | Source verified — [CI workflow](../../.github/workflows/ci.yml) | [ARCH-028](ARCH-028-implementation-slices.md) | Product/e2e CI steps may fail or no-op until Target scaffold; Target pipeline moves to Turbo after cutover. |
+| Docs-capable local gates | `check:docs-naming`, doc-integrity, module-quality, OpenAPI, `validate:neon-env` | Current / Living (docs checkout) | Source verified — [`run-checks.mjs`](../../scripts/run-checks.mjs) | [DOC-001](../_control/DOC-001-documentation-control-standard.md), [ARCH-028](ARCH-028-implementation-slices.md) | Collapse-era product/ops scripts are gated — not missing “gaps” to restore. |
 | Target build/deploy | Turbo build filtering and optional Vercel remote cache | Target | Documented Target | [ARCH-022](ARCH-022-system-overview.md), [ARCH-028](ARCH-028-implementation-slices.md) | Decide one deployment owner; avoid duplicate Vercel and Actions promotion. |
 
 ## 3.9 Supporting and module technologies
@@ -172,8 +172,8 @@ Validator exclusions: external HTTP availability and code-to-document runtime dr
 | RLS/Data API as the default BFF tenancy fix | Rejected | [ARCH-023](ARCH-023-multi-tenancy.md) | Current isolation uses hard app predicates. |
 | Schema-per-tenant or project-per-tenant as the product default | Rejected | [ARCH-023](ARCH-023-multi-tenancy.md) | Shared schema and one Neon project are accepted constraints. |
 | Collapse-era `lib/env/`, `env:compose` / `env:guard` script bodies, or recovering them from git | Retired / banned | [ARCH-027](ARCH-027-env-model.md), [ARCH-028](ARCH-028-implementation-slices.md), [AGENTS.md](../../AGENTS.md) | Forward env is Target `@afenda/env` only. Do not teach `lib/env` as Living SSOT. |
-| Treating gated npm scripts or Glob ghosts as on-disk product tooling | Rejected | [ARCH-028](ARCH-028-implementation-slices.md) | Trust the filesystem; use docs-capable gates only. |
-| Dual Living lockfile authorities (npm + pnpm) before S1.1 | Rejected | [ARCH-022](ARCH-022-system-overview.md), [ARCH-028](ARCH-028-implementation-slices.md) | Root `packageManager` does not authorize pnpm workspace ops until Target cutover. |
+| Treating gated package scripts or Glob ghosts as on-disk product tooling | Rejected | [ARCH-028](ARCH-028-implementation-slices.md) | Trust the filesystem; use docs-capable gates only. |
+| Reintroducing npm/yarn Living lockfiles beside pnpm | Rejected | [ARCH-022](ARCH-022-system-overview.md), [ARCH-028](ARCH-028-implementation-slices.md) | Root pnpm is Living SSOT; `package-lock.json` / `yarn.lock` are gitignored. |
 | Separate FFT shell, locale route tree, or infrastructure stack | Retired / rejected | [FFT-MOD-001](../modules/feed-farm-trade/FFT-MOD-001-module-architecture.md), [FFT-MOD-006](../modules/feed-farm-trade/FFT-MOD-006-surfaces-and-routes.md) | FFT remains a module of one Afenda-Lite platform. |
 
 ## 3.11 Maintenance triggers
@@ -220,6 +220,7 @@ ARCH-031 shall link to the changed authority rather than duplicate its detailed 
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 1.2.0 | 2026-07-14 | Bounded reopen: Living pnpm cutover facts (`pnpm-lock.yaml`, workspace file, CI); reject reintroducing npm/yarn Living lockfiles; `pnpm` commands replace `npm run` / `npx`. |
 | 1.1.1 | 2026-07-14 | Home flattened to docs/architecture/ (trunks removed; pack reading order in README). |
 | 1.1.0 | 2026-07-14 | Removed Collapse-era Current ops: `lib/env`, runnable compose/tenancy scripts as evidence; env forward = Target only; gated scripts + anti-recover guardrails; maintenance trigger no longer says “tree returns”. |
 | 1.0.1 | 2026-07-14 | Notes: cite ARCH-028 anti-contamination lock (no Collapse tree recover). |

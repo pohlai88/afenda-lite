@@ -4,7 +4,7 @@
 | ----------------- | ------------ |
 | **ID**            | ARCH-012     |
 | **Category**      | Architecture |
-| **Version**       | 1.2.2        |
+| **Version**       | 1.2.3        |
 | **Status**        | Living       |
 | **Control State** | Closed       |
 | **Owner**         | Frontend     |
@@ -190,7 +190,7 @@ Never place `route.ts` beside a `page.tsx` in the same segment. Prefer Server Ac
 
 Gated by `PLAYGROUND_ENABLED`. Not a client product surface. Never sync playground env to Vercel production.
 
-Curated route bindings live in `features/playground/playground-registry.ts` when the Target tree exists; `npm run check:playground` enforces route, review-definition, evidence, and E2E fixture parity.
+Curated route bindings live in `features/playground/playground-registry.ts` when the Target tree exists; `pnpm check:playground` enforces route, review-definition, evidence, and E2E fixture parity.
 
 HITL route review keeps two facts separate: **Expected from source** is the registered fixture contract backed by route/entry files; **Human verdict** is the locally stored runtime observation. Notes and copied repair prompts never mark a route verified.
 
@@ -278,6 +278,7 @@ Agent method (not a controlled ID): `.cursor/skills/afenda-elite-nextjs-best-pra
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 1.2.3 | 2026-07-14 | Bounded reopen: package-manager cutover — document `pnpm` / `pnpm exec` (repo SSOT `packageManager` + `pnpm-lock.yaml`). |
 | 1.2.2 | 2026-07-14 | Home flattened to docs/architecture/ (trunks removed; pack reading order in README). |
 | 1.2.1 | 2026-07-14 | ADR link home → `docs/architecture/adr/` (DOC-001 2.5.0). |
 | 1.2.0 | 2026-07-14 | Studio shell DNA note; composition column = Target logical bindings (not on-disk claim); ARCH-015/017 pointers. |

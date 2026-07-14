@@ -1,12 +1,14 @@
-# api-now — current Route Handler inventory
+# api-now — Living Route Handler allowlist
 
 **Source:** [docs/api/REST-001-rest-resources.md](../../../docs/api/REST-001-rest-resources.md)
 
-This file mirrors what **is implemented today** as `app/api/**` Route Handlers vs what is **contract-only** (canonical REST shapes consumed via RSC + Server Actions until an external consumer needs HTTP). SSOT is REST-001.
+This file mirrors the Living **api-now** contract and the **allowed Target** Route Handler set under `apps/web/app/api/**` (logical `app/api/**`). It distinguishes **allowlisted HTTP handlers** from **contract-only** resources (canonical REST shapes consumed via RSC + Server Actions until an external consumer needs HTTP). SSOT is REST-001.
+
+**Docs-first checkout:** root `app/api/**` may be **absent by design** ([ARCH-028](../../../docs/architecture/ARCH-028-implementation-slices.md)). This inventory is **not** a claim those handlers are physically implemented on disk today.
 
 ---
 
-## Implemented Route Handlers (api-now)
+## Allowlisted Route Handlers (api-now)
 
 | Method | Path | Purpose | Auth | Cache |
 |--------|------|---------|------|-------|
@@ -17,7 +19,7 @@ This file mirrors what **is implemented today** as `app/api/**` Route Handlers v
 
 Success JSON for these handlers uses `{ data: T }` ([API-001](../../../docs/api/API-001-api-boundaries.md)). Failures use bare `APIErrorBody` ([API-002](../../../docs/api/API-002-error-contract.md)). OpenAPI: [openapi.md](openapi.md).
 
-**No other Route Handlers exist in the contract’s api-now set.** Any scaffold that adds to this list must match REST-001 api-now or a new explicit decision.
+**Only this set is api-now.** Any Target scaffold that adds handlers must match REST-001 api-now or a new explicit decision.
 
 ---
 

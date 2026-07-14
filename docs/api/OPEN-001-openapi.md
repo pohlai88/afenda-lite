@@ -4,7 +4,7 @@
 |-------|-------|
 | ID | OPEN-001 |
 | Category | OPEN |
-| Version | 1.1.6 |
+| Version | 1.1.7 |
 | Status | Living |
 | Control State | Closed |
 | Owner | Backend |
@@ -58,7 +58,7 @@ Emit or expand the YAML when **any** are true:
 Living bar (already met for api-now):
 
 1. `OPEN-001-openapi.yaml` exists for **api-now** at minimum
-2. Spectral (or `npm run check:openapi`) passes
+2. Spectral (or `pnpm check:openapi`) passes
 3. Error schema matches [API-002](API-002-error-contract.md)
 4. Success bodies use `{ data }` envelopes
 
@@ -94,7 +94,7 @@ When `modules/platform/schemas/api-error.ts` and `modules/declarations/schemas/c
 2. Prefer importing module schemas; attach `.openapi("Name")` via `extendZodWithOpenApi` / registry — do not fork field lists.
 3. Keep response **envelopes** in the generator (or a tiny `modules/platform/schemas/api-envelope.ts` if added): runtime success is always `{ data: T }`.
 4. Delete inlined copies of `apiErrorBodySchema`, draft save/query, and answer map from the generator.
-5. Run `npm run openapi:generate` && `npm run check:openapi`.
+5. Run `pnpm openapi:generate` && `pnpm check:openapi`.
 
 Inlined schemas in `scripts/generate-openapi.mts` are **recorded mirrors** of those modules — any field change in REST/API docs must update the generator in the same change until the import handoff lands.
 
@@ -149,8 +149,8 @@ Rules:
 ## Generate
 
 ```bash
-npm run openapi:generate
-npm run check:openapi
+pnpm openapi:generate
+pnpm check:openapi
 ```
 
 # 4. References
@@ -167,6 +167,7 @@ npm run check:openapi
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.1.7 | 2026-07-14 | Bounded reopen: package-manager cutover — document `pnpm` / `pnpm exec` (repo SSOT `packageManager` + `pnpm-lock.yaml`). |
 | 1.1.6 | 2026-07-14 | Added mandatory Control State header field (Closed); lifecycle Status unchanged. |
 | 1.1.5 | 2026-07-13 | Corrected recipe ownership: OPEN-001 remains authoritative until GUIDE-011 promotion; adopted six-section structure |
 | 1.1.4 | 2026-07-13 | Linked GUIDE-011 as the planned recipe successor under `docs/api/guides/` |

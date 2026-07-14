@@ -1,24 +1,26 @@
 # Adapter map
 
-**Like api-now for backend:** which driving adapters exist and which module they call.  
+**Like api-now for backend:** which driving adapters call which module entrypoints.  
 **REST catalog / HTTP classification:** [../afenda-elite-api-contract/api-now.md](../afenda-elite-api-contract/api-now.md) · [docs/api/REST-001-rest-resources.md](../../../docs/api/REST-001-rest-resources.md)
+
+**Path truth:** Logical names below (`app/actions`, `modules/*`) are **Target/Living shape**. Physical Target home is `apps/web/…`. On this **docs-first** checkout those trees are **absent by design** — this map is ownership inventory, not a claim they are implemented today. Do not recover Collapse roots.
 
 ---
 
-## Server Actions (`app/actions/`)
+## Server Actions (logical `app/actions/` → Target `apps/web/app/actions/`)
 
 | File | Module entrypoints (typical) | Notes |
 |------|------------------------------|-------|
 | `account.ts` | `modules/identity/*` | Account session / Neon-owned fields |
-| `admin.ts` | `modules/identity/*`, platform helpers | Operator admin + org users (create/import/update/remove/bulk-remove/role/ban/bulk-ban/password/sessions) + **platform RBAC** (create/update/delete role, set permission, assign/revoke) + **`setActiveOrganizationAction`** (M1 org switch); `parseSchema` from Platform |
+| `admin.ts` | `modules/identity/*`, platform helpers | Operator admin + org users + **platform RBAC** + **`setActiveOrganizationAction`**; `parseSchema` from Platform |
 | `client.ts` | `modules/identity/*`, `modules/declarations/*`, `resolvePlatformOrgContext` | Invite stamps + scopes survey by org; compose at adapter |
 | `declarations.ts` | `modules/declarations/domain/**`, product schemas | `parseSchema` from Platform |
 | `surveys.ts` | `modules/declarations/domain/**`, product schemas, `resolvePlatformOrgContext` | Draft create stamps `organizationId` |
-| `fft.ts` | `modules/fft/domain/**`, `modules/fft/auth/*`, `modules/fft/schemas/fft-schemas.ts`, `features/fft/fft-organization-context` | Feed Farm Trade; org stamp/backfill at adapter |
+| `fft.ts` | `modules/fft/domain/**`, `modules/fft/auth/*`, `modules/fft/schemas/fft-schemas.ts`, FFT org context features | Feed Farm Trade; org stamp/backfill at adapter |
 
 There is **no** `app/actions/trade.ts`.
 
-**Canonical Action Zod edge:**
+**Canonical Action Zod edge (when Target tree exists):**
 
 ```typescript
 import { parseSchema } from "@/modules/platform/schemas/common"
@@ -27,7 +29,7 @@ import { parseSchema } from "@/modules/platform/schemas/common"
 
 ---
 
-## Route Handlers (`app/api/`) — api-now
+## Route Handlers (logical `app/api/`) — api-now allowlist
 
 | Method | Path | Module helpers |
 |--------|------|----------------|
@@ -36,17 +38,17 @@ import { parseSchema } from "@/modules/platform/schemas/common"
 | ALL | `/api/auth/[...path]` | Neon via `modules/identity/auth` |
 | GET/PUT/PATCH | `/api/client/declaration-draft` | `modules/declarations/api/client-declaration-draft-route` |
 
-**No other Route Handlers exist today.** Do not add web-UI list/read handlers for declarations/clients — use RSC → module domain.
+**Allowlist rule:** Do not add web-UI list/read handlers for declarations/clients — use RSC → module domain. On docs-first, “no other handlers” means the **Living allowlist**, not a disk inventory of a deleted tree.
 
 ---
 
-## RSC / runners
+## RSC / runners (logical)
 
 | Surface | Pattern |
 |---------|---------|
-| Prefer | `app/**/page.tsx` → features / thin runner → `modules/*/domain` |
-| Keep | `features/auth/entry/*`, `features/organization-admin/*` runners |
-| Forbidden | RSC `fetch('/api/...')` for ordinary product reads; recreate `lib/pages` |
+| Prefer | `app/**/page.tsx` → features / thin runner → `modules/*/domain` (under `apps/web` on Target) |
+| Keep (Target) | `features/auth/entry/*`, `features/organization-admin/*` runners |
+| Forbidden | RSC `fetch('/api/...')` for ordinary product reads; recreate `lib/pages`; recover Collapse roots |
 
 ---
 

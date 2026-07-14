@@ -1,0 +1,11 @@
+# Target workspace shape — ARCH-022 (apps/web + packages/*).
+# Root package.json remains the docs-first / Transition host until ARCH-028 implement.
+packages:
+  - "apps/*"
+  - "packages/*"
+
+settings:
+  auto-install-peers: true
+  strict-peer-dependencies: false
+  prefer-frozen-lockfile: true
+  manage-package-manager-versions: true

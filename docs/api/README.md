@@ -16,7 +16,7 @@ This file is **navigation only**. It does not establish architecture, contracts,
 | Register | [DOC-002](../_control/DOC-002-documentation-register.md) | ID existence, version, status |
 | Control | [DOC-001](../_control/DOC-001-documentation-control-standard.md) | Categories, lifecycle, naming |
 
-OpenAPI machine file: [`OPEN-001-openapi.yaml`](OPEN-001-openapi.yaml) (`npm run openapi:generate`). Skill mirror: [`.cursor/skills/afenda-elite-api-contract/`](../../.cursor/skills/afenda-elite-api-contract/SKILL.md) — follows these docs (ARCH-029 · GUIDE-015 · Living Phase 1), never the reverse. After Living contract edits: `npm run check:doc-integrity` · `node scripts/check-docs-naming.mjs docs/api` · `npm run check:openapi`.
+OpenAPI machine file: [`OPEN-001-openapi.yaml`](OPEN-001-openapi.yaml) (`pnpm openapi:generate`). Skill mirror: [`.cursor/skills/afenda-elite-api-contract/`](../../.cursor/skills/afenda-elite-api-contract/SKILL.md) — follows these docs (ARCH-029 · GUIDE-015 · Living Phase 1), never the reverse. After Living contract edits: `pnpm check:doc-integrity` · `node scripts/check-docs-naming.mjs docs/api` · `pnpm check:openapi`.
 
 ---
 

@@ -4,7 +4,7 @@
 | ----------------- | ------------ |
 | **ID**            | ARCH-018     |
 | **Category**      | Architecture |
-| **Version**       | 1.1.4        |
+| **Version**       | 1.1.5        |
 | **Status**        | Living     |
 | **Control State** | Closed       |
 | **Owner**         | Frontend     |
@@ -128,7 +128,7 @@ Full gate: [admincn-frontend-preflight.md](ARCH-019-admincn-frontend-preflight.m
 5. Swap fake-db for that page  
 6. Sync governance if surface IDs change (include **ui-registry**)  
 7. Promote MCP scratch → feature / portal-views; delete install-path residue  
-8. Verify: `npm run test:unit -- features/fft/ui-registry` + relevant unit tests + `npx tsc --noEmit` on touched paths  
+8. Verify: `pnpm test:unit -- features/fft/ui-registry` + relevant unit tests + `pnpm exec tsc --noEmit` on touched paths  
 
 ---
 
@@ -145,6 +145,7 @@ Full gate: [admincn-frontend-preflight.md](ARCH-019-admincn-frontend-preflight.m
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 1.1.5 | 2026-07-14 | Bounded reopen: package-manager cutover — document `pnpm` / `pnpm exec` (repo SSOT `packageManager` + `pnpm-lock.yaml`). |
 | 1.1.4 | 2026-07-14 | Drop “thin stub until UI restore”; hold ARCH-012 disposition + explicit reopen only. |
 | 1.1.3 | 2026-07-14 | Home flattened to docs/architecture/ (trunks removed; pack reading order in README). |
 | 1.1.2 | 2026-07-14 | Removed AdminCN 1.0.0 archive kit; DNA remains Studio CLI/MCP scratch-only. |

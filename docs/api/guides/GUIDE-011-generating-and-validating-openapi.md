@@ -4,7 +4,7 @@
 | ------------ | ---------- |
 | **ID**       | GUIDE-011  |
 | **Category** | Guide      |
-| **Version**  | 0.1.2      |
+| **Version**  | 0.1.3      |
 | **Status**   | Draft      |
 | **Control State** | Closed     |
 | **Owner**    | Backend    |
@@ -45,7 +45,7 @@ This guide holds OpenAPI **implementation** instructions (generate, validate, Fu
 
 | Topic | Planned content |
 | ----- | --------------- |
-| Generate | `npm run openapi:generate` (env names only) |
+| Generate | `pnpm openapi:generate` (env names only) |
 | Validate | Spectral / `check:openapi` |
 | Packages | Zod → OpenAPI toolchain |
 | Fumadocs | How published OAS is consumed |
@@ -72,6 +72,7 @@ Until Living, follow generate notes in [OPEN-001](../OPEN-001-openapi.md).
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 0.1.3 | 2026-07-14 | Bounded reopen: package-manager cutover — document `pnpm` / `pnpm exec` (repo SSOT `packageManager` + `pnpm-lock.yaml`). |
 | 0.1.2 | 2026-07-14 | RB-006 link → `docs/api/runbooks/`. |
 | 0.1.1 | 2026-07-14 | Added mandatory Control State header field (Closed); lifecycle Status unchanged. |
 | 0.1.0 | 2026-07-13 | Draft under `docs/api/guides/`; supersedes prior GUIDE-007 OpenAPI placeholder path. |

@@ -1,6 +1,6 @@
 # Next.js MCP — runtime verify
 
-Elite-adapted from Xerp `runtime-mcp.md`. Uses this repo’s `next-devtools` MCP.
+Local Elite runtime MCP verify notes. Uses this repo’s `next-devtools` MCP.
 
 ## Wiring
 

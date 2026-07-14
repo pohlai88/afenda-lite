@@ -9,8 +9,8 @@ This directory is **not a product module home**. Each copy-ready Markdown templa
 Use the executable contract-driven scaffold for real provisional work:
 
 ```powershell
-npm run plan:module-pack -- -- --prefix INV --slug inventory --title "Inventory" --owner Platform --profiles "Enterprise Core,ERP"
-npm run scaffold:module-pack -- -- --prefix INV --slug inventory --title "Inventory" --owner Platform --profiles "Enterprise Core,ERP" --apply
+pnpm plan:module-pack -- -- --prefix INV --slug inventory --title "Inventory" --owner Platform --profiles "Enterprise Core,ERP"
+pnpm scaffold:module-pack -- -- --prefix INV --slug inventory --title "Inventory" --owner Platform --profiles "Enterprise Core,ERP" --apply
 ```
 
 The generated pack stays under `docs/scratch/module-packs/<slug>/`. Promotion requires explicit ID approval, replacement of all placeholders, MOD-002 catalogue and DOC-002 registration updates, a bounded reopen, movement to `docs/modules/<slug>/`, validation, and closure.
@@ -73,7 +73,7 @@ Every criterion must identify the subject, trigger or condition, observable outc
 3. Keep exactly ten module-qualified files in one module directory; no depth folders and no MOD-011.
 4. Replace every double-brace token and all `TBD`/`TODO` language before promotion. A template must never produce a Claimable readiness state.
 5. Preserve the DOC-003 header and six sections. Real controlled documents use `Control State: Open/Reopened` only during authorized work and return to `Closed` after verification.
-6. Run `npm run test:module-pack`, `npm run check:module-quality`, `npm run check:docs-naming`, and the full documentation-integrity audit before closure.
+6. Run `pnpm test:module-pack`, `pnpm check:module-quality`, `pnpm check:docs-naming`, and the full documentation-integrity audit before closure.
 
 ## Authority
 

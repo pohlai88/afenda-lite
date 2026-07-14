@@ -1,12 +1,12 @@
 # Residue inventory (Pass 2 + full runner absorb)
 
-**Status:** Pass 2 complete (2026-07-12). **All former `lib/` runners absorbed** into `features/` (2026-07-12). **`lib/` directory is gone** — do not recreate.
+**Status:** Historical relocate program closed 2026-07-12 (pre-Collapse evidence). **`lib/` must not be recreated.** On this **docs-first** checkout, root `features/` / `modules/` / `app/` are also **absent by design** ([ARCH-028](../../../docs/architecture/ARCH-028-implementation-slices.md)) — rows below are relocate **targets**, not a claim those trees exist today.
 
-**Authority:** [docs/architecture/ARCH-009-modules-ownership-map.md](../../../docs/architecture/ARCH-009-modules-ownership-map.md) §5
+**Authority:** [ARCH-009](../../../docs/architecture/ARCH-009-modules-ownership-map.md) §5
 
 ---
 
-## Keep (product + harness) — under `features/`
+## Keep (product + harness) — Target under `apps/web/features/` (logical `features/`)
 
 | Path | Why |
 |------|-----|
@@ -15,7 +15,7 @@
 | `features/auth/public-link-page*` | `/f` / open-link page helpers |
 | `features/organization-admin/organization-admin-*` | Operator page runners |
 
-Do **not** recreate `lib/` for architecture. New UI → `features/*` or `components-V2/` per folder map.
+Do **not** recreate `lib/` or recover Collapse roots. New UI → Target `apps/web/features/*` per folder map after implement authorization.
 
 ---
 

@@ -163,7 +163,7 @@ Report:
 - validator exit and evidence location;
 - findings by severity, category, and evidence tier;
 - controlled delegations and lock escalations;
-- residual semantic risk — evidence-based from the validator `residualRisk` field (unimplemented in-scope comparison sets only; never a standing pairwise caveat after exit `0` with all in-scope sets implemented). For `docs/guides`, cite the [archive baseline](reference.md#known-baselines-do-not-reopen-as-rename-debt) (**29 known findings**) when counts match; do not describe residual risk only as missing Control State.
+- residual semantic risk — evidence-based from the validator `residualRisk` field (unimplemented in-scope comparison sets only; never a standing pairwise caveat after exit `0` with all in-scope sets implemented). For `docs/guides`, expect [zero findings](reference.md#known-baselines-do-not-reopen-as-rename-debt) when only the navigator remains (Retired stubs hard-deleted).
 
 Never say “no findings” when only a spot check was performed.
 

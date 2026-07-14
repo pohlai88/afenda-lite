@@ -68,7 +68,7 @@ Declarations is not “deprecated.” Treating FFT and Declarations as two platf
 
 ## Closed product phases (not deprecations)
 
-**SSOT:** this section (formerly [ARCH-020](../../../../docs/architecture/archive/ARCH-020-closed-scope-register.md)). Agents must not treat these as open gaps. Completeness matrices must read **Closed (registered)** or **Intentional (registered)** — never “missing” or “TODO”. Reopen requires explicit user approval in the turn.
+**SSOT:** this section (formerly ARCH-020 — Superseded in DOC-002; stub removed). Agents must not treat these as open gaps. Completeness matrices must read **Closed (registered)** or **Intentional (registered)** — never “missing” or “TODO”. Reopen requires explicit user approval in the turn.
 
 | Item | Disposition | Authority / reopen |
 |------|-------------|-------------------|
@@ -76,7 +76,7 @@ Declarations is not “deprecated.” Treating FFT and Declarations as two platf
 | `/client` workspace product restore | **Closed** — stubs only under `app/client/(workspace)/**` when Target tree exists | Reopen: explicit user letter + spec slice under `docs/architecture/` + vertical slice. Forbidden: restore Collapse-era `features/client-workspace/` or repo-root trees. |
 | FFT P3 **prod** flag promotion | **Closed** — code may exist behind flags; prod enablement is ops | [FFT-MOD-008](../../../../docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md). Forbidden: enable prod `FFT_*` P3 flags without MOD-008 checklist + approval. |
 | SaaS billing / 2FA chrome | **Intentional deferred** — not product Identity | AdminCN `ComingSoonPanel` / plan columns are chrome only. Forbidden: invent billing fields or 2FA flows without product ADR. Neon Auth owns credential MFA if enabled. |
-| Teaching ARCH-020 as Living SSOT | **Superseded** | This section + archive stub only |
+| Teaching ARCH-020 as Living SSOT | **Superseded** | This section + DOC-002 register row only |
 
 **Agent rule:** Default agent mission is **not** Feed Farm Trade program reopen. Option B (reopen / promote) always needs explicit user direction.
 
@@ -85,14 +85,14 @@ Declarations is not “deprecated.” Treating FFT and Declarations as two platf
 | Retired | Replacement | Status | Notes |
 |---------|-------------|--------|-------|
 | Teaching `docs/architecture/turborepo/` as the Target system docs home | [`docs/architecture/`](../../../../docs/architecture/) | Renamed | Compulsory 2026-07-13; folder is system architecture, not a Turborepo howto |
-| Teaching ARCH-014 UI Surfaces as Living SSOT | [ARCH-012](../../../../docs/architecture/ARCH-012-app-router-routes.md) · [ARCH-015](../../../../docs/architecture/ARCH-015-admincn-alignment.md) / [ARCH-018](../../../../docs/architecture/ARCH-018-admincn-customization.md) / [ARCH-019](../../../../docs/architecture/ARCH-019-admincn-frontend-preflight.md) · [ui-registry](../feed-farm-trade/ui-registry.md) | Superseded | Compulsory 2026-07-14; archived stub `docs/architecture/archive/ARCH-014-*`; Studio/AdminCN-first — no parallel journey catalogue |
-| Teaching ARCH-020 closed-scope-register as Living SSOT | [deprecation register — Closed product phases](reference.md) | Superseded | Compulsory 2026-07-13; archived stub `docs/architecture/archive/ARCH-020-*` |
-| Teaching ARCH-021 repository-migration-map as layout SSOT | [ARCH-022](../../../../docs/architecture/ARCH-022-system-overview.md) · [ARCH-017](../../../../docs/architecture/ARCH-017-frontend-folder-map.md) | Superseded | Compulsory 2026-07-13; archived stub `docs/architecture/archive/ARCH-021-*`; campaign closed |
+| Teaching ARCH-014 UI Surfaces as Living SSOT | [ARCH-012](../../../../docs/architecture/ARCH-012-app-router-routes.md) · [ARCH-015](../../../../docs/architecture/ARCH-015-admincn-alignment.md) / [ARCH-018](../../../../docs/architecture/ARCH-018-admincn-customization.md) / [ARCH-019](../../../../docs/architecture/ARCH-019-admincn-frontend-preflight.md) · [ui-registry](../feed-farm-trade/ui-registry.md) | Superseded | Compulsory 2026-07-14; DOC-002 register-only (stub removed); Studio/AdminCN-first — no parallel journey catalogue |
+| Teaching ARCH-020 closed-scope-register as Living SSOT | [deprecation register — Closed product phases](reference.md) | Superseded | Compulsory 2026-07-13; DOC-002 register-only (stub removed) |
+| Teaching ARCH-021 repository-migration-map as layout SSOT | [ARCH-022](../../../../docs/architecture/ARCH-022-system-overview.md) · [ARCH-017](../../../../docs/architecture/ARCH-017-frontend-folder-map.md) | Superseded | Compulsory 2026-07-13; DOC-002 register-only (stub removed); campaign closed |
 | Teaching `docs/backend/` as a top-level docs home | [`docs/architecture/`](../../../../docs/architecture/) · [ARCH-022](../../../../docs/architecture/ARCH-022-system-overview.md) · [ARCH-023](../../../../docs/architecture/ARCH-023-multi-tenancy.md) | Moved | Compulsory 2026-07-13; `docs/adr/` deleted |
 | Teaching any file under top-level `docs/adr/` (backend/frontend/turborepo) | Approved ADR home [`docs/architecture/adr/`](../../../../docs/architecture/adr/) · Living/Target ARCH · FFT spine | Hard-deleted | Compulsory 2026-07-13; top-level `docs/adr/` banned; `decisions/` folder banned (DOC-001 2.5.0) |
 | Teaching `docs/frontend/` as a top-level docs home | [`docs/architecture/`](../../../../docs/architecture/) · [`docs/modules/feed-farm-trade/`](../../../../docs/modules/feed-farm-trade/) | Moved | Compulsory 2026-07-13 |
 | Teaching GUIDE-007…014 (phase task guides) | [docs/api/guides/README.md](../../../../docs/api/guides/README.md) · FFT-MOD-010 · ARCH-023/026 | Hard-deleted | Compulsory 2026-07-13; do not recreate |
-| Teaching GUIDE-001…004 / GUIDE-006 Living engineering guides | [docs/README.md](../../../../docs/README.md) · DOC-001/003 · AGENTS.md · [ARCH-028](../../../../docs/architecture/ARCH-028-implementation-slices.md) drift · [docs/api/guides](../../../../docs/api/guides/README.md) | Retired | Compulsory 2026-07-14; archived under `docs/guides/archive/`; IDs Retired in DOC-002; do not restore to Living |
+| Teaching GUIDE-001…004 / GUIDE-006 Living engineering guides | [docs/README.md](../../../../docs/README.md) · DOC-001/003 · AGENTS.md · [ARCH-028](../../../../docs/architecture/ARCH-028-implementation-slices.md) drift · [docs/api/guides](../../../../docs/api/guides/README.md) | Retired | Compulsory 2026-07-14; IDs Retired in DOC-002 register-only (stubs removed); do not restore to Living |
 | Teaching top-level `docs/fft/` as FFT docs home | [`docs/modules/feed-farm-trade/`](../../../../docs/modules/feed-farm-trade/) | Moved | Compulsory 2026-07-13; 10-MOD spine FFT-MOD-001…010 |
 | Recreating FFT depth trees (`adr/` `ops/` `spec/` `architecture/` `integrations/` `archive/`) under `docs/modules/feed-farm-trade/` | Spine-only [FFT-MOD-010](../../../../docs/modules/feed-farm-trade/FFT-MOD-010-module-docs-index.md) | Hard-deleted | Compulsory 2026-07-13; do not `git checkout` restore; gates live in FFT-MOD-008 |
 | Teaching FFT `MOD-001` / `MOD-003` as Living entry | [FFT-MOD-008](../../../../docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md) · [FFT-MOD-010](../../../../docs/modules/feed-farm-trade/FFT-MOD-010-module-docs-index.md) | Superseded | Compulsory 2026-07-13; stubs remain for path safety |

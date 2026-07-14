@@ -3,9 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "engines": {
-    "node": "24.x"
+    "node": "24.x",
+    "pnpm": ">=10.33.4"
   },
   "scripts": {
+    "preinstall": "node scripts/only-allow-pnpm.mjs",
     "dev": "node scripts/collapse-script-unavailable.mjs \"dev\"",
     "env:compose": "node scripts/collapse-script-unavailable.mjs \"env:compose\"",
     "env:guard": "node scripts/collapse-script-unavailable.mjs \"env:guard\"",
@@ -20,7 +22,7 @@
     "clean:artifacts": "node -e \"const fs=require('fs'); for (const d of ['.next','.turbo','coverage','test-results','playwright-report','.artifacts']) fs.rmSync(d,{recursive:true,force:true})\"",
     "build": "next build",
     "start": "next start",
-    "build:check": "npm run checks && npm run build",
+    "build:check": "pnpm run checks && pnpm run build",
     "checks": "node scripts/run-checks.mjs",
     "sync:neon-auth-manifest": "node scripts/collapse-script-unavailable.mjs \"sync:neon-auth-manifest\"",
     "validate:neon-env": "node scripts/validate-neon-env.mjs",
@@ -63,7 +65,7 @@
     "test:doc-integrity": "node --test .cursor/skills/afenda-elite-doc-integrity/scripts/doc-integrity-audit.test.mjs .cursor/skills/afenda-elite-doc-integrity/scripts/doc-integrity-mutation.test.mjs .cursor/skills/afenda-elite-doc-integrity/scripts/doc-integrity-remediation.test.mjs",
     "plan:doc-integrity": "node .cursor/skills/afenda-elite-doc-integrity/scripts/remediate-docs.mjs --scope docs/api --mode plan-fix --format json",
     "fix:doc-integrity:safe": "node .cursor/skills/afenda-elite-doc-integrity/scripts/remediate-docs.mjs --scope docs/api --mode apply-safe --apply --format json",
-    "openapi:generate": "npx tsx scripts/generate-openapi.mts",
+    "openapi:generate": "pnpm exec tsx scripts/generate-openapi.mts",
     "check:openapi": "node scripts/check-openapi.mjs",
     "check:nav": "node scripts/collapse-script-unavailable.mjs \"check:nav\"",
     "check:proxy": "node scripts/collapse-script-unavailable.mjs \"check:proxy\"",
@@ -74,7 +76,7 @@
     "check:production:join-ui": "node scripts/collapse-script-unavailable.mjs \"check:production:join-ui\"",
     "check:production:post-deploy": "node scripts/collapse-script-unavailable.mjs \"check:production:post-deploy\"",
     "verify:draft-migration": "node scripts/collapse-script-unavailable.mjs \"verify:draft-migration\"",
-    "verify:architecture": "npm run checks",
+    "verify:architecture": "pnpm run checks",
     "verify:vercel-db": "node scripts/collapse-script-unavailable.mjs \"verify:vercel-db\"",
     "icons:generate": "node scripts/collapse-script-unavailable.mjs \"icons:generate\"",
     "brand:extract-sharp-owl": "node scripts/collapse-script-unavailable.mjs \"brand:extract-sharp-owl\"",
@@ -171,5 +173,13 @@
     "vitest": "^4.1.10",
     "yaml": "^2.9.0"
   },
-  "packageManager": "pnpm@10.33.4+sha512.1c67b3b359b2d408119ba1ed289f34b8fc3c6873412bec6fd264fbdc82489e510fcbecb9ce9d22dae7f3b76269d8441046014bdca53b9979cd7a561ad631b800"
+  "packageManager": "pnpm@10.33.4+sha512.1c67b3b359b2d408119ba1ed289f34b8fc3c6873412bec6fd264fbdc82489e510fcbecb9ce9d22dae7f3b76269d8441046014bdca53b9979cd7a561ad631b800",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@swc/core",
+      "esbuild",
+      "sharp",
+      "unrs-resolver"
+    ]
+  }
 }

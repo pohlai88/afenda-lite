@@ -4,7 +4,7 @@
 | ----------------- | -------------------------- |
 | **ID**            | FFT-MOD-005                |
 | **Category**      | Module                     |
-| **Version**       | 1.3.0 |
+| **Version**       | 1.3.1 |
 | **Status**        | Living                     |
 | **Control State** | Closed                   |
 | **Owner**         | Feed Farm Trade            |
@@ -57,7 +57,7 @@ Active → slug → sole membership (platform). Hard fail-closed multi-org. Ops 
 | Module RBAC | Permission catalog in `modules/fft/domain/rbac-catalog.ts` | Fine-grained trade actions when `FFT_RBAC_ENABLED` |
 | Sales allowlist | `fft_sales_member` | Roster only — does **not** auto-promote entry |
 
-Write-time `ensureFftMemberPlatformAccess` on sales upsert / FFT role assign. Backfill: `npm run backfill:fft-access`.
+Write-time `ensureFftMemberPlatformAccess` on sales upsert / FFT role assign. Backfill: `pnpm backfill:fft-access`.
 
 **Key decision:** permission-catalog RBAC — do not hardcode org-chart job titles as enums. Do not invent codes outside `rbac-catalog.ts`.
 
@@ -105,6 +105,7 @@ Single-owner ACs for this role. Evidence: [FFT-MOD-009](FFT-MOD-009-verification
 
 | Version | Date       | Summary |
 | ------- | ---------- | ------- |
+| 1.3.1 | 2026-07-14 | Bounded reopen: package-manager cutover — document `pnpm` / `pnpm exec` (repo SSOT `packageManager` + `pnpm-lock.yaml`). |
 | 1.3.0 | 2026-07-14 | Executable quality contract: profile/dimension mapping and owned ERP benchmark criteria. |
 | 1.2.0   | 2026-07-14 | Wave C: enterprise requirements FFT-AC-005-01…04 (tenancy/authz/abuse). |
 | 1.1.0   | 2026-07-14 | DOC-003 six-section retrofit; catalog path explicit; prod flags deferred to MOD-008. |

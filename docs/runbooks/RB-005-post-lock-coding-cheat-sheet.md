@@ -2,32 +2,54 @@
 
 | Field | Value |
 |-------|-------|
-| ID | RB-005 |
-| Category | Runbook |
-| Version | 1.0.1 |
-| Status | Living |
-| Control State | Closed |
-| Owner | Platform |
-| Updated | 2026-07-14 |
-| **Mode** | Runbook / command card |
-| **Audience** | Engineers + agents |
-| **Enables** | Consistent PRs after Decision lock §0 — without reopening Rejected / Deferred tenancy work |
-| **Authority** | [ARCH-023 Decision lock](../architecture/ARCH-023-multi-tenancy.md) |
-| **Locked** | 2026-07-12 |
-
-Print or pin this. One phase per turn. Fail closed on red checks.
+| **ID** | RB-005 |
+| **Category** | Runbook |
+| **Version** | 1.1.0 |
+| **Status** | Living |
+| **Control State** | Closed |
+| **Owner** | Platform |
+| **Updated** | 2026-07-14 |
 
 ---
 
-## 1. Before any code
+# 1. Purpose
+
+Command card for engineers and agents after Decision lock §0 — one phase per turn, fail closed on red checks, without reopening Rejected / Deferred tenancy work.
+
+**Authority:** [ARCH-023 Decision lock](../architecture/ARCH-023-multi-tenancy.md)  
+**Locked:** 2026-07-12
+
+---
+
+# 2. Scope
+
+## 2.1 In scope
+
+- Pre-code env alignment and phase selection
+- Consistency gates and weekly anti-drift verify packs
+- Explicit-org ops stamps and Neon prod card
+- Rejected / Deferred flash card and slice DoD
+
+## 2.2 Out of scope
+
+- Reopening Decision lock Rejected / Deferred rows without explicit user approval
+- FFT P3 production flag promotion without FFT-MOD-008 reopen
+
+---
+
+# 3. Procedure
+
+Print or pin this. One phase per turn. Fail closed on red checks.
+
+## 3.1 Before any code
 
 ```powershell
 # Name ONE phase — then run:
 # (phase table below · closed scope: deprecation register — Closed product phases)
 cd C:\JackProject\afenda-bolt\client-declaration-portal
-npm run env:neon-production
-npm run env:compose
-npm run env:guard
+pnpm env:neon-production
+pnpm env:compose
+pnpm env:guard
 ```
 
 | Phase ID | When |
@@ -40,22 +62,20 @@ npm run env:guard
 
 **Still closed:** `/client` · FFT P3 prod flags · D4/M5 denorm · D5 project-per-tenant · R1–R7
 
----
-
-## 2. Consistency gates (every PR)
+## 3.2 Consistency gates (every PR)
 
 ```powershell
-npm run audit:tenancy-nulls
-npm run check:tenancy-residue
-npx tsc --noEmit
+pnpm audit:tenancy-nulls
+pnpm check:tenancy-residue
+pnpm exec tsc --noEmit
 ```
 
 Optional before ship:
 
 ```powershell
-npm run check:db-schema
-npm run verify:vercel-db          # must show -pooler
-npm run test:e2e:journey -- e2e/tenancy-isolation.spec.ts
+pnpm check:db-schema
+pnpm verify:vercel-db          # must show -pooler
+pnpm test:e2e:journey -- e2e/tenancy-isolation.spec.ts
 ```
 
 | Must | Must not |
@@ -68,33 +88,29 @@ npm run test:e2e:journey -- e2e/tenancy-isolation.spec.ts
 
 **Anti-claim:** never write “multi-DB isolation”, “project-per-tenant”, or “RLS protects BFF tenants.”
 
----
-
-## 3. Weekly anti-drift (verify only)
+## 3.3 Weekly anti-drift (verify only)
 
 Full ladder: [neon-tenancy-efficiency/reference.md](../../.cursor/skills/neon-tenancy-efficiency/reference.md)
 
 ```powershell
 # Quick pack
-npm run env:compose
-npm run validate:env-sync
-npm run verify:vercel-db
-npm run audit:tenancy-nulls
-npm run check:tenancy-residue
-npm run audit:neon-auth-production
+pnpm env:compose
+pnpm validate:env-sync
+pnpm verify:vercel-db
+pnpm audit:tenancy-nulls
+pnpm check:tenancy-residue
+pnpm audit:neon-auth-production
 ```
 
 Do **not** raise CU or invent `FFT_ERP_*` to green checks (§0 **R7**).
 
----
-
-## 4. Ops stamps (explicit org only)
+## 3.4 Ops stamps (explicit org only)
 
 ```powershell
 # Resolve Auth org id first (not NEON_ORG_ID):
 # SELECT id, name, slug FROM neon_auth.organization ORDER BY "createdAt";
 
-npm run audit:tenancy-nulls
+pnpm audit:tenancy-nulls
 node --env-file=.env scripts/backfill-fft-access.mjs --dry-run --organization-id=<auth-org-uuid>
 # live write only when dry-run shows work:
 node --env-file=.env scripts/backfill-fft-access.mjs --organization-id=<auth-org-uuid>
@@ -113,11 +129,9 @@ E2E_ORGANIZATION_ID=4587e4c8-8119-4761-91ce-b874d3493aad
 SHARED_ADMIN_EMAIL=afenda@admin.com
 ```
 
-Set in `env.config` / `env.secret` → `npm run env:compose`. Slug must match live `neon_auth.organization` (`afenda-lite`).
+Set in `env.config` / `env.secret` → `pnpm env:compose`. Slug must match live `neon_auth.organization` (`afenda-lite`).
 
----
-
-## 5. Neon prod card (do not reinvent)
+## 3.5 Neon prod card (do not reinvent)
 
 | Item | Value |
 |------|-------|
@@ -129,17 +143,15 @@ Set in `env.config` / `env.secret` → `npm run env:compose`. Slug must match li
 | Compute | 0.25–2 CU · suspend 0 |
 | Region | `aws-ap-southeast-1` |
 
-Detail: [multi-org-ops.md](./RB-001-multi-org-ops.md)
+Detail: [RB-001](./RB-001-multi-org-ops.md)
 
 ```powershell
 # Avoid day-to-day neonctl link (rewrites .neon / pollutes .env)
-npm run env:neon-production
-npm run env:compose
+pnpm env:neon-production
+pnpm env:compose
 ```
 
----
-
-## 6. Rejected / deferred flash card
+## 3.6 Rejected / deferred flash card
 
 | ID | Status | Action |
 |----|--------|--------|
@@ -154,9 +166,7 @@ npm run env:compose
 | Prod org switcher | Deferred | Multi-membership + rollback |
 | FFT P3 flags | Deferred | [FFT-MOD-008](../modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md) |
 
----
-
-## 7. Slice DoD (fullstack-guardian)
+## 3.7 Slice DoD (fullstack-guardian)
 
 ```text
 Frontend  route → features/* runner → loading.tsx · no business logic in app/page
@@ -166,14 +176,12 @@ Security  proxy matcher · layout session · sanitizeReturnTo · parameterized S
 
 ```powershell
 # After slice
-npx tsc --noEmit
-npm run check:tenancy-residue
+pnpm exec tsc --noEmit
+pnpm check:tenancy-residue
 # + phase unit / interaction tests named in the phase task doc
 ```
 
----
-
-## 8. Phase entry docs (load one)
+## 3.8 Phase entry docs (load one)
 
 | Track | Doc |
 |-------|-----|
@@ -186,8 +194,26 @@ npm run check:tenancy-residue
 
 ---
 
-## References
+# 4. References
 
-- Decision lock: [ARCH-023 Decision lock](../architecture/ARCH-023-multi-tenancy.md)
-- Ladder commands: [neon-tenancy-efficiency/reference.md](../../.cursor/skills/neon-tenancy-efficiency/reference.md)
-- Deprecation register: [deprecation-and-migration/reference.md](../../.cursor/skills/agent-skills/skills/deprecation-and-migration/reference.md)
+| ID / Evidence | Relationship |
+| --- | --- |
+| [ARCH-023 Decision lock](../architecture/ARCH-023-multi-tenancy.md) | Binding Rejected / Deferred rows |
+| [RB-001](./RB-001-multi-org-ops.md) | Multi-org ops detail |
+| [neon-tenancy-efficiency/reference.md](../../.cursor/skills/neon-tenancy-efficiency/reference.md) | Ladder commands |
+| [deprecation-and-migration/reference.md](../../.cursor/skills/agent-skills/skills/deprecation-and-migration/reference.md) | Closed product phases |
+
+---
+
+# 5. Change Log
+
+| Version | Date | Summary |
+| ------- | ---- | ------- |
+| 1.1.0 | 2026-07-14 | DOC-003 six-section retrofit; package-manager commands remain `pnpm`. |
+| 1.0.2 | 2026-07-14 | Bounded reopen: package-manager cutover — document `pnpm` / `pnpm exec` (repo SSOT `packageManager` + `pnpm-lock.yaml`). |
+
+---
+
+# 6. Notes
+
+One phase per PR/agent turn. Fail closed. Do not reopen Decision lock rows from this card.

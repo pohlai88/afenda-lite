@@ -170,11 +170,11 @@ MODE: run tests / report — product code only if TASK says fix failing tests
 FOLLOW: Feed Farm Trade agent command sheet (locked context + load order + DoD + output contract)
 READ: verify.md commands section + testing/README.md identities
 DO:
-1. npm run env:compose (if needed for E2E)
-2. npm run test:unit -- modules/fft
-3. npm run check:fft-ui-registry && npm run test:unit -- features/fft/ui-registry
+1. Env: ARCH-027 two-state — docs-first no compose; Target post-S4.1 @afenda/env + .env.local before E2E when app exists
+2. npm run test:unit -- modules/fft (Target-gated; BLOCKED on docs-first)
+3. npm run check:fft-ui-registry && npm run test:unit -- features/fft/ui-registry (Target-gated)
 4. Optionally: npm run test:e2e:smoke / npm run test:e2e:journey (cite @smoke / @journey)
-5. Do not conflate SHARED_ADMIN_EMAIL with sales allowlist.
+5. Do not conflate SHARED_ADMIN_EMAIL with sales allowlist. Do not reopen 2B–2D.
 OUT: Output contract. Pass/fail table. No feature work.
 TASK: <REPLACE: e.g. unit only | include journey>
 ```
