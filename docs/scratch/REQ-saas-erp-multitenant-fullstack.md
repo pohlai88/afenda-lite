@@ -2,14 +2,19 @@
 
 > **Scratch / non-authoritative.** This document is working material under `docs/scratch/`. It is **not** a Living or Target source of truth. It must not be cited as controlled architecture. Promotion into an authoritative docs folder requires separate DOC-001 approval and a DOC-002 register entry.
 
+> **Parked — future-product scratch (OQ-20 closed by scope separation, 2026-07-14).**
+> The §5 ERP module set (Sales, Purchasing, Inventory, Finance, Master Data, Reporting, Payments, Integration, and related `REQ-F-*` families) describes a **distinct future product surface outside** the current Afenda-Lite Living/Target bounded contexts in [ARCH-006](../architecture/ARCH-006-bounded-contexts.md) (Identity, Declarations, Trade / Feed Farm Trade, Platform).
+> **Do not** cite this draft as Afenda-Lite Target architecture, invent ERP modules under `apps/web/modules/*`, open an ERP-expansion ADR from this file, or treat it as Module Enterprise Readiness / release evidence.
+> **Afenda-Lite runtime and product readiness remain NOT EVIDENCED.** Cross-cutting evidence semantics are now controlled by [GUIDE-017](../guides/GUIDE-017-enterprise-quality-evidence-standard.md). The ERP-specific QG catalogue, module requirements, and open decisions remain parked here and are not promoted.
+
 | Field | Value |
 |-------|-------|
 | Title | SaaS ERP Multi-Tenancy Fullstack Requirements |
-| Status | Draft |
+| Status | Draft — parked (future-product scratch) |
 | Owner | Product Architecture (provisional) |
 | Updated | 2026-07-14 |
 | Audience | Product, domain, engineering, security, data, operations, quality, and control reviewers |
-| Action enabled | Define promotion-ready requirements and decide whether a release has sufficient current evidence for enterprise production |
+| Action enabled | Preserve future-product ERP requirements outside Afenda-Lite Target; do not drive Afenda-Lite implementation or readiness claims from this file |
 
 ---
 
@@ -131,14 +136,14 @@ This draft cannot supersede or silently reopen a controlled decision. Conflicts 
 
 ### 1.4.1 Authority-conflict matrix (mandatory before promotion)
 
-Architecture compatibility is **BLOCKED**, not presumed, until the accountable owner completes and attaches this matrix. It is not satisfied by this draft's own cross-references — it requires a reviewer with read access to the cited controlled documents to record a verdict.
+Because this draft is parked, no Afenda-Lite compatibility review is active or implied. If a future product program explicitly reopens this material for controlled promotion, architecture compatibility is **BLOCKED**, not presumed, until an accountable owner completes this matrix against that program's controlled authorities; this draft's own cross-references are not sufficient evidence.
 
 | Requirement ID | Controlled authority | Compatible? | Conflict / assumption | Decision owner |
 |----------------|----------------------|-------------|------------------------|-----------------|
-| §5 module set (`REQ-F-PLT/MD/SAL/PUR/INV/FIN/RPT/INT/PAY/IMP/ENT`) | [ARCH-006](../architecture/ARCH-006-bounded-contexts.md) bounded-context map; [ARCH-022](../architecture/ARCH-022-system-overview.md) `modules/{platform,identity,declarations,fft}` Target tree | **No — confirmed conflict, not merely unreviewed** | ARCH-006's Living/Target bounded-context list is Identity, Declarations, Trade (Feed Farm Trade), and Platform. It has **no** Sales, Purchasing, Inventory, Finance, Master Data, Reporting, or Payments context, and ARCH-006 explicitly requires a new ADR before scaling to a new bounded context (§ "Scaling path (later — needs ADR)") and forbids inventing a context as a stepping stone. | Product Architecture — see [§12.2 OQ-20](#122-open-decisions) |
-| Rest of §5–§10 requirement families | ARCH-010, ARCH-022–029, ARCH-031 | Not yet reviewed | — | Product Architecture (matrix incomplete beyond the row above) |
+| §5 module set (`REQ-F-PLT/MD/SAL/PUR/INV/FIN/RPT/INT/PAY/IMP/ENT`) | [ARCH-006](../architecture/ARCH-006-bounded-contexts.md) bounded-context map; [ARCH-022](../architecture/ARCH-022-system-overview.md) `modules/{platform,identity,declarations,fft}` Target tree | **N/A — scope-separated (not an Afenda-Lite Target claim)** | Confirmed absence of ERP contexts in ARCH-006 is **resolved by parking this draft as future-product scratch**, not by claiming compatibility and not by an ERP-expansion ADR. Afenda-Lite Target contexts remain Identity, Declarations, Trade (Feed Farm Trade), and Platform. | Product Architecture — [OQ-20 closed](#1211-closed-scratch-decisions) |
+| Rest of §5–§10 requirement families (as Afenda-Lite Target claims) | ARCH-010, ARCH-022–029, ARCH-031 | **Out of scope while parked** | No Afenda-Lite Target compatibility review is required or claimed for a parked future-product draft. Compatibility review would restart only if a future program explicitly reopens this material for a new product surface. | Product Architecture |
 
-This row is the one concrete, evidence-backed exception to "architecture compatibility is BLOCKED, not presumed" in this draft: it was reviewed against the cited controlled documents and found **incompatible as scoped**, not merely unresolved. Every other row remains a template until an owner with read access completes the review. Until every row reads "Yes," §15.4 specification-completeness gate cannot pass and QG-13 remains BLOCKED.
+Architecture compatibility of this draft **with the Afenda-Lite Living Target is not claimed**. Parking closes the §5/ARCH-006 conflict via scope separation. Afenda-Lite runtime/product readiness remains **NOT EVIDENCED**. §15.4 specification-completeness and QG-13 do not apply to Afenda-Lite releases from this parked file.
 
 ### 1.5 Requirement quality contract
 
@@ -163,13 +168,14 @@ A requirement row without all three populated is NOT EVIDENCED-eligible only, ne
 
 ### 1.6 Assumptions and unknowns
 
-- This is a requirements proposal for the controlled Afenda-Lite Target, not evidence of an implemented ERP product tree.
-- The §8.1 workload is a proposed minimum acceptance envelope and remains BLOCKED until Product and Platform ratify it against demand and cost forecasts.
-- Jurisdiction-specific tax, retention, legal hold, numbering, accessibility, and data-residency obligations remain subject to Legal/Compliance decisions in §12.2.
-- Product code, production-like test environments, evidence artifacts, and release approvers are not established by this scratch document; current readiness is NOT EVIDENCED.
-- Controlled documents remain authoritative for stack, tenancy, identity, API, module, environment, deployment, and anti-contamination decisions.
-- The legal-entity/group model (§4.5, OQ-10) is unresolved; `REQ-F-ENT-*` is a candidate requirement set, not a selected architecture, until Product Architecture and Finance decide.
-- The §1.4.1/§12.3 authority-conflict matrix is a template, not a completed review; architecture compatibility remains BLOCKED until an owner with read access to the controlled documents in §14.1 completes it.
+- This is a **parked future-product** requirements draft **outside** the current Afenda-Lite Target, not a Living Target architecture proposal and not evidence of an implemented ERP (or Afenda-Lite) product tree.
+- Afenda-Lite Living/Target bounded contexts remain those in ARCH-006 only; this file does not extend them.
+- The §8.1 workload is a proposed minimum acceptance envelope for that future product surface and remains BLOCKED until Product and Platform ratify it against demand and cost forecasts for that product.
+- Jurisdiction-specific tax, retention, legal hold, numbering, accessibility, and data-residency obligations remain subject to Legal/Compliance decisions in §12.2 (ready only if that future product is pursued).
+- Product code, production-like test environments, evidence artifacts, and release approvers are not established by this scratch document; **current readiness is NOT EVIDENCED** for Afenda-Lite and for any ERP surface described here.
+- Controlled Afenda-Lite documents remain authoritative for stack, tenancy, identity, API, module, environment, deployment, and anti-contamination decisions on this checkout.
+- The legal-entity/group model (§4.5, OQ-10) is unresolved for the future product surface; `REQ-F-ENT-*` is a candidate requirement set, not Afenda-Lite selected architecture.
+- OQ-20 is closed by scope separation (§12.1.1). Remaining §1.4.1 rows are **out of scope for Afenda-Lite** while this draft stays parked; they are not an open Afenda-Lite compatibility audit.
 
 ---
 
@@ -180,7 +186,7 @@ Mid-market and enterprise operators need a single cloud ERP for sales, purchasin
 - Strict **organization-level tenancy** so customer data never leaks across tenants.
 - **Document workflow** (draft → approve → post → void/reverse) with financial integrity.
 - **Integration** for EDI replacements, e-commerce, and bank/tax connectors via stable APIs.
-- **Operational readiness**: audit, backup, observability, SSO, and RBAC suitable for regulated customers, and for multi-entity customers once [§4.5](#45-legal-entity--group-model-oq-10--open-release-blocking) resolves OQ-10.
+- **Operational readiness**: audit, backup, observability, SSO, and RBAC suitable for regulated customers, and for multi-entity customers once [§4.5](#45-legal-entity-group-model-oq-10-open-release-blocking) resolves OQ-10.
 
 Building these concerns ad hoc produces fragmented tools and broken books. This product exists to provide one modular SaaS ERP with production-grade boundaries from day one of implementation—not a disposable prototype.
 
@@ -194,7 +200,7 @@ Building these concerns ad hoc produces fragmented tools and broken books. This 
 2. Enforce hard tenant isolation on every read/write path ([§4](#4-actors-and-tenancy-model)).
 3. Preserve financial correctness: postings, periods, multi-currency, tax hooks, and immutable audit for posted documents ([§5.6](#56-finance), [§6](#6-cross-cutting-requirements)).
 4. Provide a fullstack system—first-party web UI, BFF, domain modules, PostgreSQL, jobs, files, public REST—that is operable in production ([§7](#7-fullstack-technical-requirements), [§8](#8-non-functional-requirements-and-acceptance-envelope)).
-5. Keep one shared error/idempotency/audit vocabulary across UI adapters and public HTTP ([§7.3](#73-api-and-contracts)).
+5. Keep one shared error/idempotency/audit vocabulary across UI adapters and public HTTP ([§7.3](#73-api-and-contracts-req-t-api)).
 
 ### 3.2 Non-goals (product boundary, not quality exception)
 
@@ -209,7 +215,7 @@ The following **product domains** are out of scope for this requirements set:
 | Payroll / HRIS | Not in this ERP core |
 | E-commerce storefront | Integration APIs may feed orders; no storefront UI |
 | Marketplace / app store | No third-party extension marketplace |
-| White-label theme marketplace | Tenant branding configuration is in-scope only as admin settings ([§5.1](#51-platform--tenancy)); not a theme marketplace |
+| White-label theme marketplace | Tenant branding configuration is in-scope only as admin settings ([§5.1](#51-platform-tenancy)); not a theme marketplace |
 
 ---
 
@@ -251,7 +257,7 @@ The following **product domains** are out of scope for this requirements set:
 
 This draft does not authorize schema-per-tenant, project-per-tenant, soft dual-mode tenancy, first-organization stamping, or ambient organization inference. Reconsideration requires an explicit controlled decision reopening the applicable ARCH-023 lock; this scratch requirement cannot do so.
 
-### 4.5 Legal-entity / group model (OQ-10 — open, release-blocking)
+### 4.5 Legal-entity group model (OQ-10 open release-blocking)
 
 §2 names "regulated and multi-entity customers" while §4.1–§4.4 scope isolation, numbering, fiscal periods, and credentials to one organization. Those statements are semantically incompatible until one model is selected. This section resolves the *shape* of both candidates so whichever is chosen has ready-to-promote requirements; it does **not** select one on the accountable owner's behalf.
 
@@ -574,7 +580,7 @@ ARCH-022/ARCH-024 already decide the workspace shape (Turborepo + pnpm, one app,
 | REQ-T-MONO-003 | The workspace root **must** pin exactly one `packageManager` version (pnpm) and one Node engine range; no package may declare a conflicting `engines` value. | `pnpm install` on a fresh clone with the pinned Node version succeeds without a version-mismatch warning. | A package declaring a different `packageManager` or an incompatible `engines` range fails CI at install time, not at a later, harder-to-diagnose build step. | A CI runner using a mismatched pre-installed Node/pnpm version fails fast with a clear message, not a silent partial install. |
 | REQ-T-MONO-004 | No package **must** import a dependency it has not declared in its own `package.json` (no phantom dependency reliance on pnpm's hoisting or a sibling package's transitive dependency). | A package's declared dependencies are sufficient to build it in isolation (e.g. via `pnpm --filter` with an isolated `node_modules`). | A package importing an undeclared dependency fails a phantom-dependency lint/check in CI, not only at a future pnpm-version upgrade. | Adding the missing declared dependency and re-running the check is deterministic and requires no other workaround. |
 | REQ-T-MONO-005 | Root `package.json` **must** hold devDependencies only, per ARCH-022's explicit constraint; a runtime dependency added at root **must** fail a CI check, not merely a manual review. | The root `package.json`'s `dependencies` field is empty or absent; all runtime deps live in `apps/web` or the owning package. | A PR adding a runtime dependency to the root `package.json` fails CI with a rule-specific message. | N/A — structural/static check, not a stateful operation. |
-| REQ-T-MONO-006 | Any new package beyond ARCH-024's six, or any new deployable beyond `apps/web`, **must not** be created without a preceding ADR; likewise, any new bounded context beyond ARCH-006's four **must not** be created without a preceding ADR (cross-reference OQ-20). A CI check **must** fail a PR that adds a new top-level `packages/*` or `apps/*` directory, or a new top-level `modules/*` directory, without a corresponding ADR reference in the PR description or an approved manifest entry. | A PR adding a reviewed, ADR-referenced new package passes the check because the ADR reference is present. | A PR adding an unreferenced new package or app directory fails the check, surfacing the missing-ADR reason explicitly. | N/A — structural/static check, not a stateful operation. |
+| REQ-T-MONO-006 | A package beyond ARCH-024's six **must not** be created without an explicit bounded reopen and controlled update of ARCH-024; an ADR is added only if the accountable owner determines that the topology change warrants one. A deployable beyond `apps/web`, or a bounded context beyond ARCH-006's four, **must not** be created without the preceding architecture decision required by ARCH-022/ARCH-006 (Afenda-Lite Target; OQ-20 closed by scope separation — §5 ERP modules are not Afenda-Lite Target contexts). A CI check **must** fail a PR that adds `packages/<new>`, `apps/<new>`, or `apps/web/modules/<new-context>` without the applicable controlled-update or ADR reference in the PR description or an approved manifest entry. | A reviewed package addition linked to the approved ARCH-024 update passes; a new app or bounded context passes only with its required architecture-decision reference. | An unapproved package, app, or bounded-context directory fails the check and identifies the missing controlled update or architecture decision. | N/A — structural/static check, not a stateful operation. |
 
 ---
 
@@ -727,14 +733,14 @@ All listed resources are **organization-scoped** unless explicitly platform-oper
 | Exception-state misuse | Waived requirement silently reported as PASS | ACCEPTED RISK requirement missing owner/expiry/compensating control | Enforce §1.3.2 exception fields; reject malformed exceptions | Release manager + affected owners | Blocks release sign-off until corrected |
 | Serverless execution-model mismatch | REQ-T-JOB-001 durability requirement cannot be met by an in-process scheduler on a stateless, time-bounded function runtime | Job silently stops after a function invocation ends; missed FX/report/webhook runs with no error | Select and implement the OQ-03 durable queue/worker per §7.10 before any production-exposed background-dependent increment | Platform + Operations | Blocks QG-05/QG-11 PASS for the affected increment |
 | Contract-drift between BFF and public REST | Frontend or integration client silently breaks on an unreflected contract change | Runtime type mismatch not caught by CI; a module's Zod schema (REQ-T-API-016) changed without its `z.infer` consumers being updated | Enforce a CI gate that fails when a schema change and its consumer types diverge; no new shared-contracts package (ARCH-024 closed package list) | API owner + Frontend | Blocks QG-12 PASS |
-| **Module/bounded-context scope mismatch** | The §5 ERP module set has no home in ARCH-006's controlled bounded-context list; implementing against §11's delivery order without resolving OQ-20 would mean writing product code with no approved architectural home — a direct anti-contamination and "no invented bounded context" violation | Any attempt to start §11 increment 2+ before an ADR extends ARCH-006, or before an explicit scope-separation decision is recorded | Resolve OQ-20 (ADR extending ARCH-006, or explicit scope-separation ruling) before any implementation slice begins | Product Architecture + Platform | **Blocks all implementation** — this is a controlled-authority boundary, not a quality gate; §1.4 forbids this draft from silently reopening or superseding ARCH-006, so it is distinct from and does not expand the fixed §1.3 non-waivable-conditions list |
+| **Module/bounded-context scope mismatch** | The §5 ERP module set has no home in ARCH-006; treating this draft as Afenda-Lite Target work would invent bounded contexts | Any Afenda-Lite implement slice that materializes §5 ERP modules without a new product program and controlled ADR path | **Mitigation in force:** OQ-20 closed by scope separation (§12.1.1) — this draft is parked as future-product scratch; Afenda-Lite Target contexts unchanged; no ERP-expansion ADR from this file | Product Architecture + Platform | **Blocks Afenda-Lite implementation of §5 ERP modules** while parked; does not authorize code from this scratch file |
 | Stale evidence | Unsupported readiness claim | Revision/date mismatch or missing artifact | Evidence index, freshness policy, candidate rerun | Release manager | Defaults to NOT EVIDENCED |
 
 ---
 
 ## 11. Implementation delivery order
 
-Sequencing controls dependency order only. Every production-exposed increment must satisfy all applicable §1.3 quality gates.
+**Not Afenda-Lite Target work.** This table is a future-product dependency sketch only (OQ-20 parked). It does not authorize ARCH-028 implement slices, product scaffolding, or Afenda-Lite module creation. For a future program that explicitly reopens this draft, sequencing controls dependency order only; every production-exposed increment must satisfy all applicable §1.3 quality gates.
 
 | Order | Increment | Entry condition | Required exit evidence | Rollback / stop condition |
 |-------|-----------|-----------------|------------------------|---------------------------|
@@ -768,7 +774,17 @@ These are not open vendor selections in this draft.
 | Public interface | One REST/port model; no parallel GraphQL or tRPC authority | ARCH-029 / API-001 |
 | Runtime/hosting | Node default, Vercel posture and Neon proximity | ARCH-010 / ARCH-031 |
 
+### 12.1.1 Closed scratch decisions
+
+These close **this draft's** open questions. They are **not** Living Afenda-Lite architecture, ADRs, or DOC-002 rows.
+
+| ID | Decision | Ruling | Closed |
+|----|----------|--------|--------|
+| OQ-20 | Module/bounded-context mapping vs ARCH-006 | **Scope separation.** The §5 ERP module set and related ERP `REQ-F-*` / §11 delivery increments describe a **future product surface outside** the current Afenda-Lite Target. ARCH-006's four contexts (Identity, Declarations, Trade/FFT, Platform) are **affirmed and unchanged**. No ERP-expansion ADR is opened from this file. This draft stays parked under `docs/scratch/` and must not drive Afenda-Lite implementation, Module Enterprise Readiness, or release evidence. | 2026-07-14 |
+
 ### 12.2 Open decisions
+
+Open decisions below apply **only if** a future product program explicitly reopens this parked draft. They are **not** Afenda-Lite Target blockers and must not be treated as Living architecture gaps on this checkout.
 
 | ID | Decision required | Accountable owner | Decision evidence | Deadline / blocks |
 |----|-------------------|-------------------|-------------------|-------------------|
@@ -791,17 +807,16 @@ These are not open vendor selections in this draft.
 | OQ-17 | SaaS subscription, plan, and entitlement ownership (billing system, plan-to-permission mapping, quota enforcement) | Product + Platform | Entitlement model, billing-integration design | Before GA commercial launch |
 | OQ-18 | E-invoicing and statutory reporting obligations per market | Product + Finance + Legal | Jurisdiction e-invoicing mandate matrix, format/transmission design | Before taxable transactions in a mandate market |
 | OQ-19 | Supported browsers, locales, and the accessibility test matrix, including an i18n tooling decision (e.g. build-time-validated translation catalogs) if more than one locale ships | Frontend + Design + QA | Browser/locale support matrix, WCAG 2.2 AA test plan per REQ-N-A11Y-001, chosen i18n library/workflow | Before QG-10 PASS |
-| OQ-20 | **Module/bounded-context mapping (release-blocking, confirmed conflict — see §1.4.1).** ARCH-006's Living/Target bounded-context list (Identity, Declarations, Trade/FFT, Platform) has no Sales, Purchasing, Inventory, Finance, Master Data, Reporting, Payments, or Integration context. Decide whether the §5 ERP module set becomes new bounded contexts under `apps/web/modules/*` via one or more ADRs, or whether this draft describes a distinct future product surface outside the current Afenda-Lite Target scope entirely. | Product Architecture + Platform | ADR(s) extending ARCH-006's context map, or an explicit scope-separation decision recorded against this draft | Before any §11 implementation increment begins — this blocks the entire delivery order, not one module |
 | OQ-21 | Package publishing/versioning strategy if any `@afenda/*` package (e.g. `@afenda/ui`, or a future contract/type export) is ever published outside the private workspace | Platform | Semver policy, changeset/release-pipeline design, npm-publish threat model | Before any package crosses from private-workspace-only to externally published, per ARCH-024 "Known limits" |
 | OQ-22 | Ownership home for cross-cutting concerns that comparable SaaS monorepo templates isolate into dedicated packages but that ARCH-024's closed six-package list does not name an owner for: request rate-limiting (REQ-F-INT-006), webhook signing/verification (REQ-F-INT-004/005), and durable scheduled/cron work (REQ-T-RUN-002, OQ-03). Decide whether each lives inside an existing package's public surface (e.g. rate-limiting inside `@afenda/auth` as a session-adjacent security concern), as `apps/web/modules/platform/*` domain code with no package export, or requires a seventh package — the last option requires an explicit **ARCH-024 reopen and controlled update** (Control State Closed → Reopened), not a silent addition; ARCH-024 itself does not mandate a new ADR for every package addition, so the accountable owner decides, as part of that reopen, whether the topology change also warrants a dedicated ADR. | Platform + Backend Architecture | Ownership decision recorded against ARCH-024's package contract table via a controlled reopen (an ADR is added only if the accountable owner determines the topology decision warrants one) | Before REQ-F-INT-004/005/006 or REQ-T-RUN-002 reach production implementation |
 
 Source note for OQ-22: this question surfaced from comparing this draft against `next-forge` (a community/Vercel-targeted Turborepo SaaS reference template; primary repository under Hayden Bleasel's account — [github.com/haydenbleasel/next-forge](https://github.com/haydenbleasel/next-forge)), which isolates `rate-limit` and `webhooks` as their own packages (its cron/scheduled work instead lives as handlers under its `apps/api`, not a dedicated `cron` package) — a structurally reasonable pattern in general, but not directly portable here because ARCH-024's package list is closed at exactly six named packages; the conflict is with that closed count, not with the separate "no mega-package" rejection (which addresses consolidating everything into one package, not adding a focused seventh). The decision is *where these concerns live inside the existing closed set, or through an explicit ARCH-024 reopen*, not whether to adopt the reference template's package split wholesale.
 
-Open decisions remain BLOCKED or NOT EVIDENCED; they must not be represented as selected architecture. **OQ-20 is the most consequential entry in this table**: unlike OQ-01–OQ-19, it is not a pending choice among options — it is a confirmed scope conflict between this draft and the controlled bounded-context authority, and it gates every other open decision's practical relevance.
+Open decisions remain BLOCKED or NOT EVIDENCED for any future product that reopens this draft; they must not be represented as Afenda-Lite selected architecture. **OQ-20 is closed** (§12.1.1). Remaining OQs do not authorize Afenda-Lite ERP implementation and do not create Living architecture gaps.
 
 ### 12.3 Authority-conflict matrix
 
-The matrix lives in §1.4.1, not duplicated here. One row is already populated with a confirmed finding (the §5 module set vs. ARCH-006 bounded contexts, tracked as OQ-20); every other `REQ-F-*`/`REQ-T-*`/`QG-*` family against the controlled documents in §14.1 remains a template row pending accountable-owner review. A partially completed matrix keeps architecture compatibility at BLOCKED per §12.1's own framing — the resolved constraints in §12.1 describe direction, not a completed conflict review.
+The matrix lives in §1.4.1, not duplicated here. The §5/ARCH-006 row is closed by **scope separation** (OQ-20). Remaining rows are out of scope for Afenda-Lite while this draft stays parked — not an incomplete Living Target audit.
 
 ---
 
@@ -819,7 +834,7 @@ The matrix lives in §1.4.1, not duplicated here. One row is already populated w
 | Operations, incidents, recovery and rollback | Sets outcomes only | Controlled runbooks and module MOD-008 |
 | Single material choices | May identify decision need | Controlled ADR |
 
-Promotion requires an approved home and ID, explicit owner, bounded DOC-001 work, DOC-002 registration, authority-conflict review, assumptions resolved or blocked, and documentation-integrity validation. Until then, this file is never evidence that a capability is implemented or ready.
+**Parked posture:** this file is **not** a candidate for Afenda-Lite controlled promotion while OQ-20 scope separation stands. Cross-cutting evidence vocabulary, freshness/applicability, exception governance, and release/capability aggregation were promoted to [GUIDE-017](../guides/GUIDE-017-enterprise-quality-evidence-standard.md). ERP-specific QG gates, requirements, delivery sequencing, and open decisions remain non-authoritative scratch. This file is never evidence that a capability is implemented or ready; readiness remains **NOT EVIDENCED**.
 
 ---
 
@@ -933,7 +948,9 @@ Lifecycle status, CI success, deployment, manifest presence, configured infrastr
 
 ### 15.4 Specification completeness gate
 
-This draft is ready to propose for controlled promotion only when: every `REQ-F-*`/`REQ-T-*` row has a populated positive/adverse/recovery acceptance case per §1.5.1; IDs are unique and assigned to future owners; controlled decisions are not open; workload/SLO values are ratified; open decisions (§12.2, including OQ-10–OQ-19) have owners and deadlines; rollback/failure behavior is complete; references resolve; the §1.4.1/§12.3 authority-conflict matrix has no unresolved row; and no exception is recorded outside the §1.3.2 ACCEPTED RISK structure.
+**While parked (OQ-20 scope separation):** this draft is **not** ready for Afenda-Lite controlled promotion and does not authorize Afenda-Lite ERP implementation. Afenda-Lite and future-ERP runtime readiness remain **NOT EVIDENCED**.
+
+If a future product program explicitly reopens this material for that product surface (not as silent Afenda-Lite Target expansion), completeness for proposing controlled promotion would then require: every `REQ-F-*`/`REQ-T-*` row has a populated positive/adverse/recovery acceptance case per §1.5.1; IDs are unique and assigned to future owners; controlled decisions for that program are not open; workload/SLO values are ratified; open decisions (§12.2) have owners and deadlines; rollback/failure behavior is complete; references resolve; the §1.4.1/§12.3 matrix is completed for that new product authority; and no exception is recorded outside the controlled evidence rules in [GUIDE-017](../guides/GUIDE-017-enterprise-quality-evidence-standard.md).
 
 ---
 
@@ -968,6 +985,8 @@ Before production, Operations receives ownership, dependency inventory, dashboar
 
 | Date | Summary |
 |------|---------|
+| 2026-07-14 | **V2.5 — controlled evidence extraction.** Promoted only cross-cutting evidence vocabulary, claim identity, freshness/applicability, exception governance, evaluation dimensions, and release/capability aggregation to Living GUIDE-017 under Platform ownership. Preserved this file as parked future-product scratch: no ERP module, QG catalogue, delivery sequence, open decision, bounded context, or readiness claim was promoted. |
+| 2026-07-14 | **V2.4 — OQ-20 closed by scope separation (park).** Affirmed ARCH-006 Identity / Declarations / Trade (FFT) / Platform; **no** ERP-expansion ADR. Recorded §12.1.1 ruling that the §5 ERP module set is a **future-product surface outside** Afenda-Lite Target; parked this draft under `docs/scratch/`; updated §1.4.1 matrix, §1.6, §10 risk row, §12.2/§12.3, and §13 so the draft cannot be cited as Living Target compatibility, Module Enterprise Readiness, or release evidence. Afenda-Lite and ERP runtime/product readiness remain **NOT EVIDENCED**. Documentation-only; no ARCH-028 implement and no controlled Living/Target reopen. Enterprise-quality vocabulary promotion deferred to a separate named-owner DOC-001 mission. |
 | 2026-07-14 | **V2.3 — next-forge pattern-borrowing pass (corrected).** Reviewed `next-forge` — a **community/Vercel-targeted** Turborepo SaaS reference template, not a Vercel-owned template; its primary repository is under Hayden Bleasel's account ([github.com/haydenbleasel/next-forge](https://github.com/haydenbleasel/next-forge)) — against the controlled Afenda-Lite architecture (ARCH-006/022/024/025/026/027) to identify genuinely portable patterns without silently adopting incompatible structure. **Adopted:** `REQ-T-OPS-006` — graceful degradation for optional/third-party integration configuration (tax engine, storage/malware-scan vendor, bank connector, e-invoicing), sharpening REQ-T-OPS-001's fail-fast rule to apply only to *critical* secrets; its recovery case requires approved environment-variable promotion followed by redeployment of the same build artifact, not a hot config reload, consistent with ARCH-027's deployment-configuration (not dynamic-configuration-service) model. Borrowed the underlying convention with a precise caveat: next-forge disables a *feature* when its integration is not wired in at all (e.g. Stripe never imported); a package that *is* imported still requires its own env vars to function, so "optional" describes capability-level gating, not a blanket guarantee that every imported package degrades gracefully regardless of configuration. **Flagged as a new open decision, not silently applied:** `OQ-22` — ownership home for rate-limiting, webhook signing, and durable-scheduling concerns. next-forge has dedicated `rate-limit` and `webhooks` packages, but its scheduled/cron work is implemented as handlers under its `apps/api`, not a separate `cron` package — corrected from the prior draft's mischaracterization. None of these three concerns has a named owner in ARCH-024's closed six-package list; resolving OQ-22 requires either fitting the concern into an existing package's public surface, or an explicit **ARCH-024 reopen** (Closed → Reopened) with an ADR added only if the accountable owner judges the topology change warrants one — not a mandatory new ADR for every addition. Enriched `OQ-19`'s evidence column with an i18n-tooling decision input. **Explicitly rejected as non-portable, with corrected rationale** (recorded in this log, not as new requirements, to prevent future silent adoption): next-forge's multi-app split (`app`/`web`/`api`/`email`/`docs`/`storybook`/`studio` as separate deployables) conflicts with ARCH-022's closed "one deployable (`apps/web`) until a new ADR" decision; its Prisma ORM conflicts with ARCH-025's Drizzle decision; its Clerk-based auth conflicts with ARCH-026's Neon Auth decision (Stripe is a separate concern — a payments/provider choice already governed here by `OQ-11`, not a blanket "Clerk/Stripe" conflict); and its many focused packages (analytics, observability, security, notifications, collaboration, ai, CMS, rate-limit, webhooks) conflict with ARCH-024's closed **six-package count**, not with the separate "no mega-package" rejection (which is about consolidation into one package, a different constraint) — each addition requires an ARCH-024 reopen, with an ADR only where the accountable owner determines one is warranted. Validated (no doc change needed, already correct): `@t3-oss/env-nextjs`-style per-package env validation already matches ARCH-027's `@afenda/env` Target design; Server-Components-first with client interactivity isolated to separate files already matches REQ-T-UI-002/ARCH-013; a dev-only React Email preview task already exists in ARCH-022's `turbo.json` (`email:dev`) without needing a separate deployable app. |
 | 2026-07-14 | **V2.2 — monorepo-management governance pass.** Cross-checked this draft against the controlled Turborepo/package/bounded-context authorities (ARCH-006, ARCH-022, ARCH-024) rather than treating monorepo tooling as an open gap to freely re-specify. Confirmed and recorded a high-severity finding: the §5 ERP module set (Sales/Purchasing/Inventory/Finance/Master Data/Reporting/Payments/Integration) has **no corresponding bounded context** in ARCH-006's Living/Target list (Identity, Declarations, Trade/FFT, Platform) — populated the previously-template §1.4.1 authority-conflict matrix with this concrete row, added release-blocking `OQ-20` (module/bounded-context mapping) and `OQ-21` (package publishing/versioning per ARCH-024 "Known limits"), expanded the thin §12.1 system-shape row to cite ARCH-024's exact six-package/no-mega-package/root-devDeps-only/`@afenda/*`-only constraints, and added a non-quality-gate §10 risk row ("Module/bounded-context scope mismatch") that blocks all §11 implementation until OQ-20 resolves. Corrected two prior-pass requirements that had drifted from controlled authority: `REQ-T-API-016` now defers to the existing `modules/*/schemas` Zod/`z.infer` pattern instead of implying a new shared-contracts package (which ARCH-024's closed six-package list forbids), and `REQ-T-RUN-003` now cites ARCH-022's Node-default/Edge-exception decision as controlling rather than stating the rule freestanding. Added new §7.12 `REQ-T-MONO-001…006` turning ARCH-024's own named failure modes and ARCH-022's accepted costs (cross-package `src/` import, circular dependency, undeclared exports, stale Turborepo cache, phantom dependencies, root-devDeps drift, unauthorized new package/app/context) into CI-enforceable acceptance criteria, and updated §15.1 ownership routing accordingly. No product code, package, or app was created or restructured — this pass is documentation-only, per the ARCH-028 anti-contamination lock, and defers to ARCH-006/022/024 as controlling rather than superseding them. |
 | 2026-07-14 | **V2.1 — fullstack-developer optimization pass.** Identified and closed 10 implementation-level gaps not raised by the ERP-process critique: frontend grid virtualization and Core-Web-Vitals/RUM (`REQ-T-UI-007…010`); generated/shared API types to prevent contract drift (`REQ-T-API-016`); N+1-query discipline and Neon-branch migration rehearsal (`REQ-T-DB-006/007`); a new §7.10 runtime/background-execution requirement set (`REQ-T-RUN-001…004`) making explicit that the controlled Vercel/Node hosting posture (ARCH-010/ARCH-031) cannot host an in-process durable scheduler, tightening OQ-03; a new §7.11 progressive-delivery/feature-flag requirement set (`REQ-T-FLAG-001…003`) to make §11's "delivery sequencing is not quality reduction" principle practically executable; two new §10 risk rows (serverless execution-model mismatch, contract drift); and §15.1 ownership-routing updates for the new families. No product code was written — this checkout remains docs-first under the ARCH-028 anti-contamination lock; these are requirement-level fixes only, gated by the same open-decision/BLOCKED discipline as the rest of this draft. |
