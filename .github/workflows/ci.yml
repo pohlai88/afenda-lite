@@ -26,9 +26,9 @@ jobs:
         with:
           fetch-depth: 2
 
+      # Resolve pnpm from package.json "packageManager" (Corepack pin). Do not
+      # also set "version" — pnpm/action-setup rejects dual sources.
       - uses: pnpm/action-setup@v4
-        with:
-          version: 10.33.4
 
       - uses: actions/setup-node@v4
         with:
