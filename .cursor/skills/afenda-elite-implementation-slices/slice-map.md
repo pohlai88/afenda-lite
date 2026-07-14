@@ -1,9 +1,8 @@
-# ARCH-028 — slice map (farms · authority · verify)
+# Implementation slice map (farms · authority · verify)
 
-Authority body: [ARCH-028](../../../docs/architecture/ARCH-028-implementation-slices.md).  
 Always also load: this skill’s [SKILL.md](SKILL.md).
 
-**Progress hint (checkout):** S1.1–S8.2 + Checkpoints A–F done. Next open: **Checkpoint G** (Docs lane — Target→Living Status + retirement). Re-read ARCH-028 checkboxes before starting — evidence on disk wins over this hint.
+**Progress hint (checkout):** ARCH-028 S1–S8 + Checkpoints A–**G** **closed**. Current program: [GUIDE-018](../../../docs/guides/GUIDE-018-fullstack-e2e-integration-program.md) Phase **I1** — **I1.1–I1.3** done; next **I1.4**. Evidence on disk wins over this hint.
 
 ## Farm short names
 
@@ -15,39 +14,75 @@ Always also load: this skill’s [SKILL.md](SKILL.md).
 | nextjs | `afenda-elite-nextjs-best-practice` |
 | modules | `afenda-elite-backend-modules` |
 | api | `afenda-elite-api-contract` |
+| readiness | `afenda-elite-module-readiness` |
+| doc-control | `afenda-elite-doc-control` |
+| doc-integrity | `afenda-elite-doc-integrity` |
 | refactor | `afenda-elite-monorepo-refactor` |
 | neon | `neon-tenancy-efficiency` |
+| fft | `feed-farm-trade` |
 | admincn | `admincn-customization` |
 | lanes | `bounded-agent-lanes` (method) |
+| ship | `shipping-and-launch` (method) |
+| tdd | `test-driven-development` (method) |
+| security | `security-and-hardening` (method) |
 
-## Slice table
+---
+
+## Phase I table (GUIDE-018) — current
+
+Authority body: [GUIDE-018](../../../docs/guides/GUIDE-018-fullstack-e2e-integration-program.md).
+
+| ID | Size | Lane | Primary path | Sibling authority | LOAD farms (order) | Verify (minimum) |
+|----|------|------|--------------|-------------------|--------------------|------------------|
+| **I1.1** | S | Ops | `apps/web/proxy.ts` | ARCH-026 · ARCH-012 · ARCH-022 | router → slices → nextjs → neon | Edge gate present; unauth protected routes redirect; typecheck `@afenda/web` |
+| **I1.2** | M | Ops | `apps/web/app/(public)/auth/**` | ARCH-026 · Neon Auth | router → slices → nextjs → neon → scaffold | `/auth/login` · forgot · reset render; Neon Auth UI only |
+| **I1.3** | M | Ops | `/join` + invite path | ARCH-026 · ARCH-023 | router → slices → nextjs → neon → modules | `/join?invitationId=` works; invite via `@afenda/auth` |
+| **I1.4** | S | Ops | Role shells | ARCH-026 · ARCH-023 | router → slices → nextjs → neon | Unauth → login; wrong role → `/403`; happy session reaches shell |
+| **I2.1** | M | Ops | ActionResult / error brands | ARCH-029 · API-002 · GUIDE-015 | router → slices → api → modules | Shared result/error types on Target paths; typecheck |
+| **I2.2** | S | Ops | Feature→domain→db boundary | ARCH-024 · ARCH-029 | router → slices → modules → api | `rg` features never import `@afenda/db` |
+| **I2.3** | M | Ops | First authenticated **write** | ARCH-023 · owning MOD | router → slices → modules → api → neon | One non-FFT-2B write E2E under hard tenancy |
+| **I2.4** | S | Ops | OpenAPI / REST honesty | ARCH-029 · GUIDE-015 | router → slices → api | `pnpm check:openapi` (+ integrity if mapped) |
+| **I3.1** | M | Ops | Identity / Platform | ARCH-023 · MOD | router → slices → modules → readiness → neon | Roles/assignments/audit beyond list ports |
+| **I3.2** | M | Ops | Declarations submit/read | Declarations MOD · ARCH-023 | router → slices → modules → readiness → neon | Client list → submit/read under hard tenancy |
+| **I3.3** | S | Ops | FFT read shell (freeze) | FFT-MOD-008 | router → slices → fft → modules | Phase 2A envelope only — no 2B–2D |
+| **I3.4** | M | Ops | Org-admin shell | ARCH-015/018 when needed | router → slices → scaffold → modules → admincn? | Operator UX composes Identity/Platform ports |
+| **I4** | L | Test | `testing/e2e/*` · `e2e/` | GUIDE-017 · testing/README | router → slices → tdd · lanes | Forward factories + smoke; two-org denial; no Collapse recover |
+| **I5.1** | M | Ops | Security / privacy / audit | GUIDE-017 · ARCH-023 | router → slices → security → neon | Non-waivable isolation/secret/unsafe-error closed or evidenced |
+| **I5.2** | M | Ops | Resilience / restore | GUIDE-017 · ARCH-025 | router → slices → neon | Restore/RPO path rehearsed or blocker named |
+| **I5.3** | M | Ops | Observability | GUIDE-017 | router → slices · ship | Correlation on critical path; alert→runbook link when alerts exist |
+| **I5.4** | M | Ops | UX · a11y · i18n · perf | GUIDE-017 | router → slices → scaffold | Declared states + budgets with owners (no invented thresholds) |
+| **I5.5** | M | Ops | CI / supply chain / release | GUIDE-017 · ARCH-022 | router → slices → lanes | Merge/deploy gate honesty; no silent skip |
+| **I5.6** | S | Ops | Simplification | code-simplification | router → slices | Complexity down; behavior unchanged; tests green |
+| **I6.1** | S | Docs | `*-MOD-009` / `*-MOD-010` | MOD-002 | router → slices → readiness → doc-control | Ledger rows for claimed verticals |
+| **I6.2** | S | Docs | GUIDE-017 claim | GUIDE-017 | router → slices → readiness → ship | READY / CONDITIONALLY READY / NOT READY filled |
+| **I6.3** | S | Ops | Deploy health | Deploy runbook | router → slices → ship | Actions Deploy · Vercel READY · Neon Auth domains |
+| **I7.1** | S | Docs | Doc integrity | DOC-001 | router → slices → doc-integrity | Integrity run clean or residuals logged |
+| **I7.2** | S | Normalize | Housekeeping → Slice D | ARCH-024 | router → slices → refactor | Discovery only; deletes via monorepo-refactor |
+| **I7.3** | S | Docs | Deprecation register | deprecation skill | router → slices | No banned product names / surfaces reintroduced |
+| **I7.4** | S | Docs | Skill catalog honesty | catalog.md | router → slices | Extend before inventing farms |
+
+### Phase I order lock
+
+```text
+I1.1 → I1.2 → I1.3 → I1.4 → I2.* → I3.* → I4 → I5.* → I6.* → I7.*
+```
+
+Do not skip I1 before I2 unless the user waives serial order **this turn**.
+
+---
+
+## ARCH-028 table (scaffold residual — coding closed)
+
+Authority body: [ARCH-028](../../../docs/architecture/ARCH-028-implementation-slices.md).
+
+Use only for evidence re-verify or named residual. **Do not invent S9.**
 
 | Slice | Size | Primary path | Sibling ARCH | LOAD farms (order) | Verify (minimum) |
 |-------|------|--------------|--------------|--------------------|------------------|
-| S1.1 | S | root workspace · `apps/web` · Turbo | ARCH-022 | router → slices → refactor | `pnpm install` · `turbo run build --dry=json` |
-| S1.2 | S | `packages/config` | ARCH-022 · ARCH-024 | router → slices → refactor | package listed in workspace · extends resolve |
-| **Checkpoint A** | — | workspace graph | ARCH-024 | slices | no circular workspace deps |
-| S2.1 | M | `packages/db` schema | ARCH-025 · ARCH-023 | router → slices → neon → modules | `pnpm --filter @afenda/db typecheck` · `organization_id` NOT NULL |
-| S2.2 | M | `packages/db` client · drizzle | ARCH-025 | router → slices → neon → modules | `db:generate` · `db:check` · **no** baseline migrate on prod branch |
-| **Checkpoint B** | — | DB import boundary | ARCH-025 | slices | no app `pg` · imports via `@afenda/db` |
-| S3.1 | S | `packages/auth` session | ARCH-026 | router → slices → neon → nextjs | `getSession()` → `Promise<Session>` (never silent null) · typecheck package |
-| S3.2 | S | `packages/auth` RBAC · invitations | ARCH-026 · ARCH-023 | router → slices → neon → nextjs | wrong role → `/403` · unauth → `/auth/login` · Neon SDK only in `@afenda/auth` |
-| **Checkpoint C** | — | auth import boundary | ARCH-026 | slices | no Neon Auth imports outside `@afenda/auth` · `rg "neon-auth-request" apps/web/` = 0 after move |
-| S4.1 | S | `packages/env` | ARCH-027 | router → slices → nextjs | typed `import { env } from '@afenda/env'` · compose retired same change set |
-| **Checkpoint D** | — | env file model | ARCH-027 | slices | `.env.local` only for Next · compose scripts gone · AGENTS.md matches Target |
-| S5.1 | M | `packages/ui` | ARCH-024 · ARCH-015 | router → slices → scaffold → admincn | `import { Button } from '@afenda/ui'` · globals from package · no duplicate `apps/web/components/ui` |
-| **Checkpoint E** | — | UI import boundary | ARCH-024 | slices | `rg "from.*components/ui" apps/web/` = 0 |
-| S6.1 | S | `packages/emails` | ARCH-026 | router → slices → nextjs | `pnpm --filter @afenda/emails email:dev` previews |
-| S7.1 | S/L | `apps/web` Next scaffold | ARCH-017 · ARCH-016 · ARCH-022 | router → slices → scaffold → nextjs | `pnpm --filter @afenda/web dev` :3000 · `@afenda/*` only |
-| S7.2 | S | route groups `(public)` `(operator)` `(client)` | ARCH-012 · ARCH-026 | router → slices → scaffold → nextjs → neon | `/` public · `/admin` + `/client/dashboard` guarded |
-| S7.3 | M | `apps/web/modules/*` domain | ARCH-006 · ARCH-023 · ARCH-024 | router → slices → modules → neon | domain via `@afenda/db` public surface · typecheck |
-| S7.4 | M | `apps/web/features/*` | ARCH-013 · ARCH-029 | router → slices → scaffold → modules → api | features do not import `@afenda/db` directly · smoke when e2e exists |
-| **Checkpoint F** | — | build graph | ARCH-022 | slices | `turbo run build` · `turbo run typecheck` · no `pg` · no `lib/auth|env|db` under `apps/web` |
-| S8.1 | S | `.github/workflows/ci.yml` | ARCH-022 | router → slices → lanes | CI green · Turbo remote cache token available |
-| S8.2 | S | `.github/workflows/deploy.yml` | ARCH-022 | router → slices · deployment-expert if needed | prod deploy · Corepack/pnpm knobs |
-| **Checkpoint G** | — | Target → Living | DOC-001 · ARCH-022…028 | slices → doc-control (separate Docs lane) | Status move only after tree matches; doc retirement = later Docs PR |
+| S1.1–S8.2 | — | see ARCH-028 | per row historically | — | Checkboxes + evidence already closed |
+| **Checkpoint G** | — | Docs Living cutover | DOC-001 · ARCH-022…028 | doc-control | **DONE** 2026-07-15 |
 
-## Path truth (Target)
+### Path truth (Living)
 
 | Concept | Use | Do not use |
 |---------|-----|------------|
@@ -56,15 +91,4 @@ Always also load: this skill’s [SKILL.md](SKILL.md).
 | Features | `apps/web/features/**` | root `features/` |
 | Domain | `apps/web/modules/**` | root `modules/` |
 | Packages | `packages/{auth,db,env,ui,emails,config}` | parallel invented roots |
-
-## Checkpoint pairing
-
-| After finishing | Also close |
-|-----------------|------------|
-| S1.2 | Checkpoint A |
-| S2.2 | Checkpoint B |
-| S3.2 | Checkpoint C |
-| S4.1 | Checkpoint D |
-| S5.1 | Checkpoint E |
-| S7.4 | Checkpoint F |
-| S8.2 | Checkpoint G (docs Status = **separate** Docs-lane follow-up) |
+| Program order | GUIDE-018 Phase I | inventing ARCH-028 S9 |

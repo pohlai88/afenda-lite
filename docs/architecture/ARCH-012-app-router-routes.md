@@ -4,11 +4,11 @@
 | ----------------- | ------------ |
 | **ID**            | ARCH-012     |
 | **Category**      | Architecture |
-| **Version**       | 1.2.3        |
+| **Version**       | 1.2.5        |
 | **Status**        | Living       |
-| **Control State** | Closed       |
+| **Control State** | Closed     |
 | **Owner**         | Frontend     |
-| **Updated**       | 2026-07-14   |
+| **Updated**       | 2026-07-15   |
 
 ---
 
@@ -87,7 +87,8 @@ apps/web/proxy.ts (session gate; not middleware.ts)
 |--------|------|-------------------------|---------------|
 | `/dashboard/*`, `/account/*` | Authenticated member (`requireMemberSession`); admin ops use `requirePlatformOperatorSession` | Request-time | `loading` + `error` required on authenticated segments |
 | `/fft/*` | Platform `fft.access` (`requireFftAccess` / `hasFftModuleAccess`) — org admin alone is insufficient | Request-time | `loading` + `error` on authenticated segments |
-| `/client/*` workspace | Client session; product restore **Closed (registered)** | Request-time when authorized | Per workspace row |
+| `/client/*` workspace | `requireRole('client')` on `(workspace)` layout; Closed product restore (onboarding/profile/declare) remains registered Closed | Request-time when authorized | `loading` + `error` under `dashboard/` (not on redirect parents) |
+| `/client/login`, `/client/preview-unavailable` | Gate blank chrome; session-gate bypass (no `requireRole`) | Request-time | Parent `(gate)` has **no** `loading`/`error` (login uses `redirect()`); preview segment may own them |
 | `/auth/*`, join, public links | Auth island / public | Per surface | See rows |
 | `/api/health/*` | None | `auto` + short revalidate | Route Handlers only |
 | `/playground/*` | Local only (`PLAYGROUND_ENABLED`) | Never a production contract | Dev harness |
@@ -114,12 +115,14 @@ Do **not** treat holding/Closed rows as authorization to invent new shims or pro
 | `/auth/[path]` | `app/auth/[path]/page.tsx` | root | yes | yes | no | `features/auth` |
 | `/auth/admin` | `app/auth/admin/page.tsx` | root | yes | — | no | `features/auth` / entry |
 | `/org/login` | `app/org/login/page.tsx` | root | yes | — | no | `features/auth/entry` org sign-in |
-| `/client/login` | `app/client/(gate)/login/page.tsx` | `(gate)` | yes | — | no* | `features/auth` / client entry |
+| `/client/login` | `app/(client)/client/(gate)/login/page.tsx` | `(gate)` | — | — | bypass* | `features/auth` → `redirect(/auth/login)` |
+| `/client/preview-unavailable` | `app/(client)/client/(gate)/preview-unavailable/page.tsx` | `(gate)` | yes† | yes† | bypass* | `features/auth` preview gate |
 | `/invite/[token]` | `app/invite/[token]/page.tsx` | root | yes | — | no | `features/auth/entry` legacy invite |
 | `/f/[token]` | `app/f/[token]/page.tsx` | root | yes | — | no | share access |
 | `/survey/[slug]` | `app/survey/[slug]/page.tsx` | root | yes | — | no | open link |
 
-\* `/client/*` is in the proxy matcher; `/client/login` is explicitly bypassed in `apps/web/proxy.ts`.
+\* `/client/*` is in the proxy matcher; `/client/login` and `/client/preview-unavailable` are bypassed in `apps/web/proxy.ts` via `CLIENT_GATE_PATHS` (`session-gate-policy.ts`).  
+† Segment `loading`/`error` under `preview-unavailable` only — do not place them on the parent `(gate)` segment (they swallow `redirect()` and soft-serve 200).
 
 ## 3.5 Join
 
@@ -131,17 +134,19 @@ Canonical client invitation entry: `/join?invitationId=…` ([AGENTS.md](../../A
 
 ## 3.6 Client post-login
 
-**Disposition:** `/client` workspace product restore is **Closed (registered)**. Holding UI under `app/client/(workspace)/**` is allowed only when a Target tree exists; do not restore Collapse-era `features/client-workspace/` or banned repo-root trees. Reopen requires explicit user letter + frontend spec slice + vertical slice.
+**On-disk (Living):** Target tree under `apps/web/app/(client)/client/{(gate)|(workspace)}` — see [ARCH-022](ARCH-022-system-overview.md). `(gate)` = blank chrome + session-gate bypass; `(workspace)` = `requireRole('client')`.
+
+**Disposition — Closed product restore:** `/client/onboarding`, `/client/profile`, `/client/declare/*` remain **Closed (registered)**. Do not restore Collapse-era `features/client-workspace/` or banned repo-root trees. Reopen requires explicit user letter + frontend spec slice + vertical slice.
 
 | Path | Page | Layout | loading | error | Proxy | Owner | Composition |
 |------|------|--------|---------|-------|-------|-------|-------------|
-| `/client/onboarding` | `app/client/(workspace)/onboarding/page.tsx` | workspace | yes | yes | yes | Closed product phases | holding · **Closed (registered)** |
-| `/client` | `app/client/(workspace)/page.tsx` | workspace | yes | yes | yes | Closed product phases | holding · **Closed (registered)** |
-| `/client/profile` | `app/client/(workspace)/profile/page.tsx` | workspace | yes | yes | yes | Closed product phases | holding · **Closed (registered)** |
-| `/client/declare/[assignmentId]` | `app/client/(workspace)/declare/[assignmentId]/page.tsx` | workspace | yes | yes | yes | Closed product phases | holding · **Closed (registered)** |
-| `/client/preview-unavailable` | `app/client/(gate)/preview-unavailable/page.tsx` | gate | yes | — | bypass | preview gate | holding · **Closed (registered)** |
+| `/client` | `app/(client)/client/(workspace)/page.tsx` | workspace | — | — | yes | redirect → `/client/dashboard` | wired |
+| `/client/dashboard` | `app/(client)/client/(workspace)/dashboard/page.tsx` | workspace | yes | yes | yes | `features/declarations` DeclarationsShell | wired |
+| `/client/onboarding` | `app/(client)/client/(workspace)/onboarding/page.tsx` | workspace | — | — | yes | Closed product phases | holding · **Closed (registered)** |
+| `/client/profile` | `app/(client)/client/(workspace)/profile/page.tsx` | workspace | — | — | yes | Closed product phases | holding · **Closed (registered)** |
+| `/client/declare/[assignmentId]` | `app/(client)/client/(workspace)/declare/[assignmentId]/page.tsx` | workspace | — | — | yes | Closed product phases | holding · **Closed (registered)** |
 
-Route groups: `(gate)` = blank chrome entry; `(workspace)` = authenticated client shell — [ARCH-002](ARCH-002-frontend-architecture.md).
+Route groups: `(gate)` = blank chrome entry; `(workspace)` = authenticated client shell — [ARCH-002](ARCH-002-frontend-architecture.md). Gate rows (`/client/login`, `/client/preview-unavailable`) live in §3.4.
 
 ## 3.7 Organization admin (dashboard)
 
@@ -236,7 +241,7 @@ From `apps/web/proxy.ts`:
 |-------|-------|
 | Matched | `/account/*`, `/dashboard/*`, `/client/*`, `/fft/*`, `/playground/*` |
 | Public (not matched) | `/`, `/auth/*`, `/join`, `/org/login`, `/invite/*`, `/api/*`, `/survey/*`, `/f/*` |
-| Bypasses inside matcher | `?embed=1`, client login, preview-unavailable, `next-action` header |
+| Bypasses inside matcher | `?embed=1`, `/client/login`, `/client/preview-unavailable` (`CLIENT_GATE_PATHS`), `POST`+`next-action` header |
 
 `proxy.ts` gates document navigations only. Server Actions must still call `require*Session` (and org/FFT authz + Zod) **inside** the Action.
 
@@ -278,6 +283,8 @@ Agent method (not a controlled ID): `.cursor/skills/afenda-elite-nextjs-best-pra
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 1.2.5 | 2026-07-15 | `(client)` normalize: workspace `loading`/`error` under `dashboard/` only (redirect-safe; same class as gate login). |
+| 1.2.4 | 2026-07-15 | Client path honesty: Living inventory under `app/(client)/client/{(gate)|(workspace)}`; gate loading/error rules; `/client` + `/client/dashboard` wired; preview gate moved to §3.4. |
 | 1.2.3 | 2026-07-14 | Bounded reopen: package-manager cutover — document `pnpm` / `pnpm exec` (repo SSOT `packageManager` + `pnpm-lock.yaml`). |
 | 1.2.2 | 2026-07-14 | Home flattened to docs/architecture/ (trunks removed; pack reading order in README). |
 | 1.2.1 | 2026-07-14 | ADR link home → `docs/architecture/adr/` (DOC-001 2.5.0). |

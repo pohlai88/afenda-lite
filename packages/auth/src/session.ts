@@ -3,6 +3,8 @@ import { createNeonAuth, type NeonAuth } from "@neondatabase/auth/next/server";
 import { redirect } from "next/navigation";
 import { cache } from "react";
 
+import { AUTH_LOGIN_PATH } from "./auth-paths";
+
 /** Coarse shell / routing signal — not the ARCH-023 permission catalogue. */
 export type Role = "admin" | "operator" | "client";
 
@@ -15,8 +17,6 @@ export type Session = {
 	orgId: string;
 	role: Role;
 };
-
-const LOGIN_PATH = "/auth/login";
 
 /** Neon Auth org membership roles → Afenda shell Role (ARCH-026). */
 const NEON_ORG_ROLE_TO_SESSION = {
@@ -52,7 +52,7 @@ async function resolveSession(): Promise<Session> {
 	const { data, error } = await auth.getSession();
 
 	if (error || !data?.user?.id) {
-		redirect(LOGIN_PATH);
+		redirect(AUTH_LOGIN_PATH);
 	}
 
 	const orgId = data.session.activeOrganizationId;

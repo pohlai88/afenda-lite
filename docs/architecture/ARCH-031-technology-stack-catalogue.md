@@ -4,7 +4,7 @@
 | ----------------- | ------------ |
 | **ID**            | ARCH-031     |
 | **Category**      | Architecture |
-| **Version**       | 1.3.12       |
+| **Version**       | 1.3.14       |
 | **Status**        | Living       |
 | **Control State** | Closed       |
 | **Owner**         | Platform     |
@@ -81,7 +81,7 @@ The full documentation-integrity baseline inspected **97/97 primary files**: 93 
 | Quality and testing | [`biome.jsonc`](../../biome.jsonc), [`testing/vitest.config.ts`](../../testing/vitest.config.ts), [`playwright.config.ts`](../../playwright.config.ts) | Biome + Ultracite + Vitest wired through turbo; Playwright optional (`test:e2e`) |
 | Contract / docs gates | [`OPEN-001-openapi.yaml`](../api/OPEN-001-openapi.yaml), [`generate-openapi.mts`](../../scripts/generate-openapi.mts), docs integrity scripts | Runnable on this docs-first checkout |
 | Product source presence | Collapse `app/`/`modules/`/`features/`/`components-V2/` | **Absent by design**; do not recover — [ARCH-028](ARCH-028-implementation-slices.md) |
-| Target packages (through S8.2) | `apps/web` route groups + modules domain ports + `apps/web/features/{auth,declarations,fft,org-admin}` + Next shell, `packages/{config,db,auth,env,ui,emails}`, [`turbo.json`](../../turbo.json), Target CI/deploy | **Present** after ARCH-028 S1.1–S8.2 + Checkpoint F; next open Checkpoint G (Docs) |
+| Target packages (through S8.2 + G) | `apps/web` route groups + modules domain ports + `apps/web/features/{auth,declarations,fft,org-admin}` + Next shell, `packages/{config,db,auth,env,ui,emails}`, [`turbo.json`](../../turbo.json), CI/deploy | **Present** after ARCH-028 S1.1–S8.2 + Checkpoints A–G; next program = GUIDE-018 **I1** |
 
 Validator exclusions: external HTTP availability and code-to-document runtime drift. **Package script names are not evidence** that Collapse-era tooling still runs.
 
@@ -115,7 +115,7 @@ Validator exclusions: external HTTP availability and code-to-document runtime dr
 | ---------- | ------------------- | ----------------- | ----------------------- | ---------------- | --------------------------- |
 | Database platform | Neon Postgres (shared schema) | Current / Living platform | Configured Neon posture in docs/ops; `pg` is Manifest only; domain SQL **not** on disk | [ARCH-023](ARCH-023-multi-tenancy.md), [ARCH-025](ARCH-025-data-layer.md) | Product data access ships with Target Drizzle — do not recover Collapse-era domain SQL trees. |
 | Tenancy model | One Neon project, hard `organization_id = $org` predicates | Current / Living | Decision Living in [ARCH-023](ARCH-023-multi-tenancy.md); app predicates and tenancy scripts **not** on disk (gated) | [ARCH-023](ARCH-023-multi-tenancy.md), [RB-001](../runbooks/RB-001-multi-org-ops.md) | No multi-database isolation; production pooler required. Do not restore Collapse tenancy scripts. |
-| Identity | Neon Auth (+ `@neondatabase/auth-ui`) | Current / Living; `@afenda/auth` wrapper is Target | Manifest dependencies; app wiring not verifiable | [ARCH-023](ARCH-023-multi-tenancy.md), [ARCH-026](ARCH-026-auth-session.md) | No Auth.js / Clerk / Supabase Auth. |
+| Identity | Neon Auth (+ `@neondatabase/auth-ui`) | Current / Living; `@afenda/auth` wrapper Present | `@afenda/auth` + `/auth/*` UI + `/api/auth/[...path]` on disk (I1.2) | [ARCH-023](ARCH-023-multi-tenancy.md), [ARCH-026](ARCH-026-auth-session.md) | No Auth.js / Clerk / Supabase Auth. |
 | Target ORM and transport | Drizzle ORM, Drizzle Kit, `@neondatabase/serverless` | Target | Documented Target; packages absent | [ARCH-025](ARCH-025-data-layer.md) | Schema-first; tenant reads via approved org-scoped helper (`withOrg` Target). |
 | Environment | `@t3-oss/env-nextjs`, Zod, `@afenda/env`, `.env.local` | Target (S4.1 shipped) | `packages/env` present; compose retired | [ARCH-027](ARCH-027-env-model.md), [AGENTS.md](../../AGENTS.md) | Sole env SSOT. Collapse `lib/env` / `env:compose` / `env:guard` banned to recover. |
 
@@ -221,6 +221,8 @@ ARCH-031 shall link to the changed authority rather than duplicate its detailed 
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 1.3.14 | 2026-07-15 | I1.2 honesty: Neon Auth UI `/auth/*` + `@afenda/auth` client/API handlers Present. |
+| 1.3.13 | 2026-07-15 | Checkpoint G honesty: Living checkout; next program GUIDE-018 I1; Collapse-gated scripts = inventory. |
 | 1.3.12 | 2026-07-15 | Docs audit residual: Deploy evidence — Actions success + classic PAT + `packageManager` Actions setup. |
 | 1.3.11 | 2026-07-15 | S8.2: Target deploy evidence (`deploy.yml`, Corepack, prod READY); next open Checkpoint G (Docs). |
 | 1.3.10 | 2026-07-15 | S8.1 audit: Biome+Vitest turbo gates real (19 tasks); catalogue quality/testing honesty. |
@@ -246,7 +248,7 @@ ARCH-031 shall link to the changed authority rather than duplicate its detailed 
 
 - This catalogue owns discovery and lifecycle classification only. The linked source document owns each decision.
 - Manifest-only dependencies are not automatically endorsed architecture.
-- **Checkout posture:** Collapse product trees (`app/`/`modules/`/`features/`/`components-V2/`) remain absent **by design**. Target packages through S8.2 + Checkpoint F (`apps/web` modules + feature shells + Target CI/deploy included) are present — absence of Collapse roots is not a restore ticket; next open **Checkpoint G** (Docs lane).
+- **Checkout posture:** Collapse product trees (`app/`/`modules/`/`features/`/`components-V2/`) remain absent **by design**. Living packages through S8.2 + Checkpoint G (`apps/web` modules + feature shells + CI/deploy included) are present — absence of Collapse roots is not a restore ticket; next program = [GUIDE-018](../guides/GUIDE-018-fullstack-e2e-integration-program.md) Phase **I1**. Many root script names still route through `collapse-script-unavailable.mjs` (inventory only).
 - **Anti-contamination:** do not recover Collapse-era `app/`/`modules/`/`features/`/`components-V2/`, `lib/env/`, or wiped compose/tenancy scripts from git — [ARCH-028](ARCH-028-implementation-slices.md) lock.
 - **Root cause of prior catalogue stale:** Treating `package.json` script **names** and Collapse Living compose/`lib/env` as Current runnable evidence after Collapse. Fixed in 1.1.0 — evidence follows the filesystem + Target decisions.
 - External link availability and full code-to-document runtime drift remain outside the validator coverage used for this catalogue.

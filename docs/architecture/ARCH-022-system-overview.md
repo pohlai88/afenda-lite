@@ -4,17 +4,17 @@
 |-------|-------|
 | ID | ARCH-022 |
 | Category | Architecture |
-| Version | 1.5.11 |
-| Status | Target |
+| Version | 1.6.4 |
+| Status | Living |
 | Control State | Closed |
 | Owner | Platform |
 | Updated | 2026-07-15 |
 
-> **Forward-writing / Target.** Turborepo system SSOT. On disk through S8.2: `@afenda/config|db|auth|env|ui|emails` + `apps/web` route groups + `apps/web/modules/{platform,identity,declarations,fft}` domain ports + `apps/web/features/{auth,declarations,fft,org-admin}` + Target CI/deploy — next open [ARCH-028](ARCH-028-implementation-slices.md) **Checkpoint G** (Docs lane).
+> **Living.** Turborepo system SSOT after ARCH-028 Checkpoint G (2026-07-15). On disk: `@afenda/config|db|auth|env|ui|emails` + `apps/web` route groups + `apps/web/proxy.ts` edge session gate + public Neon Auth UI `/auth/*` + `/join` + `apps/web/modules/{platform,identity,declarations,fft}` domain ports + `apps/web/features/{auth,declarations,fft,org-admin}` + CI/Deploy. Post-scaffold program order: [GUIDE-018](../guides/GUIDE-018-fullstack-e2e-integration-program.md) (next Ops: **I1.4** — role shells; I1.1–I1.3 closed).
 
 ## Context
 
-Afenda-Lite is a multi-tenant SaaS product hosted on Vercel. **Target:** it will be structured as a **Turborepo multi-package monorepo** with one deployable application (`apps/web`) and shared infrastructure packages (`packages/*`). This document is the entry point for **system architecture**, including the Modular Monolith + Hexagonal framework and the Turborepo workspace decision . Layer detail lives in sibling ARCH docs and `docs/architecture/`.
+Afenda-Lite is a multi-tenant SaaS product hosted on Vercel. It is structured as a **Turborepo multi-package monorepo** with one deployable application (`apps/web`) and shared infrastructure packages (`packages/*`). This document is the entry point for **system architecture**, including the Modular Monolith + Hexagonal framework and the Turborepo workspace decision. Layer detail lives in sibling ARCH docs and `docs/architecture/`.
 
 ## Workspace decision — Turborepo + pnpm
 
@@ -125,7 +125,7 @@ Env SSOT is `@afenda/env` + `.env.local` — [ARCH-027](ARCH-027-env-model.md). 
 
 `apps/web` depends on all packages. Packages import each other only via public exports — never `src/` internals.
 
-## Target tree
+## Living workspace tree
 
 ```
 afenda-lite/
@@ -136,11 +136,12 @@ afenda-lite/
 ├── apps/
 │   └── web/                     # sole Vercel deployable
 │       ├── app/
-│       │   ├── (public)/        # /, /join, /auth/*, /403
-│       │   ├── (operator)/      # /admin/* — requireRole('operator')
-│       │   └── (client)/        # /client/* — requireRole('client')
+│       │   ├── (public)/        # / · /403 · /auth/* · /join on disk; I1.4 = role-shell journeys
+│       │   ├── (operator)/      # /admin · /fft — requireRole('operator')
+│       │   └── (client)/        # /client/* — (gate) public · (workspace) requireRole('client')
 │       ├── features/            # auth, declarations, fft, org-admin
-│       └── modules/             # identity, declarations, fft, platform
+│       ├── modules/             # identity, declarations, fft, platform
+│       └── proxy.ts             # edge session gate — GUIDE-018 I1.1 (on disk)
 │
 ├── packages/
 │   ├── db/       → @afenda/db
@@ -238,12 +239,18 @@ Next.js App Router (apps/web)
 
 - Private workspace packages only (no npm publish until a separate decision)
 - Module extraction to a service requires a new ADR
-- Product tree may be absent on disk (wipe / rebuild); treat Target docs as authority, not invent a third layout
+- Collapse product trees stay absent by design; forward work is greenfield under `apps/web/**` and `packages/*` only ([ARCH-028](ARCH-028-implementation-slices.md) anti-contamination)
+- Auth edge residual (role shells) remains GUIDE-018 **I1.4**; `apps/web/proxy.ts`, `/auth/*`, and `/join` are on disk — do not invent a third app layout or product `middleware.ts`
 
 ## Change Log
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.6.4 | 2026-07-15 | I1.3 honesty: `/join` on disk under `(public)/`; next Ops = GUIDE-018 I1.4. |
+| 1.6.3 | 2026-07-15 | Client tree honesty: `(gate)` vs `(workspace)` under `app/(client)/client`. |
+| 1.6.2 | 2026-07-15 | I1.2 honesty: public `/auth/*` Neon Auth UI on disk; next Ops = GUIDE-018 I1.3. |
+| 1.6.1 | 2026-07-15 | I1.1 honesty: `apps/web/proxy.ts` on disk; next Ops = GUIDE-018 I1.2. |
+| 1.6.0 | 2026-07-15 | Checkpoint G: Status Target→Living; workspace tree honesty (I1 auth residual); next program = GUIDE-018 I1. |
 | 1.5.11 | 2026-07-15 | Checkout banner: S8.2 Target deploy on disk; next open Checkpoint G (Docs). |
 | 1.5.10 | 2026-07-15 | Checkout banner: S8.1 Target CI on disk; next open S8.2. |
 | 1.5.9 | 2026-07-15 | Checkout banner: S7.4 feature shells + Checkpoint F on disk; next open S8.1. |

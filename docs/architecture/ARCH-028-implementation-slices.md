@@ -4,15 +4,13 @@
 |-------|-------|
 | ID | ARCH-028 |
 | Category | Architecture |
-| Version | 1.4.27 |
-| Status | Target |
+| Version | 1.5.0 |
+| Status | Living |
 | Control State | Closed |
 | Owner | Platform |
 | Updated | 2026-07-15 |
 
-> **Control-state note:** Closed 2026-07-15 after documentation-audit residual 1.4.27 (Risks / Target-vs-checkout honesty). Not Checkpoint G Status moves.
-
-> **Forward-writing / Target.** Ordered implementation plan for the Turborepo system. Through S8.2 this checkout has `apps/web` route groups + `apps/web/modules/*` domain ports + `apps/web/features/{auth,declarations,fft,org-admin}` shells + `@afenda/{config,db,auth,env,ui,emails}` + Target CI/deploy (`.github/workflows/{ci,deploy}.yml`) — continue slice-serial only (see Anti-contamination lock below). **Checkpoint G** (Target→Living Status + doc retirement) is a separate Docs-lane mission. Each slice is S (1–2 files) or M (3–5 files). L = structural move of **Target trees already on disk** only — never Collapse/legacy recovery from git.
+> **Living.** Ordered Turborepo scaffold checklist (S1–S8 + Checkpoints A–G) and anti-contamination lock. Coding order **closed** after Checkpoint G (2026-07-15). Post-scaffold program sequence: [GUIDE-018](../guides/GUIDE-018-fullstack-e2e-integration-program.md). Do **not** invent S9 inside this document.
 
 ## Purpose
 
@@ -185,7 +183,7 @@ Operator override for a later **non-baseline** forward migrate only: `AFENDA_ALL
 
 **Checkpoint D evidence (2026-07-14):** merged local compose inventory → `.env.local`; removed `env.config` / `env.secret` / `.env` and committed examples; added `.env.example` + `!.env.example` gitignore; removed `env:compose` / `env:guard*` / compose write-path scripts from root `package.json`; `scripts/lib/env-files.mjs` + `validate-neon-env` load `.env.local` only; AGENTS.md Target env SSOT.
 
-**A–D residue pass (2026-07-14, pre-E):** deleted `env-manifest.generated.mjs` + root Collapse `components.json` (`app/`/`modules/platform` aliases); Living docs/skills retargeted off pre-S4.1 two-state; ARCH-022/AGENTS checkout posture updated for packages through `@afenda/env`. **Superseded by S5.1–S8.2 + Checkpoints E–F (2026-07-15)** — coding order complete; next open **Checkpoint G** (Docs lane).
+**A–D residue pass (2026-07-14, pre-E):** deleted `env-manifest.generated.mjs` + root Collapse `components.json` (`app/`/`modules/platform` aliases); Living docs/skills retargeted off pre-S4.1 two-state; ARCH-022/AGENTS checkout posture updated for packages through `@afenda/env`. **Superseded by S5.1–S8.2 + Checkpoints E–G (2026-07-15)** — coding order + Docs Living cutover complete; next program = [GUIDE-018](../guides/GUIDE-018-fullstack-e2e-integration-program.md) Phase I1.
 
 ---
 
@@ -366,30 +364,39 @@ Operator override for a later **non-baseline** forward migrate only: `AFENDA_ALL
 
 ### Checkpoint G — Complete
 
-- [ ] ARCH docs Status can move Target → Living when tree matches ARCH-022
-- [ ] ARCH-022…027 decision sections remain Living/Target
-- [ ] Post-ship doc retirement list below reviewed
+- [x] ARCH docs Status can move Target → Living when tree matches ARCH-022
+- [x] ARCH-022…027 decision sections remain Living/Target
+- [x] Post-ship doc retirement list below reviewed
 
-> **Lane note:** Checkpoint G is a **separate Docs-lane** mission — do not mass-edit DOC-002 Status in the S8.2 Ops turn.
+**G evidence (2026-07-15, Docs lane):**
 
-## Post-ship doc retirement (after Checkpoint G)
+| Check | Evidence |
+| ----- | -------- |
+| G1 tree | `Test-Path`: Target packages + `apps/web` route groups/modules/features + CI/Deploy **PRESENT**; ban roots `app/` · `modules/` · `features/` · `components-V2/` **ABSENT**. Residual (not scaffold blockers): `apps/web/proxy.ts` ABSENT; `(public)/auth` · `/join` not on disk → GUIDE-018 **I1**. |
+| G2 Status | ARCH-022 · 024 · 025 · 026 · 027 · 028 → **Living**; ARCH-023 remains Living Decision lock (unchanged). |
+| G3 Retirement | Table below stamped Reviewed 2026-07-15 — no mass-delete this mission. |
+| G4 Cockpit | `AGENTS.md` Next open → GUIDE-018 I1; Collapse-gated root scripts named as inventory only. |
 
-> Rule: **the code is the map.** Folder-map docs that only restate on-disk layout may be retired after the tree matches Target. Product specs and ops runbooks stay.
+> **Lane note:** Checkpoint G closed in Docs lane. New product work uses GUIDE-018 phases — not new ARCH-028 coding slices.
 
-| Doc set | Action after ship | Reason |
-|---------|-------------------|--------|
-| `docs/architecture/ARCH-001`…`ARCH-010` | Review → archive or narrow | Folder maps superseded by `apps/web/modules/` |
-| `docs/architecture/ARCH-012`…`ARCH-016` · [ARCH-017](ARCH-017-frontend-folder-map.md) | Review → archive or narrow | Folder maps superseded by App Router tree |
-| [ARCH-029](ARCH-029-interface-api-architecture.md) | Keep Living | Interface/API parent — not a folder-map retirement target |
-| `docs/guides/GUIDE-001`…`GUIDE-006` | **Retired** | Duplicated DOC-*/AGENTS/skills; drift absorbed above |
-| Former `GUIDE-007`…`GUIDE-014` | Deleted | Use ARCH-023/026 · FFT-MOD-008/010 |
-| `docs/modules/feed-farm-trade/` | Keep | Product / engine SSOT |
-| `docs/runbooks/RB-001`, `RB-005` | Keep | Ops |
-| `docs/architecture/ARCH-021` | **Superseded** (DOC-002 register-only; stub removed) | Migration map closed; Target layout = ARCH-022 |
-| Turborepo ARCH-022…028 | Status Target → Living | This set becomes Living SSOT |
-| Agent cockpit `AGENTS.md` | Cursor Agent rewrite (post-S8.2) | Must not contradict ARCH-027 / ARCH-028 / FFT-MOD-008 |
+## Post-ship doc retirement (reviewed Checkpoint G · 2026-07-15)
 
-Do **not** mass-delete in the scaffold PR. Retirement is a separate docs PR after code matches Target.
+> Rule: **the code is the map.** Folder-map docs that only restate on-disk layout may be retired after the tree matches Target. Product specs and ops runbooks stay. **This mission reviews and records disposition — it does not mass-delete.**
+
+| Doc set | Disposition (G review) | Reason |
+|---------|------------------------|--------|
+| `docs/architecture/ARCH-001`…`ARCH-010` | **Keep Living** — shape/port ownership SSOT; do not mass-archive now | Logical inventory still cited by farms; code lives under `apps/web/modules/` |
+| `docs/architecture/ARCH-012`…`ARCH-016` · [ARCH-017](ARCH-017-frontend-folder-map.md) | **Keep Living** — App Router / FE conventions SSOT; do not mass-archive now | Shape authority; routes live under `apps/web/app/` |
+| [ARCH-029](ARCH-029-interface-api-architecture.md) | **Keep Living** | Interface/API parent — not a folder-map retirement target |
+| `docs/guides/GUIDE-001`…`GUIDE-006` | **Already Retired** (register-only; stubs deleted) | Duplicated DOC-*/AGENTS/skills |
+| Former `GUIDE-007`…`GUIDE-014` | **Keep Draft under `docs/api/guides/`** until owning API roadmap promotes/retires | Use ARCH-023/026 · FFT-MOD-008/010 for product ops; API how-tos stay in API home |
+| `docs/modules/feed-farm-trade/` | **Keep** | Product / engine SSOT · FFT freeze intact |
+| `docs/runbooks/RB-001`, `RB-005` | **Keep** | Ops |
+| `docs/architecture/ARCH-021` | **Already Superseded** (DOC-002 register-only; stub removed) | Migration map closed; layout = ARCH-022 |
+| Turborepo ARCH-022…028 | **Living** (G2) | This set is Living scaffold SSOT |
+| Agent cockpit `AGENTS.md` | **Updated** (G4) | Living Turborepo + FFT freeze + script inventory honesty + next = GUIDE-018 I1 |
+
+Do **not** mass-delete in scaffold or Checkpoint G PRs. Narrow/archive folder maps only in a later Docs mission with per-doc reopen.
 
 ## Risks (implementers)
 
@@ -409,7 +416,7 @@ Absorbed from retired GUIDE-004. Records **Target vs checkout** drift for forwar
 
 | Authority | Disk today | Coding impact |
 |-----------|------------|---------------|
-| [ARCH-022…028](.) | **S1.1–S8.2 + Checkpoints A–F closed** on disk: workspace + `@afenda/{config,db,auth,env,ui,emails}` + `apps/web` route groups + modules domain ports + `apps/web/features/{auth,declarations,fft,org-admin}` + Target CI/Deploy | Docs lane — next open **Checkpoint G** (Status Target→Living + retirement review). No further coding slices in ARCH-028 order. |
+| [ARCH-022…028](.) | **S1.1–S8.2 + Checkpoints A–G closed** on disk: workspace + `@afenda/{config,db,auth,env,ui,emails}` + `apps/web` route groups + modules domain ports + feature shells + CI/Deploy; ARCH pack **Living** | Post-scaffold coding = [GUIDE-018](../guides/GUIDE-018-fullstack-e2e-integration-program.md) phases (next **I1**). No further coding slices in ARCH-028 order. |
 | Living maps ARCH-001…010 · 012…019 · 017 | Repo-root `app/`, `modules/`, `features/`, `components-V2/` **absent** after design-SSOT Collapse (`4680c91`) | **Expected · Forbidden to recover** — see Anti-contamination lock below |
 | [ARCH-023](ARCH-023-multi-tenancy.md) | Living tenancy + RBAC rules; Target packages present | Binding now — keep hard `organization_id` / RBAC invariants on greenfield code |
 | `AGENTS.md` | Cursor Agent cockpit; env SSOT `@afenda/env` + `.env.local` + `.env.example` (S4.1 / Checkpoint D) | Compose retired — do not restore; prefer AGENTS links over duplicating ARCH/FFT prose |
@@ -453,6 +460,7 @@ Living ARCH folder/route/adapter maps remain normative for **shape**. They are *
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.5.0 | 2026-07-15 | Checkpoint G closed (Docs): ARCH-022…028 Living; G1 tree evidence; retirement dispositions; AGENTS/GUIDE-018 next = I1. |
 | 1.4.27 | 2026-07-15 | Docs audit: retire stale Risks/drift (“packages empty”); record post-S8.2 CI/Deploy green on `fff00c3`; AGENTS cockpit note. |
 | 1.4.26 | 2026-07-15 | Docs audit residual: S8.1/S8.2 evidence honesty — `packageManager` Actions setup + Actions Deploy success `29367183769` + classic PAT. |
 | 1.4.25 | 2026-07-15 | S8.2 Deploy: `deploy.yml` + Corepack/pnpm knobs + turbo env pass-through; prod READY; next open Checkpoint G (Docs). |

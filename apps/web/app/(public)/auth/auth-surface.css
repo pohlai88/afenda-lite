@@ -1,0 +1,26 @@
+/**
+ * Auth island surface (ARCH-015 / ARCH-018) — route-scoped via auth layout.
+ * Complements Neon Auth UI tokens; does not pull Neon CSS into globals.
+ */
+.auth-surface {
+	background:
+		radial-gradient(
+			1200px 600px at 50% -10%,
+			color-mix(in oklab, var(--primary) 12%, transparent),
+			transparent 60%
+		),
+		var(--background);
+	color: var(--foreground);
+}
+
+.auth-surface__panel {
+	border: 1px solid color-mix(in oklab, var(--border) 85%, transparent);
+	border-radius: var(--radius-xl, 1rem);
+	background: color-mix(in oklab, var(--card) 92%, transparent);
+	padding: 1.75rem 1.5rem;
+	box-shadow: 0 24px 60px color-mix(in oklab, var(--foreground) 6%, transparent);
+}
+
+.auth-surface__brand {
+	color: var(--muted-foreground);
+}

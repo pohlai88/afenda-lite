@@ -1,13 +1,14 @@
-import { getSession } from "@afenda/auth";
+import { requireRole } from "@afenda/auth";
 
 import { listSurveys } from "@/modules/declarations/domain/list-surveys";
 
 /**
- * Declarations feature — session-aware RSC load + domain survey list
- * (ARCH-013 · ARCH-028 S7.4). Never imports `@afenda/db`.
+ * Declarations feature — client-workspace RSC shell
+ * (ARCH-013 · ARCH-024 · ARCH-028 S7.4). Never imports `@afenda/db`.
+ * Fail-closed via `requireRole('client')` even if composed outside the layout.
  */
 export async function DeclarationsShell() {
-	const { orgId } = await getSession();
+	const { orgId } = await requireRole("client");
 	const surveys = await listSurveys(orgId);
 
 	return (
@@ -17,8 +18,7 @@ export async function DeclarationsShell() {
 					Client dashboard
 				</h1>
 				<p className="text-muted-foreground">
-					Declarations surveys for org{" "}
-					<code className="text-foreground">{orgId}</code>.
+					Declarations surveys for this organization.
 				</p>
 			</header>
 

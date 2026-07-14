@@ -4,13 +4,13 @@
 |-------|-------|
 | ID | ARCH-025 |
 | Category | Architecture |
-| Version | 1.2.4 |
-| Status | Target |
+| Version | 1.3.0 |
+| Status | Living |
 | Control State | Closed |
 | Owner | Backend |
-| Updated | 2026-07-14 |
+| Updated | 2026-07-15 |
 
-> **Forward-writing / Target.** Describes the intended Turborepo system. Authoritative for new work. Missing `apps/` or `packages/` on disk is expected until implementation.
+> **Living.** Data-layer SSOT after ARCH-028 Checkpoint G (2026-07-15). `@afenda/db` + `withOrg` on disk; baseline `0000` migrate remains banned on production Neon.
 
 ## Context
 
@@ -186,6 +186,7 @@ Default: `db:migrate` fails closed. Override `AFENDA_ALLOW_DB_MIGRATE=1` is only
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.3.0 | 2026-07-15 | Checkpoint G: Status Target→Living; `@afenda/db` present; migrate ban unchanged. |
 | 1.2.4 | 2026-07-14 | Operational ban: do not `db:migrate` `0000_living-roots-baseline` onto live Neon; package guard + Cursor hook. |
 | 1.2.3 | 2026-07-14 | Reconcile `organization_id` column type to live `text` (Neon Auth org ids) after S2.1 introspect. |
 | 1.2.2 | 2026-07-14 | Bounded reopen: package-manager cutover — document `pnpm` / `pnpm exec` in place of `npm run` / `npx` (repo SSOT `packageManager` + lockfile). |

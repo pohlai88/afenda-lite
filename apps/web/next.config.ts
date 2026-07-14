@@ -70,6 +70,27 @@ const nextConfig: NextConfig = {
 			},
 		],
 	},
+	async redirects() {
+		return [
+			{
+				source: "/auth/accept-invitation",
+				has: [
+					{
+						type: "query",
+						key: "invitationId",
+						value: "(?<invitationId>.+)",
+					},
+				],
+				destination: "/join?invitationId=:invitationId",
+				permanent: true,
+			},
+			{
+				source: "/auth/accept-invitation",
+				destination: "/join",
+				permanent: true,
+			},
+		];
+	},
 	async headers() {
 		return [
 			{

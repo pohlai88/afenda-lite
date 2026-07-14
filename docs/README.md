@@ -21,7 +21,7 @@ Unified home for Living/Target ARCH, API contracts, guides, and module spines. M
 
 ## How to read
 
-1. [architecture/ARCH-022-system-overview.md](architecture/ARCH-022-system-overview.md) — Target system overview (Modular Monolith + Hexagonal + Turborepo)
+1. [architecture/ARCH-022-system-overview.md](architecture/ARCH-022-system-overview.md) — Living system overview (Modular Monolith + Hexagonal + Turborepo)
 2. [architecture/ARCH-023-multi-tenancy.md](architecture/ARCH-023-multi-tenancy.md) — Living multi-tenancy + platform RBAC + Decision lock
 3. [api/README.md](api/README.md) — API / REST / OPEN (start with [API-001](api/API-001-api-boundaries.md) + [REST-001](api/REST-001-rest-resources.md))
 4. [architecture/ARCH-013-bff-and-data-flow.md](architecture/ARCH-013-bff-and-data-flow.md) — Next.js data-pattern decision tree

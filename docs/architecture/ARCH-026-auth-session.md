@@ -4,13 +4,13 @@
 |-------|-------|
 | ID | ARCH-026 |
 | Category | Architecture |
-| Version | 1.2.2 |
-| Status | Target |
+| Version | 1.3.3 |
+| Status | Living |
 | Control State | Closed |
 | Owner | Platform |
-| Updated | 2026-07-14 |
+| Updated | 2026-07-15 |
 
-> **Forward-writing / Target.** Describes the intended Turborepo system. Authoritative for new work. Missing `apps/` or `packages/` on disk is expected until implementation.
+> **Living.** Auth/session packaging SSOT after ARCH-028 Checkpoint G (2026-07-15). `@afenda/auth` helpers + `createSessionProxy` / `apps/web/proxy.ts` (I1.1) + public Neon Auth UI `/auth/*` (I1.2) + `/join?invitationId=…` (I1.3) on disk. Remaining I1 edge: fail-closed role-shell journeys (GUIDE-018 I1.4). IAM Decision lock stays in [ARCH-023](ARCH-023-multi-tenancy.md).
 
 ## Context
 
@@ -184,6 +184,10 @@ Client invitation: operator calls `inviteOrgMember()` → Neon Auth delivers the
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.3.3 | 2026-07-15 | I1.3 honesty: `/join?invitationId=…` + Neon accept-invitation redirect; residual = I1.4 role shells. |
+| 1.3.2 | 2026-07-15 | I1.2 honesty: public `/auth/login` · forgot · reset via Neon Auth UI; residual = `/join`. |
+| 1.3.1 | 2026-07-15 | I1.1 honesty: `createSessionProxy` + `apps/web/proxy.ts` on disk; residual = `/auth/*` · `/join`. |
+| 1.3.0 | 2026-07-15 | Checkpoint G: Status Target→Living; package helpers present; I1 edge/auth UI residual named. |
 | 1.2.2 | 2026-07-14 | Bounded reopen: package-manager cutover — document `pnpm` / `pnpm exec` in place of `npm run` / `npx` (repo SSOT `packageManager` + lockfile). |
 | 1.2.1 | 2026-07-14 | Home flattened to docs/architecture/ (trunks removed; pack reading order in README). |
 | 1.2.0 | 2026-07-14 | Integrity remediation: demote role table to session signals; pointer IAM to ARCH-023; Change Log restored. |

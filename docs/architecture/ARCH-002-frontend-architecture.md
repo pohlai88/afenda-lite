@@ -4,11 +4,11 @@
 | ----------------- | ------------ |
 | **ID**            | ARCH-002     |
 | **Category**      | Architecture |
-| **Version**       | 1.3.3        |
+| **Version**       | 1.3.4        |
 | **Status**        | Living       |
-| **Control State** | Closed       |
+| **Control State** | Closed     |
 | **Owner**         | Frontend     |
-| **Updated**       | 2026-07-14   |
+| **Updated**       | 2026-07-15   |
 
 ---
 
@@ -143,8 +143,8 @@ Mirror Studio `(blank)` vs `(pages)` **without** copying blank auth demos:
 
 | Group | URL impact | Use |
 |-------|------------|-----|
-| `app/client/(gate)` | none | Public/client entry (login) — blank chrome |
-| `app/client/(workspace)` | none | Authenticated client shell (holding until reopen) |
+| `app/(client)/client/(gate)` | none | Public client gate (`/client/login`, `/client/preview-unavailable`) — blank chrome; session-gate bypass |
+| `app/(client)/client/(workspace)` | none | Authenticated client shell (`requireRole('client')`); Living `/client` → `/client/dashboard`; Closed product restore elsewhere |
 | `app/auth/*` | `/auth/...` | Neon Auth island (`features/auth`) — not AdminCN ThemeCustomizer |
 | `app/dashboard/*`, `/account/*`, `/fft/*` | shell families | Shared AdminCN shell from Studio DNA ([ARCH-015](ARCH-015-admincn-alignment.md)) |
 
@@ -174,6 +174,7 @@ Agent method (not a controlled ID): `.cursor/skills/afenda-elite-nextjs-best-pra
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 1.3.4 | 2026-07-15 | Client route-group honesty: `app/(client)/client/{(gate)|(workspace)}` (Living dashboard; Closed product restore held). |
 | 1.3.3 | 2026-07-14 | Utilization trio; defer BFF tree / routes to ARCH-013/012; pack README pointer. |
 | 1.3.2 | 2026-07-14 | Home flattened to docs/architecture/ (trunks removed; pack reading order in README). |
 | 1.3.1 | 2026-07-14 | ADR link home → `docs/architecture/adr/` (DOC-001 2.5.0). |

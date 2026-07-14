@@ -4,7 +4,7 @@
 | ----------------- | ---------- |
 | **ID**            | DOC-002    |
 | **Category**      | Control    |
-| **Version**       | 4.91.0 |
+| **Version**       | 4.100.0 |
 | **Status**        | Living     |
 | **Control State** | Closed     |
 | **Owner**         | Platform   |
@@ -71,10 +71,10 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 | ID           | Category     | Title                                      | Version | Status | Owner    | Updated    |
 | ------------ | ------------ | ------------------------------------------ | ------- | ------ | -------- | ---------- |
 | DOC-001      | Control      | Documentation Control Standard             | 2.7.0   | Living | Platform | 2026-07-14 |
-| DOC-002      | Control      | Documentation Register                     | 4.91.0 | Living | Platform | 2026-07-15 |
+| DOC-002      | Control      | Documentation Register                     | 4.100.0 | Living | Platform | 2026-07-15 |
 | DOC-003      | Control      | Controlled Document Template               | 1.4.0   | Living | Platform | 2026-07-14 |
 | ARCH-029     | Architecture | Interface and API Architecture             | 1.2.7   | Living | Platform | 2026-07-14 |
-| ARCH-031     | Architecture | Technology Stack Catalogue                 | 1.3.12  | Living | Platform | 2026-07-15 |
+| ARCH-031     | Architecture | Technology Stack Catalogue                 | 1.3.14  | Living | Platform | 2026-07-15 |
 | API-001      | API          | API Boundaries                             | 1.2.3   | Living | Backend  | 2026-07-14 |
 | API-002      | API          | Error Contract                             | 1.2.2   | Living | Backend  | 2026-07-14 |
 | API-003      | API          | API Types                                  | 2.0.1   | Living | Backend  | 2026-07-14 |
@@ -104,18 +104,19 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 | GUIDE-015    | Guide        | Interface Pack Development Roadmap         | 1.0.2   | Living | Platform | 2026-07-14 |
 | GUIDE-016    | Guide        | Feed Farm Trade Enterprise Acceptance      | 0.2.0   | Retired | Feed Farm Trade | 2026-07-14 |
 | GUIDE-017    | Guide        | Enterprise Quality and Evidence Standard   | 1.0.0   | Living | Platform | 2026-07-14 |
+| GUIDE-018    | Guide        | Full-Stack End-to-End Integration Program  | 0.3.6   | Draft  | Platform | 2026-07-15 |
 | RB-006       | Runbook      | OpenAPI Drift Detection and Recovery       | 0.2.1   | Draft  | Backend  | 2026-07-14 |
 | RB-007       | Runbook      | API Incident Response                      | 0.2.0   | Draft  | Backend  | 2026-07-14 |
 | RB-008       | Runbook      | API Contract Rollback                      | 0.2.1   | Draft  | Backend  | 2026-07-14 |
-| ARCH-022     | Architecture | System Overview — Turborepo                | 1.5.11  | Target | Platform | 2026-07-15 |
+| ARCH-022     | Architecture | System Overview — Turborepo                | 1.6.4   | Living | Platform | 2026-07-15 |
 | ARCH-023     | Architecture | Multi-Tenancy and Platform RBAC            | 3.1.4   | Living | Platform | 2026-07-14 |
-| ARCH-024     | Architecture | Package Boundaries                         | 1.2.1   | Target | Platform | 2026-07-14 |
-| ARCH-025     | Architecture | Data Layer                                 | 1.2.4   | Target | Backend  | 2026-07-14 |
-| ARCH-026     | Architecture | Authentication and Session Model           | 1.2.2   | Target | Platform | 2026-07-14 |
-| ARCH-027     | Architecture | Environment Variable Model                 | 1.5.1   | Target | Platform | 2026-07-15 |
-| ARCH-028     | Architecture | Turborepo Implementation Slices            | 1.4.27  | Target | Platform | 2026-07-15 |
+| ARCH-024     | Architecture | Package Boundaries                         | 1.3.0   | Living | Platform | 2026-07-15 |
+| ARCH-025     | Architecture | Data Layer                                 | 1.3.0   | Living | Backend  | 2026-07-15 |
+| ARCH-026     | Architecture | Authentication and Session Model           | 1.3.3   | Living | Platform | 2026-07-15 |
+| ARCH-027     | Architecture | Environment Variable Model                 | 1.6.0   | Living | Platform | 2026-07-15 |
+| ARCH-028     | Architecture | Turborepo Implementation Slices            | 1.5.0   | Living | Platform | 2026-07-15 |
 | ARCH-001     | Architecture | Backend Architecture                       | 1.2.0   | Living | Backend  | 2026-07-14 |
-| ARCH-002     | Architecture | Frontend Architecture                      | 1.3.3   | Living | Frontend | 2026-07-14 |
+| ARCH-002     | Architecture | Frontend Architecture                      | 1.3.4   | Living | Frontend | 2026-07-15 |
 | ADR-008      | ADR          | Cache Components Mode B (Gated)            | 1.0.1   | Accepted | Frontend | 2026-07-14 |
 | ARCH-003     | Architecture | Multi-tenant Ecosystem                     | 2.1.1   | Superseded | Platform | 2026-07-14 |
 | ARCH-004     | Architecture | Backend Layers                             | 1.1.1   | Living | Backend  | 2026-07-14 |
@@ -125,7 +126,7 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 | ARCH-008     | Architecture | Next.js Adapter Map                        | 1.3.0   | Living | Backend  | 2026-07-14 |
 | ARCH-009     | Architecture | Modules Ownership Map                      | 1.1.1   | Living | Backend  | 2026-07-14 |
 | ARCH-010     | Architecture | Backend Conventions                        | 1.3.0   | Living | Backend  | 2026-07-14 |
-| ARCH-012     | Architecture | App Router Routes                          | 1.2.3   | Living | Frontend | 2026-07-14 |
+| ARCH-012     | Architecture | App Router Routes                          | 1.2.5   | Living | Frontend | 2026-07-15 |
 | ARCH-013     | Architecture | BFF and Data Flow                          | 1.1.3   | Living | Frontend | 2026-07-14 |
 | ARCH-014     | Architecture | UI Surfaces                                | 2.0.0   | Superseded | Frontend | 2026-07-14 |
 | ARCH-015     | Architecture | Shadcn Studio / AdminCN Alignment          | 2.0.2   | Living | Frontend | 2026-07-15 |
@@ -168,6 +169,15 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 
 | Version | Date       | Summary                                                                                                                                         |
 | ------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| 4.100.0 | 2026-07-15 | I1.3 register sync: GUIDE-018→0.3.6 · ARCH-022→1.6.4 · ARCH-026→1.3.3; next Ops = I1.4; DOC-002 self-row synced. |
+| 4.99.0 | 2026-07-15 | `(client)` normalize honesty: ARCH-012→1.2.5 · ARCH-002→1.3.4; DOC-002 self-row synced. |
+| 4.98.0 | 2026-07-15 | ARCH-012→1.2.4 client `(gate)`/`(workspace)` path honesty vs on-disk `app/(client)/client/**`; DOC-002 self-row synced. |
+| 4.97.0 | 2026-07-15 | Client `(gate)`/`(workspace)` honesty: ARCH-022→1.6.3; DOC-002 self-row synced. |
+| 4.96.0 | 2026-07-15 | I1.2 register sync: GUIDE-018→0.3.5 · ARCH-022→1.6.2 · ARCH-026→1.3.2 · ARCH-031→1.3.14; DOC-002 self-row synced. |
+| 4.95.0 | 2026-07-15 | I1.1 gap close register sync: GUIDE-018→0.3.4 · ARCH-022→1.6.1 · ARCH-026→1.3.1; DOC-002 self-row synced. |
+| 4.94.0 | 2026-07-15 | GUIDE-018 → 0.3.3 (I1.1 `proxy.ts` evidence); program note next Ops = I1.2; DOC-002 self-row synced. |
+| 4.93.0 | 2026-07-15 | Registered GUIDE-018 (approved ID) Full-Stack End-to-End Integration Program Draft 0.3.2; DOC-002 self-row synced. |
+| 4.92.0 | 2026-07-15 | Checkpoint G: ARCH-022/024/025/026/027/028 Target→Living; ARCH-031→1.3.13 posture honesty; DOC-002 self-row synced. |
 | 4.91.0 | 2026-07-15 | Docs audit: ARCH-028→1.4.27 (stale Risks/drift retired; post-S8.2 CI/Deploy honesty); DOC-002 self-row synced. |
 | 4.90.0 | 2026-07-15 | Docs audit residual close: ARCH-028→1.4.26, ARCH-031→1.3.12; DOC-002 self-row synced (Actions Deploy evidence). |
 | 4.89.0 | 2026-07-15 | Docs audit residual: DOC-002 self-row aligned; ARCH-028→1.4.26 (S8.1/S8.2 Actions/`packageManager` evidence + Deploy run 29367183769). |
@@ -275,15 +285,17 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 
 **GUIDE-017** is the Living cross-cutting authority for evidence vocabulary and release/capability aggregation. It does not replace MOD-002 module evidence/claims or ARCH-029/GUIDE-014 interface verification.
 
+**GUIDE-018** is the registered Draft post-scaffold full-stack integration program (Phases G closed · I1.1–I1.3 done · next I1.4). It sequences work; owning ARCH/API/MOD spines remain binding for detail.
+
 `FFT-REST-002`…`FFT-REST-007`, `OPEN-002`…`OPEN-005`, `ADR-001`…`ADR-007`, `RB-009` (webhook replay), and `ARCH-030` (verification architecture) are **reserved in planning docs only** — not registered until created under the approved derivation / creation gates. **`ADR-008`** is registered (Accepted Phase 1 — Cache Components Mode B; `cacheComponents` enablement still deferred).
 
-`ARCH-022` and `ARCH-024` through `ARCH-028` describe approved target-state architecture and remain non-current until implemented or promoted to `Living`.
+`ARCH-022` and `ARCH-024` through `ARCH-028` are **Living** scaffold SSOT after Checkpoint G (2026-07-15). Post-scaffold program order is [GUIDE-018](../guides/GUIDE-018-fullstack-e2e-integration-program.md) (registered Draft 0.3.6). Auth edge residual after I1.3 (role shells) remains Phase I1 — not a Status demotion.
 
 DOC-001 is the shared Afenda documentation control baseline (Lite beta · Elite battle-proven). This register lists documents for the Lite checkout only.
 
 GUIDE-001…004, GUIDE-006, and GUIDE-016 are **Retired** in this register only (IDs non-recyclable; stub files hard-deleted — no `docs/guides/archive/`). ARCH-003, ARCH-014, ARCH-020, and ARCH-021 are **Superseded** in this register only (no `docs/architecture/archive/`). Engineering entry is `docs/README.md` + DOC-001/003 + AGENTS.md; API how-tos remain under `docs/api/guides/`; Target vs checkout drift lives in ARCH-028. Module Enterprise Readiness is MOD-002 + module spines.
 
-**Integrity baseline (`docs/guides`):** expect **0** findings for the navigator plus Living GUIDE-017. Retired GUIDE stubs remain register-only and `docs/guides/archive/` must not be restored.
+**Integrity baseline (`docs/guides`):** expect **0** findings for the navigator plus Living GUIDE-017 and registered GUIDE-018. Retired GUIDE stubs remain register-only and `docs/guides/archive/` must not be restored.
 
 Under DOC-001 §3.5.1 / §3.7, every controlled document header shall declare **Control State** (`Open` · `Closed` · `Reopened`) distinct from lifecycle **Status**. Lifecycle Status remains in this seven-field catalogue; Control State is header-only and must not be added as an eighth register column. The documentation validator requires and validates the header field for `docs/_control/**` and for any document that already declares it.
 

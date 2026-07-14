@@ -1,12 +1,15 @@
-import { requireRole } from "@afenda/auth";
 import type { ReactNode } from "react";
 
-/** Client route group — coarse shell gate via `@afenda/auth`. */
-export default async function ClientLayout({
+/**
+ * Client route-group marker only.
+ * Coarse `requireRole('client')` lives on `(workspace)` so `(gate)`
+ * surfaces (`/client/login`, `/client/preview-unavailable`) stay public
+ * per ARCH-012 §3.12 + session-gate bypasses.
+ */
+export default function ClientGroupLayout({
 	children,
 }: {
 	children: ReactNode;
 }) {
-	await requireRole("client");
 	return children;
 }

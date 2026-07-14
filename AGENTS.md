@@ -16,7 +16,7 @@ Cursor Agent instructions for this repository. Prefer **actions and links** over
 ## How Cursor Agent should work here
 
 1. **Route product work** through [`/using-afenda-elite-skills`](.cursor/skills/using-afenda-elite-skills/SKILL.md) before vendor phase skills.
-2. **One mission per chat** when shipping ARCH-028 slices — use [implementation-slices](.cursor/skills/afenda-elite-implementation-slices/SKILL.md) + [command-sheet](.cursor/skills/afenda-elite-implementation-slices/command-sheet.md).
+2. **One mission per chat** when shipping product work — ARCH-028 coding slices are **closed**; use [GUIDE-018](docs/guides/GUIDE-018-fullstack-e2e-integration-program.md) phases + farms from [`/using-afenda-elite-skills`](.cursor/skills/using-afenda-elite-skills/SKILL.md). Residual scaffold verify: [implementation-slices](.cursor/skills/afenda-elite-implementation-slices/SKILL.md).
 3. **Prefer Agent** for implement/verify; use **Plan** only when the slice cutover has a real choice; use **Ask** for read-only navigation.
 4. **Verify with evidence** (commands, CI/Deploy runs, `Test-Path` / `git ls-files`) — never trust a stale Cursor index alone.
 5. **Commit/push only when the user asks.** Never force-push `main`; never amend remote commits without explicit request.
@@ -30,6 +30,7 @@ Cursor Agent instructions for this repository. Prefer **actions and links** over
 | Controlled docs write | `afenda-elite-doc-control` |
 | Doc↔doc conflict / register drift | `afenda-elite-doc-integrity` |
 | ARCH-028 slice implement | `afenda-elite-implementation-slices` |
+| GUIDE-018 Phase I (I1.1…) | `afenda-elite-implementation-slices` + command-sheet |
 | Neon tenancy ops ladder | `neon-tenancy-efficiency` |
 | FFT product module | `feed-farm-trade` |
 | Generic engineering phases | `using-agent-skills` (method library **after** Elite router) |
@@ -52,30 +53,31 @@ Cursor Agent instructions for this repository. Prefer **actions and links** over
 |-----|---------|
 | [docs/README.md](docs/README.md) | Docs entry |
 | [DOC-001](docs/_control/DOC-001-documentation-control-standard.md) · [DOC-002](docs/_control/DOC-002-documentation-register.md) · [DOC-003](docs/_control/DOC-003-controlled-document-template.md) | Control · register · template |
-| [ARCH-022](docs/architecture/ARCH-022-system-overview.md) | Target monorepo / system overview |
+| [ARCH-022](docs/architecture/ARCH-022-system-overview.md) | Living monorepo / system overview |
 | [ARCH-023](docs/architecture/ARCH-023-multi-tenancy.md) | IAM · tenancy · Decision lock |
 | [ARCH-024](docs/architecture/ARCH-024-package-boundaries.md)…[ARCH-027](docs/architecture/ARCH-027-env-model.md) | Packages · data · auth · env |
-| [ARCH-028](docs/architecture/ARCH-028-implementation-slices.md) | Ordered slices · anti-contamination |
+| [ARCH-028](docs/architecture/ARCH-028-implementation-slices.md) | Scaffold slices (closed) · anti-contamination |
+| [GUIDE-018](docs/guides/GUIDE-018-fullstack-e2e-integration-program.md) | Post-scaffold program roadmap (Draft) |
 | [ARCH-031](docs/architecture/ARCH-031-technology-stack-catalogue.md) | Stack discovery |
 
 Controlled docs: respect **Control State**. `Closed` → reopen with explicit Docs-lane approval before substantive edits.
 
-## Checkout posture (Target on disk)
+## Checkout posture (Living Turborepo on disk)
 
-**Present:** `@afenda/{config,db,auth,env,ui,emails}` · `apps/web` route groups · `apps/web/modules/{platform,identity,declarations,fft}` · `apps/web/features/{auth,declarations,fft,org-admin}` · Target CI/Deploy (`.github/workflows/{ci,deploy}.yml`).
+**Present:** `@afenda/{config,db,auth,env,ui,emails}` · `apps/web` route groups · `apps/web/proxy.ts` edge session gate · `apps/web/modules/{platform,identity,declarations,fft}` · `apps/web/features/{auth,declarations,fft,org-admin}` · CI/Deploy (`.github/workflows/{ci,deploy}.yml`).
 
-**Absent by design:** repo-root `app/`, `modules/`, `features/`, `components-V2/`, Collapse `lib/`, wiped ops scripts.
+**Absent by design:** repo-root `app/`, `modules/`, `features/`, `components-V2/`, Collapse `lib/`, wiped ops script bodies.
 
 | Rule | Detail |
 |------|--------|
 | Forward code | Greenfield under `apps/web/**` and `packages/*` only |
-| Next open (program) | **Checkpoint G** — Docs lane (Target→Living Status + retirement). Not an Ops coding slice. |
+| Next open (program) | [GUIDE-018](docs/guides/GUIDE-018-fullstack-e2e-integration-program.md) **I1.3** — `/join` + invite. I1.1–I1.2 closed. ARCH-028 Checkpoint G **closed**. |
 | Env | `@afenda/env` + `.env.local` only (compose retired) |
 | Docs trunks | Flat `docs/architecture/ARCH-*.md` — gate `pnpm check:docs-trunk-ban` |
 | Index ghosts | Grep/Glob may list deleted paths — trust `Test-Path` · `git ls-files` · trunk-ban check |
-| Scripts | Many ops scripts still Collapse-gated; docs-capable: `pnpm checks` · `check:docs-naming` · `check:docs-trunk-ban` · `check:doc-integrity` · `check:module-quality` · `check:openapi` · `validate:neon-env` |
+| Scripts | Many root `package.json` script names still route through `scripts/collapse-script-unavailable.mjs` — **inventory only, not live controls**, until an Approved forward slice replaces them. Docs-capable today: `pnpm checks` · `check:docs-naming` · `check:docs-trunk-ban` · `check:doc-integrity` · `check:module-quality` · `check:openapi` · `validate:neon-env` |
 
-**App layout:** sole deployable `apps/web` · edge gate `apps/web/proxy.ts` (do not invent new `middleware.ts`) · imports `@afenda/*` only across packages.
+**App layout:** sole deployable `apps/web` · edge gate `apps/web/proxy.ts` on disk (do not invent `middleware.ts`) · imports `@afenda/*` only across packages.
 
 ## Feed Farm Trade
 

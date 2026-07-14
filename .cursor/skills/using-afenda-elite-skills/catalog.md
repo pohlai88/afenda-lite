@@ -54,7 +54,8 @@ Local skills must remain operable if `afenda-Xerp` is absent. Do not edit `agent
 | `afenda-elite-module-readiness` | local-elite-farm | local | keep | Module evidence ledgers · Module Enterprise Readiness claims | MOD-009 / MOD-010 evidence and claim work | MOD-002 · owning `*-MOD-009` / `*-MOD-010` | none | `.cursor/skills/afenda-elite-module-readiness/SKILL.md` | MOD-002/009/010 only — no scratch QG · no edition certification |
 | `afenda-elite-repo-housekeeping` | local-elite-farm | local | keep | Knip/drift discovery; skill-catalog align | Housekeeping / catalog drift | ARCH-024 · ARCH-028 · this catalog | none | `.cursor/skills/afenda-elite-repo-housekeeping/SKILL.md` | Deletes → monorepo-refactor Slice D |
 | `afenda-elite-monorepo-refactor` | local-elite-farm | local | keep | Governed extract/move/Slice D | Cross-package refactor | ARCH-024 · ARCH-028 | none | `.cursor/skills/afenda-elite-monorepo-refactor/SKILL.md` | |
-| `afenda-elite-implementation-slices` | local-elite-farm | local | keep | One ARCH-028 slice implement loop + command sheet | Named S\* slice / ARCH-028 continue | ARCH-028 (+ sibling ARCH per slice) | coding unlock in ARCH-028 | `.cursor/skills/afenda-elite-implementation-slices/SKILL.md` | Routes to farms via slice-map; does not replace scaffold/modules/nextjs |
+| `afenda-elite-implementation-slices` | local-elite-farm | local | keep | One GUIDE-018 Phase I / residual ARCH-028 mission + command sheet | Named `PHASE_ID` (I*) / `SLICE_ID` (S*) / command-sheet paste | GUIDE-018 · ARCH-028 (+ sibling per map) | Checkpoint G closed; Phase I open at I1.1 | `.cursor/skills/afenda-elite-implementation-slices/SKILL.md` | Routes to farms via slice-map; does not replace scaffold/modules/nextjs/api |
+
 
 ### Domain farms
 

@@ -1,6 +1,7 @@
 import { env } from "@afenda/env";
 import { headers } from "next/headers";
 
+import { buildJoinUrl } from "./join-paths";
 import { getSession, type Role } from "./session";
 
 const NEON_AUTH_SERVER_PROXY_HEADER = "x-neon-auth-server-proxy";
@@ -13,6 +14,11 @@ type NeonOrgRole = "owner" | "admin" | "member";
  */
 function requireAppOrigin(): string {
 	return new URL(env.APP_URL).origin;
+}
+
+/** Absolute `/join?invitationId=…` under production `APP_URL` (app-owned mail). */
+export function buildInviteJoinUrl(invitationId: string): string {
+	return buildJoinUrl({ invitationId, origin: requireAppOrigin() });
 }
 
 function mapRoleToNeonOrgRole(role: Role): NeonOrgRole {
@@ -46,7 +52,7 @@ export type InviteOrgMemberResult = {
  *
  * Neon Auth delivers the invite mail. For app-owned invitation mail, compose
  * `OnboardingInviteEmail` / `renderOnboardingInviteEmail` from `@afenda/emails`
- * (join URL: `/join?invitationId=…`) — do not replace this Neon send path.
+ * with `buildInviteJoinUrl(invitationId)` — do not replace this Neon send path.
  */
 export async function inviteOrgMember(
 	input: InviteOrgMemberInput,

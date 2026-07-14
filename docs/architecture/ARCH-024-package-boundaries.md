@@ -4,13 +4,13 @@
 |-------|-------|
 | ID | ARCH-024 |
 | Category | Architecture |
-| Version | 1.2.1 |
-| Status | Target |
+| Version | 1.3.0 |
+| Status | Living |
 | Control State | Closed |
 | Owner | Platform |
-| Updated | 2026-07-14 |
+| Updated | 2026-07-15 |
 
-> **Forward-writing / Target.** Describes the intended Turborepo system. Authoritative for new work. Missing `apps/` or `packages/` on disk is expected until implementation.
+> **Living.** Package boundary SSOT after ARCH-028 Checkpoint G (2026-07-15). `@afenda/{config,db,auth,env,ui,emails}` present; imports stay on public exports only.
 
 ## Context
 
@@ -160,6 +160,7 @@ apps/web/modules/declarations/domain/list.ts
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.3.0 | 2026-07-15 | Checkpoint G: Status Target→Living; packages present on disk. |
 | 1.2.1 | 2026-07-14 | Home flattened to docs/architecture/ (trunks removed; pack reading order in README). |
 | 1.2.0 | 2026-07-14 | Integrity remediation: parseable Change Log; schema path labels defer to ARCH-023/025 Living roots. |
 | 1.1.1 | 2026-07-14 | Added mandatory Control State header field (Closed); lifecycle Status unchanged. |

@@ -48,7 +48,7 @@ Task arrives (this repo / Afenda-Lite)
     ├── One mission / commit mixing risk? ──────────────────→ bounded-agent-lanes
     ├── Dead code / Knip / skill-catalog drift? ────────────→ afenda-elite-repo-housekeeping
     ├── Cross-package move / extract / Slice D delete? ─────→ afenda-elite-monorepo-refactor
-    ├── ARCH-028 Turborepo slice implement (S\* / checkpoint)? → afenda-elite-implementation-slices (then farms from its slice-map)
+    ├── ARCH-028 residual / GUIDE-018 Phase I (S* / I* / command-sheet)? → afenda-elite-implementation-slices (then farms from its slice-map)
     ├── FE scaffold / wipe / app routes? ───────────────────→ afenda-elite-frontend-scaffold
     ├── Next.js App Router / RSC / rendering / proxy / MCP routes? → afenda-elite-nextjs-best-practice
     ├── Modules / ports / residue? ─────────────────────────→ afenda-elite-backend-modules
@@ -58,7 +58,7 @@ Task arrives (this repo / Afenda-Lite)
     └── Domain farm (Neon, FFT, AdminCN)? ──────────────────→ neon-tenancy / feed-farm-trade / admincn-customization
 ```
 
-**Rule:** This router chooses *which farm*. Vendor phase skills choose *how to engineer* once the farm is fixed. Housekeeping never deletes — it hands **Slice D** to monorepo-refactor. ARCH-028 serial implement uses `afenda-elite-implementation-slices` as the slice loop; it **loads** scaffold/modules/nextjs/neon per [slice-map](../afenda-elite-implementation-slices/slice-map.md) — it does not replace those farms. Retired names: `portal-*-*` → use `afenda-elite-*` above. Wave 3: `afenda-elite-documentation` → `afenda-elite-doc-control`; `afenda-elite-docs-consistency` → `afenda-elite-doc-integrity`. Next.js mechanics: local `afenda-elite-nextjs-best-practice` (Vercel + Accelint + Cache Components; not an Xerp overlay).
+**Rule:** This router chooses *which farm*. Vendor phase skills choose *how to engineer* once the farm is fixed. Housekeeping never deletes — it hands **Slice D** to monorepo-refactor. GUIDE-018 Phase I / residual ARCH-028 serial implement uses `afenda-elite-implementation-slices` as the mission loop; it **loads** scaffold/modules/nextjs/neon/api per [slice-map](../afenda-elite-implementation-slices/slice-map.md) — it does not replace those farms. Retired names: `portal-*-*` → use `afenda-elite-*` above. Wave 3: `afenda-elite-documentation` → `afenda-elite-doc-control`; `afenda-elite-docs-consistency` → `afenda-elite-doc-integrity`. Next.js mechanics: local `afenda-elite-nextjs-best-practice` (Vercel + Accelint + Cache Components; not an Xerp overlay).
 
 ## Docs filesystem (Docs lane)
 
@@ -131,7 +131,7 @@ Local skills must remain operable if `afenda-Xerp` is deleted. Inventory and gap
 - Control: [DOC-001](../../../docs/_control/DOC-001-documentation-control-standard.md) · [DOC-002](../../../docs/_control/DOC-002-documentation-register.md) · [DOC-003](../../../docs/_control/DOC-003-controlled-document-template.md)
 - Housekeeping: [afenda-elite-repo-housekeeping](../afenda-elite-repo-housekeeping/SKILL.md)
 - Refactor: [afenda-elite-monorepo-refactor](../afenda-elite-monorepo-refactor/SKILL.md)
-- ARCH-028 slices: [afenda-elite-implementation-slices](../afenda-elite-implementation-slices/SKILL.md) — [command-sheet](../afenda-elite-implementation-slices/command-sheet.md)
+- Phase I / residual scaffold: [afenda-elite-implementation-slices](../afenda-elite-implementation-slices/SKILL.md) — [command-sheet](../afenda-elite-implementation-slices/command-sheet.md)
 - FE scaffold: [afenda-elite-frontend-scaffold](../afenda-elite-frontend-scaffold/SKILL.md)
 - Next.js App Router: [afenda-elite-nextjs-best-practice](../afenda-elite-nextjs-best-practice/SKILL.md) — Accelint + Cache Components Mode A default / Mode B ADR-gated
 - Modules: [afenda-elite-backend-modules](../afenda-elite-backend-modules/SKILL.md)

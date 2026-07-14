@@ -4,13 +4,13 @@
 |-------|-------|
 | ID | ARCH-027 |
 | Category | Architecture |
-| Version | 1.5.1 |
-| Status | Target |
+| Version | 1.6.0 |
+| Status | Living |
 | Control State | Closed |
 | Owner | Platform |
 | Updated | 2026-07-15 |
 
-> **Forward-writing / Target.** Environment SSOT for Turborepo apps. **S4.1 + Checkpoint D shipped** on this checkout (`@afenda/env` present).
+> **Living.** Environment SSOT after ARCH-028 Checkpoint G (2026-07-15). S4.1 + Checkpoint D shipped (`@afenda/env` + `.env.local` only; compose retired).
 
 > **STOP — compose retired:** Do **not** restore Collapse-era `env:compose` / `env:guard` / `env.config` / `env.secret` / `lib/env`. Local runtime file = `.env.local` only. App config = `import { env } from '@afenda/env'`. Prefer editing a known-good `.env.local` over blind `vercel env pull` (redacts / stale marketplace keys).
 
@@ -165,6 +165,7 @@ Vercel build
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.6.0 | 2026-07-15 | Checkpoint G: Status Target→Living; compose-retired env model is current ops. |
 | 1.5.1 | 2026-07-15 | Stable heading anchor `#cutover-from-compose-s41` for ARCH-028 link (cutover remains done). |
 | 1.5.0 | 2026-07-14 | S4.1 shipped: STOP = compose retired; `.env.local` + `@afenda/env` Living ops. |
 | 1.4.2 | 2026-07-14 | Remove residual “Living compose in force” phrasing; docs-first STOP until S4.1. |
