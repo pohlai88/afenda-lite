@@ -1,51 +1,5 @@
 {
-  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
-  "extends": [
-    "ultracite/biome/core",
-    "ultracite/biome/react",
-    "ultracite/biome/next",
-    "ultracite/biome/vitest"
-  ],
-  "files": {
-    "includes": [
-      // Per https://biomejs.dev/guides/configure-biome/ — positive `**` MUST
-      // precede negated/force-ignore patterns. Without it, `!!` patterns are
-      // ineffective / empty-include → Biome LSP rescans the tree nonstop.
-      "!!**/node_modules",
-      "!!**/.git",
-      "!!**/.next",
-      "!!**/dist",
-      "!!**/build",
-      "!!**/out",
-      "!!**/coverage",
-      "!!**/.turbo",
-      "!!**/.vercel",
-      "!!**/.cache",
-      // Repo artifacts / harness / generated outputs
-      "!!**/.artifacts",
-      "!!**/.tmp",
-      "!!**/.next-ui",
-      "!!**/.next-workflow",
-      "!!**/test-results",
-      "!!**/playwright-report",
-      "!!**/playwright/.cache",
-      "!!**/scripts/lib/env-manifest.generated.mjs",
-      // Markdown/MDX: Prettier owns these (Biome formatting still in progress)
-      "!!**/*.{md,mdx}",
-      // Dogshit residual + huge JSON snapshots — never index
-      "!!**/docs"
-    ]
-  },
-  "overrides": [
-    {
-      // Keep generated + seed SQL out of format thrash.
-      "includes": ["**/db/migrations/**/*.sql", "**/*.sql"],
-      "formatter": {
-        "enabled": false
-      },
-      "linter": {
-        "enabled": false
-      }
-    }
-  ]
+  "$schema": "https://biomejs.dev/schemas/2.0.0/schema.json",
+  // Workspace root delegates to @afenda/config (ARCH-028 S1.2).
+  "extends": ["@afenda/config/biome.json"]
 }

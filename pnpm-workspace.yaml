@@ -1,5 +1,4 @@
-# Target workspace shape — ARCH-022 (apps/web + packages/*).
-# Root package.json remains the docs-first / Transition host until ARCH-028 implement.
+# ARCH-022 / ARCH-028 S1.1 — pnpm workspaces (apps/web + packages/*).
 packages:
   - "apps/*"
   - "packages/*"

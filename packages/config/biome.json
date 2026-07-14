@@ -1,0 +1,44 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.0.0/schema.json",
+  "extends": [
+    "ultracite/biome/core",
+    "ultracite/biome/react",
+    "ultracite/biome/next",
+    "ultracite/biome/vitest"
+  ],
+  "files": {
+    "includes": [
+      "!!**/node_modules",
+      "!!**/.git",
+      "!!**/.next",
+      "!!**/dist",
+      "!!**/build",
+      "!!**/out",
+      "!!**/coverage",
+      "!!**/.turbo",
+      "!!**/.vercel",
+      "!!**/.cache",
+      "!!**/.artifacts",
+      "!!**/.tmp",
+      "!!**/.next-ui",
+      "!!**/.next-workflow",
+      "!!**/test-results",
+      "!!**/playwright-report",
+      "!!**/playwright/.cache",
+      "!!**/scripts/lib/env-manifest.generated.mjs",
+      "!!**/*.{md,mdx}",
+      "!!**/docs"
+    ]
+  },
+  "overrides": [
+    {
+      "includes": ["**/db/migrations/**/*.sql", "**/*.sql"],
+      "formatter": {
+        "enabled": false
+      },
+      "linter": {
+        "enabled": false
+      }
+    }
+  ]
+}

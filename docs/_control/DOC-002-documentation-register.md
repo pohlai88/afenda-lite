@@ -4,7 +4,7 @@
 | ----------------- | ---------- |
 | **ID**            | DOC-002    |
 | **Category**      | Control    |
-| **Version**       | 4.65.0 |
+| **Version**       | 4.66.0 |
 | **Status**        | Living     |
 | **Control State** | Closed     |
 | **Owner**         | Platform   |
@@ -71,7 +71,7 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 | ID           | Category     | Title                                      | Version | Status | Owner    | Updated    |
 | ------------ | ------------ | ------------------------------------------ | ------- | ------ | -------- | ---------- |
 | DOC-001      | Control      | Documentation Control Standard             | 2.7.0   | Living | Platform | 2026-07-14 |
-| DOC-002      | Control      | Documentation Register                     | 4.65.0 | Living | Platform | 2026-07-14 |
+| DOC-002      | Control      | Documentation Register                     | 4.66.0 | Living | Platform | 2026-07-14 |
 | DOC-003      | Control      | Controlled Document Template               | 1.4.0   | Living | Platform | 2026-07-14 |
 | ARCH-029     | Architecture | Interface and API Architecture             | 1.2.7   | Living | Platform | 2026-07-14 |
 | ARCH-031     | Architecture | Technology Stack Catalogue                 | 1.2.0   | Living | Platform | 2026-07-14 |
@@ -113,7 +113,7 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 | ARCH-025     | Architecture | Data Layer                                 | 1.2.2   | Target | Backend  | 2026-07-14 |
 | ARCH-026     | Architecture | Authentication and Session Model           | 1.2.2   | Target | Platform | 2026-07-14 |
 | ARCH-027     | Architecture | Environment Variable Model                 | 1.4.2   | Target | Platform | 2026-07-14 |
-| ARCH-028     | Architecture | Turborepo Implementation Slices            | 1.4.3   | Target | Platform | 2026-07-14 |
+| ARCH-028     | Architecture | Turborepo Implementation Slices            | 1.4.4   | Target | Platform | 2026-07-14 |
 | ARCH-001     | Architecture | Backend Architecture                       | 1.2.0   | Living | Backend  | 2026-07-14 |
 | ARCH-002     | Architecture | Frontend Architecture                      | 1.3.3   | Living | Frontend | 2026-07-14 |
 | ADR-008      | ADR          | Cache Components Mode B (Gated)            | 1.0.1   | Accepted | Frontend | 2026-07-14 |
@@ -168,6 +168,7 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 
 | Version | Date       | Summary                                                                                                                                         |
 | ------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| 4.66.0 | 2026-07-14 | ARCH-028 → 1.4.4 (S1.1–S1.2 + Checkpoint A implement evidence; preconditions package-manager + implement unlock). |
 | 4.65.0 | 2026-07-14 | Registered Living GUIDE-017 Enterprise Quality and Evidence Standard for cross-cutting evidence vocabulary, freshness/applicability, exception governance, and release/capability aggregation; aligned the guides integrity baseline; future-product ERP scope remains parked. |
 | 4.64.0 | 2026-07-14 | Hard-delete `docs/**/archive/` stubs; DOC-001 → 2.7.0 register-only Retired/Superseded; clear guides archive integrity baseline; ARCH-023→3.1.3, ARCH-028→1.4.3, MOD-002→4.0.2, FFT-MOD-009→2.0.3. |
 | 4.63.0 | 2026-07-14 | RB-001/RB-005 → 1.1.0 DOC-003 six-section retrofit (clears runbooks STRUCTURE-DRIFT). |

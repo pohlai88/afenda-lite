@@ -4,7 +4,7 @@
 |-------|-------|
 | ID | ARCH-028 |
 | Category | Architecture |
-| Version | 1.4.3 |
+| Version | 1.4.4 |
 | Status | Target |
 | Control State | Closed |
 | Owner | Platform |
@@ -22,8 +22,8 @@ Gives implementers a complete, ordered checklist derived from ARCH-022…027 . A
 
 - [x] ARCH-022…027 Status Target (or Living after ship)
 - [x] Turborepo decisions live in ARCH-022…027
-- [ ] Package manager cutover decided (pnpm workspaces per ARCH-022)
-- [ ] Explicit user request to implement (docs-only scope ends here)
+- [x] Package manager cutover decided (pnpm workspaces per ARCH-022) — `packageManager` pin + `pnpm-lock.yaml` + `pnpm-workspace.yaml`
+- [x] Explicit user request to implement (docs-only scope ends here) — 2026-07-14 coding unlock (S1.1+)
 
 ---
 
@@ -32,13 +32,15 @@ Gives implementers a complete, ordered checklist derived from ARCH-022…027 . A
 **Size:** S · **Files:** `pnpm-workspace.yaml`, `turbo.json`, root `package.json` (devDeps only)
 
 **Acceptance:**
-- [ ] `pnpm install` from root succeeds
-- [ ] `turbo run build --dry=json` resolves the task graph
-- [ ] Root has zero runtime `dependencies`
+- [x] `pnpm install` from root succeeds
+- [x] `turbo run build --dry=json` resolves the task graph
+- [x] Root has zero runtime `dependencies`
 
 **Verify:** `pnpm install && turbo run build --dry=json`
 
 **Cutover note:** Root package manager is already pnpm (`pnpm-lock.yaml`, `packageManager` pin). S1.1 still lands Turbo + populated `apps/*` / `packages/*` workspace members.
+
+**Implement evidence (2026-07-14):** `apps/web` (`@afenda/web`) + `packages/config` (`@afenda/config`) workspace members; root runtime deps emptied; product deps under `@afenda/web`.
 
 ---
 
@@ -47,14 +49,14 @@ Gives implementers a complete, ordered checklist derived from ARCH-022…027 . A
 **Size:** S · **Files:** `package.json`, `biome.json`, `tsconfig/base.json`, `tsconfig/nextjs.json`, `tsconfig/react-library.json`
 
 **Acceptance:**
-- [ ] Apps/packages can `extends` `@afenda/config/tsconfig/nextjs.json`
-- [ ] Biome config is extendable from the package (migrate from root `biome.jsonc`)
+- [x] Apps/packages can `extends` `@afenda/config/tsconfig/nextjs.json`
+- [x] Biome config is extendable from the package (migrate from root `biome.jsonc`)
 
 **Verify:** package is listed in the workspace
 
 ### Checkpoint A
 
-- [ ] No circular workspace deps
+- [x] No circular workspace deps
 
 ---
 
@@ -282,12 +284,12 @@ Absorbed from retired GUIDE-004. Records **Target vs checkout** drift for forwar
 
 | Authority | Disk today | Coding impact |
 |-----------|------------|---------------|
-| [ARCH-022…028](.) | `apps/`, `packages/`, `turbo.json`, `pnpm-workspace.yaml` **absent** | Expected until explicit implement request follows this document |
+| [ARCH-022…028](.) | S1.1–S1.2 present: `turbo.json`, `pnpm-workspace.yaml`, `apps/web`, `packages/config`; `@afenda/db|auth|env|ui|emails` **absent** until later slices | Continue slice-serial implement — do not skip to full tree |
 | Living maps ARCH-001…010 · 012…019 · 017 | Repo-root `app/`, `modules/`, `features/`, `components-V2/` **absent** after design-SSOT Collapse (`4680c91`) | **Expected · Forbidden to recover** — see Anti-contamination lock below |
 | [ARCH-023](ARCH-023-multi-tenancy.md) | Living tenancy + RBAC rules | Binding now — enforce invariants even before packages exist |
-| Living `AGENTS.md` env compose | Compose scripts may be missing; do not restore Collapse-era script bodies | Target is `.env.local` + `@afenda/env` at S4.1; until then document honesty over fake tooling |
+| Living `AGENTS.md` env compose | Compose scripts gated; do not restore Collapse-era script bodies | Target is `.env.local` + `@afenda/env` at S4.1; until then document honesty over fake tooling |
 
-Do **not** scaffold `apps/` or `packages/` from Target docs alone.
+Do **not** invent remaining packages from Target docs alone — land each ARCH-028 slice with verify evidence.
 
 | Concept | Target path | Do not use |
 |---------|-------------|------------|
@@ -323,6 +325,7 @@ Living ARCH folder/route/adapter maps remain normative for **shape**. They are *
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.4.4 | 2026-07-14 | S1.1–S1.2 + Checkpoint A acceptance checked after implement unlock; preconditions package-manager + implement request marked done. |
 | 1.4.3 | 2026-07-14 | ARCH-021 disposition = Superseded DOC-002 register-only (archive stub removed). |
 | 1.4.2 | 2026-07-14 | Bounded reopen: package-manager cutover — document `pnpm` / `pnpm exec` in place of `npm run` / `npx` (repo SSOT `packageManager` + lockfile). |
 | 1.4.1 | 2026-07-14 | Home flattened to docs/architecture/ (trunks removed; pack reading order in README). |

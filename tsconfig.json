@@ -1,47 +1,23 @@
 {
+  "extends": "@afenda/config/tsconfig/base.json",
   "compilerOptions": {
-    "target": "ES2017",
-    "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
-    "skipLibCheck": true,
-    "strict": true,
-    "noEmit": true,
-    "esModuleInterop": true,
-    "module": "esnext",
-    "moduleResolution": "bundler",
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "jsx": "react-jsx",
-    "incremental": true,
-    "plugins": [
-      {
-        "name": "next"
-      }
-    ],
+    "lib": ["ES2022", "DOM"],
+    "baseUrl": ".",
     "paths": {
-      "@/*": ["./*"]
+      "@afenda/config/*": ["./packages/config/*"]
     }
   },
-  "include": [
-    "next-env.d.ts",
-    "**/*.ts",
-    "**/*.tsx",
-    ".next/types/**/*.ts",
-    ".next/dev/types/**/*.ts",
-    "**/*.mts"
-  ],
+  "include": ["scripts/**/*.mts", "scripts/**/*.ts", "*.mts", "*.ts"],
   "exclude": [
     "node_modules",
-    "scripts",
+    "apps",
+    "packages",
     "_reference",
-    "components/shadcn-studio/blocks/multi-step-form-01",
-    "components-V2/platform-views/apps",
-    "components-V2/platform-views/forms",
-    "components-V2/platform-views/datatables",
-    "components-V2/platform-views/pages",
-    "components-V2/platform-components/ui/calendar.tsx",
-    "components-V2/platform-components/ui/kanban.tsx",
-    "components-V2/platform-components/ui/resizable.tsx",
-    "components-V2/platform-views/dashboards/widgets/widget-upgrade-your-plan.tsx"
+    ".next",
+    ".turbo",
+    "coverage",
+    "test-results",
+    "playwright-report"
   ]
 }
