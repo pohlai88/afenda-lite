@@ -43,9 +43,9 @@ jobs:
         with:
           fetch-depth: 2
 
+      # Resolve pnpm from package.json "packageManager" (same Corepack pin Vercel
+      # uses with ENABLE_EXPERIMENTAL_COREPACK). Do not also set "version".
       - uses: pnpm/action-setup@v4
-        with:
-          version: 10.33.4
 
       - uses: actions/setup-node@v4
         with:
