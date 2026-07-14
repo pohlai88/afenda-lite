@@ -4,13 +4,13 @@
 |-------|-------|
 | ID | ARCH-028 |
 | Category | Architecture |
-| Version | 1.4.18 |
+| Version | 1.4.20 |
 | Status | Target |
 | Control State | Closed |
 | Owner | Platform |
 | Updated | 2026-07-15 |
 
-> **Forward-writing / Target.** Ordered implementation plan for the Turborepo system. Through S7.2 this checkout has `apps/web` route groups `(public)` / `(operator)` / `(client)` + `@afenda/{config,db,auth,env,ui,emails}` — continue slice-serial only (see Anti-contamination lock below). Each slice is S (1–2 files) or M (3–5 files). L = structural move of **Target trees already on disk** only — never Collapse/legacy recovery from git.
+> **Forward-writing / Target.** Ordered implementation plan for the Turborepo system. Through S7.3 this checkout has `apps/web` route groups + `apps/web/modules/{platform,identity,declarations,fft}` domain ports + `@afenda/{config,db,auth,env,ui,emails}` — continue slice-serial only (see Anti-contamination lock below). Each slice is S (1–2 files) or M (3–5 files). L = structural move of **Target trees already on disk** only — never Collapse/legacy recovery from git.
 
 ## Purpose
 
@@ -183,7 +183,7 @@ Operator override for a later **non-baseline** forward migrate only: `AFENDA_ALL
 
 **Checkpoint D evidence (2026-07-14):** merged local compose inventory → `.env.local`; removed `env.config` / `env.secret` / `.env` and committed examples; added `.env.example` + `!.env.example` gitignore; removed `env:compose` / `env:guard*` / compose write-path scripts from root `package.json`; `scripts/lib/env-files.mjs` + `validate-neon-env` load `.env.local` only; AGENTS.md Target env SSOT.
 
-**A–D residue pass (2026-07-14, pre-E):** deleted `env-manifest.generated.mjs` + root Collapse `components.json` (`app/`/`modules/platform` aliases); Living docs/skills retargeted off pre-S4.1 two-state; ARCH-022/AGENTS checkout posture updated for packages through `@afenda/env`. **Superseded by S5.1 / Checkpoint E (2026-07-15)**, **S6.1 (2026-07-15)**, **S7.1 (2026-07-15)**, and **S7.2 (2026-07-15)** — see Acceptance evidence below; next open **S7.3**.
+**A–D residue pass (2026-07-14, pre-E):** deleted `env-manifest.generated.mjs` + root Collapse `components.json` (`app/`/`modules/platform` aliases); Living docs/skills retargeted off pre-S4.1 two-state; ARCH-022/AGENTS checkout posture updated for packages through `@afenda/env`. **Superseded by S5.1 / Checkpoint E (2026-07-15)**, **S6.1 (2026-07-15)**, **S7.1 (2026-07-15)**, **S7.2 (2026-07-15)**, and **S7.3 (2026-07-15)** — see Acceptance evidence below; next open **S7.4**.
 
 ---
 
@@ -275,11 +275,20 @@ Operator override for a later **non-baseline** forward migrate only: `AFENDA_ALL
 **Size:** M · **Bounded contexts:** `identity`, `declarations`, `fft`, `platform` — each with at least one domain function taking `orgId: string`
 
 **Acceptance:**
-- [ ] Domain imports `@afenda/db` only via public surface
-- [ ] Typecheck passes
-- [ ] When migrating live modules: replace `pg` queries with Drizzle in the same bounded context
+- [x] Domain imports `@afenda/db` only via public surface
+- [x] Typecheck passes
+- [x] When migrating live modules: replace `pg` queries with Drizzle in the same bounded context
 
-**Authority:** [ARCH-023](ARCH-023-multi-tenancy.md)
+**Authority:** [ARCH-023](ARCH-023-multi-tenancy.md) · [ARCH-006](ARCH-006-bounded-contexts.md) · [ARCH-024](ARCH-024-package-boundaries.md)
+
+**Cutover note:** Greenfield `apps/web/modules/{platform,identity,declarations,fft}` only. Do **not** recover Collapse root `modules/` from git. No Feed Farm Trade 2B–2D product reopen — shell/module shape only.
+
+**Implement evidence (2026-07-15):**
+- Greenfield domain ports under `apps/web/modules/`: `platform/domain/list-rbac-audit.ts` (`listOrgRbacAudit`), `identity/domain/list-role-assignments.ts` (`listRoleAssignments`) + `identity/domain/list-org-roles.ts` (`listOrgRoles`), `declarations/domain/list-surveys.ts` (`listSurveys`), `fft/domain/list-events.ts` (`listEvents`) — each takes explicit `orgId: string` and reads via `withOrg` from `@afenda/db` public surface only
+- Ownership: platform RBAC roles/assignments in Identity (ARCH-009/023); Platform keeps org-scoped RBAC audit governance port
+- No live Collapse modules to migrate — third Acceptance = N/A greenfield (no `pg` under `apps/web`); no `packages/db/src` internal imports; FFT 2B–2D frozen (read shell only)
+- Verify: `pnpm --filter @afenda/web typecheck` PASS · `rg` under `apps/web/modules` shows only `from "@afenda/db"`
+- Gap close (same day): moved `listOrgRoles` Platform→Identity; added Platform `listOrgRbacAudit`; sync ARCH-031 / AGENTS / backend-modules completeness
 
 ---
 
@@ -360,7 +369,7 @@ Absorbed from retired GUIDE-004. Records **Target vs checkout** drift for forwar
 
 | Authority | Disk today | Coding impact |
 |-----------|------------|---------------|
-| [ARCH-022…028](.) | S1.1–S7.2 + Checkpoints A–E present: workspace + `@afenda/{config,db,auth,env,ui,emails}` + `apps/web` route groups; modules/features still open per S7.3+ | Continue slice-serial implement — next open **S7.3** |
+| [ARCH-022…028](.) | S1.1–S7.3 + Checkpoints A–E present: workspace + `@afenda/{config,db,auth,env,ui,emails}` + `apps/web` route groups + `apps/web/modules/*` domain ports; features still open per S7.4+ | Continue slice-serial implement — next open **S7.4** |
 | Living maps ARCH-001…010 · 012…019 · 017 | Repo-root `app/`, `modules/`, `features/`, `components-V2/` **absent** after design-SSOT Collapse (`4680c91`) | **Expected · Forbidden to recover** — see Anti-contamination lock below |
 | [ARCH-023](ARCH-023-multi-tenancy.md) | Living tenancy + RBAC rules | Binding now — enforce invariants even before packages exist |
 | `AGENTS.md` env | Target `@afenda/env` + `.env.local` + `.env.example` (S4.1 / Checkpoint D) | Compose retired — do not restore |
@@ -404,6 +413,8 @@ Living ARCH folder/route/adapter maps remain normative for **shape**. They are *
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.4.20 | 2026-07-15 | S7.3 gap close: Identity owns `listOrgRoles`; Platform `listOrgRbacAudit`; evidence + catalogue honesty. |
+| 1.4.19 | 2026-07-15 | S7.3 `apps/web/modules/{platform,identity,declarations,fft}` domain ports via `@afenda/db` `withOrg`; next open S7.4. |
 | 1.4.18 | 2026-07-15 | Post-S7.2 audit: rename open S7.3/S7.4 labels (modules / feature shells); sibling Target banners sync via DOC-002. |
 | 1.4.17 | 2026-07-15 | S7.2 route groups `(public)` / `(operator)` / `(client)` with `requireRole`; `/` public; `/admin` + `/client/dashboard` guarded. |
 | 1.4.16 | 2026-07-15 | S7.1 `apps/web` Next shell (`next.config.ts` transpilePackages + App Router `/`); no Collapse recover. |

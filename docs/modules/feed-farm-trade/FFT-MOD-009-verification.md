@@ -4,11 +4,11 @@
 | ----------------- | --------------- |
 | **ID**            | FFT-MOD-009     |
 | **Category**      | Module          |
-| **Version**       | 2.0.3 |
+| **Version**       | 2.0.4 |
 | **Status**        | Living          |
 | **Control State** | Closed          |
 | **Owner**         | Feed Farm Trade |
-| **Updated**       | 2026-07-14      |
+| **Updated**       | 2026-07-15      |
 | **Spine**         | MOD-009 Verification |
 
 ---
@@ -81,7 +81,9 @@ Use [FFT-MOD-008](FFT-MOD-008-ops-runtime.md) for gate history, rollout, and pro
 
 Schema authority: [MOD-002](../MOD-002-modules-index.md) §3.7. Parser-enforced; claim cannot say Claimable while blockers remain.
 
-**Reconstruction run:** 2026-07-14 at checkout `764287d` (local `main`). Attempted residue, `pnpm test:unit -- modules/fft`, and `pnpm check:fft-ui-registry`. **Result:** all product verify paths are **BLOCKED** — this HEAD has no `app/`, `features/`, `modules/`, `testing/`, or `e2e/` tree (`git ls-files app/*` = 0). Those trees remain on `origin/main`. No row is marked PASS. Conditional Disabled rows stay `NOT EVIDENCED` until fail-closed behavior can be executed against product code. Do not infer PASS from Living prose or historical MVP narrative.
+**Reconstruction run:** 2026-07-14 at checkout `764287d` (local `main`). Attempted residue, `pnpm test:unit -- modules/fft`, and `pnpm check:fft-ui-registry`. **Result:** all product verify paths are **BLOCKED** — this HEAD has no root `app/`, `features/`, `modules/`, `testing/`, or `e2e/` tree (`git ls-files app/*` = 0). Those Collapse trees remain banned. No row is marked PASS. Conditional Disabled rows stay `NOT EVIDENCED` until fail-closed behavior can be executed against product code. Do not infer PASS from Living prose or historical shipping narrative.
+
+**S7.3 honesty (2026-07-15):** Target shell `apps/web/modules/fft/domain/list-events.ts` exists (read-only `listEvents` via `@afenda/db` `withOrg`). Root `modules/fft`, `features/fft`, `testing/`, and `e2e/` remain absent — AC rows stay **BLOCKED**. Not a Feed Farm Trade 2B–2D product reopen.
 
 | AC-ID | Owner MOD | Profile | Quality Dimension | Applicability | Activation | Evidence | Evidence Reference | Evidence Revision | Evidence Date | Blocker / Rationale |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -175,6 +177,7 @@ Authority: [AGENTS.md](../../../AGENTS.md) § Testing · skill [verify.md](../..
 
 | Version | Date       | Summary |
 | ------- | ---------- | ------- |
+| 2.0.4 | 2026-07-15 | S7.3 honesty: Target `apps/web/modules/fft` shell port present; product AC rows remain BLOCKED (no 2B–2D reopen). |
 | 2.0.3 | 2026-07-14 | GUIDE-016 Retired = DOC-002 register-only (archive stub removed). |
 | 2.0.2 | 2026-07-14 | Bounded reopen: package-manager cutover (`pnpm`); ARCH-027 two-state env — retire Living compose evidence commands; Core rows stay BLOCKED/NOT EVIDENCED. |
 | 2.0.0 | 2026-07-14 | Eleven-column contract ledger with Core/ERP dimensions; existing results preserved; new ERP rows NOT EVIDENCED; no PASS inferred. |
