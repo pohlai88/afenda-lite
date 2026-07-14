@@ -3,18 +3,22 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --port 3000",
     "build": "next build",
-    "start": "next start",
+    "start": "next start --port 3000",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
     "clean": "node -e \"const fs=require('fs'); for (const d of ['.next','.turbo','coverage','dist']) fs.rmSync(d,{recursive:true,force:true})\""
   },
   "dependencies": {
+    "@afenda/auth": "workspace:*",
     "@afenda/db": "workspace:*",
+    "@afenda/emails": "workspace:*",
     "@afenda/env": "workspace:*",
     "@afenda/ui": "workspace:*",
     "@base-ui/react": "^1.6.0",
     "@neondatabase/auth": "^0.4.2-beta",
     "@neondatabase/auth-ui": "^0.2.1-beta",
+    "@next/env": "^16.0.10",
     "@tanstack/react-table": "^8.21.3",
     "@vercel/functions": "^3.3.3",
     "class-variance-authority": "^0.7.1",
@@ -42,6 +46,7 @@
     "zustand": "^5.0.14"
   },
   "devDependencies": {
+    "@afenda/config": "workspace:*",
     "@tailwindcss/postcss": "^4",
     "@tailwindcss/typography": "^0.5.20",
     "@types/node": "^20",
@@ -50,7 +55,6 @@
     "@types/react-dom": "^19",
     "babel-plugin-react-compiler": "^1.0.0",
     "tailwindcss": "^4",
-    "typescript": "^5",
-    "@afenda/config": "workspace:*"
+    "typescript": "^5"
   }
 }

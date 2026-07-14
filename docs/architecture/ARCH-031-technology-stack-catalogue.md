@@ -4,7 +4,7 @@
 | ----------------- | ------------ |
 | **ID**            | ARCH-031     |
 | **Category**      | Architecture |
-| **Version**       | 1.3.3        |
+| **Version**       | 1.3.6        |
 | **Status**        | Living       |
 | **Control State** | Closed       |
 | **Owner**         | Platform     |
@@ -75,13 +75,13 @@ The full documentation-integrity baseline inspected **97/97 primary files**: 93 
 | -------------- | ------------------ | ------ |
 | Governed documentation | Entire `docs/` validator scope | Primary evidence for Living/Target decisions |
 | Runtime and dependency manifests | [`package.json`](../../package.json), [`pnpm-lock.yaml`](../../pnpm-lock.yaml), [`pnpm-workspace.yaml`](../../pnpm-workspace.yaml) | Dependency declarations present; most Collapse-era script bodies are **absent** and gate via [`collapse-script-unavailable.mjs`](../../scripts/collapse-script-unavailable.mjs) |
-| Framework configuration | [`next.config.ts`](../../next.config.ts), [`tsconfig.json`](../../tsconfig.json), [`postcss.config.mjs`](../../postcss.config.mjs) | Next.js, React Compiler, TypeScript, and Tailwind configuration present |
+| Framework configuration | [`apps/web/next.config.ts`](../../apps/web/next.config.ts), [`apps/web/tsconfig.json`](../../apps/web/tsconfig.json), [`apps/web/postcss.config.mjs`](../../apps/web/postcss.config.mjs) | Target Next shell (S7.1) — React Compiler, transpilePackages, Tailwind PostCSS |
 | UI tooling | `packages/ui/components.json` | Target `@afenda/ui` (S5.1 / Checkpoint E); root Collapse `components.json` remains absent |
-| Hosting and CI | [`vercel.json`](../../vercel.json), [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) | Vercel `sin1`; GitHub Actions uses Node 24 and `pnpm install --frozen-lockfile` |
+| Hosting and CI | [`apps/web/vercel.json`](../../apps/web/vercel.json), [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) | Vercel `sin1`; Project Root Directory **`apps/web`** + `sourceFilesOutsideRootDirectory=true` (verified 2026-07-15); install `cd ../.. && pnpm install --frozen-lockfile`; GitHub Actions Node 24 |
 | Quality and testing | [`biome.jsonc`](../../biome.jsonc), [`playwright.config.ts`](../../playwright.config.ts) | Tooling configuration present; test trees absent |
 | Contract / docs gates | [`OPEN-001-openapi.yaml`](../api/OPEN-001-openapi.yaml), [`generate-openapi.mts`](../../scripts/generate-openapi.mts), docs integrity scripts | Runnable on this docs-first checkout |
 | Product source presence | Collapse `app/`/`modules/`/`features/`/`components-V2/` | **Absent by design**; do not recover — [ARCH-028](ARCH-028-implementation-slices.md) |
-| Target packages (through S6.1) | `apps/web`, `packages/{config,db,auth,env,ui,emails}`, [`turbo.json`](../../turbo.json) | **Present** after ARCH-028 S1.1–S6.1; routes/modules still open (S7.x) |
+| Target packages (through S7.2) | `apps/web` route groups + Next shell, `packages/{config,db,auth,env,ui,emails}`, [`turbo.json`](../../turbo.json) | **Present** after ARCH-028 S1.1–S7.2; modules/features still open (S7.3+) |
 
 Validator exclusions: external HTTP availability and code-to-document runtime drift. **Package script names are not evidence** that Collapse-era tooling still runs.
 
@@ -90,19 +90,19 @@ Validator exclusions: external HTTP availability and code-to-document runtime dr
 | Capability | Technology / choice | Lifecycle posture | Implementation evidence | Owning authority | Constraint / migration note |
 | ---------- | ------------------- | ----------------- | ----------------------- | ---------------- | --------------------------- |
 | Server runtime | Node.js 24; Edge by documented exception only | Current / Living | Configured — [`package.json`](../../package.json), [CI](../../.github/workflows/ci.yml) | [API-001](../api/API-001-api-boundaries.md), [ARCH-016](ARCH-016-next-js-conventions.md) | DB-backed routes, actions, and pages default to Node. |
-| Application framework | Next.js 16 App Router | Current / Living | Configured — [`package.json`](../../package.json), [`next.config.ts`](../../next.config.ts); product source not verifiable | [ARCH-002](ARCH-002-frontend-architecture.md), [ARCH-016](ARCH-016-next-js-conventions.md) | One modular-monolith deployable; thin routes. |
-| Rendering and adapters | React Server Components, Server Actions, Route Handlers | Current / Living | Not verifiable in this checkout | [ARCH-013](ARCH-013-bff-and-data-flow.md), [API-001](../api/API-001-api-boundaries.md) | RSC reads domain directly; HTTP is reserved for named cases. |
-| Language and UI runtime | TypeScript 5, React 19 | Target pin with matching manifest | Configured — [`package.json`](../../package.json), [`tsconfig.json`](../../tsconfig.json) | [ARCH-022](ARCH-022-system-overview.md) | Strict TypeScript; versions remain manifest-owned. |
-| React optimization | React Compiler | Target-preferred and currently configured | Configured — [`next.config.ts`](../../next.config.ts) | [ARCH-028](ARCH-028-implementation-slices.md) | Preserve when the Target app is rebuilt. |
+| Application framework | Next.js 16 App Router | Current / Living | Configured — [`apps/web/package.json`](../../apps/web/package.json), [`apps/web/next.config.ts`](../../apps/web/next.config.ts); route groups `(public)` / `(operator)` / `(client)` verified (S7.2) | [ARCH-002](ARCH-002-frontend-architecture.md), [ARCH-016](ARCH-016-next-js-conventions.md) | One modular-monolith deployable; thin routes. |
+| Rendering and adapters | React Server Components, Server Actions, Route Handlers | Current / Living | RSC layouts/pages under `apps/web/app/(public|operator|client)`; Actions/RH still open | [ARCH-013](ARCH-013-bff-and-data-flow.md), [API-001](../api/API-001-api-boundaries.md) | RSC reads domain directly; HTTP is reserved for named cases. |
+| Language and UI runtime | TypeScript 5, React 19 | Target pin with matching manifest | Configured — [`apps/web/package.json`](../../apps/web/package.json), [`apps/web/tsconfig.json`](../../apps/web/tsconfig.json) | [ARCH-022](ARCH-022-system-overview.md) | Strict TypeScript; versions remain manifest-owned. |
+| React optimization | React Compiler | Target-preferred and currently configured | Configured — [`apps/web/next.config.ts`](../../apps/web/next.config.ts) (`reactCompiler: true`) | [ARCH-028](ARCH-028-implementation-slices.md) | Preserve on the Target app. |
 | Docs-first package workflow | pnpm (`pnpm-lock.yaml`), Corepack-pinned `packageManager`, `pnpm install --frozen-lockfile` | Current / Living | Configured — [`package.json`](../../package.json), [`pnpm-workspace.yaml`](../../pnpm-workspace.yaml), [CI](../../.github/workflows/ci.yml) | [ARCH-028](ARCH-028-implementation-slices.md) | npm/yarn lockfiles gitignored; workspace members grow slice-serially under ARCH-028. |
 | Target workspace | Turborepo with pnpm workspaces and remote caching | Target (S1.1 shipped) | [`pnpm-workspace.yaml`](../../pnpm-workspace.yaml) + [`turbo.json`](../../turbo.json) present; members through `@afenda/emails` | [ARCH-022](ARCH-022-system-overview.md), [ARCH-024](ARCH-024-package-boundaries.md) | Sole package manager is pnpm. |
-| Target package surface | Private `@afenda/{config,db,auth,env,ui,emails}` | Target (partial) | Present: `config`, `db`, `auth`, `env`, `ui`, `emails` + `apps/web`; routes/modules still open (S7.x) | [ARCH-022](ARCH-022-system-overview.md), [ARCH-024](ARCH-024-package-boundaries.md) | `apps/web` remains the sole deployable. |
+| Target package surface | Private `@afenda/{config,db,auth,env,ui,emails}` | Target (partial) | Present: packages + `apps/web` route groups (S7.2); modules/features still open (S7.3+) | [ARCH-022](ARCH-022-system-overview.md), [ARCH-024](ARCH-024-package-boundaries.md) | `apps/web` remains the sole deployable. |
 
 ## 3.4 UI and design system
 
 | Capability | Technology / choice | Lifecycle posture | Implementation evidence | Owning authority | Constraint / migration note |
 | ---------- | ------------------- | ----------------- | ----------------------- | ---------------- | --------------------------- |
-| Styling | Tailwind CSS 4 and CSS-variable tokens | Current configuration and Target | Configured — [`postcss.config.mjs`](../../postcss.config.mjs), [`package.json`](../../package.json) | [ARCH-022](ARCH-022-system-overview.md), [ARCH-024](ARCH-024-package-boundaries.md) | Product CSS source is not verifiable in this checkout. |
+| Styling | Tailwind CSS 4 and CSS-variable tokens | Current configuration and Target | Configured — [`apps/web/postcss.config.mjs`](../../apps/web/postcss.config.mjs), [`apps/web/styles/globals.css`](../../apps/web/styles/globals.css) → `@afenda/ui/globals.css` | [ARCH-022](ARCH-022-system-overview.md), [ARCH-024](ARCH-024-package-boundaries.md) | Design tokens live in `@afenda/ui`; app entry imports the package. |
 | Component foundation | shadcn **base-vega** | Living `@afenda/ui` (S5.1 shipped) | [`packages/ui`](../../packages/ui) — Button + `globals.css` + `components.json`; DNA promoted from user-approved local `_reference/archive/shadcn-pro-dashboard` (never Collapse git recover; never product `import` from `_reference`) | [ARCH-022](ARCH-022-system-overview.md), [ARCH-024](ARCH-024-package-boundaries.md), [ARCH-018](ARCH-018-admincn-customization.md) | Do not recreate root Collapse-alias `components.json`. |
 | Operator shell | AdminCN / `AdminCnShell` with Shadcn Studio DNA | Current / Living | Configured tooling; product source not verifiable | [ARCH-015](ARCH-015-admincn-alignment.md), [ARCH-018](ARCH-018-admincn-customization.md) | Shared shell only; auth remains a separate Neon Auth island. |
 | Theme and data-table DNA | `next-themes`, TanStack Table | Current / Living UI DNA | Manifest only; source not verifiable | [ARCH-015](ARCH-015-admincn-alignment.md) | One root theme owner; TanStack is a pattern dependency, not an IAM store. |
@@ -143,7 +143,7 @@ Validator exclusions: external HTTP availability and code-to-document runtime dr
 
 | Capability | Technology / choice | Lifecycle posture | Implementation evidence | Owning authority | Constraint / migration note |
 | ---------- | ------------------- | ----------------- | ----------------------- | ---------------- | --------------------------- |
-| Application hosting | Vercel, one Next.js deployable, `sin1` region | Current / Living | Configured — [`vercel.json`](../../vercel.json) | [ARCH-022](ARCH-022-system-overview.md), [RB-001](../runbooks/RB-001-multi-org-ops.md) | A second deployable requires a superseding architecture decision. |
+| Application hosting | Vercel, one Next.js deployable, `sin1` region | Current / Living | Configured — project `afenda-lite` Root Directory `apps/web`, outside-root sources on; [`apps/web/vercel.json`](../../apps/web/vercel.json) | [ARCH-022](ARCH-022-system-overview.md), [RB-001](../runbooks/RB-001-multi-org-ops.md) | Workspace packages resolve via `sourceFilesOutsideRootDirectory`; a second deployable requires a superseding decision. |
 | Database operations | Neon production branch, pooled connection, PITR and daily snapshots | Current / Living | Ops evidence documented; secret values not inspected | [ARCH-023](ARCH-023-multi-tenancy.md), [RB-001](../runbooks/RB-001-multi-org-ops.md) | Keep the shared-schema posture and production pooler invariant. |
 | Continuous integration | GitHub Actions with Node 24, `pnpm/action-setup`, and `pnpm install --frozen-lockfile` | Current configuration | Source verified — [CI workflow](../../.github/workflows/ci.yml) | [ARCH-028](ARCH-028-implementation-slices.md) | Product/e2e CI steps may fail or no-op until Target scaffold; Target pipeline moves to Turbo after cutover. |
 | Docs-capable local gates | `check:docs-naming`, doc-integrity, module-quality, OpenAPI, `validate:neon-env` | Current / Living (docs checkout) | Source verified — [`run-checks.mjs`](../../scripts/run-checks.mjs) | [DOC-001](../_control/DOC-001-documentation-control-standard.md), [ARCH-028](ARCH-028-implementation-slices.md) | Collapse-era product/ops scripts are gated — not missing “gaps” to restore. |
@@ -221,6 +221,9 @@ ARCH-031 shall link to the changed authority rather than duplicate its detailed 
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 1.3.6 | 2026-07-15 | S7.2: catalogue evidence for `(public)` / `(operator)` / `(client)` route groups; modules/features still open (S7.3+). |
+| 1.3.5 | 2026-07-15 | Vercel `afenda-lite`: Root Directory `apps/web` + outside-root sources verified; `vercel.json` colocated under `apps/web`. |
+| 1.3.4 | 2026-07-15 | S7.1: retarget Next/PostCSS evidence to `apps/web`; remove orphaned root config as SSOT; Vercel Root Directory = `apps/web`. |
 | 1.3.3 | 2026-07-15 | S6.1: `@afenda/emails` Present; catalogue inventory through S6.1; routes/modules still open. |
 | 1.3.2 | 2026-07-15 | Docs audit: Notes checkout posture Checkpoint E (includes `@afenda/ui`). |
 | 1.3.1 | 2026-07-15 | S5.1: `@afenda/ui` present; component foundation **base-vega** (local pro-dashboard DNA promote); packages through Checkpoint E. |

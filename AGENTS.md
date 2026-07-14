@@ -11,14 +11,14 @@
 
 ### Checkout posture (Collapse · anti-contamination)
 
-Design-SSOT Collapse (`4680c91`) removed repo-root product trees. **Target packages through S6.1 are on disk** (`@afenda/config|db|auth|env|ui|emails`, `apps/web` scaffold). Root `app/`, `modules/`, `features/`, `components-V2/`, Collapse `lib/`, and wiped ops scripts remain **absent by design**.
+Design-SSOT Collapse (`4680c91`) removed repo-root product trees. **Target packages through S7.1 are on disk** (`@afenda/config|db|auth|env|ui|emails`, `apps/web` Next shell). Root `app/`, `modules/`, `features/`, `components-V2/`, Collapse `lib/`, and wiped ops scripts remain **absent by design**.
 
 | Rule | Detail |
 |------|--------|
 | **Forbidden** | Recovering banned trees or wiped scripts from git (`f014807`, Collapse parents) — including `git show` / `git cat-file` / archive dumps used as an implementation seed. **Default ban.** |
 | **Waiver** | Only an explicit user approval of **that named recovery** in **this chat turn**. Slice implement requests and Living shape maps are not waivers. |
 | Authority | [ARCH-028 Anti-contamination lock](docs/architecture/ARCH-028-implementation-slices.md) · rule [`.cursor/rules/no-collapse-legacy-recovery.mdc`](.cursor/rules/no-collapse-legacy-recovery.mdc) · [deprecation register — Closed product phases](.cursor/skills/agent-skills/skills/deprecation-and-migration/reference.md) |
-| Forward product code | Continue ARCH-028 slices under `apps/web/**` and `packages/*` only — greenfield new code; never restore banned roots; next open **S7.1** (`apps/web` Next scaffold) |
+| Forward product code | Continue ARCH-028 slices under `apps/web/**` and `packages/*` only — greenfield new code; never restore banned roots; next open **S7.3** (domain modules) |
 | Env | `@afenda/env` + `.env.local` (compose retired — Checkpoint D) |
 | Docs trunks | Flat `docs/architecture/ARCH-*.md` only — no `backend/`/`frontend/`/`system/`/`tech-stack/`/`archive/` or `docs/guides/archive/`. Gate: `pnpm check:docs-trunk-ban` |
 | Index truth | Cursor Grep/Glob may list deleted trunks from a stale index — **not on disk**. Authority: `Test-Path` · `git ls-files` (0 rows) · `pnpm check:docs-trunk-ban`. See [ARCH-019 Notes](docs/architecture/ARCH-019-admincn-frontend-preflight.md). Never recreate trunks to satisfy ghosts. |

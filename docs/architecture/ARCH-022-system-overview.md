@@ -4,13 +4,13 @@
 |-------|-------|
 | ID | ARCH-022 |
 | Category | Architecture |
-| Version | 1.5.5 |
+| Version | 1.5.7 |
 | Status | Target |
 | Control State | Closed |
 | Owner | Platform |
 | Updated | 2026-07-15 |
 
-> **Forward-writing / Target.** Turborepo system SSOT. On disk through S6.1: `@afenda/config|db|auth|env|ui|emails` + `apps/web` scaffold — app routes / modules still open per [ARCH-028](ARCH-028-implementation-slices.md) S7.x.
+> **Forward-writing / Target.** Turborepo system SSOT. On disk through S7.2: `@afenda/config|db|auth|env|ui|emails` + `apps/web` route groups `(public)` / `(operator)` / `(client)` — modules / features still open per [ARCH-028](ARCH-028-implementation-slices.md) S7.3+.
 
 ## Context
 
@@ -244,6 +244,8 @@ Next.js App Router (apps/web)
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.5.7 | 2026-07-15 | Checkout banner: S7.2 route groups on disk; next open S7.3+ (modules / features). |
+| 1.5.6 | 2026-07-15 | Checkout banner: S7.1 `apps/web` Next shell on disk; next open S7.2+ (route groups / modules). |
 | 1.5.5 | 2026-07-15 | Checkout banner: S6.1 `@afenda/emails` on disk; routes/modules still open (S7.x). |
 | 1.5.4 | 2026-07-15 | Checkout banner: packages through Checkpoint E include `@afenda/ui`; emails/routes still open. |
 | 1.5.3 | 2026-07-14 | Checkpoint D residue: compose gap marked retired; header reflects packages through `@afenda/env`. |

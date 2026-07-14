@@ -1,4 +1,14 @@
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { loadEnvConfig } from "@next/env";
 import type { NextConfig } from "next";
+
+const appDir = path.dirname(fileURLToPath(import.meta.url));
+const repoRoot = path.join(appDir, "../..");
+
+// ARCH-027: local runtime env lives at repo-root `.env.local` only.
+// Next 16 has no envDir knob — load from monorepo root before config evaluates.
+loadEnvConfig(repoRoot);
 
 const securityHeaders = [
   { key: "X-DNS-Prefetch-Control", value: "on" },
@@ -13,17 +23,24 @@ const securityHeaders = [
 // need the same exception are distinct:
 //   1. allowedDevOrigins  — Turbopack HMR WebSocket connections
 //   2. experimental.serverActions.allowedOrigins — Server Action CSRF check
-//      (isCsrfOriginAllowed in action-handler.js reads only this list, NOT
-//       allowedDevOrigins, so both must be set for the sign-in flow to work)
 const DEV_IP_ORIGINS =
   process.env.NODE_ENV === "development"
     ? ["127.0.0.1:3000", "127.0.0.1:3001"]
     : [];
 
 const nextConfig: NextConfig = {
+  // Monorepo: trace + Turbopack root include packages/* outside apps/web.
+  outputFileTracingRoot: repoRoot,
   reactCompiler: true,
   poweredByHeader: false,
   allowedDevOrigins: ["127.0.0.1"],
+  transpilePackages: [
+    "@afenda/auth",
+    "@afenda/db",
+    "@afenda/emails",
+    "@afenda/env",
+    "@afenda/ui",
+  ],
   serverExternalPackages: ["@neondatabase/serverless"],
   experimental: {
     optimizePackageImports: [

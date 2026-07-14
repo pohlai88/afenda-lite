@@ -4,13 +4,13 @@
 |-------|-------|
 | ID | ARCH-028 |
 | Category | Architecture |
-| Version | 1.4.15 |
+| Version | 1.4.18 |
 | Status | Target |
 | Control State | Closed |
 | Owner | Platform |
 | Updated | 2026-07-15 |
 
-> **Forward-writing / Target.** Ordered implementation plan for the Turborepo system. Through S6.1 this checkout has `apps/web` + `@afenda/{config,db,auth,env,ui,emails}` — continue slice-serial only (see Anti-contamination lock below). Each slice is S (1–2 files) or M (3–5 files). L = structural move of **Target trees already on disk** only — never Collapse/legacy recovery from git.
+> **Forward-writing / Target.** Ordered implementation plan for the Turborepo system. Through S7.2 this checkout has `apps/web` route groups `(public)` / `(operator)` / `(client)` + `@afenda/{config,db,auth,env,ui,emails}` — continue slice-serial only (see Anti-contamination lock below). Each slice is S (1–2 files) or M (3–5 files). L = structural move of **Target trees already on disk** only — never Collapse/legacy recovery from git.
 
 ## Purpose
 
@@ -183,7 +183,7 @@ Operator override for a later **non-baseline** forward migrate only: `AFENDA_ALL
 
 **Checkpoint D evidence (2026-07-14):** merged local compose inventory → `.env.local`; removed `env.config` / `env.secret` / `.env` and committed examples; added `.env.example` + `!.env.example` gitignore; removed `env:compose` / `env:guard*` / compose write-path scripts from root `package.json`; `scripts/lib/env-files.mjs` + `validate-neon-env` load `.env.local` only; AGENTS.md Target env SSOT.
 
-**A–D residue pass (2026-07-14, pre-E):** deleted `env-manifest.generated.mjs` + root Collapse `components.json` (`app/`/`modules/platform` aliases); Living docs/skills retargeted off pre-S4.1 two-state; ARCH-022/AGENTS checkout posture updated for packages through `@afenda/env`. **Superseded by S5.1 / Checkpoint E (2026-07-15)** and **S6.1 (2026-07-15)** — see Acceptance evidence below; next open **S7.1**.
+**A–D residue pass (2026-07-14, pre-E):** deleted `env-manifest.generated.mjs` + root Collapse `components.json` (`app/`/`modules/platform` aliases); Living docs/skills retargeted off pre-S4.1 two-state; ARCH-022/AGENTS checkout posture updated for packages through `@afenda/env`. **Superseded by S5.1 / Checkpoint E (2026-07-15)**, **S6.1 (2026-07-15)**, **S7.1 (2026-07-15)**, and **S7.2 (2026-07-15)** — see Acceptance evidence below; next open **S7.3**.
 
 ---
 
@@ -238,23 +238,39 @@ Operator override for a later **non-baseline** forward migrate only: `AFENDA_ALL
 - Prefer React Compiler when the repo already enables it
 
 **Acceptance:**
-- [ ] `pnpm --filter @afenda/web dev` serves port 3000
-- [ ] No `../../../packages/` relative imports — only `@afenda/*`
+- [x] `pnpm --filter @afenda/web dev` serves port 3000
+- [x] No `../../../packages/` relative imports — only `@afenda/*`
 
 **Cutover note:** Scaffold Target `apps/web` greenfield. An L move applies only when those trees **already exist under Target paths on this checkout’s disk**. Absent Collapse roots must **not** be restored from git to “create” something to move.
+
+**Implement evidence (2026-07-15):**
+- Greenfield Target shell under `apps/web/` — `next.config.ts` (`transpilePackages` for `@afenda/{auth,db,emails,env,ui}`, `serverExternalPackages: ['@neondatabase/serverless']`, `reactCompiler`, `outputFileTracingRoot` → repo root); `loadEnvConfig(repoRoot)` via `@next/env` (Next 16 has no `envDir`) for ARCH-027 root `.env.local`
+- Minimal App Router: `app/layout.tsx` (Geist + `styles/globals.css`), `app/page.tsx` (`@afenda/ui` Button), `app/global-error.tsx`; `postcss.config.mjs`; workspace deps `@afenda/auth` + `@afenda/emails`; `dev`/`start` pinned `--port 3000`
+- Verify: `pnpm --filter @afenda/web typecheck` PASS · `pnpm --filter @afenda/web build` PASS · `pnpm --filter @afenda/web dev` Ready at `http://localhost:3000` · `GET /` 200 · MCP `get_errors` clean · `rg` `../../../packages` under `apps/web` = 0
+- Gap close (same day): deleted orphaned repo-root `next.config.ts` + `postcss.config.mjs` (Target SSOT = `apps/web`); Vercel project `afenda-lite` Root Directory=`apps/web` + `sourceFilesOutsideRootDirectory=true` (API); `apps/web/vercel.json` colocated; ARCH-031 + DOC-002 synced
 
 ---
 
 ### S7.2 — Route groups
 
-**Size:** S · **Stub layouts:** `(public)`, `(operator)` + `requireRole('operator')`, `(client)` + `requireRole('client')`
+**Size:** S · **Thin layouts:** `(public)`, `(operator)` + `requireRole('operator')`, `(client)` + `requireRole('client')`
 
 **Acceptance:**
-- [ ] `/` public; `/admin` and `/client/dashboard` guarded
+- [x] `/` public; `/admin` and `/client/dashboard` guarded
+
+**Authority:** [ARCH-012](ARCH-012-app-router-routes.md) · [ARCH-026](ARCH-026-auth-session.md)
+
+**Cutover note:** Greenfield route groups under `apps/web/app/` only. Do **not** recover Collapse `app/` trees from git. `/admin` is the S7.2 operator shell gate path (Living ARCH-012 operator family remains `/dashboard/*` for later surfaces).
+
+**Implement evidence (2026-07-15):**
+- `(public)/` — `/` + `/403` (no session gate); home moved from `app/page.tsx`
+- `(operator)/layout.tsx` → `requireRole('operator')`; `(operator)/admin/page.tsx` → `/admin`
+- `(client)/layout.tsx` → `requireRole('client')`; `(client)/client/dashboard/page.tsx` → `/client/dashboard`
+- Verify: `pnpm --filter @afenda/web typecheck` PASS · `pnpm --filter @afenda/web build` PASS (routes: `/` `○` · `/403` `○` · `/admin` `ƒ` · `/client/dashboard` `ƒ`) · `GET /` 200 · unauth `GET /admin` + `GET /client/dashboard` → 307 `location: /auth/login`
 
 ---
 
-### S7.3 — Domain stubs
+### S7.3 — Domain modules
 
 **Size:** M · **Bounded contexts:** `identity`, `declarations`, `fft`, `platform` — each with at least one domain function taking `orgId: string`
 
@@ -267,7 +283,7 @@ Operator override for a later **non-baseline** forward migrate only: `AFENDA_ALL
 
 ---
 
-### S7.4 — Feature stubs
+### S7.4 — Feature shells
 
 **Size:** M · **features:** `auth`, `declarations`, `fft`, `org-admin` — RSC pages call domain, not DB directly
 
@@ -344,7 +360,7 @@ Absorbed from retired GUIDE-004. Records **Target vs checkout** drift for forwar
 
 | Authority | Disk today | Coding impact |
 |-----------|------------|---------------|
-| [ARCH-022…028](.) | S1.1–S6.1 + Checkpoints A–E present: workspace + `@afenda/{config,db,auth,env,ui,emails}` + `apps/web` scaffold; routes/modules still open per S7.x | Continue slice-serial implement — next open **S7.1** |
+| [ARCH-022…028](.) | S1.1–S7.2 + Checkpoints A–E present: workspace + `@afenda/{config,db,auth,env,ui,emails}` + `apps/web` route groups; modules/features still open per S7.3+ | Continue slice-serial implement — next open **S7.3** |
 | Living maps ARCH-001…010 · 012…019 · 017 | Repo-root `app/`, `modules/`, `features/`, `components-V2/` **absent** after design-SSOT Collapse (`4680c91`) | **Expected · Forbidden to recover** — see Anti-contamination lock below |
 | [ARCH-023](ARCH-023-multi-tenancy.md) | Living tenancy + RBAC rules | Binding now — enforce invariants even before packages exist |
 | `AGENTS.md` env | Target `@afenda/env` + `.env.local` + `.env.example` (S4.1 / Checkpoint D) | Compose retired — do not restore |
@@ -388,6 +404,9 @@ Living ARCH folder/route/adapter maps remain normative for **shape**. They are *
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.4.18 | 2026-07-15 | Post-S7.2 audit: rename open S7.3/S7.4 labels (modules / feature shells); sibling Target banners sync via DOC-002. |
+| 1.4.17 | 2026-07-15 | S7.2 route groups `(public)` / `(operator)` / `(client)` with `requireRole`; `/` public; `/admin` + `/client/dashboard` guarded. |
+| 1.4.16 | 2026-07-15 | S7.1 `apps/web` Next shell (`next.config.ts` transpilePackages + App Router `/`); no Collapse recover. |
 | 1.4.15 | 2026-07-15 | S6.1 `@afenda/emails` (onboarding-invite + password-reset + `email:dev` :3001); Neon Auth send path unchanged. |
 | 1.4.14 | 2026-07-15 | Docs audit: A–D residue note no longer claims Next open S5.1 (E closed; next S6.1). |
 | 1.4.13 | 2026-07-15 | S5.1 `@afenda/ui` (base-vega from local pro-dashboard kit) + Checkpoint E; no Collapse recover. |

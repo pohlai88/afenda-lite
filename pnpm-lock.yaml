@@ -101,9 +101,15 @@ importers:
 
   apps/web:
     dependencies:
+      '@afenda/auth':
+        specifier: workspace:*
+        version: link:../../packages/auth
       '@afenda/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@afenda/emails':
+        specifier: workspace:*
+        version: link:../../packages/emails
       '@afenda/env':
         specifier: workspace:*
         version: link:../../packages/env
@@ -119,6 +125,9 @@ importers:
       '@neondatabase/auth-ui':
         specifier: ^0.2.1-beta
         version: 0.2.1-beta(edf4e444126da2431cbb3b20c4cfe20c)
+      '@next/env':
+        specifier: ^16.0.10
+        version: 16.2.6
       '@tanstack/react-table':
         specifier: ^8.21.3
         version: 8.21.3(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
