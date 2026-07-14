@@ -4,7 +4,7 @@
 | ----------------- | ------------ |
 | **ID**            | ARCH-031     |
 | **Category**      | Architecture |
-| **Version**       | 1.3.11       |
+| **Version**       | 1.3.12       |
 | **Status**        | Living       |
 | **Control State** | Closed       |
 | **Owner**         | Platform     |
@@ -147,7 +147,7 @@ Validator exclusions: external HTTP availability and code-to-document runtime dr
 | Database operations | Neon production branch, pooled connection, PITR and daily snapshots | Current / Living | Ops evidence documented; secret values not inspected | [ARCH-023](ARCH-023-multi-tenancy.md), [RB-001](../runbooks/RB-001-multi-org-ops.md) | Keep the shared-schema posture and production pooler invariant. |
 | Continuous integration | GitHub Actions · Node 24 · pnpm frozen lockfile · `turbo run lint typecheck test` · Vercel Remote Cache (`TURBO_TOKEN` / `TURBO_TEAM`) | Current / Living (S8.1) | Source verified — [CI workflow](../../.github/workflows/ci.yml); local **19** turbo tasks green | [ARCH-028](ARCH-028-implementation-slices.md), [ARCH-022](ARCH-022-system-overview.md) | Biome lint + Vitest contract tests + `tsc` on `@afenda/*` and `@afenda/web`. |
 | Docs-capable local gates | `check:docs-naming`, doc-integrity, module-quality, OpenAPI, `validate:neon-env` | Current / Living (docs checkout) | Source verified — [`run-checks.mjs`](../../scripts/run-checks.mjs) | [DOC-001](../_control/DOC-001-documentation-control-standard.md), [ARCH-028](ARCH-028-implementation-slices.md) | Collapse-era product/ops scripts are gated — not missing “gaps” to restore. |
-| Target build/deploy | GitHub Actions deploy · `turbo run build --filter=@afenda/web` · Vercel prod · Corepack pnpm | Current / Living (S8.2) | Source verified — [deploy workflow](../../.github/workflows/deploy.yml); prod READY `afenda-lite.vercel.app`; `ENABLE_EXPERIMENTAL_COREPACK=1`; production Git auto-deploy ignored; GH secrets/vars wired for Deploy | [ARCH-022](ARCH-022-system-overview.md), [ARCH-028](ARCH-028-implementation-slices.md) | Actions owns production (`environment: production`); commit/push `deploy.yml` then use `workflow_dispatch` or push to `main`. |
+| Target build/deploy | GitHub Actions deploy · `turbo run build --filter=@afenda/web` · Vercel prod · Corepack pnpm | Current / Living (S8.2) | Source verified — [deploy workflow](../../.github/workflows/deploy.yml); Actions run `29367183769` success; classic `VERCEL_TOKEN` PAT; `ENABLE_EXPERIMENTAL_COREPACK=1`; production Git auto-deploy ignored | [ARCH-022](ARCH-022-system-overview.md), [ARCH-028](ARCH-028-implementation-slices.md) | Actions owns production (`environment: production`); `pnpm/action-setup` reads root `packageManager` only. |
 
 ## 3.9 Supporting and module technologies
 
@@ -221,6 +221,7 @@ ARCH-031 shall link to the changed authority rather than duplicate its detailed 
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 1.3.12 | 2026-07-15 | Docs audit residual: Deploy evidence — Actions success + classic PAT + `packageManager` Actions setup. |
 | 1.3.11 | 2026-07-15 | S8.2: Target deploy evidence (`deploy.yml`, Corepack, prod READY); next open Checkpoint G (Docs). |
 | 1.3.10 | 2026-07-15 | S8.1 audit: Biome+Vitest turbo gates real (19 tasks); catalogue quality/testing honesty. |
 | 1.3.9 | 2026-07-15 | S8.1: Target CI turbo lint/typecheck/test + remote cache evidence; next open S8.2. |

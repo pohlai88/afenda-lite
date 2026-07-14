@@ -4,7 +4,7 @@
 | ----------------- | ---------- |
 | **ID**            | DOC-002    |
 | **Category**      | Control    |
-| **Version**       | 4.88.0 |
+| **Version**       | 4.90.0 |
 | **Status**        | Living     |
 | **Control State** | Closed     |
 | **Owner**         | Platform   |
@@ -71,10 +71,10 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 | ID           | Category     | Title                                      | Version | Status | Owner    | Updated    |
 | ------------ | ------------ | ------------------------------------------ | ------- | ------ | -------- | ---------- |
 | DOC-001      | Control      | Documentation Control Standard             | 2.7.0   | Living | Platform | 2026-07-14 |
-| DOC-002      | Control      | Documentation Register                     | 4.85.0 | Living | Platform | 2026-07-15 |
+| DOC-002      | Control      | Documentation Register                     | 4.90.0 | Living | Platform | 2026-07-15 |
 | DOC-003      | Control      | Controlled Document Template               | 1.4.0   | Living | Platform | 2026-07-14 |
 | ARCH-029     | Architecture | Interface and API Architecture             | 1.2.7   | Living | Platform | 2026-07-14 |
-| ARCH-031     | Architecture | Technology Stack Catalogue                 | 1.3.11  | Living | Platform | 2026-07-15 |
+| ARCH-031     | Architecture | Technology Stack Catalogue                 | 1.3.12  | Living | Platform | 2026-07-15 |
 | API-001      | API          | API Boundaries                             | 1.2.3   | Living | Backend  | 2026-07-14 |
 | API-002      | API          | Error Contract                             | 1.2.2   | Living | Backend  | 2026-07-14 |
 | API-003      | API          | API Types                                  | 2.0.1   | Living | Backend  | 2026-07-14 |
@@ -113,7 +113,7 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 | ARCH-025     | Architecture | Data Layer                                 | 1.2.4   | Target | Backend  | 2026-07-14 |
 | ARCH-026     | Architecture | Authentication and Session Model           | 1.2.2   | Target | Platform | 2026-07-14 |
 | ARCH-027     | Architecture | Environment Variable Model                 | 1.5.1   | Target | Platform | 2026-07-15 |
-| ARCH-028     | Architecture | Turborepo Implementation Slices            | 1.4.25  | Target | Platform | 2026-07-15 |
+| ARCH-028     | Architecture | Turborepo Implementation Slices            | 1.4.26  | Target | Platform | 2026-07-15 |
 | ARCH-001     | Architecture | Backend Architecture                       | 1.2.0   | Living | Backend  | 2026-07-14 |
 | ARCH-002     | Architecture | Frontend Architecture                      | 1.3.3   | Living | Frontend | 2026-07-14 |
 | ADR-008      | ADR          | Cache Components Mode B (Gated)            | 1.0.1   | Accepted | Frontend | 2026-07-14 |
@@ -168,6 +168,8 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 
 | Version | Date       | Summary                                                                                                                                         |
 | ------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| 4.90.0 | 2026-07-15 | Docs audit residual close: ARCH-028→1.4.26, ARCH-031→1.3.12; DOC-002 self-row synced (Actions Deploy evidence). |
+| 4.89.0 | 2026-07-15 | Docs audit residual: DOC-002 self-row aligned; ARCH-028→1.4.26 (S8.1/S8.2 Actions/`packageManager` evidence + Deploy run 29367183769). |
 | 4.88.0 | 2026-07-15 | S8.2 Deploy: ARCH-028→1.4.25, ARCH-022→1.5.11, ARCH-031→1.3.11 (`deploy.yml` + Corepack; prod READY; Checkpoint G next Docs). |
 | 4.87.0 | 2026-07-15 | S8.1 audit gap close: ARCH-028→1.4.24, ARCH-031→1.3.10 (Biome + Vitest under turbo; 19 tasks). |
 | 4.86.0 | 2026-07-15 | S8.1 CI: ARCH-028→1.4.23, ARCH-022→1.5.10, ARCH-031→1.3.9 (turbo lint/typecheck/test + TURBO remote cache; next open S8.2). |

@@ -4,7 +4,7 @@
 |-------|-------|
 | ID | ARCH-028 |
 | Category | Architecture |
-| Version | 1.4.25 |
+| Version | 1.4.26 |
 | Status | Target |
 | Control State | Closed |
 | Owner | Platform |
@@ -330,7 +330,7 @@ Operator override for a later **non-baseline** forward migrate only: `AFENDA_ALL
 - [x] Green on clean branch; `TURBO_TOKEN` available for remote cache
 
 **Implement evidence (2026-07-15):**
-- `.github/workflows/ci.yml` — Node 24 · pnpm 10.33.4 · `pnpm install --frozen-lockfile` · `pnpm exec turbo run lint typecheck test`; job env `TURBO_TOKEN` (secret) + `TURBO_TEAM` (variable)
+- `.github/workflows/ci.yml` — Node 24 · `pnpm/action-setup@v4` (no `version:` — resolves from root `packageManager`) · `pnpm install --frozen-lockfile` · `pnpm exec turbo run lint typecheck test`; job env `TURBO_TOKEN` (secret) + `TURBO_TEAM` (variable)
 - GitHub Actions: secret `TURBO_TOKEN` present; variable `TURBO_TEAM=jacks-projects-7b3cfe94`
 - Verify (initial): `pnpm exec turbo run lint typecheck test` PASS (typecheck only) · with token: **Remote caching enabled**
 
@@ -353,13 +353,14 @@ Operator override for a later **non-baseline** forward migrate only: `AFENDA_ALL
 - [x] Vercel: `ENABLE_EXPERIMENTAL_COREPACK=1` (or equivalent) if pnpm via Corepack is required
 
 **Implement evidence (2026-07-15):**
-- `.github/workflows/deploy.yml` — Node 24 · pnpm 10.33.4 · `turbo run build --filter=@afenda/web` gate → `vercel deploy --prod` (CLI pin `vercel@51.8.0`); `workflow_dispatch` + push `main`
+- `.github/workflows/deploy.yml` — Node 24 · `pnpm/action-setup@v4` (no `version:` — Corepack/`packageManager` pin) · `turbo run build --filter=@afenda/web` gate → classic PAT preflight (`/v2/user`) → `vercel deploy --prod` (CLI pin `vercel@51.8.0`); `workflow_dispatch` + push `main`; Environment `production`
 - `apps/web/vercel.json` — `installCommand` Corepack+pnpm · `buildCommand` turbo filter `@afenda/web` · `ignoreCommand` skips **production** Git auto-deploys (Actions owns prod; preview Git remains)
 - `turbo.json` `globalPassThroughEnv` — passes Vercel/`@afenda/env` build vars into turbo tasks (fixes Zod fail when Turbo stripped platform env)
 - Vercel project `afenda-lite`: `ENABLE_EXPERIMENTAL_COREPACK=1` (Production · Development · Preview); build log detected Corepack + `packageManager` pin
-- Prod deploy verify (CLI): `dpl_GZNTbTWwNrqeWdBG2UsQNVA7xnHf` · **READY** · aliased `https://afenda-lite.vercel.app`
+- Prod deploy verify (CLI seed): `dpl_GZNTbTWwNrqeWdBG2UsQNVA7xnHf` · **READY** · aliased `https://afenda-lite.vercel.app`
+- Prod deploy verify (Actions): run [`29367183769`](https://github.com/pohlai88/afenda-lite/actions/runs/29367183769) · **success** (classic `VERCEL_TOKEN` PAT — not OAuth CLI session)
 - Local verify: `pnpm exec turbo run build --filter=@afenda/web` PASS
-- GH Actions configured: secrets `VERCEL_TOKEN` · `DATABASE_URL` · `NEON_AUTH_BASE_URL` · `NEON_AUTH_COOKIE_SECRET` · `APP_URL` (+ existing `TURBO_TOKEN`); vars `VERCEL_ORG_ID` · `VERCEL_PROJECT_ID` · `TURBO_TEAM`; deploy job uses Environment `production`
+- GH Actions configured: secrets `VERCEL_TOKEN` (classic PAT) · `DATABASE_URL` · `NEON_AUTH_BASE_URL` · `NEON_AUTH_COOKIE_SECRET` · `APP_URL` (+ existing `TURBO_TOKEN`); vars `VERCEL_ORG_ID` · `VERCEL_PROJECT_ID` · `TURBO_TEAM`
 
 ### Checkpoint G — Complete
 
@@ -450,6 +451,7 @@ Living ARCH folder/route/adapter maps remain normative for **shape**. They are *
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.4.26 | 2026-07-15 | Docs audit residual: S8.1/S8.2 evidence honesty — `packageManager` Actions setup + Actions Deploy success `29367183769` + classic PAT. |
 | 1.4.25 | 2026-07-15 | S8.2 Deploy: `deploy.yml` + Corepack/pnpm knobs + turbo env pass-through; prod READY; next open Checkpoint G (Docs). |
 | 1.4.24 | 2026-07-15 | S8.1 audit gap close: real Biome lint + Vitest package tests under turbo (19 tasks); README Target CI. |
 | 1.4.23 | 2026-07-15 | S8.1 CI: `ci.yml` turbo lint/typecheck/test + `TURBO_TOKEN`/`TURBO_TEAM` remote cache; next open S8.2. |
