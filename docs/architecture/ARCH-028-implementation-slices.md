@@ -4,13 +4,13 @@
 |-------|-------|
 | ID | ARCH-028 |
 | Category | Architecture |
-| Version | 1.4.11 |
+| Version | 1.4.15 |
 | Status | Target |
 | Control State | Closed |
 | Owner | Platform |
 | Updated | 2026-07-15 |
 
-> **Forward-writing / Target.** Ordered implementation plan for the Turborepo system. Through Checkpoint D this checkout has `apps/web` + `@afenda/{config,db,auth,env}` — continue slice-serial only (see Anti-contamination lock below). Each slice is S (1–2 files) or M (3–5 files). L = structural move when product tree exists on disk.
+> **Forward-writing / Target.** Ordered implementation plan for the Turborepo system. Through S6.1 this checkout has `apps/web` + `@afenda/{config,db,auth,env,ui,emails}` — continue slice-serial only (see Anti-contamination lock below). Each slice is S (1–2 files) or M (3–5 files). L = structural move of **Target trees already on disk** only — never Collapse/legacy recovery from git.
 
 ## Purpose
 
@@ -121,7 +121,7 @@ Operator override for a later **non-baseline** forward migrate only: `AFENDA_ALL
 
 **Authority:** [ARCH-026](ARCH-026-auth-session.md)
 
-**Cutover note:** Consolidate `lib/auth/neon-auth-request.ts`, session helpers, and auth bits of `apps/web/proxy.ts` / middleware into this package when the monolith tree is present.
+**Cutover note:** Greenfield `@afenda/auth` only. Do **not** recover Collapse `lib/auth/**` or root `proxy.ts` from git. If a Target `apps/web/proxy.ts` already exists on disk in a later slice, wire it to this package — never `git show` / restore banned paths.
 
 **Implement evidence (2026-07-14):**
 - `@afenda/auth` greenfield under `packages/auth/` — `src/session.ts` (`Session`, `Role`, `getSession`), `src/index.ts`, `package.json`
@@ -183,7 +183,7 @@ Operator override for a later **non-baseline** forward migrate only: `AFENDA_ALL
 
 **Checkpoint D evidence (2026-07-14):** merged local compose inventory → `.env.local`; removed `env.config` / `env.secret` / `.env` and committed examples; added `.env.example` + `!.env.example` gitignore; removed `env:compose` / `env:guard*` / compose write-path scripts from root `package.json`; `scripts/lib/env-files.mjs` + `validate-neon-env` load `.env.local` only; AGENTS.md Target env SSOT.
 
-**A–D residue pass (2026-07-14, pre-E):** deleted `env-manifest.generated.mjs` + root Collapse `components.json` (`app/`/`modules/platform` aliases); Living docs/skills retargeted off pre-S4.1 two-state; ARCH-022/AGENTS checkout posture updated for packages through `@afenda/env`. Next open: S5.1 / Checkpoint E.
+**A–D residue pass (2026-07-14, pre-E):** deleted `env-manifest.generated.mjs` + root Collapse `components.json` (`app/`/`modules/platform` aliases); Living docs/skills retargeted off pre-S4.1 two-state; ARCH-022/AGENTS checkout posture updated for packages through `@afenda/env`. **Superseded by S5.1 / Checkpoint E (2026-07-15)** and **S6.1 (2026-07-15)** — see Acceptance evidence below; next open **S7.1**.
 
 ---
 
@@ -192,18 +192,25 @@ Operator override for a later **non-baseline** forward migrate only: `AFENDA_ALL
 **Size:** M · **Files:** `globals.css`, shadcn/`components.json`, public component exports
 
 **Acceptance:**
-- [ ] `import { Button } from '@afenda/ui'` resolves
-- [ ] App imports `@afenda/ui/globals.css`
-- [ ] No duplicate shadcn tree under `apps/web/components/ui/`
+- [x] `import { Button } from '@afenda/ui'` resolves
+- [x] App imports `@afenda/ui/globals.css`
+- [x] No duplicate shadcn tree under `apps/web/components/ui/`
 
 **Authority:** [ARCH-024](ARCH-024-package-boundaries.md)
 
-**Cutover note:** Move shared primitives from `components/ui/*` and cosmetic AdminCN primitives from `components-V2/*` when those trees exist. Route-bound shells stay in `apps/web/features/`.
+**Cutover note:** Greenfield `@afenda/ui` under `packages/ui` only. Do **not** recover Collapse `components/ui/*`, root `components.json`, or `components-V2/*` from git (even via `git show` as a seed). Route-bound shells stay in `apps/web/features/` when that Target tree exists on disk.
+
+**Implement evidence (2026-07-15):**
+- DNA source (user-named local kit, not Collapse git): `_reference/archive/shadcn-pro-dashboard` → promote essentials only (`base-vega` Button · `cn` · `globals.css` · `components.json`)
+- `@afenda/ui` under `packages/ui/` — exports `.` + `./globals.css`; `apps/web` depends on workspace package; `apps/web/styles/globals.css` imports `@afenda/ui/globals.css`; smoke `apps/web/ui-boundary.smoke.ts`
+- Verify: `pnpm --filter @afenda/ui typecheck` PASS · `pnpm --filter @afenda/web exec tsc --noEmit -p tsconfig.json` PASS · `rg "from.*components/ui" apps/web/` = 0 · `apps/web/components/ui` absent
+- Local cleanup (gitignored `_reference/`): removed free/individual dashboards, lite repo tar.gz, `_reference/env.config` / `env.secret`; kept `shadcn-pro-dashboard`
 
 ### Checkpoint E
 
-- [ ] `rg "from.*components/ui" apps/web/` = 0 (all UI imports use `@afenda/ui`)
+- [x] `rg "from.*components/ui" apps/web/` = 0 (all UI imports use `@afenda/ui`)
 
+**Checkpoint E evidence (2026-07-15):** No `from …components/ui` matches under `apps/web/`; web consumes `@afenda/ui` only.
 ---
 
 ### S6.1 — `packages/emails`
@@ -211,8 +218,13 @@ Operator override for a later **non-baseline** forward migrate only: `AFENDA_ALL
 **Size:** S · **Files:** onboarding-invite + password-reset templates, `email:dev` script
 
 **Acceptance:**
-- [ ] `pnpm --filter @afenda/emails email:dev` previews templates (typically `:3001`)
-- [ ] Auth invite path may compose templates from `@afenda/emails` where app-owned mail is used (Neon Auth shared provider still delivers Neon invite mail)
+- [x] `pnpm --filter @afenda/emails email:dev` previews templates (typically `:3001`)
+- [x] Auth invite path may compose templates from `@afenda/emails` where app-owned mail is used (Neon Auth shared provider still delivers Neon invite mail)
+
+**Implement evidence (2026-07-15):**
+- Greenfield `@afenda/emails` under `packages/emails/` — `src/onboarding-invite.tsx`, `src/password-reset.tsx`, `src/index.ts` (`OnboardingInviteEmail` / `PasswordResetEmail` + `renderOnboardingInviteEmail` / `renderPasswordResetEmail`); `email:dev` → port **3001**
+- Deps: `react-email`; `@react-email/ui` required as `email:dev` CLI peer (no src import); Neon Auth invite/reset delivery unchanged — `inviteOrgMember` still Neon shared provider; JSDoc points app-owned compose to `@afenda/emails`
+- Verify: `pnpm --filter @afenda/emails typecheck` PASS · `pnpm --filter @afenda/emails email:dev` Ready at `http://localhost:3001` · `/preview/onboarding-invite` + `/preview/password-reset` HTTP 200 with Afenda-Lite copy
 
 ---
 
@@ -229,7 +241,7 @@ Operator override for a later **non-baseline** forward migrate only: `AFENDA_ALL
 - [ ] `pnpm --filter @afenda/web dev` serves port 3000
 - [ ] No `../../../packages/` relative imports — only `@afenda/*`
 
-**Cutover note:** If root `app/`, `features/`, `modules/`, `public/` exist, move them into `apps/web/` in this slice (or a dedicated L PR immediately after scaffold).
+**Cutover note:** Scaffold Target `apps/web` greenfield. An L move applies only when those trees **already exist under Target paths on this checkout’s disk**. Absent Collapse roots must **not** be restored from git to “create” something to move.
 
 ---
 
@@ -332,7 +344,7 @@ Absorbed from retired GUIDE-004. Records **Target vs checkout** drift for forwar
 
 | Authority | Disk today | Coding impact |
 |-----------|------------|---------------|
-| [ARCH-022…028](.) | S1.1–S4.1 + Checkpoints A–D present: workspace + `@afenda/config` + `@afenda/db` + `@afenda/auth` + `@afenda/env`; `@afenda/ui|emails` **absent** until later slices | Continue slice-serial implement — do not skip to full tree |
+| [ARCH-022…028](.) | S1.1–S6.1 + Checkpoints A–E present: workspace + `@afenda/{config,db,auth,env,ui,emails}` + `apps/web` scaffold; routes/modules still open per S7.x | Continue slice-serial implement — next open **S7.1** |
 | Living maps ARCH-001…010 · 012…019 · 017 | Repo-root `app/`, `modules/`, `features/`, `components-V2/` **absent** after design-SSOT Collapse (`4680c91`) | **Expected · Forbidden to recover** — see Anti-contamination lock below |
 | [ARCH-023](ARCH-023-multi-tenancy.md) | Living tenancy + RBAC rules | Binding now — enforce invariants even before packages exist |
 | `AGENTS.md` env | Target `@afenda/env` + `.env.local` + `.env.example` (S4.1 / Checkpoint D) | Compose retired — do not restore |
@@ -354,13 +366,16 @@ Cite Target paths as code spans; do not create broken relative links to missing 
 
 **Compulsory.** Design-SSOT Collapse removed the Living monolith product trees from this checkout. Agents and humans **must not** re-materialize them from git history.
 
-| Banned recover | Replacement when product code is needed |
+**Default: ban. Exception: only an explicit user approval of that exact recovery in the current chat turn.** “Implement S5.1”, reading Living maps, or cutover wording that mentions old path names is **never** a recovery waiver. Operators may approve a named exception; agents must not invent one.
+
+| Banned recover (without named user approval this turn) | Replacement when product code is needed |
 |----------------|------------------------------------------|
-| `git checkout` / `git restore` / sparse checkout of Collapse parents (e.g. `f014807`, `4680c91^`) for `app/`, `modules/`, `features/`, `components-V2/`, `db/`, `e2e/`, `testing/`, `messages/`, or wiped ops `scripts/*` | **Greenfield** Target scaffold only after an **explicit** implement request following this document (S1+) into `apps/web/**` and `packages/*` |
-| Recreating root `lib/`, root `components/`, Storybook, Portal Atmosphere, soft tenancy dual-mode | Remains banned per deprecation register |
+| `git checkout` / `git restore` / sparse checkout / worktree materialization of Collapse parents (e.g. `f014807`, `4680c91^`) for `app/`, `modules/`, `features/`, `components-V2/`, `db/`, `e2e/`, `testing/`, `messages/`, or wiped ops `scripts/*` | **Greenfield** Target scaffold only after an **explicit** implement request following this document (S1+) into `apps/web/**` and `packages/*` |
+| `git show` / `git cat-file` / archive dump of those banned paths used as an implementation seed, copy-paste source, or “historical reference” to rebuild product code | Same — write new Target code from ARCH Acceptance + Living **shape**; stop and ask if content is missing |
+| Recreating root `lib/`, root `components/`, root Collapse-alias `components.json`, Storybook, Portal Atmosphere, soft tenancy dual-mode | Remains banned per deprecation register |
 | Treating Cursor Glob ghosts of `modules/**` as disk truth | Trust filesystem listing; missing roots are intentional |
 
-Living ARCH folder/route/adapter maps remain normative for **shape**. They are **not** a license to restore banned trees. Forward product work = Target paths + new code — never Collapse recovery.
+Living ARCH folder/route/adapter maps remain normative for **shape**. They are **not** a license to restore banned trees. Cutover notes that name old paths describe **disposition only** — they do **not** authorize git recovery. Forward product work = Target paths + new code — never Collapse/legacy recovery.
 
 
 ## References
@@ -373,6 +388,10 @@ Living ARCH folder/route/adapter maps remain normative for **shape**. They are *
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.4.15 | 2026-07-15 | S6.1 `@afenda/emails` (onboarding-invite + password-reset + `email:dev` :3001); Neon Auth send path unchanged. |
+| 1.4.14 | 2026-07-15 | Docs audit: A–D residue note no longer claims Next open S5.1 (E closed; next S6.1). |
+| 1.4.13 | 2026-07-15 | S5.1 `@afenda/ui` (base-vega from local pro-dashboard kit) + Checkpoint E; no Collapse recover. |
+| 1.4.12 | 2026-07-15 | Anti-contamination stress: legacy/Collapse recover (incl. `git show` mining) banned unless user names that recovery this turn; greenfield-only cutover notes for S3.1/S5.1/S7.1. |
 | 1.4.11 | 2026-07-15 | S4.1 audit gap: fix ARCH-027 cutover anchor; Purpose banner matches packages through Checkpoint D. |
 | 1.4.10 | 2026-07-14 | S4.1 `@afenda/env` (`@t3-oss/env-nextjs`) + Checkpoint D compose→`.env.local` cutover. |
 | 1.4.9 | 2026-07-14 | S3.2 `@afenda/auth` RBAC + invitations (`requireRole`, `inviteOrgMember`) + Checkpoint C. |

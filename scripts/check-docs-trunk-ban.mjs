@@ -36,4 +36,7 @@ if (present.length > 0) {
 console.log(
   `check-docs-trunk-ban: ok (0/${BANNED.length} banned trunks on disk)`,
 );
+console.log(
+  "check-docs-trunk-ban: if Cursor Grep/Glob still lists those paths, treat as index ghosts — do not recreate trunks.",
+);
 process.exit(0);

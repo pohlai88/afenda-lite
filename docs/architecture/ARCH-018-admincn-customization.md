@@ -4,11 +4,11 @@
 | ----------------- | ------------ |
 | **ID**            | ARCH-018     |
 | **Category**      | Architecture |
-| **Version**       | 1.1.5        |
+| **Version**       | 1.1.6        |
 | **Status**        | Living     |
 | **Control State** | Closed       |
 | **Owner**         | Frontend     |
-| **Updated**       | 2026-07-14   |
+| **Updated**       | 2026-07-15   |
 
 ---
 
@@ -40,13 +40,13 @@ Define Living AdminCN / Studio customization levers and promotion rules.
 **Frontend alignment:** [ARCH-015](ARCH-015-admincn-alignment.md)  
 **Preflight before new screens:** [ARCH-019](ARCH-019-admincn-frontend-preflight.md)  
 **UI registry (compulsory):** [`.cursor/skills/feed-farm-trade/ui-registry.md`](../../.cursor/skills/feed-farm-trade/ui-registry.md) · [`ui-registry.json`](../../.cursor/skills/feed-farm-trade/ui-registry.json) · skill `/feed-farm-trade`  
-**Studio DNA:** temporary CLI/MCP scratch only — do not keep permanent AdminCN trees under `_reference/`  
+**Studio DNA:** temporary CLI/MCP scratch **or** user-approved gitignored `_reference/archive/<kit>` promote into Target packages (e.g. `@afenda/ui`) — never product `import` from `_reference/**`; do not keep permanent AdminCN lock trees under `_reference/studio-admincn-lock/`  
 **Product home (logical):** `components-V2/` shape / Target `apps/web/**` after explicit implement — not recovered Collapse trees  
 **Auth island:** `features/auth/` — preserve `app/auth-surface.css` + route-scoped `app/auth/neon-auth-ui.css`
 
 ## Critical constraint (validated 2026-07-14)
 
-Studio MCP/CLI does **not** install the AdminCN zip as one unit. It exposes **blocks** under `dashboard-and-application` (`@ss-blocks/*`). No AdminCN zip kit is retained under `_reference/` in this checkout.
+Studio MCP/CLI does **not** install the AdminCN zip as one unit. It exposes **blocks** under `dashboard-and-application` (`@ss-blocks/*`). Permanent **studio-admincn-lock** kits are not retained. A user-named local archive under `_reference/archive/` may exist as offline DNA for promote-only (S5.1 `@afenda/ui` / **base-vega** from `shadcn-pro-dashboard`) — still never a runtime dependency.
 
 **CLI name trap:** install `chart-component-*` / `widget-component-*` (singular) — not `charts-component` / `widgets-component`. Pro variants (e.g. `statistics-component-03`) require a working Studio Pro license; use license-accessible `statistics-component-01` until unlocked.
 
@@ -145,6 +145,7 @@ Full gate: [admincn-frontend-preflight.md](ARCH-019-admincn-frontend-preflight.m
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 1.1.6 | 2026-07-15 | DNA: user-approved `_reference/archive` promote-only allowed (S5.1 `@afenda/ui`); ban permanent studio-admincn-lock + runtime `_reference` import. |
 | 1.1.5 | 2026-07-14 | Bounded reopen: package-manager cutover — document `pnpm` / `pnpm exec` (repo SSOT `packageManager` + `pnpm-lock.yaml`). |
 | 1.1.4 | 2026-07-14 | Drop “thin stub until UI restore”; hold ARCH-012 disposition + explicit reopen only. |
 | 1.1.3 | 2026-07-14 | Home flattened to docs/architecture/ (trunks removed; pack reading order in README). |

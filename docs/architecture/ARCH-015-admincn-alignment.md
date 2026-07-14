@@ -4,11 +4,11 @@
 | ----------------- | ------------ |
 | **ID**            | ARCH-015     |
 | **Category**      | Architecture |
-| **Version**       | 2.0.1        |
+| **Version**       | 2.0.2        |
 | **Status**        | Living       |
 | **Control State** | Closed       |
 | **Owner**         | Frontend     |
-| **Updated**       | 2026-07-14   |
+| **Updated**       | 2026-07-15   |
 
 ---
 
@@ -51,7 +51,8 @@ Define Living **Shadcn Studio** DNA rules for the operator shell: how `@ss-block
 |------|--------|
 | Source | Shadcn Studio CLI/MCP `@ss-blocks/*` under `dashboard-and-application` (and related Studio categories as approved) |
 | Install | **Temporary scratch cwd only** — promote immediately into product homes |
-| Not retained | AdminCN full-zip kits, permanent `_reference/studio-admincn-lock/`, nested `shadcn-studio/blocks/**` in the product tree |
+| Local archive promote | User-approved gitignored `_reference/archive/<kit>` may seed Target packages (e.g. S5.1 → `@afenda/ui`) — **copy/promote only**; never product `import` from `_reference/**`; never Collapse git recover |
+| Not retained | AdminCN full-zip kits as **permanent product** trees, `_reference/studio-admincn-lock/`, nested `shadcn-studio/blocks/**` in the product tree |
 | Registry | Every DNA block/primitive used in product must carry `ACN-UI-*` / `ACN-BLK-*` (HITL). FFT product modules use `FFT-UI-*`. Layer B (`dna` / `surfaces` / `requiredBlockId`) — [ui-registry](../../.cursor/skills/feed-farm-trade/ui-registry.md) |
 | Shell | One AdminCN-pattern shell for Declarations, Account, FFT — **not** FftShell / locale chrome |
 
@@ -150,6 +151,7 @@ UI registry: `.cursor/skills/feed-farm-trade/ui-registry.md`. Method: `/admincn-
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 2.0.2 | 2026-07-15 | DNA law: user-approved `_reference/archive/<kit>` promote into Target packages allowed; never runtime `_reference` import; never Collapse recover. |
 | 2.0.1 | 2026-07-14 | Home flattened to docs/architecture/ (trunks removed; pack reading order in README). |
 | 2.0.0 | 2026-07-14 | Studio-first rewrite: DNA law; block→home map; ban list; fix SaaS table; drop zip/_reference retention narrative; homes → ARCH-017. |
 | 1.1.2 | 2026-07-14 | Removed archived AdminCN 1.0.0 kit from `_reference/`; Studio DNA CLI/MCP scratch-only. |

@@ -43,6 +43,10 @@ export type InviteOrgMemberResult = {
 /**
  * Send a Neon Auth organization invitation (shared email provider).
  * Caller must pass the active session org; Neon Auth SDK usage stays in this package.
+ *
+ * Neon Auth delivers the invite mail. For app-owned invitation mail, compose
+ * `OnboardingInviteEmail` / `renderOnboardingInviteEmail` from `@afenda/emails`
+ * (join URL: `/join?invitationId=…`) — do not replace this Neon send path.
  */
 export async function inviteOrgMember(
   input: InviteOrgMemberInput,

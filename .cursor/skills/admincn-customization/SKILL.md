@@ -9,13 +9,13 @@ description: Customizes the landed AdminCN shell in components-V2 via themeConfi
 **Frontend preflight (before new screens):** [docs/architecture/ARCH-019-admincn-frontend-preflight.md](../../../docs/architecture/ARCH-019-admincn-frontend-preflight.md)  
 **Alignment:** [docs/architecture/ARCH-015-admincn-alignment.md](../../../docs/architecture/ARCH-015-admincn-alignment.md)  
 **UI registry (compulsory IDs):** [../feed-farm-trade/ui-registry.md](../feed-farm-trade/ui-registry.md) · [../feed-farm-trade/ui-registry.json](../feed-farm-trade/ui-registry.json) · skill `/feed-farm-trade` · `npm run check:fft-ui-registry`  
-**Studio DNA:** temporary CLI/MCP scratch only — do not keep permanent AdminCN trees under `_reference/`  
+**Studio DNA:** temporary CLI/MCP scratch **or** user-approved gitignored `_reference/archive/<kit>` promote into Target packages — never product `import` from `_reference/**`; do not keep permanent AdminCN lock trees under `_reference/studio-admincn-lock/`  
 **Product home (logical):** `components-V2/` shape / Target after implement — not Collapse recover  
 **Auth island:** `features/auth/` — preserve `app/auth-surface.css` + route-scoped `app/auth/neon-auth-ui.css`
 
 ## Critical constraint
 
-Studio MCP/CLI does **not** install the AdminCN zip as one unit. It exposes **blocks** under `dashboard-and-application` (shells, charts, widgets, account-settings, form-layout, empty-state, …). No AdminCN zip kit is retained under `_reference/` in this checkout.
+Studio MCP/CLI does **not** install the AdminCN zip as one unit. It exposes **blocks** under `dashboard-and-application` (shells, charts, widgets, account-settings, form-layout, empty-state, …). Permanent **studio-admincn-lock** kits are not retained. User-named local `_reference/archive/` may exist for promote-only DNA (e.g. S5.1 `@afenda/ui`) — never a runtime dependency.
 
 **Every AdminCN primitive and block must appear in `ui-registry.json`** as `ACN-UI-*` or `ACN-BLK-*`. Agents must not invent IDs. Product FFT surfaces use `FFT-UI-*`. See registry HITL before creating or wiring UI.
 

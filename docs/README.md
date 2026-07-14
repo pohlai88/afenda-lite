@@ -15,6 +15,8 @@ Unified home for Living/Target ARCH, API contracts, guides, and module spines. M
 
 **Forward-writing target:** Turborepo multi-package monorepo — [architecture/ARCH-022-system-overview.md](architecture/ARCH-022-system-overview.md).
 
+**Anti-contamination:** Collapse product trees are absent by design. Do **not** recover them from git (including `git show` as a seed) unless the user explicitly names and approves that recovery in the current turn — [ARCH-028 Anti-contamination lock](architecture/ARCH-028-implementation-slices.md) · [AGENTS.md](../AGENTS.md).
+
 **Agent skills:** `/using-afenda-elite-skills`
 
 ## How to read

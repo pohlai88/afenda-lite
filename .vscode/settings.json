@@ -63,7 +63,13 @@
     "**/playwright-report": true,
     "**/out": true,
     "**/.artifacts": true,
-    "**/.git": true
+    "**/.git": true,
+    "docs/architecture/backend": true,
+    "docs/architecture/frontend": true,
+    "docs/architecture/system": true,
+    "docs/architecture/tech-stack": true,
+    "docs/architecture/archive": true,
+    "docs/guides/archive": true
   },
   "files.watcherExclude": {
     "**/node_modules/**": true,

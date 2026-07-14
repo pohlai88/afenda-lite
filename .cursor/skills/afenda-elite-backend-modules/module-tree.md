@@ -6,7 +6,7 @@
 |------|------|-------------------------|
 | **Target physical home** | `apps/web/modules/{platform,identity,declarations,fft}` | Implemented only after explicit ARCH-028 implement / scaffold |
 | **Logical Living shape** | `modules/{platform,identity,declarations,fft}` (context L2 names) | Shape vocabulary for ownership — **not** a claim that root `modules/` exists today |
-| **Docs-first (Collapse)** | Root `modules/`, `app/`, `features/` | **Absent by design** — do not recover from git; do not treat companions below as current disk SSOT |
+| **Docs-first (Collapse)** | Root `modules/`, `app/`, `features/` | **Absent by design** — do not recover from git (incl. `git show` seed) without named user approval this turn; do not treat companions below as current disk SSOT |
 
 Verify before editing product code: `Test-Path apps/web/modules` / `Test-Path modules`. If both absent, stay docs-only.
 

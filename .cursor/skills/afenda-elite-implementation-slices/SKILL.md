@@ -32,7 +32,7 @@ Not for: doc-control ID approval, FFT 2B–2D, housekeeping deletes, or “finis
 1. **One slice per mission.** Do not start the next `S*` or checkpoint until Acceptance + Verify for the named slice pass.
 2. **Enterprise production bar only.** Shrink scope via slice size (S/M/L), never quality.
 3. **No fake completion.** No shim/stub/placeholder/throw-TODO modules. Meet Acceptance with real behavior, or stop and ask.
-4. **Anti-contamination.** Greenfield under `apps/web/**` and `packages/*` only. Never restore Collapse trees (`app/`, `modules/`, `features/`, `components-V2/`, root `lib/`, wiped `scripts/*`) from git history.
+4. **Anti-contamination.** Greenfield under `apps/web/**` and `packages/*` only. Never restore Collapse trees (`app/`, `modules/`, `features/`, `components-V2/`, root `lib/`, wiped `scripts/*`) from git history — including `git show` / `git cat-file` as an implementation seed. **Exception:** only if the user explicitly names and approves that exact recovery in **this** turn. Cutover notes that mention old paths are disposition text, not a waiver.
 5. **Serial order.** Follow ARCH-028; skipped slices need an explicit user waiver in this turn.
 6. **Baseline migrate ban.** Do not apply `packages/db` `0000_*` baseline to `br-tiny-hill-ao82jp6f`.
 7. **FFT freeze.** No Feed Farm Trade domain/logic changes unless the named slice file list requires shell wiring — and still no 2B–2D reopen.

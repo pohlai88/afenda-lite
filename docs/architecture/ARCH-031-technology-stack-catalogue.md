@@ -4,7 +4,7 @@
 | ----------------- | ------------ |
 | **ID**            | ARCH-031     |
 | **Category**      | Architecture |
-| **Version**       | 1.3.0        |
+| **Version**       | 1.3.3        |
 | **Status**        | Living       |
 | **Control State** | Closed       |
 | **Owner**         | Platform     |
@@ -76,12 +76,12 @@ The full documentation-integrity baseline inspected **97/97 primary files**: 93 
 | Governed documentation | Entire `docs/` validator scope | Primary evidence for Living/Target decisions |
 | Runtime and dependency manifests | [`package.json`](../../package.json), [`pnpm-lock.yaml`](../../pnpm-lock.yaml), [`pnpm-workspace.yaml`](../../pnpm-workspace.yaml) | Dependency declarations present; most Collapse-era script bodies are **absent** and gate via [`collapse-script-unavailable.mjs`](../../scripts/collapse-script-unavailable.mjs) |
 | Framework configuration | [`next.config.ts`](../../next.config.ts), [`tsconfig.json`](../../tsconfig.json), [`postcss.config.mjs`](../../postcss.config.mjs) | Next.js, React Compiler, TypeScript, and Tailwind configuration present |
-| UI tooling | Root `components.json` | **Absent** until S5.1 `@afenda/ui` (Collapse root file removed); do not recover banned aliases |
+| UI tooling | `packages/ui/components.json` | Target `@afenda/ui` (S5.1 / Checkpoint E); root Collapse `components.json` remains absent |
 | Hosting and CI | [`vercel.json`](../../vercel.json), [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) | Vercel `sin1`; GitHub Actions uses Node 24 and `pnpm install --frozen-lockfile` |
 | Quality and testing | [`biome.jsonc`](../../biome.jsonc), [`playwright.config.ts`](../../playwright.config.ts) | Tooling configuration present; test trees absent |
 | Contract / docs gates | [`OPEN-001-openapi.yaml`](../api/OPEN-001-openapi.yaml), [`generate-openapi.mts`](../../scripts/generate-openapi.mts), docs integrity scripts | Runnable on this docs-first checkout |
 | Product source presence | Collapse `app/`/`modules/`/`features/`/`components-V2/` | **Absent by design**; do not recover — [ARCH-028](ARCH-028-implementation-slices.md) |
-| Target packages (through Checkpoint D) | `apps/web`, `packages/{config,db,auth,env}`, [`turbo.json`](../../turbo.json) | **Present** after ARCH-028 S1.1–S4.1; `@afenda/ui`/`emails` still open |
+| Target packages (through S6.1) | `apps/web`, `packages/{config,db,auth,env,ui,emails}`, [`turbo.json`](../../turbo.json) | **Present** after ARCH-028 S1.1–S6.1; routes/modules still open (S7.x) |
 
 Validator exclusions: external HTTP availability and code-to-document runtime drift. **Package script names are not evidence** that Collapse-era tooling still runs.
 
@@ -95,15 +95,15 @@ Validator exclusions: external HTTP availability and code-to-document runtime dr
 | Language and UI runtime | TypeScript 5, React 19 | Target pin with matching manifest | Configured — [`package.json`](../../package.json), [`tsconfig.json`](../../tsconfig.json) | [ARCH-022](ARCH-022-system-overview.md) | Strict TypeScript; versions remain manifest-owned. |
 | React optimization | React Compiler | Target-preferred and currently configured | Configured — [`next.config.ts`](../../next.config.ts) | [ARCH-028](ARCH-028-implementation-slices.md) | Preserve when the Target app is rebuilt. |
 | Docs-first package workflow | pnpm (`pnpm-lock.yaml`), Corepack-pinned `packageManager`, `pnpm install --frozen-lockfile` | Current / Living | Configured — [`package.json`](../../package.json), [`pnpm-workspace.yaml`](../../pnpm-workspace.yaml), [CI](../../.github/workflows/ci.yml) | [ARCH-028](ARCH-028-implementation-slices.md) | npm/yarn lockfiles gitignored; workspace members grow slice-serially under ARCH-028. |
-| Target workspace | Turborepo with pnpm workspaces and remote caching | Target (S1.1 shipped) | [`pnpm-workspace.yaml`](../../pnpm-workspace.yaml) + [`turbo.json`](../../turbo.json) present; members through `@afenda/env` | [ARCH-022](ARCH-022-system-overview.md), [ARCH-024](ARCH-024-package-boundaries.md) | Sole package manager is pnpm. |
-| Target package surface | Private `@afenda/{config,db,auth,env,ui,emails}` | Target (partial) | Present: `config`, `db`, `auth`, `env` + `apps/web`; absent until later slices: `ui`, `emails` | [ARCH-022](ARCH-022-system-overview.md), [ARCH-024](ARCH-024-package-boundaries.md) | `apps/web` remains the sole deployable. |
+| Target workspace | Turborepo with pnpm workspaces and remote caching | Target (S1.1 shipped) | [`pnpm-workspace.yaml`](../../pnpm-workspace.yaml) + [`turbo.json`](../../turbo.json) present; members through `@afenda/emails` | [ARCH-022](ARCH-022-system-overview.md), [ARCH-024](ARCH-024-package-boundaries.md) | Sole package manager is pnpm. |
+| Target package surface | Private `@afenda/{config,db,auth,env,ui,emails}` | Target (partial) | Present: `config`, `db`, `auth`, `env`, `ui`, `emails` + `apps/web`; routes/modules still open (S7.x) | [ARCH-022](ARCH-022-system-overview.md), [ARCH-024](ARCH-024-package-boundaries.md) | `apps/web` remains the sole deployable. |
 
 ## 3.4 UI and design system
 
 | Capability | Technology / choice | Lifecycle posture | Implementation evidence | Owning authority | Constraint / migration note |
 | ---------- | ------------------- | ----------------- | ----------------------- | ---------------- | --------------------------- |
 | Styling | Tailwind CSS 4 and CSS-variable tokens | Current configuration and Target | Configured — [`postcss.config.mjs`](../../postcss.config.mjs), [`package.json`](../../package.json) | [ARCH-022](ARCH-022-system-overview.md), [ARCH-024](ARCH-024-package-boundaries.md) | Product CSS source is not verifiable in this checkout. |
-| Component foundation | shadcn base-nova | Target `@afenda/ui` foundation (S5.1) | Root `components.json` absent (Collapse removed); package lands at S5.1 | [ARCH-022](ARCH-022-system-overview.md), [ARCH-018](ARCH-018-admincn-customization.md) | Do not recover Collapse root `components.json` aliases. |
+| Component foundation | shadcn **base-vega** | Living `@afenda/ui` (S5.1 shipped) | [`packages/ui`](../../packages/ui) — Button + `globals.css` + `components.json`; DNA promoted from user-approved local `_reference/archive/shadcn-pro-dashboard` (never Collapse git recover; never product `import` from `_reference`) | [ARCH-022](ARCH-022-system-overview.md), [ARCH-024](ARCH-024-package-boundaries.md), [ARCH-018](ARCH-018-admincn-customization.md) | Do not recreate root Collapse-alias `components.json`. |
 | Operator shell | AdminCN / `AdminCnShell` with Shadcn Studio DNA | Current / Living | Configured tooling; product source not verifiable | [ARCH-015](ARCH-015-admincn-alignment.md), [ARCH-018](ARCH-018-admincn-customization.md) | Shared shell only; auth remains a separate Neon Auth island. |
 | Theme and data-table DNA | `next-themes`, TanStack Table | Current / Living UI DNA | Manifest only; source not verifiable | [ARCH-015](ARCH-015-admincn-alignment.md) | One root theme owner; TanStack is a pattern dependency, not an IAM store. |
 | Supporting UI libraries | Base UI, Lucide, Geist, Motion, Recharts | Manifest-only | Manifest only — [`package.json`](../../package.json) | [ARCH-015](ARCH-015-admincn-alignment.md), [ARCH-018](ARCH-018-admincn-customization.md) | Installed dependencies do not prove product use or grant new UI authority. |
@@ -155,7 +155,7 @@ Validator exclusions: external HTTP availability and code-to-document runtime dr
 | ---------- | ------------------- | ----------------- | ----------------------- | ---------------- | --------------------------- |
 | Internationalization | `next-intl`; FFT vi/en engine strings | Manifest-only platform dependency; FFT capability is Living | Manifest only; product source absent | [FFT-MOD-003](../modules/feed-farm-trade/FFT-MOD-003-tech-stack.md), [FFT-MOD-006](../modules/feed-farm-trade/FFT-MOD-006-surfaces-and-routes.md) | FFT routes remain locale-free; strings do not authorize a locale URL tree. |
 | Conditional notifications | Resend for app-level FFT mail | Conditional / program-gated | Manifest only; feature flags documented; source absent | [FFT-MOD-003](../modules/feed-farm-trade/FFT-MOD-003-tech-stack.md), [FFT-MOD-008](../modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md) | Not a replacement for Neon Auth shared-provider email. |
-| Target app-owned email templates | React Email in `@afenda/emails` | Target | Documented Target; dependency/package absent | [ARCH-022](ARCH-022-system-overview.md), [ARCH-026](ARCH-026-auth-session.md) | Neon Auth continues to own its own transactional messages. |
+| Target app-owned email templates | React Email in `@afenda/emails` | Target (S6.1 shipped) | Present — [`packages/emails`](../../packages/emails), `react-email` in package manifest; `email:dev` on :3001 | [ARCH-022](ARCH-022-system-overview.md), [ARCH-026](ARCH-026-auth-session.md) | Neon Auth continues to own its own transactional messages; templates compose for app-owned mail only. |
 | Import/export support | Papa Parse and SheetJS (`xlsx`) | Manifest-only | Manifest only — [`package.json`](../../package.json) | [FFT-MOD-007](../modules/feed-farm-trade/FFT-MOD-007-api-and-adapters.md), [FFT-MOD-010](../modules/feed-farm-trade/FFT-MOD-010-module-docs-index.md) | Capability docs do not prove either library is wired into product source. |
 | ERP integration | Tenant-selected HTTP adapter behind `FFT_ERP_SYNC_ENABLED` | Conditional / program-gated | Documented configuration; implementation not verifiable | [FFT-MOD-003](../modules/feed-farm-trade/FFT-MOD-003-tech-stack.md), [FFT-MOD-008](../modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md) | No platform-wide Afenda ERP client; vendor/base URL stay tenant-owned optional config. |
 
@@ -221,6 +221,9 @@ ARCH-031 shall link to the changed authority rather than duplicate its detailed 
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 1.3.3 | 2026-07-15 | S6.1: `@afenda/emails` Present; catalogue inventory through S6.1; routes/modules still open. |
+| 1.3.2 | 2026-07-15 | Docs audit: Notes checkout posture Checkpoint E (includes `@afenda/ui`). |
+| 1.3.1 | 2026-07-15 | S5.1: `@afenda/ui` present; component foundation **base-vega** (local pro-dashboard DNA promote); packages through Checkpoint E. |
 | 1.3.0 | 2026-07-15 | S4.1 evidence: packages through `@afenda/env` + `turbo.json` present; drop broken root `components.json` links (S5.1); environment row already Target shipped. |
 | 1.2.0 | 2026-07-14 | Bounded reopen: Living pnpm cutover facts (`pnpm-lock.yaml`, workspace file, CI); reject reintroducing npm/yarn Living lockfiles; `pnpm` commands replace `npm run` / `npx`. |
 | 1.1.1 | 2026-07-14 | Home flattened to docs/architecture/ (trunks removed; pack reading order in README). |
@@ -234,7 +237,7 @@ ARCH-031 shall link to the changed authority rather than duplicate its detailed 
 
 - This catalogue owns discovery and lifecycle classification only. The linked source document owns each decision.
 - Manifest-only dependencies are not automatically endorsed architecture.
-- **Checkout posture:** Collapse product trees (`app/`/`modules/`/`features/`/`components-V2/`) remain absent **by design**. Target packages through Checkpoint D are present — absence of Collapse roots is not a restore ticket.
+- **Checkout posture:** Collapse product trees (`app/`/`modules/`/`features/`/`components-V2/`) remain absent **by design**. Target packages through S6.1 (`@afenda/emails` included) are present — absence of Collapse roots is not a restore ticket; next open S7.1.
 - **Anti-contamination:** do not recover Collapse-era `app/`/`modules/`/`features/`/`components-V2/`, `lib/env/`, or wiped compose/tenancy scripts from git — [ARCH-028](ARCH-028-implementation-slices.md) lock.
 - **Root cause of prior catalogue stale:** Treating `package.json` script **names** and Collapse Living compose/`lib/env` as Current runnable evidence after Collapse. Fixed in 1.1.0 — evidence follows the filesystem + Target decisions.
 - External link availability and full code-to-document runtime drift remain outside the validator coverage used for this catalogue.

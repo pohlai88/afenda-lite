@@ -21,7 +21,7 @@ PRODUCT: Afenda-Lite · QUALITY: enterprise production only
 AUTHORITY: docs/architecture/ARCH-028-implementation-slices.md (+ sibling ARCH from slice-map)
 LANE: Ops (implement) — ARCH-028 Acceptance/evidence update for THIS slice is in-scope
 PATHS: apps/web/** · packages/* only (Target greenfield)
-FORBID: Collapse restore from git (app/ modules/ features/ components-V2/ root lib/ wiped scripts)
+FORBID: Collapse/legacy restore from git (app/ modules/ features/ components-V2/ root lib/ wiped scripts) — incl. git show mining — unless user names that recovery THIS turn
 FORBID: shims · placeholders · throw-TODO · silent-null session · inventing ahead packages
 FORBID: drizzle 0000 baseline migrate on br-tiny-hill-ao82jp6f
 FORBID: FFT 2B–2D domain / mixed FFT product commits

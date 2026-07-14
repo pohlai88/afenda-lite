@@ -42,7 +42,7 @@ Aligned to Vercel `nextjs` + Accelint via [nextjs-conventions.md](nextjs-convent
 | 24 | Cache Components | Mode A default OFF; Mode B ADR + `org:` tags — [cache-components.md](cache-components.md) |
 | 25 | MCP `get_errors` | Clean before done |
 | 26 | Tenancy / FFT / auth island | ARCH-023 · ui-registry · CSS split |
-| 27 | Anti-contamination | No Collapse recover |
+| 27 | Anti-contamination | No Collapse recover (incl. `git show` seed) unless user names that recovery this turn |
 | 28 | Auth vendor | Neon Auth retained |
 
 ---

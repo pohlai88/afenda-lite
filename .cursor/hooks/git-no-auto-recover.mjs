@@ -87,6 +87,24 @@ function isGitRecoverCommand(command) {
     return true;
   }
 
+  // Collapse / legacy path mining via git show / cat-file (rev:path)
+  // Banned trees: app/, modules/, features/, components-V2/, components/ui,
+  // Collapse lib/, db/, e2e/, testing/, messages/, and common wiped scripts nests.
+  const bannedRevPath =
+    /:(?:\.\/)?(?:app|modules|features|components-V2|components\/ui|lib|db|e2e|testing|messages)(?:\/|\b)/i;
+  if (/\bgit\s+show\b/i.test(c) && bannedRevPath.test(c)) {
+    return true;
+  }
+  if (/\bgit\s+cat-file\b/i.test(c) && bannedRevPath.test(c)) {
+    return true;
+  }
+  if (
+    /\bgit\s+archive\b/i.test(c) &&
+    /\b(?:app|modules|features|components-V2|lib|db|e2e|testing|messages)\b/i.test(c)
+  ) {
+    return true;
+  }
+
   return false;
 }
 
@@ -97,9 +115,9 @@ if (isGitRecoverCommand(command)) {
   respond({
     permission: "ask",
     user_message:
-      "Git recover/discard requires your approval. Agents cannot auto-recover from git without explicit approval.",
+      "Git recover/discard or Collapse path mining requires your approval. Agents cannot auto-recover banned trees (or git show them as seeds) without explicit approval.",
     agent_message:
-      "Blocked pending user approval: this shell command recovers, discards, or rewinds git state. Do not retry or rewrite to bypass. Explain the intent and wait for the user to approve in chat or via the hook prompt.",
+      "Blocked pending user approval: this shell command recovers, discards, rewinds git state, or dumps banned Collapse path contents (git show/cat-file/archive). Do not retry or rewrite to bypass. Explain the intent and wait for the user to approve in chat or via the hook prompt. Authority: ARCH-028 Anti-contamination lock · no-collapse-legacy-recovery.",
   });
   process.exit(0);
 }

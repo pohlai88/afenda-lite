@@ -38,11 +38,12 @@ description: >-
 2. **Descriptive params only** — never overloaded `[id]` (table below).
 3. **`lib/` is gone.** Domain/Zod/env live under `modules/{platform,identity,declarations,fft}`. Runners live under `features/`. Do not recreate `lib/`. See `/afenda-elite-backend-modules`.
 4. **No root `components/` restore.** Product UI → `features/*`.
-5. **Next 16:** `proxy.ts` only — never new `middleware.ts`.
-6. **Never** `page.tsx` + `route.ts` in the same segment.
-7. **No** parallel/intercepting routes in v1. No `template.tsx` / `default.tsx` unless required later.
-8. **Node runtime default.** No `runtime = 'edge'` on product pages.
-9. **One-version contracts.** Route param names = brand names = Zod field names (`declarationId`, not `id` vs `surveyId` drift). See [boundaries.md](boundaries.md).
+5. **No Collapse recovery.** Never restore banned trees from git (`app/`, `modules/`, `features/`, `components-V2/`, …) — including `git show` as a seed — unless the user explicitly names that recovery in this turn ([ARCH-028](../../../docs/architecture/ARCH-028-implementation-slices.md)).
+6. **Next 16:** `proxy.ts` only — never new `middleware.ts`.
+7. **Never** `page.tsx` + `route.ts` in the same segment.
+8. **No** parallel/intercepting routes in v1. No `template.tsx` / `default.tsx` unless required later.
+9. **Node runtime default.** No `runtime = 'edge'` on product pages.
+10. **One-version contracts.** Route param names = brand names = Zod field names (`declarationId`, not `id` vs `surveyId` drift). See [boundaries.md](boundaries.md).
 
 ## Wipe vs leave
 

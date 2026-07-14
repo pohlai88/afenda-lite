@@ -29,6 +29,8 @@ SKIP:
   treating Lite and Elite as divergent documentation systems
   reduced-viability quality / proposal / planning frames (sole bar = enterprise production; no-mvp-quality-bar)
   inventing Sales/Purchasing/Inventory/Finance skill farms before controlled ARCH-006 ADR
+  Collapse/legacy recover from git (incl. git show mining) unless user names that recovery this turn
+  treating Cursor Grep/Glob hits under docs/architecture/{backend,frontend,system,tech-stack,archive}/ or docs/guides/archive/ as disk truth (trust Test-Path · git ls-files · pnpm check:docs-trunk-ban)
 ```
 
 **Authority above skills:** documentation homes, lifecycle, and register rules from [DOC-001](../../../docs/_control/DOC-001-documentation-control-standard.md) + [DOC-002](../../../docs/_control/DOC-002-documentation-register.md) + [DOC-003](../../../docs/_control/DOC-003-controlled-document-template.md). Product display names follow [AGENTS.md](../../../AGENTS.md) and the deprecation register — do not invent alternate product titles in skills.

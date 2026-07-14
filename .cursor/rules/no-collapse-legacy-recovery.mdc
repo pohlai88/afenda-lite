@@ -1,0 +1,37 @@
+---
+description: Ban Collapse/legacy product-tree recovery from git unless the user explicitly approves that recovery this turn
+alwaysApply: true
+---
+
+# No Collapse / legacy recovery without named approval
+
+**NOT ALLOWED. NOT ALLOWED. NOT ALLOWED.**
+
+Agents must not re-materialize Collapse-era or other banned product trees from git history unless the user explicitly approves **that named recovery** in **this chat turn**.
+
+## Forbidden without named user approval this turn
+
+- `git checkout` / `git restore` / sparse checkout / worktree materialization of Collapse parents (e.g. `f014807`, `4680c91^`) for banned paths
+- `git show` / `git cat-file` / archive dumps of banned paths used as an implementation seed, copy-paste source, or “historical reference” to rebuild product / package / app code
+- Recreating on disk: repo-root `app/`, `modules/`, `features/`, `components-V2/`, Collapse `lib/`, root `components/`, Collapse-alias root `components.json`, wiped ops `scripts/*`, Storybook, Portal Atmosphere product trees
+
+## Not a waiver
+
+- Naming an ARCH-028 slice (e.g. S5.1) or pasting a command-sheet block
+- Living ARCH maps that describe logical folder shape
+- Cutover notes that mention old path names (disposition only)
+- “Faster than rewriting” / “read history for DNA” / index ghosts from Cursor Grep/Glob
+
+## Required behavior
+
+1. **Greenfield** under `apps/web/**` and `packages/*` only.
+2. If content seems “missing” because Collapse removed it — **stop**, state the gap, and wait for an explicit recovery exception or a greenfield implement order.
+3. Do not invent exceptions.
+
+## Authority
+
+[ARCH-028 Anti-contamination lock](../../docs/architecture/ARCH-028-implementation-slices.md) · [AGENTS.md](../../AGENTS.md) checkout posture · [deprecation register — Closed product phases](../skills/agent-skills/skills/deprecation-and-migration/reference.md) · companion [git-no-auto-recover.mdc](git-no-auto-recover.mdc)
+
+## Hook enforcement
+
+`beforeShellExecution` → `.cursor/hooks/git-no-auto-recover.mjs` asks on recover verbs and on `git show`/`git cat-file` of banned pathspecs. Do not rewrite commands to bypass the matcher.

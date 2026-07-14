@@ -29,7 +29,7 @@ description: >-
 | Target physical home | `apps/web/modules/{platform,identity,declarations,fft}` ([ARCH-006](../../../docs/architecture/ARCH-006-bounded-contexts.md) · [ARCH-022](../../../docs/architecture/ARCH-022-system-overview.md)) |
 | This checkout | Often **docs-first** after Collapse — root `modules/` / `app/` may be **absent by design** ([ARCH-028](../../../docs/architecture/ARCH-028-implementation-slices.md)) |
 | Packages | Exactly the ARCH-024 named set under Target; no new `packages/*` or `apps/*` without a preceding ADR |
-| Contaminations ban | Do not recover wiped Collapse roots (`app/`, `modules/`, `features/`, `components-V2/`) from git |
+| Contaminations ban | Do not recover wiped Collapse roots (`app/`, `modules/`, `features/`, `components-V2/`) from git — including `git show` mining — unless the user explicitly names that recovery in this turn |
 
 Logical Living shape in skill companions may still say `modules/*` — physical Target path is under `apps/web` after an explicit ARCH-028 implement request.
 

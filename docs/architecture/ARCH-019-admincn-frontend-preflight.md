@@ -4,11 +4,11 @@
 | ----------------- | ------------ |
 | **ID**            | ARCH-019     |
 | **Category**      | Architecture |
-| **Version**       | 1.1.5        |
+| **Version**       | 1.1.6        |
 | **Status**        | Living     |
 | **Control State** | Closed       |
 | **Owner**         | Frontend     |
-| **Updated**       | 2026-07-14   |
+| **Updated**       | 2026-07-15   |
 
 ---
 
@@ -58,7 +58,7 @@ Run before adding or refining an AdminCN-hosted screen.
 - [ ] Nav entry tagged with `kind` + `moduleId` (or `kind: "admin"`)  
 - [ ] Auth island CSS untouched (`auth-surface.css`, `neon-auth-ui.css`)  
 - [ ] UI IDs registered; no agent-edit of `ui-registry.json`  
-- [ ] Studio DNA comes from temporary CLI/MCP scratch (or approved HITL promote) — **never** import `_reference/` into product runtime  
+- [ ] Studio DNA comes from temporary CLI/MCP scratch **or** user-approved gitignored `_reference/archive/<kit>` promote into Target packages (e.g. `@afenda/ui`) — **never** product `import` from `_reference/**`; never Collapse git recover ([ARCH-015](ARCH-015-admincn-alignment.md) · [ARCH-018](ARCH-018-admincn-customization.md))  
 - [ ] Scratch MCP path `components/shadcn-studio/` is temporary; promote before merge  
 
 ## 3 — Data
@@ -104,6 +104,7 @@ Additional related links from prior revision:
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 1.1.6 | 2026-07-15 | DNA checklist: user-approved `_reference/archive` promote-only; never runtime `_reference` import; Notes close trunk-index residual (trust disk + trunk-ban). |
 | 1.1.5 | 2026-07-14 | Bounded reopen: package-manager cutover — document `pnpm` / `pnpm exec` (repo SSOT `packageManager` + `pnpm-lock.yaml`). |
 | 1.1.4 | 2026-07-14 | Preflight: no invented product surfaces; hold ARCH-012 disposition (remove stub-OK wording). |
 | 1.1.3 | 2026-07-14 | Home flattened to docs/architecture/ (trunks removed; pack reading order in README). |
@@ -124,3 +125,13 @@ Additional related links from prior revision:
 - **Forbidden:** recovering those trees from git history (`f014807` / Collapse parents) — contamination of the docs-first checkout. See [ARCH-028](ARCH-028-implementation-slices.md) Anti-contamination lock.
 - Paths in this document are a **logical Living map** (shape). When product code is implemented, place it under **Target** roots per [ARCH-022](ARCH-022-system-overview.md) / [ARCH-028](ARCH-028-implementation-slices.md) (`apps/web/**`, `packages/*`) after an **explicit** implement request — never as a restore of banned repo-root trees.
 - Phrases such as “on disk”, “live adapters”, or “relocate complete” describe the intended shape when a Target product tree exists; they are **not** a claim that Collapse-era files may be recovered.
+
+### Docs trunk index ghosts (residual closed)
+
+Banned nests `docs/architecture/{backend,frontend,system,tech-stack,archive}/` and `docs/guides/archive/` are **absent on disk** (DOC-001 flatten). Cursor Grep/Glob may still list them from a stale editor index.
+
+| Trust | Do not trust |
+|-------|----------------|
+| `Test-Path` · `git ls-files` (expect **0** rows) · `pnpm check:docs-trunk-ban` | Cursor Grep/Glob hits under those trunks |
+
+Authority: [docs/architecture/README.md](README.md) · [AGENTS.md](../../AGENTS.md) Index truth · [DOC-001](../_control/DOC-001-documentation-control-standard.md) § architecture home. **Never** recreate trunks to “satisfy” an index ghost.
