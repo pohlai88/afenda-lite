@@ -75,7 +75,7 @@ Adapter checklist → [`afenda-elite-api-contract`](../afenda-elite-api-contract
 | **Identity** | `modules/identity/**` | Declarations (any), Trade |
 | **Declarations** | `modules/declarations/**` | Trade (`modules/fft`) |
 | **Trade** | `modules/fft/**` | Declarations (any tree — use Platform for shared Zod) |
-| **FE runners** | `features/auth/entry`, `features/organization-admin` pages, `features/auth/public-link-page*`, `features/playground` | Domain SQL / copy SSOT (those live in `modules/`) |
+| **FE runners** | Target: `features/{auth,declarations,fft,org-admin}` shells (S7.4); Living may still name `organization-admin` / entry runners for expanded surfaces | Domain SQL / copy SSOT (those live in `modules/`) |
 
 ## Data adapters (wire)
 

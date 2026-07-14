@@ -4,13 +4,13 @@
 |-------|-------|
 | ID | ARCH-028 |
 | Category | Architecture |
-| Version | 1.4.20 |
+| Version | 1.4.22 |
 | Status | Target |
 | Control State | Closed |
 | Owner | Platform |
 | Updated | 2026-07-15 |
 
-> **Forward-writing / Target.** Ordered implementation plan for the Turborepo system. Through S7.3 this checkout has `apps/web` route groups + `apps/web/modules/{platform,identity,declarations,fft}` domain ports + `@afenda/{config,db,auth,env,ui,emails}` — continue slice-serial only (see Anti-contamination lock below). Each slice is S (1–2 files) or M (3–5 files). L = structural move of **Target trees already on disk** only — never Collapse/legacy recovery from git.
+> **Forward-writing / Target.** Ordered implementation plan for the Turborepo system. Through S7.4 + Checkpoint F this checkout has `apps/web` route groups + `apps/web/modules/*` domain ports + `apps/web/features/{auth,declarations,fft,org-admin}` shells + `@afenda/{config,db,auth,env,ui,emails}` — continue slice-serial only (see Anti-contamination lock below). Each slice is S (1–2 files) or M (3–5 files). L = structural move of **Target trees already on disk** only — never Collapse/legacy recovery from git.
 
 ## Purpose
 
@@ -183,7 +183,7 @@ Operator override for a later **non-baseline** forward migrate only: `AFENDA_ALL
 
 **Checkpoint D evidence (2026-07-14):** merged local compose inventory → `.env.local`; removed `env.config` / `env.secret` / `.env` and committed examples; added `.env.example` + `!.env.example` gitignore; removed `env:compose` / `env:guard*` / compose write-path scripts from root `package.json`; `scripts/lib/env-files.mjs` + `validate-neon-env` load `.env.local` only; AGENTS.md Target env SSOT.
 
-**A–D residue pass (2026-07-14, pre-E):** deleted `env-manifest.generated.mjs` + root Collapse `components.json` (`app/`/`modules/platform` aliases); Living docs/skills retargeted off pre-S4.1 two-state; ARCH-022/AGENTS checkout posture updated for packages through `@afenda/env`. **Superseded by S5.1 / Checkpoint E (2026-07-15)**, **S6.1 (2026-07-15)**, **S7.1 (2026-07-15)**, **S7.2 (2026-07-15)**, and **S7.3 (2026-07-15)** — see Acceptance evidence below; next open **S7.4**.
+**A–D residue pass (2026-07-14, pre-E):** deleted `env-manifest.generated.mjs` + root Collapse `components.json` (`app/`/`modules/platform` aliases); Living docs/skills retargeted off pre-S4.1 two-state; ARCH-022/AGENTS checkout posture updated for packages through `@afenda/env`. **Superseded by S5.1–S7.4 + Checkpoints E–F (2026-07-15)** — see Acceptance evidence below; next open **S8.1**.
 
 ---
 
@@ -297,14 +297,28 @@ Operator override for a later **non-baseline** forward migrate only: `AFENDA_ALL
 **Size:** M · **features:** `auth`, `declarations`, `fft`, `org-admin` — RSC pages call domain, not DB directly
 
 **Acceptance:**
-- [ ] Features do not import `@afenda/db` directly
-- [ ] Prefer existing Playwright smoke after wire-up: `pnpm --filter @afenda/web test:e2e:smoke` when e2e tree exists
+- [x] Features do not import `@afenda/db` directly
+- [x] Prefer existing Playwright smoke after wire-up: `pnpm --filter @afenda/web test:e2e:smoke` when e2e tree exists
+
+**Authority:** [ARCH-013](ARCH-013-bff-and-data-flow.md) · [ARCH-029](ARCH-029-interface-api-architecture.md)
+
+**Cutover note:** Greenfield `apps/web/features/{auth,declarations,fft,org-admin}` only. Do **not** recover Collapse root `features/` from git. Thin `page.tsx` composes features; features call `modules/*/domain` (never `@afenda/db`). No Feed Farm Trade 2B–2D reopen — read shell only.
+
+**Implement evidence (2026-07-15):**
+- Feature shells: `features/auth/forbidden-shell.tsx`, `features/org-admin/org-admin-shell.tsx` (Identity roles/assignments + Platform RBAC audit), `features/declarations/declarations-shell.tsx` (`listSurveys`), `features/fft/fft-events-shell.tsx` (`listEvents`) — session-aware load in domain-backed shells (`getSession` → domain); zero `@afenda/db` imports under `features/`
+- Thin pages: re-export compose only — `/403` → auth; `/admin` → org-admin; `/client/dashboard` → declarations; `/fft` (operator group) → fft
+- `@afenda/db` `withOrg<T>` returns `T["$inferSelect"][]` so feature shells see concrete row shapes
+- e2e smoke: **N/A** — no `apps/web/e2e` tree on this checkout (Acceptance second bullet conditional)
+- Verify: `pnpm --filter @afenda/web typecheck` PASS · `rg` `@afenda/db` under `apps/web/features` = 0
+- Audit gap close (same day): moved session out of pages into feature shells (ARCH-013 runners); farm skills retargeted Living `organization-admin` → Target `org-admin`; Checkpoint F re-verified
 
 ### Checkpoint F
 
-- [ ] `turbo run build` and `turbo run typecheck` exit 0
-- [ ] `rg "from 'pg'" .` = 0
-- [ ] `rg "lib/auth|lib/env|lib/db" apps/web/` = 0
+- [x] `turbo run build` and `turbo run typecheck` exit 0
+- [x] `rg "from 'pg'" .` = 0
+- [x] `rg "lib/auth|lib/env|lib/db" apps/web/` = 0
+
+**Checkpoint F evidence (2026-07-15):** `pnpm exec turbo run typecheck` PASS (6 tasks) · `pnpm exec turbo run build` PASS (routes: `/` `○` · `/403` `○` · `/admin` `ƒ` · `/client/dashboard` `ƒ` · `/fft` `ƒ`) · `rg` `from 'pg'` in `*.{ts,tsx,js,mjs,cjs}` = 0 · `rg` `lib/auth|lib/env|lib/db` under `apps/web/` = 0 · re-verified after audit gap close
 
 ---
 
@@ -369,7 +383,7 @@ Absorbed from retired GUIDE-004. Records **Target vs checkout** drift for forwar
 
 | Authority | Disk today | Coding impact |
 |-----------|------------|---------------|
-| [ARCH-022…028](.) | S1.1–S7.3 + Checkpoints A–E present: workspace + `@afenda/{config,db,auth,env,ui,emails}` + `apps/web` route groups + `apps/web/modules/*` domain ports; features still open per S7.4+ | Continue slice-serial implement — next open **S7.4** |
+| [ARCH-022…028](.) | S1.1–S7.4 + Checkpoints A–F present: workspace + `@afenda/{config,db,auth,env,ui,emails}` + `apps/web` route groups + modules domain ports + `apps/web/features/{auth,declarations,fft,org-admin}` | Continue slice-serial implement — next open **S8.1** |
 | Living maps ARCH-001…010 · 012…019 · 017 | Repo-root `app/`, `modules/`, `features/`, `components-V2/` **absent** after design-SSOT Collapse (`4680c91`) | **Expected · Forbidden to recover** — see Anti-contamination lock below |
 | [ARCH-023](ARCH-023-multi-tenancy.md) | Living tenancy + RBAC rules | Binding now — enforce invariants even before packages exist |
 | `AGENTS.md` env | Target `@afenda/env` + `.env.local` + `.env.example` (S4.1 / Checkpoint D) | Compose retired — do not restore |
@@ -413,6 +427,8 @@ Living ARCH folder/route/adapter maps remain normative for **shape**. They are *
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.4.22 | 2026-07-15 | S7.4 audit gap close: session-aware feature runners; Target `org-admin` farm honesty; Checkpoint F re-verify. |
+| 1.4.21 | 2026-07-15 | S7.4 feature shells + Checkpoint F; next open S8.1. |
 | 1.4.20 | 2026-07-15 | S7.3 gap close: Identity owns `listOrgRoles`; Platform `listOrgRbacAudit`; evidence + catalogue honesty. |
 | 1.4.19 | 2026-07-15 | S7.3 `apps/web/modules/{platform,identity,declarations,fft}` domain ports via `@afenda/db` `withOrg`; next open S7.4. |
 | 1.4.18 | 2026-07-15 | Post-S7.2 audit: rename open S7.3/S7.4 labels (modules / feature shells); sibling Target banners sync via DOC-002. |

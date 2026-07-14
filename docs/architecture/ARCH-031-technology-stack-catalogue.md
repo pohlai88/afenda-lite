@@ -4,7 +4,7 @@
 | ----------------- | ------------ |
 | **ID**            | ARCH-031     |
 | **Category**      | Architecture |
-| **Version**       | 1.3.7        |
+| **Version**       | 1.3.8        |
 | **Status**        | Living       |
 | **Control State** | Closed       |
 | **Owner**         | Platform     |
@@ -81,7 +81,7 @@ The full documentation-integrity baseline inspected **97/97 primary files**: 93 
 | Quality and testing | [`biome.jsonc`](../../biome.jsonc), [`playwright.config.ts`](../../playwright.config.ts) | Tooling configuration present; test trees absent |
 | Contract / docs gates | [`OPEN-001-openapi.yaml`](../api/OPEN-001-openapi.yaml), [`generate-openapi.mts`](../../scripts/generate-openapi.mts), docs integrity scripts | Runnable on this docs-first checkout |
 | Product source presence | Collapse `app/`/`modules/`/`features/`/`components-V2/` | **Absent by design**; do not recover — [ARCH-028](ARCH-028-implementation-slices.md) |
-| Target packages (through S7.3) | `apps/web` route groups + `apps/web/modules/*` domain ports + Next shell, `packages/{config,db,auth,env,ui,emails}`, [`turbo.json`](../../turbo.json) | **Present** after ARCH-028 S1.1–S7.3; features still open (S7.4+) |
+| Target packages (through S7.4) | `apps/web` route groups + modules domain ports + `apps/web/features/{auth,declarations,fft,org-admin}` + Next shell, `packages/{config,db,auth,env,ui,emails}`, [`turbo.json`](../../turbo.json) | **Present** after ARCH-028 S1.1–S7.4 + Checkpoint F; next open S8.1 |
 
 Validator exclusions: external HTTP availability and code-to-document runtime drift. **Package script names are not evidence** that Collapse-era tooling still runs.
 
@@ -96,7 +96,7 @@ Validator exclusions: external HTTP availability and code-to-document runtime dr
 | React optimization | React Compiler | Target-preferred and currently configured | Configured — [`apps/web/next.config.ts`](../../apps/web/next.config.ts) (`reactCompiler: true`) | [ARCH-028](ARCH-028-implementation-slices.md) | Preserve on the Target app. |
 | Docs-first package workflow | pnpm (`pnpm-lock.yaml`), Corepack-pinned `packageManager`, `pnpm install --frozen-lockfile` | Current / Living | Configured — [`package.json`](../../package.json), [`pnpm-workspace.yaml`](../../pnpm-workspace.yaml), [CI](../../.github/workflows/ci.yml) | [ARCH-028](ARCH-028-implementation-slices.md) | npm/yarn lockfiles gitignored; workspace members grow slice-serially under ARCH-028. |
 | Target workspace | Turborepo with pnpm workspaces and remote caching | Target (S1.1 shipped) | [`pnpm-workspace.yaml`](../../pnpm-workspace.yaml) + [`turbo.json`](../../turbo.json) present; members through `@afenda/emails` | [ARCH-022](ARCH-022-system-overview.md), [ARCH-024](ARCH-024-package-boundaries.md) | Sole package manager is pnpm. |
-| Target package surface | Private `@afenda/{config,db,auth,env,ui,emails}` | Target (partial) | Present: packages + `apps/web` route groups + `apps/web/modules/*` domain ports (S7.3); features still open (S7.4+) | [ARCH-022](ARCH-022-system-overview.md), [ARCH-024](ARCH-024-package-boundaries.md) | `apps/web` remains the sole deployable. |
+| Target package surface | Private `@afenda/{config,db,auth,env,ui,emails}` | Target (partial) | Present: packages + route groups + modules domain ports + feature shells (S7.4 / Checkpoint F); CI/deploy still open (S8.x) | [ARCH-022](ARCH-022-system-overview.md), [ARCH-024](ARCH-024-package-boundaries.md) | `apps/web` remains the sole deployable. |
 
 ## 3.4 UI and design system
 
@@ -221,6 +221,7 @@ ARCH-031 shall link to the changed authority rather than duplicate its detailed 
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 1.3.8 | 2026-07-15 | S7.4 + Checkpoint F: catalogue evidence for `apps/web/features/*` shells; next open S8.1. |
 | 1.3.7 | 2026-07-15 | S7.3: catalogue evidence for `apps/web/modules/*` domain ports; features still open (S7.4+); checkout posture next open S7.4. |
 | 1.3.6 | 2026-07-15 | S7.2: catalogue evidence for `(public)` / `(operator)` / `(client)` route groups; modules/features still open (S7.3+). |
 | 1.3.5 | 2026-07-15 | Vercel `afenda-lite`: Root Directory `apps/web` + outside-root sources verified; `vercel.json` colocated under `apps/web`. |
@@ -241,7 +242,7 @@ ARCH-031 shall link to the changed authority rather than duplicate its detailed 
 
 - This catalogue owns discovery and lifecycle classification only. The linked source document owns each decision.
 - Manifest-only dependencies are not automatically endorsed architecture.
-- **Checkout posture:** Collapse product trees (`app/`/`modules/`/`features/`/`components-V2/`) remain absent **by design**. Target packages through S7.3 (`apps/web` modules domain ports included) are present — absence of Collapse roots is not a restore ticket; next open **S7.4**.
+- **Checkout posture:** Collapse product trees (`app/`/`modules/`/`features/`/`components-V2/`) remain absent **by design**. Target packages through S7.4 + Checkpoint F (`apps/web` modules + feature shells included) are present — absence of Collapse roots is not a restore ticket; next open **S8.1**.
 - **Anti-contamination:** do not recover Collapse-era `app/`/`modules/`/`features/`/`components-V2/`, `lib/env/`, or wiped compose/tenancy scripts from git — [ARCH-028](ARCH-028-implementation-slices.md) lock.
 - **Root cause of prior catalogue stale:** Treating `package.json` script **names** and Collapse Living compose/`lib/env` as Current runnable evidence after Collapse. Fixed in 1.1.0 — evidence follows the filesystem + Target decisions.
 - External link availability and full code-to-document runtime drift remain outside the validator coverage used for this catalogue.

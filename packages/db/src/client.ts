@@ -40,11 +40,16 @@ export type TenantTable = AnyPgTable & {
  * Writes use `db.insert` / `update` / `delete` with explicit `organizationId`.
  *
  * `from` cast: Drizzle selection generics reject `AnyPgTable` intersections;
- * runtime table identity is unchanged.
+ * runtime table identity is unchanged. Return type is `T["$inferSelect"][]`
+ * so callers see the concrete table row shape (S7.4 feature shells).
  */
-export function withOrg(table: TenantTable, orgId: string) {
-  return db
+export async function withOrg<T extends TenantTable>(
+  table: T,
+  orgId: string,
+): Promise<T["$inferSelect"][]> {
+  const rows = await db
     .select()
-    .from(table as typeof schema.surveys)
+    .from(table as unknown as typeof schema.surveys)
     .where(eq(table.organizationId, orgId));
+  return rows as T["$inferSelect"][];
 }

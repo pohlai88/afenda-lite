@@ -13,7 +13,7 @@
 | `features/playground/**` | Local harness UI + registry + page runners |
 | `features/auth/entry/**` | Login / invite / secure-link entry |
 | `features/auth/public-link-page*` | `/f` / open-link page helpers |
-| `features/organization-admin/organization-admin-*` | Operator page runners |
+| `features/organization-admin/organization-admin-*` | Historical Living absorb target → Target physical `features/org-admin/` (ARCH-022 / S7.4) |
 
 Do **not** recreate `lib/` or recover Collapse roots. New UI → Target `apps/web/features/*` per folder map after implement authorization.
 
