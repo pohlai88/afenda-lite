@@ -4,13 +4,13 @@
 |-------|-------|
 | ID | ARCH-022 |
 | Category | Architecture |
-| Version | 1.5.8 |
+| Version | 1.5.9 |
 | Status | Target |
 | Control State | Closed |
 | Owner | Platform |
 | Updated | 2026-07-15 |
 
-> **Forward-writing / Target.** Turborepo system SSOT. On disk through S7.3: `@afenda/config|db|auth|env|ui|emails` + `apps/web` route groups + `apps/web/modules/{platform,identity,declarations,fft}` domain ports — features still open per [ARCH-028](ARCH-028-implementation-slices.md) S7.4+.
+> **Forward-writing / Target.** Turborepo system SSOT. On disk through S7.4 + Checkpoint F: `@afenda/config|db|auth|env|ui|emails` + `apps/web` route groups + `apps/web/modules/{platform,identity,declarations,fft}` domain ports + `apps/web/features/{auth,declarations,fft,org-admin}` — next open [ARCH-028](ARCH-028-implementation-slices.md) **S8.1**.
 
 ## Context
 
@@ -244,6 +244,7 @@ Next.js App Router (apps/web)
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.5.9 | 2026-07-15 | Checkout banner: S7.4 feature shells + Checkpoint F on disk; next open S8.1. |
 | 1.5.8 | 2026-07-15 | Checkout banner: S7.3 domain modules on disk; next open S7.4+ (feature shells). |
 | 1.5.7 | 2026-07-15 | Checkout banner: S7.2 route groups on disk; next open S7.3+ (modules / features). |
 | 1.5.6 | 2026-07-15 | Checkout banner: S7.1 `apps/web` Next shell on disk; next open S7.2+ (route groups / modules). |

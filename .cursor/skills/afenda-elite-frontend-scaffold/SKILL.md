@@ -102,7 +102,9 @@ Decision tree SSOT: [docs/architecture/ARCH-013-bff-and-data-flow.md](../../../d
 ## `features/` modules
 
 ```text
-features/{landing,auth,account,organization-admin,portal-chrome,fft,playground}/
+Target (ARCH-022 / ARCH-028 S7.4 disk): features/{auth,declarations,fft,org-admin}/
+Living expanded shape (later surfaces): landing, account, portal-chrome, playground
+  — Living docs may still say organization-admin; Target physical folder is org-admin
 ```
 
 `app/**/page.tsx` composes only. Prefer `features/` over `app/_components/` for product UI.

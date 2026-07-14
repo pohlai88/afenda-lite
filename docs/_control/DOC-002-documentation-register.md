@@ -4,7 +4,7 @@
 | ----------------- | ---------- |
 | **ID**            | DOC-002    |
 | **Category**      | Control    |
-| **Version**       | 4.83.0 |
+| **Version**       | 4.85.0 |
 | **Status**        | Living     |
 | **Control State** | Closed     |
 | **Owner**         | Platform   |
@@ -71,10 +71,10 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 | ID           | Category     | Title                                      | Version | Status | Owner    | Updated    |
 | ------------ | ------------ | ------------------------------------------ | ------- | ------ | -------- | ---------- |
 | DOC-001      | Control      | Documentation Control Standard             | 2.7.0   | Living | Platform | 2026-07-14 |
-| DOC-002      | Control      | Documentation Register                     | 4.83.0 | Living | Platform | 2026-07-15 |
+| DOC-002      | Control      | Documentation Register                     | 4.85.0 | Living | Platform | 2026-07-15 |
 | DOC-003      | Control      | Controlled Document Template               | 1.4.0   | Living | Platform | 2026-07-14 |
 | ARCH-029     | Architecture | Interface and API Architecture             | 1.2.7   | Living | Platform | 2026-07-14 |
-| ARCH-031     | Architecture | Technology Stack Catalogue                 | 1.3.7   | Living | Platform | 2026-07-15 |
+| ARCH-031     | Architecture | Technology Stack Catalogue                 | 1.3.8   | Living | Platform | 2026-07-15 |
 | API-001      | API          | API Boundaries                             | 1.2.3   | Living | Backend  | 2026-07-14 |
 | API-002      | API          | Error Contract                             | 1.2.2   | Living | Backend  | 2026-07-14 |
 | API-003      | API          | API Types                                  | 2.0.1   | Living | Backend  | 2026-07-14 |
@@ -107,13 +107,13 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 | RB-006       | Runbook      | OpenAPI Drift Detection and Recovery       | 0.2.1   | Draft  | Backend  | 2026-07-14 |
 | RB-007       | Runbook      | API Incident Response                      | 0.2.0   | Draft  | Backend  | 2026-07-14 |
 | RB-008       | Runbook      | API Contract Rollback                      | 0.2.1   | Draft  | Backend  | 2026-07-14 |
-| ARCH-022     | Architecture | System Overview — Turborepo                | 1.5.8   | Target | Platform | 2026-07-15 |
+| ARCH-022     | Architecture | System Overview — Turborepo                | 1.5.9   | Target | Platform | 2026-07-15 |
 | ARCH-023     | Architecture | Multi-Tenancy and Platform RBAC            | 3.1.4   | Living | Platform | 2026-07-14 |
 | ARCH-024     | Architecture | Package Boundaries                         | 1.2.1   | Target | Platform | 2026-07-14 |
 | ARCH-025     | Architecture | Data Layer                                 | 1.2.4   | Target | Backend  | 2026-07-14 |
 | ARCH-026     | Architecture | Authentication and Session Model           | 1.2.2   | Target | Platform | 2026-07-14 |
 | ARCH-027     | Architecture | Environment Variable Model                 | 1.5.1   | Target | Platform | 2026-07-15 |
-| ARCH-028     | Architecture | Turborepo Implementation Slices            | 1.4.20  | Target | Platform | 2026-07-15 |
+| ARCH-028     | Architecture | Turborepo Implementation Slices            | 1.4.22  | Target | Platform | 2026-07-15 |
 | ARCH-001     | Architecture | Backend Architecture                       | 1.2.0   | Living | Backend  | 2026-07-14 |
 | ARCH-002     | Architecture | Frontend Architecture                      | 1.3.3   | Living | Frontend | 2026-07-14 |
 | ADR-008      | ADR          | Cache Components Mode B (Gated)            | 1.0.1   | Accepted | Frontend | 2026-07-14 |
@@ -168,6 +168,8 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 
 | Version | Date       | Summary                                                                                                                                         |
 | ------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| 4.85.0 | 2026-07-15 | S7.4 audit gap close: ARCH-028→1.4.22 (session-aware feature runners + Target org-admin farm honesty). |
+| 4.84.0 | 2026-07-15 | S7.4 + Checkpoint F: ARCH-028→1.4.21, ARCH-022→1.5.9, ARCH-031→1.3.8 (feature shells on disk; next open S8.1). |
 | 4.83.0 | 2026-07-15 | S7.3 gap close follow-up: FFT-MOD-009→2.0.4 (Target fft shell honesty; AC still BLOCKED). |
 | 4.82.0 | 2026-07-15 | S7.3 gap close: ARCH-028→1.4.20, ARCH-031→1.3.7 (Identity RBAC ownership + catalogue honesty). |
 | 4.81.0 | 2026-07-15 | Post-S7.3: ARCH-022→1.5.8, ARCH-028→1.4.19 (domain modules on disk; register catch-up). |

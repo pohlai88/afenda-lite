@@ -47,7 +47,7 @@ import { parseSchema } from "@/modules/platform/schemas/common"
 | Surface | Pattern |
 |---------|---------|
 | Prefer | `app/**/page.tsx` → features / thin runner → `modules/*/domain` (under `apps/web` on Target) |
-| Keep (Target) | `features/auth/entry/*`, `features/organization-admin/*` runners |
+| Keep (Target) | `features/{auth,declarations,fft,org-admin}` shells (S7.4); expand with entry / richer runners under those L2 folders — Living name `organization-admin` maps to Target `org-admin` |
 | Forbidden | RSC `fetch('/api/...')` for ordinary product reads; recreate `lib/pages`; recover Collapse roots |
 
 ---
