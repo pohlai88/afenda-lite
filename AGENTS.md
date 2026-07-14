@@ -1,250 +1,190 @@
-# Agent instructions — Afenda-Lite
+# AGENTS.md — Afenda-Lite
 
-**Product:** **Afenda-Lite** — beta edition of the Afenda family (multi-module SaaS). **Afenda-Elite** is the battle-proven edition: same documentation control and similar infrastructure aliasing — not a parallel product stack or a second docs tree.
-**Retired product name:** Client Declaration Portal — compulsory; see [deprecation register](.cursor/skills/agent-skills/skills/deprecation-and-migration/reference.md).
+Cursor Agent instructions for this repository. Prefer **actions and links** over essays. Deep authority lives under `docs/` and farm skills — do not invent a second SSOT here.
 
-**Authoritative documentation:** [docs/README.md](docs/README.md) under `docs/` only. Control: [DOC-001](docs/_control/DOC-001-documentation-control-standard.md) (approved shared Lite/Elite standard) · [DOC-002](docs/_control/DOC-002-documentation-register.md) · [DOC-003](docs/_control/DOC-003-controlled-document-template.md). Do **not** recreate `doc/`.
+## Product
 
-**Quality bar (sole):** **Enterprise production.** Do not propose, plan, or ship under a reduced-viability frame. Rule [`.cursor/rules/no-mvp-quality-bar.mdc`](.cursor/rules/no-mvp-quality-bar.mdc) · hook [`.cursor/hooks/no-mvp-quality-bar.mjs`](.cursor/hooks/no-mvp-quality-bar.mjs). Shrink scope with Approved slices / Module Enterprise Readiness evidence — never shrink quality.
+| Edition | Role |
+|---------|------|
+| **Afenda-Lite** | This checkout — beta multi-module SaaS |
+| **Afenda-Elite** | Battle-proven edition — **same** DOC-001 control shape; not a second docs tree or product stack |
 
-**Repository layout:** [ARCH-022](docs/architecture/ARCH-022-system-overview.md) (Target system / monorepo tree) · [ARCH-017](docs/architecture/ARCH-017-frontend-folder-map.md) (frontend folder map — logical Living shape). ARCH-021 migration map Superseded (DOC-002 register-only). Hosting: GitHub `pohlai88/afenda-lite` · Vercel `afenda-lite` · `APP_URL=https://afenda-lite.vercel.app`.
+**Retired name:** Client Declaration Portal — compulsory; [deprecation register](.cursor/skills/agent-skills/skills/deprecation-and-migration/reference.md).
 
-### Checkout posture (Collapse · anti-contamination)
+**Hosting:** GitHub `pohlai88/afenda-lite` · Vercel `afenda-lite` · `APP_URL=https://afenda-lite.vercel.app`
 
-Design-SSOT Collapse (`4680c91`) removed repo-root product trees. **Target packages through S8.2 + Checkpoint F are on disk** (`@afenda/config|db|auth|env|ui|emails`, `apps/web` route groups + `apps/web/modules/{platform,identity,declarations,fft}` domain ports + `apps/web/features/{auth,declarations,fft,org-admin}`, Target CI/deploy). Root `app/`, `modules/`, `features/`, `components-V2/`, Collapse `lib/`, and wiped ops scripts remain **absent by design**.
+## How Cursor Agent should work here
+
+1. **Route product work** through [`/using-afenda-elite-skills`](.cursor/skills/using-afenda-elite-skills/SKILL.md) before vendor phase skills.
+2. **One mission per chat** when shipping ARCH-028 slices — use [implementation-slices](.cursor/skills/afenda-elite-implementation-slices/SKILL.md) + [command-sheet](.cursor/skills/afenda-elite-implementation-slices/command-sheet.md).
+3. **Prefer Agent** for implement/verify; use **Plan** only when the slice cutover has a real choice; use **Ask** for read-only navigation.
+4. **Verify with evidence** (commands, CI/Deploy runs, `Test-Path` / `git ls-files`) — never trust a stale Cursor index alone.
+5. **Commit/push only when the user asks.** Never force-push `main`; never amend remote commits without explicit request.
+6. **Do not print secrets.** Validate tokens via HTTP status / presence checks only.
+
+### Skill router (short)
+
+| Need | Skill |
+|------|-------|
+| Pick farm / docs type | `using-afenda-elite-skills` |
+| Controlled docs write | `afenda-elite-doc-control` |
+| Doc↔doc conflict / register drift | `afenda-elite-doc-integrity` |
+| ARCH-028 slice implement | `afenda-elite-implementation-slices` |
+| Neon tenancy ops ladder | `neon-tenancy-efficiency` |
+| FFT product module | `feed-farm-trade` |
+| Generic engineering phases | `using-agent-skills` (method library **after** Elite router) |
+
+## Non-negotiable rules
+
+| Rule | Authority |
+|------|-----------|
+| **Enterprise production** quality bar only — never MVP / “good enough later” | [`.cursor/rules/no-mvp-quality-bar.mdc`](.cursor/rules/no-mvp-quality-bar.mdc) |
+| **No shims / stubs / throw-TODO** product paths | [`.cursor/rules/no-shim-stub-tech-debt.mdc`](.cursor/rules/no-shim-stub-tech-debt.mdc) |
+| **No Collapse/legacy recover** (`app/`, `modules/`, `features/`, `components-V2/`, Collapse `lib/`, wiped `scripts/*`) unless user names that recovery **this turn** | [ARCH-028](docs/architecture/ARCH-028-implementation-slices.md) · [`.cursor/rules/no-collapse-legacy-recovery.mdc`](.cursor/rules/no-collapse-legacy-recovery.mdc) |
+| **No `decision`/`decisions` directories** — ADRs under `docs/architecture/adr/` | [`.cursor/rules/no-decision-directory.mdc`](.cursor/rules/no-decision-directory.mdc) |
+| **No git restore/reset/clean** without explicit user approval this turn | [`.cursor/rules/git-no-auto-recover.mdc`](.cursor/rules/git-no-auto-recover.mdc) |
+| Docs SSOT under **`docs/` only** — never recreate `doc/` | [DOC-001](docs/_control/DOC-001-documentation-control-standard.md) |
+| Shrink **scope** via Approved slices / MOD readiness — never shrink **quality** | ARCH-028 · MOD-002 |
+
+## Documentation & architecture authority
+
+| Doc | Use for |
+|-----|---------|
+| [docs/README.md](docs/README.md) | Docs entry |
+| [DOC-001](docs/_control/DOC-001-documentation-control-standard.md) · [DOC-002](docs/_control/DOC-002-documentation-register.md) · [DOC-003](docs/_control/DOC-003-controlled-document-template.md) | Control · register · template |
+| [ARCH-022](docs/architecture/ARCH-022-system-overview.md) | Target monorepo / system overview |
+| [ARCH-023](docs/architecture/ARCH-023-multi-tenancy.md) | IAM · tenancy · Decision lock |
+| [ARCH-024](docs/architecture/ARCH-024-package-boundaries.md)…[ARCH-027](docs/architecture/ARCH-027-env-model.md) | Packages · data · auth · env |
+| [ARCH-028](docs/architecture/ARCH-028-implementation-slices.md) | Ordered slices · anti-contamination |
+| [ARCH-031](docs/architecture/ARCH-031-technology-stack-catalogue.md) | Stack discovery |
+
+Controlled docs: respect **Control State**. `Closed` → reopen with explicit Docs-lane approval before substantive edits.
+
+## Checkout posture (Target on disk)
+
+**Present:** `@afenda/{config,db,auth,env,ui,emails}` · `apps/web` route groups · `apps/web/modules/{platform,identity,declarations,fft}` · `apps/web/features/{auth,declarations,fft,org-admin}` · Target CI/Deploy (`.github/workflows/{ci,deploy}.yml`).
+
+**Absent by design:** repo-root `app/`, `modules/`, `features/`, `components-V2/`, Collapse `lib/`, wiped ops scripts.
 
 | Rule | Detail |
 |------|--------|
-| **Forbidden** | Recovering banned trees or wiped scripts from git (`f014807`, Collapse parents) — including `git show` / `git cat-file` / archive dumps used as an implementation seed. **Default ban.** |
-| **Waiver** | Only an explicit user approval of **that named recovery** in **this chat turn**. Slice implement requests and Living shape maps are not waivers. |
-| Authority | [ARCH-028 Anti-contamination lock](docs/architecture/ARCH-028-implementation-slices.md) · rule [`.cursor/rules/no-collapse-legacy-recovery.mdc`](.cursor/rules/no-collapse-legacy-recovery.mdc) · [deprecation register — Closed product phases](.cursor/skills/agent-skills/skills/deprecation-and-migration/reference.md) |
-| Forward product code | Continue ARCH-028 slices under `apps/web/**` and `packages/*` only — greenfield new code; never restore banned roots; next open **Checkpoint G** (Docs lane — Target→Living) |
-| Env | `@afenda/env` + `.env.local` (compose retired — Checkpoint D) |
-| Docs trunks | Flat `docs/architecture/ARCH-*.md` only — no `backend/`/`frontend/`/`system/`/`tech-stack/`/`archive/` or `docs/guides/archive/`. Gate: `pnpm check:docs-trunk-ban` |
-| Index truth | Cursor Grep/Glob may list deleted trunks from a stale index — **not on disk**. Authority: `Test-Path` · `git ls-files` (0 rows) · `pnpm check:docs-trunk-ban`. See [ARCH-019 Notes](docs/architecture/ARCH-019-admincn-frontend-preflight.md). Never recreate trunks to satisfy ghosts. |
-| Scripts | Many Collapse ops scripts still gate via `scripts/collapse-script-unavailable.mjs`. Docs-capable: `pnpm checks` · `check:docs-naming` · `check:docs-trunk-ban` · `check:doc-integrity` · `check:module-quality` · `check:openapi` · `validate:neon-env` |
+| Forward code | Greenfield under `apps/web/**` and `packages/*` only |
+| Next open (program) | **Checkpoint G** — Docs lane (Target→Living Status + retirement). Not an Ops coding slice. |
+| Env | `@afenda/env` + `.env.local` only (compose retired) |
+| Docs trunks | Flat `docs/architecture/ARCH-*.md` — gate `pnpm check:docs-trunk-ban` |
+| Index ghosts | Grep/Glob may list deleted paths — trust `Test-Path` · `git ls-files` · trunk-ban check |
+| Scripts | Many ops scripts still Collapse-gated; docs-capable: `pnpm checks` · `check:docs-naming` · `check:docs-trunk-ban` · `check:doc-integrity` · `check:module-quality` · `check:openapi` · `validate:neon-env` |
 
-## Feed Farm Trade — Phase 2A closed · 2B–2D ADRs Accepted
+**App layout:** sole deployable `apps/web` · edge gate `apps/web/proxy.ts` (do not invent new `middleware.ts`) · imports `@afenda/*` only across packages.
 
-**Product module (UI / shell):** Feed Farm Trade — agent skill [`.cursor/skills/feed-farm-trade`](.cursor/skills/feed-farm-trade/SKILL.md) · locks/architecture [FFT-MOD-001](docs/modules/feed-farm-trade/FFT-MOD-001-module-architecture.md) · roadmap [FFT-MOD-010](docs/modules/feed-farm-trade/FFT-MOD-010-module-docs-index.md).
-
-**Agent entry (engine ops):** [docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md](docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md) · Index: [docs/modules/feed-farm-trade/FFT-MOD-010-module-docs-index.md](docs/modules/feed-farm-trade/FFT-MOD-010-module-docs-index.md)
-
-| Authority | Doc |
-|-----------|-----|
-| Runtime / gates / checklists | [FFT-MOD-008](docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md) |
-| Module index | [FFT-MOD-010](docs/modules/feed-farm-trade/FFT-MOD-010-module-docs-index.md) |
-| Auth / FFT RBAC | [FFT-MOD-005](docs/modules/feed-farm-trade/FFT-MOD-005-auth-tenancy-rbac.md) |
-| API / adapters | [FFT-MOD-007](docs/modules/feed-farm-trade/FFT-MOD-007-api-and-adapters.md) |
-| Locks / architecture | [FFT-MOD-001](docs/modules/feed-farm-trade/FFT-MOD-001-module-architecture.md) |
-| Roadmap / readiness | [FFT-MOD-010](docs/modules/feed-farm-trade/FFT-MOD-010-module-docs-index.md) |
-
-**Production state:** tag `fft-phase-2a` → `8e650ff`; `FFT_RBAC_ENABLED=true` on Vercel; DB branch `br-tiny-hill-ao82jp6f`. **2B–2D code blocked** until explicit program reopen + Approved slice group in [FFT-MOD-008](docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md). No Feed Farm Trade commits mixed with unrelated refactors.
-
-## Platform tenancy (hard cutover + multi-org ready)
-
-**Decision / Living inventory:** [ARCH-023](docs/architecture/ARCH-023-multi-tenancy.md) — sole Living SSOT for platform IAM + multi-tenancy + Decision lock (supersedes ARCH-003).
+## Feed Farm Trade
 
 | Fact | Detail |
 |------|--------|
-| Shipped | Hard `organization_id = $org`; migrations `027`/`028`; Users via `neon_auth.member`; FFT entry = platform `fft.access`; M1–M4 multi-org ready (logical) |
-| Neon posture | Shared schema (not project-per-tenant); prod `DATABASE_URL` must be `-pooler`; RLS out of scope on BFF path — see [ARCH-023](docs/architecture/ARCH-023-multi-tenancy.md) Operational considerations |
-| Neon Cloud | Org `org-fragrant-lake-90358173` (Launch) · project `young-hat-54755363` (**Afenda-Lite**) · branch `br-tiny-hill-ao82jp6f` protected |
-| Recovery | PITR 7d (Launch max); daily snapshots; see [multi-org-ops](docs/runbooks/RB-001-multi-org-ops.md) |
-| Env | `PORTAL_ORG_SLUG` / `PORTAL_ORG_NAME` / `PORTAL_ORG_SWITCHER_ENABLED`; do not confuse with `NEON_ORG_ID` (Neon Cloud) |
-| Ops | Tenancy/ops package scripts are **gated** on this docs-first checkout (Collapse ban). When a Target product tree exists: `audit:tenancy-nulls` · `check:tenancy-residue` · `backfill:fft-access` — skill ladder A–E [neon-tenancy-efficiency](.cursor/skills/neon-tenancy-efficiency/reference.md) |
-| Cheat sheet | [docs/runbooks/RB-005-post-lock-coding-cheat-sheet.md](docs/runbooks/RB-005-post-lock-coding-cheat-sheet.md) — post-lock commands + Rejected/Deferred flash card |
-| Decision lock | [ARCH-023 Decision lock](docs/architecture/ARCH-023-multi-tenancy.md) — Rejected R1–R7 / Deferred D4·D5; do not reopen without explicit user approval |
-| Accepted constraints | **D4** FFT child denorm deferred (M5); **D5** shared-schema / not project-per-tenant |
-| Anti-claim | Do **not** say multi-DB isolation (D5). `FFT_RBAC_ENABLED` ≠ soft SQL tenancy. Soft dual-mode / first-org stamp are **retired** — see deprecation register |
+| Skill | [`.cursor/skills/feed-farm-trade`](.cursor/skills/feed-farm-trade/SKILL.md) |
+| Ops entry | [FFT-MOD-008](docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md) |
+| Index / readiness | [FFT-MOD-010](docs/modules/feed-farm-trade/FFT-MOD-010-module-docs-index.md) |
+| Production | tag `fft-phase-2a` · `FFT_RBAC_ENABLED=true` · branch `br-tiny-hill-ao82jp6f` |
+| Freeze | **2B–2D code blocked** until explicit program reopen + Approved slice group in FFT-MOD-008. Never mix FFT domain commits with unrelated refactors. |
 
-## Environment variables
+## Platform tenancy
 
-### Source of truth (local dev) — Target / S4.1+
+**SSOT:** [ARCH-023](docs/architecture/ARCH-023-multi-tenancy.md) (supersedes ARCH-003).
+
+| Fact | Detail |
+|------|--------|
+| Shipped | Hard `organization_id = $org`; Users via `neon_auth.member`; FFT entry = platform `fft.access` |
+| Neon | Shared schema (not project-per-tenant); prod `DATABASE_URL` must be `-pooler` |
+| Cloud | Org `org-fragrant-lake-90358173` · project `young-hat-54755363` · branch `br-tiny-hill-ao82jp6f` |
+| Lock | Rejected R1–R7 / Deferred D4·D5 — do not reopen without explicit approval |
+| Anti-claim | Do **not** claim multi-DB isolation. `FFT_RBAC_ENABLED` ≠ soft SQL tenancy |
+| Ops cheat sheet | [RB-005](docs/runbooks/RB-005-post-lock-coding-cheat-sheet.md) |
+
+## Environment
 
 | File | Role |
 |------|------|
-| `.env.local` | **Only** local runtime env for Next + ops scripts (gitignored) |
+| `.env.local` | **Only** local runtime env (gitignored) |
 | `.env.example` | Committed key template (no secrets) |
-| `packages/env/src/web.ts` | Zod schema via `@t3-oss/env-nextjs` — add new vars here + `.env.local` / `.env.example` |
+| `packages/env/src/web.ts` | Zod schema — add new product vars here |
 
-**App config SSOT:** `import { env } from '@afenda/env'` ([ARCH-027](docs/architecture/ARCH-027-env-model.md)). Do **not** use raw `process.env` for product app config. Do **not** recreate Collapse-era `env.config` / `env.secret` / `env:compose` / `lib/env/`.
-
-**Workflow**
-
-1. Copy `.env.example` → `.env.local` (or refresh carefully — see Local refresh below).
-2. Fill required keys (`DATABASE_URL`, `NEON_AUTH_*`, `APP_URL`).
-3. `pnpm --filter @afenda/web dev` (when the app shell exists).
-
-| Command | Purpose |
-|---------|---------|
-| `pnpm validate:neon-env` | Neon Cloud ids / API against `.env.local` |
-| `pnpm audit:vercel` | Compare key **names** on Vercel (no values) — when Target ops tooling exists |
-| `pnpm dev` | Turbo → `@afenda/web` |
-
-Optional ops keys (Checkly): add `CHECKLY_*` to `.env.local` only — never sync to Vercel as product keys.
-
-### Playground (`/playground`) — local developer UI review only
-
-`PLAYGROUND_*` vars live in `.env.local` for **local developer UI review** (iframe embeds of real routes). **Never sync them to Vercel production.** Production deployments must not expose `/playground`; the route is gated by `PLAYGROUND_ENABLED=true` which stays local-only.
-
-**Not part of the client product**
-
-- `/playground` is a **developer harness** — not a client entry point, not documented in client journeys, and not used in production.
-- Client routes (`/`, `/client/login`, `/client/*`) are accessed **directly** by clients. Playground may iframe those URLs locally with `?embed=1` for layout review only.
-- Do **not** add product features, auth flows, or architecture that depend on `PLAYGROUND_*` or `/playground/*`.
-- Do **not** suggest playground screens or bindings when implementing client gate routes, onboarding, or sign-in — use E2E or local `/playground` embed for client UI validation instead.
-
-### Vercel production sync
-
-**Canonical store for production values:** Vercel dashboard / CLI. Local `.env.local` is for development.
-
-| Command | Purpose |
-|---------|---------|
-| `pnpm audit:vercel` | Compare key **names** on Vercel (no values) |
-| `pnpm sync:vercel` | Push canonical production keys when Target tooling exists (Collapse-gated until then) |
-| `pnpm cleanup:vercel` | Remove stale Supabase/SMTP/MailerSend keys from Vercel (gated until Target tooling) |
-
-**Keys for Vercel production:** Neon (`DATABASE_URL`, `NEON_AUTH_*`), admin/preview client fixtures, `APP_URL`, FFT feature flags (including `FFT_ERP_SYNC_ENABLED`).
-
-**Tenant-owned (optional):** `FFT_ERP_VENDOR`, `FFT_ERP_BASE_URL` — configure per customer when enabling FFT ERP sync (2D-3).
-
-**Keys never synced:** `PLAYGROUND_*`, `NEON_API_KEY`, `NEON_ORG_ID`, `NEON_PROJECT_ID`, `NEON_BRANCH_ID`, Shadcn Studio (`SHADCN_STUDIO_*`, `LICENSE_KEY`, `EMAIL`).
-
-### Local refresh / marketplace caution
-
-- Prefer editing `.env.local` from a known-good local copy. `vercel env pull` may redact secrets as empty strings and/or reintroduce stale marketplace keys (wrong `DATABASE_URL`). Review the file after any pull.
-- **`vercel integration add`** auto-writes `.env.local` — audit key **names** before trusting values.
-- Do not reintroduce `env.config` / `env.secret` / compose scripts.
-
-Use `pnpm audit:vercel` for key-name validation instead of inventing compose.
-
-### GitHub CLI (issues / PRs)
-
-**Problem:** Cursor and some shells set `GITHUB_TOKEN` to a fine-grained PAT. `gh` prefers that env var over `gh auth login` keyring credentials. Fine-grained tokens often lack `issues:write` / PR create scope → HTTP 403 on `gh issue comment`, `gh pr create`, `gh issue close`.
-
-**Fix — use the wrapper (drops `GITHUB_TOKEN` for the child process):**
+**App config:** `import { env } from '@afenda/env'` — never raw `process.env` for product config. Never restore `env.config` / `env.secret` / compose.
 
 ```bash
-pnpm gh -- auth status          # should show keyring; scopes include repo
-pnpm gh -- issue close 1 --reason completed
-pnpm gh -- pr create --base main --head my-branch
+# Local
+cp .env.example .env.local   # then fill DATABASE_URL, NEON_AUTH_*, APP_URL
+pnpm validate:neon-env
+pnpm --filter @afenda/web dev   # :3000
 ```
 
-**Do not** add `GITHUB_TOKEN` to `.env.local` — it is not app runtime config. One-time setup: `gh auth login` with a classic or keyring token that has **`repo`** scope (covers issues and PRs on private repos).
+| Never sync to Vercel prod | Notes |
+|---------------------------|--------|
+| `PLAYGROUND_*` | Local developer harness only — not client product |
+| `NEON_API_KEY`, `NEON_ORG_ID`, `NEON_PROJECT_ID`, `NEON_BRANCH_ID` | Local / MCP ops |
+| Shadcn Studio keys | Local tooling |
 
-**Manual override (PowerShell):** `Remove-Item Env:GITHUB_TOKEN` then run `gh` directly.
+**Playground:** `/playground` is a **local UI harness** (`PLAYGROUND_ENABLED=true`). Do not design product auth/onboarding that depends on it.
 
-**CI secrets (GitHub Actions):** `pnpm audit:github-actions-secrets` · `pnpm sync:github-actions-secrets` when Target tooling exists. `NEON_AUTH_*` must match the Neon branch behind `DATABASE_URL` on GitHub.
+**Vercel:** dashboard/CLI is production secret store. `VERCEL_TOKEN` for Actions must be a **classic PAT** ([account tokens](https://vercel.com/account/tokens)) — OAuth CLI sessions fail in CI. Deploy: `.github/workflows/deploy.yml` (Environment `production`).
+
+**GitHub CLI:** Cursor may inject `GITHUB_TOKEN` without write scopes → `gh` 403. Prefer `pnpm gh -- …` (wrapper drops it) or `Remove-Item Env:GITHUB_TOKEN` then keyring `gh`. Do **not** put `GITHUB_TOKEN` in `.env.local` as app config.
 
 ## Neon Auth
 
-Authority: [`.agents/skills/neon/SKILL.md`](.agents/skills/neon/SKILL.md), [`.agents/skills/neon-postgres/references/neon-auth/portal-email-verification.md`](.agents/skills/neon-postgres/references/neon-auth/portal-email-verification.md).
+Authority: [`.agents/skills/neon/SKILL.md`](.agents/skills/neon/SKILL.md) · password-reset / email refs under `.agents/skills/neon-postgres/`.
 
-**Setup / audit:** Cursor `setup-neon-auth` may 404 — use MCP `get_neon_auth_config`, then `pnpm sync:neon-auth-manifest` and `pnpm audit:neon-auth-production`. Cross-check [docs/backlogs/neon-auth-validation-matrix.md](docs/backlogs/neon-auth-validation-matrix.md).
-
-### Email — default Neon shared provider only
-
-- Neon Auth transactional mail uses the **shared provider** (`auth@mail.myneon.app`). Do **not** configure custom SMTP for Neon Auth.
-- Client onboarding invites use **Neon Auth organization invitations** (`sendClientOnboardingEmail` → `inviteClientOrganizationMember`), not a separate app email provider.
-- Before advising on auth email, read live config via Neon MCP `get_neon_auth_config`.
-
-### Trusted domains
-
-When `APP_URL` or preview URLs change, add them to Neon Auth trusted origins:
+| Topic | Rule |
+|-------|------|
+| Mail | Neon **shared** provider only — no custom SMTP for Neon Auth |
+| Invites | Neon Auth org invitations via `@afenda/auth` (`inviteOrgMember`); Origin = production `APP_URL` |
+| Join URL | `/join?invitationId=…` |
+| Password reset | Neon Auth UI forms only (`/auth/forgot-password`, `/auth/reset-password`) |
+| Branch policy | Local = **production** Neon branch `br-tiny-hill-ao82jp6f` — no branch switching |
+| MCP | User env `NEON_API_KEY`; restart Cursor after change. Avoid day-to-day `neonctl link` (rewrites `.neon`) |
 
 ```bash
-neon neon-auth domain add https://afenda-lite.vercel.app
-neon neon-auth domain list
-```
-
-Branch plugins (magic link, organization): `pnpm configure:neon-auth-production -- --configure-plugins`, then `pnpm sync:neon-auth-manifest`.
-
-Production checklist: `pnpm audit:neon-auth-production`.
-
-### Client invitation entry
-
-- Canonical URL: `/join?invitationId=…` (not `/auth/accept-invitation` or `/?invitationId=…`).
-- Org invites must use production `APP_URL` as Origin — see `lib/auth/neon-auth-request.ts`.
-
-### Password reset
-
-Authority: [`.agents/skills/neon-postgres/references/neon-auth/portal-password-reset.md`](.agents/skills/neon-postgres/references/neon-auth/portal-password-reset.md).
-
-- Enabled when Neon `email_password` is on (MCP `get_neon_auth_config`) — no custom SMTP required.
-- UI: `/auth/forgot-password` and `/auth/reset-password` via `AuthView`; `NeonAuthUIProvider` must set `baseURL` (client origin) for reset email links.
-- Do not use SDK `resetPasswordForEmail` — use Neon Auth UI forms only (Neon docs).
-
-### Local development auth
-
-**Single branch policy:** local dev uses the **production** Neon branch (`br-tiny-hill-ao82jp6f`) — no dev/CI branch switching.
-
-```bash
-# Ensure .env.local points at production Neon Auth + pooler DATABASE_URL
 pnpm validate:neon-env
-pnpm --filter @afenda/web dev   # http://localhost:3000 when app shell exists
+pnpm --filter @afenda/web dev
+# trusted domains when APP_URL / previews change:
+neon neon-auth domain add https://afenda-lite.vercel.app
 ```
-
-**Neon Cloud org (ops):** `NEON_ORG_ID=org-fragrant-lake-90358173` (Launch) · project `young-hat-54755363` (**Afenda-Lite**). Put org-scoped `NEON_API_KEY` in `.env.local` only. CLI: shell `NEON_API_KEY` or `~/.config/neonctl/credentials.json`. Cursor MCP (`.cursor/mcp.json` / `.vscode/mcp.json`): User env `NEON_API_KEY` so `Bearer ${NEON_API_KEY}` resolves — **restart Cursor** after changing it. Do **not** use `neonctl link` day-to-day here (it can rewrite `.neon` and pull into local env files).
-
-Localhost is allowed on production Neon Auth for `http://localhost:3000` sign-in. Keep `APP_URL` as the production URL in `.env.local` — server-side org invites still emit production links (`@afenda/auth` invitations). For layout-only UI work without auth, use `/playground` embed.
 
 Runbook: [docs/runbooks/local-dev-auth.md](docs/runbooks/local-dev-auth.md).
 
----
+## Portal Atmosphere
 
-## Portal Atmosphere — agent constraints
+**Dormant** — do not remount. No `components/portal-atmosphere/`, no Storybook restore, no CSS invert heroes. Production auth shell: Studio login-page-02 + Neon on `/auth/*`. Bans: deprecation register · `/using-afenda-elite-skills`.
 
-**Status:** Experiment **dormant** — do not remount. Authority for bans: [deprecation register](.cursor/skills/agent-skills/skills/deprecation-and-migration/reference.md) (Closed product phases) · `/using-afenda-elite-skills`.
+## Testing & quality gates
 
-Former Portal Atmosphere slice ADRs under `docs/architecture/slices/portal-atmosphere/` were retired. Do not restore those paths. Living docs live under `docs/` only — do not recreate `doc/`.
+Authority: [`testing/README.md`](testing/README.md).
 
-| Rule | Detail |
-|------|--------|
-| Plan before visual work | Hero/atmosphere changes: Plan mode → user approval → implement |
-| Experiment surface | **Dormant** — `components/portal-atmosphere/` hard-deleted; brand refs under `public/brand/` if present; Storybook removed |
-| Forbidden | CSS invert on owls; single PNG sticker heroes; reintroducing rejected Guardian/PA approaches |
-| Prod wiring | **Studio login-page-02 + Neon** on `/auth/*` is the production shell. Guardian Auth stay experiment-only |
+| Command | Purpose |
+|---------|---------|
+| `pnpm test` / `pnpm test:unit` | Turbo/Vitest package contracts |
+| `pnpm lint` / `pnpm typecheck` | Biome · `tsc` |
+| `pnpm exec turbo run lint typecheck test` | CI parity (S8.1) |
+| `pnpm test:e2e` / `:smoke` / `:journey` | Playwright when specs exist |
+| `pnpm check:docs-naming` | DOC-002 / naming gate |
+| `pnpm validate:neon-env` | Neon Cloud ids vs `.env.local` |
 
----
+Factory SSOT: **`testing/`** only — specs import `@/testing/e2e/*` when present.
 
-## Testing
+**CI:** `.github/workflows/ci.yml` — `pnpm/action-setup` reads root `packageManager` (no duplicate `version:`).  
+**Deploy:** `.github/workflows/deploy.yml` — turbo build `@afenda/web` → Vercel prod; production Git auto-deploy skipped via `apps/web/vercel.json` `ignoreCommand`.
 
-Authority: [`testing/README.md`](testing/README.md). Gap analysis: `/afenda-test` + [`.agents/subagents/afenda-test-engineer.md`](.agents/subagents/afenda-test-engineer.md).
+## Agent behavior checklist
 
-### Pyramid
+Before coding:
 
-| Layer | Runner | Location |
-| --- | --- | --- |
-| L0 | Vitest node | `lib/**/*.test.ts` |
-| L2 | Vitest jsdom | `**/*.interaction.test.tsx` |
-| L4 smoke | Playwright `@smoke` | `e2e/**/*.spec.ts` |
-| L4 journey | Playwright `@journey` | `e2e/**/*.spec.ts` |
+- [ ] Farm routed (`using-afenda-elite-skills` or named slice skill)
+- [ ] Slice / lane / Control State understood
+- [ ] Paths under `apps/web/**` or `packages/*` (no Collapse restore)
+- [ ] Env via `@afenda/env` if touching config
 
-Registry scripts (`pnpm checks`) are non-Vitest L0 substitutes for copy, nav, and proxy allowlists.
+Before claiming done:
 
-### Factory SSOT
-
-Credentials, fixtures, Playwright base, and React test helpers live under **`testing/`** only. Specs import from `@/testing/e2e/*`.
-
-### Commands
-
-| Command | When |
-| --- | --- |
-| `pnpm test` / `pnpm test:unit` | Turbo/Vitest package contract tests (`testing/vitest.config.ts`) |
-| `pnpm lint` / `pnpm typecheck` | Turbo Biome lint · `tsc` across workspace packages |
-| `pnpm test:e2e` | Playwright all projects (when specs exist) |
-| `pnpm test:e2e:smoke` | Auth ingress, health, public-link redirects |
-| `pnpm test:e2e:journey` | Full operator/client flows (pre-release) |
-
-### E2E environment
-
-| Variable | Purpose |
-| --- | --- |
-| `SHARED_ADMIN_EMAIL` / `SHARED_ADMIN_PASSWORD` | Operator login (CI + local) |
-| `E2E_OPERATOR_EMAIL` / `E2E_OPERATOR_PASSWORD` | Operator override |
-| `PREVIEW_CLIENT_EMAIL` / `CLIENT_DEFAULT_PASSWORD` | Preview client for journeys |
-| `E2E_CLIENT_EMAIL` / `E2E_CLIENT_PASSWORD` | Client override |
-| `E2E_SURVEY_SLUG` / `E2E_INVITE_TOKEN` | Public link smoke without operator create |
-
-Ensure `.env.local` is present before local E2E. CI injects secrets from GitHub Actions.
+- [ ] Acceptance / Verify commands green with pasted evidence
+- [ ] No shim/MVP language introduced
+- [ ] Controlled docs closed or Docs-lane reopen explicit
+- [ ] Secrets not committed (`.env.local` gitignored)

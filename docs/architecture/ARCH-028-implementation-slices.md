@@ -4,11 +4,13 @@
 |-------|-------|
 | ID | ARCH-028 |
 | Category | Architecture |
-| Version | 1.4.26 |
+| Version | 1.4.27 |
 | Status | Target |
 | Control State | Closed |
 | Owner | Platform |
 | Updated | 2026-07-15 |
+
+> **Control-state note:** Closed 2026-07-15 after documentation-audit residual 1.4.27 (Risks / Target-vs-checkout honesty). Not Checkpoint G Status moves.
 
 > **Forward-writing / Target.** Ordered implementation plan for the Turborepo system. Through S8.2 this checkout has `apps/web` route groups + `apps/web/modules/*` domain ports + `apps/web/features/{auth,declarations,fft,org-admin}` shells + `@afenda/{config,db,auth,env,ui,emails}` + Target CI/deploy (`.github/workflows/{ci,deploy}.yml`) — continue slice-serial only (see Anti-contamination lock below). **Checkpoint G** (Target→Living Status + doc retirement) is a separate Docs-lane mission. Each slice is S (1–2 files) or M (3–5 files). L = structural move of **Target trees already on disk** only — never Collapse/legacy recovery from git.
 
@@ -183,7 +185,7 @@ Operator override for a later **non-baseline** forward migrate only: `AFENDA_ALL
 
 **Checkpoint D evidence (2026-07-14):** merged local compose inventory → `.env.local`; removed `env.config` / `env.secret` / `.env` and committed examples; added `.env.example` + `!.env.example` gitignore; removed `env:compose` / `env:guard*` / compose write-path scripts from root `package.json`; `scripts/lib/env-files.mjs` + `validate-neon-env` load `.env.local` only; AGENTS.md Target env SSOT.
 
-**A–D residue pass (2026-07-14, pre-E):** deleted `env-manifest.generated.mjs` + root Collapse `components.json` (`app/`/`modules/platform` aliases); Living docs/skills retargeted off pre-S4.1 two-state; ARCH-022/AGENTS checkout posture updated for packages through `@afenda/env`. **Superseded by S5.1–S8.2 + Checkpoints E–F (2026-07-15)** — see Acceptance evidence below; next open **Checkpoint G** (Docs lane).
+**A–D residue pass (2026-07-14, pre-E):** deleted `env-manifest.generated.mjs` + root Collapse `components.json` (`app/`/`modules/platform` aliases); Living docs/skills retargeted off pre-S4.1 two-state; ARCH-022/AGENTS checkout posture updated for packages through `@afenda/env`. **Superseded by S5.1–S8.2 + Checkpoints E–F (2026-07-15)** — coding order complete; next open **Checkpoint G** (Docs lane).
 
 ---
 
@@ -358,7 +360,7 @@ Operator override for a later **non-baseline** forward migrate only: `AFENDA_ALL
 - `turbo.json` `globalPassThroughEnv` — passes Vercel/`@afenda/env` build vars into turbo tasks (fixes Zod fail when Turbo stripped platform env)
 - Vercel project `afenda-lite`: `ENABLE_EXPERIMENTAL_COREPACK=1` (Production · Development · Preview); build log detected Corepack + `packageManager` pin
 - Prod deploy verify (CLI seed): `dpl_GZNTbTWwNrqeWdBG2UsQNVA7xnHf` · **READY** · aliased `https://afenda-lite.vercel.app`
-- Prod deploy verify (Actions): run [`29367183769`](https://github.com/pohlai88/afenda-lite/actions/runs/29367183769) · **success** (classic `VERCEL_TOKEN` PAT — not OAuth CLI session)
+- Prod deploy verify (Actions): run [`29367183769`](https://github.com/pohlai88/afenda-lite/actions/runs/29367183769) · **success** (classic `VERCEL_TOKEN` PAT — not OAuth CLI session); re-verified green on `fff00c3` ([CI](https://github.com/pohlai88/afenda-lite/actions/runs/29367948546) · [Deploy](https://github.com/pohlai88/afenda-lite/actions/runs/29367948565))
 - Local verify: `pnpm exec turbo run build --filter=@afenda/web` PASS
 - GH Actions configured: secrets `VERCEL_TOKEN` (classic PAT) · `DATABASE_URL` · `NEON_AUTH_BASE_URL` · `NEON_AUTH_COOKIE_SECRET` · `APP_URL` (+ existing `TURBO_TOKEN`); vars `VERCEL_ORG_ID` · `VERCEL_PROJECT_ID` · `TURBO_TEAM`
 
@@ -385,7 +387,7 @@ Operator override for a later **non-baseline** forward migrate only: `AFENDA_ALL
 | `docs/runbooks/RB-001`, `RB-005` | Keep | Ops |
 | `docs/architecture/ARCH-021` | **Superseded** (DOC-002 register-only; stub removed) | Migration map closed; Target layout = ARCH-022 |
 | Turborepo ARCH-022…028 | Status Target → Living | This set becomes Living SSOT |
-| Living compose rules in `AGENTS.md` | Already updated in S4.1 | Must not contradict ARCH-027 |
+| Agent cockpit `AGENTS.md` | Cursor Agent rewrite (post-S8.2) | Must not contradict ARCH-027 / ARCH-028 / FFT-MOD-008 |
 
 Do **not** mass-delete in the scaffold PR. Retirement is a separate docs PR after code matches Target.
 
@@ -396,9 +398,9 @@ Do **not** mass-delete in the scaffold PR. Retirement is a separate docs PR afte
 | Schema invented without Neon introspect | Prefer `drizzle-kit introspect` / live branch before first migrate |
 | Existing `.sql` does not map 1:1 to Drizzle | `drizzle-kit check` against `br-tiny-hill-ao82jp6f`; archive old SQL |
 | `neon()` HTTP vs former `pg` pool behaviour | Exercise `withOrg` against production branch before cutting over writes |
-| Workspace packages empty until implement | Root pnpm cutover done; S1.1 adds Turbo + `apps/web` / `packages/*` |
-| pnpm symlinks break Vercel | Corepack / `installCommand` override; set `ENABLE_EXPERIMENTAL_COREPACK=1` if needed |
-| Env ADR vs old compose scripts | Retire compose in the same change set as S4.1 ([ARCH-027](ARCH-027-env-model.md)) |
+| Vercel turbo build strips platform env | Declare product vars in `turbo.json` `globalPassThroughEnv` (shipped S8.2) |
+| pnpm dual-version CI fail | `pnpm/action-setup` must **not** set `version:` when root `packageManager` is pinned (shipped S8.1/S8.2) |
+| OAuth CLI token used as Actions `VERCEL_TOKEN` | Use classic Vercel PAT only (`vercel.com/account/tokens`); preflight `/v2/user` in `deploy.yml` |
 | FFT phase gate violated by refactor commits | Refactor-only commits; no FFT domain logic changes without program reopen |
 
 ## Target vs checkout drift
@@ -407,12 +409,12 @@ Absorbed from retired GUIDE-004. Records **Target vs checkout** drift for forwar
 
 | Authority | Disk today | Coding impact |
 |-----------|------------|---------------|
-| [ARCH-022…028](.) | S1.1–S8.2 + Checkpoints A–F present: workspace + `@afenda/{config,db,auth,env,ui,emails}` + `apps/web` route groups + modules domain ports + `apps/web/features/{auth,declarations,fft,org-admin}` + Target CI/deploy | Docs lane — next open **Checkpoint G** (Status Target→Living + retirement review) |
+| [ARCH-022…028](.) | **S1.1–S8.2 + Checkpoints A–F closed** on disk: workspace + `@afenda/{config,db,auth,env,ui,emails}` + `apps/web` route groups + modules domain ports + `apps/web/features/{auth,declarations,fft,org-admin}` + Target CI/Deploy | Docs lane — next open **Checkpoint G** (Status Target→Living + retirement review). No further coding slices in ARCH-028 order. |
 | Living maps ARCH-001…010 · 012…019 · 017 | Repo-root `app/`, `modules/`, `features/`, `components-V2/` **absent** after design-SSOT Collapse (`4680c91`) | **Expected · Forbidden to recover** — see Anti-contamination lock below |
-| [ARCH-023](ARCH-023-multi-tenancy.md) | Living tenancy + RBAC rules | Binding now — enforce invariants even before packages exist |
-| `AGENTS.md` env | Target `@afenda/env` + `.env.local` + `.env.example` (S4.1 / Checkpoint D) | Compose retired — do not restore |
+| [ARCH-023](ARCH-023-multi-tenancy.md) | Living tenancy + RBAC rules; Target packages present | Binding now — keep hard `organization_id` / RBAC invariants on greenfield code |
+| `AGENTS.md` | Cursor Agent cockpit; env SSOT `@afenda/env` + `.env.local` + `.env.example` (S4.1 / Checkpoint D) | Compose retired — do not restore; prefer AGENTS links over duplicating ARCH/FFT prose |
 
-Do **not** invent remaining packages from Target docs alone — land each ARCH-028 slice with verify evidence.
+S1–S8 coding slices are **done** on this checkout. Do **not** invent new packages from Target docs alone without a superseding architecture decision + Approved slice.
 
 | Concept | Target path | Do not use |
 |---------|-------------|------------|
@@ -451,6 +453,7 @@ Living ARCH folder/route/adapter maps remain normative for **shape**. They are *
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.4.27 | 2026-07-15 | Docs audit: retire stale Risks/drift (“packages empty”); record post-S8.2 CI/Deploy green on `fff00c3`; AGENTS cockpit note. |
 | 1.4.26 | 2026-07-15 | Docs audit residual: S8.1/S8.2 evidence honesty — `packageManager` Actions setup + Actions Deploy success `29367183769` + classic PAT. |
 | 1.4.25 | 2026-07-15 | S8.2 Deploy: `deploy.yml` + Corepack/pnpm knobs + turbo env pass-through; prod READY; next open Checkpoint G (Docs). |
 | 1.4.24 | 2026-07-15 | S8.1 audit gap close: real Biome lint + Vitest package tests under turbo (19 tasks); README Target CI. |
