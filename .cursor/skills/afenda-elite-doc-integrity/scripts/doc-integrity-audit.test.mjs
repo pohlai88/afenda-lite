@@ -45,10 +45,7 @@ test("clean structured fixture returns exit 0", async (t) => {
   assert.equal(report.exitCode, 0);
   assert.equal(report.coverage.complete, true);
   assert.equal(report.findings.length, 0);
-  assert.match(
-    report.residualRisk,
-    /^None for this scope beyond standing exclusions/,
-  );
+  assert.equal(report.residualRisk, "None.");
 });
 
 test("residualRisk lists unimplemented in-scope comparison sets when findings are zero", async (t) => {

@@ -4,11 +4,11 @@
 |-------|-------|
 | ID | ARCH-027 |
 | Category | Architecture |
-| Version | 1.5.0 |
+| Version | 1.5.1 |
 | Status | Target |
 | Control State | Closed |
 | Owner | Platform |
-| Updated | 2026-07-14 |
+| Updated | 2026-07-15 |
 
 > **Forward-writing / Target.** Environment SSOT for Turborepo apps. **S4.1 + Checkpoint D shipped** on this checkout (`@afenda/env` present).
 
@@ -152,9 +152,9 @@ Vercel build
 - **Add a new var:** add to `packages/env/src/web.ts` schema + `runtimeEnv` map, update `.env.example` / Vercel, update this document's variable table.
 - **Audit / sync Vercel:** `pnpm audit:vercel` (key names) when tooling is available — never restore compose.
 
-## Cutover from compose (S4.1) — **done**
+## Cutover from compose (S4.1)
 
-Shipped 2026-07-14 with [ARCH-028](ARCH-028-implementation-slices.md) S4.1 + Checkpoint D. Compose surfaces retired; evidence on that document. Do not reopen compose.
+**Done** (2026-07-14) with [ARCH-028](ARCH-028-implementation-slices.md) S4.1 + Checkpoint D. Compose surfaces retired; evidence on that document. Do not reopen compose.
 
 ## Known limits / future changes
 
@@ -165,6 +165,7 @@ Shipped 2026-07-14 with [ARCH-028](ARCH-028-implementation-slices.md) S4.1 + Che
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.5.1 | 2026-07-15 | Stable heading anchor `#cutover-from-compose-s41` for ARCH-028 link (cutover remains done). |
 | 1.5.0 | 2026-07-14 | S4.1 shipped: STOP = compose retired; `.env.local` + `@afenda/env` Living ops. |
 | 1.4.2 | 2026-07-14 | Remove residual “Living compose in force” phrasing; docs-first STOP until S4.1. |
 | 1.4.1 | 2026-07-14 | Home flattened to docs/architecture/ (trunks removed; pack reading order in README). |

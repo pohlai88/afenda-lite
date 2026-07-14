@@ -49,6 +49,7 @@
     "db:backfill": "node scripts/collapse-script-unavailable.mjs \"db:backfill\"",
     "check:copy": "node scripts/collapse-script-unavailable.mjs \"check:copy\"",
     "check:docs-naming": "node scripts/check-docs-naming.mjs",
+    "check:docs-trunk-ban": "node scripts/check-docs-trunk-ban.mjs",
     "check:doc-integrity": "node .cursor/skills/afenda-elite-doc-integrity/scripts/audit-docs.mjs --scope docs/api --format markdown",
     "check:module-quality": "node .cursor/skills/afenda-elite-doc-integrity/scripts/audit-docs.mjs --scope docs/modules --format markdown",
     "test:module-pack": "node --test .cursor/skills/afenda-elite-doc-control/scripts/scaffold-module-pack.test.mjs .cursor/skills/afenda-elite-doc-integrity/scripts/module-pack-contract.test.mjs",

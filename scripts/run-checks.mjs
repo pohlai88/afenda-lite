@@ -8,6 +8,7 @@ import path from "node:path";
  */
 const preferred = [
   "check:docs-naming",
+  "check:docs-trunk-ban",
   "check:module-quality",
   "check:doc-integrity",
   "check:openapi",

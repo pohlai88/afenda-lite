@@ -2,7 +2,7 @@
 
 Living and Target architecture SSOTs for Afenda-Lite (beta). Afenda-Elite shares the same [DOC-001](../_control/DOC-001-documentation-control-standard.md) control model. Material decisions live in Living/Target `ARCH-*` here — ADRs only under [`adr/`](adr/) after ID approval (never top-level `docs/adr/` or any `decisions/` folder). Module spines: [`docs/modules/`](../modules/).
 
-**Layout:** flat `ARCH-*.md` + [`adr/`](adr/) + `*.snapshot.json`. Do **not** recreate `backend/`, `frontend/`, `system/`, `tech-stack/`, or archive stubs. Boundaries = document ID + packs below.
+**Layout:** flat `ARCH-*.md` + [`adr/`](adr/) + `*.snapshot.json`. Do **not** recreate `backend/`, `frontend/`, `system/`, `tech-stack/`, or archive stubs (`pnpm check:docs-trunk-ban`). If an editor index still lists those paths, ignore it — disk + that gate are authority. Boundaries = document ID + packs below.
 
 ## When to use this folder
 

@@ -574,8 +574,6 @@ export function buildResidualRisk({ failures, findings, authority, documents, sc
     return "Validation coverage is incomplete; do not claim a clean audit.";
   }
 
-  const standing =
-    "standing exclusions (external HTTP availability; code-to-document runtime drift)";
   const sets = Object.entries(authority?.cross_subject_sets ?? {});
   const unimplementedInScope = sets
     .filter(
@@ -585,8 +583,10 @@ export function buildResidualRisk({ failures, findings, authority, documents, sc
     .map(([id]) => id)
     .sort();
 
+  // Coverage report still lists out-of-scope dimensions (external HTTP, code-to-doc
+  // runtime drift). Those are not residual risk when every in-scope set executed clean.
   if (findings.length === 0 && unimplementedInScope.length === 0) {
-    return `None for this scope beyond ${standing}.`;
+    return "None.";
   }
   if (findings.length === 0) {
     return `Zero findings on executed checks. Human pairwise review still required for unimplemented in-scope comparison sets: ${unimplementedInScope.join(", ")}.`;
@@ -594,7 +594,7 @@ export function buildResidualRisk({ failures, findings, authority, documents, sc
   if (unimplementedInScope.length) {
     return `Findings remain (see report). Unimplemented in-scope comparison sets still need human pairwise review: ${unimplementedInScope.join(", ")}.`;
   }
-  return `Findings remain (see report). Declared comparison sets in scope were executed by the validator; residual is limited to ${standing}.`;
+  return "Findings remain (see report).";
 }
 
 function multiTenancyFindings(byId) {

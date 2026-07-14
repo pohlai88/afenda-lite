@@ -21,10 +21,11 @@ playwright-report/
 blob-report/
 playwright/.cache/
 
-# next.js / turbo
+# next.js / turbo / package builds
 .next/
 out/
 .turbo/
+dist/
 
 # production
 /build
@@ -33,7 +34,6 @@ out/
 .DS_Store
 *.pem
 /*.tgz
-.env.vercel.*
 _reference/
 .tmp/
 
@@ -46,10 +46,17 @@ yarn-error.log*
 .cursor/hooks/.mvp-hook-debug.log
 .cursor/hooks/.*-hook-debug.log
 
-# env files — `.env.local` is the only Next runtime file (ARCH-027 / S4.1)
+# env — ARCH-027 / S4.1: `.env.local` is the only Next runtime file
 .env*
 !.env.example
 .env.vercel.*
+.env.local.vercel-backup*
+
+# retired compose — do not reintroduce (Contamination ban / Checkpoint D)
+/env.config
+/env.secret
+/env.config.example
+/env.secret.example
 
 # vercel
 .vercel

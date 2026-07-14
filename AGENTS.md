@@ -19,7 +19,9 @@ Design-SSOT Collapse (`4680c91`) removed repo-root product trees. **Target packa
 | Authority | [ARCH-028 Anti-contamination lock](docs/architecture/ARCH-028-implementation-slices.md) · [deprecation register — Closed product phases](.cursor/skills/agent-skills/skills/deprecation-and-migration/reference.md) |
 | Forward product code | Continue ARCH-028 slices under `apps/web/**` and `packages/*` only — never restore banned roots; next open **S5.1** (`@afenda/ui`) |
 | Env | `@afenda/env` + `.env.local` (compose retired — Checkpoint D) |
-| Scripts | Many Collapse ops scripts still gate via `scripts/collapse-script-unavailable.mjs`. Docs-capable: `pnpm checks` · `check:docs-naming` · `check:doc-integrity` · `check:module-quality` · `check:openapi` · `validate:neon-env` |
+| Docs trunks | Flat `docs/architecture/ARCH-*.md` only — no `backend/`/`frontend/`/`system/`/`tech-stack/`/`archive/` or `docs/guides/archive/`. Gate: `pnpm check:docs-trunk-ban` |
+| Index truth | Cursor Grep/Glob may list deleted trunks from a stale index — trust disk (`Test-Path` / `git ls-files` / trunk-ban), not the index |
+| Scripts | Many Collapse ops scripts still gate via `scripts/collapse-script-unavailable.mjs`. Docs-capable: `pnpm checks` · `check:docs-naming` · `check:docs-trunk-ban` · `check:doc-integrity` · `check:module-quality` · `check:openapi` · `validate:neon-env` |
 
 ## Feed Farm Trade — Phase 2A closed · 2B–2D ADRs Accepted
 
