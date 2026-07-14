@@ -4,7 +4,7 @@
 | ----------------- | ------------ |
 | **ID**            | ARCH-031     |
 | **Category**      | Architecture |
-| **Version**       | 1.3.8        |
+| **Version**       | 1.3.10       |
 | **Status**        | Living       |
 | **Control State** | Closed       |
 | **Owner**         | Platform     |
@@ -77,11 +77,11 @@ The full documentation-integrity baseline inspected **97/97 primary files**: 93 
 | Runtime and dependency manifests | [`package.json`](../../package.json), [`pnpm-lock.yaml`](../../pnpm-lock.yaml), [`pnpm-workspace.yaml`](../../pnpm-workspace.yaml) | Dependency declarations present; most Collapse-era script bodies are **absent** and gate via [`collapse-script-unavailable.mjs`](../../scripts/collapse-script-unavailable.mjs) |
 | Framework configuration | [`apps/web/next.config.ts`](../../apps/web/next.config.ts), [`apps/web/tsconfig.json`](../../apps/web/tsconfig.json), [`apps/web/postcss.config.mjs`](../../apps/web/postcss.config.mjs) | Target Next shell (S7.1) — React Compiler, transpilePackages, Tailwind PostCSS |
 | UI tooling | `packages/ui/components.json` | Target `@afenda/ui` (S5.1 / Checkpoint E); root Collapse `components.json` remains absent |
-| Hosting and CI | [`apps/web/vercel.json`](../../apps/web/vercel.json), [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) | Vercel `sin1`; Project Root Directory **`apps/web`** + `sourceFilesOutsideRootDirectory=true` (verified 2026-07-15); install `cd ../.. && pnpm install --frozen-lockfile`; GitHub Actions Node 24 |
-| Quality and testing | [`biome.jsonc`](../../biome.jsonc), [`playwright.config.ts`](../../playwright.config.ts) | Tooling configuration present; test trees absent |
+| Hosting and CI | [`apps/web/vercel.json`](../../apps/web/vercel.json), [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) | Vercel `sin1`; Project Root Directory **`apps/web`** + `sourceFilesOutsideRootDirectory=true` (verified 2026-07-15); install `cd ../.. && pnpm install --frozen-lockfile`; GitHub Actions Node 24 · `turbo run lint typecheck test` + `TURBO_TOKEN`/`TURBO_TEAM` remote cache (S8.1) |
+| Quality and testing | [`biome.jsonc`](../../biome.jsonc), [`testing/vitest.config.ts`](../../testing/vitest.config.ts), [`playwright.config.ts`](../../playwright.config.ts) | Biome + Ultracite + Vitest wired through turbo; Playwright optional (`test:e2e`) |
 | Contract / docs gates | [`OPEN-001-openapi.yaml`](../api/OPEN-001-openapi.yaml), [`generate-openapi.mts`](../../scripts/generate-openapi.mts), docs integrity scripts | Runnable on this docs-first checkout |
 | Product source presence | Collapse `app/`/`modules/`/`features/`/`components-V2/` | **Absent by design**; do not recover — [ARCH-028](ARCH-028-implementation-slices.md) |
-| Target packages (through S7.4) | `apps/web` route groups + modules domain ports + `apps/web/features/{auth,declarations,fft,org-admin}` + Next shell, `packages/{config,db,auth,env,ui,emails}`, [`turbo.json`](../../turbo.json) | **Present** after ARCH-028 S1.1–S7.4 + Checkpoint F; next open S8.1 |
+| Target packages (through S8.1) | `apps/web` route groups + modules domain ports + `apps/web/features/{auth,declarations,fft,org-admin}` + Next shell, `packages/{config,db,auth,env,ui,emails}`, [`turbo.json`](../../turbo.json), Target CI | **Present** after ARCH-028 S1.1–S8.1 + Checkpoint F; next open S8.2 |
 
 Validator exclusions: external HTTP availability and code-to-document runtime drift. **Package script names are not evidence** that Collapse-era tooling still runs.
 
@@ -145,7 +145,7 @@ Validator exclusions: external HTTP availability and code-to-document runtime dr
 | ---------- | ------------------- | ----------------- | ----------------------- | ---------------- | --------------------------- |
 | Application hosting | Vercel, one Next.js deployable, `sin1` region | Current / Living | Configured — project `afenda-lite` Root Directory `apps/web`, outside-root sources on; [`apps/web/vercel.json`](../../apps/web/vercel.json) | [ARCH-022](ARCH-022-system-overview.md), [RB-001](../runbooks/RB-001-multi-org-ops.md) | Workspace packages resolve via `sourceFilesOutsideRootDirectory`; a second deployable requires a superseding decision. |
 | Database operations | Neon production branch, pooled connection, PITR and daily snapshots | Current / Living | Ops evidence documented; secret values not inspected | [ARCH-023](ARCH-023-multi-tenancy.md), [RB-001](../runbooks/RB-001-multi-org-ops.md) | Keep the shared-schema posture and production pooler invariant. |
-| Continuous integration | GitHub Actions with Node 24, `pnpm/action-setup`, and `pnpm install --frozen-lockfile` | Current configuration | Source verified — [CI workflow](../../.github/workflows/ci.yml) | [ARCH-028](ARCH-028-implementation-slices.md) | Product/e2e CI steps may fail or no-op until Target scaffold; Target pipeline moves to Turbo after cutover. |
+| Continuous integration | GitHub Actions · Node 24 · pnpm frozen lockfile · `turbo run lint typecheck test` · Vercel Remote Cache (`TURBO_TOKEN` / `TURBO_TEAM`) | Current / Living (S8.1) | Source verified — [CI workflow](../../.github/workflows/ci.yml); local **19** turbo tasks green | [ARCH-028](ARCH-028-implementation-slices.md), [ARCH-022](ARCH-022-system-overview.md) | Biome lint + Vitest contract tests + `tsc` on `@afenda/*` and `@afenda/web`. |
 | Docs-capable local gates | `check:docs-naming`, doc-integrity, module-quality, OpenAPI, `validate:neon-env` | Current / Living (docs checkout) | Source verified — [`run-checks.mjs`](../../scripts/run-checks.mjs) | [DOC-001](../_control/DOC-001-documentation-control-standard.md), [ARCH-028](ARCH-028-implementation-slices.md) | Collapse-era product/ops scripts are gated — not missing “gaps” to restore. |
 | Target build/deploy | Turbo build filtering and optional Vercel remote cache | Target | Documented Target | [ARCH-022](ARCH-022-system-overview.md), [ARCH-028](ARCH-028-implementation-slices.md) | Decide one deployment owner; avoid duplicate Vercel and Actions promotion. |
 
@@ -221,6 +221,8 @@ ARCH-031 shall link to the changed authority rather than duplicate its detailed 
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 1.3.10 | 2026-07-15 | S8.1 audit: Biome+Vitest turbo gates real (19 tasks); catalogue quality/testing honesty. |
+| 1.3.9 | 2026-07-15 | S8.1: Target CI turbo lint/typecheck/test + remote cache evidence; next open S8.2. |
 | 1.3.8 | 2026-07-15 | S7.4 + Checkpoint F: catalogue evidence for `apps/web/features/*` shells; next open S8.1. |
 | 1.3.7 | 2026-07-15 | S7.3: catalogue evidence for `apps/web/modules/*` domain ports; features still open (S7.4+); checkout posture next open S7.4. |
 | 1.3.6 | 2026-07-15 | S7.2: catalogue evidence for `(public)` / `(operator)` / `(client)` route groups; modules/features still open (S7.3+). |
@@ -242,7 +244,7 @@ ARCH-031 shall link to the changed authority rather than duplicate its detailed 
 
 - This catalogue owns discovery and lifecycle classification only. The linked source document owns each decision.
 - Manifest-only dependencies are not automatically endorsed architecture.
-- **Checkout posture:** Collapse product trees (`app/`/`modules/`/`features/`/`components-V2/`) remain absent **by design**. Target packages through S7.4 + Checkpoint F (`apps/web` modules + feature shells included) are present — absence of Collapse roots is not a restore ticket; next open **S8.1**.
+- **Checkout posture:** Collapse product trees (`app/`/`modules/`/`features/`/`components-V2/`) remain absent **by design**. Target packages through S8.1 + Checkpoint F (`apps/web` modules + feature shells + Target CI included) are present — absence of Collapse roots is not a restore ticket; next open **S8.2**.
 - **Anti-contamination:** do not recover Collapse-era `app/`/`modules/`/`features/`/`components-V2/`, `lib/env/`, or wiped compose/tenancy scripts from git — [ARCH-028](ARCH-028-implementation-slices.md) lock.
 - **Root cause of prior catalogue stale:** Treating `package.json` script **names** and Collapse Living compose/`lib/env` as Current runnable evidence after Collapse. Fixed in 1.1.0 — evidence follows the filesystem + Target decisions.
 - External link availability and full code-to-document runtime drift remain outside the validator coverage used for this catalogue.

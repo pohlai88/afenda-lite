@@ -12,32 +12,32 @@ type NeonOrgRole = "owner" | "admin" | "member";
  * are never minted from a localhost Operator Origin while APP_URL is prod.
  */
 function requireAppOrigin(): string {
-  return new URL(env.APP_URL).origin;
+	return new URL(env.APP_URL).origin;
 }
 
 function mapRoleToNeonOrgRole(role: Role): NeonOrgRole {
-  switch (role) {
-    case "admin":
-      return "owner";
-    case "operator":
-      return "admin";
-    case "client":
-      return "member";
-    default: {
-      const _exhaustive: never = role;
-      throw new Error(`@afenda/auth: unhandled role: ${_exhaustive}`);
-    }
-  }
+	switch (role) {
+		case "admin":
+			return "owner";
+		case "operator":
+			return "admin";
+		case "client":
+			return "member";
+		default: {
+			const _exhaustive: never = role;
+			throw new Error(`@afenda/auth: unhandled role: ${_exhaustive}`);
+		}
+	}
 }
 
 export type InviteOrgMemberInput = {
-  email: string;
-  orgId: string;
-  role: Role;
+	email: string;
+	orgId: string;
+	role: Role;
 };
 
 export type InviteOrgMemberResult = {
-  data: unknown;
+	data: unknown;
 };
 
 /**
@@ -49,63 +49,63 @@ export type InviteOrgMemberResult = {
  * (join URL: `/join?invitationId=…`) — do not replace this Neon send path.
  */
 export async function inviteOrgMember(
-  input: InviteOrgMemberInput,
+	input: InviteOrgMemberInput,
 ): Promise<InviteOrgMemberResult> {
-  const session = await getSession();
+	const session = await getSession();
 
-  if (session.orgId !== input.orgId) {
-    throw new Error(
-      "@afenda/auth: inviteOrgMember refuses organization other than the active session org",
-    );
-  }
+	if (session.orgId !== input.orgId) {
+		throw new Error(
+			"@afenda/auth: inviteOrgMember refuses organization other than the active session org",
+		);
+	}
 
-  const email = input.email.trim();
-  if (email.length === 0) {
-    throw new Error("@afenda/auth: inviteOrgMember requires a non-empty email");
-  }
+	const email = input.email.trim();
+	if (email.length === 0) {
+		throw new Error("@afenda/auth: inviteOrgMember requires a non-empty email");
+	}
 
-  const baseUrl = env.NEON_AUTH_BASE_URL;
-  const appOrigin = requireAppOrigin();
-  const headerStore = await headers();
-  const cookieHeader = headerStore.get("cookie") ?? "";
+	const baseUrl = env.NEON_AUTH_BASE_URL;
+	const appOrigin = requireAppOrigin();
+	const headerStore = await headers();
+	const cookieHeader = headerStore.get("cookie") ?? "";
 
-  const url = new URL(
-    "organization/invite-member",
-    baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`,
-  );
+	const url = new URL(
+		"organization/invite-member",
+		baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`,
+	);
 
-  const response = await fetch(url.toString(), {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Cookie: cookieHeader,
-      Origin: appOrigin,
-      Referer: `${appOrigin}/`,
-      [NEON_AUTH_SERVER_PROXY_HEADER]: "nextjs",
-    },
-    body: JSON.stringify({
-      email,
-      role: mapRoleToNeonOrgRole(input.role),
-      organizationId: input.orgId,
-      resend: true,
-    }),
-  });
+	const response = await fetch(url.toString(), {
+		method: "POST",
+		headers: {
+			"Content-Type": "application/json",
+			Cookie: cookieHeader,
+			Origin: appOrigin,
+			Referer: `${appOrigin}/`,
+			[NEON_AUTH_SERVER_PROXY_HEADER]: "nextjs",
+		},
+		body: JSON.stringify({
+			email,
+			role: mapRoleToNeonOrgRole(input.role),
+			organizationId: input.orgId,
+			resend: true,
+		}),
+	});
 
-  const text = await response.text();
-  let parsed: unknown = null;
-  try {
-    parsed = text ? JSON.parse(text) : null;
-  } catch {
-    parsed = { raw: text };
-  }
+	const text = await response.text();
+	let parsed: unknown = null;
+	try {
+		parsed = text ? JSON.parse(text) : null;
+	} catch {
+		parsed = { raw: text };
+	}
 
-  if (!response.ok) {
-    const message =
-      (parsed as { message?: string } | null)?.message ??
-      (parsed as { error?: string } | null)?.error ??
-      `Neon Auth organization/invite-member failed (${response.status})`;
-    throw new Error(`@afenda/auth: ${message}`);
-  }
+	if (!response.ok) {
+		const message =
+			(parsed as { message?: string } | null)?.message ??
+			(parsed as { error?: string } | null)?.error ??
+			`Neon Auth organization/invite-member failed (${response.status})`;
+		throw new Error(`@afenda/auth: ${message}`);
+	}
 
-  return { data: parsed };
+	return { data: parsed };
 }

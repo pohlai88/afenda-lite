@@ -75,9 +75,10 @@
     "brand:extract-sharp-owl": "node scripts/collapse-script-unavailable.mjs \"brand:extract-sharp-owl\"",
     "check:brand-icons": "node scripts/collapse-script-unavailable.mjs \"check:brand-icons\"",
     "validate:brand-icon-bounds": "node scripts/collapse-script-unavailable.mjs \"validate:brand-icon-bounds\"",
-    "test": "playwright test --project all",
-    "test:unit": "vitest run --config testing/vitest.config.ts --project unit",
-    "test:interaction": "vitest run --config testing/vitest.config.ts --project interaction",
+    "test": "turbo run test",
+    "test:unit": "vitest run --config testing/vitest.config.ts",
+    "test:interaction": "vitest run --config testing/vitest.config.ts --project ui",
+    "test:e2e": "playwright test --project all",
     "check:import-boundaries": "node scripts/collapse-script-unavailable.mjs \"check:import-boundaries\"",
     "check:repo-migration-map": "node scripts/collapse-script-unavailable.mjs \"check:repo-migration-map\"",
     "test:e2e:smoke": "playwright test --project smoke",
@@ -99,10 +100,13 @@
     "studio:install-block": "node scripts/collapse-script-unavailable.mjs \"studio:install-block\"",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
-    "check": "turbo run lint typecheck test build"
+    "check": "turbo run lint typecheck test build",
+    "lint:root": "biome check ."
   },
   "devDependencies": {
+    "@afenda/config": "workspace:*",
     "@asteasolutions/zod-to-openapi": "^8.5.0",
+    "@biomejs/biome": "^2.5.3",
     "@playwright/test": "^1.61.1",
     "@stoplight/json-ref-resolver": "^3.1.6",
     "@stoplight/path": "^1.3.2",
@@ -127,11 +131,11 @@
     "tsx": "^4.23.0",
     "turbo": "^2.5.4",
     "typescript": "^5",
+    "ultracite": "^7.9.4",
     "vite": "^6.4.3",
     "vitest": "^4.1.10",
     "yaml": "^2.9.0",
-    "zod": "^4.4.3",
-    "@afenda/config": "workspace:*"
+    "zod": "^4.4.3"
   },
   "packageManager": "pnpm@10.33.4+sha512.1c67b3b359b2d408119ba1ed289f34b8fc3c6873412bec6fd264fbdc82489e510fcbecb9ce9d22dae7f3b76269d8441046014bdca53b9979cd7a561ad631b800",
   "pnpm": {

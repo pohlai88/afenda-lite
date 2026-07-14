@@ -5,5 +5,5 @@ import { fftEvent, withOrg } from "@afenda/db";
  * No Feed Farm Trade 2B–2D product reopen.
  */
 export async function listEvents(orgId: string) {
-  return withOrg(fftEvent, orgId);
+	return withOrg(fftEvent, orgId);
 }

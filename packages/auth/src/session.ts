@@ -11,18 +11,18 @@ export type Role = "admin" | "operator" | "client";
  * `getSession()` never returns null and never invents a missing org.
  */
 export type Session = {
-  userId: string;
-  orgId: string;
-  role: Role;
+	userId: string;
+	orgId: string;
+	role: Role;
 };
 
 const LOGIN_PATH = "/auth/login";
 
 /** Neon Auth org membership roles → Afenda shell Role (ARCH-026). */
 const NEON_ORG_ROLE_TO_SESSION = {
-  owner: "admin",
-  admin: "operator",
-  member: "client",
+	owner: "admin",
+	admin: "operator",
+	member: "client",
 } as const satisfies Record<string, Role>;
 
 type NeonOrgRole = keyof typeof NEON_ORG_ROLE_TO_SESSION;
@@ -31,54 +31,54 @@ let neonAuth: NeonAuth | undefined;
 
 /** Package-internal Neon Auth singleton (shared by S3.2+). Not a public export. */
 export function getNeonAuth(): NeonAuth {
-  if (!neonAuth) {
-    neonAuth = createNeonAuth({
-      baseUrl: env.NEON_AUTH_BASE_URL,
-      cookies: { secret: env.NEON_AUTH_COOKIE_SECRET },
-    });
-  }
-  return neonAuth;
+	if (!neonAuth) {
+		neonAuth = createNeonAuth({
+			baseUrl: env.NEON_AUTH_BASE_URL,
+			cookies: { secret: env.NEON_AUTH_COOKIE_SECRET },
+		});
+	}
+	return neonAuth;
 }
 
 function toSessionRole(neonRole: string): Role {
-  if (Object.hasOwn(NEON_ORG_ROLE_TO_SESSION, neonRole)) {
-    return NEON_ORG_ROLE_TO_SESSION[neonRole as NeonOrgRole];
-  }
-  throw new Error(`@afenda/auth: unhandled Neon org role: ${neonRole}`);
+	if (Object.hasOwn(NEON_ORG_ROLE_TO_SESSION, neonRole)) {
+		return NEON_ORG_ROLE_TO_SESSION[neonRole as NeonOrgRole];
+	}
+	throw new Error(`@afenda/auth: unhandled Neon org role: ${neonRole}`);
 }
 
 async function resolveSession(): Promise<Session> {
-  const auth = getNeonAuth();
-  const { data, error } = await auth.getSession();
+	const auth = getNeonAuth();
+	const { data, error } = await auth.getSession();
 
-  if (error || !data?.user?.id) {
-    redirect(LOGIN_PATH);
-  }
+	if (error || !data?.user?.id) {
+		redirect(LOGIN_PATH);
+	}
 
-  const orgId = data.session.activeOrganizationId;
-  if (typeof orgId !== "string" || orgId.length === 0) {
-    throw new Error(
-      "@afenda/auth: active organization missing from session — refuse silent org default",
-    );
-  }
+	const orgId = data.session.activeOrganizationId;
+	if (typeof orgId !== "string" || orgId.length === 0) {
+		throw new Error(
+			"@afenda/auth: active organization missing from session — refuse silent org default",
+		);
+	}
 
-  const { data: memberRole, error: roleError } =
-    await auth.organization.getActiveMemberRole({
-      query: { organizationId: orgId },
-    });
+	const { data: memberRole, error: roleError } =
+		await auth.organization.getActiveMemberRole({
+			query: { organizationId: orgId },
+		});
 
-  const neonRole = memberRole?.role;
-  if (roleError || !neonRole) {
-    throw new Error(
-      "@afenda/auth: active organization membership role unresolved",
-    );
-  }
+	const neonRole = memberRole?.role;
+	if (roleError || !neonRole) {
+		throw new Error(
+			"@afenda/auth: active organization membership role unresolved",
+		);
+	}
 
-  return {
-    userId: data.user.id,
-    orgId,
-    role: toSessionRole(neonRole),
-  };
+	return {
+		userId: data.user.id,
+		orgId,
+		role: toSessionRole(neonRole),
+	};
 }
 
 /**
