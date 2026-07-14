@@ -4,13 +4,13 @@
 |-------|-------|
 | ID | ARCH-028 |
 | Category | Architecture |
-| Version | 1.4.10 |
+| Version | 1.4.11 |
 | Status | Target |
 | Control State | Closed |
 | Owner | Platform |
-| Updated | 2026-07-14 |
+| Updated | 2026-07-15 |
 
-> **Forward-writing / Target.** Ordered implementation plan for the Turborepo system. This is a **document**, not code. Do not create `apps/` or `packages/` until an explicit implementation request. Each slice is S (1–2 files) or M (3–5 files). L = structural move when product tree exists on disk.
+> **Forward-writing / Target.** Ordered implementation plan for the Turborepo system. Through Checkpoint D this checkout has `apps/web` + `@afenda/{config,db,auth,env}` — continue slice-serial only (see Anti-contamination lock below). Each slice is S (1–2 files) or M (3–5 files). L = structural move when product tree exists on disk.
 
 ## Purpose
 
@@ -373,6 +373,7 @@ Living ARCH folder/route/adapter maps remain normative for **shape**. They are *
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.4.11 | 2026-07-15 | S4.1 audit gap: fix ARCH-027 cutover anchor; Purpose banner matches packages through Checkpoint D. |
 | 1.4.10 | 2026-07-14 | S4.1 `@afenda/env` (`@t3-oss/env-nextjs`) + Checkpoint D compose→`.env.local` cutover. |
 | 1.4.9 | 2026-07-14 | S3.2 `@afenda/auth` RBAC + invitations (`requireRole`, `inviteOrgMember`) + Checkpoint C. |
 | 1.4.8 | 2026-07-14 | S3.1 `@afenda/auth` session (`getSession` → `Promise<Session>`, fail-closed org). |
