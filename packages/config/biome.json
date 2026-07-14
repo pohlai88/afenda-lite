@@ -25,7 +25,6 @@
       "!!**/test-results",
       "!!**/playwright-report",
       "!!**/playwright/.cache",
-      "!!**/scripts/lib/env-manifest.generated.mjs",
       "!!**/*.{md,mdx}",
       "!!**/docs"
     ]

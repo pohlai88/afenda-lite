@@ -4,7 +4,7 @@
 | ----------------- | ---------- |
 | **ID**            | DOC-002    |
 | **Category**      | Control    |
-| **Version**       | 4.66.0 |
+| **Version**       | 4.70.0 |
 | **Status**        | Living     |
 | **Control State** | Closed     |
 | **Owner**         | Platform   |
@@ -71,7 +71,7 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 | ID           | Category     | Title                                      | Version | Status | Owner    | Updated    |
 | ------------ | ------------ | ------------------------------------------ | ------- | ------ | -------- | ---------- |
 | DOC-001      | Control      | Documentation Control Standard             | 2.7.0   | Living | Platform | 2026-07-14 |
-| DOC-002      | Control      | Documentation Register                     | 4.66.0 | Living | Platform | 2026-07-14 |
+| DOC-002      | Control      | Documentation Register                     | 4.69.0 | Living | Platform | 2026-07-14 |
 | DOC-003      | Control      | Controlled Document Template               | 1.4.0   | Living | Platform | 2026-07-14 |
 | ARCH-029     | Architecture | Interface and API Architecture             | 1.2.7   | Living | Platform | 2026-07-14 |
 | ARCH-031     | Architecture | Technology Stack Catalogue                 | 1.2.0   | Living | Platform | 2026-07-14 |
@@ -108,12 +108,12 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 | RB-007       | Runbook      | API Incident Response                      | 0.2.0   | Draft  | Backend  | 2026-07-14 |
 | RB-008       | Runbook      | API Contract Rollback                      | 0.2.1   | Draft  | Backend  | 2026-07-14 |
 | ARCH-022     | Architecture | System Overview — Turborepo                | 1.5.2   | Target | Platform | 2026-07-14 |
-| ARCH-023     | Architecture | Multi-Tenancy and Platform RBAC            | 3.1.3   | Living | Platform | 2026-07-14 |
+| ARCH-023     | Architecture | Multi-Tenancy and Platform RBAC            | 3.1.4   | Living | Platform | 2026-07-14 |
 | ARCH-024     | Architecture | Package Boundaries                         | 1.2.1   | Target | Platform | 2026-07-14 |
-| ARCH-025     | Architecture | Data Layer                                 | 1.2.2   | Target | Backend  | 2026-07-14 |
+| ARCH-025     | Architecture | Data Layer                                 | 1.2.4   | Target | Backend  | 2026-07-14 |
 | ARCH-026     | Architecture | Authentication and Session Model           | 1.2.2   | Target | Platform | 2026-07-14 |
 | ARCH-027     | Architecture | Environment Variable Model                 | 1.4.2   | Target | Platform | 2026-07-14 |
-| ARCH-028     | Architecture | Turborepo Implementation Slices            | 1.4.4   | Target | Platform | 2026-07-14 |
+| ARCH-028     | Architecture | Turborepo Implementation Slices            | 1.4.8   | Target | Platform | 2026-07-14 |
 | ARCH-001     | Architecture | Backend Architecture                       | 1.2.0   | Living | Backend  | 2026-07-14 |
 | ARCH-002     | Architecture | Frontend Architecture                      | 1.3.3   | Living | Frontend | 2026-07-14 |
 | ADR-008      | ADR          | Cache Components Mode B (Gated)            | 1.0.1   | Accepted | Frontend | 2026-07-14 |
@@ -168,6 +168,10 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 
 | Version | Date       | Summary                                                                                                                                         |
 | ------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| 4.70.0 | 2026-07-14 | ARCH-028 → 1.4.8 (S3.1 `@afenda/auth` session acceptance + evidence). |
+| 4.69.0 | 2026-07-14 | ARCH-025→1.2.4 / ARCH-028→1.4.7 — ban `db:migrate` of `0000_living-roots-baseline` (hook + package guard). |
+| 4.68.0 | 2026-07-14 | ARCH-028 → 1.4.6 (S2.2 drizzle generate/check + Checkpoint B). |
+| 4.67.0 | 2026-07-14 | ARCH-028 S2.1 `@afenda/db`; ARCH-023→3.1.4 / ARCH-025→1.2.3 / ARCH-028→1.4.5 (`organization_id` = live `text`). |
 | 4.66.0 | 2026-07-14 | ARCH-028 → 1.4.4 (S1.1–S1.2 + Checkpoint A implement evidence; preconditions package-manager + implement unlock). |
 | 4.65.0 | 2026-07-14 | Registered Living GUIDE-017 Enterprise Quality and Evidence Standard for cross-cutting evidence vocabulary, freshness/applicability, exception governance, and release/capability aggregation; aligned the guides integrity baseline; future-product ERP scope remains parked. |
 | 4.64.0 | 2026-07-14 | Hard-delete `docs/**/archive/` stubs; DOC-001 → 2.7.0 register-only Retired/Superseded; clear guides archive integrity baseline; ARCH-023→3.1.3, ARCH-028→1.4.3, MOD-002→4.0.2, FFT-MOD-009→2.0.3. |

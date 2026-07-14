@@ -4,7 +4,7 @@
 |-------|-------|
 | ID | ARCH-028 |
 | Category | Architecture |
-| Version | 1.4.4 |
+| Version | 1.4.10 |
 | Status | Target |
 | Control State | Closed |
 | Owner | Platform |
@@ -65,12 +65,14 @@ Gives implementers a complete, ordered checklist derived from ARCH-022…027 . A
 **Size:** M · **Files:** schema `platform.ts`, `declarations.ts`, `fft.ts`, `index.ts`, `package.json`
 
 **Acceptance:**
-- [ ] Tenant table inventory matches Living ARCH-023 roots (or introspect `br-tiny-hill-ao82jp6f` then reconcile) — do not invent parallel names
-- [ ] Every tenant table has `organizationId` → `organization_id` NOT NULL with type matching shipped migrations (uuid today per ARCH-023)
-- [ ] Package typechecks
-- [ ] Public exports: `db`, `schema`, `withOrg`
+- [x] Tenant table inventory matches Living ARCH-023 roots (or introspect `br-tiny-hill-ao82jp6f` then reconcile) — do not invent parallel names
+- [x] Every tenant table has `organizationId` → `organization_id` NOT NULL with type matching shipped migrations (`text` on live branch — reconciled from uuid doc drift)
+- [x] Package typechecks
+- [x] Public exports: `db`, `schema`, `withOrg`
 
 **Authority:** [ARCH-025](ARCH-025-data-layer.md) · Living roots [ARCH-023](ARCH-023-multi-tenancy.md)
+
+**Implement evidence (2026-07-14):** `@afenda/db` — Living roots + `platform_*` IAM tables from Neon introspect; `client.ts` exports real `db` + `withOrg`; `pnpm --filter @afenda/db typecheck` PASS.
 
 ---
 
@@ -79,15 +81,34 @@ Gives implementers a complete, ordered checklist derived from ARCH-022…027 . A
 **Size:** M · **Files:** `client.ts`, `drizzle.config.ts`, scripts `db:generate` / `db:migrate` / `db:check`
 
 **Acceptance:**
-- [ ] `withOrg` is the documented tenant read entry point
-- [ ] `db:generate` writes under `packages/db/drizzle/`
-- [ ] If numbered SQL under `db/migrations/` still exists: map tables into Drizzle schema, `drizzle-kit check` against live branch `br-tiny-hill-ao82jp6f`, then archive old `.sql` under `docs/scratch/` or an ADR archive — do not silent-delete history
+- [x] `withOrg` is the documented tenant read entry point
+- [x] `db:generate` writes under `packages/db/drizzle/`
+- [x] If numbered SQL under `db/migrations/` still exists: map tables into Drizzle schema, `drizzle-kit check` against live branch `br-tiny-hill-ao82jp6f`, then archive old `.sql` under `docs/scratch/` or an ADR archive — do not silent-delete history
+
+**Implement evidence (2026-07-14):**
+- `drizzle.config.ts` + `db:generate` → `packages/db/drizzle/0000_living-roots-baseline.sql` + `meta/`
+- `db:check` → drizzle-kit journal OK; live columns already reconciled in S2.1 via Neon MCP on `br-tiny-hill-ao82jp6f`
+- `db/migrations/` **absent** on Collapse checkout — nothing to archive; baseline SQL comments warn not to apply CREATE onto live branch
+- `db:migrate` script present; do not apply `0000` to production branch (tables already exist)
+
+#### Operational ban — baseline migrate (Checkpoint B lock)
+
+**`0000_living-roots-baseline.sql` is a journal baseline for forward diffs.** Applying it with `db:migrate` on `br-tiny-hill-ao82jp6f` would try `CREATE` on existing tables — **do not.**
+
+| Layer | Enforcement |
+|-------|-------------|
+| Docs | This section · [ARCH-025](ARCH-025-data-layer.md) Operational considerations |
+| Package | `packages/db/scripts/db-migrate-guard.mjs` — fails closed; refuses when only SQL is `0000_…` |
+| Cursor hook | `.cursor/hooks/no-drizzle-baseline-migrate.mjs` (`beforeShellExecution`, `failClosed`) |
+
+Allowed without override: `pnpm --filter @afenda/db db:generate` · `db:check`.  
+Operator override for a later **non-baseline** forward migrate only: `AFENDA_ALLOW_DB_MIGRATE=1` (guard still blocks if `0000` is the sole SQL file).
 
 ### Checkpoint B
 
-- [ ] App code imports DB only from `@afenda/db`
-- [ ] No `pg` as the product DB client (ARCH-025)
-- [ ] `rg "from 'pg'" apps/` = 0 after web wiring
+- [x] App code imports DB only from `@afenda/db` — no app DB importers yet; `@afenda/web` depends on `@afenda/db` only for product DB
+- [x] No `pg` as the product DB client (ARCH-025) — removed from `@afenda/web`; client is `@neondatabase/serverless` via `@afenda/db`
+- [x] `rg "from 'pg'" apps/` = 0 after web wiring
 
 ---
 
@@ -96,11 +117,19 @@ Gives implementers a complete, ordered checklist derived from ARCH-022…027 . A
 **Size:** S · **Files:** `session.ts` (`Session`, `getSession`), `index.ts`, `package.json`
 
 **Acceptance:**
-- [ ] `getSession()` returns `Promise<Session>` — never silent null
+- [x] `getSession()` returns `Promise<Session>` — never silent null
 
 **Authority:** [ARCH-026](ARCH-026-auth-session.md)
 
 **Cutover note:** Consolidate `lib/auth/neon-auth-request.ts`, session helpers, and auth bits of `apps/web/proxy.ts` / middleware into this package when the monolith tree is present.
+
+**Implement evidence (2026-07-14):**
+- `@afenda/auth` greenfield under `packages/auth/` — `src/session.ts` (`Session`, `Role`, `getSession`), `src/index.ts`, `package.json`
+- Neon Auth via `createNeonAuth` (`@neondatabase/auth/next/server`); unauthenticated → `redirect('/auth/login')`; missing `activeOrganizationId` / unresolved membership role → throw (no silent null or invented org)
+- Neon org role map (shell signal only): `owner`→`admin`, `admin`→`operator`, `member`→`client`
+- Stabilize: `React.cache` request dedupe; package-internal `getNeonAuth()` for S3.2 reuse (not public export)
+- Cutover N/A on this checkout: `lib/auth/` and `apps/web/proxy.ts` absent (Collapse) — no restore
+- Verify: `pnpm --filter @afenda/auth typecheck` PASS
 
 ---
 
@@ -109,13 +138,21 @@ Gives implementers a complete, ordered checklist derived from ARCH-022…027 . A
 **Size:** S · **Files:** `rbac.ts` (`requireRole`), `invitations.ts` (`inviteOrgMember`)
 
 **Acceptance:**
-- [ ] Wrong role → redirect `/403`; unauthenticated → `/auth/login`
-- [ ] Neon Auth SDK calls stay inside `@afenda/auth`
+- [x] Wrong role → redirect `/403`; unauthenticated → `/auth/login`
+- [x] Neon Auth SDK calls stay inside `@afenda/auth`
+
+**Implement evidence (2026-07-14):**
+- `@afenda/auth` — `src/rbac.ts` (`requireRole` → `/403` / login via `getSession`); `src/invitations.ts` (`inviteOrgMember` via Neon Auth `organization/invite-member` with `APP_URL` Origin/Referer — Collapse `neon-auth-request` behavior absorbed here)
+- Role signal hierarchy for coarse shells: `admin` satisfies `operator`; `client` exclusive
+- Neon → Afenda invite role map: `admin`→`owner`, `operator`→`admin`, `client`→`member`
+- Verify: `pnpm --filter @afenda/auth typecheck` PASS
 
 ### Checkpoint C
 
-- [ ] No Neon Auth imports in `apps/web` outside `@afenda/auth`
-- [ ] `rg "neon-auth-request" apps/web/` = 0 after move
+- [x] No Neon Auth imports in `apps/web` outside `@afenda/auth`
+- [x] `rg "neon-auth-request" apps/web/` = 0 after move
+
+**Checkpoint C evidence (2026-07-14):** `apps/web` has no `.ts`/`.tsx` sources yet — no `@neondatabase/auth*` import statements; `rg "neon-auth-request" apps/web` = 0; SDK `createNeonAuth` only under `packages/auth/src/session.ts`. package.json may still list `@neondatabase/auth(-ui)` for forthcoming Auth UI (S7.x) — server SDK usage remains in `@afenda/auth`.
 
 ---
 
@@ -124,18 +161,29 @@ Gives implementers a complete, ordered checklist derived from ARCH-022…027 . A
 **Size:** S · **Files:** `src/web.ts` (`createEnv`), `package.json`
 
 **Acceptance:**
-- [ ] `import { env } from '@afenda/env'` is fully typed
-- [ ] Server var in client component is a type error
-- [ ] Product code does not use raw `process.env` for app config
-- [ ] Compose retired in the same change set — see [ARCH-027 cutover](ARCH-027-env-model.md#cutover-from-compose-s41)
+- [x] `import { env } from '@afenda/env'` is fully typed
+- [x] Server var in client component is a type error
+- [x] Product code does not use raw `process.env` for app config
+- [x] Compose retired in the same change set — see [ARCH-027 cutover](ARCH-027-env-model.md#cutover-from-compose-s41)
 
 **Authority:** [ARCH-027](ARCH-027-env-model.md)
 
+**Implement evidence (2026-07-14):**
+- `@afenda/env` — `packages/env/src/web.ts` (`@t3-oss/env-nextjs` + Zod 4), `src/index.ts`, `package.json`
+- Lean required server: `DATABASE_URL`, `NEON_AUTH_BASE_URL`, `NEON_AUTH_COOKIE_SECRET`, `APP_URL`; flags/ops/playground optional; `emptyStringAsUndefined`; `skipValidation` for typecheck / `SKIP_ENV_VALIDATION` only
+- `@afenda/auth` reads `env` (not raw `process.env`); `@afenda/db` keeps package-internal `process.env.DATABASE_URL` (ARCH-024 forbids db→env); `@afenda/web` depends on `@afenda/env`
+- Client/server split enforced by t3 types (no invent Client Component this slice)
+- Verify: `pnpm --filter @afenda/env typecheck` PASS · `pnpm --filter @afenda/auth typecheck` PASS
+
 ### Checkpoint D
 
-- [ ] `.env.local` is the only runtime env file for Next
-- [ ] `rg "env:compose|env:guard" package.json` = 0
-- [ ] `AGENTS.md` Living env section updated to match Target
+- [x] `.env.local` is the only runtime env file for Next
+- [x] `rg "env:compose|env:guard" package.json` = 0
+- [x] `AGENTS.md` Living env section updated to match Target
+
+**Checkpoint D evidence (2026-07-14):** merged local compose inventory → `.env.local`; removed `env.config` / `env.secret` / `.env` and committed examples; added `.env.example` + `!.env.example` gitignore; removed `env:compose` / `env:guard*` / compose write-path scripts from root `package.json`; `scripts/lib/env-files.mjs` + `validate-neon-env` load `.env.local` only; AGENTS.md Target env SSOT.
+
+**A–D residue pass (2026-07-14, pre-E):** deleted `env-manifest.generated.mjs` + root Collapse `components.json` (`app/`/`modules/platform` aliases); Living docs/skills retargeted off pre-S4.1 two-state; ARCH-022/AGENTS checkout posture updated for packages through `@afenda/env`. Next open: S5.1 / Checkpoint E.
 
 ---
 
@@ -284,10 +332,10 @@ Absorbed from retired GUIDE-004. Records **Target vs checkout** drift for forwar
 
 | Authority | Disk today | Coding impact |
 |-----------|------------|---------------|
-| [ARCH-022…028](.) | S1.1–S1.2 present: `turbo.json`, `pnpm-workspace.yaml`, `apps/web`, `packages/config`; `@afenda/db|auth|env|ui|emails` **absent** until later slices | Continue slice-serial implement — do not skip to full tree |
+| [ARCH-022…028](.) | S1.1–S4.1 + Checkpoints A–D present: workspace + `@afenda/config` + `@afenda/db` + `@afenda/auth` + `@afenda/env`; `@afenda/ui|emails` **absent** until later slices | Continue slice-serial implement — do not skip to full tree |
 | Living maps ARCH-001…010 · 012…019 · 017 | Repo-root `app/`, `modules/`, `features/`, `components-V2/` **absent** after design-SSOT Collapse (`4680c91`) | **Expected · Forbidden to recover** — see Anti-contamination lock below |
 | [ARCH-023](ARCH-023-multi-tenancy.md) | Living tenancy + RBAC rules | Binding now — enforce invariants even before packages exist |
-| Living `AGENTS.md` env compose | Compose scripts gated; do not restore Collapse-era script bodies | Target is `.env.local` + `@afenda/env` at S4.1; until then document honesty over fake tooling |
+| `AGENTS.md` env | Target `@afenda/env` + `.env.local` + `.env.example` (S4.1 / Checkpoint D) | Compose retired — do not restore |
 
 Do **not** invent remaining packages from Target docs alone — land each ARCH-028 slice with verify evidence.
 
@@ -325,6 +373,12 @@ Living ARCH folder/route/adapter maps remain normative for **shape**. They are *
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.4.10 | 2026-07-14 | S4.1 `@afenda/env` (`@t3-oss/env-nextjs`) + Checkpoint D compose→`.env.local` cutover. |
+| 1.4.9 | 2026-07-14 | S3.2 `@afenda/auth` RBAC + invitations (`requireRole`, `inviteOrgMember`) + Checkpoint C. |
+| 1.4.8 | 2026-07-14 | S3.1 `@afenda/auth` session (`getSession` → `Promise<Session>`, fail-closed org). |
+| 1.4.7 | 2026-07-14 | S2.2 operational ban documented; baseline migrate hook + package guard pointers. |
+| 1.4.6 | 2026-07-14 | S2.2 drizzle generate/migrate/check + Checkpoint B (`pg` removed from web). |
+| 1.4.5 | 2026-07-14 | S2.1 `@afenda/db` schema skeleton acceptance; `organization_id` type = live `text`. |
 | 1.4.4 | 2026-07-14 | S1.1–S1.2 + Checkpoint A acceptance checked after implement unlock; preconditions package-manager + implement request marked done. |
 | 1.4.3 | 2026-07-14 | ARCH-021 disposition = Superseded DOC-002 register-only (archive stub removed). |
 | 1.4.2 | 2026-07-14 | Bounded reopen: package-manager cutover — document `pnpm` / `pnpm exec` in place of `npm run` / `npx` (repo SSOT `packageManager` + lockfile). |

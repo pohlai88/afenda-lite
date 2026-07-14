@@ -9,6 +9,8 @@
     "clean": "node -e \"const fs=require('fs'); for (const d of ['.next','.turbo','coverage','dist']) fs.rmSync(d,{recursive:true,force:true})\""
   },
   "dependencies": {
+    "@afenda/db": "workspace:*",
+    "@afenda/env": "workspace:*",
     "@base-ui/react": "^1.6.0",
     "@neondatabase/auth": "^0.4.2-beta",
     "@neondatabase/auth-ui": "^0.2.1-beta",
@@ -25,7 +27,6 @@
     "next-intl": "^4.13.1",
     "next-themes": "^0.4.6",
     "papaparse": "^5.5.4",
-    "pg": "^8.16.3",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "react-payment-inputs": "^1.2.0",
@@ -44,7 +45,6 @@
     "@tailwindcss/typography": "^0.5.20",
     "@types/node": "^20",
     "@types/papaparse": "^5.5.2",
-    "@types/pg": "^8.15.6",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "babel-plugin-react-compiler": "^1.0.0",

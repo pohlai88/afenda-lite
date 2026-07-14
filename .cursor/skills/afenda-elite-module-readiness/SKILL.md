@@ -23,7 +23,7 @@ SKIP:
   Afenda-Lite / Afenda-Elite edition or release certification from one module
   redefining AC text inside MOD-009
   copying full requirement or evidence tables into MOD-010
-  docs-first env:compose / .env.local as Living evidence commands (ARCH-027)
+  retired env:compose as Living evidence (ARCH-027 — use @afenda/env + .env.local)
 PLACE:
   evidence rows → *-MOD-009 only
   claim narrative → *-MOD-010 only
@@ -98,9 +98,8 @@ Validator joins every AC in 001–008 to exactly one 009 row (no orphans, no mis
 3. **Confirm AC ownership** — criterion text only in 001–008; 009 records result state; 010 summarizes claims/gaps.
 4. **Run or attempt verify commands** listed in MOD-009. On docs-first checkout, absent product trees → record `BLOCKED` with command path + revision + date ([ARCH-028](../../../docs/architecture/ARCH-028-implementation-slices.md)). Do not recover wiped Collapse roots.
 5. **Update evidence rows** — never invent `PASS`. Prefer `NOT EVIDENCED` when evidence is missing or stale.
-6. **Env-related ACs** — cite [ARCH-027](../../../docs/architecture/ARCH-027-env-model.md) **two-state** only:
-   - Docs-first / pre-S4.1: no `env:compose`, no `.env.local`, no `vercel env pull`.
-   - Target post-S4.1: `@afenda/env` + `.env.local` when the product app exists.
+6. **Env-related ACs** — cite [ARCH-027](../../../docs/architecture/ARCH-027-env-model.md) only:
+   - `@afenda/env` + `.env.local` (compose retired at S4.1 / Checkpoint D).
 7. **Claims** — update MOD-010 readiness aggregation only after coverage + 009 rows are honest; do not paste the full ledger into 010.
 8. **Verify** — `pnpm check:module-quality`; fix join/ownership/schema findings before closing Control State.
 
@@ -110,7 +109,7 @@ Primary example pack (do not treat historical compose notes as Living commands):
 
 | Doc | Role |
 |-----|------|
-| [FFT-MOD-009](../../../docs/modules/feed-farm-trade/FFT-MOD-009-verification.md) | Evidence ledger + verify commands (ARCH-027 two-state) |
+| [FFT-MOD-009](../../../docs/modules/feed-farm-trade/FFT-MOD-009-verification.md) | Evidence ledger + verify commands (ARCH-027 env) |
 | [FFT-MOD-010](../../../docs/modules/feed-farm-trade/FFT-MOD-010-module-docs-index.md) | Claims / gaps / roadmap |
 | [FFT-MOD-003](../../../docs/modules/feed-farm-trade/FFT-MOD-003-tech-stack.md) · [FFT-MOD-008](../../../docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md) | Flags / ops; env evidence points here |
 
@@ -122,7 +121,7 @@ FFT domain farm gates remain [feed-farm-trade](../feed-farm-trade/SKILL.md). Thi
 2. **No edition certification** — module claim ≠ Lite/Elite release certification.
 3. **No scratch QG authority** — `docs/scratch/` may inform discovery only.
 4. **No inferred PASS** — wiring, Living prose, and historical tags are not runtime evidence.
-5. **Env evidence = ARCH-027 two-state** — retired compose pipeline is historical only.
+5. **Env evidence = ARCH-027** — `@afenda/env` + `.env.local`; compose is retired.
 6. **Doc control still applies** — ID approval, DOC-002 rows, Control State via doc-control.
 
 ## Verification
@@ -131,7 +130,7 @@ FFT domain farm gates remain [feed-farm-trade](../feed-farm-trade/SKILL.md). Thi
 - [ ] Enterprise Core + every declared optional profile; each active dimension has ≥1 AC in its sole owning role
 - [ ] Every Core / in-claim Conditional AC has a 009 row
 - [ ] No `PASS` without reference + revision + ISO date
-- [ ] Env ACs cite ARCH-027 two-state (not compose)
+- [ ] Env ACs cite ARCH-027 (`@afenda/env` + `.env.local`, not compose)
 - [ ] MOD-010 claim matches coverage + 009 (Claimable only when rules pass)
 - [ ] `pnpm check:module-quality` clean for the touched pack
 

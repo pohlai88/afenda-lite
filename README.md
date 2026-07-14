@@ -32,7 +32,7 @@ Schema is versioned in [`db/migrations/`](db/migrations/). Apply before first ru
 pnpm db:migrate
 ```
 
-Apply against your Neon branch (`DATABASE_URL` in `env.secret`). See [docs/runbooks/local-dev-auth.md](docs/runbooks/local-dev-auth.md).
+Apply against your Neon branch (`DATABASE_URL` in `.env.local`). See [docs/runbooks/local-dev-auth.md](docs/runbooks/local-dev-auth.md).
 
 The app no longer runs DDL on request — tables must exist before deploy.
 
@@ -58,19 +58,16 @@ Repository: https://github.com/pohlai88/afenda-lite
 | **Production URL** | https://afenda-lite.vercel.app |
 | **Legacy alias** | https://iam-check.vercel.app (same app — do not teach as current) |
 
-Env vars: `DATABASE_URL`, `NEON_AUTH_*`, `SHARED_ADMIN_*`, `APP_URL`. Source of truth: `env.config` + `env.secret` → `pnpm env:compose`. Stale Supabase keys: `pnpm cleanup:vercel`.
+Env vars: `DATABASE_URL`, `NEON_AUTH_*`, `SHARED_ADMIN_*`, `APP_URL`. SSOT: `import { env } from '@afenda/env'` · local file `.env.local` (template: `.env.example`). See [AGENTS.md](./AGENTS.md) · [ARCH-027](docs/architecture/ARCH-027-env-model.md).
 
 ## Local development
 
 ```bash
 pnpm install
-cp env.config.example env.config
-cp env.secret.example env.secret
-# edit env.config / env.secret, then:
-pnpm env:compose
-pnpm db:migrate
-pnpm seed:admin
-pnpm dev
+cp .env.example .env.local
+# edit .env.local (required: DATABASE_URL, NEON_AUTH_*, APP_URL)
+pnpm validate:neon-env
+pnpm --filter @afenda/web dev
 ```
 
 Open http://localhost:3000 → operator sign-in → `/dashboard`.
@@ -131,7 +128,7 @@ Optional E2E: `E2E_SURVEY_SLUG` only if you skip the operator-create → public 
 | `/client/declare/[assignmentId]` | Client | Complete assignment |
 | `/invite/[token]` | Public | Legacy invite URL → client sign-in |
 
-**Local developer only:** `/playground` iframes routes for UI review (`PLAYGROUND_ENABLED` in `env.config`). Not a product entry — see [AGENTS.md](./AGENTS.md).
+**Local developer only:** `/playground` iframes routes for UI review (`PLAYGROUND_ENABLED` in `.env.local`). Not a product entry — see [AGENTS.md](./AGENTS.md).
 
 ## Stack
 

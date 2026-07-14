@@ -31,7 +31,7 @@ Default agent mission is **not** Feed Farm Trade. See [deprecation register — 
 | Feature flag | `FFT_RBAC_ENABLED` |
 | Production | `true` on Vercel (Gate 7) |
 | Local dev default | `false` |
-| Rollback | Set flag false → `npm run env:compose` → `npm run sync:vercel` → redeploy |
+| Rollback | Set flag false on Vercel → redeploy (or `pnpm sync:vercel` when Target tooling exists) |
 | Migration | `013_hot_sales.sql` + `014_fft_rbac.sql` |
 | Admin RBAC UI | `/fft/[locale]/admin/rbac` |
 | Event create UI | `/fft/[locale]/admin/events/new` |
@@ -50,7 +50,7 @@ Default agent mission is **not** Feed Farm Trade. See [deprecation register — 
 | Trade unit tests | `npm run test:unit -- modules/fft` |
 | Trade smoke e2e | `npm run test:e2e:smoke` |
 | Gate 7 prod smoke | `node scripts/gate-7-production-smoke.mjs` |
-| Env compose | `npm run env:compose` |
+| Env | `.env.local` + `import { env } from '@afenda/env'` (compose retired) |
 
 Pre-enable matrix: [release-readiness.md § Pre-enable verification matrix](../../../../docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md#pre-enable-verification-matrix).
 

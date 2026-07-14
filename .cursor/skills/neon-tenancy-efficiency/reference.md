@@ -14,7 +14,7 @@
 
 **Fail closed:** if any step exits non-zero, stop. Do not raise compute CU or ship until that step is green.
 
-**Env (ARCH-027 two-state):** On this **docs-first** checkout, Collapse `env:compose` / `env:guard` / product e2e ladders are **gated or absent** — do not recover them. Do **not** create `.env.local` or run `vercel env pull` before S4.1. After Target S4.1: `@afenda/env` + `.env.local` only. Blocks A/E/weekly that mention compose are **historical evidence (closed 2026-07-12)** plus Target-gated replay — not Living compose mandates.
+**Env (ARCH-027 / S4.1+):** `@afenda/env` + `.env.local` only. Collapse `env:compose` / `env:guard` / `env.config` **retired — do not recover**. Historical ladder blocks that mention compose are evidence history (closed 2026-07-12), not Living instructions.
 
 ---
 
@@ -29,8 +29,7 @@ Run the full Afenda-Lite Neon multi-tenant best-practice ladder when tooling exi
 - Repo root: `C:\JackProject\afenda-bolt\client-declaration-portal`
 - Neon Console access for compute / protected branch / scale-to-zero
 - Optional: `neonctl` auth for read-only inspect
-- Docs-first: human `env.config` / `env.secret` (if present) are **inventory notes only** — not a live compose pipeline
-- Target post-S4.1: `.env.local` via approved init; product tree under `apps/web`
+- `.env.local` present (template `.env.example`); product tree under `apps/web`
 
 ```powershell
 cd C:\JackProject\afenda-bolt\client-declaration-portal
@@ -56,9 +55,7 @@ cd C:\JackProject\afenda-bolt\client-declaration-portal
 
 ## A — Full npm ladder (historical closed 2026-07-12 · Target-gated replay)
 
-**Docs-first:** do **not** run compose/`env:guard` as Living instructions. Prefer `validate:neon-env` (if present), `audit:vercel` (key names), Neon Console pooler check, and MCP auth audits. Report gated steps as `BLOCKED`.
-
-**Target post-S4.1 replay** (when product tooling exists — no `env:compose`):
+**Replay** (no `env:compose` — retired). Prefer `validate:neon-env`, `audit:vercel` (key names), Neon Console pooler check, and MCP auth audits. Report gated Collapse scripts as `BLOCKED`.
 
 ```powershell
 cd C:\JackProject\afenda-bolt\client-declaration-portal
@@ -86,8 +83,7 @@ pnpm test:e2e:journey -- e2e/tenancy-isolation.spec.ts
 
 | Step | Pass means |
 |------|------------|
-| Docs-first pre-S4.1 | No `.env.local` created; no compose recovered |
-| Target post-S4.1 | `@afenda/env` boot OK; `.env.local` only local runtime file |
+| Env | `@afenda/env` schema present; `.env.local` only local runtime file; no compose |
 | `verify:vercel-db` | `DATABASE_URL` contains `-pooler` |
 | `audit:tenancy-nulls` | Zero nulls on eight hard tenant roots (when script exists) |
 | `check:tenancy-residue` | No soft `(NULL OR org)` residue |
@@ -301,7 +297,7 @@ Rollback / recovery for org ops: [docs/runbooks/RB-001-multi-org-ops.md](../../.
 - Enable `PORTAL_ORG_SWITCHER_ENABLED` on Vercel without multi-membership + rollback
 - Mix this ladder with FFT flag promotion or portal atmosphere work
 - Reintroduce `iam-check` Auth slug / `admin@iam-check.com` / `@iam-check.com` fixture emails
-- Use `neonctl link` as a routine env fix, or prescribe `env:compose` / create `.env.local` on docs-first pre-S4.1 (ARCH-027)
+- Use `neonctl link` as a routine env fix, or restore `env:compose` / `env.config` (ARCH-027 — retired)
 
 ---
 

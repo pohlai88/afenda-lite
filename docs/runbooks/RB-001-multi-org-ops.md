@@ -58,9 +58,9 @@ Use the id for the tenant you intend to backfill — not Neon Cloud `NEON_ORG_ID
 ## 3.3 FFT access backfill
 
 ```bash
-pnpm env:compose
-node --env-file=.env scripts/backfill-fft-access.mjs --dry-run --organization-id=<org-uuid>
-node --env-file=.env scripts/backfill-fft-access.mjs --organization-id=<org-uuid>
+pnpm validate:neon-env
+node --env-file=.env.local scripts/backfill-fft-access.mjs --dry-run --organization-id=<org-uuid>
+node --env-file=.env.local scripts/backfill-fft-access.mjs --organization-id=<org-uuid>
 ```
 
 Or: `PORTAL_ORGANIZATION_ID=<org-uuid> pnpm backfill:fft-access`.
@@ -84,7 +84,7 @@ Do not confuse Neon Cloud `NEON_ORG_ID` with Neon Auth organization id.
 | Auth org id | `4587e4c8-8119-4761-91ce-b874d3493aad` |
 | Slug / name | `afenda-lite` |
 | Count | 1 Auth org on production branch |
-| Operator login | `SHARED_ADMIN_EMAIL=afenda@admin.com` (password in `env.secret`) |
+| Operator login | `SHARED_ADMIN_EMAIL=afenda@admin.com` (password in `.env.local`) |
 | Local env | `PORTAL_ORG_SLUG` / `PORTAL_ORG_NAME` / `PORTAL_ORGANIZATION_ID` / `E2E_ORGANIZATION_ID` — see [post-lock cheat sheet](./RB-005-post-lock-coding-cheat-sheet.md) §3.4 |
 
 ## 3.6 FFT access backfill evidence (E1 — 2026-07-12)
@@ -92,7 +92,7 @@ Do not confuse Neon Cloud `NEON_ORG_ID` with Neon Auth organization id.
 ```text
 Dry-run: wouldGrant=0 (no-op — rows already stamped)
 Live write: skipped (nothing to grant)
-Command: node --env-file=.env scripts/backfill-fft-access.mjs --dry-run --organization-id=4587e4c8-8119-4761-91ce-b874d3493aad
+Command: node --env-file=.env.local scripts/backfill-fft-access.mjs --dry-run --organization-id=4587e4c8-8119-4761-91ce-b874d3493aad
 ```
 
 ## 3.7 Neon production recovery posture (C-pack)
@@ -135,9 +135,8 @@ M2: `028_scoped_template_key_unique.sql` — scoped `(organization_id, template_
 Local / staged multi-org chrome:
 
 ```bash
-# env.config
+# .env.local
 PORTAL_ORG_SWITCHER_ENABLED=true
-pnpm env:compose
 ```
 
 Do not enable on Vercel production until operators have a second membership and a rollback plan.

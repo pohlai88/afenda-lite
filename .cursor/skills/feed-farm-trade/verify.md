@@ -36,7 +36,7 @@ npm run check:fft-ui-registry:expect-fail   # intentional red demo
 npm run test:unit -- features/fft/ui-registry
 ```
 
-Env: ARCH-027 two-state — docs-first/pre-S4.1 no `env:compose` / no `.env.local`; Target post-S4.1 `@afenda/env` + `.env.local` before E2E when the app exists. Identities: see `AGENTS.md` / RUNTIME — do not conflate `SHARED_ADMIN_EMAIL` with sales allowlist.
+Env: ARCH-027 — `@afenda/env` + `.env.local` (compose retired) before E2E when the app exists. Identities: see `AGENTS.md` / RUNTIME — do not conflate `SHARED_ADMIN_EMAIL` with sales allowlist.
 
 ## Existing test inventory (map loosely to AC)
 

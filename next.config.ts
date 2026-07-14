@@ -24,7 +24,7 @@ const nextConfig: NextConfig = {
   reactCompiler: true,
   poweredByHeader: false,
   allowedDevOrigins: ["127.0.0.1"],
-  serverExternalPackages: ["pg"],
+  serverExternalPackages: ["@neondatabase/serverless"],
   experimental: {
     optimizePackageImports: [
       "lucide-react",

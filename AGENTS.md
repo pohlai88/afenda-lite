@@ -11,14 +11,15 @@
 
 ### Checkout posture (Collapse · anti-contamination)
 
-This checkout is **docs-first** after design-SSOT Collapse (`4680c91`). Repo-root product trees `app/`, `modules/`, `features/`, `components-V2/` and most Collapse-era ops scripts are **absent by design**.
+Design-SSOT Collapse (`4680c91`) removed repo-root product trees. **Target packages through Checkpoint D are on disk** (`@afenda/config|db|auth|env`, `apps/web` scaffold). Root `app/`, `modules/`, `features/`, `components-V2/`, Collapse `lib/`, and wiped ops scripts remain **absent by design**.
 
 | Rule | Detail |
 |------|--------|
-| **Forbidden** | Recovering those trees or wiped scripts from git (`f014807`, Collapse parents) — contamination ban |
+| **Forbidden** | Recovering banned trees or wiped scripts from git (`f014807`, Collapse parents) — contamination ban |
 | Authority | [ARCH-028 Anti-contamination lock](docs/architecture/ARCH-028-implementation-slices.md) · [deprecation register — Closed product phases](.cursor/skills/agent-skills/skills/deprecation-and-migration/reference.md) |
-| Forward product code | Target greenfield only (`apps/web/**`, `packages/*`) after an **explicit** ARCH-028 implement request — never restore banned roots |
-| Scripts | Many `package.json` scripts gate to `scripts/collapse-script-unavailable.mjs`. Docs-capable: `pnpm checks` · `check:docs-naming` · `check:doc-integrity` · `check:module-quality` · `check:openapi` · `validate:neon-env` |
+| Forward product code | Continue ARCH-028 slices under `apps/web/**` and `packages/*` only — never restore banned roots; next open **S5.1** (`@afenda/ui`) |
+| Env | `@afenda/env` + `.env.local` (compose retired — Checkpoint D) |
+| Scripts | Many Collapse ops scripts still gate via `scripts/collapse-script-unavailable.mjs`. Docs-capable: `pnpm checks` · `check:docs-naming` · `check:doc-integrity` · `check:module-quality` · `check:openapi` · `validate:neon-env` |
 
 ## Feed Farm Trade — Phase 2A closed · 2B–2D ADRs Accepted
 
@@ -56,41 +57,33 @@ This checkout is **docs-first** after design-SSOT Collapse (`4680c91`). Repo-roo
 
 ## Environment variables
 
-### Source of truth (local dev)
+### Source of truth (local dev) — Target / S4.1+
 
-Human-maintained files (gitignored):
+| File | Role |
+|------|------|
+| `.env.local` | **Only** local runtime env for Next + ops scripts (gitignored) |
+| `.env.example` | Committed key template (no secrets) |
+| `packages/env/src/web.ts` | Zod schema via `@t3-oss/env-nextjs` — add new vars here + `.env.local` / `.env.example` |
 
-| File | Contents |
-|------|----------|
-| `env.config` | Non-secrets: URLs, emails, feature flags, playground fixtures |
-| `env.secret` | Credentials: `DATABASE_URL`, passwords, API keys |
+**App config SSOT:** `import { env } from '@afenda/env'` ([ARCH-027](docs/architecture/ARCH-027-env-model.md)). Do **not** use raw `process.env` for product app config. Do **not** recreate Collapse-era `env.config` / `env.secret` / `env:compose` / `lib/env/`.
 
-Templates (committed): `env.config.example`, `env.secret.example`.
+**Workflow**
 
-**Workflow (when env compose tooling exists on a Target checkout)**
-
-1. Edit `env.config` and/or `env.secret`.
-2. Run `pnpm env:compose` → regenerates `.env` for Next.js and scripts.
-3. Run `pnpm dev`.
-
-On **this docs-first checkout**, `env:compose` / `env:guard` / `dev` are **gated** (`collapse-script-unavailable`) until Target scaffold replaces them — do **not** restore Collapse-era compose scripts from git.
-
-`.env` is **generated** when compose exists — do not edit it by hand.
-
-**Do not use `.env.local` for this repo** when Living compose is active. Next.js loads `.env.local` after `.env` and overrides composed values. Vercel CLI (`vercel env pull`, `vercel integration add`) writes `.env.local` automatically — that reintroduces stale Supabase/SMTP keys and wrong `DATABASE_URL` for local Neon dev. Target S4.1 ([ARCH-027](docs/architecture/ARCH-027-env-model.md)) moves to `@afenda/env` + `.env.local` only after that slice ships.
+1. Copy `.env.example` → `.env.local` (or refresh carefully — see Local refresh below).
+2. Fill required keys (`DATABASE_URL`, `NEON_AUTH_*`, `APP_URL`).
+3. `pnpm --filter @afenda/web dev` (when the app shell exists).
 
 | Command | Purpose |
 |---------|---------|
-| `pnpm env:guard` | Fail if `.env.local` exists (lists key **names** only) — gated here until Target tooling |
-| `pnpm env:guard:fix` | Move `.env.local` → `.env.local.vercel-backup` — gated here until Target tooling |
-| `pnpm dev` | Gated on this checkout; Target product app lives under `apps/web` after ARCH-028 implement |
+| `pnpm validate:neon-env` | Neon Cloud ids / API against `.env.local` |
+| `pnpm audit:vercel` | Compare key **names** on Vercel (no values) — when Target ops tooling exists |
+| `pnpm dev` | Turbo → `@afenda/web` |
 
-Optional ops keys (Checkly): add `CHECKLY_*` to `env.secret` only — never pull from Vercel into local files.
+Optional ops keys (Checkly): add `CHECKLY_*` to `.env.local` only — never sync to Vercel as product keys.
 
-**Runtime env SSOT (when product code exists):** Target `@afenda/env` ([ARCH-027](docs/architecture/ARCH-027-env-model.md)). Do **not** recreate Collapse-era `lib/env/` or recover it from git. Logical Living maps may still mention `modules/platform/env/` as shape — physical home after implement is the Target package tree.
 ### Playground (`/playground`) — local developer UI review only
 
-`PLAYGROUND_*` vars live in `env.config` for **local developer UI review** (iframe embeds of real routes). **Never sync them to Vercel production.** Production deployments must not expose `/playground`; the route is gated by `PLAYGROUND_ENABLED=true` which stays local-only.
+`PLAYGROUND_*` vars live in `.env.local` for **local developer UI review** (iframe embeds of real routes). **Never sync them to Vercel production.** Production deployments must not expose `/playground`; the route is gated by `PLAYGROUND_ENABLED=true` which stays local-only.
 
 **Not part of the client product**
 
@@ -101,31 +94,27 @@ Optional ops keys (Checkly): add `CHECKLY_*` to `env.secret` only — never pull
 
 ### Vercel production sync
 
-**Direction:** local → Vercel only (`env.config` + `env.secret` → Vercel production).
+**Canonical store for production values:** Vercel dashboard / CLI. Local `.env.local` is for development.
 
 | Command | Purpose |
 |---------|---------|
-| `pnpm env:compose` | Merge config + secret → `.env` |
 | `pnpm audit:vercel` | Compare key **names** on Vercel (no values) |
-| `pnpm sync:vercel` | Push canonical production keys to Vercel |
-| `pnpm cleanup:vercel` | Remove stale Supabase/SMTP/MailerSend keys from Vercel |
+| `pnpm sync:vercel` | Push canonical production keys when Target tooling exists (Collapse-gated until then) |
+| `pnpm cleanup:vercel` | Remove stale Supabase/SMTP/MailerSend keys from Vercel (gated until Target tooling) |
 
-**Keys synced to Vercel production:** Neon (`DATABASE_URL`, `NEON_AUTH_*`), admin/preview client, `APP_URL`, FFT feature flags (including `FFT_ERP_SYNC_ENABLED`).
+**Keys for Vercel production:** Neon (`DATABASE_URL`, `NEON_AUTH_*`), admin/preview client fixtures, `APP_URL`, FFT feature flags (including `FFT_ERP_SYNC_ENABLED`).
 
-**Tenant-owned (`syncOptional`):** `FFT_ERP_VENDOR`, `FFT_ERP_BASE_URL` — pushed only when set; not required for `validate:env-sync` / `audit:vercel` while unset. Configure per customer when enabling FFT ERP sync (2D-3); adapter lives under `modules/fft/domain/erp/`, not as a product-wide Afenda ERP client.
+**Tenant-owned (optional):** `FFT_ERP_VENDOR`, `FFT_ERP_BASE_URL` — configure per customer when enabling FFT ERP sync (2D-3).
 
 **Keys never synced:** `PLAYGROUND_*`, `NEON_API_KEY`, `NEON_ORG_ID`, `NEON_PROJECT_ID`, `NEON_BRANCH_ID`, Shadcn Studio (`SHADCN_STUDIO_*`, `LICENSE_KEY`, `EMAIL`).
 
-After `sync:vercel`, redeploy: `vercel deploy --prod --yes`.
+### Local refresh / marketplace caution
 
-### Blocked commands (do not run)
+- Prefer editing `.env.local` from a known-good local copy. `vercel env pull` may redact secrets as empty strings and/or reintroduce stale marketplace keys (wrong `DATABASE_URL`). Review the file after any pull.
+- **`vercel integration add`** auto-writes `.env.local` — audit key **names** before trusting values.
+- Do not reintroduce `env.config` / `env.secret` / compose scripts.
 
-- **`vercel env pull`** — Vercel redacts secrets as empty strings on pull, which causes false audit mismatches and agent errors. Blocked by `scripts/vercel-env-guard.mjs`.
-- **`vercel integration add`** — auto-writes `.env.local`; run `pnpm env:guard:fix` after any marketplace install.
-- Do not create scripts that pull Vercel env into local files.
-- Do not overwrite `env.config` / `env.secret` from Vercel.
-
-Use `pnpm audit:vercel` for key-name validation instead.
+Use `pnpm audit:vercel` for key-name validation instead of inventing compose.
 
 ### GitHub CLI (issues / PRs)
 
@@ -139,13 +128,11 @@ pnpm gh -- issue close 1 --reason completed
 pnpm gh -- pr create --base main --head my-branch
 ```
 
-**Do not** add `GITHUB_TOKEN` to `env.secret` or `env.config` — it is not app runtime config. One-time setup: `gh auth login` with a classic or keyring token that has **`repo`** scope (covers issues and PRs on private repos).
+**Do not** add `GITHUB_TOKEN` to `.env.local` — it is not app runtime config. One-time setup: `gh auth login` with a classic or keyring token that has **`repo`** scope (covers issues and PRs on private repos).
 
 **Manual override (PowerShell):** `Remove-Item Env:GITHUB_TOKEN` then run `gh` directly.
 
-**CI secrets (GitHub Actions):** `pnpm audit:github-actions-secrets` · `pnpm sync:github-actions-secrets` (from `env.config` + `env.secret` after `env:compose`). `NEON_AUTH_*` must match the Neon branch behind `DATABASE_URL` on GitHub.
-
----
+**CI secrets (GitHub Actions):** `pnpm audit:github-actions-secrets` · `pnpm sync:github-actions-secrets` when Target tooling exists. `NEON_AUTH_*` must match the Neon branch behind `DATABASE_URL` on GitHub.
 
 ## Neon Auth
 
@@ -190,14 +177,14 @@ Authority: [`.agents/skills/neon-postgres/references/neon-auth/portal-password-r
 **Single branch policy:** local dev uses the **production** Neon branch (`br-tiny-hill-ao82jp6f`) — no dev/CI branch switching.
 
 ```bash
-pnpm env:neon-production   # align env.config, env.secret, .neon → production
-pnpm env:compose
-pnpm dev                   # http://localhost:3000
+# Ensure .env.local points at production Neon Auth + pooler DATABASE_URL
+pnpm validate:neon-env
+pnpm --filter @afenda/web dev   # http://localhost:3000 when app shell exists
 ```
 
-**Neon Cloud org (ops):** `NEON_ORG_ID=org-fragrant-lake-90358173` (Launch) · project `young-hat-54755363` (**Afenda-Lite**). Put org-scoped `NEON_API_KEY` in `env.secret` only. CLI: shell `NEON_API_KEY` or `~/.config/neonctl/credentials.json`. Cursor MCP (`.cursor/mcp.json` / `.vscode/mcp.json`): User env `NEON_API_KEY` so `Bearer ${NEON_API_KEY}` resolves — **restart Cursor** after changing it. Do **not** use `neonctl link` day-to-day here (it can rewrite `.neon` and pull into `.env`); prefer `pnpm env:neon-production` then `pnpm env:compose`.
+**Neon Cloud org (ops):** `NEON_ORG_ID=org-fragrant-lake-90358173` (Launch) · project `young-hat-54755363` (**Afenda-Lite**). Put org-scoped `NEON_API_KEY` in `.env.local` only. CLI: shell `NEON_API_KEY` or `~/.config/neonctl/credentials.json`. Cursor MCP (`.cursor/mcp.json` / `.vscode/mcp.json`): User env `NEON_API_KEY` so `Bearer ${NEON_API_KEY}` resolves — **restart Cursor** after changing it. Do **not** use `neonctl link` day-to-day here (it can rewrite `.neon` and pull into local env files).
 
-Localhost is allowed on production Neon Auth for `http://localhost:3000` sign-in. Keep `APP_URL` as the production URL in `env.config` — server-side org invites still emit production links (see `lib/auth/neon-auth-request.ts`). For layout-only UI work without auth, use `/playground` embed.
+Localhost is allowed on production Neon Auth for `http://localhost:3000` sign-in. Keep `APP_URL` as the production URL in `.env.local` — server-side org invites still emit production links (`@afenda/auth` invitations). For layout-only UI work without auth, use `/playground` embed.
 
 Runbook: [docs/runbooks/local-dev-auth.md](docs/runbooks/local-dev-auth.md).
 
@@ -257,4 +244,4 @@ Credentials, fixtures, Playwright base, and React test helpers live under **`tes
 | `E2E_CLIENT_EMAIL` / `E2E_CLIENT_PASSWORD` | Client override |
 | `E2E_SURVEY_SLUG` / `E2E_INVITE_TOKEN` | Public link smoke without operator create |
 
-Run `pnpm env:compose` before local E2E. CI injects secrets from GitHub Actions.
+Ensure `.env.local` is present before local E2E. CI injects secrets from GitHub Actions.

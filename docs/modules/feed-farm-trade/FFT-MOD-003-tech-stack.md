@@ -82,21 +82,20 @@ Record Feed Farm Trade runtime, framework, data, auth dependencies, and **module
 | `FFT_ERP_SYNC_ENABLED` | `false` | `false` | 2D |
 | `FFT_ERP_VENDOR` / `FFT_ERP_BASE_URL` | unset until tenant pack | unset | `syncOptional` |
 
-Platform env model is **ARCH-027 two-state** ([ARCH-027](../../architecture/ARCH-027-env-model.md)):
+Platform env model is [ARCH-027](../../architecture/ARCH-027-env-model.md) (`@afenda/env` + `.env.local`):
 
 | State | FFT env instruction |
 |-------|---------------------|
-| **Docs-first / pre-S4.1** | No live `env:compose` / `env:guard`. Do not recover Collapse compose or `lib/env/`. Do not create `.env.local` or run `vercel env pull`. Flag **names** and production values stay as tabled; local inventory files (if present) are notes only. |
-| **Target post-S4.1** | `@afenda/env` is the only app config reader; `.env.local` is the only local runtime env file; no compose. Never hand-edit generated env beyond the approved S4.1 init path. |
+| **S4.1+ (this checkout)** | `@afenda/env` is the only app config reader; `.env.local` is the only local runtime env file; no compose. Flag **names** and production values stay as tabled. |
 
-Historical pre-Collapse “compose then sync:vercel” procedures are **not** Living instructions on this checkout.
+Historical pre-Collapse “compose then sync:vercel” procedures are **retired** — do not restore.
 
 ## 3.6 Local vs prod
 
 | Concern | Local | Prod |
 |---------|-------|------|
 | Neon branch | Production branch policy | `br-tiny-hill-ao82jp6f` |
-| Env surface | Docs-first: inventory notes only; Target post-S4.1: `.env.local` via `@afenda/env` | Vercel production keys (audit names; sync only when shipping) |
+| Env surface | `.env.local` via `@afenda/env` | Vercel production keys (audit names; sync only when shipping) |
 | RBAC flag | often `false` | `true` |
 | ERP sync | off unless deliberately enabled | off until 2D-3 ready |
 
@@ -109,7 +108,7 @@ Single-owner ACs for this role. Evidence: [FFT-MOD-009](FFT-MOD-009-verification
 | AC-ID | Profile | Quality Dimension | Applicability | Criterion |
 | --- | --- | --- | --- | --- |
 | FFT-AC-003-01 | Enterprise Core | CORE-PLATFORM | Core | Supported runtime and dependencies are documented: Node default; Edge only as named exception; local vs prod behavior differs only as tabled. |
-| FFT-AC-003-02 | Enterprise Core | CORE-PLATFORM | Core | `FFT_*` flags/env keys match the Living flag table and platform manifest under the ARCH-027 two-state env model (no docs-first compose; Target `@afenda/env` + `.env.local` after S4.1); budgets/constraints for module resources are stated; never hand-edit runtime env outside the approved surface; never `vercel env pull` before S4.1. |
+| FFT-AC-003-02 | Enterprise Core | CORE-PLATFORM | Core | `FFT_*` flags/env keys match the Living flag table under ARCH-027 (`@afenda/env` + `.env.local`; compose retired); budgets/constraints for module resources are stated; never hand-edit runtime env outside the approved surface; review any `vercel env pull` for redacted/stale keys. |
 | FFT-AC-003-03 | Enterprise Core | CORE-PLATFORM | Conditional | When a Conditional ops/ERP capability is Disabled or Uncontracted, fail-closed behavior is evidenced (otherwise remains `NOT EVIDENCED` on FFT-MOD-009). |
 | FFT-AC-003-04 | ERP | ERP-CONFIG-ALM | Core | Configuration is separated from customization; supported versions, environment promotion, feature/config transport, and rollback ownership are documented and reproducible. |
 ---
