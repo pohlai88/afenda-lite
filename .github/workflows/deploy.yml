@@ -1,0 +1,70 @@
+# ARCH-028 S8.2 — Production deploy (turbo build gate → Vercel prod)
+# Actions owns production promotion. Production Git auto-deploy is skipped via
+# apps/web/vercel.json ignoreCommand.
+#
+# Required secrets: VERCEL_TOKEN · DATABASE_URL · NEON_AUTH_BASE_URL ·
+# NEON_AUTH_COOKIE_SECRET · APP_URL
+# Required vars: VERCEL_ORG_ID · VERCEL_PROJECT_ID · TURBO_TEAM (optional cache:
+# secret TURBO_TOKEN)
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Build · Vercel production
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+      TURBO_TEAM: ${{ vars.TURBO_TEAM }}
+      VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      NEON_AUTH_BASE_URL: ${{ secrets.NEON_AUTH_BASE_URL }}
+      NEON_AUTH_COOKIE_SECRET: ${{ secrets.NEON_AUTH_COOKIE_SECRET }}
+      APP_URL: ${{ secrets.APP_URL }}
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build @afenda/web
+        run: pnpm exec turbo run build --filter=@afenda/web
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel@51.8.0
+
+      - name: Pull Vercel production project
+        run: vercel pull --yes --environment=production
+
+      - name: Deploy Vercel production
+        # Build on Vercel infrastructure (pnpm monorepo + Root Directory apps/web).
+        # Actions turbo gate above ensures @afenda/web builds before promote.
+        run: vercel deploy --prod --yes

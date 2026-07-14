@@ -4,7 +4,7 @@
 | ----------------- | ------------ |
 | **ID**            | ARCH-031     |
 | **Category**      | Architecture |
-| **Version**       | 1.3.10       |
+| **Version**       | 1.3.11       |
 | **Status**        | Living       |
 | **Control State** | Closed       |
 | **Owner**         | Platform     |
@@ -81,7 +81,7 @@ The full documentation-integrity baseline inspected **97/97 primary files**: 93 
 | Quality and testing | [`biome.jsonc`](../../biome.jsonc), [`testing/vitest.config.ts`](../../testing/vitest.config.ts), [`playwright.config.ts`](../../playwright.config.ts) | Biome + Ultracite + Vitest wired through turbo; Playwright optional (`test:e2e`) |
 | Contract / docs gates | [`OPEN-001-openapi.yaml`](../api/OPEN-001-openapi.yaml), [`generate-openapi.mts`](../../scripts/generate-openapi.mts), docs integrity scripts | Runnable on this docs-first checkout |
 | Product source presence | Collapse `app/`/`modules/`/`features/`/`components-V2/` | **Absent by design**; do not recover — [ARCH-028](ARCH-028-implementation-slices.md) |
-| Target packages (through S8.1) | `apps/web` route groups + modules domain ports + `apps/web/features/{auth,declarations,fft,org-admin}` + Next shell, `packages/{config,db,auth,env,ui,emails}`, [`turbo.json`](../../turbo.json), Target CI | **Present** after ARCH-028 S1.1–S8.1 + Checkpoint F; next open S8.2 |
+| Target packages (through S8.2) | `apps/web` route groups + modules domain ports + `apps/web/features/{auth,declarations,fft,org-admin}` + Next shell, `packages/{config,db,auth,env,ui,emails}`, [`turbo.json`](../../turbo.json), Target CI/deploy | **Present** after ARCH-028 S1.1–S8.2 + Checkpoint F; next open Checkpoint G (Docs) |
 
 Validator exclusions: external HTTP availability and code-to-document runtime drift. **Package script names are not evidence** that Collapse-era tooling still runs.
 
@@ -96,7 +96,7 @@ Validator exclusions: external HTTP availability and code-to-document runtime dr
 | React optimization | React Compiler | Target-preferred and currently configured | Configured — [`apps/web/next.config.ts`](../../apps/web/next.config.ts) (`reactCompiler: true`) | [ARCH-028](ARCH-028-implementation-slices.md) | Preserve on the Target app. |
 | Docs-first package workflow | pnpm (`pnpm-lock.yaml`), Corepack-pinned `packageManager`, `pnpm install --frozen-lockfile` | Current / Living | Configured — [`package.json`](../../package.json), [`pnpm-workspace.yaml`](../../pnpm-workspace.yaml), [CI](../../.github/workflows/ci.yml) | [ARCH-028](ARCH-028-implementation-slices.md) | npm/yarn lockfiles gitignored; workspace members grow slice-serially under ARCH-028. |
 | Target workspace | Turborepo with pnpm workspaces and remote caching | Target (S1.1 shipped) | [`pnpm-workspace.yaml`](../../pnpm-workspace.yaml) + [`turbo.json`](../../turbo.json) present; members through `@afenda/emails` | [ARCH-022](ARCH-022-system-overview.md), [ARCH-024](ARCH-024-package-boundaries.md) | Sole package manager is pnpm. |
-| Target package surface | Private `@afenda/{config,db,auth,env,ui,emails}` | Target (partial) | Present: packages + route groups + modules domain ports + feature shells (S7.4 / Checkpoint F); CI/deploy still open (S8.x) | [ARCH-022](ARCH-022-system-overview.md), [ARCH-024](ARCH-024-package-boundaries.md) | `apps/web` remains the sole deployable. |
+| Target package surface | Private `@afenda/{config,db,auth,env,ui,emails}` | Target (partial) | Present: packages + route groups + modules domain ports + feature shells (S7.4 / Checkpoint F) + Target CI/deploy (S8.1–S8.2) | [ARCH-022](ARCH-022-system-overview.md), [ARCH-024](ARCH-024-package-boundaries.md) | `apps/web` remains the sole deployable. |
 
 ## 3.4 UI and design system
 
@@ -147,7 +147,7 @@ Validator exclusions: external HTTP availability and code-to-document runtime dr
 | Database operations | Neon production branch, pooled connection, PITR and daily snapshots | Current / Living | Ops evidence documented; secret values not inspected | [ARCH-023](ARCH-023-multi-tenancy.md), [RB-001](../runbooks/RB-001-multi-org-ops.md) | Keep the shared-schema posture and production pooler invariant. |
 | Continuous integration | GitHub Actions · Node 24 · pnpm frozen lockfile · `turbo run lint typecheck test` · Vercel Remote Cache (`TURBO_TOKEN` / `TURBO_TEAM`) | Current / Living (S8.1) | Source verified — [CI workflow](../../.github/workflows/ci.yml); local **19** turbo tasks green | [ARCH-028](ARCH-028-implementation-slices.md), [ARCH-022](ARCH-022-system-overview.md) | Biome lint + Vitest contract tests + `tsc` on `@afenda/*` and `@afenda/web`. |
 | Docs-capable local gates | `check:docs-naming`, doc-integrity, module-quality, OpenAPI, `validate:neon-env` | Current / Living (docs checkout) | Source verified — [`run-checks.mjs`](../../scripts/run-checks.mjs) | [DOC-001](../_control/DOC-001-documentation-control-standard.md), [ARCH-028](ARCH-028-implementation-slices.md) | Collapse-era product/ops scripts are gated — not missing “gaps” to restore. |
-| Target build/deploy | Turbo build filtering and optional Vercel remote cache | Target | Documented Target | [ARCH-022](ARCH-022-system-overview.md), [ARCH-028](ARCH-028-implementation-slices.md) | Decide one deployment owner; avoid duplicate Vercel and Actions promotion. |
+| Target build/deploy | GitHub Actions deploy · `turbo run build --filter=@afenda/web` · Vercel prod · Corepack pnpm | Current / Living (S8.2) | Source verified — [deploy workflow](../../.github/workflows/deploy.yml); prod READY `afenda-lite.vercel.app`; `ENABLE_EXPERIMENTAL_COREPACK=1`; production Git auto-deploy ignored; GH secrets/vars wired for Deploy | [ARCH-022](ARCH-022-system-overview.md), [ARCH-028](ARCH-028-implementation-slices.md) | Actions owns production (`environment: production`); commit/push `deploy.yml` then use `workflow_dispatch` or push to `main`. |
 
 ## 3.9 Supporting and module technologies
 
@@ -221,6 +221,7 @@ ARCH-031 shall link to the changed authority rather than duplicate its detailed 
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 1.3.11 | 2026-07-15 | S8.2: Target deploy evidence (`deploy.yml`, Corepack, prod READY); next open Checkpoint G (Docs). |
 | 1.3.10 | 2026-07-15 | S8.1 audit: Biome+Vitest turbo gates real (19 tasks); catalogue quality/testing honesty. |
 | 1.3.9 | 2026-07-15 | S8.1: Target CI turbo lint/typecheck/test + remote cache evidence; next open S8.2. |
 | 1.3.8 | 2026-07-15 | S7.4 + Checkpoint F: catalogue evidence for `apps/web/features/*` shells; next open S8.1. |
@@ -244,7 +245,7 @@ ARCH-031 shall link to the changed authority rather than duplicate its detailed 
 
 - This catalogue owns discovery and lifecycle classification only. The linked source document owns each decision.
 - Manifest-only dependencies are not automatically endorsed architecture.
-- **Checkout posture:** Collapse product trees (`app/`/`modules/`/`features/`/`components-V2/`) remain absent **by design**. Target packages through S8.1 + Checkpoint F (`apps/web` modules + feature shells + Target CI included) are present — absence of Collapse roots is not a restore ticket; next open **S8.2**.
+- **Checkout posture:** Collapse product trees (`app/`/`modules/`/`features/`/`components-V2/`) remain absent **by design**. Target packages through S8.2 + Checkpoint F (`apps/web` modules + feature shells + Target CI/deploy included) are present — absence of Collapse roots is not a restore ticket; next open **Checkpoint G** (Docs lane).
 - **Anti-contamination:** do not recover Collapse-era `app/`/`modules/`/`features/`/`components-V2/`, `lib/env/`, or wiped compose/tenancy scripts from git — [ARCH-028](ARCH-028-implementation-slices.md) lock.
 - **Root cause of prior catalogue stale:** Treating `package.json` script **names** and Collapse Living compose/`lib/env` as Current runnable evidence after Collapse. Fixed in 1.1.0 — evidence follows the filesystem + Target decisions.
 - External link availability and full code-to-document runtime drift remain outside the validator coverage used for this catalogue.
