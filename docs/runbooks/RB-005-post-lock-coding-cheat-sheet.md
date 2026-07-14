@@ -12,7 +12,7 @@
 | **Mode** | Runbook / command card |
 | **Audience** | Engineers + agents |
 | **Enables** | Consistent PRs after Decision lock §0 — without reopening Rejected / Deferred tenancy work |
-| **Authority** | [ARCH-023 Decision lock](../architecture/system/ARCH-023-multi-tenancy.md) |
+| **Authority** | [ARCH-023 Decision lock](../architecture/ARCH-023-multi-tenancy.md) |
 | **Locked** | 2026-07-12 |
 
 Print or pin this. One phase per turn. Fail closed on red checks.
@@ -177,10 +177,10 @@ npm run check:tenancy-residue
 
 | Track | Doc |
 |-------|-----|
-| Org admin | [ARCH-023](../architecture/system/ARCH-023-multi-tenancy.md) |
-| Join | [ARCH-026](../architecture/system/ARCH-026-auth-session.md) |
-| Account | [ARCH-026](../architecture/system/ARCH-026-auth-session.md) |
-| Tenancy | [ARCH-023](../architecture/system/ARCH-023-multi-tenancy.md) |
+| Org admin | [ARCH-023](../architecture/ARCH-023-multi-tenancy.md) |
+| Join | [ARCH-026](../architecture/ARCH-026-auth-session.md) |
+| Account | [ARCH-026](../architecture/ARCH-026-auth-session.md) |
+| Tenancy | [ARCH-023](../architecture/ARCH-023-multi-tenancy.md) |
 | FFT roadmap / ops | [FFT-MOD-010](../modules/feed-farm-trade/FFT-MOD-010-module-docs-index.md) · [FFT-MOD-008](../modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md) |
 | Closed scope | [deprecation register — Closed product phases](../../.cursor/skills/agent-skills/skills/deprecation-and-migration/reference.md) |
 
@@ -188,6 +188,6 @@ npm run check:tenancy-residue
 
 ## References
 
-- Decision lock: [ARCH-023 Decision lock](../architecture/system/ARCH-023-multi-tenancy.md)
+- Decision lock: [ARCH-023 Decision lock](../architecture/ARCH-023-multi-tenancy.md)
 - Ladder commands: [neon-tenancy-efficiency/reference.md](../../.cursor/skills/neon-tenancy-efficiency/reference.md)
 - Deprecation register: [deprecation-and-migration/reference.md](../../.cursor/skills/agent-skills/skills/deprecation-and-migration/reference.md)

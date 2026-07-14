@@ -1,0 +1,133 @@
+schema_version: 1
+role: MOD-005
+target_filename: "{{MODULE_PREFIX}}-MOD-005-auth-tenancy-rbac.md"
+source_format: markdown
+template: |-
+  # {{MODULE_PREFIX}}-MOD-005 Auth, Tenancy and RBAC
+  
+  | Field             | Value                     |
+  | ----------------- | ------------------------- |
+  | **ID**            | {{MODULE_PREFIX}}-MOD-005 |
+  | **Category**      | Module                    |
+  | **Version**       | 0.1.0                     |
+  | **Status**        | Draft                     |
+  | **Control State** | Closed                    |
+  | **Owner**         | {{MODULE_OWNER}}          |
+  | **Updated**       | {{DATE}}                  |
+  | **Spine**         | MOD-005 Auth, Tenancy and RBAC |
+  
+  ---
+  
+  # 1. Purpose
+  
+  Define authentication dependencies, tenant isolation, permissions, and sensitive-action controls for {{MODULE_TITLE}}.
+
+  **Audience:** application engineers, security engineers, operators, and auditors.
+  **Action enabled:** implement and verify identity, tenant, permission, deny, and abuse-control behavior.
+
+  ---
+  
+  # 2. Scope
+  
+  ## 2.1 In Scope
+  
+  - Entry/session requirements, organization scope, permission catalogue, own-scope rules, audit, and abuse controls.
+  
+  ## 2.2 Out of Scope
+  
+  - Replacing platform IAM or tenancy authority and claiming readiness.
+
+  ## 2.3 Assumptions and unresolved questions
+
+  List assumptions with an owner and validation path. Record unresolved questions with a decision owner and review trigger; never present them as accepted facts.
+
+  ---
+  
+  # 3. Auth, Tenancy and RBAC
+  
+  ## 3.1 Identity and session model
+  
+  Define accepted identities, session prerequisite, actor resolution, reauthentication points, and unauthenticated behavior.
+  
+  ## 3.2 Organization resolution and tenant isolation
+  
+  | Entry path | Organization source | Validation | Mismatch behavior | Audit signal |
+  | ---------- | ------------------- | ---------- | ----------------- | ------------ |
+  | {{ENTRY_PATH}} | {{ORG_SOURCE}} | {{VALIDATION}} | {{DENY_BEHAVIOR}} | {{SIGNAL}} |
+  
+  Link ARCH-023 for platform IAM and tenancy facts. State module-specific enforcement only.
+  
+  ## 3.3 Platform versus module permissions
+  
+  | Permission | Actor | Scope | Grants | Explicitly does not grant |
+  | ---------- | ----- | ----- | ------ | ------------------------- |
+  | {{PERMISSION}} | {{ACTOR}} | {{ORG_OR_RESOURCE_SCOPE}} | {{ALLOWED_ACTION}} | {{PROHIBITED_ACTION}} |
+  
+  ## 3.4 Gates and least privilege
+  
+  Map every sensitive action to authentication, organization, permission, ownership, and state-transition checks. Identify the authoritative enforcement layer.
+  
+  ## 3.5 Deny and failure behavior
+  
+  | Condition | HTTP/action result | User-safe response | Information disclosure control | Audit event |
+  | --------- | ------------------ | ------------------ | ------------------------------ | ----------- |
+  | {{DENY_CONDITION}} | {{RESULT}} | {{SAFE_RESPONSE}} | {{CONTROL}} | {{EVENT}} |
+  
+  Deny by default when identity, tenant, permission, or ownership cannot be proven.
+  
+  ## 3.6 Abuse, audit, and sensitive actions
+  
+  Define rate/volume controls, replay protection, privileged-action logging, approval or separation-of-duty needs, and escalation ownership.
+  
+  ## 3.7 Enterprise requirements
+  
+  | AC-ID | Profile | Quality Dimension | Applicability | Criterion |
+  | ----- | ------- | ----------------- | ------------- | --------- |
+  | {{MODULE_PREFIX}}-AC-005-01 | Enterprise Core | CORE-SECURITY | Core | {{TESTABLE_SECURITY_CRITERION}} |
+  
+  For an active ERP profile, add an ERP-SOD-COMPLIANCE row. Criteria must exercise deny paths and cross-organization attempts, not only successful access.
+
+  ---
+  
+  # 4. References
+  
+  | ID | Title | Relationship |
+  | -- | ----- | ------------ |
+  | DOC-001 | Documentation Control Standard | Governance |
+  | MOD-002 | Modules Index | Module category and readiness standard |
+  | ARCH-023 | Multi-Tenancy and Platform RBAC | Platform IAM and tenancy authority |
+  | DOC-003 | Controlled Document Template | Header and six-section baseline |
+  | {{AUTHORITY_ID}} | {{ROLE_RELEVANT_AUTHORITY}} | Governing decision, contract, implementation, or operating rule |
+
+  ---
+  
+  # 5. Change Log
+  
+  | Version | Date | Summary |
+  | ------- | ---- | ------- |
+  | 0.1.0 | {{DATE}} | Provisional module-pack scaffold. |
+  
+  ---
+  
+  # 6. Notes
+  
+  This tokenized template is non-authoritative.
+  
+  ## 6.1 Enterprise completion gate
+  
+  Before promotion:
+  
+  - name the engineering/operator audience and the decision or action enabled;
+  - replace every double-brace token and remove all TODO/TBD placeholder language;
+  - complete every MOD-002-required topic owned by this role without duplicating sibling authorities;
+  - label assumptions, unknowns, limits, deferred work, and rejected choices;
+  - make each acceptance criterion atomic, measurable, and independently reproducible;
+  - link commands, source paths, contracts, runbooks, and governing documents instead of asserting implementation from prose;
+  - synchronize header Version/Updated, latest Change Log row, and DOC-002 registration;
+  - verify Control State is Closed after authorized work; and
+  - pass test:module-pack, check:module-quality, check:docs-naming, and the full documentation-integrity audit.
+  
+  Documentation completeness does not imply Module Enterprise Readiness.
+
+
+

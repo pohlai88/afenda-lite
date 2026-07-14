@@ -17,7 +17,7 @@ This document is the module-owned REST index for Feed Farm Trade (FFT).
 
 FFT shall not remain indefinitely as an appendix inside [REST-001](../../api/REST-001-rest-resources.md). This index owns the FFT HTTP catalogue spine because FFT has its own RBAC, gated delivery phases, ERP sync, allocation, deposits, pickup, import, and operational commands.
 
-**Placeholder.** Not enforcement SSOT. Parent architecture: [ARCH-029](../../architecture/system/ARCH-029-interface-api-architecture.md). Module spine: [FFT-MOD-007](FFT-MOD-007-api-and-adapters.md).
+**Placeholder.** Not enforcement SSOT. Parent architecture: [ARCH-029](../../architecture/ARCH-029-interface-api-architecture.md). Module spine: [FFT-MOD-007](FFT-MOD-007-api-and-adapters.md).
 
 ---
 

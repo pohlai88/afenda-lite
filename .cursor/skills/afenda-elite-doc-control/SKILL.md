@@ -84,8 +84,8 @@ Conflict order: DOC-001 → category-specific standard (if any) → DOC-003 → 
 | Reader must… | Category | Prefix | Home |
 | --- | --- | --- | --- |
 | Govern docs themselves | Control | DOC | `docs/_control/` |
-| Understand system shape / Target architecture | Architecture | ARCH | `docs/architecture/` (Target packs under `docs/architecture/system/` when applicable) |
-| Accept one binding decision | ADR | ADR | `docs/architecture/decisions/` (only when explicitly approved; **no** required `docs/adr/` tree) |
+| Understand system shape / Target architecture | Architecture | ARCH | `docs/architecture/` (Target packs under `docs/architecture/` when applicable) |
+| Accept one binding decision | ADR | ADR | `docs/architecture/adr/` (only when explicitly approved; **no** top-level `docs/adr/`; **no** `decisions/` folder) |
 | Integrate against shared interface vocabulary | API | API | `docs/api/` |
 | Read HTTP path/method catalogues | REST | REST | `docs/api/` |
 | Consume machine-readable OpenAPI | OPEN | OPEN | `docs/api/` |

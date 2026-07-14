@@ -16,7 +16,7 @@
 
 Enable Backend maintainers to **revert a breaking API / BFF deployment** and restore prior Route Handler / Server Action behavior, OpenAPI artifact, and verification evidence with minimal consumer damage.
 
-Aligns with [ARCH-029](../../architecture/system/ARCH-029-interface-api-architecture.md) change gates. Breaking-change vocabulary in Draft [API-009](../API-009-compatibility-deprecation-contract.md) is cited only until Living.
+Aligns with [ARCH-029](../../architecture/ARCH-029-interface-api-architecture.md) change gates. Breaking-change vocabulary in Draft [API-009](../API-009-compatibility-deprecation-contract.md) is cited only until Living.
 
 **Audience:** Backend · release operators.
 **Action enabled:** decide and execute rollback; prove restored contract; record evidence.

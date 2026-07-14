@@ -1,0 +1,20 @@
+---
+description: Ban folders named decision/decisions; ADR home is docs/architecture/adr/.
+alwaysApply: true
+---
+
+# No `decision` / `decisions` directory
+
+**Forbidden path segment:** any folder named `decision` or `decisions` (especially `docs/architecture/decisions/`).
+
+| Allowed | Forbidden |
+|---------|-----------|
+| Category **ADR** | Directory name `decision` / `decisions` |
+| Home **`docs/architecture/adr/`** | Top-level `docs/adr/` (retired 2026-07-13) |
+| Filename `ADR-NNN-*.md` | Teaching “decisions folder” as product vocabulary |
+
+## Agent duty
+
+1. Do **not** create, write, move, or restore `**/decisions/**` or `**/decision/**`.
+2. Put new ADRs under `docs/architecture/adr/` after ID approval (DOC-001).
+3. Hook: `.cursor/hooks/no-decision-directory.mjs` (`failClosed: false`).

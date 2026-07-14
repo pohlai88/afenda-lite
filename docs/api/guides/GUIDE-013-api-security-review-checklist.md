@@ -13,7 +13,7 @@
 
 # 1. Purpose
 
-This guide will provide a **review checklist** for API / Action security before merge or release. It implements review practice against [ARCH-029](../../architecture/system/ARCH-029-interface-api-architecture.md) and [API-005](../API-005-authentication-authorization-contract.md) — it does not invent a parallel security architecture.
+This guide will provide a **review checklist** for API / Action security before merge or release. It implements review practice against [ARCH-029](../../architecture/ARCH-029-interface-api-architecture.md) and [API-005](../API-005-authentication-authorization-contract.md) — it does not invent a parallel security architecture.
 
 **Placeholder.**
 

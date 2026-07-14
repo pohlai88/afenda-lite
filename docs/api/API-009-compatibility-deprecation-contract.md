@@ -13,7 +13,7 @@
 
 # 1. Purpose
 
-This document will translate [ARCH-029](../architecture/system/ARCH-029-interface-api-architecture.md) compatibility principles into executable contract rules for additive vs breaking change, deprecation, and release evidence.
+This document will translate [ARCH-029](../architecture/ARCH-029-interface-api-architecture.md) compatibility principles into executable contract rules for additive vs breaking change, deprecation, and release evidence.
 
 **Placeholder.** Substantive rules are not yet authoritative.
 
@@ -57,7 +57,7 @@ Planned coverage:
 | OpenAPI markers            | `deprecated: true` and document cross-links                 |
 | Release evidence           | Impact analysis, regeneration, tests, approval gate         |
 
-One active HTTP contract version remains the default ([ARCH-029](../architecture/system/ARCH-029-interface-api-architecture.md) §3.1.6).
+One active HTTP contract version remains the default ([ARCH-029](../architecture/ARCH-029-interface-api-architecture.md) §3.1.6).
 
 ---
 

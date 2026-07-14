@@ -13,7 +13,7 @@
 
 # 1. Purpose
 
-This guide is the **verification authority** for the Afenda interface contract pack. It defines what must be proven before treating an API / Action / OpenAPI change as ready — without establishing architecture (that remains [ARCH-029](../../architecture/system/ARCH-029-interface-api-architecture.md)).
+This guide is the **verification authority** for the Afenda interface contract pack. It defines what must be proven before treating an API / Action / OpenAPI change as ready — without establishing architecture (that remains [ARCH-029](../../architecture/ARCH-029-interface-api-architecture.md)).
 
 **Placeholder.** Prefer this Guide over a separate ARCH-030 until verification practice is stable enough to promote architecture assurance.
 

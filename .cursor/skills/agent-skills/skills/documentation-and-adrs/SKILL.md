@@ -57,7 +57,7 @@ ADRs capture the reasoning behind significant technical decisions. They're the h
 
 ### ADR Template
 
-Store ADRs under `docs/architecture/decisions/` when explicitly approved (DOC-001 — no required `docs/adr/` tree; never recreate `doc/`). Use DOC-001 lifecycle names in Status (`Draft` · `Review` · `Accepted` · `Living` · `Target` · `Superseded` · `Retired`). Use **Control State** (`Open` · `Closed` · `Reopened`) for edit authorization — never confuse it with Status.
+Store ADRs under `docs/architecture/adr/` when explicitly approved (DOC-001 — no top-level `docs/adr/`; no `decisions/` folder; never recreate `doc/`). Use DOC-001 lifecycle names in Status (`Draft` · `Review` · `Accepted` · `Living` · `Target` · `Superseded` · `Retired`). Use **Control State** (`Open` · `Closed` · `Reopened`) for edit authorization — never confuse it with Status.
 
 ```markdown
 # ADR-001: Use PostgreSQL for primary database

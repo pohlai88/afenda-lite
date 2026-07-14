@@ -14,7 +14,7 @@
 
 Contract-first, one version, validate at the edge. Enables engineers to choose the correct adapter and security pipeline before writing Actions or Route Handlers.
 
-**Parent architecture:** [ARCH-029](../architecture/system/ARCH-029-interface-api-architecture.md). **Audience:** backend and frontend maintainers. **Action enabled:** pick adapter + apply auth inside the adapter.
+**Parent architecture:** [ARCH-029](../architecture/ARCH-029-interface-api-architecture.md). **Audience:** backend and frontend maintainers. **Action enabled:** pick adapter + apply auth inside the adapter.
 
 # 2. Scope
 
@@ -75,7 +75,7 @@ Every Server Action and every **mutating** Route Handler:
 
 Optional: schedule non-blocking audit/side effects with `after()` so they do not delay the response.
 
-**Public exceptions (no portal session):** explicit allowlist only. Living allowlist: health probes and Neon Auth proxy. Additional public survey / secure-link flows require approved catalogue rows ([REST-006](REST-006-public-survey-secure-link-resources.md)) and still validate token scope and resource state ([ARCH-029](../architecture/system/ARCH-029-interface-api-architecture.md) §3.3; [API-005](API-005-authentication-authorization-contract.md) Draft).
+**Public exceptions (no portal session):** explicit allowlist only. Living allowlist: health probes and Neon Auth proxy. Additional public survey / secure-link flows require approved catalogue rows ([REST-006](REST-006-public-survey-secure-link-resources.md)) and still validate token scope and resource state ([ARCH-029](../architecture/ARCH-029-interface-api-architecture.md) §3.3; [API-005](API-005-authentication-authorization-contract.md) Draft).
 
 ## Session guards (examples)
 
@@ -124,14 +124,14 @@ Do not ship `/api/v1` and `/api/v2` in parallel. Extend resources additively (op
 
 # 4. References
 
-- [ARCH-029 Interface and API Architecture](../architecture/system/ARCH-029-interface-api-architecture.md) (parent)
+- [ARCH-029 Interface and API Architecture](../architecture/ARCH-029-interface-api-architecture.md) (parent)
 - [REST-001 Rest Resources](REST-001-rest-resources.md)
 - [API-002 Error Contract](API-002-error-contract.md)
 - [API-003 API Types](API-003-api-types.md)
 - [API-004 Schema Map](API-004-schema-map.md)
 - [OPEN-001 OpenAPI](OPEN-001-openapi.md)
-- [../architecture/frontend/ARCH-013-bff-and-data-flow.md](../architecture/frontend/ARCH-013-bff-and-data-flow.md)
-- [../architecture/backend/ARCH-010-backend-conventions.md](../architecture/backend/ARCH-010-backend-conventions.md)
+- [../architecture/ARCH-013-bff-and-data-flow.md](../architecture/ARCH-013-bff-and-data-flow.md)
+- [../architecture/ARCH-010-backend-conventions.md](../architecture/ARCH-010-backend-conventions.md)
 
 # 5. Change Log
 

@@ -1,0 +1,43 @@
+---
+description: Ban MVP quality, MVP proposals, and MVP planning — enterprise production quality bar only
+alwaysApply: true
+---
+
+# No MVP quality · no MVP proposals · no MVP planning
+
+**NOT ALLOWED. NOT ALLOWED. NOT ALLOWED.**
+
+This project’s only quality and planning bar is **enterprise production**. Agents must not propose, plan, document, or ship work under an MVP / “minimum viable” quality or scope frame.
+
+## Forbidden
+
+- MVP quality bar, “good enough for MVP”, “MVP-OK”, “MVP-grade”, “ship as MVP”
+- MVP proposals, MVP plans, MVP roadmaps, MVP scope, MVP planning sessions
+- Minimum viable product / minimum viable scope as a carve-out from production readiness
+- Filenames or paths that encode MVP planning (`*mvp*`, `*minimum-viable*`) for new work
+- Docs, ADRs, skills, or PR prose that authorize a lower bar “until MVP”
+- Saying “later for production”, “MVP first then harden”, or equivalent
+
+## Required
+
+| Instead of | Use |
+|------------|-----|
+| MVP quality / MVP-OK | Enterprise production quality bar |
+| MVP proposal / MVP plan | Production slice / Approved slice group / Living Target scope |
+| Program MVP as the claim | Module Enterprise Readiness + evidence (MOD-002 / owning `*-MOD-009`) |
+| Shrink quality to ship | Shrink **scope** only — quality stays enterprise production |
+
+1. Plan and implement to the enterprise production bar in this change, **or**
+2. Stop, state what is blocked, and wait for an explicit written exception in **this** turn.
+
+## Narrow exceptions (only these)
+
+| Exception | Rule |
+|-----------|------|
+| User letter this turn | User explicitly ordered a named temporary exception **in this chat turn** |
+| Ban surfaces | Rules/hooks/docs that **state** this prohibition |
+| Historical residue | Existing committed text may still say “MVP”; when you **touch** it, rewrite to enterprise production language — do not add new MVP framing |
+
+## Hook enforcement
+
+`preToolUse` → `.cursor/hooks/no-mvp-quality-bar.mjs` denies Write/StrReplace/EditNotebook that **increase** forbidden MVP quality/proposal/planning matches (Cursor may flatten StrReplace to full-file Write). Cleanup that removes or holds match count steady is allowed. New `*mvp*` / `*minimum-viable*` paths are always denied. Do not rename, encode, or split edits to bypass the hook.

@@ -33,7 +33,7 @@ The final output is a markdown one-pager saved to `docs/ideas/[idea-name].md` (a
 - Problem Statement
 - Recommended Direction
 - Key Assumptions
-- MVP Scope
+- Production scope (enterprise production quality bar)
 - Not Doing list
 
 ## Detailed Instructions
@@ -123,8 +123,8 @@ Produce a concrete artifact — a markdown one-pager that moves work forward:
 - [ ] [Assumption 2 — how to test it]
 - [ ] [Assumption 3 — how to test it]
 
-## MVP Scope
-[The minimum version that tests the core assumption. What's in, what's out.]
+## Production scope
+[The smallest enterprise-production slice that tests the core assumption. What's in, what's out. Quality stays production-grade.]
 
 ## Not Doing (and Why)
 - [Thing 1] — [reason]

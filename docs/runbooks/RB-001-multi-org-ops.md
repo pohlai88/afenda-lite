@@ -9,7 +9,7 @@
 | Control State | Closed |
 | Owner | Platform |
 | Updated | 2026-07-14 |
-**Authority:** [ARCH-023 Multi-Tenancy Model](../architecture/system/ARCH-023-multi-tenancy.md) (architecture SSOT — Neon shared-schema posture + production efficiency)  
+**Authority:** [ARCH-023 Multi-Tenancy Model](../architecture/ARCH-023-multi-tenancy.md) (architecture SSOT — Neon shared-schema posture + production efficiency)  
 **Audience:** operators applying tenancy backfills after M1–M3.
 
 ## Rules

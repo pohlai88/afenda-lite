@@ -14,7 +14,7 @@
 
 One error vocabulary across adapters. Enables engineers to return predictable failures without mixing REST JSON, Action results, and RSC navigation helpers.
 
-**Parent architecture:** [ARCH-029](../architecture/system/ARCH-029-interface-api-architecture.md). **Audience:** backend and frontend maintainers. **Action enabled:** pick the correct error surface for the adapter.
+**Parent architecture:** [ARCH-029](../architecture/ARCH-029-interface-api-architecture.md). **Audience:** backend and frontend maintainers. **Action enabled:** pick the correct error surface for the adapter.
 
 # 2. Scope
 

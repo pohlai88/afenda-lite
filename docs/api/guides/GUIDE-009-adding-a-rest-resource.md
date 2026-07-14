@@ -13,7 +13,7 @@
 
 # 1. Purpose
 
-This guide will explain **how to add** a REST resource row (and handler when api-now) without turning guides into architecture. Standards live in [REST-001](../REST-001-rest-resources.md) and [ARCH-029](../../architecture/system/ARCH-029-interface-api-architecture.md).
+This guide will explain **how to add** a REST resource row (and handler when api-now) without turning guides into architecture. Standards live in [REST-001](../REST-001-rest-resources.md) and [ARCH-029](../../architecture/ARCH-029-interface-api-architecture.md).
 
 **Placeholder.**
 

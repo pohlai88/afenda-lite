@@ -4,7 +4,7 @@
 | ----------------- | ---------- |
 | **ID**            | DOC-001    |
 | **Category**      | Control    |
-| **Version**       | 2.4.0      |
+| **Version**       | 2.6.0      |
 | **Status**        | Living     |
 | **Control State** | Closed     |
 | **Owner**         | Platform   |
@@ -146,7 +146,7 @@ Use the smallest category that accurately describes the document.
 
 Use `API` for shared interface vocabulary that may cover REST handlers and Server Actions. Use `REST` for HTTP path and method catalogues. Use `OPEN` for machine-readable OpenAPI artifacts.
 
-ADR is a valid document category, but a separate `docs/adr/` folder is not required. Unless a future structure is explicitly approved, ADR documents shall be stored under `docs/architecture/decisions/`.
+ADR is a valid document category. Approved ADR home is **`docs/architecture/adr/`** only. Do **not** use top-level `docs/adr/` (retired) or any folder named `decision` / `decisions` (forbidden vocabulary).
 
 Module-qualified IDs may use a module prefix, for example `FFT-MOD-001`.
 
@@ -290,13 +290,16 @@ Product-module documentation under `docs/modules/` shall additionally obey [MOD-
 | Folder                         | Role                                                                            |
 | ------------------------------ | ------------------------------------------------------------------------------- |
 | `docs/_control/`               | Documentation governance, template, and register                                |
-| `docs/architecture/`           | Cross-system architecture, target-state architecture, boundaries, and registers |
-| `docs/architecture/decisions/` | ADR documents when explicitly approved                                          |
+| `docs/architecture/`           | Flat home for Living/Target `ARCH-*` files (boundaries by ID + README packs, not sub-trunks) |
+| `docs/architecture/adr/`       | ADR documents when explicitly approved (not `decisions/`; not top-level `docs/adr/`) |
+| `docs/architecture/archive/`   | Superseded Architecture stubs only                                              |
 | `docs/api/`                    | API, REST, and OpenAPI interface contracts                                      |
 | `docs/runbooks/`               | Operational procedures                                                          |
 | `docs/guides/`                 | Internal guides                                                                 |
 | `docs/modules/`                | Module documentation and module-specific spines                                 |
 | `docs/scratch/`                | Non-authoritative drafts and temporary notes                                    |
+
+**Forbidden under `docs/architecture/`:** recreating trunk folders `backend/`, `frontend/`, `system/`, or `tech-stack/`. Pack reading order lives in `docs/architecture/README.md` only. Findability remains `{ID}-` search under `docs/`.
 
 API-pack implementation and verification guides may be co-located under `docs/api/guides/` when they are registered in DOC-002 and linked from the API pack entry. They remain Guide-category documents subordinate to the governing architecture and API contracts. This category-specific exception does not permit other guides to bypass `docs/guides/`.
 
@@ -331,6 +334,8 @@ Everything else belongs inside the controlled document.
 
 | Version | Date       | Summary                                                                                                                                                              |
 | ------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2.6.0   | 2026-07-14 | Flat `docs/architecture/` for ARCH files; forbid `backend/`/`frontend/`/`system/`/`tech-stack/` trunks; register `archive/` role. |
+| 2.5.0   | 2026-07-14 | ADR home = `docs/architecture/adr/` only; forbid `decision`/`decisions` directory names and top-level `docs/adr/`. |
 | 2.4.0   | 2026-07-14 | Named MOD-002 as the Module category standard for the fixed 10-MOD spine, AC ownership, evidence semantics, and Module Enterprise Readiness (lifecycle independent of readiness). |
 | 2.3.0   | 2026-07-14 | Approved `docs/api/runbooks/` co-location for API-pack runbooks (RB-006…008; reserved RB-009); platform runbooks remain under `docs/runbooks/`. |
 | 2.2.0   | 2026-07-14 | Required header field **Control State** (Open · Closed · Reopened) distinct from lifecycle Status; kept DOC-002 at seven fields; validator must enforce the header field. |

@@ -21,7 +21,7 @@ Agent **runtime** procedure: decide whether a `/fft` change is allowed, what pro
 **Audience:** IDE agents, engineers, operators.
 **Action enabled:** allow / forbid / rollback FFT work without recreating a separate `ops/` tree.
 
-**Platform tenancy:** [ARCH-023](../../architecture/system/ARCH-023-multi-tenancy.md) — hard org filters; do not conflate with `FFT_RBAC_ENABLED`.
+**Platform tenancy:** [ARCH-023](../../architecture/ARCH-023-multi-tenancy.md) — hard org filters; do not conflate with `FFT_RBAC_ENABLED`.
 **Index:** [FFT-MOD-010](FFT-MOD-010-module-docs-index.md).
 
 ---

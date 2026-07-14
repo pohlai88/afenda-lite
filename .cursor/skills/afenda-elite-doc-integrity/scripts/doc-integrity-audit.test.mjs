@@ -55,7 +55,7 @@ test("residualRisk lists unimplemented in-scope comparison sets when findings ar
   const fx = fixture();
   t.after(fx.cleanup);
   fx.write(
-    "docs/architecture/system/ARCH-023-multi-tenancy.md",
+    "docs/architecture/ARCH-023-multi-tenancy.md",
     documentText({
       id: "ARCH-023",
       title: "Multi-Tenancy",
@@ -66,7 +66,7 @@ test("residualRisk lists unimplemented in-scope comparison sets when findings ar
     }),
   );
   fx.write(
-    "docs/architecture/system/ARCH-025-data-layer.md",
+    "docs/architecture/ARCH-025-data-layer.md",
     documentText({
       id: "ARCH-025",
       title: "Data Layer",
@@ -104,7 +104,7 @@ locks: []
   );
   const report = await auditDocs({
     root: fx.root,
-    scope: "docs/architecture/system",
+    scope: "docs/architecture",
     authorityMap: ".cursor/skills/afenda-elite-doc-integrity/authority-map.yaml",
   });
   assert.equal(report.exitCode, 0);
@@ -116,7 +116,7 @@ test("multi-tenancy invented schema homes are ARCH-MISALIGNMENT", async (t) => {
   const fx = fixture();
   t.after(fx.cleanup);
   fx.write(
-    "docs/architecture/system/ARCH-023-multi-tenancy.md",
+    "docs/architecture/ARCH-023-multi-tenancy.md",
     documentText({
       id: "ARCH-023",
       title: "Multi-Tenancy",
@@ -127,7 +127,7 @@ test("multi-tenancy invented schema homes are ARCH-MISALIGNMENT", async (t) => {
     }),
   );
   fx.write(
-    "docs/architecture/system/ARCH-025-data-layer.md",
+    "docs/architecture/ARCH-025-data-layer.md",
     documentText({
       id: "ARCH-025",
       title: "Data Layer",
@@ -141,7 +141,7 @@ test("multi-tenancy invented schema homes are ARCH-MISALIGNMENT", async (t) => {
     ["ARCH-023", "Architecture", "Multi-Tenancy", "1.0.0", "Living", "Platform", "2026-07-13"],
     ["ARCH-025", "Architecture", "Data Layer", "1.0.0", "Target", "Backend", "2026-07-13"],
   ]);
-  const report = await auditDocs({ root: fx.root, scope: "docs/architecture/system" });
+  const report = await auditDocs({ root: fx.root, scope: "docs/architecture" });
   assert.equal(report.exitCode, 1);
   assert.ok(report.findings.some((entry) => entry.category === "ARCH-MISALIGNMENT"));
 });

@@ -48,9 +48,9 @@ The executable mirror at `.cursor/skills/afenda-elite-doc-control/module-pack-co
 
 ## 2.2 Out of Scope
 
-- Platform tenancy / IAM facts → [ARCH-023](../architecture/system/ARCH-023-multi-tenancy.md)
-- Platform env model → [ARCH-027](../architecture/system/ARCH-027-env-model.md)
-- Interface / API architecture → [ARCH-029](../architecture/system/ARCH-029-interface-api-architecture.md) and Living `docs/api/` contracts
+- Platform tenancy / IAM facts → [ARCH-023](../architecture/ARCH-023-multi-tenancy.md)
+- Platform env model → [ARCH-027](../architecture/ARCH-027-env-model.md)
+- Interface / API architecture → [ARCH-029](../architecture/ARCH-029-interface-api-architecture.md) and Living `docs/api/` contracts
 - Creating `MOD-011` or depth folders (`adr/`, `ops/`, `spec/`) under module homes
 - Treating Module Enterprise Readiness as Afenda-Elite product/release certification
 - Implementing blocked product code to satisfy readiness criteria
@@ -75,7 +75,7 @@ The executable mirror at `.cursor/skills/afenda-elite-doc-control/module-pack-co
 |--------|----------|------|-------|---------------|
 | Feed Farm Trade | `fft` | [feed-farm-trade/](feed-farm-trade/) | [FFT-MOD-010](feed-farm-trade/FFT-MOD-010-module-docs-index.md) | [FFT-MOD-008](feed-farm-trade/FFT-MOD-008-ops-runtime.md) |
 
-Platform tenancy / RBAC (not a product-module spine): [ARCH-023](../architecture/system/ARCH-023-multi-tenancy.md).
+Platform tenancy / RBAC (not a product-module spine): [ARCH-023](../architecture/ARCH-023-multi-tenancy.md).
 
 ## 3.2 Target layout
 

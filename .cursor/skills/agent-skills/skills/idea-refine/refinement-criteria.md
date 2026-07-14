@@ -35,7 +35,7 @@ Can you actually build this? Not just technically, but practically.
 - What's the minimum technical stack needed? (If the answer is "a lot," that's a signal.)
 
 **Resource feasibility:**
-- What's the minimum team/effort to build an MVP?
+- What's the minimum team/effort to ship a production-grade first slice?
 - Does it require specialized expertise you don't have?
 - Are there regulatory, legal, or compliance requirements?
 
@@ -47,7 +47,7 @@ Can you actually build this? Not just technically, but practically.
 **Red flags:**
 - "We just need to solve [very hard research problem] first"
 - Multiple dependencies that all need to work simultaneously
-- MVP still requires months of work — likely not minimal enough
+- First production slice still requires months of work — scope is likely too wide
 
 ### 3. Differentiation
 
@@ -102,12 +102,12 @@ When choosing between directions, rank on this matrix:
 
 Then use differentiation as the tiebreaker between options in the same quadrant.
 
-## MVP Scoping Principles
+## Production scoping principles
 
-When defining MVP scope for the chosen direction:
+When defining production scope for the chosen direction (enterprise production quality bar — shrink scope, never quality):
 
-1. **One job, done well.** The MVP should nail exactly one user job. Not three jobs done partially.
-2. **The riskiest assumption first.** The MVP's primary purpose is to test the assumption most likely to be wrong.
+1. **One job, done well.** The first slice should nail exactly one user job. Not three jobs done partially.
+2. **The riskiest assumption first.** The first slice's primary purpose is to test the assumption most likely to be wrong — at production quality.
 3. **Time-box, not feature-list.** "What can we build and test in [timeframe]?" is better than "What features do we need?"
 4. **The 'Not Doing' list is mandatory.** Explicitly name what you're cutting and why. This prevents scope creep and forces honest prioritization.
-5. **If it's not embarrassing, you waited too long.** The first version should feel incomplete to the builder. If it doesn't, you over-built.
+5. **Narrow scope, not thin quality.** Cut features and surfaces; do not ship incomplete auth, tenancy, observability, or recovery.

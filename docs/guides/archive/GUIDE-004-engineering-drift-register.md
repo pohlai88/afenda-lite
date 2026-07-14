@@ -9,13 +9,13 @@
 | Owner | Platform |
 | Updated | 2026-07-14 |
 | Location | `docs/guides/archive/` |
-| Superseded by | [ARCH-028](../../architecture/system/ARCH-028-implementation-slices.md) § Target vs checkout drift |
+| Superseded by | [ARCH-028](../../architecture/ARCH-028-implementation-slices.md) § Target vs checkout drift |
 
 ## Archive notice
 
 **Status:** Retired · archived under `docs/guides/archive/` on 2026-07-14.  
 **Why:** Living engineering guides duplicated DOC-001/002/003, `docs/README.md`, `AGENTS.md`, and agent skills; GUIDE-004 drift was absorbed into ARCH-028.  
-**Successor:** [ARCH-028](../../architecture/system/ARCH-028-implementation-slices.md) § Target vs checkout drift  
+**Successor:** [ARCH-028](../../architecture/ARCH-028-implementation-slices.md) § Target vs checkout drift  
 **Forbidden:** Restoring these files to `docs/guides/` as Living SSOT; teaching them as current engineering workflow.
 
 | Archived on | 2026-07-14 |
@@ -28,8 +28,8 @@ This register records known documentation and checkout drift that affects coding
 
 | Authority | Disk today | Coding impact |
 |-----------|------------|---------------|
-| [docs/architecture/turborepo/](../../architecture/turborepo/) ARCH-022ÔÇª028 (Target) | `apps/`, `packages/`, `turbo.json`, `pnpm-workspace.yaml` **absent** | Expected until an explicit implement request follows [ARCH-028](../../architecture/turborepo/ARCH-028-implementation-slices.md) |
-| [docs/architecture/turborepo/](../../architecture/turborepo/) ARCH-022ÔÇª027 | Decisions + maps | Binding for new work; former ADR-010ÔÇª014 absorbed ÔÇö do not reopen without superseding ARCH |
+| [docs/architecture/](../../architecture/) ARCH-022ÔÇª028 (Target) | `apps/`, `packages/`, `turbo.json`, `pnpm-workspace.yaml` **absent** | Expected until an explicit implement request follows [ARCH-028](../../architecture/ARCH-028-implementation-slices.md) |
+| [docs/architecture/](../../architecture/) ARCH-022ÔÇª027 | Decisions + maps | Binding for new work; former ADR-010ÔÇª014 absorbed ÔÇö do not reopen without superseding ARCH |
 | Living `AGENTS.md` env compose | Compose / `env:guard` still describe the monolith | Remain authoritative **until** S4.1; Target is `.env.local` + `@afenda/env` |
 
 Do not scaffold `apps/` or `packages/` from Target docs alone.
@@ -57,11 +57,11 @@ Full Markdown link scan after the documentation Slice A scaffold reports these m
 | Document | Missing target |
 |----------|----------------|
 | `docs/architecture/ARCH-019-admincn-frontend-preflight.md` | `../../modules/platform/shell/access.ts` |
-| `docs/architecture/frontend/ARCH-012-app-router-routes.md` | `../../proxy.ts` |
-| `docs/architecture/frontend/ARCH-016-next-js-conventions.md` | `../../proxy.ts` |
+| `docs/architecture/ARCH-012-app-router-routes.md` | `../../proxy.ts` |
+| `docs/architecture/ARCH-016-next-js-conventions.md` | `../../proxy.ts` |
 | `docs/architecture/ARCH-011-platform-tenancy-rbac.md` | `../../app/dashboard/layout.tsx` |
 | `docs/architecture/ARCH-011-platform-tenancy-rbac.md` | `../../app/dashboard/error.tsx` |
-| `docs/architecture/turborepo/ARCH-026-auth-session.md` | `../../features/auth/README.md` |
+| `docs/architecture/ARCH-026-auth-session.md` | `../../features/auth/README.md` |
 
 These are treated as checkout/materialization drift while `app/`, `features/`, `modules/`, and `proxy.ts` are absent. Do not rewrite architecture docs to hide these targets unless the product layout decision changes.
 
@@ -92,7 +92,7 @@ If a script fails because its referenced source tree is missing, record that as 
 
 ## Working rules while drift exists
 
-- Treat `docs/architecture/backend/`, `docs/architecture/frontend/`, `docs/api/`, `docs/modules/feed-farm-trade/`, and `docs/architecture/` as architecture authorities.
+- Treat `docs/architecture/`, `docs/architecture/`, `docs/api/`, `docs/modules/feed-farm-trade/`, and `docs/architecture/` as architecture authorities.
 - Treat absent product paths as a checkout/materialization problem, not permission to invent a new layout.
 - Do not create replacement roots such as `src/`, `lib/`, `doc/`, or `modules/trade/` to work around missing target paths.
 - If a coding task requires missing paths, first restore or recreate the owning target path exactly as the authority docs describe.

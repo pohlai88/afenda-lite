@@ -18,7 +18,7 @@ Human REST **standard and resource index**. Plural nouns; HTTP methods as verbs;
 
 **Audience:** backend maintainers. **Action enabled:** implement only api-now Route Handlers; keep contract-only on RSC + Server Actions until an external consumer exists.
 
-Aligns with Afenda elite API contract + interface-design verification (typed schemas via [API-004](API-004-schema-map.md), single error shape via [API-002](API-002-error-contract.md), validate at boundary via [API-001](API-001-api-boundaries.md)). Parent: [ARCH-029](../architecture/system/ARCH-029-interface-api-architecture.md).
+Aligns with Afenda elite API contract + interface-design verification (typed schemas via [API-004](API-004-schema-map.md), single error shape via [API-002](API-002-error-contract.md), validate at boundary via [API-001](API-001-api-boundaries.md)). Parent: [ARCH-029](../architecture/ARCH-029-interface-api-architecture.md).
 
 # 2. Scope
 
@@ -251,9 +251,9 @@ Web UI uses `app/actions/fft.ts` on locale-free `/fft/*` (AdminCN). HTTP below i
 - [API-002 Error Contract](API-002-error-contract.md)
 - [API-003 API Types](API-003-api-types.md)
 - [API-004 Schema Map](API-004-schema-map.md)
-- [ARCH-029](../architecture/system/ARCH-029-interface-api-architecture.md)
+- [ARCH-029](../architecture/ARCH-029-interface-api-architecture.md)
 - [FFT-REST-001](../modules/feed-farm-trade/FFT-REST-001-feed-farm-trade-resource-index.md)
-- [../architecture/frontend/ARCH-013-bff-and-data-flow.md](../architecture/frontend/ARCH-013-bff-and-data-flow.md)
+- [../architecture/ARCH-013-bff-and-data-flow.md](../architecture/ARCH-013-bff-and-data-flow.md)
 
 # 5. Change Log
 

@@ -30,24 +30,24 @@ Afenda-Lite is the beta / lite edition of Afenda ERP. This section is the engine
 4. [../_control/DOC-001-documentation-control.md](../../_control/DOC-001-documentation-control.md) ÔÇö minimal catalogue rules
 5. [../_control/REGISTER.md](../../_control/REGISTER.md) ÔÇö critical-document register
 6. [../README.md](../../README.md) ÔÇö docs SSOT and product-wide index
-7. [../architecture/backend/ARCH-001-backend-architecture.md](../../architecture/backend/ARCH-001-backend-architecture.md) ÔÇö Modular Monolith + Hexagonal architecture
-8. [../architecture/frontend/ARCH-013-bff-and-data-flow.md](../../architecture/frontend/ARCH-013-bff-and-data-flow.md) ÔÇö Next.js BFF and data decision tree
-9. [../architecture/turborepo/ARCH-023-multi-tenancy.md](../../architecture/turborepo/ARCH-023-multi-tenancy.md) ÔÇö tenancy and Neon production posture
+7. [../architecture/ARCH-001-backend-architecture.md](../../architecture/ARCH-001-backend-architecture.md) ÔÇö Modular Monolith + Hexagonal architecture
+8. [../architecture/ARCH-013-bff-and-data-flow.md](../../architecture/ARCH-013-bff-and-data-flow.md) ÔÇö Next.js BFF and data decision tree
+9. [../architecture/ARCH-023-multi-tenancy.md](../../architecture/ARCH-023-multi-tenancy.md) ÔÇö tenancy and Neon production posture
 
 ## Engineering source map
 
 | Need | Authority |
 |------|-----------|
 | Product identity | [deprecation register](../../../.cursor/skills/agent-skills/skills/deprecation-and-migration/reference.md) (Afenda-Lite) |
-| Backend architecture | [../architecture/backend/ARCH-001-backend-architecture.md](../../architecture/backend/ARCH-001-backend-architecture.md) |
-| Frontend architecture | [../architecture/frontend/ARCH-002-frontend-architecture.md](../../architecture/frontend/ARCH-002-frontend-architecture.md) |
-| Route ownership | [../architecture/frontend/ARCH-012-app-router-routes.md](../../architecture/frontend/ARCH-012-app-router-routes.md) |
-| BFF / data access | [../architecture/frontend/ARCH-013-bff-and-data-flow.md](../../architecture/frontend/ARCH-013-bff-and-data-flow.md) |
+| Backend architecture | [../architecture/ARCH-001-backend-architecture.md](../../architecture/ARCH-001-backend-architecture.md) |
+| Frontend architecture | [../architecture/ARCH-002-frontend-architecture.md](../../architecture/ARCH-002-frontend-architecture.md) |
+| Route ownership | [../architecture/ARCH-012-app-router-routes.md](../../architecture/ARCH-012-app-router-routes.md) |
+| BFF / data access | [../architecture/ARCH-013-bff-and-data-flow.md](../../architecture/ARCH-013-bff-and-data-flow.md) |
 | API contract | [../api/API-001-api-boundaries.md](../../api/API-001-api-boundaries.md) |
 | REST resources | [../api/REST-001-rest-resources.md](../../api/REST-001-rest-resources.md) |
 | Error contract | [../api/API-002-error-contract.md](../../api/API-002-error-contract.md) |
 | Schema map | [../api/API-004-schema-map.md](../../api/API-004-schema-map.md) |
-| Tenancy / RBAC | [../architecture/turborepo/ARCH-023-multi-tenancy.md](../../architecture/turborepo/ARCH-023-multi-tenancy.md) |
+| Tenancy / RBAC | [../architecture/ARCH-023-multi-tenancy.md](../../architecture/ARCH-023-multi-tenancy.md) |
 | Multi-org ops | [../runbooks/RB-001-multi-org-ops.md](../runbooks/RB-001-multi-org-ops.md) |
 | Feed Farm Trade runtime | [FFT-MOD-008](../../modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md) |
 | Post-lock commands | [../runbooks/RB-005-post-lock-coding-cheat-sheet.md](../runbooks/RB-005-post-lock-coding-cheat-sheet.md) |

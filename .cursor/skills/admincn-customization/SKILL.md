@@ -7,14 +7,15 @@ description: Customizes the landed AdminCN shell in components-V2 via themeConfi
 
 **SSOT playbook:** [docs/architecture/ARCH-018-admincn-customization.md](../../../docs/architecture/ARCH-018-admincn-customization.md)  
 **Frontend preflight (before new screens):** [docs/architecture/ARCH-019-admincn-frontend-preflight.md](../../../docs/architecture/ARCH-019-admincn-frontend-preflight.md)  
-**Alignment:** [docs/architecture/frontend/ARCH-015-admincn-alignment.md](../../../docs/architecture/frontend/ARCH-015-admincn-alignment.md)  
+**Alignment:** [docs/architecture/ARCH-015-admincn-alignment.md](../../../docs/architecture/ARCH-015-admincn-alignment.md)  
 **UI registry (compulsory IDs):** [../feed-farm-trade/ui-registry.md](../feed-farm-trade/ui-registry.md) · [../feed-farm-trade/ui-registry.json](../feed-farm-trade/ui-registry.json) · skill `/feed-farm-trade` · `npm run check:fft-ui-registry`  
-**Product home:** `components-V2/`  
+**Studio DNA:** temporary CLI/MCP scratch only — do not keep permanent AdminCN trees under `_reference/`  
+**Product home (logical):** `components-V2/` shape / Target after implement — not Collapse recover  
 **Auth island:** `features/auth/` — preserve `app/auth-surface.css` + route-scoped `app/auth/neon-auth-ui.css`
 
 ## Critical constraint
 
-Studio MCP does **not** install the AdminCN template as one unit. It exposes **blocks** under `dashboard-and-application` (shells, charts, widgets, account-settings, form-layout, empty-state, …). The full template already lives in `components-V2/`.
+Studio MCP/CLI does **not** install the AdminCN zip as one unit. It exposes **blocks** under `dashboard-and-application` (shells, charts, widgets, account-settings, form-layout, empty-state, …). No AdminCN zip kit is retained under `_reference/` in this checkout.
 
 **Every AdminCN primitive and block must appear in `ui-registry.json`** as `ACN-UI-*` or `ACN-BLK-*`. Agents must not invent IDs. Product FFT surfaces use `FFT-UI-*`. See registry HITL before creating or wiring UI.
 
@@ -100,7 +101,7 @@ MCP installs may land under a temporary kit path. **Product code must not keep**
 
 ## Refine checklist (per page)
 
-Full gate: [admincn-frontend-preflight.md](../../../docs/architecture/ARCH-019-admincn-frontend-preflight.md).
+Full gate: [ARCH-019](../../../docs/architecture/ARCH-019-admincn-frontend-preflight.md).
 
 1. Confirm target `ACN-UI-*` / `ACN-BLK-*` / `FFT-UI-*` IDs in [ui-registry.json](../feed-farm-trade/ui-registry.json) — **STOP** if missing (human HITL)  
 2. Brand (`themePreset` / tokens) — verify login island unchanged  

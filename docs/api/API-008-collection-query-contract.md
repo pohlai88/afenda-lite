@@ -15,7 +15,7 @@
 
 This document will define one reusable standard for list and collection resources so pagination, filtering, and sorting are not redefined per REST family.
 
-**Placeholder.** Substantive rules are not yet authoritative. Parent: [ARCH-029](../architecture/system/ARCH-029-interface-api-architecture.md) §3.5 / §3.7. Aligns with types in [API-003](API-003-api-types.md) once refined.
+**Placeholder.** Substantive rules are not yet authoritative. Parent: [ARCH-029](../architecture/ARCH-029-interface-api-architecture.md) §3.5 / §3.7. Aligns with types in [API-003](API-003-api-types.md) once refined.
 
 ---
 
@@ -59,7 +59,7 @@ Planned coverage:
 | Stable ordering      | Tie-breaker fields                                             |
 | Cursor migration     | Forward-compatible rules when offset pages become cursors      |
 
-Recommended list payload shape remains under [ARCH-029](../architecture/system/ARCH-029-interface-api-architecture.md) until this contract absorbs and freezes it.
+Recommended list payload shape remains under [ARCH-029](../architecture/ARCH-029-interface-api-architecture.md) until this contract absorbs and freezes it.
 
 ---
 

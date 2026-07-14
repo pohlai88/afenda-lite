@@ -34,7 +34,7 @@ Define Feed Farm Trade identity, org resolution, platform vs module permissions,
 ## 2.2 Out of Scope
 
 - Production flag values / RBAC rollback → [FFT-MOD-008](FFT-MOD-008-ops-runtime.md)
-- Platform Decision lock (Rejected/Deferred) → [ARCH-023](../../architecture/system/ARCH-023-multi-tenancy.md)
+- Platform Decision lock (Rejected/Deferred) → [ARCH-023](../../architecture/ARCH-023-multi-tenancy.md)
 - Product shell locks → [FFT-MOD-001](FFT-MOD-001-module-architecture.md)
 
 ---
@@ -47,7 +47,7 @@ Neon Auth — session, org membership, invitations. Credential MFA (if any) is N
 
 ## 3.2 Org resolution
 
-Active → slug → sole membership (platform). Hard fail-closed multi-org. Ops stamps use explicit `--organization-id`. See [ARCH-023](../../architecture/system/ARCH-023-multi-tenancy.md).
+Active → slug → sole membership (platform). Hard fail-closed multi-org. Ops stamps use explicit `--organization-id`. See [ARCH-023](../../architecture/ARCH-023-multi-tenancy.md).
 
 ## 3.3 Platform vs module permissions
 

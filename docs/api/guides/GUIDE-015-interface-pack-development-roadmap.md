@@ -15,7 +15,7 @@
 
 This document is the **locked development roadmap** for the Afenda interface and API documentation pack.
 
-It records the ordered creation and revision sequence for architecture, contracts, resource catalogues, module REST indexes, operations runbooks, and implementation guides. It does **not** establish interface architecture — that remains [ARCH-029](../../architecture/system/ARCH-029-interface-api-architecture.md).
+It records the ordered creation and revision sequence for architecture, contracts, resource catalogues, module REST indexes, operations runbooks, and implementation guides. It does **not** establish interface architecture — that remains [ARCH-029](../../architecture/ARCH-029-interface-api-architecture.md).
 
 ## Decision lock
 
@@ -57,7 +57,7 @@ Create or revise **first**:
 
 | ID | Document | Path / note |
 | -- | -------- | ----------- |
-| ARCH-029 | Interface and API Architecture | `docs/architecture/system/ARCH-029-interface-api-architecture.md` |
+| ARCH-029 | Interface and API Architecture | `docs/architecture/ARCH-029-interface-api-architecture.md` |
 | API-001 | Adapter Boundaries and Security Pipeline | `docs/api/API-001-api-boundaries.md` |
 | API-002 | Error Contract | `docs/api/API-002-error-contract.md` |
 | API-003 | API Types | `docs/api/API-003-api-types.md` |

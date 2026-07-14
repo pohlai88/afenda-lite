@@ -9,7 +9,7 @@
 | Owner | Platform |
 | Updated | 2026-07-13 |
 
-**Change:** `docs/architecture/turborepo/` → `docs/architecture/system/`
+**Change:** `docs/architecture/turborepo/` → `docs/architecture/`
 
 **Why:** Folder holds Target **system** architecture (ARCH-022…028). “turborepo” read as a tool howto; Turborepo remains a decision inside ARCH-022 only.
 

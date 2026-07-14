@@ -45,7 +45,7 @@ Suggested promote order (unless gate-register differs): **deposit → pickup →
 ## Load order
 
 ```text
-1. SKILL.md → completeness.md → mvp-and-gaps.md → verify.md
+1. SKILL.md → completeness.md → enterprise-readiness-and-gaps.md → verify.md
 2. action-map.md (P3) → rbac-card.md
 3. docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md
 4. docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md → docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md

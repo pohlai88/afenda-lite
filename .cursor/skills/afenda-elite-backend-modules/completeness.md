@@ -1,6 +1,6 @@
 # Portal backend modules — completeness (2026-07-12)
 
-Plan authority: this skill + `docs/architecture/backend/` + [deprecation register — Closed product phases](../agent-skills/skills/deprecation-and-migration/reference.md).
+Plan authority: this skill + `docs/architecture/` + [deprecation register — Closed product phases](../agent-skills/skills/deprecation-and-migration/reference.md).
 
 | Slice | Plan | Code | Status |
 |-------|------|------|--------|
@@ -24,7 +24,7 @@ Plan authority: this skill + `docs/architecture/backend/` + [deprecation registe
 | FFT module entry control plane | `hasFftModuleAccess` | platform `fft.access` only; write-time `ensureFftMember`; ops `backfill:fft-access` | **Done** |
 | Apply migrations `025`/`026`/`027`/`028` on Neon | Ops | Prod `br-tiny-hill-ao82jp6f` | **Done** |
 | Hard multi-org cutover | Drop `IS NULL OR` + promoteLegacy | Hard scope + membership Users + CI residue + N1 active org | **Done** |
-| Multi-org ready (M1–M4) | Switcher + scoped templates + isolation + ops | [ARCH-023](../../../docs/architecture/system/ARCH-023-multi-tenancy.md) | **Done** |
+| Multi-org ready (M1–M4) | Switcher + scoped templates + isolation + ops | [ARCH-023](../../../docs/architecture/ARCH-023-multi-tenancy.md) | **Done** |
 | `/client` workspace restore | Closed + reopen checklist | Stubs only | **Closed (registered)** |
 | FFT P3 flag promotion | gate-register | Prod flags off | **Closed (registered)** |
 | SaaS billing / 2FA product | Deferred chrome | Coming-soon + plan defaults | **Intentional (registered)** |

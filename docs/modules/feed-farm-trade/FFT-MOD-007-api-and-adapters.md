@@ -34,7 +34,7 @@ Define Feed Farm Trade adapter surfaces: Server Actions, Route Handlers, result 
 
 ## 2.2 Out of Scope
 
-- Platform-wide envelope / OpenAPI → [API-001](../../api/API-001-api-boundaries.md) · [ARCH-029](../../architecture/system/ARCH-029-interface-api-architecture.md)
+- Platform-wide envelope / OpenAPI → [API-001](../../api/API-001-api-boundaries.md) · [ARCH-029](../../architecture/ARCH-029-interface-api-architecture.md)
 - Human REST path catalogue detail → [REST-001](../../api/REST-001-rest-resources.md) · Draft [FFT-REST-001](FFT-REST-001-feed-farm-trade-resource-index.md)
 - Promoting FFT HTTP for web UI lists (rejected — RSC → domain)
 
@@ -48,7 +48,7 @@ Define Feed Farm Trade adapter surfaces: Server Actions, Route Handlers, result 
 |-------|------|
 | `app/actions/fft.ts` | Primary mutation surface for trade UI |
 
-Validate with module Zod schemas → call `modules/fft/domain/*`. Prefer lifting reads to Server Components over client self-fetch of `/api/*` ([ARCH-013](../../architecture/frontend/ARCH-013-bff-and-data-flow.md)).
+Validate with module Zod schemas → call `modules/fft/domain/*`. Prefer lifting reads to Server Components over client self-fetch of `/api/*` ([ARCH-013](../../architecture/ARCH-013-bff-and-data-flow.md)).
 
 ## 3.2 Route Handlers
 

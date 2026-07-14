@@ -1,6 +1,6 @@
 # Portal frontend scaffold — completeness (2026-07-12)
 
-Plan authority: this skill + `route-tree.md` + `docs/architecture/frontend/ARCH-012-app-router-routes.md`.
+Plan authority: this skill + `route-tree.md` + `docs/architecture/ARCH-012-app-router-routes.md`.
 
 | Slice | Plan | Code | Status |
 |-------|------|------|--------|

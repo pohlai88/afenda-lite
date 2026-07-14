@@ -33,7 +33,7 @@ Choose one primary mode before writing.
 | Mode | Put it here | Use when |
 |------|-------------|----------|
 | Technical spec | `docs/guides/` or the owning architecture/module spine doc | A planned change needs goals, constraints, design, rollout, rollback, and open questions |
-| Architecture | `docs/architecture/`, `docs/architecture/backend/`, `docs/architecture/frontend/`, or `docs/modules/<slug>/` spine | A system boundary, component model, or trade-off needs to be explained |
+| Architecture | `docs/architecture/`, `docs/architecture/`, `docs/architecture/`, or `docs/modules/<slug>/` spine | A system boundary, component model, or trade-off needs to be explained |
 | ADR | `docs/architecture/` (absorb into Living ARCH; do not recreate `docs/adr/`) | One material decision needs status, context, alternatives, consequences, and follow-up |
 | Runbook | `docs/runbooks/` or module MOD-008 | Operators need to diagnose, recover, validate, or escalate |
 | Migration guide | Owning area under `docs/` | A system moves from one state to another and needs ordered steps, validation, and rollback |
@@ -66,7 +66,7 @@ Examples:
 
 ```text
 docs/api/API-001-api-boundaries.md
-docs/architecture/turborepo/ARCH-023-multi-tenancy.md
+docs/architecture/ARCH-023-multi-tenancy.md
 docs/architecture/ARCH-011-platform-tenancy-rbac.md
 docs/guides/GUIDE-002-coding-engineering-guide.md
 docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md

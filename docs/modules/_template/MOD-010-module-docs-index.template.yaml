@@ -1,0 +1,149 @@
+schema_version: 1
+role: MOD-010
+target_filename: "{{MODULE_PREFIX}}-MOD-010-module-docs-index.md"
+source_format: markdown
+template: |-
+  # {{MODULE_PREFIX}}-MOD-010 Module Docs Index + Roadmap
+  
+  | Field             | Value                     |
+  | ----------------- | ------------------------- |
+  | **ID**            | {{MODULE_PREFIX}}-MOD-010 |
+  | **Category**      | Module                    |
+  | **Version**       | 0.1.0                     |
+  | **Status**        | Draft                     |
+  | **Control State** | Closed                    |
+  | **Owner**         | {{MODULE_OWNER}}          |
+  | **Updated**       | {{DATE}}                  |
+  | **Spine**         | MOD-010 Module Docs Index |
+  
+  ---
+  
+  # 1. Purpose
+  
+  Provide the authoritative reading order, quality profiles, delivery roadmap, and Module Enterprise Readiness claim for {{MODULE_TITLE}}.
+
+  **Audience:** engineers, operators, program owners, reviewers, and agents.
+  **Action enabled:** navigate the pack, aggregate verified gaps, sequence work, and determine whether a claim is allowed.
+
+  ---
+  
+  # 2. Scope
+  
+  ## 2.1 In Scope
+  
+  - Ten-document navigation, profile activation, roadmap, gates, claim state, and residual blockers.
+  
+  ## 2.2 Out of Scope
+  
+  - Duplicating facts owned by MOD-001…009 or claiming edition-level readiness.
+
+  ## 2.3 Assumptions and unresolved questions
+
+  List assumptions with an owner and validation path. Record unresolved questions with a decision owner and review trigger; never present them as accepted facts.
+
+  ---
+  
+  # 3. Module Docs Index and Roadmap
+  
+  ## 3.1 Status snapshot
+  
+  | Area | Current state | Primary authority | Owner | Next gate |
+  | ---- | ------------- | ----------------- | ----- | --------- |
+  | Documentation lifecycle | {{STATE}} | DOC-001 / DOC-002 | {{OWNER}} | {{GATE}} |
+  | Module Enterprise Readiness | Not claimable | MOD-002 / {{MODULE_PREFIX}}-MOD-009 | {{OWNER}} | Close all blocking evidence states |
+  
+  ## 3.2 Agent read order and catalogue
+  
+  | Order | Document | Sole purpose | Lifecycle state | Control state |
+  | ----- | -------- | ------------ | --------------- | ------------- |
+  | 1 | {{MODULE_PREFIX}}-MOD-001 | Architecture and failure boundaries | {{STATUS}} | {{CONTROL_STATE}} |
+  | 2 | {{MODULE_PREFIX}}-MOD-002 | Domain and ownership | {{STATUS}} | {{CONTROL_STATE}} |
+  | 3 | {{MODULE_PREFIX}}-MOD-003 | Tech stack | {{STATUS}} | {{CONTROL_STATE}} |
+  | 4 | {{MODULE_PREFIX}}-MOD-004 | Data model | {{STATUS}} | {{CONTROL_STATE}} |
+  | 5 | {{MODULE_PREFIX}}-MOD-005 | Auth, tenancy and RBAC | {{STATUS}} | {{CONTROL_STATE}} |
+  | 6 | {{MODULE_PREFIX}}-MOD-006 | Surfaces and routes | {{STATUS}} | {{CONTROL_STATE}} |
+  | 7 | {{MODULE_PREFIX}}-MOD-007 | API and adapters | {{STATUS}} | {{CONTROL_STATE}} |
+  | 8 | {{MODULE_PREFIX}}-MOD-008 | Ops runtime | {{STATUS}} | {{CONTROL_STATE}} |
+  | 9 | {{MODULE_PREFIX}}-MOD-009 | Verification evidence | {{STATUS}} | {{CONTROL_STATE}} |
+  | 10 | {{MODULE_PREFIX}}-MOD-010 | Index, roadmap, and claim | {{STATUS}} | {{CONTROL_STATE}} |
+  
+  ## 3.3 Quality profiles
+  
+  **Quality profiles:** Enterprise Core
+  
+  Add ERP only when every required ERP dimension has an owning criterion and exactly one MOD-009 evidence row.
+  
+  ## 3.4 Readiness aggregation
+  
+  | Profile | Dimensions expected | Dimensions passing | Blocking ACs | Stale evidence | Aggregated result |
+  | ------- | ------------------- | ------------------ | ------------ | -------------- | ----------------- |
+  | Enterprise Core | 8 | 0 | {{BLOCKING_AC_IDS}} | {{STALE_AC_IDS_OR_NONE}} | Not claimable |
+  
+  Aggregate from MOD-009; do not copy full requirement text or evidence rows.
+  
+  ## 3.5 Module Enterprise Readiness
+  
+  **Module Enterprise Readiness claim:** Not claimable
+  
+  Reason: this template contains unresolved module tokens and no executable evidence. Change to Claimable only when every MOD-002 claim rule is satisfied by current MOD-009 evidence.
+  
+  ## 3.6 Gaps and roadmap
+  
+  | Sequence | Gap/outcome | Dependency | Entry gate | Exit evidence | Owner | Target/review date |
+  | -------- | ----------- | ---------- | ---------- | ------------- | ----- | ------------------ |
+  | 1 | {{GAP_OR_OUTCOME}} | {{DEPENDENCY}} | {{ENTRY_GATE}} | {{EXIT_EVIDENCE}} | {{OWNER}} | {{DATE}} |
+  
+  Order work by dependency and risk. A roadmap item is not evidence and never changes the readiness result by itself.
+  
+  ## 3.7 Claim guardrails
+  
+  - Document lifecycle and Module Enterprise Readiness are independent.
+  - One module claim does not certify Afenda-Lite, Afenda-Elite, or release readiness.
+  - No claim may be inferred from MVP language, deployment, configuration, manifest presence, or prose.
+  - Any mandatory FAIL, BLOCKED, NOT EVIDENCED, or stale evidence keeps the claim Not claimable.
+
+  ---
+  
+  # 4. References
+  
+  | ID | Title | Relationship |
+  | -- | ----- | ------------ |
+  | DOC-001 | Documentation Control Standard | Governance |
+  | DOC-002 | Documentation Register | Registration after approval |
+  | MOD-002 | Modules Index | Module category and readiness authority |
+  | {{MODULE_PREFIX}}-MOD-009 | Verification | Evidence ledger |
+  | DOC-003 | Controlled Document Template | Header and six-section baseline |
+  | {{AUTHORITY_ID}} | {{ROLE_RELEVANT_AUTHORITY}} | Governing decision, contract, implementation, or operating rule |
+
+  ---
+  
+  # 5. Change Log
+  
+  | Version | Date | Summary |
+  | ------- | ---- | ------- |
+  | 0.1.0 | {{DATE}} | Provisional module-pack scaffold; readiness is Not claimable. |
+  
+  ---
+  
+  # 6. Notes
+  
+  A module readiness claim never certifies Afenda-Lite or Afenda-Elite release readiness.
+  
+  ## 6.1 Enterprise completion gate
+  
+  Before promotion:
+  
+  - name the engineering/operator audience and the decision or action enabled;
+  - replace every double-brace token and remove all TODO/TBD placeholder language;
+  - complete every MOD-002-required topic owned by this role without duplicating sibling authorities;
+  - label assumptions, unknowns, limits, deferred work, and rejected choices;
+  - make each acceptance criterion atomic, measurable, and independently reproducible;
+  - link commands, source paths, contracts, runbooks, and governing documents instead of asserting implementation from prose;
+  - synchronize header Version/Updated, latest Change Log row, and DOC-002 registration;
+  - verify Control State is Closed after authorized work; and
+  - pass test:module-pack, check:module-quality, check:docs-naming, and the full documentation-integrity audit.
+  
+  Documentation completeness does not imply Module Enterprise Readiness.
+
+
+

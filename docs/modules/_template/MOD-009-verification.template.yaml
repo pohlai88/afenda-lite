@@ -1,0 +1,133 @@
+schema_version: 1
+role: MOD-009
+target_filename: "{{MODULE_PREFIX}}-MOD-009-verification.md"
+source_format: markdown
+template: |-
+  # {{MODULE_PREFIX}}-MOD-009 Verification
+  
+  | Field             | Value                     |
+  | ----------------- | ------------------------- |
+  | **ID**            | {{MODULE_PREFIX}}-MOD-009 |
+  | **Category**      | Module                    |
+  | **Version**       | 0.1.0                     |
+  | **Status**        | Draft                     |
+  | **Control State** | Closed                    |
+  | **Owner**         | {{MODULE_OWNER}}          |
+  | **Updated**       | {{DATE}}                  |
+  | **Spine**         | MOD-009 Verification      |
+  
+  ---
+  
+  # 1. Purpose
+  
+  Own the structured evidence ledger for every acceptance criterion in {{MODULE_TITLE}} MOD-001…008.
+
+  **Audience:** test engineers, release reviewers, control owners, and auditors.
+  **Action enabled:** reproduce evidence and determine criterion results without inferring readiness from prose.
+
+  ---
+  
+  # 2. Scope
+  
+  ## 2.1 In Scope
+  
+  - One-to-one requirement/evidence joins, activation, evidence status, references, revisions, dates, and blockers.
+  
+  ## 2.2 Out of Scope
+  
+  - Inventing requirements, changing ownership, or declaring readiness without valid evidence.
+
+  ## 2.3 Assumptions and unresolved questions
+
+  List assumptions with an owner and validation path. Record unresolved questions with a decision owner and review trigger; never present them as accepted facts.
+
+  ---
+  
+  # 3. Verification
+  
+  ## 3.1 Verification commands and environments
+  
+  | Command/check | Environment | Preconditions | Expected result | Evidence produced | Owner |
+  | ------------- | ----------- | ------------- | --------------- | ----------------- | ----- |
+  | {{COMMAND_OR_CHECK}} | {{ENVIRONMENT}} | {{PRECONDITIONS}} | {{EXPECTED_RESULT}} | {{ARTIFACT_OR_LOG}} | {{OWNER}} |
+  
+  Commands must be reproducible and safe. Record exact revisions and sanitize outputs; never include secret values.
+  
+  ## 3.2 Structured evidence table
+  
+  | AC-ID | Owner MOD | Profile | Quality Dimension | Applicability | Activation | Evidence | Evidence Reference | Evidence Revision | Evidence Date | Blocker / Rationale |
+  | ----- | --------- | ------- | ----------------- | ------------- | ---------- | -------- | ------------------ | ----------------- | ------------- | ------------------- |
+  | {{MODULE_PREFIX}}-AC-001-01 | {{MODULE_PREFIX}}-MOD-001 | Enterprise Core | CORE-ARCH | Core | Enabled | NOT EVIDENCED | | | | Template only; executable evidence has not been supplied. |
+  | {{MODULE_PREFIX}}-AC-002-01 | {{MODULE_PREFIX}}-MOD-002 | Enterprise Core | CORE-PROCESS | Core | Enabled | NOT EVIDENCED | | | | Template only; executable evidence has not been supplied. |
+  | {{MODULE_PREFIX}}-AC-003-01 | {{MODULE_PREFIX}}-MOD-003 | Enterprise Core | CORE-PLATFORM | Core | Enabled | NOT EVIDENCED | | | | Template only; executable evidence has not been supplied. |
+  | {{MODULE_PREFIX}}-AC-004-01 | {{MODULE_PREFIX}}-MOD-004 | Enterprise Core | CORE-DATA | Core | Enabled | NOT EVIDENCED | | | | Template only; executable evidence has not been supplied. |
+  | {{MODULE_PREFIX}}-AC-005-01 | {{MODULE_PREFIX}}-MOD-005 | Enterprise Core | CORE-SECURITY | Core | Enabled | NOT EVIDENCED | | | | Template only; executable evidence has not been supplied. |
+  | {{MODULE_PREFIX}}-AC-006-01 | {{MODULE_PREFIX}}-MOD-006 | Enterprise Core | CORE-EXPERIENCE | Core | Enabled | NOT EVIDENCED | | | | Template only; executable evidence has not been supplied. |
+  | {{MODULE_PREFIX}}-AC-007-01 | {{MODULE_PREFIX}}-MOD-007 | Enterprise Core | CORE-INTEGRATION | Core | Enabled | NOT EVIDENCED | | | | Template only; executable evidence has not been supplied. |
+  | {{MODULE_PREFIX}}-AC-008-01 | {{MODULE_PREFIX}}-MOD-008 | Enterprise Core | CORE-OPERATIONS | Core | Enabled | NOT EVIDENCED | | | | Template only; executable evidence has not been supplied. |
+  
+  Add exactly one evidence row for every additional AC in MOD-001 through MOD-008. Never redefine criterion text here.
+  
+  ## 3.3 Integration-chain evidence view
+  
+  | Chain/use case | Referenced ACs | Entry evidence | Boundary evidence | Persistence/side-effect evidence | Failure/recovery evidence | Result |
+  | -------------- | -------------- | -------------- | ----------------- | -------------------------------- | ------------------------- | ------ |
+  | {{CHAIN}} | {{AC_IDS}} | {{REFERENCE}} | {{REFERENCE}} | {{REFERENCE}} | {{REFERENCE}} | {{RESULT}} |
+  
+  This view may join sibling ACs but must not create new requirements or replace the structured evidence table.
+  
+  ## 3.4 Evidence semantics and update rules
+  
+  - PASS requires a reproducible reference, immutable or identifiable revision, and ISO evidence date.
+  - FAIL, BLOCKED, and NOT EVIDENCED require a concrete blocker or rationale.
+  - NOT ENABLED requires reproducible fail-closed evidence, revision, date, and authority-backed rationale.
+  - Out of Scope requires Uncontracted activation, NOT ENABLED evidence, fail-closed proof, and owning authority.
+  - Missing, stale, prose-only, or historically inferred evidence defaults to NOT EVIDENCED.
+  
+  ## 3.5 Done definition
+  
+  Verification is complete only when the AC/evidence join is one-to-one, active-profile dimensions are covered, evidence is current and reproducible, blockers have owners, and the resulting MOD-010 claim follows MOD-002 rules.
+
+  ---
+  
+  # 4. References
+  
+  | ID | Title | Relationship |
+  | -- | ----- | ------------ |
+  | DOC-001 | Documentation Control Standard | Governance |
+  | MOD-002 | Modules Index | Evidence schema and readiness authority |
+  | DOC-003 | Controlled Document Template | Header and six-section baseline |
+  | {{AUTHORITY_ID}} | {{ROLE_RELEVANT_AUTHORITY}} | Governing decision, contract, implementation, or operating rule |
+
+  ---
+  
+  # 5. Change Log
+  
+  | Version | Date | Summary |
+  | ------- | ---- | ------- |
+  | 0.1.0 | {{DATE}} | Provisional module-pack scaffold with Enterprise Core evidence rows. |
+  
+  ---
+  
+  # 6. Notes
+  
+  Add evidence rows for optional profiles only when corresponding owned requirement rows exist in MOD-001…008.
+  
+  ## 6.1 Enterprise completion gate
+  
+  Before promotion:
+  
+  - name the engineering/operator audience and the decision or action enabled;
+  - replace every double-brace token and remove all TODO/TBD placeholder language;
+  - complete every MOD-002-required topic owned by this role without duplicating sibling authorities;
+  - label assumptions, unknowns, limits, deferred work, and rejected choices;
+  - make each acceptance criterion atomic, measurable, and independently reproducible;
+  - link commands, source paths, contracts, runbooks, and governing documents instead of asserting implementation from prose;
+  - synchronize header Version/Updated, latest Change Log row, and DOC-002 registration;
+  - verify Control State is Closed after authorized work; and
+  - pass test:module-pack, check:module-quality, check:docs-naming, and the full documentation-integrity audit.
+  
+  Documentation completeness does not imply Module Enterprise Readiness.
+
+
+

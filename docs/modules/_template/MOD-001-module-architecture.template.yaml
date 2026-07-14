@@ -1,0 +1,140 @@
+schema_version: 1
+role: MOD-001
+target_filename: "{{MODULE_PREFIX}}-MOD-001-module-architecture.md"
+source_format: markdown
+template: |-
+  # {{MODULE_PREFIX}}-MOD-001 Module Architecture
+  
+  | Field             | Value                     |
+  | ----------------- | ------------------------- |
+  | **ID**            | {{MODULE_PREFIX}}-MOD-001 |
+  | **Category**      | Module                    |
+  | **Version**       | 0.1.0                     |
+  | **Status**        | Draft                     |
+  | **Control State** | Closed                    |
+  | **Owner**         | {{MODULE_OWNER}}          |
+  | **Updated**       | {{DATE}}                  |
+  | **Spine**         | MOD-001 Module Architecture |
+  
+  ---
+  
+  # 1. Purpose
+  
+  Define the architecture authority, boundaries, and failure posture for {{MODULE_TITLE}}.
+
+  **Audience:** engineers, architects, operators, and architecture reviewers.
+  **Action enabled:** review and approve module boundaries, dependency direction, failure posture, and product locks.
+
+  ---
+  
+  # 2. Scope
+  
+  ## 2.1 In Scope
+  
+  - Module purpose, context, boundaries, dependencies, failure modes, and product locks.
+  
+  ## 2.2 Out of Scope
+  
+  - Readiness claims, evidence rows, and operational checklists owned by MOD-009/010/008.
+
+  ## 2.3 Assumptions and unresolved questions
+
+  List assumptions with an owner and validation path. Record unresolved questions with a decision owner and review trigger; never present them as accepted facts.
+
+  ---
+  
+  # 3. Module Architecture
+  
+  ## 3.1 Context
+  
+  State the business capability, architectural drivers, constraints, assumptions, and unresolved questions. Link volatile platform facts to their owning authorities.
+  
+  ## 3.2 Responsibilities and boundaries
+  
+  | Boundary | Inbound responsibility | Outbound responsibility | Owner | Enforced by |
+  | -------- | ---------------------- | ----------------------- | ----- | ----------- |
+  | {{BOUNDARY_NAME}} | {{INBOUND_CONTRACT}} | {{OUTBOUND_CONTRACT}} | {{OWNER}} | {{ENFORCEMENT_REFERENCE}} |
+  
+  Record dependency direction and explicitly name forbidden coupling.
+  
+  ## 3.3 Components
+  
+  | Component | Responsibility | Interface | State owned | Failure isolation |
+  | --------- | -------------- | --------- | ----------- | ----------------- |
+  | {{COMPONENT}} | {{SINGLE_RESPONSIBILITY}} | {{INTERFACE_REFERENCE}} | {{STATE_OR_NONE}} | {{ISOLATION_BEHAVIOR}} |
+  
+  ## 3.4 Data and request flow
+  
+  Describe the normal path, authorization point, transaction boundary, emitted side effects, and response. Include a sequence or numbered flow and identify trust-boundary crossings.
+  
+  ## 3.5 Key decisions and trade-offs
+  
+  | Decision | Chosen approach | Alternatives rejected | Consequence | Revisit trigger |
+  | -------- | --------------- | --------------------- | ----------- | --------------- |
+  | {{DECISION}} | {{CHOICE}} | {{ALTERNATIVES}} | {{TRADE_OFF}} | {{TRIGGER}} |
+  
+  ## 3.6 Failure modes
+  
+  | Failure mode | Detection signal | Containment | User-visible behavior | Recovery owner |
+  | ------------ | ---------------- | ----------- | --------------------- | -------------- |
+  | {{FAILURE_MODE}} | {{SIGNAL}} | {{CONTAINMENT}} | {{FAIL_CLOSED_BEHAVIOR}} | {{OWNER}} |
+  
+  ## 3.7 Operational considerations
+  
+  Define capacity assumptions, observability dependencies, degradation behavior, and operational handoff. Detailed procedures remain in MOD-008.
+  
+  ## 3.8 Known limits and product locks
+  
+  Separate accepted limits, deferred work, and forbidden designs. Give every lock an authority, rationale, and explicit reopen condition.
+  
+  ## 3.9 Enterprise requirements
+  
+  | AC-ID | Profile | Quality Dimension | Applicability | Criterion |
+  | ----- | ------- | ----------------- | ------------- | --------- |
+  | {{MODULE_PREFIX}}-AC-001-01 | Enterprise Core | CORE-ARCH | Core | {{TESTABLE_ARCHITECTURE_CRITERION}} |
+  
+  Criteria must be independently verifiable and cover boundary enforcement, controlled failure, or another material CORE-ARCH outcome.
+
+  ---
+  
+  # 4. References
+  
+  | ID | Title | Relationship |
+  | -- | ----- | ------------ |
+  | DOC-001 | Documentation Control Standard | Governance |
+  | MOD-002 | Modules Index | Module category and readiness standard |
+  | DOC-003 | Controlled Document Template | Header and six-section baseline |
+  | {{AUTHORITY_ID}} | {{ROLE_RELEVANT_AUTHORITY}} | Governing decision, contract, implementation, or operating rule |
+
+  ---
+  
+  # 5. Change Log
+  
+  | Version | Date | Summary |
+  | ------- | ---- | ------- |
+  | 0.1.0 | {{DATE}} | Provisional module-pack scaffold. |
+  
+  ---
+  
+  # 6. Notes
+  
+  This tokenized template is non-authoritative and must remain Not claimable until promoted and evidenced.
+  
+  ## 6.1 Enterprise completion gate
+  
+  Before promotion:
+  
+  - name the engineering/operator audience and the decision or action enabled;
+  - replace every double-brace token and remove all TODO/TBD placeholder language;
+  - complete every MOD-002-required topic owned by this role without duplicating sibling authorities;
+  - label assumptions, unknowns, limits, deferred work, and rejected choices;
+  - make each acceptance criterion atomic, measurable, and independently reproducible;
+  - link commands, source paths, contracts, runbooks, and governing documents instead of asserting implementation from prose;
+  - synchronize header Version/Updated, latest Change Log row, and DOC-002 registration;
+  - verify Control State is Closed after authorized work; and
+  - pass test:module-pack, check:module-quality, check:docs-naming, and the full documentation-integrity audit.
+  
+  Documentation completeness does not imply Module Enterprise Readiness.
+
+
+

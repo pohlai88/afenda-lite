@@ -62,13 +62,13 @@ When paths are missing, this guide remains architecture guidance. Do not invent 
 ## Coding workflow
 
 1. Identify the module and owner.
-   Start from [../architecture/backend/ARCH-009-modules-ownership-map.md](../../architecture/backend/ARCH-009-modules-ownership-map.md), [../architecture/frontend/ARCH-012-app-router-routes.md](../../architecture/frontend/ARCH-012-app-router-routes.md), and [../architecture/turborepo/ARCH-023-multi-tenancy.md](../../architecture/turborepo/ARCH-023-multi-tenancy.md).
+   Start from [../architecture/ARCH-009-modules-ownership-map.md](../../architecture/ARCH-009-modules-ownership-map.md), [../architecture/ARCH-012-app-router-routes.md](../../architecture/ARCH-012-app-router-routes.md), and [../architecture/ARCH-023-multi-tenancy.md](../../architecture/ARCH-023-multi-tenancy.md).
 
 2. Verify checkout drift.
    Read [drift-register.md](./GUIDE-004-engineering-drift-register.md) and confirm the target paths for the task exist. If they are missing, restore the documented owner path or stop at documentation / planning.
 
 3. Read the closest authority.
-   For backend boundaries, read [../architecture/backend/ARCH-001-backend-architecture.md](../../architecture/backend/ARCH-001-backend-architecture.md). For data access decisions, read [../architecture/frontend/ARCH-013-bff-and-data-flow.md](../../architecture/frontend/ARCH-013-bff-and-data-flow.md). For FFT, read [FFT-MOD-008](../../modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md).
+   For backend boundaries, read [../architecture/ARCH-001-backend-architecture.md](../../architecture/ARCH-001-backend-architecture.md). For data access decisions, read [../architecture/ARCH-013-bff-and-data-flow.md](../../architecture/ARCH-013-bff-and-data-flow.md). For FFT, read [FFT-MOD-008](../../modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md).
 
 4. Choose the smallest implementation surface.
    Prefer extending the owning module and existing route/action pattern. Avoid new cross-cutting helpers unless they remove real duplication or match an established local pattern.
@@ -148,10 +148,10 @@ For the post-lock command pack, use [../runbooks/RB-005-post-lock-coding-cheat-s
 ## Related docs
 
 - [../README.md](../../README.md)
-- [../architecture/backend/ARCH-001-backend-architecture.md](../../architecture/backend/ARCH-001-backend-architecture.md)
-- [../architecture/frontend/ARCH-002-frontend-architecture.md](../../architecture/frontend/ARCH-002-frontend-architecture.md)
+- [../architecture/ARCH-001-backend-architecture.md](../../architecture/ARCH-001-backend-architecture.md)
+- [../architecture/ARCH-002-frontend-architecture.md](../../architecture/ARCH-002-frontend-architecture.md)
 - [../api/API-001-api-boundaries.md](../../api/API-001-api-boundaries.md)
-- [../architecture/turborepo/ARCH-023-multi-tenancy.md](../../architecture/turborepo/ARCH-023-multi-tenancy.md)
+- [../architecture/ARCH-023-multi-tenancy.md](../../architecture/ARCH-023-multi-tenancy.md)
 - [../runbooks/RB-001-multi-org-ops.md](../runbooks/RB-001-multi-org-ops.md)
 - [FFT-MOD-008](../../modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md)
 

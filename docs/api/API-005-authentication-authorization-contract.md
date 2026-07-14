@@ -17,7 +17,7 @@ This document will define the common authentication and authorization requiremen
 
 It exists so that [API-001](API-001-api-boundaries.md) can remain focused on the adapter security pipeline while this contract owns authn/authz vocabulary, context, and forbidden patterns.
 
-**Placeholder.** Substantive rules are not yet authoritative. Parent: [ARCH-029](../architecture/system/ARCH-029-interface-api-architecture.md).
+**Placeholder.** Substantive rules are not yet authoritative. Parent: [ARCH-029](../architecture/ARCH-029-interface-api-architecture.md).
 
 ---
 

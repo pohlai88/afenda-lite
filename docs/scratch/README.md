@@ -15,6 +15,12 @@
 
 Content here is not a source of truth until it is promoted into an authoritative docs folder. A document number and register row are added only when the user explicitly agrees.
 
+## Drafts
+
+| Document | Purpose |
+|----------|---------|
+| [REQ-saas-erp-multitenant-fullstack.md](REQ-saas-erp-multitenant-fullstack.md) | Greenfield enterprise SaaS ERP multi-tenancy fullstack requirements (non-authoritative) |
+
 ## Latest audit
 
 - [AUDIT-2026-07-13-documentation.md](AUDIT-2026-07-13-documentation.md) — hard sync: ARCH-023 sole SSOT, no ADRs, Target `apps/web/proxy.ts`

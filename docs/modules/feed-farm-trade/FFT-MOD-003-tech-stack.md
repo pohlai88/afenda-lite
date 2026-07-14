@@ -34,7 +34,7 @@ Record Feed Farm Trade runtime, framework, data, auth dependencies, and **module
 ## 2.2 Out of Scope
 
 - Whether a change is allowed in production → [FFT-MOD-008](FFT-MOD-008-ops-runtime.md)
-- Platform env compose / sync policy → [ARCH-027](../../architecture/system/ARCH-027-env-model.md)
+- Platform env compose / sync policy → [ARCH-027](../../architecture/ARCH-027-env-model.md)
 - Permission catalog → [FFT-MOD-005](FFT-MOD-005-auth-tenancy-rbac.md)
 
 ---
@@ -82,7 +82,7 @@ Record Feed Farm Trade runtime, framework, data, auth dependencies, and **module
 | `FFT_ERP_SYNC_ENABLED` | `false` | `false` | 2D |
 | `FFT_ERP_VENDOR` / `FFT_ERP_BASE_URL` | unset until tenant pack | unset | `syncOptional` |
 
-Never edit `.env` by hand. Never `vercel env pull`. Platform env model: [ARCH-027](../../architecture/system/ARCH-027-env-model.md).
+Never edit `.env` by hand. Never `vercel env pull`. Platform env model: [ARCH-027](../../architecture/ARCH-027-env-model.md).
 
 ## 3.6 Local vs prod
 

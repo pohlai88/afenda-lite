@@ -15,7 +15,7 @@
 
 This document will define how every Server Action and HTTP request is traced safely end-to-end without leaking secrets to clients.
 
-**Placeholder.** Substantive rules are not yet authoritative. Parent: [ARCH-029](../architecture/system/ARCH-029-interface-api-architecture.md) §3.11.
+**Placeholder.** Substantive rules are not yet authoritative. Parent: [ARCH-029](../architecture/ARCH-029-interface-api-architecture.md) §3.11.
 
 ---
 
@@ -58,7 +58,7 @@ Planned coverage:
 | Audit relationship            | When correlation IDs appear on audit rows                   |
 | Redaction                     | Tokens, passwords, PII, SQL, connection strings             |
 
-Expected validation or authorization failures shall not be logged as system defects ([ARCH-029](../architecture/system/ARCH-029-interface-api-architecture.md)).
+Expected validation or authorization failures shall not be logged as system defects ([ARCH-029](../architecture/ARCH-029-interface-api-architecture.md)).
 
 ---
 

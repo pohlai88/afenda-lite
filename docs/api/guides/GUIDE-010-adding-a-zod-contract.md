@@ -13,7 +13,7 @@
 
 # 1. Purpose
 
-This guide will explain **how to add** a Zod schema as the executable interface contract. Authority: [API-004](../API-004-schema-map.md), [API-003](../API-003-api-types.md), [ARCH-029](../../architecture/system/ARCH-029-interface-api-architecture.md).
+This guide will explain **how to add** a Zod schema as the executable interface contract. Authority: [API-004](../API-004-schema-map.md), [API-003](../API-003-api-types.md), [ARCH-029](../../architecture/ARCH-029-interface-api-architecture.md).
 
 **Placeholder.**
 

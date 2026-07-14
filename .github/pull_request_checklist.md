@@ -1,6 +1,6 @@
 ## Operator / rebuild PR checklist
 
-Use with [`docs/architecture/frontend/08-operator-phase1-tasks.md`](../docs/architecture/frontend/08-operator-phase1-tasks.md). Agent entry: [`/using-afenda-elite-skills`](../.cursor/skills/using-afenda-elite-skills/SKILL.md) · catalog [`doc/architecture/DOC-004-skills-architecture.md`](../doc/architecture/DOC-004-skills-architecture.md).
+Use with [`docs/architecture/08-operator-phase1-tasks.md`](../docs/architecture/08-operator-phase1-tasks.md). Agent entry: [`/using-afenda-elite-skills`](../.cursor/skills/using-afenda-elite-skills/SKILL.md) · catalog [`doc/architecture/DOC-004-skills-architecture.md`](../doc/architecture/DOC-004-skills-architecture.md).
 
 - [ ] No restore of root `components/` (named migrate to `features/operator/` only)
 - [ ] No closed journey phases (join / client workspace / account / playground / trade) unless explicitly reopened

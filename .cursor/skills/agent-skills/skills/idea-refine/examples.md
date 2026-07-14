@@ -104,7 +104,7 @@ SMS-first (not app-first) is likely the right channel. A text saying "Hey, want 
 - [ ] Restaurant owners can identify their top 20-30 regulars and share contact info — test by asking 10 restaurant owners if they'd do this
 - [ ] The commission savings ($8-10 per order) is motivating enough for owners to invest initial setup effort — interview 10 owners about platform fee pain
 
-## MVP Scope
+## Production scope
 - SMS-based reordering for a restaurant's self-identified regular customers
 - Restaurant owner adds regulars manually (name + phone + usual order) — 15-minute setup
 - Customer receives a text with their usual order, confirms with a reply, pays via link
@@ -167,9 +167,9 @@ Given your architecture and the competitive context, I'd push you toward variati
 
 ---
 
-*Phase 2 would cluster into "minimum viable co-editing (1 or 3)" vs. "differentiated collaboration model (2 or 4)" — evaluating whether to check the competitive box quickly or invest in something that becomes a selling point.*
+*Phase 2 would cluster into "narrow production co-editing (1 or 3)" vs. "differentiated collaboration model (2 or 4)" — evaluating whether to check the competitive box quickly or invest in something that becomes a selling point.*
 
-*Phase 3 would produce a one-pager recommending block-level locking as the MVP, with a "Not Doing" list that includes character-level CRDT (too complex), offline sync (not needed for 2-5 users), and AI features (premature).*
+*Phase 3 would produce a one-pager recommending block-level locking as the first production slice, with a "Not Doing" list that includes character-level CRDT (too complex), offline sync (not needed for 2-5 users), and AI features (premature).*
 
 ---
 
@@ -231,7 +231,7 @@ The interesting tension: variations 1 and 5 fix the *output* problem (nothing ch
 
 5. **Phase 2 is honest.** Ideas get called out for low differentiation or high complexity. The skill pushes back: "That instinct to include the 'necessary' thing is how products lose focus."
 
-6. **The output is actionable.** The one-pager ends with things you can *do* (validate assumptions, build the MVP, try the experiment), not things to *think about*.
+6. **The output is actionable.** The one-pager ends with things you can *do* (validate assumptions, build the first production slice, try the experiment), not things to *think about*.
 
 7. **The "Not Doing" list does real work.** It's specific and reasoned. Each item is something you might *want* to do but shouldn't yet.
 

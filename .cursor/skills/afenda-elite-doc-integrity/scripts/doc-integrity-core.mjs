@@ -325,7 +325,7 @@ function categoryHomeMatches(doc, registerDocument) {
   const rules = {
     Control: ["docs/_control/"],
     Architecture: ["docs/architecture/"],
-    ADR: ["docs/architecture/decisions/"],
+    ADR: ["docs/architecture/adr/"],
     API: ["docs/api/"],
     REST: ["docs/api/", "docs/modules/"],
     OPEN: ["docs/api/"],

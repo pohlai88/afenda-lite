@@ -11,7 +11,7 @@ This file is **navigation only**. It does not establish architecture, contracts,
 
 | Role | Document | Use for |
 |------|----------|---------|
-| Parent architecture | [ARCH-029](../architecture/system/ARCH-029-interface-api-architecture.md) | Principles, trust boundaries, Accept / Reject |
+| Parent architecture | [ARCH-029](../architecture/ARCH-029-interface-api-architecture.md) | Principles, trust boundaries, Accept / Reject |
 | Development order (locked) | [GUIDE-015](guides/GUIDE-015-interface-pack-development-roadmap.md) | Phases 1–5 create/revise sequence (Jack Wee) |
 | Register | [DOC-002](../_control/DOC-002-documentation-register.md) | ID existence, version, status |
 | Control | [DOC-001](../_control/DOC-001-documentation-control-standard.md) | Categories, lifecycle, naming |
@@ -26,7 +26,7 @@ Read in this order when joining the pack or resolving a conflict. Do **not** sta
 
 | Step | Read | Why |
 |------|------|-----|
-| 1 | [ARCH-029](../architecture/system/ARCH-029-interface-api-architecture.md) | Living parent authority — surfaces, security pipeline, compatibility, change gate |
+| 1 | [ARCH-029](../architecture/ARCH-029-interface-api-architecture.md) | Living parent authority — surfaces, security pipeline, compatibility, change gate |
 | 2 | [GUIDE-015](guides/GUIDE-015-interface-pack-development-roadmap.md) | Locked program order — what to create/refine next |
 | 3 | Phase 1 Living contracts (below) | Executable rules that implement ARCH-029 |
 | 4 | Domain / module catalogues you need | REST-00N or FFT-REST-001 only for the surface you touch |
@@ -43,7 +43,7 @@ Read in this order when joining the pack or resolving a conflict. Do **not** sta
 
 | Folder / surface | Holds | Does not hold |
 |------------------|-------|---------------|
-| `docs/architecture/system/ARCH-029-*.md` | Parent interface / API architecture | Route catalogues, Zod recipes |
+| `docs/architecture/ARCH-029-*.md` | Parent interface / API architecture | Route catalogues, Zod recipes |
 | `docs/api/API-*.md` | Cross-cutting BFF contracts (Actions + HTTP vocabulary) | Module resource inventories |
 | `docs/api/REST-*.md` | REST standards + domain path catalogues | OpenAPI generation steps |
 | `docs/modules/feed-farm-trade/FFT-REST-*.md` | FFT module REST index (and gated children) | Platform-wide REST standards |
@@ -127,6 +127,6 @@ Development/create order is locked in [GUIDE-015](guides/GUIDE-015-interface-pac
 
 | Doc | Why |
 |-----|-----|
-| [ARCH-013](../architecture/frontend/ARCH-013-bff-and-data-flow.md) | BFF / data-flow context |
-| [ARCH-010](../architecture/backend/ARCH-010-backend-conventions.md) | Backend conventions |
-| Accept / Reject decisions | Living in [ARCH-029](../architecture/system/ARCH-029-interface-api-architecture.md) — not duplicated here |
+| [ARCH-013](../architecture/ARCH-013-bff-and-data-flow.md) | BFF / data-flow context |
+| [ARCH-010](../architecture/ARCH-010-backend-conventions.md) | Backend conventions |
+| Accept / Reject decisions | Living in [ARCH-029](../architecture/ARCH-029-interface-api-architecture.md) — not duplicated here |

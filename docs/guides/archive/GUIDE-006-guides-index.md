@@ -38,8 +38,8 @@
 
 | Former | Replacement |
 |--------|-------------|
-| GUIDE-007 / 014 (org admin / tenancy evidence) | [ARCH-011](../../architecture/ARCH-011-platform-tenancy-rbac.md) ┬À [ARCH-023](../../architecture/turborepo/ARCH-023-multi-tenancy.md) |
-| GUIDE-008 / 009 (account / join) | [ARCH-026](../../architecture/turborepo/ARCH-026-auth-session.md) |
+| GUIDE-007 / 014 (org admin / tenancy evidence) | [ARCH-011](../../architecture/ARCH-011-platform-tenancy-rbac.md) ┬À [ARCH-023](../../architecture/ARCH-023-multi-tenancy.md) |
+| GUIDE-008 / 009 (account / join) | [ARCH-026](../../architecture/ARCH-026-auth-session.md) |
 | GUIDE-010ÔÇª013 (FFT P0ÔÇôP3) | [FFT-MOD-010](../../modules/feed-farm-trade/FFT-MOD-010-module-docs-index.md) ┬À [FFT-MOD-008](../../modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md) |
 
 ## Promotion Rule
@@ -52,5 +52,5 @@ Move a guide here when it is authoritative, maintained, and not better owned as 
 |---------|------|---------|
 | 1.3.0 | 2026-07-13 | Removed GUIDE-007ÔÇª014 |
 | 1.2.0 | 2026-07-13 | Absorbed GUIDE-001ÔÇª004; retired `docs/engineering/` |
-| 1.1.0 | 2026-07-13 | Absorbed GUIDE-007ÔÇª014 from `architecture/frontend/` |
+| 1.1.0 | 2026-07-13 | Absorbed GUIDE-007ÔÇª014 from `architecture/` |
 | 1.0.0 | 2026-07-13 | Scaffolded guides folder |

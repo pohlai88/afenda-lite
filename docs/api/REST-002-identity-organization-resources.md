@@ -15,7 +15,7 @@
 
 This document will catalogue Identity and Organization HTTP resources so [REST-001](REST-001-rest-resources.md) can remain the REST standard and high-level index.
 
-**Placeholder.** Not enforcement SSOT. Parent: [ARCH-029](../architecture/system/ARCH-029-interface-api-architecture.md).
+**Placeholder.** Not enforcement SSOT. Parent: [ARCH-029](../architecture/ARCH-029-interface-api-architecture.md).
 
 ---
 

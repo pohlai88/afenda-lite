@@ -15,7 +15,7 @@
 
 This document will govern duplicate commands, retries, conflicting updates, and state-version checks across executable interfaces.
 
-**Placeholder.** Substantive rules are not yet authoritative. Parent: [ARCH-029](../architecture/system/ARCH-029-interface-api-architecture.md) §3.10.
+**Placeholder.** Substantive rules are not yet authoritative. Parent: [ARCH-029](../architecture/ARCH-029-interface-api-architecture.md) §3.10.
 
 ---
 
@@ -60,7 +60,7 @@ Planned coverage:
 | `409 CONFLICT`           | When valid request conflicts with current state                |
 | High-risk commands       | Deposit, payment, submission, allocation, invite, import, ERP  |
 
-Adapters accept or derive keys; domain logic prevents duplicate side effects ([ARCH-029](../architecture/system/ARCH-029-interface-api-architecture.md)).
+Adapters accept or derive keys; domain logic prevents duplicate side effects ([ARCH-029](../architecture/ARCH-029-interface-api-architecture.md)).
 
 ---
 

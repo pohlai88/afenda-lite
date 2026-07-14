@@ -104,7 +104,7 @@ flowchart LR
 | Platform vs modules | Shared Platform/Identity/AdminCN/env/CI — not FFT-only infra |
 | Module domains | No domain imports Trade ↔ Declarations; compose at adapter if both needed |
 | Shell entitlement | `fft` via `requireFftAccess` → platform `fft.access` |
-| Data tenancy | Hard `organization_id = $org` on FFT tenant roots ([ARCH-023](../../architecture/system/ARCH-023-multi-tenancy.md)) |
+| Data tenancy | Hard `organization_id = $org` on FFT tenant roots ([ARCH-023](../../architecture/ARCH-023-multi-tenancy.md)) |
 | Chrome | `AdminCnShell` only |
 | Paths | Locale-free `/fft/**` — no live `app/fft/[locale]` |
 

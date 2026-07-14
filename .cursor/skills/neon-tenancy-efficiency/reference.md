@@ -5,7 +5,7 @@
 | **Mode** | Runbook (operator execution) |
 | **Audience** | Operators + engineers |
 | **Enables** | Complete shared-schema Neon multi-tenant efficiency + anti-drift pass without inventing steps |
-| **Authority** | [ARCH-023](../../../docs/architecture/system/ARCH-023-multi-tenancy.md) Operational considerations |
+| **Authority** | [ARCH-023](../../../docs/architecture/ARCH-023-multi-tenancy.md) Operational considerations |
 | **Skill** | [SKILL.md](SKILL.md) |
 | **Shell** | PowerShell (Windows). Same `npm run …` works in bash. |
 | **Branch** | `br-tiny-hill-ao82jp6f` (local = production Neon) |
@@ -46,7 +46,7 @@ cd C:\JackProject\afenda-bolt\client-declaration-portal
 - [x] E  Optional backfill — E1 dry-run no-op (wouldGrant=0); live write skipped
 ```
 
-**Ladder close:** A–E green for Afenda-Lite shared-schema tenancy efficiency. **Decision lock:** [ARCH-023 Decision lock](../../../docs/architecture/system/ARCH-023-multi-tenancy.md) — Rejected R1–R7 / Deferred D4·D5 / Allowed next. Coding must not reopen rejected or deferred rows without explicit user reopen.
+**Ladder close:** A–E green for Afenda-Lite shared-schema tenancy efficiency. **Decision lock:** [ARCH-023 Decision lock](../../../docs/architecture/ARCH-023-multi-tenancy.md) — Rejected R1–R7 / Deferred D4·D5 / Allowed next. Coding must not reopen rejected or deferred rows without explicit user reopen.
 
 **Identity cutover (2026-07-12):** Auth org slug/name **`afenda-lite`** (id `4587e4c8-8119-4761-91ce-b874d3493aad`); operator **`afenda@admin.com`**; `@iam-check.com` e2e junk **purged**. Local fixtures: `PORTAL_ORG_*` + `PORTAL_ORGANIZATION_ID` / `E2E_ORGANIZATION_ID` — see [post-lock cheat sheet](../../../docs/runbooks/RB-005-post-lock-coding-cheat-sheet.md) §4.
 
@@ -316,8 +316,8 @@ Rollback / recovery for org ops: [docs/runbooks/RB-001-multi-org-ops.md](../../.
 
 ## References
 
-- [ARCH-023](../../../docs/architecture/system/ARCH-023-multi-tenancy.md)
-- [ARCH-023](../../../docs/architecture/system/ARCH-023-multi-tenancy.md)
+- [ARCH-023](../../../docs/architecture/ARCH-023-multi-tenancy.md)
+- [ARCH-023](../../../docs/architecture/ARCH-023-multi-tenancy.md)
 - [multi-org-ops](../../../docs/runbooks/RB-001-multi-org-ops.md)
 - [post-lock coding cheat sheet](../../../docs/runbooks/RB-005-post-lock-coding-cheat-sheet.md)
 - [Neon multitenancy](https://neon.com/docs/guides/multitenancy)

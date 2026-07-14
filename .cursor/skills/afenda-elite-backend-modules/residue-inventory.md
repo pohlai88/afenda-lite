@@ -2,7 +2,7 @@
 
 **Status:** Pass 2 complete (2026-07-12). **All former `lib/` runners absorbed** into `features/` (2026-07-12). **`lib/` directory is gone** — do not recreate.
 
-**Authority:** [docs/architecture/backend/ARCH-009-modules-ownership-map.md](../../../docs/architecture/backend/ARCH-009-modules-ownership-map.md) §5
+**Authority:** [docs/architecture/ARCH-009-modules-ownership-map.md](../../../docs/architecture/ARCH-009-modules-ownership-map.md) §5
 
 ---
 
@@ -63,7 +63,7 @@ Do **not** recreate `lib/` for architecture. New UI → `features/*` or `compone
 
 - [x] Grep imports of each prune candidate; flip or delete safely
 - [x] Remove unused shims after zero importers
-- [x] Update this file + `docs/architecture/backend/ARCH-009-modules-ownership-map.md`
+- [x] Update this file + `docs/architecture/ARCH-009-modules-ownership-map.md`
 - [x] Do not touch FFT gate-register / prod flags in the same PR
 - [x] Playground harness absorbed (`lib/playground` + `lib/pages/playground` → `features/playground`)
 - [x] Empty `lib/` removed

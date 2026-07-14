@@ -1,0 +1,132 @@
+schema_version: 1
+role: MOD-002
+target_filename: "{{MODULE_PREFIX}}-MOD-002-domain-and-ownership.md"
+source_format: markdown
+template: |-
+  # {{MODULE_PREFIX}}-MOD-002 Domain and Ownership
+  
+  | Field             | Value                     |
+  | ----------------- | ------------------------- |
+  | **ID**            | {{MODULE_PREFIX}}-MOD-002 |
+  | **Category**      | Module                    |
+  | **Version**       | 0.1.0                     |
+  | **Status**        | Draft                     |
+  | **Control State** | Closed                    |
+  | **Owner**         | {{MODULE_OWNER}}          |
+  | **Updated**       | {{DATE}}                  |
+  | **Spine**         | MOD-002 Domain and Ownership |
+  
+  ---
+  
+  # 1. Purpose
+  
+  Define the business journey, actors, capabilities, and domain ownership for {{MODULE_TITLE}}.
+
+  **Audience:** product owners, domain engineers, process owners, and reviewers.
+  **Action enabled:** agree the bounded context, business journey, language, invariants, and ownership.
+
+  ---
+  
+  # 2. Scope
+  
+  ## 2.1 In Scope
+  
+  - Actors, end-to-end journey, capability ownership, domain terms, and business invariants.
+  
+  ## 2.2 Out of Scope
+  
+  - Platform tenancy redesign, implementation evidence, and readiness claims.
+
+  ## 2.3 Assumptions and unresolved questions
+
+  List assumptions with an owner and validation path. Record unresolved questions with a decision owner and review trigger; never present them as accepted facts.
+
+  ---
+  
+  # 3. Domain and Ownership
+  
+  ## 3.1 Bounded context
+  
+  Define the module boundary, upstream and downstream contexts, authoritative records, business invariants, assumptions, and exclusions.
+  
+  ## 3.2 Ubiquitous language
+  
+  | Term | Definition | Allowed aliases | Forbidden ambiguity | Authority |
+  | ---- | ---------- | --------------- | ------------------- | --------- |
+  | {{DOMAIN_TERM}} | {{PRECISE_DEFINITION}} | {{ALIASES_OR_NONE}} | {{FORBIDDEN_MEANING}} | {{OWNER_OR_REFERENCE}} |
+  
+  ## 3.3 Actors and business outcomes
+  
+  | Actor | Goal | Allowed responsibility | Prohibited responsibility | Outcome measure |
+  | ----- | ---- | ---------------------- | ------------------------- | --------------- |
+  | {{ACTOR}} | {{GOAL}} | {{RESPONSIBILITY}} | {{PROHIBITION}} | {{MEASURE}} |
+  
+  ## 3.4 End-to-end business journey
+  
+  | Step | Trigger | Business action | Decision/control | Result | Exception owner |
+  | ---- | ------- | --------------- | ---------------- | ------ | --------------- |
+  | 1 | {{TRIGGER}} | {{ACTION}} | {{CONTROL}} | {{RESULT}} | {{OWNER}} |
+  
+  Include exception, cancellation, reversal, and reconciliation paths where the process can diverge.
+  
+  ## 3.5 Capability, code, and document ownership
+  
+  | Capability | Domain owner | Code home | Document authority | Upstream/downstream dependency |
+  | ---------- | ------------ | --------- | ------------------ | ------------------------------ |
+  | {{CAPABILITY}} | {{OWNER}} | {{CODE_PATH}} | {{DOC_ID}} | {{DEPENDENCY}} |
+  
+  ## 3.6 Forbidden renames and ownership conflicts
+  
+  Record protected domain terms, retired names, conflicting authorities, and the approval required to change ownership.
+  
+  ## 3.7 Enterprise requirements
+  
+  | AC-ID | Profile | Quality Dimension | Applicability | Criterion |
+  | ----- | ------- | ----------------- | ------------- | --------- |
+  | {{MODULE_PREFIX}}-AC-002-01 | Enterprise Core | CORE-PROCESS | Core | {{TESTABLE_PROCESS_CRITERION}} |
+  
+  For an active ERP profile, add owned ERP-PROCESS-CONTROLS and ERP-REPORTING rows. Criteria must cover complete business outcomes, exceptions, and control ownership rather than screen presence.
+
+  ---
+  
+  # 4. References
+  
+  | ID | Title | Relationship |
+  | -- | ----- | ------------ |
+  | DOC-001 | Documentation Control Standard | Governance |
+  | MOD-002 | Modules Index | Module category and readiness standard |
+  | DOC-003 | Controlled Document Template | Header and six-section baseline |
+  | {{AUTHORITY_ID}} | {{ROLE_RELEVANT_AUTHORITY}} | Governing decision, contract, implementation, or operating rule |
+
+  ---
+  
+  # 5. Change Log
+  
+  | Version | Date | Summary |
+  | ------- | ---- | ------- |
+  | 0.1.0 | {{DATE}} | Provisional module-pack scaffold. |
+  
+  ---
+  
+  # 6. Notes
+  
+  This tokenized template is non-authoritative.
+  
+  ## 6.1 Enterprise completion gate
+  
+  Before promotion:
+  
+  - name the engineering/operator audience and the decision or action enabled;
+  - replace every double-brace token and remove all TODO/TBD placeholder language;
+  - complete every MOD-002-required topic owned by this role without duplicating sibling authorities;
+  - label assumptions, unknowns, limits, deferred work, and rejected choices;
+  - make each acceptance criterion atomic, measurable, and independently reproducible;
+  - link commands, source paths, contracts, runbooks, and governing documents instead of asserting implementation from prose;
+  - synchronize header Version/Updated, latest Change Log row, and DOC-002 registration;
+  - verify Control State is Closed after authorized work; and
+  - pass test:module-pack, check:module-quality, check:docs-naming, and the full documentation-integrity audit.
+  
+  Documentation completeness does not imply Module Enterprise Readiness.
+
+
+

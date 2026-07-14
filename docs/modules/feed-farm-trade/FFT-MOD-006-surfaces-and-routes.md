@@ -35,7 +35,7 @@ Map Feed Farm Trade operator surfaces, App Router homes, and thin-page rules.
 
 - Product locks detail → [FFT-MOD-001](FFT-MOD-001-module-architecture.md)
 - MVP / phase status → [FFT-MOD-010](FFT-MOD-010-module-docs-index.md)
-- Platform-wide route inventory → [ARCH-012](../../architecture/frontend/ARCH-012-app-router-routes.md)
+- Platform-wide route inventory → [ARCH-012](../../architecture/ARCH-012-app-router-routes.md)
 
 ---
 
@@ -50,11 +50,11 @@ Map Feed Farm Trade operator surfaces, App Router homes, and thin-page rules.
 | Layout | `app/fft/layout.tsx` | `AdminCnShell` |
 | RBAC admin | `/fft/admin/rbac` | Control plane |
 
-Canonical inventory: [ARCH-012](../../architecture/frontend/ARCH-012-app-router-routes.md).
+Canonical inventory: [ARCH-012](../../architecture/ARCH-012-app-router-routes.md).
 
 ## 3.2 Layout / shell
 
-- Operator chrome: AdminCN — [ARCH-015](../../architecture/frontend/ARCH-015-admincn-alignment.md) · [ARCH-018](../../architecture/tech-stack/ARCH-018-admincn-customization.md).
+- Operator chrome: AdminCN — [ARCH-015](../../architecture/ARCH-015-admincn-alignment.md) · [ARCH-018](../../architecture/ARCH-018-admincn-customization.md).
 - UI implementation: `features/fft/*` — **no** `FftShell`.
 
 ## 3.3 Client vs operator
@@ -66,7 +66,7 @@ Canonical inventory: [ARCH-012](../../architecture/frontend/ARCH-012-app-router-
 
 ## 3.4 Thin page rule
 
-`app/fft/**/page.tsx` stays thin RSC → feature runners / domain. Mutations via Server Actions. Align with [ARCH-013](../../architecture/frontend/ARCH-013-bff-and-data-flow.md).
+`app/fft/**/page.tsx` stays thin RSC → feature runners / domain. Mutations via Server Actions. Align with [ARCH-013](../../architecture/ARCH-013-bff-and-data-flow.md).
 
 ## 3.5 Enterprise requirements
 

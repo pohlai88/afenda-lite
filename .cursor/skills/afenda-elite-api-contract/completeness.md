@@ -1,6 +1,6 @@
 # Afenda API contract — completeness
 
-Plan authority: this skill + `api-now.md` + `docs/api/*` (SSOT: Living API-001…004, REST-001, OPEN-001; parent [ARCH-029](../../../docs/architecture/system/ARCH-029-interface-api-architecture.md); order [GUIDE-015](../../../docs/api/guides/GUIDE-015-interface-pack-development-roadmap.md)).
+Plan authority: this skill + `api-now.md` + `docs/api/*` (SSOT: Living API-001…004, REST-001, OPEN-001; parent [ARCH-029](../../../docs/architecture/ARCH-029-interface-api-architecture.md); order [GUIDE-015](../../../docs/api/guides/GUIDE-015-interface-pack-development-roadmap.md)).
 
 **Forward writing:** The contract in `docs/api/*` is authoritative now. Missing trees or apps are **recorded** as forward work against those docs — do not soften Status to “wait for checkout.” Do not treat Draft Phase 2/3 docs as Living enforcement.
 
@@ -10,7 +10,7 @@ Plan authority: this skill + `api-now.md` + `docs/api/*` (SSOT: Living API-001�
 | No web-UI list REST | RSC → domain | [API-001](../../../docs/api/API-001-api-boundaries.md) adapter choice | **Done** (contract) |
 | ActionResult / APIErrorBody | Shared codes | [API-002](../../../docs/api/API-002-error-contract.md) | **Done** (contract) |
 | HTTP success `{ data }` | Envelope | [API-001](../../../docs/api/API-001-api-boundaries.md); OPEN `*Envelope` schemas | **Done** (contract) |
-| List payload preference | `data: { items, pagination }` | [ARCH-029](../../../docs/architecture/system/ARCH-029-interface-api-architecture.md); freeze in API-008 when Living | **Done** (architecture) / API-008 **Draft** |
+| List payload preference | `data: { items, pagination }` | [ARCH-029](../../../docs/architecture/ARCH-029-interface-api-architecture.md); freeze in API-008 when Living | **Done** (architecture) / API-008 **Draft** |
 | `parseSchema` from Platform | Shared Zod | [API-004](../../../docs/api/API-004-schema-map.md) | **Done** (contract) |
 | Branded IDs one-version | Param = brand = Zod | [API-003](../../../docs/api/API-003-api-types.md) | **Done** (contract) |
 | Draft Route Handler compose | Declarations owns | REST-001 + `modules/declarations/api/client-declaration-draft-route` | **Done** (contract) |
@@ -31,7 +31,7 @@ Plan authority: this skill + `api-now.md` + `docs/api/*` (SSOT: Living API-001�
 
 - Draft API runner owned by Declarations (one-version Action/HTTP share domain + schemas)
 - Org-admin RBAC mutations stay on Server Actions (`admin.ts`), not new `/api` routes
-- Hard tenancy cutover: required `organizationId` into domain — see [ARCH-023](../../../docs/architecture/system/ARCH-023-multi-tenancy.md)
+- Hard tenancy cutover: required `organizationId` into domain — see [ARCH-023](../../../docs/architecture/ARCH-023-multi-tenancy.md)
 - Pack entry: [docs/api/README.md](../../../docs/api/README.md)
 - Control State + register: DOC-001 / DOC-002 — skill does not invent catalogue rows
 

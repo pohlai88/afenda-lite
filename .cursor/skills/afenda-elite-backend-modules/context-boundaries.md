@@ -1,6 +1,6 @@
 # Context boundaries
 
-**Authority:** [docs/architecture/backend/ARCH-006-bounded-contexts.md](../../../docs/architecture/backend/ARCH-006-bounded-contexts.md) · [docs/architecture/backend/ARCH-007-ports-and-adapters.md](../../../docs/architecture/backend/ARCH-007-ports-and-adapters.md)
+**Authority:** [docs/architecture/ARCH-006-bounded-contexts.md](../../../docs/architecture/ARCH-006-bounded-contexts.md) · [docs/architecture/ARCH-007-ports-and-adapters.md](../../../docs/architecture/ARCH-007-ports-and-adapters.md)
 
 ## Platform model
 
@@ -33,7 +33,7 @@ Compose at the **adapter** (page / Server Action / Route Handler) if a screen ne
 
 ## Port rules
 
-- Ports are named exports under `modules/*/domain` (documented interfaces in `docs/architecture/backend/ARCH-007`).
+- Ports are named exports under `modules/*/domain` (documented interfaces in `docs/architecture/ARCH-007`).
 - Ports **never** import `Request`, `next/headers`, or UI.
 - Zod at adapter edge; domain trusts typed input.
 - One port function may back both a Server Action and a Route Handler — same Zod, same error codes (`/afenda-elite-api-contract`).

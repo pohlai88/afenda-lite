@@ -100,7 +100,7 @@ REVIEW_P3 (post-repair): PASS (eval only) | prior ungated ERP retry CLOSED (acti
 IMPLEMENT_P3_FLAG_GATE: PASS | retryErpSyncJobAction + retrySyncJob gated by FFT_ERP_SYNC_ENABLED; sync.retry preserved; erp-sync-store + retry-erp-sync-job-action tests 6/6; modules/fft 181/181; audit:fft-promotion ok; no prod flags | 2026-07-11
 AC-OPS-01: PASS | flag-off erp_sync_disabled + no SQL/audit (action+domain); deposit/pickup asserts unchanged; FE placeholders; no prod enable | 2026-07-11
 F-OPS-ERP-02 / F-OPS-ERP-03: PASS (retry gate) | assertFftErpSyncFeatureAction + domain isFftErpSyncEnabled; FE panel still unwired | 2026-07-11
-BOOTSTRAP_SYNC_CHECK: APPLIED | doc/skill sync approved — 001R MVP YES + P2 done; mvp-and-gaps; README; agent-workflow; completeness locale shim; phase13 ref; RUNTIME code map → modules/fft | 2026-07-11
+BOOTSTRAP_SYNC_CHECK: APPLIED | doc/skill sync approved — 001R production spine YES + P2 done; enterprise-readiness-and-gaps; README; agent-workflow; completeness locale path; phase13 ref; RUNTIME code map → modules/fft | 2026-07-11
 BOOTSTRAP_SYNC_CHECK: PASS (inventory) | skill pack 10/10 + ADR/phase/README present; 001R↔11–14 linked; drift list logged (no product code) | 2026-07-11
 EVALUATE_P1_MVP: YES | P0+P1 AC rows PASS; trade-p1-ac-gates+session+trade+priority-csv 107/107; residue=redirect-only [locale] shim (no FftShell); P2/P3 not required for MVP claim | 2026-07-11
 REVIEW_P3: PASS (eval only) | AC-OPS-01 defaults PASS; AC-OPS-02 BLOCKED; FE ops=TradeOpsPlaceholder; deposit/pickup actions flag-gated; ERP retryErpSyncJobAction ungated vs FFT_ERP_SYNC_ENABLED (FAIL write gap); audit:fft-promotion ok; no prod flags changed | 2026-07-11

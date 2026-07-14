@@ -1,0 +1,134 @@
+schema_version: 1
+role: MOD-007
+target_filename: "{{MODULE_PREFIX}}-MOD-007-api-and-adapters.md"
+source_format: markdown
+template: |-
+  # {{MODULE_PREFIX}}-MOD-007 API and Adapters
+  
+  | Field             | Value                     |
+  | ----------------- | ------------------------- |
+  | **ID**            | {{MODULE_PREFIX}}-MOD-007 |
+  | **Category**      | Module                    |
+  | **Version**       | 0.1.0                     |
+  | **Status**        | Draft                     |
+  | **Control State** | Closed                    |
+  | **Owner**         | {{MODULE_OWNER}}          |
+  | **Updated**       | {{DATE}}                  |
+  | **Spine**         | MOD-007 API and Adapters  |
+  
+  ---
+  
+  # 1. Purpose
+  
+  Define ports, adapters, schemas, error behavior, idempotency, and external integration contracts for {{MODULE_TITLE}}.
+
+  **Audience:** application engineers, integration engineers, API reviewers, and operators.
+  **Action enabled:** implement and verify stable contracts, adapters, idempotency, retries, and failure isolation.
+
+  ---
+  
+  # 2. Scope
+  
+  ## 2.1 In Scope
+  
+  - Domain ports, driving/driven adapters, validation, errors, idempotency, concurrency, and external boundaries.
+  
+  ## 2.2 Out of Scope
+  
+  - Parallel platform interface vocabularies and unapproved external REST expansion.
+
+  ## 2.3 Assumptions and unresolved questions
+
+  List assumptions with an owner and validation path. Record unresolved questions with a decision owner and review trigger; never present them as accepted facts.
+
+  ---
+  
+  # 3. API and Adapters
+  
+  ## 3.1 Actions map
+  
+  | Use case | Driving interface | Input schema | Authorization | Transaction boundary | Result type |
+  | -------- | ----------------- | ------------ | ------------- | -------------------- | ----------- |
+  | {{USE_CASE}} | {{SERVER_ACTION_OR_PORT}} | {{SCHEMA_REFERENCE}} | {{GATE}} | {{BOUNDARY}} | {{RESULT_TYPE}} |
+  
+  ## 3.2 Route Handlers
+  
+  | Method/path | Purpose | Contract authority | Idempotency | Cache/runtime | Exposure |
+  | ----------- | ------- | ------------------ | ----------- | ------------- | -------- |
+  | {{METHOD_PATH}} | {{PURPOSE}} | {{API_DOC_ID}} | {{POLICY}} | {{POLICY}} | {{INTERNAL_EXTERNAL}} |
+  
+  Do not duplicate API-001/API-002 contract content; link the owning interface document.
+  
+  ## 3.3 Result and error types
+  
+  | Code/type | Meaning | Retryable | User-safe mapping | Observability signal |
+  | --------- | ------- | --------- | ----------------- | -------------------- |
+  | {{ERROR_TYPE}} | {{MEANING}} | {{YES_NO_CONDITION}} | {{SAFE_MAPPING}} | {{SIGNAL}} |
+  
+  ## 3.4 Ports and adapters
+  
+  | Port | Direction | Adapter | Contract/version | Timeout | Failure isolation |
+  | ---- | --------- | ------- | ---------------- | ------- | ----------------- |
+  | {{PORT}} | {{DRIVING_DRIVEN}} | {{ADAPTER}} | {{CONTRACT}} | {{TIMEOUT}} | {{ISOLATION}} |
+  
+  ## 3.5 Idempotency, concurrency, timeout, and retry
+  
+  Define idempotency key scope and lifetime, duplicate handling, ordering assumptions, retry budget/backoff, timeout, circuit behavior, dead-letter or reconciliation path, and ownership.
+  
+  ## 3.6 External integrations
+  
+  Identify data classification, authentication mechanism by key name or authority, contract evolution, availability assumptions, egress controls, observability, and disable/fail-closed behavior.
+  
+  ## 3.7 Enterprise requirements
+  
+  | AC-ID | Profile | Quality Dimension | Applicability | Criterion |
+  | ----- | ------- | ----------------- | ------------- | --------- |
+  | {{MODULE_PREFIX}}-AC-007-01 | Enterprise Core | CORE-INTEGRATION | Core | {{TESTABLE_INTEGRATION_CRITERION}} |
+  
+  For an active ERP profile, add an ERP-CLEAN-CORE-INTEGRATION row. Criteria must verify contract and failure behavior across the adapter boundary.
+
+  ---
+  
+  # 4. References
+  
+  | ID | Title | Relationship |
+  | -- | ----- | ------------ |
+  | DOC-001 | Documentation Control Standard | Governance |
+  | MOD-002 | Modules Index | Module category and readiness standard |
+  | ARCH-029 | Interface and API Architecture | Platform interface authority |
+  | API-001 | API Boundaries | Adapter constraints |
+  | DOC-003 | Controlled Document Template | Header and six-section baseline |
+  | {{AUTHORITY_ID}} | {{ROLE_RELEVANT_AUTHORITY}} | Governing decision, contract, implementation, or operating rule |
+
+  ---
+  
+  # 5. Change Log
+  
+  | Version | Date | Summary |
+  | ------- | ---- | ------- |
+  | 0.1.0 | {{DATE}} | Provisional module-pack scaffold. |
+  
+  ---
+  
+  # 6. Notes
+  
+  This tokenized template is non-authoritative.
+  
+  ## 6.1 Enterprise completion gate
+  
+  Before promotion:
+  
+  - name the engineering/operator audience and the decision or action enabled;
+  - replace every double-brace token and remove all TODO/TBD placeholder language;
+  - complete every MOD-002-required topic owned by this role without duplicating sibling authorities;
+  - label assumptions, unknowns, limits, deferred work, and rejected choices;
+  - make each acceptance criterion atomic, measurable, and independently reproducible;
+  - link commands, source paths, contracts, runbooks, and governing documents instead of asserting implementation from prose;
+  - synchronize header Version/Updated, latest Change Log row, and DOC-002 registration;
+  - verify Control State is Closed after authorized work; and
+  - pass test:module-pack, check:module-quality, check:docs-naming, and the full documentation-integrity audit.
+  
+  Documentation completeness does not imply Module Enterprise Readiness.
+
+
+

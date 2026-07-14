@@ -13,7 +13,7 @@
 
 # 1. Purpose
 
-This guide will explain **how to implement** a same-origin Server Action. It does not establish architecture — follow [ARCH-029](../../architecture/system/ARCH-029-interface-api-architecture.md) and [API-001](../API-001-api-boundaries.md).
+This guide will explain **how to implement** a same-origin Server Action. It does not establish architecture — follow [ARCH-029](../../architecture/ARCH-029-interface-api-architecture.md) and [API-001](../API-001-api-boundaries.md).
 
 **Placeholder.**
 

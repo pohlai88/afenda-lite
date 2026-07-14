@@ -13,7 +13,7 @@
 
 # 1. Purpose
 
-This guide will explain **how to test** API contracts (Zod, Actions, Route Handlers, OpenAPI alignment) without redefining architecture. Parent: [ARCH-029](../../architecture/system/ARCH-029-interface-api-architecture.md).
+This guide will explain **how to test** API contracts (Zod, Actions, Route Handlers, OpenAPI alignment) without redefining architecture. Parent: [ARCH-029](../../architecture/ARCH-029-interface-api-architecture.md).
 
 **Placeholder.**
 

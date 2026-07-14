@@ -21,7 +21,8 @@ description: >-
 | [boundaries.md](boundaries.md)         | FE↔BE contracts, branded IDs, validation edges |
 | [wipe-inventory.md](wipe-inventory.md) | Complete DELETE / REPLACE / KEEP file list     |
 | [docs/api/](../../../docs/api/)          | Error shape, REST catalog, types               |
-| [docs/architecture/frontend/](../../../docs/architecture/frontend/) | UI architecture, routes, BFF tree              |
+| [docs/architecture/](../../../docs/architecture/) | UI architecture, routes, BFF tree              |
+| [afenda-elite-nextjs-best-practice](../afenda-elite-nextjs-best-practice/SKILL.md) | App Router mechanics (RSC, rendering, MCP) |
 
 ## Agent operating rules
 
@@ -75,7 +76,7 @@ Draft XHR / auth / health / webhook? → Route Handler
 External/mobile REST?  → Route Handler per docs/api (contract-only until needed)
 ```
 
-Decision tree SSOT: [docs/architecture/frontend/ARCH-013-bff-and-data-flow.md](../../../docs/architecture/frontend/ARCH-013-bff-and-data-flow.md).
+Decision tree SSOT: [docs/architecture/ARCH-013-bff-and-data-flow.md](../../../docs/architecture/ARCH-013-bff-and-data-flow.md).
 
 ## Dynamic params (exact)
 

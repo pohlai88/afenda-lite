@@ -1,0 +1,135 @@
+schema_version: 1
+role: MOD-003
+target_filename: "{{MODULE_PREFIX}}-MOD-003-tech-stack.md"
+source_format: markdown
+template: |-
+  # {{MODULE_PREFIX}}-MOD-003 Tech Stack
+  
+  | Field             | Value                     |
+  | ----------------- | ------------------------- |
+  | **ID**            | {{MODULE_PREFIX}}-MOD-003 |
+  | **Category**      | Module                    |
+  | **Version**       | 0.1.0                     |
+  | **Status**        | Draft                     |
+  | **Control State** | Closed                    |
+  | **Owner**         | {{MODULE_OWNER}}          |
+  | **Updated**       | {{DATE}}                  |
+  | **Spine**         | MOD-003 Tech Stack        |
+  
+  ---
+  
+  # 1. Purpose
+  
+  Record supported runtime, dependencies, environments, flags, and resource budgets for {{MODULE_TITLE}}.
+
+  **Audience:** module engineers, platform engineers, operators, and security reviewers.
+  **Action enabled:** select and verify supported module technology, configuration, dependencies, and budgets.
+
+  ---
+  
+  # 2. Scope
+  
+  ## 2.1 In Scope
+  
+  - Runtime defaults, frameworks, data/auth dependencies, configuration, feature flags, and budgets.
+  
+  ## 2.2 Out of Scope
+  
+  - Secret values, platform-wide environment policy, and production promotion authorization.
+
+  ## 2.3 Assumptions and unresolved questions
+
+  List assumptions with an owner and validation path. Record unresolved questions with a decision owner and review trigger; never present them as accepted facts.
+
+  ---
+  
+  # 3. Tech Stack
+  
+  ## 3.1 Runtime
+  
+  | Capability | Technology/version | Lifecycle posture | Repository evidence | Owning authority | Constraint |
+  | ---------- | ------------------ | ----------------- | ------------------- | ---------------- | ---------- |
+  | {{CAPABILITY}} | {{TECHNOLOGY_AND_VERSION}} | {{CURRENT_TARGET_OPTIONAL_RETIRED}} | {{PATH_OR_NOT_VERIFIABLE}} | {{DOC_ID}} | {{CONSTRAINT}} |
+  
+  ## 3.2 Frameworks and UI
+  
+  Record only module-specific choices or constraints. Link shared platform and design-system authorities instead of duplicating their catalogues.
+  
+  ## 3.3 Data access
+  
+  Identify approved access libraries, transaction boundary, connection mode, migration owner, and forbidden bypasses. Do not include credentials.
+  
+  ## 3.4 Authentication dependency
+  
+  Name the platform identity/session dependency and module integration point. Keep platform IAM decisions in ARCH-023 and module permission behavior in MOD-005.
+  
+  ## 3.5 Flags and environment
+  
+  | Setting | Purpose | Environment scope | Default/fail-closed state | Owner | Authority |
+  | ------- | ------- | ----------------- | ------------------------- | ----- | --------- |
+  | {{SETTING_NAME}} | {{PURPOSE}} | {{SCOPE}} | {{SAFE_DEFAULT}} | {{OWNER}} | {{DOC_ID}} |
+  
+  List key names only. Link platform composition and validation policy instead of copying secret values.
+  
+  ## 3.6 Local versus production
+  
+  State verified differences in runtime, data connection, integrations, flags, and observability. Label facts not verifiable in the current checkout.
+  
+  ## 3.7 Resource and performance budgets
+  
+  | Budget | Threshold | Measurement method | Enforcement gate | Owner |
+  | ------ | --------- | ------------------ | ---------------- | ----- |
+  | {{BUDGET}} | {{THRESHOLD}} | {{METHOD}} | {{GATE}} | {{OWNER}} |
+  
+  ## 3.8 Enterprise requirements
+  
+  | AC-ID | Profile | Quality Dimension | Applicability | Criterion |
+  | ----- | ------- | ----------------- | ------------- | --------- |
+  | {{MODULE_PREFIX}}-AC-003-01 | Enterprise Core | CORE-PLATFORM | Core | {{TESTABLE_PLATFORM_CRITERION}} |
+  
+  For an active ERP profile, add an ERP-CONFIG-ALM row. Manifest presence alone must never be treated as implemented or approved architecture.
+
+  ---
+  
+  # 4. References
+  
+  | ID | Title | Relationship |
+  | -- | ----- | ------------ |
+  | DOC-001 | Documentation Control Standard | Governance |
+  | MOD-002 | Modules Index | Module category and readiness standard |
+  | ARCH-027 | Environment Variable Model | Platform environment policy |
+  | DOC-003 | Controlled Document Template | Header and six-section baseline |
+  | {{AUTHORITY_ID}} | {{ROLE_RELEVANT_AUTHORITY}} | Governing decision, contract, implementation, or operating rule |
+
+  ---
+  
+  # 5. Change Log
+  
+  | Version | Date | Summary |
+  | ------- | ---- | ------- |
+  | 0.1.0 | {{DATE}} | Provisional module-pack scaffold. |
+  
+  ---
+  
+  # 6. Notes
+  
+  This tokenized template is non-authoritative. Never place secret values in a module document.
+  
+  ## 6.1 Enterprise completion gate
+  
+  Before promotion:
+  
+  - name the engineering/operator audience and the decision or action enabled;
+  - replace every double-brace token and remove all TODO/TBD placeholder language;
+  - complete every MOD-002-required topic owned by this role without duplicating sibling authorities;
+  - label assumptions, unknowns, limits, deferred work, and rejected choices;
+  - make each acceptance criterion atomic, measurable, and independently reproducible;
+  - link commands, source paths, contracts, runbooks, and governing documents instead of asserting implementation from prose;
+  - synchronize header Version/Updated, latest Change Log row, and DOC-002 registration;
+  - verify Control State is Closed after authorized work; and
+  - pass test:module-pack, check:module-quality, check:docs-naming, and the full documentation-integrity audit.
+  
+  Documentation completeness does not imply Module Enterprise Readiness.
+
+
+

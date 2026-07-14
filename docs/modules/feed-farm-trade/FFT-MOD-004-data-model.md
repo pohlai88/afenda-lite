@@ -34,7 +34,7 @@ Describe Feed Farm Trade data entities, relationships, tenancy rules, and migrat
 ## 2.2 Out of Scope
 
 - Gate SQL evidence / promotion checklists → [FFT-MOD-008](FFT-MOD-008-ops-runtime.md)
-- Platform tenancy Decision lock → [ARCH-023](../../architecture/system/ARCH-023-multi-tenancy.md)
+- Platform tenancy Decision lock → [ARCH-023](../../architecture/ARCH-023-multi-tenancy.md)
 - Permission codes → [FFT-MOD-005](FFT-MOD-005-auth-tenancy-rbac.md)
 
 ---

@@ -1,6 +1,6 @@
 # API pack runbooks
 
-Navigation only. Operational procedures for the Interface / API pack. Contracts stay in Living `API-*` / `REST-*` / `OPEN-*`; architecture stays in [ARCH-029](../../architecture/system/ARCH-029-interface-api-architecture.md).
+Navigation only. Operational procedures for the Interface / API pack. Contracts stay in Living `API-*` / `REST-*` / `OPEN-*`; architecture stays in [ARCH-029](../../architecture/ARCH-029-interface-api-architecture.md).
 
 | Doc | Purpose | Status |
 |-----|---------|--------|

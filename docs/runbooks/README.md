@@ -1,6 +1,6 @@
 # runbooks
 
-Operator and agent procedures for Afenda-Lite **platform** ops. Architecture and contract documents do **not** replace operational procedures — see [ARCH-029](../architecture/system/ARCH-029-interface-api-architecture.md).
+Operator and agent procedures for Afenda-Lite **platform** ops. Architecture and contract documents do **not** replace operational procedures — see [ARCH-029](../architecture/ARCH-029-interface-api-architecture.md).
 
 | Doc | Purpose | Status |
 |-----|---------|--------|
@@ -17,8 +17,8 @@ Operator and agent procedures for Afenda-Lite **platform** ops. Architecture and
 
 | Need | Doc |
 |------|-----|
-| Interface / API architecture | [ARCH-029](../architecture/system/ARCH-029-interface-api-architecture.md) |
-| Tenancy + platform RBAC + Decision lock | [ARCH-023](../architecture/system/ARCH-023-multi-tenancy.md) |
+| Interface / API architecture | [ARCH-029](../architecture/ARCH-029-interface-api-architecture.md) |
+| Tenancy + platform RBAC + Decision lock | [ARCH-023](../architecture/ARCH-023-multi-tenancy.md) |
 | FFT ops / flags | [FFT-MOD-008](../modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md) |
 | OpenAPI governance | [OPEN-001](../api/OPEN-001-openapi.md) |
 | OpenAPI generate recipes | [GUIDE-011](../api/guides/GUIDE-011-generating-and-validating-openapi.md) (Draft) |

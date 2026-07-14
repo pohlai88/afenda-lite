@@ -42,7 +42,7 @@ Agent must read in this order before coding or claiming results:
 ```text
 1. .cursor/skills/feed-farm-trade/SKILL.md
 2. .cursor/skills/feed-farm-trade/completeness.md   (current wire status)
-3. .cursor/skills/feed-farm-trade/mvp-and-gaps.md
+3. .cursor/skills/feed-farm-trade/enterprise-readiness-and-gaps.md
 4. .cursor/skills/feed-farm-trade/verify.md         (evidence log + commands)
 5. .cursor/skills/feed-farm-trade/slice-playbook.md (if implementing)
 6. .cursor/skills/feed-farm-trade/action-map.md     (if implementing / reviewing actions)
@@ -130,7 +130,7 @@ If anything in **Locked context** conflicts with the task → **STOP** and ask. 
 COMMAND: ADVISE_STATUS
 MODE: evaluation only — do not write product code
 FOLLOW: Feed Farm Trade agent command sheet (locked context + load order + DoD + output contract)
-READ: SKILL.md → completeness.md → mvp-and-gaps.md → verify.md evidence log → 001R
+READ: SKILL.md → completeness.md → enterprise-readiness-and-gaps.md → verify.md evidence log → 001R
 DO:
 1. Summarize P0 / P1 / P2 / P3 / Later in one table (done · partial · gated · closed).
 2. Cite EVALUATE_P1_MVP + P2-AC + REVIEW_P3 lines from verify.md (do not invent status).
@@ -313,7 +313,7 @@ OUT: Output contract. Explicit: no prod FFT_* flag changes.
 COMMAND: BOOTSTRAP_SYNC_CHECK
 MODE: documentation / skill consistency only — no product code
 FOLLOW: Feed Farm Trade agent command sheet (locked context + load order + DoD + output contract)
-READ: SKILL.md + completeness.md + mvp-and-gaps.md + ADR 001/001A/001R + phase 11–14 + this command sheet
+READ: SKILL.md + completeness.md + enterprise-readiness-and-gaps.md + ADR 001/001A/001R + phase 11–14 + this command sheet
 DO:
 1. Confirm skill pack files exist and status lines agree (MVP claimable · P2 done · P3 gated).
 2. Confirm phase docs 11–14 linked from 001R and skill SSOT table.
@@ -369,5 +369,5 @@ HARD RULES:
 | Docs/skill drift | **J** `BOOTSTRAP_SYNC_CHECK` |
 
 **Skill home:** `.cursor/skills/feed-farm-trade/`  
-**Phase specs:** `docs/architecture/frontend/11`–`14-feed-farm-trade-*.md`  
+**Phase specs:** `docs/architecture/11`–`14-feed-farm-trade-*.md`  
 **Ops SSOT:** `docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md` · `docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md`

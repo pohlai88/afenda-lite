@@ -15,6 +15,18 @@
         "matcher": "Write|StrReplace|EditNotebook",
         "failClosed": true,
         "timeout": 15
+      },
+      {
+        "command": "node .cursor/hooks/no-decision-directory.mjs",
+        "matcher": "Write|StrReplace|EditNotebook",
+        "failClosed": false,
+        "timeout": 15
+      },
+      {
+        "command": "node .cursor/hooks/no-mvp-quality-bar.mjs",
+        "matcher": "Write|StrReplace|EditNotebook",
+        "failClosed": true,
+        "timeout": 15
       }
     ]
   }

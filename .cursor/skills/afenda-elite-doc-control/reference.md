@@ -32,7 +32,7 @@ Six sections: Purpose · Scope · Content · References · Change Log · Notes.
 
 ## ADR shape (when category ADR is approved)
 
-Same mandatory header. Prefer home `docs/architecture/decisions/` only when explicitly approved — there is **no** required `docs/adr/` tree. Record Context · Decision · Consequences under Content (or equivalently named subsections). Link successor/predecessor IDs; never recycle Retired or Superseded IDs.
+Same mandatory header. Prefer home `docs/architecture/adr/` only when explicitly approved — **no** top-level `docs/adr/`; **no** `decisions/` folder. Record Context · Decision · Consequences under Content (or equivalently named subsections). Link successor/predecessor IDs; never recycle Retired or Superseded IDs.
 
 ## Workflow checklist
 

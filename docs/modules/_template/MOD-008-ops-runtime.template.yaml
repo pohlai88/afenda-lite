@@ -1,0 +1,141 @@
+schema_version: 1
+role: MOD-008
+target_filename: "{{MODULE_PREFIX}}-MOD-008-ops-runtime.md"
+source_format: markdown
+template: |-
+  # {{MODULE_PREFIX}}-MOD-008 Ops Runtime
+  
+  | Field             | Value                     |
+  | ----------------- | ------------------------- |
+  | **ID**            | {{MODULE_PREFIX}}-MOD-008 |
+  | **Category**      | Module                    |
+  | **Version**       | 0.1.0                     |
+  | **Status**        | Draft                     |
+  | **Control State** | Closed                    |
+  | **Owner**         | {{MODULE_OWNER}}          |
+  | **Updated**       | {{DATE}}                  |
+  | **Spine**         | MOD-008 Ops Runtime       |
+  
+  ---
+  
+  # 1. Purpose
+  
+  Define operating gates, observability, recovery, promotion, and rollback for {{MODULE_TITLE}}.
+
+  **Audience:** operators, service owners, release managers, and incident responders.
+  **Action enabled:** promote, observe, recover, roll back, and escalate the module safely.
+
+  ---
+  
+  # 2. Scope
+  
+  ## 2.1 In Scope
+  
+  - Environment readiness, feature/config promotion, release gates, signals, incidents, recovery, and rollback ownership.
+  
+  ## 2.2 Out of Scope
+  
+  - Product architecture decisions and unsupported production enablement.
+
+  ## 2.3 Assumptions and unresolved questions
+
+  List assumptions with an owner and validation path. Record unresolved questions with a decision owner and review trigger; never present them as accepted facts.
+
+  ---
+  
+  # 3. Ops Runtime
+  
+  ## 3.1 Production state
+  
+  | Capability | Environment | Deployed/configured state | Last verified | Evidence pointer | Owner |
+  | ---------- | ----------- | ------------------------- | ------------- | ---------------- | ----- |
+  | {{CAPABILITY}} | {{ENVIRONMENT}} | {{STATE}} | {{DATE}} | {{REFERENCE}} | {{OWNER}} |
+  
+  Distinguish documented target, configured state, deployed state, and runtime-verified behavior.
+  
+  ## 3.2 Allowed and forbidden operations
+  
+  List safe operator actions, prerequisites, authorization, blast radius, and explicitly forbidden commands or state changes.
+  
+  ## 3.3 Promotion gates
+  
+  | Gate | Entry condition | Command/check | Pass condition | Failure action | Approver |
+  | ---- | --------------- | ------------- | -------------- | -------------- | -------- |
+  | {{GATE}} | {{ENTRY}} | {{COMMAND}} | {{PASS}} | {{FAIL_ACTION}} | {{OWNER}} |
+  
+  ## 3.4 Observability, SLOs, and signals
+  
+  | Service objective/signal | Target or threshold | Window | Source | Alert owner | Runbook |
+  | ------------------------ | ------------------- | ------ | ------ | ----------- | ------- |
+  | {{OBJECTIVE_OR_SIGNAL}} | {{TARGET}} | {{WINDOW}} | {{SOURCE}} | {{OWNER}} | {{REFERENCE}} |
+  
+  Cover availability, latency, correctness, saturation, dependency health, and business-process completion where material.
+  
+  ## 3.5 Incident response and escalation
+  
+  Define symptoms, immediate checks, containment, escalation path, communication owner, and evidence preservation.
+  
+  ## 3.6 Recovery and rollback
+  
+  | Scenario | Recovery point/objective | Procedure | Validation | Rollback trigger | Owner |
+  | -------- | ------------------------ | --------- | ---------- | ---------------- | ----- |
+  | {{SCENARIO}} | {{RPO_RTO_OR_TARGET}} | {{RUNBOOK}} | {{CHECK}} | {{TRIGGER}} | {{OWNER}} |
+  
+  Procedures must be executable, ordered, and safe under pressure; link detailed runbooks rather than duplicating them.
+  
+  ## 3.7 Verification pointers
+  
+  Link release checks and MOD-009 evidence rows. This document owns procedures and signals, not evidence verdicts.
+  
+  ## 3.8 Enterprise requirements
+  
+  | AC-ID | Profile | Quality Dimension | Applicability | Criterion |
+  | ----- | ------- | ----------------- | ------------- | --------- |
+  | {{MODULE_PREFIX}}-AC-008-01 | Enterprise Core | CORE-OPERATIONS | Core | {{TESTABLE_OPERATIONS_CRITERION}} |
+  
+  For an active ERP profile, add an ERP-CUTOVER-OPERATIONS row. Criteria must verify detection and recovery outcomes, not merely the presence of a runbook.
+
+  ---
+  
+  # 4. References
+  
+  | ID | Title | Relationship |
+  | -- | ----- | ------------ |
+  | DOC-001 | Documentation Control Standard | Governance |
+  | MOD-002 | Modules Index | Module category and readiness standard |
+  | RB-005 | Post-lock Coding Cheat Sheet | Platform operational constraints |
+  | DOC-003 | Controlled Document Template | Header and six-section baseline |
+  | {{AUTHORITY_ID}} | {{ROLE_RELEVANT_AUTHORITY}} | Governing decision, contract, implementation, or operating rule |
+
+  ---
+  
+  # 5. Change Log
+  
+  | Version | Date | Summary |
+  | ------- | ---- | ------- |
+  | 0.1.0 | {{DATE}} | Provisional module-pack scaffold. |
+  
+  ---
+  
+  # 6. Notes
+  
+  This tokenized template is non-authoritative. Listing a flag or capability never authorizes production enablement.
+  
+  ## 6.1 Enterprise completion gate
+  
+  Before promotion:
+  
+  - name the engineering/operator audience and the decision or action enabled;
+  - replace every double-brace token and remove all TODO/TBD placeholder language;
+  - complete every MOD-002-required topic owned by this role without duplicating sibling authorities;
+  - label assumptions, unknowns, limits, deferred work, and rejected choices;
+  - make each acceptance criterion atomic, measurable, and independently reproducible;
+  - link commands, source paths, contracts, runbooks, and governing documents instead of asserting implementation from prose;
+  - synchronize header Version/Updated, latest Change Log row, and DOC-002 registration;
+  - verify Control State is Closed after authorized work; and
+  - pass test:module-pack, check:module-quality, check:docs-naming, and the full documentation-integrity audit.
+  
+  Documentation completeness does not imply Module Enterprise Readiness.
+
+
+

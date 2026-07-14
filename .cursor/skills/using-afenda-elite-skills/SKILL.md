@@ -26,6 +26,7 @@ SKIP:
   forking vendor phase skills into afenda-elite-*
   inventing categories outside DOC-001 · auto-registering IDs without user approval
   treating Lite and Elite as divergent documentation systems
+  reduced-viability quality / proposal / planning frames (sole bar = enterprise production; no-mvp-quality-bar)
 ```
 
 **Authority above skills:** documentation homes, lifecycle, and register rules from [DOC-001](../../../docs/_control/DOC-001-documentation-control-standard.md) + [DOC-002](../../../docs/_control/DOC-002-documentation-register.md) + [DOC-003](../../../docs/_control/DOC-003-controlled-document-template.md). Product display names follow [AGENTS.md](../../../AGENTS.md) and the deprecation register — do not invent alternate product titles in skills.
@@ -42,13 +43,14 @@ Task arrives (this repo / Afenda-Lite)
     ├── Dead code / Knip / skill-catalog drift? ────────────→ afenda-elite-repo-housekeeping
     ├── Cross-package move / extract / Slice D delete? ─────→ afenda-elite-monorepo-refactor
     ├── FE scaffold / wipe / app routes? ───────────────────→ afenda-elite-frontend-scaffold
+    ├── Next.js App Router / RSC / rendering / proxy / MCP routes? → afenda-elite-nextjs-best-practice
     ├── Modules / ports / residue? ─────────────────────────→ afenda-elite-backend-modules
     ├── API contract / ActionResult / brands / OpenAPI / REST-001? ─→ afenda-elite-api-contract
     ├── Generic engineering lifecycle? ─────────────────────→ using-agent-skills
     └── Domain farm (Neon, FFT, AdminCN)? ──────────────────→ neon-tenancy / feed-farm-trade / admincn-customization
 ```
 
-**Rule:** This router chooses *which farm*. Vendor phase skills choose *how to engineer* once the farm is fixed. Housekeeping never deletes — it hands **Slice D** to monorepo-refactor. Retired names: `portal-*-*` → use `afenda-elite-*` above. Wave 3: `afenda-elite-documentation` → `afenda-elite-doc-control`; `afenda-elite-docs-consistency` → `afenda-elite-doc-integrity`.
+**Rule:** This router chooses *which farm*. Vendor phase skills choose *how to engineer* once the farm is fixed. Housekeeping never deletes — it hands **Slice D** to monorepo-refactor. Retired names: `portal-*-*` → use `afenda-elite-*` above. Wave 3: `afenda-elite-documentation` → `afenda-elite-doc-control`; `afenda-elite-docs-consistency` → `afenda-elite-doc-integrity`. Next.js mechanics: Xerp-borrowed `afenda-elite-nextjs-best-practice` (not Xerp overlay).
 
 ## Docs filesystem (Docs lane)
 
@@ -56,7 +58,7 @@ Task arrives (this repo / Afenda-Lite)
 LOAD skill → afenda-elite-doc-control (controlled-document lifecycle) → documentation-and-adrs (deep prose/ADR composition, still independently available)
 Authority  → DOC-001 + DOC-002 + DOC-003 (under docs/_control/)
 Classify   → Control | Architecture | ADR | API | REST | OPEN | Runbook | Guide | Module
-Place      → docs/_control | docs/architecture [| /system | /decisions] | docs/api | docs/runbooks | docs/guides | docs/modules/<slug>
+Place      → docs/_control | docs/architecture [| /adr | /archive] | docs/api | docs/runbooks | docs/guides | docs/modules/<slug>
 Write      → DOC-003 header (incl. Control State) + six sections; cite related IDs; no secrets
 Register   → DOC-002 seven fields only — after explicit ID approval (no Control State column)
 Lifecycle  → Status: Draft | Review | Accepted | Living | Target | Superseded | Retired
@@ -107,6 +109,7 @@ Prose      → documentation-and-adrs (method library only — not register SSOT
 - Housekeeping: [afenda-elite-repo-housekeeping](../afenda-elite-repo-housekeeping/SKILL.md)
 - Refactor: [afenda-elite-monorepo-refactor](../afenda-elite-monorepo-refactor/SKILL.md)
 - FE scaffold: [afenda-elite-frontend-scaffold](../afenda-elite-frontend-scaffold/SKILL.md)
+- Next.js App Router: [afenda-elite-nextjs-best-practice](../afenda-elite-nextjs-best-practice/SKILL.md) — Accelint + Cache Components Mode A default / Mode B ADR-gated
 - Modules: [afenda-elite-backend-modules](../afenda-elite-backend-modules/SKILL.md)
 - API contract: [afenda-elite-api-contract](../afenda-elite-api-contract/SKILL.md) — mirrors `docs/api` + ARCH-029; sync via GUIDE-015 phases + `check:doc-integrity`
 - Vendor lifecycle: [using-agent-skills](../agent-skills/skills/using-agent-skills/SKILL.md)

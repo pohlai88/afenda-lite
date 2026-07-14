@@ -10,7 +10,7 @@ description: >-
 
 # Afenda Elite — backend modules
 
-**SSOT for this program.** Shape domain work from `docs/architecture/backend/` + this skill. Do not grow `lib/` as architecture or invent `modules/trade/`. Cite `term.afenda-elite`.
+**SSOT for this program.** Shape domain work from `docs/architecture/` + this skill. Do not grow `lib/` as architecture or invent `modules/trade/`. Cite `term.afenda-elite`.
 
 | Doc | Purpose |
 |-----|---------|
@@ -19,7 +19,7 @@ description: >-
 | [adapter-map.md](adapter-map.md) | Action / Route Handler → module entrypoints |
 | [residue-inventory.md](residue-inventory.md) | Pass 2 + full runner absorb — `lib/` gone; runners under `features/` |
 | [completeness.md](completeness.md) | Plan ↔ codebase matrix for this program |
-| [docs/architecture/backend/](../../../docs/architecture/backend/) | Architecture, ownership, conventions |
+| [docs/architecture/](../../../docs/architecture/) | Architecture, ownership, conventions |
 | [docs/api/](../../../docs/api/) | Error shape, REST catalog, types |
 
 ## Agent operating rules
@@ -38,7 +38,7 @@ description: >-
 4. **One context per new file** — compose two contexts only at the adapter.
 5. **Trade code path = `modules/fft`** — never create `modules/trade/`. Product files under `features/fft/fft-*.tsx` (not `trade-*`, not `features/trade/`).
 6. **Validate once at adapter** — product Zod in owning `modules/*/schemas`; **shared** primitives (`uuidSchema`, `emailSchema`, `passwordSchema`, `slugSchema`, `parseSchema`) from `@/modules/platform/schemas/common` only. Do **not** import shared Zod from Declarations into Trade/Identity. Email normalize: `@/modules/platform/normalize-email`.
-7. **Decision tree** — link [docs/architecture/frontend/ARCH-013-bff-and-data-flow.md](../../../docs/architecture/frontend/ARCH-013-bff-and-data-flow.md); do not paste a second copy.
+7. **Decision tree** — link [docs/architecture/ARCH-013-bff-and-data-flow.md](../../../docs/architecture/ARCH-013-bff-and-data-flow.md); do not paste a second copy.
 8. **Contract** — errors / brands / REST live in `docs/api` + `/afenda-elite-api-contract`; this skill does not restate error tables.
 9. **Relocate + Pass 2 + full runner absorb are complete** — do not recreate `lib/`; product + playground runners live under `features/` ([residue-inventory.md](residue-inventory.md)).
 
@@ -63,7 +63,7 @@ External/mobile REST?  → Route Handler per docs/api (contract-only until neede
 
 ## Pass order
 
-1. **Docs / skill truth** — this skill + `docs/architecture/backend` (**done**)
+1. **Docs / skill truth** — this skill + `docs/architecture/` Backend pack (**done**)
 2. **Wire** — `/afenda-elite-api-contract` + Actions / handlers
 3. **UI** — `/afenda-elite-frontend-scaffold` + `features/*`
 4. **Residue Pass 2** — **done** 2026-07-12

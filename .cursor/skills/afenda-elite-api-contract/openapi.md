@@ -4,7 +4,7 @@
 **How-to:** [GUIDE-011](../../../docs/api/guides/GUIDE-011-generating-and-validating-openapi.md) (Draft how-to — does not override OPEN-001)  
 **Machine file:** `docs/api/OPEN-001-openapi.yaml` (generated — do not hand-maintain forever)  
 **Paths SSOT:** [REST-001](../../../docs/api/REST-001-rest-resources.md) — do not paste path tables here.  
-**Parent:** [ARCH-029](../../../docs/architecture/system/ARCH-029-interface-api-architecture.md)
+**Parent:** [ARCH-029](../../../docs/architecture/ARCH-029-interface-api-architecture.md)
 
 ## Commands
 

@@ -14,7 +14,7 @@ description: >-
 ```text
 LOAD:
   docs/api/README.md                          # pack entry · reading sequence
-  docs/architecture/system/ARCH-029-*.md      # Living parent architecture
+  docs/architecture/ARCH-029-*.md      # Living parent architecture
   docs/api/guides/GUIDE-015-*.md              # locked create/revise order (Jack Wee)
   docs/api/API-001…004 · REST-001 · OPEN-001  # Phase 1 Living executable contracts
   companions: api-now.md · brands-and-schemas.md · openapi.md · completeness.md
@@ -32,7 +32,7 @@ CLOSE:
   docs edits require DOC-001 reopen of named IDs; skill mirrors docs — never the reverse
 ```
 
-**SSOT:** [`docs/api/`](../../../docs/api/) + Living parent [ARCH-029](../../../docs/architecture/system/ARCH-029-interface-api-architecture.md).  
+**SSOT:** [`docs/api/`](../../../docs/api/) + Living parent [ARCH-029](../../../docs/architecture/ARCH-029-interface-api-architecture.md).  
 **This skill mirrors docs.** If skill and docs disagree, **docs win** — patch the skill in the same change.
 
 **Editions:** Afenda-Lite (beta) and Afenda-Elite (battle-proven) share DOC-001 control and this contract shape.
@@ -43,7 +43,7 @@ CLOSE:
 
 | Layer | Wins on | Path |
 | ----- | ------- | ---- |
-| Parent architecture | Surfaces, pipeline, Accept/Reject, compatibility | [ARCH-029](../../../docs/architecture/system/ARCH-029-interface-api-architecture.md) |
+| Parent architecture | Surfaces, pipeline, Accept/Reject, compatibility | [ARCH-029](../../../docs/architecture/ARCH-029-interface-api-architecture.md) |
 | Program order | What to create/refine next | [GUIDE-015](../../../docs/api/guides/GUIDE-015-interface-pack-development-roadmap.md) (locked) |
 | Executable contract | Adapter, errors, brands, Zod, REST paths, OpenAPI rules | Living `API-*` / `REST-*` / `OPEN-*` under `docs/api/` |
 | How-to / ops | Implementation steps only | `docs/api/guides/` · `docs/api/runbooks/` (RB-006…008) |
@@ -137,7 +137,7 @@ External REST / mobile consumer                  → Route Handler per REST-001
 ```
 
 One domain function can serve Action **and** Route Handler.  
-BFF context: [ARCH-013](../../../docs/architecture/frontend/ARCH-013-bff-and-data-flow.md).
+BFF context: [ARCH-013](../../../docs/architecture/ARCH-013-bff-and-data-flow.md).
 
 ---
 

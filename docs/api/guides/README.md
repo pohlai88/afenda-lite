@@ -1,6 +1,6 @@
 # API implementation guides
 
-Guides explain **implementation**. They do **not** establish architecture — start from [ARCH-029](../../architecture/system/ARCH-029-interface-api-architecture.md) and the Living API / REST / OPEN docs.
+Guides explain **implementation**. They do **not** establish architecture — start from [ARCH-029](../../architecture/ARCH-029-interface-api-architecture.md) and the Living API / REST / OPEN docs.
 
 | ID | Doc | Status |
 |----|-----|--------|

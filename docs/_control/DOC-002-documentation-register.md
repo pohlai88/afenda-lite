@@ -4,7 +4,7 @@
 | ----------------- | ---------- |
 | **ID**            | DOC-002    |
 | **Category**      | Control    |
-| **Version**       | 4.36.0 |
+| **Version**       | 4.59.1 |
 | **Status**        | Living     |
 | **Control State** | Closed     |
 | **Owner**         | Platform   |
@@ -75,11 +75,11 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 
 | ID           | Category     | Title                                      | Version | Status | Owner    | Updated    |
 | ------------ | ------------ | ------------------------------------------ | ------- | ------ | -------- | ---------- |
-| DOC-001      | Control      | Documentation Control Standard             | 2.4.0   | Living | Platform | 2026-07-14 |
-| DOC-002      | Control      | Documentation Register                     | 4.34.0 | Living | Platform | 2026-07-14 |
+| DOC-001      | Control      | Documentation Control Standard             | 2.6.0   | Living | Platform | 2026-07-14 |
+| DOC-002      | Control      | Documentation Register                     | 4.59.1 | Living | Platform | 2026-07-14 |
 | DOC-003      | Control      | Controlled Document Template               | 1.4.0   | Living | Platform | 2026-07-14 |
-| ARCH-029     | Architecture | Interface and API Architecture             | 1.2.5   | Living | Platform | 2026-07-14 |
-| ARCH-031     | Architecture | Technology Stack Catalogue                 | 1.0.0   | Living | Platform | 2026-07-14 |
+| ARCH-029     | Architecture | Interface and API Architecture             | 1.2.7   | Living | Platform | 2026-07-14 |
+| ARCH-031     | Architecture | Technology Stack Catalogue                 | 1.1.1   | Living | Platform | 2026-07-14 |
 | API-001      | API          | API Boundaries                             | 1.2.3   | Living | Backend  | 2026-07-14 |
 | API-002      | API          | Error Contract                             | 1.2.2   | Living | Backend  | 2026-07-14 |
 | API-003      | API          | API Types                                  | 2.0.1   | Living | Backend  | 2026-07-14 |
@@ -111,33 +111,34 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 | RB-006       | Runbook      | OpenAPI Drift Detection and Recovery       | 0.2.0   | Draft  | Backend  | 2026-07-14 |
 | RB-007       | Runbook      | API Incident Response                      | 0.2.0   | Draft  | Backend  | 2026-07-14 |
 | RB-008       | Runbook      | API Contract Rollback                      | 0.2.0   | Draft  | Backend  | 2026-07-14 |
-| ARCH-022     | Architecture | System Overview — Turborepo                | 1.5.0   | Target | Platform | 2026-07-14 |
-| ARCH-023     | Architecture | Multi-Tenancy and Platform RBAC            | 3.1.0   | Living | Platform | 2026-07-14 |
-| ARCH-024     | Architecture | Package Boundaries                         | 1.2.0   | Target | Platform | 2026-07-14 |
-| ARCH-025     | Architecture | Data Layer                                 | 1.2.0   | Target | Backend  | 2026-07-14 |
-| ARCH-026     | Architecture | Authentication and Session Model           | 1.2.0   | Target | Platform | 2026-07-14 |
-| ARCH-027     | Architecture | Environment Variable Model                 | 1.3.0   | Target | Platform | 2026-07-14 |
-| ARCH-028     | Architecture | Turborepo Implementation Slices            | 1.3.0   | Target | Platform | 2026-07-14 |
-| ARCH-001     | Architecture | Backend Architecture                       | 1.0.1   | Living | Backend  | 2026-07-14 |
-| ARCH-002     | Architecture | Frontend Architecture                      | 1.0.1   | Living | Frontend | 2026-07-14 |
+| ARCH-022     | Architecture | System Overview — Turborepo                | 1.5.2   | Target | Platform | 2026-07-14 |
+| ARCH-023     | Architecture | Multi-Tenancy and Platform RBAC            | 3.1.1   | Living | Platform | 2026-07-14 |
+| ARCH-024     | Architecture | Package Boundaries                         | 1.2.1   | Target | Platform | 2026-07-14 |
+| ARCH-025     | Architecture | Data Layer                                 | 1.2.1   | Target | Backend  | 2026-07-14 |
+| ARCH-026     | Architecture | Authentication and Session Model           | 1.2.1   | Target | Platform | 2026-07-14 |
+| ARCH-027     | Architecture | Environment Variable Model                 | 1.4.2   | Target | Platform | 2026-07-14 |
+| ARCH-028     | Architecture | Turborepo Implementation Slices            | 1.4.1   | Target | Platform | 2026-07-14 |
+| ARCH-001     | Architecture | Backend Architecture                       | 1.2.0   | Living | Backend  | 2026-07-14 |
+| ARCH-002     | Architecture | Frontend Architecture                      | 1.3.3   | Living | Frontend | 2026-07-14 |
+| ADR-008      | ADR          | Cache Components Mode B (Gated)            | 1.0.1   | Accepted | Frontend | 2026-07-14 |
 | ARCH-003     | Architecture | Multi-tenant Ecosystem                     | 2.1.1   | Superseded | Platform | 2026-07-14 |
-| ARCH-004     | Architecture | Backend Layers                             | 1.0.1   | Living | Backend  | 2026-07-14 |
-| ARCH-005     | Architecture | Backend Folder Map                         | 1.0.1   | Living | Backend  | 2026-07-14 |
-| ARCH-006     | Architecture | Bounded Contexts                           | 1.0.1   | Living | Backend  | 2026-07-14 |
-| ARCH-007     | Architecture | Ports and Adapters                         | 1.0.1   | Living | Backend  | 2026-07-14 |
-| ARCH-008     | Architecture | Next.js Adapter Map                        | 1.0.1   | Living | Backend  | 2026-07-14 |
-| ARCH-009     | Architecture | Modules Ownership Map                      | 1.0.1   | Living | Backend  | 2026-07-14 |
-| ARCH-010     | Architecture | Backend Conventions                        | 1.0.1   | Living | Backend  | 2026-07-14 |
-| ARCH-012     | Architecture | App Router Routes                          | 1.0.1   | Living | Frontend | 2026-07-14 |
-| ARCH-013     | Architecture | BFF and Data Flow                          | 1.0.1   | Living | Frontend | 2026-07-14 |
-| ARCH-014     | Architecture | UI Surfaces                                | 1.0.1   | Living | Frontend | 2026-07-14 |
-| ARCH-015     | Architecture | AdminCN Alignment                          | 1.0.1   | Living | Frontend | 2026-07-14 |
-| ARCH-016     | Architecture | Next.js Conventions                        | 1.0.1   | Living | Frontend | 2026-07-14 |
-| ARCH-017     | Architecture | Frontend Folder Map                        | 1.1.2   | Living | Frontend | 2026-07-14 |
-| ARCH-018     | Architecture | AdminCN Customization                      | 1.0.1   | Living | Frontend | 2026-07-14 |
-| ARCH-019     | Architecture | AdminCN Frontend Preflight                 | 1.0.1   | Living | Frontend | 2026-07-14 |
+| ARCH-004     | Architecture | Backend Layers                             | 1.1.1   | Living | Backend  | 2026-07-14 |
+| ARCH-005     | Architecture | Backend Folder Map                         | 1.1.1   | Living | Backend  | 2026-07-14 |
+| ARCH-006     | Architecture | Bounded Contexts                           | 1.1.1   | Living | Backend  | 2026-07-14 |
+| ARCH-007     | Architecture | Ports and Adapters                         | 1.2.0   | Living | Backend  | 2026-07-14 |
+| ARCH-008     | Architecture | Next.js Adapter Map                        | 1.3.0   | Living | Backend  | 2026-07-14 |
+| ARCH-009     | Architecture | Modules Ownership Map                      | 1.1.1   | Living | Backend  | 2026-07-14 |
+| ARCH-010     | Architecture | Backend Conventions                        | 1.3.0   | Living | Backend  | 2026-07-14 |
+| ARCH-012     | Architecture | App Router Routes                          | 1.2.2   | Living | Frontend | 2026-07-14 |
+| ARCH-013     | Architecture | BFF and Data Flow                          | 1.1.3   | Living | Frontend | 2026-07-14 |
+| ARCH-014     | Architecture | UI Surfaces                                | 2.0.0   | Superseded | Frontend | 2026-07-14 |
+| ARCH-015     | Architecture | Shadcn Studio / AdminCN Alignment          | 2.0.1   | Living | Frontend | 2026-07-14 |
+| ARCH-016     | Architecture | Next.js Conventions                        | 1.2.2   | Living | Frontend | 2026-07-14 |
+| ARCH-017     | Architecture | Frontend Folder Map                        | 2.0.1   | Living | Frontend | 2026-07-14 |
+| ARCH-018     | Architecture | AdminCN Customization                      | 1.1.4   | Living | Frontend | 2026-07-14 |
+| ARCH-019     | Architecture | AdminCN Frontend Preflight                 | 1.1.4   | Living | Frontend | 2026-07-14 |
 | ARCH-020     | Architecture | Closed Scope Register                      | 2.0.1   | Superseded | Platform | 2026-07-14 |
-| ARCH-021     | Architecture | Repository Migration Map                   | 2.0.1   | Superseded | Platform | 2026-07-14 |
+| ARCH-021     | Architecture | Repository Migration Map                   | 2.0.2   | Superseded | Platform | 2026-07-14 |
 | FFT-MOD-001  | Module       | Module Architecture                        | 2.3.0 | Living | Feed Farm Trade | 2026-07-14 |
 | FFT-MOD-002  | Module       | Domain and Ownership                       | 1.3.0 | Living | Feed Farm Trade | 2026-07-14 |
 | FFT-MOD-003  | Module       | Tech Stack                                 | 1.3.0 | Living | Feed Farm Trade | 2026-07-14 |
@@ -171,6 +172,32 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 
 | Version | Date       | Summary                                                                                                                                         |
 | ------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| 4.59.1 | 2026-07-14 | Architecture pack consolidate: utilization + pointer-only SSOTs (ARCH-001→1.2.0, 002→1.3.3, 007→1.2.0, 008→1.3.0, 010→1.3.0, 018/019→1.1.4, 022→1.5.2, 027→1.4.2); README when-to-use; drop stub/Living-compose residue. |
+| 4.59.0 | 2026-07-14 | Flatten architecture trunks: Living/Target ARCH-* → docs/architecture/; DOC-001 → 2.6.0 (forbid backend/frontend/system/tech-stack); pack reading order in architecture/README; ARCH patch bumps + ARCH-007 → 1.1.2 (OPEN-001 link); ARCH-015 register title align; ADR home unchanged. |
+| 4.58.0 | 2026-07-14 | ARCH-010 → 1.2.0 (conventions: deploy matrix SSOT; proxy≠authz; lib gone; Alignment). |
+| 4.57.0 | 2026-07-14 | ARCH-009 → 1.1.0 modules ownership (logical inventory; lib-gone honesty; RBAC/draft API; closed relocate history). |
+| 4.56.0 | 2026-07-14 | ARCH-008 → 1.2.0 (adapter map pack sync: in-Action authz, logical inventory, Alignment; proxy≠authz). |
+| 4.55.0 | 2026-07-14 | ARCH-007 → 1.1.0 ports/adapters (hard rules; Action map; onboarding off IdentityPort; TradePort; api-now RH). |
+| 4.54.0 | 2026-07-14 | ARCH-006 → 1.1.0 bounded contexts (Platform shared Zod; logical Target homes; Trade↛Declarations; fft.access). |
+| 4.53.0 | 2026-07-14 | ARCH-005 → 1.1.0 (folder map Target↔logical; env ARCH-027; adapter homes; Forbidden list). |
+| 4.52.0 | 2026-07-14 | ARCH-004 → 1.1.0 (layers + Vercel/Node adapter posture; ARCH-013 link fix). |
+| 4.51.0 | 2026-07-14 | ADR home → `docs/architecture/adr/` (DOC-001 → 2.5.0; ADR-008 → 1.0.1); forbid `decisions/`; link retarget ARCH-002→1.3.1, 008/010→1.1.1, 012→1.2.1, 013→1.1.2, 016→1.2.1, 029→1.2.6. |
+| 4.50.0 | 2026-07-14 | Backend Vercel deploy optimum: ARCH-001 → 1.1.0; ARCH-008 → 1.1.0; ARCH-010 → 1.1.0; ARCH-013 → 1.1.1 (pointer only). |
+| 4.49.0 | 2026-07-14 | Frontend pack Studio sync: ARCH-015 → 2.0.0; ARCH-002 → 1.3.0; ARCH-012 → 1.2.0; ADR-008 home restored to `architecture/decisions/` (removed `architecture/adr/`). |
+| 4.48.0 | 2026-07-14 | ARCH-017 → 2.0.0 Studio-first folder map (Shadcn DNA homes; legacy dump bans). |
+| 4.47.0 | 2026-07-14 | ARCH-016 → 1.2.0 (conventions numbered pack; Afenda overrides; hard stops; ARCH-027 link fix). |
+| 4.46.0 | 2026-07-14 | ARCH-016 → 1.1.0 Elite Next.js conventions upgrade (data patterns, Mode A RH, ADR-008 gate, MCP vs isolation). |
+| 4.45.0 | 2026-07-14 | ARCH-014 → 2.0.0 Superseded (archived); Studio/AdminCN successors ARCH-012 + ARCH-015/018/019 + ui-registry. |
+| 4.44.0 | 2026-07-14 | ARCH-013 → 1.1.0 (BFF / Accelint Action trust + waterfall sync). |
+| 4.43.0 | 2026-07-14 | ARCH-012 → 1.1.0 (App Router Elite Next.js sync); aligned DOC-002 header↔self-row (cleared prior register-version drift). |
+| 4.42.0 | 2026-07-14 | Registered ADR-008 → 1.0.0 Accepted Phase 1 (Cache Components Mode B; enablement deferred); ARCH-002 → 1.2.0; ARCH-016 → 1.0.5. |
+| 4.41.0 | 2026-07-14 | ARCH-002 → 1.1.0 Mode A/B rendering + Cache Components gate; ARCH-016 → 1.0.4 `'use cache'` align. |
+| 4.40.2 | 2026-07-14 | Removed `_reference/archive/2026-07-14-admincn-1.0.0/`; ARCH-015/018/019 → 1.1.2. |
+| 4.40.1 | 2026-07-14 | Removed `_reference/studio-admincn-lock/`; ARCH-015/018/019 → 1.1.1 (Studio DNA scratch-only). |
+| 4.40.0 | 2026-07-14 | AdminCN Studio freeze validation: ARCH-015/018/019 → 1.1.0 (MCP/CLI critical constraint). |
+| 4.39.0 | 2026-07-14 | ARCH-031 → 1.1.0 purge Collapse Current ops (`lib/env`/compose evidence); ARCH-027 → 1.4.0 docs-first STOP (no recover compose). |
+| 4.38.0 | 2026-07-14 | Anti-contamination: ARCH-028 → 1.4.0 lock; Living ARCH-001/002/004–010/012–019 checkout honesty (→ 1.0.3 / ARCH-017 → 1.1.4); ARCH-031 → 1.0.1; forbid Collapse tree recover. |
+| 4.37.0 | 2026-07-14 | Architecture sync: Living pack ARCH-001/002/004–010/012–019 DOC-003 retrofit + Change Logs; ARCH-017 → 1.1.3; ARCH-021 → 2.0.2 (ARCH-029→017 label fix); DOC-002 header↔row version align. |
 | 4.36.0 | 2026-07-14 | ARCH-023 → 3.1.0 DOC-003 six-section retrofit (Decision lock content unchanged); cleared system-pack STRUCTURE-DRIFT residual. |
 | 4.35.0 | 2026-07-14 | System-pack integrity remediation: ARCH-022→1.5.0; ARCH-024…026→1.2.0; ARCH-027→1.3.0; ARCH-028→1.3.0; ARCH-023 structure grandfather retained (DOC-001 §3.8 Review needed until material revision). |
 | 4.34.0 | 2026-07-14 | Registered Living ARCH-031 Technology Stack Catalogue as the derived stack-discovery authority. |
@@ -218,7 +245,7 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 
 `ARCH-029` is the Living parent authority for interface and API architecture. **GUIDE-015** is the locked Phases 1–5 development roadmap (Jack Wee). `API-005`…`API-009`, `REST-002`…`REST-007`, `FFT-REST-001`, `GUIDE-007`…`GUIDE-014`, and `RB-006`…`RB-008` are Draft until expanded / promoted per their owning roadmaps. API guides live under `docs/api/guides/`. API runbooks live under `docs/api/runbooks/`. Non-API guides live under `docs/guides/` when Living. **GUIDE-016** is **Retired** (archived); Module Enterprise Readiness authority is [MOD-002](../modules/MOD-002-modules-index.md) + FFT-MOD-001…010. `ARCH-030` (verification architecture) is deferred while GUIDE-014 remains the API verification Guide.
 
-`FFT-REST-002`…`FFT-REST-007`, `OPEN-002`…`OPEN-005`, `ADR-001`…`ADR-007`, `RB-009` (webhook replay), and `ARCH-030` (verification architecture) are **reserved in planning docs only** — not registered until created under the approved derivation / creation gates.
+`FFT-REST-002`…`FFT-REST-007`, `OPEN-002`…`OPEN-005`, `ADR-001`…`ADR-007`, `RB-009` (webhook replay), and `ARCH-030` (verification architecture) are **reserved in planning docs only** — not registered until created under the approved derivation / creation gates. **`ADR-008`** is registered (Accepted Phase 1 — Cache Components Mode B; `cacheComponents` enablement still deferred).
 
 `ARCH-022` and `ARCH-024` through `ARCH-028` describe approved target-state architecture and remain non-current until implemented or promoted to `Living`.
 

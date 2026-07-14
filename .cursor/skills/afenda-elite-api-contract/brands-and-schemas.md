@@ -1,7 +1,7 @@
 # Branded IDs and schema map
 
 **Sources:** [docs/api/API-003-api-types.md](../../../docs/api/API-003-api-types.md) · [docs/api/API-004-schema-map.md](../../../docs/api/API-004-schema-map.md)  
-**Parent:** [ARCH-029](../../../docs/architecture/system/ARCH-029-interface-api-architecture.md)  
+**Parent:** [ARCH-029](../../../docs/architecture/ARCH-029-interface-api-architecture.md)  
 **Frontend route params:** [../afenda-elite-frontend-scaffold/boundaries.md](../afenda-elite-frontend-scaffold/boundaries.md)
 
 If this companion drifts from API-003 / API-004, **docs win** — update this file in the same change.

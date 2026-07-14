@@ -14,7 +14,7 @@
 
 Human guide for the **machine OpenAPI** artifact. Enables maintainers to generate and consume OpenAPI without duplicating [REST-001](REST-001-rest-resources.md) path tables.
 
-**Parent architecture:** [ARCH-029](../architecture/system/ARCH-029-interface-api-architecture.md). **Audience:** backend maintainers and docs (Fumadocs) authors.
+**Parent architecture:** [ARCH-029](../architecture/ARCH-029-interface-api-architecture.md). **Audience:** backend maintainers and docs (Fumadocs) authors.
 **Action enabled:** generate `OPEN-001-openapi.yaml` for api-now; follow forward sections below when wiring Zod imports, Fumadocs, or contract-only ops. Recipes: [GUIDE-011](guides/GUIDE-011-generating-and-validating-openapi.md).
 
 **Stage:** documentation / forward writing — recipes below are authoritative for the next code slices. Do not wait for a docs app or a full `modules/` checkout before treating these rules as SSOT.
@@ -160,7 +160,7 @@ npm run check:openapi
 - [API-002 Error Contract](API-002-error-contract.md)
 - [API-004 Schema Map](API-004-schema-map.md)
 - [GUIDE-011 Generating and Validating OpenAPI](guides/GUIDE-011-generating-and-validating-openapi.md) (Draft planned successor; this file owns executable recipes until promotion)
-- [ARCH-029](../architecture/system/ARCH-029-interface-api-architecture.md)
+- [ARCH-029](../architecture/ARCH-029-interface-api-architecture.md)
 - Skills: [openapi-spec-generation](https://skills.sh/wshobson/agents/openapi-spec-generation); Fumadocs: [OpenAPI integration](https://www.fumadocs.dev/docs/integrations/openapi)
 
 # 5. Change Log

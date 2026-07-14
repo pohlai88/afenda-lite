@@ -2,7 +2,7 @@
 
 **This is `docs/`.** Authoritative SSOT for design, API, architecture, runbooks, and module ops. Do **not** recreate `doc/`.
 
-Unified home for Living/Target ARCH, API contracts, guides, and module spines. **There is no required ADR folder** — material decisions live in Living/Target ARCH and module spines (ADRs go under `architecture/decisions/` only when explicitly approved).
+Unified home for Living/Target ARCH, API contracts, guides, and module spines. Material decisions live in Living/Target ARCH and module spines. Approved ADRs go under [`architecture/adr/`](architecture/adr/) only (not top-level `docs/adr/`; not `decisions/`).
 
 | Edition | Maturity | Docs control |
 | ------- | -------- | ------------ |
@@ -11,16 +11,18 @@ Unified home for Living/Target ARCH, API contracts, guides, and module spines. *
 
 **Product identity:** Afenda-Lite is the beta edition of the Afenda family. **Client Declaration Portal** is retired — see [deprecation register](../.cursor/skills/agent-skills/skills/deprecation-and-migration/reference.md).
 
-**Forward-writing target:** Turborepo multi-package monorepo — [architecture/system/ARCH-022-system-overview.md](architecture/system/ARCH-022-system-overview.md).
+**Quality bar (sole):** Enterprise production. Reduced-viability proposals and planning are banned — [AGENTS.md](../AGENTS.md) · [`.cursor/rules/no-mvp-quality-bar.mdc`](../.cursor/rules/no-mvp-quality-bar.mdc). Module claims use Enterprise Readiness + owning `*-MOD-009` evidence ([MOD-002](modules/MOD-002-modules-index.md)).
+
+**Forward-writing target:** Turborepo multi-package monorepo — [architecture/ARCH-022-system-overview.md](architecture/ARCH-022-system-overview.md).
 
 **Agent skills:** `/using-afenda-elite-skills`
 
 ## How to read
 
-1. [architecture/system/ARCH-022-system-overview.md](architecture/system/ARCH-022-system-overview.md) — Target system overview (Modular Monolith + Hexagonal + Turborepo)
-2. [architecture/system/ARCH-023-multi-tenancy.md](architecture/system/ARCH-023-multi-tenancy.md) — Living multi-tenancy + platform RBAC + Decision lock
+1. [architecture/ARCH-022-system-overview.md](architecture/ARCH-022-system-overview.md) — Target system overview (Modular Monolith + Hexagonal + Turborepo)
+2. [architecture/ARCH-023-multi-tenancy.md](architecture/ARCH-023-multi-tenancy.md) — Living multi-tenancy + platform RBAC + Decision lock
 3. [api/README.md](api/README.md) — API / REST / OPEN (start with [API-001](api/API-001-api-boundaries.md) + [REST-001](api/REST-001-rest-resources.md))
-4. [architecture/frontend/ARCH-013-bff-and-data-flow.md](architecture/frontend/ARCH-013-bff-and-data-flow.md) — Next.js data-pattern decision tree
+4. [architecture/ARCH-013-bff-and-data-flow.md](architecture/ARCH-013-bff-and-data-flow.md) — Next.js data-pattern decision tree
 5. [modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md](modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md) — FFT agent ops entry
 
 ## Layout
@@ -29,17 +31,15 @@ Unified home for Living/Target ARCH, API contracts, guides, and module spines. *
 |------|------|-----|
 | [`_control/`](_control/) | Control | Minimal register and documentation rules |
 | [`api/`](api/) | API / REST / OPEN | Interface contracts — see [api/README.md](api/README.md) |
-| [`architecture/system/`](architecture/system/) | Architecture Target | System architecture ARCH-022…028 (monorepo Target) |
-| [`architecture/backend/`](architecture/backend/) | Architecture | Hexagon, modules, conventions (ARCH-001…010) |
-| [`architecture/frontend/`](architecture/frontend/) | Architecture | Routes, UI, BFF (ARCH-002, 012…016, 029) |
-| [`architecture/`](architecture/) | Architecture | Indexes / archive · [README](architecture/README.md) |
-| [`architecture/tech-stack/`](architecture/tech-stack/) | Architecture | Status-aware stack catalogue + AdminCN playbook/preflight — ARCH-031, 018, 019 · [README](architecture/tech-stack/README.md) |
+| [`architecture/`](architecture/) | Architecture | Flat Living/Target `ARCH-*` home · pack reading order in [README](architecture/README.md) (System · Backend · Frontend · Tech-stack) |
+| [`architecture/adr/`](architecture/adr/) | ADR | Approved ADRs only (e.g. ADR-008) — not `decisions/` |
+| [`architecture/archive/`](architecture/archive/) | Architecture archive | Superseded ARCH stubs only |
 | [`guides/`](guides/) | Guide | Home for future non-API guides · engineering GUIDE-001…006 **Retired** · API how-tos in [api/guides](api/guides/README.md) |
 | [`modules/`](modules/) | Module | 10-MOD spines + catalog ([MOD-002](modules/MOD-002-modules-index.md)); FFT at [feed-farm-trade/](modules/feed-farm-trade/) |
 | [`runbooks/`](runbooks/) | Runbook / ops | Operate, multi-org, cheatsheets |
 | [`scratch/`](scratch/) | Scratch | Non-authoritative drafts and temporary notes |
 
-**Forbidden homes:** `docs/adr/`, top-level `docs/fft/`, `docs/frontend/`, `docs/backend/`, `docs/engineering/`.
+**Forbidden homes:** `docs/adr/`, top-level `docs/fft/`, `docs/frontend/`, `docs/backend/`, `docs/engineering/`, and `docs/architecture/{backend,frontend,system,tech-stack}/`.
 
 ## Index
 
@@ -53,24 +53,24 @@ Unified home for Living/Target ARCH, API contracts, guides, and module spines. *
 
 ### Architecture — Target system (forward-writing)
 
-Index: [architecture/system/](architecture/system/)
+Index: [architecture/](architecture/)
 
 Authority for **new** workspace layout, packages, env, and data access. Status: **Target** until `apps/web` + `packages/*` ship.
 
 | Doc | Purpose |
 |-----|---------|
-| [ARCH-022](architecture/system/ARCH-022-system-overview.md) | System overview: gap table, workspace layout, stack, request flow |
-| [ARCH-023](architecture/system/ARCH-023-multi-tenancy.md) | **Sole** Living SSOT — multi-tenancy + platform RBAC + Decision lock |
-| [ARCH-024](architecture/system/ARCH-024-package-boundaries.md) | Package contracts and dependency graph |
-| [ARCH-025](architecture/system/ARCH-025-data-layer.md) | Drizzle schema, migrations, query patterns |
-| [ARCH-026](architecture/system/ARCH-026-auth-session.md) | Neon Auth, `getSession()`, RBAC guards |
-| [ARCH-027](architecture/system/ARCH-027-env-model.md) | `@t3-oss/env-nextjs`, `.env.local`, compose cutover |
-| [ARCH-028](architecture/system/ARCH-028-implementation-slices.md) | Ordered S1–S8 slices + checkpoints |
-| [ARCH-029](architecture/system/ARCH-029-interface-api-architecture.md) | **Living** parent — interface and API architecture |
+| [ARCH-022](architecture/ARCH-022-system-overview.md) | System overview: gap table, workspace layout, stack, request flow |
+| [ARCH-023](architecture/ARCH-023-multi-tenancy.md) | **Sole** Living SSOT — multi-tenancy + platform RBAC + Decision lock |
+| [ARCH-024](architecture/ARCH-024-package-boundaries.md) | Package contracts and dependency graph |
+| [ARCH-025](architecture/ARCH-025-data-layer.md) | Drizzle schema, migrations, query patterns |
+| [ARCH-026](architecture/ARCH-026-auth-session.md) | Neon Auth, `getSession()`, RBAC guards |
+| [ARCH-027](architecture/ARCH-027-env-model.md) | `@t3-oss/env-nextjs`, `.env.local`, compose cutover |
+| [ARCH-028](architecture/ARCH-028-implementation-slices.md) | Ordered S1–S8 slices + checkpoints |
+| [ARCH-029](architecture/ARCH-029-interface-api-architecture.md) | **Living** parent — interface and API architecture |
 
 ### Backend / Frontend / API
 
-See [architecture/backend/](architecture/backend/), [architecture/frontend/](architecture/frontend/), [`api/`](api/), and [ARCH-031 Technology Stack Catalogue](architecture/tech-stack/ARCH-031-technology-stack-catalogue.md).
+See [architecture/](architecture/), [architecture/](architecture/), [`api/`](api/), and [ARCH-031 Technology Stack Catalogue](architecture/ARCH-031-technology-stack-catalogue.md).
 
 ### Guides
 
@@ -90,7 +90,7 @@ See [architecture/backend/](architecture/backend/), [architecture/frontend/](arc
 
 ## Next.js decision tree (summary)
 
-Authority: [architecture/frontend/ARCH-013-bff-and-data-flow.md](architecture/frontend/ARCH-013-bff-and-data-flow.md).
+Authority: [architecture/ARCH-013-bff-and-data-flow.md](architecture/ARCH-013-bff-and-data-flow.md).
 
 ```text
 Need data?
@@ -106,14 +106,14 @@ Need data?
 
 **Forbidden:** Server Components fetching the app’s own `/api/*` for ordinary reads.
 
-Edge session gate (Target): `apps/web/proxy.ts` — not `middleware.ts`. See [ARCH-016](architecture/frontend/ARCH-016-next-js-conventions.md).
+Edge session gate (Target): `apps/web/proxy.ts` — not `middleware.ts`. See [ARCH-016](architecture/ARCH-016-next-js-conventions.md).
 
 ## Change Log
 
 | Version | Date | Summary |
 |---------|------|---------|
 | 1.3.2 | 2026-07-14 | Registered ARCH-031 status-aware Technology Stack Catalogue. |
-| 1.3.1 | 2026-07-13 | Renamed `architecture/turborepo/` → `architecture/system/` |
+| 1.3.1 | 2026-07-13 | Renamed `architecture/turborepo/` → `architecture/` |
 | 1.3.0 | 2026-07-13 | No ADR sections; ARCH-023 sole tenancy+RBAC SSOT; Target `apps/web` paths |
 | 1.2.2 | 2026-07-13 | Layout lists tech-stack |
 | 1.2.1 | 2026-07-13 | GUIDE-001…004 under `docs/guides/` |

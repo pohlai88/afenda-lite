@@ -91,7 +91,7 @@ This repo has strong governance in `docs/` but large flat areas in `lib/` and `c
 
 - **Ops / Fix / Test:** Open only files named in the mission or directly required to complete it.
 - **Docs:** Stay under `docs/` unless cross-linking requires a one-line pointer elsewhere.
-- **Normalize:** Dedicated branch only; see [ARCH-022](../../../../docs/architecture/system/ARCH-022-system-overview.md) (Target layout). ARCH-021 migration map is archived.
+- **Normalize:** Dedicated branch only; see [ARCH-022](../../../../docs/architecture/ARCH-022-system-overview.md) (Target layout). ARCH-021 migration map is archived.
 
 ## Evidence report format
 
