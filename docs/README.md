@@ -11,7 +11,7 @@ Unified home for Living/Target ARCH, API contracts, guides, and module spines. M
 
 **Product identity:** Afenda-Lite is the beta edition of the Afenda family. **Client Declaration Portal** is retired — see [deprecation register](../.cursor/skills/agent-skills/skills/deprecation-and-migration/reference.md).
 
-**Quality bar (sole):** Enterprise production. Reduced-viability proposals and planning are banned — [AGENTS.md](../AGENTS.md) · [`.cursor/rules/no-mvp-quality-bar.mdc`](../.cursor/rules/no-mvp-quality-bar.mdc). Module claims use Enterprise Readiness + owning `*-MOD-009` evidence ([MOD-002](modules/MOD-002-modules-index.md)).
+**Quality bar (sole):** Enterprise production. Reduced-viability proposals and planning are banned — [AGENTS.md](../AGENTS.md) · [`.cursor/rules/no-mvp-quality-bar.mdc`](../.cursor/rules/no-mvp-quality-bar.mdc). Cross-cutting capability/release evidence uses [GUIDE-017](guides/GUIDE-017-enterprise-quality-evidence-standard.md); module claims remain governed by Enterprise Readiness + owning `*-MOD-009` evidence ([MOD-002](modules/MOD-002-modules-index.md)).
 
 **Forward-writing target:** Turborepo multi-package monorepo — [architecture/ARCH-022-system-overview.md](architecture/ARCH-022-system-overview.md).
 
@@ -33,7 +33,7 @@ Unified home for Living/Target ARCH, API contracts, guides, and module spines. M
 | [`api/`](api/) | API / REST / OPEN | Interface contracts — see [api/README.md](api/README.md) |
 | [`architecture/`](architecture/) | Architecture | Flat Living/Target `ARCH-*` home · pack reading order in [README](architecture/README.md) (System · Backend · Frontend · Tech-stack) |
 | [`architecture/adr/`](architecture/adr/) | ADR | Approved ADRs only (e.g. ADR-008) — not `decisions/` |
-| [`guides/`](guides/) | Guide | Home for future non-API guides · GUIDE-001…006/016 **Retired** (register-only) · API how-tos in [api/guides](api/guides/README.md) |
+| [`guides/`](guides/) | Guide | Living GUIDE-017 enterprise evidence standard · GUIDE-001…006/016 **Retired** (register-only) · API how-tos in [api/guides](api/guides/README.md) |
 | [`modules/`](modules/) | Module | 10-MOD spines + catalog ([MOD-002](modules/MOD-002-modules-index.md)); FFT at [feed-farm-trade/](modules/feed-farm-trade/) |
 | [`runbooks/`](runbooks/) | Runbook / ops | Operate, multi-org, cheatsheets |
 | [`scratch/`](scratch/) | Scratch | Non-authoritative drafts and temporary notes |
@@ -75,7 +75,8 @@ See [architecture/](architecture/), [architecture/](architecture/), [`api/`](api
 
 | Doc | Purpose |
 |-----|---------|
-| [guides/README.md](guides/README.md) | Engineering GUIDE-001…006 **Retired** — use DOC-001/003, AGENTS.md, ARCH-028 drift |
+| [guides/README.md](guides/README.md) | Non-API guide navigator; Engineering GUIDE-001…006/016 remain Retired |
+| [GUIDE-017](guides/GUIDE-017-enterprise-quality-evidence-standard.md) | Enterprise quality evidence, freshness/applicability, exceptions, and release/capability aggregation |
 | [api/guides/README.md](api/guides/README.md) | API implementation guides (GUIDE-007…015) |
 | [MOD-002](modules/MOD-002-modules-index.md) | Modules catalog + 10-MOD spine guideline |
 
@@ -111,6 +112,7 @@ Edge session gate (Target): `apps/web/proxy.ts` — not `middleware.ts`. See [AR
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.3.3 | 2026-07-14 | Registered GUIDE-017 Enterprise Quality and Evidence Standard and aligned guide navigation. |
 | 1.3.2 | 2026-07-14 | Registered ARCH-031 status-aware Technology Stack Catalogue. |
 | 1.3.1 | 2026-07-13 | Renamed `architecture/turborepo/` → `architecture/` |
 | 1.3.0 | 2026-07-13 | No ADR sections; ARCH-023 sole tenancy+RBAC SSOT; Target `apps/web` paths |

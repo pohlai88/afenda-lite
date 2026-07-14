@@ -4,7 +4,7 @@
 | ----------------- | ---------- |
 | **ID**            | DOC-002    |
 | **Category**      | Control    |
-| **Version**       | 4.64.0 |
+| **Version**       | 4.65.0 |
 | **Status**        | Living     |
 | **Control State** | Closed     |
 | **Owner**         | Platform   |
@@ -71,7 +71,7 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 | ID           | Category     | Title                                      | Version | Status | Owner    | Updated    |
 | ------------ | ------------ | ------------------------------------------ | ------- | ------ | -------- | ---------- |
 | DOC-001      | Control      | Documentation Control Standard             | 2.7.0   | Living | Platform | 2026-07-14 |
-| DOC-002      | Control      | Documentation Register                     | 4.64.0 | Living | Platform | 2026-07-14 |
+| DOC-002      | Control      | Documentation Register                     | 4.65.0 | Living | Platform | 2026-07-14 |
 | DOC-003      | Control      | Controlled Document Template               | 1.4.0   | Living | Platform | 2026-07-14 |
 | ARCH-029     | Architecture | Interface and API Architecture             | 1.2.7   | Living | Platform | 2026-07-14 |
 | ARCH-031     | Architecture | Technology Stack Catalogue                 | 1.2.0   | Living | Platform | 2026-07-14 |
@@ -103,6 +103,7 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 | GUIDE-014    | Guide        | API Contract Verification Standard         | 0.1.1   | Draft  | Backend  | 2026-07-14 |
 | GUIDE-015    | Guide        | Interface Pack Development Roadmap         | 1.0.2   | Living | Platform | 2026-07-14 |
 | GUIDE-016    | Guide        | Feed Farm Trade Enterprise Acceptance      | 0.2.0   | Retired | Feed Farm Trade | 2026-07-14 |
+| GUIDE-017    | Guide        | Enterprise Quality and Evidence Standard   | 1.0.0   | Living | Platform | 2026-07-14 |
 | RB-006       | Runbook      | OpenAPI Drift Detection and Recovery       | 0.2.1   | Draft  | Backend  | 2026-07-14 |
 | RB-007       | Runbook      | API Incident Response                      | 0.2.0   | Draft  | Backend  | 2026-07-14 |
 | RB-008       | Runbook      | API Contract Rollback                      | 0.2.1   | Draft  | Backend  | 2026-07-14 |
@@ -167,6 +168,7 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 
 | Version | Date       | Summary                                                                                                                                         |
 | ------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| 4.65.0 | 2026-07-14 | Registered Living GUIDE-017 Enterprise Quality and Evidence Standard for cross-cutting evidence vocabulary, freshness/applicability, exception governance, and release/capability aggregation; aligned the guides integrity baseline; future-product ERP scope remains parked. |
 | 4.64.0 | 2026-07-14 | Hard-delete `docs/**/archive/` stubs; DOC-001 → 2.7.0 register-only Retired/Superseded; clear guides archive integrity baseline; ARCH-023→3.1.3, ARCH-028→1.4.3, MOD-002→4.0.2, FFT-MOD-009→2.0.3. |
 | 4.63.0 | 2026-07-14 | RB-001/RB-005 → 1.1.0 DOC-003 six-section retrofit (clears runbooks STRUCTURE-DRIFT). |
 | 4.62.0 | 2026-07-14 | FFT ARCH-027 env reconciliation (FFT-MOD-003/008 → 1.3.2, FFT-MOD-009 → 2.0.2) plus Living/Target pnpm command cutover register sync (MOD-002 → 4.0.1 + executable contract). |
@@ -245,6 +247,8 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 
 `ARCH-029` is the Living parent authority for interface and API architecture. **GUIDE-015** is the locked Phases 1–5 development roadmap (Jack Wee). `API-005`…`API-009`, `REST-002`…`REST-007`, `FFT-REST-001`, `GUIDE-007`…`GUIDE-014`, and `RB-006`…`RB-008` are Draft until expanded / promoted per their owning roadmaps. API guides live under `docs/api/guides/`. API runbooks live under `docs/api/runbooks/`. Non-API guides live under `docs/guides/` when Living. **GUIDE-016** is **Retired** (register-only; stub removed); Module Enterprise Readiness authority is [MOD-002](../modules/MOD-002-modules-index.md) + FFT-MOD-001…010. `ARCH-030` (verification architecture) is deferred while GUIDE-014 remains the API verification Guide.
 
+**GUIDE-017** is the Living cross-cutting authority for evidence vocabulary and release/capability aggregation. It does not replace MOD-002 module evidence/claims or ARCH-029/GUIDE-014 interface verification.
+
 `FFT-REST-002`…`FFT-REST-007`, `OPEN-002`…`OPEN-005`, `ADR-001`…`ADR-007`, `RB-009` (webhook replay), and `ARCH-030` (verification architecture) are **reserved in planning docs only** — not registered until created under the approved derivation / creation gates. **`ADR-008`** is registered (Accepted Phase 1 — Cache Components Mode B; `cacheComponents` enablement still deferred).
 
 `ARCH-022` and `ARCH-024` through `ARCH-028` describe approved target-state architecture and remain non-current until implemented or promoted to `Living`.
@@ -253,7 +257,7 @@ DOC-001 is the shared Afenda documentation control baseline (Lite beta · Elite 
 
 GUIDE-001…004, GUIDE-006, and GUIDE-016 are **Retired** in this register only (IDs non-recyclable; stub files hard-deleted — no `docs/guides/archive/`). ARCH-003, ARCH-014, ARCH-020, and ARCH-021 are **Superseded** in this register only (no `docs/architecture/archive/`). Engineering entry is `docs/README.md` + DOC-001/003 + AGENTS.md; API how-tos remain under `docs/api/guides/`; Target vs checkout drift lives in ARCH-028. Module Enterprise Readiness is MOD-002 + module spines.
 
-**Integrity baseline (`docs/guides`):** expect **0** findings when the Guide home has no Living controlled bodies (navigator README only). Prior archive-stub baselines are vacated by the 4.64.0 hard-delete.
+**Integrity baseline (`docs/guides`):** expect **0** findings for the navigator plus Living GUIDE-017. Retired GUIDE stubs remain register-only and `docs/guides/archive/` must not be restored.
 
 Under DOC-001 §3.5.1 / §3.7, every controlled document header shall declare **Control State** (`Open` · `Closed` · `Reopened`) distinct from lifecycle **Status**. Lifecycle Status remains in this seven-field catalogue; Control State is header-only and must not be added as an eighth register column. The documentation validator requires and validates the header field for `docs/_control/**` and for any document that already declares it.
 

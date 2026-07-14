@@ -1,5 +1,8 @@
 # Executive verdict
 
+> **Historical scratch critique — not authoritative.**
+> Written against an earlier revision of [REQ-saas-erp-multitenant-fullstack.md](REQ-saas-erp-multitenant-fullstack.md). REQ **V2+** absorbed the listed P0 remediations; REQ **V2.4** closed **OQ-20 by scope separation** and **parked** the REQ as a future-product surface outside Afenda-Lite Target ([ARCH-006](../architecture/ARCH-006-bounded-contexts.md)). Do not treat this file as Living architecture or as a current promotion checklist. Afenda-Lite and ERP runtime/product readiness remain **NOT EVIDENCED**.
+
 I reviewed the attached **SaaS ERP Multi-Tenancy Fullstack Requirements** as:
 
 1. a product requirements specification;
@@ -8,12 +11,12 @@ I reviewed the attached **SaaS ERP Multi-Tenancy Fullstack Requirements** as:
 
 The document is **substantially stronger than a typical early ERP specification**, particularly around evidence, financial integrity, tenant isolation, rollback, recovery, and operational handoff. However, it is not yet an executable enterprise acceptance standard.
 
-| Assessment area                 | Verdict                                                                                      |
+| Assessment area                 | Verdict (at critique time)                                                                   |
 | ------------------------------- | -------------------------------------------------------------------------------------------- |
 | Quality-framework design        | **Strong, but incomplete**                                                                   |
-| Requirements specification      | **BLOCKED for controlled promotion**                                                         |
-| Product release readiness       | **NOT EVIDENCED**                                                                            |
-| Architecture compatibility      | **NOT VERIFIABLE from this attachment alone**                                                |
+| Requirements specification      | **BLOCKED for controlled promotion** (superseded for Afenda-Lite: REQ parked, not promoted)  |
+| Product release readiness       | **NOT EVIDENCED** (still true)                                                               |
+| Architecture compatibility      | Later closed for Afenda-Lite via **scope separation** (OQ-20), not via compatibility claims  |
 | Core ERP process completeness   | **Partial; several material loops are incomplete**                                           |
 | Enterprise quality-bar coverage | **Missing identity, privacy, data-quality, maintainability, and customer-lifecycle grading** |
 

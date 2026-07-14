@@ -114,7 +114,7 @@ Do not emit a standing pairwise caveat when coverage is complete, findings are z
 
 | Scope | Baseline | Disposition |
 | --- | --- | --- |
-| `docs/guides` full profile | **0** findings (navigator only; Retired GUIDE stubs removed) | Register-only Retired IDs in DOC-002; do not restore `docs/guides/archive/`. |
+| `docs/guides` full profile | **0** findings (navigator + Living GUIDE-017; Retired GUIDE stubs removed) | GUIDE-017 is the cross-cutting evidence/release-aggregation authority; Retired IDs remain register-only; do not restore `docs/guides/archive/`. |
 | `docs/api` full profile | Zero findings when coverage complete | Living rename/verify bar. |
 | `docs/modules/feed-farm-trade` full profile | Zero findings when coverage complete | Living rename/verify bar. |
 
