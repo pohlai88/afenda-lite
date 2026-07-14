@@ -4,13 +4,13 @@
 |-------|-------|
 | ID | ARCH-022 |
 | Category | Architecture |
-| Version | 1.5.7 |
+| Version | 1.5.8 |
 | Status | Target |
 | Control State | Closed |
 | Owner | Platform |
 | Updated | 2026-07-15 |
 
-> **Forward-writing / Target.** Turborepo system SSOT. On disk through S7.2: `@afenda/config|db|auth|env|ui|emails` + `apps/web` route groups `(public)` / `(operator)` / `(client)` — modules / features still open per [ARCH-028](ARCH-028-implementation-slices.md) S7.3+.
+> **Forward-writing / Target.** Turborepo system SSOT. On disk through S7.3: `@afenda/config|db|auth|env|ui|emails` + `apps/web` route groups + `apps/web/modules/{platform,identity,declarations,fft}` domain ports — features still open per [ARCH-028](ARCH-028-implementation-slices.md) S7.4+.
 
 ## Context
 
@@ -244,6 +244,7 @@ Next.js App Router (apps/web)
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.5.8 | 2026-07-15 | Checkout banner: S7.3 domain modules on disk; next open S7.4+ (feature shells). |
 | 1.5.7 | 2026-07-15 | Checkout banner: S7.2 route groups on disk; next open S7.3+ (modules / features). |
 | 1.5.6 | 2026-07-15 | Checkout banner: S7.1 `apps/web` Next shell on disk; next open S7.2+ (route groups / modules). |
 | 1.5.5 | 2026-07-15 | Checkout banner: S6.1 `@afenda/emails` on disk; routes/modules still open (S7.x). |

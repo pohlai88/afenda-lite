@@ -2,11 +2,11 @@
 
 Plan authority: this skill + `docs/architecture/` + [deprecation register — Closed product phases](../agent-skills/skills/deprecation-and-migration/reference.md).
 
-**Checkout posture:** Rows marked **Done (historical)** were closed on the pre-Collapse product tree (2026-07-12). This **docs-first** checkout does **not** currently have root `modules/` / `app/` / `features/` — do not read “Done” as “implemented on disk today.” Target re-scaffold lives under `apps/web/…` after ARCH-028 implement authorization. DB/Neon ops rows (migrations, tenancy cutover) remain Living ops facts where still true in production Neon.
+**Checkout posture:** Rows marked **Done (historical)** were closed on the pre-Collapse product tree (2026-07-12). Root `modules/` / `app/` / `features/` remain absent by design — do not recover. Target shell under `apps/web/modules/{platform,identity,declarations,fft}` is **present (ARCH-028 S7.3)** with thin `orgId` domain ports; full Living inventory / feature shells are still open (S7.4+). DB/Neon ops rows remain Living ops facts where still true in production Neon.
 
 | Slice | Plan | Evidence kind | Status |
 |-------|------|---------------|--------|
-| Module tree `platform/identity/declarations/fft` | Exact L2 folders | Historical disk; Target `apps/web/modules` | **Done (historical)** — absent on docs-first |
+| Module tree `platform/identity/declarations/fft` | Exact L2 folders | Historical disk; Target `apps/web/modules` | **Partial (Target shell)** — S7.3 ports on disk; full L2 inventory open |
 | No `modules/trade/` / `features/trade/` product | Forbidden | Absent | **Done** |
 | No `lib/` architecture drawer | Absorb runners | `lib/` gone; do not recreate | **Done** |
 | Shared Zod + `parseSchema` on Platform | Trade/Identity import Platform | Historical Actions | **Done (historical)** |

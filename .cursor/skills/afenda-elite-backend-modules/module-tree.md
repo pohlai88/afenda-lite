@@ -4,11 +4,11 @@
 
 | Kind | Path | Status on this checkout |
 |------|------|-------------------------|
-| **Target physical home** | `apps/web/modules/{platform,identity,declarations,fft}` | Implemented only after explicit ARCH-028 implement / scaffold |
+| **Target physical home** | `apps/web/modules/{platform,identity,declarations,fft}` | **Present (S7.3 shell)** — one `domain/*` `orgId` port per context; full Living inventory still open |
 | **Logical Living shape** | `modules/{platform,identity,declarations,fft}` (context L2 names) | Shape vocabulary for ownership — **not** a claim that root `modules/` exists today |
-| **Docs-first (Collapse)** | Root `modules/`, `app/`, `features/` | **Absent by design** — do not recover from git (incl. `git show` seed) without named user approval this turn; do not treat companions below as current disk SSOT |
+| **Docs-first (Collapse)** | Root `modules/`, `app/`, `features/` | **Absent by design** — do not recover from git (incl. `git show` seed) without named user approval this turn |
 
-Verify before editing product code: `Test-Path apps/web/modules` / `Test-Path modules`. If both absent, stay docs-only.
+Verify before editing product code: `Test-Path apps/web/modules` / `Test-Path modules`. Prefer Target `apps/web/modules` when present; root Collapse trees stay banned.
 
 **Forbidden folder:** `modules/trade/` or `apps/web/modules/trade/` — Trade product context id is `fft`.
 
