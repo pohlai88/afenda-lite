@@ -3,18 +3,23 @@ import { describe, expect, it } from "vitest";
 import {
 	AFENDA_AUTH_VIEW_PATHS,
 	AUTH_BASE_PATH,
+	AUTH_FORBIDDEN_PATH,
 	AUTH_LOGIN_PATH,
 	isPublicAuthPath,
 	PUBLIC_AUTH_PATHS,
 } from "../src/auth-paths";
 
-describe("Afenda auth paths (I1.2)", () => {
+describe("Afenda auth paths (I1.2 · I1.4)", () => {
 	it("keeps AUTH_LOGIN_PATH on /auth/login as the gate SSOT", () => {
 		expect(AFENDA_AUTH_VIEW_PATHS.SIGN_IN).toBe("login");
 		expect(AUTH_LOGIN_PATH).toBe("/auth/login");
 		expect(`${AUTH_BASE_PATH}/${AFENDA_AUTH_VIEW_PATHS.SIGN_IN}`).toBe(
 			AUTH_LOGIN_PATH,
 		);
+	});
+
+	it("keeps AUTH_FORBIDDEN_PATH on /403 for wrong-role shells", () => {
+		expect(AUTH_FORBIDDEN_PATH).toBe("/403");
 	});
 
 	it("exports public login · forgot · reset · sign-out · sign-up", () => {

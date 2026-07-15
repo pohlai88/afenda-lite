@@ -3,6 +3,7 @@ export type { AfendaAuthViewPath, PublicAuthPath } from "./auth-paths";
 export {
 	AFENDA_AUTH_VIEW_PATHS,
 	AUTH_BASE_PATH,
+	AUTH_FORBIDDEN_PATH,
 	AUTH_LOGIN_PATH,
 	isPublicAuthPath,
 	PUBLIC_AUTH_PATHS,

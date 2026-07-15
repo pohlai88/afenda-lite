@@ -28,6 +28,12 @@ export const AUTH_LOGIN_PATH =
 	`${AUTH_BASE_PATH}/${AFENDA_AUTH_VIEW_PATHS.SIGN_IN}` as const;
 
 /**
+ * Authenticated-but-forbidden shell (GUIDE-018 I1.4 · ARCH-026).
+ * `requireRole` redirects here when the session role does not satisfy the gate.
+ */
+export const AUTH_FORBIDDEN_PATH = "/403" as const;
+
+/**
  * Public `/auth/[path]` Neon Auth UI surfaces (GUIDE-018 I1.2 + invitee sign-up).
  * Neon mail `/auth/accept-invitation` is a sibling redirect segment → `/join` (I1.3).
  */

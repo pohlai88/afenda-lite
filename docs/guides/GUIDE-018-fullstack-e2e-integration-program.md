@@ -4,7 +4,7 @@
 | ----------------- | ---------- |
 | **ID**            | GUIDE-018  |
 | **Category**      | Guide      |
-| **Version**       | 0.3.7      |
+| **Version**       | 0.3.8      |
 | **Status**        | Draft      |
 | **Control State** | Closed     |
 | **Owner**         | Platform   |
@@ -34,7 +34,7 @@ This guide **sequences** the program. It does **not** replace owning docs for sl
 
 - Ordered phases from foundations → scaffold (done) → docs cutover (done) → authenticity → contracts → product verticals → tests → hardening → evidence → continuous control
 - Completed [ARCH-028](../architecture/ARCH-028-implementation-slices.md) coding + Checkpoint G (S1.1–S8.2, Checkpoints A–**G**)
-- Open **Phase I1** (identity & edge) — **I1.1–I1.3** closed; next Ops mission **I1.4** (fail-closed role shells)
+- **Phase I1** (identity & edge) — **I1.1–I1.4** closed; next Ops mission **I2.1** (ActionResult / error brands)
 - Lane discipline, skill routing, and FFT freeze / anti-contamination boundaries
 - Pointers to owning authorities (no duplicated SSOT)
 
@@ -98,12 +98,12 @@ Formal release decisions use GUIDE-017 states (`PASS`, `FAIL`, `BLOCKED`, `NOT E
 FOUNDATIONS ████████ DONE
 SCAFFOLD     ████████ DONE  (ARCH-028 S1–S8 · Checkpoints A–F)
 CHECKPOINT G ████████ DONE  (Docs: ARCH-022…028 Living · retirement reviewed)
-I1           █████░░░ OPEN  ← I1.1–I1.3 done · next I1.4 (role shells)
+I1           ████████ DONE  ← I1.1–I1.4 closed · next I2.1 (ActionResult)
 I2–I7        ░░░░░░░░ WAIT
 REOPEN (R*)  ░░░░░░░░ optional · explicit written approval only
 ```
 
-**Plain-English baseline:** packages, routes, CI, Deploy, the edge session gate (`apps/web/proxy.ts`), public Neon Auth UI (`/auth/login` · forgot · reset · sign-up), and `/join?invitationId=…` exist on disk; Turborepo ARCH pack is **Living**. Remaining I1 surface (role-shell journeys), writes, E2E, observability, and release evidence are still incomplete. See §3.6 for the gap summary.
+**Plain-English baseline:** packages, routes, CI, Deploy, the edge session gate (`apps/web/proxy.ts`), public Neon Auth UI (`/auth/login` · forgot · reset · sign-up), `/join?invitationId=…`, and fail-closed role shells (`requireRole` → `/403`) exist on disk; Turborepo ARCH pack is **Living**. Remaining writes, E2E, observability, and release evidence are still incomplete. See §3.6 for the gap summary.
 
 **Standing honesty:**
 
@@ -117,8 +117,8 @@ REOPEN (R*)  ░░░░░░░░ optional · explicit written approval only
 | **F** | Foundations | DONE | Docs | Living docs control + Target architecture + locks |
 | **S** | Turborepo scaffold | DONE | Ops | Packages, `apps/web`, CI, Deploy (ARCH-028) |
 | **G** | Docs cutover | **DONE** | Docs | Target→Living + retirement reviewed |
-| **I1** | Identity & edge | **OPEN** (I1.1–I1.3 done) | Ops | Session gate, `/auth/*`, `/join`, fail-closed roles |
-| **I2** | Interface / BFF | WAIT | Ops | ActionResult, module boundaries, first write |
+| **I1** | Identity & edge | **DONE** | Ops | Session gate, `/auth/*`, `/join`, fail-closed roles |
+| **I2** | Interface / BFF | **OPEN** (next **I2.1**) | Ops | ActionResult, module boundaries, first write |
 | **I3** | Product verticals | WAIT | Ops | Identity · Declarations · FFT read (freeze) |
 | **I4** | Verification factory | WAIT | Test | Unit → contract → real E2E smoke |
 | **I5** | Hardening | WAIT | Ops/Test | Security · recovery · obs · a11y/i18n · CI depth |
@@ -196,7 +196,7 @@ Recommended mission queue: **I1 → I2 → I3 (freeze) → I4 → I5/I6**.
 
 | | |
 | --- | --- |
-| **Status** | **OPEN** — I1.1–I1.3 done; next **I1.4** |
+| **Status** | **DONE** — I1.1–I1.4 closed 2026-07-15 |
 | **Lane** | Ops + Guardian |
 | **Goal** | Real session lifecycle at the edge and public auth surfaces; shells stay fail-closed |
 
@@ -205,10 +205,10 @@ Recommended mission queue: **I1 → I2 → I3 (freeze) → I4 → I5/I6**.
 | **I1.1** | Greenfield `apps/web/proxy.ts` edge session gate | Backend + Security | **DONE** 2026-07-15 |
 | **I1.2** | Public `/auth/*` (Neon Auth: login · forgot · reset) | Frontend + Security | **DONE** 2026-07-15 |
 | **I1.3** | `/join?invitationId=…` + operator invite via `@afenda/auth` | Full stack + authz | **DONE** 2026-07-15 |
-| **I1.4** | Role shells: unauth → login; wrong role → `/403` | Authz | WAIT |
+| **I1.4** | Role shells: unauth → login; wrong role → `/403` | Authz | **DONE** 2026-07-15 |
 
 **Farms:** `afenda-elite-nextjs-best-practice` · `neon-tenancy-efficiency` · `afenda-elite-frontend-scaffold`  
-**Exit:** Anonymous, wrong-role, and happy-path session journeys have reproducible evidence (not package presence alone).
+**Exit (met):** Anonymous, wrong-role, and happy-path session journeys have reproducible evidence (not package presence alone).
 
 ### Implement evidence — I1.1 (2026-07-15)
 
@@ -242,13 +242,23 @@ Recommended mission queue: **I1 → I2 → I3 (freeze) → I4 → I5/I6**.
 | Verify | `pnpm --filter @afenda/auth typecheck` · `pnpm --filter @afenda/auth test` (22) · `pnpm --filter @afenda/web typecheck` · lint · `pnpm --filter @afenda/web test -- invite-org-member` — green; local route probe without secrets in repo |
 | Boundary | SDK stay in `@afenda/auth`; UI via `@neondatabase/auth-ui`; invitee `signUp` enabled on auth island; no app-side SMTP |
 | Gap close | Neon↔session role SSOT (`toSessionRole`/`toNeonOrgRole`) · `canInviteMember` / `inviteableRolesFor` · stable invite errors (no Neon body leak) · join-path copy via `JOIN_PATH` · `invitations` unit tests · adapter-map disk honesty |
----
+
+### Implement evidence — I1.4 (2026-07-15)
+
+| Field | Evidence |
+| ----- | -------- |
+| Paths | `@afenda/auth` `AUTH_FORBIDDEN_PATH` · `requireRole` (`packages/auth/src/rbac.ts`) · `apps/web/app/(operator)/layout.tsx` (`requireRole('operator')`) · `apps/web/app/(client)/client/(workspace)/layout.tsx` (`requireRole('client')`) · `apps/web/app/(public)/403/page.tsx` (`ForbiddenShell`) |
+| Behavior | Unauthenticated protected nav → `/auth/login` (proxy + `getSession`); authenticated insufficient role → `AUTH_FORBIDDEN_PATH` (`/403`); admin satisfies operator shell; client exclusive |
+| Verify | `pnpm --filter @afenda/auth typecheck` · `pnpm --filter @afenda/auth test` (28) · `pnpm --filter @afenda/web typecheck` · `pnpm --filter @afenda/web test -- role-shells` — green; Biome clean on touched files |
+| Route probe | Anonymous `GET /admin` · `/fft` · `/client/dashboard` → **307** `Location: /auth/login`; `GET /403` · `/auth/login` · `/` → **200** |
+| Wrong-role | `requireRole` unit matrix: client↛operator · operator↛client · operator↛admin → redirect `/403`; admin→operator + matching roles return session |
+| Boundary | Coarse shell only — ARCH-023 `hasPermission` / Tier-2 codes remain later; no FFT 2B–2D |
 
 ## Phase I2 — Interface / BFF spine
 
 | | |
 | --- | --- |
-| **Status** | WAIT (after I1) |
+| **Status** | **OPEN** — next **I2.1** (after I1) |
 | **Lane** | Ops + Guardian |
 | **Goal** | Stable ActionResult/error contracts and the first authenticated write path |
 
@@ -448,7 +458,7 @@ Snapshot of what “ON DISK vs still missing” looks like as of 2026-07-15:
 | ---- | ----- | ----------- | ---------------------- |
 | Toolchain / packages | ON DISK | pnpm · Node · Turbo · Biome · TS · `@afenda/*` | Clean CI install + full gate honesty |
 | Routes / UI | PARTIAL | `/`, `/403`, `/admin`, `/fft`, `/client/dashboard` | Forms · error/recovery · responsive · locale · a11y |
-| Authn / authz | PARTIAL | Session helpers · `proxy.ts` · `/auth/*` · `/join` · invite client · coarse shell roles | I1.4 role-shell browser proof · permission matrix |
+| Authn / authz | PARTIAL | Session helpers · `proxy.ts` · `/auth/*` · `/join` · invite · coarse shells (`requireRole` → `/403`) | Permission matrix · Tier-2 `hasPermission` product wiring · authenticated browser E2E |
 | Data / tenancy | PARTIAL | Drizzle schema · `withOrg` reads | Writes · two-org isolation suite · restore · migrate discipline |
 | Domains | PARTIAL | Read list ports | Mutations · adverse journeys · FFT beyond freeze = FROZEN |
 | API / contracts | PARTIAL | Docs + check tooling | Product handlers/actions · ActionResult runtime · contract integration |
@@ -501,6 +511,7 @@ Snapshot of what “ON DISK vs still missing” looks like as of 2026-07-15:
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 0.3.8 | 2026-07-15 | I1.4 closed: `AUTH_FORBIDDEN_PATH` · `requireRole` wrong-role → `/403` · shell layout wiring evidence; Phase I1 DONE; next Ops = I2.1. |
 | 0.3.7 | 2026-07-15 | I1.3 gap close: operator `/admin` invite → `inviteOrgMemberAction` / `inviteOrgMember`; local join route probe evidence. |
 | 0.3.6 | 2026-07-15 | I1.3 evidence: `/join?invitationId=…` · Neon `/auth/accept-invitation` → join · `buildJoinUrl` / `inviteOrgMember`; next Ops = I1.4. |
 | 0.3.5 | 2026-07-15 | I1.2 evidence: public Neon Auth UI `/auth/login` · forgot · reset; `@afenda/auth` client/API handlers; next Ops = I1.3. |
