@@ -1,14 +1,13 @@
 import { redirect } from "next/navigation";
 
+import { AUTH_FORBIDDEN_PATH } from "./auth-paths";
 import { roleSatisfies } from "./roles";
 import { getSession, type Role, type Session } from "./session";
 
-const FORBIDDEN_PATH = "/403";
-
 /**
- * Coarse shell guard against the session role signal.
+ * Coarse shell guard against the session role signal (GUIDE-018 I1.4).
  * Unauthenticated → `/auth/login` (via `getSession`).
- * Authenticated but insufficient role → `/403`.
+ * Authenticated but insufficient role → `AUTH_FORBIDDEN_PATH` (`/403`).
  *
  * Does not replace ARCH-023 permission-code checks (`hasPermission`).
  *
@@ -24,7 +23,7 @@ export async function requireRole(role: Role): Promise<Session> {
 	const session = await getSession();
 
 	if (!roleSatisfies(session.role, role)) {
-		redirect(FORBIDDEN_PATH);
+		redirect(AUTH_FORBIDDEN_PATH);
 	}
 
 	return session;
