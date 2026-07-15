@@ -4,14 +4,14 @@
 import Link from 'next/link'
 
 // Component Imports
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { AddEditUserSheet } from '@/views/apps/users/dialogs/add-edit-user-sheet'
+import { Button } from '#components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '#components/ui/card'
+import { AddEditUserSheet } from '#views/apps/users/dialogs/add-edit-user-sheet'
 import { UserViewLeftPanel } from './user-view-left-panel'
 import { UserViewTabs } from './user-view-tabs'
 
 // Hook Imports
-import { useUserViewApp } from '@/hooks/use-user-view-app'
+import { useUserViewApp } from '#hooks/use-user-view-app'
 
 export interface UserViewAppProps {
   userId: string

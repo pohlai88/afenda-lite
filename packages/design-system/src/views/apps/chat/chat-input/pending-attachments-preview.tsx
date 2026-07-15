@@ -2,10 +2,10 @@
 import { FileIcon, XIcon } from 'lucide-react'
 
 // Type Imports
-import type { PendingAttachment } from '@/types/apps/chat-types'
+import type { PendingAttachment } from '#types/apps/chat-types'
 
 // Util Imports
-import { cn } from '@/lib/utils'
+import { cn } from '#lib/utils'
 import { formatFileSize } from './composer-utils'
 
 export type PendingAttachmentsPreviewProps = {

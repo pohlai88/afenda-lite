@@ -6,10 +6,10 @@ import { useMemo, useState } from 'react'
 // Third-party Imports
 import { LogOutIcon, MonitorIcon, SmartphoneIcon } from 'lucide-react'
 
-import type { Session } from '@/types/pages/user-settings-types'
+import type { Session } from '#types/pages/user-settings-types'
 
 // Component Imports
-import { Button } from '@/components/ui/button'
+import { Button } from '#components/ui/button'
 import {
   Dialog,
   DialogClose,
@@ -17,7 +17,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle
-} from '@/components/ui/dialog'
+} from '#components/ui/dialog'
 import {
   Pagination,
   PaginationContent,
@@ -25,8 +25,8 @@ import {
   PaginationLink,
   PaginationNext,
   PaginationPrevious
-} from '@/components/ui/pagination'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+} from '#components/ui/pagination'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '#components/ui/table'
 
 const Sessions = ({ initialSessions }: { initialSessions: Session[] }) => {
   const [sessions, setSessions] = useState<Session[]>(initialSessions)

@@ -7,16 +7,16 @@ import { useState } from 'react'
 import { CheckIcon, ExternalLinkIcon } from 'lucide-react'
 
 // Component Imports
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { Checkbox } from '@/components/ui/checkbox'
-import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Separator } from '@/components/ui/separator'
+import { Badge } from '#components/ui/badge'
+import { Button } from '#components/ui/button'
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '#components/ui/card'
+import { Checkbox } from '#components/ui/checkbox'
+import { Field, FieldDescription, FieldGroup, FieldLabel } from '#components/ui/field'
+import { Input } from '#components/ui/input'
+import { Label } from '#components/ui/label'
+import { RadioGroup, RadioGroupItem } from '#components/ui/radio-group'
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '#components/ui/select'
+import { Separator } from '#components/ui/separator'
 
 // Plan Types Data
 const planTypes = [

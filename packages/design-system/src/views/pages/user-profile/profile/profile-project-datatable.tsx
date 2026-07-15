@@ -7,34 +7,34 @@ import { useMemo, useState } from 'react'
 import { ChevronLeftIcon, ChevronRightIcon, EllipsisVerticalIcon } from 'lucide-react'
 
 // Type Imports
-import type { ProfileProjectDatatableProps, ProjectDatatable } from '@/types/pages/user-profile-types'
+import type { ProfileProjectDatatableProps, ProjectDatatable } from '#types/pages/user-profile-types'
 
 // Component Imports
-import { Avatar, AvatarFallback, AvatarGroup, AvatarGroupCount, AvatarImage } from '@/components/ui/avatar'
-import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
-import { Checkbox } from '@/components/ui/checkbox'
+import { Avatar, AvatarFallback, AvatarGroup, AvatarGroupCount, AvatarImage } from '#components/ui/avatar'
+import { Button } from '#components/ui/button'
+import { Card } from '#components/ui/card'
+import { Checkbox } from '#components/ui/checkbox'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem } from '@/components/ui/pagination'
-import { Progress } from '@/components/ui/progress'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+} from '#components/ui/dropdown-menu'
+import { Input } from '#components/ui/input'
+import { Label } from '#components/ui/label'
+import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem } from '#components/ui/pagination'
+import { Progress } from '#components/ui/progress'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '#components/ui/table'
 
 // Data Imports
-import { db } from '@/fake-db/pages/user-profile'
+import { db } from '#fake-db/pages/user-profile'
 
 // Hook Imports
-import { usePagination } from '@/hooks/use-pagination'
+import { usePagination } from '#hooks/use-pagination'
 
 // Util Imports
-import { cn } from '@/lib/utils'
+import { cn } from '#lib/utils'
 
 const PAGE_SIZE = 5
 

@@ -2,10 +2,10 @@
 import type React from 'react'
 
 // Type Imports
-import type { PendingAttachment } from '@/types/apps/chat-types'
+import type { PendingAttachment } from '#types/apps/chat-types'
 
 // Component Imports
-import { Textarea } from '@/components/ui/textarea'
+import { Textarea } from '#components/ui/textarea'
 import ComposerToolbar from './composer-toolbar'
 import PendingAttachmentsPreview from './pending-attachments-preview'
 

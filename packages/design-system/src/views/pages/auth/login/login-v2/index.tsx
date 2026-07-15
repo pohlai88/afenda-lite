@@ -5,14 +5,14 @@ import Link from 'next/link'
 import { ChevronLeftIcon } from 'lucide-react'
 
 // Component Import
-import Logo from '@/components/shared/Logo'
-import { BorderBeam } from '@/components/ui/border-beam'
-import { Button } from '@/components/ui/button'
-import { Separator } from '@/components/ui/separator'
-import LoginV2Form from '@/views/pages/auth/login/login-v2/login-v2-form'
+import Logo from '#components/shared/Logo'
+import { BorderBeam } from '#components/ui/border-beam'
+import { Button } from '#components/ui/button'
+import { Separator } from '#components/ui/separator'
+import LoginV2Form from '#views/pages/auth/login/login-v2/login-v2-form'
 
 // SVG Import
-import AuthFullBackgroundShape from '@/assets/svg/auth-full-background-shape'
+import AuthFullBackgroundShape from '#assets/svg/auth-full-background-shape'
 
 const LoginV2 = () => {
   return (

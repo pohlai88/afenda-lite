@@ -2,13 +2,13 @@
 import { ArrowLeftIcon, ArrowRightIcon } from 'lucide-react'
 
 // Component Imports
-import { Button } from '@/components/ui/button'
-import { CardContent } from '@/components/ui/card'
-import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Button } from '#components/ui/button'
+import { CardContent } from '#components/ui/card'
+import { Field, FieldGroup, FieldLabel } from '#components/ui/field'
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '#components/ui/select'
 
 // Type Imports
-import type { StepperType } from '@/views/forms/form-wizard/numbered/numbered-steps'
+import type { StepperType } from '#views/forms/form-wizard/numbered/numbered-steps'
 
 const roleItems = [
   { label: 'Select role', value: null },

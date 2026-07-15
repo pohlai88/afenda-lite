@@ -3,6 +3,8 @@
 packages:
   - "apps/*"
   - "packages/*"
+  # Empty husk may remain locked by IDE/Next watchers after packages/ui removal.
+  - "!packages/ui"
 
 catalog:
   # Framework (next and @next/env share the same range)

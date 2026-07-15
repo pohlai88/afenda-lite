@@ -1,5 +1,5 @@
 // Component Imports
-import { Button } from '@/components/ui/button'
+import { Button } from '#components/ui/button'
 
 // Type Imports
 import type { StepperType } from './index'

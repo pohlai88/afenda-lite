@@ -2,18 +2,18 @@
 import { EllipsisVerticalIcon } from 'lucide-react'
 
 // Component Imports
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
-import { Checkbox } from '@/components/ui/checkbox'
+import { Badge } from '#components/ui/badge'
+import { Button } from '#components/ui/button'
+import { Card, CardContent, CardHeader } from '#components/ui/card'
+import { Checkbox } from '#components/ui/checkbox'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu'
-import { Label } from '@/components/ui/label'
+} from '#components/ui/dropdown-menu'
+import { Label } from '#components/ui/label'
 
 const listItems = ['Share', 'Update', 'Refresh']
 

@@ -2,12 +2,12 @@
 import Link from 'next/link'
 
 // Component Import
-import Logo from '@/components/shared/Logo'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import Logo from '#components/shared/Logo'
+import { Button } from '#components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#components/ui/card'
 
 // SVG Import
-import AuthBackgroundShape from '@/assets/svg/auth-background-shape'
+import AuthBackgroundShape from '#assets/svg/auth-background-shape'
 
 const VerifyEmailV1 = () => {
   return (

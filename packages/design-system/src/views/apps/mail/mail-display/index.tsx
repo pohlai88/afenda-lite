@@ -1,7 +1,7 @@
 'use client'
 
 // Type Imports
-import type { Email, EmailLabel } from '@/types/apps/mail-types'
+import type { Email, EmailLabel } from '#types/apps/mail-types'
 
 // Component Imports
 import { MailDisplayContent } from './mail-display-content'

@@ -2,19 +2,19 @@
 import { PackageIcon, TruckIcon, PackageOpenIcon, EllipsisIcon } from 'lucide-react'
 
 // Component Imports
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { Avatar, AvatarFallback, AvatarImage } from '#components/ui/avatar'
+import { Button } from '#components/ui/button'
+import { Card, CardContent, CardHeader } from '#components/ui/card'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu'
-import { Progress } from '@/components/ui/progress'
-import { Separator } from '@/components/ui/separator'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+} from '#components/ui/dropdown-menu'
+import { Progress } from '#components/ui/progress'
+import { Separator } from '#components/ui/separator'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '#components/ui/tabs'
 
 const listItems = ['Share', 'Update', 'Refresh']
 

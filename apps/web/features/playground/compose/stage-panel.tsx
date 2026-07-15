@@ -1,7 +1,6 @@
 "use client";
 
-import { AdminShell } from "@afenda/ui/shell";
-
+import { PlaygroundHarnessChrome } from "@/features/playground/harness-chrome";
 import { useCompose } from "@/features/playground/compose/compose-context";
 import {
 	STAGE_COLOR_MODES,
@@ -104,10 +103,9 @@ export function ComposeStage() {
 						</p>
 					</div>
 				) : (
-					<AdminShell
+					<PlaygroundHarnessChrome
 						key={shellKey}
 						defaultSidebarOpen={stage.inspector.sidebarOpen}
-						showFooter={false}
 						profileSlot={headerSlots.profileSlot}
 						notificationSlot={headerSlots.notificationSlot}
 						activitySlot={headerSlots.activitySlot}
@@ -124,7 +122,7 @@ export function ComposeStage() {
 								/>
 							))}
 						</div>
-					</AdminShell>
+					</PlaygroundHarnessChrome>
 				)}
 			</div>
 		</section>

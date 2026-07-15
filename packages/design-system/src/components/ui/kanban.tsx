@@ -47,13 +47,13 @@ import { createPortal } from 'react-dom'
 import { PlusIcon } from 'lucide-react'
 
 // Component Imports
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Card, CardContent } from '@/components/ui/card'
-import { Textarea } from '@/components/ui/textarea'
+import { Button } from '#components/ui/button'
+import { Input } from '#components/ui/input'
+import { Card, CardContent } from '#components/ui/card'
+import { Textarea } from '#components/ui/textarea'
 
 // Util Imports
-import { cn } from '@/lib/utils'
+import { cn } from '#lib/utils'
 
 // Contexts
 interface KanbanContextProps<T> {

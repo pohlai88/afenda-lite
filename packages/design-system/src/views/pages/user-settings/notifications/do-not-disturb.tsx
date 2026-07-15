@@ -7,15 +7,15 @@ import { useState } from 'react'
 import { BellIcon, BellOffIcon } from 'lucide-react'
 
 // Component Imports
-import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Separator } from '@/components/ui/separator'
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
+import { Button } from '#components/ui/button'
+import { Card, CardContent } from '#components/ui/card'
+import { Input } from '#components/ui/input'
+import { Label } from '#components/ui/label'
+import { Separator } from '#components/ui/separator'
+import { ToggleGroup, ToggleGroupItem } from '#components/ui/toggle-group'
 
 // Util Imports
-import { cn } from '@/lib/utils'
+import { cn } from '#lib/utils'
 
 const DoNotDisturb = () => {
   const [isDark, setIsDark] = useState(false)

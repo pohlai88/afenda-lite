@@ -2,9 +2,9 @@
 import { Building2Icon, MapIcon, MapPinIcon, PhoneIcon, SignpostIcon, UserIcon } from 'lucide-react'
 
 // Component Imports
-import { Button } from '@/components/ui/button'
-import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
-import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group'
+import { Button } from '#components/ui/button'
+import { Field, FieldGroup, FieldLabel } from '#components/ui/field'
+import { InputGroup, InputGroupAddon, InputGroupInput } from '#components/ui/input-group'
 
 const BasicFormWithIcon = () => {
   return (

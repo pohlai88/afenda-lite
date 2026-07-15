@@ -5,12 +5,12 @@ import { Button as AriaButton, Group, Input as AriaInput, NumberField } from 're
 import { MinusIcon, PlusIcon, DollarSignIcon, ArrowLeftIcon, ArrowRightIcon } from 'lucide-react'
 
 // Component Imports
-import { Label } from '@/components/ui/label'
-import { Button } from '@/components/ui/button'
-import { Switch } from '@/components/ui/switch'
-import { CardContent } from '@/components/ui/card'
-import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Label } from '#components/ui/label'
+import { Button } from '#components/ui/button'
+import { Switch } from '#components/ui/switch'
+import { CardContent } from '#components/ui/card'
+import { Field, FieldGroup, FieldLabel } from '#components/ui/field'
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '#components/ui/select'
 
 // Type Imports
 import type { StepperType } from './index'

@@ -5,15 +5,15 @@ import { Bar, ComposedChart, Line, XAxis } from 'recharts'
 import { GlobeIcon, StoreIcon, TrendingUpIcon } from 'lucide-react'
 
 // Component Imports
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
-import { type ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart'
-import { Separator } from '@/components/ui/separator'
+import { Avatar, AvatarFallback } from '#components/ui/avatar'
+import { Badge } from '#components/ui/badge'
+import { Button } from '#components/ui/button'
+import { Card, CardContent, CardHeader } from '#components/ui/card'
+import { type ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '#components/ui/chart'
+import { Separator } from '#components/ui/separator'
 
 // Util Imports
-import { cn } from '@/lib/utils'
+import { cn } from '#lib/utils'
 
 const chartData = [
   { time: '09:00', uv: 88, pv: 88 },

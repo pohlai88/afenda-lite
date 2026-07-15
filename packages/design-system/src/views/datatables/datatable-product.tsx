@@ -38,10 +38,10 @@ import {
   EllipsisVerticalIcon
 } from 'lucide-react'
 
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Checkbox } from '@/components/ui/checkbox'
+import { Avatar, AvatarFallback } from '#components/ui/avatar'
+import { Badge } from '#components/ui/badge'
+import { Button } from '#components/ui/button'
+import { Checkbox } from '#components/ui/checkbox'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -49,17 +49,17 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu'
-import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group'
-import { Label } from '@/components/ui/label'
-import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem } from '@/components/ui/pagination'
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Switch } from '@/components/ui/switch'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+} from '#components/ui/dropdown-menu'
+import { InputGroup, InputGroupAddon, InputGroupInput } from '#components/ui/input-group'
+import { Label } from '#components/ui/label'
+import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem } from '#components/ui/pagination'
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '#components/ui/select'
+import { Switch } from '#components/ui/switch'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '#components/ui/table'
 
-import { usePagination } from '@/hooks/use-pagination'
+import { usePagination } from '#hooks/use-pagination'
 
-import { cn } from '@/lib/utils'
+import { cn } from '#lib/utils'
 
 declare module '@tanstack/react-table' {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

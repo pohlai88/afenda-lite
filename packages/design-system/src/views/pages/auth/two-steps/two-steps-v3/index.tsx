@@ -2,14 +2,14 @@
 import Link from 'next/link'
 
 // Components Imports
-import Logo from '@/components/shared/Logo'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import Silk from '@/components/ui/bg-silk'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import TwoStepsV3Form from '@/views/pages/auth/two-steps/two-steps-v2/two-steps-v2-form'
+import Logo from '#components/shared/Logo'
+import { Avatar, AvatarFallback, AvatarImage } from '#components/ui/avatar'
+import Silk from '#components/ui/bg-silk'
+import { Card, CardContent, CardHeader, CardTitle } from '#components/ui/card'
+import TwoStepsV3Form from '#views/pages/auth/two-steps/two-steps-v2/two-steps-v2-form'
 
 // SVG Imports
-import LogoVector from '@/assets/svg/logo-vector'
+import LogoVector from '#assets/svg/logo-vector'
 
 const avatars = [
   {

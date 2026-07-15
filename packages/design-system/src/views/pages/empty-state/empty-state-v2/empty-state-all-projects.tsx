@@ -1,7 +1,7 @@
 // Components Imports
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
-import { Card, CardContent } from '@/components/ui/card'
-import { skeletonClass } from '@/views/pages/empty-state/empty-state-v2/empty-state-report'
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '#components/ui/accordion'
+import { Card, CardContent } from '#components/ui/card'
+import { skeletonClass } from '#views/pages/empty-state/empty-state-v2/empty-state-report'
 
 const allProjectCards = Array.from({ length: 6 }, (_, index) => index + 1)
 

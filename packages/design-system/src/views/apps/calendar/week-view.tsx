@@ -22,10 +22,10 @@ import {
 } from 'date-fns'
 
 // Type Imports
-import type { CalendarEvent } from '@/types/apps/calendar-types'
+import type { CalendarEvent } from '#types/apps/calendar-types'
 
 // Hook Imports
-import { useCurrentTimeIndicator } from '@/hooks/use-current-time-indicator'
+import { useCurrentTimeIndicator } from '#hooks/use-current-time-indicator'
 
 // Component Imports
 import { DraggableEvent } from './draggable-event'
@@ -33,11 +33,11 @@ import { DroppableCell } from './droppable-cell'
 import { EventItem } from './event-item'
 
 // Util Imports
-import { cn } from '@/lib/utils'
-import { isMultiDayEvent } from '@/utils/calendar-utils'
+import { cn } from '#lib/utils'
+import { isMultiDayEvent } from '#utils/calendar-utils'
 
 // Data Imports
-import { EndHour, StartHour, WeekCellsHeight } from '@/assets/data/constants'
+import { EndHour, StartHour, WeekCellsHeight } from '#assets/data/constants'
 
 interface WeekViewProps {
   currentDate: Date

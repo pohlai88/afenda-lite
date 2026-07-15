@@ -7,12 +7,12 @@ import { useState } from 'react'
 import { MoreVertical, PencilIcon, Trash2Icon } from 'lucide-react'
 
 // Type Imports
-import type { AppRoleWithUsers } from '@/types/apps/role-types'
+import type { AppRoleWithUsers } from '#types/apps/role-types'
 
 // Component Imports
-import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { Button } from '#components/ui/button'
+import { Card, CardContent } from '#components/ui/card'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '#components/ui/dropdown-menu'
 import {
   Dialog,
   DialogContent,
@@ -20,7 +20,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle
-} from '@/components/ui/dialog'
+} from '#components/ui/dialog'
 
 // -------------------------------------------------------------------------------------------------
 

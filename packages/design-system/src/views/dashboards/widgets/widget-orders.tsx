@@ -2,17 +2,17 @@
 import { EllipsisVerticalIcon, UserCheckIcon, MapPinIcon } from 'lucide-react'
 
 // Component Imports
-import { Button } from '@/components/ui/button'
-import { Card, CardHeader } from '@/components/ui/card'
+import { Button } from '#components/ui/button'
+import { Card, CardHeader } from '#components/ui/card'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu'
-import { Separator } from '@/components/ui/separator'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+} from '#components/ui/dropdown-menu'
+import { Separator } from '#components/ui/separator'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '#components/ui/tabs'
 import {
   Timeline,
   TimelineContent,
@@ -20,7 +20,7 @@ import {
   TimelineHeading,
   TimelineItem,
   TimelineLine
-} from '@/components/ui/timeline'
+} from '#components/ui/timeline'
 
 const listItems = ['Share', 'Update', 'Refresh']
 

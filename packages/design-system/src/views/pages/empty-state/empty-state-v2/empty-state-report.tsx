@@ -1,6 +1,6 @@
 // Components Imports
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Card, CardContent, CardHeader, CardTitle } from '#components/ui/card'
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '#components/ui/select'
 
 const timeRangeItems = [
   { label: 'Last 12 months', value: 'last-12-months' },

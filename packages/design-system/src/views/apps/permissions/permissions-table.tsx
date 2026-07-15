@@ -4,15 +4,15 @@
 import { EyeIcon, PencilLineIcon, PlusIcon, Trash2Icon } from 'lucide-react'
 
 // Type Imports
-import type { AppRoleWithUsers, PermissionKey } from '@/types/apps/role-types'
+import type { AppRoleWithUsers, PermissionKey } from '#types/apps/role-types'
 
 // Component Imports
-import { Button } from '@/components/ui/button'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { Button } from '#components/ui/button'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '#components/ui/table'
+import { Tooltip, TooltipContent, TooltipTrigger } from '#components/ui/tooltip'
 
 // Util Imports
-import { cn } from '@/lib/utils'
+import { cn } from '#lib/utils'
 
 // -------------------------------------------------------------------------------------------------
 

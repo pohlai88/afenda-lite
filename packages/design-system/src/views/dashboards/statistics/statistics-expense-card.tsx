@@ -4,9 +4,9 @@
 import { Area, AreaChart } from 'recharts'
 
 // Component Imports
-import { Badge } from '@/components/ui/badge'
-import { Card, CardContent } from '@/components/ui/card'
-import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from '@/components/ui/chart'
+import { Badge } from '#components/ui/badge'
+import { Card, CardContent } from '#components/ui/card'
+import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from '#components/ui/chart'
 
 // Expense chart data
 const expenseChartData = [

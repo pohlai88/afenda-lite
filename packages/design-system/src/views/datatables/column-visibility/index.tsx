@@ -1,6 +1,6 @@
 // Component Imports
-import { Card } from '@/components/ui/card'
-import ColumnVisibilityDatatable, { type Item } from '@/views/datatables/column-visibility/datatable-column-visibilty'
+import { Card } from '#components/ui/card'
+import ColumnVisibilityDatatable, { type Item } from '#views/datatables/column-visibility/datatable-column-visibilty'
 
 const teamData: Item[] = [
   {

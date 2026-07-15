@@ -2,16 +2,16 @@
 import Link from 'next/link'
 
 // Component Import
-import Logo from '@/components/shared/Logo'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import Silk from '@/components/ui/bg-silk'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Separator } from '@/components/ui/separator'
-import RegisterV3Form from '@/views/pages/auth/register/register-v3/register-v3-form'
+import Logo from '#components/shared/Logo'
+import { Avatar, AvatarFallback, AvatarImage } from '#components/ui/avatar'
+import Silk from '#components/ui/bg-silk'
+import { Button } from '#components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '#components/ui/card'
+import { Separator } from '#components/ui/separator'
+import RegisterV3Form from '#views/pages/auth/register/register-v3/register-v3-form'
 
 // SVG Import
-import LogoVector from '@/assets/svg/logo-vector'
+import LogoVector from '#assets/svg/logo-vector'
 
 const avatars = [
   {

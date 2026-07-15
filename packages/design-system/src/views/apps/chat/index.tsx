@@ -9,11 +9,11 @@ import ChatWindow from './chat-window'
 import ProfileSheet from './dialogs/profile-sheet'
 
 // Hook Imports
-import { useChatApp } from '@/hooks/use-chat-app'
-import { useIsMobile } from '@/hooks/use-mobile'
+import { useChatApp } from '#hooks/use-chat-app'
+import { useIsMobile } from '#hooks/use-mobile'
 
 // Util Imports
-import { cn } from '@/lib/utils'
+import { cn } from '#lib/utils'
 
 const ChatApp = () => {
   // States

@@ -1,5 +1,5 @@
 // Component Imports
-import { Card, CardContent } from '@/components/ui/card'
+import { Card, CardContent } from '#components/ui/card'
 import BasicForm from './basic-form'
 import BasicFormWithIcon from './basic-form-with-icon'
 import FormWithTabs from './form-with-tabs'

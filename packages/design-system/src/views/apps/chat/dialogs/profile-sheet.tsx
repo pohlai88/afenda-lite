@@ -1,10 +1,10 @@
 'use client'
 
 // Type Imports
-import type { ChatUser, Conversation, OwnProfileUpdate } from '@/types/apps/chat-types'
+import type { ChatUser, Conversation, OwnProfileUpdate } from '#types/apps/chat-types'
 
 // Component Imports
-import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@/components/ui/sheet'
+import { Sheet, SheetContent, SheetDescription, SheetTitle } from '#components/ui/sheet'
 import ProfileContent from './profile-content'
 
 export type ProfileSheetProps = {

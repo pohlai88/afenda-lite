@@ -20,11 +20,11 @@ import {
 } from 'lucide-react'
 
 // Component Imports
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
-import { Avatar, AvatarFallback, AvatarGroup, AvatarGroupCount, AvatarImage } from '@/components/ui/avatar'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Checkbox } from '@/components/ui/checkbox'
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '#components/ui/accordion'
+import { Avatar, AvatarFallback, AvatarGroup, AvatarGroupCount, AvatarImage } from '#components/ui/avatar'
+import { Button } from '#components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#components/ui/card'
+import { Checkbox } from '#components/ui/checkbox'
 import {
   Dialog,
   DialogClose,
@@ -33,11 +33,11 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger
-} from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Progress } from '@/components/ui/progress'
-import { formatBytes, useFileUpload, type FileWithPreview } from '@/hooks/use-file-upload'
+} from '#components/ui/dialog'
+import { Input } from '#components/ui/input'
+import { Label } from '#components/ui/label'
+import { Progress } from '#components/ui/progress'
+import { formatBytes, useFileUpload, type FileWithPreview } from '#hooks/use-file-upload'
 
 type UploadProgress = {
   fileId: string

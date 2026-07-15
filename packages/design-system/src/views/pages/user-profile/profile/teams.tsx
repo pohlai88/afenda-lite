@@ -2,23 +2,23 @@
 import { EllipsisVerticalIcon } from 'lucide-react'
 
 // Component Imports
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { Avatar, AvatarFallback, AvatarImage } from '#components/ui/avatar'
+import { Badge } from '#components/ui/badge'
+import { Button } from '#components/ui/button'
+import { Card, CardContent, CardHeader } from '#components/ui/card'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu'
+} from '#components/ui/dropdown-menu'
 
 // Data Imports
-import { db } from '@/fake-db/pages/user-profile'
+import { db } from '#fake-db/pages/user-profile'
 
 // Util Imports
-import { cn } from '@/lib/utils'
+import { cn } from '#lib/utils'
 
 type TeamsProps = {
   className?: string

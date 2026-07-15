@@ -5,16 +5,16 @@ import { format } from 'date-fns'
 import type { DayButton } from 'react-day-picker'
 
 // Type Imports
-import type { events } from '@/types/apps/calendar-types'
+import type { events } from '#types/apps/calendar-types'
 
 // Component Imports
-import { CalendarDayButton } from '@/components/ui/calendar'
+import { CalendarDayButton } from '#components/ui/calendar'
 
 // Util Imports
-import { cn } from '@/lib/utils'
+import { cn } from '#lib/utils'
 
 // Data Imports
-import { EVENT_TYPE_DOT_CLASSES } from '@/assets/data/event-type-options'
+import { EVENT_TYPE_DOT_CLASSES } from '#assets/data/event-type-options'
 
 const MAX_VISIBLE_DOTS = 2
 

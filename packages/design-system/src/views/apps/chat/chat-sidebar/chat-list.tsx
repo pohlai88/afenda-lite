@@ -2,11 +2,11 @@
 import { ChevronDownIcon, MessageSquareIcon } from 'lucide-react'
 
 // Type Imports
-import type { ChatTab, ChatUser, Conversation } from '@/types/apps/chat-types'
+import type { ChatTab, ChatUser, Conversation } from '#types/apps/chat-types'
 
 // Component Imports
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
-import { ScrollArea } from '@/components/ui/scroll-area'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '#components/ui/collapsible'
+import { ScrollArea } from '#components/ui/scroll-area'
 import ChatListItem from './chat-list-item'
 
 export type ChatListProps = {

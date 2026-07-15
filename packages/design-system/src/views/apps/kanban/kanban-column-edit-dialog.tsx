@@ -4,7 +4,7 @@
 import { useState } from 'react'
 
 // Component Imports
-import { Button } from '@/components/ui/button'
+import { Button } from '#components/ui/button'
 import {
   Dialog,
   DialogContent,
@@ -12,12 +12,12 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle
-} from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+} from '#components/ui/dialog'
+import { Input } from '#components/ui/input'
+import { Label } from '#components/ui/label'
 
 // Util Imports
-import { isDuplicateColumnTitle } from '@/utils/kanban-utils'
+import { isDuplicateColumnTitle } from '#utils/kanban-utils'
 
 interface ColumnEditDialogProps {
   columnId: string

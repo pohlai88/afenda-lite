@@ -1,15 +1,15 @@
 // Component Imports
-import DataTableBasic from '@/views/datatables/basic'
-import DataTableProgress from '@/views/datatables/progress'
-import DataTableFilters from '@/views/datatables/filters'
-import DataTablePageSizeSelector from '@/views/datatables/page-size-selectior'
-import DataTableExportButtons from '@/views/datatables/export-button'
-import DataTableGraph from '@/views/datatables/graph'
-import DataTableColumnVisibility from '@/views/datatables/column-visibility'
-import DataTableDraggableColumns from '@/views/datatables/draggable-columns'
-import DataTableExpandableRows from '@/views/datatables/expandable-rows'
-import DataTablePinnableColumns from '@/views/datatables/pinnable-columns'
-import DataTableResizableColumns from '@/views/datatables/resizable-columns'
+import DataTableBasic from '#views/datatables/basic'
+import DataTableProgress from '#views/datatables/progress'
+import DataTableFilters from '#views/datatables/filters'
+import DataTablePageSizeSelector from '#views/datatables/page-size-selectior'
+import DataTableExportButtons from '#views/datatables/export-button'
+import DataTableGraph from '#views/datatables/graph'
+import DataTableColumnVisibility from '#views/datatables/column-visibility'
+import DataTableDraggableColumns from '#views/datatables/draggable-columns'
+import DataTableExpandableRows from '#views/datatables/expandable-rows'
+import DataTablePinnableColumns from '#views/datatables/pinnable-columns'
+import DataTableResizableColumns from '#views/datatables/resizable-columns'
 
 const DataTable = () => {
   return (

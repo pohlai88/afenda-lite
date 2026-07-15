@@ -2,21 +2,21 @@
 import { EllipsisVerticalIcon, MailIcon, UserPlus2Icon, UserRoundCheckIcon } from 'lucide-react'
 
 // Component Imports
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
+import { Avatar, AvatarFallback, AvatarImage } from '#components/ui/avatar'
+import { Badge } from '#components/ui/badge'
+import { Button } from '#components/ui/button'
+import { Card, CardContent } from '#components/ui/card'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu'
-import { Separator } from '@/components/ui/separator'
+} from '#components/ui/dropdown-menu'
+import { Separator } from '#components/ui/separator'
 
 // Data Imports
-import { db } from '@/fake-db/pages/user-profile'
+import { db } from '#fake-db/pages/user-profile'
 
 const { connectionCardActions, connectionCards } = db
 

@@ -5,20 +5,20 @@ import { Area, AreaChart, Bar, BarChart, XAxis } from 'recharts'
 import { ChartColumnBigIcon, EllipsisVerticalIcon, ArrowUpIcon, ArrowRightIcon, ArrowDownIcon } from 'lucide-react'
 
 // Component Imports
-import { Avatar, AvatarFallback, AvatarGroup, AvatarImage } from '@/components/ui/avatar'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
-import { type ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart'
+import { Avatar, AvatarFallback, AvatarGroup, AvatarImage } from '#components/ui/avatar'
+import { Badge } from '#components/ui/badge'
+import { Button } from '#components/ui/button'
+import { Card, CardContent, CardHeader } from '#components/ui/card'
+import { type ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '#components/ui/chart'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+} from '#components/ui/dropdown-menu'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '#components/ui/tabs'
+import { Tooltip, TooltipContent, TooltipTrigger } from '#components/ui/tooltip'
 
 const listItems = ['Share', 'Update', 'Refresh']
 

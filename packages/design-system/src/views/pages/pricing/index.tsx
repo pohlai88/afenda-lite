@@ -19,16 +19,16 @@ import {
 } from 'lucide-react'
 
 // Component Imports
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
-import { NumberTicker } from '@/components/ui/number-ticker'
-import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area'
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Avatar, AvatarFallback } from '#components/ui/avatar'
+import { Badge } from '#components/ui/badge'
+import { Button } from '#components/ui/button'
+import { Card, CardContent } from '#components/ui/card'
+import { NumberTicker } from '#components/ui/number-ticker'
+import { ScrollArea, ScrollBar } from '#components/ui/scroll-area'
+import { Tabs, TabsList, TabsTrigger } from '#components/ui/tabs'
 
 // Util Imports
-import { cn } from '@/lib/utils'
+import { cn } from '#lib/utils'
 
 import type {
   FeatureValue,
@@ -36,7 +36,7 @@ import type {
   PricingFeatureIconKey,
   PricingPlan,
   PricingPlanIconKey
-} from '@/types/pages/pricing-types'
+} from '#types/pages/pricing-types'
 
 type Plans = PricingPlan[]
 

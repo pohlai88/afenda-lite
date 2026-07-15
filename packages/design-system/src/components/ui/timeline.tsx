@@ -4,7 +4,7 @@ import { cva, type VariantProps } from 'class-variance-authority'
 
 import { CheckIcon, CircleIcon, XIcon } from 'lucide-react'
 
-import { cn } from '@/lib/utils'
+import { cn } from '#lib/utils'
 
 const timelineVariants = cva('grid', {
   variants: {

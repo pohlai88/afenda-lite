@@ -1,5 +1,5 @@
 // Component Imports
-import { Card, CardContent } from '@/components/ui/card'
+import { Card, CardContent } from '#components/ui/card'
 import RegistrationForm from './registration-form'
 import ValidationModesDemo from './validation-demos'
 import ValidationTypes from './validation-types'

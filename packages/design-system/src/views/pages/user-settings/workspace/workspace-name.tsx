@@ -7,13 +7,13 @@ import { useId, useMemo, useState } from 'react'
 import { CheckIcon, ChevronsUpDownIcon } from 'lucide-react'
 
 // Component Imports
-import { Button } from '@/components/ui/button'
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Button } from '#components/ui/button'
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '#components/ui/command'
+import { Input } from '#components/ui/input'
+import { Label } from '#components/ui/label'
+import { Popover, PopoverContent, PopoverTrigger } from '#components/ui/popover'
 
-import { cn } from '@/lib/utils'
+import { cn } from '#lib/utils'
 
 const WorkspaceName = () => {
   const id = useId()

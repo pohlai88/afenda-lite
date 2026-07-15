@@ -38,7 +38,7 @@ export function buildAgentPrompt(stage: ComposeStageDocument): string {
 		serializeStageDocument(stage),
 		"",
 		"Constraints:",
-		"- Edit sources under packages/ui and apps/web/features/playground only as needed.",
+		"- Edit sources under packages/design-system and apps/web/features/playground only as needed.",
 		"- Do not remount Storybook. Keep PLAYGROUND_* off Vercel production.",
 		`- Ready lab ids: ${listReadyLabs()
 			.map((lab) => lab.id)

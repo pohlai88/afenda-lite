@@ -20,26 +20,26 @@ import {
 } from 'lucide-react'
 
 // Type Imports
-import type { Email, ThreadMessage } from '@/types/apps/mail-types'
+import type { Email, ThreadMessage } from '#types/apps/mail-types'
 import type { MailDisplayProps } from './index'
 
 // Component Imports
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
-import { Separator } from '@/components/ui/separator'
-import { Switch } from '@/components/ui/switch'
-import { Textarea } from '@/components/ui/textarea'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { Avatar, AvatarFallback, AvatarImage } from '#components/ui/avatar'
+import { Badge } from '#components/ui/badge'
+import { Button } from '#components/ui/button'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '#components/ui/dropdown-menu'
+import { Separator } from '#components/ui/separator'
+import { Switch } from '#components/ui/switch'
+import { Textarea } from '#components/ui/textarea'
+import { Tooltip, TooltipContent, TooltipTrigger } from '#components/ui/tooltip'
 import { LabelManager } from './label-manager'
 import { MailThreadMessage } from './mail-thread-message'
 
 // Config Imports
-import { formatMailDate, getInitialsFromName, MAIL_CURRENT_USER, MAIL_LABEL_STYLES } from '@/configs/mailConfig'
+import { formatMailDate, getInitialsFromName, MAIL_CURRENT_USER, MAIL_LABEL_STYLES } from '#configs/mailConfig'
 
 // Util Imports
-import { cn } from '@/lib/utils'
+import { cn } from '#lib/utils'
 
 const LABEL_MANAGE_STATUSES = new Set<Email['status']>(['inbox', 'sent', 'archive'])
 

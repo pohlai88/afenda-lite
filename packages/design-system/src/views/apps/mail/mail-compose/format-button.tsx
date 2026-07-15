@@ -2,8 +2,8 @@
 import type { ReactNode } from 'react'
 
 // Component Imports
-import { Button } from '@/components/ui/button'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { Button } from '#components/ui/button'
+import { Tooltip, TooltipContent, TooltipTrigger } from '#components/ui/tooltip'
 
 export const FormatButton = ({
   label,

@@ -4,7 +4,7 @@
 import { useEffect, useMemo, useState } from 'react'
 
 // Util Imports
-import { cn } from '@/lib/utils'
+import { cn } from '#lib/utils'
 
 const getInitialActiveSet = (totalCells: number, activeSquares: number) => {
   const safeActiveSquares = Math.max(1, Math.min(activeSquares, totalCells))

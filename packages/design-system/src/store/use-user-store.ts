@@ -9,10 +9,10 @@ import type {
   UserSheetMode,
   UserSorting,
   UserStatus
-} from '@/types/apps/user-types'
+} from '#types/apps/user-types'
 
 // Data Imports
-import { users as seedUsers } from '@/fake-db/apps/users'
+import { users as seedUsers } from '#fake-db/apps/users'
 
 const DEFAULT_FILTERS: UserFilters = {
   role: 'all',

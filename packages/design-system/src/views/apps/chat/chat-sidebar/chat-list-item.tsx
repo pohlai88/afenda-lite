@@ -5,16 +5,16 @@ import { format, isToday, isYesterday } from 'date-fns'
 import { BellOffIcon, ImageIcon, PaperclipIcon, PinIcon } from 'lucide-react'
 
 // Type Imports
-import type { ChatUser, ChatUserStatus, Conversation } from '@/types/apps/chat-types'
+import type { ChatUser, ChatUserStatus, Conversation } from '#types/apps/chat-types'
 
 // Component Imports
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '#components/ui/avatar'
 
 // Config Imports
-import { getInitialsFromName } from '@/configs/mailConfig'
+import { getInitialsFromName } from '#configs/mailConfig'
 
 // Util Imports
-import { cn } from '@/lib/utils'
+import { cn } from '#lib/utils'
 
 export type ChatListItemProps = {
   conversation: Conversation

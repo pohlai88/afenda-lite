@@ -1,9 +1,9 @@
 // Component Imports
-import { Button } from '@/components/ui/button'
-import { CardContent } from '@/components/ui/card'
+import { Button } from '#components/ui/button'
+import { CardContent } from '#components/ui/card'
 
 // Type Imports
-import type { StepperType } from '@/views/forms/form-wizard/numbered/numbered-steps'
+import type { StepperType } from '#views/forms/form-wizard/numbered/numbered-steps'
 
 const InviteCompleteStep = ({ stepper }: { stepper: StepperType }) => {
   return (

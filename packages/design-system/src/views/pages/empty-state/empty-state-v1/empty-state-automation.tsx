@@ -7,11 +7,11 @@ import { useState } from 'react'
 import { ArrowUpRightIcon, CheckIcon, ChevronDownIcon, PaperclipIcon, PlusIcon, WorkflowIcon } from 'lucide-react'
 
 // Component imports
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
-import { Textarea } from '@/components/ui/textarea'
-import InitializePipelineDialog from '@/views/pages/empty-state/empty-state-v1/dialog-pipeline-configuration'
+import { Button } from '#components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#components/ui/card'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '#components/ui/dropdown-menu'
+import { Textarea } from '#components/ui/textarea'
+import InitializePipelineDialog from '#views/pages/empty-state/empty-state-v1/dialog-pipeline-configuration'
 
 const models = [
   {

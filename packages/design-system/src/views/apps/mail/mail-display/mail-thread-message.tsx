@@ -1,11 +1,11 @@
 // Type Imports
-import type { ThreadMessage } from '@/types/apps/mail-types'
+import type { ThreadMessage } from '#types/apps/mail-types'
 
 // Component Imports
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '#components/ui/avatar'
 
 // Config Imports
-import { formatMailDate, getInitialsFromName } from '@/configs/mailConfig'
+import { formatMailDate, getInitialsFromName } from '#configs/mailConfig'
 
 export const MailThreadMessage = ({
   message,

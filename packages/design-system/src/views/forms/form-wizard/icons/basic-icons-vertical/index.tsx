@@ -5,9 +5,9 @@ import * as Stepperize from '@stepperize/react'
 import { BoxIcon, PackageCheckIcon, SettingsIcon, RocketIcon, CheckCircleIcon } from 'lucide-react'
 
 // Component Imports
-import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Button } from '#components/ui/button'
+import { Card, CardContent } from '#components/ui/card'
+import { Avatar, AvatarFallback } from '#components/ui/avatar'
 import ProductTypeStep from './product-type-step'
 import ProductDetailsStep from './product-details-step'
 import PricingInventoryStep from './pricing-inventory-step'
@@ -15,7 +15,7 @@ import ReviewLaunchStep from './review-launch-step'
 import PublishedStep from './published-step'
 
 // Util Imports
-import { cn } from '@/lib/utils'
+import { cn } from '#lib/utils'
 
 const { useStepper } = Stepperize.defineStepper(
   {

@@ -9,17 +9,17 @@ import { create } from 'zustand'
 import { useShallow } from 'zustand/react/shallow'
 
 // Type Imports
-import type { CalendarEvent, CalendarView, events } from '@/types/apps/calendar-types'
-import { normalizeEventType } from '@/utils/calendar-utils'
+import type { CalendarEvent, CalendarView, events } from '#types/apps/calendar-types'
+import { normalizeEventType } from '#utils/calendar-utils'
 
 // Data Imports
-import { AgendaDaysToShow } from '@/assets/data/constants'
-import { ALL_EVENT_TYPES } from '@/assets/data/event-type-options'
-import { db } from '@/fake-db/apps/calendar'
+import { AgendaDaysToShow } from '#assets/data/constants'
+import { ALL_EVENT_TYPES } from '#assets/data/event-type-options'
+import { db } from '#fake-db/apps/calendar'
 
 /**
  * ! If you're using a database, you can uncomment the line below and use the server action to fetch the data
- * ! import { getCalendarData } from '@/app/server/actions'
+ * ! import { getCalendarData } from '#app/server/actions'
  */
 
 type CalendarData = {

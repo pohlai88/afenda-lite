@@ -2,9 +2,9 @@
 import { Trash2Icon } from 'lucide-react'
 
 // Component Imports
-import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
-import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Button } from '#components/ui/button'
+import { Card, CardContent } from '#components/ui/card'
+import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '#components/ui/dialog'
 
 const DangerZone = () => {
   return (

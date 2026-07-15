@@ -2,17 +2,17 @@
 import { create } from 'zustand'
 
 // Type imports
-import type { Contact, ContactNavItem, ContactView, CreateContactInput, Label } from '@/types/apps/contact-types'
+import type { Contact, ContactNavItem, ContactView, CreateContactInput, Label } from '#types/apps/contact-types'
 
 // Utils imports
-import { parsePhoneNumber } from '@/utils/contact-utils'
+import { parsePhoneNumber } from '#utils/contact-utils'
 
 // Data imports
-import { db } from '@/fake-db/apps/contact'
+import { db } from '#fake-db/apps/contact'
 
 /**
  * ! If you're using a database, you can uncomment the line below and use the server action to fetch the data
- * ! import { getContactData } from '@/app/server/actions'
+ * ! import { getContactData } from '#app/server/actions'
  */
 
 type ContactStatusFilter = 'all' | Contact['status']

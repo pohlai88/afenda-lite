@@ -8,12 +8,12 @@ import { format } from 'date-fns'
 import { CalendarIcon, ChevronDownIcon } from 'lucide-react'
 
 // Type Imports
-import type { Task } from '@/types/apps/kanban-types'
+import type { Task } from '#types/apps/kanban-types'
 
 // Component Imports
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Button } from '@/components/ui/button'
-import { Calendar } from '@/components/ui/calendar'
+import { Avatar, AvatarFallback, AvatarImage } from '#components/ui/avatar'
+import { Button } from '#components/ui/button'
+import { Calendar } from '#components/ui/calendar'
 import {
   Combobox,
   ComboboxChip,
@@ -25,7 +25,7 @@ import {
   ComboboxList,
   ComboboxValue,
   useComboboxAnchor
-} from '@/components/ui/combobox'
+} from '#components/ui/combobox'
 import {
   Dialog,
   DialogContent,
@@ -33,21 +33,21 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle
-} from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Textarea } from '@/components/ui/textarea'
+} from '#components/ui/dialog'
+import { Input } from '#components/ui/input'
+import { Label } from '#components/ui/label'
+import { Popover, PopoverContent, PopoverTrigger } from '#components/ui/popover'
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '#components/ui/select'
+import { Textarea } from '#components/ui/textarea'
 
 // Data Imports
-import { teamMembers } from '@/fake-db/apps/kanban'
+import { teamMembers } from '#fake-db/apps/kanban'
 
 // Store Imports
-import { resolveAssignees } from '@/store/use-kanban-store'
+import { resolveAssignees } from '#store/use-kanban-store'
 
 // Util Imports
-import { getAssigneeInitials, parseDueDate, priorityItems } from '@/utils/kanban-utils'
+import { getAssigneeInitials, parseDueDate, priorityItems } from '#utils/kanban-utils'
 
 interface TaskEditDialogProps {
   task: Task | null

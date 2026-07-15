@@ -2,12 +2,12 @@
 import type { ReactElement } from 'react'
 
 // Component Imports
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { Avatar, AvatarFallback } from '#components/ui/avatar'
+import { Badge } from '#components/ui/badge'
+import { Card, CardContent, CardHeader } from '#components/ui/card'
 
 // Util Imports
-import { cn } from '@/lib/utils'
+import { cn } from '#lib/utils'
 
 // Statistics card data type
 type StatisticsCardProps = {

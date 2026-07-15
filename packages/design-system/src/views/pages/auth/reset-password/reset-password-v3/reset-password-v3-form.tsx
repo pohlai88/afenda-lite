@@ -7,9 +7,9 @@ import { useState } from 'react'
 import { EyeIcon, EyeOffIcon } from 'lucide-react'
 
 // Component Imports
-import { Button } from '@/components/ui/button'
-import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
-import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group'
+import { Button } from '#components/ui/button'
+import { Field, FieldGroup, FieldLabel } from '#components/ui/field'
+import { InputGroup, InputGroupAddon, InputGroupInput } from '#components/ui/input-group'
 
 const ResetPasswordV3Form = () => {
   const [isPasswordVisible, setIsPasswordVisible] = useState(false)

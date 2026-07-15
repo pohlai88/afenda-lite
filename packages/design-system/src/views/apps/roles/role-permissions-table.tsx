@@ -5,11 +5,11 @@ import { useFieldArray } from 'react-hook-form'
 import type { Control, UseFormWatch } from 'react-hook-form'
 
 // Type Imports
-import type { RoleFormData } from '@/types/apps/role-types'
+import type { RoleFormData } from '#types/apps/role-types'
 
 // Component Imports
-import { Checkbox } from '@/components/ui/checkbox'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Checkbox } from '#components/ui/checkbox'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '#components/ui/table'
 
 // -------------------------------------------------------------------------------------------------
 

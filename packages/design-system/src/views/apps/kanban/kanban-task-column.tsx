@@ -7,16 +7,16 @@ import type { ComponentProps } from 'react'
 import { EllipsisVerticalIcon, MoveIcon, PencilIcon, Trash2Icon } from 'lucide-react'
 
 // Component Imports
-import { KanbanAddItem, KanbanColumn, KanbanColumnContent, KanbanColumnHandle } from '@/components/ui/kanban'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { KanbanAddItem, KanbanColumn, KanbanColumnContent, KanbanColumnHandle } from '#components/ui/kanban'
+import { Badge } from '#components/ui/badge'
+import { Button } from '#components/ui/button'
+import { Card, CardContent, CardHeader } from '#components/ui/card'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '#components/ui/dropdown-menu'
 import { TaskCard } from './kanban-task-card'
 
 // Util Imports
-import { cn } from '@/lib/utils'
-import type { Task } from '@/types/apps/kanban-types'
+import { cn } from '#lib/utils'
+import type { Task } from '#types/apps/kanban-types'
 
 interface TaskColumnProps extends Omit<ComponentProps<typeof KanbanColumn>, 'children'> {
   title: string

@@ -1,4 +1,4 @@
-import type { events } from '@/types/apps/calendar-types'
+import type { events } from '#types/apps/calendar-types'
 
 export type EventTypeOption = {
   value: events

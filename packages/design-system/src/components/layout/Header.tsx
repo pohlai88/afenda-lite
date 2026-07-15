@@ -4,21 +4,21 @@
 import { ActivityIcon, BellIcon } from 'lucide-react'
 
 // Component Imports
-import ModeToggle from '@/components/layout/ModeToggle'
-import ActivityDialog from '@/components/shared/ActivityDialog'
-import NotificationDropdown from '@/components/shared/NotificationDropdown'
-import ProfileDropdown from '@/components/shared/ProfileDropdown'
-import { Button } from '@/components/ui/button'
-import { Separator } from '@/components/ui/separator'
-import { SidebarTrigger, useSidebar } from '@/components/ui/sidebar'
+import ModeToggle from '#components/layout/ModeToggle'
+import ActivityDialog from '#components/shared/ActivityDialog'
+import NotificationDropdown from '#components/shared/NotificationDropdown'
+import ProfileDropdown from '#components/shared/ProfileDropdown'
+import { Button } from '#components/ui/button'
+import { Separator } from '#components/ui/separator'
+import { SidebarTrigger, useSidebar } from '#components/ui/sidebar'
 import CommandMenu from './CommandMenu'
 import ThemeCustomizer from './ThemeCustomizer'
 
 // Hook Imports
-import { useSettings } from '@/hooks/use-settings'
+import { useSettings } from '#hooks/use-settings'
 
 // Util Imports
-import { cn } from '@/lib/utils'
+import { cn } from '#lib/utils'
 
 const Header = () => {
   const { settings, updateSettings } = useSettings()

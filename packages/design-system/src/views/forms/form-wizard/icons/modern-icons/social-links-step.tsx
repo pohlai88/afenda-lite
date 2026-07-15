@@ -2,9 +2,9 @@
 import { ArrowLeftIcon, ArrowRightIcon } from 'lucide-react'
 
 // Component Imports
-import { Button } from '@/components/ui/button'
-import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group'
-import { Label } from '@/components/ui/label'
+import { Button } from '#components/ui/button'
+import { InputGroup, InputGroupAddon, InputGroupInput } from '#components/ui/input-group'
+import { Label } from '#components/ui/label'
 
 // Type Imports
 import type { StepperType } from './index'

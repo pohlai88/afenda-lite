@@ -37,10 +37,10 @@ import {
   EllipsisVerticalIcon
 } from 'lucide-react'
 
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { type ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart'
-import { Checkbox } from '@/components/ui/checkbox'
+import { Badge } from '#components/ui/badge'
+import { Button } from '#components/ui/button'
+import { type ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '#components/ui/chart'
+import { Checkbox } from '#components/ui/checkbox'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -48,17 +48,17 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu'
-import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group'
-import { Label } from '@/components/ui/label'
-import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem } from '@/components/ui/pagination'
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+} from '#components/ui/dropdown-menu'
+import { InputGroup, InputGroupAddon, InputGroupInput } from '#components/ui/input-group'
+import { Label } from '#components/ui/label'
+import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem } from '#components/ui/pagination'
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '#components/ui/select'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '#components/ui/table'
+import { Tooltip, TooltipContent, TooltipTrigger } from '#components/ui/tooltip'
 
-import { usePagination } from '@/hooks/use-pagination'
+import { usePagination } from '#hooks/use-pagination'
 
-import { cn } from '@/lib/utils'
+import { cn } from '#lib/utils'
 
 declare module '@tanstack/react-table' {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

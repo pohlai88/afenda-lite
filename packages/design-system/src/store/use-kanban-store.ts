@@ -1,11 +1,11 @@
 import { create } from 'zustand'
 
-import { initialColumns, teamMembers } from '@/fake-db/apps/kanban'
-import type { Assignee, Task } from '@/types/apps/kanban-types'
+import { initialColumns, teamMembers } from '#fake-db/apps/kanban'
+import type { Assignee, Task } from '#types/apps/kanban-types'
 
 /**
  * ! If you're using a database, you can uncomment the line below and use the server action to fetch the data
- * ! import { getKanbanData } from '@/app/server/actions'
+ * ! import { getKanbanData } from '#app/server/actions'
  */
 
 const INITIAL_COLUMN_TITLES: Record<string, string> = {

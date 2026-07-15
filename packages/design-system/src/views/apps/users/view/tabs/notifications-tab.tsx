@@ -7,13 +7,13 @@ import { useState } from 'react'
 import { MailIcon, MonitorIcon, SmartphoneIcon } from 'lucide-react'
 
 // Type Imports
-import type { AppUser, UserNotificationSetting } from '@/types/apps/user-types'
+import type { AppUser, UserNotificationSetting } from '#types/apps/user-types'
 
 // Component Imports
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Switch } from '@/components/ui/switch'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Button } from '#components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '#components/ui/card'
+import { Switch } from '#components/ui/switch'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '#components/ui/table'
 
 type NotificationChannel = keyof Pick<UserNotificationSetting, 'email' | 'browser' | 'app'>
 

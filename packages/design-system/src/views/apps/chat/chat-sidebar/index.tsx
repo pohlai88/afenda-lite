@@ -4,12 +4,12 @@
 import { SearchIcon } from 'lucide-react'
 
 // Type Imports
-import type { ChatTab, ChatTabCounts, ChatUser, Conversation } from '@/types/apps/chat-types'
+import type { ChatTab, ChatTabCounts, ChatUser, Conversation } from '#types/apps/chat-types'
 
 // Component Imports
-import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group'
-import { Separator } from '@/components/ui/separator'
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { InputGroup, InputGroupAddon, InputGroupInput } from '#components/ui/input-group'
+import { Separator } from '#components/ui/separator'
+import { Tabs, TabsList, TabsTrigger } from '#components/ui/tabs'
 import ChatList from './chat-list'
 import ChatSidebarHeader from './chat-sidebar-header'
 

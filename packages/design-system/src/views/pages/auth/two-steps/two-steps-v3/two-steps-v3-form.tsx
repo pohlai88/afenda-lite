@@ -1,9 +1,9 @@
 'use client'
 
 // Component Imports
-import { Button } from '@/components/ui/button'
-import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
-import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp'
+import { Button } from '#components/ui/button'
+import { Field, FieldGroup, FieldLabel } from '#components/ui/field'
+import { InputOTP, InputOTPGroup, InputOTPSlot } from '#components/ui/input-otp'
 
 const TwoStepsV3Form = () => {
   return (

@@ -1,12 +1,17 @@
-// Server Actions Imports
-import { getIntegrationsData, getMembersData, getSessionsData } from '@/app/server/actions'
+// Data Imports
+import { db } from '#fake-db/pages/user-settings'
 
-import UserSettingsTabs from '@/views/pages/user-settings/user-settings-tabs'
+import UserSettingsTabs from '#views/pages/user-settings/user-settings-tabs'
 
-const UserSettings = async () => {
-  const membersData = await getMembersData()
-  const sessionsData = await getSessionsData()
-  const integrationsData = await getIntegrationsData()
+/**
+ * ! If you're using a database, you can uncomment the line below and use the server action to fetch the data
+ * ! import { getIntegrationsData, getMembersData, getSessionsData } from '#app/server/actions'
+ */
+
+const UserSettings = () => {
+  const membersData = { members: db.members, pending: db.pending }
+  const sessionsData = db.sessions
+  const integrationsData = db.integrations
 
   return (
     <div>

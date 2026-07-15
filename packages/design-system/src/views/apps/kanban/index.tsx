@@ -4,18 +4,18 @@
 import { useState } from 'react'
 
 // Type Imports
-import type { Task } from '@/types/apps/kanban-types'
+import type { Task } from '#types/apps/kanban-types'
 
 // Component Imports
-import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area'
-import { Kanban, KanbanAddColumn, KanbanBoard, KanbanOverlay } from '@/components/ui/kanban'
+import { ScrollArea, ScrollBar } from '#components/ui/scroll-area'
+import { Kanban, KanbanAddColumn, KanbanBoard, KanbanOverlay } from '#components/ui/kanban'
 import { ColumnEditDialog } from './kanban-column-edit-dialog'
 import { TaskCard } from './kanban-task-card'
 import { TaskColumn } from './kanban-task-column'
 import { TaskEditDialog } from './kanban-task-edit-dialog'
 
 // Store Imports
-import { useKanbanStore } from '@/store/use-kanban-store'
+import { useKanbanStore } from '#store/use-kanban-store'
 
 export function KanbanView() {
   const columns = useKanbanStore(s => s.columns)

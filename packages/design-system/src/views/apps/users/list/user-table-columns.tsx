@@ -24,13 +24,13 @@ import {
 } from 'lucide-react'
 
 // Type Imports
-import type { AppUser, UserBilling, UserRole, UserStatus } from '@/types/apps/user-types'
+import type { AppUser, UserBilling, UserRole, UserStatus } from '#types/apps/user-types'
 
 // Component Imports
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Checkbox } from '@/components/ui/checkbox'
+import { Avatar, AvatarFallback, AvatarImage } from '#components/ui/avatar'
+import { Badge } from '#components/ui/badge'
+import { Button } from '#components/ui/button'
+import { Checkbox } from '#components/ui/checkbox'
 import {
   Dialog,
   DialogContent,
@@ -38,7 +38,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle
-} from '@/components/ui/dialog'
+} from '#components/ui/dialog'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -46,14 +46,14 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+} from '#components/ui/dropdown-menu'
+import { Tooltip, TooltipContent, TooltipTrigger } from '#components/ui/tooltip'
 
 // Config Imports
-import { getInitialsFromName } from '@/configs/mailConfig'
+import { getInitialsFromName } from '#configs/mailConfig'
 
 // Util Imports
-import { cn } from '@/lib/utils'
+import { cn } from '#lib/utils'
 
 const ROLE_ICONS: Record<UserRole, ReactNode> = {
   Admin: <UserRoundIcon className='size-4 text-green-600 dark:text-green-400' />,

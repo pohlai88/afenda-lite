@@ -1,8 +1,8 @@
 // Type Imports
-import type { AppUser } from '@/types/apps/user-types'
+import type { AppUser } from '#types/apps/user-types'
 
 // Component Imports
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '#components/ui/tabs'
 import { AccountTab } from './tabs/account-tab'
 import { BillingTab } from './tabs/billing-tab'
 import { ConnectionsTab } from './tabs/connections-tab'

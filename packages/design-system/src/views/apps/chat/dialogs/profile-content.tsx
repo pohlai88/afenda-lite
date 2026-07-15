@@ -25,22 +25,22 @@ import type {
   Conversation,
   OwnProfileFormState,
   OwnProfileUpdate
-} from '@/types/apps/chat-types'
+} from '#types/apps/chat-types'
 
 // Component Imports
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Separator } from '@/components/ui/separator'
-import { Textarea } from '@/components/ui/textarea'
+import { Avatar, AvatarFallback, AvatarImage } from '#components/ui/avatar'
+import { Badge } from '#components/ui/badge'
+import { Button } from '#components/ui/button'
+import { Input } from '#components/ui/input'
+import { Label } from '#components/ui/label'
+import { Separator } from '#components/ui/separator'
+import { Textarea } from '#components/ui/textarea'
 
 // Config Imports
-import { getInitialsFromName } from '@/configs/mailConfig'
+import { getInitialsFromName } from '#configs/mailConfig'
 
 // Util Imports
-import { cn } from '@/lib/utils'
+import { cn } from '#lib/utils'
 
 export type ProfileContentProps = {
   user: ChatUser

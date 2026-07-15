@@ -1,5 +1,5 @@
 // Component Imports
-import { Card } from '@/components/ui/card'
+import { Card } from '#components/ui/card'
 import ResizableColumnsDatatable, { type Item } from './datatable-resizable-columns'
 
 const supportTickets: Item[] = [

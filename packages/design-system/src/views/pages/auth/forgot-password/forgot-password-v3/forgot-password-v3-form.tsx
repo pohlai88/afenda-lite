@@ -1,9 +1,9 @@
 'use client'
 
 // Component Import
-import { Button } from '@/components/ui/button'
-import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
-import { Input } from '@/components/ui/input'
+import { Button } from '#components/ui/button'
+import { Field, FieldGroup, FieldLabel } from '#components/ui/field'
+import { Input } from '#components/ui/input'
 
 const ForgotPasswordV3Form = () => {
   return (

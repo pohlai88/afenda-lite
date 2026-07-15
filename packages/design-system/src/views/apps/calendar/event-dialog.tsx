@@ -8,12 +8,12 @@ import { format, isBefore } from 'date-fns'
 import { CalendarIcon, Trash2Icon } from 'lucide-react'
 
 // Type Imports
-import type { CalendarEvent, events } from '@/types/apps/calendar-types'
+import type { CalendarEvent, events } from '#types/apps/calendar-types'
 
 // Component Imports
-import { Button } from '@/components/ui/button'
-import { Calendar } from '@/components/ui/calendar'
-import { Checkbox } from '@/components/ui/checkbox'
+import { Button } from '#components/ui/button'
+import { Calendar } from '#components/ui/calendar'
+import { Checkbox } from '#components/ui/checkbox'
 import {
   Dialog,
   DialogContent,
@@ -21,19 +21,19 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle
-} from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Textarea } from '@/components/ui/textarea'
+} from '#components/ui/dialog'
+import { Input } from '#components/ui/input'
+import { Label } from '#components/ui/label'
+import { Popover, PopoverContent, PopoverTrigger } from '#components/ui/popover'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '#components/ui/select'
+import { Textarea } from '#components/ui/textarea'
 
 // Util Imports
-import { cn } from '@/lib/utils'
+import { cn } from '#lib/utils'
 
 // Data Imports
-import { DefaultEndHour, DefaultStartHour, EndHour, StartHour } from '@/assets/data/constants'
-import { EVENT_TYPE_OPTIONS } from '@/assets/data/event-type-options'
+import { DefaultEndHour, DefaultStartHour, EndHour, StartHour } from '#assets/data/constants'
+import { EVENT_TYPE_OPTIONS } from '#assets/data/event-type-options'
 
 interface EventDialogProps {
   event: CalendarEvent | null

@@ -2,11 +2,11 @@
 import { BriefcaseBusinessIcon, CalendarDaysIcon, MapPinIcon, UserRoundCheckIcon } from 'lucide-react'
 
 // Component Imports
-import { Avatar, AvatarImage } from '@/components/ui/avatar'
-import { BackgroundRippleEffect } from '@/components/ui/background-ripple'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
-import UserProfileTabs from '@/views/pages/user-profile/user-profile-tabs'
+import { Avatar, AvatarImage } from '#components/ui/avatar'
+import { BackgroundRippleEffect } from '#components/ui/background-ripple'
+import { Button } from '#components/ui/button'
+import { Card, CardContent } from '#components/ui/card'
+import UserProfileTabs from '#views/pages/user-profile/user-profile-tabs'
 
 const UserProfile = () => {
   return (

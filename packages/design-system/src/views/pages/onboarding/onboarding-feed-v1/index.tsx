@@ -10,16 +10,16 @@ import Link from 'next/link'
 import { ChevronLeftIcon } from 'lucide-react'
 
 // Component Imports
-import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
-import PersonalInfoStep from '@/views/pages/onboarding/onboarding-feed-v1/step-01-personal-info'
-import GoalsStep from '@/views/pages/onboarding/onboarding-feed-v1/step-02-goals'
-import WorkspaceStep from '@/views/pages/onboarding/onboarding-feed-v1/step-03-workspace'
-import NotificationsStep from '@/views/pages/onboarding/onboarding-feed-v1/step-04-notifications'
-import CompleteStep from '@/views/pages/onboarding/onboarding-feed-v1/step-05-complete'
+import { Button } from '#components/ui/button'
+import { Card, CardContent } from '#components/ui/card'
+import PersonalInfoStep from '#views/pages/onboarding/onboarding-feed-v1/step-01-personal-info'
+import GoalsStep from '#views/pages/onboarding/onboarding-feed-v1/step-02-goals'
+import WorkspaceStep from '#views/pages/onboarding/onboarding-feed-v1/step-03-workspace'
+import NotificationsStep from '#views/pages/onboarding/onboarding-feed-v1/step-04-notifications'
+import CompleteStep from '#views/pages/onboarding/onboarding-feed-v1/step-05-complete'
 
 // Util Imports
-import { cn } from '@/lib/utils'
+import { cn } from '#lib/utils'
 
 const { useStepper } = Stepperize.defineStepper(
   {

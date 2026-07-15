@@ -7,11 +7,11 @@ import { useState } from 'react'
 import { EllipsisVerticalIcon, MailIcon, PlusIcon } from 'lucide-react'
 
 // SVG Import
-import BadgeCheck from '@/assets/svg/badge-check'
+import BadgeCheck from '#assets/svg/badge-check'
 
 // Component Imports
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Button } from '@/components/ui/button'
+import { Avatar, AvatarFallback, AvatarImage } from '#components/ui/avatar'
+import { Button } from '#components/ui/button'
 import {
   Dialog,
   DialogClose,
@@ -20,20 +20,20 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger
-} from '@/components/ui/dialog'
+} from '#components/ui/dialog'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu'
-import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group'
-import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Separator } from '@/components/ui/separator'
+} from '#components/ui/dropdown-menu'
+import { InputGroup, InputGroupAddon, InputGroupInput } from '#components/ui/input-group'
+import { Label } from '#components/ui/label'
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '#components/ui/select'
+import { Separator } from '#components/ui/separator'
 
-import type { MembersData } from '@/types/pages/user-settings-types'
+import type { MembersData } from '#types/pages/user-settings-types'
 
 type MembersProps = {
   membersData: MembersData

@@ -4,10 +4,10 @@
 import { useCallback, useMemo, useState } from 'react'
 
 // Type Imports
-import type { UserFormData } from '@/types/apps/user-types'
+import type { UserFormData } from '#types/apps/user-types'
 
 // Store Imports
-import { useUserStore } from '@/store/use-user-store'
+import { useUserStore } from '#store/use-user-store'
 
 export function useUserViewApp(userId: string) {
   const users = useUserStore(state => state.users)

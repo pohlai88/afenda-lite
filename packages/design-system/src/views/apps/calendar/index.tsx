@@ -9,21 +9,21 @@ import { CalendarCheckIcon, ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon, 
 import { toast } from 'sonner'
 
 // Type Imports
-import type { CalendarEvent, CalendarView, events } from '@/types/apps/calendar-types'
+import type { CalendarEvent, CalendarView, events } from '#types/apps/calendar-types'
 
 // Component Imports
-import { Button } from '@/components/ui/button'
-import { Calendar } from '@/components/ui/calendar'
-import { Checkbox } from '@/components/ui/checkbox'
+import { Button } from '#components/ui/button'
+import { Calendar } from '#components/ui/calendar'
+import { Checkbox } from '#components/ui/checkbox'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuShortcut,
   DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu'
-import { Label } from '@/components/ui/label'
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
+} from '#components/ui/dropdown-menu'
+import { Label } from '#components/ui/label'
+import { Sheet, SheetContent, SheetTrigger } from '#components/ui/sheet'
 import { AgendaView } from './agenda-view'
 import { CalendarDndProvider } from './calendar-dnd-context'
 import { DayView } from './day-view'
@@ -41,15 +41,15 @@ import {
   useEventDialog,
   useFilteredEvents,
   useSecondaryCalendar
-} from '@/store/use-calendar-store'
+} from '#store/use-calendar-store'
 
 // Util Imports
-import { cn } from '@/lib/utils'
-import { normalizeEventType } from '@/utils/calendar-utils'
+import { cn } from '#lib/utils'
+import { normalizeEventType } from '#utils/calendar-utils'
 
 // Data Imports
-import { AgendaDaysToShow, EventGap, EventHeight, WeekCellsHeight } from '@/assets/data/constants'
-import { EVENT_TYPE_OPTIONS } from '@/assets/data/event-type-options'
+import { AgendaDaysToShow, EventGap, EventHeight, WeekCellsHeight } from '#assets/data/constants'
+import { EVENT_TYPE_OPTIONS } from '#assets/data/event-type-options'
 
 export interface EventCalendarProps {
   className?: string

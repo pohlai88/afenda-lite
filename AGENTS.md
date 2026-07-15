@@ -78,6 +78,7 @@ Do not start skill loads or MCP calls before the PREFLIGHT block is in the visib
 | [ARCH-022](docs/architecture/ARCH-022-system-overview.md) | Living monorepo / system overview |
 | [ARCH-023](docs/architecture/ARCH-023-multi-tenancy.md) | IAM · tenancy · Decision lock |
 | [ARCH-024](docs/architecture/ARCH-024-package-boundaries.md)…[ARCH-027](docs/architecture/ARCH-027-env-model.md) | Packages · data · auth · env |
+| [ARCH-024 § `@afenda/ui`](docs/architecture/ARCH-024-package-boundaries.md#afendaui) | `@afenda/ui/playground` gateway subpath vs `/playground` Next.js routes — one canonical paragraph, do not re-explain elsewhere |
 | [ARCH-028](docs/architecture/ARCH-028-implementation-slices.md) | Scaffold slices (closed) · anti-contamination |
 | [GUIDE-018](docs/guides/GUIDE-018-fullstack-e2e-integration-program.md) | Post-scaffold program roadmap (Draft) |
 | [ARCH-031](docs/architecture/ARCH-031-technology-stack-catalogue.md) | Stack discovery |

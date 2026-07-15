@@ -7,10 +7,10 @@ import { useEffect, useState } from 'react'
 import { ArrowUpIcon } from 'lucide-react'
 
 // Component Imports
-import { Button } from '@/components/ui/button'
+import { Button } from '#components/ui/button'
 
 // Util Imports
-import { cn } from '@/lib/utils'
+import { cn } from '#lib/utils'
 
 const ScrollToTop = () => {
   // States

@@ -8,16 +8,16 @@ import * as Stepperize from '@stepperize/react'
 import { HomeIcon, UserIcon, LinkIcon, CheckCircleIcon, ChevronRightIcon } from 'lucide-react'
 
 // Component Imports
-import { Button } from '@/components/ui/button'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area'
+import { Button } from '#components/ui/button'
+import { Avatar, AvatarFallback } from '#components/ui/avatar'
+import { ScrollArea, ScrollBar } from '#components/ui/scroll-area'
 import AccountDetailsStep from './account-details-step'
 import PersonalInfoStep from './personal-info-step'
 import BillingStep from './billing-step'
 import CompleteStep from './complete-step'
 
 // Util Imports
-import { cn } from '@/lib/utils'
+import { cn } from '#lib/utils'
 
 const { useStepper } = Stepperize.defineStepper(
   {

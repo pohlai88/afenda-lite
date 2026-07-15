@@ -1,5 +1,5 @@
 // Component Imports
-import { Card, CardContent } from '@/components/ui/card'
+import { Card, CardContent } from '#components/ui/card'
 import FormWizardBasicIconsHorizontal from './basic-icons-horizontal'
 import FormWizardBasicIconsVertical from './basic-icons-vertical'
 import FormWizardModernIcons from './modern-icons'

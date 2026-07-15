@@ -5,20 +5,20 @@ import { Bar, BarChart, CartesianGrid, LabelList, XAxis, YAxis } from 'recharts'
 import { SmartphoneIcon, LaptopMinimalIcon, CreditCardIcon, PencilRulerIcon, EllipsisVerticalIcon } from 'lucide-react'
 
 // Component Imports
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { type ChartConfig, ChartContainer, ChartTooltip } from '@/components/ui/chart'
+import { Avatar, AvatarFallback } from '#components/ui/avatar'
+import { Button } from '#components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#components/ui/card'
+import { type ChartConfig, ChartContainer, ChartTooltip } from '#components/ui/chart'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu'
+} from '#components/ui/dropdown-menu'
 
 // Util Imports
-import { cn } from '@/lib/utils'
+import { cn } from '#lib/utils'
 
 const listItems = ['Share', 'Update', 'Refresh']
 

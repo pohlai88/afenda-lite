@@ -5,15 +5,15 @@ import Link from 'next/link'
 import { ChevronLeftIcon } from 'lucide-react'
 
 // Component Imports
-import Logo from '@/components/shared/Logo'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import Silk from '@/components/ui/bg-silk'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import ForgotPasswordV3Form from '@/views/pages/auth/forgot-password/forgot-password-v3/forgot-password-v3-form'
+import Logo from '#components/shared/Logo'
+import { Avatar, AvatarFallback, AvatarImage } from '#components/ui/avatar'
+import Silk from '#components/ui/bg-silk'
+import { Button } from '#components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '#components/ui/card'
+import ForgotPasswordV3Form from '#views/pages/auth/forgot-password/forgot-password-v3/forgot-password-v3-form'
 
 // SVG Import
-import LogoVector from '@/assets/svg/logo-vector'
+import LogoVector from '#assets/svg/logo-vector'
 
 const avatars = [
   {

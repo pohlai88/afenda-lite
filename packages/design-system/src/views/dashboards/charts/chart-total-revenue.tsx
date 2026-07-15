@@ -5,9 +5,9 @@ import { Bar, BarChart, CartesianGrid, Label, Pie, PieChart, XAxis, YAxis } from
 import { CircleDollarSignIcon, WalletIcon, EllipsisVerticalIcon } from 'lucide-react'
 
 // Component Imports
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { Avatar, AvatarFallback } from '#components/ui/avatar'
+import { Button } from '#components/ui/button'
+import { Card, CardContent, CardHeader } from '#components/ui/card'
 import {
   type ChartConfig,
   ChartContainer,
@@ -15,18 +15,18 @@ import {
   ChartLegendContent,
   ChartTooltip,
   ChartTooltipContent
-} from '@/components/ui/chart'
+} from '#components/ui/chart'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu'
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+} from '#components/ui/dropdown-menu'
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '#components/ui/select'
 
 // Util Imports
-import { cn } from '@/lib/utils'
+import { cn } from '#lib/utils'
 
 const listItems = ['Share', 'Update', 'Refresh']
 

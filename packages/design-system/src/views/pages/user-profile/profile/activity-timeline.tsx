@@ -2,12 +2,12 @@
 import { ChartNoAxesColumnIncreasingIcon, FileIcon, FileSpreadsheetIcon, FileTextIcon, ImageIcon } from 'lucide-react'
 
 // Type Imports
-import type { ActivityFileType, UserActivityItem } from '@/types/pages/user-profile-types'
+import type { ActivityFileType, UserActivityItem } from '#types/pages/user-profile-types'
 
 // Component Imports
-import { Avatar, AvatarFallback, AvatarGroup, AvatarGroupCount, AvatarImage } from '@/components/ui/avatar'
-import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { Avatar, AvatarFallback, AvatarGroup, AvatarGroupCount, AvatarImage } from '#components/ui/avatar'
+import { Badge } from '#components/ui/badge'
+import { Card, CardContent, CardHeader } from '#components/ui/card'
 import {
   Timeline,
   TimelineContent,
@@ -15,10 +15,10 @@ import {
   TimelineHeading,
   TimelineItem,
   TimelineLine
-} from '@/components/ui/timeline'
+} from '#components/ui/timeline'
 
 // Util Imports
-import { cn } from '@/lib/utils'
+import { cn } from '#lib/utils'
 
 const ATTACHMENT_FILE_ICONS: Record<ActivityFileType, typeof FileTextIcon> = {
   pdf: FileTextIcon,

@@ -4,7 +4,7 @@
 import type { ReactNode } from 'react'
 
 // Util Imports
-import { cn } from '@/lib/utils'
+import { cn } from '#lib/utils'
 
 const FORMAT_TOKEN_REGEX = /(\*\*[^*]+\*\*|\[[^\]]+\]\([^)]+\))/g
 

@@ -1,16 +1,16 @@
 'use client'
 
 // Component Imports
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { AddEditUserSheet } from '@/views/apps/users/dialogs/add-edit-user-sheet'
-import { UserPagination } from '@/views/apps/users/list/user-pagination'
-import { UserTable } from '@/views/apps/users/list/user-table'
-import { UserTableFilters } from '@/views/apps/users/list/user-table-filters'
-import { UserTableToolbar } from '@/views/apps/users/list/user-table-toolbar'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#components/ui/card'
+import { AddEditUserSheet } from '#views/apps/users/dialogs/add-edit-user-sheet'
+import { UserPagination } from '#views/apps/users/list/user-pagination'
+import { UserTable } from '#views/apps/users/list/user-table'
+import { UserTableFilters } from '#views/apps/users/list/user-table-filters'
+import { UserTableToolbar } from '#views/apps/users/list/user-table-toolbar'
 
 // Hook Imports
-import { useRolesApp } from '@/hooks/use-roles-app'
-import { useUserApp } from '@/hooks/use-user-app'
+import { useRolesApp } from '#hooks/use-roles-app'
+import { useUserApp } from '#hooks/use-user-app'
 
 // Component Imports
 import { RolePermissionDialog } from './role-permission-dialog'

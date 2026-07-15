@@ -4,9 +4,9 @@
 import * as Stepperize from '@stepperize/react'
 
 // Component Imports
-import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Button } from '#components/ui/button'
+import { Card, CardContent } from '#components/ui/card'
+import { Avatar, AvatarFallback } from '#components/ui/avatar'
 import UserDetailsStep from './user-details-step'
 import RoleAccessStep from './role-access-step'
 import PermissionsStep from './permissions-step'
@@ -14,7 +14,7 @@ import ReviewStep from './review-step'
 import InviteCompleteStep from './invite-complete-step'
 
 // Util Imports
-import { cn } from '@/lib/utils'
+import { cn } from '#lib/utils'
 
 const { useStepper } = Stepperize.defineStepper(
   {

@@ -8,13 +8,13 @@ import { useTheme } from 'next-themes'
 import { MoonStarIcon, SunIcon } from 'lucide-react'
 
 // Type Imports
-import type { Mode } from '@/contexts/settingsContext'
+import type { Mode } from '#contexts/settingsContext'
 
 // Component Imports
-import { Button } from '@/components/ui/button'
+import { Button } from '#components/ui/button'
 
 // Hook Imports
-import { useSettings } from '@/hooks/use-settings'
+import { useSettings } from '#hooks/use-settings'
 
 const ModeToggle = () => {
   // Hooks

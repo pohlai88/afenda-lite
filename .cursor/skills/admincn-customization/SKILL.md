@@ -112,6 +112,8 @@ Local AdminCN interaction harness (not Storybook, not Studio Builder embed):
 
 **Agent rule:** for singleshot UI review, write a Canvas brief (props/states/acceptance + lab URL), then iterate against the live lab. Do not claim Canvas can render AdminCN. Registry SSOT: `apps/web/features/playground/lab-registry.ts` (curated rows only).
 
+These `/playground` routes are distinct from the `@afenda/ui/playground` package subpath (the sole gateway product code imports UI primitives through) — see [ARCH-024 § `@afenda/ui`](../../../docs/architecture/ARCH-024-package-boundaries.md#afendaui) for the canonical disambiguation.
+
 ## Refine checklist (per page)
 
 Full gate: [ARCH-019](../../../docs/architecture/ARCH-019-admincn-frontend-preflight.md).

@@ -2,10 +2,10 @@
 import { InboxIcon } from 'lucide-react'
 
 // Type Imports
-import type { Email } from '@/types/apps/mail-types'
+import type { Email } from '#types/apps/mail-types'
 
 // Component Imports
-import { ScrollArea } from '@/components/ui/scroll-area'
+import { ScrollArea } from '#components/ui/scroll-area'
 import MailItem from './mail-item'
 
 interface MailListProps {

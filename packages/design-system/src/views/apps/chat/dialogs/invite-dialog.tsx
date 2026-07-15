@@ -7,16 +7,16 @@ import { useEffect, useMemo, useState } from 'react'
 import { CheckIcon, CopyIcon, Link2Icon } from 'lucide-react'
 
 // Type Imports
-import type { ChatUser } from '@/types/apps/chat-types'
+import type { ChatUser } from '#types/apps/chat-types'
 
 // Component Imports
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
+import { Avatar, AvatarFallback, AvatarImage } from '#components/ui/avatar'
+import { Button } from '#components/ui/button'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '#components/ui/dialog'
+import { Input } from '#components/ui/input'
 
 // Config Imports
-import { getInitialsFromName } from '@/configs/mailConfig'
+import { getInitialsFromName } from '#configs/mailConfig'
 
 export type InviteDialogProps = {
   open: boolean

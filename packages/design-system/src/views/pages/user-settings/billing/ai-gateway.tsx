@@ -4,9 +4,9 @@ import { useState } from 'react'
 
 import { ChevronDownIcon, HandCoinsIcon } from 'lucide-react'
 
-import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
+import { Button } from '#components/ui/button'
+import { Card, CardContent } from '#components/ui/card'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '#components/ui/collapsible'
 import {
   Dialog,
   DialogClose,
@@ -15,12 +15,12 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger
-} from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
-import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group'
-import { Label } from '@/components/ui/label'
-import { Separator } from '@/components/ui/separator'
-import { Switch } from '@/components/ui/switch'
+} from '#components/ui/dialog'
+import { Input } from '#components/ui/input'
+import { InputGroup, InputGroupAddon, InputGroupInput } from '#components/ui/input-group'
+import { Label } from '#components/ui/label'
+import { Separator } from '#components/ui/separator'
+import { Switch } from '#components/ui/switch'
 
 const presets = [20, 50, 100, 500]
 

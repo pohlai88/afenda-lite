@@ -4,10 +4,10 @@
 import { MessageSquareIcon } from 'lucide-react'
 
 // Type Imports
-import type { Attachment, ChatUser, Conversation, Message, MessageType } from '@/types/apps/chat-types'
+import type { Attachment, ChatUser, Conversation, Message, MessageType } from '#types/apps/chat-types'
 
 // Component Imports
-import ChatInput from '@/views/apps/chat/chat-input'
+import ChatInput from '#views/apps/chat/chat-input'
 import ChatMessages from './chat-messages'
 import ChatWindowHeader from './chat-window-header'
 

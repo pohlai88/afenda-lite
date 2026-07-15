@@ -2,7 +2,7 @@ import { format } from 'date-fns'
 import Papa from 'papaparse'
 import * as XLSX from 'xlsx'
 
-import type { AppUser } from '@/types/apps/user-types'
+import type { AppUser } from '#types/apps/user-types'
 
 type UserExportRow = {
   Name: string

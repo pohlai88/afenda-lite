@@ -18,22 +18,22 @@ import {
 } from 'date-fns'
 
 // Type Imports
-import type { CalendarEvent } from '@/types/apps/calendar-types'
+import type { CalendarEvent } from '#types/apps/calendar-types'
 
 // Component Imports
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Popover, PopoverContent, PopoverTrigger } from '#components/ui/popover'
 import { DraggableEvent } from './draggable-event'
 import { DroppableCell } from './droppable-cell'
 import { EventItem } from './event-item'
 
 // Hook Imports
-import { useEventVisibility } from '@/hooks/use-event-visibility'
+import { useEventVisibility } from '#hooks/use-event-visibility'
 
 // Util Imports
-import { getAllEventsForDay, getEventsForDay, getSpanningEventsForDay, sortEvents } from '@/utils/calendar-utils'
+import { getAllEventsForDay, getEventsForDay, getSpanningEventsForDay, sortEvents } from '#utils/calendar-utils'
 
 // Data Imports
-import { DefaultStartHour, EventGap, EventHeight } from '@/assets/data/constants'
+import { DefaultStartHour, EventGap, EventHeight } from '#assets/data/constants'
 
 interface MonthViewProps {
   currentDate: Date

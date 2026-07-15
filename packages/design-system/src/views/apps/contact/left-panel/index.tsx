@@ -8,19 +8,19 @@ import type { LucideIcon } from 'lucide-react'
 import { BanIcon, CircleUserIcon, ContactIcon, PlusIcon, ShieldAlertIcon, StarIcon } from 'lucide-react'
 
 // Type imports
-import type { ContactNavItem, Label } from '@/types/apps/contact-types'
-import { CONTACT_LABELS, CONTACT_LABEL_STYLES } from '@/types/apps/contact-types'
+import type { ContactNavItem, Label } from '#types/apps/contact-types'
+import { CONTACT_LABELS, CONTACT_LABEL_STYLES } from '#types/apps/contact-types'
 
 // Component imports
-import { Button } from '@/components/ui/button'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { Separator } from '@/components/ui/separator'
+import { Button } from '#components/ui/button'
+import { ScrollArea } from '#components/ui/scroll-area'
+import { Separator } from '#components/ui/separator'
 
 // Store imports
-import { useContactStore } from '@/store/use-contact-store'
+import { useContactStore } from '#store/use-contact-store'
 
 // Utils imports
-import { cn } from '@/lib/utils'
+import { cn } from '#lib/utils'
 
 const navItems: { id: ContactNavItem; label: string; icon: LucideIcon }[] = [
   { id: 'all', label: 'All Contacts', icon: CircleUserIcon },

@@ -2,13 +2,13 @@
 
 import { useEffect, useState } from 'react'
 
-import { cn } from '@/lib/utils'
+import { cn } from '#lib/utils'
 
-import { Button } from '@/components/ui/button'
-import { CircularProgress } from '@/components/ui/circular-progress'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Switch } from '@/components/ui/switch'
+import { Button } from '#components/ui/button'
+import { CircularProgress } from '#components/ui/circular-progress'
+import { Input } from '#components/ui/input'
+import { Label } from '#components/ui/label'
+import { Switch } from '#components/ui/switch'
 
 const SpendManagement = () => {
   const [enabled, setEnabled] = useState(true)

@@ -4,7 +4,7 @@
 import { useContext } from 'react'
 
 // Context Imports
-import { SettingsContext } from '@/contexts/settingsContext'
+import { SettingsContext } from '#contexts/settingsContext'
 
 export const useSettings = () => {
   const context = useContext(SettingsContext)

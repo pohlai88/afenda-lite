@@ -7,11 +7,11 @@ import { useEffect, useRef, useState } from 'react'
 import { ImageIcon, Trash2Icon, UploadCloudIcon } from 'lucide-react'
 
 // Component Imports
-import { Button } from '@/components/ui/button'
-import { ButtonGroup, ButtonGroupText } from '@/components/ui/button-group'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
+import { Button } from '#components/ui/button'
+import { ButtonGroup, ButtonGroupText } from '#components/ui/button-group'
+import { Input } from '#components/ui/input'
+import { Label } from '#components/ui/label'
+import { Textarea } from '#components/ui/textarea'
 
 const WorkspaceStep = () => {
   const inputRef = useRef<HTMLInputElement | null>(null)

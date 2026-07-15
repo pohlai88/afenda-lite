@@ -1,5 +1,5 @@
 // Type Imports
-import type { ChatData } from '@/types/apps/chat-types'
+import type { ChatData } from '#types/apps/chat-types'
 
 const CURRENT_USER_ID = 'user-me'
 

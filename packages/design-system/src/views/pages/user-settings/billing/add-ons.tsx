@@ -2,11 +2,11 @@ import Link from 'next/link'
 
 import { ArrowUpRightIcon } from 'lucide-react'
 
-import { Badge } from '@/components/ui/badge'
-import { Switch } from '@/components/ui/switch'
+import { Badge } from '#components/ui/badge'
+import { Switch } from '#components/ui/switch'
 
-import { Card, CardContent } from '@/components/ui/card'
-import { Separator } from '@/components/ui/separator'
+import { Card, CardContent } from '#components/ui/card'
+import { Separator } from '#components/ui/separator'
 
 const AddOns = () => {
   return (

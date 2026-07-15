@@ -7,16 +7,16 @@ import { useState } from 'react'
 import { CheckIcon, ChevronRightIcon, CreditCardIcon, LinkIcon, MessageCircleIcon, ZapIcon } from 'lucide-react'
 
 // Component Imports
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardTitle } from '@/components/ui/card'
-import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Avatar, AvatarFallback } from '#components/ui/avatar'
+import { Badge } from '#components/ui/badge'
+import { Button } from '#components/ui/button'
+import { Card, CardContent, CardDescription, CardTitle } from '#components/ui/card'
+import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from '#components/ui/dialog'
 
 // Util Imports
-import { cn } from '@/lib/utils'
+import { cn } from '#lib/utils'
 
-import type { IntegrationApp } from '@/types/pages/user-settings-types'
+import type { IntegrationApp } from '#types/pages/user-settings-types'
 
 const IntegrationsCommunication = ({ apps }: { apps: IntegrationApp[] }) => {
   const [connected, setConnected] = useState<boolean[]>(apps.map(() => false))

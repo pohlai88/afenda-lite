@@ -1,11 +1,11 @@
 // Component Imports
-import { Separator } from '@/components/ui/separator'
+import { Separator } from '#components/ui/separator'
 
-import type { IntegrationsData } from '@/types/pages/user-settings-types'
+import type { IntegrationsData } from '#types/pages/user-settings-types'
 
-import Communication from '@/views/pages/user-settings/integrations/integrations-communication'
-import Planning from '@/views/pages/user-settings/integrations/integrations-planning'
-import Tools from '@/views/pages/user-settings/integrations/integrations-tools'
+import Communication from '#views/pages/user-settings/integrations/integrations-communication'
+import Planning from '#views/pages/user-settings/integrations/integrations-planning'
+import Tools from '#views/pages/user-settings/integrations/integrations-tools'
 
 type IntegrationsProps = {
   integrationsData: IntegrationsData

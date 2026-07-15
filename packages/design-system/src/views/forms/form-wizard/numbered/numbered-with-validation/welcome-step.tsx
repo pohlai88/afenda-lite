@@ -2,7 +2,7 @@
 import type * as Stepperize from '@stepperize/react'
 
 // Component Imports
-import { Button } from '@/components/ui/button'
+import { Button } from '#components/ui/button'
 
 const WelcomeStep = ({ stepper, onReset }: { stepper: Stepperize.Stepper<any>; onReset: () => void }) => {
   const handleReset = () => {

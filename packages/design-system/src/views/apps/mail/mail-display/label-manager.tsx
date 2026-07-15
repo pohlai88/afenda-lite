@@ -2,17 +2,17 @@
 import { CheckIcon, Tag } from 'lucide-react'
 
 // Type Imports
-import type { EmailLabel } from '@/types/apps/mail-types'
+import type { EmailLabel } from '#types/apps/mail-types'
 
 // Component Imports
-import { Button } from '@/components/ui/button'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Button } from '#components/ui/button'
+import { Popover, PopoverContent, PopoverTrigger } from '#components/ui/popover'
 
 // Config Imports
-import { MAIL_LABEL_NAV_ITEMS, MAIL_LABEL_STYLES } from '@/configs/mailConfig'
+import { MAIL_LABEL_NAV_ITEMS, MAIL_LABEL_STYLES } from '#configs/mailConfig'
 
 // Util Imports
-import { cn } from '@/lib/utils'
+import { cn } from '#lib/utils'
 
 export const LabelManager = ({
   emailId,

@@ -7,16 +7,16 @@ import { useMemo } from 'react'
 import { PlusIcon } from 'lucide-react'
 
 // Component imports
-import { Button } from '@/components/ui/button'
+import { Button } from '#components/ui/button'
 import ContactDetails from './contact-details'
 import CreateContactForm from './create-contact-form'
 import EditContactForm from './edit-contact-form'
 
 // Store imports
-import { useContactStore } from '@/store/use-contact-store'
+import { useContactStore } from '#store/use-contact-store'
 
 // SVGs imports
-import AddNewContactSVG from '@/assets/svg/apps/contact/add-new'
+import AddNewContactSVG from '#assets/svg/apps/contact/add-new'
 
 const RightPanel = () => {
   const contacts = useContactStore(state => state.contacts)

@@ -7,8 +7,8 @@ import { useState, type ReactElement } from 'react'
 import { MessageSquareTextIcon, SettingsIcon } from 'lucide-react'
 
 // Component Imports
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { Button } from '@/components/ui/button'
+import { Alert, AlertDescription, AlertTitle } from '#components/ui/alert'
+import { Button } from '#components/ui/button'
 import {
   Dialog,
   DialogClose,
@@ -17,14 +17,14 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger
-} from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import { ScrollArea } from '@/components/ui/scroll-area'
+} from '#components/ui/dialog'
+import { Input } from '#components/ui/input'
+import { Label } from '#components/ui/label'
+import { RadioGroup, RadioGroupItem } from '#components/ui/radio-group'
+import { ScrollArea } from '#components/ui/scroll-area'
 
 // Util Imports
-import { cn } from '@/lib/utils'
+import { cn } from '#lib/utils'
 
 type Props = {
   trigger: ReactElement

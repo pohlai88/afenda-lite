@@ -2,20 +2,20 @@
 import { CheckSquareIcon, LayoutGridIcon } from 'lucide-react'
 
 // Type Imports
-import type { AppUser, UserStatus } from '@/types/apps/user-types'
+import type { AppUser, UserStatus } from '#types/apps/user-types'
 
 // Component Imports
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
-import { Separator } from '@/components/ui/separator'
+import { Avatar, AvatarFallback, AvatarImage } from '#components/ui/avatar'
+import { Badge } from '#components/ui/badge'
+import { Button } from '#components/ui/button'
+import { Card, CardContent } from '#components/ui/card'
+import { Separator } from '#components/ui/separator'
 
 // Config Imports
-import { getInitialsFromName } from '@/configs/mailConfig'
+import { getInitialsFromName } from '#configs/mailConfig'
 
 // Util Imports
-import { cn } from '@/lib/utils'
+import { cn } from '#lib/utils'
 
 const STATUS_DOT_STYLES: Record<UserStatus, string> = {
   Active: 'bg-green-500',

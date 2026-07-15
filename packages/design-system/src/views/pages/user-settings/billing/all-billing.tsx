@@ -1,5 +1,5 @@
-import { Progress } from '@/components/ui/progress'
-import { Separator } from '@/components/ui/separator'
+import { Progress } from '#components/ui/progress'
+import { Separator } from '#components/ui/separator'
 
 const Billing = () => {
   const progressSections = [

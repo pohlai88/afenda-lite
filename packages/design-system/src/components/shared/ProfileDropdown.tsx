@@ -5,8 +5,8 @@ import Link from 'next/link'
 import { CircleQuestionMarkIcon, DollarSignIcon, LogOutIcon, SettingsIcon, UserIcon } from 'lucide-react'
 
 // Component Imports
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Button } from '@/components/ui/button'
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar'
+import { Button } from '../ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,7 +15,8 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu'
+} from '../ui/dropdown-menu'
+import type { ProfileDropdownContract } from '../../playground/types'
 
 const STATIC_USER = {
   fullName: 'John Doe',
@@ -24,7 +25,7 @@ const STATIC_USER = {
   initials: 'JD'
 }
 
-const ProfileDropdown = () => {
+const ProfileDropdown = (_props: ProfileDropdownContract) => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger

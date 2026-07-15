@@ -12,18 +12,18 @@ import {
 } from 'lucide-react'
 
 // Type imports
-import type { Contact } from '@/types/apps/contact-types'
+import type { Contact } from '#types/apps/contact-types'
 
 // Component imports
-import { Button } from '@/components/ui/button'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { Button } from '#components/ui/button'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '#components/ui/dropdown-menu'
 
 // Store imports
-import { useContactStore } from '@/store/use-contact-store'
+import { useContactStore } from '#store/use-contact-store'
 
 // Utils imports
-import { cn } from '@/lib/utils'
-import { getContactDropdownActions } from '@/utils/contact-utils'
+import { cn } from '#lib/utils'
+import { getContactDropdownActions } from '#utils/contact-utils'
 
 type ContactActionsDropdownProps = {
   contact: Contact
