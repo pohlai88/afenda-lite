@@ -21,6 +21,36 @@ export type ButtonContract = {
 	onClick?: MouseEventHandler<HTMLButtonElement>;
 };
 
+export type InputContract = {
+	className?: string;
+	disabled?: boolean;
+	placeholder?: string;
+	type?: string;
+	id?: string;
+	"aria-describedby"?: string;
+};
+
+export type AccordionContract = {
+	children?: ReactNode;
+	className?: string;
+};
+
+export type AccordionItemContract = {
+	children?: ReactNode;
+	className?: string;
+	value: string;
+};
+
+export type AccordionTriggerContract = {
+	children?: ReactNode;
+	className?: string;
+};
+
+export type AccordionContentContract = {
+	children?: ReactNode;
+	className?: string;
+};
+
 export type ProfileDropdownContract = object;
 
 export type NotificationDropdownContract = {
@@ -55,11 +85,27 @@ export const ALLOWED_UI_SUBPATHS = [
 	"@afenda/ui/playground/types",
 ] as const;
 
-/** `./playground` exports with no matching `PlaygroundLab.exportName` — named, not guessed. */
+/** `./playground` exports with no lab row — named, not guessed. */
 export const PLAYGROUND_INFRA_EXPORTS = [
+	"Accordion",
+	"AccordionContent",
+	"AccordionItem",
+	"AccordionTrigger",
 	"Button",
 	"buttonVariants",
+	"Input",
 	"cn",
+] as const;
+
+/**
+ * Proven composites on the barrel. Lab harness (`apps/web/features/playground`)
+ * was removed 2026-07-15 — parity is this allowlist until a Studio MCP-driven
+ * harness returns.
+ */
+export const PLAYGROUND_PROVEN_EXPORTS = [
+	"ProfileDropdown",
+	"NotificationDropdown",
+	"ActivityDialog",
 ] as const;
 
 /** `./playground/providers` exports — verified structurally, never by dynamic import (see providers.ts). */

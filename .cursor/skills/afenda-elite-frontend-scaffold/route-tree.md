@@ -216,7 +216,7 @@ app/
 | `/fft/admin/erp-sync` | `app/fft/admin/erp-sync/page.tsx` |
 | `/fft/admin/rbac` | `app/fft/admin/rbac/page.tsx` |
 | `/fft/:locale/*` | `app/fft/[locale]/[[...path]]/page.tsx` (redirect shim) |
-| `/playground` | `app/playground/page.tsx` |
-| `/playground/:screenId` | `app/playground/[screenId]/page.tsx` |
-| `/playground/coverage` | `app/playground/coverage/page.tsx` |
-| `/playground/hitl-review` | `app/playground/hitl-review/page.tsx` |
+| `/playground` | **Absent** — `app/playground/**` removed 2026-07-15 |
+| `/playground/:screenId` | **Absent** |
+| `/playground/coverage` | **Absent** |
+| `/playground/hitl-review` | **Absent** |

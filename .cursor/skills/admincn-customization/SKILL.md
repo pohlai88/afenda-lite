@@ -5,6 +5,8 @@ description: Customizes the landed AdminCN shell in components-V2 via themeConfi
 
 # AdminCN customization
 
+**UI handoff gate (compulsory before human handoff):** [afenda-elite-ui-handoff](../afenda-elite-ui-handoff/SKILL.md) — no handroll · no UX drift · Chrome DevTools evidence required.
+
 **SSOT playbook:** [docs/architecture/ARCH-018-admincn-customization.md](../../../docs/architecture/ARCH-018-admincn-customization.md)  
 **Frontend preflight (before new screens):** [docs/architecture/ARCH-019-admincn-frontend-preflight.md](../../../docs/architecture/ARCH-019-admincn-frontend-preflight.md)  
 **Alignment:** [docs/architecture/ARCH-015-admincn-alignment.md](../../../docs/architecture/ARCH-015-admincn-alignment.md)  
@@ -82,12 +84,15 @@ MCP installs may land under a temporary kit path. **Product code must not keep**
 - `features/organization-admin/form-layout-section.tsx` ← Studio form-layout-02  
 - `features/organization-admin/statistics-card.tsx` ← Studio statistics-component-03  
 
-### High-value families (freeze set)
+### Studio block LOCK (freeze SSOT)
 
-- Shell: application-shell / dashboard-shell  
-- Dashboard: charts-component, statistics-component, widgets-component  
-- Account chrome (layout inspiration only): account-settings-01…07 — **not** a replacement for Neon AuthView on `/account/[path]` (BL-07)  
-- Forms / empty: form-layout, empty-state  
+Harness files removed 2026-07-15 — keep the freeze **here** (and in `afenda-elite-design-system`); do not recreate `features/playground/block-selection-matrix*`.
+
+**Next open Studio target:** `afenda-collection` — registry `/dashboard-and-application/application-shell/registry` · seed `application-shell-01` (LOCK; reuse promoted layout/shared; no reinstall). First primitive: Accordion → gateway when ordered. Details: [afenda-elite-design-system](../afenda-elite-design-system/SKILL.md) § Next open.
+
+**LOCK (default `/cui` / `/studio base`):** `application-shell-01` · `dashboard-dropdown-02` · `dashboard-dropdown-12` · `dashboard-dialog-20`  
+**DEFER:** form-layout / empty-state / chart-component-* / statistics / widget-component-* (named slice only)  
+**REJECT:** marketing login/forgot/reset · account-settings as product auth (Neon island)
 
 ## Forbidden without explicit reopen
 
@@ -98,21 +103,17 @@ MCP installs may land under a temporary kit path. **Product code must not keep**
 - Inventing UI IDs or agent-editing [`ui-registry.json`](../feed-farm-trade/ui-registry.json) to pass Vitest  
 - Importing `@/components-V2/platform-views/**` from `features/fft` without a HITL `FFT-UI-*` wrap  
 - Recreating `components/shadcn-studio/` or nesting `features/*/shadcn-studio/blocks/` as product homes  
+- Handrolling `apps/web/features/playground` or `apps/web/app/playground` — DNA in via **Shadcn Studio MCP** only  
 
-## Playground labs + Cursor Canvas singleshot
-
-Local AdminCN interaction harness (not Storybook, not Studio Builder embed):
+## Next harness + Cursor Canvas
 
 | Surface | Role |
 |---------|------|
-| `/playground` | Hub of **ready** labs (`PLAYGROUND_ENABLED=true`) |
-| `/playground/lab/[labId]` | Live AdminShell mount + interaction checklist |
-| `/playground/compose` | Studio Builder–shaped three-panel board; **Copy agent prompt** |
+| `@afenda/ui/playground` | Package gateway — sole runtime import door (unchanged) |
+| `/playground` Next routes | **Removed** — any future harness must arrive via Studio MCP install + promote |
 | Cursor Canvas `*.canvas.tsx` | Singleshot **brief only** — import **only** `cursor/canvas`; never `@afenda/ui` |
 
-**Agent rule:** for singleshot UI review, write a Canvas brief (props/states/acceptance + lab URL), then iterate against the live lab. Do not claim Canvas can render AdminCN. Registry SSOT: `apps/web/features/playground/lab-registry.ts` (curated rows only).
-
-These `/playground` routes are distinct from the `@afenda/ui/playground` package subpath (the sole gateway product code imports UI primitives through) — see [ARCH-024 § `@afenda/ui`](../../../docs/architecture/ARCH-024-package-boundaries.md#afendaui) for the canonical disambiguation.
+**Agent rule:** do not claim Canvas can render AdminCN. Do not invent lab-registry / compose boards. Studio block pick SSOT = LOCK/DEFER/REJECT above.
 
 ## Refine checklist (per page)
 
@@ -123,6 +124,6 @@ Full gate: [ARCH-019](../../../docs/architecture/ARCH-019-admincn-frontend-prefl
 3. Nav — real destinations only; module entitlements correct  
 4. Edit one `platform-views` composition (product → `portal-views/` or FFT `features/fft` via product ID)  
 5. Swap fake-db for that page  
-6. Sync governance (`surface-entry-points`, `ui-decision-matrix`, reliance registry, **ui-registry**)  
-7. Optional: one MCP block → **promote** into `features/organization-admin/`, `portal-views/`, or FFT feature (new `FFT-UI-*` if FFT); delete install-path residue  
+6. Sync governance (LOCK/DEFER/REJECT above, reliance registry, **ui-registry**) — retired name: `ui-decision-matrix`  
+7. Optional: one MCP block (LOCK-scored) → **promote** into `packages/design-system` layers / owning feature / FFT feature (new `FFT-UI-*` if FFT); delete install-path residue  
 8. Verify: `npm run test:unit -- features/fft/ui-registry` + relevant unit tests + `npx tsc --noEmit` on touched paths  

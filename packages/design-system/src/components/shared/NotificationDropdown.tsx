@@ -52,7 +52,7 @@ const NotificationDropdown = ({ trigger, defaultOpen, align = 'end' }: Notificat
           <TabsContent value='inbox'>
             <DropdownMenuItem className='gap-3 px-2 py-3 text-base not-data-[variant=destructive]:focus:**:text-[revert-rule]'>
               <Avatar className='size-9.5'>
-                <AvatarImage src='/images/avatars/avatar-19.webp' />
+                <AvatarImage src='https://cdn.shadcnstudio.com/ss-assets/avatar/avatar-19.png' />
                 <AvatarFallback>MB</AvatarFallback>
               </Avatar>
               <div className='flex w-full flex-col items-start'>
@@ -71,7 +71,7 @@ const NotificationDropdown = ({ trigger, defaultOpen, align = 'end' }: Notificat
             <DropdownMenuSeparator />
             <DropdownMenuItem className='gap-3 px-2 py-3 text-base not-data-[variant=destructive]:focus:**:text-[revert-rule]'>
               <Avatar className='size-9.5'>
-                <AvatarImage src='/images/avatars/avatar-5.webp' />
+                <AvatarImage src='https://cdn.shadcnstudio.com/ss-assets/avatar/avatar-5.png' />
                 <AvatarFallback>AB</AvatarFallback>
               </Avatar>
               <div className='flex w-full flex-col items-start'>
@@ -90,7 +90,7 @@ const NotificationDropdown = ({ trigger, defaultOpen, align = 'end' }: Notificat
             <DropdownMenuSeparator />
             <DropdownMenuItem className='items-start gap-3 px-2 py-3 text-base not-data-[variant=destructive]:focus:**:text-[revert-rule]'>
               <Avatar className='size-9.5'>
-                <AvatarImage src='/images/avatars/avatar-2.webp' />
+                <AvatarImage src='https://cdn.shadcnstudio.com/ss-assets/avatar/avatar-2.png' />
                 <AvatarFallback>A</AvatarFallback>
               </Avatar>
               <div className='flex w-full flex-col items-start'>
@@ -113,7 +113,7 @@ const NotificationDropdown = ({ trigger, defaultOpen, align = 'end' }: Notificat
             <DropdownMenuSeparator />
             <DropdownMenuItem className='items-start gap-3 px-2 py-3 text-base not-data-[variant=destructive]:focus:**:text-[revert-rule]'>
               <Avatar className='size-9.5'>
-                <AvatarImage src='/images/avatars/avatar-3.webp' />
+                <AvatarImage src='https://cdn.shadcnstudio.com/ss-assets/avatar/avatar-3.png' />
                 <AvatarFallback>J</AvatarFallback>
               </Avatar>
               <div className='flex w-full flex-col items-start'>
@@ -134,7 +134,7 @@ const NotificationDropdown = ({ trigger, defaultOpen, align = 'end' }: Notificat
           <TabsContent value='general'>
             <DropdownMenuItem className='gap-3 px-2 py-3 text-base not-data-[variant=destructive]:focus:**:text-[revert-rule]'>
               <Avatar className='size-9.5'>
-                <AvatarImage src='/images/avatars/avatar-7.webp' />
+                <AvatarImage src='https://cdn.shadcnstudio.com/ss-assets/avatar/avatar-7.png' />
                 <AvatarFallback>FC</AvatarFallback>
               </Avatar>
               <div className='flex w-full flex-col items-start'>
@@ -153,7 +153,7 @@ const NotificationDropdown = ({ trigger, defaultOpen, align = 'end' }: Notificat
             <DropdownMenuSeparator />
             <DropdownMenuItem className='items-start gap-3 px-2 py-3 text-base not-data-[variant=destructive]:focus:**:text-[revert-rule]'>
               <Avatar className='size-9.5'>
-                <AvatarImage src='/images/avatars/avatar-15.webp' />
+                <AvatarImage src='https://cdn.shadcnstudio.com/ss-assets/avatar/avatar-15.png' />
                 <AvatarFallback>S</AvatarFallback>
               </Avatar>
               <div className='flex w-full flex-col items-start'>
@@ -172,7 +172,7 @@ const NotificationDropdown = ({ trigger, defaultOpen, align = 'end' }: Notificat
             <DropdownMenuSeparator />
             <DropdownMenuItem className='gap-3 px-2 py-3 text-base not-data-[variant=destructive]:focus:**:text-[revert-rule]'>
               <Avatar className='size-9.5'>
-                <AvatarImage src='/images/avatars/avatar-11.webp' />
+                <AvatarImage src='https://cdn.shadcnstudio.com/ss-assets/avatar/avatar-11.png' />
                 <AvatarFallback>HL</AvatarFallback>
               </Avatar>
               <div className='flex w-full flex-col items-start'>
@@ -191,7 +191,7 @@ const NotificationDropdown = ({ trigger, defaultOpen, align = 'end' }: Notificat
             <DropdownMenuSeparator />
             <DropdownMenuItem className='items-start gap-3 px-2 py-3 text-base not-data-[variant=destructive]:focus:**:text-[revert-rule]'>
               <Avatar className='size-9.5'>
-                <AvatarImage src='/images/avatars/avatar-6.webp' />
+                <AvatarImage src='https://cdn.shadcnstudio.com/ss-assets/avatar/avatar-6.png' />
                 <AvatarFallback>R</AvatarFallback>
               </Avatar>
               <div className='flex w-full flex-col items-start'>

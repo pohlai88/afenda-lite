@@ -574,12 +574,11 @@ STOP.
 | 4    | Let agent verify + write GUIDE-018 evidence      |
 | 5    | You review · commit · open next chat             |
 
-| Next up now     | Paste block               |
-| --------------- | ------------------------- |
-| Edge `proxy.ts` | **P1** (`PHASE_ID: I1.1`) |
-| Auth UI         | **P2**                    |
-| Join / invite   | **P3**                    |
-| Role shells     | **P4**                    |
+| Next up now              | Paste block |
+| ------------------------ | ----------- |
+| Feature↛db boundary      | **P6** (`PHASE_ID: I2.2`) |
+| First authenticated write | **P7** (`I2.3`) |
+| OpenAPI honesty          | **P8** (`I2.4`) |
 
 | Anti-pattern                | Instead                                  |
 | --------------------------- | ---------------------------------------- |

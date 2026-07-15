@@ -52,6 +52,7 @@ Do not start skill loads or MCP calls before the PREFLIGHT block is in the visib
 | Doc↔doc conflict / register drift | `afenda-elite-doc-integrity` |
 | ARCH-028 slice implement | `afenda-elite-implementation-slices` |
 | GUIDE-018 Phase I (I1.1…) | `afenda-elite-implementation-slices` + command-sheet |
+| UI / Studio / shell / gateway (any farm) | `afenda-elite-ui-handoff` **then** design-system / admincn / FE scaffold |
 | Neon tenancy ops ladder | `neon-tenancy-efficiency` |
 | FFT product module | `feed-farm-trade` |
 | Generic engineering phases | `using-agent-skills` (method library **after** Elite router) |
@@ -78,7 +79,7 @@ Do not start skill loads or MCP calls before the PREFLIGHT block is in the visib
 | [ARCH-022](docs/architecture/ARCH-022-system-overview.md) | Living monorepo / system overview |
 | [ARCH-023](docs/architecture/ARCH-023-multi-tenancy.md) | IAM · tenancy · Decision lock |
 | [ARCH-024](docs/architecture/ARCH-024-package-boundaries.md)…[ARCH-027](docs/architecture/ARCH-027-env-model.md) | Packages · data · auth · env |
-| [ARCH-024 § `@afenda/ui`](docs/architecture/ARCH-024-package-boundaries.md#afendaui) | `@afenda/ui/playground` gateway subpath vs `/playground` Next.js routes — one canonical paragraph, do not re-explain elsewhere |
+| [ARCH-024 § `@afenda/ui`](docs/architecture/ARCH-024-package-boundaries.md#afendaui) | `@afenda/ui/playground` gateway subpath vs removed Next.js `/playground` harness — one canonical paragraph, do not re-explain elsewhere |
 | [ARCH-028](docs/architecture/ARCH-028-implementation-slices.md) | Scaffold slices (closed) · anti-contamination |
 | [GUIDE-018](docs/guides/GUIDE-018-fullstack-e2e-integration-program.md) | Post-scaffold program roadmap (Draft) |
 | [ARCH-031](docs/architecture/ARCH-031-technology-stack-catalogue.md) | Stack discovery |
@@ -89,12 +90,12 @@ Controlled docs: respect **Control State**. `Closed` → reopen with explicit Do
 
 **Present:** `@afenda/{config,db,auth,env,ui,emails}` · `apps/web` route groups · `apps/web/proxy.ts` edge session gate · `apps/web/modules/{platform,identity,declarations,fft}` · `apps/web/features/{auth,declarations,fft,org-admin}` · CI/Deploy (`.github/workflows/{ci,deploy}.yml`).
 
-**Absent by design:** repo-root `app/`, `modules/`, `features/`, `components-V2/`, Collapse `lib/`, wiped ops script bodies.
+**Absent by design:** repo-root `app/`, `modules/`, `features/`, `components-V2/`, Collapse `lib/`, wiped ops script bodies · `apps/web/app/playground/` · `apps/web/features/playground/` (removed 2026-07-15; do not handroll).
 
 | Rule | Detail |
 |------|--------|
 | Forward code | Greenfield under `apps/web/**` and `packages/*` only |
-| Next open (program) | [GUIDE-018](docs/guides/GUIDE-018-fullstack-e2e-integration-program.md) **I1.3** — `/join` + invite. I1.1–I1.2 closed. ARCH-028 Checkpoint G **closed**. |
+| Next open (program) | [GUIDE-018](docs/guides/GUIDE-018-fullstack-e2e-integration-program.md) **I2.2** — feature → domain → db boundary. **I2.1** ActionResult / error brands closed. Phase I1 closed. ARCH-028 Checkpoint G **closed**. |
 | Env | `@afenda/env` + `.env.local` only (compose retired) |
 | Docs trunks | Flat `docs/architecture/ARCH-*.md` — gate `pnpm check:docs-trunk-ban` |
 | Index ghosts | Grep/Glob may list deleted paths — trust `Test-Path` · `git ls-files` · trunk-ban check |
@@ -144,11 +145,11 @@ pnpm --filter @afenda/web dev   # :3000
 
 | Never sync to Vercel prod | Notes |
 |---------------------------|--------|
-| `PLAYGROUND_*` | Local developer harness only — not client product |
+| `PLAYGROUND_*` | Local reserved toggles only — Next.js `/playground` trees **absent**; do not recreate by hand; never sync to Vercel prod |
 | `NEON_API_KEY`, `NEON_ORG_ID`, `NEON_PROJECT_ID`, `NEON_BRANCH_ID` | Local / MCP ops |
 | Shadcn Studio keys | Local tooling |
 
-**Playground:** `/playground` is a **local UI harness** (`PLAYGROUND_ENABLED=true`). Do not design product auth/onboarding that depends on it.
+**Playground package gateway:** import UI only via `@afenda/ui/playground` ([ADR-009](docs/architecture/adr/ADR-009-afenda-ui-playground-gateway.md)). Next.js `/playground` routes were removed 2026-07-15 — any future browser harness requires an explicit **Shadcn Studio MCP** slice (no handroll).
 
 **Vercel:** dashboard/CLI is production secret store. `VERCEL_TOKEN` for Actions must be a **classic PAT** ([account tokens](https://vercel.com/account/tokens)) — OAuth CLI sessions fail in CI. Deploy: `.github/workflows/deploy.yml` (Environment `production`).
 

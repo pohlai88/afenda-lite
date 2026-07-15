@@ -4,7 +4,7 @@
 | ----------------- | ------------ |
 | **ID**            | ADR-009      |
 | **Category**      | ADR          |
-| **Version**       | 1.0.0        |
+| **Version**       | 1.0.1        |
 | **Status**        | Accepted     |
 | **Control State** | Closed       |
 | **Owner**         | Platform     |
@@ -81,11 +81,11 @@ This is enforced entirely by `tsc` structural typing at compile time — there i
 
 ### D5 — `@afenda/ui/playground` vs `/playground` routes — different things, same word
 
-`@afenda/ui/playground` (this package subpath) is exports-map-enforced, always-bundled, and has no relationship to environment gating. The `/playground` Next.js routes (`apps/web/app/playground/`, `apps/web/features/playground/`) are the pre-existing, `PLAYGROUND_ENABLED`-gated, local-only developer harness (ARCH-009, ARCH-012 § 3.10, ARCH-015, ARCH-017, ARCH-027) — unchanged by this decision. See the single canonical paragraph in [ARCH-024 § `@afenda/ui`](../ARCH-024-package-boundaries.md#afendaui); other documents link to it rather than repeating the distinction.
+`@afenda/ui/playground` (this package subpath) is exports-map-enforced, always-bundled, and has no relationship to environment gating. At decision time, Next.js `/playground` routes (`apps/web/app/playground/`, `apps/web/features/playground/`) were a separate local harness. **Those trees were removed 2026-07-15** and must not be handrolled; any future harness requires an explicit Shadcn Studio MCP slice. See the single canonical paragraph in [ARCH-024 § `@afenda/ui`](../ARCH-024-package-boundaries.md#afendaui).
 
 ### D6 — Boundary enforcement via tests, not convention alone
 
-`packages/design-system/__tests__/architecture.test.ts` statically parses `./playground/index.ts` and `./playground/providers.ts` and asserts their re-exports exactly match `PLAYGROUND_INFRA_EXPORTS` / `PLAYGROUND_PROVIDERS_EXPORTS` (shared constants in `./playground/types.ts`). `apps/web/__tests__/ui-boundary.test.ts` asserts the same allowlist from the consumer side and bans deep imports outside `ALLOWED_UI_SUBPATHS`. Both tests fail on any drift between the exports map, the barrel content, and the registry — the allowlist cannot silently expand.
+`packages/design-system/__tests__/architecture.test.ts` statically parses `./playground/index.ts` and `./playground/providers.ts` and asserts their re-exports match `PLAYGROUND_INFRA_EXPORTS` / `PLAYGROUND_PROVIDERS_EXPORTS` (and consumer side `PLAYGROUND_PROVEN_EXPORTS`) in `./playground/types.ts`. `apps/web/__tests__/ui-boundary.test.ts` asserts the same allowlists and bans deep imports outside `ALLOWED_UI_SUBPATHS`. Both tests fail on any drift between the exports map and the barrel — the allowlist cannot silently expand.
 
 ## Alternatives considered
 
@@ -113,11 +113,11 @@ This is enforced entirely by `tsc` structural typing at compile time — there i
 | DOC-001 | Documentation Control Standard | Governance |
 | DOC-003 | Controlled Document Template | Structure |
 | ARCH-024 | Package Boundaries | Canonical `@afenda/ui` exports-map and disambiguation paragraph |
-| ARCH-009 | Modules Ownership Map | `/playground` Next.js routes — unaffected local harness |
-| ARCH-012 | App Router Routes | § 3.10 Playground — unaffected local harness |
-| ARCH-015 | Shadcn Studio / AdminCN Alignment | `/playground/*` local-only row — unaffected |
-| ARCH-017 | Frontend Folder Map | `app/playground/`, `features/playground/` — unaffected |
-| ARCH-027 | Environment Variable Model | `PLAYGROUND_*` local-only env — unaffected |
+| ARCH-009 | Modules Ownership Map | Former Next.js harness paths — now absent |
+| ARCH-012 | App Router Routes | § 3.10 Playground — removed |
+| ARCH-015 | Shadcn Studio / AdminCN Alignment | Local harness posture — see ARCH-024 |
+| ARCH-017 | Frontend Folder Map | `app/playground/`, `features/playground/` — absent |
+| ARCH-027 | Environment Variable Model | `PLAYGROUND_*` reserved local env — routes may be absent |
 | ARCH-031 | Technology Stack Catalogue | § 3.4 UI and design system — updated to cite canonical package |
 
 ---
@@ -126,6 +126,7 @@ This is enforced entirely by `tsc` structural typing at compile time — there i
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 1.0.1 | 2026-07-15 | D5 / References honesty: Next.js harness trees removed 2026-07-15; gateway decision unchanged; boundary tests cite proven+infra allowlists. |
 | 1.0.0 | 2026-07-15 | Accepted — records the `packages/ui` retirement, `@afenda/ui` exports trim to the `./playground` gateway, and the `*Contract extends` pattern already implemented and verified (tests + typecheck green). |
 
 ---

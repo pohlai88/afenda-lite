@@ -4,7 +4,7 @@
 |-------|-------|
 | ID | ARCH-027 |
 | Category | Architecture |
-| Version | 1.6.1 |
+| Version | 1.6.2 |
 | Status | Living |
 | Control State | Closed |
 | Owner | Platform |
@@ -105,9 +105,7 @@ const db  = env.DATABASE_URL           // ✗ — TypeScript error: server var i
 | Database | `DATABASE_URL`, `NEON_*` | Yes | Neon pooler URL, auth secret |
 | App | `APP_URL`, `NEXT_PUBLIC_*` | Yes | Production URL, feature flags |
 | Feature flags | `FFT_*` | Yes | `FFT_RBAC_ENABLED` |
-| Local-only | `PLAYGROUND_*` | **No** | Dev playground toggles |
-
-`PLAYGROUND_*` gates the Next.js `/playground` routes only and has no relationship to the `@afenda/ui/playground` package subpath — see [ARCH-024 § `@afenda/ui`](ARCH-024-package-boundaries.md#afendaui) for the canonical disambiguation.
+| Local-only | `PLAYGROUND_*` | **No** | Reserved local toggles (Next.js `/playground` trees **absent** 2026-07-15; not `@afenda/ui/playground` — [ARCH-024](ARCH-024-package-boundaries.md#afendaui)) |
 | Ops | `NEON_API_KEY`, `NEON_ORG_ID` | **No** | CLI tools only |
 
 ## Data / request flow
@@ -167,6 +165,7 @@ Vercel build
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.6.2 | 2026-07-15 | `PLAYGROUND_*` = reserved local env; Next.js `/playground` trees Absent (see ARCH-024). |
 | 1.6.1 | 2026-07-15 | Linked the `PLAYGROUND_*` row to the ARCH-024 `@afenda/ui/playground` disambiguation paragraph (no independent prose). |
 | 1.6.0 | 2026-07-15 | Checkpoint G: Status Target→Living; compose-retired env model is current ops. |
 | 1.5.1 | 2026-07-15 | Stable heading anchor `#cutover-from-compose-s41` for ARCH-028 link (cutover remains done). |

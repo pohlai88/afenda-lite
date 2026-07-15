@@ -54,13 +54,15 @@ Task arrives (this repo / Afenda-Lite)
     ├── Cross-package import / DAG / new packages/*? ───────→ afenda-elite-monorepo-discipline
     ├── Cross-package move / extract / Slice D delete? ─────→ afenda-elite-monorepo-refactor
     ├── ARCH-028 residual / GUIDE-018 Phase I (S* / I* / command-sheet)? → afenda-elite-implementation-slices (then farms from its slice-map)
-    ├── FE scaffold / wipe / app routes? ───────────────────→ afenda-elite-frontend-scaffold
-    ├── Next.js App Router / RSC / rendering / proxy / MCP routes? → afenda-elite-nextjs-best-practice
+    ├── FE scaffold / wipe / app routes? ───────────────────→ afenda-elite-ui-handoff **then** afenda-elite-frontend-scaffold (when browser-visible)
+    ├── Next.js App Router / RSC / rendering / proxy / MCP routes? → afenda-elite-nextjs-best-practice (+ afenda-elite-ui-handoff when changing browser UI)
     ├── Modules / ports / residue? ─────────────────────────→ afenda-elite-backend-modules
     ├── API contract / ActionResult / brands / OpenAPI / REST-001? ─→ afenda-elite-api-contract
     ├── Module evidence / MOD-009–010 / Module Enterprise Readiness claims? → afenda-elite-module-readiness
+    ├── @afenda/ui / design-system promote / playground gateway / lab parity? → afenda-elite-ui-handoff **then** afenda-elite-design-system (/studio for CLI modes; admincn-customization for shell/theme DNA)
+    ├── AdminCN shell / theme / Studio DNA? ────────────────→ afenda-elite-ui-handoff **then** admincn-customization
     ├── Generic engineering lifecycle? ─────────────────────→ using-agent-skills
-    └── Domain farm (Neon, FFT, AdminCN)? ──────────────────→ neon-tenancy / feed-farm-trade / admincn-customization
+    └── Domain farm (Neon, FFT, AdminCN)? ──────────────────→ neon-tenancy / feed-farm-trade / admincn-customization (+ afenda-elite-ui-handoff when AdminCN UI)
 ```
 
 **Rule:** This router chooses *which farm*. Vendor phase skills choose *how to engineer* once the farm is fixed. Housekeeping never deletes — it hands **Slice D** to monorepo-refactor. Day-to-day `@afenda/*` import/DAG checks use `afenda-elite-monorepo-discipline`. GUIDE-018 Phase I / residual ARCH-028 serial implement uses `afenda-elite-implementation-slices` as the mission loop; it **loads** scaffold/modules/nextjs/neon/api per [slice-map](../afenda-elite-implementation-slices/slice-map.md) — it does not replace those farms. Retired names: `portal-*-*` → use `afenda-elite-*` above. Wave 3: `afenda-elite-documentation` → `afenda-elite-doc-control`; `afenda-elite-docs-consistency` → `afenda-elite-doc-integrity`. Next.js mechanics: local `afenda-elite-nextjs-best-practice` (Vercel + Accelint + Cache Components; not an Xerp overlay).

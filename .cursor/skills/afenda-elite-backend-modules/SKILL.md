@@ -93,7 +93,7 @@ External/mobile REST?  → Route Handler per docs/api (contract-only until neede
 3. **UI** — `/afenda-elite-frontend-scaffold` + `features/*`
 4. **Residue Pass 2** — **done** 2026-07-12
 5. **Platform copy port + entry/org-admin absorb** — **done** 2026-07-12
-6. **Playground harness absorb** — **done** 2026-07-12 (`features/playground`; `lib/` gone)
+6. **Playground harness absorb** — **done** 2026-07-12 (`features/playground`; `lib/` gone); **harness removed** 2026-07-15 — do not handroll; Studio MCP for any return
 
 ## Lessons (2026-07-12) — do not relearn the hard way
 

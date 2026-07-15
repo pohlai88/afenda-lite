@@ -4,11 +4,11 @@
 | ----------------- | ------------ |
 | **ID**            | ARCH-005     |
 | **Category**      | Architecture |
-| **Version**       | 1.1.1        |
+| **Version**       | 1.1.3        |
 | **Status**        | Living     |
 | **Control State** | Closed       |
 | **Owner**         | Backend     |
-| **Updated**       | 2026-07-14   |
+| **Updated**       | 2026-07-15   |
 
 ---
 
@@ -79,7 +79,9 @@ Driving adapters stay thin and **outside** domain trees:
 | `modules/platform/api/*` | Route adapter helpers (health, draft runner, json-response) |
 | `modules/platform/env/*` | Logical typed env shape — Target `@afenda/env` |
 | `modules/platform/schemas/api-error.ts` | Shared `APIErrorBody` / codes |
+| `modules/platform/schemas/action-result.ts` | Shared `ActionResult` / `actionOk` / `actionFail` |
 | `modules/platform/schemas/common.ts` | Shared Zod primitives (`parseSchema`, uuid, email, …) |
+| `modules/identity/schemas/invite-org-member.ts` | Org-member invite command Zod (Target on disk — I2.1) |
 | `modules/platform/db.ts`, `db-config.ts` | Pool / connection config (Node; pooler — [ARCH-010](ARCH-010-backend-conventions.md)) |
 | `modules/platform/routing/*` | Portal hrefs, public-link landing, surface registry |
 | `modules/platform/shell/*` | Shared shell types (`ShellModuleId`); resolve in portal-chrome feature home |
@@ -108,10 +110,10 @@ Driving adapters stay thin and **outside** domain trees:
 
 | Disposition | Paths |
 |-------------|-------|
-| **Runners / harness** | `features/auth/entry/**`, `features/organization-admin/organization-admin-*`, `features/auth/public-link-page*`, `features/playground/**` (local only) |
+| **Runners / harness** | `features/auth/entry/**`, `features/organization-admin/organization-admin-*`, `features/auth/public-link-page*` (playground runners **absent** 2026-07-15) |
 | **Gone** | Entire `lib/` tree — do **not** recreate |
 
-Pass 2 absorb: FE trust → `features/auth/`; brand/theme → portal-chrome features; product copy SSOT → `modules/platform/copy/`; shell members → `modules/identity/`; entry / org-admin / playground runners → `features/`. Inventory: [ARCH-009](ARCH-009-modules-ownership-map.md) · skill [`residue-inventory.md`](../../.cursor/skills/afenda-elite-backend-modules/residue-inventory.md).
+Pass 2 absorb: FE trust → `features/auth/`; brand/theme → portal-chrome features; product copy SSOT → `modules/platform/copy/`; shell members → `modules/identity/`; entry / org-admin runners → `features/`. Playground runners briefly lived under `features/playground/` then were removed 2026-07-15 — do not recreate. Inventory: [ARCH-009](ARCH-009-modules-ownership-map.md) · skill [`residue-inventory.md`](../../.cursor/skills/afenda-elite-backend-modules/residue-inventory.md).
 
 ## Alignment (must not diverge)
 
@@ -149,6 +151,8 @@ Pass 2 absorb: FE trust → `features/auth/`; brand/theme → portal-chrome feat
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 1.1.3 | 2026-07-15 | Bounded reopen (I2.1 audit repair): map `action-result.ts` + `invite-org-member` schema on Target. |
+| 1.1.2 | 2026-07-15 | Playground runner path honesty — `features/playground/**` Absent (removed). |
 | 1.1.1 | 2026-07-14 | Home flattened to docs/architecture/ (trunks removed; pack reading order in README). |
 | 1.1.0 | 2026-07-14 | Target physical ↔ logical map; env → ARCH-027; adapter table; forbidden list; Alignment; fixed ARCH-017 link; pack sync with ARCH-004/008/010. |
 | 1.0.3 | 2026-07-14 | Checkout posture: Living map = shape only; Collapse product trees not present and forbidden to recover; Target greenfield via ARCH-028 only. |

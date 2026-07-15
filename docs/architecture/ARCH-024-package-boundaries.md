@@ -4,7 +4,7 @@
 | ----------------- | ------------ |
 | **ID**            | ARCH-024     |
 | **Category**      | Architecture |
-| **Version**       | 1.5.0        |
+| **Version**       | 1.5.1        |
 | **Status**        | Living       |
 | **Control State** | Closed       |
 | **Owner**         | Platform     |
@@ -36,7 +36,7 @@ Living package boundary SSOT after ARCH-028 Checkpoint G (2026-07-15): the six s
 
 - Package internal business logic, schema definitions ([ARCH-025](ARCH-025-data-layer.md)), or backend layering ([ARCH-001](ARCH-001-backend-architecture.md))
 - Multi-tenancy / RBAC decision lock ([ARCH-023](ARCH-023-multi-tenancy.md))
-- The `/playground` Next.js dev-harness routes and their `PLAYGROUND_ENABLED` gating (unrelated surface — see § 3 `@afenda/ui` disambiguation)
+- The historical Next.js `/playground` harness name collision (disambiguation only — those routes are **absent** on disk as of 2026-07-15; see § 3 `@afenda/ui`)
 - Promoting additional `packages/design-system/src/**` templates into the gateway (each promotion is its own bounded change)
 
 ---
@@ -123,7 +123,7 @@ packages/design-system/
 └── package.json
 ```
 
-**`@afenda/ui/playground` vs the `/playground` Next.js routes — two different things sharing a name.** `@afenda/ui/playground` (this package's `src/playground/`) is the exports-map-enforced, always-bundled runtime gateway: the only path any consumer — product code or the dev harness alike — may use to reach a UI primitive. It is unrelated to env-gating and carries no `PLAYGROUND_ENABLED` semantics. The `/playground` Next.js routes (`apps/web/app/playground/`, `apps/web/features/playground/`) are the separate, `PLAYGROUND_ENABLED`-gated, local-only developer harness described in ARCH-009 § Playground, ARCH-012 § 3.10, ARCH-015, ARCH-017, and ARCH-027 — that gating is unchanged by this section. `Providers` lives at the dedicated `./playground/providers` subpath, not the primitives barrel, because its dependency chain (`settingsContext` → `fonts.ts` → `next/font/google` / `geist/font/pixel`) is a Next.js compiler-only construct that cannot be evaluated outside Next's own bundler; each gateway member's own `Props` type `extends` a curated `*Contract` type from `./playground/types`, enforced structurally by `tsc`, not by a runtime validator. Anything not re-exported from `./playground` or `./playground/providers` (i.e. `./components/*`, `./shared/*`, `./layout/*`, `./providers`, `./hooks/*`, `./lib/*`, `./utils/*`, `./configs/*`, `./contexts/*`, `./types/*`, `./store/*`, `./views/*`, `./fake-db/*`, `./assets/*`) is not part of the public exports map and fails to resolve for any consumer outside the package.
+**`@afenda/ui/playground` vs the `/playground` Next.js routes — two different things sharing a name.** `@afenda/ui/playground` (this package's `src/playground/`) is the exports-map-enforced, always-bundled runtime gateway: the only path any consumer may use to reach a UI primitive. It is unrelated to env-gating and carries no `PLAYGROUND_ENABLED` semantics. The Next.js `/playground` routes and trees (`apps/web/app/playground/`, `apps/web/features/playground/`) were a separate, local-only developer harness; **both trees were removed 2026-07-15** and must **not** be handrolled back. Any future browser harness may return only via an explicit **Shadcn Studio MCP** install + promote slice. `PLAYGROUND_*` keys may remain in `@afenda/env` / local env (see [ARCH-027](ARCH-027-env-model.md)) as reserved toggles for that future slice — they do not imply routes exist today. `Providers` lives at the dedicated `./playground/providers` subpath, not the primitives barrel, because its dependency chain (`settingsContext` → `fonts.ts` → `next/font/google` / `geist/font/pixel`) is a Next.js compiler-only construct that cannot be evaluated outside Next's own bundler; each gateway member's own `Props` type `extends` a curated `*Contract` type from `./playground/types`, enforced structurally by `tsc`, not by a runtime validator. Anything not re-exported from `./playground` or `./playground/providers` (i.e. `./components/*`, `./shared/*`, `./layout/*`, `./providers`, `./hooks/*`, `./lib/*`, `./utils/*`, `./configs/*`, `./contexts/*`, `./types/*`, `./store/*`, `./views/*`, `./fake-db/*`, `./assets/*`) is not part of the public exports map and fails to resolve for any consumer outside the package.
 
 ### `@afenda/emails`
 
@@ -207,6 +207,7 @@ apps/web/modules/declarations/domain/list.ts
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 1.5.1 | 2026-07-15 | Harness absence honesty: Next.js `/playground` trees removed; disambiguation paragraph updated (gateway unchanged). |
 | 1.5.0 | 2026-07-15 | DOC-003 six-section retrofit (content unchanged from 1.4.0 except "Known limits / future changes" moved to § 6 Notes) — this document's own 1.4.0 revision was the material change that crossed the retrofit threshold; ARCH-022/025/026/027/028 remain explicitly grandfathered per DOC-001 §3.8 (see DOC-002 register). |
 | 1.4.0 | 2026-07-15 | Reopened/closed same-turn: `@afenda/ui` exports trimmed to `.`, `./style.css`, `./playground`, `./playground/providers`, `./playground/types`; added `@afenda/ui/playground` vs `/playground` routes disambiguation paragraph; `*Contract`/`extends` pattern documented; forbidden-imports table updated. See [ADR-009](adr/ADR-009-afenda-ui-playground-gateway.md). |
 | 1.3.0 | 2026-07-15 | Checkpoint G: Status Target→Living; packages present on disk. |

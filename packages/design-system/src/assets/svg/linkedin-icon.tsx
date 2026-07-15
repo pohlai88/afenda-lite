@@ -1,4 +1,3 @@
-// React Imports
 import type { SVGAttributes } from 'react'
 
 const LinkedinIcon = (props: SVGAttributes<SVGElement>) => {

@@ -4,7 +4,7 @@
 | ----------------- | ---------- |
 | **ID**            | DOC-002    |
 | **Category**      | Control    |
-| **Version**       | 4.107.0 |
+| **Version**       | 4.112.0 |
 | **Status**        | Living     |
 | **Control State** | Closed     |
 | **Owner**         | Platform   |
@@ -71,14 +71,14 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 | ID           | Category     | Title                                      | Version | Status | Owner    | Updated    |
 | ------------ | ------------ | ------------------------------------------ | ------- | ------ | -------- | ---------- |
 | DOC-001      | Control      | Documentation Control Standard             | 2.7.0   | Living | Platform | 2026-07-14 |
-| DOC-002      | Control      | Documentation Register                     | 4.100.0 | Living | Platform | 2026-07-15 |
+| DOC-002      | Control      | Documentation Register                     | 4.112.0 | Living | Platform | 2026-07-15 |
 | DOC-003      | Control      | Controlled Document Template               | 1.4.0   | Living | Platform | 2026-07-14 |
 | ARCH-029     | Architecture | Interface and API Architecture             | 1.2.7   | Living | Platform | 2026-07-14 |
 | ARCH-031     | Architecture | Technology Stack Catalogue                 | 1.3.16  | Living | Platform | 2026-07-15 |
 | API-001      | API          | API Boundaries                             | 1.2.3   | Living | Backend  | 2026-07-14 |
 | API-002      | API          | Error Contract                             | 1.2.2   | Living | Backend  | 2026-07-14 |
 | API-003      | API          | API Types                                  | 2.0.1   | Living | Backend  | 2026-07-14 |
-| API-004      | API          | Schema Map                                 | 1.1.3   | Living | Backend  | 2026-07-14 |
+| API-004      | API          | Schema Map                                 | 1.1.4   | Living | Backend  | 2026-07-15 |
 | API-005      | API          | Authentication and Authorization Contract  | 0.1.1   | Draft  | Platform | 2026-07-14 |
 | API-006      | API          | Idempotency and Concurrency Contract       | 0.1.1   | Draft  | Backend  | 2026-07-14 |
 | API-007      | API          | API Observability and Correlation Contract | 0.1.1   | Draft  | Backend  | 2026-07-14 |
@@ -104,35 +104,35 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 | GUIDE-015    | Guide        | Interface Pack Development Roadmap         | 1.0.2   | Living | Platform | 2026-07-14 |
 | GUIDE-016    | Guide        | Feed Farm Trade Enterprise Acceptance      | 0.2.0   | Retired | Feed Farm Trade | 2026-07-14 |
 | GUIDE-017    | Guide        | Enterprise Quality and Evidence Standard   | 1.0.0   | Living | Platform | 2026-07-14 |
-| GUIDE-018    | Guide        | Full-Stack End-to-End Integration Program  | 0.3.6   | Draft  | Platform | 2026-07-15 |
+| GUIDE-018    | Guide        | Full-Stack End-to-End Integration Program  | 0.3.9   | Draft  | Platform | 2026-07-15 |
 | RB-006       | Runbook      | OpenAPI Drift Detection and Recovery       | 0.2.1   | Draft  | Backend  | 2026-07-14 |
 | RB-007       | Runbook      | API Incident Response                      | 0.2.0   | Draft  | Backend  | 2026-07-14 |
 | RB-008       | Runbook      | API Contract Rollback                      | 0.2.1   | Draft  | Backend  | 2026-07-14 |
 | ARCH-022     | Architecture | System Overview — Turborepo                | 1.6.5   | Living | Platform | 2026-07-15 |
 | ARCH-023     | Architecture | Multi-Tenancy and Platform RBAC            | 3.1.4   | Living | Platform | 2026-07-14 |
-| ARCH-024     | Architecture | Package Boundaries                         | 1.5.0   | Living | Platform | 2026-07-15 |
+| ARCH-024     | Architecture | Package Boundaries                         | 1.5.1   | Living | Platform | 2026-07-15 |
 | ARCH-025     | Architecture | Data Layer                                 | 1.3.0   | Living | Backend  | 2026-07-15 |
-| ARCH-026     | Architecture | Authentication and Session Model           | 1.3.4   | Living | Platform | 2026-07-15 |
-| ARCH-027     | Architecture | Environment Variable Model                 | 1.6.1   | Living | Platform | 2026-07-15 |
+| ARCH-026     | Architecture | Authentication and Session Model           | 1.3.6   | Living | Platform | 2026-07-15 |
+| ARCH-027     | Architecture | Environment Variable Model                 | 1.6.2   | Living | Platform | 2026-07-15 |
 | ARCH-028     | Architecture | Turborepo Implementation Slices            | 1.5.0   | Living | Platform | 2026-07-15 |
 | ARCH-001     | Architecture | Backend Architecture                       | 1.2.0   | Living | Backend  | 2026-07-14 |
 | ARCH-002     | Architecture | Frontend Architecture                      | 1.3.4   | Living | Frontend | 2026-07-15 |
 | ADR-008      | ADR          | Cache Components Mode B (Gated)            | 1.0.1   | Accepted | Frontend | 2026-07-14 |
-| ADR-009      | ADR          | `@afenda/ui` Playground Gateway as the Sole Public UI Import Surface | 1.0.0   | Accepted | Platform | 2026-07-15 |
+| ADR-009      | ADR          | `@afenda/ui` Playground Gateway as the Sole Public UI Import Surface | 1.0.1   | Accepted | Platform | 2026-07-15 |
 | ARCH-003     | Architecture | Multi-tenant Ecosystem                     | 2.1.1   | Superseded | Platform | 2026-07-14 |
 | ARCH-004     | Architecture | Backend Layers                             | 1.1.1   | Living | Backend  | 2026-07-14 |
-| ARCH-005     | Architecture | Backend Folder Map                         | 1.1.1   | Living | Backend  | 2026-07-14 |
+| ARCH-005     | Architecture | Backend Folder Map                         | 1.1.3   | Living | Backend  | 2026-07-15 |
 | ARCH-006     | Architecture | Bounded Contexts                           | 1.1.1   | Living | Backend  | 2026-07-14 |
 | ARCH-007     | Architecture | Ports and Adapters                         | 1.2.0   | Living | Backend  | 2026-07-14 |
 | ARCH-008     | Architecture | Next.js Adapter Map                        | 1.3.0   | Living | Backend  | 2026-07-14 |
-| ARCH-009     | Architecture | Modules Ownership Map                      | 1.1.2   | Living | Backend  | 2026-07-15 |
+| ARCH-009     | Architecture | Modules Ownership Map                      | 1.1.4   | Living | Backend  | 2026-07-15 |
 | ARCH-010     | Architecture | Backend Conventions                        | 1.3.0   | Living | Backend  | 2026-07-14 |
-| ARCH-012     | Architecture | App Router Routes                          | 1.2.6   | Living | Frontend | 2026-07-15 |
+| ARCH-012     | Architecture | App Router Routes                          | 1.2.7   | Living | Frontend | 2026-07-15 |
 | ARCH-013     | Architecture | BFF and Data Flow                          | 1.1.3   | Living | Frontend | 2026-07-14 |
 | ARCH-014     | Architecture | UI Surfaces                                | 2.0.0   | Superseded | Frontend | 2026-07-14 |
 | ARCH-015     | Architecture | Shadcn Studio / AdminCN Alignment          | 2.0.3   | Living | Frontend | 2026-07-15 |
 | ARCH-016     | Architecture | Next.js Conventions                        | 1.2.3   | Living | Frontend | 2026-07-14 |
-| ARCH-017     | Architecture | Frontend Folder Map                        | 2.0.2   | Living | Frontend | 2026-07-15 |
+| ARCH-017     | Architecture | Frontend Folder Map                        | 2.0.3   | Living | Frontend | 2026-07-15 |
 | ARCH-018     | Architecture | AdminCN Customization                      | 1.1.6   | Living | Frontend | 2026-07-15 |
 | ARCH-019     | Architecture | AdminCN Frontend Preflight                 | 1.1.6   | Living | Frontend | 2026-07-15 |
 | ARCH-020     | Architecture | Closed Scope Register                      | 2.0.1   | Superseded | Platform | 2026-07-14 |
@@ -170,6 +170,12 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 
 | Version | Date       | Summary                                                                                                                                         |
 | ------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| 4.112.0 | 2026-07-15 | I2.1 audit follow-through: ARCH-009→1.1.4 (action-result / invite schema honesty); DOC-002 self-row synced. |
+| 4.111.0 | 2026-07-15 | I2.1 audit repair: GUIDE-018→0.3.9 · ARCH-026→1.3.6 · ARCH-005→1.1.3 · API-004→1.1.4; next Ops = I2.2; DOC-002 self-row synced. |
+| 4.110.0 | 2026-07-15 | I1.4 register sync: GUIDE-018→0.3.8 · ARCH-026→1.3.5; Phase I1 DONE; next Ops = I2.1; DOC-002 self-row synced. |
+| 4.109.0 | 2026-07-15 | Register-only: GUIDE-018 → 0.3.7 (header already at 0.3.7); clears DOC-CONS naming REGISTER-DRIFT. |
+| 4.108.0 | 2026-07-15 | Playground harness absence honesty: ARCH-005→1.1.2 · ARCH-009→1.1.3 · ARCH-012→1.2.7 · ARCH-017→2.0.3 · ARCH-024→1.5.1 · ARCH-027→1.6.2 · ADR-009→1.0.1; DOC-002 self-row synced; no handroll restore. |
+| 4.107.0 | 2026-07-15 | ARCH-024 → 1.5.0 DOC-003 six-section retrofit (content unchanged; "Known limits" moved to § 6 Notes) — the 1.4.0 revision this session crossed the "materially revised" threshold in DOC-001 §3.8. ARCH-022/025/026/027/028 remain explicitly grandfathered (see § 6 Notes below) — link-only or single-row edits this session did not cross that threshold for them. |
 | 4.100.0 | 2026-07-15 | I1.3 register sync: GUIDE-018→0.3.6 · ARCH-022→1.6.4 · ARCH-026→1.3.3; next Ops = I1.4; DOC-002 self-row synced. |
 | 4.99.0 | 2026-07-15 | `(client)` normalize honesty: ARCH-012→1.2.5 · ARCH-002→1.3.4; DOC-002 self-row synced. |
 | 4.98.0 | 2026-07-15 | ARCH-012→1.2.4 client `(gate)`/`(workspace)` path honesty vs on-disk `app/(client)/client/**`; DOC-002 self-row synced. |
@@ -237,7 +243,6 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 | 4.39.0 | 2026-07-14 | ARCH-031 → 1.1.0 purge Collapse Current ops (`lib/env`/compose evidence); ARCH-027 → 1.4.0 docs-first STOP (no recover compose). |
 | 4.38.0 | 2026-07-14 | Anti-contamination: ARCH-028 → 1.4.0 lock; Living ARCH-001/002/004–010/012–019 checkout honesty (→ 1.0.3 / ARCH-017 → 1.1.4); ARCH-031 → 1.0.1; forbid Collapse tree recover. |
 | 4.37.0 | 2026-07-14 | Architecture sync: Living pack ARCH-001/002/004–010/012–019 DOC-003 retrofit + Change Logs; ARCH-017 → 1.1.3; ARCH-021 → 2.0.2 (ARCH-029→017 label fix); DOC-002 header↔row version align. |
-| 4.107.0 | 2026-07-15 | ARCH-024 → 1.5.0 DOC-003 six-section retrofit (content unchanged; "Known limits" moved to § 6 Notes) — the 1.4.0 revision this session crossed the "materially revised" threshold in DOC-001 §3.8. ARCH-022/025/026/027/028 remain explicitly grandfathered (see § 6 Notes below) — link-only or single-row edits this session did not cross that threshold for them. |
 | 4.106.0 | 2026-07-15 | Register-only sync: ARCH-026 register row 1.3.3 → 1.3.4 to match the document header/Change Log (I1.3 operator-invite gap close), which had already landed but never propagated to the register. Pre-existing drift, unrelated to this session's UI-gateway work; no document edit required. |
 | 4.105.0 | 2026-07-15 | Plan-vs-codebase audit: ARCH-022→1.6.5 (package boundary table `packages/ui`→`packages/design-system`), ARCH-031→1.3.16 (§3.2 ledger "UI tooling" row same fix, missed in the prior pass) — closes the last current-state `packages/ui` references in controlled docs; historical ARCH-028 S5.1 / GUIDE-018 slice records left as dated history, not current claims. |
 | 4.104.0 | 2026-07-15 | Registered ADR-009 → 1.0.0 Accepted (`@afenda/ui` playground gateway; `packages/ui`→`packages/design-system` consolidation; exports trim; `*Contract` pattern), user-approved ID this turn per DOC-001 §3.2. |
@@ -293,11 +298,11 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 
 **GUIDE-017** is the Living cross-cutting authority for evidence vocabulary and release/capability aggregation. It does not replace MOD-002 module evidence/claims or ARCH-029/GUIDE-014 interface verification.
 
-**GUIDE-018** is the registered Draft post-scaffold full-stack integration program (Phases G closed · I1.1–I1.3 done · next I1.4). It sequences work; owning ARCH/API/MOD spines remain binding for detail.
+**GUIDE-018** is the registered Draft post-scaffold full-stack integration program (Phase I1 DONE · I2.1 DONE · next I2.2). It sequences work; owning ARCH/API/MOD spines remain binding for detail.
 
 `FFT-REST-002`…`FFT-REST-007`, `OPEN-002`…`OPEN-005`, `ADR-001`…`ADR-007`, `RB-009` (webhook replay), and `ARCH-030` (verification architecture) are **reserved in planning docs only** — not registered until created under the approved derivation / creation gates. **`ADR-008`** is registered (Accepted Phase 1 — Cache Components Mode B; `cacheComponents` enablement still deferred). **`ADR-009`** is registered (Accepted — `@afenda/ui` playground gateway; `packages/ui` retirement).
 
-`ARCH-022` and `ARCH-024` through `ARCH-028` are **Living** scaffold SSOT after Checkpoint G (2026-07-15). Post-scaffold program order is [GUIDE-018](../guides/GUIDE-018-fullstack-e2e-integration-program.md) (registered Draft 0.3.6). Auth edge residual after I1.3 (role shells) remains Phase I1 — not a Status demotion.
+`ARCH-022` and `ARCH-024` through `ARCH-028` are **Living** scaffold SSOT after Checkpoint G (2026-07-15). Post-scaffold program order is [GUIDE-018](../guides/GUIDE-018-fullstack-e2e-integration-program.md) (registered Draft 0.3.9). Phase I1 (identity & edge) and I2.1 (ActionResult / error brands) are closed; next Ops = I2.2 — not a Status demotion of Living auth ARCH.
 
 **`ARCH-024`** cleared its DOC-003 six-section `STRUCTURE-DRIFT` finding at 1.5.0 (2026-07-15). **`ARCH-022`, `ARCH-025`, `ARCH-026`, `ARCH-027`, `ARCH-028`** remain explicit DOC-001 §3.8 structure grandfathers pending their own material revision — none of this session's edits to those five (link-only additions or single-row fixes) crossed the "materially revised" retrofit threshold. Same posture previously used for `ARCH-023` (grandfathered at 4.35.0, retrofitted at 4.36.0 on its own material revision).
 

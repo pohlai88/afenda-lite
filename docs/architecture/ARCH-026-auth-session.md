@@ -4,13 +4,13 @@
 |-------|-------|
 | ID | ARCH-026 |
 | Category | Architecture |
-| Version | 1.3.5 |
+| Version | 1.3.6 |
 | Status | Living |
 | Control State | Closed |
 | Owner | Platform |
 | Updated | 2026-07-15 |
 
-> **Living.** Auth/session packaging SSOT after ARCH-028 Checkpoint G (2026-07-15). `@afenda/auth` helpers + `createSessionProxy` / `apps/web/proxy.ts` (I1.1) + public Neon Auth UI `/auth/*` (I1.2) + `/join?invitationId=…` + operator `inviteOrgMember` adapter on `/admin` (I1.3) + fail-closed role shells `requireRole` → `/403` (I1.4) on disk. Next program surface: GUIDE-018 **I2** (ActionResult / BFF). IAM Decision lock stays in [ARCH-023](ARCH-023-multi-tenancy.md).
+> **Living.** Auth/session packaging SSOT after ARCH-028 Checkpoint G (2026-07-15). `@afenda/auth` helpers + `createSessionProxy` / `apps/web/proxy.ts` (I1.1) + public Neon Auth UI `/auth/*` (I1.2) + `/join?invitationId=…` + operator `inviteOrgMember` adapter on `/admin` (I1.3) + fail-closed role shells `requireRole` → `/403` (I1.4) on disk. GUIDE-018 **I2.1** closed: invite Action returns platform `ActionResult` / shared error codes. Next program surface: **I2.2** (feature → domain → `@afenda/db` boundary). IAM Decision lock stays in [ARCH-023](ARCH-023-multi-tenancy.md).
 
 ## Context
 
@@ -184,6 +184,7 @@ Client invitation: operator uses `/admin` → `inviteOrgMemberAction` → `invit
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.3.6 | 2026-07-15 | Bounded reopen (I2.1 audit repair): next-pointer honesty — I2.1 ActionResult landed; residual = I2.2. |
 | 1.3.5 | 2026-07-15 | I1.4 closed: `AUTH_FORBIDDEN_PATH` · `requireRole` wrong-role → `/403` · operator/client layout wiring; residual = GUIDE-018 I2. |
 | 1.3.4 | 2026-07-15 | I1.3 gap close: operator `/admin` → `inviteOrgMemberAction` / `inviteOrgMember`; residual = I1.4 role shells. |
 | 1.3.3 | 2026-07-15 | I1.3 honesty: `/join?invitationId=…` + Neon accept-invitation redirect; residual = I1.4 role shells. |

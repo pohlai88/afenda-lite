@@ -7,7 +7,7 @@ import {
 	inviteOrgMemberAction,
 } from "@/app/actions/invite-org-member";
 
-const initialState: InviteOrgMemberActionState = { status: "idle" };
+const initialState: InviteOrgMemberActionState = null;
 
 const fieldClassName =
 	"border-input bg-background h-9 w-full rounded-md border px-3 text-sm";
@@ -89,16 +89,16 @@ export function InviteMemberForm({
 				{pending ? "Sending invitation…" : "Send invitation"}
 			</button>
 
-			{state.status === "success" ? (
+			{state?.ok === true ? (
 				<p className="text-sm text-muted-foreground" role="status">
 					Invitation sent to{" "}
-					<code className="text-foreground">{state.email}</code>. They join via
-					the email link at{" "}
+					<code className="text-foreground">{state.data.email}</code>. They join
+					via the email link at{" "}
 					<code className="text-foreground">{joinPath}?invitationId=…</code>.
 				</p>
 			) : null}
 
-			{state.status === "error" ? (
+			{state?.ok === false ? (
 				<p className="text-sm text-destructive" role="alert">
 					{state.message}
 				</p>

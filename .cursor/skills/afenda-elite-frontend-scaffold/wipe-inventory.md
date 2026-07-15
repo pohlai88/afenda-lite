@@ -189,10 +189,7 @@ After delete: recreate empty `features/{landing,auth,account,operator,client-wor
 - `app/account/[path]/page.tsx`, `loading.tsx`, `not-found.tsx` — REPLACE
 
 ### playground
-- `app/playground/layout.tsx`, `page.tsx`, `error.tsx` — REPLACE
-- `app/playground/[screenId]/page.tsx` — REPLACE
-- `app/playground/coverage/page.tsx` — REPLACE
-- `app/playground/hitl-review/page.tsx` — REPLACE
+- `app/playground/**` — **ABSENT** 2026-07-15 (do not REPLACE/handroll; Studio MCP for any return)
 
 ### trade
 - `app/fft/page.tsx` — REPLACE

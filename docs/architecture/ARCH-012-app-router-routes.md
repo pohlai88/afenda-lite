@@ -4,9 +4,9 @@
 | ----------------- | ------------ |
 | **ID**            | ARCH-012     |
 | **Category**      | Architecture |
-| **Version**       | 1.2.6        |
+| **Version**       | 1.2.7        |
 | **Status**        | Living       |
-| **Control State** | Closed     |
+| **Control State** | Closed       |
 | **Owner**         | Frontend     |
 | **Updated**       | 2026-07-15   |
 
@@ -91,7 +91,7 @@ apps/web/proxy.ts (session gate; not middleware.ts)
 | `/client/login`, `/client/preview-unavailable` | Gate blank chrome; session-gate bypass (no `requireRole`) | Request-time | Parent `(gate)` has **no** `loading`/`error` (login uses `redirect()`); preview segment may own them |
 | `/auth/*`, join, public links | Auth island / public | Per surface | See rows |
 | `/api/health/*` | None | `auto` + short revalidate | Route Handlers only |
-| `/playground/*` | Local only (`PLAYGROUND_ENABLED`) | Never a production contract | Dev harness |
+| `/playground/*` | **Absent** on disk (removed 2026-07-15) | Not a production contract | Do not handroll; future harness via Studio MCP only — [ARCH-024 § `@afenda/ui`](ARCH-024-package-boundaries.md#afendaui) |
 
 Secondary panels may Suspense-stream **now** without Cache Components ([ARCH-002](ARCH-002-frontend-architecture.md)).
 
@@ -184,20 +184,15 @@ Same AdminCN shell as dashboard. Layout gate: `requireMemberSession`.
 
 Never place `route.ts` beside a `page.tsx` in the same segment. Prefer Server Actions for first-party browser mutations ([ARCH-013](ARCH-013-bff-and-data-flow.md)).
 
-## 3.10 Playground (dev only)
+## 3.10 Playground (dev only) — **removed**
 
 | Path | Role | Proxy | Composition |
 |------|------|-------|-------------|
-| `/playground` | Harness index | yes | wired / local-only |
-| `/playground/[screenId]` | Screen iframe host | yes | wired |
-| `/playground/coverage` | Route coverage | yes | wired |
-| `/playground/hitl-review` | Source-backed HITL route review | yes | wired |
+| `/playground` and children | Former local harness | matcher may still list path | **Absent** — trees `apps/web/app/playground/` and `apps/web/features/playground/` deleted 2026-07-15 |
 
-Gated by `PLAYGROUND_ENABLED`. Not a client product surface. Never sync playground env to Vercel production. These `/playground` routes are distinct from the `@afenda/ui/playground` package subpath — see [ARCH-024 § `@afenda/ui`](ARCH-024-package-boundaries.md#afendaui) for the canonical disambiguation.
+Do **not** recreate these routes or a handrolled lab/compose board. `PLAYGROUND_*` env keys may remain reserved ([ARCH-027](ARCH-027-env-model.md)). Name collision with `@afenda/ui/playground` (package gateway) — [ARCH-024 § `@afenda/ui`](ARCH-024-package-boundaries.md#afendaui).
 
-Curated route bindings live in `features/playground/playground-registry.ts` when the Target tree exists; `pnpm check:playground` enforces route, review-definition, evidence, and E2E fixture parity.
-
-HITL route review keeps two facts separate: **Expected from source** is the registered fixture contract backed by route/entry files; **Human verdict** is the locally stored runtime observation. Notes and copied repair prompts never mark a route verified.
+Former registry / `pnpm check:playground` / HITL harness notes no longer apply until an explicit Studio MCP-driven harness slice lands.
 
 ## 3.11 Feed Farm Trade (gated appendix)
 
@@ -283,6 +278,7 @@ Agent method (not a controlled ID): `.cursor/skills/afenda-elite-nextjs-best-pra
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 1.2.7 | 2026-07-15 | § 3.10 + family matrix: Next.js playground harness removed (absent); no handroll; Studio MCP for any future harness. |
 | 1.2.6 | 2026-07-15 | § 3.10 Playground: linked to the ARCH-024 `@afenda/ui/playground` disambiguation paragraph (no independent prose). |
 | 1.2.5 | 2026-07-15 | `(client)` normalize: workspace `loading`/`error` under `dashboard/` only (redirect-safe; same class as gate login). |
 | 1.2.4 | 2026-07-15 | Client path honesty: Living inventory under `app/(client)/client/{(gate)|(workspace)}`; gate loading/error rules; `/client` + `/client/dashboard` wired; preview gate moved to §3.4. |

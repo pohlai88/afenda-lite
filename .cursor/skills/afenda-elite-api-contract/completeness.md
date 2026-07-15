@@ -8,10 +8,10 @@ Plan authority: this skill + `api-now.md` + `docs/api/*` (SSOT: Living API-001�
 | ----- | ---- | ----------------- | ------ |
 | api-now handlers only | health / auth / draft | [REST-001](../../../docs/api/REST-001-rest-resources.md) api-now; paths `app/api/{health,auth,client}` | **Done** (contract) |
 | No web-UI list REST | RSC → domain | [API-001](../../../docs/api/API-001-api-boundaries.md) adapter choice | **Done** (contract) |
-| ActionResult / APIErrorBody | Shared codes | [API-002](../../../docs/api/API-002-error-contract.md) | **Done** (contract) |
+| ActionResult / APIErrorBody | Shared codes | [API-002](../../../docs/api/API-002-error-contract.md) · Target `apps/web/modules/platform/schemas/{action-result,api-error}.ts` | **Done** (contract + Target runtime, I2.1) |
 | HTTP success `{ data }` | Envelope | [API-001](../../../docs/api/API-001-api-boundaries.md); OPEN `*Envelope` schemas | **Done** (contract) |
 | List payload preference | `data: { items, pagination }` | [ARCH-029](../../../docs/architecture/ARCH-029-interface-api-architecture.md); freeze in API-008 when Living | **Done** (architecture) / API-008 **Draft** |
-| `parseSchema` from Platform | Shared Zod | [API-004](../../../docs/api/API-004-schema-map.md) | **Done** (contract) |
+| `parseSchema` from Platform | Shared Zod | [API-004](../../../docs/api/API-004-schema-map.md) · Target `apps/web/modules/platform/schemas/common.ts` | **Done** (contract + Target runtime, I2.1) |
 | Branded IDs one-version | Param = brand = Zod | [API-003](../../../docs/api/API-003-api-types.md) | **Done** (contract) |
 | Draft Route Handler compose | Declarations owns | REST-001 + `modules/declarations/api/client-declaration-draft-route` | **Done** (contract) |
 | FFT HTTP catalog | Contract-only, locale-free | [FFT-REST-001](../../../docs/modules/feed-farm-trade/FFT-REST-001-feed-farm-trade-resource-index.md) · REST-001 appendix | **Intentional** (Draft index) |

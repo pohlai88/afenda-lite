@@ -4,7 +4,7 @@
 | ----------------- | ------------ |
 | **ID**            | ARCH-009     |
 | **Category**      | Architecture |
-| **Version**       | 1.1.2        |
+| **Version**       | 1.1.4        |
 | **Status**        | Living       |
 | **Control State** | Closed       |
 | **Owner**         | Backend      |
@@ -74,8 +74,9 @@ Prose **Trade** = Feed Farm Trade; code path **`modules/fft/`** (never `modules/
 | Path | Role |
 |------|------|
 | `api/*` | Health / json-response helpers (no product draft compose here) |
-| `schemas/api-error.ts` | Shared API error body / codes |
-| `schemas/common.ts` | Shared Zod (`parseSchema`, uuid, email, slug, password) |
+| `schemas/api-error.ts` | Shared API error body / codes (**Target on disk**, I2.1) |
+| `schemas/action-result.ts` | Shared `ActionResult` / `actionOk` / `actionFail` (**Target on disk**, I2.1) |
+| `schemas/common.ts` | Shared Zod (`parseSchema`, uuid, email, slug, password) (**Target on disk**, I2.1) |
 | `normalize-email.ts` | Email normalize (Platform-owned) |
 | `env/*` | Typed env shape — Target `@afenda/env` ([ARCH-027](ARCH-027-env-model.md)) |
 | `db.ts`, `db-config.ts` | Pool / connection config |
@@ -103,7 +104,8 @@ Prose **Trade** = Feed Farm Trade; code path **`modules/fft/`** (never `modules/
 | `domain/invite.ts`, `tokens.ts` | Invite token / QR |
 | `domain/client-profile.ts`, `client-invitation-bootstrap.ts` | Client profile / invite bootstrap |
 | `domain/platform-rbac*.ts` | Platform RBAC domain |
-| `schemas/auth.ts`, `schemas/users.ts`, `schemas/platform-rbac.ts` | Identity Zod |
+| `schemas/invite-org-member.ts` | Org-member invite Zod (**Target on disk**, I2.1) |
+| `schemas/auth.ts`, `schemas/users.ts`, `schemas/platform-rbac.ts` | Identity Zod — Living inventory until present on Target |
 | `email/*` | Client onboarding invite email |
 | `preview-client.ts`, `portal-member*.ts`, `portal-organization.ts` | Member / preview / org helpers |
 | `admin.ts`, `auth-metadata.ts`, `delete-client-auth-user.ts` | Admin / cleanup helpers |
@@ -163,12 +165,10 @@ UI / Actions companions (not under `modules/`, ownership companions): `features/
 | `features/auth/*` (trust / shell copy) | Auth island helpers |
 | `features/organization-admin/*` | Operator page runners + promoted Studio leaves |
 | `features/portal-chrome/*` | Theme owner, brand, shell access resolve |
-| `features/playground/**` | Local harness only — never prod contract |
-
-`features/playground/` (Next.js routes) is distinct from the `@afenda/ui/playground` package subpath — see [ARCH-024 § `@afenda/ui`](ARCH-024-package-boundaries.md#afendaui) for the canonical disambiguation.
+| `features/playground/**` | **Absent** — removed 2026-07-15 (do not handroll); gateway name collision → [ARCH-024 § `@afenda/ui`](ARCH-024-package-boundaries.md#afendaui) |
 | `features/fft/fft-*.tsx` | Trade UI under AdminCN / Studio shell |
 
-Do **not** recreate `lib/pages`, `lib/entry`, or `lib/playground`.
+Do **not** recreate `lib/pages`, `lib/entry`, `lib/playground`, or `features/playground`.
 
 ---
 
@@ -212,7 +212,7 @@ Detail: [residue-inventory.md](../../.cursor/skills/afenda-elite-backend-modules
 | `lib/entry/**` | `features/auth/entry/**` |
 | `lib/pages/organization-admin-*` | `features/organization-admin/` |
 | `lib/pages/public-link-page*` | `features/auth/public-link-page*` |
-| `lib/pages/playground/**`, `lib/playground/**` | `features/playground/` |
+| `lib/pages/playground/**`, `lib/playground/**` | Formerly absorbed into `features/playground/` — that tree is also **absent** (2026-07-15); do not recreate either |
 
 ---
 
@@ -254,6 +254,8 @@ Detail: [residue-inventory.md](../../.cursor/skills/afenda-elite-backend-modules
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 1.1.4 | 2026-07-15 | Bounded reopen (I2.1 audit repair): platform `action-result` + identity invite schema Target-on-disk honesty. |
+| 1.1.3 | 2026-07-15 | `features/playground/**` Absent; do not recreate; gateway disambiguation link retained. |
 | 1.1.2 | 2026-07-15 | Linked `features/playground/**` row to the ARCH-024 `@afenda/ui/playground` disambiguation paragraph (no independent prose). |
 | 1.1.1 | 2026-07-14 | Home flattened to docs/architecture/ (trunks removed; pack reading order in README). |
 | 1.1.0 | 2026-07-14 | Logical inventory sync with module-tree: remove stale `lib/` shim claims; Platform normalize-email / RBAC / draft API ownership; FE portal-chrome + fft; closed relocate history; forbidden list; full References. |

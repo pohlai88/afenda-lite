@@ -1,7 +1,8 @@
 /**
  * S5.1 boundary — proves `@afenda/ui/playground` is the sole runtime door
- * for UI consumption, and that the gateway matches the playground lab
- * registry exactly (plus the named infra allowlist).
+ * for UI consumption, and that the gateway matches the named allowlists
+ * (infra + proven composites). The Next.js `/playground` harness was removed;
+ * lab-registry parity is suspended until a Studio MCP-driven harness returns.
  *
  * `@afenda/ui/playground/providers` is checked by static source text, not
  * dynamic import: `Providers` -> settingsContext -> fonts.ts pulls in
@@ -15,21 +16,25 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import {
+	Accordion,
+	AccordionContent,
+	AccordionItem,
+	AccordionTrigger,
 	ActivityDialog,
 	Button,
 	buttonVariants,
 	cn,
+	Input,
 	NotificationDropdown,
 	ProfileDropdown,
 } from "@afenda/ui/playground";
 import {
 	ALLOWED_UI_SUBPATHS,
 	PLAYGROUND_INFRA_EXPORTS,
+	PLAYGROUND_PROVEN_EXPORTS,
 	PLAYGROUND_PROVIDERS_EXPORTS,
 } from "@afenda/ui/playground/types";
 import { describe, expect, it } from "vitest";
-
-import { PLAYGROUND_LABS } from "@/features/playground/lab-registry";
 
 const webRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -54,24 +59,33 @@ const UI_IMPORT_PATTERN = /@afenda\/ui(?:\/[\w.\-/]+)?/g;
 
 describe("@afenda/web ui boundary", () => {
 	it("resolves every non-Providers gateway member from @afenda/ui/playground", () => {
+		expect(Accordion).toBeTypeOf("function");
+		expect(AccordionContent).toBeTypeOf("function");
+		expect(AccordionItem).toBeTypeOf("function");
+		expect(AccordionTrigger).toBeTypeOf("function");
 		expect(Button).toBeTypeOf("function");
 		expect(buttonVariants).toBeTypeOf("function");
+		expect(Input).toBeTypeOf("function");
 		expect(ProfileDropdown).toBeTypeOf("function");
 		expect(NotificationDropdown).toBeTypeOf("function");
 		expect(ActivityDialog).toBeTypeOf("function");
 		expect(cn("a", "b")).toContain("a");
 	});
 
-	it("primitives barrel exports equal registry exportName values plus the infra allowlist", () => {
-		const registryExportNames = PLAYGROUND_LABS.map((lab) => lab.exportName);
+	it("primitives barrel exports equal proven + infra allowlists", () => {
 		const expected = new Set([
-			...registryExportNames,
+			...PLAYGROUND_PROVEN_EXPORTS,
 			...PLAYGROUND_INFRA_EXPORTS,
 		]);
 		const actual = new Set(
 			Object.keys({
+				Accordion,
+				AccordionContent,
+				AccordionItem,
+				AccordionTrigger,
 				Button,
 				buttonVariants,
+				Input,
 				ProfileDropdown,
 				NotificationDropdown,
 				ActivityDialog,

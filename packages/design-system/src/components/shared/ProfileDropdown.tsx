@@ -21,7 +21,7 @@ import type { ProfileDropdownContract } from '../../playground/types'
 const STATIC_USER = {
   fullName: 'John Doe',
   email: 'john.doe@example.com',
-  imageUrl: '/images/avatars/avatar-1.webp',
+	imageUrl: 'https://cdn.shadcnstudio.com/ss-assets/avatar/avatar-1.png',
   initials: 'JD'
 }
 

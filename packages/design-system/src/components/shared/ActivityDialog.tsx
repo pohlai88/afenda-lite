@@ -22,7 +22,7 @@ const ActivityDialog = ({ defaultOpen = false, trigger, triggerClassName }: Acti
         <div className='overflow-y-auto'>
           <div className='flex gap-4 px-4 py-3'>
             <Avatar>
-              <AvatarImage src='/images/avatars/avatar-1.webp' />
+              <AvatarImage src='https://cdn.shadcnstudio.com/ss-assets/avatar/avatar-1.png' />
               <AvatarFallback>JL</AvatarFallback>
             </Avatar>
             <div className='flex w-full flex-col items-start gap-2.5'>
@@ -51,7 +51,7 @@ const ActivityDialog = ({ defaultOpen = false, trigger, triggerClassName }: Acti
 
           <div className='flex gap-4 px-4 py-3'>
             <Avatar>
-              <AvatarImage src='/images/avatars/avatar-2.webp' />
+              <AvatarImage src='https://cdn.shadcnstudio.com/ss-assets/avatar/avatar-2.png' />
               <AvatarFallback>JP</AvatarFallback>
             </Avatar>
             <div className='flex w-full flex-col items-start gap-2.5'>
@@ -76,7 +76,7 @@ const ActivityDialog = ({ defaultOpen = false, trigger, triggerClassName }: Acti
 
           <div className='flex gap-4 px-4 py-3'>
             <Avatar>
-              <AvatarImage src='/images/avatars/avatar-3.webp' />
+              <AvatarImage src='https://cdn.shadcnstudio.com/ss-assets/avatar/avatar-3.png' />
               <AvatarFallback>TH</AvatarFallback>
             </Avatar>
             <div className='flex w-full flex-col items-start gap-2.5'>
@@ -101,7 +101,7 @@ const ActivityDialog = ({ defaultOpen = false, trigger, triggerClassName }: Acti
 
           <div className='flex gap-4 px-4 py-3'>
             <Avatar>
-              <AvatarImage src='/images/avatars/avatar-5.webp' />
+              <AvatarImage src='https://cdn.shadcnstudio.com/ss-assets/avatar/avatar-5.png' />
               <AvatarFallback>D</AvatarFallback>
             </Avatar>
             <div className='text-muted-foreground flex flex-col items-start text-sm'>
@@ -116,7 +116,7 @@ const ActivityDialog = ({ defaultOpen = false, trigger, triggerClassName }: Acti
 
           <div className='flex gap-4 px-4 py-3'>
             <Avatar>
-              <AvatarImage src='/images/avatars/avatar-6.webp' />
+              <AvatarImage src='https://cdn.shadcnstudio.com/ss-assets/avatar/avatar-6.png' />
               <AvatarFallback>LA</AvatarFallback>
             </Avatar>
             <div className='flex w-full flex-col items-start gap-2.5'>
@@ -142,7 +142,7 @@ const ActivityDialog = ({ defaultOpen = false, trigger, triggerClassName }: Acti
 
           <div className='flex gap-4 px-4 py-3'>
             <Avatar>
-              <AvatarImage src='/images/avatars/avatar-8.webp' />
+              <AvatarImage src='https://cdn.shadcnstudio.com/ss-assets/avatar/avatar-8.png' />
               <AvatarFallback>M</AvatarFallback>
             </Avatar>
             <div className='text-muted-foreground flex flex-col items-start text-sm'>

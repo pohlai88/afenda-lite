@@ -4,7 +4,7 @@
 | ----------------- | ------------ |
 | **ID**            | ARCH-017     |
 | **Category**      | Architecture |
-| **Version**       | 2.0.2        |
+| **Version**       | 2.0.3        |
 | **Status**        | Living       |
 | **Control State** | Closed       |
 | **Owner**         | Frontend     |
@@ -104,7 +104,7 @@ Define the Living **frontend folder homes** for Target product UI under Next.js 
 | `app/dashboard/`, `app/account/`, `app/fft/` | AdminCN shell families |
 | `app/join/`, `app/invite/`, `app/f/`, `app/survey/` | Join + public/secure links |
 | `app/org/login/` | Operator entry alias |
-| `app/playground/` | Local developer harness — never prod contract |
+| `app/playground/` | **Absent** — removed 2026-07-15 (do not handroll; see [ARCH-024 § `@afenda/ui`](ARCH-024-package-boundaries.md#afendaui)) |
 
 Route catalogue SSOT: [ARCH-012](ARCH-012-app-router-routes.md).
 
@@ -118,9 +118,9 @@ Route catalogue SSOT: [ARCH-012](ARCH-012-app-router-routes.md).
 | `features/organization-admin/` | Declarations leaf widgets + promoted Studio shells |
 | `features/portal-chrome/` | Shared chrome / shell access / theme owner |
 | `features/fft/` | Feed Farm Trade UI under AdminCN (no parallel FftShell) |
-| `features/playground/` | Local-only review harness |
+| `features/playground/` | **Absent** — removed 2026-07-15 (do not handroll) |
 
-`app/playground/` and `features/playground/` (Next.js routes) are distinct from the `@afenda/ui/playground` package subpath — see [ARCH-024 § `@afenda/ui`](ARCH-024-package-boundaries.md#afendaui) for the canonical disambiguation.
+Name collision with `@afenda/ui/playground` (package gateway only) — [ARCH-024 § `@afenda/ui`](ARCH-024-package-boundaries.md#afendaui).
 
 Colocated `_components/` under a route segment is allowed for route-local composition ([composition](../../.cursor/skills/afenda-elite-nextjs-best-practice/reference/composition.md)).
 
@@ -183,6 +183,7 @@ UI registry: `.cursor/skills/feed-farm-trade/ui-registry.md` · skill `/admincn-
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 2.0.3 | 2026-07-15 | `app/playground/` + `features/playground/` marked Absent (harness wipe); no handroll. |
 | 2.0.2 | 2026-07-15 | Linked `app/playground/` and `features/playground/` rows to the ARCH-024 `@afenda/ui/playground` disambiguation paragraph (no independent prose). |
 | 2.0.1 | 2026-07-14 | Home flattened to docs/architecture/ (trunks removed; pack reading order in README). |
 | 2.0.0 | 2026-07-14 | Studio-first rewrite: Target homes; Shadcn Studio DNA → promote; ban legacy `lib/`/`components/`/fake-db/demos/reference kits; remove stale “on disk keep” narrative; Elite composition contract. |

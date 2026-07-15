@@ -10,7 +10,7 @@
 
 | Path | Why |
 |------|-----|
-| `features/playground/**` | Local harness UI + registry + page runners |
+| `features/playground/**` | **Absent** 2026-07-15 — do not recreate; was local harness after lib absorb |
 | `features/auth/entry/**` | Login / invite / secure-link entry |
 | `features/auth/public-link-page*` | `/f` / open-link page helpers |
 | `features/organization-admin/organization-admin-*` | Historical Living absorb target → Target physical `features/org-admin/` (ARCH-022 / S7.4) |
@@ -34,8 +34,8 @@ Do **not** recreate `lib/` or recover Collapse roots. New UI → Target `apps/we
 | `lib/entry/**` | `features/auth/entry/**` |
 | `lib/pages/organization-admin-*` | `features/organization-admin/` |
 | `lib/pages/public-link-page*` | `features/auth/public-link-page*` |
-| `lib/pages/playground/**` | `features/playground/` |
-| `lib/playground/**` | `features/playground/` |
+| `lib/pages/playground/**` | Was → `features/playground/` — both now absent |
+| `lib/playground/**` | Was → `features/playground/` — both now absent |
 | `modules/declarations/copy/*` (SSOT) | `modules/platform/copy/*` — Platform copy port |
 
 ---
@@ -65,7 +65,7 @@ Do **not** recreate `lib/` or recover Collapse roots. New UI → Target `apps/we
 - [x] Remove unused shims after zero importers
 - [x] Update this file + `docs/architecture/ARCH-009-modules-ownership-map.md`
 - [x] Do not touch FFT gate-register / prod flags in the same PR
-- [x] Playground harness absorbed (`lib/playground` + `lib/pages/playground` → `features/playground`)
+- [x] Playground harness absorb (`lib/playground` + `lib/pages/playground` → `features/playground`) — then **removed** 2026-07-15 (Studio MCP only for any return)
 - [x] Empty `lib/` removed
 
 ## Optional next (needs approve)

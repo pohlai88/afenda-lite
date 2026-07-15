@@ -58,18 +58,19 @@ function asDeclarationId(id: string): DeclarationId {
 
 | Module path | Primary resources / flows | Notable exports |
 |-------------|---------------------------|-----------------|
-| `modules/platform/schemas/common.ts` | Shared primitives | `uuidSchema`, `emailSchema`, `passwordSchema`, `slugSchema`, **`parseSchema`** |
+| `modules/platform/schemas/common.ts` | Shared primitives | `uuidSchema`, `emailSchema`, `passwordSchema`, `slugSchema`, **`parseSchema`** (**Landed**) |
 | `modules/platform/schemas/api-error.ts` | Shared HTTP error body | `APIErrorBody` / codes (**Landed**) |
-| `modules/declarations/schemas/common.ts` | Re-exports platform + declarations-only | `surveyAnswersSchema` (+ re-exports) |
-| `modules/identity/schemas/auth.ts` | Sign-in boundary | `signInSchema` |
-| `modules/identity/schemas/users.ts` | Organization-admin users | `userIdSchema`, `UserId`, create/import/update/role/ban/bulk/password schemas |
-| `modules/identity/schemas/platform-rbac.ts` | Platform RBAC | `OrganizationId`, `PlatformRoleId`, `PermissionCode`, create/update/assign schemas |
-| `modules/platform/schemas/action-result.ts` | Shared Action contract | `ActionResult<T>`, `actionOk`, `actionFail` (docs/api/API-002-error-contract) |
-| `modules/declarations/schemas/client.ts` | Onboarding, declare submit/draft, invites, deletes | `clientOnboardingSchema`, `submitClientDeclarationSchema`, `saveClientDeclarationDraftSchema`, `issueClientInviteSchema`, `removeClientRegistrationSchema`, `deleteClientAssignmentSchema` |
-| `modules/declarations/schemas/surveys.ts` | Declarations (surveys) CRUD + public submit | `surveyMetadataFormSchema`, `updateSurveySchema`, `deleteSurveySchema`, `submitSurveyResponseSchema`, param schemas |
-| `modules/declarations/schemas/declarations.ts` | Evidence registration | `registerEvidenceSchema` |
-| `modules/declarations/schemas/questions.ts` | Question drafts / CDP | `questionDraftSchema`, `cdpQuestionSchema`, `questionConfigSchema` |
-| `modules/fft/schemas/fft-schemas.ts` | Feed Farm Trade inputs | `tradeLocaleSchema`, `tradeEventIdSchema`, `tradeOrderIdSchema`, locale/event/order input objects |
+| `modules/platform/schemas/action-result.ts` | Shared Action contract | `ActionResult<T>`, `actionOk`, `actionFail` (**Landed**; API-002) |
+| `modules/identity/schemas/invite-org-member.ts` | Org-member invite | `inviteOrgMemberCommandSchema` (**Landed**, I2.1) |
+| `modules/identity/schemas/auth.ts` | Sign-in boundary | `signInSchema` (Living inventory) |
+| `modules/identity/schemas/users.ts` | Organization-admin users | `userIdSchema`, create/import/update schemas (Living inventory) |
+| `modules/identity/schemas/platform-rbac.ts` | Platform RBAC | `OrganizationId`, `PlatformRoleId`, `PermissionCode` (Living inventory) |
+| `modules/declarations/schemas/common.ts` | Re-exports platform + declarations-only | `surveyAnswersSchema` (Living inventory) |
+| `modules/declarations/schemas/client.ts` | Onboarding, declare submit/draft, invites | Living inventory |
+| `modules/declarations/schemas/surveys.ts` | Declarations (surveys) CRUD + public submit | Living inventory |
+| `modules/declarations/schemas/declarations.ts` | Evidence registration | Living inventory |
+| `modules/declarations/schemas/questions.ts` | Question drafts / CDP | Living inventory |
+| `modules/fft/schemas/fft-schemas.ts` | Feed Farm Trade inputs | Living inventory |
 
 ---
 
