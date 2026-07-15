@@ -66,4 +66,28 @@ describe("shouldBypassSessionGate", () => {
 			shouldBypassSessionGate(req({ pathname: "/client/preview-unavailable" })),
 		).toBe(true);
 	});
+
+	it("bypasses playground paths only when the harness flag is enabled", () => {
+		expect(shouldBypassSessionGate(req({ pathname: "/playground" }))).toBe(
+			false,
+		);
+		expect(
+			shouldBypassSessionGate({
+				...req({ pathname: "/playground" }),
+				playgroundEnabled: true,
+			}),
+		).toBe(true);
+		expect(
+			shouldBypassSessionGate({
+				...req({ pathname: "/playground/lab/profile-dropdown" }),
+				playgroundEnabled: true,
+			}),
+		).toBe(true);
+		expect(
+			shouldBypassSessionGate({
+				...req({ pathname: "/playground/compose" }),
+				playgroundEnabled: true,
+			}),
+		).toBe(true);
+	});
 });

@@ -13,12 +13,19 @@ export type SessionGateRequest = {
 	pathname: string;
 	searchParams: Pick<URLSearchParams, "get">;
 	hasHeader: (name: string) => boolean;
+	/** When true, `/playground/*` may bypass the session gate (local harness). */
+	playgroundEnabled?: boolean;
 };
 
 function isClientPublicPath(pathname: string): boolean {
 	return CLIENT_GATE_PATHS.some(
 		(prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
 	);
+}
+
+/** Local AdminCN harness — layout enforces `PLAYGROUND_ENABLED` via notFound. */
+function isPlaygroundPath(pathname: string): boolean {
+	return pathname === "/playground" || pathname.startsWith("/playground/");
 }
 
 /**
@@ -38,6 +45,10 @@ export function shouldBypassSessionGate(request: SessionGateRequest): boolean {
 	}
 
 	if (isClientPublicPath(request.pathname)) {
+		return true;
+	}
+
+	if (request.playgroundEnabled && isPlaygroundPath(request.pathname)) {
 		return true;
 	}
 

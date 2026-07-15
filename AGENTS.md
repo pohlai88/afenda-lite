@@ -15,6 +15,27 @@ Cursor Agent instructions for this repository. Prefer **actions and links** over
 
 ## How Cursor Agent should work here
 
+### PREFLIGHT (mandatory self-declaration)
+
+**Whenever this turn uses skills, MCP, or project rules**, the agent’s **first user-visible reply** MUST open with:
+
+```text
+### PREFLIGHT
+- Engaging: skills | mcp | rules (list which apply)
+- Skills: <name(s) or none>
+- MCP: <server/tool(s) or none>
+- Rules: <rule file stem(s) or none>
+- Router: using-afenda-elite-skills | n/a
+```
+
+| Surface | Duty |
+|---------|------|
+| Rule | [`.cursor/rules/agent-authority-preflight.mdc`](.cursor/rules/agent-authority-preflight.mdc) (`alwaysApply`) |
+| Hooks | `sessionStart` · `beforeMCPExecution` · `postToolUse` (Read of skills/rules) → [`.cursor/hooks/agent-authority-preflight.mjs`](.cursor/hooks/agent-authority-preflight.mjs) |
+| Skip | Pure chitchat with no skill load, no MCP, no rule-driven work |
+
+Do not start skill loads or MCP calls before the PREFLIGHT block is in the visible reply for that turn.
+
 1. **Route product work** through [`/using-afenda-elite-skills`](.cursor/skills/using-afenda-elite-skills/SKILL.md) before vendor phase skills.
 2. **One mission per chat** when shipping product work — ARCH-028 coding slices are **closed**; use [GUIDE-018](docs/guides/GUIDE-018-fullstack-e2e-integration-program.md) phases + farms from [`/using-afenda-elite-skills`](.cursor/skills/using-afenda-elite-skills/SKILL.md). Residual scaffold verify: [implementation-slices](.cursor/skills/afenda-elite-implementation-slices/SKILL.md).
 3. **Prefer Agent** for implement/verify; use **Plan** only when the slice cutover has a real choice; use **Ask** for read-only navigation.
@@ -39,6 +60,7 @@ Cursor Agent instructions for this repository. Prefer **actions and links** over
 
 | Rule | Authority |
 |------|-----------|
+| **PREFLIGHT** before skills / MCP / rules | [`.cursor/rules/agent-authority-preflight.mdc`](.cursor/rules/agent-authority-preflight.mdc) |
 | **Enterprise production** quality bar only — never MVP / “good enough later” | [`.cursor/rules/no-mvp-quality-bar.mdc`](.cursor/rules/no-mvp-quality-bar.mdc) |
 | **No shims / stubs / throw-TODO** product paths | [`.cursor/rules/no-shim-stub-tech-debt.mdc`](.cursor/rules/no-shim-stub-tech-debt.mdc) |
 | **No Collapse/legacy recover** (`app/`, `modules/`, `features/`, `components-V2/`, Collapse `lib/`, wiped `scripts/*`) unless user names that recovery **this turn** | [ARCH-028](docs/architecture/ARCH-028-implementation-slices.md) · [`.cursor/rules/no-collapse-legacy-recovery.mdc`](.cursor/rules/no-collapse-legacy-recovery.mdc) |
@@ -179,6 +201,7 @@ Factory SSOT: **`testing/`** only — specs import `@/testing/e2e/*` when presen
 
 Before coding:
 
+- [ ] **PREFLIGHT** self-declared (skills / MCP / rules named) if authority engages
 - [ ] Farm routed (`using-afenda-elite-skills` or named slice skill)
 - [ ] Slice / lane / Control State understood
 - [ ] Paths under `apps/web/**` or `packages/*` (no Collapse restore)

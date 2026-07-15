@@ -1,6 +1,28 @@
 {
   "version": 1,
   "hooks": {
+    "sessionStart": [
+      {
+        "command": "node .cursor/hooks/agent-authority-preflight.mjs",
+        "failClosed": false,
+        "timeout": 10
+      }
+    ],
+    "beforeMCPExecution": [
+      {
+        "command": "node .cursor/hooks/agent-authority-preflight.mjs",
+        "failClosed": false,
+        "timeout": 10
+      }
+    ],
+    "postToolUse": [
+      {
+        "command": "node .cursor/hooks/agent-authority-preflight.mjs",
+        "matcher": "Read",
+        "failClosed": false,
+        "timeout": 10
+      }
+    ],
     "beforeShellExecution": [
       {
         "command": "node .cursor/hooks/git-no-auto-recover.mjs",

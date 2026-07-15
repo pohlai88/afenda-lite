@@ -37,6 +37,7 @@
   "typescript.enablePromptUseWorkspaceTsdk": true,
   "files.insertFinalNewline": true,
   "files.trimTrailingWhitespace": true,
+  "explorer.excludeGitIgnore": false,
   "editor.tabSize": 2,
   "editor.detectIndentation": false,
   "files.exclude": {
@@ -51,8 +52,7 @@
     "**/test-results": true,
     "**/playwright-report": true,
     "**/out": true,
-    "**/.artifacts": true,
-    "_reference": true
+    "**/.artifacts": true
   },
   "search.exclude": {
     "**/node_modules": true,
@@ -68,7 +68,6 @@
     "**/out": true,
     "**/.artifacts": true,
     "**/.git": true,
-    "_reference": true,
     "docs/architecture/backend": true,
     "docs/architecture/frontend": true,
     "docs/architecture/system": true,
@@ -91,7 +90,6 @@
     "**/out/**": true,
     "**/.artifacts/**": true,
     "**/.git/**": true,
-    "**/_reference/**": true,
     "**/pnpm-lock.yaml": true
   },
 

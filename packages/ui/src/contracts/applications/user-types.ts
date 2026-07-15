@@ -118,7 +118,7 @@ export interface AppUser {
 	id: string;
 	name: string;
 	email: string;
-	avatar?: string; // URL string — if absent, show initials
+	avatar?: string; // URL string ÔÇö if absent, show initials
 	role: UserRole;
 	plan: UserPlan;
 	status: UserStatus;
