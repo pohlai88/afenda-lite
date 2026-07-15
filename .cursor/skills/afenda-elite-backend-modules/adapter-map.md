@@ -3,20 +3,21 @@
 **Like api-now for backend:** which driving adapters call which module entrypoints.  
 **REST catalog / HTTP classification:** [../afenda-elite-api-contract/api-now.md](../afenda-elite-api-contract/api-now.md) · [docs/api/REST-001-rest-resources.md](../../../docs/api/REST-001-rest-resources.md)
 
-**Path truth:** Logical names below (`app/actions`, `modules/*`) are **Target/Living shape**. Physical Target home is `apps/web/…`. On this **docs-first** checkout those trees are **absent by design** — this map is ownership inventory, not a claim they are implemented today. Do not recover Collapse roots.
+**Path truth:** Logical names below (`app/actions`, `modules/*`) are **Target/Living shape**. Physical Target home is `apps/web/…`. Rows mark **on disk** vs **planned**. Do not recover Collapse roots.
 
 ---
 
 ## Server Actions (logical `app/actions/` → Target `apps/web/app/actions/`)
 
-| File | Module entrypoints (typical) | Notes |
-|------|------------------------------|-------|
-| `account.ts` | `modules/identity/*` | Account session / Neon-owned fields |
-| `admin.ts` | `modules/identity/*`, platform helpers | Operator admin + org users + **platform RBAC** + **`setActiveOrganizationAction`**; `parseSchema` from Platform |
-| `client.ts` | `modules/identity/*`, `modules/declarations/*`, `resolvePlatformOrgContext` | Invite stamps + scopes survey by org; compose at adapter |
-| `declarations.ts` | `modules/declarations/domain/**`, product schemas | `parseSchema` from Platform |
-| `surveys.ts` | `modules/declarations/domain/**`, product schemas, `resolvePlatformOrgContext` | Draft create stamps `organizationId` |
-| `fft.ts` | `modules/fft/domain/**`, `modules/fft/auth/*`, `modules/fft/schemas/fft-schemas.ts`, FFT org context features | Feed Farm Trade; org stamp/backfill at adapter |
+| File | Disk | Module entrypoints (typical) | Notes |
+|------|------|------------------------------|-------|
+| `invite-org-member.ts` | **yes** (I1.3) | `modules/identity/domain/invite-org-member` → `@afenda/auth` `inviteOrgMember` | Operator invite; Origin = `APP_URL` |
+| `account.ts` | planned | `modules/identity/*` | Account session / Neon-owned fields |
+| `admin.ts` | planned | `modules/identity/*`, platform helpers | Broader org-admin + RBAC writes |
+| `client.ts` | planned | `modules/identity/*`, `modules/declarations/*` | Invite stamps + survey scope |
+| `declarations.ts` | planned | `modules/declarations/domain/**` | Declarations writes |
+| `surveys.ts` | planned | `modules/declarations/domain/**` | Draft create stamps `organizationId` |
+| `fft.ts` | planned | `modules/fft/domain/**` | Feed Farm Trade |
 
 There is **no** `app/actions/trade.ts`.
 
@@ -31,14 +32,14 @@ import { parseSchema } from "@/modules/platform/schemas/common"
 
 ## Route Handlers (logical `app/api/`) — api-now allowlist
 
-| Method | Path | Module helpers |
-|--------|------|----------------|
-| GET | `/api/health/liveness` | `modules/platform/api/*` |
-| GET | `/api/health/readiness` | `modules/platform/api/*` |
-| ALL | `/api/auth/[...path]` | Neon via `modules/identity/auth` |
-| GET/PUT/PATCH | `/api/client/declaration-draft` | `modules/declarations/api/client-declaration-draft-route` |
+| Method | Path | Disk | Module helpers |
+|--------|------|------|----------------|
+| ALL | `/api/auth/[...path]` | **yes** | `@afenda/auth` `createAuthApiHandlers` (not `modules/identity/auth`) |
+| GET | `/api/health/liveness` | planned | `modules/platform/api/*` |
+| GET | `/api/health/readiness` | planned | `modules/platform/api/*` |
+| GET/PUT/PATCH | `/api/client/declaration-draft` | planned | `modules/declarations/api/client-declaration-draft-route` |
 
-**Allowlist rule:** Do not add web-UI list/read handlers for declarations/clients — use RSC → module domain. On docs-first, “no other handlers” means the **Living allowlist**, not a disk inventory of a deleted tree.
+**Allowlist rule:** Do not add web-UI list/read handlers for declarations/clients — use RSC → module domain.
 
 ---
 

@@ -566,25 +566,25 @@ STOP.
 
 ## Session cheat card
 
-| Step | Action |
-|------|--------|
-| 1 | Fresh Agent chat |
-| 2 | `/afenda-elite-implementation-slices` |
-| 3 | Paste **one** Phase I block (**P1** next = I1.1) |
-| 4 | Let agent verify + write GUIDE-018 evidence |
-| 5 | You review · commit · open next chat |
+| Step | Action                                           |
+| ---- | ------------------------------------------------ |
+| 1    | Fresh Agent chat                                 |
+| 2    | `/afenda-elite-implementation-slices`            |
+| 3    | Paste **one** Phase I block (**P1** next = I1.1) |
+| 4    | Let agent verify + write GUIDE-018 evidence      |
+| 5    | You review · commit · open next chat             |
 
-| Next up now | Paste block |
-|-------------|-------------|
+| Next up now     | Paste block               |
+| --------------- | ------------------------- |
 | Edge `proxy.ts` | **P1** (`PHASE_ID: I1.1`) |
-| Auth UI | **P2** |
-| Join / invite | **P3** |
-| Role shells | **P4** |
+| Auth UI         | **P2**                    |
+| Join / invite   | **P3**                    |
+| Role shells     | **P4**                    |
 
-| Anti-pattern | Instead |
-|--------------|---------|
-| One mega-chat for I1–I7 | One block per chat |
-| “Also tidy docs/FFT” | New lane / waive serial order explicitly |
-| Restore old `app/` from git | Greenfield Living paths |
-| Invent ARCH-028 S9 | Use GUIDE-018 Phase I |
-| Skip verify | Done bar requires green commands |
+| Anti-pattern                | Instead                                  |
+| --------------------------- | ---------------------------------------- |
+| One mega-chat for I1–I7     | One block per chat                       |
+| “Also tidy docs/FFT”        | New lane / waive serial order explicitly |
+| Restore old `app/` from git | Greenfield Living paths                  |
+| Invent ARCH-028 S9          | Use GUIDE-018 Phase I                    |
+| Skip verify                 | Done bar requires green commands         |

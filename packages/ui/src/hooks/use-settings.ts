@@ -1,15 +1,10 @@
 "use client";
 
-import { useContext } from "react";
-
-import { SettingsContext } from "../contexts/settingsContext";
+import { settingsSelectors, useSettingsStore } from "../stores/settings";
 
 export function useSettings() {
-	const context = useContext(SettingsContext);
-
-	if (!context) {
-		throw new Error("useSettings must be used within a SettingsProvider");
-	}
-
-	return context;
+	const settings = useSettingsStore(settingsSelectors.settings);
+	const updateSettings = useSettingsStore(settingsSelectors.updateSettings);
+	const resetSettings = useSettingsStore(settingsSelectors.resetSettings);
+	return { settings, updateSettings, resetSettings };
 }

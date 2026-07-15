@@ -1,40 +1,11 @@
 import { env } from "@afenda/env";
 import { headers } from "next/headers";
 
-import { buildJoinUrl } from "./join-paths";
+import { requireAppOrigin } from "./join-paths";
+import { toNeonOrgRole } from "./roles";
 import { getSession, type Role } from "./session";
 
 const NEON_AUTH_SERVER_PROXY_HEADER = "x-neon-auth-server-proxy";
-
-type NeonOrgRole = "owner" | "admin" | "member";
-
-/**
- * Invitation emails must use the production app origin so accept links
- * are never minted from a localhost Operator Origin while APP_URL is prod.
- */
-function requireAppOrigin(): string {
-	return new URL(env.APP_URL).origin;
-}
-
-/** Absolute `/join?invitationId=…` under production `APP_URL` (app-owned mail). */
-export function buildInviteJoinUrl(invitationId: string): string {
-	return buildJoinUrl({ invitationId, origin: requireAppOrigin() });
-}
-
-function mapRoleToNeonOrgRole(role: Role): NeonOrgRole {
-	switch (role) {
-		case "admin":
-			return "owner";
-		case "operator":
-			return "admin";
-		case "client":
-			return "member";
-		default: {
-			const _exhaustive: never = role;
-			throw new Error(`@afenda/auth: unhandled role: ${_exhaustive}`);
-		}
-	}
-}
 
 export type InviteOrgMemberInput = {
 	email: string;
@@ -46,6 +17,10 @@ export type InviteOrgMemberResult = {
 	data: unknown;
 };
 
+function normalizeInviteEmail(email: string): string {
+	return email.trim().toLowerCase();
+}
+
 /**
  * Send a Neon Auth organization invitation (shared email provider).
  * Caller must pass the active session org; Neon Auth SDK usage stays in this package.
@@ -53,6 +28,7 @@ export type InviteOrgMemberResult = {
  * Neon Auth delivers the invite mail. For app-owned invitation mail, compose
  * `OnboardingInviteEmail` / `renderOnboardingInviteEmail` from `@afenda/emails`
  * with `buildInviteJoinUrl(invitationId)` — do not replace this Neon send path.
+ * Invite `Origin` is always production `APP_URL` (never request host).
  */
 export async function inviteOrgMember(
 	input: InviteOrgMemberInput,
@@ -65,7 +41,7 @@ export async function inviteOrgMember(
 		);
 	}
 
-	const email = input.email.trim();
+	const email = normalizeInviteEmail(input.email);
 	if (email.length === 0) {
 		throw new Error("@afenda/auth: inviteOrgMember requires a non-empty email");
 	}
@@ -91,26 +67,24 @@ export async function inviteOrgMember(
 		},
 		body: JSON.stringify({
 			email,
-			role: mapRoleToNeonOrgRole(input.role),
+			role: toNeonOrgRole(input.role),
 			organizationId: input.orgId,
 			resend: true,
 		}),
 	});
+
+	if (!response.ok) {
+		throw new Error(
+			`@afenda/auth: organization invite failed (${response.status})`,
+		);
+	}
 
 	const text = await response.text();
 	let parsed: unknown = null;
 	try {
 		parsed = text ? JSON.parse(text) : null;
 	} catch {
-		parsed = { raw: text };
-	}
-
-	if (!response.ok) {
-		const message =
-			(parsed as { message?: string } | null)?.message ??
-			(parsed as { error?: string } | null)?.error ??
-			`Neon Auth organization/invite-member failed (${response.status})`;
-		throw new Error(`@afenda/auth: ${message}`);
+		parsed = null;
 	}
 
 	return { data: parsed };

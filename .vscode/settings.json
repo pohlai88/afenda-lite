@@ -24,6 +24,9 @@
   "[css]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
+  "css.lint.unknownAtRules": "ignore",
+  "scss.lint.unknownAtRules": "ignore",
+  "less.lint.unknownAtRules": "ignore",
   "[markdown]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
@@ -48,7 +51,8 @@
     "**/test-results": true,
     "**/playwright-report": true,
     "**/out": true,
-    "**/.artifacts": true
+    "**/.artifacts": true,
+    "_reference": true
   },
   "search.exclude": {
     "**/node_modules": true,
@@ -64,12 +68,14 @@
     "**/out": true,
     "**/.artifacts": true,
     "**/.git": true,
+    "_reference": true,
     "docs/architecture/backend": true,
     "docs/architecture/frontend": true,
     "docs/architecture/system": true,
     "docs/architecture/tech-stack": true,
     "docs/architecture/archive": true,
-    "docs/guides/archive": true
+    "docs/guides/archive": true,
+    "**/pnpm-lock.yaml": true
   },
   "files.watcherExclude": {
     "**/node_modules/**": true,
@@ -84,7 +90,18 @@
     "**/playwright-report/**": true,
     "**/out/**": true,
     "**/.artifacts/**": true,
-    "**/.git/**": true
+    "**/.git/**": true,
+    "**/_reference/**": true,
+    "**/pnpm-lock.yaml": true
   },
+
+  "files.associations": {
+    "pnpm-lock.yaml": "plaintext",
+    "package-lock.json": "plaintext",
+    "yarn.lock": "plaintext"
+  },
+
+  "yaml.maxItemsComputed": 5000,
+
   "git.openRepositoryInParentFolders": "never"
 }

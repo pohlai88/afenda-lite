@@ -1,4 +1,4 @@
-import type { CalendarEventType } from "../../types/calendar";
+import type { CalendarEventType } from "../../contracts/calendar";
 
 export type { CalendarEventType };
 

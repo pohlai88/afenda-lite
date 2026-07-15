@@ -1,0 +1,39 @@
+---
+description: Ban deprecated TypeScript compilerOptions.baseUrl in tsconfig files (TS 6→7 migration).
+globs: "**/tsconfig*.json"
+alwaysApply: false
+---
+
+# No `baseUrl` in tsconfig
+
+**Forbidden:** `"baseUrl"` in any `tsconfig*.json`.
+
+TypeScript 6.0 deprecates `baseUrl` as a module look-up root; TS 7.0 removes that behavior. Do **not** add `"ignoreDeprecations": "6.0"` to bury this.
+
+## Fix
+
+Remove `baseUrl` and put the former prefix on each `paths` value. Paths are relative to the **tsconfig file** when `baseUrl` is absent.
+
+```json
+// Bad
+{
+  "compilerOptions": {
+    "baseUrl": "..",
+    "paths": { "@/testing/*": ["testing/*"] }
+  }
+}
+
+// Good
+{
+  "compilerOptions": {
+    "paths": { "@/testing/*": ["../testing/*"] }
+  }
+}
+```
+
+Prefer package `exports` / Node `#` subpath imports over new path aliases when sharing across packages.
+
+## Enforcement
+
+- Hook: `.cursor/hooks/no-tsconfig-baseurl.mjs`
+- Gate: `pnpm check:tsconfig-no-baseurl`

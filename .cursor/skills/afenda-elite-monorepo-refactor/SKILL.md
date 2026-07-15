@@ -1,12 +1,12 @@
 ---
 name: afenda-elite-monorepo-refactor
-description: Plans and executes governed monorepo refactors for Afenda Elite — package extraction, layer fixes, export moves, consumer migrations, and Slice D removals from housekeeping. Serializes safe slices, runs scoped gates, and respects @repo/* DAG + apps/app|api|docs. Use when refactoring across packages, moving code between layers, extracting shared libraries, fixing import violations, or deleting dead code after housekeeping classify.
+description: Plans and executes governed monorepo refactors for Afenda Elite — package extraction, layer fixes, export moves, consumer migrations, and Slice D removals from housekeeping. Serializes safe slices, runs scoped gates, and respects @afenda/* DAG + apps/web. Use when refactoring across packages, moving code between layers, extracting shared libraries, fixing import violations, or deleting dead code after housekeeping classify. Day-to-day import rules live in afenda-elite-monorepo-discipline.
 disable-model-invocation: true
 ---
 
 # Afenda Elite — Monorepo Refactor
 
-Local Elite monorepo refactor: Phase 0 contract · audit/plan/execute/stabilize · Slices A–E. Targets `@repo/*` · Target apps when present · no PAS/Storybook/architecture-authority package until Elite owns one.
+Local Elite monorepo refactor: Phase 0 contract · audit/plan/execute/stabilize · Slices A–E. Targets `@afenda/*` · `apps/web` · no PAS/Storybook/architecture-authority package. Day-to-day DAG/import checks → [`afenda-elite-monorepo-discipline`](../afenda-elite-monorepo-discipline/SKILL.md).
 
 **Announce:** "I'm using afenda-elite-monorepo-refactor — stating refactor contract before edits."
 
@@ -23,7 +23,7 @@ LANE: Normalize (structure) or Fix (single bug) — one lane; housekeeping remov
 | Phase | Delegate to |
 |-------|-------------|
 | Dead-code discovery | `/afenda-elite-repo-housekeeping` |
-| Package DAG / new package checklist | [ARCH-024](../../../docs/architecture/ARCH-024-package-boundaries.md) · [ARCH-028](../../../docs/architecture/ARCH-028-implementation-slices.md) |
+| Package DAG / new package checklist | [`afenda-elite-monorepo-discipline`](../afenda-elite-monorepo-discipline/SKILL.md) · [ARCH-024](../../../docs/architecture/ARCH-024-package-boundaries.md) · [ARCH-028](../../../docs/architecture/ARCH-028-implementation-slices.md) |
 | Engineering method | `using-agent-skills` → incremental-implementation |
 | Simplify after move | `code-simplification` |
 | Compulsory bans | `deprecation-and-migration` |
@@ -86,8 +86,8 @@ Housekeeping unused-*?         → removal (Slice D)
 Consumer discovery:
 
 ```bash
-rg "from [\"']@repo/<source>" apps packages --glob "*.{ts,tsx}"
-rg "<ExportedSymbol>" apps packages modules features --glob "*.{ts,tsx}"
+rg "from [\"']@afenda/<source>" apps packages --glob "*.{ts,tsx}"
+rg "<ExportedSymbol>" apps/web packages --glob "*.{ts,tsx}"
 ```
 
 Split if >~8 consumer files or multiple apps.
@@ -127,9 +127,9 @@ Rules: types before behavior · max ~10 files per execute · shim at most one sl
 
 Edit only files in the current slice. Chunk order: types → impl → tests → consumers → cleanup → package.json.
 
-- Cross-package: `from "@repo/<pkg>"` only — no deep paths  
+- Cross-package: `from "@afenda/<pkg>"` only — no deep paths  
 - Same-package: relative imports  
-- Add dependency before importing  
+- Add dependency before importing (`workspace:*`)  
 
 ---
 
@@ -165,5 +165,6 @@ Full matrix: [reference.md](reference.md).
 
 ## Related
 
+- [afenda-elite-monorepo-discipline](../afenda-elite-monorepo-discipline/SKILL.md)  
 - [afenda-elite-repo-housekeeping](../afenda-elite-repo-housekeeping/SKILL.md)  
 - Skill catalog: [using-afenda-elite-skills/catalog.md](../using-afenda-elite-skills/catalog.md)  

@@ -12,12 +12,24 @@ export type {
 	InviteOrgMemberInput,
 	InviteOrgMemberResult,
 } from "./invitations";
-export { buildInviteJoinUrl, inviteOrgMember } from "./invitations";
+export { inviteOrgMember } from "./invitations";
 export type { BuildJoinUrlInput } from "./join-paths";
-export { buildJoinUrl, JOIN_PATH } from "./join-paths";
+export {
+	buildInviteJoinUrl,
+	buildJoinUrl,
+	JOIN_PATH,
+	requireAppOrigin,
+} from "./join-paths";
 export type { SessionProxy } from "./proxy";
 export { createSessionProxy } from "./proxy";
 export { requireRole } from "./rbac";
-export { roleSatisfies } from "./roles";
+export type { NeonOrgRole } from "./roles";
+export {
+	canInviteMember,
+	inviteableRolesFor,
+	roleSatisfies,
+	toNeonOrgRole,
+	toSessionRole,
+} from "./roles";
 export type { Role, Session } from "./session";
 export { getSession } from "./session";

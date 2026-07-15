@@ -9,6 +9,7 @@ import path from "node:path";
 const preferred = [
   "check:docs-naming",
   "check:docs-trunk-ban",
+  "check:tsconfig-no-baseurl",
   "check:module-quality",
   "check:doc-integrity",
   "check:openapi",

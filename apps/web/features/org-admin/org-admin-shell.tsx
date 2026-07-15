@@ -1,5 +1,6 @@
-import { getSession } from "@afenda/auth";
+import { getSession, inviteableRolesFor, JOIN_PATH } from "@afenda/auth";
 
+import { InviteMemberForm } from "@/features/org-admin/invite-member-form";
 import { listOrgRoles } from "@/modules/identity/domain/list-org-roles";
 import { listRoleAssignments } from "@/modules/identity/domain/list-role-assignments";
 import { listOrgRbacAudit } from "@/modules/platform/domain/list-rbac-audit";
@@ -7,9 +8,12 @@ import { listOrgRbacAudit } from "@/modules/platform/domain/list-rbac-audit";
 /**
  * Org-admin feature — session-aware RSC load + Identity/Platform domain ports
  * (ARCH-013 · ARCH-028 S7.4). Never imports `@afenda/db`.
+ * Operator invite → `@afenda/auth` `inviteOrgMember` (GUIDE-018 I1.3).
  */
 export async function OrgAdminShell() {
-	const { orgId } = await getSession();
+	const session = await getSession();
+	const { orgId, role } = session;
+	const inviteableRoles = inviteableRolesFor(role);
 	const [roles, assignments, auditRows] = await Promise.all([
 		listOrgRoles(orgId),
 		listRoleAssignments(orgId),
@@ -27,6 +31,23 @@ export async function OrgAdminShell() {
 					<code className="text-foreground">{orgId}</code>.
 				</p>
 			</header>
+
+			<section
+				className="flex flex-col gap-3"
+				aria-labelledby="org-invite-heading"
+			>
+				<h2 id="org-invite-heading" className="text-lg font-medium">
+					Invite member
+				</h2>
+				<p className="text-sm text-muted-foreground">
+					Neon Auth delivers the invitation email. Invitees open{" "}
+					<code className="text-foreground">{JOIN_PATH}?invitationId=…</code>.
+				</p>
+				<InviteMemberForm
+					inviteableRoles={inviteableRoles}
+					joinPath={JOIN_PATH}
+				/>
+			</section>
 
 			<section
 				className="flex flex-col gap-3"

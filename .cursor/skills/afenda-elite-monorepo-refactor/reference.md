@@ -14,7 +14,7 @@ Local Elite refactor types and scoped gates.
 | `consumer-migration` | Contract stable, call sites stale | C only |
 | `removal` | Housekeeping unused-* | Slice D only after classify |
 
-**Direction:** code flows to the **lowest valid** `@repo/*` layer that may own the behavior. Apps (`app` / `api` / `docs`) never imported by packages.
+**Direction:** code flows to the **lowest valid** `@afenda/*` layer that may own the behavior. `apps/web` (and future `apps/*`) never imported by packages. See [`afenda-elite-monorepo-discipline`](../afenda-elite-monorepo-discipline/LAYERS.md).
 
 ## Gate matrix
 
@@ -32,5 +32,5 @@ Local Elite refactor types and scoped gates.
 ```markdown
 | Package | Role | Imports source? | In this slice? |
 |---------|------|-----------------|----------------|
-| @repo/… | source / target / consumer | yes/no | yes/no |
+| @afenda/… | source / target / consumer | yes/no | yes/no |
 ```

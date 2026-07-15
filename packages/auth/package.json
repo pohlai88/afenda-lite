@@ -20,7 +20,7 @@
 	},
 	"dependencies": {
 		"@afenda/env": "workspace:*",
-		"@neondatabase/auth": "^0.4.2-beta"
+		"@neondatabase/auth": "catalog:"
 	},
 	"peerDependencies": {
 		"next": ">=16.0.0",
@@ -28,10 +28,10 @@
 	},
 	"devDependencies": {
 		"@afenda/config": "workspace:*",
-		"@types/node": "^20",
-		"@types/react": "^19",
-		"next": "^16.0.10",
-		"react": "^19.2.3",
-		"typescript": "^5"
+		"@types/node": "catalog:",
+		"@types/react": "catalog:",
+		"next": "catalog:",
+		"react": "catalog:",
+		"typescript": "catalog:"
 	}
 }

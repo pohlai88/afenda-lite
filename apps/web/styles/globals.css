@@ -1,6 +1,0 @@
-/* Target app entry — design tokens + base styles live in @afenda/ui (S5.1). */
-@import "@afenda/ui/globals.css";
-
-/* Tailwind v4: scan app sources outside the UI package CSS root. */
-@source "../app";
-@source "../../packages/ui/src";

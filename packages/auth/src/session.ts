@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { cache } from "react";
 
 import { AUTH_LOGIN_PATH } from "./auth-paths";
+import { toSessionRole } from "./roles";
 
 /** Coarse shell / routing signal — not the ARCH-023 permission catalogue. */
 export type Role = "admin" | "operator" | "client";
@@ -18,15 +19,6 @@ export type Session = {
 	role: Role;
 };
 
-/** Neon Auth org membership roles → Afenda shell Role (ARCH-026). */
-const NEON_ORG_ROLE_TO_SESSION = {
-	owner: "admin",
-	admin: "operator",
-	member: "client",
-} as const satisfies Record<string, Role>;
-
-type NeonOrgRole = keyof typeof NEON_ORG_ROLE_TO_SESSION;
-
 let neonAuth: NeonAuth | undefined;
 
 /** Package-internal Neon Auth singleton (shared by S3.2+). Not a public export. */
@@ -38,13 +30,6 @@ export function getNeonAuth(): NeonAuth {
 		});
 	}
 	return neonAuth;
-}
-
-function toSessionRole(neonRole: string): Role {
-	if (Object.hasOwn(NEON_ORG_ROLE_TO_SESSION, neonRole)) {
-		return NEON_ORG_ROLE_TO_SESSION[neonRole as NeonOrgRole];
-	}
-	throw new Error(`@afenda/auth: unhandled Neon org role: ${neonRole}`);
 }
 
 async function resolveSession(): Promise<Session> {

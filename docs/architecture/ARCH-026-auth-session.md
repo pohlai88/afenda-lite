@@ -4,13 +4,13 @@
 |-------|-------|
 | ID | ARCH-026 |
 | Category | Architecture |
-| Version | 1.3.3 |
+| Version | 1.3.4 |
 | Status | Living |
 | Control State | Closed |
 | Owner | Platform |
 | Updated | 2026-07-15 |
 
-> **Living.** Auth/session packaging SSOT after ARCH-028 Checkpoint G (2026-07-15). `@afenda/auth` helpers + `createSessionProxy` / `apps/web/proxy.ts` (I1.1) + public Neon Auth UI `/auth/*` (I1.2) + `/join?invitationId=…` (I1.3) on disk. Remaining I1 edge: fail-closed role-shell journeys (GUIDE-018 I1.4). IAM Decision lock stays in [ARCH-023](ARCH-023-multi-tenancy.md).
+> **Living.** Auth/session packaging SSOT after ARCH-028 Checkpoint G (2026-07-15). `@afenda/auth` helpers + `createSessionProxy` / `apps/web/proxy.ts` (I1.1) + public Neon Auth UI `/auth/*` (I1.2) + `/join?invitationId=…` + operator `inviteOrgMember` adapter on `/admin` (I1.3) on disk. Remaining I1 edge: fail-closed role-shell journeys (GUIDE-018 I1.4). IAM Decision lock stays in [ARCH-023](ARCH-023-multi-tenancy.md).
 
 ## Context
 
@@ -147,7 +147,7 @@ RSC / Server Action
 
 Password reset: `/auth/forgot-password` → Neon Auth sends reset email → `/auth/reset-password`. No custom SMTP. Handled entirely by Neon Auth UI forms.
 
-Client invitation: operator calls `inviteOrgMember()` → Neon Auth delivers the invitation email → client follows link to `/join?invitationId=…`.
+Client invitation: operator uses `/admin` → `inviteOrgMemberAction` → `inviteOrgMember()` → Neon Auth delivers the invitation email → client follows link to `/join?invitationId=…`.
 
 ## Key decisions
 
@@ -184,6 +184,7 @@ Client invitation: operator calls `inviteOrgMember()` → Neon Auth delivers the
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.3.4 | 2026-07-15 | I1.3 gap close: operator `/admin` → `inviteOrgMemberAction` / `inviteOrgMember`; residual = I1.4 role shells. |
 | 1.3.3 | 2026-07-15 | I1.3 honesty: `/join?invitationId=…` + Neon accept-invitation redirect; residual = I1.4 role shells. |
 | 1.3.2 | 2026-07-15 | I1.2 honesty: public `/auth/login` · forgot · reset via Neon Auth UI; residual = `/join`. |
 | 1.3.1 | 2026-07-15 | I1.1 honesty: `createSessionProxy` + `apps/web/proxy.ts` on disk; residual = `/auth/*` · `/join`. |

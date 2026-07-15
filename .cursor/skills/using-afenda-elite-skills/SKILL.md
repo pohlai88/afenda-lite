@@ -47,6 +47,7 @@ Task arrives (this repo / Afenda-Lite)
     ├── Docs duplication / conflict / SSOT / register drift? → afenda-elite-doc-integrity
     ├── One mission / commit mixing risk? ──────────────────→ bounded-agent-lanes
     ├── Dead code / Knip / skill-catalog drift? ────────────→ afenda-elite-repo-housekeeping
+    ├── Cross-package import / DAG / new packages/*? ───────→ afenda-elite-monorepo-discipline
     ├── Cross-package move / extract / Slice D delete? ─────→ afenda-elite-monorepo-refactor
     ├── ARCH-028 residual / GUIDE-018 Phase I (S* / I* / command-sheet)? → afenda-elite-implementation-slices (then farms from its slice-map)
     ├── FE scaffold / wipe / app routes? ───────────────────→ afenda-elite-frontend-scaffold
@@ -58,7 +59,7 @@ Task arrives (this repo / Afenda-Lite)
     └── Domain farm (Neon, FFT, AdminCN)? ──────────────────→ neon-tenancy / feed-farm-trade / admincn-customization
 ```
 
-**Rule:** This router chooses *which farm*. Vendor phase skills choose *how to engineer* once the farm is fixed. Housekeeping never deletes — it hands **Slice D** to monorepo-refactor. GUIDE-018 Phase I / residual ARCH-028 serial implement uses `afenda-elite-implementation-slices` as the mission loop; it **loads** scaffold/modules/nextjs/neon/api per [slice-map](../afenda-elite-implementation-slices/slice-map.md) — it does not replace those farms. Retired names: `portal-*-*` → use `afenda-elite-*` above. Wave 3: `afenda-elite-documentation` → `afenda-elite-doc-control`; `afenda-elite-docs-consistency` → `afenda-elite-doc-integrity`. Next.js mechanics: local `afenda-elite-nextjs-best-practice` (Vercel + Accelint + Cache Components; not an Xerp overlay).
+**Rule:** This router chooses *which farm*. Vendor phase skills choose *how to engineer* once the farm is fixed. Housekeeping never deletes — it hands **Slice D** to monorepo-refactor. Day-to-day `@afenda/*` import/DAG checks use `afenda-elite-monorepo-discipline`. GUIDE-018 Phase I / residual ARCH-028 serial implement uses `afenda-elite-implementation-slices` as the mission loop; it **loads** scaffold/modules/nextjs/neon/api per [slice-map](../afenda-elite-implementation-slices/slice-map.md) — it does not replace those farms. Retired names: `portal-*-*` → use `afenda-elite-*` above. Wave 3: `afenda-elite-documentation` → `afenda-elite-doc-control`; `afenda-elite-docs-consistency` → `afenda-elite-doc-integrity`. Next.js mechanics: local `afenda-elite-nextjs-best-practice` (Vercel + Accelint + Cache Components; not an Xerp overlay).
 
 ## Docs filesystem (Docs lane)
 
@@ -83,7 +84,7 @@ Prose      → documentation-and-adrs (method library only — not register SSOT
 | L0 Rules / `AGENTS.md` | Always-on boundaries |
 | L1 This skill + `using-agent-skills` | Product routing vs vendor lifecycle |
 | L2 Documentation control · lanes · deprecation | Stability SSOT |
-| L3 Platform / module / housekeeping+refactor / catalog `keep|extend` (+ `planned` after approval) | Domain workflows |
+| L3 Platform / module / housekeeping+discipline+refactor / catalog `keep|extend` (+ `planned` after approval) | Domain workflows |
 
 ## Local skill build (no Xerp fork)
 
@@ -130,6 +131,7 @@ Local skills must remain operable if `afenda-Xerp` is deleted. Inventory and gap
 - Documentation conflict audits: [afenda-elite-doc-integrity](../afenda-elite-doc-integrity/SKILL.md)
 - Control: [DOC-001](../../../docs/_control/DOC-001-documentation-control-standard.md) · [DOC-002](../../../docs/_control/DOC-002-documentation-register.md) · [DOC-003](../../../docs/_control/DOC-003-controlled-document-template.md)
 - Housekeeping: [afenda-elite-repo-housekeeping](../afenda-elite-repo-housekeeping/SKILL.md)
+- Discipline: [afenda-elite-monorepo-discipline](../afenda-elite-monorepo-discipline/SKILL.md) — ARCH-024 import/DAG/export surface
 - Refactor: [afenda-elite-monorepo-refactor](../afenda-elite-monorepo-refactor/SKILL.md)
 - Phase I / residual scaffold: [afenda-elite-implementation-slices](../afenda-elite-implementation-slices/SKILL.md) — [command-sheet](../afenda-elite-implementation-slices/command-sheet.md)
 - FE scaffold: [afenda-elite-frontend-scaffold](../afenda-elite-frontend-scaffold/SKILL.md)

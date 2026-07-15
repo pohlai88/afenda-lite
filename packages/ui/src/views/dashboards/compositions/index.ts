@@ -1,9 +1,0 @@
-export { default as AnalyticsDashboard } from "./analytics";
-export { default as CampaignDashboard } from "./campaign";
-export { default as EcommerceDashboard } from "./ecommerce";
-export { default as FinanceDashboard } from "./finance";
-export { default as LogisticsDashboard } from "./logistics";
-export { default as OrdersDashboard } from "./orders";
-export { default as PaymentsDashboard } from "./payments";
-export { default as ProductivityDashboard } from "./productivity";
-export { default as SalesDashboard } from "./sales";

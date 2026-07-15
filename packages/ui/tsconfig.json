@@ -1,17 +1,7 @@
 {
 	"extends": "@afenda/config/tsconfig/react-library.json",
 	"compilerOptions": {
-		"rootDir": "src",
-		"strict": true,
-		"noEmit": true,
-		"moduleResolution": "bundler",
-		"module": "ESNext",
-		"target": "ES2022",
-		"skipLibCheck": true,
-		"baseUrl": ".",
-		"paths": {
-			"@afenda/ui/*": ["./src/*"]
-		}
+		"rootDir": "src"
 	},
 	"include": ["src/**/*.ts", "src/**/*.tsx"],
 	"exclude": ["node_modules", "dist"]

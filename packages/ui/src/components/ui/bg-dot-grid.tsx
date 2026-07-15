@@ -1,218 +1,228 @@
-'use client'
+"use client";
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef } from "react";
 
-import { cn } from '../../lib/utils'
+import { cn } from "../../lib/utils";
 
 interface DotGridProps {
-  className?: string
-  dotSize?: number
-  gap?: number
-  baseColor?: string
-  activeColor?: string
-  radius?: number
-  displacement?: number
-  maxScale?: number
+	className?: string;
+	dotSize?: number;
+	gap?: number;
+	baseColor?: string;
+	activeColor?: string;
+	radius?: number;
+	displacement?: number;
+	maxScale?: number;
 }
 
 interface Dot {
-  x: number
-  y: number
+	x: number;
+	y: number;
 
-  offsetX: number
-  offsetY: number
+	offsetX: number;
+	offsetY: number;
 
-  targetX: number
-  targetY: number
+	targetX: number;
+	targetY: number;
 
-  scale: number
-  targetScale: number
+	scale: number;
+	targetScale: number;
 }
 
 export function DotGrid({
-  className,
-  dotSize = 2,
-  gap = 22,
-  baseColor = 'var(--primary)',
-  activeColor = 'var(--background)',
-  radius = 140,
-  displacement = 10,
-  maxScale = 3
+	className,
+	dotSize = 2,
+	gap = 22,
+	baseColor = "var(--primary)",
+	activeColor = "var(--background)",
+	radius = 140,
+	displacement = 10,
+	maxScale = 3,
 }: DotGridProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null)
+	const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  useEffect(() => {
-    const canvas = canvasRef.current
+	useEffect(() => {
+		const canvas = canvasRef.current;
 
-    if (!canvas) return
+		if (!canvas) return;
 
-    const ctx = canvas.getContext('2d')
+		const ctx = canvas.getContext("2d");
 
-    if (!ctx) return
+		if (!ctx) return;
 
-    let animationFrame: number
+		let animationFrame: number;
 
-    const dots: Dot[] = []
+		const dots: Dot[] = [];
 
-    const mouse = {
-      x: -9999,
-      y: -9999,
+		const mouse = {
+			x: -9999,
+			y: -9999,
 
-      targetX: -9999,
-      targetY: -9999
-    }
+			targetX: -9999,
+			targetY: -9999,
+		};
 
-    const resize = () => {
-      const rect = canvas.getBoundingClientRect()
+		const resize = () => {
+			const rect = canvas.getBoundingClientRect();
 
-      const dpr = window.devicePixelRatio || 1
+			const dpr = window.devicePixelRatio || 1;
 
-      canvas.width = rect.width * dpr
-      canvas.height = rect.height * dpr
+			canvas.width = rect.width * dpr;
+			canvas.height = rect.height * dpr;
 
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+			ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-      dots.length = 0
+			dots.length = 0;
 
-      for (let x = gap / 2; x < rect.width; x += gap) {
-        for (let y = gap / 2; y < rect.height; y += gap) {
-          dots.push({
-            x,
-            y,
+			for (let x = gap / 2; x < rect.width; x += gap) {
+				for (let y = gap / 2; y < rect.height; y += gap) {
+					dots.push({
+						x,
+						y,
 
-            offsetX: 0,
-            offsetY: 0,
+						offsetX: 0,
+						offsetY: 0,
 
-            targetX: 0,
-            targetY: 0,
+						targetX: 0,
+						targetY: 0,
 
-            scale: 1,
-            targetScale: 1
-          })
-        }
-      }
-    }
+						scale: 1,
+						targetScale: 1,
+					});
+				}
+			}
+		};
 
-    resize()
+		resize();
 
-    const lerp = (start: number, end: number, factor: number) => start + (end - start) * factor
+		const lerp = (start: number, end: number, factor: number) =>
+			start + (end - start) * factor;
 
-    const resolveColor = (value: string) => {
-      const varMatch = value.match(/^var\(\s*(--[^,\s)]+)(?:\s*,\s*([^)]+))?\s*\)$/)
+		const resolveColor = (value: string) => {
+			const varMatch = value.match(
+				/^var\(\s*(--[^,\s)]+)(?:\s*,\s*([^)]+))?\s*\)$/,
+			);
 
-      if (!varMatch) return value
+			if (!varMatch) return value;
 
-      const variableName = varMatch[1]
-      const fallback = varMatch[2]
+			const variableName = varMatch[1];
+			const fallback = varMatch[2];
 
-      if (!variableName) return value
+			if (!variableName) return value;
 
-      const resolved = getComputedStyle(document.documentElement).getPropertyValue(variableName).trim()
+			const resolved = getComputedStyle(document.documentElement)
+				.getPropertyValue(variableName)
+				.trim();
 
-      return resolved || fallback?.trim() || value
-    }
+			return resolved || fallback?.trim() || value;
+		};
 
-    const animate = () => {
-      const width = canvas.clientWidth
-      const height = canvas.clientHeight
-      const resolvedBaseColor = resolveColor(baseColor)
-      const resolvedActiveColor = resolveColor(activeColor)
+		const animate = () => {
+			const width = canvas.clientWidth;
+			const height = canvas.clientHeight;
+			const resolvedBaseColor = resolveColor(baseColor);
+			const resolvedActiveColor = resolveColor(activeColor);
 
-      ctx.clearRect(0, 0, width, height)
+			ctx.clearRect(0, 0, width, height);
 
-      mouse.x = lerp(mouse.x, mouse.targetX, 0.15)
-      mouse.y = lerp(mouse.y, mouse.targetY, 0.15)
+			mouse.x = lerp(mouse.x, mouse.targetX, 0.15);
+			mouse.y = lerp(mouse.y, mouse.targetY, 0.15);
 
-      for (const dot of dots) {
-        const dx = dot.x - mouse.x
-        const dy = dot.y - mouse.y
+			for (const dot of dots) {
+				const dx = dot.x - mouse.x;
+				const dy = dot.y - mouse.y;
 
-        const distance = Math.sqrt(dx * dx + dy * dy)
+				const distance = Math.sqrt(dx * dx + dy * dy);
 
-        const influence = Math.max(0, 1 - distance / radius)
+				const influence = Math.max(0, 1 - distance / radius);
 
-        if (influence > 0) {
-          const angle = Math.atan2(dy, dx)
+				if (influence > 0) {
+					const angle = Math.atan2(dy, dx);
 
-          dot.targetX = Math.cos(angle) * displacement * influence
+					dot.targetX = Math.cos(angle) * displacement * influence;
 
-          dot.targetY = Math.sin(angle) * displacement * influence
+					dot.targetY = Math.sin(angle) * displacement * influence;
 
-          dot.targetScale = 1 + influence * (maxScale - 1)
-        } else {
-          dot.targetX = 0
-          dot.targetY = 0
-          dot.targetScale = 1
-        }
+					dot.targetScale = 1 + influence * (maxScale - 1);
+				} else {
+					dot.targetX = 0;
+					dot.targetY = 0;
+					dot.targetScale = 1;
+				}
 
-        dot.offsetX = lerp(dot.offsetX, dot.targetX, 0.12)
+				dot.offsetX = lerp(dot.offsetX, dot.targetX, 0.12);
 
-        dot.offsetY = lerp(dot.offsetY, dot.targetY, 0.12)
+				dot.offsetY = lerp(dot.offsetY, dot.targetY, 0.12);
 
-        dot.scale = lerp(dot.scale, dot.targetScale, 0.12)
+				dot.scale = lerp(dot.scale, dot.targetScale, 0.12);
 
-        const opacity = 0.25 + influence * 0.75
+				const opacity = 0.25 + influence * 0.75;
 
-        const drawX = dot.x + dot.offsetX
-        const drawY = dot.y + dot.offsetY
+				const drawX = dot.x + dot.offsetX;
+				const drawY = dot.y + dot.offsetY;
 
-        ctx.beginPath()
+				ctx.beginPath();
 
-        ctx.arc(drawX, drawY, dotSize * dot.scale, 0, Math.PI * 2)
+				ctx.arc(drawX, drawY, dotSize * dot.scale, 0, Math.PI * 2);
 
-        if (influence > 0.05) {
-          ctx.globalAlpha = 1
-          ctx.shadowBlur = influence * 20
+				if (influence > 0.05) {
+					ctx.globalAlpha = 1;
+					ctx.shadowBlur = influence * 20;
 
-          ctx.shadowColor = resolvedActiveColor
+					ctx.shadowColor = resolvedActiveColor;
 
-          ctx.fillStyle = resolvedActiveColor
-        } else {
-          ctx.shadowBlur = 0
-          ctx.globalAlpha = opacity
-          ctx.fillStyle = resolvedBaseColor
-        }
+					ctx.fillStyle = resolvedActiveColor;
+				} else {
+					ctx.shadowBlur = 0;
+					ctx.globalAlpha = opacity;
+					ctx.fillStyle = resolvedBaseColor;
+				}
 
-        ctx.fill()
-        ctx.globalAlpha = 1
-      }
+				ctx.fill();
+				ctx.globalAlpha = 1;
+			}
 
-      animationFrame = requestAnimationFrame(animate)
-    }
+			animationFrame = requestAnimationFrame(animate);
+		};
 
-    animate()
+		animate();
 
-    const handleMove = (e: MouseEvent) => {
-      const rect = canvas.getBoundingClientRect()
+		const handleMove = (e: MouseEvent) => {
+			const rect = canvas.getBoundingClientRect();
 
-      mouse.targetX = e.clientX - rect.left
+			mouse.targetX = e.clientX - rect.left;
 
-      mouse.targetY = e.clientY - rect.top
-    }
+			mouse.targetY = e.clientY - rect.top;
+		};
 
-    const handleLeave = () => {
-      mouse.targetX = -9999
-      mouse.targetY = -9999
-    }
+		const handleLeave = () => {
+			mouse.targetX = -9999;
+			mouse.targetY = -9999;
+		};
 
-    const observer = new ResizeObserver(resize)
+		const observer = new ResizeObserver(resize);
 
-    observer.observe(canvas)
+		observer.observe(canvas);
 
-    window.addEventListener('mousemove', handleMove)
+		window.addEventListener("mousemove", handleMove);
 
-    window.addEventListener('mouseleave', handleLeave)
+		window.addEventListener("mouseleave", handleLeave);
 
-    return () => {
-      cancelAnimationFrame(animationFrame)
+		return () => {
+			cancelAnimationFrame(animationFrame);
 
-      observer.disconnect()
+			observer.disconnect();
 
-      window.removeEventListener('mousemove', handleMove)
+			window.removeEventListener("mousemove", handleMove);
 
-      window.removeEventListener('mouseleave', handleLeave)
-    }
-  }, [dotSize, gap, radius, displacement, maxScale, baseColor, activeColor])
+			window.removeEventListener("mouseleave", handleLeave);
+		};
+	}, [dotSize, gap, radius, displacement, maxScale, baseColor, activeColor]);
 
-  return <canvas ref={canvasRef} className={cn('absolute inset-0 h-full w-full', className)} />
+	return (
+		<canvas
+			ref={canvasRef}
+			className={cn("absolute inset-0 h-full w-full", className)}
+		/>
+	);
 }

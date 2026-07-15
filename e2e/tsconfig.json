@@ -1,0 +1,12 @@
+{
+  "extends": "@afenda/config/tsconfig/base.json",
+  "compilerOptions": {
+    "lib": ["ES2022", "DOM"],
+    "types": ["node", "@playwright/test"],
+    "paths": {
+      "@/testing/*": ["../testing/*"]
+    }
+  },
+  "include": ["./**/*.ts", "../testing/e2e/**/*.ts"],
+  "exclude": ["node_modules"]
+}

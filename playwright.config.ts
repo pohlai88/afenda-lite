@@ -35,7 +35,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "npm run start",
+    command: "pnpm --filter @afenda/web start",
     url: baseURL,
     reuseExistingServer: Boolean(process.env.PLAYWRIGHT_REUSE_SERVER),
     timeout: 120_000,

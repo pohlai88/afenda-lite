@@ -68,10 +68,10 @@ Post the test engineer report **verbatim**.
 Optional verification (user request only):
 
 ```bash
-npm run test:unit
-npm run test:interaction
-npm run test:e2e:smoke
-npm test
+pnpm test:unit
+pnpm test:interaction
+pnpm test:e2e:smoke
+pnpm exec turbo run lint typecheck test
 ```
 
 ## Rules

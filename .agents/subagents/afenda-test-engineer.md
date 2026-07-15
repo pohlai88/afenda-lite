@@ -53,13 +53,13 @@ Recommend the **minimum** command — never default to `npm test` for slice-leve
 
 | Changed | Minimum gate |
 | --- | --- |
-| Pure lib routing/auth/policy | `npm run test:unit` |
-| Route handler / health API | `npm run test:unit` (L1 when added) |
-| Radix / shell / options popout | `npm run test:interaction` |
-| Auth ingress / public links | `npm run test:e2e:smoke` |
-| Full client/operator journeys | `npm run test:e2e:journey` |
-| Release / pre-merge full browser | `npm test` |
-| Governance registries | `npm run checks` |
+| Governance registries | `pnpm run checks` |
+| Pure lib routing/auth/policy | `pnpm test:unit` |
+| Route handler / health API | `pnpm test:unit` (L1 when added) |
+| Radix / shell / options popout | `pnpm test:interaction` |
+| Auth ingress / public links | `pnpm test:e2e:smoke` |
+| Full client/operator journeys | `pnpm test:e2e:journey` |
+| Release / pre-merge full browser | `pnpm exec turbo run lint typecheck test` |
 
 Registry scripts (`check:copy`, `check:nav`, `check:proxy`) act as non-Vitest L0 substitutes.
 
@@ -90,7 +90,7 @@ Registry scripts (`check:copy`, `check:nav`, `check:proxy`) act as non-Vitest L0
 
 - Assertions inside `it()` / `test()` only
 - Factory SSOT: `testing/` only — credentials, fixtures, Playwright base, React helpers
-- Co-locate L0 tests as `lib/**/*.test.ts`; L2 as `**/*.interaction.test.tsx`
+- Place L0/L2 Vitest files in `<pkg|app>/__tests__/` only (never under src/)
 
 ### Redundancy
 

@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # Afenda Elite — Repo Housekeeping
 
-Local Elite housekeeping: modes · Phase 0 contract · classify → Slice D. Targets `@repo/*` / Target `apps/*` when present · no Storybook/PAS/foundation-registry-owner.
+Local Elite housekeeping: modes · Phase 0 contract · classify → Slice D. Targets `@afenda/*` / `apps/web` · no Storybook/PAS/foundation-registry-owner.
 
 This skill **orchestrates** discovery and classification. **Removal** always delegates to [`afenda-elite-monorepo-refactor`](../afenda-elite-monorepo-refactor/SKILL.md) **Slice D** — not ad-hoc deletes.
 
@@ -24,7 +24,7 @@ LANE: Normalize (or Docs for catalog-only align) — never mix with Fix product 
 
 | Phase | Delegate to |
 |-------|-------------|
-| Layer / DAG / package boundaries | [ARCH-024](../../../docs/architecture/ARCH-024-package-boundaries.md) · [ARCH-028](../../../docs/architecture/ARCH-028-implementation-slices.md) · [`afenda-elite-monorepo-refactor`](../afenda-elite-monorepo-refactor/SKILL.md) |
+| Layer / DAG / package boundaries | [`afenda-elite-monorepo-discipline`](../afenda-elite-monorepo-discipline/SKILL.md) · [ARCH-024](../../../docs/architecture/ARCH-024-package-boundaries.md) · removals → [`afenda-elite-monorepo-refactor`](../afenda-elite-monorepo-refactor/SKILL.md) |
 | Skill catalog align | [using-afenda-elite-skills/catalog.md](../using-afenda-elite-skills/catalog.md) |
 | Slice D execution | `/afenda-elite-monorepo-refactor execute` |
 | Engineering method | `using-agent-skills` → incremental-implementation / code-simplification |

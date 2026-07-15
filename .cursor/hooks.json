@@ -33,6 +33,12 @@
         "matcher": "Write|StrReplace|EditNotebook",
         "failClosed": true,
         "timeout": 15
+      },
+      {
+        "command": "node .cursor/hooks/no-tsconfig-baseurl.mjs",
+        "matcher": "Write|StrReplace|EditNotebook",
+        "failClosed": true,
+        "timeout": 15
       }
     ]
   }

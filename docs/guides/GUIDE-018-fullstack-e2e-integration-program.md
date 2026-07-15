@@ -4,7 +4,7 @@
 | ----------------- | ---------- |
 | **ID**            | GUIDE-018  |
 | **Category**      | Guide      |
-| **Version**       | 0.3.6      |
+| **Version**       | 0.3.7      |
 | **Status**        | Draft      |
 | **Control State** | Closed     |
 | **Owner**         | Platform   |
@@ -236,11 +236,12 @@ Recommended mission queue: **I1 → I2 → I3 (freeze) → I4 → I5/I6**.
 
 | Field | Evidence |
 | ----- | -------- |
-| Paths | `apps/web/app/(public)/join/{page,layout,loading,error}.tsx` · `features/auth/{join-shell,auth-island-layout,auth-surface-chrome}.tsx` · `@afenda/auth` `JOIN_PATH` · `buildJoinUrl` · `buildInviteJoinUrl` · `inviteOrgMember` (Origin = `APP_URL`) |
-| Routes | `GET /join` (no id) → invitation-required shell; `GET /join?invitationId=…` → Neon `AcceptInvitationCard`; Neon mail `/auth/accept-invitation?invitationId=` → **308** `/join?invitationId=` (`apps/web/next.config.ts` redirects) |
-| Verify | `pnpm --filter @afenda/auth typecheck` · `pnpm --filter @afenda/auth test` · `pnpm --filter @afenda/web typecheck` · `pnpm --filter @afenda/web lint` · `pnpm --filter @afenda/auth lint` — green |
+| Paths | `apps/web/app/(public)/join/{page,layout,loading,error}.tsx` · `features/auth/{join-shell,auth-island-layout,auth-surface-chrome}.tsx` · `apps/web/app/actions/invite-org-member.ts` · `features/org-admin/{invite-member-form,org-admin-shell}.tsx` · `modules/identity/domain/invite-org-member.ts` · `@afenda/auth` `JOIN_PATH` · `buildJoinUrl` · `buildInviteJoinUrl` · `requireAppOrigin` · `inviteOrgMember` (Origin = `APP_URL`) |
+| Routes | `GET /join` (no id) → **200** invitation-required; `GET /join?invitationId=…` → **200** Neon `AcceptInvitationCard`; Neon mail `/auth/accept-invitation?invitationId=` → **308** `/join?invitationId=` (`apps/web/next.config.ts` redirects) |
+| Operator invite | Authenticated `/admin` form → `inviteOrgMemberAction` → `requireRole('operator')` + `canInviteMember` → `inviteOrgMember` (session `orgId`; Origin = `APP_URL`) |
+| Verify | `pnpm --filter @afenda/auth typecheck` · `pnpm --filter @afenda/auth test` (22) · `pnpm --filter @afenda/web typecheck` · lint · `pnpm --filter @afenda/web test -- invite-org-member` — green; local route probe without secrets in repo |
 | Boundary | SDK stay in `@afenda/auth`; UI via `@neondatabase/auth-ui`; invitee `signUp` enabled on auth island; no app-side SMTP |
-| Gap close | Shared auth island layout/chrome · `/auth/sign-up` public · 403 → Sign in link |
+| Gap close | Neon↔session role SSOT (`toSessionRole`/`toNeonOrgRole`) · `canInviteMember` / `inviteableRolesFor` · stable invite errors (no Neon body leak) · join-path copy via `JOIN_PATH` · `invitations` unit tests · adapter-map disk honesty |
 ---
 
 ## Phase I2 — Interface / BFF spine
@@ -500,6 +501,7 @@ Snapshot of what “ON DISK vs still missing” looks like as of 2026-07-15:
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 0.3.7 | 2026-07-15 | I1.3 gap close: operator `/admin` invite → `inviteOrgMemberAction` / `inviteOrgMember`; local join route probe evidence. |
 | 0.3.6 | 2026-07-15 | I1.3 evidence: `/join?invitationId=…` · Neon `/auth/accept-invitation` → join · `buildJoinUrl` / `inviteOrgMember`; next Ops = I1.4. |
 | 0.3.5 | 2026-07-15 | I1.2 evidence: public Neon Auth UI `/auth/login` · forgot · reset; `@afenda/auth` client/API handlers; next Ops = I1.3. |
 | 0.3.4 | 2026-07-15 | I1.1 gap close: POST-only `next-action` bypass · `session-gate-policy` unit tests · evidence paths refreshed. |

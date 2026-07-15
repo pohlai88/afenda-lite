@@ -1,10 +1,12 @@
-import { env } from "@afenda/env";
 import { headers } from "next/headers";
+
+import { requireAppOrigin } from "./join-paths";
 
 /**
  * Origin for Neon Auth UI `baseURL` (password-reset / callback links).
  * Prefer the live request host so localhost/preview resets are not forced to
  * production `APP_URL` (portal Neon Auth password-reset wiring).
+ * Invite emails still use `requireAppOrigin()` / `buildInviteJoinUrl` — never this helper.
  */
 export async function resolveAuthUiOrigin(): Promise<string> {
 	const h = await headers();
@@ -15,7 +17,7 @@ export async function resolveAuthUiOrigin(): Promise<string> {
 		return `${proto}://${host}`;
 	}
 
-	return new URL(env.APP_URL).origin;
+	return requireAppOrigin();
 }
 
 function firstHeaderValue(value: string | null): string | undefined {
