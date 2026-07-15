@@ -11,10 +11,10 @@ import type {
   Conversation,
   MessageType,
   OwnProfileUpdate
-} from '@/types/apps/chat-types'
+} from '#types/apps/chat-types'
 
 // Store Imports
-import { useChatStore } from '@/store/use-chat-store'
+import { useChatStore } from '#store/use-chat-store'
 
 const getConversationDisplayName = (conversation: Conversation, contacts: ChatUser[]): string => {
   if (conversation.type === 'group' && conversation.groupName) {

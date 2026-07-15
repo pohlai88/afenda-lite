@@ -11,8 +11,8 @@ import { usePaymentInputs } from 'react-payment-inputs'
 import { CreditCardIcon } from 'lucide-react'
 
 // Component Imports
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { Button } from '@/components/ui/button'
+import { Avatar, AvatarFallback } from '#components/ui/avatar'
+import { Button } from '#components/ui/button'
 import {
   Dialog,
   DialogClose,
@@ -21,12 +21,12 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger
-} from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+} from '#components/ui/dialog'
+import { Input } from '#components/ui/input'
+import { Label } from '#components/ui/label'
 
 // Util Imports
-import { cn } from '@/lib/utils'
+import { cn } from '#lib/utils'
 
 // Style Imports
 import 'react-19-credit-card/dist/es/index.css'

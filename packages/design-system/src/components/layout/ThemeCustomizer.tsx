@@ -18,24 +18,24 @@ import {
   type Radius,
   type Scale,
   type Variant
-} from '@/contexts/settingsContext'
-import type { ThemePresetKey } from '@/utils/theme-presets'
+} from '#contexts/settingsContext'
+import type { ThemePresetKey } from '#utils/theme-presets'
 
 // Component Imports
-import { Button } from '@/components/ui/button'
-import { Label } from '@/components/ui/label'
-import { Popover, PopoverTrigger } from '@/components/ui/popover'
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger } from '@/components/ui/select'
-import { useSidebar } from '@/components/ui/sidebar'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { Button } from '#components/ui/button'
+import { Label } from '#components/ui/label'
+import { Popover, PopoverTrigger } from '#components/ui/popover'
+import { RadioGroup, RadioGroupItem } from '#components/ui/radio-group'
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger } from '#components/ui/select'
+import { useSidebar } from '#components/ui/sidebar'
+import { Tooltip, TooltipContent, TooltipTrigger } from '#components/ui/tooltip'
 
 // Hook Imports
-import { useSettings } from '@/hooks/use-settings'
+import { useSettings } from '#hooks/use-settings'
 
 // Util Imports
-import { FONT_CONFIG, FONT_GROUPS } from '@/utils/fonts'
-import { themePresets } from '@/utils/theme-presets'
+import { FONT_CONFIG, FONT_GROUPS } from '#utils/fonts'
+import { themePresets } from '#utils/theme-presets'
 
 // Theme modes
 const MODES: { value: Mode; label: string }[] = [

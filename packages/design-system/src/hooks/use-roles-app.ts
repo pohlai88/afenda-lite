@@ -4,11 +4,11 @@
 import { useCallback, useMemo } from 'react'
 
 // Type Imports
-import type { AppRoleWithUsers, PermissionKey, RoleFormData } from '@/types/apps/role-types'
+import type { AppRoleWithUsers, PermissionKey, RoleFormData } from '#types/apps/role-types'
 
 // Store Imports
-import { PERMISSION_RESOURCES, useRolesStore } from '@/store/use-roles-store'
-import { useUserStore } from '@/store/use-user-store'
+import { PERMISSION_RESOURCES, useRolesStore } from '#store/use-roles-store'
+import { useUserStore } from '#store/use-user-store'
 
 export function useRolesApp() {
   // Store subscriptions

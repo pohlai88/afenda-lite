@@ -5,13 +5,13 @@ import Link from 'next/link'
 import { ChevronLeftIcon } from 'lucide-react'
 
 // Component Import
-import Logo from '@/components/shared/Logo'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import ForgotPasswordV1Form from '@/views/pages/auth/forgot-password/forgot-password-v1/forgot-password-v1-form'
+import Logo from '#components/shared/Logo'
+import { Button } from '#components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#components/ui/card'
+import ForgotPasswordV1Form from '#views/pages/auth/forgot-password/forgot-password-v1/forgot-password-v1-form'
 
 // SVG Import
-import AuthBackgroundShape from '@/assets/svg/auth-background-shape'
+import AuthBackgroundShape from '#assets/svg/auth-background-shape'
 
 const ForgotPasswordV1 = () => {
   return (

@@ -1,12 +1,12 @@
 // Components Imports
-import AboutSection from '@/views/pages/user-profile/profile/about-section'
-import { ActivityTimeline } from '@/views/pages/user-profile/profile/activity-timeline'
-import Connections from '@/views/pages/user-profile/profile/connections'
-import ProfileProjectDatatable from '@/views/pages/user-profile/profile/profile-project-datatable'
-import Teams from '@/views/pages/user-profile/profile/teams'
+import AboutSection from '#views/pages/user-profile/profile/about-section'
+import { ActivityTimeline } from '#views/pages/user-profile/profile/activity-timeline'
+import Connections from '#views/pages/user-profile/profile/connections'
+import ProfileProjectDatatable from '#views/pages/user-profile/profile/profile-project-datatable'
+import Teams from '#views/pages/user-profile/profile/teams'
 
 // Data Imports
-import { db } from '@/fake-db/pages/user-profile'
+import { db } from '#fake-db/pages/user-profile'
 
 const { activityLog } = db
 

@@ -2,11 +2,11 @@
 import { PlusIcon } from 'lucide-react'
 
 // Type Imports
-import type { AppRoleWithUsers } from '@/types/apps/role-types'
+import type { AppRoleWithUsers } from '#types/apps/role-types'
 
 // Component Imports
-import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
+import { Button } from '#components/ui/button'
+import { Card, CardContent } from '#components/ui/card'
 import { RoleCard } from './role-card'
 
 // -------------------------------------------------------------------------------------------------

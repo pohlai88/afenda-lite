@@ -4,7 +4,7 @@
 | ----------------- | ------------ |
 | **ID**            | ARCH-031     |
 | **Category**      | Architecture |
-| **Version**       | 1.3.14       |
+| **Version**       | 1.3.16       |
 | **Status**        | Living       |
 | **Control State** | Closed       |
 | **Owner**         | Platform     |
@@ -76,7 +76,7 @@ The full documentation-integrity baseline inspected **97/97 primary files**: 93 
 | Governed documentation | Entire `docs/` validator scope | Primary evidence for Living/Target decisions |
 | Runtime and dependency manifests | [`package.json`](../../package.json), [`pnpm-lock.yaml`](../../pnpm-lock.yaml), [`pnpm-workspace.yaml`](../../pnpm-workspace.yaml) | Dependency declarations present; most Collapse-era script bodies are **absent** and gate via [`collapse-script-unavailable.mjs`](../../scripts/collapse-script-unavailable.mjs) |
 | Framework configuration | [`apps/web/next.config.ts`](../../apps/web/next.config.ts), [`apps/web/tsconfig.json`](../../apps/web/tsconfig.json), [`apps/web/postcss.config.mjs`](../../apps/web/postcss.config.mjs) | Target Next shell (S7.1) — React Compiler, transpilePackages, Tailwind PostCSS |
-| UI tooling | `packages/ui/components.json` | Target `@afenda/ui` (S5.1 / Checkpoint E); root Collapse `components.json` remains absent |
+| UI tooling | `packages/design-system/components.json` | Living `@afenda/ui` (canonical package after the `packages/ui` name-collision resolution, 2026-07-15); root Collapse `components.json` remains absent |
 | Hosting and CI | [`apps/web/vercel.json`](../../apps/web/vercel.json), [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) | Vercel `sin1`; Project Root Directory **`apps/web`** + `sourceFilesOutsideRootDirectory=true` (verified 2026-07-15); install `cd ../.. && pnpm install --frozen-lockfile`; GitHub Actions Node 24 · `turbo run lint typecheck test` + `TURBO_TOKEN`/`TURBO_TEAM` remote cache (S8.1) |
 | Quality and testing | [`biome.jsonc`](../../biome.jsonc), [`testing/vitest.config.ts`](../../testing/vitest.config.ts), [`playwright.config.ts`](../../playwright.config.ts) | Biome + Ultracite + Vitest wired through turbo; Playwright optional (`test:e2e`) |
 | Contract / docs gates | [`OPEN-001-openapi.yaml`](../api/OPEN-001-openapi.yaml), [`generate-openapi.mts`](../../scripts/generate-openapi.mts), docs integrity scripts | Runnable on this docs-first checkout |
@@ -102,8 +102,8 @@ Validator exclusions: external HTTP availability and code-to-document runtime dr
 
 | Capability | Technology / choice | Lifecycle posture | Implementation evidence | Owning authority | Constraint / migration note |
 | ---------- | ------------------- | ----------------- | ----------------------- | ---------------- | --------------------------- |
-| Styling | Tailwind CSS 4 and CSS-variable tokens | Current configuration and Target | Configured — [`apps/web/postcss.config.mjs`](../../apps/web/postcss.config.mjs), [`apps/web/styles/globals.css`](../../apps/web/styles/globals.css) → `@afenda/ui/globals.css` | [ARCH-022](ARCH-022-system-overview.md), [ARCH-024](ARCH-024-package-boundaries.md) | Design tokens live in `@afenda/ui`; app entry imports the package. |
-| Component foundation | shadcn **base-vega** | Living `@afenda/ui` (S5.1 shipped) | [`packages/ui`](../../packages/ui) — Button + `globals.css` + `components.json`; DNA promoted from user-approved local `_reference/archive/shadcn-pro-dashboard` (never Collapse git recover; never product `import` from `_reference`) | [ARCH-022](ARCH-022-system-overview.md), [ARCH-024](ARCH-024-package-boundaries.md), [ARCH-018](ARCH-018-admincn-customization.md) | Do not recreate root Collapse-alias `components.json`. |
+| Styling | Tailwind CSS 4 and CSS-variable tokens | Current configuration and Target | Configured — [`apps/web/postcss.config.mjs`](../../apps/web/postcss.config.mjs), [`apps/web/globals.css`](../../apps/web/globals.css) → `@afenda/ui/style.css` | [ARCH-022](ARCH-022-system-overview.md), [ARCH-024](ARCH-024-package-boundaries.md) | Design tokens live in `@afenda/ui`; app entry imports the package. |
+| Component foundation | shadcn **base-vega** | Living `@afenda/ui` (canonical package: `packages/design-system`) | [`packages/design-system`](../../packages/design-system) — full template surface; public runtime door is `@afenda/ui/playground` only (see [ARCH-024 § `@afenda/ui`](ARCH-024-package-boundaries.md#afendaui)); DNA promoted from user-approved local `_reference/archive/shadcn-pro-dashboard` (never Collapse git recover; never product `import` from `_reference`) | [ARCH-022](ARCH-022-system-overview.md), [ARCH-024](ARCH-024-package-boundaries.md), [ARCH-018](ARCH-018-admincn-customization.md) | `packages/ui` retired (name collision resolved in favor of `design-system`); do not recreate root Collapse-alias `components.json`. |
 | Operator shell | AdminCN / `AdminCnShell` with Shadcn Studio DNA | Current / Living | Configured tooling; product source not verifiable | [ARCH-015](ARCH-015-admincn-alignment.md), [ARCH-018](ARCH-018-admincn-customization.md) | Shared shell only; auth remains a separate Neon Auth island. |
 | Theme and data-table DNA | `next-themes`, TanStack Table | Current / Living UI DNA | Manifest only; source not verifiable | [ARCH-015](ARCH-015-admincn-alignment.md) | One root theme owner; TanStack is a pattern dependency, not an IAM store. |
 | Supporting UI libraries | Base UI, Lucide, Geist, Motion, Recharts | Manifest-only | Manifest only — [`package.json`](../../package.json) | [ARCH-015](ARCH-015-admincn-alignment.md), [ARCH-018](ARCH-018-admincn-customization.md) | Installed dependencies do not prove product use or grant new UI authority. |
@@ -221,6 +221,8 @@ ARCH-031 shall link to the changed authority rather than duplicate its detailed 
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 1.3.16 | 2026-07-15 | Doc-vs-code audit gap close: § 3.2 source ledger "UI tooling" row still cited `packages/ui/components.json` as current evidence after the same-day name-collision consolidation — updated to `packages/design-system/components.json`. |
+| 1.3.15 | 2026-07-15 | Fixed two broken links in § 3.4 (`apps/web/styles/globals.css` → `apps/web/globals.css`; `packages/ui` → `packages/design-system`, the canonical `@afenda/ui` package after the name-collision resolution). |
 | 1.3.14 | 2026-07-15 | I1.2 honesty: Neon Auth UI `/auth/*` + `@afenda/auth` client/API handlers Present. |
 | 1.3.13 | 2026-07-15 | Checkpoint G honesty: Living checkout; next program GUIDE-018 I1; Collapse-gated scripts = inventory. |
 | 1.3.12 | 2026-07-15 | Docs audit residual: Deploy evidence — Actions success + classic PAT + `packageManager` Actions setup. |

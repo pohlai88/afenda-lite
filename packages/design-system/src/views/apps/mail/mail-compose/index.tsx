@@ -21,27 +21,27 @@ import {
 } from 'lucide-react'
 
 // Type Imports
-import type { ComposeEmailPayload } from '@/types/apps/mail-types'
+import type { ComposeEmailPayload } from '#types/apps/mail-types'
 
 // Component Imports
-import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
+import { Button } from '#components/ui/button'
+import { Dialog, DialogContent, DialogTitle } from '#components/ui/dialog'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+} from '#components/ui/dropdown-menu'
+import { Tooltip, TooltipContent, TooltipTrigger } from '#components/ui/tooltip'
 import { ComposeFieldRow } from './compose-field-row'
 import { FormatButton } from './format-button'
 
 // Config Imports
-import { deriveRecipientEmailAddress } from '@/configs/mailConfig'
+import { deriveRecipientEmailAddress } from '#configs/mailConfig'
 
 // Util Imports
-import { cn } from '@/lib/utils'
+import { cn } from '#lib/utils'
 
 export interface MailComposeProps {
   open: boolean

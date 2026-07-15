@@ -7,17 +7,17 @@ import { useEffect } from 'react'
 import { parseAsString, useQueryState } from 'nuqs'
 
 // Type Imports
-import type { IntegrationsData, MembersData, Session } from '@/types/pages/user-settings-types'
+import type { IntegrationsData, MembersData, Session } from '#types/pages/user-settings-types'
 
 // Component Imports
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import BillingUsage from '@/views/pages/user-settings/billing'
-import UserGeneral from '@/views/pages/user-settings/general'
-import Integrations from '@/views/pages/user-settings/integrations'
-import Members from '@/views/pages/user-settings/members'
-import Notifications from '@/views/pages/user-settings/notifications'
-import Security from '@/views/pages/user-settings/security'
-import Workspace from '@/views/pages/user-settings/workspace'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '#components/ui/tabs'
+import BillingUsage from '#views/pages/user-settings/billing'
+import UserGeneral from '#views/pages/user-settings/general'
+import Integrations from '#views/pages/user-settings/integrations'
+import Members from '#views/pages/user-settings/members'
+import Notifications from '#views/pages/user-settings/notifications'
+import Security from '#views/pages/user-settings/security'
+import Workspace from '#views/pages/user-settings/workspace'
 
 type UserSettingsTabsProps = {
   membersData: MembersData

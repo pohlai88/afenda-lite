@@ -2,7 +2,7 @@
 import { create } from 'zustand'
 
 // Type Imports
-import type { AppRole, PermissionKey, ResourcePermissions, RoleDialogMode, RoleFormData } from '@/types/apps/role-types'
+import type { AppRole, PermissionKey, ResourcePermissions, RoleDialogMode, RoleFormData } from '#types/apps/role-types'
 
 // ---------------------------------------------------------------------------
 // Constants

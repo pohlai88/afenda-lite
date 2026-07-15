@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@afenda/ui/components/button";
+import { Button } from "@afenda/ui/playground";
 import Link from "next/link";
 import { useState } from "react";
 

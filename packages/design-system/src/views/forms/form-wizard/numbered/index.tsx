@@ -1,5 +1,5 @@
 // Component Imports
-import { Card, CardContent } from '@/components/ui/card'
+import { Card, CardContent } from '#components/ui/card'
 import FormWizardNumberedSteps from './numbered-steps'
 import FormWizardWithValidation from './numbered-with-validation'
 

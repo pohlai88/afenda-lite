@@ -2,14 +2,14 @@
 import { ArrowLeftIcon, ArrowRightIcon } from 'lucide-react'
 
 // Component Imports
-import { Button } from '@/components/ui/button'
-import { CardContent } from '@/components/ui/card'
-import { Checkbox } from '@/components/ui/checkbox'
-import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
-import { Switch } from '@/components/ui/switch'
+import { Button } from '#components/ui/button'
+import { CardContent } from '#components/ui/card'
+import { Checkbox } from '#components/ui/checkbox'
+import { Field, FieldGroup, FieldLabel } from '#components/ui/field'
+import { Switch } from '#components/ui/switch'
 
 // Type Imports
-import type { StepperType } from '@/views/forms/form-wizard/numbered/numbered-steps'
+import type { StepperType } from '#views/forms/form-wizard/numbered/numbered-steps'
 
 const moduleAccess = ['Dashboard', 'Users', 'Analytics', 'Settings', 'Billing']
 

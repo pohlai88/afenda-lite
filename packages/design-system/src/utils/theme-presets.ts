@@ -1,5 +1,5 @@
 // Type Imports
-import type { ThemePreset } from '@/types/theme'
+import type { ThemePreset } from '../types/theme'
 
 // Theme presets
 export const themePresets = {

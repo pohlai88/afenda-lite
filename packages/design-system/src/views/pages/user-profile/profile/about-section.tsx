@@ -14,13 +14,13 @@ import {
 } from 'lucide-react'
 
 // Components Imports
-import { Card, CardContent } from '@/components/ui/card'
+import { Card, CardContent } from '#components/ui/card'
 
 // Data Imports
-import { db } from '@/fake-db/pages/user-profile'
+import { db } from '#fake-db/pages/user-profile'
 
 // Type Imports
-import type { UserProfileInfoIconKey, UserProfileOverviewIconKey } from '@/types/pages/user-profile-types'
+import type { UserProfileInfoIconKey, UserProfileOverviewIconKey } from '#types/pages/user-profile-types'
 
 type AboutItem = {
   label: string

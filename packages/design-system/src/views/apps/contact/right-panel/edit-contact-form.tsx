@@ -7,33 +7,33 @@ import { useEffect, useState } from 'react'
 import { CalendarIcon, MailIcon, MapPinIcon, PhoneIcon, XIcon } from 'lucide-react'
 
 // Type imports
-import type { Contact, Label as ContactLabel, CreateContactInput } from '@/types/apps/contact-types'
+import type { Contact, Label as ContactLabel, CreateContactInput } from '#types/apps/contact-types'
 
 // Component imports
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { Separator } from '@/components/ui/separator'
-import { Textarea } from '@/components/ui/textarea'
+import { Avatar, AvatarFallback, AvatarImage } from '#components/ui/avatar'
+import { Badge } from '#components/ui/badge'
+import { Button } from '#components/ui/button'
+import { Input } from '#components/ui/input'
+import { Label } from '#components/ui/label'
+import { ScrollArea } from '#components/ui/scroll-area'
+import { Separator } from '#components/ui/separator'
+import { Textarea } from '#components/ui/textarea'
 
 // Store imports
-import { useContactStore } from '@/store/use-contact-store'
+import { useContactStore } from '#store/use-contact-store'
 
 // Hook imports
-import { useFileUpload } from '@/hooks/use-file-upload'
+import { useFileUpload } from '#hooks/use-file-upload'
 
 // Utils imports
-import { cn } from '@/lib/utils'
+import { cn } from '#lib/utils'
 import {
   fileToDataUrl,
   getContactInitials,
   sanitizePhoneInput,
   validateEmail,
   validatePhoneNumber
-} from '@/utils/contact-utils'
+} from '#utils/contact-utils'
 
 const labelOptions: ContactLabel[] = ['lead', 'partner', 'customer', 'vip', 'freelancer', 'supplier']
 

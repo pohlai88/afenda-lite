@@ -7,29 +7,29 @@ import { useMemo, useState } from 'react'
 import { ArrowDownUpIcon, ChevronLeftIcon, MailIcon, MenuIcon, SearchIcon } from 'lucide-react'
 
 // Type Imports
-import type { Email } from '@/types/apps/mail-types'
+import type { Email } from '#types/apps/mail-types'
 
 // Component Imports
-import { Button } from '@/components/ui/button'
-import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group'
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable'
-import { Separator } from '@/components/ui/separator'
-import { Sheet, SheetContent } from '@/components/ui/sheet'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { Button } from '#components/ui/button'
+import { InputGroup, InputGroupAddon, InputGroupInput } from '#components/ui/input-group'
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '#components/ui/resizable'
+import { Separator } from '#components/ui/separator'
+import { Sheet, SheetContent } from '#components/ui/sheet'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '#components/ui/tabs'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '#components/ui/dropdown-menu'
 import MailNav from './mail-nav'
 import MailList from './mail-list'
 import MailDisplay from './mail-display'
 import MailCompose from './mail-compose'
 
 // Config Imports
-import { MAIL_COMPOSE_SESSION, MAIL_LABEL_NAV_ITEMS, MAIL_STATUS_NAV_ITEMS } from '@/configs/mailConfig'
+import { MAIL_COMPOSE_SESSION, MAIL_LABEL_NAV_ITEMS, MAIL_STATUS_NAV_ITEMS } from '#configs/mailConfig'
 
 // Hook Imports
-import { useMailApp } from '@/hooks/use-mail-app'
+import { useMailApp } from '#hooks/use-mail-app'
 
 // Util Imports
-import { cn } from '@/lib/utils'
+import { cn } from '#lib/utils'
 
 const MailApp = () => {
   // States

@@ -12,10 +12,10 @@ import type * as Stepperize from '@stepperize/react'
 import type { CompanyDetailsValues } from './index'
 
 // Component Imports
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Field, FieldError, FieldLabel } from '@/components/ui/field'
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Button } from '#components/ui/button'
+import { Input } from '#components/ui/input'
+import { Field, FieldError, FieldLabel } from '#components/ui/field'
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '#components/ui/select'
 
 const industryItems = [
   { label: 'Technology & Software', value: 'technology' },

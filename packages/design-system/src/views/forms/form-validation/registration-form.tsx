@@ -11,18 +11,18 @@ import * as z from 'zod'
 import { EyeIcon, EyeOffIcon } from 'lucide-react'
 
 // Component Imports
-import { Button } from '@/components/ui/button'
-import { Calendar } from '@/components/ui/calendar'
-import { Input } from '@/components/ui/input'
-import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Checkbox } from '@/components/ui/checkbox'
-import { Label } from '@/components/ui/label'
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import { Switch } from '@/components/ui/switch'
-import { Separator } from '@/components/ui/separator'
-import { Textarea } from '@/components/ui/textarea'
+import { Button } from '#components/ui/button'
+import { Calendar } from '#components/ui/calendar'
+import { Input } from '#components/ui/input'
+import { InputGroup, InputGroupAddon, InputGroupInput } from '#components/ui/input-group'
+import { Popover, PopoverContent, PopoverTrigger } from '#components/ui/popover'
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '#components/ui/select'
+import { Checkbox } from '#components/ui/checkbox'
+import { Label } from '#components/ui/label'
+import { RadioGroup, RadioGroupItem } from '#components/ui/radio-group'
+import { Switch } from '#components/ui/switch'
+import { Separator } from '#components/ui/separator'
+import { Textarea } from '#components/ui/textarea'
 import {
   Field,
   FieldContent,
@@ -32,10 +32,10 @@ import {
   FieldLabel,
   FieldLegend,
   FieldSet
-} from '@/components/ui/field'
+} from '#components/ui/field'
 
 // Util Imports
-import { cn } from '@/lib/utils'
+import { cn } from '#lib/utils'
 
 const formSchema = z.object({
   fullName: z

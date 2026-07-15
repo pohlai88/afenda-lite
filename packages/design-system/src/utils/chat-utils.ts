@@ -1,5 +1,5 @@
 // Type Imports
-import type { Message } from '@/types/apps/chat-types'
+import type { Message } from '#types/apps/chat-types'
 
 export const getMessagePreview = (message: Message) => {
   if (message.type === 'image') {

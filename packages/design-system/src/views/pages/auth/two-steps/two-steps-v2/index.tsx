@@ -2,12 +2,12 @@
 import Link from 'next/link'
 
 // Components Imports
-import Logo from '@/components/shared/Logo'
-import { BorderBeam } from '@/components/ui/border-beam'
-import TwoStepsV2Form from '@/views/pages/auth/two-steps/two-steps-v2/two-steps-v2-form'
+import Logo from '#components/shared/Logo'
+import { BorderBeam } from '#components/ui/border-beam'
+import TwoStepsV2Form from '#views/pages/auth/two-steps/two-steps-v2/two-steps-v2-form'
 
 // SVG Imports
-import AuthFullBackgroundShape from '@/assets/svg/auth-full-background-shape'
+import AuthFullBackgroundShape from '#assets/svg/auth-full-background-shape'
 
 const TwoStepsV2 = () => {
   return (

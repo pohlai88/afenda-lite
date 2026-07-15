@@ -1,5 +1,5 @@
 import { env } from "@afenda/env";
-import { UiProvider } from "@afenda/ui/providers";
+import { Providers } from "@afenda/ui/playground/providers";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
@@ -26,5 +26,5 @@ export default async function PlaygroundLayout({
 		notFound();
 	}
 
-	return <UiProvider>{children}</UiProvider>;
+	return <Providers>{children}</Providers>;
 }

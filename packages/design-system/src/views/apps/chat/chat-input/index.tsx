@@ -14,10 +14,10 @@ import type {
   Message,
   MessageType,
   PendingAttachment
-} from '@/types/apps/chat-types'
+} from '#types/apps/chat-types'
 
 // Component Imports
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '#components/ui/tabs'
 import ComposerBody from './composer-body'
 import ReplyBanner from './reply-banner'
 

@@ -1,4 +1,4 @@
-import type { Assignee, Task } from '@/types/apps/kanban-types'
+import type { Assignee, Task } from '#types/apps/kanban-types'
 
 export const teamMembers: Assignee[] = [
   {

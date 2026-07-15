@@ -15,28 +15,28 @@ import {
 } from 'lucide-react'
 
 // Component imports
-import { Button } from '@/components/ui/button'
+import { Button } from '#components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu'
-import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group'
-import { Label } from '@/components/ui/label'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
-import LeftPanel from '@/views/apps/contact/left-panel'
+} from '#components/ui/dropdown-menu'
+import { InputGroup, InputGroupAddon, InputGroupInput } from '#components/ui/input-group'
+import { Label } from '#components/ui/label'
+import { ScrollArea } from '#components/ui/scroll-area'
+import { Sheet, SheetContent, SheetTrigger } from '#components/ui/sheet'
+import LeftPanel from '#views/apps/contact/left-panel'
 import GridView from './grid-view'
 import ListView from './list-view'
 
 // Store imports
-import { useContactStore } from '@/store/use-contact-store'
+import { useContactStore } from '#store/use-contact-store'
 
 // Utils imports
-import { cn } from '@/lib/utils'
-import { getVisibleContacts, groupContactsByLetter, sortContacts, type ContactFilter } from '@/utils/contact-utils'
+import { cn } from '#lib/utils'
+import { getVisibleContacts, groupContactsByLetter, sortContacts, type ContactFilter } from '#utils/contact-utils'
 
 const MidPanel = () => {
   const [searchQuery, setSearchQuery] = useState('')

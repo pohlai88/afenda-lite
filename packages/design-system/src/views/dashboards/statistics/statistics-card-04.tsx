@@ -2,11 +2,11 @@
 import type { ReactNode } from 'react'
 
 // Component Imports
-import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { Badge } from '#components/ui/badge'
+import { Card, CardContent, CardHeader } from '#components/ui/card'
 
 // Util Imports
-import { cn } from '@/lib/utils'
+import { cn } from '#lib/utils'
 
 // Statistics card data type
 type StatisticsCardProps = {

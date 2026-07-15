@@ -7,11 +7,11 @@ import { useEffect } from 'react'
 import { parseAsString, useQueryState } from 'nuqs'
 
 // Component Imports
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '#components/ui/tabs'
 
-import ConnectionsCard from '@/views/pages/user-profile/connections'
-import Profile from '@/views/pages/user-profile/profile'
-import TeamsCard from '@/views/pages/user-profile/teams'
+import ConnectionsCard from '#views/pages/user-profile/connections'
+import Profile from '#views/pages/user-profile/profile'
+import TeamsCard from '#views/pages/user-profile/teams'
 import ProjectsCard from './projects'
 
 const UserProfileTabs = () => {

@@ -12,11 +12,11 @@ import * as Icon from 'lucide-react'
 import { ChevronRightIcon, SquareArrowOutUpRightIcon } from 'lucide-react'
 
 // Type Imports
-import type { MenuGroupSubItem, MenuItem, MenuSubItem } from '@/configs/navConfig'
+import type { MenuGroupSubItem, MenuItem, MenuSubItem } from '#configs/navConfig'
 
 // Component Imports
-import LogoSvg from '@/assets/svg/logo'
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
+import LogoSvg from '#assets/svg/logo'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '#components/ui/collapsible'
 import {
   Sidebar,
   SidebarContent,
@@ -31,15 +31,15 @@ import {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem
-} from '@/components/ui/sidebar'
+} from '#components/ui/sidebar'
 
 // Config Imports
-import { navItems } from '@/configs/navConfig'
-import themeConfig from '@/configs/themeConfig'
-import { useSettings } from '@/hooks/use-settings'
+import { navItems } from '#configs/navConfig'
+import themeConfig from '#configs/themeConfig'
+import { useSettings } from '#hooks/use-settings'
 
 // Util Imports
-import { cn } from '@/lib/utils'
+import { cn } from '#lib/utils'
 
 const isSubGroup = (item: MenuSubItem): item is MenuGroupSubItem => 'childItems' in item
 

@@ -1,20 +1,20 @@
 'use client'
 
 // Type imports
-import type { Contact } from '@/types/apps/contact-types'
-import { CONTACT_LABEL_STYLES } from '@/types/apps/contact-types'
+import type { Contact } from '#types/apps/contact-types'
+import { CONTACT_LABEL_STYLES } from '#types/apps/contact-types'
 
 // Component imports
-import { Badge } from '@/components/ui/badge'
-import { Separator } from '@/components/ui/separator'
-import ContactActionsDropdown from '@/views/apps/contact/contact-actions-dropdown'
-import ContactAvatar from '@/views/apps/contact/contact-avatar'
+import { Badge } from '#components/ui/badge'
+import { Separator } from '#components/ui/separator'
+import ContactActionsDropdown from '#views/apps/contact/contact-actions-dropdown'
+import ContactAvatar from '#views/apps/contact/contact-avatar'
 
 // Store imports
-import { useContactStore } from '@/store/use-contact-store'
+import { useContactStore } from '#store/use-contact-store'
 
 // Utils imports
-import { cn } from '@/lib/utils'
+import { cn } from '#lib/utils'
 
 type GroupedContacts = [string, Contact[]][]
 

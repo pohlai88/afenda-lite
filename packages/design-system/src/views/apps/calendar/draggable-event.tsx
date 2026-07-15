@@ -9,7 +9,7 @@ import { CSS } from '@dnd-kit/utilities'
 import { differenceInDays } from 'date-fns'
 
 // Type Imports
-import type { CalendarEvent } from '@/types/apps/calendar-types'
+import type { CalendarEvent } from '#types/apps/calendar-types'
 
 // Component Imports
 import { useCalendarDnd } from './calendar-dnd-context'

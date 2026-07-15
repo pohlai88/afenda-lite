@@ -4,7 +4,7 @@
 | ----------------- | ------------ |
 | **ID**            | ARCH-012     |
 | **Category**      | Architecture |
-| **Version**       | 1.2.5        |
+| **Version**       | 1.2.6        |
 | **Status**        | Living       |
 | **Control State** | Closed     |
 | **Owner**         | Frontend     |
@@ -193,7 +193,7 @@ Never place `route.ts` beside a `page.tsx` in the same segment. Prefer Server Ac
 | `/playground/coverage` | Route coverage | yes | wired |
 | `/playground/hitl-review` | Source-backed HITL route review | yes | wired |
 
-Gated by `PLAYGROUND_ENABLED`. Not a client product surface. Never sync playground env to Vercel production.
+Gated by `PLAYGROUND_ENABLED`. Not a client product surface. Never sync playground env to Vercel production. These `/playground` routes are distinct from the `@afenda/ui/playground` package subpath — see [ARCH-024 § `@afenda/ui`](ARCH-024-package-boundaries.md#afendaui) for the canonical disambiguation.
 
 Curated route bindings live in `features/playground/playground-registry.ts` when the Target tree exists; `pnpm check:playground` enforces route, review-definition, evidence, and E2E fixture parity.
 
@@ -283,6 +283,7 @@ Agent method (not a controlled ID): `.cursor/skills/afenda-elite-nextjs-best-pra
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 1.2.6 | 2026-07-15 | § 3.10 Playground: linked to the ARCH-024 `@afenda/ui/playground` disambiguation paragraph (no independent prose). |
 | 1.2.5 | 2026-07-15 | `(client)` normalize: workspace `loading`/`error` under `dashboard/` only (redirect-safe; same class as gate login). |
 | 1.2.4 | 2026-07-15 | Client path honesty: Living inventory under `app/(client)/client/{(gate)|(workspace)}`; gate loading/error rules; `/client` + `/client/dashboard` wired; preview gate moved to §3.4. |
 | 1.2.3 | 2026-07-14 | Bounded reopen: package-manager cutover — document `pnpm` / `pnpm exec` (repo SSOT `packageManager` + `pnpm-lock.yaml`). |

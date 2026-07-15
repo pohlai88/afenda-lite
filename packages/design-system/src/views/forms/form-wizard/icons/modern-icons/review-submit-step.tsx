@@ -5,12 +5,12 @@ import { ArrowLeftIcon } from 'lucide-react'
 import type { StepperType } from './index'
 
 // Component Imports
-import { Button } from '@/components/ui/button'
-import { Label } from '@/components/ui/label'
-import { Switch } from '@/components/ui/switch'
+import { Button } from '#components/ui/button'
+import { Label } from '#components/ui/label'
+import { Switch } from '#components/ui/switch'
 
 // SVG Imports
-import MultiStepReviewCompleteSVG from '@/assets/svg/review-complete'
+import MultiStepReviewCompleteSVG from '#assets/svg/review-complete'
 
 const reviewSections = [
   {

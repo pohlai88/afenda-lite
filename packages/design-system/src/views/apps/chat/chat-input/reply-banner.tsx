@@ -2,10 +2,10 @@
 import { XIcon } from 'lucide-react'
 
 // Type Imports
-import type { Message } from '@/types/apps/chat-types'
+import type { Message } from '#types/apps/chat-types'
 
 // Util Imports
-import { getMessagePreview } from '@/utils/chat-utils'
+import { getMessagePreview } from '#utils/chat-utils'
 
 export type ReplyBannerProps = {
   replyToMessage: Message

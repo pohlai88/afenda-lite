@@ -12,9 +12,9 @@ import {
 } from 'lucide-react'
 
 // Component Imports
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { type ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart'
+import { Avatar, AvatarFallback } from '#components/ui/avatar'
+import { Card, CardContent, CardHeader, CardTitle } from '#components/ui/card'
+import { type ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '#components/ui/chart'
 
 const salesPlanPercentage = 54
 const totalBars = 24

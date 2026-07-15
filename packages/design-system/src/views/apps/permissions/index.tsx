@@ -1,10 +1,10 @@
 'use client'
 
 // Component Imports
-import { Card, CardContent } from '@/components/ui/card'
+import { Card, CardContent } from '#components/ui/card'
 
 // Hook Imports
-import { useRolesApp } from '@/hooks/use-roles-app'
+import { useRolesApp } from '#hooks/use-roles-app'
 
 // Component Imports
 import { PermissionsTable } from './permissions-table'

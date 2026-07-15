@@ -2,12 +2,12 @@
 import Link from 'next/link'
 
 // Component Imports
-import Logo from '@/components/shared/Logo'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import TwoStepsV1Form from '@/views/pages/auth/two-steps/two-steps-v1/two-steps-v1-form'
+import Logo from '#components/shared/Logo'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#components/ui/card'
+import TwoStepsV1Form from '#views/pages/auth/two-steps/two-steps-v1/two-steps-v1-form'
 
 // SVG Imports
-import AuthBackgroundShape from '@/assets/svg/auth-background-shape'
+import AuthBackgroundShape from '#assets/svg/auth-background-shape'
 
 const TwoStepsV1 = () => {
   return (

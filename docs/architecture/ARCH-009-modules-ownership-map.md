@@ -4,11 +4,11 @@
 | ----------------- | ------------ |
 | **ID**            | ARCH-009     |
 | **Category**      | Architecture |
-| **Version**       | 1.1.1        |
+| **Version**       | 1.1.2        |
 | **Status**        | Living       |
 | **Control State** | Closed       |
 | **Owner**         | Backend      |
-| **Updated**       | 2026-07-14   |
+| **Updated**       | 2026-07-15   |
 
 ---
 
@@ -164,6 +164,8 @@ UI / Actions companions (not under `modules/`, ownership companions): `features/
 | `features/organization-admin/*` | Operator page runners + promoted Studio leaves |
 | `features/portal-chrome/*` | Theme owner, brand, shell access resolve |
 | `features/playground/**` | Local harness only — never prod contract |
+
+`features/playground/` (Next.js routes) is distinct from the `@afenda/ui/playground` package subpath — see [ARCH-024 § `@afenda/ui`](ARCH-024-package-boundaries.md#afendaui) for the canonical disambiguation.
 | `features/fft/fft-*.tsx` | Trade UI under AdminCN / Studio shell |
 
 Do **not** recreate `lib/pages`, `lib/entry`, or `lib/playground`.
@@ -252,6 +254,7 @@ Detail: [residue-inventory.md](../../.cursor/skills/afenda-elite-backend-modules
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 1.1.2 | 2026-07-15 | Linked `features/playground/**` row to the ARCH-024 `@afenda/ui/playground` disambiguation paragraph (no independent prose). |
 | 1.1.1 | 2026-07-14 | Home flattened to docs/architecture/ (trunks removed; pack reading order in README). |
 | 1.1.0 | 2026-07-14 | Logical inventory sync with module-tree: remove stale `lib/` shim claims; Platform normalize-email / RBAC / draft API ownership; FE portal-chrome + fft; closed relocate history; forbidden list; full References. |
 | 1.0.3 | 2026-07-14 | Checkout posture: Living map = shape only; Collapse product trees forbidden to recover. |

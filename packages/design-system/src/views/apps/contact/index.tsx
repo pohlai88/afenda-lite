@@ -6,10 +6,10 @@ import MidPanel from './mid-panel'
 import RightPanel from './right-panel'
 
 // Store imports
-import { useContactStore } from '@/store/use-contact-store'
+import { useContactStore } from '#store/use-contact-store'
 
 // Utils imports
-import { cn } from '@/lib/utils'
+import { cn } from '#lib/utils'
 
 const Contact = () => {
   const selectedContactPhone = useContactStore(state => state.selectedContactPhone)

@@ -2,13 +2,13 @@
 import { ArrowLeftIcon } from 'lucide-react'
 
 // Component Imports
-import { Label } from '@/components/ui/label'
-import { Button } from '@/components/ui/button'
-import { Switch } from '@/components/ui/switch'
-import { CardContent } from '@/components/ui/card'
+import { Label } from '#components/ui/label'
+import { Button } from '#components/ui/button'
+import { Switch } from '#components/ui/switch'
+import { CardContent } from '#components/ui/card'
 
 // SVG Imports
-import MultiStepReviewCompleteSVG from '@/assets/svg/review-complete'
+import MultiStepReviewCompleteSVG from '#assets/svg/review-complete'
 
 // Type Imports
 import type { StepperType } from './index'

@@ -27,24 +27,24 @@ import {
 import type { Column, ColumnDef, ColumnPinningState, PaginationState, SortingState } from '@tanstack/react-table'
 
 // Component Imports
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
+import { Avatar, AvatarFallback, AvatarImage } from '#components/ui/avatar'
+import { Badge } from '#components/ui/badge'
+import { Button } from '#components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu'
-import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem } from '@/components/ui/pagination'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+} from '#components/ui/dropdown-menu'
+import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem } from '#components/ui/pagination'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '#components/ui/table'
 
 // Hook Imports
-import { usePagination } from '@/hooks/use-pagination'
+import { usePagination } from '#hooks/use-pagination'
 
 // Util Imports
-import { cn } from '@/lib/utils'
+import { cn } from '#lib/utils'
 
 export type Item = {
   id: string

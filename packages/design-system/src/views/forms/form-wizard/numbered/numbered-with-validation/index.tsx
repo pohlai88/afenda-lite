@@ -8,15 +8,15 @@ import * as Stepperize from '@stepperize/react'
 import { ChevronRightIcon } from 'lucide-react'
 
 // Component Imports
-import { Button } from '@/components/ui/button'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Button } from '#components/ui/button'
+import { Avatar, AvatarFallback } from '#components/ui/avatar'
 import AccountSetupStep from './account-setup-step'
 import CompanyDetailsStep from './company-details-step'
 import SubscriptionStep from './subscription-step'
 import WelcomeStep from './welcome-step'
 
 // Util Imports
-import { cn } from '@/lib/utils'
+import { cn } from '#lib/utils'
 
 const { useStepper } = Stepperize.defineStepper(
   {

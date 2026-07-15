@@ -9,16 +9,16 @@ import type { SyntheticListenerMap } from '@dnd-kit/core/dist/hooks/utilities'
 import { differenceInMinutes, format, getMinutes, isPast } from 'date-fns'
 
 // Type Imports
-import type { CalendarEvent } from '@/types/apps/calendar-types'
+import type { CalendarEvent } from '#types/apps/calendar-types'
 
 // Util Imports
-import { cn } from '@/lib/utils'
+import { cn } from '#lib/utils'
 import {
   getBorderRadiusClasses,
   getEventColorClasses,
   getMonthViewBleedClasses,
   getMonthViewEventPaddingClasses
-} from '@/utils/calendar-utils'
+} from '#utils/calendar-utils'
 
 // Using date-fns format with custom formatting:
 // 'h' - hours (1-12)

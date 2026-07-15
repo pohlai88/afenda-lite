@@ -7,10 +7,10 @@ import { useState } from 'react'
 import { Trash2Icon } from 'lucide-react'
 
 // Type Imports
-import type { UserStatus } from '@/types/apps/user-types'
+import type { UserStatus } from '#types/apps/user-types'
 
 // Component Imports
-import { Button } from '@/components/ui/button'
+import { Button } from '#components/ui/button'
 import {
   Dialog,
   DialogContent,
@@ -18,8 +18,8 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle
-} from '@/components/ui/dialog'
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+} from '#components/ui/dialog'
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '#components/ui/select'
 
 const STATUSES: UserStatus[] = ['Active', 'Pending', 'Suspended', 'Inactive']
 

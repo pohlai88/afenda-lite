@@ -2,14 +2,14 @@
 import Link from 'next/link'
 
 // Components Import
-import Logo from '@/components/shared/Logo'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Separator } from '@/components/ui/separator'
-import LoginV1Form from '@/views/pages/auth/login/login-v1/login-v1-form'
+import Logo from '#components/shared/Logo'
+import { Button } from '#components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#components/ui/card'
+import { Separator } from '#components/ui/separator'
+import LoginV1Form from '#views/pages/auth/login/login-v1/login-v1-form'
 
 // SVG Import
-import AuthBackgroundShape from '@/assets/svg/auth-background-shape'
+import AuthBackgroundShape from '#assets/svg/auth-background-shape'
 
 const LoginV1 = () => {
   return (

@@ -2,10 +2,10 @@
 import { isSameDay } from 'date-fns'
 
 // Type Imports
-import type { CalendarEvent, events } from '@/types/apps/calendar-types'
+import type { CalendarEvent, events } from '#types/apps/calendar-types'
 
 // Util Imports
-import { cn } from '@/lib/utils'
+import { cn } from '#lib/utils'
 
 const EVENT_TYPES: events[] = ['etc', 'family', 'business', 'personal', 'holiday']
 

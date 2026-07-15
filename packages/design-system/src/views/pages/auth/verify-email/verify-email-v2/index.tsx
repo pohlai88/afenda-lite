@@ -5,12 +5,12 @@ import Link from 'next/link'
 import { ChevronLeftIcon } from 'lucide-react'
 
 // Component Import
-import Logo from '@/components/shared/Logo'
-import { BorderBeam } from '@/components/ui/border-beam'
-import { Button } from '@/components/ui/button'
+import Logo from '#components/shared/Logo'
+import { BorderBeam } from '#components/ui/border-beam'
+import { Button } from '#components/ui/button'
 
 // SVG Import
-import AuthFullBackgroundShape from '@/assets/svg/auth-full-background-shape'
+import AuthFullBackgroundShape from '#assets/svg/auth-full-background-shape'
 
 const VerifyEmailV2 = () => {
   return (

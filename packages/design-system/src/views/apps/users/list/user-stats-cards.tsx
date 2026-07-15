@@ -5,10 +5,10 @@ import type { ReactNode } from 'react'
 import { UserCheckIcon, UserCogIcon, UserPlusIcon, UsersIcon } from 'lucide-react'
 
 // Component Imports
-import { Card, CardContent } from '@/components/ui/card'
+import { Card, CardContent } from '#components/ui/card'
 
 // Util Imports
-import { cn } from '@/lib/utils'
+import { cn } from '#lib/utils'
 
 const STAT_CHANGE_BADGES = {
   totalUsers: 29,

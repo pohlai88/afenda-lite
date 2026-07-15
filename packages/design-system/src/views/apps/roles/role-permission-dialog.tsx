@@ -9,10 +9,10 @@ import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 
 // Type Imports
-import type { AppRoleWithUsers, ResourcePermissions, RoleDialogMode, RoleFormData } from '@/types/apps/role-types'
+import type { AppRoleWithUsers, ResourcePermissions, RoleDialogMode, RoleFormData } from '#types/apps/role-types'
 
 // Component Imports
-import { Button } from '@/components/ui/button'
+import { Button } from '#components/ui/button'
 import {
   Dialog,
   DialogContent,
@@ -20,9 +20,9 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription
-} from '@/components/ui/dialog'
-import { Field, FieldError, FieldLabel } from '@/components/ui/field'
-import { Input } from '@/components/ui/input'
+} from '#components/ui/dialog'
+import { Field, FieldError, FieldLabel } from '#components/ui/field'
+import { Input } from '#components/ui/input'
 import { RolePermissionsTable } from './role-permissions-table'
 
 // -------------------------------------------------------------------------------------------------

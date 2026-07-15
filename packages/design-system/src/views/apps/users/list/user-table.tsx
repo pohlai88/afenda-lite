@@ -6,13 +6,13 @@ import { flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-tabl
 import { ChevronDownIcon, ChevronUpIcon } from 'lucide-react'
 
 // Type Imports
-import type { AppUser, UserSorting, UserStatus } from '@/types/apps/user-types'
+import type { AppUser, UserSorting, UserStatus } from '#types/apps/user-types'
 
 // Component Imports
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '#components/ui/table'
 
 // Util Imports
-import { cn } from '@/lib/utils'
+import { cn } from '#lib/utils'
 import { userTableColumns } from './user-table-columns'
 
 export interface UserTableProps {

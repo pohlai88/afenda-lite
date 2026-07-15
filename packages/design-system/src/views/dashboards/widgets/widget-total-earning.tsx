@@ -2,17 +2,17 @@
 import { EllipsisVerticalIcon, ChevronUpIcon, ChevronDownIcon } from 'lucide-react'
 
 // Component Imports
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
+import { Avatar, AvatarFallback } from '#components/ui/avatar'
+import { Button } from '#components/ui/button'
+import { Card, CardContent } from '#components/ui/card'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu'
-import { Progress } from '@/components/ui/progress'
+} from '#components/ui/dropdown-menu'
+import { Progress } from '#components/ui/progress'
 
 const listItems = ['Share', 'Update', 'Refresh']
 

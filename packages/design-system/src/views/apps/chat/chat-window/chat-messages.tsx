@@ -7,19 +7,19 @@ import { useEffect, useMemo, useRef } from 'react'
 import { format, isToday, isYesterday } from 'date-fns'
 
 // Type Imports
-import type { ChatUser, Message } from '@/types/apps/chat-types'
+import type { ChatUser, Message } from '#types/apps/chat-types'
 
 // Component Imports
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Badge } from '@/components/ui/badge'
-import { ScrollArea } from '@/components/ui/scroll-area'
+import { Avatar, AvatarFallback, AvatarImage } from '#components/ui/avatar'
+import { Badge } from '#components/ui/badge'
+import { ScrollArea } from '#components/ui/scroll-area'
 import ChatMessage from './chat-message'
 
 // Config Imports
-import { getInitialsFromName } from '@/configs/mailConfig'
+import { getInitialsFromName } from '#configs/mailConfig'
 
 // Util Imports
-import { isSameMessageSender } from '@/utils/chat-utils'
+import { isSameMessageSender } from '#utils/chat-utils'
 
 export type ChatMessagesProps = {
   messages: Message[]

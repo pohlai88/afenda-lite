@@ -4,14 +4,14 @@
 import { create } from 'zustand'
 
 // Type Imports
-import type { Email, EmailLabel, EmailStatus, MailFilterTab, MailNavType, MailSortOrder } from '@/types/apps/mail-types'
+import type { Email, EmailLabel, EmailStatus, MailFilterTab, MailNavType, MailSortOrder } from '#types/apps/mail-types'
 
 // Data Imports
-import { db } from '@/fake-db/apps/mail'
+import { db } from '#fake-db/apps/mail'
 
 /**
  * ! If you're using a database, you can uncomment the line below and use the server action to fetch the data
- * ! import { getMailData } from '@/app/server/actions'
+ * ! import { getMailData } from '#app/server/actions'
  */
 
 type MailStoreData = {

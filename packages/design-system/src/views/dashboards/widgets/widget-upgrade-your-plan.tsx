@@ -6,22 +6,22 @@ import images, { type CardImages } from 'react-payment-inputs/images'
 import { EllipsisVerticalIcon, WalletIcon, CreditCardIcon } from 'lucide-react'
 
 // Component Imports
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { Avatar, AvatarFallback } from '#components/ui/avatar'
+import { Button } from '#components/ui/button'
+import { Card, CardContent, CardHeader } from '#components/ui/card'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu'
-import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+} from '#components/ui/dropdown-menu'
+import { InputGroup, InputGroupAddon, InputGroupInput } from '#components/ui/input-group'
+import { Input } from '#components/ui/input'
+import { Label } from '#components/ui/label'
 
 // Util Imports
-import { cn } from '@/lib/utils'
+import { cn } from '#lib/utils'
 
 const listItems = ['Share', 'Update', 'Refresh']
 

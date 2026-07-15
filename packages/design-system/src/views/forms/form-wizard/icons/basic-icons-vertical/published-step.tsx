@@ -1,6 +1,6 @@
 // Component Imports
-import { Button } from '@/components/ui/button'
-import { CardContent } from '@/components/ui/card'
+import { Button } from '#components/ui/button'
+import { CardContent } from '#components/ui/card'
 
 // Type Imports
 import type { StepperType } from './index'

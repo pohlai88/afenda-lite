@@ -1,4 +1,4 @@
-import type { UserSettingsData } from '@/types/pages/user-settings-types'
+import type { UserSettingsData } from '#types/pages/user-settings-types'
 
 export const db: UserSettingsData = {
   members: [

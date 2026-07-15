@@ -4,8 +4,8 @@
 import { CartesianGrid, Line, LineChart } from 'recharts'
 
 // Component Imports
-import { Card, CardDescription, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { type ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart'
+import { Card, CardDescription, CardContent, CardHeader, CardTitle } from '#components/ui/card'
+import { type ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '#components/ui/chart'
 
 // Profit chart data
 const profitChartData = [

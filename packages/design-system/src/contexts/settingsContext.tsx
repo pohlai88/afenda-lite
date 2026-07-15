@@ -8,15 +8,15 @@ import { createContext, useEffect, useMemo, useRef } from 'react'
 import { useTheme } from 'next-themes'
 
 // Hook Imports
-import { useObjectCookie } from '@/hooks/use-object-cookie'
+import { useObjectCookie } from '../hooks/use-object-cookie'
 
 // Config Imports
-import themeConfig from '@/configs/themeConfig'
+import themeConfig from '../configs/themeConfig'
 
 // Util Imports
-import { FONT_CONFIG, type FontKey } from '@/utils/fonts'
-import type { ThemePresetKey } from '@/utils/theme-presets'
-import { themePresets } from '@/utils/theme-presets'
+import { FONT_CONFIG, type FontKey } from '../utils/fonts'
+import type { ThemePresetKey } from '../utils/theme-presets'
+import { themePresets } from '../utils/theme-presets'
 
 const PRESET_CSS_VARS = [
   'background',

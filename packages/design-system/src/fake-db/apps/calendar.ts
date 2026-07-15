@@ -2,7 +2,7 @@
 import { addDays, setHours, setMinutes, subDays } from 'date-fns'
 
 // Type Imports
-import type { CalendarEvent } from '@/types/apps/calendar-types'
+import type { CalendarEvent } from '#types/apps/calendar-types'
 
 export const db: CalendarEvent[] = [
   {

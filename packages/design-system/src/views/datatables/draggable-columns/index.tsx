@@ -1,5 +1,5 @@
 // Component Imports
-import { Card } from '@/components/ui/card'
+import { Card } from '#components/ui/card'
 import DraggableColumnsDatatable, { type Item } from './datatable-draggable-columns'
 
 const vendorContracts: Item[] = [

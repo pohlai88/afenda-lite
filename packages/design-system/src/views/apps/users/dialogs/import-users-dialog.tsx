@@ -7,10 +7,10 @@ import { useState, type ChangeEvent } from 'react'
 import Papa from 'papaparse'
 
 // Type Imports
-import type { AppUser } from '@/types/apps/user-types'
+import type { AppUser } from '#types/apps/user-types'
 
 // Component Imports
-import { Button } from '@/components/ui/button'
+import { Button } from '#components/ui/button'
 import {
   Dialog,
   DialogContent,
@@ -18,9 +18,9 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle
-} from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+} from '#components/ui/dialog'
+import { Input } from '#components/ui/input'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '#components/ui/table'
 
 const PREVIEW_ROW_LIMIT = 5
 

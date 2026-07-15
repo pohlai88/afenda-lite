@@ -1,15 +1,15 @@
 import { EllipsisVerticalIcon } from 'lucide-react'
 
-import { Button } from '@/components/ui/button'
+import { Button } from '#components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu'
-import { Separator } from '@/components/ui/separator'
-import AddPaymentMethodDialog from '@/views/pages/user-settings/billing/dialog-add-payment-method'
+} from '#components/ui/dropdown-menu'
+import { Separator } from '#components/ui/separator'
+import AddPaymentMethodDialog from '#views/pages/user-settings/billing/dialog-add-payment-method'
 
 const PaymentMethod = () => {
   return (

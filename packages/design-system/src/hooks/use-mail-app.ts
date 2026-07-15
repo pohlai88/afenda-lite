@@ -4,13 +4,13 @@
 import { useCallback, useMemo } from 'react'
 
 // Type Imports
-import type { ComposeEmailPayload, Email, EmailLabel, EmailStatus, MailSortOrder } from '@/types/apps/mail-types'
+import type { ComposeEmailPayload, Email, EmailLabel, EmailStatus, MailSortOrder } from '#types/apps/mail-types'
 
 // Store Imports
-import { useMailStore } from '@/store/use-mail-store'
+import { useMailStore } from '#store/use-mail-store'
 
 // Config Imports
-import { deriveRecipientEmailAddress, getEmailPreviewText, MAIL_CURRENT_USER } from '@/configs/mailConfig'
+import { deriveRecipientEmailAddress, getEmailPreviewText, MAIL_CURRENT_USER } from '#configs/mailConfig'
 
 const sortEmails = (items: Email[], sortOrder: MailSortOrder): Email[] => {
   if (sortOrder === 'default') {

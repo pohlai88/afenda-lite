@@ -2,16 +2,16 @@
 import { StarIcon } from 'lucide-react'
 
 // Type Imports
-import type { Email } from '@/types/apps/mail-types'
+import type { Email } from '#types/apps/mail-types'
 
 // Component Imports
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '#components/ui/avatar'
 
 // Config Imports
-import { formatMailDate, getInitialsFromName, MAIL_LABEL_STYLES } from '@/configs/mailConfig'
+import { formatMailDate, getInitialsFromName, MAIL_LABEL_STYLES } from '#configs/mailConfig'
 
 // Util Imports
-import { cn } from '@/lib/utils'
+import { cn } from '#lib/utils'
 
 interface MailItemProps {
   email: Email

@@ -1,22 +1,17 @@
-// React Imports
-import type { ReactNode } from 'react'
-
 // Component Imports
 import { ThemeProvider } from './ThemeProvider'
 import { SidebarProvider } from './ui/sidebar'
 import { TooltipProvider } from './ui/tooltip'
 
 // Context Imports
-import type { Settings } from '@/contexts/settingsContext'
-import { SettingsProvider } from '@/contexts/settingsContext'
+import { SettingsProvider } from '../contexts/settingsContext'
 
-type Props = {
-  children: ReactNode
-  settingsCookie?: Settings
-  sidebarDefaultOpen?: boolean
-}
+// Playground contract
+import type { ProvidersContract } from '../playground/types'
 
-const Providers = ({ children, settingsCookie, sidebarDefaultOpen }: Props) => {
+interface ProvidersProps extends ProvidersContract {}
+
+const Providers = ({ children, settingsCookie, sidebarDefaultOpen }: ProvidersProps) => {
   return (
     <ThemeProvider attribute='class' defaultTheme={settingsCookie?.mode ?? 'system'} enableSystem={true}>
       <SettingsProvider settingsCookie={settingsCookie}>

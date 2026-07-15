@@ -2,10 +2,10 @@
 import { subDays, subHours, subWeeks } from 'date-fns'
 
 // Type Imports
-import type { Email } from '@/types/apps/mail-types'
+import type { Email } from '#types/apps/mail-types'
 
 // Config Imports
-import { MAIL_CURRENT_USER } from '@/configs/mailConfig'
+import { MAIL_CURRENT_USER } from '#configs/mailConfig'
 
 const now = new Date()
 const hoursAgo = (hours: number) => subHours(now, hours)

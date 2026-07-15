@@ -2,7 +2,7 @@
 import type { ReactNode } from 'react'
 
 // Component Imports
-import { Input } from '@/components/ui/input'
+import { Input } from '#components/ui/input'
 
 export const ComposeFieldRow = ({
   label,

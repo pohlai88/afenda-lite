@@ -2,13 +2,13 @@
 import { LaptopIcon, ShirtIcon, BookOpenIcon, BuildingIcon, ArrowLeftIcon, ArrowRightIcon } from 'lucide-react'
 
 // Component Imports
-import { Label } from '@/components/ui/label'
-import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field'
-import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group'
-import { Button } from '@/components/ui/button'
-import { CardContent } from '@/components/ui/card'
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Label } from '#components/ui/label'
+import { Field, FieldDescription, FieldGroup, FieldLabel } from '#components/ui/field'
+import { InputGroup, InputGroupAddon, InputGroupInput } from '#components/ui/input-group'
+import { Button } from '#components/ui/button'
+import { CardContent } from '#components/ui/card'
+import { RadioGroup, RadioGroupItem } from '#components/ui/radio-group'
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '#components/ui/select'
 
 // Type Imports
 import type { StepperType } from './index'

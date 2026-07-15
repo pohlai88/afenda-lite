@@ -2,9 +2,9 @@
 import Link from 'next/link'
 
 // Component Imports
-import { DotGrid } from '@/components/ui/bg-dot-grid'
-import { Button } from '@/components/ui/button'
-import { MorphingText } from '@/components/ui/morphing-text'
+import { DotGrid } from '#components/ui/bg-dot-grid'
+import { Button } from '#components/ui/button'
+import { MorphingText } from '#components/ui/morphing-text'
 
 const Error = () => {
   return (

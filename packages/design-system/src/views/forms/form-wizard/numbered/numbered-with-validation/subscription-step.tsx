@@ -13,11 +13,11 @@ import type * as Stepperize from '@stepperize/react'
 import type { SubscriptionValues } from './index'
 
 // Component Imports
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Field, FieldError, FieldLabel } from '@/components/ui/field'
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import { Button } from '#components/ui/button'
+import { Input } from '#components/ui/input'
+import { Label } from '#components/ui/label'
+import { Field, FieldError, FieldLabel } from '#components/ui/field'
+import { RadioGroup, RadioGroupItem } from '#components/ui/radio-group'
 
 const FormSchema = z.object({
   plan: z.string().min(1, 'Please select a plan'),

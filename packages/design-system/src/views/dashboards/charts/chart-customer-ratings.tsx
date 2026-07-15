@@ -5,18 +5,18 @@ import { Line, LineChart, XAxis } from 'recharts'
 import { EllipsisVerticalIcon, PlusIcon } from 'lucide-react'
 
 // Component Imports
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
-import { type ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart'
+import { Badge } from '#components/ui/badge'
+import { Button } from '#components/ui/button'
+import { Card, CardContent, CardHeader } from '#components/ui/card'
+import { type ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '#components/ui/chart'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu'
-import { Rating } from '@/components/ui/rating'
+} from '#components/ui/dropdown-menu'
+import { Rating } from '#components/ui/rating'
 
 const listItems = ['Share', 'Update', 'Refresh']
 

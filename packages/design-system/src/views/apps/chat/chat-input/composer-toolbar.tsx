@@ -2,8 +2,8 @@
 import { LinkIcon, PaperclipIcon, SendIcon, SmileIcon } from 'lucide-react'
 
 // Component Imports
-import { Button } from '@/components/ui/button'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Button } from '#components/ui/button'
+import { Popover, PopoverContent, PopoverTrigger } from '#components/ui/popover'
 
 // Data Imports
 import { COMMON_EMOJIS } from './composer-constants'

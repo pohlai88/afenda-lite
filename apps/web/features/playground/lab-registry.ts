@@ -13,13 +13,15 @@ export type PlaygroundLab = {
 	description: string;
 	category: LabCategory;
 	mount: LabMount;
+	/** Exact symbol name this lab's component is re-exported as from `@afenda/ui/playground`. */
+	exportName: string;
 	packagePath: string;
 	interactions: InteractionStep[];
 	vibePromptSeeds: string[];
 };
 
 /**
- * Curated ready labs only — no auto-scan of `@afenda/ui` blocks.
+ * Curated ready labs only — no auto-scan of `@afenda/ui` views.
  */
 export const PLAYGROUND_LABS: readonly PlaygroundLab[] = [
 	{
@@ -29,7 +31,9 @@ export const PLAYGROUND_LABS: readonly PlaygroundLab[] = [
 			"AdminCN header profile menu — open menu, navigate items, sign-out callback.",
 		category: "composite",
 		mount: "header",
-		packagePath: "packages/ui/src/components/composite/profile-dropdown.tsx",
+		exportName: "ProfileDropdown",
+		packagePath:
+			"packages/design-system/src/components/shared/ProfileDropdown.tsx",
 		interactions: [
 			{ id: "open-menu", label: "Open the profile menu from the header" },
 			{
@@ -39,7 +43,7 @@ export const PLAYGROUND_LABS: readonly PlaygroundLab[] = [
 			{ id: "sign-out", label: "Click Sign out and see harness feedback" },
 		],
 		vibePromptSeeds: [
-			"Focus ProfileDropdown in AdminShell header (profileSlot).",
+			"Focus ProfileDropdown in harness header (profileSlot).",
 			"Preserve accessibility of the dropdown trigger and destructive sign-out item.",
 		],
 	},
@@ -50,8 +54,9 @@ export const PLAYGROUND_LABS: readonly PlaygroundLab[] = [
 			"AdminCN header notifications — open menu, switch Inbox/General tabs.",
 		category: "composite",
 		mount: "header",
+		exportName: "NotificationDropdown",
 		packagePath:
-			"packages/ui/src/components/composite/notification-dropdown.tsx",
+			"packages/design-system/src/components/shared/NotificationDropdown.tsx",
 		interactions: [
 			{ id: "open-menu", label: "Open the notification menu from the header" },
 			{
@@ -64,7 +69,7 @@ export const PLAYGROUND_LABS: readonly PlaygroundLab[] = [
 			},
 		],
 		vibePromptSeeds: [
-			"Focus NotificationDropdown in AdminShell header (notificationSlot).",
+			"Focus NotificationDropdown in harness header (notificationSlot).",
 			"Keep tab switching and unread badge readable at header density.",
 		],
 	},
@@ -75,7 +80,9 @@ export const PLAYGROUND_LABS: readonly PlaygroundLab[] = [
 			"AdminCN header activity sheet — open sheet and scan the activity feed.",
 		category: "composite",
 		mount: "header",
-		packagePath: "packages/ui/src/components/composite/activity-dialog.tsx",
+		exportName: "ActivityDialog",
+		packagePath:
+			"packages/design-system/src/components/shared/ActivityDialog.tsx",
 		interactions: [
 			{ id: "open-sheet", label: "Open the activity sheet from the header" },
 			{
@@ -85,7 +92,7 @@ export const PLAYGROUND_LABS: readonly PlaygroundLab[] = [
 			{ id: "close-sheet", label: "Close the sheet and return focus" },
 		],
 		vibePromptSeeds: [
-			"Focus ActivityDialog in AdminShell header (activitySlot).",
+			"Focus ActivityDialog in harness header (activitySlot).",
 			"Preserve sheet focus trap and readable activity density.",
 		],
 	},

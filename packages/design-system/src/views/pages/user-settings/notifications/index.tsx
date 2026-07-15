@@ -1,11 +1,11 @@
 // Component Imports
-import { Button } from '@/components/ui/button'
-import { Separator } from '@/components/ui/separator'
+import { Button } from '#components/ui/button'
+import { Separator } from '#components/ui/separator'
 
-import Notifications from '@/views/pages/user-settings/notifications/all-notifications'
-import BrowserNotification from '@/views/pages/user-settings/notifications/browser-notification'
-import DoNotDisturb from '@/views/pages/user-settings/notifications/do-not-disturb'
-import InboxPrefrence from '@/views/pages/user-settings/notifications/inbox-preference'
+import Notifications from '#views/pages/user-settings/notifications/all-notifications'
+import BrowserNotification from '#views/pages/user-settings/notifications/browser-notification'
+import DoNotDisturb from '#views/pages/user-settings/notifications/do-not-disturb'
+import InboxPrefrence from '#views/pages/user-settings/notifications/inbox-preference'
 
 const NotificationsPage = () => {
   return (

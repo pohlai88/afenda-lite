@@ -1,8 +1,8 @@
 "use client";
 
-import { AdminShell } from "@afenda/ui/shell";
 import { type ReactNode, useState } from "react";
 
+import { PlaygroundHarnessChrome } from "@/features/playground/harness-chrome";
 import type { PlaygroundLab } from "@/features/playground/lab-registry";
 import {
 	ActivityDialogSubject,
@@ -43,9 +43,8 @@ function InteractionLabChrome({
 	const slots = headerSlots(api);
 
 	return (
-		<AdminShell
+		<PlaygroundHarnessChrome
 			defaultSidebarOpen={false}
-			showFooter={false}
 			profileSlot={slots.profileSlot}
 			notificationSlot={slots.notificationSlot}
 			activitySlot={slots.activitySlot}
@@ -105,7 +104,7 @@ function InteractionLabChrome({
 					{lastEvent}
 				</p>
 			</div>
-		</AdminShell>
+		</PlaygroundHarnessChrome>
 	);
 }
 

@@ -7,20 +7,20 @@ import { useState, type ComponentType, type SVGAttributes } from 'react'
 import { LinkIcon, PaletteIcon, Trash2Icon } from 'lucide-react'
 
 // Type Imports
-import type { AppUser, SocialPlatform } from '@/types/apps/user-types'
+import type { AppUser, SocialPlatform } from '#types/apps/user-types'
 
 // Component Imports
-import FacebookIcon from '@/assets/svg/facebook-icon'
-import GithubIcon from '@/assets/svg/github-icon'
-import LinkedinIcon from '@/assets/svg/linkedin-icon'
-import TwitterIcon from '@/assets/svg/twitter-icon'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Switch } from '@/components/ui/switch'
+import FacebookIcon from '#assets/svg/facebook-icon'
+import GithubIcon from '#assets/svg/github-icon'
+import LinkedinIcon from '#assets/svg/linkedin-icon'
+import TwitterIcon from '#assets/svg/twitter-icon'
+import { Avatar, AvatarFallback, AvatarImage } from '#components/ui/avatar'
+import { Button } from '#components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '#components/ui/card'
+import { Switch } from '#components/ui/switch'
 
 // Util Imports
-import { cn } from '@/lib/utils'
+import { cn } from '#lib/utils'
 
 interface BrandItem {
   image?: string

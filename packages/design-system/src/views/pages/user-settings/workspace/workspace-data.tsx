@@ -6,9 +6,9 @@ import { toast } from 'sonner'
 import { CheckCircle2Icon, DownloadIcon } from 'lucide-react'
 
 // Component Imports
-import { Button } from '@/components/ui/button'
-import { Progress } from '@/components/ui/progress'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Button } from '#components/ui/button'
+import { Progress } from '#components/ui/progress'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '#components/ui/table'
 
 const WorkspaceData = () => {
   const promise = () =>

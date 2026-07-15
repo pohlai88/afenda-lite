@@ -1,4 +1,4 @@
-import type { FaqData } from '@/types/pages/faq'
+import type { FaqData } from '#types/pages/faq'
 
 export const db: FaqData = {
   categories: [

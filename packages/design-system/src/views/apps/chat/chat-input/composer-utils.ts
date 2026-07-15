@@ -1,5 +1,5 @@
 // Type Imports
-import type { MessageType, PendingAttachment } from '@/types/apps/chat-types'
+import type { MessageType, PendingAttachment } from '#types/apps/chat-types'
 
 export const formatFileSize = (bytes: number) => {
   if (bytes < 1024) {

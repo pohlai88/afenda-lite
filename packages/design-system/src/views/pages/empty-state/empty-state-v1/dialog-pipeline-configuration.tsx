@@ -7,15 +7,15 @@ import { useState, type ReactElement } from 'react'
 import { WorkflowIcon } from 'lucide-react'
 
 // Component Imports
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Dialog, DialogClose, DialogContent, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Separator } from '@/components/ui/separator'
+import { Badge } from '#components/ui/badge'
+import { Button } from '#components/ui/button'
+import { Dialog, DialogClose, DialogContent, DialogTitle, DialogTrigger } from '#components/ui/dialog'
+import { ScrollArea } from '#components/ui/scroll-area'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '#components/ui/select'
+import { Separator } from '#components/ui/separator'
 
 // Util Imports
-import { cn } from '@/lib/utils'
+import { cn } from '#lib/utils'
 
 type Props = {
   trigger: ReactElement

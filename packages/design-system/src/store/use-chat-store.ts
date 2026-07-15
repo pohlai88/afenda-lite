@@ -12,14 +12,14 @@ import type {
   Message,
   MessageType,
   OwnProfileUpdate
-} from '@/types/apps/chat-types'
+} from '#types/apps/chat-types'
 
 // Data Imports
-import { db } from '@/fake-db/apps/chat'
+import { db } from '#fake-db/apps/chat'
 
 /**
  * ! If you're using a database, you can uncomment the line below and use the server action to fetch the data
- * ! import { getChatData } from '@/app/server/actions'
+ * ! import { getChatData } from '#app/server/actions'
  */
 
 const DELIVERY_DELAY_MS = 800

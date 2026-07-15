@@ -1,9 +1,9 @@
 'use client'
 
 // Component Imports
-import { Card } from '@/components/ui/card'
-import { AddEditUserSheet } from '@/views/apps/users/dialogs/add-edit-user-sheet'
-import { ImportUsersDialog } from '@/views/apps/users/dialogs/import-users-dialog'
+import { Card } from '#components/ui/card'
+import { AddEditUserSheet } from '#views/apps/users/dialogs/add-edit-user-sheet'
+import { ImportUsersDialog } from '#views/apps/users/dialogs/import-users-dialog'
 import { UserBulkActionBar } from './user-bulk-action-bar'
 import { UserPagination } from './user-pagination'
 import { UserStatsCards } from './user-stats-cards'
@@ -12,7 +12,7 @@ import { UserTableFilters } from './user-table-filters'
 import { UserTableToolbar } from './user-table-toolbar'
 
 // Hook Imports
-import { useUserApp } from '@/hooks/use-user-app'
+import { useUserApp } from '#hooks/use-user-app'
 
 const UserListApp = () => {
   const {

@@ -3,22 +3,22 @@ import type { LucideIcon } from 'lucide-react'
 import { ArchiveIcon, ArchiveXIcon, FileIcon, InboxIcon, SendIcon, TrashIcon } from 'lucide-react'
 
 // Type Imports
-import type { EmailLabel, EmailStatus, MailNavType } from '@/types/apps/mail-types'
+import type { EmailLabel, EmailStatus, MailNavType } from '#types/apps/mail-types'
 
 // Component Imports
-import { Button } from '@/components/ui/button'
-import { Separator } from '@/components/ui/separator'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { Button } from '#components/ui/button'
+import { Separator } from '#components/ui/separator'
+import { Tooltip, TooltipContent, TooltipTrigger } from '#components/ui/tooltip'
 
 // Config Imports
 import {
   MAIL_LABEL_STYLES,
   type MailNavLabelItemWithCount,
   type MailNavStatusItemWithCount
-} from '@/configs/mailConfig'
+} from '#configs/mailConfig'
 
 // Util Imports
-import { cn } from '@/lib/utils'
+import { cn } from '#lib/utils'
 
 const statusIcons: Record<EmailStatus, LucideIcon> = {
   inbox: InboxIcon,

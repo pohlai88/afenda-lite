@@ -1,4 +1,4 @@
-import type { Task } from '@/types/apps/kanban-types'
+import type { Task } from '#types/apps/kanban-types'
 
 export const priorityItems: Array<{ label: string; value: Task['priority'] }> = [
   { label: 'Low', value: 'low' },

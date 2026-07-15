@@ -12,14 +12,14 @@ import {
   PhoneIcon
 } from 'lucide-react'
 
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import type { FaqData, FaqIconKey, FaqSupportCardIconKey } from '@/types/pages/faq'
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '#components/ui/accordion'
+import { Avatar, AvatarFallback } from '#components/ui/avatar'
+import { Badge } from '#components/ui/badge'
+import { Button } from '#components/ui/button'
+import { Card, CardContent } from '#components/ui/card'
+import { Input } from '#components/ui/input'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '#components/ui/tabs'
+import type { FaqData, FaqIconKey, FaqSupportCardIconKey } from '#types/pages/faq'
 
 const faqIconMap: Record<FaqIconKey, ReactElement> = {
   general: <BriefcaseBusinessIcon />,

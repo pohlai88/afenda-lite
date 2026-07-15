@@ -1,20 +1,15 @@
-import type { ReactElement } from 'react'
-
 import { ImageIcon } from 'lucide-react'
 
-import { Badge } from '@/components/ui/badge'
-import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group'
-import { Separator } from '@/components/ui/separator'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
+import { Badge } from '../ui/badge'
+import { InputGroup, InputGroupAddon, InputGroupInput } from '../ui/input-group'
+import { Separator } from '../ui/separator'
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar'
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '../ui/sheet'
+import type { ActivityDialogContract } from '../../playground/types'
 
-type Props = {
-  trigger: ReactElement
-  defaultOpen?: boolean
-  triggerClassName?: string
-}
+interface ActivityDialogProps extends ActivityDialogContract {}
 
-const ActivityDialog = ({ defaultOpen = false, trigger, triggerClassName }: Props) => {
+const ActivityDialog = ({ defaultOpen = false, trigger, triggerClassName }: ActivityDialogProps) => {
   return (
     <Sheet defaultOpen={defaultOpen}>
       <SheetTrigger render={trigger} className={triggerClassName} />

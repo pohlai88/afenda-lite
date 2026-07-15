@@ -7,14 +7,14 @@ import { useState } from 'react'
 import { CreditCardIcon, InfoIcon } from 'lucide-react'
 
 // Component Imports
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
-import { Button } from '@/components/ui/button'
-import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Textarea } from '@/components/ui/textarea'
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '#components/ui/accordion'
+import { Button } from '#components/ui/button'
+import { Field, FieldGroup, FieldLabel } from '#components/ui/field'
+import { Input } from '#components/ui/input'
+import { Label } from '#components/ui/label'
+import { RadioGroup, RadioGroupItem } from '#components/ui/radio-group'
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '#components/ui/select'
+import { Textarea } from '#components/ui/textarea'
 
 const deliveryOptions = [
   {

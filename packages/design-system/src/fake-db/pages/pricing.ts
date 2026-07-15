@@ -1,4 +1,4 @@
-import type { PricingData } from '@/types/pages/pricing-types'
+import type { PricingData } from '#types/pages/pricing-types'
 
 export const db: PricingData = {
   plans: [

@@ -1,14 +1,14 @@
 'use client'
 import { CircleAlertIcon } from 'lucide-react'
 
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { Separator } from '@/components/ui/separator'
+import { Alert, AlertDescription, AlertTitle } from '#components/ui/alert'
+import { Separator } from '#components/ui/separator'
 
-import AddOns from '@/views/pages/user-settings/billing/add-ons'
-import AiGateway from '@/views/pages/user-settings/billing/ai-gateway'
-import Billing from '@/views/pages/user-settings/billing/all-billing'
-import PaymentMethod from '@/views/pages/user-settings/billing/payment-method'
-import SpendManagement from '@/views/pages/user-settings/billing/spend-management'
+import AddOns from '#views/pages/user-settings/billing/add-ons'
+import AiGateway from '#views/pages/user-settings/billing/ai-gateway'
+import Billing from '#views/pages/user-settings/billing/all-billing'
+import PaymentMethod from '#views/pages/user-settings/billing/payment-method'
+import SpendManagement from '#views/pages/user-settings/billing/spend-management'
 
 const BillingUsagePage = () => {
   return (

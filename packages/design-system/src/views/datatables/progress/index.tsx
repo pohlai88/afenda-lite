@@ -22,12 +22,12 @@ import {
 } from 'lucide-react'
 
 // Component Imports
-import { Card } from '@/components/ui/card'
-import CourseDatatable, { type Item } from '@/views/datatables/datatable-course'
+import { Card } from '#components/ui/card'
+import CourseDatatable, { type Item } from '#views/datatables/datatable-course'
 
 // SVG Imports
-import FacebookIcon from '@/assets/svg/facebook-icon'
-import FigmaIcon from '@/assets/svg/figma-icon'
+import FacebookIcon from '#assets/svg/facebook-icon'
+import FigmaIcon from '#assets/svg/figma-icon'
 
 const courseData: Item[] = [
   {

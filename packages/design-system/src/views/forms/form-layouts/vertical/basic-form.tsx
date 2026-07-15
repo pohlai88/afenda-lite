@@ -1,7 +1,7 @@
 // Component Imports
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
+import { Button } from '#components/ui/button'
+import { Input } from '#components/ui/input'
+import { Field, FieldGroup, FieldLabel } from '#components/ui/field'
 
 const BasicForm = () => {
   return (

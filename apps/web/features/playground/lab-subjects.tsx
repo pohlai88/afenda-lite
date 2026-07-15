@@ -1,14 +1,15 @@
 "use client";
 
-import { Button } from "@afenda/ui/components/button";
-import ActivityDialog from "@afenda/ui/composite/activity-dialog";
-import NotificationDropdown from "@afenda/ui/composite/notification-dropdown";
-import ProfileDropdown from "@afenda/ui/composite/profile-dropdown";
+import {
+	ActivityDialog,
+	Button,
+	NotificationDropdown,
+	ProfileDropdown,
+} from "@afenda/ui/playground";
 import { ActivityIcon, BellIcon } from "lucide-react";
 import type { ReactNode } from "react";
 
 import type { StageItem } from "@/features/playground/compose/stage-types";
-import { PROFILE_DROPDOWN_FIXTURE } from "@/features/playground/fixtures/profile-dropdown";
 import {
 	getLabById,
 	type PlaygroundLab,
@@ -35,19 +36,9 @@ function ActivityTrigger() {
 	);
 }
 
-export function ProfileDropdownSubject({
-	onSignOut,
-}: {
-	onSignOut?: () => void;
-}) {
-	return (
-		<ProfileDropdown
-			user={PROFILE_DROPDOWN_FIXTURE.user}
-			items={[...PROFILE_DROPDOWN_FIXTURE.items]}
-			signOutLabel={PROFILE_DROPDOWN_FIXTURE.signOutLabel}
-			onSignOut={onSignOut}
-		/>
-	);
+/** Canonical ProfileDropdown is fixture-static — sign-out is visual-only in kit DNA. */
+export function ProfileDropdownSubject(_props: { onSignOut?: () => void }) {
+	return <ProfileDropdown />;
 }
 
 export function NotificationDropdownSubject() {
@@ -140,7 +131,7 @@ export function StageMainSubject({
 			<p className="text-sm font-medium">{lab.title}</p>
 			<p className="text-xs text-muted-foreground">
 				{lab.mount === "header"
-					? "Also mirrored in the AdminShell header when this lab is on stage."
+					? "Also mirrored in the harness header when this lab is on stage."
 					: lab.description}
 			</p>
 			<div className="flex justify-end">{subject}</div>

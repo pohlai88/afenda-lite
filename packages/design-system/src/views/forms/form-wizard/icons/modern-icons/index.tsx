@@ -8,8 +8,8 @@ import * as Stepperize from '@stepperize/react'
 import { ChevronRightIcon } from 'lucide-react'
 
 // Component Imports
-import { Separator } from '@/components/ui/separator'
-import { Card, CardContent } from '@/components/ui/card'
+import { Separator } from '#components/ui/separator'
+import { Card, CardContent } from '#components/ui/card'
 import AccountDetailsStep from './account-details-step'
 import PersonalInfoStep from './personal-info-step'
 import AddressStep from './address-step'
@@ -18,14 +18,14 @@ import ReviewSubmitStep from './review-submit-step'
 import CompleteStep from './complete-step'
 
 // Util Imports
-import { cn } from '@/lib/utils'
+import { cn } from '#lib/utils'
 
 // SVG Imports
-import FormWizardAccountSVG from '@/assets/svg/form-wizard-account'
-import FormWizardPersonalInfoSVG from '@/assets/svg/form-wizard-personal-info'
-import FormWizardAddressSVG from '@/assets/svg/form-wizard-address'
-import FormWizardSocialLinkSVG from '@/assets/svg/form-wizard-social-link'
-import FormWizardReviewSVG from '@/assets/svg/form-wizard-review'
+import FormWizardAccountSVG from '#assets/svg/form-wizard-account'
+import FormWizardPersonalInfoSVG from '#assets/svg/form-wizard-personal-info'
+import FormWizardAddressSVG from '#assets/svg/form-wizard-address'
+import FormWizardSocialLinkSVG from '#assets/svg/form-wizard-social-link'
+import FormWizardReviewSVG from '#assets/svg/form-wizard-review'
 
 const { useStepper } = Stepperize.defineStepper(
   { id: 'multi-step-modern-account', title: 'Account Details', icon: FormWizardAccountSVG },

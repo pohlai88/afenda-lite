@@ -8,18 +8,18 @@ import { format } from 'date-fns'
 import { CheckIcon, CheckCheckIcon, FileIcon } from 'lucide-react'
 
 // Type Imports
-import type { Message } from '@/types/apps/chat-types'
+import type { Message } from '#types/apps/chat-types'
 
 // Component Imports
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import MessageContent from '@/views/apps/chat/chat-window/message-content'
+import { Avatar, AvatarFallback, AvatarImage } from '#components/ui/avatar'
+import MessageContent from '#views/apps/chat/chat-window/message-content'
 
 // Config Imports
-import { getInitialsFromName } from '@/configs/mailConfig'
+import { getInitialsFromName } from '#configs/mailConfig'
 
 // Util Imports
-import { cn } from '@/lib/utils'
-import { getMessagePreview } from '@/utils/chat-utils'
+import { cn } from '#lib/utils'
+import { getMessagePreview } from '#utils/chat-utils'
 
 export type ChatMessageProps = {
   message: Message

@@ -5,13 +5,13 @@ import Link from 'next/link'
 import { ChevronLeftIcon } from 'lucide-react'
 
 // Component Imports
-import Logo from '@/components/shared/Logo'
-import { BorderBeam } from '@/components/ui/border-beam'
-import { Button } from '@/components/ui/button'
-import ResetPasswordV2Form from '@/views/pages/auth/reset-password/reset-password-v2/reset-password-v2-form'
+import Logo from '#components/shared/Logo'
+import { BorderBeam } from '#components/ui/border-beam'
+import { Button } from '#components/ui/button'
+import ResetPasswordV2Form from '#views/pages/auth/reset-password/reset-password-v2/reset-password-v2-form'
 
 //SVG Imports
-import AuthFullBackgroundShape from '@/assets/svg/auth-full-background-shape'
+import AuthFullBackgroundShape from '#assets/svg/auth-full-background-shape'
 
 const ResetPasswordV2 = () => {
   return (

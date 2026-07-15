@@ -9,20 +9,18 @@
 			"default": "./src/index.ts"
 		},
 		"./style.css": "./src/styles/style.css",
-		"./assets/*": "./src/assets/*",
-		"./blocks/*": "./src/blocks/*",
-		"./components/*": "./src/components/ui/*",
-		"./config": "./src/config/index.ts",
-		"./contracts/theme": "./src/contracts/theme.ts",
-		"./hooks/*": "./src/hooks/*",
-		"./lib/*": "./src/lib/*",
-		"./providers": "./src/providers/index.ts",
-		"./shell": "./src/shell/index.ts",
-		"./composite/profile-dropdown": "./src/components/composite/profile-dropdown.tsx",
-		"./composite/notification-dropdown": "./src/components/composite/notification-dropdown.tsx",
-		"./composite/activity-dialog": "./src/components/composite/activity-dialog.tsx",
-		"./composite/logo": "./src/components/composite/logo.tsx",
-		"./stores/*": "./src/stores/*/index.ts"
+		"./playground": {
+			"types": "./src/playground/index.ts",
+			"default": "./src/playground/index.ts"
+		},
+		"./playground/providers": {
+			"types": "./src/playground/providers.ts",
+			"default": "./src/playground/providers.ts"
+		},
+		"./playground/types": {
+			"types": "./src/playground/types.ts",
+			"default": "./src/playground/types.ts"
+		}
 	},
 	"scripts": {
 		"lint": "biome check .",
@@ -42,6 +40,7 @@
 		"clsx": "catalog:",
 		"cmdk": "catalog:",
 		"date-fns": "catalog:",
+		"geist": "^1.7.2",
 		"input-otp": "^1.4.2",
 		"lucide-react": "catalog:",
 		"motion": "catalog:",
@@ -54,6 +53,7 @@
 		"react-hook-form": "^7.81.0",
 		"react-payment-inputs": "catalog:",
 		"react-resizable-panels": "^4.12.2",
+		"react-use": "17.6.1",
 		"recharts": "catalog:",
 		"sonner": "catalog:",
 		"tailwind-merge": "catalog:",
@@ -82,15 +82,16 @@
 	},
 	"imports": {
 		"#assets/*": "./src/assets/*",
-		"#blocks/*": "./src/blocks/*",
 		"#components/*": "./src/components/*",
-		"#config/*": "./src/config/*",
-		"#contracts/*": "./src/contracts/*",
-		"#controllers/*": "./src/controllers/*",
+		"#configs/*": "./src/configs/*",
+		"#contexts/*": "./src/contexts/*",
+		"#fake-db/*": "./src/fake-db/*",
 		"#hooks/*": "./src/hooks/*",
 		"#lib/*": "./src/lib/*",
-		"#providers/*": "./src/providers/*",
-		"#shell/*": "./src/shell/*",
-		"#stores/*": "./src/stores/*"
+		"#playground/*": "./src/playground/*",
+		"#store/*": "./src/store/*",
+		"#types/*": "./src/types/*",
+		"#utils/*": "./src/utils/*",
+		"#views/*": "./src/views/*"
 	}
 }

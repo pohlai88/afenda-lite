@@ -1,5 +1,5 @@
 // Type Imports
-import type { Contact } from '@/types/apps/contact-types'
+import type { Contact } from '#types/apps/contact-types'
 
 export const db: Contact[] = [
   {

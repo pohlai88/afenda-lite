@@ -7,26 +7,26 @@ import type { ComponentProps } from 'react'
 import { CalendarIcon, EllipsisVerticalIcon, PencilIcon, Trash2Icon } from 'lucide-react'
 
 // Type Imports
-import type { Assignee, Task } from '@/types/apps/kanban-types'
+import type { Assignee, Task } from '#types/apps/kanban-types'
 
 // Component Imports
-import { KanbanItem } from '@/components/ui/kanban'
-import { Avatar, AvatarFallback, AvatarGroup, AvatarGroupCount, AvatarImage } from '@/components/ui/avatar'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
+import { KanbanItem } from '#components/ui/kanban'
+import { Avatar, AvatarFallback, AvatarGroup, AvatarGroupCount, AvatarImage } from '#components/ui/avatar'
+import { Badge } from '#components/ui/badge'
+import { Button } from '#components/ui/button'
+import { Card, CardContent } from '#components/ui/card'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+} from '#components/ui/dropdown-menu'
+import { Tooltip, TooltipContent, TooltipTrigger } from '#components/ui/tooltip'
 
 // Util Imports
-import { cn } from '@/lib/utils'
-import { getAssigneeInitials, MAX_VISIBLE_ASSIGNEES } from '@/utils/kanban-utils'
+import { cn } from '#lib/utils'
+import { getAssigneeInitials, MAX_VISIBLE_ASSIGNEES } from '#utils/kanban-utils'
 
 function TaskAssigneeAvatars({ assignees }: { assignees: Assignee[] }) {
   const visibleAssignees = assignees.slice(0, MAX_VISIBLE_ASSIGNEES)

@@ -3,17 +3,19 @@
 	"compilerOptions": {
 		"rootDir": "src",
 		"paths": {
+			"@/*": ["./src/*"],
 			"#assets/*": ["./src/assets/*"],
-			"#blocks/*": ["./src/blocks/*"],
 			"#components/*": ["./src/components/*"],
-			"#config/*": ["./src/config/*"],
-			"#contracts/*": ["./src/contracts/*"],
-			"#controllers/*": ["./src/controllers/*"],
+			"#configs/*": ["./src/configs/*"],
+			"#contexts/*": ["./src/contexts/*"],
+			"#fake-db/*": ["./src/fake-db/*"],
 			"#hooks/*": ["./src/hooks/*"],
 			"#lib/*": ["./src/lib/*"],
-			"#providers/*": ["./src/providers/*"],
-			"#shell/*": ["./src/shell/*"],
-			"#stores/*": ["./src/stores/*"]
+			"#playground/*": ["./src/playground/*"],
+			"#store/*": ["./src/store/*"],
+			"#types/*": ["./src/types/*"],
+			"#utils/*": ["./src/utils/*"],
+			"#views/*": ["./src/views/*"]
 		}
 	},
 	"include": ["src/**/*.ts", "src/**/*.tsx"],

@@ -7,18 +7,18 @@ import { useState } from 'react'
 import { UserPlusIcon } from 'lucide-react'
 
 // Type Imports
-import type { ChatUser, ChatUserStatus } from '@/types/apps/chat-types'
+import type { ChatUser, ChatUserStatus } from '#types/apps/chat-types'
 
 // Component Imports
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Button } from '@/components/ui/button'
-import InviteDialog from '@/views/apps/chat/dialogs/invite-dialog'
+import { Avatar, AvatarFallback, AvatarImage } from '#components/ui/avatar'
+import { Button } from '#components/ui/button'
+import InviteDialog from '#views/apps/chat/dialogs/invite-dialog'
 
 // Config Imports
-import { getInitialsFromName } from '@/configs/mailConfig'
+import { getInitialsFromName } from '#configs/mailConfig'
 
 // Util Imports
-import { cn } from '@/lib/utils'
+import { cn } from '#lib/utils'
 
 export type ChatSidebarHeaderProps = {
   currentUser: ChatUser

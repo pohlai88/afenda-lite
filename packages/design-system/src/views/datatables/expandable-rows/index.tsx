@@ -1,5 +1,5 @@
 // Component Imports
-import { Card } from '@/components/ui/card'
+import { Card } from '#components/ui/card'
 import ExpandableRowsDatatable, { type Item } from './datatable-expandable-rows'
 
 const productLaunches: Item[] = [

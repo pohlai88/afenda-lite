@@ -5,7 +5,7 @@ Authority for Vitest / Playwright runners, helpers, and gate commands. Product p
 | Layer | Runner | Place tests | Gate |
 |-------|--------|-------------|------|
 | L0 | Vitest `node` | `<pkg\|app>/__tests__/**/*.test.ts` | `pnpm test:unit` or `pnpm --filter @afenda/<pkg> test` |
-| L2 | Vitest `jsdom` | `apps/web\|packages/ui/__tests__/**/*.interaction.test.tsx` | `pnpm test:interaction` |
+| L2 | Vitest `jsdom` | `apps/web\|packages/design-system/__tests__/**/*.interaction.test.tsx` | `pnpm test:interaction` |
 | L4 | Playwright `@smoke` / `@journey` | `e2e/**` | `pnpm test:e2e:smoke` · `pnpm test:e2e:journey` |
 
 **Convention:** every Vitest file lives in the workspace member’s root `__tests__/` folder. Do **not** co-locate `*.test.ts` under `src/` or feature trees.
@@ -17,7 +17,7 @@ Reject Cypress and Jest as new runners. Prefer the **lowest** layer that capture
 | Need | Import |
 |------|--------|
 | SUT from package tests | `from "../src/..."` (or app-relative from `apps/web/__tests__`) |
-| L2 helpers | `from "../../../testing/react"` (from `packages/ui/__tests__`) |
+| L2 helpers | `from "../../../testing/react"` (from `packages/design-system/__tests__`) |
 | L4 specs | `import { test, expect } from "@/testing/e2e/playwright-base"` |
 
 Path `@/testing/*` resolves from [`e2e/tsconfig.json`](../e2e/tsconfig.json).

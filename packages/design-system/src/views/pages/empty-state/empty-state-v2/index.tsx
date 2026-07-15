@@ -1,8 +1,8 @@
 // Components Imports
-import { Card, CardContent } from '@/components/ui/card'
-import EmptyStateAllProjects from '@/views/pages/empty-state/empty-state-v2/empty-state-all-projects'
-import EmptyStateProject from '@/views/pages/empty-state/empty-state-v2/empty-state-project'
-import EmptyStateReport from '@/views/pages/empty-state/empty-state-v2/empty-state-report'
+import { Card, CardContent } from '#components/ui/card'
+import EmptyStateAllProjects from '#views/pages/empty-state/empty-state-v2/empty-state-all-projects'
+import EmptyStateProject from '#views/pages/empty-state/empty-state-v2/empty-state-project'
+import EmptyStateReport from '#views/pages/empty-state/empty-state-v2/empty-state-report'
 
 function EmptyStateV2() {
   return (

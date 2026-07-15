@@ -14,7 +14,7 @@ describe("buildAgentPrompt", () => {
 		const prompt = buildAgentPrompt(stage);
 		expect(prompt).toContain("profile-dropdown");
 		expect(prompt).toContain(
-			"packages/ui/src/components/composite/profile-dropdown.tsx",
+			"packages/design-system/src/components/shared/ProfileDropdown.tsx",
 		);
 		expect(prompt).toContain("mode=dark");
 		expect(prompt).toContain("Stage JSON:");

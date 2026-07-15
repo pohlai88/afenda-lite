@@ -1,5 +1,5 @@
 // Type Imports
-import type { AppUser } from '@/types/apps/user-types'
+import type { AppUser } from '#types/apps/user-types'
 
 export interface ResourcePermissions {
   resource: string

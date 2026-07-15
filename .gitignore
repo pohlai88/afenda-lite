@@ -65,6 +65,7 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# Temporary AdminCN rebuild staging (packages/ui)
-packages/ui/.rebuild-stage/
+# packages/ui removed — canonical kit is packages/design-system (@afenda/ui).
+# Empty husk may remain while Windows holds a directory lock (IDE/Next).
+packages/ui/
 

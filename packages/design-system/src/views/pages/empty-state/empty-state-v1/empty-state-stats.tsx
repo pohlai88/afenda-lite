@@ -5,9 +5,9 @@ import Link from 'next/link'
 import { MoveRightIcon } from 'lucide-react'
 
 // Component Imports
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
-import { CircularProgress } from '@/components/ui/circular-progress'
+import { Button } from '#components/ui/button'
+import { Card, CardContent, CardHeader } from '#components/ui/card'
+import { CircularProgress } from '#components/ui/circular-progress'
 
 const Metrics = [
   { label: '0/10GB', desc: 'Storage used' },

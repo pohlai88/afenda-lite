@@ -6,8 +6,8 @@ import { DayPicker, getDefaultClassNames, type DayButton, type Locale } from 're
 
 import { ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon } from 'lucide-react'
 
-import { Button, buttonVariants } from '@/components/ui/button'
-import { cn } from '@/lib/utils'
+import { Button, buttonVariants } from '#components/ui/button'
+import { cn } from '#lib/utils'
 
 function Calendar({
   className,

@@ -1,11 +1,11 @@
 // Component Import
-import { Separator } from '@/components/ui/separator'
+import { Separator } from '#components/ui/separator'
 
-import type { Session } from '@/types/pages/user-settings-types'
+import type { Session } from '#types/pages/user-settings-types'
 
-import Sessions from '@/views/pages/user-settings/security/all-sessions'
-import ApiKey from '@/views/pages/user-settings/security/api-key'
-import TwoFactor from '@/views/pages/user-settings/security/two-factor'
+import Sessions from '#views/pages/user-settings/security/all-sessions'
+import ApiKey from '#views/pages/user-settings/security/api-key'
+import TwoFactor from '#views/pages/user-settings/security/two-factor'
 
 type SecurityProps = {
   sessionsData: Session[]

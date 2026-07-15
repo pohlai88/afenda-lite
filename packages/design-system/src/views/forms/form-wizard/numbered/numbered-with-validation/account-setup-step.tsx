@@ -15,11 +15,11 @@ import type * as Stepperize from '@stepperize/react'
 import type { AccountSetupValues } from './index'
 
 // Component Imports
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group'
-import { Field, FieldError, FieldLabel } from '@/components/ui/field'
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Button } from '#components/ui/button'
+import { Input } from '#components/ui/input'
+import { InputGroup, InputGroupAddon, InputGroupInput } from '#components/ui/input-group'
+import { Field, FieldError, FieldLabel } from '#components/ui/field'
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '#components/ui/select'
 
 const timezoneItems = [
   { label: 'America/New York (EST)', value: 'america-new-york' },

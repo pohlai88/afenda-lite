@@ -8,16 +8,16 @@ import { addDays, format, isToday } from 'date-fns'
 import { CalendarXIcon } from 'lucide-react'
 
 // Type Imports
-import type { CalendarEvent } from '@/types/apps/calendar-types'
+import type { CalendarEvent } from '#types/apps/calendar-types'
 
 // Component Imports
 import { EventItem } from './event-item'
 
 // Util Imports
-import { getAgendaEventsForDay } from '@/utils/calendar-utils'
+import { getAgendaEventsForDay } from '#utils/calendar-utils'
 
 // Data Imports
-import { AgendaDaysToShow } from '@/assets/data/constants'
+import { AgendaDaysToShow } from '#assets/data/constants'
 
 interface AgendaViewProps {
   currentDate: Date

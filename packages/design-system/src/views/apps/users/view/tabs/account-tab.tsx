@@ -4,15 +4,15 @@
 import { useMemo, useState } from 'react'
 
 // Type Imports
-import type { AppUser } from '@/types/apps/user-types'
+import type { AppUser } from '#types/apps/user-types'
 
 // Component Imports
-import { Card, CardContent } from '@/components/ui/card'
-import { ActivityTimeline } from '@/views/apps/users/view/activity-timeline'
-import { ProjectsDatatable } from '@/views/apps/users/view/projects-datatable'
+import { Card, CardContent } from '#components/ui/card'
+import { ActivityTimeline } from '#views/apps/users/view/activity-timeline'
+import { ProjectsDatatable } from '#views/apps/users/view/projects-datatable'
 
 // Hook Imports
-import { usePagination } from '@/hooks/use-pagination'
+import { usePagination } from '#hooks/use-pagination'
 
 const PAGE_SIZE = 5
 

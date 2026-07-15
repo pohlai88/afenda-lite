@@ -4,8 +4,8 @@
 import { Label, PolarGrid, PolarRadiusAxis, RadialBar, RadialBarChart } from 'recharts'
 
 // Component Imports
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { type ChartConfig, ChartContainer } from '@/components/ui/chart'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#components/ui/card'
+import { type ChartConfig, ChartContainer } from '#components/ui/chart'
 
 // User reach chart data
 const userReachChartData = [{ visitors: 500, fill: 'var(--color-visitors)' }]

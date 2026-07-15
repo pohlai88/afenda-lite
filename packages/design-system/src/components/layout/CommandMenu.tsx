@@ -10,7 +10,7 @@ import { useRouter } from 'next/navigation'
 import { CircleQuestionMarkIcon, ContactIcon, DollarSignIcon, MailIcon, SearchIcon, TrendingUpIcon } from 'lucide-react'
 
 // Component Imports
-import { Button } from '@/components/ui/button'
+import { Button } from '#components/ui/button'
 import {
   Command,
   CommandDialog,
@@ -21,11 +21,11 @@ import {
   CommandList,
   CommandSeparator,
   CommandShortcut
-} from '@/components/ui/command'
-import { Kbd } from '@/components/ui/kbd'
+} from '#components/ui/command'
+import { Kbd } from '#components/ui/kbd'
 
 // Data Imports
-import { searchData } from '@/assets/data/search'
+import { searchData } from '#assets/data/search'
 
 const CommandMenu = () => {
   // States

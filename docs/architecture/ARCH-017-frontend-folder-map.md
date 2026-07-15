@@ -4,11 +4,11 @@
 | ----------------- | ------------ |
 | **ID**            | ARCH-017     |
 | **Category**      | Architecture |
-| **Version**       | 2.0.1        |
+| **Version**       | 2.0.2        |
 | **Status**        | Living       |
 | **Control State** | Closed       |
 | **Owner**         | Frontend     |
-| **Updated**       | 2026-07-14   |
+| **Updated**       | 2026-07-15   |
 
 ---
 
@@ -120,6 +120,8 @@ Route catalogue SSOT: [ARCH-012](ARCH-012-app-router-routes.md).
 | `features/fft/` | Feed Farm Trade UI under AdminCN (no parallel FftShell) |
 | `features/playground/` | Local-only review harness |
 
+`app/playground/` and `features/playground/` (Next.js routes) are distinct from the `@afenda/ui/playground` package subpath — see [ARCH-024 § `@afenda/ui`](ARCH-024-package-boundaries.md#afendaui) for the canonical disambiguation.
+
 Colocated `_components/` under a route segment is allowed for route-local composition ([composition](../../.cursor/skills/afenda-elite-nextjs-best-practice/reference/composition.md)).
 
 ## `modules/` L2 (frontend call sites)
@@ -181,6 +183,7 @@ UI registry: `.cursor/skills/feed-farm-trade/ui-registry.md` · skill `/admincn-
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 2.0.2 | 2026-07-15 | Linked `app/playground/` and `features/playground/` rows to the ARCH-024 `@afenda/ui/playground` disambiguation paragraph (no independent prose). |
 | 2.0.1 | 2026-07-14 | Home flattened to docs/architecture/ (trunks removed; pack reading order in README). |
 | 2.0.0 | 2026-07-14 | Studio-first rewrite: Target homes; Shadcn Studio DNA → promote; ban legacy `lib/`/`components/`/fake-db/demos/reference kits; remove stale “on disk keep” narrative; Elite composition contract. |
 | 1.1.4 | 2026-07-14 | Checkout posture: Living map = shape only; Collapse product trees not present and forbidden to recover. |

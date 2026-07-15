@@ -1,12 +1,12 @@
 // Type imports
-import type { Contact } from '@/types/apps/contact-types'
+import type { Contact } from '#types/apps/contact-types'
 
 // Component imports
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '#components/ui/avatar'
 
 // Utils imports
-import { cn } from '@/lib/utils'
-import { getContactInitials } from '@/utils/contact-utils'
+import { cn } from '#lib/utils'
+import { getContactInitials } from '#utils/contact-utils'
 
 type ContactAvatarProps = {
   contact: Pick<Contact, 'firstName' | 'lastName' | 'image'>

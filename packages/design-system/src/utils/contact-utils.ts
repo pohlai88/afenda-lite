@@ -1,4 +1,4 @@
-import type { Contact, ContactNavItem, Label as ContactLabel } from '@/types/apps/contact-types'
+import type { Contact, ContactNavItem, Label as ContactLabel } from '#types/apps/contact-types'
 
 export const PHONE_NUMBER_LENGTH = 10
 

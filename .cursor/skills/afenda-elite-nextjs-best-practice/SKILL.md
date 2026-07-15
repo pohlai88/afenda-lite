@@ -78,6 +78,8 @@ proxy.ts → layout → thin page.tsx (RSC)
 | `/api/health/*` | none | `auto` + short revalidate |
 | `/playground/*` | local only | never prod contract |
 
+`/playground/*` (Next.js routes) is distinct from the `@afenda/ui/playground` package subpath — see [ARCH-024 § `@afenda/ui`](../../../docs/architecture/ARCH-024-package-boundaries.md#afendaui) for the canonical disambiguation.
+
 ---
 
 ## Data pattern decision

@@ -2,10 +2,10 @@
 import Link from 'next/link'
 
 // Hook Imports
-import { useSettings } from '@/hooks/use-settings'
+import { useSettings } from '#hooks/use-settings'
 
 // Util Imports
-import { cn } from '@/lib/utils'
+import { cn } from '#lib/utils'
 
 const Footer = () => {
   const { settings } = useSettings()

@@ -1,9 +1,9 @@
 // Type Imports
-import type { UserFilters, UserPlan, UserRole, UserStatus } from '@/types/apps/user-types'
+import type { UserFilters, UserPlan, UserRole, UserStatus } from '#types/apps/user-types'
 
 // Component Imports
-import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Label } from '#components/ui/label'
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '#components/ui/select'
 
 const ROLES: UserRole[] = ['Admin', 'Editor', 'Subscriber', 'Maintainer', 'Guest']
 const PLANS: UserPlan[] = ['Basic', 'Team', 'Enterprise']

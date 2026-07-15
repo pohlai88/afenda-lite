@@ -1,4 +1,4 @@
-import type { UserProfilePageData } from '@/types/pages/user-profile-types'
+import type { UserProfilePageData } from '#types/pages/user-profile-types'
 
 export const db: UserProfilePageData = {
   // About Section - Profile Section Data

@@ -4,7 +4,7 @@
 |-------|-------|
 | ID | ARCH-022 |
 | Category | Architecture |
-| Version | 1.6.4 |
+| Version | 1.6.5 |
 | Status | Living |
 | Control State | Closed |
 | Owner | Platform |
@@ -119,7 +119,7 @@ Env SSOT is `@afenda/env` + `.env.local` — [ARCH-027](ARCH-027-env-model.md). 
 | `packages/db` | Platform | Drizzle schema, migrations, `withOrg` |
 | `packages/auth` | Platform | `getSession`, `requireRole`, `inviteOrgMember` |
 | `packages/env` | Platform | Validated typed config |
-| `packages/ui` | Frontend | Design system components + `globals.css` |
+| `packages/design-system` (`@afenda/ui`) | Frontend | Design system components; public door is `@afenda/ui/playground` — see [ARCH-024 § `@afenda/ui`](ARCH-024-package-boundaries.md#afendaui) |
 | `packages/emails` | Platform | Transactional email templates |
 | `packages/config` | Platform | Biome + tsconfig bases (not runtime) |
 
@@ -246,6 +246,7 @@ Next.js App Router (apps/web)
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.6.5 | 2026-07-15 | Package boundary table: `packages/ui` → `packages/design-system` (canonical `@afenda/ui` after name-collision resolution); linked ARCH-024 gateway paragraph. |
 | 1.6.4 | 2026-07-15 | I1.3 honesty: `/join` on disk under `(public)/`; next Ops = GUIDE-018 I1.4. |
 | 1.6.3 | 2026-07-15 | Client tree honesty: `(gate)` vs `(workspace)` under `app/(client)/client`. |
 | 1.6.2 | 2026-07-15 | I1.2 honesty: public `/auth/*` Neon Auth UI on disk; next Ops = GUIDE-018 I1.3. |

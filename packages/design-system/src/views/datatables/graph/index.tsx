@@ -1,6 +1,6 @@
 // Component Imports
-import { Card } from '@/components/ui/card'
-import ProductDatatable, { type Item } from '@/views/datatables/datatable-product-graph'
+import { Card } from '#components/ui/card'
+import ProductDatatable, { type Item } from '#views/datatables/datatable-product-graph'
 
 const productData: Item[] = [
   {

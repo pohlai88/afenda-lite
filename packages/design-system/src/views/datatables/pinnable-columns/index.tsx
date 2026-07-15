@@ -1,5 +1,5 @@
 // Component Imports
-import { Card } from '@/components/ui/card'
+import { Card } from '#components/ui/card'
 import PinnableColumnsDatatable, { type Item } from './datatable-pinnable-columns'
 
 const employees: Item[] = [

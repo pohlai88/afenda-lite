@@ -1,11 +1,9 @@
-import type { ReactElement } from 'react'
-
 import { SettingsIcon, XIcon, LinkIcon } from 'lucide-react'
 
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Badge } from '../ui/badge'
+import { Button } from '../ui/button'
+import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,15 +12,12 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
   DropdownMenuItem
-} from '@/components/ui/dropdown-menu'
+} from '../ui/dropdown-menu'
+import type { NotificationDropdownContract } from '../../playground/types'
 
-type Props = {
-  trigger: ReactElement
-  defaultOpen?: boolean
-  align?: 'start' | 'center' | 'end'
-}
+interface NotificationDropdownProps extends NotificationDropdownContract {}
 
-const NotificationDropdown = ({ trigger, defaultOpen, align = 'end' }: Props) => {
+const NotificationDropdown = ({ trigger, defaultOpen, align = 'end' }: NotificationDropdownProps) => {
   return (
     <DropdownMenu defaultOpen={defaultOpen}>
       <DropdownMenuTrigger render={trigger} />

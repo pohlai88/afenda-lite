@@ -2,14 +2,14 @@
 import { ArrowLeftIcon } from 'lucide-react'
 
 // Component Imports
-import { Button } from '@/components/ui/button'
-import { CardContent } from '@/components/ui/card'
-import { Label } from '@/components/ui/label'
-import { Separator } from '@/components/ui/separator'
-import { Switch } from '@/components/ui/switch'
+import { Button } from '#components/ui/button'
+import { CardContent } from '#components/ui/card'
+import { Label } from '#components/ui/label'
+import { Separator } from '#components/ui/separator'
+import { Switch } from '#components/ui/switch'
 
 // Type Imports
-import type { StepperType } from '@/views/forms/form-wizard/numbered/numbered-steps'
+import type { StepperType } from '#views/forms/form-wizard/numbered/numbered-steps'
 
 const ReviewStep = ({ stepper }: { stepper: StepperType }) => {
   return (
