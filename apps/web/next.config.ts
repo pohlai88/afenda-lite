@@ -8,7 +8,9 @@ const repoRoot = path.join(appDir, "../..");
 
 // ARCH-027: local runtime env lives at repo-root `.env.local` only.
 // Next 16 has no envDir knob — load from monorepo root before config evaluates.
-loadEnvConfig(repoRoot);
+// forceReload: Next caches loadEnvConfig(apps/web) before this file runs; without
+// the 4th arg the root dir is ignored (vercel/next.js#92040).
+loadEnvConfig(repoRoot, undefined, undefined, true);
 
 const securityHeaders = [
 	{ key: "X-DNS-Prefetch-Control", value: "on" },

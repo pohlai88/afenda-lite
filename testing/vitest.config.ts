@@ -48,7 +48,22 @@ export default defineConfig({
 				},
 			},
 			nodeProject("ui", path.join(repoRoot, "packages/ui")),
-			nodeProject("web", path.join(repoRoot, "apps/web")),
+			{
+				resolve: {
+					alias: {
+						"@": path.join(repoRoot, "apps/web"),
+					},
+				},
+				test: {
+					name: "web",
+					root: path.join(repoRoot, "apps/web"),
+					include: [`${TESTS_DIR}/**/*.test.ts`],
+					environment: "node" as const,
+					env: {
+						SKIP_ENV_VALIDATION: "true",
+					},
+				},
+			},
 			{
 				plugins: [react()],
 				test: {

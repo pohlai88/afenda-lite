@@ -1,0 +1,44 @@
+---
+description: Mandatory PREFLIGHT self-declaration before using skills, MCP, or project rules
+alwaysApply: true
+---
+
+# Agent authority PREFLIGHT
+
+**REQUIRED.** When this turn will use any **skill**, **MCP**, or **project rule**, the agent’s **first visible reply** in that turn MUST open with a PREFLIGHT block. Do not hide it in thoughts only.
+
+## When it fires
+
+Emit PREFLIGHT if any of these are true for the turn:
+
+- Loading or following a skill (`.cursor/skills/**`, `.agents/skills/**`, agent skill menus)
+- Calling MCP (`GetMcpTools`, `CallMcpTool`, `FetchMcpResource`, or any MCP server tool)
+- Applying project rules (`.cursor/rules/**`) or `AGENTS.md` authority beyond trivial chitchat
+- Product routing via `/using-afenda-elite-skills`
+
+Skip only for pure chitchat with **no** skill load, **no** MCP, and **no** rule-driven work.
+
+## Exact block (copy shape)
+
+```text
+### PREFLIGHT
+- Engaging: skills | mcp | rules (list which apply)
+- Skills: <name(s) or none>
+- MCP: <server/tool(s) or none>
+- Rules: <rule file stem(s) or none>
+- Router: using-afenda-elite-skills | n/a
+```
+
+Then continue the turn (tools allowed after this block).
+
+## Forbidden
+
+- Starting tool calls that load skills / call MCP / depend on rules **without** the PREFLIGHT block first
+- Vague “I’ll use some skills” without naming them
+- Claiming a skill/MCP/rule was used without PREFLIGHT on that turn
+
+## Hook enforcement
+
+`.cursor/hooks/agent-authority-preflight.mjs` reminds on `sessionStart`, skill/rule reads (`postToolUse`), and MCP (`beforeMCPExecution`). Reminder ≠ substitute — the agent must still self-declare in the user-visible reply.
+
+Authority: [AGENTS.md](../../AGENTS.md) · companion hooks in `.cursor/hooks.json`.

@@ -21,6 +21,7 @@ export async function proxy(request: NextRequest) {
 			pathname: request.nextUrl.pathname,
 			searchParams: request.nextUrl.searchParams,
 			hasHeader: (name) => request.headers.has(name),
+			playgroundEnabled: process.env.PLAYGROUND_ENABLED === "true",
 		})
 	) {
 		return NextResponse.next();

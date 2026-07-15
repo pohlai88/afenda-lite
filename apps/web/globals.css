@@ -3,4 +3,5 @@
 
 /* Tailwind v4: scan app sources outside the UI package CSS root. */
 @source "./app";
+@source "./features";
 @source "../packages/ui/src";

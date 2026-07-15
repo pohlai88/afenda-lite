@@ -37,6 +37,10 @@ SKIP:
 
 **Skill inventory:** [catalog.md](catalog.md) — statuses `keep` · `extend` · `candidate` · `planned` · `forbidden`. Scratch `docs/scratch/` may justify candidates only; it is never Living architecture.
 
+## PREFLIGHT (before this router)
+
+Any turn that loads this skill or other farms/MCP/rules MUST open the user-visible reply with `### PREFLIGHT` per [agent-authority-preflight](../../rules/agent-authority-preflight.mdc) and [AGENTS.md](../../../AGENTS.md). Name this skill under **Skills** and set **Router:** `using-afenda-elite-skills`.
+
 ## Invoke order
 
 ```text

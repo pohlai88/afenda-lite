@@ -6,8 +6,8 @@ Local Elite runtime MCP verify notes. Uses this repo’s `next-devtools` MCP.
 
 | Item | Value |
 |------|-------|
-| MCP server | `project-0-client-declaration-portal-next-devtools` (or local `next-devtools`) |
-| Default app | port **3000** after `npm run dev` |
+| MCP server | `project-0-afenda-lite-next-devtools` (or local `next-devtools`) |
+| Default app | port **3000** after `pnpm --filter @afenda/web dev` |
 
 Checkout may be docs-first (no product tree). Only run MCP verify when a Next app is actually running.
 

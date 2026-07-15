@@ -99,6 +99,19 @@ MCP installs may land under a temporary kit path. **Product code must not keep**
 - Importing `@/components-V2/platform-views/**` from `features/fft` without a HITL `FFT-UI-*` wrap  
 - Recreating `components/shadcn-studio/` or nesting `features/*/shadcn-studio/blocks/` as product homes  
 
+## Playground labs + Cursor Canvas singleshot
+
+Local AdminCN interaction harness (not Storybook, not Studio Builder embed):
+
+| Surface | Role |
+|---------|------|
+| `/playground` | Hub of **ready** labs (`PLAYGROUND_ENABLED=true`) |
+| `/playground/lab/[labId]` | Live AdminShell mount + interaction checklist |
+| `/playground/compose` | Studio Builder–shaped three-panel board; **Copy agent prompt** |
+| Cursor Canvas `*.canvas.tsx` | Singleshot **brief only** — import **only** `cursor/canvas`; never `@afenda/ui` |
+
+**Agent rule:** for singleshot UI review, write a Canvas brief (props/states/acceptance + lab URL), then iterate against the live lab. Do not claim Canvas can render AdminCN. Registry SSOT: `apps/web/features/playground/lab-registry.ts` (curated rows only).
+
 ## Refine checklist (per page)
 
 Full gate: [ARCH-019](../../../docs/architecture/ARCH-019-admincn-frontend-preflight.md).
