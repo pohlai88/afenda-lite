@@ -576,9 +576,8 @@ STOP.
 
 | Next up now              | Paste block |
 | ------------------------ | ----------- |
-| Feature↛db boundary      | **P6** (`PHASE_ID: I2.2`) |
-| First authenticated write | **P7** (`I2.3`) |
-| OpenAPI honesty          | **P8** (`I2.4`) |
+| Identity deepen          | **P9** (`PHASE_ID: I3.1`) |
+| Declarations submit/read | **P10** (`I3.2`) |
 
 | Anti-pattern                | Instead                                  |
 | --------------------------- | ---------------------------------------- |

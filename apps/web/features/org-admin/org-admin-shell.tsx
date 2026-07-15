@@ -8,7 +8,7 @@ import { listOrgRbacAudit } from "@/modules/platform/domain/list-rbac-audit";
 /**
  * Org-admin feature — session-aware RSC load + Identity/Platform domain ports
  * (ARCH-013 · ARCH-028 S7.4). Never imports `@afenda/db`.
- * Operator invite → `@afenda/auth` `inviteOrgMember` (GUIDE-018 I1.3).
+ * Operator invite → Neon Auth + `recordRbacAudit` (GUIDE-018 I1.3 / I2.3).
  */
 export async function OrgAdminShell() {
 	const session = await getSession();
@@ -40,7 +40,8 @@ export async function OrgAdminShell() {
 					Invite member
 				</h2>
 				<p className="text-sm text-muted-foreground">
-					Neon Auth delivers the invitation email. Invitees open{" "}
+					Neon Auth delivers the invitation email; success also writes an
+					org-scoped RBAC audit row. Invitees open{" "}
 					<code className="text-foreground">{JOIN_PATH}?invitationId=…</code>.
 				</p>
 				<InviteMemberForm

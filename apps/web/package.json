@@ -17,6 +17,7 @@
 		"@afenda/emails": "workspace:*",
 		"@afenda/env": "workspace:*",
 		"@afenda/ui": "workspace:*",
+		"@asteasolutions/zod-to-openapi": "^8.5.0",
 		"@base-ui/react": "catalog:",
 		"@dnd-kit/core": "^6.3.1",
 		"@dnd-kit/sortable": "^10.0.0",

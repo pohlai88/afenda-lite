@@ -32,5 +32,5 @@ export {
 	toNeonOrgRole,
 	toSessionRole,
 } from "./roles";
-export type { Role, Session } from "./session";
-export { getSession } from "./session";
+export type { ApiSession, Role, Session } from "./session";
+export { getApiSession, getSession } from "./session";

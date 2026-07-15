@@ -868,17 +868,36 @@ export async function auditDocs(options = {}) {
   }
 
   const absoluteScope = path.resolve(root, scopeRel);
-  if (!existsSync(absoluteScope) || !statSync(absoluteScope).isDirectory()) {
-    failures.push(`Scope directory does not exist: ${scopeRel}`);
+  let primaryPaths = [];
+  if (!existsSync(absoluteScope)) {
+    failures.push(`Scope path does not exist: ${scopeRel}`);
+  } else {
+    const scopeStat = statSync(absoluteScope);
+    if (scopeStat.isFile()) {
+      const extension = path.extname(scopeRel).toLowerCase();
+      if (![".md", ".yaml", ".yml", ".json"].includes(extension)) {
+        failures.push(
+          `Scope file type unsupported (use a directory or .md/.yaml/.yml/.json): ${scopeRel}`,
+        );
+      } else {
+        primaryPaths = [posix(scopeRel)];
+      }
+    } else if (scopeStat.isDirectory()) {
+      primaryPaths = (
+        await fg(`${scopeRel}/**/*`, {
+          cwd: root,
+          onlyFiles: true,
+          dot: true,
+          ignore: scopeRel === "docs" ? ["docs/scratch/**"] : [],
+        })
+      ).sort();
+    } else {
+      failures.push(`Scope path is neither a file nor a directory: ${scopeRel}`);
+    }
   }
-  const primaryPaths = failures.length
-    ? []
-    : (await fg(`${scopeRel}/**/*`, {
-        cwd: root,
-        onlyFiles: true,
-        dot: true,
-        ignore: scopeRel === "docs" ? ["docs/scratch/**"] : [],
-      })).sort();
+  if (failures.some((entry) => entry.startsWith("Scope "))) {
+    primaryPaths = [];
+  }
   const primaryDocuments = [];
   const artifacts = [];
   let artifactsInspected = 0;

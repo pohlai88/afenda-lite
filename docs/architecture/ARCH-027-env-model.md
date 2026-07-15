@@ -4,7 +4,7 @@
 |-------|-------|
 | ID | ARCH-027 |
 | Category | Architecture |
-| Version | 1.6.2 |
+| Version | 1.6.3 |
 | Status | Living |
 | Control State | Closed |
 | Owner | Platform |
@@ -13,6 +13,26 @@
 > **Living.** Environment SSOT after ARCH-028 Checkpoint G (2026-07-15). S4.1 + Checkpoint D shipped (`@afenda/env` + `.env.local` only; compose retired).
 
 > **STOP — compose retired:** Do **not** restore Collapse-era `env:compose` / `env:guard` / `env.config` / `env.secret` / `lib/env`. Local runtime file = `.env.local` only. App config = `import { env } from '@afenda/env'`. Prefer editing a known-good `.env.local` over blind `vercel env pull` (redacts / stale marketplace keys).
+
+# 1. Purpose
+
+Living environment SSOT after ARCH-028 Checkpoint G / S4.1: `@afenda/env` + `.env.local` only; compose retired.
+
+# 2. Scope
+
+## 2.1 In Scope
+
+- `@t3-oss/env-nextjs` decision and server/client split
+- `.env.local` / `.env.example` / Vercel ops model
+- Compose retirement and PLAYGROUND_* local-only rules
+
+## 2.2 Out of Scope
+
+- Package public exports ([ARCH-024](ARCH-024-package-boundaries.md))
+- Database URL tenancy semantics ([ARCH-023](ARCH-023-multi-tenancy.md) · [ARCH-025](ARCH-025-data-layer.md))
+- Restoring Collapse compose / `lib/env`
+
+# 3. Environment Architecture
 
 ## Context
 
@@ -156,15 +176,20 @@ Vercel build
 
 **Done** (2026-07-14) with [ARCH-028](ARCH-028-implementation-slices.md) S4.1 + Checkpoint D. Compose surfaces retired; evidence on that document. Do not reopen compose.
 
-## Known limits / future changes
+# 4. References
 
-- `@t3-oss/env-nextjs` validates at module load time. Variables added after startup require a restart — no hot reload of env.
-- If a second app (`apps/admin`) is added, it gets its own schema file (`packages/env/src/admin.ts`) sharing the same package.
+| ID | Title | Relationship |
+| --- | --- | --- |
+| ARCH-022 | System Overview | Workspace / deployable bounds |
+| ARCH-024 | Package Boundaries | `@afenda/ui/playground` disambiguation for PLAYGROUND_* |
+| ARCH-028 | Implementation Slices | S4.1 + Checkpoint D evidence |
 
-## Change Log
+# 5. Change Log
+
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.6.3 | 2026-07-15 | DOC-003 six-section retrofit (content preserved; Known limits → § 6 Notes). |
 | 1.6.2 | 2026-07-15 | `PLAYGROUND_*` = reserved local env; Next.js `/playground` trees Absent (see ARCH-024). |
 | 1.6.1 | 2026-07-15 | Linked the `PLAYGROUND_*` row to the ARCH-024 `@afenda/ui/playground` disambiguation paragraph (no independent prose). |
 | 1.6.0 | 2026-07-15 | Checkpoint G: Status Target→Living; compose-retired env model is current ops. |
@@ -178,3 +203,8 @@ Vercel build
 | 1.1.0 | 2026-07-13 | Living vs Target note; compose cutover checklist |
 | 1.0.0 | 2026-07-13 | Initial Target env model |
 |
+
+# 6. Notes
+
+- `@t3-oss/env-nextjs` validates at module load time. Variables added after startup require a restart — no hot reload of env.
+- If a second app (`apps/admin`) is added, it gets its own schema file (`packages/env/src/admin.ts`) sharing the same package.

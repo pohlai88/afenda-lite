@@ -24,6 +24,32 @@ export {
 } from "../components/ui/accordion";
 export { Button, buttonVariants } from "../components/ui/button";
 export { Input } from "../components/ui/input";
+export {
+	Sidebar,
+	SidebarContent,
+	SidebarFooter,
+	SidebarGroup,
+	SidebarGroupAction,
+	SidebarGroupContent,
+	SidebarGroupLabel,
+	SidebarHeader,
+	SidebarInput,
+	SidebarInset,
+	SidebarMenu,
+	SidebarMenuAction,
+	SidebarMenuBadge,
+	SidebarMenuButton,
+	SidebarMenuItem,
+	SidebarMenuSkeleton,
+	SidebarMenuSub,
+	SidebarMenuSubButton,
+	SidebarMenuSubItem,
+	SidebarProvider,
+	SidebarRail,
+	SidebarSeparator,
+	SidebarTrigger,
+	useSidebar,
+} from "../components/ui/sidebar";
 
 // Infra allowlist — not tied to a registry lab, checked explicitly by
 // packages/design-system/__tests__/architecture.test.ts.

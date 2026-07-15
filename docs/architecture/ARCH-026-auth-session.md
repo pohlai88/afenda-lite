@@ -4,13 +4,34 @@
 |-------|-------|
 | ID | ARCH-026 |
 | Category | Architecture |
-| Version | 1.3.6 |
+| Version | 1.3.10 |
 | Status | Living |
 | Control State | Closed |
 | Owner | Platform |
 | Updated | 2026-07-15 |
 
-> **Living.** Auth/session packaging SSOT after ARCH-028 Checkpoint G (2026-07-15). `@afenda/auth` helpers + `createSessionProxy` / `apps/web/proxy.ts` (I1.1) + public Neon Auth UI `/auth/*` (I1.2) + `/join?invitationId=…` + operator `inviteOrgMember` adapter on `/admin` (I1.3) + fail-closed role shells `requireRole` → `/403` (I1.4) on disk. GUIDE-018 **I2.1** closed: invite Action returns platform `ActionResult` / shared error codes. Next program surface: **I2.2** (feature → domain → `@afenda/db` boundary). IAM Decision lock stays in [ARCH-023](ARCH-023-multi-tenancy.md).
+> **Living.** Auth/session packaging SSOT after ARCH-028 Checkpoint G (2026-07-15). `@afenda/auth` helpers + `createSessionProxy` / `apps/web/proxy.ts` (I1.1) + public Neon Auth UI `/auth/*` (I1.2) + `/join?invitationId=…` + operator `inviteOrgMember` adapter on `/admin` (I1.3) + fail-closed role shells `requireRole` → `/403` (I1.4) on disk. GUIDE-018 **Phase I2 DONE** (ActionResult · feature → domain → `@afenda/db` · invite + hard-org `recordRbacAudit` · OpenAPI honesty). Next program surface: **I3.1** (Identity / Platform deepen; Tier-2 `clients.invite` / `hasPermission`). IAM Decision lock stays in [ARCH-023](ARCH-023-multi-tenancy.md).
+
+# 1. Purpose
+
+Living auth/session packaging SSOT after ARCH-028 Checkpoint G: Neon Auth decision, `@afenda/auth` helpers, edge session gate, and invitation/join packaging.
+
+# 2. Scope
+
+## 2.1 In Scope
+
+- Neon Auth decision and packaging constraints
+- `@afenda/auth` session helpers and invitation adapters
+- Edge / public auth UI / join wiring honesty
+- Auth failure modes and trusted-domain ops
+
+## 2.2 Out of Scope
+
+- Platform IAM Decision lock and permission catalogue ([ARCH-023](ARCH-023-multi-tenancy.md))
+- ActionResult / API error brands ([ARCH-029](ARCH-029-interface-api-architecture.md) · API-002)
+- Product domain mutations (GUIDE-018 I2.3+)
+
+# 3. Authentication Architecture
 
 ## Context
 
@@ -147,7 +168,7 @@ RSC / Server Action
 
 Password reset: `/auth/forgot-password` → Neon Auth sends reset email → `/auth/reset-password`. No custom SMTP. Handled entirely by Neon Auth UI forms.
 
-Client invitation: operator uses `/admin` → `inviteOrgMemberAction` → `inviteOrgMember()` → Neon Auth delivers the invitation email → client follows link to `/join?invitationId=…`.
+Client invitation: operator uses `/admin` → `inviteOrgMemberAction` → `inviteOrgMember()` → Neon Auth delivers the invitation email → Platform `recordRbacAudit` stamps hard `organization_id` → client follows link to `/join?invitationId=…`.
 
 ## Key decisions
 
@@ -174,16 +195,23 @@ Client invitation: operator uses `/admin` → `inviteOrgMemberAction` → `invit
 - **Plugin configuration:** `pnpm configure:neon-auth-production` for magic link and org plugins.
 - **Local dev:** `http://localhost:3000` is an allowed Neon Auth origin for sign-in without extra config.
 
-## Known limits / future changes
+# 4. References
 
-- MFA is not currently configured. If required, a new ADR is needed.
-- Neon Auth custom role mapping remains an app concern; Living product authz stays in ARCH-023.
-- Social OAuth providers (Google, GitHub) are not configured. Adding one requires Neon Auth dashboard change + a new row in this document.
+| ID | Title | Relationship |
+| --- | --- | --- |
+| ARCH-023 | Multi-Tenancy and Platform RBAC | IAM Decision lock · permission-first authz |
+| ARCH-022 | System Overview | Edge / App Router placement |
+| GUIDE-018 | Full-Stack E2E Integration Program | Phase I identity / BFF sequencing |
 
-## Change Log
+# 5. Change Log
+
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.3.10 | 2026-07-15 | Bounded reopen (I2.4 audit repair): next-pointer honesty — Phase I2 done; residual = I3.1 (Tier-2 permissions). |
+| 1.3.9 | 2026-07-15 | Bounded reopen (I2.3 audit repair): invite adapter records hard-org `platform_rbac_audit`; residual = I2.4. |
+| 1.3.8 | 2026-07-15 | DOC-003 six-section retrofit (content preserved; Known limits → § 6 Notes). |
+| 1.3.7 | 2026-07-15 | Bounded reopen (I2.2 audit repair): next-pointer honesty — I2.2 feature↛db landed; residual = I2.3. |
 | 1.3.6 | 2026-07-15 | Bounded reopen (I2.1 audit repair): next-pointer honesty — I2.1 ActionResult landed; residual = I2.2. |
 | 1.3.5 | 2026-07-15 | I1.4 closed: `AUTH_FORBIDDEN_PATH` · `requireRole` wrong-role → `/403` · operator/client layout wiring; residual = GUIDE-018 I2. |
 | 1.3.4 | 2026-07-15 | I1.3 gap close: operator `/admin` → `inviteOrgMemberAction` / `inviteOrgMember`; residual = I1.4 role shells. |
@@ -196,3 +224,9 @@ Client invitation: operator uses `/admin` → `inviteOrgMemberAction` → `invit
 | 1.2.0 | 2026-07-14 | Integrity remediation: demote role table to session signals; pointer IAM to ARCH-023; Change Log restored. |
 | 1.1.1 | 2026-07-14 | Added mandatory Control State header field (Closed); lifecycle Status unchanged. |
 | 1.0.0 | 2026-07-13 | Initial Target auth/session model |
+
+# 6. Notes
+
+- MFA is not currently configured. If required, a new ADR is needed.
+- Neon Auth custom role mapping remains an app concern; Living product authz stays in ARCH-023.
+- Social OAuth providers (Google, GitHub) are not configured. Adding one requires Neon Auth dashboard change + a new row in this document.

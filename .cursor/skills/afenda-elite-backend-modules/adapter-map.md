@@ -11,7 +11,7 @@
 
 | File | Disk | Module entrypoints (typical) | Notes |
 |------|------|------------------------------|-------|
-| `invite-org-member.ts` | **yes** (I1.3) | `modules/identity/domain/invite-org-member` → `@afenda/auth` `inviteOrgMember` | Operator invite; Origin = `APP_URL` |
+| `invite-org-member.ts` | **yes** (I1.3 / I2.3) | Identity invite schemas + `@afenda/auth` `inviteOrgMember` + Platform `recordRbacAudit` | Operator invite; Origin = `APP_URL`; hard-tenancy audit write |
 | `account.ts` | planned | `modules/identity/*` | Account session / Neon-owned fields |
 | `admin.ts` | planned | `modules/identity/*`, platform helpers | Broader org-admin + RBAC writes |
 | `client.ts` | planned | `modules/identity/*`, `modules/declarations/*` | Invite stamps + survey scope |
@@ -35,9 +35,9 @@ import { parseSchema } from "@/modules/platform/schemas/common"
 | Method | Path | Disk | Module helpers |
 |--------|------|------|----------------|
 | ALL | `/api/auth/[...path]` | **yes** | `@afenda/auth` `createAuthApiHandlers` (not `modules/identity/auth`) |
-| GET | `/api/health/liveness` | planned | `modules/platform/api/*` |
-| GET | `/api/health/readiness` | planned | `modules/platform/api/*` |
-| GET/PUT/PATCH | `/api/client/declaration-draft` | planned | `modules/declarations/api/client-declaration-draft-route` |
+| GET | `/api/health/liveness` | **yes** (I2.4) | `modules/platform/domain/health` · `api/json-response` |
+| GET | `/api/health/readiness` | **yes** (I2.4) | `modules/platform/domain/health` · `api/json-response` |
+| GET/PUT/PATCH/POST | `/api/client/declaration-draft` | **yes** (I2.4) | `modules/declarations/api/client-declaration-draft-route` · domain `declaration-draft` |
 
 **Allowlist rule:** Do not add web-UI list/read handlers for declarations/clients — use RSC → module domain.
 

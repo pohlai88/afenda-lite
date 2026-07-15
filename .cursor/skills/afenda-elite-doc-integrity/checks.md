@@ -3,14 +3,14 @@
 ## Pass 1 — Exact inventory
 
 ```text
-- [ ] Enumerate primary files from current disk state
+- [ ] Enumerate primary files from current disk state (directory glob **or** single allowed file scope)
 - [ ] Record exact primary expected/inspected counts
 - [ ] Separate Markdown, artifacts, referenced dependencies, and exclusions
 - [ ] Annotate tracked/untracked state without dropping untracked files
 - [ ] Parse every controlled header, H1, Change Log, and outbound relative link
 - [ ] Load DOC-002 seven-field register and aspect-aware authority map
+- [ ] Treat Change Log **body rows** as dated history — never as Living next-pointer / program-order SSOT (header Version + latest Change Log row still must agree)
 ```
-
 Any unreadable, unsupported, or parser-failed primary file makes coverage incomplete.
 
 ## Pass 2 — Structured deterministic validation

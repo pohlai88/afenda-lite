@@ -1,8 +1,13 @@
 "use server";
 
 import { canInviteMember, inviteOrgMember, requireRole } from "@afenda/auth";
+import { revalidatePath } from "next/cache";
 
 import { inviteOrgMemberCommandSchema } from "@/modules/identity/schemas/invite-org-member";
+import {
+	MEMBER_INVITE_AUDIT_ACTION,
+	recordRbacAudit,
+} from "@/modules/platform/domain/record-rbac-audit";
 import {
 	type ActionResult,
 	actionFail,
@@ -12,6 +17,7 @@ import { parseSchema } from "@/modules/platform/schemas/common";
 
 export type InviteOrgMemberActionData = {
 	email: string;
+	auditId: string;
 };
 
 /** `null` = form idle (`useActionState`); otherwise API-002 `ActionResult`. */
@@ -20,8 +26,13 @@ export type InviteOrgMemberActionState =
 
 /**
  * Operator invite adapter — coarse `requireRole('operator')` +
- * `canInviteMember`, then `@afenda/auth` `inviteOrgMember` with session
- * `orgId` and production `APP_URL` Origin (ARCH-026 · GUIDE-018 I1.3 / I2.1).
+ * `canInviteMember`, Neon Auth `inviteOrgMember` with session `orgId`, then
+ * Platform `recordRbacAudit` hard-tenancy write (ARCH-023 · ARCH-026 ·
+ * GUIDE-018 I1.3 / I2.1 / I2.3).
+ *
+ * AuthZ bar for I2.3: Tier-1 session role gates only. ARCH-023 Tier-2
+ * `clients.invite` / `hasPermission` is GUIDE-018 **I3.1** — do not invent a
+ * permission-code shim here.
  */
 export async function inviteOrgMemberAction(
 	_prev: InviteOrgMemberActionState,
@@ -58,5 +69,28 @@ export async function inviteOrgMemberAction(
 		);
 	}
 
-	return actionOk({ email: parsed.data.email });
+	let auditId: string;
+	try {
+		const audit = await recordRbacAudit({
+			orgId: session.orgId,
+			action: MEMBER_INVITE_AUDIT_ACTION,
+			actorUserId: session.userId,
+			targetType: "membership",
+			targetId: parsed.data.email,
+			newValue: {
+				email: parsed.data.email,
+				role: parsed.data.role,
+			},
+		});
+		auditId = audit.id;
+	} catch {
+		return actionFail(
+			"INTERNAL_ERROR",
+			"Invitation was sent but the org-scoped audit write failed. Contact an admin.",
+		);
+	}
+
+	revalidatePath("/admin");
+
+	return actionOk({ email: parsed.data.email, auditId });
 }

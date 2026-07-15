@@ -4,7 +4,7 @@
 
 This file mirrors the Living **api-now** contract and the **allowed Target** Route Handler set under `apps/web/app/api/**` (logical `app/api/**`). It distinguishes **allowlisted HTTP handlers** from **contract-only** resources (canonical REST shapes consumed via RSC + Server Actions until an external consumer needs HTTP). SSOT is REST-001.
 
-**Docs-first checkout:** root `app/api/**` may be **absent by design** ([ARCH-028](../../../docs/architecture/ARCH-028-implementation-slices.md)). This inventory is **not** a claim those handlers are physically implemented on disk today.
+**Docs-first checkout (historical):** root `app/api/**` may have been absent; Target api-now handlers now live under `apps/web/app/api/**` (GUIDE-018 I2.4). Inventory here mirrors REST-001 — verify with `Test-Path` / `pnpm check:openapi`.
 
 ---
 

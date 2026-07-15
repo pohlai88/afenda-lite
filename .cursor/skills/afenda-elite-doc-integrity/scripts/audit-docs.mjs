@@ -21,7 +21,7 @@ const usage = `Usage: node audit-docs.mjs [options]
 
 Options:
   --root <path>           Repository root (default: cwd)
-  --scope <path>          Primary documentation scope (default: docs/api)
+  --scope <path>          Primary docs dir or single .md/.yaml/.yml/.json (default: docs/api)
   --register <path>       DOC-002 register path
   --authority-map <path>  Aspect-aware authority map
   --module-contract <path> Executable module contract override

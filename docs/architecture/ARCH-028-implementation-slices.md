@@ -4,19 +4,38 @@
 |-------|-------|
 | ID | ARCH-028 |
 | Category | Architecture |
-| Version | 1.5.0 |
+| Version | 1.5.3 |
 | Status | Living |
 | Control State | Closed |
 | Owner | Platform |
 | Updated | 2026-07-15 |
 
-> **Living.** Ordered Turborepo scaffold checklist (S1–S8 + Checkpoints A–G) and anti-contamination lock. Coding order **closed** after Checkpoint G (2026-07-15). Post-scaffold program sequence: [GUIDE-018](../guides/GUIDE-018-fullstack-e2e-integration-program.md). Do **not** invent S9 inside this document.
+> **Living.** Ordered Turborepo scaffold checklist (S1–S8 + Checkpoints A–G) and anti-contamination lock. Coding order **closed** after Checkpoint G (2026-07-15). Post-scaffold program sequence: [GUIDE-018](../guides/GUIDE-018-fullstack-e2e-integration-program.md) (Phase I2 DONE; next Ops **I3.1**). Do **not** invent S9 inside this document.
 
-## Purpose
+# 1. Purpose
+
+Living ordered Turborepo scaffold checklist (S1–S8 + Checkpoints A–G) and anti-contamination lock. Coding order closed after Checkpoint G; post-scaffold work is GUIDE-018.
 
 Gives implementers a complete, ordered checklist derived from ARCH-022…027 . Acceptance criteria and verify commands are the gate for each slice.
 
 **Plan residual:** Content from the Day-1 Turborepo plan (gap analysis, cutover notes, Checkpoint E, post-ship doc retirement, fuller risks) lives here and in sibling ARCH docs — not in the Cursor plan file.
+
+# 2. Scope
+
+## 2.1 In Scope
+
+- S1–S8 slice Acceptance / Verify / evidence
+- Checkpoints A–G
+- Anti-contamination lock and Target path truth
+- Pointers to sibling ARCH for package/auth/env detail
+
+## 2.2 Out of Scope
+
+- Inventing S9 or reopening scaffold coding order
+- Post-scaffold Phase I product work ([GUIDE-018](../guides/GUIDE-018-fullstack-e2e-integration-program.md))
+- Living IAM / tenancy rules ([ARCH-023](ARCH-023-multi-tenancy.md))
+
+# 3. Implementation Slices
 
 ## Preconditions (docs)
 
@@ -416,7 +435,7 @@ Absorbed from retired GUIDE-004. Records **Target vs checkout** drift for forwar
 
 | Authority | Disk today | Coding impact |
 |-----------|------------|---------------|
-| [ARCH-022…028](.) | **S1.1–S8.2 + Checkpoints A–G closed** on disk: workspace + `@afenda/{config,db,auth,env,ui,emails}` + `apps/web` route groups + modules domain ports + feature shells + CI/Deploy; ARCH pack **Living** | Post-scaffold coding = [GUIDE-018](../guides/GUIDE-018-fullstack-e2e-integration-program.md) phases (next **I1**). No further coding slices in ARCH-028 order. |
+| [ARCH-022…028](.) | **S1.1–S8.2 + Checkpoints A–G closed** on disk: workspace + `@afenda/{config,db,auth,env,ui,emails}` + `apps/web` route groups + modules domain ports + feature shells + CI/Deploy; ARCH pack **Living** | Post-scaffold coding = [GUIDE-018](../guides/GUIDE-018-fullstack-e2e-integration-program.md) phases (Phase I2 DONE; next **I3.1**). No further coding slices in ARCH-028 order. |
 | Living maps ARCH-001…010 · 012…019 · 017 | Repo-root `app/`, `modules/`, `features/`, `components-V2/` **absent** after design-SSOT Collapse (`4680c91`) | **Expected · Forbidden to recover** — see Anti-contamination lock below |
 | [ARCH-023](ARCH-023-multi-tenancy.md) | Living tenancy + RBAC rules; Target packages present | Binding now — keep hard `organization_id` / RBAC invariants on greenfield code |
 | `AGENTS.md` | Cursor Agent cockpit; env SSOT `@afenda/env` + `.env.local` + `.env.example` (S4.1 / Checkpoint D) | Compose retired — do not restore; prefer AGENTS links over duplicating ARCH/FFT prose |
@@ -450,16 +469,21 @@ Cite Target paths as code spans; do not create broken relative links to missing 
 Living ARCH folder/route/adapter maps remain normative for **shape**. They are **not** a license to restore banned trees. Cutover notes that name old paths describe **disposition only** — they do **not** authorize git recovery. Forward product work = Target paths + new code — never Collapse/legacy recovery.
 
 
-## References
+# 4. References
+
 
 - [ARCH-022 System Overview](ARCH-022-system-overview.md) — gap table + stack
 - [ARCH-027 Env Model](ARCH-027-env-model.md) — compose cutover
 - [ARCH-022 System Overview](ARCH-022-system-overview.md) § Workspace
 
-## Change Log
+# 5. Change Log
+
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.5.3 | 2026-07-15 | Bounded reopen (I2.4 audit repair): next-pointer honesty — residual = GUIDE-018 I3.1. |
+| 1.5.2 | 2026-07-15 | Bounded reopen (I2.3 audit repair): next-pointer honesty — residual = GUIDE-018 I2.4. |
+| 1.5.1 | 2026-07-15 | DOC-003 six-section retrofit (content preserved; References → § 4; Purpose banner stays § 1). |
 | 1.5.0 | 2026-07-15 | Checkpoint G closed (Docs): ARCH-022…028 Living; G1 tree evidence; retirement dispositions; AGENTS/GUIDE-018 next = I1. |
 | 1.4.27 | 2026-07-15 | Docs audit: retire stale Risks/drift (“packages empty”); record post-S8.2 CI/Deploy green on `fff00c3`; AGENTS cockpit note. |
 | 1.4.26 | 2026-07-15 | Docs audit residual: S8.1/S8.2 evidence honesty — `packageManager` Actions setup + Actions Deploy success `29367183769` + classic PAT. |
@@ -494,3 +518,7 @@ Living ARCH folder/route/adapter maps remain normative for **shape**. They are *
 | 1.1.1 | 2026-07-14 | Header Control State retrofit note (superseded by 1.2.0 row for version alignment). |
 | 1.1.0 | 2026-07-13 | Plan residuals: cutover notes, Checkpoint E, doc retirement, fuller risks |
 | 1.0.0 | 2026-07-13 | Initial S1–S8 slices |
+
+# 6. Notes
+
+Scaffold coding order is closed. Further program work is sequenced in GUIDE-018, not by inventing S9 here.

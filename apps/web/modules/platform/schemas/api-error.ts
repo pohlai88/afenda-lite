@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "@/modules/platform/schemas/openapi-zod";
 
 /**
  * Shared HTTP error vocabulary (API-002 · API-003 · OPEN-001).

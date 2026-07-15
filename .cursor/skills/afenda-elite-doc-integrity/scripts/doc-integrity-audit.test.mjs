@@ -446,3 +446,28 @@ test("current docs/api reproduces the resolved zero-finding baseline", async () 
   assert.deepEqual(report.counts.bySeverity, expected.bySeverity);
   assert.deepEqual(Object.keys(report.counts.byCategory).sort(), expected.categories);
 });
+
+test("single Markdown file --scope inspects that primary only", async () => {
+  const report = await auditDocs({
+    root: REPO_ROOT,
+    scope: "docs/guides/GUIDE-018-fullstack-e2e-integration-program.md",
+  });
+  assert.notEqual(report.exitCode, 2, report.coverage.failures.join("; "));
+  assert.equal(report.coverage.complete, true);
+  assert.equal(report.scope.primaryFiles, 1);
+  assert.equal(report.scope.markdownFiles, 1);
+  assert.equal(
+    report.scope.root,
+    "docs/guides/GUIDE-018-fullstack-e2e-integration-program.md",
+  );
+});
+
+test("missing --scope path fails coverage (exit 2) with path wording", async () => {
+  const report = await auditDocs({
+    root: REPO_ROOT,
+    scope: "docs/guides/does-not-exist-GUIDE-999.md",
+  });
+  assert.equal(report.exitCode, 2);
+  assert.equal(report.coverage.complete, false);
+  assert.match(report.coverage.failures.join("\n"), /Scope path does not exist/);
+});

@@ -4,7 +4,7 @@
 | ----------------- | ------------ |
 | **ID**            | ARCH-024     |
 | **Category**      | Architecture |
-| **Version**       | 1.5.1        |
+| **Version**       | 1.5.2        |
 | **Status**        | Living       |
 | **Control State** | Closed       |
 | **Owner**         | Platform     |
@@ -152,7 +152,14 @@ packages/config/
 
 Imports always flow from `apps/web` → `packages/*`. Never the reverse.
 
+**In-app layering (GUIDE-018 I2.2):** `features/*` and thin `app/actions/*` → `modules/*/domain` → `@afenda/db`. Features and adapters must never import `@afenda/db` (or deep `packages/db` paths). Enforced by `apps/web/__tests__/feature-db-boundary.test.ts`.
+
 ```
+apps/web/features/declarations/declarations-shell.tsx
+  │
+  import { listSurveys } from '@/modules/declarations/domain/list-surveys'   ✓
+  import { withOrg } from '@afenda/db'   ✗  (feature ↛ db)
+
 apps/web/modules/declarations/domain/list.ts
   │
   import { withOrg } from '@afenda/db'   ✓
@@ -174,6 +181,7 @@ apps/web/modules/declarations/domain/list.ts
 | `src/` internals unreachable from outside | [ARCH-022](ARCH-022-system-overview.md) § Workspace |
 | No mega-package (`@afenda/shared`) | This doc |
 | `@afenda/ui` playground gateway as the sole public UI door | [ADR-009](adr/ADR-009-afenda-ui-playground-gateway.md) |
+| Feature / adapter ↛ `@afenda/db` (domain only) | This doc § Data / request flow · GUIDE-018 I2.2 |
 
 ## Failure modes
 
@@ -182,6 +190,7 @@ apps/web/modules/declarations/domain/list.ts
 | Cross-package `src/` import | `publint` or Biome import path rule in CI |
 | Circular dependency | `turbo run build` fails with cycle error |
 | Package exports not declared | TypeScript `moduleResolution: bundler` throws at import |
+| `features/*` or `app/actions/*` imports `@afenda/db` | `feature-db-boundary` Vitest (GUIDE-018 I2.2) |
 
 ## Operational considerations
 
@@ -207,6 +216,7 @@ apps/web/modules/declarations/domain/list.ts
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 1.5.2 | 2026-07-15 | Bounded reopen (I2.2 audit repair): document feature/adapter ↛ `@afenda/db`; domain-only import + Vitest gate pointer. |
 | 1.5.1 | 2026-07-15 | Harness absence honesty: Next.js `/playground` trees removed; disambiguation paragraph updated (gateway unchanged). |
 | 1.5.0 | 2026-07-15 | DOC-003 six-section retrofit (content unchanged from 1.4.0 except "Known limits / future changes" moved to § 6 Notes) — this document's own 1.4.0 revision was the material change that crossed the retrofit threshold; ARCH-022/025/026/027/028 remain explicitly grandfathered per DOC-001 §3.8 (see DOC-002 register). |
 | 1.4.0 | 2026-07-15 | Reopened/closed same-turn: `@afenda/ui` exports trimmed to `.`, `./style.css`, `./playground`, `./playground/providers`, `./playground/types`; added `@afenda/ui/playground` vs `/playground` routes disambiguation paragraph; `*Contract`/`extends` pattern documented; forbidden-imports table updated. See [ADR-009](adr/ADR-009-afenda-ui-playground-gateway.md). |

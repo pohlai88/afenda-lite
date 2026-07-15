@@ -30,6 +30,8 @@ npm run check:doc-integrity
 **Include:** `GET /api/health/liveness`, `GET /api/health/readiness`, `GET|PUT|PATCH|POST /api/client/declaration-draft`, `APIErrorBody`, `{ data }` envelopes.  
 **Exclude:** Neon Auth `/api/auth/*`, contract-only REST, FFT appendix (until reopen + contract-only rules).
 
+**Disk honesty (I2.4):** `pnpm check:openapi` fails if any `x-afenda-status: api-now` operation lacks `apps/web/app/api/**/route.ts`.
+
 Success responses **must** be `{ data: T }`. Errors are bare `APIErrorBody`.
 
 ## When to regenerate
@@ -40,7 +42,7 @@ Any of: health/draft handler shape change; shared error/envelope change; approve
 
 | Item | Recipe in OPEN-001 |
 |------|--------------------|
-| Import live Zod (drop inline mirrors) | Forward — Zod SSOT handoff |
+| ~~Import live Zod (drop inline mirrors)~~ | **DONE** I2.4 — `modules/platform/schemas/openapi-zod` + module schemas |
 | Fumadocs `createOpenAPI({ input: ['./docs/api/OPEN-001-openapi.yaml'] })` | Forward — Fumadocs wire |
 | Contract-only ops with `x-afenda-status: contract-only` | Forward — contract-only expansion (one family per increment; no live playground) |
 

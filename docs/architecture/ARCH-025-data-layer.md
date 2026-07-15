@@ -4,13 +4,34 @@
 |-------|-------|
 | ID | ARCH-025 |
 | Category | Architecture |
-| Version | 1.3.0 |
+| Version | 1.3.1 |
 | Status | Living |
 | Control State | Closed |
 | Owner | Backend |
 | Updated | 2026-07-15 |
 
 > **Living.** Data-layer SSOT after ARCH-028 Checkpoint G (2026-07-15). `@afenda/db` + `withOrg` on disk; baseline `0000` migrate remains banned on production Neon.
+
+# 1. Purpose
+
+Living data-layer SSOT after ARCH-028 Checkpoint G: Drizzle + Neon transport, `@afenda/db` responsibilities, `withOrg`, and the baseline-migrate ban.
+
+# 2. Scope
+
+## 2.1 In Scope
+
+- Drizzle ORM decision and constraints
+- `@afenda/db` schema/client/`withOrg` responsibilities
+- Migration lifecycle and operational ban on `0000` baseline migrate
+- Failure modes for DB/env mismatch
+
+## 2.2 Out of Scope
+
+- Tenancy Decision lock and IAM catalogue ([ARCH-023](ARCH-023-multi-tenancy.md))
+- Session/auth packaging ([ARCH-026](ARCH-026-auth-session.md))
+- Domain business rules under `apps/web/modules/*/domain`
+
+# 3. Data Architecture
 
 ## Context
 
@@ -177,15 +198,20 @@ Writes use `db` directly (not `withOrg`, which is select-only). The `organizatio
 
 Default: `db:migrate` fails closed. Override `AFENDA_ALLOW_DB_MIGRATE=1` is only for a later **non-baseline** forward migration; the guard still refuses when `0000_…` is the sole SQL file.
 
-## Known limits / future changes
+# 4. References
 
-- Drizzle does not support automatic rollback migrations. Rollback requires a new forward migration that reverts the change.
-- If a second Postgres store is added (e.g., a read replica or separate analytics DB), a new `client-analytics.ts` is created alongside the existing client — not a new package.
+| ID | Title | Relationship |
+| --- | --- | --- |
+| ARCH-023 | Multi-Tenancy and Platform RBAC | Tenancy + `organization_id` / `withOrg` rule |
+| ARCH-024 | Package Boundaries | `@afenda/db` public export surface |
+| ARCH-028 | Implementation Slices | S2.x evidence · baseline migrate ban |
 
-## Change Log
+# 5. Change Log
+
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.3.1 | 2026-07-15 | DOC-003 six-section retrofit (content preserved; Known limits → § 6 Notes). |
 | 1.3.0 | 2026-07-15 | Checkpoint G: Status Target→Living; `@afenda/db` present; migrate ban unchanged. |
 | 1.2.4 | 2026-07-14 | Operational ban: do not `db:migrate` `0000_living-roots-baseline` onto live Neon; package guard + Cursor hook. |
 | 1.2.3 | 2026-07-14 | Reconcile `organization_id` column type to live `text` (Neon Auth org ids) after S2.1 introspect. |
@@ -194,3 +220,8 @@ Default: `db:migrate` fails closed. Override `AFENDA_ALLOW_DB_MIGRATE=1` is only
 | 1.2.0 | 2026-07-14 | Integrity remediation: schema inventory and `organization_id` type defer to ARCH-023 Living roots; Change Log restored; read/write examples use `surveys`. |
 | 1.1.1 | 2026-07-14 | Added mandatory Control State header field (Closed); lifecycle Status unchanged. |
 | 1.0.0 | 2026-07-13 | Initial Target data layer |
+
+# 6. Notes
+
+- Drizzle does not support automatic rollback migrations. Rollback requires a new forward migration that reverts the change.
+- If a second Postgres store is added (e.g., a read replica or separate analytics DB), a new `client-analytics.ts` is created alongside the existing client — not a new package.

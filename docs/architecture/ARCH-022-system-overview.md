@@ -4,13 +4,37 @@
 |-------|-------|
 | ID | ARCH-022 |
 | Category | Architecture |
-| Version | 1.6.5 |
+| Version | 1.6.8 |
 | Status | Living |
 | Control State | Closed |
 | Owner | Platform |
 | Updated | 2026-07-15 |
 
-> **Living.** Turborepo system SSOT after ARCH-028 Checkpoint G (2026-07-15). On disk: `@afenda/config|db|auth|env|ui|emails` + `apps/web` route groups + `apps/web/proxy.ts` edge session gate + public Neon Auth UI `/auth/*` + `/join` + `apps/web/modules/{platform,identity,declarations,fft}` domain ports + `apps/web/features/{auth,declarations,fft,org-admin}` + CI/Deploy. Post-scaffold program order: [GUIDE-018](../guides/GUIDE-018-fullstack-e2e-integration-program.md) (next Ops: **I1.4** — role shells; I1.1–I1.3 closed).
+> **Living.** Turborepo system SSOT after ARCH-028 Checkpoint G (2026-07-15). On disk: `@afenda/config|db|auth|env|ui|emails` + `apps/web` route groups + `apps/web/proxy.ts` edge session gate + public Neon Auth UI `/auth/*` + `/join` + `apps/web/modules/{platform,identity,declarations,fft}` domain ports + `apps/web/features/{auth,declarations,fft,org-admin}` + CI/Deploy. Post-scaffold program order: [GUIDE-018](../guides/GUIDE-018-fullstack-e2e-integration-program.md) (Phase I2 DONE; next Ops: **I3.1** — Identity / Platform deepen).
+
+# 1. Purpose
+
+Living Turborepo system overview SSOT after ARCH-028 Checkpoint G: workspace shape, Modular Monolith + Hexagonal framework, and pointer index to sibling ARCH docs.
+
+# 2. Scope
+
+## 2.1 In Scope
+
+- Turborepo + pnpm workspace decision and constraints
+- Modular Monolith + Hexagonal system framework rules
+- Target on-disk tree honesty (`apps/web`, `packages/*`, edge/auth surfaces)
+- Sibling ARCH index and operational build/dev notes
+
+## 2.2 Out of Scope
+
+- Package export surfaces ([ARCH-024](ARCH-024-package-boundaries.md))
+- Data/ORM detail ([ARCH-025](ARCH-025-data-layer.md))
+- Auth/session packaging ([ARCH-026](ARCH-026-auth-session.md))
+- Env schema ([ARCH-027](ARCH-027-env-model.md))
+- Scaffold slice checklist ([ARCH-028](ARCH-028-implementation-slices.md))
+- Tenancy / IAM Decision lock ([ARCH-023](ARCH-023-multi-tenancy.md))
+
+# 3. System Architecture
 
 ## Context
 
@@ -205,19 +229,6 @@ Next.js App Router (apps/web)
 | `@t3-oss/env-nextjs` | [ARCH-027](ARCH-027-env-model.md)  |
 | Platform tenancy + RBAC | [ARCH-023](ARCH-023-multi-tenancy.md) |
 
-## Sibling architecture docs
-
-| Doc | Job |
-|-----|-----|
-| [ARCH-023](ARCH-023-multi-tenancy.md) | Tenancy + RBAC flow |
-| [ARCH-024](ARCH-024-package-boundaries.md) | Package public contracts |
-| [ARCH-025](ARCH-025-data-layer.md) | Drizzle / migrations / `withOrg` |
-| [ARCH-026](ARCH-026-auth-session.md) | Session + invitations |
-| [ARCH-027](ARCH-027-env-model.md) | Env schema — `@afenda/env` + `.env.local` (compose retired) |
-| [ARCH-028](ARCH-028-implementation-slices.md) | Ordered build slices (docs plan for implementers) |
-| [ARCH-029](ARCH-029-interface-api-architecture.md) | Living interface/API architecture parent |
-| [Backend pack](README.md#packs-reading-order) | Hexagon layers, ports, module ownership (detail) |
-| [ARCH-013-bff-and-data-flow.md](ARCH-013-bff-and-data-flow.md) | Next.js data-pattern decision tree |
 
 ## Failure modes
 
@@ -235,17 +246,30 @@ Next.js App Router (apps/web)
 - Remote cache: `TURBO_TOKEN` (Vercel)
 - One deployable until a new ADR adds another app
 
-## Known limits
+# 4. References
 
-- Private workspace packages only (no npm publish until a separate decision)
-- Module extraction to a service requires a new ADR
-- Collapse product trees stay absent by design; forward work is greenfield under `apps/web/**` and `packages/*` only ([ARCH-028](ARCH-028-implementation-slices.md) anti-contamination)
-- Auth edge residual (role shells) remains GUIDE-018 **I1.4**; `apps/web/proxy.ts`, `/auth/*`, and `/join` are on disk — do not invent a third app layout or product `middleware.ts`
+### Sibling architecture docs
 
-## Change Log
+| Doc | Job |
+|-----|-----|
+| [ARCH-023](ARCH-023-multi-tenancy.md) | Tenancy + RBAC flow |
+| [ARCH-024](ARCH-024-package-boundaries.md) | Package public contracts |
+| [ARCH-025](ARCH-025-data-layer.md) | Drizzle / migrations / `withOrg` |
+| [ARCH-026](ARCH-026-auth-session.md) | Session + invitations |
+| [ARCH-027](ARCH-027-env-model.md) | Env schema — `@afenda/env` + `.env.local` (compose retired) |
+| [ARCH-028](ARCH-028-implementation-slices.md) | Ordered build slices (docs plan for implementers) |
+| [ARCH-029](ARCH-029-interface-api-architecture.md) | Living interface/API architecture parent |
+| [Backend pack](README.md#packs-reading-order) | Hexagon layers, ports, module ownership (detail) |
+| [ARCH-013-bff-and-data-flow.md](ARCH-013-bff-and-data-flow.md) | Next.js data-pattern decision tree |
+
+# 5. Change Log
+
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.6.8 | 2026-07-15 | Bounded reopen (I2.4 audit repair): next-pointer honesty — Phase I2 done; residual = I3.1. |
+| 1.6.7 | 2026-07-15 | Bounded reopen (I2.3 audit repair): next-pointer honesty — I2.3 write landed; residual = I2.4. |
+| 1.6.6 | 2026-07-15 | DOC-003 six-section retrofit (content preserved; Known limits → § 6 Notes); You-are-here next Ops = GUIDE-018 I2.3. |
 | 1.6.5 | 2026-07-15 | Package boundary table: `packages/ui` → `packages/design-system` (canonical `@afenda/ui` after name-collision resolution); linked ARCH-024 gateway paragraph. |
 | 1.6.4 | 2026-07-15 | I1.3 honesty: `/join` on disk under `(public)/`; next Ops = GUIDE-018 I1.4. |
 | 1.6.3 | 2026-07-15 | Client tree honesty: `(gate)` vs `(workspace)` under `app/(client)/client`. |
@@ -270,3 +294,10 @@ Next.js App Router (apps/web)
 | 1.2.0 | 2026-07-13 | Gap table (checkout → Target); Living compose vs Target env note |
 | 1.1.0 | 2026-07-13 | Full target stack + turbo.json |
 | 1.0.0 | 2026-07-13 | Initial Target overview |
+
+# 6. Notes
+
+- Private workspace packages only (no npm publish until a separate decision)
+- Module extraction to a service requires a new ADR
+- Collapse product trees stay absent by design; forward work is greenfield under `apps/web/**` and `packages/*` only ([ARCH-028](ARCH-028-implementation-slices.md) anti-contamination)
+- Phase I1 and Phase I2 are closed ([GUIDE-018](../guides/GUIDE-018-fullstack-e2e-integration-program.md)); next Ops = **I3.1**. Do not invent a third app layout or product `middleware.ts`.

@@ -28,8 +28,9 @@ type InviteMemberFormProps = {
 };
 
 /**
- * Operator invite form — posts to `inviteOrgMemberAction` → Neon Auth
- * via `@afenda/auth` (GUIDE-018 I1.3). Invitees join at `/join?invitationId=…`.
+ * Operator invite form — posts to `inviteOrgMemberAction` → Neon Auth +
+ * org-scoped RBAC audit write (GUIDE-018 I1.3 / I2.3). Invitees join at
+ * `/join?invitationId=…`.
  */
 export function InviteMemberForm({
 	inviteableRoles,
@@ -92,8 +93,9 @@ export function InviteMemberForm({
 			{state?.ok === true ? (
 				<p className="text-sm text-muted-foreground" role="status">
 					Invitation sent to{" "}
-					<code className="text-foreground">{state.data.email}</code>. They join
-					via the email link at{" "}
+					<code className="text-foreground">{state.data.email}</code>. Audit{" "}
+					<code className="text-foreground">{state.data.auditId}</code> recorded
+					for this org. They join via the email link at{" "}
 					<code className="text-foreground">{joinPath}?invitationId=…</code>.
 				</p>
 			) : null}

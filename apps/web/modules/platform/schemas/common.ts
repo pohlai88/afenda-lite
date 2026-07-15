@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "@/modules/platform/schemas/openapi-zod";
 
 /**
  * Platform shared Zod primitives + boundary `parseSchema` (API-004 · API-001).

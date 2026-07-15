@@ -4,11 +4,11 @@
 |-------|-------|
 | ID | OPEN-001 |
 | Category | OPEN |
-| Version | 1.1.7 |
+| Version | 1.1.8 |
 | Status | Living |
 | Control State | Closed |
 | Owner | Backend |
-| Updated | 2026-07-14 |
+| Updated | 2026-07-15 |
 
 # 1. Purpose
 
@@ -25,8 +25,9 @@ Human guide for the **machine OpenAPI** artifact. Enables maintainers to generat
 
 - One OpenAPI document for Afenda-Lite HTTP (no `/api/v1`)
 - Fumadocs (or external HTTP clients) can consume the YAML
-- Zod under `modules/*/schemas` is type SSOT; generator **must** converge on imports — inline copies are recorded mirrors until handoff lands
+- Zod under `modules/*/schemas` is type SSOT; generator imports those schemas via `modules/platform/schemas/openapi-zod` (Zod→OpenAPI handoff landed GUIDE-018 I2.4)
 - Success JSON matches runtime `{ data }` envelope — SSOT [API-001](API-001-api-boundaries.md); errors stay bare `APIErrorBody` ([API-002](API-002-error-contract.md))
+- `pnpm check:openapi` fails when `x-afenda-status: api-now` operations lack matching `apps/web/app/api/**/route.ts`
 
 ## Non-goals
 
@@ -79,24 +80,14 @@ Unavailable elsewhere does not pause Living status — it is listed here for the
 
 | Item | Where recorded |
 |------|----------------|
-| Zod import handoff (drop inline mirrors) | § Forward — Zod SSOT handoff |
+| ~~Zod import handoff (drop inline mirrors)~~ | **DONE** I2.4 — `openapi-zod` + module schema imports in `scripts/generate-openapi.mts` |
 | Fumadocs `createOpenAPI` wire | § Forward — Fumadocs wire |
 | Contract-only YAML families | § Forward — contract-only expansion |
 | FFT OpenAPI | Out until FFT reopen + contract-only rules |
 
 ## Forward — Zod SSOT handoff
 
-**Intent:** Stop duplicating schemas in `scripts/generate-openapi.mts`.
-
-When `modules/platform/schemas/api-error.ts` and `modules/declarations/schemas/client.ts` (plus `surveyAnswersSchema` / `uuidSchema` owners in [API-004](API-004-schema-map.md)) are the implementation target:
-
-1. Call `extendZodWithOpenApi(z)` once before any `.openapi()` enrichment.
-2. Prefer importing module schemas; attach `.openapi("Name")` via `extendZodWithOpenApi` / registry — do not fork field lists.
-3. Keep response **envelopes** in the generator (or a tiny `modules/platform/schemas/api-envelope.ts` if added): runtime success is always `{ data: T }`.
-4. Delete inlined copies of `apiErrorBodySchema`, draft save/query, and answer map from the generator.
-5. Run `pnpm openapi:generate` && `pnpm check:openapi`.
-
-Inlined schemas in `scripts/generate-openapi.mts` are **recorded mirrors** of those modules — any field change in REST/API docs must update the generator in the same change until the import handoff lands.
+**Status:** Landed (GUIDE-018 I2.4). Generator imports Living Target schemas; do not reintroduce inlined mirrors.
 
 ## Forward — Fumadocs wire
 
@@ -167,6 +158,7 @@ pnpm check:openapi
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.1.8 | 2026-07-15 | Bounded reopen (I2.4 audit repair): Zod SSOT handoff + api-now disk honesty gate marked landed. |
 | 1.1.7 | 2026-07-14 | Bounded reopen: package-manager cutover — document `pnpm` / `pnpm exec` (repo SSOT `packageManager` + `pnpm-lock.yaml`). |
 | 1.1.6 | 2026-07-14 | Added mandatory Control State header field (Closed); lifecycle Status unchanged. |
 | 1.1.5 | 2026-07-13 | Corrected recipe ownership: OPEN-001 remains authoritative until GUIDE-011 promotion; adopted six-section structure |

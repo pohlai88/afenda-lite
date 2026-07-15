@@ -95,7 +95,7 @@ Controlled docs: respect **Control State**. `Closed` → reopen with explicit Do
 | Rule | Detail |
 |------|--------|
 | Forward code | Greenfield under `apps/web/**` and `packages/*` only |
-| Next open (program) | [GUIDE-018](docs/guides/GUIDE-018-fullstack-e2e-integration-program.md) **I2.2** — feature → domain → db boundary. **I2.1** ActionResult / error brands closed. Phase I1 closed. ARCH-028 Checkpoint G **closed**. |
+| Next open (program) | [GUIDE-018](docs/guides/GUIDE-018-fullstack-e2e-integration-program.md) **I3.1** — Identity / Platform deepen. Phase **I2** closed (ActionResult · feature↛db · first write · OpenAPI honesty). Phase I1 closed. ARCH-028 Checkpoint G **closed**. |
 | Env | `@afenda/env` + `.env.local` only (compose retired) |
 | Docs trunks | Flat `docs/architecture/ARCH-*.md` — gate `pnpm check:docs-trunk-ban` |
 | Index ghosts | Grep/Glob may list deleted paths — trust `Test-Path` · `git ls-files` · trunk-ban check |

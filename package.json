@@ -59,7 +59,7 @@
     "test:doc-integrity": "node --test .cursor/skills/afenda-elite-doc-integrity/scripts/doc-integrity-audit.test.mjs .cursor/skills/afenda-elite-doc-integrity/scripts/doc-integrity-mutation.test.mjs .cursor/skills/afenda-elite-doc-integrity/scripts/doc-integrity-remediation.test.mjs",
     "plan:doc-integrity": "node .cursor/skills/afenda-elite-doc-integrity/scripts/remediate-docs.mjs --scope docs/api --mode plan-fix --format json",
     "fix:doc-integrity:safe": "node .cursor/skills/afenda-elite-doc-integrity/scripts/remediate-docs.mjs --scope docs/api --mode apply-safe --apply --format json",
-    "openapi:generate": "pnpm exec tsx scripts/generate-openapi.mts",
+    "openapi:generate": "pnpm exec tsx --tsconfig apps/web/tsconfig.json scripts/generate-openapi.mts",
     "check:openapi": "node scripts/check-openapi.mjs",
     "housekeeping:knip:design-system": "knip --directory packages/design-system",
     "check:nav": "node scripts/collapse-script-unavailable.mjs \"check:nav\"",

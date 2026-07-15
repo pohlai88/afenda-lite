@@ -4,7 +4,7 @@
 | ----------------- | ---------- |
 | **ID**            | GUIDE-018  |
 | **Category**      | Guide      |
-| **Version**       | 0.3.9      |
+| **Version**       | 0.3.13     |
 | **Status**        | Draft      |
 | **Control State** | Closed     |
 | **Owner**         | Platform   |
@@ -34,7 +34,7 @@ This guide **sequences** the program. It does **not** replace owning docs for sl
 
 - Ordered phases from foundations → scaffold (done) → docs cutover (done) → authenticity → contracts → product verticals → tests → hardening → evidence → continuous control
 - Completed [ARCH-028](../architecture/ARCH-028-implementation-slices.md) coding + Checkpoint G (S1.1–S8.2, Checkpoints A–**G**)
-- **Phase I1** (identity & edge) — **I1.1–I1.4** closed; **I2.1** (ActionResult / error brands) closed; next Ops mission **I2.2**
+- **Phase I1** (identity & edge) — **I1.1–I1.4** closed; **I2.1–I2.4** closed (ActionResult · feature↛db · first authenticated write · OpenAPI/REST honesty); next Ops mission **I3.1**
 - Lane discipline, skill routing, and FFT freeze / anti-contamination boundaries
 - Pointers to owning authorities (no duplicated SSOT)
 
@@ -99,12 +99,12 @@ FOUNDATIONS ████████ DONE
 SCAFFOLD     ████████ DONE  (ARCH-028 S1–S8 · Checkpoints A–F)
 CHECKPOINT G ████████ DONE  (Docs: ARCH-022…028 Living · retirement reviewed)
 I1           ████████ DONE  ← I1.1–I1.4 closed
-I2           ██░░░░░░ OPEN  ← I2.1 DONE · next I2.2 (feature↛db boundary)
-I3–I7        ░░░░░░░░ WAIT
+I2           ████████ DONE  ← I2.1–I2.4 closed (OpenAPI / REST honesty)
+I3–I7        ░░░░░░░░ WAIT  ← next Ops = I3.1
 REOPEN (R*)  ░░░░░░░░ optional · explicit written approval only
 ```
 
-**Plain-English baseline:** packages, routes, CI, Deploy, the edge session gate (`apps/web/proxy.ts`), public Neon Auth UI (`/auth/login` · forgot · reset · sign-up), `/join?invitationId=…`, fail-closed role shells (`requireRole` → `/403`), and shared `ActionResult` / `APIErrorBody` contracts on Target paths exist on disk; Turborepo ARCH pack is **Living**. Remaining writes, E2E, observability, and release evidence are still incomplete. See §3.6 for the gap summary.
+**Plain-English baseline:** packages, routes, CI, Deploy, the edge session gate (`apps/web/proxy.ts`), public Neon Auth UI (`/auth/login` · forgot · reset · sign-up), `/join?invitationId=…`, fail-closed role shells (`requireRole` → `/403`), shared `ActionResult` / `APIErrorBody` contracts, the feature → domain → `@afenda/db` import boundary (Vitest-enforced), the first authenticated tenant write (operator invite → Neon Auth + `platform_rbac_audit` hard `organization_id`), and OpenAPI api-now honesty (health + declaration-draft Route Handlers on disk · Zod SSOT handoff · `pnpm check:openapi` disk gate) exist on disk; Turborepo ARCH pack is **Living**. Remaining deeper verticals, E2E, observability, and release evidence are still incomplete. See §3.6 for the gap summary.
 
 **Standing honesty:**
 
@@ -119,7 +119,7 @@ REOPEN (R*)  ░░░░░░░░ optional · explicit written approval only
 | **S** | Turborepo scaffold | DONE | Ops | Packages, `apps/web`, CI, Deploy (ARCH-028) |
 | **G** | Docs cutover | **DONE** | Docs | Target→Living + retirement reviewed |
 | **I1** | Identity & edge | **DONE** | Ops | Session gate, `/auth/*`, `/join`, fail-closed roles |
-| **I2** | Interface / BFF | **OPEN** (next **I2.2**) | Ops | ActionResult, module boundaries, first write |
+| **I2** | Interface / BFF | **DONE** | Ops | ActionResult, module boundaries, first write, OpenAPI honesty |
 | **I3** | Product verticals | WAIT | Ops | Identity · Declarations · FFT read (freeze) |
 | **I4** | Verification factory | WAIT | Test | Unit → contract → real E2E smoke |
 | **I5** | Hardening | WAIT | Ops/Test | Security · recovery · obs · a11y/i18n · CI depth |
@@ -259,16 +259,16 @@ Recommended mission queue: **I1 → I2 → I3 (freeze) → I4 → I5/I6**.
 
 | | |
 | --- | --- |
-| **Status** | **OPEN** — **I2.1** done; next **I2.2** |
+| **Status** | **DONE** — **I2.1–I2.4** closed 2026-07-15 |
 | **Lane** | Ops + Guardian |
 | **Goal** | Stable ActionResult/error contracts and the first authenticated write path |
 
 | Stage | Build this | Stage status |
 | ----- | ---------- | ------------ |
 | **I2.1** | ActionResult / shared error brands on Target paths | **DONE** 2026-07-15 |
-| **I2.2** | Enforce feature → domain → `@afenda/db` (features never import db) | OPEN |
-| **I2.3** | First authenticated **write** vertical (prefer Identity invite or Declarations — not FFT 2B) | WAIT |
-| **I2.4** | OpenAPI / REST sync honesty (`check:openapi` · integrity) | WAIT |
+| **I2.2** | Enforce feature → domain → `@afenda/db` (features never import db) | **DONE** 2026-07-15 |
+| **I2.3** | First authenticated **write** vertical (prefer Identity invite or Declarations — not FFT 2B) | **DONE** 2026-07-15 |
+| **I2.4** | OpenAPI / REST sync honesty (`check:openapi` · integrity) | **DONE** 2026-07-15 |
 
 **Farms:** `afenda-elite-api-contract` · `afenda-elite-backend-modules`  
 **Authority:** ARCH-029 · GUIDE-015 · API/REST/OPEN pack  
@@ -285,13 +285,46 @@ Recommended mission queue: **I1 → I2 → I3 (freeze) → I4 → I5/I6**.
 | Boundary | Schemas under Target `modules/*/schemas`; invite Zod SSOT moved to Identity schemas; no throw-TODO / shim paths |
 | Side fix | `packages/design-system/.../accordion.tsx` `cn` import → relative (unblocks web typecheck via playground re-export) |
 
+### Implement evidence — I2.2 (2026-07-15)
+
+| Field | Evidence |
+| ----- | -------- |
+| Paths | Feature shells → domain ports only: `features/{declarations,fft,org-admin}/*-shell.tsx` → `modules/{declarations,fft,identity,platform}/domain/*`; SQL only in domain via `@afenda/db` `withOrg` |
+| Gate | `apps/web/__tests__/feature-db-boundary.test.ts` — features + `app/actions` ban `@afenda/db` / `packages/db` deep imports; non-domain `modules/**` also banned |
+| Disk | Features: zero `from "@afenda/db"` imports (comments only). Domain: `list-surveys` · `list-events` · `list-org-roles` · `list-role-assignments` · `list-rbac-audit` |
+| Verify | `pnpm --filter @afenda/web test -- feature-db-boundary` (4) · `pnpm --filter @afenda/web typecheck` — green; Biome clean on gate file |
+| Boundary | ARCH-013 · ARCH-024 · backend-modules: feature → domain → `@afenda/db`; adapters stay SQL-free |
+
+### Implement evidence — I2.3 (2026-07-15)
+
+| Field | Evidence |
+| ----- | -------- |
+| Paths | `apps/web/modules/platform/domain/record-rbac-audit.ts` (`recordRbacAudit` · `deleteRbacAuditRow`) · `apps/web/app/actions/invite-org-member.ts` → Neon Auth invite + audit write · `features/org-admin/invite-member-form.tsx` surfaces `auditId` |
+| Write | Inserts `platform_rbac_audit` with explicit `organization_id` from session (never ambient / soft NULL); wrong-org delete returns null |
+| Adapter | ARCH-029 §3.3: `requireRole` · Zod · `canInviteMember` · `inviteOrgMember(orgId)` · `recordRbacAudit` · `revalidatePath('/admin')` · `ActionResult` |
+| Verify | `pnpm --filter @afenda/web test -- record-rbac-audit feature-db-boundary invite-org-member action-result-contract` (15) · `pnpm --filter @afenda/web typecheck` — green; Neon fixture orgs cleaned (MCP empty) |
+| Boundary | Feature/action still SQL-free; SQL only in Platform domain; `@afenda/db` re-exports `and`/`eq`/`ne` for domain predicates |
+| Forbidden | No FFT 2B–2D; no baseline migrate |
+| Out-of-bar (disposed) | Authenticated browser invite E2E → **I4** verify factory (not I2.3 exit). Tier-2 `clients.invite` / `hasPermission` → **I3.1** (I2.3 uses `requireRole` + `canInviteMember` only). Historical Change Log “next I2.3” rows = dated history, not Living next-pointer. |
+
+### Implement evidence — I2.4 (2026-07-15)
+
+| Field | Evidence |
+| ----- | -------- |
+| Paths | `apps/web/app/api/health/{liveness,readiness}/route.ts` · `apps/web/app/api/client/declaration-draft/route.ts` · `modules/platform/{domain/health,api/json-response,schemas/{health,openapi-zod}}` · `modules/declarations/{schemas/{common,client},domain/declaration-draft,api/client-declaration-draft-route}` · `@afenda/auth` `getApiSession` |
+| Honesty | `scripts/check-openapi.mjs` asserts every `x-afenda-status: api-now` path has matching `apps/web/app/api/**/route.ts`; regenerated `OPEN-001-openapi.yaml` from module Zod SSOT |
+| Contract | Health `{ data }` envelopes · draft GET/PUT/PATCH/POST · bare `APIErrorBody`; draft gate = client session + onboarding + hard org + email owner |
+| Verify | `pnpm check:openapi` — ok (6 ops, api-now handlers on disk) · `pnpm --filter @afenda/web test -- openapi-api-now-disk openapi-contract-schemas action-result-contract feature-db-boundary` (13) · `@afenda/auth` `api-session` (2) · typecheck auth/web/db — green |
+| Boundary | Adapters SQL-free; SQL in Platform/Declarations domain only; generator imports module schemas via `openapi-zod` |
+| Forbidden | No FFT 2B–2D; Neon Auth `/api/auth/*` still excluded from YAML |
+
 ---
 
 ## Phase I3 — Product verticals
 
 | | |
 | --- | --- |
-| **Status** | WAIT (deepens after I2) |
+| **Status** | WAIT (next **I3.1**) |
 | **Lane** | Ops (+ readiness) |
 | **Goal** | Complete allowed product paths inside the FFT freeze envelope |
 
@@ -471,9 +504,9 @@ Snapshot of what “ON DISK vs still missing” looks like as of 2026-07-15:
 | Toolchain / packages | ON DISK | pnpm · Node · Turbo · Biome · TS · `@afenda/*` | Clean CI install + full gate honesty |
 | Routes / UI | PARTIAL | `/`, `/403`, `/admin`, `/fft`, `/client/dashboard` | Forms · error/recovery · responsive · locale · a11y |
 | Authn / authz | PARTIAL | Session helpers · `proxy.ts` · `/auth/*` · `/join` · invite · coarse shells (`requireRole` → `/403`) | Permission matrix · Tier-2 `hasPermission` product wiring · authenticated browser E2E |
-| Data / tenancy | PARTIAL | Drizzle schema · `withOrg` reads | Writes · two-org isolation suite · restore · migrate discipline |
-| Domains | PARTIAL | Read list ports | Mutations · adverse journeys · FFT beyond freeze = FROZEN |
-| API / contracts | PARTIAL | Docs + check tooling · platform `ActionResult` / `APIErrorBody` runtime · invite Action wired | Remaining handlers · OpenAPI Zod handoff · first write vertical (I2.3) · I2.4 honesty |
+| Data / tenancy | PARTIAL | Drizzle schema · `withOrg` reads · first hard-org write (`recordRbacAudit` / I2.3) | Broader mutation matrix · full two-org isolation suite · restore · migrate discipline |
+| Domains | PARTIAL | Read list ports · invite+audit mutation · feature → domain → db Vitest gate | Deeper Identity/Declarations mutations · adverse journeys · FFT beyond freeze = FROZEN |
+| API / contracts | ON DISK | Docs + check tooling · `ActionResult` / `APIErrorBody` · invite+audit · I2.2 boundary · api-now RHs · Zod→OpenAPI handoff · `check:openapi` disk honesty | Contract-only expansion · Fumadocs wire · broader HTTP families |
 | E2E | MISSING | Playwright config / root commands | Real `e2e/` + `testing/e2e` factories |
 | CI / Deploy | PARTIAL | Lint/typecheck/test · Actions→Vercel | Build depth · E2E · security · post-deploy smoke · rollback decision |
 | Security / obs / perf / a11y | MISSING / NOT EVIDENCED | Intent + minimal surfaces | Threat model · telemetry · budgets · matrix evidence |
@@ -523,6 +556,10 @@ Snapshot of what “ON DISK vs still missing” looks like as of 2026-07-15:
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 0.3.13 | 2026-07-15 | I2.4 closed: api-now health + declaration-draft RHs on disk · Zod SSOT OpenAPI handoff · `check:openapi` disk honesty; Phase I2 DONE; next Ops = I3.1. |
+| 0.3.12 | 2026-07-15 | I2.3 residual-risk disposition: browser invite E2E→I4; `clients.invite`→I3.1; Change Log history non-SSOT. |
+| 0.3.11 | 2026-07-15 | I2.3 closed: invite Action → Neon Auth + `recordRbacAudit` hard `organization_id` write; next Ops = I2.4. |
+| 0.3.10 | 2026-07-15 | I2.2 closed: feature → domain → `@afenda/db` Vitest gate; features/actions never import db; next Ops = I2.3. |
 | 0.3.9 | 2026-07-15 | I2.1 closed: platform `ActionResult` / `APIErrorBody` / `parseSchema` on Target paths; invite Action wired; next Ops = I2.2. |
 | 0.3.8 | 2026-07-15 | I1.4 closed: `AUTH_FORBIDDEN_PATH` · `requireRole` wrong-role → `/403` · shell layout wiring evidence; Phase I1 DONE; next Ops = I2.1. |
 | 0.3.7 | 2026-07-15 | I1.3 gap close: operator `/admin` invite → `inviteOrgMemberAction` / `inviteOrgMember`; local join route probe evidence. |

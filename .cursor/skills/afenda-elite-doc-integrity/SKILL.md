@@ -12,12 +12,12 @@ Announce: "I'm using afenda-elite-doc-integrity — validating documentation evi
 ```text
 LOAD: DOC-001…003 · authority-map.yaml · reference.md · checks.md
 ROOT: first change to the repository containing this skill, or pass --root <absolute-repository-path>
-RUN: node .cursor/skills/afenda-elite-doc-integrity/scripts/audit-docs.mjs --scope <scope> --format json
+RUN: node .cursor/skills/afenda-elite-doc-integrity/scripts/audit-docs.mjs --scope <dir-or-file.md> --format json
 NEVER: claim Pass/none/full coverage without validator evidence
 NEVER: reorder, move, reopen, or retire locked material without explicit approval
 NEVER: edit a closed controlled document unless the user or accountable owner explicitly reopens the named document or bounded scope
+NEVER: treat historical Change Log body rows as Living next-pointer authority (header Version ↔ latest row only)
 ```
-
 ## Owns
 
 ```text

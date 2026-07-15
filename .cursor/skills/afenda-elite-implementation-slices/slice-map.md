@@ -2,7 +2,7 @@
 
 Always also load: this skill’s [SKILL.md](SKILL.md).
 
-**Progress hint (checkout):** ARCH-028 S1–S8 + Checkpoints A–**G** **closed**. Current program: [GUIDE-018](../../../docs/guides/GUIDE-018-fullstack-e2e-integration-program.md) Phase **I2** — **I2.1** done; next **I2.2**. Evidence on disk wins over this hint.
+**Progress hint (checkout):** ARCH-028 S1–S8 + Checkpoints A–**G** **closed**. Current program: [GUIDE-018](../../../docs/guides/GUIDE-018-fullstack-e2e-integration-program.md) Phase **I2** — **I2.1–I2.4** done; next **I3.1**. Evidence on disk wins over this hint.
 
 ## Farm short names
 

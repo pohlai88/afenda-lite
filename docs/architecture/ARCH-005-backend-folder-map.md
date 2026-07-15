@@ -4,7 +4,7 @@
 | ----------------- | ------------ |
 | **ID**            | ARCH-005     |
 | **Category**      | Architecture |
-| **Version**       | 1.1.3        |
+| **Version**       | 1.1.4        |
 | **Status**        | Living     |
 | **Control State** | Closed       |
 | **Owner**         | Backend     |
@@ -82,6 +82,8 @@ Driving adapters stay thin and **outside** domain trees:
 | `modules/platform/schemas/action-result.ts` | Shared `ActionResult` / `actionOk` / `actionFail` |
 | `modules/platform/schemas/common.ts` | Shared Zod primitives (`parseSchema`, uuid, email, …) |
 | `modules/identity/schemas/invite-org-member.ts` | Org-member invite command Zod (Target on disk — I2.1) |
+| `modules/platform/domain/record-rbac-audit.ts` | First authenticated tenant write — `platform_rbac_audit` insert/delete with hard `organization_id` (I2.3) |
+| `modules/platform/domain/list-rbac-audit.ts` | Org-scoped RBAC audit reads via `withOrg` |
 | `modules/platform/db.ts`, `db-config.ts` | Pool / connection config (Node; pooler — [ARCH-010](ARCH-010-backend-conventions.md)) |
 | `modules/platform/routing/*` | Portal hrefs, public-link landing, surface registry |
 | `modules/platform/shell/*` | Shared shell types (`ShellModuleId`); resolve in portal-chrome feature home |
@@ -151,6 +153,7 @@ Pass 2 absorb: FE trust → `features/auth/`; brand/theme → portal-chrome feat
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 1.1.4 | 2026-07-15 | Bounded reopen (I2.3 audit repair): map `record-rbac-audit` + `list-rbac-audit` on Target. |
 | 1.1.3 | 2026-07-15 | Bounded reopen (I2.1 audit repair): map `action-result.ts` + `invite-org-member` schema on Target. |
 | 1.1.2 | 2026-07-15 | Playground runner path honesty — `features/playground/**` Absent (removed). |
 | 1.1.1 | 2026-07-14 | Home flattened to docs/architecture/ (trunks removed; pack reading order in README). |

@@ -71,6 +71,57 @@ export type ProvidersContract = {
 	sidebarDefaultOpen?: boolean;
 };
 
+type SidebarElementContract = {
+	children?: ReactNode;
+	className?: string;
+};
+
+export type SidebarProviderContract = SidebarElementContract & {
+	defaultOpen?: boolean;
+	open?: boolean;
+	onOpenChange?: (open: boolean) => void;
+};
+
+export type SidebarContract = SidebarElementContract & {
+	side?: "left" | "right";
+	variant?: "sidebar" | "floating" | "inset";
+	collapsible?: "offcanvas" | "icon" | "none";
+};
+
+export type SidebarTriggerContract = ButtonContract;
+export type SidebarRailContract = SidebarElementContract;
+export type SidebarInsetContract = SidebarElementContract;
+export type SidebarInputContract = InputContract;
+export type SidebarHeaderContract = SidebarElementContract;
+export type SidebarFooterContract = SidebarElementContract;
+export type SidebarSeparatorContract = SidebarElementContract;
+export type SidebarContentContract = SidebarElementContract;
+export type SidebarGroupContract = SidebarElementContract;
+export type SidebarGroupLabelContract = SidebarElementContract;
+export type SidebarGroupActionContract = SidebarElementContract;
+export type SidebarGroupContentContract = SidebarElementContract;
+export type SidebarMenuContract = SidebarElementContract;
+export type SidebarMenuItemContract = SidebarElementContract;
+export type SidebarMenuButtonContract = SidebarElementContract & {
+	isActive?: boolean;
+	tooltip?: string;
+	variant?: "default" | "outline";
+	size?: "default" | "sm" | "lg";
+};
+export type SidebarMenuActionContract = SidebarElementContract & {
+	showOnHover?: boolean;
+};
+export type SidebarMenuBadgeContract = SidebarElementContract;
+export type SidebarMenuSkeletonContract = SidebarElementContract & {
+	showIcon?: boolean;
+};
+export type SidebarMenuSubContract = SidebarElementContract;
+export type SidebarMenuSubItemContract = SidebarElementContract;
+export type SidebarMenuSubButtonContract = SidebarElementContract & {
+	isActive?: boolean;
+	size?: "sm" | "md";
+};
+
 /**
  * Boundary metadata (not UI, not business logic) — the single source of
  * truth both `packages/design-system/__tests__/architecture.test.ts` and
@@ -94,7 +145,31 @@ export const PLAYGROUND_INFRA_EXPORTS = [
 	"Button",
 	"buttonVariants",
 	"Input",
+	"Sidebar",
+	"SidebarContent",
+	"SidebarFooter",
+	"SidebarGroup",
+	"SidebarGroupAction",
+	"SidebarGroupContent",
+	"SidebarGroupLabel",
+	"SidebarHeader",
+	"SidebarInput",
+	"SidebarInset",
+	"SidebarMenu",
+	"SidebarMenuAction",
+	"SidebarMenuBadge",
+	"SidebarMenuButton",
+	"SidebarMenuItem",
+	"SidebarMenuSkeleton",
+	"SidebarMenuSub",
+	"SidebarMenuSubButton",
+	"SidebarMenuSubItem",
+	"SidebarProvider",
+	"SidebarRail",
+	"SidebarSeparator",
+	"SidebarTrigger",
 	"cn",
+	"useSidebar",
 ] as const;
 
 /**
