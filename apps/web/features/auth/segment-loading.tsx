@@ -1,3 +1,7 @@
+"use client";
+
+import { Spinner } from "@afenda/ui-system";
+
 type SegmentLoadingProps = {
 	className?: string;
 };
@@ -6,9 +10,11 @@ type SegmentLoadingProps = {
 export function SegmentLoading({ className }: SegmentLoadingProps) {
 	return (
 		<main
-			className={className ?? "flex min-h-dvh items-center justify-center p-8"}
+			className={
+				className ?? "flex min-h-dvh items-center justify-center gap-3 p-4"
+			}
 		>
-			<p className="text-sm text-muted-foreground">Loading…</p>
+			<Spinner size="md" variant="secondary" label="Loading" />
 		</main>
 	);
 }

@@ -1,5 +1,9 @@
 "use client";
 
+import { Button } from "@afenda/ui-system";
+
+import "../globals.css";
+
 export default function GlobalError({
 	error,
 	reset,
@@ -10,14 +14,16 @@ export default function GlobalError({
 	return (
 		<html lang="en">
 			<body>
-				<main className="flex min-h-dvh flex-col items-center justify-center gap-4 p-8">
-					<h1 className="text-2xl font-semibold">Something went wrong</h1>
-					<p className="max-w-md text-center text-sm text-neutral-600">
+				<main className="flex min-h-dvh flex-col items-center justify-center gap-4 p-4">
+					<h1 className="text-2xl font-semibold tracking-tight">
+						Something went wrong
+					</h1>
+					<p className="max-w-md text-center text-sm text-muted-foreground">
 						{error.message || "Unexpected application error."}
 					</p>
-					<button type="button" onClick={reset}>
+					<Button type="button" variant="outline" onClick={reset}>
 						Try again
-					</button>
+					</Button>
 				</main>
 			</body>
 		</html>

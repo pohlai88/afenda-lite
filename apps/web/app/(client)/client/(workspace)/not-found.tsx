@@ -1,3 +1,4 @@
+import { Button } from "@afenda/ui-system";
 import Link from "next/link";
 
 import { CLIENT_DASHBOARD_PATH } from "@/features/auth/client-paths";
@@ -8,12 +9,9 @@ export default function ClientWorkspaceNotFound() {
 		<PublicMessageShell
 			title="Not found"
 			footer={
-				<Link
-					href={CLIENT_DASHBOARD_PATH}
-					className="mt-2 rounded-md border border-border bg-background px-4 py-2 text-sm text-foreground"
-				>
-					Back to dashboard
-				</Link>
+				<Button asChild variant="outline" className="mt-2">
+					<Link href={CLIENT_DASHBOARD_PATH}>Back to dashboard</Link>
+				</Button>
 			}
 		>
 			<p className="text-sm">That client workspace page does not exist.</p>

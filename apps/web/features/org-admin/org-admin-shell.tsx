@@ -30,14 +30,14 @@ export async function OrgAdminShell() {
 	]);
 
 	return (
-		<main className="flex min-h-dvh flex-col gap-[var(--section-gap)] p-8">
+		<main className="flex min-h-dvh flex-col gap-[var(--section-gap)] p-6">
 			<header className="flex flex-col gap-2">
 				<h1 className="text-2xl font-semibold tracking-tight">
 					Operator admin
 				</h1>
-				<p className="text-muted-foreground">
+				<p className="text-sm text-muted-foreground">
 					Org-scoped RBAC shell for{" "}
-					<code className="text-foreground">{orgId}</code>.
+					<code className="font-mono text-foreground">{orgId}</code>.
 				</p>
 			</header>
 

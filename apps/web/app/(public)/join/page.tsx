@@ -1,4 +1,5 @@
 import { AUTH_LOGIN_PATH, JOIN_PATH } from "@afenda/auth";
+import { Button } from "@afenda/ui-system";
 import type { Metadata } from "next";
 import Link from "next/link";
 
@@ -25,12 +26,9 @@ export default async function JoinPage({ searchParams }: JoinPageProps) {
 			<PublicMessageShell
 				title="Invitation required"
 				footer={
-					<Link
-						href={AUTH_LOGIN_PATH}
-						className="mt-2 rounded-md border border-border bg-background px-4 py-2 text-sm text-foreground"
-					>
-						Sign in
-					</Link>
+					<Button asChild variant="outline" className="mt-2">
+						<Link href={AUTH_LOGIN_PATH}>Sign in</Link>
+					</Button>
 				}
 			>
 				<p>
