@@ -41,6 +41,7 @@ export * from "./components/ui/dropdown-menu";
 export * from "./components/ui/field";
 export * from "./components/ui/input";
 export * from "./components/ui/input-group";
+export * from "./components/ui/native-select";
 export * from "./components/ui/label";
 export * from "./components/ui/pagination";
 export * from "./components/ui/popover";
