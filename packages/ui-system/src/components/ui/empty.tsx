@@ -49,7 +49,7 @@ const Empty = React.forwardRef<HTMLDivElement, EmptyProps>(
 				)}
 
 				{title && (
-					<h3 className="mb-2 text-lg font-semibold text-foreground">
+					<h3 className="mb-2 text-lg font-medium text-foreground">
 						{title}
 					</h3>
 				)}
