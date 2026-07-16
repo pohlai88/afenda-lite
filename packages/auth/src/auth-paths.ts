@@ -5,6 +5,12 @@
 
 export const AUTH_BASE_PATH = "/auth";
 
+/**
+ * Same-origin Neon Auth BFF catch-all (`apps/web/app/api/auth/[...path]`).
+ * Browser client talks here; server proxies to `NEON_AUTH_BASE_URL` (ARCH-026 · N5).
+ */
+export const AUTH_API_BASE_PATH = "/api/auth" as const;
+
 /** Afenda overrides on better-auth-ui defaults (`sign-in` → `login`). */
 export const AFENDA_AUTH_VIEW_PATHS = {
 	ACCEPT_INVITATION: "accept-invitation",

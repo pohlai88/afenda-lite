@@ -3,6 +3,7 @@ import { createAuthClient } from "@neondatabase/auth/next";
 export type { AfendaAuthViewPath, PublicAuthPath } from "./auth-paths";
 export {
 	AFENDA_AUTH_VIEW_PATHS,
+	AUTH_API_BASE_PATH,
 	AUTH_BASE_PATH,
 	AUTH_FORBIDDEN_PATH,
 	AUTH_LOGIN_PATH,
@@ -13,8 +14,8 @@ export { JOIN_PATH } from "./join-paths";
 
 /**
  * Browser Neon Auth client for Neon Auth UI (`NeonAuthUIProvider`).
- * Talks to same-origin `/api/auth/*` (proxied by `createAuthApiHandlers`).
- * Import only from Client Components via `@afenda/auth/client` (ARCH-026).
+ * Talks to same-origin `${AUTH_API_BASE_PATH}/*` (proxied by `createAuthApiHandlers`).
+ * Import only from Client Components via `@afenda/auth/client` (ARCH-026 · N5).
  */
 
 export type BrowserAuthClient = ReturnType<typeof createAuthClient>;
@@ -26,4 +27,9 @@ export function getBrowserAuthClient(): BrowserAuthClient {
 		browserAuthClient = createAuthClient();
 	}
 	return browserAuthClient;
+}
+
+/** Clears the browser client singleton — test harness only. */
+export function resetBrowserAuthClientForTests(): void {
+	browserAuthClient = undefined;
 }

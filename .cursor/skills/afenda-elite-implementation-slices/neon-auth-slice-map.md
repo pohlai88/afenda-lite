@@ -32,7 +32,7 @@ Reuse [slice-map.md](slice-map.md) § Farm short names. Additional:
 | **N2** | Connection + migration discipline | Ops | router → slices → neon → modules | ARCH-025 · ARCH-023 | db package tests · migration inventory · no `0000_*` baseline on prod branch | APPROVED | — | human waiver Closed 2026-07-17 (do not reopen) |
 | **N3** | Backup / recovery evidence | Ops | router → slices → neon | ARCH-025 · RB-001 | Restore/RPO path rehearsed or BLOCKED named | APPROVED | 98% | independent audit 2026-07-17 |
 | **N4** | DB performance baseline | Ops | router → slices → neon | ARCH-023 · RB-001 | Pooler posture · CU evidence discipline | UNEVALUATED | — | — |
-| **N5** | Auth BFF + browser client | Ops | router → slices → nextjs → neon → neon-vendor | ARCH-026 | auth package tests · `/api/auth` path · web typecheck | UNEVALUATED | — | — |
+| **N5** | Auth BFF + browser client | Ops | router → slices → nextjs → neon → neon-vendor | ARCH-026 | auth package tests · `/api/auth` path · web typecheck | APPROVED | 100% | independent audit 2026-07-17 |
 | **N6** | Session contract | Ops | router → slices → nextjs → neon | ARCH-026 · ARCH-023 | session helpers · proxy gate tests · fail-closed | UNEVALUATED | — | — |
 | **N7** | Post-login routing | Ops | router → slices → nextjs → neon → scaffold | ARCH-026 | role home redirect · safe callback · signed-in `/` bounce · web build · browser proof | UNEVALUATED | — | — |
 | **N8** | Organization membership | Ops | router → slices → nextjs → neon → modules | ARCH-026 · ARCH-023 | invite/join path · Origin=`APP_URL` · tests | UNEVALUATED | — | — |
@@ -55,7 +55,7 @@ N1 → N2 → N3 → N4 → N5 → N6 → N7 → N8 → N9 → N10 → N11 → N
 
 Skip only with explicit user waiver **this turn**. One `N*` per chat. Do not start next until auditor APPROVED (or human waiver).
 
-**Program pointer:** last APPROVED = **N3** (independent audit 2026-07-17). Next = **N4** — start only in a fresh mission chat after human auth; do **not** sneak-start here.
+**Program pointer:** last APPROVED = **N5** (independent audit 2026-07-17). Next = **N6** — start only in a fresh mission chat after human auth; do **not** sneak-start here. (N4 remains UNEVALUATED on the serial map; N5 was closed under explicit human mission auth this turn.)
 
 ## Related I* (load hints only — not APPROVED transfer)
 

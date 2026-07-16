@@ -20,7 +20,8 @@
 	},
 	"dependencies": {
 		"@afenda/env": "workspace:*",
-		"@neondatabase/auth": "catalog:"
+		"@neondatabase/auth": "catalog:",
+		"server-only": "0.0.1"
 	},
 	"peerDependencies": {
 		"next": ">=16.0.0",
