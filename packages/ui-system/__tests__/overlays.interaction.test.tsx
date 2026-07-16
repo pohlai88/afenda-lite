@@ -23,6 +23,10 @@ import {
 	FormError,
 	FormField,
 	FormInput,
+	InputGroup,
+	InputGroupAddon,
+	InputGroupInput,
+	InputGroupText,
 	Spinner,
 	StatusBadge,
 	Dialog,
@@ -851,5 +855,20 @@ describe("WCAG 2.2 AA — Accessible Names and Descriptions", () => {
 
 		await user.click(screen.getByRole("radio", { name: "List view" }));
 		expect(onValueChange).toHaveBeenCalledWith("list");
+	});
+
+	it("InputGroup associates addons with the control", async () => {
+		render(
+			<InputGroup>
+				<InputGroupAddon>
+					<InputGroupText>@</InputGroupText>
+				</InputGroupAddon>
+				<InputGroupInput aria-label="Username" placeholder="name" />
+			</InputGroup>,
+		);
+
+		expect(screen.getByLabelText("Username")).toBeInTheDocument();
+		expect(screen.getByText("@")).toBeInTheDocument();
+		expect(screen.getAllByRole("group").length).toBeGreaterThanOrEqual(1);
 	});
 });
