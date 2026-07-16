@@ -11,8 +11,8 @@ const formErrorVariants = cva(
     variants: {
       variant: {
         default: "text-destructive",
-        warning: "text-amber-600 dark:text-amber-400",
-        info: "text-blue-600 dark:text-blue-400",
+        warning: "text-warning",
+        info: "text-info",
       },
       size: {
         sm: "text-xs",
