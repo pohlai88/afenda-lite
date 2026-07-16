@@ -661,4 +661,34 @@ describe("WCAG 2.2 AA — Accessible Names and Descriptions", () => {
 		await user.click(nextButton);
 		expect(mockPageChange).toHaveBeenCalledWith(2);
 	});
+
+	it("DataTable supports row selection with accessible controls", async () => {
+		const user = userEvent.setup();
+		const mockSelectionChange = vi.fn();
+		
+		const columns = [{ key: "name", title: "Name" }];
+		const data = [{ name: "Item 1" }, { name: "Item 2" }];
+
+		render(
+			<DataTable
+				columns={columns}
+				data={data}
+				selectable={true}
+				selectedRows={new Set([0])}
+				onSelectionChange={mockSelectionChange}
+			/>
+		);
+
+		// Should have select all checkbox
+		const selectAllCheckbox = screen.getByLabelText("Select all rows");
+		expect(selectAllCheckbox).toBeInTheDocument();
+		
+		// Should have individual row checkboxes
+		expect(screen.getByLabelText("Select row 1")).toBeInTheDocument();
+		expect(screen.getByLabelText("Select row 2")).toBeInTheDocument();
+		
+		// Test individual selection
+		await user.click(screen.getByLabelText("Select row 2"));
+		expect(mockSelectionChange).toHaveBeenCalled();
+	});
 });
