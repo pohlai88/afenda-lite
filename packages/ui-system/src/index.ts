@@ -18,6 +18,7 @@ export * from "./components/ui/status-badge";
 // Data display
 export * from "./components/ui/data-table";
 export * from "./components/ui/key-value";
+export * from "./components/ui/metric-card";
 // Empty states
 export * from "./components/ui/empty";
 // Navigation
