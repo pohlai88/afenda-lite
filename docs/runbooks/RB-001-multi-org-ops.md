@@ -4,7 +4,7 @@
 |-------|-------|
 | **ID** | RB-001 |
 | **Category** | Runbook |
-| **Version** | 1.3.1 |
+| **Version** | 1.3.2 |
 | **Status** | Living |
 | **Control State** | Closed |
 | **Owner** | Platform |
@@ -217,7 +217,7 @@ Typed CU/suspend/latency targets live in `@afenda/env` (`neon-performance-postur
 | Concurrency snapshot | `max_connections` + activity | `max_connections=901` · activity active=1 idle=1 (read-only) | **PASS** (evidence) |
 | `pg_stat_statements` | Enabled | extension present | **PASS** |
 | Slow-query top-N | Redacted mean/total ms only | Top means < 40 ms; statements are ops/DDL/health — no tenant literals committed | **PASS** (evidence) |
-| Org-index inventory (ERP roots) | Leading `organization_id` indexes | Declarations + FFT eight roots + platform role/assignment/audit — indexes present | **PASS** |
+| Org-index inventory (ERP roots) | Leading `organization_id` indexes on every public org-scoped table | **11/11** public tables with `organization_id`: declarations (surveys + client_* ×3) · FFT Living roots ×4 (`fft_event`, `fft_sales_member`, `fft_role`, `fft_role_assignment`) · platform role / assignment / audit — all indexed (MCP 2026-07-17) | **PASS** |
 | CU / connection / retention raise | Forbidden without evidence + auth | Unchanged this slice | **PASS** (discipline) |
 | Automated DB performance alerts | Hourly GitHub Actions monitor | Latency + aggregate connection pressure; deduplicated issue lifecycle | **READY** (activates on `main`) |
 
@@ -299,6 +299,7 @@ pnpm test:e2e:journey -- e2e/tenancy-isolation.spec.ts
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 1.3.2 | 2026-07-17 | N4 Path-to-100%: org-index evidence aligned to living public set (11/11) — removed inflated “FFT eight roots” claim. |
 | 1.3.1 | 2026-07-17 | N4 alert repair: hourly GitHub latency/connection-pressure monitor with deduplicated failure issue and recovery closure. |
 | 1.3.0 | 2026-07-17 | N4 DB performance baseline: CU/suspend/pooler/latency validate posture; redacted concurrency/slow-query/index evidence; alerts BLOCKED_EXTERNAL. |
 | 1.2.2 | 2026-07-17 | N3 audit Path-to-100%: five-day consecutive snapshot inventory recorded; Console toggle framed as periodic ASSUMPTION (schedule API absent). |

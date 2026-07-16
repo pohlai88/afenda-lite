@@ -4,7 +4,7 @@
 | ----------------- | ---------- |
 | **ID**            | DOC-002    |
 | **Category**      | Control    |
-| **Version**       | 4.130.0 |
+| **Version**       | 4.131.0 |
 | **Status**        | Living     |
 | **Control State** | Closed     |
 | **Owner**         | Platform   |
@@ -71,7 +71,7 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 | ID           | Category     | Title                                      | Version | Status | Owner    | Updated    |
 | ------------ | ------------ | ------------------------------------------ | ------- | ------ | -------- | ---------- |
 | DOC-001      | Control      | Documentation Control Standard             | 2.7.0   | Living | Platform | 2026-07-14 |
-| DOC-002      | Control      | Documentation Register                     | 4.130.0 | Living | Platform | 2026-07-17 |
+| DOC-002      | Control      | Documentation Register                     | 4.131.0 | Living | Platform | 2026-07-17 |
 | DOC-003      | Control      | Controlled Document Template               | 1.4.0   | Living | Platform | 2026-07-14 |
 | ARCH-029     | Architecture | Interface and API Architecture             | 1.2.7   | Living | Platform | 2026-07-14 |
 | ARCH-031     | Architecture | Technology Stack Catalogue                 | 1.3.17  | Living | Platform | 2026-07-16 |
@@ -154,7 +154,7 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 | GUIDE-004    | Guide        | Engineering Drift Register                 | 1.4.0   | Retired | Platform | 2026-07-14 |
 | GUIDE-006    | Guide        | Guides Index                               | 1.8.0   | Retired | Platform | 2026-07-14 |
 | MOD-002      | Module       | Modules Index                              | 4.0.2 | Living | Platform | 2026-07-14 |
-| RB-001       | Runbook      | Multi-org Ops                              | 1.3.1   | Living | Platform | 2026-07-17 |
+| RB-001       | Runbook      | Multi-org Ops                              | 1.3.2   | Living | Platform | 2026-07-17 |
 | RB-005       | Runbook      | Post-lock Coding Cheat Sheet               | 1.1.0   | Living | Platform | 2026-07-14 |
 
 ---
@@ -171,6 +171,7 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 
 | Version | Date       | Summary                                                                                                                                         |
 | ------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| 4.131.0 | 2026-07-17 | N4 Path-to-100%: RB-001→1.3.2 (org-index inventory = living 11/11 public tables); DOC-002 self-row synced. |
 | 4.130.0 | 2026-07-17 | Housekeeping graph honesty: ARCH-024→1.7.2 (`auth`→`env`; emails not a current web runtime dep); DOC-002 self-row synced. |
 | 4.129.0 | 2026-07-17 | Housekeeping drift align: ARCH-024→1.7.1 · ARCH-028→1.5.4 · GUIDE-018→0.3.14 after Slice D removed orphan `list-surveys.ts`; DOC-002 self-row synced. |
 | 4.128.0 | 2026-07-17 | ERP token families Living docs: ADR-010→1.1.0 · ARCH-024→1.7.0 (19 shipped families cited to `tokens.css`); DOC-002 self-row synced. |
