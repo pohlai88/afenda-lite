@@ -2,7 +2,7 @@
 
 **Borrow:** `test-driven-development` (proof) · ecosystem `deliver-acceptance-criteria` (observable Given/When/Then — folded here, not installed).
 
-**Bar:** Module Enterprise Readiness requires FFT-MOD-009 evidence satisfying [MOD-002](../../../docs/modules/MOD-002-modules-index.md) claim rules. Program MVP wiring alone ≠ Claimable ([FFT-MOD-010](../../../docs/modules/feed-farm-trade/FFT-MOD-010-module-docs-index.md)).
+**Bar:** Module Enterprise Readiness requires FFT-MOD-009 evidence satisfying [MOD-002](../../../docs/modules/MOD-002-modules-index.md) claim rules. Program wiring alone ≠ Claimable ([FFT-MOD-010](../../../docs/modules/feed-farm-trade/FFT-MOD-010-module-docs-index.md)).
 
 **Enterprise requirements + evidence:** owning ACs in [FFT-MOD-001…008](../../../docs/modules/feed-farm-trade/) · ledger [FFT-MOD-009](../../../docs/modules/feed-farm-trade/FFT-MOD-009-verification.md). GUIDE-016 is Retired (archive only).
 
@@ -28,12 +28,11 @@ npm run test:e2e:smoke    # trade ingress / auth
 npm run test:e2e:journey  # full cycle when creds available — e2e/trade-fft.spec.ts
 
 # Residue guards
-rg "FftShell|locale-switcher" features/fft app/fft
+rg "FftShell|locale-switcher" apps/web/features/fft apps/web
 
-# UI registry Layer A + Layer B (inventory + DNA / surfaces)
-npm run check:fft-ui-registry
-npm run check:fft-ui-registry:expect-fail   # intentional red demo
-npm run test:unit -- features/fft/ui-registry
+# UI registry — HITL SSOT only (package fft-ui gates removed 2026-07-17)
+# Verify: Test-Path .cursor/skills/feed-farm-trade/ui-registry.json
+# Do not run removed check:fft-ui-registry* / generate:fft-ui-registry-admincn
 ```
 
 Env: ARCH-027 — `@afenda/env` + `.env.local` (compose retired) before E2E when the app exists. Identities: see `AGENTS.md` / RUNTIME — do not conflate `SHARED_ADMIN_EMAIL` with sales allowlist.

@@ -70,8 +70,8 @@ Do **not** recreate `lib/` or recover Collapse roots. New UI → Target `apps/we
 
 ## Optional next (needs approve)
 
-- [x] ~~Refresh `docs/architecture/reliance-mapping.snapshot.json`~~ — **retired 2026-07-17** (Collapse `components-V2` residue; exporters `export:reliance-mapping` / `check:reliance-mapping-drift` remain collapse-script inventory only). Do not regenerate from git history.
-- [ ] `docs/architecture/reliance-graph.snapshot.json` / route-coverage refresh — only after an Approved slice restores live exporters (`export:reliance-graph` · `export:route-coverage`); until then treat related `check:reliance-*` / `check:route-coverage-drift` as Unevaluated inventory
+- [x] ~~Refresh `docs/architecture/reliance-mapping.snapshot.json`~~ — **retired 2026-07-17** (Collapse `components-V2` residue). Root aliases `export:reliance-mapping` / `check:reliance-mapping-drift` **removed** the same day.
+- [ ] `docs/architecture/reliance-graph.snapshot.json` / route-coverage refresh — only after an Approved slice restores live exporters (`export:reliance-graph` · `export:route-coverage`); until then `check:reliance-graph-drift` / `check:reliance-coverage` / `check:route-coverage-drift` remain Unevaluated inventory
 - Product phases (`/client` workspace restore, FFT P3 flags, SaaS billing/2FA) stay out of this lane
 
 ## Closed this pass (2026-07-12)

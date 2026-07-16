@@ -192,7 +192,7 @@ DO:
 2. npm run test:unit -- modules/fft (+ focused P3 action tests).
 3. Assert each P3 write returns documented disabled/unavailable.
 4. Spot-check P1 event/order/allocation/transfer still work.
-5. If FE touched: npm run check:fft-ui-registry.
+5. If FE touched: HITL ui-registry.json + disk verify Living FFT paths (package check:fft-ui-registry removed).
 6. Record AC-OPS-01 matrix evidence. No Vercel sync.
 OUT: Pass/fail matrix by flag × action.
 ```

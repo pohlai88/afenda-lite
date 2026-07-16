@@ -2,7 +2,7 @@
 
 **Machine SSOT:** [`ui-registry.json`](ui-registry.json) (skill-local; present on disk)  
 **Shared audit script:** `scripts/lib/fft-ui-registry-inventory.mjs` — **absent** (`Test-Path` False). Do not invent or recover from Collapse git.  
-**Generator / enforcer scripts:** root `pnpm` names `generate:fft-ui-registry-admincn`, `check:fft-ui-registry`, `check:fft-ui-registry:expect-fail` route through `scripts/collapse-script-unavailable.mjs` — **inventory only, not live controls**, until an Approved forward slice replaces them.  
+**Root `pnpm` fft-ui gates:** **removed 2026-07-17** (`check:fft-ui-registry`, `check:fft-ui-registry:expect-fail`, `generate:fft-ui-registry-admincn`). Do not re-add collapse-script aliases for them. HITL + disk verify only until an Approved slice ships real Living enforcers.  
 **Vitest enforcer:** `apps/web/features/fft/ui-registry.test.ts` — **absent** on disk (Living FFT feature files today: `fft-events-panel.tsx`, `fft-events-shell.tsx` under `apps/web/features/fft/`).  
 **AdminCN authority:** [ARCH-018](../../../docs/architecture/ARCH-018-admincn-customization.md) (the `admincn-customization` skill was retired 2026-07-16 — [ADR-010](../../../docs/architecture/adr/ADR-010-afenda-ui-system-flat-barrel.md)); UI primitives via the `@afenda/ui-system` barrel.
 
@@ -14,7 +14,7 @@
 | **B — DNA** | Product `dna` + `requiredBlockId` + `surfaces[]` pattern contracts | Code matches required Studio/AdminCN patterns |
 | **C — Visual QA** | Human / HITL screenshots | Looks right (not owned by Vitest alone) |
 
-Layer A green ≠ DNA compliant. Layer B green ≠ screenshot parity. Live automated Layer A/B gates are **unavailable** while collapse-script aliases own the check/generate names.
+Layer A green ≠ DNA compliant. Layer B green ≠ screenshot parity. Automated Layer A/B package scripts are **removed** — do not treat historical `check:fft-ui-registry` names as live.
 
 ## ID namespaces (compulsory)
 
@@ -42,19 +42,17 @@ On product rows that claim AdminCN DNA:
 
 Example: `FFT-UI-EVT-LIST` requires TanStack (`useReactTable`, `flexRender`, …), bans `FFT_NATIVE_` / native `<select` / hand `toggleSort`, and must declare `@fft-dna ACN-BLK-DATATABLES-DATATABLE-USER`.
 
-**Expect-fail gate:** `pnpm check:fft-ui-registry:expect-fail` is collapse-unavailable inventory until a forward slice restores a real enforcer.
-
 ## Rules (agents) — compulsory
 
 1. Compose **approved** `FFT-UI-*` and allowlisted primitives from `@afenda/ui-system` only.
 2. Need a new product file / new `FFT-UI-*` → **STOP and ask a human**.
 3. Need to adapt an `ACN-BLK-*` into FFT → **STOP and ask** for a new product `FFT-UI-*` that cites `requiredBlockId` + `studioSource` + `dna`.
-4. **Do not edit** `ui-registry.json` solely to green a missing Vitest / collapse-unavailable check (human HITL only).
+4. **Do not edit** `ui-registry.json` solely to claim a green gate (human HITL only; package fft-ui checks removed).
 5. **Do not** import Collapse `@/components-V2/platform-views/**` or recreate those trees from git.
 6. No hand-written visual CSS / `style=` / hex under `apps/web/features/fft`.
 7. Do not replace Neon Auth with AdminCN auth demo blocks (`ACN-BLK-PAGES-AUTH-*`).
 8. Prefer remediating product code when Layer B fails — do not weaken `dna` / `surfaces` to pass.
-9. Do not treat collapse-script `pnpm` names as live proof of registry health.
+9. Do not reintroduce root `pnpm` `check:fft-ui-registry*` / `generate:fft-ui-registry-admincn` aliases without an Approved Living implementation.
 
 ## Status values
 

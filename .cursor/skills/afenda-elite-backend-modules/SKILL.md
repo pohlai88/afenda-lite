@@ -147,5 +147,5 @@ External/mobile REST?  → Route Handler per docs/api (contract-only until neede
 - [ ] Route Handlers match api-now (four trees only unless catalog updated)
 - [ ] No `from "@/modules/declarations` inside `modules/fft` (domain or schemas)
 - [ ] Shared Zod / `parseSchema` imported from `@/modules/platform/schemas/common` at Action edge
-- [ ] `npm run check:fft-ui-registry` OK when touching FFT UI paths
+- [ ] FFT UI: HITL `ui-registry.json` + Living `apps/web/features/fft` paths when touching FFT UI (package `check:fft-ui-registry*` removed)
 - [ ] Zod at adapter edge; domain has no duplicate DTO Zod for the same input

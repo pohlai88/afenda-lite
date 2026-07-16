@@ -172,7 +172,7 @@ READ: verify.md commands section + testing/README.md identities
 DO:
 1. Env: ARCH-027 — @afenda/env + .env.local (compose retired) before E2E when app exists
 2. npm run test:unit -- modules/fft (Target-gated; BLOCKED on docs-first)
-3. npm run check:fft-ui-registry && npm run test:unit -- features/fft/ui-registry (Target-gated)
+3. HITL ui-registry.json + Test-Path Living FFT feature paths (package fft-ui gates removed)
 4. Optionally: npm run test:e2e:smoke / npm run test:e2e:journey (cite @smoke / @journey)
 5. Do not conflate SHARED_ADMIN_EMAIL with sales allowlist. Do not reopen 2B–2D.
 OUT: Output contract. Pass/fail table. No feature work.
@@ -297,7 +297,7 @@ READ: ui-registry.md + ui-registry.json + docs/architecture/ARCH-018-admincn-cus
 DO:
 1. Compose only approved FFT-UI-* and allowlisted ACN-UI-*; ACN-BLK-* requires HITL product wrap.
 2. Do not edit ui-registry.json (human HITL only). Do not invent ACN-* / FFT-UI-* IDs.
-3. Run: npm run check:fft-ui-registry && npm run test:unit -- features/fft/ui-registry
+3. HITL only: do not invent registry IDs; verify Living apps/web/features/fft paths on disk (fft-ui package gates removed)
 4. SHADCN_STUDIO_ONLY: no hand-written visual CSS; no platform-views imports from features/fft product screens without HITL wrap.
 5. Layer A ≠ Layer B ≠ visual QA. Layer B fail → remediate product/route code; do not dilute dna.
 OUT: Output contract. Explicit: no prod FFT_* flag changes.
@@ -347,7 +347,7 @@ HARD RULES:
 5. Do not start P3 prod enable or 2D-3 from a P1/P2 command.
 6. Do not claim done without Evidence block matching verify.md.
 7. If unsure: STOP and ask — do not invent F-*/AC-*/P2-AC-* IDs, permission codes, or FFT-UI/FFT-QA ids.
-8. Do not edit ui-registry.json to green Vitest / check:fft-ui-registry — human HITL only.
+8. Do not edit ui-registry.json to claim a green gate — human HITL only (package check:fft-ui-registry* removed).
 9. Do not conflate SHARED_ADMIN_EMAIL with fft_sales_member allowlist.
 ```
 

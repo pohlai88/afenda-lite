@@ -3,15 +3,14 @@
   "updated": "2026-07-11",
   "notes": [
     "Human-only edits for approved/forbidden rows and dna/surfaces contracts.",
-    "Agents must not invent reusableIds or self-approve to green Vitest/check:fft-ui-registry.",
+    "Agents must not invent reusableIds or self-approve rows.",
     "Layer A: inventory (primitives/blocks/products ↔ disk).",
     "Layer B: product dna.requiredPatterns/bannedPatterns + surfaces[]; requiredBlockId must match studioSource block path.",
-    "ACN-UI-* primitives: import when on primitiveAllowlist.",
-    "ACN-BLK-* blocks: catalog DNA — do not import platform-views from features/fft without HITL wrap via product FFT-UI-* HITL.",
+    "ACN-UI-* primitives: import when on primitiveAllowlist via @afenda/ui-system.",
+    "ACN-BLK-* blocks: catalog DNA — do not import Collapse platform-views; wrap via product FFT-UI-* HITL.",
     "Registry pass ≠ visual QA; DNA pass ≠ screenshot parity.",
-    "FFT_NATIVE_* allowed only where a product row does not ban it (forms tech-debt P2-AC-05).",
-    "Regenerate AdminCN catalog: node scripts/generate-fft-ui-registry-admincn.mjs (preserves components[] + surfaces[]).",
-    "Audit: npm run check:fft-ui-registry (complements Vitest)."
+    "Package check:fft-ui-registry* / generate:fft-ui-registry-admincn removed 2026-07-17 — HITL + disk verify only.",
+    "Do not invent scripts/lib/fft-ui-registry-inventory.mjs from git history."
   ],
   "primitiveAllowlist": [
     "accordion",

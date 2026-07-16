@@ -38,8 +38,9 @@ Available `pnpm` checks and their typical exit codes:
 | `check:brand-icons` | Gated | Yes | → `collapse-script-unavailable` |
 | `check:import-boundaries` | Gated | Yes | → `collapse-script-unavailable` |
 | `check:ui-sync` | Gated | Yes | → `collapse-script-unavailable` |
-| `check:fft-ui-registry*` | Gated | Yes | → `collapse-script-unavailable` |
-| `check:reliance-*` | Gated | Yes | → `collapse-script-unavailable` |
+| `check:fft-ui-registry*` | Removed | — | Removed 2026-07-17 from root `package.json` (were collapse aliases only) |
+| `check:reliance-graph-drift` · `check:reliance-coverage` · `export:reliance-graph` | Gated | Yes | → `collapse-script-unavailable` (Unevaluated) |
+| `check:reliance-mapping-drift` · `export:reliance-mapping` | Removed | — | Removed 2026-07-17 after `reliance-mapping.snapshot.json` retire |
 | `check:route-coverage-drift` | Gated | Yes | → `collapse-script-unavailable` |
 
 **Gated script rule:** Scripts that route through `collapse-script-unavailable.mjs` are inventory, not live controls. They exit non-zero and report as **Unevaluated**, pushing coverage to **Incomplete**.

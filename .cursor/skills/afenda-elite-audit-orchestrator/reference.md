@@ -114,7 +114,9 @@ Coverage Status: Complete | Incomplete
 
 ### V2 — Narrow shared scripts
 - `check:control-traceability` — only if v1 repeatedly finds the same cross-farm gap
-- PLAN-001 doc class (DOC-001 approval required)
+### PLAN-001 doc class (DOC-001 approval required)
+- Formal controlled plan documents under `docs/` — backlog only
+- Until then: advisory YAML keys `Authority` / `Produces` / `Verification` on `.cursor/plans/*.plan.md` close “plan omits” Observations without claiming Tier A
 - Bundled validator scripts (only for proven, stable, cross-farm rules)
 
 Each addition requires proven gap from orchestrator deployment + no existing owner.

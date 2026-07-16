@@ -40,7 +40,7 @@ External ecosystem (`deliver-acceptance-criteria`) patterns are **folded into** 
 | Worked example | [example-slice.md](example-slice.md) |
 | Completeness matrix | [completeness.md](completeness.md) |
 | Copy-paste command sheet | [command-sheet.md](command-sheet.md) (post-MVP A–J) · [command-sheet-V2.md](command-sheet-V2.md) (P3 ops series) |
-| UI registry (HITL IDs) | [ui-registry.md](ui-registry.md) · [ui-registry.json](ui-registry.json) — Layer A inventory + Layer B DNA; `npm run check:fft-ui-registry` |
+| UI registry (HITL IDs) | [ui-registry.md](ui-registry.md) · [ui-registry.json](ui-registry.json) — Layer A inventory + Layer B DNA; package `check:fft-ui-registry*` **removed** — HITL + disk verify only |
 | Ops flags | [docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md](../../../docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md) |
 | Module docs index | [FFT-MOD-010](../../../docs/modules/feed-farm-trade/FFT-MOD-010-module-docs-index.md) |
 | 10-MOD guideline | [MOD-002](../../../docs/modules/MOD-002-modules-index.md) |

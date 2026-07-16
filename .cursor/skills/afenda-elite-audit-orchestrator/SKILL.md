@@ -110,13 +110,25 @@ Severity scale:
 
 ## Plan traceability checks (Tier C — non-authoritative)
 
-Current `.cursor/plans/*.plan.md` frontmatter is `name / overview / todos / isProject` — it has **no** `Authority:/Produces:/Verification:` fields. So traceability findings are **advisory** (Observation / Minor), never Major, until the `PLAN-001` doc class (backlog) exists.
+Current Cursor `.cursor/plans/*.plan.md` frontmatter defaults to `name / overview / todos / isProject`. Those fields alone do **not** bind Tier A.
 
-When a plan is in scope, audit:
+**Resolve “plan omits Authority” (advisory convention — not PLAN-001 yet):**
 
-- Whether the plan cites controlled IDs (ADR/ARCH/API/MOD/DOC) anywhere — absence is an Observation, not a failure
-- `todos` marked `completed` are supported by Tier A/B evidence — **not** by todo status alone (the core check)
-- Any commands the plan names map to real `package.json` scripts (flag `collapse-script-unavailable` as **Unevaluated**, not pass)
+Add YAML frontmatter keys (string values OK):
+
+```yaml
+Authority: "<DOC/ARCH/ADR/MOD IDs + AGENTS/farm companions this plan obeys>"
+Produces: "<artifacts / paths this plan changes>"
+Verification: "<exact live pnpm / Test-Path / git ls-files commands>"
+```
+
+| Finding without keys | Severity | Action |
+|----------------------|----------|--------|
+| No Authority/Produces/Verification | Observation / Minor | Add keys as above — **not** a Major gap |
+| Keys present but collapse-script-only Verification | Unevaluated | Prefer live checks; gated scripts stay Incomplete coverage |
+| `todos: completed` without Tier B evidence | Unsupported claim | Re-run Verification commands |
+
+Until DOC-001 approves a `PLAN-001` class, absence of keys stays advisory. Presence of keys closes the omit for that plan without inventing controlled-doc authority.
 
 ## Negative controls (avoid false positives — mandatory)
 
