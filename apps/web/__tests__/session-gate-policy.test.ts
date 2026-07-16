@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 import { describe, expect, it } from "vitest";
@@ -10,6 +10,7 @@ function req(partial: {
 	pathname: string;
 	search?: Record<string, string>;
 	headers?: string[];
+	playgroundEnabled?: boolean;
 }) {
 	const searchParams = new URLSearchParams(partial.search);
 	const headerSet = new Set(
@@ -21,16 +22,27 @@ function req(partial: {
 		pathname: partial.pathname,
 		searchParams,
 		hasHeader: (name: string) => headerSet.has(name.toLowerCase()),
+		playgroundEnabled: partial.playgroundEnabled,
 	};
 }
 
+function readProxySource(): string {
+	return readFileSync(resolve(import.meta.dirname, "../proxy.ts"), "utf8");
+}
+
 describe("shouldBypassSessionGate", () => {
-	it("does not bypass ordinary protected GET navigations", () => {
-		expect(shouldBypassSessionGate(req({ pathname: "/fft" }))).toBe(false);
-		expect(shouldBypassSessionGate(req({ pathname: "/admin" }))).toBe(false);
-		expect(
-			shouldBypassSessionGate(req({ pathname: "/client/dashboard" })),
-		).toBe(false);
+	it("does not bypass ordinary protected GET navigations (fail closed)", () => {
+		for (const pathname of [
+			"/fft",
+			"/fft/events",
+			"/admin",
+			"/admin/users",
+			"/client/dashboard",
+			"/dashboard",
+			"/account",
+		]) {
+			expect(shouldBypassSessionGate(req({ pathname }))).toBe(false);
+		}
 	});
 
 	it("bypasses Server Actions only when method is POST with next-action", () => {
@@ -101,12 +113,54 @@ describe("shouldBypassSessionGate", () => {
 	});
 
 	it("proxy reads PLAYGROUND_ENABLED only via @afenda/env", () => {
-		const source = readFileSync(
-			resolve(import.meta.dirname, "../proxy.ts"),
-			"utf8",
-		);
+		const source = readProxySource();
 		expect(source).toContain('from "@afenda/env"');
 		expect(source).toContain("env.PLAYGROUND_ENABLED");
 		expect(source).not.toContain("process.env.PLAYGROUND_ENABLED");
 	});
 });
+
+describe("N6 proxy session gate (disk)", () => {
+	it("wires createSessionProxy and only bypasses via shouldBypassSessionGate", () => {
+		const source = readProxySource();
+		expect(source).toContain('from "@afenda/auth"');
+		expect(source).toContain("createSessionProxy");
+		expect(source).toContain("shouldBypassSessionGate");
+		expect(source).toContain("return runSessionGate(request)");
+	});
+
+	it("matcher covers protected shells and excludes public auth/join", () => {
+		const source = readProxySource();
+		for (const route of [
+			'"/account/:path*"',
+			'"/dashboard/:path*"',
+			'"/admin/:path*"',
+			'"/client/:path*"',
+			'"/fft/:path*"',
+		]) {
+			expect(source).toContain(route);
+		}
+		expect(source).not.toMatch(/matcher:\s*\[[^\]]*["']\/auth/s);
+		expect(source).not.toMatch(/matcher:\s*\[[^\]]*["']\/join/s);
+		expect(source).not.toContain('"/auth');
+		expect(source).not.toContain('"/join');
+	});
+
+	it("public Neon Auth UI and join pages exist and stay outside the matcher", () => {
+		const webRoot = resolve(import.meta.dirname, "..");
+		expect(
+			existsSync(resolve(webRoot, "app/(public)/auth/[path]/page.tsx")),
+		).toBe(true);
+		expect(existsSync(resolve(webRoot, "app/(public)/join/page.tsx"))).toBe(
+			true,
+		);
+
+		const source = readProxySource();
+		expect(source).not.toContain('"/auth');
+		expect(source).not.toContain('"/join');
+		expect(source).not.toContain("'/auth");
+		expect(source).not.toContain("'/join");
+	});
+});
+
+

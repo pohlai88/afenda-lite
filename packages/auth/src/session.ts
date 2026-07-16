@@ -81,7 +81,15 @@ async function loadApiSession(): Promise<
 		});
 
 	const neonRole = memberRole?.role;
-	if (roleError || !neonRole) {
+	if (roleError || typeof neonRole !== "string" || neonRole.length === 0) {
+		return { ok: false, reason: "missing_role" };
+	}
+
+	let role: Role;
+	try {
+		role = toSessionRole(neonRole);
+	} catch {
+		// Unknown Neon membership labels fail closed — never invent a shell role.
 		return { ok: false, reason: "missing_role" };
 	}
 
@@ -90,7 +98,7 @@ async function loadApiSession(): Promise<
 		session: {
 			userId: data.user.id,
 			orgId,
-			role: toSessionRole(neonRole),
+			role,
 			email,
 		},
 	};
