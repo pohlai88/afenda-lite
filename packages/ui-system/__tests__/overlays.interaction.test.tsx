@@ -635,4 +635,30 @@ describe("WCAG 2.2 AA — Accessible Names and Descriptions", () => {
 		);
 		expect(screen.getByRole("region", { name: "No users found" })).toBeInTheDocument();
 	});
+
+	it("DataTable shows pagination when enabled", async () => {
+		const user = userEvent.setup();
+		const mockPageChange = vi.fn();
+		
+		const columns = [{ key: "name", title: "Name" }];
+		const data = [{ name: "Test" }];
+
+		render(
+			<DataTable
+				columns={columns}
+				data={data}
+				showPagination={true}
+				currentPage={1}
+				totalPages={3}
+				onPageChange={mockPageChange}
+			/>
+		);
+
+		const navigation = screen.getByRole("navigation");
+		expect(navigation).toBeInTheDocument();
+		
+		const nextButton = screen.getByText("Next");
+		await user.click(nextButton);
+		expect(mockPageChange).toHaveBeenCalledWith(2);
+	});
 });

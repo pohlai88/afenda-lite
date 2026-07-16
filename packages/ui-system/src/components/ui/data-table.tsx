@@ -14,6 +14,14 @@ import {
   TableHeader, 
   TableRow 
 } from "./table";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "./pagination";
 
 export interface DataTableColumn<T> {
   key: keyof T;
@@ -33,6 +41,10 @@ export interface DataTableProps<T> {
   sortBy?: keyof T;
   sortDirection?: "asc" | "desc";
   onSort?: (key: keyof T, direction: "asc" | "desc") => void;
+  currentPage?: number;
+  totalPages?: number;
+  onPageChange?: (page: number) => void;
+  showPagination?: boolean;
   className?: string;
 }
 
@@ -46,6 +58,10 @@ function DataTable<T extends Record<string, any>>({
   sortBy,
   sortDirection,
   onSort,
+  currentPage = 1,
+  totalPages = 1,
+  onPageChange,
+  showPagination = false,
   className,
 }: DataTableProps<T>) {
   const handleSort = (columnKey: keyof T) => {
@@ -88,48 +104,95 @@ function DataTable<T extends Record<string, any>>({
     );
   }
 
+  const renderPagination = () => {
+    if (!showPagination || !onPageChange || totalPages <= 1) return null;
+
+    return (
+      <div className="flex items-center justify-center py-4">
+        <Pagination>
+          <PaginationContent>
+            <PaginationItem>
+              <PaginationPrevious 
+                onClick={() => currentPage > 1 && onPageChange(currentPage - 1)}
+                className={currentPage <= 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                aria-disabled={currentPage <= 1}
+              />
+            </PaginationItem>
+            
+            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+              const pageNumber = i + 1;
+              return (
+                <PaginationItem key={pageNumber}>
+                  <PaginationLink
+                    onClick={() => onPageChange(pageNumber)}
+                    isActive={currentPage === pageNumber}
+                    className="cursor-pointer"
+                    aria-label={`Go to page ${pageNumber}`}
+                  >
+                    {pageNumber}
+                  </PaginationLink>
+                </PaginationItem>
+              );
+            })}
+            
+            <PaginationItem>
+              <PaginationNext 
+                onClick={() => currentPage < totalPages && onPageChange(currentPage + 1)}
+                className={currentPage >= totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                aria-disabled={currentPage >= totalPages}
+              />
+            </PaginationItem>
+          </PaginationContent>
+        </Pagination>
+      </div>
+    );
+  };
+
   return (
-    <Table className={className}>
-      <TableHeader>
-        <TableRow>
-          {columns.map((column) => (
-            <TableHead 
-              key={String(column.key)}
-              style={{ width: column.width }}
-            >
-              {column.sortable && onSort ? (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-auto p-0 font-medium hover:bg-transparent"
-                  onClick={() => handleSort(column.key)}
-                  aria-label={`Sort by ${column.title}`}
-                >
-                  {column.title}
-                  {getSortIcon(column.key)}
-                </Button>
-              ) : (
-                column.title
-              )}
-            </TableHead>
-          ))}
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {data.map((row, index) => (
-          <TableRow key={index}>
+    <div className={className}>
+      <Table>
+        <TableHeader>
+          <TableRow>
             {columns.map((column) => (
-              <TableCell key={String(column.key)}>
-                {column.render 
-                  ? column.render(row[column.key], row, index)
-                  : String(row[column.key] ?? "")
-                }
-              </TableCell>
+              <TableHead 
+                key={String(column.key)}
+                style={{ width: column.width }}
+              >
+                {column.sortable && onSort ? (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-auto p-0 font-medium hover:bg-transparent"
+                    onClick={() => handleSort(column.key)}
+                    aria-label={`Sort by ${column.title}`}
+                  >
+                    {column.title}
+                    {getSortIcon(column.key)}
+                  </Button>
+                ) : (
+                  column.title
+                )}
+              </TableHead>
             ))}
           </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+        </TableHeader>
+        <TableBody>
+          {data.map((row, index) => (
+            <TableRow key={index}>
+              {columns.map((column) => (
+                <TableCell key={String(column.key)}>
+                  {column.render 
+                    ? column.render(row[column.key], row, index)
+                    : String(row[column.key] ?? "")
+                  }
+                </TableCell>
+              ))}
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+      {renderPagination()}
+    </div>
   );
 }
 
