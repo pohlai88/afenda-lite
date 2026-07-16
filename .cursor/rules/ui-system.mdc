@@ -33,6 +33,12 @@ The retired `@afenda/ui` playground gateway, `packages/design-system`, and UI-pi
 - Do not add raw color literals (`#…`, `rgb(…)`, `hsl(…)`) in component source outside the token file.
 - Tailwind theme-scale utilities for spacing/dimensions (`h-9`, `px-3`, `gap-2`) are allowed.
 
+## Visual lock (consistency)
+
+Product UI must **match** Afenda tokens and type/spacing tables — not freestyle aesthetics. Locked hierarchy (font, radius, density, type scale, semantic color, anti-handroll) lives in [`.cursor/skills/afenda-elite-ui-compose/SKILL.md`](../skills/afenda-elite-ui-compose/SKILL.md); this rule does not duplicate those numbers.
+
+**Done means gates green:** `pnpm check:ui-system` (includes `apps/web/__tests__/compose-redflags.test.ts` + `@afenda/ui-system` consistency). Advisory greps are not enough.
+
 ## RSC boundary
 
 - Root `src/index.ts` carries **no** `"use client"`.
