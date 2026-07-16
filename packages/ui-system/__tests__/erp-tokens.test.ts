@@ -146,20 +146,16 @@ describe("@afenda/ui-system — ERP token families (UI-CAP-05)", () => {
 	const rootBlock = blockBetween(tokens, ":root {", "\n.dark {");
 	const darkBlock = blockBetween(tokens, ".dark {", "\n}");
 
-	it.each(promoted)(
-		"defines --%s in :root and .dark with expected values",
-		(name) => {
-			expect(declaration(rootBlock, name)).toBe(lightValues[name]);
-			expect(declaration(darkBlock, name)).toBe(darkValues[name]);
-		},
-	);
+	it.each(
+		promoted,
+	)("defines --%s in :root and .dark with expected values", (name) => {
+		expect(declaration(rootBlock, name)).toBe(lightValues[name]);
+		expect(declaration(darkBlock, name)).toBe(darkValues[name]);
+	});
 
-	it.each(promoted)(
-		"maps --color-%s to var(--%s) in @theme inline",
-		(name) => {
-			expect(declaration(themeBlock, `color-${name}`)).toBe(`var(--${name})`);
-		},
-	);
+	it.each(promoted)("maps --color-%s to var(--%s) in @theme inline", (name) => {
+		expect(declaration(themeBlock, `color-${name}`)).toBe(`var(--${name})`);
+	});
 
 	it("does not ship removed label ladder slot --foreground-quaternary", () => {
 		expect(tokens).not.toMatch(/--foreground-quaternary\b/);

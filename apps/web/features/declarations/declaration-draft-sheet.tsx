@@ -18,8 +18,8 @@ import { useActionState } from "react";
 
 import {
 	loadDeclarationDraftAction,
-	saveDeclarationDraftAction,
 	type SaveDeclarationDraftData,
+	saveDeclarationDraftAction,
 } from "@/app/actions/declaration-draft";
 import type { ActionResult } from "@/modules/platform/schemas/action-result";
 

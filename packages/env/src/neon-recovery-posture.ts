@@ -136,7 +136,9 @@ export function evaluateProtectedProductionBranch(
 }
 
 /** Scheduled Neon snapshots use names like `snapshot_2026-07-16T17:00:05Z`. */
-export function isScheduledSnapshotName(name: string | null | undefined): boolean {
+export function isScheduledSnapshotName(
+	name: string | null | undefined,
+): boolean {
 	return Boolean(name?.startsWith("snapshot_"));
 }
 
@@ -198,7 +200,9 @@ export function evaluateScheduledSnapshotInventory(
 			const source = snapshotSourceBranchId(snap);
 			return source == null || source === expectedBranchId;
 		})
-		.sort((a, b) => Date.parse(b.created_at ?? "") - Date.parse(a.created_at ?? ""));
+		.sort(
+			(a, b) => Date.parse(b.created_at ?? "") - Date.parse(a.created_at ?? ""),
+		);
 
 	if (scheduled.length === 0) {
 		return {

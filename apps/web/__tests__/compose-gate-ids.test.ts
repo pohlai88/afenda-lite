@@ -18,7 +18,11 @@ const referencePath = path.join(
 	"afenda-elite-ui-compose",
 	"reference.md",
 );
-const redflagsPath = path.join(webRoot, "__tests__", "compose-redflags.test.ts");
+const redflagsPath = path.join(
+	webRoot,
+	"__tests__",
+	"compose-redflags.test.ts",
+);
 const suitabilityPath = path.join(
 	webRoot,
 	"__tests__",

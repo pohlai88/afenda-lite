@@ -71,7 +71,7 @@ Do **not** recreate `lib/` or recover Collapse roots. New UI → Target `apps/we
 ## Optional next (needs approve)
 
 - [x] ~~Refresh `docs/architecture/reliance-mapping.snapshot.json`~~ — **retired 2026-07-17** (Collapse `components-V2` residue). Root aliases `export:reliance-mapping` / `check:reliance-mapping-drift` **removed** the same day.
-- [ ] `docs/architecture/reliance-graph.snapshot.json` / route-coverage refresh — only after an Approved slice restores live exporters (`export:reliance-graph` · `export:route-coverage`); until then `check:reliance-graph-drift` / `check:reliance-coverage` / `check:route-coverage-drift` remain Unevaluated inventory
+- [x] ~~`docs/architecture/reliance-graph.snapshot.json` / `route-coverage.snapshot.json`~~ — **retired 2026-07-17** (stale Collapse-era evidence; not Living Target SSOT). Root aliases `export:reliance-graph` · `export:route-coverage` · `check:reliance-graph-drift` · `check:reliance-coverage` · `check:route-coverage-drift` · `check:import-boundaries` **removed** the same day. Live package/feature boundaries = ARCH-024 + Vitest (`feature-db-boundary` · ui/auth boundary tests). Greenfield control-plane graph only after Approved Docs ADR + implement slice (no Collapse recover).
 - Product phases (`/client` workspace restore, FFT P3 flags, SaaS billing/2FA) stay out of this lane
 
 ## Closed this pass (2026-07-12)

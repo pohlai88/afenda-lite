@@ -76,9 +76,7 @@ describe("@afenda/env neon-contract", () => {
 				branchId: APPROVED_NEON_BRANCH_ID,
 			}).ok,
 		).toBe(true);
-		expect(
-			assertNeonCloudIds({ branchId: "br-wrong-branch" }).ok,
-		).toBe(false);
+		expect(assertNeonCloudIds({ branchId: "br-wrong-branch" }).ok).toBe(false);
 		expect(
 			assertNeonCloudIds({ projectId: "wrong-project" }).issues[0]?.variable,
 		).toBe("NEON_PROJECT_ID");

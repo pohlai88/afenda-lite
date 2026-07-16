@@ -36,16 +36,15 @@ Available `pnpm` checks and their typical exit codes:
 | `check:playground` | Gated | Yes | → `collapse-script-unavailable` |
 | `check:production:*` | Gated | Yes | → `collapse-script-unavailable` |
 | `check:brand-icons` | Gated | Yes | → `collapse-script-unavailable` |
-| `check:import-boundaries` | Gated | Yes | → `collapse-script-unavailable` |
+| `check:import-boundaries` | Removed | — | Removed 2026-07-17; live gates = Vitest boundary tests + ARCH-024 |
 | `check:ui-sync` | Gated | Yes | → `collapse-script-unavailable` |
 | `check:fft-ui-registry*` | Removed | — | Removed 2026-07-17 from root `package.json` (were collapse aliases only) |
-| `check:reliance-graph-drift` · `check:reliance-coverage` · `export:reliance-graph` | Gated | Yes | → `collapse-script-unavailable` (Unevaluated) |
+| `check:reliance-graph-drift` · `check:reliance-coverage` · `export:reliance-graph` · `export:route-coverage` · `check:route-coverage-drift` | Removed | — | Removed 2026-07-17 with `reliance-graph.snapshot.json` / `route-coverage.snapshot.json` retire |
 | `check:reliance-mapping-drift` · `export:reliance-mapping` | Removed | — | Removed 2026-07-17 after `reliance-mapping.snapshot.json` retire |
-| `check:route-coverage-drift` | Gated | Yes | → `collapse-script-unavailable` |
 
 **Gated script rule:** Scripts that route through `collapse-script-unavailable.mjs` are inventory, not live controls. They exit non-zero and report as **Unevaluated**, pushing coverage to **Incomplete**.
 
-Total root scripts: ~99 in `package.json`. Gated count: ~62. Live controls: ~37.
+Total root scripts: ~93 in `package.json`. Gated count: ~56. Live controls: ~37. (2026-07-17: six reliance/route-coverage/import-boundaries inventory aliases removed.)
 
 ## Scope discovery patterns
 

@@ -2,12 +2,11 @@
 
 import { Alert, AlertDescription, Button, Separator } from "@afenda/ui-system";
 import { useState } from "react";
-
+import { fillNeonAuthLoginForm } from "@/features/auth/local-auth-credential-fill-dom";
 import type {
 	LocalAuthCredentialPair,
 	LocalAuthCredentials,
 } from "@/features/auth/local-auth-credentials";
-import { fillNeonAuthLoginForm } from "@/features/auth/local-auth-credential-fill-dom";
 
 type LocalAuthCredentialFillProps = {
 	credentials: LocalAuthCredentials;

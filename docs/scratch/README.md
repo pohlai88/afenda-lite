@@ -28,6 +28,8 @@ Content here is **not** a Living, Target, or Accepted source of truth. A documen
 | [neon-auth-optimisation/6-neon-auth-slice-card.md](neon-auth-optimisation/6-neon-auth-slice-card.md) | Neon Auth slice card template | Scratch |
 | [neon-auth-optimisation/7-N1-example.md](neon-auth-optimisation/7-N1-example.md) | N1 slice example | Scratch |
 | [neon-auth-optimisation/8-N4-db-performance.md](neon-auth-optimisation/8-N4-db-performance.md) | N4 db performance notes | Scratch |
+| [reliance-dx-patterns-xerp-oss-2026-07-17.md](reliance-dx-patterns-xerp-oss-2026-07-17.md) | Research: Xerp + OSS reliance/graph/DX patterns; Afenda keep/adapt/reject | Scratch — ADR feedstock only; not Living |
+| [biome-ultracite-oss-best-practices-2026-07-17.md](biome-ultracite-oss-best-practices-2026-07-17.md) | Research: Biome + Ultracite OSS best practices; Afenda fit and scoped lint-debt posture | Scratch — not Living |
 
 ## Rules
 
@@ -39,6 +41,8 @@ Content here is **not** a Living, Target, or Accepted source of truth. A documen
 
 | Date | Summary |
 |------|---------|
+| 2026-07-17 | Added `biome-ultracite-oss-best-practices-2026-07-17.md` (Biome + Ultracite OSS research) |
+| 2026-07-17 | Added `reliance-dx-patterns-xerp-oss-2026-07-17.md` (Xerp/OSS reliance·graph·DX research) |
 | 2026-07-17 | Reconciled inventory with disk: neon-auth-optimisation/, cursor-prompt/, HTML previews, token/compose gap md |
 | 2026-07-16 | Added `neon-auth-capability-map-and-dev-roadmap.md` (Neon capability map + auth/post-login roadmap) |
 | 2026-07-16 | Added `afenda-ui-system-architecture.md` scratch file |

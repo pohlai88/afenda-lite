@@ -4,6 +4,7 @@ import {
 	Badge,
 	Button,
 	DataTable,
+	type DataTableColumn,
 	Dialog,
 	DialogContent,
 	DialogDescription,
@@ -13,7 +14,6 @@ import {
 	Input,
 	KeyValueList,
 	StatusBadge,
-	type DataTableColumn,
 } from "@afenda/ui-system";
 import * as React from "react";
 
@@ -103,9 +103,7 @@ const columns: DataTableColumn<DeclarationAssignmentRow>[] = [
 		key: "assignmentStatus",
 		title: "Assignment",
 		sortable: true,
-		render: (value) => (
-			<Badge variant="secondary">{String(value)}</Badge>
-		),
+		render: (value) => <Badge variant="secondary">{String(value)}</Badge>,
 	},
 	{
 		key: "submitBefore",
@@ -127,7 +125,9 @@ const columns: DataTableColumn<DeclarationAssignmentRow>[] = [
 		title: "Draft",
 		sortable: true,
 		render: (value) =>
-			value ? formatDate(String(value)) : (
+			value ? (
+				formatDate(String(value))
+			) : (
 				<span className="text-foreground-tertiary">Not started</span>
 			),
 	},

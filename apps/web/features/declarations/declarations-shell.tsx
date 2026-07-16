@@ -13,8 +13,8 @@ import {
 } from "@afenda/ui-system";
 import {
 	AlertTriangleIcon,
-	ClipboardListIcon,
 	CircleCheckIcon,
+	ClipboardListIcon,
 	FilePenLineIcon,
 } from "lucide-react";
 
@@ -174,19 +174,13 @@ export async function DeclarationsShell() {
 						<CardTitle>Assignments</CardTitle>
 						<CardDescription className="text-foreground-tertiary">
 							Org-scoped surveys assigned to your client email
-							{draftCount > 0
-								? ` · ${draftCount} with a saved draft`
-								: null}
-							.
+							{draftCount > 0 ? ` · ${draftCount} with a saved draft` : null}.
 						</CardDescription>
 					</div>
 					<Badge variant="secondary">{assignments.length} assigned</Badge>
 				</CardHeader>
 				<CardContent>
-					<DeclarationsPanel
-						assignments={rows}
-						canEditDraft={canEditDraft}
-					/>
+					<DeclarationsPanel assignments={rows} canEditDraft={canEditDraft} />
 				</CardContent>
 			</Card>
 		</main>

@@ -51,9 +51,7 @@ export type NeonRuntimeContext = {
 };
 
 /** Vercel production deployment (not merely `next build` locally). */
-export function isProductionDeployment(
-	ctx: NeonRuntimeContext = {},
-): boolean {
+export function isProductionDeployment(ctx: NeonRuntimeContext = {}): boolean {
 	return ctx.vercelEnv === "production";
 }
 
@@ -108,13 +106,11 @@ export function assertAppUrl(
 			if (parsed.protocol !== "https:") {
 				issues.push({
 					variable: "APP_URL",
-					message: "must use https: on Vercel production (VERCEL_ENV=production)",
+					message:
+						"must use https: on Vercel production (VERCEL_ENV=production)",
 				});
 			}
-			if (
-				parsed.hostname === "localhost" ||
-				parsed.hostname === "127.0.0.1"
-			) {
+			if (parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1") {
 				issues.push({
 					variable: "APP_URL",
 					message: "must not be localhost on Vercel production",
@@ -130,9 +126,7 @@ export function assertAppUrl(
 	return { ok: issues.length === 0, issues };
 }
 
-export function assertNeonAuthBaseUrl(
-	baseUrl: string,
-): NeonContractResult {
+export function assertNeonAuthBaseUrl(baseUrl: string): NeonContractResult {
 	const issues: NeonContractIssue[] = [];
 	try {
 		const parsed = new URL(baseUrl);
@@ -333,10 +327,11 @@ export const productDatabaseUrlSchema = z
 			"DATABASE_URL must be a postgres URL on a Neon -pooler host (ARCH-023)",
 	});
 
-export const neonAuthBaseUrlSchema = z.url().refine(
-	(value) => assertNeonAuthBaseUrl(value).ok,
-	{ message: "NEON_AUTH_BASE_URL must be an https URL" },
-);
+export const neonAuthBaseUrlSchema = z
+	.url()
+	.refine((value) => assertNeonAuthBaseUrl(value).ok, {
+		message: "NEON_AUTH_BASE_URL must be an https URL",
+	});
 
 export const neonAuthCookieSecretSchema = z
 	.string()

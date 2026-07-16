@@ -16,10 +16,6 @@
 	"vitest": {
 		"config": ["../../testing/vitest.config.ts"]
 	},
-	"ignoreDependencies": [
-		"vitest",
-		"jsdom",
-		"tw-animate-css"
-	],
+	"ignoreDependencies": ["vitest", "jsdom", "tw-animate-css"],
 	"ignoreBinaries": ["biome", "vitest"]
 }

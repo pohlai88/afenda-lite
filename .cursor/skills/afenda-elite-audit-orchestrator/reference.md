@@ -90,7 +90,7 @@ Coverage Status: Complete | Incomplete
 ### Gated script patterns
 - Script body: `node scripts/collapse-script-unavailable.mjs "script-name"`
 - Exit codes: Non-zero from unavailable scripts → **Unevaluated**, not Fail
-- Package.json: ~62 root scripts still route through the unavailable handler
+- Package.json: ~56 root scripts still route through the unavailable handler (six reliance/route-coverage/import-boundaries aliases removed 2026-07-17)
 
 ## Precise pattern rules (evidence-gathering)
 

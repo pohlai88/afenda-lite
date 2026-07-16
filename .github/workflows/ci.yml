@@ -41,5 +41,8 @@ jobs:
       - name: Database migration journal check
         run: pnpm --filter @afenda/db db:check
 
-      - name: Lint · typecheck · test
-        run: pnpm exec turbo run lint typecheck test
+      - name: Biome CI
+        run: pnpm run lint:ci
+
+      - name: Typecheck · test
+        run: pnpm exec turbo run typecheck test

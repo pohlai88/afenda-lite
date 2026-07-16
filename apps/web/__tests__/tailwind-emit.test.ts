@@ -1,5 +1,5 @@
-import { createRequire } from "node:module";
 import { readFileSync } from "node:fs";
+import { createRequire } from "node:module";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
@@ -54,15 +54,13 @@ describe("@afenda/web — Tailwind emit smoke (ADR-010 § D4)", () => {
 		const require = createRequire(webPkgJson);
 		const tailwindPostcss = require("@tailwindcss/postcss") as () => unknown;
 		const postcssPath = require.resolve("@tailwindcss/postcss");
-		const postcss = createRequire(postcssPath)("postcss") as {
-			(
-				plugins: unknown[],
-			): {
-				process: (
-					css: string,
-					opts: { from: string },
-				) => Promise<{ css: string }>;
-			};
+		const postcss = createRequire(postcssPath)("postcss") as (
+			plugins: unknown[],
+		) => {
+			process: (
+				css: string,
+				opts: { from: string },
+			) => Promise<{ css: string }>;
 		};
 
 		const inputFile = path.join(webRoot, "globals.css");

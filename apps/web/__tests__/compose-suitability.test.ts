@@ -6,8 +6,8 @@
  * Intentionally narrow — do not expand into a full composition linter without an Approved slice.
  */
 
-import { describe, expect, it } from "vitest";
 import ts from "typescript";
+import { describe, expect, it } from "vitest";
 
 import { productTsx } from "./compose-scan";
 
@@ -144,7 +144,9 @@ describe("@afenda/web compose suitability (afenda-elite-ui-compose C1–C3)", ()
 				if (name !== "Button") {
 					return;
 				}
-				const variant = attrStringValue(attrNamed(opening.attributes, "variant"));
+				const variant = attrStringValue(
+					attrNamed(opening.attributes, "variant"),
+				);
 				if (variant !== "destructive") {
 					return;
 				}

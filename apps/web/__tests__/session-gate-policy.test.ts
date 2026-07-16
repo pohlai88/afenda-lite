@@ -163,5 +163,3 @@ describe("N6 proxy session gate (disk)", () => {
 		expect(source).not.toContain("'/join");
 	});
 });
-
-

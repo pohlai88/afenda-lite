@@ -9,6 +9,7 @@ import {
 	CardHeader,
 	CardTitle,
 	DataTable,
+	type DataTableColumn,
 	Dialog,
 	DialogContent,
 	DialogDescription,
@@ -17,7 +18,6 @@ import {
 	DialogTrigger,
 	KeyValueList,
 	StatusBadge,
-	type DataTableColumn,
 } from "@afenda/ui-system";
 import * as React from "react";
 
@@ -53,8 +53,8 @@ const roleColumns: DataTableColumn<OrgRoleRow>[] = [
 		title: "Status",
 		render: (value) => (
 			<StatusBadge
-				status={Boolean(value) ? "active" : "inactive"}
-				label={Boolean(value) ? "Active" : "Inactive"}
+				status={value ? "active" : "inactive"}
+				label={value ? "Active" : "Inactive"}
 			/>
 		),
 	},
@@ -167,9 +167,7 @@ export function OrgAdminPanels({
 						rowActions={(row) => (
 							<Dialog
 								open={selectedAudit?.id === row.id}
-								onOpenChange={(open) =>
-									setSelectedAudit(open ? row : null)
-								}
+								onOpenChange={(open) => setSelectedAudit(open ? row : null)}
 							>
 								<DialogTrigger asChild>
 									<Button
@@ -213,4 +211,3 @@ export function OrgAdminPanels({
 		</div>
 	);
 }
-

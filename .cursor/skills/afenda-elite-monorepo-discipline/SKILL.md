@@ -149,9 +149,12 @@ Lite has **no** `pnpm scaffold:package`. Manual greenfield under `packages/<name
 
 ## Verification
 
-`check:import-boundaries` is **inventory only** (collapse unavailable) until a forward slice replaces it. Use living gates:
+`check:import-boundaries` was **removed** 2026-07-17 (collapse inventory alias). Use living gates:
 
 ```bash
+# Feature ↛ db + package surface (ARCH-024)
+pnpm --filter @afenda/web test -- feature-db-boundary ui-boundary auth-sdk-boundary
+
 # Scoped after package touch
 pnpm --filter @afenda/<pkg> typecheck
 pnpm --filter @afenda/<pkg> test

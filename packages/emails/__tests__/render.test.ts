@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { renderOnboardingInviteEmail, renderPasswordResetEmail } from "../src/index";
+import {
+	renderOnboardingInviteEmail,
+	renderPasswordResetEmail,
+} from "../src/index";
 
 describe("@afenda/emails render", () => {
 	it("renders onboarding invite HTML with invitee and org", async () => {

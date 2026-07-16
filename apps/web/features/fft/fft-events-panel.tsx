@@ -1,9 +1,6 @@
 "use client";
 
-import {
-	DataTable,
-	type DataTableColumn,
-} from "@afenda/ui-system";
+import { DataTable, type DataTableColumn } from "@afenda/ui-system";
 
 export type FftEventRow = {
 	id: string;

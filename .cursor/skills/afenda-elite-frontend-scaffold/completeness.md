@@ -27,6 +27,6 @@ Plan authority: this skill + `route-tree.md` + `docs/architecture/ARCH-012-app-r
 
 ```bash
 npx tsc --noEmit
-npm run check:route-coverage-drift
+# route-coverage-drift retired 2026-07-17 — use App Router path review + Vitest
 # Dynamic folders must not include [id]
 ```

@@ -47,8 +47,7 @@ export async function OrgAdminShell() {
 					<CardDescription>
 						Neon Auth delivers the invitation email; success also writes an
 						org-scoped RBAC audit row. Invitees open{" "}
-						<code className="text-foreground">{JOIN_PATH}?invitationId=…</code>
-						.
+						<code className="text-foreground">{JOIN_PATH}?invitationId=…</code>.
 					</CardDescription>
 				</CardHeader>
 				<CardContent>

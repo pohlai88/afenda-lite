@@ -26,8 +26,7 @@ const statusBadgeVariants = cva(
 				warning:
 					"border-warning-border bg-warning-subtle text-warning-subtle-foreground",
 				inactive: "border-border bg-muted text-muted-foreground",
-				active:
-					"border-info-border bg-info-subtle text-info-subtle-foreground",
+				active: "border-info-border bg-info-subtle text-info-subtle-foreground",
 			},
 			size: {
 				sm: "px-1.5 py-0.5 text-xs",

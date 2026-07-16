@@ -2,19 +2,19 @@ import { describe, expect, it } from "vitest";
 
 import { APPROVED_NEON_BRANCH_ID } from "../src/neon-contract";
 import {
+	evaluateHistoryRetention,
+	evaluateProtectedProductionBranch,
+	evaluateScheduledSnapshotInventory,
+	isScheduledSnapshotName,
 	RECOVERY_PROD_BRANCH_ID,
+	scheduledSnapshotHourUtc,
+	scheduledSnapshotRetainDays,
 	TARGET_HISTORY_RETENTION_SECONDS,
 	TARGET_RPO_PITR_SECONDS,
 	TARGET_RPO_SNAPSHOT_HOURS,
 	TARGET_RTO_DRILL_MINUTES,
 	TARGET_SNAPSHOT_HOUR_UTC,
 	TARGET_SNAPSHOT_RETAIN_DAYS,
-	evaluateHistoryRetention,
-	evaluateProtectedProductionBranch,
-	evaluateScheduledSnapshotInventory,
-	isScheduledSnapshotName,
-	scheduledSnapshotHourUtc,
-	scheduledSnapshotRetainDays,
 } from "../src/neon-recovery-posture";
 
 describe("@afenda/env neon-recovery-posture", () => {
@@ -62,9 +62,7 @@ describe("@afenda/env neon-recovery-posture", () => {
 	});
 
 	it("classifies scheduled snapshot names and retain window", () => {
-		expect(isScheduledSnapshotName("snapshot_2026-07-16T17:00:05Z")).toBe(
-			true,
-		);
+		expect(isScheduledSnapshotName("snapshot_2026-07-16T17:00:05Z")).toBe(true);
 		expect(isScheduledSnapshotName("baseline-manual")).toBe(false);
 		const snap = {
 			name: "snapshot_2026-07-16T17:00:05Z",
