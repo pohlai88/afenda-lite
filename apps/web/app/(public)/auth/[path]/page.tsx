@@ -38,6 +38,11 @@ export async function generateMetadata({
 /**
  * Neon Auth UI paths under `/auth/*`.
  * Neon mail `/auth/accept-invitation` is a sibling segment → `/join`.
+ *
+ * Post-login callback safety (N7) is enforced in `AuthUiProvider`, which
+ * sanitizes every navigation the Neon Auth UI performs. A server redirect here
+ * is intentionally avoided: the sibling `error.tsx` boundary soft-catches
+ * `redirect()`, so the client provider is the reliable governed choke point.
  */
 export default async function AuthPage({ params }: AuthPageProps) {
 	const { path } = await params;
@@ -46,7 +51,5 @@ export default async function AuthPage({ params }: AuthPageProps) {
 	}
 	const localCredentials =
 		path === "login" ? resolveLocalAuthCredentials() : null;
-	return (
-		<AuthViewShell path={path} localCredentials={localCredentials} />
-	);
+	return <AuthViewShell path={path} localCredentials={localCredentials} />;
 }

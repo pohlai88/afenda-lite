@@ -25,6 +25,15 @@ export {
 	JOIN_PATH,
 	requireAppOrigin,
 } from "./join-paths";
+export type { PostLoginTarget } from "./post-login";
+export {
+	CLIENT_HOME_PATH,
+	OPERATOR_HOME_PATH,
+	POST_LOGIN_CALLBACK_PARAM,
+	resolvePostLoginPath,
+	resolveRoleHome,
+	sanitizeCallbackUrl,
+} from "./post-login";
 export type { SessionProxy } from "./proxy";
 export { createSessionProxy } from "./proxy";
 export { requireRole } from "./rbac";

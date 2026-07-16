@@ -29,8 +29,14 @@ Disk SSOT: `packages/ui-system/src/styles/tokens.css` (public `@afenda/ui-system
 | Primary checked / tint wash | `bg-primary-subtle` | Field checked wash; prefer over `bg-primary/5` |
 | Primary progress rail | `bg-primary-track` | Progress track under solid `bg-primary` indicator |
 | Modal / sheet dimming | `bg-overlay-scrim` | Dialog, Sheet, AlertDialog overlay |
+| Dark control fill | `bg-control-fill` · `bg-control-fill-hover` · `bg-control-fill-strong` | Input/select/checkbox dark fills; switch unchecked |
+| Accent hover fill (dark) | `bg-accent-fill-hover` | Ghost/outline dark hover |
+| Solid press hover | `bg-primary-hover` · `bg-destructive-hover` · `bg-secondary-hover` | Button/Badge solid press |
+| Sidebar group label | `text-sidebar-muted-foreground` | SidebarGroupLabel |
+| Focus / invalid ring | `ring-ring-focus` · `ring-ring-destructive-focus` · `ring-ring-destructive-focus-strong` | Alpha lives on token — no `/N` utility |
+| Kbd on tooltip | `bg-kbd-tooltip-fill` | Tooltip-inverse kbd chrome |
 
-Package primitives may still retain audited opacity for dark input fills, disabled/ring/press chrome, alert `text-destructive/90`, and sidebar label ink — do not handroll a second status/table palette in `apps/web/features/**`.
+Package primitives may retain **element opacity** only (`opacity-50`/`70` disabled/close). Color-opacity utilities for named roles are forbidden — do not handroll a second status/table palette in `apps/web/features/**`.
 
 ## Composition recipes → barrel
 

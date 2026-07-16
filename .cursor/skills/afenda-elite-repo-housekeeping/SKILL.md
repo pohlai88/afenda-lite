@@ -77,7 +77,10 @@ If the user asks to delete files directly → redirect to `/afenda-elite-monorep
 Prefer scoped runs. Until Phase C Knip scripts exist, use `rg` + catalog review and still classify.
 
 ```bash
-# Post Phase C (targets — wire when scaffold lands)
+# Live scoped scripts
+pnpm housekeeping:knip:web
+pnpm housekeeping:knip:ui-system
+# Future targets
 pnpm housekeeping:knip:workspace packages/<name>
 pnpm housekeeping:knip:advisory
 # Pre / always

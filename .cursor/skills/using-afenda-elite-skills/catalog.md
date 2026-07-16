@@ -100,8 +100,11 @@ Management = `vendored`. Status = `keep` (inventory only). Invoked via `using-ag
 | `source-driven-development` | vendored-method | `.cursor/skills/agent-skills/skills/source-driven-development/SKILL.md` |
 | `spec-driven-development` | vendored-method | `.cursor/skills/agent-skills/skills/spec-driven-development/SKILL.md` |
 | `test-driven-development` | vendored-method | `.cursor/skills/agent-skills/skills/test-driven-development/SKILL.md` |
+| `technical-writing` | vendored-method | `.cursor/skills/technical-writing/SKILL.md` |
+| `vercel-composition-patterns` | vendored-method | `.cursor/skills/vercel-composition-patterns/SKILL.md` |
+| `vercel-react-best-practices` | vendored-method | `.cursor/skills/vercel-react-best-practices/react-best-practices/SKILL.md` |
 
-Container folder `.cursor/skills/agent-skills/` has no top-level `SKILL.md` by design (skill roots live under `skills/`).
+Container folder `.cursor/skills/agent-skills/` has no top-level `SKILL.md` by design (skill roots live under `skills/`). Vercel vendor trees live at `.cursor/skills/vercel-*` — invoke after the matching Elite farm is fixed; do not fork into `afenda-elite-*`.
 
 ## Planned (approved backlog — no SKILL.md until authoring mission)
 

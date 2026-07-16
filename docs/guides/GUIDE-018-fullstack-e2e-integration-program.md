@@ -4,11 +4,11 @@
 | ----------------- | ---------- |
 | **ID**            | GUIDE-018  |
 | **Category**      | Guide      |
-| **Version**       | 0.3.13     |
+| **Version**       | 0.3.14     |
 | **Status**        | Draft      |
 | **Control State** | Closed     |
 | **Owner**         | Platform   |
-| **Updated**       | 2026-07-15 |
+| **Updated**       | 2026-07-17 |
 
 ---
 
@@ -291,7 +291,7 @@ Recommended mission queue: **I1 → I2 → I3 (freeze) → I4 → I5/I6**.
 | ----- | -------- |
 | Paths | Feature shells → domain ports only: `features/{declarations,fft,org-admin}/*-shell.tsx` → `modules/{declarations,fft,identity,platform}/domain/*`; SQL only in domain via `@afenda/db` `withOrg` |
 | Gate | `apps/web/__tests__/feature-db-boundary.test.ts` — features + `app/actions` ban `@afenda/db` / `packages/db` deep imports; non-domain `modules/**` also banned |
-| Disk | Features: zero `from "@afenda/db"` imports (comments only). Domain: `list-surveys` · `list-events` · `list-org-roles` · `list-role-assignments` · `list-rbac-audit` |
+| Disk | Features: zero `from "@afenda/db"` imports (comments only). Domain: `list-client-assignments` · `list-events` · `list-org-roles` · `list-role-assignments` · `list-rbac-audit` |
 | Verify | `pnpm --filter @afenda/web test -- feature-db-boundary` (4) · `pnpm --filter @afenda/web typecheck` — green; Biome clean on gate file |
 | Boundary | ARCH-013 · ARCH-024 · backend-modules: feature → domain → `@afenda/db`; adapters stay SQL-free |
 
@@ -303,7 +303,7 @@ Recommended mission queue: **I1 → I2 → I3 (freeze) → I4 → I5/I6**.
 | Write | Inserts `platform_rbac_audit` with explicit `organization_id` from session (never ambient / soft NULL); wrong-org delete returns null |
 | Adapter | ARCH-029 §3.3: `requireRole` · Zod · `canInviteMember` · `inviteOrgMember(orgId)` · `recordRbacAudit` · `revalidatePath('/admin')` · `ActionResult` |
 | Verify | `pnpm --filter @afenda/web test -- record-rbac-audit feature-db-boundary invite-org-member action-result-contract` (15) · `pnpm --filter @afenda/web typecheck` — green; Neon fixture orgs cleaned (MCP empty) |
-| Boundary | Feature/action still SQL-free; SQL only in Platform domain; `@afenda/db` re-exports `and`/`eq`/`ne` for domain predicates |
+| Boundary | Feature/action still SQL-free; SQL only in Platform domain; `@afenda/db` re-exports `and` / `eq` / `sql` for domain predicates |
 | Forbidden | No FFT 2B–2D; no baseline migrate |
 | Out-of-bar (disposed) | Authenticated browser invite E2E → **I4** verify factory (not I2.3 exit). Tier-2 `clients.invite` / `hasPermission` → **I3.1** (I2.3 uses `requireRole` + `canInviteMember` only). Historical Change Log “next I2.3” rows = dated history, not Living next-pointer. |
 
@@ -556,6 +556,7 @@ Snapshot of what “ON DISK vs still missing” looks like as of 2026-07-15:
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 0.3.14 | 2026-07-17 | Bounded reopen/close: housekeeping drift align after Slice D removed orphan `list-surveys.ts`; I2.2 disk row now names `list-client-assignments` and I2.3 predicate export wording matches `@afenda/db`. |
 | 0.3.13 | 2026-07-15 | I2.4 closed: api-now health + declaration-draft RHs on disk · Zod SSOT OpenAPI handoff · `check:openapi` disk honesty; Phase I2 DONE; next Ops = I3.1. |
 | 0.3.12 | 2026-07-15 | I2.3 residual-risk disposition: browser invite E2E→I4; `clients.invite`→I3.1; Change Log history non-SSOT. |
 | 0.3.11 | 2026-07-15 | I2.3 closed: invite Action → Neon Auth + `recordRbacAudit` hard `organization_id` write; next Ops = I2.4. |

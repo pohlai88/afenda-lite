@@ -11,6 +11,15 @@ export {
 	PUBLIC_AUTH_PATHS,
 } from "./auth-paths";
 export { JOIN_PATH } from "./join-paths";
+export type { PostLoginTarget } from "./post-login";
+export {
+	CLIENT_HOME_PATH,
+	OPERATOR_HOME_PATH,
+	POST_LOGIN_CALLBACK_PARAM,
+	resolvePostLoginPath,
+	resolveRoleHome,
+	sanitizeCallbackUrl,
+} from "./post-login";
 
 /**
  * Browser Neon Auth client for Neon Auth UI (`NeonAuthUIProvider`).

@@ -4,7 +4,7 @@
 | ----------------- | ---------- |
 | **ID**            | DOC-002    |
 | **Category**      | Control    |
-| **Version**       | 4.128.0 |
+| **Version**       | 4.130.0 |
 | **Status**        | Living     |
 | **Control State** | Closed     |
 | **Owner**         | Platform   |
@@ -71,7 +71,7 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 | ID           | Category     | Title                                      | Version | Status | Owner    | Updated    |
 | ------------ | ------------ | ------------------------------------------ | ------- | ------ | -------- | ---------- |
 | DOC-001      | Control      | Documentation Control Standard             | 2.7.0   | Living | Platform | 2026-07-14 |
-| DOC-002      | Control      | Documentation Register                     | 4.128.0 | Living | Platform | 2026-07-17 |
+| DOC-002      | Control      | Documentation Register                     | 4.130.0 | Living | Platform | 2026-07-17 |
 | DOC-003      | Control      | Controlled Document Template               | 1.4.0   | Living | Platform | 2026-07-14 |
 | ARCH-029     | Architecture | Interface and API Architecture             | 1.2.7   | Living | Platform | 2026-07-14 |
 | ARCH-031     | Architecture | Technology Stack Catalogue                 | 1.3.17  | Living | Platform | 2026-07-16 |
@@ -104,17 +104,17 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 | GUIDE-015    | Guide        | Interface Pack Development Roadmap         | 1.0.2   | Living | Platform | 2026-07-14 |
 | GUIDE-016    | Guide        | Feed Farm Trade Enterprise Acceptance      | 0.2.0   | Retired | Feed Farm Trade | 2026-07-14 |
 | GUIDE-017    | Guide        | Enterprise Quality and Evidence Standard   | 1.0.0   | Living | Platform | 2026-07-14 |
-| GUIDE-018    | Guide        | Full-Stack End-to-End Integration Program  | 0.3.13  | Draft  | Platform | 2026-07-15 |
+| GUIDE-018    | Guide        | Full-Stack End-to-End Integration Program  | 0.3.14  | Draft  | Platform | 2026-07-17 |
 | RB-006       | Runbook      | OpenAPI Drift Detection and Recovery       | 0.2.1   | Draft  | Backend  | 2026-07-14 |
 | RB-007       | Runbook      | API Incident Response                      | 0.2.0   | Draft  | Backend  | 2026-07-14 |
 | RB-008       | Runbook      | API Contract Rollback                      | 0.2.1   | Draft  | Backend  | 2026-07-14 |
 | ARCH-022     | Architecture | System Overview — Turborepo                | 1.6.9   | Living | Platform | 2026-07-16 |
 | ARCH-023     | Architecture | Multi-Tenancy and Platform RBAC            | 3.1.7   | Living | Platform | 2026-07-17 |
-| ARCH-024     | Architecture | Package Boundaries                         | 1.7.0   | Living | Platform | 2026-07-17 |
+| ARCH-024     | Architecture | Package Boundaries                         | 1.7.2   | Living | Platform | 2026-07-17 |
 | ARCH-025     | Architecture | Data Layer                                 | 1.3.4   | Living | Backend  | 2026-07-17 |
 | ARCH-026     | Architecture | Authentication and Session Model           | 1.3.10  | Living | Platform | 2026-07-15 |
 | ARCH-027     | Architecture | Environment Variable Model                 | 1.6.5   | Living | Platform | 2026-07-16 |
-| ARCH-028     | Architecture | Turborepo Implementation Slices            | 1.5.3   | Living | Platform | 2026-07-15 |
+| ARCH-028     | Architecture | Turborepo Implementation Slices            | 1.5.4   | Living | Platform | 2026-07-17 |
 | ARCH-001     | Architecture | Backend Architecture                       | 1.2.0   | Living | Backend  | 2026-07-14 |
 | ARCH-002     | Architecture | Frontend Architecture                      | 1.3.4   | Living | Frontend | 2026-07-15 |
 | ADR-008      | ADR          | Cache Components Mode B (Gated)            | 1.0.1   | Accepted | Frontend | 2026-07-14 |
@@ -171,6 +171,8 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 
 | Version | Date       | Summary                                                                                                                                         |
 | ------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| 4.130.0 | 2026-07-17 | Housekeeping graph honesty: ARCH-024→1.7.2 (`auth`→`env`; emails not a current web runtime dep); DOC-002 self-row synced. |
+| 4.129.0 | 2026-07-17 | Housekeeping drift align: ARCH-024→1.7.1 · ARCH-028→1.5.4 · GUIDE-018→0.3.14 after Slice D removed orphan `list-surveys.ts`; DOC-002 self-row synced. |
 | 4.128.0 | 2026-07-17 | ERP token families Living docs: ADR-010→1.1.0 · ARCH-024→1.7.0 (19 shipped families cited to `tokens.css`); DOC-002 self-row synced. |
 | 4.127.0 | 2026-07-17 | N4 alert repair: RB-001→1.3.1; DOC-002 self-row synced. |
 | 4.126.0 | 2026-07-17 | N4 DB performance baseline: ARCH-025→1.3.4 · RB-001→1.3.0; DOC-002 self-row synced. |
