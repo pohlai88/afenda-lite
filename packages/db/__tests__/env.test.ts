@@ -19,7 +19,9 @@ afterEach(() => {
 describe("@afenda/db requireProductDatabaseUrl", () => {
 	it("requires DATABASE_URL", () => {
 		delete process.env.DATABASE_URL;
-		expect(() => requireProductDatabaseUrl()).toThrow(/DATABASE_URL is required/);
+		expect(() => requireProductDatabaseUrl()).toThrow(
+			/DATABASE_URL is required/,
+		);
 	});
 
 	it("requires Neon -pooler host for the product client", () => {
@@ -44,7 +46,9 @@ describe("@afenda/db requireProductDatabaseUrl", () => {
 describe("@afenda/db requireMigrationDatabaseUrl", () => {
 	it("requires DATABASE_URL", () => {
 		delete process.env.DATABASE_URL;
-		expect(() => requireMigrationDatabaseUrl()).toThrow(/DATABASE_URL is required/);
+		expect(() => requireMigrationDatabaseUrl()).toThrow(
+			/DATABASE_URL is required/,
+		);
 	});
 
 	it("rejects invalid URLs", () => {

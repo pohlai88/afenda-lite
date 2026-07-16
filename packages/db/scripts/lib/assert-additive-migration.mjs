@@ -102,10 +102,7 @@ export function detectDestructiveStatement(statement) {
 		return "TRUNCATE";
 	}
 	// ALTER TABLE … DROP COLUMN — allow DROP CONSTRAINT / DROP INDEX elsewhere
-	if (
-		/^ALTER\s+TABLE\b/.test(upper) &&
-		/\bDROP\s+COLUMN\b/.test(upper)
-	) {
+	if (/^ALTER\s+TABLE\b/.test(upper) && /\bDROP\s+COLUMN\b/.test(upper)) {
 		return "DROP COLUMN";
 	}
 	return null;
