@@ -4,6 +4,7 @@ import * as React from "react";
 import { ChevronUpIcon, ChevronDownIcon } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { Button } from "./button";
+import { Checkbox } from "./checkbox";
 import { Empty } from "./empty";
 import { Spinner } from "./spinner";
 import { 
@@ -45,6 +46,10 @@ export interface DataTableProps<T> {
   totalPages?: number;
   onPageChange?: (page: number) => void;
   showPagination?: boolean;
+  // Selection props  
+  selectable?: boolean;
+  selectedRows?: Set<number>;
+  onSelectionChange?: (selectedRows: Set<number>) => void;
   className?: string;
 }
 
@@ -62,6 +67,9 @@ function DataTable<T extends Record<string, any>>({
   totalPages = 1,
   onPageChange,
   showPagination = false,
+  selectable = false,
+  selectedRows = new Set(),
+  onSelectionChange,
   className,
 }: DataTableProps<T>) {
   const handleSort = (columnKey: keyof T) => {
@@ -85,6 +93,32 @@ function DataTable<T extends Record<string, any>>({
       <ChevronDownIcon className="ml-1 h-4 w-4" />
     );
   };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (!onSelectionChange) return;
+    
+    if (checked) {
+      const allRows = new Set(data.map((_, index) => index));
+      onSelectionChange(allRows);
+    } else {
+      onSelectionChange(new Set());
+    }
+  };
+
+  const handleSelectRow = (rowIndex: number, checked: boolean) => {
+    if (!onSelectionChange) return;
+    
+    const newSelection = new Set(selectedRows);
+    if (checked) {
+      newSelection.add(rowIndex);
+    } else {
+      newSelection.delete(rowIndex);
+    }
+    onSelectionChange(newSelection);
+  };
+
+  const isAllSelected = data.length > 0 && selectedRows.size === data.length;
+  const isPartialSelected = selectedRows.size > 0 && selectedRows.size < data.length;
 
   if (loading) {
     return (
@@ -153,6 +187,15 @@ function DataTable<T extends Record<string, any>>({
       <Table>
         <TableHeader>
           <TableRow>
+            {selectable && (
+              <TableHead className="w-12">
+                <Checkbox
+                  checked={isAllSelected ? true : isPartialSelected ? "indeterminate" : false}
+                  onCheckedChange={handleSelectAll}
+                  aria-label="Select all rows"
+                />
+              </TableHead>
+            )}
             {columns.map((column) => (
               <TableHead 
                 key={String(column.key)}
@@ -178,7 +221,16 @@ function DataTable<T extends Record<string, any>>({
         </TableHeader>
         <TableBody>
           {data.map((row, index) => (
-            <TableRow key={index}>
+            <TableRow key={index} className={selectedRows.has(index) ? "bg-muted/50" : ""}>
+              {selectable && (
+                <TableCell>
+                  <Checkbox
+                    checked={selectedRows.has(index)}
+                    onCheckedChange={(checked) => handleSelectRow(index, checked as boolean)}
+                    aria-label={`Select row ${index + 1}`}
+                  />
+                </TableCell>
+              )}
               {columns.map((column) => (
                 <TableCell key={String(column.key)}>
                   {column.render 
