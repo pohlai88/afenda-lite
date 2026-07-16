@@ -11,6 +11,7 @@ import {
 	Calendar,
 	Combobox,
 	Progress,
+	Empty,
 	Spinner,
 	Dialog,
 	DialogContent,
@@ -549,5 +550,21 @@ describe("WCAG 2.2 AA — Accessible Names and Descriptions", () => {
 		expect(spinners[1]).toHaveAttribute("aria-label", "Processing data");
 		expect(spinners[1]).toHaveAttribute("aria-live", "polite");
 		expect(screen.getByText("Processing data")).toBeInTheDocument();
+	});
+
+	it("Empty state provides accessible region with semantic content", () => {
+		const { container } = render(
+			<Empty
+				title="No results found"
+				description="Try adjusting your search criteria"
+				action={<button>Reset Filters</button>}
+			/>
+		);
+
+		const emptyRegion = screen.getByRole("region");
+		expect(emptyRegion).toHaveAttribute("aria-label", "No results found");
+		expect(screen.getByRole("heading", { level: 3 })).toHaveTextContent("No results found");
+		expect(screen.getByText("Try adjusting your search criteria")).toBeInTheDocument();
+		expect(screen.getByRole("button", { name: "Reset Filters" })).toBeInTheDocument();
 	});
 });
