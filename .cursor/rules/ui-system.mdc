@@ -1,0 +1,45 @@
+---
+description: "@afenda/ui-system flat-barrel UI contract — compose from the package only; no handroll; no new UI deps/registries"
+globs: "apps/web/**/*.{ts,tsx,css},packages/ui-system/**/*.{ts,tsx,css}"
+alwaysApply: false
+---
+
+# `@afenda/ui-system` — flat barrel only
+
+**Authority:** [ADR-010](../../docs/architecture/adr/ADR-010-afenda-ui-system-flat-barrel.md) · [ARCH-024 § `@afenda/ui-system`](../../docs/architecture/ARCH-024-package-boundaries.md#afendaui-system) · [AGENTS.md](../../AGENTS.md)
+
+The retired `@afenda/ui` playground gateway, `packages/design-system`, and UI-pipeline skills (`afenda-elite-design-system`, `afenda-elite-ui-handoff`, `admincn-customization`) are **gone** — do not restore them.
+
+## Public import surface (binding)
+
+| Allowed | Forbidden |
+|---------|-----------|
+| `import { … } from "@afenda/ui-system"` | `from "@afenda/ui"` or any `@afenda/ui/` subpath |
+| `import "@afenda/ui-system/styles.css"` in `apps/web/globals.css` | Deep imports (`@afenda/ui-system/components/…`, package-internal paths) |
+| `cn` from the barrel | Handrolled primitives under `apps/web/components/ui/**` |
+
+## Adding or regenerating primitives
+
+1. Run `shadcn add <name>` inside `packages/ui-system` (style **new-york**, Radix / unified `radix-ui`, lucide only).
+2. `components.json` must have **no `registries` key** — built-in shadcn items only.
+3. Convert generated `@/` or `#` aliases to **relative** imports inside the package.
+4. Export the primitive from `packages/ui-system/src/index.ts` (flat barrel).
+5. Keep guardrail tests green: `pnpm --filter @afenda/ui-system test` · `pnpm --filter @afenda/web test`.
+
+## Styling
+
+- **Semantic color tokens** live in `packages/ui-system/src/styles/tokens.css` — use `bg-primary`, `text-muted-foreground`, etc.
+- **Tailwind compilation** is owned by `apps/web/globals.css` (`@import "tailwindcss"`, `tw-animate-css`, `@source` for the package).
+- Do not add raw color literals (`#…`, `rgb(…)`, `hsl(…)`) in component source outside the token file.
+- Tailwind theme-scale utilities for spacing/dimensions (`h-9`, `px-3`, `gap-2`) are allowed.
+
+## RSC boundary
+
+- Root `src/index.ts` carries **no** `"use client"`.
+- Interactive primitives keep `"use client"` in their own files (preserved across barrel re-export).
+- Server-safe leaves today: `alert`, `badge`, `breadcrumb`, `button`, `card`, `input`, `pagination`, `skeleton`, `textarea` — enforced by `packages/ui-system/__tests__/rsc-boundary.test.ts`.
+
+## Dependencies
+
+- Do not add external/paid shadcn registries, Studio registry keys, or alternate icon packages to the monorepo for product UI.
+- Do not introduce parallel UI packages or gateway subpaths.

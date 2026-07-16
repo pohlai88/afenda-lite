@@ -17,6 +17,7 @@ Always also load: this skill’s [SKILL.md](SKILL.md).
 | readiness | `afenda-elite-module-readiness` |
 | doc-control | `afenda-elite-doc-control` |
 | doc-integrity | `afenda-elite-doc-integrity` |
+| alignment | `afenda-elite-audit-orchestrator` |
 | refactor | `afenda-elite-monorepo-refactor` |
 | neon | `neon-tenancy-efficiency` |
 | fft | `feed-farm-trade` |

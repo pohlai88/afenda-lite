@@ -1,0 +1,28 @@
+# Match .editorconfig: LF in the working tree and in the index.
+* text=auto eol=lf
+
+# Windows shell entrypoints keep CRLF when present.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Diff/patch payloads: do not force EOL conversion.
+*.diff -text
+*.patch -text
+
+# Explicit binaries (avoid EOL mangling).
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+*.pdf binary
+*.zip binary
+*.gz binary
+*.7z binary
+*.wasm binary

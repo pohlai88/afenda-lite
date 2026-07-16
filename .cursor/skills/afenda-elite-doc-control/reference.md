@@ -63,5 +63,5 @@ Same mandatory header. Prefer home `docs/architecture/adr/` only when explicitly
 | Detect / plan / verify doc↔doc conflicts | [afenda-elite-doc-integrity](../afenda-elite-doc-integrity/SKILL.md) |
 | Deep prose / ADR composition craft | [documentation-and-adrs](../agent-skills/skills/documentation-and-adrs/SKILL.md) |
 | Repo hygiene | [afenda-elite-repo-housekeeping](../afenda-elite-repo-housekeeping/SKILL.md) |
-| Code↔doc drift (generic) | global `documentation-audit` |
+| Code↔doc drift (generic) | [afenda-elite-audit-orchestrator](../afenda-elite-audit-orchestrator/SKILL.md) |
 | API contract surfaces | [afenda-elite-api-contract](../afenda-elite-api-contract/SKILL.md) |

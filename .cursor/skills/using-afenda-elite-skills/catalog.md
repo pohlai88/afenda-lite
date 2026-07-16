@@ -56,6 +56,7 @@ Local skills must remain operable if `afenda-Xerp` is absent. Do not edit `agent
 | `afenda-elite-monorepo-discipline` | local-elite-farm | local | keep | Day-to-day `@afenda/*` import/DAG/export surface | Cross-package imports · new `packages/*` · layer violations | ARCH-024 · ARCH-022 | none | `.cursor/skills/afenda-elite-monorepo-discipline/SKILL.md` | Lite rewrite of Xerp `monorepo-discipline` (no Xerp LOAD) |
 | `afenda-elite-monorepo-refactor` | local-elite-farm | local | keep | Governed extract/move/Slice D | Cross-package refactor | ARCH-024 · ARCH-028 | none | `.cursor/skills/afenda-elite-monorepo-refactor/SKILL.md` | Day-to-day boundaries → monorepo-discipline |
 | `afenda-elite-implementation-slices` | local-elite-farm | local | keep | One GUIDE-018 Phase I / residual ARCH-028 mission + command sheet | Named `PHASE_ID` (I*) / `SLICE_ID` (S*) / command-sheet paste | GUIDE-018 · ARCH-028 (+ sibling per map) | Checkpoint G closed; Phase I open at I1.1 | `.cursor/skills/afenda-elite-implementation-slices/SKILL.md` | Routes to farms via slice-map; does not replace scaffold/modules/nextjs/api |
+| `afenda-elite-audit-orchestrator` | local-elite-farm | local | keep | Authority→implementation alignment audit; plan traceability; check-coverage matrix | Doc-to-code alignment; cross-layer audit; alignment matrix | DOC-001…003 · AGENTS.md · farm completeness standards | none | `.cursor/skills/afenda-elite-audit-orchestrator/SKILL.md` | Orchestration-only v1; delegates to owning farms; no bundled validator |
 
 
 ### Domain farms
@@ -102,7 +103,7 @@ Container folder `.cursor/skills/agent-skills/` has no top-level `SKILL.md` by d
 
 ## Planned (approved backlog — no SKILL.md until authoring mission)
 
-_None. `afenda-elite-implementation-slices` authored 2026-07-14 → keep (L3)._
+_None. Last authored: `afenda-elite-audit-orchestrator` 2026-07-16 → keep (L3)._
 
 ## Candidate gaps (not approved for authoring)
 

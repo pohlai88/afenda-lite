@@ -29,7 +29,7 @@ Audit · Detect · Classify · Explain · Plan · Verify
 - Writing new controlled documents, substantive Living rewrites, register changes, version bumps, document retirement, or architecture decisions → [afenda-elite-doc-control](../afenda-elite-doc-control/SKILL.md)
 - Deep prose / ADR composition craft → [documentation-and-adrs](../agent-skills/skills/documentation-and-adrs/SKILL.md)
 - Code/catalogue hygiene → [afenda-elite-repo-housekeeping](../afenda-elite-repo-housekeeping/SKILL.md)
-- Generic code-to-document comparison → global `documentation-audit`
+- Authority/plan/code alignment → [afenda-elite-audit-orchestrator](../afenda-elite-audit-orchestrator/SKILL.md)
 
 Keep code-to-doc runtime drift out of scope. Keep document-to-generated-artifact consistency in scope.
 

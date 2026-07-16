@@ -47,7 +47,7 @@ Authorized controlled-document lifecycle writes: create with DOC-003, assign app
 ## Does Not Own
 
 - Repository-wide conflict discovery or semantic comparison across multiple authorities → [afenda-elite-doc-integrity](../afenda-elite-doc-integrity/SKILL.md)
-- Code-to-document validation → global `documentation-audit` / [afenda-elite-api-contract](../afenda-elite-api-contract/SKILL.md) for API surfaces
+- Code-to-document validation → [afenda-elite-audit-orchestrator](../afenda-elite-audit-orchestrator/SKILL.md) / [afenda-elite-api-contract](../afenda-elite-api-contract/SKILL.md) for API surfaces
 - General repository cleanup → [afenda-elite-repo-housekeeping](../afenda-elite-repo-housekeeping/SKILL.md)
 - Deep inline / README / JSDoc craft as a competing SSOT → [documentation-and-adrs](../agent-skills/skills/documentation-and-adrs/SKILL.md) (method library; this skill owns governed write procedures)
 

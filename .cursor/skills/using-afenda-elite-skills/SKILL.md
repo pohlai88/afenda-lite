@@ -49,6 +49,7 @@ Task arrives (this repo / Afenda-Lite)
     ├── Product routing, monorepo, docs types, apps/docs? ──→ THIS skill first
     ├── Docs create/update/deprecate/classify? ─────────────→ afenda-elite-doc-control → documentation-and-adrs (prose)
     ├── Docs duplication / conflict / SSOT / register drift? → afenda-elite-doc-integrity
+    ├── Authority / plan / code alignment · coverage matrix? → afenda-elite-audit-orchestrator
     ├── One mission / commit mixing risk? ──────────────────→ bounded-agent-lanes
     ├── Dead code / Knip / skill-catalog drift? ────────────→ afenda-elite-repo-housekeeping
     ├── Cross-package import / DAG / new packages/*? ───────→ afenda-elite-monorepo-discipline
