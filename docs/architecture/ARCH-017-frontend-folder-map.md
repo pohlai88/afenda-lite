@@ -104,7 +104,7 @@ Define the Living **frontend folder homes** for Target product UI under Next.js 
 | `app/dashboard/`, `app/account/`, `app/fft/` | AdminCN shell families |
 | `app/join/`, `app/invite/`, `app/f/`, `app/survey/` | Join + public/secure links |
 | `app/org/login/` | Operator entry alias |
-| `app/playground/` | **Absent** — removed 2026-07-15 (do not handroll; see [ARCH-024 § `@afenda/ui`](ARCH-024-package-boundaries.md#afendaui)) |
+| `app/playground/` | **Absent** — removed 2026-07-15 (do not handroll; see [ARCH-024 § `@afenda/ui-system`](ARCH-024-package-boundaries.md#afendaui-system)) |
 
 Route catalogue SSOT: [ARCH-012](ARCH-012-app-router-routes.md).
 

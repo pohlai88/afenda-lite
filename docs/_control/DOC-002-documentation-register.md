@@ -108,7 +108,7 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 | RB-006       | Runbook      | OpenAPI Drift Detection and Recovery       | 0.2.1   | Draft  | Backend  | 2026-07-14 |
 | RB-007       | Runbook      | API Incident Response                      | 0.2.0   | Draft  | Backend  | 2026-07-14 |
 | RB-008       | Runbook      | API Contract Rollback                      | 0.2.1   | Draft  | Backend  | 2026-07-14 |
-| ARCH-022     | Architecture | System Overview — Turborepo                | 1.6.8   | Living | Platform | 2026-07-15 |
+| ARCH-022     | Architecture | System Overview — Turborepo                | 1.6.9   | Living | Platform | 2026-07-16 |
 | ARCH-023     | Architecture | Multi-Tenancy and Platform RBAC            | 3.1.4   | Living | Platform | 2026-07-14 |
 | ARCH-024     | Architecture | Package Boundaries                         | 1.6.0   | Living | Platform | 2026-07-16 |
 | ARCH-025     | Architecture | Data Layer                                 | 1.3.1   | Living | Backend  | 2026-07-15 |
@@ -126,7 +126,7 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 | ARCH-006     | Architecture | Bounded Contexts                           | 1.1.1   | Living | Backend  | 2026-07-14 |
 | ARCH-007     | Architecture | Ports and Adapters                         | 1.2.0   | Living | Backend  | 2026-07-14 |
 | ARCH-008     | Architecture | Next.js Adapter Map                        | 1.3.0   | Living | Backend  | 2026-07-14 |
-| ARCH-009     | Architecture | Modules Ownership Map                      | 1.1.4   | Living | Backend  | 2026-07-15 |
+| ARCH-009     | Architecture | Modules Ownership Map                      | 1.1.5   | Living | Backend  | 2026-07-16 |
 | ARCH-010     | Architecture | Backend Conventions                        | 1.3.0   | Living | Backend  | 2026-07-14 |
 | ARCH-012     | Architecture | App Router Routes                          | 1.2.8   | Living | Frontend | 2026-07-16 |
 | ARCH-013     | Architecture | BFF and Data Flow                          | 1.1.3   | Living | Frontend | 2026-07-14 |
@@ -134,8 +134,8 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 | ARCH-015     | Architecture | Shadcn Studio / AdminCN Alignment          | 2.0.4   | Living | Frontend | 2026-07-16 |
 | ARCH-016     | Architecture | Next.js Conventions                        | 1.2.3   | Living | Frontend | 2026-07-14 |
 | ARCH-017     | Architecture | Frontend Folder Map                        | 2.0.4   | Living | Frontend | 2026-07-16 |
-| ARCH-018     | Architecture | AdminCN Customization                      | 1.1.6   | Living | Frontend | 2026-07-15 |
-| ARCH-019     | Architecture | AdminCN Frontend Preflight                 | 1.1.6   | Living | Frontend | 2026-07-15 |
+| ARCH-018     | Architecture | AdminCN Customization                      | 1.1.7   | Living | Frontend | 2026-07-16 |
+| ARCH-019     | Architecture | AdminCN Frontend Preflight                 | 1.1.7   | Living | Frontend | 2026-07-16 |
 | ARCH-020     | Architecture | Closed Scope Register                      | 2.0.1   | Superseded | Platform | 2026-07-14 |
 | ARCH-021     | Architecture | Repository Migration Map                   | 2.0.2   | Superseded | Platform | 2026-07-14 |
 | FFT-MOD-001  | Module       | Module Architecture                        | 2.3.0 | Living | Feed Farm Trade | 2026-07-14 |
@@ -171,7 +171,7 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 
 | Version | Date       | Summary                                                                                                                                         |
 | ------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| 4.122.0 | 2026-07-16 | ADR-010 skill-retirement follow-through: repointed retired `/admincn-customization` method references (ARCH-015 → 2.0.4 · ARCH-017 → 2.0.4) to `@afenda/ui-system` barrel + `/afenda-elite-frontend-scaffold`; AdminCN architecture authority (ARCH-018) unchanged. |
+| 4.122.0 | 2026-07-16 | ADR-010 skill-retirement + anchor follow-through: repointed retired `/admincn-customization` method references (ARCH-015 → 2.0.4 · ARCH-017 → 2.0.4) to `@afenda/ui-system` barrel + `/afenda-elite-frontend-scaffold`; fixed dangling `@afenda/ui/playground` / `#afendaui` disambiguation links to `#afendaui-system` and repointed stale current-state `@afenda/ui` / `packages/design-system` references (ARCH-012 → 1.2.8 · ARCH-027 → 1.6.4 · ARCH-009 → 1.1.5 · ARCH-022 → 1.6.9 · ARCH-018 → 1.1.7 · ARCH-019 → 1.1.7 Studio-DNA promote-target example). |
 | 4.121.0 | 2026-07-16 | Registered ADR-010 → 1.0.0 Accepted (`@afenda/ui-system` flat-barrel Radix design system); ADR-009 → 1.1.0 Superseded (`@afenda/ui` playground gateway retired); ARCH-024 + ARCH-031 repointed to `@afenda/ui-system`; `packages/design-system` deleted; deprecation register + skills router updated. User-approved ADR-010 ID this turn per DOC-001 §3.2. |
 | 4.120.0 | 2026-07-15 | I2.4 audit resolve: API-004→1.1.6 (Zod→OpenAPI arrow honesty); DOC-002 self-row synced. |
 | 4.119.0 | 2026-07-15 | I2.4 audit repair: OPEN-001→1.1.8 (Zod handoff landed) · API-004→1.1.5 (draft/health Target-on-disk); DOC-002 self-row synced. |

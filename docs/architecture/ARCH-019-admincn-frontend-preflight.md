@@ -4,11 +4,11 @@
 | ----------------- | ------------ |
 | **ID**            | ARCH-019     |
 | **Category**      | Architecture |
-| **Version**       | 1.1.6        |
+| **Version**       | 1.1.7        |
 | **Status**        | Living     |
 | **Control State** | Closed       |
 | **Owner**         | Frontend     |
-| **Updated**       | 2026-07-15   |
+| **Updated**       | 2026-07-16   |
 
 ---
 
@@ -58,7 +58,7 @@ Run before adding or refining an AdminCN-hosted screen.
 - [ ] Nav entry tagged with `kind` + `moduleId` (or `kind: "admin"`)  
 - [ ] Auth island CSS untouched (`auth-surface.css`, `neon-auth-ui.css`)  
 - [ ] UI IDs registered; no agent-edit of `ui-registry.json`  
-- [ ] Studio DNA comes from temporary CLI/MCP scratch **or** user-approved gitignored `_reference/archive/<kit>` promote into Target packages (e.g. `@afenda/ui`) — **never** product `import` from `_reference/**`; never Collapse git recover ([ARCH-015](ARCH-015-admincn-alignment.md) · [ARCH-018](ARCH-018-admincn-customization.md))  
+- [ ] Studio DNA comes from temporary CLI/MCP scratch **or** user-approved gitignored `_reference/archive/<kit>` promote into Target packages (e.g. `@afenda/ui-system`) — **never** product `import` from `_reference/**`; never Collapse git recover ([ARCH-015](ARCH-015-admincn-alignment.md) · [ARCH-018](ARCH-018-admincn-customization.md))  
 - [ ] Scratch MCP path `components/shadcn-studio/` is temporary; promote before merge  
 
 ## 3 — Data
@@ -104,6 +104,7 @@ Additional related links from prior revision:
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 1.1.7 | 2026-07-16 | DNA promote-target example repointed `@afenda/ui` → `@afenda/ui-system` ([ADR-010](adr/ADR-010-afenda-ui-system-flat-barrel.md)); preflight gates otherwise unchanged. |
 | 1.1.6 | 2026-07-15 | DNA checklist: user-approved `_reference/archive` promote-only; never runtime `_reference` import; Notes close trunk-index residual (trust disk + trunk-ban). |
 | 1.1.5 | 2026-07-14 | Bounded reopen: package-manager cutover — document `pnpm` / `pnpm exec` (repo SSOT `packageManager` + `pnpm-lock.yaml`). |
 | 1.1.4 | 2026-07-14 | Preflight: no invented product surfaces; hold ARCH-012 disposition (remove stub-OK wording). |

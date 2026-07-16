@@ -4,11 +4,11 @@
 | ----------------- | ------------ |
 | **ID**            | ARCH-009     |
 | **Category**      | Architecture |
-| **Version**       | 1.1.4        |
+| **Version**       | 1.1.5        |
 | **Status**        | Living       |
 | **Control State** | Closed       |
 | **Owner**         | Backend      |
-| **Updated**       | 2026-07-15   |
+| **Updated**       | 2026-07-16   |
 
 ---
 
@@ -165,7 +165,7 @@ UI / Actions companions (not under `modules/`, ownership companions): `features/
 | `features/auth/*` (trust / shell copy) | Auth island helpers |
 | `features/organization-admin/*` | Operator page runners + promoted Studio leaves |
 | `features/portal-chrome/*` | Theme owner, brand, shell access resolve |
-| `features/playground/**` | **Absent** — removed 2026-07-15 (do not handroll); gateway name collision → [ARCH-024 § `@afenda/ui`](ARCH-024-package-boundaries.md#afendaui) |
+| `features/playground/**` | **Absent** — removed 2026-07-15 (do not handroll); the former `@afenda/ui/playground` gateway is retired → [ADR-010](adr/ADR-010-afenda-ui-system-flat-barrel.md) · UI via `@afenda/ui-system` barrel |
 | `features/fft/fft-*.tsx` | Trade UI under AdminCN / Studio shell |
 
 Do **not** recreate `lib/pages`, `lib/entry`, `lib/playground`, or `features/playground`.
@@ -254,6 +254,7 @@ Detail: [residue-inventory.md](../../.cursor/skills/afenda-elite-backend-modules
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 1.1.5 | 2026-07-16 | `features/playground/**` row: repointed retired `@afenda/ui/playground` gateway disambiguation to [ADR-010](adr/ADR-010-afenda-ui-system-flat-barrel.md) / `@afenda/ui-system` barrel; dead `#afendaui` anchor removed. |
 | 1.1.4 | 2026-07-15 | Bounded reopen (I2.1 audit repair): platform `action-result` + identity invite schema Target-on-disk honesty. |
 | 1.1.3 | 2026-07-15 | `features/playground/**` Absent; do not recreate; gateway disambiguation link retained. |
 | 1.1.2 | 2026-07-15 | Linked `features/playground/**` row to the ARCH-024 `@afenda/ui/playground` disambiguation paragraph (no independent prose). |
