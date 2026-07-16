@@ -52,6 +52,7 @@ Do not start skill loads or MCP calls before the PREFLIGHT block is in the visib
 | Doc↔doc conflict / register drift | `afenda-elite-doc-integrity` |
 | ARCH-028 slice implement | `afenda-elite-implementation-slices` |
 | GUIDE-018 Phase I (I1.1…) | `afenda-elite-implementation-slices` + command-sheet |
+| Neon Auth optimisation (`N1`–`N18`) | `afenda-elite-implementation-slices` + neon-command-sheet · Neon Slice Score + independent audit |
 | UI primitives / `@afenda/ui-system` (shadcn·Radix, tokens, barrel) | ADR-010 owned-source workflow (`shadcn add` in `packages/ui-system` → relative imports → barrel export → guardrail tests) |
 | Product UI compose / handroll fix / visual consistency | `afenda-elite-ui-compose` (SCALABILITY-FIRST / UI-CAP-*; then `frontend-ui-engineering` for a11y/state/responsive method only) |
 | UI in app routes / FE scaffold | `afenda-elite-frontend-scaffold` (consume `@afenda/ui-system` barrel) |
