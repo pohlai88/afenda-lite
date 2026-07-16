@@ -14,6 +14,8 @@ export * from "./components/ui/badge";
 export * from "./components/ui/progress";
 export * from "./components/ui/spinner";
 
+// Data display
+export * from "./components/ui/data-table";
 // Empty states
 export * from "./components/ui/empty";
 // Navigation

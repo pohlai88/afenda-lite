@@ -11,6 +11,7 @@ import {
 	Calendar,
 	Combobox,
 	Progress,
+	DataTable,
 	Empty,
 	Spinner,
 	Dialog,
@@ -568,5 +569,70 @@ describe("WCAG 2.2 AA — Accessible Names and Descriptions", () => {
 		expect(screen.getByRole("heading", { level: 3 })).toHaveTextContent("No results found");
 		expect(screen.getByText("Try adjusting your search criteria")).toBeInTheDocument();
 		expect(screen.getByRole("button", { name: "Reset Filters" })).toBeInTheDocument();
+	});
+
+	it("DataTable provides accessible table with sorting and loading states", async () => {
+		const user = userEvent.setup();
+		const mockSort = vi.fn();
+		
+		const columns = [
+			{ key: "name", title: "Name", sortable: true },
+			{ key: "email", title: "Email", sortable: false },
+			{ key: "status", title: "Status", sortable: true, render: (value: string) => value.toUpperCase() },
+		];
+		
+		const data = [
+			{ name: "John Doe", email: "john@example.com", status: "active" },
+			{ name: "Jane Smith", email: "jane@example.com", status: "inactive" },
+		];
+
+		const { rerender } = render(
+			<DataTable
+				columns={columns}
+				data={data}
+				sortBy="name"
+				sortDirection="asc"
+				onSort={mockSort}
+			/>
+		);
+
+		// Should render accessible table
+		const table = screen.getByRole("table");
+		expect(table).toBeInTheDocument();
+		
+		// Should have proper column headers
+		expect(screen.getByRole("columnheader", { name: /Name/ })).toBeInTheDocument();
+		expect(screen.getByRole("columnheader", { name: /Email/ })).toBeInTheDocument();
+		expect(screen.getByRole("columnheader", { name: /Status/ })).toBeInTheDocument();
+		
+		// Should render custom content (uppercase status)
+		expect(screen.getByText("ACTIVE")).toBeInTheDocument();
+		expect(screen.getByText("INACTIVE")).toBeInTheDocument();
+		
+		// Should handle sorting
+		const sortableHeader = screen.getByRole("button", { name: "Sort by Name" });
+		await user.click(sortableHeader);
+		expect(mockSort).toHaveBeenCalledWith("name", "desc");
+		
+		// Test loading state
+		rerender(
+			<DataTable
+				columns={columns}
+				data={[]}
+				loading={true}
+			/>
+		);
+		expect(screen.getByRole("status", { name: "Loading data..." })).toBeInTheDocument();
+		
+		// Test empty state
+		rerender(
+			<DataTable
+				columns={columns}
+				data={[]}
+				loading={false}
+				emptyTitle="No users found"
+			/>
+		);
+		expect(screen.getByRole("region", { name: "No users found" })).toBeInTheDocument();
 	});
 });
