@@ -1,4 +1,4 @@
-import { and, clientAssignments, clientProfiles, db, eq } from "@afenda/db";
+import { and, clientAssignments, clientProfiles, db, eq, sql } from "@afenda/db";
 
 import type {
 	DeclarationDraftGetResponse,
@@ -13,6 +13,10 @@ import type { SurveyAnswers } from "@/modules/declarations/schemas/common";
 
 function normalizeEmail(email: string): string {
 	return email.trim().toLowerCase();
+}
+
+function ownershipEmailPredicate(clientEmail: string) {
+	return eq(sql`lower(${clientAssignments.clientEmail})`, clientEmail);
 }
 
 function asSurveyAnswers(value: unknown): SurveyAnswers {
@@ -77,7 +81,7 @@ export async function getClientDeclarationDraft(input: {
 			and(
 				eq(clientAssignments.id, assignmentId),
 				eq(clientAssignments.organizationId, orgId),
-				eq(clientAssignments.clientEmail, clientEmail),
+				ownershipEmailPredicate(clientEmail),
 			),
 		)
 		.limit(1);
@@ -110,11 +114,34 @@ export async function saveClientDeclarationDraft(input: {
 		return null;
 	}
 
+	const [existing] = await db
+		.select({
+			draftAnswers: clientAssignments.draftAnswers,
+		})
+		.from(clientAssignments)
+		.where(
+			and(
+				eq(clientAssignments.id, assignmentId),
+				eq(clientAssignments.organizationId, orgId),
+				ownershipEmailPredicate(clientEmail),
+			),
+		)
+		.limit(1);
+
+	if (!existing) {
+		return null;
+	}
+
+	const mergedAnswers: SurveyAnswers = {
+		...asSurveyAnswers(existing.draftAnswers),
+		...input.draft.answers,
+	};
+
 	const savedAt = new Date();
 	const [row] = await db
 		.update(clientAssignments)
 		.set({
-			draftAnswers: input.draft.answers,
+			draftAnswers: mergedAnswers,
 			draftStepIndex: input.draft.stepIndex,
 			draftSavedAt: savedAt,
 		})
@@ -122,7 +149,7 @@ export async function saveClientDeclarationDraft(input: {
 			and(
 				eq(clientAssignments.id, assignmentId),
 				eq(clientAssignments.organizationId, orgId),
-				eq(clientAssignments.clientEmail, clientEmail),
+				ownershipEmailPredicate(clientEmail),
 			),
 		)
 		.returning({

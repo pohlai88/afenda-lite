@@ -262,15 +262,15 @@ Binding response shape and caps live in [SKILL.md](SKILL.md#compose-score-bindin
 **Examples (advisory):**
 
 ```text
-### Compose Score: 97% / 100%
+### Compose Score: 100% / 100%
 | Dimension | Score | Note |
 | AUTHORITY | 15/15 | Barrel + tokens |
 | CONSISTENCY | 20/20 | Comfortable density |
-| CORRECT-COMPONENT | 20/20 | DataTable + Dialog |
-| SUITABILITY | 14/15 | Filter aria-label redundant with FormField |
-| SCALABILITY | 14/15 | READ_ONLY_PERMITTED; UI-CAP-07 recorded |
-| STABILITY | 14/15 | Floor green; minor toolbar layout |
-**Path to 100%:** Drop redundant filter aria-label; land UI-CAP-07 assignment list + Sheet write for full product 100%.
+| CORRECT-COMPONENT | 20/20 | DataTable + Dialog + Sheet |
+| SUITABILITY | 15/15 | Dialog view · Sheet draft write |
+| SCALABILITY | 15/15 | UI-CAP-07 cleared (listClientAssignments + draft actions) |
+| STABILITY | 15/15 | Floor green · mounted on /client/dashboard |
+**Path to 100%:** Already at 100% — next work is product depth (submit), not compose floor.
 ```
 
 ```text

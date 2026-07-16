@@ -1,4 +1,4 @@
-import { and, clientAssignments, db, eq, surveys } from "@afenda/db";
+import { and, clientAssignments, db, eq, sql, surveys } from "@afenda/db";
 
 /**
  * Declarations — client assignment list under hard org + email ownership.
@@ -66,7 +66,7 @@ export async function listClientAssignments(input: {
 		.where(
 			and(
 				eq(clientAssignments.organizationId, orgId),
-				eq(clientAssignments.clientEmail, clientEmail),
+				eq(sql`lower(${clientAssignments.clientEmail})`, clientEmail),
 				eq(surveys.organizationId, orgId),
 			),
 		);
