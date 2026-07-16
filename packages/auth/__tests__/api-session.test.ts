@@ -1,15 +1,15 @@
+/** I2.4 Route Handler auth cases; N6 fail-closed matrix is in session-contract.test.ts. */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const getSessionMock = vi.fn();
+const getActiveMemberRoleMock = vi.fn();
 
 vi.mock("@neondatabase/auth/next/server", () => ({
 	createNeonAuth: () => ({
 		getSession: () => getSessionMock(),
 		organization: {
-			getActiveMemberRole: vi.fn(async () => ({
-				data: { role: "member" },
-				error: null,
-			})),
+			getActiveMemberRole: (...args: unknown[]) =>
+				getActiveMemberRoleMock(...args),
 		},
 		middleware: vi.fn(),
 	}),
@@ -28,6 +28,11 @@ describe("getApiSession (I2.4 Route Handler auth)", () => {
 	beforeEach(() => {
 		vi.resetModules();
 		getSessionMock.mockReset();
+		getActiveMemberRoleMock.mockReset();
+		getActiveMemberRoleMock.mockResolvedValue({
+			data: { role: "member" },
+			error: null,
+		});
 	});
 
 	it("returns null when Neon reports no session", async () => {
