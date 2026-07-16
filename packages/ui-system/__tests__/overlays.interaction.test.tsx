@@ -1,5 +1,9 @@
 import {
 	AlertDialog,
+	Accordion,
+	AccordionContent,
+	AccordionItem,
+	AccordionTrigger,
 	AlertDialogAction,
 	AlertDialogCancel,
 	AlertDialogContent,
@@ -801,5 +805,29 @@ describe("WCAG 2.2 AA — Accessible Names and Descriptions", () => {
 			expect(screen.queryByText("Hidden panel content")).not.toBeInTheDocument(),
 		);
 		expect(trigger).toHaveAttribute("aria-expanded", "false");
+	});
+
+	it("Accordion expands sections with keyboard-accessible triggers", async () => {
+		const user = userEvent.setup();
+
+		render(
+			<Accordion type="single" collapsible>
+				<AccordionItem value="item-1">
+					<AccordionTrigger>Section One</AccordionTrigger>
+					<AccordionContent>First section content</AccordionContent>
+				</AccordionItem>
+				<AccordionItem value="item-2">
+					<AccordionTrigger>Section Two</AccordionTrigger>
+					<AccordionContent>Second section content</AccordionContent>
+				</AccordionItem>
+			</Accordion>,
+		);
+
+		const sectionOne = screen.getByRole("button", { name: "Section One" });
+		expect(sectionOne).toHaveAttribute("aria-expanded", "false");
+
+		await user.click(sectionOne);
+		expect(sectionOne).toHaveAttribute("aria-expanded", "true");
+		expect(screen.getByText("First section content")).toBeVisible();
 	});
 });
