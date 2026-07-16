@@ -14,6 +14,8 @@ import {
 	DataTable,
 	Empty,
 	FormError,
+	FormField,
+	FormInput,
 	Spinner,
 	Dialog,
 	DialogContent,
@@ -724,5 +726,51 @@ describe("WCAG 2.2 AA — Accessible Names and Descriptions", () => {
 		expect(iconsInFirstError).toBeInTheDocument();
 		expect(iconsInSecondError).toBeInTheDocument();
 		expect(iconsInThirdError).not.toBeInTheDocument();
+	});
+
+	it("FormField provides integrated form control with accessibility", () => {
+		render(
+			<div>
+				<FormField
+					label="Email Address"
+					description="Enter your work email"
+					error="Email is required"
+					required={true}
+					fieldId="email"
+				>
+					<FormInput type="email" placeholder="john@company.com" />
+				</FormField>
+				
+				<FormField label="Optional field">
+					<FormInput />
+				</FormField>
+			</div>
+		);
+
+		// Should have proper label association
+		const emailInput = screen.getByLabelText(/Email Address/);
+		expect(emailInput).toBeInTheDocument();
+		expect(emailInput).toHaveAttribute("type", "email");
+		expect(emailInput).toHaveAttribute("id", "email");
+
+		// Should show required indicator
+		expect(screen.getByText("Email Address")).toBeInTheDocument();
+		
+		// Should have description and error associations
+		expect(emailInput).toHaveAttribute("aria-describedby");
+		const describedBy = emailInput.getAttribute("aria-describedby");
+		expect(describedBy).toContain("email-description");
+		expect(describedBy).toContain("email-error");
+		
+		// Should mark field as invalid when error is present
+		expect(emailInput).toHaveAttribute("aria-invalid", "true");
+		
+		// Should display description and error
+		expect(screen.getByText("Enter your work email")).toBeInTheDocument();
+		expect(screen.getByText("Email is required")).toBeInTheDocument();
+		
+		// Optional field should not have required indicator or error state
+		const optionalInput = screen.getByLabelText("Optional field");
+		expect(optionalInput).not.toHaveAttribute("aria-invalid");
 	});
 });
