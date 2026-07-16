@@ -4,9 +4,9 @@ import Link from "next/link";
 
 export default function HomePage() {
 	return (
-		<main className="flex min-h-dvh flex-col items-center justify-center gap-4 p-4">
+		<main className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-canvas p-4">
 			<h1 className="text-2xl font-semibold tracking-tight">Afenda-Lite</h1>
-			<p className="max-w-md text-center text-sm text-muted-foreground">
+			<p className="max-w-md text-center text-sm text-foreground-secondary">
 				Public shell. Operator and client surfaces are role-gated after sign-in.
 			</p>
 			<Button asChild>

@@ -94,7 +94,7 @@ const columns: DataTableColumn<DeclarationAssignmentRow>[] = [
 		title: "Slug",
 		sortable: true,
 		render: (value) => (
-			<code className="font-mono text-sm text-muted-foreground">
+			<code className="font-mono text-sm text-foreground-tertiary">
 				{String(value)}
 			</code>
 		),
@@ -128,7 +128,7 @@ const columns: DataTableColumn<DeclarationAssignmentRow>[] = [
 		sortable: true,
 		render: (value) =>
 			value ? formatDate(String(value)) : (
-				<span className="text-muted-foreground">Not started</span>
+				<span className="text-foreground-tertiary">Not started</span>
 			),
 	},
 ];

@@ -204,7 +204,7 @@ function DataTable<T extends Record<string, unknown>>({
 			) : (
 				<div className="overflow-x-auto rounded-md border shadow-[var(--shadow-raised)]">
 					<Table>
-						<TableHeader className="bg-muted/40 sticky top-0 z-10">
+						<TableHeader className="bg-surface-sunken sticky top-0 z-10">
 							<TableRow className={rowHeightClass}>
 								{selectable && (
 									<TableHead className="w-12">
@@ -253,9 +253,14 @@ function DataTable<T extends Record<string, unknown>>({
 								return (
 									<TableRow
 										key={rowId}
+										data-state={
+											resolvedSelected.has(rowId) ? "selected" : undefined
+										}
 										className={cn(
 											rowHeightClass,
-											resolvedSelected.has(rowId) && "bg-muted/50",
+											index % 2 === 1 &&
+												!resolvedSelected.has(rowId) &&
+												"bg-table-stripe",
 										)}
 									>
 										{selectable && (

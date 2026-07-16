@@ -20,12 +20,12 @@ export async function FftEventsShell() {
 	const events = await listEvents(orgId);
 
 	return (
-		<main className="flex min-h-dvh flex-col gap-6 p-6">
+		<main className="flex min-h-dvh flex-col gap-6 bg-canvas p-6">
 			<header className="flex flex-col gap-2">
 				<h1 className="text-2xl font-semibold tracking-tight">
 					Feed Farm Trade
 				</h1>
-				<p className="text-sm text-muted-foreground">
+				<p className="text-sm text-foreground-secondary">
 					Org-scoped events for{" "}
 					<code className="font-mono text-foreground">{orgId}</code>.
 				</p>

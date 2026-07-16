@@ -103,12 +103,12 @@ export async function DeclarationsShell() {
 	const draftCount = rows.filter((row) => row.draftSavedAt != null).length;
 
 	return (
-		<main className="flex min-h-dvh flex-col gap-(--section-gap) p-6">
+		<main className="flex min-h-dvh flex-col gap-(--section-gap) bg-canvas p-6">
 			<header className="flex flex-col gap-2">
 				<h1 className="text-2xl font-semibold tracking-tight">
 					Client dashboard
 				</h1>
-				<p className="text-sm text-muted-foreground">
+				<p className="text-sm text-foreground-secondary">
 					Declaration assignments for{" "}
 					<code className="font-mono text-foreground">{apiSession.email}</code>{" "}
 					in{" "}
@@ -168,11 +168,11 @@ export async function DeclarationsShell() {
 				</Alert>
 			) : null}
 
-			<Card>
+			<Card className="bg-surface-raised">
 				<CardHeader className="flex flex-row items-start justify-between gap-4">
 					<div className="space-y-1.5">
 						<CardTitle>Assignments</CardTitle>
-						<CardDescription>
+						<CardDescription className="text-foreground-tertiary">
 							Org-scoped surveys assigned to your client email
 							{draftCount > 0
 								? ` · ${draftCount} with a saved draft`

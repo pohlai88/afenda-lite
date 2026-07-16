@@ -121,14 +121,14 @@ export function DeclarationDraftSheet({
 				</SheetHeader>
 
 				{loading ? (
-					<div className="flex flex-1 items-center justify-center gap-2 py-10 text-sm text-muted-foreground">
+					<div className="flex flex-1 items-center justify-center gap-2 py-10 text-sm text-foreground-tertiary">
 						<Spinner size="sm" />
 						Loading draft…
 					</div>
 				) : loadError ? (
 					<div className="flex flex-1 flex-col gap-(--field-gap) py-4">
 						<FormError message={loadError} />
-						<p className="text-sm text-muted-foreground">
+						<p className="text-sm text-foreground-secondary">
 							Draft editing requires a completed client profile and an
 							assignment owned by your email.
 						</p>
@@ -163,7 +163,7 @@ export function DeclarationDraftSheet({
 						) : null}
 
 						{savedAt ? (
-							<p className="text-sm text-muted-foreground">
+							<p className="text-sm text-foreground-tertiary">
 								Last saved{" "}
 								<code className="font-mono text-foreground">
 									{new Date(savedAt).toLocaleString()}

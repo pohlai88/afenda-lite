@@ -10,8 +10,21 @@ const webPkgJson = path.join(webRoot, "package.json");
 const SEMANTIC_CLASSES = [
 	"bg-primary",
 	"bg-card",
+	"bg-canvas",
+	"bg-surface-raised",
+	"bg-surface-sunken",
+	"bg-success-subtle",
+	"bg-warning-subtle",
+	"bg-info-subtle",
+	"bg-destructive-subtle",
+	"bg-table-row-hover",
+	"bg-table-stripe",
 	"text-muted-foreground",
+	"text-foreground-secondary",
+	"text-foreground-tertiary",
+	"text-success-subtle-foreground",
 	"border-input",
+	"border-success-border",
 ] as const;
 
 describe("@afenda/web — Tailwind emit smoke (ADR-010 § D4)", () => {

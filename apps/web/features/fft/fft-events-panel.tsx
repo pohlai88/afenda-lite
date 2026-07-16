@@ -18,7 +18,7 @@ const columns: DataTableColumn<FftEventRow>[] = [
 		key: "eventCode",
 		title: "Code",
 		render: (value) => (
-			<code className="font-mono text-sm text-muted-foreground">
+			<code className="font-mono text-sm text-foreground-tertiary">
 				{String(value)}
 			</code>
 		),

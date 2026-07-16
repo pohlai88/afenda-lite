@@ -81,7 +81,7 @@ export function InviteMemberForm({
 			</Button>
 
 			{state?.ok === true ? (
-				<p className="text-sm text-muted-foreground" role="status">
+				<p className="text-sm text-foreground-secondary" role="status">
 					Invitation sent to{" "}
 					<code className="text-foreground">{state.data.email}</code>. Audit{" "}
 					<code className="text-foreground">{state.data.auditId}</code> recorded

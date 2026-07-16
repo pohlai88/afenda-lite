@@ -18,16 +18,16 @@ const statusBadgeVariants = cva(
 		variants: {
 			status: {
 				success:
-					"border-success/25 bg-success/10 text-success dark:border-success/30 dark:bg-success/15",
+					"border-success-border bg-success-subtle text-success-subtle-foreground",
 				pending:
-					"border-warning/25 bg-warning/10 text-warning dark:border-warning/30 dark:bg-warning/15",
+					"border-warning-border bg-warning-subtle text-warning-subtle-foreground",
 				error:
-					"border-destructive/25 bg-destructive/10 text-destructive dark:border-destructive/30 dark:bg-destructive/15",
+					"border-destructive-border bg-destructive-subtle text-destructive-subtle-foreground",
 				warning:
-					"border-warning/25 bg-warning/10 text-warning dark:border-warning/30 dark:bg-warning/15",
+					"border-warning-border bg-warning-subtle text-warning-subtle-foreground",
 				inactive: "border-border bg-muted text-muted-foreground",
 				active:
-					"border-info/25 bg-info/10 text-info dark:border-info/30 dark:bg-info/15",
+					"border-info-border bg-info-subtle text-info-subtle-foreground",
 			},
 			size: {
 				sm: "px-1.5 py-0.5 text-xs",
