@@ -3,8 +3,6 @@
 packages:
   - "apps/*"
   - "packages/*"
-  # Empty husk may remain locked by IDE/Next watchers after packages/ui removal.
-  - "!packages/ui"
 
 catalog:
   # Framework (next and @next/env share the same range)
@@ -17,7 +15,7 @@ catalog:
   # Neon / data path (shared)
   "@neondatabase/auth": ^0.4.2-beta
 
-  # UI / surface (apps/web + @afenda/ui)
+  # UI / surface (apps/web + @afenda/ui-system)
   "@base-ui/react": ^1.6.0
   "@tanstack/react-table": ^8.21.3
   class-variance-authority: ^0.7.1
