@@ -2,13 +2,13 @@ import { neon } from "@neondatabase/serverless";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/neon-http";
 import type { AnyPgTable, PgColumn } from "drizzle-orm/pg-core";
-import { requireDatabaseUrl } from "./env";
+import { requireProductDatabaseUrl } from "./env";
 import * as schema from "./schema";
 
 export type DbSchema = typeof schema;
 
 function createDb() {
-	return drizzle(neon(requireDatabaseUrl()), { schema });
+	return drizzle(neon(requireProductDatabaseUrl()), { schema });
 }
 
 export type Database = ReturnType<typeof createDb>;
@@ -18,6 +18,7 @@ let cached: Database | undefined;
 /**
  * Neon HTTP Drizzle client (ARCH-025).
  * Lazy: no connection until first property access.
+ * Product class: pooled DATABASE_URL only (N2).
  */
 export const db: Database = new Proxy({} as Database, {
 	get(_target, property, receiver) {

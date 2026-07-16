@@ -1,11 +1,21 @@
 import { defineConfig } from "drizzle-kit";
 
+import { requireMigrationDatabaseUrl } from "./src/env";
+
 /**
- * Drizzle Kit config (ARCH-025 · ARCH-028 S2.2).
+ * Drizzle Kit config (ARCH-025 · ARCH-028 S2.2 · N2).
  * Migrations write under packages/db/drizzle/.
- * Requires DATABASE_URL for migrate / live checks (prefer Neon -pooler).
+ * When DATABASE_URL is set, validate as migration-class (postgres URL; -pooler optional).
+ * Generate works without URL; migrate/guard require URL separately.
  */
-const databaseUrl = process.env.DATABASE_URL;
+function migrationCredentials(): { url: string } | undefined {
+	if (!process.env.DATABASE_URL) {
+		return undefined;
+	}
+	return { url: requireMigrationDatabaseUrl() };
+}
+
+const credentials = migrationCredentials();
 
 export default defineConfig({
 	dialect: "postgresql",
@@ -13,11 +23,9 @@ export default defineConfig({
 	out: "./drizzle",
 	strict: true,
 	verbose: true,
-	...(databaseUrl
+	...(credentials
 		? {
-				dbCredentials: {
-					url: databaseUrl,
-				},
+				dbCredentials: credentials,
 			}
 		: {}),
 });

@@ -26,15 +26,17 @@ Internal full-stack doctrine and slice specs for agents and maintainers:
 
 ## Database migrations
 
-Schema is versioned in [`db/migrations/`](db/migrations/). Apply before first run:
+Schema and migrations live in [`packages/db`](packages/db) (`drizzle/` + `src/schema/`). Canonical commands:
 
 ```bash
-pnpm db:migrate
+pnpm db:generate   # or: pnpm --filter @afenda/db db:generate
+pnpm db:check      # journal assert + drizzle-kit check (also runs in CI)
+pnpm db:migrate    # fail-closed; requires AFENDA_ALLOW_DB_MIGRATE=1; never auto-run on deploy
 ```
 
-Apply against your Neon branch (`DATABASE_URL` in `.env.local`). See [docs/runbooks/local-dev-auth.md](docs/runbooks/local-dev-auth.md).
+Product runtime requires pooled `DATABASE_URL` (`-pooler`). Migrate/ops may use the same key without `-pooler` (operator shell override only — no `DIRECT_*` product var). See [ARCH-025](docs/architecture/ARCH-025-data-layer.md) and [docs/runbooks/local-dev-auth.md](docs/runbooks/local-dev-auth.md).
 
-The app no longer runs DDL on request — tables must exist before deploy.
+The app does not run DDL on request — tables must exist before deploy. Do not apply `0000_living-roots-baseline.sql` to live Neon.
 
 ## Auth and database
 
@@ -102,14 +104,14 @@ PRODUCTION_URL=https://afenda-lite.vercel.app pnpm verify:production
 
 See [docs/runbooks/production-go-live.md](docs/runbooks/production-go-live.md) for full go-live checklist.
 
-**Existing databases** (migrated before tracking): run once, then `db:migrate`:
+**Existing databases** (operator forward migrate only — never apply the `0000` journal baseline alone):
 
 ```bash
-pnpm db:backfill
-pnpm db:migrate
+pnpm db:check
+AFENDA_ALLOW_DB_MIGRATE=1 pnpm db:migrate
 ```
 
-Optional E2E: `E2E_SURVEY_SLUG` only if you skip the operator-create → public chain test.
+Root `pnpm db:backfill` remains unavailable (Collapse inventory). Optional E2E: `E2E_SURVEY_SLUG` only if you skip the operator-create → public chain test.
 
 ## App routes
 

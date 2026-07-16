@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+
 import { describe, expect, it } from "vitest";
 
 import { shouldBypassSessionGate } from "../session-gate-policy";
@@ -74,6 +77,12 @@ describe("shouldBypassSessionGate", () => {
 		expect(
 			shouldBypassSessionGate({
 				...req({ pathname: "/playground" }),
+				playgroundEnabled: false,
+			}),
+		).toBe(false);
+		expect(
+			shouldBypassSessionGate({
+				...req({ pathname: "/playground" }),
 				playgroundEnabled: true,
 			}),
 		).toBe(true);
@@ -89,5 +98,15 @@ describe("shouldBypassSessionGate", () => {
 				playgroundEnabled: true,
 			}),
 		).toBe(true);
+	});
+
+	it("proxy reads PLAYGROUND_ENABLED only via @afenda/env", () => {
+		const source = readFileSync(
+			resolve(import.meta.dirname, "../proxy.ts"),
+			"utf8",
+		);
+		expect(source).toContain('from "@afenda/env"');
+		expect(source).toContain("env.PLAYGROUND_ENABLED");
+		expect(source).not.toContain("process.env.PLAYGROUND_ENABLED");
 	});
 });

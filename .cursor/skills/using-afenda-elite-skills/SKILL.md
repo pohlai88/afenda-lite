@@ -47,6 +47,7 @@ Any turn that loads this skill or other farms/MCP/rules MUST open the user-visib
 Task arrives (this repo / Afenda-Lite)
     │
     ├── Product routing, monorepo, docs types, apps/docs? ──→ THIS skill first
+    ├── Raw prose / HTML / ticket / log / screenshot → Cursor mission compile? ──→ cursor-mission-compile (compile only; then new Agent chat with paste)
     ├── Docs create/update/deprecate/classify? ─────────────→ afenda-elite-doc-control → documentation-and-adrs (prose)
     ├── Docs duplication / conflict / SSOT / register drift? → afenda-elite-doc-integrity
     ├── Authority / plan / code alignment · coverage matrix? → afenda-elite-audit-orchestrator

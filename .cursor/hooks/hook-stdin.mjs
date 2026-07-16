@@ -13,6 +13,19 @@
  * @returns {Promise<Record<string, unknown>>}
  */
 export async function readHookPayload(options = {}) {
+	try {
+		return await readHookPayloadStrict(options);
+	} catch {
+		return {};
+	}
+}
+
+/**
+ * Like readHookPayload but throws on invalid non-empty JSON (fail-closed hooks).
+ * @param {{ idleMs?: number, maxMs?: number, firstByteMs?: number }} [options]
+ * @returns {Promise<Record<string, unknown>>}
+ */
+export async function readHookPayloadStrict(options = {}) {
 	const idleMs = options.idleMs ?? 50;
 	const maxMs = options.maxMs ?? 3000;
 	const firstByteMs = options.firstByteMs ?? 250;
@@ -22,14 +35,11 @@ export async function readHookPayload(options = {}) {
 	if (!trimmed) {
 		return {};
 	}
-	try {
-		const parsed = JSON.parse(trimmed);
-		return parsed && typeof parsed === "object"
-			? /** @type {Record<string, unknown>} */ (parsed)
-			: {};
-	} catch {
-		return {};
+	const parsed = JSON.parse(trimmed);
+	if (!parsed || typeof parsed !== "object") {
+		throw new Error("hook payload must be a JSON object");
 	}
+	return /** @type {Record<string, unknown>} */ (parsed);
 }
 
 /**

@@ -75,4 +75,20 @@ describe("OpenAPI contract schemas (I2.4)", () => {
 			ssl: "unknown",
 		});
 	});
+
+	it("does not echo malformed DATABASE_URL secrets in connection inspect", async () => {
+		const { inspectDatabaseConnection } = await import(
+			"@/modules/platform/domain/health"
+		);
+		const malformed =
+			"%%%user:SuperSecretPassw0rd@ep-x-pooler.example/db?sslmode=require&token=leak-me-token%%%";
+		const result = inspectDatabaseConnection(malformed);
+		expect(result).toEqual({ pooler: false, ssl: "unknown" });
+		const serialized = JSON.stringify(result);
+		expect(serialized).not.toContain(malformed);
+		expect(serialized).not.toContain("SuperSecretPassw0rd");
+		expect(serialized).not.toContain("leak-me-token");
+		expect(serialized).not.toContain("sslmode=require");
+		expect(serialized).not.toContain("ep-x-pooler.example");
+	});
 });

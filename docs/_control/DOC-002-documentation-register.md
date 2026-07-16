@@ -4,7 +4,7 @@
 | ----------------- | ---------- |
 | **ID**            | DOC-002    |
 | **Category**      | Control    |
-| **Version**       | 4.122.0 |
+| **Version**       | 4.123.0 |
 | **Status**        | Living     |
 | **Control State** | Closed     |
 | **Owner**         | Platform   |
@@ -71,7 +71,7 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 | ID           | Category     | Title                                      | Version | Status | Owner    | Updated    |
 | ------------ | ------------ | ------------------------------------------ | ------- | ------ | -------- | ---------- |
 | DOC-001      | Control      | Documentation Control Standard             | 2.7.0   | Living | Platform | 2026-07-14 |
-| DOC-002      | Control      | Documentation Register                     | 4.122.0 | Living | Platform | 2026-07-16 |
+| DOC-002      | Control      | Documentation Register                     | 4.123.0 | Living | Platform | 2026-07-16 |
 | DOC-003      | Control      | Controlled Document Template               | 1.4.0   | Living | Platform | 2026-07-14 |
 | ARCH-029     | Architecture | Interface and API Architecture             | 1.2.7   | Living | Platform | 2026-07-14 |
 | ARCH-031     | Architecture | Technology Stack Catalogue                 | 1.3.17  | Living | Platform | 2026-07-16 |
@@ -113,7 +113,7 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 | ARCH-024     | Architecture | Package Boundaries                         | 1.6.0   | Living | Platform | 2026-07-16 |
 | ARCH-025     | Architecture | Data Layer                                 | 1.3.1   | Living | Backend  | 2026-07-15 |
 | ARCH-026     | Architecture | Authentication and Session Model           | 1.3.10  | Living | Platform | 2026-07-15 |
-| ARCH-027     | Architecture | Environment Variable Model                 | 1.6.4   | Living | Platform | 2026-07-16 |
+| ARCH-027     | Architecture | Environment Variable Model                 | 1.6.5   | Living | Platform | 2026-07-16 |
 | ARCH-028     | Architecture | Turborepo Implementation Slices            | 1.5.3   | Living | Platform | 2026-07-15 |
 | ARCH-001     | Architecture | Backend Architecture                       | 1.2.0   | Living | Backend  | 2026-07-14 |
 | ARCH-002     | Architecture | Frontend Architecture                      | 1.3.4   | Living | Frontend | 2026-07-15 |
@@ -171,6 +171,7 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 
 | Version | Date       | Summary                                                                                                                                         |
 | ------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| 4.123.0 | 2026-07-16 | N1 audit repair: ARCH-027 → 1.6.5 (Neon product contract keys aligned with `packages/env/neon-contract.ts`); DOC-002 self-row synced. |
 | 4.122.0 | 2026-07-16 | ADR-010 skill-retirement + anchor follow-through: repointed retired `/admincn-customization` method references (ARCH-015 → 2.0.4 · ARCH-017 → 2.0.4) to `@afenda/ui-system` barrel + `/afenda-elite-frontend-scaffold`; fixed dangling `@afenda/ui/playground` / `#afendaui` disambiguation links to `#afendaui-system` and repointed stale current-state `@afenda/ui` / `packages/design-system` references (ARCH-012 → 1.2.8 · ARCH-027 → 1.6.4 · ARCH-009 → 1.1.5 · ARCH-022 → 1.6.9 · ARCH-018 → 1.1.7 · ARCH-019 → 1.1.7 Studio-DNA promote-target example). |
 | 4.121.0 | 2026-07-16 | Registered ADR-010 → 1.0.0 Accepted (`@afenda/ui-system` flat-barrel Radix design system); ADR-009 → 1.1.0 Superseded (`@afenda/ui` playground gateway retired); ARCH-024 + ARCH-031 repointed to `@afenda/ui-system`; `packages/design-system` deleted; deprecation register + skills router updated. User-approved ADR-010 ID this turn per DOC-001 §3.2. |
 | 4.120.0 | 2026-07-15 | I2.4 audit resolve: API-004→1.1.6 (Zod→OpenAPI arrow honesty); DOC-002 self-row synced. |

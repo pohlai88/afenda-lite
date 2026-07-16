@@ -125,8 +125,12 @@ Operator:             agent + operator approval (C-pack recommendation)
 ## 3.8 Migrations
 
 ```bash
-pnpm db:migrate
+pnpm db:check
+# Forward migrate only (never sole-0000 baseline on br-tiny-hill-ao82jp6f):
+AFENDA_ALLOW_DB_MIGRATE=1 pnpm db:migrate
 ```
+
+Canonical path: `pnpm --filter @afenda/db db:migrate` (root `pnpm db:migrate` forwards). Deploy workflows do not migrate. Destructive DDL also needs `AFENDA_ALLOW_DESTRUCTIVE_MIGRATE=1`.
 
 M2: `028_scoped_template_key_unique.sql` — scoped `(organization_id, template_key)` uniqueness.
 

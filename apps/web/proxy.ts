@@ -1,4 +1,5 @@
 import { createSessionProxy } from "@afenda/auth";
+import { env } from "@afenda/env";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
@@ -21,7 +22,7 @@ export async function proxy(request: NextRequest) {
 			pathname: request.nextUrl.pathname,
 			searchParams: request.nextUrl.searchParams,
 			hasHeader: (name) => request.headers.has(name),
-			playgroundEnabled: process.env.PLAYGROUND_ENABLED === "true",
+			playgroundEnabled: env.PLAYGROUND_ENABLED,
 		})
 	) {
 		return NextResponse.next();

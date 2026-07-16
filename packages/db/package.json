@@ -15,7 +15,9 @@
 		"test": "vitest run --config ../../testing/vitest.config.ts --project db",
 		"db:generate": "drizzle-kit generate",
 		"db:migrate": "node ./scripts/db-migrate-guard.mjs",
-		"db:check": "node ./scripts/db-check.mjs"
+		"db:check": "node ./scripts/db-check.mjs",
+		"db:verify-migrate-ban": "node ./scripts/verify-migrate-ban.mjs",
+		"db:introspect": "drizzle-kit introspect"
 	},
 	"dependencies": {
 		"@neondatabase/serverless": "^1.0.0",

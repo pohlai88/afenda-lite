@@ -32,6 +32,7 @@ The retired `@afenda/ui` playground gateway, `packages/design-system`, and UI-pi
 - **Tailwind compilation** is owned by `apps/web/globals.css` (`@import "tailwindcss"`, `tw-animate-css`, `@source` for the package).
 - Do not add raw color literals (`#…`, `rgb(…)`, `hsl(…)`) in component source outside the token file.
 - Tailwind theme-scale utilities for spacing/dimensions (`h-9`, `px-3`, `gap-2`) are allowed.
+- **CSS custom properties on utilities** — binding write lock lives in [afenda-elite-ui-compose](../skills/afenda-elite-ui-compose/SKILL.md) (Locked design hierarchy: `utility-(--token)`, not `utility-[var(--token)]` for new writes). Do not duplicate that table here.
 
 ## Visual lock (consistency)
 

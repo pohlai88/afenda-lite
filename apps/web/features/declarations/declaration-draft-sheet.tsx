@@ -126,7 +126,7 @@ export function DeclarationDraftSheet({
 						Loading draft…
 					</div>
 				) : loadError ? (
-					<div className="flex flex-1 flex-col gap-[var(--field-gap)] py-4">
+					<div className="flex flex-1 flex-col gap-(--field-gap) py-4">
 						<FormError message={loadError} />
 						<p className="text-sm text-muted-foreground">
 							Draft editing requires a completed client profile and an
@@ -136,7 +136,7 @@ export function DeclarationDraftSheet({
 				) : (
 					<form
 						action={formAction}
-						className="flex flex-1 flex-col gap-[var(--field-gap)]"
+						className="flex flex-1 flex-col gap-(--field-gap)"
 					>
 						<input type="hidden" name="assignmentId" value={assignmentId} />
 						<input type="hidden" name="surveyId" value={surveyId} />

@@ -30,7 +30,7 @@ export async function OrgAdminShell() {
 	]);
 
 	return (
-		<main className="flex min-h-dvh flex-col gap-[var(--section-gap)] p-6">
+		<main className="flex min-h-dvh flex-col gap-(--section-gap) p-6">
 			<header className="flex flex-col gap-2">
 				<h1 className="text-2xl font-semibold tracking-tight">
 					Operator admin

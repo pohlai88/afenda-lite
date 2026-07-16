@@ -67,6 +67,7 @@ Local skills must remain operable if `afenda-Xerp` is absent. Do not edit `agent
 | `feed-farm-trade` | local-domain-farm | local | keep | FFT module farm / gates | FFT domain work | FFT-MOD-* · FFT-MOD-008 | none | `.cursor/skills/feed-farm-trade/SKILL.md` | 2B–2D blocked until reopen |
 | `neon-tenancy-efficiency` | local-domain-farm | local | keep | Neon shared-schema tenancy + ARCH-023 IAM application | Tenancy / Neon ops | ARCH-023 · ARCH-025 · ARCH-027 | none | `.cursor/skills/neon-tenancy-efficiency/SKILL.md` | Wave 2 extend closed → keep; ARCH-027 `@afenda/env` + `.env.local` |
 | `update-mcp-config` | local-domain-farm | local | keep | Project MCP config updates | MCP wiring | AGENTS.md · `.vscode/mcp.json` | none | `.cursor/skills/update-mcp-config/SKILL.md` | |
+| `cursor-mission-compile` | local-agent-ops | local | keep | Compiles raw prose/HTML/logs/tickets into budget Cursor missions | Prompt clean · transform · optimize · compile | Scratch vibe guideline · context-engineering | none | `.cursor/skills/cursor-mission-compile/SKILL.md` | Compile only — does not execute; Agent search owns discovery; no PREFLIGHT paste |
 
 ### Vendored method library
 
@@ -104,7 +105,7 @@ Container folder `.cursor/skills/agent-skills/` has no top-level `SKILL.md` by d
 
 ## Planned (approved backlog — no SKILL.md until authoring mission)
 
-_None. Last authored: `afenda-elite-ui-compose` 2026-07-16 → keep (L3)._
+_None. Last authored: `cursor-mission-compile` 2026-07-16 → keep (local-agent-ops)._
 
 ## Candidate gaps (not approved for authoring)
 

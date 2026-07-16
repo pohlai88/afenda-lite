@@ -5,12 +5,14 @@
  * Blocks: drizzle-kit migrate · pnpm … db:migrate · filter @afenda/db db:migrate
  * Escape: AFENDA_ALLOW_DB_MIGRATE=1 (explicit operator override only)
  *
+ * Fail-closed on parse / runtime errors (N2).
+ *
  * Stdin: { command, cwd, ... }
  * @see https://cursor.com/docs/hooks
- * Authority: ARCH-025 · ARCH-028 S2.2 operational ban
+ * Authority: ARCH-025 · ARCH-028 S2.2 · N2
  */
 import { respond } from "./hook-policy.mjs";
-import { readHookPayload } from "./hook-stdin.mjs";
+import { readHookPayloadStrict } from "./hook-stdin.mjs";
 
 /**
  * @param {string} command
@@ -48,7 +50,7 @@ function isDbMigrateCommand(command) {
 }
 
 try {
-	const payload = await readHookPayload();
+	const payload = await readHookPayloadStrict();
 	const command = typeof payload.command === "string" ? payload.command : "";
 
 	const allowEnv =
@@ -61,7 +63,7 @@ try {
 			user_message:
 				"Blocked: Drizzle db:migrate is banned while 0000_living-roots-baseline.sql is the journal baseline. Applying it on br-tiny-hill-ao82jp6f would CREATE tables that already exist. Use db:generate / db:check only. Override only with AFENDA_ALLOW_DB_MIGRATE=1 for a deliberate non-baseline migrate.",
 			agent_message:
-				"DENIED: db:migrate / drizzle-kit migrate is banned (ARCH-028 S2.2 / ARCH-025). 0000_living-roots-baseline.sql is a forward-diff journal baseline — do not apply CREATE onto live Neon. Do not bypass the hook. Tell the user; only proceed if they set AFENDA_ALLOW_DB_MIGRATE=1 for a later forward migration.",
+				"DENIED: db:migrate / drizzle-kit migrate is banned (ARCH-028 S2.2 / ARCH-025 / N2). 0000_living-roots-baseline.sql is a forward-diff journal baseline — do not apply CREATE onto live Neon. Do not bypass the hook. Tell the user; only proceed if they set AFENDA_ALLOW_DB_MIGRATE=1 for a later forward migration.",
 		});
 		process.exit(0);
 	}
@@ -70,8 +72,10 @@ try {
 	process.exit(0);
 } catch (err) {
 	respond({
-		permission: "allow",
-		agent_message: `no-drizzle-baseline-migrate soft-fail (allow): ${String(err)}`,
+		permission: "deny",
+		user_message:
+			"Blocked: no-drizzle-baseline-migrate hook failed closed (parse or runtime error).",
+		agent_message: `DENIED: no-drizzle-baseline-migrate fail-closed: ${String(err)}`,
 	});
 	process.exit(0);
 }

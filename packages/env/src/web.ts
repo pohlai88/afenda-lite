@@ -1,24 +1,43 @@
 import { createEnv } from "@t3-oss/env-nextjs";
 import { z } from "zod";
 
+import {
+	approvedNeonBranchIdSchema,
+	approvedNeonOrgIdSchema,
+	approvedNeonProjectIdSchema,
+	assertLocalOnlySecretsAbsentInProduction,
+	assertPlaygroundLocalOnly,
+	formatNeonContractIssues,
+	isProductionDeployment,
+	neonAuthBaseUrlSchema,
+	neonAuthCookieSecretSchema,
+	productAppUrlSchema,
+	productDatabaseUrlSchema,
+} from "./neon-contract";
+
 const boolString = z
 	.enum(["true", "false"])
 	.transform((value) => value === "true");
 
+const runtimeCtx = {
+	nodeEnv: process.env.NODE_ENV,
+	vercelEnv: process.env.VERCEL_ENV,
+};
+
 /**
- * Typed Next.js env for `@afenda/web` (ARCH-027 / T3 createEnv).
+ * Typed Next.js env for `@afenda/web` (ARCH-027 / T3 createEnv + N1 Neon contract).
  * Product code: `import { env } from '@afenda/env'` — never raw process.env for app config.
  */
 export const env = createEnv({
 	server: {
-		DATABASE_URL: z.url(),
-		NEON_AUTH_BASE_URL: z.url(),
-		NEON_AUTH_COOKIE_SECRET: z.string().min(32),
-		APP_URL: z.url(),
+		DATABASE_URL: productDatabaseUrlSchema,
+		NEON_AUTH_BASE_URL: neonAuthBaseUrlSchema,
+		NEON_AUTH_COOKIE_SECRET: neonAuthCookieSecretSchema,
+		APP_URL: productAppUrlSchema(runtimeCtx),
 
-		NEON_ORG_ID: z.string().min(1).optional(),
-		NEON_PROJECT_ID: z.string().min(1).optional(),
-		NEON_BRANCH_ID: z.string().min(1).optional(),
+		NEON_ORG_ID: approvedNeonOrgIdSchema.optional(),
+		NEON_PROJECT_ID: approvedNeonProjectIdSchema.optional(),
+		NEON_BRANCH_ID: approvedNeonBranchIdSchema.optional(),
 		NEON_API_KEY: z.string().min(1).optional(),
 
 		PORTAL_ORG_SLUG: z.string().min(1).optional(),
@@ -40,7 +59,18 @@ export const env = createEnv({
 		FFT_ERP_API_KEY: z.string().min(1).optional(),
 		RESEND_API_KEY: z.string().min(1).optional(),
 
-		PLAYGROUND_ENABLED: boolString.optional().default(false),
+		PLAYGROUND_ENABLED: boolString
+			.optional()
+			.default(false)
+			.superRefine((value, ctx) => {
+				const result = assertPlaygroundLocalOnly(value, runtimeCtx);
+				if (!result.ok) {
+					ctx.addIssue({
+						code: "custom",
+						message: formatNeonContractIssues(result.issues),
+					});
+				}
+			}),
 		PLAYGROUND_SURVEY_ID: z.string().min(1).optional(),
 		PLAYGROUND_ASSIGNMENT_ID: z.string().min(1).optional(),
 		PLAYGROUND_SURVEY_SLUG: z.string().min(1).optional(),
@@ -127,4 +157,26 @@ export const env = createEnv({
 	skipValidation:
 		process.env.SKIP_ENV_VALIDATION === "true" ||
 		process.env.npm_lifecycle_event === "typecheck",
+	createFinalSchema: (shape) =>
+		z.object(shape).superRefine((value, ctx) => {
+			if (!isProductionDeployment(runtimeCtx)) {
+				return;
+			}
+			const localOnly = assertLocalOnlySecretsAbsentInProduction(
+				{
+					SHARED_ADMIN_PASSWORD: value.SHARED_ADMIN_PASSWORD,
+					PREVIEW_CLIENT_PASSWORD: value.PREVIEW_CLIENT_PASSWORD,
+					CLIENT_DEFAULT_PASSWORD: value.CLIENT_DEFAULT_PASSWORD,
+					E2E_OPERATOR_PASSWORD: value.E2E_OPERATOR_PASSWORD,
+					E2E_CLIENT_PASSWORD: value.E2E_CLIENT_PASSWORD,
+				},
+				runtimeCtx,
+			);
+			if (!localOnly.ok) {
+				ctx.addIssue({
+					code: "custom",
+					message: formatNeonContractIssues(localOnly.issues),
+				});
+			}
+		}),
 });

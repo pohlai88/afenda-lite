@@ -88,6 +88,7 @@ Confirm values on disk; do not invent a second token file.
 | Font | `font-sans` → Geist Sans; `font-mono` → Geist Mono. No Inter/Roboto/system brand. Never “fix” package fonts for brand. |
 | Radius | Prefer `rounded-md`. Card root may `rounded-xl`. No `rounded-2xl` / `rounded-full` product chrome unless the primitive already uses it (e.g. Avatar). `--radius` = `0.625rem` (+ sm/md/lg/xl calcs in `tokens.css`). |
 | Density | One per page: comfortable (`gap-6`/`p-6`) **XOR** compact (`gap-4`/`p-4`). Forbidden: shell `p-8`. Use `--field-gap` / `--section-gap` / `--control-height*` / `--table-row-height*`. |
+| CSS custom properties on utilities | When the value is a bare custom property, write Tailwind v4 canonical `utility-(--token)` (e.g. `gap-(--field-gap)`). Forbidden for new writes: `utility-[var(--token)]`. Prefer theme semantic utilities when the token is already in `@theme`. Keep `-[…]` only for non–custom-property or multi-part arbitrary values. Complete static class strings only. After `ui:add`, keep CLI `-(--…)` forms — do not rewrite to `[var(--…)]`. Syntax SSOT: Tailwind docs + IntelliSense `suggestCanonicalClasses` (do not invent a parallel Tailwind guide). |
 | Type | Page `h1`: `text-2xl font-semibold tracking-tight`. Section/`CardTitle`/`Empty`: `text-lg font-medium`. Body: `text-sm`. Muted: `text-sm text-muted-foreground`. Auth eyebrow only on auth island. |
 | Color / motion | Semantic classes only (`bg-background`, `text-muted-foreground`, …). No raw `#hex`/`rgb`/`hsl` in feature TSX. Elevation/duration tokens from `tokens.css`. |
 
