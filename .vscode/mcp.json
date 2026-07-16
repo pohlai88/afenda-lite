@@ -1,42 +1,42 @@
 {
-  "servers": {
-    "next-devtools": {
-      "command": "npx",
-      "args": ["-y", "next-devtools-mcp@latest"],
-      "env": {
-        "SystemRoot": "C:\\Windows",
-        "PROGRAMFILES": "C:\\Program Files"
-      }
-    },
-    "neon": {
-      "type": "http",
-      "url": "https://mcp.neon.tech/mcp?projectId=young-hat-54755363",
-      "headers": {
-        "Authorization": "Bearer ${env:NEON_API_KEY}"
-      }
-    },
-    "chrome-devtools": {
-      "command": "npx",
-      "args": ["-y", "chrome-devtools-mcp@latest"],
-      "env": {
-        "SystemRoot": "C:\\Windows",
-        "PROGRAMFILES": "C:\\Program Files"
-      }
-    },
-    "github": {
-      "type": "http",
-      "url": "https://api.githubcopilot.com/mcp/",
-      "headers": {
-        "Authorization": "Bearer ${env:GITHUB_TOKEN}"
-      }
-    },
-    "context7": {
-      "type": "stdio",
-      "command": "npx",
-      "args": ["-y", "@upstash/context7-mcp@latest"],
-      "env": {
-        "CONTEXT7_API_KEY": "${env:CONTEXT7_API_KEY}"
-      }
-    }
-  }
+	"servers": {
+		"next-devtools": {
+			"command": "npx",
+			"args": ["-y", "next-devtools-mcp@latest"],
+			"env": {
+				"SystemRoot": "C:\\Windows",
+				"PROGRAMFILES": "C:\\Program Files"
+			}
+		},
+		"neon": {
+			"type": "http",
+			"url": "https://mcp.neon.tech/mcp?projectId=young-hat-54755363",
+			"headers": {
+				"Authorization": "Bearer ${env:NEON_API_KEY}"
+			}
+		},
+		"chrome-devtools": {
+			"command": "npx",
+			"args": ["-y", "chrome-devtools-mcp@latest"],
+			"env": {
+				"SystemRoot": "C:\\Windows",
+				"PROGRAMFILES": "C:\\Program Files"
+			}
+		},
+		"github": {
+			"type": "http",
+			"url": "https://api.githubcopilot.com/mcp/",
+			"headers": {
+				"Authorization": "Bearer ${env:GITHUB_TOKEN}"
+			}
+		},
+		"context7": {
+			"type": "stdio",
+			"command": "npx",
+			"args": ["-y", "@upstash/context7-mcp@latest"],
+			"env": {
+				"CONTEXT7_API_KEY": "${env:CONTEXT7_API_KEY}"
+			}
+		}
+	}
 }

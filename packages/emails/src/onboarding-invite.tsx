@@ -22,8 +22,8 @@ export type OnboardingInviteEmailProps = {
 
 /**
  * App-owned onboarding invite template.
- * Neon Auth org invites still ship via Neon's shared provider; compose this
- * template when the app sends its own invitation mail.
+ * Neon Auth org invites ship via Zoho SMTP on Neon Auth (ARCH-026); compose
+ * this template only when the app sends its own invitation mail.
  */
 export function OnboardingInviteEmail({
 	inviteeName,

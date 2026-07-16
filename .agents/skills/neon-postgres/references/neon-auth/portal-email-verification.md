@@ -1,27 +1,28 @@
-# Portal — Neon Auth email (shared provider)
+# Portal — Neon Auth email (Zoho SMTP)
 
-This project uses **Neon Auth’s default shared email provider** (`auth@mail.myneon.app`). Do not configure custom SMTP for Neon Auth unless the product owner explicitly requests it.
+This project uses **Zoho SMTP** as Neon Auth’s `email_provider` (host `smtp.zoho.com`, sender `no-reply@nexuscanon.com`). Do **not** revert to Neon’s shared provider (`auth@mail.myneon.app`) without an explicit Docs reopen of [ARCH-026](../../../../../docs/architecture/ARCH-026-auth-session.md).
 
 ## Policy
 
 - Read live config with Neon MCP `get_neon_auth_config` before advising on auth email behavior.
-- **Client onboarding** uses Neon Auth **organization invitations** (`lib/email/send-client-onboarding-email.ts` → `inviteClientOrganizationMember`). There is no separate app email provider.
-- Do not add `NEON_AUTH_SMTP_*` env vars unless explicitly requested.
+- Expect `email_provider.type: standard` with Zoho host/sender — secrets stay in Neon Console / MCP (`***redacted***`); never copy into app env or git.
+- **Client onboarding** uses Neon Auth **organization invitations** via `@afenda/auth` `inviteOrgMember`. There is no separate app SMTP for Neon Auth flows.
+- Do not add `NEON_AUTH_SMTP_*` (or other app-side SMTP) env vars for Neon Auth.
 
-## Neon shared email + verification
+## Verification + delivery
 
-With the shared provider, Neon Auth uses **verification codes** (OTP) when “Verify at sign-up” is enabled — not click-through links. Links require a custom SMTP provider.
+With Zoho SMTP configured, Neon Auth can send verification and transactional mail under the project brand. Prefer live `get_neon_auth_config` over stale “shared provider” assumptions.
 
-Production branch (as of setup): `verify_email_on_sign_up: true`, `require_email_verification: false`, `email_verification_method: otp`, `email_provider.type: shared`.
+Production branch posture (verify live): `verify_email_on_sign_up`, `require_email_verification`, `email_verification_method`, and `email_provider` as returned by MCP.
 
-Because verification is **not required** before sign-in, the `/join` flow is:
+Because verification may still be **not required** before sign-in, the `/join` flow is typically:
 
-1. Sign up (`AuthView` sign-up)
-2. Verify email (`AuthView` email-otp) — **required before org accept** (Neon returns 403 otherwise)
+1. Sign up or sign in (`AuthView`)
+2. Complete email verification when Neon requires it before org accept
 3. Accept invitation
-4. Sign in only if returning with an existing account
+4. Continue to role home
 
-No custom verification UI beyond Neon Auth `AuthView`; OTP email comes from `auth@mail.myneon.app`.
+No custom verification UI beyond Neon Auth `AuthView`; OTP / link mail comes from the Zoho sender configured on Neon Auth.
 
 ## Trusted domains
 
@@ -32,9 +33,10 @@ neon neon-auth domain add https://afenda-lite.vercel.app
 neon neon-auth domain list
 ```
 
-Org invitation emails must use server-side `Origin`/`Referer` from `APP_URL` — see `lib/auth/neon-auth-request.ts`.
+Org invitation API calls must use server-side `Origin`/`Referer` from production `APP_URL` — see `@afenda/auth` `inviteOrgMember` / `requireAppOrigin`.
 
 ## References
 
+- [ARCH-026 Authentication and Session Model](../../../../../docs/architecture/ARCH-026-auth-session.md)
 - [Neon email verification](https://neon.com/docs/auth/guides/email-verification.md)
 - [Neon Auth setup — Next.js](references/neon-auth/setup-nextjs.md)

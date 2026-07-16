@@ -65,7 +65,7 @@ From Neon Auth docs / llms.txt Auth section (capability list — not all enabled
 |------|-----------------|-------------|
 | Credentials | Email/password sign-in / sign-up | **Shipped** via Auth UI `/auth/*` |
 | Password | Forgot / reset UI flows | **Shipped** (`/auth/forgot-password`, `/auth/reset-password`) |
-| Email | Shared Neon mail provider | **Required** — no custom SMTP for Neon Auth ([ARCH-026](../architecture/ARCH-026-auth-session.md)) |
+| Email | Zoho SMTP via Neon Auth console | **Required** — not Neon shared; no app-side SMTP ([ARCH-026](../architecture/ARCH-026-auth-session.md)) |
 | Organizations | Orgs, members, invitations | **Shipped** — invite adapter + `/join?invitationId=…` |
 | Trusted domains | Redirect allowlist | **Ops duty** — `localhost` allowed for local sign-in; production `APP_URL` registered |
 | UI | Managed Auth UI components | **Shipped** — `NeonAuthUIProvider` / `AuthView` island |
@@ -118,7 +118,7 @@ Identity and session packaging **while authenticating** and establishing org mem
 | Session helpers | `getSession()` in `@afenda/auth` | Unauthenticated → redirect `/auth/login` |
 | Coarse roles | `requireRole()` · Neon org role → shell Role | `owner→admin`, `admin→operator`, `member→client` ([ARCH-026](../architecture/ARCH-026-auth-session.md)) |
 | Forbidden shell | Authenticated wrong role → `/403` | Fail-closed |
-| Org invite | `inviteOrgMember` · Origin always production `APP_URL` | Neon shared mail |
+| Org invite | `inviteOrgMember` · Origin always production `APP_URL` | Neon Auth Zoho SMTP |
 | Join accept | `/join?invitationId=…`; Neon mail accept → redirect `/join` | I1.3 closed |
 | Env contract | `NEON_AUTH_BASE_URL`, `NEON_AUTH_COOKIE_SECRET`, `APP_URL`, `DATABASE_URL` | `@afenda/env` — never raw `process.env` in product code |
 | Theme script patch | `patches/next-themes@0.4.6.patch` | Auth UI nests `next-themes`; ThemeScript omitted to avoid React 19 client script-tag / hydration issues |
@@ -222,7 +222,7 @@ P0 post-login redirect + signed-in / bounce
 - Reopening FFT 2B–2D or Collapse/legacy recovery
 - Claiming Neon preview services as Afenda Target
 - Multi-DB or project-per-tenant isolation
-- Custom SMTP for Neon Auth
+- App-side SMTP for Neon Auth / revert to Neon shared mail without ARCH-026 reopen
 - Portal Atmosphere / Storybook remount
 
 ---

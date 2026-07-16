@@ -22,13 +22,21 @@ type HomePageProps = {
  *
  * N8: when Neon Auth has a session but no active organization yet, bounce
  * through the cookie-safe ensure Route Handler before role-home resolution.
+ * When getSession needs Set-Cookie (session_data mint / refresh) in RSC,
+ * bounce through the cookie-safe sync Route Handler first.
  */
 export default async function HomePage({ searchParams }: HomePageProps) {
 	const query = await searchParams;
 	const rawCallback = query[POST_LOGIN_CALLBACK_PARAM];
 	const callbackUrl = Array.isArray(rawCallback) ? undefined : rawCallback;
-	const bootstrap = await getAuthBootstrap(callbackUrl ?? "/");
+	// Omit bare `/` as ensure/sync `next` — those handlers already resolve role
+	// home. Passing `next=/` created ensure↔`/` bounce risk when session_data
+	// cookies lagged behind Neon Auth server state.
+	const bootstrap = await getAuthBootstrap(callbackUrl);
 
+	if (bootstrap.state === "sync_cookies") {
+		redirect(bootstrap.url);
+	}
 	if (bootstrap.state === "ensure_active_org") {
 		redirect(bootstrap.url);
 	}

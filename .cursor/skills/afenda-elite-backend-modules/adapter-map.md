@@ -11,9 +11,11 @@
 
 | File | Disk | Module entrypoints (typical) | Notes |
 |------|------|------------------------------|-------|
-| `invite-org-member.ts` | **yes** (I1.3 / I2.3) | Identity invite schemas + `@afenda/auth` `inviteOrgMember` + Platform `recordRbacAudit` | Operator invite; Origin = `APP_URL`; hard-tenancy audit write |
+| `invite-org-member.ts` | **yes** (I1.3 / I2.3 / I3.1) | Identity invite schemas + `hasPermission(clients.invite)` + `@afenda/auth` `inviteOrgMember` + Platform `recordRbacAudit` | Operator invite; Origin = `APP_URL`; hard-tenancy audit write |
+| `assign-org-role.ts` | **yes** (I3.1) | Identity `assignOrgRole` + `hasPermission(org.roles.manage)` + Platform `recordRbacAudit` | Platform role assign; ActionResult + audit |
+| `revoke-org-role.ts` | **yes** (I3.1) | Identity `revokeOrgRole` + `hasPermission(org.roles.manage)` + Platform `recordRbacAudit` | Soft-revoke; ActionResult + audit |
 | `account.ts` | planned | `modules/identity/*` | Account session / Neon-owned fields |
-| `admin.ts` | planned | `modules/identity/*`, platform helpers | Broader org-admin + RBAC writes |
+| `admin.ts` | planned | `modules/identity/*`, platform helpers | Broader org-admin chrome (assign/revoke shipped as discrete Actions) |
 | `client.ts` | planned | `modules/identity/*`, `modules/declarations/*` | Invite stamps + survey scope |
 | `declarations.ts` | planned | `modules/declarations/domain/**` | Declarations writes |
 | `surveys.ts` | planned | `modules/declarations/domain/**` | Draft create stamps `organizationId` |

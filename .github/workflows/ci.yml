@@ -41,8 +41,41 @@ jobs:
       - name: Database migration journal check
         run: pnpm --filter @afenda/db db:check
 
+      - name: Tenancy soft-residue scan (N9 / ARCH-023 R1)
+        run: pnpm check:tenancy-residue
+
       - name: Biome CI
         run: pnpm run lint:ci
 
       - name: Typecheck · test
         run: pnpm exec turbo run typecheck test
+
+  # N9 / ARCH-023 — live null-org audit on eight hard tenant roots.
+  # Uses production DATABASE_URL (same secret class as Deploy / N4 monitor).
+  # Runs on main only so PR forks are not blocked on environment secrets.
+  tenancy-nulls:
+    name: Hard tenant-root null audit
+    needs: quality
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Zero null organization_id on eight hard roots
+        run: pnpm audit:tenancy-nulls

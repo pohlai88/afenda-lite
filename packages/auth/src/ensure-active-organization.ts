@@ -49,7 +49,13 @@ export async function handleEnsureActiveOrganizationRequest(
 		requestUrl.searchParams.get(ENSURE_NEXT_PARAM),
 	);
 	const auth = getNeonAuth();
-	const { data, error } = await auth.getSession();
+
+	// Bypass signed session_data cookie — inbound headers often still carry a
+	// pre-setActive payload (null activeOrganizationId) while the Auth server
+	// already has the org. Cookie-cache hits here cause ensure↔`/` loops.
+	const { data, error } = await auth.getSession({
+		query: { disableCookieCache: "true" },
+	});
 
 	if (error || !data?.user?.id) {
 		return NextResponse.redirect(new URL(AUTH_LOGIN_PATH, requestUrl.origin));
@@ -73,17 +79,8 @@ export async function handleEnsureActiveOrganizationRequest(
 			);
 		}
 
-		const refreshed = await auth.getSession();
-		if (
-			refreshed.error ||
-			!refreshed.data?.user?.id ||
-			refreshed.data.session.activeOrganizationId !== organizationId
-		) {
-			return new NextResponse(
-				"@afenda/auth: active organization missing after persist",
-				{ status: 500 },
-			);
-		}
+		// Trust persist — do not re-read via cookie-cache getSession (stale
+		// inbound session_data). Upstream mint below refreshes cookies.
 		orgId = organizationId;
 	}
 
@@ -116,6 +113,12 @@ export async function handleEnsureActiveOrganizationRequest(
 			{ status: 500 },
 		);
 	}
+
+	// Mint / refresh session_data on this response so the next RSC navigation
+	// does not keep reading a stale null activeOrganizationId from cookies.
+	await auth.getSession({
+		query: { disableCookieCache: "true" },
+	});
 
 	return NextResponse.redirect(
 		new URL(next ?? resolvePostLoginPath({ role }), requestUrl.origin),

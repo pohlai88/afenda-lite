@@ -48,9 +48,13 @@ export async function withOrg<T extends TenantTable>(
 	table: T,
 	orgId: string,
 ): Promise<T["$inferSelect"][]> {
+	const trimmed = orgId.trim();
+	if (trimmed.length === 0) {
+		throw new Error("withOrg requires non-empty orgId");
+	}
 	const rows = await db
 		.select()
 		.from(table as unknown as typeof schema.surveys)
-		.where(eq(table.organizationId, orgId));
+		.where(eq(table.organizationId, trimmed));
 	return rows as T["$inferSelect"][];
 }

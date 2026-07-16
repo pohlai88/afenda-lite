@@ -2,8 +2,9 @@ import { env } from "@afenda/env";
 import { headers } from "next/headers";
 
 import { requireAppOrigin } from "./join-paths";
+import type { Role } from "./role";
 import { toNeonOrgRole } from "./roles";
-import { getSession, type Role } from "./session";
+import { getSession } from "./session";
 
 const NEON_AUTH_SERVER_PROXY_HEADER = "x-neon-auth-server-proxy";
 
@@ -15,6 +16,8 @@ export type InviteOrgMemberInput = {
 
 export type InviteOrgMemberResult = {
 	data: unknown;
+	/** Neon invitation id when the invite response includes one; otherwise null. */
+	invitationId: string | null;
 };
 
 function normalizeInviteEmail(email: string): string {
@@ -22,10 +25,41 @@ function normalizeInviteEmail(email: string): string {
 }
 
 /**
- * Send a Neon Auth organization invitation (shared email provider).
+ * Pull invitation id from Neon Auth invite-member JSON without inventing ids.
+ * Accepts common Better Auth / Neon envelope shapes only.
+ */
+export function extractInvitationId(data: unknown): string | null {
+	if (typeof data !== "object" || data === null) {
+		return null;
+	}
+
+	const record = data as Record<string, unknown>;
+
+	if (typeof record.id === "string" && record.id.trim().length > 0) {
+		return record.id.trim();
+	}
+
+	if (typeof record.invitationId === "string" && record.invitationId.trim()) {
+		return record.invitationId.trim();
+	}
+
+	if (typeof record.invitation === "object" && record.invitation !== null) {
+		return extractInvitationId(record.invitation);
+	}
+
+	if (typeof record.data === "object" && record.data !== null) {
+		return extractInvitationId(record.data);
+	}
+
+	return null;
+}
+
+/**
+ * Send a Neon Auth organization invitation.
  * Caller must pass the active session org; Neon Auth SDK usage stays in this package.
  *
- * Neon Auth delivers the invite mail. For app-owned invitation mail, compose
+ * Neon Auth delivers the invite mail via the project Zoho SMTP `email_provider`
+ * (ARCH-026) — not app-side SMTP. For optional app-owned compose templates, use
  * `OnboardingInviteEmail` / `renderOnboardingInviteEmail` from `@afenda/emails`
  * with `buildInviteJoinUrl(invitationId)` — do not replace this Neon send path.
  * Invite `Origin` is always production `APP_URL` (never request host).
@@ -87,5 +121,5 @@ export async function inviteOrgMember(
 		parsed = null;
 	}
 
-	return { data: parsed };
+	return { data: parsed, invitationId: extractInvitationId(parsed) };
 }

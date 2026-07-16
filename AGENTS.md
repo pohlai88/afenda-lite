@@ -98,7 +98,7 @@ Controlled docs: respect **Control State**. `Closed` → reopen with explicit Do
 | Rule | Detail |
 |------|--------|
 | Forward code | Greenfield under `apps/web/**` and `packages/*` only |
-| Next open (program) | [GUIDE-018](docs/guides/GUIDE-018-fullstack-e2e-integration-program.md) **I3.1** — Identity / Platform deepen. Phase **I2** closed (ActionResult · feature↛db · first write · OpenAPI honesty). Phase I1 closed. ARCH-028 Checkpoint G **closed**. |
+| Next open (program) | [GUIDE-018](docs/guides/GUIDE-018-fullstack-e2e-integration-program.md) **I3.2** — Declarations submit/read. Phase **I3.1** closed (assign/revoke · `hasPermission`). Phase **I2** / **I1** closed. ARCH-028 Checkpoint G **closed**. |
 | Env | `@afenda/env` + `.env.local` only (compose retired) |
 | Docs trunks | Flat `docs/architecture/ARCH-*.md` — gate `pnpm check:docs-trunk-ban` |
 | Index ghosts | Grep/Glob may list deleted paths — trust `Test-Path` · `git ls-files` · trunk-ban check |
@@ -127,6 +127,7 @@ Controlled docs: respect **Control State**. `Closed` → reopen with explicit Do
 | Cloud | Org `org-fragrant-lake-90358173` · project `young-hat-54755363` · branch `br-tiny-hill-ao82jp6f` |
 | Lock | Rejected R1–R7 / Deferred D4·D5 — do not reopen without explicit approval |
 | Anti-claim | Do **not** claim multi-DB isolation. `FFT_RBAC_ENABLED` ≠ soft SQL tenancy |
+| Permission catalog seed | ARCH-023 v1 via `pnpm --filter @afenda/db db:ensure-permission-catalog` (not baseline migrate) |
 | Ops cheat sheet | [RB-005](docs/runbooks/RB-005-post-lock-coding-cheat-sheet.md) |
 
 ## Environment
@@ -164,7 +165,7 @@ Authority: [`.agents/skills/neon/SKILL.md`](.agents/skills/neon/SKILL.md) · pas
 
 | Topic | Rule |
 |-------|------|
-| Mail | Neon **shared** provider only — no custom SMTP for Neon Auth |
+| Mail | **Zoho SMTP** via Neon Auth console (`email_provider` · `smtp.zoho.com` · sender `no-reply@nexuscanon.com`) — not Neon shared `auth@mail.myneon.app`; no app-side SMTP for Neon Auth flows ([ARCH-026](docs/architecture/ARCH-026-auth-session.md)) |
 | Invites | Neon Auth org invitations via `@afenda/auth` (`inviteOrgMember`); Origin = production `APP_URL` |
 | Join URL | `/join?invitationId=…` |
 | Password reset | Neon Auth UI forms only (`/auth/forgot-password`, `/auth/reset-password`) |

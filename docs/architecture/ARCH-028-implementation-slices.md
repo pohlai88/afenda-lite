@@ -4,13 +4,13 @@
 |-------|-------|
 | ID | ARCH-028 |
 | Category | Architecture |
-| Version | 1.5.4 |
+| Version | 1.5.6 |
 | Status | Living |
 | Control State | Closed |
 | Owner | Platform |
 | Updated | 2026-07-17 |
 
-> **Living.** Ordered Turborepo scaffold checklist (S1–S8 + Checkpoints A–G) and anti-contamination lock. Coding order **closed** after Checkpoint G (2026-07-15). Post-scaffold program sequence: [GUIDE-018](../guides/GUIDE-018-fullstack-e2e-integration-program.md) (Phase I2 DONE; next Ops **I3.1**). Do **not** invent S9 inside this document.
+> **Living.** Ordered Turborepo scaffold checklist (S1–S8 + Checkpoints A–G) and anti-contamination lock. Coding order **closed** after Checkpoint G (2026-07-15). Post-scaffold program sequence: [GUIDE-018](../guides/GUIDE-018-fullstack-e2e-integration-program.md) (I3.1 DONE; next Ops **I3.2**). Do **not** invent S9 inside this document.
 
 # 1. Purpose
 
@@ -238,11 +238,11 @@ Operator override for a later **non-baseline** forward migrate only: `AFENDA_ALL
 
 **Acceptance:**
 - [x] `pnpm --filter @afenda/emails email:dev` previews templates (typically `:3001`)
-- [x] Auth invite path may compose templates from `@afenda/emails` where app-owned mail is used (Neon Auth shared provider still delivers Neon invite mail)
+- [x] Auth invite path may compose templates from `@afenda/emails` where app-owned mail is used (Neon Auth Zoho SMTP still delivers Neon invite mail — ARCH-026)
 
-**Implement evidence (2026-07-15):**
+**Implement evidence (2026-07-15; mail wording corrected 2026-07-17):**
 - Greenfield `@afenda/emails` under `packages/emails/` — `src/onboarding-invite.tsx`, `src/password-reset.tsx`, `src/index.ts` (`OnboardingInviteEmail` / `PasswordResetEmail` + `renderOnboardingInviteEmail` / `renderPasswordResetEmail`); `email:dev` → port **3001**
-- Deps: `react-email`; `@react-email/ui` required as `email:dev` CLI peer (no src import); Neon Auth invite/reset delivery unchanged — `inviteOrgMember` still Neon shared provider; JSDoc points app-owned compose to `@afenda/emails`
+- Deps: `react-email`; `@react-email/ui` required as `email:dev` CLI peer (no src import); Neon Auth invite/reset delivery via Zoho SMTP on Neon Auth console — `inviteOrgMember` does not use app-side SMTP; JSDoc points app-owned compose to `@afenda/emails`
 - Verify: `pnpm --filter @afenda/emails typecheck` PASS · `pnpm --filter @afenda/emails email:dev` Ready at `http://localhost:3001` · `/preview/onboarding-invite` + `/preview/password-reset` HTTP 200 with Afenda-Lite copy
 
 ---
@@ -436,7 +436,7 @@ Absorbed from retired GUIDE-004. Records **Target vs checkout** drift for forwar
 
 | Authority | Disk today | Coding impact |
 |-----------|------------|---------------|
-| [ARCH-022…028](.) | **S1.1–S8.2 + Checkpoints A–G closed** on disk: workspace + `@afenda/{config,db,auth,env,ui,emails}` + `apps/web` route groups + modules domain ports + feature shells + CI/Deploy; ARCH pack **Living** | Post-scaffold coding = [GUIDE-018](../guides/GUIDE-018-fullstack-e2e-integration-program.md) phases (Phase I2 DONE; next **I3.1**). No further coding slices in ARCH-028 order. |
+| [ARCH-022…028](.) | **S1.1–S8.2 + Checkpoints A–G closed** on disk: workspace + `@afenda/{config,db,auth,env,ui,emails}` + `apps/web` route groups + modules domain ports + feature shells + CI/Deploy; ARCH pack **Living** | Post-scaffold coding = [GUIDE-018](../guides/GUIDE-018-fullstack-e2e-integration-program.md) phases (I3.1 DONE; next **I3.2**). No further coding slices in ARCH-028 order. |
 | Living maps ARCH-001…010 · 012…019 · 017 | Repo-root `app/`, `modules/`, `features/`, `components-V2/` **absent** after design-SSOT Collapse (`4680c91`) | **Expected · Forbidden to recover** — see Anti-contamination lock below |
 | [ARCH-023](ARCH-023-multi-tenancy.md) | Living tenancy + RBAC rules; Target packages present | Binding now — keep hard `organization_id` / RBAC invariants on greenfield code |
 | `AGENTS.md` | Cursor Agent cockpit; env SSOT `@afenda/env` + `.env.local` + `.env.example` (S4.1 / Checkpoint D) | Compose retired — do not restore; prefer AGENTS links over duplicating ARCH/FFT prose |
@@ -482,6 +482,8 @@ Living ARCH folder/route/adapter maps remain normative for **shape**. They are *
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.5.6 | 2026-07-17 | Bounded reopen: S6.1 mail wording → Neon Auth Zoho SMTP (ARCH-026 2.0.0); app-side SMTP still forbidden. |
+| 1.5.5 | 2026-07-17 | Bounded reopen (I3.1 audit repair): next-pointer honesty — residual = GUIDE-018 I3.2. |
 | 1.5.4 | 2026-07-17 | Bounded reopen/close: housekeeping drift align after Slice D removed orphan `list-surveys.ts`; S7.3/S7.4 evidence now names `list-client-assignments` / `listClientAssignments`. |
 | 1.5.3 | 2026-07-15 | Bounded reopen (I2.4 audit repair): next-pointer honesty — residual = GUIDE-018 I3.1. |
 | 1.5.2 | 2026-07-15 | Bounded reopen (I2.3 audit repair): next-pointer honesty — residual = GUIDE-018 I2.4. |

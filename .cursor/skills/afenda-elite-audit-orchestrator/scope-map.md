@@ -27,7 +27,8 @@ Available `pnpm` checks and their typical exit codes:
 | `check:module-quality` | Live | No | MOD-002 module pack validation |
 | `check:openapi` | Live | No | OpenAPI YAML + schema validation |
 | `validate:neon-env` | Live | No | Neon Cloud ids vs `.env.local` |
-| `check:tenancy-residue` | Gated | Yes | → `collapse-script-unavailable` |
+| `check:tenancy-residue` | Live | No | Soft dual-mode residue scan (N9 / ARCH-023 R1) |
+| `audit:tenancy-nulls` | Live | No | Eight hard-root null `organization_id` audit (needs `DATABASE_URL`; CI on `main`) |
 | `check:copy` | Gated | Yes | → `collapse-script-unavailable` |
 | `check:tsconfig-no-baseurl` | Live | No | TypeScript config validation |
 | `check:nav` | Gated | Yes | → `collapse-script-unavailable` |

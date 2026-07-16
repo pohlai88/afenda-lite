@@ -26,7 +26,8 @@ AUTHORITY: AGENTS · ARCH-023 · ARCH-026 · GUIDE-018 · ARCH-027 · map siblin
 PATHS: apps/web/** · packages/* only
 FORBID: Collapse/legacy recover · incomplete product paths · Data API as product path
 FORBID: preview Neon Storage/Functions/AI Gateway without Approved slice
-FORBID: custom SMTP for Neon Auth · casual branch switch · secret commit
+FORBID: app-side SMTP for Neon Auth · revert Neon Auth mail to shared provider without ARCH-026 reopen · casual branch switch · secret commit
+REQUIRE: Neon Auth console Zoho SMTP (`email_provider`) for invite/reset/verify mail
 FORBID: FFT 2B–2D · drizzle 0000 baseline on br-tiny-hill-ao82jp6f
 DONE: Neon Slice Score + independent APPROVED only
 COMMIT: only when user explicitly asks

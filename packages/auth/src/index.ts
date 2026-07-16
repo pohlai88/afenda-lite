@@ -22,7 +22,7 @@ export type {
 	InviteOrgMemberInput,
 	InviteOrgMemberResult,
 } from "./invitations";
-export { inviteOrgMember } from "./invitations";
+export { extractInvitationId, inviteOrgMember } from "./invitations";
 export type { BuildJoinUrlInput } from "./join-paths";
 export {
 	buildInviteJoinUrl,
@@ -30,6 +30,13 @@ export {
 	JOIN_PATH,
 	requireAppOrigin,
 } from "./join-paths";
+export type { MemberOrganization } from "./organization-membership";
+export {
+	normalizeMemberOrganizations,
+	persistActiveOrganization,
+	resolveMemberOrganizationId,
+	selectResolvableOrganizationId,
+} from "./organization-membership";
 export type { PostLoginTarget } from "./post-login";
 export {
 	CLIENT_HOME_PATH,
@@ -42,6 +49,7 @@ export {
 export type { SessionProxy } from "./proxy";
 export { createSessionProxy } from "./proxy";
 export { requireRole } from "./rbac";
+export type { Role } from "./role";
 export type { NeonOrgRole } from "./roles";
 export {
 	canInviteMember,
@@ -50,5 +58,10 @@ export {
 	toNeonOrgRole,
 	toSessionRole,
 } from "./roles";
-export type { ApiSession, AuthBootstrap, Role, Session } from "./session";
+export type { ApiSession, AuthBootstrap, Session } from "./session";
 export { getApiSession, getAuthBootstrap, getSession } from "./session";
+export {
+	buildSyncSessionCookiesUrl,
+	handleSyncSessionCookiesRequest,
+	SYNC_SESSION_COOKIES_PATH,
+} from "./sync-session-cookies";

@@ -20,6 +20,7 @@ export {
 	resolveRoleHome,
 	sanitizeCallbackUrl,
 } from "./post-login";
+export type { Role } from "./role";
 
 /**
  * Browser Neon Auth client for Neon Auth UI (`NeonAuthUIProvider`).

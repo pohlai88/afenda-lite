@@ -104,4 +104,41 @@ describe("inviteOrgMember (I1.3)", () => {
 			}),
 		).rejects.not.toThrow(/xyz/);
 	});
+
+	it("returns invitationId when Neon includes an invitation envelope", async () => {
+		fetchMock.mockResolvedValue({
+			ok: true,
+			status: 200,
+			text: async () =>
+				JSON.stringify({
+					invitation: { id: "inv-from-neon", email: "client@example.com" },
+				}),
+		});
+
+		const { inviteOrgMember } = await import("../src/invitations");
+		await expect(
+			inviteOrgMember({
+				email: "client@example.com",
+				orgId: "org-1",
+				role: "client",
+			}),
+		).resolves.toEqual({
+			data: {
+				invitation: { id: "inv-from-neon", email: "client@example.com" },
+			},
+			invitationId: "inv-from-neon",
+		});
+	});
+});
+
+describe("extractInvitationId", () => {
+	it("reads id, invitationId, nested invitation, and data envelopes", async () => {
+		const { extractInvitationId } = await import("../src/invitations");
+		expect(extractInvitationId({ id: " inv-1 " })).toBe("inv-1");
+		expect(extractInvitationId({ invitationId: "inv-2" })).toBe("inv-2");
+		expect(extractInvitationId({ invitation: { id: "inv-3" } })).toBe("inv-3");
+		expect(extractInvitationId({ data: { id: "inv-4" } })).toBe("inv-4");
+		expect(extractInvitationId(null)).toBeNull();
+		expect(extractInvitationId({ ok: true })).toBeNull();
+	});
 });

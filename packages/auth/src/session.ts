@@ -7,12 +7,12 @@ import { buildEnsureActiveOrganizationUrl } from "./ensure-active-organization";
 import { getNeonAuth } from "./neon-auth";
 import { resolveMemberOrganizationId } from "./organization-membership";
 import { sanitizeCallbackUrl } from "./post-login";
+import type { Role } from "./role";
 import { toSessionRole } from "./roles";
+import { buildSyncSessionCookiesUrl } from "./sync-session-cookies";
 
 export { getNeonAuth } from "./neon-auth";
-
-/** Coarse shell / routing signal — not the ARCH-023 permission catalogue. */
-export type Role = "admin" | "operator" | "client";
+export type { Role } from "./role";
 
 /**
  * Typed Afenda session. `orgId` is always present when this value exists —
@@ -36,8 +36,18 @@ type SessionResolveFailure =
 	| "unauthenticated"
 	| "missing_org"
 	| "needs_active_org"
+	| "needs_cookie_sync"
 	| "missing_email"
 	| "missing_role";
+
+const COOKIE_MUTATION_BLOCKED =
+	"Cookies can only be modified in a Server Action or Route Handler";
+
+function isCookieMutationBlockedError(error: unknown): boolean {
+	return (
+		error instanceof Error && error.message.includes(COOKIE_MUTATION_BLOCKED)
+	);
+}
 
 function normalizeSessionEmail(email: unknown): string | null {
 	if (typeof email !== "string") {
@@ -52,7 +62,19 @@ async function loadApiSession(): Promise<
 	| { ok: false; reason: SessionResolveFailure }
 > {
 	const auth = getNeonAuth();
-	const { data, error } = await auth.getSession();
+	let data: Awaited<ReturnType<typeof auth.getSession>>["data"];
+	let error: Awaited<ReturnType<typeof auth.getSession>>["error"];
+	try {
+		({ data, error } = await auth.getSession());
+	} catch (caught) {
+		// Neon Auth applies upstream Set-Cookie during getSession (session_data
+		// mint / token refresh). RSC cannot mutate cookies — bounce to the
+		// cookie-safe sync Route Handler instead of 500.
+		if (isCookieMutationBlockedError(caught)) {
+			return { ok: false, reason: "needs_cookie_sync" };
+		}
+		throw caught;
+	}
 
 	if (error || !data?.user?.id) {
 		return { ok: false, reason: "unauthenticated" };
@@ -116,6 +138,9 @@ async function resolveSession(): Promise<Session> {
 		if (loaded.reason === "unauthenticated") {
 			redirect(AUTH_LOGIN_PATH);
 		}
+		if (loaded.reason === "needs_cookie_sync") {
+			redirect(buildSyncSessionCookiesUrl(await ensureRedirectTarget()));
+		}
 		if (loaded.reason === "needs_active_org") {
 			redirect(buildEnsureActiveOrganizationUrl(await ensureRedirectTarget()));
 		}
@@ -166,11 +191,13 @@ export async function getApiSession(): Promise<ApiSession | null> {
 export type AuthBootstrap =
 	| { state: "anonymous" }
 	| { state: "ready"; session: ApiSession }
-	| { state: "ensure_active_org"; url: string };
+	| { state: "ensure_active_org"; url: string }
+	| { state: "sync_cookies"; url: string };
 
 /**
  * RSC bootstrap for public entry surfaces (e.g. signed-in `/`).
- * Distinguishes anonymous vs resolvable-but-inactive org (N8 cookie persist).
+ * Distinguishes anonymous vs resolvable-but-inactive org (N8 cookie persist)
+ * vs cookie mint/refresh that must run in a Route Handler.
  */
 export async function getAuthBootstrap(
 	next?: string | null,
@@ -178,6 +205,12 @@ export async function getAuthBootstrap(
 	const loaded = await loadApiSessionCached();
 	if (loaded.ok) {
 		return { state: "ready", session: loaded.session };
+	}
+	if (loaded.reason === "needs_cookie_sync") {
+		return {
+			state: "sync_cookies",
+			url: buildSyncSessionCookiesUrl(next),
+		};
 	}
 	if (loaded.reason === "needs_active_org") {
 		return {
