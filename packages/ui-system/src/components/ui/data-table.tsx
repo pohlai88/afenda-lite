@@ -28,7 +28,7 @@ export interface DataTableColumn<T> {
 	title: string;
 	sortable?: boolean;
 	width?: string;
-	render?: (value: any, row: T, index: number) => React.ReactNode;
+	render?: (value: T[keyof T], row: T, index: number) => React.ReactNode;
 }
 
 export interface DataTableProps<T> {
@@ -52,7 +52,7 @@ export interface DataTableProps<T> {
 	className?: string;
 }
 
-function DataTable<T extends Record<string, any>>({
+function DataTable<T extends Record<string, unknown>>({
 	columns,
 	data,
 	loading = false,

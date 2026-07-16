@@ -54,14 +54,14 @@ const FormField = React.forwardRef<HTMLDivElement, FormFieldProps>(
 				<FieldGroup>
 					{children
 						? React.Children.map(children, (child) => {
-								if (React.isValidElement(child)) {
+								if (React.isValidElement<Record<string, unknown>>(child)) {
 									return React.cloneElement(child, {
 										id,
 										"aria-describedby":
 											[descriptionId, errorId].filter(Boolean).join(" ") ||
 											undefined,
 										"aria-invalid": error ? true : undefined,
-									} as any);
+									});
 								}
 								return child;
 							})

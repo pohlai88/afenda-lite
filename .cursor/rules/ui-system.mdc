@@ -37,7 +37,7 @@ The retired `@afenda/ui` playground gateway, `packages/design-system`, and UI-pi
 
 - Root `src/index.ts` carries **no** `"use client"`.
 - Interactive primitives keep `"use client"` in their own files (preserved across barrel re-export).
-- Server-safe leaves today: `alert`, `badge`, `breadcrumb`, `button`, `card`, `input`, `pagination`, `skeleton`, `textarea` — enforced by `packages/ui-system/__tests__/rsc-boundary.test.ts`.
+- Server-safe leaves today: `alert`, `badge`, `breadcrumb`, `button`, `button-group`, `card`, `input`, `kbd`, `native-select`, `pagination`, `skeleton`, `textarea` — every other `components/ui/*` must declare `"use client"` (`packages/ui-system/__tests__/rsc-boundary.test.ts`).
 
 ## Dependencies
 
