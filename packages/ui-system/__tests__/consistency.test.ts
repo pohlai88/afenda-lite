@@ -99,3 +99,21 @@ describe("@afenda/ui-system — dependency + styling consistency", () => {
 		expect(offenders, `raw color literals found in: ${offenders}`).toEqual([]);
 	});
 });
+
+describe("@afenda/ui-system — compose type lock (afenda-elite-ui-compose)", () => {
+	it("Empty title uses section type lock text-lg font-medium", () => {
+		const src = read("src/components/ui/empty.tsx");
+		expect(src).toMatch(/text-lg font-medium/);
+		expect(src).not.toMatch(/text-lg font-semibold/);
+	});
+
+	it("CardTitle uses section type lock text-lg font-medium", () => {
+		const src = read("src/components/ui/card.tsx");
+		expect(src).toMatch(/CardTitle[\s\S]*?text-lg font-medium/);
+	});
+
+	it("Card root documents Card-only rounded-xl exception", () => {
+		const src = read("src/components/ui/card.tsx");
+		expect(src).toMatch(/rounded-xl/);
+	});
+});
