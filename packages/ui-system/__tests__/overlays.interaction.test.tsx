@@ -9,6 +9,9 @@ import {
 	AlertDialogTitle,
 	AlertDialogTrigger,
 	Calendar,
+	Collapsible,
+	CollapsibleContent,
+	CollapsibleTrigger,
 	Combobox,
 	Progress,
 	DataTable,
@@ -773,5 +776,30 @@ describe("WCAG 2.2 AA — Accessible Names and Descriptions", () => {
 		// Optional field should not have required indicator or error state
 		const optionalInput = screen.getByLabelText("Optional field");
 		expect(optionalInput).not.toHaveAttribute("aria-invalid");
+	});
+
+	it("Collapsible toggles content visibility with accessible expanded state", async () => {
+		const user = userEvent.setup();
+
+		render(
+			<Collapsible>
+				<CollapsibleTrigger>Show details</CollapsibleTrigger>
+				<CollapsibleContent>Hidden panel content</CollapsibleContent>
+			</Collapsible>,
+		);
+
+		const trigger = screen.getByRole("button", { name: "Show details" });
+		expect(trigger).toHaveAttribute("aria-expanded", "false");
+		expect(screen.queryByText("Hidden panel content")).not.toBeInTheDocument();
+
+		await user.click(trigger);
+		expect(trigger).toHaveAttribute("aria-expanded", "true");
+		expect(screen.getByText("Hidden panel content")).toBeInTheDocument();
+
+		await user.click(trigger);
+		await waitFor(() =>
+			expect(screen.queryByText("Hidden panel content")).not.toBeInTheDocument(),
+		);
+		expect(trigger).toHaveAttribute("aria-expanded", "false");
 	});
 });
