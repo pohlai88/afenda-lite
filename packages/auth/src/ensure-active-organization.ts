@@ -1,0 +1,123 @@
+import { NextResponse } from "next/server";
+
+import { AUTH_LOGIN_PATH } from "./auth-paths";
+import { getNeonAuth } from "./neon-auth";
+import {
+	persistActiveOrganization,
+	resolveMemberOrganizationId,
+} from "./organization-membership";
+import { resolvePostLoginPath, sanitizeCallbackUrl } from "./post-login";
+import { toSessionRole } from "./roles";
+
+/**
+ * Cookie-safe active-org persistence (N8).
+ * Neon `organization.setActive` mutates session cookies — Next.js allows that
+ * only in Route Handlers / Server Actions, not RSC `getSession` / `getApiSession`.
+ */
+export const ENSURE_ACTIVE_ORGANIZATION_PATH =
+	"/api/session/ensure-active-organization" as const;
+
+const ENSURE_NEXT_PARAM = "next" as const;
+
+function normalizeSessionEmail(email: unknown): string | null {
+	if (typeof email !== "string") {
+		return null;
+	}
+	const normalized = email.trim().toLowerCase();
+	return normalized.length > 0 ? normalized : null;
+}
+
+/** Build the ensure Route Handler URL with an optional same-origin return path. */
+export function buildEnsureActiveOrganizationUrl(next?: string | null): string {
+	const safeNext = sanitizeCallbackUrl(next);
+	if (!safeNext) {
+		return ENSURE_ACTIVE_ORGANIZATION_PATH;
+	}
+	const params = new URLSearchParams({ [ENSURE_NEXT_PARAM]: safeNext });
+	return `${ENSURE_ACTIVE_ORGANIZATION_PATH}?${params.toString()}`;
+}
+
+/**
+ * GET handler body for `ENSURE_ACTIVE_ORGANIZATION_PATH`.
+ * Resolves sole/allowlisted membership, persists active org, then redirects.
+ */
+export async function handleEnsureActiveOrganizationRequest(
+	request: Request,
+): Promise<Response> {
+	const requestUrl = new URL(request.url);
+	const next = sanitizeCallbackUrl(
+		requestUrl.searchParams.get(ENSURE_NEXT_PARAM),
+	);
+	const auth = getNeonAuth();
+	const { data, error } = await auth.getSession();
+
+	if (error || !data?.user?.id) {
+		return NextResponse.redirect(new URL(AUTH_LOGIN_PATH, requestUrl.origin));
+	}
+
+	let orgId = data.session.activeOrganizationId;
+	if (typeof orgId !== "string" || orgId.length === 0) {
+		const organizationId = await resolveMemberOrganizationId(auth);
+		if (!organizationId) {
+			return new NextResponse(
+				"@afenda/auth: no resolvable member organization for active session",
+				{ status: 403 },
+			);
+		}
+
+		const persisted = await persistActiveOrganization(auth, organizationId);
+		if (!persisted) {
+			return new NextResponse(
+				"@afenda/auth: failed to persist active organization on session",
+				{ status: 500 },
+			);
+		}
+
+		const refreshed = await auth.getSession();
+		if (
+			refreshed.error ||
+			!refreshed.data?.user?.id ||
+			refreshed.data.session.activeOrganizationId !== organizationId
+		) {
+			return new NextResponse(
+				"@afenda/auth: active organization missing after persist",
+				{ status: 500 },
+			);
+		}
+		orgId = organizationId;
+	}
+
+	const email = normalizeSessionEmail(data.user.email);
+	if (!email) {
+		return new NextResponse(
+			"@afenda/auth: authenticated user email missing from session",
+			{ status: 500 },
+		);
+	}
+
+	const { data: memberRole, error: roleError } =
+		await auth.organization.getActiveMemberRole({
+			query: { organizationId: orgId },
+		});
+	const neonRole = memberRole?.role;
+	if (roleError || typeof neonRole !== "string" || neonRole.length === 0) {
+		return new NextResponse(
+			"@afenda/auth: active organization membership role unresolved",
+			{ status: 500 },
+		);
+	}
+
+	let role: ReturnType<typeof toSessionRole>;
+	try {
+		role = toSessionRole(neonRole);
+	} catch {
+		return new NextResponse(
+			"@afenda/auth: active organization membership role unresolved",
+			{ status: 500 },
+		);
+	}
+
+	return NextResponse.redirect(
+		new URL(next ?? resolvePostLoginPath({ role }), requestUrl.origin),
+	);
+}

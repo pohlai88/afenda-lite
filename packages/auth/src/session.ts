@@ -1,10 +1,15 @@
-import { env } from "@afenda/env";
-import { createNeonAuth, type NeonAuth } from "@neondatabase/auth/next/server";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { cache } from "react";
 
 import { AUTH_LOGIN_PATH } from "./auth-paths";
+import { buildEnsureActiveOrganizationUrl } from "./ensure-active-organization";
+import { getNeonAuth } from "./neon-auth";
+import { resolveMemberOrganizationId } from "./organization-membership";
+import { sanitizeCallbackUrl } from "./post-login";
 import { toSessionRole } from "./roles";
+
+export { getNeonAuth } from "./neon-auth";
 
 /** Coarse shell / routing signal — not the ARCH-023 permission catalogue. */
 export type Role = "admin" | "operator" | "client";
@@ -30,21 +35,9 @@ export type ApiSession = Session & {
 type SessionResolveFailure =
 	| "unauthenticated"
 	| "missing_org"
+	| "needs_active_org"
 	| "missing_email"
 	| "missing_role";
-
-let neonAuth: NeonAuth | undefined;
-
-/** Package-internal Neon Auth singleton (shared by S3.2+). Not a public export. */
-export function getNeonAuth(): NeonAuth {
-	if (!neonAuth) {
-		neonAuth = createNeonAuth({
-			baseUrl: env.NEON_AUTH_BASE_URL,
-			cookies: { secret: env.NEON_AUTH_COOKIE_SECRET },
-		});
-	}
-	return neonAuth;
-}
 
 function normalizeSessionEmail(email: unknown): string | null {
 	if (typeof email !== "string") {
@@ -67,6 +60,11 @@ async function loadApiSession(): Promise<
 
 	const orgId = data.session.activeOrganizationId;
 	if (typeof orgId !== "string" || orgId.length === 0) {
+		// Neon setActive mutates cookies — RSC cannot persist. Route Handler does.
+		const resolvableOrgId = await resolveMemberOrganizationId(auth);
+		if (resolvableOrgId) {
+			return { ok: false, reason: "needs_active_org" };
+		}
 		return { ok: false, reason: "missing_org" };
 	}
 
@@ -107,11 +105,19 @@ async function loadApiSession(): Promise<
 /** Request-scoped Neon session load shared by `getSession` and `getApiSession`. */
 const loadApiSessionCached = cache(loadApiSession);
 
+async function ensureRedirectTarget(): Promise<string | null> {
+	const headerStore = await headers();
+	return sanitizeCallbackUrl(headerStore.get("x-afenda-pathname"));
+}
+
 async function resolveSession(): Promise<Session> {
 	const loaded = await loadApiSessionCached();
 	if (!loaded.ok) {
 		if (loaded.reason === "unauthenticated") {
 			redirect(AUTH_LOGIN_PATH);
+		}
+		if (loaded.reason === "needs_active_org") {
+			redirect(buildEnsureActiveOrganizationUrl(await ensureRedirectTarget()));
 		}
 		if (loaded.reason === "missing_org") {
 			throw new Error(
@@ -138,6 +144,8 @@ async function resolveSession(): Promise<Session> {
 /**
  * Resolve the authenticated session or redirect to login.
  * Never returns null. Never fabricates `orgId` when the active org is absent.
+ * When a sole/allowlisted membership exists but is not yet active, redirects to
+ * the cookie-safe ensure Route Handler (N8).
  * Request-scoped dedupe via `React.cache` (RSC Accelint).
  */
 export const getSession: () => Promise<Session> = cache(resolveSession);
@@ -146,8 +154,36 @@ export const getSession: () => Promise<Session> = cache(resolveSession);
  * Authenticated session for Route Handlers — `null` when unauthenticated or
  * incomplete (missing org, role, or email). Never redirects.
  * Shares the same request-scoped Neon load as `getSession`.
+ *
+ * `needs_active_org` is incomplete for API callers — use the ensure Route
+ * Handler (or `getAuthBootstrap` on RSC entry) before treating as anonymous.
  */
 export async function getApiSession(): Promise<ApiSession | null> {
 	const loaded = await loadApiSessionCached();
 	return loaded.ok ? loaded.session : null;
+}
+
+export type AuthBootstrap =
+	| { state: "anonymous" }
+	| { state: "ready"; session: ApiSession }
+	| { state: "ensure_active_org"; url: string };
+
+/**
+ * RSC bootstrap for public entry surfaces (e.g. signed-in `/`).
+ * Distinguishes anonymous vs resolvable-but-inactive org (N8 cookie persist).
+ */
+export async function getAuthBootstrap(
+	next?: string | null,
+): Promise<AuthBootstrap> {
+	const loaded = await loadApiSessionCached();
+	if (loaded.ok) {
+		return { state: "ready", session: loaded.session };
+	}
+	if (loaded.reason === "needs_active_org") {
+		return {
+			state: "ensure_active_org",
+			url: buildEnsureActiveOrganizationUrl(next),
+		};
+	}
+	return { state: "anonymous" };
 }

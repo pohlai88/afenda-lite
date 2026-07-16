@@ -15,6 +15,17 @@ import { shouldBypassSessionGate } from "./session-gate-policy";
 
 const runSessionGate = createSessionProxy();
 
+const AFENDA_PATHNAME_HEADER = "x-afenda-pathname";
+
+function withPathnameHeader(request: NextRequest): Headers {
+	const requestHeaders = new Headers(request.headers);
+	requestHeaders.set(
+		AFENDA_PATHNAME_HEADER,
+		`${request.nextUrl.pathname}${request.nextUrl.search}`,
+	);
+	return requestHeaders;
+}
+
 export async function proxy(request: NextRequest) {
 	if (
 		shouldBypassSessionGate({
@@ -25,10 +36,28 @@ export async function proxy(request: NextRequest) {
 			playgroundEnabled: env.PLAYGROUND_ENABLED,
 		})
 	) {
-		return NextResponse.next();
+		return NextResponse.next({
+			request: { headers: withPathnameHeader(request) },
+		});
 	}
 
-	return runSessionGate(request);
+	const gateResponse = await runSessionGate(request);
+	if (gateResponse.status >= 300 && gateResponse.status < 400) {
+		return gateResponse;
+	}
+
+	// Authenticated continue — stamp pathname so N8 ensure can restore deep links.
+	const response = NextResponse.next({
+		request: { headers: withPathnameHeader(request) },
+	});
+	gateResponse.headers.forEach((value, key) => {
+		if (key.toLowerCase() === "set-cookie") {
+			response.headers.append(key, value);
+		} else {
+			response.headers.set(key, value);
+		}
+	});
+	return response;
 }
 
 export const config = {

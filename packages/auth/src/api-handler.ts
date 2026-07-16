@@ -1,4 +1,4 @@
-import { getNeonAuth } from "./session";
+import { getNeonAuth } from "./neon-auth";
 
 /** Next.js App Router GET/POST handlers for `/api/auth/[...path]`. */
 export type AuthApiHandlers = ReturnType<
