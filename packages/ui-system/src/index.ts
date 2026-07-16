@@ -27,6 +27,7 @@ export * from "./components/ui/command";
 export * from "./components/ui/context-menu";
 // Data display
 export * from "./components/ui/data-table";
+export * from "./components/ui/date-picker";
 export * from "./components/ui/dialog";
 export * from "./components/ui/dropdown-menu";
 // Empty states

@@ -97,6 +97,22 @@
 	--sidebar-accent-foreground: oklch(0.205 0 0);
 	--sidebar-border: oklch(0.922 0 0);
 	--sidebar-ring: oklch(0.708 0 0);
+	--control-height: 2.25rem;
+	--control-height-sm: 2rem;
+	--table-row-height: 3rem;
+	--table-row-height-compact: 2.5rem;
+	--field-gap: 1rem;
+	--section-gap: 2rem;
+	--shadow-raised: 0 1px 3px oklch(0 0 0 / 12%);
+	--shadow-overlay: 0 4px 12px oklch(0 0 0 / 15%);
+	--shadow-dialog: 0 8px 32px oklch(0 0 0 / 20%);
+	--duration-instant: 0ms;
+	--duration-fast: 150ms;
+	--duration-normal: 250ms;
+	--duration-slow: 350ms;
+	--ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+	--ease-enter: cubic-bezier(0, 0, 0.2, 1);
+	--ease-exit: cubic-bezier(0.4, 0, 1, 1);
 }
 
 .dark {
@@ -138,4 +154,20 @@
 	--sidebar-accent-foreground: oklch(0.985 0 0);
 	--sidebar-border: oklch(1 0 0 / 10%);
 	--sidebar-ring: oklch(0.556 0 0);
+	--control-height: 2.25rem;
+	--control-height-sm: 2rem;
+	--table-row-height: 3rem;
+	--table-row-height-compact: 2.5rem;
+	--field-gap: 1rem;
+	--section-gap: 2rem;
+	--shadow-raised: 0 1px 3px oklch(0 0 0 / 28%);
+	--shadow-overlay: 0 4px 12px oklch(0 0 0 / 35%);
+	--shadow-dialog: 0 8px 32px oklch(0 0 0 / 45%);
+	--duration-instant: 0ms;
+	--duration-fast: 150ms;
+	--duration-normal: 250ms;
+	--duration-slow: 350ms;
+	--ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+	--ease-enter: cubic-bezier(0, 0, 0.2, 1);
+	--ease-exit: cubic-bezier(0.4, 0, 1, 1);
 }

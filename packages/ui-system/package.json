@@ -27,7 +27,6 @@
 		"ui:add": "shadcn add"
 	},
 	"dependencies": {
-		"@base-ui/react": "catalog:",
 		"class-variance-authority": "catalog:",
 		"clsx": "catalog:",
 		"cmdk": "catalog:",
@@ -48,6 +47,7 @@
 		"@afenda/config": "workspace:*",
 		"@types/react": "catalog:",
 		"@types/react-dom": "catalog:",
+		"axe-core": "^4.12.1",
 		"react": "catalog:",
 		"react-dom": "catalog:",
 		"shadcn": "catalog:",

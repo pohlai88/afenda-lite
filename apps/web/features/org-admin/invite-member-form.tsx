@@ -1,5 +1,13 @@
 "use client";
 
+import {
+	Button,
+	FormError,
+	FormField,
+	Input,
+	NativeSelect,
+	NativeSelectOption,
+} from "@afenda/ui-system";
 import { useActionState } from "react";
 
 import {
@@ -8,9 +16,6 @@ import {
 } from "@/app/actions/invite-org-member";
 
 const initialState: InviteOrgMemberActionState = null;
-
-const fieldClassName =
-	"border-input bg-background h-9 w-full rounded-md border px-3 text-sm";
 
 type InviteRole = "admin" | "operator" | "client";
 
@@ -21,17 +26,10 @@ const ROLE_LABELS: Record<InviteRole, string> = {
 };
 
 type InviteMemberFormProps = {
-	/** Membership roles the signed-in operator may invite. */
 	inviteableRoles: InviteRole[];
-	/** Canonical join path (`JOIN_PATH`) from `@afenda/auth` — RSC-supplied. */
 	joinPath: string;
 };
 
-/**
- * Operator invite form — posts to `inviteOrgMemberAction` → Neon Auth +
- * org-scoped RBAC audit write (GUIDE-018 I1.3 / I2.3). Invitees join at
- * `/join?invitationId=…`.
- */
 export function InviteMemberForm({
 	inviteableRoles,
 	joinPath,
@@ -45,50 +43,42 @@ export function InviteMemberForm({
 		? "client"
 		: (inviteableRoles[0] ?? "client");
 
+	const disabled = pending || inviteableRoles.length === 0;
+
 	return (
-		<form action={formAction} className="flex max-w-md flex-col gap-4">
-			<div className="flex flex-col gap-2">
-				<label htmlFor="invite-email" className="text-sm font-medium">
-					Email
-				</label>
-				<input
-					id="invite-email"
+		<form
+			action={formAction}
+			className="flex max-w-md flex-col gap-[var(--field-gap)]"
+		>
+			<FormField label="Email" required>
+				<Input
 					name="email"
 					type="email"
 					autoComplete="email"
 					required
-					disabled={pending || inviteableRoles.length === 0}
+					disabled={disabled}
 					placeholder="member@example.com"
-					className={fieldClassName}
 				/>
-			</div>
+			</FormField>
 
-			<div className="flex flex-col gap-2">
-				<label htmlFor="invite-role" className="text-sm font-medium">
-					Membership role
-				</label>
-				<select
-					id="invite-role"
+			<FormField label="Membership role" required>
+				<NativeSelect
 					name="role"
 					defaultValue={defaultRole}
-					disabled={pending || inviteableRoles.length === 0}
-					className={fieldClassName}
+					disabled={disabled}
+					className="w-full"
 				>
 					{inviteableRoles.map((role) => (
-						<option key={role} value={role}>
+						<NativeSelectOption key={role} value={role}>
 							{ROLE_LABELS[role]}
-						</option>
+						</NativeSelectOption>
 					))}
-				</select>
-			</div>
+				</NativeSelect>
+			</FormField>
 
-			<button
-				type="submit"
-				disabled={pending || inviteableRoles.length === 0}
-				className="bg-primary text-primary-foreground h-9 rounded-md px-4 text-sm font-medium disabled:opacity-50"
-			>
+			<Button type="submit" disabled={disabled}>
 				{pending ? "Sending invitation…" : "Send invitation"}
-			</button>
+			</Button>
 
 			{state?.ok === true ? (
 				<p className="text-sm text-muted-foreground" role="status">
@@ -100,11 +90,7 @@ export function InviteMemberForm({
 				</p>
 			) : null}
 
-			{state?.ok === false ? (
-				<p className="text-sm text-destructive" role="alert">
-					{state.message}
-				</p>
-			) : null}
+			{state?.ok === false ? <FormError message={state.message} /> : null}
 		</form>
 	);
 }

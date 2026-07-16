@@ -22,6 +22,8 @@ import {
 	ContextMenuItem,
 	ContextMenuTrigger,
 	DataTable,
+	DatePicker,
+	DateRangePicker,
 	Dialog,
 	DialogContent,
 	DialogTitle,
@@ -519,6 +521,45 @@ describe("WCAG 2.2 AA — Accessible Names and Descriptions", () => {
 		expect(mockChange).toHaveBeenCalledWith("apple");
 	});
 
+	it("Combobox supports multi-select tags", async () => {
+		const user = userEvent.setup();
+		const mockChange = vi.fn();
+		render(
+			<Combobox
+				multiple
+				options={[
+					{ value: "apple", label: "Apple" },
+					{ value: "banana", label: "Banana" },
+				]}
+				value={["apple"]}
+				onValueChange={mockChange}
+				placeholder="Select fruits..."
+			/>,
+		);
+		expect(screen.getByText("Apple")).toBeInTheDocument();
+		await user.click(screen.getByRole("combobox"));
+		await user.click(screen.getByText("Banana"));
+		expect(mockChange).toHaveBeenCalledWith(["apple", "banana"]);
+	});
+
+	it("DatePicker opens a calendar popover", async () => {
+		const user = userEvent.setup();
+		render(<DatePicker placeholder="Pick a date" onChange={vi.fn()} />);
+		await user.click(screen.getByRole("button", { name: /Pick a date/i }));
+		expect(screen.getByRole("grid")).toBeInTheDocument();
+	});
+
+	it("DateRangePicker opens a multi-month calendar", async () => {
+		const user = userEvent.setup();
+		render(
+			<DateRangePicker placeholder="Pick a date range" onChange={vi.fn()} />,
+		);
+		await user.click(
+			screen.getByRole("button", { name: /Pick a date range/i }),
+		);
+		expect(screen.getAllByRole("grid").length).toBeGreaterThanOrEqual(1);
+	});
+
 	it("Calendar supports date selection with keyboard navigation", async () => {
 		const user = userEvent.setup();
 		const mockSelect = vi.fn();
@@ -724,16 +765,20 @@ describe("WCAG 2.2 AA — Accessible Names and Descriptions", () => {
 		const user = userEvent.setup();
 		const mockSelectionChange = vi.fn();
 
-		const columns = [{ key: "name", title: "Name" }];
+		const columns = [{ key: "name" as const, title: "Name", filterable: true }];
 		const data = [{ name: "Item 1" }, { name: "Item 2" }];
 
 		render(
 			<DataTable
 				columns={columns}
 				data={data}
+				getRowId={(row) => String(row.name)}
 				selectable={true}
-				selectedRows={new Set([0])}
+				selectedRowIds={new Set(["Item 1"])}
 				onSelectionChange={mockSelectionChange}
+				rowActions={() => <button type="button">Edit</button>}
+				filters={{ name: "" }}
+				onFilterChange={vi.fn()}
 			/>,
 		);
 
