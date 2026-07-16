@@ -17,12 +17,18 @@ const statusBadgeVariants = cva(
   {
     variants: {
       status: {
-        success: "bg-green-50 border-green-200 text-green-700 dark:bg-green-950 dark:border-green-800 dark:text-green-300",
-        pending: "bg-yellow-50 border-yellow-200 text-yellow-700 dark:bg-yellow-950 dark:border-yellow-800 dark:text-yellow-300",
-        error: "bg-red-50 border-red-200 text-red-700 dark:bg-red-950 dark:border-red-800 dark:text-red-300",
-        warning: "bg-orange-50 border-orange-200 text-orange-700 dark:bg-orange-950 dark:border-orange-800 dark:text-orange-300",
-        inactive: "bg-gray-50 border-gray-200 text-gray-600 dark:bg-gray-950 dark:border-gray-800 dark:text-gray-400",
-        active: "bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-950 dark:border-blue-800 dark:text-blue-300",
+        success:
+          "border-success/25 bg-success/10 text-success dark:border-success/30 dark:bg-success/15",
+        pending:
+          "border-warning/25 bg-warning/10 text-warning dark:border-warning/30 dark:bg-warning/15",
+        error:
+          "border-destructive/25 bg-destructive/10 text-destructive dark:border-destructive/30 dark:bg-destructive/15",
+        warning:
+          "border-warning/25 bg-warning/10 text-warning dark:border-warning/30 dark:bg-warning/15",
+        inactive:
+          "border-border bg-muted text-muted-foreground",
+        active:
+          "border-info/25 bg-info/10 text-info dark:border-info/30 dark:bg-info/15",
       },
       size: {
         sm: "px-1.5 py-0.5 text-xs",
