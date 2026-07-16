@@ -1,12 +1,12 @@
 # afenda-elite-ui-compose — recipes & gate SSOT
 
-Companion to [SKILL.md](SKILL.md). Recipes use **barrel export names** from `packages/ui-system/src/index.ts`. Confirm the barrel before inventing a local copy.
+Companion to [SKILL.md](SKILL.md). **SKILL** = QUALITY ORDER, locks, hard rules, matrix, Compose Score template. **This file** = recipes, F*/C*, UI-CAP, promotion rule, score rubric. Confirm barrel names in `packages/ui-system/src/index.ts` before inventing a local copy.
 
-**QUALITY ORDER (binding):** AUTHORITY → CONSISTENCY → CORRECT-COMPONENT → SUITABILITY → SCALABILITY → STABILITY — see [SKILL.md](SKILL.md). A visually improved screen that violates a higher rule is a failed change. **Efficiency vs rigidity:** consistency = visual language; correct-component = building blocks; suitability = task-fit pattern; scalability = no local compensation for reusable gaps; stability = safe ship of the non-compensating solution — neither “shadcn where possible” drift nor “every edit is a Sheet” rigidity.
+**QUALITY ORDER:** AUTHORITY → CONSISTENCY → CORRECT-COMPONENT → SUITABILITY → SCALABILITY → STABILITY — see [SKILL.md](SKILL.md). Prettier that breaks a higher rule = failed.
 
-**Vitest SSOT:** F* → `apps/web/__tests__/compose-redflags.test.ts`; C* → `apps/web/__tests__/compose-suitability.test.ts` (shared scan: `compose-scan.ts`); vague exports → `packages/ui-system/__tests__/export-naming.test.ts`.
+**Vitest SSOT:** F* → `apps/web/__tests__/compose-redflags.test.ts`; C* → `apps/web/__tests__/compose-suitability.test.ts` (`compose-scan.ts`); vague exports → `packages/ui-system/__tests__/export-naming.test.ts`.
 
-**Risk A — test/reference drift:** duplicated rule prose is OK; IDs must not diverge. Gate `apps/web/__tests__/compose-gate-ids.test.ts` asserts reference tables declare exactly F1–F8 and C1–C3 and that matching `it("F…" / it("C…")` titles exist in the Vitest files (plus `export-naming.test.ts` presence). When adding a gate: update reference table row **and** the test title in the same change.
+**Risk A:** IDs must not diverge. `compose-gate-ids.test.ts` asserts this file’s `| F1 |`…`| F8 |` / `| C1 |`…`| C3 |` table cells match Vitest `it("F…")` / `it("C…")` titles. Adding a gate = update this table **and** the test title in the same change.
 
 ## Composition recipes → barrel
 
@@ -34,23 +34,21 @@ import { Button, Card, FormField, Input } from "@afenda/ui-system";
 
 Missing export → ADR-010: `pnpm --filter @afenda/ui-system ui:add <name>` → relative imports → export from `src/index.ts` → package test. Never copy into `apps/web`.
 
-## Hard rules 12–15 (restated)
+## Hard rules 12–15 (detail)
 
 | Rule | Binding |
 |------|---------|
-| 12 | No silent barrel API/behavior change. Additive → tests. Rename/removal/default/semantic → migrate **all** monorepo consumers in the **same** change. |
-| 13 | Export names communicate role. Ban exact `Panel`, `Container`, `Box`, `Item`, `Wrapper`, `View`. Gate: `export-naming.test.ts`. Keep one flat barrel — **no split on count alone** (Risk D). Future review only with Approved ADR + measurable evidence (naming ambiguity, slow editor/build analysis, export collisions, tree-shaking failure, recurring wrong component selection). |
-| 14 | `DataTable` owns presentation + interaction contracts only. Feature owns data fetching, URL state, business permissions, domain actions, persistence, and server operations. |
-| 15 | **NO LOCAL CAPABILITY COMPENSATION** — when the correct barrel primitive/compound lacks an essential reusable capability, stop and issue a UI composition capability finding (`UI-CAP-*`). Do not reproduce missing behavior in `apps/web`, add a feature-local substitute, or invent fake domain controls. Reusable capability upgrades in `@afenda/ui-system`; domain capability from the owning product feature. Feature-local composition of **existing** barrel primitives remains allowed when genuinely product-specific and not duplicating reusable responsibility. |
+| 12 | No silent barrel API/behavior change. Additive → tests. Rename/removal/default/semantic → migrate **all** consumers same change. |
+| 13 | Export names communicate role. Ban exact `Panel`, `Container`, `Box`, `Item`, `Wrapper`, `View`. Gate: `export-naming.test.ts`. Flat barrel — no split on count alone (Risk D). |
+| 14 | `DataTable` = presentation + interaction only. Feature owns fetch, URL, permissions, domain, persistence, server ops. |
+| 15 | **NO LOCAL CAPABILITY COMPENSATION** — `UI-CAP-*`; no feature-local substitute for reusable gaps; no fake domain controls. Product-local compose of **existing** barrel primitives OK when not duplicating shared responsibility. |
 
-**Rule 15 — Allowed vs forbidden**
-
-| Allowed | Forbidden |
-|---------|-----------|
-| Product-specific arrangement of approved primitives | Reimplementing a missing reusable primitive or compound |
-| Feature-owned domain workflow | Generic table, selector, dialog, or metric behavior duplicated locally |
+| Allowed (rule 15) | Forbidden |
+|-------------------|-----------|
+| Product-specific arrangement of approved primitives | Reimplementing a missing reusable primitive/compound |
+| Feature-owned domain workflow | Generic table/selector/dialog/metric duplicated locally |
 | One-off domain presentation | Parallel UI-system layer |
-| Passing real routes/actions through component ports | Fake or disabled actions added for appearance |
+| Real routes/actions through component ports | Fake or disabled actions for appearance |
 
 ---
 
@@ -244,32 +242,62 @@ rg -n "divide-y.*border|rounded-md border" apps/web/features apps/web/app --glob
 rg -n "text-(3xl|4xl|5xl)|text-xl font-semibold" apps/web/features apps/web/app --glob "*.tsx"
 ```
 
-**Done means (suitability + scalability + stability):** run the Shared Component Capability Gate (SCALABILITY-FIRST) before composing shared surfaces. Apply the STABILITY verification matrix in [SKILL.md](SKILL.md) for the changed layer(s) only after capability is clear or an approved reduced/product-local outcome is recorded. Usual floor: `pnpm check:ui-system` (compose-redflags F*, compose-suitability C1–C3, package + web tests including `tailwind-emit` as scoped). Run `pnpm --filter @afenda/web build` when the matrix requires it (RSC boundary, **structural package change**, global CSS/font map, clear Next emit risk). When the matrix requires a **representative route**, use the Risk B definition in [SKILL.md](SKILL.md) (real non-auth product route exercising the change — not placeholder/dead/test-only). **Risk C:** invoking `frontend-ui-engineering` does not satisfy completion — scoped a11y evidence must be green. Greps alone never count as done.
+**Done means (suitability + scalability + stability):** run the Shared Component Capability Gate (SCALABILITY-FIRST) before composing shared surfaces. Apply the STABILITY verification matrix in [SKILL.md](SKILL.md) for the changed layer(s) only after capability is clear or an approved reduced/product-local outcome is recorded. Usual floor: `pnpm check:ui-system` (compose-redflags F*, compose-suitability C1–C3, package + web tests including `tailwind-emit` as scoped). Run `pnpm --filter @afenda/web build` when the matrix requires it (RSC boundary, **structural package change**, global CSS/font map, clear Next emit risk). When the matrix requires a **representative route**, use the Risk B definition in [SKILL.md](SKILL.md) (real non-auth product route exercising the change — not placeholder/dead/test-only). **Risk C:** invoking `frontend-ui-engineering` does not satisfy completion — scoped a11y evidence must be green. Greps alone never count as done. Always close with **Compose Score** (out of 100) + **Path to 100%** per [SKILL.md](SKILL.md#compose-score-binding--out-of-100).
 
-## Appendix — Maturity & approval
+## Compose Score rubric
 
-**Final refinements (shipped):** Risk A gate-ID sync · Risk B representative route · Risk C a11y completion ownership — see rows below and [SKILL.md](SKILL.md). Architecture unchanged.
+Binding response shape and caps live in [SKILL.md](SKILL.md#compose-score-binding--out-of-100). Use this rubric to assign each dimension. Award partial points only when the note names the residual gap.
 
-**Approved strengths (keep):** strong authority chain · one UI package · one flat barrel · locked semantic tokens · composition recipes · anti-handroll · machine-enforced F* · scoped auth exceptions · RSC discipline · product-vs-auth separation · deterministic missing-component workflow (`ui:add` → barrel → tests) · verification floor `pnpm check:ui-system`.
+| Dimension | Max | Full points when | Deduct when |
+|-----------|-----|------------------|-------------|
+| AUTHORITY | 15 | ADR-010 barrel + tokens + Geist only; no parallel SSOT | Deep/retired imports (−15 F6); parallel UI tree (−15 F7); auth-surface leak (−10 F8); inventing tokens (−10) |
+| CONSISTENCY | 20 | Type / density / radius / color locks hold; one density; one page title | `p-8` (−10 F2); rogue title (−10 F3); density mix (−8); raw hex/rgb (−10); `rounded-2xl` chrome (−5) |
+| CORRECT-COMPONENT | 20 | Intended barrel for every chrome job; no handroll | Fake Button (−15 F1); bordered tabular `<ul>` (−15 F4); handrolled Input/Alert (−10); missing Empty/Spinner where required (−8 F5) |
+| SUITABILITY | 15 | Recipe/default or justified alternate; C1–C3 clean | Wrong overlay for destroy (−15 C1); Button>Link without asChild (−10 C2); clickable Card (−10 C3); mechanical Sheet/Dialog misuse (−5) |
+| SCALABILITY | 15 | Capability gate run; no local compensation; honest reduced status or CAPABLE | Local substitute for reusable gap (−15); fake/disabled actions (−15); missing `UI-CAP-*` when blocked (−8); ui-system pollution with domain (−10) |
+| STABILITY | 15 | Matrix rows green for changed layer; scoped a11y green; representative route when required | Missing `check:ui-system` when floor applies (−10); a11y incomplete (−8 Risk C); no representative route when required (−8 Risk B); silent barrel API change (−15 rule 12) |
 
-**Final verdict:** efficient and effective for CONSISTENCY-FIRST, CORRECT-COMPONENT-FIRST, SCALABILITY-FIRST, and STABILITY-FIRST. Strongest qualities: consistency from live repository authority; correct components via recipes + semantic gates; scalability via no local compensation + UI-CAP findings; stability proven proportionally (tests, integration, builds); drift blocked by instructions **and** executable gates; architecture stays simple — one package, one barrel, one token surface, one normal verification floor (`pnpm check:ui-system`).
+**Path to 100%:** one short sentence (two max) naming the highest-impact fix(es) in QUALITY ORDER (fix AUTHORITY before polishing Suitability). Prefer concrete file/port language (`fix density gap-4→gap-6`, `add listClientAssignments then Sheet`, `run check:ui-system`). Do not invent beauty work.
 
-**Maturity thesis:** next improvement is **not** additional styling rules or product-completeness Vitest (no F9/C4). Continue strengthening **evidence integrity** — keep documented gates, executable tests, and representative product routes synchronized over time (Risk A/B/C). Capability gaps stay structured findings.
+**Examples (advisory):**
 
-| Required maturity gate | Status | Where |
-|------------------------|--------|-------|
-| Explicit STABILITY-FIRST in QUALITY ORDER | Shipped | SKILL QUALITY ORDER §6 + STABILITY-FIRST |
-| Explicit SCALABILITY-FIRST (before STABILITY) | Shipped | SKILL QUALITY ORDER §5 + SCALABILITY-FIRST policy |
-| Hard rule 15 NO LOCAL CAPABILITY COMPENSATION | Shipped | SKILL hard rules + reference restatement |
-| UI-CAP findings + promotion rule + status enum | Shipped | reference Shared Component Capability Gate |
-| No silent public API / behavior change | Shipped | Hard rule 12 |
-| Consuming-app build for structural changes | Shipped | Verification matrix |
-| Proportional verification by change risk | Shipped | Verification matrix |
-| Semantic component-usage checks beyond regex | Shipped | C1–C3 |
-| DataTable ownership limits | Shipped | Hard rule 14 + recipes |
-| Risk A — reference ↔ Vitest ID drift | Shipped | `compose-gate-ids.test.ts` (F1–F8, C1–C3 + export-naming presence) |
-| Risk B — undefined representative route | Shipped | Binding definition under verification matrix in [SKILL.md](SKILL.md) |
-| Risk C — a11y completion ambiguity | Shipped | Method = FE skill; completion = ui-compose until scoped a11y evidence green |
-| Risk D — flat barrel scaling | Documented | No split now; revisit only with Approved ADR + measurable evidence (not count alone) — hard rule 13 |
+```text
+### Compose Score: 97% / 100%
+| Dimension | Score | Note |
+| AUTHORITY | 15/15 | Barrel + tokens |
+| CONSISTENCY | 20/20 | Comfortable density |
+| CORRECT-COMPONENT | 20/20 | DataTable + Dialog |
+| SUITABILITY | 14/15 | Filter aria-label redundant with FormField |
+| SCALABILITY | 14/15 | READ_ONLY_PERMITTED; UI-CAP-07 recorded |
+| STABILITY | 14/15 | Floor green; minor toolbar layout |
+**Path to 100%:** Drop redundant filter aria-label; land UI-CAP-07 assignment list + Sheet write for full product 100%.
+```
 
-**Approval snapshot (advisory, not a gate):** Controlled Production Quality ~9.5/10; with Risks A–C shipped → expected maturity ~9.6–9.7/10. Scores do not replace green matrix evidence.
+```text
+### Compose Score: 58% / 100%
+| Dimension | Score | Note |
+| AUTHORITY | 15/15 | Barrel OK |
+| CONSISTENCY | 12/20 | Density mix p-6 + gap-4 |
+| CORRECT-COMPONENT | 10/20 | Handrolled row list |
+| SUITABILITY | 10/15 | Dialog for destroy |
+| SCALABILITY | 0/15 | Fake Respond CTA |
+| STABILITY | 11/15 | Untested overlay |
+**Path to 100%:** Remove fake CTA; replace list with DataTable; use AlertDialog for destroy; fix density; verify overlays.
+```
+
+## Appendix — Maturity
+
+**Keep:** one package · one flat barrel · live tokens · recipes · F*/C* Vitest · UI-CAP · verification floor `pnpm check:ui-system` · Compose Score.
+
+**Next:** evidence integrity (docs ↔ Vitest ↔ representative routes) — not more styling rules. No F9/C4 for product-completeness.
+
+| Gate | Status |
+|------|--------|
+| STABILITY + SCALABILITY in QUALITY ORDER | Shipped |
+| Hard rule 15 + UI-CAP + promotion rule | Shipped |
+| Risk A gate-ID sync · Risk B representative route · Risk C a11y completion | Shipped |
+| Compose Score (/100%) + Path to 100% | Shipped |
+| Risk D flat barrel | Documented — ADR + measurable evidence only |
+| Skill token efficiency (progressive disclosure) | Shipped — SKILL lean; reference holds recipes/gates/rubric |
+
+Approval snapshot (advisory): Controlled Production Quality — scores never replace green matrix evidence.

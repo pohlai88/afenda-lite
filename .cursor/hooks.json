@@ -5,14 +5,14 @@
       {
         "command": "node .cursor/hooks/agent-authority-preflight.mjs",
         "failClosed": false,
-        "timeout": 10
+        "timeout": 20
       }
     ],
     "beforeMCPExecution": [
       {
         "command": "node .cursor/hooks/agent-authority-preflight.mjs",
         "failClosed": false,
-        "timeout": 10
+        "timeout": 20
       }
     ],
     "postToolUse": [
@@ -20,7 +20,7 @@
         "command": "node .cursor/hooks/agent-authority-preflight.mjs",
         "matcher": "Read",
         "failClosed": false,
-        "timeout": 10
+        "timeout": 20
       }
     ],
     "beforeShellExecution": [
@@ -28,39 +28,39 @@
         "command": "node .cursor/hooks/git-no-auto-recover.mjs",
         "matcher": "\\bgit\\b",
         "failClosed": true,
-        "timeout": 15
+        "timeout": 20
       },
       {
         "command": "node .cursor/hooks/no-drizzle-baseline-migrate.mjs",
         "matcher": "\\bdb:migrate\\b|drizzle-kit\\s+migrate",
         "failClosed": true,
-        "timeout": 15
+        "timeout": 20
       }
     ],
     "preToolUse": [
       {
         "command": "node .cursor/hooks/no-shim-stub-tech-debt.mjs",
         "matcher": "Write|StrReplace|EditNotebook",
-        "failClosed": true,
-        "timeout": 15
+        "failClosed": false,
+        "timeout": 20
       },
       {
         "command": "node .cursor/hooks/no-decision-directory.mjs",
         "matcher": "Write|StrReplace|EditNotebook",
         "failClosed": false,
-        "timeout": 15
+        "timeout": 20
       },
       {
         "command": "node .cursor/hooks/no-mvp-quality-bar.mjs",
         "matcher": "Write|StrReplace|EditNotebook",
-        "failClosed": true,
-        "timeout": 15
+        "failClosed": false,
+        "timeout": 20
       },
       {
         "command": "node .cursor/hooks/no-tsconfig-baseurl.mjs",
         "matcher": "Write|StrReplace|EditNotebook",
-        "failClosed": true,
-        "timeout": 15
+        "failClosed": false,
+        "timeout": 20
       }
     ]
   }

@@ -9,9 +9,10 @@
  * @see https://cursor.com/docs/hooks
  */
 import { spawnSync } from "node:child_process";
-import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+
+import { readHookPayload } from "./hook-stdin.mjs";
 
 const root = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -34,19 +35,7 @@ const ALLOWED_EXT = new Set([
   ".vue",
 ]);
 
-function readPayload() {
-  try {
-    const raw = readFileSync(0, "utf8").trim();
-    if (!raw) {
-      return null;
-    }
-    return JSON.parse(raw);
-  } catch {
-    return null;
-  }
-}
-
-const payload = readPayload();
+const payload = await readHookPayload();
 const filePath = payload?.file_path;
 if (!filePath || typeof filePath !== "string") {
   process.exit(0);
