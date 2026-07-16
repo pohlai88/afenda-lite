@@ -13,6 +13,7 @@ export * from "./components/ui/avatar";
 export * from "./components/ui/badge";
 export * from "./components/ui/progress";
 export * from "./components/ui/spinner";
+export * from "./components/ui/status-badge";
 
 // Data display
 export * from "./components/ui/data-table";
