@@ -50,6 +50,10 @@
 	--color-destructive-subtle: var(--destructive-subtle);
 	--color-destructive-subtle-foreground: var(--destructive-subtle-foreground);
 	--color-destructive-border: var(--destructive-border);
+	--color-destructive-soft: var(--destructive-soft);
+	--color-primary-subtle: var(--primary-subtle);
+	--color-primary-track: var(--primary-track);
+	--color-overlay-scrim: var(--overlay-scrim);
 	--color-table-row-hover: var(--table-row-hover);
 	--color-table-stripe: var(--table-stripe);
 	--color-border: var(--border);
@@ -120,6 +124,10 @@
 	--destructive-subtle: oklch(0.96 0.03 25);
 	--destructive-subtle-foreground: oklch(0.42 0.12 25);
 	--destructive-border: oklch(0.77 0.06 25);
+	--destructive-soft: oklch(0.55 0.2 27.325);
+	--primary-subtle: oklch(0.93 0 0);
+	--primary-track: oklch(0.88 0 0);
+	--overlay-scrim: oklch(0 0 0 / 50%);
 	--table-row-hover: oklch(0.955 0 0);
 	--table-stripe: oklch(0.99 0 0);
 	--border: oklch(0.922 0 0);
@@ -196,6 +204,10 @@
 	--destructive-subtle: oklch(0.26 0.04 25);
 	--destructive-subtle-foreground: oklch(0.85 0.1 25);
 	--destructive-border: oklch(0.73 0.05 25);
+	--destructive-soft: oklch(0.497 0.12 22.216);
+	--primary-subtle: oklch(0.22 0 0);
+	--primary-track: oklch(0.35 0 0);
+	--overlay-scrim: oklch(0 0 0 / 50%);
 	--table-row-hover: oklch(0.24 0 0);
 	--table-stripe: oklch(0.19 0 0);
 	--border: oklch(1 0 0 / 10%);

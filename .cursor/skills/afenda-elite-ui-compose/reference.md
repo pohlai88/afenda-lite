@@ -25,8 +25,12 @@ Disk SSOT: `packages/ui-system/src/styles/tokens.css` (public `@afenda/ui-system
 | Status chip / banner edge | `border-{success\|warning\|info\|destructive}-border` | Pair with subtle fill |
 | Table row hover | `bg-table-row-hover` | Prefer over inventing `hover:bg-muted/50` in feature chrome |
 | Table stripe | `bg-table-stripe` | Alternating rows |
+| Soft solid destructive (dark control fill) | `bg-destructive-soft` | Button/Badge dark destructive surface — not `destructive-subtle` chip wash |
+| Primary checked / tint wash | `bg-primary-subtle` | Field checked wash; prefer over `bg-primary/5` |
+| Primary progress rail | `bg-primary-track` | Progress track under solid `bg-primary` indicator |
+| Modal / sheet dimming | `bg-overlay-scrim` | Dialog, Sheet, AlertDialog overlay |
 
-Package primitives may still use opacity aliases until a controlled ui-system upgrade — do not handroll a second status/table palette in `apps/web/features/**`.
+Package primitives may still retain audited opacity for dark input fills, disabled/ring/press chrome, alert `text-destructive/90`, and sidebar label ink — do not handroll a second status/table palette in `apps/web/features/**`.
 
 ## Composition recipes → barrel
 
