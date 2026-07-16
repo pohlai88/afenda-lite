@@ -4,11 +4,11 @@
 | ----------------- | ------------ |
 | **ID**            | ARCH-015     |
 | **Category**      | Architecture |
-| **Version**       | 2.0.3        |
+| **Version**       | 2.0.4        |
 | **Status**        | Living       |
 | **Control State** | Closed       |
 | **Owner**         | Frontend     |
-| **Updated**       | 2026-07-15   |
+| **Updated**       | 2026-07-16   |
 
 ---
 
@@ -58,7 +58,7 @@ Define Living **Shadcn Studio** DNA rules for the operator shell: how `@ss-block
 
 **Critical constraint:** Studio MCP/CLI does **not** install a whole AdminCN zip as one unit — **blocks only**.
 
-**Playbook / preflight / homes:** [ARCH-018](ARCH-018-admincn-customization.md) · [ARCH-019](ARCH-019-admincn-frontend-preflight.md) · [ARCH-017](ARCH-017-frontend-folder-map.md) · skill `/admincn-customization`.
+**Playbook / preflight / homes:** [ARCH-018](ARCH-018-admincn-customization.md) · [ARCH-019](ARCH-019-admincn-frontend-preflight.md) · [ARCH-017](ARCH-017-frontend-folder-map.md). UI primitives via the `@afenda/ui-system` barrel ([ADR-010](adr/ADR-010-afenda-ui-system-flat-barrel.md)); the `admincn-customization` skill was retired 2026-07-16.
 
 ## Studio concept → product home
 
@@ -145,7 +145,7 @@ Do **not** drive Neon Auth pages through AdminCN ThemeCustomizer.
 | ARCH-028 | Turborepo Implementation Slices | Anti-contamination |
 | FFT-MOD-001 | Feed Farm Trade module architecture | Module locks |
 
-UI registry: `.cursor/skills/feed-farm-trade/ui-registry.md`. Method: `/admincn-customization` · `/afenda-elite-nextjs-best-practice`.
+UI registry: `.cursor/skills/feed-farm-trade/ui-registry.md`. Method: `/afenda-elite-frontend-scaffold` + `@afenda/ui-system` barrel ([ADR-010](adr/ADR-010-afenda-ui-system-flat-barrel.md)) · `/afenda-elite-nextjs-best-practice`.
 
 ---
 
@@ -153,6 +153,7 @@ UI registry: `.cursor/skills/feed-farm-trade/ui-registry.md`. Method: `/admincn-
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 2.0.4 | 2026-07-16 | Repointed retired `/admincn-customization` skill method references to `@afenda/ui-system` barrel ([ADR-010](adr/ADR-010-afenda-ui-system-flat-barrel.md)) + `/afenda-elite-frontend-scaffold`; AdminCN architecture authority unchanged (this doc + ARCH-018). |
 | 2.0.3 | 2026-07-15 | Linked the `/playground/*` local-harness row to the ARCH-024 `@afenda/ui/playground` disambiguation paragraph (no independent prose). |
 | 2.0.2 | 2026-07-15 | DNA law: user-approved `_reference/archive/<kit>` promote into Target packages allowed; never runtime `_reference` import; never Collapse recover. |
 | 2.0.1 | 2026-07-14 | Home flattened to docs/architecture/ (trunks removed; pack reading order in README). |

@@ -4,11 +4,11 @@
 |-------|-------|
 | ID | ARCH-027 |
 | Category | Architecture |
-| Version | 1.6.3 |
+| Version | 1.6.4 |
 | Status | Living |
 | Control State | Closed |
 | Owner | Platform |
-| Updated | 2026-07-15 |
+| Updated | 2026-07-16 |
 
 > **Living.** Environment SSOT after ARCH-028 Checkpoint G (2026-07-15). S4.1 + Checkpoint D shipped (`@afenda/env` + `.env.local` only; compose retired).
 
@@ -125,7 +125,7 @@ const db  = env.DATABASE_URL           // ✗ — TypeScript error: server var i
 | Database | `DATABASE_URL`, `NEON_*` | Yes | Neon pooler URL, auth secret |
 | App | `APP_URL`, `NEXT_PUBLIC_*` | Yes | Production URL, feature flags |
 | Feature flags | `FFT_*` | Yes | `FFT_RBAC_ENABLED` |
-| Local-only | `PLAYGROUND_*` | **No** | Reserved local toggles (Next.js `/playground` trees **absent** 2026-07-15; not `@afenda/ui/playground` — [ARCH-024](ARCH-024-package-boundaries.md#afendaui)) |
+| Local-only | `PLAYGROUND_*` | **No** | Reserved local toggles (Next.js `/playground` trees **absent** 2026-07-15; the former `@afenda/ui/playground` gateway is retired — [ADR-010](adr/ADR-010-afenda-ui-system-flat-barrel.md)) |
 | Ops | `NEON_API_KEY`, `NEON_ORG_ID` | **No** | CLI tools only |
 
 ## Data / request flow
@@ -181,7 +181,7 @@ Vercel build
 | ID | Title | Relationship |
 | --- | --- | --- |
 | ARCH-022 | System Overview | Workspace / deployable bounds |
-| ARCH-024 | Package Boundaries | `@afenda/ui/playground` disambiguation for PLAYGROUND_* |
+| ARCH-024 | Package Boundaries | `@afenda/ui-system` UI surface; `PLAYGROUND_*` is unrelated to any package subpath |
 | ARCH-028 | Implementation Slices | S4.1 + Checkpoint D evidence |
 
 # 5. Change Log
@@ -189,6 +189,7 @@ Vercel build
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.6.4 | 2026-07-16 | `PLAYGROUND_*` disambiguation repointed: retired `@afenda/ui/playground` gateway ([ADR-010](adr/ADR-010-afenda-ui-system-flat-barrel.md)); dead `#afendaui` anchor removed; `PLAYGROUND_*` is unrelated to any package subpath. |
 | 1.6.3 | 2026-07-15 | DOC-003 six-section retrofit (content preserved; Known limits → § 6 Notes). |
 | 1.6.2 | 2026-07-15 | `PLAYGROUND_*` = reserved local env; Next.js `/playground` trees Absent (see ARCH-024). |
 | 1.6.1 | 2026-07-15 | Linked the `PLAYGROUND_*` row to the ARCH-024 `@afenda/ui/playground` disambiguation paragraph (no independent prose). |

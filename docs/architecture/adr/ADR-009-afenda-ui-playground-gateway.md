@@ -4,11 +4,13 @@
 | ----------------- | ------------ |
 | **ID**            | ADR-009      |
 | **Category**      | ADR          |
-| **Version**       | 1.0.1        |
-| **Status**        | Accepted     |
+| **Version**       | 1.1.0        |
+| **Status**        | Superseded   |
 | **Control State** | Closed       |
 | **Owner**         | Platform     |
-| **Updated**       | 2026-07-15   |
+| **Updated**       | 2026-07-16   |
+
+**Superseded by [ADR-010](ADR-010-afenda-ui-system-flat-barrel.md) on 2026-07-16.** The `@afenda/ui` (`packages/design-system`) playground gateway and `*Contract` pattern are retired; the sole UI design system is now `@afenda/ui-system` (`packages/ui-system`) with a single flat barrel. This record is preserved for history only.
 
 ---
 
@@ -126,6 +128,7 @@ This is enforced entirely by `tsc` structural typing at compile time — there i
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 1.1.0 | 2026-07-16 | Superseded by [ADR-010](ADR-010-afenda-ui-system-flat-barrel.md): `@afenda/ui` playground gateway + `*Contract` pattern retired in favor of `@afenda/ui-system` flat barrel. Record preserved for history. |
 | 1.0.1 | 2026-07-15 | D5 / References honesty: Next.js harness trees removed 2026-07-15; gateway decision unchanged; boundary tests cite proven+infra allowlists. |
 | 1.0.0 | 2026-07-15 | Accepted — records the `packages/ui` retirement, `@afenda/ui` exports trim to the `./playground` gateway, and the `*Contract extends` pattern already implemented and verified (tests + typecheck green). |
 

@@ -33,7 +33,7 @@ METHOD: Vercel nextjs + Accelint + next-cache-components (evaluate; default OFF 
 |------|-----|
 | Product entry | `/using-afenda-elite-skills` |
 | Greenfield / wipe | `afenda-elite-frontend-scaffold` |
-| AdminCN | `admincn-customization` |
+| UI primitives / AdminCN chrome | `@afenda/ui-system` barrel (ADR-010) · AdminCN authority [ARCH-018](../../../docs/architecture/ARCH-018-admincn-customization.md) |
 | Modules / ports | `afenda-elite-backend-modules` |
 | Actions / OpenAPI | `afenda-elite-api-contract` |
 | Tenancy | `neon-tenancy-efficiency` · ARCH-023 |
@@ -207,7 +207,7 @@ nextjs_index → get_routes → get_errors
 npx tsc --noEmit
 ```
 
-MCP `get_errors` clean · Action checklist in [accelint-perf.md](reference/accelint-perf.md) · AdminCN → `/admincn-customization`
+MCP `get_errors` clean · Action checklist in [accelint-perf.md](reference/accelint-perf.md) · UI primitives via `@afenda/ui-system` (ADR-010) · AdminCN authority [ARCH-018](../../../docs/architecture/ARCH-018-admincn-customization.md)
 
 ---
 

@@ -23,14 +23,14 @@ description: >-
 | [docs/api/](../../../docs/api/)          | Error shape, REST catalog, types               |
 | [docs/architecture/](../../../docs/architecture/) | UI architecture, routes, BFF tree              |
 | [afenda-elite-nextjs-best-practice](../afenda-elite-nextjs-best-practice/SKILL.md) | App Router mechanics (RSC, rendering, MCP) |
-| [afenda-elite-ui-handoff](../afenda-elite-ui-handoff/SKILL.md) | No handroll · no UX drift · Chrome DevTools before browser-UI handoff |
+| [ADR-010](../../../docs/architecture/adr/ADR-010-afenda-ui-system-flat-barrel.md) | UI primitives: consume `@afenda/ui-system` barrel + `styles.css`; no handroll under `apps/web/components`; barrel-only boundary enforced by committed tests |
 
 ## Agent operating rules
 
 1. **Surface assumptions** before wipe/scaffold if anything conflicts with this skill — stop and ask.
 2. **Scope:** scaffold PR = tree + stubs only. No domain wiring, no e2e fixes, no `lib/` residue prune, no AdminCN demos.
 3. **Simplicity:** thin `page.tsx`; UI in `features/*`; no clever route abstractions.
-4. **Verify** with the checklist below — “looks right” is not done. Browser-visible UI turns also satisfy `afenda-elite-ui-handoff`.
+4. **Verify** with the checklist below — “looks right” is not done. Browser-visible UI turns must import primitives only from `@afenda/ui-system` (ADR-010 barrel-only boundary; committed `ui-boundary` test enforces it).
 5. **Push back** on overloaded `[id]`, `fetch('/api')` for RSC reads, or growing `lib/` with domain code.
 
 ## Hard rules

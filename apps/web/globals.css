@@ -1,5 +1,17 @@
-/* Target app entry — design tokens + base styles live in @afenda/ui (packages/design-system). */
-@import "@afenda/ui/style.css";
+/*
+ * Target app entry — CSS ownership lives HERE (ARCH-024):
+ *   - the app imports Tailwind + the animation layer,
+ *   - @afenda/ui-system owns ONLY the semantic tokens (styles.css),
+ *   - the app registers the package source so Tailwind discovers its classes.
+ */
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "@afenda/ui-system/styles.css";
 
-/* Scanned elsewhere for Tailwind class discovery. */
-@source "../../../packages/design-system/src";
+@source "../../packages/ui-system/src";
+
+/* App owns brand typography — map Tailwind font tokens to the Geist next/font vars. */
+@theme inline {
+	--font-sans: var(--font-geist-sans, ui-sans-serif), system-ui, sans-serif;
+	--font-mono: var(--font-geist-mono, ui-monospace), monospace;
+}

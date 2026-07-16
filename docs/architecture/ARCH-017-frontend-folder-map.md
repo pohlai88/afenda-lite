@@ -4,11 +4,11 @@
 | ----------------- | ------------ |
 | **ID**            | ARCH-017     |
 | **Category**      | Architecture |
-| **Version**       | 2.0.3        |
+| **Version**       | 2.0.4        |
 | **Status**        | Living       |
 | **Control State** | Closed       |
 | **Owner**         | Frontend     |
-| **Updated**       | 2026-07-15   |
+| **Updated**       | 2026-07-16   |
 
 ---
 
@@ -16,7 +16,7 @@
 
 Define the Living **frontend folder homes** for Target product UI under Next.js App Router — **Shadcn Studio / AdminCN DNA** as the only shell source, thin `app/` routes, `features/` product UI, `modules/` domain, and explicit bans on legacy dumps.
 
-**Authority split:** routes → [ARCH-012](ARCH-012-app-router-routes.md); Studio keep/drop → [ARCH-015](ARCH-015-admincn-alignment.md); levers → [ARCH-018](ARCH-018-admincn-customization.md); conventions → [ARCH-016](ARCH-016-next-js-conventions.md); Mode A/B → [ARCH-002](ARCH-002-frontend-architecture.md). Method: `afenda-elite-nextjs-best-practice` · `/admincn-customization`.
+**Authority split:** routes → [ARCH-012](ARCH-012-app-router-routes.md); Studio keep/drop → [ARCH-015](ARCH-015-admincn-alignment.md); levers → [ARCH-018](ARCH-018-admincn-customization.md); conventions → [ARCH-016](ARCH-016-next-js-conventions.md); Mode A/B → [ARCH-002](ARCH-002-frontend-architecture.md). Method: `afenda-elite-nextjs-best-practice` · `afenda-elite-frontend-scaffold` + `@afenda/ui-system` barrel ([ADR-010](adr/ADR-010-afenda-ui-system-flat-barrel.md)).
 
 ---
 
@@ -175,7 +175,7 @@ proxy.ts → layout → thin page.tsx (RSC)
 | ARCH-022 | System Overview — Turborepo | Target `apps/web` |
 | ARCH-028 | Turborepo Implementation Slices | Anti-contamination |
 
-UI registry: `.cursor/skills/feed-farm-trade/ui-registry.md` · skill `/admincn-customization` · `/afenda-elite-nextjs-best-practice`.
+UI registry: `.cursor/skills/feed-farm-trade/ui-registry.md` · `/afenda-elite-frontend-scaffold` + `@afenda/ui-system` barrel ([ADR-010](adr/ADR-010-afenda-ui-system-flat-barrel.md)) · `/afenda-elite-nextjs-best-practice`.
 
 ---
 
@@ -183,6 +183,7 @@ UI registry: `.cursor/skills/feed-farm-trade/ui-registry.md` · skill `/admincn-
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 2.0.4 | 2026-07-16 | Repointed retired `/admincn-customization` skill method references to `/afenda-elite-frontend-scaffold` + `@afenda/ui-system` barrel ([ADR-010](adr/ADR-010-afenda-ui-system-flat-barrel.md)); folder homes + AdminCN authority (ARCH-015/018) unchanged. |
 | 2.0.3 | 2026-07-15 | `app/playground/` + `features/playground/` marked Absent (harness wipe); no handroll. |
 | 2.0.2 | 2026-07-15 | Linked `app/playground/` and `features/playground/` rows to the ARCH-024 `@afenda/ui/playground` disambiguation paragraph (no independent prose). |
 | 2.0.1 | 2026-07-14 | Home flattened to docs/architecture/ (trunks removed; pack reading order in README). |

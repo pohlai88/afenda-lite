@@ -1,0 +1,10 @@
+{
+	"extends": "../../../testing/tsconfig.json",
+	"include": [
+		"./**/*.ts",
+		"./**/*.tsx",
+		"../../../testing/vitest-env.d.ts",
+		"../../../testing/setup-interaction.ts"
+	],
+	"exclude": ["node_modules"]
+}

@@ -1,0 +1,47 @@
+{
+	"name": "@afenda/ui-system",
+	"version": "0.0.0",
+	"private": true,
+	"type": "module",
+	"sideEffects": [
+		"**/*.css"
+	],
+	"exports": {
+		".": {
+			"types": "./src/index.ts",
+			"default": "./src/index.ts"
+		},
+		"./styles.css": "./src/styles/tokens.css"
+	},
+	"scripts": {
+		"lint": "biome check .",
+		"typecheck": "tsc --noEmit -p tsconfig.json",
+		"test": "vitest run --config ../../testing/vitest.config.ts --project ui-system",
+		"ui:add": "shadcn add"
+	},
+	"dependencies": {
+		"class-variance-authority": "catalog:",
+		"clsx": "catalog:",
+		"cmdk": "catalog:",
+		"lucide-react": "catalog:",
+		"next-themes": "catalog:",
+		"radix-ui": "catalog:",
+		"sonner": "catalog:",
+		"tailwind-merge": "catalog:"
+	},
+	"peerDependencies": {
+		"react": ">=19.0.0",
+		"react-dom": ">=19.0.0",
+		"tailwindcss": "^4"
+	},
+	"devDependencies": {
+		"@afenda/config": "workspace:*",
+		"@types/react": "catalog:",
+		"@types/react-dom": "catalog:",
+		"react": "catalog:",
+		"react-dom": "catalog:",
+		"shadcn": "catalog:",
+		"tailwindcss": "catalog:",
+		"typescript": "catalog:"
+	}
+}

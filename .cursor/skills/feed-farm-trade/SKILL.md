@@ -20,7 +20,7 @@ description: >-
 | Proof before done | `test-driven-development` | AC evidence required — see [verify.md](verify.md) |
 | Right context | `context-engineering` | Load card below — max focused files |
 | Adapter / ActionResult | `afenda-elite-api-contract` | Trade returns `TradeActionResult` + `getTradeActionError` |
-| Route / UI homes | `afenda-elite-frontend-scaffold` + `admincn-customization` | Thin `app/fft` + `features/fft` |
+| Route / UI homes | `afenda-elite-frontend-scaffold` + `@afenda/ui-system` barrel (ADR-010); AdminCN chrome authority [ARCH-018](../../../docs/architecture/ARCH-018-admincn-customization.md) | Thin `app/fft` + `features/fft` |
 | Modules / ports | `afenda-elite-backend-modules` | Domain under `modules/fft` — never `modules/trade` |
 
 External ecosystem (`deliver-acceptance-criteria`) patterns are **folded into** [verify.md](verify.md) — do not install a second skill for AC.
@@ -135,7 +135,7 @@ HTTP external?   → Route Handler per docs/api (contract-only)
 - [afenda-elite-frontend-scaffold](../afenda-elite-frontend-scaffold/SKILL.md)  
 - [afenda-elite-api-contract](../afenda-elite-api-contract/SKILL.md)  
 - [afenda-elite-backend-modules](../afenda-elite-backend-modules/SKILL.md)  
-- [admincn-customization](../admincn-customization/SKILL.md)  
+- UI primitives: `@afenda/ui-system` barrel — [ADR-010](../../../docs/architecture/adr/ADR-010-afenda-ui-system-flat-barrel.md); AdminCN chrome authority [ARCH-018](../../../docs/architecture/ARCH-018-admincn-customization.md)  
 - [incremental-implementation](../agent-skills/skills/incremental-implementation/SKILL.md)  
 - [test-driven-development](../agent-skills/skills/test-driven-development/SKILL.md)  
 - [api-and-interface-design](../agent-skills/skills/api-and-interface-design/SKILL.md)  

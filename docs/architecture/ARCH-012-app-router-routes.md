@@ -4,11 +4,11 @@
 | ----------------- | ------------ |
 | **ID**            | ARCH-012     |
 | **Category**      | Architecture |
-| **Version**       | 1.2.7        |
+| **Version**       | 1.2.8        |
 | **Status**        | Living       |
 | **Control State** | Closed       |
 | **Owner**         | Frontend     |
-| **Updated**       | 2026-07-15   |
+| **Updated**       | 2026-07-16   |
 
 ---
 
@@ -190,7 +190,7 @@ Never place `route.ts` beside a `page.tsx` in the same segment. Prefer Server Ac
 |------|------|-------|-------------|
 | `/playground` and children | Former local harness | matcher may still list path | **Absent** — trees `apps/web/app/playground/` and `apps/web/features/playground/` deleted 2026-07-15 |
 
-Do **not** recreate these routes or a handrolled lab/compose board. `PLAYGROUND_*` env keys may remain reserved ([ARCH-027](ARCH-027-env-model.md)). Name collision with `@afenda/ui/playground` (package gateway) — [ARCH-024 § `@afenda/ui`](ARCH-024-package-boundaries.md#afendaui).
+Do **not** recreate these routes or a handrolled lab/compose board. `PLAYGROUND_*` env keys may remain reserved ([ARCH-027](ARCH-027-env-model.md)). The former `@afenda/ui/playground` package gateway that once shared the word is retired ([ADR-010](adr/ADR-010-afenda-ui-system-flat-barrel.md)) — UI now imports only the `@afenda/ui-system` barrel ([ARCH-024 § `@afenda/ui-system`](ARCH-024-package-boundaries.md#afendaui-system)).
 
 Former registry / `pnpm check:playground` / HITL harness notes no longer apply until an explicit Studio MCP-driven harness slice lands.
 
@@ -278,6 +278,7 @@ Agent method (not a controlled ID): `.cursor/skills/afenda-elite-nextjs-best-pra
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 1.2.8 | 2026-07-16 | § 3.10 disambiguation repointed: retired `@afenda/ui/playground` gateway ([ADR-010](adr/ADR-010-afenda-ui-system-flat-barrel.md)) → `@afenda/ui-system` barrel ([ARCH-024 § `@afenda/ui-system`](ARCH-024-package-boundaries.md#afendaui-system)); dead `#afendaui` anchor fixed. |
 | 1.2.7 | 2026-07-15 | § 3.10 + family matrix: Next.js playground harness removed (absent); no handroll; Studio MCP for any future harness. |
 | 1.2.6 | 2026-07-15 | § 3.10 Playground: linked to the ARCH-024 `@afenda/ui/playground` disambiguation paragraph (no independent prose). |
 | 1.2.5 | 2026-07-15 | `(client)` normalize: workspace `loading`/`error` under `dashboard/` only (redirect-safe; same class as gate login). |

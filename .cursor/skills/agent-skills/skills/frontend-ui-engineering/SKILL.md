@@ -5,7 +5,7 @@ description: Builds production-quality UIs. Use when building or modifying user-
 
 # Frontend UI Engineering
 
-**Afenda-Lite overlay:** Before product UI handoff, LOAD [afenda-elite-ui-handoff](../../../afenda-elite-ui-handoff/SKILL.md) (no handroll · no UX drift · Chrome DevTools). Prefer `@afenda/ui` / Studio DNA over inventing component trees under `apps/web/components`.
+**Afenda-Lite overlay:** Consume UI primitives only via the `@afenda/ui-system` flat barrel + `@afenda/ui-system/styles.css` ([ADR-010](../../../../../docs/architecture/adr/ADR-010-afenda-ui-system-flat-barrel.md)); never invent component trees under `apps/web/components`. Add/regenerate primitives with the ADR-010 owned-source workflow (`shadcn add` in `packages/ui-system` → convert `@/` to relative → export from `src/index.ts` → keep guardrail tests green). The barrel-only boundary is enforced by committed tests (`apps/web/__tests__/ui-boundary.test.ts`), not a handoff skill.
 
 ## Overview
 

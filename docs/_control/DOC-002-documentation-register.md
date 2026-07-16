@@ -4,11 +4,11 @@
 | ----------------- | ---------- |
 | **ID**            | DOC-002    |
 | **Category**      | Control    |
-| **Version**       | 4.120.0 |
+| **Version**       | 4.122.0 |
 | **Status**        | Living     |
 | **Control State** | Closed     |
 | **Owner**         | Platform   |
-| **Updated**       | 2026-07-15 |
+| **Updated**       | 2026-07-16 |
 
 ---
 
@@ -71,10 +71,10 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 | ID           | Category     | Title                                      | Version | Status | Owner    | Updated    |
 | ------------ | ------------ | ------------------------------------------ | ------- | ------ | -------- | ---------- |
 | DOC-001      | Control      | Documentation Control Standard             | 2.7.0   | Living | Platform | 2026-07-14 |
-| DOC-002      | Control      | Documentation Register                     | 4.120.0 | Living | Platform | 2026-07-15 |
+| DOC-002      | Control      | Documentation Register                     | 4.122.0 | Living | Platform | 2026-07-16 |
 | DOC-003      | Control      | Controlled Document Template               | 1.4.0   | Living | Platform | 2026-07-14 |
 | ARCH-029     | Architecture | Interface and API Architecture             | 1.2.7   | Living | Platform | 2026-07-14 |
-| ARCH-031     | Architecture | Technology Stack Catalogue                 | 1.3.16  | Living | Platform | 2026-07-15 |
+| ARCH-031     | Architecture | Technology Stack Catalogue                 | 1.3.17  | Living | Platform | 2026-07-16 |
 | API-001      | API          | API Boundaries                             | 1.2.3   | Living | Backend  | 2026-07-14 |
 | API-002      | API          | Error Contract                             | 1.2.2   | Living | Backend  | 2026-07-14 |
 | API-003      | API          | API Types                                  | 2.0.1   | Living | Backend  | 2026-07-14 |
@@ -110,7 +110,7 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 | RB-008       | Runbook      | API Contract Rollback                      | 0.2.1   | Draft  | Backend  | 2026-07-14 |
 | ARCH-022     | Architecture | System Overview — Turborepo                | 1.6.8   | Living | Platform | 2026-07-15 |
 | ARCH-023     | Architecture | Multi-Tenancy and Platform RBAC            | 3.1.4   | Living | Platform | 2026-07-14 |
-| ARCH-024     | Architecture | Package Boundaries                         | 1.5.2   | Living | Platform | 2026-07-15 |
+| ARCH-024     | Architecture | Package Boundaries                         | 1.6.0   | Living | Platform | 2026-07-16 |
 | ARCH-025     | Architecture | Data Layer                                 | 1.3.1   | Living | Backend  | 2026-07-15 |
 | ARCH-026     | Architecture | Authentication and Session Model           | 1.3.10  | Living | Platform | 2026-07-15 |
 | ARCH-027     | Architecture | Environment Variable Model                 | 1.6.3   | Living | Platform | 2026-07-15 |
@@ -118,7 +118,8 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 | ARCH-001     | Architecture | Backend Architecture                       | 1.2.0   | Living | Backend  | 2026-07-14 |
 | ARCH-002     | Architecture | Frontend Architecture                      | 1.3.4   | Living | Frontend | 2026-07-15 |
 | ADR-008      | ADR          | Cache Components Mode B (Gated)            | 1.0.1   | Accepted | Frontend | 2026-07-14 |
-| ADR-009      | ADR          | `@afenda/ui` Playground Gateway as the Sole Public UI Import Surface | 1.0.1   | Accepted | Platform | 2026-07-15 |
+| ADR-009      | ADR          | `@afenda/ui` Playground Gateway as the Sole Public UI Import Surface | 1.1.0   | Superseded | Platform | 2026-07-16 |
+| ADR-010      | ADR          | `@afenda/ui-system` Flat-Barrel Radix Design System | 1.0.0   | Accepted | Platform | 2026-07-16 |
 | ARCH-003     | Architecture | Multi-tenant Ecosystem                     | 2.1.1   | Superseded | Platform | 2026-07-14 |
 | ARCH-004     | Architecture | Backend Layers                             | 1.1.1   | Living | Backend  | 2026-07-14 |
 | ARCH-005     | Architecture | Backend Folder Map                         | 1.1.4   | Living | Backend  | 2026-07-15 |
@@ -130,9 +131,9 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 | ARCH-012     | Architecture | App Router Routes                          | 1.2.7   | Living | Frontend | 2026-07-15 |
 | ARCH-013     | Architecture | BFF and Data Flow                          | 1.1.3   | Living | Frontend | 2026-07-14 |
 | ARCH-014     | Architecture | UI Surfaces                                | 2.0.0   | Superseded | Frontend | 2026-07-14 |
-| ARCH-015     | Architecture | Shadcn Studio / AdminCN Alignment          | 2.0.3   | Living | Frontend | 2026-07-15 |
+| ARCH-015     | Architecture | Shadcn Studio / AdminCN Alignment          | 2.0.4   | Living | Frontend | 2026-07-16 |
 | ARCH-016     | Architecture | Next.js Conventions                        | 1.2.3   | Living | Frontend | 2026-07-14 |
-| ARCH-017     | Architecture | Frontend Folder Map                        | 2.0.3   | Living | Frontend | 2026-07-15 |
+| ARCH-017     | Architecture | Frontend Folder Map                        | 2.0.4   | Living | Frontend | 2026-07-16 |
 | ARCH-018     | Architecture | AdminCN Customization                      | 1.1.6   | Living | Frontend | 2026-07-15 |
 | ARCH-019     | Architecture | AdminCN Frontend Preflight                 | 1.1.6   | Living | Frontend | 2026-07-15 |
 | ARCH-020     | Architecture | Closed Scope Register                      | 2.0.1   | Superseded | Platform | 2026-07-14 |
@@ -170,6 +171,8 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 
 | Version | Date       | Summary                                                                                                                                         |
 | ------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| 4.122.0 | 2026-07-16 | ADR-010 skill-retirement follow-through: repointed retired `/admincn-customization` method references (ARCH-015 → 2.0.4 · ARCH-017 → 2.0.4) to `@afenda/ui-system` barrel + `/afenda-elite-frontend-scaffold`; AdminCN architecture authority (ARCH-018) unchanged. |
+| 4.121.0 | 2026-07-16 | Registered ADR-010 → 1.0.0 Accepted (`@afenda/ui-system` flat-barrel Radix design system); ADR-009 → 1.1.0 Superseded (`@afenda/ui` playground gateway retired); ARCH-024 + ARCH-031 repointed to `@afenda/ui-system`; `packages/design-system` deleted; deprecation register + skills router updated. User-approved ADR-010 ID this turn per DOC-001 §3.2. |
 | 4.120.0 | 2026-07-15 | I2.4 audit resolve: API-004→1.1.6 (Zod→OpenAPI arrow honesty); DOC-002 self-row synced. |
 | 4.119.0 | 2026-07-15 | I2.4 audit repair: OPEN-001→1.1.8 (Zod handoff landed) · API-004→1.1.5 (draft/health Target-on-disk); DOC-002 self-row synced. |
 | 4.118.0 | 2026-07-15 | I2.4 audit repair: GUIDE-018→0.3.13 · ARCH-022→1.6.8 · ARCH-026→1.3.10 · ARCH-028→1.5.3; next Ops = I3.1; DOC-002 self-row synced. |
@@ -308,7 +311,7 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 
 **GUIDE-018** is the registered Draft post-scaffold full-stack integration program (Phase I1 DONE · Phase I2 DONE · next **I3.1**). It sequences work; owning ARCH/API/MOD spines remain binding for detail.
 
-`FFT-REST-002`…`FFT-REST-007`, `OPEN-002`…`OPEN-005`, `ADR-001`…`ADR-007`, `RB-009` (webhook replay), and `ARCH-030` (verification architecture) are **reserved in planning docs only** — not registered until created under the approved derivation / creation gates. **`ADR-008`** is registered (Accepted Phase 1 — Cache Components Mode B; `cacheComponents` enablement still deferred). **`ADR-009`** is registered (Accepted — `@afenda/ui` playground gateway; `packages/ui` retirement).
+`FFT-REST-002`…`FFT-REST-007`, `OPEN-002`…`OPEN-005`, `ADR-001`…`ADR-007`, `RB-009` (webhook replay), and `ARCH-030` (verification architecture) are **reserved in planning docs only** — not registered until created under the approved derivation / creation gates. **`ADR-008`** is registered (Accepted Phase 1 — Cache Components Mode B; `cacheComponents` enablement still deferred). **`ADR-009`** is registered (Superseded by ADR-010 — the `@afenda/ui` playground gateway is retired). **`ADR-010`** is registered (Accepted — `@afenda/ui-system` flat-barrel Radix design system; `packages/design-system` retired).
 
 `ARCH-022` and `ARCH-024` through `ARCH-028` are **Living** scaffold SSOT after Checkpoint G (2026-07-15). Post-scaffold program order is [GUIDE-018](../guides/GUIDE-018-fullstack-e2e-integration-program.md) (registered Draft 0.3.13). Phase I1 and Phase I2 (ActionResult · feature↛db · first authenticated write · OpenAPI honesty) are closed; next Ops = **I3.1** — not a Status demotion of Living auth ARCH.
 

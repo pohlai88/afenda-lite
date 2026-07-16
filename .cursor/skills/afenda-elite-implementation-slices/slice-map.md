@@ -20,7 +20,8 @@ Always also load: this skill’s [SKILL.md](SKILL.md).
 | refactor | `afenda-elite-monorepo-refactor` |
 | neon | `neon-tenancy-efficiency` |
 | fft | `feed-farm-trade` |
-| admincn | `admincn-customization` |
+| ui | `afenda-elite-frontend-scaffold` + `@afenda/ui-system` barrel ([ADR-010](../../../docs/architecture/adr/ADR-010-afenda-ui-system-flat-barrel.md)) |
+| admincn | `afenda-elite-frontend-scaffold` (chrome); AdminCN authority [ARCH-018](../../../docs/architecture/ARCH-018-admincn-customization.md) |
 | lanes | `bounded-agent-lanes` (method) |
 | ship | `shipping-and-launch` (method) |
 | tdd | `test-driven-development` (method) |

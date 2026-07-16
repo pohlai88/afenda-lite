@@ -6,7 +6,7 @@
 **Script enforcer:** `npm run check:fft-ui-registry`  
 **Vitest enforcer:** [`features/fft/ui-registry.test.ts`](../../../features/fft/ui-registry.test.ts)  
 **Cursor rule:** removed — use this file + [ui-registry.json](ui-registry.json) + skill `/feed-farm-trade` · `npm run check:fft-ui-registry`  
-**AdminCN skill:** [`.cursor/skills/admincn-customization/SKILL.md`](../admincn-customization/SKILL.md)
+**AdminCN authority:** [ARCH-018](../../../docs/architecture/ARCH-018-admincn-customization.md) (the `admincn-customization` skill was retired 2026-07-16 — [ADR-010](../../../docs/architecture/adr/ADR-010-afenda-ui-system-flat-barrel.md)); UI primitives via the `@afenda/ui-system` barrel
 
 ## Layers (compulsory)
 

@@ -52,7 +52,8 @@ Do not start skill loads or MCP calls before the PREFLIGHT block is in the visib
 | Doc↔doc conflict / register drift | `afenda-elite-doc-integrity` |
 | ARCH-028 slice implement | `afenda-elite-implementation-slices` |
 | GUIDE-018 Phase I (I1.1…) | `afenda-elite-implementation-slices` + command-sheet |
-| UI / Studio / shell / gateway (any farm) | `afenda-elite-ui-handoff` **then** design-system / admincn / FE scaffold |
+| UI primitives / `@afenda/ui-system` (shadcn·Radix, tokens, barrel) | ADR-010 owned-source workflow (`shadcn add` in `packages/ui-system` → relative imports → barrel export → guardrail tests) |
+| UI in app routes / FE scaffold | `afenda-elite-frontend-scaffold` (consume `@afenda/ui-system` barrel) |
 | Neon tenancy ops ladder | `neon-tenancy-efficiency` |
 | FFT product module | `feed-farm-trade` |
 | Generic engineering phases | `using-agent-skills` (method library **after** Elite router) |
@@ -79,7 +80,7 @@ Do not start skill loads or MCP calls before the PREFLIGHT block is in the visib
 | [ARCH-022](docs/architecture/ARCH-022-system-overview.md) | Living monorepo / system overview |
 | [ARCH-023](docs/architecture/ARCH-023-multi-tenancy.md) | IAM · tenancy · Decision lock |
 | [ARCH-024](docs/architecture/ARCH-024-package-boundaries.md)…[ARCH-027](docs/architecture/ARCH-027-env-model.md) | Packages · data · auth · env |
-| [ARCH-024 § `@afenda/ui`](docs/architecture/ARCH-024-package-boundaries.md#afendaui) | `@afenda/ui/playground` gateway subpath vs removed Next.js `/playground` harness — one canonical paragraph, do not re-explain elsewhere |
+| [ARCH-024 § `@afenda/ui-system`](docs/architecture/ARCH-024-package-boundaries.md#afendaui-system) | Flat barrel `@afenda/ui-system` + `@afenda/ui-system/styles.css` public door ([ADR-010](docs/architecture/adr/ADR-010-afenda-ui-system-flat-barrel.md)) — one canonical paragraph, do not re-explain elsewhere. Retired `@afenda/ui` gateway removed. |
 | [ARCH-028](docs/architecture/ARCH-028-implementation-slices.md) | Scaffold slices (closed) · anti-contamination |
 | [GUIDE-018](docs/guides/GUIDE-018-fullstack-e2e-integration-program.md) | Post-scaffold program roadmap (Draft) |
 | [ARCH-031](docs/architecture/ARCH-031-technology-stack-catalogue.md) | Stack discovery |
@@ -149,7 +150,7 @@ pnpm --filter @afenda/web dev   # :3000
 | `NEON_API_KEY`, `NEON_ORG_ID`, `NEON_PROJECT_ID`, `NEON_BRANCH_ID` | Local / MCP ops |
 | Shadcn Studio keys | Local tooling |
 
-**Playground package gateway:** import UI only via `@afenda/ui/playground` ([ADR-009](docs/architecture/adr/ADR-009-afenda-ui-playground-gateway.md)). Next.js `/playground` routes were removed 2026-07-15 — any future browser harness requires an explicit **Shadcn Studio MCP** slice (no handroll).
+**UI design system:** import UI only via the flat barrel `@afenda/ui-system` and tokens via `@afenda/ui-system/styles.css` ([ADR-010](docs/architecture/adr/ADR-010-afenda-ui-system-flat-barrel.md), supersedes ADR-009). Owned shadcn `new-york` / Radix source in `packages/ui-system`; no gateway subpath, no `*Contract` layer, no external/paid registries. The retired `@afenda/ui` (`packages/design-system`) playground gateway is gone — do not restore it. Next.js `/playground` routes remain absent — any future browser harness requires an explicit **Shadcn Studio MCP** slice (no handroll).
 
 **Vercel:** dashboard/CLI is production secret store. `VERCEL_TOKEN` for Actions must be a **classic PAT** ([account tokens](https://vercel.com/account/tokens)) — OAuth CLI sessions fail in CI. Deploy: `.github/workflows/deploy.yml` (Environment `production`).
 

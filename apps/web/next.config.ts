@@ -41,13 +41,13 @@ const nextConfig: NextConfig = {
 		"@afenda/db",
 		"@afenda/emails",
 		"@afenda/env",
-		"@afenda/ui",
+		"@afenda/ui-system",
 	],
 	serverExternalPackages: ["@neondatabase/serverless"],
 	experimental: {
 		optimizePackageImports: [
 			"lucide-react",
-			"@base-ui/react",
+			"@afenda/ui-system",
 			"@tanstack/react-table",
 			"@neondatabase/auth-ui",
 		],

@@ -270,7 +270,7 @@ PHASE_ID: I3.4
 
 Implement GUIDE-018 I3.4 only.
 Authority: GUIDE-018 Phase I3 + ARCH-015/018 if shell deepens.
-LOAD: afenda-elite-frontend-scaffold · afenda-elite-backend-modules · admincn-customization (only if shell needs it).
+LOAD: afenda-elite-frontend-scaffold · afenda-elite-backend-modules. UI primitives via @afenda/ui-system barrel (ADR-010); AdminCN chrome authority ARCH-018 if shell deepens.
 Acceptance: operator UX composes Identity/Platform ports.
 Verify + evidence. STOP.
 ```

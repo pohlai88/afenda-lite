@@ -47,9 +47,7 @@ Local skills must remain operable if `afenda-Xerp` is absent. Do not edit `agent
 |-------|--------------|------------|--------|------|------------|----------------------|--------------|----------|-------|
 | `afenda-elite-doc-control` | local-elite-farm | local | keep | Controlled-document lifecycle under `docs/` | Docs create/update/deprecate | DOC-001 · DOC-002 · DOC-003 | none | `.cursor/skills/afenda-elite-doc-control/SKILL.md` | |
 | `afenda-elite-doc-integrity` | local-elite-farm | local | keep | Doc↔doc conflict / SSOT drift audit | Integrity detect/plan/verify | DOC-001 · DOC-002 | none | `.cursor/skills/afenda-elite-doc-integrity/SKILL.md` | Not controlled writes |
-| `afenda-elite-frontend-scaffold` | local-elite-farm | local | keep | Target FE scaffold / wipe inventory | FE scaffold missions | ARCH-017 · ARCH-028 · ARCH-015 | none | `.cursor/skills/afenda-elite-frontend-scaffold/SKILL.md` | Docs-first until implement request |
-| `afenda-elite-design-system` | local-elite-farm | local | keep | `@afenda/ui` pipeline: Studio promote → lab → gateway → boundary | Design-system / playground gateway / lab parity / ui-boundary | ADR-009 · ARCH-024 · ARCH-015 · ARCH-018 | none | `.cursor/skills/afenda-elite-design-system/SKILL.md` | Companion to `admincn-customization` + `/studio`; cwd = `packages/design-system`; **LOAD** `afenda-elite-ui-handoff` |
-| `afenda-elite-ui-handoff` | local-elite-farm | local | keep | No-handroll + UX-drift ban + compulsory Chrome DevTools before UI human handoff | Any UI farm / Studio / shell / gateway UI turn | ADR-009 · ARCH-024 · ARCH-015 · ARCH-018 | none | `.cursor/skills/afenda-elite-ui-handoff/SKILL.md` | Gates design-system · admincn · FE scaffold UI; method companion `browser-testing-with-devtools` |
+| `afenda-elite-frontend-scaffold` | local-elite-farm | local | keep | Target FE scaffold / wipe inventory; consumes `@afenda/ui-system` barrel | FE scaffold missions · app-route UI | ARCH-017 · ARCH-028 · ARCH-015 · ADR-010 | none | `.cursor/skills/afenda-elite-frontend-scaffold/SKILL.md` | Docs-first until implement request; UI primitives via `@afenda/ui-system` (ADR-010) |
 | `afenda-elite-nextjs-best-practice` | local-elite-farm | local | keep | App Router / RSC / cache / proxy mechanics | Next.js route/runtime work | ARCH-002 · ARCH-012 · ARCH-016 · ARCH-017 · ADR-008 · ARCH-027 | none | `.cursor/skills/afenda-elite-nextjs-best-practice/SKILL.md` | Wave 2 extend closed → keep |
 | `afenda-elite-backend-modules` | local-elite-farm | local | keep | Module ports, residue, ownership map | Modules / hexagonal boundaries | ARCH-001 · ARCH-006 · ARCH-009 · ARCH-022 · ARCH-024 · ARCH-028 | none | `.cursor/skills/afenda-elite-backend-modules/SKILL.md` | Wave 2 extend closed → keep; Target vs docs-first path truth |
 | `afenda-elite-api-contract` | local-elite-farm | local | keep | ActionResult, brands, OpenAPI, REST contracts | API / BFF contract work | ARCH-029 · docs/api · API-001… · REST-001 · OPEN-001 | none | `.cursor/skills/afenda-elite-api-contract/SKILL.md` | Wave 2 extend closed → keep; ARCH-029 §3.3 ten-stage pipeline |
@@ -64,7 +62,6 @@ Local skills must remain operable if `afenda-Xerp` is absent. Do not edit `agent
 
 | Skill | Source class | Management | Status | Owns | Invoked by | Controlled authority | Prerequisite | Evidence | Notes |
 |-------|--------------|------------|--------|------|------------|----------------------|--------------|----------|-------|
-| `admincn-customization` | local-domain-farm | local | keep | AdminCN shell / theme / studio MCP | AdminCN UI work | ARCH-015 · ARCH-018 · ARCH-019 | none | `.cursor/skills/admincn-customization/SKILL.md` | |
 | `feed-farm-trade` | local-domain-farm | local | keep | FFT module farm / gates | FFT domain work | FFT-MOD-* · FFT-MOD-008 | none | `.cursor/skills/feed-farm-trade/SKILL.md` | 2B–2D blocked until reopen |
 | `neon-tenancy-efficiency` | local-domain-farm | local | keep | Neon shared-schema tenancy + ARCH-023 IAM application | Tenancy / Neon ops | ARCH-023 · ARCH-025 · ARCH-027 | none | `.cursor/skills/neon-tenancy-efficiency/SKILL.md` | Wave 2 extend closed → keep; ARCH-027 `@afenda/env` + `.env.local` |
 | `update-mcp-config` | local-domain-farm | local | keep | Project MCP config updates | MCP wiring | AGENTS.md · `.vscode/mcp.json` | none | `.cursor/skills/update-mcp-config/SKILL.md` | |
@@ -133,6 +130,9 @@ Scratch REQ/response inform discovery only. Prerequisites are controlled-authori
 | Sales / Purchasing / Inventory / Finance / Payments / multi-entity skill farms | ARCH-006 contexts only until controlled ADR; scratch OQ-10/OQ-20 cannot authorize |
 | Forking `agent-skills/skills/*` into `afenda-elite-*` | Method library stays vendored |
 | Recreating `doc/` or inventing DOC-004 without DOC-001 ID approval | Documentation control |
+| `afenda-elite-design-system` (Studio promote → gateway pipeline) | Hard-deleted 2026-07-16 — ADR-010 retires the `@afenda/ui` gateway; UI primitives via `@afenda/ui-system` owned-source workflow (`shadcn add` → relative → barrel) |
+| `afenda-elite-ui-handoff` (UI handoff gate) | Hard-deleted 2026-07-16 — ADR-010 boundary is enforced by committed guardrail tests (`ui-boundary` / `consistency` / `overlays.interaction`), not a skill |
+| `admincn-customization` (AdminCN shell / Studio DNA in `components-V2`) | Hard-deleted 2026-07-16 — targeted retired `components-V2` / Studio-registry surface; AdminCN architecture authority stays in [ARCH-018](../../../docs/architecture/ARCH-018-admincn-customization.md); primitives via `@afenda/ui-system` |
 
 ## Gap → Wave 2 routing
 

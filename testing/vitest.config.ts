@@ -47,7 +47,7 @@ export default defineConfig({
 					},
 				},
 			},
-			nodeProject("ui", path.join(repoRoot, "packages/design-system")),
+			nodeProject("ui-system", path.join(repoRoot, "packages/ui-system")),
 			{
 				resolve: {
 					alias: {
@@ -71,7 +71,7 @@ export default defineConfig({
 					root: repoRoot,
 					include: [
 						`apps/web/${TESTS_DIR}/**/*.interaction.test.tsx`,
-						`packages/design-system/${TESTS_DIR}/**/*.interaction.test.tsx`,
+						`packages/ui-system/${TESTS_DIR}/**/*.interaction.test.tsx`,
 					],
 					environment: "jsdom",
 					setupFiles: [path.join(repoRoot, "testing/setup-interaction.ts")],

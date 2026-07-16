@@ -59,7 +59,7 @@ Agent must read in this order before coding or claiming results:
 13. Ops flags / promote: docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md + docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md
 ```
 
-Cross-skills only when the playbook says so: `afenda-elite-api-contract`, `afenda-elite-frontend-scaffold`, `afenda-elite-backend-modules`, `admincn-customization`, `incremental-implementation`, `test-driven-development`.
+Cross-skills only when the playbook says so: `afenda-elite-api-contract`, `afenda-elite-frontend-scaffold`, `afenda-elite-backend-modules`, `incremental-implementation`, `test-driven-development`. UI primitives via `@afenda/ui-system` barrel (ADR-010); AdminCN chrome authority ARCH-018.
 
 ---
 
@@ -210,7 +210,7 @@ TASK: <REPLACE: one sentence>
 COMMAND: IMPLEMENT_P2_AC
 MODE: UI polish only — no new domain/RBAC/actions unless required to keep P1 green
 FOLLOW: Feed Farm Trade agent command sheet (locked context + load order + DoD + output contract)
-READ: docs/modules/feed-farm-trade/FFT-MOD-010-module-docs-index.md + ui-registry.md + admincn-customization
+READ: docs/modules/feed-farm-trade/FFT-MOD-010-module-docs-index.md + ui-registry.md + docs/architecture/ARCH-018-admincn-customization.md (AdminCN authority); UI primitives via @afenda/ui-system barrel (ADR-010)
 P2_AC: <REPLACE: e.g. P2-AC-07 — must be named; inventing IDs = STOP>
 DO:
 1. Confirm P2_AC exists in phase 13 or user explicitly opened a new named AC — else STOP.
@@ -293,7 +293,7 @@ OUT: Output contract. Ask before any sync:vercel or prod enable.
 COMMAND: UI_REGISTRY
 MODE: governance — no product redesign unless TASK names a reusableId grant
 FOLLOW: Feed Farm Trade agent command sheet (locked context + load order + DoD + output contract)
-READ: ui-registry.md + ui-registry.json + admincn-customization skill + docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md
+READ: ui-registry.md + ui-registry.json + docs/architecture/ARCH-018-admincn-customization.md (AdminCN authority) + docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md; UI primitives via @afenda/ui-system barrel (ADR-010)
 DO:
 1. Compose only approved FFT-UI-* and allowlisted ACN-UI-*; ACN-BLK-* requires HITL product wrap.
 2. Do not edit ui-registry.json (human HITL only). Do not invent ACN-* / FFT-UI-* IDs.
