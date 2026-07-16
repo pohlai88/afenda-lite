@@ -105,7 +105,7 @@ Define Living **Shadcn Studio** DNA rules for the operator shell: how `@ss-block
 | Feed Farm Trade | `/fft/*` | `requireFftAccess` (`fft.access`) | `fft` |
 | Local harness | `/playground/*` | Local-only | `kind: "admin"` where applicable |
 
-`/playground/*` (Next.js routes) is distinct from the `@afenda/ui/playground` package subpath — see [ARCH-024 § `@afenda/ui`](ARCH-024-package-boundaries.md#afendaui) for the canonical disambiguation.
+`/playground/*` (Next.js routes) are **absent** (removed 2026-07-15); the former `@afenda/ui/playground` package subpath is retired ([ADR-010](adr/ADR-010-afenda-ui-system-flat-barrel.md)). UI now imports only the `@afenda/ui-system` barrel — see [ARCH-024 § `@afenda/ui-system`](ARCH-024-package-boundaries.md#afendaui-system).
 
 FFT purpose and locks: [FFT-MOD-001](../modules/feed-farm-trade/FFT-MOD-001-module-architecture.md) · [FFT-MOD-010](../modules/feed-farm-trade/FFT-MOD-010-module-docs-index.md). Org admin alone does **not** unlock `/fft`.
 
@@ -153,7 +153,7 @@ UI registry: `.cursor/skills/feed-farm-trade/ui-registry.md`. Method: `/afenda-e
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
-| 2.0.4 | 2026-07-16 | Repointed retired `/admincn-customization` skill method references to `@afenda/ui-system` barrel ([ADR-010](adr/ADR-010-afenda-ui-system-flat-barrel.md)) + `/afenda-elite-frontend-scaffold`; AdminCN architecture authority unchanged (this doc + ARCH-018). |
+| 2.0.4 | 2026-07-16 | Repointed retired `/admincn-customization` skill method references to `@afenda/ui-system` barrel ([ADR-010](adr/ADR-010-afenda-ui-system-flat-barrel.md)) + `/afenda-elite-frontend-scaffold`; fixed dangling `@afenda/ui/playground` disambiguation (dead `#afendaui` anchor → `#afendaui-system`); AdminCN architecture authority unchanged (this doc + ARCH-018). |
 | 2.0.3 | 2026-07-15 | Linked the `/playground/*` local-harness row to the ARCH-024 `@afenda/ui/playground` disambiguation paragraph (no independent prose). |
 | 2.0.2 | 2026-07-15 | DNA law: user-approved `_reference/archive/<kit>` promote into Target packages allowed; never runtime `_reference` import; never Collapse recover. |
 | 2.0.1 | 2026-07-14 | Home flattened to docs/architecture/ (trunks removed; pack reading order in README). |
