@@ -95,7 +95,7 @@ Every finding gets **exactly one** class — [reference.md](reference.md).
 | Class | Action |
 |-------|--------|
 | `unused-export` / `unused-file` / `unused-dependency` | Delegate Slice D |
-| `registry-drift` / `catalog-drift` / `skill-catalog-drift` | **align** |
+| `registry-drift` / `catalog-drift` / `skill-catalog-drift` | **align** (manual catalog/router/disk sync — no live `check:skill-*` until drift recurs in CI) |
 | `intentional-public` | Document ignore; no delete |
 | `glossary-farm-stale` | Edit YAML / seed register + sync — not Slice D on generated MD alone |
 
