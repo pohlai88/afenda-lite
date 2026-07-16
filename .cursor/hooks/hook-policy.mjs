@@ -30,16 +30,17 @@ export function isBanSurfacePath(filePath) {
 	}
 	const p = filePath.replace(/\\/g, "/").toLowerCase();
 
-	if (p.includes("/.cursor/hooks/") || p.endsWith("/.cursor/hooks")) {
+	// Match absolute (`D:/…/.cursor/rules/x`) and relative (`.cursor/rules/x`).
+	if (/(^|\/)\.cursor\/hooks(\/|$)/.test(p)) {
 		return true;
 	}
-	if (p.includes("/.cursor/rules/") || p.endsWith("/.cursor/rules")) {
+	if (/(^|\/)\.cursor\/rules(\/|$)/.test(p)) {
 		return true;
 	}
-	if (p.endsWith("/agents.md") || /(^|\/)agents\.md$/.test(p)) {
+	if (/(^|\/)agents\.md$/.test(p)) {
 		return true;
 	}
-	if (p.includes("/deprecation-and-migration/")) {
+	if (/(^|\/)deprecation-and-migration(\/|$)/.test(p)) {
 		return true;
 	}
 	return false;

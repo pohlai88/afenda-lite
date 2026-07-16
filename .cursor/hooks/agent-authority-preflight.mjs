@@ -39,13 +39,16 @@ function isAuthorityPath(filePath) {
 		return false;
 	}
 	const p = filePath.replace(/\\/g, "/").toLowerCase();
-	if (p.endsWith("/agents.md") || p.endsWith("/agent.md")) {
+	if (/(^|\/)agents\.md$/.test(p) || /(^|\/)agent\.md$/.test(p)) {
 		return true;
 	}
-	if (p.includes("/.cursor/rules/") && p.endsWith(".mdc")) {
+	if (/(^|\/)\.cursor\/rules(\/|$)/.test(p) && p.endsWith(".mdc")) {
 		return true;
 	}
-	if (p.includes("/.cursor/skills/") || p.includes("/.agents/skills/")) {
+	if (
+		/(^|\/)\.cursor\/skills(\/|$)/.test(p) ||
+		/(^|\/)\.agents\/skills(\/|$)/.test(p)
+	) {
 		return true;
 	}
 	return false;

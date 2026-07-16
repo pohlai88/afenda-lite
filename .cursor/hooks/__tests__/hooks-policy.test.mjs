@@ -232,4 +232,185 @@ describe("agent-authority-preflight", () => {
 		assert.equal(out.permission, "allow");
 		assert.match(String(out.agent_message || ""), /PREFLIGHT/);
 	});
+
+	it("sessionStart injects context without deny", () => {
+		const out = runHook("agent-authority-preflight.mjs", {
+			hook_event_name: "sessionStart",
+			composer_mode: "agent",
+		});
+		assert.equal(out.permission, undefined);
+		assert.match(String(out.additional_context || ""), /PREFLIGHT/);
+	});
+
+	it("postToolUse Read of rule injects reminder; normal Read stays quiet", () => {
+		const rule = runHook("agent-authority-preflight.mjs", {
+			hook_event_name: "postToolUse",
+			tool_name: "Read",
+			tool_input: { path: ".cursor/rules/no-shim-stub-tech-debt.mdc" },
+			tool_output: "ok",
+		});
+		assert.match(String(rule.additional_context || ""), /PREFLIGHT/);
+
+		const normal = runHook("agent-authority-preflight.mjs", {
+			hook_event_name: "postToolUse",
+			tool_name: "Read",
+			tool_input: { path: "apps/web/package.json" },
+			tool_output: "ok",
+		});
+		assert.deepEqual(normal, {});
+	});
+});
+
+describe("smoke matrix — false-ban guards", () => {
+	it("git allows Target-overlapping and safe ops", () => {
+		for (const command of [
+			"git diff",
+			"git branch -a",
+			"git show HEAD:packages/db/package.json",
+			"git show HEAD:e2e/smoke.spec.ts",
+			"git show HEAD:messages/en.json",
+			"git stash list",
+			"git checkout -b feature/x",
+			"git switch main",
+		]) {
+			const out = runHook("git-no-auto-recover.mjs", { command });
+			assert.equal(out.permission, "allow", command);
+		}
+	});
+
+	it("git asks on remaining recover verbs", () => {
+		for (const command of [
+			"git reset --hard HEAD",
+			"git clean -fd",
+			"git stash pop",
+			"git checkout -f main",
+			"git switch -f main",
+			"git merge --abort",
+			"git show HEAD:modules/fft/index.ts",
+			"git show HEAD:lib/utils.ts",
+		]) {
+			const out = runHook("git-no-auto-recover.mjs", { command });
+			assert.equal(out.permission, "ask", command);
+		}
+	});
+
+	it("drizzle allows generate/check; denies drizzle-kit migrate", () => {
+		assert.equal(
+			runHook("no-drizzle-baseline-migrate.mjs", {
+				command: "pnpm --filter @afenda/db db:generate",
+			}).permission,
+			"allow",
+		);
+		assert.equal(
+			runHook("no-drizzle-baseline-migrate.mjs", {
+				command: "pnpm --filter @afenda/db db:check",
+			}).permission,
+			"allow",
+		);
+		assert.equal(
+			runHook("no-drizzle-baseline-migrate.mjs", {
+				command: "drizzle-kit migrate",
+			}).permission,
+			"deny",
+		);
+	});
+
+	it("shim allows ban-surface rule edit and test doubles", () => {
+		assert.equal(
+			runHook("no-shim-stub-tech-debt.mjs", {
+				tool_name: "Write",
+				tool_input: {
+					path: ".cursor/rules/no-shim-stub-tech-debt.mdc",
+					contents: "No tech debt. No // stub markers in product.\n",
+				},
+			}).permission,
+			"allow",
+		);
+		assert.equal(
+			runHook("no-shim-stub-tech-debt.mjs", {
+				tool_name: "Write",
+				tool_input: {
+					path: "apps/web/__tests__/foo.test.ts",
+					contents: "// stub\nexport const mock = {};\n",
+				},
+			}).permission,
+			"allow",
+		);
+	});
+
+	it("shim denies standalone // stub marker in product", () => {
+		assert.equal(
+			runHook("no-shim-stub-tech-debt.mjs", {
+				tool_name: "Write",
+				tool_input: {
+					path: "apps/web/lib/handler.ts",
+					contents: "// stub\nexport function handler() { return null; }\n",
+				},
+			}).permission,
+			"deny",
+		);
+	});
+
+	it("mvp allows non-product cleanup language on ban surfaces only", () => {
+		assert.equal(
+			runHook("no-mvp-quality-bar.mjs", {
+				tool_name: "Write",
+				tool_input: {
+					path: ".cursor/rules/no-mvp-quality-bar.mdc",
+					contents: "MVP quality is forbidden. No MVP proposal.\n",
+				},
+			}).permission,
+			"allow",
+		);
+	});
+
+	it("decision allows filename containing decision word", () => {
+		assert.equal(
+			runHook("no-decision-directory.mjs", {
+				tool_name: "Write",
+				tool_input: {
+					path: "docs/architecture/adr/ADR-001-auth-decision-lock.md",
+					contents: "# lock\n",
+				},
+			}).permission,
+			"allow",
+		);
+	});
+
+	it("tsconfig ignores non-tsconfig files mentioning baseUrl", () => {
+		assert.equal(
+			runHook("no-tsconfig-baseurl.mjs", {
+				tool_name: "Write",
+				tool_input: {
+					path: "docs/notes.md",
+					contents: 'Never use "baseUrl" in tsconfig.\n',
+				},
+			}).permission,
+			"allow",
+		);
+	});
+
+	it("content hooks fail-open on empty stdin", () => {
+		for (const script of [
+			"no-shim-stub-tech-debt.mjs",
+			"no-mvp-quality-bar.mjs",
+			"no-decision-directory.mjs",
+			"no-tsconfig-baseurl.mjs",
+			"git-no-auto-recover.mjs",
+			"no-drizzle-baseline-migrate.mjs",
+		]) {
+			const result = spawnSync(
+				process.execPath,
+				[path.join(hooksDir, script)],
+				{
+					input: "",
+					encoding: "utf8",
+					cwd: path.resolve(hooksDir, "../.."),
+				},
+			);
+			assert.equal(result.status, 0, script);
+			const out = JSON.parse((result.stdout || "").trim() || "{}");
+			assert.equal(out.permission, "allow", script);
+		}
+	});
 });
