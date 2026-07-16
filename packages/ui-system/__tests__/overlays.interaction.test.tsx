@@ -1,9 +1,9 @@
 import {
-	AlertDialog,
 	Accordion,
 	AccordionContent,
 	AccordionItem,
 	AccordionTrigger,
+	AlertDialog,
 	AlertDialogAction,
 	AlertDialogCancel,
 	AlertDialogContent,
@@ -16,23 +16,12 @@ import {
 	Collapsible,
 	CollapsibleContent,
 	CollapsibleTrigger,
+	Combobox,
 	ContextMenu,
 	ContextMenuContent,
 	ContextMenuItem,
 	ContextMenuTrigger,
-	Combobox,
-	Progress,
 	DataTable,
-	Empty,
-	FormError,
-	FormField,
-	FormInput,
-	InputGroup,
-	InputGroupAddon,
-	InputGroupInput,
-	InputGroupText,
-	Spinner,
-	StatusBadge,
 	Dialog,
 	DialogContent,
 	DialogTitle,
@@ -41,6 +30,15 @@ import {
 	DropdownMenuContent,
 	DropdownMenuItem,
 	DropdownMenuTrigger,
+	Empty,
+	FormError,
+	FormField,
+	FormInput,
+	InputGroup,
+	InputGroupAddon,
+	InputGroupInput,
+	InputGroupText,
+	Progress,
 	Select,
 	SelectContent,
 	SelectItem,
@@ -51,13 +49,13 @@ import {
 	SheetTitle,
 	SheetTrigger,
 	Slider,
+	Spinner,
+	ToggleGroup,
+	ToggleGroupItem,
 	Tooltip,
 	TooltipContent,
 	TooltipProvider,
 	TooltipTrigger,
-	Toggle,
-	ToggleGroup,
-	ToggleGroupItem,
 } from "@afenda/ui-system";
 import {
 	cleanup,
@@ -192,17 +190,17 @@ describe("WCAG 2.2 AA — Focus Management", () => {
 		const user = userEvent.setup();
 		render(
 			<div>
-				<button>Outside Before</button>
+				<button type="button">Outside Before</button>
 				<Dialog>
 					<DialogTrigger>Open</DialogTrigger>
 					<DialogContent>
 						<DialogTitle>Modal Dialog</DialogTitle>
-						<button>Inside First</button>
-						<button>Inside Second</button>
+						<button type="button">Inside First</button>
+						<button type="button">Inside Second</button>
 					</DialogContent>
 				</Dialog>
-				<button>Outside After</button>
-			</div>
+				<button type="button">Outside After</button>
+			</div>,
 		);
 
 		// Open dialog
@@ -213,7 +211,7 @@ describe("WCAG 2.2 AA — Focus Management", () => {
 		// Radix UI Dialog automatically focuses the first focusable element when opened
 		// Let's verify proper focus trapping behavior instead of assuming order
 		const closeButton = screen.getByRole("button", { name: "Close" });
-		const firstButton = screen.getByRole("button", { name: "Inside First" });  
+		const firstButton = screen.getByRole("button", { name: "Inside First" });
 		const secondButton = screen.getByRole("button", { name: "Inside Second" });
 
 		// Test that focus is trapped within the dialog by cycling through all focusable elements
@@ -222,7 +220,9 @@ describe("WCAG 2.2 AA — Focus Management", () => {
 		await user.tab(); // Should wrap around within dialog
 
 		// Verify all focusable elements are within the dialog
-		expect([closeButton, firstButton, secondButton]).toContain(document.activeElement);
+		expect([closeButton, firstButton, secondButton]).toContain(
+			document.activeElement,
+		);
 		expect(document.activeElement).toBeInTheDocument();
 	});
 
@@ -233,9 +233,9 @@ describe("WCAG 2.2 AA — Focus Management", () => {
 				<SheetTrigger>Open Filters</SheetTrigger>
 				<SheetContent>
 					<SheetTitle>Filter Options</SheetTitle>
-					<button>Filter Button</button>
+					<button type="button">Filter Button</button>
 				</SheetContent>
-			</Sheet>
+			</Sheet>,
 		);
 
 		const trigger = screen.getByRole("button", { name: "Open Filters" });
@@ -273,17 +273,23 @@ describe("WCAG 2.2 AA — Keyboard Navigation", () => {
 
 		// Arrow down should move focus through items
 		await user.keyboard("{ArrowDown}");
-		expect(screen.getByRole("menuitem", { name: "Edit Profile" })).toHaveFocus();
-		
+		expect(
+			screen.getByRole("menuitem", { name: "Edit Profile" }),
+		).toHaveFocus();
+
 		await user.keyboard("{ArrowDown}");
-		expect(screen.getByRole("menuitem", { name: "View Settings" })).toHaveFocus();
-		
+		expect(
+			screen.getByRole("menuitem", { name: "View Settings" }),
+		).toHaveFocus();
+
 		await user.keyboard("{ArrowDown}");
 		expect(screen.getByRole("menuitem", { name: "Sign Out" })).toHaveFocus();
 
 		// Arrow up should move focus back up
 		await user.keyboard("{ArrowUp}");
-		expect(screen.getByRole("menuitem", { name: "View Settings" })).toHaveFocus();
+		expect(
+			screen.getByRole("menuitem", { name: "View Settings" }),
+		).toHaveFocus();
 	});
 
 	it("Select supports keyboard selection with Enter and Space", async () => {
@@ -298,11 +304,11 @@ describe("WCAG 2.2 AA — Keyboard Navigation", () => {
 					<SelectItem value="medium">Medium Priority</SelectItem>
 					<SelectItem value="low">Low Priority</SelectItem>
 				</SelectContent>
-			</Select>
+			</Select>,
 		);
 
 		const trigger = screen.getByRole("combobox", { name: "Choose Priority" });
-		
+
 		// Open with Enter key
 		trigger.focus();
 		await user.keyboard("{Enter}");
@@ -313,7 +319,9 @@ describe("WCAG 2.2 AA — Keyboard Navigation", () => {
 		await user.keyboard("{Enter}");
 
 		await waitFor(() => {
-			expect(within(trigger).queryByText("Medium Priority")).toBeInTheDocument();
+			expect(
+				within(trigger).queryByText("Medium Priority"),
+			).toBeInTheDocument();
 		});
 	});
 });
@@ -323,7 +331,7 @@ describe("AlertDialog — destructive action confirmation", () => {
 	it("opens on trigger and provides proper confirmation semantics", async () => {
 		const user = userEvent.setup();
 		const mockDelete = vi.fn();
-		
+
 		render(
 			<AlertDialog>
 				<AlertDialogTrigger>Delete Account</AlertDialogTrigger>
@@ -331,27 +339,32 @@ describe("AlertDialog — destructive action confirmation", () => {
 					<AlertDialogHeader>
 						<AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
 						<AlertDialogDescription>
-							This action cannot be undone. This will permanently delete your account.
+							This action cannot be undone. This will permanently delete your
+							account.
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
 						<AlertDialogCancel>Cancel</AlertDialogCancel>
-						<AlertDialogAction onClick={mockDelete}>Delete Account</AlertDialogAction>
+						<AlertDialogAction onClick={mockDelete}>
+							Delete Account
+						</AlertDialogAction>
 					</AlertDialogFooter>
 				</AlertDialogContent>
-			</AlertDialog>
+			</AlertDialog>,
 		);
 
 		// Open alert dialog
 		await user.click(screen.getByRole("button", { name: "Delete Account" }));
-		const alertDialog = await screen.findByRole("alertdialog", { 
-			name: "Are you absolutely sure?" 
+		const alertDialog = await screen.findByRole("alertdialog", {
+			name: "Are you absolutely sure?",
 		});
 		expect(alertDialog).toBeInTheDocument();
-		
-		// Verify description is associated 
-		expect(screen.getByText(/This action cannot be undone/)).toBeInTheDocument();
-		
+
+		// Verify description is associated
+		expect(
+			screen.getByText(/This action cannot be undone/),
+		).toBeInTheDocument();
+
 		// Test cancel action
 		await user.click(screen.getByRole("button", { name: "Cancel" }));
 		await waitFor(() =>
@@ -363,10 +376,10 @@ describe("AlertDialog — destructive action confirmation", () => {
 	it("confirms destructive action with proper focus management", async () => {
 		const user = userEvent.setup();
 		const mockDelete = vi.fn();
-		
+
 		render(
 			<div>
-				<button>Before</button>
+				<button type="button">Before</button>
 				<AlertDialog>
 					<AlertDialogTrigger>Delete Item</AlertDialogTrigger>
 					<AlertDialogContent>
@@ -382,17 +395,17 @@ describe("AlertDialog — destructive action confirmation", () => {
 						</AlertDialogFooter>
 					</AlertDialogContent>
 				</AlertDialog>
-				<button>After</button>
-			</div>
+				<button type="button">After</button>
+			</div>,
 		);
 
 		const trigger = screen.getByRole("button", { name: "Delete Item" });
 		await user.click(trigger);
-		
+
 		// Focus should be within dialog
 		const deleteButton = screen.getByRole("button", { name: "Delete" });
 		await user.click(deleteButton);
-		
+
 		expect(mockDelete).toHaveBeenCalledTimes(1);
 	});
 });
@@ -404,7 +417,7 @@ describe("WCAG 2.2 AA — Accessible Names and Descriptions", () => {
 				<DialogContent>
 					<DialogTitle>Edit User Profile</DialogTitle>
 				</DialogContent>
-			</Dialog>
+			</Dialog>,
 		);
 
 		const dialog = screen.getByRole("dialog", { name: "Edit User Profile" });
@@ -422,12 +435,16 @@ describe("WCAG 2.2 AA — Accessible Names and Descriptions", () => {
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 				</AlertDialogContent>
-			</AlertDialog>
+			</AlertDialog>,
 		);
 
-		const alertDialog = screen.getByRole("alertdialog", { name: "Confirm Deletion" });
+		const alertDialog = screen.getByRole("alertdialog", {
+			name: "Confirm Deletion",
+		});
 		expect(alertDialog).toBeInTheDocument();
-		expect(alertDialog).toHaveAccessibleDescription("This action is permanent and cannot be undone.");
+		expect(alertDialog).toHaveAccessibleDescription(
+			"This action is permanent and cannot be undone.",
+		);
 	});
 
 	it("Sheet has accessible name from SheetTitle", async () => {
@@ -436,7 +453,7 @@ describe("WCAG 2.2 AA — Accessible Names and Descriptions", () => {
 				<SheetContent>
 					<SheetTitle>Navigation Menu</SheetTitle>
 				</SheetContent>
-			</Sheet>
+			</Sheet>,
 		);
 
 		const sheet = screen.getByRole("dialog", { name: "Navigation Menu" });
@@ -453,7 +470,7 @@ describe("WCAG 2.2 AA — Accessible Names and Descriptions", () => {
 					<SelectItem value="todo">To Do</SelectItem>
 					<SelectItem value="done">Completed</SelectItem>
 				</SelectContent>
-			</Select>
+			</Select>,
 		);
 
 		const select = screen.getByRole("combobox", { name: "Task Status" });
@@ -476,7 +493,7 @@ describe("WCAG 2.2 AA — Accessible Names and Descriptions", () => {
 				onValueChange={mockChange}
 				placeholder="Select fruit..."
 				searchPlaceholder="Search fruits..."
-			/>
+			/>,
 		);
 
 		const combobox = screen.getByRole("combobox");
@@ -492,7 +509,7 @@ describe("WCAG 2.2 AA — Accessible Names and Descriptions", () => {
 		expect(searchInput).toBeInTheDocument();
 
 		await user.type(searchInput, "app");
-		
+
 		// Should show filtered results
 		expect(screen.getByText("Apple")).toBeInTheDocument();
 		expect(screen.queryByText("Banana")).not.toBeInTheDocument();
@@ -507,11 +524,7 @@ describe("WCAG 2.2 AA — Accessible Names and Descriptions", () => {
 		const mockSelect = vi.fn();
 
 		render(
-			<Calendar
-				mode="single"
-				selected={undefined}
-				onSelect={mockSelect}
-			/>
+			<Calendar mode="single" selected={undefined} onSelect={mockSelect} />,
 		);
 
 		// Calendar should be present with proper grid role
@@ -526,7 +539,7 @@ describe("WCAG 2.2 AA — Accessible Names and Descriptions", () => {
 		const todayButton = screen.getByRole("button", { name: /Today/ });
 		expect(todayButton).toBeInTheDocument();
 		expect(todayButton).toHaveAttribute("tabindex", "0");
-		
+
 		// Test date selection
 		await user.click(todayButton);
 		expect(mockSelect).toHaveBeenCalled();
@@ -536,8 +549,12 @@ describe("WCAG 2.2 AA — Accessible Names and Descriptions", () => {
 		render(
 			<div>
 				<Progress value={65} max={100} />
-				<Progress value={3} max={5} getValueLabel={(v, m) => `${v} of ${m} tasks completed`} />
-			</div>
+				<Progress
+					value={3}
+					max={5}
+					getValueLabel={(v, m) => `${v} of ${m} tasks completed`}
+				/>
+			</div>,
 		);
 
 		const progressBars = screen.getAllByRole("progressbar");
@@ -553,7 +570,10 @@ describe("WCAG 2.2 AA — Accessible Names and Descriptions", () => {
 		expect(progressBars[1]).toHaveAttribute("aria-valuemin", "0");
 		expect(progressBars[1]).toHaveAttribute("aria-valuemax", "5");
 		expect(progressBars[1]).toHaveAttribute("aria-valuenow", "3");
-		expect(progressBars[1]).toHaveAttribute("aria-valuetext", "3 of 5 tasks completed");
+		expect(progressBars[1]).toHaveAttribute(
+			"aria-valuetext",
+			"3 of 5 tasks completed",
+		);
 	});
 
 	it("Spinner provides accessible status and live region updates", async () => {
@@ -561,7 +581,7 @@ describe("WCAG 2.2 AA — Accessible Names and Descriptions", () => {
 			<div>
 				<Spinner />
 				<Spinner size="lg" variant="secondary" label="Processing data" />
-			</div>
+			</div>,
 		);
 
 		const spinners = screen.getAllByRole("status");
@@ -579,31 +599,42 @@ describe("WCAG 2.2 AA — Accessible Names and Descriptions", () => {
 	});
 
 	it("Empty state provides accessible region with semantic content", () => {
-		const { container } = render(
+		render(
 			<Empty
 				title="No results found"
 				description="Try adjusting your search criteria"
-				action={<button>Reset Filters</button>}
-			/>
+				action={<button type="button">Reset Filters</button>}
+			/>,
 		);
 
 		const emptyRegion = screen.getByRole("region");
 		expect(emptyRegion).toHaveAttribute("aria-label", "No results found");
-		expect(screen.getByRole("heading", { level: 3 })).toHaveTextContent("No results found");
-		expect(screen.getByText("Try adjusting your search criteria")).toBeInTheDocument();
-		expect(screen.getByRole("button", { name: "Reset Filters" })).toBeInTheDocument();
+		expect(screen.getByRole("heading", { level: 3 })).toHaveTextContent(
+			"No results found",
+		);
+		expect(
+			screen.getByText("Try adjusting your search criteria"),
+		).toBeInTheDocument();
+		expect(
+			screen.getByRole("button", { name: "Reset Filters" }),
+		).toBeInTheDocument();
 	});
 
 	it("DataTable provides accessible table with sorting and loading states", async () => {
 		const user = userEvent.setup();
 		const mockSort = vi.fn();
-		
+
 		const columns = [
 			{ key: "name", title: "Name", sortable: true },
 			{ key: "email", title: "Email", sortable: false },
-			{ key: "status", title: "Status", sortable: true, render: (value: string) => value.toUpperCase() },
+			{
+				key: "status",
+				title: "Status",
+				sortable: true,
+				render: (value: string) => value.toUpperCase(),
+			},
 		];
-		
+
 		const data = [
 			{ name: "John Doe", email: "john@example.com", status: "active" },
 			{ name: "Jane Smith", email: "jane@example.com", status: "inactive" },
@@ -616,37 +647,39 @@ describe("WCAG 2.2 AA — Accessible Names and Descriptions", () => {
 				sortBy="name"
 				sortDirection="asc"
 				onSort={mockSort}
-			/>
+			/>,
 		);
 
 		// Should render accessible table
 		const table = screen.getByRole("table");
 		expect(table).toBeInTheDocument();
-		
+
 		// Should have proper column headers
-		expect(screen.getByRole("columnheader", { name: /Name/ })).toBeInTheDocument();
-		expect(screen.getByRole("columnheader", { name: /Email/ })).toBeInTheDocument();
-		expect(screen.getByRole("columnheader", { name: /Status/ })).toBeInTheDocument();
-		
+		expect(
+			screen.getByRole("columnheader", { name: /Name/ }),
+		).toBeInTheDocument();
+		expect(
+			screen.getByRole("columnheader", { name: /Email/ }),
+		).toBeInTheDocument();
+		expect(
+			screen.getByRole("columnheader", { name: /Status/ }),
+		).toBeInTheDocument();
+
 		// Should render custom content (uppercase status)
 		expect(screen.getByText("ACTIVE")).toBeInTheDocument();
 		expect(screen.getByText("INACTIVE")).toBeInTheDocument();
-		
+
 		// Should handle sorting
 		const sortableHeader = screen.getByRole("button", { name: "Sort by Name" });
 		await user.click(sortableHeader);
 		expect(mockSort).toHaveBeenCalledWith("name", "desc");
-		
+
 		// Test loading state
-		rerender(
-			<DataTable
-				columns={columns}
-				data={[]}
-				loading={true}
-			/>
-		);
-		expect(screen.getByRole("status", { name: "Loading data..." })).toBeInTheDocument();
-		
+		rerender(<DataTable columns={columns} data={[]} loading={true} />);
+		expect(
+			screen.getByRole("status", { name: "Loading data..." }),
+		).toBeInTheDocument();
+
 		// Test empty state
 		rerender(
 			<DataTable
@@ -654,15 +687,17 @@ describe("WCAG 2.2 AA — Accessible Names and Descriptions", () => {
 				data={[]}
 				loading={false}
 				emptyTitle="No users found"
-			/>
+			/>,
 		);
-		expect(screen.getByRole("region", { name: "No users found" })).toBeInTheDocument();
+		expect(
+			screen.getByRole("region", { name: "No users found" }),
+		).toBeInTheDocument();
 	});
 
 	it("DataTable shows pagination when enabled", async () => {
 		const user = userEvent.setup();
 		const mockPageChange = vi.fn();
-		
+
 		const columns = [{ key: "name", title: "Name" }];
 		const data = [{ name: "Test" }];
 
@@ -674,12 +709,12 @@ describe("WCAG 2.2 AA — Accessible Names and Descriptions", () => {
 				currentPage={1}
 				totalPages={3}
 				onPageChange={mockPageChange}
-			/>
+			/>,
 		);
 
 		const navigation = screen.getByRole("navigation");
 		expect(navigation).toBeInTheDocument();
-		
+
 		const nextButton = screen.getByText("Next");
 		await user.click(nextButton);
 		expect(mockPageChange).toHaveBeenCalledWith(2);
@@ -688,7 +723,7 @@ describe("WCAG 2.2 AA — Accessible Names and Descriptions", () => {
 	it("DataTable supports row selection with accessible controls", async () => {
 		const user = userEvent.setup();
 		const mockSelectionChange = vi.fn();
-		
+
 		const columns = [{ key: "name", title: "Name" }];
 		const data = [{ name: "Item 1" }, { name: "Item 2" }];
 
@@ -699,17 +734,17 @@ describe("WCAG 2.2 AA — Accessible Names and Descriptions", () => {
 				selectable={true}
 				selectedRows={new Set([0])}
 				onSelectionChange={mockSelectionChange}
-			/>
+			/>,
 		);
 
 		// Should have select all checkbox
 		const selectAllCheckbox = screen.getByLabelText("Select all rows");
 		expect(selectAllCheckbox).toBeInTheDocument();
-		
+
 		// Should have individual row checkboxes
 		expect(screen.getByLabelText("Select row 1")).toBeInTheDocument();
 		expect(screen.getByLabelText("Select row 2")).toBeInTheDocument();
-		
+
 		// Test individual selection
 		await user.click(screen.getByLabelText("Select row 2"));
 		expect(mockSelectionChange).toHaveBeenCalled();
@@ -723,7 +758,7 @@ describe("WCAG 2.2 AA — Accessible Names and Descriptions", () => {
 				<FormError variant="info" showIcon={false}>
 					Please check your network connection
 				</FormError>
-			</div>
+			</div>,
 		);
 
 		// Should render as alert with live region
@@ -732,17 +767,25 @@ describe("WCAG 2.2 AA — Accessible Names and Descriptions", () => {
 
 		// Should have proper live region attributes
 		expect(errors[0]).toHaveAttribute("aria-live", "polite");
-		
+
 		// Should display messages correctly
 		expect(screen.getByText("Email is required")).toBeInTheDocument();
 		expect(screen.getByText("Password should be stronger")).toBeInTheDocument();
-		expect(screen.getByText("Please check your network connection")).toBeInTheDocument();
+		expect(
+			screen.getByText("Please check your network connection"),
+		).toBeInTheDocument();
 
 		// Should include icons where expected (first two have icons, third does not)
-		const iconsInFirstError = errors[0].querySelector('svg[aria-hidden="true"]');
-		const iconsInSecondError = errors[1].querySelector('svg[aria-hidden="true"]');
-		const iconsInThirdError = errors[2].querySelector('svg[aria-hidden="true"]');
-		
+		const iconsInFirstError = errors[0].querySelector(
+			'svg[aria-hidden="true"]',
+		);
+		const iconsInSecondError = errors[1].querySelector(
+			'svg[aria-hidden="true"]',
+		);
+		const iconsInThirdError = errors[2].querySelector(
+			'svg[aria-hidden="true"]',
+		);
+
 		expect(iconsInFirstError).toBeInTheDocument();
 		expect(iconsInSecondError).toBeInTheDocument();
 		expect(iconsInThirdError).not.toBeInTheDocument();
@@ -760,11 +803,11 @@ describe("WCAG 2.2 AA — Accessible Names and Descriptions", () => {
 				>
 					<FormInput type="email" placeholder="john@company.com" />
 				</FormField>
-				
+
 				<FormField label="Optional field">
 					<FormInput />
 				</FormField>
-			</div>
+			</div>,
 		);
 
 		// Should have proper label association
@@ -775,20 +818,20 @@ describe("WCAG 2.2 AA — Accessible Names and Descriptions", () => {
 
 		// Should show required indicator
 		expect(screen.getByText("Email Address")).toBeInTheDocument();
-		
+
 		// Should have description and error associations
 		expect(emailInput).toHaveAttribute("aria-describedby");
 		const describedBy = emailInput.getAttribute("aria-describedby");
 		expect(describedBy).toContain("email-description");
 		expect(describedBy).toContain("email-error");
-		
+
 		// Should mark field as invalid when error is present
 		expect(emailInput).toHaveAttribute("aria-invalid", "true");
-		
+
 		// Should display description and error
 		expect(screen.getByText("Enter your work email")).toBeInTheDocument();
 		expect(screen.getByText("Email is required")).toBeInTheDocument();
-		
+
 		// Optional field should not have required indicator or error state
 		const optionalInput = screen.getByLabelText("Optional field");
 		expect(optionalInput).not.toHaveAttribute("aria-invalid");
@@ -814,7 +857,9 @@ describe("WCAG 2.2 AA — Accessible Names and Descriptions", () => {
 
 		await user.click(trigger);
 		await waitFor(() =>
-			expect(screen.queryByText("Hidden panel content")).not.toBeInTheDocument(),
+			expect(
+				screen.queryByText("Hidden panel content"),
+			).not.toBeInTheDocument(),
 		);
 		expect(trigger).toHaveAttribute("aria-expanded", "false");
 	});
@@ -892,7 +937,9 @@ describe("WCAG 2.2 AA — Accessible Names and Descriptions", () => {
 
 		const trigger = screen.getByText("Right click me");
 		await user.pointer({ keys: "[MouseRight>]", target: trigger });
-		expect(await screen.findByRole("menuitem", { name: "Edit" })).toBeInTheDocument();
+		expect(
+			await screen.findByRole("menuitem", { name: "Edit" }),
+		).toBeInTheDocument();
 	});
 
 	it("Slider exposes accessible range semantics", () => {
