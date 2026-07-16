@@ -4,11 +4,11 @@
 | ----------------- | ------------ |
 | **ID**            | ADR-010      |
 | **Category**      | ADR          |
-| **Version**       | 1.0.0        |
+| **Version**       | 1.1.0        |
 | **Status**        | Accepted     |
 | **Control State** | Closed       |
 | **Owner**         | Platform     |
-| **Updated**       | 2026-07-16   |
+| **Updated**       | 2026-07-17   |
 
 ---
 
@@ -71,6 +71,21 @@ ADR-009 consolidated two colliding packages into `@afenda/ui` and trimmed its ex
 
 The consuming app (`apps/web/globals.css`) owns `@import "tailwindcss"`, the animation layer (`tw-animate-css`), the `@source` registration of the package, and brand typography. The package's `styles.css` owns **only** the semantic token layer (`@theme inline`, `:root`, `.dark`, `@custom-variant dark`) — it never imports Tailwind. This keeps one Tailwind compilation owner and lets the package stay a pure token + component source.
 
+### D4.1 — ERP token families (owned extensions in the same SSOT)
+
+Disk SSOT for semantic color is a single file: [`packages/ui-system/src/styles/tokens.css`](../../../packages/ui-system/src/styles/tokens.css) (public door `@afenda/ui-system/styles.css`). In addition to the shadcn registry slots, that file ships **19** ERP family custom properties (each with `:root` / `.dark` values and a matching `--color-*` map under `@theme inline`). Lock list: `packages/ui-system/__tests__/erp-tokens.test.ts`. Do not invent a parallel token file; cite `tokens.css` for values.
+
+| Family | Slots (19) | Compose utilities (Tailwind v4 theme) |
+|--------|------------|---------------------------------------|
+| Surface | `--surface-sunken`, `--surface-raised`, `--canvas` | `bg-surface-sunken`, `bg-surface-raised`, `bg-canvas` |
+| Ink ladder | `--foreground-secondary`, `--foreground-tertiary` | `text-foreground-secondary`, `text-foreground-tertiary` |
+| Status subtle / border | `--{success\|warning\|info\|destructive}-subtle`, `-subtle-foreground`, `-border` (12) | `bg-*-subtle`, `text-*-subtle-foreground`, `border-*-border` |
+| Table chrome | `--table-row-hover`, `--table-stripe` | `bg-table-row-hover`, `bg-table-stripe` |
+
+**Ink ladder (with registry):** `--foreground` → `--foreground-secondary` → `--foreground-tertiary` → `--muted-foreground`. **`--foreground-quaternary` is not a shippable slot** — absent from `tokens.css` / `@theme`; do not reintroduce.
+
+**Not in this decision:** Aerospace Ceramic or any scratch brand lane (`docs/scratch/**`) — those are never Living authority and must not be folded into neutral package defaults. Solid status pairs (`--success` / `--warning` / `--info` and foregrounds) and density/elevation/motion extras remain separate owned slots in the same file; they are not part of the 19-count ERP promotion set.
+
 ### D5 — Source package, no build step
 
 `@afenda/ui-system` is consumed directly from TypeScript source via Next.js `transpilePackages` (and `optimizePackageImports`). No `dist`, no separate build/semver pipeline.
@@ -114,6 +129,7 @@ Committed tests enforce the contract: barrel coverage (every `components/ui/*` p
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 1.1.0 | 2026-07-17 | Documented D4.1 — 19 shipped ERP token families (surface · ink ladder · status-subtle/border · table chrome) citing `packages/ui-system/src/styles/tokens.css` + `erp-tokens.test.ts`; ban on `--foreground-quaternary`; scratch brand lanes remain non-authority. |
 | 1.0.0 | 2026-07-16 | Accepted — greenfield `@afenda/ui-system` flat-barrel Radix design system replaces the ADR-009 `@afenda/ui` playground gateway; Radix/new-york pinned, no registries, app-owned CSS, source package, guardrails green. |
 
 ---
@@ -122,3 +138,4 @@ Committed tests enforce the contract: barrel coverage (every `components/ui/*` p
 
 - This ADR documents a decision implemented and verified in the same working session: `@afenda/ui-system` typecheck green, `apps/web` typecheck green, guardrail + keyboard/focus tests green, and a Tailwind v4 compile confirming package classes emit via `@source`.
 - Future primitive additions: run `shadcn add …` inside `packages/ui-system`, convert generated `@/` imports to relative, add the export to `src/index.ts`, and keep the barrel-coverage test green.
+- ERP family values and `@theme` maps are verified by `packages/ui-system/__tests__/erp-tokens.test.ts`; Living docs name the families and cite the path — they do not duplicate OKLCH literals.

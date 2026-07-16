@@ -144,8 +144,8 @@ function DataTable<T extends Record<string, unknown>>({
 
 	const rowHeightClass =
 		density === "compact"
-			? "h-[var(--table-row-height-compact)]"
-			: "h-[var(--table-row-height)]";
+			? "h-(--table-row-height-compact)"
+			: "h-(--table-row-height)";
 
 	if (loading) {
 		return (
@@ -202,7 +202,7 @@ function DataTable<T extends Record<string, unknown>>({
 					action={emptyAction}
 				/>
 			) : (
-				<div className="overflow-x-auto rounded-md border shadow-[var(--shadow-raised)]">
+				<div className="overflow-x-auto rounded-md border shadow-(--shadow-raised)">
 					<Table>
 						<TableHeader className="bg-surface-sunken sticky top-0 z-10">
 							<TableRow className={rowHeightClass}>

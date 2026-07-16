@@ -355,7 +355,7 @@ Product consumers under `apps/web/features/**` and product message routes now us
 | Secondary body (page intros, helper copy) | `text-foreground-secondary` |
 | Caption / tertiary (mono codes, empty cells, timestamps) | `text-foreground-tertiary` |
 
-Auth-island surfaces stay on route-scoped chrome (no product canvas kit). Package primitives still on opacity aliases (`StatusBadge` `*/10`·`*/25`, `TableRow` `hover:bg-muted/50`) — tracked as UI-CAP; do not handroll status/table chrome in features.
+Auth-island surfaces stay on route-scoped chrome (no product canvas kit). Package primitives **consume** shipped ERP chrome: `StatusBadge` → `bg-*-subtle` / `text-*-subtle-foreground` / `border-*-border`; `TableRow` → `hover:bg-table-row-hover`; `DataTable` odd rows → `bg-table-stripe` (locked in `erp-chrome.test.ts`). Do not handroll status/table chrome in features.
 
 ---
 

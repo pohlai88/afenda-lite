@@ -8,21 +8,41 @@ Companion to [SKILL.md](SKILL.md). **SKILL** = QUALITY ORDER, locks, hard rules,
 
 **Risk A:** IDs must not diverge. `compose-gate-ids.test.ts` asserts this file’s `| F1 |`…`| F8 |` / `| C1 |`…`| C3 |` table cells match Vitest `it("F…")` / `it("C…")` titles. Adding a gate = update this table **and** the test title in the same change.
 
+## ERP token utilities (shipped)
+
+Disk SSOT: `packages/ui-system/src/styles/tokens.css` (public `@afenda/ui-system/styles.css`). Living authority: [ADR-010](../../../docs/architecture/adr/ADR-010-afenda-ui-system-flat-barrel.md) § D4.1 · [ARCH-024](../../../docs/architecture/ARCH-024-package-boundaries.md) § `@afenda/ui-system`. Lock: `packages/ui-system/__tests__/erp-tokens.test.ts`. **No parallel token file.** Do not promote scratch brand lanes (including Aerospace Ceramic). **Never** use or reintroduce `--foreground-quaternary`.
+
+| Role | Utility | Notes |
+|------|---------|-------|
+| App / message shell plane | `bg-canvas` | Outside auth-island chrome |
+| Inset / sunken plane | `bg-surface-sunken` | Table header, inset list rows |
+| Raised plane | `bg-surface-raised` | Lightness elevation vs card/shadow |
+| Secondary body | `text-foreground-secondary` | Page intros, helper copy |
+| Caption / tertiary | `text-foreground-tertiary` | Mono codes, empty cells, timestamps |
+| Muted chrome | `text-muted-foreground` | Registry muted (weaker than tertiary) |
+| Status chip / banner fill | `bg-{success\|warning\|info\|destructive}-subtle` | Prefer over ad-hoc `*/10` opacity fills when composing features |
+| Status chip / banner ink | `text-{success\|warning\|info\|destructive}-subtle-foreground` | Pair with matching subtle fill |
+| Status chip / banner edge | `border-{success\|warning\|info\|destructive}-border` | Pair with subtle fill |
+| Table row hover | `bg-table-row-hover` | Prefer over inventing `hover:bg-muted/50` in feature chrome |
+| Table stripe | `bg-table-stripe` | Alternating rows |
+
+Package primitives may still use opacity aliases until a controlled ui-system upgrade — do not handroll a second status/table palette in `apps/web/features/**`.
+
 ## Composition recipes → barrel
 
 **Recipe = default, not absolute.** Prefer the row below unless workflow evidence justifies another barrel option or a dedicated page (SUITABILITY-FIRST in [SKILL.md](SKILL.md)).
 
 | Recipe | Compose from barrel | Notes |
 |--------|---------------------|-------|
-| Settings / profile panel | `Tabs`, `Card` (+ parts), `FormField`, `Input`, `Textarea`, `Switch`, `Button`, `Separator` | One density; page title outside tabs |
-| CRUD / tabular list | `DataTable`, `Button`, `Input` (filter), `Badge` / `StatusBadge`, `Pagination`, `Empty` | Feature decides sort/filter/pagination/row actions/URL/server need. DataTable must expose generic ports for approved reusable interaction; missing port → `UI-CAP-04`. Do not implement a feature-local table framework. Do not invent actions without a real product route or command. **DataTable** = presentation + interaction only; feature owns fetch/URL/permissions/domain/server (rule 14) |
+| Settings / profile panel | `Tabs`, `Card` (+ parts), `FormField`, `Input`, `Textarea`, `Switch`, `Button`, `Separator` | One density; page title outside tabs; shell plane `bg-canvas` when the surface is an app shell |
+| CRUD / tabular list | `DataTable`, `Button`, `Input` (filter), `Badge` / `StatusBadge`, `Pagination`, `Empty` | Feature decides sort/filter/pagination/row actions/URL/server need. DataTable must expose generic ports for approved reusable interaction; missing port → `UI-CAP-04`. Do not implement a feature-local table framework. Do not invent actions without a real product route or command. **DataTable** = presentation + interaction only; feature owns fetch/URL/permissions/domain/server (rule 14). Prefer ERP table utilities (`bg-table-row-hover`, `bg-table-stripe`) and status-subtle utilities when composing row/status chrome outside primitive internals |
 | Create / edit drawer | `Sheet` (+ parts), `FormField`, `Input`, `NativeSelect` / `Select`, `DatePicker`, `Combobox`, `Button`, `FormError` | **Default** for multi-field forms; tiny one-field edit may use `Dialog`; complex workflows may use a dedicated page |
 | Confirm destructive | `AlertDialog` (+ parts), `Button` `variant="destructive"` | Never custom modal markup |
-| Inline notice | `Alert` (+ parts) | Not a bordered `div` |
+| Inline notice | `Alert` (+ parts) | Not a bordered `div`. Soft status callouts may use ERP `bg-*-subtle` + `text-*-subtle-foreground` + `border-*-border` when not using `Alert`/`StatusBadge` |
+| Dense key/value detail | `KeyValue` / `KeyValueList`, `Badge`, `Separator` | Body = `text-sm`; secondary/tertiary ink via `text-foreground-secondary` / `text-foreground-tertiary` |
 | Metric strip | `MetricCard`, `KeyValue` | Use `MetricCard` for individual metrics. Use an existing shared metric compound when repeated responsive metric collection is required. If none exists and feature code would recreate count-aware grid behavior → `UI-CAP-03`. Do not add feature-local metric-grid abstractions. One-off two-card layout may still be composed directly when straightforward and not becoming a repeated abstraction |
 | App chrome nav | `Sidebar` (+ parts), `Breadcrumb`, `Separator` | Do not handroll nav pills |
 | Command palette | `Command`, `Dialog` / command dialog pattern | lucide icons only |
-| Dense key/value detail | `KeyValue` / `KeyValueList`, `Badge`, `Separator` | Body = `text-sm` |
 | Loading state | `Skeleton`, `Spinner` | Never plain loading copy alone |
 | Empty collection | `Empty` | Title uses section type lock |
 

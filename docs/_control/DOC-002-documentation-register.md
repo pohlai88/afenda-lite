@@ -4,7 +4,7 @@
 | ----------------- | ---------- |
 | **ID**            | DOC-002    |
 | **Category**      | Control    |
-| **Version**       | 4.127.0 |
+| **Version**       | 4.128.0 |
 | **Status**        | Living     |
 | **Control State** | Closed     |
 | **Owner**         | Platform   |
@@ -71,7 +71,7 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 | ID           | Category     | Title                                      | Version | Status | Owner    | Updated    |
 | ------------ | ------------ | ------------------------------------------ | ------- | ------ | -------- | ---------- |
 | DOC-001      | Control      | Documentation Control Standard             | 2.7.0   | Living | Platform | 2026-07-14 |
-| DOC-002      | Control      | Documentation Register                     | 4.127.0 | Living | Platform | 2026-07-17 |
+| DOC-002      | Control      | Documentation Register                     | 4.128.0 | Living | Platform | 2026-07-17 |
 | DOC-003      | Control      | Controlled Document Template               | 1.4.0   | Living | Platform | 2026-07-14 |
 | ARCH-029     | Architecture | Interface and API Architecture             | 1.2.7   | Living | Platform | 2026-07-14 |
 | ARCH-031     | Architecture | Technology Stack Catalogue                 | 1.3.17  | Living | Platform | 2026-07-16 |
@@ -110,7 +110,7 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 | RB-008       | Runbook      | API Contract Rollback                      | 0.2.1   | Draft  | Backend  | 2026-07-14 |
 | ARCH-022     | Architecture | System Overview — Turborepo                | 1.6.9   | Living | Platform | 2026-07-16 |
 | ARCH-023     | Architecture | Multi-Tenancy and Platform RBAC            | 3.1.7   | Living | Platform | 2026-07-17 |
-| ARCH-024     | Architecture | Package Boundaries                         | 1.6.0   | Living | Platform | 2026-07-16 |
+| ARCH-024     | Architecture | Package Boundaries                         | 1.7.0   | Living | Platform | 2026-07-17 |
 | ARCH-025     | Architecture | Data Layer                                 | 1.3.4   | Living | Backend  | 2026-07-17 |
 | ARCH-026     | Architecture | Authentication and Session Model           | 1.3.10  | Living | Platform | 2026-07-15 |
 | ARCH-027     | Architecture | Environment Variable Model                 | 1.6.5   | Living | Platform | 2026-07-16 |
@@ -119,7 +119,7 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 | ARCH-002     | Architecture | Frontend Architecture                      | 1.3.4   | Living | Frontend | 2026-07-15 |
 | ADR-008      | ADR          | Cache Components Mode B (Gated)            | 1.0.1   | Accepted | Frontend | 2026-07-14 |
 | ADR-009      | ADR          | `@afenda/ui` Playground Gateway as the Sole Public UI Import Surface | 1.1.0   | Superseded | Platform | 2026-07-16 |
-| ADR-010      | ADR          | `@afenda/ui-system` Flat-Barrel Radix Design System | 1.0.0   | Accepted | Platform | 2026-07-16 |
+| ADR-010      | ADR          | `@afenda/ui-system` Flat-Barrel Radix Design System | 1.1.0   | Accepted | Platform | 2026-07-17 |
 | ARCH-003     | Architecture | Multi-tenant Ecosystem                     | 2.1.1   | Superseded | Platform | 2026-07-14 |
 | ARCH-004     | Architecture | Backend Layers                             | 1.1.1   | Living | Backend  | 2026-07-14 |
 | ARCH-005     | Architecture | Backend Folder Map                         | 1.1.4   | Living | Backend  | 2026-07-15 |
@@ -171,6 +171,7 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 
 | Version | Date       | Summary                                                                                                                                         |
 | ------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| 4.128.0 | 2026-07-17 | ERP token families Living docs: ADR-010→1.1.0 · ARCH-024→1.7.0 (19 shipped families cited to `tokens.css`); DOC-002 self-row synced. |
 | 4.127.0 | 2026-07-17 | N4 alert repair: RB-001→1.3.1; DOC-002 self-row synced. |
 | 4.126.0 | 2026-07-17 | N4 DB performance baseline: ARCH-025→1.3.4 · RB-001→1.3.0; DOC-002 self-row synced. |
 | 4.125.0 | 2026-07-17 | N3 audit Path-to-100%: ARCH-023→3.1.7 (drill executed) · RB-001→1.2.2 (five-day snapshot inventory); DOC-002 self-row synced. |
