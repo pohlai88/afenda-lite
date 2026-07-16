@@ -50,6 +50,7 @@ import {
 	SheetContent,
 	SheetTitle,
 	SheetTrigger,
+	Slider,
 	Tooltip,
 	TooltipContent,
 	TooltipProvider,
@@ -892,5 +893,17 @@ describe("WCAG 2.2 AA — Accessible Names and Descriptions", () => {
 		const trigger = screen.getByText("Right click me");
 		await user.pointer({ keys: "[MouseRight>]", target: trigger });
 		expect(await screen.findByRole("menuitem", { name: "Edit" })).toBeInTheDocument();
+	});
+
+	it("Slider exposes accessible range semantics", () => {
+		render(
+			<Slider defaultValue={[50]} max={100} step={1} aria-label="Volume" />,
+		);
+
+		const slider = screen.getByRole("slider");
+		expect(slider).toHaveAttribute("aria-valuemin", "0");
+		expect(slider).toHaveAttribute("aria-valuemax", "100");
+		expect(slider).toHaveAttribute("aria-valuenow", "50");
+		expect(slider.closest('[aria-label="Volume"]')).toBeInTheDocument();
 	});
 });
