@@ -7,7 +7,8 @@ Farm routing per domain keyword. Always also load: main [SKILL.md](SKILL.md) and
 | Scope keyword | LOAD farms (order) | Tier A authority | Farm evidence | Minimum checks |
 |---------------|-------------------|------------------|---------------|----------------|
 | `repository` | router → doc-integrity → repo-housekeeping | DOC-001…003 · AGENTS.md | — | `check:docs-naming`, `check:docs-trunk-ban`, `check:doc-integrity`, `pnpm lint`, `pnpm typecheck` |
-| `ui-system` | router → frontend-scaffold | ADR-010 · ARCH-024 § ui-system | — | `pnpm --filter @afenda/ui-system test`, `pnpm --filter @afenda/web test` (ui-boundary), `pnpm --filter @afenda/web build` |
+| `ui-system` | router → frontend-scaffold · ui-compose (when product UI / handroll / visual consistency) | ADR-010 · ARCH-024 § ui-system · tokens.css · Geist map | compose `SKILL.md` + `reference.md` | `pnpm check:ui-system` (ui-system consistency + web compose-redflags + ui-boundary) |
+| `ui-compose` | router → ui-compose → frontend-scaffold (routes only) → frontend-ui-engineering (method only) | ADR-010 · ARCH-024 · tokens.css · apps/web Geist map | [`.cursor/skills/afenda-elite-ui-compose/SKILL.md`](../afenda-elite-ui-compose/SKILL.md) | `pnpm check:ui-system`; disk: skill + catalog + Elite router + LOAD pointers |
 | `api` | router → api-contract | ARCH-029 · API-* · REST-* · OPEN-* | [`completeness.md`](../afenda-elite-api-contract/completeness.md) | `check:doc-integrity`, `check:openapi`, `pnpm typecheck` |
 | `modules` | router → backend-modules → module-readiness | ARCH-006 · ARCH-022 · MOD-002 | per-pack `*-MOD-009/010` | `check:module-quality` |
 | `fft` | router → feed-farm-trade | FFT-MOD-* | [`completeness.md`](../feed-farm-trade/completeness.md) · [`verify.md`](../feed-farm-trade/verify.md) | farm verify commands from skill |
@@ -57,6 +58,7 @@ Total root scripts: ~99 in `package.json`. Gated count: ~62. Live controls: ~37.
 ### By user keyword
 - "audit", "alignment", "doc-to-code" → auto-select based on mentioned domains
 - "ui-system", "design-system", "ADR-010" → `ui-system`
+- "ui-compose", "compose", "handroll", "visual consistency", "type scale lock" → `ui-compose`
 - "API contract", "REST", "OpenAPI" → `api`
 - "modules", "MOD-002", "Enterprise Readiness" → `modules`
 - "FFT", "Feed Farm Trade" → `fft`

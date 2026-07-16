@@ -122,26 +122,6 @@ describe("@afenda/web compose red-flags (afenda-elite-ui-compose)", () => {
 	});
 
 	it("F8 — auth-surface.css only imported from allowlisted island paths", () => {
-		const offenders: string[] = [];
-		for (const full of collectTsx(webRoot)) {
-			const rel = toRel(full);
-			const src = readFileSync(full, "utf8");
-			if (!src.includes("auth-surface.css")) {
-				continue;
-			}
-			if (isAuthIsland(rel) || rel.endsWith("auth-surface.css")) {
-				continue;
-			}
-			// join layout is allowlisted via prefix
-			if (rel === "app/(public)/join/layout.tsx") {
-				continue;
-			}
-			offenders.push(rel);
-		}
-		// also scan css/ts that import
-		for (const full of collectTsx(webRoot)) {
-			void full;
-		}
 		const allFiles: string[] = [];
 		const walk = (dir: string) => {
 			for (const entry of readdirSync(dir)) {
@@ -152,7 +132,8 @@ describe("@afenda/web compose red-flags (afenda-elite-ui-compose)", () => {
 			}
 		};
 		walk(webRoot);
-		const cssOffenders: string[] = [];
+
+		const offenders: string[] = [];
 		for (const full of allFiles) {
 			const rel = toRel(full);
 			const src = readFileSync(full, "utf8");
@@ -164,9 +145,8 @@ describe("@afenda/web compose red-flags (afenda-elite-ui-compose)", () => {
 			) {
 				continue;
 			}
-			cssOffenders.push(rel);
+			offenders.push(rel);
 		}
-		expect(cssOffenders, `F8 auth CSS leak: ${cssOffenders}`).toEqual([]);
-		expect(offenders).toEqual([]);
+		expect(offenders, `F8 auth CSS leak: ${offenders}`).toEqual([]);
 	});
 });

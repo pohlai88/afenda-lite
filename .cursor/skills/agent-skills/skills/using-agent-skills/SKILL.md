@@ -48,8 +48,8 @@ Task arrives
     ├── New project/feature/change? ──→ spec-driven-development
     ├── Have a spec, need tasks? ──────→ planning-and-task-breakdown
     ├── Implementing code? ────────────→ incremental-implementation
-    │   ├── UI work? ─────────────────→ frontend-ui-engineering
-    │   │   ├── Afenda Elite (this repo)? → /using-afenda-elite-skills first
+    │   ├── UI work? ─────────────────→ /using-afenda-elite-skills → afenda-elite-ui-compose → frontend-ui-engineering (method only)
+    │   │   ├── Afenda Elite (this repo)? → compose lock first; then frontend-ui-engineering for a11y/state/responsive
     │   │   └── Afenda editorial / noir / not ordinary (Xerp)? → /using-afenda-skills → afenda-editorial-bundle
     │   ├── API work? ────────────────→ api-and-interface-design
     │   ├── Need better context? ─────→ context-engineering
