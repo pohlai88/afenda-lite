@@ -65,7 +65,13 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# packages/ui removed — canonical kit is packages/design-system (@afenda/ui).
-# Empty husk may remain while Windows holds a directory lock (IDE/Next).
+# @afenda/ui-system — package-local scratch docs conflict with ADR-010 / DOC-001
+# (controlled docs live under docs/ only). Do not reintroduce.
+packages/ui-system/docs/
+
+# Uncatalogued skill WIP — accept via using-afenda-elite-skills catalog before commit
+.cursor/skills/technical-writing/
+
+# Retired husk — do not restore packages/ui or @afenda/ui (ADR-010).
 packages/ui/
 
