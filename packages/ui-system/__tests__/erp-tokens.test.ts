@@ -12,7 +12,7 @@ const tokens = readFileSync(
 	"utf8",
 );
 
-/** ERP tokens promoted 2026-07-17 (UI-CAP-05 / user authority A + leave-opacity close). */
+/** ERP tokens promoted 2026-07-17 (UI-CAP-05 — Token CSS program CLOSED). */
 const promoted = [
 	"surface-sunken",
 	"surface-raised",
@@ -37,6 +37,18 @@ const promoted = [
 	"overlay-scrim",
 	"table-row-hover",
 	"table-stripe",
+	"control-fill",
+	"control-fill-hover",
+	"control-fill-strong",
+	"accent-fill-hover",
+	"primary-hover",
+	"destructive-hover",
+	"secondary-hover",
+	"sidebar-muted-foreground",
+	"ring-focus",
+	"ring-destructive-focus",
+	"ring-destructive-focus-strong",
+	"kbd-tooltip-fill",
 ] as const;
 
 const lightValues: Record<(typeof promoted)[number], string> = {
@@ -63,6 +75,18 @@ const lightValues: Record<(typeof promoted)[number], string> = {
 	"overlay-scrim": "oklch(0 0 0 / 50%)",
 	"table-row-hover": "oklch(0.955 0 0)",
 	"table-stripe": "oklch(0.99 0 0)",
+	"control-fill": "oklch(0.905 0 0)",
+	"control-fill-hover": "oklch(0.915 0 0)",
+	"control-fill-strong": "oklch(0.862 0 0)",
+	"accent-fill-hover": "oklch(0.895 0 0)",
+	"primary-hover": "oklch(0.302 0 0)",
+	"destructive-hover": "oklch(0.52 0.22 27.325)",
+	"secondary-hover": "oklch(0.912 0 0)",
+	"sidebar-muted-foreground": "oklch(0.439 0 0)",
+	"ring-focus": "oklch(0.708 0 0 / 50%)",
+	"ring-destructive-focus": "oklch(0.577 0.245 27.325 / 20%)",
+	"ring-destructive-focus-strong": "oklch(0.577 0.245 27.325 / 40%)",
+	"kbd-tooltip-fill": "oklch(1 0 0 / 20%)",
 };
 
 const darkValues: Record<(typeof promoted)[number], string> = {
@@ -89,6 +113,18 @@ const darkValues: Record<(typeof promoted)[number], string> = {
 	"overlay-scrim": "oklch(0 0 0 / 50%)",
 	"table-row-hover": "oklch(0.24 0 0)",
 	"table-stripe": "oklch(0.19 0 0)",
+	"control-fill": "oklch(0.178 0 0)",
+	"control-fill-hover": "oklch(0.252 0 0)",
+	"control-fill-strong": "oklch(0.318 0 0)",
+	"accent-fill-hover": "oklch(0.288 0 0)",
+	"primary-hover": "oklch(0.868 0 0)",
+	"destructive-hover": "oklch(0.465 0.11 22.216)",
+	"secondary-hover": "oklch(0.248 0 0)",
+	"sidebar-muted-foreground": "oklch(0.76 0 0)",
+	"ring-focus": "oklch(0.556 0 0 / 50%)",
+	"ring-destructive-focus": "oklch(0.704 0.191 22.216 / 20%)",
+	"ring-destructive-focus-strong": "oklch(0.704 0.191 22.216 / 40%)",
+	"kbd-tooltip-fill": "oklch(1 0 0 / 10%)",
 };
 
 function blockBetween(source: string, start: string, end: string): string {

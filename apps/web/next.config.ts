@@ -39,7 +39,6 @@ const nextConfig: NextConfig = {
 	transpilePackages: [
 		"@afenda/auth",
 		"@afenda/db",
-		"@afenda/emails",
 		"@afenda/env",
 		"@afenda/ui-system",
 	],
@@ -48,7 +47,6 @@ const nextConfig: NextConfig = {
 		optimizePackageImports: [
 			"lucide-react",
 			"@afenda/ui-system",
-			"@tanstack/react-table",
 			"@neondatabase/auth-ui",
 		],
 		serverActions: {

@@ -4,7 +4,7 @@
 | ----------------- | ------------ |
 | **ID**            | ARCH-024     |
 | **Category**      | Architecture |
-| **Version**       | 1.7.0        |
+| **Version**       | 1.7.2        |
 | **Status**        | Living       |
 | **Control State** | Closed       |
 | **Owner**         | Platform     |
@@ -48,11 +48,11 @@ Living package boundary SSOT after ARCH-028 Checkpoint G (2026-07-15): the six s
 ```
 apps/web
   ├── @afenda/db
-  ├── @afenda/auth  ──→  @afenda/db
+  ├── @afenda/auth  ──→  @afenda/env
   ├── @afenda/env
-  ├── @afenda/ui-system
-  └── @afenda/emails
+  └── @afenda/ui-system
 
+@afenda/emails    (workspace package — app-owned mail templates; not a current @afenda/web runtime dep)
 @afenda/config    (devDep only — not a runtime import)
 ```
 
@@ -168,10 +168,10 @@ Imports always flow from `apps/web` → `packages/*`. Never the reverse.
 ```
 apps/web/features/declarations/declarations-shell.tsx
   │
-  import { listSurveys } from '@/modules/declarations/domain/list-surveys'   ✓
+  import { listClientAssignments } from '@/modules/declarations/domain/list-client-assignments'   ✓
   import { withOrg } from '@afenda/db'   ✗  (feature ↛ db)
 
-apps/web/modules/declarations/domain/list.ts
+apps/web/modules/declarations/domain/list-client-assignments.ts
   │
   import { withOrg } from '@afenda/db'   ✓
   import { getSession } from '@afenda/auth'  ✓
@@ -228,6 +228,8 @@ apps/web/modules/declarations/domain/list.ts
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 1.7.2 | 2026-07-17 | Bounded reopen/close: dependency graph honesty — `@afenda/auth` → `@afenda/env` (not db); `@afenda/emails` remains a workspace package but is not a current `@afenda/web` runtime dep after housekeeping Slice D. |
+| 1.7.1 | 2026-07-17 | Bounded reopen/close: housekeeping drift align after Slice D removed orphan `list-surveys.ts`; data-flow example now cites the live `list-client-assignments` declaration domain port. |
 | 1.7.0 | 2026-07-17 | Documented 19 shipped ERP token families under `@afenda/ui-system` (surface · ink ladder · status-subtle/border · table chrome) with path citation to `packages/ui-system/src/styles/tokens.css` and compose utility names; linked ADR-010 § D4.1. |
 | 1.6.0 | 2026-07-16 | Design-system replacement per [ADR-010](adr/ADR-010-afenda-ui-system-flat-barrel.md): `@afenda/ui` (`packages/design-system`) playground gateway retired; `@afenda/ui-system` (`packages/ui-system`) flat barrel + `./styles.css` is the sole public UI surface; app-owned CSS split documented; contract table, graph, flow example, decisions + references repointed. |
 | 1.5.2 | 2026-07-15 | Bounded reopen (I2.2 audit repair): document feature/adapter ↛ `@afenda/db`; domain-only import + Vitest gate pointer. |

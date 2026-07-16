@@ -69,9 +69,6 @@ next-env.d.ts
 # (controlled docs live under docs/ only). Do not reintroduce.
 packages/ui-system/docs/
 
-# Uncatalogued skill WIP — accept via using-afenda-elite-skills catalog before commit
-.cursor/skills/technical-writing/
-
 # Retired husk — do not restore packages/ui or @afenda/ui (ADR-010).
 packages/ui/
 

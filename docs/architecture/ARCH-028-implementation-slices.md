@@ -4,11 +4,11 @@
 |-------|-------|
 | ID | ARCH-028 |
 | Category | Architecture |
-| Version | 1.5.3 |
+| Version | 1.5.4 |
 | Status | Living |
 | Control State | Closed |
 | Owner | Platform |
-| Updated | 2026-07-15 |
+| Updated | 2026-07-17 |
 
 > **Living.** Ordered Turborepo scaffold checklist (S1–S8 + Checkpoints A–G) and anti-contamination lock. Coding order **closed** after Checkpoint G (2026-07-15). Post-scaffold program sequence: [GUIDE-018](../guides/GUIDE-018-fullstack-e2e-integration-program.md) (Phase I2 DONE; next Ops **I3.1**). Do **not** invent S9 inside this document.
 
@@ -303,11 +303,12 @@ Operator override for a later **non-baseline** forward migrate only: `AFENDA_ALL
 **Cutover note:** Greenfield `apps/web/modules/{platform,identity,declarations,fft}` only. Do **not** recover Collapse root `modules/` from git. No Feed Farm Trade 2B–2D product reopen — shell/module shape only.
 
 **Implement evidence (2026-07-15):**
-- Greenfield domain ports under `apps/web/modules/`: `platform/domain/list-rbac-audit.ts` (`listOrgRbacAudit`), `identity/domain/list-role-assignments.ts` (`listRoleAssignments`) + `identity/domain/list-org-roles.ts` (`listOrgRoles`), `declarations/domain/list-surveys.ts` (`listSurveys`), `fft/domain/list-events.ts` (`listEvents`) — each takes explicit `orgId: string` and reads via `withOrg` from `@afenda/db` public surface only
+- Greenfield domain ports under `apps/web/modules/`: `platform/domain/list-rbac-audit.ts` (`listOrgRbacAudit`), `identity/domain/list-role-assignments.ts` (`listRoleAssignments`) + `identity/domain/list-org-roles.ts` (`listOrgRoles`), `declarations/domain/list-client-assignments.ts` (`listClientAssignments`), `fft/domain/list-events.ts` (`listEvents`) — each takes explicit tenant or owner input and reads via `withOrg` / public `@afenda/db` surface only
 - Ownership: platform RBAC roles/assignments in Identity (ARCH-009/023); Platform keeps org-scoped RBAC audit governance port
 - No live Collapse modules to migrate — third Acceptance = N/A greenfield (no `pg` under `apps/web`); no `packages/db/src` internal imports; FFT 2B–2D frozen (read shell only)
 - Verify: `pnpm --filter @afenda/web typecheck` PASS · `rg` under `apps/web/modules` shows only `from "@afenda/db"`
 - Gap close (same day): moved `listOrgRoles` Platform→Identity; added Platform `listOrgRbacAudit`; sync ARCH-031 / AGENTS / backend-modules completeness
+- Housekeeping drift align (2026-07-17): removed orphan `declarations/domain/list-surveys.ts`; declarations shell now uses `listClientAssignments`.
 
 ---
 
@@ -324,7 +325,7 @@ Operator override for a later **non-baseline** forward migrate only: `AFENDA_ALL
 **Cutover note:** Greenfield `apps/web/features/{auth,declarations,fft,org-admin}` only. Do **not** recover Collapse root `features/` from git. Thin `page.tsx` composes features; features call `modules/*/domain` (never `@afenda/db`). No Feed Farm Trade 2B–2D reopen — read shell only.
 
 **Implement evidence (2026-07-15):**
-- Feature shells: `features/auth/forbidden-shell.tsx`, `features/org-admin/org-admin-shell.tsx` (Identity roles/assignments + Platform RBAC audit), `features/declarations/declarations-shell.tsx` (`listSurveys`), `features/fft/fft-events-shell.tsx` (`listEvents`) — session-aware load in domain-backed shells (`getSession` → domain); zero `@afenda/db` imports under `features/`
+- Feature shells: `features/auth/forbidden-shell.tsx`, `features/org-admin/org-admin-shell.tsx` (Identity roles/assignments + Platform RBAC audit), `features/declarations/declarations-shell.tsx` (`listClientAssignments`), `features/fft/fft-events-shell.tsx` (`listEvents`) — session-aware load in domain-backed shells (`getSession` → domain); zero `@afenda/db` imports under `features/`
 - Thin pages: re-export compose only — `/403` → auth; `/admin` → org-admin; `/client/dashboard` → declarations; `/fft` (operator group) → fft
 - `@afenda/db` `withOrg<T>` returns `T["$inferSelect"][]` so feature shells see concrete row shapes
 - e2e smoke: **N/A** — no `apps/web/e2e` tree on this checkout (Acceptance second bullet conditional)
@@ -481,6 +482,7 @@ Living ARCH folder/route/adapter maps remain normative for **shape**. They are *
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.5.4 | 2026-07-17 | Bounded reopen/close: housekeeping drift align after Slice D removed orphan `list-surveys.ts`; S7.3/S7.4 evidence now names `list-client-assignments` / `listClientAssignments`. |
 | 1.5.3 | 2026-07-15 | Bounded reopen (I2.4 audit repair): next-pointer honesty — residual = GUIDE-018 I3.1. |
 | 1.5.2 | 2026-07-15 | Bounded reopen (I2.3 audit repair): next-pointer honesty — residual = GUIDE-018 I2.4. |
 | 1.5.1 | 2026-07-15 | DOC-003 six-section retrofit (content preserved; References → § 4; Purpose banner stays § 1). |

@@ -63,6 +63,9 @@ Task arrives (this repo / Afenda-Lite)
     ├── API contract / ActionResult / brands / OpenAPI / REST-001? ─→ afenda-elite-api-contract
     ├── Module evidence / MOD-009–010 / Module Enterprise Readiness claims? → afenda-elite-module-readiness
     ├── UI primitives / `@afenda/ui-system` (add/regenerate shadcn·Radix, tokens, barrel)? → ADR-010 owned-source workflow (`shadcn add` in `packages/ui-system` → convert `@/` to relative → export from `src/index.ts` → keep guardrail tests green); do not restore the retired `@afenda/ui` gateway / Studio-promote pipeline
+    ├── React composition / compound-component refactor (vendor supplement)? → vercel-composition-patterns (after `afenda-elite-ui-compose` farm is fixed)
+    ├── React/Next.js perf rule review (vendor supplement)? → vercel-react-best-practices (after `afenda-elite-nextjs-best-practice` farm is fixed)
+    ├── Internal technical docs prose (spec · ADR · runbook · migration)? → technical-writing (after `afenda-elite-doc-control` / `documentation-and-adrs` farm is fixed)
     ├── Generic engineering lifecycle? ─────────────────────→ using-agent-skills
     └── Domain farm (Neon, FFT)? ───────────────────────────→ neon-tenancy / feed-farm-trade
 ```

@@ -1,0 +1,25 @@
+{
+	"$schema": "https://unpkg.com/knip@6/schema.json",
+	"entry": ["app/**/*.{ts,tsx}", "session-gate-policy.ts"],
+	"project": ["**/*.{ts,tsx}"],
+	"ignoreIssues": {
+		"__tests__/compose-scan.ts": ["exports"],
+		"features/auth/client-paths.ts": ["exports"],
+		"features/fft/fft-events-panel.tsx": ["types"],
+		"features/org-admin/org-admin-panels.tsx": ["types"],
+		"modules/declarations/schemas/client.ts": ["exports", "types"],
+		"modules/declarations/schemas/common.ts": ["exports"],
+		"modules/identity/domain/invite-org-member.ts": ["exports", "types"],
+		"modules/platform/schemas/api-error.ts": ["exports", "duplicates"],
+		"modules/platform/schemas/common.ts": ["exports", "types"]
+	},
+	"vitest": {
+		"config": ["../../testing/vitest.config.ts"]
+	},
+	"ignoreDependencies": [
+		"vitest",
+		"jsdom",
+		"tw-animate-css"
+	],
+	"ignoreBinaries": ["biome", "vitest"]
+}

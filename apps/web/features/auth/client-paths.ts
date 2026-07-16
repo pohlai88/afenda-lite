@@ -1,6 +1,10 @@
 /**
  * Client URL constants (Target under `app/(client)/client/{(gate)|(workspace)}`).
  * Closed product restore routes (onboarding / profile / declare) are intentionally absent.
+ *
+ * `/client/dashboard` is the client post-login home; the governed `@afenda/auth`
+ * resolver (`CLIENT_HOME_PATH`) is the SSOT. A drift-guard test pins this
+ * constant to that resolver value so the landing path cannot diverge.
  */
 
 export const CLIENT_WORKSPACE_PATH = "/client";

@@ -32,7 +32,10 @@ const opacityChrome = [
   "bg-muted/50",
 ] as const;
 
-/** Role-matched color-opacity aliases retired when ERP tokens ship an exact role. */
+/**
+ * Role-matched color-opacity aliases retired when ERP tokens ship an exact role.
+ * Token CSS program CLOSED — do not reintroduce.
+ */
 const roleMatchedOpacityAliases = [
   "bg-destructive/10",
   "dark:data-[variant=destructive]:focus:bg-destructive/20",
@@ -42,29 +45,32 @@ const roleMatchedOpacityAliases = [
   "bg-primary/10",
   "bg-primary/20",
   "bg-black/50",
+  "dark:bg-input/30",
+  "dark:hover:bg-input/50",
+  "dark:hover:bg-accent/50",
+  "dark:bg-input/80",
+  "text-destructive/90",
+  "text-sidebar-foreground/70",
+  "hover:bg-primary/90",
+  "hover:bg-destructive/90",
+  "hover:bg-secondary/80",
+  "hover:bg-secondary/90",
+  "ring-ring/50",
+  "ring-destructive/20",
+  "ring-destructive/40",
+  "bg-background/20",
+  "bg-background/10",
 ] as const;
 
 /**
- * Residual color-opacity inventory — intentional retain (Hybrid C disposition).
- * Promoted families (soft destructive, primary tint/track, overlay scrim) are
- * forbidden above. Scratch SSOT: docs/scratch/shadcn-token-erp-gap.md.
+ * Permanently retained element-opacity only (not color-token debt).
+ * Token CSS program CLOSED — color-opacity aliases forbidden above.
  */
-const retainedColorOpacityAliases = [
+const retainedElementOpacityAliases = [
   "disabled:opacity-50",
   "data-[disabled]:opacity-50",
   "opacity-50",
   "opacity-70",
-  "ring-ring/50",
-  "ring-destructive/20",
-  "ring-destructive/40",
-  "hover:bg-primary/90",
-  "hover:bg-destructive/90",
-  "hover:bg-secondary/80",
-  "dark:bg-input/30",
-  "dark:hover:bg-input/50",
-  "dark:hover:bg-accent/50",
-  "text-destructive/90",
-  "text-sidebar-foreground/70",
 ] as const;
 
 describe("@afenda/ui-system — ERP status/table chrome (UI-CAP-05 consume)", () => {
@@ -188,9 +194,31 @@ describe("@afenda/ui-system — ERP status/table chrome (UI-CAP-05 consume)", ()
     expect(readUi("alert-dialog.tsx")).not.toContain("bg-black/50");
   });
 
-  it("retains audited residual color-opacity aliases (intentional Hybrid C retain)", () => {
+  it("control fills / press hover / rings / sidebar muted use named tokens", () => {
+    expect(readUi("input.tsx")).toContain("dark:bg-control-fill");
+    expect(readUi("button.tsx")).toContain("dark:hover:bg-control-fill-hover");
+    expect(readUi("button.tsx")).toContain("dark:hover:bg-accent-fill-hover");
+    expect(readUi("button.tsx")).toContain("hover:bg-primary-hover");
+    expect(readUi("button.tsx")).toContain("hover:bg-destructive-hover");
+    expect(readUi("button.tsx")).toContain("hover:bg-secondary-hover");
+    expect(readUi("switch.tsx")).toContain(
+      "dark:data-[state=unchecked]:bg-control-fill-strong",
+    );
+    expect(readUi("alert.tsx")).toContain(
+      "*:data-[slot=alert-description]:text-destructive",
+    );
+    expect(readUi("alert.tsx")).not.toContain("text-destructive/90");
+    expect(readUi("sidebar.tsx")).toContain("text-sidebar-muted-foreground");
+    expect(readUi("button.tsx")).toContain("focus-visible:ring-ring-focus");
+    expect(readUi("button.tsx")).toContain(
+      "aria-invalid:ring-ring-destructive-focus",
+    );
+    expect(readUi("kbd.tsx")).toContain("bg-kbd-tooltip-fill");
+  });
+
+  it("retains audited element-opacity aliases only (token CSS program closed)", () => {
     const packageUi = readAllUiSources();
-    const missing = retainedColorOpacityAliases.filter(
+    const missing = retainedElementOpacityAliases.filter(
       (cls) => !packageUi.includes(cls),
     );
     expect(missing).toEqual([]);

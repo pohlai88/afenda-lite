@@ -14,7 +14,6 @@
 		"./styles.css": "./src/styles/tokens.css"
 	},
 	"imports": {
-		"#components": "./src/components/index.ts",
 		"#components/ui/*": "./src/components/ui/*",
 		"#lib/utils": "./src/lib/utils.ts",
 		"#lib/*": "./src/lib/*",
@@ -45,6 +44,8 @@
 	},
 	"devDependencies": {
 		"@afenda/config": "workspace:*",
+		"@testing-library/react": "catalog:",
+		"@testing-library/user-event": "catalog:",
 		"@types/react": "catalog:",
 		"@types/react-dom": "catalog:",
 		"axe-core": "^4.12.1",
