@@ -15,7 +15,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 	DialogTrigger,
-	Empty,
+	KeyValueList,
 	StatusBadge,
 	type DataTableColumn,
 } from "@afenda/ui-system";
@@ -65,6 +65,15 @@ const assignmentColumns: DataTableColumn<OrgAssignmentRow>[] = [
 	{ key: "userId", title: "User" },
 	{ key: "roleId", title: "Role ID" },
 	{ key: "scopeType", title: "Scope" },
+];
+
+const auditColumns: DataTableColumn<OrgAuditRow>[] = [
+	{ key: "action", title: "Action" },
+	{
+		key: "targetType",
+		title: "Target",
+		render: (value) => (value ? String(value) : "—"),
+	},
 ];
 
 export function OrgAdminPanels({
@@ -148,72 +157,60 @@ export function OrgAdminPanels({
 					<Badge variant="secondary">{auditRows.length} events</Badge>
 				</CardHeader>
 				<CardContent className="space-y-3">
-					{auditRows.length === 0 ? (
-						<Empty
-							title="No audit rows yet"
-							description="Invites and role changes write audit entries here."
-						/>
-					) : (
-						<ul className="divide-border divide-y rounded-md border">
-							{auditRows.map((row) => (
-								<li
-									key={row.id}
-									className="flex items-center justify-between gap-3 px-3 py-2 text-sm"
-									style={{ minHeight: "var(--table-row-height)" }}
-								>
-									<span>
-										{row.action}
-										{row.targetType ? ` · ${row.targetType}` : ""}
-									</span>
-									<Dialog
-										open={selectedAudit?.id === row.id}
-										onOpenChange={(open) =>
-											setSelectedAudit(open ? row : null)
-										}
+					<DataTable
+						columns={auditColumns}
+						data={auditRows}
+						getRowId={(row) => row.id}
+						emptyTitle="No audit rows yet"
+						emptyDescription="Invites and role changes write audit entries here."
+						density="compact"
+						rowActions={(row) => (
+							<Dialog
+								open={selectedAudit?.id === row.id}
+								onOpenChange={(open) =>
+									setSelectedAudit(open ? row : null)
+								}
+							>
+								<DialogTrigger asChild>
+									<Button
+										type="button"
+										variant="outline"
+										size="sm"
+										onClick={() => setSelectedAudit(row)}
 									>
-										<DialogTrigger asChild>
-											<Button
-												type="button"
-												variant="outline"
-												size="sm"
-												onClick={() => setSelectedAudit(row)}
-											>
-												View
-											</Button>
-										</DialogTrigger>
-										<DialogContent>
-											<DialogHeader>
-												<DialogTitle>Audit event</DialogTitle>
-												<DialogDescription>
-													Org-scoped RBAC audit detail.
-												</DialogDescription>
-											</DialogHeader>
-											<dl className="grid gap-2 text-sm">
-												<div>
-													<dt className="text-muted-foreground">Action</dt>
-													<dd className="font-medium">{row.action}</dd>
-												</div>
-												<div>
-													<dt className="text-muted-foreground">Target</dt>
-													<dd className="font-medium">
-														{row.targetType ?? "—"}
-													</dd>
-												</div>
-												<div>
-													<dt className="text-muted-foreground">Event ID</dt>
-													<dd>
-														<code>{row.id}</code>
-													</dd>
-												</div>
-											</dl>
-										</DialogContent>
-									</Dialog>
-								</li>
-							))}
-						</ul>
-					)}
+										View
+									</Button>
+								</DialogTrigger>
+								<DialogContent>
+									<DialogHeader>
+										<DialogTitle>Audit event</DialogTitle>
+										<DialogDescription>
+											Org-scoped RBAC audit detail.
+										</DialogDescription>
+									</DialogHeader>
+									<KeyValueList
+										size="sm"
+										items={[
+											{ label: "Action", value: row.action },
+											{
+												label: "Target",
+												value: row.targetType ?? "—",
+											},
+											{
+												label: "Event ID",
+												value: (
+													<code className="font-mono text-sm">{row.id}</code>
+												),
+											},
+										]}
+									/>
+								</DialogContent>
+							</Dialog>
+						)}
+					/>
 				</CardContent>
 			</Card>
 		</div>
 	);
 }
+
