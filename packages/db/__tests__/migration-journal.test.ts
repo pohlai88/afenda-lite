@@ -1,4 +1,4 @@
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -14,7 +14,10 @@ afterEach(() => {
 	}
 });
 
-function fixtureDrizzle(entries: { idx: number; tag: string }[], sqlTags: string[]) {
+function fixtureDrizzle(
+	entries: { idx: number; tag: string }[],
+	sqlTags: string[],
+) {
 	const root = mkdtempSync(join(tmpdir(), "afenda-db-journal-"));
 	dirs.push(root);
 	const meta = join(root, "meta");

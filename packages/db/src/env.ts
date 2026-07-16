@@ -22,7 +22,9 @@ function assertPostgresUrl(url: string, classLabel: string): URL {
 	try {
 		parsed = new URL(url);
 	} catch {
-		throw new Error(`@afenda/db: DATABASE_URL must be a valid URL (${classLabel})`);
+		throw new Error(
+			`@afenda/db: DATABASE_URL must be a valid URL (${classLabel})`,
+		);
 	}
 	if (parsed.protocol !== "postgresql:" && parsed.protocol !== "postgres:") {
 		throw new Error(
