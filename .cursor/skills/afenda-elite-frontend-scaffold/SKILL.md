@@ -24,7 +24,7 @@ description: >-
 | [docs/architecture/](../../../docs/architecture/) | UI architecture, routes, BFF tree              |
 | [afenda-elite-nextjs-best-practice](../afenda-elite-nextjs-best-practice/SKILL.md) | App Router mechanics (RSC, rendering, MCP) |
 | [ADR-010](../../../docs/architecture/adr/ADR-010-afenda-ui-system-flat-barrel.md) | UI primitives: consume `@afenda/ui-system` barrel + `styles.css`; no handroll under `apps/web/components`; barrel-only boundary enforced by committed tests |
-| [afenda-elite-ui-compose](../afenda-elite-ui-compose/SKILL.md) | Before product UI body in `features/*` / visible pages: load compose consistency lock (type/spacing/radius/color); this farm owns routes/scaffold shape only |
+| [afenda-elite-ui-compose](../afenda-elite-ui-compose/SKILL.md) | Before product UI body in `features/*` / visible pages: load compose consistency lock (QUALITY ORDER incl. SCALABILITY-FIRST / UI-CAP-*; type/spacing/radius/color); this farm owns routes/scaffold shape only |
 
 ## Agent operating rules
 
