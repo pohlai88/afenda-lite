@@ -13,6 +13,7 @@ import {
 	Progress,
 	DataTable,
 	Empty,
+	FormError,
 	Spinner,
 	Dialog,
 	DialogContent,
@@ -690,5 +691,38 @@ describe("WCAG 2.2 AA — Accessible Names and Descriptions", () => {
 		// Test individual selection
 		await user.click(screen.getByLabelText("Select row 2"));
 		expect(mockSelectionChange).toHaveBeenCalled();
+	});
+
+	it("FormError provides accessible error messaging with live region", () => {
+		render(
+			<div>
+				<FormError message="Email is required" />
+				<FormError variant="warning" message="Password should be stronger" />
+				<FormError variant="info" showIcon={false}>
+					Please check your network connection
+				</FormError>
+			</div>
+		);
+
+		// Should render as alert with live region
+		const errors = screen.getAllByRole("alert");
+		expect(errors).toHaveLength(3);
+
+		// Should have proper live region attributes
+		expect(errors[0]).toHaveAttribute("aria-live", "polite");
+		
+		// Should display messages correctly
+		expect(screen.getByText("Email is required")).toBeInTheDocument();
+		expect(screen.getByText("Password should be stronger")).toBeInTheDocument();
+		expect(screen.getByText("Please check your network connection")).toBeInTheDocument();
+
+		// Should include icons where expected (first two have icons, third does not)
+		const iconsInFirstError = errors[0].querySelector('svg[aria-hidden="true"]');
+		const iconsInSecondError = errors[1].querySelector('svg[aria-hidden="true"]');
+		const iconsInThirdError = errors[2].querySelector('svg[aria-hidden="true"]');
+		
+		expect(iconsInFirstError).toBeInTheDocument();
+		expect(iconsInSecondError).toBeInTheDocument();
+		expect(iconsInThirdError).not.toBeInTheDocument();
 	});
 });

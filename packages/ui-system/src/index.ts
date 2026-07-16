@@ -25,6 +25,7 @@ export * from "./components/ui/button";
 export * from "./components/ui/calendar";
 export * from "./components/ui/card";
 export * from "./components/ui/checkbox";
+export * from "./components/ui/form-error";
 // Overlays / menus
 export * from "./components/ui/combobox";
 export * from "./components/ui/command";
