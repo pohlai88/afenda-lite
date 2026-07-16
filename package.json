@@ -18,6 +18,7 @@
     "checks": "node scripts/run-checks.mjs",
     "sync:neon-auth-manifest": "node scripts/collapse-script-unavailable.mjs \"sync:neon-auth-manifest\"",
     "validate:neon-env": "node --experimental-strip-types scripts/validate-neon-env.mjs",
+    "monitor:neon-performance": "node --experimental-strip-types scripts/monitor-neon-performance.mjs",
     "audit:neon-auth-production": "node scripts/collapse-script-unavailable.mjs \"audit:neon-auth-production\"",
     "configure:neon-auth-production": "node scripts/collapse-script-unavailable.mjs \"configure:neon-auth-production\"",
     "seed:admin": "node scripts/collapse-script-unavailable.mjs \"seed:admin\"",

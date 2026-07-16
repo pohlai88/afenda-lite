@@ -4,11 +4,11 @@
 |-------|-------|
 | ID | ARCH-025 |
 | Category | Architecture |
-| Version | 1.3.1 |
+| Version | 1.3.4 |
 | Status | Living |
 | Control State | Closed |
 | Owner | Backend |
-| Updated | 2026-07-15 |
+| Updated | 2026-07-17 |
 
 > **Living.** Data-layer SSOT after ARCH-028 Checkpoint G (2026-07-15). `@afenda/db` + `withOrg` on disk; baseline `0000` migrate remains banned on production Neon.
 
@@ -110,6 +110,8 @@ export const db = drizzle(sql, { schema })
 
 `@neondatabase/serverless` uses the HTTP transport — compatible with Vercel serverless. Edge runtime only when a documented exception allows it. Product runtime requires the Neon pooler endpoint (`-pooler` suffix in `DATABASE_URL`). Migration/ops tooling uses the same `DATABASE_URL` key without requiring `-pooler` (no separate product direct-URL variable).
 
+**Performance posture (N4):** the Living client does **not** wrap Neon HTTP with an app-owned connection pool, statement timeout, or retry layer — those limits are Neon HTTP + pooler behavior. Ops CU targets remain min **0.25** / max **2** / `suspend_timeout_seconds=0`; do **not** raise CU without a recorded latency baseline (`pnpm validate:neon-env` N4 probe + [RB-001](../runbooks/RB-001-multi-org-ops.md) §3.7b). Public readiness stays reachability-only; latency evidence is validate/runbook, not an expanded public health contract.
+
 ### `withOrg` — tenancy helper
 
 ```typescript
@@ -189,7 +191,7 @@ Writes use `db` directly (not `withOrg`, which is select-only). The `organizatio
 - **Check:** `pnpm --filter @afenda/db db:check` (or root `pnpm db:check`) — journal assert + `drizzle-kit check`. Wired in CI; does not apply migrations.
 - **Introspect:** `pnpm --filter @afenda/db db:introspect` pulls current DB schema as Drizzle types (for cutover audit — reconcile to Living roots before committing as source of truth). Requires migration-class `DATABASE_URL`.
 - **Migrate:** `pnpm --filter @afenda/db db:migrate` (or root `pnpm db:migrate`) — fail-closed; never on deploy. See ban below.
-- Production branch: `br-tiny-hill-ao82jp6f`. PITR 7 days.
+- Production branch: `br-tiny-hill-ao82jp6f` (protected). Recovery posture (PITR 7d, daily snapshots, RPO/RTO, ephemeral drill) — SSOT [RB-001](../runbooks/RB-001-multi-org-ops.md) §3.7; read-only verify `pnpm validate:neon-env`. Do not claim restore readiness without RB-001 live matrix + measured drill.
 
 ### Ban — `0000_living-roots-baseline` migrate
 
@@ -210,12 +212,15 @@ Default: `db:migrate` fails closed. Override `AFENDA_ALLOW_DB_MIGRATE=1` is only
 | ARCH-023 | Multi-Tenancy and Platform RBAC | Tenancy + `organization_id` / `withOrg` rule |
 | ARCH-024 | Package Boundaries | `@afenda/db` public export surface |
 | ARCH-028 | Implementation Slices | S2.x evidence · baseline migrate ban |
+| RB-001 | Multi-org Ops | Recovery posture · RPO/RTO · restore drill evidence |
 
 # 5. Change Log
 
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.3.4 | 2026-07-17 | N4: HTTP client performance honesty + CU raise requires validate/RB-001 latency evidence; no public health expansion. |
+| 1.3.3 | 2026-07-17 | N3: Operational considerations cite RB-001 recovery SSOT (PITR/snapshots/RPO/RTO); no duplicate numeric targets. |
 | 1.3.2 | 2026-07-16 | N2: product vs migration `DATABASE_URL` classes; journal assert + additive-first migrate gate; CI `db:check`; no product `DIRECT_*`. |
 | 1.3.1 | 2026-07-15 | DOC-003 six-section retrofit (content preserved; Known limits → § 6 Notes). |
 | 1.3.0 | 2026-07-15 | Checkpoint G: Status Target→Living; `@afenda/db` present; migrate ban unchanged. |

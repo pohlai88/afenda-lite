@@ -1,0 +1,125 @@
+name: Neon DB performance monitor
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/neon-performance-monitor.yml"
+      - "scripts/monitor-neon-performance.mjs"
+      - "packages/env/src/neon-performance-posture.ts"
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: neon-db-performance-monitor
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  monitor:
+    name: Latency · connection pressure
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run read-only performance monitor
+        id: performance
+        continue-on-error: true
+        run: pnpm monitor:neon-performance
+
+      - name: Reconcile alert issue
+        if: always()
+        uses: actions/github-script@v7
+        env:
+          MONITOR_OUTCOME: ${{ steps.performance.outcome }}
+        with:
+          script: |
+            const marker = "<!-- neon-db-performance-monitor -->";
+            const title = "[Ops] Neon DB performance monitor failing";
+            const timestamp = new Date().toISOString();
+            const issues = await github.paginate(
+              github.rest.issues.listForRepo,
+              {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                state: "all",
+                per_page: 100,
+              },
+            );
+            const alert = issues.find(
+              (issue) =>
+                !issue.pull_request &&
+                typeof issue.body === "string" &&
+                issue.body.includes(marker),
+            );
+
+            if (process.env.MONITOR_OUTCOME !== "success") {
+              const body = [
+                marker,
+                "The hourly N4 read-only database performance monitor failed.",
+                "",
+                `- Detected: ${timestamp}`,
+                `- Workflow run: ${context.runId} (attempt ${context.runAttempt})`,
+                "- Guardrails: SELECT 1 latency <= 5000 ms; aggregate connection usage < 80%",
+                "- Sensitive details are suppressed. Inspect the Actions log for aggregate evidence.",
+              ].join("\n");
+
+              if (alert) {
+                await github.rest.issues.update({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: alert.number,
+                  state: "open",
+                  title,
+                  body,
+                });
+              } else {
+                await github.rest.issues.create({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  title,
+                  body,
+                });
+              }
+              return;
+            }
+
+            if (alert?.state === "open") {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: alert.number,
+                body: `Recovered at ${timestamp}; workflow run ${context.runId}.`,
+              });
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: alert.number,
+                state: "closed",
+                state_reason: "completed",
+              });
+            }
+
+      - name: Mark monitor failure
+        if: steps.performance.outcome != 'success'
+        run: exit 1

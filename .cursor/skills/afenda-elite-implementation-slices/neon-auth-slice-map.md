@@ -29,8 +29,8 @@ Reuse [slice-map.md](slice-map.md) § Farm short names. Additional:
 | ID | Objective (short) | Lane | LOAD farms (order) | Living authority | Floor verify (minimum) | State | Last score | Auditor |
 |----|-------------------|------|--------------------|------------------|------------------------|-------|------------|---------|
 | **N1** | Typed Neon env contract | Ops | router → slices → neon → neon-vendor | ARCH-027 · AGENTS | `@afenda/env` typecheck/tests · `pnpm validate:neon-env` · web build if env structural | APPROVED | 100% | independent audit 2026-07-16 |
-| **N2** | Connection + migration discipline | Ops | router → slices → neon → modules | ARCH-025 · ARCH-023 | db package tests · migration inventory · no `0000_*` baseline on prod branch | UNEVALUATED | — | — |
-| **N3** | Backup / recovery evidence | Ops | router → slices → neon | ARCH-025 · RB-001 | Restore/RPO path rehearsed or BLOCKED named | UNEVALUATED | — | — |
+| **N2** | Connection + migration discipline | Ops | router → slices → neon → modules | ARCH-025 · ARCH-023 | db package tests · migration inventory · no `0000_*` baseline on prod branch | APPROVED | — | human waiver Closed 2026-07-17 (do not reopen) |
+| **N3** | Backup / recovery evidence | Ops | router → slices → neon | ARCH-025 · RB-001 | Restore/RPO path rehearsed or BLOCKED named | APPROVED | 98% | independent audit 2026-07-17 |
 | **N4** | DB performance baseline | Ops | router → slices → neon | ARCH-023 · RB-001 | Pooler posture · CU evidence discipline | UNEVALUATED | — | — |
 | **N5** | Auth BFF + browser client | Ops | router → slices → nextjs → neon → neon-vendor | ARCH-026 | auth package tests · `/api/auth` path · web typecheck | UNEVALUATED | — | — |
 | **N6** | Session contract | Ops | router → slices → nextjs → neon | ARCH-026 · ARCH-023 | session helpers · proxy gate tests · fail-closed | UNEVALUATED | — | — |
@@ -55,7 +55,7 @@ N1 → N2 → N3 → N4 → N5 → N6 → N7 → N8 → N9 → N10 → N11 → N
 
 Skip only with explicit user waiver **this turn**. One `N*` per chat. Do not start next until auditor APPROVED (or human waiver).
 
-**Program pointer:** last APPROVED = **N1** (2026-07-16). Next UNEVALUATED = **N2** (authorized for a separate mission only — do not stack here).
+**Program pointer:** last APPROVED = **N3** (independent audit 2026-07-17). Next = **N4** — start only in a fresh mission chat after human auth; do **not** sneak-start here.
 
 ## Related I* (load hints only — not APPROVED transfer)
 
