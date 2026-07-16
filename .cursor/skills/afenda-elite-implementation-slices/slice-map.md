@@ -2,6 +2,8 @@
 
 Always also load: this skill’s [SKILL.md](SKILL.md).
 
+**Neon Auth (`N1`–`N18`):** use [neon-auth-slice-map.md](neon-auth-slice-map.md) + [neon-slice-score.md](neon-slice-score.md) — not this file.
+
 **Progress hint (checkout):** ARCH-028 S1–S8 + Checkpoints A–**G** **closed**. Current program: [GUIDE-018](../../../docs/guides/GUIDE-018-fullstack-e2e-integration-program.md) Phase **I2** — **I2.1–I2.4** done; next **I3.1**. Evidence on disk wins over this hint.
 
 ## Farm short names

@@ -13,6 +13,7 @@ Farm routing per domain keyword. Always also load: main [SKILL.md](SKILL.md) and
 | `modules` | router → backend-modules → module-readiness | ARCH-006 · ARCH-022 · MOD-002 | per-pack `*-MOD-009/010` | `check:module-quality` |
 | `fft` | router → feed-farm-trade | FFT-MOD-* | [`completeness.md`](../feed-farm-trade/completeness.md) · [`verify.md`](../feed-farm-trade/verify.md) | farm verify commands from skill |
 | `phase-I` | router → implementation-slices | GUIDE-018 | [`slice-map.md`](../afenda-elite-implementation-slices/slice-map.md) | per-row Verify column |
+| `neon-auth` | router → implementation-slices → neon-tenancy | ARCH-023 · ARCH-026 · ARCH-027 · AGENTS | [`neon-auth-slice-map.md`](../afenda-elite-implementation-slices/neon-auth-slice-map.md) · [`neon-slice-score.md`](../afenda-elite-implementation-slices/neon-slice-score.md) | per-row Floor verify · Neon Slice Score · independent APPROVED; `validate:neon-env` when env touched |
 
 ## Check inventory (repository level)
 
@@ -54,6 +55,7 @@ Total root scripts: ~99 in `package.json`. Gated count: ~62. Live controls: ~37.
 - `docs/modules/**` → `modules`
 - `docs/modules/feed-farm-trade/**` → `fft`
 - `docs/guides/GUIDE-018-*` → `phase-I`
+- `docs/scratch/neon-auth-optimisation/**` or `.cursor/skills/afenda-elite-implementation-slices/neon-*` → `neon-auth`
 
 ### By user keyword
 - "audit", "alignment", "doc-to-code" → auto-select based on mentioned domains
@@ -63,11 +65,13 @@ Total root scripts: ~99 in `package.json`. Gated count: ~62. Live controls: ~37.
 - "modules", "MOD-002", "Enterprise Readiness" → `modules`
 - "FFT", "Feed Farm Trade" → `fft`
 - "Phase I", "GUIDE-018", "implementation slices" → `phase-I`
+- "Neon Auth", "N1", "N7", "neon-auth optimisation", "Neon Slice Score" → `neon-auth`
 
 ### By plan reference
 - Plan cites ADR-010 / ui-system → `ui-system`
 - Plan cites ARCH-029 / API-* → `api`
 - Plan cites GUIDE-018 → `phase-I`
+- Plan cites Neon Auth / N* / neon-slice-score → `neon-auth`
 
 ## Exclusion patterns (negative controls built-in)
 

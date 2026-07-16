@@ -12,6 +12,7 @@ Content here is **not** a Living, Target, or Accepted source of truth. A documen
 | [response-to-saas-erp-fullstack.md](response-to-saas-erp-fullstack.md) | Historical critique of an earlier REQ revision | Historical only; P0 remediations absorbed into REQ V2+; see REQ V2.4 park ruling |
 | [AUDIT-2026-07-13-documentation.md](AUDIT-2026-07-13-documentation.md) | One-shot note: `turborepo/` → system architecture home rename | Historical provenance; not a Living audit SSOT |
 | [afenda-ui-system-architecture.md](afenda-ui-system-architecture.md) | Working notes for `@afenda/ui-system` architecture | Scratch — owner edits content |
+| [neon-auth-capability-map-and-dev-roadmap.md](neon-auth-capability-map-and-dev-roadmap.md) | Neon platform capability inventory; Afenda pre-login / auth / post-login map; identity development roadmap | Scratch — not Living; cite ARCH-026 / GUIDE-018 as authority |
 
 ## Rules
 
@@ -23,6 +24,7 @@ Content here is **not** a Living, Target, or Accepted source of truth. A documen
 
 | Date | Summary |
 |------|---------|
+| 2026-07-16 | Added `neon-auth-capability-map-and-dev-roadmap.md` (Neon capability map + auth/post-login roadmap) |
 | 2026-07-16 | Added `afenda-ui-system-architecture.md` scratch file |
 | 2026-07-14 | Parked ERP REQ (OQ-20 scope separation); removed mistaken GUIDE-005 Living header; listed response + audit as historical |
 | 2026-07-13 | Defined scratch folder as non-authoritative |

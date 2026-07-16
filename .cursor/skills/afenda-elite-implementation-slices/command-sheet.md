@@ -12,6 +12,8 @@
 
 **Do not** paste multiple blocks. **Do not** ask the agent to “finish I1–I7 tonight.”
 
+**Neon Auth (`N1`–`N18`):** use [neon-command-sheet.md](neon-command-sheet.md) — do not paste N* blocks here.
+
 ---
 
 ## Locked context (always true — do not contradict)
