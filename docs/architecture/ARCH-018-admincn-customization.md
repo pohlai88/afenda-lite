@@ -4,11 +4,11 @@
 | ----------------- | ------------ |
 | **ID**            | ARCH-018     |
 | **Category**      | Architecture |
-| **Version**       | 1.1.6        |
+| **Version**       | 1.1.7        |
 | **Status**        | Living     |
 | **Control State** | Closed       |
 | **Owner**         | Frontend     |
-| **Updated**       | 2026-07-15   |
+| **Updated**       | 2026-07-16   |
 
 ---
 
@@ -40,7 +40,7 @@ Define Living AdminCN / Studio customization levers and promotion rules.
 **Frontend alignment:** [ARCH-015](ARCH-015-admincn-alignment.md)  
 **Preflight before new screens:** [ARCH-019](ARCH-019-admincn-frontend-preflight.md)  
 **UI registry (compulsory):** [`.cursor/skills/feed-farm-trade/ui-registry.md`](../../.cursor/skills/feed-farm-trade/ui-registry.md) · [`ui-registry.json`](../../.cursor/skills/feed-farm-trade/ui-registry.json) · skill `/feed-farm-trade`  
-**Studio DNA:** temporary CLI/MCP scratch **or** user-approved gitignored `_reference/archive/<kit>` promote into Target packages (e.g. `@afenda/ui`) — never product `import` from `_reference/**`; do not keep permanent AdminCN lock trees under `_reference/studio-admincn-lock/`  
+**Studio DNA:** temporary CLI/MCP scratch **or** user-approved gitignored `_reference/archive/<kit>` promote into Target packages (e.g. `@afenda/ui-system`) — never product `import` from `_reference/**`; do not keep permanent AdminCN lock trees under `_reference/studio-admincn-lock/`  
 **Product home (logical):** `components-V2/` shape / Target `apps/web/**` after explicit implement — not recovered Collapse trees  
 **Auth island:** `features/auth/` — preserve `app/auth-surface.css` + route-scoped `app/auth/neon-auth-ui.css`
 
@@ -145,6 +145,7 @@ Full gate: [admincn-frontend-preflight.md](ARCH-019-admincn-frontend-preflight.m
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 1.1.7 | 2026-07-16 | Studio DNA promote-target example repointed `@afenda/ui` → `@afenda/ui-system` ([ADR-010](adr/ADR-010-afenda-ui-system-flat-barrel.md)); AdminCN customization authority otherwise unchanged. |
 | 1.1.6 | 2026-07-15 | DNA: user-approved `_reference/archive` promote-only allowed (S5.1 `@afenda/ui`); ban permanent studio-admincn-lock + runtime `_reference` import. |
 | 1.1.5 | 2026-07-14 | Bounded reopen: package-manager cutover — document `pnpm` / `pnpm exec` (repo SSOT `packageManager` + `pnpm-lock.yaml`). |
 | 1.1.4 | 2026-07-14 | Drop “thin stub until UI restore”; hold ARCH-012 disposition + explicit reopen only. |

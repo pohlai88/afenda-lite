@@ -78,7 +78,7 @@ proxy.ts → layout → thin page.tsx (RSC)
 | `/api/health/*` | none | `auto` + short revalidate |
 | `/playground/*` | local only | never prod contract |
 
-`/playground/*` (Next.js routes) is distinct from the `@afenda/ui/playground` package subpath — see [ARCH-024 § `@afenda/ui`](../../../docs/architecture/ARCH-024-package-boundaries.md#afendaui) for the canonical disambiguation.
+`/playground/*` (Next.js routes) are **absent** (removed 2026-07-15); the former `@afenda/ui/playground` package subpath is retired ([ADR-010](../../../docs/architecture/adr/ADR-010-afenda-ui-system-flat-barrel.md)). UI imports only the `@afenda/ui-system` barrel — see [ARCH-024 § `@afenda/ui-system`](../../../docs/architecture/ARCH-024-package-boundaries.md#afendaui-system).
 
 ---
 

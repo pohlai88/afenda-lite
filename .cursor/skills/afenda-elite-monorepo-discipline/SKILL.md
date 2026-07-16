@@ -95,7 +95,7 @@ Full diagram, forbidden pairs, and violation fixes: [LAYERS.md](LAYERS.md).
 | `@afenda/db` | (none of auth/env/ui/emails) | Import `@afenda/auth` or `@afenda/env`; expose schema only via public exports |
 | `@afenda/auth` | `@afenda/env` (and `@afenda/db` only when both ARCH-024 and `package.json` list it) | Own DB schema definitions |
 | `@afenda/env` | (none) | Runtime business logic |
-| `@afenda/ui` | platform packages only if client-safe | Server-only code, DB calls, secrets |
+| `@afenda/ui-system` | platform packages only if client-safe | Server-only code, DB calls, secrets |
 | `@afenda/emails` | (UI/React peers as needed) | Be imported from client components in `apps/web` |
 | `@afenda/config` | (none at runtime) | Be imported as a runtime module; use `extends` / Biome root only |
 

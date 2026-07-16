@@ -91,7 +91,7 @@ apps/web/proxy.ts (session gate; not middleware.ts)
 | `/client/login`, `/client/preview-unavailable` | Gate blank chrome; session-gate bypass (no `requireRole`) | Request-time | Parent `(gate)` has **no** `loading`/`error` (login uses `redirect()`); preview segment may own them |
 | `/auth/*`, join, public links | Auth island / public | Per surface | See rows |
 | `/api/health/*` | None | `auto` + short revalidate | Route Handlers only |
-| `/playground/*` | **Absent** on disk (removed 2026-07-15) | Not a production contract | Do not handroll; future harness via Studio MCP only — [ARCH-024 § `@afenda/ui`](ARCH-024-package-boundaries.md#afendaui) |
+| `/playground/*` | **Absent** on disk (removed 2026-07-15) | Not a production contract | Do not handroll; future harness via Studio MCP only — UI imports the `@afenda/ui-system` barrel ([ARCH-024 § `@afenda/ui-system`](ARCH-024-package-boundaries.md#afendaui-system)) |
 
 Secondary panels may Suspense-stream **now** without Cache Components ([ARCH-002](ARCH-002-frontend-architecture.md)).
 

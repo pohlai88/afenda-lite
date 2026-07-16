@@ -30,7 +30,7 @@ Authority: [ARCH-024](../../../docs/architecture/ARCH-024-package-boundaries.md)
 
 \* Platform same-layer: prefer minimal coupling. Living edges: `@afenda/auth` → `@afenda/env`. `@afenda/db` must **not** import `@afenda/auth` or `@afenda/env`. `@afenda/env` imports no workspace packages. `@afenda/config` is not a runtime importer.
 
-† `@afenda/ui` must remain free of server-only code and DB calls (ARCH-024).
+† `@afenda/ui-system` must remain free of server-only code and DB calls (ARCH-024).
 
 ‡ `@afenda/emails` must not be imported from client components in `apps/web`.
 
@@ -41,7 +41,7 @@ Authority: [ARCH-024](../../../docs/architecture/ARCH-024-package-boundaries.md)
 | Any `packages/*` | `apps/web` or any `apps/*` | Packages must not import apps |
 | `@afenda/db` | `@afenda/auth`, `@afenda/env` | ARCH-024 contract |
 | `@afenda/env` | any `@afenda/*` business package | Env owns config only |
-| `@afenda/ui` | `@afenda/db`, server-only auth paths | UI is client/surface |
+| `@afenda/ui-system` | `@afenda/db`, server-only auth paths | UI is client/surface |
 | Any package | Relative `../../packages/...` | Cross-boundary package name required |
 | Any consumer | `@afenda/<pkg>/src/...` | Public `exports` only |
 | Any package | `@afenda/shared` | Mega-package banned (ARCH-024) |

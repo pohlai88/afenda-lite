@@ -4,11 +4,11 @@
 |-------|-------|
 | ID | ARCH-022 |
 | Category | Architecture |
-| Version | 1.6.8 |
+| Version | 1.6.9 |
 | Status | Living |
 | Control State | Closed |
 | Owner | Platform |
-| Updated | 2026-07-15 |
+| Updated | 2026-07-16 |
 
 > **Living.** Turborepo system SSOT after ARCH-028 Checkpoint G (2026-07-15). On disk: `@afenda/config|db|auth|env|ui|emails` + `apps/web` route groups + `apps/web/proxy.ts` edge session gate + public Neon Auth UI `/auth/*` + `/join` + `apps/web/modules/{platform,identity,declarations,fft}` domain ports + `apps/web/features/{auth,declarations,fft,org-admin}` + CI/Deploy. Post-scaffold program order: [GUIDE-018](../guides/GUIDE-018-fullstack-e2e-integration-program.md) (Phase I2 DONE; next Ops: **I3.1** — Identity / Platform deepen).
 
@@ -46,7 +46,7 @@ Afenda-Lite is a multi-tenant SaaS product hosted on Vercel. It is structured as
 
 | Positive | Accepted cost |
 |----------|---------------|
-| Build cache boundaries (`@afenda/ui` change ≠ rebuild `@afenda/db`) | pnpm required — npm/yarn not equivalent |
+| Build cache boundaries (`@afenda/ui-system` change ≠ rebuild `@afenda/db`) | pnpm required — npm/yarn not equivalent |
 | `src/` internals unreachable across package lines | New package → update `pnpm-workspace.yaml` |
 | One root command: `turbo run build|test|typecheck` | Stale `dependsOn` → incorrect cache hits |
 | Vercel Turborepo remote cache | |
@@ -130,7 +130,7 @@ Env SSOT is `@afenda/env` + `.env.local` — [ARCH-027](ARCH-027-env-model.md). 
 | DB | Neon Postgres + Drizzle ORM + `@neondatabase/serverless` |
 | Auth | Neon Auth via `@afenda/auth` |
 | Env | `@t3-oss/env-nextjs` in `@afenda/env`; `.env.local` only |
-| UI | `@afenda/ui` — shadcn + Tailwind v4 tokens |
+| UI | `@afenda/ui-system` — shadcn new-york / Radix + Tailwind v4 tokens (flat barrel + `styles.css`; [ADR-010](adr/ADR-010-afenda-ui-system-flat-barrel.md)) |
 | Email | `@afenda/emails` — React Email |
 | Lint / TS | Biome + shared tsconfigs from `@afenda/config` |
 | Test | Vitest + Playwright (wired through `turbo` tasks) |
@@ -143,7 +143,7 @@ Env SSOT is `@afenda/env` + `.env.local` — [ARCH-027](ARCH-027-env-model.md). 
 | `packages/db` | Platform | Drizzle schema, migrations, `withOrg` |
 | `packages/auth` | Platform | `getSession`, `requireRole`, `inviteOrgMember` |
 | `packages/env` | Platform | Validated typed config |
-| `packages/design-system` (`@afenda/ui`) | Frontend | Design system components; public door is `@afenda/ui/playground` — see [ARCH-024 § `@afenda/ui`](ARCH-024-package-boundaries.md#afendaui) |
+| `packages/ui-system` (`@afenda/ui-system`) | Frontend | Design-system primitives; public door is the flat barrel `@afenda/ui-system` + `@afenda/ui-system/styles.css` — see [ARCH-024 § `@afenda/ui-system`](ARCH-024-package-boundaries.md#afendaui-system) |
 | `packages/emails` | Platform | Transactional email templates |
 | `packages/config` | Platform | Biome + tsconfig bases (not runtime) |
 
@@ -267,6 +267,7 @@ Next.js App Router (apps/web)
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.6.9 | 2026-07-16 | Package boundary + stack rows repointed to `@afenda/ui-system` (`packages/ui-system`) per [ADR-010](adr/ADR-010-afenda-ui-system-flat-barrel.md); retired `@afenda/ui` / `packages/design-system` / `@afenda/ui/playground` gateway references and dead `#afendaui` anchor removed. |
 | 1.6.8 | 2026-07-15 | Bounded reopen (I2.4 audit repair): next-pointer honesty — Phase I2 done; residual = I3.1. |
 | 1.6.7 | 2026-07-15 | Bounded reopen (I2.3 audit repair): next-pointer honesty — I2.3 write landed; residual = I2.4. |
 | 1.6.6 | 2026-07-15 | DOC-003 six-section retrofit (content preserved; Known limits → § 6 Notes); You-are-here next Ops = GUIDE-018 I2.3. |
