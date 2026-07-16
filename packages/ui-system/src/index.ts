@@ -33,6 +33,7 @@ export * from "./components/ui/checkbox";
 export * from "./components/ui/collapsible";
 export * from "./components/ui/form-error";
 export * from "./components/ui/form-field";
+export * from "./components/ui/hover-card";
 // Overlays / menus
 export * from "./components/ui/combobox";
 export * from "./components/ui/command";
