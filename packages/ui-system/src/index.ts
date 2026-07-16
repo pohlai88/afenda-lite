@@ -26,6 +26,7 @@ export * from "./components/ui/empty";
 export * from "./components/ui/breadcrumb";
 // Form primitives
 export * from "./components/ui/button";
+export * from "./components/ui/button-group";
 export * from "./components/ui/calendar";
 export * from "./components/ui/card";
 export * from "./components/ui/checkbox";
