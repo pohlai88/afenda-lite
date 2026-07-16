@@ -11,6 +11,7 @@ import {
 	Calendar,
 	Combobox,
 	Progress,
+	Spinner,
 	Dialog,
 	DialogContent,
 	DialogTitle,
@@ -526,5 +527,27 @@ describe("WCAG 2.2 AA — Accessible Names and Descriptions", () => {
 		expect(progressBars[1]).toHaveAttribute("aria-valuemax", "5");
 		expect(progressBars[1]).toHaveAttribute("aria-valuenow", "3");
 		expect(progressBars[1]).toHaveAttribute("aria-valuetext", "3 of 5 tasks completed");
+	});
+
+	it("Spinner provides accessible status and live region updates", async () => {
+		render(
+			<div>
+				<Spinner />
+				<Spinner size="lg" variant="secondary" label="Processing data" />
+			</div>
+		);
+
+		const spinners = screen.getAllByRole("status");
+		expect(spinners).toHaveLength(2);
+
+		// First spinner - default label
+		expect(spinners[0]).toHaveAttribute("aria-label", "Loading");
+		expect(spinners[0]).toHaveAttribute("aria-live", "polite");
+		expect(screen.getByText("Loading")).toBeInTheDocument();
+
+		// Second spinner - custom label
+		expect(spinners[1]).toHaveAttribute("aria-label", "Processing data");
+		expect(spinners[1]).toHaveAttribute("aria-live", "polite");
+		expect(screen.getByText("Processing data")).toBeInTheDocument();
 	});
 });
