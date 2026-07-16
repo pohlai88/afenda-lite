@@ -6,56 +6,13 @@
 
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 
 import { describe, expect, it } from "vitest";
 
-const webRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
+import { isAuthIsland, productTsx, toRel, webAppRoot } from "./compose-scan";
 
+const webRoot = webAppRoot();
 const SKIP_DIRS = new Set(["node_modules", ".next", ".turbo", "__tests__"]);
-
-/** Relative POSIX-ish paths under apps/web that are Neon Auth island. */
-const AUTH_ISLAND_PREFIXES = [
-	"app/(public)/auth/",
-	"app/(public)/join/layout.tsx",
-	"app/(public)/join/loading.tsx",
-	"app/(public)/join/error.tsx",
-	"features/auth/auth-surface-chrome.tsx",
-	"features/auth/auth-view-shell.tsx",
-	"features/auth/join-shell.tsx",
-];
-
-function toRel(fullPath: string): string {
-	return path.relative(webRoot, fullPath).split(path.sep).join("/");
-}
-
-function isAuthIsland(rel: string): boolean {
-	return AUTH_ISLAND_PREFIXES.some(
-		(prefix) => rel === prefix || rel.startsWith(prefix),
-	);
-}
-
-function collectTsx(dir: string): string[] {
-	const files: string[] = [];
-	for (const entry of readdirSync(dir)) {
-		if (SKIP_DIRS.has(entry)) {
-			continue;
-		}
-		const fullPath = path.join(dir, entry);
-		if (statSync(fullPath).isDirectory()) {
-			files.push(...collectTsx(fullPath));
-		} else if (/\.tsx$/.test(entry)) {
-			files.push(fullPath);
-		}
-	}
-	return files;
-}
-
-function productTsx(): { rel: string; src: string }[] {
-	return collectTsx(webRoot)
-		.map((full) => ({ rel: toRel(full), src: readFileSync(full, "utf8") }))
-		.filter(({ rel }) => !isAuthIsland(rel));
-}
 
 describe("@afenda/web compose red-flags (afenda-elite-ui-compose)", () => {
 	it("F1 — no fake primary CTA stacks (inline-flex + h-9 + bg-primary)", () => {
@@ -63,14 +20,20 @@ describe("@afenda/web compose red-flags (afenda-elite-ui-compose)", () => {
 		const offenders = productTsx()
 			.filter(({ src }) => re.test(src))
 			.map(({ rel }) => rel);
-		expect(offenders, `F1 fake CTAs: ${offenders}`).toEqual([]);
+		expect(
+			offenders,
+			`F1 reason=fake primary CTA (inline-flex+h-9+bg-primary); paths: ${offenders.join(", ") || "(none)"}`,
+		).toEqual([]);
 	});
 
 	it("F2 — no page-shell p-8 in product TSX", () => {
 		const offenders = productTsx()
 			.filter(({ src }) => /\bp-8\b/.test(src))
 			.map(({ rel }) => rel);
-		expect(offenders, `F2 p-8 shells: ${offenders}`).toEqual([]);
+		expect(
+			offenders,
+			`F2 reason=page-shell p-8; paths: ${offenders.join(", ") || "(none)"}`,
+		).toEqual([]);
 	});
 
 	it("F3 — no rogue page title sizes", () => {
@@ -78,7 +41,10 @@ describe("@afenda/web compose red-flags (afenda-elite-ui-compose)", () => {
 		const offenders = productTsx()
 			.filter(({ src }) => re.test(src))
 			.map(({ rel }) => rel);
-		expect(offenders, `F3 rogue titles: ${offenders}`).toEqual([]);
+		expect(
+			offenders,
+			`F3 reason=rogue page title size; paths: ${offenders.join(", ") || "(none)"}`,
+		).toEqual([]);
 	});
 
 	it("F4 — no bordered tabular ul (divide-y + rounded-md border)", () => {
@@ -87,7 +53,10 @@ describe("@afenda/web compose red-flags (afenda-elite-ui-compose)", () => {
 		const offenders = productTsx()
 			.filter(({ src }) => re.test(src) || reAlt.test(src))
 			.map(({ rel }) => rel);
-		expect(offenders, `F4 bordered ul lists: ${offenders}`).toEqual([]);
+		expect(
+			offenders,
+			`F4 reason=bordered tabular ul (use DataTable); paths: ${offenders.join(", ") || "(none)"}`,
+		).toEqual([]);
 	});
 
 	it("F5 — loading copy requires Spinner or Skeleton import", () => {
@@ -102,7 +71,10 @@ describe("@afenda/web compose red-flags (afenda-elite-ui-compose)", () => {
 				return !hasSpinner && !hasSkeleton;
 			})
 			.map(({ rel }) => rel);
-		expect(offenders, `F5 plain loading: ${offenders}`).toEqual([]);
+		expect(
+			offenders,
+			`F5 reason=plain loading copy without Spinner/Skeleton; paths: ${offenders.join(", ") || "(none)"}`,
+		).toEqual([]);
 	});
 
 	it("F6 — no deep @afenda/ui-system paths or retired @afenda/ui", () => {
@@ -114,7 +86,10 @@ describe("@afenda/web compose red-flags (afenda-elite-ui-compose)", () => {
 				offenders.push(rel);
 			}
 		}
-		expect(offenders, `F6 bad imports: ${offenders}`).toEqual([]);
+		expect(
+			offenders,
+			`F6 reason=deep or retired UI import; paths: ${offenders.join(", ") || "(none)"}`,
+		).toEqual([]);
 	});
 
 	it("F7 — no parallel apps/web/components/ui tree", () => {
@@ -147,6 +122,9 @@ describe("@afenda/web compose red-flags (afenda-elite-ui-compose)", () => {
 			}
 			offenders.push(rel);
 		}
-		expect(offenders, `F8 auth CSS leak: ${offenders}`).toEqual([]);
+		expect(
+			offenders,
+			`F8 reason=auth-surface.css outside island allowlist; paths: ${offenders.join(", ") || "(none)"}`,
+		).toEqual([]);
 	});
 });

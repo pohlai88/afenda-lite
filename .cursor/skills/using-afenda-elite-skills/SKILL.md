@@ -56,7 +56,7 @@ Task arrives (this repo / Afenda-Lite)
     ├── Cross-package move / extract / Slice D delete? ─────→ afenda-elite-monorepo-refactor
     ├── ARCH-028 residual / GUIDE-018 Phase I (S* / I* / command-sheet)? → afenda-elite-implementation-slices (then farms from its slice-map)
     ├── FE scaffold / wipe / app routes? ───────────────────→ afenda-elite-frontend-scaffold (consume `@afenda/ui-system` barrel per ADR-010)
-    ├── Product UI compose / handroll fix / visual consistency (features/* · product pages)? → afenda-elite-ui-compose (then frontend-ui-engineering for a11y/state/responsive method only); done = `pnpm check:ui-system` green (compose-redflags + ui-system consistency)
+    ├── Product UI compose / handroll fix / visual consistency (features/* · product pages)? → afenda-elite-ui-compose (SCALABILITY-FIRST / UI-CAP-* / rule 15; then frontend-ui-engineering for a11y/state/responsive method only); done = capability check + verification matrix (floor `pnpm check:ui-system` = F*+C*+package/web tests; `pnpm --filter @afenda/web build` when matrix requires RSC/structural/CSS-font)
     ├── Next.js App Router / RSC / rendering / proxy / MCP routes? → afenda-elite-nextjs-best-practice
     ├── Modules / ports / residue? ─────────────────────────→ afenda-elite-backend-modules
     ├── API contract / ActionResult / brands / OpenAPI / REST-001? ─→ afenda-elite-api-contract

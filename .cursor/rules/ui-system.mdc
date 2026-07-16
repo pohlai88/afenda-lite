@@ -35,9 +35,9 @@ The retired `@afenda/ui` playground gateway, `packages/design-system`, and UI-pi
 
 ## Visual lock (consistency)
 
-Product UI must **match** Afenda tokens and type/spacing tables — not freestyle aesthetics. Locked hierarchy (font, radius, density, type scale, semantic color, anti-handroll) lives in [`.cursor/skills/afenda-elite-ui-compose/SKILL.md`](../skills/afenda-elite-ui-compose/SKILL.md); this rule does not duplicate those numbers.
+Product UI must **match** Afenda tokens and type/spacing tables — not freestyle aesthetics. Locked hierarchy and QUALITY ORDER (AUTHORITY → CONSISTENCY → CORRECT-COMPONENT → SUITABILITY → SCALABILITY → STABILITY; prettier that breaks a higher rule = failed; no local compensation for missing reusable barrel capability — see SCALABILITY-FIRST / hard rule 15) live in [`.cursor/skills/afenda-elite-ui-compose/SKILL.md`](../skills/afenda-elite-ui-compose/SKILL.md); this rule does not duplicate those numbers.
 
-**Done means gates green:** `pnpm check:ui-system` (includes `apps/web/__tests__/compose-redflags.test.ts` + `@afenda/ui-system` consistency). Advisory greps are not enough.
+**Done means gates + suitability + scalability + stability evidence:** apply the ui-compose **capability check** (SCALABILITY-FIRST / hard rule 15 / `UI-CAP-*`) then the **stability verification matrix** for the changed layer(s). Usual floor: `pnpm check:ui-system` (compose-redflags F*, compose-suitability C1–C3, package/web tests, `tailwind-emit` as scoped). `pnpm --filter @afenda/web build` only when the matrix requires it (RSC boundary, structural package change, global CSS/font map, clear Next emit risk). No silent barrel API change (hard rule 12 in ui-compose): additive → tests; rename/removal/default/semantic → same-change consumer migration. No local compensation for missing reusable barrel capability. Recipes are defaults (workflow may justify Dialog/page over Sheet). DataTable stays generic (feature owns fetch/URL/permissions/domain). Ban vague barrel names (Panel/Container/Box/Item/Wrapper/View). Advisory greps are not enough. Full checklist: [afenda-elite-ui-compose](../skills/afenda-elite-ui-compose/SKILL.md). Gate tables (F*/C*) + UI-CAP: [reference.md](../skills/afenda-elite-ui-compose/reference.md).
 
 ## RSC boundary
 

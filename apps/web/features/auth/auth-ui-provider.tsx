@@ -40,6 +40,11 @@ function AuthUiLink({
  * Neon Auth UI island — credentials · forgot/reset · invitee sign-up (ARCH-026 · I1.3).
  * Auth SDK client comes from `@afenda/auth/client`; no app-side SMTP.
  * `signUp` is enabled so invitation accept can create credentials before accept.
+ *
+ * `NeonAuthUIProvider` nests `next-themes` ThemeProvider. Repo `pnpm.patchedDependencies`
+ * omits ThemeScript entirely (`patches/next-themes@0.4.6.patch`) so React 19 does not
+ * warn on client `<script>` and SSR/client trees stay aligned (theme still applies via
+ * ThemeProvider effects; auth island forces `defaultTheme="light"`).
  */
 export function AuthUiProvider({ appOrigin, children }: AuthUiProviderProps) {
 	const router = useRouter();

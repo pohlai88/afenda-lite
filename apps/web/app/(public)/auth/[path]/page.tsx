@@ -7,6 +7,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { AuthViewShell } from "@/features/auth/auth-view-shell";
+import { resolveLocalAuthCredentials } from "@/features/auth/local-auth-credentials";
 
 type AuthPageProps = {
 	params: Promise<{ path: string }>;
@@ -43,5 +44,9 @@ export default async function AuthPage({ params }: AuthPageProps) {
 	if (!isPublicAuthPath(path)) {
 		notFound();
 	}
-	return <AuthViewShell path={path} />;
+	const localCredentials =
+		path === "login" ? resolveLocalAuthCredentials() : null;
+	return (
+		<AuthViewShell path={path} localCredentials={localCredentials} />
+	);
 }
