@@ -2,13 +2,30 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const getSessionMock = vi.fn();
 const getActiveMemberRoleMock = vi.fn();
+const listOrganizationsMock = vi.fn();
+const setActiveOrganizationMock = vi.fn();
 const middlewareMock = vi.fn();
 const redirectMock = vi.fn((url: string) => {
 	throw new Error(`NEXT_REDIRECT:${url}`);
 });
+const mockedEnv = vi.hoisted(() => ({
+	NEON_AUTH_BASE_URL: "https://auth.example.test",
+	NEON_AUTH_COOKIE_SECRET: "x".repeat(32),
+	DATABASE_URL: "postgresql://u:p@ep-x-pooler.example/db?sslmode=require",
+	APP_URL: "https://afenda-lite.vercel.app",
+	PORTAL_ORGANIZATION_ID: undefined as string | undefined,
+	PORTAL_ORG_SLUG: undefined as string | undefined,
+}));
 
 vi.mock("next/navigation", () => ({
 	redirect: (url: string) => redirectMock(url),
+}));
+
+vi.mock("next/headers", () => ({
+	headers: async () =>
+		new Headers({
+			"x-afenda-pathname": "",
+		}),
 }));
 
 vi.mock("@neondatabase/auth/next/server", () => ({
@@ -17,18 +34,15 @@ vi.mock("@neondatabase/auth/next/server", () => ({
 		organization: {
 			getActiveMemberRole: (...args: unknown[]) =>
 				getActiveMemberRoleMock(...args),
+			list: (...args: unknown[]) => listOrganizationsMock(...args),
+			setActive: (...args: unknown[]) => setActiveOrganizationMock(...args),
 		},
 		middleware: (...args: unknown[]) => middlewareMock(...args),
 	}),
 }));
 
 vi.mock("@afenda/env", () => ({
-	env: {
-		NEON_AUTH_BASE_URL: "https://auth.example.test",
-		NEON_AUTH_COOKIE_SECRET: "x".repeat(32),
-		DATABASE_URL: "postgresql://u:p@ep-x-pooler.example/db?sslmode=require",
-		APP_URL: "https://afenda-lite.vercel.app",
-	},
+	env: mockedEnv,
 }));
 
 function neonSession(partial?: {
@@ -40,7 +54,8 @@ function neonSession(partial?: {
 		data: {
 			user: {
 				id: partial?.userId ?? "user-1",
-				email: partial && "email" in partial ? partial.email : "User@Example.COM",
+				email:
+					partial && "email" in partial ? partial.email : "User@Example.COM",
 			},
 			session: {
 				activeOrganizationId:
@@ -53,15 +68,27 @@ function neonSession(partial?: {
 	};
 }
 
-describe("N6 session contract", () => {
+describe("N6/N8 session contract", () => {
 	beforeEach(() => {
 		vi.resetModules();
 		getSessionMock.mockReset();
 		getActiveMemberRoleMock.mockReset();
+		listOrganizationsMock.mockReset();
+		setActiveOrganizationMock.mockReset();
 		middlewareMock.mockReset();
 		redirectMock.mockClear();
+		mockedEnv.PORTAL_ORGANIZATION_ID = undefined;
+		mockedEnv.PORTAL_ORG_SLUG = undefined;
 		getActiveMemberRoleMock.mockResolvedValue({
 			data: { role: "member" },
+			error: null,
+		});
+		listOrganizationsMock.mockResolvedValue({
+			data: [],
+			error: null,
+		});
+		setActiveOrganizationMock.mockResolvedValue({
+			data: null,
 			error: null,
 		});
 	});
@@ -87,20 +114,44 @@ describe("N6 session contract", () => {
 			await expect(getApiSession()).resolves.toBeNull();
 		});
 
-		it("returns null when active organization is missing", async () => {
+		it("returns null when active organization is missing and unresolvable", async () => {
 			getSessionMock.mockResolvedValue(
 				neonSession({ activeOrganizationId: null }),
 			);
 			const { getApiSession } = await import("../src/session");
 			await expect(getApiSession()).resolves.toBeNull();
+			expect(setActiveOrganizationMock).not.toHaveBeenCalled();
 		});
 
-		it("returns null when active organization is empty", async () => {
+		it("returns null when active organization is empty and unresolvable", async () => {
 			getSessionMock.mockResolvedValue(
 				neonSession({ activeOrganizationId: "" }),
 			);
 			const { getApiSession } = await import("../src/session");
 			await expect(getApiSession()).resolves.toBeNull();
+			expect(setActiveOrganizationMock).not.toHaveBeenCalled();
+		});
+
+		it("does not call setActive from RSC when a sole membership is resolvable", async () => {
+			getSessionMock.mockResolvedValue(
+				neonSession({ activeOrganizationId: null }),
+			);
+			listOrganizationsMock.mockResolvedValue({
+				data: [{ id: "org-sole", slug: "sole-org", name: "Sole Org" }],
+				error: null,
+			});
+			const { getApiSession } = await import("../src/session");
+			await expect(getApiSession()).resolves.toBeNull();
+			expect(listOrganizationsMock).toHaveBeenCalled();
+			expect(setActiveOrganizationMock).not.toHaveBeenCalled();
+		});
+
+		it("does not resolve organizations when the active member organization exists", async () => {
+			getSessionMock.mockResolvedValue(neonSession());
+			const { getApiSession } = await import("../src/session");
+			await getApiSession();
+			expect(listOrganizationsMock).not.toHaveBeenCalled();
+			expect(setActiveOrganizationMock).not.toHaveBeenCalled();
 		});
 
 		it("returns null when email is missing", async () => {
@@ -136,6 +187,76 @@ describe("N6 session contract", () => {
 		});
 	});
 
+	describe("getAuthBootstrap", () => {
+		it("returns ready when the session already has an active org", async () => {
+			getSessionMock.mockResolvedValue(neonSession());
+			const { getAuthBootstrap } = await import("../src/session");
+			await expect(getAuthBootstrap("/")).resolves.toEqual({
+				state: "ready",
+				session: {
+					userId: "user-1",
+					orgId: "org-1",
+					role: "client",
+					email: "user@example.com",
+				},
+			});
+		});
+
+		it("returns ensure_active_org for a sole membership without writing cookies", async () => {
+			getSessionMock.mockResolvedValue(
+				neonSession({ activeOrganizationId: null }),
+			);
+			listOrganizationsMock.mockResolvedValue({
+				data: [{ id: "org-sole", slug: "sole-org", name: "Sole Org" }],
+				error: null,
+			});
+			const { getAuthBootstrap } = await import("../src/session");
+			const { ENSURE_ACTIVE_ORGANIZATION_PATH } = await import(
+				"../src/ensure-active-organization"
+			);
+			await expect(getAuthBootstrap("/admin")).resolves.toEqual({
+				state: "ensure_active_org",
+				url: `${ENSURE_ACTIVE_ORGANIZATION_PATH}?next=${encodeURIComponent("/admin")}`,
+			});
+			expect(setActiveOrganizationMock).not.toHaveBeenCalled();
+		});
+
+		it("returns ensure_active_org for an allowlisted membership among many", async () => {
+			mockedEnv.PORTAL_ORGANIZATION_ID = "org-allowed";
+			getSessionMock.mockResolvedValue(
+				neonSession({ activeOrganizationId: null }),
+			);
+			listOrganizationsMock.mockResolvedValue({
+				data: [
+					{ id: "org-other", slug: "other", name: "Other" },
+					{ id: "org-allowed", slug: "allowed", name: "Allowed" },
+				],
+				error: null,
+			});
+			const { getAuthBootstrap } = await import("../src/session");
+			await expect(getAuthBootstrap()).resolves.toMatchObject({
+				state: "ensure_active_org",
+			});
+		});
+
+		it("returns anonymous when multi-membership has no allowlist match", async () => {
+			mockedEnv.PORTAL_ORGANIZATION_ID = "org-not-a-member";
+			getSessionMock.mockResolvedValue(
+				neonSession({ activeOrganizationId: null }),
+			);
+			listOrganizationsMock.mockResolvedValue({
+				data: [
+					{ id: "org-1", slug: "one", name: "One" },
+					{ id: "org-2", slug: "two", name: "Two" },
+				],
+				error: null,
+			});
+			const { getAuthBootstrap } = await import("../src/session");
+			await expect(getAuthBootstrap()).resolves.toEqual({ state: "anonymous" });
+			expect(setActiveOrganizationMock).not.toHaveBeenCalled();
+		});
+	});
+
 	describe("getSession", () => {
 		it("returns typed Session without inventing fields when complete", async () => {
 			getSessionMock.mockResolvedValue(neonSession());
@@ -161,7 +282,7 @@ describe("N6 session contract", () => {
 			expect(redirectMock).toHaveBeenCalledWith(AUTH_LOGIN_PATH);
 		});
 
-		it("throws when active organization is missing (never defaults org)", async () => {
+		it("throws when active organization is missing and unresolvable", async () => {
 			getSessionMock.mockResolvedValue(
 				neonSession({ activeOrganizationId: null }),
 			);
@@ -170,6 +291,24 @@ describe("N6 session contract", () => {
 				/active organization missing from session/,
 			);
 			expect(redirectMock).not.toHaveBeenCalled();
+		});
+
+		it("redirects to the ensure Route Handler when a sole membership is resolvable", async () => {
+			getSessionMock.mockResolvedValue(
+				neonSession({ activeOrganizationId: null }),
+			);
+			listOrganizationsMock.mockResolvedValue({
+				data: [{ id: "org-sole", slug: "sole-org", name: "Sole Org" }],
+				error: null,
+			});
+			const { getSession } = await import("../src/session");
+			const { ENSURE_ACTIVE_ORGANIZATION_PATH } = await import(
+				"../src/ensure-active-organization"
+			);
+			await expect(getSession()).rejects.toThrow(
+				`NEXT_REDIRECT:${ENSURE_ACTIVE_ORGANIZATION_PATH}`,
+			);
+			expect(setActiveOrganizationMock).not.toHaveBeenCalled();
 		});
 
 		it("throws when email is missing", async () => {
@@ -193,9 +332,71 @@ describe("N6 session contract", () => {
 		});
 	});
 
+	describe("handleEnsureActiveOrganizationRequest", () => {
+		it("persists a sole member organization then redirects to role home", async () => {
+			getSessionMock
+				.mockResolvedValueOnce(neonSession({ activeOrganizationId: null }))
+				.mockResolvedValueOnce(
+					neonSession({ activeOrganizationId: "org-sole" }),
+				);
+			listOrganizationsMock.mockResolvedValue({
+				data: [{ id: "org-sole", slug: "sole-org", name: "Sole Org" }],
+				error: null,
+			});
+			getActiveMemberRoleMock.mockResolvedValue({
+				data: { role: "admin" },
+				error: null,
+			});
+
+			const { handleEnsureActiveOrganizationRequest } = await import(
+				"../src/ensure-active-organization"
+			);
+			const response = await handleEnsureActiveOrganizationRequest(
+				new Request(
+					"https://afenda-lite.vercel.app/api/session/ensure-active-organization",
+				),
+			);
+
+			expect(setActiveOrganizationMock).toHaveBeenCalledWith({
+				organizationId: "org-sole",
+			});
+			expect(response.status).toBeGreaterThanOrEqual(300);
+			expect(response.status).toBeLessThan(400);
+			expect(new URL(String(response.headers.get("location"))).pathname).toBe(
+				"/admin",
+			);
+		});
+
+		it("honors a safe next callback after persist", async () => {
+			getSessionMock
+				.mockResolvedValueOnce(neonSession({ activeOrganizationId: null }))
+				.mockResolvedValueOnce(
+					neonSession({ activeOrganizationId: "org-sole" }),
+				);
+			listOrganizationsMock.mockResolvedValue({
+				data: [{ id: "org-sole", slug: "sole-org", name: "Sole Org" }],
+				error: null,
+			});
+
+			const { handleEnsureActiveOrganizationRequest } = await import(
+				"../src/ensure-active-organization"
+			);
+			const response = await handleEnsureActiveOrganizationRequest(
+				new Request(
+					"https://afenda-lite.vercel.app/api/session/ensure-active-organization?next=%2Ffft",
+				),
+			);
+
+			expect(new URL(String(response.headers.get("location"))).pathname).toBe(
+				"/fft",
+			);
+		});
+	});
+
 	describe("createSessionProxy", () => {
 		it("binds Neon middleware to AUTH_LOGIN_PATH", async () => {
-			const gate = vi.fn();
+			const { NextRequest, NextResponse } = await import("next/server");
+			const gate = vi.fn(async () => NextResponse.next());
 			middlewareMock.mockReturnValue(gate);
 			const { createSessionProxy } = await import("../src/proxy");
 			const { AUTH_LOGIN_PATH } = await import("../src/auth-paths");
@@ -203,12 +404,32 @@ describe("N6 session contract", () => {
 			expect(middlewareMock).toHaveBeenCalledWith({
 				loginUrl: AUTH_LOGIN_PATH,
 			});
-			expect(proxy).toBe(gate);
+			expect(typeof proxy).toBe("function");
+			await proxy(new NextRequest("https://afenda-lite.vercel.app/admin"));
+			expect(gate).toHaveBeenCalled();
+		});
+
+		it("preserves same-origin path as redirectTo on login redirects", async () => {
+			const { NextRequest, NextResponse } = await import("next/server");
+			const { AUTH_LOGIN_PATH } = await import("../src/auth-paths");
+			const { POST_LOGIN_CALLBACK_PARAM } = await import("../src/post-login");
+			middlewareMock.mockImplementation(() => {
+				return async (request: NextRequest) => {
+					return NextResponse.redirect(new URL(AUTH_LOGIN_PATH, request.url));
+				};
+			});
+			const { createSessionProxy } = await import("../src/proxy");
+			const sessionProxy = createSessionProxy();
+			const response = await sessionProxy(
+				new NextRequest("https://afenda-lite.vercel.app/fft"),
+			);
+			const location = new URL(String(response.headers.get("location")));
+			expect(location.pathname).toBe(AUTH_LOGIN_PATH);
+			expect(location.searchParams.get(POST_LOGIN_CALLBACK_PARAM)).toBe("/fft");
 		});
 
 		it("request-level: unauthenticated protected request redirects to /auth/login", async () => {
 			const { NextRequest, NextResponse } = await import("next/server");
-			// Neon Auth middleware contract under test: unauthenticated → loginUrl.
 			middlewareMock.mockImplementation((options: { loginUrl: string }) => {
 				return async (request: NextRequest) => {
 					const session = await getSessionMock();

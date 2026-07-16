@@ -13,6 +13,11 @@ export {
 	PUBLIC_AUTH_PATHS,
 } from "./auth-paths";
 export { resolveAuthUiOrigin } from "./auth-ui-origin";
+export {
+	buildEnsureActiveOrganizationUrl,
+	ENSURE_ACTIVE_ORGANIZATION_PATH,
+	handleEnsureActiveOrganizationRequest,
+} from "./ensure-active-organization";
 export type {
 	InviteOrgMemberInput,
 	InviteOrgMemberResult,
@@ -45,5 +50,5 @@ export {
 	toNeonOrgRole,
 	toSessionRole,
 } from "./roles";
-export type { ApiSession, Role, Session } from "./session";
-export { getApiSession, getSession } from "./session";
+export type { ApiSession, AuthBootstrap, Role, Session } from "./session";
+export { getApiSession, getAuthBootstrap, getSession } from "./session";

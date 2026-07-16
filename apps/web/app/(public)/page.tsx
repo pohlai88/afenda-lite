@@ -1,6 +1,6 @@
 import {
 	AUTH_LOGIN_PATH,
-	getApiSession,
+	getAuthBootstrap,
 	POST_LOGIN_CALLBACK_PARAM,
 	resolvePostLoginPath,
 } from "@afenda/auth";
@@ -18,15 +18,27 @@ type HomePageProps = {
  * N7 signed-in bounce: an authenticated visitor never dead-ends on `/`. The
  * governed resolver (`@afenda/auth`) sends them to a safe same-origin callback
  * when present, otherwise to their coarse role home. Anonymous visitors keep
- * the public shell. `getApiSession` is null-safe (no anonymous login redirect).
+ * the public shell.
+ *
+ * N8: when Neon Auth has a session but no active organization yet, bounce
+ * through the cookie-safe ensure Route Handler before role-home resolution.
  */
 export default async function HomePage({ searchParams }: HomePageProps) {
-	const session = await getApiSession();
-	if (session) {
-		const query = await searchParams;
-		const rawCallback = query[POST_LOGIN_CALLBACK_PARAM];
-		const callbackUrl = Array.isArray(rawCallback) ? undefined : rawCallback;
-		redirect(resolvePostLoginPath({ role: session.role, callbackUrl }));
+	const query = await searchParams;
+	const rawCallback = query[POST_LOGIN_CALLBACK_PARAM];
+	const callbackUrl = Array.isArray(rawCallback) ? undefined : rawCallback;
+	const bootstrap = await getAuthBootstrap(callbackUrl ?? "/");
+
+	if (bootstrap.state === "ensure_active_org") {
+		redirect(bootstrap.url);
+	}
+	if (bootstrap.state === "ready") {
+		redirect(
+			resolvePostLoginPath({
+				role: bootstrap.session.role,
+				callbackUrl,
+			}),
+		);
 	}
 
 	return (

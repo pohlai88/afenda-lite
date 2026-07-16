@@ -126,7 +126,8 @@ describe("N6 proxy session gate (disk)", () => {
 		expect(source).toContain('from "@afenda/auth"');
 		expect(source).toContain("createSessionProxy");
 		expect(source).toContain("shouldBypassSessionGate");
-		expect(source).toContain("return runSessionGate(request)");
+		expect(source).toContain("runSessionGate(request)");
+		expect(source).toContain("x-afenda-pathname");
 	});
 
 	it("matcher covers protected shells and excludes public auth/join", () => {

@@ -30,10 +30,11 @@ describe("post-login routing wiring (N7)", () => {
 
 	it("bounces a signed-in `/` through the resolver, not a hardcoded path", () => {
 		const source = readFileSync(join(webRoot, "app/(public)/page.tsx"), "utf8");
-		expect(source).toContain("getApiSession");
+		expect(source).toContain("getAuthBootstrap");
 		expect(source).toContain("resolvePostLoginPath");
 		expect(source).toContain("redirect(");
 		expect(source).toContain("POST_LOGIN_CALLBACK_PARAM");
+		expect(source).toContain("ensure_active_org");
 	});
 
 	it("sanitizes AuthUiProvider redirectTo and navigate destinations", () => {
