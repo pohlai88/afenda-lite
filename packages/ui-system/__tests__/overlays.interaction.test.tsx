@@ -8,6 +8,7 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 	AlertDialogTrigger,
+	Combobox,
 	Dialog,
 	DialogContent,
 	DialogTitle,
@@ -427,5 +428,47 @@ describe("WCAG 2.2 AA — Accessible Names and Descriptions", () => {
 
 		const select = screen.getByRole("combobox", { name: "Task Status" });
 		expect(select).toBeInTheDocument();
+	});
+
+	it("Combobox has searchable functionality with keyboard support", async () => {
+		const user = userEvent.setup();
+		const mockChange = vi.fn();
+		const options = [
+			{ value: "apple", label: "Apple" },
+			{ value: "banana", label: "Banana" },
+			{ value: "orange", label: "Orange" },
+		];
+
+		render(
+			<Combobox
+				options={options}
+				value=""
+				onValueChange={mockChange}
+				placeholder="Select fruit..."
+				searchPlaceholder="Search fruits..."
+			/>
+		);
+
+		const combobox = screen.getByRole("combobox");
+		expect(combobox).toBeInTheDocument();
+		expect(combobox).toHaveAttribute("aria-expanded", "false");
+
+		// Open combobox
+		await user.click(combobox);
+		expect(combobox).toHaveAttribute("aria-expanded", "true");
+
+		// Search functionality
+		const searchInput = screen.getByPlaceholderText("Search fruits...");
+		expect(searchInput).toBeInTheDocument();
+
+		await user.type(searchInput, "app");
+		
+		// Should show filtered results
+		expect(screen.getByText("Apple")).toBeInTheDocument();
+		expect(screen.queryByText("Banana")).not.toBeInTheDocument();
+
+		// Select an option
+		await user.click(screen.getByText("Apple"));
+		expect(mockChange).toHaveBeenCalledWith("apple");
 	});
 });
