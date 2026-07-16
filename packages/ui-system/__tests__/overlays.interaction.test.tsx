@@ -10,6 +10,7 @@ import {
 	AlertDialogTrigger,
 	Calendar,
 	Combobox,
+	Progress,
 	Dialog,
 	DialogContent,
 	DialogTitle,
@@ -501,5 +502,29 @@ describe("WCAG 2.2 AA — Accessible Names and Descriptions", () => {
 		// Test date selection
 		await user.click(todayButton);
 		expect(mockSelect).toHaveBeenCalled();
+	});
+
+	it("Progress provides accessible status and value information", async () => {
+		render(
+			<div>
+				<Progress value={65} max={100} />
+				<Progress value={3} max={5} getValueLabel={(v, m) => `${v} of ${m} tasks completed`} />
+			</div>
+		);
+
+		const progressBars = screen.getAllByRole("progressbar");
+		expect(progressBars).toHaveLength(2);
+
+		// First progress bar - default percentage label
+		expect(progressBars[0]).toHaveAttribute("aria-valuemin", "0");
+		expect(progressBars[0]).toHaveAttribute("aria-valuemax", "100");
+		expect(progressBars[0]).toHaveAttribute("aria-valuenow", "65");
+		expect(progressBars[0]).toHaveAttribute("aria-valuetext", "65%");
+
+		// Second progress bar - custom label
+		expect(progressBars[1]).toHaveAttribute("aria-valuemin", "0");
+		expect(progressBars[1]).toHaveAttribute("aria-valuemax", "5");
+		expect(progressBars[1]).toHaveAttribute("aria-valuenow", "3");
+		expect(progressBars[1]).toHaveAttribute("aria-valuetext", "3 of 5 tasks completed");
 	});
 });
