@@ -46,6 +46,9 @@ import {
 	TooltipContent,
 	TooltipProvider,
 	TooltipTrigger,
+	Toggle,
+	ToggleGroup,
+	ToggleGroupItem,
 } from "@afenda/ui-system";
 import {
 	cleanup,
@@ -829,5 +832,24 @@ describe("WCAG 2.2 AA — Accessible Names and Descriptions", () => {
 		await user.click(sectionOne);
 		expect(sectionOne).toHaveAttribute("aria-expanded", "true");
 		expect(screen.getByText("First section content")).toBeVisible();
+	});
+
+	it("ToggleGroup supports single selection with pressed state", async () => {
+		const user = userEvent.setup();
+		const onValueChange = vi.fn();
+
+		render(
+			<ToggleGroup type="single" onValueChange={onValueChange}>
+				<ToggleGroupItem value="list" aria-label="List view">
+					List
+				</ToggleGroupItem>
+				<ToggleGroupItem value="grid" aria-label="Grid view">
+					Grid
+				</ToggleGroupItem>
+			</ToggleGroup>,
+		);
+
+		await user.click(screen.getByRole("radio", { name: "List view" }));
+		expect(onValueChange).toHaveBeenCalledWith("list");
 	});
 });
