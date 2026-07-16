@@ -338,12 +338,52 @@ Subtle + subtle-foreground values match the prior proposal for all four roles / 
 
 ---
 
+## Residual color-opacity — Hybrid C close (2026-07-17)
+
+Approved disposition this chat: **PROMOTE** soft-solid destructive, primary tint/track, overlay scrim; **RETAIN** dark input/accent fills, alert `text-destructive/90`, sidebar group-label ink. Disabled/ring/press-hover opacity remain retained (out of mission scope).
+
+### Promoted (implemented)
+
+| Family | Before | After | Token values | Contrast |
+|--------|--------|-------|--------------|----------|
+| Soft-solid destructive | `dark:bg-destructive/60` (Button, Badge) | `dark:bg-destructive-soft` | L `oklch(0.577 0.245 27.325)` (= light `--destructive`); D `oklch(0.497 0.125 21.522)` | White on soft: L **4.76** / D **6.48** (≥4.5). Opaque match of dark `/60` sRGB composite over `--background`. |
+| Primary checked wash | `bg-primary/5` + `dark:…/10` (Field) | `bg-primary-subtle` | L `oklch(0.98 0 0)`; D `oklch(0.25 0 0)` | `--foreground` on subtle: L **18.68** / D **15.32**. Distinct from surface/table L steps. |
+| Primary progress track | `bg-primary/20` (Progress) | `bg-primary-track` | L `oklch(0.86 0 0)`; D `oklch(0.33 0 0)` | Primary indicator vs track (non-text): L **11.70** / D **9.70** (≥3:1). |
+| Overlay scrim | `bg-black/50` (Dialog, Sheet, AlertDialog) | `bg-overlay-scrim` | both modes `oklch(0 0 0 / 50%)` | Non-text dimming plane — no AA text pair. |
+
+`@theme inline` maps: `--color-destructive-soft`, `--color-primary-subtle`, `--color-primary-track`, `--color-overlay-scrim`.
+
+### Retained (intentional — locked in `erp-chrome.test.ts`)
+
+| Family | Aliases | Why no token |
+|--------|---------|--------------|
+| Dark input / accent fills | `dark:bg-input/30`, `dark:hover:bg-input/50`, `dark:hover:bg-accent/50` | Dark `--input` is already translucent; utilities stack opacity. No opaque ERP role matches surface/muted ladder without inventing a 2–3 step control-fill family. |
+| Alert destructive description | `text-destructive/90` | Soft description emphasis vs title; not a distinct semantic beyond `--destructive`. Full `text-destructive` already AA on card. |
+| Sidebar group label | `text-sidebar-foreground/70` | Single chrome call site; no sidebar-muted slot required this slice. |
+| Disabled / ring / press hover | `opacity-50`/`70`, `ring-*/20|40|50`, `hover:bg-*/90|/80` | Out of this mission scope (state chrome / press darkening). |
+
+**Still forbidden** (role-matched; ERP token exists — `opacityChrome` / `roleMatchedOpacityAliases` gates):
+
+| Retired alias pattern | Replaced by |
+|-----------------------|-------------|
+| `bg-*-subtle` roles via `bg-success/10` … `border-info/25` | `*-subtle` / `*-subtle-foreground` / `*-border` |
+| `hover:bg-muted/50`, `bg-muted/40`, `bg-muted/50` (table) | `table-row-hover`, `table-stripe`, `surface-sunken` |
+| `data-[variant=destructive]:focus:bg-destructive/10` (+ dark `/20`) | `bg-destructive-subtle` |
+| `text-foreground/60` (tabs inactive) | `text-muted-foreground` |
+| `dark:bg-destructive/60` | `bg-destructive-soft` |
+| `bg-primary/5`, `bg-primary/10` | `bg-primary-subtle` |
+| `bg-primary/20` | `bg-primary-track` |
+| `bg-black/50` (overlay) | `bg-overlay-scrim` |
+
+---
+
 ## Promotion posture
 
 1. shadcn neutral registry slots remain aligned (32/32 light, 31/31 dark, 0 drift); no registry slot values changed.
 2. ERP surface / status-subtle / table + `--foreground-secondary` + `--foreground-tertiary` are **implemented** with measured WCAG ratios; `--foreground-quaternary` is **removed** (failed dark 3:1 vs muted-fg — never ship).
-3. Aerospace Ceramic remains a separate scratch brand lane and must not be folded into neutral parity work.
-4. Existing Afenda extras (status solid pairs, density, elevation shadows, motion, radius ladder including 2xl/3xl/4xl) are preserved.
+3. Leave-opacity Hybrid C close: **promoted** soft destructive + primary subtle/track + overlay scrim; **retained** dark control fills, alert `/90`, sidebar `/70`, plus out-of-scope disabled/ring/press aliases — do not purge `retainedColorOpacityAliases`.
+4. Aerospace Ceramic remains a separate scratch brand lane and must not be folded into neutral parity work.
+5. Existing Afenda extras (status solid pairs, density, elevation shadows, motion, radius ladder including 2xl/3xl/4xl) are preserved.
 
 ### apps/web compose adoption (2026-07-17)
 
@@ -368,9 +408,9 @@ pnpm --filter @afenda/ui-system test
 pnpm check:ui-system
 ```
 
-### Gate evidence (2026-07-17 promote + label A pass)
+### Gate evidence (2026-07-17 promote + label A pass + leave-opacity Hybrid C close)
 
 | Command | Result |
 |---------|--------|
-| `pnpm --filter @afenda/ui-system test` | PASS — 4 files / **59** tests (`erp-tokens.test.ts` 43) |
-| `pnpm check:ui-system` | PASS — ui-system 59 + web 63; prior `session-proxy-request` `NextRequest`-as-type failure no longer present on disk |
+| `pnpm --filter @afenda/ui-system test` | PASS — 5 files / **79** tests (`erp-tokens` 51, `erp-chrome` 12 including promote + retain locks) |
+| `pnpm check:ui-system` | PASS — ui-system 79 + web 67; `tailwind-emit` includes `bg-destructive-soft`, `bg-primary-subtle`, `bg-primary-track`, `bg-overlay-scrim` |

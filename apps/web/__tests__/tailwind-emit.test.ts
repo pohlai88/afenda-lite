@@ -17,14 +17,24 @@ const SEMANTIC_CLASSES = [
 	"bg-warning-subtle",
 	"bg-info-subtle",
 	"bg-destructive-subtle",
+	"bg-destructive-soft",
+	"bg-primary-subtle",
+	"bg-primary-track",
+	"bg-overlay-scrim",
 	"bg-table-row-hover",
 	"bg-table-stripe",
 	"text-muted-foreground",
 	"text-foreground-secondary",
 	"text-foreground-tertiary",
 	"text-success-subtle-foreground",
+	"text-warning-subtle-foreground",
+	"text-info-subtle-foreground",
+	"text-destructive-subtle-foreground",
 	"border-input",
 	"border-success-border",
+	"border-warning-border",
+	"border-info-border",
+	"border-destructive-border",
 ] as const;
 
 describe("@afenda/web — Tailwind emit smoke (ADR-010 § D4)", () => {
@@ -33,7 +43,9 @@ describe("@afenda/web — Tailwind emit smoke (ADR-010 § D4)", () => {
 		const tailwindPostcss = require("@tailwindcss/postcss") as () => unknown;
 		const postcssPath = require.resolve("@tailwindcss/postcss");
 		const postcss = createRequire(postcssPath)("postcss") as {
-			(plugins: unknown[]): {
+			(
+				plugins: unknown[],
+			): {
 				process: (
 					css: string,
 					opts: { from: string },

@@ -12,7 +12,7 @@ const tokens = readFileSync(
 	"utf8",
 );
 
-/** ERP tokens promoted 2026-07-17 (UI-CAP-05 / user authority A). */
+/** ERP tokens promoted 2026-07-17 (UI-CAP-05 / user authority A + leave-opacity close). */
 const promoted = [
 	"surface-sunken",
 	"surface-raised",
@@ -31,6 +31,10 @@ const promoted = [
 	"destructive-subtle",
 	"destructive-subtle-foreground",
 	"destructive-border",
+	"destructive-soft",
+	"primary-subtle",
+	"primary-track",
+	"overlay-scrim",
 	"table-row-hover",
 	"table-stripe",
 ] as const;
@@ -53,6 +57,10 @@ const lightValues: Record<(typeof promoted)[number], string> = {
 	"destructive-subtle": "oklch(0.96 0.03 25)",
 	"destructive-subtle-foreground": "oklch(0.42 0.12 25)",
 	"destructive-border": "oklch(0.77 0.06 25)",
+	"destructive-soft": "oklch(0.55 0.2 27.325)",
+	"primary-subtle": "oklch(0.93 0 0)",
+	"primary-track": "oklch(0.88 0 0)",
+	"overlay-scrim": "oklch(0 0 0 / 50%)",
 	"table-row-hover": "oklch(0.955 0 0)",
 	"table-stripe": "oklch(0.99 0 0)",
 };
@@ -75,6 +83,10 @@ const darkValues: Record<(typeof promoted)[number], string> = {
 	"destructive-subtle": "oklch(0.26 0.04 25)",
 	"destructive-subtle-foreground": "oklch(0.85 0.1 25)",
 	"destructive-border": "oklch(0.73 0.05 25)",
+	"destructive-soft": "oklch(0.497 0.12 22.216)",
+	"primary-subtle": "oklch(0.22 0 0)",
+	"primary-track": "oklch(0.35 0 0)",
+	"overlay-scrim": "oklch(0 0 0 / 50%)",
 	"table-row-hover": "oklch(0.24 0 0)",
 	"table-stripe": "oklch(0.19 0 0)",
 };
