@@ -120,7 +120,7 @@ Route catalogue SSOT: [ARCH-012](ARCH-012-app-router-routes.md).
 | `features/fft/` | Feed Farm Trade UI under AdminCN (no parallel FftShell) |
 | `features/playground/` | **Absent** — removed 2026-07-15 (do not handroll) |
 
-Name collision with `@afenda/ui/playground` (package gateway only) — [ARCH-024 § `@afenda/ui`](ARCH-024-package-boundaries.md#afendaui).
+The former `@afenda/ui/playground` package gateway that once shared the word is retired ([ADR-010](adr/ADR-010-afenda-ui-system-flat-barrel.md)); UI imports only the `@afenda/ui-system` barrel — [ARCH-024 § `@afenda/ui-system`](ARCH-024-package-boundaries.md#afendaui-system).
 
 Colocated `_components/` under a route segment is allowed for route-local composition ([composition](../../.cursor/skills/afenda-elite-nextjs-best-practice/reference/composition.md)).
 
@@ -183,7 +183,7 @@ UI registry: `.cursor/skills/feed-farm-trade/ui-registry.md` · `/afenda-elite-f
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
-| 2.0.4 | 2026-07-16 | Repointed retired `/admincn-customization` skill method references to `/afenda-elite-frontend-scaffold` + `@afenda/ui-system` barrel ([ADR-010](adr/ADR-010-afenda-ui-system-flat-barrel.md)); folder homes + AdminCN authority (ARCH-015/018) unchanged. |
+| 2.0.4 | 2026-07-16 | Repointed retired `/admincn-customization` skill method references to `/afenda-elite-frontend-scaffold` + `@afenda/ui-system` barrel ([ADR-010](adr/ADR-010-afenda-ui-system-flat-barrel.md)); fixed dangling `@afenda/ui/playground` disambiguation (dead `#afendaui` anchor → `#afendaui-system`); folder homes + AdminCN authority (ARCH-015/018) unchanged. |
 | 2.0.3 | 2026-07-15 | `app/playground/` + `features/playground/` marked Absent (harness wipe); no handroll. |
 | 2.0.2 | 2026-07-15 | Linked `app/playground/` and `features/playground/` rows to the ARCH-024 `@afenda/ui/playground` disambiguation paragraph (no independent prose). |
 | 2.0.1 | 2026-07-14 | Home flattened to docs/architecture/ (trunks removed; pack reading order in README). |
