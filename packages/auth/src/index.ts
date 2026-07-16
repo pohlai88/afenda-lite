@@ -1,7 +1,11 @@
+import "server-only";
+
+export type { AuthApiHandlers } from "./api-handler";
 export { createAuthApiHandlers } from "./api-handler";
 export type { AfendaAuthViewPath, PublicAuthPath } from "./auth-paths";
 export {
 	AFENDA_AUTH_VIEW_PATHS,
+	AUTH_API_BASE_PATH,
 	AUTH_BASE_PATH,
 	AUTH_FORBIDDEN_PATH,
 	AUTH_LOGIN_PATH,

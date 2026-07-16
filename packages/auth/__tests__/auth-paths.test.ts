@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
 	AFENDA_AUTH_VIEW_PATHS,
+	AUTH_API_BASE_PATH,
 	AUTH_BASE_PATH,
 	AUTH_FORBIDDEN_PATH,
 	AUTH_LOGIN_PATH,
@@ -9,13 +10,17 @@ import {
 	PUBLIC_AUTH_PATHS,
 } from "../src/auth-paths";
 
-describe("Afenda auth paths (I1.2 · I1.4)", () => {
+describe("Afenda auth paths (I1.2 · I1.4 · N5)", () => {
 	it("keeps AUTH_LOGIN_PATH on /auth/login as the gate SSOT", () => {
 		expect(AFENDA_AUTH_VIEW_PATHS.SIGN_IN).toBe("login");
 		expect(AUTH_LOGIN_PATH).toBe("/auth/login");
 		expect(`${AUTH_BASE_PATH}/${AFENDA_AUTH_VIEW_PATHS.SIGN_IN}`).toBe(
 			AUTH_LOGIN_PATH,
 		);
+	});
+
+	it("keeps AUTH_API_BASE_PATH on /api/auth as the BFF SSOT", () => {
+		expect(AUTH_API_BASE_PATH).toBe("/api/auth");
 	});
 
 	it("keeps AUTH_FORBIDDEN_PATH on /403 for wrong-role shells", () => {
