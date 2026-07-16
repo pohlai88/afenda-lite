@@ -16,6 +16,10 @@ import {
 	Collapsible,
 	CollapsibleContent,
 	CollapsibleTrigger,
+	ContextMenu,
+	ContextMenuContent,
+	ContextMenuItem,
+	ContextMenuTrigger,
 	Combobox,
 	Progress,
 	DataTable,
@@ -870,5 +874,23 @@ describe("WCAG 2.2 AA — Accessible Names and Descriptions", () => {
 		expect(screen.getByLabelText("Username")).toBeInTheDocument();
 		expect(screen.getByText("@")).toBeInTheDocument();
 		expect(screen.getAllByRole("group").length).toBeGreaterThanOrEqual(1);
+	});
+
+	it("ContextMenu opens on right click with accessible menu items", async () => {
+		const user = userEvent.setup();
+
+		render(
+			<ContextMenu>
+				<ContextMenuTrigger>Right click me</ContextMenuTrigger>
+				<ContextMenuContent>
+					<ContextMenuItem>Edit</ContextMenuItem>
+					<ContextMenuItem>Delete</ContextMenuItem>
+				</ContextMenuContent>
+			</ContextMenu>,
+		);
+
+		const trigger = screen.getByText("Right click me");
+		await user.pointer({ keys: "[MouseRight>]", target: trigger });
+		expect(await screen.findByRole("menuitem", { name: "Edit" })).toBeInTheDocument();
 	});
 });
