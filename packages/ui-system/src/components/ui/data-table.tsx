@@ -54,8 +54,6 @@ export interface DataTableProps<T> {
 	selectable?: boolean;
 	selectedRowIds?: Set<string>;
 	onSelectionChange?: (selectedRowIds: Set<string>) => void;
-	/** @deprecated Prefer selectedRowIds + getRowId */
-	selectedRows?: Set<number>;
 	rowActions?: (row: T, index: number) => React.ReactNode;
 	toolbar?: React.ReactNode;
 	filters?: Partial<Record<keyof T, string>>;
@@ -97,7 +95,6 @@ function DataTable<T extends Record<string, unknown>>({
 	selectable = false,
 	selectedRowIds,
 	onSelectionChange,
-	selectedRows,
 	rowActions,
 	toolbar,
 	filters,
@@ -105,14 +102,7 @@ function DataTable<T extends Record<string, unknown>>({
 	density = "comfortable",
 	className,
 }: DataTableProps<T>) {
-	const resolvedSelected =
-		selectedRowIds ??
-		new Set(
-			[...(selectedRows ?? [])].flatMap((index) => {
-				const row = data[index];
-				return row ? [getRowId(row, index)] : [];
-			}),
-		);
+	const resolvedSelected = selectedRowIds ?? new Set<string>();
 
 	const handleSort = (columnKey: keyof T) => {
 		if (!onSort) return;
