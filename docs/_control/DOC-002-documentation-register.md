@@ -113,7 +113,7 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 | ARCH-024     | Architecture | Package Boundaries                         | 1.6.0   | Living | Platform | 2026-07-16 |
 | ARCH-025     | Architecture | Data Layer                                 | 1.3.1   | Living | Backend  | 2026-07-15 |
 | ARCH-026     | Architecture | Authentication and Session Model           | 1.3.10  | Living | Platform | 2026-07-15 |
-| ARCH-027     | Architecture | Environment Variable Model                 | 1.6.3   | Living | Platform | 2026-07-15 |
+| ARCH-027     | Architecture | Environment Variable Model                 | 1.6.4   | Living | Platform | 2026-07-16 |
 | ARCH-028     | Architecture | Turborepo Implementation Slices            | 1.5.3   | Living | Platform | 2026-07-15 |
 | ARCH-001     | Architecture | Backend Architecture                       | 1.2.0   | Living | Backend  | 2026-07-14 |
 | ARCH-002     | Architecture | Frontend Architecture                      | 1.3.4   | Living | Frontend | 2026-07-15 |
@@ -128,7 +128,7 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 | ARCH-008     | Architecture | Next.js Adapter Map                        | 1.3.0   | Living | Backend  | 2026-07-14 |
 | ARCH-009     | Architecture | Modules Ownership Map                      | 1.1.4   | Living | Backend  | 2026-07-15 |
 | ARCH-010     | Architecture | Backend Conventions                        | 1.3.0   | Living | Backend  | 2026-07-14 |
-| ARCH-012     | Architecture | App Router Routes                          | 1.2.7   | Living | Frontend | 2026-07-15 |
+| ARCH-012     | Architecture | App Router Routes                          | 1.2.8   | Living | Frontend | 2026-07-16 |
 | ARCH-013     | Architecture | BFF and Data Flow                          | 1.1.3   | Living | Frontend | 2026-07-14 |
 | ARCH-014     | Architecture | UI Surfaces                                | 2.0.0   | Superseded | Frontend | 2026-07-14 |
 | ARCH-015     | Architecture | Shadcn Studio / AdminCN Alignment          | 2.0.4   | Living | Frontend | 2026-07-16 |
