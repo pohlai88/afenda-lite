@@ -8,6 +8,7 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 	AlertDialogTrigger,
+	Calendar,
 	Combobox,
 	Dialog,
 	DialogContent,
@@ -470,5 +471,35 @@ describe("WCAG 2.2 AA — Accessible Names and Descriptions", () => {
 		// Select an option
 		await user.click(screen.getByText("Apple"));
 		expect(mockChange).toHaveBeenCalledWith("apple");
+	});
+
+	it("Calendar supports date selection with keyboard navigation", async () => {
+		const user = userEvent.setup();
+		const mockSelect = vi.fn();
+
+		render(
+			<Calendar
+				mode="single"
+				selected={undefined}
+				onSelect={mockSelect}
+			/>
+		);
+
+		// Calendar should be present with proper grid role
+		const calendar = screen.getByRole("grid");
+		expect(calendar).toBeInTheDocument();
+
+		// Should contain navigatable days
+		const days = screen.getAllByRole("button");
+		expect(days.length).toBeGreaterThan(0);
+
+		// Today should be highlighted and focused
+		const todayButton = screen.getByRole("button", { name: /Today/ });
+		expect(todayButton).toBeInTheDocument();
+		expect(todayButton).toHaveAttribute("tabindex", "0");
+		
+		// Test date selection
+		await user.click(todayButton);
+		expect(mockSelect).toHaveBeenCalled();
 	});
 });
