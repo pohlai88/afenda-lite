@@ -121,6 +121,7 @@ function Combobox(props: ComboboxProps) {
 					type="button"
 					variant="outline"
 					role="combobox"
+					aria-label={triggerLabel}
 					aria-expanded={open}
 					aria-haspopup="listbox"
 					aria-multiselectable={multiple || undefined}

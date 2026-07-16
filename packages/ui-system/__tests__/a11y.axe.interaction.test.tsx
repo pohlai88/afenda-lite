@@ -9,14 +9,29 @@ import {
 	AlertDialogTitle,
 	AlertDialogTrigger,
 	Button,
+	Combobox,
+	DataTable,
+	DatePicker,
 	Dialog,
 	DialogContent,
 	DialogDescription,
 	DialogHeader,
 	DialogTitle,
 	DialogTrigger,
+	FormError,
 	FormField,
 	Input,
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+	Sheet,
+	SheetContent,
+	SheetDescription,
+	SheetHeader,
+	SheetTitle,
+	SheetTrigger,
 } from "@afenda/ui-system";
 import { render } from "@testing-library/react";
 import axe from "axe-core";
@@ -78,6 +93,23 @@ describe("@afenda/ui-system — axe a11y suite", () => {
 		await expectNoA11yViolations(container);
 	});
 
+	it("Sheet trigger tree has no serious violations", async () => {
+		const { container } = render(
+			<Sheet>
+				<SheetTrigger asChild>
+					<Button type="button">Open filters</Button>
+				</SheetTrigger>
+				<SheetContent>
+					<SheetHeader>
+						<SheetTitle>Filters</SheetTitle>
+						<SheetDescription>Narrow the result set.</SheetDescription>
+					</SheetHeader>
+				</SheetContent>
+			</Sheet>,
+		);
+		await expectNoA11yViolations(container);
+	});
+
 	it("FormField with Input has no serious violations", async () => {
 		const { container } = render(
 			<FormField
@@ -88,6 +120,68 @@ describe("@afenda/ui-system — axe a11y suite", () => {
 			>
 				<Input type="email" defaultValue="" />
 			</FormField>,
+		);
+		await expectNoA11yViolations(container);
+	});
+
+	it("FormError variants have no serious violations", async () => {
+		const { container } = render(
+			<div>
+				<FormError message="Email is required" />
+				<FormError variant="warning" message="Password should be stronger" />
+				<FormError variant="info" message="Check your connection" />
+			</div>,
+		);
+		await expectNoA11yViolations(container);
+	});
+
+	it("Select trigger tree has no serious violations", async () => {
+		const { container } = render(
+			<Select>
+				<SelectTrigger aria-label="Status">
+					<SelectValue placeholder="Status" />
+				</SelectTrigger>
+				<SelectContent>
+					<SelectItem value="open">Open</SelectItem>
+					<SelectItem value="closed">Closed</SelectItem>
+				</SelectContent>
+			</Select>,
+		);
+		await expectNoA11yViolations(container);
+	});
+
+	it("Combobox closed tree has no serious violations", async () => {
+		const { container } = render(
+			<Combobox
+				options={[
+					{ value: "a", label: "Alpha" },
+					{ value: "b", label: "Beta" },
+				]}
+				value=""
+				onValueChange={() => undefined}
+				placeholder="Pick one"
+			/>,
+		);
+		await expectNoA11yViolations(container);
+	});
+
+	it("DatePicker closed tree has no serious violations", async () => {
+		const { container } = render(
+			<DatePicker placeholder="Pick a date" onChange={() => undefined} />,
+		);
+		await expectNoA11yViolations(container);
+	});
+
+	it("DataTable with selection has no serious violations", async () => {
+		const { container } = render(
+			<DataTable
+				columns={[{ key: "name", title: "Name" }]}
+				data={[{ name: "Row 1" }, { name: "Row 2" }]}
+				getRowId={(row) => String(row.name)}
+				selectable
+				selectedRowIds={new Set(["Row 1"])}
+				onSelectionChange={() => undefined}
+			/>,
 		);
 		await expectNoA11yViolations(container);
 	});
