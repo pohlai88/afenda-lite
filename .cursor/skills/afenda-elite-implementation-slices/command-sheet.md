@@ -104,11 +104,11 @@ Update GUIDE-018 evidence for I1.1. STOP. No commit unless asked.
 PHASE_ID: I1.2
 
 Implement GUIDE-018 I1.2 only.
-Authority: GUIDE-018 Phase I1 + ARCH-026 · Neon Auth (shared provider only).
+Authority: GUIDE-018 Phase I1 + ARCH-026 · Neon Auth (Zoho SMTP via Neon Auth console; no app-side SMTP).
 LOAD: afenda-elite-nextjs-best-practice · neon-tenancy-efficiency · afenda-elite-frontend-scaffold.
 Acceptance: public /auth/login · forgot-password · reset-password via Neon Auth UI forms.
 Guardian: Frontend + Security.
-Verify: routes render; no custom SMTP; package/session helpers stay in @afenda/auth.
+Verify: routes render; no app-side SMTP; Neon Auth Zoho SMTP delivery; package/session helpers stay in @afenda/auth.
 Update GUIDE-018 evidence. STOP.
 ```
 

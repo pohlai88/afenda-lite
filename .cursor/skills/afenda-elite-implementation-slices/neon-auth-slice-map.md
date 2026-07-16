@@ -35,7 +35,7 @@ Reuse [slice-map.md](slice-map.md) § Farm short names. Additional:
 | **N5** | Auth BFF + browser client | Ops | router → slices → nextjs → neon → neon-vendor | ARCH-026 | auth package tests · `/api/auth` path · web typecheck | APPROVED | 100% | independent audit 2026-07-17 |
 | **N6** | Session contract | Ops | router → slices → nextjs → neon | ARCH-026 · ARCH-023 | session helpers · proxy gate tests · fail-closed | APPROVED | 100% | independent audit 2026-07-17 |
 | **N7** | Post-login routing | Ops | router → slices → nextjs → neon → scaffold | ARCH-026 | role home redirect · safe callback · signed-in `/` bounce · web build · browser proof | APPROVED | 100% | independent audit 2026-07-17 |
-| **N8** | Organization membership | Ops | router → slices → nextjs → neon → modules | ARCH-026 · ARCH-023 | invite/join path · Origin=`APP_URL` · tests | UNEVALUATED | — | — |
+| **N8** | Organization membership | Ops | router → slices → nextjs → neon → modules | ARCH-026 · ARCH-023 | invite/join path · Origin=`APP_URL` · tests | APPROVED | 100% | independent audit 2026-07-17 · Path-to-100% closed (ARCH-026 2.0.0 Zoho SMTP lock) |
 | **N9** | Hard tenancy enforcement | Ops | router → slices → neon → modules | ARCH-023 | org predicate audits · isolation tests | UNEVALUATED | — | — |
 | **N10** | Permission kernel | Ops | router → slices → neon → modules → api | ARCH-023 | permission codes · hasPermission surface | UNEVALUATED | — | — |
 | **N11** | Product authorization wiring | Ops | router → slices → modules → neon → readiness | ARCH-023 · GUIDE-018 I3.1 | product ports use permissions beyond coarse role | UNEVALUATED | — | — |
@@ -55,7 +55,7 @@ N1 → N2 → N3 → N4 → N5 → N6 → N7 → N8 → N9 → N10 → N11 → N
 
 Skip only with explicit user waiver **this turn**. One `N*` per chat. Do not start next until auditor APPROVED (or human waiver).
 
-**Program pointer:** last APPROVED = **N7** (independent audit 2026-07-17). Wave-0 **N4** closed APPROVED 100% (independent audit + Path-to-100% 2026-07-17). Next = **N8** — authorize only after human auth in a fresh mission chat; do **not** sneak-start here. (N5–N7 closed under explicit human mission auth ahead of N4.)
+**Program pointer:** last APPROVED = **N8** (independent audit 2026-07-17). Wave-0 **N4** closed APPROVED 100% (independent audit + Path-to-100% 2026-07-17). Next = **N9** — authorize only after human auth in a fresh mission chat; do **not** sneak-start here.
 
 ## Related I* (load hints only — not APPROVED transfer)
 

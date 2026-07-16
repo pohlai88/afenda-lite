@@ -4,11 +4,11 @@
 | ----------------- | ------------ |
 | **ID**            | ARCH-031     |
 | **Category**      | Architecture |
-| **Version**       | 1.3.17       |
+| **Version**       | 1.4.0        |
 | **Status**        | Living       |
 | **Control State** | Closed       |
 | **Owner**         | Platform     |
-| **Updated**       | 2026-07-16   |
+| **Updated**       | 2026-07-17   |
 
 ---
 
@@ -154,8 +154,9 @@ Validator exclusions: external HTTP availability and code-to-document runtime dr
 | Capability | Technology / choice | Lifecycle posture | Implementation evidence | Owning authority | Constraint / migration note |
 | ---------- | ------------------- | ----------------- | ----------------------- | ---------------- | --------------------------- |
 | Internationalization | `next-intl`; FFT vi/en engine strings | Manifest-only platform dependency; FFT capability is Living | Manifest only; product source absent | [FFT-MOD-003](../modules/feed-farm-trade/FFT-MOD-003-tech-stack.md), [FFT-MOD-006](../modules/feed-farm-trade/FFT-MOD-006-surfaces-and-routes.md) | FFT routes remain locale-free; strings do not authorize a locale URL tree. |
-| Conditional notifications | Resend for app-level FFT mail | Conditional / program-gated | Manifest only; feature flags documented; source absent | [FFT-MOD-003](../modules/feed-farm-trade/FFT-MOD-003-tech-stack.md), [FFT-MOD-008](../modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md) | Not a replacement for Neon Auth shared-provider email. |
-| Target app-owned email templates | React Email in `@afenda/emails` | Target (S6.1 shipped) | Present — [`packages/emails`](../../packages/emails), `react-email` in package manifest; `email:dev` on :3001 | [ARCH-022](ARCH-022-system-overview.md), [ARCH-026](ARCH-026-auth-session.md) | Neon Auth continues to own its own transactional messages; templates compose for app-owned mail only. |
+| Conditional notifications | Resend for app-level FFT mail | Conditional / program-gated | Manifest only; feature flags documented; source absent | [FFT-MOD-003](../modules/feed-farm-trade/FFT-MOD-003-tech-stack.md), [FFT-MOD-008](../modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md) | Not a replacement for Neon Auth Zoho SMTP transactional mail. |
+| Neon Auth transactional mail | Zoho SMTP via Neon Auth console (`smtp.zoho.com` · sender `no-reply@nexuscanon.com`) | Current / Living | Neon Auth `email_provider` on production branch | [ARCH-026](ARCH-026-auth-session.md), [AGENTS.md](../../AGENTS.md) | Secrets in Neon Console only; no app-side SMTP for invite/reset/verify. |
+| Target app-owned email templates | React Email in `@afenda/emails` | Target (S6.1 shipped) | Present — [`packages/emails`](../../packages/emails), `react-email` in package manifest; `email:dev` on :3001 | [ARCH-022](ARCH-022-system-overview.md), [ARCH-026](ARCH-026-auth-session.md) | Neon Auth owns invite/reset/verify delivery (Zoho); templates compose for app-owned mail only. |
 | Import/export support | Papa Parse and SheetJS (`xlsx`) | Manifest-only | Manifest only — [`package.json`](../../package.json) | [FFT-MOD-007](../modules/feed-farm-trade/FFT-MOD-007-api-and-adapters.md), [FFT-MOD-010](../modules/feed-farm-trade/FFT-MOD-010-module-docs-index.md) | Capability docs do not prove either library is wired into product source. |
 | ERP integration | Tenant-selected HTTP adapter behind `FFT_ERP_SYNC_ENABLED` | Conditional / program-gated | Documented configuration; implementation not verifiable | [FFT-MOD-003](../modules/feed-farm-trade/FFT-MOD-003-tech-stack.md), [FFT-MOD-008](../modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md) | No platform-wide Afenda ERP client; vendor/base URL stay tenant-owned optional config. |
 
@@ -168,7 +169,8 @@ Validator exclusions: external HTTP availability and code-to-document runtime dr
 | GraphQL or tRPC beside the REST/port model | Rejected | [ARCH-022](ARCH-022-system-overview.md) | Do not create a second contract version. |
 | Prisma, Kysely, TypeORM, or MikroORM for the Target data layer | Rejected | [ARCH-025](ARCH-025-data-layer.md) | Drizzle is the approved Target ORM. |
 | Auth.js, Clerk, custom JWT, or Supabase Auth | Rejected | [ARCH-026](ARCH-026-auth-session.md) | Neon Auth remains the identity provider. |
-| Custom SMTP for Neon Auth | Rejected | [ARCH-026](ARCH-026-auth-session.md) | Use Neon's shared provider for Neon Auth transactional mail. |
+| Neon shared mail provider for Neon Auth | Rejected | [ARCH-026](ARCH-026-auth-session.md) | Production Neon Auth mail uses **Zoho SMTP** via Neon Auth console. |
+| App-side SMTP for Neon Auth invite/reset/verify | Rejected | [ARCH-026](ARCH-026-auth-session.md) | Delivery stays on Neon Auth `email_provider` (Zoho); no `NEON_AUTH_SMTP_*` in app env. |
 | Storybook restoration | Retired | [ARCH-017](ARCH-017-frontend-folder-map.md) | Storybook was removed; do not recreate it without an explicit decision. |
 | RLS/Data API as the default BFF tenancy fix | Rejected | [ARCH-023](ARCH-023-multi-tenancy.md) | Current isolation uses hard app predicates. |
 | Schema-per-tenant or project-per-tenant as the product default | Rejected | [ARCH-023](ARCH-023-multi-tenancy.md) | Shared schema and one Neon project are accepted constraints. |
@@ -221,6 +223,7 @@ ARCH-031 shall link to the changed authority rather than duplicate its detailed 
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 1.4.0 | 2026-07-17 | Neon Auth mail lock: Zoho SMTP via Neon Auth console (align ARCH-026 2.0.0); Neon shared provider + app-side SMTP for Neon Auth flows rejected. |
 | 1.3.17 | 2026-07-16 | UI stack repointed to `@afenda/ui-system` per [ADR-010](adr/ADR-010-afenda-ui-system-flat-barrel.md): component foundation shadcn **new-york** / Radix (unified `radix-ui`, lucide, no external registries), flat barrel + `styles.css` public door, app-owned Tailwind compilation; `@afenda/ui` / `packages/design-system` and base-vega retired. |
 | 1.3.16 | 2026-07-15 | Doc-vs-code audit gap close: § 3.2 source ledger "UI tooling" row still cited `packages/ui/components.json` as current evidence after the same-day name-collision consolidation — updated to `packages/design-system/components.json`. |
 | 1.3.15 | 2026-07-15 | Fixed two broken links in § 3.4 (`apps/web/styles/globals.css` → `apps/web/globals.css`; `packages/ui` → `packages/design-system`, the canonical `@afenda/ui` package after the name-collision resolution). |

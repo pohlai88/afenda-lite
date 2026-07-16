@@ -30,7 +30,7 @@ vi.mock("next/headers", () => ({
 
 vi.mock("@neondatabase/auth/next/server", () => ({
 	createNeonAuth: () => ({
-		getSession: () => getSessionMock(),
+		getSession: (...args: unknown[]) => getSessionMock(...args),
 		organization: {
 			getActiveMemberRole: (...args: unknown[]) =>
 				getActiveMemberRoleMock(...args),
@@ -255,6 +255,22 @@ describe("N6/N8 session contract", () => {
 			await expect(getAuthBootstrap()).resolves.toEqual({ state: "anonymous" });
 			expect(setActiveOrganizationMock).not.toHaveBeenCalled();
 		});
+
+		it("returns sync_cookies when Neon getSession attempts RSC cookie writes", async () => {
+			getSessionMock.mockRejectedValue(
+				new Error(
+					"Cookies can only be modified in a Server Action or Route Handler. Read more: https://nextjs.org/docs",
+				),
+			);
+			const { getAuthBootstrap } = await import("../src/session");
+			const { SYNC_SESSION_COOKIES_PATH } = await import(
+				"../src/sync-session-cookies"
+			);
+			await expect(getAuthBootstrap("/")).resolves.toEqual({
+				state: "sync_cookies",
+				url: `${SYNC_SESSION_COOKIES_PATH}?next=${encodeURIComponent("/")}`,
+			});
+		});
 	});
 
 	describe("getSession", () => {
@@ -311,6 +327,21 @@ describe("N6/N8 session contract", () => {
 			expect(setActiveOrganizationMock).not.toHaveBeenCalled();
 		});
 
+		it("redirects to the sync Route Handler when cookie mutation is blocked in RSC", async () => {
+			getSessionMock.mockRejectedValue(
+				new Error(
+					"Cookies can only be modified in a Server Action or Route Handler",
+				),
+			);
+			const { getSession } = await import("../src/session");
+			const { SYNC_SESSION_COOKIES_PATH } = await import(
+				"../src/sync-session-cookies"
+			);
+			await expect(getSession()).rejects.toThrow(
+				`NEXT_REDIRECT:${SYNC_SESSION_COOKIES_PATH}`,
+			);
+		});
+
 		it("throws when email is missing", async () => {
 			getSessionMock.mockResolvedValue(neonSession({ email: null }));
 			const { getSession } = await import("../src/session");
@@ -334,11 +365,9 @@ describe("N6/N8 session contract", () => {
 
 	describe("handleEnsureActiveOrganizationRequest", () => {
 		it("persists a sole member organization then redirects to role home", async () => {
-			getSessionMock
-				.mockResolvedValueOnce(neonSession({ activeOrganizationId: null }))
-				.mockResolvedValueOnce(
-					neonSession({ activeOrganizationId: "org-sole" }),
-				);
+			getSessionMock.mockResolvedValue(
+				neonSession({ activeOrganizationId: null }),
+			);
 			listOrganizationsMock.mockResolvedValue({
 				data: [{ id: "org-sole", slug: "sole-org", name: "Sole Org" }],
 				error: null,
@@ -360,6 +389,11 @@ describe("N6/N8 session contract", () => {
 			expect(setActiveOrganizationMock).toHaveBeenCalledWith({
 				organizationId: "org-sole",
 			});
+			// Upstream reads only (disableCookieCache) — never trust inbound session_data.
+			expect(getSessionMock).toHaveBeenCalledWith({
+				query: { disableCookieCache: "true" },
+			});
+			expect(getSessionMock).toHaveBeenCalledTimes(2);
 			expect(response.status).toBeGreaterThanOrEqual(300);
 			expect(response.status).toBeLessThan(400);
 			expect(new URL(String(response.headers.get("location"))).pathname).toBe(
@@ -368,11 +402,9 @@ describe("N6/N8 session contract", () => {
 		});
 
 		it("honors a safe next callback after persist", async () => {
-			getSessionMock
-				.mockResolvedValueOnce(neonSession({ activeOrganizationId: null }))
-				.mockResolvedValueOnce(
-					neonSession({ activeOrganizationId: "org-sole" }),
-				);
+			getSessionMock.mockResolvedValue(
+				neonSession({ activeOrganizationId: null }),
+			);
 			listOrganizationsMock.mockResolvedValue({
 				data: [{ id: "org-sole", slug: "sole-org", name: "Sole Org" }],
 				error: null,
@@ -389,6 +421,72 @@ describe("N6/N8 session contract", () => {
 
 			expect(new URL(String(response.headers.get("location"))).pathname).toBe(
 				"/fft",
+			);
+		});
+
+		it("skips setActive when upstream session already has active org", async () => {
+			getSessionMock.mockResolvedValue(neonSession());
+			getActiveMemberRoleMock.mockResolvedValue({
+				data: { role: "admin" },
+				error: null,
+			});
+
+			const { handleEnsureActiveOrganizationRequest } = await import(
+				"../src/ensure-active-organization"
+			);
+			const response = await handleEnsureActiveOrganizationRequest(
+				new Request(
+					"https://afenda-lite.vercel.app/api/session/ensure-active-organization?next=%2F",
+				),
+			);
+
+			expect(setActiveOrganizationMock).not.toHaveBeenCalled();
+			expect(getSessionMock).toHaveBeenCalledWith({
+				query: { disableCookieCache: "true" },
+			});
+			expect(new URL(String(response.headers.get("location"))).pathname).toBe(
+				"/",
+			);
+		});
+	});
+
+	describe("handleSyncSessionCookiesRequest", () => {
+		it("forces disableCookieCache then redirects to next when authenticated", async () => {
+			getSessionMock.mockResolvedValue(neonSession());
+			const { handleSyncSessionCookiesRequest } = await import(
+				"../src/sync-session-cookies"
+			);
+			const response = await handleSyncSessionCookiesRequest(
+				new Request(
+					"https://afenda-lite.vercel.app/api/session/sync-cookies?next=%2Fadmin",
+				),
+			);
+
+			expect(getSessionMock).toHaveBeenCalledWith({
+				query: { disableCookieCache: "true" },
+			});
+			expect(response.status).toBeGreaterThanOrEqual(300);
+			expect(response.status).toBeLessThan(400);
+			expect(new URL(String(response.headers.get("location"))).pathname).toBe(
+				"/admin",
+			);
+		});
+
+		it("redirects to login when session is absent", async () => {
+			getSessionMock.mockResolvedValue({
+				data: null,
+				error: { message: "no session" },
+			});
+			const { handleSyncSessionCookiesRequest } = await import(
+				"../src/sync-session-cookies"
+			);
+			const { AUTH_LOGIN_PATH } = await import("../src/auth-paths");
+			const response = await handleSyncSessionCookiesRequest(
+				new Request("https://afenda-lite.vercel.app/api/session/sync-cookies"),
+			);
+
+			expect(new URL(String(response.headers.get("location"))).pathname).toBe(
+				AUTH_LOGIN_PATH,
 			);
 		});
 	});

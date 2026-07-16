@@ -1,6 +1,16 @@
 "use client";
 
 import {
+	Alert,
+	AlertDescription,
+	AlertDialog,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+	AlertTitle,
 	Badge,
 	Button,
 	Card,
@@ -15,22 +25,35 @@ import {
 	DialogDescription,
 	DialogHeader,
 	DialogTitle,
-	DialogTrigger,
+	FormError,
 	KeyValueList,
+	Spinner,
 	StatusBadge,
 } from "@afenda/ui-system";
-import * as React from "react";
+import { useActionState, useEffect, useMemo, useState } from "react";
 
+import {
+	type RevokeOrgRoleActionState,
+	revokeOrgRoleAction,
+} from "@/app/actions/revoke-org-role";
+import { AssignOrgRoleForm } from "@/features/org-admin/assign-org-role-form";
+
+/**
+ * Org-admin panels — DataTable + CAPABLE assign/revoke (GUIDE-018 I3.1 ·
+ * ADR-010 · UI-CAP-07). Audit View Dialog remains CAPABLE read detail.
+ */
 export type OrgRoleRow = {
 	id: string;
 	name: string;
 	active: boolean;
+	isSystemTemplate: boolean;
 };
 
 export type OrgAssignmentRow = {
 	id: string;
 	userId: string;
 	roleId: string;
+	roleName: string;
 	scopeType: string;
 };
 
@@ -49,6 +72,11 @@ type OrgAdminPanelsProps = {
 const roleColumns: DataTableColumn<OrgRoleRow>[] = [
 	{ key: "name", title: "Role", sortable: true },
 	{
+		key: "isSystemTemplate",
+		title: "Catalog",
+		render: (value) => (value ? "System template" : "Org custom"),
+	},
+	{
 		key: "active",
 		title: "Status",
 		render: (value) => (
@@ -63,7 +91,7 @@ const roleColumns: DataTableColumn<OrgRoleRow>[] = [
 
 const assignmentColumns: DataTableColumn<OrgAssignmentRow>[] = [
 	{ key: "userId", title: "User" },
-	{ key: "roleId", title: "Role ID" },
+	{ key: "roleName", title: "Role", sortable: true },
 	{ key: "scopeType", title: "Scope" },
 ];
 
@@ -76,29 +104,130 @@ const auditColumns: DataTableColumn<OrgAuditRow>[] = [
 	},
 ];
 
+function IdentifierText({ value }: { value: string }) {
+	return (
+		<code className="font-mono text-sm text-foreground-tertiary">{value}</code>
+	);
+}
+
+function eventCountLabel(count: number): string {
+	return count === 1 ? "1 event" : `${count} events`;
+}
+
+const revokeInitialState: RevokeOrgRoleActionState = null;
+
+function RevokeAssignmentDialog({
+	assignment,
+	open,
+	onOpenChange,
+}: {
+	assignment: OrgAssignmentRow | null;
+	open: boolean;
+	onOpenChange: (open: boolean) => void;
+}) {
+	const [state, formAction, pending] = useActionState(
+		revokeOrgRoleAction,
+		revokeInitialState,
+	);
+
+	useEffect(() => {
+		if (state?.ok === true) {
+			onOpenChange(false);
+		}
+	}, [state, onOpenChange]);
+
+	return (
+		<AlertDialog open={open} onOpenChange={onOpenChange}>
+			<AlertDialogContent>
+				{assignment ? (
+					<form action={formAction} className="flex flex-col gap-4">
+						<input type="hidden" name="assignmentId" value={assignment.id} />
+						<AlertDialogHeader>
+							<AlertDialogTitle>Revoke role assignment</AlertDialogTitle>
+							<AlertDialogDescription>
+								Soft-revokes the active assignment for this organization. The
+								audit log keeps the history.
+							</AlertDialogDescription>
+						</AlertDialogHeader>
+						<KeyValueList
+							size="sm"
+							items={[
+								{
+									label: "User",
+									value: <IdentifierText value={assignment.userId} />,
+								},
+								{ label: "Role", value: assignment.roleName },
+								{
+									label: "Assignment",
+									value: <IdentifierText value={assignment.id} />,
+								},
+							]}
+						/>
+						{state?.ok === false ? <FormError message={state.message} /> : null}
+						{state?.ok === true ? (
+							<Alert role="status">
+								<AlertTitle>Assignment revoked</AlertTitle>
+								<AlertDescription>
+									Audit{" "}
+									<code className="font-mono text-sm text-foreground-tertiary">
+										{state.data.auditId}
+									</code>{" "}
+									recorded.
+								</AlertDescription>
+							</Alert>
+						) : null}
+						<AlertDialogFooter>
+							<AlertDialogCancel disabled={pending}>Cancel</AlertDialogCancel>
+							<Button type="submit" variant="destructive" disabled={pending}>
+								{pending ? (
+									<>
+										<Spinner
+											size="sm"
+											label="Revoking assignment"
+											className="text-primary-foreground"
+										/>
+										Revoking…
+									</>
+								) : (
+									"Revoke assignment"
+								)}
+							</Button>
+						</AlertDialogFooter>
+					</form>
+				) : null}
+			</AlertDialogContent>
+		</AlertDialog>
+	);
+}
+
 export function OrgAdminPanels({
 	roles,
 	assignments,
 	auditRows,
 }: OrgAdminPanelsProps) {
-	const [sortBy, setSortBy] = React.useState<keyof OrgRoleRow>("name");
-	const [sortDirection, setSortDirection] = React.useState<"asc" | "desc">(
-		"asc",
-	);
-	const [selectedAudit, setSelectedAudit] = React.useState<OrgAuditRow | null>(
+	const [sortBy, setSortBy] = useState<keyof OrgRoleRow>("name");
+	const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+	const [selectedAudit, setSelectedAudit] = useState<OrgAuditRow | null>(null);
+	const [revokeTarget, setRevokeTarget] = useState<OrgAssignmentRow | null>(
 		null,
 	);
 
-	const sortedRoles = React.useMemo(() => {
-		const copy = [...roles];
-		copy.sort((a, b) => {
+	const sortedRoles = useMemo(() => {
+		const next = [...roles];
+		next.sort((a, b) => {
 			const left = String(a[sortBy] ?? "");
 			const right = String(b[sortBy] ?? "");
 			const cmp = left.localeCompare(right);
 			return sortDirection === "asc" ? cmp : -cmp;
 		});
-		return copy;
+		return next;
 	}, [roles, sortBy, sortDirection]);
+
+	const assignableRoleOptions = useMemo(
+		() =>
+			roles.filter((role) => role.active).map(({ id, name }) => ({ id, name })),
+		[roles],
+	);
 
 	return (
 		<div className="flex flex-col gap-(--section-gap)">
@@ -106,7 +235,8 @@ export function OrgAdminPanels({
 				<CardHeader>
 					<CardTitle>Roles</CardTitle>
 					<CardDescription>
-						Org-scoped membership roles ({roles.length}).
+						Assignable platform roles for this organization ({roles.length}):
+						system templates and org-custom roles.
 					</CardDescription>
 				</CardHeader>
 				<CardContent>
@@ -120,8 +250,8 @@ export function OrgAdminPanels({
 							setSortBy(key);
 							setSortDirection(direction);
 						}}
-						emptyTitle="No org roles yet"
-						emptyDescription="Roles appear here after platform seeding."
+						emptyTitle="No assignable roles"
+						emptyDescription="System templates or org-scoped roles appear here when seeded."
 						density="comfortable"
 					/>
 				</CardContent>
@@ -134,14 +264,28 @@ export function OrgAdminPanels({
 						Active assignments for this organization ({assignments.length}).
 					</CardDescription>
 				</CardHeader>
-				<CardContent>
+				<CardContent className="space-y-6">
+					<div className="space-y-3">
+						<h3 className="text-sm font-medium tracking-tight">Assign role</h3>
+						<AssignOrgRoleForm roles={assignableRoleOptions} />
+					</div>
 					<DataTable
 						columns={assignmentColumns}
 						data={assignments}
 						getRowId={(row) => row.id}
 						emptyTitle="No role assignments yet"
-						emptyDescription="Invite a member to create the first assignment."
-						density="compact"
+						emptyDescription="Assign a platform role to a Neon Auth user id."
+						density="comfortable"
+						rowActions={(row) => (
+							<Button
+								type="button"
+								variant="outline"
+								size="sm"
+								onClick={() => setRevokeTarget(row)}
+							>
+								Revoke
+							</Button>
+						)}
 					/>
 				</CardContent>
 			</Card>
@@ -154,7 +298,7 @@ export function OrgAdminPanels({
 							Recent org-scoped audit events ({auditRows.length}).
 						</CardDescription>
 					</div>
-					<Badge variant="secondary">{auditRows.length} events</Badge>
+					<Badge variant="secondary">{eventCountLabel(auditRows.length)}</Badge>
 				</CardHeader>
 				<CardContent className="space-y-3">
 					<DataTable
@@ -163,51 +307,66 @@ export function OrgAdminPanels({
 						getRowId={(row) => row.id}
 						emptyTitle="No audit rows yet"
 						emptyDescription="Invites and role changes write audit entries here."
-						density="compact"
+						density="comfortable"
 						rowActions={(row) => (
-							<Dialog
-								open={selectedAudit?.id === row.id}
-								onOpenChange={(open) => setSelectedAudit(open ? row : null)}
+							<Button
+								type="button"
+								variant="outline"
+								size="sm"
+								onClick={() => setSelectedAudit(row)}
 							>
-								<DialogTrigger asChild>
-									<Button
-										type="button"
-										variant="outline"
-										size="sm"
-										onClick={() => setSelectedAudit(row)}
-									>
-										View
-									</Button>
-								</DialogTrigger>
-								<DialogContent>
-									<DialogHeader>
-										<DialogTitle>Audit event</DialogTitle>
-										<DialogDescription>
-											Org-scoped RBAC audit detail.
-										</DialogDescription>
-									</DialogHeader>
-									<KeyValueList
-										size="sm"
-										items={[
-											{ label: "Action", value: row.action },
-											{
-												label: "Target",
-												value: row.targetType ?? "—",
-											},
-											{
-												label: "Event ID",
-												value: (
-													<code className="font-mono text-sm">{row.id}</code>
-												),
-											},
-										]}
-									/>
-								</DialogContent>
-							</Dialog>
+								View
+							</Button>
 						)}
 					/>
+					<Dialog
+						open={selectedAudit !== null}
+						onOpenChange={(open) => {
+							if (!open) {
+								setSelectedAudit(null);
+							}
+						}}
+					>
+						<DialogContent>
+							<DialogHeader>
+								<DialogTitle>Audit event</DialogTitle>
+								<DialogDescription>
+									Org-scoped RBAC audit detail.
+								</DialogDescription>
+							</DialogHeader>
+							{selectedAudit ? (
+								<KeyValueList
+									size="sm"
+									items={[
+										{ label: "Action", value: selectedAudit.action },
+										{
+											label: "Target",
+											value: selectedAudit.targetType ?? "—",
+										},
+										{
+											label: "Event ID",
+											value: <IdentifierText value={selectedAudit.id} />,
+										},
+									]}
+								/>
+							) : null}
+						</DialogContent>
+					</Dialog>
 				</CardContent>
 			</Card>
+
+			{revokeTarget ? (
+				<RevokeAssignmentDialog
+					key={revokeTarget.id}
+					assignment={revokeTarget}
+					open
+					onOpenChange={(open) => {
+						if (!open) {
+							setRevokeTarget(null);
+						}
+					}}
+				/>
+			) : null}
 		</div>
 	);
 }

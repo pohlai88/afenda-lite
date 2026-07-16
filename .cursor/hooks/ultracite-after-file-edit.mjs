@@ -46,6 +46,19 @@ if (!ALLOWED_EXT.has(ext)) {
   process.exit(0);
 }
 
+// Stay aligned with biome.jsonc force-ignores (product CI surface only).
+const normalized = filePath.replaceAll("\\", "/");
+const skippedSegment =
+  normalized.includes("/.cursor/") ||
+  normalized.includes("/.agents/") ||
+  normalized.includes("/_reference/") ||
+  normalized.includes("/public/") ||
+  normalized.endsWith("/next-env.d.ts") ||
+  normalized.endsWith("next-env.d.ts");
+if (skippedSegment) {
+  process.exit(0);
+}
+
 const ultraciteCli = path.join(
   root,
   "node_modules",

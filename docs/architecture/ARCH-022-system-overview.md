@@ -4,13 +4,13 @@
 |-------|-------|
 | ID | ARCH-022 |
 | Category | Architecture |
-| Version | 1.6.9 |
+| Version | 1.6.10 |
 | Status | Living |
 | Control State | Closed |
 | Owner | Platform |
-| Updated | 2026-07-16 |
+| Updated | 2026-07-17 |
 
-> **Living.** Turborepo system SSOT after ARCH-028 Checkpoint G (2026-07-15). On disk: `@afenda/config|db|auth|env|ui|emails` + `apps/web` route groups + `apps/web/proxy.ts` edge session gate + public Neon Auth UI `/auth/*` + `/join` + `apps/web/modules/{platform,identity,declarations,fft}` domain ports + `apps/web/features/{auth,declarations,fft,org-admin}` + CI/Deploy. Post-scaffold program order: [GUIDE-018](../guides/GUIDE-018-fullstack-e2e-integration-program.md) (Phase I2 DONE; next Ops: **I3.1** — Identity / Platform deepen).
+> **Living.** Turborepo system SSOT after ARCH-028 Checkpoint G (2026-07-15). On disk: `@afenda/config|db|auth|env|ui|emails` + `apps/web` route groups + `apps/web/proxy.ts` edge session gate + public Neon Auth UI `/auth/*` + `/join` + `apps/web/modules/{platform,identity,declarations,fft}` domain ports + `apps/web/features/{auth,declarations,fft,org-admin}` + CI/Deploy. Post-scaffold program order: [GUIDE-018](../guides/GUIDE-018-fullstack-e2e-integration-program.md) (Phase I3.1 DONE; next Ops: **I3.2** — Declarations submit/read).
 
 # 1. Purpose
 
@@ -267,6 +267,7 @@ Next.js App Router (apps/web)
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.6.10 | 2026-07-17 | Bounded reopen (I3.1 audit repair): next-pointer honesty — I3.1 done; residual = I3.2. |
 | 1.6.9 | 2026-07-16 | Package boundary + stack rows repointed to `@afenda/ui-system` (`packages/ui-system`) per [ADR-010](adr/ADR-010-afenda-ui-system-flat-barrel.md); retired `@afenda/ui` / `packages/design-system` / `@afenda/ui/playground` gateway references and dead `#afendaui` anchor removed. |
 | 1.6.8 | 2026-07-15 | Bounded reopen (I2.4 audit repair): next-pointer honesty — Phase I2 done; residual = I3.1. |
 | 1.6.7 | 2026-07-15 | Bounded reopen (I2.3 audit repair): next-pointer honesty — I2.3 write landed; residual = I2.4. |
@@ -301,4 +302,4 @@ Next.js App Router (apps/web)
 - Private workspace packages only (no npm publish until a separate decision)
 - Module extraction to a service requires a new ADR
 - Collapse product trees stay absent by design; forward work is greenfield under `apps/web/**` and `packages/*` only ([ARCH-028](ARCH-028-implementation-slices.md) anti-contamination)
-- Phase I1 and Phase I2 are closed ([GUIDE-018](../guides/GUIDE-018-fullstack-e2e-integration-program.md)); next Ops = **I3.1**. Do not invent a third app layout or product `middleware.ts`.
+- Phase I1, Phase I2, and I3.1 are closed ([GUIDE-018](../guides/GUIDE-018-fullstack-e2e-integration-program.md)); next Ops = **I3.2**. Do not invent a third app layout or product `middleware.ts`.

@@ -17,6 +17,7 @@
 		"db:migrate": "node ./scripts/db-migrate-guard.mjs",
 		"db:check": "node ./scripts/db-check.mjs",
 		"db:verify-migrate-ban": "node ./scripts/verify-migrate-ban.mjs",
+		"db:ensure-permission-catalog": "node ./scripts/ensure-platform-permission-catalog.mjs",
 		"db:introspect": "drizzle-kit introspect"
 	},
 	"dependencies": {

@@ -1,117 +1,118 @@
 {
-  "biome.enabled": true,
-  "editor.formatOnSave": true,
-  "editor.codeActionsOnSave": {
-    "source.fixAll.biome": "explicit",
-    "source.organizeImports.biome": "explicit"
-  },
-  "editor.defaultFormatter": "esbenp.prettier-vscode",
-  "[javascript]": {
-    "editor.defaultFormatter": "biomejs.biome"
-  },
-  "[javascriptreact]": {
-    "editor.defaultFormatter": "biomejs.biome"
-  },
-  "[typescript]": {
-    "editor.defaultFormatter": "biomejs.biome"
-  },
-  "[typescriptreact]": {
-    "editor.defaultFormatter": "biomejs.biome"
-  },
-  "[json]": {
-    "editor.defaultFormatter": "biomejs.biome"
-  },
-  "[jsonc]": {
-    "editor.defaultFormatter": "biomejs.biome"
-  },
-  "[css]": {
-    "editor.defaultFormatter": "biomejs.biome"
-  },
-  "css.lint.unknownAtRules": "ignore",
-  "scss.lint.unknownAtRules": "ignore",
-  "less.lint.unknownAtRules": "ignore",
-  "[markdown]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode"
-  },
-  "[mdx]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode"
-  },
-  "typescript.tsdk": "node_modules/typescript/lib",
-  "typescript.enablePromptUseWorkspaceTsdk": true,
-  "files.eol": "\n",
-  "files.insertFinalNewline": true,
-  "files.trimTrailingWhitespace": true,
-  "explorer.excludeGitIgnore": true,
-  "explorer.autoReveal": false,
-  "explorer.decorations.badges": false,
-  "explorer.decorations.colors": false,
-  "git.decorations.enabled": false,
-  "git.autorefresh": false,
-  "problems.decorations.enabled": false,
-  "scm.diffDecorations": "none",
-  "search.followSymlinks": false,
-  "editor.tabSize": 2,
-  "editor.detectIndentation": false,
-  "files.exclude": {
-    "**/node_modules": true,
-    "**/.next": true,
-    "**/.next-ui": true,
-    "**/.next-workflow": true,
-    "**/.turbo": true,
-    "**/dist": true,
-    "**/build": true,
-    "**/coverage": true,
-    "**/test-results": true,
-    "**/playwright-report": true,
-    "**/out": true,
-    "**/.artifacts": true
-  },
-  "search.exclude": {
-    "**/node_modules": true,
-    "**/.next": true,
-    "**/.next-ui": true,
-    "**/.next-workflow": true,
-    "**/.turbo": true,
-    "**/dist": true,
-    "**/build": true,
-    "**/coverage": true,
-    "**/test-results": true,
-    "**/playwright-report": true,
-    "**/out": true,
-    "**/.artifacts": true,
-    "**/.git": true,
-    "docs/architecture/backend": true,
-    "docs/architecture/frontend": true,
-    "docs/architecture/system": true,
-    "docs/architecture/tech-stack": true,
-    "docs/architecture/archive": true,
-    "docs/guides/archive": true,
-    "**/pnpm-lock.yaml": true
-  },
-  "files.watcherExclude": {
-    "**/node_modules/**": true,
-    "**/.next/**": true,
-    "**/.next-ui/**": true,
-    "**/.next-workflow/**": true,
-    "**/.turbo/**": true,
-    "**/dist/**": true,
-    "**/build/**": true,
-    "**/coverage/**": true,
-    "**/test-results/**": true,
-    "**/playwright-report/**": true,
-    "**/out/**": true,
-    "**/.artifacts/**": true,
-    "**/.git/**": true,
-    "**/pnpm-lock.yaml": true
-  },
+	"biome.enabled": true,
+	"biome.requireConfiguration": true,
+	"editor.formatOnSave": true,
+	"editor.codeActionsOnSave": {
+		"source.fixAll.biome": "explicit",
+		"source.organizeImports.biome": "explicit"
+	},
+	"editor.defaultFormatter": "esbenp.prettier-vscode",
+	"[javascript]": {
+		"editor.defaultFormatter": "biomejs.biome"
+	},
+	"[javascriptreact]": {
+		"editor.defaultFormatter": "biomejs.biome"
+	},
+	"[typescript]": {
+		"editor.defaultFormatter": "biomejs.biome"
+	},
+	"[typescriptreact]": {
+		"editor.defaultFormatter": "biomejs.biome"
+	},
+	"[json]": {
+		"editor.defaultFormatter": "biomejs.biome"
+	},
+	"[jsonc]": {
+		"editor.defaultFormatter": "biomejs.biome"
+	},
+	"[css]": {
+		"editor.defaultFormatter": "biomejs.biome"
+	},
+	"css.lint.unknownAtRules": "ignore",
+	"scss.lint.unknownAtRules": "ignore",
+	"less.lint.unknownAtRules": "ignore",
+	"[markdown]": {
+		"editor.defaultFormatter": "esbenp.prettier-vscode"
+	},
+	"[mdx]": {
+		"editor.defaultFormatter": "esbenp.prettier-vscode"
+	},
+	"typescript.tsdk": "node_modules/typescript/lib",
+	"typescript.enablePromptUseWorkspaceTsdk": true,
+	"files.eol": "\n",
+	"files.insertFinalNewline": true,
+	"files.trimTrailingWhitespace": true,
+	"explorer.excludeGitIgnore": true,
+	"explorer.autoReveal": false,
+	"explorer.decorations.badges": false,
+	"explorer.decorations.colors": false,
+	"git.decorations.enabled": false,
+	"git.autorefresh": false,
+	"problems.decorations.enabled": false,
+	"scm.diffDecorations": "none",
+	"search.followSymlinks": false,
+	"editor.tabSize": 2,
+	"editor.detectIndentation": false,
+	"files.exclude": {
+		"**/node_modules": true,
+		"**/.next": true,
+		"**/.next-ui": true,
+		"**/.next-workflow": true,
+		"**/.turbo": true,
+		"**/dist": true,
+		"**/build": true,
+		"**/coverage": true,
+		"**/test-results": true,
+		"**/playwright-report": true,
+		"**/out": true,
+		"**/.artifacts": true
+	},
+	"search.exclude": {
+		"**/node_modules": true,
+		"**/.next": true,
+		"**/.next-ui": true,
+		"**/.next-workflow": true,
+		"**/.turbo": true,
+		"**/dist": true,
+		"**/build": true,
+		"**/coverage": true,
+		"**/test-results": true,
+		"**/playwright-report": true,
+		"**/out": true,
+		"**/.artifacts": true,
+		"**/.git": true,
+		"docs/architecture/backend": true,
+		"docs/architecture/frontend": true,
+		"docs/architecture/system": true,
+		"docs/architecture/tech-stack": true,
+		"docs/architecture/archive": true,
+		"docs/guides/archive": true,
+		"**/pnpm-lock.yaml": true
+	},
+	"files.watcherExclude": {
+		"**/node_modules/**": true,
+		"**/.next/**": true,
+		"**/.next-ui/**": true,
+		"**/.next-workflow/**": true,
+		"**/.turbo/**": true,
+		"**/dist/**": true,
+		"**/build/**": true,
+		"**/coverage/**": true,
+		"**/test-results/**": true,
+		"**/playwright-report/**": true,
+		"**/out/**": true,
+		"**/.artifacts/**": true,
+		"**/.git/**": true,
+		"**/pnpm-lock.yaml": true
+	},
 
-  "files.associations": {
-    "pnpm-lock.yaml": "plaintext",
-    "package-lock.json": "plaintext",
-    "yarn.lock": "plaintext"
-  },
+	"files.associations": {
+		"pnpm-lock.yaml": "plaintext",
+		"package-lock.json": "plaintext",
+		"yarn.lock": "plaintext"
+	},
 
-  "yaml.maxItemsComputed": 5000,
+	"yaml.maxItemsComputed": 5000,
 
-  "git.openRepositoryInParentFolders": "never"
+	"git.openRepositoryInParentFolders": "never"
 }

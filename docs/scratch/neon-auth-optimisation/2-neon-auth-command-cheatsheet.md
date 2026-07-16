@@ -90,7 +90,7 @@ Keep these decisions unless an explicit approved architecture mission changes th
 - Tenant-owned data is hard-scoped by `organization_id`.
 - Do not claim multi-database or project-per-tenant isolation.
 - Do not enable Neon preview services merely because they exist.
-- Do not adopt custom SMTP for Neon Auth unless controlled authority changes.
+- Neon Auth mail = Zoho SMTP via Neon Auth console (ARCH-026). Do not add app-side SMTP; do not revert to Neon shared without Docs reopen.
 - Do not switch production branches casually.
 - Secrets remain outside source control.
 

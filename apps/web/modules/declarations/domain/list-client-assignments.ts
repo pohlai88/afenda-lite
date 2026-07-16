@@ -3,6 +3,8 @@ import { and, clientAssignments, db, eq, sql, surveys } from "@afenda/db";
 /**
  * Declarations — client assignment list under hard org + email ownership.
  * Joins surveys for display fields (ARCH-024 domain → `@afenda/db`).
+ * Hard tenancy (N9 / ARCH-023): `organization_id = $org` on both
+ * `client_assignments` and `surveys` — never soft `(NULL OR org)`.
  */
 
 function normalizeEmail(email: string): string {

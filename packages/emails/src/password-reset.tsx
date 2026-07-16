@@ -21,8 +21,8 @@ export type PasswordResetEmailProps = {
 
 /**
  * App-owned password-reset template.
- * Neon Auth password reset mail continues on Neon's shared provider; compose
- * this template when the app sends its own reset mail.
+ * Neon Auth password reset mail ships via Zoho SMTP on Neon Auth (ARCH-026);
+ * compose this template only when the app sends its own reset mail.
  */
 export function PasswordResetEmail({
 	recipientName,

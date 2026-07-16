@@ -1,4 +1,4 @@
-import type { Role } from "./session";
+import type { Role } from "./role";
 
 /**
  * Coarse shell role hierarchy (ARCH-026).

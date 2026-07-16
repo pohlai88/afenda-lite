@@ -45,7 +45,11 @@ export function buildJoinUrl(input: BuildJoinUrlInput): string {
 	return `${origin}${path}`;
 }
 
-/** Absolute `/join?invitationId=…` under production `APP_URL` (app-owned mail). */
+/**
+ * Absolute `/join?invitationId=…` under production `APP_URL` origin.
+ * Neon Auth delivers invite mail via Zoho SMTP (ARCH-026); this helper only
+ * mints the accept link — it does not send mail.
+ */
 export function buildInviteJoinUrl(invitationId: string): string {
 	return buildJoinUrl({ invitationId, origin: requireAppOrigin() });
 }

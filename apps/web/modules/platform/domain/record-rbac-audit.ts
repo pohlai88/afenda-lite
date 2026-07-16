@@ -3,6 +3,10 @@ import { and, db, eq, platformRbacAudit } from "@afenda/db";
 /** Audit action stamped when an operator invitation succeeds (GUIDE-018 I2.3). */
 export const MEMBER_INVITE_AUDIT_ACTION = "member.invite" as const;
 
+/** Audit actions for platform role assignment mutations (GUIDE-018 I3.1). */
+export const ROLE_ASSIGN_AUDIT_ACTION = "role.assign" as const;
+export const ROLE_REVOKE_AUDIT_ACTION = "role.revoke" as const;
+
 export type RecordRbacAuditCommand = {
 	/** Active session organization — must be stamped on the row (ARCH-023). */
 	orgId: string;
@@ -10,6 +14,8 @@ export type RecordRbacAuditCommand = {
 	actorUserId: string;
 	targetType?: string;
 	targetId?: string;
+	roleId?: string;
+	oldValue?: Record<string, unknown>;
 	newValue?: Record<string, unknown>;
 	reason?: string;
 };
@@ -44,6 +50,8 @@ export async function recordRbacAudit(command: RecordRbacAuditCommand) {
 			organizationId: orgId,
 			targetType: command.targetType,
 			targetId: command.targetId,
+			roleId: command.roleId,
+			oldValue: command.oldValue,
 			newValue: command.newValue,
 			reason: command.reason,
 		})

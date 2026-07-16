@@ -1,4 +1,4 @@
-import type { Role } from "./session";
+import type { Role } from "./role";
 
 /**
  * Governed post-login routing (N7).

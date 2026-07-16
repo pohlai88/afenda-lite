@@ -49,6 +49,8 @@ fft.access
 
 Adding a code is a release; assigning it to a role is an org-admin action. Do not invent ERP SoD matrices here.
 
+**Release seed path (N10):** typed `PLATFORM_PERMISSION_V1` + `ensurePlatformPermissionCatalog` in `@afenda/db`. Ops: `pnpm --filter @afenda/db db:ensure-permission-catalog`. Not drizzle `0000_*` baseline migrate.
+
 ### Owns vs hand-off
 
 | Concern | Owner |

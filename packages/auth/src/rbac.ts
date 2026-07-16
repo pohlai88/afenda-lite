@@ -1,8 +1,9 @@
 import { redirect } from "next/navigation";
 
 import { AUTH_FORBIDDEN_PATH } from "./auth-paths";
+import type { Role } from "./role";
 import { roleSatisfies } from "./roles";
-import { getSession, type Role, type Session } from "./session";
+import { getSession, type Session } from "./session";
 
 /**
  * Coarse shell guard against the session role signal (GUIDE-018 I1.4).

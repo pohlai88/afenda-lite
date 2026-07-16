@@ -28,7 +28,12 @@
       "!!**/playwright/.cache",
       "!!**/*.{md,mdx}",
       "!!**/docs",
-      "!!**/drizzle"
+      "!!**/drizzle",
+      "!!**/.cursor",
+      "!!**/.agents",
+      "!!**/_reference",
+      "!!**/public",
+      "!!**/next-env.d.ts"
     ]
   },
   "css": {

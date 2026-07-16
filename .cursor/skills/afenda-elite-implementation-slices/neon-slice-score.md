@@ -26,7 +26,7 @@ A green build that violates a higher rule is a failed slice.
 | Neon Serverless Postgres + Neon Auth via `@afenda/auth` | Data API as product data path |
 | Drizzle / `@afenda/db` | Preview Object Storage / Functions / AI Gateway by proximity |
 | Pooled `-pooler` for product `DATABASE_URL` | Casual branch switch / day-to-day `neonctl link` rewrite |
-| Neon org roles = identity signals only | Custom SMTP for Neon Auth |
+| Neon org roles = identity signals only | App-side SMTP for Neon Auth / Neon shared mail (Zoho SMTP via Neon Auth console is required — ARCH-026) |
 | Hard `organization_id` tenancy | Multi-DB / project-per-tenant isolation claims |
 
 Vendor depth: `.agents/skills/neon` · `neon-postgres` (esp. `references/neon-auth.md`). Domain farm: `neon-tenancy-efficiency`.
