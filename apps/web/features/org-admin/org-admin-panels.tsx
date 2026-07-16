@@ -101,7 +101,7 @@ export function OrgAdminPanels({
 	}, [roles, sortBy, sortDirection]);
 
 	return (
-		<div className="flex flex-col gap-[var(--section-gap)]">
+		<div className="flex flex-col gap-(--section-gap)">
 			<Card>
 				<CardHeader>
 					<CardTitle>Roles</CardTitle>

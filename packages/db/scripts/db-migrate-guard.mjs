@@ -1,16 +1,24 @@
 /**
- * Fail-closed guard for `pnpm --filter @afenda/db db:migrate`.
+ * Fail-closed guard for `pnpm --filter @afenda/db db:migrate` (N2).
  *
  * 0000_living-roots-baseline.sql is a journal baseline for forward diffs.
  * Applying it on br-tiny-hill-ao82jp6f would try CREATE on existing tables.
  *
- * Set AFENDA_ALLOW_DB_MIGRATE=1 only for deliberate non-baseline forward migrates.
- * Authority: ARCH-025 · ARCH-028 S2.2
+ * Requires:
+ * - AFENDA_ALLOW_DB_MIGRATE=1
+ * - non-sole-0000 SQL set
+ * - valid migration-class DATABASE_URL (same key; -pooler not required)
+ * - additive-first SQL unless AFENDA_ALLOW_DESTRUCTIVE_MIGRATE=1
+ *
+ * Authority: ARCH-025 · ARCH-028 S2.2 · N2
  */
 import { spawnSync } from "node:child_process";
-import { existsSync, readdirSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+
+import { assertAdditiveMigrations } from "./lib/assert-additive-migration.mjs";
+import { requireMigrationDatabaseUrl } from "./lib/database-url.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const drizzleDir = join(root, "drizzle");
@@ -47,6 +55,32 @@ if (onlyBaseline) {
 
 The only migration is 0000_living-roots-baseline.sql (CREATE baseline for tables that already exist on live Neon).
 Generate a forward migration after a schema change, then migrate that file — never apply 0000 alone.
+`);
+	process.exit(1);
+}
+
+try {
+	requireMigrationDatabaseUrl(process.env);
+} catch (error) {
+	const message = error instanceof Error ? error.message : String(error);
+	console.error(`@afenda/db db:migrate DENIED: ${message}`);
+	process.exit(1);
+}
+
+const allowDestructive = process.env.AFENDA_ALLOW_DESTRUCTIVE_MIGRATE === "1";
+const sqlContents = sqlFiles.map((file) =>
+	readFileSync(join(drizzleDir, file), "utf8"),
+);
+const additive = assertAdditiveMigrations(sqlContents, { allowDestructive });
+if (!additive.ok) {
+	console.error(`
+@afenda/db db:migrate DENIED — destructive SQL detected (additive-first policy)
+
+Findings:
+${additive.findings.map((f) => `  - ${f.reason}: ${f.statement}`).join("\n")}
+
+Override only with explicit operator approval:
+  AFENDA_ALLOW_DESTRUCTIVE_MIGRATE=1 AFENDA_ALLOW_DB_MIGRATE=1 pnpm --filter @afenda/db db:migrate
 `);
 	process.exit(1);
 }

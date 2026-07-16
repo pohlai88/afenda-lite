@@ -293,7 +293,7 @@ Detail and weekly ladder: [neon-tenancy-efficiency](../../.cursor/skills/neon-te
 
 | Area | Rule |
 |------|------|
-| Connections | Runtime `-pooler`; migrations use direct endpoint |
+| Connections | Runtime `-pooler` via product `DATABASE_URL`; migrations/ops use the same key (`-pooler` not required; operator may shell-override to unpooled — no product `DIRECT_*` var) |
 | Compute | Paid plan; same region as Vercel; protected prod branch; disable scale-to-zero if cold starts hurt UX |
 | Queries | Hard `organization_id = $org`; prefer `(organization_id, …)` leading indexes |
 | Restore | PITR 7d (Launch max); daily snapshots; restore drill in RB-001 |
@@ -332,6 +332,7 @@ pnpm backfill:fft-access -- --organization-id=<org-uuid>
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 3.1.5 | 2026-07-16 | N2: Connections row — product `-pooler`; migrate/ops same `DATABASE_URL` key (no product `DIRECT_*`). |
 | 3.1.4 | 2026-07-14 | Reconcile tenant-root `organization_id` type to live `text` after Neon introspect (S2.1). |
 | 3.1.3 | 2026-07-14 | Hard-delete ARCH-003 archive stub; supersession points at DOC-002 register-only. |
 | 3.1.2 | 2026-07-14 | Bounded reopen: package-manager cutover — document `pnpm` / `pnpm exec` (repo SSOT `packageManager` + `pnpm-lock.yaml`). |

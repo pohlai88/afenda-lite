@@ -85,6 +85,22 @@ describe("no-drizzle-baseline-migrate", () => {
 		});
 		assert.equal(out.permission, "allow");
 	});
+
+	it("denies on invalid JSON payload (fail-closed)", () => {
+		const result = spawnSync(
+			process.execPath,
+			[path.join(hooksDir, "no-drizzle-baseline-migrate.mjs")],
+			{
+				input: "{not-json",
+				encoding: "utf8",
+				cwd: path.resolve(hooksDir, "../.."),
+			},
+		);
+		assert.equal(result.status, 0);
+		const out = JSON.parse((result.stdout || "").trim().split("\n").pop() || "{}");
+		assert.equal(out.permission, "deny");
+		assert.match(String(out.agent_message || ""), /fail-closed/i);
+	});
 });
 
 describe("no-shim-stub-tech-debt", () => {

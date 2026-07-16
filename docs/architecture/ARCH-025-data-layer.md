@@ -108,7 +108,7 @@ const sql = neon(env.DATABASE_URL)
 export const db = drizzle(sql, { schema })
 ```
 
-`@neondatabase/serverless` uses the HTTP transport — compatible with Vercel serverless. Edge runtime only when a documented exception allows it. Connection pooling is handled by the Neon pooler endpoint (`-pooler` suffix in `DATABASE_URL`).
+`@neondatabase/serverless` uses the HTTP transport — compatible with Vercel serverless. Edge runtime only when a documented exception allows it. Product runtime requires the Neon pooler endpoint (`-pooler` suffix in `DATABASE_URL`). Migration/ops tooling uses the same `DATABASE_URL` key without requiring `-pooler` (no separate product direct-URL variable).
 
 ### `withOrg` — tenancy helper
 
@@ -133,13 +133,17 @@ This is the **only** authorised path to tenant-scoped reads (Target packaging of
 ```
 1. Edit schema file (packages/db/src/schema/*.ts)
 2. pnpm --filter @afenda/db db:generate
-   → drizzle-kit generate → writes drizzle/<timestamp>_<name>.sql
+   → drizzle-kit generate → writes drizzle/<tag>_<name>.sql + meta/_journal.json
 3. Review generated SQL — never treat 0000_living-roots-baseline.sql as apply-to-live
-4. Forward migrates only (see Operational ban) — guarded db:migrate; not the baseline CREATE
-5. Commit schema file + migration file together
+4. pnpm --filter @afenda/db db:check
+   → journal assert (dup tags/idx, ordering, missing/orphan SQL) + drizzle-kit check
+5. Forward migrates only (see Operational ban) — guarded db:migrate; not the baseline CREATE
+   → requires AFENDA_ALLOW_DB_MIGRATE=1, migration-class DATABASE_URL, additive-first SQL
+   → destructive DROP TABLE / TRUNCATE / DROP COLUMN also need AFENDA_ALLOW_DESTRUCTIVE_MIGRATE=1
+6. Commit schema file + migration file together
 ```
 
-No ad-hoc `ALTER TABLE` in production. Every schema change goes through this lifecycle.
+No ad-hoc `ALTER TABLE` in production. Every schema change goes through this lifecycle. Prefer additive migrations; destructive DDL is fail-closed without explicit operator override.
 
 ### Read path
 
@@ -175,15 +179,16 @@ Writes use `db` directly (not `withOrg`, which is select-only). The `organizatio
 | Failure | Impact | Detection |
 |---------|--------|-----------|
 | `DATABASE_URL` missing or wrong | Startup Zod error from `@afenda/env` | App refuses to start |
-| Migration applied to wrong branch | Schema mismatch | `drizzle-kit check` in CI |
+| Migration applied to wrong branch | Schema mismatch | `pnpm --filter @afenda/db db:check` in CI |
 | `organization_id` missing from new table | Potential cross-tenant leak | `pnpm audit:tenancy-nulls` |
 | Neon pooler unavailable | All DB calls fail | Neon status page; app returns 500 |
 
 ## Operational considerations
 
-- **Generate:** `pnpm --filter @afenda/db db:generate` after schema change.
-- **Check:** `pnpm --filter @afenda/db db:check` verifies local migration journal consistency.
-- **Introspect:** `pnpm --filter @afenda/db db:introspect` pulls current DB schema as Drizzle types (for cutover audit — reconcile to Living roots before committing as source of truth).
+- **Generate:** `pnpm --filter @afenda/db db:generate` (or root `pnpm db:generate`) after schema change.
+- **Check:** `pnpm --filter @afenda/db db:check` (or root `pnpm db:check`) — journal assert + `drizzle-kit check`. Wired in CI; does not apply migrations.
+- **Introspect:** `pnpm --filter @afenda/db db:introspect` pulls current DB schema as Drizzle types (for cutover audit — reconcile to Living roots before committing as source of truth). Requires migration-class `DATABASE_URL`.
+- **Migrate:** `pnpm --filter @afenda/db db:migrate` (or root `pnpm db:migrate`) — fail-closed; never on deploy. See ban below.
 - Production branch: `br-tiny-hill-ao82jp6f`. PITR 7 days.
 
 ### Ban — `0000_living-roots-baseline` migrate
@@ -196,7 +201,7 @@ Writes use `db` directly (not `withOrg`, which is select-only). The `organizatio
 | Cursor hook | `.cursor/hooks/no-drizzle-baseline-migrate.mjs` |
 | Slice evidence | [ARCH-028](ARCH-028-implementation-slices.md) S2.2 Operational ban |
 
-Default: `db:migrate` fails closed. Override `AFENDA_ALLOW_DB_MIGRATE=1` is only for a later **non-baseline** forward migration; the guard still refuses when `0000_…` is the sole SQL file.
+Default: `db:migrate` fails closed. Override `AFENDA_ALLOW_DB_MIGRATE=1` is only for a later **non-baseline** forward migration; the guard still refuses when `0000_…` is the sole SQL file. Additive-first: `DROP TABLE` / `TRUNCATE` / `DROP COLUMN` also require `AFENDA_ALLOW_DESTRUCTIVE_MIGRATE=1`. Deploy workflows do not run migrate.
 
 # 4. References
 
@@ -211,6 +216,7 @@ Default: `db:migrate` fails closed. Override `AFENDA_ALLOW_DB_MIGRATE=1` is only
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.3.2 | 2026-07-16 | N2: product vs migration `DATABASE_URL` classes; journal assert + additive-first migrate gate; CI `db:check`; no product `DIRECT_*`. |
 | 1.3.1 | 2026-07-15 | DOC-003 six-section retrofit (content preserved; Known limits → § 6 Notes). |
 | 1.3.0 | 2026-07-15 | Checkpoint G: Status Target→Living; `@afenda/db` present; migrate ban unchanged. |
 | 1.2.4 | 2026-07-14 | Operational ban: do not `db:migrate` `0000_living-roots-baseline` onto live Neon; package guard + Cursor hook. |

@@ -48,7 +48,7 @@ export function InviteMemberForm({
 	return (
 		<form
 			action={formAction}
-			className="flex max-w-md flex-col gap-[var(--field-gap)]"
+			className="flex max-w-md flex-col gap-(--field-gap)"
 		>
 			<FormField label="Email" required>
 				<Input

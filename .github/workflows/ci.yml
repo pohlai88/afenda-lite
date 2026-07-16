@@ -38,5 +38,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Database migration journal check
+        run: pnpm --filter @afenda/db db:check
+
       - name: Lint · typecheck · test
         run: pnpm exec turbo run lint typecheck test

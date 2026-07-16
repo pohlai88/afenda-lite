@@ -4,13 +4,13 @@
 |-------|-------|
 | ID | ARCH-027 |
 | Category | Architecture |
-| Version | 1.6.4 |
+| Version | 1.6.5 |
 | Status | Living |
 | Control State | Closed |
 | Owner | Platform |
 | Updated | 2026-07-16 |
 
-> **Living.** Environment SSOT after ARCH-028 Checkpoint G (2026-07-15). S4.1 + Checkpoint D shipped (`@afenda/env` + `.env.local` only; compose retired).
+> **Living.** Environment SSOT after ARCH-028 Checkpoint G (2026-07-15). S4.1 + Checkpoint D shipped (`@afenda/env` + `.env.local` only; compose retired). N1 adds typed Neon product contract in `packages/env/src/neon-contract.ts`.
 
 > **STOP — compose retired:** Do **not** restore Collapse-era `env:compose` / `env:guard` / `env.config` / `env.secret` / `lib/env`. Local runtime file = `.env.local` only. App config = `import { env } from '@afenda/env'`. Prefer editing a known-good `.env.local` over blind `vercel env pull` (redacts / stale marketplace keys).
 
@@ -69,36 +69,45 @@ Living environment SSOT after ARCH-028 Checkpoint G / S4.1: `@afenda/env` + `.en
 
 | Component | Responsibility |
 |-----------|---------------|
-| `packages/env/src/web.ts` | Single Zod schema declaring all variables, their types, and server/client placement |
+| `packages/env/src/neon-contract.ts` | Neon product contract SSOT — pooler `DATABASE_URL`, https Neon Auth base URL, cookie secret ≥32, approved Cloud ids, Vercel-prod local-only gates; pure evaluators + Zod schemas |
+| `packages/env/src/web.ts` | `@t3-oss/env-nextjs` createEnv wiring all product vars (imports Neon schemas from `neon-contract.ts`) |
 | `.env.local` | The only env file loaded at runtime for Next + ops. Gitignored. Template: `.env.example`. |
+| `pnpm validate:neon-env` | Ops check: product contract against `.env.local` + Neon Cloud id/API linkage |
 | `vercel env pull` | Optional refresh into `.env.local` — audit values after pull. |
 | Vercel dashboard / CLI | Canonical store for production env values |
 
-`packages/env` does **not** own: secrets storage (that is Vercel), secrets rotation, or application logic that uses env values.
+`packages/env` does **not** own: secrets storage (that is Vercel), secrets rotation, or application logic that uses env values. `@afenda/db` may read `process.env.DATABASE_URL` only (ARCH-024 forbids `db → env`) and must still require Neon `-pooler` for the product client.
 
 ## Components
 
 ### Schema structure
 
 ```typescript
-// packages/env/src/web.ts
+// packages/env/src/web.ts (illustrative — live schemas in neon-contract.ts)
 import { createEnv } from '@t3-oss/env-nextjs'
-import { z } from 'zod'
+import {
+  neonAuthBaseUrlSchema,
+  neonAuthCookieSecretSchema,
+  productAppUrlSchema,
+  productDatabaseUrlSchema,
+} from './neon-contract'
 
 export const env = createEnv({
   server: {
-    DATABASE_URL:        z.string().url(),
-    NEON_AUTH_SECRET:    z.string().min(1),
-    // ... other server-only vars
+    DATABASE_URL: productDatabaseUrlSchema,           // Neon -pooler host required
+    NEON_AUTH_BASE_URL: neonAuthBaseUrlSchema,        // https
+    NEON_AUTH_COOKIE_SECRET: neonAuthCookieSecretSchema, // min 32
+    APP_URL: productAppUrlSchema({ vercelEnv: process.env.VERCEL_ENV }),
+    // … other server-only vars
   },
   client: {
-    NEXT_PUBLIC_APP_URL: z.string().url(),
-    // ... NEXT_PUBLIC_* vars only
+    // Product Neon/Auth vars are server-only today — no NEXT_PUBLIC_* Neon keys.
   },
   runtimeEnv: {
-    DATABASE_URL:        process.env.DATABASE_URL,
-    NEON_AUTH_SECRET:    process.env.NEON_AUTH_SECRET,
-    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+    DATABASE_URL: process.env.DATABASE_URL,
+    NEON_AUTH_BASE_URL: process.env.NEON_AUTH_BASE_URL,
+    NEON_AUTH_COOKIE_SECRET: process.env.NEON_AUTH_COOKIE_SECRET,
+    APP_URL: process.env.APP_URL,
   },
 })
 ```
@@ -110,23 +119,21 @@ export const env = createEnv({
 import { env } from '@afenda/env'
 
 const url = env.DATABASE_URL    // ✓ — server block, safe to use here
+const origin = env.APP_URL      // ✓ — invite Origin / app absolute URLs
 
-// apps/web/features/*/client-component.tsx  (client component)
-import { env } from '@afenda/env'
-
-const url = env.NEXT_PUBLIC_APP_URL    // ✓ — client block
-const db  = env.DATABASE_URL           // ✗ — TypeScript error: server var in client
+// Client components must not import server env keys.
+// import { env } from '@afenda/env' then env.DATABASE_URL → TypeScript error
 ```
 
 ### Variable categories
 
-| Category | Env key prefix | Synced to Vercel | Example |
-|----------|---------------|-----------------|---------|
-| Database | `DATABASE_URL`, `NEON_*` | Yes | Neon pooler URL, auth secret |
-| App | `APP_URL`, `NEXT_PUBLIC_*` | Yes | Production URL, feature flags |
-| Feature flags | `FFT_*` | Yes | `FFT_RBAC_ENABLED` |
-| Local-only | `PLAYGROUND_*` | **No** | Reserved local toggles (Next.js `/playground` trees **absent** 2026-07-15; the former `@afenda/ui/playground` gateway is retired — [ADR-010](adr/ADR-010-afenda-ui-system-flat-barrel.md)) |
-| Ops | `NEON_API_KEY`, `NEON_ORG_ID` | **No** | CLI tools only |
+| Category | Env keys | Synced to Vercel | Example |
+|----------|----------|------------------|---------|
+| Required product | `DATABASE_URL`, `NEON_AUTH_BASE_URL`, `APP_URL` | Yes | Pooler URL, Auth base URL, production origin |
+| Server secret | `NEON_AUTH_COOKIE_SECRET` | Yes | Cookie signing secret (≥32 chars) |
+| App / flags | `FFT_*`, portal labels | Yes (product flags) | `FFT_RBAC_ENABLED` |
+| Local-only | `PLAYGROUND_*`, autofill passwords (`SHARED_ADMIN_PASSWORD`, …) | **No** | Dev login autofill; blocked when `VERCEL_ENV=production`. Next.js `/playground` trees **absent** (ADR-010) |
+| Ops | `NEON_API_KEY`, `NEON_ORG_ID`, `NEON_PROJECT_ID`, `NEON_BRANCH_ID` | **No** | `validate:neon-env` / CLI — approved Cloud ids when set |
 
 ## Data / request flow
 
@@ -169,8 +176,9 @@ Vercel build
 ## Operational considerations
 
 - **Local init:** copy `.env.example` → `.env.local`, fill required keys, `pnpm validate:neon-env`, then `pnpm --filter @afenda/web dev`.
-- **Add a new var:** add to `packages/env/src/web.ts` schema + `runtimeEnv` map, update `.env.example` / Vercel, update this document's variable table.
-- **Audit / sync Vercel:** `pnpm audit:vercel` (key names) when tooling is available — never restore compose.
+- **Add a new var:** add to `packages/env/src/web.ts` (+ `neon-contract.ts` when Neon-shaped), update `.env.example` / Vercel, update this document's variable table.
+- **Neon product contract:** pooler host on product `DATABASE_URL`; https `NEON_AUTH_BASE_URL`; `NEON_AUTH_COOKIE_SECRET` ≥32; approved `NEON_ORG_ID` / `NEON_PROJECT_ID` / `NEON_BRANCH_ID` when set; local autofill passwords and `PLAYGROUND_ENABLED=true` forbidden when `VERCEL_ENV=production`.
+- **Audit / sync Vercel:** `pnpm audit:vercel` (key names) when tooling is available — never restore compose. Never sync `PLAYGROUND_*` or autofill passwords to production.
 
 ## Cutover from compose (S4.1)
 
@@ -181,7 +189,9 @@ Vercel build
 | ID | Title | Relationship |
 | --- | --- | --- |
 | ARCH-022 | System Overview | Workspace / deployable bounds |
-| ARCH-024 | Package Boundaries | `@afenda/ui-system` UI surface; `PLAYGROUND_*` is unrelated to any package subpath |
+| ARCH-023 | Multi-tenancy | Prod `-pooler` `DATABASE_URL`; shared-schema Cloud ids |
+| ARCH-024 | Package Boundaries | `@afenda/ui-system` UI surface; `db ↛ env`; `PLAYGROUND_*` unrelated to package subpaths |
+| ARCH-026 | Auth model | Neon Auth via `@afenda/auth`; cookie / base URL consumers |
 | ARCH-028 | Implementation Slices | S4.1 + Checkpoint D evidence |
 
 # 5. Change Log
@@ -189,6 +199,7 @@ Vercel build
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.6.5 | 2026-07-16 | N1 audit repair: illustrative schema → `NEON_AUTH_COOKIE_SECRET` + server `APP_URL`; document `neon-contract.ts` + `validate:neon-env` product contract; classify ops vs local-only Neon keys. |
 | 1.6.4 | 2026-07-16 | `PLAYGROUND_*` disambiguation repointed: retired `@afenda/ui/playground` gateway ([ADR-010](adr/ADR-010-afenda-ui-system-flat-barrel.md)); dead `#afendaui` anchor removed; `PLAYGROUND_*` is unrelated to any package subpath. |
 | 1.6.3 | 2026-07-15 | DOC-003 six-section retrofit (content preserved; Known limits → § 6 Notes). |
 | 1.6.2 | 2026-07-15 | `PLAYGROUND_*` = reserved local env; Next.js `/playground` trees Absent (see ARCH-024). |

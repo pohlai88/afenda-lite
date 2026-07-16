@@ -28,7 +28,8 @@ export function inspectDatabaseConnection(databaseUrl: string): {
 		host = parsed.hostname;
 		ssl = parsed.searchParams.get("sslmode") ?? "required";
 	} catch {
-		host = databaseUrl;
+		// Never echo the raw DATABASE_URL (may contain credentials).
+		host = "invalid";
 	}
 	return {
 		pooler: host.includes("-pooler"),

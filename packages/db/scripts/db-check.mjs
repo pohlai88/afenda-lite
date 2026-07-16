@@ -1,12 +1,14 @@
 /**
- * ARCH-028 S2.2 — journal consistency + live credential gate.
+ * N2 — journal consistency + drizzle-kit check + migration journal assert.
  * Live column inventory was reconciled in S2.1 via Neon MCP on br-tiny-hill-ao82jp6f.
- * Numbered SQL under db/migrations/ is absent on this Collapse checkout (no archive move).
+ * Does not apply migrations.
  */
 import { spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+
+import { assertMigrationJournal } from "./lib/assert-migration-journal.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const drizzleDir = join(root, "drizzle");
@@ -17,6 +19,16 @@ if (!existsSync(drizzleDir)) {
 	);
 	process.exit(1);
 }
+
+const journal = assertMigrationJournal(drizzleDir);
+if (!journal.ok) {
+	console.error("@afenda/db db:check: journal assert FAILED:");
+	for (const issue of journal.issues) {
+		console.error(`  - ${issue}`);
+	}
+	process.exit(1);
+}
+console.log("@afenda/db db:check: journal assert OK");
 
 const check = spawnSync("pnpm", ["exec", "drizzle-kit", "check"], {
 	cwd: root,
@@ -30,19 +42,19 @@ if (check.status !== 0) {
 
 if (!process.env.DATABASE_URL) {
 	console.log(
-		"@afenda/db db:check: journal OK (DATABASE_URL unset — skipped live migrate dry; S2.1 Neon introspect remains authority for live columns)",
+		"@afenda/db db:check: journal OK (DATABASE_URL unset — skipped live credential note; S2.1 Neon introspect remains authority for live columns)",
 	);
 	process.exit(0);
 }
 
-// Prefer pooler for product paths; warn only (do not print the URL).
+// Product paths require -pooler; migrate/ops may use non-pooler via the same key.
 if (!process.env.DATABASE_URL.includes("-pooler")) {
-	console.warn(
-		"@afenda/db db:check: DATABASE_URL has no -pooler suffix (ARCH-023 prefers pooler for app paths)",
+	console.log(
+		"@afenda/db db:check: DATABASE_URL present without -pooler (allowed for migration/ops class; product runtime still requires -pooler)",
 	);
 }
 
 console.log(
-	"@afenda/db db:check: journal OK; DATABASE_URL present — live schema remain validated via S2.1 introspect + generated migrations under drizzle/",
+	"@afenda/db db:check: OK — journal assert + drizzle-kit check; live schema remain validated via S2.1 introspect + generated migrations under drizzle/",
 );
 process.exit(0);
