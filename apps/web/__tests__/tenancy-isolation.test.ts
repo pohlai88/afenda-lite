@@ -1,14 +1,12 @@
 /**
  * N9 / ARCH-023 — two-org isolation for living tenant adapters.
+ * GUIDE-018 I5.1 — by-id get/draft/save/submit denial under peer org.
  *
  * Integration cases need `DATABASE_URL` (runner env or `.env.local`).
  * Fixtures use synthetic org ids and are deleted in afterAll.
  */
 
 import { randomUUID } from "node:crypto";
-import { readFileSync } from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import {
 	and,
 	clientAssignments,
@@ -19,8 +17,13 @@ import {
 	surveys,
 	withOrg,
 } from "@afenda/db";
+import { resolveDatabaseUrlForTests } from "@afenda/testing/require-database-for-ci";
 import { afterAll, describe, expect, it } from "vitest";
 
+import {
+	getClientDeclarationDraft,
+	saveClientDeclarationDraft,
+} from "../modules/declarations/domain/declaration-draft";
 import { getClientDeclaration } from "../modules/declarations/domain/get-client-declaration";
 import { listClientAssignments } from "../modules/declarations/domain/list-client-assignments";
 import { submitClientDeclaration } from "../modules/declarations/domain/submit-client-declaration";
@@ -31,43 +34,7 @@ import {
 	recordRbacAudit,
 } from "../modules/platform/domain/record-rbac-audit";
 
-const repoRoot = path.resolve(
-	path.dirname(fileURLToPath(import.meta.url)),
-	"../../..",
-);
-
-function loadDatabaseUrl(): string | undefined {
-	if (process.env.DATABASE_URL) {
-		return process.env.DATABASE_URL;
-	}
-	try {
-		const text = readFileSync(path.join(repoRoot, ".env.local"), "utf8");
-		for (const line of text.split(/\r?\n/)) {
-			const trimmed = line.trim();
-			if (trimmed.length === 0 || trimmed.startsWith("#")) continue;
-			const match = /^DATABASE_URL\s*=\s*(.*)$/.exec(trimmed);
-			if (!match) continue;
-			let value = match[1]?.trim() ?? "";
-			if (
-				(value.startsWith('"') && value.endsWith('"')) ||
-				(value.startsWith("'") && value.endsWith("'"))
-			) {
-				value = value.slice(1, -1);
-			}
-			return value.length > 0 ? value : undefined;
-		}
-	} catch {
-		return undefined;
-	}
-	return undefined;
-}
-
-const databaseUrl = loadDatabaseUrl();
-if (databaseUrl) {
-	process.env.DATABASE_URL = databaseUrl;
-}
-
-const hasDatabase = typeof databaseUrl === "string" && databaseUrl.length > 0;
+const { hasDatabase } = resolveDatabaseUrlForTests();
 
 describe("tenancy isolation guards (N9)", () => {
 	it("withOrg rejects empty orgId", async () => {
@@ -142,6 +109,7 @@ describe.skipIf(!hasDatabase)("tenancy isolation two-org (N9)", () => {
 			actorUserId: `user-n9-iso-${runId}`,
 			targetType: "membership",
 			targetId: clientEmail,
+			correlationId: "test-correlation-id",
 		});
 		auditIds.push({ id: row.id, orgId: orgA });
 
@@ -211,6 +179,88 @@ describe.skipIf(!hasDatabase)("tenancy isolation two-org (N9)", () => {
 				),
 			);
 		expect(leaked).toHaveLength(0);
+	});
+
+	it("I5.1: orgB cannot get/draft/save/submit orgA assignment by id", async () => {
+		const actorId = randomUUID();
+		const surveyQuestionId = randomUUID();
+		const [survey] = await db
+			.insert(surveys)
+			.values({
+				slug: `n9-i51-${runId}`,
+				title: "I5.1 by-id isolation survey",
+				question: "By id?",
+				userId: actorId,
+				organizationId: orgA,
+				categories: [],
+			})
+			.returning({ id: surveys.id });
+		if (!survey) {
+			throw new Error("survey insert failed");
+		}
+		surveyIds.push(survey.id);
+
+		const [assignment] = await db
+			.insert(clientAssignments)
+			.values({
+				surveyId: survey.id,
+				clientEmail,
+				assignedBy: actorId,
+				organizationId: orgA,
+				status: "pending",
+			})
+			.returning({ id: clientAssignments.id });
+		if (!assignment) {
+			throw new Error("assignment insert failed");
+		}
+		assignmentIds.push(assignment.id);
+
+		const saved = await saveClientDeclarationDraft({
+			orgId: orgA,
+			clientEmail,
+			draft: {
+				assignmentId: assignment.id,
+				answers: { [surveyQuestionId]: "owned by org A" },
+				stepIndex: 0,
+			},
+		});
+		expect(saved.ok).toBe(true);
+
+		await expect(
+			getClientDeclarationDraft({
+				orgId: orgB,
+				clientEmail,
+				assignmentId: assignment.id,
+			}),
+		).resolves.toBeNull();
+
+		await expect(
+			saveClientDeclarationDraft({
+				orgId: orgB,
+				clientEmail,
+				draft: {
+					assignmentId: assignment.id,
+					answers: { [surveyQuestionId]: "peer write must fail" },
+					stepIndex: 1,
+				},
+			}),
+		).resolves.toEqual({ ok: false, reason: "not_found" });
+
+		await expect(
+			getClientDeclaration({
+				orgId: orgB,
+				clientEmail,
+				assignmentId: assignment.id,
+			}),
+		).resolves.toBeNull();
+
+		await expect(
+			submitClientDeclaration({
+				orgId: orgB,
+				clientEmail,
+				assignmentId: assignment.id,
+			}),
+		).resolves.toEqual({ ok: false, reason: "not_found" });
 	});
 
 	it("FFT listEvents: event under A is invisible to org B", async () => {

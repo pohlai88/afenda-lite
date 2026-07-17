@@ -5,7 +5,7 @@ import type { ApiErrorCode } from "@/modules/platform/schemas/api-error";
  * Expected failures return `{ ok: false, … }`; throw only for unexpected bugs.
  */
 
-export type ActionSuccess<T> = {
+type ActionSuccess<T> = {
 	ok: true;
 	data: T;
 };
@@ -33,16 +33,15 @@ export function actionFail(
 		: { ok: false, code, message, details };
 }
 
-export function isActionSuccess<T>(
-	result: ActionResult<T>,
-): result is ActionSuccess<T> {
-	return result.ok;
-}
-
-export function isActionFailure<T>(
-	result: ActionResult<T>,
-): result is ActionFailure {
-	return !result.ok;
+/**
+ * API-007 — unexpected Action failure with safe client correlation reference.
+ * `details` is always `{ correlationId }` (no stacks / secrets).
+ */
+export function actionFailInternal(
+	message: string,
+	correlationId: string,
+): ActionFailure {
+	return actionFail("INTERNAL_ERROR", message, { correlationId });
 }
 
 type ActionFieldErrorDetails = {

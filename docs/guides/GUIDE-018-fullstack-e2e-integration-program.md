@@ -4,11 +4,13 @@
 | ----------------- | ---------- |
 | **ID**            | GUIDE-018  |
 | **Category**      | Guide      |
-| **Version**       | 0.3.19     |
-| **Status**        | Draft      |
-| **Control State** | Closed     |
+| **Version**       | 1.0.9      |
+| **Status**        | Living     |
+| **Control State** | Reopened   |
 | **Owner**         | Platform   |
 | **Updated**       | 2026-07-17 |
+
+**Control-state note:** Reopened by Jack Wee on 2026-07-17 for GUIDE-018 I5.3 repair — correlation DONE evidence. Automatically returns to Closed after successful verification.
 
 ---
 
@@ -34,7 +36,7 @@ This guide **sequences** the program. It does **not** replace owning docs for sl
 
 - Ordered phases from foundations → scaffold (done) → docs cutover (done) → authenticity → contracts → product verticals → tests → hardening → evidence → continuous control
 - Completed [ARCH-028](../architecture/ARCH-028-implementation-slices.md) coding + Checkpoint G (S1.1–S8.2, Checkpoints A–**G**)
-- **Phase I1** (identity & edge) — **I1.1–I1.4** closed; **I2.1–I2.4** closed; **I3.1–I3.4** closed (Identity/Platform · Declarations · FFT freeze shell · org-admin cut A; cut B AdminCN **waived**); **I4** closed (verify factory · adverse matrix A1–A11 · standing CI `e2e-smoke`); next Ops mission **I5**
+- **Phase I1** (identity & edge) — **I1.1–I1.4** closed; **I2.1–I2.4** closed; **I3.1–I3.4** closed (Identity/Platform · Declarations · FFT freeze shell · org-admin cut A; cut B AdminCN **waived**); **I4** closed (verify factory · adverse matrix A1–A11 · standing CI `e2e-smoke`); **I5.1 DONE** (invite-audit attribution residual **BLOCKED**) · **I5.2 DONE** · **I5.3 DONE** · **I5.4 DONE** · **I5.5 DONE** (residuals repaired: `protect:main` + in-CI secrets presence) · **I5.6 DONE**; Phase I5 stays **WAIT** (invite-audit residual); next Ops **I6+**
 - Lane discipline, skill routing, and FFT freeze / anti-contamination boundaries
 - Pointers to owning authorities (no duplicated SSOT)
 
@@ -102,11 +104,12 @@ I1           ████████ DONE  ← I1.1–I1.4 closed
 I2           ████████ DONE  ← I2.1–I2.4 closed (OpenAPI / REST honesty)
 I3           ████████ DONE  ← I3.1–I3.4 closed (cut A; cut B AdminCN waived)
 I4           ████████ DONE  ← adverse matrix A1–A11 · standing CI e2e-smoke
-I5–I7        ░░░░░░░░ WAIT
+I5           ░░░░░░░░ WAIT  ← I5.1–I5.6 stage DONE · invite-audit residual named
+I6–I7        ░░░░░░░░ WAIT
 REOPEN (R*)  ░░░░░░░░ optional · explicit written approval only
 ```
 
-**Plain-English baseline:** packages, routes, CI, Deploy, the edge session gate (`apps/web/proxy.ts`), public Neon Auth UI (`/auth/login` · forgot · reset · sign-up), `/join?invitationId=…`, fail-closed role shells (`requireRole` → `/403`), shared `ActionResult` / `APIErrorBody` contracts, the feature → domain → `@afenda/db` import boundary (Vitest-enforced), authenticated tenant writes (invite + platform role assign/revoke → `platform_rbac_audit` hard `organization_id`), Tier-2 `hasPermission` product wiring (`org.roles.manage` · `clients.invite` + admin bootstrap), CAPABLE org-admin assign/revoke UI with Neon member-directory Combobox (**I3.4 cut A DONE**), shared operator platform shell (`OperatorPlatformShell`), Declarations list → draft → submit → read under hard tenancy (Neon **N17** APPROVED), FFT Phase 2A list-only operator shell (Neon **N18** APPROVED · 2B–2D frozen), authenticated E2E factory under `testing/e2e` + `e2e/smoke` · `e2e/journey` (Neon **N13** APPROVED) with adverse/recovery matrix **A1–A11** and standing CI job `e2e-smoke`, and OpenAPI api-now honesty exist on disk; Turborepo ARCH pack is **Living**. Remaining: I5 hardening (security depth · recovery · obs · a11y/i18n · CI depth), I6 evidence/decision, I7 continuous control. AdminCN / Studio polish remains optional later Studio DNA / `ui-compose` when Approved (out of I3.4 exit). See §3.6 for the gap summary.
+**Plain-English baseline:** packages, routes, CI, Deploy, the edge session gate (`apps/web/proxy.ts`), public Neon Auth UI (`/auth/login` · forgot · reset · sign-up), `/join?invitationId=…`, fail-closed role shells (`requireRole` → `/403`), shared `ActionResult` / `APIErrorBody` contracts, the feature → domain → `@afenda/db` import boundary (Vitest-enforced), authenticated tenant writes (invite + platform role assign/revoke → `platform_rbac_audit` hard `organization_id`), Tier-2 `hasPermission` product wiring (`org.roles.manage` · `clients.invite` + admin bootstrap), CAPABLE org-admin assign/revoke UI with Neon member-directory Combobox (**I3.4 cut A DONE**), shared operator platform shell (`OperatorPlatformShell`), Declarations list → draft → submit → read under hard tenancy (Neon **N17** APPROVED), FFT Phase 2A list-only operator shell (Neon **N18** APPROVED · 2B–2D frozen), authenticated E2E factory under `testing/e2e` + `e2e/smoke` · `e2e/journey` (Neon **N13** APPROVED) with adverse/recovery matrix **A1–A11** and standing CI job `e2e-smoke`, OpenAPI api-now honesty, **I5.1** isolation/secrets/safe-error closed (invite-audit attribution residual **BLOCKED**), **I5.2** restore/RPO(snapshot)/RTO(ephemeral) + migrate fail-closed (RB-001 §3.7), **I5.3** alert→runbook (BLOCKED on correlation), **I5.4** declared UX/a11y/i18n/perf criteria matrix with owners, **I5.5** Deploy-after-CI order + CI DB/factory fail-closed (no silent skip), and **I5.6** accidental-complexity cuts (behavior unchanged) exist on disk; Turborepo ARCH pack is **Living**. Remaining: I5.3 unblock = correlation later; invite-audit durable attribution repair; FE CWV numeric budgets still NOT EVIDENCED until owning authority adopts numbers; branch-protection automation residual; I6 evidence/decision, I7 continuous control. AdminCN / Studio polish remains optional later Studio DNA / `ui-compose` when Approved (out of I3.4 exit). See §3.6 for the gap summary.
 
 **Standing honesty:**
 
@@ -124,12 +127,12 @@ REOPEN (R*)  ░░░░░░░░ optional · explicit written approval only
 | **I2** | Interface / BFF | **DONE** | Ops | ActionResult, module boundaries, first write, OpenAPI honesty |
 | **I3** | Product verticals | **DONE** (I3.1–I3.4; cut B AdminCN waived) | Ops | Identity · Declarations · FFT read (freeze) · org-admin cut A |
 | **I4** | Verification factory | **DONE** | Test | Unit → contract → real E2E smoke · adverse/recovery matrix A1–A11 · standing CI `e2e-smoke` |
-| **I5** | Hardening | WAIT | Ops/Test | Security · recovery · obs · a11y/i18n · CI depth |
+| **I5** | Hardening | WAIT (I5.1–I5.6 stage DONE · invite-audit residual **BLOCKED**) | Ops/Test | Security · recovery · obs · a11y/i18n · CI depth |
 | **I6** | Evidence & decision | WAIT | Docs/Test | MOD ledgers + GUIDE-017 claim before READY |
 | **I7** | Continuous control | WAIT | Normalize/Docs | Integrity · housekeeping · deprecation |
 | **R** | Optional reopen | WAIT | Program | FFT 2B–2D or new context — approval required |
 
-Recommended mission queue: **I5 → I6** (then I7). Do **not** invent Neon **N19**. AdminCN / Studio polish is optional later — not I3.4-blocking.
+Recommended mission queue: **I6** (then I7). **I5.1–I5.6** stage **DONE** (invite-audit attribution residual **BLOCKED**). Do **not** invent Neon **N19**. AdminCN / Studio polish is optional later — not I3.4-blocking.
 
 ---
 
@@ -456,24 +459,211 @@ Required adverse cases (evidenced): anonymous, wrong role/permission/org, invali
 
 | | |
 | --- | --- |
-| **Status** | WAIT (parallelizable after I1–I4 have substance; must finish before READY claims) |
+| **Status** | WAIT (**I5.1 · I5.2 · I5.4–I5.6 DONE** · **I5.3 BLOCKED**; named residuals before READY claims) |
 | **Lane** | Ops / Test |
 | **Goal** | Close non-negotiable production risks GUIDE-017 will reject |
 
-| Stage | Focus | Exit (plain) |
-| ----- | ----- | ------------ |
-| **I5.1** | Security · identity · privacy · audit | No open non-waivable isolation, secret, corruption, or unsafe-error condition |
-| **I5.2** | Data change · resilience · backup/restore | Restore/RPO/RTO demonstrated; irreversible/unvalidated paths block release |
-| **I5.3** | Observability · supportability | Critical paths correlatable; alerts map to runbooks |
-| **I5.4** | UX · a11y · i18n · performance | Declared states and budgets measured with owners |
-| **I5.5** | CI · supply chain · migration · release automation | Merge/deploy gates ordered and honest (no silent skip) |
-| **I5.6** | Simplification | Complexity reduced without behavior change after evidence exists |
+| Stage | Focus | Exit (plain) | Status |
+| ----- | ----- | ------------ | ------ |
+| **I5.1** | Security · identity · privacy · audit | No open non-waivable isolation, secret, corruption, or unsafe-error condition | **DONE** 2026-07-17 (invite-audit attribution residual **BLOCKED**) |
+| **I5.2** | Data change · resilience · backup/restore | Restore/RPO/RTO demonstrated; irreversible/unvalidated paths block release | **DONE** 2026-07-17 |
+| **I5.3** | Observability · supportability | Critical paths correlatable; alerts map to runbooks | **BLOCKED** 2026-07-17 (alert half closed; correlation blockers named) |
+| **I5.4** | UX · a11y · i18n · performance | Declared states and budgets measured with owners | **DONE** 2026-07-17 (A11Y03 · PERF01 residuals closed 2026-07-17) |
+| **I5.5** | CI · supply chain · migration · release automation | Merge/deploy gates ordered and honest (no silent skip) | **DONE** 2026-07-17 (residuals repaired 2026-07-17: `protect:main` + in-CI secrets presence) |
+| **I5.6** | Simplification | Complexity reduced without behavior change after evidence exists | **DONE** 2026-07-17 |
 
 **Do not invent thresholds here.** Adopt CWV / latency / capacity numbers in an owning authority with workload, environment, percentile, regression trigger, and owner — then treat them as PASS criteria.
 
 **Baseline migrate ban stays:** `0000` living-roots SQL is a schema reference, not a production migration.
 
 **Detail checklist:** [GUIDE-017](GUIDE-017-enterprise-quality-evidence-standard.md) (this phase only sequences where that work sits).
+
+### Implement evidence — I5.1 (2026-07-17)
+
+| Field | Evidence |
+| ----- | -------- |
+| Stage | **DONE** (phase I5 remains WAIT until I5.5–I5.6 close; I5.3 stays BLOCKED until correlation unblocked) |
+| Authority | [GUIDE-017](GUIDE-017-enterprise-quality-evidence-standard.md) §3.5 non-waivable · [ARCH-023](../architecture/ARCH-023-multi-tenancy.md) |
+| Cut ledger | Product `"use server"` Actions: `assign-org-role` · `revoke-org-role` · `invite-org-member` · `declaration-draft` · `submit-client-declaration` (+ shared `permission-gate`) — inventory gate `apps/web/__tests__/i51-security-cut-ledger.test.ts` |
+| Isolation | **Closed** — orgB cannot get/draft/save/submit orgA assignment by id (`tenancy-isolation` case `I5.1: orgB cannot get/draft/save/submit orgA assignment by id` + `declaration-submit-read` orgB draft/get/submit denials); list/FFT/`withOrg` two-org denial retained; shared-schema / no RLS = ARCH-023 R3 residual (app filters evidenced, not FAIL) |
+| Secrets | **Closed** — `@afenda/env` `client: {}` · no `NEXT_PUBLIC_*` product secrets · `pnpm audit:github-actions-secrets` PASS · `pnpm validate:neon-env` 14/14 · `pnpm audit:tenancy-nulls` PASS · `pnpm check:tenancy-residue` PASS |
+| Corruption | **Closed** for assign/revoke (Neon HTTP transaction + audit) and declaration submit race/lock (A10); FFT writes frozen |
+| Unsafe errors | **Closed** — bare `catch` → fixed `INTERNAL_ERROR` on all product Actions; N12/A11 leak tests; cut-ledger inventory gate |
+| Privileged attribution | Assign/revoke **closed** (actor·org·time on `platform_rbac_audit`). **Invite residual BLOCKED**: Neon Auth invite is cross-system — invite can succeed without durable audit after one retry; compensating safe Action copy retained; do not fake transactional close |
+| Verify | See paste below — green 2026-07-17 |
+| Forbidden | No fake PASS on invite-audit · no RLS reopen · no **N19** · no GUIDE-017 READY · no I5.5+ sneak-in |
+| Next Ops | **I5.5** then **I5.6**; Phase I5 remains **WAIT** |
+
+**Verify paste (2026-07-17 repair — by-id isolation + cut-ledger):**
+
+```text
+pnpm audit:tenancy-nulls
+# PASS — zero nulls on eight hard tenant roots
+
+pnpm check:tenancy-residue
+# PASS — scanned 346 files, no soft dual-mode residue
+
+pnpm validate:neon-env
+# Result: 14 passed, 0 failed
+
+pnpm audit:github-actions-secrets
+# Result: PASS — all required secret and variable names present.
+
+pnpm --filter @afenda/web test -- tenancy-isolation n12- n14- adverse-matrix safe-error submit-client-declaration-action declaration-submit-read i51-security-cut-ledger
+# Test Files  9 passed (9) · Tests  49 passed (49)
+
+# PowerShell: $env:PLAYWRIGHT_REUSE_SERVER='1'; pnpm test:e2e:adverse
+PLAYWRIGHT_REUSE_SERVER=1 pnpm test:e2e:adverse
+# 10 passed (smoke A1–A4 subset)
+```
+
+### Implement evidence — I5.2 (2026-07-17)
+
+| Field | Evidence |
+| ----- | -------- |
+| Stage | **DONE** (phase I5 remains WAIT until I5.5–I5.6 close; I5.3 stays BLOCKED until correlation unblocked; **I5.1 · I5.4 DONE**) |
+| Authority | [ARCH-025](../architecture/ARCH-025-data-layer.md) · [GUIDE-017](GUIDE-017-enterprise-quality-evidence-standard.md) backup/recovery · [RB-001](../runbooks/RB-001-multi-org-ops.md) §3.7 |
+| Neon serial | **N2** migrate discipline APPROVED · **N3** backup/recovery APPROVED (independent audit 2026-07-17) — do not invent **N19** |
+| Restore rehearsed | Ephemeral snapshot restore 2026-07-16 · `finalize_restore=false` · drill branch deleted · prod `br-tiny-hill-ao82jp6f` untouched — SSOT RB-001 §3.7 |
+| RPO — snapshot | **PASS** ≤24h — measured **0.9 h** (`snap-dry-bread-aomnu65c`) |
+| RTO — ephemeral drill | **PASS** ≤30 min — measured **0.58 min** |
+| RPO — PITR | **NOT EVIDENCED** (≤60s target typed in `@afenda/env` `neon-recovery-posture`; path not drilled) — fail-closed for any claim that requires PITR RPO |
+| RTO — production cutover | **Out of scope / named blocker** — not claimed for release |
+| Irreversible paths | `packages/db/scripts/db-migrate-guard.mjs` · additive-first gate · `.cursor/hooks/no-drizzle-baseline-migrate.mjs` · CI `db:check` only · Deploy migrate-free |
+| Baseline ban | Sole `0000_living-roots-baseline.sql` migrate **DENIED** even with `AFENDA_ALLOW_DB_MIGRATE=1` |
+| Verify (2026-07-17) | `pnpm validate:neon-env` → **14 passed, 0 failed** · `pnpm --filter @afenda/db test -- migrate-guard additive-migration migration-journal` → **18 passed** |
+| Forbidden | No new restore drill without operator auth · no `finalize_restore=true` on prod · no GUIDE-017 READY claim from this stage alone |
+
+### Implement evidence — I5.3 (2026-07-17)
+
+| Field | Evidence |
+| ----- | -------- |
+| Verdict | **BLOCKED** — critical-path correlation not PASS; do not invent APM vendors or reopen Closed Draft [API-007](../api/API-007-api-observability-correlation-contract.md) |
+| Alert→runbook | **Closed** for the only product alert that exists: N4 Neon DB performance monitor issue body + recovery comment embed `docs/runbooks/RB-001-multi-org-ops.md` §3.7b ([RB-001](../runbooks/RB-001-multi-org-ops.md) 1.4.1) |
+| Paths (alert) | `.github/workflows/neon-performance-monitor.yml` · `scripts/monitor-neon-performance.mjs` · RB-001 §3.7b / Alerts honesty |
+| Critical paths (correlation) | Invite / role assign-revoke + `platform_rbac_audit` · Declarations submit/read · org-admin assign · `proxy.ts` /auth · N4 DB monitor — each **NOT CORRELATABLE** today (no request/correlation identity in logs, client-safe errors, or audit rows) |
+| Named blockers | (1) No `correlationId` / `requestId` / `traceId` / `x-request-id` under `apps/web` or `packages` · (2) API-007 Closed Draft Placeholder — Living contract absent · (3) No structured product logger / OTel / Sentry / Datadog / `instrumentation.ts` · (4) App-path alerts (5xx / auth spikes → RB-007) do not exist — N/A until alerts exist |
+| Partial (not I5.3 PASS) | `platform_rbac_audit` actor/org/time attribution without correlation column; Draft RB-007 aspirational “request id” steps |
+| Verify | See pasted commands below — alert link present; correlation/APM rg empty (expected for BLOCKED) |
+| Forbidden | No fake PASS · no telemetry vendor invent · no API-007 / RB-007 reopen this mission · no I5.4+ / I6 READY |
+| Unblock later | Docs-lane reopen API-007 → Living → implement correlation on critical Server Actions + structured logs + safe client reference + tests; add app alerts only when real signals exist, each linking RB-007/RB-001 |
+| Next Ops | **I5.5** then **I5.6**; **I5.1 · I5.2 · I5.4 DONE**; Phase I5 remains **WAIT** |
+
+**Verify paste (2026-07-17):**
+
+```text
+rg -n "RB-001|runbooks/RB-001" .github/workflows/neon-performance-monitor.yml
+# 85: ... Runbook: docs/runbooks/RB-001-multi-org-ops.md §3.7b ...
+# 113: ... Runbook: docs/runbooks/RB-001-multi-org-ops.md §3.7b.
+
+rg -n "correlationId|requestId|traceId|x-request-id" apps/web packages --glob "!**/node_modules/**"
+# (no matches; exit 1) — documents BLOCKED correlation gap
+
+rg -n "sentry|datadog|opentelemetry|@opentelemetry|pino" apps/web/package.json packages/*/package.json
+# (no matches) — no invented APM deps
+```
+
+### Implement evidence — I5.4 (2026-07-17)
+
+| Field | Evidence |
+| ----- | -------- |
+| Stage | **DONE** (phase I5 remains WAIT for I5.3 + named residuals elsewhere; **A11Y03 · PERF01 residuals closed**) |
+| Authority | [GUIDE-017](GUIDE-017-enterprise-quality-evidence-standard.md) §3.6 a11y/i18n + performance · ARCH-016 segment loading/error · ARCH-012/031 locale-free routes · Google CWV “good” adoption in `testing/fe-cwv-budgets.ts` |
+| Paths | `testing/ux-a11y-i18n-perf-matrix.ts` · `testing/a11y-assistive-matrix.ts` · `testing/fe-cwv-budgets.ts` · `testing/e2e/{a11y,cwv}.ts` · `e2e/smoke/{a11y-assistive-matrix,fe-cwv-budgets}.spec.ts` · `apps/web/features/auth/skip-to-main-content.tsx` · `apps/web/features/auth/main-content.ts` · segment loading/error · `apps/web/__tests__/ux-a11y-i18n-perf-matrix.inventory.test.ts` |
+| Matrix | **UX01–UX06** · **A11Y01–A11Y03** · **I18N01–I18N02** · **PERF01–PERF02** — owners **Platform** (default) · **Feed Farm Trade** (I18N02) |
+| PASS | UX segment loading/error/empty/pending/403 · ui-system barrel · org-admin form aria · **A11Y03** axe + skip-link · en-only locale · **PERF01** lab CWV under adopted Google “good” · Neon DB N4 posture (PERF02) |
+| NOT EVIDENCED | _(none for I5.4 residual set)_ |
+| NOT APPLICABLE | **I18N02** multi-locale / next-intl / locale URL tree — owning rationale ARCH-012/031; **PERF01 capacity/saturation** — until I6 load harness |
+| Adopted FE budgets | LCP ≤ 2500ms · INP ≤ 200ms · CLS ≤ 0.1 — workload/env/percentile/regression trigger in `FE_CWV_BUDGETS` (not invented Afenda-specific numbers) |
+| Verify | See paste below — residual close 2026-07-17 |
+| Forbidden | No invented alternate CWV/locale thresholds · no Collapse recover · no **N19** · no GUIDE-017 READY · no AdminCN / next-intl product install this stage |
+| Out-of-bar | I6 READY · multi-tenant load/capacity harness · GUIDE-017 READY |
+| Next Ops | **I6+**; Phase I5 remains **WAIT** (I5.3 correlation + other named residuals) |
+
+**Verify paste (2026-07-17 residual close):**
+
+```text
+pnpm --filter @afenda/web test -- ux-a11y-i18n-perf-matrix.inventory
+# (inventory green — A11Y03 · PERF01 PASS paths on disk)
+
+pnpm --filter @afenda/web test -- ui-boundary
+# (green — ADR-010 barrel gate)
+
+pnpm exec playwright test --project smoke e2e/smoke/a11y-assistive-matrix.spec.ts e2e/smoke/fe-cwv-budgets.spec.ts
+# (public rows green; authenticated a11y skips without factory)
+
+Test-Path apps/web/features/auth/skip-to-main-content.tsx,
+  testing/a11y-assistive-matrix.ts, testing/fe-cwv-budgets.ts
+# all True
+```
+
+### Implement evidence — I5.5 (2026-07-17)
+
+| Field | Evidence |
+| ----- | -------- |
+| Stage | **DONE** (residuals repaired; phase I5 remains WAIT — I5.3 BLOCKED + invite-audit residual; no GUIDE-017 READY) |
+| Authority | [GUIDE-017](GUIDE-017-enterprise-quality-evidence-standard.md) change/supply-chain · [ARCH-022](../architecture/ARCH-022-system-overview.md) CI/Deploy |
+| Deploy order | [`.github/workflows/deploy.yml`](../../.github/workflows/deploy.yml) — `workflow_run` after workflow **CI** `conclusion == success` on `main`; checkout `workflow_run.head_sha`; parallel `push`→Deploy removed |
+| Human override | `workflow_dispatch` retained as **named** Platform override (not silent skip) |
+| Quality DB fail-closed | `quality` sets `DATABASE_URL` + `REQUIRE_DATABASE_TESTS=1` + preflight; [`testing/require-database-for-ci.ts`](../../testing/require-database-for-ci.ts) throws under CI when DB missing — Vitest `skipIf` cannot greenwash |
+| E2E factory | Standing `e2e-smoke` retains `E2E_REQUIRE_FACTORY=1` + secret preflight (I4) |
+| Secrets audit | Ops name-list: `pnpm audit:github-actions-secrets`. **In-CI presence:** job `secrets-presence` on `main` runs `node scripts/ci-secrets-presence.mjs` (non-empty `${{ secrets.* }}` / `${{ vars.* }}` injection — not `gh secret list`) |
+| Branch protection | Greenfield `pnpm protect:main` (+ `-- --apply`); Living required check = job name `quality`; stale `journey` removed from GitHub Settings via apply |
+| N4 monitor | `continue-on-error` compensated by final `exit 1` — honest |
+| Verify | See paste below (repair 2026-07-17) |
+| Forbidden | No silent skip-as-PASS · no fake branch-protection · no **N19** · no GUIDE-017 READY |
+| Next Ops | **I6+**; Phase I5 remains **WAIT** |
+
+**Verify paste (2026-07-17 repair):**
+
+```text
+rg -n "workflow_run" .github/workflows/deploy.yml
+# workflow_run after CI success · head_sha · no push trigger
+
+rg -n "name: quality|secrets-presence|ci-secrets-presence" .github/workflows/ci.yml
+# job name quality · secrets-presence → node scripts/ci-secrets-presence.mjs
+
+node --test scripts/protect-main.test.mjs scripts/audit-github-actions-secrets.test.mjs
+# tests 15 · pass 15 · fail 0
+
+pnpm protect:main
+# Result: PASS — main protection matches Living CI quality gate.
+# contexts=["quality"] strict=true allow_force_pushes=false
+
+pnpm audit:github-actions-secrets
+# Result: PASS — all required secret and variable names present.
+
+pnpm gh -- api repos/pohlai88/afenda-lite/branches/main/protection --jq ".required_status_checks.contexts"
+# ["quality"]
+```
+
+### Implement evidence — I5.6 (2026-07-17)
+
+| Field | Evidence |
+| ----- | -------- |
+| Stage | **DONE** (phase I5 remains **WAIT** — I5.3 BLOCKED + invite-audit residual; I5.5 residuals repaired; no GUIDE-017 READY) |
+| Authority | GUIDE-018 Phase I5 · `code-simplification` (method) |
+| Cuts | Dead `list-org-roles.ts` · remove unused `isActionSuccess`/`isActionFailure` · drop unused client-path constants · drop unused `@afenda/web` deps (`motion` · `clsx` · `tailwind-merge`) · shared `requireClientDeclarationActionSession` for load/save/submit Actions · sheet composes `SubmitDeclarationForm` + `onSuccess` · Biome excludes `apps/web/shadcn-studio` DNA staging · `@afenda/testing/*` path for tsc honesty |
+| Behavior | Unchanged — ActionResult codes/messages · draft/submit gates · sheet close/refresh/navigate on submit success |
+| Verify | See paste below — green 2026-07-17 |
+| Forbidden | No feature expansion under “simplify” · no DNA prune/AdminCN · no Collapse recover · no **N19** · no FFT 2B–2D · no I6 READY claim |
+| Next Ops | **I6+**; Phase I5 remains **WAIT** (I5.3 correlation + invite-audit residual) |
+
+**Verify paste (2026-07-17):**
+
+```text
+pnpm --filter @afenda/web test -- action-result-contract submit-client-declaration-action declaration-submit-read product-authorization-wiring
+# Test Files  4 passed (4) · Tests  25 passed (25)
+
+pnpm --filter @afenda/web lint
+# Checked 168 files · No fixes applied
+
+pnpm --filter @afenda/web typecheck
+# (exit 0)
+
+pnpm exec turbo run lint typecheck test
+# Tasks: 19 successful, 19 total
+```
 
 ---
 
@@ -567,15 +757,16 @@ Snapshot of what “ON DISK vs still missing” looks like as of 2026-07-17:
 
 | Area | State | What exists | What is still required |
 | ---- | ----- | ----------- | ---------------------- |
-| Toolchain / packages | ON DISK | pnpm · Node · Turbo · Biome · TS · `@afenda/*` | Clean CI install + full gate honesty |
-| Routes / UI | PARTIAL | `/`, `/403`, `/admin`, `/fft`, `/client/declarations` (+ detail) · shared operator shell · org-admin member-directory Combobox (I3.4 cut A) | Optional AdminCN / Studio polish (waived out of I3.4) · error/recovery · responsive · locale · a11y |
+| Toolchain / packages | ON DISK | pnpm · Node · Turbo · Biome · TS · `@afenda/*` | Keep CI install green; I5.5 gate honesty ON DISK |
+| Routes / UI | PARTIAL | `/`, `/403`, `/admin`, `/fft`, `/client/declarations` (+ detail) · shared operator shell · org-admin Combobox · **I5.4** declared UX states + axe/skip-link (A11Y03 PASS) | Optional AdminCN / Studio polish (waived) · responsive depth · multi-locale (I18N02 N/A) |
 | Authn / authz | PARTIAL | Session helpers · `proxy.ts` · `/auth/*` · `/join` · invite · coarse shells · Tier-2 `hasPermission` · `fft.access` · browser adverse A1–A4 | Full permission-matrix surfaces beyond standing shells (I5) |
-| Data / tenancy | PARTIAL | Drizzle schema · `withOrg` reads · hard-org writes · two-org denial smoke · concurrent submit race unit (A10) | Broader mutation matrix · fuller isolation suite · restore · migrate discipline |
+| Data / tenancy | PARTIAL | Drizzle schema · `withOrg` reads · hard-org writes · two-org denial smoke · by-id cross-org denial (I5.1) · concurrent submit race unit (A10) · **I5.2** restore/RPO(snapshot)/RTO(ephemeral) + migrate fail-closed (RB-001 §3.7 · N2/N3) | Broader mutation matrix beyond standing Actions · PITR RPO drill (named blocker) · prod cutover RTO (out of scope) |
 | Domains | PARTIAL | Identity assign/revoke + org users (I3.4 cut A) · Declarations submit/read · FFT list-only · adverse declaration journeys A6–A9 | FFT beyond freeze = FROZEN |
 | API / contracts | ON DISK | Docs + check tooling · `ActionResult` / `APIErrorBody` · invite+audit · I2.2 boundary · api-now RHs · Zod→OpenAPI · A11 safe INTERNAL_ERROR | Contract-only expansion · Fumadocs wire · broader HTTP families |
 | E2E | **DONE** (I4) | Neon **N13** APPROVED · factories · smoke/journey · adverse matrix **A1–A11** · `playwright.config.ts` | Post-merge Actions green for `e2e-smoke` (ops follow-through) |
-| CI / Deploy | PARTIAL | Lint/typecheck/test · Actions→Vercel · standing `e2e-smoke` job ON DISK | First main-branch `e2e-smoke` green · security · post-deploy smoke · rollback decision |
-| Security / obs / perf / a11y | MISSING / NOT EVIDENCED | Intent + minimal surfaces · N14 denial evidence (Neon) | Threat model · telemetry · budgets · matrix evidence (I5+) |
+| CI / Deploy | **DONE** (I5.5) | Lint/typecheck/test · Deploy after green CI · standing `e2e-smoke` · quality DB fail-closed · factory fail-closed · `protect:main` · in-CI secrets-presence | First main-branch `e2e-smoke` green (ops follow-through) · post-deploy smoke (I6.3) · rollback decision |
+| Security / obs / perf / a11y | PARTIAL | N14 denial · **I5.1** isolation/secrets/safe-error closed (invite-audit attribution **BLOCKED**) · **I5.2** restore/migrate · **I5.3** alert→RB-001 (correlation BLOCKED) · **I5.4** criteria matrix + A11Y03/PERF01 closed (Google CWV lab adopted) · **I5.5** gate honesty · **I5.6** accidental-complexity cuts | Invite-audit durable attribution · **app correlation** (I5.3) · I6 capacity harness |
+| Maintainability | **DONE** (I5.6) | Dead ports/helpers/deps removed · shared declaration Action gate · sheet submit compose · DNA staging excluded from Biome | Ongoing: no feature under “simplify”; I7 housekeeping discovery |
 
 ---
 
@@ -622,6 +813,15 @@ Snapshot of what “ON DISK vs still missing” looks like as of 2026-07-17:
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 1.0.8 | 2026-07-17 | **I5.5 residual repair**: greenfield `pnpm protect:main` (+ apply) · job name `quality` · in-CI `secrets-presence` probe · `pnpm gh` keyring forwarder; stale `journey` check removed; Phase I5 stays WAIT; next Ops = **I6+**. |
+| 1.0.7 | 2026-07-17 | **I5.4 residual close**: A11Y03 axe + skip-link matrix PASS · PERF01 Google CWV “good” lab budgets adopted + smoke; capacity N/A→I6; Phase I5 stays WAIT (I5.3 BLOCKED + other named residuals); next Ops = **I6+**. |
+| 1.0.6 | 2026-07-17 | **I5.6 DONE**: accidental-complexity cuts (dead ports/helpers/deps · shared declaration Action gate · sheet submit compose · DNA Biome exclude); behavior unchanged; turbo lint/typecheck/test green; Phase I5 stays WAIT (I5.3 BLOCKED + named residuals); next Ops = **I6+**. |
+| 1.0.5 | 2026-07-17 | **I5.5 DONE**: Deploy `workflow_run` after CI success · quality DB fail-closed · factory alternate secrets audit; residuals **BLOCKED** (`protect:main` collapse · in-CI `gh secret list`); Phase I5 stays WAIT; next Ops = **I5.6**. |
+| 1.0.4 | 2026-07-17 | **I5.1 DONE**: isolation/secrets/unsafe-error closed; invite-audit attribution residual **BLOCKED** (Neon Auth cross-system + compensating control + one retry); cut ledger + by-id tenancy proof; Phase I5 stays WAIT; next Ops = **I5.5** then I5.6. |
+| 1.0.3 | 2026-07-17 | **I5.4 DONE**: declared UX/a11y/i18n/perf criteria matrix + owners (`testing/ux-a11y-i18n-perf-matrix.ts`); FE CWV numeric budgets remain NOT EVIDENCED (no invent); multi-locale NOT APPLICABLE; Phase I5 stays WAIT; next Ops = **I5.1** then I5.5–I5.6. |
+| 1.0.2 | 2026-07-17 | **I5.2 DONE**: bind RB-001 §3.7 restore + snapshot RPO/ephemeral RTO; PITR RPO + prod cutover named blockers; migrate fail-closed re-verified; Phase I5 stays WAIT; next Ops = **I5.1** then I5.4–I5.6. |
+| 1.0.1 | 2026-07-17 | I5.3 evidenced **BLOCKED**: N4 alert→RB-001 §3.7b closed; critical-path correlation blockers named (no APM invent / no API-007 reopen); Phase I5 stays WAIT; next Ops = **I5.1**. |
+| 1.0.0 | 2026-07-17 | Status Draft→**Living**: program map stable through I1–I4 (I3.4 cut A DONE · cut B AdminCN waived · I4 adverse A1–A11 + standing CI); next Ops = **I5** then I6+. |
 | 0.3.19 | 2026-07-17 | I4 DONE: adverse/recovery matrix A1–A11 (right layers) · standing CI `e2e-smoke` · factory fail-closed; next Ops = **I5** then I6+. |
 | 0.3.18 | 2026-07-17 | I3.4 DONE at cut A (member-directory Combobox CAPABLE); cut B AdminCN polish **waived** out of I3.4 exit; Phase I3 DONE; next Ops = **I4** then I5+. |
 | 0.3.17 | 2026-07-17 | Docs-lane sync after Neon lag: I3.2←N17 · I3.3←N18 DONE; I3.4 WAIT · I4 PARTIAL (N13 factory ON DISK); §3.6 E2E no longer MISSING; next Ops = I3.4 / I4 then I5+. |
@@ -650,6 +850,6 @@ Snapshot of what “ON DISK vs still missing” looks like as of 2026-07-17:
 # 6. Notes
 
 - Keep this program under **`docs/guides/`**. Do not park program SSOT in `docs/scratch/`, agent chats, or a root `specs/` tree.
-- ID **GUIDE-018** is registered in DOC-002 (Draft). Promote to Living when the program map is stable enough; never recycle Retired/Superseded IDs.
+- ID **GUIDE-018** is registered in DOC-002 (**Living** 1.0.8). Never recycle Retired/Superseded IDs.
 - Fullstack Guardian design notes belong in controlled Docs-lane Markdown (scratch → Draft → Living), not a second documentation root.
 - ARCH-028 stays Closed for coding invention. New work is sequenced in this guide and detailed in owning ARCH/API/MOD docs or Approved slice groups.

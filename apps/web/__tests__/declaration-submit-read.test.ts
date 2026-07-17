@@ -6,56 +6,20 @@
  */
 
 import { randomUUID } from "node:crypto";
-import { readFileSync } from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { clientAssignments, db, eq, surveys } from "@afenda/db";
+import { resolveDatabaseUrlForTests } from "@afenda/testing/require-database-for-ci";
 import { afterAll, describe, expect, it } from "vitest";
-
-import { saveClientDeclarationDraft } from "../modules/declarations/domain/declaration-draft";
+import {
+	getClientDeclarationDraft,
+	saveClientDeclarationDraft,
+} from "../modules/declarations/domain/declaration-draft";
 import { getClientDeclaration } from "../modules/declarations/domain/get-client-declaration";
 import {
 	hasDeclarationAnswerContent,
 	submitClientDeclaration,
 } from "../modules/declarations/domain/submit-client-declaration";
 
-const repoRoot = path.resolve(
-	path.dirname(fileURLToPath(import.meta.url)),
-	"../../..",
-);
-
-function loadDatabaseUrl(): string | undefined {
-	if (process.env.DATABASE_URL) {
-		return process.env.DATABASE_URL;
-	}
-	try {
-		const text = readFileSync(path.join(repoRoot, ".env.local"), "utf8");
-		for (const line of text.split(/\r?\n/)) {
-			const trimmed = line.trim();
-			if (trimmed.length === 0 || trimmed.startsWith("#")) continue;
-			const match = /^DATABASE_URL\s*=\s*(.*)$/.exec(trimmed);
-			if (!match) continue;
-			let value = match[1]?.trim() ?? "";
-			if (
-				(value.startsWith('"') && value.endsWith('"')) ||
-				(value.startsWith("'") && value.endsWith("'"))
-			) {
-				value = value.slice(1, -1);
-			}
-			return value.length > 0 ? value : undefined;
-		}
-	} catch {
-		return undefined;
-	}
-	return undefined;
-}
-
-const databaseUrl = loadDatabaseUrl();
-if (databaseUrl) {
-	process.env.DATABASE_URL = databaseUrl;
-}
-
-const hasDatabase = typeof databaseUrl === "string" && databaseUrl.length > 0;
+const { hasDatabase } = resolveDatabaseUrlForTests();
 
 describe("declaration submit/read guards (N17)", () => {
 	it("hasDeclarationAnswerContent rejects empty answer maps", () => {
@@ -154,6 +118,26 @@ describe.skipIf(!hasDatabase)("declaration submit/read two-org (N17)", () => {
 			},
 		});
 		expect(saved.ok).toBe(true);
+
+		// I5.1 / N17 — peer org cannot draft-get or draft-save by assignment id
+		await expect(
+			getClientDeclarationDraft({
+				orgId: orgB,
+				clientEmail,
+				assignmentId: assignment.id,
+			}),
+		).resolves.toBeNull();
+		await expect(
+			saveClientDeclarationDraft({
+				orgId: orgB,
+				clientEmail,
+				draft: {
+					assignmentId: assignment.id,
+					answers: { [surveyQuestionId]: "peer write must fail" },
+					stepIndex: 1,
+				},
+			}),
+		).resolves.toEqual({ ok: false, reason: "not_found" });
 
 		const first = await submitClientDeclaration({
 			orgId: orgA,

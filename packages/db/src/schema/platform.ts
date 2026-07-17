@@ -99,6 +99,8 @@ export const platformRbacAudit = pgTable("platform_rbac_audit", {
 	oldValue: jsonb("old_value"),
 	newValue: jsonb("new_value"),
 	reason: text("reason"),
+	/** API-007 / GUIDE-018 I5.3 — required on new privileged writes; null on history. */
+	correlationId: text("correlation_id"),
 	createdAt: timestamp("created_at", { withTimezone: true })
 		.notNull()
 		.defaultNow(),

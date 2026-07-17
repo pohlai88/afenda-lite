@@ -1,5 +1,7 @@
 import { and, db, eq, platformRbacAudit } from "@afenda/db";
 
+import { requireTrimmed } from "@/modules/platform/domain/require-trimmed";
+
 /** Audit action stamped when an operator invitation succeeds (GUIDE-018 I2.3). */
 export const MEMBER_INVITE_AUDIT_ACTION = "member.invite" as const;
 
@@ -12,6 +14,8 @@ export type RecordRbacAuditCommand = {
 	orgId: string;
 	action: string;
 	actorUserId: string;
+	/** API-007 — required on new privileged writes (GUIDE-018 I5.3). */
+	correlationId: string;
 	targetType?: string;
 	targetId?: string;
 	roleId?: string;
@@ -19,14 +23,6 @@ export type RecordRbacAuditCommand = {
 	newValue?: Record<string, unknown>;
 	reason?: string;
 };
-
-function requireTrimmed(value: string, field: string, context: string): string {
-	const trimmed = value.trim();
-	if (trimmed.length === 0) {
-		throw new Error(`${context} requires non-empty ${field}`);
-	}
-	return trimmed;
-}
 
 /**
  * Platform — authenticated tenant write: insert `platform_rbac_audit` with
@@ -41,6 +37,11 @@ export async function recordRbacAudit(command: RecordRbacAuditCommand) {
 		"recordRbacAudit",
 	);
 	const action = requireTrimmed(command.action, "action", "recordRbacAudit");
+	const correlationId = requireTrimmed(
+		command.correlationId,
+		"correlationId",
+		"recordRbacAudit",
+	);
 
 	const [row] = await db
 		.insert(platformRbacAudit)
@@ -48,6 +49,7 @@ export async function recordRbacAudit(command: RecordRbacAuditCommand) {
 			action,
 			actorUserId,
 			organizationId: orgId,
+			correlationId,
 			targetType: command.targetType,
 			targetId: command.targetId,
 			roleId: command.roleId,

@@ -162,6 +162,9 @@ describe("N12 living authz audit evidence", () => {
 				actorUserId: "user-n12-operator",
 				targetType: "membership",
 				targetId: "new.member@example.com",
+				correlationId: expect.stringMatching(
+					/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+				),
 			}),
 		);
 	});
@@ -181,10 +184,41 @@ describe("N12 living authz audit evidence", () => {
 		expect(result).toMatchObject({
 			ok: false,
 			code: "INTERNAL_ERROR",
+			details: {
+				correlationId: expect.stringMatching(
+					/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+				),
+			},
 		});
+		expect(auditMocks.recordRbacAudit).toHaveBeenCalledTimes(2);
 		expect(JSON.stringify(result)).not.toContain("SECRET_PASSWORD");
 		expect(JSON.stringify(result)).not.toContain("postgres://");
 		expect(JSON.stringify(result)).not.toContain(secretLeak);
+	});
+
+	it("retries invite audit once then succeeds (I5.1)", async () => {
+		authMocks.inviteOrgMember.mockResolvedValue({
+			invitationId: "inv-n12-fixture",
+		});
+		auditMocks.recordRbacAudit
+			.mockRejectedValueOnce(new Error("transient audit"))
+			.mockResolvedValueOnce({ id: "audit-invite-retry" });
+
+		const formData = new FormData();
+		formData.set("email", "retry.member@example.com");
+		formData.set("role", "client");
+
+		const result = await inviteOrgMemberAction(null, formData);
+
+		expect(result).toEqual({
+			ok: true,
+			data: {
+				email: "retry.member@example.com",
+				auditId: "audit-invite-retry",
+				joinUrl: "/join?invitationId=inv-n12-fixture",
+			},
+		});
+		expect(auditMocks.recordRbacAudit).toHaveBeenCalledTimes(2);
 	});
 
 	it("returns auditId from DB-atomic assignOrgRoleWithAudit", async () => {
@@ -223,6 +257,9 @@ describe("N12 living authz audit evidence", () => {
 				roleId: ROLE_ID,
 				grantedBy: "user-n12-operator",
 				actorUserId: "user-n12-operator",
+				correlationId: expect.stringMatching(
+					/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+				),
 			}),
 		);
 		expect(identityMocks.getOrganizationUser).toHaveBeenCalledWith(

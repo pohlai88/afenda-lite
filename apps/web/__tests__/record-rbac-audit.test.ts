@@ -65,6 +65,7 @@ describe("recordRbacAudit guards (I2.3)", () => {
 				orgId: "   ",
 				action: MEMBER_INVITE_AUDIT_ACTION,
 				actorUserId: "user-a",
+				correlationId: "test-correlation-id",
 			}),
 		).rejects.toThrow(/orgId/);
 	});
@@ -75,6 +76,7 @@ describe("recordRbacAudit guards (I2.3)", () => {
 				orgId: "org-a",
 				action: MEMBER_INVITE_AUDIT_ACTION,
 				actorUserId: "",
+				correlationId: "test-correlation-id",
 			}),
 		).rejects.toThrow(/actorUserId/);
 	});
@@ -99,6 +101,7 @@ describe.skipIf(!hasDatabase)("recordRbacAudit tenancy write (I2.3)", () => {
 			targetType: "membership",
 			targetId: "invitee@example.com",
 			newValue: { email: "invitee@example.com", role: "client" },
+			correlationId: "test-correlation-id",
 		});
 		createdAuditIds.push({ id: row.id, orgId: orgA });
 
