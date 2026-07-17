@@ -266,7 +266,7 @@ export function TheMachineLandingStage({
 						<div className="brandbar__descriptor">
 							Purpose-bound enterprise intelligence
 						</div>
-						<SignInButton variant="secondary" />
+						<SignInButton surface="machine" />
 					</div>
 				</header>
 
