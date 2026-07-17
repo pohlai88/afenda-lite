@@ -1,5 +1,6 @@
 "use client";
 
+import type { PublicAuthPath } from "@afenda/auth/client";
 import { AuthView } from "@neondatabase/auth-ui";
 
 import { AuthSurfaceChrome } from "@/features/auth/auth-surface-chrome";
@@ -7,7 +8,7 @@ import { LocalAuthCredentialFill } from "@/features/auth/local-auth-credential-f
 import type { LocalAuthCredentials } from "@/features/auth/local-auth-credentials";
 
 type AuthViewShellProps = {
-	path: string;
+	path: PublicAuthPath;
 	/** Development-only operator / preview credentials for login autofill. */
 	localCredentials?: LocalAuthCredentials | null;
 };

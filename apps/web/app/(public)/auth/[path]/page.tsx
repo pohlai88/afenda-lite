@@ -21,6 +21,9 @@ const AUTH_TITLES: Record<PublicAuthPath, string> = {
 	"sign-up": "Sign up",
 };
 
+/** Reject undeclared segments (e.g. `/auth/sign-in`) with a hard 404 — not a soft island fallback. */
+export const dynamicParams = false;
+
 export function generateStaticParams() {
 	return PUBLIC_AUTH_PATHS.map((path) => ({ path }));
 }

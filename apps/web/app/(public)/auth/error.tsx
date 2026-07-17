@@ -11,6 +11,7 @@ export default function AuthError({ error, reset }: AuthErrorProps) {
 	return (
 		<div className="auth-surface">
 			<SegmentError
+				asLandmark={false}
 				title="Sign-in unavailable"
 				fallbackMessage="The auth surface failed to render. Try again."
 				error={error}
