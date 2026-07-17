@@ -8,7 +8,7 @@ import {
 } from "@afenda/auth";
 import { revalidatePath } from "next/cache";
 
-import { hasPermission } from "@/modules/identity/domain/has-permission";
+import { forbidUnlessPermission } from "@/app/actions/permission-gate";
 import { inviteOrgMemberCommandSchema } from "@/modules/identity/schemas/invite-org-member";
 import {
 	MEMBER_INVITE_AUDIT_ACTION,
@@ -60,17 +60,12 @@ export async function inviteOrgMemberAction(
 		return actionFail("FORBIDDEN", "You cannot invite that membership role.");
 	}
 
-	const mayInvite = await hasPermission({
-		orgId: session.orgId,
-		userId: session.userId,
-		code: "clients.invite",
-		bootstrapRole: session.role,
-	});
-	if (!mayInvite) {
-		return actionFail(
-			"FORBIDDEN",
-			"You do not have permission to invite members.",
-		);
+	const permissionDenied = await forbidUnlessPermission(
+		session,
+		"clients.invite",
+	);
+	if (permissionDenied) {
+		return permissionDenied;
 	}
 
 	let invitationId: string | null = null;

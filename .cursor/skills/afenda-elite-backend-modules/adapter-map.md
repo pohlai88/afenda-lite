@@ -11,9 +11,10 @@
 
 | File | Disk | Module entrypoints (typical) | Notes |
 |------|------|------------------------------|-------|
-| `invite-org-member.ts` | **yes** (I1.3 / I2.3 / I3.1) | Identity invite schemas + `hasPermission(clients.invite)` + `@afenda/auth` `inviteOrgMember` + Platform `recordRbacAudit` | Operator invite; Origin = `APP_URL`; hard-tenancy audit write |
-| `assign-org-role.ts` | **yes** (I3.1) | Identity `assignOrgRole` + `hasPermission(org.roles.manage)` + Platform `recordRbacAudit` | Platform role assign; ActionResult + audit |
-| `revoke-org-role.ts` | **yes** (I3.1) | Identity `revokeOrgRole` + `hasPermission(org.roles.manage)` + Platform `recordRbacAudit` | Soft-revoke; ActionResult + audit |
+| `invite-org-member.ts` | **yes** (I1.3 / I2.3 / I3.1 / N11) | Identity invite schemas + shared session permission gate (`clients.invite`) + `@afenda/auth` `inviteOrgMember` + Platform `recordRbacAudit` | Operator invite; Origin = `APP_URL`; hard-tenancy audit write |
+| `assign-org-role.ts` | **yes** (I3.1 / N11) | Identity `assignOrgRole` + shared session permission gate (`org.roles.manage`) + Platform `recordRbacAudit` | Platform role assign; ActionResult + audit |
+| `revoke-org-role.ts` | **yes** (I3.1 / N11) | Identity `revokeOrgRole` + shared session permission gate (`org.roles.manage`) + Platform `recordRbacAudit` | Soft-revoke; ActionResult + audit |
+| `declaration-draft.ts` | **yes** (I2.4 / N11) | Declarations draft read/write + shared session permission gate (`declarations.read` / `declarations.manage`) | Client-owned org/email predicates; ActionResult |
 | `account.ts` | planned | `modules/identity/*` | Account session / Neon-owned fields |
 | `admin.ts` | planned | `modules/identity/*`, platform helpers | Broader org-admin chrome (assign/revoke shipped as discrete Actions) |
 | `client.ts` | planned | `modules/identity/*`, `modules/declarations/*` | Invite stamps + survey scope |
@@ -51,6 +52,7 @@ import { parseSchema } from "@/modules/platform/schemas/common"
 |---------|---------|
 | Prefer | `app/**/page.tsx` → features / thin runner → `modules/*/domain` (under `apps/web` on Target) |
 | Keep (Target) | `features/{auth,declarations,fft,org-admin}` shells (S7.4); expand with entry / richer runners under those L2 folders — Living name `organization-admin` maps to Target `org-admin` |
+| N11 Tier-2 | `org-admin` → `org.roles.manage` / `clients.invite`; `declarations` → `declarations.read` (+ `declarations.manage` for draft controls); `fft` → `fft.access`; coarse `requireRole` remains the route shell |
 | Forbidden | RSC `fetch('/api/...')` for ordinary product reads; recreate `lib/pages`; recover Collapse roots |
 
 ---

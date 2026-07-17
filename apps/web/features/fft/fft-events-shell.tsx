@@ -7,6 +7,7 @@ import {
 	CardTitle,
 } from "@afenda/ui-system";
 
+import { requirePermission } from "@/features/auth/require-permission";
 import { FftEventsPanel } from "@/features/fft/fft-events-panel";
 import { listEvents } from "@/modules/fft/domain/list-events";
 
@@ -16,8 +17,9 @@ import { listEvents } from "@/modules/fft/domain/list-events";
  * Never imports `@afenda/db`. UI from `@afenda/ui-system` (ADR-010).
  */
 export async function FftEventsShell() {
-	const { orgId } = await getSession();
-	const events = await listEvents(orgId);
+	const session = await getSession();
+	await requirePermission(session, "fft.access");
+	const events = await listEvents(session.orgId);
 
 	return (
 		<main className="flex min-h-dvh flex-col gap-6 bg-canvas p-6">
@@ -27,7 +29,7 @@ export async function FftEventsShell() {
 				</h1>
 				<p className="text-sm text-foreground-secondary">
 					Org-scoped events for{" "}
-					<code className="font-mono text-foreground">{orgId}</code>.
+					<code className="font-mono text-foreground">{session.orgId}</code>.
 				</p>
 			</header>
 
