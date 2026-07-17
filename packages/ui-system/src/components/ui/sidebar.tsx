@@ -16,6 +16,7 @@ import {
 	SheetHeader,
 	SheetTitle,
 } from "./sheet";
+import { SIDEBAR_COOKIE_MAX_AGE, SIDEBAR_COOKIE_NAME } from "./sidebar-cookie";
 import { Skeleton } from "./skeleton";
 import {
 	Tooltip,
@@ -24,12 +25,12 @@ import {
 	TooltipTrigger,
 } from "./tooltip";
 
-const SIDEBAR_COOKIE_NAME = "sidebar_state";
-const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
 const SIDEBAR_WIDTH = "16rem";
 const SIDEBAR_WIDTH_MOBILE = "18rem";
 const SIDEBAR_WIDTH_ICON = "3rem";
 const SIDEBAR_KEYBOARD_SHORTCUT = "b";
+/** Hydration-stable skeleton bar — never Math.random during SSR/hydrate. */
+const SIDEBAR_MENU_SKELETON_WIDTH = "70%";
 
 type SidebarContextProps = {
 	state: "expanded" | "collapsed";
@@ -601,15 +602,13 @@ function SidebarMenuBadge({
 function SidebarMenuSkeleton({
 	className,
 	showIcon = false,
+	width = SIDEBAR_MENU_SKELETON_WIDTH,
 	...props
 }: React.ComponentProps<"div"> & {
 	showIcon?: boolean;
+	/** CSS length for the text skeleton; default is hydration-stable. */
+	width?: string;
 }) {
-	// Random width between 50 to 90%.
-	const width = React.useMemo(() => {
-		return `${Math.floor(Math.random() * 40) + 50}%`;
-	}, []);
-
 	return (
 		<div
 			data-slot="sidebar-menu-skeleton"

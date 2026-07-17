@@ -27,6 +27,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 
+import { MAIN_CONTENT_ID } from "@/features/auth/main-content";
 import type { ShellNavItem } from "@/features/portal-chrome/nav-config";
 
 const NAV_ICONS: Record<string, typeof LayoutDashboard> = {
@@ -37,6 +38,8 @@ const NAV_ICONS: Record<string, typeof LayoutDashboard> = {
 type OperatorPlatformChromeProps = {
 	navItems: ShellNavItem[];
 	orgId: string;
+	/** Server-read `sidebar_state` cookie — keeps SSR/client first paint aligned. */
+	defaultSidebarOpen?: boolean;
 	children: ReactNode;
 };
 
@@ -47,6 +50,7 @@ type OperatorPlatformChromeProps = {
 export function OperatorPlatformChrome({
 	navItems,
 	orgId,
+	defaultSidebarOpen = true,
 	children,
 }: OperatorPlatformChromeProps) {
 	const pathname = usePathname();
@@ -55,7 +59,7 @@ export function OperatorPlatformChrome({
 		navItems.find((item) => pathname.startsWith(`${item.href}/`));
 
 	return (
-		<SidebarProvider>
+		<SidebarProvider defaultOpen={defaultSidebarOpen}>
 			<Sidebar collapsible="icon" variant="inset">
 				<SidebarHeader className="border-b border-sidebar-border">
 					<div className="flex items-center gap-2 px-2 py-1">
@@ -105,10 +109,7 @@ export function OperatorPlatformChrome({
 				<header className="sticky top-0 z-50 border-b border-border bg-surface-raised">
 					<div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-2 sm:px-6">
 						<SidebarTrigger className="-ml-1" />
-						<Separator
-							orientation="vertical"
-							className="hidden h-4 sm:block"
-						/>
+						<Separator orientation="vertical" className="hidden h-4 sm:block" />
 						<Breadcrumb className="hidden sm:block">
 							<BreadcrumbList>
 								<BreadcrumbItem>
@@ -120,9 +121,13 @@ export function OperatorPlatformChrome({
 						</Breadcrumb>
 					</div>
 				</header>
-				<div className="mx-auto flex w-full max-w-7xl flex-1 flex-col px-4 py-6 sm:px-6">
+				<main
+					id={MAIN_CONTENT_ID}
+					tabIndex={-1}
+					className="mx-auto flex w-full max-w-7xl flex-1 flex-col px-4 py-6 sm:px-6"
+				>
 					{children}
-				</div>
+				</main>
 			</SidebarInset>
 		</SidebarProvider>
 	);

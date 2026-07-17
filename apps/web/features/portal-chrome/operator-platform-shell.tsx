@@ -1,4 +1,6 @@
 import { getSession } from "@afenda/auth";
+import { SIDEBAR_COOKIE_NAME } from "@afenda/ui-system";
+import { cookies } from "next/headers";
 import type { ReactNode } from "react";
 
 import { OperatorPlatformChrome } from "@/features/portal-chrome/operator-platform-chrome";
@@ -11,15 +13,22 @@ type OperatorPlatformShellProps = {
 /**
  * Shared ERP operator platform shell (N16 · ARCH-015/018).
  * Composes Identity permission ports for nav access; vertical pages supply body.
+ * Reads sidebar cookie on the server so `defaultOpen` matches first paint.
  */
 export async function OperatorPlatformShell({
 	children,
 }: OperatorPlatformShellProps) {
-	const session = await getSession();
+	const [session, cookieStore] = await Promise.all([getSession(), cookies()]);
 	const navItems = await resolveOperatorShellNav(session);
+	const sidebarCookie = cookieStore.get(SIDEBAR_COOKIE_NAME)?.value;
+	const defaultSidebarOpen = sidebarCookie !== "false";
 
 	return (
-		<OperatorPlatformChrome navItems={navItems} orgId={session.orgId}>
+		<OperatorPlatformChrome
+			defaultSidebarOpen={defaultSidebarOpen}
+			navItems={navItems}
+			orgId={session.orgId}
+		>
 			{children}
 		</OperatorPlatformChrome>
 	);
