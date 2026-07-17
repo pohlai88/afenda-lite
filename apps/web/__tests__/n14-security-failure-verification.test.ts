@@ -206,10 +206,13 @@ describe("N14 denial surface evidence pins", () => {
 			"utf8",
 		);
 		const requirePermission = source("features/auth/require-permission.ts");
+		const requireFftAccess = source("modules/fft/auth/require-fft-access.ts");
 		expect(authPaths).toContain('AUTH_FORBIDDEN_PATH = "/403"');
 		expect(rbac).toContain("AUTH_FORBIDDEN_PATH");
 		expect(requirePermission).toContain("AUTH_FORBIDDEN_PATH");
 		expect(requirePermission).toContain("redirect");
+		expect(requireFftAccess).toContain("AUTH_FORBIDDEN_PATH");
+		expect(requireFftAccess).toContain("redirect");
 	});
 
 	it("keeps Playwright workerTenant empty-pattern so playwright-base loads", () => {

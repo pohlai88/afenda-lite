@@ -276,7 +276,9 @@ describe("N11 product authorization wiring", () => {
 				"org.roles.manage",
 				"clients.invite",
 			],
-			"features/fft/fft-events-shell.tsx": ["fft.access"],
+			"modules/fft/auth/require-fft-access.ts": ["fft.access"],
+			"app/(operator)/fft/layout.tsx": ["requireFftAccess"],
+			"features/fft/fft-events-shell.tsx": ["requireFftAccess"],
 			"features/declarations/declarations-shell.tsx": [
 				"declarations.read",
 				"declarations.manage",
@@ -303,7 +305,10 @@ describe("N11 product authorization wiring", () => {
 
 	it("keeps RSC denial and existing mutations on the shared gates", () => {
 		expect(source("features/fft/fft-events-shell.tsx")).toContain(
-			"requirePermission",
+			"requireFftAccess",
+		);
+		expect(source("modules/fft/auth/require-fft-access.ts")).toContain(
+			"AUTH_FORBIDDEN_PATH",
 		);
 		expect(source("features/declarations/declarations-shell.tsx")).toContain(
 			"forbidPermissionAccess",

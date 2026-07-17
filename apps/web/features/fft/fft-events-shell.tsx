@@ -7,18 +7,18 @@ import {
 	CardTitle,
 } from "@afenda/ui-system";
 
-import { requirePermission } from "@/features/auth/require-permission";
 import { FftEventsPanel } from "@/features/fft/fft-events-panel";
+import { requireFftAccess } from "@/modules/fft/auth/require-fft-access";
 import { listEvents } from "@/modules/fft/domain/list-events";
 
 /**
  * Feed Farm Trade feature — session-aware RSC load + domain event list
- * (ARCH-013 · ARCH-028 S7.4). Read shape only; no 2B–2D reopen.
+ * (ARCH-013 · ARCH-028 S7.4 · N18). Read shape only; no 2B–2D reopen.
  * Never imports `@afenda/db`. UI from `@afenda/ui-system` (ADR-010).
  */
 export async function FftEventsShell() {
 	const session = await getSession();
-	await requirePermission(session, "fft.access");
+	await requireFftAccess(session);
 	const events = await listEvents(session.orgId);
 
 	return (
