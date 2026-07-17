@@ -48,7 +48,7 @@ const hasDatabase = typeof databaseUrl === "string" && databaseUrl.length > 0;
 describe("runNeonHttpTransaction contract", () => {
 	it("rejects an empty query list before contacting Neon", async () => {
 		const { runNeonHttpTransaction } = await import("../src/http-transaction");
-		await expect(runNeonHttpTransaction(() => [])).rejects.toThrow(
+		await expect(runNeonHttpTransaction([])).rejects.toThrow(
 			/at least one query/,
 		);
 	});

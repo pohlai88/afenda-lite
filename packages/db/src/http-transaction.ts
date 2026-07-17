@@ -48,6 +48,10 @@ export async function runNeonHttpTransaction<T extends unknown[]>(
 	queriesOrFn: NeonHttpTxQuery[] | ((sql: NeonHttpSql) => NeonHttpTxQuery[]),
 	options?: NeonHttpTransactionOptions,
 ): Promise<T> {
+	if (Array.isArray(queriesOrFn) && queriesOrFn.length === 0) {
+		throw new Error("runNeonHttpTransaction requires at least one query");
+	}
+
 	const sql = getNeonSql();
 	const queries =
 		typeof queriesOrFn === "function" ? queriesOrFn(sql) : queriesOrFn;
