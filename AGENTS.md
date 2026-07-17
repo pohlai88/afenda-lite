@@ -109,7 +109,7 @@ Controlled docs: respect **Control State**. `Closed` → reopen with explicit Do
 |------|--------|
 | Forward code | Greenfield under `apps/web/**` and `packages/*` only |
 | Next open (GUIDE-018) | **I3.2** — Declarations submit/read. Phase **I3.1** closed (assign/revoke · `hasPermission`). Phase **I2** / **I1** closed. ARCH-028 Checkpoint G **closed**. |
-| Next open (Neon Auth `N*`) | **N13** independently APPROVED at 95%; Path-to-100% repair SCORED 100% (2026-07-17), pending independent re-audit. Next ID = **N14** only after that re-audit — do **not** sneak-start here. Map: [neon-auth-slice-map](.cursor/skills/afenda-elite-implementation-slices/neon-auth-slice-map.md). |
+| Next open (Neon Auth `N*`) | **N13** APPROVED at 100%; Path-to-100% closed (re-audit 2026-07-17). Next ID = **N14** only — do **not** sneak-start here. Map: [neon-auth-slice-map](.cursor/skills/afenda-elite-implementation-slices/neon-auth-slice-map.md). |
 | Env | `@afenda/env` + `.env.local` only (compose retired) |
 | Docs trunks | Flat `docs/architecture/ARCH-*.md` — gate `pnpm check:docs-trunk-ban` |
 | Index ghosts | Grep/Glob may list deleted paths — trust `Test-Path` · `git ls-files` · trunk-ban check |
