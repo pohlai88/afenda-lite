@@ -39,7 +39,7 @@ SKIP:
 
 ## PREFLIGHT (before this router)
 
-Any turn that loads this skill or other farms/MCP/rules MUST open the user-visible reply with `### PREFLIGHT` per [agent-authority-preflight](../../rules/agent-authority-preflight.mdc) and [AGENTS.md](../../../AGENTS.md). Name this skill under **Skills** and set **Router:** `using-afenda-elite-skills`.
+Any turn that loads this skill or other farms/MCP/rules MUST open the user-visible reply with `### PREFLIGHT` per [agent-authority-preflight](../../rules/agent-authority-preflight.mdc) and [AGENTS.md](../../../AGENTS.md). Name this skill under **Skills** and set **Router:** `using-afenda-elite-skills`. Product/package code turns also list **`coding-discipline`** under **Rules** ([coding-discipline.mdc](../../rules/coding-discipline.mdc)); list **`afenda-coding-discipline`** under **Skills** only when that skill was loaded.
 
 ## Invoke order
 
@@ -58,15 +58,17 @@ Task arrives (this repo / Afenda-Lite)
     ├── ARCH-028 residual / GUIDE-018 Phase I / Neon Auth optimisation (S* / I* / N* / command-sheet / neon-command-sheet)? → afenda-elite-implementation-slices (then farms from slice-map or neon-auth-slice-map; N* → Neon Slice Score + independent audit)
     ├── FE scaffold / wipe / app routes? ───────────────────→ afenda-elite-frontend-scaffold (consume `@afenda/ui-system` barrel per ADR-010)
     ├── Product UI compose / handroll fix / visual consistency / UI rating (features/* · product pages)? → afenda-elite-ui-compose (SCALABILITY-FIRST / UI-CAP-* / rule 15; Compose Score /100% + Path to 100%; then frontend-ui-engineering for a11y/state/responsive method only); done = capability check + verification matrix + score (floor `pnpm check:ui-system` = F*+C*+package/web tests; `pnpm --filter @afenda/web build` when matrix requires RSC/structural/CSS-font)
+    ├── Shadcn Studio DNA / Pro blocks / dual components.json / Method A|B promote? → shadcn-ui (stage under `apps/web/shadcn-studio` → promote → prune; then ui-compose for product QUALITY ORDER); never product-import DNA; never registries on ui-system without ADR-010 reopen
     ├── Next.js App Router / RSC / rendering / proxy / MCP routes? → afenda-elite-nextjs-best-practice
     ├── Modules / ports / residue? ─────────────────────────→ afenda-elite-backend-modules
     ├── API contract / ActionResult / brands / OpenAPI / REST-001? ─→ afenda-elite-api-contract
     ├── Module evidence / MOD-009–010 / Module Enterprise Readiness claims? → afenda-elite-module-readiness
-    ├── UI primitives / `@afenda/ui-system` (add/regenerate shadcn·Radix, tokens, barrel)? → ADR-010 owned-source workflow (`shadcn add` in `packages/ui-system` → convert `@/` to relative → export from `src/index.ts` → keep guardrail tests green); do not restore the retired `@afenda/ui` gateway / Studio-promote pipeline
+    ├── UI primitives / `@afenda/ui-system` (add/regenerate shadcn·Radix, tokens, barrel)? → shadcn-ui + ADR-010 owned-source workflow (`pnpm --filter @afenda/ui-system ui:add` → relative → barrel → tests); do not restore the retired `@afenda/ui` gateway / Collapse Studio-promote pipeline
     ├── React composition / compound-component / provider API architecture? → afenda-elite-react-composition (after `afenda-elite-ui-compose` classifies capability; vendor `vercel-composition-patterns` is progressive disclosure only)
     ├── React runtime / performance (waterfalls · rerenders · bundle · serialization · hydration)? → afenda-elite-react-best-practices (App Router/cache stays with `afenda-elite-nextjs-best-practice`; vendor `vercel-react-best-practices` is progressive disclosure only)
     ├── Root / package / app README · Diátaxis intro / compose · audit · README Score / Path to 100%? → afenda-readme-diataxis (not controlled `docs/` bodies)
     ├── Internal technical docs prose (spec · ADR · runbook · migration)? → technical-writing (after `afenda-elite-doc-control` / `documentation-and-adrs` farm is fixed)
+    ├── TS / coding discipline (brands · unions · any/as · boundary hygiene) after farm fixed? → afenda-coding-discipline (not PR review / simplify / API SSOT / React perf)
     ├── Generic engineering lifecycle? ─────────────────────→ using-agent-skills
     └── Domain farm (Neon, FFT)? ───────────────────────────→ neon-tenancy / feed-farm-trade
 ```

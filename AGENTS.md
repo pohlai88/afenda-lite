@@ -33,6 +33,7 @@ Cursor Agent instructions for this repository. Prefer **actions and links** over
 | Rule | [`.cursor/rules/agent-authority-preflight.mdc`](.cursor/rules/agent-authority-preflight.mdc) (`alwaysApply`) |
 | Hooks | `sessionStart` · `beforeMCPExecution` · `postToolUse` (Read of skills/rules) → [`.cursor/hooks/agent-authority-preflight.mjs`](.cursor/hooks/agent-authority-preflight.mjs) |
 | Skip | Pure chitchat with no skill load, no MCP, no rule-driven work |
+| Coding floor | Product/package code → list **`coding-discipline`** under **Rules** ([`.cursor/rules/coding-discipline.mdc`](.cursor/rules/coding-discipline.mdc)). List **`afenda-coding-discipline`** under **Skills** only when that skill was loaded |
 
 Do not start skill loads or MCP calls before the PREFLIGHT block is in the visible reply for that turn.
 
@@ -54,7 +55,8 @@ Full inventory: [catalog.md](.cursor/skills/using-afenda-elite-skills/catalog.md
 | Doc↔doc conflict / register drift | `afenda-elite-doc-integrity` |
 | GUIDE-018 Phase I (`I*`) / residual ARCH-028 (`S*`) | `afenda-elite-implementation-slices` + command-sheet |
 | Neon Auth optimisation (`N1`–`N18`) | `afenda-elite-implementation-slices` + neon-command-sheet · Neon Slice Score + independent audit |
-| UI primitives / `@afenda/ui-system` (shadcn·Radix, tokens, barrel) | ADR-010 owned-source workflow (`shadcn add` in `packages/ui-system` → relative imports → barrel export → guardrail tests) |
+| UI primitives / `@afenda/ui-system` (shadcn·Radix, tokens, barrel) | `shadcn-ui` + ADR-010 owned-source (`pnpm --filter @afenda/ui-system ui:add` → relative → barrel → tests) |
+| Shadcn Studio DNA / Pro blocks / DNA forwarder | `shadcn-ui` — Method A → `apps/web/shadcn-studio`; Method B MCP; machine SSOT [`dna-ledger.json`](.cursor/skills/shadcn-ui/dna-ledger.json); promote → prune; never product-import DNA; Afenda install registry deferred; no ui-system registries without ADR-010 reopen |
 | Product UI compose / handroll fix / visual consistency | `afenda-elite-ui-compose` (SCALABILITY-FIRST / UI-CAP-*; then `frontend-ui-engineering` for a11y/state/responsive method only) |
 | React composition / compound / provider API | `afenda-elite-react-composition` (after ui-compose classifies capability; vendor composition patterns = progressive only) |
 | React runtime / perf (waterfalls · rerenders · bundle · hydration) | `afenda-elite-react-best-practices` (App Router/cache stays with `afenda-elite-nextjs-best-practice`; vendor RBP = progressive only) |
@@ -66,6 +68,7 @@ Full inventory: [catalog.md](.cursor/skills/using-afenda-elite-skills/catalog.md
 | Cross-package import / DAG | `afenda-elite-monorepo-discipline` |
 | Dead code / skill-catalog drift | `afenda-elite-repo-housekeeping` |
 | Root / package / app README · Diátaxis · README Score | `afenda-readme-diataxis` (not controlled `docs/` bodies) |
+| TS / coding discipline (brands · unions · any/as · boundary) | L0 [coding-discipline](.cursor/rules/coding-discipline.mdc) rule (PREFLIGHT **Rules**); full table `afenda-coding-discipline` skill after farm fixed |
 | Neon tenancy ops ladder | `neon-tenancy-efficiency` |
 | FFT product module | `feed-farm-trade` |
 | Generic engineering phases | `using-agent-skills` (method library **after** Elite router) |
@@ -75,6 +78,7 @@ Full inventory: [catalog.md](.cursor/skills/using-afenda-elite-skills/catalog.md
 | Rule | Authority |
 |------|-----------|
 | **PREFLIGHT** before skills / MCP / rules | [`.cursor/rules/agent-authority-preflight.mdc`](.cursor/rules/agent-authority-preflight.mdc) |
+| **Coding discipline** L0 floor (brands · unknown/as · ActionResult · barrel · env) | [`.cursor/rules/coding-discipline.mdc`](.cursor/rules/coding-discipline.mdc) (`alwaysApply`; full table → `afenda-coding-discipline` skill) |
 | **Enterprise production** quality bar only — never MVP / “good enough later” | [`.cursor/rules/no-mvp-quality-bar.mdc`](.cursor/rules/no-mvp-quality-bar.mdc) |
 | **No shims / stubs / throw-TODO** product paths | [`.cursor/rules/no-shim-stub-tech-debt.mdc`](.cursor/rules/no-shim-stub-tech-debt.mdc) |
 | **No Collapse/legacy recover** (`app/`, `modules/`, `features/`, `components-V2/`, Collapse `lib/`, wiped `scripts/*`) unless user names that recovery **this turn** | [ARCH-028](docs/architecture/ARCH-028-implementation-slices.md) · [`.cursor/rules/no-collapse-legacy-recovery.mdc`](.cursor/rules/no-collapse-legacy-recovery.mdc) |

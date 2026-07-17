@@ -6,7 +6,7 @@
 | Audience | Afenda engineers (Identity / Frontend / UI compose) |
 | Updated | 2026-07-17 |
 | Primary mode | FE surface inventory + ui-compose recipes |
-| Companion | [1-neon-auth-capability-map-and-dev-roadmap.md](./1-neon-auth-capability-map-and-dev-roadmap.md) |
+| Companion | [1-neon-auth-capability-map-and-dev-roadmap.md](./1-neon-auth-capability-map-and-dev-roadmap.md) · [11-studio-admincn-possibility-audit.md](./11-studio-admincn-possibility-audit.md) (Studio P0 narrative) · machine SSOT [dna-ledger.json](../../../.cursor/skills/shadcn-ui/dna-ledger.json) |
 
 ## Status / posture (Scratch — not Living)
 

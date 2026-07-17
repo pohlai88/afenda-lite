@@ -51,12 +51,18 @@ Package primitives may retain **element opacity** only (`opacity-50`/`70` disabl
 | Inline notice | `Alert` (+ parts) | Not a bordered `div`. Soft status callouts may use ERP `bg-*-subtle` + `text-*-subtle-foreground` + `border-*-border` when not using `Alert`/`StatusBadge` |
 | Dense key/value detail | `KeyValue` / `KeyValueList`, `Badge`, `Separator` | Body = `text-sm`; secondary/tertiary ink via `text-foreground-secondary` / `text-foreground-tertiary` |
 | Metric strip | `MetricCard`, `KeyValue` | Use `MetricCard` for individual metrics. Use an existing shared metric compound when repeated responsive metric collection is required. If none exists and feature code would recreate count-aware grid behavior → `UI-CAP-03`. Do not add feature-local metric-grid abstractions. One-off two-card layout may still be composed directly when straightforward and not becoming a repeated abstraction |
-| App chrome nav | `Sidebar` (+ parts), `Breadcrumb`, `Separator` | Do not handroll nav pills |
+| App chrome nav | `Sidebar` (+ parts), `Breadcrumb`, `Separator` | Do not handroll nav pills. Living operator frame: `OperatorPlatformShell` → `OperatorPlatformChrome` under `features/portal-chrome/`. Studio shell DNA → promote via `shadcn-ui` into this home — never import `apps/web/shadcn-studio/**` |
+| **Message shell** | `Button` (`asChild` + `Link` for CTAs), optional `Alert` | Blank-chrome gate / 403 / join-missing / not-found. Living: `PublicMessageShell` (`features/auth/public-message-shell.tsx`) — centered `main`, `bg-canvas`, page `h1` lock, body `text-sm text-foreground-secondary`, optional footer. Prefer shared shell over one-off centered pages. Studio `empty-state-*` = layout DNA only (ADAPT → this recipe); do not replace with Card stacks |
+| **Auth island** | Neon Auth UI (`AuthView` / invitation cards) + route-scoped `auth-surface.css` | Living: `AuthIslandLayout` → `AuthUiProvider` → `AuthViewShell` / `AuthSurfaceChrome`. Auth eyebrow + island CSS stay route-scoped — never leak into operator/client product shells. Studio `login-page-*` = **chrome DNA only** (ADAPT); Studio login/register/forgot **forms REJECT**. No parallel product kit from auth-surface |
 | Command palette | `Command`, `Dialog` / command dialog pattern | lucide icons only |
 | Loading state | `Skeleton`, `Spinner` | Never plain loading copy alone |
 | Empty collection | `Empty` | Title uses section type lock |
 
 **Banned when `DataTable` fits:** bordered handrolled `<ul>` with divide-y + border for rows with ≥2 fields or row actions.
+
+### Studio DNA → compose (pointer)
+
+Shadcn Studio CLI/MCP + dual `components.json` + Method A/B: [`shadcn-ui`](../shadcn-ui/SKILL.md). Machine DNA metadata: [`dna-ledger.json`](../shadcn-ui/dna-ledger.json) (`AFN-DNA-*`). Stage under `apps/web/shadcn-studio/`; after promote, **this skill** owns QUALITY ORDER. Do not restore retired `afenda-elite-design-system` / `admincn-customization`.
 
 ```tsx
 import { Button, Card, FormField, Input } from "@afenda/ui-system";

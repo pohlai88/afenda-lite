@@ -3,6 +3,8 @@
  * @afenda/web: the flat barrel (`@afenda/ui-system`) and its stylesheet
  * (`@afenda/ui-system/styles.css`) are the only allowed specifiers, and no
  * source deep-imports internal component paths or the retired `@afenda/ui`.
+ * Studio DNA staging (`shadcn-studio/`) is excluded from product scans; product
+ * routes/features must not import it (M-A1).
  */
 
 import { readdirSync, readFileSync, statSync } from "node:fs";
@@ -14,7 +16,13 @@ import { describe, expect, it } from "vitest";
 
 const webRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 
-const SKIP_DIRS = new Set(["node_modules", ".next", ".turbo", "__tests__"]);
+const SKIP_DIRS = new Set([
+	"node_modules",
+	".next",
+	".turbo",
+	"__tests__",
+	"shadcn-studio",
+]);
 
 function collectSourceFiles(dir: string): string[] {
 	const files: string[] = [];
@@ -32,12 +40,22 @@ function collectSourceFiles(dir: string): string[] {
 	return files;
 }
 
+function isUnderDnaStaging(relativePath: string): boolean {
+	const normalized = relativePath.split(path.sep).join("/");
+	return (
+		normalized === "shadcn-studio" || normalized.startsWith("shadcn-studio/")
+	);
+}
+
 const ALLOWED_SPECIFIERS = new Set([
 	"@afenda/ui-system",
 	"@afenda/ui-system/styles.css",
 ]);
 const UI_SYSTEM_PATTERN = /@afenda\/ui-system(?:\/[\w.\-/]+)?/g;
 const RETIRED_UI_PATTERN = /@afenda\/ui(?![\w-])(?:\/[\w.\-/]+)?/g;
+/** Product import of DNA staging (alias or relative). */
+const DNA_IMPORT_PATTERN =
+	/from\s+["']@\/shadcn-studio(?:\/[^"']*)?["']|from\s+["'][^"']*\/shadcn-studio\/[^"']*["']|import\s+["']@\/shadcn-studio(?:\/[^"']*)?["']/;
 
 describe("@afenda/web ui-system boundary", () => {
 	it("resolves representative primitives from the flat barrel", () => {
@@ -71,5 +89,23 @@ describe("@afenda/web ui-system boundary", () => {
 			}
 		}
 		expect(offenders, `retired @afenda/ui refs: ${offenders}`).toEqual([]);
+	});
+
+	it("never product-imports Studio DNA staging (shadcn-studio)", () => {
+		const offenders: string[] = [];
+		for (const file of collectSourceFiles(webRoot)) {
+			const rel = path.relative(webRoot, file);
+			if (isUnderDnaStaging(rel)) {
+				continue;
+			}
+			const contents = readFileSync(file, "utf-8");
+			if (DNA_IMPORT_PATTERN.test(contents)) {
+				offenders.push(rel);
+			}
+		}
+		expect(
+			offenders,
+			`product DNA imports found: ${offenders.join(", ")}`,
+		).toEqual([]);
 	});
 });

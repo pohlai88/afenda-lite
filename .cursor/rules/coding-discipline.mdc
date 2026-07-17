@@ -1,0 +1,31 @@
+---
+description: Always-on Afenda TypeScript/coding floor — brands, unknown/as, ActionResult, barrel, env; deeper table via afenda-coding-discipline skill
+alwaysApply: true
+---
+
+# Coding discipline (L0 floor)
+
+Always-on floor for product/package code. Full rule table + patterns: [afenda-coding-discipline](../skills/afenda-coding-discipline/SKILL.md) (load after the product farm is fixed). This rule does **not** own API SSOT, UI compose, or review process.
+
+## Binding floor
+
+| Topic | Rule |
+|-------|------|
+| External data | `unknown` → validate (Zod / owning schema); no product-path `any` without a change-note justification |
+| Casts | No unearned `as`; prefer `satisfies`; brand only after parse |
+| Variants | Discriminated unions (`kind` / `type` / `ok`); exhaust `never` in defaults |
+| Brands | Prefer [API-003](../../docs/api/API-003-api-types.md) brands at boundaries — do not invent parallel brand shapes |
+| API outcomes | `ActionResult<T>` (`ok: true \| false`) — not tutorial `{ success, data }` envelopes |
+| UI imports | `import { … } from "@afenda/ui-system"` only — no barrel bypass |
+| Env | `import { env } from "@afenda/env"` — no raw `process.env` for product config |
+| Lint | Biome + `@afenda/config` — do not invent ESLint/Prettier stacks |
+| Layout | Greenfield under `apps/web/**` and `packages/*` only |
+| Correctness | No silent “shouldn’t happen” branches; delete dead code; comments = WHY only |
+
+## PREFLIGHT
+
+When this turn edits product/package code or applies this floor, list **`coding-discipline`** under **Rules**. List **`afenda-coding-discipline`** under **Skills** only if that skill was loaded this turn.
+
+## Deeper work
+
+Typed refactor / brands / unions / boundary hygiene beyond this floor → load [afenda-coding-discipline](../skills/afenda-coding-discipline/SKILL.md) + [reference.md](../skills/afenda-coding-discipline/reference.md). Route-outs (API SSOT, review, simplify, React perf) stay in that skill.

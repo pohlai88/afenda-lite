@@ -102,6 +102,9 @@ try {
 				PREFLIGHT_TEMPLATE,
 				"",
 				"Rule: .cursor/rules/agent-authority-preflight.mdc · AGENTS.md",
+				"",
+				"Always-apply coding floor: list `coding-discipline` under **Rules** when editing product/package code.",
+				"List `afenda-coding-discipline` under **Skills** only if that skill was loaded (full table after farm fixed).",
 			].join("\n"),
 			env: {
 				AFENDA_AUTHORITY_PREFLIGHT: "required",
