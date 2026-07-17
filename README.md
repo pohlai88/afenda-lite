@@ -1,16 +1,14 @@
 # Afenda-Lite
 
-**What it is** — Afenda-Lite is the beta edition of **Afenda ERP**: a multi-module SaaS on shared Platform + Identity, built on Vercel, Neon Postgres, and Neon Auth.
+**Afenda-Lite** is the beta edition of **Afenda ERP** — a multi-module SaaS on shared Platform + Identity, running on Vercel, Neon Postgres, and Neon Auth.
 
-**What it does** — Operators manage declarations, clients, and org roles; entitled users run Feed Farm Trade under `/fft`. Public and secure share links let declarants complete assignments without operator accounts.
+Operators manage declarations, clients, and org roles; entitled users run Feed Farm Trade under `/fft`. Public and secure share links let declarants complete assignments without operator accounts.
 
-**Need it meets** — One deployable web app with hard tenant boundaries, Neon-backed auth and data, and module surfaces that share platform RBAC instead of ad hoc per-app stacks.
+One deployable web app with organization-scoped data (`organization_id`), Neon-backed auth and Postgres, and module surfaces that share platform RBAC — see [ARCH-023](docs/architecture/ARCH-023-multi-tenancy.md).
 
-**Who it is for** — Operators and org admins running declarations and FFT; engineers extending `apps/web` and `packages/*`; agents routing work through `docs/` and [AGENTS.md](./AGENTS.md).
+For operators and org admins running declarations and FFT; for engineers extending `apps/web` and `packages/*`. Agent checkout doctrine lives in [AGENTS.md](./AGENTS.md).
 
 > **Retired product name:** Client Declaration Portal — see [deprecation register](.cursor/skills/agent-skills/skills/deprecation-and-migration/reference.md).
-
-**Local disk path:** prefer `C:\JackProject\afenda-bolt\afenda-lite`. If this clone is still named `client-declaration-portal`, close Cursor and run `C:\JackProject\afenda-bolt\rename-afenda-lite.ps1`, then reopen the `afenda-lite` folder.
 
 ## What you get
 
@@ -21,6 +19,8 @@
 - Public and secure share links (`/survey/[slug]`, `/f/[token]`)
 
 ## Local development
+
+**Engines:** Node.js `24.x` · pnpm `>=10.33.4` (see root `package.json`).
 
 ```bash
 pnpm install
@@ -71,8 +71,6 @@ pnpm db:check
 AFENDA_ALLOW_DB_MIGRATE=1 pnpm db:migrate
 ```
 
-Root `pnpm db:backfill` remains unavailable (Collapse inventory).
-
 ## Auth and database
 
 | Concern | Authority |
@@ -116,8 +114,6 @@ Health endpoints:
 
 - `GET /api/health/liveness` — process up (no dependency checks)
 - `GET /api/health/readiness` — dependency readiness gate
-
-Optional E2E: `E2E_SURVEY_SLUG` only if you skip the operator-create → public chain test.
 
 ## App routes
 
