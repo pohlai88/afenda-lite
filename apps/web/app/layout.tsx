@@ -3,6 +3,8 @@ import { GeistSans } from "geist/font/sans";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
+import { SkipToMainContent } from "@/features/auth/skip-to-main-content";
+
 import "../globals.css";
 
 export const metadata: Metadata = {
@@ -20,7 +22,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
 			className={`${GeistSans.variable} ${GeistMono.variable}`}
 			suppressHydrationWarning
 		>
-			<body>{children}</body>
+			<body>
+				<SkipToMainContent />
+				{children}
+			</body>
 		</html>
 	);
 }

@@ -13,15 +13,6 @@ export const emailSchema = z
 	.pipe(z.email())
 	.transform((value) => value.toLowerCase());
 
-export const passwordSchema = z.string().min(8).max(128);
-
-export const slugSchema = z
-	.string()
-	.trim()
-	.min(1)
-	.max(128)
-	.regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
-
 export type ParseSchemaSuccess<T> = {
 	success: true;
 	data: T;

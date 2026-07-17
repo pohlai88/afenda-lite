@@ -32,7 +32,9 @@
 			// Static assets; public/lynx/*.css are HTML shells that OOM Biome CSS parse.
 			"!!**/public",
 			// Next.js generated; line endings regenerate per OS.
-			"!!**/next-env.d.ts"
+			"!!**/next-env.d.ts",
+			// Shadcn Studio DNA staging (Method A) — not product CI surface.
+			"!!**/apps/web/shadcn-studio"
 		]
 	},
 	"overrides": [

@@ -1,7 +1,7 @@
 "use client";
 
 import { Button, FormError } from "@afenda/ui-system";
-import { useActionState } from "react";
+import { useActionState, useEffect, useEffectEvent } from "react";
 
 import {
 	type SubmitClientDeclarationData,
@@ -12,16 +12,28 @@ import type { ActionResult } from "@/modules/platform/schemas/action-result";
 type SubmitDeclarationFormProps = {
 	assignmentId: string;
 	disabled?: boolean;
+	onSuccess?: (data: SubmitClientDeclarationData) => void;
 };
 
 export function SubmitDeclarationForm({
 	assignmentId,
 	disabled = false,
+	onSuccess,
 }: SubmitDeclarationFormProps) {
 	const [state, formAction, pending] = useActionState(
 		submitClientDeclarationAction,
 		null as ActionResult<SubmitClientDeclarationData> | null,
 	);
+
+	const notifySuccess = useEffectEvent((data: SubmitClientDeclarationData) => {
+		onSuccess?.(data);
+	});
+
+	useEffect(() => {
+		if (state?.ok) {
+			notifySuccess(state.data);
+		}
+	}, [state]);
 
 	const blocked = disabled || pending;
 

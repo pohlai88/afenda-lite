@@ -8,11 +8,11 @@
  * `/client/dashboard` remains an alias redirect to the declarations list.
  */
 
-export const CLIENT_WORKSPACE_PATH = "/client";
-/** Alias redirect target — not the role home SSOT (see CLIENT_HOME_PATH). */
-export const CLIENT_DASHBOARD_ALIAS_PATH = "/client/dashboard";
 /** Client post-login / workspace home (pinned to `@afenda/auth` CLIENT_HOME_PATH). */
 export const CLIENT_DASHBOARD_PATH = "/client/declarations";
+
+/** Legacy bookmark alias → `CLIENT_DASHBOARD_PATH` (not a public Pre-Login path). */
+export const CLIENT_DASHBOARD_ALIAS_PATH = "/client/dashboard";
 
 /** Session-gate bypass surfaces (ARCH-012 §3.12). */
 export const CLIENT_LOGIN_PATH = "/client/login";

@@ -4,7 +4,7 @@
 |-------|-------|
 | **ID** | RB-001 |
 | **Category** | Runbook |
-| **Version** | 1.4.0 |
+| **Version** | 1.4.1 |
 | **Status** | Living |
 | **Control State** | Closed |
 | **Owner** | Platform |
@@ -228,7 +228,7 @@ Typed CU/suspend/latency targets live in `@afenda/env` (`neon-performance-postur
 
 1. `pnpm validate:neon-env` — expect N4 CU/suspend + pooled host + `SELECT 1` latency rows green.
 2. `pnpm monitor:neon-performance` — expect latency ≤5000 ms and aggregate active+idle connections <80% of `max_connections`.
-3. `.github/workflows/neon-performance-monitor.yml` runs hourly against the GitHub `production` environment. Failure opens or updates one `[Ops] Neon DB performance monitor failing` issue; recovery comments and closes it.
+3. `.github/workflows/neon-performance-monitor.yml` runs hourly against the GitHub `production` environment. Failure opens or updates one `[Ops] Neon DB performance monitor failing` issue (body embeds a pointer to this §3.7b); recovery comments and closes it.
 4. Optional MCP/SQL (direct): B2 concurrency · B3 org indexes · B6 / `list_slow_queries` — **redact** query text and all URLs/params from any paste.
 5. Do **not** PATCH compute CU, suspend, `max_connections`, or retention. Do **not** run soak/k6 against production.
 6. If latency repeatedly exceeds the validate guardrail after pooler + short-transaction hygiene: escalate with evidence — CU raise needs separate explicit auth (not N4).
@@ -243,7 +243,7 @@ Product DB client is Neon HTTP Drizzle (`@neondatabase/serverless` via `@afenda/
 
 ### Alerts honesty
 
-Neon Launch provides dashboards but no native automated alerts; Neon metric export requires Scale plus an external observability provider. N4 therefore uses the existing GitHub Actions + production-secret surface: hourly read-only latency and aggregate connection-pressure probes, workflow failure, and a deduplicated GitHub issue with recovery closure. CU/suspend drift remains a read-only `validate:neon-env`/operator check; the monitor does not mutate Neon or expose sensitive query details.
+Neon Launch provides dashboards but no native automated alerts; Neon metric export requires Scale plus an external observability provider. N4 therefore uses the existing GitHub Actions + production-secret surface: hourly read-only latency and aggregate connection-pressure probes, workflow failure, and a deduplicated GitHub issue with recovery closure. The failure issue body and recovery comment each embed a runbook pointer to this §3.7b (`docs/runbooks/RB-001-multi-org-ops.md`). CU/suspend drift remains a read-only `validate:neon-env`/operator check; the monitor does not mutate Neon or expose sensitive query details.
 
 ## 3.8 Migrations
 
@@ -362,6 +362,7 @@ CI/deploy remain restore-free and migrate-free (`db:check` only) — unchanged f
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 1.4.1 | 2026-07-17 | I5.3: N4 GitHub alert issue body + recovery comment embed §3.7b runbook pointer (alert→runbook). |
 | 1.4.0 | 2026-07-17 | N15: trusted domains · deploy health · live vs collapsed script table; validate N15 domain row. |
 | 1.3.2 | 2026-07-17 | N4 Path-to-100%: org-index evidence aligned to living public set (11/11) — removed inflated “FFT eight roots” claim. |
 | 1.3.1 | 2026-07-17 | N4 alert repair: hourly GitHub latency/connection-pressure monitor with deduplicated failure issue and recovery closure. |

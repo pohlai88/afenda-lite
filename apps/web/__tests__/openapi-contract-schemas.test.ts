@@ -4,8 +4,8 @@ import {
 	saveClientDeclarationDraftSchema,
 	submitClientDeclarationSchema,
 } from "@/modules/declarations/schemas/client";
-import { parseSchema } from "@/modules/declarations/schemas/common";
 import { getLivenessSnapshot } from "@/modules/platform/domain/health";
+import { parseSchema } from "@/modules/platform/schemas/common";
 import {
 	livenessResponseSchema,
 	readinessResponseSchema,

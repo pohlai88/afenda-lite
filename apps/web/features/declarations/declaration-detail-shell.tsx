@@ -24,22 +24,10 @@ import { isClientOnboardingComplete } from "@/modules/declarations/domain/declar
 import { getClientDeclaration } from "@/modules/declarations/domain/get-client-declaration";
 import { SUBMITTED_ASSIGNMENT_STATUS } from "@/modules/declarations/domain/submit-client-declaration";
 import { sessionHasPermission } from "@/modules/identity/domain/session-permission";
+import { formatInstantUtc } from "@/modules/platform/format/instant";
 
 function formatDate(value: string | null): string {
-	if (!value) {
-		return "—";
-	}
-	const date = new Date(value);
-	if (Number.isNaN(date.getTime())) {
-		return value;
-	}
-	return date.toLocaleString(undefined, {
-		year: "numeric",
-		month: "short",
-		day: "numeric",
-		hour: "2-digit",
-		minute: "2-digit",
-	});
+	return formatInstantUtc(value);
 }
 
 function answerDisplay(answers: Record<string, boolean | string>): string {

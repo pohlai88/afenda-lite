@@ -10,7 +10,7 @@
       name="description"
     >
     <title>Afenda — The Machine (lab)</title>
-    <!-- Production SSOT: features/landing/the-machine-landing.* — this file is a static lab twin. -->
+    <!-- Production SSOT: apps/web/features/landing/the-machine-landing.* — this file is a static lab twin. -->
 
     <link href="https://fonts.googleapis.com" rel="preconnect">
     <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
@@ -276,8 +276,7 @@
     .ambient,
     .vignette,
     .grain,
-    .frame,
-    .datum {
+    .frame {
       position: absolute;
       inset: 0;
       pointer-events: none;
@@ -328,39 +327,6 @@
       background-size: 180px 180px;
       mix-blend-mode: soft-light;
       opacity: 0.035;
-    }
-
-    .datum {
-      z-index: 6;
-      background:
-        linear-gradient(
-          90deg,
-          transparent calc(50% - 0.5px),
-          rgba(242, 238, 229, 0.045) 50%,
-          transparent calc(50% + 0.5px)
-        ),
-        linear-gradient(
-          transparent calc(50% - 0.5px),
-          rgba(242, 238, 229, 0.03) 50%,
-          transparent calc(50% + 0.5px)
-        );
-      opacity: 0.16;
-      -webkit-mask-image: radial-gradient(
-        circle at var(--signal-x) var(--signal-y),
-        #000 0,
-        transparent 27%
-      );
-      mask-image: radial-gradient(
-        circle at var(--signal-x) var(--signal-y),
-        #000 0,
-        transparent 27%
-      );
-      transition: opacity 1200ms var(--ease-luxury);
-    }
-
-    body.is-detecting .datum,
-    body.is-reacting .datum {
-      opacity: 0.31;
     }
 
     .frame {
@@ -1239,7 +1205,6 @@
       <div aria-hidden="true" class="ambient"></div>
       <div aria-hidden="true" class="vignette"></div>
       <div aria-hidden="true" class="grain"></div>
-      <div aria-hidden="true" class="datum"></div>
       <div aria-hidden="true" class="frame"></div>
       <div aria-hidden="true" class="geometry"></div>
 

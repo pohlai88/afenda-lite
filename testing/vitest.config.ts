@@ -12,7 +12,14 @@ const repoRoot = path.resolve(
 /** L0/L2 Vitest specs live only under `<package|app>/__tests__/`. */
 const TESTS_DIR = "__tests__";
 
+const testingAlias = {
+	"@afenda/testing": path.join(repoRoot, "testing"),
+};
+
 const nodeProject = (name: string, root: string) => ({
+	resolve: {
+		alias: testingAlias,
+	},
 	test: {
 		name,
 		root,
@@ -52,6 +59,7 @@ export default defineConfig({
 				resolve: {
 					alias: {
 						"@": path.join(repoRoot, "apps/web"),
+						...testingAlias,
 					},
 				},
 				test: {
@@ -69,6 +77,7 @@ export default defineConfig({
 				resolve: {
 					alias: {
 						"@": path.join(repoRoot, "apps/web"),
+						...testingAlias,
 					},
 				},
 				test: {

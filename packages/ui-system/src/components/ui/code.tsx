@@ -9,10 +9,7 @@ function Code({ className, ...props }: React.ComponentProps<"code">) {
 	return (
 		<code
 			data-slot="code"
-			className={cn(
-				"font-mono text-sm text-foreground-tertiary",
-				className,
-			)}
+			className={cn("font-mono text-sm text-foreground-tertiary", className)}
 			{...props}
 		/>
 	);

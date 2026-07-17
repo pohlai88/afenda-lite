@@ -38,6 +38,15 @@ Aspirational / reconciliation material. Living FFT ops and freeze stay in [`docs
 | [6-fft-implementation-slice-map.md](FFT/6-fft-implementation-slice-map.md) | Discovery `FT1`–`FT18` slice map (not Neon `N*`) | Scratch — UNEVALUATED until Approved missions |
 | [7-fft-frontend-ui-ux.md](FFT/7-fft-frontend-ui-ux.md) | FFT App Router UI/UX blueprint | Scratch Target narrative |
 
+### `fullstack-e2e/` — GUIDE-018 Pre/Post HITL ledgers
+
+Human-in-the-loop checklists for fullstack E2E cuts. **Scratch only** — does not change GUIDE-018 Living status, invent I6 READY, or register DOC-002 IDs. Cite [GUIDE-018](../guides/GUIDE-018-fullstack-e2e-integration-program.md) + [`afenda-elite-implementation-slices`](../../.cursor/skills/afenda-elite-implementation-slices/SKILL.md).
+
+| Document | Purpose | Posture |
+|----------|---------|---------|
+| [1-pre-login-hitl.md](fullstack-e2e/1-pre-login-hitl.md) | Pre-Login HITL: UI-UX → FE → DB → BE (public → auth entry; stop before post-login homes) | Scratch — UNEVALUATED until human runs verify |
+| [2-post-login-hitl.md](fullstack-e2e/2-post-login-hitl.md) | Post-Login HITL: UI-UX → FE → DB → BE (role homes / shells / authenticated writes; FE-11…FE-15) | Scratch — UNEVALUATED until human runs verify |
+
 ### `neon-auth-optimisation/`
 
 Working Neon Auth notes. **N1–N18 serial complete** (N18 APPROVED 2026-07-17). Cite [ARCH-026](../architecture/ARCH-026-auth-session.md) and the [neon-auth-slice-map](../../.cursor/skills/afenda-elite-implementation-slices/neon-auth-slice-map.md) as authority; do not treat scratch files as Living SSOT or invent **N19**.
@@ -85,6 +94,8 @@ Folder stubs own the file lists. Packs are discovery + verify ledgers only — *
 
 | Date | Summary |
 |------|---------|
+| 2026-07-17 | Added `fullstack-e2e/2-post-login-hitl.md` (Post-Login four-layer HITL ledger) |
+| 2026-07-17 | Added `fullstack-e2e/1-pre-login-hitl.md` (Pre-Login four-layer HITL ledger) |
 | 2026-07-17 | Record N18 APPROVED / N1–N18 complete across neon-auth pack + FFT evidence pointers; add neon-auth-optimisation README |
 | 2026-07-17 | Reconciled inventory with disk: added `FFT/`, `module-packs/`, neon-auth `9`/`10`; removed gone paths (`AUDIT-*`, token/compose gap md, HTML previews except aerospace-ceramic, biome-ultracite research); grouped tables + four-slot intro |
 | 2026-07-17 | Added `reliance-dx-patterns-xerp-oss-2026-07-17.md` (Xerp/OSS reliance·graph·DX research) |

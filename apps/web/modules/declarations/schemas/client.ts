@@ -1,7 +1,5 @@
-import {
-	surveyAnswersSchema,
-	uuidSchema,
-} from "@/modules/declarations/schemas/common";
+import { surveyAnswersSchema } from "@/modules/declarations/schemas/common";
+import { uuidSchema } from "@/modules/platform/schemas/common";
 import { z } from "@/modules/platform/schemas/openapi-zod";
 
 /**

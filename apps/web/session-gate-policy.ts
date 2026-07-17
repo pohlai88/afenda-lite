@@ -5,9 +5,6 @@
 
 import { CLIENT_GATE_PATHS } from "./features/auth/client-paths";
 
-/** Alias of `CLIENT_GATE_PATHS` for proxy/tests (ARCH-012 bypass list). */
-export const CLIENT_PUBLIC_PREFIXES = CLIENT_GATE_PATHS;
-
 export type SessionGateRequest = {
 	method: string;
 	pathname: string;

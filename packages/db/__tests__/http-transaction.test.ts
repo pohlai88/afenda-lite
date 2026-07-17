@@ -2,48 +2,10 @@
  * Neon HTTP non-interactive transaction helper (N12 residual · ARCH-025).
  */
 
-import { readFileSync } from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { resolveDatabaseUrlForTests } from "@afenda/testing/require-database-for-ci";
 import { afterAll, describe, expect, it } from "vitest";
 
-const repoRoot = path.resolve(
-	path.dirname(fileURLToPath(import.meta.url)),
-	"../../..",
-);
-
-function loadDatabaseUrl(): string | undefined {
-	if (process.env.DATABASE_URL) {
-		return process.env.DATABASE_URL;
-	}
-	try {
-		const text = readFileSync(path.join(repoRoot, ".env.local"), "utf8");
-		for (const line of text.split(/\r?\n/)) {
-			const trimmed = line.trim();
-			if (trimmed.length === 0 || trimmed.startsWith("#")) continue;
-			const match = /^DATABASE_URL\s*=\s*(.*)$/.exec(trimmed);
-			if (!match) continue;
-			let value = match[1]?.trim() ?? "";
-			if (
-				(value.startsWith('"') && value.endsWith('"')) ||
-				(value.startsWith("'") && value.endsWith("'"))
-			) {
-				value = value.slice(1, -1);
-			}
-			return value.length > 0 ? value : undefined;
-		}
-	} catch {
-		return undefined;
-	}
-	return undefined;
-}
-
-const databaseUrl = loadDatabaseUrl();
-if (databaseUrl) {
-	process.env.DATABASE_URL = databaseUrl;
-}
-
-const hasDatabase = typeof databaseUrl === "string" && databaseUrl.length > 0;
+const { hasDatabase } = resolveDatabaseUrlForTests();
 
 describe("runNeonHttpTransaction contract", () => {
 	it("rejects an empty query list before contacting Neon", async () => {

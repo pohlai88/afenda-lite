@@ -38,10 +38,9 @@ describe("ADVERSE_MATRIX disk inventory (I4)", () => {
 			expect(row.evidence.length).toBeGreaterThan(0);
 			for (const evidencePath of row.evidence) {
 				const absolute = path.join(repoRoot, evidencePath);
-				expect(
-					existsSync(absolute),
-					`${row.id} missing: ${evidencePath}`,
-				).toBe(true);
+				expect(existsSync(absolute), `${row.id} missing: ${evidencePath}`).toBe(
+					true,
+				);
 			}
 		}
 	});

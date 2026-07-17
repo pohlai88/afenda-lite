@@ -1,6 +1,8 @@
 import { requireRole } from "@afenda/auth";
 import type { ReactNode } from "react";
 
+import { MAIN_CONTENT_ID } from "@/features/auth/main-content";
+
 /**
  * Authenticated client workspace — fail-closed coarse shell gate (ARCH-012).
  * Segment `loading`/`error` live under `dashboard/` so this segment's index
@@ -12,5 +14,9 @@ export default async function ClientWorkspaceLayout({
 	children: ReactNode;
 }) {
 	await requireRole("client");
-	return children;
+	return (
+		<main id={MAIN_CONTENT_ID} tabIndex={-1} className="min-h-dvh">
+			{children}
+		</main>
+	);
 }

@@ -18,6 +18,8 @@ import { shouldBypassSessionGate } from "./session-gate-policy";
  * Server Actions / mutations must still call `getSession` / `requireRole`
  * inside the action — proxy alone is not an authz bar.
  * I5.3 / API-007 — stamps `x-correlation-id` on gate responses.
+ * PL-S1 — typed matcher inventory lives in `SESSION_GATE_PROTECTED_MATCHERS`;
+ * `config.matcher` must stay a static literal array (Next compile-time parse).
  */
 
 const runSessionGate = createSessionProxy();

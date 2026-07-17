@@ -6,8 +6,6 @@ import {
 	actionFail,
 	actionFieldMessage,
 	actionOk,
-	isActionFailure,
-	isActionSuccess,
 } from "../modules/platform/schemas/action-result";
 import {
 	API_ERROR_HTTP_STATUS,
@@ -21,12 +19,12 @@ import {
 import { emailSchema, parseSchema } from "../modules/platform/schemas/common";
 
 describe("ActionResult + error brands (I2.1)", () => {
-	it("discriminates success and failure helpers", () => {
+	it("discriminates success and failure via ok", () => {
 		const ok = actionOk({ email: "a@b.co" });
 		const fail = actionFail("FORBIDDEN", "Not allowed.");
 
-		expect(isActionSuccess(ok)).toBe(true);
-		expect(isActionFailure(fail)).toBe(true);
+		expect(ok.ok).toBe(true);
+		expect(fail.ok).toBe(false);
 		expect(ok.data.email).toBe("a@b.co");
 		expect(fail.code).toBe("FORBIDDEN");
 	});

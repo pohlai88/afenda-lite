@@ -7,6 +7,8 @@ import {
 	platformRolePermission,
 } from "@afenda/db";
 
+import { requireTrimmed } from "@/modules/platform/domain/require-trimmed";
+
 /** Coarse shell role used only for unassigned admin bootstrap (ARCH-023). */
 export type PermissionBootstrapRole = "admin" | "operator" | "client";
 
@@ -22,14 +24,6 @@ export type HasPermissionInput = {
 	bootstrapRole?: PermissionBootstrapRole;
 };
 
-function requireTrimmed(value: string, field: string): string {
-	const trimmed = value.trim();
-	if (trimmed.length === 0) {
-		throw new Error(`hasPermission requires non-empty ${field}`);
-	}
-	return trimmed;
-}
-
 /**
  * Identity — Tier-2 permission check via active org assignments → role
  * permissions (GUIDE-018 I3.1 · ARCH-023 · N10). Catalog-gated: unknown codes
@@ -39,9 +33,9 @@ function requireTrimmed(value: string, field: string): string {
 export async function hasPermission(
 	input: HasPermissionInput,
 ): Promise<boolean> {
-	const orgId = requireTrimmed(input.orgId, "orgId");
-	const userId = requireTrimmed(input.userId, "userId");
-	const code = requireTrimmed(input.code, "code");
+	const orgId = requireTrimmed(input.orgId, "orgId", "hasPermission");
+	const userId = requireTrimmed(input.userId, "userId", "hasPermission");
+	const code = requireTrimmed(input.code, "code", "hasPermission");
 
 	if (!isPlatformPermissionCodeV1(code)) {
 		return false;

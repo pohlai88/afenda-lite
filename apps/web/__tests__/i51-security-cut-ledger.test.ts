@@ -102,7 +102,7 @@ describe("I5.1 safe-error Action inventory", () => {
 			path.join(actionsDir, "invite-org-member.ts"),
 			"utf8",
 		);
-		expect(invite).toContain("stage: \"requested\"");
+		expect(invite).toContain('stage: "requested"');
 		expect(invite).toContain("was not sent");
 		expect(invite).not.toContain(
 			"Invitation was sent but the org-scoped audit write failed",

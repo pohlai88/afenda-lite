@@ -2,12 +2,6 @@ import type { platformRoleAssignment } from "@afenda/db";
 
 import type { AssignOrgRoleCommand } from "@/modules/identity/schemas/assign-org-role";
 
-export {
-	type AssignOrgRoleCommand,
-	assignOrgRoleCommandSchema,
-	parseAssignOrgRoleCommand,
-} from "@/modules/identity/schemas/assign-org-role";
-
 export const ORGANIZATION_SCOPE = "organization" as const;
 
 export type AssignOrgRoleInput = AssignOrgRoleCommand & {

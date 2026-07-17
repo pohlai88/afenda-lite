@@ -53,7 +53,9 @@ describe("N18 FFT permitted vertical (Phase 2A freeze)", () => {
 	it("requireFftAccess denies without fft.access via AUTH_FORBIDDEN_PATH", async () => {
 		hasPermissionMock.mockResolvedValue(false);
 
-		await expect(requireFftAccess(session)).rejects.toThrow("NEXT_REDIRECT:/403");
+		await expect(requireFftAccess(session)).rejects.toThrow(
+			"NEXT_REDIRECT:/403",
+		);
 		expect(navigationMocks.redirect).toHaveBeenCalledWith("/403");
 		expect(hasPermissionMock).toHaveBeenCalledWith(
 			expect.objectContaining({
@@ -76,10 +78,12 @@ describe("N18 FFT permitted vertical (Phase 2A freeze)", () => {
 	});
 
 	it("wires layout + shell to requireFftAccess and keeps features SQL-free", () => {
-		expect(existsSync(path.join(webRoot, "app/(operator)/fft/layout.tsx"))).toBe(
-			true,
+		expect(
+			existsSync(path.join(webRoot, "app/(operator)/fft/layout.tsx")),
+		).toBe(true);
+		expect(source("app/(operator)/fft/layout.tsx")).toContain(
+			"requireFftAccess",
 		);
-		expect(source("app/(operator)/fft/layout.tsx")).toContain("requireFftAccess");
 		expect(source("features/fft/fft-events-shell.tsx")).toContain(
 			"requireFftAccess",
 		);

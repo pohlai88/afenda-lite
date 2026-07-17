@@ -6,13 +6,7 @@ import {
 	platformRolePermission,
 } from "@afenda/db";
 
-function requireTrimmed(value: string, field: string): string {
-	const trimmed = value.trim();
-	if (trimmed.length === 0) {
-		throw new Error(`listUserPermissions requires non-empty ${field}`);
-	}
-	return trimmed;
-}
+import { requireTrimmed } from "@/modules/platform/domain/require-trimmed";
 
 /**
  * Identity — distinct Tier-2 permission codes for a user in one org via
@@ -23,8 +17,8 @@ export async function listUserPermissions(
 	orgId: string,
 	userId: string,
 ): Promise<string[]> {
-	const scopedOrgId = requireTrimmed(orgId, "orgId");
-	const scopedUserId = requireTrimmed(userId, "userId");
+	const scopedOrgId = requireTrimmed(orgId, "orgId", "listUserPermissions");
+	const scopedUserId = requireTrimmed(userId, "userId", "listUserPermissions");
 
 	const rows = await db
 		.selectDistinct({ code: platformRolePermission.permissionCode })

@@ -4,11 +4,13 @@
 | ----------------- | ---------- |
 | **ID**            | GUIDE-017  |
 | **Category**      | Guide      |
-| **Version**       | 1.0.0      |
+| **Version**       | 1.0.2      |
 | **Status**        | Living     |
 | **Control State** | Closed     |
 | **Owner**         | Platform   |
-| **Updated**       | 2026-07-14 |
+| **Updated**       | 2026-07-17 |
+
+**Control-state note:** Closed 2026-07-17 after I6.3 deploy-health blocker clear (decision remains **NOT READY** @ `fc16109`).
 
 ---
 
@@ -228,11 +230,40 @@ Incremental scope reduces the number of applicable criteria, not their required 
 
 Terms such as MVP, lite, thin, simple, beta, or good enough never relax correctness, isolation, security, audit, accessibility, recovery, evidence, or operability.
 
-## 3.11 Current Checkout Posture
+## 3.11 Current claim identity (GUIDE-018 I6.2)
 
-GUIDE-017 being Living means the evidence standard is approved and maintained. It does **not** mean the product or a release is ready.
+GUIDE-017 being Living means the evidence standard is approved and maintained. It does **not** mean the product or a release is ready. Living documentation ≠ READY.
 
-This docs-first checkout has no Target product tree. Afenda-Lite runtime and product readiness therefore remain NOT EVIDENCED until an explicitly scoped claim has current reproducible evidence from the implemented Target.
+Frozen claim identity per §3.1 (GUIDE-018 **I6.2**, 2026-07-17). Decision algorithm §3.9 applied against revision-bound evidence — not “ON DISK” or I6.1 ledger refresh alone.
+
+| Field | Content |
+| ----- | ------- |
+| Claim scope | Afenda-Lite production-exposed slice after GUIDE-018 **I1–I6.1** (Identity/Platform · Declarations · org-admin cut A · FFT Phase 2A list-only · I4 adverse A1–A11 · I5 hardening floor). **Not** Afenda-Elite edition certification · **not** FFT Module Enterprise Readiness Claimable · **not** a full SaaS release |
+| Revision | `fc16109` (`fc16109f768cf81cd214a6ec4bf3e1f7d5f99626`) |
+| Environment | Neon branch `br-tiny-hill-ao82jp6f` · `@afenda/env` + `.env.local` profile; production deploy health **confirmed** (GUIDE-018 **I6.3** — Deploy · Vercel READY · trusted domains) |
+| Criterion set | This guide §3.6 dimensions · GUIDE-018 I1–I6.1 implement evidence · [MOD-002](../modules/MOD-002-modules-index.md) **4.0.3** pack gaps · [FFT-MOD-009](../modules/feed-farm-trade/FFT-MOD-009-verification.md) **2.1.0** §3.5 · I5.1–I5.6 implement evidence · I6.3 deploy-health verify |
+| Decision owner | Platform |
+| Decision date | 2026-07-17 |
+| Evidence index | GUIDE-018 Phase I3–I6.3 (+ I5.* sections) · FFT-MOD-009 **2.1.0** / FFT-MOD-010 **2.5.0** · MOD-002 **4.0.3** · verify: `pnpm --filter @afenda/web test -- fft-permitted-vertical tenancy-isolation portal-chrome operator-paths` (4 files / 21 tests) · `pnpm check:module-quality` (Coverage complete · Findings: 0) · I6.3 `pnpm check:production:post-deploy` / domain audit |
+| Exclusions | FFT 2B–2D ([FFT-MOD-008](../modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md) freeze) · AdminCN cut B (waived) · I18N02 multi-locale (NOT APPLICABLE per I5.4) |
+| **Decision** | **NOT READY** |
+| Accepted risks | **none** |
+| Review trigger | After Approved Docs-lane packs for packless verticals + fresh verify at a new revision |
+
+### Blocking criteria (non-exhaustive; each blocks READY / CONDITIONALLY READY without accepted risk)
+
+| Blocker | Evidence pointer |
+| ------- | ---------------- |
+| Packless Identity / Platform · Declarations · org-admin | MOD-002 **4.0.3** · GUIDE-018 I6.1 completeness matrix — no `*-MOD-009` / `*-MOD-010` → module-spine criteria **NOT EVIDENCED** |
+| FFT Module Enterprise Readiness **Not claimable** | FFT-MOD-010 **2.5.0** · FFT-MOD-009 **2.1.0** @ `fc16109` — many Core **NOT EVIDENCED** |
+| PITR RPO not drilled | GUIDE-018 I5.2 — **NOT EVIDENCED** (fail-closed for recovery claims that require it) |
+| Capacity / broader release surfaces | GUIDE-018 §3.6 — I6 capacity harness · post-merge `e2e-smoke` follow-through still required for broader claims |
+
+**Cleared (I6.3 — does not change decision):** Production deploy health — GUIDE-018 I6.3 **DONE** (Deploy `29558380028` success · Vercel Production Ready · Neon Auth trusted domains for `APP_URL` + localhost).
+
+CONDITIONALLY READY is unavailable: no current accepted-risk dispositions (§3.5) cover the remaining non-PASS criteria. READY is impossible while any mandatory criterion remains FAIL, BLOCKED, or NOT EVIDENCED without accepted risk.
+
+Program mission evidence for this fill: [GUIDE-018](GUIDE-018-fullstack-e2e-integration-program.md) Implement evidence — I6.2.
 
 ---
 
@@ -254,6 +285,8 @@ This docs-first checkout has no Target product tree. Afenda-Lite runtime and pro
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 1.0.2 | 2026-07-17 | **I6.3 blocker re-stamp**: deploy-health blocker cleared (GUIDE-018 I6.3 DONE); decision remains **NOT READY** @ `fc16109` (packless verticals · FFT Not claimable · PITR RPO); Living GUIDE-017 ≠ product READY. |
+| 1.0.1 | 2026-07-17 | **I6.2**: §3.11 claim identity filled for Afenda-Lite I1–I6.1 production-exposed slice @ `fc16109` — decision **NOT READY** (packless verticals · FFT Not claimable · PITR RPO · I6.3 open); Living GUIDE-017 ≠ product READY. |
 | 1.0.0 | 2026-07-14 | Approved Living cross-cutting evidence and release/capability decision standard after complete guide and docs-wide integrity review; MOD-002, ARCH-029, GUIDE-014, and parked ERP boundaries retained. |
 | 0.9.0 | 2026-07-14 | Review candidate extracted from reusable evidence semantics in the parked ERP requirements draft; excludes future-product ERP scope and preserves MOD-002 / ARCH-029 authority. |
 

@@ -114,9 +114,9 @@ describe("OrgAdminPanels — revoke + audit STABILITY", () => {
 		expect(
 			screen.getAllByText("Ada · ada@example.com").length,
 		).toBeGreaterThanOrEqual(1);
-		expect(
-			screen.getAllByText("user_neon_abc").length,
-		).toBeGreaterThanOrEqual(1);
+		expect(screen.getAllByText("user_neon_abc").length).toBeGreaterThanOrEqual(
+			1,
+		);
 		expect(
 			screen.getByText("11111111-1111-4111-8111-111111111111"),
 		).toBeInTheDocument();

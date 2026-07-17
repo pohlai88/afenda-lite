@@ -112,7 +112,7 @@ Controlled docs: respect **Control State**. `Closed` → reopen with explicit Do
 | Rule | Detail |
 |------|--------|
 | Forward code | Greenfield under `apps/web/**` and `packages/*` only |
-| Next open (GUIDE-018) | GUIDE-018 **Living 1.0.10**. Phase **I1–I5 DONE** (I3.4 cut B AdminCN waived). Invite-audit durable (pre-Neon audit) · I5.3 correlation Living (API-007). Next Ops = **I6+**. ARCH-028 Checkpoint G **closed**. Do **not** invent **N19**. Do **not** claim GUIDE-017 READY from I5 alone. |
+| Next open (GUIDE-018) | GUIDE-018 **Living 1.0.13**. Phase **I1–I6 DONE** (I3.4 cut B AdminCN waived; I6.3 deploy health confirmed). GUIDE-017 claim **NOT READY** @ `fc16109`. Next Ops = **I7.1**. ARCH-028 Checkpoint G **closed**. Do **not** invent **N19**. Do **not** claim GUIDE-017 READY from I6.3 alone. |
 | Next open (Neon Auth `N*`) | **N1–N18 serial complete** — all APPROVED at 100% (incl. **N15** Path-to-100% closed). Do **not** invent **N19**. Map: [neon-auth-slice-map](.cursor/skills/afenda-elite-implementation-slices/neon-auth-slice-map.md). |
 | Env | `@afenda/env` + `.env.local` only (compose retired) |
 | Docs trunks | Flat `docs/architecture/ARCH-*.md` — gate `pnpm check:docs-trunk-ban` |

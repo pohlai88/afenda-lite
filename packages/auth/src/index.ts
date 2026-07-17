@@ -2,15 +2,31 @@ import "server-only";
 
 export type { AuthApiHandlers } from "./api-handler";
 export { createAuthApiHandlers } from "./api-handler";
-export type { AfendaAuthViewPath, PublicAuthPath } from "./auth-paths";
+export type {
+	AfendaAuthViewPath,
+	PreLoginPublicPath,
+	PublicAuthPath,
+	RejectedAuthPathAlias,
+} from "./auth-paths";
 export {
 	AFENDA_AUTH_VIEW_PATHS,
+	AUTH_ACCEPT_INVITATION_PATH,
 	AUTH_API_BASE_PATH,
 	AUTH_BASE_PATH,
 	AUTH_FORBIDDEN_PATH,
+	AUTH_FORGOT_PASSWORD_PATH,
 	AUTH_LOGIN_PATH,
+	AUTH_RESET_PASSWORD_PATH,
+	AUTH_SIGN_OUT_PATH,
+	AUTH_SIGN_UP_PATH,
+	isPreLoginPublicPath,
 	isPublicAuthPath,
+	isRejectedAuthPathAlias,
+	PRE_LOGIN_PUBLIC_PATHS,
+	PUBLIC_AUTH_FULL_PATHS,
 	PUBLIC_AUTH_PATHS,
+	PUBLIC_LANDING_PATH,
+	REJECTED_AUTH_PATH_ALIASES,
 } from "./auth-paths";
 export { resolveAuthUiOrigin } from "./auth-ui-origin";
 export {
