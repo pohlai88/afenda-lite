@@ -1,4 +1,4 @@
-import { getSession, inviteableRolesFor, JOIN_PATH } from "@afenda/auth";
+import { inviteableRolesFor, JOIN_PATH, requireRole } from "@afenda/auth";
 import {
 	Card,
 	CardContent,
@@ -45,13 +45,14 @@ async function loadMemberDirectory(
 /**
  * Org-admin feature — session-aware RSC load + Identity/Platform domain ports
  * (ARCH-013 · ARCH-028 S7.4 · GUIDE-018 I3.1). Never imports `@afenda/db`.
+ * Fail-closed via `requireRole('operator')` even if composed outside the layout.
  * Operator invite → Neon Auth + `recordRbacAudit`; assign/revoke → Identity
  * ports + audit. UI composed exclusively from `@afenda/ui-system` (ADR-010).
  *
  * CAPABLE: invite, assign, revoke, audit View Dialog. No fake CTAs.
  */
 export async function OrgAdminShell() {
-	const session = await getSession();
+	const session = await requireRole("operator");
 	const { orgId, role } = session;
 	const [canManageRoles, canInvite] = await Promise.all([
 		sessionHasPermission(session, "org.roles.manage"),

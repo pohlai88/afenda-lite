@@ -6,16 +6,11 @@ import {
 	Code,
 	DataTable,
 	type DataTableColumn,
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogHeader,
-	DialogTitle,
 	FormField,
 	Input,
-	KeyValueList,
 	StatusBadge,
 } from "@afenda/ui-system";
+import Link from "next/link";
 import * as React from "react";
 
 import { DeclarationDraftSheet } from "@/features/declarations/declaration-draft-sheet";
@@ -88,6 +83,10 @@ function matchesFilter(row: DeclarationAssignmentRow, query: string): boolean {
 	return haystack.includes(needle);
 }
 
+function isSubmittedStatus(status: string): boolean {
+	return status.trim().toLowerCase() === "submitted";
+}
+
 const columns: DataTableColumn<DeclarationAssignmentRow>[] = [
 	{ key: "title", title: "Survey", sortable: true },
 	{
@@ -100,7 +99,14 @@ const columns: DataTableColumn<DeclarationAssignmentRow>[] = [
 		key: "assignmentStatus",
 		title: "Assignment",
 		sortable: true,
-		render: (value) => <Badge variant="secondary">{String(value)}</Badge>,
+		render: (value) => {
+			const status = String(value);
+			return (
+				<Badge variant={isSubmittedStatus(status) ? "default" : "secondary"}>
+					{status}
+				</Badge>
+			);
+		},
 	},
 	{
 		key: "submitBefore",
@@ -139,8 +145,6 @@ export function DeclarationsPanel({
 	const [sortDirection, setSortDirection] = React.useState<"asc" | "desc">(
 		"asc",
 	);
-	const [selected, setSelected] =
-		React.useState<DeclarationAssignmentRow | null>(null);
 	const [draftTarget, setDraftTarget] =
 		React.useState<DeclarationAssignmentRow | null>(null);
 	const [filterQuery, setFilterQuery] = React.useState("");
@@ -173,8 +177,6 @@ export function DeclarationsPanel({
 		});
 		return copy;
 	}, [filtered, sortBy, sortDirection]);
-
-	const selectedDue = selected ? dueBadge(selected.dueState) : null;
 
 	return (
 		<div className="flex flex-col gap-3">
@@ -213,124 +215,28 @@ export function DeclarationsPanel({
 						: "Assignments appear here when a survey is assigned to your client email."
 				}
 				density="comfortable"
-				rowActions={(row) => (
-					<div className="flex flex-wrap gap-2">
-						<Button
-							type="button"
-							variant="outline"
-							size="sm"
-							onClick={() => setSelected(row)}
-						>
-							View
-						</Button>
-						{canEditDraft ? (
-							<Button
-								type="button"
-								size="sm"
-								onClick={() => setDraftTarget(row)}
-							>
-								Respond
+				rowActions={(row) => {
+					const submitted = isSubmittedStatus(row.assignmentStatus);
+					return (
+						<div className="flex flex-wrap gap-2">
+							<Button asChild variant="outline" size="sm">
+								<Link href={`/client/declarations/${row.assignmentId}`}>
+									View
+								</Link>
 							</Button>
-						) : null}
-					</div>
-				)}
-			/>
-
-			<Dialog
-				open={selected != null}
-				onOpenChange={(open) => {
-					if (!open) {
-						setSelected(null);
-					}
+							{canEditDraft && !submitted ? (
+								<Button
+									type="button"
+									size="sm"
+									onClick={() => setDraftTarget(row)}
+								>
+									Respond
+								</Button>
+							) : null}
+						</div>
+					);
 				}}
-			>
-				<DialogContent>
-					{selected && selectedDue ? (
-						<>
-							<DialogHeader>
-								<DialogTitle>{selected.title}</DialogTitle>
-								<DialogDescription>
-									Assignment detail for your client session.
-								</DialogDescription>
-							</DialogHeader>
-							<KeyValueList
-								size="sm"
-								items={[
-									{
-										label: "Assignment ID",
-										value: (
-											<code className="font-mono text-sm">
-												{selected.assignmentId}
-											</code>
-										),
-									},
-									{
-										label: "Assignment status",
-										value: selected.assignmentStatus,
-									},
-									{
-										label: "Slug",
-										value: (
-											<code className="font-mono text-sm">{selected.slug}</code>
-										),
-									},
-									{
-										label: "Reference",
-										value: selected.referenceNumber ?? "—",
-									},
-									{
-										label: "Case",
-										value: selected.caseNumber ?? "—",
-									},
-									{
-										label: "Due",
-										value: formatDate(selected.submitBefore),
-									},
-									{
-										label: "Status",
-										value: (
-											<StatusBadge
-												status={selectedDue.status}
-												label={selectedDue.label}
-											/>
-										),
-									},
-									{
-										label: "Draft saved",
-										value: formatDate(selected.draftSavedAt),
-									},
-									{
-										label: "Question",
-										value: selected.question,
-									},
-									{
-										label: "Purpose",
-										value: selected.purpose ?? "—",
-									},
-									{
-										label: "Surveyor",
-										value:
-											[selected.surveyorName, selected.surveyorOrg]
-												.filter(Boolean)
-												.join(" · ") || "—",
-									},
-									{
-										label: "Surveyee org",
-										value: selected.surveyeeOrg ?? "—",
-									},
-									{
-										label: "Categories",
-										value:
-											selected.categories.length > 0
-												? selected.categories.join(", ")
-												: "—",
-									},
-								]}
-							/>
-						</>
-					) : null}
-				</DialogContent>
-			</Dialog>
+			/>
 
 			{draftTarget ? (
 				<DeclarationDraftSheet

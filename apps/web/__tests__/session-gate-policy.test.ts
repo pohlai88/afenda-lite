@@ -37,6 +37,7 @@ describe("shouldBypassSessionGate", () => {
 			"/fft/events",
 			"/admin",
 			"/admin/users",
+			"/client/declarations",
 			"/client/dashboard",
 			"/dashboard",
 			"/account",

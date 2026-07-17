@@ -1,11 +1,8 @@
-import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 
-import { DeclarationsShell } from "@/features/declarations/declarations-shell";
+import { CLIENT_DASHBOARD_PATH } from "@/features/auth/client-paths";
 
-export const metadata: Metadata = {
-	title: "Client dashboard",
-};
-
+/** Alias — bookmarks to `/client/dashboard` land on declarations home (N17). */
 export default function ClientDashboardPage() {
-	return <DeclarationsShell />;
+	redirect(CLIENT_DASHBOARD_PATH);
 }

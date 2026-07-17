@@ -153,10 +153,17 @@ export async function saveDeclarationDraftAction(
 			"Declaration draft could not be saved. Try again or contact an admin.",
 		);
 	}
-	if (!saved) {
+	if (!saved.ok) {
+		if (saved.reason === "locked") {
+			return actionFail(
+				"CONFLICT",
+				"This declaration is already submitted and cannot be edited.",
+			);
+		}
 		return actionFail("NOT_FOUND", "Declaration draft was not found.");
 	}
 
-	revalidatePath("/client/dashboard");
-	return actionOk(saved);
+	revalidatePath("/client/declarations");
+	revalidatePath(`/client/declarations/${parsed.data.assignmentId}`);
+	return actionOk({ savedAt: saved.savedAt });
 }

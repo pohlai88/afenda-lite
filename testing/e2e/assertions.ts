@@ -26,7 +26,7 @@ export function expectOperatorHome(pathname: string): void {
 }
 
 export function expectClientHome(pathname: string): void {
-	expect(pathname).toBe("/client/dashboard");
+	expect(pathname).toBe("/client/declarations");
 }
 
 export type OperatorShellNavExpectation = {

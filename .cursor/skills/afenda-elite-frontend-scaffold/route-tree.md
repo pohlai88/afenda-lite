@@ -2,6 +2,33 @@
 
 Generate this tree for greenfield scaffold. Every `page.tsx` is a stub RSC.
 
+## Living checkout overlay
+
+ARCH-028 Checkpoint S7.2/G cut the current deployable web tree to route
+groups. For the operator admin surface, the living path is:
+
+```text
+app/
+  (operator)/
+    layout.tsx        # requireRole("operator")
+    loading.tsx
+    error.tsx         # client segment error
+    not-found.tsx
+    admin/
+      page.tsx        # thin RSC → features/org-admin/OrgAdminShell
+```
+
+Checklist for this living `/admin` segment:
+
+- URL: `/admin`
+- Folder: `app/(operator)/admin/page.tsx`
+- Page stays thin; product UI lives in `features/org-admin`
+- No `route.ts` in the segment
+- No dynamic params
+- No `runtime = "edge"`
+- No imports from `@/lib/**`, `@/app/actions`, or `@/modules/**` in `page.tsx`
+- Parent `(operator)/layout.tsx` owns coarse `requireRole("operator")`; feature shell may also fail-close defensively
+
 **Next.js rules for this tree:**
 
 - Root `layout.tsx` / `global-error.tsx` include `<html>` + `<body>`

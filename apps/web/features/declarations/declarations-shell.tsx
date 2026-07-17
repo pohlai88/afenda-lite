@@ -115,9 +115,7 @@ export async function DeclarationsShell() {
 	return (
 		<main className="flex min-h-dvh flex-col gap-(--section-gap) bg-canvas p-6">
 			<header className="flex flex-col gap-2">
-				<h1 className="text-2xl font-semibold tracking-tight">
-					Client dashboard
-				</h1>
+				<h1 className="text-2xl font-semibold tracking-tight">Declarations</h1>
 				<p className="text-sm text-foreground-secondary">
 					Declaration assignments for{" "}
 					<code className="font-mono text-foreground">{apiSession.email}</code>{" "}

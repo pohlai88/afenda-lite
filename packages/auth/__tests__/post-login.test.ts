@@ -16,16 +16,18 @@ describe("resolveRoleHome (N7)", () => {
 		expect(OPERATOR_HOME_PATH).toBe("/admin");
 	});
 
-	it("routes client to the client dashboard", () => {
+	it("routes client to the declarations home", () => {
 		expect(resolveRoleHome("client")).toBe(CLIENT_HOME_PATH);
-		expect(CLIENT_HOME_PATH).toBe("/client/dashboard");
+		expect(CLIENT_HOME_PATH).toBe("/client/declarations");
 	});
 });
 
 describe("sanitizeCallbackUrl (N7 same-origin allowlist)", () => {
 	it("accepts absolute same-origin paths, preserving query and hash", () => {
 		expect(sanitizeCallbackUrl("/fft")).toBe("/fft");
-		expect(sanitizeCallbackUrl("/client/dashboard")).toBe("/client/dashboard");
+		expect(sanitizeCallbackUrl("/client/declarations")).toBe(
+			"/client/declarations",
+		);
 		expect(sanitizeCallbackUrl("/admin/users?tab=roles#top")).toBe(
 			"/admin/users?tab=roles#top",
 		);
@@ -80,9 +82,9 @@ describe("resolvePostLoginPath (N7 governed resolver)", () => {
 		expect(
 			resolvePostLoginPath({
 				role: "client",
-				callbackUrl: "/client/dashboard",
+				callbackUrl: "/client/declarations",
 			}),
-		).toBe("/client/dashboard");
+		).toBe("/client/declarations");
 	});
 
 	it("falls back to the role home when the callback is unsafe", () => {

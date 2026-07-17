@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
 	declarationDraftQuerySchema,
 	saveClientDeclarationDraftSchema,
+	submitClientDeclarationSchema,
 } from "@/modules/declarations/schemas/client";
 import { parseSchema } from "@/modules/declarations/schemas/common";
 import { getLivenessSnapshot } from "@/modules/platform/domain/health";
@@ -59,6 +60,13 @@ describe("OpenAPI contract schemas (I2.4)", () => {
 		if (write.success) {
 			expect(write.data.stepIndex).toBe(2);
 		}
+
+		expect(
+			parseSchema(submitClientDeclarationSchema, { assignmentId }),
+		).toEqual({
+			success: true,
+			data: { assignmentId },
+		});
 	});
 
 	it("detects Neon pooler hosts for readiness connection flags", async () => {

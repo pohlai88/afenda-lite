@@ -48,7 +48,9 @@ describe("portal-chrome (N16)", () => {
 	});
 
 	it("includes FFT nav when fft.access is granted", async () => {
-		hasPermissionMock.mockImplementation(async ({ code }) => code === "fft.access");
+		hasPermissionMock.mockImplementation(
+			async ({ code }) => code === "fft.access",
+		);
 
 		const nav = await resolveOperatorShellNav(session);
 		expect(nav.map((item) => item.id)).toEqual(["fft"]);

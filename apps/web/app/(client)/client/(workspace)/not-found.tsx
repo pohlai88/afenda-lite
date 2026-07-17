@@ -10,7 +10,7 @@ export default function ClientWorkspaceNotFound() {
 			title="Not found"
 			footer={
 				<Button asChild variant="outline" className="mt-2">
-					<Link href={CLIENT_DASHBOARD_PATH}>Back to dashboard</Link>
+					<Link href={CLIENT_DASHBOARD_PATH}>Back to declarations</Link>
 				</Button>
 			}
 		>

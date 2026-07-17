@@ -141,9 +141,15 @@ export async function handleWriteClientDeclarationDraft(
 		clientEmail: gate.session.email,
 		draft: parsed.data,
 	});
-	if (!saved) {
+	if (!saved.ok) {
+		if (saved.reason === "locked") {
+			return jsonError(
+				"CONFLICT",
+				"This declaration is already submitted and cannot be edited.",
+			);
+		}
 		return jsonError("NOT_FOUND", DRAFT_NOT_FOUND);
 	}
 
-	return jsonData(saved, { headers: DRAFT_CACHE_HEADERS });
+	return jsonData({ savedAt: saved.savedAt }, { headers: DRAFT_CACHE_HEADERS });
 }

@@ -13,6 +13,7 @@ Plan authority: this skill + `route-tree.md` + `docs/architecture/ARCH-012-app-r
 | `lib/` runners | Absorb | `lib/` gone | **Done** |
 | Root + segment `error.tsx` client | Convention | Present on product trees | **Done** |
 | api/actions untouched by scaffold | Keep | api-now only | **Done** |
+| Living `/admin` operator route group | ARCH-028 S7.2/G | `app/(operator)/admin/page.tsx` thin RSC → `features/org-admin`; parent `(operator)` segment owns layout/loading/error/not-found | **Done** |
 | `/client` workspace product rebuild | Closed + reopen checklist | Stubs only | **Closed (registered)** — [deprecation register](../../../agent-skills/skills/deprecation-and-migration/reference.md) |
 | Wipe inventory historical FFT locale rows | Superseded note | Documented | **Intentional** |
 

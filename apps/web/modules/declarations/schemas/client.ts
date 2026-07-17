@@ -42,3 +42,54 @@ export const declarationDraftWriteResponseSchema = z.object({
 export type DeclarationDraftWriteResponse = z.infer<
 	typeof declarationDraftWriteResponseSchema
 >;
+
+/**
+ * Client declaration submit / owned-read contract (N17 · REST-001 Assignments).
+ */
+
+export const submitClientDeclarationSchema = z.object({
+	assignmentId: uuidSchema,
+});
+
+export type SubmitClientDeclaration = z.infer<
+	typeof submitClientDeclarationSchema
+>;
+
+export const submitClientDeclarationResponseSchema = z.object({
+	assignmentId: uuidSchema,
+	status: z.literal("submitted"),
+	confirmationCode: z.string().min(1),
+	idempotent: z.boolean(),
+});
+
+export type SubmitClientDeclarationResponse = z.infer<
+	typeof submitClientDeclarationResponseSchema
+>;
+
+export const clientDeclarationGetResponseSchema = z.object({
+	assignmentId: uuidSchema,
+	surveyId: uuidSchema,
+	status: z.string().min(1),
+	confirmationCode: z.string().nullable(),
+	answers: surveyAnswersSchema,
+	stepIndex: z.number().int().min(0),
+	draftSavedAt: z.string().datetime().nullable(),
+	title: z.string().min(1),
+	slug: z.string().min(1),
+	question: z.string().min(1),
+	referenceNumber: z.string().nullable(),
+	caseNumber: z.string().nullable(),
+	effectiveDate: z.string().nullable(),
+	submitBefore: z.string().datetime().nullable(),
+	dueDate: z.string().datetime().nullable(),
+	surveyorName: z.string().nullable(),
+	surveyorOrg: z.string().nullable(),
+	surveyeeOrg: z.string().nullable(),
+	purpose: z.string().nullable(),
+	categories: z.array(z.string()),
+	createdAt: z.string().datetime(),
+});
+
+export type ClientDeclarationGetResponse = z.infer<
+	typeof clientDeclarationGetResponseSchema
+>;

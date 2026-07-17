@@ -41,7 +41,7 @@ test.describe("post-login routing @journey", () => {
 		expectOperatorHome(new URL(page.url()).pathname);
 	});
 
-	test("client lands on /client/dashboard", async ({ page, workerTenant }) => {
+	test("client lands on /client/declarations", async ({ page, workerTenant }) => {
 		const client = workerTenant?.client ?? resolveClientCredentials();
 		test.skip(
 			!client,
@@ -94,6 +94,6 @@ test.describe("post-login routing @journey", () => {
 		);
 
 		await loginAsOperator(page, operator ?? { email: "", password: "" });
-		await expectWrongRoleForbidden(page, "/client/dashboard");
+		await expectWrongRoleForbidden(page, "/client/declarations");
 	});
 });

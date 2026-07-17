@@ -7,16 +7,21 @@ import {
 	sql,
 } from "@afenda/db";
 
+import { SUBMITTED_ASSIGNMENT_STATUS } from "@/modules/declarations/domain/assignment-status";
 import type {
 	DeclarationDraftGetResponse,
-	DeclarationDraftWriteResponse,
 	SaveClientDeclarationDraft,
 } from "@/modules/declarations/schemas/client";
 import type { SurveyAnswers } from "@/modules/declarations/schemas/common";
 
 /**
  * Declarations — client draft get/save under hard `organization_id` + email owner.
+ * Draft writes are locked after finalize (`status === submitted`).
  */
+
+export type SaveClientDeclarationDraftOutcome =
+	| { ok: true; savedAt: string }
+	| { ok: false; reason: "not_found" | "locked" };
 
 function normalizeEmail(email: string): string {
 	return email.trim().toLowerCase();
@@ -109,7 +114,7 @@ export async function saveClientDeclarationDraft(input: {
 	orgId: string;
 	clientEmail: string;
 	draft: SaveClientDeclarationDraft;
-}): Promise<DeclarationDraftWriteResponse | null> {
+}): Promise<SaveClientDeclarationDraftOutcome> {
 	const orgId = input.orgId.trim();
 	const clientEmail = normalizeEmail(input.clientEmail);
 	const assignmentId = input.draft.assignmentId.trim();
@@ -118,12 +123,13 @@ export async function saveClientDeclarationDraft(input: {
 		clientEmail.length === 0 ||
 		assignmentId.length === 0
 	) {
-		return null;
+		return { ok: false, reason: "not_found" };
 	}
 
 	const [existing] = await db
 		.select({
 			draftAnswers: clientAssignments.draftAnswers,
+			status: clientAssignments.status,
 		})
 		.from(clientAssignments)
 		.where(
@@ -136,7 +142,11 @@ export async function saveClientDeclarationDraft(input: {
 		.limit(1);
 
 	if (!existing) {
-		return null;
+		return { ok: false, reason: "not_found" };
+	}
+
+	if (existing.status === SUBMITTED_ASSIGNMENT_STATUS) {
+		return { ok: false, reason: "locked" };
 	}
 
 	const mergedAnswers: SurveyAnswers = {
@@ -164,8 +174,8 @@ export async function saveClientDeclarationDraft(input: {
 		});
 
 	if (!row?.draftSavedAt) {
-		return null;
+		return { ok: false, reason: "not_found" };
 	}
 
-	return { savedAt: row.draftSavedAt.toISOString() };
+	return { ok: true, savedAt: row.draftSavedAt.toISOString() };
 }

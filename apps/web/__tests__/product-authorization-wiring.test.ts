@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -22,6 +22,7 @@ const declarationMocks = vi.hoisted(() => ({
 	getClientDeclarationDraft: vi.fn(),
 	isClientOnboardingComplete: vi.fn(),
 	saveClientDeclarationDraft: vi.fn(),
+	submitClientDeclaration: vi.fn(),
 }));
 
 const navigationMocks = vi.hoisted(() => ({
@@ -55,11 +56,16 @@ vi.mock("@/modules/declarations/domain/declaration-draft", () => ({
 	saveClientDeclarationDraft: declarationMocks.saveClientDeclarationDraft,
 }));
 
+vi.mock("@/modules/declarations/domain/submit-client-declaration", () => ({
+	submitClientDeclaration: declarationMocks.submitClientDeclaration,
+}));
+
 import {
 	loadDeclarationDraftAction,
 	saveDeclarationDraftAction,
 } from "../app/actions/declaration-draft";
 import { forbidUnlessPermission } from "../app/actions/permission-gate";
+import { submitClientDeclarationAction } from "../app/actions/submit-client-declaration";
 import { requirePermission } from "../features/auth/require-permission";
 import {
 	handleGetClientDeclarationDraft,
@@ -166,6 +172,7 @@ describe("N11 product authorization wiring", () => {
 			savedAt: null,
 		});
 		declarationMocks.saveClientDeclarationDraft.mockResolvedValue({
+			ok: true,
 			savedAt: "2026-07-17T00:00:00.000Z",
 		});
 
@@ -215,6 +222,46 @@ describe("N11 product authorization wiring", () => {
 		expect(declarationMocks.isClientOnboardingComplete).not.toHaveBeenCalled();
 	});
 
+	it("denies declaration submit when declarations.manage is unassigned", async () => {
+		hasPermissionMock.mockResolvedValue(false);
+		const formData = new FormData();
+		formData.set("assignmentId", "09ec6b05-9e7d-4de4-99e0-046c216fd4d1");
+		const result = await submitClientDeclarationAction(null, formData);
+
+		expect(result).toMatchObject({ ok: false, code: "FORBIDDEN" });
+		expect(declarationMocks.isClientOnboardingComplete).not.toHaveBeenCalled();
+		expect(declarationMocks.submitClientDeclaration).not.toHaveBeenCalled();
+		expect(hasPermissionMock).toHaveBeenCalledWith(
+			expect.objectContaining({ code: "declarations.manage" }),
+		);
+	});
+
+	it("allows declaration submit after permission and onboarding", async () => {
+		hasPermissionMock.mockResolvedValue(true);
+		declarationMocks.submitClientDeclaration.mockResolvedValue({
+			ok: true,
+			data: {
+				assignmentId: "09ec6b05-9e7d-4de4-99e0-046c216fd4d1",
+				status: "submitted",
+				confirmationCode: "conf-n17",
+				idempotent: false,
+			},
+		});
+
+		const formData = new FormData();
+		formData.set("assignmentId", "09ec6b05-9e7d-4de4-99e0-046c216fd4d1");
+		const result = await submitClientDeclarationAction(null, formData);
+
+		expect(result.ok).toBe(true);
+		expect(declarationMocks.submitClientDeclaration).toHaveBeenCalledWith(
+			expect.objectContaining({
+				orgId: "org-n11",
+				clientEmail: "client@example.com",
+				assignmentId: "09ec6b05-9e7d-4de4-99e0-046c216fd4d1",
+			}),
+		);
+	});
+
 	it("pins every living product port to its ARCH-023 v1 code", () => {
 		const expectedCodesByPort = {
 			"app/actions/assign-org-role.ts": ["org.roles.manage"],
@@ -224,12 +271,17 @@ describe("N11 product authorization wiring", () => {
 				"declarations.read",
 				"declarations.manage",
 			],
+			"app/actions/submit-client-declaration.ts": ["declarations.manage"],
 			"features/org-admin/org-admin-shell.tsx": [
 				"org.roles.manage",
 				"clients.invite",
 			],
 			"features/fft/fft-events-shell.tsx": ["fft.access"],
 			"features/declarations/declarations-shell.tsx": [
+				"declarations.read",
+				"declarations.manage",
+			],
+			"features/declarations/declaration-detail-shell.tsx": [
 				"declarations.read",
 				"declarations.manage",
 			],
@@ -259,13 +311,59 @@ describe("N11 product authorization wiring", () => {
 		expect(source("features/org-admin/org-admin-shell.tsx")).toContain(
 			"forbidPermissionAccess",
 		);
+		expect(source("features/org-admin/org-admin-shell.tsx")).toContain(
+			'requireRole("operator")',
+		);
 		for (const relativePath of [
 			"app/actions/assign-org-role.ts",
 			"app/actions/revoke-org-role.ts",
 			"app/actions/invite-org-member.ts",
 			"app/actions/declaration-draft.ts",
+			"app/actions/submit-client-declaration.ts",
 		]) {
 			expect(source(relativePath)).toContain("forbidUnlessPermission");
 		}
+		expect(
+			source("features/declarations/declaration-detail-shell.tsx"),
+		).toContain("forbidPermissionAccess");
+	});
+
+	it("keeps N17 submit/read on Action + RSC (no assignment REST dual path)", () => {
+		expect(
+			existsSync(
+				path.join(webRoot, "app/actions/submit-client-declaration.ts"),
+			),
+		).toBe(true);
+		expect(
+			existsSync(
+				path.join(
+					webRoot,
+					"modules/declarations/domain/get-client-declaration.ts",
+				),
+			),
+		).toBe(true);
+		expect(
+			existsSync(
+				path.join(
+					webRoot,
+					"modules/declarations/domain/submit-client-declaration.ts",
+				),
+			),
+		).toBe(true);
+		expect(
+			existsSync(
+				path.join(
+					webRoot,
+					"features/declarations/declaration-detail-shell.tsx",
+				),
+			),
+		).toBe(true);
+		expect(existsSync(path.join(webRoot, "app/api/assignments"))).toBe(false);
+		expect(source("app/actions/submit-client-declaration.ts")).toContain(
+			"submitClientDeclaration",
+		);
+		expect(
+			source("features/declarations/declaration-detail-shell.tsx"),
+		).toContain("getClientDeclaration");
 	});
 });

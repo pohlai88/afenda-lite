@@ -33,7 +33,7 @@ describe("role shells wiring (I1.4)", () => {
 			"utf8",
 		);
 		expect(source).toContain('requireRole("client")');
-		expect(CLIENT_DASHBOARD_PATH).toBe("/client/dashboard");
+		expect(CLIENT_DASHBOARD_PATH).toBe("/client/declarations");
 		expect([...CLIENT_GATE_PATHS]).not.toContain(CLIENT_DASHBOARD_PATH);
 	});
 

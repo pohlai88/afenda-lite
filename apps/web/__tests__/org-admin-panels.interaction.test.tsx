@@ -10,10 +10,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { RevokeOrgRoleActionState } from "@/app/actions/revoke-org-role";
 import {
+	OrgAdminPanels,
 	type OrgAssignmentRow,
 	type OrgAuditRow,
 	type OrgRoleRow,
-	OrgAdminPanels,
 } from "@/features/org-admin/org-admin-panels";
 
 const { revokeOrgRoleAction } = vi.hoisted(() => ({

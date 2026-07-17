@@ -10,6 +10,7 @@ test.describe("anonymous gate @smoke", () => {
 	for (const protectedPath of [
 		"/admin",
 		"/fft",
+		"/client/declarations",
 		"/client/dashboard",
 		"/dashboard",
 	] as const) {

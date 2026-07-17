@@ -13,6 +13,7 @@ import {
 	Spinner,
 	Textarea,
 } from "@afenda/ui-system";
+import { useRouter } from "next/navigation";
 import * as React from "react";
 import { useActionState } from "react";
 
@@ -21,6 +22,10 @@ import {
 	type SaveDeclarationDraftData,
 	saveDeclarationDraftAction,
 } from "@/app/actions/declaration-draft";
+import {
+	type SubmitClientDeclarationData,
+	submitClientDeclarationAction,
+} from "@/app/actions/submit-client-declaration";
 import type { ActionResult } from "@/modules/platform/schemas/action-result";
 
 type DeclarationDraftSheetProps = {
@@ -59,6 +64,7 @@ export function DeclarationDraftSheet({
 	title,
 	question,
 }: DeclarationDraftSheetProps) {
+	const router = useRouter();
 	const [answer, setAnswer] = React.useState("");
 	const [stepIndex, setStepIndex] = React.useState(0);
 	const [loadError, setLoadError] = React.useState<string | null>(null);
@@ -68,6 +74,11 @@ export function DeclarationDraftSheet({
 	const [saveState, formAction, pending] = useActionState(
 		saveDeclarationDraftAction,
 		null as ActionResult<SaveDeclarationDraftData> | null,
+	);
+
+	const [submitState, submitAction, submitPending] = useActionState(
+		submitClientDeclarationAction,
+		null as ActionResult<SubmitClientDeclarationData> | null,
 	);
 
 	React.useEffect(() => {
@@ -107,7 +118,16 @@ export function DeclarationDraftSheet({
 		}
 	}, [saveState]);
 
-	const formBlocked = loading || Boolean(loadError) || pending;
+	React.useEffect(() => {
+		if (submitState?.ok) {
+			onOpenChange(false);
+			router.refresh();
+			router.push(`/client/declarations/${assignmentId}`);
+		}
+	}, [submitState, onOpenChange, router, assignmentId]);
+
+	const formBlocked = loading || Boolean(loadError) || pending || submitPending;
+	const canSubmit = answer.trim().length > 0 && savedAt != null && !formBlocked;
 
 	return (
 		<Sheet open={open} onOpenChange={onOpenChange}>
@@ -115,8 +135,8 @@ export function DeclarationDraftSheet({
 				<SheetHeader>
 					<SheetTitle>{title}</SheetTitle>
 					<SheetDescription>
-						Save a draft response for this assignment. Answers are scoped to
-						your client session.
+						Save a draft response, then submit to finalize. Answers are scoped
+						to your client session.
 					</SheetDescription>
 				</SheetHeader>
 
@@ -134,57 +154,73 @@ export function DeclarationDraftSheet({
 						</p>
 					</div>
 				) : (
-					<form
-						action={formAction}
-						className="flex flex-1 flex-col gap-(--field-gap)"
-					>
-						<input type="hidden" name="assignmentId" value={assignmentId} />
-						<input type="hidden" name="surveyId" value={surveyId} />
-						<input type="hidden" name="stepIndex" value={String(stepIndex)} />
+					<div className="flex flex-1 flex-col gap-(--field-gap)">
+						<form
+							action={formAction}
+							className="flex flex-1 flex-col gap-(--field-gap)"
+						>
+							<input type="hidden" name="assignmentId" value={assignmentId} />
+							<input type="hidden" name="surveyId" value={surveyId} />
+							<input type="hidden" name="stepIndex" value={String(stepIndex)} />
 
-						<p className="text-sm text-foreground">{question}</p>
+							<p className="text-sm text-foreground">{question}</p>
 
-						<FormField label="Your response" required fieldId="draft-answer">
-							<Textarea
-								id="draft-answer"
-								name="answer"
-								value={answer}
-								onChange={(event) => setAnswer(event.target.value)}
-								required
-								rows={8}
-								disabled={formBlocked}
-								placeholder="Enter your declaration response"
-								className="min-h-40"
-							/>
-						</FormField>
+							<FormField label="Your response" required fieldId="draft-answer">
+								<Textarea
+									id="draft-answer"
+									name="answer"
+									value={answer}
+									onChange={(event) => setAnswer(event.target.value)}
+									required
+									rows={8}
+									disabled={formBlocked}
+									placeholder="Enter your declaration response"
+									className="min-h-40"
+								/>
+							</FormField>
 
-						{saveState && !saveState.ok ? (
-							<FormError message={saveState.message} />
-						) : null}
+							{saveState && !saveState.ok ? (
+								<FormError message={saveState.message} />
+							) : null}
 
-						{savedAt ? (
-							<p className="text-sm text-foreground-tertiary">
-								Last saved{" "}
-								<code className="font-mono text-foreground">
-									{new Date(savedAt).toLocaleString()}
-								</code>
+							{savedAt ? (
+								<p className="text-sm text-foreground-tertiary">
+									Last saved{" "}
+									<code className="font-mono text-foreground">
+										{new Date(savedAt).toLocaleString()}
+									</code>
+								</p>
+							) : null}
+
+							<SheetFooter className="mt-auto gap-2 sm:justify-start">
+								<Button type="submit" disabled={formBlocked}>
+									{pending ? "Saving…" : "Save draft"}
+								</Button>
+								<Button
+									type="button"
+									variant="outline"
+									disabled={pending || submitPending}
+									onClick={() => onOpenChange(false)}
+								>
+									Close
+								</Button>
+							</SheetFooter>
+						</form>
+
+						<form action={submitAction} className="flex flex-col gap-2">
+							<input type="hidden" name="assignmentId" value={assignmentId} />
+							{submitState && !submitState.ok ? (
+								<FormError message={submitState.message} />
+							) : null}
+							<Button type="submit" variant="secondary" disabled={!canSubmit}>
+								{submitPending ? "Submitting…" : "Submit declaration"}
+							</Button>
+							<p className="text-xs text-foreground-tertiary">
+								Save a draft first. Submit freezes saved answers and issues a
+								confirmation code.
 							</p>
-						) : null}
-
-						<SheetFooter className="mt-auto gap-2 sm:justify-start">
-							<Button type="submit" disabled={formBlocked}>
-								{pending ? "Saving…" : "Save draft"}
-							</Button>
-							<Button
-								type="button"
-								variant="outline"
-								disabled={pending}
-								onClick={() => onOpenChange(false)}
-							>
-								Close
-							</Button>
-						</SheetFooter>
-					</form>
+						</form>
+					</div>
 				)}
 			</SheetContent>
 		</Sheet>

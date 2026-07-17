@@ -15,8 +15,8 @@ import type { Role } from "./role";
 /** Operator + admin coarse product home (operator shell). */
 export const OPERATOR_HOME_PATH = "/admin" as const;
 
-/** Client coarse product home (client workspace dashboard). */
-export const CLIENT_HOME_PATH = "/client/dashboard" as const;
+/** Client coarse product home (declarations list — N17). */
+export const CLIENT_HOME_PATH = "/client/declarations" as const;
 
 /**
  * Query-param name that carries the intended post-login return path.

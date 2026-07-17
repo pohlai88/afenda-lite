@@ -17,7 +17,7 @@ describe("client path SSOT", () => {
 		]);
 	});
 
-	it("keeps workspace dashboard path stable", () => {
-		expect(CLIENT_DASHBOARD_PATH).toBe("/client/dashboard");
+	it("keeps workspace declarations home path stable", () => {
+		expect(CLIENT_DASHBOARD_PATH).toBe("/client/declarations");
 	});
 });

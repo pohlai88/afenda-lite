@@ -21,7 +21,9 @@ import {
 } from "@afenda/db";
 import { afterAll, describe, expect, it } from "vitest";
 
+import { getClientDeclaration } from "../modules/declarations/domain/get-client-declaration";
 import { listClientAssignments } from "../modules/declarations/domain/list-client-assignments";
+import { submitClientDeclaration } from "../modules/declarations/domain/submit-client-declaration";
 import { listEvents } from "../modules/fft/domain/list-events";
 import {
 	deleteRbacAuditRow,
@@ -84,6 +86,26 @@ describe("tenancy isolation guards (N9)", () => {
 			clientEmail: "client@example.com",
 		});
 		expect(rows).toEqual([]);
+	});
+
+	it("getClientDeclaration returns null for empty orgId", async () => {
+		await expect(
+			getClientDeclaration({
+				orgId: "   ",
+				clientEmail: "client@example.com",
+				assignmentId: randomUUID(),
+			}),
+		).resolves.toBeNull();
+	});
+
+	it("submitClientDeclaration fails closed for empty orgId", async () => {
+		await expect(
+			submitClientDeclaration({
+				orgId: "",
+				clientEmail: "client@example.com",
+				assignmentId: randomUUID(),
+			}),
+		).resolves.toEqual({ ok: false, reason: "not_found" });
 	});
 });
 
