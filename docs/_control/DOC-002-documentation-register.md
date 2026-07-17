@@ -4,7 +4,7 @@
 | ----------------- | ---------- |
 | **ID**            | DOC-002    |
 | **Category**      | Control    |
-| **Version**       | 4.133.0 |
+| **Version**       | 4.135.0 |
 | **Status**        | Living     |
 | **Control State** | Closed     |
 | **Owner**         | Platform   |
@@ -71,7 +71,7 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 | ID           | Category     | Title                                      | Version | Status | Owner    | Updated    |
 | ------------ | ------------ | ------------------------------------------ | ------- | ------ | -------- | ---------- |
 | DOC-001      | Control      | Documentation Control Standard             | 2.7.0   | Living | Platform | 2026-07-14 |
-| DOC-002      | Control      | Documentation Register                     | 4.133.0 | Living | Platform | 2026-07-17 |
+| DOC-002      | Control      | Documentation Register                     | 4.135.0 | Living | Platform | 2026-07-17 |
 | DOC-003      | Control      | Controlled Document Template               | 1.4.0   | Living | Platform | 2026-07-14 |
 | ARCH-029     | Architecture | Interface and API Architecture             | 1.2.7   | Living | Platform | 2026-07-14 |
 | ARCH-031     | Architecture | Technology Stack Catalogue                 | 1.4.0   | Living | Platform | 2026-07-17 |
@@ -112,7 +112,7 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 | ARCH-023     | Architecture | Multi-Tenancy and Platform RBAC            | 3.1.7   | Living | Platform | 2026-07-17 |
 | ARCH-024     | Architecture | Package Boundaries                         | 1.7.2   | Living | Platform | 2026-07-17 |
 | ARCH-025     | Architecture | Data Layer                                 | 1.3.4   | Living | Backend  | 2026-07-17 |
-| ARCH-026     | Architecture | Authentication and Session Model           | 2.0.0   | Living | Platform | 2026-07-17 |
+| ARCH-026     | Architecture | Authentication and Session Model           | 2.0.1   | Living | Platform | 2026-07-17 |
 | ARCH-027     | Architecture | Environment Variable Model                 | 1.6.5   | Living | Platform | 2026-07-16 |
 | ARCH-028     | Architecture | Turborepo Implementation Slices            | 1.5.6   | Living | Platform | 2026-07-17 |
 | ARCH-001     | Architecture | Backend Architecture                       | 1.2.0   | Living | Backend  | 2026-07-14 |
@@ -154,8 +154,8 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 | GUIDE-004    | Guide        | Engineering Drift Register                 | 1.4.0   | Retired | Platform | 2026-07-14 |
 | GUIDE-006    | Guide        | Guides Index                               | 1.8.0   | Retired | Platform | 2026-07-14 |
 | MOD-002      | Module       | Modules Index                              | 4.0.2 | Living | Platform | 2026-07-14 |
-| RB-001       | Runbook      | Multi-org Ops                              | 1.3.2   | Living | Platform | 2026-07-17 |
-| RB-005       | Runbook      | Post-lock Coding Cheat Sheet               | 1.1.0   | Living | Platform | 2026-07-14 |
+| RB-001       | Runbook      | Multi-org Ops                              | 1.4.0   | Living | Platform | 2026-07-17 |
+| RB-005       | Runbook      | Post-lock Coding Cheat Sheet               | 1.2.0   | Living | Platform | 2026-07-17 |
 
 ---
 
@@ -171,6 +171,8 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 
 | Version | Date       | Summary                                                                                                                                         |
 | ------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| 4.135.0 | 2026-07-17 | N15 Path-to-100%: ARCH-026→2.0.1 (trusted-domain/deploy ops honesty; collapsed configure no longer live); DOC-002 self-row synced. |
+| 4.134.0 | 2026-07-17 | N15 Production ops: RB-001→1.4.0 · RB-005→1.2.0 (trusted domains · deploy health · live validate honesty); DOC-002 self-row synced. |
 | 4.133.0 | 2026-07-17 | Neon Auth mail lock: ARCH-026→2.0.0 (Zoho SMTP via Neon Auth console) · ARCH-031→1.4.0 · ARCH-028→1.5.6 · GUIDE-018→0.3.16; DOC-002 self-row synced. |
 | 4.132.0 | 2026-07-17 | I3.1 audit repair: GUIDE-018→0.3.15 · ARCH-022→1.6.10 · ARCH-026→1.3.11 · ARCH-028→1.5.5; next Ops = I3.2; DOC-002 self-row synced. |
 | 4.131.0 | 2026-07-17 | N4 Path-to-100%: RB-001→1.3.2 (org-index inventory = living 11/11 public tables); DOC-002 self-row synced. |

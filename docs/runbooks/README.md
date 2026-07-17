@@ -4,8 +4,8 @@ Operator and agent procedures for Afenda-Lite **platform** ops. Architecture and
 
 | Doc | Purpose | Status |
 |-----|---------|--------|
-| [RB-001](RB-001-multi-org-ops.md) | Multi-org ops — resolve org id, FFT access backfill, tenancy audits, Neon restore pointers | Living |
-| [RB-005](RB-005-post-lock-coding-cheat-sheet.md) | Post-lock coding cheat sheet — env, phase entry, Rejected/Deferred flash card | Living |
+| [RB-001](RB-001-multi-org-ops.md) | Multi-org ops — resolve org id, FFT access backfill, tenancy audits, Neon restore/perf, N15 Auth domains + deploy health | Living |
+| [RB-005](RB-005-post-lock-coding-cheat-sheet.md) | Post-lock coding cheat sheet — env, phase entry, Rejected/Deferred flash card, weekly pack | Living |
 
 **API-pack runbooks** (OpenAPI drift, API incident, contract rollback) live under [`docs/api/runbooks/`](../api/runbooks/README.md) so the API pack stays standalone — [RB-006](../api/runbooks/RB-006-openapi-drift-detection-recovery.md) · [RB-007](../api/runbooks/RB-007-api-incident-response.md) · [RB-008](../api/runbooks/RB-008-api-contract-rollback.md).
 

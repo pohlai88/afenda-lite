@@ -36,8 +36,8 @@ Cursor Agent instructions for this repository. Prefer **actions and links** over
 
 Do not start skill loads or MCP calls before the PREFLIGHT block is in the visible reply for that turn.
 
-1. **Route product work** through [`/using-afenda-elite-skills`](.cursor/skills/using-afenda-elite-skills/SKILL.md) before vendor phase skills.
-2. **One mission per chat** when shipping product work — ARCH-028 coding slices are **closed**; use [GUIDE-018](docs/guides/GUIDE-018-fullstack-e2e-integration-program.md) phases + farms from [`/using-afenda-elite-skills`](.cursor/skills/using-afenda-elite-skills/SKILL.md). Residual scaffold verify: [implementation-slices](.cursor/skills/afenda-elite-implementation-slices/SKILL.md).
+1. **Route product work** through [`/using-afenda-elite-skills`](.cursor/skills/using-afenda-elite-skills/SKILL.md) — sole product entry. Vendor phase skills under `agent-skills/` are a **method library after** the farm is fixed, not competing entry points.
+2. **One mission per chat** when shipping product work — ARCH-028 coding slices are **closed**; use [GUIDE-018](docs/guides/GUIDE-018-fullstack-e2e-integration-program.md) phases + farms from the router. Residual scaffold / Neon Auth `N*` missions: [implementation-slices](.cursor/skills/afenda-elite-implementation-slices/SKILL.md) (+ command-sheet or neon-command-sheet).
 3. **Prefer Agent** for implement/verify; use **Plan** only when the slice cutover has a real choice; use **Ask** for read-only navigation.
 4. **Verify with evidence** (commands, CI/Deploy runs, `Test-Path` / `git ls-files`) — never trust a stale Cursor index alone.
 5. **Commit/push only when the user asks.** Never force-push `main`; never amend remote commits without explicit request.
@@ -45,17 +45,27 @@ Do not start skill loads or MCP calls before the PREFLIGHT block is in the visib
 
 ### Skill router (short)
 
+Full inventory: [catalog.md](.cursor/skills/using-afenda-elite-skills/catalog.md). Prefer **extend** before inventing farms.
+
 | Need | Skill |
 |------|-------|
 | Pick farm / docs type | `using-afenda-elite-skills` |
 | Controlled docs write | `afenda-elite-doc-control` |
 | Doc↔doc conflict / register drift | `afenda-elite-doc-integrity` |
-| ARCH-028 slice implement | `afenda-elite-implementation-slices` |
-| GUIDE-018 Phase I (I1.1…) | `afenda-elite-implementation-slices` + command-sheet |
+| GUIDE-018 Phase I (`I*`) / residual ARCH-028 (`S*`) | `afenda-elite-implementation-slices` + command-sheet |
 | Neon Auth optimisation (`N1`–`N18`) | `afenda-elite-implementation-slices` + neon-command-sheet · Neon Slice Score + independent audit |
 | UI primitives / `@afenda/ui-system` (shadcn·Radix, tokens, barrel) | ADR-010 owned-source workflow (`shadcn add` in `packages/ui-system` → relative imports → barrel export → guardrail tests) |
 | Product UI compose / handroll fix / visual consistency | `afenda-elite-ui-compose` (SCALABILITY-FIRST / UI-CAP-*; then `frontend-ui-engineering` for a11y/state/responsive method only) |
+| React composition / compound / provider API | `afenda-elite-react-composition` (after ui-compose classifies capability; vendor composition patterns = progressive only) |
+| React runtime / perf (waterfalls · rerenders · bundle · hydration) | `afenda-elite-react-best-practices` (App Router/cache stays with `afenda-elite-nextjs-best-practice`; vendor RBP = progressive only) |
 | UI in app routes / FE scaffold | `afenda-elite-frontend-scaffold` (consume `@afenda/ui-system` barrel) |
+| Next.js App Router / RSC / proxy / cache | `afenda-elite-nextjs-best-practice` |
+| Modules / ports / residue | `afenda-elite-backend-modules` |
+| API contract / ActionResult / OpenAPI / REST | `afenda-elite-api-contract` |
+| Module evidence / MOD readiness claims | `afenda-elite-module-readiness` |
+| Cross-package import / DAG | `afenda-elite-monorepo-discipline` |
+| Dead code / skill-catalog drift | `afenda-elite-repo-housekeeping` |
+| Root / package / app README · Diátaxis · README Score | `afenda-readme-diataxis` (not controlled `docs/` bodies) |
 | Neon tenancy ops ladder | `neon-tenancy-efficiency` |
 | FFT product module | `feed-farm-trade` |
 | Generic engineering phases | `using-agent-skills` (method library **after** Elite router) |
@@ -91,18 +101,19 @@ Controlled docs: respect **Control State**. `Closed` → reopen with explicit Do
 
 ## Checkout posture (Living Turborepo on disk)
 
-**Present:** `@afenda/{config,db,auth,env,ui,emails}` · `apps/web` route groups · `apps/web/proxy.ts` edge session gate · `apps/web/modules/{platform,identity,declarations,fft}` · `apps/web/features/{auth,declarations,fft,org-admin}` · CI/Deploy (`.github/workflows/{ci,deploy}.yml`).
+**Present:** `@afenda/{config,db,auth,env,ui-system,emails}` · `apps/web` route groups · `apps/web/proxy.ts` edge session gate · `apps/web/modules/{platform,identity,declarations,fft}` · `apps/web/features/{auth,declarations,fft,org-admin}` · CI/Deploy (`.github/workflows/{ci,deploy}.yml`).
 
 **Absent by design:** repo-root `app/`, `modules/`, `features/`, `components-V2/`, Collapse `lib/`, wiped ops script bodies · `apps/web/app/playground/` · `apps/web/features/playground/` (removed 2026-07-15; do not handroll).
 
 | Rule | Detail |
 |------|--------|
 | Forward code | Greenfield under `apps/web/**` and `packages/*` only |
-| Next open (program) | [GUIDE-018](docs/guides/GUIDE-018-fullstack-e2e-integration-program.md) **I3.2** — Declarations submit/read. Phase **I3.1** closed (assign/revoke · `hasPermission`). Phase **I2** / **I1** closed. ARCH-028 Checkpoint G **closed**. |
+| Next open (GUIDE-018) | **I3.2** — Declarations submit/read. Phase **I3.1** closed (assign/revoke · `hasPermission`). Phase **I2** / **I1** closed. ARCH-028 Checkpoint G **closed**. |
+| Next open (Neon Auth `N*`) | **N13** independently APPROVED at 95%; Path-to-100% repair SCORED 100% (2026-07-17), pending independent re-audit. Next ID = **N14** only after that re-audit — do **not** sneak-start here. Map: [neon-auth-slice-map](.cursor/skills/afenda-elite-implementation-slices/neon-auth-slice-map.md). |
 | Env | `@afenda/env` + `.env.local` only (compose retired) |
 | Docs trunks | Flat `docs/architecture/ARCH-*.md` — gate `pnpm check:docs-trunk-ban` |
 | Index ghosts | Grep/Glob may list deleted paths — trust `Test-Path` · `git ls-files` · trunk-ban check |
-| Scripts | Many root `package.json` script names still route through `scripts/collapse-script-unavailable.mjs` — **inventory only, not live controls**, until an Approved forward slice replaces them. Docs-capable today: `pnpm checks` · `check:docs-naming` · `check:docs-trunk-ban` · `check:doc-integrity` · `check:module-quality` · `check:openapi` · `validate:neon-env` |
+| Scripts | Many root `package.json` script names still route through `scripts/collapse-script-unavailable.mjs` — **inventory only, not live controls**, until an Approved forward slice replaces them. Docs-capable today: `pnpm checks` · `check:docs-naming` · `check:docs-trunk-ban` · `check:doc-integrity` · `check:module-quality` · `check:openapi` · `validate:neon-env` · `audit:tenancy-nulls` · `audit:github-actions-secrets` |
 
 **App layout:** sole deployable `apps/web` · edge gate `apps/web/proxy.ts` on disk (do not invent `middleware.ts`) · imports `@afenda/*` only across packages.
 
@@ -161,7 +172,7 @@ pnpm --filter @afenda/web dev   # :3000
 
 ## Neon Auth
 
-Authority: [`.agents/skills/neon/SKILL.md`](.agents/skills/neon/SKILL.md) · password-reset / email refs under `.agents/skills/neon-postgres/`.
+Authority: [`.agents/skills/neon/SKILL.md`](.agents/skills/neon/SKILL.md) · password-reset / email refs under `.agents/skills/neon-postgres/`. Optimisation serial: [neon-auth-slice-map](.cursor/skills/afenda-elite-implementation-slices/neon-auth-slice-map.md) · [neon-slice-score](.cursor/skills/afenda-elite-implementation-slices/neon-slice-score.md).
 
 | Topic | Rule |
 |-------|------|
@@ -171,6 +182,7 @@ Authority: [`.agents/skills/neon/SKILL.md`](.agents/skills/neon/SKILL.md) · pas
 | Password reset | Neon Auth UI forms only (`/auth/forgot-password`, `/auth/reset-password`) |
 | Branch policy | Local = **production** Neon branch `br-tiny-hill-ao82jp6f` — no branch switching |
 | MCP | User env `NEON_API_KEY`; restart Cursor after change. Avoid day-to-day `neonctl link` (rewrites `.neon`) |
+| `N*` close | Neon Slice Score + independent auditor `APPROVED` only — implementer never self-APPROVES; GUIDE-018 “closed” ≠ Neon APPROVED |
 
 ```bash
 pnpm validate:neon-env
@@ -179,7 +191,7 @@ pnpm --filter @afenda/web dev
 neon neon-auth domain add https://afenda-lite.vercel.app
 ```
 
-Runbook: [docs/runbooks/local-dev-auth.md](docs/runbooks/local-dev-auth.md).
+Runbook: [docs/runbooks/RB-001-multi-org-ops.md §3.12](docs/runbooks/RB-001-multi-org-ops.md#312-production-auth-ops--deploy-health-n15).
 
 ## Portal Atmosphere
 
@@ -197,8 +209,12 @@ Authority: [`testing/README.md`](testing/README.md).
 | `pnpm test:e2e` / `:smoke` / `:journey` | Playwright when specs exist |
 | `pnpm check:docs-naming` | DOC-002 / naming gate |
 | `pnpm validate:neon-env` | Neon Cloud ids vs `.env.local` |
+| `pnpm audit:tenancy-nulls` | Eight hard tenant roots null-org audit |
+| `pnpm audit:github-actions-secrets` | Required Actions secret/var **names** only |
 
 Factory SSOT: **`testing/`** only — specs import `@/testing/e2e/*` when present.
+
+**Neon Auth `N*` missions:** floor verify from [neon-auth-slice-map](.cursor/skills/afenda-elite-implementation-slices/neon-auth-slice-map.md) + acceptance matrix + [Neon Slice Score](.cursor/skills/afenda-elite-implementation-slices/neon-slice-score.md). Product close requires independent auditor `APPROVED` in a fresh chat — not implementer self-APPROVE.
 
 **CI:** `.github/workflows/ci.yml` — `pnpm/action-setup` reads root `packageManager` (no duplicate `version:`).  
 **Deploy:** `.github/workflows/deploy.yml` — turbo build `@afenda/web` → Vercel prod; production Git auto-deploy skipped via `apps/web/vercel.json` `ignoreCommand`.
@@ -216,6 +232,7 @@ Before coding:
 Before claiming done:
 
 - [ ] Acceptance / Verify commands green with pasted evidence
+- [ ] `N*` only: Neon Slice Score emitted + independent auditor APPROVED (or REJECTED/BLOCKED findings)
 - [ ] No shim/MVP language introduced
 - [ ] Controlled docs closed or Docs-lane reopen explicit
 - [ ] Secrets not committed (`.env.local` gitignored)

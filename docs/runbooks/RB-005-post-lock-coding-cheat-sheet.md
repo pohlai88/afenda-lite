@@ -4,11 +4,11 @@
 |-------|-------|
 | **ID** | RB-005 |
 | **Category** | Runbook |
-| **Version** | 1.1.0 |
+| **Version** | 1.2.0 |
 | **Status** | Living |
 | **Control State** | Closed |
 | **Owner** | Platform |
-| **Updated** | 2026-07-14 |
+| **Updated** | 2026-07-17 |
 
 ---
 
@@ -46,7 +46,7 @@ Print or pin this. One phase per turn. Fail closed on red checks.
 ```powershell
 # Name ONE phase — then run:
 # (phase table below · closed scope: deprecation register — Closed product phases)
-cd C:\JackProject\afenda-bolt\client-declaration-portal
+cd C:\JackProject\afenda-bolt\afenda-lite
 # Ensure .env.local has production Neon Auth + pooler DATABASE_URL
 pnpm validate:neon-env
 ```
@@ -90,15 +90,18 @@ pnpm test:e2e:journey -- e2e/tenancy-isolation.spec.ts
 ## 3.3 Weekly anti-drift (verify only)
 
 Full ladder: [neon-tenancy-efficiency/reference.md](../../.cursor/skills/neon-tenancy-efficiency/reference.md)
+Auth domains + deploy health detail: [RB-001 §3.12](./RB-001-multi-org-ops.md)
 
 ```powershell
-# Quick pack (Target env — ARCH-027 / S4.1+)
+# Quick pack (Target env — ARCH-027 / S4.1+) — live scripts only
 pnpm validate:neon-env
-pnpm audit:vercel
+pnpm audit:neon-auth-production
+pnpm check:production:post-deploy
 pnpm audit:tenancy-nulls
 pnpm check:tenancy-residue
-pnpm audit:neon-auth-production
 ```
+
+Do **not** use collapsed inventory aliases as green paths (`pnpm audit:vercel` · `pnpm configure:neon-auth-production` → `exit 1`). Confirm Vercel **READY** in the dashboard when deploy evidence is needed.
 
 Do **not** raise CU or invent `FFT_ERP_*` to green checks (§0 **R7**).
 
@@ -196,7 +199,7 @@ pnpm check:tenancy-residue
 | ID / Evidence | Relationship |
 | --- | --- |
 | [ARCH-023 Decision lock](../architecture/ARCH-023-multi-tenancy.md) | Binding Rejected / Deferred rows |
-| [RB-001](./RB-001-multi-org-ops.md) | Multi-org ops detail |
+| [RB-001](./RB-001-multi-org-ops.md) | Multi-org ops detail · N15 domains/deploy |
 | [neon-tenancy-efficiency/reference.md](../../.cursor/skills/neon-tenancy-efficiency/reference.md) | Ladder commands |
 | [deprecation-and-migration/reference.md](../../.cursor/skills/agent-skills/skills/deprecation-and-migration/reference.md) | Closed product phases |
 
@@ -206,6 +209,7 @@ pnpm check:tenancy-residue
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 1.2.0 | 2026-07-17 | N15: weekly pack uses live Auth/deploy scripts; drop collapsed `audit:vercel` green claim; path → afenda-lite. |
 | 1.1.0 | 2026-07-14 | DOC-003 six-section retrofit; package-manager commands remain `pnpm`. |
 | 1.0.2 | 2026-07-14 | Bounded reopen: package-manager cutover — document `pnpm` / `pnpm exec` (repo SSOT `packageManager` + `pnpm-lock.yaml`). |
 

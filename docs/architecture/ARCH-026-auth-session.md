@@ -4,7 +4,7 @@
 |-------|-------|
 | ID | ARCH-026 |
 | Category | Architecture |
-| Version | 2.0.0 |
+| Version | 2.0.1 |
 | Status | Living |
 | Control State | Closed |
 | Owner | Platform |
@@ -193,10 +193,11 @@ Client invitation: operator uses `/admin` → `inviteOrgMemberAction` → `invit
 
 ## Operational considerations
 
-- **Trusted domains:** add any new Vercel preview URL to Neon Auth trusted origins: `neon neon-auth domain add https://…`.
-- **Auth config audit:** `pnpm audit:neon-auth-production`.
-- **Plugin configuration:** `pnpm configure:neon-auth-production` for magic link and org plugins.
-- **Local dev:** `http://localhost:3000` is an allowed Neon Auth origin for sign-in without extra config.
+- **Trusted domains:** add every production, preview, custom, and local origin used by `APP_URL` to Neon Auth trusted origins: `neon neon-auth domain add https://…`. Procedure and evidence live in [RB-001 §3.12](../runbooks/RB-001-multi-org-ops.md#312-production-auth-ops--deploy-health-n15).
+- **Auth config audit:** `pnpm audit:neon-auth-production` confirms trusted domains; `pnpm validate:neon-env` includes the N15 trusted-domain row.
+- **Plugin configuration:** `pnpm configure:neon-auth-production` is collapsed inventory only (`exit 1`), not a live operator control. Configure Neon Auth plugins through the Neon console / approved MCP flow until a future Approved slice replaces that inventory alias.
+- **Deploy health:** `pnpm check:production:post-deploy` probes production liveness/readiness and recent Deploy evidence.
+- **Local dev:** `http://localhost:3000` must be present in Neon Auth trusted domains for local sign-in.
 
 # 4. References
 
@@ -211,6 +212,7 @@ Client invitation: operator uses `/admin` → `inviteOrgMemberAction` → `invit
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 2.0.1 | 2026-07-17 | N15 Path-to-100%: operational bullets point to live trusted-domain/deploy checks; collapsed `configure:neon-auth-production` no longer presented as a live control. |
 | 2.0.0 | 2026-07-17 | **Breaking mail decision:** Neon Auth transactional email = **Zoho SMTP** (Neon Auth console `email_provider`); Neon shared provider rejected; app-side SMTP for Neon Auth flows remains forbidden. |
 | 1.3.11 | 2026-07-17 | Bounded reopen (I3.1 audit repair): next-pointer honesty — I3.1 Tier-2 permissions landed; residual = I3.2. |
 | 1.3.10 | 2026-07-15 | Bounded reopen (I2.4 audit repair): next-pointer honesty — Phase I2 done; residual = I3.1 (Tier-2 permissions). |

@@ -12,6 +12,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { getEnvValue, loadLocalEnv } from "./lib/env-files.mjs";
+import { evaluateTrustedDomains, extractTrustedOrigins } from "./lib/neon-auth-trusted-domains.mjs";
 
 const env = loadLocalEnv();
 // Prefer `.env.local` over shell exports — stale NEON_BRANCH_ID must not win.
@@ -471,6 +472,46 @@ if (!databaseUrl) {
 
 console.log(
 	"[note] N4 does not raise CU/suspend/connection limits; scheduled latency/connection alerts use pnpm monitor:neon-performance.",
+);
+
+// N15 trusted domains — Neon Auth redirect allowlist (ops; no secret values).
+const appUrl = env.APP_URL || getEnvValue("APP_URL", env);
+try {
+	const domainListRaw = run([
+		"neon-auth",
+		"domain",
+		"list",
+		"--project-id",
+		projectId,
+		"--branch",
+		branchId,
+	]);
+	const domainListJson = JSON.parse(domainListRaw);
+	const trustedOrigins = extractTrustedOrigins(domainListJson);
+	const domains = evaluateTrustedDomains({
+		appUrl: appUrl ?? "",
+		trustedOrigins,
+	});
+	record(
+		check(
+			"N15 Neon Auth trusted domains",
+			domains.ok,
+			domains.ok ? domains.detail : domains.detail,
+		),
+	);
+} catch (error) {
+	record(
+		check(
+			"N15 Neon Auth trusted domains",
+			false,
+			(error.stderr?.toString?.() ?? error.message).trim() ||
+				"neon-auth domain list failed — Console verify required (no fake PASS)",
+		),
+	);
+}
+
+console.log(
+	"[note] N15: when APP_URL or preview hosts change, run neon neon-auth domain add <origin> then re-validate.",
 );
 
 console.log(`\nResult: ${passed} passed, ${failed} failed`);

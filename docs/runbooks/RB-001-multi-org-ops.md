@@ -4,7 +4,7 @@
 |-------|-------|
 | **ID** | RB-001 |
 | **Category** | Runbook |
-| **Version** | 1.3.2 |
+| **Version** | 1.4.0 |
 | **Status** | Living |
 | **Control State** | Closed |
 | **Owner** | Platform |
@@ -14,10 +14,10 @@
 
 # 1. Purpose
 
-Operator runbook for multi-org tenancy backfills, null audits, recovery posture, DB performance baseline evidence, and isolation checks after M1–M3.
+Operator runbook for multi-org tenancy backfills, null audits, recovery posture, DB performance baseline evidence, isolation checks after M1–M3, and Neon Auth production ops (trusted domains · deploy health · live validate scripts).
 
 **Authority:** [ARCH-023 Multi-Tenancy Model](../architecture/ARCH-023-multi-tenancy.md) (architecture SSOT — Neon shared-schema posture + production efficiency).  
-**Audience:** operators applying tenancy backfills after M1–M3.
+**Audience:** operators applying tenancy backfills after M1–M3 and Neon Auth production domain/deploy checks (N15).
 
 ---
 
@@ -30,11 +30,14 @@ Operator runbook for multi-org tenancy backfills, null audits, recovery posture,
 - Neon production recovery posture (PITR / snapshots)
 - Neon DB performance baseline (CU / suspend / pooler / latency evidence)
 - Migrations and isolation smoke related to multi-org
+- Neon Auth trusted domains + production deploy health (N15)
 
 ## 2.2 Out of scope
 
 - Product feature design (owned by ARCH-023 / FFT module spines)
 - Reopening Rejected / Deferred Decision lock rows without explicit approval
+- Editing CI/Deploy workflow YAML (document how to *read* Deploy evidence only)
+- Collapse-era script restore (`configure:neon-auth-production` stays inventory-only until a separate Approved slice)
 
 ---
 
@@ -283,6 +286,65 @@ pnpm test:e2e:journey -- e2e/tenancy-isolation.spec.ts
 2. Sole `neon_auth.member` row for the operator user
 3. Fail closed if the user has multiple memberships without an explicit org
 
+## 3.12 Production Auth ops + deploy health (N15)
+
+### Live vs collapsed scripts
+
+| Script | Status | Use |
+|--------|--------|-----|
+| `pnpm validate:neon-env` | **Live** | N1 contract + N3 recovery + N4 perf + **N15 trusted domains** |
+| `pnpm audit:neon-auth-production` | **Live** | Focused trusted-domain audit (APP_URL + localhost) |
+| `pnpm check:production:post-deploy` | **Live** | HTTP liveness/readiness + latest Actions Deploy |
+| `pnpm verify:production` | **Live** | Alias of `check:production:post-deploy` |
+| `pnpm audit:vercel` | Collapsed (`exit 1`) | Do **not** claim green — use deploy-health + Vercel dashboard READY |
+| `pnpm configure:neon-auth-production` | Collapsed (`exit 1`) | Inventory only — do not restore from git |
+
+### Trusted domains
+
+Neon Auth only redirects to origins on its trusted list. Production `APP_URL` and local `http://localhost:3000` must be registered.
+
+```powershell
+# List (JSON) — pasteable evidence
+npx neon@latest neon-auth domain list --project-id young-hat-54755363 --branch br-tiny-hill-ao82jp6f -o json
+
+# Add when APP_URL or preview host changes (ops config — no branch switch)
+npx neon@latest neon-auth domain add https://afenda-lite.vercel.app --project-id young-hat-54755363 --branch br-tiny-hill-ao82jp6f
+npx neon@latest neon-auth domain add http://localhost:3000 --project-id young-hat-54755363 --branch br-tiny-hill-ao82jp6f
+
+pnpm validate:neon-env
+pnpm audit:neon-auth-production
+```
+
+**Evidence template (paste into mission report):**
+
+```text
+domain list: PASS — includes https://afenda-lite.vercel.app · http://localhost:3000
+validate:neon-env N15 row: PASS
+audit:neon-auth-production: PASS — Result: N passed, 0 failed
+```
+
+### Deploy health
+
+Do **not** edit `.github/workflows/deploy.yml` in N15. Confirm promotion + serving health:
+
+1. GitHub Actions **Deploy** on `main`: at least one recent `success` / `completed` in the last 10 runs (`pnpm check:production:post-deploy`). If the absolute latest run failed, investigate CI — production may still serve the last success (script notes this; does not fake green on zero successes).
+2. Vercel production deployment for project `afenda-lite` → **READY** (dashboard/CLI — no secret commit).
+3. Public probes against production `APP_URL`:
+
+```powershell
+pnpm check:production:post-deploy
+# probes: GET {APP_URL}/api/health/liveness · GET {APP_URL}/api/health/readiness
+```
+
+**Evidence template:**
+
+```text
+check:production:post-deploy: PASS — liveness alive · readiness ready|degraded noted · Deploy success
+Vercel READY: confirmed (dashboard) — no token logged
+```
+
+CI/deploy remain restore-free and migrate-free (`db:check` only) — unchanged from N3/N4.
+
 ---
 
 # 4. References
@@ -290,6 +352,7 @@ pnpm test:e2e:journey -- e2e/tenancy-isolation.spec.ts
 | ID / Evidence | Relationship |
 | --- | --- |
 | [ARCH-023](../architecture/ARCH-023-multi-tenancy.md) | Tenancy Decision lock / Living SSOT |
+| [ARCH-026](../architecture/ARCH-026-auth-session.md) | Auth session · trusted-domain ops pointer |
 | [RB-005](./RB-005-post-lock-coding-cheat-sheet.md) | Post-lock command card |
 | [neon-tenancy-efficiency/reference.md](../../.cursor/skills/neon-tenancy-efficiency/reference.md) | Efficiency ladder A→E |
 
@@ -299,6 +362,7 @@ pnpm test:e2e:journey -- e2e/tenancy-isolation.spec.ts
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 1.4.0 | 2026-07-17 | N15: trusted domains · deploy health · live vs collapsed script table; validate N15 domain row. |
 | 1.3.2 | 2026-07-17 | N4 Path-to-100%: org-index evidence aligned to living public set (11/11) — removed inflated “FFT eight roots” claim. |
 | 1.3.1 | 2026-07-17 | N4 alert repair: hourly GitHub latency/connection-pressure monitor with deduplicated failure issue and recovery closure. |
 | 1.3.0 | 2026-07-17 | N4 DB performance baseline: CU/suspend/pooler/latency validate posture; redacted concurrency/slow-query/index evidence; alerts BLOCKED_EXTERNAL. |
