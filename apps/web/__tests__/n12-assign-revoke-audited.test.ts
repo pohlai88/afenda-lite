@@ -96,6 +96,7 @@ describe.skipIf(!hasDatabase)("assign/revoke WithAudit atomicity (N12)", () => {
 			roleId: ORG_ADMIN_TEMPLATE_ROLE_ID,
 			grantedBy: actorUserId,
 			actorUserId,
+			correlationId: "test-correlation-id",
 		});
 
 		expect(result.ok).toBe(true);
@@ -127,6 +128,7 @@ describe.skipIf(!hasDatabase)("assign/revoke WithAudit atomicity (N12)", () => {
 			);
 		expect(audits).toHaveLength(1);
 		expect(audits[0]?.targetId).toBe(result.assignment.id);
+		expect(audits[0]?.correlationId).toBe("test-correlation-id");
 	});
 
 	it("revokeOrgRoleWithAudit returns auditId and soft-revokes under same org", async () => {
@@ -136,6 +138,7 @@ describe.skipIf(!hasDatabase)("assign/revoke WithAudit atomicity (N12)", () => {
 			roleId: ORG_ADMIN_TEMPLATE_ROLE_ID,
 			grantedBy: actorUserId,
 			actorUserId,
+			correlationId: "test-correlation-id",
 		});
 		expect(assigned.ok).toBe(true);
 		if (!assigned.ok) {
@@ -149,6 +152,7 @@ describe.skipIf(!hasDatabase)("assign/revoke WithAudit atomicity (N12)", () => {
 			orgId: orgA,
 			assignmentId: assigned.assignment.id,
 			actorUserId,
+			correlationId: "test-correlation-id",
 		});
 		expect(revoked.ok).toBe(true);
 		if (!revoked.ok) {

@@ -3,6 +3,12 @@ import { env } from "@afenda/env";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
+import {
+	CORRELATION_HEADER,
+	resolveCorrelationId,
+} from "@/modules/platform/observability/correlation";
+import { logProductEvent } from "@/modules/platform/observability/product-log";
+
 import { shouldBypassSessionGate } from "./session-gate-policy";
 
 /**
@@ -11,6 +17,7 @@ import { shouldBypassSessionGate } from "./session-gate-policy";
  * because the operator shell is on disk under that path (ARCH-022).
  * Server Actions / mutations must still call `getSession` / `requireRole`
  * inside the action — proxy alone is not an authz bar.
+ * I5.3 / API-007 — stamps `x-correlation-id` on gate responses.
  */
 
 const runSessionGate = createSessionProxy();
@@ -26,7 +33,19 @@ function withPathnameHeader(request: NextRequest): Headers {
 	return requestHeaders;
 }
 
+function withCorrelation(
+	response: NextResponse,
+	correlationId: string,
+): NextResponse {
+	response.headers.set(CORRELATION_HEADER, correlationId);
+	return response;
+}
+
 export async function proxy(request: NextRequest) {
+	const correlationId = resolveCorrelationId(
+		request.headers.get(CORRELATION_HEADER),
+	);
+
 	if (
 		shouldBypassSessionGate({
 			method: request.method,
@@ -36,13 +55,23 @@ export async function proxy(request: NextRequest) {
 			playgroundEnabled: env.PLAYGROUND_ENABLED,
 		})
 	) {
-		return NextResponse.next({
-			request: { headers: withPathnameHeader(request) },
-		});
+		return withCorrelation(
+			NextResponse.next({
+				request: { headers: withPathnameHeader(request) },
+			}),
+			correlationId,
+		);
 	}
 
 	const gateResponse = await runSessionGate(request);
 	if (gateResponse.status >= 300 && gateResponse.status < 400) {
+		logProductEvent({
+			level: "info",
+			event: "proxy.session_redirect",
+			correlationId,
+			path: request.nextUrl.pathname,
+		});
+		gateResponse.headers.set(CORRELATION_HEADER, correlationId);
 		return gateResponse;
 	}
 
@@ -57,7 +86,7 @@ export async function proxy(request: NextRequest) {
 			response.headers.set(key, value);
 		}
 	});
-	return response;
+	return withCorrelation(response, correlationId);
 }
 
 export const config = {

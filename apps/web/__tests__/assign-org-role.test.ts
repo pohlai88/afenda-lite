@@ -7,8 +7,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { and, db, eq, platformRoleAssignment, withOrg } from "@afenda/db";
 import { afterAll, describe, expect, it } from "vitest";
-import { parseAssignOrgRoleCommand } from "../modules/identity/domain/assign-org-role";
 import { assignOrgRoleWithAudit } from "../modules/identity/domain/assign-org-role-audited";
+import { parseAssignOrgRoleCommand } from "../modules/identity/schemas/assign-org-role";
 import { deleteRbacAuditRow } from "../modules/platform/domain/record-rbac-audit";
 
 const repoRoot = path.resolve(
@@ -119,6 +119,7 @@ describe.skipIf(!hasDatabase)(
 				roleId: ORG_ADMIN_TEMPLATE_ROLE_ID,
 				grantedBy,
 				actorUserId: grantedBy,
+				correlationId: "test-correlation-id",
 			});
 			expect(result.ok).toBe(true);
 			if (!result.ok) {
@@ -149,6 +150,7 @@ describe.skipIf(!hasDatabase)(
 				roleId: ORG_ADMIN_TEMPLATE_ROLE_ID,
 				grantedBy,
 				actorUserId: grantedBy,
+				correlationId: "test-correlation-id",
 			});
 			expect(conflict.ok).toBe(false);
 			if (!conflict.ok) {
@@ -163,6 +165,7 @@ describe.skipIf(!hasDatabase)(
 				roleId: "00000000-0000-4000-8000-000000000099",
 				grantedBy,
 				actorUserId: grantedBy,
+				correlationId: "test-correlation-id",
 			});
 			expect(result.ok).toBe(false);
 			if (!result.ok) {

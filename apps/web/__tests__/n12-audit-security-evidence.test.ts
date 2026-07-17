@@ -134,11 +134,16 @@ describe("N12 living authz audit evidence", () => {
 		});
 	});
 
-	it("stamps member.invite audit and returns auditId after invite (cross-system)", async () => {
-		authMocks.inviteOrgMember.mockResolvedValue({
-			invitationId: "inv-n12-fixture",
+	it("stamps member.invite audit before Neon invite (durable attribution)", async () => {
+		const callOrder: string[] = [];
+		auditMocks.recordRbacAudit.mockImplementation(async () => {
+			callOrder.push("audit");
+			return { id: "audit-invite-1" };
 		});
-		auditMocks.recordRbacAudit.mockResolvedValue({ id: "audit-invite-1" });
+		authMocks.inviteOrgMember.mockImplementation(async () => {
+			callOrder.push("invite");
+			return { invitationId: "inv-n12-fixture" };
+		});
 
 		const formData = new FormData();
 		formData.set("email", "new.member@example.com");
@@ -154,7 +159,7 @@ describe("N12 living authz audit evidence", () => {
 				joinUrl: "/join?invitationId=inv-n12-fixture",
 			},
 		});
-		expect(authMocks.inviteOrgMember).toHaveBeenCalled();
+		expect(callOrder).toEqual(["audit", "invite"]);
 		expect(auditMocks.recordRbacAudit).toHaveBeenCalledWith(
 			expect.objectContaining({
 				orgId: "org-n12",
@@ -162,6 +167,11 @@ describe("N12 living authz audit evidence", () => {
 				actorUserId: "user-n12-operator",
 				targetType: "membership",
 				targetId: "new.member@example.com",
+				newValue: expect.objectContaining({
+					email: "new.member@example.com",
+					role: "client",
+					stage: "requested",
+				}),
 				correlationId: expect.stringMatching(
 					/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
 				),
@@ -169,14 +179,38 @@ describe("N12 living authz audit evidence", () => {
 		);
 	});
 
-	it("returns safe INTERNAL_ERROR when invite audit write fails (compensating control)", async () => {
-		authMocks.inviteOrgMember.mockResolvedValue({
-			invitationId: "inv-n12-fixture",
-		});
+	it("does not call Neon when invite audit write fails (fail closed)", async () => {
 		auditMocks.recordRbacAudit.mockRejectedValue(new Error(secretLeak));
 
 		const formData = new FormData();
 		formData.set("email", "new.member@example.com");
+		formData.set("role", "client");
+
+		const result = await inviteOrgMemberAction(null, formData);
+
+		expect(result).toMatchObject({
+			ok: false,
+			code: "INTERNAL_ERROR",
+			message: expect.stringContaining("was not sent"),
+			details: {
+				correlationId: expect.stringMatching(
+					/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+				),
+			},
+		});
+		expect(authMocks.inviteOrgMember).not.toHaveBeenCalled();
+		expect(auditMocks.recordRbacAudit).toHaveBeenCalledTimes(1);
+		expect(JSON.stringify(result)).not.toContain("SECRET_PASSWORD");
+		expect(JSON.stringify(result)).not.toContain("postgres://");
+		expect(JSON.stringify(result)).not.toContain(secretLeak);
+	});
+
+	it("keeps durable audit when Neon invite fails after audit", async () => {
+		auditMocks.recordRbacAudit.mockResolvedValue({ id: "audit-before-neon" });
+		authMocks.inviteOrgMember.mockRejectedValue(new Error(secretLeak));
+
+		const formData = new FormData();
+		formData.set("email", "fail.member@example.com");
 		formData.set("role", "client");
 
 		const result = await inviteOrgMemberAction(null, formData);
@@ -190,35 +224,9 @@ describe("N12 living authz audit evidence", () => {
 				),
 			},
 		});
-		expect(auditMocks.recordRbacAudit).toHaveBeenCalledTimes(2);
-		expect(JSON.stringify(result)).not.toContain("SECRET_PASSWORD");
-		expect(JSON.stringify(result)).not.toContain("postgres://");
+		expect(auditMocks.recordRbacAudit).toHaveBeenCalledTimes(1);
+		expect(authMocks.inviteOrgMember).toHaveBeenCalledTimes(1);
 		expect(JSON.stringify(result)).not.toContain(secretLeak);
-	});
-
-	it("retries invite audit once then succeeds (I5.1)", async () => {
-		authMocks.inviteOrgMember.mockResolvedValue({
-			invitationId: "inv-n12-fixture",
-		});
-		auditMocks.recordRbacAudit
-			.mockRejectedValueOnce(new Error("transient audit"))
-			.mockResolvedValueOnce({ id: "audit-invite-retry" });
-
-		const formData = new FormData();
-		formData.set("email", "retry.member@example.com");
-		formData.set("role", "client");
-
-		const result = await inviteOrgMemberAction(null, formData);
-
-		expect(result).toEqual({
-			ok: true,
-			data: {
-				email: "retry.member@example.com",
-				auditId: "audit-invite-retry",
-				joinUrl: "/join?invitationId=inv-n12-fixture",
-			},
-		});
-		expect(auditMocks.recordRbacAudit).toHaveBeenCalledTimes(2);
 	});
 
 	it("returns auditId from DB-atomic assignOrgRoleWithAudit", async () => {

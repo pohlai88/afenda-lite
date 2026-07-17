@@ -18,9 +18,12 @@ import {
 	ORGANIZATION_SCOPE,
 } from "@/modules/identity/domain/assign-org-role";
 import { ROLE_ASSIGN_AUDIT_ACTION } from "@/modules/platform/domain/record-rbac-audit";
+import { requireTrimmed } from "@/modules/platform/domain/require-trimmed";
 
 export type AssignOrgRoleWithAuditInput = AssignOrgRoleInput & {
 	actorUserId: string;
+	/** API-007 — stamped on `platform_rbac_audit.correlation_id`. */
+	correlationId: string;
 };
 
 export type AssignOrgRoleWithAuditOk = {
@@ -47,14 +50,6 @@ type AssignAuditedSqlRow = {
 	updated_at: string | Date;
 	audit_id: string;
 };
-
-function requireTrimmed(value: string, field: string, context: string): string {
-	const trimmed = value.trim();
-	if (trimmed.length === 0) {
-		throw new Error(`${context} requires non-empty ${field}`);
-	}
-	return trimmed;
-}
 
 function mapAssignmentRow(
 	row: AssignAuditedSqlRow,
@@ -141,6 +136,11 @@ export async function assignOrgRoleWithAudit(
 		"actorUserId",
 		"assignOrgRoleWithAudit",
 	);
+	const correlationId = requireTrimmed(
+		input.correlationId,
+		"correlationId",
+		"assignOrgRoleWithAudit",
+	);
 
 	const role = await findAssignableRole(roleId, orgId);
 	if (!role) {
@@ -205,7 +205,8 @@ export async function assignOrgRoleWithAudit(
 								target_type,
 								target_id,
 								role_id,
-								new_value
+								new_value,
+								correlation_id
 							)
 							SELECT
 								${ROLE_ASSIGN_AUDIT_ACTION},
@@ -214,7 +215,8 @@ export async function assignOrgRoleWithAudit(
 								${"role_assignment"},
 								mutated.id,
 								mutated.role_id,
-								${newValueJson}::jsonb
+								${newValueJson}::jsonb,
+								${correlationId}
 							FROM mutated
 							RETURNING id, organization_id
 						)
@@ -256,7 +258,8 @@ export async function assignOrgRoleWithAudit(
 								target_type,
 								target_id,
 								role_id,
-								new_value
+								new_value,
+								correlation_id
 							)
 							SELECT
 								${ROLE_ASSIGN_AUDIT_ACTION},
@@ -265,7 +268,8 @@ export async function assignOrgRoleWithAudit(
 								${"role_assignment"},
 								mutated.id,
 								mutated.role_id,
-								${newValueJson}::jsonb
+								${newValueJson}::jsonb,
+								${correlationId}
 							FROM mutated
 							RETURNING id, organization_id
 						)

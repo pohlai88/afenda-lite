@@ -1,15 +1,16 @@
 "use server";
 
-import { getApiSession, requireRole } from "@afenda/auth";
 import { revalidatePath } from "next/cache";
 
-import { forbidUnlessPermission } from "@/app/actions/permission-gate";
-import { isClientOnboardingComplete } from "@/modules/declarations/domain/declaration-draft";
+import { requireClientDeclarationActionSession } from "@/app/actions/client-declaration-action-session";
 import { submitClientDeclaration } from "@/modules/declarations/domain/submit-client-declaration";
 import { submitClientDeclarationSchema } from "@/modules/declarations/schemas/client";
+import { createCorrelationId } from "@/modules/platform/observability/correlation";
+import { logProductEvent } from "@/modules/platform/observability/product-log";
 import {
 	type ActionResult,
 	actionFail,
+	actionFailInternal,
 	actionOk,
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
@@ -22,34 +23,21 @@ export type SubmitClientDeclarationData = {
 };
 
 /**
- * Finalize a client declaration assignment (N17).
+ * Finalize a client declaration assignment (N17 · I5.3 correlation).
  * Mirrors draft Action gates: client role · declarations.manage · onboarding · org+email ownership.
  */
 export async function submitClientDeclarationAction(
 	_prev: ActionResult<SubmitClientDeclarationData> | null,
 	formData: FormData,
 ): Promise<ActionResult<SubmitClientDeclarationData>> {
-	await requireRole("client");
-	const apiSession = await getApiSession();
-	if (!apiSession) {
-		return actionFail("UNAUTHORIZED", "Authentication required.");
-	}
-
-	const permissionDenied = await forbidUnlessPermission(
-		apiSession,
+	const correlationId = createCorrelationId();
+	const gate = await requireClientDeclarationActionSession(
 		"declarations.manage",
 	);
-	if (permissionDenied) {
-		return permissionDenied;
+	if (!gate.ok) {
+		return gate;
 	}
-
-	const onboarded = await isClientOnboardingComplete({
-		orgId: apiSession.orgId,
-		userId: apiSession.userId,
-	});
-	if (!onboarded) {
-		return actionFail("FORBIDDEN", "Complete client onboarding first.");
-	}
+	const { session: apiSession } = gate;
 
 	const assignmentId = String(formData.get("assignmentId") ?? "");
 	const parsed = parseSchema(submitClientDeclarationSchema, { assignmentId });
@@ -69,9 +57,18 @@ export async function submitClientDeclarationAction(
 			assignmentId: parsed.data.assignmentId,
 		});
 	} catch {
-		return actionFail(
-			"INTERNAL_ERROR",
+		logProductEvent({
+			level: "error",
+			event: "action.internal_error",
+			correlationId,
+			orgId: apiSession.orgId,
+			actorUserId: apiSession.userId,
+			path: "submitClientDeclarationAction",
+			code: "INTERNAL_ERROR",
+		});
+		return actionFailInternal(
 			"Declaration could not be submitted. Try again or contact an admin.",
+			correlationId,
 		);
 	}
 
@@ -84,6 +81,15 @@ export async function submitClientDeclarationAction(
 		}
 		return actionFail("NOT_FOUND", "Declaration assignment was not found.");
 	}
+
+	logProductEvent({
+		level: "info",
+		event: "declaration.submit",
+		correlationId,
+		orgId: apiSession.orgId,
+		actorUserId: apiSession.userId,
+		path: "submitClientDeclarationAction",
+	});
 
 	revalidatePath("/client/declarations");
 	revalidatePath(`/client/declarations/${parsed.data.assignmentId}`);

@@ -98,7 +98,7 @@ Full inventory: [catalog.md](.cursor/skills/using-afenda-elite-skills/catalog.md
 | [ARCH-024](docs/architecture/ARCH-024-package-boundaries.md)…[ARCH-027](docs/architecture/ARCH-027-env-model.md) | Packages · data · auth · env |
 | [ARCH-024 § `@afenda/ui-system`](docs/architecture/ARCH-024-package-boundaries.md#afendaui-system) | Flat barrel `@afenda/ui-system` + `@afenda/ui-system/styles.css` public door ([ADR-010](docs/architecture/adr/ADR-010-afenda-ui-system-flat-barrel.md)) — one canonical paragraph, do not re-explain elsewhere. Retired `@afenda/ui` gateway removed. |
 | [ARCH-028](docs/architecture/ARCH-028-implementation-slices.md) | Scaffold slices (closed) · anti-contamination |
-| [GUIDE-018](docs/guides/GUIDE-018-fullstack-e2e-integration-program.md) | Post-scaffold program roadmap (Draft) |
+| [GUIDE-018](docs/guides/GUIDE-018-fullstack-e2e-integration-program.md) | Post-scaffold program roadmap (Living) |
 | [ARCH-031](docs/architecture/ARCH-031-technology-stack-catalogue.md) | Stack discovery |
 
 Controlled docs: respect **Control State**. `Closed` → reopen with explicit Docs-lane approval before substantive edits.
@@ -112,12 +112,12 @@ Controlled docs: respect **Control State**. `Closed` → reopen with explicit Do
 | Rule | Detail |
 |------|--------|
 | Forward code | Greenfield under `apps/web/**` and `packages/*` only |
-| Next open (GUIDE-018) | Phase **I3 DONE** (I3.1–I3.4; cut B AdminCN waived this chat) · **I4 DONE** (0.3.19). GUIDE-018 Draft **0.3.19** Closed. Next Ops = **I5** then **I6+**. ARCH-028 Checkpoint G **closed**. Do **not** invent **N19**. |
+| Next open (GUIDE-018) | GUIDE-018 **Living 1.0.10**. Phase **I1–I5 DONE** (I3.4 cut B AdminCN waived). Invite-audit durable (pre-Neon audit) · I5.3 correlation Living (API-007). Next Ops = **I6+**. ARCH-028 Checkpoint G **closed**. Do **not** invent **N19**. Do **not** claim GUIDE-017 READY from I5 alone. |
 | Next open (Neon Auth `N*`) | **N1–N18 serial complete** — all APPROVED at 100% (incl. **N15** Path-to-100% closed). Do **not** invent **N19**. Map: [neon-auth-slice-map](.cursor/skills/afenda-elite-implementation-slices/neon-auth-slice-map.md). |
 | Env | `@afenda/env` + `.env.local` only (compose retired) |
 | Docs trunks | Flat `docs/architecture/ARCH-*.md` — gate `pnpm check:docs-trunk-ban` |
 | Index ghosts | Grep/Glob may list deleted paths — trust `Test-Path` · `git ls-files` · trunk-ban check |
-| Scripts | Many root `package.json` script names still route through `scripts/collapse-script-unavailable.mjs` — **inventory only, not live controls**, until an Approved forward slice replaces them. Docs-capable today: `pnpm checks` · `check:docs-naming` · `check:docs-trunk-ban` · `check:doc-integrity` · `check:module-quality` · `check:openapi` · `validate:neon-env` · `audit:tenancy-nulls` · `audit:github-actions-secrets` |
+| Scripts | Many root `package.json` script names still route through `scripts/collapse-script-unavailable.mjs` — **inventory only, not live controls**, until an Approved forward slice replaces them. Docs-capable today: `pnpm checks` · `check:docs-naming` · `check:docs-trunk-ban` · `check:doc-integrity` · `check:module-quality` · `check:openapi` · `validate:neon-env` · `audit:tenancy-nulls` · `audit:github-actions-secrets` · `protect:main` · `pnpm gh` |
 
 **App layout:** sole deployable `apps/web` · edge gate `apps/web/proxy.ts` on disk (do not invent `middleware.ts`) · imports `@afenda/*` only across packages.
 
@@ -214,7 +214,8 @@ Authority: [`testing/README.md`](testing/README.md).
 | `pnpm check:docs-naming` | DOC-002 / naming gate |
 | `pnpm validate:neon-env` | Neon Cloud ids vs `.env.local` |
 | `pnpm audit:tenancy-nulls` | Eight hard tenant roots null-org audit |
-| `pnpm audit:github-actions-secrets` | Required Actions secret/var **names** only |
+| `pnpm audit:github-actions-secrets` | Required Actions secret/var **names** only (Ops; keyring `gh`) |
+| `pnpm protect:main` | Verify (or `-- --apply`) Living `main` required check = `quality` |
 
 Factory SSOT: **`testing/`** only — specs import `@/testing/e2e/*` when present.
 

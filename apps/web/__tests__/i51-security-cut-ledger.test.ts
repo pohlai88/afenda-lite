@@ -97,12 +97,14 @@ describe("I5.1 safe-error Action inventory", () => {
 		}
 	});
 
-	it("invite Action documents compensating control when audit fails after Neon invite", () => {
+	it("invite Action audits before Neon so invite never runs without attribution", () => {
 		const invite = readFileSync(
 			path.join(actionsDir, "invite-org-member.ts"),
 			"utf8",
 		);
-		expect(invite).toContain(
+		expect(invite).toContain("stage: \"requested\"");
+		expect(invite).toContain("was not sent");
+		expect(invite).not.toContain(
 			"Invitation was sent but the org-scoped audit write failed",
 		);
 	});

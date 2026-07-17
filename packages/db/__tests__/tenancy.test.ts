@@ -53,6 +53,12 @@ describe("@afenda/db hard tenant roots (N9 / ARCH-023)", () => {
 		expect(columns.organizationId.notNull).toBe(true);
 		expect(columns.actorUserId.notNull).toBe(true);
 	});
+
+	it("exposes nullable correlation_id on platform_rbac_audit (I5.3 / API-007)", () => {
+		const columns = getTableColumns(platformRbacAudit);
+		expect(columns.correlationId.name).toBe("correlation_id");
+		expect(columns.correlationId.notNull).toBe(false);
+	});
 });
 
 describe("withOrg fail-closed (N9)", () => {

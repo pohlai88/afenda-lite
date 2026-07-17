@@ -37,9 +37,12 @@ export type InviteOrgMemberActionState =
 
 /**
  * Operator invite adapter — coarse `requireRole('operator')` +
- * `canInviteMember` + Tier-2 `clients.invite` via `hasPermission`, Neon Auth
- * `inviteOrgMember` with session `orgId`, then Platform `recordRbacAudit`
- * hard-tenancy write (ARCH-023 · ARCH-026 · GUIDE-018 I1.3 / I2.1 / I2.3 / I3.1 · I5.3).
+ * `canInviteMember` + Tier-2 `clients.invite` via `hasPermission`.
+ *
+ * Neon Auth invite is cross-system (no shared DB transaction with
+ * `platform_rbac_audit`). Durable privileged attribution is closed by writing
+ * the org-scoped audit row **before** calling Neon — invite never runs without
+ * actor·org·time·correlation on disk (ARCH-023 · GUIDE-018 I5.1 / I5.3).
  */
 export async function inviteOrgMemberAction(
 	_prev: InviteOrgMemberActionState,
@@ -72,6 +75,38 @@ export async function inviteOrgMemberAction(
 		return permissionDenied;
 	}
 
+	let auditId: string;
+	try {
+		const audit = await recordRbacAudit({
+			orgId: session.orgId,
+			action: MEMBER_INVITE_AUDIT_ACTION,
+			actorUserId: session.userId,
+			correlationId,
+			targetType: "membership",
+			targetId: parsed.data.email,
+			newValue: {
+				email: parsed.data.email,
+				role: parsed.data.role,
+				stage: "requested",
+			},
+		});
+		auditId = audit.id;
+	} catch {
+		logProductEvent({
+			level: "error",
+			event: "action.internal_error",
+			correlationId,
+			orgId: session.orgId,
+			actorUserId: session.userId,
+			path: "inviteOrgMemberAction.audit",
+			code: "INTERNAL_ERROR",
+		});
+		return actionFailInternal(
+			"Invitation could not be audited. It was not sent. Try again or contact an admin.",
+			correlationId,
+		);
+	}
+
 	let invitationId: string | null = null;
 	try {
 		const invited = await inviteOrgMember({
@@ -92,61 +127,6 @@ export async function inviteOrgMemberAction(
 		});
 		return actionFailInternal(
 			"Invitation could not be sent. Try again or contact an admin.",
-			correlationId,
-		);
-	}
-
-	// Neon Auth invite is cross-system — cannot share a DB transaction with
-	// platform_rbac_audit. One immediate retry reduces transient audit misses;
-	// durable attribution after invite-without-audit remains I5.1 BLOCKED.
-	const auditPayload = {
-		orgId: session.orgId,
-		action: MEMBER_INVITE_AUDIT_ACTION,
-		actorUserId: session.userId,
-		correlationId,
-		targetType: "membership" as const,
-		targetId: parsed.data.email,
-		newValue: {
-			email: parsed.data.email,
-			role: parsed.data.role,
-		},
-	};
-	let auditId: string | undefined;
-	for (let attempt = 0; attempt < 2; attempt += 1) {
-		try {
-			const audit = await recordRbacAudit(auditPayload);
-			auditId = audit.id;
-			break;
-		} catch {
-			if (attempt === 1) {
-				logProductEvent({
-					level: "error",
-					event: "action.internal_error",
-					correlationId,
-					orgId: session.orgId,
-					actorUserId: session.userId,
-					path: "inviteOrgMemberAction.audit",
-					code: "INTERNAL_ERROR",
-				});
-				return actionFailInternal(
-					"Invitation was sent but the org-scoped audit write failed. Contact an admin.",
-					correlationId,
-				);
-			}
-		}
-	}
-	if (!auditId) {
-		logProductEvent({
-			level: "error",
-			event: "action.internal_error",
-			correlationId,
-			orgId: session.orgId,
-			actorUserId: session.userId,
-			path: "inviteOrgMemberAction.audit",
-			code: "INTERNAL_ERROR",
-		});
-		return actionFailInternal(
-			"Invitation was sent but the org-scoped audit write failed. Contact an admin.",
 			correlationId,
 		);
 	}

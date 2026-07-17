@@ -63,11 +63,16 @@ describe("submitClientDeclarationAction dependency failure (I4 A11)", () => {
 
 		const result = await submitClientDeclarationAction(null, formData);
 
-		expect(result).toEqual({
-			ok: false,
-			code: "INTERNAL_ERROR",
-			message:
-				"Declaration could not be submitted. Try again or contact an admin.",
+		expect(result.ok).toBe(false);
+		if (result.ok) {
+			throw new Error("expected ActionFailure");
+		}
+		expect(result.code).toBe("INTERNAL_ERROR");
+		expect(result.message).toBe(
+			"Declaration could not be submitted. Try again or contact an admin.",
+		);
+		expect(result.details).toEqual({
+			correlationId: expect.any(String),
 		});
 		expect(JSON.stringify(result)).not.toContain("hunter2");
 		expect(JSON.stringify(result)).not.toContain("postgres://");

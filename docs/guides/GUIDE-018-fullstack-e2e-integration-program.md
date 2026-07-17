@@ -4,13 +4,13 @@
 | ----------------- | ---------- |
 | **ID**            | GUIDE-018  |
 | **Category**      | Guide      |
-| **Version**       | 1.0.9      |
+| **Version**       | 1.0.10     |
 | **Status**        | Living     |
-| **Control State** | Reopened   |
+| **Control State** | Closed     |
 | **Owner**         | Platform   |
 | **Updated**       | 2026-07-17 |
 
-**Control-state note:** Reopened by Jack Wee on 2026-07-17 for GUIDE-018 I5.3 repair — correlation DONE evidence. Automatically returns to Closed after successful verification.
+**Control-state note:** Closed 2026-07-17 after I5.3 correlation DONE + invite-audit durable attribution close (pre-Neon audit).
 
 ---
 
@@ -36,7 +36,7 @@ This guide **sequences** the program. It does **not** replace owning docs for sl
 
 - Ordered phases from foundations → scaffold (done) → docs cutover (done) → authenticity → contracts → product verticals → tests → hardening → evidence → continuous control
 - Completed [ARCH-028](../architecture/ARCH-028-implementation-slices.md) coding + Checkpoint G (S1.1–S8.2, Checkpoints A–**G**)
-- **Phase I1** (identity & edge) — **I1.1–I1.4** closed; **I2.1–I2.4** closed; **I3.1–I3.4** closed (Identity/Platform · Declarations · FFT freeze shell · org-admin cut A; cut B AdminCN **waived**); **I4** closed (verify factory · adverse matrix A1–A11 · standing CI `e2e-smoke`); **I5.1 DONE** (invite-audit attribution residual **BLOCKED**) · **I5.2 DONE** · **I5.3 DONE** · **I5.4 DONE** · **I5.5 DONE** (residuals repaired: `protect:main` + in-CI secrets presence) · **I5.6 DONE**; Phase I5 stays **WAIT** (invite-audit residual); next Ops **I6+**
+- **Phase I1** (identity & edge) — **I1.1–I1.4** closed; **I2.1–I2.4** closed; **I3.1–I3.4** closed (Identity/Platform · Declarations · FFT freeze shell · org-admin cut A; cut B AdminCN **waived**); **I4** closed (verify factory · adverse matrix A1–A11 · standing CI `e2e-smoke`); **I5.1–I5.6 DONE** (invite-audit durable via pre-Neon `platform_rbac_audit`; I5.3 correlation Living); Phase I5 **DONE**; next Ops **I6+**
 - Lane discipline, skill routing, and FFT freeze / anti-contamination boundaries
 - Pointers to owning authorities (no duplicated SSOT)
 
@@ -104,7 +104,7 @@ I1           ████████ DONE  ← I1.1–I1.4 closed
 I2           ████████ DONE  ← I2.1–I2.4 closed (OpenAPI / REST honesty)
 I3           ████████ DONE  ← I3.1–I3.4 closed (cut A; cut B AdminCN waived)
 I4           ████████ DONE  ← adverse matrix A1–A11 · standing CI e2e-smoke
-I5           ░░░░░░░░ WAIT  ← I5.1–I5.6 stage DONE · invite-audit residual named
+I5           ████████ DONE  ← I5.1–I5.6 closed (invite-audit + correlation residuals closed)
 I6–I7        ░░░░░░░░ WAIT
 REOPEN (R*)  ░░░░░░░░ optional · explicit written approval only
 ```
@@ -127,12 +127,12 @@ REOPEN (R*)  ░░░░░░░░ optional · explicit written approval only
 | **I2** | Interface / BFF | **DONE** | Ops | ActionResult, module boundaries, first write, OpenAPI honesty |
 | **I3** | Product verticals | **DONE** (I3.1–I3.4; cut B AdminCN waived) | Ops | Identity · Declarations · FFT read (freeze) · org-admin cut A |
 | **I4** | Verification factory | **DONE** | Test | Unit → contract → real E2E smoke · adverse/recovery matrix A1–A11 · standing CI `e2e-smoke` |
-| **I5** | Hardening | WAIT (I5.1–I5.6 stage DONE · invite-audit residual **BLOCKED**) | Ops/Test | Security · recovery · obs · a11y/i18n · CI depth |
+| **I5** | Hardening | **DONE** (I5.1–I5.6; invite-audit + correlation residuals closed 2026-07-17) | Ops/Test | Security · recovery · obs · a11y/i18n · CI depth |
 | **I6** | Evidence & decision | WAIT | Docs/Test | MOD ledgers + GUIDE-017 claim before READY |
 | **I7** | Continuous control | WAIT | Normalize/Docs | Integrity · housekeeping · deprecation |
 | **R** | Optional reopen | WAIT | Program | FFT 2B–2D or new context — approval required |
 
-Recommended mission queue: **I6** (then I7). **I5.1–I5.6** stage **DONE** (invite-audit attribution residual **BLOCKED**). Do **not** invent Neon **N19**. AdminCN / Studio polish is optional later — not I3.4-blocking.
+Recommended mission queue: **I6** (then I7). Phase **I5 DONE**. Do **not** invent Neon **N19**. AdminCN / Studio polish is optional later — not I3.4-blocking. Do **not** claim GUIDE-017 READY from I5 alone.
 
 ---
 
@@ -459,15 +459,15 @@ Required adverse cases (evidenced): anonymous, wrong role/permission/org, invali
 
 | | |
 | --- | --- |
-| **Status** | WAIT (**I5.1 · I5.2 · I5.4–I5.6 DONE** · **I5.3 BLOCKED**; named residuals before READY claims) |
+| **Status** | **DONE** (I5.1–I5.6; residuals closed 2026-07-17 — no GUIDE-017 READY from this phase alone) |
 | **Lane** | Ops / Test |
 | **Goal** | Close non-negotiable production risks GUIDE-017 will reject |
 
 | Stage | Focus | Exit (plain) | Status |
 | ----- | ----- | ------------ | ------ |
-| **I5.1** | Security · identity · privacy · audit | No open non-waivable isolation, secret, corruption, or unsafe-error condition | **DONE** 2026-07-17 (invite-audit attribution residual **BLOCKED**) |
+| **I5.1** | Security · identity · privacy · audit | No open non-waivable isolation, secret, corruption, or unsafe-error condition | **DONE** 2026-07-17 (invite-audit durable via pre-Neon audit) |
 | **I5.2** | Data change · resilience · backup/restore | Restore/RPO/RTO demonstrated; irreversible/unvalidated paths block release | **DONE** 2026-07-17 |
-| **I5.3** | Observability · supportability | Critical paths correlatable; alerts map to runbooks | **BLOCKED** 2026-07-17 (alert half closed; correlation blockers named) |
+| **I5.3** | Observability · supportability | Critical paths correlatable; alerts map to runbooks | **DONE** 2026-07-17 (API-007 Living + Action/proxy correlation) |
 | **I5.4** | UX · a11y · i18n · performance | Declared states and budgets measured with owners | **DONE** 2026-07-17 (A11Y03 · PERF01 residuals closed 2026-07-17) |
 | **I5.5** | CI · supply chain · migration · release automation | Merge/deploy gates ordered and honest (no silent skip) | **DONE** 2026-07-17 (residuals repaired 2026-07-17: `protect:main` + in-CI secrets presence) |
 | **I5.6** | Simplification | Complexity reduced without behavior change after evidence exists | **DONE** 2026-07-17 |
@@ -482,17 +482,17 @@ Required adverse cases (evidenced): anonymous, wrong role/permission/org, invali
 
 | Field | Evidence |
 | ----- | -------- |
-| Stage | **DONE** (phase I5 remains WAIT until I5.5–I5.6 close; I5.3 stays BLOCKED until correlation unblocked) |
+| Stage | **DONE** (invite-audit durable 2026-07-17 — audit **before** Neon; Phase I5 **DONE**) |
 | Authority | [GUIDE-017](GUIDE-017-enterprise-quality-evidence-standard.md) §3.5 non-waivable · [ARCH-023](../architecture/ARCH-023-multi-tenancy.md) |
 | Cut ledger | Product `"use server"` Actions: `assign-org-role` · `revoke-org-role` · `invite-org-member` · `declaration-draft` · `submit-client-declaration` (+ shared `permission-gate`) — inventory gate `apps/web/__tests__/i51-security-cut-ledger.test.ts` |
 | Isolation | **Closed** — orgB cannot get/draft/save/submit orgA assignment by id (`tenancy-isolation` case `I5.1: orgB cannot get/draft/save/submit orgA assignment by id` + `declaration-submit-read` orgB draft/get/submit denials); list/FFT/`withOrg` two-org denial retained; shared-schema / no RLS = ARCH-023 R3 residual (app filters evidenced, not FAIL) |
 | Secrets | **Closed** — `@afenda/env` `client: {}` · no `NEXT_PUBLIC_*` product secrets · `pnpm audit:github-actions-secrets` PASS · `pnpm validate:neon-env` 14/14 · `pnpm audit:tenancy-nulls` PASS · `pnpm check:tenancy-residue` PASS |
 | Corruption | **Closed** for assign/revoke (Neon HTTP transaction + audit) and declaration submit race/lock (A10); FFT writes frozen |
 | Unsafe errors | **Closed** — bare `catch` → fixed `INTERNAL_ERROR` on all product Actions; N12/A11 leak tests; cut-ledger inventory gate |
-| Privileged attribution | Assign/revoke **closed** (actor·org·time on `platform_rbac_audit`). **Invite residual BLOCKED**: Neon Auth invite is cross-system — invite can succeed without durable audit after one retry; compensating safe Action copy retained; do not fake transactional close |
+| Privileged attribution | Assign/revoke **closed** (actor·org·time·correlation on `platform_rbac_audit`). **Invite closed** — durable `member.invite` audit with `stage: requested` **before** Neon Auth call (fail closed if audit fails; Neon never runs without attribution; no shared transaction invent / no RLS) |
 | Verify | See paste below — green 2026-07-17 |
-| Forbidden | No fake PASS on invite-audit · no RLS reopen · no **N19** · no GUIDE-017 READY · no I5.5+ sneak-in |
-| Next Ops | **I5.5** then **I5.6**; Phase I5 remains **WAIT** |
+| Forbidden | No fake transactional Neon+DB close · no RLS reopen · no **N19** · no GUIDE-017 READY |
+| Next Ops | **I6+** |
 
 **Verify paste (2026-07-17 repair — by-id isolation + cut-ledger):**
 
@@ -521,7 +521,7 @@ PLAYWRIGHT_REUSE_SERVER=1 pnpm test:e2e:adverse
 
 | Field | Evidence |
 | ----- | -------- |
-| Stage | **DONE** (phase I5 remains WAIT until I5.5–I5.6 close; I5.3 stays BLOCKED until correlation unblocked; **I5.1 · I5.4 DONE**) |
+| Stage | **DONE** (Phase I5 **DONE** after invite-audit + I5.3 close; **I5.1 · I5.4 DONE**) |
 | Authority | [ARCH-025](../architecture/ARCH-025-data-layer.md) · [GUIDE-017](GUIDE-017-enterprise-quality-evidence-standard.md) backup/recovery · [RB-001](../runbooks/RB-001-multi-org-ops.md) §3.7 |
 | Neon serial | **N2** migrate discipline APPROVED · **N3** backup/recovery APPROVED (independent audit 2026-07-17) — do not invent **N19** |
 | Restore rehearsed | Ephemeral snapshot restore 2026-07-16 · `finalize_restore=false` · drill branch deleted · prod `br-tiny-hill-ao82jp6f` untouched — SSOT RB-001 §3.7 |
@@ -538,28 +538,29 @@ PLAYWRIGHT_REUSE_SERVER=1 pnpm test:e2e:adverse
 
 | Field | Evidence |
 | ----- | -------- |
-| Verdict | **BLOCKED** — critical-path correlation not PASS; do not invent APM vendors or reopen Closed Draft [API-007](../api/API-007-api-observability-correlation-contract.md) |
+| Verdict | **DONE** — critical-path correlation PASS under Living [API-007](../api/API-007-api-observability-correlation-contract.md); no vendor APM invent |
 | Alert→runbook | **Closed** for the only product alert that exists: N4 Neon DB performance monitor issue body + recovery comment embed `docs/runbooks/RB-001-multi-org-ops.md` §3.7b ([RB-001](../runbooks/RB-001-multi-org-ops.md) 1.4.1) |
 | Paths (alert) | `.github/workflows/neon-performance-monitor.yml` · `scripts/monitor-neon-performance.mjs` · RB-001 §3.7b / Alerts honesty |
-| Critical paths (correlation) | Invite / role assign-revoke + `platform_rbac_audit` · Declarations submit/read · org-admin assign · `proxy.ts` /auth · N4 DB monitor — each **NOT CORRELATABLE** today (no request/correlation identity in logs, client-safe errors, or audit rows) |
-| Named blockers | (1) No `correlationId` / `requestId` / `traceId` / `x-request-id` under `apps/web` or `packages` · (2) API-007 Closed Draft Placeholder — Living contract absent · (3) No structured product logger / OTel / Sentry / Datadog / `instrumentation.ts` · (4) App-path alerts (5xx / auth spikes → RB-007) do not exist — N/A until alerts exist |
-| Partial (not I5.3 PASS) | `platform_rbac_audit` actor/org/time attribution without correlation column; Draft RB-007 aspirational “request id” steps |
-| Verify | See pasted commands below — alert link present; correlation/APM rg empty (expected for BLOCKED) |
-| Forbidden | No fake PASS · no telemetry vendor invent · no API-007 / RB-007 reopen this mission · no I5.4+ / I6 READY |
-| Unblock later | Docs-lane reopen API-007 → Living → implement correlation on critical Server Actions + structured logs + safe client reference + tests; add app alerts only when real signals exist, each linking RB-007/RB-001 |
-| Next Ops | **I5.5** then **I5.6**; **I5.1 · I5.2 · I5.4 DONE**; Phase I5 remains **WAIT** |
+| Critical paths (correlation) | Invite · assign/revoke (+ `platform_rbac_audit.correlation_id`) · declaration draft/submit · `proxy.ts` `x-correlation-id` · structured `logProductEvent` · safe `actionFailInternal` client `details.correlationId` · N4 workflow/run identity |
+| Contract | API-007 **Living** 1.0.0 · DOC-002 synced · helpers `apps/web/modules/platform/observability/{correlation,product-log}.ts` · inventory `apps/web/__tests__/i53-correlation-inventory.test.ts` |
+| App-path alerts (5xx/auth) | **N/A** until real signals exist — each future alert must link RB-007/RB-001 |
+| Verify | See paste below — green 2026-07-17 |
+| Forbidden | No Sentry/Datadog/OTel invent · no GUIDE-017 READY · no RB-007 reopen |
+| Next Ops | **I6+**; Phase I5 **DONE** |
 
-**Verify paste (2026-07-17):**
+**Verify paste (2026-07-17 correlation close):**
 
 ```text
 rg -n "RB-001|runbooks/RB-001" .github/workflows/neon-performance-monitor.yml
-# 85: ... Runbook: docs/runbooks/RB-001-multi-org-ops.md §3.7b ...
-# 113: ... Runbook: docs/runbooks/RB-001-multi-org-ops.md §3.7b.
+# matches §3.7b runbook links in alert body + recovery comment
 
-rg -n "correlationId|requestId|traceId|x-request-id" apps/web packages --glob "!**/node_modules/**"
-# (no matches; exit 1) — documents BLOCKED correlation gap
+rg -n "correlationId|x-correlation-id|createCorrelationId" apps/web packages --glob "!**/node_modules/**"
+# matches Actions · proxy · audit · observability helpers · tests
 
-rg -n "sentry|datadog|opentelemetry|@opentelemetry|pino" apps/web/package.json packages/*/package.json
+pnpm --filter @afenda/web test -- i53-correlation-inventory
+# Test Files  1 passed · helpers + critical-path wiring inventory
+
+rg -n "sentry|datadog|opentelemetry|@opentelemetry" apps/web/package.json
 # (no matches) — no invented APM deps
 ```
 
@@ -578,7 +579,7 @@ rg -n "sentry|datadog|opentelemetry|@opentelemetry|pino" apps/web/package.json p
 | Verify | See paste below — residual close 2026-07-17 |
 | Forbidden | No invented alternate CWV/locale thresholds · no Collapse recover · no **N19** · no GUIDE-017 READY · no AdminCN / next-intl product install this stage |
 | Out-of-bar | I6 READY · multi-tenant load/capacity harness · GUIDE-017 READY |
-| Next Ops | **I6+**; Phase I5 remains **WAIT** (I5.3 correlation + other named residuals) |
+| Next Ops | **I6+**; Phase I5 **DONE** |
 
 **Verify paste (2026-07-17 residual close):**
 
@@ -601,7 +602,7 @@ Test-Path apps/web/features/auth/skip-to-main-content.tsx,
 
 | Field | Evidence |
 | ----- | -------- |
-| Stage | **DONE** (residuals repaired; phase I5 remains WAIT — I5.3 BLOCKED + invite-audit residual; no GUIDE-017 READY) |
+| Stage | **DONE** (residuals repaired; Phase I5 **DONE** after invite-audit + I5.3 close; no GUIDE-017 READY) |
 | Authority | [GUIDE-017](GUIDE-017-enterprise-quality-evidence-standard.md) change/supply-chain · [ARCH-022](../architecture/ARCH-022-system-overview.md) CI/Deploy |
 | Deploy order | [`.github/workflows/deploy.yml`](../../.github/workflows/deploy.yml) — `workflow_run` after workflow **CI** `conclusion == success` on `main`; checkout `workflow_run.head_sha`; parallel `push`→Deploy removed |
 | Human override | `workflow_dispatch` retained as **named** Platform override (not silent skip) |
@@ -612,7 +613,7 @@ Test-Path apps/web/features/auth/skip-to-main-content.tsx,
 | N4 monitor | `continue-on-error` compensated by final `exit 1` — honest |
 | Verify | See paste below (repair 2026-07-17) |
 | Forbidden | No silent skip-as-PASS · no fake branch-protection · no **N19** · no GUIDE-017 READY |
-| Next Ops | **I6+**; Phase I5 remains **WAIT** |
+| Next Ops | **I6+**; Phase I5 **DONE** |
 
 **Verify paste (2026-07-17 repair):**
 
@@ -641,13 +642,13 @@ pnpm gh -- api repos/pohlai88/afenda-lite/branches/main/protection --jq ".requir
 
 | Field | Evidence |
 | ----- | -------- |
-| Stage | **DONE** (phase I5 remains **WAIT** — I5.3 BLOCKED + invite-audit residual; I5.5 residuals repaired; no GUIDE-017 READY) |
+| Stage | **DONE** (Phase I5 **DONE** after invite-audit + I5.3 close; I5.5 residuals repaired; no GUIDE-017 READY) |
 | Authority | GUIDE-018 Phase I5 · `code-simplification` (method) |
 | Cuts | Dead `list-org-roles.ts` · remove unused `isActionSuccess`/`isActionFailure` · drop unused client-path constants · drop unused `@afenda/web` deps (`motion` · `clsx` · `tailwind-merge`) · shared `requireClientDeclarationActionSession` for load/save/submit Actions · sheet composes `SubmitDeclarationForm` + `onSuccess` · Biome excludes `apps/web/shadcn-studio` DNA staging · `@afenda/testing/*` path for tsc honesty |
 | Behavior | Unchanged — ActionResult codes/messages · draft/submit gates · sheet close/refresh/navigate on submit success |
 | Verify | See paste below — green 2026-07-17 |
 | Forbidden | No feature expansion under “simplify” · no DNA prune/AdminCN · no Collapse recover · no **N19** · no FFT 2B–2D · no I6 READY claim |
-| Next Ops | **I6+**; Phase I5 remains **WAIT** (I5.3 correlation + invite-audit residual) |
+| Next Ops | **I6+**; Phase I5 **DONE** |
 
 **Verify paste (2026-07-17):**
 
@@ -765,7 +766,7 @@ Snapshot of what “ON DISK vs still missing” looks like as of 2026-07-17:
 | API / contracts | ON DISK | Docs + check tooling · `ActionResult` / `APIErrorBody` · invite+audit · I2.2 boundary · api-now RHs · Zod→OpenAPI · A11 safe INTERNAL_ERROR | Contract-only expansion · Fumadocs wire · broader HTTP families |
 | E2E | **DONE** (I4) | Neon **N13** APPROVED · factories · smoke/journey · adverse matrix **A1–A11** · `playwright.config.ts` | Post-merge Actions green for `e2e-smoke` (ops follow-through) |
 | CI / Deploy | **DONE** (I5.5) | Lint/typecheck/test · Deploy after green CI · standing `e2e-smoke` · quality DB fail-closed · factory fail-closed · `protect:main` · in-CI secrets-presence | First main-branch `e2e-smoke` green (ops follow-through) · post-deploy smoke (I6.3) · rollback decision |
-| Security / obs / perf / a11y | PARTIAL | N14 denial · **I5.1** isolation/secrets/safe-error closed (invite-audit attribution **BLOCKED**) · **I5.2** restore/migrate · **I5.3** alert→RB-001 (correlation BLOCKED) · **I5.4** criteria matrix + A11Y03/PERF01 closed (Google CWV lab adopted) · **I5.5** gate honesty · **I5.6** accidental-complexity cuts | Invite-audit durable attribution · **app correlation** (I5.3) · I6 capacity harness |
+| Security / obs / perf / a11y | **DONE** (I5 floor) | N14 denial · **I5.1** isolation/secrets/safe-error + invite pre-Neon audit · **I5.2** restore/migrate · **I5.3** alert→RB-001 + API-007 correlation · **I5.4** criteria matrix + A11Y03/PERF01 · **I5.5** gate honesty · **I5.6** accidental-complexity cuts | I6 capacity harness · GUIDE-017 READY claim |
 | Maintainability | **DONE** (I5.6) | Dead ports/helpers/deps removed · shared declaration Action gate · sheet submit compose · DNA staging excluded from Biome | Ongoing: no feature under “simplify”; I7 housekeeping discovery |
 
 ---
@@ -813,6 +814,7 @@ Snapshot of what “ON DISK vs still missing” looks like as of 2026-07-17:
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 1.0.10 | 2026-07-17 | **Phase I5 DONE**: invite-audit durable via pre-Neon `platform_rbac_audit` · I5.3 correlation Living (API-007 + Actions/proxy inventory); residuals that kept I5 WAIT closed; next Ops = **I6+**; no GUIDE-017 READY. |
 | 1.0.8 | 2026-07-17 | **I5.5 residual repair**: greenfield `pnpm protect:main` (+ apply) · job name `quality` · in-CI `secrets-presence` probe · `pnpm gh` keyring forwarder; stale `journey` check removed; Phase I5 stays WAIT; next Ops = **I6+**. |
 | 1.0.7 | 2026-07-17 | **I5.4 residual close**: A11Y03 axe + skip-link matrix PASS · PERF01 Google CWV “good” lab budgets adopted + smoke; capacity N/A→I6; Phase I5 stays WAIT (I5.3 BLOCKED + other named residuals); next Ops = **I6+**. |
 | 1.0.6 | 2026-07-17 | **I5.6 DONE**: accidental-complexity cuts (dead ports/helpers/deps · shared declaration Action gate · sheet submit compose · DNA Biome exclude); behavior unchanged; turbo lint/typecheck/test green; Phase I5 stays WAIT (I5.3 BLOCKED + named residuals); next Ops = **I6+**. |

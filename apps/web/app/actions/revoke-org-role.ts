@@ -6,9 +6,12 @@ import { revalidatePath } from "next/cache";
 import { forbidUnlessPermission } from "@/app/actions/permission-gate";
 import { revokeOrgRoleWithAudit } from "@/modules/identity/domain/revoke-org-role-audited";
 import { revokeOrgRoleCommandSchema } from "@/modules/identity/schemas/revoke-org-role";
+import { createCorrelationId } from "@/modules/platform/observability/correlation";
+import { logProductEvent } from "@/modules/platform/observability/product-log";
 import {
 	type ActionResult,
 	actionFail,
+	actionFailInternal,
 	actionOk,
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
@@ -28,12 +31,13 @@ export type RevokeOrgRoleActionState =
  * Operator revoke adapter — coarse `requireRole('operator')` + Tier-2
  * `org.roles.manage` via `hasPermission`, then Identity
  * `revokeOrgRoleWithAudit` (soft-revoke + org-scoped audit in one Neon HTTP
- * transaction — ARCH-023 · ARCH-025 · GUIDE-018 I3.1 · N12).
+ * transaction — ARCH-023 · ARCH-025 · GUIDE-018 I3.1 · N12 · I5.3).
  */
 export async function revokeOrgRoleAction(
 	_prev: RevokeOrgRoleActionState,
 	formData: FormData,
 ): Promise<RevokeOrgRoleActionState> {
+	const correlationId = createCorrelationId();
 	const session = await requireRole("operator");
 
 	const parsed = parseSchema(revokeOrgRoleCommandSchema, {
@@ -61,17 +65,36 @@ export async function revokeOrgRoleAction(
 			orgId: session.orgId,
 			assignmentId: parsed.data.assignmentId,
 			actorUserId: session.userId,
+			correlationId,
 		});
 	} catch {
-		return actionFail(
-			"INTERNAL_ERROR",
+		logProductEvent({
+			level: "error",
+			event: "action.internal_error",
+			correlationId,
+			orgId: session.orgId,
+			actorUserId: session.userId,
+			path: "revokeOrgRoleAction",
+			code: "INTERNAL_ERROR",
+		});
+		return actionFailInternal(
 			"Role revocation failed. Try again or contact an admin.",
+			correlationId,
 		);
 	}
 
 	if (!result.ok) {
 		return actionFail(result.code, result.message);
 	}
+
+	logProductEvent({
+		level: "info",
+		event: "role.revoke",
+		correlationId,
+		orgId: session.orgId,
+		actorUserId: session.userId,
+		path: "revokeOrgRoleAction",
+	});
 
 	revalidatePath("/admin");
 

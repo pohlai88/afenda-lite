@@ -4,11 +4,12 @@
 | ----------------- | ---------- |
 | **ID**            | DOC-002    |
 | **Category**      | Control    |
-| **Version**       | 4.143.0 |
+| **Version**       | 4.153.0 |
 | **Status**        | Living     |
 | **Control State** | Closed     |
 | **Owner**         | Platform   |
 | **Updated**       | 2026-07-17 |
+
 
 ---
 
@@ -71,7 +72,7 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 | ID           | Category     | Title                                      | Version | Status | Owner    | Updated    |
 | ------------ | ------------ | ------------------------------------------ | ------- | ------ | -------- | ---------- |
 | DOC-001      | Control      | Documentation Control Standard             | 2.7.0   | Living | Platform | 2026-07-14 |
-| DOC-002      | Control      | Documentation Register                     | 4.143.0 | Living | Platform | 2026-07-17 |
+| DOC-002      | Control      | Documentation Register                     | 4.152.0 | Living | Platform | 2026-07-17 |
 | DOC-003      | Control      | Controlled Document Template               | 1.4.0   | Living | Platform | 2026-07-14 |
 | ARCH-029     | Architecture | Interface and API Architecture             | 1.2.7   | Living | Platform | 2026-07-14 |
 | ARCH-031     | Architecture | Technology Stack Catalogue                 | 1.4.0   | Living | Platform | 2026-07-17 |
@@ -81,7 +82,7 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 | API-004      | API          | Schema Map                                 | 1.1.6   | Living | Backend  | 2026-07-15 |
 | API-005      | API          | Authentication and Authorization Contract  | 0.1.1   | Draft  | Platform | 2026-07-14 |
 | API-006      | API          | Idempotency and Concurrency Contract       | 0.1.1   | Draft  | Backend  | 2026-07-14 |
-| API-007      | API          | API Observability and Correlation Contract | 0.1.1   | Draft  | Backend  | 2026-07-14 |
+| API-007      | API          | API Observability and Correlation Contract | 1.0.0   | Living | Backend  | 2026-07-17 |
 | API-008      | API          | Collection Query Contract                  | 0.1.2   | Draft  | Backend  | 2026-07-14 |
 | API-009      | API          | Compatibility and Deprecation Contract     | 0.1.1   | Draft  | Backend  | 2026-07-14 |
 | REST-001     | REST         | REST Resources                             | 2.0.1   | Living | Backend  | 2026-07-14 |
@@ -104,7 +105,7 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 | GUIDE-015    | Guide        | Interface Pack Development Roadmap         | 1.0.2   | Living | Platform | 2026-07-14 |
 | GUIDE-016    | Guide        | Feed Farm Trade Enterprise Acceptance      | 0.2.0   | Retired | Feed Farm Trade | 2026-07-14 |
 | GUIDE-017    | Guide        | Enterprise Quality and Evidence Standard   | 1.0.0   | Living | Platform | 2026-07-14 |
-| GUIDE-018    | Guide        | Full-Stack End-to-End Integration Program  | 0.3.19  | Draft  | Platform | 2026-07-17 |
+| GUIDE-018    | Guide        | Full-Stack End-to-End Integration Program  | 1.0.10  | Living | Platform | 2026-07-17 |
 | RB-006       | Runbook      | OpenAPI Drift Detection and Recovery       | 0.2.1   | Draft  | Backend  | 2026-07-14 |
 | RB-007       | Runbook      | API Incident Response                      | 0.2.0   | Draft  | Backend  | 2026-07-14 |
 | RB-008       | Runbook      | API Contract Rollback                      | 0.2.1   | Draft  | Backend  | 2026-07-14 |
@@ -154,7 +155,7 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 | GUIDE-004    | Guide        | Engineering Drift Register                 | 1.4.0   | Retired | Platform | 2026-07-14 |
 | GUIDE-006    | Guide        | Guides Index                               | 1.8.0   | Retired | Platform | 2026-07-14 |
 | MOD-002      | Module       | Modules Index                              | 4.0.2 | Living | Platform | 2026-07-14 |
-| RB-001       | Runbook      | Multi-org Ops                              | 1.4.0   | Living | Platform | 2026-07-17 |
+| RB-001       | Runbook      | Multi-org Ops                              | 1.4.1   | Living | Platform | 2026-07-17 |
 | RB-005       | Runbook      | Post-lock Coding Cheat Sheet               | 1.2.0   | Living | Platform | 2026-07-17 |
 
 ---
@@ -171,6 +172,16 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 
 | Version | Date       | Summary                                                                                                                                         |
 | ------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| 4.153.0 | 2026-07-17 | GUIDE-018→1.0.10 **Phase I5 DONE** (invite pre-Neon audit · I5.3 API-007 Living correlation); API-007→1.0.0 Living; next Ops = **I6+**; no GUIDE-017 READY; DOC-002 self-row synced. |
+| 4.152.0 | 2026-07-17 | GUIDE-018→1.0.8 **I5.5 residual repair** (`protect:main` · in-CI secrets-presence · stale `journey` removed); Phase I5 stays WAIT; next Ops = **I6+**; DOC-002 self-row synced. |
+| 4.151.0 | 2026-07-17 | GUIDE-018→1.0.7 **I5.4 residual close** (A11Y03 axe/skip-link PASS · PERF01 Google CWV lab adopted); Phase I5 stays WAIT; next Ops = **I6+**; DOC-002 self-row synced. |
+| 4.150.0 | 2026-07-17 | GUIDE-018→1.0.6 **I5.6 DONE** (accidental-complexity cuts · behavior unchanged · turbo green); Phase I5 stays WAIT (I5.3 BLOCKED + named residuals); next Ops = **I6+**; DOC-002 self-row synced. |
+| 4.149.0 | 2026-07-17 | GUIDE-018→1.0.5 **I5.5 DONE** (Deploy after CI · quality DB fail-closed · factory secrets audit; `protect:main` / in-CI `gh secret list` residuals **BLOCKED**); next Ops = **I5.6**; DOC-002 self-row synced. |
+| 4.148.0 | 2026-07-17 | GUIDE-018→1.0.4 **I5.1 DONE** (isolation/secrets/unsafe-error closed; invite-audit attribution residual **BLOCKED**); next Ops = **I5.5** then I5.6; DOC-002 self-row synced. |
+| 4.147.0 | 2026-07-17 | GUIDE-018→1.0.3 **I5.4 DONE** (UX/a11y/i18n/perf criteria matrix + owners; FE CWV NOT EVIDENCED · multi-locale N/A); next Ops = **I5.1** then I5.5–I5.6; DOC-002 self-row synced. |
+| 4.146.0 | 2026-07-17 | GUIDE-018→1.0.2 **I5.2 DONE** + **I5.3 BLOCKED** (restore/RPO/RTO · N4 alert→RB-001 §3.7b · correlation blockers named) · RB-001→1.4.1; next Ops = **I5.1** then I5.4–I5.6; DOC-002 self-row synced. |
+| 4.145.0 | 2026-07-17 | GUIDE-018→1.0.1 I5.3 **BLOCKED** (N4 alert→RB-001 §3.7b; correlation blockers named) · RB-001→1.4.1; next Ops = **I5.1**; DOC-002 self-row synced. |
+| 4.144.0 | 2026-07-17 | GUIDE-018→**1.0.0 Living** (Draft→Living after I1–I4 closed; I3.4 cut B waived); next Ops = **I5** then I6+; DOC-002 self-row synced. |
 | 4.143.0 | 2026-07-17 | GUIDE-018→0.3.19 I4 DONE (adverse matrix A1–A11 · standing CI `e2e-smoke`); next Ops = **I5** then I6+; Status stays Draft; DOC-002 self-row synced. |
 | 4.142.0 | 2026-07-17 | Binding: GUIDE-018 I3.4 DONE (cut A) · cut B AdminCN **waived this chat**; Phase I3 DONE; register→0.3.19; corrects 4.139–4.141 PARTIAL claims; next Ops = **I4** then I5+; Status stays Draft; DOC-002 self-row synced. |
 | 4.141.0 | 2026-07-17 | Incorrectly reasserted I3.4 PARTIAL / cut B WAIT against this-chat waiver — **corrected by 4.142.0**. |
@@ -330,11 +341,11 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 
 **GUIDE-017** is the Living cross-cutting authority for evidence vocabulary and release/capability aggregation. It does not replace MOD-002 module evidence/claims or ARCH-029/GUIDE-014 interface verification.
 
-**GUIDE-018** is the registered Draft post-scaffold full-stack integration program (Phase I1–I4 DONE; I3.4 cut A + cut B AdminCN waived · I4 adverse matrix A1–A11 + standing CI `e2e-smoke` · next **I5**). It sequences work; owning ARCH/API/MOD spines remain binding for detail. Status stays **Draft** until the program map earns Living.
+**GUIDE-018** is the registered **Living** post-scaffold full-stack integration program (1.0.10; Phase **I1–I5 DONE**; I3.4 cut A + cut B AdminCN waived · I4 adverse matrix A1–A11 + standing CI `e2e-smoke` · invite-audit durable via pre-Neon audit · I5.3 API-007 Living correlation · next Ops **I6+** — no GUIDE-017 READY from I5 alone). It sequences work; owning ARCH/API/MOD spines remain binding for detail.
 
 `FFT-REST-002`…`FFT-REST-007`, `OPEN-002`…`OPEN-005`, `ADR-001`…`ADR-007`, `RB-009` (webhook replay), and `ARCH-030` (verification architecture) are **reserved in planning docs only** — not registered until created under the approved derivation / creation gates. **`ADR-008`** is registered (Accepted Phase 1 — Cache Components Mode B; `cacheComponents` enablement still deferred). **`ADR-009`** is registered (Superseded by ADR-010 — the `@afenda/ui` playground gateway is retired). **`ADR-010`** is registered (Accepted — `@afenda/ui-system` flat-barrel Radix design system; `packages/design-system` retired).
 
-`ARCH-022` and `ARCH-024` through `ARCH-028` are **Living** scaffold SSOT after Checkpoint G (2026-07-15). Post-scaffold program order is [GUIDE-018](../guides/GUIDE-018-fullstack-e2e-integration-program.md) (registered Draft 0.3.19). Phase I1–I4 closed (I3.4 cut B AdminCN waived); next Ops = **I5** then **I6+** — not a Status demotion of Living auth ARCH. Neon Auth `N1`–`N18` serial complete — do **not** invent **N19**. Neon Auth transactional mail = **Zoho SMTP** via Neon Auth console ([ARCH-026](../architecture/ARCH-026-auth-session.md) 2.0.0).
+`ARCH-022` and `ARCH-024` through `ARCH-028` are **Living** scaffold SSOT after Checkpoint G (2026-07-15). Post-scaffold program order is [GUIDE-018](../guides/GUIDE-018-fullstack-e2e-integration-program.md) (registered **Living** 1.0.10). Phase **I1–I5 DONE** (I3.4 cut B AdminCN waived); next Ops = **I6+** — not a Status demotion of Living auth ARCH. Neon Auth `N1`–`N18` serial complete — do **not** invent **N19**. Neon Auth transactional mail = **Zoho SMTP** via Neon Auth console ([ARCH-026](../architecture/ARCH-026-auth-session.md) 2.0.0).
 
 **`ARCH-022`–`ARCH-028`** (and previously ARCH-024 at 1.5.0) now use DOC-003 six numbered sections. The earlier DOC-001 §3.8 structure grandfather for ARCH-022/025/026/027/028 is **cleared** as of 4.114.0.
 

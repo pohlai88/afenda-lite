@@ -1,21 +1,22 @@
 "use server";
 
-import { getApiSession, requireRole } from "@afenda/auth";
 import { revalidatePath } from "next/cache";
 
-import { forbidUnlessPermission } from "@/app/actions/permission-gate";
+import { requireClientDeclarationActionSession } from "@/app/actions/client-declaration-action-session";
 import {
 	getClientDeclarationDraft,
-	isClientOnboardingComplete,
 	saveClientDeclarationDraft,
 } from "@/modules/declarations/domain/declaration-draft";
 import {
 	declarationDraftQuerySchema,
 	saveClientDeclarationDraftSchema,
 } from "@/modules/declarations/schemas/client";
+import { createCorrelationId } from "@/modules/platform/observability/correlation";
+import { logProductEvent } from "@/modules/platform/observability/product-log";
 import {
 	type ActionResult,
 	actionFail,
+	actionFailInternal,
 	actionOk,
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
@@ -38,27 +39,12 @@ export type SaveDeclarationDraftData = {
 export async function loadDeclarationDraftAction(
 	assignmentId: string,
 ): Promise<ActionResult<LoadDeclarationDraftData>> {
-	await requireRole("client");
-	const apiSession = await getApiSession();
-	if (!apiSession) {
-		return actionFail("UNAUTHORIZED", "Authentication required.");
+	const correlationId = createCorrelationId();
+	const gate = await requireClientDeclarationActionSession("declarations.read");
+	if (!gate.ok) {
+		return gate;
 	}
-
-	const permissionDenied = await forbidUnlessPermission(
-		apiSession,
-		"declarations.read",
-	);
-	if (permissionDenied) {
-		return permissionDenied;
-	}
-
-	const onboarded = await isClientOnboardingComplete({
-		orgId: apiSession.orgId,
-		userId: apiSession.userId,
-	});
-	if (!onboarded) {
-		return actionFail("FORBIDDEN", "Complete client onboarding first.");
-	}
+	const { session: apiSession } = gate;
 
 	const parsed = parseSchema(declarationDraftQuerySchema, { assignmentId });
 	if (!parsed.success) {
@@ -77,9 +63,18 @@ export async function loadDeclarationDraftAction(
 			assignmentId: parsed.data.assignmentId,
 		});
 	} catch {
-		return actionFail(
-			"INTERNAL_ERROR",
+		logProductEvent({
+			level: "error",
+			event: "action.internal_error",
+			correlationId,
+			orgId: apiSession.orgId,
+			actorUserId: apiSession.userId,
+			path: "loadDeclarationDraftAction",
+			code: "INTERNAL_ERROR",
+		});
+		return actionFailInternal(
 			"Declaration draft could not be loaded. Try again or contact an admin.",
+			correlationId,
 		);
 	}
 	if (!draft) {
@@ -97,27 +92,14 @@ export async function saveDeclarationDraftAction(
 	_prev: ActionResult<SaveDeclarationDraftData> | null,
 	formData: FormData,
 ): Promise<ActionResult<SaveDeclarationDraftData>> {
-	await requireRole("client");
-	const apiSession = await getApiSession();
-	if (!apiSession) {
-		return actionFail("UNAUTHORIZED", "Authentication required.");
-	}
-
-	const permissionDenied = await forbidUnlessPermission(
-		apiSession,
+	const correlationId = createCorrelationId();
+	const gate = await requireClientDeclarationActionSession(
 		"declarations.manage",
 	);
-	if (permissionDenied) {
-		return permissionDenied;
+	if (!gate.ok) {
+		return gate;
 	}
-
-	const onboarded = await isClientOnboardingComplete({
-		orgId: apiSession.orgId,
-		userId: apiSession.userId,
-	});
-	if (!onboarded) {
-		return actionFail("FORBIDDEN", "Complete client onboarding first.");
-	}
+	const { session: apiSession } = gate;
 
 	const assignmentId = String(formData.get("assignmentId") ?? "");
 	const surveyId = String(formData.get("surveyId") ?? "");
@@ -148,9 +130,18 @@ export async function saveDeclarationDraftAction(
 			draft: parsed.data,
 		});
 	} catch {
-		return actionFail(
-			"INTERNAL_ERROR",
+		logProductEvent({
+			level: "error",
+			event: "action.internal_error",
+			correlationId,
+			orgId: apiSession.orgId,
+			actorUserId: apiSession.userId,
+			path: "saveDeclarationDraftAction",
+			code: "INTERNAL_ERROR",
+		});
+		return actionFailInternal(
 			"Declaration draft could not be saved. Try again or contact an admin.",
+			correlationId,
 		);
 	}
 	if (!saved.ok) {
@@ -162,6 +153,15 @@ export async function saveDeclarationDraftAction(
 		}
 		return actionFail("NOT_FOUND", "Declaration draft was not found.");
 	}
+
+	logProductEvent({
+		level: "info",
+		event: "declaration.draft_save",
+		correlationId,
+		orgId: apiSession.orgId,
+		actorUserId: apiSession.userId,
+		path: "saveDeclarationDraftAction",
+	});
 
 	revalidatePath("/client/declarations");
 	revalidatePath(`/client/declarations/${parsed.data.assignmentId}`);

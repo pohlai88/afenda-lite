@@ -124,6 +124,7 @@ describe.skipIf(!hasDatabase)("permission kernel product wiring (N10)", () => {
 			roleId: ORG_ADMIN_TEMPLATE_ROLE_ID,
 			grantedBy,
 			actorUserId: grantedBy,
+			correlationId: "test-correlation-id",
 		});
 		expect(assign.ok).toBe(true);
 		if (!assign.ok) {
@@ -160,6 +161,7 @@ describe.skipIf(!hasDatabase)("permission kernel product wiring (N10)", () => {
 			orgId: orgA,
 			assignmentId: assign.assignment.id,
 			actorUserId: grantedBy,
+			correlationId: "test-correlation-id",
 		});
 		if (revoked.ok) {
 			createdAuditIds.push({ id: revoked.auditId, orgId: orgA });

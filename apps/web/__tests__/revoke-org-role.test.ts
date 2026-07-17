@@ -9,8 +9,8 @@ import { and, db, eq, platformRoleAssignment } from "@afenda/db";
 import { afterAll, describe, expect, it } from "vitest";
 
 import { assignOrgRoleWithAudit } from "../modules/identity/domain/assign-org-role-audited";
-import { parseRevokeOrgRoleCommand } from "../modules/identity/domain/revoke-org-role";
 import { revokeOrgRoleWithAudit } from "../modules/identity/domain/revoke-org-role-audited";
+import { parseRevokeOrgRoleCommand } from "../modules/identity/schemas/revoke-org-role";
 import { deleteRbacAuditRow } from "../modules/platform/domain/record-rbac-audit";
 
 const repoRoot = path.resolve(
@@ -102,6 +102,7 @@ describe.skipIf(!hasDatabase)("revokeOrgRoleWithAudit tenancy (I3.1)", () => {
 			roleId: VIEWER_TEMPLATE_ROLE_ID,
 			grantedBy,
 			actorUserId: grantedBy,
+			correlationId: "test-correlation-id",
 		});
 		expect(assigned.ok).toBe(true);
 		if (!assigned.ok) {
@@ -114,6 +115,7 @@ describe.skipIf(!hasDatabase)("revokeOrgRoleWithAudit tenancy (I3.1)", () => {
 			orgId: orgB,
 			assignmentId: assigned.assignment.id,
 			actorUserId: grantedBy,
+			correlationId: "test-correlation-id",
 		});
 		expect(wrongOrg.ok).toBe(false);
 		if (!wrongOrg.ok) {
@@ -124,6 +126,7 @@ describe.skipIf(!hasDatabase)("revokeOrgRoleWithAudit tenancy (I3.1)", () => {
 			orgId: orgA,
 			assignmentId: assigned.assignment.id,
 			actorUserId: grantedBy,
+			correlationId: "test-correlation-id",
 		});
 		expect(revoked.ok).toBe(true);
 		if (!revoked.ok) {
@@ -137,6 +140,7 @@ describe.skipIf(!hasDatabase)("revokeOrgRoleWithAudit tenancy (I3.1)", () => {
 			orgId: orgA,
 			assignmentId: assigned.assignment.id,
 			actorUserId: grantedBy,
+			correlationId: "test-correlation-id",
 		});
 		expect(second.ok).toBe(false);
 		if (!second.ok) {
@@ -149,6 +153,7 @@ describe.skipIf(!hasDatabase)("revokeOrgRoleWithAudit tenancy (I3.1)", () => {
 			roleId: VIEWER_TEMPLATE_ROLE_ID,
 			grantedBy,
 			actorUserId: grantedBy,
+			correlationId: "test-correlation-id",
 		});
 		expect(reactivated.ok).toBe(true);
 		if (!reactivated.ok) {
@@ -162,6 +167,7 @@ describe.skipIf(!hasDatabase)("revokeOrgRoleWithAudit tenancy (I3.1)", () => {
 			orgId: orgA,
 			assignmentId: reactivated.assignment.id,
 			actorUserId: grantedBy,
+			correlationId: "test-correlation-id",
 		});
 		if (finalRevoke.ok) {
 			createdAuditIds.push({ id: finalRevoke.auditId, orgId: orgA });

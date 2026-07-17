@@ -15,9 +15,12 @@ import type {
 	RevokeOrgRoleResult,
 } from "@/modules/identity/domain/revoke-org-role";
 import { ROLE_REVOKE_AUDIT_ACTION } from "@/modules/platform/domain/record-rbac-audit";
+import { requireTrimmed } from "@/modules/platform/domain/require-trimmed";
 
 export type RevokeOrgRoleWithAuditInput = RevokeOrgRoleInput & {
 	actorUserId: string;
+	/** API-007 — stamped on `platform_rbac_audit.correlation_id`. */
+	correlationId: string;
 };
 
 export type RevokeOrgRoleWithAuditOk = {
@@ -43,14 +46,6 @@ type RevokeAuditedSqlRow = {
 	updated_at: string | Date;
 	audit_id: string;
 };
-
-function requireTrimmed(value: string, field: string, context: string): string {
-	const trimmed = value.trim();
-	if (trimmed.length === 0) {
-		throw new Error(`${context} requires non-empty ${field}`);
-	}
-	return trimmed;
-}
 
 function mapAssignmentRow(
 	row: RevokeAuditedSqlRow,
@@ -92,6 +87,11 @@ export async function revokeOrgRoleWithAudit(
 	const actorUserId = requireTrimmed(
 		input.actorUserId,
 		"actorUserId",
+		"revokeOrgRoleWithAudit",
+	);
+	const correlationId = requireTrimmed(
+		input.correlationId,
+		"correlationId",
 		"revokeOrgRoleWithAudit",
 	);
 
@@ -145,7 +145,8 @@ export async function revokeOrgRoleWithAudit(
 						target_id,
 						role_id,
 						old_value,
-						new_value
+						new_value,
+						correlation_id
 					)
 					SELECT
 						${ROLE_REVOKE_AUDIT_ACTION},
@@ -155,7 +156,8 @@ export async function revokeOrgRoleWithAudit(
 						mutated.id,
 						mutated.role_id,
 						${oldValueJson}::jsonb,
-						${newValueJson}::jsonb
+						${newValueJson}::jsonb,
+						${correlationId}
 					FROM mutated
 					RETURNING id, organization_id
 				)

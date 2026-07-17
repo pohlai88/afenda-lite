@@ -143,6 +143,7 @@ describe.skipIf(!hasDatabase)("hasPermission product wiring (I3.1)", () => {
 			roleId: ORG_ADMIN_TEMPLATE_ROLE_ID,
 			grantedBy,
 			actorUserId: grantedBy,
+			correlationId: "test-correlation-id",
 		});
 		expect(adminAssign.ok).toBe(true);
 		if (!adminAssign.ok) {
@@ -157,6 +158,7 @@ describe.skipIf(!hasDatabase)("hasPermission product wiring (I3.1)", () => {
 			roleId: VIEWER_TEMPLATE_ROLE_ID,
 			grantedBy,
 			actorUserId: grantedBy,
+			correlationId: "test-correlation-id",
 		});
 		expect(viewerAssign.ok).toBe(true);
 		if (!viewerAssign.ok) {
@@ -204,6 +206,7 @@ describe.skipIf(!hasDatabase)("hasPermission product wiring (I3.1)", () => {
 			orgId,
 			assignmentId: adminAssign.assignment.id,
 			actorUserId: grantedBy,
+			correlationId: "test-correlation-id",
 		});
 		if (adminRevoke.ok) {
 			createdAuditIds.push({ id: adminRevoke.auditId, orgId });
@@ -212,6 +215,7 @@ describe.skipIf(!hasDatabase)("hasPermission product wiring (I3.1)", () => {
 			orgId,
 			assignmentId: viewerAssign.assignment.id,
 			actorUserId: grantedBy,
+			correlationId: "test-correlation-id",
 		});
 		if (viewerRevoke.ok) {
 			createdAuditIds.push({ id: viewerRevoke.auditId, orgId });
