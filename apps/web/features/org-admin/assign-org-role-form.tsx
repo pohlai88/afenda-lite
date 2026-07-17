@@ -45,7 +45,7 @@ type AssignOrgRoleFormProps = {
 
 /**
  * Org-admin assign form — CAPABLE when assignable roles and the org member
- * directory are available (GUIDE-018 I3.1 · UI-CAP-07 Combobox).
+ * directory are available (GUIDE-018 I3.4 cut A · UI-CAP-07 Combobox).
  */
 export function AssignOrgRoleForm({
 	roles,
@@ -120,7 +120,7 @@ export function AssignOrgRoleForm({
 		<form
 			action={formAction}
 			aria-busy={pending}
-			className="flex max-w-md flex-col gap-(--field-gap)"
+			className="flex w-full flex-col gap-(--field-gap)"
 		>
 			<FormField
 				label="Organization member"

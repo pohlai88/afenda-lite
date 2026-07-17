@@ -9,7 +9,14 @@ import { fileURLToPath } from "node:url";
 
 const webRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 
-const SKIP_DIRS = new Set(["node_modules", ".next", ".turbo", "__tests__"]);
+/** Staging DNA is not Living product UI (ARCH-015 · ADR-010). */
+const SKIP_DIRS = new Set([
+	"node_modules",
+	".next",
+	".turbo",
+	"__tests__",
+	"shadcn-studio",
+]);
 
 /** Relative POSIX-ish paths under apps/web that are Neon Auth island. */
 export const AUTH_ISLAND_PREFIXES = [
@@ -53,8 +60,17 @@ function collectTsx(dir: string): string[] {
 	return files;
 }
 
+function isDnaStaging(rel: string): boolean {
+	return (
+		rel === "shadcn-studio" ||
+		rel.startsWith("shadcn-studio/") ||
+		rel === "components/shadcn-studio" ||
+		rel.startsWith("components/shadcn-studio/")
+	);
+}
+
 export function productTsx(): { rel: string; src: string }[] {
 	return collectTsx(webRoot)
 		.map((full) => ({ rel: toRel(full), src: readFileSync(full, "utf8") }))
-		.filter(({ rel }) => !isAuthIsland(rel));
+		.filter(({ rel }) => !isAuthIsland(rel) && !isDnaStaging(rel));
 }

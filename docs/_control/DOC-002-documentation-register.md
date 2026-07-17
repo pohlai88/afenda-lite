@@ -4,7 +4,7 @@
 | ----------------- | ---------- |
 | **ID**            | DOC-002    |
 | **Category**      | Control    |
-| **Version**       | 4.135.0 |
+| **Version**       | 4.143.0 |
 | **Status**        | Living     |
 | **Control State** | Closed     |
 | **Owner**         | Platform   |
@@ -71,7 +71,7 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 | ID           | Category     | Title                                      | Version | Status | Owner    | Updated    |
 | ------------ | ------------ | ------------------------------------------ | ------- | ------ | -------- | ---------- |
 | DOC-001      | Control      | Documentation Control Standard             | 2.7.0   | Living | Platform | 2026-07-14 |
-| DOC-002      | Control      | Documentation Register                     | 4.135.0 | Living | Platform | 2026-07-17 |
+| DOC-002      | Control      | Documentation Register                     | 4.143.0 | Living | Platform | 2026-07-17 |
 | DOC-003      | Control      | Controlled Document Template               | 1.4.0   | Living | Platform | 2026-07-14 |
 | ARCH-029     | Architecture | Interface and API Architecture             | 1.2.7   | Living | Platform | 2026-07-14 |
 | ARCH-031     | Architecture | Technology Stack Catalogue                 | 1.4.0   | Living | Platform | 2026-07-17 |
@@ -104,7 +104,7 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 | GUIDE-015    | Guide        | Interface Pack Development Roadmap         | 1.0.2   | Living | Platform | 2026-07-14 |
 | GUIDE-016    | Guide        | Feed Farm Trade Enterprise Acceptance      | 0.2.0   | Retired | Feed Farm Trade | 2026-07-14 |
 | GUIDE-017    | Guide        | Enterprise Quality and Evidence Standard   | 1.0.0   | Living | Platform | 2026-07-14 |
-| GUIDE-018    | Guide        | Full-Stack End-to-End Integration Program  | 0.3.16  | Draft  | Platform | 2026-07-17 |
+| GUIDE-018    | Guide        | Full-Stack End-to-End Integration Program  | 0.3.19  | Draft  | Platform | 2026-07-17 |
 | RB-006       | Runbook      | OpenAPI Drift Detection and Recovery       | 0.2.1   | Draft  | Backend  | 2026-07-14 |
 | RB-007       | Runbook      | API Incident Response                      | 0.2.0   | Draft  | Backend  | 2026-07-14 |
 | RB-008       | Runbook      | API Contract Rollback                      | 0.2.1   | Draft  | Backend  | 2026-07-14 |
@@ -171,6 +171,14 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 
 | Version | Date       | Summary                                                                                                                                         |
 | ------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| 4.143.0 | 2026-07-17 | GUIDE-018→0.3.19 I4 DONE (adverse matrix A1–A11 · standing CI `e2e-smoke`); next Ops = **I5** then I6+; Status stays Draft; DOC-002 self-row synced. |
+| 4.142.0 | 2026-07-17 | Binding: GUIDE-018 I3.4 DONE (cut A) · cut B AdminCN **waived this chat**; Phase I3 DONE; register→0.3.19; corrects 4.139–4.141 PARTIAL claims; next Ops = **I4** then I5+; Status stays Draft; DOC-002 self-row synced. |
+| 4.141.0 | 2026-07-17 | Incorrectly reasserted I3.4 PARTIAL / cut B WAIT against this-chat waiver — **corrected by 4.142.0**. |
+| 4.140.0 | 2026-07-17 | GUIDE-018 I3.4 DONE / cut B waived (this chat) — momentarily disputed by 4.141.0; restored by 4.142.0. |
+| 4.139.0 | 2026-07-17 | Corrects 4.138.0 false claim: GUIDE-018→0.3.18 I3.4 cut A ON DISK · cut B AdminCN WAIT · I3.4 not DONE; next Ops = I3.4 cut B / I4; Status stays Draft; DOC-002 self-row synced. |
+| 4.138.0 | 2026-07-17 | Erroneous: GUIDE-018 I3.4 DONE / cut B waived — **corrected by 4.139.0 / 4.141.0**. |
+| 4.137.0 | 2026-07-17 | GUIDE-018→0.3.18 I3.4 cut A ON DISK (member-directory); cut B AdminCN WAIT; I3.4 not DONE; next Ops = I3.4 cut B / I4; Status stays Draft; DOC-002 self-row synced. |
+| 4.136.0 | 2026-07-17 | GUIDE-018→0.3.17 Docs-lane sync: I3.2←N17 · I3.3←N18 DONE; next Ops = I3.4 / I4 then I5+; Status stays Draft; DOC-002 self-row synced. |
 | 4.135.0 | 2026-07-17 | N15 Path-to-100%: ARCH-026→2.0.1 (trusted-domain/deploy ops honesty; collapsed configure no longer live); DOC-002 self-row synced. |
 | 4.134.0 | 2026-07-17 | N15 Production ops: RB-001→1.4.0 · RB-005→1.2.0 (trusted domains · deploy health · live validate honesty); DOC-002 self-row synced. |
 | 4.133.0 | 2026-07-17 | Neon Auth mail lock: ARCH-026→2.0.0 (Zoho SMTP via Neon Auth console) · ARCH-031→1.4.0 · ARCH-028→1.5.6 · GUIDE-018→0.3.16; DOC-002 self-row synced. |
@@ -322,11 +330,11 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 
 **GUIDE-017** is the Living cross-cutting authority for evidence vocabulary and release/capability aggregation. It does not replace MOD-002 module evidence/claims or ARCH-029/GUIDE-014 interface verification.
 
-**GUIDE-018** is the registered Draft post-scaffold full-stack integration program (Phase I1 DONE · Phase I2 DONE · I3.1 DONE · next **I3.2**). It sequences work; owning ARCH/API/MOD spines remain binding for detail.
+**GUIDE-018** is the registered Draft post-scaffold full-stack integration program (Phase I1–I4 DONE; I3.4 cut A + cut B AdminCN waived · I4 adverse matrix A1–A11 + standing CI `e2e-smoke` · next **I5**). It sequences work; owning ARCH/API/MOD spines remain binding for detail. Status stays **Draft** until the program map earns Living.
 
 `FFT-REST-002`…`FFT-REST-007`, `OPEN-002`…`OPEN-005`, `ADR-001`…`ADR-007`, `RB-009` (webhook replay), and `ARCH-030` (verification architecture) are **reserved in planning docs only** — not registered until created under the approved derivation / creation gates. **`ADR-008`** is registered (Accepted Phase 1 — Cache Components Mode B; `cacheComponents` enablement still deferred). **`ADR-009`** is registered (Superseded by ADR-010 — the `@afenda/ui` playground gateway is retired). **`ADR-010`** is registered (Accepted — `@afenda/ui-system` flat-barrel Radix design system; `packages/design-system` retired).
 
-`ARCH-022` and `ARCH-024` through `ARCH-028` are **Living** scaffold SSOT after Checkpoint G (2026-07-15). Post-scaffold program order is [GUIDE-018](../guides/GUIDE-018-fullstack-e2e-integration-program.md) (registered Draft 0.3.16). Phase I1, Phase I2, and I3.1 (assign/revoke · Tier-2 `hasPermission`) are closed; next Ops = **I3.2** — not a Status demotion of Living auth ARCH. Neon Auth transactional mail = **Zoho SMTP** via Neon Auth console ([ARCH-026](../architecture/ARCH-026-auth-session.md) 2.0.0).
+`ARCH-022` and `ARCH-024` through `ARCH-028` are **Living** scaffold SSOT after Checkpoint G (2026-07-15). Post-scaffold program order is [GUIDE-018](../guides/GUIDE-018-fullstack-e2e-integration-program.md) (registered Draft 0.3.19). Phase I1–I4 closed (I3.4 cut B AdminCN waived); next Ops = **I5** then **I6+** — not a Status demotion of Living auth ARCH. Neon Auth `N1`–`N18` serial complete — do **not** invent **N19**. Neon Auth transactional mail = **Zoho SMTP** via Neon Auth console ([ARCH-026](../architecture/ARCH-026-auth-session.md) 2.0.0).
 
 **`ARCH-022`–`ARCH-028`** (and previously ARCH-024 at 1.5.0) now use DOC-003 six numbered sections. The earlier DOC-001 §3.8 structure grandfather for ARCH-022/025/026/027/028 is **cleared** as of 4.114.0.
 

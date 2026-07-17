@@ -81,9 +81,15 @@ vi.mock("@/features/org-admin/invite-member-form", () => ({
 }));
 
 vi.mock("@/features/org-admin/org-admin-panels", () => ({
-	OrgAdminPanels: () =>
+	OrgAdminPanels: (props: {
+		memberDirectory: { status: string; options: { id: string }[] };
+		assignments: { userId: string; userLabel: string }[];
+	}) =>
 		createElement("div", {
 			"data-testid": "org-admin-panels",
+			"data-directory-status": props.memberDirectory.status,
+			"data-directory-count": String(props.memberDirectory.options.length),
+			"data-assignment-label": props.assignments[0]?.userLabel ?? "",
 		}),
 }));
 
@@ -129,17 +135,32 @@ describe("OrgAdminShell — RSC STABILITY", () => {
 			},
 		]);
 		platformMocks.listOrgRbacAudit.mockResolvedValue([
-			{ id: "aud_1", action: "role.assign", targetType: "assignment" },
+			{
+				id: "aud_1",
+				action: "role.assign",
+				targetType: "assignment",
+				targetId: "asg_1",
+				actorUserId: "user_1",
+				roleId: "role_1",
+				reason: null,
+				createdAt: new Date("2026-07-17T08:00:00.000Z"),
+				oldValue: null,
+				newValue: { roleId: "role_1" },
+			},
 		]);
 	});
 
-	it("pins fail-closed requireRole('operator') + canvas shell plane", () => {
+	it("pins fail-closed requireRole('operator') + section density", () => {
 		const shell = source("features/org-admin/org-admin-shell.tsx");
+		const chrome = source(
+			"features/portal-chrome/operator-platform-chrome.tsx",
+		);
 		expect(shell).toContain('requireRole("operator")');
 		expect(shell).not.toMatch(/\bgetSession\b/);
-		expect(shell).toContain("bg-canvas");
 		expect(shell).toContain("<main");
 		expect(shell).toContain("gap-(--section-gap)");
+		expect(shell).toContain("MetricGrid");
+		expect(chrome).toContain("bg-canvas");
 		expect(shell).not.toMatch(/from ["']@afenda\/db["']/);
 	});
 
@@ -174,6 +195,9 @@ describe("OrgAdminShell — RSC STABILITY", () => {
 		const html = await renderShellHtml();
 
 		expect(html).toContain('data-testid="org-admin-panels"');
+		expect(html).toContain('data-directory-status="ready"');
+		expect(html).toContain('data-directory-count="1"');
+		expect(html).toContain('data-assignment-label="Ada · ada@example.com"');
 		expect(html).not.toContain('data-testid="invite-member-form"');
 		expect(identityMocks.listAssignableRoles).toHaveBeenCalledWith("org-admin");
 		expect(identityMocks.listRoleAssignments).toHaveBeenCalledWith("org-admin");

@@ -89,6 +89,7 @@
 		"check:repo-migration-map": "node scripts/collapse-script-unavailable.mjs \"check:repo-migration-map\"",
 		"test:e2e:smoke": "playwright test --project smoke",
 		"test:e2e:journey": "playwright test --project journey",
+		"test:e2e:adverse": "playwright test --project=smoke e2e/smoke/anonymous-gate.spec.ts e2e/smoke/wrong-role-gate.spec.ts e2e/smoke/two-org-denial.spec.ts e2e/smoke/fft-permitted-vertical.spec.ts",
 		"evaluate:ui-matrix": "node scripts/collapse-script-unavailable.mjs \"evaluate:ui-matrix\"",
 		"check:ui-sync": "node scripts/collapse-script-unavailable.mjs \"check:ui-sync\"",
 		"studio:init": "node scripts/collapse-script-unavailable.mjs \"studio:init\"",

@@ -12,5 +12,9 @@
 		".next/types/**/*.ts",
 		".next/dev/types/**/*.ts"
 	],
-	"exclude": ["node_modules", "**/*.interaction.test.tsx"]
+	"exclude": [
+		"node_modules",
+		"**/*.interaction.test.tsx",
+		"shadcn-studio"
+	]
 }

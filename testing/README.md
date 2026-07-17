@@ -12,6 +12,37 @@ Authority for Vitest / Playwright runners, helpers, and gate commands. Product p
 
 Reject Cypress and Jest as new runners. Prefer the **lowest** layer that captures the claim.
 
+## I4 adverse / recovery matrix
+
+Machine inventory: [`testing/e2e/adverse-matrix.ts`](e2e/adverse-matrix.ts). Cases at the **right layer** (unit and/or browser):
+
+| ID | Case | Layers | Evidence |
+|----|------|--------|----------|
+| A1 | Anonymous → `/auth/login` | smoke | `e2e/smoke/anonymous-gate.spec.ts` |
+| A2 | Wrong-role → `/403` | smoke | `e2e/smoke/wrong-role-gate.spec.ts` |
+| A3 | Two-org denial | smoke | `e2e/smoke/two-org-denial.spec.ts` |
+| A4 | Wrong-permission (`fft.access`) → `/403` | smoke | `e2e/smoke/fft-permitted-vertical.spec.ts` |
+| A5 | Invite → join accept | journey | `e2e/journey/invite-join.spec.ts` |
+| A6 | Draft save → reopen recover → submit | journey | `e2e/journey/declarations-draft-recovery.spec.ts` |
+| A7 | Invalid input (empty / no draft) | unit + journey | `declaration-submit-read.test.ts` · `declarations-adverse-recovery.spec.ts` |
+| A8 | Stale / locked after finalize | unit + journey | same |
+| A9 | Duplicate / idempotent re-submit | unit + journey | same |
+| A10 | Concurrent double-submit race | unit | `declaration-submit-read.test.ts` |
+| A11 | Dependency throw → safe `INTERNAL_ERROR` | unit | `submit-client-declaration-action.test.ts` |
+
+## Standing CI E2E gate
+
+| Fact | Detail |
+|------|--------|
+| Workflow | [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) job `e2e-smoke` |
+| When | `push` to `main` after `quality` (not PR forks) |
+| Command | `pnpm test:e2e:smoke` with `E2E_REQUIRE_FACTORY=1` |
+| Fail-closed | Missing `E2E_FACTORY_PASSWORD` (or hash-template `PREVIEW_CLIENT_PASSWORD`) → job **fails** with named owner **Platform** — never skip-as-PASS |
+| Secrets | `DATABASE_URL` · `NEON_AUTH_*` · `APP_URL` · factory password (+ `PREVIEW_CLIENT_EMAIL` as hash-template email) |
+| Owner | Platform |
+
+Local authenticated runs still **skip** with a named reason when factory env is incomplete. CI standing gate must not.
+
 ## Imports
 
 | Need | Import |
@@ -29,11 +60,12 @@ Path `@/testing/*` resolves from [`e2e/tsconfig.json`](../e2e/tsconfig.json).
 
 | Module | Role |
 |--------|------|
-| `testing/e2e/playwright-base.ts` | `test` / `expect` + worker-scoped `workerTenant` |
+| `testing/e2e/playwright-base.ts` | `test` / `expect` + worker-scoped `workerTenant` · `E2E_REQUIRE_FACTORY` fail-closed |
 | `testing/e2e/tenancy.ts` | Unique orgs/users per worker · two-org denial · cleanup |
 | `testing/e2e/flows.ts` | `signIn` / `loginAsOperator` / `loginAsClient` |
 | `testing/e2e/assertions.ts` | Anonymous redirect · wrong-role `/403` · role homes |
 | `testing/e2e/credentials.ts` | Explicit `E2E_*` overrides for one-off runs |
+| `testing/e2e/adverse-matrix.ts` | I4 adverse/recovery case inventory (A1–A11) |
 | `testing/e2e/neon-sql.ts` | Neon HTTP SQL for factory SQL |
 
 **Env (local `.env.local` — never commit secrets):**
@@ -65,6 +97,7 @@ pnpm exec turbo run lint typecheck test   # CI parity
 
 pnpm test:e2e:smoke         # Playwright @smoke
 pnpm test:e2e:journey       # Playwright @journey
+pnpm test:e2e:adverse       # A1–A4 smoke subset
 # Reuse a running app (skip spawning webServer):
 #   $env:PLAYWRIGHT_REUSE_SERVER=1; pnpm test:e2e:smoke
 ```

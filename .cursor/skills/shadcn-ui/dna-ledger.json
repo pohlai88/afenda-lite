@@ -22,14 +22,14 @@
 			"studioNs": "@ss-blocks",
 			"verdict": "ADAPT",
 			"method": "A",
-			"status": "staged",
+			"status": "promoted",
 			"landPath": "apps/web/features/portal-chrome/",
 			"feZones": ["FE-11", "FE-12"],
 			"barrelDeps": ["Sidebar", "Breadcrumb", "Separator", "Button"],
 			"strip": ["demo-nav", "locale-switcher", "social-footer", "cdn-avatars"],
 			"evidenceRef": "docs/scratch/neon-auth-optimisation/11-studio-admincn-possibility-audit.md",
 			"updated": "2026-07-17",
-			"notes": "Staged: apps/web/shadcn-studio/app/application-shell-01/ + shared blocks/dropdown-*."
+			"notes": "Promoted: sticky inset header + Breadcrumb into operator-platform-chrome.tsx; DNA app/application-shell-01 pruned."
 		},
 		{
 			"id": "AFN-DNA-EMPTY-STATE-01",
@@ -67,14 +67,14 @@
 			"studioNs": "@ss-blocks",
 			"verdict": "ADAPT",
 			"method": "A",
-			"status": "staged",
+			"status": "promoted",
 			"landPath": "apps/web/features/org-admin/",
 			"feZones": ["FE-11"],
 			"barrelDeps": ["MetricCard", "KeyValue"],
 			"strip": ["demo-metrics", "fake-sparkline-kit"],
 			"evidenceRef": "docs/scratch/neon-auth-optimisation/11-studio-admincn-possibility-audit.md",
 			"updated": "2026-07-17",
-			"notes": "Staged: shadcn-studio/app/statistics-component-01/ + blocks/statistics-component-01/statistics-card-01.tsx. Prefer barrel MetricCard; compound gaps → UI-CAP-03."
+			"notes": "Promoted: MetricGrid real counts in org-admin-shell.tsx via barrel MetricCard; DNA statistics tree pruned. No UI-CAP-03."
 		},
 		{
 			"id": "AFN-DNA-FORM-LAYOUT",
@@ -82,14 +82,14 @@
 			"studioNs": "@ss-blocks",
 			"verdict": "ADAPT",
 			"method": "A",
-			"status": "staged",
+			"status": "promoted",
 			"landPath": "apps/web/features/org-admin/",
 			"feZones": ["FE-11", "FE-13"],
 			"barrelDeps": ["Sheet", "FormField", "Input", "Button", "FormError"],
 			"strip": ["gallery-only-forms", "parallel-form-kit"],
 			"evidenceRef": "docs/scratch/neon-auth-optimisation/11-studio-admincn-possibility-audit.md",
 			"updated": "2026-07-17",
-			"notes": "Staged: shadcn-studio/app/form-layout-01/ + blocks/form-layout-01/. Secondary land: apps/web/features/declarations/ Sheet forms."
+			"notes": "Promoted: assign flow Sheet in org-admin-panels.tsx + FormField density; revoke stays AlertDialog. DNA form-layout tree pruned. Secondary land declarations deferred."
 		},
 		{
 			"id": "AFN-DNA-DATATABLE",
@@ -97,14 +97,14 @@
 			"studioNs": "@ss-blocks",
 			"verdict": "ADAPT",
 			"method": "A",
-			"status": "staged",
+			"status": "promoted",
 			"landPath": "packages/ui-system/",
 			"feZones": ["FE-11", "FE-13"],
 			"barrelDeps": ["DataTable", "Button", "Input", "Badge", "Pagination", "Empty"],
 			"strip": ["feature-local-table-framework", "fake-row-actions"],
 			"evidenceRef": "docs/scratch/neon-auth-optimisation/11-studio-admincn-possibility-audit.md",
 			"updated": "2026-07-17",
-			"notes": "Staged: shadcn-studio/app/datatable-component-04/ + blocks/datatable-component-04/datatable-user.tsx + hooks/use-pagination.ts. Ports/API upgrades in ui-system; feature compose under org-admin/declarations. Feature owns fetch/URL/permissions. Missing ports → UI-CAP-04."
+			"notes": "Promoted: no new ui-system ports (gallery tanstack DNA already covered by barrel DataTable); org-admin tables use density=compact. DNA datatable tree pruned. No UI-CAP-04."
 		},
 		{
 			"id": "AFN-DNA-LANGUAGE-SWITCHER",

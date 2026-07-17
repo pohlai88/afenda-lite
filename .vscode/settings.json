@@ -42,7 +42,7 @@
 	"files.eol": "\n",
 	"files.insertFinalNewline": true,
 	"files.trimTrailingWhitespace": true,
-	"explorer.excludeGitIgnore": true,
+	"explorer.excludeGitIgnore": false,
 	"explorer.autoReveal": false,
 	"explorer.decorations.badges": false,
 	"explorer.decorations.colors": false,

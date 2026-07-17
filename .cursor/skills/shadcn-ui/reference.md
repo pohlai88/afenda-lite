@@ -192,12 +192,12 @@ Do not maintain a second P0 table here — edit the ledger. Quick index:
 
 | id | studioId | verdict | status |
 |----|----------|---------|--------|
-| `AFN-DNA-APPLICATION-SHELL-01` | application-shell-01 | ADAPT | candidate |
-| `AFN-DNA-EMPTY-STATE-01` | empty-state-01 | ADAPT | candidate |
-| `AFN-DNA-LOGIN-PAGE-CHROME` | login-page | ADAPT (chrome) | candidate |
-| `AFN-DNA-STATISTICS-CARD-01` | statistics-card-01 | ADAPT | candidate |
-| `AFN-DNA-FORM-LAYOUT` | form-layout | ADAPT | candidate |
-| `AFN-DNA-DATATABLE` | datatable | ADAPT | candidate |
+| `AFN-DNA-APPLICATION-SHELL-01` | application-shell-01 | ADAPT | promoted |
+| `AFN-DNA-EMPTY-STATE-01` | empty-state-01 | ADAPT | staged |
+| `AFN-DNA-LOGIN-PAGE-CHROME` | login-page-03 | ADAPT (chrome) | staged |
+| `AFN-DNA-STATISTICS-CARD-01` | statistics-component-01 | ADAPT | promoted |
+| `AFN-DNA-FORM-LAYOUT` | form-layout-01 | ADAPT | promoted |
+| `AFN-DNA-DATATABLE` | datatable-component-04 | ADAPT | promoted |
 | `AFN-DNA-LANGUAGE-SWITCHER` | language-switcher | REJECT | rejected |
 | `AFN-DNA-SOCIAL-FOOTER` | social-footer | REJECT | rejected |
 | `AFN-DNA-THEMES` | @ss-themes/* | REJECT | rejected |

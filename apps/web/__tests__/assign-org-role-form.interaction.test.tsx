@@ -200,9 +200,11 @@ describe("AssignOrgRoleForm — member picker STABILITY", () => {
 			expect(screen.getByText("Role assigned")).toBeInTheDocument();
 		});
 		expect(form).toHaveAttribute("aria-busy", "false");
-		expect(
-			container.querySelector('input[type="hidden"][name="userId"]'),
-		).toHaveAttribute("value", "");
+		await waitFor(() => {
+			expect(
+				container.querySelector('input[type="hidden"][name="userId"]'),
+			).toHaveAttribute("value", "");
+		});
 		expect(screen.getByRole("button", { name: /assign role/i })).toBeDisabled();
 	});
 

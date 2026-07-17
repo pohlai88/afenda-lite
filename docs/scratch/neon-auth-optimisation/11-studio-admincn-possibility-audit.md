@@ -76,3 +76,4 @@ Env for Method A: `EMAIL` + `LICENSE_KEY` (and documented `SHADCN_STUDIO_*`) in 
 | 2026-07-17 | Initial P0 audit; land path `apps/web/shadcn-studio`; skills `shadcn-ui` + ui-compose Message/Auth recipes |
 | 2026-07-17 | Machine SSOT → `shadcn-ui/dna-ledger.json`; install registry deferred |
 | 2026-07-17 | Audit repair: landPath single-path, evidenceRef file-only; scope-map `studio-dna` |
+| 2026-07-17 | I3.4 cut B: promoted shell-01 · statistics · form-layout · datatable into portal-chrome / org-admin / barrel consume; DNA trees pruned; ledger `promoted` |

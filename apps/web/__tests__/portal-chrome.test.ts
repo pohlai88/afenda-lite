@@ -84,4 +84,16 @@ describe("portal-chrome (N16)", () => {
 		expect(layout).toContain("OperatorPlatformShell");
 		expect(layout).toContain('requireRole("operator")');
 	});
+
+	it("promotes shell-01 header DNA without locale/social/CDN chrome", () => {
+		const chrome = source(
+			"features/portal-chrome/operator-platform-chrome.tsx",
+		);
+		expect(chrome).toContain("Breadcrumb");
+		expect(chrome).toContain("SidebarTrigger");
+		expect(chrome).toContain("bg-surface-raised");
+		expect(chrome).not.toMatch(/LanguageDropdown|dropdown-language/i);
+		expect(chrome).not.toMatch(/FacebookIcon|cdn\.shadcnstudio/i);
+		expect(chrome).not.toMatch(/shadcn-studio/);
+	});
 });

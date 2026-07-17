@@ -41,6 +41,7 @@ const ASSIGNMENTS: OrgAssignmentRow[] = [
 	{
 		id: "asg_1",
 		userId: "user_neon_abc",
+		userLabel: "Ada · ada@example.com",
 		roleId: ROLES[0].id,
 		roleName: "Org Admin",
 		scopeType: "organization",
@@ -52,6 +53,14 @@ const AUDIT_ROWS: OrgAuditRow[] = [
 		id: "aud_1",
 		action: "role.assign",
 		targetType: "assignment",
+		targetId: "asg_1",
+		actorUserId: "user_neon_abc",
+		actorLabel: "Ada · ada@example.com",
+		roleId: ROLES[0].id,
+		reason: null,
+		createdAt: "2026-07-17T08:00:00.000Z",
+		oldValueJson: null,
+		newValueJson: '{\n  "roleId": "11111111-1111-4111-8111-111111111111"\n}',
 	},
 ];
 
@@ -98,14 +107,23 @@ beforeEach(() => {
 });
 
 describe("OrgAdminPanels — revoke + audit STABILITY", () => {
-	it("renders identifier cells with Code and mounts assign form", () => {
+	it("renders directory member labels and opens assign Sheet", async () => {
+		const user = userEvent.setup();
 		renderPanels();
 
-		expect(screen.getByTestId("assign-org-role-form")).toBeInTheDocument();
-		expect(screen.getByText("user_neon_abc")).toBeInTheDocument();
+		expect(
+			screen.getAllByText("Ada · ada@example.com").length,
+		).toBeGreaterThanOrEqual(1);
+		expect(
+			screen.getAllByText("user_neon_abc").length,
+		).toBeGreaterThanOrEqual(1);
 		expect(
 			screen.getByText("11111111-1111-4111-8111-111111111111"),
 		).toBeInTheDocument();
+
+		await user.click(screen.getByRole("button", { name: /^assign role$/i }));
+		expect(screen.getByTestId("assign-org-role-form")).toBeInTheDocument();
+		expect(screen.getByRole("dialog")).toBeInTheDocument();
 	});
 
 	it("opens audit View Dialog as read detail", async () => {
@@ -117,6 +135,11 @@ describe("OrgAdminPanels — revoke + audit STABILITY", () => {
 		const dialog = screen.getByRole("dialog");
 		expect(within(dialog).getByText("Audit event")).toBeInTheDocument();
 		expect(within(dialog).getByText("role.assign")).toBeInTheDocument();
+		expect(
+			within(dialog).getByText("Ada · ada@example.com"),
+		).toBeInTheDocument();
+		expect(within(dialog).getByText("asg_1")).toBeInTheDocument();
+		expect(within(dialog).getByText(/"roleId"/)).toBeInTheDocument();
 		expect(within(dialog).getByText("aud_1")).toBeInTheDocument();
 	});
 
@@ -139,6 +162,9 @@ describe("OrgAdminPanels — revoke + audit STABILITY", () => {
 		const dialog = screen.getByRole("alertdialog");
 		expect(
 			within(dialog).getByText("Revoke role assignment"),
+		).toBeInTheDocument();
+		expect(
+			within(dialog).getByText("Ada · ada@example.com"),
 		).toBeInTheDocument();
 		expect(within(dialog).getByText("asg_1")).toBeInTheDocument();
 

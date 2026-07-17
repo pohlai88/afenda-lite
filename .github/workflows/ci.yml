@@ -79,3 +79,61 @@ jobs:
 
       - name: Zero null organization_id on eight hard roots
         run: pnpm audit:tenancy-nulls
+
+  # GUIDE-018 I4 — standing Playwright @smoke gate (adverse matrix + factory).
+  # Main only: needs Neon Auth + factory hash-template secrets (not available to forks).
+  # E2E_REQUIRE_FACTORY=1 → missing factory env fails closed (skip is not PASS).
+  # Factory password: prefer E2E_FACTORY_PASSWORD; else PREVIEW_CLIENT_PASSWORD as
+  # hash-template plaintext only (never a Playwright login subject).
+  e2e-smoke:
+    name: E2E smoke (I4 standing gate)
+    needs: quality
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    timeout-minutes: 35
+    runs-on: ubuntu-latest
+    env:
+      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+      TURBO_TEAM: ${{ vars.TURBO_TEAM }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      NEON_AUTH_BASE_URL: ${{ secrets.NEON_AUTH_BASE_URL }}
+      NEON_AUTH_COOKIE_SECRET: ${{ secrets.NEON_AUTH_COOKIE_SECRET }}
+      APP_URL: ${{ secrets.APP_URL }}
+      # Prefer dedicated factory secret; else hash-template plaintext (never login subject).
+      E2E_FACTORY_PASSWORD: ${{ secrets.E2E_FACTORY_PASSWORD || secrets.PREVIEW_CLIENT_PASSWORD }}
+      E2E_FACTORY_HASH_TEMPLATE_EMAIL: ${{ secrets.PREVIEW_CLIENT_EMAIL }}
+      E2E_REQUIRE_FACTORY: "1"
+      CI: "true"
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: pnpm
+
+      - name: Fail closed if factory password missing
+        run: |
+          if [ -z "$E2E_FACTORY_PASSWORD" ]; then
+            echo "::error::I4 standing E2E gate BLOCKED — set Actions secret E2E_FACTORY_PASSWORD (preferred) or PREVIEW_CLIENT_PASSWORD (hash-template plaintext). Owner: Platform."
+            exit 1
+          fi
+          if [ -z "$DATABASE_URL" ] || [ -z "$NEON_AUTH_BASE_URL" ] || [ -z "$NEON_AUTH_COOKIE_SECRET" ] || [ -z "$APP_URL" ]; then
+            echo "::error::I4 standing E2E gate BLOCKED — missing DATABASE_URL / NEON_AUTH_* / APP_URL. Owner: Platform."
+            exit 1
+          fi
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build @afenda/web
+        run: pnpm exec turbo run build --filter=@afenda/web
+
+      - name: Install Playwright Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Playwright @smoke (I4 adverse matrix)
+        run: pnpm test:e2e:smoke

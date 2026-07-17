@@ -25,6 +25,12 @@ import {
 	DialogTitle,
 	FormError,
 	KeyValueList,
+	Sheet,
+	SheetContent,
+	SheetDescription,
+	SheetHeader,
+	SheetTitle,
+	SheetTrigger,
 	Spinner,
 	StatusBadge,
 } from "@afenda/ui-system";
@@ -41,7 +47,8 @@ import {
 
 /**
  * Org-admin panels — DataTable + CAPABLE assign/revoke (GUIDE-018 I3.1 ·
- * ADR-010). Audit View Dialog remains CAPABLE read detail.
+ * ADR-010 · I3.4 Sheet assign). Audit View Dialog projects full RBAC audit
+ * fields from Platform domain (actor, target, values, when).
  */
 export type OrgRoleRow = {
 	id: string;
@@ -53,6 +60,8 @@ export type OrgRoleRow = {
 export type OrgAssignmentRow = {
 	id: string;
 	userId: string;
+	/** Directory label (`name · email`) when known; else Neon `userId`. */
+	userLabel: string;
 	roleId: string;
 	roleName: string;
 	scopeType: string;
@@ -62,6 +71,16 @@ export type OrgAuditRow = {
 	id: string;
 	action: string;
 	targetType: string | null;
+	targetId: string | null;
+	actorUserId: string;
+	/** Directory label when known; else Neon `actorUserId`. */
+	actorLabel: string;
+	roleId: string | null;
+	reason: string | null;
+	/** ISO-8601 from domain `createdAt`. */
+	createdAt: string;
+	oldValueJson: string | null;
+	newValueJson: string | null;
 };
 
 type OrgAdminPanelsProps = {
@@ -95,22 +114,72 @@ const roleColumns: DataTableColumn<OrgRoleRow>[] = [
 	},
 ];
 
+function AssignmentUserCell({
+	userId,
+	userLabel,
+}: {
+	userId: string;
+	userLabel: string;
+}) {
+	if (userLabel === userId) {
+		return <Code>{userId}</Code>;
+	}
+	return (
+		<span className="flex flex-col gap-0.5">
+			<span className="text-sm text-foreground">{userLabel}</span>
+			<Code className="text-xs text-foreground-secondary">{userId}</Code>
+		</span>
+	);
+}
+
+function auditDetailValue(value: string | null | undefined): string {
+	if (value == null || value.trim().length === 0) {
+		return "—";
+	}
+	return value;
+}
+
+function formatAuditWhen(iso: string): string {
+	const parsed = Date.parse(iso);
+	if (Number.isNaN(parsed)) {
+		return iso;
+	}
+	return new Date(parsed).toLocaleString();
+}
+
 const assignmentColumns: DataTableColumn<OrgAssignmentRow>[] = [
 	{
-		key: "userId",
+		key: "userLabel",
 		title: "User",
-		render: (value) => <Code>{String(value)}</Code>,
+		sortable: true,
+		render: (_value, row) => (
+			<AssignmentUserCell userId={row.userId} userLabel={row.userLabel} />
+		),
 	},
 	{ key: "roleName", title: "Role", sortable: true },
 	{ key: "scopeType", title: "Scope" },
 ];
 
 const auditColumns: DataTableColumn<OrgAuditRow>[] = [
-	{ key: "action", title: "Action" },
+	{ key: "action", title: "Action", sortable: true },
+	{
+		key: "actorLabel",
+		title: "Actor",
+		sortable: true,
+		render: (_value, row) => (
+			<AssignmentUserCell userId={row.actorUserId} userLabel={row.actorLabel} />
+		),
+	},
 	{
 		key: "targetType",
 		title: "Target",
 		render: (value) => (value ? String(value) : "—"),
+	},
+	{
+		key: "createdAt",
+		title: "When",
+		sortable: true,
+		render: (value) => formatAuditWhen(String(value)),
 	},
 ];
 
@@ -164,7 +233,12 @@ function RevokeAssignmentDialog({
 							items={[
 								{
 									label: "User",
-									value: <Code>{assignment.userId}</Code>,
+									value:
+										assignment.userLabel === assignment.userId ? (
+											<Code>{assignment.userId}</Code>
+										) : (
+											assignment.userLabel
+										),
 								},
 								{ label: "Role", value: assignment.roleName },
 								{
@@ -210,6 +284,7 @@ export function OrgAdminPanels({
 	const [revokeTarget, setRevokeTarget] = useState<OrgAssignmentRow | null>(
 		null,
 	);
+	const [assignOpen, setAssignOpen] = useState(false);
 
 	const sortedRoles = useMemo(() => {
 		const next = [...roles];
@@ -251,35 +326,51 @@ export function OrgAdminPanels({
 						}}
 						emptyTitle="No assignable roles"
 						emptyDescription="System templates or org-scoped roles appear here when seeded."
-						density="comfortable"
+						density="compact"
 					/>
 				</CardContent>
 			</Card>
 
 			<Card>
-				<CardHeader>
-					<CardTitle>Role assignments</CardTitle>
-					<CardDescription>
-						Active assignments for this organization ({assignments.length}).
-					</CardDescription>
-				</CardHeader>
-				<CardContent className="flex flex-col gap-(--section-gap)">
-					<div className="flex flex-col gap-(--field-gap)">
-						<h3 className="text-sm font-medium text-foreground-secondary">
-							Assign role
-						</h3>
-						<AssignOrgRoleForm
-							roles={assignableRoleOptions}
-							memberDirectory={memberDirectory}
-						/>
+				<CardHeader className="flex flex-row items-start justify-between gap-(--field-gap)">
+					<div className="flex flex-col gap-1.5">
+						<CardTitle>Role assignments</CardTitle>
+						<CardDescription>
+							Active assignments for this organization ({assignments.length}).
+						</CardDescription>
 					</div>
+					<Sheet open={assignOpen} onOpenChange={setAssignOpen}>
+						<SheetTrigger asChild>
+							<Button type="button">Assign role</Button>
+						</SheetTrigger>
+						<SheetContent
+							side="right"
+							className="flex w-full flex-col gap-(--section-gap) sm:max-w-md"
+						>
+							<SheetHeader>
+								<SheetTitle>Assign role</SheetTitle>
+								<SheetDescription>
+									Bind a platform role to an organization member. Soft-revoke
+									keeps audit history.
+								</SheetDescription>
+							</SheetHeader>
+							<div className="flex flex-1 flex-col gap-(--field-gap) overflow-y-auto px-4 pb-4">
+								<AssignOrgRoleForm
+									roles={assignableRoleOptions}
+									memberDirectory={memberDirectory}
+								/>
+							</div>
+						</SheetContent>
+					</Sheet>
+				</CardHeader>
+				<CardContent>
 					<DataTable
 						columns={assignmentColumns}
 						data={assignments}
 						getRowId={(row) => row.id}
 						emptyTitle="No role assignments yet"
 						emptyDescription="Assign a platform role to an organization member."
-						density="comfortable"
+						density="compact"
 						rowActions={(row) => (
 							<Button
 								type="button"
@@ -311,7 +402,7 @@ export function OrgAdminPanels({
 						getRowId={(row) => row.id}
 						emptyTitle="No audit rows yet"
 						emptyDescription="Invites and role changes write audit entries here."
-						density="comfortable"
+						density="compact"
 						rowActions={(row) => (
 							<Button
 								type="button"
@@ -344,8 +435,61 @@ export function OrgAdminPanels({
 									items={[
 										{ label: "Action", value: selectedAudit.action },
 										{
-											label: "Target",
-											value: selectedAudit.targetType ?? "—",
+											label: "Actor",
+											value: (
+												<AssignmentUserCell
+													userId={selectedAudit.actorUserId}
+													userLabel={selectedAudit.actorLabel}
+												/>
+											),
+										},
+										{
+											label: "Target type",
+											value: auditDetailValue(selectedAudit.targetType),
+										},
+										{
+											label: "Target ID",
+											value: selectedAudit.targetId ? (
+												<Code>{selectedAudit.targetId}</Code>
+											) : (
+												"—"
+											),
+										},
+										{
+											label: "Role ID",
+											value: selectedAudit.roleId ? (
+												<Code>{selectedAudit.roleId}</Code>
+											) : (
+												"—"
+											),
+										},
+										{
+											label: "Reason",
+											value: auditDetailValue(selectedAudit.reason),
+										},
+										{
+											label: "When",
+											value: formatAuditWhen(selectedAudit.createdAt),
+										},
+										{
+											label: "Previous value",
+											value: selectedAudit.oldValueJson ? (
+												<Code className="whitespace-pre-wrap text-xs">
+													{selectedAudit.oldValueJson}
+												</Code>
+											) : (
+												"—"
+											),
+										},
+										{
+											label: "New value",
+											value: selectedAudit.newValueJson ? (
+												<Code className="whitespace-pre-wrap text-xs">
+													{selectedAudit.newValueJson}
+												</Code>
+											) : (
+												"—"
+											),
 										},
 										{
 											label: "Event ID",

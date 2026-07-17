@@ -297,4 +297,73 @@ describe.skipIf(!hasDatabase)("declaration submit/read two-org (N17)", () => {
 			stepIndex: 0,
 		});
 	});
+
+	it("concurrent double-submit race yields one confirmation (I4 A10)", async () => {
+		const actorId = randomUUID();
+		const surveyQuestionId = randomUUID();
+		const [survey] = await db
+			.insert(surveys)
+			.values({
+				slug: `n17-race-${runId}`,
+				title: "N17 race survey",
+				question: "Race?",
+				userId: actorId,
+				organizationId: orgA,
+				categories: [],
+			})
+			.returning({ id: surveys.id });
+		if (!survey) {
+			throw new Error("survey insert failed");
+		}
+		surveyIds.push(survey.id);
+
+		const [assignment] = await db
+			.insert(clientAssignments)
+			.values({
+				surveyId: survey.id,
+				clientEmail,
+				assignedBy: actorId,
+				organizationId: orgA,
+				status: "pending",
+			})
+			.returning({ id: clientAssignments.id });
+		if (!assignment) {
+			throw new Error("assignment insert failed");
+		}
+		assignmentIds.push(assignment.id);
+
+		const saved = await saveClientDeclarationDraft({
+			orgId: orgA,
+			clientEmail,
+			draft: {
+				assignmentId: assignment.id,
+				answers: { [surveyQuestionId]: "Concurrent finalize" },
+				stepIndex: 0,
+			},
+		});
+		expect(saved.ok).toBe(true);
+
+		const [first, second] = await Promise.all([
+			submitClientDeclaration({
+				orgId: orgA,
+				clientEmail,
+				assignmentId: assignment.id,
+			}),
+			submitClientDeclaration({
+				orgId: orgA,
+				clientEmail,
+				assignmentId: assignment.id,
+			}),
+		]);
+
+		expect(first.ok).toBe(true);
+		expect(second.ok).toBe(true);
+		if (!first.ok || !second.ok) {
+			return;
+		}
+		expect(first.data.confirmationCode).toBe(second.data.confirmationCode);
+		expect(first.data.status).toBe("submitted");
+		expect(second.data.status).toBe("submitted");
+		expect(first.data.idempotent || second.data.idempotent).toBe(true);
+	});
 });
