@@ -211,4 +211,16 @@ describe("N14 denial surface evidence pins", () => {
 		expect(requirePermission).toContain("AUTH_FORBIDDEN_PATH");
 		expect(requirePermission).toContain("redirect");
 	});
+
+	it("keeps Playwright workerTenant empty-pattern so playwright-base loads", () => {
+		const playwrightBase = readFileSync(
+			path.join(webRoot, "../../testing/e2e/playwright-base.ts"),
+			"utf8",
+		);
+		expect(playwrightBase).toContain(
+			"biome-ignore lint/correctness/noEmptyPattern: Playwright worker fixture API",
+		);
+		expect(playwrightBase).toContain("async ({}, use, workerInfo)");
+		expect(playwrightBase).not.toContain("async (_fixtures, use, workerInfo)");
+	});
 });
