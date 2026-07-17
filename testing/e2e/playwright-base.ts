@@ -19,9 +19,7 @@ type WorkerFixtures = {
 
 export const test = base.extend<object, WorkerFixtures>({
 	workerTenant: [
-		// Playwright requires object-destructuring for the first fixture arg.
-		// biome-ignore lint/correctness/noEmptyPattern: Playwright worker fixture API
-		async ({}, use, workerInfo) => {
+		async (_fixtures, use, workerInfo) => {
 			if (!isFactoryEnvReady()) {
 				await use(null);
 				return;
