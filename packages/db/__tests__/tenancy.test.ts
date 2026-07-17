@@ -8,7 +8,7 @@ import {
 } from "../src/hard-tenant-roots";
 import { surveys } from "../src/schema/declarations";
 import { fftEvent } from "../src/schema/fft";
-import { platformRole } from "../src/schema/platform";
+import { platformRole, platformRbacAudit } from "../src/schema/platform";
 
 describe("@afenda/db hard tenant roots (N9 / ARCH-023)", () => {
 	it("lists exactly eight hard tenant root table names", () => {
@@ -46,6 +46,12 @@ describe("@afenda/db hard tenant roots (N9 / ARCH-023)", () => {
 		expect(getTableColumns(platformRole).organizationId.name).toBe(
 			"organization_id",
 		);
+	});
+
+	it("requires organization_id and actor_user_id on platform_rbac_audit (N12)", () => {
+		const columns = getTableColumns(platformRbacAudit);
+		expect(columns.organizationId.notNull).toBe(true);
+		expect(columns.actorUserId.notNull).toBe(true);
 	});
 });
 

@@ -1,0 +1,36 @@
+N:afenda-elite-react-composition
+D:Afenda-scoped React component API and state-composition practices. Wraps vendor vercel-composition-patterns as reference-only. Use when shaping a component public API or state architecture (boolean modes; variants; compound components; providers; context contracts; children over render props; React 19 ref/use where version allows). Not for product styling; runtime performance; or App Router policy. Load vendor rules/<id>.md by id after applying the O override matrix.
+G:react composition compound provider context variants boolean-props state actions meta afenda barrel
+A[6]:
+  1,ADR-010 · ARCH-024 · tokens.css · approved architecture
+  2,afenda-elite-ui-compose (which component / UI-CAP capability)
+  3,afenda-elite-nextjs-best-practice
+  4,afenda-elite-react-composition (this)
+  5,afenda-elite-react-best-practices
+  6,vercel-composition-patterns (reference)
+U[4]:
+  Shaping a component public API (variants vs boolean modes)
+  Compound components + shared context contract
+  Lifting state into providers with state/actions/meta
+  children vs render props for a reusable structure
+S[6]{n,action}:
+  1,Confirm task is component API/state shape else route-out (ui-compose / react-best-practices / nextjs)
+  2,If product chrome — get primitive + UI-CAP capability from afenda-elite-ui-compose first
+  3,Apply O overrides — drop/narrow reject|route-out|defer ids
+  4,Load only vendor rules/<id>.md needed (never invent ids)
+  5,Prefer explicit variants + providers over boolean modes; keep state dependency-injected
+  6,Preserve @afenda/ui-system barrel · tokens · QUALITY ORDER — no parallel design system
+O[4]{id,stance,rule}:
+  product-chrome-component-choice,route-out,Which primitive + visual capability come from afenda-elite-ui-compose (UI-CAP-*); this skill only shapes the API
+  boolean-mode-product-shells,reject,No boolean-mode mega-components that violate ui-compose QUALITY ORDER; split into explicit variants
+  react19-no-forwardref,defer-to-version,Apply ref-as-prop/use() only when repo React version supports React 19; else keep compatible form
+  parallel-tokens-handrolled-chrome,reject,Never introduce local tokens or handrolled chrome to satisfy composition; consume @afenda/ui-system (ADR-010)
+V[8]:
+  architecture-avoid-boolean-props
+  architecture-compound-components
+  state-context-interface
+  state-decouple-implementation
+  state-lift-state
+  patterns-explicit-variants
+  patterns-children-over-render-props
+  react19-no-forwardref

@@ -4,12 +4,9 @@ import { requireRole } from "@afenda/auth";
 import { revalidatePath } from "next/cache";
 
 import { forbidUnlessPermission } from "@/app/actions/permission-gate";
-import { assignOrgRole } from "@/modules/identity/domain/assign-org-role";
+import { assignOrgRoleWithAudit } from "@/modules/identity/domain/assign-org-role-audited";
+import { getOrganizationUser } from "@/modules/identity/domain/organization-users";
 import { assignOrgRoleCommandSchema } from "@/modules/identity/schemas/assign-org-role";
-import {
-	ROLE_ASSIGN_AUDIT_ACTION,
-	recordRbacAudit,
-} from "@/modules/platform/domain/record-rbac-audit";
 import {
 	type ActionResult,
 	actionFail,
@@ -31,8 +28,9 @@ export type AssignOrgRoleActionState =
 
 /**
  * Operator assign adapter — coarse `requireRole('operator')` + Tier-2
- * `org.roles.manage` via `hasPermission`, Identity `assignOrgRole` hard-tenancy
- * write, then Platform `recordRbacAudit` (ARCH-023 · GUIDE-018 I3.1).
+ * `org.roles.manage` via `hasPermission`, current-org membership check,
+ * then Identity `assignOrgRoleWithAudit` (mutation + org-scoped audit in
+ * one Neon HTTP transaction — ARCH-023 · ARCH-025 · GUIDE-018 I3.1 · N12).
  */
 export async function assignOrgRoleAction(
 	_prev: AssignOrgRoleActionState,
@@ -47,7 +45,7 @@ export async function assignOrgRoleAction(
 	if (!parsed.success) {
 		return actionFail(
 			"VALIDATION_ERROR",
-			"Enter a valid user id and role.",
+			"Select a valid organization member and role.",
 			parsed.details,
 		);
 	}
@@ -60,13 +58,31 @@ export async function assignOrgRoleAction(
 		return permissionDenied;
 	}
 
-	let result: Awaited<ReturnType<typeof assignOrgRole>>;
+	let member: Awaited<ReturnType<typeof getOrganizationUser>>;
 	try {
-		result = await assignOrgRole({
+		member = await getOrganizationUser(session.orgId, parsed.data.userId);
+	} catch {
+		return actionFail(
+			"INTERNAL_ERROR",
+			"Could not verify organization membership. Try again or contact an admin.",
+		);
+	}
+
+	if (!member) {
+		return actionFail(
+			"NOT_FOUND",
+			"That user is not an active member of this organization.",
+		);
+	}
+
+	let result: Awaited<ReturnType<typeof assignOrgRoleWithAudit>>;
+	try {
+		result = await assignOrgRoleWithAudit({
 			orgId: session.orgId,
-			userId: parsed.data.userId,
+			userId: member.userId,
 			roleId: parsed.data.roleId,
 			grantedBy: session.userId,
+			actorUserId: session.userId,
 		});
 	} catch {
 		return actionFail(
@@ -79,30 +95,6 @@ export async function assignOrgRoleAction(
 		return actionFail(result.code, result.message);
 	}
 
-	let auditId: string;
-	try {
-		const audit = await recordRbacAudit({
-			orgId: session.orgId,
-			action: ROLE_ASSIGN_AUDIT_ACTION,
-			actorUserId: session.userId,
-			targetType: "role_assignment",
-			targetId: result.assignment.id,
-			roleId: result.assignment.roleId,
-			newValue: {
-				userId: result.assignment.userId,
-				roleId: result.assignment.roleId,
-				scopeType: result.assignment.scopeType,
-				reactivated: result.reactivated,
-			},
-		});
-		auditId = audit.id;
-	} catch {
-		return actionFail(
-			"INTERNAL_ERROR",
-			"Role was assigned but the org-scoped audit write failed. Contact an admin.",
-		);
-	}
-
 	revalidatePath("/admin");
 
 	return actionOk({
@@ -110,6 +102,6 @@ export async function assignOrgRoleAction(
 		userId: result.assignment.userId,
 		roleId: result.assignment.roleId,
 		reactivated: result.reactivated,
-		auditId,
+		auditId: result.auditId,
 	});
 }

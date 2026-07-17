@@ -130,6 +130,9 @@ Reference these guidelines when:
 
 ## How to Use
 
+**Compact machine index (llmx):** `SKILL.toon` — N/D/G/U/S + `R[69]` rule table.
+Prefer that + selected `rules/<id>.md` over loading `AGENTS.md`.
+
 Read individual rule files for detailed explanations and code examples:
 
 ```
@@ -142,6 +145,9 @@ Each rule file contains:
 - Incorrect code example with explanation
 - Correct code example with explanation
 - Additional context and references
+
+**Route-outs:** composition / boolean props → `vercel-composition-patterns`.
+Afenda product UI → `afenda-elite-ui-compose` + ADR-010.
 
 ## Full Compiled Document
 

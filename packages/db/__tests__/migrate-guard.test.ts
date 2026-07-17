@@ -1,4 +1,5 @@
 import { spawnSync } from "node:child_process";
+import { readdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -6,6 +7,7 @@ import { describe, expect, it } from "vitest";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const guard = join(root, "scripts/db-migrate-guard.mjs");
+const drizzleDir = join(root, "drizzle");
 const poolerUrl =
 	"postgresql://u:p@ep-example-pooler.c-2.ap-southeast-1.aws.neon.tech/neondb";
 
@@ -27,26 +29,24 @@ describe("db-migrate-guard", () => {
 		expect(`${result.stderr}${result.stdout}`).toMatch(/DENIED/);
 	});
 
-	it("denies sole-0000 baseline even with override", () => {
-		const result = runGuard({
-			AFENDA_ALLOW_DB_MIGRATE: "1",
-			DATABASE_URL: poolerUrl,
-		});
-		expect(result.status).toBe(1);
-		expect(`${result.stderr}${result.stdout}`).toMatch(
-			/0000_living-roots-baseline/,
-		);
+	it("has forward migrations beyond sole 0000 baseline (N12)", () => {
+		const sqlFiles = readdirSync(drizzleDir).filter((f) => f.endsWith(".sql"));
+		expect(sqlFiles).toContain("0000_living-roots-baseline.sql");
+		expect(sqlFiles.some((f) => f.startsWith("0001_"))).toBe(true);
+		expect(sqlFiles.length).toBeGreaterThan(1);
 	});
 
-	it("denies missing DATABASE_URL after override when not sole-baseline", () => {
-		// With only baseline on disk, sole-baseline fires first — still non-zero
-		// and never reaches drizzle-kit. Assert non-zero + no drizzle apply marker.
+	it("denies missing DATABASE_URL after override when forward migrations exist", () => {
 		const result = runGuard({
 			AFENDA_ALLOW_DB_MIGRATE: "1",
 			DATABASE_URL: "",
 		});
 		expect(result.status).toBe(1);
 		const combined = `${result.stderr}${result.stdout}`;
+		expect(combined).toMatch(/DATABASE_URL/);
 		expect(combined).not.toMatch(/Applying migrations/i);
+		expect(combined).not.toMatch(
+			/The only migration is 0000_living-roots-baseline/,
+		);
 	});
 });

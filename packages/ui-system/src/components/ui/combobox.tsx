@@ -30,6 +30,8 @@ type ComboboxBaseProps = {
 	className?: string;
 	id?: string;
 	name?: string;
+	"aria-label"?: string;
+	"aria-labelledby"?: string;
 	"aria-invalid"?: boolean | "true" | "false";
 	"aria-describedby"?: string;
 };
@@ -58,6 +60,8 @@ function Combobox(props: ComboboxProps) {
 		className,
 		id,
 		name,
+		"aria-label": ariaLabel,
+		"aria-labelledby": ariaLabelledBy,
 		"aria-invalid": ariaInvalid,
 		"aria-describedby": ariaDescribedBy,
 	} = props;
@@ -105,6 +109,10 @@ function Combobox(props: ComboboxProps) {
 			: placeholder
 		: (selectedOptions[0]?.label ?? placeholder);
 
+	const hasExplicitAccessibleName =
+		(typeof ariaLabel === "string" && ariaLabel.trim().length > 0) ||
+		(typeof ariaLabelledBy === "string" && ariaLabelledBy.trim().length > 0);
+
 	return (
 		<Popover open={open} onOpenChange={setOpen}>
 			{name ? (
@@ -121,7 +129,16 @@ function Combobox(props: ComboboxProps) {
 					type="button"
 					variant="outline"
 					role="combobox"
-					aria-label={triggerLabel}
+					aria-label={
+						hasExplicitAccessibleName
+							? ariaLabel?.trim() || undefined
+							: triggerLabel
+					}
+					aria-labelledby={
+						hasExplicitAccessibleName
+							? ariaLabelledBy?.trim() || undefined
+							: undefined
+					}
 					aria-expanded={open}
 					aria-haspopup="listbox"
 					aria-multiselectable={multiple || undefined}

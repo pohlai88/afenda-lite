@@ -69,11 +69,19 @@ export async function loadDeclarationDraftAction(
 		);
 	}
 
-	const draft = await getClientDeclarationDraft({
-		orgId: apiSession.orgId,
-		clientEmail: apiSession.email,
-		assignmentId: parsed.data.assignmentId,
-	});
+	let draft: Awaited<ReturnType<typeof getClientDeclarationDraft>>;
+	try {
+		draft = await getClientDeclarationDraft({
+			orgId: apiSession.orgId,
+			clientEmail: apiSession.email,
+			assignmentId: parsed.data.assignmentId,
+		});
+	} catch {
+		return actionFail(
+			"INTERNAL_ERROR",
+			"Declaration draft could not be loaded. Try again or contact an admin.",
+		);
+	}
 	if (!draft) {
 		return actionFail("NOT_FOUND", "Declaration draft was not found.");
 	}
@@ -132,11 +140,19 @@ export async function saveDeclarationDraftAction(
 		);
 	}
 
-	const saved = await saveClientDeclarationDraft({
-		orgId: apiSession.orgId,
-		clientEmail: apiSession.email,
-		draft: parsed.data,
-	});
+	let saved: Awaited<ReturnType<typeof saveClientDeclarationDraft>>;
+	try {
+		saved = await saveClientDeclarationDraft({
+			orgId: apiSession.orgId,
+			clientEmail: apiSession.email,
+			draft: parsed.data,
+		});
+	} catch {
+		return actionFail(
+			"INTERNAL_ERROR",
+			"Declaration draft could not be saved. Try again or contact an admin.",
+		);
+	}
 	if (!saved) {
 		return actionFail("NOT_FOUND", "Declaration draft was not found.");
 	}

@@ -66,6 +66,11 @@ export default defineConfig({
 			},
 			{
 				plugins: [react()],
+				resolve: {
+					alias: {
+						"@": path.join(repoRoot, "apps/web"),
+					},
+				},
 				test: {
 					name: "interaction",
 					root: repoRoot,

@@ -165,6 +165,22 @@ describe("@afenda/ui-system — axe a11y suite", () => {
 		await expectNoA11yViolations(container);
 	});
 
+	it("Combobox with stable aria-label has no serious violations", async () => {
+		const { container } = render(
+			<Combobox
+				options={[
+					{ value: "a", label: "Alpha" },
+					{ value: "b", label: "Beta" },
+				]}
+				value="a"
+				onValueChange={() => undefined}
+				placeholder="Pick one"
+				aria-label="Organization member"
+			/>,
+		);
+		await expectNoA11yViolations(container);
+	});
+
 	it("DatePicker closed tree has no serious violations", async () => {
 		const { container } = render(
 			<DatePicker placeholder="Pick a date" onChange={() => undefined} />,

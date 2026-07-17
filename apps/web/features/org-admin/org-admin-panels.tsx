@@ -36,7 +36,10 @@ import {
 	type RevokeOrgRoleActionState,
 	revokeOrgRoleAction,
 } from "@/app/actions/revoke-org-role";
-import { AssignOrgRoleForm } from "@/features/org-admin/assign-org-role-form";
+import {
+	AssignOrgRoleForm,
+	type MemberDirectoryState,
+} from "@/features/org-admin/assign-org-role-form";
 
 /**
  * Org-admin panels — DataTable + CAPABLE assign/revoke (GUIDE-018 I3.1 ·
@@ -67,6 +70,7 @@ type OrgAdminPanelsProps = {
 	roles: OrgRoleRow[];
 	assignments: OrgAssignmentRow[];
 	auditRows: OrgAuditRow[];
+	memberDirectory: MemberDirectoryState;
 };
 
 const roleColumns: DataTableColumn<OrgRoleRow>[] = [
@@ -204,6 +208,7 @@ export function OrgAdminPanels({
 	roles,
 	assignments,
 	auditRows,
+	memberDirectory,
 }: OrgAdminPanelsProps) {
 	const [sortBy, setSortBy] = useState<keyof OrgRoleRow>("name");
 	const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
@@ -267,14 +272,17 @@ export function OrgAdminPanels({
 				<CardContent className="space-y-6">
 					<div className="space-y-3">
 						<h3 className="text-sm font-medium tracking-tight">Assign role</h3>
-						<AssignOrgRoleForm roles={assignableRoleOptions} />
+						<AssignOrgRoleForm
+							roles={assignableRoleOptions}
+							memberDirectory={memberDirectory}
+						/>
 					</div>
 					<DataTable
 						columns={assignmentColumns}
 						data={assignments}
 						getRowId={(row) => row.id}
 						emptyTitle="No role assignments yet"
-						emptyDescription="Assign a platform role to a Neon Auth user id."
+						emptyDescription="Assign a platform role to an organization member."
 						density="comfortable"
 						rowActions={(row) => (
 							<Button

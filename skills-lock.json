@@ -1,11 +1,23 @@
 {
-	"version": 1,
-	"skills": {
-		"neon": {
-			"source": "neondatabase/agent-skills",
-			"sourceType": "github",
-			"skillPath": "skills/neon/SKILL.md",
-			"computedHash": "1159ab3e02a317e45a6cf0a42c0138b173ead24921b2712b5ef8c90a7a5ef89d"
-		}
-	}
+  "version": 1,
+  "skills": {
+    "diataxis-gen-readme": {
+      "source": "trogonstack/agentskills",
+      "sourceType": "github",
+      "skillPath": "plugins/trogonstack-diataxis/skills/diataxis-gen-readme/SKILL.md",
+      "computedHash": "32a401c93db491073dcbb92e24827c0be789a058e67368954d65567eaf92109c"
+    },
+    "indexion-readme": {
+      "source": "trkbt10/indexion-skills",
+      "sourceType": "github",
+      "skillPath": "skills/indexion-readme/SKILL.md",
+      "computedHash": "a45ec68296705a05d11b55485a1bfef0d1b768222cd677660e18d9e5fd7e56c0"
+    },
+    "neon": {
+      "source": "neondatabase/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/neon/SKILL.md",
+      "computedHash": "1159ab3e02a317e45a6cf0a42c0138b173ead24921b2712b5ef8c90a7a5ef89d"
+    }
+  }
 }

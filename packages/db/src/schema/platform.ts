@@ -5,6 +5,7 @@
  * Column types reconciled from live branch `br-tiny-hill-ao82jp6f` (2026-07-14).
  * `organization_id` is `text` (Neon Auth org ids), not uuid.
  */
+import { sql } from "drizzle-orm";
 import {
 	boolean,
 	jsonb,
@@ -12,6 +13,7 @@ import {
 	primaryKey,
 	text,
 	timestamp,
+	uniqueIndex,
 	uuid,
 } from "drizzle-orm/pg-core";
 
@@ -44,22 +46,31 @@ export const platformRole = pgTable("platform_role", {
 		.defaultNow(),
 });
 
-export const platformRoleAssignment = pgTable("platform_role_assignment", {
-	id: uuid("id").primaryKey().defaultRandom(),
-	userId: text("user_id").notNull(),
-	organizationId: text("organization_id").notNull(),
-	roleId: uuid("role_id").notNull(),
-	scopeType: text("scope_type").notNull(),
-	scopeId: text("scope_id"),
-	active: boolean("active").notNull().default(true),
-	grantedBy: text("granted_by"),
-	createdAt: timestamp("created_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-	updatedAt: timestamp("updated_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-});
+export const platformRoleAssignment = pgTable(
+	"platform_role_assignment",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		userId: text("user_id").notNull(),
+		organizationId: text("organization_id").notNull(),
+		roleId: uuid("role_id").notNull(),
+		scopeType: text("scope_type").notNull(),
+		scopeId: text("scope_id"),
+		active: boolean("active").notNull().default(true),
+		grantedBy: text("granted_by"),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		/** N12 Path-to-100%: one active assignment per natural key (soft-revoke OK). */
+		uniqueIndex("platform_role_assignment_active_natural_key_uidx")
+			.on(t.userId, t.organizationId, t.roleId, t.scopeType, t.scopeId)
+			.where(sql`${t.active} = true`),
+	],
+);
 
 export const platformRolePermission = pgTable(
 	"platform_role_permission",
@@ -77,8 +88,10 @@ export const platformRolePermission = pgTable(
 export const platformRbacAudit = pgTable("platform_rbac_audit", {
 	id: uuid("id").primaryKey().defaultRandom(),
 	action: text("action").notNull(),
-	actorUserId: text("actor_user_id"),
-	organizationId: text("organization_id"),
+	/** Required — writer stamps session user (ARCH-023 · GUIDE-017 · N12). */
+	actorUserId: text("actor_user_id").notNull(),
+	/** Required — writer stamps session org; hard tenancy predicate (ARCH-023 · N12). */
+	organizationId: text("organization_id").notNull(),
 	targetType: text("target_type"),
 	targetId: text("target_id"),
 	roleId: uuid("role_id"),

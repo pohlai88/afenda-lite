@@ -30,7 +30,7 @@ page.tsx (thin RSC)
 | Heavy charts / widgets | `next/dynamic` client leaves (`bundle-dynamic-imports`) |
 | Studio MCP install | Temporary scratch cwd — promote into `features/` / `portal-views/`; never keep `shadcn-studio/` nesting |
 
-**Do not** dump module UI into a root `components/` recycling bin. **Avoid barrel imports** that pull entire UI kits (`bundle-barrel-imports`).
+**Do not** dump module UI into a root `components/` recycling bin. Avoid **third-party mega-barrels** (`lucide-react`, large UI kits — `bundle-barrel-imports`); product UI still imports from `@afenda/ui-system` (ADR-010 — see `afenda-elite-react-best-practices`).
 
 ---
 

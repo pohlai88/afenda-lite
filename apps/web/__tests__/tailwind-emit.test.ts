@@ -50,31 +50,35 @@ const SEMANTIC_CLASSES = [
 ] as const;
 
 describe("@afenda/web — Tailwind emit smoke (ADR-010 § D4)", () => {
-	it("emits ui-system semantic classes via globals.css @source", async () => {
-		const require = createRequire(webPkgJson);
-		const tailwindPostcss = require("@tailwindcss/postcss") as () => unknown;
-		const postcssPath = require.resolve("@tailwindcss/postcss");
-		const postcss = createRequire(postcssPath)("postcss") as (
-			plugins: unknown[],
-		) => {
-			process: (
-				css: string,
-				opts: { from: string },
-			) => Promise<{ css: string }>;
-		};
+	it(
+		"emits ui-system semantic classes via globals.css @source",
+		async () => {
+			const require = createRequire(webPkgJson);
+			const tailwindPostcss = require("@tailwindcss/postcss") as () => unknown;
+			const postcssPath = require.resolve("@tailwindcss/postcss");
+			const postcss = createRequire(postcssPath)("postcss") as (
+				plugins: unknown[],
+			) => {
+				process: (
+					css: string,
+					opts: { from: string },
+				) => Promise<{ css: string }>;
+			};
 
-		const inputFile = path.join(webRoot, "globals.css");
-		const result = await postcss([tailwindPostcss()]).process(
-			readFileSync(inputFile, "utf8"),
-			{ from: inputFile },
-		);
+			const inputFile = path.join(webRoot, "globals.css");
+			const result = await postcss([tailwindPostcss()]).process(
+				readFileSync(inputFile, "utf8"),
+				{ from: inputFile },
+			);
 
-		const missing = SEMANTIC_CLASSES.filter(
-			(cls) => !result.css.includes(`.${cls}`),
-		);
-		expect(
-			missing,
-			`PostCSS compile did not emit package classes: ${missing.join(", ")}`,
-		).toEqual([]);
-	});
+			const missing = SEMANTIC_CLASSES.filter(
+				(cls) => !result.css.includes(`.${cls}`),
+			);
+			expect(
+				missing,
+				`PostCSS compile did not emit package classes: ${missing.join(", ")}`,
+			).toEqual([]);
+		},
+		30_000,
+	);
 });

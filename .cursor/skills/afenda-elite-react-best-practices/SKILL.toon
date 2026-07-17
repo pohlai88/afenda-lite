@@ -1,0 +1,29 @@
+N:afenda-elite-react-best-practices
+D:Afenda-scoped React runtime and performance practices. Wraps vendor vercel-react-best-practices as reference-only. Use when profiling or refactoring React/Next.js runtime performance in this repo. Not for product UI styling; component API architecture; or App Router/cache policy. Load vendor rules/<id>.md by id after applying the O override matrix below.
+G:react nextjs performance waterfall bundle rerender serialization hydration afenda barrel tenancy
+A[6]:
+  1,ADR-010 · ARCH-024 · tokens.css · approved architecture
+  2,afenda-elite-ui-compose
+  3,afenda-elite-nextjs-best-practice
+  4,afenda-elite-react-composition
+  5,afenda-elite-react-best-practices (this)
+  6,vercel-react-best-practices (reference)
+U[4]:
+  React runtime performance review or refactor with evidence
+  Bundle or load-time cost against a measured contribution
+  Rerender / serialization / hydration cost with profiler or network evidence
+  Automated pass against vendor rule ids under Afenda overrides
+S[6]{n,action}:
+  1,Confirm task is runtime/perf else route-out (ui-compose / react-composition / nextjs)
+  2,Match category by impact async>bundle>server>client>rerender>rendering>js>advanced
+  3,Apply O overrides — drop/narrow reject|override|defer|route-out ids
+  4,Load only vendor rules/<id>.md needed (never invent ids; avoid AGENTS.md dump)
+  5,Require evidence before rewrite (bundle|profiler|rerender|waterfall|matching high-impact smell)
+  6,Preserve @afenda/ui-system barrel · Neon Auth · ARCH-023 · Next.js ownership
+O[5]{id,stance,rule}:
+  bundle-barrel-imports,override,Product imports from @afenda/ui-system barrel; mega-barrel/deep-import advice applies to third-party kits only
+  server-cache-lru,reject,No cross-request LRU for tenant/org/user data on serverless (ARCH-023)
+  client-swr-dedup,defer,Require dedupe + coherent cache ownership via approved data layer; not a forced SWR dependency
+  composition-topics,route-out,Boolean props/compound/providers to afenda-elite-react-composition — never vendor as task authority
+  feature-local-ui-copy,reject,No next/dynamic copies of barrel primitives into apps/web/features/**
+E:No perf rewrite without measured bundle | profiler | repeated rerender | network waterfall | matching high-impact vendor smell

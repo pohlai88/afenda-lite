@@ -1,22 +1,25 @@
 /**
- * GUIDE-018 I3.1 — revoke org role Zod + hard-tenancy soft-revoke.
+ * GUIDE-018 I3.1 — revoke org role Zod + hard-tenancy soft-revoke with audit (N12 Path-to-100%).
  */
 
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { describe, expect, it } from "vitest";
+import { and, db, eq, platformRoleAssignment } from "@afenda/db";
+import { afterAll, describe, expect, it } from "vitest";
 
-import { assignOrgRole } from "../modules/identity/domain/assign-org-role";
-import {
-	parseRevokeOrgRoleCommand,
-	revokeOrgRole,
-} from "../modules/identity/domain/revoke-org-role";
+import { assignOrgRoleWithAudit } from "../modules/identity/domain/assign-org-role-audited";
+import { parseRevokeOrgRoleCommand } from "../modules/identity/domain/revoke-org-role";
+import { revokeOrgRoleWithAudit } from "../modules/identity/domain/revoke-org-role-audited";
+import { deleteRbacAuditRow } from "../modules/platform/domain/record-rbac-audit";
 
 const repoRoot = path.resolve(
 	path.dirname(fileURLToPath(import.meta.url)),
 	"../../..",
 );
+
+const createdAssignmentIds: Array<{ id: string; orgId: string }> = [];
+const createdAuditIds: Array<{ id: string; orgId: string }> = [];
 
 function loadDatabaseUrl(): string | undefined {
 	if (process.env.DATABASE_URL) {
@@ -69,69 +72,99 @@ describe("parseRevokeOrgRoleCommand (I3.1)", () => {
 	});
 });
 
-describe.skipIf(!hasDatabase)("revokeOrgRole tenancy (I3.1)", () => {
+describe.skipIf(!hasDatabase)("revokeOrgRoleWithAudit tenancy (I3.1)", () => {
 	const runId = `${Date.now()}`;
 	const orgA = `org-i31-revoke-a-${runId}`;
 	const orgB = `org-i31-revoke-b-${runId}`;
 	const userId = `user-i31-revoke-target-${runId}`;
 	const grantedBy = `user-i31-revoke-actor-${runId}`;
 
+	afterAll(async () => {
+		for (const row of createdAuditIds) {
+			await deleteRbacAuditRow({ id: row.id, orgId: row.orgId });
+		}
+		for (const row of createdAssignmentIds) {
+			await db
+				.delete(platformRoleAssignment)
+				.where(
+					and(
+						eq(platformRoleAssignment.id, row.id),
+						eq(platformRoleAssignment.organizationId, row.orgId),
+					),
+				);
+		}
+	});
+
 	it("soft-revokes only when id and organization_id match", async () => {
-		const assigned = await assignOrgRole({
+		const assigned = await assignOrgRoleWithAudit({
 			orgId: orgA,
 			userId,
 			roleId: VIEWER_TEMPLATE_ROLE_ID,
 			grantedBy,
+			actorUserId: grantedBy,
 		});
 		expect(assigned.ok).toBe(true);
 		if (!assigned.ok) {
 			return;
 		}
+		createdAssignmentIds.push({ id: assigned.assignment.id, orgId: orgA });
+		createdAuditIds.push({ id: assigned.auditId, orgId: orgA });
 
-		const wrongOrg = await revokeOrgRole({
+		const wrongOrg = await revokeOrgRoleWithAudit({
 			orgId: orgB,
 			assignmentId: assigned.assignment.id,
+			actorUserId: grantedBy,
 		});
 		expect(wrongOrg.ok).toBe(false);
 		if (!wrongOrg.ok) {
 			expect(wrongOrg.code).toBe("NOT_FOUND");
 		}
 
-		const revoked = await revokeOrgRole({
+		const revoked = await revokeOrgRoleWithAudit({
 			orgId: orgA,
 			assignmentId: assigned.assignment.id,
+			actorUserId: grantedBy,
 		});
 		expect(revoked.ok).toBe(true);
 		if (!revoked.ok) {
 			return;
 		}
+		createdAuditIds.push({ id: revoked.auditId, orgId: orgA });
 		expect(revoked.assignment.active).toBe(false);
+		expect(revoked.auditId).toBeTruthy();
 
-		const second = await revokeOrgRole({
+		const second = await revokeOrgRoleWithAudit({
 			orgId: orgA,
 			assignmentId: assigned.assignment.id,
+			actorUserId: grantedBy,
 		});
 		expect(second.ok).toBe(false);
 		if (!second.ok) {
 			expect(second.code).toBe("NOT_FOUND");
 		}
 
-		const reactivated = await assignOrgRole({
+		const reactivated = await assignOrgRoleWithAudit({
 			orgId: orgA,
 			userId,
 			roleId: VIEWER_TEMPLATE_ROLE_ID,
 			grantedBy,
+			actorUserId: grantedBy,
 		});
 		expect(reactivated.ok).toBe(true);
 		if (!reactivated.ok) {
 			return;
 		}
+		createdAuditIds.push({ id: reactivated.auditId, orgId: orgA });
 		expect(reactivated.reactivated).toBe(true);
 		expect(reactivated.assignment.id).toBe(assigned.assignment.id);
 
-		await revokeOrgRole({
+		const finalRevoke = await revokeOrgRoleWithAudit({
 			orgId: orgA,
 			assignmentId: reactivated.assignment.id,
+			actorUserId: grantedBy,
 		});
+		if (finalRevoke.ok) {
+			createdAuditIds.push({ id: finalRevoke.auditId, orgId: orgA });
+		}
 	});
 });

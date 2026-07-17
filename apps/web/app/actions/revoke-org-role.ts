@@ -4,12 +4,8 @@ import { requireRole } from "@afenda/auth";
 import { revalidatePath } from "next/cache";
 
 import { forbidUnlessPermission } from "@/app/actions/permission-gate";
-import { revokeOrgRole } from "@/modules/identity/domain/revoke-org-role";
+import { revokeOrgRoleWithAudit } from "@/modules/identity/domain/revoke-org-role-audited";
 import { revokeOrgRoleCommandSchema } from "@/modules/identity/schemas/revoke-org-role";
-import {
-	ROLE_REVOKE_AUDIT_ACTION,
-	recordRbacAudit,
-} from "@/modules/platform/domain/record-rbac-audit";
 import {
 	type ActionResult,
 	actionFail,
@@ -30,8 +26,9 @@ export type RevokeOrgRoleActionState =
 
 /**
  * Operator revoke adapter — coarse `requireRole('operator')` + Tier-2
- * `org.roles.manage` via `hasPermission`, Identity `revokeOrgRole` hard-tenancy
- * soft-revoke, then Platform `recordRbacAudit` (ARCH-023 · GUIDE-018 I3.1).
+ * `org.roles.manage` via `hasPermission`, then Identity
+ * `revokeOrgRoleWithAudit` (soft-revoke + org-scoped audit in one Neon HTTP
+ * transaction — ARCH-023 · ARCH-025 · GUIDE-018 I3.1 · N12).
  */
 export async function revokeOrgRoleAction(
 	_prev: RevokeOrgRoleActionState,
@@ -58,11 +55,12 @@ export async function revokeOrgRoleAction(
 		return permissionDenied;
 	}
 
-	let result: Awaited<ReturnType<typeof revokeOrgRole>>;
+	let result: Awaited<ReturnType<typeof revokeOrgRoleWithAudit>>;
 	try {
-		result = await revokeOrgRole({
+		result = await revokeOrgRoleWithAudit({
 			orgId: session.orgId,
 			assignmentId: parsed.data.assignmentId,
+			actorUserId: session.userId,
 		});
 	} catch {
 		return actionFail(
@@ -75,39 +73,12 @@ export async function revokeOrgRoleAction(
 		return actionFail(result.code, result.message);
 	}
 
-	let auditId: string;
-	try {
-		const audit = await recordRbacAudit({
-			orgId: session.orgId,
-			action: ROLE_REVOKE_AUDIT_ACTION,
-			actorUserId: session.userId,
-			targetType: "role_assignment",
-			targetId: result.assignment.id,
-			roleId: result.assignment.roleId,
-			oldValue: {
-				userId: result.assignment.userId,
-				roleId: result.assignment.roleId,
-				scopeType: result.assignment.scopeType,
-				active: true,
-			},
-			newValue: {
-				active: false,
-			},
-		});
-		auditId = audit.id;
-	} catch {
-		return actionFail(
-			"INTERNAL_ERROR",
-			"Role was revoked but the org-scoped audit write failed. Contact an admin.",
-		);
-	}
-
 	revalidatePath("/admin");
 
 	return actionOk({
 		assignmentId: result.assignment.id,
 		userId: result.assignment.userId,
 		roleId: result.assignment.roleId,
-		auditId,
+		auditId: result.auditId,
 	});
 }

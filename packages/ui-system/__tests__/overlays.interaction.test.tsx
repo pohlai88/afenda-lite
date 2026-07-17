@@ -521,6 +521,70 @@ describe("WCAG 2.2 AA — Accessible Names and Descriptions", () => {
 		expect(mockChange).toHaveBeenCalledWith("apple");
 	});
 
+	it("Combobox keeps a stable aria-label when selection changes", async () => {
+		const user = userEvent.setup();
+		const mockChange = vi.fn();
+		const { rerender } = render(
+			<Combobox
+				options={[
+					{ value: "apple", label: "Apple" },
+					{ value: "banana", label: "Banana" },
+				]}
+				value=""
+				onValueChange={mockChange}
+				placeholder="Select fruit..."
+				aria-label="Organization member"
+			/>,
+		);
+
+		expect(
+			screen.getByRole("combobox", { name: "Organization member" }),
+		).toHaveAttribute("aria-label", "Organization member");
+
+		rerender(
+			<Combobox
+				options={[
+					{ value: "apple", label: "Apple" },
+					{ value: "banana", label: "Banana" },
+				]}
+				value="apple"
+				onValueChange={mockChange}
+				placeholder="Select fruit..."
+				aria-label="Organization member"
+			/>,
+		);
+
+		expect(
+			screen.getByRole("combobox", { name: "Organization member" }),
+		).toHaveAttribute("aria-label", "Organization member");
+		expect(screen.getByText("Apple")).toBeInTheDocument();
+
+		await user.click(
+			screen.getByRole("combobox", { name: "Organization member" }),
+		);
+		await user.click(screen.getByText("Banana"));
+		expect(mockChange).toHaveBeenCalledWith("banana");
+	});
+
+	it("Combobox uses aria-labelledby when supplied and skips trigger-label fallback", () => {
+		render(
+			<>
+				<span id="member-label">Member label</span>
+				<Combobox
+					options={[{ value: "apple", label: "Apple" }]}
+					value="apple"
+					onValueChange={() => undefined}
+					placeholder="Select fruit..."
+					aria-labelledby="member-label"
+				/>
+			</>,
+		);
+
+		const combobox = screen.getByRole("combobox", { name: "Member label" });
+		expect(combobox).toHaveAttribute("aria-labelledby", "member-label");
+		expect(combobox).not.toHaveAttribute("aria-label");
+	});
+
 	it("Combobox supports multi-select tags", async () => {
 		const user = userEvent.setup();
 		const mockChange = vi.fn();

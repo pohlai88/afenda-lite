@@ -1,4 +1,4 @@
-import { and, db, eq, platformRoleAssignment } from "@afenda/db";
+import { platformRoleAssignment } from "@afenda/db";
 
 export {
 	parseRevokeOrgRoleCommand,
@@ -24,51 +24,7 @@ export type RevokeOrgRoleErr = {
 
 export type RevokeOrgRoleResult = RevokeOrgRoleOk | RevokeOrgRoleErr;
 
-function requireTrimmed(value: string, field: string, context: string): string {
-	const trimmed = value.trim();
-	if (trimmed.length === 0) {
-		throw new Error(`${context} requires non-empty ${field}`);
-	}
-	return trimmed;
-}
-
 /**
- * Identity — soft-revoke a platform role assignment under hard org stamp
- * (GUIDE-018 I3.1 · ARCH-023). Requires `id` and `organization_id` match;
- * already-inactive or wrong-org → NOT_FOUND honesty.
+ * Product mutate lives in `revoke-org-role-audited.ts` (`revokeOrgRoleWithAudit`).
+ * Non-audited `revokeOrgRole` was retired (N12 Path-to-100%).
  */
-export async function revokeOrgRole(
-	input: RevokeOrgRoleInput,
-): Promise<RevokeOrgRoleResult> {
-	const orgId = requireTrimmed(input.orgId, "orgId", "revokeOrgRole");
-	const assignmentId = requireTrimmed(
-		input.assignmentId,
-		"assignmentId",
-		"revokeOrgRole",
-	);
-
-	const [revoked] = await db
-		.update(platformRoleAssignment)
-		.set({
-			active: false,
-			updatedAt: new Date(),
-		})
-		.where(
-			and(
-				eq(platformRoleAssignment.id, assignmentId),
-				eq(platformRoleAssignment.organizationId, orgId),
-				eq(platformRoleAssignment.active, true),
-			),
-		)
-		.returning();
-
-	if (!revoked) {
-		return {
-			ok: false,
-			code: "NOT_FOUND",
-			message: "Active assignment not found for this organization.",
-		};
-	}
-
-	return { ok: true, assignment: revoked };
-}

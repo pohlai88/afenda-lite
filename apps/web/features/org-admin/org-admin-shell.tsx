@@ -8,12 +8,38 @@ import {
 } from "@afenda/ui-system";
 
 import { forbidPermissionAccess } from "@/features/auth/require-permission";
+import type { MemberDirectoryState } from "@/features/org-admin/assign-org-role-form";
 import { InviteMemberForm } from "@/features/org-admin/invite-member-form";
 import { OrgAdminPanels } from "@/features/org-admin/org-admin-panels";
 import { listAssignableRoles } from "@/modules/identity/domain/list-assignable-roles";
 import { listRoleAssignments } from "@/modules/identity/domain/list-role-assignments";
+import { listOrganizationUsers } from "@/modules/identity/domain/organization-users";
 import { sessionHasPermission } from "@/modules/identity/domain/session-permission";
 import { listOrgRbacAudit } from "@/modules/platform/domain/list-rbac-audit";
+
+function memberLabel(name: string, email: string): string {
+	return `${name} · ${email}`;
+}
+
+async function loadMemberDirectory(
+	orgId: string,
+): Promise<MemberDirectoryState> {
+	try {
+		const users = await listOrganizationUsers(orgId);
+		if (users.length === 0) {
+			return { status: "empty", options: [] };
+		}
+		return {
+			status: "ready",
+			options: users.map((user) => ({
+				id: user.userId,
+				label: memberLabel(user.name, user.email),
+			})),
+		};
+	} catch {
+		return { status: "unavailable", options: [] };
+	}
+}
 
 /**
  * Org-admin feature — session-aware RSC load + Identity/Platform domain ports
@@ -35,13 +61,19 @@ export async function OrgAdminShell() {
 		forbidPermissionAccess();
 	}
 
-	const [roles, assignments, auditRows] = canManageRoles
+	const [roles, assignments, auditRows, memberDirectory] = canManageRoles
 		? await Promise.all([
 				listAssignableRoles(orgId),
 				listRoleAssignments(orgId),
 				listOrgRbacAudit(orgId),
+				loadMemberDirectory(orgId),
 			])
-		: [[], [], []];
+		: [
+				[],
+				[],
+				[],
+				{ status: "unavailable", options: [] } satisfies MemberDirectoryState,
+			];
 
 	const inviteableRoles = canInvite ? inviteableRolesFor(role) : [];
 	const roleNameById = new Map(roles.map((item) => [item.id, item.name]));
@@ -104,6 +136,7 @@ export async function OrgAdminShell() {
 						action: item.action,
 						targetType: item.targetType,
 					}))}
+					memberDirectory={memberDirectory}
 				/>
 			) : null}
 		</main>

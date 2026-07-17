@@ -42,7 +42,7 @@
 		"cleanup:vercel": "node scripts/collapse-script-unavailable.mjs \"cleanup:vercel\"",
 		"cleanup:vercel:dev": "node scripts/collapse-script-unavailable.mjs \"cleanup:vercel:dev\"",
 		"audit:vercel": "node scripts/collapse-script-unavailable.mjs \"audit:vercel\"",
-		"audit:github-actions-secrets": "node scripts/collapse-script-unavailable.mjs \"audit:github-actions-secrets\"",
+		"audit:github-actions-secrets": "node scripts/audit-github-actions-secrets.mjs",
 		"sync:github-actions-secrets": "node scripts/collapse-script-unavailable.mjs \"sync:github-actions-secrets\"",
 		"sync:github-actions-secrets:production": "node scripts/collapse-script-unavailable.mjs \"sync:github-actions-secrets:production\"",
 		"configure:checkly-liveness": "node scripts/collapse-script-unavailable.mjs \"configure:checkly-liveness\"",

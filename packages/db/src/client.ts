@@ -1,14 +1,13 @@
-import { neon } from "@neondatabase/serverless";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/neon-http";
 import type { AnyPgTable, PgColumn } from "drizzle-orm/pg-core";
-import { requireProductDatabaseUrl } from "./env";
+import { getNeonSql } from "./http-transaction";
 import * as schema from "./schema";
 
 export type DbSchema = typeof schema;
 
 function createDb() {
-	return drizzle(neon(requireProductDatabaseUrl()), { schema });
+	return drizzle(getNeonSql(), { schema });
 }
 
 export type Database = ReturnType<typeof createDb>;

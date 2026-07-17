@@ -2,12 +2,15 @@
 
 import { Button } from "@afenda/ui-system";
 
+import { GLOBAL_ERROR_PUBLIC_MESSAGE } from "@/features/auth/safe-error-copy";
+
 import "../globals.css";
 
 export default function GlobalError({
-	error,
+	error: _error,
 	reset,
 }: {
+	/** Kept for Next.js error-boundary contract; internal text is not shown. */
 	error: Error & { digest?: string };
 	reset: () => void;
 }) {
@@ -19,7 +22,7 @@ export default function GlobalError({
 						Something went wrong
 					</h1>
 					<p className="max-w-md text-center text-sm text-foreground-secondary">
-						{error.message || "Unexpected application error."}
+						{GLOBAL_ERROR_PUBLIC_MESSAGE}
 					</p>
 					<Button type="button" variant="outline" onClick={reset}>
 						Try again

@@ -1,6 +1,12 @@
 export { and, asc, eq, isNull, or, sql } from "drizzle-orm";
 export type { Database, DbSchema, TenantTable } from "./client";
 export { db, withOrg } from "./client";
+export type {
+	NeonHttpIsolationLevel,
+	NeonHttpSql,
+	NeonHttpTransactionOptions,
+} from "./http-transaction";
+export { getNeonSql, runNeonHttpTransaction } from "./http-transaction";
 export type { HardTenantRootTableName } from "./hard-tenant-roots";
 export {
 	HARD_TENANT_ROOT_TABLE_NAMES,

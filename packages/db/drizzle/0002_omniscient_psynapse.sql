@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "platform_role_assignment_active_natural_key_uidx" ON "platform_role_assignment" USING btree ("user_id","organization_id","role_id","scope_type","scope_id") WHERE "platform_role_assignment"."active" = true;

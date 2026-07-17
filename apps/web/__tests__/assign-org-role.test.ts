@@ -1,18 +1,17 @@
 /**
- * GUIDE-018 I3.1 — assign org role Zod + hard-tenancy domain write.
+ * GUIDE-018 I3.1 — assign org role Zod + hard-tenancy audited write (N12 Path-to-100%).
  */
 
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { platformRoleAssignment, withOrg } from "@afenda/db";
+import { and, db, eq, platformRoleAssignment, withOrg } from "@afenda/db";
 import { afterAll, describe, expect, it } from "vitest";
 
-import {
-	assignOrgRole,
-	parseAssignOrgRoleCommand,
-} from "../modules/identity/domain/assign-org-role";
-import { revokeOrgRole } from "../modules/identity/domain/revoke-org-role";
+import { assignOrgRoleWithAudit } from "../modules/identity/domain/assign-org-role-audited";
+import { parseAssignOrgRoleCommand } from "../modules/identity/domain/assign-org-role";
+import { revokeOrgRoleWithAudit } from "../modules/identity/domain/revoke-org-role-audited";
+import { deleteRbacAuditRow } from "../modules/platform/domain/record-rbac-audit";
 
 const repoRoot = path.resolve(
 	path.dirname(fileURLToPath(import.meta.url)),
@@ -20,6 +19,7 @@ const repoRoot = path.resolve(
 );
 
 const createdAssignmentIds: Array<{ id: string; orgId: string }> = [];
+const createdAuditIds: Array<{ id: string; orgId: string }> = [];
 
 function loadDatabaseUrl(): string | undefined {
 	if (process.env.DATABASE_URL) {
@@ -89,7 +89,7 @@ describe("parseAssignOrgRoleCommand (I3.1)", () => {
 	});
 });
 
-describe.skipIf(!hasDatabase)("assignOrgRole tenancy write (I3.1)", () => {
+describe.skipIf(!hasDatabase)("assignOrgRoleWithAudit tenancy write (I3.1)", () => {
 	const runId = `${Date.now()}`;
 	const orgA = `org-i31-assign-a-${runId}`;
 	const orgB = `org-i31-assign-b-${runId}`;
@@ -97,20 +97,28 @@ describe.skipIf(!hasDatabase)("assignOrgRole tenancy write (I3.1)", () => {
 	const grantedBy = `user-i31-assign-actor-${runId}`;
 
 	afterAll(async () => {
+		for (const row of createdAuditIds) {
+			await deleteRbacAuditRow({ id: row.id, orgId: row.orgId });
+		}
 		for (const row of createdAssignmentIds) {
-			await revokeOrgRole({
-				orgId: row.orgId,
-				assignmentId: row.id,
-			});
+			await db
+				.delete(platformRoleAssignment)
+				.where(
+					and(
+						eq(platformRoleAssignment.id, row.id),
+						eq(platformRoleAssignment.organizationId, row.orgId),
+					),
+				);
 		}
 	});
 
-	it("assigns a system template role under hard organization_id", async () => {
-		const result = await assignOrgRole({
+	it("assigns a system template role under hard organization_id with auditId", async () => {
+		const result = await assignOrgRoleWithAudit({
 			orgId: orgA,
 			userId,
 			roleId: ORG_ADMIN_TEMPLATE_ROLE_ID,
 			grantedBy,
+			actorUserId: grantedBy,
 		});
 		expect(result.ok).toBe(true);
 		if (!result.ok) {
@@ -118,10 +126,12 @@ describe.skipIf(!hasDatabase)("assignOrgRole tenancy write (I3.1)", () => {
 		}
 
 		createdAssignmentIds.push({ id: result.assignment.id, orgId: orgA });
+		createdAuditIds.push({ id: result.auditId, orgId: orgA });
 		expect(result.assignment.organizationId).toBe(orgA);
 		expect(result.assignment.roleId).toBe(ORG_ADMIN_TEMPLATE_ROLE_ID);
 		expect(result.assignment.active).toBe(true);
 		expect(result.reactivated).toBe(false);
+		expect(result.auditId).toBeTruthy();
 
 		const forOrgA = await withOrg(platformRoleAssignment, orgA);
 		expect(forOrgA.some((item) => item.id === result.assignment.id)).toBe(true);
@@ -131,11 +141,12 @@ describe.skipIf(!hasDatabase)("assignOrgRole tenancy write (I3.1)", () => {
 			false,
 		);
 
-		const conflict = await assignOrgRole({
+		const conflict = await assignOrgRoleWithAudit({
 			orgId: orgA,
 			userId,
 			roleId: ORG_ADMIN_TEMPLATE_ROLE_ID,
 			grantedBy,
+			actorUserId: grantedBy,
 		});
 		expect(conflict.ok).toBe(false);
 		if (!conflict.ok) {
@@ -144,11 +155,12 @@ describe.skipIf(!hasDatabase)("assignOrgRole tenancy write (I3.1)", () => {
 	});
 
 	it("rejects unknown role ids", async () => {
-		const result = await assignOrgRole({
+		const result = await assignOrgRoleWithAudit({
 			orgId: orgA,
 			userId: "user-i31-missing-role",
 			roleId: "00000000-0000-4000-8000-000000000099",
 			grantedBy,
+			actorUserId: grantedBy,
 		});
 		expect(result.ok).toBe(false);
 		if (!result.ok) {

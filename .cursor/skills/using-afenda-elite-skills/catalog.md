@@ -49,6 +49,8 @@ Local skills must remain operable if `afenda-Xerp` is absent. Do not edit `agent
 | `afenda-elite-doc-integrity` | local-elite-farm | local | keep | Doc↔doc conflict / SSOT drift audit | Integrity detect/plan/verify | DOC-001 · DOC-002 | none | `.cursor/skills/afenda-elite-doc-integrity/SKILL.md` | Not controlled writes |
 | `afenda-elite-frontend-scaffold` | local-elite-farm | local | keep | Target FE scaffold / wipe inventory; consumes `@afenda/ui-system` barrel | FE scaffold missions · app-route UI | ARCH-017 · ARCH-028 · ARCH-015 · ADR-010 | none | `.cursor/skills/afenda-elite-frontend-scaffold/SKILL.md` | Docs-first until implement request; UI primitives via `@afenda/ui-system` (ADR-010) |
 | `afenda-elite-ui-compose` | local-elite-farm | local | keep | Product UI consistency lock — lean SKILL + reference progressive disclosure; QUALITY ORDER; Compose Score /100%; hard rule 15 / UI-CAP-*; F* + C* Vitest | Compose · handroll fix · visual consistency · UI audit/rate | ADR-010 · ARCH-024 · tokens.css · Geist | none | `.cursor/skills/afenda-elite-ui-compose/SKILL.md` | Done = capability + matrix + Compose Score; floor `pnpm check:ui-system`; reference = recipes/gates/rubric SSOT |
+| `afenda-elite-react-composition` | local-elite-farm | local | keep | React component API architecture adapter — RC-COMP-*; variants/compounds/providers; after ui-compose capability status | Boolean-mode refactor · compound API design · provider boundaries · UI-CAP shared-compound design | ADR-010 · ARCH-024 · ui-compose | ui-compose classifies first | `.cursor/skills/afenda-elite-react-composition/SKILL.md` | Vendor `vercel-composition-patterns` progressive only; may design package upgrades under BLOCKED_UI_SYSTEM; never feature-local substitute |
+| `afenda-elite-react-best-practices` | local-elite-farm | local | keep | React runtime/perf adapter — override-only matrix over vendor RBP; waterfalls/rerender/bundle/serialization/hydration; evidence gate | Runtime perf review/refactor with evidence · bundle/rerender/waterfall smells | ADR-010 · ARCH-023 · ui-compose · nextjs-best-practice | App Router/cache stays with nextjs-best-practice | `.cursor/skills/afenda-elite-react-best-practices/SKILL.md` | Vendor `vercel-react-best-practices` progressive only; barrel override (`@afenda/ui-system`) + reject cross-request LRU for tenant data; no speculative micro-opt |
 | `afenda-elite-nextjs-best-practice` | local-elite-farm | local | keep | App Router / RSC / cache / proxy mechanics | Next.js route/runtime work | ARCH-002 · ARCH-012 · ARCH-016 · ARCH-017 · ADR-008 · ARCH-027 | none | `.cursor/skills/afenda-elite-nextjs-best-practice/SKILL.md` | Wave 2 extend closed → keep |
 | `afenda-elite-backend-modules` | local-elite-farm | local | keep | Module ports, residue, ownership map | Modules / hexagonal boundaries | ARCH-001 · ARCH-006 · ARCH-009 · ARCH-022 · ARCH-024 · ARCH-028 | none | `.cursor/skills/afenda-elite-backend-modules/SKILL.md` | Wave 2 extend closed → keep; Target vs docs-first path truth |
 | `afenda-elite-api-contract` | local-elite-farm | local | keep | ActionResult, brands, OpenAPI, REST contracts | API / BFF contract work | ARCH-029 · docs/api · API-001… · REST-001 · OPEN-001 | none | `.cursor/skills/afenda-elite-api-contract/SKILL.md` | Wave 2 extend closed → keep; ARCH-029 §3.3 ten-stage pipeline |
@@ -100,8 +102,8 @@ Management = `vendored`. Status = `keep` (inventory only). Invoked via `using-ag
 | `source-driven-development` | vendored-method | `.cursor/skills/agent-skills/skills/source-driven-development/SKILL.md` |
 | `spec-driven-development` | vendored-method | `.cursor/skills/agent-skills/skills/spec-driven-development/SKILL.md` |
 | `test-driven-development` | vendored-method | `.cursor/skills/agent-skills/skills/test-driven-development/SKILL.md` |
-| `vercel-composition-patterns` | vendored-method | `.cursor/skills/vercel-composition-patterns/SKILL.md` |
-| `vercel-react-best-practices` | vendored-method | `.cursor/skills/vercel-react-best-practices/react-best-practices/SKILL.md` |
+| `vercel-composition-patterns` | vendored-method | `.cursor/skills/vercel-composition-patterns/SKILL.md` (progressive under `afenda-elite-react-composition`; not a competing product entry) |
+| `vercel-react-best-practices` | vendored-method | `.cursor/skills/vercel-react-best-practices/react-best-practices/SKILL.md` (progressive under `afenda-elite-react-best-practices`; not a competing product entry) |
 
 Container folder `.cursor/skills/agent-skills/` has no top-level `SKILL.md` by design (skill roots live under `skills/`). Vercel vendor trees live at `.cursor/skills/vercel-*` — invoke after the matching Elite farm is fixed; do not fork into `afenda-elite-*`.
 
@@ -111,6 +113,7 @@ Management = `local`. Status = `keep`. Method library invoked after a farm is fi
 
 | Skill | Source class | Evidence |
 |-------|--------------|----------|
+| `afenda-readme-diataxis` | local-method | `.cursor/skills/afenda-readme-diataxis/SKILL.md` (Diátaxis triage + README intro; handoff to doc-control / technical-writing) |
 | `technical-writing` | local-method | `.cursor/skills/technical-writing/SKILL.md` |
 
 ## Planned (approved backlog — no SKILL.md until authoring mission)

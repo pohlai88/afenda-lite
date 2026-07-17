@@ -1,20 +1,25 @@
 /**
- * GUIDE-018 I3.1 — Tier-2 hasPermission + admin bootstrap.
+ * GUIDE-018 I3.1 — Tier-2 hasPermission + admin bootstrap (N12 Path-to-100% WithAudit).
  */
 
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { describe, expect, it } from "vitest";
+import { and, db, eq, platformRoleAssignment } from "@afenda/db";
+import { afterAll, describe, expect, it } from "vitest";
 
-import { assignOrgRole } from "../modules/identity/domain/assign-org-role";
+import { assignOrgRoleWithAudit } from "../modules/identity/domain/assign-org-role-audited";
 import { hasPermission } from "../modules/identity/domain/has-permission";
-import { revokeOrgRole } from "../modules/identity/domain/revoke-org-role";
+import { revokeOrgRoleWithAudit } from "../modules/identity/domain/revoke-org-role-audited";
+import { deleteRbacAuditRow } from "../modules/platform/domain/record-rbac-audit";
 
 const repoRoot = path.resolve(
 	path.dirname(fileURLToPath(import.meta.url)),
 	"../../..",
 );
+
+const createdAssignmentIds: Array<{ id: string; orgId: string }> = [];
+const createdAuditIds: Array<{ id: string; orgId: string }> = [];
 
 function loadDatabaseUrl(): string | undefined {
 	if (process.env.DATABASE_URL) {
@@ -90,6 +95,22 @@ describe.skipIf(!hasDatabase)("hasPermission product wiring (I3.1)", () => {
 	const orgId = `org-i31-perm-a-${runId}`;
 	const grantedBy = `user-i31-perm-actor-${runId}`;
 
+	afterAll(async () => {
+		for (const row of createdAuditIds) {
+			await deleteRbacAuditRow({ id: row.id, orgId: row.orgId });
+		}
+		for (const row of createdAssignmentIds) {
+			await db
+				.delete(platformRoleAssignment)
+				.where(
+					and(
+						eq(platformRoleAssignment.id, row.id),
+						eq(platformRoleAssignment.organizationId, row.orgId),
+					),
+				);
+		}
+	});
+
 	it("bootstraps admin only when the actor has zero active assignments", async () => {
 		const unassignedUser = `user-i31-perm-bootstrap-${runId}`;
 
@@ -116,76 +137,84 @@ describe.skipIf(!hasDatabase)("hasPermission product wiring (I3.1)", () => {
 		const adminUser = `user-i31-perm-admin-${runId}`;
 		const viewerUser = `user-i31-perm-viewer-${runId}`;
 
-		const adminAssign = await assignOrgRole({
+		const adminAssign = await assignOrgRoleWithAudit({
 			orgId,
 			userId: adminUser,
 			roleId: ORG_ADMIN_TEMPLATE_ROLE_ID,
 			grantedBy,
+			actorUserId: grantedBy,
 		});
 		expect(adminAssign.ok).toBe(true);
 		if (!adminAssign.ok) {
 			return;
 		}
+		createdAssignmentIds.push({ id: adminAssign.assignment.id, orgId });
+		createdAuditIds.push({ id: adminAssign.auditId, orgId });
 
-		const viewerAssign = await assignOrgRole({
+		const viewerAssign = await assignOrgRoleWithAudit({
 			orgId,
 			userId: viewerUser,
 			roleId: VIEWER_TEMPLATE_ROLE_ID,
 			grantedBy,
+			actorUserId: grantedBy,
 		});
 		expect(viewerAssign.ok).toBe(true);
 		if (!viewerAssign.ok) {
-			await revokeOrgRole({
-				orgId,
-				assignmentId: adminAssign.assignment.id,
-			});
 			return;
 		}
+		createdAssignmentIds.push({ id: viewerAssign.assignment.id, orgId });
+		createdAuditIds.push({ id: viewerAssign.auditId, orgId });
 
-		try {
-			await expect(
-				hasPermission({
-					orgId,
-					userId: adminUser,
-					code: "org.roles.manage",
-					bootstrapRole: "client",
-				}),
-			).resolves.toBe(true);
-
-			await expect(
-				hasPermission({
-					orgId,
-					userId: viewerUser,
-					code: "org.roles.manage",
-					bootstrapRole: "admin",
-				}),
-			).resolves.toBe(false);
-
-			await expect(
-				hasPermission({
-					orgId,
-					userId: viewerUser,
-					code: "declarations.read",
-				}),
-			).resolves.toBe(true);
-
-			await expect(
-				hasPermission({
-					orgId: `${orgId}-other`,
-					userId: viewerUser,
-					code: "declarations.read",
-					bootstrapRole: "client",
-				}),
-			).resolves.toBe(false);
-		} finally {
-			await revokeOrgRole({
+		await expect(
+			hasPermission({
 				orgId,
-				assignmentId: adminAssign.assignment.id,
-			});
-			await revokeOrgRole({
+				userId: adminUser,
+				code: "org.roles.manage",
+				bootstrapRole: "client",
+			}),
+		).resolves.toBe(true);
+
+		await expect(
+			hasPermission({
 				orgId,
-				assignmentId: viewerAssign.assignment.id,
-			});
+				userId: viewerUser,
+				code: "org.roles.manage",
+				bootstrapRole: "admin",
+			}),
+		).resolves.toBe(false);
+
+		await expect(
+			hasPermission({
+				orgId,
+				userId: viewerUser,
+				code: "declarations.read",
+			}),
+		).resolves.toBe(true);
+
+		await expect(
+			hasPermission({
+				orgId: `${orgId}-other`,
+				userId: viewerUser,
+				code: "declarations.read",
+				bootstrapRole: "client",
+			}),
+		).resolves.toBe(false);
+
+		const adminRevoke = await revokeOrgRoleWithAudit({
+			orgId,
+			assignmentId: adminAssign.assignment.id,
+			actorUserId: grantedBy,
+		});
+		if (adminRevoke.ok) {
+			createdAuditIds.push({ id: adminRevoke.auditId, orgId });
+		}
+		const viewerRevoke = await revokeOrgRoleWithAudit({
+			orgId,
+			assignmentId: viewerAssign.assignment.id,
+			actorUserId: grantedBy,
+		});
+		if (viewerRevoke.ok) {
+			createdAuditIds.push({ id: viewerRevoke.auditId, orgId });
 		}
 	});
 });

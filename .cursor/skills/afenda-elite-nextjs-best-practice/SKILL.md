@@ -41,7 +41,8 @@ METHOD: Vercel nextjs + Accelint + next-cache-components (evaluate; default OFF 
 | Conventions API | Vercel plugin `nextjs` → [reference/nextjs-conventions.md](reference/nextjs-conventions.md) |
 | Cache Components / PPR | [ADR-008](../../../docs/architecture/adr/ADR-008-cache-components-mode-b.md) · [reference/cache-components.md](reference/cache-components.md) — Phase 1 Accepted; Phase 2 not authorized |
 | Perf + Action security | Accelint → [reference/accelint-perf.md](reference/accelint-perf.md) |
-| Vercel rule ids | [reference/vercel-perf.md](reference/vercel-perf.md) |
+| Accelint × App Router Vercel ids | [reference/vercel-perf.md](reference/vercel-perf.md) — not a second RBP SSOT |
+| React runtime/perf catalogue (waterfalls · rerenders · bundle · serialization · evidence gate) | `afenda-elite-react-best-practices` (App Router/cache stays here) |
 | `proxy.ts` | `routing-middleware` |
 
 ---

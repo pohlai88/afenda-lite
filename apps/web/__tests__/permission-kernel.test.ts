@@ -1,5 +1,6 @@
 /**
  * N10 — Permission kernel: catalog gate, list ports, two-org authz isolation.
+ * Assign/revoke via WithAudit (N12 Path-to-100%).
  */
 
 import { readFileSync } from "node:fs";
@@ -7,15 +8,20 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
 	PLATFORM_PERMISSION_CODES_V1,
+	and,
+	db,
+	eq,
 	ensurePlatformPermissionCatalog,
+	platformRoleAssignment,
 } from "@afenda/db";
 import { afterAll, describe, expect, it } from "vitest";
 
-import { assignOrgRole } from "../modules/identity/domain/assign-org-role";
+import { assignOrgRoleWithAudit } from "../modules/identity/domain/assign-org-role-audited";
 import { hasPermission } from "../modules/identity/domain/has-permission";
 import { listPermissionCatalog } from "../modules/identity/domain/list-permission-catalog";
 import { listUserPermissions } from "../modules/identity/domain/list-user-permissions";
-import { revokeOrgRole } from "../modules/identity/domain/revoke-org-role";
+import { revokeOrgRoleWithAudit } from "../modules/identity/domain/revoke-org-role-audited";
+import { deleteRbacAuditRow } from "../modules/platform/domain/record-rbac-audit";
 
 const repoRoot = path.resolve(
 	path.dirname(fileURLToPath(import.meta.url)),
@@ -85,17 +91,26 @@ describe.skipIf(!hasDatabase)("permission kernel product wiring (N10)", () => {
 	const orgB = `org-n10-b-${runId}`;
 	const userId = `user-n10-iso-${runId}`;
 	const grantedBy = `user-n10-actor-${runId}`;
-	const assignmentIds: string[] = [];
+	const createdAssignmentIds: Array<{ id: string; orgId: string }> = [];
+	const createdAuditIds: Array<{ id: string; orgId: string }> = [];
 
 	afterAll(async () => {
-		for (const assignmentId of assignmentIds) {
-			await revokeOrgRole({ orgId: orgA, assignmentId }).catch(() => undefined);
-			await revokeOrgRole({ orgId: orgB, assignmentId }).catch(() => undefined);
+		for (const row of createdAuditIds) {
+			await deleteRbacAuditRow({ id: row.id, orgId: row.orgId });
+		}
+		for (const row of createdAssignmentIds) {
+			await db
+				.delete(platformRoleAssignment)
+				.where(
+					and(
+						eq(platformRoleAssignment.id, row.id),
+						eq(platformRoleAssignment.organizationId, row.orgId),
+					),
+				);
 		}
 	});
 
 	it("lists catalog codes that include ARCH-023 v1", async () => {
-		const { db } = await import("@afenda/db");
 		await ensurePlatformPermissionCatalog(db);
 		const catalog = await listPermissionCatalog();
 		const codes = catalog.map((row) => row.code);
@@ -105,17 +120,19 @@ describe.skipIf(!hasDatabase)("permission kernel product wiring (N10)", () => {
 	});
 
 	it("two-org: grant in A is not effective in B", async () => {
-		const assign = await assignOrgRole({
+		const assign = await assignOrgRoleWithAudit({
 			orgId: orgA,
 			userId,
 			roleId: ORG_ADMIN_TEMPLATE_ROLE_ID,
 			grantedBy,
+			actorUserId: grantedBy,
 		});
 		expect(assign.ok).toBe(true);
 		if (!assign.ok) {
 			return;
 		}
-		assignmentIds.push(assign.assignment.id);
+		createdAssignmentIds.push({ id: assign.assignment.id, orgId: orgA });
+		createdAuditIds.push({ id: assign.auditId, orgId: orgA });
 
 		await expect(
 			hasPermission({
@@ -140,5 +157,14 @@ describe.skipIf(!hasDatabase)("permission kernel product wiring (N10)", () => {
 		expect(permsA).toContain("org.roles.manage");
 		expect(permsA).toContain("fft.access");
 		expect(permsB).toEqual([]);
+
+		const revoked = await revokeOrgRoleWithAudit({
+			orgId: orgA,
+			assignmentId: assign.assignment.id,
+			actorUserId: grantedBy,
+		});
+		if (revoked.ok) {
+			createdAuditIds.push({ id: revoked.auditId, orgId: orgA });
+		}
 	});
 });

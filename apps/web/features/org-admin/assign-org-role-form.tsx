@@ -5,14 +5,14 @@ import {
 	AlertDescription,
 	AlertTitle,
 	Button,
+	Combobox,
 	FormError,
 	FormField,
-	Input,
 	NativeSelect,
 	NativeSelectOption,
 	Spinner,
 } from "@afenda/ui-system";
-import { useActionState } from "react";
+import { useActionState, useEffect, useMemo, useState } from "react";
 
 import {
 	type AssignOrgRoleActionState,
@@ -26,8 +26,19 @@ export type AssignableRoleOption = {
 	name: string;
 };
 
+export type AssignableMemberOption = {
+	id: string;
+	label: string;
+};
+
+export type MemberDirectoryState =
+	| { status: "ready"; options: AssignableMemberOption[] }
+	| { status: "empty"; options: [] }
+	| { status: "unavailable"; options: [] };
+
 type AssignOrgRoleFormProps = {
 	roles: AssignableRoleOption[];
+	memberDirectory: MemberDirectoryState;
 };
 
 type FieldErrors = {
@@ -49,21 +60,64 @@ function fieldMessage(
 }
 
 /**
- * Org-admin assign form — CAPABLE when assignable roles exist (GUIDE-018 I3.1).
- * Neon `userId` text field until a member-directory port ships (not a fake CTA).
+ * Org-admin assign form — CAPABLE when assignable roles and the org member
+ * directory are available (GUIDE-018 I3.1 · UI-CAP-07 Combobox).
  */
-export function AssignOrgRoleForm({ roles }: AssignOrgRoleFormProps) {
+export function AssignOrgRoleForm({
+	roles,
+	memberDirectory,
+}: AssignOrgRoleFormProps) {
 	const [state, formAction, pending] = useActionState(
 		assignOrgRoleAction,
 		initialState,
 	);
+	const [selectedUserId, setSelectedUserId] = useState("");
+
+	useEffect(() => {
+		if (state?.ok === true) {
+			setSelectedUserId("");
+		}
+	}, [state]);
+
+	const comboboxOptions = useMemo(
+		() =>
+			memberDirectory.options.map((member) => ({
+				value: member.id,
+				label: member.label,
+			})),
+		[memberDirectory.options],
+	);
 
 	if (roles.length === 0) {
 		return (
-			<Alert>
+			<Alert role="status">
 				<AlertTitle>Assignment unavailable</AlertTitle>
 				<AlertDescription>
 					No assignable platform roles are available for this organization.
+				</AlertDescription>
+			</Alert>
+		);
+	}
+
+	if (memberDirectory.status === "unavailable") {
+		return (
+			<Alert>
+				<AlertTitle>Member directory unavailable</AlertTitle>
+				<AlertDescription>
+					Organization members could not be loaded. Role assignment stays
+					closed until the directory is available again.
+				</AlertDescription>
+			</Alert>
+		);
+	}
+
+	if (memberDirectory.status === "empty") {
+		return (
+			<Alert role="status">
+				<AlertTitle>No organization members</AlertTitle>
+				<AlertDescription>
+					Invite a Neon Auth member to this organization before assigning a
+					platform role.
 				</AlertDescription>
 			</Alert>
 		);
@@ -73,6 +127,7 @@ export function AssignOrgRoleForm({ roles }: AssignOrgRoleFormProps) {
 	const userIdError = fieldMessage(state, "userId");
 	const roleIdError = fieldMessage(state, "roleId");
 	const showFormError =
+		!pending &&
 		state?.ok === false &&
 		userIdError === undefined &&
 		roleIdError === undefined;
@@ -84,20 +139,22 @@ export function AssignOrgRoleForm({ roles }: AssignOrgRoleFormProps) {
 			className="flex max-w-md flex-col gap-(--field-gap)"
 		>
 			<FormField
-				label="User ID"
+				label="Organization member"
 				required
 				fieldId="assign-user-id"
 				error={userIdError}
-				description="Neon Auth user id for the member receiving the platform role."
+				description="Search and select an active Neon Auth member of this organization."
 			>
-				<Input
+				<Combobox
 					name="userId"
-					type="text"
-					autoComplete="off"
-					required
+					options={comboboxOptions}
+					value={selectedUserId}
+					onValueChange={setSelectedUserId}
+					placeholder="Select a member…"
+					searchPlaceholder="Search members…"
+					emptyMessage="No matching members."
 					disabled={pending}
-					placeholder="user id"
-					spellCheck={false}
+					aria-label="Organization member"
 				/>
 			</FormField>
 
@@ -120,7 +177,7 @@ export function AssignOrgRoleForm({ roles }: AssignOrgRoleFormProps) {
 				</NativeSelect>
 			</FormField>
 
-			<Button type="submit" disabled={pending}>
+			<Button type="submit" disabled={pending || selectedUserId.length === 0}>
 				{pending ? (
 					<>
 						<Spinner
@@ -135,7 +192,7 @@ export function AssignOrgRoleForm({ roles }: AssignOrgRoleFormProps) {
 				)}
 			</Button>
 
-			{state?.ok === true ? (
+			{state?.ok === true && !pending ? (
 				<Alert role="status">
 					<AlertTitle>
 						{state.data.reactivated ? "Assignment restored" : "Role assigned"}
