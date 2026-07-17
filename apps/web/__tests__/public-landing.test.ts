@@ -32,11 +32,16 @@ describe("public landing (PL-S2)", () => {
 		const stage = source("features/landing/the-machine-landing-stage.tsx");
 		const cta = source("features/auth/sign-in-button.tsx");
 		expect(stage).toContain("SignInButton");
+		expect(stage).toContain('surface="machine"');
 		expect(stage).not.toContain('href="/auth/sign-in"');
 		expect(stage).not.toContain('href="/auth/login"');
 		expect(cta).toContain("AUTH_LOGIN_PATH");
-		expect(cta).toContain("<Link href={AUTH_LOGIN_PATH}>Sign in</Link>");
-		expect(cta).toContain("Button asChild");
+		expect(cta).toContain("<Link href={AUTH_LOGIN_PATH}>");
+		expect(cta).toContain("Sign in");
+		expect(cta).toContain("sign-in-button__mark");
+		expect(cta).toContain("asChild");
+		expect(cta).toContain("<Button");
+		expect(cta).toContain('surface?: "default" | "machine"');
 		expect(AUTH_LOGIN_PATH).toBe("/auth/login");
 	});
 
