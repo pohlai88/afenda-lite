@@ -1,8 +1,6 @@
 "use client";
 
 import {
-	Alert,
-	AlertDescription,
 	AlertDialog,
 	AlertDialogCancel,
 	AlertDialogContent,
@@ -10,7 +8,6 @@ import {
 	AlertDialogFooter,
 	AlertDialogHeader,
 	AlertDialogTitle,
-	AlertTitle,
 	Badge,
 	Button,
 	Card,
@@ -18,6 +15,7 @@ import {
 	CardDescription,
 	CardHeader,
 	CardTitle,
+	Code,
 	DataTable,
 	type DataTableColumn,
 	Dialog,
@@ -43,7 +41,7 @@ import {
 
 /**
  * Org-admin panels — DataTable + CAPABLE assign/revoke (GUIDE-018 I3.1 ·
- * ADR-010 · UI-CAP-07). Audit View Dialog remains CAPABLE read detail.
+ * ADR-010). Audit View Dialog remains CAPABLE read detail.
  */
 export type OrgRoleRow = {
 	id: string;
@@ -90,11 +88,19 @@ const roleColumns: DataTableColumn<OrgRoleRow>[] = [
 			/>
 		),
 	},
-	{ key: "id", title: "ID" },
+	{
+		key: "id",
+		title: "ID",
+		render: (value) => <Code>{String(value)}</Code>,
+	},
 ];
 
 const assignmentColumns: DataTableColumn<OrgAssignmentRow>[] = [
-	{ key: "userId", title: "User" },
+	{
+		key: "userId",
+		title: "User",
+		render: (value) => <Code>{String(value)}</Code>,
+	},
 	{ key: "roleName", title: "Role", sortable: true },
 	{ key: "scopeType", title: "Scope" },
 ];
@@ -107,12 +113,6 @@ const auditColumns: DataTableColumn<OrgAuditRow>[] = [
 		render: (value) => (value ? String(value) : "—"),
 	},
 ];
-
-function IdentifierText({ value }: { value: string }) {
-	return (
-		<code className="font-mono text-sm text-foreground-tertiary">{value}</code>
-	);
-}
 
 function eventCountLabel(count: number): string {
 	return count === 1 ? "1 event" : `${count} events`;
@@ -140,11 +140,17 @@ function RevokeAssignmentDialog({
 		}
 	}, [state, onOpenChange]);
 
+	const showFormError = !pending && state?.ok === false;
+
 	return (
 		<AlertDialog open={open} onOpenChange={onOpenChange}>
 			<AlertDialogContent>
 				{assignment ? (
-					<form action={formAction} className="flex flex-col gap-4">
+					<form
+						action={formAction}
+						aria-busy={pending}
+						className="flex flex-col gap-(--field-gap)"
+					>
 						<input type="hidden" name="assignmentId" value={assignment.id} />
 						<AlertDialogHeader>
 							<AlertDialogTitle>Revoke role assignment</AlertDialogTitle>
@@ -158,28 +164,16 @@ function RevokeAssignmentDialog({
 							items={[
 								{
 									label: "User",
-									value: <IdentifierText value={assignment.userId} />,
+									value: <Code>{assignment.userId}</Code>,
 								},
 								{ label: "Role", value: assignment.roleName },
 								{
 									label: "Assignment",
-									value: <IdentifierText value={assignment.id} />,
+									value: <Code>{assignment.id}</Code>,
 								},
 							]}
 						/>
-						{state?.ok === false ? <FormError message={state.message} /> : null}
-						{state?.ok === true ? (
-							<Alert role="status">
-								<AlertTitle>Assignment revoked</AlertTitle>
-								<AlertDescription>
-									Audit{" "}
-									<code className="font-mono text-sm text-foreground-tertiary">
-										{state.data.auditId}
-									</code>{" "}
-									recorded.
-								</AlertDescription>
-							</Alert>
-						) : null}
+						{showFormError ? <FormError message={state.message} /> : null}
 						<AlertDialogFooter>
 							<AlertDialogCancel disabled={pending}>Cancel</AlertDialogCancel>
 							<Button type="submit" variant="destructive" disabled={pending}>
@@ -269,9 +263,11 @@ export function OrgAdminPanels({
 						Active assignments for this organization ({assignments.length}).
 					</CardDescription>
 				</CardHeader>
-				<CardContent className="space-y-6">
-					<div className="space-y-3">
-						<h3 className="text-sm font-medium tracking-tight">Assign role</h3>
+				<CardContent className="flex flex-col gap-(--section-gap)">
+					<div className="flex flex-col gap-(--field-gap)">
+						<h3 className="text-sm font-medium text-foreground-secondary">
+							Assign role
+						</h3>
 						<AssignOrgRoleForm
 							roles={assignableRoleOptions}
 							memberDirectory={memberDirectory}
@@ -299,8 +295,8 @@ export function OrgAdminPanels({
 			</Card>
 
 			<Card>
-				<CardHeader className="flex flex-row items-start justify-between gap-4">
-					<div className="space-y-1.5">
+				<CardHeader className="flex flex-row items-start justify-between gap-(--field-gap)">
+					<div className="flex flex-col gap-1.5">
 						<CardTitle>RBAC audit</CardTitle>
 						<CardDescription>
 							Recent org-scoped audit events ({auditRows.length}).
@@ -308,7 +304,7 @@ export function OrgAdminPanels({
 					</div>
 					<Badge variant="secondary">{eventCountLabel(auditRows.length)}</Badge>
 				</CardHeader>
-				<CardContent className="space-y-3">
+				<CardContent className="flex flex-col gap-(--field-gap)">
 					<DataTable
 						columns={auditColumns}
 						data={auditRows}
@@ -353,7 +349,7 @@ export function OrgAdminPanels({
 										},
 										{
 											label: "Event ID",
-											value: <IdentifierText value={selectedAudit.id} />,
+											value: <Code>{selectedAudit.id}</Code>,
 										},
 									]}
 								/>

@@ -28,3 +28,35 @@ export function expectOperatorHome(pathname: string): void {
 export function expectClientHome(pathname: string): void {
 	expect(pathname).toBe("/client/dashboard");
 }
+
+export type OperatorShellNavExpectation = {
+	admin: boolean;
+	fft: boolean;
+};
+
+/**
+ * N16 — assert permission-filtered operator platform shell sidebar links.
+ */
+export async function expectOperatorShellNav(
+	page: Page,
+	expectation: OperatorShellNavExpectation,
+): Promise<void> {
+	const adminLink = page.locator('a[href="/admin"]').filter({
+		hasText: /Operator admin/i,
+	});
+	const fftLink = page.locator('a[href="/fft"]').filter({
+		hasText: /Feed Farm Trade/i,
+	});
+
+	if (expectation.admin) {
+		await expect(adminLink.first()).toBeVisible({ timeout: 15_000 });
+	} else {
+		await expect(adminLink).toHaveCount(0);
+	}
+
+	if (expectation.fft) {
+		await expect(fftLink.first()).toBeVisible({ timeout: 15_000 });
+	} else {
+		await expect(fftLink).toHaveCount(0);
+	}
+}

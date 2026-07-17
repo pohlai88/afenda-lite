@@ -27,6 +27,7 @@ const SERVER_SAFE = [
 	"button",
 	"button-group",
 	"card",
+	"code",
 	"input",
 	"kbd",
 	"native-select",

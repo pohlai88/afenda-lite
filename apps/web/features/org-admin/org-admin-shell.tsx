@@ -5,6 +5,7 @@ import {
 	CardDescription,
 	CardHeader,
 	CardTitle,
+	Code,
 } from "@afenda/ui-system";
 
 import { forbidPermissionAccess } from "@/features/auth/require-permission";
@@ -86,11 +87,7 @@ export async function OrgAdminShell() {
 					Operator admin
 				</h1>
 				<p className="text-sm text-foreground-secondary">
-					Org-scoped RBAC shell for{" "}
-					<code className="font-mono text-sm text-foreground-tertiary">
-						{orgId}
-					</code>
-					.
+					Org-scoped RBAC shell for <Code>{orgId}</Code>.
 				</p>
 			</header>
 
@@ -101,10 +98,7 @@ export async function OrgAdminShell() {
 						<CardDescription>
 							Neon Auth delivers the invitation email; success also writes an
 							org-scoped RBAC audit row. Invitees open{" "}
-							<code className="font-mono text-sm text-foreground-tertiary">
-								{JOIN_PATH}?invitationId=…
-							</code>
-							.
+							<Code>{JOIN_PATH}?invitationId=…</Code>.
 						</CardDescription>
 					</CardHeader>
 					<CardContent>

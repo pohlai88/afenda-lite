@@ -4,6 +4,7 @@ import { z } from "zod";
 import {
 	type ActionResult,
 	actionFail,
+	actionFieldMessage,
 	actionOk,
 	isActionFailure,
 	isActionSuccess,
@@ -38,6 +39,17 @@ describe("ActionResult + error brands (I2.1)", () => {
 		);
 
 		expect(JSON.parse(JSON.stringify(result))).toEqual(result);
+	});
+
+	it("reads the first field error from ActionResult details", () => {
+		const fail = actionFail("VALIDATION_ERROR", "Invalid input.", {
+			fieldErrors: { email: ["Required", "Too short"], role: ["Invalid"] },
+		});
+		expect(actionFieldMessage(fail, "email")).toBe("Required");
+		expect(actionFieldMessage(fail, "role")).toBe("Invalid");
+		expect(actionFieldMessage(fail, "missing")).toBeUndefined();
+		expect(actionFieldMessage(null, "email")).toBeUndefined();
+		expect(actionFieldMessage(actionOk({ id: "1" }), "email")).toBeUndefined();
 	});
 
 	it("maps shared ApiErrorCode brands to HTTP status", () => {

@@ -298,6 +298,86 @@ export async function provisionWorkerTenant(
 	};
 }
 
+/**
+ * Assign system template `editor` to the factory operator in orgA.
+ * Editor has `clients.invite` (shows Operator admin nav) but not `fft.access`
+ * (hides FFT nav) and disables admin permission bootstrap.
+ */
+export async function assignLimitedOperatorNavRole(
+	handle: WorkerTenantHandle,
+): Promise<{ assignmentId: string; roleId: string }> {
+	const databaseUrl = requireDatabaseUrl();
+	const sql = await createNeonSql(databaseUrl);
+
+	await sql`
+		DELETE FROM platform_role_assignment
+		WHERE user_id = ${handle.operator.userId}
+			AND organization_id = ${handle.orgA.id}
+	`;
+
+	const roles = (await sql`
+		SELECT id
+		FROM platform_role
+		WHERE template_key = 'editor'
+			AND is_system_template = true
+			AND organization_id IS NULL
+		LIMIT 1
+	`) as Array<{ id: string }>;
+
+	const roleId = roles[0]?.id;
+	if (!roleId) {
+		throw new Error(
+			"N16 factory: system template role editor missing — run permission catalog seed",
+		);
+	}
+
+	const inserted = (await sql`
+		INSERT INTO platform_role_assignment (
+			user_id,
+			organization_id,
+			role_id,
+			scope_type,
+			scope_id,
+			active,
+			granted_by,
+			created_at,
+			updated_at
+		)
+		VALUES (
+			${handle.operator.userId},
+			${handle.orgA.id},
+			${roleId}::uuid,
+			'organization',
+			${handle.orgA.id},
+			true,
+			${handle.operator.userId},
+			NOW(),
+			NOW()
+		)
+		RETURNING id
+	`) as Array<{ id: string }>;
+
+	const assignmentId = inserted[0]?.id;
+	if (!assignmentId) {
+		throw new Error("N16 factory: failed to insert limited operator assignment");
+	}
+
+	return { assignmentId, roleId };
+}
+
+/** Restore admin-bootstrap path: zero active platform assignments for operator. */
+export async function clearOperatorPlatformAssignments(
+	handle: WorkerTenantHandle,
+): Promise<void> {
+	const databaseUrl = requireDatabaseUrl();
+	const sql = await createNeonSql(databaseUrl);
+	await sql`
+		DELETE FROM platform_role_assignment
+		WHERE user_id = ${handle.operator.userId}
+			AND organization_id = ${handle.orgA.id}
+	`;
+}
+
 /** Idempotent cleanup of rows created by `provisionWorkerTenant`. */
 export async function cleanupWorkerTenant(
 	handle: WorkerTenantHandle,
@@ -321,6 +401,20 @@ export async function cleanupWorkerTenant(
 		handle.foreignOwner.email,
 		handle.invitee.email,
 	];
+
+	for (const userId of userIds) {
+		await sql`
+			DELETE FROM platform_role_assignment
+			WHERE user_id = ${userId}
+		`;
+	}
+
+	for (const orgId of orgIds) {
+		await sql`
+			DELETE FROM platform_role_assignment
+			WHERE organization_id = ${orgId}
+		`;
+	}
 
 	for (const userId of userIds) {
 		await sql`

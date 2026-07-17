@@ -44,3 +44,27 @@ export function isActionFailure<T>(
 ): result is ActionFailure {
 	return !result.ok;
 }
+
+type ActionFieldErrorDetails = {
+	fieldErrors?: Record<string, string[] | undefined>;
+};
+
+/**
+ * First Zod/`parseSchema` field error from an ActionResult failure.
+ * Forms use this for FormField `error`; prefer over duplicating casts.
+ */
+export function actionFieldMessage(
+	state: ActionResult<unknown> | null | undefined,
+	field: string,
+): string | undefined {
+	if (!state || state.ok || state.details === undefined) {
+		return undefined;
+	}
+	if (typeof state.details !== "object" || state.details === null) {
+		return undefined;
+	}
+	const messages = (state.details as ActionFieldErrorDetails).fieldErrors?.[
+		field
+	];
+	return messages?.[0];
+}

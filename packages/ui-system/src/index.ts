@@ -20,6 +20,7 @@ export * from "./components/ui/button-group";
 export * from "./components/ui/calendar";
 export * from "./components/ui/card";
 export * from "./components/ui/checkbox";
+export * from "./components/ui/code";
 export * from "./components/ui/collapsible";
 // Overlays / menus
 export * from "./components/ui/combobox";

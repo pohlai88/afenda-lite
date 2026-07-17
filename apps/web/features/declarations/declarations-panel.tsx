@@ -3,6 +3,7 @@
 import {
 	Badge,
 	Button,
+	Code,
 	DataTable,
 	type DataTableColumn,
 	Dialog,
@@ -93,11 +94,7 @@ const columns: DataTableColumn<DeclarationAssignmentRow>[] = [
 		key: "slug",
 		title: "Slug",
 		sortable: true,
-		render: (value) => (
-			<code className="font-mono text-sm text-foreground-tertiary">
-				{String(value)}
-			</code>
-		),
+		render: (value) => <Code>{String(value)}</Code>,
 	},
 	{
 		key: "assignmentStatus",

@@ -1,6 +1,6 @@
 "use client";
 
-import { DataTable, type DataTableColumn } from "@afenda/ui-system";
+import { Code, DataTable, type DataTableColumn } from "@afenda/ui-system";
 
 export type FftEventRow = {
 	id: string;
@@ -14,11 +14,7 @@ const columns: DataTableColumn<FftEventRow>[] = [
 	{
 		key: "eventCode",
 		title: "Code",
-		render: (value) => (
-			<code className="font-mono text-sm text-foreground-tertiary">
-				{String(value)}
-			</code>
-		),
+		render: (value) => <Code>{String(value)}</Code>,
 	},
 	{ key: "status", title: "Status" },
 ];

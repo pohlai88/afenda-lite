@@ -6,6 +6,7 @@ import {
 	AlertDescription,
 	AlertTitle,
 	Button,
+	Code,
 	FormError,
 	FormField,
 	Input,
@@ -20,6 +21,7 @@ import {
 	type InviteOrgMemberActionState,
 	inviteOrgMemberAction,
 } from "@/app/actions/invite-org-member";
+import { actionFieldMessage } from "@/modules/platform/schemas/action-result";
 
 const initialState: InviteOrgMemberActionState = null;
 
@@ -34,24 +36,10 @@ type InviteMemberFormProps = {
 	joinPath: string;
 };
 
-type FieldErrors = {
-	fieldErrors?: Record<string, string[] | undefined>;
-};
-
-function fieldMessage(
-	state: InviteOrgMemberActionState,
-	field: string,
-): string | undefined {
-	if (!state || state.ok || state.details === undefined) {
-		return undefined;
-	}
-	if (typeof state.details !== "object" || state.details === null) {
-		return undefined;
-	}
-	const messages = (state.details as FieldErrors).fieldErrors?.[field];
-	return messages?.[0];
-}
-
+/**
+ * Org-admin invite form — CAPABLE when `inviteableRoles` is non-empty
+ * (GUIDE-018 I1.3 / I2.3 / I3.1 · `clients.invite`).
+ */
 export function InviteMemberForm({
 	inviteableRoles,
 	joinPath,
@@ -63,7 +51,7 @@ export function InviteMemberForm({
 
 	if (inviteableRoles.length === 0) {
 		return (
-			<Alert>
+			<Alert role="status">
 				<AlertTitle>Invitations unavailable</AlertTitle>
 				<AlertDescription>
 					Your membership role cannot invite members for this organization.
@@ -76,10 +64,13 @@ export function InviteMemberForm({
 	const defaultRole = inviteableRoles.includes("client")
 		? "client"
 		: inviteableRoles[0];
-	const emailError = fieldMessage(state, "email");
-	const roleError = fieldMessage(state, "role");
+	const emailError = actionFieldMessage(state, "email");
+	const roleError = actionFieldMessage(state, "role");
 	const showFormError =
-		state?.ok === false && emailError === undefined && roleError === undefined;
+		!pending &&
+		state?.ok === false &&
+		emailError === undefined &&
+		roleError === undefined;
 
 	return (
 		<form
@@ -133,19 +124,12 @@ export function InviteMemberForm({
 				)}
 			</Button>
 
-			{state?.ok === true ? (
+			{state?.ok === true && !pending ? (
 				<Alert role="status">
 					<AlertTitle>Invitation sent</AlertTitle>
 					<AlertDescription>
-						Sent to{" "}
-						<code className="font-mono text-sm text-foreground-tertiary">
-							{state.data.email}
-						</code>
-						. Audit{" "}
-						<code className="font-mono text-sm text-foreground-tertiary">
-							{state.data.auditId}
-						</code>{" "}
-						recorded for this org.{" "}
+						Sent to <Code>{state.data.email}</Code>. Audit{" "}
+						<Code>{state.data.auditId}</Code> recorded for this org.{" "}
 						{state.data.joinUrl ? (
 							<>
 								Join link:{" "}
@@ -163,10 +147,7 @@ export function InviteMemberForm({
 						) : (
 							<>
 								They join via the email link at{" "}
-								<code className="font-mono text-sm text-foreground-tertiary">
-									{joinPath}?invitationId=…
-								</code>
-								.
+								<Code>{joinPath}?invitationId=…</Code>.
 							</>
 						)}
 					</AlertDescription>

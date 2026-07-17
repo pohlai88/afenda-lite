@@ -5,6 +5,7 @@ import {
 	AlertDescription,
 	AlertTitle,
 	Button,
+	Code,
 	Combobox,
 	FormError,
 	FormField,
@@ -18,6 +19,7 @@ import {
 	type AssignOrgRoleActionState,
 	assignOrgRoleAction,
 } from "@/app/actions/assign-org-role";
+import { actionFieldMessage } from "@/modules/platform/schemas/action-result";
 
 const initialState: AssignOrgRoleActionState = null;
 
@@ -40,24 +42,6 @@ type AssignOrgRoleFormProps = {
 	roles: AssignableRoleOption[];
 	memberDirectory: MemberDirectoryState;
 };
-
-type FieldErrors = {
-	fieldErrors?: Record<string, string[] | undefined>;
-};
-
-function fieldMessage(
-	state: AssignOrgRoleActionState,
-	field: string,
-): string | undefined {
-	if (!state || state.ok || state.details === undefined) {
-		return undefined;
-	}
-	if (typeof state.details !== "object" || state.details === null) {
-		return undefined;
-	}
-	const messages = (state.details as FieldErrors).fieldErrors?.[field];
-	return messages?.[0];
-}
 
 /**
  * Org-admin assign form — CAPABLE when assignable roles and the org member
@@ -124,8 +108,8 @@ export function AssignOrgRoleForm({
 	}
 
 	const defaultRoleId = roles[0]?.id;
-	const userIdError = fieldMessage(state, "userId");
-	const roleIdError = fieldMessage(state, "roleId");
+	const userIdError = actionFieldMessage(state, "userId");
+	const roleIdError = actionFieldMessage(state, "roleId");
 	const showFormError =
 		!pending &&
 		state?.ok === false &&
@@ -198,19 +182,9 @@ export function AssignOrgRoleForm({
 						{state.data.reactivated ? "Assignment restored" : "Role assigned"}
 					</AlertTitle>
 					<AlertDescription>
-						User{" "}
-						<code className="font-mono text-sm text-foreground-tertiary">
-							{state.data.userId}
-						</code>{" "}
-						· assignment{" "}
-						<code className="font-mono text-sm text-foreground-tertiary">
-							{state.data.assignmentId}
-						</code>
-						. Audit{" "}
-						<code className="font-mono text-sm text-foreground-tertiary">
-							{state.data.auditId}
-						</code>{" "}
-						recorded for this org.
+						User <Code>{state.data.userId}</Code> · assignment{" "}
+						<Code>{state.data.assignmentId}</Code>. Audit{" "}
+						<Code>{state.data.auditId}</Code> recorded for this org.
 					</AlertDescription>
 				</Alert>
 			) : null}
