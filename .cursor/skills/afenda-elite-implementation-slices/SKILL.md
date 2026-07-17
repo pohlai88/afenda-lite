@@ -25,7 +25,7 @@ description: >-
 | [command-sheet.md](command-sheet.md) | Copy-paste blocks for `I*` / `S*` |
 | [slice-map.md](slice-map.md) | `I*` / `S*` → farms · authority · verify |
 | [neon-command-sheet.md](neon-command-sheet.md) | Copy-paste implement / audit / repair for `N*` |
-| [neon-auth-slice-map.md](neon-auth-slice-map.md) | `N1`–`N18` → farms · floor verify · UNEVALUATED |
+| [neon-auth-slice-map.md](neon-auth-slice-map.md) | `N1`–`N18` → farms · floor verify · APPROVED (serial complete) |
 | [neon-slice-score.md](neon-slice-score.md) | Neon QUALITY ORDER · /100% score · caps |
 
 ## When to use

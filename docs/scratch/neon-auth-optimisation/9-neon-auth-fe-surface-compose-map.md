@@ -97,7 +97,7 @@ flowchart TB
 | Static `redirectTo="/"` P0 | `AuthUiProvider` uses `sanitizeCallbackUrl(searchParams.get("redirectTo")) ?? "/"`; `/` then bounces via `getAuthBootstrap` + `resolvePostLoginPath` (N7 APPROVED) |
 | No signed-in redirect off `/` | `(public)/page.tsx` redirects ready sessions to role home (N7) |
 | Client home `/client/dashboard` | `CLIENT_HOME_PATH=/client/declarations`; `/client/dashboard` is alias redirect (FE-15) |
-| P0 “not done until browser…” | N7 auditor APPROVED 100% — **routing closed**; remaining work is UI polish / N18 / plugins only when Approved |
+| P0 “not done until browser…” | N7 auditor APPROVED 100% — **routing closed**; N18 APPROVED; remaining = UI polish / plugins only when Approved |
 
 Do **not** treat doc 1 P0 rows as open implementation work without re-checking disk.
 
@@ -221,7 +221,7 @@ Redirect to `AUTH_LOGIN_PATH` (`/auth/login`). Session-gate **bypass**. No featu
 | Tree | `FftEventsShell` → `FftEventsPanel` (`DataTable`) |
 | Recipe | App chrome + Card + DataTable (Empty via DataTable props) |
 | States | permission deny · empty events · list |
-| N* | N16 · **N18 UNEVALUATED** (list-only envelope; 2B–2D frozen) |
+| N* | N16 · **N18 APPROVED** (list-only envelope; 2B–2D frozen) |
 | Capability | `LIST_ONLY_PERMITTED` for deep FFT routes — do not invent `/fft/events/*` UI |
 
 ### FE-13 — Declarations list `/client/declarations`
@@ -320,10 +320,10 @@ Present in proxy matcher and/or scaffold `route-tree.md` but **no living `page.t
 | `/auth/verify-email` · `(auth)/(protected)` tree shape | Not Living — living uses `(public)` + `[path]` |
 | `/admin/approvals` · `/admin/activity` · admin KPI home zoo | Not Living — FE-11 is org-admin invite/RBAC |
 | `/client/dashboard` as product home · `/client/profile` | Not Living — home is FE-13; dashboard is alias only |
-| Deep `/fft/pipeline|customers|…` in doc 10 | Not Living — prefer FFT doc 7; FE-12 list-only until N18 |
+| Deep `/fft/pipeline|customers|…` in doc 10 | Not Living — prefer FFT doc 7; FE-12 list-only (N18 closed; 2B–2D frozen) |
 | `ErpAppShell` / boundary / evidence component zoo | Not Living — thinner `OperatorPlatformShell` + verticals |
 
-Materialize only via Neon Auth `N*` / GUIDE-018 **Approved** slices (next open N* = **N18** only).
+Materialize only via GUIDE-018 / FFT-MOD-008 **Approved** slices (Neon Auth `N1`–`N18` serial complete — do not invent N19).
 
 ---
 
@@ -350,7 +350,7 @@ Estimates from living source review (2026-07-17). Not a formal slice close — n
 
 ### Operator ERP (FE-11–12)
 
-### Compose Score: 94% / 100%
+### Compose Score: 99% / 100%
 
 | Dimension | Score | Note |
 |-----------|-------|------|
@@ -358,10 +358,10 @@ Estimates from living source review (2026-07-17). Not a formal slice close — n
 | CONSISTENCY | 20/20 | `text-2xl` titles · `gap-6`/`p-6` · `bg-canvas` inset |
 | CORRECT-COMPONENT | 20/20 | No handrolled nav; DataTable Empty props |
 | SUITABILITY | 14/15 | FE-12 list-only honest; deep FFT routes absent (−1) |
-| SCALABILITY | 13/15 | FE-12 `LIST_ONLY_PERMITTED` until N18; no fake deep links (−2) |
-| STABILITY | 12/15 | N16 APPROVED; N18 UNEVALUATED (−3) |
+| SCALABILITY | 15/15 | N18 APPROVED list-only envelope; no fake deep links |
+| STABILITY | 15/15 | N16 · N18 APPROVED (Path-to-100% closed) |
 
-**Path to 100%:** Close N18 within FFT-MOD-008 envelope only; do not expand `/fft/*` tree without Approved slice.
+**Path to 100%:** Closed for N18 product bar. Deep `/fft/*` only after FFT-MOD-008 reopen — not Neon N*.
 
 **UI-CAP findings:** none for FE-11. FE-12: product-local list-only (not a ui-system gap).
 
@@ -443,7 +443,8 @@ Authenticated FE-11 / FE-13 product chrome **not** screenshot — no operator/cl
 ## Non-goals
 
 - Promoting this file to Living / DOC-002
-- Implementing N18 FFT expansion or Neon Auth plugins
+- Inventing N19 or reopening FFT 2B–2D / deep `/fft/*` from this map
+- Enabling Neon Auth plugins without an Approved slice
 - Beauty redesign of Neon `AuthView` internals
 - Restoring Collapse / Portal Atmosphere / playground
 
@@ -456,7 +457,7 @@ Authenticated FE-11 / FE-13 product chrome **not** screenshot — no operator/cl
 | [10-neon-auth-frontend-ui-ux.md](./10-neon-auth-frontend-ui-ux.md) | **Target** companion only — quarantine; keep separate; not materialization order |
 | `afenda-elite-ui-compose` | QUALITY ORDER · recipes · Compose Score |
 | `afenda-elite-frontend-scaffold/route-tree.md` | Target tree — living overlay only for `/admin` |
-| neon-auth-slice-map | N* APPROVED / UNEVALUATED |
+| neon-auth-slice-map | N1–N18 APPROVED (serial complete) |
 | ARCH-026 · ADR-010 · ARCH-024 `@afenda/ui-system` | Living packaging / barrel |
 
 ## Change log
@@ -465,3 +466,4 @@ Authenticated FE-11 / FE-13 product chrome **not** screenshot — no operator/cl
 |------|---------|
 | 2026-07-17 | Initial FE-01…FE-15 compose map; drift vs doc 1; zone scores; disk verify + Chrome MCP a11y/`redirectTo` evidence |
 | 2026-07-17 | Cross-link doc 10 as Target-only; Absent appendix lists doc 10 domains (`/system`, `/dev/neon`, …) — keep separate, no merge |
+| 2026-07-17 | Record N18 APPROVED; FE-12 + Operator zone scores; N1–N18 serial complete (no N19) |

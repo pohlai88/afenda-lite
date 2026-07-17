@@ -42,10 +42,10 @@ Reuse [slice-map.md](slice-map.md) § Farm short names. Additional:
 | **N12** | Audit / security evidence | Ops | router → slices → security → neon | GUIDE-017 · ARCH-023 | audit evidence · secret/unsafe-error closed or evidenced | APPROVED | 100% | independent audit 2026-07-17 · Path-to-100% repair SCORED 2026-07-17 (re-audit required) |
 | **N13** | Authenticated E2E factory | Test | router → slices → tdd · lanes | GUIDE-018 I4 · testing/ | factories under `testing/` · smoke green | APPROVED | 100% | independent audit 2026-07-17 · Path-to-100% closed (re-audit 2026-07-17) |
 | **N14** | Security / failure verification | Ops | router → slices → security → neon | GUIDE-017 | denial / failure cases evidenced | APPROVED | 100% | independent audit 2026-07-17 · Path-to-100% closed |
-| **N15** | Production operations | Ops | router → slices → neon → ship | RB-001 · RB-005 · AGENTS | domains · deploy health · validate scripts | APPROVED | 97% | independent audit 2026-07-17 · Path-to-100% open |
+| **N15** | Production operations | Ops | router → slices → neon → ship | RB-001 · RB-005 · AGENTS | domains · deploy health · validate scripts | APPROVED | 100% | independent audit 2026-07-17 · Path-to-100% closed 2026-07-17 (AUTHORITY pointer lag cleared; N14–N18 APPROVED; floor re-verify green) |
 | **N16** | Shared ERP platform shell | Ops | router → slices → scaffold → modules | ARCH-015/018 as needed | shell composes ports · ui-compose if UI | APPROVED | 100% | independent audit 2026-07-17 · Path-to-100% closed |
 | **N17** | Declarations vertical | Ops | router → slices → modules → readiness → neon | ARCH-023 · GUIDE-018 I3.2 | submit/read under hard tenancy | APPROVED | 100% | independent audit 2026-07-17 · Path-to-100% closed (scratch pack evidence ledger; Living MOD promotion = later Docs-lane) |
-| **N18** | FFT permitted vertical | Ops | router → slices → fft → modules | FFT-MOD-008 | Phase 2A envelope only — no 2B–2D | UNEVALUATED | — | — |
+| **N18** | FFT permitted vertical | Ops | router → slices → fft → modules | FFT-MOD-008 | Phase 2A envelope only — no 2B–2D | APPROVED | 100% | independent audit 2026-07-17 · Path-to-100% closed (scratch pack evidence ledger; Living MOD promotion = later Docs-lane; no 2B–2D) |
 
 ## Serial order
 
@@ -55,7 +55,7 @@ N1 → N2 → N3 → N4 → N5 → N6 → N7 → N8 → N9 → N10 → N11 → N
 
 Skip only with explicit user waiver **this turn**. One `N*` per chat. Do not start next until auditor APPROVED (or human waiver).
 
-**Program pointer:** last APPROVED = **N17** (independent audit 2026-07-17 · 100%; Path-to-100% closed). Next ID = **N18** only — authorize after N17 close; do **not** sneak-start here.
+**Program pointer:** last APPROVED = **N18** (independent audit 2026-07-17 · 100%; Path-to-100% closed). **N1–N18 serial complete** (all Path-to-100% closed, including **N15**) — do **not** invent **N19**. Residual Docs-lane only: GUIDE-018 I3.3 checkbox sync (GUIDE Control State Closed).
 
 ## Related I* (load hints only — not APPROVED transfer)
 

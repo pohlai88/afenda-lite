@@ -7,7 +7,7 @@
 | Merge policy | **Keep separate** from doc 9 — do not fold this body into the living map |
 | Materialize when | Neon Auth `N*` / GUIDE-018 **Approved slice** only — never “because it is in this file” |
 
-**Quarantine:** `/system/*`, `/dev/neon/*`, deep `/fft/*`, aspirational admin KPI homes, and the shared-component zoo below are **Target narrative**. Living checkout uses `(public)` / `(operator)` / `(client)`, `/admin` org-admin, `/client/declarations` as client home, and `/fft` list-only until N18 + FFT-MOD-008. FFT deep commercial UX belongs in [FFT `7-fft-frontend-ui-ux.md`](../FFT/7-fft-frontend-ui-ux.md), not here.
+**Quarantine:** `/system/*`, `/dev/neon/*`, deep `/fft/*`, aspirational admin KPI homes, and the shared-component zoo below are **Target narrative**. Living checkout uses `(public)` / `(operator)` / `(client)`, `/admin` org-admin, `/client/declarations` as client home, and `/fft` list-only (**N18 APPROVED** · FFT-MOD-008 freeze). FFT deep commercial UX belongs in [FFT `7-fft-frontend-ui-ux.md`](../FFT/7-fft-frontend-ui-ux.md), not here.
 
 ## 1. Architecture verdict
 
@@ -1669,14 +1669,14 @@ signed-in / redirect
 wrong-role /403 preservation
 ```
 
-Do **not** implement the full Neon Control Centre (`/dev/neon/*`) or `/system/*` without an Approved slice. Next program ID per neon-auth-slice-map is **N18** only (FFT permitted vertical) — not a sneak-start of doc-10 Target trees.
+Do **not** implement the full Neon Control Centre (`/dev/neon/*`) or `/system/*` without an Approved slice. Neon Auth **N1–N18 serial is complete** (N18 APPROVED) — do **not** invent N19 or sneak-start doc-10 Target trees.
 
 ## After N7 (program order — living slice map wins)
 
 ```text
-N8–N17 APPROVED (see neon-auth-slice-map)
-→ N18 permitted FFT only (UNEVALUATED; FFT-MOD-008 freeze on 2B–2D)
+N1–N18 APPROVED (see neon-auth-slice-map) — serial complete; no N19
 → /system and /dev/neon only after explicit Approved slice groups
+→ deep /fft/* only after FFT-MOD-008 reopen (not Neon N*)
 ```
 
 ---

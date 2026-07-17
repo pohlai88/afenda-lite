@@ -108,8 +108,8 @@ Controlled docs: respect **Control State**. `Closed` → reopen with explicit Do
 | Rule | Detail |
 |------|--------|
 | Forward code | Greenfield under `apps/web/**` and `packages/*` only |
-| Next open (GUIDE-018) | **I3.2** — Declarations submit/read. Phase **I3.1** closed (assign/revoke · `hasPermission`). Phase **I2** / **I1** closed. ARCH-028 Checkpoint G **closed**. |
-| Next open (Neon Auth `N*`) | **N16** APPROVED at 100% (Path-to-100% closed); N15 APPROVED at 97% (Path-to-100% open). Next ID = **N17** only — do **not** sneak-start here. Map: [neon-auth-slice-map](.cursor/skills/afenda-elite-implementation-slices/neon-auth-slice-map.md). |
+| Next open (GUIDE-018) | Product evidence for **I3.1–I3.3** on disk via N11/N17/N18. GUIDE-018 **Control State Closed** — checkbox sync needs Docs-lane reopen. Operational next after reopen: **I3.4** (org-admin) / **I4**. ARCH-028 Checkpoint G **closed**. |
+| Next open (Neon Auth `N*`) | **N1–N18 serial complete** — all APPROVED at 100% (incl. **N15** Path-to-100% closed). Do **not** invent **N19**. Map: [neon-auth-slice-map](.cursor/skills/afenda-elite-implementation-slices/neon-auth-slice-map.md). |
 | Env | `@afenda/env` + `.env.local` only (compose retired) |
 | Docs trunks | Flat `docs/architecture/ARCH-*.md` — gate `pnpm check:docs-trunk-ban` |
 | Index ghosts | Grep/Glob may list deleted paths — trust `Test-Path` · `git ls-files` · trunk-ban check |

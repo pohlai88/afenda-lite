@@ -3,11 +3,14 @@
 | Field | Value |
 | --- | --- |
 | Slice | N18 FFT permitted vertical |
-| Mode | Path-to-100% repair (browser deny/allow) |
+| Mode | Closed — independent audit APPROVED |
 | Date | 2026-07-17 |
 | Living authority | FFT-MOD-008 · ARCH-023 · GUIDE-018 I3.3 · AGENTS |
+| Neon Slice Score | **100%** · Path-to-100% closed |
+| Auditor | Independent audit 2026-07-17 → **APPROVED** |
 | Scratch role | Evidence / OPS ledger only — **not** Living SSOT |
 | Module readiness | **Not claimable** |
+| GUIDE-018 I3.3 checkbox | Still WAIT in Closed GUIDE — Docs-lane reopen required to sync |
 
 ## 1. Product path (implementation)
 
@@ -77,4 +80,4 @@ exit 0 — 2026-07-17
 
 ## 4. Path to 100% (N18)
 
-**Closed** by authenticated browser deny/allow on `/fft` under platform `fft.access` (`e2e/smoke/fft-permitted-vertical.spec.ts`). Living MOD promotion remains later Docs-lane; independent auditor APPROVED required for neon-auth-slice-map close.
+**Closed** by authenticated browser deny/allow on `/fft` under platform `fft.access` (`e2e/smoke/fft-permitted-vertical.spec.ts`). Independent auditor **APPROVED** 2026-07-17; neon-auth-slice-map row recorded. Living MOD promotion and GUIDE-018 I3.3 checkbox sync remain later Docs-lane (GUIDE Control State Closed).

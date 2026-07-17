@@ -2,7 +2,7 @@
 
 Profiles: Enterprise Core · FFT freeze envelope
 
-> **Non-authoritative scratch.** This pack is a discovery + verify ledger for Neon Auth slice **N18** (FFT Phase-2A permitted vertical under hard tenancy). It does **not** replace Living authority and is **not** SSOT.
+> **Non-authoritative scratch.** This pack is a discovery + verify ledger for Neon Auth slice **N18** (FFT Phase-2A permitted vertical under hard tenancy). **N18 APPROVED** 2026-07-17 (100% · Path-to-100% closed). It does **not** replace Living authority and is **not** SSOT.
 
 ## Living authority (wins over this pack)
 
@@ -29,4 +29,4 @@ Do not invent Living IDs from this scratch. Do not reopen FFT 2B–2D.
 
 ## Slice map pointer
 
-`.cursor/skills/afenda-elite-implementation-slices/neon-auth-slice-map.md` → **N18**.
+`.cursor/skills/afenda-elite-implementation-slices/neon-auth-slice-map.md` → **N18 APPROVED** (N1–N18 serial complete — do not invent N19).

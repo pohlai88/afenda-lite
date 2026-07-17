@@ -190,27 +190,27 @@ Enterprise production quality bar only. Shrink **scope** via Approved slices —
 
 ### P2 — Product verticals (gated)
 
-| Item | Outcome | Not done until |
-|------|---------|----------------|
-| **I3.2** Declarations | Client list → submit/read under hard tenancy | I3.2 slice evidence |
-| **I3.3** FFT | Operator read shell + Phase 2A RBAC only | FFT-MOD-008 Allowed; **2B–2D remain frozen** |
+| Item | Outcome | Status (scratch honesty 2026-07-17) |
+|------|---------|-------------------------------------|
+| **I3.2** Declarations | Client list → submit/read under hard tenancy | **Shipped** via Neon **N17** APPROVED — GUIDE checkbox sync = Docs-lane |
+| **I3.3** FFT | Operator read shell + Phase 2A RBAC only | **Shipped** via Neon **N18** APPROVED — **2B–2D remain frozen** |
 
 ### Later — Neon platform expansion
 
 | Item | Gate |
 |------|------|
-| Neon Auth plugins (OAuth, magic link, JWT for external services, …) | Explicit Approved slice + Neon Auth production checklist |
+| Neon Auth plugins (OAuth, magic link, JWT for external services, …) | Explicit Approved slice + Neon Auth production checklist — **not** N19 |
 | Data API as a product query path | Only if Approved ADR supersedes Drizzle/`@afenda/db` for that surface |
 | Object Storage / Functions / AI Gateway | Preview access + `us-east-2` (or Neon’s then-current eligibility) + Approved slice — do not handroll on ineligible projects |
 
 ### Suggested sequencing
 
 ```text
-P0 post-login redirect + signed-in / bounce
-  → P1 I3.1 hasPermission deepen
-  → P1 authenticated E2E (I4)
-  → P2 Declarations I3.2 (parallelizable once I3.1 authz bar is clear)
-  → FFT only inside FFT-MOD-008 Allowed window
+P0–P2 Neon Auth N1–N18 COMPLETE (2026-07-17)
+  → do not invent N19
+  → GUIDE-018 checkbox sync only via Docs-lane reopen (Control State Closed)
+  → Neon plugins / preview services only with new Approved slice + ADR
+  → FFT deep / 2B–2D only after FFT-MOD-008 reopen
 ```
 
 ---
@@ -246,4 +246,5 @@ P0 post-login redirect + signed-in / bounce
 
 | Date | Summary |
 |------|---------|
+| 2026-07-17 | Stamp N1–N18 complete; P2 I3.2/I3.3 shipped via N17/N18; no N19 |
 | 2026-07-16 | Initial scratch: Neon capability inventory; pre-login / auth / post-login Afenda map; development roadmap with P0 post-login gap |
