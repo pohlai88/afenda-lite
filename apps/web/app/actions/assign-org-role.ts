@@ -3,8 +3,8 @@
 import { requireRole } from "@afenda/auth";
 import { revalidatePath } from "next/cache";
 
+import { forbidUnlessPermission } from "@/app/actions/permission-gate";
 import { assignOrgRole } from "@/modules/identity/domain/assign-org-role";
-import { hasPermission } from "@/modules/identity/domain/has-permission";
 import { assignOrgRoleCommandSchema } from "@/modules/identity/schemas/assign-org-role";
 import {
 	ROLE_ASSIGN_AUDIT_ACTION,
@@ -52,17 +52,12 @@ export async function assignOrgRoleAction(
 		);
 	}
 
-	const allowed = await hasPermission({
-		orgId: session.orgId,
-		userId: session.userId,
-		code: "org.roles.manage",
-		bootstrapRole: session.role,
-	});
-	if (!allowed) {
-		return actionFail(
-			"FORBIDDEN",
-			"You do not have permission to manage org roles.",
-		);
+	const permissionDenied = await forbidUnlessPermission(
+		session,
+		"org.roles.manage",
+	);
+	if (permissionDenied) {
+		return permissionDenied;
 	}
 
 	let result: Awaited<ReturnType<typeof assignOrgRole>>;

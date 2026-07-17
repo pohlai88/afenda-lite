@@ -168,6 +168,15 @@ describe.skipIf(!hasDatabase)("hasPermission product wiring (I3.1)", () => {
 					code: "declarations.read",
 				}),
 			).resolves.toBe(true);
+
+			await expect(
+				hasPermission({
+					orgId: `${orgId}-other`,
+					userId: viewerUser,
+					code: "declarations.read",
+					bootstrapRole: "client",
+				}),
+			).resolves.toBe(false);
 		} finally {
 			await revokeOrgRole({
 				orgId,

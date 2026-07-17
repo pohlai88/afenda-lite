@@ -3,6 +3,7 @@
 import { getApiSession, requireRole } from "@afenda/auth";
 import { revalidatePath } from "next/cache";
 
+import { forbidUnlessPermission } from "@/app/actions/permission-gate";
 import {
 	getClientDeclarationDraft,
 	isClientOnboardingComplete,
@@ -41,6 +42,14 @@ export async function loadDeclarationDraftAction(
 	const apiSession = await getApiSession();
 	if (!apiSession) {
 		return actionFail("UNAUTHORIZED", "Authentication required.");
+	}
+
+	const permissionDenied = await forbidUnlessPermission(
+		apiSession,
+		"declarations.read",
+	);
+	if (permissionDenied) {
+		return permissionDenied;
 	}
 
 	const onboarded = await isClientOnboardingComplete({
@@ -84,6 +93,14 @@ export async function saveDeclarationDraftAction(
 	const apiSession = await getApiSession();
 	if (!apiSession) {
 		return actionFail("UNAUTHORIZED", "Authentication required.");
+	}
+
+	const permissionDenied = await forbidUnlessPermission(
+		apiSession,
+		"declarations.manage",
+	);
+	if (permissionDenied) {
+		return permissionDenied;
 	}
 
 	const onboarded = await isClientOnboardingComplete({

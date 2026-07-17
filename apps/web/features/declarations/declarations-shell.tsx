@@ -17,13 +17,14 @@ import {
 	ClipboardListIcon,
 	FilePenLineIcon,
 } from "lucide-react";
-
+import { forbidPermissionAccess } from "@/features/auth/require-permission";
 import {
 	type DeclarationDueState,
 	DeclarationsPanel,
 } from "@/features/declarations/declarations-panel";
 import { isClientOnboardingComplete } from "@/modules/declarations/domain/declaration-draft";
 import { listClientAssignments } from "@/modules/declarations/domain/list-client-assignments";
+import { sessionHasPermission } from "@/modules/identity/domain/session-permission";
 
 function toIso(value: Date | string | null | undefined): string | null {
 	if (value == null) {
@@ -66,7 +67,15 @@ export async function DeclarationsShell() {
 		);
 	}
 
-	const [assignments, canEditDraft] = await Promise.all([
+	const [canReadDeclarations, canManageDeclarations] = await Promise.all([
+		sessionHasPermission(session, "declarations.read"),
+		sessionHasPermission(session, "declarations.manage"),
+	]);
+	if (!canReadDeclarations) {
+		forbidPermissionAccess();
+	}
+
+	const [assignments, onboardingComplete] = await Promise.all([
 		listClientAssignments({
 			orgId: apiSession.orgId,
 			clientEmail: apiSession.email,
@@ -76,6 +85,7 @@ export async function DeclarationsShell() {
 			userId: session.userId,
 		}),
 	]);
+	const canEditDraft = onboardingComplete && canManageDeclarations;
 
 	const rows = assignments.map((item) => ({
 		assignmentId: item.assignmentId,
@@ -162,8 +172,9 @@ export async function DeclarationsShell() {
 					<FilePenLineIcon />
 					<AlertTitle>Draft editing unavailable</AlertTitle>
 					<AlertDescription>
-						Complete client onboarding before saving declaration drafts. You can
-						still view assignment details.
+						{onboardingComplete
+							? "Your assigned role does not include declaration editing. You can still view assignment details."
+							: "Complete client onboarding before saving declaration drafts. You can still view assignment details."}
 					</AlertDescription>
 				</Alert>
 			) : null}

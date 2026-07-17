@@ -7,10 +7,12 @@ import {
 	CardTitle,
 } from "@afenda/ui-system";
 
+import { forbidPermissionAccess } from "@/features/auth/require-permission";
 import { InviteMemberForm } from "@/features/org-admin/invite-member-form";
 import { OrgAdminPanels } from "@/features/org-admin/org-admin-panels";
 import { listAssignableRoles } from "@/modules/identity/domain/list-assignable-roles";
 import { listRoleAssignments } from "@/modules/identity/domain/list-role-assignments";
+import { sessionHasPermission } from "@/modules/identity/domain/session-permission";
 import { listOrgRbacAudit } from "@/modules/platform/domain/list-rbac-audit";
 
 /**
@@ -24,13 +26,24 @@ import { listOrgRbacAudit } from "@/modules/platform/domain/list-rbac-audit";
 export async function OrgAdminShell() {
 	const session = await getSession();
 	const { orgId, role } = session;
-	const inviteableRoles = inviteableRolesFor(role);
-	const [roles, assignments, auditRows] = await Promise.all([
-		listAssignableRoles(orgId),
-		listRoleAssignments(orgId),
-		listOrgRbacAudit(orgId),
+	const [canManageRoles, canInvite] = await Promise.all([
+		sessionHasPermission(session, "org.roles.manage"),
+		sessionHasPermission(session, "clients.invite"),
 	]);
 
+	if (!(canManageRoles || canInvite)) {
+		forbidPermissionAccess();
+	}
+
+	const [roles, assignments, auditRows] = canManageRoles
+		? await Promise.all([
+				listAssignableRoles(orgId),
+				listRoleAssignments(orgId),
+				listOrgRbacAudit(orgId),
+			])
+		: [[], [], []];
+
+	const inviteableRoles = canInvite ? inviteableRolesFor(role) : [];
 	const roleNameById = new Map(roles.map((item) => [item.id, item.name]));
 	const activeAssignments = assignments.filter((item) => item.active);
 
@@ -49,46 +62,50 @@ export async function OrgAdminShell() {
 				</p>
 			</header>
 
-			<Card>
-				<CardHeader>
-					<CardTitle>Invite member</CardTitle>
-					<CardDescription>
-						Neon Auth delivers the invitation email; success also writes an
-						org-scoped RBAC audit row. Invitees open{" "}
-						<code className="font-mono text-sm text-foreground-tertiary">
-							{JOIN_PATH}?invitationId=…
-						</code>
-						.
-					</CardDescription>
-				</CardHeader>
-				<CardContent>
-					<InviteMemberForm
-						inviteableRoles={inviteableRoles}
-						joinPath={JOIN_PATH}
-					/>
-				</CardContent>
-			</Card>
+			{canInvite ? (
+				<Card>
+					<CardHeader>
+						<CardTitle>Invite member</CardTitle>
+						<CardDescription>
+							Neon Auth delivers the invitation email; success also writes an
+							org-scoped RBAC audit row. Invitees open{" "}
+							<code className="font-mono text-sm text-foreground-tertiary">
+								{JOIN_PATH}?invitationId=…
+							</code>
+							.
+						</CardDescription>
+					</CardHeader>
+					<CardContent>
+						<InviteMemberForm
+							inviteableRoles={inviteableRoles}
+							joinPath={JOIN_PATH}
+						/>
+					</CardContent>
+				</Card>
+			) : null}
 
-			<OrgAdminPanels
-				roles={roles.map((item) => ({
-					id: item.id,
-					name: item.name,
-					active: item.active,
-					isSystemTemplate: item.isSystemTemplate,
-				}))}
-				assignments={activeAssignments.map((item) => ({
-					id: item.id,
-					userId: item.userId,
-					roleId: item.roleId,
-					roleName: roleNameById.get(item.roleId) ?? item.roleId,
-					scopeType: item.scopeType,
-				}))}
-				auditRows={auditRows.map((item) => ({
-					id: item.id,
-					action: item.action,
-					targetType: item.targetType,
-				}))}
-			/>
+			{canManageRoles ? (
+				<OrgAdminPanels
+					roles={roles.map((item) => ({
+						id: item.id,
+						name: item.name,
+						active: item.active,
+						isSystemTemplate: item.isSystemTemplate,
+					}))}
+					assignments={activeAssignments.map((item) => ({
+						id: item.id,
+						userId: item.userId,
+						roleId: item.roleId,
+						roleName: roleNameById.get(item.roleId) ?? item.roleId,
+						scopeType: item.scopeType,
+					}))}
+					auditRows={auditRows.map((item) => ({
+						id: item.id,
+						action: item.action,
+						targetType: item.targetType,
+					}))}
+				/>
+			) : null}
 		</main>
 	);
 }

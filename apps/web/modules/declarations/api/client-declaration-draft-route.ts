@@ -12,6 +12,11 @@ import {
 	declarationDraftQuerySchema,
 	saveClientDeclarationDraftSchema,
 } from "@/modules/declarations/schemas/client";
+import {
+	PERMISSION_DENIED_MESSAGE,
+	type ProductPermissionCode,
+	sessionHasPermission,
+} from "@/modules/identity/domain/session-permission";
 import { jsonData, jsonError } from "@/modules/platform/api/json-response";
 import type { APIErrorBody } from "@/modules/platform/schemas/api-error";
 import { parseSchema } from "@/modules/platform/schemas/common";
@@ -27,7 +32,9 @@ type DraftJsonResponse =
 	| NextResponse<{ data: DeclarationDraftWriteResponse }>
 	| NextResponse<APIErrorBody>;
 
-async function requireClientDraftSession(): Promise<
+async function requireClientDraftSession(
+	code: ProductPermissionCode,
+): Promise<
 	| { ok: true; session: ApiSession }
 	| { ok: false; response: NextResponse<APIErrorBody> }
 > {
@@ -42,6 +49,12 @@ async function requireClientDraftSession(): Promise<
 		return {
 			ok: false,
 			response: jsonError("FORBIDDEN", "Client session required."),
+		};
+	}
+	if (!(await sessionHasPermission(session, code))) {
+		return {
+			ok: false,
+			response: jsonError("FORBIDDEN", PERMISSION_DENIED_MESSAGE[code]),
 		};
 	}
 
@@ -65,7 +78,7 @@ async function requireClientDraftSession(): Promise<
 export async function handleGetClientDeclarationDraft(
 	request: NextRequest,
 ): Promise<DraftJsonResponse> {
-	const gate = await requireClientDraftSession();
+	const gate = await requireClientDraftSession("declarations.read");
 	if (!gate.ok) {
 		return gate.response;
 	}
@@ -104,7 +117,7 @@ async function readJsonBody(request: NextRequest): Promise<unknown> {
 export async function handleWriteClientDeclarationDraft(
 	request: NextRequest,
 ): Promise<DraftJsonResponse> {
-	const gate = await requireClientDraftSession();
+	const gate = await requireClientDraftSession("declarations.manage");
 	if (!gate.ok) {
 		return gate.response;
 	}
