@@ -41,8 +41,8 @@ Reuse [slice-map.md](slice-map.md) § Farm short names. Additional:
 | **N11** | Product authorization wiring | Ops | router → slices → modules → neon → readiness | ARCH-023 · GUIDE-018 I3.1 | product ports use permissions beyond coarse role | APPROVED | 100% | independent audit 2026-07-17 |
 | **N12** | Audit / security evidence | Ops | router → slices → security → neon | GUIDE-017 · ARCH-023 | audit evidence · secret/unsafe-error closed or evidenced | APPROVED | 100% | independent audit 2026-07-17 · Path-to-100% repair SCORED 2026-07-17 (re-audit required) |
 | **N13** | Authenticated E2E factory | Test | router → slices → tdd · lanes | GUIDE-018 I4 · testing/ | factories under `testing/` · smoke green | APPROVED | 100% | independent audit 2026-07-17 · Path-to-100% closed (re-audit 2026-07-17) |
-| **N14** | Security / failure verification | Ops | router → slices → security → neon | GUIDE-017 | denial / failure cases evidenced | UNEVALUATED | — | — |
-| **N15** | Production operations | Ops | router → slices → neon → ship | RB-001 · RB-005 · AGENTS | domains · deploy health · validate scripts | UNEVALUATED | — | — |
+| **N14** | Security / failure verification | Ops | router → slices → security → neon | GUIDE-017 | denial / failure cases evidenced | APPROVED | 100% | independent audit 2026-07-17 · Path-to-100% closed |
+| **N15** | Production operations | Ops | router → slices → neon → ship | RB-001 · RB-005 · AGENTS | domains · deploy health · validate scripts | APPROVED | 97% | independent audit 2026-07-17 · Path-to-100% open |
 | **N16** | Shared ERP platform shell | Ops | router → slices → scaffold → modules | ARCH-015/018 as needed | shell composes ports · ui-compose if UI | UNEVALUATED | — | — |
 | **N17** | Declarations vertical | Ops | router → slices → modules → readiness → neon | Declarations MOD · ARCH-023 | submit/read under hard tenancy | UNEVALUATED | — | — |
 | **N18** | FFT permitted vertical | Ops | router → slices → fft → modules | FFT-MOD-008 | Phase 2A envelope only — no 2B–2D | UNEVALUATED | — | — |
@@ -55,7 +55,7 @@ N1 → N2 → N3 → N4 → N5 → N6 → N7 → N8 → N9 → N10 → N11 → N
 
 Skip only with explicit user waiver **this turn**. One `N*` per chat. Do not start next until auditor APPROVED (or human waiver).
 
-**Program pointer:** last APPROVED = **N13** at 100% (Path-to-100% closed — re-audit 2026-07-17). Next = **N14** only — do **not** sneak-start here.
+**Program pointer:** last APPROVED = **N15** (independent audit 2026-07-17 · 97%; Path-to-100% open). Next = **N16** only — do **not** sneak-start here.
 
 ## Related I* (load hints only — not APPROVED transfer)
 
