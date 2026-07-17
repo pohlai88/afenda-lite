@@ -65,7 +65,7 @@ Task arrives (this repo / Afenda-Lite)
     ├── UI primitives / `@afenda/ui-system` (add/regenerate shadcn·Radix, tokens, barrel)? → ADR-010 owned-source workflow (`shadcn add` in `packages/ui-system` → convert `@/` to relative → export from `src/index.ts` → keep guardrail tests green); do not restore the retired `@afenda/ui` gateway / Studio-promote pipeline
     ├── React composition / compound-component / provider API architecture? → afenda-elite-react-composition (after `afenda-elite-ui-compose` classifies capability; vendor `vercel-composition-patterns` is progressive disclosure only)
     ├── React runtime / performance (waterfalls · rerenders · bundle · serialization · hydration)? → afenda-elite-react-best-practices (App Router/cache stays with `afenda-elite-nextjs-best-practice`; vendor `vercel-react-best-practices` is progressive disclosure only)
-    ├── Root / package / app README · Diátaxis intro / how-to vs reference on README surfaces? → afenda-readme-diataxis (not controlled `docs/` bodies)
+    ├── Root / package / app README · Diátaxis intro / compose · audit · README Score / Path to 100%? → afenda-readme-diataxis (not controlled `docs/` bodies)
     ├── Internal technical docs prose (spec · ADR · runbook · migration)? → technical-writing (after `afenda-elite-doc-control` / `documentation-and-adrs` farm is fixed)
     ├── Generic engineering lifecycle? ─────────────────────→ using-agent-skills
     └── Domain farm (Neon, FFT)? ───────────────────────────→ neon-tenancy / feed-farm-trade

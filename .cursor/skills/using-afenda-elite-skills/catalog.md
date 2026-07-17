@@ -113,7 +113,7 @@ Management = `local`. Status = `keep`. Method library invoked after a farm is fi
 
 | Skill | Source class | Evidence |
 |-------|--------------|----------|
-| `afenda-readme-diataxis` | local-method | `.cursor/skills/afenda-readme-diataxis/SKILL.md` (Diátaxis triage + README intro; handoff to doc-control / technical-writing) |
+| `afenda-readme-diataxis` | local-method | `.cursor/skills/afenda-readme-diataxis/SKILL.md` (Diátaxis triage + QUALITY ORDER + README Score / Path to 100%; handoff to doc-control / technical-writing / documentation-and-adrs) |
 | `technical-writing` | local-method | `.cursor/skills/technical-writing/SKILL.md` |
 
 ## Planned (approved backlog — no SKILL.md until authoring mission)
