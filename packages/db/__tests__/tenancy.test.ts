@@ -8,7 +8,7 @@ import {
 } from "../src/hard-tenant-roots";
 import { surveys } from "../src/schema/declarations";
 import { fftEvent } from "../src/schema/fft";
-import { platformRole, platformRbacAudit } from "../src/schema/platform";
+import { platformRbacAudit, platformRole } from "../src/schema/platform";
 
 describe("@afenda/db hard tenant roots (N9 / ARCH-023)", () => {
 	it("lists exactly eight hard tenant root table names", () => {

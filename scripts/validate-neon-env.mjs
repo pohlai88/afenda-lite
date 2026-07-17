@@ -12,7 +12,10 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { getEnvValue, loadLocalEnv } from "./lib/env-files.mjs";
-import { evaluateTrustedDomains, extractTrustedOrigins } from "./lib/neon-auth-trusted-domains.mjs";
+import {
+	evaluateTrustedDomains,
+	extractTrustedOrigins,
+} from "./lib/neon-auth-trusted-domains.mjs";
 
 const env = loadLocalEnv();
 // Prefer `.env.local` over shell exports — stale NEON_BRANCH_ID must not win.

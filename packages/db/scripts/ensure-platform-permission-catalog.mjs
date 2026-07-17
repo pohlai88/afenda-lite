@@ -56,15 +56,11 @@ const runner = join(
 	"scripts/ensure-platform-permission-catalog-run.ts",
 );
 
-const result = spawnSync(
-	"pnpm",
-	["exec", "tsx", runner],
-	{
-		cwd: packageRoot,
-		stdio: "inherit",
-		shell: true,
-		env: process.env,
-	},
-);
+const result = spawnSync("pnpm", ["exec", "tsx", runner], {
+	cwd: packageRoot,
+	stdio: "inherit",
+	shell: true,
+	env: process.env,
+});
 
 process.exit(result.status ?? 1);

@@ -104,8 +104,8 @@ export function AssignOrgRoleForm({
 			<Alert>
 				<AlertTitle>Member directory unavailable</AlertTitle>
 				<AlertDescription>
-					Organization members could not be loaded. Role assignment stays
-					closed until the directory is available again.
+					Organization members could not be loaded. Role assignment stays closed
+					until the directory is available again.
 				</AlertDescription>
 			</Alert>
 		);

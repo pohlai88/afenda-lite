@@ -74,16 +74,19 @@ vi.mock("@/modules/identity/domain/revoke-org-role-audited", () => ({
 	revokeOrgRoleWithAudit: identityMocks.revokeOrgRoleWithAudit,
 }));
 
-vi.mock("@/modules/platform/domain/record-rbac-audit", async (importOriginal) => {
-	const actual =
-		await importOriginal<
-			typeof import("../modules/platform/domain/record-rbac-audit")
-		>();
-	return {
-		...actual,
-		recordRbacAudit: auditMocks.recordRbacAudit,
-	};
-});
+vi.mock(
+	"@/modules/platform/domain/record-rbac-audit",
+	async (importOriginal) => {
+		const actual =
+			await importOriginal<
+				typeof import("../modules/platform/domain/record-rbac-audit")
+			>();
+		return {
+			...actual,
+			recordRbacAudit: auditMocks.recordRbacAudit,
+		};
+	},
+);
 
 vi.mock("@/modules/declarations/domain/declaration-draft", () => ({
 	getClientDeclarationDraft: declarationMocks.getClientDeclarationDraft,

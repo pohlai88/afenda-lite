@@ -10,11 +10,11 @@ import { describe, expect, it } from "vitest";
 
 import { db } from "../src/client";
 import {
+	ensurePlatformPermissionCatalog,
+	isPlatformPermissionCodeV1,
 	PLATFORM_PERMISSION_CODES_V1,
 	PLATFORM_PERMISSION_V1,
 	PLATFORM_ROLE_TEMPLATES_V1,
-	ensurePlatformPermissionCatalog,
-	isPlatformPermissionCodeV1,
 } from "../src/platform-permission-catalog";
 import {
 	platformPermission,
@@ -117,60 +117,57 @@ describe("PLATFORM_PERMISSION_V1 (N10 / ARCH-023)", () => {
 	});
 });
 
-describe.skipIf(!hasDatabase)(
-	"ensurePlatformPermissionCatalog (N10)",
-	() => {
-		it("is idempotent and preserves template_key → role ids", async () => {
-			const first = await ensurePlatformPermissionCatalog(db);
-			expect(first.permissionCount).toBe(7);
-			expect(first.templates).toHaveLength(3);
+describe.skipIf(!hasDatabase)("ensurePlatformPermissionCatalog (N10)", () => {
+	it("is idempotent and preserves template_key → role ids", async () => {
+		const first = await ensurePlatformPermissionCatalog(db);
+		expect(first.permissionCount).toBe(7);
+		expect(first.templates).toHaveLength(3);
 
-			const second = await ensurePlatformPermissionCatalog(db);
-			expect(second.permissionCount).toBe(7);
-			expect(second.templates.map((t) => t.roleId).toSorted()).toEqual(
-				first.templates.map((t) => t.roleId).toSorted(),
+		const second = await ensurePlatformPermissionCatalog(db);
+		expect(second.permissionCount).toBe(7);
+		expect(second.templates.map((t) => t.roleId).toSorted()).toEqual(
+			first.templates.map((t) => t.roleId).toSorted(),
+		);
+		expect(second.templates.every((t) => t.created === false)).toBe(true);
+
+		const codes = await db
+			.select({ code: platformPermission.code })
+			.from(platformPermission)
+			.where(
+				inArray(platformPermission.code, [...PLATFORM_PERMISSION_CODES_V1]),
 			);
-			expect(second.templates.every((t) => t.created === false)).toBe(true);
+		expect(codes.map((r) => r.code).toSorted()).toEqual(
+			[...ARCH023_V1_CODES].toSorted(),
+		);
 
-			const codes = await db
-				.select({ code: platformPermission.code })
-				.from(platformPermission)
+		for (const template of PLATFORM_ROLE_TEMPLATES_V1) {
+			const [role] = await db
+				.select({ id: platformRole.id })
+				.from(platformRole)
 				.where(
-					inArray(platformPermission.code, [...PLATFORM_PERMISSION_CODES_V1]),
-				);
-			expect(codes.map((r) => r.code).toSorted()).toEqual(
-				[...ARCH023_V1_CODES].toSorted(),
+					and(
+						eq(platformRole.templateKey, template.templateKey),
+						eq(platformRole.isSystemTemplate, true),
+						isNull(platformRole.organizationId),
+					),
+				)
+				.limit(1);
+			expect(role).toBeDefined();
+			if (!role) continue;
+
+			const links = await db
+				.select({ code: platformRolePermission.permissionCode })
+				.from(platformRolePermission)
+				.where(eq(platformRolePermission.roleId, role.id));
+			expect(links.map((l) => l.code).toSorted()).toEqual(
+				[...template.permissionCodes].toSorted(),
 			);
+		}
 
-			for (const template of PLATFORM_ROLE_TEMPLATES_V1) {
-				const [role] = await db
-					.select({ id: platformRole.id })
-					.from(platformRole)
-					.where(
-						and(
-							eq(platformRole.templateKey, template.templateKey),
-							eq(platformRole.isSystemTemplate, true),
-							isNull(platformRole.organizationId),
-						),
-					)
-					.limit(1);
-				expect(role).toBeDefined();
-				if (!role) continue;
-
-				const links = await db
-					.select({ code: platformRolePermission.permissionCode })
-					.from(platformRolePermission)
-					.where(eq(platformRolePermission.roleId, role.id));
-				expect(links.map((l) => l.code).toSorted()).toEqual(
-					[...template.permissionCodes].toSorted(),
-				);
-			}
-
-			// Known live Org Admin / Viewer UUIDs used by I3.1 tests
-			const orgAdmin = first.templates.find((t) => t.templateKey === "org_admin");
-			const viewer = first.templates.find((t) => t.templateKey === "viewer");
-			expect(orgAdmin?.roleId).toBe("22527ba9-7a74-4217-8b2e-986f36e0b444");
-			expect(viewer?.roleId).toBe("d9305ced-bbd5-493b-9b78-80ebb78c6450");
-		});
-	},
-);
+		// Known live Org Admin / Viewer UUIDs used by I3.1 tests
+		const orgAdmin = first.templates.find((t) => t.templateKey === "org_admin");
+		const viewer = first.templates.find((t) => t.templateKey === "viewer");
+		expect(orgAdmin?.roleId).toBe("22527ba9-7a74-4217-8b2e-986f36e0b444");
+		expect(viewer?.roleId).toBe("d9305ced-bbd5-493b-9b78-80ebb78c6450");
+	});
+});

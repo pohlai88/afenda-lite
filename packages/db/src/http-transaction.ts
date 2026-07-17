@@ -5,12 +5,13 @@
  * `db.transaction` is unsupported on neon-http; use `sql.transaction([...])`
  * for atomic multi-statement writes in one HTTP round-trip.
  */
-import { neon } from "@neondatabase/serverless";
+
 import type {
 	HTTPTransactionOptions,
 	NeonQueryFunction,
 	NeonQueryPromise,
 } from "@neondatabase/serverless";
+import { neon } from "@neondatabase/serverless";
 
 import { requireProductDatabaseUrl } from "./env";
 
@@ -44,9 +45,7 @@ type NeonHttpTxQuery = NeonQueryPromise<false, false>;
  * Default isolation: `ReadCommitted` (Postgres write default; explicit for ops).
  */
 export async function runNeonHttpTransaction<T extends unknown[]>(
-	queriesOrFn:
-		| NeonHttpTxQuery[]
-		| ((sql: NeonHttpSql) => NeonHttpTxQuery[]),
+	queriesOrFn: NeonHttpTxQuery[] | ((sql: NeonHttpSql) => NeonHttpTxQuery[]),
 	options?: NeonHttpTransactionOptions,
 ): Promise<T> {
 	const sql = getNeonSql();

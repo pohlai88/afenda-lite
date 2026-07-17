@@ -86,9 +86,7 @@ beforeEach(() => {
 
 describe("AssignOrgRoleForm — member picker STABILITY", () => {
 	it("empty roles Alert is non-assertive status", () => {
-		render(
-			<AssignOrgRoleForm roles={[]} memberDirectory={READY_DIRECTORY} />,
-		);
+		render(<AssignOrgRoleForm roles={[]} memberDirectory={READY_DIRECTORY} />);
 
 		const status = screen.getByRole("status");
 		expect(status).toHaveTextContent("Assignment unavailable");

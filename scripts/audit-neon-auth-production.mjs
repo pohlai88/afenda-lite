@@ -87,7 +87,9 @@ try {
 		appUrl: appUrl ?? "",
 		trustedOrigins,
 	});
-	record(check("trusted domains (APP_URL + local)", domains.ok, domains.detail));
+	record(
+		check("trusted domains (APP_URL + local)", domains.ok, domains.detail),
+	);
 	console.log(
 		`     listed: ${trustedOrigins.length ? trustedOrigins.join(", ") : "(none)"}`,
 	);

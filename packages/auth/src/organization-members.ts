@@ -58,9 +58,7 @@ function memberFromUnknown(row: unknown): OrgMember | null {
 	}
 
 	const email =
-		normalizeEmail(user?.email) ??
-		normalizeEmail(record.email) ??
-		null;
+		normalizeEmail(user?.email) ?? normalizeEmail(record.email) ?? null;
 	if (!email) {
 		return null;
 	}
@@ -156,10 +154,7 @@ export async function listOrgMembers(
 	let offset = 0;
 
 	for (let page = 0; page < MAX_PAGES; page += 1) {
-		const { members, total } = await fetchOrgMemberPage(
-			organizationId,
-			offset,
-		);
+		const { members, total } = await fetchOrgMemberPage(organizationId, offset);
 
 		for (const member of members) {
 			byUserId.set(member.userId, member);

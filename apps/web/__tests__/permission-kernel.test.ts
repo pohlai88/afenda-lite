@@ -7,11 +7,11 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
-	PLATFORM_PERMISSION_CODES_V1,
 	and,
 	db,
-	eq,
 	ensurePlatformPermissionCatalog,
+	eq,
+	PLATFORM_PERMISSION_CODES_V1,
 	platformRoleAssignment,
 } from "@afenda/db";
 import { afterAll, describe, expect, it } from "vitest";
@@ -75,9 +75,7 @@ describe("permission kernel guards (N10)", () => {
 	});
 
 	it("listUserPermissions rejects empty orgId", async () => {
-		await expect(listUserPermissions("  ", "user-a")).rejects.toThrow(
-			/orgId/,
-		);
+		await expect(listUserPermissions("  ", "user-a")).rejects.toThrow(/orgId/);
 	});
 
 	it("listUserPermissions rejects empty userId", async () => {

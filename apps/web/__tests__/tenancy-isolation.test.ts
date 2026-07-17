@@ -24,8 +24,8 @@ import { afterAll, describe, expect, it } from "vitest";
 import { listClientAssignments } from "../modules/declarations/domain/list-client-assignments";
 import { listEvents } from "../modules/fft/domain/list-events";
 import {
-	MEMBER_INVITE_AUDIT_ACTION,
 	deleteRbacAuditRow,
+	MEMBER_INVITE_AUDIT_ACTION,
 	recordRbacAudit,
 } from "../modules/platform/domain/record-rbac-audit";
 

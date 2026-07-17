@@ -30,6 +30,12 @@ export {
 	JOIN_PATH,
 	requireAppOrigin,
 } from "./join-paths";
+export type { OrgMember } from "./organization-members";
+export {
+	findOrgMember,
+	listOrgMembers,
+	normalizeOrgMembers,
+} from "./organization-members";
 export type { MemberOrganization } from "./organization-membership";
 export {
 	normalizeMemberOrganizations,
@@ -37,12 +43,6 @@ export {
 	resolveMemberOrganizationId,
 	selectResolvableOrganizationId,
 } from "./organization-membership";
-export type { OrgMember } from "./organization-members";
-export {
-	findOrgMember,
-	listOrgMembers,
-	normalizeOrgMembers,
-} from "./organization-members";
 export type { PostLoginTarget } from "./post-login";
 export {
 	CLIENT_HOME_PATH,

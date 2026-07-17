@@ -116,11 +116,15 @@ function main() {
 		if (result.missingVars.length > 0) {
 			console.error(`[fail] missing vars: ${result.missingVars.join(", ")}`);
 		}
-		console.error("\nResult: FAIL — set missing names in GitHub Actions (no values logged here).");
+		console.error(
+			"\nResult: FAIL — set missing names in GitHub Actions (no values logged here).",
+		);
 		process.exit(1);
 	}
 
-	console.log("\nResult: PASS — all required secret and variable names present.");
+	console.log(
+		"\nResult: PASS — all required secret and variable names present.",
+	);
 	process.exit(0);
 }
 

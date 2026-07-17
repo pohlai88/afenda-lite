@@ -3,11 +3,7 @@
  * Neon Auth membership via `@afenda/auth`; no SQL, Request, or UI.
  */
 
-import {
-	findOrgMember,
-	listOrgMembers,
-	type OrgMember,
-} from "@afenda/auth";
+import { findOrgMember, listOrgMembers, type OrgMember } from "@afenda/auth";
 
 export type OrganizationUser = {
 	userId: string;

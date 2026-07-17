@@ -5,16 +5,22 @@
 
 /** @param {string} value */
 export function normalizeOrigin(value) {
-	const trimmed = String(value ?? "").trim().replace(/\/+$/, "");
+	const trimmed = String(value ?? "")
+		.trim()
+		.replace(/\/+$/, "");
 	if (!trimmed) {
 		return "";
 	}
 	try {
-		const url = new URL(trimmed.includes("://") ? trimmed : `https://${trimmed}`);
+		const url = new URL(
+			trimmed.includes("://") ? trimmed : `https://${trimmed}`,
+		);
 		const port =
 			url.port &&
-			!((url.protocol === "https:" && url.port === "443") ||
-				(url.protocol === "http:" && url.port === "80"))
+			!(
+				(url.protocol === "https:" && url.port === "443") ||
+				(url.protocol === "http:" && url.port === "80")
+			)
 				? `:${url.port}`
 				: "";
 		return `${url.protocol}//${url.hostname.toLowerCase()}${port}`;
@@ -40,7 +46,7 @@ export function extractTrustedOrigins(listJson) {
 		const raw =
 			typeof row === "string"
 				? row
-				: row?.domain ?? row?.origin ?? row?.url ?? "";
+				: (row?.domain ?? row?.origin ?? row?.url ?? "");
 		const normalized = normalizeOrigin(raw);
 		if (normalized) {
 			origins.push(normalized);

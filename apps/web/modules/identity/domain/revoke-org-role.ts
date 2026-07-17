@@ -1,4 +1,4 @@
-import { platformRoleAssignment } from "@afenda/db";
+import type { platformRoleAssignment } from "@afenda/db";
 
 export {
 	parseRevokeOrgRoleCommand,
