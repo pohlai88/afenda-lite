@@ -1,9 +1,10 @@
 # FFT Blueprint vs Agri-OSS Scorecard
 
 > **Status:** Research evaluation  
-> **Authority:** Non-authoritative scratch material  
+> **Authority:** Non-authoritative scratch material — does **not** replace Living `FFT-MOD-*`  
 > **Assessment date:** 17 July 2026  
 > **Primary source:** [1-fft-architecture.md](1-fft-architecture.md)  
+> **Downstream:** [3-fft-improvement.md](3-fft-improvement.md) · [4-fft-reconciliation-and-promotion-map.md](4-fft-reconciliation-and-promotion-map.md) · [5-fft-relevant-architecture.md](5-fft-relevant-architecture.md) · [6-fft-implementation-slice-map.md](6-fft-implementation-slice-map.md)  
 > **Interactive view:** Cursor Canvas `fft-blueprint-oss-scorecard.canvas.tsx`
 
 ## 1. Purpose and boundary
@@ -432,7 +433,8 @@ Refresh this scorecard when:
 - the source blueprint changes materially;
 - an assessed OSS project changes architecture or maintenance status;
 - FFT adopts, replaces, or rejects a benchmark pattern;
-- implementation scoring is explicitly commissioned as a separate assessment; or
+- implementation scoring is explicitly commissioned as a separate assessment;
+- the relevant architecture ([5](5-fft-relevant-architecture.md)) or FT slice map ([6](6-fft-implementation-slice-map.md)) changes the Adopt/Defer set; or
 - a controlled FFT document accepts priorities derived from this scratch analysis.
 
-This scratch report must not silently become architecture authority. Accepted product locks and implementation requirements belong in the controlled FFT module document set.
+This scratch report must not silently become architecture authority. Accepted product locks and implementation requirements belong in the controlled FFT module document set. Slice discovery continues in [6-fft-implementation-slice-map.md](6-fft-implementation-slice-map.md).

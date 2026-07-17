@@ -44,7 +44,7 @@ Reuse [slice-map.md](slice-map.md) § Farm short names. Additional:
 | **N14** | Security / failure verification | Ops | router → slices → security → neon | GUIDE-017 | denial / failure cases evidenced | APPROVED | 100% | independent audit 2026-07-17 · Path-to-100% closed |
 | **N15** | Production operations | Ops | router → slices → neon → ship | RB-001 · RB-005 · AGENTS | domains · deploy health · validate scripts | APPROVED | 97% | independent audit 2026-07-17 · Path-to-100% open |
 | **N16** | Shared ERP platform shell | Ops | router → slices → scaffold → modules | ARCH-015/018 as needed | shell composes ports · ui-compose if UI | APPROVED | 100% | independent audit 2026-07-17 · Path-to-100% closed |
-| **N17** | Declarations vertical | Ops | router → slices → modules → readiness → neon | Declarations MOD · ARCH-023 | submit/read under hard tenancy | UNEVALUATED | — | — |
+| **N17** | Declarations vertical | Ops | router → slices → modules → readiness → neon | ARCH-023 · GUIDE-018 I3.2 | submit/read under hard tenancy | SCORED | 100% | pending independent audit 2026-07-17 · Path-to-100% closed (scratch pack `docs/scratch/module-packs/declarations/N17-submit-read-evidence.md`; Living MOD promotion = later Docs-lane) |
 | **N18** | FFT permitted vertical | Ops | router → slices → fft → modules | FFT-MOD-008 | Phase 2A envelope only — no 2B–2D | UNEVALUATED | — | — |
 
 ## Serial order
@@ -55,7 +55,7 @@ N1 → N2 → N3 → N4 → N5 → N6 → N7 → N8 → N9 → N10 → N11 → N
 
 Skip only with explicit user waiver **this turn**. One `N*` per chat. Do not start next until auditor APPROVED (or human waiver).
 
-**Program pointer:** last APPROVED = **N16** (independent audit 2026-07-17 · 100%; Path-to-100% closed). Next = **N17** only — do **not** sneak-start here.
+**Program pointer:** last APPROVED = **N16** (independent audit 2026-07-17 · 100%; Path-to-100% closed). **N17** SCORED 100% 2026-07-17 (Path-to-100% closed via scratch Declarations pack) — pending independent audit; do **not** start **N18** until N17 APPROVED.
 
 ## Related I* (load hints only — not APPROVED transfer)
 

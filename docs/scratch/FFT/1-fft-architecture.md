@@ -1,5 +1,9 @@
 # FFT Enterprise Product and Architecture Definition
 
+> **Status:** Scratch aspirational blueprint
+> **Authority:** Non-authoritative research material — does **not** replace Living `FFT-MOD-*`
+> **Lineage:** this file -> [2-fft-blueprint-oss-scorecard.md](2-fft-blueprint-oss-scorecard.md) -> [3-fft-improvement.md](3-fft-improvement.md) -> [4-fft-reconciliation-and-promotion-map.md](4-fft-reconciliation-and-promotion-map.md) -> [5-fft-relevant-architecture.md](5-fft-relevant-architecture.md) -> [6-fft-implementation-slice-map.md](6-fft-implementation-slice-map.md) -> controlled FFT-MOD reopen only after approval
+
 ## 1. Product definition
 
 **Feed–Farm–Trade, or FFT,** should be positioned as a **multi-tenant, industry-specific commercial operating platform** for organizations involved in animal feed and livestock or aquaculture production.

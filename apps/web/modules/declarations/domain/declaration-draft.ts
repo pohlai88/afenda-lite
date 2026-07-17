@@ -4,6 +4,7 @@ import {
 	clientProfiles,
 	db,
 	eq,
+	ne,
 	sql,
 } from "@afenda/db";
 
@@ -17,6 +18,7 @@ import type { SurveyAnswers } from "@/modules/declarations/schemas/common";
 /**
  * Declarations — client draft get/save under hard `organization_id` + email owner.
  * Draft writes are locked after finalize (`status === submitted`).
+ * UPDATE WHERE excludes submitted so concurrent finalize cannot be overwritten.
  */
 
 export type SaveClientDeclarationDraftOutcome =
@@ -167,6 +169,7 @@ export async function saveClientDeclarationDraft(input: {
 				eq(clientAssignments.id, assignmentId),
 				eq(clientAssignments.organizationId, orgId),
 				ownershipEmailPredicate(clientEmail),
+				ne(clientAssignments.status, SUBMITTED_ASSIGNMENT_STATUS),
 			),
 		)
 		.returning({
@@ -174,6 +177,20 @@ export async function saveClientDeclarationDraft(input: {
 		});
 
 	if (!row?.draftSavedAt) {
+		const [again] = await db
+			.select({ status: clientAssignments.status })
+			.from(clientAssignments)
+			.where(
+				and(
+					eq(clientAssignments.id, assignmentId),
+					eq(clientAssignments.organizationId, orgId),
+					ownershipEmailPredicate(clientEmail),
+				),
+			)
+			.limit(1);
+		if (again?.status === SUBMITTED_ASSIGNMENT_STATUS) {
+			return { ok: false, reason: "locked" };
+		}
 		return { ok: false, reason: "not_found" };
 	}
 

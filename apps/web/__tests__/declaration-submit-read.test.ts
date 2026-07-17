@@ -219,4 +219,82 @@ describe.skipIf(!hasDatabase)("declaration submit/read two-org (N17)", () => {
 			}),
 		).resolves.toEqual({ ok: false, reason: "not_found" });
 	});
+
+	it("draft save stays locked when status is already submitted (UPDATE WHERE)", async () => {
+		const actorId = randomUUID();
+		const surveyQuestionId = randomUUID();
+		const [survey] = await db
+			.insert(surveys)
+			.values({
+				slug: `n17-lock-${runId}`,
+				title: "N17 lock survey",
+				question: "Locked?",
+				userId: actorId,
+				organizationId: orgA,
+				categories: [],
+			})
+			.returning({ id: surveys.id });
+		if (!survey) {
+			throw new Error("survey insert failed");
+		}
+		surveyIds.push(survey.id);
+
+		const [assignment] = await db
+			.insert(clientAssignments)
+			.values({
+				surveyId: survey.id,
+				clientEmail,
+				assignedBy: actorId,
+				organizationId: orgA,
+				status: "pending",
+			})
+			.returning({ id: clientAssignments.id });
+		if (!assignment) {
+			throw new Error("assignment insert failed");
+		}
+		assignmentIds.push(assignment.id);
+
+		const originalAnswer = "Original draft before finalize";
+		const saved = await saveClientDeclarationDraft({
+			orgId: orgA,
+			clientEmail,
+			draft: {
+				assignmentId: assignment.id,
+				answers: { [surveyQuestionId]: originalAnswer },
+				stepIndex: 0,
+			},
+		});
+		expect(saved.ok).toBe(true);
+
+		await db
+			.update(clientAssignments)
+			.set({
+				status: "submitted",
+				confirmationCode: randomUUID(),
+			})
+			.where(eq(clientAssignments.id, assignment.id));
+
+		const locked = await saveClientDeclarationDraft({
+			orgId: orgA,
+			clientEmail,
+			draft: {
+				assignmentId: assignment.id,
+				answers: { [surveyQuestionId]: "must not overwrite submitted" },
+				stepIndex: 2,
+			},
+		});
+		expect(locked).toEqual({ ok: false, reason: "locked" });
+
+		const owned = await getClientDeclaration({
+			orgId: orgA,
+			clientEmail,
+			assignmentId: assignment.id,
+		});
+		expect(owned).toMatchObject({
+			assignmentId: assignment.id,
+			status: "submitted",
+			answers: { [surveyQuestionId]: originalAnswer },
+			stepIndex: 0,
+		});
+	});
 });

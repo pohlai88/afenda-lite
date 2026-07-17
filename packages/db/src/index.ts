@@ -1,4 +1,4 @@
-export { and, asc, eq, isNull, or, sql } from "drizzle-orm";
+export { and, asc, eq, isNull, ne, or, sql } from "drizzle-orm";
 export type { Database, DbSchema, TenantTable } from "./client";
 export { db, withOrg } from "./client";
 export type { HardTenantRootTableName } from "./hard-tenant-roots";
