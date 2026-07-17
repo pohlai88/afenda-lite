@@ -323,10 +323,19 @@ describe("N11 product authorization wiring", () => {
 			"app/actions/assign-org-role.ts",
 			"app/actions/revoke-org-role.ts",
 			"app/actions/invite-org-member.ts",
+		]) {
+			expect(source(relativePath)).toContain("forbidUnlessPermission");
+		}
+		expect(
+			source("app/actions/client-declaration-action-session.ts"),
+		).toContain("forbidUnlessPermission");
+		for (const relativePath of [
 			"app/actions/declaration-draft.ts",
 			"app/actions/submit-client-declaration.ts",
 		]) {
-			expect(source(relativePath)).toContain("forbidUnlessPermission");
+			expect(source(relativePath)).toContain(
+				"requireClientDeclarationActionSession",
+			);
 		}
 		expect(
 			source("features/declarations/declaration-detail-shell.tsx"),

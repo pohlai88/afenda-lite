@@ -1,10 +1,9 @@
-import { AUTH_LOGIN_PATH, JOIN_PATH } from "@afenda/auth";
-import { Button } from "@afenda/ui-system";
+import { JOIN_PATH } from "@afenda/auth";
 import type { Metadata } from "next";
-import Link from "next/link";
 
 import { JoinShell } from "@/features/auth/join-shell";
 import { PublicMessageShell } from "@/features/auth/public-message-shell";
+import { SignInButton } from "@/features/auth/sign-in-button";
 
 type JoinPageProps = {
 	searchParams: Promise<{ invitationId?: string }>;
@@ -25,11 +24,7 @@ export default async function JoinPage({ searchParams }: JoinPageProps) {
 		return (
 			<PublicMessageShell
 				title="Invitation required"
-				footer={
-					<Button asChild variant="outline" className="mt-2">
-						<Link href={AUTH_LOGIN_PATH}>Sign in</Link>
-					</Button>
-				}
+				footer={<SignInButton variant="outline" className="mt-2" />}
 			>
 				<p>
 					Open the link from your invitation email. Expected shape:{" "}

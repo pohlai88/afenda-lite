@@ -14,6 +14,7 @@ import Link from "next/link";
 import * as React from "react";
 
 import { DeclarationDraftSheet } from "@/features/declarations/declaration-draft-sheet";
+import { formatInstantUtcDate } from "@/modules/platform/format/instant";
 
 export type DeclarationDueState = "open" | "past_due" | "none";
 
@@ -44,18 +45,7 @@ type DeclarationsPanelProps = {
 };
 
 function formatDate(value: string | null): string {
-	if (!value) {
-		return "—";
-	}
-	const date = new Date(value);
-	if (Number.isNaN(date.getTime())) {
-		return value;
-	}
-	return date.toLocaleDateString(undefined, {
-		year: "numeric",
-		month: "short",
-		day: "numeric",
-	});
+	return formatInstantUtcDate(value);
 }
 
 function dueBadge(dueState: DeclarationDueState): {

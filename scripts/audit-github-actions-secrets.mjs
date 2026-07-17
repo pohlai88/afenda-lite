@@ -95,6 +95,9 @@ function collectVarNames() {
 function main() {
 	console.log("=== GitHub Actions secrets audit (presence only) ===\n");
 	console.log(`Required secrets: ${REQUIRED_ACTIONS_SECRETS.join(", ")}`);
+	console.log(
+		"Required secret alternates (one of each group): E2E_FACTORY_PASSWORD|PREVIEW_CLIENT_PASSWORD",
+	);
 	console.log(`Required vars: ${REQUIRED_ACTIONS_VARS.join(", ")}\n`);
 
 	const secretNames = collectSecretNames();
@@ -111,6 +114,11 @@ function main() {
 		if (result.missingSecrets.length > 0) {
 			console.error(
 				`[fail] missing secrets: ${result.missingSecrets.join(", ")}`,
+			);
+		}
+		if (result.missingSecretAlternates.length > 0) {
+			console.error(
+				`[fail] missing secret alternates (need one of each group): ${result.missingSecretAlternates.join("; ")}`,
 			);
 		}
 		if (result.missingVars.length > 0) {

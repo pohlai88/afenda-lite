@@ -1,5 +1,10 @@
-# ARCH-028 S8.1 — CI quality gate (turbo lint · typecheck · test)
+# ARCH-028 S8.1 / GUIDE-018 I5.5 — CI quality gate (turbo lint · typecheck · test)
 # Remote cache: TURBO_TOKEN (Actions secret) + TURBO_TEAM (Actions variable)
+# Deploy waits for this workflow to conclude success on main (workflow_run).
+#
+# Job `name: quality` is the PR required status-check context (`pnpm protect:main`).
+# In-CI secrets: `secrets-presence` probes non-empty injection (no `gh secret list`).
+# Ops name-list audit remains `pnpm audit:github-actions-secrets` (keyring gh).
 name: CI
 
 on:
@@ -12,13 +17,18 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Check context for branch protection must equal this job name.
   quality:
-    name: Lint · typecheck · test
-    timeout-minutes: 20
+    name: quality
+    timeout-minutes: 30
     runs-on: ubuntu-latest
     env:
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
       TURBO_TEAM: ${{ vars.TURBO_TEAM }}
+      # I5.5 — DB integration suites fail closed when missing (skip is not PASS).
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      CI: "true"
+      REQUIRE_DATABASE_TESTS: "1"
 
     steps:
       - name: Check out code
@@ -34,6 +44,13 @@ jobs:
         with:
           node-version: "24"
           cache: pnpm
+
+      - name: Fail closed if DATABASE_URL missing
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::error::I5.5 quality DB gate BLOCKED — set Actions secret DATABASE_URL (repo or production). Owner: Platform. Skip is not PASS."
+            exit 1
+          fi
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -137,3 +154,34 @@ jobs:
 
       - name: Playwright @smoke (I4 adverse matrix)
         run: pnpm test:e2e:smoke
+
+  # I5.5 — presence probe for required Actions secrets/vars (main only).
+  # Does not call `gh secret list` (GITHUB_TOKEN cannot list names). Empty
+  # `${{ secrets.* }}` / `${{ vars.* }}` injection fails closed.
+  secrets-presence:
+    name: secrets-presence
+    needs: quality
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      NEON_AUTH_BASE_URL: ${{ secrets.NEON_AUTH_BASE_URL }}
+      NEON_AUTH_COOKIE_SECRET: ${{ secrets.NEON_AUTH_COOKIE_SECRET }}
+      APP_URL: ${{ secrets.APP_URL }}
+      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+      E2E_FACTORY_PASSWORD: ${{ secrets.E2E_FACTORY_PASSWORD }}
+      PREVIEW_CLIENT_PASSWORD: ${{ secrets.PREVIEW_CLIENT_PASSWORD }}
+      VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
+      TURBO_TEAM: ${{ vars.TURBO_TEAM }}
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Fail closed if required secrets/vars empty
+        # Pure Node — no install. Same catalog as `pnpm audit:github-actions-secrets`.
+        run: node scripts/ci-secrets-presence.mjs

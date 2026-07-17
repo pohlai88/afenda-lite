@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { parseInviteOrgMemberCommand } from "../modules/identity/domain/invite-org-member";
+import { parseInviteOrgMemberCommand } from "../modules/identity/schemas/invite-org-member";
 
 describe("parseInviteOrgMemberCommand (I1.3)", () => {
 	it("normalizes email and accepts client role", () => {

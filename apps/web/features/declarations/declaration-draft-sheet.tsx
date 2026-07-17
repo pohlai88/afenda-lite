@@ -22,10 +22,9 @@ import {
 	type SaveDeclarationDraftData,
 	saveDeclarationDraftAction,
 } from "@/app/actions/declaration-draft";
-import {
-	type SubmitClientDeclarationData,
-	submitClientDeclarationAction,
-} from "@/app/actions/submit-client-declaration";
+import type { SubmitClientDeclarationData } from "@/app/actions/submit-client-declaration";
+import { SubmitDeclarationForm } from "@/features/declarations/submit-declaration-form";
+import { formatInstantUtc } from "@/modules/platform/format/instant";
 import type { ActionResult } from "@/modules/platform/schemas/action-result";
 
 type DeclarationDraftSheetProps = {
@@ -76,11 +75,6 @@ export function DeclarationDraftSheet({
 		null as ActionResult<SaveDeclarationDraftData> | null,
 	);
 
-	const [submitState, submitAction, submitPending] = useActionState(
-		submitClientDeclarationAction,
-		null as ActionResult<SubmitClientDeclarationData> | null,
-	);
-
 	React.useEffect(() => {
 		if (!open) {
 			return;
@@ -118,15 +112,15 @@ export function DeclarationDraftSheet({
 		}
 	}, [saveState]);
 
-	React.useEffect(() => {
-		if (submitState?.ok) {
+	const onSubmitSuccess = React.useEffectEvent(
+		(_data: SubmitClientDeclarationData) => {
 			onOpenChange(false);
 			router.refresh();
 			router.push(`/client/declarations/${assignmentId}`);
-		}
-	}, [submitState, onOpenChange, router, assignmentId]);
+		},
+	);
 
-	const formBlocked = loading || Boolean(loadError) || pending || submitPending;
+	const formBlocked = loading || Boolean(loadError) || pending;
 	const canSubmit = answer.trim().length > 0 && savedAt != null && !formBlocked;
 
 	return (
@@ -187,7 +181,7 @@ export function DeclarationDraftSheet({
 								<p className="text-sm text-foreground-tertiary">
 									Last saved{" "}
 									<code className="font-mono text-foreground">
-										{new Date(savedAt).toLocaleString()}
+										{formatInstantUtc(savedAt)}
 									</code>
 								</p>
 							) : null}
@@ -199,7 +193,7 @@ export function DeclarationDraftSheet({
 								<Button
 									type="button"
 									variant="outline"
-									disabled={pending || submitPending}
+									disabled={pending}
 									onClick={() => onOpenChange(false)}
 								>
 									Close
@@ -207,19 +201,18 @@ export function DeclarationDraftSheet({
 							</SheetFooter>
 						</form>
 
-						<form action={submitAction} className="flex flex-col gap-2">
-							<input type="hidden" name="assignmentId" value={assignmentId} />
-							{submitState && !submitState.ok ? (
-								<FormError message={submitState.message} />
-							) : null}
-							<Button type="submit" variant="secondary" disabled={!canSubmit}>
-								{submitPending ? "Submitting…" : "Submit declaration"}
-							</Button>
+						<div className="flex flex-col gap-2">
+							<SubmitDeclarationForm
+								assignmentId={assignmentId}
+								disabled={!canSubmit}
+								onSuccess={onSubmitSuccess}
+							/>
+
 							<p className="text-xs text-foreground-tertiary">
 								Save a draft first. Submit freezes saved answers and issues a
 								confirmation code.
 							</p>
-						</form>
+						</div>
 					</div>
 				)}
 			</SheetContent>

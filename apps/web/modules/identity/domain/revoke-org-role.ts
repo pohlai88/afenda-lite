@@ -1,11 +1,5 @@
 import type { platformRoleAssignment } from "@afenda/db";
 
-export {
-	parseRevokeOrgRoleCommand,
-	type RevokeOrgRoleCommand,
-	revokeOrgRoleCommandSchema,
-} from "@/modules/identity/schemas/revoke-org-role";
-
 export type RevokeOrgRoleInput = {
 	orgId: string;
 	assignmentId: string;

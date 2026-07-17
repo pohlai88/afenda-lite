@@ -30,6 +30,19 @@ Machine inventory: [`testing/e2e/adverse-matrix.ts`](e2e/adverse-matrix.ts). Cas
 | A10 | Concurrent double-submit race | unit | `declaration-submit-read.test.ts` |
 | A11 | Dependency throw → safe `INTERNAL_ERROR` | unit | `submit-client-declaration-action.test.ts` |
 
+## I5.4 UX · a11y · i18n · perf criteria
+
+Machine inventory: [`testing/ux-a11y-i18n-perf-matrix.ts`](ux-a11y-i18n-perf-matrix.ts). Disk honesty: `apps/web/__tests__/ux-a11y-i18n-perf-matrix.inventory.test.ts`.
+
+| Pillar | Declared bar | Owner | Evidence posture |
+|--------|--------------|-------|------------------|
+| UX states | Segment loading/error · empty tables · pending/`aria-busy` · `/403` | Platform | PASS where ON DISK + inventory |
+| a11y floor | `@afenda/ui-system` barrel + org-admin form aria + axe/skip-link matrix | Platform | PASS — `testing/a11y-assistive-matrix.ts` · `e2e/smoke/a11y-assistive-matrix.spec.ts` |
+| i18n | English-only (`lang="en"`), locale-free routes | Platform | PASS for controlled scope; multi-locale = NOT APPLICABLE (Feed Farm Trade / ARCH-012) |
+| FE perf | CWV lab budgets (Google “good”) with workload·env·percentile·owner | Platform | PASS — `testing/fe-cwv-budgets.ts` · `e2e/smoke/fe-cwv-budgets.spec.ts`; capacity → I6 N/A; Neon DB N4 = PERF02 |
+
+**Out of bar for I5.4:** inventing alternate CWV numbers (use adopted Google “good” only) · `next-intl` / `messages/` install · AdminCN polish · multi-tenant load/capacity harness (I6) · GUIDE-017 READY.
+
 ## Standing CI E2E gate
 
 | Fact | Detail |
@@ -43,12 +56,24 @@ Machine inventory: [`testing/e2e/adverse-matrix.ts`](e2e/adverse-matrix.ts). Cas
 
 Local authenticated runs still **skip** with a named reason when factory env is incomplete. CI standing gate must not.
 
+## I5.5 merge / deploy gate honesty
+
+| Fact | Detail |
+|------|--------|
+| Deploy order | [`.github/workflows/deploy.yml`](../.github/workflows/deploy.yml) runs via `workflow_run` after workflow **CI** succeeds on `main` (not parallel `push`) |
+| Human override | `workflow_dispatch` on Deploy is named Platform override — not a silent skip |
+| Quality DB suites | `quality` injects `DATABASE_URL` + `REQUIRE_DATABASE_TESTS=1`; [`testing/require-database-for-ci.ts`](require-database-for-ci.ts) throws when CI lacks DB (skip is not PASS) |
+| Secrets audit | Ops name-list: `pnpm audit:github-actions-secrets`. In-CI: job `secrets-presence` probes non-empty injection (`node scripts/ci-secrets-presence.mjs`) — not `gh secret list` |
+| Branch protection | `pnpm protect:main` verifies Living contract (required check `quality`); apply with `pnpm protect:main -- --apply` |
+| Owner | Platform |
+
 ## Imports
 
 | Need | Import |
 |------|--------|
 | SUT from package tests | `from "../src/..."` (or app-relative from `apps/web/__tests__`) |
-| L2 helpers | `from "../../../testing/react"` (from `packages/ui-system/__tests__`) |
+| DB suite CI fail-closed | `import { resolveDatabaseUrlForTests } from "@afenda/testing/require-database-for-ci"` (Vitest alias) |
+| L2 interaction | `@testing-library/react` + `@testing-library/user-event` directly in `*.interaction.test.tsx` |
 | L4 specs | `import { test, expect } from "@/testing/e2e/playwright-base"` |
 | L4 login flows | `from "@/testing/e2e/flows"` |
 | L4 assertions | `from "@/testing/e2e/assertions"` |
@@ -66,6 +91,9 @@ Path `@/testing/*` resolves from [`e2e/tsconfig.json`](../e2e/tsconfig.json).
 | `testing/e2e/assertions.ts` | Anonymous redirect · wrong-role `/403` · role homes |
 | `testing/e2e/credentials.ts` | Explicit `E2E_*` overrides for one-off runs |
 | `testing/e2e/adverse-matrix.ts` | I4 adverse/recovery case inventory (A1–A11) |
+| `testing/ux-a11y-i18n-perf-matrix.ts` | I5.4 UX · a11y · i18n · perf criteria + owners |
+| `testing/a11y-assistive-matrix.ts` | I5.4 A11Y03 axe + skip-link journey inventory |
+| `testing/fe-cwv-budgets.ts` | I5.4 PERF01 adopted Google CWV lab budgets |
 | `testing/e2e/neon-sql.ts` | Neon HTTP SQL for factory SQL |
 
 **Env (local `.env.local` — never commit secrets):**
@@ -107,7 +135,6 @@ pnpm test:e2e:adverse       # A1–A4 smoke subset
 | Path | Owns |
 |------|------|
 | `testing/vitest.config.ts` | Multi-project Vitest workspace (`__tests__` includes only) |
-| `testing/react.tsx` | L2 `setupUser` / Testing Library helpers |
 | `testing/e2e/*` | Playwright env · base · flows · tenancy factory · assertions |
 | `e2e/**` | Playwright specs only (`@smoke` / `@journey`) |
 | `<member>/__tests__/` | That member’s Vitest suite |

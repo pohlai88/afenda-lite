@@ -7,6 +7,6 @@
 			"@/testing/*": ["../testing/*"]
 		}
 	},
-	"include": ["./**/*.ts", "../testing/e2e/**/*.ts"],
+	"include": ["./**/*.ts", "../testing/**/*.ts"],
 	"exclude": ["node_modules"]
 }

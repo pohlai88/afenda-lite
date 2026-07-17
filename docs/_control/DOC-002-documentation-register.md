@@ -4,7 +4,7 @@
 | ----------------- | ---------- |
 | **ID**            | DOC-002    |
 | **Category**      | Control    |
-| **Version**       | 4.153.0 |
+| **Version**       | 4.156.0 |
 | **Status**        | Living     |
 | **Control State** | Closed     |
 | **Owner**         | Platform   |
@@ -72,7 +72,7 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 | ID           | Category     | Title                                      | Version | Status | Owner    | Updated    |
 | ------------ | ------------ | ------------------------------------------ | ------- | ------ | -------- | ---------- |
 | DOC-001      | Control      | Documentation Control Standard             | 2.7.0   | Living | Platform | 2026-07-14 |
-| DOC-002      | Control      | Documentation Register                     | 4.152.0 | Living | Platform | 2026-07-17 |
+| DOC-002      | Control      | Documentation Register                     | 4.156.0 | Living | Platform | 2026-07-17 |
 | DOC-003      | Control      | Controlled Document Template               | 1.4.0   | Living | Platform | 2026-07-14 |
 | ARCH-029     | Architecture | Interface and API Architecture             | 1.2.7   | Living | Platform | 2026-07-14 |
 | ARCH-031     | Architecture | Technology Stack Catalogue                 | 1.4.0   | Living | Platform | 2026-07-17 |
@@ -104,8 +104,8 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 | GUIDE-014    | Guide        | API Contract Verification Standard         | 0.1.1   | Draft  | Backend  | 2026-07-14 |
 | GUIDE-015    | Guide        | Interface Pack Development Roadmap         | 1.0.2   | Living | Platform | 2026-07-14 |
 | GUIDE-016    | Guide        | Feed Farm Trade Enterprise Acceptance      | 0.2.0   | Retired | Feed Farm Trade | 2026-07-14 |
-| GUIDE-017    | Guide        | Enterprise Quality and Evidence Standard   | 1.0.0   | Living | Platform | 2026-07-14 |
-| GUIDE-018    | Guide        | Full-Stack End-to-End Integration Program  | 1.0.10  | Living | Platform | 2026-07-17 |
+| GUIDE-017    | Guide        | Enterprise Quality and Evidence Standard   | 1.0.2   | Living | Platform | 2026-07-17 |
+| GUIDE-018    | Guide        | Full-Stack End-to-End Integration Program  | 1.0.13  | Living | Platform | 2026-07-17 |
 | RB-006       | Runbook      | OpenAPI Drift Detection and Recovery       | 0.2.1   | Draft  | Backend  | 2026-07-14 |
 | RB-007       | Runbook      | API Incident Response                      | 0.2.0   | Draft  | Backend  | 2026-07-14 |
 | RB-008       | Runbook      | API Contract Rollback                      | 0.2.1   | Draft  | Backend  | 2026-07-14 |
@@ -147,14 +147,14 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 | FFT-MOD-006  | Module       | Surfaces and Routes                        | 1.3.0 | Living | Feed Farm Trade | 2026-07-14 |
 | FFT-MOD-007  | Module       | API and Adapters                           | 1.3.0 | Living | Feed Farm Trade | 2026-07-14 |
 | FFT-MOD-008  | Module       | Ops Runtime                                | 1.3.2 | Living | Feed Farm Trade | 2026-07-14 |
-| FFT-MOD-009  | Module       | Verification                               | 2.0.4 | Living | Feed Farm Trade | 2026-07-15 |
-| FFT-MOD-010  | Module       | Module Docs Index + Roadmap                | 2.4.0 | Living | Feed Farm Trade | 2026-07-14 |
+| FFT-MOD-009  | Module       | Verification                               | 2.1.0 | Living | Feed Farm Trade | 2026-07-17 |
+| FFT-MOD-010  | Module       | Module Docs Index + Roadmap                | 2.5.0 | Living | Feed Farm Trade | 2026-07-17 |
 | GUIDE-001    | Guide        | Engineering Docs Entry                     | 1.2.0   | Retired | Platform | 2026-07-14 |
 | GUIDE-002    | Guide        | Coding Engineering Guide                   | 1.2.0   | Retired | Platform | 2026-07-14 |
 | GUIDE-003    | Guide        | Engineering Documentation Workflow         | 1.3.0   | Retired | Platform | 2026-07-14 |
 | GUIDE-004    | Guide        | Engineering Drift Register                 | 1.4.0   | Retired | Platform | 2026-07-14 |
 | GUIDE-006    | Guide        | Guides Index                               | 1.8.0   | Retired | Platform | 2026-07-14 |
-| MOD-002      | Module       | Modules Index                              | 4.0.2 | Living | Platform | 2026-07-14 |
+| MOD-002      | Module       | Modules Index                              | 4.0.3 | Living | Platform | 2026-07-17 |
 | RB-001       | Runbook      | Multi-org Ops                              | 1.4.1   | Living | Platform | 2026-07-17 |
 | RB-005       | Runbook      | Post-lock Coding Cheat Sheet               | 1.2.0   | Living | Platform | 2026-07-17 |
 
@@ -172,6 +172,9 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 
 | Version | Date       | Summary                                                                                                                                         |
 | ------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| 4.156.0 | 2026-07-17 | GUIDE-018→1.0.13 **I6.3 DONE** (Deploy · Vercel READY · Neon Auth domains) · GUIDE-017→1.0.2 (deploy-health blocker cleared; claim stays **NOT READY**); Phase I6 **DONE**; next Ops = **I7.1**; DOC-002 self-row synced. |
+| 4.155.0 | 2026-07-17 | GUIDE-017→1.0.1 · GUIDE-018→1.0.12 **I6.2 DONE** (claim identity **NOT READY** @ `fc16109`); Phase I6 stays WAIT (I6.3); next Ops = **I6.3**; DOC-002 self-row synced. |
+| 4.154.0 | 2026-07-17 | GUIDE-018→1.0.11 **I6.1 DONE** (FFT-MOD-009→2.1.0 · FFT-MOD-010→2.5.0 · MOD-002→4.0.3 pack gaps); Phase I6 stays WAIT; no GUIDE-017 READY; DOC-002 self-row synced. |
 | 4.153.0 | 2026-07-17 | GUIDE-018→1.0.10 **Phase I5 DONE** (invite pre-Neon audit · I5.3 API-007 Living correlation); API-007→1.0.0 Living; next Ops = **I6+**; no GUIDE-017 READY; DOC-002 self-row synced. |
 | 4.152.0 | 2026-07-17 | GUIDE-018→1.0.8 **I5.5 residual repair** (`protect:main` · in-CI secrets-presence · stale `journey` removed); Phase I5 stays WAIT; next Ops = **I6+**; DOC-002 self-row synced. |
 | 4.151.0 | 2026-07-17 | GUIDE-018→1.0.7 **I5.4 residual close** (A11Y03 axe/skip-link PASS · PERF01 Google CWV lab adopted); Phase I5 stays WAIT; next Ops = **I6+**; DOC-002 self-row synced. |
@@ -339,13 +342,13 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 
 `ARCH-029` is the Living parent authority for interface and API architecture. **GUIDE-015** is the locked Phases 1–5 development roadmap (Jack Wee). `API-005`…`API-009`, `REST-002`…`REST-007`, `FFT-REST-001`, `GUIDE-007`…`GUIDE-014`, and `RB-006`…`RB-008` are Draft until expanded / promoted per their owning roadmaps. API guides live under `docs/api/guides/`. API runbooks live under `docs/api/runbooks/`. Non-API guides live under `docs/guides/` when Living. **GUIDE-016** is **Retired** (register-only; stub removed); Module Enterprise Readiness authority is [MOD-002](../modules/MOD-002-modules-index.md) + FFT-MOD-001…010. `ARCH-030` (verification architecture) is deferred while GUIDE-014 remains the API verification Guide.
 
-**GUIDE-017** is the Living cross-cutting authority for evidence vocabulary and release/capability aggregation. It does not replace MOD-002 module evidence/claims or ARCH-029/GUIDE-014 interface verification.
+**GUIDE-017** is the Living cross-cutting authority for evidence vocabulary and release/capability aggregation (1.0.2; §3.11 claim identity for Afenda-Lite I1–I6.1 slice = **NOT READY** @ `fc16109`; I6.3 deploy-health blocker cleared). It does not replace MOD-002 module evidence/claims or ARCH-029/GUIDE-014 interface verification. Living GUIDE-017 ≠ product READY.
 
-**GUIDE-018** is the registered **Living** post-scaffold full-stack integration program (1.0.10; Phase **I1–I5 DONE**; I3.4 cut A + cut B AdminCN waived · I4 adverse matrix A1–A11 + standing CI `e2e-smoke` · invite-audit durable via pre-Neon audit · I5.3 API-007 Living correlation · next Ops **I6+** — no GUIDE-017 READY from I5 alone). It sequences work; owning ARCH/API/MOD spines remain binding for detail.
+**GUIDE-018** is the registered **Living** post-scaffold full-stack integration program (1.0.13; Phase **I1–I6 DONE**; GUIDE-017 claim **NOT READY**; next Ops **I7.1**). It sequences work; owning ARCH/API/MOD spines remain binding for detail.
 
 `FFT-REST-002`…`FFT-REST-007`, `OPEN-002`…`OPEN-005`, `ADR-001`…`ADR-007`, `RB-009` (webhook replay), and `ARCH-030` (verification architecture) are **reserved in planning docs only** — not registered until created under the approved derivation / creation gates. **`ADR-008`** is registered (Accepted Phase 1 — Cache Components Mode B; `cacheComponents` enablement still deferred). **`ADR-009`** is registered (Superseded by ADR-010 — the `@afenda/ui` playground gateway is retired). **`ADR-010`** is registered (Accepted — `@afenda/ui-system` flat-barrel Radix design system; `packages/design-system` retired).
 
-`ARCH-022` and `ARCH-024` through `ARCH-028` are **Living** scaffold SSOT after Checkpoint G (2026-07-15). Post-scaffold program order is [GUIDE-018](../guides/GUIDE-018-fullstack-e2e-integration-program.md) (registered **Living** 1.0.10). Phase **I1–I5 DONE** (I3.4 cut B AdminCN waived); next Ops = **I6+** — not a Status demotion of Living auth ARCH. Neon Auth `N1`–`N18` serial complete — do **not** invent **N19**. Neon Auth transactional mail = **Zoho SMTP** via Neon Auth console ([ARCH-026](../architecture/ARCH-026-auth-session.md) 2.0.0).
+`ARCH-022` and `ARCH-024` through `ARCH-028` are **Living** scaffold SSOT after Checkpoint G (2026-07-15). Post-scaffold program order is [GUIDE-018](../guides/GUIDE-018-fullstack-e2e-integration-program.md) (registered **Living** 1.0.13). Phase **I1–I6 DONE** (GUIDE-017 claim **NOT READY**); next Ops = **I7.1** — not a Status demotion of Living auth ARCH. Neon Auth `N1`–`N18` serial complete — do **not** invent **N19**. Neon Auth transactional mail = **Zoho SMTP** via Neon Auth console ([ARCH-026](../architecture/ARCH-026-auth-session.md) 2.0.0).
 
 **`ARCH-022`–`ARCH-028`** (and previously ARCH-024 at 1.5.0) now use DOC-003 six numbered sections. The earlier DOC-001 §3.8 structure grandfather for ARCH-022/025/026/027/028 is **cleared** as of 4.114.0.
 

@@ -4,11 +4,11 @@
 | ----------------- | -------------------------- |
 | **ID**            | FFT-MOD-010                |
 | **Category**      | Module                     |
-| **Version**       | 2.4.0 |
+| **Version**       | 2.5.0 |
 | **Status**        | Living                     |
 | **Control State** | Closed                     |
 | **Owner**         | Feed Farm Trade            |
-| **Updated**       | 2026-07-14                 |
+| **Updated**       | 2026-07-17                 |
 | **Spine**         | MOD-010 Module Docs Index |
 
 ---
@@ -18,7 +18,7 @@
 Module docs index, agent read order, roadmap/gap register, and **Module Enterprise Readiness** claim aggregation for Feed Farm Trade.
 
 **Audience:** engineers and agents joining FFT work.
-**Action enabled:** navigate the spine; distinguish program MVP roadmap from Module Enterprise Readiness; never claim readiness without [FFT-MOD-009](FFT-MOD-009-verification.md) evidence.
+**Action enabled:** navigate the spine; distinguish program roadmap from Module Enterprise Readiness; never claim readiness without [FFT-MOD-009](FFT-MOD-009-verification.md) evidence.
 
 **Architecture / locks:** [FFT-MOD-001](FFT-MOD-001-module-architecture.md)  
 **Runtime:** [FFT-MOD-008](FFT-MOD-008-ops-runtime.md)  
@@ -62,8 +62,8 @@ Also: [AGENTS.md](../../../AGENTS.md) · [deprecation register](../../../.cursor
 
 ```text
 DO NOT: FftShell, /fft/[locale], customer portal, invent permission codes, rename FFT_*
-TRUSTED: modules/fft/domain/rbac-catalog.ts · app/actions/fft.ts · modules/fft/domain/store.ts
-READINESS: reconstruct from FFT-MOD-009 — never inherit PASS from historical MVP prose
+TRUSTED (Target): apps/web/modules/fft/** · apps/web/features/fft/** · apps/web/app/(operator)/fft/**
+READINESS: reconstruct from FFT-MOD-009 — never inherit PASS from historical program prose or ON DISK presence
 ```
 
 ## 3.2 Spine catalog (MOD-001…009)
@@ -90,34 +90,34 @@ Authority: [MOD-002](../MOD-002-modules-index.md) §3.3. Evidence SSOT: [FFT-MOD
 
 **Module Enterprise Readiness claim:** Not claimable
 
-| Dimension | Aggregation (from FFT-MOD-009 §3.5 @ 764287d) |
+| Dimension | Aggregation (from FFT-MOD-009 §3.5 @ fc16109) |
 | --------- | ------------------------------ |
 | Profiles | Enterprise Core and ERP active |
 | Applicability | Core and Conditional ACs registered; Out of Scope none |
 | Quality dimensions | All active Core/ERP dimensions have owned ACs; result states remain in FFT-MOD-009 |
 | Activation | Core rows Enabled; Conditional rows Disabled |
-| Evidence | Core/ops rows = `BLOCKED` (product tree absent at HEAD); Conditional Disabled rows = `NOT EVIDENCED` |
+| Evidence | Phase 2A shell: four Core rows `PASS` (001-01 · 001-02 · 003-02 · 004-01); remaining Core/ops/ERP = `NOT EVIDENCED`; Conditional Disabled = `NOT EVIDENCED` (no fail-closed NOT ENABLED yet) |
 
 | Gate | Result |
 | ---- | ------ |
-| Every Core = Enabled + PASS | Fail (`BLOCKED`) |
+| Every Core = Enabled + PASS | Fail (majority `NOT EVIDENCED`) |
 | Enabled Conditional = PASS | N/A (no Enabled Conditional rows) |
 | Disabled/Uncontracted Conditional = NOT ENABLED with fail-closed evidence | Fail (`NOT EVIDENCED`) |
 | Mandatory FAIL / BLOCKED / NOT EVIDENCED | Blocks claim |
 
-Claim marker left **Not claimable** — not hand-promoted. Re-run verify only after product trees (`app/`, `modules/`, `features/`, `testing/`, `e2e/`) are present on the same checkout as this ledger.
+Claim marker left **Not claimable** — not hand-promoted. Target Phase 2A shell evidence does **not** satisfy Enterprise Core + ERP claim rules. Do not promote from GUIDE-018 I3.3 program-DONE or path presence alone.
 
 This claim does **not** certify Afenda-Elite, the Afenda product, or a release.
 
-## 3.4 Program roadmap — MVP outcome (not the readiness claim)
+## 3.4 Program roadmap — production slice outcome (not the readiness claim)
 
-Historical program goal: P0 + P1 working cycle (not a documentation binder).
+Historical program goal: P0 + P1 working cycle (not a documentation binder). Quality bar remains enterprise production ([MOD-002](../MOD-002-modules-index.md)).
 
-**Operator outcome:** Entitled sales/ops can run: setup event (products, supply, custom fields, customer priority) → open window → take orders → transfer → allocate → complete → audit/export. Thin AdminCN pages OK. Full polish = P2. Deposits/pickup/ERP = P3.
+**Operator outcome:** Entitled sales/ops can run: setup event (products, supply, custom fields, customer priority) → open window → take orders → transfer → allocate → complete → audit/export. Thin AdminCN pages OK. Full polish = P2. Deposits/pickup/ERP = P3. **Living checkout:** Phase 2A list-only shell only; 2B–2D frozen ([FFT-MOD-008](FFT-MOD-008-ops-runtime.md)).
 
 | Program label | Required | Relationship to readiness |
 |---------------|----------|---------------------------|
-| Program MVP (P0+P1 incl. G1–G6) | Roadmap target + observable AC | Necessary input to evidence rows — **not** automatic Claimable |
+| Program P0+P1 cycle (incl. G1–G6) | Roadmap target + observable AC | Necessary input to evidence rows — **not** automatic Claimable |
 | UI polish | P2 — complete 2026-07-11 | Outside Core readiness unless promoted to AC |
 | Ops handoff | P3 — flags + FFT-MOD-008 | Conditional ACs when enabled |
 | Customer portal / locale URLs / `FFT_*` rename | Later | Out of Scope / Later |
@@ -141,7 +141,7 @@ Living SSOT: [FFT-MOD-008](FFT-MOD-008-ops-runtime.md). Flag promotion still req
 
 ### Promote into P1 (wired)
 
-| ID | Capability | Why MVP |
+| ID | Capability | Why required for P1 cycle |
 |----|------------|---------|
 | **G1** | Customer priority | Allocation is priority-ranked |
 | **G2** | Supply caps | Allocation without supply is unconstrained |
@@ -158,7 +158,7 @@ Living SSOT: [FFT-MOD-008](FFT-MOD-008-ops-runtime.md). Flag promotion still req
 | **G8** | Exports (`export.orders`) — AC under F-ADM |
 | **G9** | Manual allocation override — AC under F-ALC (sensitive) |
 
-### Keep out of MVP
+### Keep out of P0–P1 cycle
 
 Offline booth · barcode · floor plans · full feed ERP · VFD · customer portal · mobile-native · deposits/pickup/imports/ERP sync (→ **P3**) · notification polish (→ P3/Later)
 
@@ -168,9 +168,9 @@ Offline booth · barcode · floor plans · full feed ERP · VFD · customer port
 
 Must hold: `requireFftAccess` · FFT nav only when entitled · AdminCN on `/fft/*` · no session → sign-in · locale-free `/fft`.
 
-## 3.7 P1 — Core cycle (program MVP)
+## 3.7 P1 — Core cycle (program roadmap)
 
-**Status:** Wired 2026-07-11 (program). Do not treat as Module Enterprise Readiness Claimable until §3.3 opens.
+**Status:** Wired 2026-07-11 (program history). Living checkout is Phase 2A list-only; do not treat as Module Enterprise Readiness Claimable until §3.3 opens.
 
 Surfaces: events, setup, order, my-orders, allocation, rbac. P3 surfaces under `/fft/admin/.../deposits|pickup|imports`, `/erp-sync` — flag-gated.
 
@@ -241,6 +241,7 @@ docs/modules/feed-farm-trade/
 
 | Version | Date       | Summary |
 | ------- | ---------- | ------- |
+| 2.5.0 | 2026-07-17 | **I6.1**: Re-aggregated from FFT-MOD-009 2.1.0 `@fc16109` (four Phase 2A PASS rows; claim stays Not claimable); Target path trust notes; program-roadmap wording aligned to enterprise production bar. |
 | 2.4.0 | 2026-07-14 | Activated Enterprise Core + ERP profiles and aggregated the contract ledger; readiness remains Not claimable. |
 | 2.3.0   | 2026-07-14 | Re-aggregated from FFT-MOD-009 1.3.0 reconstruction (`BLOCKED`/`NOT EVIDENCED`); claim remains Not claimable (not hand-promoted). |
 | 2.2.0   | 2026-07-14 | Wave B: Module Enterprise Readiness aggregation; vacated inherited claimable PASS; claim marker Not claimable. |

@@ -3,7 +3,7 @@
   "contractVersion": "1.0.0",
   "authority": {
     "id": "MOD-002",
-    "version": "4.0.2",
+    "version": "4.0.3",
     "marker": "**Executable module contract:** 1.0.0"
   },
   "roles": {

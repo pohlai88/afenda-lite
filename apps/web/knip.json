@@ -9,7 +9,6 @@
 		"features/org-admin/org-admin-panels.tsx": ["types"],
 		"modules/declarations/schemas/client.ts": ["exports", "types"],
 		"modules/declarations/schemas/common.ts": ["exports"],
-		"modules/identity/domain/invite-org-member.ts": ["exports", "types"],
 		"modules/platform/schemas/api-error.ts": ["exports", "duplicates"],
 		"modules/platform/schemas/common.ts": ["exports", "types"]
 	},

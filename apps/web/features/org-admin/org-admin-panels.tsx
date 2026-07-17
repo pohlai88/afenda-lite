@@ -44,6 +44,7 @@ import {
 	AssignOrgRoleForm,
 	type MemberDirectoryState,
 } from "@/features/org-admin/assign-org-role-form";
+import { formatInstantUtc } from "@/modules/platform/format/instant";
 
 /**
  * Org-admin panels — DataTable + CAPABLE assign/revoke (GUIDE-018 I3.1 ·
@@ -139,14 +140,6 @@ function auditDetailValue(value: string | null | undefined): string {
 	return value;
 }
 
-function formatAuditWhen(iso: string): string {
-	const parsed = Date.parse(iso);
-	if (Number.isNaN(parsed)) {
-		return iso;
-	}
-	return new Date(parsed).toLocaleString();
-}
-
 const assignmentColumns: DataTableColumn<OrgAssignmentRow>[] = [
 	{
 		key: "userLabel",
@@ -179,7 +172,7 @@ const auditColumns: DataTableColumn<OrgAuditRow>[] = [
 		key: "createdAt",
 		title: "When",
 		sortable: true,
-		render: (value) => formatAuditWhen(String(value)),
+		render: (value) => formatInstantUtc(String(value)),
 	},
 ];
 
@@ -469,7 +462,7 @@ export function OrgAdminPanels({
 										},
 										{
 											label: "When",
-											value: formatAuditWhen(selectedAudit.createdAt),
+											value: formatInstantUtc(selectedAudit.createdAt),
 										},
 										{
 											label: "Previous value",

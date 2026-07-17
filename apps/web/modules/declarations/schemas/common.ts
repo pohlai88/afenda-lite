@@ -2,14 +2,8 @@ import { uuidSchema } from "@/modules/platform/schemas/common";
 import { z } from "@/modules/platform/schemas/openapi-zod";
 
 /**
- * Declarations shared Zod — survey answer map + Platform re-exports (API-004).
+ * Declarations shared Zod — survey answer map (API-004).
  */
-
-export {
-	emailSchema,
-	parseSchema,
-	uuidSchema,
-} from "@/modules/platform/schemas/common";
 
 export const surveyAnswersSchema = z.record(
 	uuidSchema,

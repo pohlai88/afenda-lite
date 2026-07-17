@@ -4,11 +4,11 @@
 | ----------------- | ---------- |
 | **ID**            | MOD-002    |
 | **Category**      | Module     |
-| **Version**       | 4.0.2 |
+| **Version**       | 4.0.3 |
 | **Status**        | Living     |
 | **Control State** | Closed     |
 | **Owner**         | Platform   |
-| **Updated**       | 2026-07-14 |
+| **Updated**       | 2026-07-17 |
 
 ---
 
@@ -76,6 +76,8 @@ The executable mirror at `.cursor/skills/afenda-elite-doc-control/module-pack-co
 | Feed Farm Trade | `fft` | [feed-farm-trade/](feed-farm-trade/) | [FFT-MOD-010](feed-farm-trade/FFT-MOD-010-module-docs-index.md) | [FFT-MOD-008](feed-farm-trade/FFT-MOD-008-ops-runtime.md) |
 
 Platform tenancy / RBAC (not a product-module spine): [ARCH-023](../architecture/ARCH-023-multi-tenancy.md).
+
+**Program verticals without module packs (GUIDE-018 I6.1 honesty):** Identity / Platform, Declarations, and org-admin are program-DONE under [GUIDE-018](../guides/GUIDE-018-fullstack-e2e-integration-program.md) I3 but have **no** catalogued `*-MOD-009` / `*-MOD-010` yet. Program evidence remains in GUIDE-018 until an Approved Docs-lane pack is registered here. Program-DONE ≠ Module Enterprise Readiness.
 
 ## 3.2 Target layout
 
@@ -245,6 +247,7 @@ The benchmark inputs are [Microsoft implementation strategy](https://learn.micro
 
 | Version | Date       | Summary |
 | ------- | ---------- | ------- |
+| 4.0.3 | 2026-07-17 | **I6.1**: Catalog honesty note — Identity/Platform · Declarations · org-admin have no MOD packs yet; FFT remains sole catalogued spine. |
 | 4.0.2 | 2026-07-14 | GUIDE-016 Retired = DOC-002 register-only (archive stub removed). |
 | 4.0.1 | 2026-07-14 | Bounded reopen: package-manager cutover — document `pnpm` / `pnpm exec` (repo SSOT `packageManager` + `pnpm-lock.yaml`). |
 | 4.0.0 | 2026-07-14 | Executable contract 1.0.0; Core/ERP profiles; five/eleven-column interfaces; deterministic scaffold and validation rules. |

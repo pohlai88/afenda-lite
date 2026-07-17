@@ -1,18 +1,18 @@
 /**
  * N6 — Request-level composition: `apps/web/proxy.ts` forwards protected
- * navigations through `createSessionProxy` and surfaces `/auth/login`.
+ * navigations through `createSessionProxy` and surfaces `AUTH_LOGIN_PATH`.
  * Auth-package `session-contract.test.ts` proves `createSessionProxy` binds
  * Neon middleware to `AUTH_LOGIN_PATH` and redirects unauthenticated requests.
  * Public `/auth/*` and `/join` stay outside the matcher (session-gate-policy).
  */
 
+import { AUTH_LOGIN_PATH } from "@afenda/auth/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const sessionGateMock = vi.fn();
 
 vi.mock("@afenda/auth", () => ({
 	createSessionProxy: () => sessionGateMock,
-	AUTH_LOGIN_PATH: "/auth/login",
 }));
 
 vi.mock("@afenda/env", () => ({
@@ -27,10 +27,10 @@ describe("N6 apps/web proxy request gate", () => {
 		sessionGateMock.mockReset();
 	});
 
-	it("request-level: unauthenticated protected path redirects via createSessionProxy to /auth/login", async () => {
+	it("request-level: unauthenticated protected path redirects via createSessionProxy to AUTH_LOGIN_PATH", async () => {
 		const { NextRequest, NextResponse } = await import("next/server");
 		sessionGateMock.mockImplementation(async (request) => {
-			return NextResponse.redirect(new URL("/auth/login", request.url));
+			return NextResponse.redirect(new URL(AUTH_LOGIN_PATH, request.url));
 		});
 
 		const { proxy } = await import("../proxy");
@@ -42,7 +42,7 @@ describe("N6 apps/web proxy request gate", () => {
 		expect(response.status).toBeGreaterThanOrEqual(300);
 		expect(response.status).toBeLessThan(400);
 		expect(new URL(String(response.headers.get("location"))).pathname).toBe(
-			"/auth/login",
+			AUTH_LOGIN_PATH,
 		);
 	});
 

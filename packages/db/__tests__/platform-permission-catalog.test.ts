@@ -2,12 +2,9 @@
  * N10 — ARCH-023 v1 permission catalog + idempotent ensure.
  */
 
-import { readFileSync } from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { resolveDatabaseUrlForTests } from "@afenda/testing/require-database-for-ci";
 import { and, eq, inArray, isNull } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
-
 import { db } from "../src/client";
 import {
 	ensurePlatformPermissionCatalog,
@@ -22,43 +19,7 @@ import {
 	platformRolePermission,
 } from "../src/schema/platform";
 
-const repoRoot = path.resolve(
-	path.dirname(fileURLToPath(import.meta.url)),
-	"../../..",
-);
-
-function loadDatabaseUrl(): string | undefined {
-	if (process.env.DATABASE_URL) {
-		return process.env.DATABASE_URL;
-	}
-	try {
-		const text = readFileSync(path.join(repoRoot, ".env.local"), "utf8");
-		for (const line of text.split(/\r?\n/)) {
-			const trimmed = line.trim();
-			if (trimmed.length === 0 || trimmed.startsWith("#")) continue;
-			const match = /^DATABASE_URL\s*=\s*(.*)$/.exec(trimmed);
-			if (!match) continue;
-			let value = match[1]?.trim() ?? "";
-			if (
-				(value.startsWith('"') && value.endsWith('"')) ||
-				(value.startsWith("'") && value.endsWith("'"))
-			) {
-				value = value.slice(1, -1);
-			}
-			return value.length > 0 ? value : undefined;
-		}
-	} catch {
-		return undefined;
-	}
-	return undefined;
-}
-
-const databaseUrl = loadDatabaseUrl();
-if (databaseUrl) {
-	process.env.DATABASE_URL = databaseUrl;
-}
-
-const hasDatabase = typeof databaseUrl === "string" && databaseUrl.length > 0;
+const { hasDatabase } = resolveDatabaseUrlForTests();
 
 const ARCH023_V1_CODES = [
 	"org.users.manage",
@@ -169,5 +130,5 @@ describe.skipIf(!hasDatabase)("ensurePlatformPermissionCatalog (N10)", () => {
 		const viewer = first.templates.find((t) => t.templateKey === "viewer");
 		expect(orgAdmin?.roleId).toBe("22527ba9-7a74-4217-8b2e-986f36e0b444");
 		expect(viewer?.roleId).toBe("d9305ced-bbd5-493b-9b78-80ebb78c6450");
-	});
+	}, 30_000);
 });

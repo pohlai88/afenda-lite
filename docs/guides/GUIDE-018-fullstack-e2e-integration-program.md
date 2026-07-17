@@ -4,13 +4,13 @@
 | ----------------- | ---------- |
 | **ID**            | GUIDE-018  |
 | **Category**      | Guide      |
-| **Version**       | 1.0.10     |
+| **Version**       | 1.0.13     |
 | **Status**        | Living     |
 | **Control State** | Closed     |
 | **Owner**         | Platform   |
 | **Updated**       | 2026-07-17 |
 
-**Control-state note:** Closed 2026-07-17 after I5.3 correlation DONE + invite-audit durable attribution close (pre-Neon audit).
+**Control-state note:** Closed 2026-07-17 after I6.3 production deploy health (**DONE**); Phase I6 **DONE**; GUIDE-017 claim remains **NOT READY** @ `fc16109` (pack/recovery gaps).
 
 ---
 
@@ -36,7 +36,7 @@ This guide **sequences** the program. It does **not** replace owning docs for sl
 
 - Ordered phases from foundations → scaffold (done) → docs cutover (done) → authenticity → contracts → product verticals → tests → hardening → evidence → continuous control
 - Completed [ARCH-028](../architecture/ARCH-028-implementation-slices.md) coding + Checkpoint G (S1.1–S8.2, Checkpoints A–**G**)
-- **Phase I1** (identity & edge) — **I1.1–I1.4** closed; **I2.1–I2.4** closed; **I3.1–I3.4** closed (Identity/Platform · Declarations · FFT freeze shell · org-admin cut A; cut B AdminCN **waived**); **I4** closed (verify factory · adverse matrix A1–A11 · standing CI `e2e-smoke`); **I5.1–I5.6 DONE** (invite-audit durable via pre-Neon `platform_rbac_audit`; I5.3 correlation Living); Phase I5 **DONE**; next Ops **I6+**
+- **Phase I1** (identity & edge) — **I1.1–I1.4** closed; **I2.1–I2.4** closed; **I3.1–I3.4** closed (Identity/Platform · Declarations · FFT freeze shell · org-admin cut A; cut B AdminCN **waived**); **I4** closed (verify factory · adverse matrix A1–A11 · standing CI `e2e-smoke`); **I5.1–I5.6 DONE** (invite-audit durable via pre-Neon `platform_rbac_audit`; I5.3 correlation Living); Phase I5 **DONE**; **I6.1–I6.3 DONE** (FFT ledger refresh · GUIDE-017 claim **NOT READY** · production deploy health); Phase I6 **DONE**; next Ops **I7.1**
 - Lane discipline, skill routing, and FFT freeze / anti-contamination boundaries
 - Pointers to owning authorities (no duplicated SSOT)
 
@@ -105,11 +105,12 @@ I2           ████████ DONE  ← I2.1–I2.4 closed (OpenAPI / RE
 I3           ████████ DONE  ← I3.1–I3.4 closed (cut A; cut B AdminCN waived)
 I4           ████████ DONE  ← adverse matrix A1–A11 · standing CI e2e-smoke
 I5           ████████ DONE  ← I5.1–I5.6 closed (invite-audit + correlation residuals closed)
-I6–I7        ░░░░░░░░ WAIT
+I6           ████████ DONE  ← I6.1–I6.3 closed (GUIDE-017 claim stays NOT READY)
+I7           ░░░░░░░░ WAIT
 REOPEN (R*)  ░░░░░░░░ optional · explicit written approval only
 ```
 
-**Plain-English baseline:** packages, routes, CI, Deploy, the edge session gate (`apps/web/proxy.ts`), public Neon Auth UI (`/auth/login` · forgot · reset · sign-up), `/join?invitationId=…`, fail-closed role shells (`requireRole` → `/403`), shared `ActionResult` / `APIErrorBody` contracts, the feature → domain → `@afenda/db` import boundary (Vitest-enforced), authenticated tenant writes (invite + platform role assign/revoke → `platform_rbac_audit` hard `organization_id`), Tier-2 `hasPermission` product wiring (`org.roles.manage` · `clients.invite` + admin bootstrap), CAPABLE org-admin assign/revoke UI with Neon member-directory Combobox (**I3.4 cut A DONE**), shared operator platform shell (`OperatorPlatformShell`), Declarations list → draft → submit → read under hard tenancy (Neon **N17** APPROVED), FFT Phase 2A list-only operator shell (Neon **N18** APPROVED · 2B–2D frozen), authenticated E2E factory under `testing/e2e` + `e2e/smoke` · `e2e/journey` (Neon **N13** APPROVED) with adverse/recovery matrix **A1–A11** and standing CI job `e2e-smoke`, OpenAPI api-now honesty, **I5.1** isolation/secrets/safe-error closed (invite-audit attribution residual **BLOCKED**), **I5.2** restore/RPO(snapshot)/RTO(ephemeral) + migrate fail-closed (RB-001 §3.7), **I5.3** alert→runbook (BLOCKED on correlation), **I5.4** declared UX/a11y/i18n/perf criteria matrix with owners, **I5.5** Deploy-after-CI order + CI DB/factory fail-closed (no silent skip), and **I5.6** accidental-complexity cuts (behavior unchanged) exist on disk; Turborepo ARCH pack is **Living**. Remaining: I5.3 unblock = correlation later; invite-audit durable attribution repair; FE CWV numeric budgets still NOT EVIDENCED until owning authority adopts numbers; branch-protection automation residual; I6 evidence/decision, I7 continuous control. AdminCN / Studio polish remains optional later Studio DNA / `ui-compose` when Approved (out of I3.4 exit). See §3.6 for the gap summary.
+**Plain-English baseline:** packages, routes, CI, Deploy, the edge session gate (`apps/web/proxy.ts`), public Neon Auth UI (`/auth/login` · forgot · reset · sign-up), `/join?invitationId=…`, fail-closed role shells (`requireRole` → `/403`), shared `ActionResult` / `APIErrorBody` contracts, the feature → domain → `@afenda/db` import boundary (Vitest-enforced), authenticated tenant writes (invite + platform role assign/revoke → `platform_rbac_audit` hard `organization_id`), Tier-2 `hasPermission` product wiring (`org.roles.manage` · `clients.invite` + admin bootstrap), CAPABLE org-admin assign/revoke UI with Neon member-directory Combobox (**I3.4 cut A DONE**), shared operator platform shell (`OperatorPlatformShell`), Declarations list → draft → submit → read under hard tenancy (Neon **N17** APPROVED), FFT Phase 2A list-only operator shell (Neon **N18** APPROVED · 2B–2D frozen), authenticated E2E factory under `testing/e2e` + `e2e/smoke` · `e2e/journey` (Neon **N13** APPROVED) with adverse/recovery matrix **A1–A11** and standing CI job `e2e-smoke`, OpenAPI api-now honesty, **I5.1** isolation/secrets/safe-error closed (invite-audit attribution residual **BLOCKED**), **I5.2** restore/RPO(snapshot)/RTO(ephemeral) + migrate fail-closed (RB-001 §3.7), **I5.3** alert→runbook (BLOCKED on correlation), **I5.4** declared UX/a11y/i18n/perf criteria matrix with owners, **I5.5** Deploy-after-CI order + CI DB/factory fail-closed (no silent skip), and **I5.6** accidental-complexity cuts (behavior unchanged) exist on disk; Turborepo ARCH pack is **Living**. Remaining: FE CWV numeric budgets still NOT EVIDENCED until owning authority adopts numbers; branch-protection automation residual; I7 continuous control. GUIDE-017 claim stays **NOT READY** (pack/recovery gaps). AdminCN / Studio polish remains optional later Studio DNA / `ui-compose` when Approved (out of I3.4 exit). See §3.6 for the gap summary.
 
 **Standing honesty:**
 
@@ -128,11 +129,11 @@ REOPEN (R*)  ░░░░░░░░ optional · explicit written approval only
 | **I3** | Product verticals | **DONE** (I3.1–I3.4; cut B AdminCN waived) | Ops | Identity · Declarations · FFT read (freeze) · org-admin cut A |
 | **I4** | Verification factory | **DONE** | Test | Unit → contract → real E2E smoke · adverse/recovery matrix A1–A11 · standing CI `e2e-smoke` |
 | **I5** | Hardening | **DONE** (I5.1–I5.6; invite-audit + correlation residuals closed 2026-07-17) | Ops/Test | Security · recovery · obs · a11y/i18n · CI depth |
-| **I6** | Evidence & decision | WAIT | Docs/Test | MOD ledgers + GUIDE-017 claim before READY |
+| **I6** | Evidence & decision | **DONE** (I6.1–I6.3) | Docs/Test | MOD ledgers + GUIDE-017 claim before READY |
 | **I7** | Continuous control | WAIT | Normalize/Docs | Integrity · housekeeping · deprecation |
 | **R** | Optional reopen | WAIT | Program | FFT 2B–2D or new context — approval required |
 
-Recommended mission queue: **I6** (then I7). Phase **I5 DONE**. Do **not** invent Neon **N19**. AdminCN / Studio polish is optional later — not I3.4-blocking. Do **not** claim GUIDE-017 READY from I5 alone.
+Recommended mission queue: **I7.1**. **I6.1–I6.3 DONE** (GUIDE-017 claim = **NOT READY** @ `fc16109`). Do **not** invent Neon **N19**. Do **not** promote claim to READY from I6.3 alone.
 
 ---
 
@@ -354,7 +355,7 @@ Recommended mission queue: **I6** (then I7). Phase **I5 DONE**. Do **not** inven
 | UI | Org-admin LIST_ONLY lifted for assign/revoke; Neon `userId` field at I3.1 close (member-directory landed later as **I3.4 cut A**); role names resolved from assignable catalog |
 | Verify | `pnpm --filter @afenda/web test -- assign-org-role revoke-org-role has-permission invite-org-member record-rbac-audit` (18) · `pnpm --filter @afenda/web typecheck` · `pnpm exec turbo run lint typecheck test --filter=@afenda/web --filter=@afenda/auth --filter=@afenda/db` (9/9) — green 2026-07-17 |
 | Boundary | Adapters SQL-free; SQL in Identity/Platform domain; `@afenda/db` re-exports `and` / `eq` / `isNull` / `or` / `sql` |
-| Evidence home | GUIDE-018 (no Identity/Platform `*-MOD-009` packs yet) · adapter-map assign/revoke **yes** |
+| Evidence home | GUIDE-018 (no Identity/Platform `*-MOD-009` packs yet — **I6.1 gap named**) · adapter-map assign/revoke **yes** |
 | Forbidden | No FFT 2B–2D; no baseline migrate; no Collapse recover |
 | Out-of-bar | Authenticated browser assign/invite E2E → **I4**; Neon member-directory picker → **I3.4 cut A** (closed); AdminCN polish → **cut B waived** (out of I3.4 exit); Declarations → **I3.2** (closed) |
 
@@ -364,7 +365,7 @@ Recommended mission queue: **I6** (then I7). Phase **I5 DONE**. Do **not** inven
 | ----- | -------- |
 | Paths | Domain `modules/declarations/domain/{list-client-assignments,declaration-draft,submit-client-declaration,get-client-declaration,assignment-status}.ts` · Actions `app/actions/declaration-draft.ts` · API `app/api/client/declaration-draft/route.ts` · Features `features/declarations/{declarations-shell,declarations-panel,declaration-draft-sheet,submit-declaration-form,declaration-detail-shell}.tsx` · Routes `/client/declarations` · `/client/declarations/[assignmentId]` |
 | Behavior | Client list → draft → submit → confirmation read under hard `organization_id` + email owner; idempotent re-submit |
-| Neon | **N17** APPROVED 100% (independent audit 2026-07-17 · Path-to-100% closed); Living Declarations MOD promotion = later Docs-lane |
+| Neon | **N17** APPROVED 100% (independent audit 2026-07-17 · Path-to-100% closed); Living Declarations MOD promotion = later Docs-lane (**I6.1 gap named**) |
 | Verify | `e2e/journey/declarations-submit-read.spec.ts` (N13 factory) · Neon slice-map floor verify for N17 — green at APPROVED |
 | Boundary | Feature/action SQL-free; SQL in Declarations domain via `@afenda/db`; no FFT 2B–2D |
 | Forbidden | No baseline migrate; no Collapse recover; do not invent **N19** |
@@ -375,7 +376,7 @@ Recommended mission queue: **I6** (then I7). Phase **I5 DONE**. Do **not** inven
 | ----- | -------- |
 | Paths | `modules/fft/domain/list-events.ts` · `modules/fft/auth/require-fft-access.ts` · `features/fft/{fft-events-shell,fft-events-panel}.tsx` · `features/portal-chrome/operator-platform-shell.tsx` · `app/(operator)/fft/{layout,page}.tsx` |
 | Behavior | Operator FFT list-only shell + Phase 2A `fft.access` gate; hard tenancy via `withOrg` |
-| Neon | **N18** APPROVED 100% (independent audit 2026-07-17 · Path-to-100% closed); Living FFT MOD evidence promotion = later Docs-lane |
+| Neon | **N18** APPROVED 100% (independent audit 2026-07-17 · Path-to-100% closed); Living FFT MOD evidence promoted under **I6.1** (claim remains Not claimable) |
 | Verify | `e2e/smoke/fft-permitted-vertical.spec.ts` · Neon slice-map floor verify for N18 — green at APPROVED |
 | Boundary | FFT-MOD-008 Allowed/Forbidden; **2B–2D remain FROZEN** until program reopen |
 | Forbidden | No deep `/fft/*` commercial UX; no Collapse recover; do not invent **N19** |
@@ -672,18 +673,149 @@ pnpm exec turbo run lint typecheck test
 
 | | |
 | --- | --- |
-| **Status** | WAIT |
+| **Status** | **DONE** (I6.1–I6.3) |
 | **Lane** | Docs / Test |
 | **Goal** | Bind claims to ledgers before anyone says READY |
 
 | Stage | Outcome |
 | ----- | ------- |
-| **I6.1** | Module evidence ledgers updated (`*-MOD-009` / `*-MOD-010`) |
-| **I6.2** | GUIDE-017 claim identity filled (READY / CONDITIONALLY READY / NOT READY) |
-| **I6.3** | Production deploy health confirmed (Actions Deploy · Vercel READY · trusted Neon Auth domains) |
+| **I6.1** | Module evidence ledgers updated (`*-MOD-009` / `*-MOD-010`) — **DONE** 2026-07-17 |
+| **I6.2** | GUIDE-017 claim identity filled — **DONE** 2026-07-17 (**NOT READY** @ `fc16109`) |
+| **I6.3** | Production deploy health confirmed — **DONE** 2026-07-17 (Actions Deploy · Vercel READY · trusted Neon Auth domains) |
 
 **Farms:** `afenda-elite-module-readiness` · shipping-and-launch  
 **Exit:** Any readiness claim points at fresh, revision-bound evidence — never “ON DISK exists.”
+
+### Implement evidence — I6.1 (2026-07-17)
+
+| Field | Evidence |
+| ----- | -------- |
+| Scope | Docs/Test only — ledger refresh + honest pack gaps; no I6.2 GUIDE-017 claim; no I6.3 deploy health |
+| Checkout | `fc16109` |
+| Completeness matrix | See table below |
+| FFT ledger | [FFT-MOD-009](../modules/feed-farm-trade/FFT-MOD-009-verification.md) **2.1.0** · [FFT-MOD-010](../modules/feed-farm-trade/FFT-MOD-010-module-docs-index.md) **2.5.0** — Module Enterprise Readiness **Not claimable** |
+| Catalog | [MOD-002](../modules/MOD-002-modules-index.md) **4.0.3** — packless verticals named |
+| Forbidden | No GUIDE-017 READY / CONDITIONALLY READY fill · no N19 · no FFT 2B–2D · no new MOD ID invent |
+| Next Ops | **I6.2** (Phase I6 stays WAIT) |
+
+| Vertical | Ledger row / home | I6.1 status |
+| -------- | ----------------- | ----------- |
+| Identity / Platform (I3.1) | No `*-MOD-009` / `*-MOD-010` | **Gap named** — program evidence remains GUIDE-018 I3.1 / N11 until Approved Docs-lane pack |
+| Declarations (I3.2) | No pack | **Gap named** — program evidence GUIDE-018 I3.2 / N17 |
+| Org-admin cut A (I3.4) | No pack | **Gap named** — program evidence GUIDE-018 I3.4 cut A |
+| FFT Phase 2A (I3.3) | FFT-MOD-009 §3.5 @ `fc16109` · FFT-MOD-010 claim aggregation | **Ledger updated** — four Core PASS (001-01 · 001-02 · 003-02 · 004-01); claim **Not claimable**; never ON DISK as PASS |
+
+**Verify paste (I6.1):**
+
+```bash
+pnpm --filter @afenda/web test -- fft-permitted-vertical tenancy-isolation portal-chrome operator-paths
+# Test Files  4 passed (4)
+# Tests  21 passed (21)
+
+pnpm check:module-quality
+# Coverage complete: yes · Findings: 0
+```
+
+**Residuals for I6.2:** fill GUIDE-017 claim identity (READY / CONDITIONALLY READY / NOT READY) from revision-bound evidence — not from I6.1 alone; packless verticals remain gaps unless Docs-lane packs land first.
+
+### Implement evidence — I6.2 (2026-07-17)
+
+| Field | Evidence |
+| ----- | -------- |
+| Scope | Docs only — GUIDE-017 §3.1 claim identity + §3.9 decision; no I6.3 deploy health; no new MOD packs |
+| Checkout | `fc16109` (same revision as I6.1 ledger run; unit floor re-verified this mission) |
+| Claim authority | [GUIDE-017](GUIDE-017-enterprise-quality-evidence-standard.md) **1.0.1** §3.11 |
+| **Decision** | **NOT READY** |
+| Accepted risks | **none** (CONDITIONALLY READY unavailable) |
+| Forbidden | No READY / CONDITIONALLY READY without accepted-risk rows · no N19 · no FFT 2B–2D · no inventing Identity/Declarations/org-admin packs · no I6.3 work this mission |
+| Next Ops | **I6.3** (Phase I6 stays WAIT) |
+
+| Claim field | Value |
+| ----------- | ----- |
+| Claim scope | Afenda-Lite production-exposed slice after I1–I6.1 (not Elite edition · not FFT Module Enterprise Readiness Claimable · not full SaaS release) |
+| Revision | `fc16109` |
+| Environment | Neon `br-tiny-hill-ao82jp6f` · `@afenda/env` + `.env.local`; prod deploy health deferred to I6.3 |
+| Criterion set | GUIDE-017 §3.6 · this guide I1–I6.1 · MOD-002 **4.0.3** · FFT-MOD-009 **2.1.0** §3.5 · I5.1–I5.6 |
+| Decision owner / date | Platform · 2026-07-17 |
+| Evidence index | GUIDE-017 §3.11 · I6.1 completeness matrix · FFT-MOD-009/010 · MOD-002 pack gaps · I5.* implement evidence |
+| Exclusions | FFT 2B–2D freeze · AdminCN cut B waived · I18N02 N/A · I6.3 deploy health deferred |
+
+| Blocking criterion | Pointer |
+| ------------------ | ------- |
+| Packless Identity / Platform · Declarations · org-admin | MOD-002 **4.0.3** · I6.1 matrix — no `*-MOD-009`/`*-MOD-010` |
+| FFT Module Enterprise Readiness **Not claimable** | FFT-MOD-010 **2.5.0** · FFT-MOD-009 **2.1.0** @ `fc16109` |
+| PITR RPO **NOT EVIDENCED** | I5.2 implement evidence |
+| Deploy health unconfirmed | I6.3 open |
+| Capacity / broader surfaces | §3.6 gap summary |
+
+**Verify paste (I6.2):**
+
+```bash
+git rev-parse --short HEAD
+# fc16109
+
+pnpm --filter @afenda/web test -- fft-permitted-vertical tenancy-isolation portal-chrome operator-paths
+# Test Files  4 passed (4)
+# Tests  21 passed (21)
+
+pnpm check:module-quality
+# Coverage complete: yes · Findings: 0
+
+pnpm check:docs-naming
+# Coverage complete: yes · Findings: 0 (after DOC-002 sync)
+```
+
+**Residuals for I6.3:** Actions Deploy green · Vercel production READY · trusted Neon Auth domains vs `APP_URL`. Claim may remain **NOT READY** after I6.3 until pack gaps / accepted-risk / recovery blockers close — do not treat deploy health alone as READY.
+
+### Implement evidence — I6.3 (2026-07-17)
+
+| Field | Evidence |
+| ----- | -------- |
+| Scope | Ops only — production deploy health; no I7.*; no I6.1/I6.2 ledger rewrite; no GUIDE-017 READY flip |
+| Checkout | `fc16109` |
+| Actions Deploy | Run `29558380028` — `completed` / `success` (2026-07-17T05:50:38Z); ≥1 success in last 10 |
+| Vercel production | Project `afenda-lite` — latest Production deployment **Ready** (CLI `vercel ls afenda-lite --prod`; no token logged) |
+| Neon Auth domains | `https://afenda-lite.vercel.app` · `http://localhost:3000` trusted (plus `https://*.vercel.app` · `https://www.nexuscanon.com`) |
+| Forbidden | No GUIDE-017 READY / CONDITIONALLY READY · no N19 · no FFT 2B–2D · no inventing green Deploy/Vercel/domain status |
+| Next Ops | **I7.1** (Phase I6 **DONE**) |
+
+| Check | Result |
+| ----- | ------ |
+| A. Actions Deploy | **PASS** — success `29558380028` |
+| B. Vercel READY | **PASS** — Production **Ready** |
+| C. Trusted domains | **PASS** — APP_URL + localhost present |
+| D. Public probes | **PASS** — liveness `alive` · readiness `ready` |
+
+**Verify paste (I6.3):**
+
+```bash
+pnpm gh -- run list --workflow=Deploy --branch=main --limit=10
+# completed  success  …  Deploy  main  …  29558380028  …  2026-07-17T05:50:38Z
+
+pnpm check:production:post-deploy
+# [ok] APP_URL present
+# [ok] GET /api/health/liveness — HTTP 200 status=alive
+# [ok] GET /api/health/readiness — HTTP 200 status=ready
+# [ok] GitHub Actions Deploy (recent success) — success …/actions/runs/29558380028
+# Result: 4 passed, 0 failed
+
+vercel ls afenda-lite --prod
+# Age 9h  …/afenda-lite  …  ● Ready  Production
+
+pnpm audit:neon-auth-production
+# [ok] trusted domains (APP_URL + local)
+#      APP_URL https://afenda-lite.vercel.app trusted · local origin present
+# Result: 3 passed, 0 failed
+
+pnpm validate:neon-env
+# [ok] N15 Neon Auth trusted domains
+# Result: 14 passed, 0 failed
+
+npx neon@latest neon-auth domain list --project-id young-hat-54755363 --branch br-tiny-hill-ao82jp6f -o json
+# includes https://afenda-lite.vercel.app · http://localhost:3000
+```
+
+**Residuals for I7 / GUIDE-017:** claim stays **NOT READY** (packless verticals · FFT Not claimable · PITR RPO). Next Ops = **I7.1** doc integrity. Do not treat I6.3 deploy health as product READY.
 
 ---
 
@@ -765,8 +897,8 @@ Snapshot of what “ON DISK vs still missing” looks like as of 2026-07-17:
 | Domains | PARTIAL | Identity assign/revoke + org users (I3.4 cut A) · Declarations submit/read · FFT list-only · adverse declaration journeys A6–A9 | FFT beyond freeze = FROZEN |
 | API / contracts | ON DISK | Docs + check tooling · `ActionResult` / `APIErrorBody` · invite+audit · I2.2 boundary · api-now RHs · Zod→OpenAPI · A11 safe INTERNAL_ERROR | Contract-only expansion · Fumadocs wire · broader HTTP families |
 | E2E | **DONE** (I4) | Neon **N13** APPROVED · factories · smoke/journey · adverse matrix **A1–A11** · `playwright.config.ts` | Post-merge Actions green for `e2e-smoke` (ops follow-through) |
-| CI / Deploy | **DONE** (I5.5) | Lint/typecheck/test · Deploy after green CI · standing `e2e-smoke` · quality DB fail-closed · factory fail-closed · `protect:main` · in-CI secrets-presence | First main-branch `e2e-smoke` green (ops follow-through) · post-deploy smoke (I6.3) · rollback decision |
-| Security / obs / perf / a11y | **DONE** (I5 floor) | N14 denial · **I5.1** isolation/secrets/safe-error + invite pre-Neon audit · **I5.2** restore/migrate · **I5.3** alert→RB-001 + API-007 correlation · **I5.4** criteria matrix + A11Y03/PERF01 · **I5.5** gate honesty · **I5.6** accidental-complexity cuts | I6 capacity harness · GUIDE-017 READY claim |
+| CI / Deploy | **DONE** (I5.5 · I6.3) | Lint/typecheck/test · Deploy after green CI · standing `e2e-smoke` · quality DB fail-closed · factory fail-closed · `protect:main` · in-CI secrets-presence · **I6.3** Deploy success · Vercel READY · trusted domains · post-deploy probes | First main-branch `e2e-smoke` green (ops follow-through) · rollback decision |
+| Security / obs / perf / a11y | **DONE** (I5 floor) | N14 denial · **I5.1** isolation/secrets/safe-error + invite pre-Neon audit · **I5.2** restore/migrate · **I5.3** alert→RB-001 + API-007 correlation · **I5.4** criteria matrix + A11Y03/PERF01 · **I5.5** gate honesty · **I5.6** accidental-complexity cuts | I6 capacity harness residual · GUIDE-017 claim = **NOT READY** (I6.2); READY blocked until pack/recovery gaps close |
 | Maintainability | **DONE** (I5.6) | Dead ports/helpers/deps removed · shared declaration Action gate · sheet submit compose · DNA staging excluded from Biome | Ongoing: no feature under “simplify”; I7 housekeeping discovery |
 
 ---
@@ -814,6 +946,9 @@ Snapshot of what “ON DISK vs still missing” looks like as of 2026-07-17:
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 1.0.13 | 2026-07-17 | **I6.3 DONE**: production deploy health confirmed (Deploy `29558380028` success · Vercel Production Ready · Neon Auth domains for `APP_URL` + localhost); Phase I6 **DONE**; GUIDE-017 stays **NOT READY**; next Ops = **I7.1**. |
+| 1.0.12 | 2026-07-17 | **I6.2 DONE**: GUIDE-017 **1.0.1** claim identity filled @ `fc16109` — decision **NOT READY** (packless verticals · FFT Not claimable · PITR RPO · I6.3 open); Phase I6 stays WAIT (I6.3); next Ops = **I6.3**. |
+| 1.0.11 | 2026-07-17 | **I6.1 DONE**: FFT-MOD-009/010 Target reconstruction `@fc16109` · MOD-002 pack gaps named · completeness matrix; Phase I6 stays WAIT (I6.2–I6.3); no GUIDE-017 READY. |
 | 1.0.10 | 2026-07-17 | **Phase I5 DONE**: invite-audit durable via pre-Neon `platform_rbac_audit` · I5.3 correlation Living (API-007 + Actions/proxy inventory); residuals that kept I5 WAIT closed; next Ops = **I6+**; no GUIDE-017 READY. |
 | 1.0.8 | 2026-07-17 | **I5.5 residual repair**: greenfield `pnpm protect:main` (+ apply) · job name `quality` · in-CI `secrets-presence` probe · `pnpm gh` keyring forwarder; stale `journey` check removed; Phase I5 stays WAIT; next Ops = **I6+**. |
 | 1.0.7 | 2026-07-17 | **I5.4 residual close**: A11Y03 axe + skip-link matrix PASS · PERF01 Google CWV “good” lab budgets adopted + smoke; capacity N/A→I6; Phase I5 stays WAIT (I5.3 BLOCKED + other named residuals); next Ops = **I6+**. |
@@ -852,6 +987,6 @@ Snapshot of what “ON DISK vs still missing” looks like as of 2026-07-17:
 # 6. Notes
 
 - Keep this program under **`docs/guides/`**. Do not park program SSOT in `docs/scratch/`, agent chats, or a root `specs/` tree.
-- ID **GUIDE-018** is registered in DOC-002 (**Living** 1.0.8). Never recycle Retired/Superseded IDs.
+- ID **GUIDE-018** is registered in DOC-002 (**Living** 1.0.12). Never recycle Retired/Superseded IDs.
 - Fullstack Guardian design notes belong in controlled Docs-lane Markdown (scratch → Draft → Living), not a second documentation root.
 - ARCH-028 stays Closed for coding invention. New work is sequenced in this guide and detailed in owning ARCH/API/MOD docs or Approved slice groups.

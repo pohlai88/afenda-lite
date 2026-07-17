@@ -1,29 +1,32 @@
 import {
-	AUTH_LOGIN_PATH,
 	getAuthBootstrap,
 	POST_LOGIN_CALLBACK_PARAM,
 	resolvePostLoginPath,
 } from "@afenda/auth";
-import { Button } from "@afenda/ui-system";
-import Link from "next/link";
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+
+import { TheMachineLanding } from "@/features/landing/the-machine-landing";
 
 type HomePageProps = {
 	searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
 
+export const metadata: Metadata = {
+	title: "Afenda — The Machine",
+	description:
+		"The Machine by Afenda — purpose-bound enterprise intelligence for protection, detection, and response.",
+};
+
 /**
- * Public landing.
+ * Public landing (`/`).
  *
- * N7 signed-in bounce: an authenticated visitor never dead-ends on `/`. The
- * governed resolver (`@afenda/auth`) sends them to a safe same-origin callback
- * when present, otherwise to their coarse role home. Anonymous visitors keep
- * the public shell.
+ * Anonymous visitors get The Machine (`features/landing`). N7 signed-in bounce:
+ * authenticated visitors never dead-end on `/` — governed resolver sends them
+ * to a safe same-origin callback or coarse role home.
  *
- * N8: when Neon Auth has a session but no active organization yet, bounce
- * through the cookie-safe ensure Route Handler before role-home resolution.
- * When getSession needs Set-Cookie (session_data mint / refresh) in RSC,
- * bounce through the cookie-safe sync Route Handler first.
+ * N8: session without active org → ensure Route Handler; getSession Set-Cookie
+ * needs → sync Route Handler first.
  */
 export default async function HomePage({ searchParams }: HomePageProps) {
 	const query = await searchParams;
@@ -34,30 +37,23 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 	// cookies lagged behind Neon Auth server state.
 	const bootstrap = await getAuthBootstrap(callbackUrl);
 
-	if (bootstrap.state === "sync_cookies") {
-		redirect(bootstrap.url);
+	switch (bootstrap.state) {
+		case "sync_cookies":
+			return redirect(bootstrap.url);
+		case "ensure_active_org":
+			return redirect(bootstrap.url);
+		case "ready":
+			return redirect(
+				resolvePostLoginPath({
+					role: bootstrap.session.role,
+					callbackUrl,
+				}),
+			);
+		case "anonymous":
+			return <TheMachineLanding />;
+		default: {
+			const _exhaustive: never = bootstrap;
+			return _exhaustive;
+		}
 	}
-	if (bootstrap.state === "ensure_active_org") {
-		redirect(bootstrap.url);
-	}
-	if (bootstrap.state === "ready") {
-		redirect(
-			resolvePostLoginPath({
-				role: bootstrap.session.role,
-				callbackUrl,
-			}),
-		);
-	}
-
-	return (
-		<main className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-canvas p-4">
-			<h1 className="text-2xl font-semibold tracking-tight">Afenda-Lite</h1>
-			<p className="max-w-md text-center text-sm text-foreground-secondary">
-				Public shell. Operator and client surfaces are role-gated after sign-in.
-			</p>
-			<Button asChild>
-				<Link href={AUTH_LOGIN_PATH}>Sign in</Link>
-			</Button>
-		</main>
-	);
 }

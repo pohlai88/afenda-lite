@@ -186,10 +186,7 @@ export async function OrgAdminShell() {
 					assignments={activeAssignments.map((item) => ({
 						id: item.id,
 						userId: item.userId,
-						userLabel: resolveAssignmentUserLabel(
-							memberDirectory,
-							item.userId,
-						),
+						userLabel: resolveAssignmentUserLabel(memberDirectory, item.userId),
 						roleId: item.roleId,
 						roleName: roleNameById.get(item.roleId) ?? item.roleId,
 						scopeType: item.scopeType,

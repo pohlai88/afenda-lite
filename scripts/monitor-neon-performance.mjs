@@ -41,6 +41,17 @@ const serverlessUrl = pathToFileURL(
 ).href;
 
 let failed = 0;
+/** API-007 / I5.3 — run identity for N4 monitor (not an app APM vendor). */
+const correlationId = crypto.randomUUID();
+console.log(
+	JSON.stringify({
+		ts: new Date().toISOString(),
+		service: "neon-performance-monitor",
+		level: "info",
+		event: "n4.monitor.start",
+		correlationId,
+	}),
+);
 
 function record(label, result) {
 	const marker = result.ok ? "[ok]" : "[fail]";
@@ -90,5 +101,15 @@ try {
 	);
 }
 
+console.log(
+	JSON.stringify({
+		ts: new Date().toISOString(),
+		service: "neon-performance-monitor",
+		level: failed === 0 ? "info" : "error",
+		event: "n4.monitor.result",
+		correlationId,
+		code: failed === 0 ? "PASS" : "FAIL",
+	}),
+);
 console.log(`Result: ${failed === 0 ? "PASS" : "FAIL"}`);
 process.exit(failed === 0 ? 0 : 1);
