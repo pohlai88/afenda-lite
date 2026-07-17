@@ -1,7 +1,10 @@
 /**
  * Playwright credential resolution for Neon Auth journeys.
- * Prefer explicit `E2E_*` overrides; fall back to local seed fixtures.
- * Never invent passwords — callers must skip when a pair is incomplete.
+ *
+ * N13 factory SSOT: `workerTenant` from `@/testing/e2e/playwright-base` +
+ * `E2E_FACTORY_PASSWORD`. Explicit `E2E_*` pairs support one-off runs.
+ * Seed autofill accounts are never Playwright login subjects. Callers skip
+ * with a named reason when neither factory nor explicit credentials exist.
  */
 
 export type E2ECredentialPair = {
@@ -21,39 +24,17 @@ function readPair(
 	return { email, password };
 }
 
-/** Operator / org-admin shell account. */
+/** Explicit operator / org-admin shell account for one-off runs. */
 export function resolveOperatorCredentials(): E2ECredentialPair | null {
-	return (
-		readPair("E2E_OPERATOR_EMAIL", "E2E_OPERATOR_PASSWORD") ??
-		readPair("SHARED_ADMIN_EMAIL", "SHARED_ADMIN_PASSWORD")
-	);
+	return readPair("E2E_OPERATOR_EMAIL", "E2E_OPERATOR_PASSWORD");
 }
 
-/** Client shell account (post-login routing). */
+/** Explicit client shell account for one-off runs. */
 export function resolveClientCredentials(): E2ECredentialPair | null {
-	return (
-		readPair("E2E_CLIENT_EMAIL", "E2E_CLIENT_PASSWORD") ??
-		readPair("PREVIEW_CLIENT_EMAIL", "PREVIEW_CLIENT_PASSWORD")
-	);
+	return readPair("E2E_CLIENT_EMAIL", "E2E_CLIENT_PASSWORD");
 }
 
-/**
- * Non-member invitee for N8 invite→join accept.
- * Prefer `E2E_INVITEE_*`; else fixture email + `PREVIEW_CLIENT_PASSWORD`
- * (hash aligned by `prepareN8InviteeFixture`).
- */
+/** Explicit non-member invitee for one-off invite→join runs. */
 export function resolveInviteeCredentials(): E2ECredentialPair | null {
-	const explicit = readPair("E2E_INVITEE_EMAIL", "E2E_INVITEE_PASSWORD");
-	if (explicit) {
-		return explicit;
-	}
-	const password =
-		process.env.E2E_INVITEE_PASSWORD?.trim() ||
-		process.env.PREVIEW_CLIENT_PASSWORD?.trim() ||
-		"";
-	const email = process.env.E2E_INVITEE_EMAIL?.trim() || "";
-	if (email && password) {
-		return { email, password };
-	}
-	return null;
+	return readPair("E2E_INVITEE_EMAIL", "E2E_INVITEE_PASSWORD");
 }

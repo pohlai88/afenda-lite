@@ -1,68 +1,52 @@
-import { resolveOperatorCredentials } from "@/testing/e2e/credentials";
-import {
-	assertN8InviteAccepted,
-	prepareN8InviteeFixture,
-	resolveN8InviteeCredentials,
-} from "@/testing/e2e/invitee-fixture";
+import { loginAsOperator, signIn } from "@/testing/e2e/flows";
 import { expect, test } from "@/testing/e2e/playwright-base";
+import {
+	assertInviteAccepted,
+	prepareInviteeForOrg,
+} from "@/testing/e2e/tenancy";
 
 /**
  * N8 — authenticated operator invite → `/join?invitationId=` accept (@journey).
  *
+ * N13 worker factory supplies a unique operator, invitee, and orgA. Seed
+ * autofill accounts are never login subjects.
+ *
  * Mapped accept path (Neon Auth + UI):
  * 1. Operator invites a **verified non-member** (Neon rejects current members).
  * 2. Unauthenticated `/join` → `/auth/login?redirectTo=/join?invitationId=…`.
- * 3. Invitee **signs in** (not sign-up) — avoids hashed signup OTP in
- *    `neon_auth.verification`.
+ * 3. Invitee **signs in** (not sign-up) — avoids hashed signup OTP.
  * 4. AcceptInvitationCard accept → role home; invitation status=`accepted`.
  */
-
-const operator = resolveOperatorCredentials();
-const invitee = resolveN8InviteeCredentials();
-const hasInviteJoinPair = Boolean(
-	operator && invitee && process.env.DATABASE_URL?.trim(),
-);
-
-async function signIn(
-	page: import("@playwright/test").Page,
-	email: string,
-	password: string,
-): Promise<void> {
-	await page.goto("/auth/login");
-	await page.getByRole("textbox", { name: /email/i }).fill(email);
-	await page.locator('input[type="password"]').first().fill(password);
-	await page
-		.getByRole("button", { name: /sign in|log in|login|continue/i })
-		.first()
-		.click();
-}
 
 test.describe("invite → join accept @journey", () => {
 	test("operator invites verified non-member; invitee accepts at /join", async ({
 		page,
+		workerTenant,
 	}) => {
 		test.setTimeout(180_000);
+
 		test.skip(
-			!hasInviteJoinPair,
-			"Operator + N8 invitee credentials + DATABASE_URL required",
+			!workerTenant,
+			"workerTenant factory required (E2E_FACTORY_PASSWORD + DATABASE_URL)",
 		);
+		if (!workerTenant) {
+			return;
+		}
 
-		const operatorEmail = operator?.email ?? "";
-		const operatorPassword = operator?.password ?? "";
-		const inviteeEmail = invitee?.email ?? "";
-		const inviteePassword = invitee?.password ?? "";
+		const { operator, invitee, orgA } = workerTenant;
+		await prepareInviteeForOrg({
+			inviteeEmail: invitee.email,
+			organizationId: orgA.id,
+		});
 
-		await prepareN8InviteeFixture(inviteeEmail);
-
-		await signIn(page, operatorEmail, operatorPassword);
-		await page.waitForURL(/\/admin(\/|$)/, { timeout: 45_000 });
+		await loginAsOperator(page, operator);
 
 		await page.goto("/admin");
 		const inviteForm = page.locator("form").filter({
 			has: page.getByRole("button", { name: /send invitation/i }),
 		});
 		await expect(inviteForm).toBeVisible({ timeout: 15_000 });
-		await inviteForm.locator('input[name="email"]').fill(inviteeEmail);
+		await inviteForm.locator('input[name="email"]').fill(invitee.email);
 		const roleSelect = inviteForm.locator('select[name="role"]');
 		if (await roleSelect.count()) {
 			await roleSelect.selectOption("client");
@@ -85,7 +69,7 @@ test.describe("invite → join accept @journey", () => {
 				`Invite failed: ${(await formError.innerText())?.trim() || "(empty alert)"}`,
 			);
 		}
-		await expect(status).toContainText(inviteeEmail.toLowerCase());
+		await expect(status).toContainText(invitee.email.toLowerCase());
 
 		const joinLink = page.getByTestId("invite-join-url");
 		await expect(joinLink).toBeVisible({ timeout: 15_000 });
@@ -106,12 +90,7 @@ test.describe("invite → join accept @journey", () => {
 			decodeURIComponent(loginUrl.searchParams.get("redirectTo") ?? ""),
 		).toBe(`/join?invitationId=${invitationId}`);
 
-		await page.getByRole("textbox", { name: /email/i }).fill(inviteeEmail);
-		await page.locator('input[type="password"]').first().fill(inviteePassword);
-		await page
-			.getByRole("button", { name: /sign in|log in|login|continue/i })
-			.first()
-			.click();
+		await signIn(page, invitee.email, invitee.password);
 
 		await page.waitForURL(
 			(url) =>
@@ -122,7 +101,6 @@ test.describe("invite → join accept @journey", () => {
 		);
 
 		if (new URL(page.url()).pathname.startsWith("/join")) {
-			// Neon Auth UI: heading "Accept Invitation"; primary action label is "Accept".
 			const acceptButton = page.getByRole("button", { name: /^accept$/i });
 			await expect(acceptButton).toBeVisible({ timeout: 30_000 });
 			await acceptButton.click();
@@ -135,9 +113,10 @@ test.describe("invite → join accept @journey", () => {
 			/^\/(client\/dashboard|admin)/,
 		);
 
-		await assertN8InviteAccepted({
-			inviteeEmail,
+		await assertInviteAccepted({
+			inviteeEmail: invitee.email,
 			invitationId: invitationId ?? "",
+			organizationId: orgA.id,
 		});
 	});
 });
