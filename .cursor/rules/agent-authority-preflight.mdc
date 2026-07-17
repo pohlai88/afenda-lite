@@ -31,11 +31,24 @@ Skip only for pure chitchat with **no** skill load, **no** MCP, and **no** rule-
 
 Then continue the turn (tools allowed after this block).
 
+## Always-apply baseline (Rules line)
+
+When the turn applies project rules (including `alwaysApply`) or edits product/package code, name the **rule file stems** that apply under **Rules**. Baseline stems commonly include:
+
+| Stem | When |
+|------|------|
+| `agent-authority-preflight` | Any PREFLIGHT-firing turn |
+| `coding-discipline` | Product/package code edits or typed hygiene this turn |
+| `no-shim-stub-tech-debt` · `no-mvp-quality-bar` | Product work (and whenever those bans apply) |
+
+**Skills vs Rules:** list `afenda-coding-discipline` under **Skills** only when that skill was loaded this turn. The always-apply floor is **`coding-discipline`** (Rules) — do not invent the skill name under Skills to “cover” the rule.
+
 ## Forbidden
 
 - Starting tool calls that load skills / call MCP / depend on rules **without** the PREFLIGHT block first
 - Vague “I’ll use some skills” without naming them
 - Claiming a skill/MCP/rule was used without PREFLIGHT on that turn
+- Listing `afenda-coding-discipline` under Skills when only the `coding-discipline` rule applied
 
 ## Hook enforcement
 

@@ -72,3 +72,10 @@ packages/ui-system/docs/
 # Retired husk — do not restore packages/ui or @afenda/ui (ADR-010).
 packages/ui/
 
+# Studio DNA Method A installs (bulky) — keep forwarder stubs tracked (M-A1).
+# Tracked: apps/web/components.json · shadcn-studio/styles.css · shadcn-studio/lib/utils.ts
+apps/web/shadcn-studio/**
+!apps/web/shadcn-studio/styles.css
+!apps/web/shadcn-studio/lib/
+!apps/web/shadcn-studio/lib/utils.ts
+

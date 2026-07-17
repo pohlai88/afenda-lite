@@ -49,10 +49,12 @@ LOAD:
   apps/web/app/layout.tsx · apps/web/globals.css
   .cursor/rules/ui-system.mdc
   reference.md  (recipes · F* · C* · UI-CAP · score rubric)
+  ../shadcn-ui/SKILL.md  (when Studio DNA / CLI / components.json — Method A/B)
 SKIP:
-  beauty campaigns · Storybook / playground · private registries
+  beauty campaigns · Storybook / playground · private registries on product ui-system
   forking frontend-ui-engineering · scratch → Living docs
   parallel tokens / type scales · auth-surface as product kit
+  product import from apps/web/shadcn-studio/** · apps/web/components/ui/**
 ```
 
 ## Authority ladder · ownership · extract
@@ -70,7 +72,8 @@ SKIP:
 | Font, radius, type, color, density, recipes, anti-handroll, Compose Score | **this skill** |
 | Route tree, scaffold, FE↔BE | `afenda-elite-frontend-scaffold` |
 | A11y/state/responsive method | `frontend-ui-engineering` — **completion stays here** (Risk C) |
-| Add/regenerate primitives | ADR-010 `ui:add` → relative imports → barrel → tests |
+| Add/regenerate product primitives | ADR-010 `ui:add` in `packages/ui-system` → relative → barrel → tests |
+| Studio DNA CLI/MCP · DNA forwarder · promote into homes | `shadcn-ui` — then return here for QUALITY ORDER |
 
 | Layer | Source |
 |-------|--------|
@@ -171,6 +174,7 @@ Rubric + examples: [reference.md](reference.md#compose-score-rubric).
 ```text
 Need product UI
   → /using-afenda-elite-skills → this skill
+  → Studio DNA / Pro blocks / dual components.json? → shadcn-ui first (stage → promote → prune)
   → QUALITY ORDER → LOAD disk SSOT + reference.md
   → capability gate → UI-CAP if blocked (no local substitute)
   → frontend-ui-engineering (method only)

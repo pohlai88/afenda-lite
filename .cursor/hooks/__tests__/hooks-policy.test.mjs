@@ -255,7 +255,9 @@ describe("agent-authority-preflight", () => {
 			composer_mode: "agent",
 		});
 		assert.equal(out.permission, undefined);
-		assert.match(String(out.additional_context || ""), /PREFLIGHT/);
+		const ctx = String(out.additional_context || "");
+		assert.match(ctx, /PREFLIGHT/);
+		assert.match(ctx, /coding-discipline/);
 	});
 
 	it("postToolUse Read of rule injects reminder; normal Read stays quiet", () => {
