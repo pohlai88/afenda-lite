@@ -53,6 +53,11 @@ export * from "./components/ui/select";
 export * from "./components/ui/separator";
 export * from "./components/ui/sheet";
 export * from "./components/ui/sidebar";
+/** Cookie name/max-age — non-client; RSC shells read → `SidebarProvider defaultOpen`. */
+export {
+	SIDEBAR_COOKIE_MAX_AGE,
+	SIDEBAR_COOKIE_NAME,
+} from "./components/ui/sidebar-cookie";
 export * from "./components/ui/skeleton";
 export * from "./components/ui/slider";
 export * from "./components/ui/sonner";

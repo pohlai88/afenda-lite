@@ -85,6 +85,17 @@ describe("portal-chrome (N16)", () => {
 		expect(layout).toContain('requireRole("operator")');
 	});
 
+	it("passes server-read sidebar cookie into SidebarProvider defaultOpen", () => {
+		const shell = source("features/portal-chrome/operator-platform-shell.tsx");
+		const chrome = source(
+			"features/portal-chrome/operator-platform-chrome.tsx",
+		);
+		expect(shell).toContain("SIDEBAR_COOKIE_NAME");
+		expect(shell).toContain("cookies()");
+		expect(shell).toContain("defaultSidebarOpen");
+		expect(chrome).toContain("defaultOpen={defaultSidebarOpen}");
+	});
+
 	it("promotes shell-01 header DNA without locale/social/CDN chrome", () => {
 		const chrome = source(
 			"features/portal-chrome/operator-platform-chrome.tsx",
