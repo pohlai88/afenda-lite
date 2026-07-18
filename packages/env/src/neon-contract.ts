@@ -11,6 +11,20 @@ export const APPROVED_NEON_ORG_ID = "org-fragrant-lake-90358173" as const;
 export const APPROVED_NEON_PROJECT_ID = "young-hat-54755363" as const;
 export const APPROVED_NEON_BRANCH_ID = "br-tiny-hill-ao82jp6f" as const;
 export const PRODUCTION_APP_ORIGIN = "https://afenda-lite.vercel.app" as const;
+export const PRODUCTION_APP_HOST = new URL(PRODUCTION_APP_ORIGIN).hostname;
+
+/** Approved APP_URL hostnames for local / non-Vercel-production runtimes (PL-S9). */
+export const APPROVED_APP_HOSTS = [
+	"localhost",
+	"127.0.0.1",
+	PRODUCTION_APP_HOST,
+] as const;
+
+/**
+ * Baseline drizzle migrate on the production Neon branch is prohibited (N2 / ARCH-025).
+ * Identified by the env gate; enforcement lives in `@afenda/db` db-migrate-guard.
+ */
+export const PRODUCTION_BASELINE_MIGRATE_PROHIBITED = true as const;
 
 export type NeonEnvClass =
 	| "required-product"
@@ -95,6 +109,10 @@ export function assertProductDatabaseUrl(
 	return { ok: issues.length === 0, issues };
 }
 
+export function isApprovedAppHost(hostname: string): boolean {
+	return (APPROVED_APP_HOSTS as readonly string[]).includes(hostname);
+}
+
 export function assertAppUrl(
 	appUrl: string,
 	ctx: NeonRuntimeContext = {},
@@ -110,12 +128,17 @@ export function assertAppUrl(
 						"must use https: on Vercel production (VERCEL_ENV=production)",
 				});
 			}
-			if (parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1") {
+			if (parsed.origin !== new URL(PRODUCTION_APP_ORIGIN).origin) {
 				issues.push({
 					variable: "APP_URL",
-					message: "must not be localhost on Vercel production",
+					message: `must equal approved production origin ${PRODUCTION_APP_ORIGIN}`,
 				});
 			}
+		} else if (!isApprovedAppHost(parsed.hostname)) {
+			issues.push({
+				variable: "APP_URL",
+				message: `hostname must be an approved local or production host (${APPROVED_APP_HOSTS.join(", ")})`,
+			});
 		}
 	} catch {
 		issues.push({
@@ -235,6 +258,34 @@ export function assertPlaygroundLocalOnly(
 	return { ok: issues.length === 0, issues };
 }
 
+export type ProdBranchMigratePostureResult = NeonContractResult & {
+	detail: string;
+};
+
+/**
+ * Identify the production-branch baseline-migrate prohibition (PL-S9 / N2).
+ * Does not run drizzle; never logs DATABASE_URL or other secrets.
+ * Branch id mismatches reuse `assertNeonCloudIds` (single error message).
+ */
+export function evaluateProdBranchBaselineMigratePosture(input: {
+	branchId?: string;
+}): ProdBranchMigratePostureResult {
+	const cloud = assertNeonCloudIds({ branchId: input.branchId });
+	if (!cloud.ok) {
+		return {
+			ok: false,
+			issues: cloud.issues,
+			detail: formatNeonContractIssues(cloud.issues),
+		};
+	}
+
+	return {
+		ok: true,
+		issues: [],
+		detail: `prohibited on ${APPROVED_NEON_BRANCH_ID} — use @afenda/db db-migrate-guard (never apply 0000 alone)`,
+	};
+}
+
 export type NeonProductEnvInput = {
 	DATABASE_URL?: string;
 	NEON_AUTH_BASE_URL?: string;
@@ -340,7 +391,7 @@ export const neonAuthCookieSecretSchema = z
 export function productAppUrlSchema(ctx: NeonRuntimeContext = {}) {
 	return z.url().refine((value) => assertAppUrl(value, ctx).ok, {
 		message:
-			"APP_URL must be a valid URL; on Vercel production it must be https and non-localhost",
+			"APP_URL must be a valid URL on an approved host; on Vercel production it must equal the approved production origin",
 	});
 }
 

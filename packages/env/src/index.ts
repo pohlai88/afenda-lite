@@ -1,4 +1,5 @@
 export {
+	APPROVED_APP_HOSTS,
 	APPROVED_NEON_BRANCH_ID,
 	APPROVED_NEON_ORG_ID,
 	APPROVED_NEON_PROJECT_ID,
@@ -10,7 +11,9 @@ export {
 	assertPlaygroundLocalOnly,
 	assertProductDatabaseUrl,
 	evaluateNeonProductEnv,
+	evaluateProdBranchBaselineMigratePosture,
 	formatNeonContractIssues,
+	isApprovedAppHost,
 	isNeonPoolerDatabaseUrl,
 	isProductionDeployment,
 	NEON_ENV_CLASSIFICATION,
@@ -19,7 +22,10 @@ export {
 	type NeonEnvClass,
 	type NeonProductEnvInput,
 	type NeonRuntimeContext,
+	PRODUCTION_APP_HOST,
 	PRODUCTION_APP_ORIGIN,
+	PRODUCTION_BASELINE_MIGRATE_PROHIBITED,
+	type ProdBranchMigratePostureResult,
 	redactEnvValue,
 } from "./neon-contract";
 export {

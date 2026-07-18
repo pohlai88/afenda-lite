@@ -39,11 +39,13 @@ export type {
 	InviteOrgMemberResult,
 } from "./invitations";
 export { extractInvitationId, inviteOrgMember } from "./invitations";
-export type { BuildJoinUrlInput } from "./join-paths";
+export type { BuildJoinUrlInput, JoinInvitationQuery } from "./join-paths";
 export {
 	buildInviteJoinUrl,
 	buildJoinUrl,
+	JOIN_INVITATION_ID_MAX_LENGTH,
 	JOIN_PATH,
+	parseJoinInvitationQuery,
 	requireAppOrigin,
 } from "./join-paths";
 export type { OrgMember } from "./organization-members";

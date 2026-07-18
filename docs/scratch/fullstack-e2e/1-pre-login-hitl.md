@@ -82,8 +82,8 @@ Fill **Status** only after human or commanded verify. Never invent PASS.
 | PL-FE-05 | Frontend | Client gate redirect | `(gate)/login/page.tsx` | Anonymous `/client/login` lands on `/auth/login` | UNEVALUATED | |
 | PL-FE-06 | Frontend | Public a11y / CWV floor | `testing/a11y-assistive-matrix.ts` · `fe-cwv-budgets.ts` | Smoke: a11y A11Y03-P1/P2 · CWV public `/auth/login` · `/403` (when Playwright env ready) | UNEVALUATED | |
 | PL-DB-01 | DB | Neon env contract | `@afenda/env` · `.env.local` | `pnpm validate:neon-env` | UNEVALUATED | |
-| PL-DB-02 | DB | Readiness storage probe | `modules/platform/domain/health.ts` | Dev up: `GET /api/health/readiness` → `storage: postgres` (or document `unreachable` as FAIL/BLOCKED) | UNEVALUATED | |
-| PL-DB-03 | DB | Auth env on readiness | same | Readiness `auth: configured` requires `NEON_AUTH_BASE_URL` + cookie secret ≥32 | UNEVALUATED | |
+| PL-DB-02 | DB | Readiness storage probe | `modules/platform/domain/health.ts` | Dev up: `GET /api/health/readiness` → `checks.storage.provider: postgres` + `reachable` (or document `unreachable` / `not_ready` as FAIL/BLOCKED) | UNEVALUATED | |
+| PL-DB-03 | DB | Auth env on readiness | same | Readiness `checks.auth.status: configured` requires `NEON_AUTH_BASE_URL` + cookie secret ≥32 (config only — not provider reachability) | UNEVALUATED | |
 | PL-DB-04 | DB | Neon Auth managed identity store | Neon Cloud / `neon_auth` (provider-owned) | HITL: confirm invitation/user rows only via Neon Auth / approved SQL — **no** inventing app tables for login | UNEVALUATED | |
 | PL-DB-05 | DB | Pre-Login write posture | — | Anonymous public/auth/join **must not** write platform tenancy tables (`platform_rbac_audit`, declarations, FFT). Invite **send** is post-login. | UNEVALUATED | |
 | PL-BE-01 | Backend | Auth BFF wiring | `app/api/auth/[...path]/route.ts` | `pnpm --filter @afenda/web test -- auth-bff-route` | UNEVALUATED | |
@@ -164,8 +164,8 @@ pnpm exec playwright test e2e/smoke/anonymous-gate.spec.ts
 | Step | Checkpoint | Pass criterion | Status |
 |------|------------|----------------|--------|
 | HITL-DB-1 | **Env ids** | `pnpm validate:neon-env` green against Living Neon project/branch policy | UNEVALUATED |
-| HITL-DB-2 | **Readiness DB** | `/api/health/readiness` reports `storage: postgres` when DATABASE_URL pooler reachable | UNEVALUATED |
-| HITL-DB-3 | **Auth configured signal** | Readiness `auth: configured` (env presence — not a live Neon Auth ping) | UNEVALUATED |
+| HITL-DB-2 | **Readiness DB** | `/api/health/readiness` reports `checks.storage.provider: postgres` + `reachable` when DATABASE_URL pooler reachable | UNEVALUATED |
+| HITL-DB-3 | **Auth configured signal** | Readiness `checks.auth.status: configured` (env presence — not a live Neon Auth ping) | UNEVALUATED |
 | HITL-DB-4 | **Managed store HITL** | Human confirms Pre-Login identity data lives in Neon Auth managed store; app does not invent a parallel session table | UNEVALUATED |
 | HITL-DB-5 | **No anonymous tenancy writes** | Trace Pre-Login paths: no `platform_rbac_audit` / declarations / FFT writes for anonymous | UNEVALUATED |
 

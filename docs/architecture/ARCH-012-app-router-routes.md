@@ -4,11 +4,11 @@
 | ----------------- | ------------ |
 | **ID**            | ARCH-012     |
 | **Category**      | Architecture |
-| **Version**       | 1.2.8        |
+| **Version**       | 1.2.9        |
 | **Status**        | Living       |
 | **Control State** | Closed       |
 | **Owner**         | Frontend     |
-| **Updated**       | 2026-07-16   |
+| **Updated**       | 2026-07-18   |
 
 ---
 
@@ -230,15 +230,17 @@ Promotion and flags: follow [FFT-MOD-008](../modules/feed-farm-trade/FFT-MOD-008
 
 ## 3.12 Proxy matcher (authoritative)
 
-From `apps/web/proxy.ts`:
+From `apps/web/proxy.ts` (`config.matcher` static literals; typed inventory `SESSION_GATE_PROTECTED_MATCHERS` in `apps/web/features/auth/pre-login-route-contract.ts`):
 
 | Class | Paths |
 |-------|-------|
-| Matched | `/account/*`, `/dashboard/*`, `/client/*`, `/fft/*`, `/playground/*` |
-| Public (not matched) | `/`, `/auth/*`, `/join`, `/org/login`, `/invite/*`, `/api/*`, `/survey/*`, `/f/*` |
-| Bypasses inside matcher | `?embed=1`, `/client/login`, `/client/preview-unavailable` (`CLIENT_GATE_PATHS`), `POST`+`next-action` header |
+| Matched | `/account/*`, `/dashboard/*`, `/admin/*`, `/client/*`, `/fft/*`, `/playground/*` |
+| Public (not matched) | `/`, `/auth/*`, `/join`, `/org/login`, `/invite/*`, `/api/*` (incl. Neon Auth BFF + health), `/survey/*`, `/f/*`, static / `_next` |
+| Bypasses inside matcher | `?embed=1`; `/client/login`, `/client/preview-unavailable` (`CLIENT_GATE_PATHS`); Pre-Login API paths via `shouldBypassSessionGate` (auth BFF + health — defense-in-depth); `POST`+`next-action`; `/playground/*` when `PLAYGROUND_ENABLED` |
 
-`proxy.ts` gates document navigations only. Server Actions must still call `require*Session` (and org/FFT authz + Zod) **inside** the Action.
+Living operator shell on `/admin` is matched ([ARCH-022](ARCH-022-system-overview.md) · [ARCH-026](ARCH-026-auth-session.md)).
+
+`proxy.ts` gates document navigations only. Server Actions must still call `require*Session` (and org/FFT authz + Zod) **inside** the Action. Structured unauthorized for Route Handlers uses `getApiSession` ([API-002](../api/API-002-error-contract.md) JSON 401) — not HTML login redirects.
 
 ## 3.13 Verification (when Target App Router exists)
 
@@ -261,9 +263,11 @@ Docs-first checkout with no product tree: audit this Living catalogue only — n
 | ARCH-015 | AdminCN Alignment | Shell / portal-views |
 | ARCH-016 | Next.js Conventions | Special files · async APIs · proxy mechanics |
 | ARCH-017 | Frontend Folder Map | Folder homes for owners |
-| ARCH-022 | System Overview | Target monorepo tree |
+| ARCH-022 | System Overview | Target monorepo tree · Living `/admin` shell |
 | ARCH-023 | Multi-Tenancy and Platform RBAC | Org isolation · FFT entry |
+| ARCH-026 | Auth and Session | `createSessionProxy` · edge session gate |
 | ARCH-028 | Implementation Slices | Anti-contamination · Target greenfield |
+| API-002 | Error Contract | Route Handler JSON 401 (`getApiSession`) |
 | ADR-008 | Cache Components Mode B (Gated) | Mode B enable gate (Phase 1 only) |
 | FFT-MOD-001 | Feed Farm Trade module architecture | FFT product locks |
 | FFT-MOD-005 | Feed Farm Trade auth / tenancy / RBAC | FFT access gate |
@@ -278,6 +282,7 @@ Agent method (not a controlled ID): `.cursor/skills/afenda-elite-nextjs-best-pra
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 1.2.9 | 2026-07-18 | Bounded reopen (PL-S5 audit): §3.12 Matched adds Living `/admin/*`; bypasses document Pre-Login API + playground flag; note document-nav vs `getApiSession` JSON 401; References + ARCH-026 / API-002. |
 | 1.2.8 | 2026-07-16 | § 3.10 disambiguation repointed: retired `@afenda/ui/playground` gateway ([ADR-010](adr/ADR-010-afenda-ui-system-flat-barrel.md)) → `@afenda/ui-system` barrel ([ARCH-024 § `@afenda/ui-system`](ARCH-024-package-boundaries.md#afendaui-system)); dead `#afendaui` anchor fixed. |
 | 1.2.7 | 2026-07-15 | § 3.10 + family matrix: Next.js playground harness removed (absent); no handroll; Studio MCP for any future harness. |
 | 1.2.6 | 2026-07-15 | § 3.10 Playground: linked to the ARCH-024 `@afenda/ui/playground` disambiguation paragraph (no independent prose). |

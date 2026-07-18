@@ -52,3 +52,44 @@ describe("join paths (I1.3)", () => {
 		expect(() => buildInviteJoinUrl("  ")).toThrow(/non-empty invitationId/);
 	});
 });
+
+describe("parseJoinInvitationQuery (PL-S4)", () => {
+	beforeEach(() => {
+		vi.resetModules();
+	});
+
+	it("classifies missing and blank as missing", async () => {
+		const { parseJoinInvitationQuery } = await import("../src/join-paths");
+		expect(parseJoinInvitationQuery(undefined)).toEqual({ kind: "missing" });
+		expect(parseJoinInvitationQuery(null)).toEqual({ kind: "missing" });
+		expect(parseJoinInvitationQuery("")).toEqual({ kind: "missing" });
+		expect(parseJoinInvitationQuery("   ")).toEqual({ kind: "missing" });
+	});
+
+	it("classifies structurally unsafe values as invalid", async () => {
+		const {
+			JOIN_INVITATION_ID_MAX_LENGTH,
+			parseJoinInvitationQuery,
+		} = await import("../src/join-paths");
+		expect(parseJoinInvitationQuery(["a", "b"])).toEqual({ kind: "invalid" });
+		expect(parseJoinInvitationQuery(42)).toEqual({ kind: "invalid" });
+		expect(parseJoinInvitationQuery("inv\u0000bad")).toEqual({
+			kind: "invalid",
+		});
+		expect(
+			parseJoinInvitationQuery("x".repeat(JOIN_INVITATION_ID_MAX_LENGTH + 1)),
+		).toEqual({ kind: "invalid" });
+	});
+
+	it("accepts opaque printable ids including the acceptance probe", async () => {
+		const { parseJoinInvitationQuery } = await import("../src/join-paths");
+		expect(parseJoinInvitationQuery("test")).toEqual({
+			kind: "present",
+			invitationId: "test",
+		});
+		expect(parseJoinInvitationQuery("  inv-neon-1  ")).toEqual({
+			kind: "present",
+			invitationId: "inv-neon-1",
+		});
+	});
+});

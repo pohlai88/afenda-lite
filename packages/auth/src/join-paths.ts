@@ -8,11 +8,57 @@ import { env } from "@afenda/env";
 
 export const JOIN_PATH = "/join" as const;
 
+/** Structural ceiling for opaque Neon invitation ids (not a UUID gate). */
+export const JOIN_INVITATION_ID_MAX_LENGTH = 256 as const;
+
+const JOIN_INVITATION_CONTROL_CHARS = /[\u0000-\u001F\u007F]/;
+
 export type BuildJoinUrlInput = {
 	invitationId: string;
 	/** Absolute origin (`https://…`). Defaults to relative `/join?…` when omitted. */
 	origin?: string;
 };
+
+/**
+ * Join query parse result — structural only.
+ * Neon invitation ids are opaque (not UUID-gated); never log the token.
+ */
+export type JoinInvitationQuery =
+	| { kind: "missing" }
+	| { kind: "invalid" }
+	| { kind: "present"; invitationId: string };
+
+/**
+ * Validate `invitationId` searchParam without logging the value.
+ * Missing/blank → missing; array/non-string/control/over-length → invalid;
+ * opaque printable string (incl. probe `test`) → present for Neon handoff.
+ */
+export function parseJoinInvitationQuery(
+	invitationId: unknown,
+): JoinInvitationQuery {
+	if (invitationId === undefined || invitationId === null) {
+		return { kind: "missing" };
+	}
+	if (Array.isArray(invitationId)) {
+		return { kind: "invalid" };
+	}
+	if (typeof invitationId !== "string") {
+		return { kind: "invalid" };
+	}
+
+	const trimmed = invitationId.trim();
+	if (trimmed.length === 0) {
+		return { kind: "missing" };
+	}
+	if (trimmed.length > JOIN_INVITATION_ID_MAX_LENGTH) {
+		return { kind: "invalid" };
+	}
+	if (JOIN_INVITATION_CONTROL_CHARS.test(trimmed)) {
+		return { kind: "invalid" };
+	}
+
+	return { kind: "present", invitationId: trimmed };
+}
 
 /**
  * Invitation emails must use the production app origin so accept links

@@ -163,6 +163,7 @@ describe("PL-S1 Pre-Login route inventory", () => {
 		const nextConfig = readFileSync(nextConfigPath, "utf8");
 		expect(nextConfig).toContain(`source: "${AUTH_ACCEPT_INVITATION_PATH}"`);
 		expect(nextConfig).toContain(`destination: "${JOIN_PATH}`);
+		expect(nextConfig).toContain("permanent: true");
 	});
 
 	it("keeps proxy config.matcher static and equal to SESSION_GATE_PROTECTED_MATCHERS", () => {
@@ -177,6 +178,18 @@ describe("PL-S1 Pre-Login route inventory", () => {
 			...(configBlock?.[1] ?? "").matchAll(/"([^"]+)"/g),
 		].map((match) => match[1]);
 		expect(matcherLiterals).toEqual([...SESSION_GATE_PROTECTED_MATCHERS]);
+	});
+
+	it("keeps every Pre-Login API path outside SESSION_GATE_PROTECTED_MATCHERS", () => {
+		for (const apiPath of PRE_LOGIN_API_PATHS) {
+			const matched = SESSION_GATE_PROTECTED_MATCHERS.some((matcher) => {
+				const prefix = matcher.replace(/\/:path\*$/, "");
+				return apiPath === prefix || apiPath.startsWith(`${prefix}/`);
+			});
+			expect(matched, `${apiPath} must stay outside the session-gate matcher`).toBe(
+				false,
+			);
+		}
 	});
 
 	it("never classifies post-login homes as public", () => {
