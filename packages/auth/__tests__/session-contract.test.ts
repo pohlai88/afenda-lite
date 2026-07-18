@@ -239,7 +239,7 @@ describe("N6/N8 session contract", () => {
 			});
 		});
 
-		it("returns anonymous when multi-membership has no allowlist match", async () => {
+		it("returns unresolved_organization when multi-membership has no allowlist match", async () => {
 			mockedEnv.PORTAL_ORGANIZATION_ID = "org-not-a-member";
 			getSessionMock.mockResolvedValue(
 				neonSession({ activeOrganizationId: null }),
@@ -252,8 +252,26 @@ describe("N6/N8 session contract", () => {
 				error: null,
 			});
 			const { getAuthBootstrap } = await import("../src/session");
-			await expect(getAuthBootstrap()).resolves.toEqual({ state: "anonymous" });
+			await expect(getAuthBootstrap()).resolves.toEqual({
+				state: "unresolved_organization",
+				reason: "missing_org",
+			});
 			expect(setActiveOrganizationMock).not.toHaveBeenCalled();
+		});
+
+		it("returns unresolved_organization when signed-in with zero memberships", async () => {
+			getSessionMock.mockResolvedValue(
+				neonSession({ activeOrganizationId: null }),
+			);
+			listOrganizationsMock.mockResolvedValue({
+				data: [],
+				error: null,
+			});
+			const { getAuthBootstrap } = await import("../src/session");
+			await expect(getAuthBootstrap()).resolves.toEqual({
+				state: "unresolved_organization",
+				reason: "missing_org",
+			});
 		});
 
 		it("returns sync_cookies when Neon getSession attempts RSC cookie writes", async () => {

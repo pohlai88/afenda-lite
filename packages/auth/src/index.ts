@@ -24,7 +24,6 @@ export {
 	AUTH_LOGIN_PATH,
 	AUTH_RESET_PASSWORD_PATH,
 	AUTH_SIGN_OUT_PATH,
-	AUTH_SIGN_UP_PATH,
 	isPreLoginPublicPath,
 	isPublicAuthPath,
 	isRejectedAuthPathAlias,
@@ -36,11 +35,7 @@ export {
 } from "./auth-paths";
 export { resolveAuthUiOrigin } from "./auth-ui-origin";
 export type { CredentialAuthResult } from "./credentials";
-export {
-	signInWithEmail,
-	signOutSession,
-	signUpWithEmail,
-} from "./credentials";
+export { signInWithEmail, signOutSession } from "./credentials";
 export {
 	buildEnsureActiveOrganizationUrl,
 	ENSURE_ACTIVE_ORGANIZATION_PATH,

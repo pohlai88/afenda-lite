@@ -10,7 +10,6 @@ import {
 	AUTH_LOGIN_PATH,
 	AUTH_RESET_PASSWORD_PATH,
 	AUTH_SIGN_OUT_PATH,
-	AUTH_SIGN_UP_PATH,
 	isPreLoginPublicPath,
 	isPublicAuthPath,
 	isRejectedAuthPathAlias,
@@ -36,7 +35,6 @@ describe("Afenda auth paths (I1.2 · I1.4 · N5 · PL-S1)", () => {
 		expect(AUTH_FORGOT_PASSWORD_PATH).toBe("/auth/forgot-password");
 		expect(AUTH_RESET_PASSWORD_PATH).toBe("/auth/reset-password");
 		expect(AUTH_SIGN_OUT_PATH).toBe("/auth/sign-out");
-		expect(AUTH_SIGN_UP_PATH).toBe("/auth/sign-up");
 		expect(AUTH_ACCEPT_INVITATION_PATH).toBe("/auth/accept-invitation");
 	});
 
@@ -48,21 +46,26 @@ describe("Afenda auth paths (I1.2 · I1.4 · N5 · PL-S1)", () => {
 		expect(AUTH_FORBIDDEN_PATH).toBe("/403");
 	});
 
-	it("exports public login · forgot · reset · sign-out · sign-up", () => {
+	it("exports public login · forgot · reset · sign-out (not sign-up)", () => {
 		expect([...PUBLIC_AUTH_PATHS]).toEqual([
 			"login",
 			"forgot-password",
 			"reset-password",
 			"sign-out",
-			"sign-up",
 		]);
 		expect(isPublicAuthPath("login")).toBe(true);
 		expect(isPublicAuthPath("forgot-password")).toBe(true);
 		expect(isPublicAuthPath("reset-password")).toBe(true);
 		expect(isPublicAuthPath("sign-out")).toBe(true);
-		expect(isPublicAuthPath("sign-up")).toBe(true);
+		expect(isPublicAuthPath("sign-up")).toBe(false);
 		expect(isPublicAuthPath("accept-invitation")).toBe(false);
 		expect(isPublicAuthPath("sign-in")).toBe(false);
+	});
+
+	it("keeps AFENDA_AUTH_VIEW_PATHS.SIGN_UP for Neon viewPaths only", () => {
+		expect(AFENDA_AUTH_VIEW_PATHS.SIGN_UP).toBe("sign-up");
+		expect(isPublicAuthPath(AFENDA_AUTH_VIEW_PATHS.SIGN_UP)).toBe(false);
+		expect(isPreLoginPublicPath(`${AUTH_BASE_PATH}/sign-up`)).toBe(false);
 	});
 
 	it("rejects undeclared sign-in alias (not AUTH_LOGIN_PATH)", () => {
@@ -94,7 +97,6 @@ describe("Afenda auth paths (I1.2 · I1.4 · N5 · PL-S1)", () => {
 			AUTH_FORGOT_PASSWORD_PATH,
 			AUTH_RESET_PASSWORD_PATH,
 			AUTH_SIGN_OUT_PATH,
-			AUTH_SIGN_UP_PATH,
 		]);
 		expect(isPreLoginPublicPath(PUBLIC_LANDING_PATH)).toBe(true);
 		expect(isPreLoginPublicPath(JOIN_PATH)).toBe(true);

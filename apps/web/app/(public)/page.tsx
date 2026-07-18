@@ -6,6 +6,7 @@ import {
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
+import { UnresolvedOrganizationShell } from "@/features/auth/unresolved-organization-shell";
 import { TheMachineLanding } from "@/features/landing/the-machine-landing";
 
 type HomePageProps = {
@@ -22,11 +23,10 @@ export const metadata: Metadata = {
  * Public landing (`/`).
  *
  * Anonymous visitors get The Machine (`features/landing`). N7 signed-in bounce:
- * authenticated visitors never dead-end on `/` — governed resolver sends them
- * to a safe same-origin callback or coarse role home.
- *
- * N8: session without active org → ensure Route Handler; getSession Set-Cookie
- * needs → sync Route Handler first.
+ * ready sessions → governed resolver (callback or role home). N8: inactive but
+ * resolvable org → ensure Route Handler; cookie mint → sync Route Handler.
+ * Authenticated with no resolvable membership → UnresolvedOrganizationShell
+ * (never marketing landing after sign-up).
  */
 export default async function HomePage({ searchParams }: HomePageProps) {
 	const query = await searchParams;
@@ -49,6 +49,8 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 					callbackUrl,
 				}),
 			);
+		case "unresolved_organization":
+			return <UnresolvedOrganizationShell />;
 		case "anonymous":
 			return <TheMachineLanding />;
 		default: {

@@ -4,12 +4,13 @@ import {
 	AFENDA_AUTH_VIEW_PATHS,
 	AUTH_BASE_PATH,
 	getBrowserAuthClient,
+	JOIN_PATH,
 	POST_LOGIN_CALLBACK_PARAM,
 	sanitizeCallbackUrl,
 } from "@afenda/auth/client";
 import { NeonAuthUIProvider } from "@neondatabase/auth-ui";
 import NextLink from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { ReactNode } from "react";
 
 type AuthUiProviderProps = {
@@ -76,19 +77,31 @@ function toSafeNavigatePath(href: string): string {
  * warn on client `<script>` and SSR/client trees stay aligned (theme still applies via
  * ThemeProvider effects; auth island forces `defaultTheme="light"`).
  *
- * N7: the `redirectTo` prop is the sanitized query callback (or `/`), and every
- * navigate/replace destination is re-checked through the same allowlist so an
- * unsanitized value can never drive a post-login redirect.
+ * N7: the `redirectTo` prop is the sanitized query callback, else the join return
+ * path when `/join?invitationId=…` is active, else `/`. Every navigate/replace
+ * destination is re-checked through the same allowlist so an unsanitized value
+ * can never drive a post-login redirect.
  *
  * Must render under a Suspense boundary (`useSearchParams`).
  */
 export function AuthUiProvider({ appOrigin, children }: AuthUiProviderProps) {
 	const router = useRouter();
+	const pathname = usePathname();
 	const searchParams = useSearchParams();
 	const authClient = getBrowserAuthClient();
 
+	const invitationId = searchParams.get("invitationId")?.trim() ?? "";
+	const joinReturnPath =
+		pathname === JOIN_PATH && invitationId.length > 0
+			? sanitizeCallbackUrl(
+					`${JOIN_PATH}?${new URLSearchParams({ invitationId }).toString()}`,
+				)
+			: null;
+
 	const redirectTo =
-		sanitizeCallbackUrl(searchParams.get(POST_LOGIN_CALLBACK_PARAM)) ?? "/";
+		sanitizeCallbackUrl(searchParams.get(POST_LOGIN_CALLBACK_PARAM)) ??
+		joinReturnPath ??
+		"/";
 
 	const navigateSafe = (href: string) => {
 		router.push(toSafeNavigatePath(href));

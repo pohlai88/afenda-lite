@@ -18,10 +18,9 @@ const AUTH_TITLES: Record<PublicAuthPath, string> = {
 	[AFENDA_AUTH_VIEW_PATHS.FORGOT_PASSWORD]: "Forgot password",
 	[AFENDA_AUTH_VIEW_PATHS.RESET_PASSWORD]: "Reset password",
 	[AFENDA_AUTH_VIEW_PATHS.SIGN_OUT]: "Sign out",
-	[AFENDA_AUTH_VIEW_PATHS.SIGN_UP]: "Sign up",
 };
 
-/** Reject undeclared segments (e.g. `/auth/sign-in`) with a hard 404 — not a soft island fallback. */
+/** Reject undeclared segments (e.g. `/auth/sign-in`, `/auth/sign-up`) with a hard 404 — not a soft island fallback. */
 export const dynamicParams = false;
 
 export function generateStaticParams() {
@@ -40,8 +39,8 @@ export async function generateMetadata({
 
 /**
  * Public `/auth/*` — Path A Afenda credential forms + Neon AuthView for forgot/reset.
- * Post-login callback safety (N7): Path A via `signInAction` / `signUpAction`;
- * Neon residual via `AuthUiProvider`.
+ * Post-login callback safety (N7): Path A via `signInAction`;
+ * Neon residual via `AuthUiProvider`. Invitee credential creation is `/join` only.
  */
 export default async function AuthPage({ params }: AuthPageProps) {
 	const { path } = await params;

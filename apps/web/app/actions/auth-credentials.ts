@@ -6,7 +6,6 @@ import {
 	sanitizeCallbackUrl,
 	signInWithEmail,
 	signOutSession,
-	signUpWithEmail,
 } from "@afenda/auth";
 import { redirect } from "next/navigation";
 import { z } from "zod";
@@ -24,15 +23,8 @@ const emailPasswordSchema = z.object({
 	callback: z.string().trim().max(2048).optional(),
 });
 
-const signUpSchema = emailPasswordSchema.extend({
-	name: z.string().trim().min(1).max(120),
-});
-
 export type SignInActionData = { redirected: true };
 export type SignInActionState = ActionResult<SignInActionData> | null;
-
-export type SignUpActionData = { redirected: true };
-export type SignUpActionState = ActionResult<SignUpActionData> | null;
 
 function mapCredentialFailure(
 	result: { ok: false; message: string; code?: string },
@@ -79,40 +71,6 @@ export async function signInAction(
 	const result = await signInWithEmail({
 		email: parsed.data.email,
 		password: parsed.data.password,
-	});
-	if (!result.ok) {
-		return mapCredentialFailure(result, correlationId);
-	}
-
-	redirect(resolvePostAuthRedirect(parsed.data.callback));
-}
-
-/**
- * Path A — email/password sign-up via `@afenda/auth` → Neon Auth SDK.
- */
-export async function signUpAction(
-	_prev: SignUpActionState,
-	formData: FormData,
-): Promise<SignUpActionState> {
-	const correlationId = createCorrelationId();
-	const parsed = parseSchema(signUpSchema, {
-		email: formData.get("email"),
-		password: formData.get("password"),
-		name: formData.get("name"),
-		callback: formData.get(POST_LOGIN_CALLBACK_PARAM) || undefined,
-	});
-	if (!parsed.success) {
-		return actionFail(
-			"VALIDATION_ERROR",
-			"Enter your name, a valid email, and a password.",
-			parsed.details,
-		);
-	}
-
-	const result = await signUpWithEmail({
-		email: parsed.data.email,
-		password: parsed.data.password,
-		name: parsed.data.name,
 	});
 	if (!result.ok) {
 		return mapCredentialFailure(result, correlationId);

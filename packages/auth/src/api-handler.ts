@@ -58,8 +58,25 @@ function firstHeaderValue(value: string | null): string | undefined {
 	return first && first.length > 0 ? first : undefined;
 }
 
+const LOOPBACK_HOSTNAMES = new Set(["localhost", "127.0.0.1"]);
+
+function isVercelProductionRuntime(): boolean {
+	return process.env.VERCEL_ENV === "production";
+}
+
+function isLoopbackHostname(hostname: string): boolean {
+	return LOOPBACK_HOSTNAMES.has(hostname.toLowerCase());
+}
+
+function hostHeaderHostname(host: string): string {
+	return host.split(":")[0]?.toLowerCase() ?? "";
+}
+
 /**
  * POST Origin/Host allowlist against `APP_URL` (same-origin browser + trusted proxy host).
+ * Non-production also trusts loopback Origins/Hosts so local `next dev` works when
+ * `.env.local` keeps production-shaped `APP_URL` (aligns with `resolveAuthUiOrigin`).
+ * Vercel production never trusts loopback — closes CSRF from localhost → prod.
  * GET remains provider-pass-through (callbacks / session reads).
  */
 export function isTrustedAuthBffPost(request: Request): boolean {
@@ -70,7 +87,14 @@ export function isTrustedAuthBffPost(request: Request): boolean {
 	const origin = firstHeaderValue(request.headers.get("origin"));
 	if (origin) {
 		try {
-			return new URL(origin).origin === appOrigin;
+			const originUrl = new URL(origin);
+			if (originUrl.origin === appOrigin) {
+				return true;
+			}
+			return (
+				!isVercelProductionRuntime() &&
+				isLoopbackHostname(originUrl.hostname)
+			);
 		} catch {
 			return false;
 		}
@@ -79,7 +103,15 @@ export function isTrustedAuthBffPost(request: Request): boolean {
 	const host = firstHeaderValue(
 		request.headers.get("x-forwarded-host") ?? request.headers.get("host"),
 	);
-	return host?.toLowerCase() === appHost;
+	if (!host) {
+		return false;
+	}
+	if (host.toLowerCase() === appHost) {
+		return true;
+	}
+	return (
+		!isVercelProductionRuntime() && isLoopbackHostname(hostHeaderHostname(host))
+	);
 }
 
 function stampCorrelation(response: Response, correlationId: string): Response {

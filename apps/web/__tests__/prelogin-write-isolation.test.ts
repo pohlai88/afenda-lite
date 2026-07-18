@@ -244,8 +244,9 @@ describe("@afenda/web Pre-Login write isolation (PL-S10)", () => {
 		const source = readFileSync(credentialsFile as string, "utf-8");
 		expect(source).toMatch(/from\s*["']@afenda\/auth["']/);
 		expect(source).toMatch(/signInWithEmail/);
-		expect(source).toMatch(/signUpWithEmail/);
 		expect(source).toMatch(/signOutSession/);
+		expect(source).not.toMatch(/signUpWithEmail/);
+		expect(source).not.toMatch(/signUpAction/);
 		expect(source).not.toMatch(/@afenda\/db/);
 		expect(source).not.toMatch(DRIZZLE_MUTATION);
 	});

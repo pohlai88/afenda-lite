@@ -64,6 +64,8 @@ function renderJoinState(query: JoinInvitationQuery): ReactNode {
  * Structural query parse only; Neon owns accept/session; no membership write.
  */
 export default async function JoinPage({ searchParams }: JoinPageProps) {
-	const { invitationId } = await searchParams;
-	return renderJoinState(parseJoinInvitationQuery(invitationId));
+	const params = await searchParams;
+	const { invitationId } = params;
+	const query = parseJoinInvitationQuery(invitationId);
+	return renderJoinState(query);
 }

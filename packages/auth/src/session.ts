@@ -192,12 +192,19 @@ export type AuthBootstrap =
 	| { state: "anonymous" }
 	| { state: "ready"; session: ApiSession }
 	| { state: "ensure_active_org"; url: string }
-	| { state: "sync_cookies"; url: string };
+	| { state: "sync_cookies"; url: string }
+	/** Signed-in but no resolvable org / role / email — never marketing landing. */
+	| {
+			state: "unresolved_organization";
+			reason: "missing_org" | "missing_role" | "missing_email";
+	  };
 
 /**
  * RSC bootstrap for public entry surfaces (e.g. signed-in `/`).
  * Distinguishes anonymous vs resolvable-but-inactive org (N8 cookie persist)
- * vs cookie mint/refresh that must run in a Route Handler.
+ * vs cookie mint/refresh that must run in a Route Handler vs authenticated
+ * but incomplete (no membership / role / email) — never collapses those to
+ * anonymous marketing.
  */
 export async function getAuthBootstrap(
 	next?: string | null,
@@ -217,6 +224,13 @@ export async function getAuthBootstrap(
 			state: "ensure_active_org",
 			url: buildEnsureActiveOrganizationUrl(next),
 		};
+	}
+	if (
+		loaded.reason === "missing_org" ||
+		loaded.reason === "missing_role" ||
+		loaded.reason === "missing_email"
+	) {
+		return { state: "unresolved_organization", reason: loaded.reason };
 	}
 	return { state: "anonymous" };
 }
