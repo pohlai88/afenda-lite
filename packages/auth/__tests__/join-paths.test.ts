@@ -67,10 +67,8 @@ describe("parseJoinInvitationQuery (PL-S4)", () => {
 	});
 
 	it("classifies structurally unsafe values as invalid", async () => {
-		const {
-			JOIN_INVITATION_ID_MAX_LENGTH,
-			parseJoinInvitationQuery,
-		} = await import("../src/join-paths");
+		const { JOIN_INVITATION_ID_MAX_LENGTH, parseJoinInvitationQuery } =
+			await import("../src/join-paths");
 		expect(parseJoinInvitationQuery(["a", "b"])).toEqual({ kind: "invalid" });
 		expect(parseJoinInvitationQuery(42)).toEqual({ kind: "invalid" });
 		expect(parseJoinInvitationQuery("inv\u0000bad")).toEqual({

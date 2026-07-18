@@ -4,13 +4,13 @@
 |-------|-------|
 | ID | ARCH-026 |
 | Category | Architecture |
-| Version | 2.0.1 |
+| Version | 2.1.0 |
 | Status | Living |
 | Control State | Closed |
 | Owner | Platform |
-| Updated | 2026-07-17 |
+| Updated | 2026-07-18 |
 
-> **Living.** Auth/session packaging SSOT after ARCH-028 Checkpoint G (2026-07-15). `@afenda/auth` helpers + `createSessionProxy` / `apps/web/proxy.ts` (I1.1) + public Neon Auth UI `/auth/*` (I1.2) + `/join?invitationId=…` + operator `inviteOrgMember` adapter on `/admin` (I1.3) + fail-closed role shells `requireRole` → `/403` (I1.4) on disk. GUIDE-018 **I3.1 DONE** (Tier-2 `hasPermission` · assign/revoke · invite `clients.invite`). Next program surface: **I3.2** (Declarations). IAM Decision lock stays in [ARCH-023](ARCH-023-multi-tenancy.md). Neon Auth transactional mail: **Zoho SMTP** via Neon Auth `email_provider` (not Neon shared `auth@mail.myneon.app`).
+> **Living.** Auth/session packaging SSOT after ARCH-028 Checkpoint G (2026-07-15). `@afenda/auth` helpers + `createSessionProxy` / `apps/web/proxy.ts` (I1.1) + public `/auth/*` (I1.2; **Path A** Afenda forms for login/sign-up/sign-out via Neon SDK; Neon `AuthView` residual for forgot/reset) + `/join?invitationId=…` + operator `inviteOrgMember` adapter on `/admin` (I1.3) + fail-closed role shells `requireRole` → `/403` (I1.4) on disk. GUIDE-018 **I3.1 DONE** (Tier-2 `hasPermission` · assign/revoke · invite `clients.invite`). Next program surface: **I3.2** (Declarations). IAM Decision lock stays in [ARCH-023](ARCH-023-multi-tenancy.md). Neon Auth transactional mail: **Zoho SMTP** via Neon Auth `email_provider` (not Neon shared `auth@mail.myneon.app`). Neon Auth **presentation** (prebuilt Auth UI vs app-owned forms + SDK) is packaging — not a Neon prohibition of custom UI.
 
 # 1. Purpose
 
@@ -41,7 +41,18 @@ Afenda-Lite uses Neon Auth as its identity provider. Neon Auth handles user iden
 
 ## Neon Auth decision
 
-**Decision:** Use **Neon Auth** (`@neondatabase/auth` + `@neondatabase/auth-ui`). Auth transactional email is delivered by Neon Auth using **Zoho SMTP** configured in the Neon Auth console (`email_provider.type: standard` · host `smtp.zoho.com` · sender `no-reply@nexuscanon.com`). Password reset and org invitations use Neon Auth UI / invite APIs — **not** an app-owned SMTP stack. All SDK usage wrapped in `@afenda/auth`.
+**Decision:** Use **Neon Auth / Managed Better Auth** via `@neondatabase/auth` (server + client SDK), wrapped by `@afenda/auth`. Auth transactional email is delivered by Neon Auth using **Zoho SMTP** configured in the Neon Auth console (`email_provider.type: standard` · host `smtp.zoho.com` · sender `no-reply@nexuscanon.com`). Org invitations use Neon Auth invite APIs — **not** an app-owned SMTP stack.
+
+**Not a Neon “Auth UI lock”:** Neon documents **two** presentation paths ([Auth overview](https://neon.com/docs/auth/overview)):
+
+| Path | Neon authority | Afenda use |
+|------|----------------|------------|
+| **A — App-owned UI + SDK** | [Next.js API methods](https://neon.com/docs/auth/quick-start/nextjs-api-only) — `auth.signIn.email()` / `auth.signUp.email()` / … | **Living** for `/auth/login` · `/auth/sign-up` · `/auth/sign-out` via `@afenda/auth` + Afenda forms. |
+| **B — Prebuilt Auth UI** | [`@neondatabase/auth-ui`](https://neon.com/docs/auth/reference/ui-components) — `NeonAuthUIProvider` · `AuthView` · form components | **Living residual** for `/auth/forgot-password` · `/auth/reset-password` until Neon SDK reset parity. |
+
+Do **not** read “Living uses Auth UI” as “Neon forbids custom forms” or “Afenda forever bans SDK forms.” Earlier wording that implied an Auth-UI-only lock was **misleading** and is corrected in **2.1.0**.
+
+**Password reset capability honesty (Neon, not Afenda taste):** Neon’s [password reset guide](https://neon.com/docs/auth/guides/password-reset) currently states SDK `resetPasswordForEmail` is **not fully supported** — use Neon Auth UI forgot/reset form components (or Neon-documented UI) for reset until Neon ships SDK parity. Sign-in / sign-up custom UI via SDK remains first-class per Neon. Reset still must go through Neon Auth delivery (Zoho SMTP) — never app SMTP.
 
 | Positive | Accepted cost |
 |----------|---------------|
@@ -49,6 +60,7 @@ Afenda-Lite uses Neon Auth as its identity provider. Neon Auth handles user iden
 | First-class org invitations | Neon membership roles are identity signals — product authz is ARCH-023 |
 | No custom session table | Social OAuth needs separate Neon config if ever needed |
 | Branded Zoho SMTP for invite / reset / verify mail | Neon Auth console SMTP secrets — never commit; rotate in Neon Console / MCP only |
+| Neon supports custom UI **or** Auth UI | Forgot/reset residual on Path B until Neon SDK reset parity |
 
 | Alternative | Why rejected |
 |-------------|--------------|
@@ -58,15 +70,17 @@ Afenda-Lite uses Neon Auth as its identity provider. Neon Auth handles user iden
 | Custom JWT | Own session/key rotation with no product differentiation |
 | Supabase Auth | Second infra dependency beside Neon |
 | App-side SMTP in `apps/web` / `@afenda/emails` for Neon Auth flows | Dual mail path; secrets in app env; bypasses Neon Auth delivery |
+| Fake / lookalike login that does not call Neon Auth SDK | Not a Neon Auth session — forbidden regardless of UI beauty |
 
 **Constraints that must not be broken:**
 
-- Neon Auth SDK usage stays inside `@afenda/auth` — no direct SDK calls from `apps/web` features/modules
+- Neon Auth SDK usage stays inside `@afenda/auth` — no direct `@neondatabase/auth` calls from `apps/web` features/modules (presentation may live in `features/auth`; session/sign-in/invite wrappers stay in the package)
 - Auth transactional email uses **Zoho SMTP via Neon Auth** — do not revert to Neon shared provider without an explicit Docs reopen of this decision
 - Do **not** add app-side SMTP (`NEON_AUTH_SMTP_*`, Resend, nodemailer, etc.) for Neon Auth invite / reset / verify
 - Client invite entry remains `/join?invitationId=…`
 - `getSession()` never silently defaults a missing `orgId`
 - Product authorization checks follow ARCH-023 (permission codes / `hasPermission`) — do not treat Neon role display names as the sole authz bar
+- Do **not** invent a second IdP or dual session path
 
 Tenancy + platform IAM: [ARCH-023](ARCH-023-multi-tenancy.md).
 
@@ -77,7 +91,7 @@ Tenancy + platform IAM: [ARCH-023](ARCH-023-multi-tenancy.md).
 | Neon Auth | Identity store, org model, JWT issuance, email delivery |
 | `@afenda/auth` | Session resolution, coarse route guards, invitation wrapper |
 | `apps/web` RSC / Server Action | Calls `getSession()` at every protected entry point; applies ARCH-023 permission checks where required |
-| `apps/web` `app/(public)/auth/*` | Renders Neon Auth UI forms (`NeonAuthUIProvider`) |
+| `apps/web` `app/(public)/auth/*` | Public auth routes. **Living:** Path A Afenda forms (login/sign-up/sign-out) + Neon `AuthView` (forgot/reset). Calls Neon Auth only through `@afenda/auth` / Auth UI provider. |
 
 `@afenda/auth` does **not** own: Living permission catalogue, Decision lock, or FFT domain RBAC ([FFT-MOD-005](../modules/feed-farm-trade/FFT-MOD-005-auth-tenancy-rbac.md)); user profile data beyond `userId`/`orgId`/`role`; invitation email templates in `@afenda/emails` (Neon Auth delivers its own invite / reset / verify mail via the Zoho SMTP `email_provider` configured on the Neon Auth project).
 
@@ -150,7 +164,7 @@ Module permissions (for example `fft.access`) are evaluated per ARCH-023 / FFT-M
 ## Data / request flow
 
 ```
-/auth/login (Neon Auth UI)
+/auth/login  (Living: Afenda form + @afenda/auth → Neon SDK · Path A)
   │
   Neon Auth issues JWT
   │
@@ -169,7 +183,7 @@ RSC / Server Action
   domain call(orgId, ...)
 ```
 
-Password reset: `/auth/forgot-password` → Neon Auth sends reset email via Zoho SMTP → `/auth/reset-password`. Handled entirely by Neon Auth UI forms (no app-side SMTP).
+Password reset: `/auth/forgot-password` → Neon Auth sends reset email via Zoho SMTP → `/auth/reset-password`. Delivery is Neon Auth (no app-side SMTP). **Living UI** uses Neon `AuthView` for forgot/reset; Neon currently documents incomplete SDK reset method support — see § Neon Auth decision.
 
 Client invitation: operator uses `/admin` → `inviteOrgMemberAction` → `inviteOrgMember()` → Neon Auth delivers the invitation email via Zoho SMTP → Platform `recordRbacAudit` stamps hard `organization_id` → client follows link to `/join?invitationId=…`.
 
@@ -179,6 +193,7 @@ Client invitation: operator uses `/admin` → `inviteOrgMemberAction` → `invit
 |----------|---------------|
 | Neon Auth over Auth.js, Clerk, custom JWT | This doc § Neon Auth decision |
 | Zoho SMTP via Neon Auth for auth transactional mail (not Neon shared; not app SMTP) | This doc § Neon Auth decision |
+| Auth **presentation** = Neon Path A (SDK + own UI) **or** Path B (Auth UI); Living = Path A login/sign-up/sign-out + Path B forgot/reset | This doc § Neon Auth decision (2.1.0 honesty · Path A cutover) |
 | `orgId` always resolved from session, never from URL param alone | [ARCH-023](ARCH-023-multi-tenancy.md) |
 | Permission-first platform IAM | [ARCH-023](ARCH-023-multi-tenancy.md) |
 
@@ -212,6 +227,7 @@ Client invitation: operator uses `/admin` → `inviteOrgMemberAction` → `invit
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 2.1.0 | 2026-07-18 | **Honesty repair + Path A cutover:** remove misleading Auth-UI-only lock; Living login/sign-up/sign-out = Afenda forms + Neon SDK via `@afenda/auth`; forgot/reset residual = Neon `AuthView`. |
 | 2.0.1 | 2026-07-17 | N15 Path-to-100%: operational bullets point to live trusted-domain/deploy checks; collapsed `configure:neon-auth-production` no longer presented as a live control. |
 | 2.0.0 | 2026-07-17 | **Breaking mail decision:** Neon Auth transactional email = **Zoho SMTP** (Neon Auth console `email_provider`); Neon shared provider rejected; app-side SMTP for Neon Auth flows remains forbidden. |
 | 1.3.11 | 2026-07-17 | Bounded reopen (I3.1 audit repair): next-pointer honesty — I3.1 Tier-2 permissions landed; residual = I3.2. |
@@ -238,3 +254,4 @@ Client invitation: operator uses `/admin` → `inviteOrgMemberAction` → `invit
 - Neon Auth custom role mapping remains an app concern; Living product authz stays in ARCH-023.
 - Neon Auth SMTP secrets stay in Neon Console / MCP configure only — never in `.env.local`, Vercel app env, or git.
 - Google OAuth may be present on the Neon Auth project; product login surface remains email/password until an explicit OAuth product slice.
+- Studio / Afenda chrome DNA for `/auth/*` may wrap Path A or Path B; credential **lookalike** forms that do not call Neon Auth via `@afenda/auth` remain forbidden.

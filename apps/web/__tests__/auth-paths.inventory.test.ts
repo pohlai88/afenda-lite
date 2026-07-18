@@ -161,9 +161,17 @@ describe("PL-S1 Pre-Login route inventory", () => {
 	it("declares accept-invitation redirect in next.config (not a public page)", () => {
 		expect(isPreLoginPublicPath(AUTH_ACCEPT_INVITATION_PATH)).toBe(false);
 		const nextConfig = readFileSync(nextConfigPath, "utf8");
-		expect(nextConfig).toContain(`source: "${AUTH_ACCEPT_INVITATION_PATH}"`);
-		expect(nextConfig).toContain(`destination: "${JOIN_PATH}`);
+		expect(nextConfig).toContain("AUTH_ACCEPT_INVITATION_PATH");
+		expect(nextConfig).toContain("JOIN_PATH");
+		expect(nextConfig).toContain("packages/auth/src/auth-paths");
+		expect(nextConfig).toContain("packages/auth/src/join-paths");
+		expect(nextConfig).toContain("invitationId=:invitationId");
 		expect(nextConfig).toContain("permanent: true");
+		// next.config must pin the same literals as package SSOT (CJS-safe; no .ts import).
+		expect(AUTH_ACCEPT_INVITATION_PATH).toBe("/auth/accept-invitation");
+		expect(JOIN_PATH).toBe("/join");
+		expect(nextConfig).toContain(`"${AUTH_ACCEPT_INVITATION_PATH}"`);
+		expect(nextConfig).toContain(`"${JOIN_PATH}"`);
 	});
 
 	it("keeps proxy config.matcher static and equal to SESSION_GATE_PROTECTED_MATCHERS", () => {
@@ -186,9 +194,10 @@ describe("PL-S1 Pre-Login route inventory", () => {
 				const prefix = matcher.replace(/\/:path\*$/, "");
 				return apiPath === prefix || apiPath.startsWith(`${prefix}/`);
 			});
-			expect(matched, `${apiPath} must stay outside the session-gate matcher`).toBe(
-				false,
-			);
+			expect(
+				matched,
+				`${apiPath} must stay outside the session-gate matcher`,
+			).toBe(false);
 		}
 	});
 

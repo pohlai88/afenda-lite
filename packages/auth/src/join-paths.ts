@@ -11,7 +11,16 @@ export const JOIN_PATH = "/join" as const;
 /** Structural ceiling for opaque Neon invitation ids (not a UUID gate). */
 export const JOIN_INVITATION_ID_MAX_LENGTH = 256 as const;
 
-const JOIN_INVITATION_CONTROL_CHARS = /[\u0000-\u001F\u007F]/;
+/** C0 controls + DEL — char codes avoid Biome `noControlCharactersInRegex`. */
+function joinInvitationHasControlChars(value: string): boolean {
+	for (let i = 0; i < value.length; i++) {
+		const code = value.charCodeAt(i);
+		if (code <= 0x1f || code === 0x7f) {
+			return true;
+		}
+	}
+	return false;
+}
 
 export type BuildJoinUrlInput = {
 	invitationId: string;
@@ -53,7 +62,7 @@ export function parseJoinInvitationQuery(
 	if (trimmed.length > JOIN_INVITATION_ID_MAX_LENGTH) {
 		return { kind: "invalid" };
 	}
-	if (JOIN_INVITATION_CONTROL_CHARS.test(trimmed)) {
+	if (joinInvitationHasControlChars(trimmed)) {
 		return { kind: "invalid" };
 	}
 

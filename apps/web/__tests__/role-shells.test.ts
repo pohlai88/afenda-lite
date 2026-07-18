@@ -43,5 +43,7 @@ describe("role shells wiring (I1.4)", () => {
 			"utf8",
 		);
 		expect(source).toContain("ForbiddenShell");
+		expect(source).toContain('title: "403"');
+		expect(source).toContain("metadata");
 	});
 });

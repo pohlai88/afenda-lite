@@ -29,12 +29,11 @@ function renderJoinState(query: JoinInvitationQuery): ReactNode {
 				<PublicMessageShell
 					title="Invitation required"
 					footer={joinMessageFooter()}
+					asLandmark={false}
 				>
 					<p>
 						Open the link from your invitation email. Expected shape:{" "}
-						<code className="text-foreground">
-							{JOIN_PATH}?invitationId=…
-						</code>
+						<code className="text-foreground">{JOIN_PATH}?invitationId=…</code>
 					</p>
 				</PublicMessageShell>
 			);
@@ -43,6 +42,7 @@ function renderJoinState(query: JoinInvitationQuery): ReactNode {
 				<PublicMessageShell
 					title="Invalid invitation link"
 					footer={joinMessageFooter()}
+					asLandmark={false}
 				>
 					<p>
 						This invitation link is not valid. Open the link from your

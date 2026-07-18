@@ -29,7 +29,7 @@ export const FE_CWV_BUDGETS = {
 		"Google Core Web Vitals “good” thresholds (LCP ≤ 2.5s · INP ≤ 200ms · CLS ≤ 0.1) — web.dev / CrUX guidance, adopted 2026-07-17",
 	owner: "Platform",
 	workload:
-		"Cold Chromium navigation of public /auth/login and /403 (lab); optional authenticated shells when E2E factory is ready",
+		"Cold Chromium navigation of Pre-Login public surfaces `/`, `/auth/login`, `/join`, `/403` (lab); optional authenticated shells when E2E factory is ready",
 	environment: "Playwright Chromium lab (local + CI `e2e-smoke`)",
 	percentile:
 		"Lab single-run gate (stricter than field p75) — any exceedance fails the smoke",
@@ -39,5 +39,5 @@ export const FE_CWV_BUDGETS = {
 		inpMs: 200,
 		cls: 0.1,
 	},
-	publicPaths: ["/auth/login", "/403"],
+	publicPaths: ["/", "/auth/login", "/join", "/403"],
 } as const satisfies FeCwvBudgets;

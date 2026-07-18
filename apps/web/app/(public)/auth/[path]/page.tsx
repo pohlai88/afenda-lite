@@ -1,4 +1,5 @@
 import {
+	AFENDA_AUTH_VIEW_PATHS,
 	isPublicAuthPath,
 	PUBLIC_AUTH_PATHS,
 	type PublicAuthPath,
@@ -6,7 +7,7 @@ import {
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
-import { AuthViewShell } from "@/features/auth/auth-view-shell";
+import { AuthPathShell } from "@/features/auth/auth-path-shell";
 import { resolveLocalAuthCredentials } from "@/features/auth/local-auth-credentials";
 
 type AuthPageProps = {
@@ -14,11 +15,11 @@ type AuthPageProps = {
 };
 
 const AUTH_TITLES: Record<PublicAuthPath, string> = {
-	login: "Sign in",
-	"forgot-password": "Forgot password",
-	"reset-password": "Reset password",
-	"sign-out": "Sign out",
-	"sign-up": "Sign up",
+	[AFENDA_AUTH_VIEW_PATHS.SIGN_IN]: "Sign in",
+	[AFENDA_AUTH_VIEW_PATHS.FORGOT_PASSWORD]: "Forgot password",
+	[AFENDA_AUTH_VIEW_PATHS.RESET_PASSWORD]: "Reset password",
+	[AFENDA_AUTH_VIEW_PATHS.SIGN_OUT]: "Sign out",
+	[AFENDA_AUTH_VIEW_PATHS.SIGN_UP]: "Sign up",
 };
 
 /** Reject undeclared segments (e.g. `/auth/sign-in`) with a hard 404 — not a soft island fallback. */
@@ -39,13 +40,9 @@ export async function generateMetadata({
 }
 
 /**
- * Neon Auth UI paths under `/auth/*`.
- * Neon mail `/auth/accept-invitation` is a sibling segment → `/join`.
- *
- * Post-login callback safety (N7) is enforced in `AuthUiProvider`, which
- * sanitizes every navigation the Neon Auth UI performs. A server redirect here
- * is intentionally avoided: the sibling `error.tsx` boundary soft-catches
- * `redirect()`, so the client provider is the reliable governed choke point.
+ * Public `/auth/*` — Path A Afenda credential forms + Neon AuthView for forgot/reset.
+ * Post-login callback safety (N7): Path A via `signInAction` / `signUpAction`;
+ * Neon residual via `AuthUiProvider`.
  */
 export default async function AuthPage({ params }: AuthPageProps) {
 	const { path } = await params;
@@ -53,6 +50,8 @@ export default async function AuthPage({ params }: AuthPageProps) {
 		notFound();
 	}
 	const localCredentials =
-		path === "login" ? resolveLocalAuthCredentials() : null;
-	return <AuthViewShell path={path} localCredentials={localCredentials} />;
+		path === AFENDA_AUTH_VIEW_PATHS.SIGN_IN
+			? resolveLocalAuthCredentials()
+			: null;
+	return <AuthPathShell path={path} localCredentials={localCredentials} />;
 }

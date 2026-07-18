@@ -43,28 +43,33 @@ describe("PL-S3 Auth Island surface", () => {
 		expect(page).toContain("dynamicParams = false");
 		expect(page).toContain("generateStaticParams");
 		expect(page).toContain("PUBLIC_AUTH_PATHS");
-		expect(page).toContain("AuthViewShell");
+		expect(page).toContain("AuthPathShell");
 		expect(page).toContain('from "@afenda/auth"');
 		expect(page).not.toMatch(/@neondatabase\/auth['"]/);
-		expect(page).not.toMatch(/<form[\s>]/i);
 		expect(page).not.toMatch(/credential.*POST|fetch\(.*login/i);
 	});
 
-	it("renders Neon AuthView inside Afenda chrome only", () => {
-		const shell = source("features/auth/auth-view-shell.tsx");
-		expect(shell).toContain('from "@neondatabase/auth-ui"');
+	it("renders Path A Afenda forms + Neon AuthView for forgot/reset", () => {
+		const shell = source("features/auth/auth-path-shell.tsx");
+		expect(shell).toContain("AfendaSignInForm");
+		expect(shell).toContain("AfendaSignUpForm");
 		expect(shell).toContain("AuthView");
 		expect(shell).toContain("AuthSurfaceChrome");
 		expect(shell).toContain("PublicAuthPath");
 		expect(shell).toContain('from "@afenda/auth/client"');
+		expect(shell).toContain('from "@neondatabase/auth-ui"');
 		expect(shell).not.toMatch(/@neondatabase\/auth['"]/);
-		expect(shell).not.toMatch(/<form[\s>]/i);
+
+		const signIn = source("features/auth/afenda-sign-in-form.tsx");
+		expect(signIn).toContain("signInAction");
+		expect(signIn).toContain('from "@afenda/ui-system"');
+		expect(signIn).toContain("<form");
 	});
 
 	it("ships loading + error under the auth island", () => {
-		expect(existsSync(path.join(webRoot, "app/(public)/auth/loading.tsx"))).toBe(
-			true,
-		);
+		expect(
+			existsSync(path.join(webRoot, "app/(public)/auth/loading.tsx")),
+		).toBe(true);
 		expect(existsSync(path.join(webRoot, "app/(public)/auth/error.tsx"))).toBe(
 			true,
 		);
@@ -80,17 +85,30 @@ describe("PL-S3 Auth Island surface", () => {
 	it("gives AuthIslandLayout the sole #main-content landmark", () => {
 		const island = source("features/auth/auth-island-layout.tsx");
 		const chrome = source("features/auth/auth-surface-chrome.tsx");
+		const messageShell = source("features/auth/public-message-shell.tsx");
 		expect(island).toContain("MAIN_CONTENT_ID");
 		expect(island).toMatch(/<main[^>]*id=\{MAIN_CONTENT_ID\}/);
 		expect(chrome).not.toMatch(/<main[\s>]/);
 		expect(chrome).toMatch(/<div className="auth-surface/);
+		expect(messageShell).toContain("asLandmark");
+		expect(messageShell).toContain('asLandmark ? "main" : "div"');
+	});
+
+	it("moves focus after Path A auth action errors", () => {
+		const helper = source("features/auth/focus-auth-action-error.ts");
+		const signIn = source("features/auth/afenda-sign-in-form.tsx");
+		const signUp = source("features/auth/afenda-sign-up-form.tsx");
+		expect(helper).toContain("focusAuthActionError");
+		expect(helper).toContain("aria-invalid");
+		expect(signIn).toContain("focusAuthActionError");
+		expect(signUp).toContain("focusAuthActionError");
 	});
 
 	it("keeps skip link targeting #main-content from root layout", () => {
 		const skip = source("features/auth/skip-to-main-content.tsx");
 		const root = source("app/layout.tsx");
 		expect(skip).toContain("MAIN_CONTENT_HASH");
-		expect(skip).toContain('href={MAIN_CONTENT_HASH}');
+		expect(skip).toContain("href={MAIN_CONTENT_HASH}");
 		expect(root).toContain("SkipToMainContent");
 	});
 

@@ -2,10 +2,10 @@ import { db, sql } from "@afenda/db";
 import { env, MAX_SELECT1_LATENCY_MS } from "@afenda/env";
 
 import {
-	livenessResponseSchema,
 	type LivenessResponse,
-	readinessResponseSchema,
+	livenessResponseSchema,
 	type ReadinessResponse,
+	readinessResponseSchema,
 } from "@/modules/platform/schemas/health";
 
 /**

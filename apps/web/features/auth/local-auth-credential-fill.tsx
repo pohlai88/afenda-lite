@@ -46,7 +46,7 @@ export function LocalAuthCredentialFill({
 				<p className="text-lg font-medium">Local sign-in</p>
 				<p className="text-sm text-muted-foreground">
 					Fills the form above for developer or preview client. Sign in still
-					requires the Neon Auth submit action.
+					requires submitting the Afenda sign-in form (Neon Auth SDK).
 				</p>
 			</div>
 			<div className="flex flex-col gap-2">

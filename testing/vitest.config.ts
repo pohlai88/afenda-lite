@@ -31,6 +31,8 @@ const nodeProject = (name: string, root: string) => ({
 	},
 });
 
+const authProject = nodeProject("auth", path.join(repoRoot, "packages/auth"));
+
 export default defineConfig({
 	root: repoRoot,
 	test: {
@@ -40,7 +42,16 @@ export default defineConfig({
 			SKIP_ENV_VALIDATION: "true",
 		},
 		projects: [
-			nodeProject("auth", path.join(repoRoot, "packages/auth")),
+			{
+				...authProject,
+				test: {
+					...authProject.test,
+					// Cold dynamic import + Neon mock re-bind under turbo parallel load.
+					testTimeout: 30_000,
+					// Serial files avoid singleton/mock races (browser-client · rbac).
+					fileParallelism: false,
+				},
+			},
 			nodeProject("db", path.join(repoRoot, "packages/db")),
 			nodeProject("emails", path.join(repoRoot, "packages/emails")),
 			{
@@ -67,6 +78,8 @@ export default defineConfig({
 					root: path.join(repoRoot, "apps/web"),
 					include: [`${TESTS_DIR}/**/*.test.ts`],
 					environment: "node" as const,
+					// Cold import / Neon SELECT under turbo parallel load can exceed 5s.
+					testTimeout: 15_000,
 					env: {
 						SKIP_ENV_VALIDATION: "true",
 					},

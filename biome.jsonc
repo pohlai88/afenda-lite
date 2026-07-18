@@ -64,6 +64,18 @@
 					}
 				}
 			}
+		},
+		{
+			// Landing a11y: visually-hidden clip + prefers-reduced-motion must use
+			// !important to defeat authored cascade (enterprise public surface).
+			"includes": ["apps/web/features/landing/the-machine-landing.css"],
+			"linter": {
+				"rules": {
+					"complexity": {
+						"noImportantStyles": "off"
+					}
+				}
+			}
 		}
 	]
 }

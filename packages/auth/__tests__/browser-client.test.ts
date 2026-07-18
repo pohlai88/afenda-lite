@@ -30,6 +30,7 @@ describe("getBrowserAuthClient (N5)", () => {
 		const { getBrowserAuthClient, resetBrowserAuthClientForTests } =
 			await import("../src/client");
 		resetBrowserAuthClientForTests();
+		createAuthClientMock.mockClear();
 
 		getBrowserAuthClient();
 		resetBrowserAuthClientForTests();

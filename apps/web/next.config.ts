@@ -71,9 +71,14 @@ const nextConfig: NextConfig = {
 		],
 	},
 	async redirects() {
+		// Path SSOT: packages/auth/src/auth-paths · packages/auth/src/join-paths.
+		// next.config.ts is CJS-transpiled; relative `.ts` imports fail MODULE_NOT_FOUND.
+		// Values are pinned by auth-paths.inventory.test.ts — do not diverge.
+		const AUTH_ACCEPT_INVITATION_PATH = "/auth/accept-invitation";
+		const JOIN_PATH = "/join";
 		return [
 			{
-				source: "/auth/accept-invitation",
+				source: AUTH_ACCEPT_INVITATION_PATH,
 				has: [
 					{
 						type: "query",
@@ -81,12 +86,12 @@ const nextConfig: NextConfig = {
 						value: "(?<invitationId>.+)",
 					},
 				],
-				destination: "/join?invitationId=:invitationId",
+				destination: `${JOIN_PATH}?invitationId=:invitationId`,
 				permanent: true,
 			},
 			{
-				source: "/auth/accept-invitation",
-				destination: "/join",
+				source: AUTH_ACCEPT_INVITATION_PATH,
+				destination: JOIN_PATH,
 				permanent: true,
 			},
 		];

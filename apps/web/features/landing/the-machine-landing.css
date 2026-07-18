@@ -478,11 +478,7 @@
 	border: 1.5px solid rgba(213, 196, 157, 0.72);
 	border-radius: 0.375rem;
 	background:
-		linear-gradient(
-			180deg,
-			rgba(242, 238, 229, 0.1) 0%,
-			transparent 42%
-		),
+		linear-gradient(180deg, rgba(242, 238, 229, 0.1) 0%, transparent 42%),
 		linear-gradient(
 			135deg,
 			rgba(194, 173, 125, 0.16) 0%,
@@ -574,11 +570,7 @@
 	color: var(--ivory);
 	border-color: rgba(242, 238, 229, 0.92);
 	background:
-		linear-gradient(
-			180deg,
-			rgba(242, 238, 229, 0.16) 0%,
-			transparent 48%
-		),
+		linear-gradient(180deg, rgba(242, 238, 229, 0.16) 0%, transparent 48%),
 		linear-gradient(
 			135deg,
 			rgba(194, 173, 125, 0.28) 0%,

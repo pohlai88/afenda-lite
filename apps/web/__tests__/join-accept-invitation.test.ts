@@ -55,6 +55,8 @@ describe("join accept-invitation (PL-S4)", () => {
 		expect(page).toContain('case "present"');
 		expect(page).toContain("const _exhaustive: never");
 		expect(page).toContain("invitationId?: string | string[]");
+		// PL-S12 — message shells must not nest a second <main> under AuthIslandLayout.
+		expect(page).toContain("asLandmark={false}");
 		expect(page).not.toContain("recordRbacAudit");
 		expect(page).not.toContain("platform_membership");
 		expect(page).not.toContain("@afenda/db");
@@ -75,14 +77,24 @@ describe("join accept-invitation (PL-S4)", () => {
 
 	it("declares accept-invitation → /join as permanent redirect preserving invitationId", () => {
 		const nextConfig = source("next.config.ts");
-		expect(nextConfig).toContain(`source: "${AUTH_ACCEPT_INVITATION_PATH}"`);
+		// CJS-safe local consts pin the same literals as @afenda/auth SSOT.
+		expect(AUTH_ACCEPT_INVITATION_PATH).toBe("/auth/accept-invitation");
+		expect(JOIN_PATH).toBe("/join");
 		expect(nextConfig).toContain(
-			`destination: "${JOIN_PATH}?invitationId=:invitationId"`,
+			`const AUTH_ACCEPT_INVITATION_PATH = "${AUTH_ACCEPT_INVITATION_PATH}"`,
 		);
-		expect(nextConfig).toContain(`destination: "${JOIN_PATH}"`);
+		expect(nextConfig).toContain(`const JOIN_PATH = "${JOIN_PATH}"`);
+		expect(nextConfig).toContain("source: AUTH_ACCEPT_INVITATION_PATH");
+		// Pin next.config template literal text without embedding `${` in a string literal.
+		expect(nextConfig).toContain(
+			["destination: `", "$", "{JOIN_PATH}?invitationId=:invitationId`"].join(
+				"",
+			),
+		);
+		expect(nextConfig).toContain("destination: JOIN_PATH");
 		expect(nextConfig).toContain("permanent: true");
 		expect(nextConfig).toContain('key: "invitationId"');
-		expect(nextConfig).toContain("value: \"(?<invitationId>.+)\"");
+		expect(nextConfig).toContain('value: "(?<invitationId>.+)"');
 	});
 
 	it("shares Neon Auth island CSS via join layout", () => {

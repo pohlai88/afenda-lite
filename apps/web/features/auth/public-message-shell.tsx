@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ElementType, ReactNode } from "react";
 
 import { MAIN_CONTENT_ID } from "@/features/auth/main-content";
 
@@ -6,6 +6,11 @@ type PublicMessageShellProps = {
 	title: string;
 	children: ReactNode;
 	footer?: ReactNode;
+	/**
+	 * When false, render a div so a parent layout can own the sole `<main>`
+	 * (join island under AuthIslandLayout).
+	 */
+	asLandmark?: boolean;
 };
 
 /**
@@ -15,11 +20,12 @@ export function PublicMessageShell({
 	title,
 	children,
 	footer,
+	asLandmark = true,
 }: PublicMessageShellProps) {
+	const Root: ElementType = asLandmark ? "main" : "div";
 	return (
-		<main
-			id={MAIN_CONTENT_ID}
-			tabIndex={-1}
+		<Root
+			{...(asLandmark ? { id: MAIN_CONTENT_ID, tabIndex: -1 as const } : {})}
 			className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-canvas p-4 text-center"
 		>
 			<h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
@@ -27,6 +33,6 @@ export function PublicMessageShell({
 				{children}
 			</div>
 			{footer}
-		</main>
+		</Root>
 	);
 }

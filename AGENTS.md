@@ -183,7 +183,7 @@ Authority: [`.agents/skills/neon/SKILL.md`](.agents/skills/neon/SKILL.md) · pas
 | Mail | **Zoho SMTP** via Neon Auth console (`email_provider` · `smtp.zoho.com` · sender `no-reply@nexuscanon.com`) — not Neon shared `auth@mail.myneon.app`; no app-side SMTP for Neon Auth flows ([ARCH-026](docs/architecture/ARCH-026-auth-session.md)) |
 | Invites | Neon Auth org invitations via `@afenda/auth` (`inviteOrgMember`); Origin = production `APP_URL` |
 | Join URL | `/join?invitationId=…` |
-| Password reset | Neon Auth UI forms only (`/auth/forgot-password`, `/auth/reset-password`) |
+| Password reset | Neon Auth delivery via Zoho SMTP (`/auth/forgot-password` · `/auth/reset-password`). Living UI = Neon Auth UI components; Neon SDK reset method incomplete per Neon docs. Custom sign-in/sign-up UI via `@afenda/auth` is Neon Path A — not forbidden ([ARCH-026](docs/architecture/ARCH-026-auth-session.md) 2.1.0) |
 | Branch policy | Local = **production** Neon branch `br-tiny-hill-ao82jp6f` — no branch switching |
 | MCP | User env `NEON_API_KEY`; restart Cursor after change. Avoid day-to-day `neonctl link` (rewrites `.neon`) |
 | `N*` close | Neon Slice Score + independent auditor `APPROVED` only — implementer never self-APPROVES; GUIDE-018 “closed” ≠ Neon APPROVED |

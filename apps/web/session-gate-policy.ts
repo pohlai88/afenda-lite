@@ -39,10 +39,7 @@ function isPlaygroundPath(pathname: string): boolean {
 function isPreLoginApiPath(pathname: string): boolean {
 	for (const apiPath of PRE_LOGIN_API_PATHS) {
 		if (apiPath === AUTH_API_BASE_PATH) {
-			if (
-				pathname === apiPath ||
-				pathname.startsWith(`${apiPath}/`)
-			) {
+			if (pathname === apiPath || pathname.startsWith(`${apiPath}/`)) {
 				return true;
 			}
 			continue;

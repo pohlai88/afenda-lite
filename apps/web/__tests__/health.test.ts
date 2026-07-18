@@ -2,6 +2,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const executeMock = vi.hoisted(() => vi.fn());
 
+/** Mutable env double — product `env` is readonly; probes read fields at call time. */
+const mockEnv = vi.hoisted(() => ({
+	DATABASE_URL: "postgresql://u:p@ep-x-pooler.example/db?sslmode=require",
+	NEON_AUTH_BASE_URL: "https://auth.example.com",
+	NEON_AUTH_COOKIE_SECRET: "x".repeat(32),
+}));
+
 vi.mock("@afenda/db", () => ({
 	db: {
 		execute: executeMock,
@@ -11,15 +18,9 @@ vi.mock("@afenda/db", () => ({
 
 vi.mock("@afenda/env", () => ({
 	MAX_SELECT1_LATENCY_MS: 50,
-	env: {
-		DATABASE_URL:
-			"postgresql://u:p@ep-x-pooler.example/db?sslmode=require",
-		NEON_AUTH_BASE_URL: "https://auth.example.com",
-		NEON_AUTH_COOKIE_SECRET: "x".repeat(32),
-	},
+	env: mockEnv,
 }));
 
-import { env } from "@afenda/env";
 import {
 	getLivenessSnapshot,
 	getReadinessSnapshot,
@@ -33,9 +34,9 @@ import {
 describe("platform health probes (PL-S8)", () => {
 	beforeEach(() => {
 		executeMock.mockReset();
-		env.NEON_AUTH_BASE_URL = "https://auth.example.com";
-		env.NEON_AUTH_COOKIE_SECRET = "x".repeat(32);
-		env.DATABASE_URL =
+		mockEnv.NEON_AUTH_BASE_URL = "https://auth.example.com";
+		mockEnv.NEON_AUTH_COOKIE_SECRET = "x".repeat(32);
+		mockEnv.DATABASE_URL =
 			"postgresql://u:p@ep-x-pooler.example/db?sslmode=require";
 	});
 
@@ -67,7 +68,7 @@ describe("platform health probes (PL-S8)", () => {
 
 	it("reports degraded when auth misconfigured and DB reachable", async () => {
 		executeMock.mockResolvedValueOnce([]);
-		env.NEON_AUTH_COOKIE_SECRET = "short";
+		mockEnv.NEON_AUTH_COOKIE_SECRET = "short";
 		const snap = await getReadinessSnapshot(
 			new Date("2026-07-15T12:00:00.000Z"),
 		);
@@ -109,8 +110,8 @@ describe("platform health probes (PL-S8)", () => {
 	it("never echoes secrets in readiness JSON", async () => {
 		const secretUrl =
 			"postgresql://user:SuperSecretPassw0rd@ep-x-pooler.example/db?sslmode=require&token=leak-me-token";
-		env.DATABASE_URL = secretUrl;
-		env.NEON_AUTH_COOKIE_SECRET = "cookie-secret-value-32chars-min!!";
+		mockEnv.DATABASE_URL = secretUrl;
+		mockEnv.NEON_AUTH_COOKIE_SECRET = "cookie-secret-value-32chars-min!!";
 		executeMock.mockResolvedValueOnce([]);
 		const snap = await getReadinessSnapshot(
 			new Date("2026-07-15T12:00:00.000Z"),
@@ -119,7 +120,7 @@ describe("platform health probes (PL-S8)", () => {
 		expect(serialized).not.toContain("SuperSecretPassw0rd");
 		expect(serialized).not.toContain("leak-me-token");
 		expect(serialized).not.toContain(secretUrl);
-		expect(serialized).not.toContain(env.NEON_AUTH_COOKIE_SECRET);
+		expect(serialized).not.toContain(mockEnv.NEON_AUTH_COOKIE_SECRET);
 		expect(serialized).not.toContain("cookie-secret");
 	});
 

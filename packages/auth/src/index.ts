@@ -1,7 +1,13 @@
 import "server-only";
 
 export type { AuthApiHandlers } from "./api-handler";
-export { createAuthApiHandlers } from "./api-handler";
+export {
+	AUTH_BFF_CORRELATION_HEADER,
+	createAuthApiHandlers,
+	isTrustedAuthBffPost,
+	redactAuthHeaderValue,
+	resolveAuthBffCorrelationId,
+} from "./api-handler";
 export type {
 	AfendaAuthViewPath,
 	PreLoginPublicPath,
@@ -29,6 +35,12 @@ export {
 	REJECTED_AUTH_PATH_ALIASES,
 } from "./auth-paths";
 export { resolveAuthUiOrigin } from "./auth-ui-origin";
+export type { CredentialAuthResult } from "./credentials";
+export {
+	signInWithEmail,
+	signOutSession,
+	signUpWithEmail,
+} from "./credentials";
 export {
 	buildEnsureActiveOrganizationUrl,
 	ENSURE_ACTIVE_ORGANIZATION_PATH,

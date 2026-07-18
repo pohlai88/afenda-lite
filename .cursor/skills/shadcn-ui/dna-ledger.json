@@ -59,7 +59,7 @@
 			"strip": ["studio-login-forms", "studio-register-forms", "studio-forgot-reset-forms", "credential-fields"],
 			"evidenceRef": "docs/scratch/neon-auth-optimisation/11-studio-admincn-possibility-audit.md",
 			"updated": "2026-07-17",
-			"notes": "Staged as login-page-03 (user Method-A paste). Chrome DNA only. Neon AuthView / invitation cards stay. Studio form widgets REJECT on promote. DNA may reference input-group not yet copied into shadcn-studio/components/ui/."
+			"notes": "Staged as login-page-03 (user Method-A paste). Chrome DNA only for island frame. Living login/sign-up = Path A Afenda forms + Neon SDK (ARCH-026 2.1.0). Neon AuthView residual = forgot/reset only. Studio credential forms still REJECT as dual IdP lookalikes."
 		},
 		{
 			"id": "AFN-DNA-STATISTICS-CARD-01",

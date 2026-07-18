@@ -100,10 +100,7 @@ describe("public landing (PL-S2)", () => {
 		);
 		expect(css).toContain('url("/lynx/lynx-landing-standard.png")');
 		expect(
-			existsSync(
-				join(webRoot, "public/lynx/lynx-landing-standard.png"),
-			),
+			existsSync(join(webRoot, "public/lynx/lynx-landing-standard.png")),
 		).toBe(true);
 	});
 });
-

@@ -1,10 +1,5 @@
 /**
- * DOM helpers for Neon Auth UI login autofill (RHF-compatible native events).
- * Kept free of React / UI imports so node Vitest can cover them.
- */
-
-/**
- * Sets a controlled React input value so Neon Auth / RHF pick up the change.
+ * Sets a controlled React input value so RHF / controlled inputs pick up the change.
  */
 export function setNativeInputValue(input: HTMLInputElement, value: string) {
 	const descriptor = Object.getOwnPropertyDescriptor(
@@ -17,16 +12,14 @@ export function setNativeInputValue(input: HTMLInputElement, value: string) {
 }
 
 /**
- * Fills the Neon Auth UI sign-in form (email + password fields).
+ * Fills the Afenda Path A (or Neon residual) sign-in form email + password fields.
  * Returns false when the form is not mounted yet.
  */
 export function fillNeonAuthLoginForm(
 	email: string,
 	password: string,
 ): boolean {
-	const root =
-		document.querySelector<HTMLElement>("[data-slot='auth-view'], form") ??
-		document.body;
+	const root = document.querySelector<HTMLElement>("form") ?? document.body;
 	const emailInput = root.querySelector<HTMLInputElement>(
 		'input[name="email"], input[type="email"]',
 	);

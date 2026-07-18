@@ -4,7 +4,7 @@
 | ----------------- | ---------- |
 | **ID**            | DOC-002    |
 | **Category**      | Control    |
-| **Version**       | 4.157.0 |
+| **Version**       | 4.158.0 |
 | **Status**        | Living     |
 | **Control State** | Closed     |
 | **Owner**         | Platform   |
@@ -72,7 +72,7 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 | ID           | Category     | Title                                      | Version | Status | Owner    | Updated    |
 | ------------ | ------------ | ------------------------------------------ | ------- | ------ | -------- | ---------- |
 | DOC-001      | Control      | Documentation Control Standard             | 2.7.0   | Living | Platform | 2026-07-14 |
-| DOC-002      | Control      | Documentation Register                     | 4.157.0 | Living | Platform | 2026-07-18 |
+| DOC-002      | Control      | Documentation Register                     | 4.158.0 | Living | Platform | 2026-07-18 |
 | DOC-003      | Control      | Controlled Document Template               | 1.4.0   | Living | Platform | 2026-07-14 |
 | ARCH-029     | Architecture | Interface and API Architecture             | 1.2.7   | Living | Platform | 2026-07-14 |
 | ARCH-031     | Architecture | Technology Stack Catalogue                 | 1.4.0   | Living | Platform | 2026-07-17 |
@@ -113,7 +113,7 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 | ARCH-023     | Architecture | Multi-Tenancy and Platform RBAC            | 3.1.7   | Living | Platform | 2026-07-17 |
 | ARCH-024     | Architecture | Package Boundaries                         | 1.7.2   | Living | Platform | 2026-07-17 |
 | ARCH-025     | Architecture | Data Layer                                 | 1.3.4   | Living | Backend  | 2026-07-17 |
-| ARCH-026     | Architecture | Authentication and Session Model           | 2.0.1   | Living | Platform | 2026-07-17 |
+| ARCH-026     | Architecture | Authentication and Session Model           | 2.1.0   | Living | Platform | 2026-07-18 |
 | ARCH-027     | Architecture | Environment Variable Model                 | 1.6.5   | Living | Platform | 2026-07-16 |
 | ARCH-028     | Architecture | Turborepo Implementation Slices            | 1.5.6   | Living | Platform | 2026-07-17 |
 | ARCH-001     | Architecture | Backend Architecture                       | 1.2.0   | Living | Backend  | 2026-07-14 |
@@ -172,6 +172,7 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 
 | Version | Date       | Summary                                                                                                                                         |
 | ------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| 4.158.0 | 2026-07-18 | ARCH-026→2.1.0 honesty repair: Auth presentation = Neon Path A (SDK + own UI) or Path B (Auth UI); remove misleading Auth-UI-only lock; DOC-002 self-row synced. |
 | 4.157.0 | 2026-07-18 | ARCH-012→1.2.9 §3.12 proxy matcher honesty (`/admin/*` · Pre-Login API bypass · document-nav vs API-002); DOC-002 self-row synced. |
 | 4.156.0 | 2026-07-17 | GUIDE-018→1.0.13 **I6.3 DONE** (Deploy · Vercel READY · Neon Auth domains) · GUIDE-017→1.0.2 (deploy-health blocker cleared; claim stays **NOT READY**); Phase I6 **DONE**; next Ops = **I7.1**; DOC-002 self-row synced. |
 | 4.155.0 | 2026-07-17 | GUIDE-017→1.0.1 · GUIDE-018→1.0.12 **I6.2 DONE** (claim identity **NOT READY** @ `fc16109`); Phase I6 stays WAIT (I6.3); next Ops = **I6.3**; DOC-002 self-row synced. |
@@ -349,7 +350,7 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 
 `FFT-REST-002`…`FFT-REST-007`, `OPEN-002`…`OPEN-005`, `ADR-001`…`ADR-007`, `RB-009` (webhook replay), and `ARCH-030` (verification architecture) are **reserved in planning docs only** — not registered until created under the approved derivation / creation gates. **`ADR-008`** is registered (Accepted Phase 1 — Cache Components Mode B; `cacheComponents` enablement still deferred). **`ADR-009`** is registered (Superseded by ADR-010 — the `@afenda/ui` playground gateway is retired). **`ADR-010`** is registered (Accepted — `@afenda/ui-system` flat-barrel Radix design system; `packages/design-system` retired).
 
-`ARCH-022` and `ARCH-024` through `ARCH-028` are **Living** scaffold SSOT after Checkpoint G (2026-07-15). Post-scaffold program order is [GUIDE-018](../guides/GUIDE-018-fullstack-e2e-integration-program.md) (registered **Living** 1.0.13). Phase **I1–I6 DONE** (GUIDE-017 claim **NOT READY**); next Ops = **I7.1** — not a Status demotion of Living auth ARCH. Neon Auth `N1`–`N18` serial complete — do **not** invent **N19**. Neon Auth transactional mail = **Zoho SMTP** via Neon Auth console ([ARCH-026](../architecture/ARCH-026-auth-session.md) 2.0.0).
+`ARCH-022` and `ARCH-024` through `ARCH-028` are **Living** scaffold SSOT after Checkpoint G (2026-07-15). Post-scaffold program order is [GUIDE-018](../guides/GUIDE-018-fullstack-e2e-integration-program.md) (registered **Living** 1.0.13). Phase **I1–I6 DONE** (GUIDE-017 claim **NOT READY**); next Ops = **I7.1** — not a Status demotion of Living auth ARCH. Neon Auth `N1`–`N18` serial complete — do **not** invent **N19**. Neon Auth transactional mail = **Zoho SMTP** via Neon Auth console ([ARCH-026](../architecture/ARCH-026-auth-session.md) 2.1.0). Auth **presentation** Living = Path A (Afenda forms + Neon SDK) for login/sign-up/sign-out; Path B `AuthView` residual for forgot/reset.
 
 **`ARCH-022`–`ARCH-028`** (and previously ARCH-024 at 1.5.0) now use DOC-003 six numbered sections. The earlier DOC-001 §3.8 structure grandfather for ARCH-022/025/026/027/028 is **cleared** as of 4.114.0.
 
