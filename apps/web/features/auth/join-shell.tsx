@@ -4,6 +4,7 @@ import { JOIN_PATH } from "@afenda/auth/client";
 import {
 	AcceptInvitationCard,
 	AuthLoading,
+	authLocalization,
 	SignedIn,
 	SignedOut,
 	SignInForm,
@@ -29,13 +30,17 @@ function InviteeJoinCredentials({
 	joinReturnPath: string;
 }) {
 	const [mode, setMode] = useState<InviteeAuthMode>("sign-up");
+	const neonCredentialFormProps = {
+		redirectTo: joinReturnPath,
+		localization: authLocalization,
+	} as const;
 
 	return (
 		<div className="flex w-full flex-col gap-(--field-gap)">
 			{mode === "sign-up" ? (
-				<SignUpForm redirectTo={joinReturnPath} />
+				<SignUpForm {...neonCredentialFormProps} />
 			) : (
-				<SignInForm redirectTo={joinReturnPath} />
+				<SignInForm {...neonCredentialFormProps} />
 			)}
 			<p className="text-center text-sm text-foreground-secondary">
 				{mode === "sign-up" ? (
