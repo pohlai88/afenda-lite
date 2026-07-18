@@ -48,7 +48,10 @@ test.describe("declarations submit/read @journey", () => {
 			timeout: 15_000,
 		});
 
-		await page.getByRole("button", { name: /^Respond$/i }).first().click();
+		await page
+			.getByRole("button", { name: /^Respond$/i })
+			.first()
+			.click();
 		const answer = page.getByLabel(/your response/i);
 		await expect(answer).toBeVisible({ timeout: 15_000 });
 		await answer.fill("N17 Path-to-100% declaration response");

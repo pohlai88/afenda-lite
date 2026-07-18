@@ -35,9 +35,11 @@ test.describe("FFT permitted vertical @smoke", () => {
 		await expect(
 			page.getByRole("heading", { name: "Feed Farm Trade", level: 1 }),
 		).toBeVisible({ timeout: 15_000 });
-		await expect(page.getByText("Events", { exact: true }).first()).toBeVisible({
-			timeout: 15_000,
-		});
+		await expect(page.getByText("Events", { exact: true }).first()).toBeVisible(
+			{
+				timeout: 15_000,
+			},
+		);
 	});
 
 	test("operator without fft.access is forbidden on /fft", async ({

@@ -40,7 +40,8 @@ export const UX_A11Y_I18N_PERF_MATRIX = [
 			"apps/web/app/(client)/client/(workspace)/loading.tsx",
 			"apps/web/features/auth/segment-loading.tsx",
 		],
-		notes: "Operator + client workspace; SegmentLoading via @afenda/ui-system Spinner.",
+		notes:
+			"Operator + client workspace; SegmentLoading via @afenda/ui-system Spinner.",
 	},
 	{
 		id: "UX02",
@@ -55,7 +56,8 @@ export const UX_A11Y_I18N_PERF_MATRIX = [
 			"apps/web/features/auth/segment-error.tsx",
 			"apps/web/features/auth/safe-error-copy.ts",
 		],
-		notes: "SegmentError + safe-error-copy; auth/join public segments also covered.",
+		notes:
+			"SegmentError + safe-error-copy; auth/join public segments also covered.",
 	},
 	{
 		id: "UX03",
@@ -69,7 +71,8 @@ export const UX_A11Y_I18N_PERF_MATRIX = [
 			"apps/web/app/(public)/join/loading.tsx",
 			"apps/web/app/(public)/join/error.tsx",
 		],
-		notes: "Root global-error / app-level not-found are out of this authenticated-segment bar.",
+		notes:
+			"Root global-error / app-level not-found are out of this authenticated-segment bar.",
 	},
 	{
 		id: "UX04",
@@ -96,7 +99,8 @@ export const UX_A11Y_I18N_PERF_MATRIX = [
 			"apps/web/features/fft",
 			"apps/web/features/org-admin",
 		],
-		notes: "DataTable emptyTitle/emptyDescription patterns; directories as path evidence.",
+		notes:
+			"DataTable emptyTitle/emptyDescription patterns; directories as path evidence.",
 	},
 	{
 		id: "UX06",
@@ -109,7 +113,8 @@ export const UX_A11Y_I18N_PERF_MATRIX = [
 			"apps/web/__tests__/assign-org-role-form.interaction.test.tsx",
 			"apps/web/__tests__/org-admin-panels.interaction.test.tsx",
 		],
-		notes: "useActionState pending + Spinner; interaction tests assert aria-busy.",
+		notes:
+			"useActionState pending + Spinner; interaction tests assert aria-busy.",
 	},
 	{
 		id: "A11Y01",
@@ -119,7 +124,8 @@ export const UX_A11Y_I18N_PERF_MATRIX = [
 		owner: "Platform",
 		evidenceState: "PASS",
 		evidencePaths: ["apps/web/__tests__/ui-boundary.test.ts"],
-		notes: "ui-boundary Vitest gate; shadcn-studio DNA excluded from product imports.",
+		notes:
+			"ui-boundary Vitest gate; shadcn-studio DNA excluded from product imports.",
 	},
 	{
 		id: "A11Y02",

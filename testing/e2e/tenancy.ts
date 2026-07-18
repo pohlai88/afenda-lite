@@ -359,7 +359,9 @@ export async function assignLimitedOperatorNavRole(
 
 	const assignmentId = inserted[0]?.id;
 	if (!assignmentId) {
-		throw new Error("N16 factory: failed to insert limited operator assignment");
+		throw new Error(
+			"N16 factory: failed to insert limited operator assignment",
+		);
 	}
 
 	return { assignmentId, roleId };
