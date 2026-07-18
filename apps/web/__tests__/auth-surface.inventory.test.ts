@@ -54,11 +54,17 @@ describe("PL-S3 Auth Island surface", () => {
 		expect(shell).toContain("AfendaSignInForm");
 		expect(shell).toContain("AfendaSignUpForm");
 		expect(shell).toContain("AuthView");
-		expect(shell).toContain("AuthSurfaceChrome");
+		expect(shell).not.toContain("AuthSurfaceChrome");
 		expect(shell).toContain("PublicAuthPath");
 		expect(shell).toContain('from "@afenda/auth/client"');
 		expect(shell).toContain('from "@neondatabase/auth-ui"');
 		expect(shell).not.toMatch(/@neondatabase\/auth['"]/);
+		expect(shell).not.toContain("LocalAuthCredentialFill");
+		expect(shell).not.toContain("localCredentials");
+
+		const page = source("app/(public)/auth/[path]/page.tsx");
+		expect(page).not.toContain("resolveLocalAuthCredentials");
+		expect(page).not.toContain("localCredentials");
 
 		const signIn = source("features/auth/afenda-sign-in-form.tsx");
 		expect(signIn).toContain("signInAction");
@@ -85,13 +91,104 @@ describe("PL-S3 Auth Island surface", () => {
 	it("gives AuthIslandLayout the sole #main-content landmark", () => {
 		const island = source("features/auth/auth-island-layout.tsx");
 		const chrome = source("features/auth/auth-surface-chrome.tsx");
+		const root = source("features/auth/auth-surface-root.tsx");
 		const messageShell = source("features/auth/public-message-shell.tsx");
 		expect(island).toContain("MAIN_CONTENT_ID");
 		expect(island).toMatch(/<main[^>]*id=\{MAIN_CONTENT_ID\}/);
+		expect(island).toContain("AuthSurfaceChrome");
 		expect(chrome).not.toMatch(/<main[\s>]/);
-		expect(chrome).toMatch(/<div className="auth-surface/);
+		expect(chrome).toContain("AuthSurfaceRoot");
+		expect(root).toContain("AUTH_SURFACE_CYCLE_MS");
+		expect(root).toContain("animationDelay");
+		expect(root).toMatch(/className="auth-surface dark /);
 		expect(messageShell).toContain("asLandmark");
 		expect(messageShell).toContain('asLandmark ? "main" : "div"');
+	});
+
+	it("ships split-stage lynx chrome without Studio IdP forms", () => {
+		const chrome = source("features/auth/auth-surface-chrome.tsx");
+		const surfaceCss = source("app/(public)/auth/auth-surface.css");
+		expect(chrome).toContain("AUTH_ISLAND_BRAND_ART_ICE");
+		expect(chrome).toContain("AUTH_ISLAND_BRAND_ART_FIRE");
+		expect(chrome).toContain("/lynx/lynx-icy3-wide.png");
+		expect(chrome).toContain("/lynx/lynx-fire-wide.png");
+		expect(chrome).toContain("auth-surface__art-plane");
+		expect(chrome).toContain("auth-surface__brand-art--ice");
+		expect(chrome).toContain("auth-surface__brand-art--fire");
+		expect(chrome).toContain("auth-surface__radiant--ice");
+		expect(chrome).toContain("auth-surface__radiant--fire");
+		expect(chrome).toContain("auth-surface__weather");
+		expect(chrome).toContain("auth-surface__snow");
+		expect(chrome).toContain("auth-surface__steam");
+		expect(chrome).toContain("auth-surface__embers");
+		expect(chrome).toContain("auth-surface__panel-frost");
+		expect(chrome).toContain("auth-surface__panel-ember");
+		expect(chrome).toContain("auth-surface__panel-heat");
+		expect(chrome).toContain('from "next/image"');
+		expect(chrome).toContain("auth-surface__backdrop");
+		expect(chrome).toContain("auth-surface__atmosphere");
+		expect(chrome).toContain("auth-surface__radiant");
+		expect(chrome).toContain("auth-surface__panel");
+		expect(chrome).toContain("auth-surface__stage");
+		expect(chrome).toContain("object-cover");
+		expect(chrome).toContain("object-center");
+		expect(chrome).toContain('sizes="100vw"');
+		expect(chrome).not.toContain("auth-surface__art-frame");
+		expect(chrome).not.toContain("object-contain");
+		expect(chrome).toContain("AuthSurfaceRoot");
+		expect(surfaceCss).toContain("color-scheme: dark");
+		expect(chrome).toContain('alt=""');
+		expect(chrome).toContain('aria-hidden="true"');
+		expect(chrome).not.toContain("object-left");
+		expect(chrome).not.toContain("auth-surface__brand-rail");
+		expect(chrome).not.toMatch(/<main[\s>]/);
+		expect(chrome).not.toMatch(/shadcn-studio/);
+		expect(chrome).not.toMatch(
+			/Login with Google|Login with Facebook|LoginForm/,
+		);
+		expect(chrome).not.toMatch(/social\.providers|AvatarImage/);
+		expect(surfaceCss).toContain("@property --auth-panel-ice");
+		expect(surfaceCss).toContain("@property --auth-panel-fire");
+		expect(surfaceCss).toContain("@property --auth-lynx-fire");
+		expect(surfaceCss).toContain("@property --auth-snow");
+		expect(surfaceCss).toContain("@property --auth-steam");
+		expect(surfaceCss).toContain("@property --auth-embers");
+		expect(surfaceCss).toContain("auth-surface-cinematic-cycle");
+		expect(surfaceCss).toContain("auth-surface-snow-fall");
+		expect(surfaceCss).toContain("auth-surface-steam-rise");
+		expect(surfaceCss).toContain("auth-surface-ember-rise");
+		expect(surfaceCss).toContain("auth-surface-heat-shimmer");
+		expect(surfaceCss).toContain("auth-surface__art-plane");
+		expect(surfaceCss).toContain("auth-surface__weather");
+		expect(surfaceCss).toContain("auth-surface__steam");
+		expect(surfaceCss).toContain("auth-surface__embers");
+		expect(surfaceCss).toContain("auth-surface__panel-frost");
+		expect(surfaceCss).toContain("auth-surface__panel-ember");
+		expect(surfaceCss).toContain("auth-surface__panel-heat");
+		expect(surfaceCss).toContain("auth-surface__atmosphere");
+		expect(surfaceCss).toContain("auth-surface__radiant");
+		expect(surfaceCss).toContain("auth-surface__radiant--ice");
+		expect(surfaceCss).toContain("auth-surface__radiant--fire");
+		expect(surfaceCss).toContain("mix-blend-mode: screen");
+		expect(surfaceCss).toContain("radial-gradient");
+		expect(surfaceCss).toContain("conic-gradient");
+		expect(surfaceCss).toContain("linear-gradient");
+		expect(surfaceCss).toContain("var(--surface-raised)");
+		expect(surfaceCss).toContain("var(--shadow-dialog)");
+		expect(surfaceCss).toContain("var(--primary)");
+		expect(surfaceCss).toContain("var(--info)");
+		expect(surfaceCss).toContain("var(--warning)");
+		expect(surfaceCss).toContain("var(--destructive)");
+		expect(surfaceCss).toContain("var(--chart-1)");
+		expect(surfaceCss).toContain("prefers-reduced-motion");
+		expect(surfaceCss).not.toContain("--auth-element");
+		expect(surfaceCss).not.toMatch(/#[0-9a-fA-F]{3,8}\b/);
+		expect(
+			existsSync(path.join(webRoot, "public/lynx/lynx-icy3-wide.png")),
+		).toBe(true);
+		expect(
+			existsSync(path.join(webRoot, "public/lynx/lynx-fire-wide.png")),
+		).toBe(true);
 	});
 
 	it("moves focus after Path A auth action errors", () => {

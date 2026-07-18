@@ -28,8 +28,11 @@ export function SegmentError({
 	asLandmark = true,
 }: SegmentErrorProps) {
 	const Root: ElementType = asLandmark ? "main" : "div";
+	const className = asLandmark
+		? "flex min-h-dvh flex-col items-center justify-center gap-4 bg-canvas p-4 text-center"
+		: "flex flex-col items-center justify-center gap-4 py-8 text-center";
 	return (
-		<Root className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-canvas p-4 text-center">
+		<Root className={className}>
 			<h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
 			<p className="max-w-sm text-sm text-foreground-secondary">
 				{publicErrorCopy(fallbackMessage)}

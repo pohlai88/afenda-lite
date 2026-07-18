@@ -1,10 +1,11 @@
 import { SegmentLoading } from "@/features/auth/segment-loading";
 
+/** Panel-body spinner — cinematic chrome stays mounted in AuthIslandLayout. */
 export default function JoinLoading() {
 	return (
 		<SegmentLoading
 			asLandmark={false}
-			className="auth-surface flex min-h-dvh items-center justify-center p-6"
+			className="flex items-center justify-center py-12"
 		/>
 	);
 }

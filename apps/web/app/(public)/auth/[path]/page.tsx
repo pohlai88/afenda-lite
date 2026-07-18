@@ -8,7 +8,6 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { AuthPathShell } from "@/features/auth/auth-path-shell";
-import { resolveLocalAuthCredentials } from "@/features/auth/local-auth-credentials";
 
 type AuthPageProps = {
 	params: Promise<{ path: string }>;
@@ -49,9 +48,5 @@ export default async function AuthPage({ params }: AuthPageProps) {
 	if (!isPublicAuthPath(path)) {
 		notFound();
 	}
-	const localCredentials =
-		path === AFENDA_AUTH_VIEW_PATHS.SIGN_IN
-			? resolveLocalAuthCredentials()
-			: null;
-	return <AuthPathShell path={path} localCredentials={localCredentials} />;
+	return <AuthPathShell path={path} />;
 }

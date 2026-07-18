@@ -44,7 +44,9 @@ Human-in-the-loop checklists for fullstack E2E cuts. **Scratch only** — does n
 
 | Document | Purpose | Posture |
 |----------|---------|---------|
-| [1-pre-login-hitl.md](fullstack-e2e/1-pre-login-hitl.md) | Pre-Login HITL: UI-UX → FE → DB → BE (public → auth entry; stop before post-login homes) | Scratch — UNEVALUATED until human runs verify |
+| [1-pre-login-hitl.md](fullstack-e2e/1-pre-login-hitl.md) | Pre-Login HITL: UI-UX → FE → DB → BE (public → auth entry; stop before post-login homes) | Scratch — PL-S14 CLOSED PASS 2026-07-18 |
+| [1A-SL-pre-login.md](fullstack-e2e/1A-SL-pre-login.md) | Pre-Login development slice map (PL-S1–PL-S14) | Scratch — slices CLOSED 2026-07-18 |
+| [1A-PL-ui-ux-requirements.md](fullstack-e2e/1A-PL-ui-ux-requirements.md) | Pre-Login UI/UX requirements inventory (Neon MCP + live Auth config + PL slices) + Section D verify ledger | Scratch — inventory delivered 2026-07-18 |
 | [2-post-login-hitl.md](fullstack-e2e/2-post-login-hitl.md) | Post-Login HITL: UI-UX → FE → DB → BE (role homes / shells / authenticated writes; FE-11…FE-15) | Scratch — UNEVALUATED until human runs verify |
 
 ### `neon-auth-optimisation/`
@@ -94,6 +96,7 @@ Folder stubs own the file lists. Packs are discovery + verify ledgers only — *
 
 | Date | Summary |
 |------|---------|
+| 2026-07-18 | Added `fullstack-e2e/1A-PL-ui-ux-requirements.md` (Neon MCP + Afenda Pre-Login UI/UX inventory + Section D verify); listed `1A-SL-pre-login.md` in inventory |
 | 2026-07-17 | Added `fullstack-e2e/2-post-login-hitl.md` (Post-Login four-layer HITL ledger) |
 | 2026-07-17 | Added `fullstack-e2e/1-pre-login-hitl.md` (Pre-Login four-layer HITL ledger) |
 | 2026-07-17 | Record N18 APPROVED / N1–N18 complete across neon-auth pack + FFT evidence pointers; add neon-auth-optimisation README |

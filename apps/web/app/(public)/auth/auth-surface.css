@@ -1,26 +1,945 @@
 /**
- * Auth island surface (ARCH-015 / ARCH-018) — route-scoped via auth layout.
- * Complements Neon Auth UI tokens; does not pull Neon CSS into globals.
+ * Auth island surface (ARCH-015 / ARCH-018) — route-scoped via auth + join layouts.
+ * Cinematic staggered ice ↔ fire beats (panel leads, lynx follows, snow → re-ice).
+ * Vision craft: longer holds, thaw steam, rising embers, frost creep, heat shimmer.
+ * Complements Neon Auth UI tokens. Not a product layout kit; not Studio IdP forms.
  */
+
+@property --auth-panel-ice {
+	syntax: "<number>";
+	inherits: true;
+	initial-value: 1;
+}
+
+@property --auth-panel-fire {
+	syntax: "<number>";
+	inherits: true;
+	initial-value: 0;
+}
+
+@property --auth-lynx-fire {
+	syntax: "<number>";
+	inherits: true;
+	initial-value: 0;
+}
+
+@property --auth-snow {
+	syntax: "<number>";
+	inherits: true;
+	initial-value: 0;
+}
+
+@property --auth-steam {
+	syntax: "<number>";
+	inherits: true;
+	initial-value: 0;
+}
+
+@property --auth-embers {
+	syntax: "<number>";
+	inherits: true;
+	initial-value: 0;
+}
+
 .auth-surface {
+	/* Island is always OLED dark — lynx plate + glass (root app may stay light). */
+	color-scheme: dark;
+	background: var(--canvas);
+	color: var(--foreground);
+	isolation: isolate;
+	--auth-panel-ice: 1;
+	--auth-panel-fire: 0;
+	--auth-lynx-fire: 0;
+	--auth-snow: 0;
+	--auth-steam: 0;
+	--auth-embers: 0;
+	/* Accent hue: ice leads / fire leads — thaw gap falls back to border. */
+	--auth-accent: color-mix(
+		in oklab,
+		color-mix(
+			in oklab,
+			var(--info) calc(var(--auth-panel-ice) * 100%),
+			var(--warning) calc(var(--auth-panel-fire) * 100%)
+		)
+		70%,
+		var(--border) 30%
+	);
+	/* login-command ~25s elemental cycle */
+	animation: auth-surface-cinematic-cycle 25s ease-in-out infinite;
+}
+
+.auth-surface__backdrop {
+	z-index: 0;
+	overflow: hidden;
+	background: var(--canvas);
+}
+
+/* Shared drift so ice + fire faces stay registered during morph. */
+.auth-surface__art-plane {
+	z-index: 0;
+	transform: scale(1.04);
+	animation: auth-surface-art-drift 32s ease-in-out infinite alternate;
+}
+
+.auth-surface__brand-art {
+	object-position: center center;
+	user-select: none;
+}
+
+.auth-surface__brand-art--ice {
+	z-index: 0;
+	opacity: 1;
+}
+
+/*
+ * Fire reveal — regional mask from shield/keyhole (login-command).
+ * Not a flat full-frame opacity crossfade.
+ */
+.auth-surface__brand-art--fire {
+	z-index: 1;
+	opacity: 1;
+	-webkit-mask-image: radial-gradient(
+		circle at 42% 62%,
+		black calc(var(--auth-lynx-fire) * 52%),
+		transparent calc(var(--auth-lynx-fire) * 92% + 0.5%)
+	);
+	mask-image: radial-gradient(
+		circle at 42% 62%,
+		black calc(var(--auth-lynx-fire) * 52%),
+		transparent calc(var(--auth-lynx-fire) * 92% + 0.5%)
+	);
+	-webkit-mask-repeat: no-repeat;
+	mask-repeat: no-repeat;
+	-webkit-mask-size: 100% 100%;
+	mask-size: 100% 100%;
+}
+
+/*
+ * Radiant energy — ice/fire blooms track lynx morph only (not panel thaw).
+ */
+.auth-surface__radiant {
+	mix-blend-mode: screen;
+	z-index: 2;
+}
+
+.auth-surface__radiant--ice {
+	opacity: calc((1 - var(--auth-lynx-fire)) * 0.85);
 	background:
 		radial-gradient(
-			1200px 600px at 50% -10%,
-			color-mix(in oklab, var(--primary) 12%, transparent),
-			transparent 60%
+			circle 18% at 38% 38%,
+			color-mix(in oklab, var(--foreground) 55%, transparent) 0%,
+			color-mix(in oklab, var(--info) 28%, transparent) 28%,
+			transparent 62%
 		),
-		var(--background);
-	color: var(--foreground);
+		radial-gradient(
+			circle 14% at 48% 38%,
+			color-mix(in oklab, var(--foreground) 48%, transparent) 0%,
+			color-mix(in oklab, var(--info) 24%, transparent) 32%,
+			transparent 58%
+		),
+		radial-gradient(
+			ellipse 28% 22% at 43% 62%,
+			color-mix(in oklab, var(--info) 42%, transparent) 0%,
+			color-mix(in oklab, var(--info) 12%, transparent) 45%,
+			transparent 70%
+		),
+		radial-gradient(
+			ellipse 70% 60% at 40% 46%,
+			color-mix(in oklab, var(--info) 16%, transparent) 0%,
+			transparent 68%
+		);
+}
+
+.auth-surface__radiant--fire {
+	opacity: calc(var(--auth-lynx-fire) * 0.95);
+	background:
+		radial-gradient(
+			circle 18% at 38% 38%,
+			color-mix(in oklab, var(--foreground) 45%, transparent) 0%,
+			color-mix(in oklab, var(--warning) 40%, transparent) 28%,
+			transparent 62%
+		),
+		radial-gradient(
+			circle 14% at 48% 38%,
+			color-mix(in oklab, var(--warning) 44%, transparent) 0%,
+			color-mix(in oklab, var(--destructive) 26%, transparent) 32%,
+			transparent 58%
+		),
+		radial-gradient(
+			ellipse 28% 22% at 43% 62%,
+			color-mix(in oklab, var(--chart-1) 50%, transparent) 0%,
+			color-mix(in oklab, var(--warning) 16%, transparent) 45%,
+			transparent 70%
+		),
+		radial-gradient(
+			ellipse 70% 60% at 40% 46%,
+			color-mix(in oklab, var(--destructive) 22%, transparent) 0%,
+			transparent 68%
+		);
+}
+
+/* Ambient wash follows lynx element (warm only when fire lynx is present). */
+.auth-surface__atmosphere {
+	z-index: 3;
+	background:
+		radial-gradient(
+			ellipse 55% 50% at 38% 44%,
+			color-mix(
+				in oklab,
+				color-mix(
+						in oklab,
+						var(--info) calc((1 - var(--auth-lynx-fire)) * 100%),
+						var(--warning) calc(var(--auth-lynx-fire) * 100%)
+					)
+					18%,
+				transparent
+			)
+			0%,
+			transparent 62%
+		),
+		radial-gradient(
+			ellipse 90% 80% at 50% 50%,
+			transparent 40%,
+			color-mix(in oklab, var(--overlay-scrim) 55%, transparent) 100%
+		),
+		linear-gradient(
+			to bottom,
+			color-mix(in oklab, var(--background) 55%, transparent) 0%,
+			transparent 22%,
+			transparent 68%,
+			color-mix(in oklab, var(--background) 70%, transparent) 100%
+		);
+}
+
+/*
+ * Atmosphere FX (login-command): face-clear, capped density.
+ * Runtime (bead-debug): tiles/DOM/anim OK; peaks washed out —
+ * embersOpacity≈0.29 (var 0.55×0.52) + screen/soft-light → invisible.
+ */
+.auth-surface__steam {
+	z-index: 4;
+	opacity: calc(var(--auth-steam) * 0.55);
+	mix-blend-mode: soft-light;
+	/* Keep mist off the face / shield focal region. */
+	-webkit-mask-image: radial-gradient(
+		ellipse 48% 52% at 40% 46%,
+		transparent 42%,
+		black 78%
+	);
+	mask-image: radial-gradient(
+		ellipse 48% 52% at 40% 46%,
+		transparent 42%,
+		black 78%
+	);
+	background:
+		radial-gradient(
+			ellipse 70% 42% at 28% 88%,
+			color-mix(in oklab, var(--foreground) 28%, transparent) 0%,
+			color-mix(in oklab, var(--info) 14%, transparent) 40%,
+			transparent 72%
+		),
+		radial-gradient(
+			ellipse 50% 34% at 70% 92%,
+			color-mix(in oklab, var(--foreground) 18%, transparent) 0%,
+			transparent 68%
+		);
+	filter: blur(22px);
+	animation: auth-surface-steam-rise 8s ease-in-out infinite alternate;
+	transform: translate3d(0, 0, 0);
+}
+
+.auth-surface__embers {
+	z-index: 4;
+	opacity: calc(var(--auth-embers) * 0.9);
+	mix-blend-mode: normal;
+	overflow: hidden;
+	pointer-events: none;
+	-webkit-mask-image: radial-gradient(
+		ellipse 46% 50% at 40% 46%,
+		transparent 28%,
+		black 68%
+	);
+	mask-image: radial-gradient(
+		ellipse 46% 50% at 40% 46%,
+		transparent 28%,
+		black 68%
+	);
+}
+
+/* Fire beads: mono --warning only; core ≤1.25px, hard cut by 2.5px. */
+.auth-surface__ember-field {
+	position: absolute;
+	inset: 0 -8% -20%;
+	height: 130%;
+	background-image:
+		radial-gradient(
+			circle at 22% 86%,
+			color-mix(in oklab, var(--warning) 88%, transparent) 0 1.25px,
+			transparent 2.5px
+		),
+		radial-gradient(
+			circle at 68% 90%,
+			color-mix(in oklab, var(--warning) 72%, transparent) 0 1px,
+			transparent 2.25px
+		),
+		radial-gradient(
+			circle at 44% 78%,
+			color-mix(in oklab, var(--warning) 64%, transparent) 0 1px,
+			transparent 2px
+		),
+		radial-gradient(
+			circle at 82% 84%,
+			color-mix(in oklab, var(--warning) 78%, transparent) 0 1.15px,
+			transparent 2.35px
+		),
+		radial-gradient(
+			circle at 12% 72%,
+			color-mix(in oklab, var(--warning) 58%, transparent) 0 0.9px,
+			transparent 2px
+		);
+	background-size:
+		145px 170px,
+		185px 210px,
+		125px 155px,
+		200px 235px,
+		165px 195px;
+	background-repeat: repeat;
+}
+
+.auth-surface__ember-field--a {
+	animation: auth-surface-ember-rise 11s linear infinite;
+	opacity: 0.9;
+}
+
+.auth-surface__ember-field--b {
+	animation: auth-surface-ember-rise 16s linear infinite;
+	animation-delay: -4s;
+	opacity: 0.65;
+	background-position:
+		40px 20px,
+		90px 60px,
+		10px 100px,
+		120px 30px,
+		55px 80px;
+}
+
+.auth-surface__weather {
+	z-index: 4;
+	opacity: calc(var(--auth-snow) * 0.9);
+	mix-blend-mode: normal;
+	overflow: hidden;
+	-webkit-mask-image: radial-gradient(
+		ellipse 46% 50% at 40% 46%,
+		transparent 26%,
+		black 70%
+	);
+	mask-image: radial-gradient(
+		ellipse 46% 50% at 40% 46%,
+		transparent 26%,
+		black 70%
+	);
+}
+
+/* Snow beads: cool only; core ≤1.25px, hard cut by 2.5px. */
+.auth-surface__snow {
+	position: absolute;
+	inset: -40% 0 0 0;
+	height: 150%;
+	background-image:
+		radial-gradient(
+			circle at 18% 12%,
+			color-mix(in oklab, var(--foreground) 85%, transparent) 0 1.25px,
+			transparent 2.5px
+		),
+		radial-gradient(
+			circle at 62% 8%,
+			color-mix(in oklab, var(--foreground) 70%, transparent) 0 1px,
+			transparent 2.25px
+		),
+		radial-gradient(
+			circle at 84% 22%,
+			color-mix(in oklab, var(--foreground) 62%, transparent) 0 1px,
+			transparent 2px
+		),
+		radial-gradient(
+			circle at 36% 30%,
+			color-mix(in oklab, var(--foreground) 75%, transparent) 0 1.15px,
+			transparent 2.35px
+		),
+		radial-gradient(
+			circle at 8% 48%,
+			color-mix(in oklab, var(--foreground) 55%, transparent) 0 0.9px,
+			transparent 2px
+		);
+	background-size:
+		130px 155px,
+		170px 195px,
+		120px 145px,
+		195px 220px,
+		150px 180px;
+	background-repeat: repeat;
+}
+
+.auth-surface__snow--a {
+	animation: auth-surface-snow-fall 14s linear infinite;
+	opacity: 0.85;
+}
+
+.auth-surface__snow--b {
+	animation: auth-surface-snow-fall-mirror 19s linear infinite;
+	animation-delay: -5s;
+	opacity: 0.6;
+	background-position:
+		30px 10px,
+		80px 40px,
+		0 70px,
+		110px 20px,
+		45px 55px;
+}
+
+/* Soft vignette above FX — edges darker, Lynx face stays clear. */
+.auth-surface__veil {
+	z-index: 5;
+	background: linear-gradient(
+		to bottom,
+		color-mix(in oklab, var(--overlay-scrim) 28%, transparent) 0%,
+		transparent 32%,
+		color-mix(in oklab, var(--overlay-scrim) 40%, transparent) 100%
+	);
+}
+
+.auth-surface__stage {
+	z-index: 1;
+}
+
+.auth-surface__column {
+	z-index: 10;
+	background: transparent;
 }
 
 .auth-surface__panel {
-	border: 1px solid color-mix(in oklab, var(--border) 85%, transparent);
-	border-radius: var(--radius-xl, 1rem);
-	background: color-mix(in oklab, var(--card) 92%, transparent);
-	padding: 1.75rem 1.5rem;
-	box-shadow: 0 24px 60px color-mix(in oklab, var(--foreground) 6%, transparent);
+	position: relative;
+	overflow: hidden;
+	border: 1px solid color-mix(in oklab, var(--border) 45%, var(--auth-accent) 55%);
+	border-radius: var(--radius-xl);
+	background: color-mix(
+		in oklab,
+		var(--surface-raised) calc(48% + var(--auth-panel-ice) * 8%),
+		transparent
+	);
+	backdrop-filter: blur(calc(18px + var(--auth-panel-ice) * 8px))
+		saturate(calc(1.1 + var(--auth-panel-ice) * 0.25 + var(--auth-panel-fire) * 0.15));
+	-webkit-backdrop-filter: blur(calc(18px + var(--auth-panel-ice) * 8px))
+		saturate(calc(1.1 + var(--auth-panel-ice) * 0.25 + var(--auth-panel-fire) * 0.15));
+	padding: var(--section-gap) calc(var(--field-gap) * 1.5);
+	box-shadow:
+		var(--shadow-dialog),
+		var(--shadow-overlay),
+		0 0 calc(32px + var(--auth-panel-ice) * 20px + var(--auth-panel-fire) * 28px)
+			color-mix(in oklab, var(--auth-accent) 18%, transparent),
+		0 0 0 1px color-mix(in oklab, var(--auth-accent) 34%, transparent),
+		inset 0 1px 0 color-mix(in oklab, var(--foreground) 14%, transparent),
+		inset 0 0 calc(24px + var(--auth-panel-ice) * 22px)
+			color-mix(in oklab, var(--info) calc(var(--auth-panel-ice) * 14%), transparent),
+		inset 0 0 calc(20px + var(--auth-panel-fire) * 28px)
+			color-mix(
+				in oklab,
+				var(--warning) calc(var(--auth-panel-fire) * 16%),
+				transparent
+			);
+	animation: auth-surface-panel-enter 260ms ease-out both;
+}
+
+/* Top signal bar — accent follows panel beat. */
+.auth-surface__panel::before {
+	content: "";
+	position: absolute;
+	inset: 0 0 auto 0;
+	z-index: 2;
+	height: 0.1875rem;
+	background: linear-gradient(
+		to right,
+		transparent 0%,
+		color-mix(in oklab, var(--auth-accent) 55%, var(--primary) 45%) 18%,
+		var(--foreground) 50%,
+		color-mix(in oklab, var(--auth-accent) 55%, var(--primary) 45%) 82%,
+		transparent 100%
+	);
+	pointer-events: none;
+	box-shadow: 0 0 18px color-mix(in oklab, var(--auth-accent) 42%, transparent);
+}
+
+/*
+ * Frost glass — corner creep from edges inward as --auth-panel-ice rises;
+ * dissolves (corners retreat) during thaw.
+ */
+.auth-surface__panel-frost {
+	position: absolute;
+	inset: 0;
+	z-index: 0;
+	border-radius: inherit;
+	opacity: calc(0.2 + var(--auth-panel-ice) * 0.78);
+	background:
+		radial-gradient(
+			circle at 0% 0%,
+			color-mix(in oklab, var(--foreground) 28%, transparent) 0%,
+			transparent calc(18% + var(--auth-panel-ice) * 28%)
+		),
+		radial-gradient(
+			circle at 100% 0%,
+			color-mix(in oklab, var(--info) 24%, transparent) 0%,
+			transparent calc(16% + var(--auth-panel-ice) * 26%)
+		),
+		radial-gradient(
+			circle at 0% 100%,
+			color-mix(in oklab, var(--info) 18%, transparent) 0%,
+			transparent calc(14% + var(--auth-panel-ice) * 22%)
+		),
+		radial-gradient(
+			circle at 100% 100%,
+			color-mix(in oklab, var(--foreground) 16%, transparent) 0%,
+			transparent calc(14% + var(--auth-panel-ice) * 22%)
+		),
+		radial-gradient(
+			ellipse 80% 55% at 50% -10%,
+			color-mix(in oklab, var(--info) calc(var(--auth-panel-ice) * 30%), transparent)
+				0%,
+			transparent 55%
+		),
+		linear-gradient(
+			160deg,
+			color-mix(in oklab, var(--foreground) calc(var(--auth-panel-ice) * 12%), transparent)
+				0%,
+			transparent 42%,
+			color-mix(in oklab, var(--info) calc(var(--auth-panel-ice) * 10%), transparent)
+				100%
+		);
+	box-shadow:
+		inset 0 0 0 calc(1px + var(--auth-panel-ice) * 1px)
+			color-mix(in oklab, var(--info) calc(var(--auth-panel-ice) * 40%), transparent),
+		inset 0 0 calc(12px + var(--auth-panel-ice) * 28px)
+			color-mix(in oklab, var(--info) calc(var(--auth-panel-ice) * 10%), transparent);
+	/* Rim-first reveal: hollow when ice low, fills as ice rises. */
+	-webkit-mask-image: radial-gradient(
+		ellipse 72% 68% at 50% 48%,
+		transparent calc(28% + (1 - var(--auth-panel-ice)) * 48%),
+		black calc(42% + (1 - var(--auth-panel-ice)) * 40%)
+	);
+	mask-image: radial-gradient(
+		ellipse 72% 68% at 50% 48%,
+		transparent calc(28% + (1 - var(--auth-panel-ice)) * 48%),
+		black calc(42% + (1 - var(--auth-panel-ice)) * 40%)
+	);
+}
+
+/* Ember bloom — ignites after thaw, fades as frost returns. */
+.auth-surface__panel-ember {
+	position: absolute;
+	inset: -8% -6%;
+	z-index: 0;
+	border-radius: inherit;
+	opacity: calc(var(--auth-panel-fire) * 0.88);
+	mix-blend-mode: screen;
+	background:
+		radial-gradient(
+			ellipse 70% 45% at 50% 110%,
+			color-mix(in oklab, var(--warning) 42%, transparent) 0%,
+			color-mix(in oklab, var(--destructive) 18%, transparent) 40%,
+			transparent 70%
+		),
+		radial-gradient(
+			circle at 20% 80%,
+			color-mix(in oklab, var(--chart-1) 28%, transparent) 0%,
+			transparent 45%
+		),
+		radial-gradient(
+			circle at 82% 75%,
+			color-mix(in oklab, var(--warning) 24%, transparent) 0%,
+			transparent 40%
+		);
+	filter: blur(2px);
+}
+
+/* Heat shimmer bands — fire panel only (vision heat distortion). */
+.auth-surface__panel-heat {
+	position: absolute;
+	inset: 0;
+	z-index: 0;
+	border-radius: inherit;
+	opacity: calc(var(--auth-panel-fire) * 0.42);
+	mix-blend-mode: soft-light;
+	background: repeating-linear-gradient(
+		105deg,
+		transparent 0 10px,
+		color-mix(in oklab, var(--warning) 12%, transparent) 11px 13px,
+		transparent 14px 22px
+	);
+	background-size: 100% 200%;
+	animation: auth-surface-heat-shimmer 2.4s ease-in-out infinite;
+	pointer-events: none;
 }
 
 .auth-surface__brand {
-	color: var(--muted-foreground);
+	color: var(--foreground);
+	letter-spacing: 0.2em;
+}
+
+@keyframes auth-surface-panel-enter {
+	from {
+		opacity: 0;
+		transform: translateY(0.5rem);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@keyframes auth-surface-art-drift {
+	from {
+		transform: scale(1.04) translate3d(0, 0, 0);
+	}
+	to {
+		transform: scale(1.08) translate3d(-0.5%, 0.3%, 0);
+	}
+}
+
+@keyframes auth-surface-snow-fall {
+	from {
+		transform: translate3d(0, -6%, 0);
+	}
+	to {
+		transform: translate3d(1%, 14%, 0);
+	}
+}
+
+@keyframes auth-surface-snow-fall-mirror {
+	from {
+		transform: scaleX(-1) translate3d(0, -6%, 0);
+	}
+	to {
+		transform: scaleX(-1) translate3d(-1%, 14%, 0);
+	}
+}
+
+@keyframes auth-surface-steam-rise {
+	from {
+		transform: translate3d(0, 4%, 0) scale(1);
+		filter: blur(20px);
+	}
+	to {
+		transform: translate3d(0.5%, -3%, 0) scale(1.04);
+		filter: blur(26px);
+	}
+}
+
+@keyframes auth-surface-ember-rise {
+	from {
+		transform: translate3d(0, 10%, 0);
+	}
+	to {
+		transform: translate3d(1%, -22%, 0);
+	}
+}
+
+@keyframes auth-surface-heat-shimmer {
+	from {
+		background-position: 0 0;
+		opacity: calc(var(--auth-panel-fire) * 0.28);
+	}
+	to {
+		background-position: 0 40%;
+		opacity: calc(var(--auth-panel-fire) * 0.5);
+	}
+}
+
+/*
+ * login-command ~25s:
+ * 0–4 Ice · 4–7 Thaw · 7–10 Ignition · 10–15 Fire · 15–18 Snow · 18–22 Freeze · 22–25 Settle
+ */
+@keyframes auth-surface-cinematic-cycle {
+	/* Phase 1 — Frozen stillness (fine snow drift) */
+	0%,
+	16% {
+		--auth-panel-ice: 1;
+		--auth-panel-fire: 0;
+		--auth-lynx-fire: 0;
+		--auth-snow: 0.55;
+		--auth-steam: 0;
+		--auth-embers: 0;
+	}
+
+	/* Phase 2 — Internal thaw (panel leads) */
+	22% {
+		--auth-panel-ice: 0.45;
+		--auth-panel-fire: 0.15;
+		--auth-lynx-fire: 0;
+		--auth-snow: 0.15;
+		--auth-steam: 0.55;
+		--auth-embers: 0.1;
+	}
+
+	/* Phase 3 — Ignition (panel → shield → lynx) */
+	28% {
+		--auth-panel-ice: 0.1;
+		--auth-panel-fire: 0.7;
+		--auth-lynx-fire: 0.12;
+		--auth-snow: 0;
+		--auth-steam: 0.35;
+		--auth-embers: 0.55;
+	}
+
+	34% {
+		--auth-panel-ice: 0;
+		--auth-panel-fire: 1;
+		--auth-lynx-fire: 0.45;
+		--auth-snow: 0;
+		--auth-steam: 0.15;
+		--auth-embers: 0.85;
+	}
+
+	40% {
+		--auth-panel-ice: 0;
+		--auth-panel-fire: 1;
+		--auth-lynx-fire: 0.85;
+		--auth-snow: 0;
+		--auth-steam: 0;
+		--auth-embers: 1;
+	}
+
+	/* Phase 4 — Full fire */
+	48%,
+	60% {
+		--auth-panel-ice: 0;
+		--auth-panel-fire: 1;
+		--auth-lynx-fire: 1;
+		--auth-snow: 0;
+		--auth-steam: 0;
+		--auth-embers: 1;
+	}
+
+	/* Phase 5 — First snow (embers + snow coexist) */
+	66% {
+		--auth-panel-ice: 0.2;
+		--auth-panel-fire: 0.75;
+		--auth-lynx-fire: 1;
+		--auth-snow: 0.75;
+		--auth-steam: 0.1;
+		--auth-embers: 0.45;
+	}
+
+	72% {
+		--auth-panel-ice: 0.45;
+		--auth-panel-fire: 0.45;
+		--auth-lynx-fire: 0.75;
+		--auth-snow: 1;
+		--auth-steam: 0.2;
+		--auth-embers: 0.15;
+	}
+
+	/* Phase 6 — Deep freeze (cold wave from panel) */
+	80% {
+		--auth-panel-ice: 0.8;
+		--auth-panel-fire: 0.15;
+		--auth-lynx-fire: 0.35;
+		--auth-snow: 0.9;
+		--auth-steam: 0.35;
+		--auth-embers: 0;
+	}
+
+	88% {
+		--auth-panel-ice: 1;
+		--auth-panel-fire: 0;
+		--auth-lynx-fire: 0.1;
+		--auth-snow: 0.65;
+		--auth-steam: 0.1;
+		--auth-embers: 0;
+	}
+
+	/* Phase 7 — Frozen reset */
+	100% {
+		--auth-panel-ice: 1;
+		--auth-panel-fire: 0;
+		--auth-lynx-fire: 0;
+		--auth-snow: 0.55;
+		--auth-steam: 0;
+		--auth-embers: 0;
+	}
+}
+
+@media (min-width: 1024px) {
+	.auth-surface__brand-art {
+		object-position: 42% 46%;
+	}
+
+	.auth-surface__radiant--ice {
+		background:
+			radial-gradient(
+				circle 16% at 34% 40%,
+				color-mix(in oklab, var(--foreground) 58%, transparent) 0%,
+				color-mix(in oklab, var(--info) 30%, transparent) 30%,
+				transparent 64%
+			),
+			radial-gradient(
+				circle 13% at 44% 40%,
+				color-mix(in oklab, var(--foreground) 50%, transparent) 0%,
+				color-mix(in oklab, var(--info) 26%, transparent) 34%,
+				transparent 60%
+			),
+			radial-gradient(
+				ellipse 24% 20% at 39% 64%,
+				color-mix(in oklab, var(--info) 48%, transparent) 0%,
+				color-mix(in oklab, var(--info) 14%, transparent) 48%,
+				transparent 72%
+			),
+			radial-gradient(
+				ellipse 58% 70% at 36% 48%,
+				color-mix(in oklab, var(--info) 14%, transparent) 0%,
+				transparent 70%
+			),
+			conic-gradient(
+				from 210deg at 40% 48%,
+				transparent 0deg,
+				color-mix(in oklab, var(--info) 10%, transparent) 40deg,
+				transparent 90deg,
+				color-mix(in oklab, var(--foreground) 6%, transparent) 180deg,
+				transparent 270deg,
+				color-mix(in oklab, var(--info) 8%, transparent) 320deg,
+				transparent 360deg
+			);
+	}
+
+	.auth-surface__radiant--fire {
+		background:
+			radial-gradient(
+				circle 16% at 34% 40%,
+				color-mix(in oklab, var(--foreground) 48%, transparent) 0%,
+				color-mix(in oklab, var(--warning) 38%, transparent) 30%,
+				transparent 64%
+			),
+			radial-gradient(
+				circle 13% at 44% 40%,
+				color-mix(in oklab, var(--warning) 46%, transparent) 0%,
+				color-mix(in oklab, var(--destructive) 28%, transparent) 34%,
+				transparent 60%
+			),
+			radial-gradient(
+				ellipse 24% 20% at 39% 64%,
+				color-mix(in oklab, var(--chart-1) 54%, transparent) 0%,
+				color-mix(in oklab, var(--warning) 18%, transparent) 48%,
+				transparent 72%
+			),
+			radial-gradient(
+				ellipse 58% 70% at 36% 48%,
+				color-mix(in oklab, var(--destructive) 20%, transparent) 0%,
+				transparent 70%
+			),
+			conic-gradient(
+				from 210deg at 40% 48%,
+				transparent 0deg,
+				color-mix(in oklab, var(--warning) 14%, transparent) 40deg,
+				transparent 90deg,
+				color-mix(in oklab, var(--chart-1) 10%, transparent) 180deg,
+				transparent 270deg,
+				color-mix(in oklab, var(--destructive) 12%, transparent) 320deg,
+				transparent 360deg
+			);
+	}
+
+	.auth-surface__atmosphere {
+		background:
+			radial-gradient(
+				ellipse 48% 55% at 36% 46%,
+				color-mix(
+					in oklab,
+					color-mix(
+							in oklab,
+							var(--info) calc((1 - var(--auth-lynx-fire)) * 100%),
+							var(--warning) calc(var(--auth-lynx-fire) * 100%)
+						)
+						14%,
+					transparent
+				)
+				0%,
+				transparent 58%
+			),
+			radial-gradient(
+				ellipse 100% 90% at 70% 50%,
+				transparent 35%,
+				color-mix(in oklab, var(--overlay-scrim) 48%, transparent) 100%
+			),
+			linear-gradient(
+				to right,
+				color-mix(in oklab, var(--background) 35%, transparent) 0%,
+				transparent 28%,
+				transparent 62%,
+				color-mix(in oklab, var(--overlay-scrim) 38%, transparent) 100%
+			);
+	}
+
+	.auth-surface__veil {
+		background: linear-gradient(
+			to right,
+			transparent 0%,
+			transparent 52%,
+			color-mix(in oklab, var(--overlay-scrim) 28%, transparent) 78%,
+			color-mix(in oklab, var(--overlay-scrim) 52%, transparent) 100%
+		);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.auth-surface {
+		animation: none;
+		--auth-panel-ice: 1;
+		--auth-panel-fire: 0;
+		--auth-lynx-fire: 0;
+		--auth-snow: 0;
+		--auth-steam: 0;
+		--auth-embers: 0;
+	}
+
+	.auth-surface__art-plane {
+		animation: none;
+		transform: none;
+	}
+
+	.auth-surface__brand-art--fire {
+		opacity: 0;
+		-webkit-mask-image: none;
+		mask-image: none;
+	}
+
+	.auth-surface__radiant--ice {
+		opacity: 0.78;
+	}
+
+	.auth-surface__radiant--fire {
+		opacity: 0;
+	}
+
+	.auth-surface__snow,
+	.auth-surface__ember-field,
+	.auth-surface__steam,
+	.auth-surface__panel-heat {
+		animation: none;
+	}
+
+	.auth-surface__weather,
+	.auth-surface__steam,
+	.auth-surface__embers,
+	.auth-surface__panel-heat {
+		opacity: 0;
+	}
+
+	.auth-surface__panel {
+		animation: none;
+		backdrop-filter: none;
+		-webkit-backdrop-filter: none;
+		background: color-mix(in oklab, var(--surface-raised) 96%, var(--card) 4%);
+	}
+
+	.auth-surface__panel-ember {
+		opacity: 0;
+	}
 }

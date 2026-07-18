@@ -65,8 +65,10 @@ describe("join accept-invitation (PL-S4)", () => {
 
 	it("keeps JoinShell on Neon AcceptInvitationCard inside auth island chrome", () => {
 		const shell = source("features/auth/join-shell.tsx");
+		const island = source("features/auth/auth-island-layout.tsx");
 		expect(shell).toContain("AcceptInvitationCard");
-		expect(shell).toContain("AuthSurfaceChrome");
+		expect(shell).not.toContain("AuthSurfaceChrome");
+		expect(island).toContain("AuthSurfaceChrome");
 		expect(shell).toContain('from "@neondatabase/auth-ui"');
 		expect(shell).not.toMatch(/@neondatabase\/auth['"]/);
 		expect(shell).not.toMatch(/<form[\s>]/i);

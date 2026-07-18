@@ -129,4 +129,21 @@ describe("public landing (PL-S2)", () => {
 			"animation: cinematicZoom 36s ease-in-out infinite alternate",
 		);
 	});
+
+	it("applies lynx-guard dual-plane atmosphere without CDP chrome", () => {
+		const css = source("features/landing/the-machine-landing.css");
+		const stage = source("features/landing/the-machine-landing-stage.tsx");
+		expect(css).toContain("--nebula:");
+		expect(css).toContain("--void:");
+		expect(css).toContain(".constellation");
+		expect(stage).toContain('className="constellation"');
+		expect(stage).toContain("Truth, guarded quietly.");
+		expect(stage).toContain("Your truth. Our shield.");
+		expect(stage).toContain("Secure");
+		expect(stage).toContain("Confidential");
+		expect(stage).toContain("Verified");
+		expect(stage).not.toMatch(/Client Declaration Portal|Access Vault/);
+		expect(stage).not.toContain("Continue with Google");
+		expect(css).toContain("CLOSED (edit-forbidden)");
+	});
 });

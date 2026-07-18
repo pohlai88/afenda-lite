@@ -58,8 +58,8 @@ export function AfendaSignInForm() {
 			<input type="hidden" name={POST_LOGIN_CALLBACK_PARAM} value={callback} />
 			<div className="flex flex-col gap-1">
 				<h1 className="text-2xl font-semibold tracking-tight">Sign in</h1>
-				<p className="text-sm text-muted-foreground">
-					Use your Afenda email and password.
+				<p className="text-sm text-foreground-secondary">
+					Enter your Afenda email and password to continue.
 				</p>
 			</div>
 			<FormField

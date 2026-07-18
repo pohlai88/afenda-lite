@@ -7,16 +7,15 @@ type AuthErrorProps = {
 	reset: () => void;
 };
 
+/** Panel-body error — cinematic chrome stays mounted in AuthIslandLayout. */
 export default function AuthError({ error, reset }: AuthErrorProps) {
 	return (
-		<div className="auth-surface">
-			<SegmentError
-				asLandmark={false}
-				title="Sign-in unavailable"
-				fallbackMessage="The auth surface failed to render. Try again."
-				error={error}
-				reset={reset}
-			/>
-		</div>
+		<SegmentError
+			asLandmark={false}
+			title="Sign-in unavailable"
+			fallbackMessage="The auth surface failed to render. Try again."
+			error={error}
+			reset={reset}
+		/>
 	);
 }

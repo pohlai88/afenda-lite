@@ -52,14 +52,14 @@
 			"studioNs": "@ss-blocks",
 			"verdict": "ADAPT",
 			"method": "A",
-			"status": "staged",
-			"landPath": "apps/web/features/auth/",
+			"status": "promoted",
+			"landPath": "apps/web/features/auth/auth-surface-chrome.tsx",
 			"feZones": ["FE-02", "FE-03", "FE-04", "FE-05", "FE-06"],
-			"barrelDeps": ["Button", "Card"],
-			"strip": ["studio-login-forms", "studio-register-forms", "studio-forgot-reset-forms", "credential-fields"],
-			"evidenceRef": "docs/scratch/neon-auth-optimisation/11-studio-admincn-possibility-audit.md",
-			"updated": "2026-07-17",
-			"notes": "Staged as login-page-03 (user Method-A paste). Chrome DNA only for island frame. Living login/sign-up = Path A Afenda forms + Neon SDK (ARCH-026 2.1.0). Neon AuthView residual = forgot/reset only. Studio credential forms still REJECT as dual IdP lookalikes."
+			"barrelDeps": [],
+			"strip": ["studio-login-forms", "studio-register-forms", "studio-forgot-reset-forms", "credential-fields", "oauth-buttons", "social-proof-avatars"],
+			"evidenceRef": "docs/scratch/fullstack-e2e/1A-PL-ui-ux-requirements.md",
+			"updated": "2026-07-18",
+			"notes": "Promoted split chrome into AuthSurfaceChrome + auth-surface.css. Right rail = /lynx/afenda-lynx-pixel.png (apps/web/public). Living login/sign-up = Path A; Neon AuthView = forgot/reset; join = AcceptInvitationCard. Staging tree retained under shadcn-studio/blocks/login-page-03 (not product-imported). Neon Auth config fit matrix KEEP; no configure_neon_auth this mission."
 		},
 		{
 			"id": "AFN-DNA-STATISTICS-CARD-01",

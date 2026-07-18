@@ -261,6 +261,7 @@ export function TheMachineLandingStage({
 				</div>
 
 				<div aria-hidden="true" className="ambient" />
+				<div aria-hidden="true" className="constellation" />
 				<div aria-hidden="true" className="vignette" />
 				<div aria-hidden="true" className="grain" />
 
@@ -302,67 +303,79 @@ export function TheMachineLandingStage({
 						Afenda
 					</div>
 					<div className="brandbar__end">
-						<div className="brandbar__descriptor">
-							Purpose-bound enterprise intelligence
-						</div>
-						<SignInButton surface="machine" />
+					<div className="brandbar__descriptor">
+						Guarded enterprise intelligence
 					</div>
-				</header>
+					<SignInButton surface="machine" />
+				</div>
+			</header>
 
-				<section aria-labelledby="hero-title" className="copy">
-					<p className="kicker">Prevention, engineered.</p>
+			<section aria-labelledby="hero-title" className="copy">
+				<p className="kicker">
+					Secure<span className="kicker__sep" aria-hidden="true" />
+					Confidential
+					<span className="kicker__sep" aria-hidden="true" />
+					Verified
+				</p>
 
-					<h1 className="title" id="hero-title">
-						<span className="title__article">The</span>
-						<span className="title__word">
-							<span className="title__ink">Machine</span>
-							<span aria-hidden="true" className="title__echo">
-								Machine
-							</span>
+				<h1 className="title" id="hero-title">
+					<span className="title__article">The</span>
+					<span className="title__word">
+						<span className="title__ink">Machine</span>
+						<span aria-hidden="true" className="title__echo">
+							Machine
 						</span>
-					</h1>
+					</span>
+				</h1>
 
-					<ol aria-label="Protect. Detect. React." className="sequence">
-						<li className="sequence__item" data-phase="protect">
-							<span aria-hidden="true" className="sequence__index">
-								01
-							</span>
-							<span className="sequence__verb">
-								Protect<span className="sequence__period">.</span>
-							</span>
-						</li>
-						<li className="sequence__item" data-phase="detect">
-							<span aria-hidden="true" className="sequence__index">
-								02
-							</span>
-							<span className="sequence__verb">
-								Detect<span className="sequence__period">.</span>
-							</span>
-						</li>
-						<li className="sequence__item" data-phase="react">
-							<span aria-hidden="true" className="sequence__index">
-								03
-							</span>
-							<span className="sequence__verb">
-								React<span className="sequence__period">.</span>
-							</span>
-						</li>
-					</ol>
+				<p className="motto">Truth, guarded quietly.</p>
 
-					<p className="support">
-						<span>
-							The Machine turns live business signals into early warning—so you
-							can <strong>contain risk before it becomes disruption.</strong>
+				<ol aria-label="Protect. Detect. React." className="sequence">
+					<li className="sequence__item" data-phase="protect">
+						<span aria-hidden="true" className="sequence__index">
+							01
 						</span>
-					</p>
-				</section>
+						<span className="sequence__verb">
+							Protect<span className="sequence__period">.</span>
+						</span>
+					</li>
+					<li className="sequence__item" data-phase="detect">
+						<span aria-hidden="true" className="sequence__index">
+							02
+						</span>
+						<span className="sequence__verb">
+							Detect<span className="sequence__period">.</span>
+						</span>
+					</li>
+					<li className="sequence__item" data-phase="react">
+						<span aria-hidden="true" className="sequence__index">
+							03
+						</span>
+						<span className="sequence__verb">
+							React<span className="sequence__period">.</span>
+						</span>
+					</li>
+				</ol>
 
-				<nav aria-label="Enterprise coverage" className="scope">
-					<span>Finance</span>
-					<span>Operations</span>
-					<span>Controls</span>
-					<span>Compliance</span>
-				</nav>
+				<p className="support">
+					<span>
+						Live signals become early warning—so you can{" "}
+						<strong>contain risk before it becomes disruption.</strong>
+					</span>
+				</p>
+			</section>
+
+			<p className="shield-line" translate="no">
+				<span aria-hidden="true" className="shield-line__mark" />
+				Your truth. Our shield.
+			</p>
+
+			<nav aria-label="Enterprise coverage" className="scope">
+				<span>Finance</span>
+				<span>Operations</span>
+				<span>Controls</span>
+				<span>Compliance</span>
+			</nav>
 			</main>
 		</div>
 	);

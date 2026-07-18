@@ -5,6 +5,9 @@
     },
     "context7-plugin": {
       "enabled": true
+    },
+    "figma": {
+      "enabled": true
     }
   }
 }

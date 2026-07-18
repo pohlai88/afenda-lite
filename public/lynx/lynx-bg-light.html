@@ -1,0 +1,551 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <meta content="#eef2f7" name="theme-color">
+    <title>Afenda — Light BG</title>
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    >
+    <style>
+    :root {
+      --bg: #eef2f7;
+      --bg-deep: #e4ebf3;
+      --ink: #0f172a;
+      --ink-soft: #334155;
+      --muted: #475569;
+      --ice: #7eb8d4;
+      --ice-soft: rgba(126, 184, 212, 0.35);
+      --ice-glow: rgba(173, 216, 230, 0.45);
+      --seam: #c5d4e0;
+      --ease: cubic-bezier(0.16, 1, 0.3, 1);
+      --nav-h: 3.25rem;
+    }
+
+    html {
+      color-scheme: light;
+    }
+
+    * {
+      box-sizing: border-box;
+      padding: 0;
+      margin: 0;
+    }
+
+    body,
+    html {
+      min-height: 100%;
+      min-height: 100dvh;
+      background-color: var(--bg);
+    }
+
+    body {
+      overflow: hidden;
+      font-family: Inter, system-ui, sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(
+          ellipse 70% 55% at 78% 42%,
+          rgba(255, 255, 255, 0.85) 0%,
+          transparent 62%
+        ),
+        radial-gradient(
+          ellipse 50% 40% at 92% 88%,
+          var(--ice-soft) 0%,
+          transparent 70%
+        ),
+        linear-gradient(145deg, var(--bg) 0%, var(--bg-deep) 100%);
+    }
+
+    .skip-link {
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 100;
+      padding: 0.75rem 1.25rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--bg);
+      background: var(--ink);
+      border-radius: 0 0 0.5rem;
+      transform: translateY(-120%);
+      transition: transform 180ms var(--ease);
+    }
+
+    .skip-link:focus {
+      outline: none;
+    }
+
+    .skip-link:focus-visible {
+      transform: translateY(0);
+    }
+
+    .compare-nav {
+      position: fixed;
+      top: max(12px, env(safe-area-inset-top));
+      left: 50%;
+      z-index: 50;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      justify-content: center;
+      max-width: calc(100vw - 24px);
+      min-height: var(--nav-h);
+      padding: 6px;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 0.6875rem;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      background: rgba(238, 242, 247, 0.78);
+      border: 1px solid color-mix(in srgb, var(--seam) 80%, var(--ink) 20%);
+      border-radius: 999px;
+      box-shadow: 0 8px 28px rgba(15, 23, 42, 0.06);
+      backdrop-filter: blur(16px);
+      transform: translateX(-50%);
+    }
+
+    .compare-nav a {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      padding: 0 12px;
+      color: var(--muted);
+      text-decoration: none;
+      cursor: pointer;
+      border-radius: 999px;
+      transition:
+        color 200ms var(--ease),
+        background 200ms var(--ease);
+    }
+
+    .compare-nav a:hover {
+      color: var(--ink);
+      background: rgba(15, 23, 42, 0.05);
+    }
+
+    .compare-nav a:focus {
+      outline: none;
+    }
+
+    .compare-nav a:focus-visible {
+      outline: 2px solid var(--ice);
+      outline-offset: 2px;
+      color: var(--ink);
+    }
+
+    .compare-nav a.is-active {
+      color: #f8fafc;
+      background: var(--ink);
+    }
+
+    .compare-nav a.is-active:hover {
+      color: #f8fafc;
+      background: #1e293b;
+    }
+
+    .light-theme-wrapper {
+      position: relative;
+      display: flex;
+      width: 100vw;
+      height: 100vh;
+      height: 100dvh;
+      overflow: hidden;
+    }
+
+    .lynx-container {
+      position: relative;
+      z-index: 1;
+      flex: 0 0 58%;
+      width: 58%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #05070c;
+      -webkit-mask-image: linear-gradient(
+        to right,
+        #000 0%,
+        #000 62%,
+        rgba(0, 0, 0, 0.85) 78%,
+        rgba(0, 0, 0, 0.35) 90%,
+        transparent 100%
+      );
+      mask-image: linear-gradient(
+        to right,
+        #000 0%,
+        #000 62%,
+        rgba(0, 0, 0, 0.85) 78%,
+        rgba(0, 0, 0, 0.35) 90%,
+        transparent 100%
+      );
+    }
+
+    .lynx-cinematic-img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center left;
+      user-select: none;
+      animation: cinematicZoom 32s var(--ease) infinite alternate;
+      filter:
+        contrast(1.28)
+        brightness(1.12)
+        saturate(1.45)
+        drop-shadow(0 0 28px var(--ice-glow));
+    }
+
+    .seam-bloom {
+      position: absolute;
+      top: 0;
+      right: -8%;
+      z-index: 2;
+      width: 42%;
+      height: 100%;
+      pointer-events: none;
+      background: linear-gradient(
+        to right,
+        transparent 0%,
+        color-mix(in srgb, var(--ice) 18%, transparent) 45%,
+        color-mix(in srgb, var(--bg) 55%, transparent) 78%,
+        var(--bg) 100%
+      );
+      mix-blend-mode: screen;
+      opacity: 0.85;
+    }
+
+    .mist {
+      position: absolute;
+      inset: 0;
+      z-index: 3;
+      pointer-events: none;
+      background:
+        radial-gradient(
+          ellipse 36% 48% at 72% 48%,
+          var(--ice-glow) 0%,
+          transparent 68%
+        ),
+        radial-gradient(
+          ellipse 28% 36% at 58% 62%,
+          rgba(173, 216, 230, 0.2) 0%,
+          transparent 70%
+        );
+      animation: mistPulse 14s ease-in-out infinite alternate;
+    }
+
+    @keyframes cinematicZoom {
+      from {
+        transform: scale(1);
+      }
+      to {
+        transform: scale(1.06);
+      }
+    }
+
+    @keyframes mistPulse {
+      from {
+        opacity: 0.55;
+      }
+      to {
+        opacity: 0.9;
+      }
+    }
+
+    @keyframes copyIn {
+      from {
+        opacity: 0;
+        transform: translateY(18px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .content-rail {
+      position: relative;
+      z-index: 4;
+      display: flex;
+      flex: 1 1 42%;
+      flex-direction: column;
+      gap: 1.25rem;
+      justify-content: center;
+      width: 42%;
+      height: 100%;
+      padding:
+        calc(var(--nav-h) + 2rem)
+        clamp(1.75rem, 4.5vw, 4rem)
+        3rem
+        clamp(1rem, 2.5vw, 2rem);
+    }
+
+    .brand {
+      font-family: "Cormorant Garamond", Georgia, serif;
+      font-size: clamp(3.5rem, 7.5vw, 5.75rem);
+      font-weight: 500;
+      line-height: 0.92;
+      color: var(--ink);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      text-wrap: balance;
+      opacity: 0;
+      animation: copyIn 900ms var(--ease) 120ms forwards;
+    }
+
+    .headline {
+      max-width: 14ch;
+      font-family: "Cormorant Garamond", Georgia, serif;
+      font-size: clamp(1.65rem, 2.8vw, 2.35rem);
+      font-style: italic;
+      font-weight: 400;
+      line-height: 1.25;
+      color: var(--ink-soft);
+      text-wrap: pretty;
+      opacity: 0;
+      animation: copyIn 900ms var(--ease) 280ms forwards;
+    }
+
+    .support {
+      max-width: 28ch;
+      margin: 0.25rem 0 0;
+      font-size: 1rem;
+      font-weight: 400;
+      line-height: 1.6;
+      color: var(--muted);
+      text-wrap: pretty;
+      opacity: 0;
+      animation: copyIn 900ms var(--ease) 420ms forwards;
+    }
+
+    .cta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      align-items: center;
+      margin-top: 0.75rem;
+      opacity: 0;
+      animation: copyIn 900ms var(--ease) 560ms forwards;
+    }
+
+    .cta {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 48px;
+      padding: 0 1.35rem;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: #f8fafc;
+      text-decoration: none;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      cursor: pointer;
+      background: var(--ink);
+      border: 1px solid var(--ink);
+      border-radius: 999px;
+      transition:
+        background 200ms var(--ease),
+        color 200ms var(--ease),
+        transform 200ms var(--ease),
+        box-shadow 200ms var(--ease);
+    }
+
+    .cta:hover {
+      background: #1e293b;
+      box-shadow: 0 10px 28px rgba(15, 23, 42, 0.14);
+      transform: translateY(-1px);
+    }
+
+    .cta:focus {
+      outline: none;
+    }
+
+    .cta:focus-visible {
+      outline: 2px solid var(--ice);
+      outline-offset: 3px;
+    }
+
+    .cta:active {
+      transform: scale(0.98);
+    }
+
+    .cta-ghost {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 48px;
+      padding: 0 1.1rem;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--ink-soft);
+      text-decoration: none;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      cursor: pointer;
+      background: transparent;
+      border: 1px solid color-mix(in srgb, var(--seam) 70%, var(--ink) 30%);
+      border-radius: 999px;
+      transition:
+        border-color 200ms var(--ease),
+        background 200ms var(--ease),
+        color 200ms var(--ease);
+    }
+
+    .cta-ghost:hover {
+      color: var(--ink);
+      background: rgba(255, 255, 255, 0.55);
+      border-color: var(--ink-soft);
+    }
+
+    .cta-ghost:focus {
+      outline: none;
+    }
+
+    .cta-ghost:focus-visible {
+      outline: 2px solid var(--ice);
+      outline-offset: 3px;
+    }
+
+    @media (max-width: 900px) {
+      body {
+        overflow: auto;
+      }
+
+      .light-theme-wrapper {
+        flex-direction: column;
+        height: auto;
+        min-height: 100dvh;
+      }
+
+      .lynx-container {
+        flex: none;
+        width: 100%;
+        height: min(58vh, 480px);
+        -webkit-mask-image: linear-gradient(
+          to bottom,
+          #000 0%,
+          #000 58%,
+          rgba(0, 0, 0, 0.75) 78%,
+          rgba(0, 0, 0, 0.25) 90%,
+          transparent 100%
+        );
+        mask-image: linear-gradient(
+          to bottom,
+          #000 0%,
+          #000 58%,
+          rgba(0, 0, 0, 0.75) 78%,
+          rgba(0, 0, 0, 0.25) 90%,
+          transparent 100%
+        );
+      }
+
+      .lynx-cinematic-img {
+        object-position: center 38%;
+      }
+
+      .seam-bloom {
+        top: auto;
+        right: 0;
+        bottom: -12%;
+        width: 100%;
+        height: 48%;
+        background: linear-gradient(
+          to bottom,
+          transparent 0%,
+          color-mix(in srgb, var(--ice) 16%, transparent) 40%,
+          var(--bg) 100%
+        );
+      }
+
+      .mist {
+        background: radial-gradient(
+          ellipse 70% 40% at 50% 78%,
+          var(--ice-glow) 0%,
+          transparent 72%
+        );
+      }
+
+      .content-rail {
+        flex: none;
+        width: 100%;
+        height: auto;
+        min-height: 42vh;
+        padding: 0.5rem 1.5rem calc(2.5rem + env(safe-area-inset-bottom));
+      }
+
+      .brand {
+        font-size: clamp(2.75rem, 14vw, 4rem);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .lynx-cinematic-img,
+      .mist,
+      .brand,
+      .headline,
+      .support,
+      .cta-row {
+        animation: none !important;
+      }
+
+      .brand,
+      .headline,
+      .support,
+      .cta-row {
+        opacity: 1;
+        transform: none;
+      }
+
+      .cta:hover,
+      .cta:active {
+        transform: none;
+      }
+    }
+    </style>
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+
+    <nav aria-label="Presentation comparison" class="compare-nav">
+      <a href="/lynx/lynx-overlay.html">Polaris Grid</a>
+      <a href="/lynx/lynx-cinematic.html">Cinematic</a>
+      <a href="/lynx/lynx-hybrid.html">Hybrid</a>
+      <a href="/lynx/lynx-the-machine.html">Machine</a>
+      <a aria-current="page" class="is-active" href="/lynx/lynx-bg-light.html"
+        >Light BG</a
+      >
+    </nav>
+
+    <main class="light-theme-wrapper" id="main-content">
+      <div class="lynx-container">
+        <img
+          alt="Ethereal lynx emerging from darkness with icy blue energy wisps"
+          class="lynx-cinematic-img"
+          height="1080"
+          src="lynx-bg.png"
+          width="1920"
+        >
+        <div aria-hidden="true" class="seam-bloom"></div>
+        <div aria-hidden="true" class="mist"></div>
+      </div>
+
+      <div class="content-rail">
+        <p class="brand" translate="no">Afenda</p>
+        <h1 class="headline">Truth, guarded quietly.</h1>
+        <p class="support">
+          Black plate dissolves into light — the lynx stays luminous, never a
+          hard collage edge.
+        </p>
+        <div class="cta-row">
+          <a class="cta" href="/lynx/lynx-cinematic.html">View cinematic</a>
+          <a class="cta-ghost" href="/lynx/lynx-the-machine.html">The Machine</a>
+        </div>
+      </div>
+    </main>
+  </body>
+</html>
