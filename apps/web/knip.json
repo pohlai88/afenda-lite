@@ -2,19 +2,39 @@
 	"$schema": "https://unpkg.com/knip@6/schema.json",
 	"entry": ["app/**/*.{ts,tsx}", "session-gate-policy.ts"],
 	"project": ["**/*.{ts,tsx}"],
+	"ignore": ["shadcn-studio/**"],
 	"ignoreIssues": {
 		"__tests__/compose-scan.ts": ["exports"],
+		"features/auth/auth-surface-chrome.tsx": ["exports"],
+		"features/auth/auth-surface-root.tsx": ["exports"],
 		"features/auth/client-paths.ts": ["exports"],
+		"features/auth/pre-login-route-contract.ts": ["exports", "types"],
 		"features/fft/fft-events-panel.tsx": ["types"],
+		"features/landing/machine-sensor-engine.ts": ["exports"],
+		"features/landing/the-machine-fonts.ts": ["exports"],
+		"features/org-admin/assign-org-role-form.tsx": ["types"],
 		"features/org-admin/org-admin-panels.tsx": ["types"],
+		"features/portal-chrome/nav-config.ts": ["types"],
+		"modules/declarations/domain/assignment-status.ts": ["types"],
 		"modules/declarations/schemas/client.ts": ["exports", "types"],
 		"modules/declarations/schemas/common.ts": ["exports"],
+		"modules/identity/domain/assign-org-role-audited.ts": ["types"],
+		"modules/identity/domain/assign-org-role.ts": ["types"],
+		"modules/identity/domain/revoke-org-role-audited.ts": ["types"],
+		"modules/identity/domain/revoke-org-role.ts": ["types"],
+		"modules/platform/observability/product-log.ts": ["types"],
 		"modules/platform/schemas/api-error.ts": ["exports", "duplicates"],
 		"modules/platform/schemas/common.ts": ["exports", "types"]
 	},
 	"vitest": {
 		"config": ["../../testing/vitest.config.ts"]
 	},
-	"ignoreDependencies": ["vitest", "jsdom", "tw-animate-css"],
+	"ignoreDependencies": [
+		"vitest",
+		"jsdom",
+		"tw-animate-css",
+		"@testing-library/react",
+		"@testing-library/user-event"
+	],
 	"ignoreBinaries": ["biome", "vitest"]
 }

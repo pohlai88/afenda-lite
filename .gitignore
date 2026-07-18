@@ -45,6 +45,7 @@ yarn-error.log*
 .cursor/hooks/**/*.log
 .cursor/hooks/.mvp-hook-debug.log
 .cursor/hooks/.*-hook-debug.log
+.cursor/debug*.log
 
 # env — ARCH-027 / S4.1: `.env.local` is the only Next runtime file
 .env*

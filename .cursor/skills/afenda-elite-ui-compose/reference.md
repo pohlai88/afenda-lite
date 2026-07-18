@@ -266,7 +266,6 @@ Do not add Badge/Sheet/Table semantic gates without an Approved skill expansion.
 - `apps/web/app/(public)/auth/**`
 - `apps/web/app/(public)/join/layout.tsx` (may import auth-surface for join island)
 - `apps/web/features/auth/auth-surface-chrome.tsx` and auth shells that only wrap Neon Auth UI
-- `apps/web/features/auth/local-auth-credential-fill.tsx` (local login autofill — island only)
 - `apps/web/app/(public)/auth/auth-surface.css`
 
 Do not copy auth-surface patterns into operator or client product layouts. Allowlist prefixes live in `apps/web/__tests__/compose-scan.ts` — review when adding.

@@ -28,7 +28,6 @@ export const AUTH_ISLAND_PREFIXES = [
 	"features/auth/auth-surface-root.tsx",
 	"features/auth/auth-path-shell.tsx",
 	"features/auth/join-shell.tsx",
-	"features/auth/local-auth-credential-fill.tsx",
 ];
 
 export function webAppRoot(): string {
