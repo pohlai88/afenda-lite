@@ -26,14 +26,14 @@ describe("PL-S3 Auth Island surface", () => {
 		expect(MAIN_CONTENT_HASH).toBe("#main-content");
 	});
 
-	it("pins declared public auth segments (login not sign-in)", () => {
+	it("pins declared public auth segments (login not sign-in; no public sign-up)", () => {
 		expect([...PUBLIC_AUTH_PATHS]).toEqual([
 			"login",
 			"forgot-password",
 			"reset-password",
 			"sign-out",
-			"sign-up",
 		]);
+		expect(PUBLIC_AUTH_PATHS).not.toContain("sign-up");
 	});
 
 	it("keeps the dynamic auth page thin and fail-closed", () => {
@@ -49,10 +49,10 @@ describe("PL-S3 Auth Island surface", () => {
 		expect(page).not.toMatch(/credential.*POST|fetch\(.*login/i);
 	});
 
-	it("renders Path A Afenda forms + Neon AuthView for forgot/reset", () => {
+	it("renders Path A Afenda sign-in + Neon AuthView for forgot/reset (no public sign-up)", () => {
 		const shell = source("features/auth/auth-path-shell.tsx");
 		expect(shell).toContain("AfendaSignInForm");
-		expect(shell).toContain("AfendaSignUpForm");
+		expect(shell).not.toContain("AfendaSignUpForm");
 		expect(shell).toContain("AuthView");
 		expect(shell).not.toContain("AuthSurfaceChrome");
 		expect(shell).toContain("PublicAuthPath");
@@ -65,11 +65,15 @@ describe("PL-S3 Auth Island surface", () => {
 		const page = source("app/(public)/auth/[path]/page.tsx");
 		expect(page).not.toContain("resolveLocalAuthCredentials");
 		expect(page).not.toContain("localCredentials");
+		expect(page).toContain("/auth/sign-up");
 
 		const signIn = source("features/auth/afenda-sign-in-form.tsx");
 		expect(signIn).toContain("signInAction");
 		expect(signIn).toContain('from "@afenda/ui-system"');
 		expect(signIn).toContain("<form");
+		expect(signIn).not.toContain("Organization Invitation Signin");
+		expect(signIn).not.toContain("AUTH_SIGN_UP_PATH");
+		expect(signIn).not.toContain("/auth/sign-up");
 	});
 
 	it("ships loading + error under the auth island", () => {
@@ -106,6 +110,15 @@ describe("PL-S3 Auth Island surface", () => {
 		expect(root).toMatch(/className="auth-surface dark /);
 		expect(messageShell).toContain("asLandmark");
 		expect(messageShell).toContain('asLandmark ? "main" : "div"');
+		expect(messageShell).toContain("bg-canvas");
+		expect(messageShell).toContain("min-h-dvh");
+		expect(messageShell).toContain("max-w-md");
+		expect(messageShell).toContain("gap-(--field-gap)");
+		expect(messageShell).toContain('flex w-full flex-col gap-(--field-gap)');
+		// Island embed must not hard-code blank plane on the shared class string.
+		expect(messageShell).toMatch(
+			/asLandmark\s*\?\s*"[^"]*bg-canvas[^"]*"\s*:\s*"[^"]*gap-\(--field-gap\)"/,
+		);
 	});
 
 	it("ships split-stage lynx chrome without Studio IdP forms", () => {
@@ -227,11 +240,12 @@ describe("PL-S3 Auth Island surface", () => {
 	it("moves focus after Path A auth action errors", () => {
 		const helper = source("features/auth/focus-auth-action-error.ts");
 		const signIn = source("features/auth/afenda-sign-in-form.tsx");
-		const signUp = source("features/auth/afenda-sign-up-form.tsx");
 		expect(helper).toContain("focusAuthActionError");
 		expect(helper).toContain("aria-invalid");
 		expect(signIn).toContain("focusAuthActionError");
-		expect(signUp).toContain("focusAuthActionError");
+		expect(
+			existsSync(path.join(webRoot, "features/auth/afenda-sign-up-form.tsx")),
+		).toBe(false);
 	});
 
 	it("keeps skip link targeting #main-content from root layout", () => {

@@ -3,13 +3,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 vi.mock("server-only", () => ({}));
 
 const signInEmail = vi.fn();
-const signUpEmail = vi.fn();
 const signOut = vi.fn();
 
 vi.mock("../src/neon-auth", () => ({
 	getNeonAuth: () => ({
 		signIn: { email: signInEmail },
-		signUp: { email: signUpEmail },
 		signOut,
 	}),
 }));
@@ -17,7 +15,6 @@ vi.mock("../src/neon-auth", () => ({
 describe("credential auth (Path A SDK)", () => {
 	beforeEach(() => {
 		signInEmail.mockReset();
-		signUpEmail.mockReset();
 		signOut.mockReset();
 	});
 
@@ -45,23 +42,6 @@ describe("credential auth (Path A SDK)", () => {
 			ok: false,
 			message: "Invalid credentials",
 			code: "INVALID",
-		});
-	});
-
-	it("signUpWithEmail passes name email password", async () => {
-		signUpEmail.mockResolvedValue({ data: {}, error: null });
-		const { signUpWithEmail } = await import("../src/credentials");
-		await expect(
-			signUpWithEmail({
-				email: "a@b.c",
-				password: "secret",
-				name: "Ada",
-			}),
-		).resolves.toEqual({ ok: true });
-		expect(signUpEmail).toHaveBeenCalledWith({
-			email: "a@b.c",
-			password: "secret",
-			name: "Ada",
 		});
 	});
 

@@ -51,6 +51,8 @@ describe("public landing (PL-S2)", () => {
 		const stage = source("features/landing/the-machine-landing-stage.tsx");
 		expect(page).toContain("TheMachineLanding");
 		expect(page).toContain('case "anonymous"');
+		expect(page).toContain('case "unresolved_organization"');
+		expect(page).toContain("UnresolvedOrganizationShell");
 		expect(page).not.toContain("PublicMessageShell");
 		expect(landing).toContain("TheMachineLandingStage");
 		expect(landing).toContain("machineFontVariables");
@@ -89,7 +91,16 @@ describe("public landing (PL-S2)", () => {
 		const page = source("app/(public)/page.tsx");
 		expect(page).toContain("switch (bootstrap.state)");
 		expect(page).toContain('case "anonymous"');
+		expect(page).toContain('case "unresolved_organization"');
 		expect(page).toContain("const _exhaustive: never = bootstrap");
+	});
+
+	it("keeps signed-in unresolved org off The Machine marketing landing", () => {
+		const shell = source("features/auth/unresolved-organization-shell.tsx");
+		expect(shell).toContain("Organization required");
+		expect(shell).toContain("AUTH_SIGN_OUT_PATH");
+		expect(shell).toContain("JOIN_PATH");
+		expect(shell).not.toContain("TheMachineLanding");
 	});
 
 	it("wires Machine hero art under apps/web/public for Next static serve", () => {

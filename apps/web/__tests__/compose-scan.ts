@@ -25,6 +25,7 @@ export const AUTH_ISLAND_PREFIXES = [
 	"app/(public)/join/loading.tsx",
 	"app/(public)/join/error.tsx",
 	"features/auth/auth-surface-chrome.tsx",
+	"features/auth/auth-surface-root.tsx",
 	"features/auth/auth-path-shell.tsx",
 	"features/auth/join-shell.tsx",
 	"features/auth/local-auth-credential-fill.tsx",

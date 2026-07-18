@@ -125,6 +125,42 @@ describe("createAuthApiHandlers (PL-S7 BFF)", () => {
 		expect(response.status).toBe(204);
 	});
 
+	it("allows POST from loopback Origin when not Vercel production", async () => {
+		handlerPost.mockResolvedValue(new Response(null, { status: 204 }));
+		vi.stubEnv("VERCEL_ENV", "");
+
+		const { createAuthApiHandlers } = await import("../src/api-handler");
+		const { POST } = createAuthApiHandlers();
+		const response = await POST(
+			authRequest("POST", { Origin: "http://localhost:3000" }),
+			{},
+		);
+
+		expect(handlerPost).toHaveBeenCalledTimes(1);
+		expect(response.status).toBe(204);
+		vi.unstubAllEnvs();
+	});
+
+	it("rejects POST from loopback Origin on Vercel production", async () => {
+		vi.stubEnv("VERCEL_ENV", "production");
+
+		const { AUTH_BFF_CORRELATION_HEADER, createAuthApiHandlers } = await import(
+			"../src/api-handler"
+		);
+		const { POST } = createAuthApiHandlers();
+		const response = await POST(
+			authRequest("POST", {
+				Origin: "http://localhost:3000",
+				[AUTH_BFF_CORRELATION_HEADER]: CORRELATION_ID,
+			}),
+			{},
+		);
+
+		expect(handlerPost).not.toHaveBeenCalled();
+		expect(response.status).toBe(403);
+		vi.unstubAllEnvs();
+	});
+
 	it("allows POST without Origin when Host matches APP_URL", async () => {
 		handlerPost.mockResolvedValue(new Response(null, { status: 204 }));
 

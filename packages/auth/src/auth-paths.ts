@@ -55,8 +55,6 @@ export const AUTH_RESET_PASSWORD_PATH = authUiPath(
 
 export const AUTH_SIGN_OUT_PATH = authUiPath(AFENDA_AUTH_VIEW_PATHS.SIGN_OUT);
 
-export const AUTH_SIGN_UP_PATH = authUiPath(AFENDA_AUTH_VIEW_PATHS.SIGN_UP);
-
 /**
  * Neon mail landing — redirect-only (`next.config` → `/join`).
  * Not a public Auth UI page; not in `PUBLIC_AUTH_PATHS`.
@@ -94,15 +92,16 @@ export function isRejectedAuthPathAlias(
 }
 
 /**
- * Public `/auth/[path]` Neon Auth UI surfaces (GUIDE-018 I1.2 + invitee sign-up).
- * Neon mail accept-invitation is redirect-only → `/join` (I1.3).
+ * Public `/auth/[path]` Auth UI surfaces (GUIDE-018 I1.2).
+ * Invitee credential creation is invitation-only via `/join` (Neon AcceptInvitationCard).
+ * `sign-up` is not a public Auth UI page (404). Neon mail accept-invitation is
+ * redirect-only → `/join` (I1.3).
  */
 export const PUBLIC_AUTH_PATHS = [
 	AFENDA_AUTH_VIEW_PATHS.SIGN_IN,
 	AFENDA_AUTH_VIEW_PATHS.FORGOT_PASSWORD,
 	AFENDA_AUTH_VIEW_PATHS.RESET_PASSWORD,
 	AFENDA_AUTH_VIEW_PATHS.SIGN_OUT,
-	AFENDA_AUTH_VIEW_PATHS.SIGN_UP,
 ] as const;
 
 export type PublicAuthPath = (typeof PUBLIC_AUTH_PATHS)[number];
@@ -113,7 +112,6 @@ export const PUBLIC_AUTH_FULL_PATHS = [
 	AUTH_FORGOT_PASSWORD_PATH,
 	AUTH_RESET_PASSWORD_PATH,
 	AUTH_SIGN_OUT_PATH,
-	AUTH_SIGN_UP_PATH,
 ] as const;
 
 const PUBLIC_AUTH_PATH_SET = new Set<string>(PUBLIC_AUTH_PATHS);

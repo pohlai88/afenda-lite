@@ -16,7 +16,6 @@ export {
 	AUTH_LOGIN_PATH,
 	AUTH_RESET_PASSWORD_PATH,
 	AUTH_SIGN_OUT_PATH,
-	AUTH_SIGN_UP_PATH,
 	isPreLoginPublicPath,
 	isPublicAuthPath,
 	isRejectedAuthPathAlias,

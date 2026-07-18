@@ -35,6 +35,8 @@ describe("post-login routing wiring (N7)", () => {
 		expect(source).toContain("redirect(");
 		expect(source).toContain("POST_LOGIN_CALLBACK_PARAM");
 		expect(source).toContain("ensure_active_org");
+		expect(source).toContain("unresolved_organization");
+		expect(source).toContain("UnresolvedOrganizationShell");
 	});
 
 	it("sanitizes AuthUiProvider redirectTo and navigate destinations", () => {

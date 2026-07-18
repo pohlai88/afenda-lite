@@ -2,7 +2,6 @@
 
 import {
 	AUTH_FORGOT_PASSWORD_PATH,
-	AUTH_SIGN_UP_PATH,
 	POST_LOGIN_CALLBACK_PARAM,
 } from "@afenda/auth/client";
 import {
@@ -111,15 +110,6 @@ export function AfendaSignInForm() {
 				>
 					Forgot password?
 				</Link>
-				<p className="text-muted-foreground">
-					Need an account?{" "}
-					<Link
-						href={AUTH_SIGN_UP_PATH}
-						className="text-foreground hover:underline"
-					>
-						Sign up
-					</Link>
-				</p>
 			</div>
 		</form>
 	);

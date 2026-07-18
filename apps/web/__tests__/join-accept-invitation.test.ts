@@ -61,12 +61,27 @@ describe("join accept-invitation (PL-S4)", () => {
 		expect(page).not.toContain("platform_membership");
 		expect(page).not.toContain("@afenda/db");
 		expect(page).not.toMatch(/console\.(log|info|debug|warn|error)/);
+
+		// Island embed: no nested blank-chrome plane inside AuthSurfaceChrome.
+		const messageShell = source("features/auth/public-message-shell.tsx");
+		expect(messageShell).toContain("gap-(--field-gap)");
+		expect(messageShell).toMatch(
+			/asLandmark\s*\?\s*"[^"]*bg-canvas[^"]*"\s*:\s*"[^"]*gap-\(--field-gap\)"/,
+		);
+		expect(messageShell).toMatch(
+			/asLandmark\s*\?\s*"[^"]*max-w-md[^"]*"\s*:\s*"text-sm text-foreground-secondary"/,
+		);
 	});
 
 	it("keeps JoinShell on Neon AcceptInvitationCard inside auth island chrome", () => {
 		const shell = source("features/auth/join-shell.tsx");
 		const island = source("features/auth/auth-island-layout.tsx");
 		expect(shell).toContain("AcceptInvitationCard");
+		expect(shell).toContain("SignedIn");
+		expect(shell).toContain("SignedOut");
+		expect(shell).toContain("SignUpForm");
+		expect(shell).toContain("SignInForm");
+		expect(shell).toContain("InviteeJoinCredentials");
 		expect(shell).not.toContain("AuthSurfaceChrome");
 		expect(island).toContain("AuthSurfaceChrome");
 		expect(shell).toContain('from "@neondatabase/auth-ui"');
@@ -75,6 +90,10 @@ describe("join accept-invitation (PL-S4)", () => {
 		expect(shell).not.toContain("recordRbacAudit");
 		expect(shell).not.toContain("platform_membership");
 		expect(shell).not.toMatch(/console\.(log|info|debug|warn|error)/);
+		// Invitee credentials stay on /join — never bounce via AcceptInvitationCard alone.
+		expect(shell).not.toContain("useAuthenticate");
+		expect(shell).not.toContain("AfendaSignUpForm");
+		expect(shell).not.toContain("/auth/sign-up");
 	});
 
 	it("declares accept-invitation → /join as permanent redirect preserving invitationId", () => {

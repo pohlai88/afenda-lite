@@ -42,23 +42,6 @@ export async function signInWithEmail(input: {
 	return { ok: true };
 }
 
-/** Email/password sign-up via Managed Better Auth server SDK. */
-export async function signUpWithEmail(input: {
-	email: string;
-	password: string;
-	name: string;
-}): Promise<CredentialAuthResult> {
-	const { error } = await getNeonAuth().signUp.email({
-		email: input.email,
-		password: input.password,
-		name: input.name,
-	});
-	if (error) {
-		return toFailure(error);
-	}
-	return { ok: true };
-}
-
 /** Clears the Neon Auth session cookies for the current request. */
 export async function signOutSession(): Promise<CredentialAuthResult> {
 	const { error } = await getNeonAuth().signOut();
