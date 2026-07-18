@@ -92,8 +92,7 @@ export function isTrustedAuthBffPost(request: Request): boolean {
 				return true;
 			}
 			return (
-				!isVercelProductionRuntime() &&
-				isLoopbackHostname(originUrl.hostname)
+				!isVercelProductionRuntime() && isLoopbackHostname(originUrl.hostname)
 			);
 		} catch {
 			return false;

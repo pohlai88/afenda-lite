@@ -4,10 +4,10 @@ import { JOIN_PATH } from "@afenda/auth/client";
 import {
 	AcceptInvitationCard,
 	AuthLoading,
-	SignInForm,
-	SignUpForm,
 	SignedIn,
 	SignedOut,
+	SignInForm,
+	SignUpForm,
 } from "@neondatabase/auth-ui";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";

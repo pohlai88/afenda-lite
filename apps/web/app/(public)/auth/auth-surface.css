@@ -59,11 +59,11 @@
 	--auth-accent: color-mix(
 		in oklab,
 		color-mix(
-			in oklab,
-			var(--info) calc(var(--auth-panel-ice) * 100%),
-			var(--warning) calc(var(--auth-panel-fire) * 100%)
-		)
-		70%,
+				in oklab,
+				var(--info) calc(var(--auth-panel-ice) * 100%),
+				var(--warning) calc(var(--auth-panel-fire) * 100%)
+			)
+			70%,
 		var(--border) 30%
 	);
 	/* login-command ~25s elemental cycle */
@@ -94,8 +94,8 @@
 .auth-surface__art-plane {
 	z-index: 0;
 	transform-origin: center center;
-	animation: auth-surface-art-drift var(--auth-ken-zoom-duration) linear infinite
-		alternate;
+	animation: auth-surface-art-drift var(--auth-ken-zoom-duration) linear
+		infinite alternate;
 	will-change: transform;
 	backface-visibility: hidden;
 }
@@ -204,16 +204,16 @@
 		radial-gradient(
 			ellipse 55% 50% at 38% 44%,
 			color-mix(
-				in oklab,
-				color-mix(
-						in oklab,
-						var(--info) calc((1 - var(--auth-lynx-fire)) * 100%),
-						var(--warning) calc(var(--auth-lynx-fire) * 100%)
-					)
-					18%,
-				transparent
-			)
-			0%,
+					in oklab,
+					color-mix(
+							in oklab,
+							var(--info) calc((1 - var(--auth-lynx-fire)) * 100%),
+							var(--warning) calc(var(--auth-lynx-fire) * 100%)
+						)
+						18%,
+					transparent
+				)
+				0%,
 			transparent 62%
 		),
 		radial-gradient(
@@ -491,7 +491,8 @@
 .auth-surface__panel {
 	position: relative;
 	overflow: hidden;
-	border: 1px solid color-mix(in oklab, var(--border) 45%, var(--auth-accent) 55%);
+	border: 1px solid
+		color-mix(in oklab, var(--border) 45%, var(--auth-accent) 55%);
 	border-radius: var(--radius-xl);
 	background: color-mix(
 		in oklab,
@@ -499,25 +500,34 @@
 		transparent
 	);
 	backdrop-filter: blur(calc(18px + var(--auth-panel-ice) * 8px))
-		saturate(calc(1.1 + var(--auth-panel-ice) * 0.25 + var(--auth-panel-fire) * 0.15));
+		saturate(
+			calc(1.1 + var(--auth-panel-ice) * 0.25 + var(--auth-panel-fire) * 0.15)
+		);
 	-webkit-backdrop-filter: blur(calc(18px + var(--auth-panel-ice) * 8px))
-		saturate(calc(1.1 + var(--auth-panel-ice) * 0.25 + var(--auth-panel-fire) * 0.15));
+		saturate(
+			calc(1.1 + var(--auth-panel-ice) * 0.25 + var(--auth-panel-fire) * 0.15)
+		);
 	padding: var(--section-gap) calc(var(--field-gap) * 1.5);
 	box-shadow:
 		var(--shadow-dialog),
 		var(--shadow-overlay),
-		0 0 calc(32px + var(--auth-panel-ice) * 20px + var(--auth-panel-fire) * 28px)
-			color-mix(in oklab, var(--auth-accent) 18%, transparent),
+		0 0
+		calc(32px + var(--auth-panel-ice) * 20px + var(--auth-panel-fire) * 28px)
+		color-mix(in oklab, var(--auth-accent) 18%, transparent),
 		0 0 0 1px color-mix(in oklab, var(--auth-accent) 34%, transparent),
 		inset 0 1px 0 color-mix(in oklab, var(--foreground) 14%, transparent),
 		inset 0 0 calc(24px + var(--auth-panel-ice) * 22px)
-			color-mix(in oklab, var(--info) calc(var(--auth-panel-ice) * 14%), transparent),
+		color-mix(
+			in oklab,
+			var(--info) calc(var(--auth-panel-ice) * 14%),
+			transparent
+		),
 		inset 0 0 calc(20px + var(--auth-panel-fire) * 28px)
-			color-mix(
-				in oklab,
-				var(--warning) calc(var(--auth-panel-fire) * 16%),
-				transparent
-			);
+		color-mix(
+			in oklab,
+			var(--warning) calc(var(--auth-panel-fire) * 16%),
+			transparent
+		);
 	animation: auth-surface-panel-enter 260ms ease-out both;
 }
 
@@ -573,23 +583,43 @@
 		),
 		radial-gradient(
 			ellipse 80% 55% at 50% -10%,
-			color-mix(in oklab, var(--info) calc(var(--auth-panel-ice) * 30%), transparent)
+			color-mix(
+					in oklab,
+					var(--info) calc(var(--auth-panel-ice) * 30%),
+					transparent
+				)
 				0%,
 			transparent 55%
 		),
 		linear-gradient(
 			160deg,
-			color-mix(in oklab, var(--foreground) calc(var(--auth-panel-ice) * 12%), transparent)
+			color-mix(
+					in oklab,
+					var(--foreground) calc(var(--auth-panel-ice) * 12%),
+					transparent
+				)
 				0%,
 			transparent 42%,
-			color-mix(in oklab, var(--info) calc(var(--auth-panel-ice) * 10%), transparent)
+			color-mix(
+					in oklab,
+					var(--info) calc(var(--auth-panel-ice) * 10%),
+					transparent
+				)
 				100%
 		);
 	box-shadow:
 		inset 0 0 0 calc(1px + var(--auth-panel-ice) * 1px)
-			color-mix(in oklab, var(--info) calc(var(--auth-panel-ice) * 40%), transparent),
+		color-mix(
+			in oklab,
+			var(--info) calc(var(--auth-panel-ice) * 40%),
+			transparent
+		),
 		inset 0 0 calc(12px + var(--auth-panel-ice) * 28px)
-			color-mix(in oklab, var(--info) calc(var(--auth-panel-ice) * 10%), transparent);
+		color-mix(
+			in oklab,
+			var(--info) calc(var(--auth-panel-ice) * 10%),
+			transparent
+		);
 	/* Rim-first reveal: hollow when ice low, fills as ice rises. */
 	-webkit-mask-image: radial-gradient(
 		ellipse 72% 68% at 50% 48%,
@@ -922,16 +952,16 @@
 			radial-gradient(
 				ellipse 48% 55% at 36% 46%,
 				color-mix(
-					in oklab,
-					color-mix(
-							in oklab,
-							var(--info) calc((1 - var(--auth-lynx-fire)) * 100%),
-							var(--warning) calc(var(--auth-lynx-fire) * 100%)
-						)
-						14%,
-					transparent
-				)
-				0%,
+						in oklab,
+						color-mix(
+								in oklab,
+								var(--info) calc((1 - var(--auth-lynx-fire)) * 100%),
+								var(--warning) calc(var(--auth-lynx-fire) * 100%)
+							)
+							14%,
+						transparent
+					)
+					0%,
 				transparent 58%
 			),
 			radial-gradient(

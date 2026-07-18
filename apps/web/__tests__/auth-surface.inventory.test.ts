@@ -114,7 +114,7 @@ describe("PL-S3 Auth Island surface", () => {
 		expect(messageShell).toContain("min-h-dvh");
 		expect(messageShell).toContain("max-w-md");
 		expect(messageShell).toContain("gap-(--field-gap)");
-		expect(messageShell).toContain('flex w-full flex-col gap-(--field-gap)');
+		expect(messageShell).toContain("flex w-full flex-col gap-(--field-gap)");
 		// Island embed must not hard-code blank plane on the shared class string.
 		expect(messageShell).toMatch(
 			/asLandmark\s*\?\s*"[^"]*bg-canvas[^"]*"\s*:\s*"[^"]*gap-\(--field-gap\)"/,
