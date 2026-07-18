@@ -8,8 +8,8 @@ import { describe, it } from "node:test";
 import {
 	buildMainProtectionPutBody,
 	evaluateMainProtection,
-	readProtectionSnapshot,
 	REQUIRED_MAIN_STATUS_CHECKS,
+	readProtectionSnapshot,
 } from "./lib/protect-main.mjs";
 
 describe("protect-main", () => {

@@ -41,7 +41,10 @@ test.describe("post-login routing @journey", () => {
 		expectOperatorHome(new URL(page.url()).pathname);
 	});
 
-	test("client lands on /client/declarations", async ({ page, workerTenant }) => {
+	test("client lands on /client/declarations", async ({
+		page,
+		workerTenant,
+	}) => {
 		const client = workerTenant?.client ?? resolveClientCredentials();
 		test.skip(
 			!client,

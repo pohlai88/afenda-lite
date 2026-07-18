@@ -44,7 +44,11 @@ function runGh(args, opts = {}) {
 		throw new Error(`gh failed to start: ${result.error.message}`);
 	}
 	if (result.status !== 0) {
-		const err = (result.stderr || result.stdout || `gh exit ${result.status}`).trim();
+		const err = (
+			result.stderr ||
+			result.stdout ||
+			`gh exit ${result.status}`
+		).trim();
 		throw new Error(`gh ${args.join(" ")} failed: ${err}`);
 	}
 	return result.stdout || "";
@@ -74,11 +78,19 @@ function applyProtection() {
 }
 
 function printResult(result) {
-	console.log(`Required status checks: ${REQUIRED_MAIN_STATUS_CHECKS.join(", ")}`);
-	console.log(`Observed contexts: ${result.observedContexts.join(", ") || "(none)"}`);
-	console.log(`strict=${result.strict} allow_force_pushes=${result.allowForcePushes} allow_deletions=${result.allowDeletions}`);
+	console.log(
+		`Required status checks: ${REQUIRED_MAIN_STATUS_CHECKS.join(", ")}`,
+	);
+	console.log(
+		`Observed contexts: ${result.observedContexts.join(", ") || "(none)"}`,
+	);
+	console.log(
+		`strict=${result.strict} allow_force_pushes=${result.allowForcePushes} allow_deletions=${result.allowDeletions}`,
+	);
 	if (result.missingContexts.length > 0) {
-		console.error(`[fail] missing required checks: ${result.missingContexts.join(", ")}`);
+		console.error(
+			`[fail] missing required checks: ${result.missingContexts.join(", ")}`,
+		);
 	}
 	if (result.staleContexts.length > 0) {
 		console.error(
@@ -116,7 +128,9 @@ function main() {
 		process.exit(1);
 	}
 
-	console.log("\nResult: PASS — main protection matches Living CI quality gate.");
+	console.log(
+		"\nResult: PASS — main protection matches Living CI quality gate.",
+	);
 	process.exit(0);
 }
 

@@ -1,6 +1,6 @@
-import { FE_CWV_BUDGETS } from "@/testing/fe-cwv-budgets";
 import { collectLabCwvs } from "@/testing/e2e/cwv";
 import { expect, test } from "@/testing/e2e/playwright-base";
+import { FE_CWV_BUDGETS } from "@/testing/fe-cwv-budgets";
 
 /**
  * I5.4 PERF01 — lab CWV samples must stay under adopted Google “good” budgets (@smoke).

@@ -20,13 +20,13 @@ export async function collectLabCwvs(page: Page): Promise<LabCwvSample> {
 		) as PerformanceEntry[];
 		const lcpMs =
 			lcpEntries.length > 0
-				? lcpEntries[lcpEntries.length - 1]?.startTime ?? 0
+				? (lcpEntries[lcpEntries.length - 1]?.startTime ?? 0)
 				: 0;
 
 		let cls = 0;
-		const shifts = performance.getEntriesByType(
-			"layout-shift",
-		) as Array<PerformanceEntry & { value?: number; hadRecentInput?: boolean }>;
+		const shifts = performance.getEntriesByType("layout-shift") as Array<
+			PerformanceEntry & { value?: number; hadRecentInput?: boolean }
+		>;
 		for (const entry of shifts) {
 			if (!entry.hadRecentInput) {
 				cls += entry.value ?? 0;
