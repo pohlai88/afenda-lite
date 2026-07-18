@@ -81,6 +81,8 @@ describe("join accept-invitation (PL-S4)", () => {
 		expect(shell).toContain("SignedOut");
 		expect(shell).toContain("SignUpForm");
 		expect(shell).toContain("SignInForm");
+		expect(shell).toContain("authLocalization");
+		expect(shell).toContain("localization: authLocalization");
 		expect(shell).toContain("InviteeJoinCredentials");
 		expect(shell).not.toContain("AuthSurfaceChrome");
 		expect(island).toContain("AuthSurfaceChrome");
