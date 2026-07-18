@@ -4,11 +4,11 @@
 | ----------------- | ---------- |
 | **ID**            | DOC-002    |
 | **Category**      | Control    |
-| **Version**       | 4.156.0 |
+| **Version**       | 4.157.0 |
 | **Status**        | Living     |
 | **Control State** | Closed     |
 | **Owner**         | Platform   |
-| **Updated**       | 2026-07-17 |
+| **Updated**       | 2026-07-18 |
 
 
 ---
@@ -72,7 +72,7 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 | ID           | Category     | Title                                      | Version | Status | Owner    | Updated    |
 | ------------ | ------------ | ------------------------------------------ | ------- | ------ | -------- | ---------- |
 | DOC-001      | Control      | Documentation Control Standard             | 2.7.0   | Living | Platform | 2026-07-14 |
-| DOC-002      | Control      | Documentation Register                     | 4.156.0 | Living | Platform | 2026-07-17 |
+| DOC-002      | Control      | Documentation Register                     | 4.157.0 | Living | Platform | 2026-07-18 |
 | DOC-003      | Control      | Controlled Document Template               | 1.4.0   | Living | Platform | 2026-07-14 |
 | ARCH-029     | Architecture | Interface and API Architecture             | 1.2.7   | Living | Platform | 2026-07-14 |
 | ARCH-031     | Architecture | Technology Stack Catalogue                 | 1.4.0   | Living | Platform | 2026-07-17 |
@@ -129,7 +129,7 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 | ARCH-008     | Architecture | Next.js Adapter Map                        | 1.3.0   | Living | Backend  | 2026-07-14 |
 | ARCH-009     | Architecture | Modules Ownership Map                      | 1.1.5   | Living | Backend  | 2026-07-16 |
 | ARCH-010     | Architecture | Backend Conventions                        | 1.3.0   | Living | Backend  | 2026-07-14 |
-| ARCH-012     | Architecture | App Router Routes                          | 1.2.8   | Living | Frontend | 2026-07-16 |
+| ARCH-012     | Architecture | App Router Routes                          | 1.2.9   | Living | Frontend | 2026-07-18 |
 | ARCH-013     | Architecture | BFF and Data Flow                          | 1.1.3   | Living | Frontend | 2026-07-14 |
 | ARCH-014     | Architecture | UI Surfaces                                | 2.0.0   | Superseded | Frontend | 2026-07-14 |
 | ARCH-015     | Architecture | Shadcn Studio / AdminCN Alignment          | 2.0.4   | Living | Frontend | 2026-07-16 |
@@ -172,6 +172,7 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 
 | Version | Date       | Summary                                                                                                                                         |
 | ------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| 4.157.0 | 2026-07-18 | ARCH-012→1.2.9 §3.12 proxy matcher honesty (`/admin/*` · Pre-Login API bypass · document-nav vs API-002); DOC-002 self-row synced. |
 | 4.156.0 | 2026-07-17 | GUIDE-018→1.0.13 **I6.3 DONE** (Deploy · Vercel READY · Neon Auth domains) · GUIDE-017→1.0.2 (deploy-health blocker cleared; claim stays **NOT READY**); Phase I6 **DONE**; next Ops = **I7.1**; DOC-002 self-row synced. |
 | 4.155.0 | 2026-07-17 | GUIDE-017→1.0.1 · GUIDE-018→1.0.12 **I6.2 DONE** (claim identity **NOT READY** @ `fc16109`); Phase I6 stays WAIT (I6.3); next Ops = **I6.3**; DOC-002 self-row synced. |
 | 4.154.0 | 2026-07-17 | GUIDE-018→1.0.11 **I6.1 DONE** (FFT-MOD-009→2.1.0 · FFT-MOD-010→2.5.0 · MOD-002→4.0.3 pack gaps); Phase I6 stays WAIT; no GUIDE-017 READY; DOC-002 self-row synced. |

@@ -526,6 +526,35 @@ describe("N6/N8 session contract", () => {
 			expect(location.searchParams.get(POST_LOGIN_CALLBACK_PARAM)).toBe("/fft");
 		});
 
+		it("overwrites external redirectTo on login redirects with sanitized request path", async () => {
+			const { NextRequest, NextResponse } = await import("next/server");
+			const { AUTH_LOGIN_PATH } = await import("../src/auth-paths");
+			const { POST_LOGIN_CALLBACK_PARAM } = await import("../src/post-login");
+			middlewareMock.mockImplementation(() => {
+				return async (request: NextRequest) => {
+					const loginUrl = new URL(AUTH_LOGIN_PATH, request.url);
+					loginUrl.searchParams.set(
+						POST_LOGIN_CALLBACK_PARAM,
+						"https://evil.example",
+					);
+					return NextResponse.redirect(loginUrl);
+				};
+			});
+			const { createSessionProxy } = await import("../src/proxy");
+			const sessionProxy = createSessionProxy();
+			const response = await sessionProxy(
+				new NextRequest("https://afenda-lite.vercel.app/admin/users"),
+			);
+			const location = new URL(String(response.headers.get("location")));
+			expect(location.pathname).toBe(AUTH_LOGIN_PATH);
+			expect(location.searchParams.get(POST_LOGIN_CALLBACK_PARAM)).toBe(
+				"/admin/users",
+			);
+			expect(location.searchParams.get(POST_LOGIN_CALLBACK_PARAM)).not.toBe(
+				"https://evil.example",
+			);
+		});
+
 		it("request-level: unauthenticated protected request redirects to /auth/login", async () => {
 			const { NextRequest, NextResponse } = await import("next/server");
 			middlewareMock.mockImplementation((options: { loginUrl: string }) => {

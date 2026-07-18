@@ -26,7 +26,12 @@ export {
 	PUBLIC_LANDING_PATH,
 	REJECTED_AUTH_PATH_ALIASES,
 } from "./auth-paths";
-export { JOIN_PATH } from "./join-paths";
+export type { JoinInvitationQuery } from "./join-paths";
+export {
+	JOIN_INVITATION_ID_MAX_LENGTH,
+	JOIN_PATH,
+	parseJoinInvitationQuery,
+} from "./join-paths";
 export type { PostLoginTarget } from "./post-login";
 export {
 	CLIENT_HOME_PATH,

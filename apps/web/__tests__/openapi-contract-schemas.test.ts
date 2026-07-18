@@ -20,26 +20,43 @@ describe("OpenAPI contract schemas (I2.4)", () => {
 		});
 	});
 
-	it("readiness schema accepts ready and degraded shapes", () => {
+	it("readiness schema accepts ready, degraded, and not_ready shapes", () => {
 		const ready = readinessResponseSchema.parse({
 			status: "ready",
+			checks: {
+				storage: { provider: "postgres", status: "reachable" },
+				auth: { provider: "neon_auth", status: "configured" },
+			},
 			topology: "neon-shared-schema",
-			storage: "postgres",
 			connection: { pooler: true, ssl: "require" },
-			auth: "configured",
 			timestamp: "2026-07-15T12:00:00.000Z",
 		});
 		expect(ready.status).toBe("ready");
+		expect(ready.checks.storage.provider).toBe("postgres");
 
 		const degraded = readinessResponseSchema.parse({
 			status: "degraded",
+			checks: {
+				storage: { provider: "postgres", status: "reachable" },
+				auth: { provider: "neon_auth", status: "misconfigured" },
+			},
 			topology: "neon-shared-schema",
-			storage: "unreachable",
-			connection: { pooler: false, ssl: "unknown" },
-			auth: "missing",
+			connection: { pooler: true, ssl: "require" },
 			timestamp: "2026-07-15T12:00:00.000Z",
 		});
 		expect(degraded.status).toBe("degraded");
+
+		const notReady = readinessResponseSchema.parse({
+			status: "not_ready",
+			checks: {
+				storage: { provider: "postgres", status: "unreachable" },
+				auth: { provider: "neon_auth", status: "configured" },
+			},
+			topology: "neon-shared-schema",
+			connection: { pooler: false, ssl: "unknown" },
+			timestamp: "2026-07-15T12:00:00.000Z",
+		});
+		expect(notReady.status).toBe("not_ready");
 	});
 
 	it("validates declaration draft query and write bodies", () => {

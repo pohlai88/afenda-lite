@@ -83,6 +83,23 @@ describe("shouldBypassSessionGate", () => {
 		).toBe(true);
 	});
 
+	it("bypasses Pre-Login API surfaces (auth BFF + health)", () => {
+		expect(shouldBypassSessionGate(req({ pathname: "/api/auth" }))).toBe(true);
+		expect(
+			shouldBypassSessionGate(req({ pathname: "/api/auth/get-session" })),
+		).toBe(true);
+		expect(
+			shouldBypassSessionGate(req({ pathname: "/api/health/liveness" })),
+		).toBe(true);
+		expect(
+			shouldBypassSessionGate(req({ pathname: "/api/health/readiness" })),
+		).toBe(true);
+		// Post-login APIs stay fail-closed at the policy layer.
+		expect(
+			shouldBypassSessionGate(req({ pathname: "/api/session/sync-cookies" })),
+		).toBe(false);
+	});
+
 	it("bypasses playground paths only when the harness flag is enabled", () => {
 		expect(shouldBypassSessionGate(req({ pathname: "/playground" }))).toBe(
 			false,
@@ -131,7 +148,7 @@ describe("N6 proxy session gate (disk)", () => {
 		expect(source).toContain("x-afenda-pathname");
 	});
 
-	it("matcher covers protected shells and excludes public auth/join", () => {
+	it("matcher covers protected shells and excludes public auth/join/api/static", () => {
 		const source = readProxySource();
 		for (const route of [
 			'"/account/:path*"',
@@ -142,8 +159,15 @@ describe("N6 proxy session gate (disk)", () => {
 		]) {
 			expect(source).toContain(route);
 		}
-		expect(source).not.toMatch(/matcher:\s*\[[^\]]*["']\/auth/s);
-		expect(source).not.toMatch(/matcher:\s*\[[^\]]*["']\/join/s);
+		const matcherBlock = source.match(
+			/export const config = \{[\s\S]*?matcher:\s*\[([\s\S]*?)\]/,
+		);
+		expect(matcherBlock).not.toBeNull();
+		const matcherBody = matcherBlock?.[1] ?? "";
+		expect(matcherBody).not.toMatch(/["']\/auth/);
+		expect(matcherBody).not.toMatch(/["']\/join/);
+		expect(matcherBody).not.toMatch(/["']\/api/);
+		expect(matcherBody).not.toMatch(/["']\/_next/);
 		expect(source).not.toContain('"/auth');
 		expect(source).not.toContain('"/join');
 	});

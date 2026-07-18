@@ -95,18 +95,25 @@ record(
 const readiness = await fetchJson("/api/health/readiness");
 const readyData = readiness.body?.data ?? readiness.body;
 const readyStatus = readyData?.status;
+const authStatus = readyData?.checks?.auth?.status ?? "n/a";
+const storageStatus = readyData?.checks?.storage?.status ?? "n/a";
+const storageProvider = readyData?.checks?.storage?.provider ?? "n/a";
+const readinessStatusOk =
+	readyStatus === "ready" ||
+	readyStatus === "degraded" ||
+	readyStatus === "not_ready";
 record(
 	check(
 		"GET /api/health/readiness",
-		readiness.ok && (readyStatus === "ready" || readyStatus === "degraded"),
+		readiness.ok && readinessStatusOk,
 		readiness.error
 			? `request failed (${readiness.error})`
-			: `HTTP ${readiness.status} status=${readyStatus ?? "unknown"} auth=${readyData?.auth ?? "n/a"} storage=${readyData?.storage ?? "n/a"}`,
+			: `HTTP ${readiness.status} status=${readyStatus ?? "unknown"} auth=${authStatus} storage=${storageProvider}/${storageStatus}`,
 	),
 );
-if (readyStatus === "degraded") {
+if (readyStatus === "degraded" || readyStatus === "not_ready") {
 	console.log(
-		"[note] readiness=degraded — investigate DB/auth config; deploy may still be serving",
+		`[note] readiness=${readyStatus} — investigate DB/auth config; deploy may still be serving`,
 	);
 }
 

@@ -12,8 +12,11 @@ import {
 	assertPlaygroundLocalOnly,
 	assertProductDatabaseUrl,
 	evaluateNeonProductEnv,
+	evaluateProdBranchBaselineMigratePosture,
+	isApprovedAppHost,
 	isNeonPoolerDatabaseUrl,
 	isProductionDeployment,
+	PRODUCTION_BASELINE_MIGRATE_PROHIBITED,
 	redactEnvValue,
 } from "../src/neon-contract";
 
@@ -51,8 +54,19 @@ describe("@afenda/env neon-contract", () => {
 		expect(redactEnvValue("super-secret")).toBe("[redacted]");
 	});
 
-	it("allows http APP_URL locally but rejects http/localhost on Vercel production", () => {
+	it("allows approved APP_URL hosts and rejects unapproved or malformed URLs", () => {
+		expect(isApprovedAppHost("localhost")).toBe(true);
+		expect(isApprovedAppHost("evil.example")).toBe(false);
 		expect(assertAppUrl("http://localhost:3000").ok).toBe(true);
+		expect(assertAppUrl("https://afenda-lite.vercel.app").ok).toBe(true);
+		expect(assertAppUrl("https://evil.example").ok).toBe(false);
+		expect(assertAppUrl("https://evil.example").issues[0]?.variable).toBe(
+			"APP_URL",
+		);
+		expect(assertAppUrl("not-a-url").ok).toBe(false);
+		expect(assertAppUrl("not-a-url").issues[0]?.message).toBe(
+			"must be a valid URL",
+		);
 		expect(
 			assertAppUrl("http://localhost:3000", { vercelEnv: "production" }).ok,
 		).toBe(false);
@@ -66,6 +80,33 @@ describe("@afenda/env neon-contract", () => {
 				vercelEnv: "production",
 			}).ok,
 		).toBe(false);
+		expect(
+			assertAppUrl("https://preview.vercel.app", {
+				vercelEnv: "production",
+			}).ok,
+		).toBe(false);
+	});
+
+	it("identifies production-branch baseline-migrate prohibition without secrets", () => {
+		expect(PRODUCTION_BASELINE_MIGRATE_PROHIBITED).toBe(true);
+		const posture = evaluateProdBranchBaselineMigratePosture({
+			branchId: APPROVED_NEON_BRANCH_ID,
+		});
+		expect(posture.ok).toBe(true);
+		expect(posture.detail).toContain("prohibited");
+		expect(posture.detail).toContain(APPROVED_NEON_BRANCH_ID);
+		expect(posture.detail).not.toContain("postgresql://");
+		expect(JSON.stringify(posture)).not.toContain("secret");
+
+		const wrongBranch = evaluateProdBranchBaselineMigratePosture({
+			branchId: "br-wrong-branch",
+		});
+		expect(wrongBranch.ok).toBe(false);
+		expect(wrongBranch.issues[0]?.variable).toBe("NEON_BRANCH_ID");
+
+		const unsetBranch = evaluateProdBranchBaselineMigratePosture({});
+		expect(unsetBranch.ok).toBe(true);
+		expect(unsetBranch.detail).toContain("prohibited");
 	});
 
 	it("locks Neon Cloud ids to the approved production branch policy", () => {

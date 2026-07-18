@@ -32,6 +32,7 @@ const {
 	APPROVED_NEON_ORG_ID,
 	APPROVED_NEON_PROJECT_ID,
 	evaluateNeonProductEnv,
+	evaluateProdBranchBaselineMigratePosture,
 	formatNeonContractIssues,
 } = await import(neonContractUrl);
 
@@ -142,6 +143,17 @@ record(
 		productResult.ok
 			? "DATABASE_URL pooler · Neon Auth URL/secret · APP_URL · cloud ids · local-only gates"
 			: formatNeonContractIssues(productResult.issues),
+	),
+);
+
+const migratePosture = evaluateProdBranchBaselineMigratePosture({
+	branchId,
+});
+record(
+	check(
+		"PL-S9 prod-branch baseline-migrate posture",
+		migratePosture.ok,
+		migratePosture.detail,
 	),
 );
 

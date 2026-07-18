@@ -76,12 +76,47 @@ components:
           enum:
             - ready
             - degraded
+            - not_ready
+        checks:
+          type: object
+          properties:
+            storage:
+              type: object
+              properties:
+                provider:
+                  type: string
+                  enum:
+                    - postgres
+                status:
+                  type: string
+                  enum:
+                    - reachable
+                    - unreachable
+              required:
+                - provider
+                - status
+            auth:
+              type: object
+              properties:
+                provider:
+                  type: string
+                  enum:
+                    - neon_auth
+                status:
+                  type: string
+                  enum:
+                    - configured
+                    - misconfigured
+              required:
+                - provider
+                - status
+          required:
+            - storage
+            - auth
         topology:
           type: string
-          minLength: 1
-        storage:
-          type: string
-          minLength: 1
+          enum:
+            - neon-shared-schema
         connection:
           type: object
           properties:
@@ -93,21 +128,14 @@ components:
           required:
             - pooler
             - ssl
-        auth:
-          type: string
-          enum:
-            - configured
-            - missing
-            - degraded
         timestamp:
           type: string
           format: date-time
       required:
         - status
+        - checks
         - topology
-        - storage
         - connection
-        - auth
         - timestamp
     SaveClientDeclarationDraft:
       type: object
@@ -192,12 +220,47 @@ components:
               enum:
                 - ready
                 - degraded
+                - not_ready
+            checks:
+              type: object
+              properties:
+                storage:
+                  type: object
+                  properties:
+                    provider:
+                      type: string
+                      enum:
+                        - postgres
+                    status:
+                      type: string
+                      enum:
+                        - reachable
+                        - unreachable
+                  required:
+                    - provider
+                    - status
+                auth:
+                  type: object
+                  properties:
+                    provider:
+                      type: string
+                      enum:
+                        - neon_auth
+                    status:
+                      type: string
+                      enum:
+                        - configured
+                        - misconfigured
+                  required:
+                    - provider
+                    - status
+              required:
+                - storage
+                - auth
             topology:
               type: string
-              minLength: 1
-            storage:
-              type: string
-              minLength: 1
+              enum:
+                - neon-shared-schema
             connection:
               type: object
               properties:
@@ -209,21 +272,14 @@ components:
               required:
                 - pooler
                 - ssl
-            auth:
-              type: string
-              enum:
-                - configured
-                - missing
-                - degraded
             timestamp:
               type: string
               format: date-time
           required:
             - status
+            - checks
             - topology
-            - storage
             - connection
-            - auth
             - timestamp
       required:
         - data

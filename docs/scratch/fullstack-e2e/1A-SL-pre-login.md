@@ -309,6 +309,8 @@ pnpm --filter @afenda/web test -- join accept-invitation
 
 ## PL-S5 — Anonymous Session Gate
 
+**Status:** CLOSED (2026-07-18) — edge deny + canonical login redirect; Pre-Login API bypass; return-path sanitize; unit + smoke green.
+
 **Objective**
 
 Ensure protected document navigation is denied at the edge and redirected to the canonical login URL.
@@ -317,21 +319,23 @@ Ensure protected document navigation is denied at the edge and redirected to the
 
 ```text
 apps/web/proxy.ts
+apps/web/session-gate-policy.ts
+apps/web/features/auth/pre-login-route-contract.ts
 packages/auth/src/proxy.ts
-packages/auth/src/session-gate-policy.ts
 packages/auth/src/auth-paths.ts
-apps/web/e2e/smoke/anonymous-gate.spec.ts
+packages/auth/src/post-login.ts
+e2e/smoke/anonymous-gate.spec.ts
 ```
 
 **Implementation requirements**
 
 1. Use `createSessionProxy()` from `@afenda/auth`.
-2. Keep matcher policy explicit and testable.
+2. Keep matcher policy explicit and testable (`SESSION_GATE_PROTECTED_MATCHERS` + static `config.matcher`).
 3. Bypass only approved public, auth, health, static, embed, and client-gate surfaces.
 4. Preserve the original destination through a safe return-path mechanism where approved.
-5. Reject open redirect targets.
-6. Distinguish document navigation from API or Server Action requests.
-7. Do not redirect API calls to HTML login pages when a structured unauthorized response is required.
+5. Reject open redirect targets (`sanitizeCallbackUrl`).
+6. Distinguish document navigation from API or Server Action requests (matcher + policy bypass; Actions re-auth in body).
+7. Do not redirect API calls to HTML login pages when a structured unauthorized response is required (`getApiSession` / API-002; Pre-Login API bypass).
 8. Do not execute product database reads before anonymous denial.
 
 **Acceptance criteria**
@@ -372,10 +376,10 @@ Normalize legacy or client-facing entry routes without creating a second authent
 **Likely files**
 
 ```text
-apps/web/app/(gate)/login/page.tsx
-apps/web/app/(gate)/preview-unavailable/page.tsx
-apps/web/src/**/client-paths.ts
-packages/auth/src/session-gate-policy.ts
+apps/web/app/(client)/client/(gate)/login/page.tsx
+apps/web/app/(client)/client/(gate)/preview-unavailable/page.tsx
+apps/web/features/auth/client-paths.ts
+apps/web/session-gate-policy.ts
 ```
 
 **Implementation requirements**
@@ -461,6 +465,8 @@ pnpm --filter @afenda/web typecheck
 ---
 
 ## PL-S8 — Health and Dependency Readiness
+
+**Status:** CLOSED (disk + OpenAPI + `pnpm --filter @afenda/web test -- health` + live curl evidence)
 
 **Objective**
 
