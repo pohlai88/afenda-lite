@@ -1,6 +1,6 @@
 import { expectOperatorShellNav } from "@/testing/e2e/assertions";
 import { loginAsOperator } from "@/testing/e2e/flows";
-import { expect, test } from "@/testing/e2e/playwright-base";
+import { test } from "@/testing/e2e/playwright-base";
 import {
 	assignLimitedOperatorNavRole,
 	clearOperatorPlatformAssignments,
