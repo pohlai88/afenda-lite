@@ -53,6 +53,8 @@
 	--auth-snow: 0;
 	--auth-steam: 0;
 	--auth-embers: 0;
+	/* Ken-burns — landing .art-zoom pattern, stronger amplitude (1 → 1.18). */
+	--auth-ken-zoom-duration: 22s;
 	/* Accent hue: ice leads / fire leads — thaw gap falls back to border. */
 	--auth-accent: color-mix(
 		in oklab,
@@ -68,17 +70,34 @@
 	animation: auth-surface-cinematic-cycle 25s ease-in-out infinite;
 }
 
+/* Tab hidden — freeze cycle + particle layers (login-command performance). */
+.auth-surface--paused,
+.auth-surface--paused .auth-surface__art-plane,
+.auth-surface--paused .auth-surface__ember-field,
+.auth-surface--paused .auth-surface__snow,
+.auth-surface--paused .auth-surface__steam,
+.auth-surface--paused .auth-surface__panel-heat {
+	animation-play-state: paused;
+}
+
 .auth-surface__backdrop {
 	z-index: 0;
 	overflow: hidden;
 	background: var(--canvas);
 }
 
-/* Shared drift so ice + fire faces stay registered during morph. */
+/*
+ * Ken-burns zoom — same plane for ice + fire so faces stay registered.
+ * Linear (not ease-in-out): landing proven; ease-in-out stalls and reads static
+ * at prior 1.04→1.08 / 32s amplitude. Stronger than Machine landing 1.12 DNA.
+ */
 .auth-surface__art-plane {
 	z-index: 0;
-	transform: scale(1.04);
-	animation: auth-surface-art-drift 32s ease-in-out infinite alternate;
+	transform-origin: center center;
+	animation: auth-surface-art-drift var(--auth-ken-zoom-duration) linear infinite
+		alternate;
+	will-change: transform;
+	backface-visibility: hidden;
 }
 
 .auth-surface__brand-art {
@@ -412,6 +431,58 @@
 	z-index: 1;
 }
 
+/*
+ * Bottom-left identity copy — calm across ice↔fire; clear of lynx face.
+ * Undertone tracks --auth-* cycle via --auth-accent (CSS tokens only; no orange ink).
+ */
+.auth-surface__identity {
+	position: absolute;
+	z-index: 6;
+	left: clamp(1rem, 3.5vw, 2.25rem);
+	bottom: clamp(1rem, 4.5vh, 2.5rem);
+	max-width: 20rem;
+	pointer-events: none;
+	--auth-identity-ink: color-mix(
+		in oklab,
+		var(--foreground) calc(94% - var(--auth-panel-fire) * 6%),
+		var(--auth-accent) calc(6% + var(--auth-panel-fire) * 10%)
+	);
+	--auth-identity-muted: color-mix(
+		in oklab,
+		var(--muted-foreground) calc(92% - var(--auth-panel-fire) * 8%),
+		var(--auth-accent) calc(8% + var(--auth-panel-fire) * 12%)
+	);
+	text-shadow: 0 1px 14px
+		color-mix(in oklab, var(--background) 62%, transparent);
+}
+
+.auth-surface__identity-eyebrow {
+	margin: 0;
+	font-size: 0.6875rem;
+	font-weight: 600;
+	letter-spacing: 0.2em;
+	text-transform: uppercase;
+	color: var(--auth-identity-muted);
+}
+
+.auth-surface__identity-tagline {
+	margin: 0.4rem 0 0;
+	font-size: 0.9375rem;
+	font-weight: 500;
+	line-height: 1.35;
+	letter-spacing: 0.01em;
+	color: var(--auth-identity-ink);
+}
+
+.auth-surface__identity-support {
+	margin: 0.55rem 0 0;
+	font-size: 0.75rem;
+	font-weight: 400;
+	line-height: 1.4;
+	letter-spacing: 0.02em;
+	color: var(--auth-identity-muted);
+}
+
 .auth-surface__column {
 	z-index: 10;
 	background: transparent;
@@ -597,10 +668,10 @@
 
 @keyframes auth-surface-art-drift {
 	from {
-		transform: scale(1.04) translate3d(0, 0, 0);
+		transform: scale(1) translate3d(0, 0, 0);
 	}
 	to {
-		transform: scale(1.08) translate3d(-0.5%, 0.3%, 0);
+		transform: scale(1.18) translate3d(-2.1%, -1.4%, 0);
 	}
 }
 
@@ -888,12 +959,53 @@
 	}
 }
 
+/*
+ * Mobile particle cap — drop secondary fields, sparse primary beads, no heat shimmer.
+ * login-command: reduce particle density below 768px.
+ */
+@media (max-width: 767.98px) {
+	.auth-surface__ember-field--b,
+	.auth-surface__snow--b {
+		display: none;
+	}
+
+	.auth-surface__ember-field--a {
+		opacity: 0.45;
+		background-size:
+			220px 260px,
+			280px 320px,
+			200px 240px,
+			300px 360px,
+			250px 300px;
+	}
+
+	.auth-surface__snow--a {
+		opacity: 0.42;
+		background-size:
+			200px 240px,
+			260px 300px,
+			190px 230px,
+			290px 340px,
+			230px 280px;
+	}
+
+	.auth-surface__steam {
+		opacity: calc(var(--auth-steam) * 0.28);
+		filter: blur(16px);
+	}
+
+	.auth-surface__panel-heat {
+		display: none;
+	}
+}
+
+/*
+ * Reduced motion — soft ice↔fire material dissolve only (login-command).
+ * No particles, art drift, or heat; form stays fully static.
+ */
 @media (prefers-reduced-motion: reduce) {
 	.auth-surface {
-		animation: none;
-		--auth-panel-ice: 1;
-		--auth-panel-fire: 0;
-		--auth-lynx-fire: 0;
+		animation: auth-surface-reduced-dissolve 25s ease-in-out infinite;
 		--auth-snow: 0;
 		--auth-steam: 0;
 		--auth-embers: 0;
@@ -904,18 +1016,12 @@
 		transform: none;
 	}
 
-	.auth-surface__brand-art--fire {
-		opacity: 0;
-		-webkit-mask-image: none;
-		mask-image: none;
-	}
-
 	.auth-surface__radiant--ice {
-		opacity: 0.78;
+		opacity: calc(0.55 + (1 - var(--auth-lynx-fire)) * 0.3);
 	}
 
 	.auth-surface__radiant--fire {
-		opacity: 0;
+		opacity: calc(var(--auth-lynx-fire) * 0.65);
 	}
 
 	.auth-surface__snow,
@@ -936,10 +1042,45 @@
 		animation: none;
 		backdrop-filter: none;
 		-webkit-backdrop-filter: none;
-		background: color-mix(in oklab, var(--surface-raised) 96%, var(--card) 4%);
+		background: color-mix(
+			in oklab,
+			var(--surface-raised) calc(92% + var(--auth-panel-ice) * 4%),
+			var(--card) calc(4% + var(--auth-panel-fire) * 4%)
+		);
+	}
+}
+
+/*
+ * Soft dissolve keyframes — same 25s period so wall-clock delay still rejoins phase.
+ * Holds ice / fire longer; transitions only panel + lynx material tokens.
+ */
+@keyframes auth-surface-reduced-dissolve {
+	0%,
+	38% {
+		--auth-panel-ice: 1;
+		--auth-panel-fire: 0;
+		--auth-lynx-fire: 0;
+		--auth-snow: 0;
+		--auth-steam: 0;
+		--auth-embers: 0;
 	}
 
-	.auth-surface__panel-ember {
-		opacity: 0;
+	50%,
+	88% {
+		--auth-panel-ice: 0;
+		--auth-panel-fire: 1;
+		--auth-lynx-fire: 0.82;
+		--auth-snow: 0;
+		--auth-steam: 0;
+		--auth-embers: 0;
+	}
+
+	100% {
+		--auth-panel-ice: 1;
+		--auth-panel-fire: 0;
+		--auth-lynx-fire: 0;
+		--auth-snow: 0;
+		--auth-steam: 0;
+		--auth-embers: 0;
 	}
 }

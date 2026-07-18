@@ -1,4 +1,11 @@
+"use client";
+
+import {
+	AUTH_FORGOT_PASSWORD_PATH,
+	AUTH_RESET_PASSWORD_PATH,
+} from "@afenda/auth/client";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 
 import { AuthSurfaceRoot } from "@/features/auth/auth-surface-root";
@@ -12,6 +19,27 @@ export const AUTH_ISLAND_BRAND_ART_FIRE = "/lynx/lynx-fire-wide.png";
 type AuthSurfaceChromeProps = {
 	children: ReactNode;
 };
+
+/**
+ * Recovery-path support line — forgot/reset only.
+ * Pathname client read keeps chrome mounted across `/auth/*` swaps.
+ */
+function AuthSurfaceIdentitySupport() {
+	const pathname = usePathname();
+	const showSupport =
+		pathname === AUTH_FORGOT_PASSWORD_PATH ||
+		pathname === AUTH_RESET_PASSWORD_PATH;
+
+	if (!showSupport) {
+		return null;
+	}
+
+	return (
+		<p className="auth-surface__identity-support">
+			Identity secured. Access restored.
+		</p>
+	);
+}
 
 /**
  * Neon Auth island chrome — cinematic ice↔fire lynx + glass credential column.
@@ -59,11 +87,18 @@ export function AuthSurfaceChrome({ children }: AuthSurfaceChromeProps) {
 				<div className="auth-surface__veil pointer-events-none absolute inset-0" />
 			</div>
 
-			{/* Layout spacer — art is full-bleed behind the grid. */}
-			<div
-				className="auth-surface__stage relative min-h-[40vh] lg:min-h-dvh"
-				aria-hidden="true"
-			/>
+			{/* Layout spacer — art is full-bleed behind the grid; identity sits bottom-left. */}
+			<div className="auth-surface__stage relative min-h-[40vh] lg:min-h-dvh">
+				<div className="auth-surface__identity">
+					<p className="auth-surface__identity-eyebrow">AFENDA IDENTITY</p>
+					<p className="auth-surface__identity-tagline">
+						Protected through
+						<br />
+						every state.
+					</p>
+					<AuthSurfaceIdentitySupport />
+				</div>
+			</div>
 
 			<div className="auth-surface__column relative z-10 flex min-h-0 flex-col justify-center p-6 lg:p-(--section-gap)">
 				<div className="auth-surface__panel flex w-full flex-col gap-6">

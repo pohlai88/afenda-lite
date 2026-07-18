@@ -113,7 +113,8 @@
 /*
  * Shared zoom plane — art + sensor use the same class so keyframes stay locked.
  * Linear (not ease-in-out): ease-in-out stalls at apex and reads as a static page
- * on this crushed grayscale art. Amplitude 1.12 so crop motion is visible.
+ * on this crushed grayscale art. Amplitude 1.18 — stronger crop push than the
+ * lynx-cinematic DNA base (1.07) / prior Living 1.12 so ken-burns reads clearly.
  * DNA: public/lynx/lynx-cinematic.html (22s · infinite alternate).
  */
 .art-zoom {
@@ -144,7 +145,7 @@
 		transform: scale(1) translate3d(0, 0, 0);
 	}
 	to {
-		transform: scale(1.12) translate3d(-1.25%, -0.85%, 0);
+		transform: scale(1.18) translate3d(-2.1%, -1.4%, 0);
 	}
 }
 

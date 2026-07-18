@@ -100,6 +100,9 @@ describe("PL-S3 Auth Island surface", () => {
 		expect(chrome).toContain("AuthSurfaceRoot");
 		expect(root).toContain("AUTH_SURFACE_CYCLE_MS");
 		expect(root).toContain("animationDelay");
+		expect(root).toContain("visibilitychange");
+		expect(root).toContain("auth-surface--paused");
+		expect(root).toContain("document.hidden");
 		expect(root).toMatch(/className="auth-surface dark /);
 		expect(messageShell).toContain("asLandmark");
 		expect(messageShell).toContain('asLandmark ? "main" : "div"');
@@ -130,6 +133,17 @@ describe("PL-S3 Auth Island surface", () => {
 		expect(chrome).toContain("auth-surface__radiant");
 		expect(chrome).toContain("auth-surface__panel");
 		expect(chrome).toContain("auth-surface__stage");
+		expect(chrome).toContain("auth-surface__identity");
+		expect(chrome).toContain("auth-surface__identity-eyebrow");
+		expect(chrome).toContain("auth-surface__identity-tagline");
+		expect(chrome).toContain("AFENDA IDENTITY");
+		expect(chrome).toContain("Protected through");
+		expect(chrome).toContain("every state.");
+		expect(chrome).toContain("Identity secured. Access restored.");
+		expect(chrome).toContain("AUTH_FORGOT_PASSWORD_PATH");
+		expect(chrome).toContain("AUTH_RESET_PASSWORD_PATH");
+		expect(chrome).toContain("usePathname");
+		expect(chrome).not.toContain("data-phase");
 		expect(chrome).toContain("object-cover");
 		expect(chrome).toContain("object-center");
 		expect(chrome).toContain('sizes="100vw"');
@@ -159,6 +173,10 @@ describe("PL-S3 Auth Island surface", () => {
 		expect(surfaceCss).toContain("auth-surface-ember-rise");
 		expect(surfaceCss).toContain("auth-surface-heat-shimmer");
 		expect(surfaceCss).toContain("auth-surface__art-plane");
+		expect(surfaceCss).toContain("--auth-ken-zoom-duration: 22s");
+		expect(surfaceCss).toContain("transform: scale(1.18)");
+		expect(surfaceCss).toContain("translate3d(-2.1%, -1.4%, 0)");
+		expect(surfaceCss).not.toContain("transform: scale(1.04)");
 		expect(surfaceCss).toContain("auth-surface__weather");
 		expect(surfaceCss).toContain("auth-surface__steam");
 		expect(surfaceCss).toContain("auth-surface__embers");
@@ -169,6 +187,15 @@ describe("PL-S3 Auth Island surface", () => {
 		expect(surfaceCss).toContain("auth-surface__radiant");
 		expect(surfaceCss).toContain("auth-surface__radiant--ice");
 		expect(surfaceCss).toContain("auth-surface__radiant--fire");
+		expect(surfaceCss).toContain("auth-surface__identity");
+		expect(surfaceCss).toContain("auth-surface__identity-eyebrow");
+		expect(surfaceCss).toContain("auth-surface__identity-tagline");
+		expect(surfaceCss).toContain("auth-surface__identity-support");
+		expect(surfaceCss).toContain("--auth-identity-ink");
+		expect(surfaceCss).toContain("--auth-identity-muted");
+		expect(surfaceCss).toContain("var(--auth-accent)");
+		expect(surfaceCss).toContain("var(--auth-panel-fire)");
+		expect(surfaceCss).toContain("max-width: 20rem");
 		expect(surfaceCss).toContain("mix-blend-mode: screen");
 		expect(surfaceCss).toContain("radial-gradient");
 		expect(surfaceCss).toContain("conic-gradient");
@@ -181,6 +208,12 @@ describe("PL-S3 Auth Island surface", () => {
 		expect(surfaceCss).toContain("var(--destructive)");
 		expect(surfaceCss).toContain("var(--chart-1)");
 		expect(surfaceCss).toContain("prefers-reduced-motion");
+		expect(surfaceCss).toContain("auth-surface--paused");
+		expect(surfaceCss).toContain("animation-play-state: paused");
+		expect(surfaceCss).toContain("auth-surface-reduced-dissolve");
+		expect(surfaceCss).toContain("max-width: 767.98px");
+		expect(surfaceCss).toContain("auth-surface__ember-field--b");
+		expect(surfaceCss).toContain("auth-surface__snow--b");
 		expect(surfaceCss).not.toContain("--auth-element");
 		expect(surfaceCss).not.toMatch(/#[0-9a-fA-F]{3,8}\b/);
 		expect(
