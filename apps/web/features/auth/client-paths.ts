@@ -22,3 +22,6 @@ export const CLIENT_GATE_PATHS = [
 	CLIENT_LOGIN_PATH,
 	CLIENT_PREVIEW_UNAVAILABLE_PATH,
 ] as const;
+
+/** One typed gate-path member of `CLIENT_GATE_PATHS` (PL-S6). */
+export type ClientGatePath = (typeof CLIENT_GATE_PATHS)[number];
