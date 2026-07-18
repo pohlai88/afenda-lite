@@ -28,6 +28,8 @@
 	--ease-luxury: cubic-bezier(0.22, 1, 0.36, 1);
 	--ease-soft: cubic-bezier(0.4, 0, 0.2, 1);
 	--reveal-time: 2100ms;
+	/* Cinematic ken-burns — duration from lynx-cinematic; linear keeps motion continuous */
+	--cinematic-zoom-duration: 22s;
 	--art: url("/lynx/lynx-landing-standard.png");
 	--fallback:
 		radial-gradient(
@@ -92,9 +94,49 @@
 }
 
 .art-plane {
+	/* Same box as .stage so cover-fit hotspot math matches clip-path + sensor */
+	inset: 0;
 	z-index: 0;
 	overflow: hidden;
 	background: var(--fallback);
+}
+
+/*
+ * Shared zoom plane — art + sensor use the same class so keyframes stay locked.
+ * Linear (not ease-in-out): ease-in-out stalls at apex and reads as a static page
+ * on this crushed grayscale art. Amplitude 1.12 so crop motion is visible.
+ * DNA: public/lynx/lynx-cinematic.html (22s · infinite alternate).
+ */
+.art-zoom {
+	transform-origin: center center;
+	animation: cinematicZoom var(--cinematic-zoom-duration) linear infinite
+		alternate;
+	will-change: transform;
+	backface-visibility: hidden;
+}
+
+/*
+ * Parallel zoom plane for sensor + geometry — same .art-zoom as .art-plane
+ * so the blink stays on the keyhole, while z-index stays above ambient/vignette.
+ */
+.sensor-plane {
+	position: absolute;
+	inset: 0;
+	z-index: 30;
+	pointer-events: none;
+}
+
+.sensor-plane .sensor {
+	pointer-events: auto;
+}
+
+@keyframes cinematicZoom {
+	from {
+		transform: scale(1) translate3d(0, 0, 0);
+	}
+	to {
+		transform: scale(1.12) translate3d(-1.25%, -0.85%, 0);
+	}
 }
 
 .hero-base,
@@ -114,16 +156,6 @@
 		filter 2600ms var(--ease-luxury),
 		opacity 2100ms var(--ease-luxury),
 		transform 4400ms var(--ease-luxury);
-	animation: still-breath 30s ease-in-out infinite alternate;
-}
-
-@keyframes still-breath {
-	from {
-		transform: scale(1.012);
-	}
-	to {
-		transform: scale(1.024);
-	}
 }
 
 /* Continues after dark reveal while Response active */
@@ -272,11 +304,12 @@
 	animation: response-breath 16s var(--ease-soft) infinite alternate;
 }
 
+/* Keep cinematicZoom running after dark→light reveal (was paused here — froze ken-burns). */
+
 .the-machine.is-reacting .hero-base {
 	opacity: 0.69;
 	filter: grayscale(1) sepia(0.07) brightness(0.19) contrast(1.14);
 	transform: scale(1);
-	animation-play-state: paused;
 }
 
 .the-machine.is-reacting .hero-bloom {
@@ -286,12 +319,17 @@
 	animation: response-bloom 5.5s var(--ease-soft) infinite;
 }
 
+/*
+ * Stage hairline frame (.frame + corner ticks) — CLOSED (edit-forbidden) 2026-07-18.
+ * Forbidden: inset border rails, ::before/::after corner ticks, or any className="frame"
+ * on The Machine landing. Reopen: explicit user letter this turn.
+ */
+
 /* ---------- Atmosphere ---------- */
 
 .ambient,
 .vignette,
-.grain,
-.frame {
+.grain {
 	position: absolute;
 	inset: 0;
 	pointer-events: none;
@@ -342,43 +380,6 @@
 	background-size: 180px 180px;
 	mix-blend-mode: soft-light;
 	opacity: 0.035;
-}
-
-.frame {
-	inset: clamp(18px, 2.35vw, 36px);
-	z-index: 8;
-	border: 1px solid rgba(242, 238, 229, 0.07);
-	transition:
-		border-color 1800ms var(--ease-luxury),
-		opacity 1800ms var(--ease-luxury);
-}
-
-.frame::before,
-.frame::after {
-	position: absolute;
-	bottom: -1px;
-	width: 34px;
-	height: 1px;
-	content: "";
-	background: rgba(194, 173, 125, 0.4);
-	transition: width 1800ms var(--ease-luxury);
-}
-
-.frame::before {
-	left: -1px;
-}
-
-.frame::after {
-	right: -1px;
-}
-
-.the-machine.is-reacting .frame {
-	border-color: rgba(242, 238, 229, 0.105);
-}
-
-.the-machine.is-reacting .frame::before,
-.the-machine.is-reacting .frame::after {
-	width: 76px;
 }
 
 /* ---------- Brand ---------- */
@@ -1239,10 +1240,6 @@
 				transparent 61%,
 				rgba(9, 10, 8, 0.72) 100%
 			);
-	}
-
-	.frame {
-		inset: 14px;
 	}
 
 	.scope {

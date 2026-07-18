@@ -103,4 +103,30 @@ describe("public landing (PL-S2)", () => {
 			existsSync(join(webRoot, "public/lynx/lynx-landing-standard.png")),
 		).toBe(true);
 	});
+
+	it("forbids The Machine stage hairline frame (.frame)", () => {
+		const stage = source("features/landing/the-machine-landing-stage.tsx");
+		const css = source("features/landing/the-machine-landing.css");
+		expect(stage).not.toContain('className="frame"');
+		expect(css).not.toMatch(/(^|\n)\.frame(\s|,|\{|::)/);
+		expect(css).toContain("CLOSED (edit-forbidden)");
+		expect(css).toContain("Stage hairline frame");
+	});
+
+	it("pins cinematicZoom ken-burns on shared .art-zoom (22s · linear · scale 1.12)", () => {
+		const css = source("features/landing/the-machine-landing.css");
+		const stage = source("features/landing/the-machine-landing-stage.tsx");
+		expect(css).toContain("--cinematic-zoom-duration: 22s");
+		expect(css).toContain(
+			"animation: cinematicZoom var(--cinematic-zoom-duration) linear infinite",
+		);
+		expect(css).toContain("transform: scale(1.12)");
+		expect(css).toContain("lynx-cinematic.html");
+		expect(css).toContain(".art-zoom");
+		expect(stage).toContain('className="art-plane art-zoom"');
+		expect(stage).toContain('className="sensor-plane art-zoom"');
+		expect(css).not.toContain(
+			"animation: cinematicZoom 36s ease-in-out infinite alternate",
+		);
+	});
 });

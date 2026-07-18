@@ -53,6 +53,7 @@ export function TheMachineLandingStage({
 	fontClassName = "",
 }: TheMachineLandingStageProps) {
 	const rootRef = useRef<HTMLDivElement>(null);
+	const sensorRef = useRef<HTMLButtonElement>(null);
 	const chargeRef = useRef(0);
 	const targetChargeRef = useRef(0);
 	const chargeFrameRef = useRef(0);
@@ -130,11 +131,19 @@ export function TheMachineLandingStage({
 			if (reactingRef.current || !finePointer) {
 				return;
 			}
+			/* Visual center — sensor lives inside cinematicZoom art-plane */
+			const sensorRect = sensorRef.current?.getBoundingClientRect();
+			const sensorX = sensorRect
+				? sensorRect.left + sensorRect.width / 2
+				: sensorPosRef.current.x;
+			const sensorY = sensorRect
+				? sensorRect.top + sensorRect.height / 2
+				: sensorPosRef.current.y;
 			const charge = proximityCharge({
 				clientX,
 				clientY,
-				sensorX: sensorPosRef.current.x,
-				sensorY: sensorPosRef.current.y,
+				sensorX,
+				sensorY,
 				viewportWidth: window.innerWidth,
 			});
 			setCharge(charge);
@@ -245,7 +254,7 @@ export function TheMachineLandingStage({
 	return (
 		<div ref={rootRef} className={rootClass}>
 			<main className="stage" id={MAIN_CONTENT_ID} tabIndex={-1}>
-				<div aria-hidden="true" className="art-plane">
+				<div aria-hidden="true" className="art-plane art-zoom">
 					<div className="hero-base" />
 					<div className="hero-bloom" />
 					<div className="hero-reveal" />
@@ -254,8 +263,38 @@ export function TheMachineLandingStage({
 				<div aria-hidden="true" className="ambient" />
 				<div aria-hidden="true" className="vignette" />
 				<div aria-hidden="true" className="grain" />
-				<div aria-hidden="true" className="frame" />
-				<div aria-hidden="true" className="geometry" />
+
+				{/* Same .art-zoom as art-plane — keeps blink locked to keyhole above atmosphere */}
+				<div className="sensor-plane art-zoom">
+					<div aria-hidden="true" className="geometry" />
+					<button
+						aria-label={sensorAriaLabel(ui.reacting)}
+						aria-pressed={ui.reacting}
+						className="sensor"
+						id="lynx-sensor"
+						ref={sensorRef}
+						type="button"
+						onClick={() => toggleReaction()}
+						onPointerEnter={() => {
+							const finePointer = window.matchMedia(
+								"(hover: hover) and (pointer: fine)",
+							).matches;
+							if (!reactingRef.current && finePointer) {
+								detectingRef.current = true;
+								setCharge(1);
+								setUi({ armed: true, detecting: true, reacting: false });
+							}
+						}}
+					>
+						<span aria-live="polite" className="sensor__label">
+							{sensorLabel(phase)}
+						</span>
+						<span className="visually-hidden">
+							Approach the Lynx to detect a signal. Press to activate or reset
+							the response.
+						</span>
+					</button>
+				</div>
 
 				<header className="brandbar">
 					<div className="brand" translate="no">
@@ -317,33 +356,6 @@ export function TheMachineLandingStage({
 						</span>
 					</p>
 				</section>
-
-				<button
-					aria-label={sensorAriaLabel(ui.reacting)}
-					aria-pressed={ui.reacting}
-					className="sensor"
-					id="lynx-sensor"
-					type="button"
-					onClick={() => toggleReaction()}
-					onPointerEnter={() => {
-						const finePointer = window.matchMedia(
-							"(hover: hover) and (pointer: fine)",
-						).matches;
-						if (!reactingRef.current && finePointer) {
-							detectingRef.current = true;
-							setCharge(1);
-							setUi({ armed: true, detecting: true, reacting: false });
-						}
-					}}
-				>
-					<span aria-live="polite" className="sensor__label">
-						{sensorLabel(phase)}
-					</span>
-					<span className="visually-hidden">
-						Approach the Lynx to detect a signal. Press to activate or reset the
-						response.
-					</span>
-				</button>
 
 				<nav aria-label="Enterprise coverage" className="scope">
 					<span>Finance</span>
