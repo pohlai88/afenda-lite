@@ -69,6 +69,18 @@ export function isProductionDeployment(ctx: NeonRuntimeContext = {}): boolean {
 	return ctx.vercelEnv === "production";
 }
 
+/**
+ * Any Vercel runtime (preview / production) where AI Gateway OIDC may apply.
+ * Local `next dev` without VERCEL_ENV is false.
+ */
+export function isVercelRuntime(ctx: NeonRuntimeContext = {}): boolean {
+	return (
+		ctx.vercelEnv === "production" ||
+		ctx.vercelEnv === "preview" ||
+		ctx.vercelEnv === "development"
+	);
+}
+
 export function redactEnvValue(_value: string | undefined): string {
 	return "[redacted]";
 }

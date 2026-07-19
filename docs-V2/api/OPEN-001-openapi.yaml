@@ -18,6 +18,8 @@ servers:
 tags:
   - name: Health
     description: Public probes
+  - name: Observability
+    description: Prometheus scrape
 components:
   securitySchemes:
     neonAuthSession:
@@ -26,6 +28,10 @@ components:
       name: session
       description: Neon Auth client session cookie (browser same-origin). Cookie name here is illustrative
         — Neon owns the real name.
+    metricsScrapeBearer:
+      type: http
+      scheme: bearer
+      description: Bearer token matching server env METRICS_SCRAPE_TOKEN. Unset token → 404 (fail closed).
   schemas:
     APIErrorBody:
       type: object
@@ -151,6 +157,10 @@ components:
                   - up
                   - down
                   - skipped
+              critical:
+                type: boolean
+                description: Critical probe failure → overall not_ready; non-critical → degraded. postgres is
+                  critical; neon_auth is not.
               latencyMs:
                 type: integer
                 minimum: 0
@@ -160,6 +170,7 @@ components:
             required:
               - name
               - status
+              - critical
               - latencyMs
               - checkedAt
           minItems: 1
@@ -294,6 +305,10 @@ components:
                       - up
                       - down
                       - skipped
+                  critical:
+                    type: boolean
+                    description: Critical probe failure → overall not_ready; non-critical → degraded. postgres is
+                      critical; neon_auth is not.
                   latencyMs:
                     type: integer
                     minimum: 0
@@ -303,6 +318,7 @@ components:
                 required:
                   - name
                   - status
+                  - critical
                   - latencyMs
                   - checkedAt
               minItems: 1
@@ -355,7 +371,8 @@ paths:
   /api/health/readiness:
     get:
       summary: Dependency readiness probe
-      description: "DB / auth dependency snapshot. Prefer Cache-Control: no-store."
+      description: "DB / auth dependency snapshot. Prefer Cache-Control: no-store. HTTP 503 when status is
+        not_ready (critical storage unreachable); 200 for ready and degraded."
       tags:
         - Health
       responses:
@@ -365,7 +382,37 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ReadinessEnvelope"
+        "503":
+          description: "Not ready — critical dependency (postgres) unreachable; body still `{ data:
+            ReadinessResponse }`"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReadinessEnvelope"
       operationId: getHealthReadiness
+      x-afenda-status: api-now
+  /api/metrics:
+    get:
+      summary: Prometheus metrics scrape
+      description: "Prometheus text exposition from @afenda/metrics. Requires Authorization: Bearer
+        matching METRICS_SCRAPE_TOKEN. Fail closed when token unset (404)."
+      tags:
+        - Observability
+      security:
+        - metricsScrapeBearer: []
+      responses:
+        "200":
+          description: Prometheus exposition text
+          content:
+            text/plain:
+              schema:
+                type: string
+                description: Prometheus metrics body
+        "401":
+          description: Missing or invalid bearer token
+        "404":
+          description: Scrape disabled — METRICS_SCRAPE_TOKEN unset
+      operationId: getMetricsScrape
       x-afenda-status: api-now
 x-afenda-document:
   id: OPEN-001

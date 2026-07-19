@@ -1,5 +1,6 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { securityHeadersForNext } from "@afenda/security";
 import { loadEnvConfig } from "@next/env";
 import type { NextConfig } from "next";
 
@@ -12,12 +13,7 @@ const repoRoot = path.join(appDir, "../..");
 // the 4th arg the root dir is ignored (vercel/next.js#92040).
 loadEnvConfig(repoRoot, undefined, undefined, true);
 
-const securityHeaders = [
-	{ key: "X-DNS-Prefetch-Control", value: "on" },
-	{ key: "X-Frame-Options", value: "SAMEORIGIN" },
-	{ key: "X-Content-Type-Options", value: "nosniff" },
-	{ key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-];
+const securityHeaders = securityHeadersForNext();
 
 // When the dev server is accessed via explicit IP (127.0.0.1) rather than the
 // hostname it binds to (localhost), Next.js sets x-forwarded-host to localhost
@@ -40,6 +36,8 @@ const nextConfig: NextConfig = {
 		"@afenda/auth",
 		"@afenda/db",
 		"@afenda/env",
+		"@afenda/http",
+		"@afenda/security",
 		"@afenda/ui-system",
 	],
 	serverExternalPackages: ["@neondatabase/serverless"],

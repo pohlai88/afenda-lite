@@ -6,7 +6,7 @@
 | Authority | **Scratch** — observability-and-instrumentation + disk `modules/platform/observability/**` |
 | Updated | 2026-07-20 |
 
-Thin operator path: correlate → health → logs. Not a metrics-platform design.
+Thin operator path: correlate → health → logs → **Prometheus scrape**. No vendor APM / OpenTelemetry — scrape DNA: [metrics-dna.md](metrics-dna.md).
 
 ---
 
@@ -19,7 +19,7 @@ Thin operator path: correlate → health → logs. Not a metrics-platform design
 | Edge | `apps/web/proxy.ts` stamps correlation on gate responses |
 | Actions | Unexpected fail → `actionFailInternal(message, correlationId)` — `details` = `{ correlationId }` only |
 
-Path: `apps/web/modules/platform/observability/correlation.ts`.
+Path: `@afenda/http` (`packages/http` — `CORRELATION_HEADER` · `resolveCorrelationId` · `createCorrelationId`).
 
 ---
 
@@ -39,10 +39,23 @@ Paths: `packages/logger` · web re-export `modules/platform/observability/produc
 
 | Path | Job |
 |------|-----|
-| `GET /api/health/liveness` | Process up |
-| `GET /api/health/readiness` | Deps ready |
+| `GET /api/health/liveness` | Process up (**200**) |
+| `GET /api/health/readiness` | Deps ready (**200** ready/degraded; **503** when `not_ready` / storage down) |
 
-Domain helpers: `modules/platform/domain/health.ts` · schemas `modules/platform/schemas/health.ts`.
+Runtime SSOT: `@afenda/admin/health` (re-exported via `modules/platform/domain/health.ts`). OpenAPI wire Zod: `modules/platform/schemas/health.ts`.
+
+---
+
+## Prometheus scrape
+
+| Item | Disk |
+|------|------|
+| Package | `@afenda/metrics` — registry · HTTP/DB/cache instruments · `renderPrometheusText` |
+| Scrape | `GET /api/metrics` — bearer `METRICS_SCRAPE_TOKEN` (fail closed when unset → **404**) |
+| HTTP record | `createPlatformRouteHandler({ routeTemplate })` → `recordHttpRequest` |
+| Not this | `@afenda/http` `Server-Timing` (per-response header) · vendor APM / OTEL |
+
+DNA absorb/reject: [metrics-dna.md](metrics-dna.md).
 
 ---
 
@@ -58,7 +71,9 @@ Filter by `correlationId` from Action failure `details` or response header.
 
 ### Rate-limited responses (429)
 
-`@afenda/rate-limit` denials map via `toRateLimitAppError` → `RATE_LIMITED` / `SERVICE_UNAVAILABLE` (+ `Retry-After` on Route Handlers). Living surfaces: auth BFF POST (`auth_bff_post`) · Path A `signInAction` (`auth_sign_in`, key `IP:email`). Limited paths log allowlisted fields only: `event` · `correlationId` · `path` · `code`. Store: Upstash when configured; process memory for non-production without keys; store throws fail closed as unavailable.
+`@afenda/rate-limit` denials map via `toRateLimitAppError` → `RATE_LIMITED` / `SERVICE_UNAVAILABLE` (+ `Retry-After` on Route Handlers). Allowed and rate-limited BFF responses also stamp `X-RateLimit-Limit` / `Remaining` / `Reset` from the store quota. Living surfaces: auth BFF POST (`auth_bff_post`) · Path A `signInAction` (`auth_sign_in`, key `IP:email`). Limited paths log allowlisted fields only: `event` · `correlationId` · `path` · `code`. Store: Upstash when configured; process memory for non-production without keys; store throws fail closed as unavailable.
+
+Health RHs and auth BFF also emit `Server-Timing` (`health_*` / `auth_bff` metrics) via `@afenda/http` — not a second correlation header.
 
 ---
 
@@ -66,7 +81,8 @@ Filter by `correlationId` from Action failure `details` or response header.
 
 | Stop | Why |
 |------|-----|
-| No vendor APM SDK invent | stdout JSON + Vercel logs; Pino only via `@afenda/logger` (not direct app dep) |
+| No vendor APM / OTEL SDK invent | stdout JSON + Vercel logs + Prometheus scrape; Pino only via `@afenda/logger` (not direct app dep) |
+| No open `/api/metrics` without token | Fail closed — unset `METRICS_SCRAPE_TOKEN` → 404 |
 | No secrets in log fields | Redaction-safe contract |
 | No skip correlation on gate/Action fails | Needed to join edge + action evidence |
 
@@ -75,9 +91,10 @@ Filter by `correlationId` from Action failure `details` or response header.
 ## Verify
 
 ```text
-1. Disk: packages/logger · modules/platform/observability/{correlation,product-log}.ts
+1. Disk: packages/logger · packages/metrics · modules/platform/observability/product-log.ts
 2. Live: GET /api/health/liveness → 200
 3. After a fail: Action details.correlationId ↔ vercel logs / stdout
+4. Authorized GET /api/metrics → Prometheus text (token from METRICS_SCRAPE_TOKEN)
 ```
 
-Companion: [../api/README.md](../api/README.md) · [../deploy/README.md](../deploy/README.md) · [../auth/README.md](../auth/README.md).
+Companion: [metrics-dna.md](metrics-dna.md) · [../api/README.md](../api/README.md) · [../deploy/README.md](../deploy/README.md) · [../auth/README.md](../auth/README.md).

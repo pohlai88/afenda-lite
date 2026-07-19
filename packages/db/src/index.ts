@@ -11,6 +11,7 @@ export {
 	lte,
 	max,
 	ne,
+	or,
 	sql,
 } from "drizzle-orm";
 export { db, withOrg } from "./client";

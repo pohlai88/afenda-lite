@@ -1,6 +1,18 @@
 import { bucketPolicy } from "./buckets";
 import { retryAfterSecondsFromReset } from "./retry-after";
-import type { RateLimitHitResult, RateLimitStore } from "./types";
+import type { RateLimitHitResult, RateLimitQuota, RateLimitStore } from "./types";
+
+function quotaAt(input: {
+	limit: number;
+	remaining: number;
+	resetEpochMs: number;
+}): RateLimitQuota {
+	return {
+		limit: input.limit,
+		remaining: Math.max(0, input.remaining),
+		resetEpochMs: input.resetEpochMs,
+	};
+}
 
 /**
  * Process-local sliding window. Suitable for single-process local/dev and Vitest.
@@ -21,21 +33,33 @@ export function createMemoryRateLimitStore(): RateLimitStore {
 			if (active.length >= policy.limit) {
 				const oldest = active[0];
 				windows.set(fullKey, active);
-				if (oldest === undefined) {
-					return { allowed: false, retryAfterSeconds: 1 };
-				}
+				const resetEpochMs =
+					oldest === undefined ? now + policy.windowMs : oldest + policy.windowMs;
 				return {
 					allowed: false,
-					retryAfterSeconds: retryAfterSecondsFromReset(
-						oldest + policy.windowMs,
-						now,
-					),
+					retryAfterSeconds:
+						oldest === undefined
+							? 1
+							: retryAfterSecondsFromReset(resetEpochMs, now),
+					quota: quotaAt({
+						limit: policy.limit,
+						remaining: 0,
+						resetEpochMs,
+					}),
 				};
 			}
 
 			active.push(now);
 			windows.set(fullKey, active);
-			return { allowed: true };
+			const oldest = active[0] ?? now;
+			return {
+				allowed: true,
+				quota: quotaAt({
+					limit: policy.limit,
+					remaining: policy.limit - active.length,
+					resetEpochMs: oldest + policy.windowMs,
+				}),
+			};
 		},
 	};
 }

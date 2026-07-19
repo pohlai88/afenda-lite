@@ -33,7 +33,7 @@ const rows = await withOrg(platformRoleAssignment, orgId);
 | Generated SQL / journal | `drizzle/` |
 | Client | `src/client.ts` (`db` · `withOrg`) |
 
-Living tables include `platform_permission`, `platform_role`, `platform_role_assignment`, `platform_role_permission`, `platform_rbac_audit`. Hard tenant roots for null-org audits: `platform_role_assignment` · `platform_rbac_audit` (`HARD_TENANT_ROOT_*`).
+Living tables include `platform_permission`, `platform_role`, `platform_role_assignment`, `platform_role_permission`, `platform_rbac_audit`, `platform_audit_log`, `platform_search_document`, `platform_notification`. Hard tenant roots for null-org audits: `platform_role_assignment` · `platform_rbac_audit` · `platform_audit_log` · `platform_search_document` · `platform_notification` (`HARD_TENANT_ROOT_*`). General activity audit writer: `@afenda/audit` (not `@afenda/admin/audit`). Product search writer: `@afenda/search`. In-app notification writer: `@afenda/notifications`.
 
 ```bash
 pnpm --filter @afenda/db db:generate
@@ -92,6 +92,7 @@ Do not add to this package: `@afenda/env` imports, Neon Auth session clients, Ac
 
 | Topic | Link |
 |-------|------|
+| Data layer Scratch · schema craft checklist (reference → Drizzle) | [docs-V2/data](../../docs-V2/data/README.md) · [Schema craft checklist](../../docs-V2/data/README.md#schema-craft-checklist-reference--drizzle) |
 | Tenancy · pooler · shared schema (Scratch; Living ARCH-023 dormant) | [docs-V2/tenancy](../../docs-V2/tenancy/README.md) · [neon-optimize](../../docs-V2/tenancy/neon-optimize.md) |
 | Package DAG / leaf rules | [docs-V2/monorepo](../../docs-V2/monorepo/README.md) · [LAYERS.md](../../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md) |
 | Agent checkout posture | [AGENTS.md](../../AGENTS.md) |

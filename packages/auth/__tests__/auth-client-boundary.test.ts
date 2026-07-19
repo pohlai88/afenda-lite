@@ -9,10 +9,9 @@ import { fileURLToPath } from "node:url";
 
 import { describe, expect, it } from "vitest";
 
-const clientSourcePath = path.join(
-	path.dirname(fileURLToPath(import.meta.url)),
-	"../src/client.ts",
-);
+const packageRoot = path.dirname(fileURLToPath(import.meta.url));
+const clientSourcePath = path.join(packageRoot, "../src/client.ts");
+const serverIndexPath = path.join(packageRoot, "../src/index.ts");
 
 const FORBIDDEN_IMPORTS = [
 	/\bfrom\s*["']\.\/session["']/,
@@ -38,5 +37,15 @@ describe("@afenda/auth/client boundary (N5)", () => {
 		expect(source).toContain("AUTH_API_BASE_PATH");
 		expect(source).toContain("export function getBrowserAuthClient");
 		expect(source).toContain('from "@neondatabase/auth/next"');
+	});
+});
+
+describe("@afenda/auth server barrel hygiene", () => {
+	it("exports AuthBootstrap and CredentialAuthResult types without a middleware subpath", () => {
+		const source = readFileSync(serverIndexPath, "utf-8");
+		expect(source).toContain("export type { CredentialAuthResult }");
+		expect(source).toContain("AuthBootstrap");
+		expect(source).not.toMatch(/from\s*["']\.\/middleware["']/);
+		expect(source).not.toContain("./middleware");
 	});
 });

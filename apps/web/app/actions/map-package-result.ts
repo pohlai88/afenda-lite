@@ -7,7 +7,8 @@ import {
 } from "@/modules/platform/schemas/action-result";
 
 /**
- * Honest `Result` → `ActionResult` map for `@afenda/admin` package calls.
+ * Honest `Result` → `ActionResult` map for Rank-1 package calls
+ * (`@afenda/admin` · `@afenda/auth` adapter outcomes).
  * Preserves code, message, and details (fieldErrors · disposition · org).
  */
 export function mapPackageResult<T>(result: Result<T>): ActionResult<T> {

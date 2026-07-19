@@ -81,6 +81,13 @@ vi.mock("@/modules/identity/domain/organization-users", () => ({
 	listOrganizationUsers: identityMocks.listOrganizationUsers,
 }));
 
+vi.mock("@/modules/identity/domain/organization-member-search", () => ({
+	syncOrganizationMemberSearchIndex: vi.fn().mockResolvedValue({
+		ok: true,
+		data: { upserted: 0, pruned: 0 },
+	}),
+}));
+
 vi.mock("@/modules/platform/domain/list-rbac-audit", () => ({
 	listOrgRbacAudit: platformMocks.listOrgRbacAudit,
 }));

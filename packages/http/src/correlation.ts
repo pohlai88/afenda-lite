@@ -1,5 +1,5 @@
 /**
- * API-007 — correlation identity for critical Server Actions and edge gate.
+ * API-007 — correlation identity for Actions, RH, and edge gate.
  */
 
 export const CORRELATION_HEADER = "x-correlation-id" as const;

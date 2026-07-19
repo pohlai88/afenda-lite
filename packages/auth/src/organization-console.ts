@@ -1,3 +1,6 @@
+import { fail, ok, type Result } from "@afenda/errors/result";
+
+import { failFromNeonOrgProbe } from "./auth-failure";
 import { getNeonAuth } from "./neon-auth";
 import {
 	type MemberOrganization,
@@ -20,17 +23,6 @@ export type CreatedOrganization = {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === "object" && value !== null;
-}
-
-function neonErrorMessage(error: unknown, fallback: string): string {
-	if (
-		isRecord(error) &&
-		typeof error.message === "string" &&
-		error.message.trim().length > 0
-	) {
-		return error.message.trim();
-	}
-	return fallback;
 }
 
 /**
@@ -70,16 +62,17 @@ export function parseCreatedOrganization(
 /**
  * List organizations for the active Neon Auth session.
  * Neon Auth SDK ownership stays in this package.
+ * Returns `@afenda/errors` `Result` — web/admin map to `ActionResult` / product copy.
  */
-export async function listMemberOrganizations(): Promise<MemberOrganization[]> {
+export async function listMemberOrganizations(): Promise<
+	Result<MemberOrganization[]>
+> {
 	const auth = getNeonAuth();
 	const { data, error } = await auth.organization.list();
 	if (error) {
-		throw new Error(
-			`@afenda/auth: ${neonErrorMessage(error, "organization list failed")}`,
-		);
+		return failFromNeonOrgProbe(error, "Failed to list organizations");
 	}
-	return normalizeMemberOrganizations(data);
+	return ok(normalizeMemberOrganizations(data));
 }
 
 /**
@@ -88,35 +81,30 @@ export async function listMemberOrganizations(): Promise<MemberOrganization[]> {
  */
 export async function createOrganization(
 	input: CreateOrganizationInput,
-): Promise<CreatedOrganization> {
+): Promise<Result<CreatedOrganization>> {
 	const name = input.name.trim();
 	const slug = input.slug.trim();
 	if (name.length === 0) {
-		throw new Error(
-			"@afenda/auth: createOrganization requires a non-empty name",
-		);
+		return fail("BAD_REQUEST", "Organization name is required");
 	}
 	if (slug.length === 0) {
-		throw new Error(
-			"@afenda/auth: createOrganization requires a non-empty slug",
-		);
+		return fail("BAD_REQUEST", "Organization slug is required");
 	}
 
 	const auth = getNeonAuth();
 	const { data, error } = await auth.organization.create({ name, slug });
 	if (error) {
-		throw new Error(
-			`@afenda/auth: ${neonErrorMessage(error, "organization create failed")}`,
-		);
+		return failFromNeonOrgProbe(error, "Failed to create organization");
 	}
 
 	const created = parseCreatedOrganization(data);
 	if (!created) {
-		throw new Error(
-			"@afenda/auth: organization create returned no usable organization id",
+		return fail(
+			"INTERNAL_ERROR",
+			"Organization create returned no usable organization id",
 		);
 	}
-	return created;
+	return ok(created);
 }
 
 /**
@@ -126,21 +114,21 @@ export async function createOrganization(
  */
 export async function persistActiveOrganization(
 	organizationId: string,
-): Promise<void> {
+): Promise<Result<void>> {
 	const trimmed = organizationId.trim();
 	if (trimmed.length === 0) {
-		throw new Error(
-			"@afenda/auth: persistActiveOrganization requires a non-empty organizationId",
-		);
+		return fail("BAD_REQUEST", "Active organization id is required");
 	}
 
 	const auth = getNeonAuth();
 	const persisted = await persistActiveOrganizationWithClient(auth, trimmed);
 	if (!persisted) {
-		throw new Error(
-			"@afenda/auth: failed to persist active organization on session",
+		return fail(
+			"INTERNAL_ERROR",
+			"Failed to persist active organization on session",
 		);
 	}
+	return ok(undefined);
 }
 
 /**
@@ -150,29 +138,30 @@ export async function persistActiveOrganization(
  */
 export async function deleteOrganization(
 	organizationId: string,
-): Promise<void> {
+): Promise<Result<void>> {
 	const trimmed = organizationId.trim();
 	if (trimmed.length === 0) {
-		throw new Error(
-			"@afenda/auth: deleteOrganization requires a non-empty organizationId",
+		return fail("BAD_REQUEST", "Organization id is required");
+	}
+
+	const memberships = await listMemberOrganizations();
+	if (!memberships.ok) {
+		return memberships;
+	}
+	const isMember = memberships.data.some((row) => row.id === trimmed);
+	if (!isMember) {
+		return fail(
+			"FORBIDDEN",
+			"Organization is not in the session memberships",
 		);
 	}
 
 	const auth = getNeonAuth();
-	const memberships = await listMemberOrganizations();
-	const isMember = memberships.some((row) => row.id === trimmed);
-	if (!isMember) {
-		throw new Error(
-			"@afenda/auth: deleteOrganization refuses organization outside session memberships",
-		);
-	}
-
 	const { error } = await auth.organization.delete({
 		organizationId: trimmed,
 	});
 	if (error) {
-		throw new Error(
-			`@afenda/auth: ${neonErrorMessage(error, "organization delete failed")}`,
-		);
+		return failFromNeonOrgProbe(error, "Failed to delete organization");
 	}
+	return ok(undefined);
 }

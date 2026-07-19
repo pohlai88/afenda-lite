@@ -64,8 +64,16 @@ describe("@afenda/admin health probes", () => {
 		});
 		expect(snapshot.checks.auth.latencyMs).toBeGreaterThanOrEqual(0);
 		expect(snapshot.probes).toEqual([
-			expect.objectContaining({ name: "postgres", status: "up" }),
-			expect.objectContaining({ name: "neon_auth", status: "up" }),
+			expect.objectContaining({
+				name: "postgres",
+				status: "up",
+				critical: true,
+			}),
+			expect.objectContaining({
+				name: "neon_auth",
+				status: "up",
+				critical: false,
+			}),
 		]);
 		expect(snapshot.connection.pooler).toBe(true);
 		expect(dbExecute).toHaveBeenCalled();

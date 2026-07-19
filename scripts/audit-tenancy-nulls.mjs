@@ -17,6 +17,9 @@ import { getEnvValue, loadLocalEnv } from "./lib/env-files.mjs";
 const HARD_TENANT_ROOT_TABLE_NAMES = [
 	"platform_role_assignment",
 	"platform_rbac_audit",
+	"platform_audit_log",
+	"platform_search_document",
+	"platform_notification",
 ];
 
 const fileEnv = loadLocalEnv();
@@ -44,6 +47,12 @@ const NULL_COUNT_BY_TABLE = {
 		sql`SELECT count(*)::int AS null_count FROM platform_role_assignment WHERE organization_id IS NULL`,
 	platform_rbac_audit: () =>
 		sql`SELECT count(*)::int AS null_count FROM platform_rbac_audit WHERE organization_id IS NULL`,
+	platform_audit_log: () =>
+		sql`SELECT count(*)::int AS null_count FROM platform_audit_log WHERE organization_id IS NULL`,
+	platform_search_document: () =>
+		sql`SELECT count(*)::int AS null_count FROM platform_search_document WHERE organization_id IS NULL`,
+	platform_notification: () =>
+		sql`SELECT count(*)::int AS null_count FROM platform_notification WHERE organization_id IS NULL`,
 };
 
 console.log(

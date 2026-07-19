@@ -6,10 +6,9 @@ import {
 	usagePeriodSchema,
 } from "@afenda/admin/usage";
 import { requireRole } from "@afenda/auth";
+import { createCorrelationId } from "@afenda/http";
 import { z } from "zod";
-
 import { mapPackageResult } from "@/app/actions/map-package-result";
-import { createCorrelationId } from "@/modules/platform/observability/correlation";
 import { logProductEvent } from "@/modules/platform/observability/product-log";
 import {
 	type ActionResult,

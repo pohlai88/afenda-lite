@@ -23,6 +23,49 @@ type AuthConfigStatus = ReadinessResponse["checks"]["auth"]["status"];
 type AuthReachability = ReadinessResponse["checks"]["auth"]["reachability"];
 type OverallStatus = ReadinessResponse["status"];
 
+type BoundedProbeResult = {
+	ok: boolean;
+	latencyMs: number;
+};
+
+/**
+ * Race async work against `timeoutMs`; always return wall-clock `latencyMs`.
+ * Timeout or throw → `ok: false` (same as probe failure).
+ * `onTimeout` runs when the race timer wins (e.g. AbortController.abort for fetch).
+ */
+async function runBoundedProbe(
+	timeoutMs: number,
+	work: () => Promise<void>,
+	onTimeout?: () => void,
+): Promise<BoundedProbeResult> {
+	const started = performance.now();
+	let timeoutId: ReturnType<typeof setTimeout> | undefined;
+	try {
+		await Promise.race([
+			work(),
+			new Promise<never>((_, reject) => {
+				timeoutId = setTimeout(() => {
+					onTimeout?.();
+					reject(new Error("health probe timed out"));
+				}, timeoutMs);
+			}),
+		]);
+		return {
+			ok: true,
+			latencyMs: Math.round(performance.now() - started),
+		};
+	} catch {
+		return {
+			ok: false,
+			latencyMs: Math.round(performance.now() - started),
+		};
+	} finally {
+		if (timeoutId !== undefined) {
+			clearTimeout(timeoutId);
+		}
+	}
+}
+
 export function getLivenessSnapshot(now: Date = new Date()): LivenessResponse {
 	return livenessResponseSchema.parse({
 		status: "alive",
@@ -92,62 +135,40 @@ type TimedProbe = {
  * elapsed for that attempt — not a separate SLA signal.
  */
 async function probeDatabase(): Promise<TimedProbe> {
-	const started = performance.now();
-	let timeoutId: ReturnType<typeof setTimeout> | undefined;
-	try {
-		await Promise.race([
-			db.execute(sql`select 1`),
-			new Promise<never>((_, reject) => {
-				timeoutId = setTimeout(() => {
-					reject(new Error("select 1 timed out"));
-				}, MAX_SELECT1_LATENCY_MS);
-			}),
-		]);
-		return {
-			status: "reachable",
-			latencyMs: Math.round(performance.now() - started),
-		};
-	} catch {
-		return {
-			status: "unreachable",
-			latencyMs: Math.round(performance.now() - started),
-		};
-	} finally {
-		if (timeoutId !== undefined) {
-			clearTimeout(timeoutId);
-		}
-	}
+	const result = await runBoundedProbe(MAX_SELECT1_LATENCY_MS, async () => {
+		await db.execute(sql`select 1`);
+	});
+	return {
+		status: result.ok ? "reachable" : "unreachable",
+		latencyMs: result.latencyMs,
+	};
 }
 
 /**
  * Bounded GET against Neon Auth base URL. Any HTTP completion (incl. 4xx/5xx)
  * counts as reachable; abort/network failure → unreachable.
+ * AbortController cancels the fetch when the shared timeout wins.
  */
 async function probeNeonAuthBaseUrl(baseUrl: string): Promise<TimedProbe> {
-	const started = performance.now();
 	const controller = new AbortController();
-	const timeoutId = setTimeout(() => {
-		controller.abort();
-	}, AUTH_PROBE_TIMEOUT_MS);
-	try {
-		await fetch(baseUrl, {
-			method: "GET",
-			redirect: "manual",
-			signal: controller.signal,
-			cache: "no-store",
-		});
-		return {
-			status: "reachable",
-			latencyMs: Math.round(performance.now() - started),
-		};
-	} catch {
-		return {
-			status: "unreachable",
-			latencyMs: Math.round(performance.now() - started),
-		};
-	} finally {
-		clearTimeout(timeoutId);
-	}
+	const result = await runBoundedProbe(
+		AUTH_PROBE_TIMEOUT_MS,
+		async () => {
+			await fetch(baseUrl, {
+				method: "GET",
+				redirect: "manual",
+				signal: controller.signal,
+				cache: "no-store",
+			});
+		},
+		() => {
+			controller.abort();
+		},
+	);
+	return {
+		status: result.ok ? "reachable" : "unreachable",
+		latencyMs: result.latencyMs,
+	};
 }
 
 function toProbeStatus(
@@ -197,12 +218,14 @@ export async function getReadinessSnapshot(
 		{
 			name: "postgres",
 			status: toProbeStatus(storage.status),
+			critical: true,
 			latencyMs: storage.latencyMs,
 			checkedAt,
 		},
 		{
 			name: "neon_auth",
 			status: toProbeStatus(authReachability),
+			critical: false,
 			latencyMs: authLatencyMs,
 			checkedAt,
 		},

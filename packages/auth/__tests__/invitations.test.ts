@@ -45,7 +45,12 @@ describe("inviteOrgMember (I1.3)", () => {
 				orgId: "org-other",
 				role: "client",
 			}),
-		).rejects.toThrow(/refuses organization/);
+		).resolves.toEqual({
+			ok: false,
+			code: "FORBIDDEN",
+			message:
+				"Invitation refuses an organization other than the active session org",
+		});
 		expect(fetchMock).not.toHaveBeenCalled();
 	});
 
@@ -80,7 +85,7 @@ describe("inviteOrgMember (I1.3)", () => {
 		});
 	});
 
-	it("throws a stable failure without Neon response body leakage", async () => {
+	it("returns a stable failure without Neon response body leakage", async () => {
 		fetchMock.mockResolvedValue({
 			ok: false,
 			status: 403,
@@ -89,20 +94,17 @@ describe("inviteOrgMember (I1.3)", () => {
 		});
 
 		const { inviteOrgMember } = await import("../src/invitations");
-		await expect(
-			inviteOrgMember({
-				email: "a@b.co",
-				orgId: "org-1",
-				role: "client",
-			}),
-		).rejects.toThrow(/organization invite failed \(403\)/);
-		await expect(
-			inviteOrgMember({
-				email: "a@b.co",
-				orgId: "org-1",
-				role: "client",
-			}),
-		).rejects.not.toThrow(/xyz/);
+		const result = await inviteOrgMember({
+			email: "a@b.co",
+			orgId: "org-1",
+			role: "client",
+		});
+		expect(result).toEqual({
+			ok: false,
+			code: "FORBIDDEN",
+			message: "Invitation is not permitted for this session",
+		});
+		expect(JSON.stringify(result)).not.toContain("xyz");
 	});
 
 	it("returns invitationId when Neon includes an invitation envelope", async () => {
@@ -123,10 +125,13 @@ describe("inviteOrgMember (I1.3)", () => {
 				role: "client",
 			}),
 		).resolves.toEqual({
+			ok: true,
 			data: {
-				invitation: { id: "inv-from-neon", email: "client@example.com" },
+				data: {
+					invitation: { id: "inv-from-neon", email: "client@example.com" },
+				},
+				invitationId: "inv-from-neon",
 			},
-			invitationId: "inv-from-neon",
 		});
 	});
 });

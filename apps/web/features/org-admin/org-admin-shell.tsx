@@ -23,6 +23,7 @@ import {
 } from "@/features/org-admin/org-console-panels";
 import { listAssignableRoles } from "@/modules/identity/domain/list-assignable-roles";
 import { listRoleAssignments } from "@/modules/identity/domain/list-role-assignments";
+import { syncOrganizationMemberSearchIndex } from "@/modules/identity/domain/organization-member-search";
 import { listOrganizationUsers } from "@/modules/identity/domain/organization-users";
 import { sessionHasPermission } from "@/modules/identity/domain/session-permission";
 import { listOrgRbacAudit } from "@/modules/platform/domain/list-rbac-audit";
@@ -86,21 +87,30 @@ function currentUtcYearMonth(now = new Date()): string {
 async function loadMemberDirectory(
 	orgId: string,
 ): Promise<MemberDirectoryState> {
+	let users: Awaited<ReturnType<typeof listOrganizationUsers>>;
 	try {
-		const users = await listOrganizationUsers(orgId);
-		if (users.length === 0) {
-			return { status: "empty", options: [] };
-		}
-		return {
-			status: "ready",
-			options: users.map((user) => ({
-				id: user.userId,
-				label: memberLabel(user.name, user.email),
-			})),
-		};
+		users = await listOrganizationUsers(orgId);
 	} catch {
 		return { status: "unavailable", options: [] };
 	}
+
+	// Warm / prune search index; directory stays available if sync fails.
+	try {
+		await syncOrganizationMemberSearchIndex(orgId);
+	} catch {
+		// Index warm is best-effort for first paint.
+	}
+
+	if (users.length === 0) {
+		return { status: "empty", options: [] };
+	}
+	return {
+		status: "ready",
+		options: users.map((user) => ({
+			id: user.userId,
+			label: memberLabel(user.name, user.email),
+		})),
+	};
 }
 
 /**

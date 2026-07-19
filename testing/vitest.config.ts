@@ -58,6 +58,13 @@ export default defineConfig({
 			nodeProject("logger", path.join(repoRoot, "packages/logger")),
 			nodeProject("rate-limit", path.join(repoRoot, "packages/rate-limit")),
 			nodeProject("cache", path.join(repoRoot, "packages/cache")),
+			nodeProject("audit", path.join(repoRoot, "packages/audit")),
+			nodeProject("search", path.join(repoRoot, "packages/search")),
+			nodeProject("notifications", path.join(repoRoot, "packages/notifications")),
+			nodeProject("http", path.join(repoRoot, "packages/http")),
+			nodeProject("security", path.join(repoRoot, "packages/security")),
+			nodeProject("metrics", path.join(repoRoot, "packages/metrics")),
+			nodeProject("ai-the-machine", path.join(repoRoot, "packages/ai-the-machine")),
 			nodeProject("emails", path.join(repoRoot, "packages/emails")),
 			{
 				test: {

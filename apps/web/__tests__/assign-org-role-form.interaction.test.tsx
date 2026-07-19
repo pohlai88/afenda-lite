@@ -14,12 +14,17 @@ import {
 	type MemberDirectoryState,
 } from "@/features/org-admin/assign-org-role-form";
 
-const { assignOrgRoleAction } = vi.hoisted(() => ({
+const { assignOrgRoleAction, searchOrgMembersAction } = vi.hoisted(() => ({
 	assignOrgRoleAction: vi.fn(),
+	searchOrgMembersAction: vi.fn(),
 }));
 
 vi.mock("@/app/actions/assign-org-role", () => ({
 	assignOrgRoleAction,
+}));
+
+vi.mock("@/app/actions/search-org-members", () => ({
+	searchOrgMembersAction,
 }));
 
 const ROLES = [
@@ -60,6 +65,7 @@ function successState(
 			roleId: DEFAULT_ROLE_ID,
 			reactivated: false,
 			auditId,
+			notificationId: null,
 		},
 	};
 }
@@ -82,6 +88,12 @@ afterEach(() => {
 
 beforeEach(() => {
 	assignOrgRoleAction.mockReset();
+	searchOrgMembersAction.mockReset();
+	searchOrgMembersAction.mockResolvedValue({
+		ok: false,
+		code: "INTERNAL_ERROR",
+		message: "search unavailable",
+	});
 });
 
 describe("AssignOrgRoleForm — member picker STABILITY", () => {
@@ -169,6 +181,48 @@ describe("AssignOrgRoleForm — member picker STABILITY", () => {
 		expect(
 			within(listbox).queryByText("Ada Lovelace · ada@example.com"),
 		).not.toBeInTheDocument();
+	});
+
+	it("replaces options from FTS Action hits", async () => {
+		vi.useFakeTimers({ shouldAdvanceTime: true });
+		try {
+			const user = userEvent.setup({
+				advanceTimers: vi.advanceTimersByTime.bind(vi),
+			});
+			searchOrgMembersAction.mockResolvedValue({
+				ok: true,
+				data: {
+					members: [
+						{ id: "user_neon_def", label: "Grace Hopper · grace@example.com" },
+					],
+				},
+			});
+
+			render(
+				<AssignOrgRoleForm roles={ROLES} memberDirectory={READY_DIRECTORY} />,
+			);
+
+			await user.click(
+				screen.getByRole("combobox", { name: "Organization member" }),
+			);
+			await user.type(screen.getByPlaceholderText("Search members…"), "hop");
+
+			await vi.advanceTimersByTimeAsync(300);
+
+			await waitFor(() => {
+				expect(searchOrgMembersAction).toHaveBeenCalledWith({ query: "hop" });
+			});
+
+			const listbox = screen.getByRole("listbox");
+			expect(
+				within(listbox).getByText("Grace Hopper · grace@example.com"),
+			).toBeInTheDocument();
+			expect(
+				within(listbox).queryByText("Ada Lovelace · ada@example.com"),
+			).not.toBeInTheDocument();
+		} finally {
+			vi.useRealTimers();
+		}
 	});
 
 	it("hides success while pending, shows it after resolve, and resets selection", async () => {

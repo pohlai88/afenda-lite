@@ -4,14 +4,13 @@
  */
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { describe, expect, it } from "vitest";
-
 import {
 	CORRELATION_HEADER,
 	createCorrelationId,
 	isCorrelationId,
 	resolveCorrelationId,
-} from "../modules/platform/observability/correlation";
+} from "@afenda/http";
+import { describe, expect, it } from "vitest";
 import { actionFailInternal } from "../modules/platform/schemas/action-result";
 
 const webRoot = join(import.meta.dirname, "..");
@@ -78,6 +77,7 @@ describe("I5.3 critical-path wiring inventory", () => {
 		expect(pkg).not.toMatch(/sentry|datadog|opentelemetry|@opentelemetry/i);
 		// Structured logs use @afenda/logger (Pino stays inside that package).
 		expect(pkg).toContain("@afenda/logger");
+		expect(pkg).toContain("@afenda/http");
 		expect(pkg).not.toMatch(/"pino"/);
 	});
 });

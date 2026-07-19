@@ -25,12 +25,17 @@ export {
 	REJECTED_AUTH_PATH_ALIASES,
 } from "./auth-paths";
 export { resolveAuthUiOrigin } from "./auth-ui-origin";
+export type { CredentialAuthResult } from "./credentials";
 export { signInWithEmail, signOutSession } from "./credentials";
 export {
 	buildEnsureActiveOrganizationUrl,
 	ENSURE_ACTIVE_ORGANIZATION_PATH,
 	handleEnsureActiveOrganizationRequest,
 } from "./ensure-active-organization";
+export type {
+	InviteOrgMemberData,
+	InviteOrgMemberInput,
+} from "./invitations";
 export { inviteOrgMember } from "./invitations";
 export type { JoinInvitationQuery } from "./join-paths";
 export {
@@ -67,7 +72,7 @@ export {
 	inviteableRolesFor,
 	roleSatisfies,
 } from "./roles";
-export type { ApiSession, Session } from "./session";
+export type { ApiSession, AuthBootstrap, Session } from "./session";
 export { getApiSession, getAuthBootstrap, getSession } from "./session";
 export {
 	buildSyncSessionCookiesUrl,

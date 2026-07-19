@@ -6,7 +6,7 @@
 | Authority | **Scratch** — api-and-interface-design + disk `modules/platform/schemas/**` |
 | Updated | 2026-07-20 |
 
-Stable wire contracts for mutations and RH JSON. HTTP allowlist: [rest.md](rest.md). Server Actions on disk: [actions.md](actions.md).
+Stable wire contracts for mutations and RH JSON. HTTP allowlist: [rest.md](rest.md). Server Actions on disk: [actions.md](actions.md). Fetch pipeline DNA (Vierp `api-middleware` borrow/reject): [middleware-dna.md](middleware-dna.md).
 
 ---
 
@@ -35,7 +35,7 @@ Do not invent dashboard list GETs under `/api` for same-origin UI.
 | Failure | `{ ok: false, code, message, details? }` |
 | Helpers | `actionOk` · `actionFail` · `actionFailInternal(message, correlationId)` |
 
-Expected failures return `{ ok: false }` — throw only for unexpected bugs. Never tutorial `{ success, data }`. Error codes / safe serialize / AppError: `@afenda/errors` (no Next.js on the kernel). Closed codes include `RATE_LIMITED` (429) and `SERVICE_UNAVAILABLE` (503); Route Handlers may emit `Retry-After` via `jsonError` when `details.retryAfter` is a positive integer.
+Expected failures return `{ ok: false }` — throw only for unexpected bugs. Never tutorial `{ success, data }`. Error codes / safe serialize / AppError: `@afenda/errors` (no Next.js on the kernel). Closed codes include `RATE_LIMITED` (429) and `SERVICE_UNAVAILABLE` (503); Route Handlers may emit `Retry-After` via `jsonError` when `details.retryAfter` is a positive integer. Auth BFF also stamps `X-RateLimit-*` + `Server-Timing` — see [middleware-dna.md](middleware-dna.md).
 
 ---
 
@@ -67,6 +67,7 @@ Machine Zod helpers live under `modules/platform/schemas/openapi-zod.ts`. Genera
 | Stop | Why |
 |------|-----|
 | No `{ success, data }` / `success: boolean` envelopes | Breaks ActionResult consumers + contracts |
+| No `@afenda/api-middleware` god package | Leaf owners — see [middleware-dna.md](middleware-dna.md) |
 | No RH for ordinary UI reads | Avoids BFF self-fetch waterfalls |
 | No `/api/v1` versioning | One URL surface |
 | No secret/stack in `details` | Safe client correlation only |
@@ -83,4 +84,4 @@ Machine Zod helpers live under `modules/platform/schemas/openapi-zod.ts`. Genera
 5. Re-probe Actions: disk apps/web/app/actions/** ↔ actions.md
 ```
 
-Companion: [rest.md](rest.md) · [actions.md](actions.md) · [../modules/README.md](../modules/README.md) · [../nextjs/data.md](../nextjs/data.md) · [../observability/README.md](../observability/README.md).
+Companion: [rest.md](rest.md) · [actions.md](actions.md) · [middleware-dna.md](middleware-dna.md) · [../modules/README.md](../modules/README.md) · [../nextjs/data.md](../nextjs/data.md) · [../observability/README.md](../observability/README.md) · [../observability/metrics-dna.md](../observability/metrics-dna.md).

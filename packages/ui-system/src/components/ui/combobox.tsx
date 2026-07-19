@@ -30,6 +30,10 @@ type ComboboxBaseProps = {
 	className?: string;
 	id?: string;
 	name?: string;
+	/** `client` (default) filters labels locally; `none` shows `options` as-is. */
+	filterMode?: "client" | "none";
+	/** Fires on search input change (after local state updates). */
+	onSearchChange?: (query: string) => void;
 	"aria-label"?: string;
 	"aria-labelledby"?: string;
 	"aria-invalid"?: boolean | "true" | "false";
@@ -60,6 +64,8 @@ function Combobox(props: ComboboxProps) {
 		className,
 		id,
 		name,
+		filterMode = "client",
+		onSearchChange,
 		"aria-label": ariaLabel,
 		"aria-labelledby": ariaLabelledBy,
 		"aria-invalid": ariaInvalid,
@@ -69,6 +75,18 @@ function Combobox(props: ComboboxProps) {
 	const multiple = props.multiple === true;
 	const [open, setOpen] = React.useState(false);
 	const [searchValue, setSearchValue] = React.useState("");
+
+	const handleSearchChange = (next: string) => {
+		setSearchValue(next);
+		onSearchChange?.(next);
+	};
+
+	const visibleOptions =
+		filterMode === "none"
+			? options
+			: options.filter((option) =>
+					option.label.toLowerCase().includes(searchValue.toLowerCase()),
+				);
 
 	const selectedValues = multiple
 		? (props.value ?? [])
@@ -87,14 +105,14 @@ function Combobox(props: ComboboxProps) {
 				? current.filter((item) => item !== optionValue)
 				: [...current, optionValue];
 			props.onValueChange?.(next);
-			setSearchValue("");
+			handleSearchChange("");
 			return;
 		}
 
 		const next = optionValue === props.value ? "" : optionValue;
 		props.onValueChange?.(next);
 		setOpen(false);
-		setSearchValue("");
+		handleSearchChange("");
 	};
 
 	const removeValue = (optionValue: string) => {
@@ -182,36 +200,30 @@ function Combobox(props: ComboboxProps) {
 					<CommandInput
 						placeholder={searchPlaceholder}
 						value={searchValue}
-						onValueChange={setSearchValue}
+						onValueChange={handleSearchChange}
 					/>
 					<CommandList>
 						<CommandEmpty>{emptyMessage}</CommandEmpty>
 						<CommandGroup>
-							{options
-								.filter((option) =>
-									option.label
-										.toLowerCase()
-										.includes(searchValue.toLowerCase()),
-								)
-								.map((option) => {
-									const selected = selectedValues.includes(option.value);
-									return (
-										<CommandItem
-											key={option.value}
-											value={option.value}
-											disabled={option.disabled}
-											onSelect={() => handleSelect(option.value)}
-										>
-											<CheckIcon
-												className={cn(
-													"mr-2 h-4 w-4",
-													selected ? "opacity-100" : "opacity-0",
-												)}
-											/>
-											{option.label}
-										</CommandItem>
-									);
-								})}
+							{visibleOptions.map((option) => {
+								const selected = selectedValues.includes(option.value);
+								return (
+									<CommandItem
+										key={option.value}
+										value={option.value}
+										disabled={option.disabled}
+										onSelect={() => handleSelect(option.value)}
+									>
+										<CheckIcon
+											className={cn(
+												"mr-2 h-4 w-4",
+												selected ? "opacity-100" : "opacity-0",
+											)}
+										/>
+										{option.label}
+									</CommandItem>
+								);
+							})}
 						</CommandGroup>
 					</CommandList>
 				</Command>

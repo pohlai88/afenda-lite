@@ -80,6 +80,7 @@ Full inventory: [catalog.md](.cursor/skills/using-afenda-elite-skills/catalog.md
 | **Coding discipline** L0 floor (brands · unknown/as · ActionResult · barrel · env) | [`.cursor/rules/coding-discipline.mdc`](.cursor/rules/coding-discipline.mdc) (`alwaysApply`; full table → `afenda-coding-discipline` skill) |
 | **Enterprise production** quality bar only — never MVP / “good enough later” | [`.cursor/rules/no-mvp-quality-bar.mdc`](.cursor/rules/no-mvp-quality-bar.mdc) |
 | **No shims / stubs / throw-TODO** product paths | [`.cursor/rules/no-shim-stub-tech-debt.mdc`](.cursor/rules/no-shim-stub-tech-debt.mdc) |
+| **No parking / defer / false YAGNI** — no consumer ≠ unused; drop only when user names it this turn | [`.cursor/rules/no-park-defer-false-yagni.mdc`](.cursor/rules/no-park-defer-false-yagni.mdc) |
 | **No Collapse/legacy recover** (`app/`, `modules/`, `features/`, `components-V2/`, Collapse `lib/`, wiped `scripts/*`) unless user names that recovery **this turn** | [`.cursor/rules/no-collapse-legacy-recovery.mdc`](.cursor/rules/no-collapse-legacy-recovery.mdc) · farm ARCH-028 notes |
 | **No `decision`/`decisions` directories** — ADRs under `docs/architecture/adr/` when Living docs reopen | [`.cursor/rules/no-decision-directory.mdc`](.cursor/rules/no-decision-directory.mdc) |
 | **No git restore/reset/clean** without explicit user approval this turn | [`.cursor/rules/git-no-auto-recover.mdc`](.cursor/rules/git-no-auto-recover.mdc) |
@@ -102,7 +103,7 @@ Full inventory: [catalog.md](.cursor/skills/using-afenda-elite-skills/catalog.md
 
 ## Checkout posture (Living Turborepo on disk)
 
-**Present:** `@afenda/{config,db,auth,env,errors,logger,rate-limit,cache,admin,ui-system,emails}` · `apps/web` · `apps/docs` (**official** Fumadocs docs) · `apps/web/proxy.ts` edge session gate · `apps/web/modules/{platform,identity}` · `apps/web/features/{auth,org-admin}` · `docs-V2/**` Scratch packs · CI/Deploy (`.github/workflows/{ci,deploy}.yml`).
+**Present:** `@afenda/{config,db,auth,env,errors,logger,rate-limit,cache,audit,search,notifications,admin,http,security,metrics,ai-the-machine,ui-system,emails}` · `apps/web` · `apps/docs` (**official** Fumadocs docs) · `apps/web/proxy.ts` edge session gate · `apps/web/modules/{platform,identity}` · `apps/web/features/{auth,org-admin,ai-the-machine}` · `docs-V2/**` Scratch packs · CI/Deploy (`.github/workflows/{ci,deploy}.yml`).
 
 **Absent by design / removed domains:** Living controlled `docs/` (cutover `71176a0`) · product **Declarations** + **Feed Farm Trade (FFT)** modules/features/routes (nuclear wipe) · `feed-farm-trade` skill · repo-root `app/`, `modules/`, `features/`, `components-V2/`, Collapse `lib/`, wiped ops script bodies · `apps/web/app/playground/` · `apps/web/features/playground/` (removed 2026-07-15; do not handroll). Do **not** recreate `modules/declarations`, `modules/fft`, `features/declarations`, `features/fft`, or `/client/declarations` / `/fft` product trees.
 
@@ -202,7 +203,7 @@ Authority: [`testing/README.md`](testing/README.md).
 | `pnpm test:e2e` / `:smoke` / `:journey` | Playwright when specs exist |
 | `pnpm check:docs-naming` | DOC-002 / naming gate |
 | `pnpm validate:neon-env` | Neon Cloud ids vs `.env.local` |
-| `pnpm audit:tenancy-nulls` | Eight hard tenant roots null-org audit |
+| `pnpm audit:tenancy-nulls` | Living hard tenant roots null-org audit (`platform_role_assignment` · `platform_rbac_audit` · `platform_audit_log` · `platform_search_document`) |
 | `pnpm audit:github-actions-secrets` | Required Actions secret/var **names** only (Ops; keyring `gh`) |
 | `pnpm protect:main` | Verify (or `-- --apply`) Living `main` required check = `quality` |
 
@@ -227,6 +228,6 @@ Before claiming done:
 
 - [ ] Acceptance / Verify commands green with pasted evidence
 - [ ] `N*` only: Neon Slice Score emitted + independent auditor APPROVED (or REJECTED/BLOCKED findings)
-- [ ] No shim/MVP language introduced
+- [ ] No shim/MVP/park-defer/false-YAGNI language introduced
 - [ ] Controlled docs closed or Docs-lane reopen explicit
 - [ ] Secrets not committed (`.env.local` gitignored)

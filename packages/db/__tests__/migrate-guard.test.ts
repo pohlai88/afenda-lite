@@ -29,21 +29,24 @@ describe("db-migrate-guard", () => {
 		expect(`${result.stderr}${result.stdout}`).toMatch(/DENIED/);
 	});
 
-	it("has exactly one 0000_* journal baseline (Mode C)", () => {
-		const sqlFiles = readdirSync(drizzleDir).filter((f) => f.endsWith(".sql"));
-		expect(sqlFiles).toHaveLength(1);
-		expect(sqlFiles[0]).toMatch(/^0000_.+\.sql$/);
+	it("keeps one 0000_* baseline plus forward additive SQL", () => {
+		const sqlFiles = readdirSync(drizzleDir)
+			.filter((f) => f.endsWith(".sql"))
+			.toSorted();
+		const baselines = sqlFiles.filter((f) => /^0000_.+\.sql$/.test(f));
+		expect(baselines).toHaveLength(1);
+		expect(sqlFiles.some((f) => /^0001_.+\.sql$/.test(f))).toBe(true);
 	});
 
-	it("denies sole baseline without AFENDA_ALLOW_BASELINE_MIGRATE", () => {
+	it("denies missing DATABASE_URL when migrate allow is set", () => {
 		const result = runGuard({
 			AFENDA_ALLOW_DB_MIGRATE: "1",
 			AFENDA_ALLOW_BASELINE_MIGRATE: "",
-			DATABASE_URL: poolerUrl,
+			DATABASE_URL: "",
 		});
 		expect(result.status).toBe(1);
 		const combined = `${result.stderr}${result.stdout}`;
-		expect(combined).toMatch(/AFENDA_ALLOW_BASELINE_MIGRATE/);
+		expect(combined).toMatch(/DATABASE_URL/);
 		expect(combined).not.toMatch(/Applying migrations/i);
 	});
 

@@ -1,0 +1,46 @@
+---
+description: Ban parking/deferral and false YAGNI deletes — no consumer ≠ unused; only user-named drop
+alwaysApply: true
+---
+
+# No parking · no defer · no false YAGNI
+
+**NOT ALLOWED. NOT ALLOWED. NOT ALLOWED.**
+
+Agents must not park work, defer real delivery, or invent YAGNI / “no consumer” deletes. Absence of a current importer does **not** mean the surface will not be used.
+
+## Forbidden
+
+- Parking work: “park for later”, “park for now”, “park behind…”, parked slices presented as done
+- Deferral as a completion strategy: “defer implementation”, “come back later”, “revisit later”, “ship later” (when used to avoid finishing)
+- False YAGNI: removing, rewriting, or refusing to keep a surface **because** nothing imports it yet
+- “No consumer / unused / no importers → delete / drop / strip / refactor / re-code”
+- Inventing “won’t be used” / “won’t need” without the user stating that **this turn**
+- Speculative cleanup refactors whose only justification is missing callers
+
+## Required behavior
+
+| Instead of | Do |
+|------------|----|
+| Park / defer unfinished work | Finish the real slice end-to-end, **or** stop and ask |
+| Delete because no consumer | Keep the intended surface unless the user names the drop |
+| YAGNI as delete authority | YAGNI only when the **user** says it will not be used / is out of scope **this turn** |
+| Re-code “unused” modules | Leave correct Approved / Living Target surfaces; do not rewrite for fashion |
+
+1. Ship the real behavior in scope this turn, **or**
+2. Stop, state the block, and wait for an explicit written exception or named drop in **this** turn.
+
+Do not invent exceptions. Do not treat Knip / “unused export” / empty import graphs as delete authority.
+
+## Narrow exceptions (only these)
+
+| Exception | Rule |
+|-----------|------|
+| User letter this turn | User explicitly named the surface as unused / out of scope / drop **in this chat turn** |
+| Approved Slice D / housekeeping handoff | Deletes only via the owning farm’s delete path after explicit mission — not ad-hoc YAGNI |
+| Ban surfaces | Rules/hooks/docs that **state** this prohibition |
+| True dead residue | User-named remove, or an Approved delete mission — never inferred from “no consumer yet” |
+
+## Hook enforcement
+
+`preToolUse` → `.cursor/hooks/no-park-defer-false-yagni.mjs` denies Write/StrReplace/EditNotebook that **increase** parking / deferral / false-YAGNI language (Cursor may flatten StrReplace to full-file Write). Cleanup that removes or holds match count steady is allowed. Do not rename, encode, or split edits to bypass the hook.

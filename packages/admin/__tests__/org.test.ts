@@ -59,10 +59,13 @@ describe("@afenda/admin org services", () => {
 
 	it("listOrganizations returns summaries with lastActivityAt from audit", async () => {
 		const lastAt = new Date("2026-07-19T12:00:00.000Z");
-		listMemberOrganizations.mockResolvedValue([
-			{ id: "org-1", slug: "one" },
-			{ id: "org-2", slug: "two" },
-		]);
+		listMemberOrganizations.mockResolvedValue({
+			ok: true,
+			data: [
+				{ id: "org-1", slug: "one" },
+				{ id: "org-2", slug: "two" },
+			],
+		});
 		mockLastActivityRows([
 			{ organizationId: "org-1", lastActivityAt: lastAt },
 			{ organizationId: "org-2", lastActivityAt: null },
@@ -79,15 +82,17 @@ describe("@afenda/admin org services", () => {
 		expect(select).toHaveBeenCalled();
 	});
 
-	it("listOrganizations maps Neon failures to ok:false", async () => {
-		listMemberOrganizations.mockRejectedValue(
-			new Error("@afenda/auth: list denied"),
-		);
+	it("listOrganizations forwards Neon Result failures", async () => {
+		listMemberOrganizations.mockResolvedValue({
+			ok: false,
+			code: "FORBIDDEN",
+			message: "Not authorized for this organization action",
+		});
 		const { listOrganizations } = await import("../src/org");
 		await expect(listOrganizations()).resolves.toEqual({
 			ok: false,
-			code: "UNAUTHORIZED",
-			message: "Not authorized for organization console",
+			code: "FORBIDDEN",
+			message: "Not authorized for this organization action",
 		});
 		expect(select).not.toHaveBeenCalled();
 	});
@@ -106,7 +111,10 @@ describe("@afenda/admin org services", () => {
 	});
 
 	it("createOrganization returns created org on Neon success", async () => {
-		createNeonOrganization.mockResolvedValue(createdOrg);
+		createNeonOrganization.mockResolvedValue({
+			ok: true,
+			data: createdOrg,
+		});
 		const { createOrganization } = await import("../src/org");
 		await expect(
 			createOrganization({ name: "Acme", slug: "acme" }),
@@ -117,9 +125,11 @@ describe("@afenda/admin org services", () => {
 	});
 
 	it("createOrganization maps conflict-shaped Neon errors", async () => {
-		createNeonOrganization.mockRejectedValue(
-			new Error("@afenda/auth: slug taken"),
-		);
+		createNeonOrganization.mockResolvedValue({
+			ok: false,
+			code: "CONFLICT",
+			message: "Organization already exists",
+		});
 		const { createOrganization } = await import("../src/org");
 		await expect(
 			createOrganization({ name: "Acme", slug: "acme" }),
@@ -141,7 +151,7 @@ describe("@afenda/admin org services", () => {
 	});
 
 	it("deleteOrganization returns orgId on Neon success", async () => {
-		deleteNeonOrganization.mockResolvedValue(undefined);
+		deleteNeonOrganization.mockResolvedValue({ ok: true, data: undefined });
 		const { deleteOrganization } = await import("../src/org");
 		await expect(deleteOrganization({ orgId: "org-1" })).resolves.toEqual({
 			ok: true,
@@ -151,11 +161,11 @@ describe("@afenda/admin org services", () => {
 	});
 
 	it("deleteOrganization maps membership refusal to FORBIDDEN", async () => {
-		deleteNeonOrganization.mockRejectedValue(
-			new Error(
-				"@afenda/auth: deleteOrganization refuses organization outside session memberships",
-			),
-		);
+		deleteNeonOrganization.mockResolvedValue({
+			ok: false,
+			code: "FORBIDDEN",
+			message: "Organization is not in the session memberships",
+		});
 		const { deleteOrganization } = await import("../src/org");
 		await expect(deleteOrganization({ orgId: "org-1" })).resolves.toEqual({
 			ok: false,
@@ -186,14 +196,18 @@ describe("@afenda/admin org services", () => {
 			const callOrder: string[] = [];
 			createNeonOrganization.mockImplementation(async () => {
 				callOrder.push("create");
-				return createdOrg;
+				return { ok: true, data: createdOrg };
 			});
 			persistActiveOrganization.mockImplementation(async () => {
 				callOrder.push("setActive");
+				return { ok: true, data: undefined };
 			});
 			inviteOrgMember.mockImplementation(async () => {
 				callOrder.push("invite");
-				return { data: null, invitationId: "inv-1" };
+				return {
+					ok: true,
+					data: { data: null, invitationId: "inv-1" },
+				};
 			});
 
 			const { provisionOrganization } = await import("../src/org");
@@ -220,12 +234,15 @@ describe("@afenda/admin org services", () => {
 		});
 
 		it("does not invite when active-org persist fails (session-safe)", async () => {
-			createNeonOrganization.mockResolvedValue(createdOrg);
-			persistActiveOrganization.mockRejectedValue(
-				new Error(
-					"@afenda/auth: failed to persist active organization on session",
-				),
-			);
+			createNeonOrganization.mockResolvedValue({
+				ok: true,
+				data: createdOrg,
+			});
+			persistActiveOrganization.mockResolvedValue({
+				ok: false,
+				code: "INTERNAL_ERROR",
+				message: "Failed to persist active organization on session",
+			});
 
 			const { provisionOrganization } = await import("../src/org");
 			const { PROVISION_ORG_CREATED_SET_ACTIVE_FAILED } = await import(
@@ -251,11 +268,19 @@ describe("@afenda/admin org services", () => {
 		});
 
 		it("returns org + disposition when invite fails after create+setActive", async () => {
-			createNeonOrganization.mockResolvedValue(createdOrg);
-			persistActiveOrganization.mockResolvedValue(undefined);
-			inviteOrgMember.mockRejectedValue(
-				new Error("@afenda/auth: organization invite failed (500)"),
-			);
+			createNeonOrganization.mockResolvedValue({
+				ok: true,
+				data: createdOrg,
+			});
+			persistActiveOrganization.mockResolvedValue({
+				ok: true,
+				data: undefined,
+			});
+			inviteOrgMember.mockResolvedValue({
+				ok: false,
+				code: "SERVICE_UNAVAILABLE",
+				message: "Invitation service is temporarily unavailable",
+			});
 
 			const { provisionOrganization } = await import("../src/org");
 			const { PROVISION_ORG_CREATED_INVITE_FAILED } = await import(

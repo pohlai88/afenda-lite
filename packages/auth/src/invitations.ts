@@ -1,6 +1,8 @@
 import { env } from "@afenda/env";
+import { fail, ok, type Result } from "@afenda/errors/result";
 import { headers } from "next/headers";
 
+import { failFromInviteHttpStatus } from "./auth-failure";
 import { requireAppOrigin } from "./join-paths";
 import type { Role } from "./role";
 import { toNeonOrgRole } from "./roles";
@@ -14,7 +16,7 @@ export type InviteOrgMemberInput = {
 	role: Role;
 };
 
-export type InviteOrgMemberResult = {
+export type InviteOrgMemberData = {
 	data: unknown;
 	/** Neon invitation id when the invite response includes one; otherwise null. */
 	invitationId: string | null;
@@ -58,6 +60,8 @@ export function extractInvitationId(data: unknown): string | null {
  * Send a Neon Auth organization invitation.
  * Caller must pass the active session org; Neon Auth SDK usage stays in this package.
  *
+ * Returns `@afenda/errors` `Result` — web Server Actions map to `ActionResult`.
+ *
  * Neon Auth delivers the invite mail via the project Zoho SMTP `email_provider`
  * (ARCH-026) — not app-side SMTP. For optional app-owned compose templates, use
  * `OnboardingInviteEmail` / `renderOnboardingInviteEmail` from `@afenda/emails`
@@ -66,18 +70,19 @@ export function extractInvitationId(data: unknown): string | null {
  */
 export async function inviteOrgMember(
 	input: InviteOrgMemberInput,
-): Promise<InviteOrgMemberResult> {
+): Promise<Result<InviteOrgMemberData>> {
 	const session = await getSession();
 
 	if (session.orgId !== input.orgId) {
-		throw new Error(
-			"@afenda/auth: inviteOrgMember refuses organization other than the active session org",
+		return fail(
+			"FORBIDDEN",
+			"Invitation refuses an organization other than the active session org",
 		);
 	}
 
 	const email = normalizeInviteEmail(input.email);
 	if (email.length === 0) {
-		throw new Error("@afenda/auth: inviteOrgMember requires a non-empty email");
+		return fail("BAD_REQUEST", "Invitation requires a non-empty email");
 	}
 
 	const baseUrl = env.NEON_AUTH_BASE_URL;
@@ -108,9 +113,7 @@ export async function inviteOrgMember(
 	});
 
 	if (!response.ok) {
-		throw new Error(
-			`@afenda/auth: organization invite failed (${response.status})`,
-		);
+		return failFromInviteHttpStatus(response.status);
 	}
 
 	const text = await response.text();
@@ -121,5 +124,5 @@ export async function inviteOrgMember(
 		parsed = null;
 	}
 
-	return { data: parsed, invitationId: extractInvitationId(parsed) };
+	return ok({ data: parsed, invitationId: extractInvitationId(parsed) });
 }

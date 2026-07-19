@@ -13,6 +13,7 @@ export type {
 	RateLimitBucket,
 	RateLimitFailure,
 	RateLimitHitResult,
+	RateLimitQuota,
 	RateLimitResult,
 	RateLimitStore,
 } from "./types";

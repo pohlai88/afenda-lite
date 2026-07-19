@@ -6,10 +6,9 @@ import {
 	provisionOrganizationInputSchema,
 } from "@afenda/admin";
 import { requireRole } from "@afenda/auth";
+import { createCorrelationId } from "@afenda/http";
 import { revalidatePath } from "next/cache";
-
 import { mapPackageResult } from "@/app/actions/map-package-result";
-import { createCorrelationId } from "@/modules/platform/observability/correlation";
 import { logProductEvent } from "@/modules/platform/observability/product-log";
 import {
 	type ActionResult,

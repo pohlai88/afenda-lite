@@ -13,15 +13,17 @@ import {
 	NativeSelectOption,
 	Spinner,
 } from "@afenda/ui-system";
-import { useActionState, useEffect, useMemo, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 
 import {
 	type AssignOrgRoleActionState,
 	assignOrgRoleAction,
 } from "@/app/actions/assign-org-role";
+import { searchOrgMembersAction } from "@/app/actions/search-org-members";
 import { actionFieldMessage } from "@/modules/platform/schemas/action-result";
 
 const initialState: AssignOrgRoleActionState = null;
+const SEARCH_DEBOUNCE_MS = 250;
 
 export type AssignableRoleOption = {
 	id: string;
@@ -43,9 +45,41 @@ type AssignOrgRoleFormProps = {
 	memberDirectory: MemberDirectoryState;
 };
 
+type ComboboxOption = {
+	value: string;
+	label: string;
+};
+
+function toComboboxOptions(
+	members: AssignableMemberOption[],
+): ComboboxOption[] {
+	return members.map((member) => ({
+		value: member.id,
+		label: member.label,
+	}));
+}
+
+function withSelectedOption(
+	options: ComboboxOption[],
+	selectedUserId: string,
+	directoryOptions: ComboboxOption[],
+): ComboboxOption[] {
+	if (selectedUserId.length === 0) {
+		return options;
+	}
+	if (options.some((option) => option.value === selectedUserId)) {
+		return options;
+	}
+	const selected = directoryOptions.find(
+		(option) => option.value === selectedUserId,
+	);
+	return selected === undefined ? options : [selected, ...options];
+}
+
 /**
  * Org-admin assign form — CAPABLE when assignable roles and the org member
  * directory are available (GUIDE-018 I3.4 cut A · UI-CAP-07 Combobox).
+ * Member search uses org-scoped Postgres FTS with client-filter fallback.
  */
 export function AssignOrgRoleForm({
 	roles,
@@ -56,6 +90,10 @@ export function AssignOrgRoleForm({
 		initialState,
 	);
 	const [selectedUserId, setSelectedUserId] = useState("");
+	const [searchQuery, setSearchQuery] = useState("");
+	const [ftsOptions, setFtsOptions] = useState<ComboboxOption[] | null>(null);
+
+	const directoryOptions = toComboboxOptions(memberDirectory.options);
 
 	useEffect(() => {
 		if (state?.ok === true) {
@@ -63,14 +101,32 @@ export function AssignOrgRoleForm({
 		}
 	}, [state]);
 
-	const comboboxOptions = useMemo(
-		() =>
-			memberDirectory.options.map((member) => ({
-				value: member.id,
-				label: member.label,
-			})),
-		[memberDirectory.options],
-	);
+	useEffect(() => {
+		const trimmed = searchQuery.trim();
+		if (trimmed.length === 0) {
+			setFtsOptions(null);
+			return;
+		}
+
+		let cancelled = false;
+		const timer = setTimeout(() => {
+			void searchOrgMembersAction({ query: trimmed }).then((result) => {
+				if (cancelled) {
+					return;
+				}
+				if (!result.ok) {
+					setFtsOptions(null);
+					return;
+				}
+				setFtsOptions(toComboboxOptions(result.data.members));
+			});
+		}, SEARCH_DEBOUNCE_MS);
+
+		return () => {
+			cancelled = true;
+			clearTimeout(timer);
+		};
+	}, [searchQuery]);
 
 	if (roles.length === 0) {
 		return (
@@ -107,6 +163,13 @@ export function AssignOrgRoleForm({
 		);
 	}
 
+	const filterMode = ftsOptions === null ? "client" : "none";
+	const comboboxOptions = withSelectedOption(
+		ftsOptions ?? directoryOptions,
+		selectedUserId,
+		directoryOptions,
+	);
+
 	const defaultRoleId = roles[0]?.id;
 	const userIdError = actionFieldMessage(state, "userId");
 	const roleIdError = actionFieldMessage(state, "roleId");
@@ -134,6 +197,8 @@ export function AssignOrgRoleForm({
 					options={comboboxOptions}
 					value={selectedUserId}
 					onValueChange={setSelectedUserId}
+					filterMode={filterMode}
+					onSearchChange={setSearchQuery}
 					placeholder="Select a member…"
 					searchPlaceholder="Search members…"
 					emptyMessage="No matching members."

@@ -55,7 +55,14 @@ import { signInAction } from "../app/actions/auth-credentials";
 describe("signInAction rate limit", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		rateLimitMocks.checkRateLimit.mockResolvedValue({ ok: true });
+		rateLimitMocks.checkRateLimit.mockResolvedValue({
+			ok: true,
+			quota: {
+				limit: 5,
+				remaining: 4,
+				resetEpochMs: Date.now() + 60_000,
+			},
+		});
 	});
 
 	it("returns ActionResult RATE_LIMITED with retryAfter and logs correlation", async () => {
@@ -63,6 +70,7 @@ describe("signInAction rate limit", () => {
 			ok: false,
 			reason: "rate_limited",
 			retryAfterSeconds: 17,
+			quota: { limit: 5, remaining: 0, resetEpochMs: Date.now() + 17_000 },
 		});
 
 		const formData = new FormData();
@@ -100,6 +108,7 @@ describe("signInAction rate limit", () => {
 			ok: false,
 			reason: "rate_limited",
 			retryAfterSeconds: 12,
+			quota: { limit: 5, remaining: 0, resetEpochMs: Date.now() + 12_000 },
 		});
 
 		const formData = new FormData();
@@ -121,7 +130,14 @@ describe("signInAction rate limit", () => {
 	});
 
 	it("uses _invalid sentinel when email is missing", async () => {
-		rateLimitMocks.checkRateLimit.mockResolvedValue({ ok: true });
+		rateLimitMocks.checkRateLimit.mockResolvedValue({
+			ok: true,
+			quota: {
+				limit: 5,
+				remaining: 4,
+				resetEpochMs: Date.now() + 60_000,
+			},
+		});
 
 		const formData = new FormData();
 		formData.set("password", "x");

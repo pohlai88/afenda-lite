@@ -57,7 +57,14 @@ describe("createAuthApiHandlers (PL-S7 BFF)", () => {
 		handlerGet.mockReset();
 		handlerPost.mockReset();
 		rateLimitMocks.checkRateLimit.mockReset();
-		rateLimitMocks.checkRateLimit.mockResolvedValue({ ok: true });
+		rateLimitMocks.checkRateLimit.mockResolvedValue({
+			ok: true,
+			quota: {
+				limit: 20,
+				remaining: 19,
+				resetEpochMs: Date.now() + 60_000,
+			},
+		});
 		getHandlerMock.mockReturnValue({
 			GET: handlerGet,
 			POST: handlerPost,
@@ -194,10 +201,12 @@ describe("createAuthApiHandlers (PL-S7 BFF)", () => {
 	});
 
 	it("returns RATE_LIMITED 429 with Retry-After and correlation on over-limit POST", async () => {
+		const resetEpochMs = 1_700_000_042_000;
 		rateLimitMocks.checkRateLimit.mockResolvedValue({
 			ok: false,
 			reason: "rate_limited",
 			retryAfterSeconds: 42,
+			quota: { limit: 20, remaining: 0, resetEpochMs },
 		});
 		const chunks: string[] = [];
 		const writeSpy = vi
@@ -223,6 +232,12 @@ describe("createAuthApiHandlers (PL-S7 BFF)", () => {
 		expect(handlerPost).not.toHaveBeenCalled();
 		expect(response.status).toBe(429);
 		expect(response.headers.get("Retry-After")).toBe("42");
+		expect(response.headers.get("X-RateLimit-Limit")).toBe("20");
+		expect(response.headers.get("X-RateLimit-Remaining")).toBe("0");
+		expect(response.headers.get("X-RateLimit-Reset")).toBe("1700000042");
+		expect(response.headers.get("Server-Timing")).toMatch(
+			/^auth_bff;dur=\d+(\.\d)?$/,
+		);
 		expect(response.headers.get(AUTH_BFF_CORRELATION_HEADER)).toBe(
 			CORRELATION_ID,
 		);

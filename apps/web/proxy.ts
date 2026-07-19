@@ -1,12 +1,9 @@
 import { createSessionProxy } from "@afenda/auth";
 import { env } from "@afenda/env";
+import { CORRELATION_HEADER, resolveCorrelationId } from "@afenda/http";
 import { logProductEvent } from "@afenda/logger/edge";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-import {
-	CORRELATION_HEADER,
-	resolveCorrelationId,
-} from "@/modules/platform/observability/correlation";
 
 import { shouldBypassSessionGate } from "./session-gate-policy";
 

@@ -81,7 +81,7 @@ describe("shouldBypassSessionGate", () => {
 		).toBe(true);
 	});
 
-	it("bypasses Pre-Login API surfaces (auth BFF + health)", () => {
+	it("bypasses Pre-Login API surfaces (auth BFF + health + metrics)", () => {
 		expect(shouldBypassSessionGate(req({ pathname: "/api/auth" }))).toBe(true);
 		expect(
 			shouldBypassSessionGate(req({ pathname: "/api/auth/get-session" })),
@@ -92,6 +92,9 @@ describe("shouldBypassSessionGate", () => {
 		expect(
 			shouldBypassSessionGate(req({ pathname: "/api/health/readiness" })),
 		).toBe(true);
+		expect(shouldBypassSessionGate(req({ pathname: "/api/metrics" }))).toBe(
+			true,
+		);
 		// Post-login APIs stay fail-closed at the policy layer.
 		expect(
 			shouldBypassSessionGate(req({ pathname: "/api/session/sync-cookies" })),

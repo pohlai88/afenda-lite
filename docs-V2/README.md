@@ -27,6 +27,7 @@ No controlled-document register. No links outside this tree into other doc homes
 | API contracts | [api/README.md](api/README.md) | api-and-interface-design |
 | HTTP Route Handlers | [api/rest.md](api/rest.md) | api-and-interface-design |
 | Server Actions | [api/actions.md](api/actions.md) | api-and-interface-design |
+| API middleware DNA (borrow/reject) | [api/middleware-dna.md](api/middleware-dna.md) | api-and-interface-design · monorepo-discipline |
 | Next.js App Router | [nextjs/README.md](nextjs/README.md) | incremental FE + App Router |
 | UI consume | [nextjs/ui.md](nextjs/ui.md) | frontend-ui-engineering |
 | Official docs app (`@afenda/docs`) | [docs/README.md](docs/README.md) | documentation-and-adrs · fumadocs-mdx-structure · [docs/automation.md](docs/automation.md) |
@@ -37,6 +38,9 @@ No controlled-document register. No links outside this tree into other doc homes
 | Lint | [lint/README.md](lint/README.md) | ci-cd-and-automation |
 | Deploy + launch | [deploy/README.md](deploy/README.md) | shipping-and-launch |
 | Observability | [observability/README.md](observability/README.md) | observability-and-instrumentation |
+| Product search (Neon FTS) | [search/README.md](search/README.md) | monorepo-discipline · planning dependency graph |
+| In-app notifications | [notifications/README.md](notifications/README.md) | monorepo-discipline · planning dependency graph |
+| AI The Machine | [ai/README.md](ai/README.md) · [ai/ai-the-machine-dna.md](ai/ai-the-machine-dna.md) | monorepo-discipline · ai-sdk · vercel-agent |
 
 ---
 

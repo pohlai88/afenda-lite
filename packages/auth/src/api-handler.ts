@@ -5,8 +5,18 @@ import {
 	httpErrorBody,
 	retryAfterSeconds,
 } from "@afenda/errors/http";
+import {
+	applyRateLimitHeaders,
+	applyRetryAfterHeader,
+	applyServerTimingHeader,
+	type RateLimitHeaderQuota,
+} from "@afenda/http";
 import { createLogger } from "@afenda/logger";
-import { checkRateLimit, toRateLimitAppError } from "@afenda/rate-limit";
+import {
+	checkRateLimit,
+	type RateLimitQuota,
+	toRateLimitAppError,
+} from "@afenda/rate-limit";
 
 import { getNeonAuth } from "./neon-auth";
 
@@ -16,6 +26,7 @@ const authBffLogger = createLogger({ service: "afenda-auth-bff" });
 export const AUTH_BFF_CORRELATION_HEADER = "x-correlation-id" as const;
 
 const UNKNOWN_CLIENT_IP = "unknown";
+const SERVER_TIMING_METRIC = "auth_bff";
 
 const UUID_RE =
 	/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -125,8 +136,29 @@ export function isTrustedAuthBffPost(request: Request): boolean {
 	);
 }
 
-function stampCorrelation(response: Response, correlationId: string): Response {
-	response.headers.set(AUTH_BFF_CORRELATION_HEADER, correlationId);
+function toHeaderQuota(quota: RateLimitQuota): RateLimitHeaderQuota {
+	return {
+		limit: quota.limit,
+		remaining: quota.remaining,
+		resetEpochMs: quota.resetEpochMs,
+	};
+}
+
+function stampBffResponse(
+	response: Response,
+	input: {
+		correlationId: string;
+		startTimeMs: number;
+		quota?: RateLimitQuota;
+	},
+): Response {
+	response.headers.set(AUTH_BFF_CORRELATION_HEADER, input.correlationId);
+	applyServerTimingHeader(response.headers, input.startTimeMs, {
+		metric: SERVER_TIMING_METRIC,
+	});
+	if (input.quota !== undefined) {
+		applyRateLimitHeaders(response.headers, toHeaderQuota(input.quota));
+	}
 	return response;
 }
 
@@ -142,27 +174,56 @@ function clientIpFromRequest(request: Request): string {
 	return UNKNOWN_CLIENT_IP;
 }
 
-function forbiddenResponse(correlationId: string): Response {
-	return stampCorrelation(new Response(null, { status: 403 }), correlationId);
+function forbiddenResponse(
+	correlationId: string,
+	startTimeMs: number,
+): Response {
+	return stampBffResponse(new Response(null, { status: 403 }), {
+		correlationId,
+		startTimeMs,
+	});
 }
 
-function safeInternalErrorResponse(correlationId: string): Response {
-	return stampCorrelation(new Response(null, { status: 500 }), correlationId);
+function safeInternalErrorResponse(
+	correlationId: string,
+	startTimeMs: number,
+): Response {
+	return stampBffResponse(new Response(null, { status: 500 }), {
+		correlationId,
+		startTimeMs,
+	});
 }
 
-function appErrorResponse(correlationId: string, error: AppError): Response {
-	const retryAfter = retryAfterSeconds(error.details);
+function appErrorResponse(input: {
+	correlationId: string;
+	startTimeMs: number;
+	error: AppError;
+	quota?: RateLimitQuota;
+}): Response {
+	const retryAfter = retryAfterSeconds(input.error.details);
 	const headers = new Headers({
 		"content-type": "application/json",
-		[AUTH_BFF_CORRELATION_HEADER]: correlationId,
+		[AUTH_BFF_CORRELATION_HEADER]: input.correlationId,
 	});
 	if (retryAfter !== undefined) {
-		headers.set("Retry-After", String(retryAfter));
+		applyRetryAfterHeader(headers, retryAfter);
 	}
+	if (input.quota !== undefined) {
+		applyRateLimitHeaders(headers, toHeaderQuota(input.quota));
+	}
+	applyServerTimingHeader(headers, input.startTimeMs, {
+		metric: SERVER_TIMING_METRIC,
+	});
 	return new Response(
-		JSON.stringify(httpErrorBody(error.code, error.message, error.details)),
+		JSON.stringify(
+			httpErrorBody(
+				input.error.code,
+				input.error.message,
+				input.error.details,
+			),
+		),
 		{
-			status: ERROR_HTTP_STATUS[error.code],
+			status: ERROR_HTTP_STATUS[input.error.code],
 			headers,
 		},
 	);
@@ -185,15 +246,17 @@ function wrapProviderHandler(
 	method: "GET" | "POST",
 ): AuthRouteHandler {
 	return async (request, context) => {
+		const startTimeMs = Date.now();
 		const correlationId = resolveAuthBffCorrelationId(
 			request.headers.get(AUTH_BFF_CORRELATION_HEADER),
 		);
 		const pathname = new URL(request.url).pathname;
 
 		if (method === "POST" && !isTrustedAuthBffPost(request)) {
-			return forbiddenResponse(correlationId);
+			return forbiddenResponse(correlationId, startTimeMs);
 		}
 
+		let postQuota: RateLimitQuota | undefined;
 		if (method === "POST") {
 			const limit = await checkRateLimit({
 				bucket: "auth_bff_post",
@@ -210,20 +273,30 @@ function wrapProviderHandler(
 					path: pathname,
 					code: error.code,
 				});
-				return appErrorResponse(correlationId, error);
+				return appErrorResponse({
+					correlationId,
+					startTimeMs,
+					error,
+					...(limit.reason === "rate_limited" ? { quota: limit.quota } : {}),
+				});
 			}
+			postQuota = limit.quota;
 		}
 
 		try {
 			const response = await provider(request, context);
-			return stampCorrelation(response, correlationId);
+			return stampBffResponse(response, {
+				correlationId,
+				startTimeMs,
+				...(postQuota !== undefined ? { quota: postQuota } : {}),
+			});
 		} catch {
 			logAuthBffUnexpectedError({
 				correlationId,
 				method,
 				pathname,
 			});
-			return safeInternalErrorResponse(correlationId);
+			return safeInternalErrorResponse(correlationId, startTimeMs);
 		}
 	};
 }

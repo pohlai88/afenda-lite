@@ -58,6 +58,13 @@ registry.registerComponent("securitySchemes", "neonAuthSession", {
 		"Neon Auth client session cookie (browser same-origin). Cookie name here is illustrative — Neon owns the real name.",
 });
 
+registry.registerComponent("securitySchemes", "metricsScrapeBearer", {
+	type: "http",
+	scheme: "bearer",
+	description:
+		"Bearer token matching server env METRICS_SCRAPE_TOKEN. Unset token → 404 (fail closed).",
+});
+
 registry.registerPath({
 	method: "get",
 	path: "/api/health/liveness",
@@ -78,7 +85,8 @@ registry.registerPath({
 	method: "get",
 	path: "/api/health/readiness",
 	summary: "Dependency readiness probe",
-	description: "DB / auth dependency snapshot. Prefer Cache-Control: no-store.",
+	description:
+		"DB / auth dependency snapshot. Prefer Cache-Control: no-store. HTTP 503 when status is not_ready (critical storage unreachable); 200 for ready and degraded.",
 	tags: ["Health"],
 	responses: {
 		200: {
@@ -86,6 +94,42 @@ registry.registerPath({
 			content: {
 				"application/json": { schema: readinessEnvelopeSchema },
 			},
+		},
+		503: {
+			description:
+				"Not ready — critical dependency (postgres) unreachable; body still `{ data: ReadinessResponse }`",
+			content: {
+				"application/json": { schema: readinessEnvelopeSchema },
+			},
+		},
+	},
+});
+
+registry.registerPath({
+	method: "get",
+	path: "/api/metrics",
+	summary: "Prometheus metrics scrape",
+	description:
+		"Prometheus text exposition from @afenda/metrics. Requires Authorization: Bearer matching METRICS_SCRAPE_TOKEN. Fail closed when token unset (404).",
+	tags: ["Observability"],
+	security: [{ metricsScrapeBearer: [] }],
+	responses: {
+		200: {
+			description: "Prometheus exposition text",
+			content: {
+				"text/plain": {
+					schema: z.string().openapi({
+						type: "string",
+						description: "Prometheus metrics body",
+					}),
+				},
+			},
+		},
+		401: {
+			description: "Missing or invalid bearer token",
+		},
+		404: {
+			description: "Scrape disabled — METRICS_SCRAPE_TOKEN unset",
 		},
 	},
 });
@@ -109,7 +153,10 @@ const document = generator.generateDocument({
 			description: "Local next dev",
 		},
 	],
-	tags: [{ name: "Health", description: "Public probes" }],
+	tags: [
+		{ name: "Health", description: "Public probes" },
+		{ name: "Observability", description: "Prometheus scrape" },
+	],
 });
 
 const operationMetadata = {
@@ -118,6 +165,9 @@ const operationMetadata = {
 	},
 	"/api/health/readiness": {
 		get: { operationId: "getHealthReadiness", status: "api-now" },
+	},
+	"/api/metrics": {
+		get: { operationId: "getMetricsScrape", status: "api-now" },
 	},
 } as const;
 

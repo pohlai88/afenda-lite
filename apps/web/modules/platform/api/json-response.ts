@@ -1,4 +1,5 @@
 import { retryAfterSeconds } from "@afenda/errors/http";
+import { applyRetryAfterHeader } from "@afenda/http";
 import { NextResponse } from "next/server";
 
 import {
@@ -29,10 +30,12 @@ export function jsonError(
 	details?: unknown,
 ): NextResponse<APIErrorBody> {
 	const retryAfter = retryAfterSeconds(details);
+	const headers = new Headers();
+	if (retryAfter !== undefined) {
+		applyRetryAfterHeader(headers, retryAfter);
+	}
 	return NextResponse.json(apiErrorBody(code, message, details), {
 		status: API_ERROR_HTTP_STATUS[code],
-		...(retryAfter === undefined
-			? {}
-			: { headers: { "Retry-After": String(retryAfter) } }),
+		headers,
 	});
 }

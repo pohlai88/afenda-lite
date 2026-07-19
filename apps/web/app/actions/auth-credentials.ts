@@ -7,12 +7,11 @@ import {
 	signInWithEmail,
 	signOutSession,
 } from "@afenda/auth";
+import { createCorrelationId } from "@afenda/http";
 import { checkRateLimit, toRateLimitAppError } from "@afenda/rate-limit";
 import { redirect } from "next/navigation";
-
 import { signInSchema } from "@/modules/identity/schemas/auth";
 import { readRequestAttribution } from "@/modules/platform/domain/request-attribution";
-import { createCorrelationId } from "@/modules/platform/observability/correlation";
 import { logProductEvent } from "@/modules/platform/observability/product-log";
 import {
 	type ActionResult,
@@ -58,7 +57,9 @@ function signInRateLimitKey(input: {
 }): string {
 	const ip = input.ipAddress?.trim() || UNKNOWN_CLIENT_IP;
 	const email =
-		typeof input.emailRaw === "string" ? input.emailRaw.trim().toLowerCase() : "";
+		typeof input.emailRaw === "string"
+			? input.emailRaw.trim().toLowerCase()
+			: "";
 	return `${ip}:${email.length > 0 ? email : INVALID_EMAIL_KEY}`;
 }
 

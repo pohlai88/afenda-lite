@@ -9,6 +9,7 @@ import {
 	assertPlaygroundLocalOnly,
 	formatNeonContractIssues,
 	isProductionDeployment,
+	isVercelRuntime,
 	neonAuthBaseUrlSchema,
 	neonAuthCookieSecretSchema,
 	productAppUrlSchema,
@@ -24,10 +25,16 @@ const runtimeCtx = {
 	vercelEnv: process.env.VERCEL_ENV,
 };
 
+/** True when running on a Vercel deployment (preview / production / vercel-dev). */
+export function isVercelRuntimeNow(): boolean {
+	return isVercelRuntime(runtimeCtx);
+}
+
 /**
  * Typed Next.js env for `@afenda/web` (ARCH-027 / T3 createEnv + N1 Neon contract).
  * Product code: `import { env } from '@afenda/env'` — never raw process.env for app config.
  */
+
 export const env = createEnv({
 	server: {
 		DATABASE_URL: productDatabaseUrlSchema,
@@ -53,6 +60,20 @@ export const env = createEnv({
 		/** Upstash Redis REST — required on Vercel production for shared rate limits. */
 		UPSTASH_REDIS_REST_URL: z.url().optional(),
 		UPSTASH_REDIS_REST_TOKEN: z.string().min(1).optional(),
+
+		/**
+		 * Bearer token for `GET /api/metrics` Prometheus scrape.
+		 * Fail closed when unset — scrape RH returns 404.
+		 */
+		METRICS_SCRAPE_TOKEN: z.string().min(16).optional(),
+
+		/**
+		 * Vercel AI Gateway API key for `@afenda/ai-the-machine`.
+		 * Local: required for chat RH. On Vercel, OIDC may apply when unset.
+		 */
+		AI_GATEWAY_API_KEY: z.string().min(1).optional(),
+		/** AI Gateway model id (`provider/model`). */
+		AI_THE_MACHINE_MODEL: z.string().min(1).optional(),
 
 		PLAYGROUND_ENABLED: boolString
 			.optional()
@@ -113,6 +134,11 @@ export const env = createEnv({
 
 		UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL,
 		UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,
+
+		METRICS_SCRAPE_TOKEN: process.env.METRICS_SCRAPE_TOKEN,
+
+		AI_GATEWAY_API_KEY: process.env.AI_GATEWAY_API_KEY,
+		AI_THE_MACHINE_MODEL: process.env.AI_THE_MACHINE_MODEL,
 
 		PLAYGROUND_ENABLED: process.env.PLAYGROUND_ENABLED,
 		PLAYGROUND_SURVEY_ID: process.env.PLAYGROUND_SURVEY_ID,

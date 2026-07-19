@@ -39,7 +39,7 @@ When the turn applies project rules (including `alwaysApply`) or edits product/p
 |------|------|
 | `agent-authority-preflight` | Any PREFLIGHT-firing turn |
 | `coding-discipline` | Product/package code edits or typed hygiene this turn |
-| `no-shim-stub-tech-debt` · `no-mvp-quality-bar` | Product work (and whenever those bans apply) |
+| `no-shim-stub-tech-debt` · `no-mvp-quality-bar` · `no-park-defer-false-yagni` | Product work (and whenever those bans apply) |
 
 **Skills vs Rules:** list `afenda-coding-discipline` under **Skills** only when that skill was loaded this turn. The always-apply floor is **`coding-discipline`** (Rules) — do not invent the skill name under Skills to “cover” the rule.
 

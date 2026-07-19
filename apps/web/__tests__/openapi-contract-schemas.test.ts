@@ -33,8 +33,20 @@ describe("OpenAPI contract schemas (I2.4)", () => {
 				},
 			},
 			probes: [
-				{ name: "postgres", status: "up", latencyMs: 4, checkedAt },
-				{ name: "neon_auth", status: "up", latencyMs: 5, checkedAt },
+				{
+					name: "postgres",
+					status: "up",
+					critical: true,
+					latencyMs: 4,
+					checkedAt,
+				},
+				{
+					name: "neon_auth",
+					status: "up",
+					critical: false,
+					latencyMs: 5,
+					checkedAt,
+				},
 			],
 			topology: "neon-shared-schema",
 			connection: { pooler: true, ssl: "require" },
@@ -45,6 +57,8 @@ describe("OpenAPI contract schemas (I2.4)", () => {
 		expect(ready.checks.storage.latencyMs).toBe(4);
 		expect(ready.checks.auth.reachability).toBe("reachable");
 		expect(ready.probes).toHaveLength(2);
+		expect(ready.probes[0]?.critical).toBe(true);
+		expect(ready.probes[1]?.critical).toBe(false);
 
 		const degraded = readinessResponseSchema.parse({
 			status: "degraded",
@@ -62,8 +76,20 @@ describe("OpenAPI contract schemas (I2.4)", () => {
 				},
 			},
 			probes: [
-				{ name: "postgres", status: "up", latencyMs: 2, checkedAt },
-				{ name: "neon_auth", status: "skipped", latencyMs: 0, checkedAt },
+				{
+					name: "postgres",
+					status: "up",
+					critical: true,
+					latencyMs: 2,
+					checkedAt,
+				},
+				{
+					name: "neon_auth",
+					status: "skipped",
+					critical: false,
+					latencyMs: 0,
+					checkedAt,
+				},
 			],
 			topology: "neon-shared-schema",
 			connection: { pooler: true, ssl: "require" },
@@ -88,8 +114,20 @@ describe("OpenAPI contract schemas (I2.4)", () => {
 				},
 			},
 			probes: [
-				{ name: "postgres", status: "down", latencyMs: 50, checkedAt },
-				{ name: "neon_auth", status: "up", latencyMs: 3, checkedAt },
+				{
+					name: "postgres",
+					status: "down",
+					critical: true,
+					latencyMs: 50,
+					checkedAt,
+				},
+				{
+					name: "neon_auth",
+					status: "up",
+					critical: false,
+					latencyMs: 3,
+					checkedAt,
+				},
 			],
 			topology: "neon-shared-schema",
 			connection: { pooler: false, ssl: "unknown" },

@@ -27,9 +27,14 @@ const readinessAuthCheckSchema = z.object({
 	latencyMs: z.number().int().min(0),
 });
 
-const healthProbeSchema = z.object({
+	const healthProbeSchema = z.object({
 	name: z.enum(["postgres", "neon_auth"]),
 	status: z.enum(["up", "down", "skipped"]),
+	/**
+	 * Critical probe failure → overall `not_ready`; non-critical → `degraded`.
+	 * postgres is critical; neon_auth is not.
+	 */
+	critical: z.boolean(),
 	latencyMs: z.number().int().min(0),
 	checkedAt: z.string().datetime(),
 });

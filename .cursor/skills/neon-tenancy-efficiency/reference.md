@@ -85,7 +85,7 @@ pnpm test:e2e:journey -- e2e/tenancy-isolation.spec.ts
 |------|------------|
 | Env | `@afenda/env` schema present; `.env.local` only local runtime file; no compose |
 | `verify:vercel-db` | `DATABASE_URL` contains `-pooler` |
-| `audit:tenancy-nulls` | Zero nulls on living hard tenant roots (`platform_role_assignment`, `platform_rbac_audit`) |
+| `audit:tenancy-nulls` | Zero nulls on living hard tenant roots (`platform_role_assignment`, `platform_rbac_audit`, `platform_audit_log`, `platform_search_document`) |
 | `check:tenancy-residue` | No soft `(NULL OR org)` residue |
 | Isolation e2e | Green only when Target app suite exists |
 
@@ -121,7 +121,8 @@ FROM pg_indexes
 WHERE schemaname = 'public'
   AND tablename IN (
     'platform_role_assignment',
-    'platform_rbac_audit'
+    'platform_rbac_audit',
+    'platform_audit_log'
   )
   AND indexdef ILIKE '%organization_id%'
 ORDER BY tablename, indexname;
@@ -129,7 +130,8 @@ ORDER BY tablename, indexname;
 -- B4 NOT NULL on living hard roots (expect zero rows)
 SELECT 'platform_role_assignment' AS t, count(*) AS nulls
 FROM platform_role_assignment WHERE organization_id IS NULL
-UNION ALL SELECT 'platform_rbac_audit', count(*) FROM platform_rbac_audit WHERE organization_id IS NULL;
+UNION ALL SELECT 'platform_rbac_audit', count(*) FROM platform_rbac_audit WHERE organization_id IS NULL
+UNION ALL SELECT 'platform_audit_log', count(*) FROM platform_audit_log WHERE organization_id IS NULL;
 
 -- B5 Auth org registry (for ops — never stamp LIMIT 1 blindly)
 SELECT id, name, slug, "createdAt"
@@ -196,7 +198,7 @@ cd C:\JackProject\afenda-bolt\afenda-lite
 rg -n "organization_id" apps/web/modules packages/db/src --glob "*.ts" 2>$null
 ```
 
-Every living tenant-root read/write must use hard `organization_id = $org` (via `withOrg` / equivalent). Missing filter = critical stop. Living hard roots: `platform_role_assignment`, `platform_rbac_audit`.
+Every living tenant-root read/write must use hard `organization_id = $org` (via `withOrg` / equivalent). Missing filter = critical stop. Living hard roots: `platform_role_assignment`, `platform_rbac_audit`, `platform_audit_log`, `platform_search_document`.
 
 **D closed 2026-07-12 (historical):** prior Declarations/FFT domain scopes — product modules now **removed**. Allowed unscoped: session `user_id` identity reads.
 

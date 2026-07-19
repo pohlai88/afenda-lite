@@ -24,30 +24,6 @@ import {
 	provisionOrganizationResultSchema,
 } from "./schemas/org";
 
-/**
- * Map Neon Auth failure shapes to stable Result codes.
- * Classifies on Error.message patterns but never returns raw driver/auth text.
- */
-function mapAuthFailure(error: unknown, fallback: string): Result<never> {
-	if (!(error instanceof Error)) {
-		return failFromUnknown(error, fallback);
-	}
-	const probe = error.message.trim();
-	if (probe.includes("non-empty")) {
-		return fail("BAD_REQUEST", "Invalid organization input");
-	}
-	if (/slug taken|already exists|conflict/i.test(probe)) {
-		return fail("CONFLICT", "Organization already exists");
-	}
-	if (/outside session memberships/i.test(probe)) {
-		return fail("FORBIDDEN", "Organization is not in the session memberships");
-	}
-	if (/unauthor|forbidden|denied|not owner/i.test(probe)) {
-		return fail("UNAUTHORIZED", "Not authorized for organization console");
-	}
-	return failFromUnknown(error, fallback);
-}
-
 async function loadLastActivityByOrgId(
 	orgIds: readonly string[],
 ): Promise<Map<string, Date>> {
@@ -81,11 +57,14 @@ export async function listOrganizations(): Promise<
 	Result<OrganizationSummary[]>
 > {
 	try {
-		const rows = await listMemberOrganizations();
+		const listed = await listMemberOrganizations();
+		if (!listed.ok) {
+			return listed;
+		}
 		const lastActivityByOrgId = await loadLastActivityByOrgId(
-			rows.map((row) => row.id),
+			listed.data.map((row) => row.id),
 		);
-		const parsed = rows.map((row) =>
+		const parsed = listed.data.map((row) =>
 			organizationSummarySchema.parse({
 				id: row.id,
 				slug: row.slug,
@@ -94,7 +73,7 @@ export async function listOrganizations(): Promise<
 		);
 		return ok(parsed);
 	} catch (error) {
-		return mapAuthFailure(error, "Failed to list organizations");
+		return failFromUnknown(error, "Failed to list organizations");
 	}
 }
 
@@ -111,12 +90,11 @@ export async function createOrganization(
 		});
 	}
 
-	try {
-		const created = await createNeonOrganization(parsedInput.data);
-		return ok(createdOrganizationSchema.parse(created));
-	} catch (error) {
-		return mapAuthFailure(error, "Failed to create organization");
+	const created = await createNeonOrganization(parsedInput.data);
+	if (!created.ok) {
+		return created;
 	}
+	return ok(createdOrganizationSchema.parse(created.data));
 }
 
 /**
@@ -133,14 +111,13 @@ export async function deleteOrganization(
 		});
 	}
 
-	try {
-		await deleteNeonOrganization(parsedInput.data.orgId);
-		return ok(
-			deletedOrganizationSchema.parse({ orgId: parsedInput.data.orgId }),
-		);
-	} catch (error) {
-		return mapAuthFailure(error, "Failed to delete organization");
+	const deleted = await deleteNeonOrganization(parsedInput.data.orgId);
+	if (!deleted.ok) {
+		return deleted;
 	}
+	return ok(
+		deletedOrganizationSchema.parse({ orgId: parsedInput.data.orgId }),
+	);
 }
 
 /**
@@ -162,22 +139,18 @@ export async function provisionOrganization(
 	}
 
 	const command = parsedInput.data;
-	let organization: CreatedOrganization;
 
-	try {
-		organization = createdOrganizationSchema.parse(
-			await createNeonOrganization({
-				name: command.name,
-				slug: command.slug,
-			}),
-		);
-	} catch (error) {
-		return mapAuthFailure(error, "Failed to create organization");
+	const created = await createNeonOrganization({
+		name: command.name,
+		slug: command.slug,
+	});
+	if (!created.ok) {
+		return created;
 	}
+	const organization = createdOrganizationSchema.parse(created.data);
 
-	try {
-		await persistActiveOrganization(organization.id);
-	} catch {
+	const persisted = await persistActiveOrganization(organization.id);
+	if (!persisted.ok) {
 		return fail(
 			"INTERNAL_ERROR",
 			"Organization created; active org switch failed — set active then retry invite",
@@ -188,19 +161,12 @@ export async function provisionOrganization(
 		);
 	}
 
-	try {
-		const invited = await inviteOrgMember({
-			email: command.adminEmail,
-			orgId: organization.id,
-			role: command.adminRole,
-		});
-		return ok(
-			provisionOrganizationResultSchema.parse({
-				organization,
-				invitationId: invited.invitationId,
-			}),
-		);
-	} catch {
+	const invited = await inviteOrgMember({
+		email: command.adminEmail,
+		orgId: organization.id,
+		role: command.adminRole,
+	});
+	if (!invited.ok) {
 		return fail(
 			"INTERNAL_ERROR",
 			"Organization created; invite failed — retry invite",
@@ -210,4 +176,11 @@ export async function provisionOrganization(
 			},
 		);
 	}
+
+	return ok(
+		provisionOrganizationResultSchema.parse({
+			organization,
+			invitationId: invited.data.invitationId,
+		}),
+	);
 }

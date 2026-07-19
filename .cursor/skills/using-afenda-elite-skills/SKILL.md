@@ -29,6 +29,7 @@ SKIP:
   inventing categories outside DOC-001 · auto-registering IDs without user approval
   treating Lite and Elite as divergent documentation systems
   reduced-viability quality / proposal / planning frames (sole bar = enterprise production; no-mvp-quality-bar)
+  parking / deferral-as-completion / false YAGNI deletes (no consumer ≠ unused; no-park-defer-false-yagni)
   inventing Sales/Purchasing/Inventory/Finance skill farms before controlled ARCH-006 ADR
   Collapse/legacy recover from git (incl. git show mining) unless user names that recovery this turn
   treating Cursor Grep/Glob hits under docs/architecture/{backend,frontend,system,tech-stack,archive}/ or docs/guides/archive/ as disk truth (trust Test-Path · git ls-files · pnpm check:docs-trunk-ban)

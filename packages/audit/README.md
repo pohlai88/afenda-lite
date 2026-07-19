@@ -1,0 +1,87 @@
+# `@afenda/audit`
+
+Rank-1 Platform general domain activity audit for Afenda-Lite: org-scoped writes to `platform_audit_log`, field-level diffs with sensitive masking, and query / export / purge helpers. Outcomes use `@afenda/errors` `Result` — this package does not own HTTP status lines, `NextResponse`, or Action envelopes.
+
+**Not RBAC audit.** Privileged IAM mutations continue to use [`@afenda/admin/audit`](../admin/README.md) → `platform_rbac_audit`. Do not dual-write either table around these packages.
+
+Use this package from Platform / app server code when a domain mutation must leave an explicit activity trail. Maintainers run lint / typecheck / Vitest via the filter scripts below (Node `24.x`, pnpm `≥10.33.4` from the repo root `engines`).
+
+## Consume
+
+Workspace dependency — import from the root barrel:
+
+```ts
+import { createAuditRecorder, queryAuditLog } from "@afenda/audit";
+
+const recorder = createAuditRecorder();
+const write = await recorder.record({
+  organizationId,
+  actorUserId,
+  correlationId,
+  module: "identity",
+  entity: "member",
+  entityId,
+  action: "UPDATE",
+  oldValue,
+  newValue,
+});
+if (!write.ok) {
+  // map Result at the adapter — do not invent { success, data }
+}
+
+const page = await queryAuditLog({ organizationId, page: 1 });
+```
+
+Pass request-scoped `organizationId`, `actorUserId`, and `correlationId` on every write. Never stamp ambient org. Never log secrets from audit payloads (sensitive keys are masked before persist).
+
+**Living consumers:** `apps/web` `recordOrganizationDeletedAudit` → `deleteOrganizationAction` (org hard-delete → `platform_audit_log`). RBAC mutations stay on `@afenda/admin/audit` — do not dual-write.
+
+## Store
+
+| Surface | Backend |
+|---------|---------|
+| Production default | `DrizzleAuditStore` → `platform_audit_log` via `@afenda/db` |
+| Vitest injection | `createAuditRecorder({ store })` / query helpers `store` arg |
+
+Every read/write/purge predicates `organization_id`. Export is capped at `MAX_AUDIT_EXPORT_ROWS` (10_000).
+
+## Maintain
+
+```bash
+pnpm --filter @afenda/audit lint
+pnpm --filter @afenda/audit typecheck
+pnpm --filter @afenda/audit test
+```
+
+Requires root engines: **Node `24.x`**, **pnpm `≥10.33.4`**.
+
+## Exports
+
+| Path | Role |
+|------|------|
+| `@afenda/audit` | `createAuditRecorder` · `DrizzleAuditStore` / `createDrizzleAuditStore` · `queryAuditLog` · `getEntityHistory` · `getUserActivity` · `countByAction` · `exportAuditLog` · `purgeOldEntries` · `computeDiff` / `maskSensitiveData` · `auditEntriesToCsv` · Zod schemas · types |
+
+Inject `store` into recorder / query helpers in tests. Production callers omit `store` (fresh `DrizzleAuditStore` per factory call — no process-global singleton).
+
+## Ownership
+
+| Surface | Owner |
+|---------|-------|
+| `platform_audit_log` write / list / export / purge | `@afenda/audit` |
+| `platform_rbac_audit` write / list / delete | `@afenda/admin/audit` |
+| Table schema · hard-tenant root | `@afenda/db` |
+| `Result` / error codes | `@afenda/errors` |
+
+**Layer:** Rank-1 Platform (`@afenda/db` · `@afenda/errors` · zod · server-only). Must not import Surfaces, `apps/*`, `@afenda/admin`, or `@afenda/auth`. See [docs-V2/monorepo](../../docs-V2/monorepo/README.md).
+
+## Out of scope
+
+Do not add to this package: Prisma middleware / ORM auto-intercept, process-global audit context, file/JSONL stores, RBAC action vocabulary (`role.assign` / `member.invite`), Next.js handlers, ActionResult envelopes, OpenAPI ownership, or a second tenancy model.
+
+## Authority
+
+| Topic | Link |
+|-------|------|
+| Package DAG | [docs-V2/monorepo](../../docs-V2/monorepo/README.md) · [LAYERS.md](../../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md) |
+| Data / hard tenant roots | [docs-V2/data](../../docs-V2/data/README.md) · [`@afenda/db`](../db/README.md) |
+| Agent checkout posture | [AGENTS.md](../../AGENTS.md) |

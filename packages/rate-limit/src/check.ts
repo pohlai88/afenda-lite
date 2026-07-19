@@ -2,6 +2,7 @@ import { resolveRateLimitBackend } from "./resolve-store";
 import type {
 	RateLimitBucket,
 	RateLimitHitResult,
+	RateLimitQuota,
 	RateLimitResult,
 	RateLimitStore,
 } from "./types";
@@ -25,18 +26,27 @@ const STORE_UNAVAILABLE: RateLimitResult = {
 	service: "upstash_redis",
 };
 
+function emptyKeyQuota(nowMs: number): RateLimitQuota {
+	return {
+		limit: 0,
+		remaining: 0,
+		resetEpochMs: nowMs + EMPTY_KEY_RETRY_AFTER_SECONDS * 1000,
+	};
+}
+
 function normalizeKey(key: string): string {
 	return key.trim().toLowerCase();
 }
 
 function fromHit(hit: RateLimitHitResult): RateLimitResult {
 	if (hit.allowed) {
-		return { ok: true };
+		return { ok: true, quota: hit.quota };
 	}
 	return {
 		ok: false,
 		reason: "rate_limited",
 		retryAfterSeconds: hit.retryAfterSeconds,
+		quota: hit.quota,
 	};
 }
 
@@ -62,6 +72,7 @@ export async function checkRateLimit(
 			ok: false,
 			reason: "rate_limited",
 			retryAfterSeconds: EMPTY_KEY_RETRY_AFTER_SECONDS,
+			quota: emptyKeyQuota(Date.now()),
 		};
 	}
 

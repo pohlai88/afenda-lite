@@ -4,7 +4,7 @@
 |-------|-------|
 | Surface | `docs-V2/auth/README.md` |
 | Authority | **Scratch** — security-and-hardening + disk `packages/auth/**` · `apps/web/proxy.ts` · `features/auth/**` |
-| Updated | 2026-07-19 |
+| Updated | 2026-07-20 |
 
 Re-probe after auth route or Neon Auth trusted-origin changes.
 
@@ -63,6 +63,7 @@ Outcomes: `toRateLimitAppError` → `RATE_LIMITED` (429 + `Retry-After` on BFF) 
 | No `middleware.ts` invent | Edge file is `proxy.ts` |
 | No `configure_neon_auth` without ask | Trusted origins are Class A — [../tenancy/](../tenancy/README.md) |
 | No VietERP ioredis / Express middleware port | Afenda store = Upstash REST or memory only (`_reference/packages/rate-limit` is DNA, not runtime) |
+| No Keycloak / OIDC JWT port from `_reference/packages/auth` (`@vierp/auth`) | DNA only — not Neon Auth. Hard-reject: Keycloak issuer/JWKS verify, `sessionStorage` access/refresh tokens, Classic `withAuth` middleware, trusting inbound `x-user-*` as session, `{ success: false }` envelopes, raw `SSO_*` `process.env`, ERP role→permission string tables, `tenantId \|\| 'default'`. Remap ideas only via `@afenda/errors` `Result` + web `ActionResult` — never invent **N19** or a second IdP |
 
 ---
 

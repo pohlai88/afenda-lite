@@ -23,7 +23,7 @@ Agents must not introduce shims, stubs, placeholders, deferred work, or “tech 
 1. Implement the real behavior end-to-end in this change, **or**
 2. Stop, tell the user what is blocked, and wait for an explicit written exception in **this** turn.
 
-Do not invent exceptions. Do not “park” work behind a stub and call the task done.
+Do not invent exceptions. Do not “park” work behind a stub and call the task done. Parking / deferral / false YAGNI (no-consumer deletes) → [no-park-defer-false-yagni](no-park-defer-false-yagni.mdc).
 
 ## Narrow exceptions (only these)
 

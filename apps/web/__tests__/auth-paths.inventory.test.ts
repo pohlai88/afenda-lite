@@ -31,6 +31,7 @@ import {
 import {
 	HEALTH_LIVENESS_PATH,
 	HEALTH_READINESS_PATH,
+	METRICS_SCRAPE_PATH,
 	POST_LOGIN_PATHS_NOT_PUBLIC,
 	PRE_LOGIN_API_PATHS,
 	PRE_LOGIN_GATE_BYPASS_PATHS,
@@ -151,6 +152,7 @@ describe("PL-S1 Pre-Login route inventory", () => {
 			AUTH_API_BASE_PATH,
 			HEALTH_LIVENESS_PATH,
 			HEALTH_READINESS_PATH,
+			METRICS_SCRAPE_PATH,
 		]);
 		const missing = PRE_LOGIN_API_PATHS.filter(
 			(apiPath) => !existsSync(apiRouteFile(apiPath)),

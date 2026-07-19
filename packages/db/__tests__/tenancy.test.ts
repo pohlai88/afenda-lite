@@ -7,17 +7,23 @@ import {
 	HARD_TENANT_ROOT_TABLES,
 } from "../src/hard-tenant-roots";
 import {
+	platformAuditLog,
+	platformNotification,
 	platformRbacAudit,
 	platformRole,
 	platformRoleAssignment,
+	platformSearchDocument,
 } from "../src/schema/platform";
 
 describe("@afenda/db hard tenant roots (N9 / ARCH-023)", () => {
 	it("lists platform IAM hard tenant root table names", () => {
-		expect(HARD_TENANT_ROOT_TABLE_NAMES).toHaveLength(2);
+		expect(HARD_TENANT_ROOT_TABLE_NAMES).toHaveLength(5);
 		expect([...HARD_TENANT_ROOT_TABLE_NAMES]).toEqual([
 			"platform_role_assignment",
 			"platform_rbac_audit",
+			"platform_audit_log",
+			"platform_search_document",
+			"platform_notification",
 		]);
 	});
 
@@ -36,6 +42,39 @@ describe("@afenda/db hard tenant roots (N9 / ARCH-023)", () => {
 		expect(getTableColumns(platformRbacAudit).organizationId.name).toBe(
 			"organization_id",
 		);
+		expect(getTableColumns(platformAuditLog).organizationId.name).toBe(
+			"organization_id",
+		);
+		expect(getTableColumns(platformSearchDocument).organizationId.name).toBe(
+			"organization_id",
+		);
+		expect(getTableColumns(platformNotification).organizationId.name).toBe(
+			"organization_id",
+		);
+	});
+
+	it("requires organization_id and user_id on platform_notification", () => {
+		const columns = getTableColumns(platformNotification);
+		expect(columns.organizationId.notNull).toBe(true);
+		expect(columns.userId.notNull).toBe(true);
+		expect(columns.channel.notNull).toBe(true);
+		expect(columns.read.notNull).toBe(true);
+	});
+
+	it("requires organization_id and search_vector on platform_search_document", () => {
+		const columns = getTableColumns(platformSearchDocument);
+		expect(columns.organizationId.notNull).toBe(true);
+		expect(columns.searchVector.notNull).toBe(true);
+		expect(columns.documentId.name).toBe("document_id");
+		expect(columns.entity.notNull).toBe(true);
+	});
+
+	it("requires organization_id, actor_user_id, correlation_id on platform_audit_log", () => {
+		const columns = getTableColumns(platformAuditLog);
+		expect(columns.organizationId.notNull).toBe(true);
+		expect(columns.actorUserId.notNull).toBe(true);
+		expect(columns.correlationId.notNull).toBe(true);
+		expect(columns.correlationId.name).toBe("correlation_id");
 	});
 
 	it("exposes organization_id on platform_role (templates may be NULL)", () => {

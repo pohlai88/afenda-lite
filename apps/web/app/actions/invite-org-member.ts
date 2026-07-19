@@ -10,12 +10,11 @@ import {
 	inviteOrgMember,
 	requireRole,
 } from "@afenda/auth";
+import { createCorrelationId } from "@afenda/http";
 import { revalidatePath } from "next/cache";
-
 import { forbidUnlessPermission } from "@/app/actions/permission-gate";
 import { inviteOrgMemberCommandSchema } from "@/modules/identity/schemas/invite-org-member";
 import { readRequestAttribution } from "@/modules/platform/domain/request-attribution";
-import { createCorrelationId } from "@/modules/platform/observability/correlation";
 import { logProductEvent } from "@/modules/platform/observability/product-log";
 import {
 	type ActionResult,
@@ -114,15 +113,12 @@ export async function inviteOrgMemberAction(
 		);
 	}
 
-	let invitationId: string | null = null;
-	try {
-		const invited = await inviteOrgMember({
-			email: parsed.data.email,
-			orgId: session.orgId,
-			role: parsed.data.role,
-		});
-		invitationId = invited.invitationId;
-	} catch {
+	const invited = await inviteOrgMember({
+		email: parsed.data.email,
+		orgId: session.orgId,
+		role: parsed.data.role,
+	});
+	if (!invited.ok) {
 		logProductEvent({
 			level: "error",
 			event: "action.internal_error",
@@ -130,13 +126,20 @@ export async function inviteOrgMemberAction(
 			orgId: session.orgId,
 			actorUserId: session.userId,
 			path: "inviteOrgMemberAction",
-			code: "INTERNAL_ERROR",
+			code: invited.code,
 		});
-		return actionFailInternal(
-			"Invitation could not be sent. Try again or contact an admin.",
-			correlationId,
-		);
+		if (
+			invited.code === "INTERNAL_ERROR" ||
+			invited.code === "SERVICE_UNAVAILABLE"
+		) {
+			return actionFailInternal(
+				"Invitation could not be sent. Try again or contact an admin.",
+				correlationId,
+			);
+		}
+		return actionFail(invited.code, invited.message, invited.details);
 	}
+	const invitationId = invited.data.invitationId;
 
 	logProductEvent({
 		level: "info",

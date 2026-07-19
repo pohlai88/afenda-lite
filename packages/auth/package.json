@@ -21,6 +21,7 @@
 	"dependencies": {
 		"@afenda/env": "workspace:*",
 		"@afenda/errors": "workspace:*",
+		"@afenda/http": "workspace:*",
 		"@afenda/logger": "workspace:*",
 		"@afenda/rate-limit": "workspace:*",
 		"@neondatabase/auth": "catalog:",

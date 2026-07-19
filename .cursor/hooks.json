@@ -57,6 +57,12 @@
         "timeout": 20
       },
       {
+        "command": "node .cursor/hooks/no-park-defer-false-yagni.mjs",
+        "matcher": "Write|StrReplace|EditNotebook",
+        "failClosed": false,
+        "timeout": 20
+      },
+      {
         "command": "node .cursor/hooks/no-tsconfig-baseurl.mjs",
         "matcher": "Write|StrReplace|EditNotebook",
         "failClosed": false,

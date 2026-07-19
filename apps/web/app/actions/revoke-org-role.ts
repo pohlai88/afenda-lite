@@ -1,13 +1,12 @@
 "use server";
 
 import { requireRole } from "@afenda/auth";
+import { createCorrelationId } from "@afenda/http";
 import { revalidatePath } from "next/cache";
-
 import { forbidUnlessPermission } from "@/app/actions/permission-gate";
 import { revokeOrgRoleWithAudit } from "@/modules/identity/domain/revoke-org-role-audited";
 import { revokeOrgRoleCommandSchema } from "@/modules/identity/schemas/revoke-org-role";
 import { readRequestAttribution } from "@/modules/platform/domain/request-attribution";
-import { createCorrelationId } from "@/modules/platform/observability/correlation";
 import { logProductEvent } from "@/modules/platform/observability/product-log";
 import {
 	type ActionResult,

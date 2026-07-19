@@ -31,7 +31,12 @@ describe("checkRateLimit (memory store)", () => {
 				{ bucket: "auth_sign_in", key },
 				{ store },
 			);
-			expect(allowed).toEqual({ ok: true });
+			expect(allowed.ok).toBe(true);
+			if (allowed.ok) {
+				expect(allowed.quota.limit).toBe(5);
+				expect(allowed.quota.remaining).toBe(4 - i);
+				expect(allowed.quota.resetEpochMs).toBeGreaterThan(Date.now() - 1000);
+			}
 		}
 
 		const denied = await checkRateLimit(
@@ -43,6 +48,11 @@ describe("checkRateLimit (memory store)", () => {
 			expect(denied.reason).toBe("rate_limited");
 			if (denied.reason === "rate_limited") {
 				expect(denied.retryAfterSeconds).toBeGreaterThanOrEqual(1);
+				expect(denied.quota).toEqual({
+					limit: 5,
+					remaining: 0,
+					resetEpochMs: denied.quota.resetEpochMs,
+				});
 			}
 		}
 	});
@@ -57,20 +67,27 @@ describe("checkRateLimit (memory store)", () => {
 			{ bucket: "auth_bff_post", key: "a@example.test" },
 			{ store },
 		);
-		expect(a).toEqual({ ok: true });
-		expect(b).toEqual({ ok: true });
+		expect(a.ok).toBe(true);
+		expect(b.ok).toBe(true);
+		if (a.ok && b.ok) {
+			expect(a.quota.limit).toBe(5);
+			expect(b.quota.limit).toBe(20);
+		}
 	});
 
 	it("rate-limits empty keys", async () => {
+		const before = Date.now();
 		const result = await checkRateLimit({
 			bucket: "auth_bff_post",
 			key: "   ",
 		});
-		expect(result).toEqual({
-			ok: false,
-			reason: "rate_limited",
-			retryAfterSeconds: 60,
-		});
+		expect(result.ok).toBe(false);
+		if (!result.ok && result.reason === "rate_limited") {
+			expect(result.retryAfterSeconds).toBe(60);
+			expect(result.quota.limit).toBe(0);
+			expect(result.quota.remaining).toBe(0);
+			expect(result.quota.resetEpochMs).toBeGreaterThanOrEqual(before + 60_000);
+		}
 	});
 
 	it("fails closed when production has no Upstash keys", async () => {
@@ -128,6 +145,7 @@ describe("toRateLimitAppError", () => {
 			ok: false,
 			reason: "rate_limited",
 			retryAfterSeconds: 9,
+			quota: { limit: 5, remaining: 0, resetEpochMs: Date.now() + 9000 },
 		});
 		expect(limited.code).toBe("RATE_LIMITED");
 		expect(limited.details).toEqual({ retryAfter: 9 });

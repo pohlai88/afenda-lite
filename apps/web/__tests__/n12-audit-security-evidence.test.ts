@@ -116,7 +116,10 @@ describe("N12 living authz audit evidence", () => {
 		});
 		authMocks.inviteOrgMember.mockImplementation(async () => {
 			callOrder.push("invite");
-			return { invitationId: "inv-n12-fixture" };
+			return {
+				ok: true as const,
+				data: { data: null, invitationId: "inv-n12-fixture" },
+			};
 		});
 
 		const formData = new FormData();
@@ -184,7 +187,12 @@ describe("N12 living authz audit evidence", () => {
 			ok: true as const,
 			data: { id: "audit-before-neon" },
 		});
-		authMocks.inviteOrgMember.mockRejectedValue(new Error(secretLeak));
+		authMocks.inviteOrgMember.mockResolvedValue({
+			ok: false as const,
+			code: "INTERNAL_ERROR",
+			message: "Invitation could not be sent",
+			details: { leak: secretLeak },
+		});
 
 		const formData = new FormData();
 		formData.set("email", "fail.member@example.com");
@@ -401,11 +409,25 @@ describe("N12 join accept NOT APPLICABLE (ARCH-023 Tier-1)", () => {
 		expect(invite).toContain("inviteOrgMember");
 		expect(invite).toContain("recordRbacAudit");
 		expect(invite).not.toContain("runNeonHttpTransaction");
+		expect(invite).not.toContain("createAuditRecorder");
 
 		expect(assign).toContain("assignOrgRoleWithAudit");
 		expect(assign).not.toContain("recordRbacAudit");
+		expect(assign).not.toContain("createAuditRecorder");
 		expect(revoke).toContain("revokeOrgRoleWithAudit");
 		expect(revoke).not.toContain("recordRbacAudit");
+		expect(revoke).not.toContain("createAuditRecorder");
+
+		const deleteOrg = source("app/actions/delete-organization.ts");
+		const deleteOrgAudit = source(
+			"modules/platform/domain/record-organization-deleted-audit.ts",
+		);
+		expect(deleteOrg).toContain("recordOrganizationDeletedAudit");
+		expect(deleteOrg).toContain("platform_audit_log");
+		expect(deleteOrg).not.toContain("recordRbacAudit");
+		expect(deleteOrg).not.toContain("createAuditRecorder");
+		expect(deleteOrgAudit).toContain("createAuditRecorder");
+		expect(deleteOrgAudit).not.toContain("recordRbacAudit");
 
 		expect(assignDomain).toContain("runNeonHttpTransaction");
 		expect(revokeDomain).toContain("runNeonHttpTransaction");

@@ -17,6 +17,7 @@ export {
 	isApprovedAppHost,
 	isNeonPoolerDatabaseUrl,
 	isProductionDeployment,
+	isVercelRuntime,
 	type NeonContractIssue,
 	type NeonContractResult,
 	type NeonEnvClass,
@@ -65,4 +66,4 @@ export {
 	TARGET_SNAPSHOT_HOUR_UTC,
 	TARGET_SNAPSHOT_RETAIN_DAYS,
 } from "./neon-recovery-posture";
-export { env } from "./web";
+export { env, isVercelRuntimeNow } from "./web";

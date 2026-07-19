@@ -29,14 +29,18 @@ export const PRE_LOGIN_GATE_BYPASS_PATHS = CLIENT_GATE_PATHS;
 export const HEALTH_LIVENESS_PATH = "/api/health/liveness" as const;
 export const HEALTH_READINESS_PATH = "/api/health/readiness" as const;
 
+/** Prometheus scrape (token-gated; fail closed when unset). */
+export const METRICS_SCRAPE_PATH = "/api/metrics" as const;
+
 /**
- * Pre-Login API surfaces (auth BFF + platform health).
+ * Pre-Login API surfaces (auth BFF + platform health + metrics scrape).
  * Session cookie/org APIs are post-login and intentionally excluded.
  */
 export const PRE_LOGIN_API_PATHS = [
 	AUTH_API_BASE_PATH,
 	HEALTH_LIVENESS_PATH,
 	HEALTH_READINESS_PATH,
+	METRICS_SCRAPE_PATH,
 ] as const;
 
 export type PreLoginApiPath = (typeof PRE_LOGIN_API_PATHS)[number];

@@ -22,9 +22,11 @@ if (!result.ok) {
 }
 ```
 
-`key` is an opaque composite identity (email, `org:user`, IP+path). Never log secrets. Empty/whitespace keys are treated as rate-limited (60s retry).
+`key` is an opaque composite identity (email, `org:user`, IP+path). Never log secrets. Empty/whitespace keys are treated as rate-limited (60s retry, `quota.limit = 0`).
 
-**Living consumers:** `@afenda/auth` (`auth_bff_post` on BFF POSTs); `apps/web` Path A sign-in Action (`auth_sign_in` keyed by email). Map `AppError` to product `ActionResult` / HTTP at the adapter — do not invent `{ success, data }` envelopes.
+Successful and `rate_limited` results include `quota: { limit, remaining, resetEpochMs }` for `X-RateLimit-*` attach via `@afenda/http` `applyRateLimitHeaders`. `unavailable` has no quota.
+
+**Living consumers:** `@afenda/auth` (`auth_bff_post` on BFF POSTs — stamps RateLimit headers on Response); `apps/web` Path A sign-in Action (`auth_sign_in` keyed by email). Map `AppError` to product `ActionResult` / HTTP at the adapter — do not invent `{ success, data }` envelopes.
 
 ## Store
 
@@ -59,7 +61,7 @@ Requires root engines: **Node `24.x`**, **pnpm `≥10.33.4`**.
 
 | Path | Role |
 |------|------|
-| `@afenda/rate-limit` | `checkRateLimit` · `toRateLimitAppError` · `BUCKET_POLICIES` / `bucketPolicy` · `RATE_LIMIT_BUCKETS` · `resolveRateLimitBackend` · `createMemoryRateLimitStore` (+ types) |
+| `@afenda/rate-limit` | `checkRateLimit` · `toRateLimitAppError` · `BUCKET_POLICIES` / `bucketPolicy` · `RATE_LIMIT_BUCKETS` · `resolveRateLimitBackend` · `createMemoryRateLimitStore` · `RateLimitQuota` (+ types) |
 
 `createMemoryRateLimitStore` and `checkRateLimit(..., { store })` are for Vitest injection. `resetResolvedRateLimitBackend` clears the process cache between tests. Production callers omit `store` and use the resolved backend.
 

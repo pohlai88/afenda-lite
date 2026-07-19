@@ -58,7 +58,7 @@ Requires root engines: **Node `24.x`**, **pnpm `≥10.33.4`**.
 | Surface | Owner |
 |---------|-------|
 | Pino factory · product allowlist · redact paths · edge emit | `@afenda/logger` |
-| Correlation mint / header (`x-correlation-id`) | `apps/web/modules/platform/observability/correlation.ts` |
+| Correlation mint / header (`x-correlation-id`) | `@afenda/http` |
 | When to emit product events | Call-site Actions / BFF / proxy |
 
 **Layer:** Rank-1 Platform **leaf** (`pino` only; no `@afenda/*` runtime deps). Must not import Surfaces or `apps/*`. See [docs-V2/monorepo](../../docs-V2/monorepo/README.md).

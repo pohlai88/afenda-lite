@@ -1,0 +1,94 @@
+# `@afenda/security`
+
+**What it is** — Rank-1 Platform security header builders for Afenda-Lite: Next-shaped response headers, CSP string construction, and allow-list CORS / preflight helpers.
+
+**What it does** — Emits `{ key, value }[]` for App Router `headers()`, optionally with CSP and HSTS; builds CSP from typed directives (soft default or strict preset); builds Fetch CORS headers and OPTIONS preflight responses for an explicit origin allow-list (never `*`).
+
+**When you need it** — Centralizing security header SSOT for `next.config.ts`, applying the same list onto Fetch `Headers` in a Route Handler, or answering cross-origin preflight without duplicating allow-list logic.
+
+**Who it's for** — Package consumers in `apps/web` (config adapter + future RH CORS). Next-free leaf: no `@afenda/*` runtime deps, no Next.js imports. Does **not** own RBAC, rate-limit, audit, CSRF stores, or session auth (`@afenda/auth` / `@afenda/admin` / `@afenda/rate-limit` / `@afenda/audit`).
+
+## Consume
+
+Workspace dependency — import from the root barrel:
+
+```ts
+import {
+	applySecurityHeaders,
+	buildCorsHeaders,
+	createCorsConfig,
+	handleCorsPreflight,
+	securityHeadersForNext,
+	strictSecurityHeadersForNext,
+} from "@afenda/security";
+
+// next.config.ts — living baseline (CSP/HSTS opt-in; Permissions-Policy included)
+const securityHeaders = securityHeadersForNext();
+
+// Opt-in production hardening (not wired to living next.config)
+const strict = strictSecurityHeadersForNext({
+	reportUri: "https://example.com/csp",
+	hstsPreload: true,
+});
+
+// Fetch RH — same list onto Headers
+const headers = new Headers();
+applySecurityHeaders(headers, securityHeadersForNext({ includeCsp: true }));
+
+// CORS — validate + defaults, then fail closed on unknown origin
+const config = createCorsConfig({
+	origins: ["https://afenda-lite.vercel.app"],
+});
+const cors = buildCorsHeaders({
+	config,
+	requestOrigin: request.headers.get("Origin"),
+});
+const preflight = handleCorsPreflight({ request, config });
+```
+
+Blank or `*` origins in the allow-list throw. Missing/unknown `Origin` → no `Access-Control-Allow-Origin` (preflight → 403). `frameAncestors: ["'none'"]` derives `X-Frame-Options: DENY` unless `frameOptions` is set explicitly.
+
+**Living consumer:** [`apps/web/next.config.ts`](../../apps/web/next.config.ts) → `securityHeadersForNext()` (DNS prefetch, `SAMEORIGIN`, `nosniff`, strict-origin referrer, Permissions-Policy). Strict CSP / HSTS stay package opt-in until a dedicated cutover.
+
+## Maintain
+
+```bash
+pnpm --filter @afenda/security lint
+pnpm --filter @afenda/security typecheck
+pnpm --filter @afenda/security test
+```
+
+Requires root engines: **Node `24.x`**, **pnpm `≥10.33.4`**.
+
+## Exports
+
+| Path | Role |
+|------|------|
+| `@afenda/security` | `securityHeadersForNext` · `strictSecurityHeadersForNext` · `DEFAULT_SECURITY_HEADERS` · `applySecurityHeaders` · `buildContentSecurityPolicy` · `DEFAULT_CSP_DIRECTIVES` · `STRICT_CSP_DIRECTIVES` · `createCorsConfig` · `ResolvedCorsConfig` · `buildCorsHeaders` · `handleCorsPreflight` · header name constants (+ types) |
+
+Full surface: [`src/index.ts`](./src/index.ts).
+
+## Ownership
+
+| Surface | Owner |
+|---------|-------|
+| Security header list · CSP builder · CORS allow-list helpers | `@afenda/security` |
+| Apply headers to all routes via Next `headers()` | `apps/web/next.config.ts` |
+| Correlation header name / mint | [`@afenda/http`](../http/README.md) |
+| Session gate / Neon Auth | [`@afenda/auth`](../auth/README.md) · [docs-V2/auth](../../docs-V2/auth/README.md) |
+| Upstash rate limit | [`@afenda/rate-limit`](../rate-limit/README.md) |
+| `platform_audit_log` | [`@afenda/audit`](../audit/README.md) |
+
+**Layer:** Rank-1 Platform **leaf** (no `@afenda/*` runtime deps). Must not import Surfaces or `apps/*`. See [docs-V2/monorepo](../../docs-V2/monorepo/README.md).
+
+## Out of scope
+
+Do not add to this package: Next.js / Express / Pages middleware wrappers, Vierp-style RBAC matrices, in-memory CSRF or rate-limit stores, `sanitizeSQL`, API-key product surfaces, tutorial `{ success }` envelopes, or trusting client `x-user-id` / `x-tenant-id` as identity. Do **not** reassemble CORS/CSP/headers into `@afenda/api-middleware` — borrow/reject SSOT: [docs-V2/api/middleware-dna.md](../../docs-V2/api/middleware-dna.md).
+
+## Authority
+
+| Topic | Link |
+|-------|------|
+| Package DAG | [docs-V2/monorepo](../../docs-V2/monorepo/README.md) · [LAYERS.md](../../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md) |
+| API envelopes (not this package) | [docs-V2/api](../../docs-V2/api/README.md) |
+| Agent checkout posture | [AGENTS.md](../../AGENTS.md) |

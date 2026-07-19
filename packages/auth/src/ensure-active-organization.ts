@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { authPlainTextFailure } from "./auth-failure";
 import { AUTH_LOGIN_PATH } from "./auth-paths";
 import { getNeonAuth } from "./neon-auth";
 import {
@@ -65,17 +66,17 @@ export async function handleEnsureActiveOrganizationRequest(
 	if (typeof orgId !== "string" || orgId.length === 0) {
 		const organizationId = await resolveMemberOrganizationId(auth);
 		if (!organizationId) {
-			return new NextResponse(
+			return authPlainTextFailure(
+				"FORBIDDEN",
 				"@afenda/auth: no resolvable member organization for active session",
-				{ status: 403 },
 			);
 		}
 
 		const persisted = await persistActiveOrganization(auth, organizationId);
 		if (!persisted) {
-			return new NextResponse(
+			return authPlainTextFailure(
+				"INTERNAL_ERROR",
 				"@afenda/auth: failed to persist active organization on session",
-				{ status: 500 },
 			);
 		}
 
@@ -86,9 +87,9 @@ export async function handleEnsureActiveOrganizationRequest(
 
 	const email = normalizeSessionEmail(data.user.email);
 	if (!email) {
-		return new NextResponse(
+		return authPlainTextFailure(
+			"INTERNAL_ERROR",
 			"@afenda/auth: authenticated user email missing from session",
-			{ status: 500 },
 		);
 	}
 
@@ -98,9 +99,9 @@ export async function handleEnsureActiveOrganizationRequest(
 		});
 	const neonRole = memberRole?.role;
 	if (roleError || typeof neonRole !== "string" || neonRole.length === 0) {
-		return new NextResponse(
+		return authPlainTextFailure(
+			"INTERNAL_ERROR",
 			"@afenda/auth: active organization membership role unresolved",
-			{ status: 500 },
 		);
 	}
 
@@ -108,9 +109,9 @@ export async function handleEnsureActiveOrganizationRequest(
 	try {
 		role = toSessionRole(neonRole);
 	} catch {
-		return new NextResponse(
+		return authPlainTextFailure(
+			"INTERNAL_ERROR",
 			"@afenda/auth: active organization membership role unresolved",
-			{ status: 500 },
 		);
 	}
 

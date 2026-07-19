@@ -8,6 +8,8 @@
 import { sql } from "drizzle-orm";
 import {
 	boolean,
+	customType,
+	index,
 	jsonb,
 	pgTable,
 	primaryKey,
@@ -16,6 +18,13 @@ import {
 	uniqueIndex,
 	uuid,
 } from "drizzle-orm/pg-core";
+
+/** Postgres `tsvector` — maintained on write via `to_tsvector`. */
+const tsvector = customType<{ data: string }>({
+	dataType() {
+		return "tsvector";
+	},
+});
 
 export const platformPermission = pgTable("platform_permission", {
 	code: text("code").primaryKey(),
@@ -108,3 +117,134 @@ export const platformRbacAudit = pgTable("platform_rbac_audit", {
 		.notNull()
 		.defaultNow(),
 });
+
+/**
+ * General domain activity audit (distinct from RBAC `platform_rbac_audit`).
+ * Sole writer: `@afenda/audit` — do not dual-write from apps/web.
+ */
+export const platformAuditLog = pgTable(
+	"platform_audit_log",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		/** Required — hard tenancy predicate (ARCH-023). */
+		organizationId: text("organization_id").notNull(),
+		/** Required — writer stamps session user. */
+		actorUserId: text("actor_user_id").notNull(),
+		/** API-007 — required on new writes. */
+		correlationId: text("correlation_id").notNull(),
+		module: text("module").notNull(),
+		entity: text("entity").notNull(),
+		entityId: text("entity_id").notNull(),
+		action: text("action").notNull(),
+		changes: jsonb("changes").notNull(),
+		oldValue: jsonb("old_value"),
+		newValue: jsonb("new_value"),
+		metadata: jsonb("metadata"),
+		ipAddress: text("ip_address"),
+		userAgent: text("user_agent"),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("platform_audit_log_org_created_at_idx").on(
+			t.organizationId,
+			t.createdAt,
+		),
+		index("platform_audit_log_org_entity_idx").on(
+			t.organizationId,
+			t.entity,
+			t.entityId,
+		),
+		index("platform_audit_log_org_actor_idx").on(
+			t.organizationId,
+			t.actorUserId,
+		),
+		index("platform_audit_log_org_action_idx").on(t.organizationId, t.action),
+		index("platform_audit_log_org_module_idx").on(t.organizationId, t.module),
+	],
+);
+
+/**
+ * Org-scoped product search documents (Postgres FTS).
+ * Sole writer: `@afenda/search` — do not dual-write from apps/web.
+ */
+export const platformSearchDocument = pgTable(
+	"platform_search_document",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		/** Required — hard tenancy predicate (ARCH-023). */
+		organizationId: text("organization_id").notNull(),
+		/** Caller-defined entity type key (e.g. `member`). */
+		entity: text("entity").notNull(),
+		/** Source id within entity. */
+		documentId: text("document_id").notNull(),
+		title: text("title").notNull(),
+		description: text("description"),
+		url: text("url"),
+		metadata: jsonb("metadata"),
+		searchVector: tsvector("search_vector").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		uniqueIndex("platform_search_document_org_entity_doc_uidx").on(
+			t.organizationId,
+			t.entity,
+			t.documentId,
+		),
+		index("platform_search_document_org_entity_idx").on(
+			t.organizationId,
+			t.entity,
+		),
+		index("platform_search_document_search_vector_gin_idx").using(
+			"gin",
+			t.searchVector,
+		),
+	],
+);
+
+/**
+ * Org-scoped in-app notifications (IN_APP channel).
+ * Sole writer: `@afenda/notifications` — do not dual-write from apps/web.
+ */
+export const platformNotification = pgTable(
+	"platform_notification",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		/** Required — hard tenancy predicate (ARCH-023). */
+		organizationId: text("organization_id").notNull(),
+		/** Recipient user (Neon Auth user id). */
+		userId: text("user_id").notNull(),
+		type: text("type").notNull(),
+		priority: text("priority").notNull(),
+		/** Slice-1 channel is always IN_APP (Zod-enforced at package boundary). */
+		channel: text("channel").notNull(),
+		title: text("title").notNull(),
+		body: text("body").notNull(),
+		module: text("module").notNull(),
+		actionUrl: text("action_url"),
+		metadata: jsonb("metadata"),
+		read: boolean("read").notNull().default(false),
+		expiresAt: timestamp("expires_at", { withTimezone: true }),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("platform_notification_org_user_created_at_idx").on(
+			t.organizationId,
+			t.userId,
+			t.createdAt,
+		),
+		index("platform_notification_org_user_unread_idx").on(
+			t.organizationId,
+			t.userId,
+			t.read,
+		),
+	],
+);

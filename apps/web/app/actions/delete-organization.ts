@@ -6,10 +6,10 @@ import {
 	deleteOrganizationInputSchema,
 } from "@afenda/admin";
 import { requireRole } from "@afenda/auth";
+import { createCorrelationId } from "@afenda/http";
 import { revalidatePath } from "next/cache";
-
 import { mapPackageResult } from "@/app/actions/map-package-result";
-import { createCorrelationId } from "@/modules/platform/observability/correlation";
+import { recordOrganizationDeletedAudit } from "@/modules/platform/domain/record-organization-deleted-audit";
 import { logProductEvent } from "@/modules/platform/observability/product-log";
 import {
 	type ActionResult,
@@ -29,6 +29,10 @@ export type DeleteOrganizationActionState =
  * `@afenda/admin` `deleteOrganization`. Permanent removal only (never a soft
  * archive). Package enforces session membership / owner; adapter maps
  * `Result` → `ActionResult` honestly.
+ *
+ * General activity trail after Neon success:
+ * `recordOrganizationDeletedAudit` → `@afenda/audit` → `platform_audit_log`.
+ * Does not use `@afenda/admin/audit` (RBAC SSOT stays separate).
  */
 export async function deleteOrganizationAction(
 	_prev: DeleteOrganizationActionState,
@@ -71,11 +75,21 @@ export async function deleteOrganizationAction(
 		return mapPackageResult(result);
 	}
 
+	const deletedOrgId = result.data.orgId;
+	const auditFailure = await writeOrganizationDeleteAudit({
+		organizationId: deletedOrgId,
+		actorUserId: session.userId,
+		correlationId,
+	});
+	if (auditFailure) {
+		return auditFailure;
+	}
+
 	logProductEvent({
 		level: "info",
 		event: "organization.delete",
 		correlationId,
-		orgId: result.data.orgId,
+		orgId: deletedOrgId,
 		actorUserId: session.userId,
 		path: "deleteOrganizationAction",
 	});
@@ -83,4 +97,47 @@ export async function deleteOrganizationAction(
 	revalidatePath("/admin");
 
 	return mapPackageResult(result);
+}
+
+async function writeOrganizationDeleteAudit(input: {
+	organizationId: string;
+	actorUserId: string;
+	correlationId: string;
+}): Promise<ActionResult<never> | null> {
+	const { organizationId, actorUserId, correlationId } = input;
+
+	try {
+		const audit = await recordOrganizationDeletedAudit({
+			organizationId,
+			actorUserId,
+			correlationId,
+		});
+		if (audit.ok) {
+			return null;
+		}
+		logProductEvent({
+			level: "error",
+			event: "action.internal_error",
+			correlationId,
+			orgId: organizationId,
+			actorUserId,
+			path: "deleteOrganizationAction.audit",
+			code: audit.code,
+		});
+	} catch {
+		logProductEvent({
+			level: "error",
+			event: "action.internal_error",
+			correlationId,
+			orgId: organizationId,
+			actorUserId,
+			path: "deleteOrganizationAction.audit",
+			code: "INTERNAL_ERROR",
+		});
+	}
+
+	return actionFailInternal(
+		"Organization was deleted, but the activity audit could not be written. Contact an admin with this correlation id.",
+		correlationId,
+	);
 }

@@ -1,14 +1,14 @@
 "use server";
 
 import { requireRole } from "@afenda/auth";
+import { createCorrelationId } from "@afenda/http";
 import { revalidatePath } from "next/cache";
-
 import { forbidUnlessPermission } from "@/app/actions/permission-gate";
 import { assignOrgRoleWithAudit } from "@/modules/identity/domain/assign-org-role-audited";
 import { getOrganizationUser } from "@/modules/identity/domain/organization-users";
+import { recordOrgRoleAssignedNotification } from "@/modules/identity/domain/record-org-role-assigned-notification";
 import { assignOrgRoleCommandSchema } from "@/modules/identity/schemas/assign-org-role";
 import { readRequestAttribution } from "@/modules/platform/domain/request-attribution";
-import { createCorrelationId } from "@/modules/platform/observability/correlation";
 import { logProductEvent } from "@/modules/platform/observability/product-log";
 import {
 	type ActionResult,
@@ -24,6 +24,7 @@ export type AssignOrgRoleActionData = {
 	roleId: string;
 	reactivated: boolean;
 	auditId: string;
+	notificationId: string | null;
 };
 
 /** `null` = form idle (`useActionState`); otherwise API-002 `ActionResult`. */
@@ -122,6 +123,41 @@ export async function assignOrgRoleAction(
 		return actionFail(result.code, result.message);
 	}
 
+	let notificationId: string | null = null;
+	try {
+		const notification = await recordOrgRoleAssignedNotification({
+			organizationId: session.orgId,
+			userId: result.assignment.userId,
+			roleId: result.assignment.roleId,
+			assignmentId: result.assignment.id,
+			actorUserId: session.userId,
+			reactivated: result.reactivated,
+		});
+		if (notification.ok) {
+			notificationId = notification.data.id;
+		} else {
+			logProductEvent({
+				level: "error",
+				event: "action.internal_error",
+				correlationId,
+				orgId: session.orgId,
+				actorUserId: session.userId,
+				path: "assignOrgRoleAction.notification",
+				code: notification.code,
+			});
+		}
+	} catch {
+		logProductEvent({
+			level: "error",
+			event: "action.internal_error",
+			correlationId,
+			orgId: session.orgId,
+			actorUserId: session.userId,
+			path: "assignOrgRoleAction.notification",
+			code: "INTERNAL_ERROR",
+		});
+	}
+
 	logProductEvent({
 		level: "info",
 		event: "role.assign",
@@ -139,5 +175,6 @@ export async function assignOrgRoleAction(
 		roleId: result.assignment.roleId,
 		reactivated: result.reactivated,
 		auditId: result.auditId,
+		notificationId,
 	});
 }

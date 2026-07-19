@@ -57,10 +57,12 @@ Companion ops (repo root): `pnpm validate:neon-env`.
 
 | Path | Role |
 |------|------|
-| `@afenda/auth` | Server barrel (`server-only`): session · proxy · BFF · credentials · invites · org console · paths · `requireRole` |
+| `@afenda/auth` | Server barrel (`server-only`): session · proxy · BFF · credentials · invites · org console · paths · `requireRole` · types `AuthBootstrap` · `CredentialAuthResult` · invite/org `Result` outcomes |
 | `@afenda/auth/client` | Browser Neon Auth client (`getBrowserAuthClient`) + shared path/join/post-login helpers — Client Components only |
 
-**Peer deps:** `next` ≥16 · `react` ≥19. **Runtime deps:** `@afenda/env` · `@afenda/errors` · `@afenda/logger` · `@afenda/rate-limit` · `@neondatabase/auth` · `server-only`.
+Invite / org-console primitives return `@afenda/errors` `Result` (closed `ErrorCode`). Web Server Actions map to `ActionResult` at the boundary — do not add a `{ success }` envelope or a `./middleware` subpath.
+
+**Peer deps:** `next` ≥16 · `react` ≥19. **Runtime deps:** `@afenda/env` · `@afenda/errors` · `@afenda/http` · `@afenda/logger` · `@afenda/rate-limit` · `@neondatabase/auth` · `server-only`.
 
 ## Ownership
 
@@ -71,11 +73,26 @@ Companion ops (repo root): `pnpm validate:neon-env`.
 | Session-gate policy matcher · auth UI shells · ActionResult adapters | `apps/web` |
 | Typed product env | `@afenda/env` |
 
-**Layer:** Rank-1 Platform (`@afenda/env` · `@afenda/errors` · `@afenda/logger` · `@afenda/rate-limit`). Must not import Surfaces or `apps/*`. See [docs-V2/monorepo](../../docs-V2/monorepo/README.md).
+**Layer:** Rank-1 Platform (`@afenda/env` · `@afenda/errors` · `@afenda/http` · `@afenda/logger` · `@afenda/rate-limit`). Must not import Surfaces or `apps/*`. See [docs-V2/monorepo](../../docs-V2/monorepo/README.md).
 
 ## Out of scope
 
 Do not add to this package: a second identity provider, app-side SMTP for Neon Auth mail, Portal Atmosphere restore, dual Neon Auth org clients, client UI under the server barrel, or tenancy models beyond shared-schema organization scope (never multi-DB / project-per-tenant isolation).
+
+**Reference DNA (`_reference/packages/auth` / `@vierp/auth`) — hard reject (do not port):**
+
+| Reject | Why |
+|--------|-----|
+| Keycloak / OIDC JWKS verify (`jose` remote certs) | Neon Auth owns session verification |
+| Browser `sessionStorage` access/refresh tokens | XSS surface; Neon uses httpOnly cookies |
+| Classic Next `middleware` + `withAuth` HOF | Edge gate is `apps/web/proxy.ts` + `createSessionProxy` |
+| Trust inbound `x-user-*` headers as identity | Spoofable; use Neon session APIs |
+| `{ success: false, error }` JSON | Adapter failures use `@afenda/errors` `Result`; web maps to `ActionResult` |
+| Raw `SSO_*` / `process.env` | `@afenda/env` only |
+| Hard-coded ERP role → permission strings | ARCH-023 permissions live in `apps/web/modules/identity` |
+| Soft `tenantId \|\| 'default'` | Hard org tenancy — never invent a default tenant |
+
+Structural ideas already remapped here: explicit `Result` failure codes on invite/org-console primitives; server vs `./client` subpaths (no `./middleware` export).
 
 ## Authority
 

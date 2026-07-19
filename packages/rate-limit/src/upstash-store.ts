@@ -6,12 +6,25 @@ import { retryAfterSecondsFromReset } from "./retry-after";
 import type {
 	RateLimitBucket,
 	RateLimitHitResult,
+	RateLimitQuota,
 	RateLimitStore,
 } from "./types";
 
 function windowSeconds(windowMs: number): `${number} s` {
 	const seconds = Math.max(1, Math.ceil(windowMs / 1000));
 	return `${seconds} s`;
+}
+
+function quotaFromUpstash(result: {
+	limit: number;
+	remaining: number;
+	reset: number;
+}): RateLimitQuota {
+	return {
+		limit: result.limit,
+		remaining: Math.max(0, result.remaining),
+		resetEpochMs: result.reset,
+	};
 }
 
 export function createUpstashRateLimitStore(input: {
@@ -46,12 +59,14 @@ export function createUpstashRateLimitStore(input: {
 	return {
 		async hit(hitInput): Promise<RateLimitHitResult> {
 			const result = await limiterFor(hitInput.bucket).limit(hitInput.key);
+			const quota = quotaFromUpstash(result);
 			if (result.success) {
-				return { allowed: true };
+				return { allowed: true, quota };
 			}
 			return {
 				allowed: false,
 				retryAfterSeconds: retryAfterSecondsFromReset(result.reset, Date.now()),
+				quota,
 			};
 		},
 	};
