@@ -192,7 +192,7 @@ describe("createAuthApiHandlers (PL-S7 BFF)", () => {
 		const { createAuthApiHandlers } = await import("../src/api-handler");
 		const { POST } = createAuthApiHandlers();
 		const response = await POST(
-			authRequest("POST", { Host: "afenda-lite.vercel.app" }),
+			authRequest("POST", { Host: "www.nexuscanon.com" }),
 			{},
 		);
 
