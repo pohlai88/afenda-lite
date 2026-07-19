@@ -1,5 +1,5 @@
-import { CORRELATION_HEADER } from "./correlation";
 import type { HttpContext } from "./context";
+import { CORRELATION_HEADER } from "./correlation";
 import { applyServerTimingHeader } from "./server-timing";
 
 export type StampHttpResponseOptions = {

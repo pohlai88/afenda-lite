@@ -8,7 +8,7 @@ vi.mock("next/headers", () => ({
 
 vi.mock("@afenda/env", () => ({
 	env: {
-		APP_URL: "https://afenda-lite.vercel.app",
+		APP_URL: "https://www.nexuscanon.com",
 	},
 }));
 
@@ -42,7 +42,7 @@ describe("resolveAuthUiOrigin", () => {
 
 		const { resolveAuthUiOrigin } = await import("../src/auth-ui-origin");
 		await expect(resolveAuthUiOrigin()).resolves.toBe(
-			"https://afenda-lite.vercel.app",
+			"https://www.nexuscanon.com",
 		);
 	});
 });

@@ -43,8 +43,8 @@ Optional (Speed Insights already on only — do not enable here): p75 LCP ≤ 2.
 
 | Check | Pass when |
 |-------|-----------|
-| L1 Health | `GET https://afenda-lite.vercel.app/api/health/liveness` → 200 |
-| L2 Origin | Production `APP_URL` = `https://afenda-lite.vercel.app` |
+| L1 Health | `GET https://www.nexuscanon.com/api/health/liveness` → 200 |
+| L2 Origin | Production `APP_URL` = `https://www.nexuscanon.com` |
 | L3 Trusted origins | Neon Auth `trusted_origins` includes that origin ([../tenancy/neon-optimize.md](../tenancy/neon-optimize.md)) |
 | L4 Invite join | Invite links use production origin → `/join?invitationId=…` ([../tenancy/urls.md](../tenancy/urls.md)) |
 | L5 Domains | Class A ledger current ([../tenancy/vercel-domains.md](../tenancy/vercel-domains.md)) |

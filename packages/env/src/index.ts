@@ -18,6 +18,7 @@ export {
 	isNeonPoolerDatabaseUrl,
 	isProductionDeployment,
 	isVercelRuntime,
+	LEGACY_VERCEL_APP_HOST,
 	type NeonContractIssue,
 	type NeonContractResult,
 	type NeonEnvClass,

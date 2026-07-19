@@ -27,7 +27,7 @@ const readinessAuthCheckSchema = z.object({
 	latencyMs: z.number().int().min(0),
 });
 
-	const healthProbeSchema = z.object({
+const healthProbeSchema = z.object({
 	name: z.enum(["postgres", "neon_auth"]),
 	status: z.enum(["up", "down", "skipped"]),
 	/**

@@ -33,7 +33,7 @@ const readinessAuthCheckSchema = z.object({
 	}),
 });
 
-	const healthProbeSchema = z.object({
+const healthProbeSchema = z.object({
 	name: z.enum(["postgres", "neon_auth"]),
 	status: z.enum(["up", "down", "skipped"]),
 	critical: z.boolean().openapi({

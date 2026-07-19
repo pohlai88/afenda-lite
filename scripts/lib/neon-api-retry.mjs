@@ -81,9 +81,7 @@ export async function withNeonRetries(operation, options = {}) {
 							? error.message
 							: String(error);
 				const stderr =
-					"stderr" in error && error.stderr != null
-						? String(error.stderr)
-						: "";
+					"stderr" in error && error.stderr != null ? String(error.stderr) : "";
 				return isTransientNeonFailure({
 					status,
 					message: `${message}\n${stderr}`.trim(),

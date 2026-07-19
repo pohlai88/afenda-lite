@@ -10,7 +10,7 @@ describe("@afenda/emails render", () => {
 		const html = await renderOnboardingInviteEmail({
 			inviteeName: "Ada",
 			organizationName: "Afenda",
-			inviteUrl: "https://afenda-lite.vercel.app/join?invitationId=test",
+			inviteUrl: "https://www.nexuscanon.com/join?invitationId=test",
 		});
 		expect(html).toContain("Ada");
 		expect(html).toContain("Afenda");
@@ -20,7 +20,7 @@ describe("@afenda/emails render", () => {
 	it("renders password-reset HTML with reset URL", async () => {
 		const html = await renderPasswordResetEmail({
 			recipientName: "Ada",
-			resetUrl: "https://afenda-lite.vercel.app/auth/reset-password?token=test",
+			resetUrl: "https://www.nexuscanon.com/auth/reset-password?token=test",
 		});
 		expect(html).toContain("Ada");
 		expect(html).toContain("reset-password?token=test");

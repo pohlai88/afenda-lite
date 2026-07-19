@@ -97,7 +97,7 @@ export function PasswordResetEmail({
 PasswordResetEmail.PreviewProps = {
 	recipientName: "Alex Morgan",
 	resetUrl:
-		"https://afenda-lite.vercel.app/auth/reset-password?token=preview-reset",
+		"https://www.nexuscanon.com/auth/reset-password?token=preview-reset",
 } satisfies PasswordResetEmailProps;
 
 export default PasswordResetEmail;

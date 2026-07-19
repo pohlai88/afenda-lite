@@ -100,7 +100,7 @@ export function OnboardingInviteEmail({
 OnboardingInviteEmail.PreviewProps = {
 	inviteeName: "Alex Morgan",
 	organizationName: "Harbor Feeds",
-	inviteUrl: "https://afenda-lite.vercel.app/join?invitationId=preview-invite",
+	inviteUrl: "https://www.nexuscanon.com/join?invitationId=preview-invite",
 } satisfies OnboardingInviteEmailProps;
 
 export default OnboardingInviteEmail;

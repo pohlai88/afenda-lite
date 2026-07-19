@@ -15,20 +15,16 @@ describe("auth-failure taxonomy", () => {
 				message: "Organization already exists",
 			},
 		);
-		expect(
-			failFromNeonOrgProbe({ message: "not owner" }, "fallback"),
-		).toEqual({
+		expect(failFromNeonOrgProbe({ message: "not owner" }, "fallback")).toEqual({
 			ok: false,
 			code: "FORBIDDEN",
 			message: "Not authorized for this organization action",
 		});
-		expect(failFromNeonOrgProbe({ message: "boom" }, "safe fallback")).toEqual(
-			{
-				ok: false,
-				code: "INTERNAL_ERROR",
-				message: "safe fallback",
-			},
-		);
+		expect(failFromNeonOrgProbe({ message: "boom" }, "safe fallback")).toEqual({
+			ok: false,
+			code: "INTERNAL_ERROR",
+			message: "safe fallback",
+		});
 	});
 
 	it("maps invite HTTP status to closed codes", () => {

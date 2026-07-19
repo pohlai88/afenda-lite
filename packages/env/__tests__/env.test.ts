@@ -58,6 +58,7 @@ describe("@afenda/env neon-contract", () => {
 		expect(isApprovedAppHost("localhost")).toBe(true);
 		expect(isApprovedAppHost("evil.example")).toBe(false);
 		expect(assertAppUrl("http://localhost:3000").ok).toBe(true);
+		expect(assertAppUrl("https://www.nexuscanon.com").ok).toBe(true);
 		expect(assertAppUrl("https://afenda-lite.vercel.app").ok).toBe(true);
 		expect(assertAppUrl("https://evil.example").ok).toBe(false);
 		expect(assertAppUrl("https://evil.example").issues[0]?.variable).toBe(
@@ -71,12 +72,17 @@ describe("@afenda/env neon-contract", () => {
 			assertAppUrl("http://localhost:3000", { vercelEnv: "production" }).ok,
 		).toBe(false);
 		expect(
-			assertAppUrl("https://afenda-lite.vercel.app", {
+			assertAppUrl("https://www.nexuscanon.com", {
 				vercelEnv: "production",
 			}).ok,
 		).toBe(true);
 		expect(
-			assertAppUrl("http://afenda-lite.vercel.app", {
+			assertAppUrl("https://afenda-lite.vercel.app", {
+				vercelEnv: "production",
+			}).ok,
+		).toBe(false);
+		expect(
+			assertAppUrl("http://www.nexuscanon.com", {
 				vercelEnv: "production",
 			}).ok,
 		).toBe(false);
@@ -195,7 +201,7 @@ describe("@afenda/env neon-contract", () => {
 				DATABASE_URL: POOLER_URL,
 				NEON_AUTH_BASE_URL: AUTH_BASE,
 				NEON_AUTH_COOKIE_SECRET: COOKIE_OK,
-				APP_URL: "https://afenda-lite.vercel.app",
+				APP_URL: "https://www.nexuscanon.com",
 				SHARED_ADMIN_PASSWORD: "must-not-ship",
 				PLAYGROUND_ENABLED: true,
 			},

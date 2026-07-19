@@ -24,7 +24,7 @@ vi.mock("@afenda/env", () => ({
 		NEON_AUTH_BASE_URL: "https://auth.example.test",
 		NEON_AUTH_COOKIE_SECRET: "x".repeat(32),
 		DATABASE_URL: "postgresql://u:p@ep-x-pooler.example/db?sslmode=require",
-		APP_URL: "https://afenda-lite.vercel.app",
+		APP_URL: "https://www.nexuscanon.com",
 	},
 	isProductionDeployment: () => false,
 }));
@@ -40,7 +40,7 @@ vi.mock("@afenda/rate-limit", async () => {
 	};
 });
 
-const APP_ORIGIN = "https://afenda-lite.vercel.app";
+const APP_ORIGIN = "https://www.nexuscanon.com";
 const CORRELATION_ID = "11111111-1111-4111-8111-111111111111";
 
 function authRequest(method: "GET" | "POST", headers?: HeadersInit): Request {

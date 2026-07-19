@@ -5,10 +5,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import {
-	isTransientNeonFailure,
-	withNeonRetries,
-} from "./neon-api-retry.mjs";
+import { isTransientNeonFailure, withNeonRetries } from "./neon-api-retry.mjs";
 
 describe("isTransientNeonFailure", () => {
 	it("flags Neon CLI reachability blip", () => {
@@ -23,7 +20,11 @@ describe("isTransientNeonFailure", () => {
 
 	it("flags common HTTP statuses", () => {
 		for (const status of [408, 429, 500, 502, 503, 504]) {
-			assert.equal(isTransientNeonFailure({ status }), true, `status ${status}`);
+			assert.equal(
+				isTransientNeonFailure({ status }),
+				true,
+				`status ${status}`,
+			);
 		}
 	});
 

@@ -20,7 +20,7 @@ vi.mock("@afenda/env", () => ({
 		NEON_AUTH_BASE_URL: "https://auth.example.test",
 		NEON_AUTH_COOKIE_SECRET: "x".repeat(32),
 		DATABASE_URL: "postgresql://u:p@ep-x-pooler.example/db?sslmode=require",
-		APP_URL: "https://afenda-lite.vercel.app",
+		APP_URL: "https://www.nexuscanon.com",
 	},
 }));
 

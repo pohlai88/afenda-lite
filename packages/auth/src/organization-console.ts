@@ -150,10 +150,7 @@ export async function deleteOrganization(
 	}
 	const isMember = memberships.data.some((row) => row.id === trimmed);
 	if (!isMember) {
-		return fail(
-			"FORBIDDEN",
-			"Organization is not in the session memberships",
-		);
+		return fail("FORBIDDEN", "Organization is not in the session memberships");
 	}
 
 	const auth = getNeonAuth();

@@ -10,14 +10,18 @@ import { z } from "zod";
 export const APPROVED_NEON_ORG_ID = "org-fragrant-lake-90358173" as const;
 export const APPROVED_NEON_PROJECT_ID = "young-hat-54755363" as const;
 export const APPROVED_NEON_BRANCH_ID = "br-tiny-hill-ao82jp6f" as const;
-export const PRODUCTION_APP_ORIGIN = "https://afenda-lite.vercel.app" as const;
+export const PRODUCTION_APP_ORIGIN = "https://www.nexuscanon.com" as const;
 export const PRODUCTION_APP_HOST = new URL(PRODUCTION_APP_ORIGIN).hostname;
+
+/** Legacy Vercel project host — approved for non-production APP_URL only. */
+export const LEGACY_VERCEL_APP_HOST = "afenda-lite.vercel.app" as const;
 
 /** Approved APP_URL hostnames for local / non-Vercel-production runtimes (PL-S9). */
 export const APPROVED_APP_HOSTS = [
 	"localhost",
 	"127.0.0.1",
 	PRODUCTION_APP_HOST,
+	LEGACY_VERCEL_APP_HOST,
 ] as const;
 
 /**

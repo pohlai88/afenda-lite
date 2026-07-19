@@ -12,7 +12,7 @@ const mockedEnv = vi.hoisted(() => ({
 	NEON_AUTH_BASE_URL: "https://auth.example.test",
 	NEON_AUTH_COOKIE_SECRET: "x".repeat(32),
 	DATABASE_URL: "postgresql://u:p@ep-x-pooler.example/db?sslmode=require",
-	APP_URL: "https://afenda-lite.vercel.app",
+	APP_URL: "https://www.nexuscanon.com",
 	PORTAL_ORGANIZATION_ID: undefined as string | undefined,
 	PORTAL_ORG_SLUG: undefined as string | undefined,
 }));
@@ -400,7 +400,7 @@ describe("N6/N8 session contract", () => {
 			);
 			const response = await handleEnsureActiveOrganizationRequest(
 				new Request(
-					"https://afenda-lite.vercel.app/api/session/ensure-active-organization",
+					"https://www.nexuscanon.com/api/session/ensure-active-organization",
 				),
 			);
 
@@ -433,7 +433,7 @@ describe("N6/N8 session contract", () => {
 			);
 			const response = await handleEnsureActiveOrganizationRequest(
 				new Request(
-					"https://afenda-lite.vercel.app/api/session/ensure-active-organization?next=%2Fadmin",
+					"https://www.nexuscanon.com/api/session/ensure-active-organization?next=%2Fadmin",
 				),
 			);
 
@@ -454,7 +454,7 @@ describe("N6/N8 session contract", () => {
 			);
 			const response = await handleEnsureActiveOrganizationRequest(
 				new Request(
-					"https://afenda-lite.vercel.app/api/session/ensure-active-organization?next=%2F",
+					"https://www.nexuscanon.com/api/session/ensure-active-organization?next=%2F",
 				),
 			);
 
@@ -476,7 +476,7 @@ describe("N6/N8 session contract", () => {
 			);
 			const response = await handleSyncSessionCookiesRequest(
 				new Request(
-					"https://afenda-lite.vercel.app/api/session/sync-cookies?next=%2Fadmin",
+					"https://www.nexuscanon.com/api/session/sync-cookies?next=%2Fadmin",
 				),
 			);
 
@@ -500,7 +500,7 @@ describe("N6/N8 session contract", () => {
 			);
 			const { AUTH_LOGIN_PATH } = await import("../src/auth-paths");
 			const response = await handleSyncSessionCookiesRequest(
-				new Request("https://afenda-lite.vercel.app/api/session/sync-cookies"),
+				new Request("https://www.nexuscanon.com/api/session/sync-cookies"),
 			);
 
 			expect(new URL(String(response.headers.get("location"))).pathname).toBe(
@@ -521,7 +521,7 @@ describe("N6/N8 session contract", () => {
 				loginUrl: AUTH_LOGIN_PATH,
 			});
 			expect(typeof proxy).toBe("function");
-			await proxy(new NextRequest("https://afenda-lite.vercel.app/admin"));
+			await proxy(new NextRequest("https://www.nexuscanon.com/admin"));
 			expect(gate).toHaveBeenCalled();
 		});
 
@@ -537,7 +537,7 @@ describe("N6/N8 session contract", () => {
 			const { createSessionProxy } = await import("../src/proxy");
 			const sessionProxy = createSessionProxy();
 			const response = await sessionProxy(
-				new NextRequest("https://afenda-lite.vercel.app/admin"),
+				new NextRequest("https://www.nexuscanon.com/admin"),
 			);
 			const location = new URL(String(response.headers.get("location")));
 			expect(location.pathname).toBe(AUTH_LOGIN_PATH);
@@ -563,7 +563,7 @@ describe("N6/N8 session contract", () => {
 			const { createSessionProxy } = await import("../src/proxy");
 			const sessionProxy = createSessionProxy();
 			const response = await sessionProxy(
-				new NextRequest("https://afenda-lite.vercel.app/admin/users"),
+				new NextRequest("https://www.nexuscanon.com/admin/users"),
 			);
 			const location = new URL(String(response.headers.get("location")));
 			expect(location.pathname).toBe(AUTH_LOGIN_PATH);
@@ -599,7 +599,7 @@ describe("N6/N8 session contract", () => {
 
 			const sessionProxy = createSessionProxy();
 			const response = await sessionProxy(
-				new NextRequest("https://afenda-lite.vercel.app/admin"),
+				new NextRequest("https://www.nexuscanon.com/admin"),
 			);
 
 			expect(middlewareMock).toHaveBeenCalledWith({
@@ -630,7 +630,7 @@ describe("N6/N8 session contract", () => {
 			const { createSessionProxy } = await import("../src/proxy");
 			const sessionProxy = createSessionProxy();
 			const response = await sessionProxy(
-				new NextRequest("https://afenda-lite.vercel.app/admin/users"),
+				new NextRequest("https://www.nexuscanon.com/admin/users"),
 			);
 
 			expect(response.status).toBe(200);

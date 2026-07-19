@@ -1,6 +1,10 @@
 import { bucketPolicy } from "./buckets";
 import { retryAfterSecondsFromReset } from "./retry-after";
-import type { RateLimitHitResult, RateLimitQuota, RateLimitStore } from "./types";
+import type {
+	RateLimitHitResult,
+	RateLimitQuota,
+	RateLimitStore,
+} from "./types";
 
 function quotaAt(input: {
 	limit: number;
@@ -34,7 +38,9 @@ export function createMemoryRateLimitStore(): RateLimitStore {
 				const oldest = active[0];
 				windows.set(fullKey, active);
 				const resetEpochMs =
-					oldest === undefined ? now + policy.windowMs : oldest + policy.windowMs;
+					oldest === undefined
+						? now + policy.windowMs
+						: oldest + policy.windowMs;
 				return {
 					allowed: false,
 					retryAfterSeconds:

@@ -216,11 +216,7 @@ function appErrorResponse(input: {
 	});
 	return new Response(
 		JSON.stringify(
-			httpErrorBody(
-				input.error.code,
-				input.error.message,
-				input.error.details,
-			),
+			httpErrorBody(input.error.code, input.error.message, input.error.details),
 		),
 		{
 			status: ERROR_HTTP_STATUS[input.error.code],
