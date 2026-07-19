@@ -17,7 +17,7 @@ Authority: ARCH-024 operative (this file + SKILL.md). Living ARCH-024 body dorma
 │  Rank 1 — Platform                                           │
 │  @afenda/db  @afenda/auth  @afenda/admin  @afenda/env        │
 │  @afenda/errors  @afenda/logger  @afenda/rate-limit          │
-│  @afenda/config                                              │
+│  @afenda/cache  @afenda/config                               │
 │  See allowed same-layer edges below                          │
 └──────────────────────────────────────────────────────────────┘
 ```
@@ -30,7 +30,7 @@ Authority: ARCH-024 operative (this file + SKILL.md). Living ARCH-024 body dorma
 | Surfaces  | ✅† | same-ok‡ | ❌ |
 | Application | ✅ | ✅ | ❌ (apps must not import each other) |
 
-\* Platform same-layer: prefer minimal coupling. Living edges: `@afenda/auth` → `@afenda/env` · `@afenda/logger` · `@afenda/rate-limit` · `@afenda/errors`; `@afenda/rate-limit` → `@afenda/env` · `@afenda/errors`; `@afenda/admin` → `@afenda/auth` · `@afenda/db` · `@afenda/env` · `@afenda/errors`; `apps/web` → `@afenda/errors` · `@afenda/logger` · `@afenda/rate-limit`. `@afenda/errors` and `@afenda/logger` are Rank-1 **leaves** (no `@afenda/*` deps). `@afenda/db` must **not** import `@afenda/auth` or `@afenda/env`. `@afenda/env` imports no workspace packages. `@afenda/config` is not a runtime importer.
+\* Platform same-layer: prefer minimal coupling. Living edges: `@afenda/auth` → `@afenda/env` · `@afenda/logger` · `@afenda/rate-limit` · `@afenda/errors`; `@afenda/rate-limit` → `@afenda/env` · `@afenda/errors`; `@afenda/cache` → `@afenda/env` · `@afenda/errors`; `@afenda/admin` → `@afenda/auth` · `@afenda/db` · `@afenda/env` · `@afenda/errors`; `apps/web` → `@afenda/errors` · `@afenda/logger` · `@afenda/rate-limit`. `@afenda/errors` and `@afenda/logger` are Rank-1 **leaves** (no `@afenda/*` deps). `@afenda/db` must **not** import `@afenda/auth` or `@afenda/env`. `@afenda/env` imports no workspace packages. `@afenda/config` is not a runtime importer.
 
 † `@afenda/ui-system` must remain free of server-only code and DB calls (ARCH-024).
 
@@ -44,6 +44,7 @@ Authority: ARCH-024 operative (this file + SKILL.md). Living ARCH-024 body dorma
 | `@afenda/db` | `@afenda/auth`, `@afenda/env` | ARCH-024 contract |
 | `@afenda/admin` | Surfaces, `apps/*`, second Neon Auth client | Org-console Platform; Neon SDK ownership stays in `@afenda/auth`; RBAC audit → `@afenda/admin/audit`; health → `@afenda/admin/health` (incl. readiness `latencyMs`); provision = create → `persistActiveOrganization` → invite |
 | `@afenda/env` | any `@afenda/*` business package | Env owns config only |
+| `@afenda/cache` | Surfaces, `apps/*`, foreign Redis outside Upstash, `FLUSHDB` | L1+L2 Platform cache; shares Upstash with rate-limit under `@afenda/cache:` prefix |
 | `@afenda/ui-system` | `@afenda/db`, server-only auth paths | UI is client/surface |
 | Any package | Relative `../../packages/...` | Cross-boundary package name required |
 | Any consumer | `@afenda/<pkg>/src/...` | Public `exports` only |

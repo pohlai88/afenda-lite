@@ -53,7 +53,7 @@ if (databaseUrl) {
 const hasDatabase = typeof databaseUrl === "string" && databaseUrl.length > 0;
 
 /** Live Org Admin system template on br-tiny-hill (ARCH-023 seed). */
-const ORG_ADMIN_TEMPLATE_ROLE_ID = "22527ba9-7a74-4217-8b2e-986f36e0b444";
+const ORG_ADMIN_TEMPLATE_ROLE_ID = "790f03ae-5d20-4ef4-9c8a-a5ee1ed6a28a";
 
 describe("parseAssignOrgRoleCommand (I3.1)", () => {
 	it("accepts trimmed userId and uuid roleId", () => {

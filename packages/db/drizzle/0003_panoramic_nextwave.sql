@@ -1,1 +1,0 @@
-ALTER TABLE "platform_rbac_audit" ADD COLUMN "correlation_id" text;

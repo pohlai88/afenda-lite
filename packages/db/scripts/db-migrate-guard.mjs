@@ -1,16 +1,16 @@
 /**
  * Fail-closed guard for `pnpm --filter @afenda/db db:migrate` (N2).
  *
- * 0000_living-roots-baseline.sql is a journal baseline for forward diffs.
- * Applying it on br-tiny-hill-ao82jp6f would try CREATE on existing tables.
+ * A sole `0000_*.sql` journal baseline is CREATE DDL for an empty public schema.
+ * Applying it on br-tiny-hill-ao82jp6f when tables already exist will fail CREATE.
  *
  * Requires:
  * - AFENDA_ALLOW_DB_MIGRATE=1
- * - non-sole-0000 SQL set
+ * - non-sole-0000 SQL set, OR AFENDA_ALLOW_BASELINE_MIGRATE=1 (Mode C / empty-DB apply)
  * - valid migration-class DATABASE_URL (same key; -pooler not required)
  * - additive-first SQL unless AFENDA_ALLOW_DESTRUCTIVE_MIGRATE=1
  *
- * Authority: ARCH-025 · ARCH-028 S2.2 · N2
+ * Authority: ARCH-025 · ARCH-028 S2.2 · N2 · Mode C PL-S9 exception
  */
 import { spawnSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
@@ -29,11 +29,12 @@ if (!allow) {
 	console.error(`
 @afenda/db db:migrate DENIED
 
-0000_living-roots-baseline.sql is a journal baseline for forward diffs.
-Applying it with db:migrate on br-tiny-hill-ao82jp6f would try CREATE on existing tables — do not.
+A sole 0000_*.sql journal baseline is CREATE DDL — do not apply onto live Neon
+when product tables already exist.
 
 Allowed without override: db:generate · db:check
 Override (operator only): AFENDA_ALLOW_DB_MIGRATE=1 pnpm --filter @afenda/db db:migrate
+Sole baseline after intentional wipe: also set AFENDA_ALLOW_BASELINE_MIGRATE=1
 
 See ARCH-028 S2.2 · ARCH-025 Operational considerations · .cursor/hooks/no-drizzle-baseline-migrate.mjs
 `);
@@ -47,14 +48,16 @@ if (!existsSync(drizzleDir)) {
 
 const sqlFiles = readdirSync(drizzleDir).filter((f) => f.endsWith(".sql"));
 const onlyBaseline =
-	sqlFiles.length === 1 && sqlFiles[0] === "0000_living-roots-baseline.sql";
+	sqlFiles.length === 1 && /^0000_.+\.sql$/.test(sqlFiles[0] ?? "");
+const allowBaseline = process.env.AFENDA_ALLOW_BASELINE_MIGRATE === "1";
 
-if (onlyBaseline) {
+if (onlyBaseline && !allowBaseline) {
 	console.error(`
 @afenda/db db:migrate DENIED even with AFENDA_ALLOW_DB_MIGRATE=1
 
-The only migration is 0000_living-roots-baseline.sql (CREATE baseline for tables that already exist on live Neon).
-Generate a forward migration after a schema change, then migrate that file — never apply 0000 alone.
+The only migration is ${sqlFiles[0]} (CREATE baseline).
+Generate a forward migration after a schema change, then migrate that file —
+or after an intentional empty-DB wipe set AFENDA_ALLOW_BASELINE_MIGRATE=1.
 `);
 	process.exit(1);
 }

@@ -30,7 +30,7 @@ Historical provenance: patterns adapted from Xerp `monorepo-discipline`; rewritt
 ```
 Rank 3 — Application  : apps/web  (sole deployable; future apps/* follow same rule)
 Rank 2 — Surfaces     : @afenda/ui-system · @afenda/emails
-Rank 1 — Platform     : @afenda/db · @afenda/auth · @afenda/admin · @afenda/env · @afenda/errors · @afenda/logger · @afenda/config
+Rank 1 — Platform     : @afenda/db · @afenda/auth · @afenda/admin · @afenda/env · @afenda/errors · @afenda/logger · @afenda/rate-limit · @afenda/cache · @afenda/config
 ```
 
 **Direction rule:** imports flow **down** only (higher rank → same or lower). Packages never import `apps/*`. No cycles.
@@ -40,11 +40,13 @@ Dependency graph (runtime):
 ```
 apps/web
   ├── @afenda/db
-  ├── @afenda/auth  ──→  @afenda/env · @afenda/logger
+  ├── @afenda/auth  ──→  @afenda/env · @afenda/logger · @afenda/rate-limit · @afenda/errors
   ├── @afenda/admin ──→  @afenda/auth · @afenda/db · @afenda/env · @afenda/errors
   ├── @afenda/env
   ├── @afenda/errors   (leaf — AppError / codes / Result / http / postgres adapter)
   ├── @afenda/logger   (leaf — Pino Node + edge emit; no @afenda/* runtime deps)
+  ├── @afenda/rate-limit ──→  @afenda/env · @afenda/errors
+  ├── @afenda/cache      ──→  @afenda/env · @afenda/errors
   ├── @afenda/ui-system
   └── @afenda/emails
 
@@ -102,6 +104,8 @@ Full diagram, forbidden pairs, and violation fixes: [LAYERS.md](LAYERS.md).
 | `@afenda/env` | (none) | Runtime business logic |
 | `@afenda/errors` | (none) | Next.js; `pg` / Drizzle / Prisma; UI/locale copy as contract |
 | `@afenda/logger` | (none of `@afenda/*`) | Next.js; APM SDKs; Surfaces / `apps/*` |
+| `@afenda/rate-limit` | `@afenda/env` · `@afenda/errors` | Next.js; Surfaces / `apps/*`; foreign Redis outside Upstash |
+| `@afenda/cache` | `@afenda/env` · `@afenda/errors` | Next.js; Surfaces / `apps/*`; foreign Redis outside Upstash; `FLUSHDB` |
 | `@afenda/ui-system` | platform packages only if client-safe | Server-only code, DB calls, secrets |
 | `@afenda/emails` | (UI/React peers as needed) | Be imported from client components in `apps/web` |
 | `@afenda/config` | (none at runtime) | Be imported as a runtime module; use `extends` / Biome root only |

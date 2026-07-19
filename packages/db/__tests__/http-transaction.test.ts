@@ -3,7 +3,7 @@
  */
 
 import { resolveDatabaseUrlForTests } from "@afenda/testing/require-database-for-ci";
-import { afterAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 const { hasDatabase } = resolveDatabaseUrlForTests();
 
@@ -21,8 +21,25 @@ describe.skipIf(!hasDatabase)("runNeonHttpTransaction atomicity (N12)", () => {
 	const orgId = `org-n12-tx-${runId}`;
 	const userId = `user-n12-tx-${runId}`;
 	const assignmentId = crypto.randomUUID();
-	/** Live Org Admin system template on br-tiny-hill (ARCH-023 seed). */
-	const roleId = "22527ba9-7a74-4217-8b2e-986f36e0b444";
+	/** Resolved from live Org Admin system template (ARCH-023 seed). */
+	let roleId = "";
+
+	beforeAll(async () => {
+		const { getNeonSql } = await import("../src/http-transaction");
+		const sql = getNeonSql();
+		const [template] = await sql`
+			SELECT id::text AS id
+			FROM platform_role
+			WHERE template_key = 'org_admin'
+				AND is_system_template = true
+				AND organization_id IS NULL
+			LIMIT 1
+		`;
+		expect(template?.id).toMatch(
+			/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+		);
+		roleId = String(template.id);
+	});
 
 	afterAll(async () => {
 		const { getNeonSql } = await import("../src/http-transaction");

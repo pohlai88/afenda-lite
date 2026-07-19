@@ -53,7 +53,7 @@ if (databaseUrl) {
 
 const hasDatabase = typeof databaseUrl === "string" && databaseUrl.length > 0;
 
-const VIEWER_TEMPLATE_ROLE_ID = "d9305ced-bbd5-493b-9b78-80ebb78c6450";
+const VIEWER_TEMPLATE_ROLE_ID = "67ee19f3-ab7e-4856-aaed-68c55cdb87de";
 
 describe("parseRevokeOrgRoleCommand (I3.1)", () => {
 	it("accepts uuid assignmentId", () => {

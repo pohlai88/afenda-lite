@@ -116,10 +116,15 @@ describe.skipIf(!hasDatabase)("ensurePlatformPermissionCatalog (N10)", () => {
 			);
 		}
 
-		// Known live Org Admin / Viewer UUIDs used by I3.1 tests
+		// Stable UUIDs across ensure calls (values rotate after Mode C baseline wipe+reseed)
 		const orgAdmin = first.templates.find((t) => t.templateKey === "org_admin");
 		const viewer = first.templates.find((t) => t.templateKey === "viewer");
-		expect(orgAdmin?.roleId).toBe("22527ba9-7a74-4217-8b2e-986f36e0b444");
-		expect(viewer?.roleId).toBe("d9305ced-bbd5-493b-9b78-80ebb78c6450");
+		expect(orgAdmin?.roleId).toMatch(
+			/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+		);
+		expect(viewer?.roleId).toMatch(
+			/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+		);
+		expect(orgAdmin?.roleId).not.toBe(viewer?.roleId);
 	}, 30_000);
 });

@@ -53,8 +53,8 @@ if (databaseUrl) {
 
 const hasDatabase = typeof databaseUrl === "string" && databaseUrl.length > 0;
 
-const ORG_ADMIN_TEMPLATE_ROLE_ID = "22527ba9-7a74-4217-8b2e-986f36e0b444";
-const VIEWER_TEMPLATE_ROLE_ID = "d9305ced-bbd5-493b-9b78-80ebb78c6450";
+const ORG_ADMIN_TEMPLATE_ROLE_ID = "790f03ae-5d20-4ef4-9c8a-a5ee1ed6a28a";
+const VIEWER_TEMPLATE_ROLE_ID = "67ee19f3-ab7e-4856-aaed-68c55cdb87de";
 
 describe("hasPermission guards (I3.1 / N10)", () => {
 	it("rejects empty orgId before touching the database", async () => {

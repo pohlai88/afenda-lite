@@ -516,6 +516,28 @@ importers:
         specifier: 'catalog:'
         version: 5.9.3
 
+  packages/cache:
+    dependencies:
+      '@afenda/env':
+        specifier: workspace:*
+        version: link:../env
+      '@afenda/errors':
+        specifier: workspace:*
+        version: link:../errors
+      '@upstash/redis':
+        specifier: 'catalog:'
+        version: 1.38.0
+    devDependencies:
+      '@afenda/config':
+        specifier: workspace:*
+        version: link:../config
+      '@types/node':
+        specifier: 'catalog:'
+        version: 20.19.30
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
+
   packages/config: {}
 
   packages/db:

@@ -282,7 +282,7 @@ export function evaluateProdBranchBaselineMigratePosture(input: {
 	return {
 		ok: true,
 		issues: [],
-		detail: `prohibited on ${APPROVED_NEON_BRANCH_ID} — use @afenda/db db-migrate-guard (never apply 0000 alone)`,
+		detail: `prohibited on ${APPROVED_NEON_BRANCH_ID} — use @afenda/db db-migrate-guard (never apply sole 0000 without AFENDA_ALLOW_BASELINE_MIGRATE)`,
 	};
 }
 
