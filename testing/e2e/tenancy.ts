@@ -300,8 +300,8 @@ export async function provisionWorkerTenant(
 
 /**
  * Assign system template `editor` to the factory operator in orgA.
- * Editor has `clients.invite` (shows Operator admin nav) but not `fft.access`
- * (hides FFT nav) and disables admin permission bootstrap.
+ * Editor has `clients.invite` + `account.self` and disables admin permission
+ * bootstrap (no full org_admin catalog grant).
  */
 export async function assignLimitedOperatorNavRole(
 	handle: WorkerTenantHandle,

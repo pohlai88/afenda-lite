@@ -22,7 +22,7 @@ LOAD:
   ../afenda-elite-doc-control/doc-control-rules.md   # DOC-001…003 operative rules (skill-local)
 SKIP:
   recreating doc/ · restoring Living docs/ without Docs-lane · treating Fumadocs MDX as Living DOC-001
-  Storybook / Guardian Auth product restore · guardian-css-audit · FFT P3 flag promotion without gate-register
+  Storybook / Guardian Auth product restore · guardian-css-audit · recreating wiped Declarations/FFT product modules
   afenda-Xerp editorial bundles (different repo overlay)
   forking or syncing Xerp / vendor skills into afenda-elite-*
   LOAD / symlink / submodule paths into afenda-Xerp
@@ -71,7 +71,7 @@ Task arrives (this repo / Afenda-Lite)
     ├── Internal technical docs prose (spec · ADR · runbook · migration)? → technical-writing (after `afenda-elite-doc-control` / `documentation-and-adrs` farm is fixed)
     ├── TS / coding discipline (brands · unions · any/as · boundary hygiene) after farm fixed? → afenda-coding-discipline (not PR review / simplify / API SSOT / React perf)
     ├── Generic engineering lifecycle? ─────────────────────→ using-agent-skills
-    └── Domain farm (Neon, FFT)? ───────────────────────────→ neon-tenancy / feed-farm-trade
+    └── Domain farm (Neon tenancy)? ────────────────────────→ neon-tenancy-efficiency
 ```
 
 **Rule:** This router chooses *which farm*. Vendor phase skills choose *how to engineer* once the farm is fixed. Housekeeping never deletes — it hands **Slice D** to monorepo-refactor. Day-to-day `@afenda/*` import/DAG checks use `afenda-elite-monorepo-discipline`. GUIDE-018 Phase I / residual ARCH-028 / Neon Auth `N*` serial implement uses `afenda-elite-implementation-slices` as the mission loop; it **loads** scaffold/modules/nextjs/neon/api per [slice-map](../afenda-elite-implementation-slices/slice-map.md) or [neon-auth-slice-map](../afenda-elite-implementation-slices/neon-auth-slice-map.md) — it does not replace those farms. `N*` closes only via Neon Slice Score + independent audit. Retired names: `portal-*-*` → use `afenda-elite-*` above. Wave 3: `afenda-elite-documentation` → `afenda-elite-doc-control`; `afenda-elite-docs-consistency` → `afenda-elite-doc-integrity`. Next.js mechanics: local `afenda-elite-nextjs-best-practice` (Vercel + Accelint + Cache Components; not an Xerp overlay).

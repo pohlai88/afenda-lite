@@ -28,7 +28,7 @@ FORBID: Collapse/legacy recover · incomplete product paths · Data API as produ
 FORBID: preview Neon Storage/Functions/AI Gateway without Approved slice
 FORBID: app-side SMTP for Neon Auth · revert Neon Auth mail to shared provider without ARCH-026 reopen · casual branch switch · secret commit
 REQUIRE: Neon Auth console Zoho SMTP (`email_provider`) for invite/reset/verify mail
-FORBID: FFT 2B–2D · drizzle 0000 baseline on br-tiny-hill-ao82jp6f
+FORBID: recreate wiped Declarations/FFT · drizzle 0000 baseline on br-tiny-hill-ao82jp6f
 DONE: Neon Slice Score + independent APPROVED only
 COMMIT: only when user explicitly asks
 ```

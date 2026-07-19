@@ -1,7 +1,7 @@
 # Afenda-Lite deprecation register (compulsory)
 
 **Product:** **Afenda-Lite** (beta edition of the Afenda family). **Afenda-Elite** is the battle-proven edition. Both share [DOC-001](../../../../docs/_control/DOC-001-documentation-control-standard.md) documentation control and similar infra aliasing.  
-**Authority:** [SKILL.md](SKILL.md) · `/using-afenda-elite-skills` · FFT locks/roadmap under [`docs/modules/feed-farm-trade/`](../../../../docs/modules/feed-farm-trade/) (FFT-MOD-001 · FFT-MOD-010)
+**Authority:** [SKILL.md](SKILL.md) · `/using-afenda-elite-skills` · living modules = platform + identity only (Declarations + FFT product modules **removed**)
 
 Status meanings:
 
@@ -28,35 +28,38 @@ Status meanings:
 
 ---
 
-## Identity & paths (Feed Farm Trade)
+## Identity & paths (Feed Farm Trade — removed)
 
 | Retired | Replacement | Status | Notes |
 |---------|-------------|--------|-------|
-| Product/engine name **Hot Sales** | **Feed Farm Trade (FFT)** | Retired | FE ADR-001 amended 2026-07-12 |
-| URL product home `/trade/*` | `/fft/*` | Redirect-only | `proxy.ts` 308; do not rebuild `/trade` UI |
-| Env prefix `HOT_SALES_*` | `FFT_*` | Retired | Migrate Vercel/local; do not re-add Hot Sales keys |
-| DB `hot_sales_*` tables | `fft_*` | Retired | Migration `024_fft_rename_hot_sales_tables.sql` |
-| Tags `hot-sales-phase-*` | `fft-phase-*` (new work) | Footnote only | Immutable history — do not retag |
+| Product/engine name **Hot Sales** | *(none — FFT product removed)* | Retired | Historical rename only; do not restore Hot Sales or FFT product |
+| URL product homes `/trade/*`, `/fft/*` | Living operator shell under `/admin` (identity / org-admin) | Hard-deleted | Nuclear wipe — do not rebuild `/trade` or `/fft` UI |
+| Env prefix `HOT_SALES_*` / product `FFT_*` | Platform/identity env only (`@afenda/env`) | Retired | Do not re-add Hot Sales or FFT product keys |
+| DB `hot_sales_*` / `fft_*` product tables | Platform RBAC roots (`platform_role_assignment`, `platform_rbac_audit`) | Retired / removed from living product | Historical migrations may remain; do not grow FFT domain |
+| Tags `hot-sales-phase-*` / `fft-phase-*` | — | Footnote only | Immutable history — do not retag or reopen 2B–2D |
+| `feed-farm-trade` skill | — | Hard-deleted | Skill directory removed; catalog status `forbidden` |
+| Frozen expansion framing (2B–2D “until reopen”) | **Removed** — not frozen | Hard-deleted | Do not teach FFT freeze/reopen as open work |
 
 ## Shell & FE residue
 
 | Retired | Replacement | Status | Notes |
 |---------|-------------|--------|-------|
-| `FftShell` / locale switcher | Shared `AdminCnShell` on `/fft/*` | Hard-deleted / ban remount | AC-SH; skill DO NOT |
-| Live App Router `/fft/[locale]` | Locale-free `/fft/**` | Redirect / shim only | Action arg `FFT_UI_LOCALE` for copy |
-| Separate FFT chrome / “second app” | One Afenda-Lite SaaS · two modules | Rejected framing | Platform+Identity shared with Declarations |
-| FFT as separate infra “course” | Shared env/Neon/auth/proxy/CI/Vercel | Rejected framing | Module domain ≠ separate stack |
-| Whole `components/` tree (2026-07-11) | `features/*` / `components-V2/*` | Hard-deleted | Named migrates only |
+| `FftShell` / locale switcher / `/fft/**` product | Shared AdminCN on living identity/org-admin routes | Hard-deleted / ban remount | Nuclear wipe |
+| Live App Router `/fft/[locale]` | — | Hard-deleted | Do not remount locale or locale-free FFT trees |
+| Separate FFT chrome / “second app” | One Afenda-Lite SaaS · platform + identity | Rejected framing | |
+| FFT as separate infra “course” | Shared env/Neon/auth/proxy/CI/Vercel | Rejected framing | |
+| Whole `components/` tree (2026-07-11) | `features/*` under Target (living: auth · org-admin) | Hard-deleted | Named migrates only |
 
-## Module boundary (not a deprecation of Declarations)
+## Module boundary (Declarations + FFT removed)
 
 | Rule | Meaning |
 |------|---------|
-| No domain imports Trade ↔ Declarations | Module boundary inside **one** Afenda-Lite platform |
-| Compose at adapter if both needed | Shared shell/nav OK |
-| Platform/infra changes | Update **once** for both modules |
+| Living contexts only | `modules/{platform,identity}` · `features/{auth,org-admin}` |
+| Declarations product module | **Compulsory retired / removed** — not a living domain |
+| Feed Farm Trade (`fft`) product module | **Removed** — not “frozen expansion” |
+| Platform/infra changes | Update once for living modules |
 
-Declarations is not “deprecated.” Treating FFT and Declarations as two platforms **is** deprecated framing. Calling the whole product a “portal” **is** deprecated framing.
+**Declarations** is compulsory retired (nuclear wipe). **FFT** is removed (not frozen for later 2B–2D). Treating wiped domains as still-living modules **is** deprecated framing. Calling the whole product a “portal” **is** deprecated framing.
 
 ## Atmosphere / auth experiments
 
@@ -88,30 +91,31 @@ Declarations is not “deprecated.” Treating FFT and Declarations as two platf
 | Collapse-era product trees (`app/`, `modules/`, `features/`, `components-V2/`, wiped ops scripts) | **Hard-deleted / ban recover** — intentional docs-first checkout contamination lock | [ARCH-028](../../../../docs/architecture/ARCH-028-implementation-slices.md) Anti-contamination lock. **Forbidden without named user approval this turn:** `git checkout` / `git restore` / `git show` / `git cat-file` / archive of `f014807` or Collapse parents used to rebuild product code. Forward product code = Target greenfield (`apps/web`, `packages/*`) only after explicit ARCH-028 implement request. |
 | Collapse compose env model (`env.config` / `env.secret` / `env:compose` / `env:guard` / `env-manifest.generated`) | **Retired** — S4.1 / Checkpoint D | [ARCH-027](../../../../docs/architecture/ARCH-027-env-model.md) · [ARCH-028](../../../../docs/architecture/ARCH-028-implementation-slices.md). Replacement: `@afenda/env` + `.env.local` + `.env.example`. Forbidden: restore compose scripts or dual env systems. |
 | Repo-root `components.json` pointing at Collapse `app/` / `modules/platform` / `components/ui` | **Hard-deleted** · replaced by `@afenda/ui-system` (`packages/ui-system/components.json`) | [ARCH-028](../../../../docs/architecture/ARCH-028-implementation-slices.md) S5.1 / Checkpoint E · [ARCH-031](../../../../docs/architecture/ARCH-031-technology-stack-catalogue.md) · [ADR-010](../../../../docs/architecture/adr/ADR-010-afenda-ui-system-flat-barrel.md). Owned shadcn `new-york` / Radix source in `packages/ui-system` (the interim `@afenda/ui` / `packages/design-system` **base-vega** package is itself retired — see UI design system section below). Forbidden: recreate root shadcn config against banned trees; Collapse git recover. |
-| `/client` workspace product restore | **Closed** — stubs only under `app/client/(workspace)/**` when Target tree exists | Reopen: explicit user letter + spec slice under `docs/architecture/` + vertical slice. Forbidden: restore Collapse-era `features/client-workspace/` or repo-root trees. |
-| FFT P3 **prod** flag promotion | **Closed** — code may exist behind flags; prod enablement is ops | [FFT-MOD-008](../../../../docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md). Forbidden: enable prod `FFT_*` P3 flags without MOD-008 checklist + approval. |
+| `/client` workspace product restore (Declarations) | **Hard-deleted / removed** — `CLIENT_HOME=/client` shell may exist; Declarations product routes/modules gone | Forbidden: recreate `modules/declarations`, `features/declarations`, `/client/declarations`, declaration-draft RH. Reopen requires explicit user letter + new ADR — not Collapse recovery. |
+| Declarations product module (forms, drafts, share links, `/client/declare*`) | **Compulsory retired / removed** | Nuclear wipe. Permission catalog has no `declarations.*`. |
+| Feed Farm Trade product module + 2B–2D / P3 flags | **Removed** — not frozen | Nuclear wipe. Skill `feed-farm-trade` deleted. Permission catalog has no `fft.access`. Forbidden: recreate FFT trees or teach 2B–2D reopen gates. |
 | The Machine landing Sign in (`surface="machine"`) | **Closed** — dual-frame champagne CTA under `.the-machine` | [`sign-in-button.tsx`](../../../../apps/web/features/auth/sign-in-button.tsx) · [`the-machine-landing.css`](../../../../apps/web/features/landing/the-machine-landing.css). Forbidden: restyle; `--auth-signin-*` parallel tokens; global vault-glass kits; Morphor/cold-blue SignIn; applying Machine chrome to join/forbidden/preview shells. Reopen: explicit user letter this turn. |
 | SaaS billing / 2FA chrome | **Intentional deferred** — not product Identity | AdminCN `ComingSoonPanel` / plan columns are chrome only. Forbidden: invent billing fields or 2FA flows without product ADR. Neon Auth owns credential MFA if enabled. |
 | Teaching ARCH-020 as Living SSOT | **Superseded** | This section + DOC-002 register row only |
 
-**Agent rule:** Default agent mission is **not** Feed Farm Trade program reopen. Option B (reopen / promote) always needs explicit user direction.
+**Agent rule:** Default agent mission is **not** Declarations or FFT product restore. Named recovery always needs explicit user direction **this turn**.
 
 ## Tenancy (hard cutover + multi-org ready)
 
 | Retired | Replacement | Status | Notes |
 |---------|-------------|--------|-------|
 | Teaching `docs/architecture/turborepo/` as the Target system docs home | [`docs/architecture/`](../../../../docs/architecture/) | Renamed | Compulsory 2026-07-13; folder is system architecture, not a Turborepo howto |
-| Teaching ARCH-014 UI Surfaces as Living SSOT | [ARCH-012](../../../../docs/architecture/ARCH-012-app-router-routes.md) · [ARCH-015](../../../../docs/architecture/ARCH-015-admincn-alignment.md) / [ARCH-018](../../../../docs/architecture/ARCH-018-admincn-customization.md) / [ARCH-019](../../../../docs/architecture/ARCH-019-admincn-frontend-preflight.md) · [ui-registry](../feed-farm-trade/ui-registry.md) | Superseded | Compulsory 2026-07-14; DOC-002 register-only (stub removed); Studio/AdminCN-first — no parallel journey catalogue |
+| Teaching ARCH-014 UI Surfaces as Living SSOT | ARCH-012 · ARCH-015 / ARCH-018 / ARCH-019 · (historical FFT ui-registry — skill removed) | Superseded | Compulsory 2026-07-14; DOC-002 register-only (stub removed); Studio/AdminCN-first — no parallel journey catalogue |
 | Teaching ARCH-020 closed-scope-register as Living SSOT | [deprecation register — Closed product phases](reference.md) | Superseded | Compulsory 2026-07-13; DOC-002 register-only (stub removed) |
 | Teaching ARCH-021 repository-migration-map as layout SSOT | [ARCH-022](../../../../docs/architecture/ARCH-022-system-overview.md) · [ARCH-017](../../../../docs/architecture/ARCH-017-frontend-folder-map.md) | Superseded | Compulsory 2026-07-13; DOC-002 register-only (stub removed); campaign closed |
 | Teaching `docs/backend/` as a top-level docs home | [`docs/architecture/`](../../../../docs/architecture/) · [ARCH-022](../../../../docs/architecture/ARCH-022-system-overview.md) · [ARCH-023](../../../../docs/architecture/ARCH-023-multi-tenancy.md) | Moved | Compulsory 2026-07-13; `docs/adr/` deleted |
 | Teaching any file under top-level `docs/adr/` (backend/frontend/turborepo) | Approved ADR home [`docs/architecture/adr/`](../../../../docs/architecture/adr/) · Living/Target ARCH · FFT spine | Hard-deleted | Compulsory 2026-07-13; top-level `docs/adr/` banned; `decisions/` folder banned (DOC-001 2.5.0) |
-| Teaching `docs/frontend/` as a top-level docs home | [`docs/architecture/`](../../../../docs/architecture/) · [`docs/modules/feed-farm-trade/`](../../../../docs/modules/feed-farm-trade/) | Moved | Compulsory 2026-07-13 |
+| Teaching `docs/frontend/` as a top-level docs home | [`docs/architecture/`](../../../../docs/architecture/) · (historical FFT module docs home — product removed) | Moved | Compulsory 2026-07-13 |
 | Teaching GUIDE-007…014 (phase task guides) | [docs/api/guides/README.md](../../../../docs/api/guides/README.md) · FFT-MOD-010 · ARCH-023/026 | Hard-deleted | Compulsory 2026-07-13; do not recreate |
 | Teaching GUIDE-001…004 / GUIDE-006 Living engineering guides | [docs/README.md](../../../../docs/README.md) · DOC-001/003 · AGENTS.md · [ARCH-028](../../../../docs/architecture/ARCH-028-implementation-slices.md) drift · [docs/api/guides](../../../../docs/api/guides/README.md) | Retired | Compulsory 2026-07-14; IDs Retired in DOC-002 register-only (stubs removed); do not restore to Living |
-| Teaching top-level `docs/fft/` as FFT docs home | [`docs/modules/feed-farm-trade/`](../../../../docs/modules/feed-farm-trade/) | Moved | Compulsory 2026-07-13; 10-MOD spine FFT-MOD-001…010 |
-| Recreating FFT depth trees (`adr/` `ops/` `spec/` `architecture/` `integrations/` `archive/`) under `docs/modules/feed-farm-trade/` | Spine-only [FFT-MOD-010](../../../../docs/modules/feed-farm-trade/FFT-MOD-010-module-docs-index.md) | Hard-deleted | Compulsory 2026-07-13; do not `git checkout` restore; gates live in FFT-MOD-008 |
-| Teaching FFT `MOD-001` / `MOD-003` as Living entry | [FFT-MOD-008](../../../../docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md) · [FFT-MOD-010](../../../../docs/modules/feed-farm-trade/FFT-MOD-010-module-docs-index.md) | Superseded | Compulsory 2026-07-13; stubs remain for path safety |
+| Teaching top-level `docs/fft/` as FFT docs home | Historical `docs/modules/feed-farm-trade/` spine (product **removed**) | Moved / then wiped | Compulsory 2026-07-13; nuclear wipe retired FFT product docs farm |
+| Recreating FFT depth trees under `docs/modules/feed-farm-trade/` | — | Hard-deleted | Compulsory 2026-07-13; do not `git checkout` restore; product module gone |
+| Teaching FFT `MOD-001` / `MOD-003` / freeze reopen as Living entry | — | Superseded / removed | Nuclear wipe — FFT not frozen for 2B–2D |
 | Teaching `docs/engineering/` as a docs home | [`docs/guides/`](../../../../docs/guides/README.md) (DOC-001 Guide home; engineering GUIDE-001…006 Retired) | Moved | Compulsory 2026-07-13; do not recreate `engineering/` |
 | Teaching a separate ARCH-011 IAM file (or any ADR as Living SSOT) | [ARCH-023](../../../../docs/architecture/ARCH-023-multi-tenancy.md) (sole tenancy + RBAC) · [ARCH-022](../../../../docs/architecture/ARCH-022-system-overview.md) | Hard-deleted | Compulsory 2026-07-13; no ADR home; no dual IAM ARCH |
 | Soft SQL `(organization_id IS NULL OR = $org)` dual-mode | Hard `organization_id = $org` + migration `027` | Hard-deleted | CI `check:tenancy-residue`; ARCH-023 Decision lock **R1** |

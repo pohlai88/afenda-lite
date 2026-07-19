@@ -6,6 +6,11 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
+	deleteRbacAuditRow,
+	ROLE_ASSIGN_AUDIT_ACTION,
+	ROLE_REVOKE_AUDIT_ACTION,
+} from "@afenda/admin/audit";
+import {
 	and,
 	db,
 	eq,
@@ -14,14 +19,8 @@ import {
 	withOrg,
 } from "@afenda/db";
 import { afterAll, describe, expect, it } from "vitest";
-
 import { assignOrgRoleWithAudit } from "../modules/identity/domain/assign-org-role-audited";
 import { revokeOrgRoleWithAudit } from "../modules/identity/domain/revoke-org-role-audited";
-import {
-	deleteRbacAuditRow,
-	ROLE_ASSIGN_AUDIT_ACTION,
-	ROLE_REVOKE_AUDIT_ACTION,
-} from "@afenda/admin/audit";
 
 const repoRoot = path.resolve(
 	path.dirname(fileURLToPath(import.meta.url)),

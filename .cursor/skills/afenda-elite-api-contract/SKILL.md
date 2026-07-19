@@ -5,7 +5,7 @@ description: >-
   security pipeline, { data } envelope, APIErrorBody/ActionResult, brands, Zod map,
   api-now allowlist, OpenAPI under docs-V2, and sync checks. Use when writing app/actions,
   app/api Route Handlers, modules/*/schemas, OpenAPI YAML; or when the user mentions API
-  contract, ActionResult, branded IDs, declaration-draft, or afenda-elite-api-contract.
+  contract, ActionResult, branded IDs, health api-now, or afenda-elite-api-contract.
 ---
 
 # Afenda — API contract
@@ -52,7 +52,7 @@ CLOSE:
 
 1. api-now Route Handler inventory in docs-V2 `rest.md` or on disk
 2. OpenAPI generate/check commands or YAML include set
-3. ActionResult / APIErrorBody / draft RH compose changes
+3. ActionResult / APIErrorBody / health RH compose changes
 4. Scratch docs-V2/api authority notes
 
 **After api-now HTTP / Scratch API pack edits, run:**
@@ -84,11 +84,11 @@ pnpm check:openapi
 | User / task signal | Do this |
 | ------------------ | ------- |
 | New Action or Route Handler | §1–§5 + Action security checklist + §10; classify api-now (§6) |
-| Change draft / health / auth HTTP | Update code + regenerate OpenAPI ([openapi.md](openapi.md)) |
+| Change health / auth HTTP | Update code + regenerate OpenAPI ([openapi.md](openapi.md)) |
 | New Zod schema / brand | [brands-and-schemas.md](brands-and-schemas.md); one-version only |
 | OpenAPI / Spectral | [openapi.md](openapi.md) — never hand-edit YAML forever |
 | List endpoints for dashboard | **Reject** — RSC → domain ([api-now.md](api-now.md)) |
-| FFT HTTP | Reject until program reopen + real external consumer |
+| Declarations draft / FFT HTTP | **Reject** — product modules removed (nuclear wipe) |
 | docs-V2/api Scratch drift | Patch Scratch + this skill together |
 
 ---
@@ -129,7 +129,7 @@ Treat every Server Action as a **public endpoint**. Layout/`proxy.ts` visibility
 | 1 | Parse and validate input | Zod / `parseSchema` at adapter |
 | 2 | Establish the authenticated actor | Session re-verify **inside** the adapter |
 | 3 | Establish organization, tenant, or module scope | Active `organization_id` / module scope; reject omit/forge ([neon-tenancy-efficiency](../neon-tenancy-efficiency/SKILL.md)) |
-| 4 | Authorize the requested capability | Permission codes / `fft.access` — not Neon role display names |
+| 4 | Authorize the requested capability | Platform permission codes — not Neon role display names |
 | 5 | Validate resource ownership or state constraints | IDOR / state-machine / ownership before mutation |
 | 6 | Invoke the domain with trusted types | No `Request` / cookies in ports |
 | 7 | Map expected failures to the controlled error vocabulary | `ActionResult` / `APIErrorBody` |
@@ -196,8 +196,6 @@ Expected failures → structured result. Throw only for unexpected bugs. Never e
 | `requireAdminSession` | Operator Actions |
 | `requireClientSession` / helpers | Client Actions |
 | `requireAccountSession` | Account |
-| Trade access helpers | `app/actions/fft` |
-
 Mutating RHs authenticate equivalently (cookie session).
 
 ---
@@ -215,8 +213,8 @@ Mutating RHs authenticate equivalently (cookie session).
 
 Inventory: [api-now.md](api-now.md) · [docs-V2/api/rest.md](../../../docs-V2/api/rest.md).
 
-**api-now only:** `/api/health/*`, `/api/auth/[...path]`, `/api/session/*`, `/api/client/declaration-draft` (POST = keepalive).  
-**Do not** add same-origin list/read GETs under `/api` for dashboard — RSC → domain.
+**api-now only:** `/api/health/*`, `/api/auth/[...path]`, `/api/session/*` (health-only OpenAPI YAML).  
+**Do not** add same-origin list/read GETs under `/api` for dashboard — RSC → domain. Do **not** recreate wiped declaration-draft / FFT HTTP.
 
 ---
 
@@ -230,20 +228,19 @@ Inventory: [api-now.md](api-now.md) · [docs-V2/api/rest.md](../../../docs-V2/ap
 
 | Pattern | Convention |
 | ------- | ---------- |
-| Paths | Plural nouns (`/api/declarations`) |
+| Paths | Plural nouns when product HTTP exists |
 | IDs | Path params; UUID |
 | Query | `camelCase` |
 | Booleans | `is` / `has` / `can` |
 | Enums | `UPPER_SNAKE` on wire |
-| FFT | Locale-free `/api/fft/...` (no `:locale`) |
 
 ---
 
 ## 9. Accept / Reject
 
-**Accept:** RSC reads; Actions mutate UI; RH for health/auth/session/draft/external-with-consumer; `{ data }` success; bare errors; Zod SSOT; locale-free FFT paths when HTTP exists.
+**Accept:** RSC reads; Actions mutate UI; RH for health/auth/session/external-with-consumer; `{ data }` success; bare errors; Zod SSOT.
 
-**Reject:** RH for ordinary web UI list reads; inventing offline REST catalogues; `/api/fft/:locale/...`; layout-only Action auth; throw for expected auth; Actions as cacheable GET; Edge default for DB; CDN cache on session draft; restoring Living `docs/api` without Docs-lane approval.
+**Reject:** RH for ordinary web UI list reads; inventing offline REST catalogues; recreating wiped Declarations/FFT HTTP; layout-only Action auth; throw for expected auth; Actions as cacheable GET; Edge default for DB; restoring Living `docs/api` without Docs-lane approval.
 
 ---
 
@@ -268,7 +265,7 @@ Inventory: [api-now.md](api-now.md) · [docs-V2/api/rest.md](../../../docs-V2/ap
 
 ## Out of scope
 
-- FFT flags / 2B–2D gates → `/feed-farm-trade`
+- Wiped Declarations/FFT product restore → deprecation register (compulsory retired / removed)
 - UI scaffold / `loading.tsx` → [frontend-scaffold](../afenda-elite-frontend-scaffold/SKILL.md)
 - Modules residue → [backend-modules](../afenda-elite-backend-modules/SKILL.md)
 - Restoring Living DOC-001 `docs/` tree → explicit Docs-lane mission

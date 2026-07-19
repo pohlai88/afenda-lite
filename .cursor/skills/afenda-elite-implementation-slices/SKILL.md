@@ -18,7 +18,7 @@ description: >-
 | **Scaffold (closed)** | ARCH-028 operative → [slice-map.md](slice-map.md) | residual `S*` only — no inventing S9 |
 | **Neon Auth optimisation** | ARCH-023 · ARCH-026 · GUIDE-018 · AGENTS · [neon-auth-slice-map](neon-auth-slice-map.md) | `N1`…`N18` — scratch discovers; score proves |
 
-**Does not own:** FFT 2B–2D reopen, Docs ID/register invent, Collapse recovery, mass multi-phase finish, self-APPROVE of `N*`.
+**Does not own:** wiped Declarations/FFT product restore, Docs ID/register invent, Collapse recovery, mass multi-phase finish, self-APPROVE of `N*`.
 
 | File | Purpose |
 |------|---------|
@@ -40,7 +40,7 @@ N*: paste neon-command-sheet OR name N1–N18
   → fresh chat: audit → APPROVED | REJECTED | BLOCKED
 ```
 
-Not for: registering new doc IDs, FFT 2B–2D, housekeeping deletes, stacking multiple stages in one turn, claiming GUIDE “closed” as Neon APPROVED.
+Not for: registering new doc IDs, recreating wiped Declarations/FFT modules, housekeeping deletes, stacking multiple stages in one turn, claiming GUIDE “closed” as Neon APPROVED.
 
 ## Hard rules
 
@@ -50,7 +50,7 @@ Not for: registering new doc IDs, FFT 2B–2D, housekeeping deletes, stacking mu
 4. **Anti-contamination.** Greenfield under `apps/web/**` and `packages/*` only. Never restore Collapse trees from git unless the user names that recovery **this turn**.
 5. **Serial order.** GUIDE-018 I1→I7; `N1`→`N18` per neon-auth-slice-map. Skipping needs an explicit user waiver this turn. Do not invent ARCH-028 S9.
 6. **Baseline migrate ban.** Do not apply `packages/db` `0000_*` baseline to `br-tiny-hill-ao82jp6f`.
-7. **FFT freeze.** No 2B–2D domain reopen. FFT work only inside FFT-MOD-008 Allowed envelope.
+7. **Domain wipe.** Declarations + FFT product modules are **removed** — do not recreate or teach freeze/reopen as open work.
 8. **Lane:** match map row. No mixed lanes.
 9. **Guardian (Ops verticals):** before coding I1–I3/I5 or N5–N12 product paths — Frontend · Backend · Security perspectives.
 10. **Neon evaluation:** Implementer emits Neon Slice Score only — never self-APPROVE. Independent audit chat closes `N*`.

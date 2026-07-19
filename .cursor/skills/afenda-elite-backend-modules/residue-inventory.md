@@ -36,7 +36,7 @@ Do **not** recreate `lib/` or recover Collapse roots. New UI → Target `apps/we
 | `lib/pages/public-link-page*` | `features/auth/public-link-page*` |
 | `lib/pages/playground/**` | Was → `features/playground/` — both now absent |
 | `lib/playground/**` | Was → `features/playground/` — both now absent |
-| `modules/declarations/copy/*` (SSOT) | `modules/platform/copy/*` — Platform copy port |
+| `modules/declarations/copy/*` (SSOT) | `modules/platform/copy/*` — Platform copy port (Declarations module later **removed**) |
 
 ---
 
@@ -56,6 +56,9 @@ Do **not** recreate `lib/` or recover Collapse roots. New UI → Target `apps/we
 | `lib/playground/` |
 | `lib/utils.ts`, `lib/format.ts` |
 | `modules/trade/` |
+| `modules/declarations/` (nuclear wipe) |
+| `modules/fft/` (nuclear wipe) |
+| `features/declarations/` · `features/fft/` (nuclear wipe) |
 
 ---
 
@@ -64,14 +67,14 @@ Do **not** recreate `lib/` or recover Collapse roots. New UI → Target `apps/we
 - [x] Grep imports of each prune candidate; flip or delete safely
 - [x] Remove unused shims after zero importers
 - [x] Update this file (ARCH-009 Living body dormant — companion is SSOT)
-- [x] Do not touch FFT gate-register / prod flags in the same PR
+- [x] Do not recreate wiped Declarations/FFT product trees
 - [x] Playground harness absorb (`lib/playground` + `lib/pages/playground` → `features/playground`) — then **removed** 2026-07-15 (Studio MCP only for any return)
 - [x] Empty `lib/` removed
 
 ## Optional next (needs approve)
 
 - [x] ~~Reliance mapping / graph / route-coverage snapshots~~ — **retired 2026-07-17** (Collapse residue). Root aliases removed. Live package/feature boundaries = ARCH-024 + Vitest (`feature-db-boundary` · ui/auth boundary tests). Greenfield control-plane graph only after Approved Docs ADR + implement slice (no Collapse recover).
-- Product phases (`/client` workspace restore, FFT P3 flags, SaaS billing/2FA) stay out of this lane
+- Product phases (Declarations/FFT restore, SaaS billing/2FA) stay out of this lane
 
 ## Closed this pass (2026-07-12)
 

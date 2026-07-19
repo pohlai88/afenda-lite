@@ -41,7 +41,7 @@ describe("createLogger", () => {
 			write.mockRestore();
 		}
 
-		const line = chunks.find((c) => c.includes("\"event\":\"probe\""));
+		const line = chunks.find((c) => c.includes('"event":"probe"'));
 		expect(line).toBeDefined();
 		const parsed = JSON.parse(line ?? "{}") as Record<string, unknown>;
 		expect(parsed.service).toBe("test-service");
@@ -73,9 +73,7 @@ describe("createLogger", () => {
 			write.mockRestore();
 		}
 
-		const line = chunks.find((c) =>
-			c.includes("auth_bff.unexpected_error"),
-		);
+		const line = chunks.find((c) => c.includes("auth_bff.unexpected_error"));
 		expect(line).toBeDefined();
 		const parsed = JSON.parse(line ?? "{}") as Record<string, unknown>;
 		expect(parsed).toEqual(

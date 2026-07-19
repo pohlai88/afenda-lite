@@ -37,7 +37,7 @@ METHOD: Vercel nextjs + Accelint + next-cache-components (evaluate; default OFF 
 | Modules / ports | `afenda-elite-backend-modules` |
 | Actions / OpenAPI | `afenda-elite-api-contract` |
 | Tenancy | `neon-tenancy-efficiency` · ARCH-023 |
-| FFT | `/feed-farm-trade` |
+| Wiped FFT/Declarations | deprecation register — **removed**; do not route |
 | Conventions API | Vercel plugin `nextjs` → [reference/nextjs-conventions.md](reference/nextjs-conventions.md) |
 | Cache Components / PPR | ADR-008 · [reference/cache-components.md](reference/cache-components.md) — Phase 1 Accepted; Phase 2 not authorized |
 | Perf + Action security | Accelint → [reference/accelint-perf.md](reference/accelint-perf.md) |
@@ -73,8 +73,7 @@ proxy.ts → layout → thin page.tsx (RSC)
 | Family | Gate | Default render |
 |--------|------|----------------|
 | `/dashboard/*`, `/account/*` | member | request-time |
-| `/fft/*` | FFT access | request-time |
-| `/client/*` workspace | client session | request-time |
+| `/client/*` workspace | client session (`CLIENT_HOME`) | request-time |
 | `/auth/*`, join, public | auth island / public | per surface |
 | `/api/health/*` | none | `auto` + short revalidate |
 | `/playground/*` | local only | never prod contract |
@@ -143,7 +142,7 @@ Dedicated `afenda-elite-env-governance` remains catalog **candidate**. Enforce A
 
 Apply **in this order** (details: [reference/accelint-perf.md](reference/accelint-perf.md)):
 
-1. **Security** — every Server Action: session + org/FFT authz + Zod (layout/`proxy` is not enough)  
+1. **Security** — every Server Action: session + org authz + Zod (layout/`proxy` is not enough)  
 2. **Waterfalls** — start independent work immediately; `Promise.allSettled` when fully independent  
 3. **Serialization** — pass only used fields; avoid duplicate transforms that break RSC reference dedupe  
 4. **Suspense** — stream secondary panels; optional promise + `use()` for progressive load  

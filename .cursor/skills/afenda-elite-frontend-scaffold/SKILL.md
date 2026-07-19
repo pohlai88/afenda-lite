@@ -37,14 +37,14 @@ description: >-
 
 1. **Scaffold ≠ wire.** No `@/lib/**`, `@/app/actions`, `@/lib/pages`, `@/lib/entry`, `@/modules/**` domain in stub pages.
 2. **Descriptive params only** — never overloaded `[id]` (table below).
-3. **`lib/` is gone.** Domain/Zod/env live under `modules/{platform,identity,declarations,fft}`. Runners live under `features/`. Do not recreate `lib/`. See `/afenda-elite-backend-modules`.
+3. **`lib/` is gone.** Domain/Zod/env live under `modules/{platform,identity}`. Runners live under `features/{auth,org-admin}` (+ portal-chrome / landing as present). Do not recreate `lib/` or wiped Declarations/FFT trees. See `/afenda-elite-backend-modules`.
 4. **No root `components/` restore.** Product UI → `features/*`.
-5. **No Collapse recovery.** Never restore banned trees from git (`app/`, `modules/`, `features/`, `components-V2/`, …) — including `git show` as a seed — unless the user explicitly names that recovery in this turn (ARCH-028).
+5. **No Collapse / wiped-domain recovery.** Never restore banned trees or Declarations/FFT product modules from git — including `git show` as a seed — unless the user explicitly names that recovery in this turn (ARCH-028).
 6. **Next 16:** `proxy.ts` only — never new `middleware.ts`.
 7. **Never** `page.tsx` + `route.ts` in the same segment.
 8. **No** parallel/intercepting routes in v1. No `template.tsx` / `default.tsx` unless required later.
 9. **Node runtime default.** No `runtime = 'edge'` on product pages.
-10. **One-version contracts.** Route param names = brand names = Zod field names (`declarationId`, not `id` vs `surveyId` drift). See [boundaries.md](boundaries.md).
+10. **One-version contracts.** Route param names = brand names = Zod field names. See [boundaries.md](boundaries.md).
 
 ## Wipe vs leave
 
@@ -52,7 +52,7 @@ description: >-
 | ----------------------------------------------- | -------------------------------------------------- |
 | Product `app/**` pages, layouts, loading, error | `app/api/**`, `app/actions/**`                     |
 | `features/**` implementations                   | `modules/**` (wire pass) |
-| `portal-views/**` product screens               | `db/**`, `proxy.ts`, `messages/fft/**`, `doc/**` |
+| `portal-views/**` product screens               | `db/**`, `proxy.ts`, `doc/**` |
 
 ## Next.js conventions (scaffold)
 
@@ -74,11 +74,11 @@ Templates: [stubs.md](stubs.md).
 ```text
 RSC read?              → module port directly (never fetch own /api)
 Client mutation?       → Server Action → Zod → port → ActionResult
-Draft XHR / auth / health / webhook? → Route Handler
+Auth / health / webhook? → Route Handler
 External/mobile REST?  → Route Handler per docs-V2/api + api-contract (contract-only until needed)
 ```
 
-Decision tree SSOT (ARCH-013 operative): RSC → domain; mutation → Action; draft/auth/health → RH — see [boundaries.md](boundaries.md) + api-contract.
+Decision tree SSOT (ARCH-013 operative): RSC → domain; mutation → Action; auth/health → RH — see [boundaries.md](boundaries.md) + api-contract.
 
 ## Dynamic params (exact)
 
@@ -86,29 +86,23 @@ Decision tree SSOT (ARCH-013 operative): RSC → domain; mutation → Action; dr
 | ----------------- | --------------------------------- | -------------------------- |
 | `[path]`          | `/auth/[path]`, `/account/[path]` | AuthPath / AccountPath     |
 | `[...path]`       | `/api/auth/[...path]` only        | —                          |
-| `[token]`         | `/invite/[token]`                 | InviteToken                |
-| `[token]`         | `/f/[token]`                      | ShareToken                 |
-| `[slug]`          | `/survey/[slug]`                  | SurveySlug                 |
-| `[declarationId]` | `/dashboard/[declarationId]`      | DeclarationId              |
-| `[assignmentId]`  | `/client/declare/[assignmentId]`  | AssignmentId               |
-| `[eventId]`       | `/fft/…/events/[eventId]/…`       | TradeEventId               |
-| `[screenId]`      | `/playground/[screenId]`          | PlaygroundScreenId         |
-| `[userId]`        | `/dashboard/users/[userId]`       | UserId (wire pass)         |
+| `[userId]`        | org-admin users routes when present | UserId (wire pass)       |
 | `invitationId`    | `/join` searchParams              | InvitationId               |
 
-**P1 FFT routes are locale-free** under `/fft/*` (no `/fft/[locale]` product segment). `TradeLocale` remains an i18n brand, not a live App Router param on P1.
+**Removed routes (nuclear wipe — do not scaffold as living):** `/client/declarations`, `/client/declare/*`, `/fft/**`, `/survey/*`, `/f/*`, declaration-draft RH params.
 
-**Forbidden:** `/dashboard/[id]`, `/client/declare/[id]`, mixing brands as raw `string` across ports when wiring.
+**Forbidden:** overloaded `[id]` params; mixing brands as raw `string` across ports when wiring; recreating wiped Declarations/FFT product routes.
 
 ## `features/` modules
 
 ```text
-Target (ARCH-022 / ARCH-028 S7.4 disk): features/{auth,declarations,fft,org-admin}/
-Living expanded shape (later surfaces): landing, account, portal-chrome, playground
+Target living: features/{auth,org-admin}/
+Optional present: landing, portal-chrome
+Removed: declarations, fft, playground
   — Living docs may still say organization-admin; Target physical folder is org-admin
 ```
 
-`app/**/page.tsx` composes only. Prefer `features/` over `app/_components/` for product UI.
+`app/**/page.tsx` composes only. Prefer `features/` over `app/_components/` for product UI. `CLIENT_HOME` = `/client` (workspace shell — not Declarations product).
 
 ## Pass order
 
@@ -125,7 +119,7 @@ Living expanded shape (later surfaces): landing, account, portal-chrome, playgro
 - Sync params, server `error.tsx`, Edge product pages
 - Growing fat `lib/` as the architecture (domain belongs in `modules/*`)
 - Divergent param names vs schema fields vs brands
-- Creating `modules/trade/` (use `modules/fft`)
+- Creating `modules/trade/`, `modules/fft/`, `modules/declarations/`, or matching product `features/*`
 
 ## Cross-skills
 

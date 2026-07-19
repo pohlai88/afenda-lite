@@ -1,8 +1,8 @@
 # Complete wipe inventory (scaffold pass)
 
-> **Superseded for Feed Farm Trade routes (2026-07-11):** `/fft/[locale]/*` and `features/fft/*` UI listed below were wiped. Live tree is locale-free under `/fft/*` with **AdminCN shell** (not `FftShell`). Treat locale/FftShell rows as historical only — see [route-tree.md](route-tree.md) (ARCH-012 operative).
+> **Nuclear wipe (2026-07-20):** Declarations + Feed Farm Trade product modules/routes/features are **removed** (not frozen). Rows below that name `/fft/*`, `features/fft/*`, `/client/declarations`, declaration-draft, or `features/declarations` are **historical wipe inventory only** — do not treat as living Target trees. Living FE = auth · org-admin · `/admin` · `/client` shell (`CLIENT_HOME`). See [route-tree.md](route-tree.md) + deprecation register.
 
-**Generated from disk.** This is what `/afenda-elite-frontend-scaffold` deletes or replaces when you say go.
+**Generated from disk (historical).** This is what `/afenda-elite-frontend-scaffold` deletes or replaces when you say go.
 
 Legend:
 

@@ -85,20 +85,16 @@ export const UX_A11Y_I18N_PERF_MATRIX = [
 			"apps/web/features/auth/forbidden-shell.tsx",
 			"e2e/smoke/wrong-role-gate.spec.ts",
 		],
-		notes: "I4 A2/A4 browser proof; ForbiddenShell product surface.",
+		notes: "I4 A2 browser proof; ForbiddenShell product surface.",
 	},
 	{
 		id: "UX05",
 		pillar: "ux",
 		criterion:
-			"In-scope list/panel empty states declared on Declarations · FFT · org-admin tables",
+			"In-scope list/panel empty states declared on org-admin tables",
 		owner: "Platform",
 		evidenceState: "PASS",
-		evidencePaths: [
-			"apps/web/features/declarations",
-			"apps/web/features/fft",
-			"apps/web/features/org-admin",
-		],
+		evidencePaths: ["apps/web/features/org-admin"],
 		notes:
 			"DataTable emptyTitle/emptyDescription patterns; directories as path evidence.",
 	},
@@ -106,7 +102,7 @@ export const UX_A11Y_I18N_PERF_MATRIX = [
 		id: "UX06",
 		pillar: "ux",
 		criterion:
-			"Mutation forms declare pending/submitting (aria-busy) on org-admin + declaration writes",
+			"Mutation forms declare pending/submitting (aria-busy) on org-admin writes",
 		owner: "Platform",
 		evidenceState: "PASS",
 		evidencePaths: [
@@ -166,18 +162,18 @@ export const UX_A11Y_I18N_PERF_MATRIX = [
 		evidenceState: "PASS",
 		evidencePaths: ["apps/web/app/layout.tsx"],
 		notes:
-			"Locale-free routes (/fft, /admin, /client); next-intl product source absent by design for this claim scope.",
+			"Locale-free routes (/admin, /client); next-intl product source absent by design for this claim scope.",
 	},
 	{
 		id: "I18N02",
 		pillar: "i18n",
 		criterion:
 			"Multi-locale product UI (next-intl · messages catalogs · locale URL segments)",
-		owner: "Feed Farm Trade",
+		owner: "Platform",
 		evidenceState: "NOT_APPLICABLE",
 		evidencePaths: [],
 		notes:
-			"Owning rationale: ARCH-012 / ARCH-031 — locale URL tree rejected; FFT routes locale-free; multi-locale deferred until program reopen + Living owner adopts matrix. Fail-closed: no locale switcher / FftShell restore.",
+			"Owning rationale: ARCH-012 / ARCH-031 — locale URL tree rejected; product shells are locale-free. Multi-locale remains NOT APPLICABLE until an approved Living owner adopts a matrix.",
 	},
 	{
 		id: "PERF01",
@@ -201,9 +197,12 @@ export const UX_A11Y_I18N_PERF_MATRIX = [
 			"Neon DB performance posture remains separately owned (N4) — not a frontend CWV substitute",
 		owner: "Platform",
 		evidenceState: "PASS",
-		evidencePaths: ["docs/architecture/ARCH-023-multi-tenancy.md"],
+		evidencePaths: [
+			"docs-V2/tenancy/README.md",
+			"docs-V2/tenancy/neon-optimize.md",
+		],
 		notes:
-			"References Neon Auth N4 / RB-001 pooler + SELECT-1 discipline only; does not claim FE budgets.",
+			"Scratch tenancy SSOT while Living ARCH-023 dormant (cutover 71176a0). Neon Auth N4 / pooler + SELECT-1 discipline; not an FE CWV substitute.",
 	},
 ] as const satisfies readonly UxCriteriaRow[];
 

@@ -12,7 +12,7 @@ Farm routing per domain keyword. Always also load: main [SKILL.md](SKILL.md) and
 | `studio-dna` / `shadcn-ui` | router → shadcn-ui → ui-compose (after promote) | ADR-010 · ARCH-015 · ARCH-024 · ui-system.mdc | [`dna-ledger.json`](../shadcn-ui/dna-ledger.json) · [`dna-ledger.md`](../shadcn-ui/dna-ledger.md) · [`SKILL.md`](../shadcn-ui/SKILL.md) | Disk: `Test-Path` skill files + ledger JSON parse; `packages/ui-system/components.json` has no `registries`; `apps/web/components.json` / `shadcn-studio` absent-by-design until Method A; after promote: `pnpm check:ui-system`. No `check:dna-ledger` (HITL only — Unevaluated) |
 | `api` | router → api-contract | docs-V2/api · api-contract companions | [`completeness.md`](../afenda-elite-api-contract/completeness.md) | `check:openapi`, `pnpm typecheck` |
 | `modules` | router → backend-modules → module-readiness | ARCH-006 · ARCH-022 · mod-readiness-rules | companions + Living packs when restored | `check:module-quality` when Living packs present |
-| `fft` | router → feed-farm-trade | FFT-MOD-* | [`completeness.md`](../feed-farm-trade/completeness.md) · [`verify.md`](../feed-farm-trade/verify.md) | farm verify commands from skill |
+| `fft` / Declarations | — (removed) | deprecation register | — | Nuclear wipe — do **not** route to deleted `feed-farm-trade`; living modules = platform + identity |
 | `phase-I` | router → implementation-slices | GUIDE-018 | [`slice-map.md`](../afenda-elite-implementation-slices/slice-map.md) | per-row Verify column |
 | `neon-auth` | router → implementation-slices → neon-tenancy | ARCH-023 · ARCH-026 · ARCH-027 · AGENTS | [`neon-auth-slice-map.md`](../afenda-elite-implementation-slices/neon-auth-slice-map.md) · [`neon-slice-score.md`](../afenda-elite-implementation-slices/neon-slice-score.md) | per-row Floor verify · Neon Slice Score · independent APPROVED; `validate:neon-env` when env touched |
 
@@ -29,7 +29,7 @@ Available `pnpm` checks and their typical exit codes:
 | `check:openapi` | Live | No | OpenAPI YAML + schema validation |
 | `validate:neon-env` | Live | No | Neon Cloud ids vs `.env.local` |
 | `check:tenancy-residue` | Live | No | Soft dual-mode residue scan (N9 / ARCH-023 R1) |
-| `audit:tenancy-nulls` | Live | No | Eight hard-root null `organization_id` audit (needs `DATABASE_URL`; CI on `main`) |
+| `audit:tenancy-nulls` | Live | No | Living hard-root null `organization_id` audit (`platform_role_assignment`, `platform_rbac_audit`; needs `DATABASE_URL`; CI on `main`) |
 | `check:copy` | Gated | Yes | → `collapse-script-unavailable` |
 | `check:tsconfig-no-baseurl` | Live | No | TypeScript config validation |
 | `check:nav` | Gated | Yes | → `collapse-script-unavailable` |
@@ -55,7 +55,7 @@ Total root scripts: ~93 in `package.json`. Gated count: ~56. Live controls: ~37.
 - `docs-V2/**` Scratch packs → matching domain (`api` · `docs` · `monorepo` · …)
 - `packages/ui-system/**` → `ui-system`
 - `docs-V2/api/**` or api-contract companions → `api`
-- Living `docs/modules/**` (when restored) → `modules` / `fft`
+- Living `docs/modules/**` (when restored) → `modules` (platform/identity only; no FFT farm)
 - `.cursor/skills/afenda-elite-implementation-slices/**` → `phase-I` / `neon-auth`
 
 ### By user keyword
@@ -65,7 +65,7 @@ Total root scripts: ~93 in `package.json`. Gated count: ~56. Live controls: ~37.
 - "Studio DNA", "shadcn-ui", "shadcn-studio", "dna-ledger", "AFN-DNA", "Method A", "Method B Studio" → `studio-dna` / `shadcn-ui`
 - "API contract", "REST", "OpenAPI" → `api`
 - "modules", "MOD-002", "Enterprise Readiness" → `modules`
-- "FFT", "Feed Farm Trade" → `fft`
+- "FFT", "Feed Farm Trade", "Declarations product" → removed domains (deprecation register; stop — do not invent farm)
 - "Phase I", "GUIDE-018", "implementation slices" → `phase-I`
 - "Neon Auth", "N1", "N7", "neon-auth optimisation", "Neon Slice Score" → `neon-auth`
 
@@ -79,7 +79,7 @@ Total root scripts: ~93 in `package.json`. Gated count: ~56. Live controls: ~37.
 
 ### Forward-recorded exclusions
 - API completeness: items marked "Recorded (forward)", "Draft — not Living SSOT"
-- FFT completeness: "Intentional", "contract-only until needed"
+- FFT/Declarations product completeness: **Removed (wiped)** — not living evidence targets
 - Module packs: "Draft" lifecycle docs with forward claims
 
 ### Absent-by-design exclusions

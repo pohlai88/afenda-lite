@@ -6,6 +6,8 @@
 
 If this companion drifts from disk Zod schemas, **disk wins** — update this file in the same change.
 
+**Removed modules:** Declarations + FFT schema trees are **gone** — brands below for wiped domains are footnotes only.
+
 ---
 
 ## Branded ID table
@@ -14,32 +16,32 @@ Do not pass raw `string` across domain boundaries when a brand exists.
 
 | Brand | Zod source | Route param | Notes |
 |-------|-----------|-------------|-------|
-| `DeclarationId` | `uuidSchema` via domain lookup | `[declarationId]` | `/dashboard/[declarationId]` |
-| `ClientId` | `uuidSchema` via domain lookup | — | Internal to operator domain |
-| `AssignmentId` | `uuidSchema` via domain lookup | `[assignmentId]` | `/client/declare/[assignmentId]` |
-| `ShareToken` | token schema in domain | `[token]` | `/f/[token]` |
-| `InviteToken` | `surveyInviteTokenParamSchema` | `[token]` | `/invite/[token]` |
-| `TradeEventId` | `tradeEventIdSchema` | `[eventId]` | `/fft/…/events/[eventId]/…` (locale-free P1) |
-| `TradeOrderId` | `tradeOrderIdSchema` | — | Feed Farm Trade only |
-| `TradeLocale` | `tradeLocaleSchema` (`'vi' \| 'en'`) | — | i18n / messages; not a live `/fft/[locale]` segment on P1 |
-| `SurveySlug` | `slugSchema` | `[slug]` | `/survey/[slug]` |
 | `InvitationId` | `uuidSchema` | `invitationId` (searchParams) | `/join?invitationId=` |
-| `UserId` | `userIdSchema` (`modules/identity/schemas/users.ts`) | `[userId]` | `/dashboard/users/[userId]` — Neon Auth user directory |
+| `UserId` | `userIdSchema` (`modules/identity/schemas/users.ts`) | `[userId]` | Org-admin users when route exists |
 | `OrganizationId` | `organizationIdSchema` (`modules/identity/schemas/platform-rbac.ts`) | — | Neon Auth organization id (tenant) |
 | `PlatformRoleId` | `platformRoleIdSchema` | — | Platform RBAC role |
 | `PermissionCode` | `permissionCodeSchema` | — | Platform permission catalog code |
+
+### Removed brands (footnotes — do not wire as living)
+
+| Brand | Former route | Status |
+|-------|--------------|--------|
+| `DeclarationId` | `/dashboard/[declarationId]` | Removed with Declarations module |
+| `AssignmentId` | `/client/declare/[assignmentId]` | Removed |
+| `ShareToken` / `SurveySlug` | `/f/[token]`, `/survey/[slug]` | Removed |
+| `TradeEventId` / `TradeOrderId` / `TradeLocale` | `/fft/**` | Removed with FFT module |
 
 **Construction pattern:**
 
 ```typescript
 // Only construct after uuidSchema / domain lookup succeeds
-type DeclarationId = string & { readonly __brand: 'DeclarationId' }
-function asDeclarationId(id: string): DeclarationId {
-  return id as DeclarationId
+type UserId = string & { readonly __brand: 'UserId' }
+function asUserId(id: string): UserId {
+  return id as UserId
 }
 ```
 
-**Forbidden:** `/dashboard/[id]`, `/client/declare/[id]`, mixing brands as raw `string` across ports when wiring. Param names must match brand names must match Zod field names — no drift (`declarationId`, not `id` vs `surveyId`).
+**Forbidden:** overloaded `[id]` params; mixing brands as raw `string` across ports when wiring; recreating wiped Declarations/FFT brands as living product routes.
 
 ---
 
@@ -60,18 +62,14 @@ function asDeclarationId(id: string): DeclarationId {
 |-------------|---------------------------|-----------------|
 | `modules/platform/schemas/common.ts` | Shared primitives | `uuidSchema`, `emailSchema`, `passwordSchema`, `slugSchema`, **`parseSchema`** (**Landed**) |
 | `modules/platform/schemas/api-error.ts` | Web re-export + Zod OpenAPI | Codes/body from `@afenda/errors` (+ `/http`); Zod schemas local (**Landed**) |
-| `modules/platform/schemas/action-result.ts` | Web Action adapters | `ActionResult` aliases `@afenda/errors/result`; `actionFailInternal` / `actionFieldMessage` local (**Landed**; API-002) |
-| `packages/errors` (`@afenda/errors`) | Transport-neutral error kernel | `AppError`, `ErrorCode`/`ApiErrorCode` (incl. `RATE_LIMITED`/`SERVICE_UNAVAILABLE`), normalize, serialize, `Result`, `/http` (`retryAfterSeconds`), `/adapters/postgres` (**Landed**) |
+| `modules/platform/schemas/action-result.ts` | Web Action adapters | `ActionResult` aliases `@afenda/errors/result`; `actionFailInternal` / `actionFieldMessage` local (**Landed**) |
+| `packages/errors` (`@afenda/errors`) | Transport-neutral error kernel | `AppError`, `ErrorCode`/`ApiErrorCode`, normalize, serialize, `Result`, `/http`, `/adapters/postgres` (**Landed**) |
 | `modules/identity/schemas/invite-org-member.ts` | Org-member invite | `inviteOrgMemberCommandSchema` (**Landed**, I2.1) |
-| `modules/identity/schemas/auth.ts` | Sign-in boundary | `signInSchema` (Living inventory) |
-| `modules/identity/schemas/users.ts` | Organization-admin users | `userIdSchema`, create/import/update schemas (Living inventory) |
-| `modules/identity/schemas/platform-rbac.ts` | Platform RBAC | `OrganizationId`, `PlatformRoleId`, `PermissionCode` (Living inventory) |
-| `modules/declarations/schemas/common.ts` | Re-exports platform + declarations-only | `surveyAnswersSchema` (Living inventory) |
-| `modules/declarations/schemas/client.ts` | Onboarding, declare submit/draft, invites | Living inventory |
-| `modules/declarations/schemas/surveys.ts` | Declarations (surveys) CRUD + public submit | Living inventory |
-| `modules/declarations/schemas/declarations.ts` | Evidence registration | Living inventory |
-| `modules/declarations/schemas/questions.ts` | Question drafts / CDP | Living inventory |
-| `modules/fft/schemas/fft-schemas.ts` | Feed Farm Trade inputs | Living inventory |
+| `modules/identity/schemas/auth.ts` | Sign-in boundary | `signInSchema` |
+| `modules/identity/schemas/users.ts` | Organization-admin users | `userIdSchema`, create/import/update schemas |
+| `modules/identity/schemas/platform-rbac.ts` | Platform RBAC | `OrganizationId`, `PlatformRoleId`, `PermissionCode` |
+| `modules/declarations/schemas/**` | — | **Removed** (nuclear wipe) |
+| `modules/fft/schemas/**` | — | **Removed** (nuclear wipe) |
 
 ---
 
@@ -81,14 +79,9 @@ function asDeclarationId(id: string): DeclarationId {
 |----------|----------------------|-------------|
 | Health | — | — |
 | Auth (Neon) | Neon-owned | — |
-| Declaration draft (api-now) | `saveClientDeclarationDraftSchema` | `getClientDeclarationDraftQuerySchema` |
-| Clients / invitations | `issueClientInviteSchema`, delete schemas | `uuidSchema` |
-| Declarations | `surveyMetadataFormSchema`, `updateSurveySchema`, `deleteSurveySchema` | `surveyIdParamSchema` |
-| Assignments / submissions | `submitClientDeclarationSchema`, draft schema | `uuidSchema` |
-| Public survey | `submitSurveyResponseSchema` | `openSurveySlugParamSchema` |
-| Secure link | submit schemas + token | `surveyInviteTokenParamSchema` / token schemas in domain |
-| Users (org admin) | `createOrganizationUserSchema`, `updateOrganizationUserSchema`, `setOrganizationUserRoleSchema`, `banOrganizationUserSchema`, `setOrganizationUserPasswordSchema` | `userIdSchema` |
-| Trade | `modules/fft/schemas/fft-schemas.ts` (+ action-local objects) | `tradeLocaleSchema`, event/order ids |
+| Users (org admin) | `createOrganizationUserSchema`, `updateOrganizationUserSchema`, … | `userIdSchema` |
+| Platform RBAC assign/revoke | Identity + platform schemas | — |
+| Declaration draft / Trade | — | **Removed** — not api-now |
 
 ---
 
@@ -98,9 +91,9 @@ Always import `parseSchema` from platform common at adapter boundaries:
 
 ```typescript
 import { parseSchema } from '@/modules/platform/schemas/common'
-import { updateSurveySchema } from '@/modules/declarations/schemas/surveys'
+import { inviteOrgMemberCommandSchema } from '@/modules/identity/schemas/invite-org-member'
 
-const parsed = parseSchema(updateSurveySchema, input)
+const parsed = parseSchema(inviteOrgMemberCommandSchema, input)
 if (!parsed.success) {
   return { ok: false, code: 'VALIDATION_ERROR', message: parsed.error }
 }
@@ -119,9 +112,8 @@ These are **named gaps** — do not invent ad-hoc schemas to fill them; add only
 |-----|-----------------|
 | Shared `PaginatedResult` schema helper | When first list endpoint is exposed over HTTP |
 | Account PATCH schema | Only if portal-owned fields exist beyond Neon AccountView |
-| Trade REST surface schemas | Keep in `fft-schemas.ts`; split files only if module grows unwieldy |
 
-OpenAPI export: [openapi.md](openapi.md) · `docs-V2/api/OPEN-001-openapi.yaml` — not a schema gap.
+OpenAPI export: [openapi.md](openapi.md) · `docs-V2/api/OPEN-001-openapi.yaml` — health-only; not a schema gap.
 
 ---
 
@@ -133,4 +125,4 @@ OpenAPI export: [openapi.md](openapi.md) · `docs-V2/api/OPEN-001-openapi.yaml` 
 | Add optional fields when extending | Change existing field types or remove fields |
 | Brand IDs at the boundary | Use `any` / untyped `Record<string, unknown>` in adapters |
 | Keep dates as ISO `string` on the wire | Pass `Date` across RSC → client without serialization |
-| One schema per resource concern in `modules/*/schemas` | Duplicate schema in `app/actions/` or inline; recreate `lib/schemas/` |
+| One schema per resource concern in living `modules/*/schemas` | Duplicate schema in `app/actions/` or inline; recreate wiped Declarations/FFT schemas |

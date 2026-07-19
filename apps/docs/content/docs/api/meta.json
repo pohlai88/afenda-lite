@@ -2,11 +2,7 @@
   "pages": [
     "index",
     "getHealthLiveness",
-    "getHealthReadiness",
-    "getClientDeclarationDraft",
-    "postClientDeclarationDraftKeepalive",
-    "patchClientDeclarationDraft",
-    "putClientDeclarationDraft"
+    "getHealthReadiness"
   ],
   "title": "HTTP API",
   "icon": "CodeXml"

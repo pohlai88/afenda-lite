@@ -16,7 +16,8 @@ Authority: ARCH-024 operative (this file + SKILL.md). Living ARCH-024 body dorma
 ├──────────────────────────────────────────────────────────────┤
 │  Rank 1 — Platform                                           │
 │  @afenda/db  @afenda/auth  @afenda/admin  @afenda/env        │
-│  @afenda/errors  @afenda/logger  @afenda/config              │
+│  @afenda/errors  @afenda/logger  @afenda/rate-limit          │
+│  @afenda/config                                              │
 │  See allowed same-layer edges below                          │
 └──────────────────────────────────────────────────────────────┘
 ```
@@ -29,7 +30,7 @@ Authority: ARCH-024 operative (this file + SKILL.md). Living ARCH-024 body dorma
 | Surfaces  | ✅† | same-ok‡ | ❌ |
 | Application | ✅ | ✅ | ❌ (apps must not import each other) |
 
-\* Platform same-layer: prefer minimal coupling. Living edges: `@afenda/auth` → `@afenda/env` · `@afenda/logger`; `@afenda/admin` → `@afenda/auth` · `@afenda/db` · `@afenda/env` · `@afenda/errors`; `apps/web` → `@afenda/errors` · `@afenda/logger`. `@afenda/errors` and `@afenda/logger` are Rank-1 **leaves** (no `@afenda/*` deps). `@afenda/db` must **not** import `@afenda/auth` or `@afenda/env`. `@afenda/env` imports no workspace packages. `@afenda/config` is not a runtime importer.
+\* Platform same-layer: prefer minimal coupling. Living edges: `@afenda/auth` → `@afenda/env` · `@afenda/logger` · `@afenda/rate-limit` · `@afenda/errors`; `@afenda/rate-limit` → `@afenda/env` · `@afenda/errors`; `@afenda/admin` → `@afenda/auth` · `@afenda/db` · `@afenda/env` · `@afenda/errors`; `apps/web` → `@afenda/errors` · `@afenda/logger` · `@afenda/rate-limit`. `@afenda/errors` and `@afenda/logger` are Rank-1 **leaves** (no `@afenda/*` deps). `@afenda/db` must **not** import `@afenda/auth` or `@afenda/env`. `@afenda/env` imports no workspace packages. `@afenda/config` is not a runtime importer.
 
 † `@afenda/ui-system` must remain free of server-only code and DB calls (ARCH-024).
 

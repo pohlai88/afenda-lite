@@ -97,10 +97,11 @@ Full diagram, forbidden pairs, and violation fixes: [LAYERS.md](LAYERS.md).
 | Package | May depend on (workspace) | Must not |
 |---------|---------------------------|----------|
 | `@afenda/db` | (none of auth/env/ui/emails) | Import `@afenda/auth` or `@afenda/env`; expose schema only via public exports |
-| `@afenda/auth` | `@afenda/env` (and `@afenda/db` only when both ARCH-024 and `package.json` list it) | Own DB schema definitions |
+| `@afenda/auth` | `@afenda/env` · `@afenda/logger` (and `@afenda/db` only when both ARCH-024 and `package.json` list it) | Own DB schema definitions |
 | `@afenda/admin` | `@afenda/auth` · `@afenda/db` · `@afenda/env` · `@afenda/errors` | Import Surfaces / `apps/*`; own a second Neon Auth client |
 | `@afenda/env` | (none) | Runtime business logic |
 | `@afenda/errors` | (none) | Next.js; `pg` / Drizzle / Prisma; UI/locale copy as contract |
+| `@afenda/logger` | (none of `@afenda/*`) | Next.js; APM SDKs; Surfaces / `apps/*` |
 | `@afenda/ui-system` | platform packages only if client-safe | Server-only code, DB calls, secrets |
 | `@afenda/emails` | (UI/React peers as needed) | Be imported from client components in `apps/web` |
 | `@afenda/config` | (none at runtime) | Be imported as a runtime module; use `extends` / Biome root only |

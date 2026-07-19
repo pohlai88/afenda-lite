@@ -53,7 +53,7 @@ export async function withOrg<T extends TenantTable>(
 	}
 	const rows = await db
 		.select()
-		.from(table as unknown as typeof schema.surveys)
+		.from(table as unknown as typeof schema.platformRoleAssignment)
 		.where(eq(table.organizationId, trimmed));
 	return rows as T["$inferSelect"][];
 }

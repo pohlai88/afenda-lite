@@ -49,10 +49,10 @@ export async function loginAsOperator(
 	await loginAs(page, pair, { waitFor: /\/admin(\/|$)/ });
 }
 
-/** Client shell login → `/client/declarations`. */
+/** Client shell login → `/client`. */
 export async function loginAsClient(
 	page: Page,
 	pair: LoginPair,
 ): Promise<void> {
-	await loginAs(page, pair, { waitFor: /\/client\/declarations(\/|$)/ });
+	await loginAs(page, pair, { waitFor: /\/client(\/|$)/ });
 }

@@ -56,6 +56,7 @@ export default defineConfig({
 			nodeProject("admin", path.join(repoRoot, "packages/admin")),
 			nodeProject("errors", path.join(repoRoot, "packages/errors")),
 			nodeProject("logger", path.join(repoRoot, "packages/logger")),
+			nodeProject("rate-limit", path.join(repoRoot, "packages/rate-limit")),
 			nodeProject("emails", path.join(repoRoot, "packages/emails")),
 			{
 				test: {

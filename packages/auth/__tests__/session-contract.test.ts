@@ -433,12 +433,12 @@ describe("N6/N8 session contract", () => {
 			);
 			const response = await handleEnsureActiveOrganizationRequest(
 				new Request(
-					"https://afenda-lite.vercel.app/api/session/ensure-active-organization?next=%2Ffft",
+					"https://afenda-lite.vercel.app/api/session/ensure-active-organization?next=%2Fadmin",
 				),
 			);
 
 			expect(new URL(String(response.headers.get("location"))).pathname).toBe(
-				"/fft",
+				"/admin",
 			);
 		});
 
@@ -537,11 +537,13 @@ describe("N6/N8 session contract", () => {
 			const { createSessionProxy } = await import("../src/proxy");
 			const sessionProxy = createSessionProxy();
 			const response = await sessionProxy(
-				new NextRequest("https://afenda-lite.vercel.app/fft"),
+				new NextRequest("https://afenda-lite.vercel.app/admin"),
 			);
 			const location = new URL(String(response.headers.get("location")));
 			expect(location.pathname).toBe(AUTH_LOGIN_PATH);
-			expect(location.searchParams.get(POST_LOGIN_CALLBACK_PARAM)).toBe("/fft");
+			expect(location.searchParams.get(POST_LOGIN_CALLBACK_PARAM)).toBe(
+				"/admin",
+			);
 		});
 
 		it("overwrites external redirectTo on login redirects with sanitized request path", async () => {
@@ -628,7 +630,7 @@ describe("N6/N8 session contract", () => {
 			const { createSessionProxy } = await import("../src/proxy");
 			const sessionProxy = createSessionProxy();
 			const response = await sessionProxy(
-				new NextRequest("https://afenda-lite.vercel.app/fft/events"),
+				new NextRequest("https://afenda-lite.vercel.app/admin/users"),
 			);
 
 			expect(response.status).toBe(200);

@@ -58,17 +58,16 @@ modules/<context>/*      → ports + persistence (SSOT — relocate complete)
 
 | Need | Adapter | Anti-pattern |
 |------|---------|--------------|
-| RSC read | Call `modules/*/domain` port | `fetch('/api/declarations')` from RSC |
+| RSC read | Call `modules/*/domain` port | `fetch('/api/...')` from RSC for ordinary reads |
 | Client mutation | Server Action | Ad-hoc Route Handler for same-origin form POST |
-| Draft keepalive XHR | Existing `/api/client/declaration-draft` | Duplicating as Action + Handler without reason |
 | Health / Neon Auth | Route Handler | Embedding in page |
 
-Trade code path: `modules/fft` (never `modules/trade`). Schema map: `/afenda-elite-api-contract` · modules layout: `/afenda-elite-backend-modules`.
+Living modules: `platform` + `identity` only. Schema map: `/afenda-elite-api-contract` · modules layout: `/afenda-elite-backend-modules`. Do not recreate wiped Declarations/FFT trees.
 
 ### Input / Output split (wire)
 
 - **Input** — caller fields only (`Create*` / `Update*` / PATCH partial)
-- **Output** — includes server ids/timestamps (`Declaration`, `Assignment`, …)
+- **Output** — includes server ids/timestamps
 - Zod is SSOT; export types via `z.infer` — no parallel DTO trees
 
 ## Error semantics (one shape)
@@ -99,20 +98,19 @@ type ActionResult<T> =
 
 | Context | May depend on | Must not import |
 |---------|---------------|-----------------|
-| Identity | Neon Auth, platform | Declarations domain, Trade domain |
-| Declarations | Identity (actor/org) | Trade |
-| Trade | Identity (allowlist/RBAC) | Declarations |
+| Identity | Neon Auth, platform | Wiped Declarations / FFT domains |
 | Platform | nothing product-specific | — |
+| Declarations / FFT | — | **Removed** — do not recreate |
 
-Compose at the **adapter** (page/action) if a screen needs two contexts — do not merge domains.
+Compose at the **adapter** (page/action) if a screen needs two living contexts — do not merge domains.
 
 ## api-now vs contract-only
 
-| api-now (keep / implement as HTTP) | contract-only (do not scaffold handlers for web UI) |
+| api-now (keep / implement as HTTP) | contract-only / removed (do not scaffold) |
 |------------------------------------|-----------------------------------------------------|
-| `/api/health/*` | `/api/clients`, `/api/declarations`, … |
+| `/api/health/*` | Wiped Declarations/FFT list or draft HTTP |
 | `/api/auth/[...path]` | Share/public REST duplicates of page runners |
-| `/api/client/declaration-draft` | `/api/account` for Neon-owned fields |
+| `/api/session/*` | `/api/account` for Neon-owned fields |
 
 Web UI uses RSC + Actions. REST catalog in docs/api is for external consumers later — **one version**, extend additively.
 
@@ -120,7 +118,7 @@ Web UI uses RSC + Actions. REST catalog in docs/api is for external consumers la
 
 | Surface | Convention |
 |---------|------------|
-| App route segments | descriptive resource ids (`declarationId`) |
+| App route segments | descriptive resource ids (`userId`) |
 | Query params | camelCase (`invitationId`, `returnTo`) |
 | Action/REST fields | camelCase |
 | Error `code` / enums | UPPER_SNAKE |

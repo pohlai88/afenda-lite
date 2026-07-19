@@ -21,14 +21,8 @@ Machine inventory: [`testing/e2e/adverse-matrix.ts`](e2e/adverse-matrix.ts). Cas
 | A1 | Anonymous → `/auth/login` | smoke | `e2e/smoke/anonymous-gate.spec.ts` |
 | A2 | Wrong-role → `/403` | smoke | `e2e/smoke/wrong-role-gate.spec.ts` |
 | A3 | Two-org denial | smoke | `e2e/smoke/two-org-denial.spec.ts` |
-| A4 | Wrong-permission (`fft.access`) → `/403` | smoke | `e2e/smoke/fft-permitted-vertical.spec.ts` |
+| A4 | Action permission denial → `FORBIDDEN` | unit | `n14-security-failure-verification.test.ts` |
 | A5 | Invite → join accept | journey | `e2e/journey/invite-join.spec.ts` |
-| A6 | Draft save → reopen recover → submit | journey | `e2e/journey/declarations-draft-recovery.spec.ts` |
-| A7 | Invalid input (empty / no draft) | unit + journey | `declaration-submit-read.test.ts` · `declarations-adverse-recovery.spec.ts` |
-| A8 | Stale / locked after finalize | unit + journey | same |
-| A9 | Duplicate / idempotent re-submit | unit + journey | same |
-| A10 | Concurrent double-submit race | unit | `declaration-submit-read.test.ts` |
-| A11 | Dependency throw → safe `INTERNAL_ERROR` | unit | `submit-client-declaration-action.test.ts` |
 
 ## I5.4 UX · a11y · i18n · perf criteria
 
@@ -38,8 +32,8 @@ Machine inventory: [`testing/ux-a11y-i18n-perf-matrix.ts`](ux-a11y-i18n-perf-mat
 |--------|--------------|-------|------------------|
 | UX states | Segment loading/error · empty tables · pending/`aria-busy` · `/403` | Platform | PASS where ON DISK + inventory |
 | a11y floor | `@afenda/ui-system` barrel + org-admin form aria + axe/skip-link matrix | Platform | PASS — `testing/a11y-assistive-matrix.ts` · `e2e/smoke/a11y-assistive-matrix.spec.ts` |
-| i18n | English-only (`lang="en"`), locale-free routes | Platform | PASS for controlled scope; multi-locale = NOT APPLICABLE (Feed Farm Trade / ARCH-012) |
-| FE perf | CWV lab budgets (Google “good”) with workload·env·percentile·owner | Platform | PASS — `testing/fe-cwv-budgets.ts` · `e2e/smoke/fe-cwv-budgets.spec.ts`; capacity → I6 N/A; Neon DB N4 = PERF02 |
+| i18n | English-only (`lang="en"`), locale-free routes | Platform | PASS for controlled scope; multi-locale = NOT APPLICABLE (ARCH-012) |
+| FE perf | CWV lab budgets (Google “good”) with workload·env·percentile·owner | Platform | PASS — `testing/fe-cwv-budgets.ts` · `e2e/smoke/fe-cwv-budgets.spec.ts`; capacity → I6 N/A; Neon DB N4 = PERF02 (Scratch evidence `docs-V2/tenancy/**` while Living ARCH-023 dormant) |
 
 **Out of bar for I5.4:** inventing alternate CWV numbers (use adopted Google “good” only) · `next-intl` / `messages/` install · AdminCN polish · multi-tenant load/capacity harness (I6) · GUIDE-017 READY.
 
@@ -90,7 +84,7 @@ Path `@/testing/*` resolves from [`e2e/tsconfig.json`](../e2e/tsconfig.json).
 | `testing/e2e/flows.ts` | `signIn` / `loginAsOperator` / `loginAsClient` |
 | `testing/e2e/assertions.ts` | Anonymous redirect · wrong-role `/403` · role homes |
 | `testing/e2e/credentials.ts` | Explicit `E2E_*` overrides for one-off runs |
-| `testing/e2e/adverse-matrix.ts` | I4 adverse/recovery case inventory (A1–A11) |
+| `testing/e2e/adverse-matrix.ts` | I4 adverse/recovery case inventory (A1–A5) |
 | `testing/ux-a11y-i18n-perf-matrix.ts` | I5.4 UX · a11y · i18n · perf criteria + owners |
 | `testing/a11y-assistive-matrix.ts` | I5.4 A11Y03 axe + skip-link journey inventory |
 | `testing/fe-cwv-budgets.ts` | I5.4 PERF01 adopted Google CWV lab budgets |
@@ -125,7 +119,7 @@ pnpm exec turbo run lint typecheck test   # CI parity
 
 pnpm test:e2e:smoke         # Playwright @smoke
 pnpm test:e2e:journey       # Playwright @journey
-pnpm test:e2e:adverse       # A1–A4 smoke subset
+pnpm test:e2e:adverse       # A1–A3 smoke subset
 # Reuse a running app (skip spawning webServer):
 #   $env:PLAYWRIGHT_REUSE_SERVER=1; pnpm test:e2e:smoke
 ```

@@ -18,11 +18,8 @@ export const PERMISSION_DENIED_MESSAGE = {
 		"You do not have permission to manage organization users.",
 	"org.roles.manage":
 		"You do not have permission to manage organization roles.",
-	"declarations.manage": "You do not have permission to manage declarations.",
-	"declarations.read": "You do not have permission to read declarations.",
 	"clients.invite": "You do not have permission to invite members.",
 	"account.self": "You do not have permission to manage this account.",
-	"fft.access": "You do not have permission to access Feed Farm Trade.",
 } as const satisfies Record<PlatformPermissionCodeV1, string>;
 
 /**

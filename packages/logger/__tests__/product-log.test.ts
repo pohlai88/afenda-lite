@@ -53,9 +53,7 @@ describe("logProductEvent (Node / Pino)", () => {
 			{ service: "afenda-auth-bff" },
 		);
 
-		const line = chunks.find((c) =>
-			c.includes("auth_bff.unexpected_error"),
-		);
+		const line = chunks.find((c) => c.includes("auth_bff.unexpected_error"));
 		expect(line).toBeDefined();
 		const parsed: unknown = JSON.parse(line ?? "{}");
 		expect(parsed).toEqual(
@@ -87,7 +85,7 @@ describe("logProductEvent (edge)", () => {
 		const parsed: unknown = JSON.parse(String(info.mock.calls[0]?.[0]));
 		expect(parsed).toEqual(
 			expect.objectContaining({
-				ts: expect.any(String),
+				time: expect.any(String),
 				level: "info",
 				service: "afenda-web",
 				event: "proxy.session_redirect",

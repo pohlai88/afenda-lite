@@ -27,10 +27,10 @@ Persistence foundation under API/UI. Adapter choice (RSC/Action/RH) stays in [..
 | File | Role |
 |------|------|
 | `packages/db/src/schema/index.ts` | Barrel |
-| `packages/db/src/schema/platform.ts` | Platform tables |
-| `packages/db/src/schema/declarations.ts` | Declarations tables |
-| `packages/db/src/schema/fft.ts` | FFT / Trade tables |
-| `packages/db/src/hard-tenant-roots.ts` | Hard-tenant roots (`organization_id` NOT NULL) |
+| `packages/db/src/schema/platform.ts` | Platform tables (incl. RBAC) |
+| `packages/db/src/hard-tenant-roots.ts` | Living hard-tenant roots: `platform_role_assignment`, `platform_rbac_audit` |
+
+**Removed schema files (nuclear wipe):** `schema/declarations.ts`, `schema/fft.ts` — do not recreate as living product tables.
 
 File inventory only — no per-column encyclopedia. Re-probe `packages/db/src/schema/*` after schema adds.
 

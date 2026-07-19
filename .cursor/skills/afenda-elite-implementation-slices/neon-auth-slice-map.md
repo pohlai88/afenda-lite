@@ -22,7 +22,7 @@ Reuse [slice-map.md](slice-map.md) § Farm short names. Additional:
 | 1 | N5–N8 | Identity / session |
 | 2 | N9–N12 | Tenancy / authz / evidence |
 | 3 | N13–N15 | Verification / ops |
-| 4 | N16–N18 | ERP verticals (FFT freeze applies) |
+| 4 | N16–N18 | ERP verticals (historical; FFT product later removed) |
 
 ## Slice table
 
@@ -45,7 +45,7 @@ Reuse [slice-map.md](slice-map.md) § Farm short names. Additional:
 | **N15** | Production operations | Ops | router → slices → neon → ship | RB-001 · RB-005 · AGENTS | domains · deploy health · validate scripts | APPROVED | 100% | independent audit 2026-07-17 · Path-to-100% closed 2026-07-17 (AUTHORITY pointer lag cleared; N14–N18 APPROVED; floor re-verify green) |
 | **N16** | Shared ERP platform shell | Ops | router → slices → scaffold → modules | ARCH-015/018 as needed | shell composes ports · ui-compose if UI | APPROVED | 100% | independent audit 2026-07-17 · Path-to-100% closed |
 | **N17** | Declarations vertical | Ops | router → slices → modules → readiness → neon | ARCH-023 · GUIDE-018 I3.2 | submit/read under hard tenancy | APPROVED | 100% | independent audit 2026-07-17 · Path-to-100% closed (scratch pack evidence ledger; Living MOD promotion = later Docs-lane) |
-| **N18** | FFT permitted vertical | Ops | router → slices → fft → modules | FFT-MOD-008 | Phase 2A envelope only — no 2B–2D | APPROVED | 100% | independent audit 2026-07-17 · Path-to-100% closed (scratch pack evidence ledger; Living MOD promotion = later Docs-lane; no 2B–2D) |
+| **N18** | FFT permitted vertical *(historical)* | Ops | — | — | Product module later **removed** (nuclear wipe) | APPROVED | 100% | independent audit 2026-07-17 · closed historically; do not reopen FFT product as living |
 
 ## Serial order
 
@@ -67,6 +67,6 @@ Skip only with explicit user waiver **this turn**. One `N*` per chat. Do not sta
 | N11 | I3.1 |
 | N13 | I4 |
 | N17 | I3.2 |
-| N18 | I3.3 + FFT freeze |
+| N18 | I3.3 historical (FFT later removed) |
 
 Re-score against this map’s acceptance; do not inherit GUIDE checkboxes as Neon APPROVED.

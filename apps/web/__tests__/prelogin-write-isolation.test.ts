@@ -2,7 +2,7 @@
  * PL-S10 — Pre-Login managed identity / write isolation.
  *
  * Anonymous and auth-entry surfaces must not reach application-owned tenancy,
- * audit, declarations, FFT, or `@afenda/db` write commands. Identity persistence
+ * audit, org-admin mutations, or `@afenda/db` write commands. Identity persistence
  * stays Neon Auth (provider-owned) via the BFF and Path A `auth-credentials`.
  */
 
@@ -61,16 +61,10 @@ const FORBIDDEN_IMPORT_SOURCE = [
 	String.raw`(?:from|import)\s*['"]@afenda\/admin(?:\/[^'"]*)?['"]`,
 	String.raw`(?:from|import)\s*['"][^'"]*platformRbacAudit[^'"]*['"]`,
 	String.raw`(?:from|import)\s*['"][^'"]*platform_rbac_audit[^'"]*['"]`,
-	String.raw`(?:from|import)\s*['"]@\/modules\/declarations(?:\/[^'"]*)?['"]`,
-	String.raw`(?:from|import)\s*['"]@\/modules\/fft(?:\/[^'"]*)?['"]`,
-	String.raw`(?:from|import)\s*['"](?:\.\.?\/)*modules\/declarations(?:\/[^'"]*)?['"]`,
-	String.raw`(?:from|import)\s*['"](?:\.\.?\/)*modules\/fft(?:\/[^'"]*)?['"]`,
 ].map((source) => new RegExp(source, "g"));
 
 /** Reachable file path segments that must never appear on the Pre-Login graph. */
 const FORBIDDEN_PATH_FRAGMENT = [
-	"/modules/declarations/",
-	"/modules/fft/",
 	"assign-org-role",
 	"revoke-org-role",
 	"invite-org-member",

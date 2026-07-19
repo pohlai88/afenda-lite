@@ -70,7 +70,6 @@ Full inventory: [catalog.md](.cursor/skills/using-afenda-elite-skills/catalog.md
 | Root / package / app README · Diátaxis · README Score | `afenda-readme-diataxis` (not controlled `docs/` bodies) |
 | TS / coding discipline (brands · unions · any/as · boundary) | L0 [coding-discipline](.cursor/rules/coding-discipline.mdc) rule (PREFLIGHT **Rules**); full table `afenda-coding-discipline` skill after farm fixed |
 | Neon tenancy ops ladder | `neon-tenancy-efficiency` |
-| FFT product module | `feed-farm-trade` |
 | Generic engineering phases | `using-agent-skills` (method library **after** Elite router) |
 
 ## Non-negotiable rules
@@ -103,9 +102,9 @@ Full inventory: [catalog.md](.cursor/skills/using-afenda-elite-skills/catalog.md
 
 ## Checkout posture (Living Turborepo on disk)
 
-**Present:** `@afenda/{config,db,auth,env,errors,admin,ui-system,emails}` · `apps/web` · `apps/docs` (**official** Fumadocs docs) · `apps/web/proxy.ts` edge session gate · `apps/web/modules/{platform,identity,declarations,fft}` · `apps/web/features/{auth,declarations,fft,org-admin}` · `docs-V2/**` Scratch packs · CI/Deploy (`.github/workflows/{ci,deploy}.yml`).
+**Present:** `@afenda/{config,db,auth,env,errors,logger,admin,ui-system,emails}` · `apps/web` · `apps/docs` (**official** Fumadocs docs) · `apps/web/proxy.ts` edge session gate · `apps/web/modules/{platform,identity}` · `apps/web/features/{auth,org-admin}` · `docs-V2/**` Scratch packs · CI/Deploy (`.github/workflows/{ci,deploy}.yml`).
 
-**Absent by design:** Living controlled `docs/` (cutover `71176a0`) · repo-root `app/`, `modules/`, `features/`, `components-V2/`, Collapse `lib/`, wiped ops script bodies · `apps/web/app/playground/` · `apps/web/features/playground/` (removed 2026-07-15; do not handroll).
+**Absent by design / removed domains:** Living controlled `docs/` (cutover `71176a0`) · product **Declarations** + **Feed Farm Trade (FFT)** modules/features/routes (nuclear wipe) · `feed-farm-trade` skill · repo-root `app/`, `modules/`, `features/`, `components-V2/`, Collapse `lib/`, wiped ops script bodies · `apps/web/app/playground/` · `apps/web/features/playground/` (removed 2026-07-15; do not handroll). Do **not** recreate `modules/declarations`, `modules/fft`, `features/declarations`, `features/fft`, or `/client/declarations` / `/fft` product trees.
 
 | Rule | Detail |
 |------|--------|
@@ -120,27 +119,19 @@ Full inventory: [catalog.md](.cursor/skills/using-afenda-elite-skills/catalog.md
 
 **App layout:** sole deployable `apps/web` · edge gate `apps/web/proxy.ts` on disk (do not invent `middleware.ts`) · imports `@afenda/*` only across packages.
 
-## Feed Farm Trade
-
-| Fact | Detail |
-|------|--------|
-| Skill | [`.cursor/skills/feed-farm-trade`](.cursor/skills/feed-farm-trade/SKILL.md) |
-| Ops / readiness | Farm companions (Living FFT-MOD-* under `docs/modules/` dormant until Docs-lane reopen) |
-| Production | tag `fft-phase-2a` · `FFT_RBAC_ENABLED=true` · branch `br-tiny-hill-ao82jp6f` |
-| Freeze | **2B–2D code blocked** until explicit program reopen + Approved slice group in FFT-MOD-008. Never mix FFT domain commits with unrelated refactors. |
-
 ## Platform tenancy
 
 **SSOT (Scratch):** [docs-V2/tenancy](docs-V2/tenancy/README.md) · farm `neon-tenancy-efficiency` (Living ARCH-023 dormant until Docs-lane reopen).
 
 | Fact | Detail |
 |------|--------|
-| Shipped | Hard `organization_id = $org`; Users via `neon_auth.member`; FFT entry = platform `fft.access` |
+| Shipped | Hard `organization_id = $org`; Users via `neon_auth.member`; living modules = **platform + identity** only |
 | Neon | Shared schema (not project-per-tenant); prod `DATABASE_URL` must be `-pooler` |
 | Cloud | Org `org-fragrant-lake-90358173` · project `young-hat-54755363` · branch `br-tiny-hill-ao82jp6f` |
 | Lock | Rejected R1–R7 / Deferred D4·D5 — do not reopen without explicit approval |
-| Anti-claim | Do **not** claim multi-DB isolation. `FFT_RBAC_ENABLED` ≠ soft SQL tenancy |
-| Permission catalog seed | `pnpm --filter @afenda/db db:ensure-permission-catalog` (not baseline migrate) |
+| Anti-claim | Do **not** claim multi-DB isolation |
+| Permission catalog seed | `pnpm --filter @afenda/db db:ensure-permission-catalog` (not baseline migrate); catalog has **no** `declarations.*` / `fft.access` |
+| Client home | `CLIENT_HOME` = `/client` (workspace shell — not declarations product) |
 | Ops | Farm companions + [docs-V2/tenancy](docs-V2/tenancy/README.md) (Living RB-005 dormant) |
 
 ## Environment

@@ -1,7 +1,7 @@
 # api-now — Route Handler allowlist
 
 **Scratch SSOT:** [docs-V2/api/rest.md](../../../docs-V2/api/rest.md)  
-**Disk:** `apps/web/app/api/**/route.ts` (exactly six handlers)  
+**Disk:** `apps/web/app/api/**/route.ts`  
 **Living REST-001:** retired on this checkout — do not invent contract-only catalogues from history
 
 This file mirrors the **api-now** allowlist. Verify with `Test-Path` / `pnpm check:openapi` — never trust a stale Cursor index alone.
@@ -17,27 +17,24 @@ This file mirrors the **api-now** allowlist. Verify with `Test-Path` / `pnpm che
 | ALL | `/api/auth/[...path]` | Neon Auth proxy | Neon | Neon-owned; not portal JSON; excluded from OpenAPI YAML |
 | GET | `/api/session/sync-cookies` | Cookie-safe session mint / refresh | member session | Redirect; not `{ data }` JSON; excluded from YAML |
 | GET | `/api/session/ensure-active-organization` | Active-org persistence | member session | Redirect / plain-text; excluded from YAML |
-| GET | `/api/client/declaration-draft` | Load draft | client session | `{ data }` · `private, no-store` |
-| PUT / PATCH | `/api/client/declaration-draft` | Save draft | client session | Prefer PUT · `private, no-store` |
-| POST | `/api/client/declaration-draft` | Keepalive write alias | client session | Same handler as PUT/PATCH |
 
-Success JSON for health + draft uses `{ data: T }`. Failures use bare `APIErrorBody`. OpenAPI: [openapi.md](openapi.md).
+Success JSON for health uses `{ data: T }`. Failures use bare `APIErrorBody`. OpenAPI: [openapi.md](openapi.md) — **health-only** YAML include set.
 
-**Only this set is api-now.** Do not add handlers for dashboard list reads.
+**Only this set is api-now.** Do not add handlers for dashboard list reads. **Removed:** `/api/client/declaration-draft` (Declarations product wiped).
 
 ---
 
 ## Prohibition — do not scaffold these as Route Handlers for web UI
 
-Web UI adapters call `modules/*/domain` via RSC + Server Actions. Do **not** create Route Handlers for clients, declarations lists, assignments, share links, account, org users, or FFT until a real external consumer exists ([docs-V2/api/rest.md](../../../docs-V2/api/rest.md) decision rule).
+Web UI adapters call `modules/*/domain` via RSC + Server Actions. Do **not** create Route Handlers for clients, wiped Declarations lists/drafts, assignments, share links, account, org users, or FFT until a real external consumer exists **and** a living product module is approved ([docs-V2/api/rest.md](../../../docs-V2/api/rest.md) decision rule).
 
 > Neon-owned password/email flows stay on Neon Auth UI / `/api/auth/*` — do not duplicate.
 
 ---
 
-## Feed Farm Trade (gated — not api-now)
+## Feed Farm Trade / Declarations HTTP
 
-**Do not implement as Route Handlers until an external consumer is confirmed.** Web UI continues via FFT Server Actions. Paths must stay **locale-free** (no `:locale` segment). See `/feed-farm-trade` skill before touching HTTP.
+**Removed** with product domains (nuclear wipe). Do not implement FFT or declaration-draft Route Handlers. Do not route to deleted `feed-farm-trade` skill.
 
 ---
 
@@ -68,14 +65,12 @@ Do **not** introduce top-level `pagination` beside `data`. A shared `PaginatedRe
 ```
 Task                                                  Right adapter
 ────────────────────────────────────────────────────────────────────
-Dashboard reads (declarations, clients list)        → RSC → domain (no /api)
-Client workspace reads (assignment, questions)      → RSC → domain (no /api)
+Dashboard / org-admin reads                         → RSC → domain (no /api)
 Account reads                                       → RSC → domain (no /api)
-Client mutations (submit, draft, onboard)           → Server Action
-Operator mutations (create, delete, update)         → Server Action
-Draft autosave from browser XHR                     → /api/client/declaration-draft (api-now)
+Operator / identity mutations                       → Server Action
 Neon Auth UI callbacks / magic-link                 → /api/auth/[...path] (api-now)
 Health probes (uptime, readiness)                   → /api/health/* (api-now)
 Session cookie bridges                              → /api/session/* (api-now)
 Future mobile / external REST consumer              → new RH only when consumer exists
+Wiped Declarations draft / FFT HTTP                 → do not recreate
 ```

@@ -17,7 +17,7 @@ No dependency on legacy `docs/`. Skill companions under `.cursor/skills/afenda-e
 apps/web/proxy.ts  →  layout  →  thin page.tsx (RSC)
   → features/* (UI)
   → app/actions/* (mutations)  OR  modules/* (reads)
-  → app/api/*/route.ts  — health / Neon Auth / session / draft XHR only
+  → app/api/*/route.ts  — health / Neon Auth / session only
                          (never RSC self-fetch('/api') for own product reads)
 ```
 

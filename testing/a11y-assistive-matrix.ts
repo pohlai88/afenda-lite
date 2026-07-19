@@ -39,10 +39,10 @@ export const A11Y_ASSISTIVE_MATRIX = [
 	},
 	{
 		id: "A11Y03-P4",
-		path: "/client/declarations",
+		path: "/client",
 		auth: "client",
 		checks: ["axe", "skip-link"],
-		notes: "Client declarations list after factory client login.",
+		notes: "Client workspace home after factory client login.",
 	},
 ] as const satisfies readonly A11yAssistiveRow[];
 

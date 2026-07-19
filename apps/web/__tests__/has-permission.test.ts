@@ -5,13 +5,12 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { deleteRbacAuditRow } from "@afenda/admin/audit";
 import { and, db, eq, platformRoleAssignment } from "@afenda/db";
 import { afterAll, describe, expect, it } from "vitest";
-
 import { assignOrgRoleWithAudit } from "../modules/identity/domain/assign-org-role-audited";
 import { hasPermission } from "../modules/identity/domain/has-permission";
 import { revokeOrgRoleWithAudit } from "../modules/identity/domain/revoke-org-role-audited";
-import { deleteRbacAuditRow } from "@afenda/admin/audit";
 
 const repoRoot = path.resolve(
 	path.dirname(fileURLToPath(import.meta.url)),
@@ -189,7 +188,7 @@ describe.skipIf(!hasDatabase)("hasPermission product wiring (I3.1)", () => {
 			hasPermission({
 				orgId,
 				userId: viewerUser,
-				code: "declarations.read",
+				code: "account.self",
 			}),
 		).resolves.toBe(true);
 
@@ -197,7 +196,7 @@ describe.skipIf(!hasDatabase)("hasPermission product wiring (I3.1)", () => {
 			hasPermission({
 				orgId: `${orgId}-other`,
 				userId: viewerUser,
-				code: "declarations.read",
+				code: "account.self",
 				bootstrapRole: "client",
 			}),
 		).resolves.toBe(false);

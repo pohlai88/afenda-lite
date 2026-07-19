@@ -5,11 +5,11 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { deleteRbacAuditRow } from "@afenda/admin/audit";
 import { and, db, eq, platformRoleAssignment, withOrg } from "@afenda/db";
 import { afterAll, describe, expect, it } from "vitest";
 import { assignOrgRoleWithAudit } from "../modules/identity/domain/assign-org-role-audited";
 import { parseAssignOrgRoleCommand } from "../modules/identity/schemas/assign-org-role";
-import { deleteRbacAuditRow } from "@afenda/admin/audit";
 
 const repoRoot = path.resolve(
 	path.dirname(fileURLToPath(import.meta.url)),

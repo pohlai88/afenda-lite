@@ -25,7 +25,7 @@
 |-------|-----|
 | `app/(public)/` | Landing, auth, join, 403 |
 | `app/(client)/` | Client gate + workspace |
-| `app/(operator)/` | `/admin`, `/fft` |
+| `app/(operator)/` | `/admin` |
 
 ---
 
@@ -38,6 +38,7 @@
 | Fat `page.tsx` | UI in `features/*` |
 | Root `components/` dump · banished `lib/` growth | Wrong homes |
 | Storybook · `/playground` prod routes | Retired / absent |
+| `modules/declarations` · `modules/fft` · `/fft` product | Nuclear wipe — removed |
 | Product-import of `shadcn-studio/` scratch | Promote then prune |
 | Bypass `@afenda/ui-system` | Barrel only |
 | `any` / unearned `as` in product paths | Validate at boundary |

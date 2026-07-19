@@ -33,11 +33,9 @@ function readProxySource(): string {
 describe("shouldBypassSessionGate", () => {
 	it("does not bypass ordinary protected GET navigations (fail closed)", () => {
 		for (const pathname of [
-			"/fft",
-			"/fft/events",
 			"/admin",
 			"/admin/users",
-			"/client/declarations",
+			"/client",
 			"/client/dashboard",
 			"/dashboard",
 			"/account",
@@ -51,7 +49,7 @@ describe("shouldBypassSessionGate", () => {
 			shouldBypassSessionGate(
 				req({
 					method: "POST",
-					pathname: "/fft",
+					pathname: "/admin",
 					headers: ["next-action"],
 				}),
 			),
@@ -61,7 +59,7 @@ describe("shouldBypassSessionGate", () => {
 			shouldBypassSessionGate(
 				req({
 					method: "GET",
-					pathname: "/fft",
+					pathname: "/admin",
 					headers: ["next-action"],
 				}),
 			),
@@ -71,7 +69,7 @@ describe("shouldBypassSessionGate", () => {
 	it("bypasses ARCH-012 embed and client public prefixes", () => {
 		expect(
 			shouldBypassSessionGate(
-				req({ pathname: "/fft", search: { embed: "1" } }),
+				req({ pathname: "/admin", search: { embed: "1" } }),
 			),
 		).toBe(true);
 
@@ -155,7 +153,6 @@ describe("N6 proxy session gate (disk)", () => {
 			'"/dashboard/:path*"',
 			'"/admin/:path*"',
 			'"/client/:path*"',
-			'"/fft/:path*"',
 		]) {
 			expect(source).toContain(route);
 		}

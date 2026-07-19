@@ -14,7 +14,7 @@
 Need data?
 ├─ UI read → RSC / loader → modules/*/domain  (no /api hop)
 ├─ Mutation → Server Action — auth + authz + Zod inside
-├─ Health / Neon Auth / session bridges / draft XHR → Route Handler
+├─ Health / Neon Auth / session bridges → Route Handler
 └─ Client read → props from RSC — never invent fetch('/api') for own product reads
 ```
 
@@ -28,7 +28,7 @@ Every `'use server'` export is a public endpoint.
 
 1. Parse (`unknown` → Zod)  
 2. Authenticate inside the action  
-3. Authorize (role / org / ownership / FFT)  
+3. Authorize (role / org / ownership / permission codes)  
 4. Domain with trusted types  
 5. Return `ActionResult<T>` · revalidate on success when UI-backed  
 

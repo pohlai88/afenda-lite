@@ -7,10 +7,7 @@ import { test } from "@/testing/e2e/playwright-base";
  * Operator must not enter client shells; client must not enter operator admin.
  */
 test.describe("wrong-role gate @smoke", () => {
-	test("operator on /client/declarations stays /403", async ({
-		page,
-		workerTenant,
-	}) => {
+	test("operator on /client stays /403", async ({ page, workerTenant }) => {
 		test.skip(
 			!workerTenant,
 			"E2E_FACTORY_PASSWORD + DATABASE_URL required for N13 factory",
@@ -20,7 +17,7 @@ test.describe("wrong-role gate @smoke", () => {
 		}
 
 		await loginAsOperator(page, workerTenant.operator);
-		await expectWrongRoleForbidden(page, "/client/declarations");
+		await expectWrongRoleForbidden(page, "/client");
 	});
 
 	test("client on /admin stays /403", async ({ page, workerTenant }) => {

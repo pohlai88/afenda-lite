@@ -1,11 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-	declarationDraftQuerySchema,
-	saveClientDeclarationDraftSchema,
-	submitClientDeclarationSchema,
-} from "@/modules/declarations/schemas/client";
 import { getLivenessSnapshot } from "@/modules/platform/domain/health";
-import { parseSchema } from "@/modules/platform/schemas/common";
 import {
 	livenessResponseSchema,
 	readinessResponseSchema,
@@ -102,33 +96,6 @@ describe("OpenAPI contract schemas (I2.4)", () => {
 			timestamp: checkedAt,
 		});
 		expect(notReady.status).toBe("not_ready");
-	});
-
-	it("validates declaration draft query and write bodies", () => {
-		const assignmentId = "550e8400-e29b-41d4-a716-446655440000";
-		const questionId = "550e8400-e29b-41d4-a716-446655440001";
-
-		expect(parseSchema(declarationDraftQuerySchema, { assignmentId })).toEqual({
-			success: true,
-			data: { assignmentId },
-		});
-
-		const write = parseSchema(saveClientDeclarationDraftSchema, {
-			assignmentId,
-			answers: { [questionId]: true },
-			stepIndex: 2,
-		});
-		expect(write.success).toBe(true);
-		if (write.success) {
-			expect(write.data.stepIndex).toBe(2);
-		}
-
-		expect(
-			parseSchema(submitClientDeclarationSchema, { assignmentId }),
-		).toEqual({
-			success: true,
-			data: { assignmentId },
-		});
 	});
 
 	it("detects Neon pooler hosts for readiness connection flags", async () => {

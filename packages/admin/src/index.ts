@@ -47,8 +47,15 @@ export type {
 	ProvisionOrganizationResult,
 } from "./schemas/org";
 export {
+	createdOrganizationSchema,
+	createOrganizationInputSchema,
+	deletedOrganizationSchema,
+	deleteOrganizationInputSchema,
+	organizationSummarySchema,
 	PROVISION_ORG_CREATED_INVITE_FAILED,
 	PROVISION_ORG_CREATED_SET_ACTIVE_FAILED,
+	provisionOrganizationInputSchema,
+	provisionOrganizationResultSchema,
 } from "./schemas/org";
 export type {
 	GetOrganizationUsageInput,

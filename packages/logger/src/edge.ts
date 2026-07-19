@@ -1,16 +1,13 @@
 import { emitConsoleJson } from "./emit-console";
-import { resolveProductService, toProductLogRecord } from "./product-fields";
+import { toProductLogRecord } from "./product-fields";
 import type {
 	CreateLoggerOptions,
 	EdgeLogger,
 	EdgeLoggerBindings,
 	LogLevel,
+	LogProductEventOptions,
 	ProductLogEvent,
 } from "./types";
-
-type LogProductEventOptions = {
-	service?: string;
-};
 
 /**
  * Edge-safe product events (proxy / middleware). Same allowlisted fields as
@@ -20,8 +17,7 @@ export function logProductEvent(
 	entry: ProductLogEvent,
 	options?: LogProductEventOptions,
 ): void {
-	const record = toProductLogRecord(entry, options?.service);
-	emitConsoleJson(entry.level, record);
+	emitConsoleJson(entry.level, toProductLogRecord(entry, options?.service));
 }
 
 function emitEdge(
@@ -31,17 +27,14 @@ function emitEdge(
 	fields: Record<string, unknown>,
 	msg?: string,
 ): void {
-	const line: Record<string, unknown> = {
-		ts: new Date().toISOString(),
+	emitConsoleJson(level, {
+		time: new Date().toISOString(),
 		service,
 		level,
 		...bindings,
 		...fields,
-	};
-	if (msg !== undefined) {
-		line.msg = msg;
-	}
-	emitConsoleJson(level, line);
+		...(msg !== undefined ? { msg } : {}),
+	});
 }
 
 export function createEdgeLogger(options: CreateLoggerOptions): EdgeLogger {
@@ -74,8 +67,7 @@ export type {
 	CreateLoggerOptions,
 	EdgeLogger,
 	EdgeLoggerBindings,
+	LogProductEventOptions,
 	ProductLogEvent,
 	ProductLogLevel,
 } from "./types";
-
-export { resolveProductService };

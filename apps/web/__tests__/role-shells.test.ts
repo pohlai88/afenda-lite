@@ -24,7 +24,7 @@ describe("role shells wiring (I1.4)", () => {
 		);
 		expect(source).toContain('requireRole("operator")');
 		expect(source).toContain("OperatorPlatformShell");
-		expect(OPERATOR_SHELL_PATHS).toEqual(["/admin", "/fft"]);
+		expect(OPERATOR_SHELL_PATHS).toEqual(["/admin"]);
 	});
 
 	it("wires client workspace layout to requireRole('client')", () => {
@@ -33,7 +33,7 @@ describe("role shells wiring (I1.4)", () => {
 			"utf8",
 		);
 		expect(source).toContain('requireRole("client")');
-		expect(CLIENT_DASHBOARD_PATH).toBe("/client/declarations");
+		expect(CLIENT_DASHBOARD_PATH).toBe("/client");
 		expect([...CLIENT_GATE_PATHS]).not.toContain(CLIENT_DASHBOARD_PATH);
 	});
 

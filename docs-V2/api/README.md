@@ -16,7 +16,7 @@ Stable wire contracts for mutations and RH JSON. HTTP allowlist: [rest.md](rest.
 |------|----------|--------|
 | UI mutation | Server Action (`'use server'`) — [actions.md](actions.md) | `ActionResult<T>` |
 | UI read | RSC → domain | Typed domain result (not RH) |
-| Health · Neon Auth · session · draft XHR | Route Handler | See [rest.md](rest.md) wire shapes |
+| Health · Neon Auth · session | Route Handler | See [rest.md](rest.md) wire shapes |
 
 Do not invent dashboard list GETs under `/api` for same-origin UI.
 
@@ -54,7 +54,7 @@ Full TS floor: [../discipline/README.md](../discipline/README.md).
 
 ## OpenAPI
 
-Machine Zod helpers live under `modules/platform/schemas/openapi-zod.ts`. Generated artifact: [`OPEN-001-openapi.yaml`](OPEN-001-openapi.yaml) (api-now health + draft only). Do **not** invent offline REST catalogues — only ship RH paths that exist on disk ([rest.md](rest.md)). Do **not** hand-edit the YAML to clear drift — fix Zod / `scripts/generate-openapi.mts`, then `pnpm openapi:generate`.
+Machine Zod helpers live under `modules/platform/schemas/openapi-zod.ts`. Generated artifact: [`OPEN-001-openapi.yaml`](OPEN-001-openapi.yaml) (api-now **health-only**). Do **not** invent offline REST catalogues — only ship RH paths that exist on disk ([rest.md](rest.md)). Do **not** hand-edit the YAML to clear drift — fix Zod / `scripts/generate-openapi.mts`, then `pnpm openapi:generate`.
 
 **Verified (2026-07-19):** `pnpm openapi:generate && pnpm check:openapi` exit 0 — YAML byte-matches generator (aligned with Zod; not hand-edit, not stale).
 

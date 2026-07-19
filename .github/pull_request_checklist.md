@@ -9,4 +9,4 @@ Authorities: [AGENTS.md](../AGENTS.md) · [ARCH-028](../docs/architecture/ARCH-0
 - [ ] No invention of new bounded contexts beyond ARCH-006 without a controlled ADR
 - [ ] Skills: catalog status is `keep` / `extend` / approved `planned` — no Xerp fork, no `doc/` DOC-004 recreate
 - [ ] Docs changes cite DOC-001 / DOC-002 / DOC-003; no parallel SSOT under `doc/`
-- [ ] One agent lane per mission (Ops / Fix / Docs / Test / Normalize); no FFT 2B–2D without program reopen
+- [ ] One agent lane per mission (Ops / Fix / Docs / Test / Normalize); no recreate of wiped Declarations/FFT product modules
