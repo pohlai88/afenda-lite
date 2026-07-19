@@ -70,16 +70,6 @@
 	animation: auth-surface-cinematic-cycle 25s ease-in-out infinite;
 }
 
-/* Tab hidden — freeze cycle + particle layers (login-command performance). */
-.auth-surface--paused,
-.auth-surface--paused .auth-surface__art-plane,
-.auth-surface--paused .auth-surface__ember-field,
-.auth-surface--paused .auth-surface__snow,
-.auth-surface--paused .auth-surface__steam,
-:where(.auth-surface.auth-surface--paused) .auth-surface__panel-heat {
-	animation-play-state: paused;
-}
-
 :where(.auth-surface) .auth-surface__backdrop {
 	z-index: 0;
 	overflow: hidden;
@@ -1113,4 +1103,14 @@
 		--auth-steam: 0;
 		--auth-embers: 0;
 	}
+}
+
+/* Tab hidden — after layer rules so pause selectors do not precede lower-specificity bases. */
+.auth-surface--paused,
+.auth-surface--paused .auth-surface__art-plane,
+.auth-surface--paused .auth-surface__ember-field,
+.auth-surface--paused .auth-surface__snow,
+.auth-surface--paused .auth-surface__steam,
+:where(.auth-surface.auth-surface--paused) .auth-surface__panel-heat {
+	animation-play-state: paused;
 }

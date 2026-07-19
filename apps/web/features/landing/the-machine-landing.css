@@ -136,10 +136,6 @@
 	pointer-events: none;
 }
 
-:where(.the-machine) .sensor-plane .sensor {
-	pointer-events: auto;
-}
-
 @keyframes cinematicZoom {
 	from {
 		transform: scale(1) translate3d(0, 0, 0);
@@ -1077,6 +1073,10 @@
 	border: 0;
 	border-radius: 50% 50% 44% 44% / 58% 58% 42% 42%;
 	transform: translate(-50%, -50%);
+}
+
+:where(.the-machine) .sensor-plane .sensor {
+	pointer-events: auto;
 }
 
 .sensor::before,

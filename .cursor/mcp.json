@@ -38,6 +38,9 @@
         "SystemRoot": "C:\\Windows",
         "PROGRAMFILES": "C:\\Program Files"
       }
+    },
+    "vercel": {
+      "url": "https://mcp.vercel.com/jacks-projects-7b3cfe94/afenda-lite"
     }
   }
 }
