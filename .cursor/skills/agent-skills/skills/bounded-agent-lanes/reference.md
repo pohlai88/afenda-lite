@@ -6,65 +6,38 @@ Updatable defaults for this repository. The skill core in [SKILL.md](SKILL.md) s
 
 ## Current active lane
 
-**Feed Farm Trade Ops — closed** (2026-07-10)
+**No FFT / Declarations product lane** (nuclear wipe — commit `54b4e8b` and successors).
 
-Default agent mission is **not** Feed Farm Trade. See [deprecation register — Closed product phases](../deprecation-and-migration/reference.md) · [using-afenda-elite-skills](../../../using-afenda-elite-skills/SKILL.md).
+Default agent mission is **not** Feed Farm Trade or Client Declarations. Route product work through [using-afenda-elite-skills](../../../using-afenda-elite-skills/SKILL.md). Compulsory ban surface: [deprecation register — Closed product phases](../deprecation-and-migration/reference.md).
 
----
-
-## Feed Farm Trade — agent entry (when trade work is explicitly requested)
-
-| Doc type | Path |
-|----------|------|
-| **RUNTIME** (read first) | [docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md](../../../../docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md) |
-| Index + doc types | [docs/modules/feed-farm-trade/FFT-MOD-010-module-docs-index.md](../../../../docs/modules/feed-farm-trade/FFT-MOD-010-module-docs-index.md) |
-| OPS gates (historical) | [docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md](../../../../docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md) |
-| OPS rollout | [docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md](../../../../docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md) |
-| OPS release readiness | [docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md](../../../../docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md) |
-| SPEC 2A (frozen) | [docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md](../../../../docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md) |
-| ARCHITECTURE S19 | [docs/modules/feed-farm-trade/FFT-MOD-001-module-architecture.md](../../../../docs/modules/feed-farm-trade/FFT-MOD-001-module-architecture.md) |
-
-### Frozen decisions (do not rename / redesign)
-
-| Area | Decision |
-|------|----------|
-| Feature flag | `FFT_RBAC_ENABLED` |
-| Production | `true` on Vercel (Gate 7) |
-| Local dev default | `false` |
-| Rollback | Set flag false on Vercel → redeploy (or `pnpm sync:vercel` when Target tooling exists) |
-| Migration | `013_hot_sales.sql` + `014_fft_rbac.sql` |
-| Admin RBAC UI | `/fft/[locale]/admin/rbac` |
-| Event create UI | `/fft/[locale]/admin/events/new` |
-
-### Forbidden without explicit approval
-
-- Phase 2B–2D, new permissions/UI/schema
-- Repo normalization mixed into Feed Farm Trade commits
+Living modules/features on disk: `platform` · `identity` · `auth` · `org-admin` · `portal-chrome` · `landing`.
 
 ---
 
-## Typical Feed Farm Trade checks
+## Feed Farm Trade / Declarations — closed (do not reopen)
+
+| Fact | Detail |
+|------|--------|
+| Product trees | `modules/{fft,declarations}` · `features/{fft,declarations}` · `/fft/**` · declaration-draft RH — **gone** |
+| Skill | `feed-farm-trade` — **deleted**; catalog row `forbidden` |
+| Living docs | `docs/modules/feed-farm-trade/**` dormant/absent — do not invent Living FFT packs |
+| Env flags | Do not treat `FFT_*` / survey playground keys as active product reopen levers |
+
+### Forbidden without explicit named approval this turn
+
+- Recreate wiped FFT / Declarations modules, features, routes, or the `feed-farm-trade` skill
+- Mix domain reopen with repo Normalize / housekeeping commits
+
+---
+
+## Typical living-shell checks
 
 | Check | Command |
 |-------|---------|
-| Trade unit tests | `npm run test:unit -- modules/fft` |
-| Trade smoke e2e | `npm run test:e2e:smoke` |
-| Gate 7 prod smoke | `node scripts/gate-7-production-smoke.mjs` |
+| Unit / contract | `pnpm test` / scoped `pnpm --filter @afenda/web test` |
+| Lint · types | `pnpm lint` · `pnpm typecheck` |
 | Env | `.env.local` + `import { env } from '@afenda/env'` (compose retired) |
-
-Pre-enable matrix: [release-readiness.md § Pre-enable verification matrix](../../../../docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md#pre-enable-verification-matrix).
-
-Evidence template: [rollout.md § Evidence report template](../../../../docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md#evidence-report-template).
-
----
-
-## Docs lane (fft doc updates)
-
-| Field | Value |
-|-------|-------|
-| **Lane** | Docs |
-| **Target files** | `docs/modules/feed-farm-trade/**`, this `reference.md` (cross-links only) |
-| **Forbidden** | Code, schema, permissions, UI |
+| Neon contract | `pnpm validate:neon-env` |
 
 ---
 
@@ -72,6 +45,6 @@ Evidence template: [rollout.md § Evidence report template](../../../../docs/mod
 
 | Lane | Entry |
 |------|-------|
-| Remaining development | [remaining-development.md](../../../../docs/architecture/remaining-development.md) |
-| Guardian Auth closeout | [pa-guardian-module-remaining.md](../../../../docs/architecture/slices/portal-atmosphere/pa-guardian-module-remaining.md) |
-| Program tracking | [gate-register.md](../../../../docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md) · [deprecation register — Closed product phases](../deprecation-and-migration/reference.md) |
+| Elite product router | [using-afenda-elite-skills](../../../using-afenda-elite-skills/SKILL.md) |
+| Closed product phases | [deprecation-and-migration/reference.md](../deprecation-and-migration/reference.md) |
+| Scratch ops packs | [docs-V2/README.md](../../../../docs-V2/README.md) |

@@ -48,9 +48,9 @@ All operative rules: [mod-readiness-rules.md](mod-readiness-rules.md).
 7. **Claims** — update MOD-010 readiness aggregation only after coverage + 009 rows are honest.
 8. **Verify** — `pnpm check:module-quality` when Living packs exist; fix join/ownership/schema findings before closing Control State.
 
-## Concrete module example — Feed Farm Trade
+## Concrete module example — living domains
 
-IDs and roles in [mod-readiness-rules.md](mod-readiness-rules.md). Domain farm gates remain [feed-farm-trade](../feed-farm-trade/SKILL.md). This skill owns **evidence/claim semantics**, not FFT product reopen.
+IDs and roles in [mod-readiness-rules.md](mod-readiness-rules.md). Living product modules on this checkout are **platform** and **identity** only. Declarations / Feed Farm Trade (and the deleted `feed-farm-trade` skill) are nuclear wipe — do not route readiness work there. This skill owns **evidence/claim semantics**, not product reopen.
 
 ## Hard rules
 

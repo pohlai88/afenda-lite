@@ -7,7 +7,7 @@
 	],
 	"notes": [
 		"Machine SSOT for platform Studio DNA metadata. Narrative: docs/scratch/neon-auth-optimisation/11-studio-admincn-possibility-audit.md",
-		"Namespace AFN-DNA-* only. Do not invent FFT-UI-* here (FFT owns feed-farm-trade/ui-registry.json).",
+		"Namespace AFN-DNA-* only. Do not invent parallel DNA namespaces (FFT / Declarations product farms removed).",
 		"Agents must not self-set status=promoted without disk land path + user/HITL.",
 		"status=rejected rows stay rejected. Themes / install-theme stay rejected.",
 		"landPath = primary promote home (single path). Secondary homes go in notes.",

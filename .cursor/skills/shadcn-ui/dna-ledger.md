@@ -43,7 +43,7 @@ Before any Studio `/iui` / `/cui` / `/rui` promote or Method A/B land:
 
 ## Compulsory rules
 
-1. Namespace **`AFN-DNA-*` only** in this file. Do not invent `FFT-UI-*` / edit FFT `ui-registry.json` from platform DNA work.
+1. Namespace **`AFN-DNA-*` only** in this file. Do not invent parallel DNA namespaces (FFT / Declarations product farms removed).
 2. **Never** product-import `apps/web/shadcn-studio/**`.
 3. Do **not** self-set `status: promoted` without: (a) files on disk at `landPath`, (b) upgrade checklist done, (c) user/HITL acknowledgment in the mission.
 4. `verdict: REJECT` / `status: rejected` — do not reopen without user order this turn; do not stage.

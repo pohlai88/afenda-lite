@@ -145,9 +145,8 @@ CLI name trap (ARCH-018): singular `chart-component-*` vs metadata plural — ve
 | Reusable primitive / compound | `packages/ui-system` + barrel |
 | Shell chrome (sidebar/header/nav frame) | `apps/web/features/portal-chrome/` |
 | Org admin / roles / stats panels | `apps/web/features/org-admin/` |
-| FFT | `apps/web/features/fft/` |
-| Declarations | `apps/web/features/declarations/` |
 | Auth chrome only (layout/message wrappers) | `apps/web/features/auth/` — Neon `AuthView` / invitation cards stay; **no** Studio login forms |
+| ~~FFT~~ / ~~Declarations~~ | **Removed** — do not land DNA under `features/fft/` or `features/declarations/` |
 
 ---
 
