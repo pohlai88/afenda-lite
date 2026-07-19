@@ -6,7 +6,8 @@
 | Authority | **Scratch** — upstream [Deploying](https://fumadocs.dev/docs/deploying) · disk `@afenda/docs` |
 | Status | **Active** — Framework Mode on Next.js · Vercel Node host target · product Deploy stays `@afenda/web` |
 | Audience | Engineers hosting or auditing the official docs app |
-| Updated | 2026-07-19 |
+| Updated | 2026-07-20 |
+| Host | **Configured** — Vercel `afenda-lite-docs` · prod `https://afenda-lite-docs.vercel.app` |
 
 Upstream: Fumadocs is powered by the underlying React framework — follow that framework’s deploy guide. Lite locks **Next.js Framework Mode** on **Node** (not Edge), with Vercel as the configured host target for `@afenda/docs`.
 
@@ -86,17 +87,31 @@ pnpm --filter @afenda/docs build
 pnpm --filter @afenda/docs start   # :3001
 ```
 
-Host (configured): Vercel project **`afenda-lite-docs`** · Root Directory `apps/docs` · production origin `https://afenda-lite-docs.vercel.app` · Agent link `apps/docs/.vercel` (gitignored). Prefer **Git-based** deploys so `VERCEL_DEEP_CLONE=true` supplies history for RSS `lastModified` (CLI file upload has no `.git`).
+Host (configured): Vercel project **`afenda-lite-docs`** (`prj_W5wMNpRgGedfkNRNuaHCXJmCEp42`, team `jacks-projects-7b3cfe94`) · Root Directory `apps/docs` · Node `24.x` · region `sin1` · production origin `https://afenda-lite-docs.vercel.app` · Agent link `apps/docs/.vercel` (gitignored). Prefer **Git-based** deploys so `VERCEL_DEEP_CLONE=true` supplies history for RSS `lastModified` (CLI file upload has no `.git`).
 
-**Promote (explicit — `ignoreCommand` cancels Production-target Git builds):**
+### Promote (binding — Production Git is skipped)
+
+`ignoreCommand` exits `0` when `VERCEL_ENV=production`, so **Production-target Git builds cancel by design**. That is the docs prod gate — not a misconfiguration.
 
 ```bash
-# 1) Git preview build of the SHA (omit target=production)
-# 2) After Ready + smoke, point the prod alias at that deployment:
+# 1) Push / wait for a Ready Git *preview* of the SHA (do not force target=production)
+vercel list --scope jacks-projects-7b3cfe94
+
+# 2) Smoke the Ready URL, then point prod alias at it:
 vercel alias set <ready-deployment-url> afenda-lite-docs.vercel.app --scope jacks-projects-7b3cfe94
+
+# 3) Host smoke
+curl -sI -L https://afenda-lite-docs.vercel.app/   # 307 → /docs → 200
+curl -sI https://afenda-lite-docs.vercel.app/docs  # 200 · x-vercel-id region sin1
 ```
 
-Do **not** use `vercel promote` / API `target: "production"` for this project — those re-enter the ignore step and cancel. Product `deploy.yml` stays `@afenda/web` only.
+| Do | Do not |
+|----|--------|
+| Promote via Ready preview + `vercel alias set` | `vercel promote` / API `target: "production"` (re-enters ignore → cancel) |
+| Keep product `deploy.yml` on `@afenda/web` only | Point product Deploy / Neon secrets at docs |
+| Remove canceled Production deploys after noise (`vercel rm <url> -y --scope …`) | Delete the Ready deployment that holds the prod alias (`--safe` skips aliased) |
+
+Observability: Speed Insights / Web Analytics are **disabled** on the docs project (`POST /speed-insights/toggle` · `/web/insights/toggle` with `value=false`). Residual DSN ids with `hasData: false` may remain on the project object — `@afenda/docs` does not ship `@vercel/analytics` / `@vercel/speed-insights`.
 
 ---
 
@@ -164,6 +179,8 @@ Schema: `import { docsEnv } from '@afenda/env/docs'`. `VERCEL_DEEP_CLONE` is a V
 3. next.config.mjs: createMDX · no output: "export" · no output: "standalone"
 4. vercel.json: filter=@afenda/docs · regions sin1 · ignoreCommand production skip
 5. pnpm --filter @afenda/docs test -- docs-openapi-wire · typecheck · build
+6. Host: vercel project afenda-lite-docs · env names DOCS_URL · VERCEL_DEEP_CLONE · GITHUB_APP_* only
+7. Prod: alias afenda-lite-docs.vercel.app → Ready preview · curl / and /docs → 200 · sin1
 ```
 
 Companion: [next.md](next.md) · [automation.md](automation.md) · [`../deploy/README.md`](../deploy/README.md) · [README.md](README.md).
