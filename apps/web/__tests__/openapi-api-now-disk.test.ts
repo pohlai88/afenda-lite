@@ -17,6 +17,7 @@ const API_NOW_ROUTE_FILES = [
 	"app/api/health/liveness/route.ts",
 	"app/api/health/readiness/route.ts",
 	"app/api/metrics/route.ts",
+	"app/api/ai/chat/route.ts",
 	"app/api/auth/[...path]/route.ts",
 	"app/api/session/sync-cookies/route.ts",
 	"app/api/session/ensure-active-organization/route.ts",

@@ -29,13 +29,10 @@ describe("readRequestAttribution", () => {
 		const { readRequestAttribution } = await import(
 			"../modules/platform/domain/request-attribution"
 		);
-		const { MAX_RBAC_AUDIT_USER_AGENT_LENGTH } = await import(
-			"@afenda/admin/audit"
-		);
 
 		await expect(readRequestAttribution()).resolves.toEqual({
 			ipAddress: "203.0.113.10",
-			userAgent: longUa.slice(0, MAX_RBAC_AUDIT_USER_AGENT_LENGTH),
+			userAgent: longUa.slice(0, 512),
 		});
 	});
 

@@ -233,7 +233,7 @@ describe("N12 living authz audit evidence", () => {
 
 		const result = await assignOrgRoleAction(null, formData);
 
-		expect(result).toEqual({
+		expect(result).toMatchObject({
 			ok: true,
 			data: {
 				assignmentId: ASSIGNMENT_ID,
@@ -243,6 +243,13 @@ describe("N12 living authz audit evidence", () => {
 				auditId: "audit-assign-1",
 			},
 		});
+		expect(result?.ok === true).toBe(true);
+		if (result?.ok === true) {
+			expect(
+				result.data.notificationId === null ||
+					typeof result.data.notificationId === "string",
+			).toBe(true);
+		}
 		expect(identityMocks.assignOrgRoleWithAudit).toHaveBeenCalledWith(
 			expect.objectContaining({
 				orgId: "org-n12",
