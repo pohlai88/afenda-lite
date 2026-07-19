@@ -82,7 +82,7 @@ jobs:
                 `- Workflow run: ${context.runId} (attempt ${context.runAttempt})`,
                 "- Guardrails: SELECT 1 latency <= 5000 ms; aggregate connection usage < 80%",
                 "- Sensitive details are suppressed. Inspect the Actions log for aggregate evidence.",
-                "- Runbook: docs/runbooks/RB-001-multi-org-ops.md §3.7b (Neon DB performance baseline / Alerts honesty)",
+                "- Ops: docs/architecture/ARCH-023-multi-tenancy.md §3.10 (Neon DB performance baseline / Alerts honesty)",
               ].join("\n");
 
               if (alert) {
@@ -110,7 +110,7 @@ jobs:
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: alert.number,
-                body: `Recovered at ${timestamp}; workflow run ${context.runId}. Runbook: docs/runbooks/RB-001-multi-org-ops.md §3.7b.`,
+                body: `Recovered at ${timestamp}; workflow run ${context.runId}. Ops: docs/architecture/ARCH-023-multi-tenancy.md §3.10.`,
               });
               await github.rest.issues.update({
                 owner: context.repo.owner,

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
-
+import { signInSchema } from "../modules/identity/schemas/auth";
 import {
 	type ActionResult,
 	actionFail,
@@ -16,7 +16,6 @@ import {
 	healthJson,
 	isApiErrorCode,
 } from "../modules/platform/schemas/api-error";
-import { signInSchema } from "../modules/identity/schemas/auth";
 import { emailSchema, parseSchema } from "../modules/platform/schemas/common";
 
 describe("ActionResult + error brands (I2.1)", () => {

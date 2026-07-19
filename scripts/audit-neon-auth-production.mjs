@@ -107,7 +107,7 @@ console.log(
 	"\n[note] Env/recovery/perf: pnpm validate:neon-env · Deploy health: pnpm check:production:post-deploy",
 );
 console.log(
-	"[note] Domain add: neon neon-auth domain add <origin> — see docs/runbooks/RB-001-multi-org-ops.md §3.12",
+	"[note] Domain add: neon neon-auth domain add <origin> — see docs/architecture/ARCH-026-auth-session.md + AGENTS.md Neon Auth",
 );
 console.log(`\nResult: ${passed} passed, ${failed} failed`);
 process.exit(failed > 0 ? 1 : 0);

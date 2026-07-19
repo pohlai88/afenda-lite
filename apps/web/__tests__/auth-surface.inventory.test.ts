@@ -170,9 +170,7 @@ describe("PL-S3 Auth Island surface", () => {
 		expect(surfaceCss).toContain(
 			":where(.auth-surface) .auth-surface__brand-art",
 		);
-		expect(surfaceCss).toContain(
-			":where(.auth-surface) .auth-surface__column",
-		);
+		expect(surfaceCss).toContain(":where(.auth-surface) .auth-surface__column");
 		expect(surfaceCss).toContain("letter-spacing: 0.2em");
 		expect(surfaceCss).toContain("z-index: 10");
 		expect(chrome).toContain('alt=""');

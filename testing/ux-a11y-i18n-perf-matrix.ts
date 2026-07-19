@@ -201,7 +201,7 @@ export const UX_A11Y_I18N_PERF_MATRIX = [
 			"Neon DB performance posture remains separately owned (N4) — not a frontend CWV substitute",
 		owner: "Platform",
 		evidenceState: "PASS",
-		evidencePaths: ["docs/runbooks/RB-001-multi-org-ops.md"],
+		evidencePaths: ["docs/architecture/ARCH-023-multi-tenancy.md"],
 		notes:
 			"References Neon Auth N4 / RB-001 pooler + SELECT-1 discipline only; does not claim FE budgets.",
 	},
