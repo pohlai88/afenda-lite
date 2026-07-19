@@ -416,18 +416,8 @@ export async function cleanupWorkerTenant(
 			DELETE FROM platform_role_assignment
 			WHERE organization_id = ${orgId}
 		`;
-		await sql`
-			DELETE FROM client_assignments
-			WHERE organization_id = ${orgId}
-		`;
-		await sql`
-			DELETE FROM surveys
-			WHERE organization_id = ${orgId}
-		`;
-		await sql`
-			DELETE FROM client_profiles
-			WHERE organization_id = ${orgId}
-		`;
+		// Declarations product tables (client_assignments / surveys / client_profiles)
+		// were wiped — do not DELETE them here.
 	}
 
 	for (const userId of userIds) {
