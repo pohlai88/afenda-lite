@@ -13,6 +13,7 @@ import {
 	Code,
 	KeyValueList,
 	StatusBadge,
+	Textarea,
 } from "@afenda/ui-system";
 import { ArrowLeftIcon, FilePenLineIcon } from "lucide-react";
 import Link from "next/link";
@@ -227,9 +228,12 @@ export async function DeclarationDetailShell({
 						</CardDescription>
 					</CardHeader>
 					<CardContent className="flex flex-col gap-(--section-gap)">
-						<pre className="whitespace-pre-wrap rounded-md border border-border bg-canvas p-3 text-sm text-foreground">
-							{answerDisplay(declaration.answers)}
-						</pre>
+						<Textarea
+							readOnly
+							aria-label="Declaration response answers"
+							value={answerDisplay(declaration.answers)}
+							className="min-h-24 resize-none bg-canvas font-mono text-sm"
+						/>
 
 						{canSubmit ? (
 							hasAnswers ? (

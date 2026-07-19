@@ -16,6 +16,7 @@ import {
 	healthJson,
 	isApiErrorCode,
 } from "../modules/platform/schemas/api-error";
+import { signInSchema } from "../modules/identity/schemas/auth";
 import { emailSchema, parseSchema } from "../modules/platform/schemas/common";
 
 describe("ActionResult + error brands (I2.1)", () => {
@@ -82,6 +83,28 @@ describe("ActionResult + error brands (I2.1)", () => {
 		expect(ok).toEqual({
 			success: true,
 			data: { email: "client@example.com" },
+		});
+	});
+
+	it("parseSchema accepts Path A signInSchema at the Action boundary", () => {
+		const failed = parseSchema(signInSchema, {
+			email: "bad",
+			password: "",
+		});
+		expect(failed.success).toBe(false);
+
+		const ok = parseSchema(signInSchema, {
+			email: "  Operator@Example.COM ",
+			password: "secret",
+			callback: "/admin",
+		});
+		expect(ok).toEqual({
+			success: true,
+			data: {
+				email: "operator@example.com",
+				password: "secret",
+				callback: "/admin",
+			},
 		});
 	});
 });

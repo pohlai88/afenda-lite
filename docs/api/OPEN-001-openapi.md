@@ -4,11 +4,11 @@
 |-------|-------|
 | ID | OPEN-001 |
 | Category | OPEN |
-| Version | 1.1.8 |
+| Version | 1.1.9 |
 | Status | Living |
 | Control State | Closed |
 | Owner | Backend |
-| Updated | 2026-07-15 |
+| Updated | 2026-07-19 |
 
 # 1. Purpose
 
@@ -33,6 +33,7 @@ Human guide for the **machine OpenAPI** artifact. Enables maintainers to generat
 
 - Duplicating REST path catalogs in this Markdown file
 - Including Neon Auth (`/api/auth/*`) in portal OpenAPI
+- Including session completion bridges (`/api/session/*`) — redirect / Set-Cookie only; catalogued in REST-001 api-now but not JSON `{ data }` product APIs
 - Dumping all contract-only REST paths into the first YAML without `x-afenda-status`
 - Product-embedded Swagger UI (use Fumadocs playground when wired)
 
@@ -67,10 +68,10 @@ Living bar (already met for api-now):
 
 | Included | Excluded |
 |----------|----------|
-| `GET /api/health/liveness` | Neon Auth proxy |
-| `GET /api/health/readiness` | FFT HTTP appendix (until FFT reopen + this guide’s contract-only rules) |
-| `GET/PUT/PATCH/POST /api/client/declaration-draft` | Live playground for contract-only ops |
-| Shared `APIErrorBody` + `{ data }` envelopes | |
+| `GET /api/health/liveness` | Neon Auth proxy (`/api/auth/*`) |
+| `GET /api/health/readiness` | Session bridges (`/api/session/sync-cookies`, `/api/session/ensure-active-organization`) — REST-001 api-now; redirect / plain-text, not `{ data }` |
+| `GET/PUT/PATCH/POST /api/client/declaration-draft` | FFT HTTP appendix (until FFT reopen + this guide’s contract-only rules) |
+| Shared `APIErrorBody` + `{ data }` envelopes | Live playground for contract-only ops |
 
 # 3. Contract and operation
 
@@ -158,6 +159,7 @@ pnpm check:openapi
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.1.9 | 2026-07-19 | Bounded reopen: exclude `/api/session/*` bridges from YAML (REST-001 api-now honesty; same posture as Neon Auth proxy). |
 | 1.1.8 | 2026-07-15 | Bounded reopen (I2.4 audit repair): Zod SSOT handoff + api-now disk honesty gate marked landed. |
 | 1.1.7 | 2026-07-14 | Bounded reopen: package-manager cutover — document `pnpm` / `pnpm exec` (repo SSOT `packageManager` + `pnpm-lock.yaml`). |
 | 1.1.6 | 2026-07-14 | Added mandatory Control State header field (Closed); lifecycle Status unchanged. |

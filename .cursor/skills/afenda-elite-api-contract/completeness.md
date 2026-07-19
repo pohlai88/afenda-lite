@@ -6,7 +6,7 @@ Plan authority: this skill + `api-now.md` + `docs/api/*` (SSOT: Living API-001�
 
 | Slice | Plan | Recorded location | Status |
 | ----- | ---- | ----------------- | ------ |
-| api-now handlers only | health / auth / draft | [REST-001](../../../docs/api/REST-001-rest-resources.md) api-now; paths `app/api/{health,auth,client}` | **Done** (contract) |
+| api-now handlers only | health / auth / session / draft | [REST-001](../../../docs/api/REST-001-rest-resources.md) api-now; paths `app/api/{health,auth,session,client}` | **Done** (contract) |
 | No web-UI list REST | RSC → domain | [API-001](../../../docs/api/API-001-api-boundaries.md) adapter choice | **Done** (contract) |
 | ActionResult / APIErrorBody | Shared codes | [API-002](../../../docs/api/API-002-error-contract.md) · Target `apps/web/modules/platform/schemas/{action-result,api-error}.ts` | **Done** (contract + Target runtime, I2.1) |
 | HTTP success `{ data }` | Envelope | [API-001](../../../docs/api/API-001-api-boundaries.md); OPEN `*Envelope` schemas | **Done** (contract) |

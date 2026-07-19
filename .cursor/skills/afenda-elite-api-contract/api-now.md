@@ -15,9 +15,11 @@ This file mirrors the Living **api-now** contract and the **allowed Target** Rou
 | GET | `/api/health/liveness` | Process up | public | Optional short public CDN cache |
 | GET | `/api/health/readiness` | DB / deps ready | public | Prefer `no-store` |
 | ALL | `/api/auth/[...path]` | Neon Auth proxy | Neon | Neon-owned |
+| GET | `/api/session/sync-cookies` | Cookie-safe session mint / refresh | member session | `private, no-store` — redirect; not `{ data }` JSON |
+| GET | `/api/session/ensure-active-organization` | Cookie-safe active-org persistence | member session | `private, no-store` — redirect / plain-text; not `{ data }` JSON |
 | GET/PUT/PATCH | `/api/client/declaration-draft` | Draft autosave (POST keepalive alias) | client session | `private, no-store` |
 
-Success JSON for these handlers uses `{ data: T }` ([API-001](../../../docs/api/API-001-api-boundaries.md)). Failures use bare `APIErrorBody` ([API-002](../../../docs/api/API-002-error-contract.md)). OpenAPI: [openapi.md](openapi.md).
+Success JSON for health + draft uses `{ data: T }` ([API-001](../../../docs/api/API-001-api-boundaries.md)). Failures use bare `APIErrorBody` ([API-002](../../../docs/api/API-002-error-contract.md)). Auth proxy and session bridges are **excluded from** OpenAPI YAML (redirect / Neon-owned). OpenAPI: [openapi.md](openapi.md).
 
 **Only this set is api-now.** Any Target scaffold that adds handlers must match REST-001 api-now or a new explicit decision.
 

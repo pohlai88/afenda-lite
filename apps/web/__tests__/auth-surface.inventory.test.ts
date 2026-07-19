@@ -158,12 +158,23 @@ describe("PL-S3 Auth Island surface", () => {
 		expect(chrome).toContain("usePathname");
 		expect(chrome).not.toContain("data-phase");
 		expect(chrome).toContain("object-cover");
-		expect(chrome).toContain("object-center");
+		expect(chrome).not.toContain("object-center");
+		expect(chrome).not.toContain("tracking-[0.2em]");
+		expect(chrome).not.toContain("z-10");
 		expect(chrome).toContain('sizes="100vw"');
 		expect(chrome).not.toContain("auth-surface__art-frame");
 		expect(chrome).not.toContain("object-contain");
 		expect(chrome).toContain("AuthSurfaceRoot");
 		expect(surfaceCss).toContain("color-scheme: dark");
+		expect(surfaceCss).toContain("object-position: center center");
+		expect(surfaceCss).toContain(
+			":where(.auth-surface) .auth-surface__brand-art",
+		);
+		expect(surfaceCss).toContain(
+			":where(.auth-surface) .auth-surface__column",
+		);
+		expect(surfaceCss).toContain("letter-spacing: 0.2em");
+		expect(surfaceCss).toContain("z-index: 10");
 		expect(chrome).toContain('alt=""');
 		expect(chrome).toContain('aria-hidden="true"');
 		expect(chrome).not.toContain("object-left");

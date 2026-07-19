@@ -4,11 +4,11 @@
 |-------|-------|
 | ID | REST-001 |
 | Category | REST |
-| Version | 2.0.1 |
+| Version | 2.0.2 |
 | Status | Living |
 | Control State | Closed |
 | Owner | Backend |
-| Updated | 2026-07-14 |
+| Updated | 2026-07-19 |
 
 # 1. Purpose
 
@@ -82,9 +82,13 @@ Errors: [API-002](API-002-error-contract.md) only — never alternate shapes.
 | GET | `/api/health/liveness` | Process up | public | Optional short public CDN cache |
 | GET | `/api/health/readiness` | DB / deps ready | public | Prefer `no-store` (DB-sensitive) |
 | ALL | `/api/auth/[...path]` | Neon Auth proxy | Neon | Neon-owned — do not add portal caching rules |
+| GET | `/api/session/sync-cookies` | Cookie-safe Neon session mint / refresh (RSC cannot write Set-Cookie) | member session (redirect to login if absent) | `private, no-store` — redirect + Set-Cookie; **not** `{ data }` JSON |
+| GET | `/api/session/ensure-active-organization` | Cookie-safe `organization.setActive` persistence before role-home routing | member session (redirect / 403 text if unresolved) | `private, no-store` — redirect or plain-text failure; **not** `{ data }` JSON |
 | GET/PUT/PATCH | `/api/client/declaration-draft` | Draft autosave (POST = keepalive alias) | client session | `private, no-store` |
 
 Draft is a Route Handler because Server Actions are POST-only and Client Component autosave needs GET/PUT/PATCH plus keepalive-style XHR. Prefer **PUT** for full draft replace; **PATCH** only if partial draft fields are supported by schema.
+
+Session completion bridges (`/api/session/*`) exist because Neon Auth cookie mutations are illegal in RSC. They are **api-now** but **excluded from** [OPEN-001](OPEN-001-openapi.md) YAML (same posture as `/api/auth/*`) — redirect / plain-text only, not portal JSON envelopes.
 
 Do not add same-origin “list declarations” GETs under `/api` for the dashboard — use RSC → domain.
 
@@ -259,6 +263,7 @@ Web UI uses `app/actions/fft.ts` on locale-free `/fft/*` (AdminCN). HTTP below i
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 2.0.2 | 2026-07-19 | Bounded reopen: api-now rows for `/api/session/sync-cookies` + `/api/session/ensure-active-organization`; OpenAPI exclude note (redirect bridges). |
 | 2.0.1 | 2026-07-14 | Added mandatory Control State header field (Closed); lifecycle Status unchanged. |
 | 2.0.0 | 2026-07-13 | Breaking: aligned list responses to `{ data: { items, pagination } }`; corrected title and adopted six-section structure |
 | 1.2.1 | 2026-07-13 | Documented target split to REST-002…007 + FFT-REST-001 placeholders |

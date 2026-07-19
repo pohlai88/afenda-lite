@@ -1,6 +1,7 @@
 "use client";
 
 import { JOIN_PATH } from "@afenda/auth/client";
+import { Button, Spinner } from "@afenda/ui-system";
 import {
 	AcceptInvitationCard,
 	AuthLoading,
@@ -46,24 +47,26 @@ function InviteeJoinCredentials({
 				{mode === "sign-up" ? (
 					<>
 						Already have an account?{" "}
-						<button
+						<Button
 							type="button"
-							className="text-foreground underline"
+							variant="link"
+							className="h-auto p-0 text-foreground"
 							onClick={() => setMode("sign-in")}
 						>
 							Sign in
-						</button>
+						</Button>
 					</>
 				) : (
 					<>
 						Need an account for this invitation?{" "}
-						<button
+						<Button
 							type="button"
-							className="text-foreground underline"
+							variant="link"
+							className="h-auto p-0 text-foreground"
 							onClick={() => setMode("sign-up")}
 						>
 							Create account
-						</button>
+						</Button>
 					</>
 				)}
 			</p>
@@ -86,9 +89,12 @@ export function JoinShell() {
 	return (
 		<>
 			<AuthLoading>
-				<p className="text-sm text-foreground-secondary" role="status">
-					Loading invitation…
-				</p>
+				<div
+					className="flex items-center justify-center gap-2 py-4"
+					role="status"
+				>
+					<Spinner size="sm" label="Loading invitation" />
+				</div>
 			</AuthLoading>
 			<SignedIn>
 				<AcceptInvitationCard />

@@ -83,7 +83,7 @@
 	font: inherit;
 }
 
-.stage {
+:where(.the-machine) .stage {
 	position: relative;
 	width: 100vw;
 	height: 100dvh;
@@ -97,12 +97,12 @@
 .art-plane,
 .hero-base,
 .hero-reveal,
-.hero-bloom {
+:where(.the-machine) .hero-bloom {
 	position: absolute;
 	inset: 0;
 }
 
-.art-plane {
+:where(.the-machine) .art-plane {
 	/* Same box as .stage so cover-fit hotspot math matches clip-path + sensor */
 	inset: 0;
 	z-index: 0;
@@ -117,7 +117,7 @@
  * lynx-cinematic DNA base (1.07) / prior Living 1.12 so ken-burns reads clearly.
  * DNA: public/lynx/lynx-cinematic.html (22s · infinite alternate).
  */
-.art-zoom {
+:where(.the-machine) .art-zoom {
 	transform-origin: center center;
 	animation: cinematicZoom var(--cinematic-zoom-duration) linear infinite
 		alternate;
@@ -129,14 +129,14 @@
  * Parallel zoom plane for sensor + geometry — same .art-zoom as .art-plane
  * so the blink stays on the keyhole, while z-index stays above ambient/vignette.
  */
-.sensor-plane {
+:where(.the-machine) .sensor-plane {
 	position: absolute;
 	inset: 0;
 	z-index: 30;
 	pointer-events: none;
 }
 
-.sensor-plane .sensor {
+:where(.the-machine) .sensor-plane .sensor {
 	pointer-events: auto;
 }
 
@@ -151,14 +151,14 @@
 
 .hero-base,
 .hero-reveal,
-.hero-bloom {
+:where(.the-machine) .hero-bloom {
 	background-image: var(--art), var(--fallback);
 	background-repeat: no-repeat, no-repeat;
 	background-position: center, center;
 	background-size: cover, cover;
 }
 
-.hero-base {
+:where(.the-machine) .hero-base {
 	/* Observe: dual-tone plate reads faintly — light ivory / dark nebula split */
 	opacity: 0.98;
 	filter: grayscale(0.55) sepia(0.06) saturate(0.85) brightness(0.32)
@@ -254,7 +254,7 @@
 }
 
 .hero-reveal,
-.hero-bloom {
+:where(.the-machine) .hero-bloom {
 	pointer-events: none;
 	-webkit-clip-path: circle(
 		var(--signal-radius) at var(--signal-x) var(--signal-y)
@@ -270,7 +270,7 @@
 		transform 2500ms var(--ease-luxury);
 }
 
-.hero-reveal {
+:where(.the-machine) .hero-reveal {
 	z-index: 1;
 	opacity: 0.98;
 	/* Reveal restores lynx-guard color science: warm left / cool right */
@@ -278,7 +278,7 @@
 		contrast(1.04);
 }
 
-.hero-bloom {
+:where(.the-machine) .hero-bloom {
 	z-index: 2;
 	mix-blend-mode: screen;
 	opacity: 0.14;
@@ -343,13 +343,13 @@
 .ambient,
 .vignette,
 .grain,
-.constellation {
+:where(.the-machine) .constellation {
 	position: absolute;
 	inset: 0;
 	pointer-events: none;
 }
 
-.ambient {
+:where(.the-machine) .ambient {
 	z-index: 3;
 	background:
 /* Copy field (left) stays readable; nebula (right) stays luminous */
@@ -385,7 +385,7 @@
 	opacity: 0.68;
 }
 
-.vignette {
+:where(.the-machine) .vignette {
 	z-index: 4;
 	background: radial-gradient(
 		ellipse at 58% 48%,
@@ -400,7 +400,7 @@
 	opacity: 0.62;
 }
 
-.constellation {
+:where(.the-machine) .constellation {
 	z-index: 4;
 	opacity: 0.55;
 	background-image:
@@ -439,7 +439,7 @@
 	opacity: 0.85;
 }
 
-.grain {
+:where(.the-machine) .grain {
 	z-index: 5;
 	background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.88' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.8'/%3E%3C/svg%3E");
 	background-size: 180px 180px;
@@ -449,7 +449,7 @@
 
 /* ---------- Brand ---------- */
 
-.brandbar {
+:where(.the-machine) .brandbar {
 	position: absolute;
 	top: max(43px, calc(env(safe-area-inset-top) + 28px));
 	right: max(clamp(38px, 4.4vw, 72px), calc(env(safe-area-inset-right) + 24px));
@@ -462,7 +462,7 @@
 	user-select: none;
 }
 
-.brandbar__end {
+:where(.the-machine) .brandbar__end {
 	display: inline-flex;
 	flex-wrap: wrap;
 	gap: 12px;
@@ -470,7 +470,7 @@
 	justify-content: flex-end;
 }
 
-.brand {
+:where(.the-machine) .brand {
 	display: inline-flex;
 	gap: 13px;
 	align-items: center;
@@ -482,7 +482,7 @@
 	letter-spacing: 0.31em;
 }
 
-.brand__mark {
+:where(.the-machine) .brand__mark {
 	width: 5px;
 	height: 5px;
 	background: var(--champagne);
@@ -490,7 +490,7 @@
 	transform: rotate(45deg);
 }
 
-.brandbar__descriptor {
+:where(.the-machine) .brandbar__descriptor {
 	font-family: var(--machine-font-mono);
 	font-size: 7px;
 	font-weight: 300;
@@ -695,7 +695,7 @@
 
 /* ---------- Editorial typography ---------- */
 
-.copy {
+:where(.the-machine) .copy {
 	position: absolute;
 	top: 50%;
 	left: clamp(42px, 6.7vw, 108px);
@@ -705,7 +705,7 @@
 	transform: translateY(-48%);
 }
 
-.kicker {
+:where(.the-machine) .kicker {
 	display: flex;
 	gap: 12px;
 	align-items: center;
@@ -721,7 +721,7 @@
 	animation: quiet-in 1400ms var(--ease-luxury) 120ms forwards;
 }
 
-.kicker::before {
+:where(.the-machine) .kicker::before {
 	width: 34px;
 	height: 1px;
 	content: "";
@@ -731,7 +731,7 @@
 	animation: rule-in 1500ms var(--ease-luxury) 260ms both;
 }
 
-.kicker__sep {
+:where(.the-machine) .kicker__sep {
 	display: inline-block;
 	width: 4px;
 	height: 4px;
@@ -757,7 +757,7 @@
 	}
 }
 
-.title {
+:where(.the-machine) .title {
 	display: grid;
 	grid-template-columns: min-content minmax(0, 1fr);
 	gap: clamp(0.75rem, 1.25vw, 1.25rem);
@@ -767,7 +767,7 @@
 	margin: 0;
 }
 
-.motto {
+:where(.the-machine) .motto {
 	margin: clamp(1rem, 2vh, 1.45rem) 0 0;
 	font-family: var(--machine-font-display);
 	font-size: clamp(1.15rem, 1.85vw, 1.65rem);
@@ -782,7 +782,7 @@
 	animation: quiet-in 1500ms var(--ease-luxury) 420ms forwards;
 }
 
-.title__article {
+:where(.the-machine) .title__article {
 	display: block;
 	padding-bottom: 0.5em;
 	font-family: var(--machine-font-mono);
@@ -805,7 +805,7 @@
 	}
 }
 
-.title__word {
+:where(.the-machine) .title__word {
 	position: relative;
 	display: inline-block;
 	min-width: 0;
@@ -833,7 +833,7 @@
 }
 
 .title__ink,
-.title__echo {
+:where(.the-machine) .title__echo {
 	display: block;
 	transition:
 		opacity 1500ms var(--ease-luxury),
@@ -842,7 +842,7 @@
 		-webkit-text-stroke 1500ms var(--ease-luxury);
 }
 
-.title__ink {
+:where(.the-machine) .title__ink {
 	position: relative;
 	z-index: 2;
 	color: transparent;
@@ -860,7 +860,7 @@
 	filter: saturate(0.84);
 }
 
-.title__echo {
+:where(.the-machine) .title__echo {
 	position: absolute;
 	inset: 0;
 	z-index: 1;
@@ -899,7 +899,7 @@
 	transform: translate(0, 0);
 }
 
-.sequence {
+:where(.the-machine) .sequence {
 	position: relative;
 	display: grid;
 	grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -913,7 +913,7 @@
 	animation: quiet-in 1500ms var(--ease-luxury) 520ms forwards;
 }
 
-.sequence::before {
+:where(.the-machine) .sequence::before {
 	position: absolute;
 	top: 0;
 	right: 0;
@@ -923,7 +923,7 @@
 	background: rgba(242, 238, 229, 0.105);
 }
 
-.sequence__item {
+:where(.the-machine) .sequence__item {
 	position: relative;
 	display: grid;
 	grid-template-columns: auto 1fr;
@@ -933,7 +933,7 @@
 	padding-top: 0.92rem;
 }
 
-.sequence__item::before {
+:where(.the-machine) .sequence__item::before {
 	position: absolute;
 	top: 0;
 	left: 0;
@@ -953,7 +953,7 @@
 		transform 1200ms var(--ease-luxury);
 }
 
-.sequence__index {
+:where(.the-machine) .sequence__index {
 	font-family: var(--machine-font-mono);
 	font-size: 7px;
 	font-weight: 300;
@@ -962,7 +962,7 @@
 	transition: color 900ms var(--ease-soft);
 }
 
-.sequence__verb {
+:where(.the-machine) .sequence__verb {
 	min-width: 0;
 	font-family: var(--machine-font-display);
 	font-size: clamp(1.65rem, 2.55vw, 2.55rem);
@@ -978,7 +978,7 @@
 		letter-spacing 1100ms var(--ease-luxury);
 }
 
-.sequence__period {
+:where(.the-machine) .sequence__period {
 	color: rgba(194, 173, 125, 0.45);
 	transition: color 900ms var(--ease-luxury);
 }
@@ -1024,7 +1024,7 @@
 	color: var(--champagne-pale);
 }
 
-.support {
+:where(.the-machine) .support {
 	display: grid;
 	grid-template-columns: 34px minmax(0, 1fr);
 	gap: 13px;
@@ -1043,7 +1043,7 @@
 	animation: quiet-in 1500ms var(--ease-luxury) 700ms forwards;
 }
 
-.support::before {
+:where(.the-machine) .support::before {
 	width: 34px;
 	height: 1px;
 	margin-top: 0.78em;
@@ -1051,7 +1051,7 @@
 	background: rgba(194, 173, 125, 0.36);
 }
 
-.support strong {
+:where(.the-machine) .support strong {
 	font-weight: 400;
 	color: rgba(242, 238, 229, 0.73);
 }
@@ -1062,7 +1062,7 @@
 
 /* ---------- Lynx sensor ---------- */
 
-.sensor {
+:where(.the-machine) .sensor {
 	position: absolute;
 	top: var(--signal-y);
 	left: var(--signal-x);
@@ -1080,7 +1080,7 @@
 }
 
 .sensor::before,
-.sensor::after {
+:where(.the-machine) .sensor::after {
 	position: absolute;
 	top: 50%;
 	left: 50%;
@@ -1096,7 +1096,7 @@
 		background 700ms var(--ease-soft);
 }
 
-.sensor::before {
+:where(.the-machine) .sensor::before {
 	width: calc(58px + var(--charge) * 38px);
 	height: calc(58px + var(--charge) * 38px);
 	border: 1px solid rgba(194, 173, 125, calc(0.13 + var(--charge) * 0.38));
@@ -1106,7 +1106,7 @@
 		inset 0 0 25px rgba(242, 238, 229, calc(0.013 + var(--charge) * 0.027));
 }
 
-.sensor::after {
+:where(.the-machine) .sensor::after {
 	width: 4px;
 	height: 4px;
 	background: rgba(213, 196, 157, calc(0.34 + var(--charge) * 0.5));
@@ -1133,16 +1133,16 @@
 	animation: response-core 2.2s var(--ease-soft) infinite;
 }
 
-.sensor:focus {
+:where(.the-machine) .sensor:focus {
 	outline: none;
 }
 
-.sensor:focus-visible {
+:where(.the-machine) .sensor:focus-visible {
 	outline: 1px solid rgba(213, 196, 157, 0.84);
 	outline-offset: 7px;
 }
 
-.sensor__label {
+:where(.the-machine) .sensor__label {
 	position: absolute;
 	top: calc(50% + 53px);
 	left: 50%;
@@ -1164,7 +1164,7 @@
 		opacity 700ms var(--ease-soft);
 }
 
-.sensor__label::before {
+:where(.the-machine) .sensor__label::before {
 	width: 16px;
 	height: 1px;
 	content: "";
@@ -1184,7 +1184,7 @@
 }
 
 /* Sacred geometry — lynx-guard celestial map locked to keyhole hotspot */
-.geometry {
+:where(.the-machine) .geometry {
 	position: absolute;
 	top: var(--signal-y);
 	left: var(--signal-x);
@@ -1223,7 +1223,7 @@
 }
 
 .geometry::before,
-.geometry::after {
+:where(.the-machine) .geometry::after {
 	position: absolute;
 	inset: 0;
 	content: "";
@@ -1231,7 +1231,7 @@
 	border-radius: 50%;
 }
 
-.geometry::before {
+:where(.the-machine) .geometry::before {
 	/* Split rings — light / dark hemisphere of the dual lynx */
 	border-color: rgba(213, 196, 157, 0.32);
 	clip-path: polygon(
@@ -1247,7 +1247,7 @@
 	box-shadow: 0 0 24px rgba(194, 173, 125, 0.08);
 }
 
-.geometry::after {
+:where(.the-machine) .geometry::after {
 	inset: 16%;
 	border-color: rgba(91, 140, 255, 0.22);
 	clip-path: polygon(
@@ -1276,7 +1276,7 @@
 
 /* ---------- Footer ---------- */
 
-.shield-line {
+:where(.the-machine) .shield-line {
 	position: absolute;
 	bottom: max(42px, calc(env(safe-area-inset-bottom) + 28px));
 	left: max(clamp(38px, 4.4vw, 72px), calc(env(safe-area-inset-left) + 24px));
@@ -1296,7 +1296,7 @@
 	animation: quiet-in 1600ms var(--ease-luxury) 700ms forwards;
 }
 
-.shield-line__mark {
+:where(.the-machine) .shield-line__mark {
 	width: 11px;
 	height: 13px;
 	background: linear-gradient(
@@ -1308,7 +1308,7 @@
 	box-shadow: 0 0 14px rgba(194, 173, 125, 0.2);
 }
 
-.scope {
+:where(.the-machine) .scope {
 	position: absolute;
 	right: max(clamp(38px, 4.4vw, 72px), calc(env(safe-area-inset-right) + 24px));
 	bottom: max(42px, calc(env(safe-area-inset-bottom) + 28px));
@@ -1325,13 +1325,13 @@
 	user-select: none;
 }
 
-.scope span:not(:last-child)::after {
+:where(.the-machine) .scope span:not(:last-child)::after {
 	margin-left: 12px;
 	color: rgba(194, 173, 125, 0.42);
 	content: "·";
 }
 
-.visually-hidden {
+:where(.the-machine) .visually-hidden {
 	position: absolute !important;
 	width: 1px !important;
 	height: 1px !important;
@@ -1346,36 +1346,36 @@
 /* ---------- Responsive ---------- */
 
 @media (max-width: 1040px) {
-	.brandbar {
+	:where(.the-machine) .brandbar {
 		top: max(34px, calc(env(safe-area-inset-top) + 22px));
 		right: max(28px, calc(env(safe-area-inset-right) + 18px));
 		left: max(28px, calc(env(safe-area-inset-left) + 18px));
 	}
 
-	.brandbar__descriptor {
+	:where(.the-machine) .brandbar__descriptor {
 		display: none;
 	}
 
-	.copy {
+	:where(.the-machine) .copy {
 		top: 45%;
 		left: max(28px, calc(env(safe-area-inset-left) + 18px));
 		width: min(86vw, 42rem);
 		transform: translateY(-50%);
 	}
 
-	.title__word {
+	:where(.the-machine) .title__word {
 		font-size: clamp(4.8rem, 15.5vw, 8.4rem);
 	}
 
-	.sequence {
+	:where(.the-machine) .sequence {
 		width: min(36rem, 100%);
 	}
 
-	.sequence__verb {
+	:where(.the-machine) .sequence__verb {
 		font-size: clamp(1.5rem, 5.4vw, 2.35rem);
 	}
 
-	.ambient {
+	:where(.the-machine) .ambient {
 		background:
 			linear-gradient(
 				180deg,
@@ -1397,13 +1397,13 @@
 			);
 	}
 
-	.shield-line {
+	:where(.the-machine) .shield-line {
 		bottom: max(48px, calc(env(safe-area-inset-bottom) + 36px));
 		left: max(28px, calc(env(safe-area-inset-left) + 18px));
 		font-size: 0.82rem;
 	}
 
-	.scope {
+	:where(.the-machine) .scope {
 		right: auto;
 		bottom: max(25px, calc(env(safe-area-inset-bottom) + 14px));
 		left: max(28px, calc(env(safe-area-inset-left) + 18px));
@@ -1413,28 +1413,28 @@
 		letter-spacing: 0.15em;
 	}
 
-	.scope span:not(:last-child)::after {
+	:where(.the-machine) .scope span:not(:last-child)::after {
 		margin-left: 8px;
 	}
 }
 
 @media (max-width: 640px) {
-	.copy {
+	:where(.the-machine) .copy {
 		top: 41.5%;
 		width: calc(100vw - 56px);
 	}
 
-	.kicker {
+	:where(.the-machine) .kicker {
 		margin-bottom: 1.2rem;
 		font-size: 7px;
 	}
 
-	.title {
+	:where(.the-machine) .title {
 		display: block;
 		width: 100%;
 	}
 
-	.title__article {
+	:where(.the-machine) .title__article {
 		padding: 0;
 		margin: 0 0 0.55rem 0.1em;
 		writing-mode: horizontal-tb;
@@ -1442,7 +1442,7 @@
 		animation-name: quiet-in;
 	}
 
-	.title__word {
+	:where(.the-machine) .title__word {
 		font-size: clamp(4.2rem, 20.8vw, 6.7rem);
 		letter-spacing: -0.073em;
 	}
@@ -1452,26 +1452,26 @@
 		letter-spacing: -0.064em;
 	}
 
-	.sequence {
+	:where(.the-machine) .sequence {
 		gap: 0.65rem;
 		margin-top: 1.45rem;
 	}
 
-	.sequence__item {
+	:where(.the-machine) .sequence__item {
 		grid-template-columns: 1fr;
 		row-gap: 0.42rem;
 		padding-top: 0.72rem;
 	}
 
-	.sequence__index {
+	:where(.the-machine) .sequence__index {
 		font-size: 6px;
 	}
 
-	.sequence__verb {
+	:where(.the-machine) .sequence__verb {
 		font-size: clamp(1.25rem, 6vw, 1.75rem);
 	}
 
-	.support {
+	:where(.the-machine) .support {
 		grid-template-columns: 24px minmax(0, 1fr);
 		gap: 10px;
 		max-width: 20rem;
@@ -1480,52 +1480,52 @@
 		line-height: 1.68;
 	}
 
-	.support::before {
+	:where(.the-machine) .support::before {
 		width: 24px;
 	}
 
-	.scope span:nth-child(n + 3) {
+	:where(.the-machine) .scope span:nth-child(n + 3) {
 		display: none;
 	}
 }
 
 @media (max-height: 680px) and (orientation: landscape) {
-	.brandbar {
+	:where(.the-machine) .brandbar {
 		top: 30px;
 	}
 
-	.copy {
+	:where(.the-machine) .copy {
 		top: 52%;
 	}
 
-	.kicker {
+	:where(.the-machine) .kicker {
 		margin-bottom: 0.9rem;
 	}
 
-	.title__word {
+	:where(.the-machine) .title__word {
 		font-size: clamp(4.1rem, 10.5vw, 7rem);
 	}
 
-	.sequence {
+	:where(.the-machine) .sequence {
 		margin-top: 1.15rem;
 	}
 
-	.support {
+	:where(.the-machine) .support {
 		margin-top: 1.1rem;
 	}
 
-	.scope {
+	:where(.the-machine) .scope {
 		bottom: 25px;
 	}
 }
 
 @media (hover: none), (pointer: coarse) {
-	.sensor {
+	:where(.the-machine) .sensor {
 		width: 204px;
 		height: 218px;
 	}
 
-	.sensor__label {
+	:where(.the-machine) .sensor__label {
 		color: rgba(213, 196, 157, 0.69);
 		opacity: 1;
 	}

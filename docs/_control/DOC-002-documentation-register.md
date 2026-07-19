@@ -4,12 +4,11 @@
 | ----------------- | ---------- |
 | **ID**            | DOC-002    |
 | **Category**      | Control    |
-| **Version**       | 4.158.0 |
+| **Version**       | 4.159.0 |
 | **Status**        | Living     |
 | **Control State** | Closed     |
 | **Owner**         | Platform   |
-| **Updated**       | 2026-07-18 |
-
+| **Updated**       | 2026-07-19 |
 
 ---
 
@@ -72,20 +71,20 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 | ID           | Category     | Title                                      | Version | Status | Owner    | Updated    |
 | ------------ | ------------ | ------------------------------------------ | ------- | ------ | -------- | ---------- |
 | DOC-001      | Control      | Documentation Control Standard             | 2.7.0   | Living | Platform | 2026-07-14 |
-| DOC-002      | Control      | Documentation Register                     | 4.158.0 | Living | Platform | 2026-07-18 |
+| DOC-002      | Control      | Documentation Register                     | 4.159.0 | Living | Platform | 2026-07-19 |
 | DOC-003      | Control      | Controlled Document Template               | 1.4.0   | Living | Platform | 2026-07-14 |
 | ARCH-029     | Architecture | Interface and API Architecture             | 1.2.7   | Living | Platform | 2026-07-14 |
 | ARCH-031     | Architecture | Technology Stack Catalogue                 | 1.4.0   | Living | Platform | 2026-07-17 |
 | API-001      | API          | API Boundaries                             | 1.2.3   | Living | Backend  | 2026-07-14 |
 | API-002      | API          | Error Contract                             | 1.2.2   | Living | Backend  | 2026-07-14 |
 | API-003      | API          | API Types                                  | 2.0.1   | Living | Backend  | 2026-07-14 |
-| API-004      | API          | Schema Map                                 | 1.1.6   | Living | Backend  | 2026-07-15 |
+| API-004      | API          | Schema Map                                 | 1.1.7   | Living | Backend  | 2026-07-19 |
 | API-005      | API          | Authentication and Authorization Contract  | 0.1.1   | Draft  | Platform | 2026-07-14 |
 | API-006      | API          | Idempotency and Concurrency Contract       | 0.1.1   | Draft  | Backend  | 2026-07-14 |
 | API-007      | API          | API Observability and Correlation Contract | 1.0.0   | Living | Backend  | 2026-07-17 |
 | API-008      | API          | Collection Query Contract                  | 0.1.2   | Draft  | Backend  | 2026-07-14 |
 | API-009      | API          | Compatibility and Deprecation Contract     | 0.1.1   | Draft  | Backend  | 2026-07-14 |
-| REST-001     | REST         | REST Resources                             | 2.0.1   | Living | Backend  | 2026-07-14 |
+| REST-001     | REST         | REST Resources                             | 2.0.2   | Living | Backend  | 2026-07-19 |
 | REST-002     | REST         | Identity and Organization Resources        | 0.1.1   | Draft  | Platform | 2026-07-14 |
 | REST-003     | REST         | Client Resources                           | 0.1.1   | Draft  | Backend  | 2026-07-14 |
 | REST-004     | REST         | Declaration Resources                      | 0.1.1   | Draft  | Backend  | 2026-07-14 |
@@ -93,7 +92,7 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 | REST-006     | REST         | Public Survey and Secure-Link Resources    | 0.1.1   | Draft  | Backend  | 2026-07-14 |
 | REST-007     | REST         | Account Resources                          | 0.1.1   | Draft  | Platform | 2026-07-14 |
 | FFT-REST-001 | REST         | Feed Farm Trade Resource Index             | 0.1.1   | Draft  | Backend  | 2026-07-14 |
-| OPEN-001     | OPEN         | OpenAPI                                    | 1.1.8   | Living | Backend  | 2026-07-15 |
+| OPEN-001     | OPEN         | OpenAPI                                    | 1.1.9   | Living | Backend  | 2026-07-19 |
 | GUIDE-007    | Guide        | Implementing a Server Action               | 0.1.1   | Draft  | Backend  | 2026-07-14 |
 | GUIDE-008    | Guide        | Implementing a Route Handler               | 0.1.1   | Draft  | Backend  | 2026-07-14 |
 | GUIDE-009    | Guide        | Adding a REST Resource                     | 0.1.1   | Draft  | Backend  | 2026-07-14 |
@@ -172,6 +171,7 @@ Agents may propose a candidate ID, but shall not invent, reuse, or commit an ID 
 
 | Version | Date       | Summary                                                                                                                                         |
 | ------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| 4.159.0 | 2026-07-19 | API contract best-practice: REST-001→2.0.2 (session api-now) · OPEN-001→1.1.9 (session YAML exclude) · API-004→1.1.7 (`signInSchema` Target); DOC-002 self-row synced. |
 | 4.158.0 | 2026-07-18 | ARCH-026→2.1.0 honesty repair: Auth presentation = Neon Path A (SDK + own UI) or Path B (Auth UI); remove misleading Auth-UI-only lock; DOC-002 self-row synced. |
 | 4.157.0 | 2026-07-18 | ARCH-012→1.2.9 §3.12 proxy matcher honesty (`/admin/*` · Pre-Login API bypass · document-nav vs API-002); DOC-002 self-row synced. |
 | 4.156.0 | 2026-07-17 | GUIDE-018→1.0.13 **I6.3 DONE** (Deploy · Vercel READY · Neon Auth domains) · GUIDE-017→1.0.2 (deploy-health blocker cleared; claim stays **NOT READY**); Phase I6 **DONE**; next Ops = **I7.1**; DOC-002 self-row synced. |

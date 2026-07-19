@@ -61,7 +61,7 @@ export function AuthSurfaceChrome({ children }: AuthSurfaceChromeProps) {
 						fill
 						priority
 						sizes="100vw"
-						className="auth-surface__brand-art auth-surface__brand-art--ice object-cover object-center"
+						className="auth-surface__brand-art auth-surface__brand-art--ice object-cover"
 					/>
 					<Image
 						src={AUTH_ISLAND_BRAND_ART_FIRE}
@@ -69,7 +69,7 @@ export function AuthSurfaceChrome({ children }: AuthSurfaceChromeProps) {
 						fill
 						priority
 						sizes="100vw"
-						className="auth-surface__brand-art auth-surface__brand-art--fire object-cover object-center"
+						className="auth-surface__brand-art auth-surface__brand-art--fire object-cover"
 					/>
 				</div>
 				<div className="auth-surface__radiant auth-surface__radiant--ice pointer-events-none absolute inset-0" />
@@ -100,7 +100,7 @@ export function AuthSurfaceChrome({ children }: AuthSurfaceChromeProps) {
 				</div>
 			</div>
 
-			<div className="auth-surface__column relative z-10 flex min-h-0 flex-col justify-center p-6 lg:p-(--section-gap)">
+			<div className="auth-surface__column relative flex min-h-0 flex-col justify-center p-6 lg:p-(--section-gap)">
 				<div className="auth-surface__panel flex w-full flex-col gap-6">
 					<div
 						className="auth-surface__panel-frost pointer-events-none"
@@ -114,7 +114,7 @@ export function AuthSurfaceChrome({ children }: AuthSurfaceChromeProps) {
 						className="auth-surface__panel-heat pointer-events-none"
 						aria-hidden="true"
 					/>
-					<p className="auth-surface__brand relative z-[1] text-center text-sm font-semibold tracking-[0.2em] uppercase">
+					<p className="auth-surface__brand relative z-[1] text-center text-sm font-semibold uppercase">
 						Afenda-Lite
 					</p>
 					<div className="auth-surface__panel-body relative z-[1] flex flex-col gap-6">

@@ -76,11 +76,11 @@
 .auth-surface--paused .auth-surface__ember-field,
 .auth-surface--paused .auth-surface__snow,
 .auth-surface--paused .auth-surface__steam,
-.auth-surface--paused .auth-surface__panel-heat {
+:where(.auth-surface.auth-surface--paused) .auth-surface__panel-heat {
 	animation-play-state: paused;
 }
 
-.auth-surface__backdrop {
+:where(.auth-surface) .auth-surface__backdrop {
 	z-index: 0;
 	overflow: hidden;
 	background: var(--canvas);
@@ -91,7 +91,7 @@
  * Linear (not ease-in-out): landing proven; ease-in-out stalls and reads static
  * at prior 1.04→1.08 / 32s amplitude. Stronger than Machine landing 1.12 DNA.
  */
-.auth-surface__art-plane {
+:where(.auth-surface) .auth-surface__art-plane {
 	z-index: 0;
 	transform-origin: center center;
 	animation: auth-surface-art-drift var(--auth-ken-zoom-duration) linear
@@ -100,12 +100,12 @@
 	backface-visibility: hidden;
 }
 
-.auth-surface__brand-art {
+:where(.auth-surface) .auth-surface__brand-art {
 	object-position: center center;
 	user-select: none;
 }
 
-.auth-surface__brand-art--ice {
+:where(.auth-surface) .auth-surface__brand-art--ice {
 	z-index: 0;
 	opacity: 1;
 }
@@ -114,7 +114,7 @@
  * Fire reveal — regional mask from shield/keyhole (login-command).
  * Not a flat full-frame opacity crossfade.
  */
-.auth-surface__brand-art--fire {
+:where(.auth-surface) .auth-surface__brand-art--fire {
 	z-index: 1;
 	opacity: 1;
 	-webkit-mask-image: radial-gradient(
@@ -136,12 +136,12 @@
 /*
  * Radiant energy — ice/fire blooms track lynx morph only (not panel thaw).
  */
-.auth-surface__radiant {
+:where(.auth-surface) .auth-surface__radiant {
 	mix-blend-mode: screen;
 	z-index: 2;
 }
 
-.auth-surface__radiant--ice {
+:where(.auth-surface) .auth-surface__radiant--ice {
 	opacity: calc((1 - var(--auth-lynx-fire)) * 0.85);
 	background:
 		radial-gradient(
@@ -169,7 +169,7 @@
 		);
 }
 
-.auth-surface__radiant--fire {
+:where(.auth-surface) .auth-surface__radiant--fire {
 	opacity: calc(var(--auth-lynx-fire) * 0.95);
 	background:
 		radial-gradient(
@@ -198,7 +198,7 @@
 }
 
 /* Ambient wash follows lynx element (warm only when fire lynx is present). */
-.auth-surface__atmosphere {
+:where(.auth-surface) .auth-surface__atmosphere {
 	z-index: 3;
 	background:
 		radial-gradient(
@@ -235,7 +235,7 @@
  * Runtime (bead-debug): tiles/DOM/anim OK; peaks washed out —
  * embersOpacity≈0.29 (var 0.55×0.52) + screen/soft-light → invisible.
  */
-.auth-surface__steam {
+:where(.auth-surface) .auth-surface__steam {
 	z-index: 4;
 	opacity: calc(var(--auth-steam) * 0.55);
 	mix-blend-mode: soft-light;
@@ -267,7 +267,7 @@
 	transform: translate3d(0, 0, 0);
 }
 
-.auth-surface__embers {
+:where(.auth-surface) .auth-surface__embers {
 	z-index: 4;
 	opacity: calc(var(--auth-embers) * 0.9);
 	mix-blend-mode: normal;
@@ -286,7 +286,7 @@
 }
 
 /* Fire beads: mono --warning only; core ≤1.25px, hard cut by 2.5px. */
-.auth-surface__ember-field {
+:where(.auth-surface) .auth-surface__ember-field {
 	position: absolute;
 	inset: 0 -8% -20%;
 	height: 130%;
@@ -325,12 +325,12 @@
 	background-repeat: repeat;
 }
 
-.auth-surface__ember-field--a {
+:where(.auth-surface) .auth-surface__ember-field--a {
 	animation: auth-surface-ember-rise 11s linear infinite;
 	opacity: 0.9;
 }
 
-.auth-surface__ember-field--b {
+:where(.auth-surface) .auth-surface__ember-field--b {
 	animation: auth-surface-ember-rise 16s linear infinite;
 	animation-delay: -4s;
 	opacity: 0.65;
@@ -342,7 +342,7 @@
 		55px 80px;
 }
 
-.auth-surface__weather {
+:where(.auth-surface) .auth-surface__weather {
 	z-index: 4;
 	opacity: calc(var(--auth-snow) * 0.9);
 	mix-blend-mode: normal;
@@ -360,7 +360,7 @@
 }
 
 /* Snow beads: cool only; core ≤1.25px, hard cut by 2.5px. */
-.auth-surface__snow {
+:where(.auth-surface) .auth-surface__snow {
 	position: absolute;
 	inset: -40% 0 0 0;
 	height: 150%;
@@ -399,12 +399,12 @@
 	background-repeat: repeat;
 }
 
-.auth-surface__snow--a {
+:where(.auth-surface) .auth-surface__snow--a {
 	animation: auth-surface-snow-fall 14s linear infinite;
 	opacity: 0.85;
 }
 
-.auth-surface__snow--b {
+:where(.auth-surface) .auth-surface__snow--b {
 	animation: auth-surface-snow-fall-mirror 19s linear infinite;
 	animation-delay: -5s;
 	opacity: 0.6;
@@ -417,7 +417,7 @@
 }
 
 /* Soft vignette above FX — edges darker, Lynx face stays clear. */
-.auth-surface__veil {
+:where(.auth-surface) .auth-surface__veil {
 	z-index: 5;
 	background: linear-gradient(
 		to bottom,
@@ -427,7 +427,7 @@
 	);
 }
 
-.auth-surface__stage {
+:where(.auth-surface) .auth-surface__stage {
 	z-index: 1;
 }
 
@@ -435,7 +435,7 @@
  * Bottom-left identity copy — calm across ice↔fire; clear of lynx face.
  * Undertone tracks --auth-* cycle via --auth-accent (CSS tokens only; no orange ink).
  */
-.auth-surface__identity {
+:where(.auth-surface) .auth-surface__identity {
 	position: absolute;
 	z-index: 6;
 	left: clamp(1rem, 3.5vw, 2.25rem);
@@ -456,7 +456,7 @@
 		color-mix(in oklab, var(--background) 62%, transparent);
 }
 
-.auth-surface__identity-eyebrow {
+:where(.auth-surface) .auth-surface__identity-eyebrow {
 	margin: 0;
 	font-size: 0.6875rem;
 	font-weight: 600;
@@ -465,7 +465,7 @@
 	color: var(--auth-identity-muted);
 }
 
-.auth-surface__identity-tagline {
+:where(.auth-surface) .auth-surface__identity-tagline {
 	margin: 0.4rem 0 0;
 	font-size: 0.9375rem;
 	font-weight: 500;
@@ -474,7 +474,7 @@
 	color: var(--auth-identity-ink);
 }
 
-.auth-surface__identity-support {
+:where(.auth-surface) .auth-surface__identity-support {
 	margin: 0.55rem 0 0;
 	font-size: 0.75rem;
 	font-weight: 400;
@@ -483,12 +483,12 @@
 	color: var(--auth-identity-muted);
 }
 
-.auth-surface__column {
+:where(.auth-surface) .auth-surface__column {
 	z-index: 10;
 	background: transparent;
 }
 
-.auth-surface__panel {
+:where(.auth-surface) .auth-surface__panel {
 	position: relative;
 	overflow: hidden;
 	border: 1px solid
@@ -532,7 +532,7 @@
 }
 
 /* Top signal bar — accent follows panel beat. */
-.auth-surface__panel::before {
+:where(.auth-surface) .auth-surface__panel::before {
 	content: "";
 	position: absolute;
 	inset: 0 0 auto 0;
@@ -554,7 +554,7 @@
  * Frost glass — corner creep from edges inward as --auth-panel-ice rises;
  * dissolves (corners retreat) during thaw.
  */
-.auth-surface__panel-frost {
+:where(.auth-surface) .auth-surface__panel-frost {
 	position: absolute;
 	inset: 0;
 	z-index: 0;
@@ -634,7 +634,7 @@
 }
 
 /* Ember bloom — ignites after thaw, fades as frost returns. */
-.auth-surface__panel-ember {
+:where(.auth-surface) .auth-surface__panel-ember {
 	position: absolute;
 	inset: -8% -6%;
 	z-index: 0;
@@ -662,7 +662,7 @@
 }
 
 /* Heat shimmer bands — fire panel only (vision heat distortion). */
-.auth-surface__panel-heat {
+:where(.auth-surface) .auth-surface__panel-heat {
 	position: absolute;
 	inset: 0;
 	z-index: 0;
@@ -680,7 +680,7 @@
 	pointer-events: none;
 }
 
-.auth-surface__brand {
+:where(.auth-surface) .auth-surface__brand {
 	color: var(--foreground);
 	letter-spacing: 0.2em;
 }
@@ -869,11 +869,11 @@
 }
 
 @media (min-width: 1024px) {
-	.auth-surface__brand-art {
+	:where(.auth-surface) .auth-surface__brand-art {
 		object-position: 42% 46%;
 	}
 
-	.auth-surface__radiant--ice {
+	:where(.auth-surface) .auth-surface__radiant--ice {
 		background:
 			radial-gradient(
 				circle 16% at 34% 40%,
@@ -910,7 +910,7 @@
 			);
 	}
 
-	.auth-surface__radiant--fire {
+	:where(.auth-surface) .auth-surface__radiant--fire {
 		background:
 			radial-gradient(
 				circle 16% at 34% 40%,
@@ -947,7 +947,7 @@
 			);
 	}
 
-	.auth-surface__atmosphere {
+	:where(.auth-surface) .auth-surface__atmosphere {
 		background:
 			radial-gradient(
 				ellipse 48% 55% at 36% 46%,
@@ -978,7 +978,7 @@
 			);
 	}
 
-	.auth-surface__veil {
+	:where(.auth-surface) .auth-surface__veil {
 		background: linear-gradient(
 			to right,
 			transparent 0%,
@@ -995,11 +995,11 @@
  */
 @media (max-width: 767.98px) {
 	.auth-surface__ember-field--b,
-	.auth-surface__snow--b {
+	:where(.auth-surface) .auth-surface__snow--b {
 		display: none;
 	}
 
-	.auth-surface__ember-field--a {
+	:where(.auth-surface) .auth-surface__ember-field--a {
 		opacity: 0.45;
 		background-size:
 			220px 260px,
@@ -1009,7 +1009,7 @@
 			250px 300px;
 	}
 
-	.auth-surface__snow--a {
+	:where(.auth-surface) .auth-surface__snow--a {
 		opacity: 0.42;
 		background-size:
 			200px 240px,
@@ -1019,12 +1019,12 @@
 			230px 280px;
 	}
 
-	.auth-surface__steam {
+	:where(.auth-surface) .auth-surface__steam {
 		opacity: calc(var(--auth-steam) * 0.28);
 		filter: blur(16px);
 	}
 
-	.auth-surface__panel-heat {
+	:where(.auth-surface) .auth-surface__panel-heat {
 		display: none;
 	}
 }
@@ -1041,34 +1041,34 @@
 		--auth-embers: 0;
 	}
 
-	.auth-surface__art-plane {
+	:where(.auth-surface) .auth-surface__art-plane {
 		animation: none;
 		transform: none;
 	}
 
-	.auth-surface__radiant--ice {
+	:where(.auth-surface) .auth-surface__radiant--ice {
 		opacity: calc(0.55 + (1 - var(--auth-lynx-fire)) * 0.3);
 	}
 
-	.auth-surface__radiant--fire {
+	:where(.auth-surface) .auth-surface__radiant--fire {
 		opacity: calc(var(--auth-lynx-fire) * 0.65);
 	}
 
 	.auth-surface__snow,
 	.auth-surface__ember-field,
 	.auth-surface__steam,
-	.auth-surface__panel-heat {
+	:where(.auth-surface) .auth-surface__panel-heat {
 		animation: none;
 	}
 
 	.auth-surface__weather,
 	.auth-surface__steam,
 	.auth-surface__embers,
-	.auth-surface__panel-heat {
+	:where(.auth-surface) .auth-surface__panel-heat {
 		opacity: 0;
 	}
 
-	.auth-surface__panel {
+	:where(.auth-surface) .auth-surface__panel {
 		animation: none;
 		backdrop-filter: none;
 		-webkit-backdrop-filter: none;

@@ -9,7 +9,7 @@ import {
 	CardDescription,
 	CardHeader,
 	CardTitle,
-	MetricCard,
+	MetricGrid,
 } from "@afenda/ui-system";
 import {
 	AlertTriangleIcon,
@@ -124,30 +124,32 @@ export async function DeclarationsShell() {
 				</p>
 			</header>
 
-			<section
-				aria-label="Declarations summary"
-				className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
-			>
-				<MetricCard
-					title="Assignments"
-					value={assignments.length}
-					description="Surveys assigned to your email"
-					icon={<ClipboardListIcon className="h-4 w-4" />}
-					trend="neutral"
-				/>
-				<MetricCard
-					title="Open"
-					value={openCount}
-					description="Assignments with a future due date"
-					icon={<CircleCheckIcon className="h-4 w-4" />}
-					trend="neutral"
-				/>
-				<MetricCard
-					title="Past due"
-					value={pastDueCount}
-					description="Assignments past their due date"
-					icon={<AlertTriangleIcon className="h-4 w-4" />}
-					trend="neutral"
+			<section aria-label="Declarations summary">
+				<MetricGrid
+					columns={3}
+					metrics={[
+						{
+							title: "Assignments",
+							value: assignments.length,
+							description: "Surveys assigned to your email",
+							icon: <ClipboardListIcon className="h-4 w-4" aria-hidden />,
+							trend: "neutral",
+						},
+						{
+							title: "Open",
+							value: openCount,
+							description: "Assignments with a future due date",
+							icon: <CircleCheckIcon className="h-4 w-4" aria-hidden />,
+							trend: "neutral",
+						},
+						{
+							title: "Past due",
+							value: pastDueCount,
+							description: "Assignments past their due date",
+							icon: <AlertTriangleIcon className="h-4 w-4" aria-hidden />,
+							trend: "neutral",
+						},
+					]}
 				/>
 			</section>
 

@@ -4,11 +4,11 @@
 |-------|-------|
 | ID | API-004 |
 | Category | API |
-| Version | 1.1.6 |
+| Version | 1.1.7 |
 | Status | Living |
 | Control State | Closed |
 | Owner | Backend |
-| Updated | 2026-07-15 |
+| Updated | 2026-07-19 |
 
 # 1. Purpose
 
@@ -30,7 +30,7 @@ Relocate from `lib/schemas/` is **complete** — do not recreate that drawer.
 | `modules/platform/schemas/health.ts` | Health probe responses | `livenessResponseSchema`, `readinessResponseSchema` — **Target on disk** (I2.4) |
 | `modules/platform/schemas/openapi-zod.ts` | Zod→OpenAPI shared extend | `z` singleton for OPEN-001 generation — **Target on disk** (I2.4) |
 | `modules/identity/schemas/invite-org-member.ts` | Org-member invite command | `inviteOrgMemberCommandSchema`, `parseInviteOrgMemberCommand` — **Target on disk** (I2.1) |
-| `modules/identity/schemas/auth.ts` | Sign-in boundary | `signInSchema` — Living inventory (not yet on Target) |
+| `modules/identity/schemas/auth.ts` | Sign-in boundary | `signInSchema` — **Target on disk** (API contract best-practice slice) |
 | `modules/identity/schemas/users.ts` | Org-admin users | `userIdSchema`, create/update/role/ban/bulk/password schemas — Living inventory |
 | `modules/identity/schemas/platform-rbac.ts` | Platform RBAC | `OrganizationId`, `PlatformRoleId`, `PermissionCode`, assign schemas — Living inventory |
 | `modules/declarations/schemas/common.ts` | Re-exports platform + declarations-only | `surveyAnswersSchema` (+ Platform re-exports) — **Target on disk** (I2.4) |
@@ -47,7 +47,8 @@ Relocate from `lib/schemas/` is **complete** — do not recreate that drawer.
 | Resource | Create / write schema | Read params |
 |----------|----------------------|-------------|
 | Health | — | `livenessResponseSchema` / `readinessResponseSchema` |
-| Auth (Neon) | Neon-owned | — |
+| Auth (Neon BFF) | Neon-owned | — |
+| Auth credentials (Path A Action) | `signInSchema` (**Target on disk**) | — |
 | Declaration draft (api-now) | `saveClientDeclarationDraftSchema` (**Target on disk**, I2.4) | `declarationDraftQuerySchema` (**Target on disk**, I2.4) |
 | Clients / invitations | `issueClientInviteSchema`, delete schemas | `uuidSchema` |
 | Org-member invite (Neon Auth) | `inviteOrgMemberCommandSchema` (**Target on disk**, I2.1) | — |
@@ -90,6 +91,7 @@ if (!parsed.success) {
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.1.7 | 2026-07-19 | Bounded reopen: `modules/identity/schemas/auth.ts` (`signInSchema`) marked Target on disk for Path A credential Action. |
 | 1.1.6 | 2026-07-15 | Bounded reopen (I2.4 audit resolve): Zod→OpenAPI arrow honesty on openapi-zod row. |
 | 1.1.5 | 2026-07-15 | Bounded reopen (I2.4 audit repair): health · openapi-zod · declaration draft schemas marked Target on disk. |
 | 1.1.4 | 2026-07-15 | Bounded reopen (I2.1 audit repair): Target-on-disk markers for platform + invite schemas; Living inventory labeled for absent rows. |

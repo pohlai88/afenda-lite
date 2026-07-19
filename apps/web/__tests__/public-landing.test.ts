@@ -134,7 +134,7 @@ describe("public landing (PL-S2)", () => {
 		expect(css).toContain("transform: scale(1.18)");
 		expect(css).toContain("translate3d(-2.1%, -1.4%, 0)");
 		expect(css).toContain("lynx-cinematic.html");
-		expect(css).toContain(".art-zoom");
+		expect(css).toContain(":where(.the-machine) .art-zoom");
 		expect(stage).toContain('className="art-plane art-zoom"');
 		expect(stage).toContain('className="sensor-plane art-zoom"');
 		expect(css).not.toContain(
@@ -148,7 +148,7 @@ describe("public landing (PL-S2)", () => {
 		const stage = source("features/landing/the-machine-landing-stage.tsx");
 		expect(css).toContain("--nebula:");
 		expect(css).toContain("--void:");
-		expect(css).toContain(".constellation");
+		expect(css).toContain(":where(.the-machine) .constellation");
 		expect(stage).toContain('className="constellation"');
 		expect(stage).toContain("Truth, guarded quietly.");
 		expect(stage).toContain("Your truth. Our shield.");

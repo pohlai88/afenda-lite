@@ -8,7 +8,8 @@ import {
 	signOutSession,
 } from "@afenda/auth";
 import { redirect } from "next/navigation";
-import { z } from "zod";
+
+import { signInSchema } from "@/modules/identity/schemas/auth";
 import { createCorrelationId } from "@/modules/platform/observability/correlation";
 import {
 	type ActionResult,
@@ -16,12 +17,6 @@ import {
 	actionFailInternal,
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
-
-const emailPasswordSchema = z.object({
-	email: z.string().trim().email().max(320),
-	password: z.string().min(1).max(256),
-	callback: z.string().trim().max(2048).optional(),
-});
 
 export type SignInActionData = { redirected: true };
 export type SignInActionState = ActionResult<SignInActionData> | null;
@@ -55,7 +50,7 @@ export async function signInAction(
 	formData: FormData,
 ): Promise<SignInActionState> {
 	const correlationId = createCorrelationId();
-	const parsed = parseSchema(emailPasswordSchema, {
+	const parsed = parseSchema(signInSchema, {
 		email: formData.get("email"),
 		password: formData.get("password"),
 		callback: formData.get(POST_LOGIN_CALLBACK_PARAM) || undefined,
