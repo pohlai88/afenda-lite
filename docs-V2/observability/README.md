@@ -4,7 +4,7 @@
 |-------|-------|
 | Surface | `docs-V2/observability/README.md` |
 | Authority | **Scratch** — observability-and-instrumentation + disk `modules/platform/observability/**` |
-| Updated | 2026-07-19 |
+| Updated | 2026-07-20 |
 
 Thin operator path: correlate → health → logs. Not a metrics-platform design.
 
@@ -25,13 +25,13 @@ Path: `apps/web/modules/platform/observability/correlation.ts`.
 
 ## Structured product logs
 
-`logProductEvent` → one redaction-safe JSON line on stdout (`service: "afenda-web"`).
+`@afenda/logger` — Pino on Node; `@afenda/logger/edge` for `proxy.ts`. Closed `logProductEvent` allowlist (`service: "afenda-web"` default).
 
 | Allowed fields | Forbidden |
 |----------------|-----------|
 | `level` · `event` · `correlationId` · optional `orgId` · `actorUserId` · `path` · `code` | Secrets · tokens · SQL · stacks · full request bodies |
 
-Path: `apps/web/modules/platform/observability/product-log.ts`.
+Paths: `packages/logger` · web re-export `modules/platform/observability/product-log.ts` · edge import in `proxy.ts`.
 
 ---
 
@@ -62,7 +62,7 @@ Filter by `correlationId` from Action failure `details` or response header.
 
 | Stop | Why |
 |------|-----|
-| No vendor APM SDK invent | stdout JSON + Vercel logs are the path |
+| No vendor APM SDK invent | stdout JSON + Vercel logs; Pino only via `@afenda/logger` (not direct app dep) |
 | No secrets in log fields | Redaction-safe contract |
 | No skip correlation on gate/Action fails | Needed to join edge + action evidence |
 
@@ -71,7 +71,7 @@ Filter by `correlationId` from Action failure `details` or response header.
 ## Verify
 
 ```text
-1. Disk: modules/platform/observability/{correlation,product-log}.ts
+1. Disk: packages/logger · modules/platform/observability/{correlation,product-log}.ts
 2. Live: GET /api/health/liveness → 200
 3. After a fail: Action details.correlationId ↔ vercel logs / stdout
 ```
