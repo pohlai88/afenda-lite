@@ -5,43 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1784043065313,
-      "tag": "0000_living-roots-baseline",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1784250618200,
-      "tag": "0001_zippy_greymalkin",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1784254018744,
-      "tag": "0002_omniscient_psynapse",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1784296220085,
-      "tag": "0003_panoramic_nextwave",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1784482967665,
-      "tag": "0004_dark_carnage",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1784486677167,
-      "tag": "0005_loose_titanium_man",
+      "when": 1784489280139,
+      "tag": "0000_platform-iam-baseline",
       "breakpoints": true
     }
   ]

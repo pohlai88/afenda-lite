@@ -61,9 +61,9 @@ try {
 		respond({
 			permission: "deny",
 			user_message:
-				"Blocked: Drizzle db:migrate is banned while 0000_living-roots-baseline.sql is the journal baseline. Applying it on br-tiny-hill-ao82jp6f would CREATE tables that already exist. Use db:generate / db:check only. Override only with AFENDA_ALLOW_DB_MIGRATE=1 for a deliberate non-baseline migrate.",
+				"Blocked: Drizzle db:migrate is banned without AFENDA_ALLOW_DB_MIGRATE=1. A sole 0000_*.sql baseline CREATE on br-tiny-hill-ao82jp6f when tables already exist will fail. Use db:generate / db:check only. For forward migrate set AFENDA_ALLOW_DB_MIGRATE=1; after an intentional empty-DB wipe also set AFENDA_ALLOW_BASELINE_MIGRATE=1.",
 			agent_message:
-				"DENIED: db:migrate / drizzle-kit migrate is banned (ARCH-028 S2.2 / ARCH-025 / N2). 0000_living-roots-baseline.sql is a forward-diff journal baseline — do not apply CREATE onto live Neon. Do not bypass the hook. Tell the user; only proceed if they set AFENDA_ALLOW_DB_MIGRATE=1 for a later forward migration.",
+				"DENIED: db:migrate / drizzle-kit migrate is banned (ARCH-028 S2.2 / ARCH-025 / N2). Do not bypass the hook. Tell the user; only proceed with AFENDA_ALLOW_DB_MIGRATE=1 (and AFENDA_ALLOW_BASELINE_MIGRATE=1 for sole-0000 apply after wipe).",
 		});
 		process.exit(0);
 	}

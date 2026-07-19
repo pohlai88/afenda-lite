@@ -58,13 +58,19 @@ pnpm db:migrate    # fail-closed; requires AFENDA_ALLOW_DB_MIGRATE=1; never auto
 
 Product runtime requires pooled `DATABASE_URL` (`-pooler`). Migrate/ops may use the same key without `-pooler` (operator shell override only — no `DIRECT_*` product var).
 
-The app does not run DDL on request — tables must exist before deploy. Do not apply `0000_living-roots-baseline.sql` to live Neon.
+The app does not run DDL on request — tables must exist before deploy. Do not apply a sole `0000_*.sql` baseline to live Neon when product tables already exist.
 
 **Existing databases** (operator forward migrate only):
 
 ```bash
 pnpm db:check
 AFENDA_ALLOW_DB_MIGRATE=1 pnpm db:migrate
+```
+
+**Empty public schema after intentional wipe** (Mode C sole baseline):
+
+```bash
+AFENDA_ALLOW_DB_MIGRATE=1 AFENDA_ALLOW_BASELINE_MIGRATE=1 pnpm db:migrate
 ```
 
 ## Auth and database

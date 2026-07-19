@@ -1,0 +1,81 @@
+# `@afenda/cache`
+
+Rank-1 Platform multi-layer cache for Afenda-Lite: process L1 plus Upstash Redis L2 (REST). Shares the Upstash instance with `@afenda/rate-limit` under a dedicated key prefix — never `FLUSHDB`. Outcomes map unavailable backends to `@afenda/errors` via `toCacheAppError`.
+
+Use this package from Platform / app server code when a value must be cached across Vercel isolates or deduplicated in-process. Maintainers run lint / typecheck / Vitest via the filter scripts below (Node `24.x`, pnpm `≥10.33.4` from the repo root `engines`).
+
+## Consume
+
+Workspace dependency — import from the root barrel:
+
+```ts
+import {
+  createCacheManager,
+  CacheKeys,
+  CacheTTL,
+  toCacheAppError,
+} from "@afenda/cache";
+
+const cache = createCacheManager();
+const key = CacheKeys.orgConfig(organizationId);
+const config = await cache.getOrSet(
+  key,
+  () => loadOrgConfig(organizationId),
+  { ttl: CacheTTL.LONG, tags: [`org:${organizationId}`] },
+);
+```
+
+Cached values must be JSON-serializable (L2 round-trips through Upstash JSON). Never log secrets or tokens from cache payloads.
+
+**Living consumers:** none required for this package scaffold — wire from Platform modules when a slice needs shared cache.
+
+## Store
+
+| Runtime | Backend |
+|---------|---------|
+| `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` set | L1 + `@upstash/redis` L2 (prefix `@afenda/cache:v1:`) |
+| Non-production (`VERCEL_ENV` ≠ `production`), no Upstash | L1-only (explicit — not a fake Redis) |
+| Vercel production (`VERCEL_ENV=production`), no Upstash | Fail closed (`unavailable` → `serviceUnavailable`) |
+
+Env keys via `@afenda/env` only. No foreign Redis clients outside Upstash REST. `flush()` clears L1 and deletes keys under the package prefix only.
+
+## Maintain
+
+```bash
+pnpm --filter @afenda/cache lint
+pnpm --filter @afenda/cache typecheck
+pnpm --filter @afenda/cache test
+```
+
+Requires root engines: **Node `24.x`**, **pnpm `≥10.33.4`**.
+
+## Exports
+
+| Path | Role |
+|------|------|
+| `@afenda/cache` | `CacheManager` · `createCacheManager` · `resolveCacheBackend` · `CacheKeys` / `CacheTTL` · cursor helpers · `RequestDeduplicator` · `BatchLoader` · `toCacheAppError` (+ types) |
+
+`createCacheManager({ backend: "l1" })`, `{ redis }`, `{ l2 }`, or TTL/size overrides bypass the process singleton (still fail-closed in Vercel production without Upstash unless `backend: "l1"` / inject). `resetResolvedCacheBackend` clears the process cache between tests. Default `createCacheManager()` returns the resolved singleton.
+
+## Ownership
+
+| Surface | Owner |
+|---------|-------|
+| L1+L2 manager · resolve · keys/TTL · helpers · `toCacheAppError` | `@afenda/cache` |
+| `SERVICE_UNAVAILABLE` vocabulary + factories | [`@afenda/errors`](../errors/README.md) |
+| Upstash URL/token schema | `@afenda/env` |
+| Abuse limiting on the same Upstash instance | [`@afenda/rate-limit`](../rate-limit/README.md) |
+
+**Layer:** Rank-1 Platform (`@afenda/env` · `@afenda/errors` · Upstash). Must not import Surfaces or `apps/*`. See [docs-V2/monorepo](../../docs-V2/monorepo/README.md).
+
+## Out of scope
+
+Do not add to this package: Next.js handlers, ActionResult envelopes, OpenAPI ownership, foreign Redis SDKs (`ioredis`), `FLUSHDB`, declaration/FFT product keys, UI/locale copy, or a second tenancy model.
+
+## Authority
+
+| Topic | Link |
+|-------|------|
+| Error vocabulary (`serviceUnavailable`) | [`@afenda/errors`](../errors/README.md) |
+| Package DAG | [docs-V2/monorepo](../../docs-V2/monorepo/README.md) · [LAYERS.md](../../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md) |
+| Agent checkout posture | [AGENTS.md](../../AGENTS.md) |
