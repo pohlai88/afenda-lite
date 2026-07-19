@@ -16,6 +16,10 @@ import {
 	evaluateTrustedDomains,
 	extractTrustedOrigins,
 } from "./lib/neon-auth-trusted-domains.mjs";
+import {
+	isTransientNeonFailure,
+	withNeonRetries,
+} from "./lib/neon-api-retry.mjs";
 
 const env = loadLocalEnv();
 // Prefer `.env.local` over shell exports — stale NEON_BRANCH_ID must not win.
@@ -57,32 +61,75 @@ const {
 	selectBranchReadWriteEndpoint,
 } = await import(neonPerformanceUrl);
 
-async function neonApiGet(path) {
-	const res = await fetch(`https://console.neon.tech/api/v2${path}`, {
-		headers: {
-			Authorization: `Bearer ${apiKey}`,
-			Accept: "application/json",
-		},
-	});
-	const text = await res.text();
-	let body;
-	try {
-		body = JSON.parse(text);
-	} catch {
-		body = { raw: text.slice(0, 200) };
+function errorDetail(error) {
+	if (error && typeof error === "object") {
+		const stderr =
+			"stderr" in error && error.stderr != null ? String(error.stderr) : "";
+		const message =
+			error instanceof Error
+				? error.message
+				: "message" in error && typeof error.message === "string"
+					? error.message
+					: String(error);
+		return `${message}\n${stderr}`.trim();
 	}
-	return { status: res.status, body };
+	return String(error);
+}
+
+function logNeonRetry({ attempt, attempts, error, delayMs }) {
+	const detail = errorDetail(error).split("\n")[0] ?? "transient Neon failure";
+	console.log(
+		`[retry] Neon API attempt ${attempt}/${attempts} failed; wait ${delayMs}ms — ${detail}`,
+	);
+}
+
+async function neonApiGet(path) {
+	return withNeonRetries(
+		async () => {
+			let res;
+			try {
+				res = await fetch(`https://console.neon.tech/api/v2${path}`, {
+					headers: {
+						Authorization: `Bearer ${apiKey}`,
+						Accept: "application/json",
+					},
+				});
+			} catch (error) {
+				const err = new Error(errorDetail(error));
+				err.cause = error;
+				throw err;
+			}
+			const text = await res.text();
+			let body;
+			try {
+				body = JSON.parse(text);
+			} catch {
+				body = { raw: text.slice(0, 200) };
+			}
+			if (isTransientNeonFailure({ status: res.status })) {
+				const err = new Error(`Neon API HTTP ${res.status} for ${path}`);
+				err.status = res.status;
+				throw err;
+			}
+			return { status: res.status, body };
+		},
+		{ onRetry: logNeonRetry },
+	);
 }
 
 const neonFile = JSON.parse(readFileSync(".neon", "utf8"));
 
-function run(args) {
-	return execFileSync("npx", ["neon@latest", ...args, "-o", "json"], {
-		env: { ...process.env, NEON_API_KEY: apiKey },
-		encoding: "utf8",
-		shell: true,
-		maxBuffer: 10 * 1024 * 1024,
-	});
+async function run(args) {
+	return withNeonRetries(
+		() =>
+			execFileSync("npx", ["neon@latest", ...args, "-o", "json"], {
+				env: { ...process.env, NEON_API_KEY: apiKey },
+				encoding: "utf8",
+				shell: true,
+				maxBuffer: 10 * 1024 * 1024,
+			}),
+		{ onRetry: logNeonRetry },
+	);
 }
 
 function check(label, ok, detail) {
@@ -188,30 +235,40 @@ record(
 	),
 );
 
-try {
-	const branch = JSON.parse(
-		run(["branches", "get", branchId, "--project-id", projectId]),
-	);
-	record(
-		check(
-			"branch API access",
-			branch.id === branchId && branch.project_id === projectId,
-			`${branch.name} (${branch.id}) on ${branch.project_id}`,
-		),
-	);
-} catch (error) {
+// Prefer REST for branch probe — avoids npx/neonctl Windows flakes on pre-push.
+if (!apiKey?.startsWith("napi_")) {
 	record(
 		check(
 			"branch API access",
 			false,
-			(error.stderr?.toString?.() ?? error.message).trim(),
+			"NEON_API_KEY missing — cannot probe branch API",
 		),
 	);
+} else {
+	try {
+		const branchRes = await neonApiGet(
+			`/projects/${projectId}/branches/${branchId}`,
+		);
+		const branch = branchRes.body.branch ?? branchRes.body;
+		record(
+			check(
+				"branch API access",
+				branchRes.status === 200 &&
+					branch.id === branchId &&
+					branch.project_id === projectId,
+				branchRes.status === 200
+					? `${branch.name} (${branch.id}) on ${branch.project_id}`
+					: `GET /branches failed HTTP ${branchRes.status}`,
+			),
+		);
+	} catch (error) {
+		record(check("branch API access", false, errorDetail(error)));
+	}
 }
 
 try {
 	const auth = JSON.parse(
-		run([
+		await run([
 			"neon-auth",
 			"status",
 			"--project-id",
@@ -228,17 +285,11 @@ try {
 		),
 	);
 } catch (error) {
-	record(
-		check(
-			"neon-auth access",
-			false,
-			(error.stderr?.toString?.() ?? error.message).trim(),
-		),
-	);
+	record(check("neon-auth access", false, errorDetail(error)));
 }
 
 try {
-	run(["projects", "list", "--org-id", orgId]);
+	await run(["projects", "list", "--org-id", orgId]);
 	record(
 		check(
 			"org-wide project list",
@@ -247,7 +298,7 @@ try {
 		),
 	);
 } catch (error) {
-	const message = (error.stderr?.toString?.() ?? error.message).trim();
+	const message = errorDetail(error);
 	const projectScoped = message.includes("subject_project_id");
 	record(
 		check(
@@ -352,13 +403,7 @@ if (!apiKey?.startsWith("napi_")) {
 			);
 		}
 	} catch (error) {
-		record(
-			check(
-				"N3 recovery posture API",
-				false,
-				(error.message ?? String(error)).trim(),
-			),
-		);
+		record(check("N3 recovery posture API", false, errorDetail(error)));
 	}
 }
 
@@ -433,11 +478,7 @@ if (!apiKey?.startsWith("napi_")) {
 		}
 	} catch (error) {
 		record(
-			check(
-				"N4 compute autoscaling / suspend",
-				false,
-				(error.message ?? String(error)).trim(),
-			),
+			check("N4 compute autoscaling / suspend", false, errorDetail(error)),
 		);
 	}
 }
@@ -492,7 +533,7 @@ console.log(
 // N15 trusted domains — Neon Auth redirect allowlist (ops; no secret values).
 const appUrl = env.APP_URL || getEnvValue("APP_URL", env);
 try {
-	const domainListRaw = run([
+	const domainListRaw = await run([
 		"neon-auth",
 		"domain",
 		"list",
@@ -519,7 +560,7 @@ try {
 		check(
 			"N15 Neon Auth trusted domains",
 			false,
-			(error.stderr?.toString?.() ?? error.message).trim() ||
+			errorDetail(error) ||
 				"neon-auth domain list failed — Console verify required (no fake PASS)",
 		),
 	);
