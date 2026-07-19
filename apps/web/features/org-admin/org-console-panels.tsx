@@ -67,7 +67,7 @@ export type OrgListLoadState =
 	| { status: "empty"; organizations: [] }
 	| { status: "unavailable"; organizations: []; message: string };
 
-export type UsageMetricsView = {
+type UsageMetricsView = {
 	orgId: string;
 	period: string;
 	activeMembers: number;

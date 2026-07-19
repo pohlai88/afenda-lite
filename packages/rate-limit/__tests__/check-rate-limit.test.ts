@@ -94,6 +94,32 @@ describe("checkRateLimit (memory store)", () => {
 			service: "upstash_redis",
 		});
 	});
+
+	it("fails closed when the resolved store throws", async () => {
+		const { isProductionDeployment } = await import("@afenda/env");
+		vi.mocked(isProductionDeployment).mockReturnValue(false);
+		resetResolvedRateLimitBackend();
+
+		const backend = resolveRateLimitBackend();
+		expect(backend.kind).toBe("store");
+		if (backend.kind !== "store") {
+			return;
+		}
+
+		vi.spyOn(backend.store, "hit").mockRejectedValueOnce(
+			new Error("upstash network down"),
+		);
+
+		const result = await checkRateLimit({
+			bucket: "auth_bff_post",
+			key: "203.0.113.10:/api/auth/sign-in",
+		});
+		expect(result).toEqual({
+			ok: false,
+			reason: "unavailable",
+			service: "upstash_redis",
+		});
+	});
 });
 
 describe("toRateLimitAppError", () => {

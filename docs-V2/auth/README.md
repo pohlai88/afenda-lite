@@ -44,6 +44,15 @@ Do not merge invite-link origin with Auth UI callback origin — see [../tenancy
 
 ---
 
+## Rate limit (auth abuse)
+
+| Surface | Bucket | Owner |
+|---------|--------|-------|
+| Neon Auth BFF `POST` `/api/auth/*` | `auth_bff_post` (20 / 60s, key `IP:pathname`) | `@afenda/auth` → `@afenda/rate-limit` |
+| Path A `signInAction` | `auth_sign_in` (5 / 60s, key `IP:email`) | `apps/web` → `@afenda/rate-limit` |
+
+Outcomes: `toRateLimitAppError` → `RATE_LIMITED` (429 + `Retry-After` on BFF) or `SERVICE_UNAVAILABLE` (prod without Upstash / store fault). Store: Upstash REST when `UPSTASH_REDIS_*` set; process memory only for non-production without keys. Package README: [`packages/rate-limit`](../../packages/rate-limit/README.md). Observability: [../observability/README.md](../observability/README.md).
+
 ## Hard stops / Why
 
 | Stop | Why |
@@ -53,6 +62,7 @@ Do not merge invite-link origin with Auth UI callback origin — see [../tenancy
 | Authz inside every `'use server'` | Actions are public endpoints |
 | No `middleware.ts` invent | Edge file is `proxy.ts` |
 | No `configure_neon_auth` without ask | Trusted origins are Class A — [../tenancy/](../tenancy/README.md) |
+| No VietERP ioredis / Express middleware port | Afenda store = Upstash REST or memory only (`_reference/packages/rate-limit` is DNA, not runtime) |
 
 ---
 

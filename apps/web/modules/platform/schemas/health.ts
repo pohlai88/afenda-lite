@@ -10,8 +10,6 @@ export const livenessResponseSchema = z.object({
 	timestamp: z.string().datetime(),
 });
 
-export type LivenessResponse = z.infer<typeof livenessResponseSchema>;
-
 const readinessStorageCheckSchema = z.object({
 	provider: z.literal("postgres"),
 	status: z.enum(["reachable", "unreachable"]),
@@ -59,5 +57,3 @@ export const readinessResponseSchema = z.object({
 	}),
 	timestamp: z.string().datetime(),
 });
-
-export type ReadinessResponse = z.infer<typeof readinessResponseSchema>;

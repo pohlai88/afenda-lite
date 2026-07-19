@@ -2,6 +2,7 @@ import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
 
 import { BUCKET_POLICIES } from "./buckets";
+import { retryAfterSecondsFromReset } from "./retry-after";
 import type {
 	RateLimitBucket,
 	RateLimitHitResult,
@@ -48,11 +49,10 @@ export function createUpstashRateLimitStore(input: {
 			if (result.success) {
 				return { allowed: true };
 			}
-			const retryAfterSeconds = Math.max(
-				1,
-				Math.ceil((result.reset - Date.now()) / 1000),
-			);
-			return { allowed: false, retryAfterSeconds };
+			return {
+				allowed: false,
+				retryAfterSeconds: retryAfterSecondsFromReset(result.reset, Date.now()),
+			};
 		},
 	};
 }

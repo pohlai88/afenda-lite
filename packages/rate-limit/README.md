@@ -40,10 +40,10 @@ Env keys via `@afenda/env` only. No foreign Redis clients outside Upstash REST.
 
 | Bucket | Limit / window | Typical key |
 |--------|----------------|-------------|
-| `auth_bff_post` | 20 / 60s | IP + pathname |
-| `auth_sign_in` | 5 / 60s | Normalized email |
+| `auth_bff_post` | 20 / 60s | `IP:pathname` |
+| `auth_sign_in` | 5 / 60s | `IP:email` (email lowercased; missing → `_invalid`) |
 
-Callers never pass limit/window — policy lives in `BUCKET_POLICIES`.
+Callers never pass limit/window — policy lives in `BUCKET_POLICIES`. Resolved store throws (Upstash/network) map to `unavailable` → `SERVICE_UNAVAILABLE` (fail closed).
 
 ## Maintain
 

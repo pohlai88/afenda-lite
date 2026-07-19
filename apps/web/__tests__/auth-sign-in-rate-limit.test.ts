@@ -37,6 +37,13 @@ vi.mock("@/modules/platform/observability/product-log", () => ({
 	logProductEvent: logMocks.logProductEvent,
 }));
 
+vi.mock("@/modules/platform/domain/request-attribution", () => ({
+	readRequestAttribution: vi.fn(async () => ({
+		ipAddress: "203.0.113.50",
+		userAgent: "vitest",
+	})),
+}));
+
 vi.mock("next/navigation", () => ({
 	redirect: vi.fn(() => {
 		throw new Error("NEXT_REDIRECT");
@@ -64,6 +71,10 @@ describe("signInAction rate limit", () => {
 
 		const result = await signInAction(null, formData);
 
+		expect(rateLimitMocks.checkRateLimit).toHaveBeenCalledWith({
+			bucket: "auth_sign_in",
+			key: "203.0.113.50:client@example.com",
+		});
 		expect(authMocks.signInWithEmail).not.toHaveBeenCalled();
 		expect(result).toEqual({
 			ok: false,
@@ -82,5 +93,44 @@ describe("signInAction rate limit", () => {
 				),
 			}),
 		);
+	});
+
+	it("rate-limits before schema validation (malformed email still consumes budget)", async () => {
+		rateLimitMocks.checkRateLimit.mockResolvedValue({
+			ok: false,
+			reason: "rate_limited",
+			retryAfterSeconds: 12,
+		});
+
+		const formData = new FormData();
+		formData.set("email", "not-an-email");
+		formData.set("password", "x");
+
+		const result = await signInAction(null, formData);
+
+		expect(rateLimitMocks.checkRateLimit).toHaveBeenCalledWith({
+			bucket: "auth_sign_in",
+			key: "203.0.113.50:not-an-email",
+		});
+		expect(result).toEqual({
+			ok: false,
+			code: "RATE_LIMITED",
+			message: "Too many requests. Try again later.",
+			details: { retryAfter: 12 },
+		});
+	});
+
+	it("uses _invalid sentinel when email is missing", async () => {
+		rateLimitMocks.checkRateLimit.mockResolvedValue({ ok: true });
+
+		const formData = new FormData();
+		formData.set("password", "x");
+
+		await signInAction(null, formData);
+
+		expect(rateLimitMocks.checkRateLimit).toHaveBeenCalledWith({
+			bucket: "auth_sign_in",
+			key: "203.0.113.50:_invalid",
+		});
 	});
 });

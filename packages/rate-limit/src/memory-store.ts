@@ -1,4 +1,5 @@
 import { bucketPolicy } from "./buckets";
+import { retryAfterSecondsFromReset } from "./retry-after";
 import type { RateLimitHitResult, RateLimitStore } from "./types";
 
 /**
@@ -19,16 +20,17 @@ export function createMemoryRateLimitStore(): RateLimitStore {
 
 			if (active.length >= policy.limit) {
 				const oldest = active[0];
+				windows.set(fullKey, active);
 				if (oldest === undefined) {
-					windows.set(fullKey, active);
 					return { allowed: false, retryAfterSeconds: 1 };
 				}
-				const retryAfterSeconds = Math.max(
-					1,
-					Math.ceil((oldest + policy.windowMs - now) / 1000),
-				);
-				windows.set(fullKey, active);
-				return { allowed: false, retryAfterSeconds };
+				return {
+					allowed: false,
+					retryAfterSeconds: retryAfterSecondsFromReset(
+						oldest + policy.windowMs,
+						now,
+					),
+				};
 			}
 
 			active.push(now);

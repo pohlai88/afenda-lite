@@ -1,4 +1,3 @@
-import type { ApiErrorCode } from "@afenda/errors";
 import {
 	type ResultFailure as ActionFailure,
 	type Result as ActionResult,
@@ -10,9 +9,10 @@ import {
  * Shared Server Action result contract (API-002 · API-003).
  * Core Result helpers: `@afenda/errors/result`.
  * Expected failures return `{ ok: false, … }`; throw only for unexpected bugs.
+ * Error codes: import `ApiErrorCode` from `@afenda/errors` (or schemas/api-error).
  */
 
-export type { ActionFailure, ActionResult, ApiErrorCode };
+export type { ActionFailure, ActionResult };
 
 export { actionFail, actionOk };
 

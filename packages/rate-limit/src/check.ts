@@ -19,6 +19,12 @@ export type CheckRateLimitOptions = {
 
 const EMPTY_KEY_RETRY_AFTER_SECONDS = 60;
 
+const STORE_UNAVAILABLE: RateLimitResult = {
+	ok: false,
+	reason: "unavailable",
+	service: "upstash_redis",
+};
+
 function normalizeKey(key: string): string {
 	return key.trim().toLowerCase();
 }
@@ -34,6 +40,18 @@ function fromHit(hit: RateLimitHitResult): RateLimitResult {
 	};
 }
 
+async function hitResolvedStore(
+	store: RateLimitStore,
+	input: { bucket: RateLimitBucket; key: string },
+): Promise<RateLimitResult> {
+	try {
+		return fromHit(await store.hit(input));
+	} catch {
+		// Fail closed — Upstash/network faults must not bypass abuse limits as 500s.
+		return STORE_UNAVAILABLE;
+	}
+}
+
 export async function checkRateLimit(
 	input: CheckRateLimitInput,
 	options?: CheckRateLimitOptions,
@@ -47,9 +65,9 @@ export async function checkRateLimit(
 		};
 	}
 
-	const store = options?.store;
-	if (store) {
-		return fromHit(await store.hit({ bucket: input.bucket, key }));
+	const injected = options?.store;
+	if (injected) {
+		return fromHit(await injected.hit({ bucket: input.bucket, key }));
 	}
 
 	const backend = resolveRateLimitBackend();
@@ -57,5 +75,5 @@ export async function checkRateLimit(
 		return { ok: false, reason: "unavailable", service: backend.service };
 	}
 
-	return fromHit(await backend.store.hit({ bucket: input.bucket, key }));
+	return hitResolvedStore(backend.store, { bucket: input.bucket, key });
 }

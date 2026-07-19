@@ -58,7 +58,7 @@ Filter by `correlationId` from Action failure `details` or response header.
 
 ### Rate-limited responses (429)
 
-`@afenda/rate-limit` denials map via `toRateLimitAppError` → `RATE_LIMITED` / `SERVICE_UNAVAILABLE` (+ `Retry-After` on Route Handlers). Living surfaces: auth BFF POST · Path A `signInAction`. Limited paths log allowlisted fields only: `event` · `correlationId` · `path` · `code`. Store: Upstash on Vercel production; process memory for local without Upstash keys.
+`@afenda/rate-limit` denials map via `toRateLimitAppError` → `RATE_LIMITED` / `SERVICE_UNAVAILABLE` (+ `Retry-After` on Route Handlers). Living surfaces: auth BFF POST (`auth_bff_post`) · Path A `signInAction` (`auth_sign_in`, key `IP:email`). Limited paths log allowlisted fields only: `event` · `correlationId` · `path` · `code`. Store: Upstash when configured; process memory for non-production without keys; store throws fail closed as unavailable.
 
 ---
 

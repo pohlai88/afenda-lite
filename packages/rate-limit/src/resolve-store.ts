@@ -5,19 +5,24 @@ import type { RateLimitStore } from "./types";
 import { createUpstashRateLimitStore } from "./upstash-store";
 
 export type ResolvedBackend =
-	| { kind: "store"; store: RateLimitStore }
+	| { kind: "store"; store: RateLimitStore; backend: "upstash" | "memory" }
 	| { kind: "unavailable"; service: "upstash_redis" };
 
 let cached: ResolvedBackend | undefined;
 let memorySingleton: RateLimitStore | undefined;
 
-function hasUpstashConfig(): boolean {
-	return (
-		typeof env.UPSTASH_REDIS_REST_URL === "string" &&
-		env.UPSTASH_REDIS_REST_URL.length > 0 &&
-		typeof env.UPSTASH_REDIS_REST_TOKEN === "string" &&
-		env.UPSTASH_REDIS_REST_TOKEN.length > 0
-	);
+function upstashCredentials(): { url: string; token: string } | undefined {
+	const url = env.UPSTASH_REDIS_REST_URL;
+	const token = env.UPSTASH_REDIS_REST_TOKEN;
+	if (
+		typeof url === "string" &&
+		url.length > 0 &&
+		typeof token === "string" &&
+		token.length > 0
+	) {
+		return { url, token };
+	}
+	return undefined;
 }
 
 function memoryStore(): RateLimitStore {
@@ -36,23 +41,18 @@ export function resolveRateLimitBackend(): ResolvedBackend {
 		return cached;
 	}
 
-	if (hasUpstashConfig()) {
-		const url = env.UPSTASH_REDIS_REST_URL;
-		const token = env.UPSTASH_REDIS_REST_TOKEN;
-		if (url === undefined || token === undefined) {
-			cached = { kind: "unavailable", service: "upstash_redis" };
-			return cached;
-		}
+	const credentials = upstashCredentials();
+	if (credentials) {
 		cached = {
 			kind: "store",
-			store: createUpstashRateLimitStore({ url, token }),
+			backend: "upstash",
+			store: createUpstashRateLimitStore(credentials),
 		};
 		return cached;
 	}
 
 	if (
 		isProductionDeployment({
-			nodeEnv: process.env.NODE_ENV,
 			vercelEnv: process.env.VERCEL_ENV,
 		})
 	) {
@@ -60,7 +60,7 @@ export function resolveRateLimitBackend(): ResolvedBackend {
 		return cached;
 	}
 
-	cached = { kind: "store", store: memoryStore() };
+	cached = { kind: "store", backend: "memory", store: memoryStore() };
 	return cached;
 }
 
