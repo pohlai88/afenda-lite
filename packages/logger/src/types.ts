@@ -16,6 +16,10 @@ export type ProductLogEvent = {
 	code?: string;
 };
 
+export type LogProductEventOptions = {
+	service?: string;
+};
+
 export type CreateLoggerOptions = {
 	service: string;
 	level?: LogLevel;

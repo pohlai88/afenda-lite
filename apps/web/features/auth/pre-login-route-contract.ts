@@ -51,7 +51,6 @@ export const SESSION_GATE_PROTECTED_MATCHERS = [
 	"/dashboard/:path*",
 	"/admin/:path*",
 	"/client/:path*",
-	"/fft/:path*",
 	"/playground/:path*",
 ] as const;
 

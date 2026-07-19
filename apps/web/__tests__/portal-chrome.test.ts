@@ -39,7 +39,6 @@ describe("portal-chrome (N16)", () => {
 	it("filters operator nav via Identity permission ports (OR per item)", async () => {
 		hasPermissionMock.mockImplementation(async ({ code }) => {
 			if (code === "org.roles.manage") return true;
-			if (code === "fft.access") return false;
 			return false;
 		});
 
@@ -47,18 +46,16 @@ describe("portal-chrome (N16)", () => {
 		expect(nav.map((item) => item.id)).toEqual(["org-admin"]);
 	});
 
-	it("includes FFT nav when fft.access is granted", async () => {
-		hasPermissionMock.mockImplementation(
-			async ({ code }) => code === "fft.access",
-		);
+	it("hides org-admin nav when no listed permission is granted", async () => {
+		hasPermissionMock.mockResolvedValue(false);
 
 		const nav = await resolveOperatorShellNav(session);
-		expect(nav.map((item) => item.id)).toEqual(["fft"]);
+		expect(nav.map((item) => item.id)).toEqual([]);
 	});
 
 	it("exposes module-tagged nav for on-disk operator routes only", () => {
 		const hrefs = OPERATOR_SHELL_NAV.map((item) => item.href);
-		expect(hrefs).toEqual(["/admin", "/fft"]);
+		expect(hrefs).toEqual(["/admin"]);
 		expect(OPERATOR_SHELL_NAV.every((item) => item.kind === "module")).toBe(
 			true,
 		);
@@ -74,8 +71,7 @@ describe("portal-chrome (N16)", () => {
 
 		for (const file of portalChromeSources) {
 			const text = source(file);
-			expect(text).not.toMatch(/@\/modules\/declarations/);
-			expect(text).not.toMatch(/@\/modules\/fft\/domain/);
+			expect(text).not.toMatch(/@\/modules\/(?!identity\/|platform\/)/);
 		}
 	});
 

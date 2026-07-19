@@ -16,25 +16,23 @@ describe("resolveRoleHome (N7)", () => {
 		expect(OPERATOR_HOME_PATH).toBe("/admin");
 	});
 
-	it("routes client to the declarations home", () => {
+	it("routes client to the workspace home", () => {
 		expect(resolveRoleHome("client")).toBe(CLIENT_HOME_PATH);
-		expect(CLIENT_HOME_PATH).toBe("/client/declarations");
+		expect(CLIENT_HOME_PATH).toBe("/client");
 	});
 });
 
 describe("sanitizeCallbackUrl (N7 same-origin allowlist)", () => {
 	it("accepts absolute same-origin paths, preserving query and hash", () => {
-		expect(sanitizeCallbackUrl("/fft")).toBe("/fft");
-		expect(sanitizeCallbackUrl("/client/declarations")).toBe(
-			"/client/declarations",
-		);
+		expect(sanitizeCallbackUrl("/admin")).toBe("/admin");
+		expect(sanitizeCallbackUrl("/client")).toBe("/client");
 		expect(sanitizeCallbackUrl("/admin/users?tab=roles#top")).toBe(
 			"/admin/users?tab=roles#top",
 		);
 	});
 
 	it("trims surrounding whitespace before validating", () => {
-		expect(sanitizeCallbackUrl("  /fft  ")).toBe("/fft");
+		expect(sanitizeCallbackUrl("  /admin  ")).toBe("/admin");
 	});
 
 	it("rejects protocol-relative and backslash host tricks", () => {
@@ -52,15 +50,15 @@ describe("sanitizeCallbackUrl (N7 same-origin allowlist)", () => {
 	});
 
 	it("rejects relative paths that do not start with a single slash", () => {
-		expect(sanitizeCallbackUrl("fft")).toBeNull();
-		expect(sanitizeCallbackUrl("./fft")).toBeNull();
+		expect(sanitizeCallbackUrl("admin")).toBeNull();
+		expect(sanitizeCallbackUrl("./admin")).toBeNull();
 		expect(sanitizeCallbackUrl("../admin")).toBeNull();
 	});
 
 	it("rejects control characters, raw whitespace, and empty input", () => {
-		expect(sanitizeCallbackUrl("/fft\nhost")).toBeNull();
-		expect(sanitizeCallbackUrl("/fft\thost")).toBeNull();
-		expect(sanitizeCallbackUrl("/fft host")).toBeNull();
+		expect(sanitizeCallbackUrl("/admin\nhost")).toBeNull();
+		expect(sanitizeCallbackUrl("/admin\thost")).toBeNull();
+		expect(sanitizeCallbackUrl("/admin host")).toBeNull();
 		expect(sanitizeCallbackUrl("")).toBeNull();
 		expect(sanitizeCallbackUrl("   ")).toBeNull();
 	});
@@ -69,22 +67,22 @@ describe("sanitizeCallbackUrl (N7 same-origin allowlist)", () => {
 		expect(sanitizeCallbackUrl(undefined)).toBeNull();
 		expect(sanitizeCallbackUrl(null)).toBeNull();
 		expect(sanitizeCallbackUrl(42)).toBeNull();
-		expect(sanitizeCallbackUrl(["/fft"])).toBeNull();
-		expect(sanitizeCallbackUrl({ path: "/fft" })).toBeNull();
+		expect(sanitizeCallbackUrl(["/admin"])).toBeNull();
+		expect(sanitizeCallbackUrl({ path: "/admin" })).toBeNull();
 	});
 });
 
 describe("resolvePostLoginPath (N7 governed resolver)", () => {
 	it("prefers a safe same-origin callback over the role home", () => {
 		expect(
-			resolvePostLoginPath({ role: "operator", callbackUrl: "/fft" }),
-		).toBe("/fft");
+			resolvePostLoginPath({ role: "operator", callbackUrl: "/admin/users" }),
+		).toBe("/admin/users");
 		expect(
 			resolvePostLoginPath({
 				role: "client",
-				callbackUrl: "/client/declarations",
+				callbackUrl: "/client",
 			}),
-		).toBe("/client/declarations");
+		).toBe("/client");
 	});
 
 	it("falls back to the role home when the callback is unsafe", () => {

@@ -1,21 +1,14 @@
 import { expectOperatorShellNav } from "@/testing/e2e/assertions";
 import { loginAsOperator } from "@/testing/e2e/flows";
 import { test } from "@/testing/e2e/playwright-base";
-import {
-	assignLimitedOperatorNavRole,
-	clearOperatorPlatformAssignments,
-} from "@/testing/e2e/tenancy";
+import { clearOperatorPlatformAssignments } from "@/testing/e2e/tenancy";
 
 /**
- * N16 Path-to-100% — authenticated operator platform shell nav (@smoke).
- * Case A: admin bootstrap → both module links.
- * Case B: editor assignment (clients.invite, no fft.access) → FFT link hidden.
- * Serial: shared workerTenant assignment state must not leak across cases.
+ * N16 — authenticated operator platform shell nav (@smoke).
+ * Admin bootstrap → Operator admin link visible on `/admin`.
  */
 test.describe("operator platform shell @smoke", () => {
-	test.describe.configure({ mode: "serial" });
-
-	test("admin bootstrap shows Operator admin and Feed Farm Trade nav", async ({
+	test("admin bootstrap shows Operator admin nav", async ({
 		page,
 		workerTenant,
 	}) => {
@@ -29,31 +22,6 @@ test.describe("operator platform shell @smoke", () => {
 
 		await clearOperatorPlatformAssignments(workerTenant);
 		await loginAsOperator(page, workerTenant.operator);
-		await expectOperatorShellNav(page, { admin: true, fft: true });
-
-		await page
-			.locator('a[href="/fft"]')
-			.filter({ hasText: /Feed Farm Trade/i })
-			.first()
-			.click();
-		await page.waitForURL(/\/fft(\/|$)/, { timeout: 15_000 });
-		await expectOperatorShellNav(page, { admin: true, fft: true });
-	});
-
-	test("limited assignment hides Feed Farm Trade nav without fft.access", async ({
-		page,
-		workerTenant,
-	}) => {
-		test.skip(
-			!workerTenant,
-			"E2E_FACTORY_PASSWORD + DATABASE_URL required for N13 factory",
-		);
-		if (!workerTenant) {
-			return;
-		}
-
-		await assignLimitedOperatorNavRole(workerTenant);
-		await loginAsOperator(page, workerTenant.operator);
-		await expectOperatorShellNav(page, { admin: true, fft: false });
+		await expectOperatorShellNav(page, { admin: true });
 	});
 });

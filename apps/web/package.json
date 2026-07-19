@@ -18,6 +18,7 @@
 		"@afenda/env": "workspace:*",
 		"@afenda/errors": "workspace:*",
 		"@afenda/logger": "workspace:*",
+		"@afenda/rate-limit": "workspace:*",
 		"@afenda/ui-system": "workspace:*",
 		"@asteasolutions/zod-to-openapi": "^8.5.0",
 		"@neondatabase/auth-ui": "^0.2.1-beta",

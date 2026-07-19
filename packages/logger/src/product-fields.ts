@@ -6,31 +6,43 @@ export function resolveProductService(service?: string): string {
 	return service ?? DEFAULT_PRODUCT_SERVICE;
 }
 
-/** Allowlisted product fields only — no open metadata bags. */
-export function toProductLogRecord(
+/** Allowlisted business fields shared by Node (Pino) and edge sinks. */
+export function toProductAllowlistFields(
 	entry: ProductLogEvent,
-	service?: string,
 ): Record<string, string> {
-	const record: Record<string, string> = {
-		ts: new Date().toISOString(),
-		service: resolveProductService(service),
-		level: entry.level,
+	const fields: Record<string, string> = {
 		event: entry.event,
 		correlationId: entry.correlationId,
 	};
 
 	if (entry.orgId !== undefined) {
-		record.orgId = entry.orgId;
+		fields.orgId = entry.orgId;
 	}
 	if (entry.actorUserId !== undefined) {
-		record.actorUserId = entry.actorUserId;
+		fields.actorUserId = entry.actorUserId;
 	}
 	if (entry.path !== undefined) {
-		record.path = entry.path;
+		fields.path = entry.path;
 	}
 	if (entry.code !== undefined) {
-		record.code = entry.code;
+		fields.code = entry.code;
 	}
 
-	return record;
+	return fields;
+}
+
+/**
+ * Full edge/console product line. Uses `time` (ISO) to match Pino
+ * `stdTimeFunctions.isoTime` so ops filters one timestamp key.
+ */
+export function toProductLogRecord(
+	entry: ProductLogEvent,
+	service?: string,
+): Record<string, string> {
+	return {
+		time: new Date().toISOString(),
+		service: resolveProductService(service),
+		level: entry.level,
+		...toProductAllowlistFields(entry),
+	};
 }

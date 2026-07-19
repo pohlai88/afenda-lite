@@ -6,6 +6,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { deleteRbacAuditRow } from "@afenda/admin/audit";
 import {
 	and,
 	db,
@@ -15,13 +16,11 @@ import {
 	platformRoleAssignment,
 } from "@afenda/db";
 import { afterAll, describe, expect, it } from "vitest";
-
 import { assignOrgRoleWithAudit } from "../modules/identity/domain/assign-org-role-audited";
 import { hasPermission } from "../modules/identity/domain/has-permission";
 import { listPermissionCatalog } from "../modules/identity/domain/list-permission-catalog";
 import { listUserPermissions } from "../modules/identity/domain/list-user-permissions";
 import { revokeOrgRoleWithAudit } from "../modules/identity/domain/revoke-org-role-audited";
-import { deleteRbacAuditRow } from "@afenda/admin/audit";
 
 const repoRoot = path.resolve(
 	path.dirname(fileURLToPath(import.meta.url)),
@@ -69,7 +68,7 @@ describe("permission kernel guards (N10)", () => {
 			hasPermission({
 				orgId: "org-n10",
 				userId: "user-n10",
-				code: "fft.orders.manage",
+				code: "unknown.permission.code",
 			}),
 		).resolves.toBe(false);
 	});
@@ -154,7 +153,8 @@ describe.skipIf(!hasDatabase)("permission kernel product wiring (N10)", () => {
 		const permsA = await listUserPermissions(orgA, userId);
 		const permsB = await listUserPermissions(orgB, userId);
 		expect(permsA).toContain("org.roles.manage");
-		expect(permsA).toContain("fft.access");
+		expect(permsA).toContain("clients.invite");
+		expect(permsA).toContain("account.self");
 		expect(permsB).toEqual([]);
 
 		const revoked = await revokeOrgRoleWithAudit({

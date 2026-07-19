@@ -76,8 +76,8 @@ Compulsory still requires a working replacement (or an Accepted decision that th
 ## Afenda-Lite rules (read [reference.md](reference.md))
 
 1. **Product name is Afenda-Lite** (beta edition). **Afenda-Elite** is battle-proven; both share DOC-001 docs control. **Client Declaration Portal** and "this app is a portal" framing are retired.
-2. **One SaaS, multiple modules** (`declarations` | `fft` | …). Platform/infra updates are shared — never deprecate “into” a second stack.
-3. **Retired identities stay retired:** Hot Sales, `/trade` product URLs, `HOT_SALES_*`, `FftShell`, live `/fft/[locale]`, Client Declaration Portal.
+2. **One SaaS, living modules = platform + identity** (org-admin). Declarations and Feed Farm Trade product modules are **compulsory retired / removed** — never restore as living domains.
+3. **Retired identities stay retired:** Hot Sales, `/trade` / `/fft` product URLs, `HOT_SALES_*` / `FFT_*` product keys, `FftShell`, Client Declaration Portal, Declarations product routes (`/client/declarations`, draft RH), `feed-farm-trade` skill.
 4. **Redirects are migration aids**, not permission to rebuild the old tree.
 5. **Historical tags / archive docs** may remain as footnotes; do not retag or restore as live entry points.
 6. **On touch:** if a file still teaches a retired product name or mounts a retired path, delete or rewrite in the same PR.
@@ -131,7 +131,7 @@ Parallel run → shift traffic → idle old → **delete** old. Do not stop at �
 
 ### Adapter / Redirect
 
-OK as a temporary bridge (`/trade` → `/fft`). Not OK as a forever product surface or an excuse to remount `FftShell`.
+OK as a temporary bridge only when still listed Redirect-only. Not OK as a forever product surface or an excuse to remount wiped Declarations/FFT trees.
 
 ### Feature Flag
 
@@ -139,7 +139,7 @@ Use flags to cut over writes/reads. When flag is permanently on for the replacem
 
 ## Zombie Code
 
-No owner + active consumers + stale docs = limbo. Assign ownership or compulsory-migrate. Zombie dual names (Hot Sales + FFT) are especially toxic for agents — remove the old name from live SSOT.
+No owner + active consumers + stale docs = limbo. Assign ownership or compulsory-migrate. Zombie dual names (Hot Sales / FFT / Declarations-as-living) are especially toxic for agents — remove the old name from live SSOT.
 
 ## Common Rationalizations
 
@@ -149,7 +149,7 @@ No owner + active consumers + stale docs = limbo. Assign ownership or compulsory
 | “Someone might need it later” | Rebuild if needed; do not keep rejected shells. |
 | “Advisory is safer” | Soft deprecation reintroduces FftShell / Hot Sales / separate-infra framing. |
 | “Leave a shim for convenience” | Redirect only; no product UI on the shim. |
-| “FFT infra is a different course” | Rejected — one platform, two modules. |
+| “FFT / Declarations are still living modules” | Rejected — nuclear wipe removed both; living = platform + identity only. |
 | “We'll clean docs later” | Docs that teach retired names are active defects. |
 
 ## Red Flags
@@ -169,4 +169,4 @@ No owner + active consumers + stale docs = limbo. Assign ownership or compulsory
 - [ ] No live product entry to the old path (redirect-only OK)
 - [ ] Agents cannot honestly read live docs as endorsing the old name
 - [ ] Old code/tests/config removed or quarantined as archive footnotes
-- [ ] Platform/infra changes still shared across modules (no new FFT-only stack)
+- [ ] Platform/infra changes stay shared (no recreated Declarations/FFT product stack)

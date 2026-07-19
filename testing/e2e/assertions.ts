@@ -26,12 +26,11 @@ export function expectOperatorHome(pathname: string): void {
 }
 
 export function expectClientHome(pathname: string): void {
-	expect(pathname).toBe("/client/declarations");
+	expect(pathname).toBe("/client");
 }
 
 export type OperatorShellNavExpectation = {
 	admin: boolean;
-	fft: boolean;
 };
 
 /**
@@ -44,19 +43,10 @@ export async function expectOperatorShellNav(
 	const adminLink = page.locator('a[href="/admin"]').filter({
 		hasText: /Operator admin/i,
 	});
-	const fftLink = page.locator('a[href="/fft"]').filter({
-		hasText: /Feed Farm Trade/i,
-	});
 
 	if (expectation.admin) {
 		await expect(adminLink.first()).toBeVisible({ timeout: 15_000 });
 	} else {
 		await expect(adminLink).toHaveCount(0);
-	}
-
-	if (expectation.fft) {
-		await expect(fftLink.first()).toBeVisible({ timeout: 15_000 });
-	} else {
-		await expect(fftLink).toHaveCount(0);
 	}
 }

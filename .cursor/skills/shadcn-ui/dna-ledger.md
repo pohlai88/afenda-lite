@@ -2,7 +2,7 @@
 
 **Machine SSOT:** [`dna-ledger.json`](dna-ledger.json)  
 **Narrative audit:** [`11-studio-admincn-possibility-audit.md`](../../../docs/scratch/neon-auth-optimisation/11-studio-admincn-possibility-audit.md)  
-**Pattern ancestor (not a merge target):** FFT [`ui-registry.md`](../feed-farm-trade/ui-registry.md) — platform DNA stays lean here.
+**Pattern ancestor (not a merge target):** historical FFT ui-registry (skill removed with nuclear wipe) — platform DNA stays lean here.
 
 ## Own install registry — DEFERRED
 

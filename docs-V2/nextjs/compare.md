@@ -49,10 +49,11 @@
 | Older skill wording | MCP / disk |
 |---------------------|------------|
 | `/dashboard/*`, `/account/*` | Not in `get_routes` |
-| `/admin`, `/fft` | Present |
+| `/admin` | Present |
+| `/fft` | Removed (nuclear wipe) |
 | `/client/*` | Present |
 | `/auth/*`, `/join`, `/` | Present |
-| `/api/health\|auth\|session\|declaration-draft` | Present |
+| `/api/health\|auth\|session` | Present (no declaration-draft) |
 | `/playground/*` | Absent (correct) |
 
 ## Verify

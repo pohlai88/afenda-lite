@@ -1,5 +1,12 @@
 import { env } from "@afenda/env";
+import type { AppError } from "@afenda/errors";
+import {
+	ERROR_HTTP_STATUS,
+	httpErrorBody,
+	retryAfterSeconds,
+} from "@afenda/errors/http";
 import { createLogger } from "@afenda/logger";
+import { checkRateLimit, toRateLimitAppError } from "@afenda/rate-limit";
 
 import { getNeonAuth } from "./neon-auth";
 
@@ -7,6 +14,8 @@ const authBffLogger = createLogger({ service: "afenda-auth-bff" });
 
 /** Wire header for BFF correlation (API-007 twin — package-local, no apps/web import). */
 export const AUTH_BFF_CORRELATION_HEADER = "x-correlation-id" as const;
+
+const UNKNOWN_CLIENT_IP = "unknown";
 
 const UUID_RE =
 	/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -121,6 +130,18 @@ function stampCorrelation(response: Response, correlationId: string): Response {
 	return response;
 }
 
+function clientIpFromRequest(request: Request): string {
+	const forwarded = firstHeaderValue(request.headers.get("x-forwarded-for"));
+	if (forwarded) {
+		return forwarded;
+	}
+	const realIp = firstHeaderValue(request.headers.get("x-real-ip"));
+	if (realIp) {
+		return realIp;
+	}
+	return UNKNOWN_CLIENT_IP;
+}
+
 function forbiddenResponse(correlationId: string): Response {
 	return stampCorrelation(new Response(null, { status: 403 }), correlationId);
 }
@@ -129,18 +150,34 @@ function safeInternalErrorResponse(correlationId: string): Response {
 	return stampCorrelation(new Response(null, { status: 500 }), correlationId);
 }
 
+function appErrorResponse(correlationId: string, error: AppError): Response {
+	const retryAfter = retryAfterSeconds(error.details);
+	const headers = new Headers({
+		"content-type": "application/json",
+		[AUTH_BFF_CORRELATION_HEADER]: correlationId,
+	});
+	if (retryAfter !== undefined) {
+		headers.set("Retry-After", String(retryAfter));
+	}
+	return new Response(
+		JSON.stringify(httpErrorBody(error.code, error.message, error.details)),
+		{
+			status: ERROR_HTTP_STATUS[error.code],
+			headers,
+		},
+	);
+}
+
 function logAuthBffUnexpectedError(input: {
 	correlationId: string;
 	method: string;
 	pathname: string;
 }): void {
-	authBffLogger
-		.child({ correlationId: input.correlationId })
-		.error({
-			event: "auth_bff.unexpected_error",
-			method: input.method,
-			path: input.pathname,
-		});
+	authBffLogger.child({ correlationId: input.correlationId }).error({
+		event: "auth_bff.unexpected_error",
+		method: input.method,
+		path: input.pathname,
+	});
 }
 
 function wrapProviderHandler(
@@ -155,6 +192,26 @@ function wrapProviderHandler(
 
 		if (method === "POST" && !isTrustedAuthBffPost(request)) {
 			return forbiddenResponse(correlationId);
+		}
+
+		if (method === "POST") {
+			const limit = await checkRateLimit({
+				bucket: "auth_bff_post",
+				key: `${clientIpFromRequest(request)}:${pathname}`,
+			});
+			if (!limit.ok) {
+				const error = toRateLimitAppError(limit);
+				const event =
+					limit.reason === "unavailable"
+						? "auth_bff.rate_limit_unavailable"
+						: "auth_bff.rate_limited";
+				authBffLogger.child({ correlationId }).warn({
+					event,
+					path: pathname,
+					code: error.code,
+				});
+				return appErrorResponse(correlationId, error);
+			}
 		}
 
 		try {

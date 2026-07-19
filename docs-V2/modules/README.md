@@ -8,6 +8,8 @@
 
 Bounded contexts on disk. Re-probe L2 folders after module changes. Do **not** treat skill `module-tree.md` Living inventory as disk SSOT.
 
+**Removed domains (nuclear wipe):** Declarations (`modules/declarations`, `features/declarations`) and Feed Farm Trade (`modules/fft`, `features/fft`, `feed-farm-trade` skill) are **gone** — do not recreate.
+
 ---
 
 ## Context map (disk)
@@ -15,13 +17,9 @@ Bounded contexts on disk. Re-probe L2 folders after module changes. Do **not** t
 | Context | L2 on disk | Feature UI | Primary routes |
 |---------|------------|------------|----------------|
 | platform | `api` · `domain` · `format` · `observability` · `schemas` | portal-chrome · landing | `/` · health · correlation |
-| identity | `domain` · `schemas` | auth · org-admin | `/auth/*` · `/join` · `/admin` |
-| declarations | `api` · `domain` · `schemas` | declarations | `/client/**` |
-| fft (Trade) | `auth` · `domain` | fft | `/fft` |
+| identity | `domain` · `schemas` | auth · org-admin | `/auth/*` · `/join` · `/admin` · `/client` |
 
-Physical home: `apps/web/modules/{platform,identity,declarations,fft}`. Never invent `modules/trade/`.
-
-FFT **2B–2D** product code stays frozen until an explicit program reopen this chat.
+Physical home: `apps/web/modules/{platform,identity}`. Living feature homes: `apps/web/features/{auth,org-admin}` (+ portal-chrome / landing as present). Never invent `modules/trade/`, `modules/declarations/`, or `modules/fft/`.
 
 ---
 
@@ -29,12 +27,11 @@ FFT **2B–2D** product code stays frozen until an explicit program reopen this 
 
 | Rule | Why |
 |------|-----|
-| Identity ↛ Declarations (any) | Keep RBAC/session free of declaration domain |
-| Trade (`fft`) ↛ Declarations (any, incl. schemas) | Shared Zod from Platform only |
-| Platform ↛ Declarations / FFT **domain compose** | Platform owns shared contracts; product compose at adapters / features |
+| Identity ↛ deleted domain trees | Keep RBAC/session free of wiped Declarations/FFT residue |
+| Platform ↛ product domain compose for removed modules | Platform owns shared contracts; living product compose = identity / org-admin adapters |
 | Ports ↛ `Request` · `next/headers` · UI | HTTP/UI stay in Actions / RH / pages |
 
-Compose two contexts only at the adapter (Server Action · Route Handler · thin page). Deep rule table: farm skill `context-boundaries.md` (not pasted here).
+Compose two living contexts only at the adapter (Server Action · Route Handler · thin page). Deep rule table: farm skill `context-boundaries.md` (not pasted here).
 
 ---
 
@@ -52,10 +49,10 @@ Compose two contexts only at the adapter (Server Action · Route Handler · thin
 ## Verify
 
 ```text
-1. Disk: apps/web/modules/{platform,identity,declarations,fft}/<L2>
-2. No modules/trade/ · no root modules/ (Collapse)
-3. Search apps/web/modules/{fft,identity} for from "@/modules/declarations
-   → expect zero product imports (rg or IDE search)
+1. Disk: apps/web/modules/{platform,identity}/<L2>
+2. No modules/trade/ · no modules/declarations/ · no modules/fft/ · no root modules/ (Collapse)
+3. Search apps/web for modules/declarations|modules/fft|features/declarations|features/fft
+   → expect zero living product trees (rg or IDE search)
 4. Ownership summary: ../system/README.md → this pack
 ```
 

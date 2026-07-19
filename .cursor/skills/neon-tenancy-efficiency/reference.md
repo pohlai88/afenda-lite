@@ -85,11 +85,11 @@ pnpm test:e2e:journey -- e2e/tenancy-isolation.spec.ts
 |------|------------|
 | Env | `@afenda/env` schema present; `.env.local` only local runtime file; no compose |
 | `verify:vercel-db` | `DATABASE_URL` contains `-pooler` |
-| `audit:tenancy-nulls` | Zero nulls on eight hard tenant roots (when script exists) |
+| `audit:tenancy-nulls` | Zero nulls on living hard tenant roots (`platform_role_assignment`, `platform_rbac_audit`) |
 | `check:tenancy-residue` | No soft `(NULL OR org)` residue |
 | Isolation e2e | Green only when Target app suite exists |
 
-**Do not** invent placeholder `FFT_ERP_VENDOR` / `FFT_ERP_BASE_URL` to green A1 — those are tenant/ops-owned when enabling FFT ERP sync (2D-3).
+**Do not** invent placeholder ERP / wiped-domain env keys to green A1.
 
 ### If pooler check fails
 
@@ -115,32 +115,21 @@ WHERE datname = current_database()
 GROUP BY usename, state
 ORDER BY count(*) DESC;
 
--- B3 Org indexes on hard tenant roots (migration 027 contract)
+-- B3 Org indexes on living hard tenant roots (post domain wipe)
 SELECT tablename, indexname, indexdef
 FROM pg_indexes
 WHERE schemaname = 'public'
   AND tablename IN (
-    'surveys',
-    'client_invitations',
-    'client_profiles',
-    'client_assignments',
-    'fft_event',
-    'fft_sales_member',
-    'fft_role',
-    'fft_role_assignment'
+    'platform_role_assignment',
+    'platform_rbac_audit'
   )
   AND indexdef ILIKE '%organization_id%'
 ORDER BY tablename, indexname;
 
--- B4 NOT NULL on hard roots (expect zero rows)
-SELECT 'surveys' AS t, count(*) AS nulls FROM surveys WHERE organization_id IS NULL
-UNION ALL SELECT 'client_invitations', count(*) FROM client_invitations WHERE organization_id IS NULL
-UNION ALL SELECT 'client_profiles', count(*) FROM client_profiles WHERE organization_id IS NULL
-UNION ALL SELECT 'client_assignments', count(*) FROM client_assignments WHERE organization_id IS NULL
-UNION ALL SELECT 'fft_event', count(*) FROM fft_event WHERE organization_id IS NULL
-UNION ALL SELECT 'fft_sales_member', count(*) FROM fft_sales_member WHERE organization_id IS NULL
-UNION ALL SELECT 'fft_role', count(*) FROM fft_role WHERE organization_id IS NULL
-UNION ALL SELECT 'fft_role_assignment', count(*) FROM fft_role_assignment WHERE organization_id IS NULL;
+-- B4 NOT NULL on living hard roots (expect zero rows)
+SELECT 'platform_role_assignment' AS t, count(*) AS nulls
+FROM platform_role_assignment WHERE organization_id IS NULL
+UNION ALL SELECT 'platform_rbac_audit', count(*) FROM platform_rbac_audit WHERE organization_id IS NULL;
 
 -- B5 Auth org registry (for ops — never stamp LIMIT 1 blindly)
 SELECT id, name, slug, "createdAt"
@@ -203,37 +192,21 @@ npm run check:production:post-deploy
 ## D — Domain anti-drift grep
 
 ```powershell
-cd C:\JackProject\afenda-bolt\client-declaration-portal
-# Target path when present — root modules/ is absent on docs-first (do not recover)
-rg -n "FROM (surveys|client_|fft_)" apps/web/modules modules --glob "*.ts" 2>$null
-rg -n "organizationScopeSql|organization_id\s*=\s*\$" apps/web/modules modules --glob "*.ts" 2>$null
+cd C:\JackProject\afenda-bolt\afenda-lite
+rg -n "organization_id" apps/web/modules packages/db/src --glob "*.ts" 2>$null
 ```
 
-Every tenant-root read/write must use hard `organization_id = $org` (via `organizationScopeSql` or equivalent). Missing filter = critical stop. On docs-first with no product tree, treat this block as N/A / historical.
+Every living tenant-root read/write must use hard `organization_id = $org` (via `withOrg` / equivalent). Missing filter = critical stop. Living hard roots: `platform_role_assignment`, `platform_rbac_audit`.
 
-**D closed 2026-07-12:** FFT RBAC `duplicateRole` / `ensureRoleAssignment` / `revokeRoleAssignment` / `setRoleActive` hard-scoped; closing-soon cron fans out per Auth org then scopes `fft_event`; `deleteClientProfileByUserId` org-scoped. Allowed unscoped: capability tokens (`slug`/`token`) and session `user_id` identity reads.
+**D closed 2026-07-12 (historical):** prior Declarations/FFT domain scopes — product modules now **removed**. Allowed unscoped: session `user_id` identity reads.
 
 ---
 
 ## E — Conditional ops (only when needed)
 
-### E1 FFT access backfill (explicit org UUID)
+### E1 FFT access backfill *(removed)*
 
-Auth tenant (product) — **not** Neon Cloud `NEON_ORG_ID`:
-
-```text
-4587e4c8-8119-4761-91ce-b874d3493aad   # slug afenda-lite
-```
-
-```powershell
-# Target / when backfill script exists — require explicit org; no docs-first compose
-# Use approved env file for the checkout state (post-S4.1: .env.local via @afenda/env)
-node scripts/backfill-fft-access.mjs --dry-run --organization-id=4587e4c8-8119-4761-91ce-b874d3493aad
-# live write only when dry-run shows wouldGrant > 0:
-node scripts/backfill-fft-access.mjs --organization-id=4587e4c8-8119-4761-91ce-b874d3493aad
-```
-
-Or set `$env:PORTAL_ORGANIZATION_ID` explicitly in the shell — never rely on Collapse compose.
+FFT product module + `fft.access` catalog entry are **gone**. Do not run historical `backfill-fft-access` as living ops.
 
 ### E2 Migrations (use **direct** `DATABASE_URL`, not pooler)
 
@@ -295,7 +268,7 @@ Rollback / recovery for org ops: [docs/runbooks/RB-001-multi-org-ops.md](../../.
 - Enable Neon RLS on the product BFF path without a new ADR
 - Treat project-per-tenant as a performance optimization (D5)
 - Enable `PORTAL_ORG_SWITCHER_ENABLED` on Vercel without multi-membership + rollback
-- Mix this ladder with FFT flag promotion or portal atmosphere work
+- Mix this ladder with wiped Declarations/FFT product restore or portal atmosphere work
 - Reintroduce `iam-check` Auth slug / `admin@iam-check.com` / `@iam-check.com` fixture emails
 - Use `neonctl link` as a routine env fix, or restore `env:compose` / `env.config` (ARCH-027 — retired)
 

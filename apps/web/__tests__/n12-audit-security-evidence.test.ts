@@ -15,13 +15,6 @@ const operatorSession = {
 	email: "operator@example.com",
 };
 
-const clientSession = {
-	userId: "user-n12-client",
-	orgId: "org-n12",
-	role: "client" as const,
-	email: "client@example.com",
-};
-
 const authMocks = vi.hoisted(() => ({
 	requireRole: vi.fn(),
 	getApiSession: vi.fn(),
@@ -38,12 +31,6 @@ const identityMocks = vi.hoisted(() => ({
 
 const auditMocks = vi.hoisted(() => ({
 	recordRbacAudit: vi.fn(),
-}));
-
-const declarationMocks = vi.hoisted(() => ({
-	getClientDeclarationDraft: vi.fn(),
-	isClientOnboardingComplete: vi.fn(),
-	saveClientDeclarationDraft: vi.fn(),
 }));
 
 vi.mock("@afenda/auth", () => ({
@@ -88,29 +75,17 @@ vi.mock("@afenda/admin/audit", async (importOriginal) => {
 	};
 });
 
-vi.mock("@/modules/declarations/domain/declaration-draft", () => ({
-	getClientDeclarationDraft: declarationMocks.getClientDeclarationDraft,
-	isClientOnboardingComplete: declarationMocks.isClientOnboardingComplete,
-	saveClientDeclarationDraft: declarationMocks.saveClientDeclarationDraft,
-}));
-
+import { MEMBER_INVITE_AUDIT_ACTION } from "@afenda/admin/audit";
 import { assignOrgRoleAction } from "../app/actions/assign-org-role";
-import {
-	loadDeclarationDraftAction,
-	saveDeclarationDraftAction,
-} from "../app/actions/declaration-draft";
 import { inviteOrgMemberAction } from "../app/actions/invite-org-member";
 import { revokeOrgRoleAction } from "../app/actions/revoke-org-role";
 import { hasPermission } from "../modules/identity/domain/has-permission";
-import { MEMBER_INVITE_AUDIT_ACTION } from "@afenda/admin/audit";
 
 const hasPermissionMock = vi.mocked(hasPermission);
 
 const ROLE_ID = "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee";
 const ASSIGNMENT_ID = "11111111-2222-4333-8444-555555555555";
 const USER_ID = "member-user-n12";
-const ASSIGNMENT_UUID = "09ec6b05-9e7d-4de4-99e0-046c216fd4d1";
-const SURVEY_UUID = "bfc535bd-54f4-4607-9a59-279150339e89";
 
 const secretLeak =
 	"postgres://user:SECRET_PASSWORD@ep-xxx.neon.tech/neondb?sslmode=require";
@@ -119,13 +94,12 @@ describe("N12 living authz audit evidence", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		authMocks.requireRole.mockResolvedValue(operatorSession);
-		authMocks.getApiSession.mockResolvedValue(clientSession);
+		authMocks.getApiSession.mockResolvedValue(operatorSession);
 		authMocks.canInviteMember.mockReturnValue(true);
 		authMocks.buildJoinUrl.mockReturnValue(
 			"/join?invitationId=inv-n12-fixture",
 		);
 		hasPermissionMock.mockResolvedValue(true);
-		declarationMocks.isClientOnboardingComplete.mockResolvedValue(true);
 		identityMocks.getOrganizationUser.mockResolvedValue({
 			userId: USER_ID,
 			email: "member@example.com",
@@ -382,57 +356,11 @@ describe("N12 living authz audit evidence", () => {
 	});
 });
 
-describe("N12 declaration draft unsafe-error closure", () => {
-	beforeEach(() => {
-		vi.clearAllMocks();
-		authMocks.requireRole.mockResolvedValue(clientSession);
-		authMocks.getApiSession.mockResolvedValue(clientSession);
-		hasPermissionMock.mockResolvedValue(true);
-		declarationMocks.isClientOnboardingComplete.mockResolvedValue(true);
-	});
-
-	it("maps unexpected draft load failures to safe INTERNAL_ERROR", async () => {
-		declarationMocks.getClientDeclarationDraft.mockRejectedValue(
-			new Error(`query failed ${secretLeak}`),
-		);
-
-		const result = await loadDeclarationDraftAction(ASSIGNMENT_UUID);
-
-		expect(result).toMatchObject({
-			ok: false,
-			code: "INTERNAL_ERROR",
-		});
-		expect(JSON.stringify(result)).not.toContain("SECRET_PASSWORD");
-		expect(JSON.stringify(result)).not.toContain("postgres://");
-	});
-
-	it("maps unexpected draft save failures to safe INTERNAL_ERROR", async () => {
-		declarationMocks.saveClientDeclarationDraft.mockRejectedValue(
-			new Error(`@afenda/db: ${secretLeak}`),
-		);
-
-		const formData = new FormData();
-		formData.set("assignmentId", ASSIGNMENT_UUID);
-		formData.set("surveyId", SURVEY_UUID);
-		formData.set("answer", "yes");
-		formData.set("stepIndex", "0");
-
-		const result = await saveDeclarationDraftAction(null, formData);
-
-		expect(result).toMatchObject({
-			ok: false,
-			code: "INTERNAL_ERROR",
-		});
-		expect(JSON.stringify(result)).not.toContain("SECRET_PASSWORD");
-		expect(JSON.stringify(result)).not.toContain("@afenda/db");
-	});
-});
-
 /**
  * N12 / GUIDE-017 — join accept is ARCH-023 Tier-1 Neon Auth membership
  * (AcceptInvitationCard). Platform RBAC audit (Tier-2) already attributes
  * `member.invite` at operator invite. Join accept is NOT APPLICABLE for
- * app-side `platform_rbac_audit` writes — do not invent a stub hook Neon UI
+ * app-side `platform_rbac_audit` writes — do not invent a hook Neon UI
  * never calls. `ensure-active-organization` is session cookie sync only.
  */
 describe("N12 join accept NOT APPLICABLE (ARCH-023 Tier-1)", () => {

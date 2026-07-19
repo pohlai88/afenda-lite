@@ -48,16 +48,11 @@ export const env = createEnv({
 
 		GUARDIAN_AUTH_SHELL: boolString.optional().default(true),
 
-		FFT_RBAC_ENABLED: boolString.optional().default(false),
-		FFT_DEPOSIT_ENABLED: boolString.optional().default(false),
-		FFT_PICKUP_OPS_ENABLED: boolString.optional().default(false),
-		FFT_NOTIFICATIONS_ENABLED: boolString.optional().default(false),
-		FFT_EMAIL_FROM: z.string().min(1).optional(),
-		FFT_ERP_SYNC_ENABLED: boolString.optional().default(false),
-		FFT_ERP_VENDOR: z.string().min(1).optional(),
-		FFT_ERP_BASE_URL: z.url().optional(),
-		FFT_ERP_API_KEY: z.string().min(1).optional(),
 		RESEND_API_KEY: z.string().min(1).optional(),
+
+		/** Upstash Redis REST — required on Vercel production for shared rate limits. */
+		UPSTASH_REDIS_REST_URL: z.url().optional(),
+		UPSTASH_REDIS_REST_TOKEN: z.string().min(1).optional(),
 
 		PLAYGROUND_ENABLED: boolString
 			.optional()
@@ -74,8 +69,6 @@ export const env = createEnv({
 		PLAYGROUND_SURVEY_ID: z.string().min(1).optional(),
 		PLAYGROUND_ASSIGNMENT_ID: z.string().min(1).optional(),
 		PLAYGROUND_SURVEY_SLUG: z.string().min(1).optional(),
-		PLAYGROUND_FFT_EVENT_ID: z.string().min(1).optional(),
-		PLAYGROUND_FFT_LOCALE: z.string().min(1).optional(),
 
 		SHARED_ADMIN_EMAIL: z.email().optional(),
 		SHARED_ADMIN_NAME: z.string().min(1).optional(),
@@ -116,23 +109,15 @@ export const env = createEnv({
 
 		GUARDIAN_AUTH_SHELL: process.env.GUARDIAN_AUTH_SHELL,
 
-		FFT_RBAC_ENABLED: process.env.FFT_RBAC_ENABLED,
-		FFT_DEPOSIT_ENABLED: process.env.FFT_DEPOSIT_ENABLED,
-		FFT_PICKUP_OPS_ENABLED: process.env.FFT_PICKUP_OPS_ENABLED,
-		FFT_NOTIFICATIONS_ENABLED: process.env.FFT_NOTIFICATIONS_ENABLED,
-		FFT_EMAIL_FROM: process.env.FFT_EMAIL_FROM,
-		FFT_ERP_SYNC_ENABLED: process.env.FFT_ERP_SYNC_ENABLED,
-		FFT_ERP_VENDOR: process.env.FFT_ERP_VENDOR,
-		FFT_ERP_BASE_URL: process.env.FFT_ERP_BASE_URL,
-		FFT_ERP_API_KEY: process.env.FFT_ERP_API_KEY,
 		RESEND_API_KEY: process.env.RESEND_API_KEY,
+
+		UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL,
+		UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,
 
 		PLAYGROUND_ENABLED: process.env.PLAYGROUND_ENABLED,
 		PLAYGROUND_SURVEY_ID: process.env.PLAYGROUND_SURVEY_ID,
 		PLAYGROUND_ASSIGNMENT_ID: process.env.PLAYGROUND_ASSIGNMENT_ID,
 		PLAYGROUND_SURVEY_SLUG: process.env.PLAYGROUND_SURVEY_SLUG,
-		PLAYGROUND_FFT_EVENT_ID: process.env.PLAYGROUND_FFT_EVENT_ID,
-		PLAYGROUND_FFT_LOCALE: process.env.PLAYGROUND_FFT_LOCALE,
 
 		SHARED_ADMIN_EMAIL: process.env.SHARED_ADMIN_EMAIL,
 		SHARED_ADMIN_NAME: process.env.SHARED_ADMIN_NAME,

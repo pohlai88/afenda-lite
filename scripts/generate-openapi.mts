@@ -1,7 +1,7 @@
 /**
  * Emit docs-V2/api/OPEN-001-openapi.yaml for api-now HTTP only.
  *
- * Zod SSOT: apps/web/modules platform + declarations schemas.
+ * Zod SSOT: apps/web/modules/platform schemas.
  * Run with: pnpm exec tsx --tsconfig apps/web/tsconfig.json scripts/generate-openapi.mts
  *
  * @see docs-V2/api/rest.md
@@ -15,12 +15,6 @@ import {
 } from "@asteasolutions/zod-to-openapi";
 import { stringify as stringifyYaml } from "yaml";
 
-import {
-	declarationDraftGetResponseSchema,
-	declarationDraftQuerySchema,
-	declarationDraftWriteResponseSchema,
-	saveClientDeclarationDraftSchema,
-} from "../apps/web/modules/declarations/schemas/client";
 import { apiErrorBodySchema } from "../apps/web/modules/platform/schemas/api-error";
 import {
 	livenessResponseSchema,
@@ -47,42 +41,14 @@ const readinessEnvelopeSchema = dataEnvelope(
 	readinessResponseSchema,
 	"ReadinessEnvelope",
 );
-const declarationDraftGetEnvelopeSchema = dataEnvelope(
-	declarationDraftGetResponseSchema,
-	"DeclarationDraftGetEnvelope",
-);
-const declarationDraftWriteEnvelopeSchema = dataEnvelope(
-	declarationDraftWriteResponseSchema,
-	"DeclarationDraftWriteEnvelope",
-);
 
 const registry = new OpenAPIRegistry();
 
 registry.register("APIErrorBody", apiErrorBodySchema);
 registry.register("LivenessResponse", livenessResponseSchema);
 registry.register("ReadinessResponse", readinessResponseSchema);
-registry.register(
-	"SaveClientDeclarationDraft",
-	saveClientDeclarationDraftSchema,
-);
-registry.register(
-	"DeclarationDraftGetResponse",
-	declarationDraftGetResponseSchema,
-);
-registry.register(
-	"DeclarationDraftWriteResponse",
-	declarationDraftWriteResponseSchema,
-);
 registry.register("LivenessEnvelope", livenessEnvelopeSchema);
 registry.register("ReadinessEnvelope", readinessEnvelopeSchema);
-registry.register(
-	"DeclarationDraftGetEnvelope",
-	declarationDraftGetEnvelopeSchema,
-);
-registry.register(
-	"DeclarationDraftWriteEnvelope",
-	declarationDraftWriteEnvelopeSchema,
-);
 
 registry.registerComponent("securitySchemes", "neonAuthSession", {
 	type: "apiKey",
@@ -91,39 +57,6 @@ registry.registerComponent("securitySchemes", "neonAuthSession", {
 	description:
 		"Neon Auth client session cookie (browser same-origin). Cookie name here is illustrative — Neon owns the real name.",
 });
-
-const errorResponses = {
-	400: {
-		description: "Bad request",
-		content: {
-			"application/json": { schema: apiErrorBodySchema },
-		},
-	},
-	401: {
-		description: "Unauthorized",
-		content: {
-			"application/json": { schema: apiErrorBodySchema },
-		},
-	},
-	403: {
-		description: "Forbidden",
-		content: {
-			"application/json": { schema: apiErrorBodySchema },
-		},
-	},
-	404: {
-		description: "Not found",
-		content: {
-			"application/json": { schema: apiErrorBodySchema },
-		},
-	},
-	422: {
-		description: "Validation error",
-		content: {
-			"application/json": { schema: apiErrorBodySchema },
-		},
-	},
-} as const;
 
 registry.registerPath({
 	method: "get",
@@ -157,77 +90,6 @@ registry.registerPath({
 	},
 });
 
-registry.registerPath({
-	method: "get",
-	path: "/api/client/declaration-draft",
-	summary: "Load client declaration draft",
-	description:
-		"Requires client session + onboarding. Cache-Control: private, no-store. Success body uses `{ data }` envelope.",
-	tags: ["DeclarationDraft"],
-	security: [{ neonAuthSession: [] }],
-	request: {
-		query: declarationDraftQuerySchema,
-	},
-	responses: {
-		200: {
-			description: "Draft loaded",
-			content: {
-				"application/json": { schema: declarationDraftGetEnvelopeSchema },
-			},
-		},
-		...errorResponses,
-	},
-});
-
-const writeDraftShared = {
-	tags: ["DeclarationDraft"] as string[],
-	security: [{ neonAuthSession: [] }],
-	request: {
-		body: {
-			content: {
-				"application/json": { schema: saveClientDeclarationDraftSchema },
-			},
-			required: true,
-		},
-	},
-	responses: {
-		200: {
-			description: "Draft saved",
-			content: {
-				"application/json": { schema: declarationDraftWriteEnvelopeSchema },
-			},
-		},
-		...errorResponses,
-	},
-};
-
-registry.registerPath({
-	method: "put",
-	path: "/api/client/declaration-draft",
-	summary: "Persist client declaration draft",
-	description:
-		"Full draft replace (saveClientDeclarationDraftSchema). Cache-Control: private, no-store.",
-	...writeDraftShared,
-});
-
-registry.registerPath({
-	method: "patch",
-	path: "/api/client/declaration-draft",
-	summary: "Persist client declaration draft",
-	description:
-		"Same write body as PUT when partial fields are not split at the schema. Cache-Control: private, no-store.",
-	...writeDraftShared,
-});
-
-registry.registerPath({
-	method: "post",
-	path: "/api/client/declaration-draft",
-	summary: "Persist draft (keepalive alias)",
-	description:
-		"Keepalive alias of PUT/PATCH with the same body. Cache-Control: private, no-store.",
-	...writeDraftShared,
-});
-
 const generator = new OpenApiGeneratorV3(registry.definitions);
 const document = generator.generateDocument({
 	openapi: "3.0.3",
@@ -247,13 +109,7 @@ const document = generator.generateDocument({
 			description: "Local next dev",
 		},
 	],
-	tags: [
-		{ name: "Health", description: "Public probes" },
-		{
-			name: "DeclarationDraft",
-			description: "Client autosave XHR (api-now)",
-		},
-	],
+	tags: [{ name: "Health", description: "Public probes" }],
 });
 
 const operationMetadata = {
@@ -262,15 +118,6 @@ const operationMetadata = {
 	},
 	"/api/health/readiness": {
 		get: { operationId: "getHealthReadiness", status: "api-now" },
-	},
-	"/api/client/declaration-draft": {
-		get: { operationId: "getClientDeclarationDraft", status: "api-now" },
-		put: { operationId: "putClientDeclarationDraft", status: "api-now" },
-		patch: { operationId: "patchClientDeclarationDraft", status: "api-now" },
-		post: {
-			operationId: "postClientDeclarationDraftKeepalive",
-			status: "api-now",
-		},
 	},
 } as const;
 
@@ -295,8 +142,8 @@ for (const [route, methods] of Object.entries(operationMetadata)) {
 Object.assign(document, {
 	"x-afenda-document": {
 		id: "OPEN-001",
-		version: "1.1.6",
-		generatedAt: "2026-07-15",
+		version: "1.2.0",
+		generatedAt: "2026-07-20",
 	},
 });
 

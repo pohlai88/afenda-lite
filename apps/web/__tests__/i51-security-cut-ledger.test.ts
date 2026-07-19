@@ -1,8 +1,6 @@
 /**
  * GUIDE-018 I5.1 — cut ledger + safe-error inventory for product Server Actions.
- * Isolation by-id proof: tenancy-isolation
- *   "I5.1: orgB cannot get/draft/save/submit orgA assignment by id"
- * plus declaration-submit-read orgB draft/get/submit denials.
+ * Isolation by-org proof: tenancy-isolation RBAC audit two-org case.
  */
 
 import { existsSync, readdirSync, readFileSync } from "node:fs";
@@ -20,13 +18,10 @@ const PRODUCT_SERVER_ACTIONS = [
 	"assign-org-role.ts",
 	"revoke-org-role.ts",
 	"invite-org-member.ts",
-	"declaration-draft.ts",
-	"submit-client-declaration.ts",
 ] as const;
 
 const SAFE_ERROR_EVIDENCE = [
 	"apps/web/__tests__/n12-audit-security-evidence.test.ts",
-	"apps/web/__tests__/submit-client-declaration-action.test.ts",
 	"apps/web/__tests__/safe-error-copy.test.ts",
 ] as const;
 

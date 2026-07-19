@@ -133,7 +133,7 @@ Demo locally: `pnpm --filter @afenda/docs dev` → `/docs/api`.
 
 ## Scope (api-now)
 
-**In YAML / docs UI:** health liveness · readiness · declaration-draft GET/PUT/PATCH/POST.
+**In YAML / docs UI:** health liveness · readiness only (declaration-draft removed with Declarations wipe).
 
 **Excluded (on disk, not in YAML):** `/api/auth/*` · `/api/session/*` (redirect / plain-text bridges).
 

@@ -22,7 +22,6 @@ Always also load: this skill’s [SKILL.md](SKILL.md).
 | alignment | `afenda-elite-audit-orchestrator` |
 | refactor | `afenda-elite-monorepo-refactor` |
 | neon | `neon-tenancy-efficiency` |
-| fft | `feed-farm-trade` |
 | ui | `afenda-elite-frontend-scaffold` + `@afenda/ui-system` barrel (ADR-010) |
 | admincn | `afenda-elite-frontend-scaffold` (chrome); AdminCN authority ARCH-018 |
 | lanes | `bounded-agent-lanes` (method) |
@@ -44,11 +43,11 @@ Authority: GUIDE-018 operative facts in this map + [command-sheet.md](command-sh
 | **I1.4** | S | Ops | Role shells | ARCH-026 · ARCH-023 | router → slices → nextjs → neon | Unauth → login; wrong role → `/403`; happy session reaches shell |
 | **I2.1** | M | Ops | ActionResult / error brands | ARCH-029 · API-002 · GUIDE-015 | router → slices → api → modules | Shared result/error types on Target paths; typecheck |
 | **I2.2** | S | Ops | Feature→domain→db boundary | ARCH-024 · ARCH-029 | router → slices → modules → api | `rg` features never import `@afenda/db` |
-| **I2.3** | M | Ops | First authenticated **write** | ARCH-023 · owning MOD | router → slices → modules → api → neon | One non-FFT-2B write E2E under hard tenancy |
+| **I2.3** | M | Ops | First authenticated **write** | ARCH-023 · owning MOD | router → slices → modules → api → neon | One identity/platform write E2E under hard tenancy |
 | **I2.4** | S | Ops | OpenAPI / REST honesty | ARCH-029 · GUIDE-015 | router → slices → api | `pnpm check:openapi` (+ integrity if mapped) |
 | **I3.1** | M | Ops | Identity / Platform | ARCH-023 · MOD | router → slices → modules → readiness → neon | Roles/assignments/audit beyond list ports |
-| **I3.2** | M | Ops | Declarations submit/read | Declarations MOD · ARCH-023 | router → slices → modules → readiness → neon | Client list → submit/read under hard tenancy |
-| **I3.3** | S | Ops | FFT read shell (freeze) | FFT-MOD-008 | router → slices → fft → modules | Phase 2A envelope only — no 2B–2D |
+| **I3.2** | M | Ops | Declarations submit/read | — | — | **Removed (nuclear wipe)** — historical only |
+| **I3.3** | S | Ops | FFT read shell | — | — | **Removed (nuclear wipe)** — not freeze/reopen |
 | **I3.4** | M | Ops | Org-admin shell | ARCH-015/018 when needed | router → slices → scaffold → modules → admincn? | Operator UX composes Identity/Platform ports |
 | **I4** | L | Test | `testing/e2e/*` · `e2e/` | GUIDE-017 · testing/README | router → slices → tdd · lanes | Forward factories + smoke; two-org denial; no Collapse recover |
 | **I5.1** | M | Ops | Security / privacy / audit | GUIDE-017 · ARCH-023 | router → slices → security → neon | Non-waivable isolation/secret/unsafe-error closed or evidenced |

@@ -7,16 +7,20 @@ import {
 	signInWithEmail,
 	signOutSession,
 } from "@afenda/auth";
+import { checkRateLimit, toRateLimitAppError } from "@afenda/rate-limit";
 import { redirect } from "next/navigation";
 
 import { signInSchema } from "@/modules/identity/schemas/auth";
 import { createCorrelationId } from "@/modules/platform/observability/correlation";
+import { logProductEvent } from "@/modules/platform/observability/product-log";
 import {
 	type ActionResult,
 	actionFail,
 	actionFailInternal,
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
+
+const AUTH_SIGN_IN_PATH = AUTH_LOGIN_PATH;
 
 export type SignInActionData = { redirected: true };
 export type SignInActionState = ActionResult<SignInActionData> | null;
@@ -61,6 +65,25 @@ export async function signInAction(
 			"Enter a valid email and password.",
 			parsed.details,
 		);
+	}
+
+	const limit = await checkRateLimit({
+		bucket: "auth_sign_in",
+		key: parsed.data.email,
+	});
+	if (!limit.ok) {
+		const error = toRateLimitAppError(limit);
+		logProductEvent({
+			level: "warn",
+			event:
+				limit.reason === "unavailable"
+					? "auth_sign_in.rate_limit_unavailable"
+					: "auth_sign_in.rate_limited",
+			correlationId,
+			path: AUTH_SIGN_IN_PATH,
+			code: error.code,
+		});
+		return actionFail(error.code, error.message, error.details);
 	}
 
 	const result = await signInWithEmail({

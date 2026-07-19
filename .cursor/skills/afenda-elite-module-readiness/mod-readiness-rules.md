@@ -11,7 +11,7 @@ Verify when Living packs exist: `pnpm check:module-quality`.
 | Structured MOD-009 evidence table semantics | Scratch QG-* as authority |
 | MOD-002 claim rules for **Module Enterprise Readiness** | Certifying Afenda-Lite, Afenda-Elite, or a release |
 | Role split: AC owners 001–008 · evidence 009 · claims 010 | Platform testing-pyramid policy rewrite |
-| Docs-first vs Target honesty when commands cannot run | Reopening FFT 2B–2D without program reopen |
+| Docs-first vs Target honesty when commands cannot run | Recreating wiped Declarations/FFT product modules |
 
 **Claim name:** Module Enterprise Readiness. Passing one module does **not** certify an edition or release.
 
@@ -83,4 +83,4 @@ On docs-first checkout, absent product trees → record `BLOCKED` with command p
 | FFT-MOD-010 | Claims / gaps / roadmap |
 | FFT-MOD-003 · FFT-MOD-008 | Flags / ops; env evidence points here |
 
-Domain gates: [feed-farm-trade](../feed-farm-trade/SKILL.md).
+Domain gates: living modules = platform + identity only (Declarations/FFT product farms **removed**).

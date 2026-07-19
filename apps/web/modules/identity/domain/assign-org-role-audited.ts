@@ -2,6 +2,8 @@
  * Identity — assign org role + platform RBAC audit in one Neon HTTP transaction
  * (N12 residual · ARCH-025 · ARCH-023).
  */
+
+import { ROLE_ASSIGN_AUDIT_ACTION } from "@afenda/admin/audit";
 import {
 	and,
 	db,
@@ -11,13 +13,11 @@ import {
 	platformRoleAssignment,
 	runNeonHttpTransaction,
 } from "@afenda/db";
-
 import {
 	type AssignOrgRoleInput,
 	type AssignOrgRoleResult,
 	ORGANIZATION_SCOPE,
 } from "@/modules/identity/domain/assign-org-role";
-import { ROLE_ASSIGN_AUDIT_ACTION } from "@afenda/admin/audit";
 import { requireTrimmed } from "@/modules/platform/domain/require-trimmed";
 
 export type AssignOrgRoleWithAuditInput = AssignOrgRoleInput & {

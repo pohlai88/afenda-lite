@@ -46,8 +46,6 @@ describe("I5.3 critical-path wiring inventory", () => {
 		"app/actions/invite-org-member.ts",
 		"app/actions/assign-org-role.ts",
 		"app/actions/revoke-org-role.ts",
-		"app/actions/declaration-draft.ts",
-		"app/actions/submit-client-declaration.ts",
 	] as const;
 
 	it("wires createCorrelationId + actionFailInternal on critical Actions", () => {

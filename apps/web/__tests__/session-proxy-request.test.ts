@@ -36,11 +36,7 @@ describe("N6 apps/web proxy request gate", () => {
 		});
 
 		const { proxy } = await import("../proxy");
-		for (const protectedPath of [
-			"/admin",
-			"/fft",
-			"/client/declarations",
-		] as const) {
+		for (const protectedPath of ["/admin", "/client"] as const) {
 			sessionGateMock.mockClear();
 			const response = await proxy(
 				new NextRequest(`https://afenda-lite.vercel.app${protectedPath}`),

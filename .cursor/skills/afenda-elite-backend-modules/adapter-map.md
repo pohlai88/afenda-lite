@@ -3,7 +3,7 @@
 **Like api-now for backend:** which driving adapters call which module entrypoints.  
 **REST catalog / HTTP classification:** [../afenda-elite-api-contract/api-now.md](../afenda-elite-api-contract/api-now.md) · [docs-V2/api/rest.md](../../../docs-V2/api/rest.md)
 
-**Path truth:** Logical names below (`app/actions`, `modules/*`) are **Target/Living shape**. Physical Target home is `apps/web/…`. Rows mark **on disk** vs **planned**. Do not recover Collapse roots.
+**Path truth:** Logical names below (`app/actions`, `modules/*`) are **Target/Living shape**. Physical Target home is `apps/web/…`. Rows mark **on disk** vs **planned**. Do not recover Collapse roots or wiped Declarations/FFT trees.
 
 ---
 
@@ -18,17 +18,12 @@ Scratch catalogue (disk-honest): [docs-V2/api/actions.md](../../../docs-V2/api/a
 | `invite-org-member.ts` | **yes** (I1.3 / I2.3 / I3.1 / N11) | Identity invite schemas + shared session permission gate (`clients.invite`) + `@afenda/auth` `inviteOrgMember` + Platform `recordRbacAudit` | Operator invite; Origin = `APP_URL`; hard-tenancy audit write |
 | `assign-org-role.ts` | **yes** (I3.1 / N11) | Identity `assignOrgRole` + shared session permission gate (`org.roles.manage`) + Platform `recordRbacAudit` | Platform role assign; ActionResult + audit |
 | `revoke-org-role.ts` | **yes** (I3.1 / N11) | Identity `revokeOrgRole` + shared session permission gate (`org.roles.manage`) + Platform `recordRbacAudit` | Soft-revoke; ActionResult + audit |
-| `client-declaration-action-session.ts` | **yes** | Declarations client Action session gate | Shared by draft/submit Actions |
-| `declaration-draft.ts` | **yes** (I2.4 / N11) | Declarations draft read/write + shared session permission gate (`declarations.read` / `declarations.manage`) | Client-owned org/email predicates; ActionResult; draft lock after submit |
-| `submit-client-declaration.ts` | **yes** (N17) | Declarations `submitClientDeclaration` + shared session permission gate (`declarations.manage`) | Finalize under hard org+email; idempotent confirmation; ActionResult |
 | `account.ts` | planned | `modules/identity/*` | Account session / Neon-owned fields |
-| `admin.ts` | planned | `modules/identity/*`, platform helpers | Broader org-admin chrome — **not** on disk; assign/revoke/invite are discrete Actions above |
-| `client.ts` | planned | `modules/identity/*`, `modules/declarations/*` | Invite stamps + survey scope |
-| `declarations.ts` | planned | `modules/declarations/domain/**` | Broader Declarations writes (submit shipped as discrete Action) |
-| `surveys.ts` | planned | `modules/declarations/domain/**` | Draft create stamps `organizationId` |
-| `fft.ts` | planned | `modules/fft/domain/**` | Feed Farm Trade — frozen 2B–2D until program reopen |
+| `admin.ts` | planned | `modules/identity/*`, platform helpers | Broader org-admin chrome — assign/revoke/invite are discrete Actions above |
 
-There is **no** `app/actions/trade.ts`.
+**Removed (nuclear wipe — do not recreate):** `client-declaration-action-session.ts`, `declaration-draft.ts`, `submit-client-declaration.ts`, `declarations.ts`, `surveys.ts`, `fft.ts`, `client.ts` Declarations compose.
+
+There is **no** `app/actions/trade.ts` and **no** living FFT/Declarations Actions.
 
 **Canonical Action Zod edge (when Target tree exists):**
 
@@ -48,11 +43,12 @@ import { parseSchema } from "@/modules/platform/schemas/common"
 | GET | `/api/health/readiness` | **yes** (I2.4) | `modules/platform/domain/health` · `api/json-response` |
 | GET | `/api/session/sync-cookies` | **yes** | `@afenda/auth` session cookie bridge (excluded from OpenAPI YAML) |
 | GET | `/api/session/ensure-active-organization` | **yes** | `@afenda/auth` active-org persistence (excluded from OpenAPI YAML) |
-| GET/PUT/PATCH/POST | `/api/client/declaration-draft` | **yes** (I2.4) | `modules/declarations/api/client-declaration-draft-route` · domain `declaration-draft` |
 
-HTTP allowlist Scratch: [docs-V2/api/rest.md](../../../docs-V2/api/rest.md) (exactly 6 `route.ts` trees).
+**Removed RH:** `/api/client/declaration-draft` — not api-now.
 
-**Allowlist rule:** Do not add web-UI list/read handlers for declarations/clients — use RSC → module domain.
+HTTP allowlist Scratch: [docs-V2/api/rest.md](../../../docs-V2/api/rest.md).
+
+**Allowlist rule:** Do not add web-UI list/read handlers — use RSC → module domain. Do not recreate wiped Declarations/FFT HTTP.
 
 ---
 
@@ -61,10 +57,9 @@ HTTP allowlist Scratch: [docs-V2/api/rest.md](../../../docs-V2/api/rest.md) (exa
 | Surface | Pattern |
 |---------|---------|
 | Prefer | `app/**/page.tsx` → features / thin runner → `modules/*/domain` (under `apps/web` on Target) |
-| Keep (Target) | `features/{auth,declarations,fft,org-admin}` shells (S7.4); expand with entry / richer runners under those L2 folders — Living name `organization-admin` maps to Target `org-admin` |
-| N11 Tier-2 | `org-admin` → `org.roles.manage` / `clients.invite`; `declarations` → `declarations.read` (+ `declarations.manage` for draft/submit); `fft` → `fft.access`; coarse `requireRole` remains the route shell |
-| N17 Declarations | RSC list `/client/declarations` + detail `/client/declarations/[assignmentId]` → `listClientAssignments` / `getClientDeclaration`; submit Action → `submitClientDeclaration` |
-| Forbidden | RSC `fetch('/api/...')` for ordinary product reads; recreate `lib/pages`; recover Collapse roots |
+| Keep (Target) | `features/{auth,org-admin}` shells; Living name `organization-admin` maps to Target `org-admin` |
+| Permission codes | `org-admin` → `org.roles.manage` / `clients.invite` (catalog has **no** `declarations.*` / `fft.access`) |
+| Forbidden | RSC `fetch('/api/...')` for ordinary product reads; recreate `lib/pages`; recover Collapse or wiped Declarations/FFT roots |
 
 ---
 
@@ -79,8 +74,8 @@ One port function
 
 ## Checklist
 
-- [ ] New Action file maps to one primary context (or documents adapter composition)
+- [ ] New Action file maps to one primary living context (or documents adapter composition)
 - [ ] New HTTP route is api-now or an explicit catalog decision
 - [ ] Action and Handler for the same use-case share schema + codes
-- [ ] `parseSchema` from Platform common (not Declarations common)
-- [ ] FFT work goes through `app/actions/fft.ts` + `modules/fft`
+- [ ] `parseSchema` from Platform common
+- [ ] No Declarations/FFT product Actions or RH reintroduced

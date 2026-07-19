@@ -17,8 +17,8 @@ One screen for “what ships.” Re-probe disk after package or route-group chan
 | App | Product deployable `apps/web` (Next.js App Router) · official docs `apps/docs` (`@afenda/docs` Fumadocs; not Vercel prod product) |
 | Edge gate | `apps/web/proxy.ts` — **not** `middleware.ts` |
 | Packages | `@afenda/{config,db,auth,env,ui-system,emails}` |
-| Domains | `apps/web/modules/{platform,identity,declarations,fft}` |
-| UI features | `apps/web/features/{auth,declarations,fft,org-admin,portal-chrome,landing}` |
+| Domains | `apps/web/modules/{platform,identity}` |
+| UI features | `apps/web/features/{auth,org-admin,portal-chrome,landing}` |
 
 ---
 
@@ -28,7 +28,7 @@ One screen for “what ships.” Re-probe disk after package or route-group chan
 |------|---------|-----|
 | UI read | RSC → `modules/*/domain` | Same-origin; no self-`fetch('/api')` hop |
 | UI mutation | Server Action — authz + Zod inside | Public endpoint; proxy alone is not authz |
-| Health · Neon Auth · session · draft XHR | Route Handler under `/api` | Real external/browser consumers only |
+| Health · Neon Auth · session | Route Handler under `/api` | Real external/browser consumers only |
 
 ---
 
@@ -51,11 +51,9 @@ Summary only — L2 folders, isolation, verify: [../modules/README.md](../module
 | Module | Domain home | Feature UI | Primary routes |
 |--------|-------------|------------|----------------|
 | platform | `modules/platform` | portal-chrome · landing | `/` · health · correlation |
-| identity | `modules/identity` | auth · org-admin | `/auth/*` · `/join` · `/admin` |
-| declarations | `modules/declarations` | declarations | `/client/**` |
-| fft | `modules/fft` | fft | `/fft` |
+| identity | `modules/identity` | auth · org-admin | `/auth/*` · `/join` · `/admin` · `/client` |
 
-FFT **2B–2D** product code stays frozen until an explicit program reopen this chat.
+**Removed (nuclear wipe):** Declarations + Feed Farm Trade product modules/features/routes — do not recreate.
 
 ---
 

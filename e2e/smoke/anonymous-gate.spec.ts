@@ -9,8 +9,7 @@ import { test } from "@/testing/e2e/playwright-base";
 test.describe("anonymous gate @smoke", () => {
 	for (const protectedPath of [
 		"/admin",
-		"/fft",
-		"/client/declarations",
+		"/client",
 		"/client/dashboard",
 		"/dashboard",
 	] as const) {

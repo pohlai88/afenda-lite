@@ -22,7 +22,7 @@ import {
 	SidebarSeparator,
 	SidebarTrigger,
 } from "@afenda/ui-system";
-import { LayoutDashboard, Wheat } from "lucide-react";
+import { LayoutDashboard } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
@@ -32,7 +32,6 @@ import type { ShellNavItem } from "@/features/portal-chrome/nav-config";
 
 const NAV_ICONS: Record<string, typeof LayoutDashboard> = {
 	"org-admin": LayoutDashboard,
-	fft: Wheat,
 };
 
 type OperatorPlatformChromeProps = {

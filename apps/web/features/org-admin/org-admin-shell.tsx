@@ -1,3 +1,5 @@
+import { listOrganizations } from "@afenda/admin";
+import { getOrganizationUsageMetrics } from "@afenda/admin/usage";
 import { inviteableRolesFor, JOIN_PATH, requireRole } from "@afenda/auth";
 import {
 	Card,
@@ -14,6 +16,11 @@ import { forbidPermissionAccess } from "@/features/auth/require-permission";
 import type { MemberDirectoryState } from "@/features/org-admin/assign-org-role-form";
 import { InviteMemberForm } from "@/features/org-admin/invite-member-form";
 import { OrgAdminPanels } from "@/features/org-admin/org-admin-panels";
+import {
+	OrgConsolePanels,
+	type OrgListLoadState,
+	type UsageLoadState,
+} from "@/features/org-admin/org-console-panels";
 import { listAssignableRoles } from "@/modules/identity/domain/list-assignable-roles";
 import { listRoleAssignments } from "@/modules/identity/domain/list-role-assignments";
 import { listOrganizationUsers } from "@/modules/identity/domain/organization-users";
@@ -48,15 +55,32 @@ function formatAuditJsonValue(value: unknown): string | null {
 	}
 }
 
-function toAuditCreatedAtIso(value: Date | string): string {
+/** Serialize domain timestamps for RSC→client props; null when unparseable. */
+function toIsoInstantOrNull(
+	value: Date | string | null | undefined,
+): string | null {
+	if (value == null) {
+		return null;
+	}
 	if (value instanceof Date) {
 		return value.toISOString();
 	}
 	const parsed = Date.parse(value);
 	if (Number.isNaN(parsed)) {
-		return value;
+		return null;
 	}
 	return new Date(parsed).toISOString();
+}
+
+function toAuditCreatedAtIso(value: Date | string): string {
+	return toIsoInstantOrNull(value) ?? String(value);
+}
+
+/** Current UTC calendar month `YYYY-MM` for usage RSC load. */
+function currentUtcYearMonth(now = new Date()): string {
+	const year = now.getUTCFullYear();
+	const month = String(now.getUTCMonth() + 1).padStart(2, "0");
+	return `${year}-${month}`;
 }
 
 async function loadMemberDirectory(
@@ -80,14 +104,61 @@ async function loadMemberDirectory(
 }
 
 /**
+ * Justified RSC load for org list — Action unfit for first paint
+ * (same pattern as roles/assignments). Mutations use Server Actions.
+ */
+async function loadOrgList(): Promise<OrgListLoadState> {
+	const result = await listOrganizations();
+	if (!result.ok) {
+		return {
+			status: "unavailable",
+			organizations: [],
+			message: result.message,
+		};
+	}
+	if (result.data.length === 0) {
+		return { status: "empty", organizations: [] };
+	}
+	return {
+		status: "ready",
+		organizations: result.data.map((org) => ({
+			id: org.id,
+			slug: org.slug,
+			name: org.name ?? null,
+			lastActivityAt: toIsoInstantOrNull(org.lastActivityAt),
+		})),
+	};
+}
+
+async function loadUsage(
+	orgId: string,
+	period: string,
+): Promise<UsageLoadState> {
+	const result = await getOrganizationUsageMetrics({ orgId, period });
+	if (!result.ok) {
+		return { status: "unavailable", message: result.message };
+	}
+	return {
+		status: "ready",
+		metrics: {
+			orgId: result.data.orgId,
+			period: result.data.period,
+			activeMembers: result.data.activeMembers,
+			rbacAuditEvents: result.data.rbacAuditEvents,
+			activeRoleAssignments: result.data.activeRoleAssignments,
+		},
+	};
+}
+
+/**
  * Org-admin feature — session-aware RSC load + Identity/Platform domain ports
- * (ARCH-013 · ARCH-028 S7.4 · GUIDE-018 I3.1). Never imports `@afenda/db`.
- * Fail-closed via `requireRole('operator')` even if composed outside the layout.
- * Operator invite → Neon Auth + `recordRbacAudit`; assign/revoke → Identity
- * ports + audit. UI composed exclusively from `@afenda/ui-system` (ADR-010).
+ * + `@afenda/admin` org-console (ARCH-013 · ARCH-028 S7.4 · GUIDE-018 I3.1).
+ * Never imports `@afenda/db`. Fail-closed via `requireRole('operator')` even if
+ * composed outside the layout. UI composed exclusively from `@afenda/ui-system`
+ * (ADR-010).
  *
- * CAPABLE: invite, assign (member-directory Combobox · Sheet), revoke, audit
- * View Dialog (full RBAC fields), MetricGrid (I3.4 cut A + cut B polish).
+ * CAPABLE: org list (RSC) · provision · hard-delete · usage; invite, assign
+ * (member-directory Combobox · Sheet), revoke, audit View Dialog, MetricGrid.
  */
 export async function OrgAdminShell() {
 	const session = await requireRole("operator");
@@ -101,19 +172,21 @@ export async function OrgAdminShell() {
 		forbidPermissionAccess();
 	}
 
-	const [roles, assignments, auditRows, memberDirectory] = canManageRoles
-		? await Promise.all([
-				listAssignableRoles(orgId),
-				listRoleAssignments(orgId),
-				listOrgRbacAudit(orgId),
-				loadMemberDirectory(orgId),
-			])
-		: [
-				[],
-				[],
-				[],
-				{ status: "unavailable", options: [] } satisfies MemberDirectoryState,
-			];
+	const usagePeriod = currentUtcYearMonth();
+	const [roles, assignments, auditRows, memberDirectory, orgList, usage] =
+		await Promise.all([
+			canManageRoles ? listAssignableRoles(orgId) : Promise.resolve([]),
+			canManageRoles ? listRoleAssignments(orgId) : Promise.resolve([]),
+			canManageRoles ? listOrgRbacAudit(orgId) : Promise.resolve([]),
+			canManageRoles
+				? loadMemberDirectory(orgId)
+				: Promise.resolve({
+						status: "unavailable",
+						options: [],
+					} satisfies MemberDirectoryState),
+			loadOrgList(),
+			loadUsage(orgId, usagePeriod),
+		]);
 
 	const inviteableRoles = canInvite ? inviteableRolesFor(role) : [];
 	const roleNameById = new Map(roles.map((item) => [item.id, item.name]));
@@ -126,9 +199,11 @@ export async function OrgAdminShell() {
 					Operator admin
 				</h1>
 				<p className="text-sm text-foreground-secondary">
-					Org-scoped RBAC shell for <Code>{orgId}</Code>.
+					Org-console and org-scoped RBAC for active org <Code>{orgId}</Code>.
 				</p>
 			</header>
+
+			<OrgConsolePanels orgList={orgList} usage={usage} activeOrgId={orgId} />
 
 			{canManageRoles ? (
 				<MetricGrid

@@ -3,15 +3,15 @@
 | Field | Value |
 |-------|-------|
 | Surface | `docs-V2/nextjs/routes.md` |
-| Authority | **Scratch** — Next.js MCP `get_routes` (`:3000`) |
-| Snapshot | 2026-07-19 |
-| Updated | 2026-07-19 |
+| Authority | **Scratch** — Next.js MCP `get_routes` + disk honesty post domain wipe |
+| Snapshot | 2026-07-20 |
+| Updated | 2026-07-20 |
 
-Shipped = MCP inventory only. Do not document paths that are not in `get_routes`.
+Shipped = disk / MCP inventory only. Do not document wiped Declarations/FFT product paths as living.
 
 ---
 
-## A. MCP inventory
+## A. Living inventory
 
 ### Pages
 
@@ -21,18 +21,21 @@ Shipped = MCP inventory only. Do not document paths that are not in `get_routes`
 | `/403` | `(public)` |
 | `/join` | `(public)` |
 | `/auth/[path]` | `(public)` |
-| `/client` | `(client)` workspace |
-| `/client/dashboard` | `(client)` workspace |
-| `/client/declarations` | `(client)` workspace |
-| `/client/declarations/[assignmentId]` | `(client)` workspace |
+| `/client` | `(client)` workspace (`CLIENT_HOME`) |
+| `/client/dashboard` | `(client)` workspace (when present) |
 | `/client/login` | `(client)` gate |
 | `/client/preview-unavailable` | `(client)` gate |
 | `/admin` | `(operator)` |
-| `/fft` | `(operator)` |
+
+### Removed (nuclear wipe — not living)
+
+`/client/declarations`, `/client/declarations/[assignmentId]`, `/fft/**`, declaration-draft product UI.
 
 ### Route Handlers
 
-See [../api/rest.md](../api/rest.md). Paths: `/api/auth/[...path]`, `/api/health/liveness`, `/api/health/readiness`, `/api/session/sync-cookies`, `/api/session/ensure-active-organization`, `/api/client/declaration-draft`.
+See [../api/rest.md](../api/rest.md). Paths: `/api/auth/[...path]`, `/api/health/liveness`, `/api/health/readiness`, `/api/session/sync-cookies`, `/api/session/ensure-active-organization`.
+
+**Removed RH:** `/api/client/declaration-draft`.
 
 Pages Router: none.
 
@@ -45,9 +48,9 @@ Pages Router: none.
 | `(public)` | public / auth island | per surface |
 | `(client)` gate | public gate | request-time |
 | `(client)` workspace | client session | request-time — never `force-static` |
-| `(operator)` `/admin`, `/fft` | member / FFT access | request-time — never `force-static` |
+| `(operator)` `/admin` | member / operator role | request-time — never `force-static` |
 | `/api/health/*` | none | `auto` + short revalidate |
-| `/api/auth/*`, `/api/session/*`, draft | Neon / session | `private, no-store` where applicable |
+| `/api/auth/*`, `/api/session/*` | Neon / session | `private, no-store` where applicable |
 
 `proxy.ts` gates navigations — not a substitute for in-Action auth.
 
@@ -55,7 +58,7 @@ Pages Router: none.
 
 ## C. Not shipped
 
-`/dashboard/*`, `/account/*`, `/playground/*` — **not** in MCP `get_routes`. Do not document as live.
+`/dashboard/*`, `/account/*`, `/playground/*`, `/fft/*` — **not** living product. Do not document as live.
 
 ---
 
@@ -72,4 +75,6 @@ Pages Router: none.
 
 ```text
 nextjs_index → get_routes  # keep this snapshot aligned
+Test-Path apps/web/app/(operator)/admin
+# expect absent: apps/web/app/**/fft · **/declarations · **/declaration-draft
 ```

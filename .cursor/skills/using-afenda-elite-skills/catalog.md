@@ -68,8 +68,8 @@ Local skills must remain operable if `afenda-Xerp` is absent. Do not edit `agent
 
 | Skill | Source class | Management | Status | Owns | Invoked by | Controlled authority | Prerequisite | Evidence | Notes |
 |-------|--------------|------------|--------|------|------------|----------------------|--------------|----------|-------|
-| `feed-farm-trade` | local-domain-farm | local | keep | FFT module farm / gates | FFT domain work | FFT-MOD-* · FFT-MOD-008 | none | `.cursor/skills/feed-farm-trade/SKILL.md` | 2B–2D blocked until reopen |
 | `neon-tenancy-efficiency` | local-domain-farm | local | keep | Neon shared-schema tenancy + ARCH-023 IAM application | Tenancy / Neon ops | ARCH-023 · ARCH-025 · ARCH-027 | none | `.cursor/skills/neon-tenancy-efficiency/SKILL.md` | Wave 2 extend closed → keep; ARCH-027 `@afenda/env` + `.env.local` |
+| `feed-farm-trade` | local-domain-farm | local | forbidden | — (skill directory removed) | — | — | — | — | Nuclear wipe — FFT product module + farm **removed**; do not recreate |
 | `update-mcp-config` | local-domain-farm | local | keep | Project MCP config updates | MCP wiring | AGENTS.md · `.vscode/mcp.json` | none | `.cursor/skills/update-mcp-config/SKILL.md` | |
 | `cursor-mission-compile` | local-agent-ops | local | keep | Compiles raw prose/HTML/logs/tickets into budget Cursor missions | Prompt clean · transform · optimize · compile | Scratch vibe guideline · context-engineering | none | `.cursor/skills/cursor-mission-compile/SKILL.md` | Compile only — does not execute; Agent search owns discovery; no PREFLIGHT paste |
 
@@ -161,7 +161,7 @@ Scratch REQ/response inform discovery only. Prerequisites are controlled-authori
 | API schemas / errors / ARCH-029 §3.3 pipeline | keep `afenda-elite-api-contract` | Wave 2.2 done |
 | App Router Actions / ARCH-027 env | keep `afenda-elite-nextjs-best-practice` | Wave 2.3 done |
 | Module ports / ARCH-006 boundaries | keep `afenda-elite-backend-modules` | Wave 2.4 done |
-| Module evidence / readiness claims | keep `afenda-elite-module-readiness` | Authored after API + FFT env cleanup |
+| Module evidence / readiness claims | keep `afenda-elite-module-readiness` | Authored after API env cleanup; Declarations/FFT product modules removed |
 | Broader RBAC/SoD farm · env farm · Action farm · drizzle · test | candidate (above) | Not Wave 2 authoring |
 
 ## Wave 2 extend status (history · 2026-07-14)
@@ -173,7 +173,7 @@ Scratch REQ/response inform discovery only. Prerequisites are controlled-authori
 | 2.3 | `afenda-elite-nextjs-best-practice` | Extended — Action mechanics + ARCH-027 env (`@afenda/env`) | **keep** |
 | 2.4 | `afenda-elite-backend-modules` | Extended — Target vs docs-first companions | **keep** |
 
-**P1 corrections (same wave):** ten-stage pipeline; retired compose guidance; companions no longer claim deleted trees as disk SSOT; FFT MOD/command sheets reconciled to ARCH-027 (`@afenda/env`); `afenda-elite-module-readiness` authored → **keep**.
+**P1 corrections (same wave):** ten-stage pipeline; retired compose guidance; companions no longer claim deleted trees as disk SSOT; env reconciled to ARCH-027 (`@afenda/env`); `afenda-elite-module-readiness` authored → **keep**. Declarations/FFT product farms **removed** (nuclear wipe).
 
 ### RBAC absorption note
 

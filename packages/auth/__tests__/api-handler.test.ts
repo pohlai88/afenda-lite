@@ -4,6 +4,10 @@ const getHandlerMock = vi.fn();
 const handlerGet = vi.fn();
 const handlerPost = vi.fn();
 
+const rateLimitMocks = vi.hoisted(() => ({
+	checkRateLimit: vi.fn(),
+}));
+
 vi.mock("@neondatabase/auth/next/server", () => ({
 	createNeonAuth: () => ({
 		getSession: vi.fn(),
@@ -22,7 +26,19 @@ vi.mock("@afenda/env", () => ({
 		DATABASE_URL: "postgresql://u:p@ep-x-pooler.example/db?sslmode=require",
 		APP_URL: "https://afenda-lite.vercel.app",
 	},
+	isProductionDeployment: () => false,
 }));
+
+vi.mock("@afenda/rate-limit", async () => {
+	const actual =
+		await vi.importActual<typeof import("@afenda/rate-limit")>(
+			"@afenda/rate-limit",
+		);
+	return {
+		...actual,
+		checkRateLimit: rateLimitMocks.checkRateLimit,
+	};
+});
 
 const APP_ORIGIN = "https://afenda-lite.vercel.app";
 const CORRELATION_ID = "11111111-1111-4111-8111-111111111111";
@@ -40,6 +56,8 @@ describe("createAuthApiHandlers (PL-S7 BFF)", () => {
 		getHandlerMock.mockReset();
 		handlerGet.mockReset();
 		handlerPost.mockReset();
+		rateLimitMocks.checkRateLimit.mockReset();
+		rateLimitMocks.checkRateLimit.mockResolvedValue({ ok: true });
 		getHandlerMock.mockReturnValue({
 			GET: handlerGet,
 			POST: handlerPost,
@@ -175,9 +193,63 @@ describe("createAuthApiHandlers (PL-S7 BFF)", () => {
 		expect(response.status).toBe(204);
 	});
 
+	it("returns RATE_LIMITED 429 with Retry-After and correlation on over-limit POST", async () => {
+		rateLimitMocks.checkRateLimit.mockResolvedValue({
+			ok: false,
+			reason: "rate_limited",
+			retryAfterSeconds: 42,
+		});
+		const chunks: string[] = [];
+		const writeSpy = vi
+			.spyOn(process.stdout, "write")
+			.mockImplementation((chunk) => {
+				chunks.push(String(chunk));
+				return true;
+			});
+
+		const { AUTH_BFF_CORRELATION_HEADER, createAuthApiHandlers } = await import(
+			"../src/api-handler"
+		);
+		const { POST } = createAuthApiHandlers();
+		const response = await POST(
+			authRequest("POST", {
+				Origin: APP_ORIGIN,
+				"x-forwarded-for": "203.0.113.10",
+				[AUTH_BFF_CORRELATION_HEADER]: CORRELATION_ID,
+			}),
+			{},
+		);
+
+		expect(handlerPost).not.toHaveBeenCalled();
+		expect(response.status).toBe(429);
+		expect(response.headers.get("Retry-After")).toBe("42");
+		expect(response.headers.get(AUTH_BFF_CORRELATION_HEADER)).toBe(
+			CORRELATION_ID,
+		);
+		await expect(response.json()).resolves.toEqual({
+			error: {
+				code: "RATE_LIMITED",
+				message: "Too many requests. Try again later.",
+				details: { retryAfter: 42 },
+			},
+		});
+		const logged =
+			chunks.find((c) => c.includes("auth_bff.rate_limited")) ?? "";
+		expect(logged).toContain("auth_bff.rate_limited");
+		expect(logged).toContain(CORRELATION_ID);
+		expect(logged).toContain("RATE_LIMITED");
+		writeSpy.mockRestore();
+	});
+
 	it("returns safe empty 500 when the provider throws", async () => {
 		handlerGet.mockRejectedValue(new Error("upstream secret token leak"));
-		const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+		const chunks: string[] = [];
+		const writeSpy = vi
+			.spyOn(process.stdout, "write")
+			.mockImplementation((chunk) => {
+				chunks.push(String(chunk));
+				return true;
+			});
 
 		const { AUTH_BFF_CORRELATION_HEADER, createAuthApiHandlers } = await import(
 			"../src/api-handler"
@@ -196,12 +268,13 @@ describe("createAuthApiHandlers (PL-S7 BFF)", () => {
 			CORRELATION_ID,
 		);
 
-		const logged = String(errorSpy.mock.calls[0]?.[0] ?? "");
+		const logged =
+			chunks.find((c) => c.includes("auth_bff.unexpected_error")) ?? "";
 		expect(logged).toContain("auth_bff.unexpected_error");
 		expect(logged).toContain(CORRELATION_ID);
 		expect(logged).not.toContain("secret");
 		expect(logged).not.toContain("token leak");
-		errorSpy.mockRestore();
+		writeSpy.mockRestore();
 	});
 });
 

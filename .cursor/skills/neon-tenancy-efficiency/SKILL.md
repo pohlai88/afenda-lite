@@ -33,7 +33,7 @@ Tier 3  Modules         hasPermission(code) only — never Neon/org role display
 | Explicit org | Resolve `orgId` from session and pass it — never ambient globals or URL-alone trust |
 | Permission-first | Prefer platform permission codes over Neon Auth `owner\|admin\|member` or `user.role` for product authorization |
 | Session + active org | Session binds user + active organization; org switch must re-authorize permissions (ARCH-023) |
-| Module entry vs domain | Platform owns `fft.access`; FFT domain catalogs stay in FFT — do not merge into `platform_*` (R6) |
+| Module entry vs domain | Living modules = platform + identity only; do not recreate wiped FFT/Declarations catalogs into `platform_*` (R6 historical) |
 | Jobs / webhooks / export | Carry the same organization context and isolation rules as interactive BFF (fail closed if missing) |
 | Search / cache keys | When search indexes or caches exist, key or filter by `organization_id` — no global keys from document number alone |
 | RLS | Do **not** introduce Neon RLS on the BFF path (R3) |
@@ -42,10 +42,10 @@ Tier 3  Modules         hasPermission(code) only — never Neon/org role display
 
 ```text
 org.users.manage | org.roles.manage
-declarations.manage | declarations.read
 clients.invite | account.self
-fft.access
 ```
+
+**Removed from catalog (nuclear wipe):** `declarations.manage` · `declarations.read` · `fft.access`
 
 Adding a code is a release; assigning it to a role is an org-admin action. Do not invent ERP SoD matrices here.
 
@@ -65,8 +65,8 @@ Adding a code is a release; assigning it to a role is an org-admin action. Do no
 
 **Locked 2026-07-12** in ARCH-023 **Decision lock**:
 
-- **Rejected (R1–R7):** soft dual-mode, first-org stamp, RLS-as-default BFF, schema-per-tenant, project-per-tenant as efficiency fix, FFT domain catalog merge, CU/ERP placeholder hacks.
-- **Deferred:** D4/M5 child denorm; D5 project fleet; prod org switcher; FFT P3 flags.
+- **Rejected (R1–R7):** soft dual-mode, first-org stamp, RLS-as-default BFF, schema-per-tenant, project-per-tenant as efficiency fix, merging wiped FFT domain catalogs into platform, CU/ERP placeholder hacks.
+- **Deferred:** D4/M5 child denorm; D5 project fleet; prod org switcher.
 - **Allowed:** preserve hard org filters on new work; weekly anti-drift verify; named product slices that do not reopen R*/D*.
 
 Do **not** start coding that “closes D5” or “adds RLS for tenancy” without user reopen of that ID.
@@ -90,7 +90,7 @@ RETIRED: iam-check Auth slug · admin@iam-check.com · @iam-check.com e2e junk (
 ENV: ARCH-027 — `@afenda/env` + `.env.local` (compose retired)
 ```
 
-Do **not** flood with FFT phase docs or portal-atmosphere rules unless the user reopened that scope.
+Do **not** flood with wiped Declarations/FFT product restore or portal-atmosphere rules unless the user named that recovery this turn.
 
 ## Env posture (ARCH-027 — read before any env command)
 
@@ -161,7 +161,7 @@ Full one-liner set: [reference.md](reference.md#weekly-anti-drift-pack).
 
 - Raise CU before pooler + short transactions + org-leading indexes are green
 - Enable `PORTAL_ORG_SWITCHER_ENABLED` on Vercel without multi-membership + rollback
-- Mix this lane with FFT flag promotion or portal atmosphere work
+- Mix this lane with wiped Declarations/FFT product restore or portal atmosphere work
 - Reintroduce `iam-check` Auth slug / `admin@iam-check.com` / `@iam-check.com` fixture emails
 - Run `neonctl link` as a routine env fix, or restore `env:compose` / `env.config` (ARCH-027 — retired)
 

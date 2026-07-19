@@ -36,10 +36,8 @@ const gatePreviewPage = resolve(
 /** Product / authz surfaces forbidden on anonymous gate routes (PL-S6). */
 const FORBIDDEN_GATE_IMPORT_MARKERS = [
 	"requireRole",
-	"features/declarations",
 	"features/org-admin",
 	"features/portal-chrome",
-	"modules/declarations",
 	"@afenda/db",
 ] as const;
 
@@ -54,8 +52,8 @@ describe("client path SSOT (PL-S1)", () => {
 		expect([...PRE_LOGIN_GATE_BYPASS_PATHS]).toEqual([...CLIENT_GATE_PATHS]);
 	});
 
-	it("keeps workspace declarations home path stable and pinned to auth SSOT", () => {
-		expect(CLIENT_DASHBOARD_PATH).toBe("/client/declarations");
+	it("keeps workspace home path stable and pinned to auth SSOT", () => {
+		expect(CLIENT_DASHBOARD_PATH).toBe("/client");
 		expect(CLIENT_DASHBOARD_PATH).toBe(CLIENT_HOME_PATH);
 		expect(CLIENT_DASHBOARD_ALIAS_PATH).toBe("/client/dashboard");
 		expect(CLIENT_DASHBOARD_ALIAS_PATH).not.toBe(CLIENT_DASHBOARD_PATH);

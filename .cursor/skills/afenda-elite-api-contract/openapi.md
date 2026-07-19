@@ -27,8 +27,8 @@ pnpm check:openapi
 
 ## Current YAML scope (api-now)
 
-**Include:** `GET /api/health/liveness`, `GET /api/health/readiness`, `GET|PUT|PATCH|POST /api/client/declaration-draft`, `APIErrorBody`, `{ data }` envelopes.  
-**Exclude:** Neon Auth `/api/auth/*`, session bridges `/api/session/*` (redirect / plain-text), contract-only REST, FFT appendix (until reopen + real consumer).
+**Include:** `GET /api/health/liveness`, `GET /api/health/readiness`, `APIErrorBody`, `{ data }` envelopes.
+**Exclude:** Neon Auth `/api/auth/*`, session bridges `/api/session/*` (redirect / plain-text), contract-only REST, wiped Declarations draft / FFT HTTP.
 
 **Disk honesty:** `pnpm check:openapi` fails if any `x-afenda-status: api-now` operation lacks `apps/web/app/api/**/route.ts`. Session bridges are allowlisted on disk but intentionally absent from YAML.
 
@@ -36,7 +36,7 @@ Success responses **must** be `{ data: T }`. Errors are bare `APIErrorBody`.
 
 ## When to regenerate
 
-Any of: health/draft handler shape change; shared error/envelope change; approved new api-now family added to YAML.
+Any of: health handler shape change; shared error/envelope change; approved new api-now family added to YAML.
 
 ## Forward work (recorded)
 

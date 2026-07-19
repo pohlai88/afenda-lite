@@ -27,7 +27,7 @@ flowchart TD
   page --> feature
   page --> domain
   feature -->|mutations| action
-  browser -->|XHR health auth draft| api
+  browser -->|XHR health auth session| api
   action --> schema
   api --> schema
   schema --> domain
@@ -58,7 +58,7 @@ Tenant / session surfaces are **request-time**. Never `force-static` on session-
 
 | Surface | Policy |
 |---------|--------|
-| `/admin`, `/fft`, `/client/*`, auth | Request-time |
+| `/admin`, `/client/*`, auth | Request-time |
 | Tenant RH | `no-store` / selective dynamic |
 | `/api/health/*` | `auto` + short revalidate |
 

@@ -26,7 +26,7 @@ PATHS: apps/web/** · packages/* only (Living greenfield)
 FORBID: Collapse/legacy restore from git (app/ modules/ features/ components-V2/ root lib/ wiped scripts) — incl. git show mining — unless user names that recovery THIS turn
 FORBID: shims · placeholders · throw-TODO · silent-null session · inventing ARCH-028 S9
 FORBID: drizzle 0000 baseline migrate on br-tiny-hill-ao82jp6f
-FORBID: FFT 2B–2D domain / mixed FFT product commits
+FORBID: recreate wiped Declarations/FFT product modules / mixed domain restore commits
 COMMIT: only when user explicitly asks
 ```
 
@@ -192,7 +192,7 @@ PHASE_ID: I2.3
 Implement GUIDE-018 I2.3 only.
 Authority: GUIDE-018 Phase I2 + ARCH-023 + owning module spine.
 LOAD: afenda-elite-backend-modules · afenda-elite-api-contract · neon-tenancy-efficiency.
-Acceptance: first authenticated WRITE vertical (prefer Identity invite or Declarations — NOT FFT 2B).
+Acceptance: first authenticated WRITE vertical (Identity invite / platform RBAC — not wiped Declarations/FFT).
 Hard organization_id tenancy on the write path. Guardian full stack + validation.
 Verify: end-to-end write under tenancy. Update GUIDE-018 evidence. STOP.
 ```
@@ -231,37 +231,27 @@ Verify + evidence. STOP.
 
 ---
 
-## P10 — I3.2 Declarations submit/read
+## P10 — I3.2 Declarations submit/read *(removed)*
 
 ```text
-/afenda-elite-implementation-slices
-
-PHASE_ID: I3.2
-
-Implement GUIDE-018 I3.2 only.
-Authority: GUIDE-018 Phase I3 + Declarations module + ARCH-023.
-LOAD: afenda-elite-backend-modules · afenda-elite-module-readiness · neon-tenancy-efficiency.
-Acceptance: client list → submit/read under hard tenancy.
-Verify + evidence. STOP.
+Historical GUIDE-018 I3.2 only — Declarations product module REMOVED (nuclear wipe).
+Do not implement. Do not recreate modules/declarations or /client/declarations.
+Authority: deprecation register — Declarations compulsory retired.
+LOAD: afenda-elite-backend-modules (platform + identity only).
+STOP — no Declarations product work.
 ```
 
 ---
 
-## P11 — I3.3 FFT read shell (freeze)
+## P11 — I3.3 FFT read shell *(removed)*
 
 ```text
-/afenda-elite-implementation-slices
-
-PHASE_ID: I3.3
-
-Implement GUIDE-018 I3.3 only — FFT freeze envelope.
-Authority: GUIDE-018 Phase I3 + FFT-MOD-008 Allowed/Forbidden.
-LOAD: feed-farm-trade · afenda-elite-backend-modules.
-Acceptance: operator read shell + Phase 2A RBAC only. FORBID 2B–2D domain reopen.
-Verify + evidence. STOP.
+Historical GUIDE-018 I3.3 only — FFT product module REMOVED (nuclear wipe).
+Do not implement. Do not load deleted feed-farm-trade.
+Authority: deprecation register — FFT removed (not freeze/reopen).
+LOAD: afenda-elite-backend-modules (platform + identity only).
+STOP — no FFT product work.
 ```
-
----
 
 ## P12 — I3.4 Org-admin shell
 
@@ -579,12 +569,12 @@ STOP.
 | Next up now              | Paste block |
 | ------------------------ | ----------- |
 | Identity deepen          | **P9** (`PHASE_ID: I3.1`) |
-| Declarations submit/read | **P10** (`I3.2`) |
+| Declarations submit/read | **P10** (`I3.2`) — **removed** |
 
 | Anti-pattern                | Instead                                  |
 | --------------------------- | ---------------------------------------- |
 | One mega-chat for I1–I7     | One block per chat                       |
-| “Also tidy docs/FFT”        | New lane / waive serial order explicitly |
+| “Also restore FFT/Declarations” | Named recovery approval this turn required |
 | Restore old `app/` from git | Greenfield Living paths                  |
 | Invent ARCH-028 S9          | Use GUIDE-018 Phase I                    |
 | Skip verify                 | Done bar requires green commands         |

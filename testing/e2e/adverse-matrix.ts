@@ -39,10 +39,10 @@ export const ADVERSE_MATRIX = [
 	},
 	{
 		id: "A4",
-		case: "wrong-permission vertical → /403 (fft.access)",
-		layers: ["smoke"],
-		evidence: ["e2e/smoke/fft-permitted-vertical.spec.ts"],
-		requiresFactory: true,
+		case: "action permission denial → FORBIDDEN ActionResult",
+		layers: ["unit"],
+		evidence: ["apps/web/__tests__/n14-security-failure-verification.test.ts"],
+		requiresFactory: false,
 	},
 	{
 		id: "A5",
@@ -50,57 +50,6 @@ export const ADVERSE_MATRIX = [
 		layers: ["journey"],
 		evidence: ["e2e/journey/invite-join.spec.ts"],
 		requiresFactory: true,
-	},
-	{
-		id: "A6",
-		case: "declaration draft save → reopen recover → submit",
-		layers: ["journey"],
-		evidence: ["e2e/journey/declarations-draft-recovery.spec.ts"],
-		requiresFactory: true,
-	},
-	{
-		id: "A7",
-		case: "invalid input — empty submit / submit without draft",
-		layers: ["unit", "journey"],
-		evidence: [
-			"apps/web/__tests__/declaration-submit-read.test.ts",
-			"e2e/journey/declarations-adverse-recovery.spec.ts",
-		],
-		requiresFactory: true,
-	},
-	{
-		id: "A8",
-		case: "stale / locked write after finalize",
-		layers: ["unit", "journey"],
-		evidence: [
-			"apps/web/__tests__/declaration-submit-read.test.ts",
-			"e2e/journey/declarations-adverse-recovery.spec.ts",
-		],
-		requiresFactory: true,
-	},
-	{
-		id: "A9",
-		case: "duplicate / idempotent re-submit",
-		layers: ["unit", "journey"],
-		evidence: [
-			"apps/web/__tests__/declaration-submit-read.test.ts",
-			"e2e/journey/declarations-adverse-recovery.spec.ts",
-		],
-		requiresFactory: true,
-	},
-	{
-		id: "A10",
-		case: "concurrent double-submit race → stable confirmation",
-		layers: ["unit"],
-		evidence: ["apps/web/__tests__/declaration-submit-read.test.ts"],
-		requiresFactory: false,
-	},
-	{
-		id: "A11",
-		case: "dependency throw → safe INTERNAL_ERROR ActionResult",
-		layers: ["unit"],
-		evidence: ["apps/web/__tests__/submit-client-declaration-action.test.ts"],
-		requiresFactory: false,
 	},
 ] as const satisfies readonly AdverseMatrixRow[];
 

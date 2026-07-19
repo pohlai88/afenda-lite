@@ -41,10 +41,7 @@ test.describe("post-login routing @journey", () => {
 		expectOperatorHome(new URL(page.url()).pathname);
 	});
 
-	test("client lands on /client/declarations", async ({
-		page,
-		workerTenant,
-	}) => {
+	test("client lands on /client", async ({ page, workerTenant }) => {
 		const client = workerTenant?.client ?? resolveClientCredentials();
 		test.skip(
 			!client,
@@ -65,11 +62,11 @@ test.describe("post-login routing @journey", () => {
 			"workerTenant or explicit E2E_OPERATOR_* credentials required",
 		);
 
-		await page.goto("/fft");
+		await page.goto("/admin/users");
 		await page.waitForURL(/\/auth\/login/, { timeout: 15_000 });
 		await signIn(page, operator?.email ?? "", operator?.password ?? "");
-		await page.waitForURL(/\/fft(\/|$)/, { timeout: 30_000 });
-		expect(new URL(page.url()).pathname).toMatch(/^\/fft/);
+		await page.waitForURL(/\/admin(\/|$)/, { timeout: 30_000 });
+		expect(new URL(page.url()).pathname).toMatch(/^\/admin/);
 	});
 
 	test("external callback is rejected — lands on role home, not external", async ({
@@ -97,6 +94,6 @@ test.describe("post-login routing @journey", () => {
 		);
 
 		await loginAsOperator(page, operator ?? { email: "", password: "" });
-		await expectWrongRoleForbidden(page, "/client/declarations");
+		await expectWrongRoleForbidden(page, "/client");
 	});
 });

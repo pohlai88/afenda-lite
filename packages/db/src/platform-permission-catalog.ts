@@ -1,8 +1,8 @@
 /**
  * ARCH-023 §3.2 — platform permission catalog v1 + system role templates.
  *
- * Adding a code is a release. FFT domain catalogs stay out of platform_* (R6).
- * `fft.access` is module entry only.
+ * Adding a code is a release. Domain vertical catalogs are absent after the
+ * declarations/FFT wipe — only platform / org / account codes remain.
  */
 import { and, eq, inArray, isNull, notInArray } from "drizzle-orm";
 
@@ -13,7 +13,7 @@ import {
 	platformRolePermission,
 } from "./schema/platform";
 
-/** Seed permission codes (v1) — ARCH-023 §3.2. */
+/** Seed permission codes (v1) — ARCH-023 §3.2 (shell after domain wipe). */
 export const PLATFORM_PERMISSION_V1 = [
 	{
 		code: "org.users.manage",
@@ -28,21 +28,9 @@ export const PLATFORM_PERMISSION_V1 = [
 		sensitive: true,
 	},
 	{
-		code: "declarations.manage",
-		module: "declarations",
-		description: "Create and manage declarations",
-		sensitive: false,
-	},
-	{
-		code: "declarations.read",
-		module: "declarations",
-		description: "View declarations",
-		sensitive: false,
-	},
-	{
 		code: "clients.invite",
-		module: "declarations",
-		description: "Invite clients to declarations",
+		module: "org",
+		description: "Invite members to the organization",
 		sensitive: false,
 	},
 	{
@@ -51,12 +39,13 @@ export const PLATFORM_PERMISSION_V1 = [
 		description: "Manage own account settings",
 		sensitive: false,
 	},
-	{
-		code: "fft.access",
-		module: "fft",
-		description: "Enter Feed Farm Trade module and see FFT nav",
-		sensitive: false,
-	},
+] as const;
+
+/** Retired v1 codes removed by the domain wipe — deleted on ensure. */
+const RETIRED_PLATFORM_PERMISSION_CODES = [
+	"declarations.manage",
+	"declarations.read",
+	"fft.access",
 ] as const;
 
 export type PlatformPermissionV1 = (typeof PLATFORM_PERMISSION_V1)[number];
@@ -97,19 +86,14 @@ export const PLATFORM_ROLE_TEMPLATES_V1: readonly PlatformRoleTemplateV1[] = [
 	{
 		templateKey: "editor",
 		name: "Editor",
-		description: "Declarations edit + client invite + account self",
-		permissionCodes: [
-			"declarations.manage",
-			"declarations.read",
-			"clients.invite",
-			"account.self",
-		],
+		description: "Org invite + account self",
+		permissionCodes: ["clients.invite", "account.self"],
 	},
 	{
 		templateKey: "viewer",
 		name: "Viewer",
-		description: "Declarations read + account self",
-		permissionCodes: ["declarations.read", "account.self"],
+		description: "Account self",
+		permissionCodes: ["account.self"],
 	},
 ] as const;
 
@@ -126,8 +110,7 @@ export type EnsurePlatformPermissionCatalogResult = {
  * Idempotent upsert of ARCH-023 v1 `platform_permission` rows and the three
  * system role templates (`org_admin` · `editor` · `viewer`) with exact
  * `platform_role_permission` links. Preserves existing template UUIDs when
- * `template_key` already exists. Does not create/remove non-v1 templates
- * (e.g. live `fft_member`).
+ * `template_key` already exists. Removes retired domain permission codes.
  */
 export async function ensurePlatformPermissionCatalog(
 	database: Database,
@@ -150,6 +133,19 @@ export async function ensurePlatformPermissionCatalog(
 				},
 			});
 	}
+
+	await database
+		.delete(platformRolePermission)
+		.where(
+			inArray(platformRolePermission.permissionCode, [
+				...RETIRED_PLATFORM_PERMISSION_CODES,
+			]),
+		);
+	await database
+		.delete(platformPermission)
+		.where(
+			inArray(platformPermission.code, [...RETIRED_PLATFORM_PERMISSION_CODES]),
+		);
 
 	const templates: Array<{
 		templateKey: string;

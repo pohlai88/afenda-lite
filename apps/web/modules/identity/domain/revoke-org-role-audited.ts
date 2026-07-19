@@ -2,6 +2,8 @@
  * Identity — soft-revoke org role + platform RBAC audit in one Neon HTTP
  * transaction (N12 residual · ARCH-025 · ARCH-023).
  */
+
+import { ROLE_REVOKE_AUDIT_ACTION } from "@afenda/admin/audit";
 import {
 	and,
 	db,
@@ -9,12 +11,10 @@ import {
 	platformRoleAssignment,
 	runNeonHttpTransaction,
 } from "@afenda/db";
-
 import type {
 	RevokeOrgRoleInput,
 	RevokeOrgRoleResult,
 } from "@/modules/identity/domain/revoke-org-role";
-import { ROLE_REVOKE_AUDIT_ACTION } from "@afenda/admin/audit";
 import { requireTrimmed } from "@/modules/platform/domain/require-trimmed";
 
 export type RevokeOrgRoleWithAuditInput = RevokeOrgRoleInput & {

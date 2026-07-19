@@ -4,13 +4,14 @@
 
 | Kind | Path | Status on this checkout |
 |------|------|-------------------------|
-| **Target physical home** | `apps/web/modules/{platform,identity,declarations,fft}` | **Present (S7.3 shell)** — one `domain/*` `orgId` port per context; feature shells consume them (S7.4); full Living inventory still open |
-| **Logical Living shape** | `modules/{platform,identity,declarations,fft}` (context L2 names) | Shape vocabulary for ownership — **not** a claim that root `modules/` exists today |
-| **Docs-first (Collapse)** | Root `modules/`, `app/`, `features/` | **Absent by design** — do not recover from git (incl. `git show` seed) without named user approval this turn |
+| **Target physical home** | `apps/web/modules/{platform,identity}` | **Present** — living contexts only |
+| **Logical Living shape** | `modules/{platform,identity}` | Shape vocabulary for ownership — **not** a claim that root `modules/` exists today |
+| **Docs-first (Collapse)** | Root `modules/`, `app/`, `features/` | **Absent by design** — do not recover from git without named user approval this turn |
+| **Removed (nuclear wipe)** | `modules/declarations`, `modules/fft` | **Gone** — do not recreate; footnotes only |
 
 Verify before editing product code: `Test-Path apps/web/modules` / `Test-Path modules`. Prefer Target `apps/web/modules` when present; root Collapse trees stay banned.
 
-**Forbidden folder:** `modules/trade/` or `apps/web/modules/trade/` — Trade product context id is `fft`.
+**Forbidden folders:** `modules/trade/`, `modules/declarations/`, `modules/fft/` (and Target equivalents under `apps/web/`).
 
 Paths below use **logical** `modules/<context>/…` names. On Target, prefix with `apps/web/`. Adapters under logical `app/actions` / `app/api` map to Target `apps/web/app/…` when present.
 
@@ -28,7 +29,7 @@ Paths below use **logical** `modules/<context>/…` names. On Target, prefix wit
 | Routing | `routing/*` |
 | Shell | `shell/*` (`ShellModuleId` / `ShellAccess` types only; resolve in portal-chrome features) |
 | Governance | `governance/*` |
-| Shared | `utils.ts`, `format.ts`, `breakpoints.ts`, `pagination-range.ts`, `form-constraints.ts`, `evidence-acceptance.ts`, `clipboard.ts`, `app-url.ts`, `audit.ts`, `observability.ts`, `playground-embed.ts` |
+| Shared | `utils.ts`, `format.ts`, `breakpoints.ts`, `pagination-range.ts`, `form-constraints.ts`, `clipboard.ts`, `app-url.ts`, `audit.ts`, `observability.ts` |
 | Copy | `copy/{portal-copy,portal-name}.ts` (product copy SSOT when tree exists) |
 
 ---
@@ -38,36 +39,23 @@ Paths below use **logical** `modules/<context>/…` names. On Target, prefix wit
 | Area | Paths |
 |------|-------|
 | Neon Auth | `auth/*` |
-| Domain | `domain/{neon-auth-users,organization-users,invite,tokens,client-profile,client-invitation-bootstrap,platform-rbac,platform-rbac-catalog,platform-rbac-access}.ts` |
+| Domain | `domain/{neon-auth-users,organization-users,invite,tokens,platform-rbac,platform-rbac-catalog,platform-rbac-access}.ts` |
 | Schemas | `schemas/auth.ts`, `schemas/users.ts`, `schemas/platform-rbac.ts` |
 | Session | `account-session.ts`, `client-session.ts` |
 | Email | `email/*` |
-| Other | `preview-client.ts`, `portal-member*.ts`, `portal-organization.ts`, `admin.ts`, `production-fixtures.ts`, `client-invitation-join-auth.ts`, `delete-client-auth-user.ts`, `auth-metadata.ts`, `organization-admin-shell-members.ts` |
+| Other | `preview-client.ts`, `portal-member*.ts`, `portal-organization.ts`, `admin.ts`, `auth-metadata.ts`, `organization-admin-shell-members.ts` |
 
 ---
 
-## Declarations — `modules/declarations/`
+## Declarations — `modules/declarations/` *(removed)*
 
-| Area | Paths |
-|------|-------|
-| Domain | `domain/**` (surveys, clients, drafts, evidence, submissions, share links, …) |
-| Schemas | `schemas/common.ts` (re-exports Platform + `surveyAnswersSchema`), `{client,surveys,declarations,questions}.ts` |
-| API (draft) | `api/client-declaration-draft-route*` — owns draft Route Handler compose |
-| Server helpers | `server-actions/*` |
-| Other | `client-onboarding*`, `client-dashboard-metrics.ts`, `client-access-message.ts`, `question-*.ts`, `countries.ts`, `cdp-ai-prompt.ts` |
+**Status:** Nuclear wipe — product module **gone**. Do not invent Living inventory rows. Historical paths (draft RH, surveys, share links) are footnotes only.
 
 ---
 
-## Trade (Feed Farm Trade) — `modules/fft/`
+## Trade (Feed Farm Trade) — `modules/fft/` *(removed)*
 
-| Area | Paths |
-|------|-------|
-| Domain | `domain/**` |
-| Schemas | `schemas/fft-schemas.ts` (imports Platform common — **not** Declarations) |
-| Auth / flags | `auth/fft-session.ts`, `auth/fft-phase2b.ts`, `auth/fft-phase2d.ts` |
-| i18n | `i18n/*` |
-
-UI companions (logical): `features/fft/fft-*.tsx`, `app/actions/fft.ts`, `app/fft/*` → Target under `apps/web/` when scaffolded.
+**Status:** Nuclear wipe — product module **gone** (not frozen 2B–2D). Do not invent Living inventory rows. Skill `feed-farm-trade` deleted.
 
 ---
 
@@ -79,12 +67,9 @@ UI companions (logical): `features/fft/fft-*.tsx`, `app/actions/fft.ts`, `app/ff
 |------|-----------------|-------------------|
 | `account.ts` | Identity | Platform common when needed |
 | `admin.ts` | Identity / Platform | Platform `schemas/common` |
-| `client.ts` | Identity + Declarations (compose at adapter) | Platform `schemas/common` |
-| `declarations.ts` | Declarations | Platform `schemas/common` |
-| `surveys.ts` | Declarations | Platform `schemas/common` |
-| `fft.ts` | Trade (`fft`) | via `fft-schemas` → Platform |
+| Identity RBAC / invite Actions | Identity | Platform `schemas/common` |
 
-There is **no** `app/actions/trade.ts`.
+**Removed Actions (do not recreate):** `declarations.ts`, `surveys.ts`, `fft.ts`, declaration-draft / submit-client-declaration adapters.
 
 ### Route Handlers — logical `app/api/` (api-now only)
 
@@ -93,12 +78,14 @@ There is **no** `app/actions/trade.ts`.
 | `health/liveness` | Platform |
 | `health/readiness` | Platform |
 | `auth/[...path]` | Identity |
-| `client/declaration-draft` | Declarations `api/client-declaration-draft-route` |
+| `session/*` | Identity / `@afenda/auth` |
 
-See `/afenda-elite-api-contract` → `api-now.md` for the prohibition on scaffolding contract-only list handlers for web UI.
+**Removed RH:** `client/declaration-draft` — not api-now.
+
+See `/afenda-elite-api-contract` → `api-now.md`.
 
 ---
 
 ## Gone (do not recreate)
 
-Entire Collapse `lib/` tree. Residue map: [residue-inventory.md](residue-inventory.md) — historical relocate inventory; not a claim those `features/` paths exist on this docs-first checkout.
+Entire Collapse `lib/` tree. Wiped Declarations + FFT product modules. Residue map: [residue-inventory.md](residue-inventory.md) — historical relocate inventory; not a claim those `features/` paths exist on this docs-first checkout.

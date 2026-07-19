@@ -2,21 +2,20 @@
 
 **Afenda-Lite** is the beta edition of **Afenda ERP** — a multi-module SaaS on shared Platform + Identity, running on Vercel, Neon Postgres, and Neon Auth.
 
-Operators manage declarations, clients, and org roles; entitled users run Feed Farm Trade under `/fft`. Public and secure share links let declarants complete assignments without operator accounts.
+Operators manage org roles and invitations under `/admin`; clients land on `/client` (`CLIENT_HOME`). Product **Declarations** and **Feed Farm Trade** modules have been removed (nuclear wipe) — do not document them as living product surfaces.
 
-One deployable web app with organization-scoped data (`organization_id`), Neon-backed auth and Postgres, and module surfaces that share platform RBAC — see [ARCH-023](docs/architecture/ARCH-023-multi-tenancy.md).
+One deployable web app with organization-scoped data (`organization_id`), Neon-backed auth and Postgres, and living module surfaces that share platform RBAC — see Scratch [docs-V2/tenancy](docs-V2/tenancy/README.md).
 
-For operators and org admins running declarations and FFT; for engineers extending `apps/web` and `packages/*`. Agent checkout doctrine lives in [AGENTS.md](./AGENTS.md).
+For operators and org admins on platform + identity; for engineers extending `apps/web` and `packages/*`. Agent checkout doctrine lives in [AGENTS.md](./AGENTS.md).
 
 > **Retired product name:** Client Declaration Portal — see [deprecation register](.cursor/skills/agent-skills/skills/deprecation-and-migration/reference.md).
 
 ## What you get
 
-- Operator sign-in and AdminCN shell for entitled modules
-- Declarations: dynamic forms, share links, invites, dashboard
-- Feed Farm Trade: events, orders, allocation (entitlement-gated under `/fft`)
-- Client invite, onboarding, and assigned declarations (module surfaces)
-- Public and secure share links (`/survey/[slug]`, `/f/[token]`)
+- Operator sign-in and AdminCN shell for living modules (platform + identity / org-admin)
+- Org invite + platform RBAC assign/revoke
+- Client home shell at `/client`
+- Health probes and Neon Auth session bridges
 
 ## Local development
 
@@ -30,22 +29,19 @@ pnpm validate:neon-env
 pnpm --filter @afenda/web dev
 ```
 
-Open http://localhost:3000 → operator sign-in → `/dashboard`.
+Open http://localhost:3000 → operator sign-in → `/admin`.
 
-Env SSOT: `import { env } from '@afenda/env'` · local file `.env.local` (template: `.env.example`). See [ARCH-027](docs/architecture/ARCH-027-env-model.md) and [RB-005](docs/runbooks/RB-005-post-lock-coding-cheat-sheet.md).
+Env SSOT: `import { env } from '@afenda/env'` · local file `.env.local` (template: `.env.example`). Scratch packs: [docs-V2](docs-V2/README.md).
 
 ## Documentation
 
 | Need | Start here |
 |------|------------|
-| Docs index | [docs/README.md](docs/README.md) |
-| System layout | [ARCH-022](docs/architecture/ARCH-022-system-overview.md) |
-| Tenancy + RBAC | [ARCH-023](docs/architecture/ARCH-023-multi-tenancy.md) |
-| Packages + UI barrel | [ARCH-024](docs/architecture/ARCH-024-package-boundaries.md) · [ADR-010](docs/architecture/adr/ADR-010-afenda-ui-system-flat-barrel.md) |
-| Data + migrations | [ARCH-025](docs/architecture/ARCH-025-data-layer.md) |
-| Auth + session | [ARCH-026](docs/architecture/ARCH-026-auth-session.md) |
-| FFT ops | [FFT-MOD-008](docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md) |
-| Platform runbooks | [docs/runbooks/README.md](docs/runbooks/README.md) |
+| Scratch packs | [docs-V2/README.md](docs-V2/README.md) |
+| System layout | [docs-V2/system/README.md](docs-V2/system/README.md) |
+| Tenancy | [docs-V2/tenancy/README.md](docs-V2/tenancy/README.md) |
+| Modules | [docs-V2/modules/README.md](docs-V2/modules/README.md) |
+| Official docs site | [`apps/docs`](apps/docs) (`@afenda/docs`) |
 | Agent routing | [AGENTS.md](./AGENTS.md) · `/using-afenda-elite-skills` |
 
 Product name SSOT and closed phases: [deprecation register](.cursor/skills/agent-skills/skills/deprecation-and-migration/reference.md).
@@ -60,7 +56,7 @@ pnpm db:check      # journal assert + drizzle-kit check (also runs in CI)
 pnpm db:migrate    # fail-closed; requires AFENDA_ALLOW_DB_MIGRATE=1; never auto-run on deploy
 ```
 
-Product runtime requires pooled `DATABASE_URL` (`-pooler`). Migrate/ops may use the same key without `-pooler` (operator shell override only — no `DIRECT_*` product var). See [ARCH-025](docs/architecture/ARCH-025-data-layer.md).
+Product runtime requires pooled `DATABASE_URL` (`-pooler`). Migrate/ops may use the same key without `-pooler` (operator shell override only — no `DIRECT_*` product var).
 
 The app does not run DDL on request — tables must exist before deploy. Do not apply `0000_living-roots-baseline.sql` to live Neon.
 
@@ -76,7 +72,7 @@ AFENDA_ALLOW_DB_MIGRATE=1 pnpm db:migrate
 | Concern | Authority |
 |---------|-----------|
 | Postgres | Neon — `DATABASE_URL` (use `-pooler` host in production/serverless) |
-| Auth | Neon Auth — `NEON_AUTH_*`, trusted domains — [ARCH-026](docs/architecture/ARCH-026-auth-session.md) |
+| Auth | Neon Auth — `NEON_AUTH_*`, trusted domains |
 | Schema | [`packages/db/drizzle/`](packages/db/drizzle/) |
 
 ## GitHub
@@ -119,18 +115,17 @@ Health endpoints:
 
 | Route | Who | Purpose |
 |-------|-----|---------|
-| `/`, `/client/login` | Client | Session router → Neon Auth or `/client` / onboarding |
-| `/org/login` | Operator | Organization sign in |
-| `/dashboard` | Operator | Manage declarations |
-| `/dashboard/clients` | Operator | Invite clients |
-| `/dashboard/[declarationId]` | Operator | View submissions |
-| `/fft/*` | Operator (entitled) | Feed Farm Trade module |
-| `/survey/[slug]` | Public | Open declaration link |
-| `/f/[token]` | Public | Secure declaration link |
-| `/client` | Client | Assigned declarations |
-| `/client/onboarding` | Client | Declarant profile setup |
-| `/client/declare/[assignmentId]` | Client | Complete assignment |
-| `/invite/[token]` | Public | Legacy invite URL → client sign-in |
+| `/` | Public | Landing / session router |
+| `/auth/*` | Public | Neon Auth island |
+| `/join` | Public | Org invitation accept |
+| `/admin` | Operator | Org-admin shell |
+| `/client` | Client | Client home (`CLIENT_HOME`) |
+| `/client/login` | Client | Gate |
+| `/api/health/*` | Probes | Liveness / readiness |
+| `/api/auth/*` | Neon | Auth proxy |
+| `/api/session/*` | Session | Cookie / active-org bridges |
+
+**Removed:** `/fft/**`, `/client/declarations/**`, Declarations share/survey product routes, declaration-draft RH.
 
 ## Stack
 

@@ -1,13 +1,12 @@
 import { createSessionProxy } from "@afenda/auth";
 import { env } from "@afenda/env";
+import { logProductEvent } from "@afenda/logger/edge";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-
 import {
 	CORRELATION_HEADER,
 	resolveCorrelationId,
 } from "@/modules/platform/observability/correlation";
-import { logProductEvent } from "@afenda/logger/edge";
 
 import { shouldBypassSessionGate } from "./session-gate-policy";
 
@@ -99,7 +98,6 @@ export const config = {
 		"/dashboard/:path*",
 		"/admin/:path*",
 		"/client/:path*",
-		"/fft/:path*",
 		"/playground/:path*",
 	],
 };

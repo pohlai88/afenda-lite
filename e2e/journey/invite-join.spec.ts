@@ -95,8 +95,7 @@ test.describe("invite → join accept @journey", () => {
 		await page.waitForURL(
 			(url) =>
 				url.pathname.startsWith("/join") ||
-				url.pathname.startsWith("/client/declarations") ||
-				url.pathname.startsWith("/client/dashboard") ||
+				url.pathname.startsWith("/client") ||
 				url.pathname.startsWith("/admin"),
 			{ timeout: 45_000 },
 		);
@@ -107,12 +106,10 @@ test.describe("invite → join accept @journey", () => {
 			await acceptButton.click();
 		}
 
-		await page.waitForURL(/\/(client\/(declarations|dashboard)|admin)(\/|$)/, {
+		await page.waitForURL(/\/(client|admin)(\/|$)/, {
 			timeout: 60_000,
 		});
-		expect(new URL(page.url()).pathname).toMatch(
-			/^\/(client\/(declarations|dashboard)|admin)/,
-		);
+		expect(new URL(page.url()).pathname).toMatch(/^\/(client|admin)/);
 
 		await assertInviteAccepted({
 			inviteeEmail: invitee.email,
