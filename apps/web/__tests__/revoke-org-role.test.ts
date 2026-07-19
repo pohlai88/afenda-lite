@@ -11,7 +11,7 @@ import { afterAll, describe, expect, it } from "vitest";
 import { assignOrgRoleWithAudit } from "../modules/identity/domain/assign-org-role-audited";
 import { revokeOrgRoleWithAudit } from "../modules/identity/domain/revoke-org-role-audited";
 import { parseRevokeOrgRoleCommand } from "../modules/identity/schemas/revoke-org-role";
-import { deleteRbacAuditRow } from "../modules/platform/domain/record-rbac-audit";
+import { deleteRbacAuditRow } from "@afenda/admin/audit";
 
 const repoRoot = path.resolve(
 	path.dirname(fileURLToPath(import.meta.url)),

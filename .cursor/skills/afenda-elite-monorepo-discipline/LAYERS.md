@@ -11,11 +11,12 @@ Authority: ARCH-024 operative (this file + SKILL.md). Living ARCH-024 body dorma
 │  Can import: Surfaces + Platform                             │
 ├──────────────────────────────────────────────────────────────┤
 │  Rank 2 — Surfaces                                           │
-│  @afenda/ui  @afenda/emails                                  │
-│  Can import: Platform (client-safe only for ui)              │
+│  @afenda/ui-system  @afenda/emails                           │
+│  Can import: Platform (client-safe only for ui-system)       │
 ├──────────────────────────────────────────────────────────────┤
 │  Rank 1 — Platform                                           │
-│  @afenda/db  @afenda/auth  @afenda/env  @afenda/config       │
+│  @afenda/db  @afenda/auth  @afenda/admin  @afenda/env        │
+│  @afenda/errors  @afenda/config                              │
 │  See allowed same-layer edges below                          │
 └──────────────────────────────────────────────────────────────┘
 ```
@@ -28,7 +29,7 @@ Authority: ARCH-024 operative (this file + SKILL.md). Living ARCH-024 body dorma
 | Surfaces  | ✅† | same-ok‡ | ❌ |
 | Application | ✅ | ✅ | ❌ (apps must not import each other) |
 
-\* Platform same-layer: prefer minimal coupling. Living edges: `@afenda/auth` → `@afenda/env`. `@afenda/db` must **not** import `@afenda/auth` or `@afenda/env`. `@afenda/env` imports no workspace packages. `@afenda/config` is not a runtime importer.
+\* Platform same-layer: prefer minimal coupling. Living edges: `@afenda/auth` → `@afenda/env`; `@afenda/admin` → `@afenda/auth` · `@afenda/db` · `@afenda/env` · `@afenda/errors`; `apps/web` → `@afenda/errors`. `@afenda/errors` is a Rank-1 **leaf** (no `@afenda/*` deps). `@afenda/db` must **not** import `@afenda/auth` or `@afenda/env`. `@afenda/env` imports no workspace packages. `@afenda/config` is not a runtime importer.
 
 † `@afenda/ui-system` must remain free of server-only code and DB calls (ARCH-024).
 
@@ -40,6 +41,7 @@ Authority: ARCH-024 operative (this file + SKILL.md). Living ARCH-024 body dorma
 |------|--------------|--------|
 | Any `packages/*` | `apps/web` or any `apps/*` | Packages must not import apps |
 | `@afenda/db` | `@afenda/auth`, `@afenda/env` | ARCH-024 contract |
+| `@afenda/admin` | Surfaces, `apps/*`, second Neon Auth client | Org-console Platform; Neon SDK ownership stays in `@afenda/auth`; RBAC audit → `@afenda/admin/audit`; health → `@afenda/admin/health` (incl. readiness `latencyMs`); provision = create → `persistActiveOrganization` → invite |
 | `@afenda/env` | any `@afenda/*` business package | Env owns config only |
 | `@afenda/ui-system` | `@afenda/db`, server-only auth paths | UI is client/surface |
 | Any package | Relative `../../packages/...` | Cross-boundary package name required |

@@ -21,40 +21,85 @@ describe("OpenAPI contract schemas (I2.4)", () => {
 	});
 
 	it("readiness schema accepts ready, degraded, and not_ready shapes", () => {
+		const checkedAt = "2026-07-15T12:00:00.000Z";
+
 		const ready = readinessResponseSchema.parse({
 			status: "ready",
 			checks: {
-				storage: { provider: "postgres", status: "reachable" },
-				auth: { provider: "neon_auth", status: "configured" },
+				storage: {
+					provider: "postgres",
+					status: "reachable",
+					latencyMs: 4,
+				},
+				auth: {
+					provider: "neon_auth",
+					status: "configured",
+					reachability: "reachable",
+					latencyMs: 5,
+				},
 			},
+			probes: [
+				{ name: "postgres", status: "up", latencyMs: 4, checkedAt },
+				{ name: "neon_auth", status: "up", latencyMs: 5, checkedAt },
+			],
 			topology: "neon-shared-schema",
 			connection: { pooler: true, ssl: "require" },
-			timestamp: "2026-07-15T12:00:00.000Z",
+			timestamp: checkedAt,
 		});
 		expect(ready.status).toBe("ready");
 		expect(ready.checks.storage.provider).toBe("postgres");
+		expect(ready.checks.storage.latencyMs).toBe(4);
+		expect(ready.checks.auth.reachability).toBe("reachable");
+		expect(ready.probes).toHaveLength(2);
 
 		const degraded = readinessResponseSchema.parse({
 			status: "degraded",
 			checks: {
-				storage: { provider: "postgres", status: "reachable" },
-				auth: { provider: "neon_auth", status: "misconfigured" },
+				storage: {
+					provider: "postgres",
+					status: "reachable",
+					latencyMs: 2,
+				},
+				auth: {
+					provider: "neon_auth",
+					status: "misconfigured",
+					reachability: "not_probed",
+					latencyMs: 0,
+				},
 			},
+			probes: [
+				{ name: "postgres", status: "up", latencyMs: 2, checkedAt },
+				{ name: "neon_auth", status: "skipped", latencyMs: 0, checkedAt },
+			],
 			topology: "neon-shared-schema",
 			connection: { pooler: true, ssl: "require" },
-			timestamp: "2026-07-15T12:00:00.000Z",
+			timestamp: checkedAt,
 		});
 		expect(degraded.status).toBe("degraded");
+		expect(degraded.checks.auth.reachability).toBe("not_probed");
 
 		const notReady = readinessResponseSchema.parse({
 			status: "not_ready",
 			checks: {
-				storage: { provider: "postgres", status: "unreachable" },
-				auth: { provider: "neon_auth", status: "configured" },
+				storage: {
+					provider: "postgres",
+					status: "unreachable",
+					latencyMs: 50,
+				},
+				auth: {
+					provider: "neon_auth",
+					status: "configured",
+					reachability: "reachable",
+					latencyMs: 3,
+				},
 			},
+			probes: [
+				{ name: "postgres", status: "down", latencyMs: 50, checkedAt },
+				{ name: "neon_auth", status: "up", latencyMs: 3, checkedAt },
+			],
 			topology: "neon-shared-schema",
 			connection: { pooler: false, ssl: "unknown" },
-			timestamp: "2026-07-15T12:00:00.000Z",
+			timestamp: checkedAt,
 		});
 		expect(notReady.status).toBe("not_ready");
 	});

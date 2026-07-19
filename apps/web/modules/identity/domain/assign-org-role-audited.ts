@@ -17,13 +17,15 @@ import {
 	type AssignOrgRoleResult,
 	ORGANIZATION_SCOPE,
 } from "@/modules/identity/domain/assign-org-role";
-import { ROLE_ASSIGN_AUDIT_ACTION } from "@/modules/platform/domain/record-rbac-audit";
+import { ROLE_ASSIGN_AUDIT_ACTION } from "@afenda/admin/audit";
 import { requireTrimmed } from "@/modules/platform/domain/require-trimmed";
 
 export type AssignOrgRoleWithAuditInput = AssignOrgRoleInput & {
 	actorUserId: string;
 	/** API-007 — stamped on `platform_rbac_audit.correlation_id`. */
 	correlationId: string;
+	ipAddress?: string;
+	userAgent?: string;
 };
 
 export type AssignOrgRoleWithAuditOk = {
@@ -141,6 +143,8 @@ export async function assignOrgRoleWithAudit(
 		"correlationId",
 		"assignOrgRoleWithAudit",
 	);
+	const ipAddress = input.ipAddress?.trim() || null;
+	const userAgent = input.userAgent?.trim() || null;
 
 	const role = await findAssignableRole(roleId, orgId);
 	if (!role) {
@@ -206,7 +210,9 @@ export async function assignOrgRoleWithAudit(
 								target_id,
 								role_id,
 								new_value,
-								correlation_id
+								correlation_id,
+								ip_address,
+								user_agent
 							)
 							SELECT
 								${ROLE_ASSIGN_AUDIT_ACTION},
@@ -216,7 +222,9 @@ export async function assignOrgRoleWithAudit(
 								mutated.id,
 								mutated.role_id,
 								${newValueJson}::jsonb,
-								${correlationId}
+								${correlationId},
+								${ipAddress},
+								${userAgent}
 							FROM mutated
 							RETURNING id, organization_id
 						)
@@ -259,7 +267,9 @@ export async function assignOrgRoleWithAudit(
 								target_id,
 								role_id,
 								new_value,
-								correlation_id
+								correlation_id,
+								ip_address,
+								user_agent
 							)
 							SELECT
 								${ROLE_ASSIGN_AUDIT_ACTION},
@@ -269,7 +279,9 @@ export async function assignOrgRoleWithAudit(
 								mutated.id,
 								mutated.role_id,
 								${newValueJson}::jsonb,
-								${correlationId}
+								${correlationId},
+								${ipAddress},
+								${userAgent}
 							FROM mutated
 							RETURNING id, organization_id
 						)

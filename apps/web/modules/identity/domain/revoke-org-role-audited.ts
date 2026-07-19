@@ -14,13 +14,15 @@ import type {
 	RevokeOrgRoleInput,
 	RevokeOrgRoleResult,
 } from "@/modules/identity/domain/revoke-org-role";
-import { ROLE_REVOKE_AUDIT_ACTION } from "@/modules/platform/domain/record-rbac-audit";
+import { ROLE_REVOKE_AUDIT_ACTION } from "@afenda/admin/audit";
 import { requireTrimmed } from "@/modules/platform/domain/require-trimmed";
 
 export type RevokeOrgRoleWithAuditInput = RevokeOrgRoleInput & {
 	actorUserId: string;
 	/** API-007 — stamped on `platform_rbac_audit.correlation_id`. */
 	correlationId: string;
+	ipAddress?: string;
+	userAgent?: string;
 };
 
 export type RevokeOrgRoleWithAuditOk = {
@@ -94,6 +96,8 @@ export async function revokeOrgRoleWithAudit(
 		"correlationId",
 		"revokeOrgRoleWithAudit",
 	);
+	const ipAddress = input.ipAddress?.trim() || null;
+	const userAgent = input.userAgent?.trim() || null;
 
 	const [active] = await db
 		.select()
@@ -146,7 +150,9 @@ export async function revokeOrgRoleWithAudit(
 						role_id,
 						old_value,
 						new_value,
-						correlation_id
+						correlation_id,
+						ip_address,
+						user_agent
 					)
 					SELECT
 						${ROLE_REVOKE_AUDIT_ACTION},
@@ -157,7 +163,9 @@ export async function revokeOrgRoleWithAudit(
 						mutated.role_id,
 						${oldValueJson}::jsonb,
 						${newValueJson}::jsonb,
-						${correlationId}
+						${correlationId},
+						${ipAddress},
+						${userAgent}
 					FROM mutated
 					RETURNING id, organization_id
 				)

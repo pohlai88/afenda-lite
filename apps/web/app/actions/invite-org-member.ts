@@ -1,6 +1,10 @@
 "use server";
 
 import {
+	MEMBER_INVITE_AUDIT_ACTION,
+	recordRbacAudit,
+} from "@afenda/admin/audit";
+import {
 	buildJoinUrl,
 	canInviteMember,
 	inviteOrgMember,
@@ -10,10 +14,7 @@ import { revalidatePath } from "next/cache";
 
 import { forbidUnlessPermission } from "@/app/actions/permission-gate";
 import { inviteOrgMemberCommandSchema } from "@/modules/identity/schemas/invite-org-member";
-import {
-	MEMBER_INVITE_AUDIT_ACTION,
-	recordRbacAudit,
-} from "@/modules/platform/domain/record-rbac-audit";
+import { readRequestAttribution } from "@/modules/platform/domain/request-attribution";
 import { createCorrelationId } from "@/modules/platform/observability/correlation";
 import { logProductEvent } from "@/modules/platform/observability/product-log";
 import {
@@ -77,6 +78,7 @@ export async function inviteOrgMemberAction(
 
 	let auditId: string;
 	try {
+		const attribution = await readRequestAttribution();
 		const audit = await recordRbacAudit({
 			orgId: session.orgId,
 			action: MEMBER_INVITE_AUDIT_ACTION,
@@ -89,8 +91,13 @@ export async function inviteOrgMemberAction(
 				role: parsed.data.role,
 				stage: "requested",
 			},
+			ipAddress: attribution.ipAddress,
+			userAgent: attribution.userAgent,
 		});
-		auditId = audit.id;
+		if (!audit.ok) {
+			throw new Error(audit.message);
+		}
+		auditId = audit.data.id;
 	} catch {
 		logProductEvent({
 			level: "error",

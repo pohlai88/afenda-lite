@@ -53,7 +53,11 @@ describe("ActionResult + error brands (I2.1)", () => {
 	it("maps shared ApiErrorCode brands to HTTP status", () => {
 		expect(API_ERROR_HTTP_STATUS.UNAUTHORIZED).toBe(401);
 		expect(API_ERROR_HTTP_STATUS.VALIDATION_ERROR).toBe(422);
+		expect(API_ERROR_HTTP_STATUS.RATE_LIMITED).toBe(429);
+		expect(API_ERROR_HTTP_STATUS.SERVICE_UNAVAILABLE).toBe(503);
 		expect(isApiErrorCode("NOT_FOUND")).toBe(true);
+		expect(isApiErrorCode("RATE_LIMITED")).toBe(true);
+		expect(isApiErrorCode("SERVICE_UNAVAILABLE")).toBe(true);
 		expect(isApiErrorCode("TEAPOT")).toBe(false);
 		expect(asApiErrorCode("CONFLICT")).toBe("CONFLICT");
 	});

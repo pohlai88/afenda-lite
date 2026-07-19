@@ -21,7 +21,7 @@ import { hasPermission } from "../modules/identity/domain/has-permission";
 import { listPermissionCatalog } from "../modules/identity/domain/list-permission-catalog";
 import { listUserPermissions } from "../modules/identity/domain/list-user-permissions";
 import { revokeOrgRoleWithAudit } from "../modules/identity/domain/revoke-org-role-audited";
-import { deleteRbacAuditRow } from "../modules/platform/domain/record-rbac-audit";
+import { deleteRbacAuditRow } from "@afenda/admin/audit";
 
 const repoRoot = path.resolve(
 	path.dirname(fileURLToPath(import.meta.url)),

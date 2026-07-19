@@ -1,0 +1,21 @@
+/** Pino redact paths — never accept user-controlled path lists. */
+export const DEFAULT_REDACT_PATHS = [
+	"password",
+	"secret",
+	"token",
+	"apiKey",
+	"accessToken",
+	"refreshToken",
+	"authorization",
+	"creditCard",
+	"cvv",
+	"socialSecurityNumber",
+	"bankAccount",
+	"*.password",
+	"*.secret",
+	"*.token",
+	"*.apiKey",
+	"*.accessToken",
+	"*.refreshToken",
+	"*.authorization",
+] as const;

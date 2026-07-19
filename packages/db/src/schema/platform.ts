@@ -101,6 +101,9 @@ export const platformRbacAudit = pgTable("platform_rbac_audit", {
 	reason: text("reason"),
 	/** API-007 / GUIDE-018 I5.3 — required on new privileged writes; null on history. */
 	correlationId: text("correlation_id"),
+	/** Optional request attribution (nullable on history / non-HTTP writers). */
+	ipAddress: text("ip_address"),
+	userAgent: text("user_agent"),
 	createdAt: timestamp("created_at", { withTimezone: true })
 		.notNull()
 		.defaultNow(),

@@ -29,8 +29,8 @@ Historical provenance: patterns adapted from Xerp `monorepo-discipline`; rewritt
 
 ```
 Rank 3 — Application  : apps/web  (sole deployable; future apps/* follow same rule)
-Rank 2 — Surfaces     : @afenda/ui · @afenda/emails
-Rank 1 — Platform     : @afenda/db · @afenda/auth · @afenda/env · @afenda/config
+Rank 2 — Surfaces     : @afenda/ui-system · @afenda/emails
+Rank 1 — Platform     : @afenda/db · @afenda/auth · @afenda/admin · @afenda/env · @afenda/errors · @afenda/config
 ```
 
 **Direction rule:** imports flow **down** only (higher rank → same or lower). Packages never import `apps/*`. No cycles.
@@ -41,8 +41,10 @@ Dependency graph (runtime):
 apps/web
   ├── @afenda/db
   ├── @afenda/auth  ──→  @afenda/env   (and @afenda/db only when ARCH-024 DAG + package.json both allow)
+  ├── @afenda/admin ──→  @afenda/auth · @afenda/db · @afenda/env · @afenda/errors
   ├── @afenda/env
-  ├── @afenda/ui
+  ├── @afenda/errors   (leaf — AppError / codes / Result / http / postgres adapter)
+  ├── @afenda/ui-system
   └── @afenda/emails
 
 @afenda/config    (devDep / tsconfig extends only — not a runtime import)
@@ -95,7 +97,9 @@ Full diagram, forbidden pairs, and violation fixes: [LAYERS.md](LAYERS.md).
 |---------|---------------------------|----------|
 | `@afenda/db` | (none of auth/env/ui/emails) | Import `@afenda/auth` or `@afenda/env`; expose schema only via public exports |
 | `@afenda/auth` | `@afenda/env` (and `@afenda/db` only when both ARCH-024 and `package.json` list it) | Own DB schema definitions |
+| `@afenda/admin` | `@afenda/auth` · `@afenda/db` · `@afenda/env` · `@afenda/errors` | Import Surfaces / `apps/*`; own a second Neon Auth client |
 | `@afenda/env` | (none) | Runtime business logic |
+| `@afenda/errors` | (none) | Next.js; `pg` / Drizzle / Prisma; UI/locale copy as contract |
 | `@afenda/ui-system` | platform packages only if client-safe | Server-only code, DB calls, secrets |
 | `@afenda/emails` | (UI/React peers as needed) | Be imported from client components in `apps/web` |
 | `@afenda/config` | (none at runtime) | Be imported as a runtime module; use `extends` / Biome root only |

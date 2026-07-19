@@ -45,6 +45,12 @@ vi.mock("next/cache", () => ({
 	revalidatePath: vi.fn(),
 }));
 
+vi.mock("next/headers", () => ({
+	headers: async () => ({
+		get: () => null,
+	}),
+}));
+
 vi.mock("@/modules/identity/domain/has-permission", () => ({
 	hasPermission: vi.fn(),
 }));
@@ -61,19 +67,13 @@ vi.mock("@/modules/identity/domain/revoke-org-role-audited", () => ({
 	revokeOrgRoleWithAudit: identityMocks.revokeOrgRoleWithAudit,
 }));
 
-vi.mock(
-	"@/modules/platform/domain/record-rbac-audit",
-	async (importOriginal) => {
-		const actual =
-			await importOriginal<
-				typeof import("../modules/platform/domain/record-rbac-audit")
-			>();
-		return {
-			...actual,
-			recordRbacAudit: auditMocks.recordRbacAudit,
-		};
-	},
-);
+vi.mock("@afenda/admin/audit", async (importOriginal) => {
+	const actual = await importOriginal<typeof import("@afenda/admin/audit")>();
+	return {
+		...actual,
+		recordRbacAudit: auditMocks.recordRbacAudit,
+	};
+});
 
 import { assignOrgRoleAction } from "../app/actions/assign-org-role";
 import { inviteOrgMemberAction } from "../app/actions/invite-org-member";

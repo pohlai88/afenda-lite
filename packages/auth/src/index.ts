@@ -38,6 +38,17 @@ export {
 	JOIN_PATH,
 	parseJoinInvitationQuery,
 } from "./join-paths";
+export type {
+	CreatedOrganization,
+	CreateOrganizationInput,
+	MemberOrganization,
+} from "./organization-console";
+export {
+	createOrganization,
+	deleteOrganization,
+	listMemberOrganizations,
+	persistActiveOrganization,
+} from "./organization-console";
 export type { OrgMember } from "./organization-members";
 export { findOrgMember, listOrgMembers } from "./organization-members";
 export {

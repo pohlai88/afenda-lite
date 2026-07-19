@@ -5,7 +5,7 @@
 | Surface | `docs-V2/monorepo/README.md` |
 | Authority | **Scratch** — coding-standards (file/org) · monorepo-discipline + disk `packages/*` · `apps/web` |
 | Purpose | Lean import / layer / workspace rules |
-| Updated | 2026-07-19 |
+| Updated | 2026-07-20 |
 
 Re-probe after package add/rename or DAG change.
 
@@ -19,9 +19,9 @@ Imports flow **down** only. Packages never import `apps/*`. No cycles.
 |------|-------|----------|
 | 3 | Application | `apps/web` · `apps/docs` (`@afenda/docs`) |
 | 2 | Surfaces | `@afenda/ui-system` · `@afenda/emails` |
-| 1 | Platform | `@afenda/db` · `@afenda/auth` · `@afenda/env` · `@afenda/config` |
+| 1 | Platform | `@afenda/db` · `@afenda/auth` · `@afenda/admin` · `@afenda/env` · `@afenda/errors` · `@afenda/config` |
 
-`@afenda/config` = devDep / tsconfig / Biome extend only — not a runtime import. `@afenda/auth` → `@afenda/env`. App domain: `apps/web/modules/*` · `features/*`.
+`@afenda/config` = devDep / tsconfig / Biome extend only — not a runtime import. `@afenda/errors` = transport-neutral AppError / codes / Result / http / postgres-adapter leaf (no Next.js · no DB drivers). `@afenda/auth` → `@afenda/env` (incl. session-scoped `persistActiveOrganization` for RH/Action). `@afenda/admin` → `@afenda/auth` · `@afenda/db` · `@afenda/env` · `@afenda/errors` (org-console services; sole `platform_rbac_audit` write/list SSOT — no dual writer under `apps/web`; `provisionOrganization` = create → setActive → invite; health probes + readiness `latencyMs` SSOT — web domain re-exports). RBAC audit callers use `@afenda/admin/audit`; health callers use `@afenda/admin/health` (no Neon Auth client load). App domain: `apps/web/modules/*` · `features/*`.
 
 `@afenda/docs` = official documentation site — may depend on workspace `@afenda/config` only; **must not** import `@afenda/db` · `@afenda/auth` · `@afenda/env` product secrets. OpenAPI consumer rules: [../docs/README.md](../docs/README.md).
 
@@ -42,7 +42,9 @@ Imports flow **down** only. Packages never import `apps/*`. No cycles.
 |---------|----------|
 | `@afenda/db` | Import auth/env/ui/emails |
 | `@afenda/auth` | Own DB schema |
+| `@afenda/admin` | Import Surfaces / `apps/*`; invent a second Neon Auth client |
 | `@afenda/env` | Runtime business logic |
+| `@afenda/errors` | Next.js; `pg` / Drizzle / Prisma; UI/locale copy as contract |
 | `@afenda/ui-system` | Server-only / DB / secrets |
 | `@afenda/emails` | Import from client components in `apps/web` |
 

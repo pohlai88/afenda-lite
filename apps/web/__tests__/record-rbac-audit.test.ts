@@ -9,14 +9,13 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { platformRbacAudit, withOrg } from "@afenda/db";
-import { afterAll, describe, expect, it } from "vitest";
-
 import {
 	deleteRbacAuditRow,
 	MEMBER_INVITE_AUDIT_ACTION,
 	recordRbacAudit,
-} from "../modules/platform/domain/record-rbac-audit";
+} from "@afenda/admin/audit";
+import { platformRbacAudit, withOrg } from "@afenda/db";
+import { afterAll, describe, expect, it } from "vitest";
 
 const repoRoot = path.resolve(
 	path.dirname(fileURLToPath(import.meta.url)),
@@ -60,25 +59,29 @@ const hasDatabase = typeof databaseUrl === "string" && databaseUrl.length > 0;
 
 describe("recordRbacAudit guards (I2.3)", () => {
 	it("rejects empty orgId before touching the database", async () => {
-		await expect(
-			recordRbacAudit({
-				orgId: "   ",
-				action: MEMBER_INVITE_AUDIT_ACTION,
-				actorUserId: "user-a",
-				correlationId: "test-correlation-id",
-			}),
-		).rejects.toThrow(/orgId/);
+		const result = await recordRbacAudit({
+			orgId: "   ",
+			action: MEMBER_INVITE_AUDIT_ACTION,
+			actorUserId: "user-a",
+			correlationId: "test-correlation-id",
+		});
+		expect(result.ok).toBe(false);
+		if (!result.ok) {
+			expect(result.code).toBe("BAD_REQUEST");
+		}
 	});
 
 	it("rejects empty actorUserId", async () => {
-		await expect(
-			recordRbacAudit({
-				orgId: "org-a",
-				action: MEMBER_INVITE_AUDIT_ACTION,
-				actorUserId: "",
-				correlationId: "test-correlation-id",
-			}),
-		).rejects.toThrow(/actorUserId/);
+		const result = await recordRbacAudit({
+			orgId: "org-a",
+			action: MEMBER_INVITE_AUDIT_ACTION,
+			actorUserId: "",
+			correlationId: "test-correlation-id",
+		});
+		expect(result.ok).toBe(false);
+		if (!result.ok) {
+			expect(result.code).toBe("BAD_REQUEST");
+		}
 	});
 });
 
@@ -94,7 +97,7 @@ describe.skipIf(!hasDatabase)("recordRbacAudit tenancy write (I2.3)", () => {
 	});
 
 	it("inserts with explicit organization_id and isolates via withOrg", async () => {
-		const row = await recordRbacAudit({
+		const recorded = await recordRbacAudit({
 			orgId: orgA,
 			action: MEMBER_INVITE_AUDIT_ACTION,
 			actorUserId,
@@ -103,6 +106,12 @@ describe.skipIf(!hasDatabase)("recordRbacAudit tenancy write (I2.3)", () => {
 			newValue: { email: "invitee@example.com", role: "client" },
 			correlationId: "test-correlation-id",
 		});
+		if (!recorded.ok) {
+			throw new Error(
+				`recordRbacAudit failed: ${recorded.code} ${recorded.message}`,
+			);
+		}
+		const row = recorded.data;
 		createdAuditIds.push({ id: row.id, orgId: orgA });
 
 		expect(row.organizationId).toBe(orgA);
@@ -119,7 +128,10 @@ describe.skipIf(!hasDatabase)("recordRbacAudit tenancy write (I2.3)", () => {
 			id: row.id,
 			orgId: orgB,
 		});
-		expect(wrongOrgDelete).toBeNull();
+		expect(wrongOrgDelete.ok).toBe(true);
+		if (wrongOrgDelete.ok) {
+			expect(wrongOrgDelete.data).toBeNull();
+		}
 
 		const forOrgAAfterDeniedDelete = await withOrg(platformRbacAudit, orgA);
 		expect(forOrgAAfterDeniedDelete.some((item) => item.id === row.id)).toBe(

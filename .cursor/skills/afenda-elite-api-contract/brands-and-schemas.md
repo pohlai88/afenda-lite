@@ -59,8 +59,9 @@ function asDeclarationId(id: string): DeclarationId {
 | Module path | Primary resources / flows | Notable exports |
 |-------------|---------------------------|-----------------|
 | `modules/platform/schemas/common.ts` | Shared primitives | `uuidSchema`, `emailSchema`, `passwordSchema`, `slugSchema`, **`parseSchema`** (**Landed**) |
-| `modules/platform/schemas/api-error.ts` | Shared HTTP error body | `APIErrorBody` / codes (**Landed**) |
-| `modules/platform/schemas/action-result.ts` | Shared Action contract | `ActionResult<T>`, `actionOk`, `actionFail` (**Landed**; API-002) |
+| `modules/platform/schemas/api-error.ts` | Web re-export + Zod OpenAPI | Codes/body from `@afenda/errors` (+ `/http`); Zod schemas local (**Landed**) |
+| `modules/platform/schemas/action-result.ts` | Web Action adapters | `ActionResult` aliases `@afenda/errors/result`; `actionFailInternal` / `actionFieldMessage` local (**Landed**; API-002) |
+| `packages/errors` (`@afenda/errors`) | Transport-neutral error kernel | `AppError`, `ErrorCode`/`ApiErrorCode` (incl. `RATE_LIMITED`/`SERVICE_UNAVAILABLE`), normalize, serialize, `Result`, `/http` (`retryAfterSeconds`), `/adapters/postgres` (**Landed**) |
 | `modules/identity/schemas/invite-org-member.ts` | Org-member invite | `inviteOrgMemberCommandSchema` (**Landed**, I2.1) |
 | `modules/identity/schemas/auth.ts` | Sign-in boundary | `signInSchema` (Living inventory) |
 | `modules/identity/schemas/users.ts` | Organization-admin users | `userIdSchema`, create/import/update schemas (Living inventory) |
