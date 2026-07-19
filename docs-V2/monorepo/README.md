@@ -19,9 +19,9 @@ Imports flow **down** only. Packages never import `apps/*`. No cycles.
 |------|-------|----------|
 | 3 | Application | `apps/web` · `apps/docs` (`@afenda/docs`) |
 | 2 | Surfaces | `@afenda/ui-system` · `@afenda/emails` |
-| 1 | Platform | `@afenda/db` · `@afenda/auth` · `@afenda/admin` · `@afenda/env` · `@afenda/errors` · `@afenda/config` |
+| 1 | Platform | `@afenda/db` · `@afenda/auth` · `@afenda/admin` · `@afenda/env` · `@afenda/errors` · `@afenda/logger` · `@afenda/config` |
 
-`@afenda/config` = devDep / tsconfig / Biome extend only — not a runtime import. `@afenda/errors` = transport-neutral AppError / codes / Result / http / postgres-adapter leaf (no Next.js · no DB drivers). `@afenda/auth` → `@afenda/env` (incl. session-scoped `persistActiveOrganization` for RH/Action). `@afenda/admin` → `@afenda/auth` · `@afenda/db` · `@afenda/env` · `@afenda/errors` (org-console services; sole `platform_rbac_audit` write/list SSOT — no dual writer under `apps/web`; `provisionOrganization` = create → setActive → invite; health probes + readiness `latencyMs` SSOT — web domain re-exports). RBAC audit callers use `@afenda/admin/audit`; health callers use `@afenda/admin/health` (no Neon Auth client load). App domain: `apps/web/modules/*` · `features/*`.
+`@afenda/config` = devDep / tsconfig / Biome extend only — not a runtime import. `@afenda/errors` = transport-neutral AppError / codes / Result / http / postgres-adapter leaf (no Next.js · no DB drivers). `@afenda/logger` = Pino Node logger + edge emit leaf (`pino` only; no APM). `@afenda/auth` → `@afenda/env` · `@afenda/logger` (incl. session-scoped `persistActiveOrganization` for RH/Action). `@afenda/admin` → `@afenda/auth` · `@afenda/db` · `@afenda/env` · `@afenda/errors` (org-console services; sole `platform_rbac_audit` write/list SSOT — no dual writer under `apps/web`; `provisionOrganization` = create → setActive → invite; health probes + readiness `latencyMs` SSOT — web domain re-exports). RBAC audit callers use `@afenda/admin/audit`; health callers use `@afenda/admin/health` (no Neon Auth client load). App domain: `apps/web/modules/*` · `features/*`.
 
 `@afenda/docs` = official documentation site — may depend on workspace `@afenda/config` only; **must not** import `@afenda/db` · `@afenda/auth` · `@afenda/env` product secrets. OpenAPI consumer rules: [../docs/README.md](../docs/README.md).
 
