@@ -1,6 +1,9 @@
 import { env } from "@afenda/env";
+import { createLogger } from "@afenda/logger";
 
 import { getNeonAuth } from "./neon-auth";
+
+const authBffLogger = createLogger({ service: "afenda-auth-bff" });
 
 /** Wire header for BFF correlation (API-007 twin — package-local, no apps/web import). */
 export const AUTH_BFF_CORRELATION_HEADER = "x-correlation-id" as const;
@@ -131,16 +134,13 @@ function logAuthBffUnexpectedError(input: {
 	method: string;
 	pathname: string;
 }): void {
-	const line = JSON.stringify({
-		ts: new Date().toISOString(),
-		service: "afenda-auth-bff",
-		level: "error",
-		event: "auth_bff.unexpected_error",
-		correlationId: input.correlationId,
-		method: input.method,
-		path: input.pathname,
-	});
-	console.error(line);
+	authBffLogger
+		.child({ correlationId: input.correlationId })
+		.error({
+			event: "auth_bff.unexpected_error",
+			method: input.method,
+			path: input.pathname,
+		});
 }
 
 function wrapProviderHandler(

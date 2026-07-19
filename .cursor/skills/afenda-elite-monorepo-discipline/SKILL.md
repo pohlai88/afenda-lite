@@ -30,7 +30,7 @@ Historical provenance: patterns adapted from Xerp `monorepo-discipline`; rewritt
 ```
 Rank 3 — Application  : apps/web  (sole deployable; future apps/* follow same rule)
 Rank 2 — Surfaces     : @afenda/ui-system · @afenda/emails
-Rank 1 — Platform     : @afenda/db · @afenda/auth · @afenda/admin · @afenda/env · @afenda/errors · @afenda/config
+Rank 1 — Platform     : @afenda/db · @afenda/auth · @afenda/admin · @afenda/env · @afenda/errors · @afenda/logger · @afenda/config
 ```
 
 **Direction rule:** imports flow **down** only (higher rank → same or lower). Packages never import `apps/*`. No cycles.
@@ -40,10 +40,11 @@ Dependency graph (runtime):
 ```
 apps/web
   ├── @afenda/db
-  ├── @afenda/auth  ──→  @afenda/env   (and @afenda/db only when ARCH-024 DAG + package.json both allow)
+  ├── @afenda/auth  ──→  @afenda/env · @afenda/logger
   ├── @afenda/admin ──→  @afenda/auth · @afenda/db · @afenda/env · @afenda/errors
   ├── @afenda/env
   ├── @afenda/errors   (leaf — AppError / codes / Result / http / postgres adapter)
+  ├── @afenda/logger   (leaf — Pino Node + edge emit; no @afenda/* runtime deps)
   ├── @afenda/ui-system
   └── @afenda/emails
 
