@@ -1,0 +1,1114 @@
+# GENERATED — do not hand-edit.
+# Source: scripts/generate-openapi.mts
+# Scratch authority: docs-V2/api/rest.md
+# Regenerate: pnpm openapi:generate
+openapi: 3.0.3
+info:
+  title: Afenda-Lite HTTP (api-now)
+  version: 1.0.0
+  description: "Machine OpenAPI for implemented Route Handlers only. Success JSON uses `{ data }`
+    (healthJson / apiData). Errors use APIErrorBody (no data wrapper). Neon Auth `/api/auth/*` is
+    excluded. Contract-only REST lives in REST-001 until handlers exist. One-version rule: no
+    `/api/v1`."
+servers:
+  - url: https://afenda-lite.vercel.app
+    description: Production
+  - url: http://localhost:3000
+    description: Local next dev
+tags:
+  - name: Health
+    description: Public probes
+  - name: DeclarationDraft
+    description: Client autosave XHR (api-now)
+components:
+  securitySchemes:
+    neonAuthSession:
+      type: apiKey
+      in: cookie
+      name: session
+      description: Neon Auth client session cookie (browser same-origin). Cookie name here is illustrative
+        — Neon owns the real name.
+  schemas:
+    APIErrorBody:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              enum:
+                - BAD_REQUEST
+                - UNAUTHORIZED
+                - FORBIDDEN
+                - NOT_FOUND
+                - CONFLICT
+                - VALIDATION_ERROR
+                - INTERNAL_ERROR
+            message:
+              type: string
+              minLength: 1
+            details:
+              nullable: true
+          required:
+            - code
+            - message
+      required:
+        - error
+    LivenessResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+            - alive
+        timestamp:
+          type: string
+          format: date-time
+      required:
+        - status
+        - timestamp
+    ReadinessResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+            - ready
+            - degraded
+            - not_ready
+        checks:
+          type: object
+          properties:
+            storage:
+              type: object
+              properties:
+                provider:
+                  type: string
+                  enum:
+                    - postgres
+                status:
+                  type: string
+                  enum:
+                    - reachable
+                    - unreachable
+              required:
+                - provider
+                - status
+            auth:
+              type: object
+              properties:
+                provider:
+                  type: string
+                  enum:
+                    - neon_auth
+                status:
+                  type: string
+                  enum:
+                    - configured
+                    - misconfigured
+              required:
+                - provider
+                - status
+          required:
+            - storage
+            - auth
+        topology:
+          type: string
+          enum:
+            - neon-shared-schema
+        connection:
+          type: object
+          properties:
+            pooler:
+              type: boolean
+            ssl:
+              type: string
+              minLength: 1
+          required:
+            - pooler
+            - ssl
+        timestamp:
+          type: string
+          format: date-time
+      required:
+        - status
+        - checks
+        - topology
+        - connection
+        - timestamp
+    SaveClientDeclarationDraft:
+      type: object
+      properties:
+        assignmentId:
+          type: string
+          format: uuid
+        answers:
+          type: object
+          additionalProperties:
+            anyOf:
+              - type: boolean
+              - type: string
+                maxLength: 10000
+        stepIndex:
+          type: integer
+          minimum: 0
+          maximum: 10000
+      required:
+        - assignmentId
+        - answers
+        - stepIndex
+    DeclarationDraftGetResponse:
+      type: object
+      properties:
+        assignmentId:
+          type: string
+          format: uuid
+        answers:
+          type: object
+          additionalProperties:
+            anyOf:
+              - type: boolean
+              - type: string
+                maxLength: 10000
+        stepIndex:
+          type: integer
+          minimum: 0
+        savedAt:
+          type: string
+          nullable: true
+          format: date-time
+      required:
+        - assignmentId
+        - answers
+        - stepIndex
+        - savedAt
+    DeclarationDraftWriteResponse:
+      type: object
+      properties:
+        savedAt:
+          type: string
+          format: date-time
+      required:
+        - savedAt
+    LivenessEnvelope:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            status:
+              type: string
+              enum:
+                - alive
+            timestamp:
+              type: string
+              format: date-time
+          required:
+            - status
+            - timestamp
+      required:
+        - data
+    ReadinessEnvelope:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            status:
+              type: string
+              enum:
+                - ready
+                - degraded
+                - not_ready
+            checks:
+              type: object
+              properties:
+                storage:
+                  type: object
+                  properties:
+                    provider:
+                      type: string
+                      enum:
+                        - postgres
+                    status:
+                      type: string
+                      enum:
+                        - reachable
+                        - unreachable
+                  required:
+                    - provider
+                    - status
+                auth:
+                  type: object
+                  properties:
+                    provider:
+                      type: string
+                      enum:
+                        - neon_auth
+                    status:
+                      type: string
+                      enum:
+                        - configured
+                        - misconfigured
+                  required:
+                    - provider
+                    - status
+              required:
+                - storage
+                - auth
+            topology:
+              type: string
+              enum:
+                - neon-shared-schema
+            connection:
+              type: object
+              properties:
+                pooler:
+                  type: boolean
+                ssl:
+                  type: string
+                  minLength: 1
+              required:
+                - pooler
+                - ssl
+            timestamp:
+              type: string
+              format: date-time
+          required:
+            - status
+            - checks
+            - topology
+            - connection
+            - timestamp
+      required:
+        - data
+    DeclarationDraftGetEnvelope:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            assignmentId:
+              type: string
+              format: uuid
+            answers:
+              type: object
+              additionalProperties:
+                anyOf:
+                  - type: boolean
+                  - type: string
+                    maxLength: 10000
+            stepIndex:
+              type: integer
+              minimum: 0
+            savedAt:
+              type: string
+              nullable: true
+              format: date-time
+          required:
+            - assignmentId
+            - answers
+            - stepIndex
+            - savedAt
+      required:
+        - data
+    DeclarationDraftWriteEnvelope:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            savedAt:
+              type: string
+              format: date-time
+          required:
+            - savedAt
+      required:
+        - data
+  parameters: {}
+paths:
+  /api/health/liveness:
+    get:
+      summary: Process liveness probe
+      description: Public process-up check. Optional short public CDN cache.
+      tags:
+        - Health
+      responses:
+        "200":
+          description: Process is alive
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LivenessEnvelope"
+      operationId: getHealthLiveness
+      x-afenda-status: api-now
+  /api/health/readiness:
+    get:
+      summary: Dependency readiness probe
+      description: "DB / auth dependency snapshot. Prefer Cache-Control: no-store."
+      tags:
+        - Health
+      responses:
+        "200":
+          description: Ready or degraded snapshot
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReadinessEnvelope"
+      operationId: getHealthReadiness
+      x-afenda-status: api-now
+  /api/client/declaration-draft:
+    get:
+      summary: Load client declaration draft
+      description: "Requires client session + onboarding. Cache-Control: private, no-store. Success body
+        uses `{ data }` envelope."
+      tags:
+        - DeclarationDraft
+      security:
+        - neonAuthSession: []
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: assignmentId
+          in: query
+      responses:
+        "200":
+          description: Draft loaded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeclarationDraftGetEnvelope"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        enum:
+                          - BAD_REQUEST
+                          - UNAUTHORIZED
+                          - FORBIDDEN
+                          - NOT_FOUND
+                          - CONFLICT
+                          - VALIDATION_ERROR
+                          - INTERNAL_ERROR
+                      message:
+                        type: string
+                        minLength: 1
+                      details:
+                        nullable: true
+                    required:
+                      - code
+                      - message
+                required:
+                  - error
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        enum:
+                          - BAD_REQUEST
+                          - UNAUTHORIZED
+                          - FORBIDDEN
+                          - NOT_FOUND
+                          - CONFLICT
+                          - VALIDATION_ERROR
+                          - INTERNAL_ERROR
+                      message:
+                        type: string
+                        minLength: 1
+                      details:
+                        nullable: true
+                    required:
+                      - code
+                      - message
+                required:
+                  - error
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        enum:
+                          - BAD_REQUEST
+                          - UNAUTHORIZED
+                          - FORBIDDEN
+                          - NOT_FOUND
+                          - CONFLICT
+                          - VALIDATION_ERROR
+                          - INTERNAL_ERROR
+                      message:
+                        type: string
+                        minLength: 1
+                      details:
+                        nullable: true
+                    required:
+                      - code
+                      - message
+                required:
+                  - error
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        enum:
+                          - BAD_REQUEST
+                          - UNAUTHORIZED
+                          - FORBIDDEN
+                          - NOT_FOUND
+                          - CONFLICT
+                          - VALIDATION_ERROR
+                          - INTERNAL_ERROR
+                      message:
+                        type: string
+                        minLength: 1
+                      details:
+                        nullable: true
+                    required:
+                      - code
+                      - message
+                required:
+                  - error
+        "422":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        enum:
+                          - BAD_REQUEST
+                          - UNAUTHORIZED
+                          - FORBIDDEN
+                          - NOT_FOUND
+                          - CONFLICT
+                          - VALIDATION_ERROR
+                          - INTERNAL_ERROR
+                      message:
+                        type: string
+                        minLength: 1
+                      details:
+                        nullable: true
+                    required:
+                      - code
+                      - message
+                required:
+                  - error
+      operationId: getClientDeclarationDraft
+      x-afenda-status: api-now
+    put:
+      summary: Persist client declaration draft
+      description: "Full draft replace (saveClientDeclarationDraftSchema). Cache-Control: private, no-store."
+      tags:
+        - DeclarationDraft
+      security:
+        - neonAuthSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                assignmentId:
+                  type: string
+                  format: uuid
+                answers:
+                  type: object
+                  additionalProperties:
+                    anyOf:
+                      - type: boolean
+                      - type: string
+                        maxLength: 10000
+                stepIndex:
+                  type: integer
+                  minimum: 0
+                  maximum: 10000
+              required:
+                - assignmentId
+                - answers
+                - stepIndex
+      responses:
+        "200":
+          description: Draft saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeclarationDraftWriteEnvelope"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        enum:
+                          - BAD_REQUEST
+                          - UNAUTHORIZED
+                          - FORBIDDEN
+                          - NOT_FOUND
+                          - CONFLICT
+                          - VALIDATION_ERROR
+                          - INTERNAL_ERROR
+                      message:
+                        type: string
+                        minLength: 1
+                      details:
+                        nullable: true
+                    required:
+                      - code
+                      - message
+                required:
+                  - error
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        enum:
+                          - BAD_REQUEST
+                          - UNAUTHORIZED
+                          - FORBIDDEN
+                          - NOT_FOUND
+                          - CONFLICT
+                          - VALIDATION_ERROR
+                          - INTERNAL_ERROR
+                      message:
+                        type: string
+                        minLength: 1
+                      details:
+                        nullable: true
+                    required:
+                      - code
+                      - message
+                required:
+                  - error
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        enum:
+                          - BAD_REQUEST
+                          - UNAUTHORIZED
+                          - FORBIDDEN
+                          - NOT_FOUND
+                          - CONFLICT
+                          - VALIDATION_ERROR
+                          - INTERNAL_ERROR
+                      message:
+                        type: string
+                        minLength: 1
+                      details:
+                        nullable: true
+                    required:
+                      - code
+                      - message
+                required:
+                  - error
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        enum:
+                          - BAD_REQUEST
+                          - UNAUTHORIZED
+                          - FORBIDDEN
+                          - NOT_FOUND
+                          - CONFLICT
+                          - VALIDATION_ERROR
+                          - INTERNAL_ERROR
+                      message:
+                        type: string
+                        minLength: 1
+                      details:
+                        nullable: true
+                    required:
+                      - code
+                      - message
+                required:
+                  - error
+        "422":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        enum:
+                          - BAD_REQUEST
+                          - UNAUTHORIZED
+                          - FORBIDDEN
+                          - NOT_FOUND
+                          - CONFLICT
+                          - VALIDATION_ERROR
+                          - INTERNAL_ERROR
+                      message:
+                        type: string
+                        minLength: 1
+                      details:
+                        nullable: true
+                    required:
+                      - code
+                      - message
+                required:
+                  - error
+      operationId: putClientDeclarationDraft
+      x-afenda-status: api-now
+    patch:
+      summary: Persist client declaration draft
+      description: "Same write body as PUT when partial fields are not split at the schema. Cache-Control:
+        private, no-store."
+      tags:
+        - DeclarationDraft
+      security:
+        - neonAuthSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                assignmentId:
+                  type: string
+                  format: uuid
+                answers:
+                  type: object
+                  additionalProperties:
+                    anyOf:
+                      - type: boolean
+                      - type: string
+                        maxLength: 10000
+                stepIndex:
+                  type: integer
+                  minimum: 0
+                  maximum: 10000
+              required:
+                - assignmentId
+                - answers
+                - stepIndex
+      responses:
+        "200":
+          description: Draft saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeclarationDraftWriteEnvelope"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        enum:
+                          - BAD_REQUEST
+                          - UNAUTHORIZED
+                          - FORBIDDEN
+                          - NOT_FOUND
+                          - CONFLICT
+                          - VALIDATION_ERROR
+                          - INTERNAL_ERROR
+                      message:
+                        type: string
+                        minLength: 1
+                      details:
+                        nullable: true
+                    required:
+                      - code
+                      - message
+                required:
+                  - error
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        enum:
+                          - BAD_REQUEST
+                          - UNAUTHORIZED
+                          - FORBIDDEN
+                          - NOT_FOUND
+                          - CONFLICT
+                          - VALIDATION_ERROR
+                          - INTERNAL_ERROR
+                      message:
+                        type: string
+                        minLength: 1
+                      details:
+                        nullable: true
+                    required:
+                      - code
+                      - message
+                required:
+                  - error
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        enum:
+                          - BAD_REQUEST
+                          - UNAUTHORIZED
+                          - FORBIDDEN
+                          - NOT_FOUND
+                          - CONFLICT
+                          - VALIDATION_ERROR
+                          - INTERNAL_ERROR
+                      message:
+                        type: string
+                        minLength: 1
+                      details:
+                        nullable: true
+                    required:
+                      - code
+                      - message
+                required:
+                  - error
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        enum:
+                          - BAD_REQUEST
+                          - UNAUTHORIZED
+                          - FORBIDDEN
+                          - NOT_FOUND
+                          - CONFLICT
+                          - VALIDATION_ERROR
+                          - INTERNAL_ERROR
+                      message:
+                        type: string
+                        minLength: 1
+                      details:
+                        nullable: true
+                    required:
+                      - code
+                      - message
+                required:
+                  - error
+        "422":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        enum:
+                          - BAD_REQUEST
+                          - UNAUTHORIZED
+                          - FORBIDDEN
+                          - NOT_FOUND
+                          - CONFLICT
+                          - VALIDATION_ERROR
+                          - INTERNAL_ERROR
+                      message:
+                        type: string
+                        minLength: 1
+                      details:
+                        nullable: true
+                    required:
+                      - code
+                      - message
+                required:
+                  - error
+      operationId: patchClientDeclarationDraft
+      x-afenda-status: api-now
+    post:
+      summary: Persist draft (keepalive alias)
+      description: "Keepalive alias of PUT/PATCH with the same body. Cache-Control: private, no-store."
+      tags:
+        - DeclarationDraft
+      security:
+        - neonAuthSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                assignmentId:
+                  type: string
+                  format: uuid
+                answers:
+                  type: object
+                  additionalProperties:
+                    anyOf:
+                      - type: boolean
+                      - type: string
+                        maxLength: 10000
+                stepIndex:
+                  type: integer
+                  minimum: 0
+                  maximum: 10000
+              required:
+                - assignmentId
+                - answers
+                - stepIndex
+      responses:
+        "200":
+          description: Draft saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeclarationDraftWriteEnvelope"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        enum:
+                          - BAD_REQUEST
+                          - UNAUTHORIZED
+                          - FORBIDDEN
+                          - NOT_FOUND
+                          - CONFLICT
+                          - VALIDATION_ERROR
+                          - INTERNAL_ERROR
+                      message:
+                        type: string
+                        minLength: 1
+                      details:
+                        nullable: true
+                    required:
+                      - code
+                      - message
+                required:
+                  - error
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        enum:
+                          - BAD_REQUEST
+                          - UNAUTHORIZED
+                          - FORBIDDEN
+                          - NOT_FOUND
+                          - CONFLICT
+                          - VALIDATION_ERROR
+                          - INTERNAL_ERROR
+                      message:
+                        type: string
+                        minLength: 1
+                      details:
+                        nullable: true
+                    required:
+                      - code
+                      - message
+                required:
+                  - error
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        enum:
+                          - BAD_REQUEST
+                          - UNAUTHORIZED
+                          - FORBIDDEN
+                          - NOT_FOUND
+                          - CONFLICT
+                          - VALIDATION_ERROR
+                          - INTERNAL_ERROR
+                      message:
+                        type: string
+                        minLength: 1
+                      details:
+                        nullable: true
+                    required:
+                      - code
+                      - message
+                required:
+                  - error
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        enum:
+                          - BAD_REQUEST
+                          - UNAUTHORIZED
+                          - FORBIDDEN
+                          - NOT_FOUND
+                          - CONFLICT
+                          - VALIDATION_ERROR
+                          - INTERNAL_ERROR
+                      message:
+                        type: string
+                        minLength: 1
+                      details:
+                        nullable: true
+                    required:
+                      - code
+                      - message
+                required:
+                  - error
+        "422":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        enum:
+                          - BAD_REQUEST
+                          - UNAUTHORIZED
+                          - FORBIDDEN
+                          - NOT_FOUND
+                          - CONFLICT
+                          - VALIDATION_ERROR
+                          - INTERNAL_ERROR
+                      message:
+                        type: string
+                        minLength: 1
+                      details:
+                        nullable: true
+                    required:
+                      - code
+                      - message
+                required:
+                  - error
+      operationId: postClientDeclarationDraftKeepalive
+      x-afenda-status: api-now
+x-afenda-document:
+  id: OPEN-001
+  version: 1.1.6
+  generatedAt: 2026-07-15
+

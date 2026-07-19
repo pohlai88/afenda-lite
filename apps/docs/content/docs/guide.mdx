@@ -1,0 +1,149 @@
+---
+title: Maintainer guide
+description: Day-1 Fumadocs mirror habits — pipeline, content tree, and stock MDX components.
+---
+
+<Callout type="info" title="Day-1 boundary">
+  No `DATABASE_URL`, Neon Auth, or `CRON_SECRET` on `@afenda/docs`. Product secrets
+  stay on `@afenda/web` / Vercel. Do not treat MDX as Controlled DOC-001 SSOT.
+</Callout>
+
+## Pipeline
+
+<Steps>
+<Step>
+
+### Regenerate OpenAPI
+
+From the monorepo root, after handler or Zod changes:
+
+```bash
+pnpm openapi:generate
+pnpm check:openapi
+```
+
+</Step>
+<Step>
+
+### Refresh API MDX
+
+```bash
+pnpm --filter @afenda/docs generate:openapi-docs
+```
+
+Hand-maintained `content/docs/api/index.mdx` must stay; operation pages and
+`api/meta.json` come from `generateFiles`.
+
+</Step>
+<Step>
+
+### Source, links, build
+
+```bash
+pnpm --filter @afenda/docs generate:source
+pnpm --filter @afenda/docs lint:links
+pnpm --filter @afenda/docs typecheck
+pnpm --filter @afenda/docs build
+```
+
+Lean gate without a full Next build: `pnpm check:docs-app`.
+
+</Step>
+</Steps>
+
+## Commands by change
+
+<Tabs items={["Narrative MDX", "OpenAPI / handlers", "Search / layout"]}>
+  <Tab>
+
+```bash
+pnpm --filter @afenda/docs generate:source
+pnpm --filter @afenda/docs lint:links
+pnpm --filter @afenda/docs dev
+```
+
+  </Tab>
+  <Tab>
+
+```bash
+pnpm openapi:generate && pnpm check:openapi
+pnpm --filter @afenda/docs generate:openapi-docs
+pnpm check:docs-app
+pnpm --filter @afenda/docs test
+```
+
+  </Tab>
+  <Tab>
+
+Search is stock Orama via `GET /api/search` (`createFromSource`). Nav links and
+`githubUrl` live in `lib/layout.shared.tsx`. After edits, run `typecheck` and
+`build`, then smoke `:3001`.
+
+  </Tab>
+</Tabs>
+
+## Content tree
+
+<Files>
+  <Folder name="content/docs" defaultOpen>
+    <File name="index.mdx" />
+    <File name="guide.mdx" />
+    <File name="meta.json" />
+    <Folder name="api" defaultOpen>
+      <File name="index.mdx" />
+      <File name="meta.json" />
+      <File name="getHealthLiveness.mdx" />
+    </Folder>
+  </Folder>
+</Files>
+
+## Day-1 rules
+
+<TypeTable
+  type={{
+    noProductSecrets: {
+      description: "No DATABASE_URL, Neon Auth, or CRON_SECRET on the docs project",
+      type: "must",
+      default: "enforced",
+    },
+    openApiSsot: {
+      description: "Machine file stays at docs-V2/api/OPEN-001-openapi.yaml",
+      type: "must",
+      default: "OPEN-001",
+    },
+    englishOnly: {
+      description: "No i18n locale trees until an explicit reopen",
+      type: "must",
+      default: "en",
+    },
+    noRegistry: {
+      description: "No external component registries or preview-install UI on docs",
+      type: "must",
+      default: "banned",
+    },
+  }}
+/>
+
+## Pitfalls
+
+<Accordions type="single">
+  <Accordion title="Sidebar missing after a new page">
+    Append the slug to the nearest `meta.json` `pages` array, then
+    `generate:source` and `lint:links`.
+  </Accordion>
+  <Accordion title="Hand-edited operation MDX vanished">
+    Operation pages under `api/` are owned by `generate:openapi-docs`. Edit the
+    Zod/OpenAPI source instead, then regenerate.
+  </Accordion>
+  <Accordion title="Search returns nothing">
+    Confirm `app/api/search/route.ts` exports `GET` from `createFromSource(source)`
+    and that `generate:source` has run so the page tree is current.
+  </Accordion>
+</Accordions>
+
+## Add a narrative page
+
+1. Add `content/docs/<slug>.mdx` with `title` and `description` frontmatter.
+2. Append `<slug>` to `content/docs/meta.json` (or a folder `meta.json`).
+3. Run `pnpm --filter @afenda/docs generate:source` and `lint:links`.
+4. Verify `/docs/<slug>` on port **3001**.

@@ -18,6 +18,8 @@ import {
 	sessionHasPermission,
 } from "@/modules/identity/domain/session-permission";
 import { jsonData, jsonError } from "@/modules/platform/api/json-response";
+import { createCorrelationId } from "@/modules/platform/observability/correlation";
+import { logProductEvent } from "@/modules/platform/observability/product-log";
 import type { APIErrorBody } from "@/modules/platform/schemas/api-error";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
@@ -26,6 +28,10 @@ const DRAFT_CACHE_HEADERS = {
 } as const;
 
 const DRAFT_NOT_FOUND = "Declaration draft was not found.";
+const DRAFT_LOAD_INTERNAL =
+	"Declaration draft could not be loaded. Try again or contact an admin.";
+const DRAFT_SAVE_INTERNAL =
+	"Declaration draft could not be saved. Try again or contact an admin.";
 
 type DraftJsonResponse =
 	| NextResponse<{ data: DeclarationDraftGetResponse }>
@@ -72,12 +78,31 @@ async function requireClientDraftSession(
 	return { ok: true, session };
 }
 
+function draftInternalError(
+	message: string,
+	correlationId: string,
+	session: ApiSession,
+	path: string,
+): NextResponse<APIErrorBody> {
+	logProductEvent({
+		level: "error",
+		event: "route.internal_error",
+		correlationId,
+		orgId: session.orgId,
+		actorUserId: session.userId,
+		path,
+		code: "INTERNAL_ERROR",
+	});
+	return jsonError("INTERNAL_ERROR", message, { correlationId });
+}
+
 /**
- * Declarations draft Route Handler compose (REST-001 api-now · ARCH-029 §3.3).
+ * Declarations draft Route Handler compose (docs-V2/api rest · security pipeline).
  */
 export async function handleGetClientDeclarationDraft(
 	request: NextRequest,
 ): Promise<DraftJsonResponse> {
+	const correlationId = createCorrelationId();
 	const gate = await requireClientDraftSession("declarations.read");
 	if (!gate.ok) {
 		return gate.response;
@@ -94,11 +119,21 @@ export async function handleGetClientDeclarationDraft(
 		);
 	}
 
-	const draft = await getClientDeclarationDraft({
-		orgId: gate.session.orgId,
-		clientEmail: gate.session.email,
-		assignmentId: parsed.data.assignmentId,
-	});
+	let draft: Awaited<ReturnType<typeof getClientDeclarationDraft>>;
+	try {
+		draft = await getClientDeclarationDraft({
+			orgId: gate.session.orgId,
+			clientEmail: gate.session.email,
+			assignmentId: parsed.data.assignmentId,
+		});
+	} catch {
+		return draftInternalError(
+			DRAFT_LOAD_INTERNAL,
+			correlationId,
+			gate.session,
+			"handleGetClientDeclarationDraft",
+		);
+	}
 	if (!draft) {
 		return jsonError("NOT_FOUND", DRAFT_NOT_FOUND);
 	}
@@ -117,6 +152,7 @@ async function readJsonBody(request: NextRequest): Promise<unknown> {
 export async function handleWriteClientDeclarationDraft(
 	request: NextRequest,
 ): Promise<DraftJsonResponse> {
+	const correlationId = createCorrelationId();
 	const gate = await requireClientDraftSession("declarations.manage");
 	if (!gate.ok) {
 		return gate.response;
@@ -136,11 +172,21 @@ export async function handleWriteClientDeclarationDraft(
 		);
 	}
 
-	const saved = await saveClientDeclarationDraft({
-		orgId: gate.session.orgId,
-		clientEmail: gate.session.email,
-		draft: parsed.data,
-	});
+	let saved: Awaited<ReturnType<typeof saveClientDeclarationDraft>>;
+	try {
+		saved = await saveClientDeclarationDraft({
+			orgId: gate.session.orgId,
+			clientEmail: gate.session.email,
+			draft: parsed.data,
+		});
+	} catch {
+		return draftInternalError(
+			DRAFT_SAVE_INTERNAL,
+			correlationId,
+			gate.session,
+			"handleWriteClientDeclarationDraft",
+		);
+	}
 	if (!saved.ok) {
 		if (saved.reason === "locked") {
 			return jsonError(

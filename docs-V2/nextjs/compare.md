@@ -24,7 +24,7 @@
 
 | Removed | Why |
 |---------|-----|
-| Links into `docs/**` (ARCH / API / ADR / DOC) | Legacy tree will be hard-deleted — V2 must stand alone |
+| Links into `docs/**` (ARCH / API / ADR / DOC) | Living tree absent by design (cutover) — V2 stands alone |
 | Living REST contract-only catalogues | Not on MCP; inventing endpoints is over-engineering |
 | Deferral text “Living SSOT until cutover” | Authority is MCP + nextjs skill + disk |
 

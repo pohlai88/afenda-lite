@@ -1,0 +1,44 @@
+{
+	"name": "@afenda/docs",
+	"version": "0.0.0",
+	"private": true,
+	"description": "Afenda-Lite Fumadocs Day-1 mirror (OpenAPI consumer for docs-V2)",
+	"scripts": {
+		"generate:source": "fumadocs-mdx",
+		"generate:openapi-docs": "pnpm exec tsx scripts/generate-openapi-docs.mts",
+		"lint:links": "pnpm exec tsx scripts/lint-links.mts",
+		"test": "vitest run --config ../../testing/vitest.config.ts --project docs",
+		"predev": "pnpm generate:source",
+		"prebuild": "pnpm generate:source && pnpm generate:openapi-docs",
+		"pretypecheck": "pnpm generate:source",
+		"dev": "next dev --port 3001",
+		"build": "next build",
+		"start": "next start --port 3001",
+		"typecheck": "tsc --noEmit -p tsconfig.json",
+		"clean": "node -e \"const fs=require('fs'); for (const d of ['.next','.source','.turbo']) { try { fs.rmSync(d,{recursive:true,force:true,maxRetries:8,retryDelay:100}); } catch (e) { if (e && e.code !== 'ENOENT') throw e; } }\""
+	},
+	"dependencies": {
+		"fumadocs-core": "^16.10.5",
+		"fumadocs-mdx": "^15.0.12",
+		"fumadocs-ui": "^16.10.5",
+		"lucide-react": "catalog:",
+		"mdast-util-to-markdown": "^2.1.2",
+		"next": "catalog:",
+		"react": "catalog:",
+		"react-dom": "catalog:",
+		"zod": "catalog:"
+	},
+	"devDependencies": {
+		"@afenda/config": "workspace:*",
+		"@tailwindcss/postcss": "^4.3.3",
+		"@types/mdx": "^2.0.14",
+		"@types/node": "catalog:",
+		"@types/react": "catalog:",
+		"@types/react-dom": "catalog:",
+		"fumadocs-openapi": "^11.0.5",
+		"next-validate-link": "^1.6.6",
+		"tailwindcss": "^4.3.3",
+		"tsx": "catalog:",
+		"typescript": "catalog:"
+	}
+}

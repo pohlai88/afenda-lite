@@ -1,0 +1,35 @@
+---
+title: HTTP API (api-now)
+description: Generated from docs-V2/api/OPEN-001-openapi.yaml — health and declaration-draft only.
+---
+
+<Callout type="info" title="Generated operations">
+  Operation pages below come from `pnpm --filter @afenda/docs generate:openapi-docs`
+  after regenerating `docs-V2/api/OPEN-001-openapi.yaml`. Auth and session bridges
+  are on disk but intentionally absent from the OpenAPI document.
+</Callout>
+
+Afenda-Lite **api-now** HTTP surface. Prefer these pages over pasting request/response tables into narrative MDX.
+
+## Operations
+
+<Cards>
+  <Card title="Health — liveness" href="/docs/api/getHealthLiveness">
+    `GET /api/health/liveness`
+  </Card>
+  <Card title="Health — readiness" href="/docs/api/getHealthReadiness">
+    `GET /api/health/readiness`
+  </Card>
+  <Card title="Declaration draft — get" href="/docs/api/getClientDeclarationDraft">
+    `GET` client declaration draft
+  </Card>
+  <Card title="Declaration draft — keepalive" href="/docs/api/postClientDeclarationDraftKeepalive">
+    `POST` draft keepalive
+  </Card>
+  <Card title="Declaration draft — patch" href="/docs/api/patchClientDeclarationDraft">
+    `PATCH` draft fields
+  </Card>
+  <Card title="Declaration draft — put" href="/docs/api/putClientDeclarationDraft">
+    `PUT` full draft replace
+  </Card>
+</Cards>

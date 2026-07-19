@@ -12,5 +12,3 @@ export const signInSchema = z.object({
 	password: z.string().min(1).max(256),
 	callback: z.string().trim().max(2048).optional(),
 });
-
-export type SignInCommand = z.infer<typeof signInSchema>;

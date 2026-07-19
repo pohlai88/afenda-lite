@@ -51,7 +51,9 @@ Full TS floor: [../discipline/README.md](../discipline/README.md).
 
 ## OpenAPI
 
-Machine Zod helpers live under `modules/platform/schemas/openapi-zod.ts`. Do **not** invent offline REST catalogues here — only ship RH paths that exist on disk ([rest.md](rest.md)).
+Machine Zod helpers live under `modules/platform/schemas/openapi-zod.ts`. Generated artifact: [`OPEN-001-openapi.yaml`](OPEN-001-openapi.yaml) (api-now health + draft only). Do **not** invent offline REST catalogues — only ship RH paths that exist on disk ([rest.md](rest.md)).
+
+**Docs consumer:** `@afenda/docs` (`apps/docs`) loads this YAML via Fumadocs `createOpenAPI` + `generateFiles` — not product Swagger under `apps/web`. Practices: [../docs/openapi.md](../docs/openapi.md) · automation: [../docs/automation.md](../docs/automation.md) · pack [../docs/README.md](../docs/README.md).
 
 ---
 
@@ -69,10 +71,10 @@ Machine Zod helpers live under `modules/platform/schemas/openapi-zod.ts`. Do **n
 ## Verify
 
 ```text
-1. pnpm --filter @afenda/web exec vitest run __tests__/action-result-contract.test.ts
-2. rg "success:\\s*true|\\{\\s*success" apps/web --glob "*.{ts,tsx}"
-3. Disk: modules/platform/schemas/action-result.ts · api-error.ts
-4. Re-probe RH inventory: Next.js MCP get_routes ↔ rest.md
+1. pnpm --filter @afenda/web test -- __tests__/action-result-contract.test.ts
+2. Disk: modules/platform/schemas/action-result.ts · api-error.ts (no tutorial `{ success, data }` ActionResult)
+3. pnpm openapi:generate && pnpm check:openapi
+4. Re-probe RH inventory: disk apps/web/app/api/** ↔ rest.md
 ```
 
 Companion: [rest.md](rest.md) · [../nextjs/data.md](../nextjs/data.md) · [../observability/README.md](../observability/README.md).

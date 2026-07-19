@@ -11,7 +11,7 @@ import { parse as parseYaml } from "yaml";
 import { validateOpenApiFile } from "../.cursor/skills/afenda-elite-doc-integrity/scripts/doc-integrity-core.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const yamlPath = join(root, "docs", "api", "OPEN-001-openapi.yaml");
+const yamlPath = join(root, "docs-V2", "api", "OPEN-001-openapi.yaml");
 const webApiRoot = join(root, "apps", "web", "app", "api");
 
 function fail(message, code = 1) {
@@ -75,7 +75,10 @@ function assertApiNowHandlersOnDisk(document) {
 }
 
 if (!existsSync(yamlPath)) {
-	fail("missing docs/api/OPEN-001-openapi.yaml — run pnpm openapi:generate", 2);
+	fail(
+		"missing docs-V2/api/OPEN-001-openapi.yaml — run pnpm openapi:generate",
+		2,
+	);
 }
 
 const dir = mkdtempSync(join(tmpdir(), "afenda-openapi-"));

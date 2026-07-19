@@ -1,44 +1,43 @@
 # Afenda API contract — completeness
 
-Plan authority: this skill + `api-now.md` + `docs/api/*` (SSOT: Living API-001…004, REST-001, OPEN-001; parent [ARCH-029](../../../docs/architecture/ARCH-029-interface-api-architecture.md); order [GUIDE-015](../../../docs/api/guides/GUIDE-015-interface-pack-development-roadmap.md)).
+**Plan authority (this checkout):** this skill + [api-now.md](api-now.md) + Scratch [`docs-V2/api/*`](../../../docs-V2/api/README.md) + disk `apps/web/app/api/**` + `modules/platform/schemas/**`.
 
-**Forward writing:** The contract in `docs/api/*` is authoritative now. Missing trees or apps are **recorded** as forward work against those docs — do not soften Status to “wait for checkout.” Do not treat Draft Phase 2/3 docs as Living enforcement.
+**Living pack:** `docs/api/*` · ARCH-029 · GUIDE-015 — **retired on disk** after HEAD cutover to docs-V2 Scratch. Do not treat deleted Living paths as blocking SSOT. Do not invent contract-only REST catalogues from history.
+
+**Forward writing:** Disk handlers + docs-V2 Scratch + Zod schemas are authoritative for api-now. Missing Living trees are recorded as Docs-lane restore work — not as permission to scaffold fake HTTP.
 
 | Slice | Plan | Recorded location | Status |
 | ----- | ---- | ----------------- | ------ |
-| api-now handlers only | health / auth / session / draft | [REST-001](../../../docs/api/REST-001-rest-resources.md) api-now; paths `app/api/{health,auth,session,client}` | **Done** (contract) |
-| No web-UI list REST | RSC → domain | [API-001](../../../docs/api/API-001-api-boundaries.md) adapter choice | **Done** (contract) |
-| ActionResult / APIErrorBody | Shared codes | [API-002](../../../docs/api/API-002-error-contract.md) · Target `apps/web/modules/platform/schemas/{action-result,api-error}.ts` | **Done** (contract + Target runtime, I2.1) |
-| HTTP success `{ data }` | Envelope | [API-001](../../../docs/api/API-001-api-boundaries.md); OPEN `*Envelope` schemas | **Done** (contract) |
-| List payload preference | `data: { items, pagination }` | [ARCH-029](../../../docs/architecture/ARCH-029-interface-api-architecture.md); freeze in API-008 when Living | **Done** (architecture) / API-008 **Draft** |
-| `parseSchema` from Platform | Shared Zod | [API-004](../../../docs/api/API-004-schema-map.md) · Target `apps/web/modules/platform/schemas/common.ts` | **Done** (contract + Target runtime, I2.1) |
-| Branded IDs one-version | Param = brand = Zod | [API-003](../../../docs/api/API-003-api-types.md) | **Done** (contract) |
-| Draft Route Handler compose | Declarations owns | REST-001 + `modules/declarations/api/client-declaration-draft-route` | **Done** (contract) |
-| FFT HTTP catalog | Contract-only, locale-free | [FFT-REST-001](../../../docs/modules/feed-farm-trade/FFT-REST-001-feed-farm-trade-resource-index.md) · REST-001 appendix | **Intentional** (Draft index) |
-| Docs prefix split API/REST/OPEN | DOC-001 + pack | `docs/api/API-*`, `REST-*`, `OPEN-*` + `guides/` + `runbooks/` | **Done** |
-| GUIDE-015 locked roadmap | Phases 1–5 | [GUIDE-015](../../../docs/api/guides/GUIDE-015-interface-pack-development-roadmap.md) | **Done** (Living) |
-| Phase 2 cross-cutting | Authz / idempotency / observability / collection / deprecation | API-005…009 | **Draft** — not Living SSOT |
-| Phase 3 resource families | Domain REST catalogues | REST-002…007 | **Draft** — expand on demand |
-| Shared `PaginatedResult` Zod | Named gap | [API-004 Gaps](../../../docs/api/API-004-schema-map.md) | **Recorded** (forward) |
-| OpenAPI api-now YAML + gate | OPEN-001 | YAML + `npm run check:openapi` | **Done** |
-| OpenAPI Zod import handoff | Drop inline mirrors | [OPEN-001 Forward — Zod](../../../docs/api/OPEN-001-openapi.md) · GUIDE-011 | **Recorded** (forward) |
-| OpenAPI Fumadocs wire | Docs app consumer | [OPEN-001 Forward — Fumadocs](../../../docs/api/OPEN-001-openapi.md) | **Recorded** (forward) |
-| OpenAPI contract-only expand | `x-afenda-status` | [OPEN-001 Forward — contract-only](../../../docs/api/OPEN-001-openapi.md) | **Recorded** (forward) |
-| Divergent Action vs HTTP for same use-case | Forbidden | Draft Action + draft Route share domain | **Done** (contract) |
-| Skill ↔ docs sync | Mirror only | This skill + `npm run check:doc-integrity` | **Operational** |
+| api-now handlers only | health / auth / session / draft | [rest.md](../../../docs-V2/api/rest.md); `app/api/{health,auth,session,client}` | **Done** |
+| No web-UI list REST | RSC → domain | docs-V2 adapter table | **Done** |
+| ActionResult / APIErrorBody | Shared codes | `apps/web/modules/platform/schemas/{action-result,api-error}.ts` | **Done** |
+| HTTP success `{ data }` | Envelope | docs-V2 + OPEN YAML envelopes | **Done** |
+| List payload preference | `data: { items, pagination }` | Architecture preference; no HTTP list yet | **Recorded** (forward) |
+| `parseSchema` from Platform | Shared Zod | `apps/web/modules/platform/schemas/common.ts` | **Done** |
+| Branded IDs one-version | Param = brand = Zod | [brands-and-schemas.md](brands-and-schemas.md) + disk schemas | **Done** |
+| Draft Route Handler compose | Declarations owns | `modules/declarations/api/client-declaration-draft-route` | **Done** |
+| Draft RH unexpected errors | `INTERNAL_ERROR` + correlation | Same compose file | **Done** (stabilize) |
+| FFT HTTP catalog | Gated until consumer | feed-farm-trade skill | **Intentional** (not api-now) |
+| Living DOC-001 API pack | API/REST/OPEN Controlled docs | `docs/api/**` | **Retired on disk (docs-V2 Scratch)** |
+| GUIDE-015 locked roadmap | Phases 1–5 | Living pack | **Retired on disk** |
+| OpenAPI api-now YAML + gate | Generate + check | `docs-V2/api/OPEN-001-openapi.yaml` + `pnpm check:openapi` | **Done** |
+| OpenAPI Fumadocs wire | Docs app consumer | [openapi.md](openapi.md); `apps/docs` | **Done** |
+| OpenAPI contract-only expand | `x-afenda-status` | Only with real consumer | **Recorded** (forward) |
+| Divergent Action vs HTTP for same use-case | Forbidden | Draft Action + draft Route share domain | **Done** |
+| Skill ↔ Scratch sync | Mirror disk | This skill + docs-V2 | **Operational** |
 
 ## Stabilization (latest)
 
 - Draft API runner owned by Declarations (one-version Action/HTTP share domain + schemas)
 - Org-admin RBAC mutations stay on Server Actions (`admin.ts`), not new `/api` routes
-- Hard tenancy cutover: required `organizationId` into domain — see [ARCH-023](../../../docs/architecture/ARCH-023-multi-tenancy.md)
-- Pack entry: [docs/api/README.md](../../../docs/api/README.md)
-- Control State + register: DOC-001 / DOC-002 — skill does not invent catalogue rows
+- OpenAPI artifact lives under `docs-V2/api/` (not deleted `docs/api/`)
+- Action vs RH session helpers remain intentionally mirrored (adapter isolation — not a defect)
+- Pack entry: [docs-V2/api/README.md](../../../docs-V2/api/README.md)
 
 ## Verify
 
 ```bash
-npm run check:doc-integrity
-node scripts/check-docs-naming.mjs docs/api
-npm run check:openapi
+pnpm openapi:generate
+pnpm check:openapi
+pnpm --filter @afenda/web test -- __tests__/action-result-contract.test.ts __tests__/openapi-api-now-disk.test.ts __tests__/api-health-routes.test.ts __tests__/declaration-draft-route-internal-error.test.ts
 ```

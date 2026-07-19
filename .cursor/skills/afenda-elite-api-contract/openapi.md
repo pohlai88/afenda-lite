@@ -1,54 +1,54 @@
-# OpenAPI execution (OPEN-001)
+# OpenAPI execution (api-now)
 
-**SSOT:** [docs/api/OPEN-001-openapi.md](../../../docs/api/OPEN-001-openapi.md)  
-**How-to:** [GUIDE-011](../../../docs/api/guides/GUIDE-011-generating-and-validating-openapi.md) (Draft how-to — does not override OPEN-001)  
-**Machine file:** `docs/api/OPEN-001-openapi.yaml` (generated — do not hand-maintain forever)  
-**Paths SSOT:** [REST-001](../../../docs/api/REST-001-rest-resources.md) — do not paste path tables here.  
-**Parent:** [ARCH-029](../../../docs/architecture/ARCH-029-interface-api-architecture.md)
+**Scratch SSOT:** [docs-V2/api/rest.md](../../../docs-V2/api/rest.md) · [docs-V2/api/README.md](../../../docs-V2/api/README.md)  
+**Machine file:** `docs-V2/api/OPEN-001-openapi.yaml` (generated — do not hand-maintain forever)  
+**Paths SSOT:** disk `apps/web/app/api/**` + [api-now.md](api-now.md)  
+**Living pack:** `docs/api/OPEN-001*` — **retired on this checkout** (do not restore without Docs-lane approval)
 
 ## Commands
 
 ```bash
-npm run openapi:generate
-npm run check:openapi
-npm run check:doc-integrity
+pnpm openapi:generate
+pnpm check:openapi
 ```
 
-`check:openapi` fails on missing YAML, regenerate drift, or Spectral errors. Hooked into `npm run checks` via `scripts/run-checks.mjs`. After OPEN-001 markdown or Living contract changes, also run doc integrity.
+`check:openapi` fails on missing YAML, regenerate drift, Spectral errors, or `x-afenda-status: api-now` ops without a matching `apps/web/app/api/**/route.ts`. Hooked into `pnpm checks` via `scripts/run-checks.mjs`.
+
+`check:doc-integrity` (Living `docs/api` scope) is **N/A** while that tree is absent — OpenAPI is gated independently.
 
 ## Artifact split
 
 | Artifact | Owns |
 |----------|------|
-| `OPEN-001-openapi.md` | Rules, stack pin, forward recipes |
-| `OPEN-001-openapi.yaml` | OAS 3.0.3 document only |
+| `docs-V2/api/rest.md` | Human RH allowlist + wire shapes |
+| `docs-V2/api/OPEN-001-openapi.yaml` | OAS 3.0.3 document only |
 | `scripts/generate-openapi.mts` | Zod registry → YAML |
 | `.spectral.yaml` | Lint |
 
 ## Current YAML scope (api-now)
 
 **Include:** `GET /api/health/liveness`, `GET /api/health/readiness`, `GET|PUT|PATCH|POST /api/client/declaration-draft`, `APIErrorBody`, `{ data }` envelopes.  
-**Exclude:** Neon Auth `/api/auth/*`, session bridges `/api/session/*` (REST-001 api-now; redirect / plain-text), contract-only REST, FFT appendix (until reopen + contract-only rules).
+**Exclude:** Neon Auth `/api/auth/*`, session bridges `/api/session/*` (redirect / plain-text), contract-only REST, FFT appendix (until reopen + real consumer).
 
-**Disk honesty (I2.4):** `pnpm check:openapi` fails if any `x-afenda-status: api-now` operation lacks `apps/web/app/api/**/route.ts`. Session bridges are allowlisted on disk via REST-001 but intentionally absent from YAML.
+**Disk honesty:** `pnpm check:openapi` fails if any `x-afenda-status: api-now` operation lacks `apps/web/app/api/**/route.ts`. Session bridges are allowlisted on disk but intentionally absent from YAML.
 
 Success responses **must** be `{ data: T }`. Errors are bare `APIErrorBody`.
 
 ## When to regenerate
 
-Any of: health/draft handler shape change; shared error/envelope change; approved contract-only family added to YAML.
+Any of: health/draft handler shape change; shared error/envelope change; approved new api-now family added to YAML.
 
-## Forward work (recorded — execute against OPEN-001)
+## Forward work (recorded)
 
-| Item | Recipe in OPEN-001 |
-|------|--------------------|
-| ~~Import live Zod (drop inline mirrors)~~ | **DONE** I2.4 — `modules/platform/schemas/openapi-zod` + module schemas |
-| Fumadocs `createOpenAPI({ input: ['./docs/api/OPEN-001-openapi.yaml'] })` | Forward — Fumadocs wire |
-| Contract-only ops with `x-afenda-status: contract-only` | Forward — contract-only expansion (one family per increment; no live playground) |
+| Item | Status |
+|------|--------|
+| Import live Zod (drop inline mirrors) | **DONE** — `modules/platform/schemas/openapi-zod` + module schemas |
+| Fumadocs `createOpenAPI({ input: ['../../docs-V2/api/OPEN-001-openapi.yaml'] })` | **DONE** — `@afenda/docs` (`apps/docs`) Day-1 mirror; `pnpm --filter @afenda/docs generate:openapi-docs` |
+| Contract-only ops with `x-afenda-status: contract-only` | Forward — only when a real external consumer exists |
 
 ## Anti-mixing
 
-- Do not edit REST-001 path tables while only regenerating YAML
-- Do not put OAS bodies inside OPEN-001 markdown
-- Do not dump full REST-001 into YAML in one pass
+- Do not invent offline REST catalogues in YAML
+- Do not dump contract-only paths into YAML without a consumer
 - Do not add product Swagger UI under Afenda-Lite app routes
+- Do not retarget YAML back to deleted `docs/api/` without Docs-lane restore

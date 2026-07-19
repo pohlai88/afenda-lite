@@ -1,0 +1,12 @@
+{
+  "pages": [
+    "index",
+    "getHealthLiveness",
+    "getHealthReadiness",
+    "getClientDeclarationDraft",
+    "postClientDeclarationDraftKeepalive",
+    "patchClientDeclarationDraft",
+    "putClientDeclarationDraft"
+  ],
+  "title": "HTTP API"
+}
