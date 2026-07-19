@@ -39,7 +39,11 @@
 		"VERCEL",
 		"VERCEL_ENV",
 		"VERCEL_URL",
-		"CI"
+		"CI",
+		"GITHUB_APP_ID",
+		"GITHUB_APP_PRIVATE_KEY",
+		"DOCS_URL",
+		"VERCEL_DEEP_CLONE"
 	],
 	"tasks": {
 		"build": {
