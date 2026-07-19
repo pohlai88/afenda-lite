@@ -4,10 +4,11 @@
 |-------|-------|
 | **Role** | Agent skill inventory and routing register (not a DOC-001 controlled document) |
 | **Router** | [SKILL.md](SKILL.md) |
-| **Authority above this file** | Controlled `docs/` (DOC/ARCH/API/REST/MOD) + [AGENTS.md](../../../AGENTS.md) |
+| **Authority above this file** | [AGENTS.md](../../../AGENTS.md) · farm companions · Scratch [docs-V2](../../../docs-V2/README.md) · [doc-control-rules](../afenda-elite-doc-control/doc-control-rules.md) |
 | **Editions** | Afenda-Lite (beta) · Afenda-Elite (battle-proven) — same catalogue shape |
+| **Living docs/** | Absent by design until Docs-lane reopen — Elite skills must LOAD skill-local / Scratch / disk |
 
-Scratch requirements under `docs/scratch/` may justify a **candidate** row. They are not Living/Target architecture and must not be cited as binding skill rules until controlled promotion.
+Scratch packs under `docs-V2/**` may justify a **candidate** row. They are not Living/Target architecture and must not be cited as binding skill rules until Docs-lane controlled promotion.
 
 ## Lifecycle
 
@@ -25,8 +26,8 @@ Transitions: `candidate → planned` only after explicit user acceptance; `plann
 
 | Allowed | Forbidden |
 |---------|-----------|
-| Rewrite checklists against Lite ARCH/API/Neon/DOC | Copy or fork Xerp skill trees |
-| Cite controlled docs + this repo only | Symlink / submodule / git-subtree / “sync from Xerp” |
+| Rewrite checklists against Lite ARCH/API/Neon/DOC (skill-local + Scratch) | Copy or fork Xerp skill trees |
+| Cite AGENTS · docs-V2 · farm companions + this repo only | Symlink / submodule / git-subtree / “sync from Xerp” · required Living `docs/` LOAD |
 | Prefer **extend** before new `afenda-elite-*` | Fork vendor phase skills into Elite names |
 | At most one non-operational historical-provenance sentence | Operational `LOAD` or path into `afenda-Xerp/` |
 | Catalog **planned** row before new farm | Ad-hoc skill creation outside this catalog |
@@ -39,14 +40,14 @@ Local skills must remain operable if `afenda-Xerp` is absent. Do not edit `agent
 
 | Skill | Source class | Management | Status | Owns | Invoked by | Controlled authority | Prerequisite | Evidence | Notes |
 |-------|--------------|------------|--------|------|------------|----------------------|--------------|----------|-------|
-| `using-afenda-elite-skills` | local-router | local | keep | Product farm routing; sole Lite/Elite entry | Session start / product tasks | DOC-001…003 · AGENTS.md | none | `.cursor/skills/using-afenda-elite-skills/SKILL.md` | Inventory SSOT is this file |
+| `using-afenda-elite-skills` | local-router | local | keep | Product farm routing; sole Lite/Elite entry | Session start / product tasks | doc-control-rules · AGENTS.md · docs-V2 | none | `.cursor/skills/using-afenda-elite-skills/SKILL.md` | Inventory SSOT is this file; Living docs/ dormant |
 
 ### L3 — Elite farms
 
 | Skill | Source class | Management | Status | Owns | Invoked by | Controlled authority | Prerequisite | Evidence | Notes |
 |-------|--------------|------------|--------|------|------------|----------------------|--------------|----------|-------|
-| `afenda-elite-doc-control` | local-elite-farm | local | keep | Controlled-document lifecycle under `docs/` | Docs create/update/deprecate | DOC-001 · DOC-002 · DOC-003 | none | `.cursor/skills/afenda-elite-doc-control/SKILL.md` | |
-| `afenda-elite-doc-integrity` | local-elite-farm | local | keep | Doc↔doc conflict / SSOT drift audit | Integrity detect/plan/verify | DOC-001 · DOC-002 | none | `.cursor/skills/afenda-elite-doc-integrity/SKILL.md` | Not controlled writes |
+| `afenda-elite-doc-control` | local-elite-farm | local | keep | Controlled-document lifecycle (DOC model) | Docs create/update/deprecate | doc-control-rules (DOC-001…003 operative) | none | `.cursor/skills/afenda-elite-doc-control/SKILL.md` | Living docs/ writes blocked while tree absent |
+| `afenda-elite-doc-integrity` | local-elite-farm | local | keep | Doc↔doc conflict / SSOT drift audit | Integrity detect/plan/verify | doc-control-rules · authority-map | none | `.cursor/skills/afenda-elite-doc-integrity/SKILL.md` | N/A while Living docs/ absent; not controlled writes |
 | `afenda-elite-frontend-scaffold` | local-elite-farm | local | keep | Target FE scaffold / wipe inventory; consumes `@afenda/ui-system` barrel | FE scaffold missions · app-route UI | ARCH-017 · ARCH-028 · ARCH-015 · ADR-010 | none | `.cursor/skills/afenda-elite-frontend-scaffold/SKILL.md` | Docs-first until implement request; UI primitives via `@afenda/ui-system` (ADR-010) |
 | `afenda-elite-ui-compose` | local-elite-farm | local | keep | Product UI consistency lock — lean SKILL + reference progressive disclosure; QUALITY ORDER; Compose Score /100%; hard rule 15 / UI-CAP-*; F* + C* Vitest | Compose · handroll fix · visual consistency · UI audit/rate | ADR-010 · ARCH-024 · tokens.css · Geist | none | `.cursor/skills/afenda-elite-ui-compose/SKILL.md` | Done = capability + matrix + Compose Score; floor `pnpm check:ui-system`; reference = recipes/gates/rubric SSOT; Studio DNA method → `shadcn-ui` then return here |
 | `shadcn-ui` | local-elite-farm | local | keep | Monorepo shadcn CLI + Studio DNA — ui-system product SSOT (no registries); Method A → `apps/web/shadcn-studio`; Method B MCP; `dna-ledger.json` metadata | Studio /iui /cui /rui · DNA forwarder · `ui:add` · Claude `@/components/ui` override · DNA ledger | ADR-010 · ARCH-015 · ARCH-024 · ui-system.mdc | none | `.cursor/skills/shadcn-ui/SKILL.md` | Owns AFN-DNA-* ledger; Afenda install registry deferred; never product-import DNA tree; compose → ui-compose |
@@ -150,7 +151,7 @@ Scratch REQ/response inform discovery only. Prerequisites are controlled-authori
 | Recreating `doc/` or inventing DOC-004 without DOC-001 ID approval | Documentation control |
 | `afenda-elite-design-system` (Studio promote → gateway pipeline) | Hard-deleted 2026-07-16 — ADR-010 retires the `@afenda/ui` gateway; product primitives via `@afenda/ui-system`; Studio DNA method = [`shadcn-ui`](../shadcn-ui/SKILL.md) (stage `apps/web/shadcn-studio` → promote) — do not restore this farm |
 | `afenda-elite-ui-handoff` (UI handoff gate) | Hard-deleted 2026-07-16 — ADR-010 boundary is enforced by committed guardrail tests (`ui-boundary` / `consistency` / `overlays.interaction`), not a skill |
-| `admincn-customization` (AdminCN shell / Studio DNA in `components-V2`) | Hard-deleted 2026-07-16 — targeted retired `components-V2` / Studio-registry surface; AdminCN architecture authority stays in [ARCH-018](../../../docs/architecture/ARCH-018-admincn-customization.md); DNA intake = [`shadcn-ui`](../shadcn-ui/SKILL.md); primitives via `@afenda/ui-system` |
+| `admincn-customization` (AdminCN shell / Studio DNA in `components-V2`) | Hard-deleted 2026-07-16 — targeted retired `components-V2` / Studio-registry surface; AdminCN architecture authority = ARCH-018 (skill-local / Scratch; Living body dormant); DNA intake = [`shadcn-ui`](../shadcn-ui/SKILL.md); primitives via `@afenda/ui-system` |
 
 ## Gap → Wave 2 routing
 

@@ -1,6 +1,6 @@
 # afenda-elite-doc-control — quick reference
 
-Afenda-specific controlled workflow only. Deep prose, inline comments, README craft, and JSDoc/OpenAPI examples stay in [documentation-and-adrs](../agent-skills/skills/documentation-and-adrs/SKILL.md). Authority remains DOC-001 · DOC-002 · DOC-003.
+Afenda-specific controlled workflow only. Deep prose, inline comments, README craft, and JSDoc/OpenAPI examples stay in [documentation-and-adrs](../agent-skills/skills/documentation-and-adrs/SKILL.md). Authority: [doc-control-rules.md](doc-control-rules.md) (DOC-001 · DOC-002 · DOC-003 operative). Living bodies dormant until Docs-lane reopen.
 
 ## Controlled-document header (DOC-003)
 
@@ -28,17 +28,18 @@ Six sections: Purpose · Scope · Content · References · Change Log · Notes.
 
 ## Module-pack scaffold
 
-`module-pack-contract.json` is the executable mirror subordinate to MOD-002. Use `plan:module-pack` for deterministic preview and `scaffold:module-pack -- --apply` only for scratch generation. Never promote placeholders, auto-register provisional IDs, create MOD-011, or create depth folders.
+`module-pack-contract.json` is the executable mirror subordinate to MOD-002. Use `plan:module-pack` for deterministic preview and `scaffold:module-pack -- --apply` only for scratch generation **when Living `docs/` exists**. Never promote placeholders, auto-register provisional IDs, create MOD-011, or create depth folders. While `docs/` is absent, treat `--apply` as **N/A**.
 
 ## ADR shape (when category ADR is approved)
 
-Same mandatory header. Prefer home `docs/architecture/adr/` only when explicitly approved — **no** top-level `docs/adr/`; **no** `decisions/` folder. Record Context · Decision · Consequences under Content (or equivalently named subsections). Link successor/predecessor IDs; never recycle Retired or Superseded IDs.
+Same mandatory header. Prefer home `docs/architecture/adr/` only when Living docs restored and explicitly approved — **no** top-level `docs/adr/`; **no** `decisions/` folder. Record Context · Decision · Consequences under Content (or equivalently named subsections). Link successor/predecessor IDs; never recycle Retired or Superseded IDs.
 
 ## Workflow checklist
 
 ```text
-- [ ] Classify category + home (DOC-001)
-- [ ] LOAD DOC-001 + DOC-002 + DOC-003
+- [ ] Living docs/ present (else STOP — Docs-lane)
+- [ ] Classify category + home (doc-control-rules)
+- [ ] LOAD doc-control-rules.md
 - [ ] ID approved by user (or provisional Draft, not in register)
 - [ ] Create | Update | Move | Supersede/Retire
 - [ ] Explicit reopen: named document(s), bounded scope, intended change
@@ -65,3 +66,4 @@ Same mandatory header. Prefer home `docs/architecture/adr/` only when explicitly
 | Repo hygiene | [afenda-elite-repo-housekeeping](../afenda-elite-repo-housekeeping/SKILL.md) |
 | Code↔doc drift (generic) | [afenda-elite-audit-orchestrator](../afenda-elite-audit-orchestrator/SKILL.md) |
 | API contract surfaces | [afenda-elite-api-contract](../afenda-elite-api-contract/SKILL.md) |
+| Scratch engineering packs | [docs-V2/README.md](../../../docs-V2/README.md) |

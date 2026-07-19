@@ -93,22 +93,24 @@ Full inventory: [catalog.md](.cursor/skills/using-afenda-elite-skills/catalog.md
 |---------|---------|
 | [docs-V2/README.md](docs-V2/README.md) | Scratch E2E architecture packs (day-to-day agent ops) |
 | [docs-V2/system/README.md](docs-V2/system/README.md) · [monorepo](docs-V2/monorepo/README.md) · [pnpm](docs-V2/pnpm/README.md) · [api](docs-V2/api/README.md) · [tenancy](docs-V2/tenancy/README.md) | System · DAG · install · contracts · tenancy |
-| [docs-V2/api/OPEN-001-openapi.yaml](docs-V2/api/OPEN-001-openapi.yaml) | OpenAPI SSOT for `@afenda/docs` consumer |
+| [`@afenda/docs`](apps/docs) | **Official** human-facing documentation site (Fumadocs) — active config; enterprise production bar |
+| [docs-V2/api/OPEN-001-openapi.yaml](docs-V2/api/OPEN-001-openapi.yaml) | OpenAPI machine SSOT consumed by `@afenda/docs` |
+| [docs-V2/docs/README.md](docs-V2/docs/README.md) | Scratch ops pack for the official docs app (UI · pipeline · content rules) |
 | Living `docs/` (DOC-001 · ARCH-* · GUIDE-018 · MOD-*) | **Dormant** — absent on disk until Docs-lane reopen; DOC-001 control shape still applies when Living returns |
 | Farm skills under `.cursor/skills/` | Method + evidence companions (not a second product SSOT) |
 
-Do not treat Fumadocs (`apps/docs`) or Scratch packs as Living DOC-001 authority.
+`@afenda/docs` is the official docs site. Do **not** treat its MDX as Living DOC-001 controlled-document SSOT (register / Accept·Living lifecycle). Scratch packs are engineering authority, not a second published docs app.
 
 ## Checkout posture (Living Turborepo on disk)
 
-**Present:** `@afenda/{config,db,auth,env,ui-system,emails}` · `apps/web` · `apps/docs` (Fumadocs mirror) · `apps/web/proxy.ts` edge session gate · `apps/web/modules/{platform,identity,declarations,fft}` · `apps/web/features/{auth,declarations,fft,org-admin}` · `docs-V2/**` Scratch packs · CI/Deploy (`.github/workflows/{ci,deploy}.yml`).
+**Present:** `@afenda/{config,db,auth,env,ui-system,emails}` · `apps/web` · `apps/docs` (**official** Fumadocs docs) · `apps/web/proxy.ts` edge session gate · `apps/web/modules/{platform,identity,declarations,fft}` · `apps/web/features/{auth,declarations,fft,org-admin}` · `docs-V2/**` Scratch packs · CI/Deploy (`.github/workflows/{ci,deploy}.yml`).
 
 **Absent by design:** Living controlled `docs/` (cutover `71176a0`) · repo-root `app/`, `modules/`, `features/`, `components-V2/`, Collapse `lib/`, wiped ops script bodies · `apps/web/app/playground/` · `apps/web/features/playground/` (removed 2026-07-15; do not handroll).
 
 | Rule | Detail |
 |------|--------|
 | Forward code | Greenfield under `apps/web/**` and `packages/*` only |
-| Docs | Scratch = `docs-V2/**`. Living `docs/` restore requires explicit Docs-lane + named recovery — not agent default |
+| Docs | Official site = `apps/docs`. Scratch ops = `docs-V2/docs/**`. Living `docs/` restore requires explicit Docs-lane + named recovery — not agent default |
 | Next open (GUIDE-018) | Phase **I1–I6 DONE**. GUIDE-017 claim **NOT READY** @ `fc16109`. Next Ops = **I7.1**. ARCH-028 Checkpoint G **closed**. Do **not** invent **N19**. Do **not** claim GUIDE-017 READY from I6.3 alone. Map: implementation-slices farm |
 | Next open (Neon Auth `N*`) | **N1–N18 serial complete** — all APPROVED at 100% (incl. **N15** Path-to-100% closed). Do **not** invent **N19**. Map: [neon-auth-slice-map](.cursor/skills/afenda-elite-implementation-slices/neon-auth-slice-map.md). |
 | Env | `@afenda/env` + `.env.local` only (compose retired) |

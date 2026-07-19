@@ -8,5 +8,6 @@
     "patchClientDeclarationDraft",
     "putClientDeclarationDraft"
   ],
-  "title": "HTTP API"
+  "title": "HTTP API",
+  "icon": "CodeXml"
 }

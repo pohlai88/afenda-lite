@@ -23,7 +23,7 @@ The new skill may recommend an API shape, but it cannot classify UI-CAP ownershi
 ```text
 LOAD:
   afenda-elite-ui-compose (capability status first)  ← required before this skill guides implementation
-  docs/architecture/adr/ADR-010-afenda-ui-system-flat-barrel.md
+  ADR-010 operative: import UI only from @afenda/ui-system barrel (+ styles.css) — AGENTS.md
   reference.md  (conflict matrix · gates · RC-COMP-* · vendor rule map)
   vercel-composition-patterns rules/<id>.md  (reference bodies — by id, after O-filter)
 SKIP:

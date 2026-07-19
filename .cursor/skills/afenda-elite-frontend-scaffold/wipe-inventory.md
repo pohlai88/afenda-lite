@@ -1,6 +1,6 @@
 # Complete wipe inventory (scaffold pass)
 
-> **Superseded for Feed Farm Trade routes (2026-07-11):** `/fft/[locale]/*` and `features/fft/*` UI listed below were wiped. Live tree is locale-free under `/fft/*` with **AdminCN shell** (not `FftShell`). Treat locale/FftShell rows as historical only — see [docs/architecture/ARCH-012-app-router-routes.md](../../../docs/architecture/ARCH-012-app-router-routes.md).
+> **Superseded for Feed Farm Trade routes (2026-07-11):** `/fft/[locale]/*` and `features/fft/*` UI listed below were wiped. Live tree is locale-free under `/fft/*` with **AdminCN shell** (not `FftShell`). Treat locale/FftShell rows as historical only — see [route-tree.md](route-tree.md) (ARCH-012 operative).
 
 **Generated from disk.** This is what `/afenda-elite-frontend-scaffold` deletes or replaces when you say go.
 

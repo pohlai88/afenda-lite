@@ -1,6 +1,6 @@
 # Monorepo layer reference (Afenda-Lite)
 
-Authority: [ARCH-024](../../../docs/architecture/ARCH-024-package-boundaries.md). No `architecture-authority` package in this checkout — enforce by review + typecheck until a forward import-boundary slice lands.
+Authority: ARCH-024 operative (this file + SKILL.md). Living ARCH-024 body dormant. No `architecture-authority` package — enforce by review + typecheck until a forward import-boundary slice lands. Scratch: [`docs-V2/pnpm`](../../../docs-V2/pnpm/README.md) · [`docs-V2/monorepo`](../../../docs-V2/monorepo/README.md).
 
 ## Full layer diagram
 

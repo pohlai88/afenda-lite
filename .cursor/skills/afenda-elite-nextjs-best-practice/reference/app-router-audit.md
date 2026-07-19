@@ -6,7 +6,7 @@ Run after App Router changes when a Next app is present. **MCP preferred**.
 nextjs_index → get_routes → get_errors
 ```
 
-Docs-first checkout with no product tree: audit Living ARCH only — no invented disk claims ([ARCH-028](../../../docs/architecture/ARCH-028-implementation-slices.md)).
+Docs-first checkout with no product tree: audit Living ARCH only — no invented disk claims (ARCH-028).
 
 Aligned to Vercel `nextjs` + Accelint via [nextjs-conventions.md](nextjs-conventions.md) · [accelint-perf.md](accelint-perf.md).
 

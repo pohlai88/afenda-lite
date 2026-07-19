@@ -42,8 +42,7 @@ Reject too loose (“shadcn where possible”) and too rigid (“every edit is a
 
 ```text
 LOAD:
-  docs/architecture/adr/ADR-010-afenda-ui-system-flat-barrel.md
-  docs/architecture/ARCH-024-package-boundaries.md  (#afendaui-system)
+  ADR-010 · ARCH-024 operative (AGENTS.md + this skill) — barrel @afenda/ui-system only
   packages/ui-system/src/styles/tokens.css
   packages/ui-system/src/index.ts
   apps/web/app/layout.tsx · apps/web/globals.css
@@ -51,8 +50,8 @@ LOAD:
   reference.md  (recipes · F* · C* · UI-CAP · score rubric)
   ../shadcn-ui/SKILL.md  (when Studio DNA / CLI / components.json — Method A/B)
 SKIP:
-  beauty campaigns · Storybook / playground · private registries on product ui-system
-  forking frontend-ui-engineering · scratch → Living docs
+  required Living docs/architecture LOAD · beauty campaigns · Storybook / playground
+  private registries on product ui-system · forking frontend-ui-engineering
   parallel tokens / type scales · auth-surface as product kit
   product import from apps/web/shadcn-studio/** · apps/web/components/ui/**
 ```

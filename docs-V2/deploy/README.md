@@ -22,6 +22,7 @@ Re-probe after region or deploy-pipeline changes — not Living SSOT.
 | Production git auto-deploy | Skipped (`ignoreCommand` exits 0 when `VERCEL_ENV=production`) |
 | Neon co-locate | Keep `sin1` ↔ Neon `aws-ap-southeast-1` — [../tenancy/neon-optimize.md](../tenancy/neon-optimize.md) |
 | Domain / deploy inventory | [../tenancy/vercel-domains.md](../tenancy/vercel-domains.md) |
+| Official docs app | Separate host lock — [`../docs/deploying.md`](../docs/deploying.md) · [`apps/docs/vercel.json`](../../apps/docs/vercel.json) · **not** this product Deploy workflow |
 
 ---
 

@@ -10,7 +10,19 @@ description: >-
 
 # Afenda Elite — backend modules
 
-**SSOT for this program.** Shape domain work from `docs/architecture/` + this skill. Do not grow `lib/` as architecture or invent `modules/trade/`. Cite `term.afenda-elite`.
+**SSOT for this program.** Shape domain work from this skill + companions + disk `apps/web/modules/**` + Scratch [`docs-V2/api`](../../../docs-V2/api/README.md). Do not grow `lib/` as architecture or invent `modules/trade/`. Cite `term.afenda-elite`. Living `docs/architecture` / `docs/api` bodies are dormant — operative ARCH facts live in companions.
+
+```text
+LOAD:
+  companions: module-tree.md · context-boundaries.md · adapter-map.md · residue-inventory.md · completeness.md
+  apps/web/modules/** · apps/web/features/**   # disk honesty
+  docs-V2/api/README.md · rest.md · actions.md # HTTP / Action Scratch
+SKIP:
+  Living docs/architecture · docs/api as required LOAD
+  recreating lib/ · modules/trade/ · Collapse root recover
+VERIFY:
+  Test-Path apps/web/modules · companion checklists
+```
 
 | Doc | Purpose |
 |-----|---------|
@@ -19,19 +31,19 @@ description: >-
 | [adapter-map.md](adapter-map.md) | Action / Route Handler → module entrypoints |
 | [residue-inventory.md](residue-inventory.md) | Pass 2 + full runner absorb — `lib/` gone; runners under `features/` |
 | [completeness.md](completeness.md) | Plan ↔ codebase matrix for this program |
-| [docs/architecture/](../../../docs/architecture/) | Architecture, ownership, conventions |
-| [docs/api/](../../../docs/api/) | Error shape, REST catalog, types |
+| [docs-V2/api/](../../../docs-V2/api/) | Error shape, RH allowlist, Actions Scratch |
+| [afenda-elite-api-contract](../afenda-elite-api-contract/SKILL.md) | Brands · envelopes · OpenAPI |
 
 ## Target tree + docs-first checkout
 
 | Surface | Authority |
 |---------|-------------|
-| Target physical home | `apps/web/modules/{platform,identity,declarations,fft}` ([ARCH-006](../../../docs/architecture/ARCH-006-bounded-contexts.md) · [ARCH-022](../../../docs/architecture/ARCH-022-system-overview.md)) |
-| This checkout | Often **docs-first** after Collapse — root `modules/` / `app/` may be **absent by design** ([ARCH-028](../../../docs/architecture/ARCH-028-implementation-slices.md)) |
+| Target physical home | `apps/web/modules/{platform,identity,declarations,fft}` (ARCH-006 · ARCH-022 — see [module-tree](module-tree.md)) |
+| This checkout | Root `modules/` / `app/` may be **absent by design** (ARCH-028 — Collapse ban); Target under `apps/web` is present |
 | Packages | Exactly the ARCH-024 named set under Target; no new `packages/*` or `apps/*` without a preceding ADR |
 | Contaminations ban | Do not recover wiped Collapse roots (`app/`, `modules/`, `features/`, `components-V2/`) from git — including `git show` mining — unless the user explicitly names that recovery in this turn |
 
-Logical Living shape in skill companions may still say `modules/*` — physical Target path is under `apps/web` after an explicit ARCH-028 implement request.
+Logical shape in companions may say `modules/*` — physical Target path is under `apps/web`.
 
 ### Bounded contexts (locked)
 
@@ -39,18 +51,18 @@ Only **Platform · Identity · Declarations · Trade (`fft`)**. Inventing Sales/
 
 ### AuthZ at module boundary
 
-Domain entrypoints that mutate or read tenant data take explicit `orgId` and rely on adapter-enforced permission codes ([ARCH-023](../../../docs/architecture/ARCH-023-multi-tenancy.md)). Modules must not:
+Domain entrypoints that mutate or read tenant data take explicit `orgId` and rely on adapter-enforced permission codes (ARCH-023 · [`neon-tenancy-efficiency`](../neon-tenancy-efficiency/SKILL.md)). Modules must not:
 
 - infer org from ambient state;
 - authorize by Neon Auth role display names; or
 - import another context’s tables/schemas outside published ports.
 
-Adapter checklist → [`afenda-elite-api-contract`](../afenda-elite-api-contract/SKILL.md). Isolation ops → [`neon-tenancy-efficiency`](../neon-tenancy-efficiency/SKILL.md).
+Adapter checklist → [`afenda-elite-api-contract`](../afenda-elite-api-contract/SKILL.md).
 
 ## Agent operating rules
 
 1. **Surface assumptions** if disk and this skill disagree — stop and ask.
-2. **Scope:** new domain/schema/env files go under Target `apps/web/modules/<context>/` (or Living `modules/<context>/` only when that tree exists on disk). Adapters stay thin in App Router Actions / Route Handlers.
+2. **Scope:** new domain/schema/env files go under Target `apps/web/modules/<context>/`. Adapters stay thin in App Router Actions / Route Handlers.
 3. **Simplicity:** one context per file; compose two contexts only at the adapter.
 4. **Verify** with the checklist below — “looks right” is not done.
 5. **Push back** on `lib/domain` recreation, RSC `fetch('/api')` for ordinary reads, `modules/trade/`, or new bounded contexts without ADR.
@@ -63,9 +75,9 @@ Adapter checklist → [`afenda-elite-api-contract`](../afenda-elite-api-contract
 4. **One context per new file** — compose two contexts only at the adapter.
 5. **Trade code path = `fft`** — never create `modules/trade/`. Product UI under `features/fft/…` on Target (not `trade-*`).
 6. **Validate once at adapter** — product Zod in owning context schemas; **shared** primitives from Platform `schemas/common` only. Do **not** import shared Zod from Declarations into Trade/Identity.
-7. **Decision tree** — [ARCH-013](../../../docs/architecture/ARCH-013-bff-and-data-flow.md); do not paste a second copy.
-8. **Contract** — errors / brands / REST live in `docs/api` + `/afenda-elite-api-contract`; this skill does not restate error tables.
-9. **Residue program** — do not recreate `lib/`; historical absorb targets are under Target `features/` ([residue-inventory.md](residue-inventory.md)) — not a claim they exist on docs-first disk today.
+7. **Decision tree (ARCH-013 operative):** RSC read → domain port; client mutation → Server Action → Zod → port → ActionResult; draft XHR / auth / health / webhook → Route Handler; external REST → RH per api-contract (contract-only until needed). Do not paste a second copy.
+8. **Contract** — errors / brands / REST live in [`afenda-elite-api-contract`](../afenda-elite-api-contract/SKILL.md) + `docs-V2/api`; this skill does not restate error tables.
+9. **Residue program** — do not recreate `lib/`; historical absorb targets are under Target `features/` ([residue-inventory.md](residue-inventory.md)).
 
 ## Context cheat sheet
 
@@ -75,7 +87,7 @@ Adapter checklist → [`afenda-elite-api-contract`](../afenda-elite-api-contract
 | **Identity** | `modules/identity/**` | Declarations (any), Trade |
 | **Declarations** | `modules/declarations/**` | Trade (`modules/fft`) |
 | **Trade** | `modules/fft/**` | Declarations (any tree — use Platform for shared Zod) |
-| **FE runners** | Target: `features/{auth,declarations,fft,org-admin}` shells (S7.4); Living may still name `organization-admin` / entry runners for expanded surfaces | Domain SQL / copy SSOT (those live in `modules/`) |
+| **FE runners** | Target: `features/{auth,declarations,fft,org-admin}` shells (S7.4) | Domain SQL / copy SSOT (those live in `modules/`) |
 
 ## Data adapters (wire)
 
@@ -83,12 +95,12 @@ Adapter checklist → [`afenda-elite-api-contract`](../afenda-elite-api-contract
 RSC read?              → modules/*/domain directly (never fetch own /api)
 Client mutation?       → Server Action → Zod → port → ActionResult
 Draft XHR / auth / health / webhook? → Route Handler
-External/mobile REST?  → Route Handler per docs/api (contract-only until needed)
+External/mobile REST?  → Route Handler per docs-V2/api + api-contract (contract-only until needed)
 ```
 
 ## Pass order
 
-1. **Docs / skill truth** — this skill + `docs/architecture/` Backend pack (**done**)
+1. **Skill truth** — this skill + companions (**done**)
 2. **Wire** — `/afenda-elite-api-contract` + Actions / handlers
 3. **UI** — `/afenda-elite-frontend-scaffold` + `features/*`
 4. **Residue Pass 2** — **done** 2026-07-12
@@ -109,7 +121,6 @@ External/mobile REST?  → Route Handler per docs/api (contract-only until neede
 | Pass 2 ≠ delete runners | All runners absorbed into `features/`; do not recreate `lib/`; do not mix with FFT flags |
 | Users list was fixture-only | Wire `modules/identity/domain/organization-users` + `UserId` schemas; RSC loader maps display; role/ban via `app/actions/admin` → `neonAdmin*` |
 | Users export / bulk | Client CSV/JSON from filtered list; bulk remove/ban actions with Zod `userIds` array; import via CSV/JSON template (`email,name,password,role`) |
-
 | AdminCN plan/billing columns | Keep as chrome defaults (`Basic` / `Manual`); do not invent SaaS billing in Identity |
 | Users create/edit/password/sessions | Actions in `admin.ts`; forms in `features/organization-admin`; enrich company/phone/country from Declarations profile summaries **at the RSC adapter only** |
 | Mapper tests pulled Neon Auth Next entry | Keep pure mappers in `features/organization-admin/organization-admin-users-map.ts` — do not import `neonAdmin*` into unit-tested map modules |
@@ -134,11 +145,11 @@ External/mobile REST?  → Route Handler per docs/api (contract-only until neede
 |------|-------|
 | Route stubs / wipe FE | `/afenda-elite-frontend-scaffold` |
 | ActionResult / brands / api-now | `/afenda-elite-api-contract` |
-| FFT product UI / gates / registry | `/feed-farm-trade` · [docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md](../../../docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md) |
+| FFT product UI / gates / registry | `/feed-farm-trade` (ops facts in that farm — Living FFT-MOD bodies dormant) |
 
 ## Verify backend modules
 
-- [ ] On Target checkout: [module-tree.md](module-tree.md) matches `apps/web/modules` (or Living `modules/` only if present on disk)
+- [ ] On Target checkout: [module-tree.md](module-tree.md) matches `apps/web/modules`
 - [ ] Docs-first checkout: absent product roots are expected — do not recover Collapse trees
 - [ ] No fifth bounded context / `modules/trade/` without ADR
 - [ ] `lib/` is absent (no `entry|pages|playground|domain|schemas|auth|copy|utils|format`)

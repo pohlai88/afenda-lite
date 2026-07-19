@@ -23,7 +23,7 @@ Imports flow **down** only. Packages never import `apps/*`. No cycles.
 
 `@afenda/config` = devDep / tsconfig / Biome extend only — not a runtime import. `@afenda/auth` → `@afenda/env`. App domain: `apps/web/modules/*` · `features/*`.
 
-`@afenda/docs` = Fumadocs Day-1 mirror — may depend on workspace `@afenda/config` only; **must not** import `@afenda/db` · `@afenda/auth` · `@afenda/env` product secrets. OpenAPI consumer rules: [../docs/README.md](../docs/README.md).
+`@afenda/docs` = official documentation site — may depend on workspace `@afenda/config` only; **must not** import `@afenda/db` · `@afenda/auth` · `@afenda/env` product secrets. OpenAPI consumer rules: [../docs/README.md](../docs/README.md).
 
 ---
 

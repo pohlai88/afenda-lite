@@ -7,6 +7,8 @@
 | Audience | Engineers writing narrative docs MDX |
 | Updated | 2026-07-19 |
 
+**MDX syntax & defaults (Markdown guide):** [markdown.md](markdown.md).
+
 Lite adapts **structure** from `fumadocs-mdx-structure`. Do **not** copy 8bitcn imports, `ComponentPreview`, or `@8bitcn/*` install commands into this app.
 
 ---
@@ -24,10 +26,13 @@ description: One-line purpose for sidebar + metadata.
 
 | Field | Rule |
 |-------|------|
-| `title` | Required · human title · drives DocsTitle |
-| `description` | Required · `generateMetadata` + cards |
+| `title` | Required · human title · drives DocsTitle · stock `pageSchema` |
+| `description` | Required in Lite authoring · `generateMetadata` + cards (schema allows omit — still write it) |
+| `icon` | Optional Lucide name · sidebar via `lucideIconsPlugin` — [loader-plugins.md](loader-plugins.md) · [page-conventions.md](page-conventions.md) |
 | `full` | Optional · `true` for OpenAPI operation pages (generator sets this) |
-| `_openapi` | Generated API pages only — see [openapi.md](openapi.md) |
+| `_openapi` | Generated API pages only — [openapi.md](openapi.md) · [openapi-generate-files.md](openapi-generate-files.md) |
+
+Validation: stock `pageSchema` / `metaSchema` on `defineDocs` — [fumadocs-mdx.md](fumadocs-mdx.md). Do **not** `.extend()` without a named schema reopen.
 
 Missing `title` / `description` breaks metadata and confuses the sidebar.
 
@@ -44,7 +49,7 @@ Missing `title` / `description` breaks metadata and confuses the sidebar.
 | ` ```tsx ` for TypeScript examples | Invent install registries (`@8bitcn`, paid shadcn registries) |
 | Prefer links over pasting API tables | Duplicate OpenAPI — use generated API pages |
 
-Default MDX components: `apps/docs/components/mdx.tsx` (wraps `fumadocs-ui/mdx` + stock UI + `APIPage` / `OpenAPIPage`). `source.config.ts` sets `providerImportSource: "@/components/mdx"`.
+Default MDX components: `apps/docs/components/mdx.tsx` (wraps `fumadocs-ui/mdx` + stock UI + `APIPage` / `OpenAPIPage`). Relative `./file.mdx` links: `createRelativeLink` on the page RSC — [ui-components.md](ui-components.md). `source.config.ts` sets `providerImportSource: "@/components/mdx"`.
 
 ---
 
@@ -52,11 +57,11 @@ Default MDX components: `apps/docs/components/mdx.tsx` (wraps `fumadocs-ui/mdx` 
 
 Use stock components registered in `getMDXComponents` — **without** 8bitcn / registry installs.
 
-**SSOT for the full catalog + status tags:** [ui-components.md](ui-components.md) (Shipped · Documented / not wired · Out of scope). Layout / theme / search: [ui.md](ui.md) · [ui-layouts.md](ui-layouts.md).
+**SSOT for the full catalog + status tags:** [ui-components.md](ui-components.md) (Shipped · Outside baseline · Banned). Layout / Themes (`neutral`) / Search UI: [ui.md](ui.md) · [ui-layouts.md](ui-layouts.md).
 
 Shipped shortlist: `Callout` · `Cards`/`Card` · `Tabs`/`Tab` · `Steps`/`Step` · `Files`/`Folder`/`File` · `Accordions`/`Accordion` · `TypeTable` · defaults from `fumadocs-ui/mdx` (incl. code blocks) · `APIPage`/`OpenAPIPage`.
 
-**Do not use:** `AutoTypeTable`, Twoslash, `ComponentPreview`, `CopyCommandButton`, `@8bitcn/*`, or product `@afenda/ui-system` in docs MDX — see Out of scope in [ui-components.md](ui-components.md).
+**Do not use:** `ComponentPreview`, `CopyCommandButton`, `@8bitcn/*`, or product `@afenda/ui-system` in docs MDX — see Banned in [ui-components.md](ui-components.md).
 
 Reference surface: `apps/docs/content/docs/guide.mdx`.
 
@@ -66,15 +71,17 @@ Reference surface: `apps/docs/content/docs/guide.mdx`.
 
 Sidebar order = `meta.json` `pages` arrays (folder + root). Keep names matching file slugs (no extension).
 
+Full conventions (slugs · folder groups · root folders · icons · `pages` syntax): **[page-conventions.md](page-conventions.md)**.
+
 ```json
 {
   "pages": ["index", "guide", "api"]
 }
 ```
 
-After adding a page: update the nearest `meta.json`, then `pnpm --filter @afenda/docs generate:source` and `lint:links`.
+After adding a page: update the nearest `meta.json`, then `pnpm --filter @afenda/docs generate:source` and `lint:links` ([validate-links.md](validate-links.md)).
 
-`api/meta.json` is owned by `generateFiles` (`meta: true`) — do not hand-maintain op slugs there across regenerations.
+`api/meta.json` is owned by `generateFiles` (`meta: true`) — do not hand-maintain op slugs there across regenerations. Do not set `"root": true` (Layout Tabs off).
 
 ---
 
@@ -83,7 +90,7 @@ After adding a page: update the nearest `meta.json`, then `pnpm --filter @afenda
 | Anti-pattern | Why it hurts |
 |--------------|--------------|
 | Tutorial “hello world” filler | Noise for maintainers |
-| Embedding secrets / env values | Day-1 mirror forbids product secrets |
+| Embedding secrets / env values | Docs project rules forbid product secrets |
 | Deep links into Collapse / deleted `docs/api` Living paths | Index ghosts · wrong SSOT |
 | Boolean-prop explosion in custom MDX components | Prefer explicit variants / composition |
 
@@ -110,4 +117,4 @@ Product UI primitives stay on `@afenda/ui-system` + ADR-010 — document them in
 5. Spot-check /docs in browser (:3001) after content edits
 ```
 
-Companion: [ui-components.md](ui-components.md) · [ui.md](ui.md) · [content.md](content.md) · [README.md](README.md) · [automation.md](automation.md).
+Companion: [markdown.md](markdown.md) · [ui-components.md](ui-components.md) · [ui.md](ui.md) · [content.md](content.md) · [README.md](README.md) · [automation.md](automation.md).

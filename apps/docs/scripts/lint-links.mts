@@ -1,6 +1,7 @@
 /**
- * Validate internal MDX links under content/docs (English Day-1 mirror).
- * Pattern adapted from afenda-Xerp apps/docs — Lite has no [lang] segment.
+ * Validate internal MDX links under content/docs (official English docs).
+ * SSOT: docs-V2/docs/validate-links.md
+ * Lite uses content walk + tsx (not Bun MDX loader / source import — .source TLA).
  */
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join, relative } from "node:path";

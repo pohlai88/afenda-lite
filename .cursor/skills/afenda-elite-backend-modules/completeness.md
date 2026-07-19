@@ -1,6 +1,6 @@
 # Portal backend modules — completeness (program history)
 
-Plan authority: this skill + `docs/architecture/` + [deprecation register — Closed product phases](../agent-skills/skills/deprecation-and-migration/reference.md).
+Plan authority: this skill + companions + disk `apps/web/modules/**` + [deprecation register — Closed product phases](../agent-skills/skills/deprecation-and-migration/reference.md). Living `docs/architecture/` dormant.
 
 **Checkout posture:** Rows marked **Done (historical)** were closed on the pre-Collapse product tree (2026-07-12). Root `modules/` / `app/` / `features/` remain absent by design — do not recover. Target shell under `apps/web/modules/{platform,identity,declarations,fft}` is **present (ARCH-028 S7.3)** with thin `orgId` domain ports; `apps/web/features/{auth,declarations,fft,org-admin}` shells are **present (S7.4)**; full Living inventory / Actions / RH remain open (S8.x+). DB/Neon ops rows remain Living ops facts where still true in production Neon.
 

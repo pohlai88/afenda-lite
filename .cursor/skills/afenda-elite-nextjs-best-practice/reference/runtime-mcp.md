@@ -22,7 +22,7 @@ nextjs_call → get_errors
 
 ## After App Router edits
 
-1. `get_routes` — paths match [ARCH-012](../../../docs/architecture/ARCH-012-app-router-routes.md)  
+1. `get_routes` — paths match ARCH-012  
 2. `get_errors` — must be clean before claiming done  
 
 Also use Vercel `nextjs` **debug-tricks**: confirm the real dev port (do not assume 3000); Next 16 exposes `/_next/mcp` by default.

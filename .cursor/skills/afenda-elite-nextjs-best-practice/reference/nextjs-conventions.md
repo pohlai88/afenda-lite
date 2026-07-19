@@ -135,7 +135,7 @@ export async function GET(
 |--------------|--------|
 | Managed Clerk/Auth0 | **Neon Auth** |
 | Edge by default | **Node** (ARCH-002) |
-| Broad static / Cache Components | Mode A request-time default; Mode B Phase 2 only — [ADR-008](../../../docs/architecture/adr/ADR-008-cache-components-mode-b.md) · Living [ARCH-016](../../../docs/architecture/ARCH-016-next-js-conventions.md) |
+| Broad static / Cache Components | Mode A request-time default; Mode B Phase 2 only — ADR-008 · Living ARCH-016 |
 | Parallel/intercepting modals | Only with route catalogue approval |
 | Self-host Docker matrix | Vercel primary — consult ops ADRs if ever needed |
 

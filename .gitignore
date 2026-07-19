@@ -27,6 +27,9 @@ out/
 .turbo/
 dist/
 
+# fumadocs-mdx generated collections (apps/docs — also listed in apps/docs/.gitignore)
+.source/
+
 # production
 /build
 

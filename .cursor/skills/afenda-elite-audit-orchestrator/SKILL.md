@@ -33,7 +33,7 @@ SKIP:
 ## Owns
 
 - **Discover** — resolve scope → farm(s) via catalog + scope-map
-- **Resolve authority chain** — Tier A docs + farm companions; Tier C plans checked for traceability metadata only
+- **Resolve authority chain** — Tier A = AGENTS + farm companions + Scratch `docs-V2/**` (Living `docs/` dormant); Tier C plans checked for traceability metadata only
 - **Identify + run** existing repository checks (consumer, not author)
 - **Disk truth** — `Test-Path`, `git ls-files`, `pnpm check:docs-trunk-ban` (AGENTS.md index-ghost rule)
 - **Normalize** results into one gap matrix + check-coverage ledger
@@ -58,7 +58,8 @@ SKIP:
 
 | Tier | Artifact | Authority | Can auditors rely on it? |
 |------|----------|-----------|--------------------------|
-| **A** | `docs/` controlled documents (DOC/ARCH/ADR/API/MOD) | ✅ Highest | **Yes** |
+| **A** | AGENTS.md · farm companions · Scratch `docs-V2/**` · skill-local DOC/MOD rules | ✅ Highest (this checkout) | **Yes** |
+| **A** | Living Controlled `docs/**` (DOC/ARCH/ADR/API/MOD) | ✅ Highest when Docs-lane restored | **Yes if on disk** — dormant until reopen |
 | **A** | Farm `completeness.md`, `verify.md`, gate registers | ✅ Highest | **Yes** |
 | **B** | Generated evidence (pnpm checks, tests, CI outputs) | ✅ Controlled evidence | **Yes** |
 | **C** | `.cursor/plans/*.plan.md` | ⚠ Planning only | **Reference only** |
@@ -154,7 +155,7 @@ Prefer `git ls-files` / `Test-Path` / `pnpm check:docs-trunk-ban` over index hit
 1. **Emit PREFLIGHT** with skills/rules engaged.
 2. **Discover scope** — route to farm(s) via catalog + scope-map.
 3. **Baseline disk state** — separate primary scope, dependencies, artifacts, exclusions.
-4. **Resolve authority chain** — load Tier A controlled docs + farm evidence files.
+4. **Resolve authority chain** — load Tier A (AGENTS · farm companions · docs-V2 Scratch; Living docs/ only if Docs-lane restored) + farm evidence files.
 5. **Identify applicable checks** — existing `pnpm` scripts, not new validator logic.
 6. **Run checks** — execute and capture exit codes + output.
 7. **Apply negative controls** — filter out forward-recorded/absent-by-design hits.
@@ -168,4 +169,4 @@ Prefer `git ls-files` / `Test-Path` / `pnpm check:docs-trunk-ban` over index hit
 - Authority tiers + gap taxonomy: [reference.md](reference.md)
 - Catalog: [../using-afenda-elite-skills/catalog.md](../using-afenda-elite-skills/catalog.md)
 - Router: [../using-afenda-elite-skills/SKILL.md](../using-afenda-elite-skills/SKILL.md)
-- Control: [../../../docs/_control/DOC-001-documentation-control-standard.md](../../../docs/_control/DOC-001-documentation-control-standard.md)
+- Control: [doc-control-rules](../afenda-elite-doc-control/doc-control-rules.md)

@@ -1,12 +1,15 @@
 ---
 title: Maintainer guide
-description: Day-1 Fumadocs mirror habits — pipeline, content tree, and stock MDX components.
+description: Official docs habits — pipeline, content tree, and configured MDX components.
+icon: BookOpen
 ---
 
-<Callout type="info" title="Day-1 boundary">
+<Callout type="info" title="Docs project boundary">
   No `DATABASE_URL`, Neon Auth, or `CRON_SECRET` on `@afenda/docs`. Product secrets
-  stay on `@afenda/web` / Vercel. Do not treat MDX as Controlled DOC-001 SSOT.
+  stay on `@afenda/web` / Vercel. Do not treat MDX as Living Controlled DOC-001 SSOT.
 </Callout>
+
+<InlineTOC>On this page</InlineTOC>
 
 ## Pipeline
 
@@ -75,9 +78,9 @@ pnpm --filter @afenda/docs test
   </Tab>
   <Tab>
 
-Search is stock Orama via `GET /api/search` (`createFromSource`). Nav links and
-`githubUrl` live in `lib/layout.shared.tsx`. After edits, run `typecheck` and
-`build`, then smoke `:3001`.
+Search UI is stock `RootProvider` (⌘K / Ctrl+K) with Orama via
+`GET /api/search` (`createFromSource`). Banner and GitHub Info live in the root /
+docs layouts. After edits, run `typecheck` and `build`, then smoke `:3001`.
 
   </Tab>
 </Tabs>
@@ -97,7 +100,7 @@ Search is stock Orama via `GET /api/search` (`createFromSource`). Nav links and
   </Folder>
 </Files>
 
-## Day-1 rules
+## Docs project rules
 
 <TypeTable
   type={{
@@ -124,6 +127,25 @@ Search is stock Orama via `GET /api/search` (`createFromSource`). Nav links and
   }}
 />
 
+### Auto Type Table
+
+Types extracted from `lib/demo-types.ts` via `fumadocs-typescript`:
+
+<AutoTypeTable path="lib/demo-types.ts" name="DocsProjectRule" />
+
+## Code Block (Dynamic)
+
+Runtime-highlighted sample (client Shiki):
+
+<DynamicCodeBlock
+  lang="ts"
+  code={'export const docsPort = 3001;\nconsole.log("Afenda-Lite Docs");'}
+/>
+
+## Zoomable Image
+
+![Docs sample](/docs-sample.svg)
+
 ## Pitfalls
 
 <Accordions type="single">
@@ -141,9 +163,18 @@ Search is stock Orama via `GET /api/search` (`createFromSource`). Nav links and
   </Accordion>
 </Accordions>
 
+## Page graph
+
+Link graph across narrative docs (nodes from the page tree; edges from
+`extractedReferences`):
+
+<GraphView />
+
 ## Add a narrative page
 
 1. Add `content/docs/<slug>.mdx` with `title` and `description` frontmatter.
 2. Append `<slug>` to `content/docs/meta.json` (or a folder `meta.json`).
 3. Run `pnpm --filter @afenda/docs generate:source` and `lint:links`.
 4. Verify `/docs/<slug>` on port **3001**.
+
+Relative links work: [HTTP API](./api/index.mdx).

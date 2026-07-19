@@ -1,7 +1,7 @@
 # Cache Components (Next.js 16) — Elite method
 
 Digest of Vercel plugin **`next-cache-components`**.  
-**Authority:** [ADR-008](../../../docs/architecture/adr/ADR-008-cache-components-mode-b.md) (Accepted Phase 1) · [ARCH-002](../../../docs/architecture/ARCH-002-frontend-architecture.md) · [ARCH-023](../../../docs/architecture/ARCH-023-multi-tenancy.md).
+**Authority:** ADR-008 (Accepted Phase 1) · ARCH-002 · ARCH-023.
 
 | Phase | State |
 |-------|--------|
@@ -100,6 +100,6 @@ Full lists: ADR-008 § Phase 2 checklist A/B.
 
 ## See also
 
-- [ADR-008](../../../docs/architecture/adr/ADR-008-cache-components-mode-b.md)  
+- ADR-008  
 - [rendering-caching.md](rendering-caching.md) · [accelint-perf.md](accelint-perf.md)  
 - Vercel: `next-cache-components`  

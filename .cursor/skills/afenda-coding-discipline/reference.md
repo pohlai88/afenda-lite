@@ -1,10 +1,10 @@
 # Afenda coding discipline — patterns
 
-Load only the section matching a rule id from [SKILL.md](SKILL.md). Examples use Afenda shapes (`OrganizationId`, `ActionResult`, Zod). Brand table and ActionResult SSOT remain [API-003](../../../docs/api/API-003-api-types.md) — do not fork them here.
+Load only the section matching a rule id from [SKILL.md](SKILL.md). Examples use Afenda shapes (`OrganizationId`, `ActionResult`, Zod). Brand table and ActionResult SSOT remain [brands-and-schemas.md](../afenda-elite-api-contract/brands-and-schemas.md) (API-003 operative) — do not fork them here.
 
 ## `brand-boundary`
 
-Prefer API-003 brands. Validate once at the boundary; downstream trusts the type.
+Prefer api-contract brands ([brands-and-schemas](../afenda-elite-api-contract/brands-and-schemas.md)). Validate once at the boundary; downstream trusts the type.
 
 ```ts
 import type { OrganizationId } from /* owning module / API types */;

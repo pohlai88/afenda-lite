@@ -1,5 +1,15 @@
-.next
-.source
-.turbo
-node_modules
-out
+# Next / Turbo / install
+.next/
+.turbo/
+node_modules/
+out/
+
+# fumadocs-mdx generated collections (`pnpm generate:source`)
+.source/
+
+# Local Vercel project link (CLI) — do not commit
+.vercel/
+
+# TypeScript emit (also covered by root *.tsbuildinfo / next-env.d.ts)
+*.tsbuildinfo
+next-env.d.ts

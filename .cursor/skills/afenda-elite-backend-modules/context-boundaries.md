@@ -1,6 +1,6 @@
 # Context boundaries
 
-**Authority:** [ARCH-006](../../../docs/architecture/ARCH-006-bounded-contexts.md) · [ARCH-007](../../../docs/architecture/ARCH-007-ports-and-adapters.md) · [ARCH-028](../../../docs/architecture/ARCH-028-implementation-slices.md)
+**Authority (operative IDs):** ARCH-006 contexts · ARCH-007 ports/adapters · ARCH-028 anti-contamination. Living bodies dormant — this companion is SSOT.
 
 Paths like `modules/<context>` are **logical / Target shape** (`apps/web/modules/…` when implemented). On this **docs-first** checkout, root `modules/` / `app/` / `features/` are **absent by design** — import bans still apply to future Target code; do not treat this file as current disk SSOT.
 
@@ -35,7 +35,7 @@ Compose at the **adapter** (page / Server Action / Route Handler) if a screen ne
 
 ## Port rules
 
-- Ports are named exports under `modules/*/domain` (documented interfaces in `docs/architecture/ARCH-007`).
+- Ports are named exports under `modules/*/domain` (ARCH-007 ports/adapters — interfaces live with domain code).
 - Ports **never** import `Request`, `next/headers`, or UI.
 - Zod at adapter edge; domain trusts typed input.
 - One port function may back both a Server Action and a Route Handler — same Zod, same error codes (`/afenda-elite-api-contract`).

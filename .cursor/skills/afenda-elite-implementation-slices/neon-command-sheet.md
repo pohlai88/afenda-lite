@@ -21,7 +21,7 @@ I*/S* blocks stay in [command-sheet.md](command-sheet.md). Score rubric: [neon-s
 
 ```text
 PRODUCT: Afenda-Lite · QUALITY: enterprise production only
-PROGRAM: Neon Auth optimisation N1–N18 (discovery under docs/scratch/neon-auth-optimisation/)
+PROGRAM: Neon Auth optimisation N1–N18 (discovery = neon-auth-slice-map + neon-slice-score)
 AUTHORITY: AGENTS · ARCH-023 · ARCH-026 · GUIDE-018 · ARCH-027 · map siblings (Living wins over scratch)
 PATHS: apps/web/** · packages/* only
 FORBID: Collapse/legacy recover · incomplete product paths · Data API as product path

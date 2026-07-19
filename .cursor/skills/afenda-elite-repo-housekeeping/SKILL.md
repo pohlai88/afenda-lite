@@ -24,7 +24,7 @@ LANE: Normalize (or Docs for catalog-only align) — never mix with Fix product 
 
 | Phase | Delegate to |
 |-------|-------------|
-| Layer / DAG / package boundaries | [`afenda-elite-monorepo-discipline`](../afenda-elite-monorepo-discipline/SKILL.md) · [ARCH-024](../../../docs/architecture/ARCH-024-package-boundaries.md) · removals → [`afenda-elite-monorepo-refactor`](../afenda-elite-monorepo-refactor/SKILL.md) |
+| Layer / DAG / package boundaries | [`afenda-elite-monorepo-discipline`](../afenda-elite-monorepo-discipline/SKILL.md) · ARCH-024 · removals → [`afenda-elite-monorepo-refactor`](../afenda-elite-monorepo-refactor/SKILL.md) |
 | Skill catalog align | [using-afenda-elite-skills/catalog.md](../using-afenda-elite-skills/catalog.md) |
 | Slice D execution | `/afenda-elite-monorepo-refactor execute` |
 | Engineering method | `using-agent-skills` → incremental-implementation / code-simplification |

@@ -13,7 +13,7 @@ disable-model-invocation: true
 
 Local Elite Next.js mechanics: Vercel **`nextjs`** → **`accelint-nextjs-best-practices`** → evaluated **`next-cache-components`** (PPR / `'use cache'` — Mode B ADR-gated; Mode A default = request-time + Suspense).
 
-**Elite locks:** Target `apps/web/**` + Living shape maps · Neon Auth · ARCH docs · no PAS/`apps/erp`/Storybook · no Collapse recover ([ARCH-028](../../../docs/architecture/ARCH-028-implementation-slices.md)).
+**Elite locks:** Target `apps/web/**` + Living shape maps · Neon Auth · ARCH docs · no PAS/`apps/erp`/Storybook · no Collapse recover (ARCH-028).
 
 **Announce:** "I'm using afenda-elite-nextjs-best-practice — App Router mechanics only; not inventing module layout."
 
@@ -33,13 +33,13 @@ METHOD: Vercel nextjs + Accelint + next-cache-components (evaluate; default OFF 
 |------|-----|
 | Product entry | `/using-afenda-elite-skills` |
 | Greenfield / wipe | `afenda-elite-frontend-scaffold` |
-| UI primitives / AdminCN chrome | `@afenda/ui-system` barrel (ADR-010) · AdminCN authority [ARCH-018](../../../docs/architecture/ARCH-018-admincn-customization.md) |
+| UI primitives / AdminCN chrome | `@afenda/ui-system` barrel (ADR-010) · AdminCN authority ARCH-018 |
 | Modules / ports | `afenda-elite-backend-modules` |
 | Actions / OpenAPI | `afenda-elite-api-contract` |
 | Tenancy | `neon-tenancy-efficiency` · ARCH-023 |
 | FFT | `/feed-farm-trade` |
 | Conventions API | Vercel plugin `nextjs` → [reference/nextjs-conventions.md](reference/nextjs-conventions.md) |
-| Cache Components / PPR | [ADR-008](../../../docs/architecture/adr/ADR-008-cache-components-mode-b.md) · [reference/cache-components.md](reference/cache-components.md) — Phase 1 Accepted; Phase 2 not authorized |
+| Cache Components / PPR | ADR-008 · [reference/cache-components.md](reference/cache-components.md) — Phase 1 Accepted; Phase 2 not authorized |
 | Perf + Action security | Accelint → [reference/accelint-perf.md](reference/accelint-perf.md) |
 | Accelint × App Router Vercel ids | [reference/vercel-perf.md](reference/vercel-perf.md) — not a second RBP SSOT |
 | React runtime/perf catalogue (waterfalls · rerenders · bundle · serialization · evidence gate) | `afenda-elite-react-best-practices` (App Router/cache stays here) |
@@ -79,7 +79,7 @@ proxy.ts → layout → thin page.tsx (RSC)
 | `/api/health/*` | none | `auto` + short revalidate |
 | `/playground/*` | local only | never prod contract |
 
-`/playground/*` (Next.js routes) are **absent** (removed 2026-07-15); the former `@afenda/ui/playground` package subpath is retired ([ADR-010](../../../docs/architecture/adr/ADR-010-afenda-ui-system-flat-barrel.md)). UI imports only the `@afenda/ui-system` barrel — see [ARCH-024 § `@afenda/ui-system`](../../../docs/architecture/ARCH-024-package-boundaries.md#afendaui-system).
+`/playground/*` (Next.js routes) are **absent** (removed 2026-07-15); the former `@afenda/ui/playground` package subpath is retired (ADR-010). UI imports only the `@afenda/ui-system` barrel — see ARCH-024 § `@afenda/ui-system`.
 
 ---
 
@@ -106,7 +106,7 @@ Full Accelint security/perf checklist: [reference/accelint-perf.md](reference/ac
 
 ### Env / client-secret boundary (ARCH-027)
 
-Dedicated `afenda-elite-env-governance` remains catalog **candidate**. Enforce [ARCH-027](../../../docs/architecture/ARCH-027-env-model.md):
+Dedicated `afenda-elite-env-governance` remains catalog **candidate**. Enforce ARCH-027:
 
 | State | Rule |
 |-------|------|
@@ -163,7 +163,7 @@ Symptom → rule map lives in Accelint AGENTS.md; Afenda digest: [accelint-perf.
 | Tenant BFF | Mode A: selective `force-dynamic` / `no-store` · Mode B: migrate segment configs off (ADR-008) |
 | Health | `auto` + short revalidate (Mode A) |
 | Suspense secondary panels | **Yes now** (no Cache Components required) |
-| `'use cache'` / PPR / `cacheComponents` | **Off** — [ADR-008](../../../docs/architecture/adr/ADR-008-cache-components-mode-b.md) Phase 1 Accepted; Phase 2 not authorized |
+| `'use cache'` / PPR / `cacheComponents` | **Off** — ADR-008 Phase 1 Accepted; Phase 2 not authorized |
 
 → [reference/rendering-caching.md](reference/rendering-caching.md)
 
@@ -208,7 +208,7 @@ nextjs_index → get_routes → get_errors
 npx tsc --noEmit
 ```
 
-MCP `get_errors` clean · Action checklist in [accelint-perf.md](reference/accelint-perf.md) · UI primitives via `@afenda/ui-system` (ADR-010) · AdminCN authority [ARCH-018](../../../docs/architecture/ARCH-018-admincn-customization.md)
+MCP `get_errors` clean · Action checklist in [accelint-perf.md](reference/accelint-perf.md) · UI primitives via `@afenda/ui-system` (ADR-010) · AdminCN authority ARCH-018
 
 ---
 

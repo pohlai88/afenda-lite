@@ -11,16 +11,17 @@ Internal guide for agents and maintainers. **Enables:** pick the right farm and 
 
 **End-state:** this skill is the **only product entry**. Vendor phase skills under `agent-skills/skills/` are a **method library** after the farm is fixed — not Elite-named forks.
 
-**Editions:** Afenda-Lite (this checkout, **beta**) and Afenda-Elite (**battle-proven**) share [DOC-001](../../../docs/_control/DOC-001-documentation-control-standard.md) documentation control and similar infrastructure aliasing. Maturity differs; catalogue shape does not.
+**Editions:** Afenda-Lite (this checkout, **beta**) and Afenda-Elite (**battle-proven**) share the DOC-001 control **model** ([doc-control-rules](../afenda-elite-doc-control/doc-control-rules.md)). Maturity differs; catalogue shape does not. Living `docs/**` bodies are **absent by design** on this checkout until Docs-lane reopen.
 
 ```text
 LOAD:
-  docs/README.md
-  docs/_control/DOC-001-documentation-control-standard.md
-  docs/_control/DOC-002-documentation-register.md
-  docs/_control/DOC-003-controlled-document-template.md
+  AGENTS.md
+  docs-V2/README.md
+  catalog.md
+  living-docs-link-inventory.md
+  ../afenda-elite-doc-control/doc-control-rules.md   # DOC-001…003 operative rules (skill-local)
 SKIP:
-  recreating doc/ · Fumadocs-as-authority · hand glossary twin
+  recreating doc/ · restoring Living docs/ without Docs-lane · treating Fumadocs MDX as Living DOC-001
   Storybook / Guardian Auth product restore · guardian-css-audit · FFT P3 flag promotion without gate-register
   afenda-Xerp editorial bundles (different repo overlay)
   forking or syncing Xerp / vendor skills into afenda-elite-*
@@ -33,9 +34,9 @@ SKIP:
   treating Cursor Grep/Glob hits under docs/architecture/{backend,frontend,system,tech-stack,archive}/ or docs/guides/archive/ as disk truth (trust Test-Path · git ls-files · pnpm check:docs-trunk-ban)
 ```
 
-**Authority above skills:** documentation homes, lifecycle, and register rules from [DOC-001](../../../docs/_control/DOC-001-documentation-control-standard.md) + [DOC-002](../../../docs/_control/DOC-002-documentation-register.md) + [DOC-003](../../../docs/_control/DOC-003-controlled-document-template.md). Product display names follow [AGENTS.md](../../../AGENTS.md) and the deprecation register — do not invent alternate product titles in skills.
+**Authority above skills:** documentation homes, lifecycle, and register rules from [doc-control-rules](../afenda-elite-doc-control/doc-control-rules.md). Product display names follow [AGENTS.md](../../../AGENTS.md) and the deprecation register — do not invent alternate product titles in skills. Day-to-day Scratch packs: [docs-V2/README.md](../../../docs-V2/README.md).
 
-**Skill inventory:** [catalog.md](catalog.md) — statuses `keep` · `extend` · `candidate` · `planned` · `forbidden`. Scratch `docs/scratch/` may justify candidates only; it is never Living architecture.
+**Skill inventory:** [catalog.md](catalog.md) — statuses `keep` · `extend` · `candidate` · `planned` · `forbidden`. Scratch under `docs-V2/**` may justify candidates only; it is never Living architecture. Cutover evidence: [living-docs-link-inventory.md](living-docs-link-inventory.md).
 
 ## PREFLIGHT (before this router)
 
@@ -66,7 +67,7 @@ Task arrives (this repo / Afenda-Lite)
     ├── UI primitives / `@afenda/ui-system` (add/regenerate shadcn·Radix, tokens, barrel)? → shadcn-ui + ADR-010 owned-source workflow (`pnpm --filter @afenda/ui-system ui:add` → relative → barrel → tests); do not restore the retired `@afenda/ui` gateway / Collapse Studio-promote pipeline
     ├── React composition / compound-component / provider API architecture? → afenda-elite-react-composition (after `afenda-elite-ui-compose` classifies capability; vendor `vercel-composition-patterns` is progressive disclosure only)
     ├── React runtime / performance (waterfalls · rerenders · bundle · serialization · hydration)? → afenda-elite-react-best-practices (App Router/cache stays with `afenda-elite-nextjs-best-practice`; vendor `vercel-react-best-practices` is progressive disclosure only)
-    ├── Root / package / app README · Diátaxis intro / compose · audit · README Score / Path to 100%? → afenda-readme-diataxis (not controlled `docs/` bodies)
+    ├── Root / package / app README · Diátaxis intro / compose · audit · README Score / Path to 100%? → afenda-readme-diataxis (not controlled Living docs/ bodies)
     ├── Internal technical docs prose (spec · ADR · runbook · migration)? → technical-writing (after `afenda-elite-doc-control` / `documentation-and-adrs` farm is fixed)
     ├── TS / coding discipline (brands · unions · any/as · boundary hygiene) after farm fixed? → afenda-coding-discipline (not PR review / simplify / API SSOT / React perf)
     ├── Generic engineering lifecycle? ─────────────────────→ using-agent-skills
@@ -77,17 +78,21 @@ Task arrives (this repo / Afenda-Lite)
 
 ## Docs filesystem (Docs lane)
 
+Living Controlled `docs/**` is **dormant** on this checkout (cutover `71176a0`) until explicit Docs-lane reopen. Operative DOC rules live in [doc-control-rules](../afenda-elite-doc-control/doc-control-rules.md). Day-to-day Scratch = `docs-V2/**`. Official site = `@afenda/docs` (not DOC-001 SSOT).
+
 ```text
-LOAD skill → afenda-elite-doc-control (controlled-document lifecycle) → documentation-and-adrs (deep prose/ADR composition, still independently available)
-Authority  → DOC-001 + DOC-002 + DOC-003 (under docs/_control/)
+LOAD skill → afenda-elite-doc-control (doc-control-rules.md) → documentation-and-adrs (deep prose/ADR composition)
+Authority  → DOC-001 + DOC-002 + DOC-003 operative rules (skill-local; Living bodies absent)
 Classify   → Control | Architecture | ADR | API | REST | OPEN | Runbook | Guide | Module
 Place      → docs/_control | docs/architecture [| /adr] | docs/api | docs/runbooks | docs/guides | docs/modules/<slug>
+             (homes apply only when Living docs/ is restored via Docs-lane — do not invent the tree)
 Write      → DOC-003 header (incl. Control State) + six sections; cite related IDs; no secrets
 Register   → DOC-002 seven fields only — after explicit ID approval (no Control State column)
 Lifecycle  → Status: Draft | Review | Accepted | Living | Target | Superseded | Retired
 Control    → Control State: Open | Closed | Reopened (header-only; ≠ Status)
 Verify     → header ↔ DOC-002; Control State enforced; filename {ID}-{kebab-slug}.md; no SSOT under doc/
-Integrity  → afenda-elite-doc-integrity (doc↔doc detect / plan / verify — not controlled writes)
+Integrity  → afenda-elite-doc-integrity (N/A while Living docs/ absent)
+Scratch    → docs-V2/** (engineering packs — not Living DOC-001)
 Prose      → documentation-and-adrs (method library only — not register SSOT)
 ```
 
@@ -97,28 +102,29 @@ Prose      → documentation-and-adrs (method library only — not register SSOT
 |-------|------|
 | L0 Rules / `AGENTS.md` | Always-on boundaries |
 | L1 This skill + `using-agent-skills` | Product routing vs vendor lifecycle |
-| L2 Documentation control · lanes · deprecation | Stability SSOT |
+| L2 Documentation control · lanes · deprecation | Stability SSOT (skill-local DOC rules while Living dormant) |
 | L3 Platform / module / housekeeping+discipline+refactor / catalog `keep|extend` (+ `planned` after approval) | Domain workflows |
 
 ## Local skill build (no Xerp fork)
 
 | Allowed | Forbidden |
 |---------|-----------|
-| Rewrite patterns against Lite ARCH/API/Neon/DOC | Copy Xerp trees · keep `afenda-Xerp/...` LOAD paths |
-| Cite controlled docs + this repo only | Symlink / submodule / git-subtree / “sync from Xerp” |
+| Rewrite patterns against Lite ARCH/API/Neon/DOC (skill-local + Scratch) | Copy Xerp trees · keep `afenda-Xerp/...` LOAD paths |
+| Cite AGENTS · docs-V2 · farm companions · this repo only | Symlink / submodule / git-subtree / “sync from Xerp” |
 | Prefer catalog **extend** before new `afenda-elite-*` | Fork vendor phase skills into Elite names |
 | One-line historical provenance (optional) | “See Xerp for details” as incomplete body |
 | `candidate → planned` only after user acceptance | Ad-hoc farms outside [catalog.md](catalog.md) |
 
-Local skills must remain operable if `afenda-Xerp` is deleted. Inventory and gap rows live in [catalog.md](catalog.md); invoke order stays here.
+Local skills must remain operable if `afenda-Xerp` is deleted **and** if Living `docs/` is absent. Inventory and gap rows live in [catalog.md](catalog.md); invoke order stays here.
 
 ## Operating contract
 
 1. **Do not invent product display names** — follow AGENTS.md / deprecation register.
-2. **Authoritative docs live under `docs/`** — categories and folders per DOC-001. Accept/Living/Target → DOC-002 row after user-approved ID. Do **not** recreate `doc/`.
-3. **Fumadocs = Day-1 mirror** when present — not authority; no DB/Auth/`CRON_SECRET` on docs project; no `_reference/` upload.
-4. **One lane per mission** — Ops / Fix / Docs / Test / Normalize; no mixing.
-5. **Before creating a skill** — require a catalog row (`planned` after review), prefer **extend** an existing farm, then add a router bullet. Do not fork vendor or Xerp skills into `afenda-elite-*`.
+2. **DOC control model** — categories and folders per [doc-control-rules](../afenda-elite-doc-control/doc-control-rules.md). Living `docs/` writes require Docs-lane reopen + tree on disk. Do **not** recreate `doc/` or invent Living trees.
+3. **`@afenda/docs` = official docs site** (active Fumadocs config) — not Living DOC-001 SSOT; no DB/Auth/`CRON_SECRET` on docs project; no `_reference/` upload; enterprise production bar only.
+4. **Scratch `docs-V2/**`** — day-to-day engineering authority packs; not a second published docs app and not DOC-001 register SSOT.
+5. **One lane per mission** — Ops / Fix / Docs / Test / Normalize; no mixing.
+6. **Before creating a skill** — require a catalog row (`planned` after review), prefer **extend** an existing farm, then add a router bullet. Do not fork vendor or Xerp skills into `afenda-elite-*`.
 
 ## Non-goals
 
@@ -128,22 +134,25 @@ Local skills must remain operable if `afenda-Xerp` is deleted. Inventory and gap
 - Treating Lite beta vs Elite battle-proven as an excuse for divergent catalogue rules  
 - Duplicating vendor lifecycle inside Elite skills  
 - Maintaining parity with or loading skills from `afenda-Xerp`  
+- Requiring absent Living `docs/**` paths for Elite skills to function  
 
 ## Verification
 
 - [ ] Invoked this skill (or equivalent LOAD) before product farm work  
-- [ ] Docs work cites DOC-001 / DOC-002 / DOC-003, not a reinvented scheme  
+- [ ] Docs work cites [doc-control-rules](../afenda-elite-doc-control/doc-control-rules.md), not a reinvented scheme  
 - [ ] Lane named; no lane mixing  
 - [ ] Skill chosen from [catalog.md](catalog.md) status (`keep` / `extend` / `planned`; never `forbidden` or unapproved `candidate`)  
 - [ ] No operational path into `afenda-Xerp/.cursor/skills`  
+- [ ] No required LOAD into absent Living `docs/**`  
 
 ## Additional resources
 
 - Inventory: [catalog.md](catalog.md)  
+- Living-link cutover: [living-docs-link-inventory.md](living-docs-link-inventory.md)  
 - Pointer: [reference.md](reference.md)  
-- Documentation governance: [afenda-elite-doc-control](../afenda-elite-doc-control/SKILL.md)
+- Documentation governance: [afenda-elite-doc-control](../afenda-elite-doc-control/SKILL.md) · [doc-control-rules](../afenda-elite-doc-control/doc-control-rules.md)
 - Documentation conflict audits: [afenda-elite-doc-integrity](../afenda-elite-doc-integrity/SKILL.md)
-- Control: [DOC-001](../../../docs/_control/DOC-001-documentation-control-standard.md) · [DOC-002](../../../docs/_control/DOC-002-documentation-register.md) · [DOC-003](../../../docs/_control/DOC-003-controlled-document-template.md)
+- Scratch packs: [docs-V2/README.md](../../../docs-V2/README.md)
 - Housekeeping: [afenda-elite-repo-housekeeping](../afenda-elite-repo-housekeeping/SKILL.md)
 - Discipline: [afenda-elite-monorepo-discipline](../afenda-elite-monorepo-discipline/SKILL.md) — ARCH-024 import/DAG/export surface
 - Refactor: [afenda-elite-monorepo-refactor](../afenda-elite-monorepo-refactor/SKILL.md)
@@ -151,7 +160,7 @@ Local skills must remain operable if `afenda-Xerp` is deleted. Inventory and gap
 - FE scaffold: [afenda-elite-frontend-scaffold](../afenda-elite-frontend-scaffold/SKILL.md)
 - Next.js App Router: [afenda-elite-nextjs-best-practice](../afenda-elite-nextjs-best-practice/SKILL.md) — Accelint + Cache Components Mode A default / Mode B ADR-gated
 - Modules: [afenda-elite-backend-modules](../afenda-elite-backend-modules/SKILL.md)
-- API contract: [afenda-elite-api-contract](../afenda-elite-api-contract/SKILL.md) — mirrors `docs/api` + ARCH-029; sync via GUIDE-015 phases + `check:doc-integrity`
+- API contract: [afenda-elite-api-contract](../afenda-elite-api-contract/SKILL.md) — `docs-V2/api` Scratch + disk + companions; `pnpm check:openapi`
 - Module readiness: [afenda-elite-module-readiness](../afenda-elite-module-readiness/SKILL.md) — MOD-002 evidence + Module Enterprise Readiness claims (`*-MOD-009` / `*-MOD-010`)
 - Vendor lifecycle: [using-agent-skills](../agent-skills/skills/using-agent-skills/SKILL.md)
 - Docs prose: [documentation-and-adrs](../agent-skills/skills/documentation-and-adrs/SKILL.md)

@@ -29,7 +29,7 @@
 ## Stabilization (latest)
 
 - Draft API runner owned by Declarations (one-version Action/HTTP share domain + schemas)
-- Org-admin RBAC mutations stay on Server Actions (`admin.ts`), not new `/api` routes
+- Org-admin RBAC mutations stay on discrete Server Actions (`assign-org-role` · `revoke-org-role` · `invite-org-member`), not new `/api` routes — see Scratch [actions.md](../../../docs-V2/api/actions.md); no monolithic `admin.ts` on disk
 - OpenAPI artifact lives under `docs-V2/api/` (not deleted `docs/api/`)
 - Action vs RH session helpers remain intentionally mirrored (adapter isolation — not a defect)
 - Pack entry: [docs-V2/api/README.md](../../../docs-V2/api/README.md)

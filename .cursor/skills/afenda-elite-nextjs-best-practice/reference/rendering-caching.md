@@ -1,6 +1,6 @@
 # Rendering and caching matrix
 
-**Authority:** [ADR-008](../../../docs/architecture/adr/ADR-008-cache-components-mode-b.md) · [ARCH-002](../../../docs/architecture/ARCH-002-frontend-architecture.md) · [ARCH-023](../../../docs/architecture/ARCH-023-multi-tenancy.md).  
+**Authority:** ADR-008 · ARCH-002 · ARCH-023.  
 **Method:** [nextjs-conventions.md](nextjs-conventions.md) · **[cache-components.md](cache-components.md)**.
 
 Afenda product surfaces are **tenant / session-scoped by default**. Do not apply generic static optimization or shared remote cache without ADR-008 D4 principal-safe scope.

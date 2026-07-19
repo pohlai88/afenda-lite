@@ -4,7 +4,7 @@ Companion to [SKILL.md](SKILL.md). Load only for `N*` / Neon Auth optimisation m
 
 **Done:** acceptance matrix green + **Neon Slice Score** emitted. Product close requires independent auditor `APPROVED` ([neon-command-sheet.md](neon-command-sheet.md) § Audit). GUIDE-018 “closed” is not APPROVED.
 
-Scratch discovery: `docs/scratch/neon-auth-optimisation/`. Living authority: AGENTS.md · ARCH-023 · ARCH-026 · GUIDE-018 · ARCH-027 · owning MOD/ADR.
+Scratch discovery: skill-local neon maps (historical `docs/scratch/neon-auth-optimisation/` may be absent). Authority: AGENTS.md · ARCH-023 · ARCH-026 · GUIDE-018 · ARCH-027 operative IDs · owning MOD/ADR (Living bodies dormant).
 
 ## QUALITY ORDER (binding)
 

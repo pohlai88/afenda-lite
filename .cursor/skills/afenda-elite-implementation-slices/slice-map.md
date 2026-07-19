@@ -4,7 +4,7 @@ Always also load: this skill’s [SKILL.md](SKILL.md).
 
 **Neon Auth (`N1`–`N18`):** use [neon-auth-slice-map.md](neon-auth-slice-map.md) + [neon-slice-score.md](neon-slice-score.md) — not this file.
 
-**Progress hint (checkout):** ARCH-028 S1–S8 + Checkpoints A–**G** **closed**. Current program: [GUIDE-018](../../../docs/guides/GUIDE-018-fullstack-e2e-integration-program.md) Phase **I3** — **I3.1** done; next **I3.2**. Evidence on disk wins over this hint.
+**Progress hint (checkout):** ARCH-028 S1–S8 + Checkpoints A–**G** **closed**. Current program: GUIDE-018 Phase **I3** — **I3.1** done; next **I3.2**. Evidence on disk wins over this hint.
 
 ## Farm short names
 
@@ -23,8 +23,8 @@ Always also load: this skill’s [SKILL.md](SKILL.md).
 | refactor | `afenda-elite-monorepo-refactor` |
 | neon | `neon-tenancy-efficiency` |
 | fft | `feed-farm-trade` |
-| ui | `afenda-elite-frontend-scaffold` + `@afenda/ui-system` barrel ([ADR-010](../../../docs/architecture/adr/ADR-010-afenda-ui-system-flat-barrel.md)) |
-| admincn | `afenda-elite-frontend-scaffold` (chrome); AdminCN authority [ARCH-018](../../../docs/architecture/ARCH-018-admincn-customization.md) |
+| ui | `afenda-elite-frontend-scaffold` + `@afenda/ui-system` barrel (ADR-010) |
+| admincn | `afenda-elite-frontend-scaffold` (chrome); AdminCN authority ARCH-018 |
 | lanes | `bounded-agent-lanes` (method) |
 | ship | `shipping-and-launch` (method) |
 | tdd | `test-driven-development` (method) |
@@ -34,7 +34,7 @@ Always also load: this skill’s [SKILL.md](SKILL.md).
 
 ## Phase I table (GUIDE-018) — current
 
-Authority body: [GUIDE-018](../../../docs/guides/GUIDE-018-fullstack-e2e-integration-program.md).
+Authority: GUIDE-018 operative facts in this map + [command-sheet.md](command-sheet.md) (Living GUIDE body dormant).
 
 | ID | Size | Lane | Primary path | Sibling authority | LOAD farms (order) | Verify (minimum) |
 |----|------|------|--------------|-------------------|--------------------|------------------|
@@ -77,7 +77,7 @@ Do not skip I1 before I2 unless the user waives serial order **this turn**.
 
 ## ARCH-028 table (scaffold residual — coding closed)
 
-Authority body: [ARCH-028](../../../docs/architecture/ARCH-028-implementation-slices.md).
+Authority: ARCH-028 operative facts in this map + [command-sheet.md](command-sheet.md) (Living ARCH body dormant).
 
 Use only for evidence re-verify or named residual. **Do not invent S9.**
 

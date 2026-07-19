@@ -13,7 +13,7 @@ In **this repository**, **`/using-afenda-elite-skills` is the only product entry
 
 Elite overlay covers:
 
-- Farm routing (documentation control under `docs/_control`, monorepo, Fumadocs Day-1 mirror when present)
+- Farm routing (documentation control under `docs/_control`, monorepo, official `@afenda/docs` when present)
 - Documentation create/update/retire — `afenda-elite-doc-control` ([DOC-001](../../../../../docs/_control/DOC-001-documentation-control-standard.md) · [DOC-002](../../../../../docs/_control/DOC-002-documentation-register.md) · [DOC-003](../../../../../docs/_control/DOC-003-controlled-document-template.md))
 - Housekeeping → Slice D refactor handoff
 - Non-goals: recreating `doc/`, divergent Lite/Elite catalogue rules, Fumadocs-as-authority, fork-all-vendor-to-elite

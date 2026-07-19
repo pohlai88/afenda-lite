@@ -19,7 +19,7 @@ Afenda-controlled wrapper over the vendor `vercel-react-best-practices` catalogu
 
 ```text
 LOAD:
-  docs/architecture/adr/ADR-010-afenda-ui-system-flat-barrel.md  (barrel is non-negotiable)
+  ADR-010 operative: @afenda/ui-system barrel only (non-negotiable) — AGENTS.md
   afenda-elite-ui-compose (UI ownership)  ·  afenda-elite-nextjs-best-practice (App Router/cache)
   reference.md  (override matrix · packing · evidence rule)
   vercel-react-best-practices rules/<id>.md  (reference bodies — by id, after O-filter)

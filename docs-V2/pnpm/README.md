@@ -75,6 +75,9 @@ Prefer root Turbo scripts (`pnpm lint`, `pnpm typecheck`, `pnpm exec turbo run b
 1. pnpm -v   # matches packageManager major.minor (10.33.x)
 2. pnpm install --frozen-lockfile
 3. pnpm --filter @afenda/web exec node -e "console.log('ok')"
+4. Docs Tailwind pin (not catalog:) — must resolve ≥ 4.3.3:
+   pnpm --filter @afenda/docs list @tailwindcss/postcss tailwindcss --depth 0
+   pnpm --filter @afenda/docs why @tailwindcss/postcss
 ```
 
 ---

@@ -11,8 +11,8 @@ Local Elite monorepo refactor: Phase 0 contract · audit/plan/execute/stabilize 
 **Announce:** "I'm using afenda-elite-monorepo-refactor — stating refactor contract before edits."
 
 ```text
-LOAD: using-afenda-elite-skills · docs/_control (Docs lane) · package DAG ADRs when Accepted
-SKIP: bulk codemods · full-repo lint --fix · _reference/archive · Fumadocs-as-authority edits
+LOAD: using-afenda-elite-skills · afenda-elite-monorepo-discipline/LAYERS.md · docs-V2/monorepo · doc-control-rules (Docs lane only when Living restored)
+SKIP: required Living docs/_control LOAD · bulk codemods · full-repo lint --fix · _reference/archive · Fumadocs-as-authority edits
 LANE: Normalize (structure) or Fix (single bug) — one lane; housekeeping removals = Normalize
 ```
 
@@ -23,7 +23,7 @@ LANE: Normalize (structure) or Fix (single bug) — one lane; housekeeping remov
 | Phase | Delegate to |
 |-------|-------------|
 | Dead-code discovery | `/afenda-elite-repo-housekeeping` |
-| Package DAG / new package checklist | [`afenda-elite-monorepo-discipline`](../afenda-elite-monorepo-discipline/SKILL.md) · [ARCH-024](../../../docs/architecture/ARCH-024-package-boundaries.md) · [ARCH-028](../../../docs/architecture/ARCH-028-implementation-slices.md) |
+| Package DAG / new package checklist | [`afenda-elite-monorepo-discipline`](../afenda-elite-monorepo-discipline/SKILL.md) · ARCH-024 · ARCH-028 |
 | Engineering method | `using-agent-skills` → incremental-implementation |
 | Simplify after move | `code-simplification` |
 | Compulsory bans | `deprecation-and-migration` |

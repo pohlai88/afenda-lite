@@ -4,7 +4,7 @@
 |-------|-------|
 | Surface | `docs-V2/data/README.md` |
 | Authority | **Scratch** — planning-and-task-breakdown (foundation) + disk `packages/db/**` |
-| Updated | 2026-07-19 |
+| Updated | 2026-07-20 |
 
 Persistence foundation under API/UI. Adapter choice (RSC/Action/RH) stays in [../nextjs/data.md](../nextjs/data.md).
 
@@ -19,6 +19,20 @@ Persistence foundation under API/UI. Adapter choice (RSC/Action/RH) stays in [..
 | Schema | Shared Neon schema (not project-per-tenant) |
 | Tenant key | `organization_id` text NOT NULL on hard tenant roots |
 | Prod URL | `DATABASE_URL` must use Neon **pooler** |
+
+---
+
+## Schema files (disk)
+
+| File | Role |
+|------|------|
+| `packages/db/src/schema/index.ts` | Barrel |
+| `packages/db/src/schema/platform.ts` | Platform tables |
+| `packages/db/src/schema/declarations.ts` | Declarations tables |
+| `packages/db/src/schema/fft.ts` | FFT / Trade tables |
+| `packages/db/src/hard-tenant-roots.ts` | Hard-tenant roots (`organization_id` NOT NULL) |
+
+File inventory only — no per-column encyclopedia. Re-probe `packages/db/src/schema/*` after schema adds.
 
 ---
 
@@ -66,4 +80,4 @@ Do not invent ad-hoc SQL migrate paths outside `@afenda/db` scripts.
 4. Disk: packages/db/src/client.ts · hard-tenant-roots.ts · schema/*
 ```
 
-Companion: [../auth/README.md](../auth/README.md) · [../tenancy/README.md](../tenancy/README.md) · [../nextjs/data.md](../nextjs/data.md).
+Companion: [../auth/README.md](../auth/README.md) · [../tenancy/README.md](../tenancy/README.md) · [../modules/README.md](../modules/README.md) · [../nextjs/data.md](../nextjs/data.md).

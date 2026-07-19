@@ -21,17 +21,17 @@ Local-method skill: TypeScript and coding hygiene **after** the product farm is 
 
 ```text
 LOAD:
-  docs/architecture/ARCH-022-system-overview.md
-  docs/architecture/ARCH-024-package-boundaries.md
-  docs/architecture/ARCH-029-interface-api-architecture.md
-  docs/api/API-003-api-types.md
-  docs/architecture/adr/ADR-010-afenda-ui-system-flat-barrel.md
+  AGENTS.md                                                    # checkout · UI barrel · env floor
+  ../afenda-elite-api-contract/brands-and-schemas.md · SKILL.md  # brands · ActionResult (API-003 operative)
+  ../afenda-elite-monorepo-discipline/LAYERS.md · SKILL.md       # ARCH-024 DAG operative
+  ../afenda-elite-ui-compose/SKILL.md                          # ADR-010 barrel operative
   @afenda/config · biome.jsonc  (lint/format SSOT)
   reference.md  (patterns by rule id — load only what you need)
 SKIP:
-  inventing REST { success, data } envelopes  → afenda-elite-api-contract · API-003
-  inventing brands that duplicate API-003     → afenda-elite-api-contract
-  deep-import / bypass @afenda/ui-system      → ADR-010
+  required Living docs/architecture · docs/api LOAD
+  inventing REST { success, data } envelopes  → afenda-elite-api-contract
+  inventing brands that duplicate api-contract brands → afenda-elite-api-contract
+  deep-import / bypass @afenda/ui-system      → ADR-010 (ui-compose / AGENTS)
   PR multi-axis review process                → code-review-and-quality
   behavior-preserving clarity refactor        → code-simplification
   React waterfalls / bundle / hydration       → afenda-elite-react-best-practices
@@ -43,7 +43,7 @@ SKIP:
 
 | Need | Owner |
 |------|-------|
-| ActionResult, brand table, Zod schema map, OpenAPI/REST | `afenda-elite-api-contract` + API-003… |
+| ActionResult, brand table, Zod schema map, OpenAPI/REST | `afenda-elite-api-contract` + [brands-and-schemas](../afenda-elite-api-contract/brands-and-schemas.md) |
 | Product UI tokens / compose / handroll | `afenda-elite-ui-compose` |
 | React runtime / perf evidence | `afenda-elite-react-best-practices` |
 | Multi-axis PR review | `code-review-and-quality` |
@@ -55,7 +55,7 @@ SKIP:
 | Id | Rule |
 |----|------|
 | `union-discriminant` | Model variants with a literal discriminant (`kind` / `type` / `ok`). No optional-field bags that allow impossible states. |
-| `brand-boundary` | Brand primitives at the boundary; prefer existing API-003 brands (`OrganizationId`, `UserId`, …). Do not invent parallel brand shapes. |
+| `brand-boundary` | Brand primitives at the boundary; prefer existing api-contract brands (`OrganizationId`, `UserId`, …). Do not invent parallel brand shapes. |
 | `unknown-not-any` | External data is `unknown`. `any` is forbidden in product paths unless justified in the change note. |
 | `no-unearned-as` | Cast only after validation (schema parse or earned narrow). Prefer `satisfies` over widen-casts. |
 | `narrowing-order` | Discriminant switch → `in` → `typeof`/`instanceof` → honest type guard → `as` last. |
@@ -74,8 +74,8 @@ Patterns: [reference.md](reference.md).
 
 | Topic | Stance |
 |-------|--------|
-| UI imports | Product **must** `import { … } from "@afenda/ui-system"`. Reject generic “avoid barrels” advice for this package. |
-| API outcomes | Use `ActionResult<T>` (`ok: true \| false`) per API-003 — not tutorial `{ success, data }` envelopes. |
+| UI imports | Product **must** `import { … } from "@afenda/ui-system"` (ADR-010 / AGENTS / ui-compose). Reject generic “avoid barrels” advice for this package. |
+| API outcomes | Use `ActionResult<T>` (`ok: true \| false`) per api-contract — not tutorial `{ success, data }` envelopes. |
 | Lint / format | Biome + `@afenda/config` only — do not invent ESLint/Prettier stacks. |
 | Quality bar | Enterprise production only. No shim/stub/TODO-throw product paths. |
 | Env | `import { env } from "@afenda/env"` — never raw `process.env` for product config. |
@@ -85,13 +85,13 @@ Patterns: [reference.md](reference.md).
 
 1. Confirm the product farm is fixed (router → owning `afenda-elite-*` / domain farm).
 2. Apply the discipline table; load only matching sections in [reference.md](reference.md).
-3. Prefer existing API-003 brands and module Zod schemas — do not fork types.
+3. Prefer existing brands from [brands-and-schemas](../afenda-elite-api-contract/brands-and-schemas.md) and module Zod schemas — do not fork types.
 4. When claiming typed close: scoped `pnpm lint` / `pnpm typecheck` (or package filter) green.
 
 ## Verify
 
 - [ ] No new `any` without justification; no unearned `as`
 - [ ] Discriminants / exhaustiveness where variants exist
-- [ ] Brands not duplicated vs API-003; ActionResult shape preserved
+- [ ] Brands not duplicated vs api-contract; ActionResult shape preserved
 - [ ] No `@afenda/ui-system` barrel bypass; no ad-hoc REST envelope
 - [ ] Route-outs respected (review / simplify / API / React perf not answered here)

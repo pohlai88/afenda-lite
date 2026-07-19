@@ -64,4 +64,5 @@ export {
 	TARGET_SNAPSHOT_HOUR_UTC,
 	TARGET_SNAPSHOT_RETAIN_DAYS,
 } from "./neon-recovery-posture";
+export { docsEnv } from "./docs";
 export { env } from "./web";

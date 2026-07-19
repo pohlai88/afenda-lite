@@ -7,7 +7,7 @@
 | Audience | Engineers wiring CI or regenerating API docs |
 | Updated | 2026-07-19 |
 
-This guide is the **internal runbook** for the Day-1 docs pipeline. It assumes [README.md](README.md) Day-1 rules.
+This guide is the **internal runbook** for the official docs pipeline. It assumes [README.md](README.md) docs project rules.
 
 ---
 
@@ -17,15 +17,16 @@ This guide is the **internal runbook** for the Day-1 docs pipeline. It assumes [
 |-------|---------|---------------|
 | 1. Zod → OAS | `pnpm openapi:generate` | [`../api/OPEN-001-openapi.yaml`](../api/OPEN-001-openapi.yaml) |
 | 2. OAS honesty | `pnpm check:openapi` | Drift + Spectral + api-now `route.ts` on disk |
-| 3. OAS → MDX | `pnpm --filter @afenda/docs generate:openapi-docs` | `content/docs/api/*` via `generateFiles({ input: openapi })` |
+| 3. OAS → MDX | `pnpm --filter @afenda/docs generate:openapi-docs` | `content/docs/api/*` via `generateFiles` — [openapi-generate-files.md](openapi-generate-files.md) · AsyncAPI Outside — [asyncapi.md](asyncapi.md) |
 | 4. MDX → collections | `pnpm --filter @afenda/docs generate:source` | `.source/` (gitignored) |
-| 5. Links | `pnpm --filter @afenda/docs lint:links` | Broken internal links fail |
+| 4b. Node inventory | `pnpm --filter @afenda/docs list:source-pages` | Offline `source.getPages()` via `register()` — [fumadocs-mdx-node.md](fumadocs-mdx-node.md) |
+| 5. Links | `pnpm --filter @afenda/docs lint:links` | Broken internal links fail — [validate-links.md](validate-links.md) |
 | 6. Wire contract | `pnpm --filter @afenda/docs test` | Document id + loader + CSS preset + search route + anti-8bitcn |
 | 7. Types / SSG | `typecheck` · `build` | Local or CI job — not every `pnpm checks` |
 
-Stock search: `app/api/search/route.ts` exports `GET` from `createFromSource(source)` (bundled Orama — no Cloud). No separate step; covered by `typecheck` / `build` / wire `test`. UI config map (search · theme · RootProvider): [ui.md](ui.md). Ban scan: `rg -n "8bitcn|ComponentPreview" apps/docs` must exit with no matches (rg exit `1` = clean).
+Search UI: stock `<RootProvider>` dialog (⌘K / Ctrl+K) + `app/api/search/route.ts` → `createFromSource(source)` (bundled Orama — no Cloud). Covered by `typecheck` / `build` / wire `test`. SSOT: [search-orama.md](search-orama.md) · [ui.md](ui.md) Search UI · Themes. Ban scan: `rg -n "8bitcn|ComponentPreview" apps/docs` must exit with no matches (rg exit `1` = clean).
 
-Lean monorepo gate (no full Next build): `pnpm check:docs-app` → generate OpenAPI MDX + lint:links.
+Lean monorepo gate (no full Next build): `pnpm check:docs-app` → generate OpenAPI MDX + lint:links. Link tool SSOT: [validate-links.md](validate-links.md).
 
 ---
 
@@ -51,7 +52,7 @@ void generateFiles({
 
 | Rule | Detail |
 |------|--------|
-| Single `openapi` export | [apps/docs/lib/openapi.server.ts](../../apps/docs/lib/openapi.server.ts) |
+| Single `openapi` export | [apps/docs/lib/openapi.server.ts](../../apps/docs/lib/openapi.server.ts) — [openapi-server.md](openapi-server.md) |
 | `input: openapi` | Matches [fuma-nama/fumadocs](https://github.com/fuma-nama/fumadocs) docs |
 | Hand `api/index.mdx` | Narrative intro — generator must not clobber it |
 | Orphan cleanup | After generate, delete `*.mdx` not listed in `meta.json` pages |
@@ -72,13 +73,16 @@ Lite script: `apps/docs/scripts/generate-openapi-docs.mts` (`createOpenAPI` → 
 
 ---
 
-## CI recommendation
+## CI (configured)
 
 | Job | Include |
 |-----|---------|
-| Fast docs gate (`pnpm checks` / `check:docs-app`) | `generate:openapi-docs` + `lint:links` (+ wire `test` when cheap) |
-| Product OAS | `check:openapi` (already in `pnpm checks`) |
-| Docs deploy / PR smoke | `pnpm --filter @afenda/docs typecheck` · `build` on docs-touched PRs |
+| Fast docs gate | `.github/workflows/ci.yml` `quality` → `pnpm check:docs-app` (`generate:openapi-docs` + `lint:links`) |
+| Local lean gate | `pnpm checks` includes `check:docs-app` when `apps/docs` exists |
+| Product OAS | `check:openapi` (in `pnpm checks`; not duplicated in CI quality) |
+| Docs typecheck / wire test | CI `turbo run typecheck test` covers `@afenda/docs` |
+| Docs deploy / PR smoke | `pnpm --filter @afenda/docs build` on docs-touched promote paths |
+| Docs host promote | [deploying.md](deploying.md) — Vercel Node · separate docs project · not product `deploy.yml` |
 
 Do **not** require full `@afenda/web` build for docs-only MDX edits.
 
@@ -105,4 +109,4 @@ pnpm --filter @afenda/docs typecheck
 pnpm --filter @afenda/docs build
 ```
 
-Companion: [openapi.md](openapi.md) · [content.md](content.md) · skill `afenda-elite-api-contract/openapi.md`.
+Companion: [openapi.md](openapi.md) · [openapi-server.md](openapi-server.md) · [openapi-generate-files.md](openapi-generate-files.md) · [content.md](content.md) · [deploying.md](deploying.md) · skill `afenda-elite-api-contract/openapi.md`.

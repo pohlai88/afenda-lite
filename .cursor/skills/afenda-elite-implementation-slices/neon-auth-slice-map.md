@@ -4,7 +4,7 @@ Load with [SKILL.md](SKILL.md) + [neon-slice-score.md](neon-slice-score.md) when
 
 **Posture:** every row starts **UNEVALUATED**. GUIDE-018 / ARCH-028 checkboxes do not set APPROVED. Update last score / verdict only after scored missions + auditor.
 
-**Discovery (not Living SSOT):** `docs/scratch/neon-auth-optimisation/`.
+**Discovery (not Living SSOT):** this map + [neon-command-sheet.md](neon-command-sheet.md) (historical `docs/scratch/neon-auth-optimisation/` may be absent).
 
 ## Farm short names
 

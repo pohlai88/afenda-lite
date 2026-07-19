@@ -20,10 +20,9 @@ description: >-
 | [stubs.md](stubs.md)                   | Stub templates (layout / error / page)         |
 | [boundaries.md](boundaries.md)         | FE↔BE contracts, branded IDs, validation edges |
 | [wipe-inventory.md](wipe-inventory.md) | Complete DELETE / REPLACE / KEEP file list     |
-| [docs/api/](../../../docs/api/)          | Error shape, REST catalog, types               |
-| [docs/architecture/](../../../docs/architecture/) | UI architecture, routes, BFF tree              |
-| [afenda-elite-nextjs-best-practice](../afenda-elite-nextjs-best-practice/SKILL.md) | App Router mechanics (RSC, rendering, MCP) |
-| [ADR-010](../../../docs/architecture/adr/ADR-010-afenda-ui-system-flat-barrel.md) | UI primitives: consume `@afenda/ui-system` barrel + `styles.css`; no handroll under `apps/web/components`; barrel-only boundary enforced by committed tests |
+| [docs-V2/api/](../../../docs-V2/api/) · [api-contract](../afenda-elite-api-contract/SKILL.md) | Error shape, REST allowlist, types |
+| Companions + [nextjs-best-practice](../afenda-elite-nextjs-best-practice/SKILL.md) | Routes, BFF tree, App Router mechanics |
+| ADR-010 (operative) | UI primitives: `@afenda/ui-system` barrel + `styles.css` only; no handroll under `apps/web/components` |
 | [afenda-elite-ui-compose](../afenda-elite-ui-compose/SKILL.md) | Before product UI body in `features/*` / visible pages: load compose consistency lock (QUALITY ORDER incl. SCALABILITY-FIRST / UI-CAP-*; type/spacing/radius/color); this farm owns routes/scaffold shape only |
 
 ## Agent operating rules
@@ -40,7 +39,7 @@ description: >-
 2. **Descriptive params only** — never overloaded `[id]` (table below).
 3. **`lib/` is gone.** Domain/Zod/env live under `modules/{platform,identity,declarations,fft}`. Runners live under `features/`. Do not recreate `lib/`. See `/afenda-elite-backend-modules`.
 4. **No root `components/` restore.** Product UI → `features/*`.
-5. **No Collapse recovery.** Never restore banned trees from git (`app/`, `modules/`, `features/`, `components-V2/`, …) — including `git show` as a seed — unless the user explicitly names that recovery in this turn ([ARCH-028](../../../docs/architecture/ARCH-028-implementation-slices.md)).
+5. **No Collapse recovery.** Never restore banned trees from git (`app/`, `modules/`, `features/`, `components-V2/`, …) — including `git show` as a seed — unless the user explicitly names that recovery in this turn (ARCH-028).
 6. **Next 16:** `proxy.ts` only — never new `middleware.ts`.
 7. **Never** `page.tsx` + `route.ts` in the same segment.
 8. **No** parallel/intercepting routes in v1. No `template.tsx` / `default.tsx` unless required later.
@@ -76,10 +75,10 @@ Templates: [stubs.md](stubs.md).
 RSC read?              → module port directly (never fetch own /api)
 Client mutation?       → Server Action → Zod → port → ActionResult
 Draft XHR / auth / health / webhook? → Route Handler
-External/mobile REST?  → Route Handler per docs/api (contract-only until needed)
+External/mobile REST?  → Route Handler per docs-V2/api + api-contract (contract-only until needed)
 ```
 
-Decision tree SSOT: [docs/architecture/ARCH-013-bff-and-data-flow.md](../../../docs/architecture/ARCH-013-bff-and-data-flow.md).
+Decision tree SSOT (ARCH-013 operative): RSC → domain; mutation → Action; draft/auth/health → RH — see [boundaries.md](boundaries.md) + api-contract.
 
 ## Dynamic params (exact)
 

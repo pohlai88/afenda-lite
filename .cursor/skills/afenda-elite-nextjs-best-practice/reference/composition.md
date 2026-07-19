@@ -1,6 +1,6 @@
 # Composition — thin App Router pages
 
-**Authority:** [ARCH-002](../../../docs/architecture/ARCH-002-frontend-architecture.md) · [ARCH-017](../../../docs/architecture/ARCH-017-frontend-folder-map.md).  
+**Authority:** ARCH-002 · ARCH-017.  
 **Method:** Vercel `nextjs` + Accelint 1.x/2.x · [nextjs-conventions.md](nextjs-conventions.md) · [accelint-perf.md](accelint-perf.md).
 
 ---
@@ -25,7 +25,7 @@ page.tsx (thin RSC)
 | UI type | Location |
 |---------|----------|
 | Product screens | `features/<area>/` |
-| AdminCN shell / portal-views | Logical `components-V2/` homes ([ARCH-017](../../../docs/architecture/ARCH-017-frontend-folder-map.md)) — Studio DNA promote only; never recover Collapse trees |
+| AdminCN shell / portal-views | Logical `components-V2/` homes (ARCH-017) — Studio DNA promote only; never recover Collapse trees |
 | Route-local composition | colocated `_components/` under the route segment when needed |
 | Heavy charts / widgets | `next/dynamic` client leaves (`bundle-dynamic-imports`) |
 | Studio MCP install | Temporary scratch cwd — promote into `features/` / `portal-views/`; never keep `shadcn-studio/` nesting |

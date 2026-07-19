@@ -1,8 +1,8 @@
 # Residue inventory (Pass 2 + full runner absorb)
 
-**Status:** Historical relocate program closed 2026-07-12 (pre-Collapse evidence). **`lib/` must not be recreated.** On this **docs-first** checkout, root `features/` / `modules/` / `app/` are also **absent by design** ([ARCH-028](../../../docs/architecture/ARCH-028-implementation-slices.md)) — rows below are relocate **targets**, not a claim those trees exist today.
+**Status:** Historical relocate program closed 2026-07-12 (pre-Collapse evidence). **`lib/` must not be recreated.** On this **docs-first** checkout, root `features/` / `modules/` / `app/` are also **absent by design** (ARCH-028) — rows below are relocate **targets**, not a claim those trees exist today.
 
-**Authority:** [ARCH-009](../../../docs/architecture/ARCH-009-modules-ownership-map.md) §5
+**Authority (operative):** ARCH-009 ownership map (residue / relocate) — Living body dormant; this companion is SSOT.
 
 ---
 
@@ -63,15 +63,14 @@ Do **not** recreate `lib/` or recover Collapse roots. New UI → Target `apps/we
 
 - [x] Grep imports of each prune candidate; flip or delete safely
 - [x] Remove unused shims after zero importers
-- [x] Update this file + `docs/architecture/ARCH-009-modules-ownership-map.md`
+- [x] Update this file (ARCH-009 Living body dormant — companion is SSOT)
 - [x] Do not touch FFT gate-register / prod flags in the same PR
 - [x] Playground harness absorb (`lib/playground` + `lib/pages/playground` → `features/playground`) — then **removed** 2026-07-15 (Studio MCP only for any return)
 - [x] Empty `lib/` removed
 
 ## Optional next (needs approve)
 
-- [x] ~~Refresh `docs/architecture/reliance-mapping.snapshot.json`~~ — **retired 2026-07-17** (Collapse `components-V2` residue). Root aliases `export:reliance-mapping` / `check:reliance-mapping-drift` **removed** the same day.
-- [x] ~~`docs/architecture/reliance-graph.snapshot.json` / `route-coverage.snapshot.json`~~ — **retired 2026-07-17** (stale Collapse-era evidence; not Living Target SSOT). Root aliases `export:reliance-graph` · `export:route-coverage` · `check:reliance-graph-drift` · `check:reliance-coverage` · `check:route-coverage-drift` · `check:import-boundaries` **removed** the same day. Live package/feature boundaries = ARCH-024 + Vitest (`feature-db-boundary` · ui/auth boundary tests). Greenfield control-plane graph only after Approved Docs ADR + implement slice (no Collapse recover).
+- [x] ~~Reliance mapping / graph / route-coverage snapshots~~ — **retired 2026-07-17** (Collapse residue). Root aliases removed. Live package/feature boundaries = ARCH-024 + Vitest (`feature-db-boundary` · ui/auth boundary tests). Greenfield control-plane graph only after Approved Docs ADR + implement slice (no Collapse recover).
 - Product phases (`/client` workspace restore, FFT P3 flags, SaaS billing/2FA) stay out of this lane
 
 ## Closed this pass (2026-07-12)

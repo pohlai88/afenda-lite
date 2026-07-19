@@ -6,12 +6,12 @@ Farm routing per domain keyword. Always also load: main [SKILL.md](SKILL.md) and
 
 | Scope keyword | LOAD farms (order) | Tier A authority | Farm evidence | Minimum checks |
 |---------------|-------------------|------------------|---------------|----------------|
-| `repository` | router → doc-integrity → repo-housekeeping | DOC-001…003 · AGENTS.md | — | `check:docs-naming`, `check:docs-trunk-ban`, `check:doc-integrity`, `pnpm lint`, `pnpm typecheck` |
+| `repository` | router → doc-integrity → repo-housekeeping | doc-control-rules · AGENTS.md · docs-V2 | — | `check:docs-trunk-ban`, `pnpm lint`, `pnpm typecheck` (Living docs checks N/A while tree absent) |
 | `ui-system` | router → frontend-scaffold · ui-compose (when product UI / handroll / visual consistency) | ADR-010 · ARCH-024 § ui-system · tokens.css · Geist map | compose `SKILL.md` + `reference.md` | `pnpm check:ui-system` (ui-system consistency + web compose-redflags F* + compose-suitability C1–C3 + ui-boundary); matrix build when RSC/structural/CSS-font |
 | `ui-compose` | router → ui-compose → frontend-scaffold (routes only) → frontend-ui-engineering (method only) | ADR-010 · ARCH-024 · tokens.css · apps/web Geist map | [`.cursor/skills/afenda-elite-ui-compose/SKILL.md`](../afenda-elite-ui-compose/SKILL.md) + `reference.md` (incl. UI-CAP / promotion rule) | Verification matrix: floor `pnpm check:ui-system` (F*+C*); capability findings are structured `UI-CAP-*` (not new F*/C*); build when matrix requires; disk: skill + catalog + Elite router + LOAD pointers |
 | `studio-dna` / `shadcn-ui` | router → shadcn-ui → ui-compose (after promote) | ADR-010 · ARCH-015 · ARCH-024 · ui-system.mdc | [`dna-ledger.json`](../shadcn-ui/dna-ledger.json) · [`dna-ledger.md`](../shadcn-ui/dna-ledger.md) · [`SKILL.md`](../shadcn-ui/SKILL.md) | Disk: `Test-Path` skill files + ledger JSON parse; `packages/ui-system/components.json` has no `registries`; `apps/web/components.json` / `shadcn-studio` absent-by-design until Method A; after promote: `pnpm check:ui-system`. No `check:dna-ledger` (HITL only — Unevaluated) |
-| `api` | router → api-contract | ARCH-029 · API-* · REST-* · OPEN-* | [`completeness.md`](../afenda-elite-api-contract/completeness.md) | `check:doc-integrity`, `check:openapi`, `pnpm typecheck` |
-| `modules` | router → backend-modules → module-readiness | ARCH-006 · ARCH-022 · MOD-002 | per-pack `*-MOD-009/010` | `check:module-quality` |
+| `api` | router → api-contract | docs-V2/api · api-contract companions | [`completeness.md`](../afenda-elite-api-contract/completeness.md) | `check:openapi`, `pnpm typecheck` |
+| `modules` | router → backend-modules → module-readiness | ARCH-006 · ARCH-022 · mod-readiness-rules | companions + Living packs when restored | `check:module-quality` when Living packs present |
 | `fft` | router → feed-farm-trade | FFT-MOD-* | [`completeness.md`](../feed-farm-trade/completeness.md) · [`verify.md`](../feed-farm-trade/verify.md) | farm verify commands from skill |
 | `phase-I` | router → implementation-slices | GUIDE-018 | [`slice-map.md`](../afenda-elite-implementation-slices/slice-map.md) | per-row Verify column |
 | `neon-auth` | router → implementation-slices → neon-tenancy | ARCH-023 · ARCH-026 · ARCH-027 · AGENTS | [`neon-auth-slice-map.md`](../afenda-elite-implementation-slices/neon-auth-slice-map.md) · [`neon-slice-score.md`](../afenda-elite-implementation-slices/neon-slice-score.md) | per-row Floor verify · Neon Slice Score · independent APPROVED; `validate:neon-env` when env touched |
@@ -51,13 +51,12 @@ Total root scripts: ~93 in `package.json`. Gated count: ~56. Live controls: ~37.
 ## Scope discovery patterns
 
 ### By file pattern
-- `.md` under `docs/` → `repository`
+- `.md` under Living `docs/` (when restored) → `repository`
+- `docs-V2/**` Scratch packs → matching domain (`api` · `docs` · `monorepo` · …)
 - `packages/ui-system/**` → `ui-system`
-- `docs/api/**` → `api`
-- `docs/modules/**` → `modules`
-- `docs/modules/feed-farm-trade/**` → `fft`
-- `docs/guides/GUIDE-018-*` → `phase-I`
-- `docs/scratch/neon-auth-optimisation/**` or `.cursor/skills/afenda-elite-implementation-slices/neon-*` → `neon-auth`
+- `docs-V2/api/**` or api-contract companions → `api`
+- Living `docs/modules/**` (when restored) → `modules` / `fft`
+- `.cursor/skills/afenda-elite-implementation-slices/**` → `phase-I` / `neon-auth`
 
 ### By user keyword
 - "audit", "alignment", "doc-to-code" → auto-select based on mentioned domains

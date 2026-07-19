@@ -4,9 +4,9 @@
 |-------|-------|
 | Surface | `docs-V2/api/README.md` |
 | Authority | **Scratch** — api-and-interface-design + disk `modules/platform/schemas/**` |
-| Updated | 2026-07-19 |
+| Updated | 2026-07-20 |
 
-Stable wire contracts for mutations and RH JSON. HTTP allowlist: [rest.md](rest.md).
+Stable wire contracts for mutations and RH JSON. HTTP allowlist: [rest.md](rest.md). Server Actions on disk: [actions.md](actions.md).
 
 ---
 
@@ -14,7 +14,7 @@ Stable wire contracts for mutations and RH JSON. HTTP allowlist: [rest.md](rest.
 
 | Need | Contract | Return |
 |------|----------|--------|
-| UI mutation | Server Action (`'use server'`) | `ActionResult<T>` |
+| UI mutation | Server Action (`'use server'`) — [actions.md](actions.md) | `ActionResult<T>` |
 | UI read | RSC → domain | Typed domain result (not RH) |
 | Health · Neon Auth · session · draft XHR | Route Handler | See [rest.md](rest.md) wire shapes |
 
@@ -51,9 +51,11 @@ Full TS floor: [../discipline/README.md](../discipline/README.md).
 
 ## OpenAPI
 
-Machine Zod helpers live under `modules/platform/schemas/openapi-zod.ts`. Generated artifact: [`OPEN-001-openapi.yaml`](OPEN-001-openapi.yaml) (api-now health + draft only). Do **not** invent offline REST catalogues — only ship RH paths that exist on disk ([rest.md](rest.md)).
+Machine Zod helpers live under `modules/platform/schemas/openapi-zod.ts`. Generated artifact: [`OPEN-001-openapi.yaml`](OPEN-001-openapi.yaml) (api-now health + draft only). Do **not** invent offline REST catalogues — only ship RH paths that exist on disk ([rest.md](rest.md)). Do **not** hand-edit the YAML to clear drift — fix Zod / `scripts/generate-openapi.mts`, then `pnpm openapi:generate`.
 
-**Docs consumer:** `@afenda/docs` (`apps/docs`) loads this YAML via Fumadocs `createOpenAPI` + `generateFiles` — not product Swagger under `apps/web`. Practices: [../docs/openapi.md](../docs/openapi.md) · automation: [../docs/automation.md](../docs/automation.md) · pack [../docs/README.md](../docs/README.md).
+**Verified (2026-07-19):** `pnpm openapi:generate && pnpm check:openapi` exit 0 — YAML byte-matches generator (aligned with Zod; not hand-edit, not stale).
+
+**Docs consumer:** `@afenda/docs` (`apps/docs`) loads this YAML via Fumadocs `createOpenAPI` + `generateFiles` — not product Swagger under `apps/web`; never copy into `apps/docs/openapi/`. Practices: [../docs/openapi.md](../docs/openapi.md) · automation: [../docs/automation.md](../docs/automation.md) · pack [../docs/README.md](../docs/README.md).
 
 ---
 
@@ -75,6 +77,7 @@ Machine Zod helpers live under `modules/platform/schemas/openapi-zod.ts`. Genera
 2. Disk: modules/platform/schemas/action-result.ts · api-error.ts (no tutorial `{ success, data }` ActionResult)
 3. pnpm openapi:generate && pnpm check:openapi
 4. Re-probe RH inventory: disk apps/web/app/api/** ↔ rest.md
+5. Re-probe Actions: disk apps/web/app/actions/** ↔ actions.md
 ```
 
-Companion: [rest.md](rest.md) · [../nextjs/data.md](../nextjs/data.md) · [../observability/README.md](../observability/README.md).
+Companion: [rest.md](rest.md) · [actions.md](actions.md) · [../modules/README.md](../modules/README.md) · [../nextjs/data.md](../nextjs/data.md) · [../observability/README.md](../observability/README.md).

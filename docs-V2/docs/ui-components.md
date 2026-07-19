@@ -3,13 +3,59 @@
 | Field | Value |
 |-------|-------|
 | Surface | `docs-V2/docs/ui-components.md` |
-| Authority | **Scratch** — [ui.md](ui.md) status legend · disk `apps/docs/components/mdx.tsx` |
+| Authority | **Scratch** — upstream [Components](https://fumadocs.dev/docs/ui/components) · [ui.md](ui.md) status legend · disk `@afenda/docs` |
+| Status | **Active** — CLI-owned Radix UI components under `apps/docs/components` |
 | Audience | Engineers writing narrative MDX or extending the MDX registry |
 | Updated | 2026-07-19 |
 
-Component catalog for Fumadocs UI in Lite. Authoring habits (frontmatter, anti-patterns) stay in [practices.md](practices.md). This file is the **SSOT for which components are allowed and their status**.
+This file is the **SSOT for which Fumadocs UI components are wired**. Markdown/MDX syntax: [markdown.md](markdown.md). Authoring habits: [practices.md](practices.md). Layout chrome: [ui-layouts.md](ui-layouts.md). CLI install: [cli.md](cli.md).
 
-Registry disk: `apps/docs/components/mdx.tsx` · `source.config.ts` sets `providerImportSource: "@/components/mdx"`. Live samples: `apps/docs/content/docs/guide.mdx` (reference — not expanded by this pack).
+Disk: `apps/docs/components/*.tsx` (CLI) · `components/mdx.tsx` · `app/docs/[[...slug]]/page.tsx` · `app/layout.tsx` · `lib/layout.shared.tsx` · `source.config.ts`. Samples: `content/docs/guide.mdx`.
+
+---
+
+## Overview
+
+| Concern | Disk |
+|---------|------|
+| Owned UI components | `components/{accordion,banner,callout,…}.tsx` via Fumadocs CLI (`uiLibrary: radix-ui`) |
+| Default MDX + registry | `components/mdx.tsx` — imports local `@/components/*` |
+| Relative Link | `a: createRelativeLink(source, page)` on page RSC |
+| Inline TOC items | Page overrides `InlineTOC` with `page.data.toc` — [get-toc.md](get-toc.md) |
+| Banner | `app/layout.tsx` → `@/components/banner` |
+| GitHub Info | `lib/layout.shared.tsx` → `@/components/github-info` |
+| Graph View | `components/graph-view.tsx` + `lib/build-graph.ts` + `extractLinkReferences` |
+| Feedback | Page mount + `lib/github-feedback.ts` → GitHub Discussions |
+| Auto Type Table | `fumadocs-typescript` + `lib/docs-typescript.ts` — detail [typescript.md](typescript.md) |
+| Dynamic Code Block | `fumadocs-ui/components/dynamic-codeblock` (package — not in CLI registry) |
+
+---
+
+## Configured catalog (Shipped)
+
+| Component | Wire | Source |
+|-----------|------|--------|
+| **Accordion** | MDX `Accordion` / `Accordions` | CLI → `components/accordion.tsx` + `ui/accordion.tsx` |
+| **Auto Type Table** | MDX `AutoTypeTable` | Package `fumadocs-typescript/ui` — [typescript.md](typescript.md) |
+| **Banner** | Root layout | CLI → `components/banner.tsx` · `id="afenda-lite-docs"` |
+| **Callout** | MDX `Callout` (JSX only · no `:::tip`) | CLI → `components/callout.tsx` — [remark-admonition.md](remark-admonition.md) |
+| **Card / Cards** | MDX `Card` / `Cards` | CLI → `components/card.tsx` |
+| **Code Block** | MDX `pre` → `CodeBlock`/`Pre` | CLI → `components/codeblock.tsx` |
+| **Code Block (Dynamic)** | MDX `DynamicCodeBlock` | Package `fumadocs-ui` |
+| **Files** | MDX `Files` / `Folder` / `File` (JSX only · no `` ```files ``) | CLI → `components/files.tsx` — [remark-mdx-files.md](remark-mdx-files.md) |
+| **GitHub Info** | Docs layout `links` custom item | CLI → `components/github-info.tsx` · **no token** |
+| **Graph View** | MDX `GraphView` → `DocsGraphView` | CLI → `components/graph-view.tsx` |
+| **Heading** | MDX `h1`–`h6` | CLI → `components/heading.tsx` |
+| **Zoomable Image** | MDX `img` → `ImageZoom` | CLI → `components/image-zoom.tsx` + `app/image-zoom.css` · sizes via default Remark Image — [remark-image.md](remark-image.md) |
+| **Inline TOC** | MDX `InlineTOC` | CLI → `components/inline-toc.tsx` |
+| **Steps** | MDX `Steps` / `Step` (JSX only · no heading `[step]`) | CLI → `components/steps.tsx` — [remark-steps.md](remark-steps.md) |
+| **Tabs** | MDX `Tabs` / `Tab` | CLI → `components/tabs.tsx` + `ui/tabs.tsx` |
+| **Type Table** | MDX `TypeTable` | CLI → `components/type-table.tsx` |
+| **Feedback** | Page `Feedback` + `FeedbackText` | CLI → `components/feedback/*` · actions `lib/github-feedback.ts` |
+| Relative Link | `createRelativeLink` | Package `fumadocs-core` |
+| OpenAPI | `APIPage` / `OpenAPIPage` | [openapi.md](openapi.md) · [openapi-api-page.md](openapi-api-page.md) |
+
+Primitives pulled with CLI: `components/ui/{button,accordion,tabs,collapsible}.tsx` · `lib/cn.ts` (`cnfast`).
 
 ---
 
@@ -17,114 +63,77 @@ Registry disk: `apps/docs/components/mdx.tsx` · `source.config.ts` sets `provid
 
 ```tsx
 import defaultMdxComponents from "fumadocs-ui/mdx";
-// + Accordion, Tabs, Steps, Files, TypeTable
-// + APIPage / OpenAPIPage
+import { Accordion, Accordions } from "@/components/accordion";
+import { Callout } from "@/components/callout";
+import { Card, Cards } from "@/components/card";
+// …local CLI components…
 
 export function getMDXComponents(components?) {
   return {
     ...defaultMdxComponents,
-    Accordion, Accordions, File, Files, Folder,
-    Step, Steps, Tab, Tabs, TypeTable,
-    APIPage, OpenAPIPage: APIPage,
+    Callout, Card, Cards,
+    h1: (props) => <Heading as="h1" {...props} />,
+    // …
+    img: MdxZoomImage,
+    pre: (props) => <CodeBlock {...props}><Pre>{props.children}</Pre></CodeBlock>,
+    GraphView: DocsGraphView,
     ...components,
   };
 }
 ```
 
-Defaults from `fumadocs-ui/mdx` include Callout, Cards/Card, code blocks, and standard MDX element mappings. Explicit imports add the interactive set below.
-
 ---
 
-## Shipped (use in narrative MDX)
+## Graph View config
 
-| Component | Source | Typical use |
-|-----------|--------|-------------|
-| `Callout` | `fumadocs-ui/mdx` defaults | Warnings · Day-1 boundaries |
-| `Cards` / `Card` | `fumadocs-ui/mdx` defaults | Section landings · internal links |
-| Code blocks | `fumadocs-ui/mdx` defaults | Fenced examples (` ```tsx `) |
-| `Tabs` / `Tab` | `fumadocs-ui/components/tabs` | Command variants |
-| `Steps` / `Step` | `fumadocs-ui/components/steps` | Pipelines |
-| `Files` / `Folder` / `File` | `fumadocs-ui/components/files` | Content trees |
-| `Accordions` / `Accordion` | `fumadocs-ui/components/accordion` | Pitfalls / FAQ |
-| `TypeTable` | `fumadocs-ui/components/type-table` | Manual field tables only |
-| `APIPage` / `OpenAPIPage` | `@/components/api-page` | Generated OpenAPI ops — [openapi.md](openapi.md) |
-
-```mdx
-<Callout type="warn" title="Not DOC-001">
-  Fumadocs is a Day-1 mirror — not Controlled documentation authority.
-</Callout>
-
-<Cards>
-  <Card title="HTTP API" href="/docs/api">Generated OpenAPI operations.</Card>
-</Cards>
-
-<Tabs items={["pnpm", "npm"]}>
-  <Tab value="pnpm">pnpm --filter @afenda/docs dev</Tab>
-  <Tab value="npm">npm run dev --workspace @afenda/docs</Tab>
-</Tabs>
+```ts
+// source.config.ts
+export const docs = defineDocs({
+  dir: "content/docs",
+  docs: {
+    postprocess: { extractLinkReferences: true },
+  },
+});
 ```
 
-Prefer generated API pages over pasting HTTP tables. Prefer [ui.md](ui.md) / Scratch packs over inventing product UI in MDX.
+Deps: `react-force-graph-2d` · `d3-force` (CLI Graph View).
 
 ---
 
-## Documented / not wired
+## Feedback (GitHub Discussions)
 
-Upstream Fumadocs UI components **not** registered in Lite `getMDXComponents` and **not** used in app layouts. Config shape only — do not claim they work in MDX until registered + demoed.
+Full Framework Mode map (page · block · Discussions · ops): **[feedback.md](feedback.md)**.
 
-| Component | Upstream path | Notes |
-|-----------|---------------|-------|
-| `Banner` | `fumadocs-ui/components/banner` | Site-wide announcement; often layout-level, not MDX |
-| `ImageZoom` | `fumadocs-ui/components/image-zoom` | Zoomable images |
-| `InlineTOC` | `fumadocs-ui/components/inline-toc` | In-body TOC (page already has `DocsPage` toc) |
-| `GithubInfo` | `fumadocs-ui/components/github-info` | Repo meta chrome |
-| `DynamicCodeBlock` | `fumadocs-ui/components/dynamic-codeblock` | Runtime-highlighted code |
-| Graph view | `fumadocs-ui/components/graph-view` | Link graph visualization |
-| Codeblock deep APIs | Upstream codeblock docs | Beyond default fenced blocks from `fumadocs-ui/mdx` |
-
-**To wire later (checklist):**
-
-```text
-1. Import from fumadocs-ui/components/<name>
-2. Register in getMDXComponents (or layout for Banner)
-3. Add a guide.mdx sample
-4. pnpm --filter @afenda/docs typecheck · lint:links · spot-check :3001
-```
-
-Do not use Fumadocs CLI local install as the default path — [ui.md](ui.md) CLI stance.
+| Piece | Disk |
+|-------|------|
+| UI | `components/feedback/client.tsx` · `schema.ts` |
+| Actions | `lib/github-feedback.ts` |
+| Mount | `[[...slug]]/page.tsx` — `FeedbackText` + `Feedback` |
+| Block IDs | `remarkBlockId` + `addDataAttribute: "feedback"` |
+| Ops | **Opened** — set `GITHUB_APP_*` after App install ([feedback.md](feedback.md)) |
 
 ---
 
-## Out of scope (Day-1 ban)
+## Banned (unchanged)
 
 | Surface | Why |
 |---------|-----|
-| `AutoTypeTable` / Twoslash | Extra TS extract / highlight stack — not Lite docs Day-1 |
 | `ComponentPreview` · `CopyCommandButton` | 8bitcn / registry preview patterns |
 | `@8bitcn/*` · paid shadcn registries | Explicit pack ban — [README.md](README.md) |
-| Product `@afenda/ui-system` in docs MDX | Product design system ≠ docs mirror; needs explicit slice |
-| Vendor skills `fumadocs-component-docs` · `fumadocs-registry-integration` | N/A for Lite docs |
-
----
-
-## OpenAPI UI (related, not MDX chrome)
-
-| Status | **Shipped** |
-|--------|-------------|
-| Wire | `APIPage` in MDX registry + preload on operation pages |
-| Styles | `fumadocs-openapi/css/preset.css` — [ui.md](ui.md) Theme |
-| Contract | [openapi.md](openapi.md) |
-
-Do not grow a second Swagger UI under `apps/web`.
+| Product `@afenda/ui-system` in docs MDX | Product design system ≠ docs shell |
+| `GITHUB_TOKEN` / product secrets on docs | Docs project boundary — GithubInfo runs without token |
 
 ---
 
 ## Verify
 
 ```text
-1. Read apps/docs/components/mdx.tsx — Shipped table matches exports
-2. Grep apps/docs for Banner|ImageZoom|AutoTypeTable|ComponentPreview — expect no product wiring
-3. After registry edits: generate:source · lint:links · typecheck
+1. apps/docs/components/*.tsx present for catalog rows (CLI-owned)
+2. mdx.tsx imports @/components/* (not fumadocs-ui/components/* for owned set)
+3. Banner + GithubInfo use local components; global.css imports ./image-zoom.css
+4. Feedback wire — [feedback.md](feedback.md)
+5. pnpm --filter @afenda/docs typecheck · test -- docs-openapi-wire
+6. Spot-check /docs/guide (UI present; live submit deferred until GitHub App ops open)
 ```
 
-Companion: [practices.md](practices.md) · [ui.md](ui.md) · [ui-layouts.md](ui-layouts.md) · [openapi.md](openapi.md).
+Companion: [typescript.md](typescript.md) · [feedback.md](feedback.md) · [cli.md](cli.md) · [practices.md](practices.md) · [ui.md](ui.md) · [ui-layouts.md](ui-layouts.md) · [openapi.md](openapi.md).

@@ -1,7 +1,7 @@
 # Adapter map
 
 **Like api-now for backend:** which driving adapters call which module entrypoints.  
-**REST catalog / HTTP classification:** [../afenda-elite-api-contract/api-now.md](../afenda-elite-api-contract/api-now.md) · [docs/api/REST-001-rest-resources.md](../../../docs/api/REST-001-rest-resources.md)
+**REST catalog / HTTP classification:** [../afenda-elite-api-contract/api-now.md](../afenda-elite-api-contract/api-now.md) · [docs-V2/api/rest.md](../../../docs-V2/api/rest.md)
 
 **Path truth:** Logical names below (`app/actions`, `modules/*`) are **Target/Living shape**. Physical Target home is `apps/web/…`. Rows mark **on disk** vs **planned**. Do not recover Collapse roots.
 
@@ -9,19 +9,24 @@
 
 ## Server Actions (logical `app/actions/` → Target `apps/web/app/actions/`)
 
+Scratch catalogue (disk-honest): [docs-V2/api/actions.md](../../../docs-V2/api/actions.md).
+
 | File | Disk | Module entrypoints (typical) | Notes |
 |------|------|------------------------------|-------|
+| `auth-credentials.ts` | **yes** | Identity `signInSchema` + `@afenda/auth` credentials | `signInAction` → `ActionResult`; `signOutAction` redirects (`void`) |
+| `permission-gate.ts` | **yes** | Identity `sessionHasPermission` | Shared Action denial → `ActionFailure \| null` (not a UI mutation entry) |
 | `invite-org-member.ts` | **yes** (I1.3 / I2.3 / I3.1 / N11) | Identity invite schemas + shared session permission gate (`clients.invite`) + `@afenda/auth` `inviteOrgMember` + Platform `recordRbacAudit` | Operator invite; Origin = `APP_URL`; hard-tenancy audit write |
 | `assign-org-role.ts` | **yes** (I3.1 / N11) | Identity `assignOrgRole` + shared session permission gate (`org.roles.manage`) + Platform `recordRbacAudit` | Platform role assign; ActionResult + audit |
 | `revoke-org-role.ts` | **yes** (I3.1 / N11) | Identity `revokeOrgRole` + shared session permission gate (`org.roles.manage`) + Platform `recordRbacAudit` | Soft-revoke; ActionResult + audit |
+| `client-declaration-action-session.ts` | **yes** | Declarations client Action session gate | Shared by draft/submit Actions |
 | `declaration-draft.ts` | **yes** (I2.4 / N11) | Declarations draft read/write + shared session permission gate (`declarations.read` / `declarations.manage`) | Client-owned org/email predicates; ActionResult; draft lock after submit |
 | `submit-client-declaration.ts` | **yes** (N17) | Declarations `submitClientDeclaration` + shared session permission gate (`declarations.manage`) | Finalize under hard org+email; idempotent confirmation; ActionResult |
 | `account.ts` | planned | `modules/identity/*` | Account session / Neon-owned fields |
-| `admin.ts` | planned | `modules/identity/*`, platform helpers | Broader org-admin chrome (assign/revoke shipped as discrete Actions) |
+| `admin.ts` | planned | `modules/identity/*`, platform helpers | Broader org-admin chrome — **not** on disk; assign/revoke/invite are discrete Actions above |
 | `client.ts` | planned | `modules/identity/*`, `modules/declarations/*` | Invite stamps + survey scope |
 | `declarations.ts` | planned | `modules/declarations/domain/**` | Broader Declarations writes (submit shipped as discrete Action) |
 | `surveys.ts` | planned | `modules/declarations/domain/**` | Draft create stamps `organizationId` |
-| `fft.ts` | planned | `modules/fft/domain/**` | Feed Farm Trade |
+| `fft.ts` | planned | `modules/fft/domain/**` | Feed Farm Trade — frozen 2B–2D until program reopen |
 
 There is **no** `app/actions/trade.ts`.
 
@@ -41,7 +46,11 @@ import { parseSchema } from "@/modules/platform/schemas/common"
 | ALL | `/api/auth/[...path]` | **yes** | `@afenda/auth` `createAuthApiHandlers` (not `modules/identity/auth`) |
 | GET | `/api/health/liveness` | **yes** (I2.4) | `modules/platform/domain/health` · `api/json-response` |
 | GET | `/api/health/readiness` | **yes** (I2.4) | `modules/platform/domain/health` · `api/json-response` |
+| GET | `/api/session/sync-cookies` | **yes** | `@afenda/auth` session cookie bridge (excluded from OpenAPI YAML) |
+| GET | `/api/session/ensure-active-organization` | **yes** | `@afenda/auth` active-org persistence (excluded from OpenAPI YAML) |
 | GET/PUT/PATCH/POST | `/api/client/declaration-draft` | **yes** (I2.4) | `modules/declarations/api/client-declaration-draft-route` · domain `declaration-draft` |
+
+HTTP allowlist Scratch: [docs-V2/api/rest.md](../../../docs-V2/api/rest.md) (exactly 6 `route.ts` trees).
 
 **Allowlist rule:** Do not add web-UI list/read handlers for declarations/clients — use RSC → module domain.
 

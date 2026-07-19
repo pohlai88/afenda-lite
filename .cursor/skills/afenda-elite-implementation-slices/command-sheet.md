@@ -37,9 +37,9 @@ COMMIT: only when user explicitly asks
 ```text
 1. .cursor/skills/afenda-elite-implementation-slices/SKILL.md
 2. .cursor/skills/afenda-elite-implementation-slices/slice-map.md  (row for PHASE_ID / SLICE_ID)
-3. docs/guides/GUIDE-018-fullstack-e2e-integration-program.md       (Phase I)
-   OR docs/architecture/ARCH-028-implementation-slices.md          (S* residual)
-4. Sibling ARCH/MOD/FFT files named in the slice-map row
+3. GUIDE-018 / ARCH-028 operative facts in slice-map + this command-sheet
+   (Living GUIDE-018 / ARCH-028 bodies dormant — do not require docs/guides or docs/architecture)
+4. Sibling farm companions / Scratch docs-V2 named in the slice-map row
 5. Each farm SKILL.md listed in the LOAD column (in order)
 6. Inventory disk → implement gap → verify → evidence → STOP
 ```

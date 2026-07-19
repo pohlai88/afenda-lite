@@ -43,7 +43,7 @@ Any of: health/draft handler shape change; shared error/envelope change; approve
 | Item | Status |
 |------|--------|
 | Import live Zod (drop inline mirrors) | **DONE** — `modules/platform/schemas/openapi-zod` + module schemas |
-| Fumadocs `createOpenAPI({ input: ['../../docs-V2/api/OPEN-001-openapi.yaml'] })` | **DONE** — `@afenda/docs` (`apps/docs`) Day-1 mirror; `pnpm --filter @afenda/docs generate:openapi-docs` |
+| Fumadocs SchemaRecord `input: { [OPENAPI_DOCUMENT_ID]: OPENAPI_DOCUMENT_PATH }` | **DONE** — `@afenda/docs` cwd-independent; `pnpm --filter @afenda/docs generate:openapi-docs` |
 | Contract-only ops with `x-afenda-status: contract-only` | Forward — only when a real external consumer exists |
 
 ## Anti-mixing

@@ -5,15 +5,21 @@ description: Audit governed Afenda documentation for document-to-document confli
 
 # Afenda Elite — Documentation Integrity
 
-Audit **doc↔doc** integrity under `docs/` with reproducible validator evidence and aspect-aware authority analysis.
+Audit **doc↔doc** integrity under Living `docs/` with reproducible validator evidence and aspect-aware authority analysis. Living `docs/` is **dormant** on this checkout — CLI runs are **N/A** until Docs-lane reopen (scripts skip when the tree is absent).
 
 Announce: "I'm using afenda-elite-doc-integrity — validating documentation evidence before semantic conflict analysis."
 
 ```text
-LOAD: DOC-001…003 · authority-map.yaml · reference.md · checks.md
+LOAD:
+  ../afenda-elite-doc-control/doc-control-rules.md   # DOC-001…003 operative
+  authority-map.yaml · reference.md · checks.md
+POSTURE:
+  Living docs/ absent → audit CLI N/A (do not invent Living trees; fixtures under scripts/ are test doubles only)
 ROOT: first change to the repository containing this skill, or pass --root <absolute-repository-path>
 RUN: node .cursor/skills/afenda-elite-doc-integrity/scripts/audit-docs.mjs --scope <dir-or-file.md> --format json
+  (only when Living docs/ exists on disk)
 NEVER: claim Pass/none/full coverage without validator evidence
+NEVER: restore Living docs/ without Docs-lane · claim coverage against absent trees
 NEVER: reorder, move, reopen, or retire locked material without explicit approval
 NEVER: edit a closed controlled document unless the user or accountable owner explicitly reopens the named document or bounded scope
 NEVER: treat historical Change Log body rows as Living next-pointer authority (header Version ↔ latest row only)
@@ -174,4 +180,4 @@ Never say “no findings” when only a spot check was performed.
 - [authority-map.yaml](authority-map.yaml) — aspect precedence and cross-subject sets
 - [validator](scripts/audit-docs.mjs) — deterministic and implemented semantic checks
 - [remediator](scripts/remediate-docs.mjs) — hash-guarded plan/apply workflow for allowlisted `AUTO` repairs
-- [DOC-001](../../../docs/_control/DOC-001-documentation-control-standard.md) · [DOC-002](../../../docs/_control/DOC-002-documentation-register.md) · [DOC-003](../../../docs/_control/DOC-003-controlled-document-template.md)
+- DOC control: [doc-control-rules](../afenda-elite-doc-control/doc-control-rules.md)

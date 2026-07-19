@@ -7,6 +7,10 @@
 | Audience | Engineers adding narrative pages or regenerating API MDX |
 | Updated | 2026-07-19 |
 
+**Content source (Fumadocs MDX vs CMS / Local Markdown / MDX Remote):** [content-source.md](content-source.md) · [sanity.md](sanity.md) · [local-md.md](local-md.md) · [mdx-remote.md](mdx-remote.md) (Outside).
+
+**Page slugs · page tree · meta.json conventions:** [page-conventions.md](page-conventions.md) (SSOT).
+
 ---
 
 ## Layout (English-only)
@@ -22,7 +26,11 @@ apps/docs/content/docs/
     <generated-op>.mdx      # generateFiles — do not hand-edit forever
 ```
 
-`source.config.ts` points `defineDocs({ dir: "content/docs" })` and `providerImportSource: "@/components/mdx"`. Loader `baseUrl: "/docs"`.
+`source.config.ts` points `defineDocs({ dir: "content/docs" })` and `providerImportSource: "@/components/mdx"`. Loader `baseUrl: "/docs"` + `docs.toFumadocsSource()` — **not** BaseHub / Sanity / Payload — [content-source.md](content-source.md). Sidebar items come from this tree via `DocsLayout` `tree={source.pageTree}` — [ui-layouts.md](ui-layouts.md) DocsLayout.
+
+Do **not** mark folders `"root": true` for Layout Tabs — Lite sets `tabs={false}` (Guide/API are Layout Links).
+
+Do **not** add `permission` (or other access) frontmatter for gated Loader filters — public docs lock until reopen — [access-control.md](access-control.md).
 
 **Fumadocs UI configuration** (theme, layouts, MDX component status): [ui.md](ui.md) · [ui-layouts.md](ui-layouts.md) · [ui-components.md](ui-components.md) — not this file.
 
@@ -49,7 +57,7 @@ Hand `api/index.mdx` is the narrative landing page; regenerating ops must **pres
 |--------|------|
 | `generate:source` | `fumadocs-mdx` → `.source/` |
 | `generate:openapi-docs` | `generateFiles({ input: openapi })` → EN operation MDX |
-| `lint:links` | `next-validate-link` over content |
+| `lint:links` | `next-validate-link` over content — [validate-links.md](validate-links.md) |
 | `predev` / `prebuild` | Ensure source (+ OpenAPI pages on build) |
 
 See [automation.md](automation.md).
@@ -88,4 +96,4 @@ See [automation.md](automation.md).
 5. pnpm --filter @afenda/docs build                   # SSG smoke
 ```
 
-Companion: [practices.md](practices.md) · [ui.md](ui.md) · [openapi.md](openapi.md) · [automation.md](automation.md).
+Companion: [page-conventions.md](page-conventions.md) · [practices.md](practices.md) · [ui.md](ui.md) · [openapi.md](openapi.md) · [automation.md](automation.md).

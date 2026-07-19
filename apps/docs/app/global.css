@@ -1,7 +1,9 @@
+/* Fumadocs Themes SSOT: docs-V2/docs/ui.md — color lock = neutral */
 @import "tailwindcss";
 @import "fumadocs-ui/css/neutral.css";
 @import "fumadocs-ui/css/preset.css";
 @import "fumadocs-openapi/css/preset.css";
+@import "./image-zoom.css";
 
 @source "../../../node_modules/fumadocs-ui/dist/**/*.{js,mjs}";
 @source "../../../node_modules/fumadocs-openapi/dist/**/*.{js,mjs}";

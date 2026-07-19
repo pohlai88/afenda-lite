@@ -115,7 +115,7 @@ Do not emit a standing pairwise caveat when coverage is complete, findings are z
 
 | Scope | Baseline | Disposition |
 | --- | --- | --- |
-| `docs/guides` full profile | **0** findings (navigator + Living GUIDE-017; Retired GUIDE stubs removed) | GUIDE-017 is the cross-cutting evidence/release-aggregation authority; Retired IDs remain register-only; do not restore `docs/guides/archive/`. |
-| `docs/api` full profile | Zero findings when coverage complete | Living rename/verify bar. |
-| `docs/modules/feed-farm-trade` full profile | Zero findings when coverage complete | Living rename/verify bar. |
+| Living `docs/**` (any) | **N/A** while tree absent (docs-V2 Scratch era) | Do not invent Living trees; CLI skips; fixtures under `scripts/` are test doubles only |
+| `docs/guides` full profile (when Living restored) | **0** findings (navigator + Living GUIDE-017) | GUIDE-017 cross-cutting evidence authority; do not restore `docs/guides/archive/` |
+| `docs/api` / FFT module packs (when Living restored) | Zero findings when coverage complete | Living rename/verify bar |
 

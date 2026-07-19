@@ -1,6 +1,6 @@
 # FE ↔ BE boundaries (contract-first)
 
-Hardens interfaces so the wrong thing is hard. Aligns with `/api-and-interface-design` and [docs/api/](../../../docs/api/).
+Hardens interfaces so the wrong thing is hard. Aligns with `/api-and-interface-design` and [`docs-V2/api`](../../../docs-V2/api/) + [api-contract](../afenda-elite-api-contract/SKILL.md).
 
 **Scaffold pass:** name routes and stub `Props` to match this contract. Do not implement Zod/ports yet.  
 **Wire pass:** enforce every rule below.
@@ -11,7 +11,7 @@ Hardens interfaces so the wrong thing is hard. Aligns with `/api-and-interface-d
 |------|-------|----------|
 | URL `params` / `searchParams` | **Untrusted** | Zod at page runner or action entry — then brand |
 | Server Action input | **Untrusted** | Zod → `ActionResult` |
-| Route Handler body/query | **Untrusted** | Zod → same error shape as [docs/api/API-002-error-contract.md](../../../docs/api/API-002-error-contract.md) |
+| Route Handler body/query | **Untrusted** | Zod → same error shape as api-contract / Platform `APIErrorBody` |
 | Module/domain internals | Trusted after boundary | No re-validation of already-parsed types |
 | Third-party HTTP responses | **Untrusted** | Parse before use |
 
@@ -76,7 +76,7 @@ Trade code path: `modules/fft` (never `modules/trade`). Schema map: `/afenda-eli
 ### Route Handlers
 
 ```typescript
-// docs/api/API-002-error-contract.md
+// APIErrorBody — see afenda-elite-api-contract / Platform schemas
 { error: { code: string; message: string; details?: unknown } }
 ```
 

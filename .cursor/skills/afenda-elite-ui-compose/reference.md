@@ -10,7 +10,7 @@ Companion to [SKILL.md](SKILL.md). **SKILL** = QUALITY ORDER, locks, hard rules,
 
 ## ERP token utilities (shipped)
 
-Disk SSOT: `packages/ui-system/src/styles/tokens.css` (public `@afenda/ui-system/styles.css`). Living authority: [ADR-010](../../../docs/architecture/adr/ADR-010-afenda-ui-system-flat-barrel.md) § D4.1 · [ARCH-024](../../../docs/architecture/ARCH-024-package-boundaries.md) § `@afenda/ui-system`. Lock: `packages/ui-system/__tests__/erp-tokens.test.ts`. **No parallel token file.** Do not promote scratch brand lanes (including Aerospace Ceramic). **Never** use or reintroduce `--foreground-quaternary`.
+Disk SSOT: `packages/ui-system/src/styles/tokens.css` (public `@afenda/ui-system/styles.css`). Operative authority: ADR-010 flat-barrel · ARCH-024 `@afenda/ui-system` (Living bodies dormant — AGENTS.md + this farm). Lock: `packages/ui-system/__tests__/erp-tokens.test.ts`. **No parallel token file.** Do not promote scratch brand lanes (including Aerospace Ceramic). **Never** use or reintroduce `--foreground-quaternary`.
 
 | Role | Utility | Notes |
 |------|---------|-------|

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="240" viewBox="0 0 640 240" role="img" aria-label="Afenda docs sample">
+  <rect width="640" height="240" fill="#f4f4f5"/>
+  <rect x="24" y="24" width="592" height="192" rx="8" fill="#e4e4e7"/>
+  <text x="320" y="120" text-anchor="middle" font-family="system-ui,sans-serif" font-size="28" fill="#18181b">Afenda-Lite Docs</text>
+  <text x="320" y="156" text-anchor="middle" font-family="system-ui,sans-serif" font-size="16" fill="#52525b">Zoomable Image sample</text>
+</svg>

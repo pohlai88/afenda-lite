@@ -14,9 +14,9 @@ description: >-
 
 | Program | Authority | IDs |
 |---------|-----------|-----|
-| **Phase I (current)** | [GUIDE-018](../../../docs/guides/GUIDE-018-fullstack-e2e-integration-program.md) | `I1.1`…`I7.*` |
-| **Scaffold (closed)** | [ARCH-028](../../../docs/architecture/ARCH-028-implementation-slices.md) | residual `S*` only — no inventing S9 |
-| **Neon Auth optimisation** | Living: ARCH-023 · ARCH-026 · GUIDE-018 · AGENTS · [neon-auth-slice-map](neon-auth-slice-map.md) | `N1`…`N18` — scratch discovers; score proves |
+| **Phase I (current)** | GUIDE-018 operative → [slice-map.md](slice-map.md) · [command-sheet.md](command-sheet.md) | `I1.1`…`I7.*` |
+| **Scaffold (closed)** | ARCH-028 operative → [slice-map.md](slice-map.md) | residual `S*` only — no inventing S9 |
+| **Neon Auth optimisation** | ARCH-023 · ARCH-026 · GUIDE-018 · AGENTS · [neon-auth-slice-map](neon-auth-slice-map.md) | `N1`…`N18` — scratch discovers; score proves |
 
 **Does not own:** FFT 2B–2D reopen, Docs ID/register invent, Collapse recovery, mass multi-phase finish, self-APPROVE of `N*`.
 
@@ -62,7 +62,7 @@ Not for: registering new doc IDs, FFT 2B–2D, housekeeping deletes, stacking mu
 2. Branch:
      N*  → neon-auth-slice-map row + neon-slice-score (+ neon-command-sheet if pasted)
      else → slice-map.md row (GUIDE-018 vs ARCH-028)
-3. Read Living authority for that ID (scratch is discovery only for N*).
+3. Read skill-local map/sheet for that ID (Living GUIDE-018 / ARCH-028 bodies dormant; scratch discovers for N* only).
 4. LOAD each farm SKILL.md listed (in order). For N*, load neon-vendor refs when mapped.
 5. Inventory disk for the primary path.
 6. Implement / audit / repair per MODE — gap only for this mission.

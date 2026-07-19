@@ -1,6 +1,6 @@
 # Module tree (Target shape · logical inventory)
 
-**Authority:** [ARCH-005](../../../docs/architecture/ARCH-005-backend-folder-map.md) · [ARCH-006](../../../docs/architecture/ARCH-006-bounded-contexts.md) · [ARCH-009](../../../docs/architecture/ARCH-009-modules-ownership-map.md) · [ARCH-022](../../../docs/architecture/ARCH-022-system-overview.md) · [ARCH-028](../../../docs/architecture/ARCH-028-implementation-slices.md)
+**Authority (operative IDs):** ARCH-005 folder map · ARCH-006 bounded contexts · ARCH-009 ownership · ARCH-022 system overview · ARCH-028 anti-contamination. Living bodies dormant — this companion + disk `apps/web/modules/**` are SSOT.
 
 | Kind | Path | Status on this checkout |
 |------|------|-------------------------|

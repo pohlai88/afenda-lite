@@ -11,13 +11,13 @@ paths:
 
 # Afenda Elite — Monorepo Discipline
 
-Day-to-day `@afenda/*` import and package-boundary rules for this checkout. Authority: [ARCH-024](../../../docs/architecture/ARCH-024-package-boundaries.md) · [ARCH-022](../../../docs/architecture/ARCH-022-system-overview.md). Governed extract/move/delete stays in [`afenda-elite-monorepo-refactor`](../afenda-elite-monorepo-refactor/SKILL.md); dead-code discovery in [`afenda-elite-repo-housekeeping`](../afenda-elite-repo-housekeeping/SKILL.md).
+Day-to-day `@afenda/*` import and package-boundary rules for this checkout. Authority: ARCH-024 · ARCH-022 operative → [LAYERS.md](LAYERS.md) + Scratch [`docs-V2/pnpm`](../../../docs-V2/pnpm/README.md) · [`docs-V2/monorepo`](../../../docs-V2/monorepo/README.md). Governed extract/move/delete stays in [`afenda-elite-monorepo-refactor`](../afenda-elite-monorepo-refactor/SKILL.md); dead-code discovery in [`afenda-elite-repo-housekeeping`](../afenda-elite-repo-housekeeping/SKILL.md).
 
 **Announce:** "I'm using afenda-elite-monorepo-discipline — checking package boundaries before cross-package edits."
 
 ```text
-LOAD: using-afenda-elite-skills · ARCH-024 · ARCH-022 · this skill
-SKIP: Xerp architecture-authority / PAS registries · scaffold:package templates · Storybook/docs app product restore · mega-package @afenda/shared
+LOAD: using-afenda-elite-skills · LAYERS.md · docs-V2/pnpm · docs-V2/monorepo · this skill
+SKIP: Living docs/architecture required LOAD · Xerp architecture-authority / PAS registries · scaffold:package templates · Storybook product restore · mega-package @afenda/shared
 LANE: Normalize (structure) or Fix (single illegal import) — one lane
 ```
 
@@ -81,6 +81,7 @@ Full diagram, forbidden pairs, and violation fixes: [LAYERS.md](LAYERS.md).
    ```
 
 6. **`catalog:` for shared externals.** Versions for deps listed in `pnpm-workspace.yaml` `catalog` / `catalogs` use `"catalog:"` (or `"catalog:<name>"`). Do not re-pin those versions in individual `package.json` files.
+   **Approved exception:** `@afenda/docs` pins `tailwindcss` + `@tailwindcss/postcss` `^4.3.3` (not `"catalog:"`) so fumadocs logical utilities (`-inset-s-*`) resolve. Catalog `^4` currently resolves PostCSS below 4.3 for `@afenda/web` — do **not** restore docs to `"catalog:"` and do **not** bump the default catalog without cause. Scratch: [`docs-V2/pnpm/README.md`](../../../docs-V2/pnpm/README.md) · [`docs-V2/docs/README.md`](../../../docs-V2/docs/README.md) failure-mode row.
 
 7. **No phantom dependencies.** A package may only import what is in its own `package.json` `dependencies` / `devDependencies`. Hoisting is not a contract.
 
@@ -123,7 +124,7 @@ Lite has **no** `pnpm scaffold:package`. Manual greenfield under `packages/<name
 [ ] 1. Name @afenda/<kebab> — private workspace package; type module
 [ ] 2. Directory packages/<name>/ with src/index.ts public surface
 [ ] 3. package.json exports map (typically "." → src/index.ts until a build step exists)
-[ ] 4. Internal deps: workspace:* only; shared externals: catalog: when listed in pnpm-workspace.yaml
+[ ] 4. Internal deps: workspace:* only; shared externals: catalog: when listed in pnpm-workspace.yaml (exception: `@afenda/docs` Tailwind pins — rule 6)
 [ ] 5. Layer rank assigned mentally against ARCH-024 DAG; no upward imports
 [ ] 6. pnpm-workspace.yaml already covers packages/* — confirm glob; then pnpm install
 [ ] 7. Update ARCH-024 package contract table (Docs lane; reopen if Control State Closed)
@@ -146,6 +147,21 @@ Lite has **no** `pnpm scaffold:package`. Manual greenfield under `packages/<name
 | Env product config | `@afenda/env` + ARCH-027 (never raw `process.env`) |
 
 ---
+
+## Discover resolved version (catalog vs pin)
+
+Do not trust `package.json` ranges alone — lockfile + store decide what PostCSS/Tailwind actually run. After any Tailwind or catalog touch:
+
+```bash
+# Docs pin (must be ≥ 4.3.3, not catalog:)
+pnpm --filter @afenda/docs list @tailwindcss/postcss tailwindcss --depth 0
+pnpm --filter @afenda/docs why @tailwindcss/postcss
+
+# Catalog consumer (may stay on older ^4 resolve — leave alone without cause)
+pnpm --filter @afenda/web list @tailwindcss/postcss tailwindcss --depth 0
+```
+
+Expect: docs → `4.3.3` both packages; web → catalog resolve (e.g. postcss `4.1.18` / tw `4.2.1`). If docs shows catalog versions or `< 4.3.3`, restore the `^4.3.3` pins — do not delete `-inset-s-*` utilities.
 
 ## Verification
 
