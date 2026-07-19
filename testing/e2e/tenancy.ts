@@ -412,12 +412,27 @@ export async function cleanupWorkerTenant(
 	}
 
 	for (const orgId of orgIds) {
+		// Living hard tenant roots only — never reference wiped Declarations/FFT tables.
 		await sql`
 			DELETE FROM platform_role_assignment
 			WHERE organization_id = ${orgId}
 		`;
-		// Declarations product tables (client_assignments / surveys / client_profiles)
-		// were wiped — do not DELETE them here.
+		await sql`
+			DELETE FROM platform_rbac_audit
+			WHERE organization_id = ${orgId}
+		`;
+		await sql`
+			DELETE FROM platform_audit_log
+			WHERE organization_id = ${orgId}
+		`;
+		await sql`
+			DELETE FROM platform_search_document
+			WHERE organization_id = ${orgId}
+		`;
+		await sql`
+			DELETE FROM platform_notification
+			WHERE organization_id = ${orgId}
+		`;
 	}
 
 	for (const userId of userIds) {
