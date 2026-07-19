@@ -1,10 +1,10 @@
 # Branded IDs and schema map
 
-**Sources:** [docs/api/API-003-api-types.md](../../../docs/api/API-003-api-types.md) · [docs/api/API-004-schema-map.md](../../../docs/api/API-004-schema-map.md)  
-**Parent:** [ARCH-029](../../../docs/architecture/ARCH-029-interface-api-architecture.md)  
-**Frontend route params:** [../afenda-elite-frontend-scaffold/boundaries.md](../afenda-elite-frontend-scaffold/boundaries.md)
+**Scratch / disk SSOT:** `apps/web/modules/*/schemas/**` · [docs-V2/api/README.md](../../../docs-V2/api/README.md) · [docs-V2/discipline/README.md](../../../docs-V2/discipline/README.md)  
+**Frontend route params:** [../afenda-elite-frontend-scaffold/boundaries.md](../afenda-elite-frontend-scaffold/boundaries.md)  
+**Living API-003 / API-004:** retired on this checkout — brand table below mirrors disk schemas
 
-If this companion drifts from API-003 / API-004, **docs win** — update this file in the same change.
+If this companion drifts from disk Zod schemas, **disk wins** — update this file in the same change.
 
 ---
 
@@ -112,15 +112,15 @@ Do not re-validate the same shape inside domain helpers.
 
 ## Known schema gaps
 
-These are **named gaps** from `docs/api/API-004-schema-map.md` — do not invent ad-hoc schemas to fill them; add only when the corresponding feature is promoted:
+These are **named gaps** — do not invent ad-hoc schemas to fill them; add only when the corresponding feature is promoted:
 
 | Gap | Condition to add |
 |-----|-----------------|
-| Shared `PaginatedResult` schema helper | When first contract-only list endpoint is exposed over HTTP |
+| Shared `PaginatedResult` schema helper | When first list endpoint is exposed over HTTP |
 | Account PATCH schema | Only if portal-owned fields exist beyond Neon AccountView |
 | Trade REST surface schemas | Keep in `fft-schemas.ts`; split files only if module grows unwieldy |
 
-OpenAPI living export: [openapi.md](openapi.md) / [OPEN-001](../../../docs/api/OPEN-001-openapi.md) — not a schema gap.
+OpenAPI export: [openapi.md](openapi.md) · `docs-V2/api/OPEN-001-openapi.yaml` — not a schema gap.
 
 ---
 

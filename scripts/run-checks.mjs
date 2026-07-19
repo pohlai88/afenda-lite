@@ -13,6 +13,7 @@ const preferred = [
 	"check:module-quality",
 	"check:doc-integrity",
 	"check:openapi",
+	"check:docs-app",
 ];
 
 function scriptExists(scriptName) {
@@ -20,6 +21,24 @@ function scriptExists(scriptName) {
 	const cmd = pkg.scripts?.[scriptName];
 	if (!cmd) return false;
 	if (String(cmd).includes("collapse-script-unavailable.mjs")) return false;
+	// Living docs/ removed (cutover 71176a0) — Scratch docs-V2; skip Living gates.
+	if (
+		(scriptName === "check:docs-naming" ||
+			scriptName === "check:doc-integrity" ||
+			scriptName === "check:module-quality") &&
+		!fs.existsSync("docs")
+	) {
+		return false;
+	}
+	if (scriptName === "check:doc-integrity" && !fs.existsSync("docs/api")) {
+		return false;
+	}
+	if (scriptName === "check:module-quality" && !fs.existsSync("docs/modules")) {
+		return false;
+	}
+	if (scriptName === "check:docs-app" && !fs.existsSync("apps/docs")) {
+		return false;
+	}
 	if (String(cmd).includes(".cursor/skills/")) return true;
 	const m = String(cmd).match(/scripts\/([A-Za-z0-9._/-]+\.(?:mjs|mts))/);
 	if (!m) return true;

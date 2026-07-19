@@ -1,74 +1,49 @@
-# api-now — Living Route Handler allowlist
+# api-now — Route Handler allowlist
 
-**Source:** [docs/api/REST-001-rest-resources.md](../../../docs/api/REST-001-rest-resources.md)
+**Scratch SSOT:** [docs-V2/api/rest.md](../../../docs-V2/api/rest.md)  
+**Disk:** `apps/web/app/api/**/route.ts` (exactly six handlers)  
+**Living REST-001:** retired on this checkout — do not invent contract-only catalogues from history
 
-This file mirrors the Living **api-now** contract and the **allowed Target** Route Handler set under `apps/web/app/api/**` (logical `app/api/**`). It distinguishes **allowlisted HTTP handlers** from **contract-only** resources (canonical REST shapes consumed via RSC + Server Actions until an external consumer needs HTTP). SSOT is REST-001.
-
-**Docs-first checkout (historical):** root `app/api/**` may have been absent; Target api-now handlers now live under `apps/web/app/api/**` (GUIDE-018 I2.4). Inventory here mirrors REST-001 — verify with `Test-Path` / `pnpm check:openapi`.
+This file mirrors the **api-now** allowlist. Verify with `Test-Path` / `pnpm check:openapi` — never trust a stale Cursor index alone.
 
 ---
 
 ## Allowlisted Route Handlers (api-now)
 
-| Method | Path | Purpose | Auth | Cache |
-|--------|------|---------|------|-------|
-| GET | `/api/health/liveness` | Process up | public | Optional short public CDN cache |
+| Method | Path | Purpose | Auth | Cache / notes |
+|--------|------|---------|------|---------------|
+| GET | `/api/health/liveness` | Process up | public | Optional short public cache |
 | GET | `/api/health/readiness` | DB / deps ready | public | Prefer `no-store` |
-| ALL | `/api/auth/[...path]` | Neon Auth proxy | Neon | Neon-owned |
-| GET | `/api/session/sync-cookies` | Cookie-safe session mint / refresh | member session | `private, no-store` — redirect; not `{ data }` JSON |
-| GET | `/api/session/ensure-active-organization` | Cookie-safe active-org persistence | member session | `private, no-store` — redirect / plain-text; not `{ data }` JSON |
-| GET/PUT/PATCH | `/api/client/declaration-draft` | Draft autosave (POST keepalive alias) | client session | `private, no-store` |
+| ALL | `/api/auth/[...path]` | Neon Auth proxy | Neon | Neon-owned; not portal JSON; excluded from OpenAPI YAML |
+| GET | `/api/session/sync-cookies` | Cookie-safe session mint / refresh | member session | Redirect; not `{ data }` JSON; excluded from YAML |
+| GET | `/api/session/ensure-active-organization` | Active-org persistence | member session | Redirect / plain-text; excluded from YAML |
+| GET | `/api/client/declaration-draft` | Load draft | client session | `{ data }` · `private, no-store` |
+| PUT / PATCH | `/api/client/declaration-draft` | Save draft | client session | Prefer PUT · `private, no-store` |
+| POST | `/api/client/declaration-draft` | Keepalive write alias | client session | Same handler as PUT/PATCH |
 
-Success JSON for health + draft uses `{ data: T }` ([API-001](../../../docs/api/API-001-api-boundaries.md)). Failures use bare `APIErrorBody` ([API-002](../../../docs/api/API-002-error-contract.md)). Auth proxy and session bridges are **excluded from** OpenAPI YAML (redirect / Neon-owned). OpenAPI: [openapi.md](openapi.md).
+Success JSON for health + draft uses `{ data: T }`. Failures use bare `APIErrorBody`. OpenAPI: [openapi.md](openapi.md).
 
-**Only this set is api-now.** Any Target scaffold that adds handlers must match REST-001 api-now or a new explicit decision.
+**Only this set is api-now.** Do not add handlers for dashboard list reads.
 
 ---
 
 ## Prohibition — do not scaffold these as Route Handlers for web UI
 
-The resources below have a defined REST contract but **web UI adapters call the same `modules/*/domain` functions without HTTP**. Do not create Route Handlers for these routes to serve the dashboard, client workspace, or account surfaces.
-
-See full path tables (including organization users and FFT) in [REST-001](../../../docs/api/REST-001-rest-resources.md).
-
-### Clients / Declarations / Assignments / Share links / Account
-
-Contract-only — RSC + Server Actions for web UI.
+Web UI adapters call `modules/*/domain` via RSC + Server Actions. Do **not** create Route Handlers for clients, declarations lists, assignments, share links, account, org users, or FFT until a real external consumer exists ([docs-V2/api/rest.md](../../../docs-V2/api/rest.md) decision rule).
 
 > Neon-owned password/email flows stay on Neon Auth UI / `/api/auth/*` — do not duplicate.
 
 ---
 
-## Feed Farm Trade appendix (contract-only, gated)
+## Feed Farm Trade (gated — not api-now)
 
-**Do not implement as Route Handlers until an external consumer is confirmed.** Web UI continues via `app/actions/fft.ts`. Paths are **locale-free** (no `:locale` segment):
-
-| Method | Path | Purpose |
-|--------|------|---------|
-| GET/POST | `/api/fft/events` | List / create events |
-| GET/PATCH | `/api/fft/events/:eventId` | Detail / setup |
-| POST | `/api/fft/events/:eventId/orders` | Submit order |
-| POST | `/api/fft/events/:eventId/allocations` | Run allocation |
-| GET/POST | `/api/fft/events/:eventId/deposits` | Deposits |
-| GET/POST | `/api/fft/events/:eventId/pickups` | Pickup windows / fulfill |
-| POST | `/api/fft/events/:eventId/imports` | Import dry-run / apply |
-| GET | `/api/fft/rbac/roles` | List trade roles |
-| POST | `/api/fft/rbac/assignments` | Assign trade role |
-| DELETE | `/api/fft/rbac/assignments/:assignmentId` | Remove assignment |
-| POST | `/api/fft/erp-sync/jobs` | Enqueue sync job |
-| GET | `/api/fft/erp-sync/jobs/:jobId` | Sync job status |
-
-See `/feed-farm-trade` and `docs/modules/feed-farm-trade/` before touching any of these.
+**Do not implement as Route Handlers until an external consumer is confirmed.** Web UI continues via FFT Server Actions. Paths must stay **locale-free** (no `:locale` segment). See `/feed-farm-trade` skill before touching HTTP.
 
 ---
 
-## Pagination shape (contract)
+## Pagination shape (when HTTP lists exist)
 
-All list endpoints (when exposed over HTTP) must keep success under `{ data: T }` ([API-001](../../../docs/api/API-001-api-boundaries.md)). Prefer ARCH-029 list payloads:
-
-```http
-GET /api/declarations?page=1&pageSize=20&sortBy=createdAt&sortOrder=desc
-```
+Keep success under `{ data: T }`. Prefer:
 
 ```json
 {
@@ -84,7 +59,7 @@ GET /api/declarations?page=1&pageSize=20&sortBy=createdAt&sortOrder=desc
 }
 ```
 
-Do **not** introduce new top-level `pagination` beside `data`. Shared list query rules freeze in [API-008](../../../docs/api/API-008-collection-query-contract.md) when Living. A shared `PaginatedResult` Zod helper is a **named gap** — add when the first contract-only list is exposed over HTTP ([API-004 Gaps](../../../docs/api/API-004-schema-map.md)).
+Do **not** introduce top-level `pagination` beside `data`. A shared `PaginatedResult` Zod helper is a **named gap** — add only when the first list is HTTP-exposed.
 
 ---
 
@@ -101,5 +76,6 @@ Operator mutations (create, delete, update)         → Server Action
 Draft autosave from browser XHR                     → /api/client/declaration-draft (api-now)
 Neon Auth UI callbacks / magic-link                 → /api/auth/[...path] (api-now)
 Health probes (uptime, readiness)                   → /api/health/* (api-now)
-Future mobile / external REST consumer              → Route Handler per REST-001 contract-only catalog
+Session cookie bridges                              → /api/session/* (api-now)
+Future mobile / external REST consumer              → new RH only when consumer exists
 ```

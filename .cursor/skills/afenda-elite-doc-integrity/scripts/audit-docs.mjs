@@ -50,6 +50,19 @@ if (options.profile && !["full", "naming"].includes(options.profile)) {
 }
 
 try {
+  const { existsSync } = await import("node:fs");
+  const path = await import("node:path");
+  const root = path.resolve(options.root ?? process.cwd());
+  if (!existsSync(path.join(root, "docs"))) {
+    const msg =
+      "audit-docs: skipped — Living docs/ absent (docs-V2 Scratch era; cutover 71176a0)\n";
+    process.stdout.write(
+      options.format === "json"
+        ? `${JSON.stringify({ schemaVersion: "1.0.0", skipped: true, reason: "living-docs-absent", exitCode: 0 }, null, 2)}\n`
+        : msg,
+    );
+    process.exit(0);
+  }
   const { auditDocs, reportToMarkdown } = await import("./doc-integrity-core.mjs");
   const report = await auditDocs(options);
   process.stdout.write(

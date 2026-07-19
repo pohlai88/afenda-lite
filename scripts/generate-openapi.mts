@@ -1,10 +1,10 @@
 /**
- * Emit docs/api/OPEN-001-openapi.yaml for api-now HTTP only.
+ * Emit docs-V2/api/OPEN-001-openapi.yaml for api-now HTTP only.
  *
- * Zod SSOT: apps/web/modules platform + declarations schemas (OPEN-001 Zod handoff).
+ * Zod SSOT: apps/web/modules platform + declarations schemas.
  * Run with: pnpm exec tsx --tsconfig apps/web/tsconfig.json scripts/generate-openapi.mts
  *
- * @see docs/api/OPEN-001-openapi.md
+ * @see docs-V2/api/rest.md
  */
 import { writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -29,7 +29,7 @@ import {
 import { z } from "../apps/web/modules/platform/schemas/openapi-zod";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const OUT_REL = join("docs", "api", "OPEN-001-openapi.yaml");
+const OUT_REL = join("docs-V2", "api", "OPEN-001-openapi.yaml");
 const outPath = process.env.OPENAPI_OUT
 	? process.env.OPENAPI_OUT
 	: join(root, OUT_REL);
@@ -303,7 +303,7 @@ Object.assign(document, {
 const header = [
 	"# GENERATED — do not hand-edit.",
 	"# Source: scripts/generate-openapi.mts",
-	"# Guide: docs/api/OPEN-001-openapi.md",
+	"# Scratch authority: docs-V2/api/rest.md",
 	"# Regenerate: pnpm openapi:generate",
 	"",
 ].join("\n");

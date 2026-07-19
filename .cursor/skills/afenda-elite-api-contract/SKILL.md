@@ -1,41 +1,37 @@
 ---
 name: afenda-elite-api-contract
 description: >-
-  Enforces Afenda API/REST/OPEN contracts from docs/api and ARCH-029 — adapter choice,
+  Enforces Afenda API contracts from docs-V2/api Scratch + disk handlers — adapter choice,
   security pipeline, { data } envelope, APIErrorBody/ActionResult, brands, Zod map,
-  api-now vs contract-only, OpenAPI, GUIDE-015 phases, and docs sync checks. Use when
-  writing app/actions, app/api Route Handlers, modules/*/schemas, OpenAPI YAML,
-  Fumadocs API docs; or when the user mentions API contract, REST-001, OPEN-001,
-  ActionResult, branded IDs, declaration-draft, GUIDE-015, or afenda-elite-api-contract.
+  api-now allowlist, OpenAPI under docs-V2, and sync checks. Use when writing app/actions,
+  app/api Route Handlers, modules/*/schemas, OpenAPI YAML; or when the user mentions API
+  contract, ActionResult, branded IDs, declaration-draft, or afenda-elite-api-contract.
 ---
 
 # Afenda — API contract
 
 ```text
 LOAD:
-  docs/api/README.md                          # pack entry · reading sequence
-  docs/architecture/ARCH-029-*.md      # Living parent architecture
-  docs/api/guides/GUIDE-015-*.md              # locked create/revise order (Jack Wee)
-  docs/api/API-001…004 · REST-001 · OPEN-001  # Phase 1 Living executable contracts
+  docs-V2/api/README.md · rest.md             # Scratch pack entry + RH allowlist
+  apps/web/app/api/**                         # disk honesty
+  modules/platform/schemas/**                 # ActionResult · APIErrorBody · parseSchema
   companions: api-now.md · brands-and-schemas.md · openapi.md · completeness.md
 SKIP:
-  inventing rules not in docs/api or ARCH-029
-  treating Draft API-005…009 / REST-002…007 / FFT-REST-* as Living SSOT
-  letting guides/runbooks/skills override Living contracts
+  inventing contract-only REST catalogues without a consumer
+  restoring Living docs/api without Docs-lane approval
   dual /api/v1+/api/v2 · layout-only auth · web-UI list GETs under /api
 VERIFY:
-  header Control State Closed unless explicitly reopened (DOC-001)
-  npm run check:doc-integrity   # docs/api semantic + register
-  node scripts/check-docs-naming.mjs docs/api
-  npm run check:openapi            # after api-now HTTP / envelope changes
+  pnpm check:openapi                           # after api-now HTTP / envelope changes
+  pnpm --filter @afenda/web test -- __tests__/openapi-api-now-disk.test.ts
 CLOSE:
-  docs edits require DOC-001 reopen of named IDs; skill mirrors docs — never the reverse
+  skill mirrors Scratch docs-V2 + disk — never invent Living DOC-001 rows here
 ```
 
-**SSOT:** [`docs/api/`](../../../docs/api/) + Living parent [ARCH-029](../../../docs/architecture/ARCH-029-interface-api-architecture.md).  
-**This skill mirrors docs.** If skill and docs disagree, **docs win** — patch the skill in the same change.
+**SSOT (this checkout):** [`docs-V2/api/`](../../../docs-V2/api/) + disk `apps/web/app/api/**` + `modules/*/schemas/**`.  
+**Living pack** (`docs/api/*`, ARCH-029 Controlled docs): **retired on disk** — cite only as historical; do not block work on missing paths.  
+**This skill mirrors Scratch + disk.** If skill and disk disagree, **disk wins** — patch the skill in the same change.
 
-**Editions:** Afenda-Lite (beta) and Afenda-Elite (battle-proven) share DOC-001 control and this contract shape.
+**Editions:** Afenda-Lite (beta) and Afenda-Elite (battle-proven) share the same wire shapes on this checkout.
 
 ---
 
@@ -43,29 +39,27 @@ CLOSE:
 
 | Layer | Wins on | Path |
 | ----- | ------- | ---- |
-| Parent architecture | Surfaces, pipeline, Accept/Reject, compatibility | [ARCH-029](../../../docs/architecture/ARCH-029-interface-api-architecture.md) |
-| Program order | What to create/refine next | [GUIDE-015](../../../docs/api/guides/GUIDE-015-interface-pack-development-roadmap.md) (locked) |
-| Executable contract | Adapter, errors, brands, Zod, REST paths, OpenAPI rules | Living `API-*` / `REST-*` / `OPEN-*` under `docs/api/` |
-| How-to / ops | Implementation steps only | `docs/api/guides/` · `docs/api/runbooks/` (RB-006…008) |
-| Catalogue | ID / version / Status | [DOC-002](../../../docs/_control/DOC-002-documentation-register.md) |
+| Scratch pack | Adapter choice, RH allowlist, wire shapes | [docs-V2/api/](../../../docs-V2/api/) |
+| Disk handlers | What exists as HTTP | `apps/web/app/api/**/route.ts` |
+| Schemas / envelopes | Zod, ActionResult, APIErrorBody | `apps/web/modules/platform/schemas/**` · module schemas |
+| OpenAPI machine file | Generated OAS for api-now | `docs-V2/api/OPEN-001-openapi.yaml` |
 | Skill companions | Agent execution aid | this folder — subordinate |
+| Living DOC-001 pack | Retired on this checkout | Do not restore without Docs-lane |
 
-**Conflict rule (from docs/api README):** ARCH-029 > Living contracts > GUIDE-015 (order only) > guides/runbooks/skills.
+**Conflict rule:** disk handlers + docs-V2 Scratch > skill companions. Do not invent HTTP from retired Living catalogues.
 
 **Sync triggers — update this skill when any of these change:**
 
-1. Living Phase 1 contract (`API-001…004`, `REST-001`, `OPEN-001`) or ARCH-029 Accept/Reject
-2. api-now Route Handler inventory in REST-001
-3. OpenAPI generate/check commands or YAML include set
-4. GUIDE-015 phase map or Draft→Living promotion of API-005…009 / REST-002…007
-5. Docs verify scripts (`check:doc-integrity`, `check:docs-naming`, `check:openapi`)
+1. api-now Route Handler inventory in docs-V2 `rest.md` or on disk
+2. OpenAPI generate/check commands or YAML include set
+3. ActionResult / APIErrorBody / draft RH compose changes
+4. Scratch docs-V2/api authority notes
 
-**After docs/api contract edits, run:**
+**After api-now HTTP / Scratch API pack edits, run:**
 
 ```bash
-npm run check:doc-integrity
-node scripts/check-docs-naming.mjs docs/api
-npm run check:openapi
+pnpm openapi:generate
+pnpm check:openapi
 ```
 
 ---
@@ -74,39 +68,14 @@ npm run check:openapi
 
 | Resource | Use when |
 | -------- | -------- |
-| [docs/api/README.md](../../../docs/api/README.md) | Pack entry · reading sequence · phase index |
+| [docs-V2/api/README.md](../../../docs-V2/api/README.md) | Scratch pack entry |
+| [docs-V2/api/rest.md](../../../docs-V2/api/rest.md) | RH allowlist + wire shapes |
 | [completeness.md](completeness.md) | Plan ↔ recorded contract status |
 | [api-now.md](api-now.md) | Exact RH inventory + UI prohibition |
 | [brands-and-schemas.md](brands-and-schemas.md) | Brands + `modules/*/schemas` |
-| [openapi.md](openapi.md) | Generate / expand OPEN-001 YAML |
-| [API-001](../../../docs/api/API-001-api-boundaries.md) | Adapter + pipeline + `{ data }` |
-| [API-002](../../../docs/api/API-002-error-contract.md) | Errors / ActionResult |
-| [API-003](../../../docs/api/API-003-api-types.md) | Brands / I/O split |
-| [API-004](../../../docs/api/API-004-schema-map.md) | Schema ownership |
-| [REST-001](../../../docs/api/REST-001-rest-resources.md) | Paths + HTTP semantics + api-now |
-| [OPEN-001](../../../docs/api/OPEN-001-openapi.md) | OpenAPI governance |
-| [GUIDE-011](../../../docs/api/guides/GUIDE-011-generating-and-validating-openapi.md) | OpenAPI how-to |
-| [GUIDE-014](../../../docs/api/guides/GUIDE-014-api-contract-verification-standard.md) | Verification bar (Draft until promoted) |
-| [FFT-REST-001](../../../docs/modules/feed-farm-trade/FFT-REST-001-feed-farm-trade-resource-index.md) | FFT REST index (Draft) |
-| [RB-006…008](../../../docs/api/runbooks/) | Drift / incident / rollback |
+| [openapi.md](openapi.md) | Generate / check OpenAPI YAML |
 
-**Prefixes:** `API-` BFF vocabulary · `REST-` human paths · `FFT-REST-` module REST · `OPEN-` OpenAPI · `GUIDE-` how-to · `RB-` ops.
-
-**Cross-skill:** [frontend-scaffold/boundaries](../afenda-elite-frontend-scaffold/boundaries.md) · [backend-modules](../afenda-elite-backend-modules/SKILL.md) · [api-and-interface-design](../agent-skills/skills/api-and-interface-design/SKILL.md) · farm via [`/using-afenda-elite-skills`](../using-afenda-elite-skills/SKILL.md) · docs control via [afenda-elite-doc-control](../afenda-elite-doc-control/SKILL.md).
-
----
-
-## GUIDE-015 phases (do not reorder)
-
-| Phase | Docs | Agent rule |
-| ----- | ---- | ---------- |
-| 1 Living | API-001…004, REST-001, OPEN-001 | Enforce as SSOT |
-| 2 Draft | API-005…009 | Cite only; do not invent Living behavior from placeholders |
-| 3 Draft | REST-002…007 | Expand on demand per GUIDE-015; web UI still RSC/Actions |
-| 4 Module | FFT-REST-001 (+ gated children) | Contract-only until FFT program reopen |
-| 5 Ops/guides | GUIDE-007…015, RB-006…008 | How-to / ops — never redefine architecture |
-
-Reading order for conflicts: ARCH-029 → GUIDE-015 → Phase 1 Living → domain REST you touch → Draft only if in scope → guides/runbooks.
+**Cross-skill:** [frontend-scaffold/boundaries](../afenda-elite-frontend-scaffold/boundaries.md) · [backend-modules](../afenda-elite-backend-modules/SKILL.md) · [api-and-interface-design](../agent-skills/skills/api-and-interface-design/SKILL.md) · farm via [`/using-afenda-elite-skills`](../using-afenda-elite-skills/SKILL.md).
 
 ---
 
@@ -114,14 +83,13 @@ Reading order for conflicts: ARCH-029 → GUIDE-015 → Phase 1 Living → domai
 
 | User / task signal | Do this |
 | ------------------ | ------- |
-| New Action or Route Handler | §1–§5 + Action security checklist + §10; classify api-now vs contract-only (§6) |
+| New Action or Route Handler | §1–§5 + Action security checklist + §10; classify api-now (§6) |
 | Change draft / health / auth HTTP | Update code + regenerate OpenAPI ([openapi.md](openapi.md)) |
 | New Zod schema / brand | [brands-and-schemas.md](brands-and-schemas.md); one-version only |
-| OpenAPI / Fumadocs / Spectral | [openapi.md](openapi.md) + GUIDE-011 — never hand-edit YAML forever |
+| OpenAPI / Spectral | [openapi.md](openapi.md) — never hand-edit YAML forever |
 | List endpoints for dashboard | **Reject** — RSC → domain ([api-now.md](api-now.md)) |
-| FFT HTTP | Contract-only until program reopen; locale-free paths; FFT-REST-001 |
-| Draft API-005…009 topic | Read Draft doc + ARCH-029; do not promote Status without GUIDE-015 + approval |
-| docs/api prose / register drift | [afenda-elite-doc-control](../afenda-elite-doc-control/SKILL.md) + reopen named IDs |
+| FFT HTTP | Reject until program reopen + real external consumer |
+| docs-V2/api Scratch drift | Patch Scratch + this skill together |
 
 ---
 
@@ -132,12 +100,11 @@ Need                                                Adapter
 ─────────────────────────────────────────────────────────────
 Same-origin UI mutation                          → Server Action
 Same-origin UI read                              → RSC → modules/*/domain (no HTTP)
-Health / Neon Auth proxy / draft XHR             → Route Handler under /api
-External REST / mobile consumer                  → Route Handler per REST-001
+Health / Neon Auth / session / draft XHR         → Route Handler under /api
+External REST / mobile consumer                  → Route Handler only when consumer exists
 ```
 
-One domain function can serve Action **and** Route Handler.  
-BFF context: [ARCH-013](../../../docs/architecture/ARCH-013-bff-and-data-flow.md).
+One domain function can serve Action **and** Route Handler.
 
 ---
 
@@ -150,46 +117,45 @@ BFF context: [ARCH-013](../../../docs/architecture/ARCH-013-bff-and-data-flow.md
 | `modules/*/domain` | Parameterized queries, domain rules | Read `Request` / cookies |
 | UI / RSC | Domain (reads) or Actions (mutations) | Import `pg` / build SQL |
 
-Optional: `after()` for non-blocking audit after the response (does not replace pipeline stage 8). Public exceptions: health + Neon Auth proxy only (API-001).  
+Optional: `after()` for non-blocking audit after the response (does not replace pipeline stage 8). Public exceptions: health + Neon Auth proxy only.  
 Default **Node** runtime for DB handlers. No `route.ts` beside `page.tsx`.
 
-### Mutating boundary — ARCH-029 §3.3 security pipeline (mandatory)
+### Mutating boundary — security pipeline (mandatory)
 
-Treat every Server Action as a **public endpoint**. Layout/`proxy.ts` visibility does **not** replace this pipeline. Every mutating Server Action and Route Handler shall run **in order** ([ARCH-029](../../../docs/architecture/ARCH-029-interface-api-architecture.md) §3.3):
+Treat every Server Action as a **public endpoint**. Layout/`proxy.ts` visibility does **not** replace this pipeline. Every mutating Server Action and Route Handler shall run **in order**:
 
 | # | Stage | Notes |
 |---|-------|-------|
-| 1 | Parse and validate input | Zod / `parseSchema` at adapter (API-001 · API-004) |
-| 2 | Establish the authenticated actor | Session re-verify **inside** the adapter (Accelint 2.1) |
-| 3 | Establish organization, tenant, or module scope | Active `organization_id` / module scope; reject omit/forge ([ARCH-023](../../../docs/architecture/ARCH-023-multi-tenancy.md) · neon-tenancy) |
+| 1 | Parse and validate input | Zod / `parseSchema` at adapter |
+| 2 | Establish the authenticated actor | Session re-verify **inside** the adapter |
+| 3 | Establish organization, tenant, or module scope | Active `organization_id` / module scope; reject omit/forge ([neon-tenancy-efficiency](../neon-tenancy-efficiency/SKILL.md)) |
 | 4 | Authorize the requested capability | Permission codes / `fft.access` — not Neon role display names |
 | 5 | Validate resource ownership or state constraints | IDOR / state-machine / ownership before mutation |
 | 6 | Invoke the domain with trusted types | No `Request` / cookies in ports |
-| 7 | Map expected failures to the controlled error vocabulary | `ActionResult` / `APIErrorBody` ([API-002](../../../docs/api/API-002-error-contract.md)) |
+| 7 | Map expected failures to the controlled error vocabulary | `ActionResult` / `APIErrorBody` |
 | 8 | Record audit evidence where required | Actor, org, correlation where policy requires |
 | 9 | Revalidate affected UI or cache where applicable | `revalidatePath` / tags; org-scoped cache keys |
 | 10 | Emit a safe response | No secrets, stacks, SQL, or internal exception details |
 
-**Target before merge:** all ten stages applied (or explicitly N/A with rationale for non-mutating/public allowlist paths). Public exceptions are Living API-001 allowlist only (health + Neon Auth proxy) until further approved.
+**Target before merge:** all ten stages applied (or explicitly N/A with rationale for non-mutating/public allowlist paths). Public exceptions: health + Neon Auth proxy.
 
-**Supplementary (not a substitute for the ten stages):** same use-case Action + RH share Zod, brands, and error `code` set (§5 one-version). Dedicated `afenda-elite-server-action-security` stays catalog **candidate**.
+**Supplementary:** same use-case Action + RH share Zod, brands, and error `code` set (§5 one-version).
 
-**Tenant data:** domain queries take explicit `orgId`; hard predicates / Target `withOrg` — [neon-tenancy-efficiency](../neon-tenancy-efficiency/SKILL.md).  
-**Draft API-005…006:** cite only; do not invent Living behavior until GUIDE-015 promotion.
+**Tenant data:** domain queries take explicit `orgId`; hard predicates — [neon-tenancy-efficiency](../neon-tenancy-efficiency/SKILL.md).
 
 ---
 
 ## 3. Success + error wire shapes
 
-**Route Handler success** (API-001) — helpers `healthJson` / `apiData`:
+**Route Handler success** — helpers `healthJson` / `apiData` / `jsonData`:
 
 ```typescript
 { data: T } // HTTP 200 / 201
 ```
 
-**Lists (ARCH-029 preference):** put list payload **inside** `data`, preferably `{ items, pagination }` — never bare top-level resources. Freeze query rules in API-008 when Living. Do not ship top-level `pagination` beside `data` for new work.
+**Lists (preference):** put list payload **inside** `data`, preferably `{ items, pagination }` — never bare top-level resources. Do not ship top-level `pagination` beside `data` for new work.
 
-**Route Handler failure** (API-002) — bare body, **not** under `data`:
+**Route Handler failure** — bare body, **not** under `data`:
 
 ```typescript
 interface APIErrorBody {
@@ -240,16 +206,16 @@ Mutating RHs authenticate equivalently (cookie session).
 
 - No `/api/v1` + `/api/v2`.
 - Same use-case Action + RH share Zod, output type, error `code` set.
-- Additive optional fields only; removal needs controlled decision (ARCH-029 / ADR when required).
+- Additive optional fields only; removal needs explicit approval.
 - Status codes, pagination shape, error codes are commitments.
 
 ---
 
-## 6. api-now vs contract-only
+## 6. api-now vs not-yet-HTTP
 
-Inventory + FFT appendix: [api-now.md](api-now.md). SSOT paths: [REST-001](../../../docs/api/REST-001-rest-resources.md).
+Inventory: [api-now.md](api-now.md) · [docs-V2/api/rest.md](../../../docs-V2/api/rest.md).
 
-**api-now only:** `/api/health/*`, `/api/auth/[...path]`, `/api/client/declaration-draft` (POST = keepalive).  
+**api-now only:** `/api/health/*`, `/api/auth/[...path]`, `/api/session/*`, `/api/client/declaration-draft` (POST = keepalive).  
 **Do not** add same-origin list/read GETs under `/api` for dashboard — RSC → domain.
 
 ---
@@ -275,11 +241,9 @@ Inventory + FFT appendix: [api-now.md](api-now.md). SSOT paths: [REST-001](../..
 
 ## 9. Accept / Reject
 
-Living Accept/Reject lives in **ARCH-029** — do not maintain a divergent chat copy. Skill flash card:
+**Accept:** RSC reads; Actions mutate UI; RH for health/auth/session/draft/external-with-consumer; `{ data }` success; bare errors; Zod SSOT; locale-free FFT paths when HTTP exists.
 
-**Accept:** RSC reads; Actions mutate UI; RH for health/auth/draft/external; `{ data }` success; bare errors; Zod SSOT; locale-free FFT contract.
-
-**Reject:** Contract-only RH for web UI; dual `01-*` filenames; `/api/fft/:locale/...`; layout-only Action auth; throw for expected auth; Actions as cacheable GET; Edge default for DB; CDN cache on session draft; dumping all contract-only into OpenAPI playground; promoting Draft Phase 2/3 docs without GUIDE-015 + approval.
+**Reject:** RH for ordinary web UI list reads; inventing offline REST catalogues; `/api/fft/:locale/...`; layout-only Action auth; throw for expected auth; Actions as cacheable GET; Edge default for DB; CDN cache on session draft; restoring Living `docs/api` without Docs-lane approval.
 
 ---
 
@@ -290,23 +254,23 @@ Living Accept/Reject lives in **ARCH-029** — do not maintain a divergent chat 
 - [ ] Zod in owning `modules/*/schemas` (not inline Action)
 - [ ] `parseSchema` at boundary
 - [ ] Success `{ data }` (RH) or `ActionResult` (Action); bare `APIErrorBody` on RH failure
-- [ ] List payloads prefer `data: { items, pagination }` (ARCH-029)
+- [ ] List payloads prefer `data: { items, pagination }`
 - [ ] Standard error `code`
 - [ ] Branded ID at boundary
 - [ ] Create/Patch omit server fields
-- [ ] api-now vs contract-only classified
+- [ ] api-now classified ([api-now.md](api-now.md))
 - [ ] One-version — no parallel URL version / silent field removal
-- [ ] Draft docs cited only as Draft — not as Living enforcement
-- [ ] If api-now HTTP shape changed → `npm run openapi:generate` && `npm run check:openapi`
-- [ ] If `docs/api` Living contract changed → sync this skill + `npm run check:doc-integrity`
+- [ ] Unexpected RH failures → `INTERNAL_ERROR` + correlation (no raw throws to clients)
+- [ ] If api-now HTTP shape changed → `pnpm openapi:generate` && `pnpm check:openapi`
+- [ ] If docs-V2/api Scratch changed → sync this skill
 
 ---
 
 ## Out of scope
 
-- FFT flags / 2B–2D gates → `/feed-farm-trade` + `docs/modules/feed-farm-trade/`
+- FFT flags / 2B–2D gates → `/feed-farm-trade`
 - UI scaffold / `loading.tsx` → [frontend-scaffold](../afenda-elite-frontend-scaffold/SKILL.md)
 - Modules residue → [backend-modules](../afenda-elite-backend-modules/SKILL.md)
-- Doc register / Control State → [afenda-elite-doc-control](../afenda-elite-doc-control/SKILL.md)
+- Restoring Living DOC-001 `docs/` tree → explicit Docs-lane mission
 - Playground / env → `AGENTS.md`
 - Neon Auth internals → `.agents/skills/neon/SKILL.md` (use `/api/auth/[...path]` only)

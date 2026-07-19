@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
@@ -21,6 +21,7 @@ import {
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(SCRIPT_DIR, "../../../..");
+const LIVING_DOCS_PRESENT = existsSync(path.join(REPO_ROOT, "docs"));
 
 test("Markdown parser supports legacy/modern headers and composite IDs", () => {
   const legacy = parseMarkdown(documentText({ id: "API-001", title: "Legacy", modern: false }), "legacy.md");
@@ -434,7 +435,11 @@ test("semantic fixtures compare across subjects and lifecycle", async (t) => {
   );
 });
 
-test("current docs/api reproduces the resolved zero-finding baseline", async () => {
+test("current docs/api reproduces the resolved zero-finding baseline", async (t) => {
+  if (!LIVING_DOCS_PRESENT) {
+    t.skip("Living docs/ absent (docs-V2 Scratch era; cutover 71176a0)");
+    return;
+  }
   const expected = JSON.parse(
     readFileSync(path.join(SCRIPT_DIR, "fixtures/docs-api-baseline.json"), "utf8"),
   );
@@ -447,7 +452,11 @@ test("current docs/api reproduces the resolved zero-finding baseline", async () 
   assert.deepEqual(Object.keys(report.counts.byCategory).sort(), expected.categories);
 });
 
-test("single Markdown file --scope inspects that primary only", async () => {
+test("single Markdown file --scope inspects that primary only", async (t) => {
+  if (!LIVING_DOCS_PRESENT) {
+    t.skip("Living docs/ absent (docs-V2 Scratch era; cutover 71176a0)");
+    return;
+  }
   const report = await auditDocs({
     root: REPO_ROOT,
     scope: "docs/guides/GUIDE-018-fullstack-e2e-integration-program.md",

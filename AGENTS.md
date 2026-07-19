@@ -1,6 +1,6 @@
 # AGENTS.md — Afenda-Lite
 
-Cursor Agent instructions for this repository. Prefer **actions and links** over essays. Deep authority lives under `docs/` and farm skills — do not invent a second SSOT here.
+Cursor Agent instructions for this repository. Prefer **actions and links** over essays. Day-to-day architecture packs live under `docs-V2/` (Scratch). Living controlled `docs/` is **absent by design** on this checkout (cutover `71176a0`) until an explicit Docs-lane reopen — do not invent a second SSOT or recreate `doc/`.
 
 ## Product
 
@@ -38,7 +38,7 @@ Cursor Agent instructions for this repository. Prefer **actions and links** over
 Do not start skill loads or MCP calls before the PREFLIGHT block is in the visible reply for that turn.
 
 1. **Route product work** through [`/using-afenda-elite-skills`](.cursor/skills/using-afenda-elite-skills/SKILL.md) — sole product entry. Vendor phase skills under `agent-skills/` are a **method library after** the farm is fixed, not competing entry points.
-2. **One mission per chat** when shipping product work — ARCH-028 coding slices are **closed**; use [GUIDE-018](docs/guides/GUIDE-018-fullstack-e2e-integration-program.md) phases + farms from the router. Residual scaffold / Neon Auth `N*` missions: [implementation-slices](.cursor/skills/afenda-elite-implementation-slices/SKILL.md) (+ command-sheet or neon-command-sheet).
+2. **One mission per chat** when shipping product work — ARCH-028 coding slices are **closed**; use GUIDE-018 phases (farm map + [docs-V2](docs-V2/README.md) Scratch packs) from the router. Residual scaffold / Neon Auth `N*` missions: [implementation-slices](.cursor/skills/afenda-elite-implementation-slices/SKILL.md) (+ command-sheet or neon-command-sheet).
 3. **Prefer Agent** for implement/verify; use **Plan** only when the slice cutover has a real choice; use **Ask** for read-only navigation.
 4. **Verify with evidence** (commands, CI/Deploy runs, `Test-Path` / `git ls-files`) — never trust a stale Cursor index alone.
 5. **Commit/push only when the user asks.** Never force-push `main`; never amend remote commits without explicit request.
@@ -81,43 +81,40 @@ Full inventory: [catalog.md](.cursor/skills/using-afenda-elite-skills/catalog.md
 | **Coding discipline** L0 floor (brands · unknown/as · ActionResult · barrel · env) | [`.cursor/rules/coding-discipline.mdc`](.cursor/rules/coding-discipline.mdc) (`alwaysApply`; full table → `afenda-coding-discipline` skill) |
 | **Enterprise production** quality bar only — never MVP / “good enough later” | [`.cursor/rules/no-mvp-quality-bar.mdc`](.cursor/rules/no-mvp-quality-bar.mdc) |
 | **No shims / stubs / throw-TODO** product paths | [`.cursor/rules/no-shim-stub-tech-debt.mdc`](.cursor/rules/no-shim-stub-tech-debt.mdc) |
-| **No Collapse/legacy recover** (`app/`, `modules/`, `features/`, `components-V2/`, Collapse `lib/`, wiped `scripts/*`) unless user names that recovery **this turn** | [ARCH-028](docs/architecture/ARCH-028-implementation-slices.md) · [`.cursor/rules/no-collapse-legacy-recovery.mdc`](.cursor/rules/no-collapse-legacy-recovery.mdc) |
-| **No `decision`/`decisions` directories** — ADRs under `docs/architecture/adr/` | [`.cursor/rules/no-decision-directory.mdc`](.cursor/rules/no-decision-directory.mdc) |
+| **No Collapse/legacy recover** (`app/`, `modules/`, `features/`, `components-V2/`, Collapse `lib/`, wiped `scripts/*`) unless user names that recovery **this turn** | [`.cursor/rules/no-collapse-legacy-recovery.mdc`](.cursor/rules/no-collapse-legacy-recovery.mdc) · farm ARCH-028 notes |
+| **No `decision`/`decisions` directories** — ADRs under `docs/architecture/adr/` when Living docs reopen | [`.cursor/rules/no-decision-directory.mdc`](.cursor/rules/no-decision-directory.mdc) |
 | **No git restore/reset/clean** without explicit user approval this turn | [`.cursor/rules/git-no-auto-recover.mdc`](.cursor/rules/git-no-auto-recover.mdc) |
-| Docs SSOT under **`docs/` only** — never recreate `doc/` | [DOC-001](docs/_control/DOC-001-documentation-control-standard.md) |
-| Shrink **scope** via Approved slices / MOD readiness — never shrink **quality** | ARCH-028 · MOD-002 |
+| **Scratch docs** under **`docs-V2/`** — never recreate `doc/`; do **not** recreate Living `docs/` without Docs-lane reopen | [docs-V2/README.md](docs-V2/README.md) · cutover `71176a0` |
+| Shrink **scope** via Approved slices / MOD readiness — never shrink **quality** | Farm maps · module-readiness |
 
 ## Documentation & architecture authority
 
-| Doc | Use for |
-|-----|---------|
-| [docs/README.md](docs/README.md) | Docs entry |
-| [DOC-001](docs/_control/DOC-001-documentation-control-standard.md) · [DOC-002](docs/_control/DOC-002-documentation-register.md) · [DOC-003](docs/_control/DOC-003-controlled-document-template.md) | Control · register · template |
-| [ARCH-022](docs/architecture/ARCH-022-system-overview.md) | Living monorepo / system overview |
-| [ARCH-023](docs/architecture/ARCH-023-multi-tenancy.md) | IAM · tenancy · Decision lock |
-| [ARCH-024](docs/architecture/ARCH-024-package-boundaries.md)…[ARCH-027](docs/architecture/ARCH-027-env-model.md) | Packages · data · auth · env |
-| [ARCH-024 § `@afenda/ui-system`](docs/architecture/ARCH-024-package-boundaries.md#afendaui-system) | Flat barrel `@afenda/ui-system` + `@afenda/ui-system/styles.css` public door ([ADR-010](docs/architecture/adr/ADR-010-afenda-ui-system-flat-barrel.md)) — one canonical paragraph, do not re-explain elsewhere. Retired `@afenda/ui` gateway removed. |
-| [ARCH-028](docs/architecture/ARCH-028-implementation-slices.md) | Scaffold slices (closed) · anti-contamination |
-| [GUIDE-018](docs/guides/GUIDE-018-fullstack-e2e-integration-program.md) | Post-scaffold program roadmap (Living) |
-| [ARCH-031](docs/architecture/ARCH-031-technology-stack-catalogue.md) | Stack discovery |
+| Surface | Use for |
+|---------|---------|
+| [docs-V2/README.md](docs-V2/README.md) | Scratch E2E architecture packs (day-to-day agent ops) |
+| [docs-V2/system/README.md](docs-V2/system/README.md) · [monorepo](docs-V2/monorepo/README.md) · [pnpm](docs-V2/pnpm/README.md) · [api](docs-V2/api/README.md) · [tenancy](docs-V2/tenancy/README.md) | System · DAG · install · contracts · tenancy |
+| [docs-V2/api/OPEN-001-openapi.yaml](docs-V2/api/OPEN-001-openapi.yaml) | OpenAPI SSOT for `@afenda/docs` consumer |
+| Living `docs/` (DOC-001 · ARCH-* · GUIDE-018 · MOD-*) | **Dormant** — absent on disk until Docs-lane reopen; DOC-001 control shape still applies when Living returns |
+| Farm skills under `.cursor/skills/` | Method + evidence companions (not a second product SSOT) |
 
-Controlled docs: respect **Control State**. `Closed` → reopen with explicit Docs-lane approval before substantive edits.
+Do not treat Fumadocs (`apps/docs`) or Scratch packs as Living DOC-001 authority.
 
 ## Checkout posture (Living Turborepo on disk)
 
-**Present:** `@afenda/{config,db,auth,env,ui-system,emails}` · `apps/web` route groups · `apps/web/proxy.ts` edge session gate · `apps/web/modules/{platform,identity,declarations,fft}` · `apps/web/features/{auth,declarations,fft,org-admin}` · CI/Deploy (`.github/workflows/{ci,deploy}.yml`).
+**Present:** `@afenda/{config,db,auth,env,ui-system,emails}` · `apps/web` · `apps/docs` (Fumadocs mirror) · `apps/web/proxy.ts` edge session gate · `apps/web/modules/{platform,identity,declarations,fft}` · `apps/web/features/{auth,declarations,fft,org-admin}` · `docs-V2/**` Scratch packs · CI/Deploy (`.github/workflows/{ci,deploy}.yml`).
 
-**Absent by design:** repo-root `app/`, `modules/`, `features/`, `components-V2/`, Collapse `lib/`, wiped ops script bodies · `apps/web/app/playground/` · `apps/web/features/playground/` (removed 2026-07-15; do not handroll).
+**Absent by design:** Living controlled `docs/` (cutover `71176a0`) · repo-root `app/`, `modules/`, `features/`, `components-V2/`, Collapse `lib/`, wiped ops script bodies · `apps/web/app/playground/` · `apps/web/features/playground/` (removed 2026-07-15; do not handroll).
 
 | Rule | Detail |
 |------|--------|
 | Forward code | Greenfield under `apps/web/**` and `packages/*` only |
-| Next open (GUIDE-018) | GUIDE-018 **Living 1.0.13**. Phase **I1–I6 DONE** (I3.4 cut B AdminCN waived; I6.3 deploy health confirmed). GUIDE-017 claim **NOT READY** @ `fc16109`. Next Ops = **I7.1**. ARCH-028 Checkpoint G **closed**. Do **not** invent **N19**. Do **not** claim GUIDE-017 READY from I6.3 alone. |
+| Docs | Scratch = `docs-V2/**`. Living `docs/` restore requires explicit Docs-lane + named recovery — not agent default |
+| Next open (GUIDE-018) | Phase **I1–I6 DONE**. GUIDE-017 claim **NOT READY** @ `fc16109`. Next Ops = **I7.1**. ARCH-028 Checkpoint G **closed**. Do **not** invent **N19**. Do **not** claim GUIDE-017 READY from I6.3 alone. Map: implementation-slices farm |
 | Next open (Neon Auth `N*`) | **N1–N18 serial complete** — all APPROVED at 100% (incl. **N15** Path-to-100% closed). Do **not** invent **N19**. Map: [neon-auth-slice-map](.cursor/skills/afenda-elite-implementation-slices/neon-auth-slice-map.md). |
 | Env | `@afenda/env` + `.env.local` only (compose retired) |
-| Docs trunks | Flat `docs/architecture/ARCH-*.md` — gate `pnpm check:docs-trunk-ban` |
-| Index ghosts | Grep/Glob may list deleted paths — trust `Test-Path` · `git ls-files` · trunk-ban check |
-| Scripts | Many root `package.json` script names still route through `scripts/collapse-script-unavailable.mjs` — **inventory only, not live controls**, until an Approved forward slice replaces them. Docs-capable today: `pnpm checks` · `check:docs-naming` · `check:docs-trunk-ban` · `check:doc-integrity` · `check:module-quality` · `check:openapi` · `validate:neon-env` · `audit:tenancy-nulls` · `audit:github-actions-secrets` · `protect:main` · `pnpm gh` |
+| Docs trunks | Gate `pnpm check:docs-trunk-ban` (banned architecture trunks stay absent) |
+| Index ghosts | Grep/Glob may list deleted Living `docs/**` paths — trust `Test-Path` · `git ls-files` · trunk-ban check |
+| Scripts | Many root `package.json` script names still route through `scripts/collapse-script-unavailable.mjs` — **inventory only**. Live when `docs/` absent: `pnpm checks` skips Living naming/integrity/module-quality · `check:docs-trunk-ban` · `check:openapi` · `validate:neon-env` · `audit:tenancy-nulls` · `audit:github-actions-secrets` · `protect:main` · `pnpm gh` |
 
 **App layout:** sole deployable `apps/web` · edge gate `apps/web/proxy.ts` on disk (do not invent `middleware.ts`) · imports `@afenda/*` only across packages.
 
@@ -126,14 +123,13 @@ Controlled docs: respect **Control State**. `Closed` → reopen with explicit Do
 | Fact | Detail |
 |------|--------|
 | Skill | [`.cursor/skills/feed-farm-trade`](.cursor/skills/feed-farm-trade/SKILL.md) |
-| Ops entry | [FFT-MOD-008](docs/modules/feed-farm-trade/FFT-MOD-008-ops-runtime.md) |
-| Index / readiness | [FFT-MOD-010](docs/modules/feed-farm-trade/FFT-MOD-010-module-docs-index.md) |
+| Ops / readiness | Farm companions (Living FFT-MOD-* under `docs/modules/` dormant until Docs-lane reopen) |
 | Production | tag `fft-phase-2a` · `FFT_RBAC_ENABLED=true` · branch `br-tiny-hill-ao82jp6f` |
 | Freeze | **2B–2D code blocked** until explicit program reopen + Approved slice group in FFT-MOD-008. Never mix FFT domain commits with unrelated refactors. |
 
 ## Platform tenancy
 
-**SSOT:** [ARCH-023](docs/architecture/ARCH-023-multi-tenancy.md) (supersedes ARCH-003).
+**SSOT (Scratch):** [docs-V2/tenancy](docs-V2/tenancy/README.md) · farm `neon-tenancy-efficiency` (Living ARCH-023 dormant until Docs-lane reopen).
 
 | Fact | Detail |
 |------|--------|
@@ -142,8 +138,8 @@ Controlled docs: respect **Control State**. `Closed` → reopen with explicit Do
 | Cloud | Org `org-fragrant-lake-90358173` · project `young-hat-54755363` · branch `br-tiny-hill-ao82jp6f` |
 | Lock | Rejected R1–R7 / Deferred D4·D5 — do not reopen without explicit approval |
 | Anti-claim | Do **not** claim multi-DB isolation. `FFT_RBAC_ENABLED` ≠ soft SQL tenancy |
-| Permission catalog seed | ARCH-023 v1 via `pnpm --filter @afenda/db db:ensure-permission-catalog` (not baseline migrate) |
-| Ops cheat sheet | [RB-005](docs/runbooks/RB-005-post-lock-coding-cheat-sheet.md) |
+| Permission catalog seed | `pnpm --filter @afenda/db db:ensure-permission-catalog` (not baseline migrate) |
+| Ops | Farm companions + [docs-V2/tenancy](docs-V2/tenancy/README.md) (Living RB-005 dormant) |
 
 ## Environment
 
@@ -168,7 +164,7 @@ pnpm --filter @afenda/web dev   # :3000
 | `NEON_API_KEY`, `NEON_ORG_ID`, `NEON_PROJECT_ID`, `NEON_BRANCH_ID` | Local / MCP ops |
 | Shadcn Studio keys | Local tooling |
 
-**UI design system:** import UI only via the flat barrel `@afenda/ui-system` and tokens via `@afenda/ui-system/styles.css` ([ADR-010](docs/architecture/adr/ADR-010-afenda-ui-system-flat-barrel.md), supersedes ADR-009). Owned shadcn `new-york` / Radix source in `packages/ui-system`; no gateway subpath, no `*Contract` layer, no external/paid registries. The retired `@afenda/ui` (`packages/design-system`) playground gateway is gone — do not restore it. Next.js `/playground` routes remain absent — any future browser harness requires an explicit **Shadcn Studio MCP** slice (no handroll).
+**UI design system:** import UI only via the flat barrel `@afenda/ui-system` and tokens via `@afenda/ui-system/styles.css` (ADR-010 flat-barrel — Living ADR body dormant; farm `shadcn-ui` + `afenda-elite-ui-compose`). Owned shadcn `new-york` / Radix source in `packages/ui-system`; no gateway subpath, no `*Contract` layer, no external/paid registries. The retired `@afenda/ui` playground gateway is gone — do not restore it. Next.js `/playground` routes remain absent — any future browser harness requires an explicit **Shadcn Studio MCP** slice (no handroll).
 
 **Vercel:** dashboard/CLI is production secret store. `VERCEL_TOKEN` for Actions must be a **classic PAT** ([account tokens](https://vercel.com/account/tokens)) — OAuth CLI sessions fail in CI. Deploy: `.github/workflows/deploy.yml` (Environment `production`).
 
@@ -180,10 +176,10 @@ Authority: [`.agents/skills/neon/SKILL.md`](.agents/skills/neon/SKILL.md) · pas
 
 | Topic | Rule |
 |-------|------|
-| Mail | **Zoho SMTP** via Neon Auth console (`email_provider` · `smtp.zoho.com` · sender `no-reply@nexuscanon.com`) — not Neon shared `auth@mail.myneon.app`; no app-side SMTP for Neon Auth flows ([ARCH-026](docs/architecture/ARCH-026-auth-session.md)) |
+| Mail | **Zoho SMTP** via Neon Auth console (`email_provider` · `smtp.zoho.com` · sender `no-reply@nexuscanon.com`) — not Neon shared `auth@mail.myneon.app`; no app-side SMTP for Neon Auth flows ([docs-V2/auth](docs-V2/auth/README.md)) |
 | Invites | Neon Auth org invitations via `@afenda/auth` (`inviteOrgMember`); Origin = production `APP_URL` |
 | Join URL | `/join?invitationId=…` |
-| Password reset | Neon Auth delivery via Zoho SMTP (`/auth/forgot-password` · `/auth/reset-password`). Living UI = Neon Auth UI components; Neon SDK reset method incomplete per Neon docs. Custom sign-in/sign-up UI via `@afenda/auth` is Neon Path A — not forbidden ([ARCH-026](docs/architecture/ARCH-026-auth-session.md) 2.1.0) |
+| Password reset | Neon Auth delivery via Zoho SMTP (`/auth/forgot-password` · `/auth/reset-password`). Living UI = Neon Auth UI components; Neon SDK reset method incomplete per Neon docs. Custom sign-in/sign-up UI via `@afenda/auth` is Neon Path A — not forbidden ([docs-V2/auth](docs-V2/auth/README.md)) |
 | Branch policy | Local = **production** Neon branch `br-tiny-hill-ao82jp6f` — no branch switching |
 | MCP | User env `NEON_API_KEY`; restart Cursor after change. Avoid day-to-day `neonctl link` (rewrites `.neon`) |
 | `N*` close | Neon Slice Score + independent auditor `APPROVED` only — implementer never self-APPROVES; GUIDE-018 “closed” ≠ Neon APPROVED |
@@ -195,7 +191,7 @@ pnpm --filter @afenda/web dev
 neon neon-auth domain add https://afenda-lite.vercel.app
 ```
 
-Runbook: [docs/runbooks/RB-001-multi-org-ops.md §3.12](docs/runbooks/RB-001-multi-org-ops.md#312-production-auth-ops--deploy-health-n15).
+Ops: [docs-V2/auth](docs-V2/auth/README.md) · neon-auth-slice-map (Living RB-001 §3.12 dormant until Docs-lane reopen).
 
 ## Portal Atmosphere
 

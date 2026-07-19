@@ -66,6 +66,7 @@
 		"fix:doc-integrity:safe": "node .cursor/skills/afenda-elite-doc-integrity/scripts/remediate-docs.mjs --scope docs/api --mode apply-safe --apply --format json",
 		"openapi:generate": "pnpm exec tsx --tsconfig apps/web/tsconfig.json scripts/generate-openapi.mts",
 		"check:openapi": "node scripts/check-openapi.mjs",
+		"check:docs-app": "pnpm --filter @afenda/docs generate:openapi-docs && pnpm --filter @afenda/docs lint:links",
 		"housekeeping:knip:ui-system": "knip --directory packages/ui-system",
 		"housekeeping:knip:web": "knip --directory apps/web",
 		"check:nav": "node scripts/collapse-script-unavailable.mjs \"check:nav\"",

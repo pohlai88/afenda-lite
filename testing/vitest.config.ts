@@ -66,6 +66,7 @@ export default defineConfig({
 				},
 			},
 			nodeProject("ui-system", path.join(repoRoot, "packages/ui-system")),
+			nodeProject("docs", path.join(repoRoot, "apps/docs")),
 			{
 				resolve: {
 					alias: {
