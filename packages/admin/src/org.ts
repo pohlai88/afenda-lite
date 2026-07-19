@@ -115,9 +115,7 @@ export async function deleteOrganization(
 	if (!deleted.ok) {
 		return deleted;
 	}
-	return ok(
-		deletedOrganizationSchema.parse({ orgId: parsedInput.data.orgId }),
-	);
+	return ok(deletedOrganizationSchema.parse({ orgId: parsedInput.data.orgId }));
 }
 
 /**

@@ -90,8 +90,7 @@ export const UX_A11Y_I18N_PERF_MATRIX = [
 	{
 		id: "UX05",
 		pillar: "ux",
-		criterion:
-			"In-scope list/panel empty states declared on org-admin tables",
+		criterion: "In-scope list/panel empty states declared on org-admin tables",
 		owner: "Platform",
 		evidenceState: "PASS",
 		evidencePaths: ["apps/web/features/org-admin"],

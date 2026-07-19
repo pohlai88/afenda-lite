@@ -1,12 +1,11 @@
 import { describe, expect, it } from "vitest";
-
+import { CORRELATION_HEADER } from "../src/correlation";
 import {
 	applyServerTimingHeader,
 	SERVER_TIMING_HEADER,
 } from "../src/server-timing";
 import { stampHttpResponse } from "../src/stamp-response";
 import { withHttpContext } from "../src/with-http-context";
-import { CORRELATION_HEADER } from "../src/correlation";
 
 describe("@afenda/http Server-Timing", () => {
 	it("applyServerTimingHeader writes app;dur=", () => {

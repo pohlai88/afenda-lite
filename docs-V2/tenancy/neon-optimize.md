@@ -5,7 +5,7 @@
 | Surface | `docs-V2/tenancy/neon-optimize.md` |
 | Authority | **Scratch** — shipping / security boundary + Neon MCP (read-only) |
 | Class | **A** (trusted-origin ↔ `APP_URL`) |
-| Updated | 2026-07-19 |
+| Updated | 2026-07-20 |
 
 ---
 
@@ -27,17 +27,17 @@
 
 | Origin | Role |
 |--------|------|
-| `https://afenda-lite.vercel.app` | Production = `APP_URL` (canonical) |
+| `https://www.nexuscanon.com` | Production = `APP_URL` (canonical) |
+| `https://afenda-lite.vercel.app` | Legacy project host (keep for Auth UI / rollback probes) |
 | `https://*.vercel.app` | Preview Auth UI |
 | `http://localhost:3000` | Local (`allow_localhost: true`) |
-| `https://www.nexuscanon.com` | Allowlist only — see [vercel-domains.md](vercel-domains.md) A4 |
 
 | ID | Action | Status |
 |----|--------|--------|
 | N1 | Remove trailing-slash dupe origin | **DONE** 2026-07-19 |
 | N2 | `APP_URL` ⊆ trusted after every domain change | Standing |
 | N3 | Keep `*.vercel.app` while previews use Auth UI | Standing |
-| N4 | `www.nexuscanon.com` mail vs app host | Open |
+| N4 | `www.nexuscanon.com` mail vs app host | **Closed** 2026-07-20 — canonical origin = www |
 
 **Coupling:** never edit `APP_URL` or Neon trusted origins alone.
 

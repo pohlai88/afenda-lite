@@ -10,7 +10,7 @@ vi.mock("next/headers", () => ({
 
 vi.mock("@afenda/env", () => ({
 	env: {
-		APP_URL: "https://afenda-lite.vercel.app",
+		APP_URL: "https://www.nexuscanon.com",
 		NEON_AUTH_BASE_URL: "https://auth.example.test/",
 	},
 }));
@@ -75,8 +75,8 @@ describe("inviteOrgMember (I1.3)", () => {
 		];
 		expect(url).toBe("https://auth.example.test/organization/invite-member");
 		expect(init.method).toBe("POST");
-		expect(init.headers.Origin).toBe("https://afenda-lite.vercel.app");
-		expect(init.headers.Referer).toBe("https://afenda-lite.vercel.app/");
+		expect(init.headers.Origin).toBe("https://www.nexuscanon.com");
+		expect(init.headers.Referer).toBe("https://www.nexuscanon.com/");
 		expect(JSON.parse(init.body)).toEqual({
 			email: "client@example.com",
 			role: "member",

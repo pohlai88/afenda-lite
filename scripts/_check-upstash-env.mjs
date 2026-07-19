@@ -28,7 +28,9 @@ for (const key of keys) {
 }
 
 // Optional live ping (status only) when both present and uncommented
-const urlLine = text.split(/\r?\n/).find((l) => l.trimStart().startsWith("UPSTASH_REDIS_REST_URL="));
+const urlLine = text
+	.split(/\r?\n/)
+	.find((l) => l.trimStart().startsWith("UPSTASH_REDIS_REST_URL="));
 const tokenLine = text
 	.split(/\r?\n/)
 	.find((l) => l.trimStart().startsWith("UPSTASH_REDIS_REST_TOKEN="));

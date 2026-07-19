@@ -39,7 +39,7 @@ describe("N6 apps/web proxy request gate", () => {
 		for (const protectedPath of ["/admin", "/client"] as const) {
 			sessionGateMock.mockClear();
 			const response = await proxy(
-				new NextRequest(`https://afenda-lite.vercel.app${protectedPath}`),
+				new NextRequest(`https://www.nexuscanon.com${protectedPath}`),
 			);
 
 			expect(sessionGateMock).toHaveBeenCalledTimes(1);
@@ -58,7 +58,7 @@ describe("N6 apps/web proxy request gate", () => {
 		for (const gatePath of CLIENT_GATE_PATHS) {
 			sessionGateMock.mockClear();
 			const response = await proxy(
-				new NextRequest(`https://afenda-lite.vercel.app${gatePath}`),
+				new NextRequest(`https://www.nexuscanon.com${gatePath}`),
 			);
 
 			expect(sessionGateMock).not.toHaveBeenCalled();
@@ -79,7 +79,7 @@ describe("N6 apps/web proxy request gate", () => {
 		] as const) {
 			sessionGateMock.mockClear();
 			const response = await proxy(
-				new NextRequest(`https://afenda-lite.vercel.app${apiPath}`),
+				new NextRequest(`https://www.nexuscanon.com${apiPath}`),
 			);
 
 			expect(sessionGateMock).not.toHaveBeenCalled();

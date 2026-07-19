@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@afenda/env", () => ({
 	env: {
-		APP_URL: "https://afenda-lite.vercel.app",
+		APP_URL: "https://www.nexuscanon.com",
 	},
 }));
 
@@ -28,9 +28,9 @@ describe("join paths (I1.3)", () => {
 		expect(
 			buildJoinUrl({
 				invitationId: "inv-abc",
-				origin: "https://afenda-lite.vercel.app/",
+				origin: "https://www.nexuscanon.com/",
 			}),
-		).toBe("https://afenda-lite.vercel.app/join?invitationId=inv-abc");
+		).toBe("https://www.nexuscanon.com/join?invitationId=inv-abc");
 	});
 
 	it("rejects empty invitationId", async () => {
@@ -43,7 +43,7 @@ describe("join paths (I1.3)", () => {
 	it("buildInviteJoinUrl uses production APP_URL origin", async () => {
 		const { buildInviteJoinUrl } = await import("../src/join-paths");
 		expect(buildInviteJoinUrl("inv-123")).toBe(
-			"https://afenda-lite.vercel.app/join?invitationId=inv-123",
+			"https://www.nexuscanon.com/join?invitationId=inv-123",
 		);
 	});
 
