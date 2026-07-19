@@ -30,7 +30,7 @@ Historical provenance: patterns adapted from Xerp `monorepo-discipline`; rewritt
 ```
 Rank 3 — Application  : apps/web  (sole deployable; future apps/* follow same rule)
 Rank 2 — Surfaces     : @afenda/ui-system · @afenda/emails
-Rank 1 — Platform     : @afenda/db · @afenda/auth · @afenda/admin · @afenda/env · @afenda/errors · @afenda/logger · @afenda/rate-limit · @afenda/cache · @afenda/audit · @afenda/search · @afenda/notifications · @afenda/http · @afenda/security · @afenda/metrics · @afenda/ai-the-machine · @afenda/config
+Rank 1 — Platform     : @afenda/db · @afenda/auth · @afenda/admin · @afenda/env · @afenda/errors · @afenda/logger · @afenda/rate-limit · @afenda/cache · @afenda/audit · @afenda/search · @afenda/notifications · @afenda/events · @afenda/http · @afenda/security · @afenda/metrics · @afenda/openapi · @afenda/ai-the-machine · @afenda/config
 ```
 
 **Direction rule:** imports flow **down** only (higher rank → same or lower). Packages never import `apps/*`. No cycles.
@@ -48,11 +48,13 @@ apps/web
   ├── @afenda/http     (leaf — Fetch compose · correlation · pagination · Retry-After)
   ├── @afenda/security (leaf — headers · CSP · CORS builders; next.config adapts)
   ├── @afenda/metrics  (leaf — Prometheus registry · record · scrape text)
+  ├── @afenda/openapi  (leaf — Zod→OAS glue · envelope · YAML emit)
   ├── @afenda/rate-limit ──→  @afenda/env · @afenda/errors
   ├── @afenda/cache      ──→  @afenda/env · @afenda/errors
   ├── @afenda/audit      ──→  @afenda/db · @afenda/errors
   ├── @afenda/search     ──→  @afenda/db · @afenda/errors
   ├── @afenda/notifications ──→  @afenda/db · @afenda/errors
+  ├── @afenda/events         ──→  @afenda/db · @afenda/errors
   ├── @afenda/ai-the-machine ──→  @afenda/errors  (+ ai SDK)
   ├── @afenda/ui-system
   └── @afenda/emails

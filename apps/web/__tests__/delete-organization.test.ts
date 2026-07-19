@@ -23,6 +23,10 @@ const auditMocks = vi.hoisted(() => ({
 	recordOrganizationDeletedAudit: vi.fn(),
 }));
 
+const eventMocks = vi.hoisted(() => ({
+	recordOrganizationDeletedEvent: vi.fn(),
+}));
+
 vi.mock("@afenda/auth", () => ({
 	requireRole: authMocks.requireRole,
 }));
@@ -39,6 +43,10 @@ vi.mock("@/modules/platform/domain/record-organization-deleted-audit", () => ({
 	recordOrganizationDeletedAudit: auditMocks.recordOrganizationDeletedAudit,
 }));
 
+vi.mock("@/modules/platform/domain/record-organization-deleted-event", () => ({
+	recordOrganizationDeletedEvent: eventMocks.recordOrganizationDeletedEvent,
+}));
+
 vi.mock("next/cache", () => ({
 	revalidatePath: vi.fn(),
 }));
@@ -53,6 +61,10 @@ describe("deleteOrganizationAction", () => {
 		auditMocks.recordOrganizationDeletedAudit.mockResolvedValue({
 			ok: true,
 			data: { id: "audit-1" },
+		});
+		eventMocks.recordOrganizationDeletedEvent.mockResolvedValue({
+			ok: true,
+			data: { id: "evt-1" },
 		});
 	});
 
@@ -91,6 +103,11 @@ describe("deleteOrganizationAction", () => {
 			actorUserId: operatorSession.userId,
 			correlationId: expect.any(String),
 		});
+		expect(eventMocks.recordOrganizationDeletedEvent).toHaveBeenCalledWith({
+			organizationId: "org-to-delete",
+			deletedByUserId: operatorSession.userId,
+			correlationId: expect.any(String),
+		});
 		expect(revalidatePath).toHaveBeenCalledWith("/admin");
 	});
 
@@ -112,6 +129,7 @@ describe("deleteOrganizationAction", () => {
 			expect(result.message).toContain("session memberships");
 		}
 		expect(auditMocks.recordOrganizationDeletedAudit).not.toHaveBeenCalled();
+		expect(eventMocks.recordOrganizationDeletedEvent).not.toHaveBeenCalled();
 		expect(revalidatePath).not.toHaveBeenCalled();
 	});
 
@@ -136,6 +154,7 @@ describe("deleteOrganizationAction", () => {
 			expect(result.code).toBe("INTERNAL_ERROR");
 			expect(result.message).toMatch(/activity audit/i);
 		}
+		expect(eventMocks.recordOrganizationDeletedEvent).not.toHaveBeenCalled();
 		expect(revalidatePath).not.toHaveBeenCalled();
 	});
 
@@ -162,6 +181,7 @@ describe("deleteOrganizationAction", () => {
 		expect(action).toMatch(/Permanent removal only/i);
 		expect(action).toContain('from "@afenda/admin"');
 		expect(action).toContain("recordOrganizationDeletedAudit");
+		expect(action).toContain("recordOrganizationDeletedEvent");
 		expect(action).toContain("platform_audit_log");
 		expect(action).not.toContain("recordRbacAudit");
 		expect(action).not.toContain('from "@afenda/audit"');

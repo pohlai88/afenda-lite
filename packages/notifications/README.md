@@ -37,7 +37,7 @@ const page = await listNotifications({ organizationId, userId, page: 1 });
 
 Pass request-scoped `organizationId` and recipient `userId` on every write. Mark-read / delete require `organizationId` + `userId` + `id` (ownership).
 
-**Living consumers:** `apps/web` identity `recordOrgRoleAssignedNotification` → `assignOrgRoleAction`.
+**Living consumers:** `apps/web` identity `recordOrgRoleAssignedEvent` → handler → `recordOrgRoleAssignedNotification` → `assignOrgRoleAction`.
 
 ## Store
 

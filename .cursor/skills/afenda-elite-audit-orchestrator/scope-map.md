@@ -16,7 +16,7 @@ Farm routing per domain keyword. Always also load: main [SKILL.md](SKILL.md) and
 | `phase-I` | router → implementation-slices | GUIDE-018 | [`slice-map.md`](../afenda-elite-implementation-slices/slice-map.md) | per-row Verify column |
 | `neon-auth` | router → implementation-slices → neon-tenancy | ARCH-023 · ARCH-026 · ARCH-027 · AGENTS | [`neon-auth-slice-map.md`](../afenda-elite-implementation-slices/neon-auth-slice-map.md) · [`neon-slice-score.md`](../afenda-elite-implementation-slices/neon-slice-score.md) | per-row Floor verify · Neon Slice Score · independent APPROVED; `validate:neon-env` when env touched |
 | `ai-the-machine` / `ai` | router → monorepo-discipline → api-contract → coding-discipline | docs-V2/ai · LAYERS.md · AGENTS.md | [`docs-V2/ai/ai-the-machine-dna.md`](../../../docs-V2/ai/ai-the-machine-dna.md) · [`docs-V2/ai/README.md`](../../../docs-V2/ai/README.md) | `pnpm --filter @afenda/ai-the-machine test` · `pnpm --filter @afenda/web test -- api-ai-chat` · `check:openapi` |
-| `platform-rank1` / `http` / `metrics` / `audit` / `search` / `notifications` / `security` | router → monorepo-discipline → api-contract (when RH) | docs-V2/monorepo · LAYERS.md · docs-V2/{observability,search,notifications,api} | package READMEs · DNA packs | per-package `test` + `typecheck`; `check:openapi` when OpenAPI surface touched |
+| `platform-rank1` / `http` / `metrics` / `audit` / `search` / `notifications` / `events` / `security` / `openapi` | router → monorepo-discipline → api-contract (when RH / OAS) | docs-V2/monorepo · LAYERS.md · docs-V2/{observability,search,notifications,events,api} | package READMEs · DNA packs · api-contract `openapi.md` | per-package `test` + `typecheck`; `pnpm openapi:generate` + `check:openapi` when OpenAPI surface touched |
 
 ## Check inventory (repository level)
 
@@ -31,7 +31,7 @@ Available `pnpm` checks and their typical exit codes:
 | `check:openapi` | Live | No | OpenAPI YAML + schema validation |
 | `validate:neon-env` | Live | No | Neon Cloud ids vs `.env.local` |
 | `check:tenancy-residue` | Live | No | Soft dual-mode residue scan (N9 / ARCH-023 R1) |
-| `audit:tenancy-nulls` | Live | No | Living hard-root null `organization_id` audit (`platform_role_assignment`, `platform_rbac_audit`, `platform_audit_log`, `platform_search_document`, `platform_notification`; needs `DATABASE_URL`; CI on `main`) |
+| `audit:tenancy-nulls` | Live | No | Living hard-root null `organization_id` audit (`platform_role_assignment`, `platform_rbac_audit`, `platform_audit_log`, `platform_search_document`, `platform_notification`, `platform_domain_event`; needs `DATABASE_URL`; CI on `main`) |
 | `check:copy` | Gated | Yes | → `collapse-script-unavailable` |
 | `check:tsconfig-no-baseurl` | Live | No | TypeScript config validation |
 | `check:nav` | Gated | Yes | → `collapse-script-unavailable` |

@@ -32,7 +32,8 @@ const ROLE_ASSIGNED_NOTIFICATION = {
 
 /**
  * Record an in-app notification for the member who was assigned a role.
- * Call after `assignOrgRoleWithAudit` succeeds.
+ * Invoked by the `identity.org_role.assigned` event handler
+ * (`recordOrgRoleAssignedEvent`) — not from Server Actions directly.
  */
 export async function recordOrgRoleAssignedNotification(
 	input: RecordOrgRoleAssignedNotificationInput,

@@ -103,7 +103,7 @@ Full inventory: [catalog.md](.cursor/skills/using-afenda-elite-skills/catalog.md
 
 ## Checkout posture (Living Turborepo on disk)
 
-**Present:** `@afenda/{config,db,auth,env,errors,logger,rate-limit,cache,audit,search,notifications,admin,http,security,metrics,ai-the-machine,ui-system,emails}` · `apps/web` · `apps/docs` (**official** Fumadocs docs) · `apps/web/proxy.ts` edge session gate · `apps/web/modules/{platform,identity}` · `apps/web/features/{auth,org-admin,ai-the-machine}` · `docs-V2/**` Scratch packs · CI/Deploy (`.github/workflows/{ci,deploy}.yml`).
+**Present:** `@afenda/{config,db,auth,env,errors,logger,rate-limit,cache,audit,search,notifications,events,admin,http,security,metrics,openapi,ai-the-machine,ui-system,emails}` · `apps/web` · `apps/docs` (**official** Fumadocs docs) · `apps/web/proxy.ts` edge session gate · `apps/web/modules/{platform,identity}` · `apps/web/features/{auth,org-admin,ai-the-machine}` · `docs-V2/**` Scratch packs · CI/Deploy (`.github/workflows/{ci,deploy}.yml`).
 
 **Absent by design / removed domains:** Living controlled `docs/` (cutover `71176a0`) · product **Declarations** + **Feed Farm Trade (FFT)** modules/features/routes (nuclear wipe) · `feed-farm-trade` skill · repo-root `app/`, `modules/`, `features/`, `components-V2/`, Collapse `lib/`, wiped ops script bodies · `apps/web/app/playground/` · `apps/web/features/playground/` (removed 2026-07-15; do not handroll). Do **not** recreate `modules/declarations`, `modules/fft`, `features/declarations`, `features/fft`, or `/client/declarations` / `/fft` product trees.
 
@@ -203,7 +203,7 @@ Authority: [`testing/README.md`](testing/README.md).
 | `pnpm test:e2e` / `:smoke` / `:journey` | Playwright when specs exist |
 | `pnpm check:docs-naming` | DOC-002 / naming gate |
 | `pnpm validate:neon-env` | Neon Cloud ids vs `.env.local` |
-| `pnpm audit:tenancy-nulls` | Living hard tenant roots null-org audit (`platform_role_assignment` · `platform_rbac_audit` · `platform_audit_log` · `platform_search_document`) |
+| `pnpm audit:tenancy-nulls` | Living hard tenant roots null-org audit (`platform_role_assignment` · `platform_rbac_audit` · `platform_audit_log` · `platform_search_document` · `platform_notification` · `platform_domain_event`) |
 | `pnpm audit:github-actions-secrets` | Required Actions secret/var **names** only (Ops; keyring `gh`) |
 | `pnpm protect:main` | Verify (or `-- --apply`) Living `main` required check = `quality` |
 

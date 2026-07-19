@@ -1,26 +1,31 @@
 /**
  * Emit docs-V2/api/OPEN-001-openapi.yaml for api-now HTTP only.
  *
- * Zod SSOT: apps/web/modules/platform schemas.
+ * Zod SSOT: apps/web/modules/platform schemas + `@afenda/openapi` helpers.
  * Run with: pnpm exec tsx --tsconfig apps/web/tsconfig.json scripts/generate-openapi.mts
  *
  * @see docs-V2/api/rest.md
  */
-import { writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
+	dataEnvelope,
+	OPENAPI_DOCUMENT_ID,
+	OPENAPI_VERSION,
 	OpenAPIRegistry,
 	OpenApiGeneratorV3,
-} from "@asteasolutions/zod-to-openapi";
-import { stringify as stringifyYaml } from "yaml";
+	type OperationMetadataMap,
+	stampAfendaDocument,
+	stampOperationMetadata,
+	writeOpenApiYaml,
+	z,
+} from "@afenda/openapi";
 
 import { apiErrorBodySchema } from "../apps/web/modules/platform/schemas/api-error";
 import {
 	livenessResponseSchema,
 	readinessResponseSchema,
 } from "../apps/web/modules/platform/schemas/health";
-import { z } from "../apps/web/modules/platform/schemas/openapi-zod";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const OUT_REL = join("docs-V2", "api", "OPEN-001-openapi.yaml");
@@ -28,10 +33,31 @@ const outPath = process.env.OPENAPI_OUT
 	? process.env.OPENAPI_OUT
 	: join(root, OUT_REL);
 
-/** Runtime success envelope from `healthJson` / `apiData` — always `{ data: T }`. */
-function dataEnvelope<T extends z.ZodTypeAny>(inner: T, name: string) {
-	return z.object({ data: inner }).openapi(name);
-}
+const YAML_HEADER_LINES = [
+	"# GENERATED — do not hand-edit.",
+	"# Source: scripts/generate-openapi.mts",
+	"# Scratch authority: docs-V2/api/rest.md",
+	"# Regenerate: pnpm openapi:generate",
+	"",
+] as const;
+
+const OPERATION_METADATA = {
+	"/api/health/liveness": {
+		get: { operationId: "getHealthLiveness", status: "api-now" },
+	},
+	"/api/health/readiness": {
+		get: { operationId: "getHealthReadiness", status: "api-now" },
+	},
+	"/api/metrics": {
+		get: { operationId: "getMetricsScrape", status: "api-now" },
+	},
+} as const satisfies OperationMetadataMap;
+
+const DOCUMENT_META = {
+	id: OPENAPI_DOCUMENT_ID,
+	version: "1.2.0",
+	generatedAt: "2026-07-20",
+} as const;
 
 const livenessEnvelopeSchema = dataEnvelope(
 	livenessResponseSchema,
@@ -136,7 +162,7 @@ registry.registerPath({
 
 const generator = new OpenApiGeneratorV3(registry.definitions);
 const document = generator.generateDocument({
-	openapi: "3.0.3",
+	openapi: OPENAPI_VERSION,
 	info: {
 		title: "Afenda-Lite HTTP (api-now)",
 		version: "1.0.0",
@@ -159,58 +185,7 @@ const document = generator.generateDocument({
 	],
 });
 
-const operationMetadata = {
-	"/api/health/liveness": {
-		get: { operationId: "getHealthLiveness", status: "api-now" },
-	},
-	"/api/health/readiness": {
-		get: { operationId: "getHealthReadiness", status: "api-now" },
-	},
-	"/api/metrics": {
-		get: { operationId: "getMetricsScrape", status: "api-now" },
-	},
-} as const;
-
-for (const [route, methods] of Object.entries(operationMetadata)) {
-	for (const [method, metadata] of Object.entries(methods)) {
-		const operation =
-			document.paths?.[route]?.[
-				method as keyof (typeof document.paths)[string]
-			];
-		if (!operation || typeof operation !== "object") {
-			throw new Error(
-				`Missing generated operation ${method.toUpperCase()} ${route}`,
-			);
-		}
-		Object.assign(operation, {
-			operationId: metadata.operationId,
-			"x-afenda-status": metadata.status,
-		});
-	}
-}
-
-Object.assign(document, {
-	"x-afenda-document": {
-		id: "OPEN-001",
-		version: "1.2.0",
-		generatedAt: "2026-07-20",
-	},
-});
-
-const header = [
-	"# GENERATED — do not hand-edit.",
-	"# Source: scripts/generate-openapi.mts",
-	"# Scratch authority: docs-V2/api/rest.md",
-	"# Regenerate: pnpm openapi:generate",
-	"",
-].join("\n");
-
-writeFileSync(
-	outPath,
-	`${header}${stringifyYaml(JSON.parse(JSON.stringify(document)), {
-		lineWidth: 100,
-		aliasDuplicateObjects: false,
-	})}\n`,
-	"utf8",
-);
+stampOperationMetadata(document, OPERATION_METADATA);
+stampAfendaDocument(document, DOCUMENT_META);
+writeOpenApiYaml(outPath, document, YAML_HEADER_LINES);
 console.log(`Wrote ${outPath}`);

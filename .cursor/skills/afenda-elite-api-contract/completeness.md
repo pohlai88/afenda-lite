@@ -18,14 +18,15 @@
 | Branded IDs one-version | Param = brand = Zod | [brands-and-schemas.md](brands-and-schemas.md) + disk schemas | **Done** (living identity brands) |
 | FFT HTTP catalog | Removed with FFT | — | **Removed (wiped)** |
 | Living DOC-001 API pack | API/REST/OPEN Controlled docs | `docs/api/**` | **Retired on disk (docs-V2 Scratch)** |
-| OpenAPI api-now YAML + gate | Generate + check (health-only) | `docs-V2/api/OPEN-001-openapi.yaml` + `pnpm check:openapi` | **Done** |
+| OpenAPI api-now YAML + gate | Generate + check (health + metrics) | `docs-V2/api/OPEN-001-openapi.yaml` + `pnpm check:openapi` | **Done** |
+| `@afenda/openapi` Zod→OAS leaf | Extended `z` · envelope · stamps · YAML emit | `packages/openapi` · web `openapi-zod` re-export | **Done** |
 | OpenAPI Fumadocs wire | Docs app consumer | [openapi.md](openapi.md); `apps/docs` | **Done** |
 | OpenAPI contract-only expand | `x-afenda-status` | Only with real consumer | **Recorded** (forward) |
 | Skill ↔ Scratch sync | Mirror disk | This skill + docs-V2 | **Operational** |
 
 ## Stabilization (latest)
 
-- api-now OpenAPI include set is **health-only** (declaration-draft removed with Declarations product)
+- api-now OpenAPI include set is **health probes + Prometheus `/api/metrics`** (declaration-draft removed with Declarations product; stream `/api/ai/chat` stays YAML-excluded)
 - Org-admin RBAC mutations stay on discrete Server Actions (`assign-org-role` · `revoke-org-role` · `invite-org-member`), not new `/api` routes — see Scratch [actions.md](../../../docs-V2/api/actions.md)
 - OpenAPI artifact lives under `docs-V2/api/` (not deleted `docs/api/`)
 - Pack entry: [docs-V2/api/README.md](../../../docs-V2/api/README.md)

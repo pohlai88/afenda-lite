@@ -4,6 +4,7 @@
  */
 import {
 	platformAuditLog,
+	platformDomainEvent,
 	platformNotification,
 	platformRbacAudit,
 	platformRoleAssignment,
@@ -17,6 +18,7 @@ export const HARD_TENANT_ROOT_TABLE_NAMES = [
 	"platform_audit_log",
 	"platform_search_document",
 	"platform_notification",
+	"platform_domain_event",
 ] as const;
 
 export type HardTenantRootTableName =
@@ -29,4 +31,5 @@ export const HARD_TENANT_ROOT_TABLES = {
 	platformAuditLog,
 	platformSearchDocument,
 	platformNotification,
+	platformDomainEvent,
 } as const;

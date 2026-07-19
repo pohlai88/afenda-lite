@@ -22,7 +22,7 @@
 | Field | Value |
 |-------|-------|
 | Surface | `assignOrgRoleAction` success path |
-| Adapter | `recordOrgRoleAssignedNotification` (identity domain) |
+| Adapter | `recordOrgRoleAssignedEvent` → handler → `recordOrgRoleAssignedNotification` (identity domain) |
 | Recipient | Target member (`assignment.userId`) |
 | Read path | `listMyNotificationsAction` · `markNotificationReadAction` · `markAllNotificationsReadAction` · `getUnreadNotificationCountAction` (session stamps org/user; package facades direct — no pass-through domain) |
 

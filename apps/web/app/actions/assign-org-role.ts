@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache";
 import { forbidUnlessPermission } from "@/app/actions/permission-gate";
 import { assignOrgRoleWithAudit } from "@/modules/identity/domain/assign-org-role-audited";
 import { getOrganizationUser } from "@/modules/identity/domain/organization-users";
-import { recordOrgRoleAssignedNotification } from "@/modules/identity/domain/record-org-role-assigned-notification";
+import { recordOrgRoleAssignedEvent } from "@/modules/identity/domain/record-org-role-assigned-event";
 import { assignOrgRoleCommandSchema } from "@/modules/identity/schemas/assign-org-role";
 import { readRequestAttribution } from "@/modules/platform/domain/request-attribution";
 import { logProductEvent } from "@/modules/platform/observability/product-log";
@@ -125,16 +125,17 @@ export async function assignOrgRoleAction(
 
 	let notificationId: string | null = null;
 	try {
-		const notification = await recordOrgRoleAssignedNotification({
+		const recorded = await recordOrgRoleAssignedEvent({
 			organizationId: session.orgId,
 			userId: result.assignment.userId,
 			roleId: result.assignment.roleId,
 			assignmentId: result.assignment.id,
 			actorUserId: session.userId,
+			correlationId,
 			reactivated: result.reactivated,
 		});
-		if (notification.ok) {
-			notificationId = notification.data.id;
+		if (recorded.ok) {
+			notificationId = recorded.data.notificationId;
 		} else {
 			logProductEvent({
 				level: "error",
@@ -142,8 +143,8 @@ export async function assignOrgRoleAction(
 				correlationId,
 				orgId: session.orgId,
 				actorUserId: session.userId,
-				path: "assignOrgRoleAction.notification",
-				code: notification.code,
+				path: "assignOrgRoleAction.event",
+				code: recorded.code,
 			});
 		}
 	} catch {
@@ -153,7 +154,7 @@ export async function assignOrgRoleAction(
 			correlationId,
 			orgId: session.orgId,
 			actorUserId: session.userId,
-			path: "assignOrgRoleAction.notification",
+			path: "assignOrgRoleAction.event",
 			code: "INTERNAL_ERROR",
 		});
 	}

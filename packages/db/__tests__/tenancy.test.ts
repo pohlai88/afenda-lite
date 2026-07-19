@@ -8,6 +8,7 @@ import {
 } from "../src/hard-tenant-roots";
 import {
 	platformAuditLog,
+	platformDomainEvent,
 	platformNotification,
 	platformRbacAudit,
 	platformRole,
@@ -17,13 +18,14 @@ import {
 
 describe("@afenda/db hard tenant roots (N9 / ARCH-023)", () => {
 	it("lists platform IAM hard tenant root table names", () => {
-		expect(HARD_TENANT_ROOT_TABLE_NAMES).toHaveLength(5);
+		expect(HARD_TENANT_ROOT_TABLE_NAMES).toHaveLength(6);
 		expect([...HARD_TENANT_ROOT_TABLE_NAMES]).toEqual([
 			"platform_role_assignment",
 			"platform_rbac_audit",
 			"platform_audit_log",
 			"platform_search_document",
 			"platform_notification",
+			"platform_domain_event",
 		]);
 	});
 
@@ -51,6 +53,21 @@ describe("@afenda/db hard tenant roots (N9 / ARCH-023)", () => {
 		expect(getTableColumns(platformNotification).organizationId.name).toBe(
 			"organization_id",
 		);
+		expect(getTableColumns(platformDomainEvent).organizationId.name).toBe(
+			"organization_id",
+		);
+	});
+
+	it("requires organization_id, type, status on platform_domain_event", () => {
+		const columns = getTableColumns(platformDomainEvent);
+		expect(columns.organizationId.notNull).toBe(true);
+		expect(columns.type.notNull).toBe(true);
+		expect(columns.sourceModule.notNull).toBe(true);
+		expect(columns.correlationId.notNull).toBe(true);
+		expect(columns.actorUserId.notNull).toBe(true);
+		expect(columns.payload.notNull).toBe(true);
+		expect(columns.status.notNull).toBe(true);
+		expect(columns.attempts.notNull).toBe(true);
 	});
 
 	it("requires organization_id and user_id on platform_notification", () => {

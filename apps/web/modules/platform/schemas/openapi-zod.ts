@@ -1,11 +1,5 @@
-import { extendZodWithOpenApi } from "@asteasolutions/zod-to-openapi";
-import { z } from "zod";
-
 /**
- * Single Zod instance extended for OPEN-001 generation.
- * Schema modules and `scripts/generate-openapi.mts` must import `z` from here
- * so registry.register can call `.openapi()` on the same prototype.
+ * Re-export the shared OpenAPI-extended Zod instance.
+ * SSOT: `@afenda/openapi/zod`.
  */
-extendZodWithOpenApi(z);
-
-export { z };
+export { z } from "@afenda/openapi/zod";

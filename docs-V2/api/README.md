@@ -54,7 +54,7 @@ Full TS floor: [../discipline/README.md](../discipline/README.md).
 
 ## OpenAPI
 
-Machine Zod helpers live under `modules/platform/schemas/openapi-zod.ts`. Generated artifact: [`OPEN-001-openapi.yaml`](OPEN-001-openapi.yaml) (api-now **health-only**). Do **not** invent offline REST catalogues — only ship RH paths that exist on disk ([rest.md](rest.md)). Do **not** hand-edit the YAML to clear drift — fix Zod / `scripts/generate-openapi.mts`, then `pnpm openapi:generate`.
+Machine Zod→OpenAPI helpers live in `@afenda/openapi` (`zod` · `document`); web schemas re-export `z` via `modules/platform/schemas/openapi-zod.ts`. Generated artifact: [`OPEN-001-openapi.yaml`](OPEN-001-openapi.yaml) (api-now health + metrics scrape). Do **not** invent offline REST catalogues — only ship RH paths that exist on disk ([rest.md](rest.md)). Do **not** hand-edit the YAML to clear drift — fix Zod / `scripts/generate-openapi.mts`, then `pnpm openapi:generate`.
 
 **Verified (2026-07-19):** `pnpm openapi:generate && pnpm check:openapi` exit 0 — YAML byte-matches generator (aligned with Zod; not hand-edit, not stale).
 

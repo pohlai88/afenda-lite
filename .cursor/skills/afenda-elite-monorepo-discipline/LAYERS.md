@@ -18,8 +18,9 @@ Authority: ARCH-024 operative (this file + SKILL.md). Living ARCH-024 body dorma
 │  @afenda/db  @afenda/auth  @afenda/admin  @afenda/env        │
 │  @afenda/errors  @afenda/logger  @afenda/rate-limit          │
 │  @afenda/cache  @afenda/audit  @afenda/search                │
-│  @afenda/notifications  @afenda/http  @afenda/security       │
-│  @afenda/metrics  @afenda/ai-the-machine  @afenda/config     │
+│  @afenda/notifications  @afenda/events  @afenda/http         │
+│  @afenda/security  @afenda/metrics  @afenda/openapi          │
+│  @afenda/ai-the-machine  @afenda/config                      │
 │  See allowed same-layer edges below                          │
 └──────────────────────────────────────────────────────────────┘
 ```
@@ -32,7 +33,7 @@ Authority: ARCH-024 operative (this file + SKILL.md). Living ARCH-024 body dorma
 | Surfaces  | ✅† | same-ok‡ | ❌ |
 | Application | ✅ | ✅ | ❌ (apps must not import each other) |
 
-\* Platform same-layer: prefer minimal coupling. Living edges: `@afenda/auth` → `@afenda/env` · `@afenda/http` · `@afenda/logger` · `@afenda/rate-limit` · `@afenda/errors`; `@afenda/rate-limit` → `@afenda/env` · `@afenda/errors`; `@afenda/cache` → `@afenda/env` · `@afenda/errors`; `@afenda/audit` → `@afenda/db` · `@afenda/errors`; `@afenda/search` → `@afenda/db` · `@afenda/errors`; `@afenda/notifications` → `@afenda/db` · `@afenda/errors`; `@afenda/ai-the-machine` → `@afenda/errors`; `@afenda/admin` → `@afenda/auth` · `@afenda/db` · `@afenda/env` · `@afenda/errors`; `apps/web` → `@afenda/errors` · `@afenda/logger` · `@afenda/rate-limit` · `@afenda/audit` · `@afenda/search` · `@afenda/notifications` · `@afenda/http` · `@afenda/security` · `@afenda/metrics` · `@afenda/ai-the-machine` (general activity; RBAC stays `@afenda/admin/audit`). `@afenda/errors`, `@afenda/logger`, `@afenda/http`, `@afenda/security`, and `@afenda/metrics` are Rank-1 **leaves** (no `@afenda/*` deps). `@afenda/db` must **not** import `@afenda/auth` or `@afenda/env`. `@afenda/env` imports no workspace packages. `@afenda/config` is not a runtime importer.
+\* Platform same-layer: prefer minimal coupling. Living edges: `@afenda/auth` → `@afenda/env` · `@afenda/http` · `@afenda/logger` · `@afenda/rate-limit` · `@afenda/errors`; `@afenda/rate-limit` → `@afenda/env` · `@afenda/errors`; `@afenda/cache` → `@afenda/env` · `@afenda/errors`; `@afenda/audit` → `@afenda/db` · `@afenda/errors`; `@afenda/search` → `@afenda/db` · `@afenda/errors`; `@afenda/notifications` → `@afenda/db` · `@afenda/errors`; `@afenda/events` → `@afenda/db` · `@afenda/errors`; `@afenda/ai-the-machine` → `@afenda/errors`; `@afenda/admin` → `@afenda/auth` · `@afenda/db` · `@afenda/env` · `@afenda/errors`; `apps/web` → `@afenda/errors` · `@afenda/logger` · `@afenda/rate-limit` · `@afenda/audit` · `@afenda/search` · `@afenda/notifications` · `@afenda/events` · `@afenda/http` · `@afenda/security` · `@afenda/metrics` · `@afenda/openapi` · `@afenda/ai-the-machine` (general activity; RBAC stays `@afenda/admin/audit`). `@afenda/errors`, `@afenda/logger`, `@afenda/http`, `@afenda/security`, `@afenda/metrics`, and `@afenda/openapi` are Rank-1 **leaves** (no `@afenda/*` deps). `@afenda/db` must **not** import `@afenda/auth` or `@afenda/env`. `@afenda/env` imports no workspace packages. `@afenda/config` is not a runtime importer.
 
 † `@afenda/ui-system` must remain free of server-only code and DB calls (ARCH-024).
 
@@ -50,9 +51,11 @@ Authority: ARCH-024 operative (this file + SKILL.md). Living ARCH-024 body dorma
 | `@afenda/audit` | Surfaces, `apps/*`, `@afenda/admin`, `@afenda/auth`, Prisma middleware | General `platform_audit_log` SSOT; RBAC stays `@afenda/admin/audit` → `platform_rbac_audit` |
 | `@afenda/search` | Surfaces, `apps/*`, paid search SaaS, Meili/Typesense/FlexSearch SDKs, docs Orama ownership | Sole `platform_search_document` Postgres FTS SSOT; docs stay Orama in `@afenda/docs` |
 | `@afenda/notifications` | Surfaces, `apps/*`, WebSocket servers, Redis primary store, EMAIL/SMS/PUSH without transport | Sole `platform_notification` IN_APP inbox SSOT |
+| `@afenda/events` | Surfaces, `apps/*`, NATS / Redis bus, `@afenda/notifications` import | Sole `platform_domain_event` outbox SSOT; handlers injected from web |
 | `@afenda/http` | Next.js; Surfaces / `apps/*`; `@afenda/*` runtime deps; tutorial `{ success }` envelopes | Fetch compose · correlation · pagination · Retry-After / RateLimit / Server-Timing leaf |
 | `@afenda/security` | Next.js; Surfaces / `apps/*`; `@afenda/*` runtime deps; RBAC / rate-limit / audit / CSRF stores | Headers · CSP · CORS builders leaf; Next config is the adapter |
 | `@afenda/metrics` | Next.js; Surfaces / `apps/*`; `@afenda/*` runtime deps; OTEL / vendor APM; org-id labels; Prisma middleware | Prometheus registry · record helpers · scrape text leaf; web owns RH + token gate |
+| `@afenda/openapi` | Next.js; Surfaces / `apps/*`; `@afenda/*` runtime deps; product Swagger UI; manual OAS builders | Zod→OAS glue · `{ data }` envelope · metadata stamp · YAML emit leaf; path registration stays in root script; docs UI stays `@afenda/docs` |
 | `@afenda/ai-the-machine` | Next.js; Surfaces / `apps/*`; `@afenda/db`; direct `@anthropic-ai/sdk`; ERP module assistants | AI SDK engine · prompt-only assistants; web injects Gateway model + session context |
 | `@afenda/ui-system` | `@afenda/db`, server-only auth paths | UI is client/surface |
 | Any package | Relative `../../packages/...` | Cross-boundary package name required |

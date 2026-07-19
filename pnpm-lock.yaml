@@ -136,9 +136,9 @@ importers:
       '@afenda/config':
         specifier: workspace:*
         version: link:packages/config
-      '@asteasolutions/zod-to-openapi':
-        specifier: ^8.5.0
-        version: 8.5.0(zod@4.4.3)
+      '@afenda/openapi':
+        specifier: workspace:*
+        version: link:packages/openapi
       '@axe-core/playwright':
         specifier: ^4.12.1
         version: 4.12.1(playwright-core@1.61.1)
@@ -386,6 +386,9 @@ importers:
       '@afenda/errors':
         specifier: workspace:*
         version: link:../../packages/errors
+      '@afenda/events':
+        specifier: workspace:*
+        version: link:../../packages/events
       '@afenda/http':
         specifier: workspace:*
         version: link:../../packages/http
@@ -398,6 +401,9 @@ importers:
       '@afenda/notifications':
         specifier: workspace:*
         version: link:../../packages/notifications
+      '@afenda/openapi':
+        specifier: workspace:*
+        version: link:../../packages/openapi
       '@afenda/rate-limit':
         specifier: workspace:*
         version: link:../../packages/rate-limit
@@ -413,9 +419,6 @@ importers:
       '@ai-sdk/react':
         specifier: 'catalog:'
         version: 4.0.34(react@19.2.7)(zod@4.4.3)
-      '@asteasolutions/zod-to-openapi':
-        specifier: ^8.5.0
-        version: 8.5.0(zod@4.4.3)
       '@neondatabase/auth-ui':
         specifier: ^0.2.1-beta
         version: 0.2.1-beta(6f63ea4960858f443b4aa8d612bed05c)
@@ -710,6 +713,31 @@ importers:
         specifier: 'catalog:'
         version: 5.9.3
 
+  packages/events:
+    dependencies:
+      '@afenda/db':
+        specifier: workspace:*
+        version: link:../db
+      '@afenda/errors':
+        specifier: workspace:*
+        version: link:../errors
+      server-only:
+        specifier: 0.0.1
+        version: 0.0.1
+      zod:
+        specifier: 'catalog:'
+        version: 4.4.3
+    devDependencies:
+      '@afenda/config':
+        specifier: workspace:*
+        version: link:../config
+      '@types/node':
+        specifier: 'catalog:'
+        version: 20.19.30
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
+
   packages/http:
     devDependencies:
       '@afenda/config':
@@ -765,6 +793,28 @@ importers:
       server-only:
         specifier: 0.0.1
         version: 0.0.1
+      zod:
+        specifier: 'catalog:'
+        version: 4.4.3
+    devDependencies:
+      '@afenda/config':
+        specifier: workspace:*
+        version: link:../config
+      '@types/node':
+        specifier: 'catalog:'
+        version: 20.19.30
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
+
+  packages/openapi:
+    dependencies:
+      '@asteasolutions/zod-to-openapi':
+        specifier: ^8.5.0
+        version: 8.5.0(zod@4.4.3)
+      yaml:
+        specifier: ^2.9.0
+        version: 2.9.0
       zod:
         specifier: 'catalog:'
         version: 4.4.3

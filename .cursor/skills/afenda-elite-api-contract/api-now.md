@@ -13,12 +13,14 @@ This file mirrors the **api-now** allowlist. Verify with `Test-Path` / `pnpm che
 | Method | Path | Purpose | Auth | Cache / notes |
 |--------|------|---------|------|---------------|
 | GET | `/api/health/liveness` | Process up | public | Optional short public cache |
-| GET | `/api/health/readiness` | DB / deps ready | public | Prefer `no-store` |
+| GET | `/api/health/readiness` | DB / deps ready | public | Prefer `no-store`; **503** when `not_ready` |
+| GET | `/api/metrics` | Prometheus scrape | bearer `METRICS_SCRAPE_TOKEN` | Fail closed unset → **404**; bad bearer → **401**; `text/plain` |
+| POST | `/api/ai/chat` | The Machine UIMessage stream | member session | AI SDK stream; **excluded** from OpenAPI YAML |
 | ALL | `/api/auth/[...path]` | Neon Auth proxy | Neon | Neon-owned; not portal JSON; excluded from OpenAPI YAML |
 | GET | `/api/session/sync-cookies` | Cookie-safe session mint / refresh | member session | Redirect; not `{ data }` JSON; excluded from YAML |
 | GET | `/api/session/ensure-active-organization` | Active-org persistence | member session | Redirect / plain-text; excluded from YAML |
 
-Success JSON for health uses `{ data: T }`. Failures use bare `APIErrorBody`. OpenAPI: [openapi.md](openapi.md) — **health-only** YAML include set.
+Success JSON for health uses `{ data: T }`. Failures use bare `APIErrorBody`. Metrics is Prometheus text (not `{ data }`). OpenAPI: [openapi.md](openapi.md) — health + metrics YAML include set (`/api/ai/chat` excluded).
 
 **Only this set is api-now.** Do not add handlers for dashboard list reads. **Removed:** `/api/client/declaration-draft` (Declarations product wiped).
 

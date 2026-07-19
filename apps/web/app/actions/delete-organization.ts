@@ -10,6 +10,7 @@ import { createCorrelationId } from "@afenda/http";
 import { revalidatePath } from "next/cache";
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { recordOrganizationDeletedAudit } from "@/modules/platform/domain/record-organization-deleted-audit";
+import { recordOrganizationDeletedEvent } from "@/modules/platform/domain/record-organization-deleted-event";
 import { logProductEvent } from "@/modules/platform/observability/product-log";
 import {
 	type ActionResult,
@@ -31,7 +32,8 @@ export type DeleteOrganizationActionState =
  * `Result` → `ActionResult` honestly.
  *
  * General activity trail after Neon success:
- * `recordOrganizationDeletedAudit` → `@afenda/audit` → `platform_audit_log`.
+ * `recordOrganizationDeletedAudit` → `@afenda/audit` → `platform_audit_log`,
+ * then `recordOrganizationDeletedEvent` → `@afenda/events` outbox.
  * Does not use `@afenda/admin/audit` (RBAC SSOT stays separate).
  */
 export async function deleteOrganizationAction(
@@ -84,6 +86,12 @@ export async function deleteOrganizationAction(
 	if (auditFailure) {
 		return auditFailure;
 	}
+
+	await writeOrganizationDeleteEvent({
+		organizationId: deletedOrgId,
+		actorUserId: session.userId,
+		correlationId,
+	});
 
 	logProductEvent({
 		level: "info",
@@ -140,4 +148,43 @@ async function writeOrganizationDeleteAudit(input: {
 		"Organization was deleted, but the activity audit could not be written. Contact an admin with this correlation id.",
 		correlationId,
 	);
+}
+
+/** Soft-fail: org already deleted; outbox miss must not undo Neon delete. */
+async function writeOrganizationDeleteEvent(input: {
+	organizationId: string;
+	actorUserId: string;
+	correlationId: string;
+}): Promise<void> {
+	const { organizationId, actorUserId, correlationId } = input;
+
+	try {
+		const recorded = await recordOrganizationDeletedEvent({
+			organizationId,
+			deletedByUserId: actorUserId,
+			correlationId,
+		});
+		if (recorded.ok) {
+			return;
+		}
+		logProductEvent({
+			level: "error",
+			event: "action.internal_error",
+			correlationId,
+			orgId: organizationId,
+			actorUserId,
+			path: "deleteOrganizationAction.event",
+			code: recorded.code,
+		});
+	} catch {
+		logProductEvent({
+			level: "error",
+			event: "action.internal_error",
+			correlationId,
+			orgId: organizationId,
+			actorUserId,
+			path: "deleteOrganizationAction.event",
+			code: "INTERNAL_ERROR",
+		});
+	}
 }

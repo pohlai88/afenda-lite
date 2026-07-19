@@ -64,9 +64,11 @@ export default defineConfig({
 				"notifications",
 				path.join(repoRoot, "packages/notifications"),
 			),
+			nodeProject("events", path.join(repoRoot, "packages/events")),
 			nodeProject("http", path.join(repoRoot, "packages/http")),
 			nodeProject("security", path.join(repoRoot, "packages/security")),
 			nodeProject("metrics", path.join(repoRoot, "packages/metrics")),
+			nodeProject("openapi", path.join(repoRoot, "packages/openapi")),
 			nodeProject(
 				"ai-the-machine",
 				path.join(repoRoot, "packages/ai-the-machine"),

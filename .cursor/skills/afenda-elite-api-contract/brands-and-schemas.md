@@ -113,7 +113,7 @@ These are **named gaps** — do not invent ad-hoc schemas to fill them; add only
 | Shared `PaginatedResult` schema helper | When first list endpoint is exposed over HTTP |
 | Account PATCH schema | Only if portal-owned fields exist beyond Neon AccountView |
 
-OpenAPI export: [openapi.md](openapi.md) · `docs-V2/api/OPEN-001-openapi.yaml` — health-only; not a schema gap.
+OpenAPI export: [openapi.md](openapi.md) · `docs-V2/api/OPEN-001-openapi.yaml` — health + metrics; Zod helpers in `@afenda/openapi`; not a schema gap.
 
 ---
 

@@ -102,7 +102,7 @@
 	},
 	"devDependencies": {
 		"@afenda/config": "workspace:*",
-		"@asteasolutions/zod-to-openapi": "^8.5.0",
+		"@afenda/openapi": "workspace:*",
 		"@axe-core/playwright": "^4.12.1",
 		"@biomejs/biome": "catalog:",
 		"@playwright/test": "^1.61.1",

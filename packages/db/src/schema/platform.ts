@@ -10,6 +10,7 @@ import {
 	boolean,
 	customType,
 	index,
+	integer,
 	jsonb,
 	pgTable,
 	primaryKey,
@@ -246,5 +247,46 @@ export const platformNotification = pgTable(
 			t.userId,
 			t.read,
 		),
+	],
+);
+
+/**
+ * Org-scoped domain-event outbox (pending → processed / failed).
+ * Sole writer: `@afenda/events` — do not dual-write from apps/web.
+ */
+export const platformDomainEvent = pgTable(
+	"platform_domain_event",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		/** Required — hard tenancy predicate (ARCH-023). */
+		organizationId: text("organization_id").notNull(),
+		/** Dotted type — e.g. identity.org_role.assigned */
+		type: text("type").notNull(),
+		/** Living module source — platform | identity */
+		sourceModule: text("source_module").notNull(),
+		correlationId: text("correlation_id").notNull(),
+		causationId: text("causation_id"),
+		actorUserId: text("actor_user_id").notNull(),
+		payload: jsonb("payload").notNull(),
+		metadata: jsonb("metadata"),
+		/** Outbox status — pending | processed | failed */
+		status: text("status").notNull().default("pending"),
+		attempts: integer("attempts").notNull().default(0),
+		lastError: text("last_error"),
+		processedAt: timestamp("processed_at", { withTimezone: true }),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("platform_domain_event_org_created_at_idx").on(
+			t.organizationId,
+			t.createdAt,
+		),
+		index("platform_domain_event_status_created_at_idx").on(
+			t.status,
+			t.createdAt,
+		),
+		index("platform_domain_event_org_type_idx").on(t.organizationId, t.type),
 	],
 );

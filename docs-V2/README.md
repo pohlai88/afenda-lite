@@ -40,6 +40,7 @@ No controlled-document register. No links outside this tree into other doc homes
 | Observability | [observability/README.md](observability/README.md) | observability-and-instrumentation |
 | Product search (Neon FTS) | [search/README.md](search/README.md) | monorepo-discipline · planning dependency graph |
 | In-app notifications | [notifications/README.md](notifications/README.md) | monorepo-discipline · planning dependency graph |
+| Domain events / outbox | [events/README.md](events/README.md) · [events/events-dna.md](events/events-dna.md) | monorepo-discipline · planning dependency graph |
 | AI The Machine | [ai/README.md](ai/README.md) · [ai/ai-the-machine-dna.md](ai/ai-the-machine-dna.md) | monorepo-discipline · ai-sdk · vercel-agent |
 
 ---
