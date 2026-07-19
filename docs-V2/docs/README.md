@@ -7,7 +7,7 @@
 | App | `@afenda/docs` · port **3001** |
 | Status | **Active** — official human-facing documentation site (enterprise production bar) |
 | Audience | Engineers maintaining docs content, Fumadocs UI, and the OpenAPI consumer |
-| Updated | 2026-07-19 |
+| Updated | 2026-07-20 |
 
 **What it is** — Scratch ops pack for Afenda-Lite’s official docs site (`@afenda/docs` / `apps/docs`): Fumadocs UI, MDX content, and the OpenAPI consumer.
 

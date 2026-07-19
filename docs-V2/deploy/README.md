@@ -5,7 +5,7 @@
 | Surface | `docs-V2/deploy/README.md` |
 | Authority | **Scratch** — shipping-and-launch + Vercel MCP (read-only) + disk under `apps/web/**` |
 | Purpose | Lean deploy latency · cache · region gates · launch checklist |
-| Updated | 2026-07-19 |
+| Updated | 2026-07-20 |
 
 Re-probe after region or deploy-pipeline changes — not Living SSOT.
 
@@ -22,7 +22,7 @@ Re-probe after region or deploy-pipeline changes — not Living SSOT.
 | Production git auto-deploy | Skipped (`ignoreCommand` exits 0 when `VERCEL_ENV=production`) |
 | Neon co-locate | Keep `sin1` ↔ Neon `aws-ap-southeast-1` — [../tenancy/neon-optimize.md](../tenancy/neon-optimize.md) |
 | Domain / deploy inventory | [../tenancy/vercel-domains.md](../tenancy/vercel-domains.md) |
-| Official docs app | Separate host lock — [`../docs/deploying.md`](../docs/deploying.md) · [`apps/docs/vercel.json`](../../apps/docs/vercel.json) · **not** this product Deploy workflow |
+| Official docs app | Separate host **`afenda-lite-docs`** — [`../docs/deploying.md`](../docs/deploying.md) · [`apps/docs/vercel.json`](../../apps/docs/vercel.json) · **not** this product Deploy workflow · prod via Ready preview + `vercel alias set` (Production Git cancels by design) |
 
 ---
 
