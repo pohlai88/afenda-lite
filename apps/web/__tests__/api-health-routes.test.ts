@@ -12,9 +12,32 @@ vi.mock("@/modules/platform/domain/health", () => ({
 	getReadinessSnapshot: async () => ({
 		status: "ready",
 		checks: {
-			storage: { provider: "postgres", status: "reachable" },
-			auth: { provider: "neon_auth", status: "configured" },
+			storage: {
+				provider: "postgres",
+				status: "reachable",
+				latencyMs: 3,
+			},
+			auth: {
+				provider: "neon_auth",
+				status: "configured",
+				reachability: "reachable",
+				latencyMs: 5,
+			},
 		},
+		probes: [
+			{
+				name: "postgres",
+				status: "up",
+				latencyMs: 3,
+				checkedAt: "2026-07-15T12:00:00.000Z",
+			},
+			{
+				name: "neon_auth",
+				status: "up",
+				latencyMs: 5,
+				checkedAt: "2026-07-15T12:00:00.000Z",
+			},
+		],
 		topology: "neon-shared-schema",
 		connection: { pooler: true, ssl: "require" },
 		timestamp: "2026-07-15T12:00:00.000Z",

@@ -103,7 +103,7 @@ Full inventory: [catalog.md](.cursor/skills/using-afenda-elite-skills/catalog.md
 
 ## Checkout posture (Living Turborepo on disk)
 
-**Present:** `@afenda/{config,db,auth,env,ui-system,emails}` · `apps/web` · `apps/docs` (**official** Fumadocs docs) · `apps/web/proxy.ts` edge session gate · `apps/web/modules/{platform,identity,declarations,fft}` · `apps/web/features/{auth,declarations,fft,org-admin}` · `docs-V2/**` Scratch packs · CI/Deploy (`.github/workflows/{ci,deploy}.yml`).
+**Present:** `@afenda/{config,db,auth,env,errors,admin,ui-system,emails}` · `apps/web` · `apps/docs` (**official** Fumadocs docs) · `apps/web/proxy.ts` edge session gate · `apps/web/modules/{platform,identity,declarations,fft}` · `apps/web/features/{auth,declarations,fft,org-admin}` · `docs-V2/**` Scratch packs · CI/Deploy (`.github/workflows/{ci,deploy}.yml`).
 
 **Absent by design:** Living controlled `docs/` (cutover `71176a0`) · repo-root `app/`, `modules/`, `features/`, `components-V2/`, Collapse `lib/`, wiped ops script bodies · `apps/web/app/playground/` · `apps/web/features/playground/` (removed 2026-07-15; do not handroll).
 

@@ -58,6 +58,12 @@ vi.mock("next/cache", () => ({
 	revalidatePath: vi.fn(),
 }));
 
+vi.mock("next/headers", () => ({
+	headers: async () => ({
+		get: () => null,
+	}),
+}));
+
 vi.mock("@/modules/identity/domain/has-permission", () => ({
 	hasPermission: vi.fn(),
 }));
@@ -74,19 +80,13 @@ vi.mock("@/modules/identity/domain/revoke-org-role-audited", () => ({
 	revokeOrgRoleWithAudit: identityMocks.revokeOrgRoleWithAudit,
 }));
 
-vi.mock(
-	"@/modules/platform/domain/record-rbac-audit",
-	async (importOriginal) => {
-		const actual =
-			await importOriginal<
-				typeof import("../modules/platform/domain/record-rbac-audit")
-			>();
-		return {
-			...actual,
-			recordRbacAudit: auditMocks.recordRbacAudit,
-		};
-	},
-);
+vi.mock("@afenda/admin/audit", async (importOriginal) => {
+	const actual = await importOriginal<typeof import("@afenda/admin/audit")>();
+	return {
+		...actual,
+		recordRbacAudit: auditMocks.recordRbacAudit,
+	};
+});
 
 vi.mock("@/modules/declarations/domain/declaration-draft", () => ({
 	getClientDeclarationDraft: declarationMocks.getClientDeclarationDraft,
@@ -102,7 +102,7 @@ import {
 import { inviteOrgMemberAction } from "../app/actions/invite-org-member";
 import { revokeOrgRoleAction } from "../app/actions/revoke-org-role";
 import { hasPermission } from "../modules/identity/domain/has-permission";
-import { MEMBER_INVITE_AUDIT_ACTION } from "../modules/platform/domain/record-rbac-audit";
+import { MEMBER_INVITE_AUDIT_ACTION } from "@afenda/admin/audit";
 
 const hasPermissionMock = vi.mocked(hasPermission);
 
@@ -138,7 +138,7 @@ describe("N12 living authz audit evidence", () => {
 		const callOrder: string[] = [];
 		auditMocks.recordRbacAudit.mockImplementation(async () => {
 			callOrder.push("audit");
-			return { id: "audit-invite-1" };
+			return { ok: true as const, data: { id: "audit-invite-1" } };
 		});
 		authMocks.inviteOrgMember.mockImplementation(async () => {
 			callOrder.push("invite");
@@ -206,7 +206,10 @@ describe("N12 living authz audit evidence", () => {
 	});
 
 	it("keeps durable audit when Neon invite fails after audit", async () => {
-		auditMocks.recordRbacAudit.mockResolvedValue({ id: "audit-before-neon" });
+		auditMocks.recordRbacAudit.mockResolvedValue({
+			ok: true as const,
+			data: { id: "audit-before-neon" },
+		});
 		authMocks.inviteOrgMember.mockRejectedValue(new Error(secretLeak));
 
 		const formData = new FormData();

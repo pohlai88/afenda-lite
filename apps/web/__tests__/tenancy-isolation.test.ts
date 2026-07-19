@@ -32,7 +32,7 @@ import {
 	deleteRbacAuditRow,
 	MEMBER_INVITE_AUDIT_ACTION,
 	recordRbacAudit,
-} from "../modules/platform/domain/record-rbac-audit";
+} from "@afenda/admin/audit";
 
 const { hasDatabase } = resolveDatabaseUrlForTests();
 
@@ -103,7 +103,7 @@ describe.skipIf(!hasDatabase)("tenancy isolation two-org (N9)", () => {
 	});
 
 	it("RBAC audit: withOrg A sees row; withOrg B does not", async () => {
-		const row = await recordRbacAudit({
+		const recorded = await recordRbacAudit({
 			orgId: orgA,
 			action: MEMBER_INVITE_AUDIT_ACTION,
 			actorUserId: `user-n9-iso-${runId}`,
@@ -111,6 +111,11 @@ describe.skipIf(!hasDatabase)("tenancy isolation two-org (N9)", () => {
 			targetId: clientEmail,
 			correlationId: "test-correlation-id",
 		});
+		expect(recorded.ok).toBe(true);
+		if (!recorded.ok) {
+			throw new Error(recorded.message);
+		}
+		const row = recorded.data;
 		auditIds.push({ id: row.id, orgId: orgA });
 
 		const forA = await withOrg(platformRbacAudit, orgA);

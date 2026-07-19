@@ -38,6 +38,9 @@ catalog:
   tailwindcss: ^4
   "@tailwindcss/postcss": ^4
 
+  # Observability (platform logger)
+  pino: ^10.3.1
+
   # Types / tooling
   typescript: ^5
   "@types/node": ^20

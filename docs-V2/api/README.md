@@ -24,7 +24,10 @@ Do not invent dashboard list GETs under `/api` for same-origin UI.
 
 ## ActionResult (disk)
 
-Path: `apps/web/modules/platform/schemas/action-result.ts`
+| Layer | Path |
+|-------|------|
+| Kernel SSOT | `@afenda/errors` · `@afenda/errors/result` · `@afenda/errors/http` |
+| Web adapters | `apps/web/modules/platform/schemas/action-result.ts` · `api-error.ts` |
 
 | Outcome | Shape |
 |---------|-------|
@@ -32,7 +35,7 @@ Path: `apps/web/modules/platform/schemas/action-result.ts`
 | Failure | `{ ok: false, code, message, details? }` |
 | Helpers | `actionOk` · `actionFail` · `actionFailInternal(message, correlationId)` |
 
-Expected failures return `{ ok: false }` — throw only for unexpected bugs. Never tutorial `{ success, data }`.
+Expected failures return `{ ok: false }` — throw only for unexpected bugs. Never tutorial `{ success, data }`. Error codes / safe serialize / AppError: `@afenda/errors` (no Next.js on the kernel). Closed codes include `RATE_LIMITED` (429) and `SERVICE_UNAVAILABLE` (503); Route Handlers may emit `Retry-After` via `jsonError` when `details.retryAfter` is a positive integer.
 
 ---
 

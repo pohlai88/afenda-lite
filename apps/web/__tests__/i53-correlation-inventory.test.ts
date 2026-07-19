@@ -67,9 +67,12 @@ describe("I5.3 critical-path wiring inventory", () => {
 	});
 
 	it("requires correlationId on recordRbacAudit writes", () => {
-		const audit = readWeb("modules/platform/domain/record-rbac-audit.ts");
-		expect(audit).toContain("correlationId: string");
+		const audit = readFileSync(
+			join(webRoot, "../../packages/admin/src/schemas/audit.ts"),
+			"utf8",
+		);
 		expect(audit).toContain("correlationId");
+		expect(audit).toContain("recordRbacAuditCommandSchema");
 	});
 
 	it("does not invent vendor APM dependencies in apps/web package.json", () => {

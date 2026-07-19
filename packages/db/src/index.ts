@@ -1,4 +1,18 @@
-export { and, asc, eq, isNull, ne, sql } from "drizzle-orm";
+export {
+	and,
+	asc,
+	count,
+	desc,
+	eq,
+	gte,
+	inArray,
+	isNull,
+	lt,
+	lte,
+	max,
+	ne,
+	sql,
+} from "drizzle-orm";
 export { db, withOrg } from "./client";
 export {
 	HARD_TENANT_ROOT_TABLE_NAMES,

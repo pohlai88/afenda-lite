@@ -7,6 +7,7 @@ import { forbidUnlessPermission } from "@/app/actions/permission-gate";
 import { assignOrgRoleWithAudit } from "@/modules/identity/domain/assign-org-role-audited";
 import { getOrganizationUser } from "@/modules/identity/domain/organization-users";
 import { assignOrgRoleCommandSchema } from "@/modules/identity/schemas/assign-org-role";
+import { readRequestAttribution } from "@/modules/platform/domain/request-attribution";
 import { createCorrelationId } from "@/modules/platform/observability/correlation";
 import { logProductEvent } from "@/modules/platform/observability/product-log";
 import {
@@ -90,6 +91,7 @@ export async function assignOrgRoleAction(
 
 	let result: Awaited<ReturnType<typeof assignOrgRoleWithAudit>>;
 	try {
+		const attribution = await readRequestAttribution();
 		result = await assignOrgRoleWithAudit({
 			orgId: session.orgId,
 			userId: member.userId,
@@ -97,6 +99,8 @@ export async function assignOrgRoleAction(
 			grantedBy: session.userId,
 			actorUserId: session.userId,
 			correlationId,
+			ipAddress: attribution.ipAddress,
+			userAgent: attribution.userAgent,
 		});
 	} catch {
 		logProductEvent({

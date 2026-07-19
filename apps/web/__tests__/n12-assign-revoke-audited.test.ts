@@ -21,7 +21,7 @@ import {
 	deleteRbacAuditRow,
 	ROLE_ASSIGN_AUDIT_ACTION,
 	ROLE_REVOKE_AUDIT_ACTION,
-} from "../modules/platform/domain/record-rbac-audit";
+} from "@afenda/admin/audit";
 
 const repoRoot = path.resolve(
 	path.dirname(fileURLToPath(import.meta.url)),

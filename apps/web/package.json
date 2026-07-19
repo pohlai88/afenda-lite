@@ -12,9 +12,11 @@
 		"clean": "node -e \"const fs=require('fs'); for (const d of ['.next','.turbo','coverage','dist']) fs.rmSync(d,{recursive:true,force:true})\""
 	},
 	"dependencies": {
+		"@afenda/admin": "workspace:*",
 		"@afenda/auth": "workspace:*",
 		"@afenda/db": "workspace:*",
 		"@afenda/env": "workspace:*",
+		"@afenda/errors": "workspace:*",
 		"@afenda/ui-system": "workspace:*",
 		"@asteasolutions/zod-to-openapi": "^8.5.0",
 		"@neondatabase/auth-ui": "^0.2.1-beta",

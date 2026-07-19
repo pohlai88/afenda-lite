@@ -23,11 +23,11 @@ const migrateGuardPath = path.join(
 	"db-migrate-guard.mjs",
 );
 const platformSchemaPath = path.join(schemaRoot, "platform.ts");
-const readinessDomainPath = path.join(
-	webRoot,
-	"modules",
-	"platform",
-	"domain",
+const readinessProbePath = path.join(
+	repoRoot,
+	"packages",
+	"admin",
+	"src",
 	"health.ts",
 );
 const bffRouteRelative = "app/api/auth/[...path]/route.ts";
@@ -58,6 +58,7 @@ const FORBIDDEN_IMPORT_SOURCE = [
 	String.raw`(?:from|import)\s*['"][^'"]*revoke-org-role(?:-audited)?[^'"]*['"]`,
 	String.raw`(?:from|import)\s*['"][^'"]*invite-org-member[^'"]*['"]`,
 	String.raw`(?:from|import)\s*['"][^'"]*record-rbac-audit[^'"]*['"]`,
+	String.raw`(?:from|import)\s*['"]@afenda\/admin(?:\/[^'"]*)?['"]`,
 	String.raw`(?:from|import)\s*['"][^'"]*platformRbacAudit[^'"]*['"]`,
 	String.raw`(?:from|import)\s*['"][^'"]*platform_rbac_audit[^'"]*['"]`,
 	String.raw`(?:from|import)\s*['"]@\/modules\/declarations(?:\/[^'"]*)?['"]`,
@@ -74,6 +75,7 @@ const FORBIDDEN_PATH_FRAGMENT = [
 	"revoke-org-role",
 	"invite-org-member",
 	"record-rbac-audit",
+	"/packages/admin/",
 ];
 
 const DRIZZLE_MUTATION =
@@ -266,7 +268,7 @@ describe("@afenda/web Pre-Login write isolation (PL-S10)", () => {
 	});
 
 	it("readiness probe remains read-only select 1", () => {
-		const source = readFileSync(readinessDomainPath, "utf-8");
+		const source = readFileSync(readinessProbePath, "utf-8");
 		expect(source).toMatch(/sql`select 1`/);
 		expect(source).not.toMatch(DRIZZLE_MUTATION);
 	});

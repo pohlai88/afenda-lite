@@ -53,6 +53,9 @@ export default defineConfig({
 				},
 			},
 			nodeProject("db", path.join(repoRoot, "packages/db")),
+			nodeProject("admin", path.join(repoRoot, "packages/admin")),
+			nodeProject("errors", path.join(repoRoot, "packages/errors")),
+			nodeProject("logger", path.join(repoRoot, "packages/logger")),
 			nodeProject("emails", path.join(repoRoot, "packages/emails")),
 			{
 				test: {
@@ -71,6 +74,7 @@ export default defineConfig({
 				resolve: {
 					alias: {
 						"@": path.join(repoRoot, "apps/web"),
+						"server-only": path.join(repoRoot, "testing/empty-server-only.ts"),
 						...testingAlias,
 					},
 				},

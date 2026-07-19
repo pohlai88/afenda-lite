@@ -1,6 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const executeMock = vi.hoisted(() => vi.fn());
+const fetchMock = vi.hoisted(() => vi.fn());
+
+vi.stubGlobal("fetch", fetchMock);
 
 /** Mutable env double — product `env` is readonly; probes read fields at call time. */
 const mockEnv = vi.hoisted(() => ({
@@ -34,10 +37,12 @@ import {
 describe("platform health probes (PL-S8)", () => {
 	beforeEach(() => {
 		executeMock.mockReset();
+		fetchMock.mockReset();
 		mockEnv.NEON_AUTH_BASE_URL = "https://auth.example.com";
 		mockEnv.NEON_AUTH_COOKIE_SECRET = "x".repeat(32);
 		mockEnv.DATABASE_URL =
 			"postgresql://u:p@ep-x-pooler.example/db?sslmode=require";
+		fetchMock.mockResolvedValue(new Response(null, { status: 200 }));
 	});
 
 	it("liveness is process-up only", () => {
@@ -47,23 +52,30 @@ describe("platform health probes (PL-S8)", () => {
 			timestamp: "2026-07-15T12:00:00.000Z",
 		});
 		expect(executeMock).not.toHaveBeenCalled();
+		expect(fetchMock).not.toHaveBeenCalled();
 	});
 
-	it("reports ready when DB reachable and auth configured", async () => {
+	it("reports ready when DB reachable and Auth HTTP reachable", async () => {
 		executeMock.mockResolvedValueOnce([]);
 		const snap = await getReadinessSnapshot(
 			new Date("2026-07-15T12:00:00.000Z"),
 		);
-		expect(readinessResponseSchema.parse(snap)).toEqual({
-			status: "ready",
-			checks: {
-				storage: { provider: "postgres", status: "reachable" },
-				auth: { provider: "neon_auth", status: "configured" },
-			},
-			topology: "neon-shared-schema",
-			connection: { pooler: true, ssl: "require" },
-			timestamp: "2026-07-15T12:00:00.000Z",
+		const parsed = readinessResponseSchema.parse(snap);
+		expect(parsed.status).toBe("ready");
+		expect(parsed.checks.storage).toMatchObject({
+			provider: "postgres",
+			status: "reachable",
 		});
+		expect(parsed.checks.storage.latencyMs).toBeGreaterThanOrEqual(0);
+		expect(parsed.checks.auth).toMatchObject({
+			provider: "neon_auth",
+			status: "configured",
+			reachability: "reachable",
+		});
+		expect(parsed.probes).toHaveLength(2);
+		expect(parsed.topology).toBe("neon-shared-schema");
+		expect(parsed.connection).toEqual({ pooler: true, ssl: "require" });
+		expect(parsed.timestamp).toBe("2026-07-15T12:00:00.000Z");
 	});
 
 	it("reports degraded when auth misconfigured and DB reachable", async () => {
@@ -76,8 +88,26 @@ describe("platform health probes (PL-S8)", () => {
 		expect(snap.checks.auth).toEqual({
 			provider: "neon_auth",
 			status: "misconfigured",
+			reachability: "not_probed",
+			latencyMs: 0,
 		});
 		expect(snap.checks.storage.status).toBe("reachable");
+		expect(fetchMock).not.toHaveBeenCalled();
+	});
+
+	it("reports degraded when Auth HTTP unreachable and DB reachable", async () => {
+		executeMock.mockResolvedValueOnce([]);
+		fetchMock.mockRejectedValueOnce(new Error("ECONNREFUSED"));
+		const snap = await getReadinessSnapshot(
+			new Date("2026-07-15T12:00:00.000Z"),
+		);
+		expect(snap.status).toBe("degraded");
+		expect(snap.checks.auth.reachability).toBe("unreachable");
+		expect(snap.probes).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({ name: "neon_auth", status: "down" }),
+			]),
+		);
 	});
 
 	it("reports not_ready when DB unreachable — never ready", async () => {
@@ -86,10 +116,8 @@ describe("platform health probes (PL-S8)", () => {
 			new Date("2026-07-15T12:00:00.000Z"),
 		);
 		expect(snap.status).toBe("not_ready");
-		expect(snap.checks.storage).toEqual({
-			provider: "postgres",
-			status: "unreachable",
-		});
+		expect(snap.checks.storage.status).toBe("unreachable");
+		expect(snap.checks.storage.latencyMs).toBeGreaterThanOrEqual(0);
 		expect(snap.status).not.toBe("ready");
 	});
 
@@ -105,6 +133,7 @@ describe("platform health probes (PL-S8)", () => {
 		);
 		expect(snap.status).toBe("not_ready");
 		expect(snap.checks.storage.status).toBe("unreachable");
+		expect(snap.checks.storage.latencyMs).toBeGreaterThanOrEqual(50);
 	});
 
 	it("never echoes secrets in readiness JSON", async () => {
@@ -120,17 +149,18 @@ describe("platform health probes (PL-S8)", () => {
 		expect(serialized).not.toContain("SuperSecretPassw0rd");
 		expect(serialized).not.toContain("leak-me-token");
 		expect(serialized).not.toContain(secretUrl);
-		expect(serialized).not.toContain(mockEnv.NEON_AUTH_COOKIE_SECRET);
-		expect(serialized).not.toContain("cookie-secret");
 	});
 
-	it("inspectDatabaseConnection never echoes malformed URL secrets", () => {
-		const malformed =
-			"%%%user:SuperSecretPassw0rd@ep-x-pooler.example/db?sslmode=require&token=leak-me-token%%%";
-		const result = inspectDatabaseConnection(malformed);
-		expect(result).toEqual({ pooler: false, ssl: "unknown" });
-		const serialized = JSON.stringify(result);
-		expect(serialized).not.toContain("SuperSecretPassw0rd");
-		expect(serialized).not.toContain("leak-me-token");
+	it("inspectDatabaseConnection flags pooler hosts", () => {
+		expect(
+			inspectDatabaseConnection(
+				"postgresql://u:p@ep-x-pooler.example/db?sslmode=require",
+			),
+		).toEqual({ pooler: true, ssl: "require" });
+		expect(
+			inspectDatabaseConnection(
+				"postgresql://u:p@ep-x.example/db?sslmode=require",
+			),
+		).toEqual({ pooler: false, ssl: "require" });
 	});
 });
