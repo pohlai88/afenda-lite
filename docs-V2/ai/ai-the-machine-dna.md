@@ -46,6 +46,8 @@ Enable Code Review (dashboard — **no MCP/API toggle**): team slug `jacks-proje
 
 **HITL verify path (2026-07-20 cutover):** After enable, open a PR (or wait for the next PR). Confirm a Code Review run appears under Agent → Code Review for that PR. Do **not** use MCP `list_agent_runs` (eve observability — out of scope). Agent Installation (Analytics / Speed Insights) is a different free product — skip this slice.
 
+**Production cutover evidence (2026-07-20):** Deploy workflow promoted READY `dpl_DaZAHd6mZuN4x8n6rWF6P3G6CZT8` @ `824b059` (includes Rank-1 + The Machine). Probe: `GET /api/health/liveness` → 200; unauthenticated `POST /api/ai/chat` → **401** (not 404).
+
 Env (names only; values never in git): `AI_GATEWAY_API_KEY`, `AI_THE_MACHINE_MODEL` (default `anthropic/claude-sonnet-4.5`). Synced to Vercel **Production / Preview / Development** via CLI from local `.env.local` (2026-07-20). On Vercel, Gateway OIDC may apply when the key is omitted.
 
 ---
