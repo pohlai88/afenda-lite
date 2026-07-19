@@ -7,7 +7,7 @@ import {
 	CORRELATION_HEADER,
 	resolveCorrelationId,
 } from "@/modules/platform/observability/correlation";
-import { logProductEvent } from "@/modules/platform/observability/product-log";
+import { logProductEvent } from "@afenda/logger/edge";
 
 import { shouldBypassSessionGate } from "./session-gate-policy";
 

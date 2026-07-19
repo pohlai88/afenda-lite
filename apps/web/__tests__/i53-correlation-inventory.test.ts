@@ -77,8 +77,9 @@ describe("I5.3 critical-path wiring inventory", () => {
 
 	it("does not invent vendor APM dependencies in apps/web package.json", () => {
 		const pkg = readWeb("package.json");
-		expect(pkg).not.toMatch(
-			/sentry|datadog|opentelemetry|@opentelemetry|"pino"/i,
-		);
+		expect(pkg).not.toMatch(/sentry|datadog|opentelemetry|@opentelemetry/i);
+		// Structured logs use @afenda/logger (Pino stays inside that package).
+		expect(pkg).toContain("@afenda/logger");
+		expect(pkg).not.toMatch(/"pino"/);
 	});
 });

@@ -20,6 +20,7 @@
 	},
 	"dependencies": {
 		"@afenda/env": "workspace:*",
+		"@afenda/logger": "workspace:*",
 		"@neondatabase/auth": "catalog:",
 		"server-only": "0.0.1"
 	},
