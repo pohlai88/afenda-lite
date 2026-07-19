@@ -1,8 +1,12 @@
-import {
-	MAX_RBAC_AUDIT_IP_ADDRESS_LENGTH,
-	MAX_RBAC_AUDIT_USER_AGENT_LENGTH,
-} from "@afenda/admin/audit";
 import { headers } from "next/headers";
+
+/**
+ * Truncation limits for privileged audit attribution.
+ * Keep numeric parity with `@afenda/admin/audit` MAX_RBAC_AUDIT_* — this module
+ * must not import `@afenda/admin` (prelogin Path A reaches here via auth-credentials).
+ */
+const MAX_ATTRIBUTION_IP_ADDRESS_LENGTH = 128;
+const MAX_ATTRIBUTION_USER_AGENT_LENGTH = 512;
 
 export type RequestAttribution = {
 	ipAddress: string | undefined;
@@ -27,10 +31,10 @@ export async function readRequestAttribution(): Promise<RequestAttribution> {
 
 	return {
 		ipAddress: rawIp
-			? truncate(rawIp, MAX_RBAC_AUDIT_IP_ADDRESS_LENGTH)
+			? truncate(rawIp, MAX_ATTRIBUTION_IP_ADDRESS_LENGTH)
 			: undefined,
 		userAgent: rawUa
-			? truncate(rawUa, MAX_RBAC_AUDIT_USER_AGENT_LENGTH)
+			? truncate(rawUa, MAX_ATTRIBUTION_USER_AGENT_LENGTH)
 			: undefined,
 	};
 }
