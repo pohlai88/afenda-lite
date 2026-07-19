@@ -23,7 +23,7 @@ This guide is the **internal runbook** for the Day-1 docs pipeline. It assumes [
 | 6. Wire contract | `pnpm --filter @afenda/docs test` | Document id + loader + CSS preset + search route + anti-8bitcn |
 | 7. Types / SSG | `typecheck` · `build` | Local or CI job — not every `pnpm checks` |
 
-Stock search: `app/api/search/route.ts` exports `GET` from `createFromSource(source)` (bundled Orama — no Cloud). No separate step; covered by `typecheck` / `build` / wire `test`. Ban scan: `rg -n "8bitcn|ComponentPreview" apps/docs` must exit with no matches (rg exit `1` = clean).
+Stock search: `app/api/search/route.ts` exports `GET` from `createFromSource(source)` (bundled Orama — no Cloud). No separate step; covered by `typecheck` / `build` / wire `test`. UI config map (search · theme · RootProvider): [ui.md](ui.md). Ban scan: `rg -n "8bitcn|ComponentPreview" apps/docs` must exit with no matches (rg exit `1` = clean).
 
 Lean monorepo gate (no full Next build): `pnpm check:docs-app` → generate OpenAPI MDX + lint:links.
 

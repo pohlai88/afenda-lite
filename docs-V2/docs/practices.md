@@ -50,29 +50,13 @@ Default MDX components: `apps/docs/components/mdx.tsx` (wraps `fumadocs-ui/mdx` 
 
 ## Native Fumadocs MDX (allowed)
 
-Registered in `getMDXComponents` — use in narrative MDX **without** 8bitcn / registry installs:
+Use stock components registered in `getMDXComponents` — **without** 8bitcn / registry installs.
 
-| Component | Source | Typical use |
-|-----------|--------|-------------|
-| `Callout` | `fumadocs-ui/mdx` defaults | Warnings · Day-1 boundaries |
-| `Cards` / `Card` | `fumadocs-ui/mdx` defaults | Section landings · internal links |
-| `Tabs` / `Tab` | `fumadocs-ui/components/tabs` | Command variants |
-| `Steps` / `Step` | `fumadocs-ui/components/steps` | Pipelines |
-| `Files` / `Folder` / `File` | `fumadocs-ui/components/files` | Content trees |
-| `Accordions` / `Accordion` | `fumadocs-ui/components/accordion` | Pitfalls / FAQ |
-| `TypeTable` | `fumadocs-ui/components/type-table` | Manual field tables only |
+**SSOT for the full catalog + status tags:** [ui-components.md](ui-components.md) (Shipped · Documented / not wired · Out of scope). Layout / theme / search: [ui.md](ui.md) · [ui-layouts.md](ui-layouts.md).
 
-```mdx
-<Callout type="warn" title="Not DOC-001">
-  Fumadocs is a Day-1 mirror — not Controlled documentation authority.
-</Callout>
+Shipped shortlist: `Callout` · `Cards`/`Card` · `Tabs`/`Tab` · `Steps`/`Step` · `Files`/`Folder`/`File` · `Accordions`/`Accordion` · `TypeTable` · defaults from `fumadocs-ui/mdx` (incl. code blocks) · `APIPage`/`OpenAPIPage`.
 
-<Cards>
-  <Card title="HTTP API" href="/docs/api">Generated OpenAPI operations.</Card>
-</Cards>
-```
-
-**Do not use:** `AutoTypeTable`, Twoslash, `ComponentPreview`, `CopyCommandButton`, `@8bitcn/*`, or product `@afenda/ui-system` in docs MDX.
+**Do not use:** `AutoTypeTable`, Twoslash, `ComponentPreview`, `CopyCommandButton`, `@8bitcn/*`, or product `@afenda/ui-system` in docs MDX — see Out of scope in [ui-components.md](ui-components.md).
 
 Reference surface: `apps/docs/content/docs/guide.mdx`.
 
@@ -126,4 +110,4 @@ Product UI primitives stay on `@afenda/ui-system` + ADR-010 — document them in
 5. Spot-check /docs in browser (:3001) after content edits
 ```
 
-Companion: [content.md](content.md) · [README.md](README.md) · [automation.md](automation.md).
+Companion: [ui-components.md](ui-components.md) · [ui.md](ui.md) · [content.md](content.md) · [README.md](README.md) · [automation.md](automation.md).
