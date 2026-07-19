@@ -44,7 +44,9 @@ components:
                 - NOT_FOUND
                 - CONFLICT
                 - VALIDATION_ERROR
+                - RATE_LIMITED
                 - INTERNAL_ERROR
+                - SERVICE_UNAVAILABLE
             message:
               type: string
               minLength: 1
@@ -92,9 +94,16 @@ components:
                   enum:
                     - reachable
                     - unreachable
+                latencyMs:
+                  type: integer
+                  minimum: 0
+                  description: Wall-clock milliseconds for the bounded select 1 probe. Timeout at
+                    MAX_SELECT1_LATENCY_MS already yields status unreachable; latencyMs remains the
+                    measured elapsed time.
               required:
                 - provider
                 - status
+                - latencyMs
             auth:
               type: object
               properties:
@@ -107,12 +116,57 @@ components:
                   enum:
                     - configured
                     - misconfigured
+                reachability:
+                  type: string
+                  enum:
+                    - reachable
+                    - unreachable
+                    - not_probed
+                  description: HTTP reachability of NEON_AUTH_BASE_URL. not_probed when auth env/config is incomplete
+                    (cheap fail before fetch).
+                latencyMs:
+                  type: integer
+                  minimum: 0
+                  description: Wall-clock milliseconds for the bounded Neon Auth base-URL probe. 0 when reachability
+                    is not_probed.
               required:
                 - provider
                 - status
+                - reachability
+                - latencyMs
           required:
             - storage
             - auth
+        probes:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+                enum:
+                  - postgres
+                  - neon_auth
+              status:
+                type: string
+                enum:
+                  - up
+                  - down
+                  - skipped
+              latencyMs:
+                type: integer
+                minimum: 0
+              checkedAt:
+                type: string
+                format: date-time
+            required:
+              - name
+              - status
+              - latencyMs
+              - checkedAt
+          minItems: 1
+          description: Real multi-probe fan-out (postgres select 1 + Neon Auth HTTP). No invented
+            NATS/Redis/port fleet.
         topology:
           type: string
           enum:
@@ -134,6 +188,7 @@ components:
       required:
         - status
         - checks
+        - probes
         - topology
         - connection
         - timestamp
@@ -236,9 +291,16 @@ components:
                       enum:
                         - reachable
                         - unreachable
+                    latencyMs:
+                      type: integer
+                      minimum: 0
+                      description: Wall-clock milliseconds for the bounded select 1 probe. Timeout at
+                        MAX_SELECT1_LATENCY_MS already yields status unreachable; latencyMs remains
+                        the measured elapsed time.
                   required:
                     - provider
                     - status
+                    - latencyMs
                 auth:
                   type: object
                   properties:
@@ -251,12 +313,57 @@ components:
                       enum:
                         - configured
                         - misconfigured
+                    reachability:
+                      type: string
+                      enum:
+                        - reachable
+                        - unreachable
+                        - not_probed
+                      description: HTTP reachability of NEON_AUTH_BASE_URL. not_probed when auth env/config is incomplete
+                        (cheap fail before fetch).
+                    latencyMs:
+                      type: integer
+                      minimum: 0
+                      description: Wall-clock milliseconds for the bounded Neon Auth base-URL probe. 0 when reachability
+                        is not_probed.
                   required:
                     - provider
                     - status
+                    - reachability
+                    - latencyMs
               required:
                 - storage
                 - auth
+            probes:
+              type: array
+              items:
+                type: object
+                properties:
+                  name:
+                    type: string
+                    enum:
+                      - postgres
+                      - neon_auth
+                  status:
+                    type: string
+                    enum:
+                      - up
+                      - down
+                      - skipped
+                  latencyMs:
+                    type: integer
+                    minimum: 0
+                  checkedAt:
+                    type: string
+                    format: date-time
+                required:
+                  - name
+                  - status
+                  - latencyMs
+                  - checkedAt
+              minItems: 1
+              description: Real multi-probe fan-out (postgres select 1 + Neon Auth HTTP). No invented
+                NATS/Redis/port fleet.
             topology:
               type: string
               enum:
@@ -278,6 +385,7 @@ components:
           required:
             - status
             - checks
+            - probes
             - topology
             - connection
             - timestamp
@@ -400,7 +508,9 @@ paths:
                           - NOT_FOUND
                           - CONFLICT
                           - VALIDATION_ERROR
+                          - RATE_LIMITED
                           - INTERNAL_ERROR
+                          - SERVICE_UNAVAILABLE
                       message:
                         type: string
                         minLength: 1
@@ -430,7 +540,9 @@ paths:
                           - NOT_FOUND
                           - CONFLICT
                           - VALIDATION_ERROR
+                          - RATE_LIMITED
                           - INTERNAL_ERROR
+                          - SERVICE_UNAVAILABLE
                       message:
                         type: string
                         minLength: 1
@@ -460,7 +572,9 @@ paths:
                           - NOT_FOUND
                           - CONFLICT
                           - VALIDATION_ERROR
+                          - RATE_LIMITED
                           - INTERNAL_ERROR
+                          - SERVICE_UNAVAILABLE
                       message:
                         type: string
                         minLength: 1
@@ -490,7 +604,9 @@ paths:
                           - NOT_FOUND
                           - CONFLICT
                           - VALIDATION_ERROR
+                          - RATE_LIMITED
                           - INTERNAL_ERROR
+                          - SERVICE_UNAVAILABLE
                       message:
                         type: string
                         minLength: 1
@@ -520,7 +636,9 @@ paths:
                           - NOT_FOUND
                           - CONFLICT
                           - VALIDATION_ERROR
+                          - RATE_LIMITED
                           - INTERNAL_ERROR
+                          - SERVICE_UNAVAILABLE
                       message:
                         type: string
                         minLength: 1
@@ -591,7 +709,9 @@ paths:
                           - NOT_FOUND
                           - CONFLICT
                           - VALIDATION_ERROR
+                          - RATE_LIMITED
                           - INTERNAL_ERROR
+                          - SERVICE_UNAVAILABLE
                       message:
                         type: string
                         minLength: 1
@@ -621,7 +741,9 @@ paths:
                           - NOT_FOUND
                           - CONFLICT
                           - VALIDATION_ERROR
+                          - RATE_LIMITED
                           - INTERNAL_ERROR
+                          - SERVICE_UNAVAILABLE
                       message:
                         type: string
                         minLength: 1
@@ -651,7 +773,9 @@ paths:
                           - NOT_FOUND
                           - CONFLICT
                           - VALIDATION_ERROR
+                          - RATE_LIMITED
                           - INTERNAL_ERROR
+                          - SERVICE_UNAVAILABLE
                       message:
                         type: string
                         minLength: 1
@@ -681,7 +805,9 @@ paths:
                           - NOT_FOUND
                           - CONFLICT
                           - VALIDATION_ERROR
+                          - RATE_LIMITED
                           - INTERNAL_ERROR
+                          - SERVICE_UNAVAILABLE
                       message:
                         type: string
                         minLength: 1
@@ -711,7 +837,9 @@ paths:
                           - NOT_FOUND
                           - CONFLICT
                           - VALIDATION_ERROR
+                          - RATE_LIMITED
                           - INTERNAL_ERROR
+                          - SERVICE_UNAVAILABLE
                       message:
                         type: string
                         minLength: 1
@@ -783,7 +911,9 @@ paths:
                           - NOT_FOUND
                           - CONFLICT
                           - VALIDATION_ERROR
+                          - RATE_LIMITED
                           - INTERNAL_ERROR
+                          - SERVICE_UNAVAILABLE
                       message:
                         type: string
                         minLength: 1
@@ -813,7 +943,9 @@ paths:
                           - NOT_FOUND
                           - CONFLICT
                           - VALIDATION_ERROR
+                          - RATE_LIMITED
                           - INTERNAL_ERROR
+                          - SERVICE_UNAVAILABLE
                       message:
                         type: string
                         minLength: 1
@@ -843,7 +975,9 @@ paths:
                           - NOT_FOUND
                           - CONFLICT
                           - VALIDATION_ERROR
+                          - RATE_LIMITED
                           - INTERNAL_ERROR
+                          - SERVICE_UNAVAILABLE
                       message:
                         type: string
                         minLength: 1
@@ -873,7 +1007,9 @@ paths:
                           - NOT_FOUND
                           - CONFLICT
                           - VALIDATION_ERROR
+                          - RATE_LIMITED
                           - INTERNAL_ERROR
+                          - SERVICE_UNAVAILABLE
                       message:
                         type: string
                         minLength: 1
@@ -903,7 +1039,9 @@ paths:
                           - NOT_FOUND
                           - CONFLICT
                           - VALIDATION_ERROR
+                          - RATE_LIMITED
                           - INTERNAL_ERROR
+                          - SERVICE_UNAVAILABLE
                       message:
                         type: string
                         minLength: 1
@@ -974,7 +1112,9 @@ paths:
                           - NOT_FOUND
                           - CONFLICT
                           - VALIDATION_ERROR
+                          - RATE_LIMITED
                           - INTERNAL_ERROR
+                          - SERVICE_UNAVAILABLE
                       message:
                         type: string
                         minLength: 1
@@ -1004,7 +1144,9 @@ paths:
                           - NOT_FOUND
                           - CONFLICT
                           - VALIDATION_ERROR
+                          - RATE_LIMITED
                           - INTERNAL_ERROR
+                          - SERVICE_UNAVAILABLE
                       message:
                         type: string
                         minLength: 1
@@ -1034,7 +1176,9 @@ paths:
                           - NOT_FOUND
                           - CONFLICT
                           - VALIDATION_ERROR
+                          - RATE_LIMITED
                           - INTERNAL_ERROR
+                          - SERVICE_UNAVAILABLE
                       message:
                         type: string
                         minLength: 1
@@ -1064,7 +1208,9 @@ paths:
                           - NOT_FOUND
                           - CONFLICT
                           - VALIDATION_ERROR
+                          - RATE_LIMITED
                           - INTERNAL_ERROR
+                          - SERVICE_UNAVAILABLE
                       message:
                         type: string
                         minLength: 1
@@ -1094,7 +1240,9 @@ paths:
                           - NOT_FOUND
                           - CONFLICT
                           - VALIDATION_ERROR
+                          - RATE_LIMITED
                           - INTERNAL_ERROR
+                          - SERVICE_UNAVAILABLE
                       message:
                         type: string
                         minLength: 1
