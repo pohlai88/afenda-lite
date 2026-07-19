@@ -90,7 +90,7 @@ Repository: https://github.com/pohlai88/afenda-lite
 | | |
 |---|---|
 | **Project** | `afenda-lite` |
-| **Production URL** | https://afenda-lite.vercel.app |
+| **Production URL** | https://www.nexuscanon.com |
 | **Legacy alias** | https://iam-check.vercel.app (same app — do not teach as current) |
 
 Deploy: `.github/workflows/deploy.yml` (Environment `production`).

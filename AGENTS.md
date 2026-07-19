@@ -11,7 +11,7 @@ Cursor Agent instructions for this repository. Prefer **actions and links** over
 
 **Retired name:** Client Declaration Portal — compulsory; [deprecation register](.cursor/skills/agent-skills/skills/deprecation-and-migration/reference.md).
 
-**Hosting:** GitHub `pohlai88/afenda-lite` · Vercel `afenda-lite` · `APP_URL=https://afenda-lite.vercel.app`
+**Hosting:** GitHub `pohlai88/afenda-lite` · Vercel `afenda-lite` · `APP_URL=https://www.nexuscanon.com`
 
 ## How Cursor Agent should work here
 
@@ -182,7 +182,7 @@ Authority: [`.agents/skills/neon/SKILL.md`](.agents/skills/neon/SKILL.md) · pas
 pnpm validate:neon-env
 pnpm --filter @afenda/web dev
 # trusted domains when APP_URL / previews change:
-neon neon-auth domain add https://afenda-lite.vercel.app
+neon neon-auth domain add https://www.nexuscanon.com
 ```
 
 Ops: [docs-V2/auth](docs-V2/auth/README.md) · neon-auth-slice-map (Living RB-001 §3.12 dormant until Docs-lane reopen).

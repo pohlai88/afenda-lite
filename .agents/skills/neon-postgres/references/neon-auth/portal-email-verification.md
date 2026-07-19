@@ -26,10 +26,10 @@ No custom verification UI beyond Neon Auth `AuthView`; OTP / link mail comes fro
 
 ## Trusted domains
 
-Register every app origin with Neon Auth. Production: `https://afenda-lite.vercel.app`. Local: `http://localhost:3000`.
+Register every app origin with Neon Auth. Production: `https://www.nexuscanon.com`. Local: `http://localhost:3000`.
 
 ```bash
-neon neon-auth domain add https://afenda-lite.vercel.app
+neon neon-auth domain add https://www.nexuscanon.com
 neon neon-auth domain list
 ```
 

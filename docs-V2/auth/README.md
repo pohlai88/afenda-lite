@@ -72,7 +72,7 @@ Outcomes: `toRateLimitAppError` → `RATE_LIMITED` (429 + `Retry-After` on BFF) 
 ```text
 1. pnpm validate:neon-env
 2. Disk: apps/web/proxy.ts · session-gate-policy.ts · app/(public)/auth · app/(public)/join
-3. Live: GET https://afenda-lite.vercel.app/api/health/liveness
+3. Live: GET https://www.nexuscanon.com/api/health/liveness
 4. MCP (read-only): get_neon_auth_config — trusted_origins ↔ APP_URL
 ```
 
