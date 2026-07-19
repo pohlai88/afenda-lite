@@ -24,6 +24,8 @@ apps/docs/content/docs/
 
 `source.config.ts` points `defineDocs({ dir: "content/docs" })` and `providerImportSource: "@/components/mdx"`. Loader `baseUrl: "/docs"`.
 
+**Fumadocs UI configuration** (theme, layouts, MDX component status): [ui.md](ui.md) · [ui-layouts.md](ui-layouts.md) · [ui-components.md](ui-components.md) — not this file.
+
 ---
 
 ## Hand vs generated
@@ -86,4 +88,4 @@ See [automation.md](automation.md).
 5. pnpm --filter @afenda/docs build                   # SSG smoke
 ```
 
-Companion: [practices.md](practices.md) · [openapi.md](openapi.md) · [automation.md](automation.md).
+Companion: [practices.md](practices.md) · [ui.md](ui.md) · [openapi.md](openapi.md) · [automation.md](automation.md).

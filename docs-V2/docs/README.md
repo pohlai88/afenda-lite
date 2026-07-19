@@ -18,8 +18,9 @@ Method aids (vendor): `fumadocs-mdx-structure` · `fumadocs-i18n` (structure onl
 
 | Decision / action | Use |
 |-------------------|-----|
-| Change docs app layout / MDX habits | [practices.md](practices.md) · [content.md](content.md) |
-| Stock search / nav / MDX UI | `app/api/search/route.ts` · `lib/layout.shared.tsx` · `components/mdx.tsx` · `/docs/guide` |
+| Full Fumadocs UI configuration map | [ui.md](ui.md) · [ui-layouts.md](ui-layouts.md) · [ui-components.md](ui-components.md) |
+| Change docs app layout / MDX habits | [practices.md](practices.md) · [content.md](content.md) · [ui-layouts.md](ui-layouts.md) |
+| Stock search / nav / MDX UI | [ui.md](ui.md) · `app/api/search/route.ts` · `lib/layout.shared.tsx` · `components/mdx.tsx` · `/docs/guide` |
 | Change api-now HTTP or regenerate API pages | [openapi.md](openapi.md) · [automation.md](automation.md) |
 | Add CI / local gates for docs | [automation.md](automation.md) |
 | Plan multi-locale later | [i18n.md](i18n.md) (not shipped) |
@@ -62,13 +63,16 @@ apps/docs/
   source.config.ts          # fumadocs-mdx defineDocs + providerImportSource
   lib/source.ts             # loader + openapi.loaderPlugin()
   lib/openapi.server.ts     # createOpenAPI → docs-V2 YAML
-  lib/layout.shared.tsx     # nav title · githubUrl · Guide/API links
-  components/mdx.tsx        # fumadocs-ui/mdx + Tabs/Steps/Files/…
+  lib/layout.shared.tsx     # BaseLayoutProps — nav · githubUrl · Guide/API links
+  components/mdx.tsx        # fumadocs-ui/mdx + Tabs/Steps/Files/… (see ui-components.md)
   scripts/generate-openapi-docs.mts   # fumadocs-openapi generateFiles
   scripts/lint-links.mts              # next-validate-link
   content/docs/             # MDX + meta.json (EN) — index · guide · api
+  app/layout.tsx            # RootProvider
+  app/global.css            # fumadocs-ui neutral + preset (+ openapi preset)
   app/api/search/route.ts   # createFromSource (stock Orama)
-  app/docs/[[...slug]]/     # DocsLayout + OpenAPI preload
+  app/docs/layout.tsx       # DocsLayout + pageTree
+  app/docs/[[...slug]]/     # DocsPage chrome + OpenAPI preload
 ```
 
 | Concern | Path |
@@ -86,10 +90,13 @@ apps/docs/
 |------|------|
 | 1 | This README |
 | 2 | [automation.md](automation.md) — generate · lint · CI |
-| 3 | [practices.md](practices.md) — MDX / frontmatter / components |
-| 4 | [content.md](content.md) — tree, meta.json, hand vs generated |
-| 5 | [openapi.md](openapi.md) — Fumadocs OpenAPI consumer |
-| 6 | [i18n.md](i18n.md) — forward multi-locale (not shipped) |
+| 3 | [ui.md](ui.md) — Fumadocs UI configuration map (theme · search · CLI) |
+| 4 | [ui-layouts.md](ui-layouts.md) — RootProvider · DocsLayout · nav · deferred layouts |
+| 5 | [ui-components.md](ui-components.md) — MDX component catalog + status |
+| 6 | [practices.md](practices.md) — MDX frontmatter / body habits |
+| 7 | [content.md](content.md) — tree, meta.json, hand vs generated |
+| 8 | [openapi.md](openapi.md) — Fumadocs OpenAPI consumer |
+| 9 | [i18n.md](i18n.md) — forward multi-locale (not shipped) |
 
 API wire shapes: [`../api/README.md`](../api/README.md) · [`../api/rest.md`](../api/rest.md). Workspace DAG: [`../monorepo/README.md`](../monorepo/README.md).
 
