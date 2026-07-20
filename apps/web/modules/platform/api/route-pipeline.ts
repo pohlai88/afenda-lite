@@ -1,6 +1,6 @@
 import type { HttpHandler, HttpMiddleware } from "@afenda/http";
 import { compose, withHttpContext } from "@afenda/http";
-import { recordHttpRequest } from "@afenda/metrics";
+import { recordHttpRequest } from "@afenda/metrics/node";
 import {
 	buildCorsHeaders,
 	type CorsConfig,

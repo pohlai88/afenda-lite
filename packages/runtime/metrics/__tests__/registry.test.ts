@@ -1,11 +1,8 @@
 import { afterEach, describe, expect, it } from "vitest";
 
-import {
-	createMetricsRegistry,
-	getDefaultMetricsRegistry,
-	resetDefaultMetricsRegistryForTests,
-} from "../src/registry";
-import { DEFAULT_METRICS_SERVICE } from "../src/types";
+import { DEFAULT_METRICS_SERVICE } from "../src/core/constants";
+import { createMetricsRegistry, getDefaultMetricsRegistry } from "../src/node";
+import { resetDefaultMetricsRegistryForTests } from "../src/testing";
 
 describe("@afenda/metrics registry", () => {
 	afterEach(() => {

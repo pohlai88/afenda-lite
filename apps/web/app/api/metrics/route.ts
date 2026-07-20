@@ -1,9 +1,12 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 
 import { env } from "@afenda/env";
-import { PROMETHEUS_CONTENT_TYPE, renderPrometheusText } from "@afenda/metrics";
+import { PROMETHEUS_CONTENT_TYPE, renderPrometheusText } from "@afenda/metrics/node";
 
 import { createPlatformRouteHandler } from "@/modules/platform/api/route-pipeline";
+
+// Explicitly declare Node runtime for Prometheus metrics
+export const runtime = "nodejs";
 
 const METRICS_ROUTE_TEMPLATE = "/api/metrics" as const;
 

@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
+import { assertRouteTemplate } from "../src/core/route-template";
 import {
-	assertRouteTemplate,
+	createMetricsRegistry,
 	recordCacheAccess,
 	recordDbQuery,
 	recordHttpRequest,
-} from "../src/record";
-import { createMetricsRegistry } from "../src/registry";
+} from "../src/node";
 
 describe("@afenda/metrics record helpers", () => {
 	it("rejects empty method and high-cardinality route templates", () => {

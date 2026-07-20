@@ -10,28 +10,49 @@
 
 ## Consume
 
-Workspace dependency — import from the root barrel:
+**Runtime isolation via subpath exports** — `prom-client` is Node-only and must not be bundled into Edge runtimes. This package exposes three entry points:
+
+- **`@afenda/metrics/core`** — Universal contracts (types, constants, validation) with no runtime dependencies
+- **`@afenda/metrics/node`** — Prometheus implementation for Node.js Route Handlers
+- **`@afenda/metrics/testing`** — Test utilities (registry reset)
+
+**Node Route Handler example:**
 
 ```ts
 import {
 	PROMETHEUS_CONTENT_TYPE,
 	recordHttpRequest,
 	renderPrometheusText,
-} from "@afenda/metrics";
+} from "@afenda/metrics/node";
 
-recordHttpRequest({
-	method: "GET",
-	routeTemplate: "/api/health/liveness",
-	statusCode: 200,
-	durationSeconds: 0.012,
-});
+// Explicitly declare Node runtime
+export const runtime = "nodejs";
 
-const body = await renderPrometheusText();
-return new Response(body, {
-	headers: {
-		"Content-Type": PROMETHEUS_CONTENT_TYPE,
-		"Cache-Control": "no-store",
-	},
+export async function GET(request: Request): Promise<Response> {
+	recordHttpRequest({
+		method: "GET",
+		routeTemplate: "/api/health/liveness",
+		statusCode: 200,
+		durationSeconds: 0.012,
+	});
+
+	const body = await renderPrometheusText();
+	return new Response(body, {
+		headers: {
+			"Content-Type": PROMETHEUS_CONTENT_TYPE,
+			"Cache-Control": "no-store",
+		},
+	});
+}
+```
+
+**Test example:**
+
+```ts
+import { resetDefaultMetricsRegistryForTests } from "@afenda/metrics/testing";
+
+beforeEach(() => {
+	resetDefaultMetricsRegistryForTests();
 });
 ```
 
@@ -53,9 +74,11 @@ Requires root engines: **Node `24.x`**, **pnpm `≥10.33.4`**.
 
 | Path | Role |
 |------|------|
-| `@afenda/metrics` | `createMetricsRegistry` · `getDefaultMetricsRegistry` · `assertRouteTemplate` · `recordHttpRequest` · `recordDbQuery` · `recordCacheAccess` · `renderPrometheusText` · `PROMETHEUS_CONTENT_TYPE` · bucket / service constants · `resetDefaultMetricsRegistryForTests` (test seam) |
+| `@afenda/metrics/core` | Universal contracts: `RecordHttpRequestInput` · `RecordDbQueryInput` · `RecordCacheAccessInput` · `CacheAccessResult` · `assertRouteTemplate` · `HTTP_DURATION_BUCKETS` · `DB_DURATION_BUCKETS` · `DEFAULT_METRICS_SERVICE` |
+| `@afenda/metrics/node` | Prometheus implementation: `createMetricsRegistry` · `getDefaultMetricsRegistry` · `recordHttpRequest` · `recordDbQuery` · `recordCacheAccess` · `renderPrometheusText` · `PROMETHEUS_CONTENT_TYPE` · `MetricsRegistryBundle` · `CreateMetricsRegistryOptions` |
+| `@afenda/metrics/testing` | Test utilities: `resetDefaultMetricsRegistryForTests` |
 
-Full surface: [`src/index.ts`](./src/index.ts).
+**No root export** — bare `import {} from "@afenda/metrics"` is forbidden. All consumers must use explicit subpaths.
 
 ## Ownership
 
@@ -72,7 +95,7 @@ Full surface: [`src/index.ts`](./src/index.ts).
 ## Out of scope
 
 - OpenTelemetry / OTLP / vendor APM
-- Edge runtime metrics
+- **Edge runtime metrics** — no no-op implementation; real Edge metric sink deferred until genuine consumer exists
 - NATS instruments
 - Pages `withMetrics` / Prisma `$use` ports
 - Multi-tenant Prometheus labels
