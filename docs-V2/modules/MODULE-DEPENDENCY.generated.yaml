@@ -1,0 +1,24 @@
+# GENERATED — do not edit by hand. Source: ERP module.manifest.ts
+# Regenerate: pnpm validate:modules --write
+modules:
+  - id: master-data
+    optionalIntegratesWith:
+      - moduleId: sales
+        style: events
+      - moduleId: purchasing
+        style: events
+      - moduleId: inventory
+        style: events
+    required: []
+  - id: sales
+    optionalIntegratesWith:
+      - moduleId: inventory
+        style: events
+      - moduleId: fulfillment
+        style: events
+      - moduleId: receivables
+        style: events
+    required:
+      - master-data
+source: on-disk-module-manifests
+version: phase-2/2026-07-20

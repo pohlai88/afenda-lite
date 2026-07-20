@@ -41,6 +41,10 @@ export {
 	isKnownEventType,
 	MAX_DISPATCH_LIMIT,
 	MAX_EVENT_PAGE_SIZE,
+	type MasterDataEntityPayload,
+	MasterDataEventSchemas,
+	type MasterDataEventType,
+	masterDataEntityPayloadSchema,
 	type ParsedDomainEvent,
 	type ParsedEventDispatchOptions,
 	type ParsedEventPurgeOptions,
@@ -51,6 +55,11 @@ export {
 	type PublishEventCommand,
 	platformOrganizationDeletedPayloadSchema,
 	publishEventCommandSchema,
+	SalesEventSchemas,
+	type SalesEventType,
+	type SalesOrderLinePayload,
+	type SalesOrderPayload,
+	salesOrderPayloadSchema,
 } from "./schemas";
 export type { EventStore } from "./store";
 export {

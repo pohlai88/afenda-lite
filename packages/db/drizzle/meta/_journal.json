@@ -33,8 +33,57 @@
     {
       "idx": 4,
       "version": "7",
-      "when": 1784501737506,
+      "when": 1784541000000,
       "tag": "0004_platform_domain_event",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1784542000000,
+      "tag": "0005_shiny_jean_grey",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1784543000000,
+      "tag": "0006_md_extensions",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1784544000000,
+      "tag": "0007_md_item_variants",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1784545000000,
+      "tag": "0008_md_change_request",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1784546000000,
+      "tag": "0009_md_payment_term",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1784547000000,
+      "tag": "0010_md_tax_registration",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1784548000000,
+      "tag": "0011_sales_order",
       "breakpoints": true
     }
   ]

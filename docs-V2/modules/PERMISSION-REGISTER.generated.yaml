@@ -1,0 +1,23 @@
+# GENERATED — do not edit by hand. Source: ERP module.manifest.ts
+# Regenerate: pnpm validate:modules --write
+permissions:
+  - code: master_data.read
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.manage
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.approve
+    moduleId: master-data
+    namespace: master_data
+  - code: master_data.import_approve
+    moduleId: master-data
+    namespace: master_data
+  - code: sales.read
+    moduleId: sales
+    namespace: sales
+  - code: sales.manage
+    moduleId: sales
+    namespace: sales
+source: on-disk-module-manifests
+version: phase-2/2026-07-20

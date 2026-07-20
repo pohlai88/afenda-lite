@@ -26,6 +26,12 @@ const ARCH023_V1_CODES = [
 	"org.roles.manage",
 	"clients.invite",
 	"account.self",
+	"master_data.read",
+	"master_data.manage",
+	"master_data.approve",
+	"master_data.import_approve",
+	"sales.read",
+	"sales.manage",
 ] as const;
 
 describe("PLATFORM_PERMISSION_V1 (N10 / ARCH-023)", () => {
@@ -33,11 +39,12 @@ describe("PLATFORM_PERMISSION_V1 (N10 / ARCH-023)", () => {
 		expect([...PLATFORM_PERMISSION_CODES_V1].toSorted()).toEqual(
 			[...ARCH023_V1_CODES].toSorted(),
 		);
-		expect(PLATFORM_PERMISSION_V1).toHaveLength(4);
+		expect(PLATFORM_PERMISSION_V1).toHaveLength(10);
 	});
 
 	it("isPlatformPermissionCodeV1 accepts only v1 codes", () => {
 		expect(isPlatformPermissionCodeV1("org.roles.manage")).toBe(true);
+		expect(isPlatformPermissionCodeV1("sales.read")).toBe(true);
 		expect(isPlatformPermissionCodeV1("fft.orders.manage")).toBe(false);
 		expect(isPlatformPermissionCodeV1("declarations.read")).toBe(false);
 		expect(isPlatformPermissionCodeV1("")).toBe(false);
@@ -59,24 +66,33 @@ describe("PLATFORM_PERMISSION_V1 (N10 / ARCH-023)", () => {
 			(t) => t.templateKey === "editor",
 		);
 		expect(editor?.permissionCodes.toSorted()).toEqual(
-			["account.self", "clients.invite"].toSorted(),
+			[
+				"account.self",
+				"clients.invite",
+				"master_data.manage",
+				"master_data.read",
+				"sales.manage",
+				"sales.read",
+			].toSorted(),
 		);
 
 		const viewer = PLATFORM_ROLE_TEMPLATES_V1.find(
 			(t) => t.templateKey === "viewer",
 		);
-		expect(viewer?.permissionCodes.toSorted()).toEqual(["account.self"]);
+		expect(viewer?.permissionCodes.toSorted()).toEqual(
+			["account.self", "master_data.read", "sales.read"].toSorted(),
+		);
 	});
 });
 
 describe.skipIf(!hasDatabase)("ensurePlatformPermissionCatalog (N10)", () => {
 	it("is idempotent and preserves template_key → role ids", async () => {
 		const first = await ensurePlatformPermissionCatalog(db);
-		expect(first.permissionCount).toBe(4);
+		expect(first.permissionCount).toBe(10);
 		expect(first.templates).toHaveLength(3);
 
 		const second = await ensurePlatformPermissionCatalog(db);
-		expect(second.permissionCount).toBe(4);
+		expect(second.permissionCount).toBe(10);
 		expect(second.templates.map((t) => t.roleId).toSorted()).toEqual(
 			first.templates.map((t) => t.roleId).toSorted(),
 		);

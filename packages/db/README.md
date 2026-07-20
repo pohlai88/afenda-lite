@@ -33,7 +33,7 @@ const rows = await withOrg(platformRoleAssignment, orgId);
 | Generated SQL / journal | `drizzle/` |
 | Client | `src/client.ts` (`db` · `withOrg`) |
 
-Living tables include `platform_permission`, `platform_role`, `platform_role_assignment`, `platform_role_permission`, `platform_rbac_audit`, `platform_audit_log`, `platform_search_document`, `platform_notification`. Hard tenant roots for null-org audits: `platform_role_assignment` · `platform_rbac_audit` · `platform_audit_log` · `platform_search_document` · `platform_notification` (`HARD_TENANT_ROOT_*`). General activity audit writer: `@afenda/audit` (not `@afenda/admin/audit`). Product search writer: `@afenda/search`. In-app notification writer: `@afenda/notifications`.
+Living tables include `platform_permission`, `platform_role`, `platform_role_assignment`, `platform_role_permission`, `platform_rbac_audit`, `platform_audit_log`, `platform_search_document`, `platform_notification`, `platform_domain_event`. Hard tenant roots for null-org audits: `platform_role_assignment` · `platform_rbac_audit` · `platform_audit_log` · `platform_search_document` · `platform_notification` · `platform_domain_event` (`HARD_TENANT_ROOT_*`). General activity audit writer: `@afenda/audit` (not `@afenda/admin/audit`). Product search writer: `@afenda/search`. In-app notification writer: `@afenda/notifications`. Domain-event outbox writer: `@afenda/events`.
 
 ```bash
 pnpm --filter @afenda/db db:generate

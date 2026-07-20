@@ -1,0 +1,29 @@
+# GENERATED — do not edit by hand. Source: ERP module.manifest.ts
+# Regenerate: pnpm validate:modules --write
+modules:
+  - activationMode: core
+    aggregates:
+      - party
+      - item
+      - item_group
+      - warehouse
+      - payment_term
+      - tax_registration
+      - item_template
+      - item_variant
+      - change_request
+    band: R1-F
+    category: master-data
+    id: master-data
+    lifecycle: active
+    packageName: "@afenda/master-data"
+  - activationMode: organization_toggle
+    aggregates:
+      - sales_order
+    band: R1-F
+    category: commercial
+    id: sales
+    lifecycle: active
+    packageName: "@afenda/sales"
+source: on-disk-module-manifests
+version: phase-2/2026-07-20

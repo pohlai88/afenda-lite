@@ -1,0 +1,212 @@
+# Authorized @afenda workspace edges
+# Dual control: package.json realizes; this file authorizes; CI reconciles (Phase 2).
+# Version: workspace-edges/2026-07-20
+# Authority: docs-V2/monorepo · LAYERS.md · packages_refactor_v2.3 promotion
+
+version: "workspace-edges/2026-07-20"
+authority: packages_refactor_v2.3
+updated: "2026-07-20"
+
+edges:
+  - from: "@afenda/auth"
+    to: "@afenda/env"
+    status: approved
+    authority: ARCH-024
+    reason: "Neon Auth adapter env contract"
+    effectiveDate: "2026-07-20"
+  - from: "@afenda/auth"
+    to: "@afenda/http"
+    status: approved
+    authority: ARCH-024
+    reason: "BFF fetch compose / correlation"
+    effectiveDate: "2026-07-20"
+  - from: "@afenda/auth"
+    to: "@afenda/logger"
+    status: approved
+    authority: ARCH-024
+    reason: "Auth structured logging"
+    effectiveDate: "2026-07-20"
+  - from: "@afenda/auth"
+    to: "@afenda/rate-limit"
+    status: approved
+    authority: ARCH-024
+    reason: "BFF POST rate limit"
+    effectiveDate: "2026-07-20"
+  - from: "@afenda/auth"
+    to: "@afenda/errors"
+    status: approved
+    authority: ARCH-024
+    reason: "Transport-neutral errors"
+    effectiveDate: "2026-07-20"
+
+  - from: "@afenda/rate-limit"
+    to: "@afenda/env"
+    status: approved
+    authority: ARCH-024
+    reason: "Upstash / limiter config"
+    effectiveDate: "2026-07-20"
+  - from: "@afenda/rate-limit"
+    to: "@afenda/errors"
+    status: approved
+    authority: ARCH-024
+    reason: "Limiter error codes"
+    effectiveDate: "2026-07-20"
+
+  - from: "@afenda/cache"
+    to: "@afenda/env"
+    status: approved
+    authority: ARCH-024
+    reason: "Upstash Redis L2 config"
+    effectiveDate: "2026-07-20"
+  - from: "@afenda/cache"
+    to: "@afenda/errors"
+    status: approved
+    authority: ARCH-024
+    reason: "Cache fail-closed errors"
+    effectiveDate: "2026-07-20"
+
+  - from: "@afenda/audit"
+    to: "@afenda/db"
+    status: approved
+    authority: ARCH-024
+    reason: "platform_audit_log SSOT"
+    effectiveDate: "2026-07-20"
+  - from: "@afenda/audit"
+    to: "@afenda/errors"
+    status: approved
+    authority: ARCH-024
+    reason: "Audit error codes"
+    effectiveDate: "2026-07-20"
+
+  - from: "@afenda/search"
+    to: "@afenda/db"
+    status: approved
+    authority: ARCH-024
+    reason: "platform_search_document SSOT"
+    effectiveDate: "2026-07-20"
+  - from: "@afenda/search"
+    to: "@afenda/errors"
+    status: approved
+    authority: ARCH-024
+    reason: "Search error codes"
+    effectiveDate: "2026-07-20"
+
+  - from: "@afenda/notifications"
+    to: "@afenda/db"
+    status: approved
+    authority: ARCH-024
+    reason: "platform_notification SSOT"
+    effectiveDate: "2026-07-20"
+  - from: "@afenda/notifications"
+    to: "@afenda/errors"
+    status: approved
+    authority: ARCH-024
+    reason: "Notification error codes"
+    effectiveDate: "2026-07-20"
+
+  - from: "@afenda/events"
+    to: "@afenda/db"
+    status: approved
+    authority: ARCH-024
+    reason: "platform_domain_event outbox SSOT"
+    effectiveDate: "2026-07-20"
+  - from: "@afenda/events"
+    to: "@afenda/errors"
+    status: approved
+    authority: ARCH-024
+    reason: "Events error codes"
+    effectiveDate: "2026-07-20"
+
+  - from: "@afenda/master-data"
+    to: "@afenda/db"
+    status: approved
+    authority: ARCH-006
+    reason: "md_* / ref_* schema access"
+    effectiveDate: "2026-07-20"
+  - from: "@afenda/master-data"
+    to: "@afenda/errors"
+    status: approved
+    authority: ARCH-006
+    reason: "Master-data error codes"
+    effectiveDate: "2026-07-20"
+  - from: "@afenda/master-data"
+    to: "@afenda/audit"
+    status: approved
+    authority: ARCH-006
+    reason: "Master mutation audit"
+    effectiveDate: "2026-07-20"
+  - from: "@afenda/master-data"
+    to: "@afenda/events"
+    status: approved
+    authority: ARCH-006
+    reason: "Master mutation outbox"
+    effectiveDate: "2026-07-20"
+  - from: "@afenda/master-data"
+    to: "@afenda/search"
+    status: approved
+    authority: ARCH-006
+    reason: "Search projectors for masters"
+    effectiveDate: "2026-07-20"
+
+  - from: "@afenda/sales"
+    to: "@afenda/db"
+    status: approved
+    authority: ARCH-006
+    reason: "sales_order schema access"
+    effectiveDate: "2026-07-20"
+  - from: "@afenda/sales"
+    to: "@afenda/errors"
+    status: approved
+    authority: ARCH-006
+    reason: "Sales error codes"
+    effectiveDate: "2026-07-20"
+  - from: "@afenda/sales"
+    to: "@afenda/audit"
+    status: approved
+    authority: ARCH-006
+    reason: "Sales mutation audit"
+    effectiveDate: "2026-07-20"
+  - from: "@afenda/sales"
+    to: "@afenda/events"
+    status: approved
+    authority: ARCH-006
+    reason: "Sales outbox events"
+    effectiveDate: "2026-07-20"
+  - from: "@afenda/sales"
+    to: "@afenda/master-data"
+    status: approved
+    authority: ARCH-006
+    reason: "FK + snapshots; masters via public API only"
+    effectiveDate: "2026-07-20"
+
+  - from: "@afenda/ai-the-machine"
+    to: "@afenda/errors"
+    status: approved
+    authority: ARCH-024
+    reason: "AI engine error codes"
+    effectiveDate: "2026-07-20"
+
+  - from: "@afenda/admin"
+    to: "@afenda/auth"
+    status: approved
+    authority: ARCH-024
+    reason: "Org console uses Neon Auth adapter"
+    effectiveDate: "2026-07-20"
+  - from: "@afenda/admin"
+    to: "@afenda/db"
+    status: approved
+    authority: ARCH-024
+    reason: "RBAC audit / provision persistence"
+    effectiveDate: "2026-07-20"
+  - from: "@afenda/admin"
+    to: "@afenda/env"
+    status: approved
+    authority: ARCH-024
+    reason: "Admin env contract"
+    effectiveDate: "2026-07-20"
+  - from: "@afenda/admin"
+    to: "@afenda/errors"
+    status: approved
+    authority: ARCH-024
+    reason: "Admin error codes"
+    effectiveDate: "2026-07-20"

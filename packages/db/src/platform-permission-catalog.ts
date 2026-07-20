@@ -39,6 +39,42 @@ export const PLATFORM_PERMISSION_V1 = [
 		description: "Manage own account settings",
 		sensitive: false,
 	},
+	{
+		code: "master_data.read",
+		module: "master_data",
+		description: "Read organization master data (party, item, warehouse)",
+		sensitive: false,
+	},
+	{
+		code: "master_data.manage",
+		module: "master_data",
+		description: "Create and mutate organization master data",
+		sensitive: true,
+	},
+	{
+		code: "master_data.approve",
+		module: "master_data",
+		description: "Approve or reject master-data change requests (checker)",
+		sensitive: true,
+	},
+	{
+		code: "master_data.import_approve",
+		module: "master_data",
+		description: "Approve and apply master-data bulk import",
+		sensitive: true,
+	},
+	{
+		code: "sales.read",
+		module: "sales",
+		description: "Read organization sales orders",
+		sensitive: false,
+	},
+	{
+		code: "sales.manage",
+		module: "sales",
+		description: "Create, line, and post sales orders",
+		sensitive: true,
+	},
 ] as const;
 
 /** Retired v1 codes removed by the domain wipe — deleted on ensure. */
@@ -86,14 +122,22 @@ export const PLATFORM_ROLE_TEMPLATES_V1: readonly PlatformRoleTemplateV1[] = [
 	{
 		templateKey: "editor",
 		name: "Editor",
-		description: "Org invite + account self",
-		permissionCodes: ["clients.invite", "account.self"],
+		description:
+			"Org invite + master-data manage + account self (no MDG/import approve)",
+		permissionCodes: [
+			"clients.invite",
+			"account.self",
+			"master_data.read",
+			"master_data.manage",
+			"sales.read",
+			"sales.manage",
+		],
 	},
 	{
 		templateKey: "viewer",
 		name: "Viewer",
-		description: "Account self",
-		permissionCodes: ["account.self"],
+		description: "Account self + master-data read + sales read",
+		permissionCodes: ["account.self", "master_data.read", "sales.read"],
 	},
 ] as const;
 

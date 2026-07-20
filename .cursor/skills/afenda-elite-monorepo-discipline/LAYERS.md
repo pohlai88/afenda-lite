@@ -1,6 +1,8 @@
 # Monorepo layer reference (Afenda-Lite)
 
-Authority: ARCH-024 operative (this file + SKILL.md). Living ARCH-024 body dormant. No `architecture-authority` package — enforce by review + typecheck until a forward import-boundary slice lands. Scratch: [`docs-V2/pnpm`](../../../docs-V2/pnpm/README.md) · [`docs-V2/monorepo`](../../../docs-V2/monorepo/README.md).
+Authority: ARCH-024 operative (this file + SKILL.md) + ERP expansion governance promoted 2026-07-20 from [`packages_refactor_v2.3.md`](../../../docs-V2/_scratch/packages_refactor_v2.3.md). Living ARCH-024 body dormant. No `architecture-authority` package — enforce by review + typecheck until a forward import-boundary slice lands. Operative Scratch: [`docs-V2/pnpm`](../../../docs-V2/pnpm/README.md) · [`docs-V2/monorepo`](../../../docs-V2/monorepo/README.md) · [`WORKSPACE-EDGE-REGISTER.yaml`](../../../docs-V2/modules/WORKSPACE-EDGE-REGISTER.yaml).
+
+**Version:** `layers-governance/2026-07-20`
 
 ## Full layer diagram
 
@@ -14,16 +16,32 @@ Authority: ARCH-024 operative (this file + SKILL.md). Living ARCH-024 body dorma
 │  @afenda/ui-system  @afenda/emails                           │
 │  Can import: Platform (client-safe only for ui-system)       │
 ├──────────────────────────────────────────────────────────────┤
-│  Rank 1 — Platform                                           │
-│  @afenda/db  @afenda/auth  @afenda/admin  @afenda/env        │
-│  @afenda/errors  @afenda/logger  @afenda/rate-limit          │
-│  @afenda/cache  @afenda/audit  @afenda/search                │
-│  @afenda/notifications  @afenda/events  @afenda/http         │
-│  @afenda/security  @afenda/metrics  @afenda/openapi          │
-│  @afenda/ai-the-machine  @afenda/config                      │
-│  See allowed same-layer edges below                          │
+│  Rank 1 — Platform (bands classify only — never grant deps)  │
+│  R1-A foundation · R1-B runtime · R1-C data-plane            │
+│  R1-D control · R1-F ERP · R1-X optional                     │
+│  See band table + allowed same-layer edges below             │
 └──────────────────────────────────────────────────────────────┘
 ```
+
+## Rank-1 bands (classification only)
+
+| Band | Kind | Packages |
+|------|------|----------|
+| R1-A | Foundation | `@afenda/config` · `@afenda/env` · `@afenda/errors` |
+| R1-B | Runtime | `@afenda/logger` · `@afenda/http` · `@afenda/security` · `@afenda/metrics` · `@afenda/openapi` · `@afenda/rate-limit` · `@afenda/cache` |
+| R1-C | Data plane | `@afenda/db` · `@afenda/audit` · `@afenda/events` · `@afenda/search` · `@afenda/notifications` |
+| R1-D | Control plane | `@afenda/auth` · `@afenda/admin` |
+| R1-F | ERP | `@afenda/master-data` · `@afenda/sales` |
+| R1-X | Optional capability | `@afenda/ai-the-machine` |
+
+```text
+Bands classify packages; bands never grant dependency rights.
+A package may import only what package.json declares AND
+WORKSPACE-EDGE-REGISTER authorizes. Register authorizes;
+package.json realizes; CI reconciles (Phase 2 validator).
+```
+
+**Peer ERP default:** R1-F packages do not import each other. `@afenda/sales` → `@afenda/master-data` is backbone master-data (required), not a peer transactional ERP module.
 
 ## Allowed imports by layer
 
@@ -33,7 +51,7 @@ Authority: ARCH-024 operative (this file + SKILL.md). Living ARCH-024 body dorma
 | Surfaces  | ✅† | same-ok‡ | ❌ |
 | Application | ✅ | ✅ | ❌ (apps must not import each other) |
 
-\* Platform same-layer: prefer minimal coupling. Living edges: `@afenda/auth` → `@afenda/env` · `@afenda/http` · `@afenda/logger` · `@afenda/rate-limit` · `@afenda/errors`; `@afenda/rate-limit` → `@afenda/env` · `@afenda/errors`; `@afenda/cache` → `@afenda/env` · `@afenda/errors`; `@afenda/audit` → `@afenda/db` · `@afenda/errors`; `@afenda/search` → `@afenda/db` · `@afenda/errors`; `@afenda/notifications` → `@afenda/db` · `@afenda/errors`; `@afenda/events` → `@afenda/db` · `@afenda/errors`; `@afenda/ai-the-machine` → `@afenda/errors`; `@afenda/admin` → `@afenda/auth` · `@afenda/db` · `@afenda/env` · `@afenda/errors`; `apps/web` → `@afenda/errors` · `@afenda/logger` · `@afenda/rate-limit` · `@afenda/audit` · `@afenda/search` · `@afenda/notifications` · `@afenda/events` · `@afenda/http` · `@afenda/security` · `@afenda/metrics` · `@afenda/openapi` · `@afenda/ai-the-machine` (general activity; RBAC stays `@afenda/admin/audit`). `@afenda/errors`, `@afenda/logger`, `@afenda/http`, `@afenda/security`, `@afenda/metrics`, and `@afenda/openapi` are Rank-1 **leaves** (no `@afenda/*` deps). `@afenda/db` must **not** import `@afenda/auth` or `@afenda/env`. `@afenda/env` imports no workspace packages. `@afenda/config` is not a runtime importer.
+\* Platform same-layer: prefer minimal coupling. Living edges (must match WORKSPACE-EDGE-REGISTER): `@afenda/auth` → `@afenda/env` · `@afenda/http` · `@afenda/logger` · `@afenda/rate-limit` · `@afenda/errors`; `@afenda/rate-limit` → `@afenda/env` · `@afenda/errors`; `@afenda/cache` → `@afenda/env` · `@afenda/errors`; `@afenda/audit` → `@afenda/db` · `@afenda/errors`; `@afenda/search` → `@afenda/db` · `@afenda/errors`; `@afenda/notifications` → `@afenda/db` · `@afenda/errors`; `@afenda/events` → `@afenda/db` · `@afenda/errors`; `@afenda/master-data` → `@afenda/db` · `@afenda/errors` · `@afenda/audit` · `@afenda/events` · `@afenda/search`; `@afenda/sales` → `@afenda/db` · `@afenda/errors` · `@afenda/audit` · `@afenda/events` · `@afenda/master-data`; `@afenda/ai-the-machine` → `@afenda/errors`; `@afenda/admin` → `@afenda/auth` · `@afenda/db` · `@afenda/env` · `@afenda/errors`; `apps/web` → `@afenda/errors` · `@afenda/logger` · `@afenda/rate-limit` · `@afenda/audit` · `@afenda/search` · `@afenda/notifications` · `@afenda/events` · `@afenda/http` · `@afenda/security` · `@afenda/metrics` · `@afenda/openapi` · `@afenda/ai-the-machine` · `@afenda/sales` (general activity; RBAC stays `@afenda/admin/audit`). `@afenda/errors`, `@afenda/logger`, `@afenda/http`, `@afenda/security`, `@afenda/metrics`, and `@afenda/openapi` are Rank-1 **leaves** (no `@afenda/*` deps). `@afenda/db` must **not** import `@afenda/auth` or `@afenda/env`. `@afenda/env` imports no workspace packages. `@afenda/config` is not a runtime importer.
 
 † `@afenda/ui-system` must remain free of server-only code and DB calls (ARCH-024).
 
@@ -52,6 +70,9 @@ Authority: ARCH-024 operative (this file + SKILL.md). Living ARCH-024 body dorma
 | `@afenda/search` | Surfaces, `apps/*`, paid search SaaS, Meili/Typesense/FlexSearch SDKs, docs Orama ownership | Sole `platform_search_document` Postgres FTS SSOT; docs stay Orama in `@afenda/docs` |
 | `@afenda/notifications` | Surfaces, `apps/*`, WebSocket servers, Redis primary store, EMAIL/SMS/PUSH without transport | Sole `platform_notification` IN_APP inbox SSOT |
 | `@afenda/events` | Surfaces, `apps/*`, NATS / Redis bus, `@afenda/notifications` import | Sole `platform_domain_event` outbox SSOT; handlers injected from web |
+| `@afenda/master-data` | Surfaces, `apps/*`, Next.js, NATS, Map production stores, `{ success }` envelopes, dual-write `md_*` outside package, org-scoped `md_uom` | Sole mutation owner for Authority B `ref_*` reads + `md_party` · `md_item_group` · `md_item` · `md_warehouse`; schema in `@afenda/db` |
+| `@afenda/sales` | Surfaces, `apps/*`, Next.js, dual-write `md_*`, local customer/product shadow tables, peer R1-F packages | Sales order/line consumer; masters via `@afenda/master-data` only |
+| Any R1-F ERP | Peer R1-F `package.json` edge without WORKSPACE-EDGE-REGISTER approval; `@afenda/admin` | Dual-control + authz boundary |
 | `@afenda/http` | Next.js; Surfaces / `apps/*`; `@afenda/*` runtime deps; tutorial `{ success }` envelopes | Fetch compose · correlation · pagination · Retry-After / RateLimit / Server-Timing leaf |
 | `@afenda/security` | Next.js; Surfaces / `apps/*`; `@afenda/*` runtime deps; RBAC / rate-limit / audit / CSRF stores | Headers · CSP · CORS builders leaf; Next config is the adapter |
 | `@afenda/metrics` | Next.js; Surfaces / `apps/*`; `@afenda/*` runtime deps; OTEL / vendor APM; org-id labels; Prisma middleware | Prometheus registry · record helpers · scrape text leaf; web owns RH + token gate |
@@ -60,13 +81,13 @@ Authority: ARCH-024 operative (this file + SKILL.md). Living ARCH-024 body dorma
 | `@afenda/ui-system` | `@afenda/db`, server-only auth paths | UI is client/surface |
 | Any package | Relative `../../packages/...` | Cross-boundary package name required |
 | Any consumer | `@afenda/<pkg>/src/...` | Public `exports` only |
-| Any package | `@afenda/shared` | Mega-package banned (ARCH-024) |
+| Any package | `@afenda/shared` · `@afenda/common` · `@afenda/erp-utils` · `@afenda/domain-kit` | Mega-package / premature shared helpers banned |
 
 ## Same-layer rules
 
 | Layer | Same-layer OK? | Notes |
 |-------|----------------|-------|
-| Platform | Yes, narrowly | Document every edge in ARCH-024 + `package.json` |
+| Platform | Yes, narrowly | Document every edge in WORKSPACE-EDGE-REGISTER + `package.json` |
 | Surfaces | Prefer no | ui ↔ emails coupling needs explicit justification |
 | Application | No | Only one app today; future apps/* stay isolated |
 
@@ -92,7 +113,7 @@ import { env } from "@afenda/env";
 
 ### Phantom dependency
 
-Package resolves a transitive dep via hoist but does not declare it — fails on clean install. Fix: add to that package's `package.json` (`workspace:*` if internal).
+Package resolves a transitive dep via hoist but does not declare it — fails on clean install. Fix: add to that package's `package.json` (`workspace:*` if internal) **and** add WORKSPACE-EDGE-REGISTER row in the same mission.
 
 ### Upward / app import from a package
 
@@ -110,6 +131,15 @@ auth → db → auth   // ❌
 
 Fix: extract shared types/contracts to the lowest legal package, or keep orchestration in `apps/web`.
 
+### Peer ERP without dual-control
+
+```ts
+// ❌ @afenda/sales importing a future @afenda/inventory
+import { reserveStock } from "@afenda/inventory";
+```
+
+Fix: events / ports / app-saga at composition root (`apps/web`), or Approved ARCH-006 cut + dual-control edge.
+
 ## Known exceptions
 
-None approved. If an exception is required, record it in ARCH-024 (Docs lane; Control State reopen) before coding it.
+None approved. If an exception is required, record it in ARCH-024 (Docs lane; Control State reopen) and WORKSPACE-EDGE-REGISTER before coding it.

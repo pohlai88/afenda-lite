@@ -8,6 +8,12 @@
 
 Bounded contexts on disk. Re-probe L2 folders after module changes. Do **not** treat skill `module-tree.md` Living inventory as disk SSOT.
 
+**Package DAG / ERP governance** (distinct from app `modules/*`): [PACKAGE-GOVERNANCE.md](./PACKAGE-GOVERNANCE.md) · [WORKSPACE-EDGE-REGISTER.yaml](./WORKSPACE-EDGE-REGISTER.yaml) · [MODULE-ROADMAP.yaml](./MODULE-ROADMAP.yaml) · [MODULE-CATALOG.generated.yaml](./MODULE-CATALOG.generated.yaml) · [PHASE-2-REPORT.md](./PHASE-2-REPORT.md) · [../monorepo/README.md](../monorepo/README.md).
+
+```bash
+pnpm validate:modules
+```
+
 **Removed domains (nuclear wipe):** Declarations (`modules/declarations`, `features/declarations`) and Feed Farm Trade (`modules/fft`, `features/fft`, `feed-farm-trade` skill) are **gone** — do not recreate.
 
 ---
