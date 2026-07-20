@@ -13,14 +13,14 @@ Borrow/reject matrix for plan/tier gates and ops toggles. Operator path: [README
 
 ## Verdict
 
-**Do not create `@afenda/feature-flags`.** The reference is a static plan/tier entitlement catalog (~210 lines, one file), not progressive delivery. Keep ops kill switches on [`@afenda/env`](../../packages/env). Afenda does not sell by module — org capacity **position** is [`@afenda/admin/usage`](../../packages/admin) ([../usage/usage-position-dna.md](../usage/usage-position-dna.md)), not an entitlements package. Progressive delivery (%, targeting, remote kill switches) is a separate design — do not grow a tier matrix into that.
+**Do not create `@afenda/feature-flags`.** The reference is a static plan/tier entitlement catalog (~210 lines, one file), not progressive delivery. Keep ops kill switches on [`@afenda/env`](../../packages/foundation/env). Afenda does not sell by module — org capacity **position** is [`@afenda/admin/usage`](../../packages/control-plane/admin) ([../usage/usage-position-dna.md](../usage/usage-position-dna.md)), not an entitlements package. Progressive delivery (%, targeting, remote kill switches) is a separate design — do not grow a tier matrix into that.
 
 | Concern | Owner (today) |
 |---------|----------------|
-| Boolean ops toggles | [`@afenda/env`](../../packages/env) (`PORTAL_ORG_SWITCHER_ENABLED` · `GUARDIAN_AUTH_SHELL` · `PLAYGROUND_ENABLED`) |
+| Boolean ops toggles | [`@afenda/env`](../../packages/foundation/env) (`PORTAL_ORG_SWITCHER_ENABLED` · `GUARDIAN_AUTH_SHELL` · `PLAYGROUND_ENABLED`) |
 | Session / playground path gate | `apps/web/proxy.ts` · `session-gate-policy.ts` |
 | Plan/tier entitlement matrix | **Absent** — Afenda does not sell by module |
-| Org usage position (capacity bands) | [`@afenda/admin/usage`](../../packages/admin) — [../usage/usage-position-dna.md](../usage/usage-position-dna.md) |
+| Org usage position (capacity bands) | [`@afenda/admin/usage`](../../packages/control-plane/admin) — [../usage/usage-position-dna.md](../usage/usage-position-dna.md) |
 | Progressive-delivery flags SDK | **Absent** — no LD / Unleash / `@vercel/flags` / OpenFeature |
 
 ---
@@ -83,7 +83,7 @@ Borrow/reject matrix for plan/tier gates and ops toggles. Operator path: [README
 2. Test-Path packages/entitlements → False
 3. rg "@afenda/feature-flags" apps packages — ban product imports (Scratch/README only)
 4. rg "isFeatureEnabled|requireFeature|FeatureFlagError" apps/web packages — expect no product ports from Vierp
-5. Confirm ops toggles remain in packages/env/src/web.ts (PORTAL_ORG_SWITCHER_ENABLED · GUARDIAN_AUTH_SHELL · PLAYGROUND_ENABLED)
+5. Confirm ops toggles remain in packages/foundation/env/src/web.ts (PORTAL_ORG_SWITCHER_ENABLED · GUARDIAN_AUTH_SHELL · PLAYGROUND_ENABLED)
 ```
 
 Companion: [README.md](README.md) · [../usage/README.md](../usage/README.md) · [../system/README.md](../system/README.md) · [../monorepo/README.md](../monorepo/README.md) · [../deploy/README.md](../deploy/README.md).

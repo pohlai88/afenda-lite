@@ -17,7 +17,7 @@ No DOC-002 rows. No links into `docs/`. Re-probe after Ultracite major or Biome 
 |-------|-----|----------|
 | Biome | Engine — format · lint · assist · CI | catalog `@biomejs/biome` `^2.5.3` |
 | Ultracite | Biome presets (v7 paths) | `ultracite` `^7.9.4` |
-| Shared config | Extends presets once | [`packages/config/biome.json`](../../packages/config/biome.json) |
+| Shared config | Extends presets once | [`packages/foundation/config/biome.json`](../../packages/foundation/config/biome.json) |
 | Root | Workspace `includes` + product `overrides` | [`biome.jsonc`](../../biome.jsonc) |
 
 Chain: root → `@afenda/config/biome.json` → `ultracite/biome/{core,react,next,vitest}`. One root config — no nested package `biome.json` unless a real package-only carve-out appears.

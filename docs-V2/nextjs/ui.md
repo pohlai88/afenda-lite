@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|-------|
 | Surface | `docs-V2/nextjs/ui.md` |
-| Authority | **Scratch** — frontend-ui-engineering + disk `packages/ui-system/**` · `apps/web/features/**` |
+| Authority | **Scratch** — frontend-ui-engineering + disk `packages/surfaces/ui-system/**` · `apps/web/features/**` |
 | Updated | 2026-07-19 |
 
 Product UI consumes the flat barrel only. Re-probe after barrel export changes.
@@ -25,7 +25,7 @@ No deep `@afenda/ui-system/src/...`. No parallel UI package. No product import o
 
 ```text
 1. pnpm --filter @afenda/ui-system ui:add <component>
-2. Fix to relative imports inside packages/ui-system
+2. Fix to relative imports inside packages/surfaces/ui-system
 3. Export from package barrel (package.json exports ".")
 4. pnpm --filter @afenda/ui-system test
 5. Consume from apps/web via barrel only
@@ -61,7 +61,7 @@ No deep `@afenda/ui-system/src/...`. No parallel UI package. No product import o
 1. pnpm --filter @afenda/ui-system test
 2. rg "from [\"']@afenda/ui-system/" apps/web --glob "*.{ts,tsx}"   # deep paths = smell
 3. rg "from [\"']@afenda/ui-system[\"']" apps/web --glob "*.{ts,tsx}"
-4. Disk: packages/ui-system/package.json exports · src/index.ts
+4. Disk: packages/surfaces/ui-system/package.json exports · src/index.ts
 ```
 
 Companion: [README.md](README.md) · [../discipline/README.md](../discipline/README.md) · [folders.md](folders.md).

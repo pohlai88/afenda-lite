@@ -26,8 +26,8 @@ DNA borrow/reject: [master-data-dna.md](master-data-dna.md). Leftovers method: [
 
 | Stage | Disk evidence |
 |-------|----------------|
-| Domain scaffold + contracts | `packages/master-data` |
-| Platform refs + core org masters | `packages/db/src/schema/master-data.ts` + commands |
+| Domain scaffold + contracts | `packages/erp/master-data` |
+| Platform refs + core org masters | `packages/data-plane/db/src/schema/master-data.ts` + commands |
 | Aggregate extensions (§3.3) | `md_party_*` · `md_item_*` · `md_warehouse_external_id` + `extensions.ts` |
 | Lifecycle + concurrency + merge | status CAS · `mergeParties` · `master_data.party.merged.v1` |
 | Audit + outbox same-TX | `drizzle-store.ts` / `drizzle-extension-mutations.ts` CTEs |
@@ -91,7 +91,7 @@ pnpm audit:tenancy-nulls
 
 | Claim | Path |
 |-------|------|
-| Sole write path | `packages/master-data/src/{party,item,item-group,warehouse,payment-term,item-variant,change-request,extensions,merge,import-bulk}.ts` |
+| Sole write path | `packages/erp/master-data/src/{party,item,item-group,warehouse,payment-term,item-variant,change-request,extensions,merge,import-bulk}.ts` |
 | MDG change requests (R2) | `change-request.ts` · `0008_md_change_request.sql` · gated activate/merge · `__tests__/change-request.domain.test.ts` · `apps/web/__tests__/master-data-change-request.test.ts` |
 
 | Extensions + role-before-activate | `extensions.ts` · `__tests__/extensions.domain.test.ts` |

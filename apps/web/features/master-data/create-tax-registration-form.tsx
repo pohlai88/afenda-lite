@@ -1,6 +1,6 @@
 "use client";
 
-import { TAX_REGISTRATION_TYPES } from "@afenda/master-data";
+import { TAX_REGISTRATION_TYPES } from "@afenda/master-data/types";
 import {
 	Alert,
 	AlertDescription,

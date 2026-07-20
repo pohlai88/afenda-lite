@@ -2,7 +2,7 @@
  * N9 / ARCH-023 — assert zero null `organization_id` on hard tenant roots.
  *
  * Table inventory matches `HARD_TENANT_ROOT_TABLE_NAMES` in
- * `packages/db/src/hard-tenant-roots.ts` (kept as a plain list here so Node
+ * `packages/data-plane/db/src/hard-tenant-roots.ts` (kept as a plain list here so Node
  * can run without resolving Drizzle TS extensionless imports).
  *
  * Usage: pnpm audit:tenancy-nulls
@@ -60,7 +60,7 @@ if (!databaseUrl || databaseUrl.trim().length === 0) {
 const serverlessUrl = pathToFileURL(
 	resolve(
 		process.cwd(),
-		"packages/db/node_modules/@neondatabase/serverless/index.mjs",
+		"packages/data-plane/db/node_modules/@neondatabase/serverless/index.mjs",
 	),
 ).href;
 const { neon } = await import(serverlessUrl);

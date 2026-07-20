@@ -106,6 +106,7 @@ describe("master-data import Actions", () => {
 				actorUserId: "user-import",
 				sourceSystem: "erp",
 			}),
+			expect.objectContaining({ authorization: expect.anything() }),
 		);
 	});
 
@@ -164,6 +165,7 @@ describe("master-data import Actions", () => {
 				dryRun: false,
 				approved: true,
 			}),
+			expect.objectContaining({ authorization: expect.anything() }),
 		);
 	});
 });

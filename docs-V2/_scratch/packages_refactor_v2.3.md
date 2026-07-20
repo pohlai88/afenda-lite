@@ -20,12 +20,14 @@ PROMOTION COMPLETE:
   WORKSPACE-EDGE-REGISTER.yaml + MODULE-ROADMAP.yaml seeded
   packages/README.md Phase 1 band classification applied
 
-AUTHORIZED NEXT:
+AUTHORIZED NEXT (historical at promotion):
   Phase 2 manifests, generated registers, validators, negative fixtures
 
-NOT AUTHORIZED:
-  Phase 3 folder nesting
-  Phase 4 ERP package creation
+SUPERSEDED 2026-07-20 by [phase3_phase4.md](./phase3_phase4.md):
+  Phase 3 folder nesting — AUTHORIZED (evidence gate waived)
+  Phase 4 ERP package creation — AUTHORIZED (package-by-package after Phase 3 audit)
+
+STILL NOT AUTHORIZED:
   @afenda/module-catalog runtime
   @afenda/authorization extraction
   @afenda/jobs creation
@@ -76,7 +78,7 @@ Rank-1 mixes foundation, runtime, data-plane, control plane, ERP, and AI. Folder
 - Mega-packages or shared-domain kits (`@afenda/shared`, `@afenda/common`, …).
 - Empty speculative packages or empty source trees.
 - Restoring Living `docs/` or Collapse trees without named recovery.
-- Shipping new ERP packages without ARCH-006 / Approved slice.
+- Shipping new ERP packages without Approved slice + `docs-V2/modules` MODULE-ROADMAP cut (dormant ARCH-006 ID is a label only — not on-disk SSOT).
 - Claiming runtime enablement readiness from docs or CI alone.
 - Treating Scratch as temporary implementation authority.
 - Authorizing Phase 3/4, module-catalog runtime, authorization extract, jobs, or new transaction-core packages.
@@ -87,9 +89,9 @@ Rank-1 mixes foundation, runtime, data-plane, control plane, ERP, and AI. Folder
 
 | Constraint | Source |
 |------------|--------|
-| Imports Rank 3 → 2 → 1; packages never import `apps/*` | ARCH-024 / LAYERS |
-| No `@afenda/shared`; no category implementation packages | ARCH-024 |
-| Schema DDL in `@afenda/db`; mutation authority in owning package | Monorepo + master-data / sales |
+| Imports Rank 3 → 2 → 1; packages never import `apps/*` | docs-V2/monorepo · LAYERS.md |
+| No `@afenda/shared`; no category implementation packages | docs-V2/monorepo · LAYERS.md |
+| Schema DDL in `@afenda/db`; mutation authority in owning package | docs-V2/monorepo · master-data / sales |
 | Enterprise production quality — no shim or stub product paths | Always-apply rules |
 | Scratch acceptance ≠ implementation start | Approval handoff |
 | `apps/web/modules/*` ≠ `@afenda/module-catalog` | AGENTS.md |
@@ -113,9 +115,10 @@ does not begin.
 
 ```text
 Scratch accepted
-→ Living authority amended (docs-V2/monorepo + LAYERS.md; ADR/ARCH when available)
+→ Living Scratch authority amended (docs-V2/monorepo + LAYERS.md)
 → version / authority recorded
 → Phase 1 begins
+  (dormant ARCH/ADR IDs = labels only until Docs-lane reopen — never ghost Living docs/ SSOT)
 ```
 
 **Forbidden sequence**
@@ -129,7 +132,7 @@ Scratch accepted
 Steps:
 
 1. Human stamps this Scratch plan accepted for Living-authority promotion.
-2. Amend `docs-V2/monorepo` and `LAYERS.md` with the approved laws (and Living ADR/ARCH companions when Docs-lane is open).
+2. Amend `docs-V2/monorepo` and `LAYERS.md` with the approved laws. Do **not** recreate Living `docs/architecture/ARCH-*` bodies — Docs-lane reopen is a separate named mission.
 3. Record version/authority on those surfaces.
 4. Mark this Scratch file accepted-reference or superseded.
 5. Only then begin Phase 1.
@@ -140,7 +143,7 @@ Steps:
 
 ### Physical layout
 
-Canonical architecture is **classification and ownership**, not folder nesting. `packages/sales` may stay at the package root indefinitely (`band: R1-F`, `category: commercial`).
+Canonical architecture is **classification and ownership**, not folder nesting. `packages/erp/sales` may stay at the package root indefinitely (`band: R1-F`, `category: commercial`).
 
 If Phase 3 is later authorized: one category level; published names stay `@afenda/<name>`. Category folders hold `README.md` + child packages only — never barrels or domain stores.
 
@@ -192,7 +195,7 @@ Do **not** say either file independently “owns” the entire graph.
 |---------|------------------------------------------------------|
 | `@afenda/sales` | errors, db, audit, events, master-data |
 | `@afenda/master-data` | errors, db, audit, events, search |
-| Future `@afenda/inventory` | Only via ARCH-006 cut + dual-control edge |
+| Future `@afenda/inventory` | Only via MODULE-ROADMAP cut + dual-control edge |
 
 Also forbidden: dual-write another package’s mutation tables; ERP import of `@afenda/admin`.
 
@@ -202,7 +205,7 @@ edges:
   - from: "@afenda/sales"
     to: "@afenda/master-data"
     status: approved
-    authority: ARCH-006
+    authority: docs-V2/monorepo
     reason: "FK + snapshots; masters via public API"
     effectiveDate: "2026-07-01"
 ```
@@ -633,11 +636,15 @@ Does **not** block Phase 1–2. Record before worker-driven ERP mutations begin.
 
 **Rollback:** remove CI job and validators in a follow-up commit. Do not mark failing validators green.
 
-### Phase 3 / 4 — not authorized
+### Phase 3 / 4 — status after Phase 1–2
 
-Evidence gate for future Phase 3 (≥2): ≥24 root packages · ≥3 path mistakes in 60 days · manual category map needed · audit navigation slowed · nesting study shows fewer errors.
+Phase 1–2 = governance baseline (done on disk). Phase 3 is **optional folder nesting**, not the next required mission after Phase 1–2. Flat `packages/<name>` remains valid indefinitely.
 
-Phase 4 still requires ARCH-006 cut + full package bar + dual-control edges.
+**Audit 2026-07-20 (evidence gate, ≥2 of 5):** root packages **22** (Unmet vs ≥24) · documented path mistakes in 60 days **none found** (Unmet) · manual category map / audit navigation / nesting study = Unevaluated or Unmet. **Verdict: GATE_UNMET** — no nesting mission from that audit. Commands: `git ls-files "packages/*/package.json"` · `git log --since=2026-05-21` path-mistake probes.
+
+Evidence criteria (for a future nesting mission only): ≥24 root packages · ≥3 path mistakes in 60 days · manual category map needed · audit navigation slowed · nesting study shows fewer errors.
+
+Phase 4 still requires MODULE-ROADMAP cut + full package bar + dual-control edges.
 
 ---
 

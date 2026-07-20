@@ -98,7 +98,7 @@ DNA still describes capabilities that are not on disk. Without a scratch cutover
 | **Must not** | `variant_json` bag on root item as truth; fuzzy “pick first variant.” |
 | **Depends on** | Shipped `md_item` · `md_item_group` · lifecycle |
 | **Tables** | `md_item_template` · `md_item_template_attribute` · `md_item_template_attribute_option` · `md_item_variant` · `md_item_variant_attribute_value` |
-| **Evidence** | `packages/db/src/schema/master-data.ts` · `packages/db/drizzle/0007_md_item_variants.sql` · `packages/master-data/src/item-variant.ts` · `packages/master-data/src/drizzle-variant-mutations.ts` · `packages/master-data/__tests__/item-variant.domain.test.ts` · `apps/web/app/actions/create-item-template.ts` · `apps/web/app/actions/add-item-template-attribute.ts` · `apps/web/app/actions/add-item-template-attribute-option.ts` · `apps/web/app/actions/create-item-variant.ts` · `apps/web/features/master-data/create-item-template-form.tsx` · `apps/web/features/master-data/add-item-template-attribute-form.tsx` · `apps/web/features/master-data/add-item-template-attribute-option-form.tsx` · `apps/web/features/master-data/create-item-variant-form.tsx` · `apps/web/features/master-data/master-data-shell.tsx` (Templates + Variants panels) |
+| **Evidence** | `packages/data-plane/db/src/schema/master-data.ts` · `packages/data-plane/db/drizzle/0007_md_item_variants.sql` · `packages/erp/master-data/src/item-variant.ts` · `packages/erp/master-data/src/drizzle-variant-mutations.ts` · `packages/erp/master-data/__tests__/item-variant.domain.test.ts` · `apps/web/app/actions/create-item-template.ts` · `apps/web/app/actions/add-item-template-attribute.ts` · `apps/web/app/actions/add-item-template-attribute-option.ts` · `apps/web/app/actions/create-item-variant.ts` · `apps/web/features/master-data/create-item-template-form.tsx` · `apps/web/features/master-data/add-item-template-attribute-form.tsx` · `apps/web/features/master-data/add-item-template-attribute-option-form.tsx` · `apps/web/features/master-data/create-item-variant-form.tsx` · `apps/web/features/master-data/master-data-shell.tsx` (Templates + Variants panels) |
 | **Verify** | `pnpm --filter @afenda/master-data typecheck test` · `pnpm --filter @afenda/db test -- master-data-schema tenancy` · `pnpm audit:tenancy-nulls` |
 
 ### R2 — Approval workflow (MDG) — **SHIPPED**
@@ -112,7 +112,7 @@ DNA still describes capabilities that are not on disk. Without a scratch cutover
 | **Must not** | Auto-merge; bypass CAS; dual-write outside package; bulk-import-apply gating (stays R6). |
 | **Depends on** | Shipped lifecycle · merge · `master_data.manage` + new `master_data.approve` |
 | **Status** | **Shipped** 2026-07-20 · **Q2 resolved:** activate+merge only |
-| **Evidence** | `packages/db/src/schema/master-data.ts` (`mdChangeRequest`) · `drizzle/0008_md_change_request.sql` · `hard-tenant-roots.ts` · `platform-permission-catalog.ts` (`master_data.approve`) · `packages/master-data/src/change-request.ts` · `drizzle-change-request.ts` · gated `party.ts` / `merge.ts` · `packages/events/.../master-data.events.ts` (`change_request.*.v1`) · `apps/web/app/actions/*change-request*` · `activate-party.ts` / `merge-parties.ts` · `features/master-data/change-request-panel.tsx` · `__tests__/change-request.domain.test.ts` · `apps/web/__tests__/master-data-change-request.test.ts` |
+| **Evidence** | `packages/data-plane/db/src/schema/master-data.ts` (`mdChangeRequest`) · `drizzle/0008_md_change_request.sql` · `hard-tenant-roots.ts` · `platform-permission-catalog.ts` (`master_data.approve`) · `packages/erp/master-data/src/change-request.ts` · `drizzle-change-request.ts` · gated `party.ts` / `merge.ts` · `packages/data-plane/events/.../master-data.events.ts` (`change_request.*.v1`) · `apps/web/app/actions/*change-request*` · `activate-party.ts` / `merge-parties.ts` · `features/master-data/change-request-panel.tsx` · `__tests__/change-request.domain.test.ts` · `apps/web/__tests__/master-data-change-request.test.ts` |
 | **Verify** | `pnpm --filter @afenda/master-data typecheck test` · `pnpm --filter @afenda/web typecheck test -- master-data` · `pnpm --filter @afenda/events test` · `pnpm --filter @afenda/db test -- master-data-schema tenancy` · `pnpm audit:tenancy-nulls` |
 
 ### R3 — `md_payment_term` — **SHIPPED**
@@ -126,7 +126,7 @@ DNA still describes capabilities that are not on disk. Without a scratch cutover
 | **Must not** | Invent SO/PO line behavior here — terms are referenced later by transactional modules. |
 | **Depends on** | Shipped party/item patterns (copy contracts, do not fork) |
 | **Status** | **Shipped** 2026-07-20 |
-| **Evidence** | `packages/db/src/schema/master-data.ts` (`mdPaymentTerm`) · `drizzle/0009_md_payment_term.sql` · `hard-tenant-roots.ts` · `scripts/audit-tenancy-nulls.mjs` · `packages/master-data/src/payment-term.ts` · `drizzle-store.ts` CTEs · `packages/events/.../master-data.events.ts` · `apps/web/app/actions/{list,create,update,*-payment-term,payment-term-lifecycle}.ts` · `features/master-data/{create-payment-term-form,payment-term-lifecycle-form}.tsx` · `__tests__/master-data.domain.test.ts` · `apps/web/__tests__/{master-data-actions,product-authorization-wiring}.test.ts` |
+| **Evidence** | `packages/data-plane/db/src/schema/master-data.ts` (`mdPaymentTerm`) · `drizzle/0009_md_payment_term.sql` · `hard-tenant-roots.ts` · `scripts/audit-tenancy-nulls.mjs` · `packages/erp/master-data/src/payment-term.ts` · `drizzle-store.ts` CTEs · `packages/data-plane/events/.../master-data.events.ts` · `apps/web/app/actions/{list,create,update,*-payment-term,payment-term-lifecycle}.ts` · `features/master-data/{create-payment-term-form,payment-term-lifecycle-form}.tsx` · `__tests__/master-data.domain.test.ts` · `apps/web/__tests__/{master-data-actions,product-authorization-wiring}.test.ts` |
 | **Domain fields** | §24 warehouse-shaped lifecycle + `net_days` (int ≥ 0) |
 
 ### R4 — `md_tax_registration`
@@ -140,7 +140,7 @@ DNA still describes capabilities that are not on disk. Without a scratch cutover
 | **Must not** | Premature `md_tax_*` columns guessed outside the tax Scratch SSOT |
 | **Depends on** | Tax architecture Scratch — **Q3 resolved**: [../tax/tax-architecture.md](../tax/tax-architecture.md) |
 | **Status** | **Shipped** 2026-07-20 |
-| **Evidence** | `packages/db/src/schema/master-data.ts` (`mdTaxRegistration`) · `drizzle/0010_md_tax_registration.sql` · `hard-tenant-roots.ts` · `scripts/audit-tenancy-nulls.mjs` · `packages/master-data/src/tax-registration.ts` · `drizzle-store.ts` CTEs · `packages/events/.../master-data.events.ts` · `apps/web/app/actions/{list,create,update,*-tax-registration,tax-registration-lifecycle}.ts` · `features/master-data/{create-tax-registration-form,tax-registration-lifecycle-form}.tsx` · `__tests__/master-data.domain.test.ts` · `apps/web/__tests__/{master-data-actions,product-authorization-wiring}.test.ts` |
+| **Evidence** | `packages/data-plane/db/src/schema/master-data.ts` (`mdTaxRegistration`) · `drizzle/0010_md_tax_registration.sql` · `hard-tenant-roots.ts` · `scripts/audit-tenancy-nulls.mjs` · `packages/erp/master-data/src/tax-registration.ts` · `drizzle-store.ts` CTEs · `packages/data-plane/events/.../master-data.events.ts` · `apps/web/app/actions/{list,create,update,*-tax-registration,tax-registration-lifecycle}.ts` · `features/master-data/{create-tax-registration-form,tax-registration-lifecycle-form}.tsx` · `__tests__/master-data.domain.test.ts` · `apps/web/__tests__/{master-data-actions,product-authorization-wiring}.test.ts` |
 | **Verify sketch** | See tax-architecture acceptance + `pnpm audit:tenancy-nulls` |
 
 ### R5 — Transactional modules (ARCH-006 consumers)
@@ -155,7 +155,7 @@ DNA still describes capabilities that are not on disk. Without a scratch cutover
 | **Must not** | Port transaction tables into `@afenda/master-data`. |
 | **Depends on** | Shipped spine; R1–R3 as each module needs them |
 | **Status** | **R5-0 accepted**. **R5-1 Sales SHIPPED** 2026-07-20. Purchasing / Inventory later. |
-| **Evidence (R5-1)** | `packages/sales` · `packages/db/src/schema/sales.ts` · `drizzle/0011_sales_order.sql` · `hard-tenant-roots.ts` · `packages/events/.../sales.events.ts` · `platform-permission-catalog.ts` (`sales.read` / `sales.manage`) · `apps/web/app/actions/*sales*` · `features/sales/*` · `__tests__/sales.domain.test.ts` · `__tests__/anti-shadow.test.ts` |
+| **Evidence (R5-1)** | `packages/erp/sales` · `packages/data-plane/db/src/schema/sales.ts` · `drizzle/0011_sales_order.sql` · `hard-tenant-roots.ts` · `packages/data-plane/events/.../sales.events.ts` · `platform-permission-catalog.ts` (`sales.read` / `sales.manage`) · `apps/web/app/actions/*sales*` · `features/sales/*` · `__tests__/sales.domain.test.ts` · `__tests__/anti-shadow.test.ts` |
 | **Verify** | `pnpm --filter @afenda/sales typecheck test` · `pnpm --filter @afenda/db test -- sales tenancy` · `pnpm --filter @afenda/events test` · `pnpm --filter @afenda/web typecheck test -- sales` · `pnpm audit:tenancy-nulls` · anti-shadow `rg` |
 
 ### R6 — Optional harden (not §23 Absent)
@@ -184,7 +184,7 @@ These improve fidelity to DNA prose; they are **not** missing spine stages. **On
 
 **Pattern to copy (do not invent):**
 
-- Root commands: `packages/master-data/src/{party,item,warehouse}.ts`
+- Root commands: `packages/erp/master-data/src/{party,item,warehouse}.ts`
 - Extensions: `extensions.ts` + `drizzle-extension-mutations.ts`
 - Web adapter: `apps/web/app/actions/*master-data*` + `runMemberSessionAction` / `mapPackageResult`
 - Merge steward baseline: `merge.ts` + `merge-parties-form.tsx` (R2 extends governance, does not replace)
@@ -274,7 +274,7 @@ PROJECT CONTEXT:
 - This mission: pick ONE open track — R6 harden row · or Purchasing/Inventory consumer
 - Constraints: sole write path, hard tenancy, Result/ActionResult, same-TX, pageSize<=100
 - Forbidden: Employee md_*, BOM/stock/CoA, md_uom, shadow sales_customer, Living docs/, Collapse recover
-- Pattern files: packages/sales/src/order.ts · packages/master-data/src/party.ts · apps/web/app/actions/*sales*
+- Pattern files: packages/erp/sales/src/order.ts · packages/erp/master-data/src/party.ts · apps/web/app/actions/*sales*
 - Evidence parents: master-data-dna.md §23/§28 · arch-006-consumer-contract.md · README.md capability matrix
 ```
 

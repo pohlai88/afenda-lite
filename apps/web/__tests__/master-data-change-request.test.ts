@@ -108,6 +108,7 @@ describe("master-data change-request Actions", () => {
 				commandKind: "activate_party",
 				payload: { partyId: "11111111-1111-4111-8111-111111111111" },
 			}),
+			expect.objectContaining({ authorization: expect.anything() }),
 		);
 	});
 
@@ -150,6 +151,7 @@ describe("master-data change-request Actions", () => {
 				id: "55555555-5555-4555-8555-555555555555",
 				expectedVersion: 1,
 			}),
+			expect.objectContaining({ authorization: expect.anything() }),
 		);
 	});
 
@@ -175,6 +177,7 @@ describe("master-data change-request Actions", () => {
 				organizationId: "org-cr",
 				reviewNote: "Incomplete roles",
 			}),
+			expect.objectContaining({ authorization: expect.anything() }),
 		);
 	});
 });

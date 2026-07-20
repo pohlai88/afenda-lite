@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|-------|
 | Surface | `docs-V2/auth/README.md` |
-| Authority | **Scratch** — security-and-hardening + disk `packages/auth/**` · `apps/web/proxy.ts` · `features/auth/**` |
+| Authority | **Scratch** — security-and-hardening + disk `packages/control-plane/auth/**` · `apps/web/proxy.ts` · `features/auth/**` |
 | Updated | 2026-07-20 |
 
 Re-probe after auth route or Neon Auth trusted-origin changes.
@@ -51,7 +51,7 @@ Do not merge invite-link origin with Auth UI callback origin — see [../tenancy
 | Neon Auth BFF `POST` `/api/auth/*` | `auth_bff_post` (20 / 60s, key `IP:pathname`) | `@afenda/auth` → `@afenda/rate-limit` |
 | Path A `signInAction` | `auth_sign_in` (5 / 60s, key `IP:email`) | `apps/web` → `@afenda/rate-limit` |
 
-Outcomes: `toRateLimitAppError` → `RATE_LIMITED` (429 + `Retry-After` on BFF) or `SERVICE_UNAVAILABLE` (prod without Upstash / store fault). Store: Upstash REST when `UPSTASH_REDIS_*` set; process memory only for non-production without keys. Package README: [`packages/rate-limit`](../../packages/rate-limit/README.md). Observability: [../observability/README.md](../observability/README.md).
+Outcomes: `toRateLimitAppError` → `RATE_LIMITED` (429 + `Retry-After` on BFF) or `SERVICE_UNAVAILABLE` (prod without Upstash / store fault). Store: Upstash REST when `UPSTASH_REDIS_*` set; process memory only for non-production without keys. Package README: [`packages/runtime/rate-limit`](../../packages/runtime/rate-limit/README.md). Observability: [../observability/README.md](../observability/README.md).
 
 ## Hard stops / Why
 

@@ -1033,7 +1033,7 @@ describe("docs OpenAPI wire", () => {
 		expect(page).not.toMatch(/fumadocs-core\/content\/github/);
 		expect(page).not.toMatch(/\bGIT_TOKEN\b/);
 
-		const docsEnvPath = join(appDir, "../../packages/env/src/docs.ts");
+		const docsEnvPath = join(appDir, "../../packages/foundation/env/src/docs.ts");
 		const docsEnvSource = readFileSync(docsEnvPath, "utf8");
 		expect(docsEnvSource).toContain("DOCS_URL");
 		expect(docsEnvSource).toContain("GITHUB_APP_ID");
@@ -1930,7 +1930,7 @@ describe("docs OpenAPI wire", () => {
 		expect(layout).not.toMatch(/\bAPP_URL\b/);
 		expect(layout).not.toMatch(/process\.env\./);
 
-		const docsEnvPath = join(appDir, "../../packages/env/src/docs.ts");
+		const docsEnvPath = join(appDir, "../../packages/foundation/env/src/docs.ts");
 		const docsEnvSource = readFileSync(docsEnvPath, "utf8");
 		expect(docsEnvSource).toContain("DOCS_URL");
 		expect(docsEnvSource).toContain("http://localhost:3001");

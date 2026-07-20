@@ -8,7 +8,7 @@ import { dirname, join } from "node:path";
 import { stringify as stringifyYaml } from "yaml";
 
 /**
- * @typedef {import("../../packages/db/src/module-manifest-contract.ts").AfendaModuleManifest} AfendaModuleManifest
+ * @typedef {import("../../packages/data-plane/db/src/module-manifest-contract.ts").AfendaModuleManifest} AfendaModuleManifest
  */
 
 /**

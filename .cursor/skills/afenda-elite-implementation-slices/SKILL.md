@@ -49,7 +49,7 @@ Not for: registering new doc IDs, recreating wiped Declarations/FFT modules, hou
 3. **No fake completion.** Meet exit criteria with real behavior, or stop and ask.
 4. **Anti-contamination.** Greenfield under `apps/web/**` and `packages/*` only. Never restore Collapse trees from git unless the user names that recovery **this turn**.
 5. **Serial order.** GUIDE-018 I1→I7; `N1`→`N18` per neon-auth-slice-map. Skipping needs an explicit user waiver this turn. Do not invent ARCH-028 S9.
-6. **Baseline migrate ban.** Do not apply `packages/db` `0000_*` baseline to `br-tiny-hill-ao82jp6f`.
+6. **Baseline migrate ban.** Do not apply `packages/data-plane/db` `0000_*` baseline to `br-tiny-hill-ao82jp6f`.
 7. **Domain wipe.** Declarations + FFT product modules are **removed** — do not recreate or teach freeze/reopen as open work.
 8. **Lane:** match map row. No mixed lanes.
 9. **Guardian (Ops verticals):** before coding I1–I3/I5 or N5–N12 product paths — Frontend · Backend · Security perspectives.

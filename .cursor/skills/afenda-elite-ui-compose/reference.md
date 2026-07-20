@@ -1,16 +1,16 @@
 # afenda-elite-ui-compose — recipes & gate SSOT
 
-Companion to [SKILL.md](SKILL.md). **SKILL** = QUALITY ORDER, locks, hard rules, matrix, Compose Score template. **This file** = recipes, F*/C*, UI-CAP, promotion rule, score rubric. Confirm barrel names in `packages/ui-system/src/index.ts` before inventing a local copy.
+Companion to [SKILL.md](SKILL.md). **SKILL** = QUALITY ORDER, locks, hard rules, matrix, Compose Score template. **This file** = recipes, F*/C*, UI-CAP, promotion rule, score rubric. Confirm barrel names in `packages/surfaces/ui-system/src/index.ts` before inventing a local copy.
 
 **QUALITY ORDER:** AUTHORITY → CONSISTENCY → CORRECT-COMPONENT → SUITABILITY → SCALABILITY → STABILITY — see [SKILL.md](SKILL.md). Prettier that breaks a higher rule = failed.
 
-**Vitest SSOT:** F* → `apps/web/__tests__/compose-redflags.test.ts`; C* → `apps/web/__tests__/compose-suitability.test.ts` (`compose-scan.ts`); vague exports → `packages/ui-system/__tests__/export-naming.test.ts`.
+**Vitest SSOT:** F* → `apps/web/__tests__/compose-redflags.test.ts`; C* → `apps/web/__tests__/compose-suitability.test.ts` (`compose-scan.ts`); vague exports → `packages/surfaces/ui-system/__tests__/export-naming.test.ts`.
 
 **Risk A:** IDs must not diverge. `compose-gate-ids.test.ts` asserts this file’s `| F1 |`…`| F8 |` / `| C1 |`…`| C3 |` table cells match Vitest `it("F…")` / `it("C…")` titles. Adding a gate = update this table **and** the test title in the same change.
 
 ## ERP token utilities (shipped)
 
-Disk SSOT: `packages/ui-system/src/styles/tokens.css` (public `@afenda/ui-system/styles.css`). Operative authority: ADR-010 flat-barrel · ARCH-024 `@afenda/ui-system` (Living bodies dormant — AGENTS.md + this farm). Lock: `packages/ui-system/__tests__/erp-tokens.test.ts`. **No parallel token file.** Do not promote scratch brand lanes (including Aerospace Ceramic). **Never** use or reintroduce `--foreground-quaternary`.
+Disk SSOT: `packages/surfaces/ui-system/src/styles/tokens.css` (public `@afenda/ui-system/styles.css`). Operative authority: ADR-010 flat-barrel · ARCH-024 `@afenda/ui-system` (Living bodies dormant — AGENTS.md + this farm). Lock: `packages/surfaces/ui-system/__tests__/erp-tokens.test.ts`. **No parallel token file.** Do not promote scratch brand lanes (including Aerospace Ceramic). **Never** use or reintroduce `--foreground-quaternary`.
 
 | Role | Utility | Notes |
 |------|---------|-------|

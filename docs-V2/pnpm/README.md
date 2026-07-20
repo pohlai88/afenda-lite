@@ -98,7 +98,7 @@ Documented dispose — leave as intentional vendor noise. Do **not** silence wit
 | Observation | Decision | Why | Disk evidence |
 |-------------|----------|-----|---------------|
 | `fumadocs-mdx` ↔ catalog `vite` | **Documented dispose (B)** — keep catalog `vite: ^6.4.3` | Docs uses fumadocs-mdx **Next** path (`generate:source` / `fumadocs-mdx/next`), not `fumadocs-mdx/vite`. Sole vite consumer is root Vitest; `vitest@4` peers `vite ^6 \|\| ^7 \|\| ^8`. Catalog bump to 7/8 is monorepo-wide for an unused optional peer. | `fumadocs-mdx@15.2.0` peer `vite: 7.x.x \|\| 8.x.x` + `peerDependenciesMeta.vite.optional: true` · root `vite@6.4.3` (`pnpm why vite` → one version) · no `fumadocs-mdx/vite` imports under `apps/docs` |
-| Neon Auth / better-auth optionals | **Documented dispose** | Vendor adapter peers; Next path already wired. Unused DB/framework adapters must not be installed as fake “Closed”. | `@neondatabase/auth@0.4.2-beta` optional peers `next` / `react` / `react-dom` · `@afenda/auth` peers + imports `next`/`react`; `react-dom` from `@afenda/web` · nested `better-auth@1.4.18` optional peers (`prisma`, `drizzle-orm`, `mongodb`, `vue`, `svelte`, …) with **zero** imports under `packages/auth` / `apps/web` |
+| Neon Auth / better-auth optionals | **Documented dispose** | Vendor adapter peers; Next path already wired. Unused DB/framework adapters must not be installed as fake “Closed”. | `@neondatabase/auth@0.4.2-beta` optional peers `next` / `react` / `react-dom` · `@afenda/auth` peers + imports `next`/`react`; `react-dom` from `@afenda/web` · nested `better-auth@1.4.18` optional peers (`prisma`, `drizzle-orm`, `mongodb`, `vue`, `svelte`, …) with **zero** imports under `packages/control-plane/auth` / `apps/web` |
 
 ### Anti-actions
 

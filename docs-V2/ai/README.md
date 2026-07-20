@@ -17,7 +17,7 @@
 
 | Layer | Path |
 |-------|------|
-| Package | `packages/ai-the-machine` (`@afenda/ai-the-machine`) |
+| Package | `packages/intelligence/ai-the-machine` (`@afenda/ai-the-machine`) |
 | RH | `POST /api/ai/chat` (UIMessage stream — excluded from OPEN-001) |
 | UI | `apps/web/features/ai-the-machine` on `/client` |
 | Env | `AI_GATEWAY_API_KEY` · `AI_THE_MACHINE_MODEL` (`@afenda/env`) |

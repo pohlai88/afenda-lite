@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|-------|
 | Surface | `docs-V2/data/README.md` |
-| Authority | **Scratch** — planning-and-task-breakdown (foundation) + disk `packages/db/**` |
+| Authority | **Scratch** — planning-and-task-breakdown (foundation) + disk `packages/data-plane/db/**` |
 | Updated | 2026-07-20 |
 
 Persistence foundation under API/UI. Adapter choice (RSC/Action/RH) stays in [../nextjs/data.md](../nextjs/data.md).
@@ -26,20 +26,20 @@ Persistence foundation under API/UI. Adapter choice (RSC/Action/RH) stays in [..
 
 | File | Role |
 |------|------|
-| `packages/db/src/schema/index.ts` | Barrel |
-| `packages/db/src/schema/platform.ts` | Platform tables (incl. RBAC) |
-| `packages/db/src/schema/master-data.ts` | Living Authority B: `ref_*` · `md_party` · `md_item_group` · `md_item` · `md_warehouse` (UoM = platform `ref_uom` only) — [../master-data/README.md](../master-data/README.md) |
-| `packages/db/src/hard-tenant-roots.ts` | Living hard-tenant roots: platform IAM/activity tables + `md_party` · `md_item_group` · `md_item` · `md_warehouse` |
+| `packages/data-plane/db/src/schema/index.ts` | Barrel |
+| `packages/data-plane/db/src/schema/platform.ts` | Platform tables (incl. RBAC) |
+| `packages/data-plane/db/src/schema/master-data.ts` | Living Authority B: `ref_*` · `md_party` · `md_item_group` · `md_item` · `md_warehouse` (UoM = platform `ref_uom` only) — [../master-data/README.md](../master-data/README.md) |
+| `packages/data-plane/db/src/hard-tenant-roots.ts` | Living hard-tenant roots: platform IAM/activity tables + `md_party` · `md_item_group` · `md_item` · `md_warehouse` |
 
 **Removed schema files (nuclear wipe):** `schema/declarations.ts`, `schema/fft.ts` — do not recreate as living product tables.
 
-File inventory only — no per-column encyclopedia. Re-probe `packages/db/src/schema/*` after schema adds.
+File inventory only — no per-column encyclopedia. Re-probe `packages/data-plane/db/src/schema/*` after schema adds.
 
 ---
 
 ## Schema craft checklist (reference → Drizzle)
 
-Source reviewed: `_reference/packages/database` — **Prisma 7 ERP** (`@vierp/database` / LIPHOCO), **not** Drizzle/Neon. Use it as craft rules for **future approved** Greenfield tables under `packages/db/src/schema/*`. Do not port ERP models or the Prisma stack.
+Source reviewed: `_reference/packages/database` — **Prisma 7 ERP** (`@vierp/database` / LIPHOCO), **not** Drizzle/Neon. Use it as craft rules for **future approved** Greenfield tables under `packages/data-plane/db/src/schema/*`. Do not port ERP models or the Prisma stack.
 
 Living `@afenda/db` already owns Neon HTTP (`-pooler`), hard `organization_id` + `withOrg`, migrate guards, permission catalog, and audit indexes — see [Posture](#posture-disk) · [../tenancy/README.md](../tenancy/README.md). Do not re-implement those from the reference.
 
@@ -123,8 +123,8 @@ Do not invent ad-hoc SQL migrate paths outside `@afenda/db` scripts.
 3. pnpm audit:tenancy-nulls   # needs DATABASE_URL; CI on main
 4. rg "withOrg" apps/web/modules --glob "*.ts"
 5. rg "Schema craft checklist" docs-V2/data/README.md
-6. Disk: packages/db/src/client.ts · hard-tenant-roots.ts · schema/platform.ts
+6. Disk: packages/data-plane/db/src/client.ts · hard-tenant-roots.ts · schema/platform.ts
 7. Absent-by-design: schema/declarations.ts · schema/fft.ts
 ```
 
-Companion: [`@afenda/db` README](../../packages/db/README.md) · [../auth/README.md](../auth/README.md) · [../tenancy/README.md](../tenancy/README.md) · [../modules/README.md](../modules/README.md) · [../nextjs/data.md](../nextjs/data.md).
+Companion: [`@afenda/db` README](../../packages/data-plane/db/README.md) · [../auth/README.md](../auth/README.md) · [../tenancy/README.md](../tenancy/README.md) · [../modules/README.md](../modules/README.md) · [../nextjs/data.md](../nextjs/data.md).

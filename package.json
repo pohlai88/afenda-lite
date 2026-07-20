@@ -67,7 +67,7 @@
 		"openapi:generate": "pnpm exec tsx --tsconfig apps/web/tsconfig.json scripts/generate-openapi.mts",
 		"check:openapi": "node scripts/check-openapi.mjs",
 		"check:docs-app": "pnpm --filter @afenda/docs generate:openapi-docs && pnpm --filter @afenda/docs generate:package-docs && pnpm --filter @afenda/docs lint:links",
-		"housekeeping:knip:ui-system": "knip --directory packages/ui-system",
+		"housekeeping:knip:ui-system": "knip --directory packages/surfaces/ui-system",
 		"housekeeping:knip:web": "knip --directory apps/web",
 		"check:nav": "node scripts/collapse-script-unavailable.mjs \"check:nav\"",
 		"check:proxy": "node scripts/collapse-script-unavailable.mjs \"check:proxy\"",

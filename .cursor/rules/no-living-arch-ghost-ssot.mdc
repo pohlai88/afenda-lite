@@ -1,0 +1,49 @@
+---
+description: Ban Living docs/ recreate and ghost ARCH SSOT — Scratch docs-V2 is operative authority
+alwaysApply: true
+---
+
+# No Living ARCH ghost SSOT · no Living `docs/` recreate
+
+**NOT ALLOWED. NOT ALLOWED. NOT ALLOWED.**
+
+**What ARCH is:** Living DOC-001 **Architecture** controlled documents — class `ARCH-*`, home `docs/architecture/ARCH-NNN-*.md` (ADRs under `docs/architecture/adr/`). On this checkout those bodies are **absent by design** (cutover `71176a0`) until an explicit **Docs-lane reopen**.
+
+**Legacy influence (banned):** treating missing Living ARCH/ADR/GUIDE bodies as on-disk SSOT, dual-stacking ghost Living paths with Scratch, or recreating the Living `docs/` tree without a named Docs-lane reopen **this turn**.
+
+## Operative authority (this checkout)
+
+| Use | Do not use as disk SSOT |
+|-----|-------------------------|
+| `docs-V2/**` Scratch packs | Missing `docs/architecture/ARCH-*` / `docs/architecture/adr/*` |
+| Farm companions · `LAYERS.md` · AGENTS.md | Cursor index ghosts under Living `docs/` |
+| ARCH-* / ADR-* **IDs as labels** (DOC control shape) | Inventing or restoring Living ARCH/ADR **file bodies** |
+
+## Forbidden without named Docs-lane reopen this turn
+
+- Create, write, move, or restore repo-root Living `docs/**` (anything under `docs/` that is **not** `docs-V2/**`)
+- Cite `docs/architecture/ARCH-*` or `docs/architecture/adr/*` as implementable on-disk authority
+- “Restore Living docs”, “reopen `docs/architecture`”, or mine Living ARCH bodies via `git show` for content (Collapse/git bans still apply)
+- Dual-authority: Scratch + ghost Living ARCH as equal SSOT
+
+## Required behavior
+
+1. Implement against `docs-V2/**` · farm companions · package/disk truth, **or**
+2. Stop and wait for an explicit Docs-lane reopen / named Living recovery exception **in this chat turn**.
+
+ARCH-* IDs may still appear as **dormant control labels** (catalogs, registers, historical notes). They must not imply a Living file is present.
+
+## Narrow exceptions (only these)
+
+| Exception | Rule |
+|-----------|------|
+| User letter this turn | Explicit Docs-lane reopen or named Living `docs/` recovery **in this chat turn** |
+| Ban surfaces | Rules/hooks/AGENTS/deprecation register that **state** this prohibition |
+| Official docs app | `apps/docs/**` (Fumadocs) — not Living DOC-001 SSOT |
+| Scratch | `docs-V2/**` only |
+
+## Hook enforcement
+
+`preToolUse` → `.cursor/hooks/no-living-arch-ghost-ssot.mjs` denies Write/StrReplace/EditNotebook that recreate Living `docs/` paths or **increase** ghost-Living SSOT path citations. Cleanup that removes or holds match count steady is allowed. Do not rename, encode, or split edits to bypass the hook.
+
+Authority: [AGENTS.md](../../AGENTS.md) · companion [no-collapse-legacy-recovery.mdc](no-collapse-legacy-recovery.mdc) · `pnpm check:docs-trunk-ban`.

@@ -180,7 +180,7 @@ apps/docs/
 |---------|------|
 | App package | `apps/docs` (`@afenda/docs`) |
 | Content | `apps/docs/content/docs/**` |
-| Docs env schema | `packages/env/src/docs.ts` · import `@afenda/env/docs` |
+| Docs env schema | `packages/foundation/env/src/docs.ts` · import `@afenda/env/docs` |
 | OAS input | `OPENAPI_DOCUMENT_ID` (`../../docs-V2/api/OPEN-001-openapi.yaml`) + absolute `OPENAPI_DOCUMENT_PATH` in `openapi-document-id.ts` |
 
 ---

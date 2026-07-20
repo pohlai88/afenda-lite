@@ -6,7 +6,7 @@ on:
     paths:
       - ".github/workflows/neon-performance-monitor.yml"
       - "scripts/monitor-neon-performance.mjs"
-      - "packages/env/src/neon-performance-posture.ts"
+      - "packages/foundation/env/src/neon-performance-posture.ts"
   schedule:
     - cron: "17 * * * *"
   workflow_dispatch:

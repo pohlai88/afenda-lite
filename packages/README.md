@@ -6,79 +6,79 @@ Import by package name only (`@afenda/<name>` or a declared `exports` subpath). 
 
 For engineers extending Platform or Surfaces; each package README is the consume / maintain entry. Agent checkout posture: [AGENTS.md](../AGENTS.md).
 
-**Governance version:** `packages-catalog/2026-07-20` (Phase 1 classification — promoted from packages_refactor_v2.3). Phase 3 nesting and Phase 4 new ERP packages are **not** authorized.
+**Governance version:** `packages-catalog/2026-07-20` (Phase 1 classification — promoted from packages_refactor_v2.3). Phase 1–2 governance baseline is **done**. Phase 3 one-level category nesting is **done** (`packages/<category>/<name>`; published names unchanged). Phase 4 new ERP packages need a separate MODULE-ROADMAP cut after Phase 3 audit. Status: [docs-V2/monorepo/README.md](../docs-V2/monorepo/README.md) § Phase status · authorization: [phase3_phase4.md](../docs-V2/_scratch/phase3_phase4.md).
 
 ## Layers
 
-Imports flow **down** only. No cycles. `@afenda/config` is devDep / tsconfig / Biome extend only — not a runtime import. **Bands classify only; they never grant dependency rights.**
+Imports flow **down** only. No cycles. `@afenda/config` is devDep / tsconfig / Biome extend only — not a runtime import. **Bands / category folders classify and organize only; they never grant dependency rights.** Category directories are not packages — do not publish `@afenda/foundation`, `@afenda/erp`, etc.
 
 | Rank | Layer | Packages |
 |------|-------|----------|
-| 2 | Surfaces (R2) | [`ui-system`](./ui-system/README.md) · [`emails`](./emails/README.md) |
+| 2 | Surfaces (R2) | [`ui-system`](./surfaces/ui-system/README.md) · [`emails`](./surfaces/emails/README.md) |
 | 1 | Platform | See banded catalog below |
 
-Application (`apps/web` · `apps/docs`) is Rank 3 — outside this folder. Physical paths stay flat (`packages/<name>`).
+Application (`apps/web` · `apps/docs`) is Rank 3 — outside this folder. Physical layout: `packages/<category>/<name>/`.
 
 ## Catalog
 
-### Surfaces — Rank 2
+### Surfaces — Rank 2 — [`surfaces/`](./surfaces/README.md)
 
 | Package | Role |
 |---------|------|
-| [`@afenda/ui-system`](./ui-system/README.md) | Owned-source shadcn/Radix primitives + semantic tokens (flat barrel) |
-| [`@afenda/emails`](./emails/README.md) | React Email templates for app-owned mail composition |
+| [`@afenda/ui-system`](./surfaces/ui-system/README.md) | Owned-source shadcn/Radix primitives + semantic tokens (flat barrel) |
+| [`@afenda/emails`](./surfaces/emails/README.md) | React Email templates for app-owned mail composition |
 
-### Platform Foundation — Rank 1A
-
-| Package | Role |
-|---------|------|
-| [`@afenda/config`](./config/README.md) | Shared Biome + TypeScript bases (dev-time only) |
-| [`@afenda/env`](./env/README.md) | Typed env contract (`createEnv` + Zod) — sole product env SSOT |
-| [`@afenda/errors`](./errors/README.md) | Transport-neutral `AppError` / codes / `Result` leaf |
-
-### Runtime Infrastructure — Rank 1B
+### Platform Foundation — Rank 1A — [`foundation/`](./foundation/README.md)
 
 | Package | Role |
 |---------|------|
-| [`@afenda/logger`](./logger/README.md) | Pino Node logger + edge-safe emit |
-| [`@afenda/http`](./http/README.md) | Fetch compose · correlation · pagination · rate-limit / timing headers |
-| [`@afenda/security`](./security/README.md) | Security headers · CSP · CORS builders |
-| [`@afenda/metrics`](./metrics/README.md) | Prometheus registry · HTTP/DB/cache instruments |
-| [`@afenda/openapi`](./openapi/README.md) | Zod→OpenAPI glue · `{ data }` envelope · YAML emit |
-| [`@afenda/rate-limit`](./rate-limit/README.md) | Sliding-window abuse limiter (Upstash / memory) |
-| [`@afenda/cache`](./cache/README.md) | L1 process + Upstash Redis L2 cache |
+| [`@afenda/config`](./foundation/config/README.md) | Shared Biome + TypeScript bases (dev-time only) |
+| [`@afenda/env`](./foundation/env/README.md) | Typed env contract (`createEnv` + Zod) — sole product env SSOT |
+| [`@afenda/errors`](./foundation/errors/README.md) | Transport-neutral `AppError` / codes / `Result` leaf |
 
-### Data Plane — Rank 1C
+### Runtime Infrastructure — Rank 1B — [`runtime/`](./runtime/README.md)
 
 | Package | Role |
 |---------|------|
-| [`@afenda/db`](./db/README.md) | Neon HTTP + Drizzle · living `platform_*` / domain schema |
-| [`@afenda/audit`](./audit/README.md) | Sole `platform_audit_log` write/list/export SSOT |
-| [`@afenda/events`](./events/README.md) | Sole `platform_domain_event` outbox SSOT |
-| [`@afenda/search`](./search/README.md) | Sole `platform_search_document` Postgres FTS SSOT |
-| [`@afenda/notifications`](./notifications/README.md) | Sole `platform_notification` IN_APP inbox SSOT |
+| [`@afenda/logger`](./runtime/logger/README.md) | Pino Node logger + edge-safe emit |
+| [`@afenda/http`](./runtime/http/README.md) | Fetch compose · correlation · pagination · rate-limit / timing headers |
+| [`@afenda/security`](./runtime/security/README.md) | Security headers · CSP · CORS builders |
+| [`@afenda/metrics`](./runtime/metrics/README.md) | Prometheus registry · HTTP/DB/cache instruments |
+| [`@afenda/openapi`](./runtime/openapi/README.md) | Zod→OpenAPI glue · `{ data }` envelope · YAML emit |
+| [`@afenda/rate-limit`](./runtime/rate-limit/README.md) | Sliding-window abuse limiter (Upstash / memory) |
+| [`@afenda/cache`](./runtime/cache/README.md) | L1 process + Upstash Redis L2 cache |
 
-### Identity and Control Plane — Rank 1D
-
-| Package | Role |
-|---------|------|
-| [`@afenda/auth`](./auth/README.md) | Neon Auth adapter · session · BFF · Path A credentials |
-| [`@afenda/admin`](./admin/README.md) | Org-console services · RBAC audit · health / provision |
-
-### ERP — Rank 1F
+### Data Plane — Rank 1C — [`data-plane/`](./data-plane/README.md)
 
 | Package | Role |
 |---------|------|
-| [`@afenda/master-data`](./master-data/README.md) | `ref_*` + org masters (`md_party` · `md_item*` · `md_warehouse`) |
-| [`@afenda/sales`](./sales/README.md) | Sales order/line consumer (ARCH-006) |
+| [`@afenda/db`](./data-plane/db/README.md) | Neon HTTP + Drizzle · living `platform_*` / domain schema |
+| [`@afenda/audit`](./data-plane/audit/README.md) | Sole `platform_audit_log` write/list/export SSOT |
+| [`@afenda/events`](./data-plane/events/README.md) | Sole `platform_domain_event` outbox SSOT |
+| [`@afenda/search`](./data-plane/search/README.md) | Sole `platform_search_document` Postgres FTS SSOT |
+| [`@afenda/notifications`](./data-plane/notifications/README.md) | Sole `platform_notification` IN_APP inbox SSOT |
+
+### Identity and Control Plane — Rank 1D — [`control-plane/`](./control-plane/README.md)
+
+| Package | Role |
+|---------|------|
+| [`@afenda/auth`](./control-plane/auth/README.md) | Neon Auth adapter · session · BFF · Path A credentials |
+| [`@afenda/admin`](./control-plane/admin/README.md) | Org-console services · RBAC audit · health / provision |
+
+### ERP — Rank 1F — [`erp/`](./erp/README.md)
+
+| Package | Role |
+|---------|------|
+| [`@afenda/master-data`](./erp/master-data/README.md) | `ref_*` + org masters (`md_party` · `md_item*` · `md_warehouse`) |
+| [`@afenda/sales`](./erp/sales/README.md) | Sales order/line consumer (ARCH-006) |
 
 Peer R1-F packages do not import each other. Candidates (no package yet): [MODULE-ROADMAP.yaml](../docs-V2/modules/MODULE-ROADMAP.yaml).
 
-### Intelligence — Rank 1X
+### Intelligence — Rank 1X — [`intelligence/`](./intelligence/README.md)
 
 | Package | Role |
 |---------|------|
-| [`@afenda/ai-the-machine`](./ai-the-machine/README.md) | AI SDK conversational engine (prompt-only assistants) |
+| [`@afenda/ai-the-machine`](./intelligence/ai-the-machine/README.md) | AI SDK conversational engine (prompt-only assistants) |
 
 ## Consume
 
@@ -104,7 +104,7 @@ pnpm --filter @afenda/<name> typecheck
 pnpm --filter @afenda/<name> test
 ```
 
-Add / rename packages only with a DAG update in [docs-V2/monorepo](../docs-V2/monorepo/README.md) and a WORKSPACE-EDGE-REGISTER row.
+Add / rename packages only with a DAG update in [docs-V2/monorepo](../docs-V2/monorepo/README.md) and a WORKSPACE-EDGE-REGISTER row. Place new packages under the matching category folder; keep published name `@afenda/<name>`.
 
 ## Authority
 
@@ -115,6 +115,7 @@ Add / rename packages only with a DAG update in [docs-V2/monorepo](../docs-V2/mo
 | Module roadmap | [MODULE-ROADMAP.yaml](../docs-V2/modules/MODULE-ROADMAP.yaml) |
 | pnpm · catalog | [docs-V2/pnpm](../docs-V2/pnpm/README.md) |
 | Tenancy · shared schema | [docs-V2/tenancy](../docs-V2/tenancy/README.md) |
+| Phase 3/4 authorization | [phase3_phase4.md](../docs-V2/_scratch/phase3_phase4.md) |
 | Accepted promotion reference | [packages_refactor_v2.3.md](../docs-V2/_scratch/packages_refactor_v2.3.md) |
 | Repo quickstart | [README.md](../README.md) |
 | Agent checkout | [AGENTS.md](../AGENTS.md) |

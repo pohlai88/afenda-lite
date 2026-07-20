@@ -19,7 +19,7 @@
 | FFT HTTP catalog | Removed with FFT | — | **Removed (wiped)** |
 | Living DOC-001 API pack | API/REST/OPEN Controlled docs | `docs/api/**` | **Retired on disk (docs-V2 Scratch)** |
 | OpenAPI api-now YAML + gate | Generate + check (health + metrics) | `docs-V2/api/OPEN-001-openapi.yaml` + `pnpm check:openapi` | **Done** |
-| `@afenda/openapi` Zod→OAS leaf | Extended `z` · envelope · stamps · YAML emit | `packages/openapi` · web `openapi-zod` re-export | **Done** |
+| `@afenda/openapi` Zod→OAS leaf | Extended `z` · envelope · stamps · YAML emit | `packages/runtime/openapi` · web `openapi-zod` re-export | **Done** |
 | OpenAPI Fumadocs wire | Docs app consumer | [openapi.md](openapi.md); `apps/docs` | **Done** |
 | OpenAPI contract-only expand | `x-afenda-status` | Only with real consumer | **Recorded** (forward) |
 | Skill ↔ Scratch sync | Mirror disk | This skill + docs-V2 | **Operational** |

@@ -43,8 +43,8 @@ Reject too loose (“shadcn where possible”) and too rigid (“every edit is a
 ```text
 LOAD:
   ADR-010 · ARCH-024 operative (AGENTS.md + this skill) — barrel @afenda/ui-system only
-  packages/ui-system/src/styles/tokens.css
-  packages/ui-system/src/index.ts
+  packages/surfaces/ui-system/src/styles/tokens.css
+  packages/surfaces/ui-system/src/index.ts
   apps/web/app/layout.tsx · apps/web/globals.css
   .cursor/rules/ui-system.mdc
   reference.md  (recipes · F* · C* · UI-CAP · score rubric)
@@ -71,7 +71,7 @@ SKIP:
 | Font, radius, type, color, density, recipes, anti-handroll, Compose Score | **this skill** |
 | Route tree, scaffold, FE↔BE | `afenda-elite-frontend-scaffold` |
 | A11y/state/responsive method | `frontend-ui-engineering` — **completion stays here** (Risk C) |
-| Add/regenerate product primitives | ADR-010 `ui:add` in `packages/ui-system` → relative → barrel → tests |
+| Add/regenerate product primitives | ADR-010 `ui:add` in `packages/surfaces/ui-system` → relative → barrel → tests |
 | Studio DNA CLI/MCP · DNA forwarder · promote into homes | `shadcn-ui` — then return here for QUALITY ORDER |
 
 | Layer | Source |

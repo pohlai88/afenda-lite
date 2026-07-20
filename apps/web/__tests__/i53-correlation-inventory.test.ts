@@ -65,7 +65,7 @@ describe("I5.3 critical-path wiring inventory", () => {
 
 	it("requires correlationId on recordRbacAudit writes", () => {
 		const audit = readFileSync(
-			join(webRoot, "../../packages/admin/src/schemas/audit.ts"),
+			join(webRoot, "../../packages/control-plane/admin/src/schemas/audit.ts"),
 			"utf8",
 		);
 		expect(audit).toContain("correlationId");

@@ -195,7 +195,7 @@ npm run check:production:post-deploy
 
 ```powershell
 cd C:\JackProject\afenda-bolt\afenda-lite
-rg -n "organization_id" apps/web/modules packages/db/src --glob "*.ts" 2>$null
+rg -n "organization_id" apps/web/modules packages/data-plane/db/src --glob "*.ts" 2>$null
 ```
 
 Every living tenant-root read/write must use hard `organization_id = $org` (via `withOrg` / equivalent). Missing filter = critical stop. Living hard roots: `platform_role_assignment`, `platform_rbac_audit`, `platform_audit_log`, `platform_search_document`.

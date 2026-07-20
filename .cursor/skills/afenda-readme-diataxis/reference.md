@@ -117,7 +117,7 @@ Binding response shape and caps live in [SKILL.md](SKILL.md#readme-score-binding
 ### README Score: 100% / 100%
 | Dimension | Score | Note |
 | AUTHORITY | 20/20 | Docs linked; ARCH-023 tenancy wording |
-| ACCURACY | 25/25 | Scripts + links Test-Path; packages/db/drizzle |
+| ACCURACY | 25/25 | Scripts + links Test-Path; packages/data-plane/db/drizzle |
 | DIATAXIS | 15/15 | mixed-index · four-slot intro · natural voice |
 | AUDIENCE | 15/15 | No machine paths; public root clean |
 | BREVITY | 10/10 | Section budget held |

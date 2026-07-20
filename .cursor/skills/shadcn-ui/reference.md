@@ -1,6 +1,6 @@
 # shadcn-ui — components.json · Studio MCP · DNA promote
 
-Companion to [SKILL.md](SKILL.md). Confirm product barrel in `packages/ui-system/src/index.ts` before inventing exports.
+Companion to [SKILL.md](SKILL.md). Confirm product barrel in `packages/surfaces/ui-system/src/index.ts` before inventing exports.
 
 ---
 
@@ -8,7 +8,7 @@ Companion to [SKILL.md](SKILL.md). Confirm product barrel in `packages/ui-system
 
 | Path | Role | Registries |
 |------|------|------------|
-| `packages/ui-system/components.json` | **Product** shadcn CLI SSOT (`new-york`, `#` aliases) | **None** (ADR-010) |
+| `packages/surfaces/ui-system/components.json` | **Product** shadcn CLI SSOT (`new-york`, `#` aliases) | **None** (ADR-010) |
 | `apps/web/components.json` | **DNA forwarder** — present (M-A1) | `@shadcn-studio` · `@ss-components` · `@ss-blocks` · `@ss-themes` |
 | `apps/web/shadcn-studio/**` | **DNA staging** — stubs tracked; bulky installs gitignored (M-A1) | n/a |
 | `packages/design-system/components.json` | Retired historical Studio home | Do not restore package |
@@ -42,7 +42,7 @@ Official Studio CLI expands `${EMAIL}` / `${LICENSE_KEY}` in registry params.
 | Afenda documented names | `SHADCN_STUDIO_EMAIL` · `SHADCN_STUDIO_API_KEY` |
 | Studio CLI names (required for Method A) | `EMAIL` · `LICENSE_KEY` |
 
-Schema allows both pairs in [`packages/env/src/web.ts`](../../../packages/env/src/web.ts). Template: [`.env.example`](../../../.env.example).
+Schema allows both pairs in [`packages/foundation/env/src/web.ts`](../../../packages/foundation/env/src/web.ts). Template: [`.env.example`](../../../.env.example).
 
 **Rules:** set both pairs (or export CLI names from Studio values) before Method A; never sync Studio secrets to Vercel prod; never print secret values; validate presence/HTTP only.
 
@@ -142,7 +142,7 @@ CLI name trap (ARCH-018): singular `chart-component-*` vs metadata plural — ve
 
 | DNA class | Land after upgrade |
 |-----------|-------------------|
-| Reusable primitive / compound | `packages/ui-system` + barrel |
+| Reusable primitive / compound | `packages/surfaces/ui-system` + barrel |
 | Shell chrome (sidebar/header/nav frame) | `apps/web/features/portal-chrome/` |
 | Org admin / roles / stats panels | `apps/web/features/org-admin/` |
 | Auth chrome only (layout/message wrappers) | `apps/web/features/auth/` — Neon `AuthView` / invitation cards stay; **no** Studio login forms |
@@ -205,7 +205,7 @@ Do not maintain a second P0 table here — edit the ledger. Quick index:
 
 ## 9. Recommendation (Owned-promote)
 
-1. Keep product `packages/ui-system/components.json` **without** registries (ADR-010 hold).
+1. Keep product `packages/surfaces/ui-system/components.json` **without** registries (ADR-010 hold).
 2. DNA via **Method B** for most work; **Method A** into `apps/web/shadcn-studio/` when full trees Approved.
 3. Runtime: features/routes never import DNA tree.
 4. Themes REJECT.

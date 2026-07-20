@@ -14,10 +14,18 @@ import { describe, expect, it } from "vitest";
 
 const webRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const repoRoot = path.join(webRoot, "..", "..");
-const schemaRoot = path.join(repoRoot, "packages", "db", "src", "schema");
+const schemaRoot = path.join(
+	repoRoot,
+	"packages",
+	"data-plane",
+	"db",
+	"src",
+	"schema",
+);
 const migrateGuardPath = path.join(
 	repoRoot,
 	"packages",
+	"data-plane",
 	"db",
 	"scripts",
 	"db-migrate-guard.mjs",
@@ -26,6 +34,7 @@ const platformSchemaPath = path.join(schemaRoot, "platform.ts");
 const readinessProbePath = path.join(
 	repoRoot,
 	"packages",
+	"control-plane",
 	"admin",
 	"src",
 	"health.ts",
@@ -69,7 +78,7 @@ const FORBIDDEN_PATH_FRAGMENT = [
 	"revoke-org-role",
 	"invite-org-member",
 	"record-rbac-audit",
-	"/packages/admin/",
+	"/packages/control-plane/admin/",
 ];
 
 const DRIZZLE_MUTATION =
@@ -267,7 +276,7 @@ describe("@afenda/web Pre-Login write isolation (PL-S10)", () => {
 		expect(source).not.toMatch(DRIZZLE_MUTATION);
 	});
 
-	it("packages/db schema has no app-owned session or credential tables", () => {
+	it("packages/data-plane/db schema has no app-owned session or credential tables", () => {
 		const tableNames = collectPgTableNames(schemaRoot);
 		expect(tableNames.length).toBeGreaterThan(0);
 		const offenders = tableNames.filter(
@@ -290,7 +299,7 @@ describe("@afenda/web Pre-Login write isolation (PL-S10)", () => {
 	it("preserves production baseline migrate guard (PL-S9)", () => {
 		expect(existsSync(migrateGuardPath)).toBe(true);
 		expect(toRepoPath(migrateGuardPath)).toBe(
-			"packages/db/scripts/db-migrate-guard.mjs",
+			"packages/data-plane/db/scripts/db-migrate-guard.mjs",
 		);
 	});
 });

@@ -19,7 +19,7 @@ Thin operator path: correlate → health → logs → **Prometheus scrape**. No 
 | Edge | `apps/web/proxy.ts` stamps correlation on gate responses |
 | Actions | Unexpected fail → `actionFailInternal(message, correlationId)` — `details` = `{ correlationId }` only |
 
-Path: `@afenda/http` (`packages/http` — `CORRELATION_HEADER` · `resolveCorrelationId` · `createCorrelationId`).
+Path: `@afenda/http` (`packages/runtime/http` — `CORRELATION_HEADER` · `resolveCorrelationId` · `createCorrelationId`).
 
 ---
 
@@ -31,7 +31,7 @@ Path: `@afenda/http` (`packages/http` — `CORRELATION_HEADER` · `resolveCorrel
 |----------------|-----------|
 | `level` · `event` · `correlationId` · optional `orgId` · `actorUserId` · `path` · `code` | Secrets · tokens · SQL · stacks · full request bodies |
 
-Paths: `packages/logger` · web re-export `modules/platform/observability/product-log.ts` · edge import in `proxy.ts`.
+Paths: `packages/runtime/logger` · web re-export `modules/platform/observability/product-log.ts` · edge import in `proxy.ts`.
 
 ---
 
@@ -93,7 +93,7 @@ Health RHs and auth BFF also emit `Server-Timing` (`health_*` / `auth_bff` metri
 ## Verify
 
 ```text
-1. Disk: packages/logger · packages/metrics · modules/platform/observability/product-log.ts
+1. Disk: packages/runtime/logger · packages/runtime/metrics · modules/platform/observability/product-log.ts
 2. Live: GET /api/health/liveness → 200
 3. After a fail: Action details.correlationId ↔ vercel logs / stdout
 4. Authorized GET /api/metrics → Prometheus text (token from METRICS_SCRAPE_TOKEN)

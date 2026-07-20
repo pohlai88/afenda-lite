@@ -51,7 +51,7 @@ function fail(message, code = 1) {
 }
 
 async function loadLivingManifests() {
-	/** @type {import("../packages/db/src/module-manifest-contract.ts").AfendaModuleManifest[]} */
+	/** @type {import("../packages/data-plane/db/src/module-manifest-contract.ts").AfendaModuleManifest[]} */
 	const manifests = [];
 	for (const meta of LIVING_ERP_MANIFEST_PACKAGES) {
 		const manifestPath = join(root, meta.dir, "src", "module.manifest.ts");
@@ -74,6 +74,7 @@ async function loadPlatformPermissionCodes() {
 	const catalogPath = join(
 		root,
 		"packages",
+		"data-plane",
 		"db",
 		"src",
 		"platform-permission-catalog.ts",
@@ -99,7 +100,7 @@ async function main() {
 	);
 	const knownTables = new Set(Object.values(SCHEMA_SYMBOL_TO_TABLE));
 	const eventsMod = await import(
-		pathToFileURL(join(root, "packages/events/src/schemas/index.ts")).href
+		pathToFileURL(join(root, "packages/data-plane/events/src/schemas/index.ts")).href
 	);
 	const knownEvents = new Set(Object.keys(eventsMod.AllEventSchemas));
 

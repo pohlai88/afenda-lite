@@ -48,10 +48,20 @@ describe("@afenda/web compose red-flags (afenda-elite-ui-compose)", () => {
 	});
 
 	it("F4 — no bordered tabular ul (divide-y + rounded-md border)", () => {
-		const re = /<ul[^>]*className="[^"]*divide-[^"]*border[^"]*"/;
-		const reAlt = /<ul[^>]*className="[^"]*rounded-md border[^"]*divide/;
+		const ulClass = /<ul[^>]*className="([^"]*)"/g;
 		const offenders = productTsx()
-			.filter(({ src }) => re.test(src) || reAlt.test(src))
+			.filter(({ src }) => {
+				for (const match of src.matchAll(ulClass)) {
+					const tokens = (match[1] ?? "").split(/\s+/).filter(Boolean);
+					const hasDivide = tokens.some((t) => t.startsWith("divide-"));
+					// Exact `border` utility only — not `divide-border` / `border-*` colors.
+					const hasBoxBorder = tokens.includes("border");
+					if (hasDivide && hasBoxBorder) {
+						return true;
+					}
+				}
+				return false;
+			})
 			.map(({ rel }) => rel);
 		expect(
 			offenders,

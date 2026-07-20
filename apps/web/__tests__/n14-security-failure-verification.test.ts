@@ -197,11 +197,11 @@ describe("N14 denial surface evidence pins", () => {
 
 	it("keeps AUTH_FORBIDDEN_PATH wired for wrong-role / permission RSC denial", () => {
 		const authPaths = readFileSync(
-			path.join(webRoot, "../../packages/auth/src/auth-paths.ts"),
+			path.join(webRoot, "../../packages/control-plane/auth/src/auth-paths.ts"),
 			"utf8",
 		);
 		const rbac = readFileSync(
-			path.join(webRoot, "../../packages/auth/src/rbac.ts"),
+			path.join(webRoot, "../../packages/control-plane/auth/src/rbac.ts"),
 			"utf8",
 		);
 		const requirePermission = source("features/auth/require-permission.ts");

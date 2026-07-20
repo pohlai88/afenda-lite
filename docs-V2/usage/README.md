@@ -13,10 +13,10 @@ DNA borrow/reject: [usage-position-dna.md](usage-position-dna.md).
 
 | Need | Surface |
 |------|---------|
-| Org usage position | [`@afenda/admin/usage`](../../packages/admin) — `getOrganizationUsageMetrics` · `buildUsagePosition` |
+| Org usage position | [`@afenda/admin/usage`](../../packages/control-plane/admin) — `getOrganizationUsageMetrics` · `buildUsagePosition` |
 | Period bounds | `usagePeriodUtcBounds` · `YYYY-MM` UTC half-open |
-| Ops kill switches | [`@afenda/env`](../../packages/env) — see [entitlements](../entitlements/README.md) |
-| Prometheus scrape | [`@afenda/metrics`](../../packages/metrics) — **not** this pack |
+| Ops kill switches | [`@afenda/env`](../../packages/foundation/env) — see [entitlements](../entitlements/README.md) |
+| Prometheus scrape | [`@afenda/metrics`](../../packages/runtime/metrics) — **not** this pack |
 
 ## Must not
 

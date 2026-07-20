@@ -89,7 +89,7 @@ Rank-1 mixes foundation, runtime, data-plane, control plane, ERP, and AI. Folder
 
 **Canonical architecture is package classification and ownership — not folder location.**
 
-`packages/sales` may remain at the package root indefinitely while Sales is classified `band: R1-F`, `category: commercial`.
+`packages/erp/sales` may remain at the package root indefinitely while Sales is classified `band: R1-F`, `category: commercial`.
 
 If (and only if) Phase 3 is later authorized, nesting is **one category level**, published names unchanged:
 

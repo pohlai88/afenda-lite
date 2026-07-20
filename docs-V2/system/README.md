@@ -36,7 +36,7 @@ One screen for “what ships.” Re-probe disk after package or route-group chan
 
 | Rule | Detail |
 |------|--------|
-| Import | `import { env } from "@afenda/env"` — schema `packages/env` |
+| Import | `import { env } from "@afenda/env"` — schema `packages/foundation/env` |
 | Local runtime | `.env.local` only (gitignored) |
 | Template | `.env.example` — keys, no secrets |
 | Ops toggles | Named booleans on `@afenda/env` (`PORTAL_ORG_SWITCHER_ENABLED` · `GUARDIAN_AUTH_SHELL` · `PLAYGROUND_ENABLED`) — not a feature-flags package; DNA: [../entitlements/README.md](../entitlements/README.md) |

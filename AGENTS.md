@@ -82,6 +82,7 @@ Full inventory: [catalog.md](.cursor/skills/using-afenda-elite-skills/catalog.md
 | **No shims / stubs / throw-TODO** product paths | [`.cursor/rules/no-shim-stub-tech-debt.mdc`](.cursor/rules/no-shim-stub-tech-debt.mdc) |
 | **No parking / defer / false YAGNI** — no consumer ≠ unused; drop only when user names it this turn | [`.cursor/rules/no-park-defer-false-yagni.mdc`](.cursor/rules/no-park-defer-false-yagni.mdc) |
 | **No Collapse/legacy recover** (`app/`, `modules/`, `features/`, `components-V2/`, Collapse `lib/`, wiped `scripts/*`) unless user names that recovery **this turn** | [`.cursor/rules/no-collapse-legacy-recovery.mdc`](.cursor/rules/no-collapse-legacy-recovery.mdc) · farm ARCH-028 notes |
+| **No Living ARCH ghost SSOT** — do not recreate Living `docs/` or cite missing `docs/architecture/ARCH-*` as on-disk authority; Scratch `docs-V2` is operative | [`.cursor/rules/no-living-arch-ghost-ssot.mdc`](.cursor/rules/no-living-arch-ghost-ssot.mdc) |
 | **No `decision`/`decisions` directories** — ADRs under `docs/architecture/adr/` when Living docs reopen | [`.cursor/rules/no-decision-directory.mdc`](.cursor/rules/no-decision-directory.mdc) |
 | **No git restore/reset/clean** without explicit user approval this turn | [`.cursor/rules/git-no-auto-recover.mdc`](.cursor/rules/git-no-auto-recover.mdc) |
 | **Scratch docs** under **`docs-V2/`** — never recreate `doc/`; do **not** recreate Living `docs/` without Docs-lane reopen | [docs-V2/README.md](docs-V2/README.md) · cutover `71176a0` |
@@ -141,7 +142,7 @@ Full inventory: [catalog.md](.cursor/skills/using-afenda-elite-skills/catalog.md
 |------|------|
 | `.env.local` | **Only** local runtime env (gitignored) |
 | `.env.example` | Committed key template (no secrets) |
-| `packages/env/src/web.ts` | Zod schema — add new product vars here |
+| `packages/foundation/env/src/web.ts` | Zod schema — add new product vars here |
 
 **App config:** `import { env } from '@afenda/env'` — never raw `process.env` for product config. Never restore `env.config` / `env.secret` / compose.
 
@@ -158,7 +159,7 @@ pnpm --filter @afenda/web dev   # :3000
 | `NEON_API_KEY`, `NEON_ORG_ID`, `NEON_PROJECT_ID`, `NEON_BRANCH_ID` | Local / MCP ops |
 | Shadcn Studio keys | Local tooling |
 
-**UI design system:** import UI only via the flat barrel `@afenda/ui-system` and tokens via `@afenda/ui-system/styles.css` (ADR-010 flat-barrel — Living ADR body dormant; farm `shadcn-ui` + `afenda-elite-ui-compose`). Owned shadcn `new-york` / Radix source in `packages/ui-system`; no gateway subpath, no `*Contract` layer, no external/paid registries. The retired `@afenda/ui` playground gateway is gone — do not restore it. Next.js `/playground` routes remain absent — any future browser harness requires an explicit **Shadcn Studio MCP** slice (no handroll).
+**UI design system:** import UI only via the flat barrel `@afenda/ui-system` and tokens via `@afenda/ui-system/styles.css` (ADR-010 flat-barrel — Living ADR body dormant; farm `shadcn-ui` + `afenda-elite-ui-compose`). Owned shadcn `new-york` / Radix source in `packages/surfaces/ui-system`; no gateway subpath, no `*Contract` layer, no external/paid registries. The retired `@afenda/ui` playground gateway is gone — do not restore it. Next.js `/playground` routes remain absent — any future browser harness requires an explicit **Shadcn Studio MCP** slice (no handroll).
 
 **Vercel:** dashboard/CLI is production secret store. `VERCEL_TOKEN` for Actions must be a **classic PAT** ([account tokens](https://vercel.com/account/tokens)) — OAuth CLI sessions fail in CI. Deploy: `.github/workflows/deploy.yml` (Environment `production`).
 

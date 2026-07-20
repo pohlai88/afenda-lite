@@ -1,0 +1,29 @@
+{
+	"name": "@afenda/logger",
+	"version": "0.0.0",
+	"private": true,
+	"type": "module",
+	"exports": {
+		".": {
+			"types": "./src/index.ts",
+			"default": "./src/index.ts"
+		},
+		"./edge": {
+			"types": "./src/edge.ts",
+			"default": "./src/edge.ts"
+		}
+	},
+	"scripts": {
+		"lint": "biome check .",
+		"typecheck": "tsc --noEmit -p tsconfig.json",
+		"test": "vitest run --config ../../../testing/vitest.config.ts --project logger"
+	},
+	"dependencies": {
+		"pino": "catalog:"
+	},
+	"devDependencies": {
+		"@afenda/config": "workspace:*",
+		"@types/node": "catalog:",
+		"typescript": "catalog:"
+	}
+}

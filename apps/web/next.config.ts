@@ -69,7 +69,7 @@ const nextConfig: NextConfig = {
 		],
 	},
 	async redirects() {
-		// Path SSOT: packages/auth/src/auth-paths · packages/auth/src/join-paths.
+		// Path SSOT: packages/control-plane/auth/src/auth-paths · packages/control-plane/auth/src/join-paths.
 		// next.config.ts is CJS-transpiled; relative `.ts` imports fail MODULE_NOT_FOUND.
 		// Values are pinned by auth-paths.inventory.test.ts — do not diverge.
 		const AUTH_ACCEPT_INVITATION_PATH = "/auth/accept-invitation";

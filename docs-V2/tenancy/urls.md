@@ -13,7 +13,7 @@
 
 | Constant / env | Value (non-secret) |
 |----------------|--------------------|
-| `PRODUCTION_APP_ORIGIN` (`packages/env`) | `https://www.nexuscanon.com` |
+| `PRODUCTION_APP_ORIGIN` (`packages/foundation/env`) | `https://www.nexuscanon.com` |
 | Production `APP_URL` | Must equal that origin on Vercel production |
 | Approved non-prod hosts | `localhost` · `127.0.0.1` · `www.nexuscanon.com` · `afenda-lite.vercel.app` (legacy project host) |
 
@@ -25,8 +25,8 @@
 
 | Helper | File | Use | Must not |
 |--------|------|-----|----------|
-| `requireAppOrigin()` / `buildInviteJoinUrl` | `packages/auth/src/join-paths.ts` | Invitation accept links → absolute `/join?invitationId=…` under **production** `APP_URL` | Mint invites from localhost/preview when prod `APP_URL` is set |
-| `resolveAuthUiOrigin()` | `packages/auth/src/auth-ui-origin.ts` | Neon Auth UI `baseURL` for password-reset / callback — prefer live `x-forwarded-host` / `host` | Drive invite email links |
+| `requireAppOrigin()` / `buildInviteJoinUrl` | `packages/control-plane/auth/src/join-paths.ts` | Invitation accept links → absolute `/join?invitationId=…` under **production** `APP_URL` | Mint invites from localhost/preview when prod `APP_URL` is set |
+| `resolveAuthUiOrigin()` | `packages/control-plane/auth/src/auth-ui-origin.ts` | Neon Auth UI `baseURL` for password-reset / callback — prefer live `x-forwarded-host` / `host` | Drive invite email links |
 
 Join path constant: `JOIN_PATH = "/join"`. Neon may land on `/auth/accept-invitation`; product redirects to `/join` with `invitationId` preserved.
 

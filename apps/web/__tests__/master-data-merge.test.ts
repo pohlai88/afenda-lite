@@ -101,6 +101,7 @@ describe("mergePartiesAction", () => {
 				targetExpectedVersion: 2,
 				fieldDecisions: { name: "source" },
 			}),
+			expect.objectContaining({ authorization: expect.anything() }),
 		);
 	});
 });

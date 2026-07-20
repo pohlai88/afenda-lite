@@ -1204,7 +1204,7 @@ valid_from / valid_to where required
 Illustrative structure:
 
 ```text
-packages/master-data/
+packages/erp/master-data/
 ├── package.json
 ├── tsconfig.json
 ├── src/
@@ -1301,19 +1301,19 @@ Schema tables remain available through the controlled `@afenda/db` schema surfac
 ## 27. Verification
 
 ```text
-1. Test-Path packages/master-data
+1. Test-Path packages/erp/master-data
    → True after scaffold
 
-2. rg "ref_country|ref_currency|ref_uom|md_party|md_party_role|md_item|md_item_uom|md_item_group|md_warehouse" packages/db/src/schema
+2. rg "ref_country|ref_currency|ref_uom|md_party|md_party_role|md_item|md_item_uom|md_item_group|md_warehouse" packages/data-plane/db/src/schema
    → Expected canonical schema hits
 
 3. rg "sales_customer|purchase_supplier|inventory_product|finance_vendor" packages apps
    → Zero competing master roots, excluding migrations and explicitly documented legacy adapters
 
-4. rg "createEntityRoutes|x-tenant-id|startMasterDataSync|JetStream|NATS" packages/master-data apps/web
+4. rg "createEntityRoutes|x-tenant-id|startMasterDataSync|JetStream|NATS" packages/erp/master-data apps/web
    → Zero product ports in the master-data implementation
 
-5. rg "WHERE.*id" packages/master-data
+5. rg "WHERE.*id" packages/erp/master-data
    → Review every write for organization binding
 
 6. pnpm audit:tenancy-nulls

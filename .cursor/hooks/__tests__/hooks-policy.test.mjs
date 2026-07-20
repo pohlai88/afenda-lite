@@ -232,6 +232,60 @@ describe("no-tsconfig-baseurl", () => {
 	});
 });
 
+describe("no-living-arch-ghost-ssot", () => {
+	it("allows AGENTS.md ban language and docs-V2 Scratch", () => {
+		const agents = runHook("no-living-arch-ghost-ssot.mjs", {
+			tool_name: "Write",
+			tool_input: {
+				path: "AGENTS.md",
+				contents:
+					"No Living ARCH ghost SSOT — do not cite docs/architecture/ARCH-024 as on-disk\n",
+			},
+		});
+		assert.equal(agents.permission, "allow");
+
+		const scratch = runHook("no-living-arch-ghost-ssot.mjs", {
+			tool_name: "Write",
+			tool_input: {
+				path: "docs-V2/monorepo/README.md",
+				contents: "# Monorepo\nUse LAYERS.md. ARCH-024 is a dormant label only.\n",
+			},
+		});
+		assert.equal(scratch.permission, "allow");
+	});
+
+	it("denies Living docs/ path and ghost ARCH path citations", () => {
+		const livingPath = runHook("no-living-arch-ghost-ssot.mjs", {
+			tool_name: "Write",
+			tool_input: {
+				path: "docs/architecture/ARCH-024-layers.md",
+				contents: "# ghost\n",
+			},
+		});
+		assert.equal(livingPath.permission, "deny");
+
+		const cite = runHook("no-living-arch-ghost-ssot.mjs", {
+			tool_name: "Write",
+			tool_input: {
+				path: "packages/erp/sales/README.md",
+				contents: "Implement per docs/architecture/ARCH-006-modules.md on disk.\n",
+			},
+		});
+		assert.equal(cite.permission, "deny");
+	});
+
+	it("allows apps/docs official site paths", () => {
+		const out = runHook("no-living-arch-ghost-ssot.mjs", {
+			tool_name: "Write",
+			tool_input: {
+				path: "apps/docs/content/docs/guide.mdx",
+				contents: "# Guide\n",
+			},
+		});
+		assert.equal(out.permission, "allow");
+	});
+});
+
 describe("agent-authority-preflight", () => {
 	it("returns empty object on unknown event", () => {
 		const out = runHook("agent-authority-preflight.mjs", {
@@ -284,7 +338,7 @@ describe("smoke matrix — false-ban guards", () => {
 		for (const command of [
 			"git diff",
 			"git branch -a",
-			"git show HEAD:packages/db/package.json",
+			"git show HEAD:packages/data-plane/db/package.json",
 			"git show HEAD:e2e/smoke.spec.ts",
 			"git show HEAD:messages/en.json",
 			"git stash list",
@@ -414,6 +468,7 @@ describe("smoke matrix — false-ban guards", () => {
 			"no-mvp-quality-bar.mjs",
 			"no-decision-directory.mjs",
 			"no-tsconfig-baseurl.mjs",
+			"no-living-arch-ghost-ssot.mjs",
 			"git-no-auto-recover.mjs",
 			"no-drizzle-baseline-migrate.mjs",
 		]) {

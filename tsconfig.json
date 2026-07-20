@@ -4,7 +4,7 @@
 		"allowJs": true,
 		"lib": ["ES2022", "DOM"],
 		"paths": {
-			"@afenda/config/*": ["./packages/config/*"]
+			"@afenda/config/*": ["./packages/foundation/config/*"]
 		}
 	},
 	"include": ["scripts/**/*.mts", "scripts/**/*.ts", "*.mts", "*.ts"],

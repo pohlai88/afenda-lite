@@ -17,12 +17,12 @@ Borrow/reject matrix for Fetch RH pipeline concerns. Living wire shapes stay in 
 
 | Concern | Owner |
 |---------|-------|
-| Compose · `x-correlation-id` · pagination · `Retry-After` · `X-RateLimit-*` · `Server-Timing` · `withHttpContext` / `stampHttpResponse` | [`@afenda/http`](../../packages/http/README.md) |
-| Security headers · CSP · CORS allow-list / preflight | [`@afenda/security`](../../packages/security/README.md) |
-| Abuse limit store · buckets · `checkRateLimit` (+ quota) | [`@afenda/rate-limit`](../../packages/rate-limit/README.md) |
-| `AppError` · ActionResult · RH `{ data }` / `{ error }` | [`@afenda/errors`](../../packages/errors/README.md) · web `jsonData` / `jsonError` |
+| Compose · `x-correlation-id` · pagination · `Retry-After` · `X-RateLimit-*` · `Server-Timing` · `withHttpContext` / `stampHttpResponse` | [`@afenda/http`](../../packages/runtime/http/README.md) |
+| Security headers · CSP · CORS allow-list / preflight | [`@afenda/security`](../../packages/runtime/security/README.md) |
+| Abuse limit store · buckets · `checkRateLimit` (+ quota) | [`@afenda/rate-limit`](../../packages/runtime/rate-limit/README.md) |
+| `AppError` · ActionResult · RH `{ data }` / `{ error }` | [`@afenda/errors`](../../packages/foundation/errors/README.md) · web `jsonData` / `jsonError` |
 | RH onion adapter (correlation + Server-Timing + optional CORS) | `apps/web/modules/platform/api/route-pipeline.ts` |
-| Auth BFF rate-limit headers + Server-Timing | [`@afenda/auth`](../../packages/auth/README.md) `createAuthApiHandlers` |
+| Auth BFF rate-limit headers + Server-Timing | [`@afenda/auth`](../../packages/control-plane/auth/README.md) `createAuthApiHandlers` |
 | Session gate | `apps/web/proxy.ts` + `@afenda/auth` |
 
 ---
@@ -31,7 +31,7 @@ Borrow/reject matrix for Fetch RH pipeline concerns. Living wire shapes stay in 
 
 | Idea | Disk |
 |------|------|
-| Onion `compose` + double-`next` | `packages/http/src/compose.ts` |
+| Onion `compose` + double-`next` | `packages/runtime/http/src/compose.ts` |
 | Correlation SSOT | `x-correlation-id` via `createHttpContext` / `stampHttpResponse` |
 | `X-RateLimit-Limit` / `Remaining` / `Reset` | Store quota → `applyRateLimitHeaders` → auth BFF POST |
 | `Server-Timing` (not `x-response-time`) | `applyServerTimingHeader` · health via `createPlatformRouteHandler` · auth BFF |
@@ -72,7 +72,7 @@ Borrow/reject matrix for Fetch RH pipeline concerns. Living wire shapes stay in 
 ## Verify
 
 ```text
-1. Test-Path packages/http · packages/security · packages/rate-limit · packages/errors (present)
+1. Test-Path packages/runtime/http · packages/runtime/security · packages/runtime/rate-limit · packages/foundation/errors (present)
 2. Test-Path packages/api-middleware → False
 3. rg "@afenda/api-middleware" apps packages — ban mentions in Scratch/README only
 4. pnpm --filter @afenda/http test

@@ -1,6 +1,6 @@
 /**
- * packages/* → MDX under content/docs/packages.
- * SSOT: docs-V2/docs/automation.md · content.md
+ * Nested workspace packages (packages/category/name) → MDX under content/docs/packages.
+ * Slug remains @afenda name. SSOT: docs-V2/docs/automation.md · content.md
  * Hand-owned index.mdx is preserved; generated pages are rewritten each run.
  */
 import {
@@ -134,15 +134,33 @@ function discoverPackages(): DiscoveredPackage[] {
 		fail(`packages directory missing at ${packagesDir}`);
 	}
 	const out: DiscoveredPackage[] = [];
-	for (const dirName of readdirSync(packagesDir)) {
-		const packageDir = join(packagesDir, dirName);
-		if (!statSync(packageDir).isDirectory()) {
+
+	const candidateDirs: Array<{ dirName: string; packageDir: string }> = [];
+	for (const entry of readdirSync(packagesDir)) {
+		const entryDir = join(packagesDir, entry);
+		if (!statSync(entryDir).isDirectory()) {
 			continue;
 		}
+		if (existsSync(join(entryDir, "package.json"))) {
+			candidateDirs.push({ dirName: entry, packageDir: entryDir });
+			continue;
+		}
+		for (const child of readdirSync(entryDir)) {
+			const packageDir = join(entryDir, child);
+			if (
+				statSync(packageDir).isDirectory() &&
+				existsSync(join(packageDir, "package.json"))
+			) {
+				candidateDirs.push({
+					dirName: `${entry}/${child}`,
+					packageDir,
+				});
+			}
+		}
+	}
+
+	for (const { dirName, packageDir } of candidateDirs) {
 		const packageJsonPath = join(packageDir, "package.json");
-		if (!existsSync(packageJsonPath)) {
-			continue;
-		}
 		const pkg = JSON.parse(readFileSync(packageJsonPath, "utf8")) as PackageJson;
 		if (typeof pkg.name !== "string" || !pkg.name.startsWith("@afenda/")) {
 			continue;

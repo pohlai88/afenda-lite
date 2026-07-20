@@ -135,10 +135,10 @@ importers:
     devDependencies:
       '@afenda/config':
         specifier: workspace:*
-        version: link:packages/config
+        version: link:packages/foundation/config
       '@afenda/openapi':
         specifier: workspace:*
-        version: link:packages/openapi
+        version: link:packages/runtime/openapi
       '@axe-core/playwright':
         specifier: ^4.12.1
         version: 4.12.1(playwright-core@1.61.1)
@@ -252,7 +252,7 @@ importers:
     dependencies:
       '@afenda/env':
         specifier: workspace:*
-        version: link:../../packages/env
+        version: link:../../packages/foundation/env
       '@floating-ui/react-dom':
         specifier: ^2.1.9
         version: 2.1.9(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -328,7 +328,7 @@ importers:
     devDependencies:
       '@afenda/config':
         specifier: workspace:*
-        version: link:../../packages/config
+        version: link:../../packages/foundation/config
       '@fumadocs/cli':
         specifier: ^1.4.1
         version: 1.4.1
@@ -367,61 +367,61 @@ importers:
     dependencies:
       '@afenda/admin':
         specifier: workspace:*
-        version: link:../../packages/admin
+        version: link:../../packages/control-plane/admin
       '@afenda/ai-the-machine':
         specifier: workspace:*
-        version: link:../../packages/ai-the-machine
+        version: link:../../packages/intelligence/ai-the-machine
       '@afenda/audit':
         specifier: workspace:*
-        version: link:../../packages/audit
+        version: link:../../packages/data-plane/audit
       '@afenda/auth':
         specifier: workspace:*
-        version: link:../../packages/auth
+        version: link:../../packages/control-plane/auth
       '@afenda/db':
         specifier: workspace:*
-        version: link:../../packages/db
+        version: link:../../packages/data-plane/db
       '@afenda/env':
         specifier: workspace:*
-        version: link:../../packages/env
+        version: link:../../packages/foundation/env
       '@afenda/errors':
         specifier: workspace:*
-        version: link:../../packages/errors
+        version: link:../../packages/foundation/errors
       '@afenda/events':
         specifier: workspace:*
-        version: link:../../packages/events
+        version: link:../../packages/data-plane/events
       '@afenda/http':
         specifier: workspace:*
-        version: link:../../packages/http
+        version: link:../../packages/runtime/http
       '@afenda/logger':
         specifier: workspace:*
-        version: link:../../packages/logger
+        version: link:../../packages/runtime/logger
       '@afenda/master-data':
         specifier: workspace:*
-        version: link:../../packages/master-data
+        version: link:../../packages/erp/master-data
       '@afenda/metrics':
         specifier: workspace:*
-        version: link:../../packages/metrics
+        version: link:../../packages/runtime/metrics
       '@afenda/notifications':
         specifier: workspace:*
-        version: link:../../packages/notifications
+        version: link:../../packages/data-plane/notifications
       '@afenda/openapi':
         specifier: workspace:*
-        version: link:../../packages/openapi
+        version: link:../../packages/runtime/openapi
       '@afenda/rate-limit':
         specifier: workspace:*
-        version: link:../../packages/rate-limit
+        version: link:../../packages/runtime/rate-limit
       '@afenda/sales':
         specifier: workspace:*
-        version: link:../../packages/sales
+        version: link:../../packages/erp/sales
       '@afenda/search':
         specifier: workspace:*
-        version: link:../../packages/search
+        version: link:../../packages/data-plane/search
       '@afenda/security':
         specifier: workspace:*
-        version: link:../../packages/security
+        version: link:../../packages/runtime/security
       '@afenda/ui-system':
         specifier: workspace:*
-        version: link:../../packages/ui-system
+        version: link:../../packages/surfaces/ui-system
       '@ai-sdk/react':
         specifier: 'catalog:'
         version: 4.0.34(react@19.2.7)(zod@4.4.3)
@@ -458,7 +458,7 @@ importers:
     devDependencies:
       '@afenda/config':
         specifier: workspace:*
-        version: link:../../packages/config
+        version: link:../../packages/foundation/config
       '@tailwindcss/postcss':
         specifier: 'catalog:'
         version: 4.1.18
@@ -481,20 +481,20 @@ importers:
         specifier: 'catalog:'
         version: 5.9.3
 
-  packages/admin:
+  packages/control-plane/admin:
     dependencies:
       '@afenda/auth':
         specifier: workspace:*
         version: link:../auth
       '@afenda/db':
         specifier: workspace:*
-        version: link:../db
+        version: link:../../data-plane/db
       '@afenda/env':
         specifier: workspace:*
-        version: link:../env
+        version: link:../../foundation/env
       '@afenda/errors':
         specifier: workspace:*
-        version: link:../errors
+        version: link:../../foundation/errors
       server-only:
         specifier: 0.0.1
         version: 0.0.1
@@ -504,7 +504,7 @@ importers:
     devDependencies:
       '@afenda/config':
         specifier: workspace:*
-        version: link:../config
+        version: link:../../foundation/config
       '@types/node':
         specifier: 'catalog:'
         version: 20.19.30
@@ -521,11 +521,277 @@ importers:
         specifier: 'catalog:'
         version: 5.9.3
 
-  packages/ai-the-machine:
+  packages/control-plane/auth:
+    dependencies:
+      '@afenda/env':
+        specifier: workspace:*
+        version: link:../../foundation/env
+      '@afenda/errors':
+        specifier: workspace:*
+        version: link:../../foundation/errors
+      '@afenda/http':
+        specifier: workspace:*
+        version: link:../../runtime/http
+      '@afenda/logger':
+        specifier: workspace:*
+        version: link:../../runtime/logger
+      '@afenda/rate-limit':
+        specifier: workspace:*
+        version: link:../../runtime/rate-limit
+      '@neondatabase/auth':
+        specifier: 'catalog:'
+        version: 0.4.2-beta(@better-auth/core@1.4.18(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.21)(better-call@1.1.8(zod@4.4.3))(jose@6.2.3)(kysely@0.28.17)(nanostores@1.4.0))(@better-auth/utils@0.3.0)(@types/react-dom@19.2.3(@types/react@19.2.9))(@types/react@19.2.9)(better-call@1.1.8(zod@4.4.3))(drizzle-kit@0.31.10)(drizzle-orm@0.44.7(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.1)(@types/pg@8.16.0)(@upstash/redis@1.38.0)(kysely@0.28.17)(pg@8.17.2))(nanostores@1.4.0)(next@16.2.10(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.61.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(pg@8.17.2)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@20.19.30)(jsdom@29.1.1(@noble/hashes@2.2.0))(vite@6.4.3(@types/node@20.19.30)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.23.0)(yaml@2.9.0)))
+      server-only:
+        specifier: 0.0.1
+        version: 0.0.1
+    devDependencies:
+      '@afenda/config':
+        specifier: workspace:*
+        version: link:../../foundation/config
+      '@types/node':
+        specifier: 'catalog:'
+        version: 20.19.30
+      '@types/react':
+        specifier: 'catalog:'
+        version: 19.2.9
+      next:
+        specifier: 'catalog:'
+        version: 16.2.10(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.61.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      react:
+        specifier: 'catalog:'
+        version: 19.2.7
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
+
+  packages/data-plane/audit:
+    dependencies:
+      '@afenda/db':
+        specifier: workspace:*
+        version: link:../db
+      '@afenda/errors':
+        specifier: workspace:*
+        version: link:../../foundation/errors
+      server-only:
+        specifier: 0.0.1
+        version: 0.0.1
+      zod:
+        specifier: 'catalog:'
+        version: 4.4.3
+    devDependencies:
+      '@afenda/config':
+        specifier: workspace:*
+        version: link:../../foundation/config
+      '@types/node':
+        specifier: 'catalog:'
+        version: 20.19.30
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
+
+  packages/data-plane/db:
+    dependencies:
+      '@neondatabase/serverless':
+        specifier: ^1.0.0
+        version: 1.1.0
+      drizzle-orm:
+        specifier: ^0.44.2
+        version: 0.44.7(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.1)(@types/pg@8.16.0)(@upstash/redis@1.38.0)(kysely@0.28.17)(pg@8.17.2)
+    devDependencies:
+      '@afenda/config':
+        specifier: workspace:*
+        version: link:../../foundation/config
+      '@types/node':
+        specifier: 'catalog:'
+        version: 20.19.30
+      drizzle-kit:
+        specifier: ^0.31.4
+        version: 0.31.10
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
+
+  packages/data-plane/events:
+    dependencies:
+      '@afenda/db':
+        specifier: workspace:*
+        version: link:../db
+      '@afenda/errors':
+        specifier: workspace:*
+        version: link:../../foundation/errors
+      server-only:
+        specifier: 0.0.1
+        version: 0.0.1
+      zod:
+        specifier: 'catalog:'
+        version: 4.4.3
+    devDependencies:
+      '@afenda/config':
+        specifier: workspace:*
+        version: link:../../foundation/config
+      '@types/node':
+        specifier: 'catalog:'
+        version: 20.19.30
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
+
+  packages/data-plane/notifications:
+    dependencies:
+      '@afenda/db':
+        specifier: workspace:*
+        version: link:../db
+      '@afenda/errors':
+        specifier: workspace:*
+        version: link:../../foundation/errors
+      server-only:
+        specifier: 0.0.1
+        version: 0.0.1
+      zod:
+        specifier: 'catalog:'
+        version: 4.4.3
+    devDependencies:
+      '@afenda/config':
+        specifier: workspace:*
+        version: link:../../foundation/config
+      '@types/node':
+        specifier: 'catalog:'
+        version: 20.19.30
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
+
+  packages/data-plane/search:
+    dependencies:
+      '@afenda/db':
+        specifier: workspace:*
+        version: link:../db
+      '@afenda/errors':
+        specifier: workspace:*
+        version: link:../../foundation/errors
+      server-only:
+        specifier: 0.0.1
+        version: 0.0.1
+      zod:
+        specifier: 'catalog:'
+        version: 4.4.3
+    devDependencies:
+      '@afenda/config':
+        specifier: workspace:*
+        version: link:../../foundation/config
+      '@types/node':
+        specifier: 'catalog:'
+        version: 20.19.30
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
+
+  packages/erp/master-data:
+    dependencies:
+      '@afenda/audit':
+        specifier: workspace:*
+        version: link:../../data-plane/audit
+      '@afenda/db':
+        specifier: workspace:*
+        version: link:../../data-plane/db
+      '@afenda/errors':
+        specifier: workspace:*
+        version: link:../../foundation/errors
+      '@afenda/events':
+        specifier: workspace:*
+        version: link:../../data-plane/events
+      '@afenda/search':
+        specifier: workspace:*
+        version: link:../../data-plane/search
+      server-only:
+        specifier: 0.0.1
+        version: 0.0.1
+      zod:
+        specifier: 'catalog:'
+        version: 4.4.3
+    devDependencies:
+      '@afenda/config':
+        specifier: workspace:*
+        version: link:../../foundation/config
+      '@types/node':
+        specifier: 'catalog:'
+        version: 20.19.30
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
+
+  packages/erp/sales:
+    dependencies:
+      '@afenda/audit':
+        specifier: workspace:*
+        version: link:../../data-plane/audit
+      '@afenda/db':
+        specifier: workspace:*
+        version: link:../../data-plane/db
+      '@afenda/errors':
+        specifier: workspace:*
+        version: link:../../foundation/errors
+      '@afenda/events':
+        specifier: workspace:*
+        version: link:../../data-plane/events
+      '@afenda/master-data':
+        specifier: workspace:*
+        version: link:../master-data
+      server-only:
+        specifier: 0.0.1
+        version: 0.0.1
+      zod:
+        specifier: 'catalog:'
+        version: 4.4.3
+    devDependencies:
+      '@afenda/config':
+        specifier: workspace:*
+        version: link:../../foundation/config
+      '@types/node':
+        specifier: 'catalog:'
+        version: 20.19.30
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
+
+  packages/foundation/config: {}
+
+  packages/foundation/env:
+    dependencies:
+      '@t3-oss/env-nextjs':
+        specifier: ^0.13.11
+        version: 0.13.11(typescript@5.9.3)(zod@4.4.3)
+      zod:
+        specifier: 'catalog:'
+        version: 4.4.3
+    devDependencies:
+      '@afenda/config':
+        specifier: workspace:*
+        version: link:../config
+      '@types/node':
+        specifier: 'catalog:'
+        version: 20.19.30
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
+
+  packages/foundation/errors:
+    devDependencies:
+      '@afenda/config':
+        specifier: workspace:*
+        version: link:../config
+      '@types/node':
+        specifier: 'catalog:'
+        version: 20.19.30
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
+
+  packages/intelligence/ai-the-machine:
     dependencies:
       '@afenda/errors':
         specifier: workspace:*
-        version: link:../errors
+        version: link:../../foundation/errors
       ai:
         specifier: 'catalog:'
         version: 7.0.31(zod@4.4.3)
@@ -538,7 +804,7 @@ importers:
     devDependencies:
       '@afenda/config':
         specifier: workspace:*
-        version: link:../config
+        version: link:../../foundation/config
       '@types/node':
         specifier: 'catalog:'
         version: 20.19.30
@@ -546,89 +812,21 @@ importers:
         specifier: 'catalog:'
         version: 5.9.3
 
-  packages/audit:
-    dependencies:
-      '@afenda/db':
-        specifier: workspace:*
-        version: link:../db
-      '@afenda/errors':
-        specifier: workspace:*
-        version: link:../errors
-      server-only:
-        specifier: 0.0.1
-        version: 0.0.1
-      zod:
-        specifier: 'catalog:'
-        version: 4.4.3
-    devDependencies:
-      '@afenda/config':
-        specifier: workspace:*
-        version: link:../config
-      '@types/node':
-        specifier: 'catalog:'
-        version: 20.19.30
-      typescript:
-        specifier: 'catalog:'
-        version: 5.9.3
-
-  packages/auth:
+  packages/runtime/cache:
     dependencies:
       '@afenda/env':
         specifier: workspace:*
-        version: link:../env
+        version: link:../../foundation/env
       '@afenda/errors':
         specifier: workspace:*
-        version: link:../errors
-      '@afenda/http':
-        specifier: workspace:*
-        version: link:../http
-      '@afenda/logger':
-        specifier: workspace:*
-        version: link:../logger
-      '@afenda/rate-limit':
-        specifier: workspace:*
-        version: link:../rate-limit
-      '@neondatabase/auth':
-        specifier: 'catalog:'
-        version: 0.4.2-beta(@types/react-dom@19.2.3(@types/react@19.2.9))(@types/react@19.2.9)(drizzle-kit@0.31.10)(drizzle-orm@0.44.7(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.1)(@types/pg@8.16.0)(@upstash/redis@1.38.0)(kysely@0.28.17)(pg@8.17.2))(next@16.2.10(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.61.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(pg@8.17.2)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@20.19.30)(jsdom@29.1.1(@noble/hashes@2.2.0))(vite@6.4.3(@types/node@20.19.30)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.23.0)(yaml@2.9.0)))
-      server-only:
-        specifier: 0.0.1
-        version: 0.0.1
-    devDependencies:
-      '@afenda/config':
-        specifier: workspace:*
-        version: link:../config
-      '@types/node':
-        specifier: 'catalog:'
-        version: 20.19.30
-      '@types/react':
-        specifier: 'catalog:'
-        version: 19.2.9
-      next:
-        specifier: 'catalog:'
-        version: 16.2.10(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.61.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      react:
-        specifier: 'catalog:'
-        version: 19.2.7
-      typescript:
-        specifier: 'catalog:'
-        version: 5.9.3
-
-  packages/cache:
-    dependencies:
-      '@afenda/env':
-        specifier: workspace:*
-        version: link:../env
-      '@afenda/errors':
-        specifier: workspace:*
-        version: link:../errors
+        version: link:../../foundation/errors
       '@upstash/redis':
         specifier: 'catalog:'
         version: 1.38.0
     devDependencies:
       '@afenda/config':
         specifier: workspace:*
-        version: link:../config
+        version: link:../../foundation/config
       '@types/node':
         specifier: 'catalog:'
         version: 20.19.30
@@ -636,31 +834,110 @@ importers:
         specifier: 'catalog:'
         version: 5.9.3
 
-  packages/config: {}
-
-  packages/db:
-    dependencies:
-      '@neondatabase/serverless':
-        specifier: ^1.0.0
-        version: 1.1.0
-      drizzle-orm:
-        specifier: ^0.44.2
-        version: 0.44.7(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.1)(@types/pg@8.16.0)(@upstash/redis@1.38.0)(kysely@0.28.17)(pg@8.17.2)
+  packages/runtime/http:
     devDependencies:
       '@afenda/config':
         specifier: workspace:*
-        version: link:../config
+        version: link:../../foundation/config
       '@types/node':
         specifier: 'catalog:'
         version: 20.19.30
-      drizzle-kit:
-        specifier: ^0.31.4
-        version: 0.31.10
       typescript:
         specifier: 'catalog:'
         version: 5.9.3
 
-  packages/emails:
+  packages/runtime/logger:
+    dependencies:
+      pino:
+        specifier: 'catalog:'
+        version: 10.3.1
+    devDependencies:
+      '@afenda/config':
+        specifier: workspace:*
+        version: link:../../foundation/config
+      '@types/node':
+        specifier: 'catalog:'
+        version: 20.19.30
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
+
+  packages/runtime/metrics:
+    dependencies:
+      prom-client:
+        specifier: 'catalog:'
+        version: 15.1.3
+    devDependencies:
+      '@afenda/config':
+        specifier: workspace:*
+        version: link:../../foundation/config
+      '@types/node':
+        specifier: 'catalog:'
+        version: 20.19.30
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
+
+  packages/runtime/openapi:
+    dependencies:
+      '@asteasolutions/zod-to-openapi':
+        specifier: ^8.5.0
+        version: 8.5.0(zod@4.4.3)
+      yaml:
+        specifier: ^2.9.0
+        version: 2.9.0
+      zod:
+        specifier: 'catalog:'
+        version: 4.4.3
+    devDependencies:
+      '@afenda/config':
+        specifier: workspace:*
+        version: link:../../foundation/config
+      '@types/node':
+        specifier: 'catalog:'
+        version: 20.19.30
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
+
+  packages/runtime/rate-limit:
+    dependencies:
+      '@afenda/env':
+        specifier: workspace:*
+        version: link:../../foundation/env
+      '@afenda/errors':
+        specifier: workspace:*
+        version: link:../../foundation/errors
+      '@upstash/ratelimit':
+        specifier: 'catalog:'
+        version: 2.0.8(@upstash/redis@1.38.0)
+      '@upstash/redis':
+        specifier: 'catalog:'
+        version: 1.38.0
+    devDependencies:
+      '@afenda/config':
+        specifier: workspace:*
+        version: link:../../foundation/config
+      '@types/node':
+        specifier: 'catalog:'
+        version: 20.19.30
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
+
+  packages/runtime/security:
+    devDependencies:
+      '@afenda/config':
+        specifier: workspace:*
+        version: link:../../foundation/config
+      '@types/node':
+        specifier: 'catalog:'
+        version: 20.19.30
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
+
+  packages/surfaces/emails:
     dependencies:
       react-email:
         specifier: ^6.8.1
@@ -668,7 +945,7 @@ importers:
     devDependencies:
       '@afenda/config':
         specifier: workspace:*
-        version: link:../config
+        version: link:../../foundation/config
       '@react-email/ui':
         specifier: ^6.8.1
         version: 6.8.1(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.61.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -688,284 +965,7 @@ importers:
         specifier: 'catalog:'
         version: 5.9.3
 
-  packages/env:
-    dependencies:
-      '@t3-oss/env-nextjs':
-        specifier: ^0.13.11
-        version: 0.13.11(typescript@5.9.3)(zod@4.4.3)
-      zod:
-        specifier: 'catalog:'
-        version: 4.4.3
-    devDependencies:
-      '@afenda/config':
-        specifier: workspace:*
-        version: link:../config
-      '@types/node':
-        specifier: 'catalog:'
-        version: 20.19.30
-      typescript:
-        specifier: 'catalog:'
-        version: 5.9.3
-
-  packages/errors:
-    devDependencies:
-      '@afenda/config':
-        specifier: workspace:*
-        version: link:../config
-      '@types/node':
-        specifier: 'catalog:'
-        version: 20.19.30
-      typescript:
-        specifier: 'catalog:'
-        version: 5.9.3
-
-  packages/events:
-    dependencies:
-      '@afenda/db':
-        specifier: workspace:*
-        version: link:../db
-      '@afenda/errors':
-        specifier: workspace:*
-        version: link:../errors
-      server-only:
-        specifier: 0.0.1
-        version: 0.0.1
-      zod:
-        specifier: 'catalog:'
-        version: 4.4.3
-    devDependencies:
-      '@afenda/config':
-        specifier: workspace:*
-        version: link:../config
-      '@types/node':
-        specifier: 'catalog:'
-        version: 20.19.30
-      typescript:
-        specifier: 'catalog:'
-        version: 5.9.3
-
-  packages/http:
-    devDependencies:
-      '@afenda/config':
-        specifier: workspace:*
-        version: link:../config
-      '@types/node':
-        specifier: 'catalog:'
-        version: 20.19.30
-      typescript:
-        specifier: 'catalog:'
-        version: 5.9.3
-
-  packages/logger:
-    dependencies:
-      pino:
-        specifier: 'catalog:'
-        version: 10.3.1
-    devDependencies:
-      '@afenda/config':
-        specifier: workspace:*
-        version: link:../config
-      '@types/node':
-        specifier: 'catalog:'
-        version: 20.19.30
-      typescript:
-        specifier: 'catalog:'
-        version: 5.9.3
-
-  packages/master-data:
-    dependencies:
-      '@afenda/audit':
-        specifier: workspace:*
-        version: link:../audit
-      '@afenda/db':
-        specifier: workspace:*
-        version: link:../db
-      '@afenda/errors':
-        specifier: workspace:*
-        version: link:../errors
-      '@afenda/events':
-        specifier: workspace:*
-        version: link:../events
-      '@afenda/search':
-        specifier: workspace:*
-        version: link:../search
-      server-only:
-        specifier: 0.0.1
-        version: 0.0.1
-      zod:
-        specifier: 'catalog:'
-        version: 4.4.3
-    devDependencies:
-      '@afenda/config':
-        specifier: workspace:*
-        version: link:../config
-      '@types/node':
-        specifier: 'catalog:'
-        version: 20.19.30
-      typescript:
-        specifier: 'catalog:'
-        version: 5.9.3
-
-  packages/metrics:
-    dependencies:
-      prom-client:
-        specifier: 'catalog:'
-        version: 15.1.3
-    devDependencies:
-      '@afenda/config':
-        specifier: workspace:*
-        version: link:../config
-      '@types/node':
-        specifier: 'catalog:'
-        version: 20.19.30
-      typescript:
-        specifier: 'catalog:'
-        version: 5.9.3
-
-  packages/notifications:
-    dependencies:
-      '@afenda/db':
-        specifier: workspace:*
-        version: link:../db
-      '@afenda/errors':
-        specifier: workspace:*
-        version: link:../errors
-      server-only:
-        specifier: 0.0.1
-        version: 0.0.1
-      zod:
-        specifier: 'catalog:'
-        version: 4.4.3
-    devDependencies:
-      '@afenda/config':
-        specifier: workspace:*
-        version: link:../config
-      '@types/node':
-        specifier: 'catalog:'
-        version: 20.19.30
-      typescript:
-        specifier: 'catalog:'
-        version: 5.9.3
-
-  packages/openapi:
-    dependencies:
-      '@asteasolutions/zod-to-openapi':
-        specifier: ^8.5.0
-        version: 8.5.0(zod@4.4.3)
-      yaml:
-        specifier: ^2.9.0
-        version: 2.9.0
-      zod:
-        specifier: 'catalog:'
-        version: 4.4.3
-    devDependencies:
-      '@afenda/config':
-        specifier: workspace:*
-        version: link:../config
-      '@types/node':
-        specifier: 'catalog:'
-        version: 20.19.30
-      typescript:
-        specifier: 'catalog:'
-        version: 5.9.3
-
-  packages/rate-limit:
-    dependencies:
-      '@afenda/env':
-        specifier: workspace:*
-        version: link:../env
-      '@afenda/errors':
-        specifier: workspace:*
-        version: link:../errors
-      '@upstash/ratelimit':
-        specifier: 'catalog:'
-        version: 2.0.8(@upstash/redis@1.38.0)
-      '@upstash/redis':
-        specifier: 'catalog:'
-        version: 1.38.0
-    devDependencies:
-      '@afenda/config':
-        specifier: workspace:*
-        version: link:../config
-      '@types/node':
-        specifier: 'catalog:'
-        version: 20.19.30
-      typescript:
-        specifier: 'catalog:'
-        version: 5.9.3
-
-  packages/sales:
-    dependencies:
-      '@afenda/audit':
-        specifier: workspace:*
-        version: link:../audit
-      '@afenda/db':
-        specifier: workspace:*
-        version: link:../db
-      '@afenda/errors':
-        specifier: workspace:*
-        version: link:../errors
-      '@afenda/events':
-        specifier: workspace:*
-        version: link:../events
-      '@afenda/master-data':
-        specifier: workspace:*
-        version: link:../master-data
-      server-only:
-        specifier: 0.0.1
-        version: 0.0.1
-      zod:
-        specifier: 'catalog:'
-        version: 4.4.3
-    devDependencies:
-      '@afenda/config':
-        specifier: workspace:*
-        version: link:../config
-      '@types/node':
-        specifier: 'catalog:'
-        version: 20.19.30
-      typescript:
-        specifier: 'catalog:'
-        version: 5.9.3
-
-  packages/search:
-    dependencies:
-      '@afenda/db':
-        specifier: workspace:*
-        version: link:../db
-      '@afenda/errors':
-        specifier: workspace:*
-        version: link:../errors
-      server-only:
-        specifier: 0.0.1
-        version: 0.0.1
-      zod:
-        specifier: 'catalog:'
-        version: 4.4.3
-    devDependencies:
-      '@afenda/config':
-        specifier: workspace:*
-        version: link:../config
-      '@types/node':
-        specifier: 'catalog:'
-        version: 20.19.30
-      typescript:
-        specifier: 'catalog:'
-        version: 5.9.3
-
-  packages/security:
-    devDependencies:
-      '@afenda/config':
-        specifier: workspace:*
-        version: link:../config
-      '@types/node':
-        specifier: 'catalog:'
-        version: 20.19.30
-      typescript:
-        specifier: 'catalog:'
-        version: 5.9.3
-
-  packages/ui-system:
+  packages/surfaces/ui-system:
     dependencies:
       class-variance-authority:
         specifier: 'catalog:'
@@ -1000,7 +1000,7 @@ importers:
     devDependencies:
       '@afenda/config':
         specifier: workspace:*
-        version: link:../config
+        version: link:../../foundation/config
       '@testing-library/react':
         specifier: 'catalog:'
         version: 16.3.2(@testing-library/dom@10.4.1)(@types/react-dom@19.2.3(@types/react@19.2.9))(@types/react@19.2.9)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -10105,7 +10105,7 @@ snapshots:
       '@tybys/wasm-util': 0.10.3
     optional: true
 
-  '@neondatabase/auth-ui@0.2.1-beta(214b957ebe70c2a7086d9364a9133681)':
+  '@neondatabase/auth-ui@0.2.1-beta(6f63ea4960858f443b4aa8d612bed05c)':
     dependencies:
       '@better-auth/passkey': 1.4.18(@better-auth/core@1.4.18(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.21)(better-call@1.1.8(zod@4.4.3))(jose@6.2.3)(kysely@0.28.17)(nanostores@1.4.0))(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.21)(better-auth@1.4.18(drizzle-kit@0.31.10)(drizzle-orm@0.44.7(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.1)(@types/pg@8.16.0)(@upstash/redis@1.38.0)(kysely@0.28.17)(pg@8.17.2))(next@16.2.10(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.61.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(pg@8.17.2)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@20.19.30)(jsdom@29.1.1(@noble/hashes@2.2.0))(vite@6.4.3(@types/node@20.19.30)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.23.0)(yaml@2.9.0))))(better-call@1.1.8(zod@4.4.3))(nanostores@1.4.0)
       '@captchafox/react': 1.13.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -10113,7 +10113,7 @@ snapshots:
       '@hcaptcha/react-hcaptcha': 1.17.4(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@hookform/resolvers': 5.4.0(react-hook-form@7.81.0(react@19.2.7))
       '@marsidev/react-turnstile': 1.5.3(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@neondatabase/auth': 0.4.2-beta(@types/react-dom@19.2.3(@types/react@19.2.9))(@types/react@19.2.9)(drizzle-kit@0.31.10)(drizzle-orm@0.44.7(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.1)(@types/pg@8.16.0)(@upstash/redis@1.38.0)(kysely@0.28.17)(pg@8.17.2))(next@16.2.10(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.61.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(pg@8.17.2)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@20.19.30)(jsdom@29.1.1(@noble/hashes@2.2.0))(vite@6.4.3(@types/node@20.19.30)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.23.0)(yaml@2.9.0)))
+      '@neondatabase/auth': 0.4.2-beta(13313f7a8ec69f63ddfbad3b153c7dff)
       '@radix-ui/react-avatar': 1.2.2(@types/react-dom@19.2.3(@types/react@19.2.9))(@types/react@19.2.9)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@radix-ui/react-checkbox': 1.3.7(@types/react-dom@19.2.3(@types/react@19.2.9))(@types/react@19.2.9)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@radix-ui/react-context': 1.2.0(@types/react@19.2.9)(react@19.2.7)
@@ -10177,7 +10177,7 @@ snapshots:
       - vitest
       - vue
 
-  '@neondatabase/auth-ui@0.2.1-beta(6f63ea4960858f443b4aa8d612bed05c)':
+  '@neondatabase/auth-ui@0.2.1-beta(9a1babc26dd55688a03a7e26e355d1e3)':
     dependencies:
       '@better-auth/passkey': 1.4.18(@better-auth/core@1.4.18(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.21)(better-call@1.1.8(zod@4.4.3))(jose@6.2.3)(kysely@0.28.17)(nanostores@1.4.0))(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.21)(better-auth@1.4.18(drizzle-kit@0.31.10)(drizzle-orm@0.44.7(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.1)(@types/pg@8.16.0)(@upstash/redis@1.38.0)(kysely@0.28.17)(pg@8.17.2))(next@16.2.10(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.61.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(pg@8.17.2)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@20.19.30)(jsdom@29.1.1(@noble/hashes@2.2.0))(vite@6.4.3(@types/node@20.19.30)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.23.0)(yaml@2.9.0))))(better-call@1.1.8(zod@4.4.3))(nanostores@1.4.0)
       '@captchafox/react': 1.13.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -10185,7 +10185,7 @@ snapshots:
       '@hcaptcha/react-hcaptcha': 1.17.4(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@hookform/resolvers': 5.4.0(react-hook-form@7.81.0(react@19.2.7))
       '@marsidev/react-turnstile': 1.5.3(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@neondatabase/auth': 0.4.2-beta(13313f7a8ec69f63ddfbad3b153c7dff)
+      '@neondatabase/auth': 0.4.2-beta(@better-auth/core@1.4.18(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.21)(better-call@1.1.8(zod@4.4.3))(jose@6.2.3)(kysely@0.28.17)(nanostores@1.4.0))(@better-auth/utils@0.3.0)(@types/react-dom@19.2.3(@types/react@19.2.9))(@types/react@19.2.9)(better-call@1.1.8(zod@4.4.3))(drizzle-kit@0.31.10)(drizzle-orm@0.44.7(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.1)(@types/pg@8.16.0)(@upstash/redis@1.38.0)(kysely@0.28.17)(pg@8.17.2))(nanostores@1.4.0)(next@16.2.10(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.61.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(pg@8.17.2)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@20.19.30)(jsdom@29.1.1(@noble/hashes@2.2.0))(vite@6.4.3(@types/node@20.19.30)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.23.0)(yaml@2.9.0)))
       '@radix-ui/react-avatar': 1.2.2(@types/react-dom@19.2.3(@types/react@19.2.9))(@types/react@19.2.9)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@radix-ui/react-checkbox': 1.3.7(@types/react-dom@19.2.3(@types/react@19.2.9))(@types/react@19.2.9)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@radix-ui/react-context': 1.2.0(@types/react@19.2.9)(react@19.2.7)
@@ -10290,10 +10290,10 @@ snapshots:
       - vitest
       - vue
 
-  '@neondatabase/auth@0.4.2-beta(@types/react-dom@19.2.3(@types/react@19.2.9))(@types/react@19.2.9)(drizzle-kit@0.31.10)(drizzle-orm@0.44.7(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.1)(@types/pg@8.16.0)(@upstash/redis@1.38.0)(kysely@0.28.17)(pg@8.17.2))(next@16.2.10(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.61.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(pg@8.17.2)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@20.19.30)(jsdom@29.1.1(@noble/hashes@2.2.0))(vite@6.4.3(@types/node@20.19.30)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.23.0)(yaml@2.9.0)))':
+  '@neondatabase/auth@0.4.2-beta(@better-auth/core@1.4.18(@better-auth/utils@0.3.0)(@better-fetch/fetch@1.1.21)(better-call@1.1.8(zod@4.4.3))(jose@6.2.3)(kysely@0.28.17)(nanostores@1.4.0))(@better-auth/utils@0.3.0)(@types/react-dom@19.2.3(@types/react@19.2.9))(@types/react@19.2.9)(better-call@1.1.8(zod@4.4.3))(drizzle-kit@0.31.10)(drizzle-orm@0.44.7(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.1)(@types/pg@8.16.0)(@upstash/redis@1.38.0)(kysely@0.28.17)(pg@8.17.2))(nanostores@1.4.0)(next@16.2.10(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.61.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(pg@8.17.2)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@20.19.30)(jsdom@29.1.1(@noble/hashes@2.2.0))(vite@6.4.3(@types/node@20.19.30)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.23.0)(yaml@2.9.0)))':
     dependencies:
       '@better-fetch/fetch': 1.1.21
-      '@neondatabase/auth-ui': 0.2.1-beta(214b957ebe70c2a7086d9364a9133681)
+      '@neondatabase/auth-ui': 0.2.1-beta(9a1babc26dd55688a03a7e26e355d1e3)
       '@supabase/auth-js': 2.79.0
       better-auth: 1.4.18(drizzle-kit@0.31.10)(drizzle-orm@0.44.7(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.1)(@types/pg@8.16.0)(@upstash/redis@1.38.0)(kysely@0.28.17)(pg@8.17.2))(next@16.2.10(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.61.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(pg@8.17.2)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vitest@4.1.10(@opentelemetry/api@1.9.1)(@types/node@20.19.30)(jsdom@29.1.1(@noble/hashes@2.2.0))(vite@6.4.3(@types/node@20.19.30)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.23.0)(yaml@2.9.0)))
       jose: 6.1.2

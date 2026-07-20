@@ -2,7 +2,7 @@
 name: shadcn-ui
 description: >-
   Afenda monorepo shadcn CLI + Shadcn Studio DNA intake. Product primitives via
-  packages/ui-system (ADR-010, no registries). Studio Pro Method A lands under
+  packages/surfaces/ui-system (ADR-010, no registries). Studio Pro Method A lands under
   apps/web/shadcn-studio via apps/web/components.json DNA forwarder; Method B
   copies MCP source. Promote into @afenda/ui-system / features/*; never product
   import from shadcn-studio. Overrides Claude @/components/ui defaults. Use when
@@ -19,7 +19,7 @@ description: >-
 
 ```text
 LOAD:
-  packages/ui-system/components.json
+  packages/surfaces/ui-system/components.json
   docs/architecture/adr/ADR-010-afenda-ui-system-flat-barrel.md
   docs/architecture/ARCH-015-admincn-alignment.md  (DNA law · promote-out)
   docs/architecture/ARCH-024-package-boundaries.md  (#afendaui-system)
@@ -29,7 +29,7 @@ LOAD:
   reference.md
 SKIP:
   Claude skill defaults (@/components/ui · root shadcn init as product)
-  registries on packages/ui-system without ADR-010 reopen
+  registries on packages/surfaces/ui-system without ADR-010 reopen
   hosting @afenda shadcn install registry (deferred — dna-ledger.md)
   product import from apps/web/shadcn-studio/**
   apps/web/components/ui/** parallel kit
@@ -53,7 +53,7 @@ SKIP:
 
 | File | Role |
 |------|------|
-| [`packages/ui-system/components.json`](../../../packages/ui-system/components.json) | **Product SSOT** — `new-york`, `#` aliases, **no `registries`** |
+| [`packages/surfaces/ui-system/components.json`](../../../packages/surfaces/ui-system/components.json) | **Product SSOT** — `new-york`, `#` aliases, **no `registries`** |
 | `apps/web/components.json` | **DNA forwarder only** — aliases + Studio `@ss-*` registries → write under `apps/web/shadcn-studio/` |
 | Repo-root / product `apps/web/components/ui` | **Banned** |
 
@@ -104,7 +104,7 @@ Attached Claude `/shadcn-ui` teaches `@/components/ui` and app-root install. **I
 ## Verify
 
 - [ ] Ledger row loaded; REJECT/rejected not staged
-- [ ] Product CLI only in `packages/ui-system`
+- [ ] Product CLI only in `packages/surfaces/ui-system`
 - [ ] Studio DNA only under `apps/web/shadcn-studio` (Method A) or Method B buffer → promote
 - [ ] No product route imports DNA tree
 - [ ] Themes REJECT vs `tokens.css`

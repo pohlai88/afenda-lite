@@ -26,7 +26,7 @@ const SAFE_ERROR_EVIDENCE = [
 ] as const;
 
 const SECRET_SURFACE_EVIDENCE = [
-	"packages/env/src/web.ts",
+	"packages/foundation/env/src/web.ts",
 	"scripts/audit-github-actions-secrets.mjs",
 ] as const;
 
@@ -62,7 +62,7 @@ describe("I5.1 cut ledger", () => {
 
 	it("keeps @afenda/env client schema empty (no NEXT_PUBLIC product secrets)", () => {
 		const envSource = readFileSync(
-			path.join(repoRoot, "packages/env/src/web.ts"),
+			path.join(repoRoot, "packages/foundation/env/src/web.ts"),
 			"utf8",
 		);
 		expect(envSource).toMatch(/client:\s*\{\s*\}/);

@@ -17,10 +17,10 @@ Borrow/reject for org capacity **position** (Afenda does not sell by module). Op
 
 | Concern | Owner (today) |
 |---------|----------------|
-| Living counts + ops bands | [`@afenda/admin/usage`](../../packages/admin) |
-| Ops kill switches | [`@afenda/env`](../../packages/env) |
+| Living counts + ops bands | [`@afenda/admin/usage`](../../packages/control-plane/admin) |
+| Ops kill switches | [`@afenda/env`](../../packages/foundation/env) |
 | Plan/module SKU gates | **Absent** — not product model |
-| Prometheus instruments | [`@afenda/metrics`](../../packages/metrics) |
+| Prometheus instruments | [`@afenda/metrics`](../../packages/runtime/metrics) |
 
 ---
 
@@ -74,10 +74,10 @@ Borrow/reject for org capacity **position** (Afenda does not sell by module). Op
 ## Verify
 
 ```text
-1. packages/admin/src/usage-position.ts + usage-bands.ts on disk
+1. packages/control-plane/admin/src/usage-position.ts + usage-bands.ts on disk
 2. organizationUsageMetricsSchema has metrics.* + alerts (not flat counts)
 3. Test-Path packages/org-usage → False
-4. rg "suggestedTier|PRICING_PLANS" packages/admin — expect no product port
+4. rg "suggestedTier|PRICING_PLANS" packages/control-plane/admin — expect no product port
 ```
 
 Companion: [README.md](README.md) · [../entitlements/entitlements-dna.md](../entitlements/entitlements-dna.md) · [../observability/README.md](../observability/README.md).

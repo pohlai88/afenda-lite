@@ -77,7 +77,7 @@ Full diagram, forbidden pairs, and violation fixes: [LAYERS.md](LAYERS.md).
    // ✅
    import { withOrg } from "@afenda/db";
    // ❌
-   import { withOrg } from "../../packages/db/src/client";
+   import { withOrg } from "../../packages/data-plane/db/src/client";
    ```
 
 2. **Public export surface only.** Consumers use the package name (and declared subpaths in `package.json#exports`). Never deep `src/` paths of another package:

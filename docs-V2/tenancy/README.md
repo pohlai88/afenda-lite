@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|-------|
 | Surface | `docs-V2/tenancy/README.md` |
-| Authority | **Scratch** — Neon MCP + Vercel MCP (read-only) + disk under `apps/web/**` · `packages/auth/**` · `packages/env/**` |
+| Authority | **Scratch** — Neon MCP + Vercel MCP (read-only) + disk under `apps/web/**` · `packages/control-plane/auth/**` · `packages/foundation/env/**` |
 | Farm | `neon-tenancy-efficiency` |
 | Updated | 2026-07-19 |
 

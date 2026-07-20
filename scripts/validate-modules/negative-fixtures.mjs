@@ -264,9 +264,11 @@ export function runNegativeFixtures() {
 			) ?? "",
 		);
 
-		mkdirSync(join(tmpRoot, "packages", "sales", "src"), { recursive: true });
+		mkdirSync(join(tmpRoot, "packages", "erp", "sales", "src"), {
+			recursive: true,
+		});
 		writeFileSync(
-			join(tmpRoot, "packages", "sales", "src", "bad.ts"),
+			join(tmpRoot, "packages", "erp", "sales", "src", "bad.ts"),
 			`import { x } from "@afenda/master-data/src/party";\n`,
 			"utf8",
 		);
@@ -279,7 +281,7 @@ export function runNegativeFixtures() {
 		);
 
 		writeFileSync(
-			join(tmpRoot, "packages", "sales", "src", "foreign.ts"),
+			join(tmpRoot, "packages", "erp", "sales", "src", "foreign.ts"),
 			`import { mdParty } from "@afenda/db";\n`,
 			"utf8",
 		);
@@ -302,7 +304,7 @@ export function runNegativeFixtures() {
 			) ?? "",
 		);
 
-		mkdirSync(join(tmpRoot, "packages", "master-data", "src"), {
+		mkdirSync(join(tmpRoot, "packages", "erp", "master-data", "src"), {
 			recursive: true,
 		});
 		mkdirSync(join(tmpRoot, "apps", "web", "lib", "erp"), {

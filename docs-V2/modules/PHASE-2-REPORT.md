@@ -59,7 +59,7 @@
 pnpm validate:modules → exit 0 (7 registers matched; 19 fixtures)
 pnpm test:validate-modules → exit 0
 rg / Select-String: docs-V2/monorepo/README.md has no “not live yet” for validate:modules
-git ls-files scripts/validate-modules.mjs docs-V2/modules/WORKSPACE-EDGE-REGISTER.yaml packages/master-data/src/module.manifest.ts packages/sales/src/module.manifest.ts
+git ls-files scripts/validate-modules.mjs docs-V2/modules/WORKSPACE-EDGE-REGISTER.yaml packages/erp/master-data/src/module.manifest.ts packages/erp/sales/src/module.manifest.ts
 git show HEAD:package.json / HEAD:.github/workflows/ci.yml → contain validate:modules
 ```
 

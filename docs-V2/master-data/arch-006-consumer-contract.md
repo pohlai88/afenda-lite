@@ -98,7 +98,7 @@ Purchasing / Inventory / Manufacturing / Finance = later chats, same contract.
 
 ## Master-data duty during R5
 
-Stay authoritative: lifecycle, external-id, alias, search rebuild, pageSize≤100. Do not grow SO/PO/stock tables into [packages/master-data](../../packages/master-data).
+Stay authoritative: lifecycle, external-id, alias, search rebuild, pageSize≤100. Do not grow SO/PO/stock tables into [packages/erp/master-data](../../packages/erp/master-data).
 
 ---
 

@@ -17,8 +17,8 @@ Borrow/reject matrix for domain events / transactional outbox. Operator path: [R
 
 | Concern | Owner |
 |---------|-------|
-| Outbox write · claim · query · purge | [`@afenda/events`](../../packages/events/README.md) |
-| Table `platform_domain_event` | [`@afenda/db`](../../packages/db/README.md) |
+| Outbox write · claim · query · purge | [`@afenda/events`](../../packages/data-plane/events/README.md) |
+| Table `platform_domain_event` | [`@afenda/db`](../../packages/data-plane/db/README.md) |
 | Handler side-effects (e.g. IN_APP inbox) | `apps/web/modules/**/domain` (inject handlers; package stays leaf) |
 | Broker / realtime | **None** — not in Afenda stack |
 
@@ -28,10 +28,10 @@ Borrow/reject matrix for domain events / transactional outbox. Operator path: [R
 
 | Idea | Disk |
 |------|------|
-| Zod catalogs keyed by dotted type | `packages/events/src/schemas/*.events.ts` |
-| Single envelope (`payload`, `organizationId`) | `packages/events/src/types.ts` |
-| `AllEventSchemas` validate-on-publish | `packages/events/src/schemas/index.ts` |
-| Correlation / causation helpers | `packages/events/src/ids.ts` |
+| Zod catalogs keyed by dotted type | `packages/data-plane/events/src/schemas/*.events.ts` |
+| Single envelope (`payload`, `organizationId`) | `packages/data-plane/events/src/types.ts` |
+| `AllEventSchemas` validate-on-publish | `packages/data-plane/events/src/schemas/index.ts` |
+| Correlation / causation helpers | `packages/data-plane/events/src/ids.ts` |
 | Durable ack → outbox status | `pending` → `processed` / `failed` + `attempts` |
 | Store port + memory test double | `store.ts` · `__tests__/helpers/memory-event-store.ts` |
 | Living catalogs only | `identity.*` · `platform.*` |
@@ -69,7 +69,7 @@ Borrow/reject matrix for domain events / transactional outbox. Operator path: [R
 ## Verify
 
 ```text
-1. Test-Path packages/events (present)
+1. Test-Path packages/data-plane/events (present)
 2. pnpm --filter @afenda/events test
 3. pnpm --filter @afenda/events typecheck
 4. pnpm --filter @afenda/db test -- tenancy

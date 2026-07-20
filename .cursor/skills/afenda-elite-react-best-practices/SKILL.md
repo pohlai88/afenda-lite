@@ -58,7 +58,7 @@ Apply vendor rules **except** these. Full stance + notes: [reference.md](referen
 
 | Vendor id / topic | Stance | Afenda rule |
 |-------------------|--------|-------------|
-| `bundle-barrel-imports` | override | Product **must** `import { … } from "@afenda/ui-system"`. Mega-barrel / deep-import advice applies to **third-party** kits only (`lucide-react`, MUI…), via `optimizePackageImports` or package-internal relative imports inside `packages/ui-system`. Never deep-import or bypass the Afenda barrel from features. |
+| `bundle-barrel-imports` | override | Product **must** `import { … } from "@afenda/ui-system"`. Mega-barrel / deep-import advice applies to **third-party** kits only (`lucide-react`, MUI…), via `optimizePackageImports` or package-internal relative imports inside `packages/surfaces/ui-system`. Never deep-import or bypass the Afenda barrel from features. |
 | `server-cache-lru` | reject | No cross-request LRU for tenant/org/user data on serverless (ARCH-023). |
 | `client-swr-dedup` | defer | Requirement is dedupe + coherent cache ownership, not a forced SWR dependency. Use the approved data layer. |
 | composition topics | route-out | Boolean props / compound / providers → `afenda-elite-react-composition` (never vendor as task authority). |

@@ -27,7 +27,7 @@
 |--|--|
 | **DNA** | §13 lifecycle `uploaded → parsed → validated → approved → applied → reconciled` |
 | **Ship** | Explicit approve step and/or permission before `apply` import; keep dry-run + reconcile |
-| **Surfaces** | `packages/master-data` import primitives if needed · `apps/web` validate/apply Actions · RBAC code (e.g. extend `master_data.manage` or add `master_data.import_approve`) |
+| **Surfaces** | `packages/erp/master-data` import primitives if needed · `apps/web` validate/apply Actions · RBAC code (e.g. extend `master_data.manage` or add `master_data.import_approve`) |
 | **Must not** | Auto-apply on validate; bypass CAS; unbounded one-TX files |
 | **Pattern** | Existing `import-bulk.ts` · `validate-master-data-import.ts` · `apply-master-data-import.ts` |
 | **Verify** | Deny apply without approve · dry-run unchanged · org bind · web permission tests |

@@ -9,7 +9,7 @@ Farm routing per domain keyword. Always also load: main [SKILL.md](SKILL.md) and
 | `repository` | router → doc-integrity → repo-housekeeping | doc-control-rules · AGENTS.md · docs-V2 | — | `check:docs-trunk-ban`, `pnpm lint`, `pnpm typecheck` (Living docs checks N/A while tree absent) |
 | `ui-system` | router → frontend-scaffold · ui-compose (when product UI / handroll / visual consistency) | ADR-010 · ARCH-024 § ui-system · tokens.css · Geist map | compose `SKILL.md` + `reference.md` | `pnpm check:ui-system` (ui-system consistency + web compose-redflags F* + compose-suitability C1–C3 + ui-boundary); matrix build when RSC/structural/CSS-font |
 | `ui-compose` | router → ui-compose → frontend-scaffold (routes only) → frontend-ui-engineering (method only) | ADR-010 · ARCH-024 · tokens.css · apps/web Geist map | [`.cursor/skills/afenda-elite-ui-compose/SKILL.md`](../afenda-elite-ui-compose/SKILL.md) + `reference.md` (incl. UI-CAP / promotion rule) | Verification matrix: floor `pnpm check:ui-system` (F*+C*); capability findings are structured `UI-CAP-*` (not new F*/C*); build when matrix requires; disk: skill + catalog + Elite router + LOAD pointers |
-| `studio-dna` / `shadcn-ui` | router → shadcn-ui → ui-compose (after promote) | ADR-010 · ARCH-015 · ARCH-024 · ui-system.mdc | [`dna-ledger.json`](../shadcn-ui/dna-ledger.json) · [`dna-ledger.md`](../shadcn-ui/dna-ledger.md) · [`SKILL.md`](../shadcn-ui/SKILL.md) | Disk: `Test-Path` skill files + ledger JSON parse; `packages/ui-system/components.json` has no `registries`; `apps/web/components.json` / `shadcn-studio` absent-by-design until Method A; after promote: `pnpm check:ui-system`. No `check:dna-ledger` (HITL only — Unevaluated) |
+| `studio-dna` / `shadcn-ui` | router → shadcn-ui → ui-compose (after promote) | ADR-010 · ARCH-015 · ARCH-024 · ui-system.mdc | [`dna-ledger.json`](../shadcn-ui/dna-ledger.json) · [`dna-ledger.md`](../shadcn-ui/dna-ledger.md) · [`SKILL.md`](../shadcn-ui/SKILL.md) | Disk: `Test-Path` skill files + ledger JSON parse; `packages/surfaces/ui-system/components.json` has no `registries`; `apps/web/components.json` / `shadcn-studio` absent-by-design until Method A; after promote: `pnpm check:ui-system`. No `check:dna-ledger` (HITL only — Unevaluated) |
 | `api` | router → api-contract | docs-V2/api · api-contract companions | [`completeness.md`](../afenda-elite-api-contract/completeness.md) | `check:openapi`, `pnpm typecheck` |
 | `modules` | router → backend-modules → module-readiness | ARCH-006 · ARCH-022 · mod-readiness-rules | companions + Living packs when restored | `check:module-quality` when Living packs present |
 | `fft` / Declarations | — (removed) | deprecation register | — | Nuclear wipe — do **not** route to deleted `feed-farm-trade`; living modules = platform + identity |
@@ -55,7 +55,7 @@ Total root scripts: ~93 in `package.json`. Gated count: ~56. Live controls: ~37.
 ### By file pattern
 - `.md` under Living `docs/` (when restored) → `repository`
 - `docs-V2/**` Scratch packs → matching domain (`api` · `docs` · `monorepo` · …)
-- `packages/ui-system/**` → `ui-system`
+- `packages/surfaces/ui-system/**` → `ui-system`
 - `docs-V2/api/**` or api-contract companions → `api`
 - Living `docs/modules/**` (when restored) → `modules` (platform/identity only; no FFT farm)
 - `.cursor/skills/afenda-elite-implementation-slices/**` → `phase-I` / `neon-auth`
@@ -103,11 +103,11 @@ Total root scripts: ~93 in `package.json`. Gated count: ~56. Live controls: ~37.
 ### File existence commands
 ```bash
 # Preferred: tracked files only
-git ls-files packages/ui-system
+git ls-files packages/surfaces/ui-system
 
 # Existence check
-Test-Path "packages/ui-system" # PowerShell
-test -e packages/ui-system     # bash
+Test-Path "packages/surfaces/ui-system" # PowerShell
+test -e packages/surfaces/ui-system     # bash
 
 # Structure validation
 pnpm check:docs-trunk-ban

@@ -6,19 +6,19 @@ import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import { parse as parseYaml } from "yaml";
 
-/** @typedef {import("../../packages/db/src/module-manifest-contract.ts").AfendaModuleManifest} AfendaModuleManifest */
+/** @typedef {import("../../packages/data-plane/db/src/module-manifest-contract.ts").AfendaModuleManifest} AfendaModuleManifest */
 
 export const LIVING_ERP_MANIFEST_PACKAGES = [
 	{
 		id: "master-data",
 		packageName: "@afenda/master-data",
-		dir: "packages/master-data",
+		dir: "packages/erp/master-data",
 		manifestExport: "masterDataModuleManifest",
 	},
 	{
 		id: "sales",
 		packageName: "@afenda/sales",
-		dir: "packages/sales",
+		dir: "packages/erp/sales",
 		manifestExport: "salesModuleManifest",
 	},
 ];
@@ -622,43 +622,71 @@ export function reconcileWorkspaceEdges(input) {
  * @param {{ id: string }[]} roadmapModules
  */
 export function validateCandidatePackagesAbsent(root, roadmapModules) {
-	/** @type {string[]} */
-	const errors = [];
+	/** @type {Set<string>} */
+	const errors = new Set();
 	const livingIds = new Set(LIVING_ERP_MANIFEST_PACKAGES.map((p) => p.id));
-	for (const name of FORBIDDEN_PHASE_PACKAGE_DIRS) {
-		const path = join(root, "packages", name);
-		if (existsSync(path)) {
-			errors.push(
+	const packageDirs = listPackageDirs(root);
+	const packageLeafNames = new Set(
+		packageDirs.map((rel) => rel.split(/[/\\]/).at(-1) ?? rel),
+	);
+
+	/**
+	 * @param {string} name
+	 */
+	function flagCandidate(name) {
+		if (packageLeafNames.has(name) || existsSync(join(root, "packages", name))) {
+			errors.add(
 				`candidate module represented as an on-disk package: packages/${name}`,
 			);
 		}
+	}
+
+	for (const name of FORBIDDEN_PHASE_PACKAGE_DIRS) {
+		flagCandidate(name);
 	}
 	for (const row of roadmapModules) {
 		if (livingIds.has(row.id)) {
 			continue;
 		}
-		const path = join(root, "packages", row.id);
-		if (existsSync(path)) {
-			errors.push(
-				`candidate module represented as an on-disk package: packages/${row.id}`,
-			);
-		}
+		flagCandidate(row.id);
 	}
-	return errors;
+	return [...errors];
 }
 
 /**
+ * Relative package dirs under packages/ (one-level category nesting).
+ * Examples: `foundation/env`, `erp/sales`.
+ *
  * @param {string} root
+ * @returns {string[]}
  */
 function listPackageDirs(root) {
 	const packagesRoot = join(root, "packages");
-	return readdirSync(packagesRoot).filter((name) => {
-		const full = join(packagesRoot, name);
-		return (
-			statSync(full).isDirectory() &&
-			existsSync(join(full, "package.json"))
-		);
-	});
+	if (!existsSync(packagesRoot)) {
+		return [];
+	}
+	/** @type {string[]} */
+	const out = [];
+	for (const entry of readdirSync(packagesRoot)) {
+		const full = join(packagesRoot, entry);
+		if (!statSync(full).isDirectory()) {
+			continue;
+		}
+		if (existsSync(join(full, "package.json"))) {
+			out.push(entry);
+			continue;
+		}
+		for (const child of readdirSync(full)) {
+			const childFull = join(full, child);
+			if (
+				statSync(childFull).isDirectory() &&
+				existsSync(join(childFull, "package.json"))
+			) {
+				out.push(`${entry}/${child}`);
+			}
+		}
+	}
+	return out;
 }
 
 /**

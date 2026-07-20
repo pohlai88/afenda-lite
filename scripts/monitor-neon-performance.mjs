@@ -25,7 +25,7 @@ if (!databaseUrl.includes("-pooler")) {
 }
 
 const performancePostureUrl = pathToFileURL(
-	resolve(process.cwd(), "packages/env/src/neon-performance-posture.ts"),
+	resolve(process.cwd(), "packages/foundation/env/src/neon-performance-posture.ts"),
 ).href;
 const {
 	evaluateConnectionPressure,
@@ -36,7 +36,7 @@ const {
 const serverlessUrl = pathToFileURL(
 	resolve(
 		process.cwd(),
-		"packages/db/node_modules/@neondatabase/serverless/index.mjs",
+		"packages/data-plane/db/node_modules/@neondatabase/serverless/index.mjs",
 	),
 ).href;
 

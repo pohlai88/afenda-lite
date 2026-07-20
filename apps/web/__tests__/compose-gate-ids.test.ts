@@ -31,6 +31,7 @@ const suitabilityPath = path.join(
 const exportNamingPath = path.join(
 	repoRoot,
 	"packages",
+	"surfaces",
 	"ui-system",
 	"__tests__",
 	"export-naming.test.ts",

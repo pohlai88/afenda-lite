@@ -32,17 +32,19 @@
 	"scss.lint.unknownAtRules": "ignore",
 	"less.lint.unknownAtRules": "ignore",
 	"[markdown]": {
-		"editor.defaultFormatter": "esbenp.prettier-vscode"
+		"editor.defaultFormatter": "esbenp.prettier-vscode",
+		"editor.formatOnSave": false
 	},
 	"[mdx]": {
-		"editor.defaultFormatter": "esbenp.prettier-vscode"
+		"editor.defaultFormatter": "esbenp.prettier-vscode",
+		"editor.formatOnSave": false
 	},
 	"typescript.tsdk": "node_modules/typescript/lib",
 	"typescript.enablePromptUseWorkspaceTsdk": true,
 	"files.eol": "\n",
 	"files.insertFinalNewline": true,
 	"files.trimTrailingWhitespace": true,
-	"explorer.excludeGitIgnore": false,
+	"explorer.excludeGitIgnore": true,
 	"explorer.autoReveal": false,
 	"explorer.decorations.badges": false,
 	"explorer.decorations.colors": false,
@@ -65,7 +67,10 @@
 		"**/test-results": true,
 		"**/playwright-report": true,
 		"**/out": true,
-		"**/.artifacts": true
+		"**/.artifacts": true,
+		"**/_reference": true,
+		"**/.tmp": true,
+		"**/.vercel": true
 	},
 	"search.exclude": {
 		"**/node_modules": true,
@@ -81,6 +86,9 @@
 		"**/out": true,
 		"**/.artifacts": true,
 		"**/.git": true,
+		"**/_reference": true,
+		"**/.tmp": true,
+		"**/.vercel": true,
 		"docs/architecture/backend": true,
 		"docs/architecture/frontend": true,
 		"docs/architecture/system": true,
@@ -103,6 +111,9 @@
 		"**/out/**": true,
 		"**/.artifacts/**": true,
 		"**/.git/**": true,
+		"**/_reference/**": true,
+		"**/.tmp/**": true,
+		"**/.vercel/**": true,
 		"**/pnpm-lock.yaml": true
 	},
 

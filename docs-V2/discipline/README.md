@@ -34,7 +34,7 @@ Key rule ids: `union-discriminant` · `brand-boundary` · `unknown-not-any` · `
 |----------|------|
 | `ActionResult<T>` | `apps/web/modules/platform/schemas/action-result.ts` |
 | Contract test | `apps/web/__tests__/action-result-contract.test.ts` |
-| Env schema | `packages/env` |
+| Env schema | `packages/foundation/env` |
 
 ---
 

@@ -120,7 +120,7 @@ Agents must not edit packages or add CI validators from this Scratch file alone.
 
 **Canonical architecture is classification and ownership — not folder nesting.**
 
-`packages/sales` may stay at the package root forever while classified `band: R1-F`, `category: commercial`.
+`packages/erp/sales` may stay at the package root forever while classified `band: R1-F`, `category: commercial`.
 
 If Phase 3 is later authorized, use **one** category level; published names stay `@afenda/<name>`:
 

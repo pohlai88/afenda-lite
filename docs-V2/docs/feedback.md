@@ -152,7 +152,7 @@ apps/docs/
   lib/github-feedback.ts           # Server actions → Discussions
   source.config.ts                 # remarkBlockId
   app/docs/[[...slug]]/page.tsx    # Mount
-packages/env/src/docs.ts           # GITHUB_APP_* optional at boot
+packages/foundation/env/src/docs.ts           # GITHUB_APP_* optional at boot
 ```
 
 ---

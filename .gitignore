@@ -71,7 +71,7 @@ next-env.d.ts
 
 # @afenda/ui-system — package-local scratch docs conflict with ADR-010 / DOC-001
 # (controlled docs live under docs/ only). Do not reintroduce.
-packages/ui-system/docs/
+packages/surfaces/ui-system/docs/
 
 # Retired husk — do not restore packages/ui or @afenda/ui (ADR-010).
 packages/ui/

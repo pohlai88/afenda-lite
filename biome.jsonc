@@ -24,7 +24,7 @@
 			"!!**/playwright/.cache",
 			"!!**/*.{md,mdx}",
 			"!!**/docs",
-			"!!**/packages/db/drizzle",
+			"!!**/packages/data-plane/db/drizzle",
 			// Agent/tooling trees + legacy reference dumps (not product CI surface).
 			"!!**/.cursor",
 			"!!**/.agents",
@@ -44,8 +44,8 @@
 			// a11y roles, sidebar cookie persistence, memo deps). Relaxed here to
 			// preserve 1:1 upstream parity across regenerations.
 			"includes": [
-				"packages/ui-system/src/components/ui/**",
-				"packages/ui-system/src/hooks/**"
+				"packages/surfaces/ui-system/src/components/ui/**",
+				"packages/surfaces/ui-system/src/hooks/**"
 			],
 			"linter": {
 				"rules": {

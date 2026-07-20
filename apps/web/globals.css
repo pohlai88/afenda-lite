@@ -8,7 +8,7 @@
 @import "tw-animate-css";
 @import "@afenda/ui-system/styles.css";
 
-@source "../../packages/ui-system/src";
+@source "../../packages/surfaces/ui-system/src";
 
 /* App owns brand typography — map Tailwind font tokens to the Geist next/font vars. */
 @theme inline {

@@ -24,7 +24,7 @@ GitHub on docs today: nav `githubUrl` + Discussions Feedback App — [feedback.m
 |----------|------|
 | No last-edit fetch | No `fumadocs-core/content/github` imports under `apps/docs` |
 | No last-update UI | [`app/docs/[[...slug]]/page.tsx`](../../apps/docs/app/docs/[[...slug]]/page.tsx) — no `lastUpdate` / last-edit props on `DocsPage` |
-| No `GIT_TOKEN` / `GIT_TOKEN` Bearer | Not in [`packages/env/src/docs.ts`](../../packages/env/src/docs.ts) · not required for docs build |
+| No `GIT_TOKEN` / `GIT_TOKEN` Bearer | Not in [`packages/foundation/env/src/docs.ts`](../../packages/foundation/env/src/docs.ts) · not required for docs build |
 | MDX `lastModified` for RSS | **Active elsewhere** — [rss.md](rss.md) · not DocsPage chrome |
 | Repo pointer only | `githubUrl` + GithubInfo — not per-page commit times |
 
@@ -104,7 +104,7 @@ Until then: no Commits API last-edit on `@afenda/docs`.
 ```text
 1. No fumadocs-core/content/github · getGithubLastEdit under apps/docs lib/app/components
 2. docs page: no lastUpdate / last-edit props
-3. packages/env/src/docs.ts: no GIT_TOKEN
+3. packages/foundation/env/src/docs.ts: no GIT_TOKEN
 4. source.config.ts: lastModified() present for RSS (rss.md) — not a Commits API call
 5. Wire test: docs-openapi-wire Last Modified Outside baseline (no GitHub Commits last-edit UI)
 6. pnpm --filter @afenda/docs test -- docs-openapi-wire

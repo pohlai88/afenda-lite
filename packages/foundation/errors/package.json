@@ -1,0 +1,38 @@
+{
+	"name": "@afenda/errors",
+	"version": "0.0.0",
+	"private": true,
+	"type": "module",
+	"exports": {
+		".": {
+			"types": "./src/index.ts",
+			"default": "./src/index.ts"
+		},
+		"./result": {
+			"types": "./src/result/index.ts",
+			"default": "./src/result/index.ts"
+		},
+		"./http": {
+			"types": "./src/http/index.ts",
+			"default": "./src/http/index.ts"
+		},
+		"./common": {
+			"types": "./src/common/index.ts",
+			"default": "./src/common/index.ts"
+		},
+		"./adapters/postgres": {
+			"types": "./src/adapters/postgres.ts",
+			"default": "./src/adapters/postgres.ts"
+		}
+	},
+	"scripts": {
+		"lint": "biome check .",
+		"typecheck": "tsc --noEmit -p tsconfig.json",
+		"test": "vitest run --config ../../../testing/vitest.config.ts --project errors"
+	},
+	"devDependencies": {
+		"@afenda/config": "workspace:*",
+		"@types/node": "catalog:",
+		"typescript": "catalog:"
+	}
+}

@@ -63,7 +63,7 @@ function asUserId(id: string): UserId {
 | `modules/platform/schemas/common.ts` | Shared primitives | `uuidSchema`, `emailSchema`, `passwordSchema`, `slugSchema`, **`parseSchema`** (**Landed**) |
 | `modules/platform/schemas/api-error.ts` | Web re-export + Zod OpenAPI | Codes/body from `@afenda/errors` (+ `/http`); Zod schemas local (**Landed**) |
 | `modules/platform/schemas/action-result.ts` | Web Action adapters | `ActionResult` aliases `@afenda/errors/result`; `actionFailInternal` / `actionFieldMessage` local (**Landed**) |
-| `packages/errors` (`@afenda/errors`) | Transport-neutral error kernel | `AppError`, `ErrorCode`/`ApiErrorCode`, normalize, serialize, `Result`, `/http`, `/adapters/postgres` (**Landed**) |
+| `packages/foundation/errors` (`@afenda/errors`) | Transport-neutral error kernel | `AppError`, `ErrorCode`/`ApiErrorCode`, normalize, serialize, `Result`, `/http`, `/adapters/postgres` (**Landed**) |
 | `modules/identity/schemas/invite-org-member.ts` | Org-member invite | `inviteOrgMemberCommandSchema` (**Landed**, I2.1) |
 | `modules/identity/schemas/auth.ts` | Sign-in boundary | `signInSchema` |
 | `modules/identity/schemas/users.ts` | Organization-admin users | `userIdSchema`, create/import/update schemas |

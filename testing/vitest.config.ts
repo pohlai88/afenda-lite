@@ -31,7 +31,7 @@ const nodeProject = (name: string, root: string) => ({
 	},
 });
 
-const authProject = nodeProject("auth", path.join(repoRoot, "packages/auth"));
+const authProject = nodeProject("auth", path.join(repoRoot, "packages/control-plane/auth"));
 
 export default defineConfig({
 	root: repoRoot,
@@ -52,23 +52,23 @@ export default defineConfig({
 					fileParallelism: false,
 				},
 			},
-			nodeProject("db", path.join(repoRoot, "packages/db")),
-			nodeProject("admin", path.join(repoRoot, "packages/admin")),
-			nodeProject("errors", path.join(repoRoot, "packages/errors")),
-			nodeProject("logger", path.join(repoRoot, "packages/logger")),
-			nodeProject("rate-limit", path.join(repoRoot, "packages/rate-limit")),
-			nodeProject("cache", path.join(repoRoot, "packages/cache")),
-			nodeProject("audit", path.join(repoRoot, "packages/audit")),
-			nodeProject("search", path.join(repoRoot, "packages/search")),
+			nodeProject("db", path.join(repoRoot, "packages/data-plane/db")),
+			nodeProject("admin", path.join(repoRoot, "packages/control-plane/admin")),
+			nodeProject("errors", path.join(repoRoot, "packages/foundation/errors")),
+			nodeProject("logger", path.join(repoRoot, "packages/runtime/logger")),
+			nodeProject("rate-limit", path.join(repoRoot, "packages/runtime/rate-limit")),
+			nodeProject("cache", path.join(repoRoot, "packages/runtime/cache")),
+			nodeProject("audit", path.join(repoRoot, "packages/data-plane/audit")),
+			nodeProject("search", path.join(repoRoot, "packages/data-plane/search")),
 			nodeProject(
 				"notifications",
-				path.join(repoRoot, "packages/notifications"),
+				path.join(repoRoot, "packages/data-plane/notifications"),
 			),
-			nodeProject("events", path.join(repoRoot, "packages/events")),
+			nodeProject("events", path.join(repoRoot, "packages/data-plane/events")),
 			{
 				...nodeProject(
 					"master-data",
-					path.join(repoRoot, "packages/master-data"),
+					path.join(repoRoot, "packages/erp/master-data"),
 				),
 				resolve: {
 					alias: {
@@ -78,7 +78,7 @@ export default defineConfig({
 				},
 			},
 			{
-				...nodeProject("sales", path.join(repoRoot, "packages/sales")),
+				...nodeProject("sales", path.join(repoRoot, "packages/erp/sales")),
 				resolve: {
 					alias: {
 						...testingAlias,
@@ -86,19 +86,19 @@ export default defineConfig({
 					},
 				},
 			},
-			nodeProject("http", path.join(repoRoot, "packages/http")),
-			nodeProject("security", path.join(repoRoot, "packages/security")),
-			nodeProject("metrics", path.join(repoRoot, "packages/metrics")),
-			nodeProject("openapi", path.join(repoRoot, "packages/openapi")),
+			nodeProject("http", path.join(repoRoot, "packages/runtime/http")),
+			nodeProject("security", path.join(repoRoot, "packages/runtime/security")),
+			nodeProject("metrics", path.join(repoRoot, "packages/runtime/metrics")),
+			nodeProject("openapi", path.join(repoRoot, "packages/runtime/openapi")),
 			nodeProject(
 				"ai-the-machine",
-				path.join(repoRoot, "packages/ai-the-machine"),
+				path.join(repoRoot, "packages/intelligence/ai-the-machine"),
 			),
-			nodeProject("emails", path.join(repoRoot, "packages/emails")),
+			nodeProject("emails", path.join(repoRoot, "packages/surfaces/emails")),
 			{
 				test: {
 					name: "env",
-					root: path.join(repoRoot, "packages/env"),
+					root: path.join(repoRoot, "packages/foundation/env"),
 					include: [`${TESTS_DIR}/**/*.test.ts`],
 					environment: "node",
 					env: {
@@ -106,7 +106,7 @@ export default defineConfig({
 					},
 				},
 			},
-			nodeProject("ui-system", path.join(repoRoot, "packages/ui-system")),
+			nodeProject("ui-system", path.join(repoRoot, "packages/surfaces/ui-system")),
 			nodeProject("docs", path.join(repoRoot, "apps/docs")),
 			{
 				resolve: {
@@ -141,7 +141,7 @@ export default defineConfig({
 					root: repoRoot,
 					include: [
 						`apps/web/${TESTS_DIR}/**/*.interaction.test.tsx`,
-						`packages/ui-system/${TESTS_DIR}/**/*.interaction.test.tsx`,
+						`packages/surfaces/ui-system/${TESTS_DIR}/**/*.interaction.test.tsx`,
 					],
 					environment: "jsdom",
 					setupFiles: [path.join(repoRoot, "testing/setup-interaction.ts")],

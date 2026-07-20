@@ -4,7 +4,7 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { MemorySearchStore } from "../../../packages/search/__tests__/helpers/memory-search-store";
+import { MemorySearchStore } from "../../../packages/data-plane/search/__tests__/helpers/memory-search-store";
 
 const authMocks = vi.hoisted(() => ({
 	listOrgMembers: vi.fn(),

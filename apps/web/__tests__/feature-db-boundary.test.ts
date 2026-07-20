@@ -2,7 +2,7 @@
  * GUIDE-018 I2.2 — feature → domain → `@afenda/db` boundary.
  *
  * Features and thin adapters must never import `@afenda/db` (or deep
- * packages/db paths). Org-scoped SQL lives only under each modules
+ * packages/data-plane/db paths). Org-scoped SQL lives only under each modules
  * context domain folder (ARCH-013 · ARCH-024 · afenda-elite-backend-modules).
  */
 
@@ -61,7 +61,7 @@ function findDbImportOffenders(dirs: string[]): string[] {
 }
 
 describe("@afenda/web feature → domain → db boundary (I2.2)", () => {
-	it("features never import @afenda/db or packages/db internals", () => {
+	it("features never import @afenda/db or packages/data-plane/db internals", () => {
 		expect(findDbImportOffenders([featuresRoot])).toEqual([]);
 	});
 

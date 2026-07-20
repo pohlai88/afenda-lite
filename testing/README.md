@@ -1,11 +1,11 @@
 # Testing factory (SSOT)
 
-Authority for Vitest / Playwright runners, helpers, and gate commands. Product packages do **not** own the factory — especially [`@afenda/config`](../packages/config) (Biome + TypeScript bases only; no Vitest scripts or test helpers).
+Authority for Vitest / Playwright runners, helpers, and gate commands. Product packages do **not** own the factory — especially [`@afenda/config`](../packages/foundation/config) (Biome + TypeScript bases only; no Vitest scripts or test helpers).
 
 | Layer | Runner | Place tests | Gate |
 |-------|--------|-------------|------|
 | L0 | Vitest `node` | `<pkg\|app>/__tests__/**/*.test.ts` | `pnpm test:unit` or `pnpm --filter @afenda/<pkg> test` |
-| L2 | Vitest `jsdom` | `packages/ui-system/__tests__/**/*.interaction.test.tsx` | `pnpm test:interaction` |
+| L2 | Vitest `jsdom` | `packages/surfaces/ui-system/__tests__/**/*.interaction.test.tsx` | `pnpm test:interaction` |
 | L4 | Playwright `@smoke` / `@journey` | `e2e/**` | `pnpm test:e2e:smoke` · `pnpm test:e2e:journey` |
 
 **Convention:** every Vitest file lives in the workspace member’s root `__tests__/` folder. Do **not** co-locate `*.test.ts` under `src/` or feature trees.
@@ -132,7 +132,7 @@ pnpm test:e2e:adverse       # A1–A3 smoke subset
 | `testing/e2e/*` | Playwright env · base · flows · tenancy factory · assertions |
 | `e2e/**` | Playwright specs only (`@smoke` / `@journey`) |
 | `<member>/__tests__/` | That member’s Vitest suite |
-| `packages/config` | Shared Biome / tsconfig — **not** Vitest |
+| `packages/foundation/config` | Shared Biome / tsconfig — **not** Vitest |
 
 ## Catalog note
 

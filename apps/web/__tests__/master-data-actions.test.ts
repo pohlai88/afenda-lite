@@ -156,6 +156,7 @@ describe("master-data Server Actions", () => {
 				name: "Acme Corp",
 				partyKind: "organization",
 			}),
+			expect.objectContaining({ authorization: expect.anything() }),
 		);
 	});
 
@@ -172,12 +173,13 @@ describe("master-data Server Actions", () => {
 			operatorSession,
 			"master_data.read",
 		);
-		expect(masterDataMocks.listParties).toHaveBeenCalledWith({
-			organizationId: "org-md-active",
-			page: undefined,
-			pageSize: 10,
-			status: undefined,
-		});
+		expect(masterDataMocks.listParties).toHaveBeenCalledWith(
+			expect.objectContaining({
+				organizationId: "org-md-active",
+				pageSize: 10,
+			}),
+			expect.objectContaining({ authorization: expect.anything() }),
+		);
 	});
 
 	it("maps package failure from createPartyRole", async () => {
@@ -229,6 +231,7 @@ describe("master-data Server Actions", () => {
 				expectedVersion: 1,
 				changeRequestId: "44444444-4444-4444-8444-444444444444",
 			}),
+			expect.objectContaining({ authorization: expect.anything() }),
 		);
 	});
 
@@ -288,6 +291,7 @@ describe("master-data Server Actions", () => {
 				name: "Net 30",
 				netDays: 30,
 			}),
+			expect.objectContaining({ authorization: expect.anything() }),
 		);
 	});
 
@@ -304,12 +308,13 @@ describe("master-data Server Actions", () => {
 			operatorSession,
 			"master_data.read",
 		);
-		expect(masterDataMocks.listPaymentTerms).toHaveBeenCalledWith({
-			organizationId: "org-md-active",
-			page: undefined,
-			pageSize: 10,
-			status: undefined,
-		});
+		expect(masterDataMocks.listPaymentTerms).toHaveBeenCalledWith(
+			expect.objectContaining({
+				organizationId: "org-md-active",
+				pageSize: 10,
+			}),
+			expect.objectContaining({ authorization: expect.anything() }),
+		);
 	});
 
 	it("denies payment term activate when master_data.manage is missing", async () => {
@@ -401,6 +406,7 @@ describe("master-data Server Actions", () => {
 				registrationType: "vat_gst",
 				registrationNumber: "VAT-1",
 			}),
+			expect.objectContaining({ authorization: expect.anything() }),
 		);
 	});
 
@@ -417,13 +423,13 @@ describe("master-data Server Actions", () => {
 			operatorSession,
 			"master_data.read",
 		);
-		expect(masterDataMocks.listTaxRegistrations).toHaveBeenCalledWith({
-			organizationId: "org-md-active",
-			page: undefined,
-			pageSize: 10,
-			status: undefined,
-			partyId: undefined,
-		});
+		expect(masterDataMocks.listTaxRegistrations).toHaveBeenCalledWith(
+			expect.objectContaining({
+				organizationId: "org-md-active",
+				pageSize: 10,
+			}),
+			expect.objectContaining({ authorization: expect.anything() }),
+		);
 	});
 
 	it("denies tax registration activate when master_data.manage is missing", async () => {
@@ -495,6 +501,7 @@ describe("master-data Server Actions", () => {
 				code: "TEE",
 				name: "T-shirt",
 			}),
+			expect.objectContaining({ authorization: expect.anything() }),
 		);
 	});
 
@@ -511,10 +518,13 @@ describe("master-data Server Actions", () => {
 			operatorSession,
 			"master_data.read",
 		);
-		expect(masterDataMocks.listItemTemplates).toHaveBeenCalledWith({
-			organizationId: "org-md-active",
-			pageSize: 50,
-		});
+		expect(masterDataMocks.listItemTemplates).toHaveBeenCalledWith(
+			expect.objectContaining({
+				organizationId: "org-md-active",
+				pageSize: 50,
+			}),
+			expect.objectContaining({ authorization: expect.anything() }),
+		);
 	});
 
 	it("denies attribute option create when master_data.manage is missing", async () => {
@@ -600,6 +610,7 @@ describe("master-data Server Actions", () => {
 					{ attributeId: attrSize, valueText: "M" },
 				],
 			}),
+			expect.objectContaining({ authorization: expect.anything() }),
 		);
 	});
 });

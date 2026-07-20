@@ -1,8 +1,9 @@
-# ARCH-022 / ARCH-028 S1.1 — pnpm workspaces (apps/* + packages/*).
+# ARCH-022 / ARCH-028 S1.1 — pnpm workspaces (apps/* + packages/*/*).
+# Phase 3: one-level category nesting; published names remain @afenda/<name>.
 # Catalog: shared direct-dep versions (external). Internal packages stay workspace:*.
 packages:
   - "apps/*"
-  - "packages/*"
+  - "packages/*/*"
 
 catalog:
   # Framework (next and @next/env share the same range)

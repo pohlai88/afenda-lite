@@ -2,7 +2,7 @@
 	"version": 1,
 	"updated": "2026-07-17",
 	"deferred": [
-		"Afenda-hosted shadcn install registry (@afenda/* JSON host) — deferred until explicit ADR; do not add registries to packages/ui-system/components.json (ADR-010 hold).",
+		"Afenda-hosted shadcn install registry (@afenda/* JSON host) — deferred until explicit ADR; do not add registries to packages/surfaces/ui-system/components.json (ADR-010 hold).",
 		"No Vitest/pnpm dna-ledger gate this revision — agent + HITL only."
 	],
 	"notes": [
@@ -98,7 +98,7 @@
 			"verdict": "ADAPT",
 			"method": "A",
 			"status": "promoted",
-			"landPath": "packages/ui-system/",
+			"landPath": "packages/surfaces/ui-system/",
 			"feZones": ["FE-11", "FE-13"],
 			"barrelDeps": ["DataTable", "Button", "Input", "Badge", "Pagination", "Empty"],
 			"strip": ["feature-local-table-framework", "fake-row-actions"],

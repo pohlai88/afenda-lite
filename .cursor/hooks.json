@@ -67,6 +67,12 @@
         "matcher": "Write|StrReplace|EditNotebook",
         "failClosed": false,
         "timeout": 20
+      },
+      {
+        "command": "node .cursor/hooks/no-living-arch-ghost-ssot.mjs",
+        "matcher": "Write|StrReplace|EditNotebook",
+        "failClosed": false,
+        "timeout": 20
       }
     ]
   }

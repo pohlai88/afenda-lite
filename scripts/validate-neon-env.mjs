@@ -3,7 +3,7 @@
  *
  * Usage: pnpm validate:neon-env
  *
- * Product contract SSOT: packages/env/src/neon-contract.ts
+ * Product contract SSOT: packages/foundation/env/src/neon-contract.ts
  * This script adds Neon Cloud API checks on top of the product contract.
  */
 
@@ -29,7 +29,7 @@ const projectId = env.NEON_PROJECT_ID || getEnvValue("NEON_PROJECT_ID", env);
 const branchId = env.NEON_BRANCH_ID || getEnvValue("NEON_BRANCH_ID", env);
 
 const neonContractUrl = pathToFileURL(
-	resolve(process.cwd(), "packages/env/src/neon-contract.ts"),
+	resolve(process.cwd(), "packages/foundation/env/src/neon-contract.ts"),
 ).href;
 const {
 	APPROVED_NEON_BRANCH_ID,
@@ -41,7 +41,7 @@ const {
 } = await import(neonContractUrl);
 
 const neonRecoveryUrl = pathToFileURL(
-	resolve(process.cwd(), "packages/env/src/neon-recovery-posture.ts"),
+	resolve(process.cwd(), "packages/foundation/env/src/neon-recovery-posture.ts"),
 ).href;
 const {
 	evaluateHistoryRetention,
@@ -51,7 +51,7 @@ const {
 } = await import(neonRecoveryUrl);
 
 const neonPerformanceUrl = pathToFileURL(
-	resolve(process.cwd(), "packages/env/src/neon-performance-posture.ts"),
+	resolve(process.cwd(), "packages/foundation/env/src/neon-performance-posture.ts"),
 ).href;
 const {
 	evaluateComputeAutoscaling,
@@ -497,7 +497,7 @@ if (!databaseUrl) {
 		const serverlessUrl = pathToFileURL(
 			resolve(
 				process.cwd(),
-				"packages/db/node_modules/@neondatabase/serverless/index.mjs",
+				"packages/data-plane/db/node_modules/@neondatabase/serverless/index.mjs",
 			),
 		).href;
 		const { neon } = await import(serverlessUrl);

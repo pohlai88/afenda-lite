@@ -48,7 +48,7 @@ Product name SSOT and closed phases: [deprecation register](.cursor/skills/agent
 
 ## Database migrations
 
-Schema and migrations live in [`packages/db`](packages/db) (`drizzle/` + `src/schema/`). Canonical commands:
+Schema and migrations live in [`packages/data-plane/db`](packages/data-plane/db) (`drizzle/` + `src/schema/`). Canonical commands:
 
 ```bash
 pnpm db:generate   # or: pnpm --filter @afenda/db db:generate
@@ -79,7 +79,7 @@ AFENDA_ALLOW_DB_MIGRATE=1 AFENDA_ALLOW_BASELINE_MIGRATE=1 pnpm db:migrate
 |---------|-----------|
 | Postgres | Neon — `DATABASE_URL` (use `-pooler` host in production/serverless) |
 | Auth | Neon Auth — `NEON_AUTH_*`, trusted domains |
-| Schema | [`packages/db/drizzle/`](packages/db/drizzle/) |
+| Schema | [`packages/data-plane/db/drizzle/`](packages/data-plane/db/drizzle/) |
 
 ## GitHub
 

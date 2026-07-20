@@ -165,8 +165,8 @@ describe("PL-S1 Pre-Login route inventory", () => {
 		const nextConfig = readFileSync(nextConfigPath, "utf8");
 		expect(nextConfig).toContain("AUTH_ACCEPT_INVITATION_PATH");
 		expect(nextConfig).toContain("JOIN_PATH");
-		expect(nextConfig).toContain("packages/auth/src/auth-paths");
-		expect(nextConfig).toContain("packages/auth/src/join-paths");
+		expect(nextConfig).toContain("packages/control-plane/auth/src/auth-paths");
+		expect(nextConfig).toContain("packages/control-plane/auth/src/join-paths");
 		expect(nextConfig).toContain("invitationId=:invitationId");
 		expect(nextConfig).toContain("permanent: true");
 		// next.config must pin the same literals as package SSOT (CJS-safe; no .ts import).

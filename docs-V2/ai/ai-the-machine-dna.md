@@ -5,7 +5,7 @@
 | Surface | `docs-V2/ai/ai-the-machine-dna.md` |
 | Authority | **Scratch** — monorepo-discipline · ai-sdk · vercel-agent |
 | Source DNA | `_reference/packages/ai-copilot` (`@vierp/ai-copilot`) — read-only historical |
-| Living package | [`@afenda/ai-the-machine`](../../packages/ai-the-machine/README.md) |
+| Living package | [`@afenda/ai-the-machine`](../../packages/intelligence/ai-the-machine/README.md) |
 | Updated | 2026-07-20 |
 
 ---

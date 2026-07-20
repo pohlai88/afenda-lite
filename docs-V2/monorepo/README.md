@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|-------|
 | Surface | `docs-V2/monorepo/README.md` |
-| Authority | **Operative** (docs-V2 Scratch pack) — coding-standards · monorepo-discipline + disk `packages/*` · `apps/web` |
+| Authority | **Operative** (docs-V2 Scratch pack) — coding-standards · monorepo-discipline + disk `packages/*/*` · `apps/web` |
 | Purpose | Lean import / layer / workspace rules + ERP expansion governance baseline |
 | Updated | 2026-07-20 |
 | Version | `monorepo-governance/2026-07-20` |
@@ -12,7 +12,16 @@
 
 Re-probe after package add/rename or DAG change. Controlled Living `docs/` remains dormant until Docs-lane reopen — this pack + LAYERS.md are the named promotion targets.
 
-**Not authorized here:** Phase 3 folder nesting · Phase 4 new ERP packages · `@afenda/module-catalog` runtime · `@afenda/authorization` extraction · `@afenda/jobs` · new transaction-core packages.
+### Phase status (2026-07-20)
+
+| Phase | Meaning | Status |
+|-------|---------|--------|
+| **1** | Classification + banded catalog | **Done** — [packages/README.md](../../packages/README.md) |
+| **2** | Dual-control validators (`pnpm validate:modules`) | **Done** — Living in CI; [PHASE-2-REPORT.md](../modules/PHASE-2-REPORT.md) |
+| **3** | One-level category folders under `packages/` (imports stay `@afenda/<name>`) | **Done** — living shape `packages/<category>/<name>` (22 packages). Evidence gate waived in writing 2026-07-20; authorization: [phase3_phase4.md](../_scratch/phase3_phase4.md). Categories are not packages (no `@afenda/foundation` etc.). Ready for independent audit before Phase 4. |
+| **4** | New ERP packages from MODULE-ROADMAP | Authorized after Phase 3 independent approval — execute package-by-package ([phase3_phase4.md](../_scratch/phase3_phase4.md)); not opened by Phase 1–2 close alone |
+
+Still out of scope for this pack (separate missions): `@afenda/module-catalog` runtime · `@afenda/authorization` extraction · `@afenda/jobs` · new transaction-core packages.
 
 ---
 
@@ -30,17 +39,17 @@ Imports flow **down** only. Packages never import `apps/*`. No cycles.
 
 Bands never grant import rights. Every edge is package-specific via dual-control (below). Catalog: [packages/README.md](../../packages/README.md).
 
-| Band | Kind | On-disk packages |
-|------|------|------------------|
-| R1-A | Foundation | `config` · `env` · `errors` |
-| R1-B | Runtime | `logger` · `http` · `security` · `metrics` · `openapi` · `rate-limit` · `cache` |
-| R1-C | Data plane | `db` · `audit` · `events` · `search` · `notifications` |
-| R1-D | Control plane | `auth` · `admin` |
-| R1-F | ERP | `master-data` · `sales` |
-| R1-X | Optional capability | `ai-the-machine` |
-| R2 | Surfaces | `ui-system` · `emails` |
+| Band | Kind | On-disk path |
+|------|------|--------------|
+| R1-A | Foundation | `packages/foundation/{config,env,errors}` |
+| R1-B | Runtime | `packages/runtime/{logger,http,security,metrics,openapi,rate-limit,cache}` |
+| R1-C | Data plane | `packages/data-plane/{db,audit,events,search,notifications}` |
+| R1-D | Control plane | `packages/control-plane/{auth,admin}` |
+| R1-F | ERP | `packages/erp/{master-data,sales}` |
+| R1-X | Optional capability | `packages/intelligence/ai-the-machine` |
+| R2 | Surfaces | `packages/surfaces/{ui-system,emails}` |
 
-Physical layout stays flat (`packages/<name>`). Category nesting is Phase 3 — not authorized.
+Physical layout is one-level nested (`packages/<category>/<name>`). Categories organize the repository only — they are not dependency or ownership units. Published imports remain `@afenda/<name>`.
 
 ---
 
@@ -106,7 +115,7 @@ Do not promote business helpers to `@afenda/shared`, `@afenda/common`, `@afenda/
 
 | # | Do | Don't |
 |---|----|-------|
-| 1 | `import { … } from "@afenda/db"` | `../../packages/db/src/...` |
+| 1 | `import { … } from "@afenda/db"` | `../../packages/data-plane/db/src/...` |
 | 2 | Package name or declared `exports` | `@afenda/*/src/...` |
 | 3 | Internal deps `"workspace:*"` | Semver range on `@afenda/*` |
 | 4 | Shared externals `"catalog:"` when listed | Re-pin per package (exception: `@afenda/docs` pins `tailwindcss` + `@tailwindcss/postcss` `^4.3.3` for fumadocs-openapi — see [../pnpm/README.md](../pnpm/README.md) · [../docs/README.md](../docs/README.md)) |

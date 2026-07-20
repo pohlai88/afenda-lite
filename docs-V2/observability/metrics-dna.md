@@ -17,11 +17,11 @@ Borrow/reject matrix for Prometheus scrape metrics. Operator path: [README.md](R
 
 | Concern | Owner |
 |---------|-------|
-| Registry · instruments · `record*` · `renderPrometheusText` | [`@afenda/metrics`](../../packages/metrics/README.md) |
+| Registry · instruments · `record*` · `renderPrometheusText` | [`@afenda/metrics`](../../packages/runtime/metrics/README.md) |
 | Fail-closed scrape RH (`GET /api/metrics` + bearer) | `apps/web/app/api/metrics/route.ts` |
 | HTTP timing record on platform RHs | `apps/web/modules/platform/api/route-pipeline.ts` |
-| Request-header latency (`Server-Timing`) | [`@afenda/http`](../../packages/http/README.md) — **not** a second scrape surface |
-| Structured logs | [`@afenda/logger`](../../packages/logger/README.md) |
+| Request-header latency (`Server-Timing`) | [`@afenda/http`](../../packages/runtime/http/README.md) — **not** a second scrape surface |
+| Structured logs | [`@afenda/logger`](../../packages/runtime/logger/README.md) |
 
 ---
 
@@ -29,7 +29,7 @@ Borrow/reject matrix for Prometheus scrape metrics. Operator path: [README.md](R
 
 | Idea | Disk |
 |------|------|
-| Dedicated Prometheus `Registry` | `packages/metrics/src/registry.ts` |
+| Dedicated Prometheus `Registry` | `packages/runtime/metrics/src/registry.ts` |
 | `collectDefaultMetrics` (Node) | factory default (`collectDefaults: true`) |
 | HTTP duration histogram + request counter | `http_request_duration_seconds` · `http_request_total` |
 | DB query duration histogram | `db_query_duration_seconds` (labels: `operation`, `table`) |
@@ -71,7 +71,7 @@ Borrow/reject matrix for Prometheus scrape metrics. Operator path: [README.md](R
 ## Verify
 
 ```text
-1. Test-Path packages/metrics (present)
+1. Test-Path packages/runtime/metrics (present)
 2. Test-Path packages/api-middleware → False
 3. pnpm --filter @afenda/metrics test
 4. pnpm --filter @afenda/web test -- api-metrics-route api-health-routes auth-paths.inventory

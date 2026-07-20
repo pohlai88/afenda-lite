@@ -6,7 +6,7 @@
 
 ## Own install registry — DEFERRED
 
-Do **not** create or wire an Afenda-hosted shadcn registry (`@afenda/*` JSON host). Do **not** add `registries` to [`packages/ui-system/components.json`](../../../packages/ui-system/components.json) without an explicit ADR-010 reopen. Studio `@ss-*` registries belong only on the DNA forwarder `apps/web/components.json` (Method A staging).
+Do **not** create or wire an Afenda-hosted shadcn registry (`@afenda/*` JSON host). Do **not** add `registries` to [`packages/surfaces/ui-system/components.json`](../../../packages/surfaces/ui-system/components.json) without an explicit ADR-010 reopen. Studio `@ss-*` registries belong only on the DNA forwarder `apps/web/components.json` (Method A staging).
 
 Metadata ROI now = this ledger. Install-registry hosting = later ADR mission only.
 

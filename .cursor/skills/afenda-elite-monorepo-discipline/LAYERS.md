@@ -106,7 +106,7 @@ import { withOrg } from "@afenda/db";
 
 ```ts
 // ❌
-import { env } from "../../../packages/env/src/web";
+import { env } from "../../../packages/foundation/env/src/web";
 // ✅
 import { env } from "@afenda/env";
 ```
@@ -118,7 +118,7 @@ Package resolves a transitive dep via hoist but does not declare it — fails on
 ### Upward / app import from a package
 
 ```ts
-// In packages/auth/...
+// In packages/control-plane/auth/...
 import { something } from "../../../apps/web/modules/identity/..."; // ❌
 // Fix: move shared contract into a lower-rank package or keep behavior in apps/web
 ```

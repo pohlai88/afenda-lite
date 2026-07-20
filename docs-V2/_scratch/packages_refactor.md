@@ -853,19 +853,19 @@ duplicate namespace detection
 Move current packages into one-level categories:
 
 ```text
-packages/errors
+packages/foundation/errors
 → packages/foundation/errors
 
-packages/db
+packages/data-plane/db
 → packages/data-plane/db
 
-packages/auth
+packages/control-plane/auth
 → packages/control-plane/auth
 
-packages/master-data
+packages/erp/master-data
 → packages/erp/master-data
 
-packages/sales
+packages/erp/sales
 → packages/erp/sales
 ```
 
