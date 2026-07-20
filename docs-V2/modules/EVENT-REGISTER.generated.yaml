@@ -1,0 +1,203 @@
+# GENERATED — do not edit by hand. Source: ERP module.manifest.ts
+# Regenerate: pnpm validate:modules --write
+events:
+  - direction: emits
+    id: master_data.party.created.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.party.updated.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.party.activated.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.party.inactive.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.party.blocked.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.party.retired.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.party.restored.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.item.created.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.item.updated.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.item.activated.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.item.inactive.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.item.retired.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.item_group.created.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.item_group.updated.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.item_group.activated.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.item_group.inactive.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.item_group.retired.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.warehouse.created.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.warehouse.updated.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.warehouse.activated.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.warehouse.inactive.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.warehouse.moved.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.warehouse.retired.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.payment_term.created.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.payment_term.updated.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.payment_term.activated.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.payment_term.inactive.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.payment_term.retired.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.tax_registration.created.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.tax_registration.updated.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.tax_registration.activated.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.tax_registration.blocked.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.tax_registration.retired.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.tax_registration.restored.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.party_role.created.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.party_role.updated.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.party_role.activated.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.party_role.retired.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.party_address.created.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.party_address.updated.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.party_contact.created.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.party_contact.updated.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.party_external_id.created.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.party_relationship.created.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.item_uom.created.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.item_barcode.created.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.item_external_id.created.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.item_alias.created.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.warehouse_external_id.created.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.party.merged.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.item_template.created.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.item_template.updated.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.item_template.activated.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.item_template.inactive.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.item_template.retired.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.item_template_attribute.created.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.item_template_attribute_option.created.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.item_variant.created.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.item_variant.retired.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.change_request.submitted.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.change_request.approved.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.change_request.rejected.v1
+    moduleId: master-data
+  - direction: emits
+    id: master_data.change_request.applied.v1
+    moduleId: master-data
+  - direction: emits
+    id: sales.order.created.v1
+    moduleId: sales
+  - direction: emits
+    id: sales.order.line_added.v1
+    moduleId: sales
+  - direction: emits
+    id: sales.order.posted.v1
+    moduleId: sales
+source: on-disk-module-manifests
+version: phase-2/2026-07-20

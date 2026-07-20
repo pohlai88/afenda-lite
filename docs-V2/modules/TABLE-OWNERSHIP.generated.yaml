@@ -1,0 +1,101 @@
+# GENERATED — do not edit by hand. Source: ERP module.manifest.ts
+# Regenerate: pnpm validate:modules --write
+source: on-disk-module-manifests
+tables:
+  - moduleId: master-data
+    packageName: "@afenda/master-data"
+    schemaOwner: "@afenda/db"
+    table: md_party
+  - moduleId: master-data
+    packageName: "@afenda/master-data"
+    schemaOwner: "@afenda/db"
+    table: md_item_group
+  - moduleId: master-data
+    packageName: "@afenda/master-data"
+    schemaOwner: "@afenda/db"
+    table: md_item
+  - moduleId: master-data
+    packageName: "@afenda/master-data"
+    schemaOwner: "@afenda/db"
+    table: md_warehouse
+  - moduleId: master-data
+    packageName: "@afenda/master-data"
+    schemaOwner: "@afenda/db"
+    table: md_payment_term
+  - moduleId: master-data
+    packageName: "@afenda/master-data"
+    schemaOwner: "@afenda/db"
+    table: md_tax_registration
+  - moduleId: master-data
+    packageName: "@afenda/master-data"
+    schemaOwner: "@afenda/db"
+    table: md_party_role
+  - moduleId: master-data
+    packageName: "@afenda/master-data"
+    schemaOwner: "@afenda/db"
+    table: md_party_address
+  - moduleId: master-data
+    packageName: "@afenda/master-data"
+    schemaOwner: "@afenda/db"
+    table: md_party_contact
+  - moduleId: master-data
+    packageName: "@afenda/master-data"
+    schemaOwner: "@afenda/db"
+    table: md_party_external_id
+  - moduleId: master-data
+    packageName: "@afenda/master-data"
+    schemaOwner: "@afenda/db"
+    table: md_party_relationship
+  - moduleId: master-data
+    packageName: "@afenda/master-data"
+    schemaOwner: "@afenda/db"
+    table: md_item_uom
+  - moduleId: master-data
+    packageName: "@afenda/master-data"
+    schemaOwner: "@afenda/db"
+    table: md_item_barcode
+  - moduleId: master-data
+    packageName: "@afenda/master-data"
+    schemaOwner: "@afenda/db"
+    table: md_item_external_id
+  - moduleId: master-data
+    packageName: "@afenda/master-data"
+    schemaOwner: "@afenda/db"
+    table: md_item_alias
+  - moduleId: master-data
+    packageName: "@afenda/master-data"
+    schemaOwner: "@afenda/db"
+    table: md_warehouse_external_id
+  - moduleId: master-data
+    packageName: "@afenda/master-data"
+    schemaOwner: "@afenda/db"
+    table: md_item_template
+  - moduleId: master-data
+    packageName: "@afenda/master-data"
+    schemaOwner: "@afenda/db"
+    table: md_item_template_attribute
+  - moduleId: master-data
+    packageName: "@afenda/master-data"
+    schemaOwner: "@afenda/db"
+    table: md_item_template_attribute_option
+  - moduleId: master-data
+    packageName: "@afenda/master-data"
+    schemaOwner: "@afenda/db"
+    table: md_item_variant
+  - moduleId: master-data
+    packageName: "@afenda/master-data"
+    schemaOwner: "@afenda/db"
+    table: md_item_variant_attribute_value
+  - moduleId: master-data
+    packageName: "@afenda/master-data"
+    schemaOwner: "@afenda/db"
+    table: md_change_request
+  - moduleId: sales
+    packageName: "@afenda/sales"
+    schemaOwner: "@afenda/db"
+    table: sales_order
+  - moduleId: sales
+    packageName: "@afenda/sales"
+    schemaOwner: "@afenda/db"
+    table: sales_order_line
+version: phase-2/2026-07-20

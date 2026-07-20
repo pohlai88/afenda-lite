@@ -7,6 +7,10 @@
 		".": {
 			"types": "./src/index.ts",
 			"default": "./src/index.ts"
+		},
+		"./module-manifest": {
+			"types": "./src/module-manifest-contract.ts",
+			"default": "./src/module-manifest-contract.ts"
 		}
 	},
 	"scripts": {

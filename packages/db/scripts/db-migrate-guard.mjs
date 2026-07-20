@@ -21,7 +21,39 @@ import { assertAdditiveMigrations } from "./lib/assert-additive-migration.mjs";
 import { requireMigrationDatabaseUrl } from "./lib/database-url.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
+const repoRoot = join(root, "../..");
 const drizzleDir = join(root, "drizzle");
+
+/** Same load path as ensure-platform-permission-catalog — never print values. */
+function loadEnvLocal() {
+	if (process.env.DATABASE_URL) {
+		return;
+	}
+	const envPath = join(repoRoot, ".env.local");
+	if (!existsSync(envPath)) {
+		return;
+	}
+	const text = readFileSync(envPath, "utf8");
+	for (const line of text.split(/\r?\n/)) {
+		const trimmed = line.trim();
+		if (trimmed.length === 0 || trimmed.startsWith("#")) continue;
+		const match = /^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/.exec(trimmed);
+		if (!match) continue;
+		const key = match[1];
+		let value = match[2]?.trim() ?? "";
+		if (
+			(value.startsWith('"') && value.endsWith('"')) ||
+			(value.startsWith("'") && value.endsWith("'"))
+		) {
+			value = value.slice(1, -1);
+		}
+		if (process.env[key] === undefined) {
+			process.env[key] = value;
+		}
+	}
+}
+
+loadEnvLocal();
 
 const allow = process.env.AFENDA_ALLOW_DB_MIGRATE === "1";
 

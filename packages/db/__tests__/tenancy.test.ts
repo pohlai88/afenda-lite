@@ -17,8 +17,8 @@ import {
 } from "../src/schema/platform";
 
 describe("@afenda/db hard tenant roots (N9 / ARCH-023)", () => {
-	it("lists platform IAM hard tenant root table names", () => {
-		expect(HARD_TENANT_ROOT_TABLE_NAMES).toHaveLength(6);
+	it("lists platform IAM + master-data hard tenant root table names", () => {
+		expect(HARD_TENANT_ROOT_TABLE_NAMES).toHaveLength(30);
 		expect([...HARD_TENANT_ROOT_TABLE_NAMES]).toEqual([
 			"platform_role_assignment",
 			"platform_rbac_audit",
@@ -26,6 +26,30 @@ describe("@afenda/db hard tenant roots (N9 / ARCH-023)", () => {
 			"platform_search_document",
 			"platform_notification",
 			"platform_domain_event",
+			"md_party",
+			"md_item_group",
+			"md_item",
+			"md_warehouse",
+			"md_payment_term",
+			"md_tax_registration",
+			"md_party_role",
+			"md_party_address",
+			"md_party_contact",
+			"md_party_external_id",
+			"md_party_relationship",
+			"md_item_uom",
+			"md_item_barcode",
+			"md_item_external_id",
+			"md_item_alias",
+			"md_warehouse_external_id",
+			"md_item_template",
+			"md_item_template_attribute",
+			"md_item_template_attribute_option",
+			"md_item_variant",
+			"md_item_variant_attribute_value",
+			"md_change_request",
+			"sales_order",
+			"sales_order_line",
 		]);
 	});
 

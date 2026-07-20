@@ -2,7 +2,12 @@
  * Org-scoped domain-event outbox vocabulary (living modules only).
  */
 
-export const EVENT_SOURCE_MODULES = ["platform", "identity"] as const;
+export const EVENT_SOURCE_MODULES = [
+	"platform",
+	"identity",
+	"master_data",
+	"sales",
+] as const;
 
 export type EventSourceModule = (typeof EVENT_SOURCE_MODULES)[number];
 

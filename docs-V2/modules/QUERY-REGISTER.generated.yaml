@@ -1,0 +1,146 @@
+# GENERATED — do not edit by hand. Source: ERP module.manifest.ts
+# Regenerate: pnpm validate:modules --write
+queries:
+  - id: master_data.party.get_by_id
+    moduleId: master-data
+    permission: master_data.read
+  - id: master_data.party.get_by_code
+    moduleId: master-data
+    permission: master_data.read
+  - id: master_data.party.list
+    moduleId: master-data
+    permission: master_data.read
+  - id: master_data.party.find_duplicates
+    moduleId: master-data
+    permission: master_data.read
+  - id: master_data.item.get_by_id
+    moduleId: master-data
+    permission: master_data.read
+  - id: master_data.item.get_by_code
+    moduleId: master-data
+    permission: master_data.read
+  - id: master_data.item.list
+    moduleId: master-data
+    permission: master_data.read
+  - id: master_data.item_group.get_by_id
+    moduleId: master-data
+    permission: master_data.read
+  - id: master_data.item_group.get_by_code
+    moduleId: master-data
+    permission: master_data.read
+  - id: master_data.item_group.list
+    moduleId: master-data
+    permission: master_data.read
+  - id: master_data.warehouse.get_by_id
+    moduleId: master-data
+    permission: master_data.read
+  - id: master_data.warehouse.get_by_code
+    moduleId: master-data
+    permission: master_data.read
+  - id: master_data.warehouse.list
+    moduleId: master-data
+    permission: master_data.read
+  - id: master_data.payment_term.get_by_id
+    moduleId: master-data
+    permission: master_data.read
+  - id: master_data.payment_term.get_by_code
+    moduleId: master-data
+    permission: master_data.read
+  - id: master_data.payment_term.list
+    moduleId: master-data
+    permission: master_data.read
+  - id: master_data.tax_registration.get_by_id
+    moduleId: master-data
+    permission: master_data.read
+  - id: master_data.tax_registration.list
+    moduleId: master-data
+    permission: master_data.read
+  - id: master_data.tax_registration.find_by_party
+    moduleId: master-data
+    permission: master_data.read
+  - id: master_data.party_role.list
+    moduleId: master-data
+    permission: master_data.read
+  - id: master_data.party_address.list
+    moduleId: master-data
+    permission: master_data.read
+  - id: master_data.party_contact.list
+    moduleId: master-data
+    permission: master_data.read
+  - id: master_data.item_uom.list
+    moduleId: master-data
+    permission: master_data.read
+  - id: master_data.item.find_by_alias
+    moduleId: master-data
+    permission: master_data.read
+  - id: master_data.item.find_by_external_id
+    moduleId: master-data
+    permission: master_data.read
+  - id: master_data.party.find_by_external_id
+    moduleId: master-data
+    permission: master_data.read
+  - id: master_data.warehouse.find_by_external_id
+    moduleId: master-data
+    permission: master_data.read
+  - id: master_data.item_template.get_by_id
+    moduleId: master-data
+    permission: master_data.read
+  - id: master_data.item_template.get_by_code
+    moduleId: master-data
+    permission: master_data.read
+  - id: master_data.item_template.list
+    moduleId: master-data
+    permission: master_data.read
+  - id: master_data.item_template_attribute.list
+    moduleId: master-data
+    permission: master_data.read
+  - id: master_data.item_template_attribute_option.list
+    moduleId: master-data
+    permission: master_data.read
+  - id: master_data.item_variant.get_by_id
+    moduleId: master-data
+    permission: master_data.read
+  - id: master_data.item_variant.list_by_template
+    moduleId: master-data
+    permission: master_data.read
+  - id: master_data.change_request.get_by_id
+    moduleId: master-data
+    permission: master_data.read
+  - id: master_data.change_request.list
+    moduleId: master-data
+    permission: master_data.read
+  - id: master_data.ref.country.get_by_code
+    moduleId: master-data
+    permission: master_data.read
+  - id: master_data.ref.currency.get_by_code
+    moduleId: master-data
+    permission: master_data.read
+  - id: master_data.ref.language.get_by_code
+    moduleId: master-data
+    permission: master_data.read
+  - id: master_data.ref.time_zone.get_by_iana
+    moduleId: master-data
+    permission: master_data.read
+  - id: master_data.ref.uom.get_by_id
+    moduleId: master-data
+    permission: master_data.read
+  - id: master_data.ref.uom.get_by_code
+    moduleId: master-data
+    permission: master_data.read
+  - id: master_data.ref.uom.list
+    moduleId: master-data
+    permission: master_data.read
+  - id: master_data.ref.uom_dimension.get_by_code
+    moduleId: master-data
+    permission: master_data.read
+  - id: master_data.search.query
+    moduleId: master-data
+    permission: master_data.read
+  - id: sales.order.get
+    moduleId: sales
+    permission: sales.read
+  - id: sales.order.list
+    moduleId: sales
+    permission: sales.read
+source: on-disk-module-manifests
+version: phase-2/2026-07-20

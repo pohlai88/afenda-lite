@@ -1,0 +1,95 @@
+# `@afenda/master-data`
+
+Rank-1 Platform ERP reference-data and operational-master spine for Afenda-Lite: platform `ref_*` lookups, org-scoped `md_*` masters and aggregate extensions, Zod brands, lifecycle + version CAS, and same-TX audit/outbox ports. Outcomes use `@afenda/errors` `Result` — this package does not own HTTP status lines, `NextResponse`, NATS, or Action envelopes.
+
+**Tables live in `@afenda/db`.** Mutations are sole-owned here — do not dual-write `md_*` from `apps/web` or transactional modules.
+
+**UoM is platform-only:** `ref_uom_dimension` → `ref_uom`; `md_item.base_uom_id` → `ref_uom`; item packaging conversions in `md_item_uom`. There is no org-scoped `md_uom`.
+
+Use this package from Platform / app server code when creating or mutating Party · Item · Item group · Warehouse and their extensions. Maintainers run lint / typecheck / Vitest via the filter scripts below (Node `24.x`, pnpm `≥10.33.4` from the repo root `engines`).
+
+## Consume
+
+Workspace dependency — import from the root barrel:
+
+```ts
+import { createParty, createPartyRole, activatePartyRole, activateParty } from "@afenda/master-data";
+
+const party = await createParty({
+  organizationId,
+  actorUserId,
+  correlationId,
+  code: "ACME",
+  name: "Acme Trading",
+  partyKind: "organization",
+});
+if (!party.ok) {
+  // map Result at the adapter — do not invent { success, data }
+}
+```
+
+Pass request-scoped `organizationId`, `actorUserId`, and `correlationId` on every mutation. Updates require `expectedVersion`. List `pageSize` ≤ 100.
+
+**Party activation contract:** activation requires ≥1 active `md_party_role`. Do not add `is_customer` / `is_supplier` booleans.
+
+## Authority B tables
+
+| Class | Tables |
+|---------|--------|
+| Platform refs | `ref_country` · `ref_currency` · `ref_language` · `ref_time_zone` · `ref_uom_dimension` · `ref_uom` |
+| Org masters | `md_party` · `md_item_group` · `md_item` · `md_warehouse` · `md_payment_term` · `md_tax_registration` |
+| Extensions | `md_party_role` · `md_party_address` · `md_party_contact` · `md_party_external_id` · `md_party_relationship` · `md_item_uom` · `md_item_barcode` · `md_item_external_id` · `md_item_alias` · `md_warehouse_external_id` |
+
+Out of scope: BOM / stock qty / CoA, transactional modules (ARCH-006 lives in `@afenda/sales` and siblings).
+
+## Store / ports
+
+| Surface | Backend |
+|---------|---------|
+| Production default | `DrizzleMasterDataStore` → `@afenda/db` — **all** org mutations use `runNeonHttpTransaction` CTE (entity + `platform_audit_log` + `platform_domain_event` same TX) |
+| Vitest injection | `MemoryMasterDataStore` + memory `AuditFactPort` / `OutboxPort` (in-process atomic) |
+| Ports | `MutationPorts` remain on the store interface for test injection; Drizzle embeds SQL side-effects and does not call SQL ports |
+
+## Maintain
+
+```bash
+pnpm --filter @afenda/master-data lint
+pnpm --filter @afenda/master-data typecheck
+pnpm --filter @afenda/master-data test
+```
+
+Requires root engines: **Node `24.x`**, **pnpm `≥10.33.4`**.
+
+## Exports
+
+| Path | Role |
+|------|------|
+| `@afenda/master-data` | Commands · queries · Zod schemas · brands · `MasterDataStore` type · Drizzle store · production ports · lifecycle/code helpers |
+
+Never re-exports raw Drizzle tables or `db` / `eq`.
+
+## Ownership
+
+| Surface | Owner |
+|---------|-------|
+| `md_*` / `ref_*` schema · hard-tenant `md_*` | `@afenda/db` |
+| Domain CRUD · brands · CAS · lifecycle · extensions | `@afenda/master-data` |
+| `master_data.*` event contracts | `@afenda/events` |
+| `Result` / error codes | `@afenda/errors` |
+
+**Also shipped:** search projectors (`md_*` → `@afenda/search`) · bounded import upsert-by-code · `mergeParties` + duplicate warnings.
+
+**Layer:** Rank-1 Platform (`@afenda/db` · `@afenda/errors` · `@afenda/audit` · `@afenda/events` · `@afenda/search` · zod · server-only). Must not import Surfaces, `apps/*`, or Next.js. See [docs-V2/monorepo](../../docs-V2/monorepo/README.md).
+
+## Code policy
+
+Trim → Unicode NFC → uppercase for `normalized_code`. Max length 64. Charset after normalize: `[A-Z0-9._-]`.
+
+## Authority
+
+| Topic | Link |
+|-------|------|
+| Scratch DNA | [docs-V2/master-data](../../docs-V2/master-data/README.md) · [master-data-dna.md](../../docs-V2/master-data/master-data-dna.md) |
+| Package DAG | [docs-V2/monorepo](../../docs-V2/monorepo/README.md) · [LAYERS.md](../../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md) |
+| Events catalog | [docs-V2/events](../../docs-V2/events/README.md) · [`@afenda/events`](../events/README.md) |
+| Agent checkout posture | [AGENTS.md](../../AGENTS.md) |
