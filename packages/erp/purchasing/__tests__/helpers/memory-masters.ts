@@ -65,7 +65,11 @@ export function createMemoryMasterLookup(
 			}
 			return ok(row);
 		},
-		async getRefUomById(id: string): Promise<Result<RefUom | null>> {
+		async getRefUomById(
+			_organizationId: string,
+			id: string,
+			_actorUserId: string,
+		): Promise<Result<RefUom | null>> {
 			return ok(uoms.get(id) ?? null);
 		},
 		async hasActiveSupplierRole(

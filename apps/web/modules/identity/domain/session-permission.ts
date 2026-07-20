@@ -64,8 +64,22 @@ export const PERMISSION_DENIED_MESSAGE: Record<PlatformPermissionCodeV1, string>
 		"You do not have permission to read stock availability.",
 	"inventory.adjustment.post":
 		"You do not have permission to post stock adjustments.",
-	"receiving.read": "You do not have permission to read goods receipts.",
-	"receiving.manage": "You do not have permission to manage goods receipts.",
+	"receiving.receipt.read":
+		"You do not have permission to read goods receipts.",
+	"receiving.receipt.create":
+		"You do not have permission to create goods receipts.",
+	"receiving.receipt.update":
+		"You do not have permission to update goods receipts.",
+	"receiving.receipt.post":
+		"You do not have permission to post goods receipts.",
+	"receiving.receipt.cancel":
+		"You do not have permission to cancel draft goods receipts.",
+	"receiving.receipt.reverse":
+		"You do not have permission to reverse posted goods receipts.",
+	"receiving.discrepancy.record":
+		"You do not have permission to record receiving discrepancies.",
+	"receiving.discrepancy.resolve":
+		"You do not have permission to resolve receiving discrepancies.",
 	"fulfillment.delivery.read":
 		"You do not have permission to read deliveries.",
 	"fulfillment.delivery.create":

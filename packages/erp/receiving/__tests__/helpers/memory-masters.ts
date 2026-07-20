@@ -17,7 +17,11 @@ export function createMemoryMasterLookup(
 				row === undefined || row.organizationId !== organizationId ? null : row,
 			);
 		},
-		async getRefUomById(id): Promise<Result<RefUom | null>> {
+		async getRefUomById(
+			_organizationId,
+			id,
+			_actorUserId,
+		): Promise<Result<RefUom | null>> {
 			return ok(uoms.get(id) ?? null);
 		},
 		async getWarehouseById(

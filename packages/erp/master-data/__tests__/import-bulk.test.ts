@@ -18,6 +18,15 @@ function ctx(organizationId = "org-import") {
 	};
 }
 
+function applyBase(organizationId = "org-import") {
+	return {
+		...ctx(organizationId),
+		dryRun: false as const,
+		approved: true as const,
+		idempotencyKey: randomUUID(),
+	};
+}
+
 describe("@afenda/master-data import bulk", () => {
 	it("dry-run reports create/update/unchanged without writing", async () => {
 		const { options, store } = createMasterDataTestHarness();
@@ -97,7 +106,13 @@ describe("@afenda/master-data import bulk", () => {
 		];
 
 		const deniedExplicit = await upsertPartiesByCode(
-			{ ...ctx(), dryRun: false, approved: false, rows },
+			{
+				...ctx(),
+				dryRun: false,
+				approved: false,
+				idempotencyKey: "deny-explicit",
+				rows,
+			},
 			options,
 		);
 		expect(deniedExplicit.ok).toBe(false);
@@ -108,7 +123,7 @@ describe("@afenda/master-data import bulk", () => {
 		}
 
 		const deniedOmitted = await upsertPartiesByCode(
-			{ ...ctx(), dryRun: false, rows },
+			{ ...ctx(), dryRun: false, idempotencyKey: "deny-omitted", rows },
 			options,
 		);
 		expect(deniedOmitted.ok).toBe(false);
@@ -120,6 +135,31 @@ describe("@afenda/master-data import bulk", () => {
 
 		const missing = await store.getPartyByCode("org-import", "NOAP");
 		expect(missing.ok && missing.data === null).toBe(true);
+	});
+
+	it("rejects apply without idempotencyKey", async () => {
+		const { options } = createMasterDataTestHarness();
+		const denied = await upsertPartiesByCode(
+			{
+				...ctx(),
+				dryRun: false,
+				approved: true,
+				rows: [
+					{
+						code: "NOKEY",
+						name: "No Key",
+						partyKind: "organization",
+					},
+				],
+			},
+			options,
+		);
+		expect(denied.ok).toBe(false);
+		if (!denied.ok) {
+			expect(denied.details).toMatchObject({
+				reason: "MASTER_VALIDATION_FAILED",
+			});
+		}
 	});
 
 	it("rejects duplicate codes in file and CAS conflicts", async () => {
@@ -141,9 +181,7 @@ describe("@afenda/master-data import bulk", () => {
 
 		const report = await upsertPartiesByCode(
 			{
-				...ctx(),
-				dryRun: false,
-				approved: true,
+				...applyBase(),
 				rows: [
 					{
 						code: "DUP",
@@ -180,14 +218,12 @@ describe("@afenda/master-data import bulk", () => {
 		).toBe(true);
 	});
 
-	it("applies create then unchanged on second apply (idempotent)", async () => {
+	it("applies create then unchanged on second apply (row-level)", async () => {
 		const { options } = createMasterDataTestHarness();
 
 		const first = await upsertPartiesByCode(
 			{
-				...ctx(),
-				dryRun: false,
-				approved: true,
+				...applyBase(),
 				rows: [
 					{
 						code: "IDEM",
@@ -206,9 +242,7 @@ describe("@afenda/master-data import bulk", () => {
 
 		const second = await upsertPartiesByCode(
 			{
-				...ctx(),
-				dryRun: false,
-				approved: true,
+				...applyBase(),
 				rows: [
 					{
 						code: "IDEM",
@@ -225,6 +259,58 @@ describe("@afenda/master-data import bulk", () => {
 		}
 		expect(second.data.unchanged).toBe(1);
 		expect(second.data.created).toBe(0);
+	});
+
+	it("replays stored report for the same idempotencyKey", async () => {
+		const { options, store } = createMasterDataTestHarness();
+		const idempotencyKey = "batch-key-1";
+
+		const first = await upsertPartiesByCode(
+			{
+				...ctx(),
+				dryRun: false,
+				approved: true,
+				idempotencyKey,
+				rows: [
+					{
+						code: "REPLAY1",
+						name: "Replay Co",
+						partyKind: "organization",
+					},
+				],
+			},
+			options,
+		);
+		expect(first.ok).toBe(true);
+		if (!first.ok) {
+			return;
+		}
+		expect(first.data.created).toBe(1);
+
+		const second = await upsertPartiesByCode(
+			{
+				...ctx(),
+				dryRun: false,
+				approved: true,
+				idempotencyKey,
+				rows: [
+					{
+						code: "REPLAY1",
+						name: "Different Name Should Not Apply",
+						partyKind: "organization",
+					},
+				],
+			},
+			options,
+		);
+		expect(second.ok).toBe(true);
+		if (!second.ok) {
+			return;
+		}
+		expect(second.data).toEqual(first.data);
+
+		const party = await store.getPartyByCode("org-import", "REPLAY1");
+		expect(party.ok && party.data?.name === "Replay Co").toBe(true);
 	});
 
 	it("honors import mode create_only and update_existing", async () => {
@@ -246,10 +332,8 @@ describe("@afenda/master-data import bulk", () => {
 
 		const createOnlyUpdate = await upsertPartiesByCode(
 			{
-				...ctx(),
+				...applyBase(),
 				mode: "create_only",
-				dryRun: false,
-				approved: true,
 				rows: [
 					{
 						code: "MODE1",
@@ -272,10 +356,8 @@ describe("@afenda/master-data import bulk", () => {
 
 		const updateExistingCreate = await upsertPartiesByCode(
 			{
-				...ctx(),
+				...applyBase(),
 				mode: "update_existing",
-				dryRun: false,
-				approved: true,
 				rows: [
 					{
 						code: "MODE2",
@@ -294,10 +376,8 @@ describe("@afenda/master-data import bulk", () => {
 
 		const updateExistingApply = await upsertPartiesByCode(
 			{
-				...ctx(),
+				...applyBase(),
 				mode: "update_existing",
-				dryRun: false,
-				approved: true,
 				rows: [
 					{
 						code: "MODE1",
@@ -334,9 +414,7 @@ describe("@afenda/master-data import bulk", () => {
 
 		const report = await upsertPartiesByCode(
 			{
-				...ctx(),
-				dryRun: false,
-				approved: true,
+				...applyBase(),
 				rows: [
 					{
 						code: "KIND1",
@@ -360,9 +438,7 @@ describe("@afenda/master-data import bulk", () => {
 
 		await upsertPartiesByCode(
 			{
-				...ctx("org-a"),
-				dryRun: false,
-				approved: true,
+				...applyBase("org-a"),
 				rows: [
 					{
 						code: "T1",

@@ -373,7 +373,11 @@ async function resolveItemSnapshot(
 	}
 
 	const uomResult = requireMaster(
-		await masters.getRefUomById(itemResult.data.baseUomId),
+		await masters.getRefUomById(
+			organizationId,
+			itemResult.data.baseUomId,
+			actorUserId,
+		),
 		"Base UoM not found for item",
 	);
 	if (!uomResult.ok) {

@@ -10,6 +10,8 @@ import type {
 	ChangeRequestCreateRecord,
 	ChangeRequestListFilter,
 	ChangeRequestReviewRecord,
+	ImportBatchCreateRecord,
+	ImportBatchRecord,
 	ItemAliasCreateRecord,
 	ItemBarcodeCreateRecord,
 	ItemCreateRecord,
@@ -196,6 +198,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		WarehouseExternalId
 	>();
 	private readonly changeRequests = new Map<string, ChangeRequest>();
+	private readonly importBatches = new Map<string, ImportBatchRecord>();
 	private readonly itemTemplates = new Map<string, ItemTemplate>();
 	private readonly itemTemplateAttributes = new Map<
 		string,
@@ -768,6 +771,96 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		this.parties.set(survivor.id, survivor);
 		this.parties.set(merged.id, merged);
 
+		const roleSnapshots: PartyRole[] = [];
+		const addressSnapshots: PartyAddress[] = [];
+		const contactSnapshots: PartyContact[] = [];
+		const survivorActiveRoleCodes = new Set(
+			[...this.partyRoles.values()]
+				.filter(
+					(role) =>
+						role.organizationId === record.organizationId &&
+						role.partyId === survivor.id &&
+						role.status === "active",
+				)
+				.map((role) => role.roleCode),
+		);
+		let rolesReassigned = 0;
+		let rolesRetiredColliding = 0;
+		for (const role of this.partyRoles.values()) {
+			if (
+				role.organizationId !== record.organizationId ||
+				role.partyId !== source.id
+			) {
+				continue;
+			}
+			roleSnapshots.push({ ...role });
+			if (
+				role.status === "active" &&
+				survivorActiveRoleCodes.has(role.roleCode)
+			) {
+				const retired: PartyRole = {
+					...role,
+					status: "retired",
+					version: role.version + 1,
+					updatedBy: record.actorUserId,
+					updatedAt: now,
+					retiredAt: now,
+					retiredBy: record.actorUserId,
+				};
+				this.partyRoles.set(role.id, retired);
+				rolesRetiredColliding += 1;
+				continue;
+			}
+			if (role.status === "active") {
+				survivorActiveRoleCodes.add(role.roleCode);
+			}
+			const movedRole: PartyRole = {
+				...role,
+				partyId: survivor.id,
+				version: role.version + 1,
+				updatedBy: record.actorUserId,
+				updatedAt: now,
+			};
+			this.partyRoles.set(role.id, movedRole);
+			rolesReassigned += 1;
+		}
+		let addressesMoved = 0;
+		for (const address of this.partyAddresses.values()) {
+			if (
+				address.organizationId !== record.organizationId ||
+				address.partyId !== source.id
+			) {
+				continue;
+			}
+			addressSnapshots.push({ ...address });
+			this.partyAddresses.set(address.id, {
+				...address,
+				partyId: survivor.id,
+				version: address.version + 1,
+				updatedBy: record.actorUserId,
+				updatedAt: now,
+			});
+			addressesMoved += 1;
+		}
+		let contactsMoved = 0;
+		for (const contact of this.partyContacts.values()) {
+			if (
+				contact.organizationId !== record.organizationId ||
+				contact.partyId !== source.id
+			) {
+				continue;
+			}
+			contactSnapshots.push({ ...contact });
+			this.partyContacts.set(contact.id, {
+				...contact,
+				partyId: survivor.id,
+				version: contact.version + 1,
+				updatedBy: record.actorUserId,
+				updatedAt: now,
+			});
+			contactsMoved += 1;
+		}
+
 		const movedExternalIds: PartyExternalId[] = [];
 		for (const ext of this.partyExternalIds.values()) {
 			if (
@@ -821,6 +914,15 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				this.parties.set(sourceSnapshot.id, sourceSnapshot);
 				this.parties.set(targetSnapshot.id, targetSnapshot);
 				this.changeRequests.set(crSnapshot.id, crSnapshot);
+				for (const role of roleSnapshots) {
+					this.partyRoles.set(role.id, role);
+				}
+				for (const address of addressSnapshots) {
+					this.partyAddresses.set(address.id, address);
+				}
+				for (const contact of contactSnapshots) {
+					this.partyContacts.set(contact.id, contact);
+				}
 				for (const ext of movedExternalIds) {
 					this.partyExternalIds.set(ext.id, ext);
 				}
@@ -856,6 +958,12 @@ export class MemoryMasterDataStore implements MasterDataStore {
 					mergedId: merged.id,
 					survivorVersion: survivor.version,
 					fieldDecisions: record.fieldDecisions,
+					consolidation: {
+						rolesReassigned,
+						rolesRetiredColliding,
+						addressesMoved,
+						contactsMoved,
+					},
 				},
 				type: "master_data.party.merged.v1",
 				code: survivor.code,
@@ -1416,10 +1524,31 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			createdAt: now,
 			updatedAt: now,
 		};
+		const baseUomRow: ItemUom = {
+			id: randomUUID(),
+			organizationId: item.organizationId,
+			itemId: item.id,
+			uomId: item.baseUomId,
+			toBaseNumerator: "1",
+			toBaseDenominator: "1",
+			usage: "other",
+			barcode: null,
+			roundingRule: null,
+			minQuantity: null,
+			version: 1,
+			validFrom: null,
+			validTo: null,
+			createdBy: item.createdBy,
+			updatedBy: item.createdBy,
+			createdAt: now,
+			updatedAt: now,
+		};
 		this.items.set(item.id, item);
+		this.itemUoms.set(baseUomRow.id, baseUomRow);
 		const sideEffect = await this.commitMutation(
 			() => {
 				this.items.delete(item.id);
+				this.itemUoms.delete(baseUomRow.id);
 			},
 			ports,
 			{
@@ -4522,6 +4651,55 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			return fail("INTERNAL_ERROR", "Item variant create returned no row");
 		}
 		return ok(assembled);
+	}
+
+	async getImportBatchByIdempotencyKey(
+		organizationId: string,
+		idempotencyKey: string,
+	): Promise<Result<ImportBatchRecord | null>> {
+		for (const batch of this.importBatches.values()) {
+			if (
+				batch.organizationId === organizationId &&
+				batch.idempotencyKey === idempotencyKey
+			) {
+				return ok(batch);
+			}
+		}
+		return ok(null);
+	}
+
+	async saveImportBatch(
+		record: ImportBatchCreateRecord,
+	): Promise<Result<ImportBatchRecord>> {
+		const existing = await this.getImportBatchByIdempotencyKey(
+			record.organizationId,
+			record.idempotencyKey,
+		);
+		if (!existing.ok) {
+			return existing;
+		}
+		if (existing.data !== null) {
+			return fail("CONFLICT", "Import batch already exists", {
+				reason: "MASTER_IMPORT_IDEMPOTENT_REPLAY",
+			} satisfies MasterFailureDetails);
+		}
+		const now = new Date();
+		const batch: ImportBatchRecord = {
+			id: randomUUID(),
+			organizationId: record.organizationId,
+			idempotencyKey: record.idempotencyKey,
+			entityType: record.entityType,
+			sourceSystem: record.sourceSystem,
+			mode: record.mode,
+			status: "applied",
+			report: record.report,
+			actorUserId: record.actorUserId,
+			correlationId: record.correlationId,
+			createdAt: now,
+			updatedAt: now,
+		};
+		this.importBatches.set(batch.id, batch);
+		return ok(batch);
 	}
 }
 

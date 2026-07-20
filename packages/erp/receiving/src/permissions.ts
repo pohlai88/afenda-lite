@@ -1,7 +1,27 @@
-export const RECEIVING_PERMISSION_READ = "receiving.read" as const;
-export const RECEIVING_PERMISSION_MANAGE = "receiving.manage" as const;
+export const RECEIVING_PERMISSION_RECEIPT_READ =
+	"receiving.receipt.read" as const;
+export const RECEIVING_PERMISSION_RECEIPT_CREATE =
+	"receiving.receipt.create" as const;
+export const RECEIVING_PERMISSION_RECEIPT_UPDATE =
+	"receiving.receipt.update" as const;
+export const RECEIVING_PERMISSION_RECEIPT_POST =
+	"receiving.receipt.post" as const;
+export const RECEIVING_PERMISSION_RECEIPT_CANCEL =
+	"receiving.receipt.cancel" as const;
+export const RECEIVING_PERMISSION_RECEIPT_REVERSE =
+	"receiving.receipt.reverse" as const;
+export const RECEIVING_PERMISSION_DISCREPANCY_RECORD =
+	"receiving.discrepancy.record" as const;
+export const RECEIVING_PERMISSION_DISCREPANCY_RESOLVE =
+	"receiving.discrepancy.resolve" as const;
 
 export const RECEIVING_PERMISSION_CODES = [
-	RECEIVING_PERMISSION_READ,
-	RECEIVING_PERMISSION_MANAGE,
+	RECEIVING_PERMISSION_RECEIPT_READ,
+	RECEIVING_PERMISSION_RECEIPT_CREATE,
+	RECEIVING_PERMISSION_RECEIPT_UPDATE,
+	RECEIVING_PERMISSION_RECEIPT_POST,
+	RECEIVING_PERMISSION_RECEIPT_CANCEL,
+	RECEIVING_PERMISSION_RECEIPT_REVERSE,
+	RECEIVING_PERMISSION_DISCREPANCY_RECORD,
+	RECEIVING_PERMISSION_DISCREPANCY_RESOLVE,
 ] as const;

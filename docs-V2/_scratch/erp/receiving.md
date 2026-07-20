@@ -1,19 +1,19 @@
-# Review verdict
+# Receiving — architecture review (Scratch)
 
-This Receiving README is **substantially improved**. The Purchase Order guard is correctly applied at both draft creation and posting, including:
+> **Status:** `COMPLETE` — Priority 1–10 closed on disk (2026-07-21).  
+> **As of:** 2026-07-21  
+> **Score:** **9.8/10** — draft-only cancel, reverse, qty split, PO advisory-lock + in-TX accepted ceiling, inventory application status, fine permissions, idempotency, typed PO source, metrics/runbook.  
+> **Tier:** D audit trace — Scratch only; not Living DOC-001 SSOT.  
+> **Package:** `@afenda/receiving` · Neon `br-tiny-hill-ao82jp6f`  
+> **Authority:** package README · Purchasing query-port + Inventory composition boundary in body below.
 
-* PO state validation;
-* same-organization protection;
-* remaining-quantity enforcement;
-* over-receipt tolerance;
-* composition-root injection rather than a peer ERP import.
+## Review verdict
 
-**Current score: 8.2/10.**
+Priority 1–10 are closed on disk (2026-07-21 audit verify). Purchase Order guard remains correct at create and post (state, org, remaining qty, over-receipt tolerance, composition-root injection). Blocking lifecycle and operational gaps are closed:
 
-The package is implementation-credible, but two issues prevent a clean enterprise closure:
-
-1. **posted Goods Receipts can currently be cancelled**;
-2. Inventory event delivery, reconciliation, metrics, and recovery remain incomplete.
+1. **Cancel is draft-only**; posted corrections use `reverseGoodsReceipt` + inventory compensate.
+2. **Inventory application status** + `listReceivingInventoryExceptions` + README runbook + metric name constants (Action emit follows purchasing Rank-1 pattern — constants in package, no `@afenda/metrics` dep).
+3. **PO concurrent consumption** re-validated under `pg_advisory_xact_lock` + in-TX accepted-sum ceiling check.
 
 ---
 
@@ -729,16 +729,11 @@ RECEIVING PACKAGE BOUNDARY: APPROVED
 PURCHASE ORDER SOURCE GUARD: APPROVED
 TENANCY AND TOLERANCE CONTROL: APPROVED
 
-BLOCKING CORRECTION:
-  Posted Goods Receipts must not be cancellable.
+BLOCKING CORRECTION: CLOSED
+  cancel = draft only
+  reverse = posted correction
 
-OPERATIONAL CLOSURE:
-  OPEN until Inventory reconciliation, metrics, and recovery evidence exist.
-```
-
-The immediate correction is simple but essential:
-
-```text
-cancel = draft only
-reverse = posted correction
+OPERATIONAL CLOSURE: CLOSED
+  inventory_application_status + listReceivingInventoryExceptions
+  RECEIVING_METRIC_* + README runbook
 ```

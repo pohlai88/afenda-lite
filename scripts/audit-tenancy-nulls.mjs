@@ -43,6 +43,7 @@ const HARD_TENANT_ROOT_TABLE_NAMES = [
 	"md_item_variant",
 	"md_item_variant_attribute_value",
 	"md_change_request",
+	"md_import_batch",
 	"sales_order",
 	"sales_order_line",
 	"purchase_order",
@@ -158,6 +159,8 @@ const NULL_COUNT_BY_TABLE = {
 		sql`SELECT count(*)::int AS null_count FROM md_item_variant_attribute_value WHERE organization_id IS NULL`,
 	md_change_request: () =>
 		sql`SELECT count(*)::int AS null_count FROM md_change_request WHERE organization_id IS NULL`,
+	md_import_batch: () =>
+		sql`SELECT count(*)::int AS null_count FROM md_import_batch WHERE organization_id IS NULL`,
 	sales_order: () =>
 		sql`SELECT count(*)::int AS null_count FROM sales_order WHERE organization_id IS NULL`,
 	sales_order_line: () =>

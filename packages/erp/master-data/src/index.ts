@@ -60,10 +60,6 @@ export {
 } from "./contracts/reasons";
 export { createEmptyDependencyInspector } from "./dependency";
 export {
-	createDrizzleMasterDataStore,
-	DrizzleMasterDataStore,
-} from "./drizzle-store";
-export {
 	activatePartyRole,
 	createItemAlias,
 	createItemBarcode,
@@ -148,6 +144,7 @@ export {
 	findPartyDuplicateWarnings,
 	type MergePartiesResult,
 	mergeParties,
+	resolveCanonicalPartyId,
 	mergePartiesInputSchema,
 } from "./merge";
 export {
@@ -319,6 +316,7 @@ export {
 	type DependencyInspector,
 	ITEM_TEMPLATE_ATTRIBUTE_VALUE_KINDS,
 	ITEM_TYPES,
+	ITEM_UOM_ROUNDING_RULES,
 	ITEM_UOM_USAGES,
 	type Item,
 	type ItemAlias,
@@ -331,6 +329,7 @@ export {
 	type ItemTemplateAttributeValueKind,
 	type ItemType,
 	type ItemUom,
+	type ItemUomRoundingRule,
 	type ItemUomUsage,
 	type ItemVariant,
 	type ItemVariantAttributeValue,
@@ -339,6 +338,7 @@ export {
 	type MasterStatus,
 	type MergePartiesChangePayload,
 	PARTY_KINDS,
+	PARTY_RELATIONSHIP_TYPES,
 	PARTY_ROLE_CODES,
 	type Party,
 	type PartyAddress,
@@ -346,6 +346,7 @@ export {
 	type PartyExternalId,
 	type PartyKind,
 	type PartyRelationship,
+	type PartyRelationshipType,
 	type PartyRole,
 	type PartyRoleCode,
 	type PaymentTerm,

@@ -8,6 +8,10 @@
 			"types": "./src/index.ts",
 			"default": "./src/index.ts"
 		},
+		"./adapters/drizzle": {
+			"types": "./src/adapters/drizzle.ts",
+			"default": "./src/adapters/drizzle.ts"
+		},
 		"./types": {
 			"types": "./src/types.ts",
 			"default": "./src/types.ts"

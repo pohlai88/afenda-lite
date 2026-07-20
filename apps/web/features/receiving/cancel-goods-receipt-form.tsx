@@ -30,7 +30,7 @@ export function CancelGoodsReceiptForm({ canManage }: { canManage: boolean }) {
 			<Alert role="status">
 				<AlertTitle>Cancel unavailable</AlertTitle>
 				<AlertDescription>
-					You can view goods receipts but cannot cancel them in this
+					You can view goods receipts but cannot cancel draft receipts in this
 					organization.
 				</AlertDescription>
 			</Alert>

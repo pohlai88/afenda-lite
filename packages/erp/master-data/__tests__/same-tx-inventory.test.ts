@@ -58,6 +58,8 @@ describe("@afenda/master-data same-TX inventory", () => {
 		for (const method of mutationMethods) {
 			expect(source).toContain(method);
 		}
+		expect(source).toContain("base_uom AS (");
+		expect(source).toContain("INSERT INTO md_item_uom (");
 		const extensionSource = readFileSync(
 			join(
 				dirname(fileURLToPath(import.meta.url)),

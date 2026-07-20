@@ -201,10 +201,13 @@ queries:
     permission: receivables.aging.read
   - id: receiving.receipt.get
     moduleId: receiving
-    permission: receiving.read
+    permission: receiving.receipt.read
   - id: receiving.receipt.list
     moduleId: receiving
-    permission: receiving.read
+    permission: receiving.receipt.read
+  - id: receiving.inventory.exceptions
+    moduleId: receiving
+    permission: receiving.receipt.read
   - id: sales.order.get
     moduleId: sales
     permission: sales.order.read

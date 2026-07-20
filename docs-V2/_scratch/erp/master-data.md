@@ -1,4 +1,13 @@
-# Review verdict
+# Master Data — architecture review (Scratch)
+
+> **Status:** `OPEN` — Blocking findings remain; not plan ↔ disk closed. Identity-spine gaps still open.  
+> **As of:** 2026-07-21  
+> **Score:** **8.4/10** — strong ownership README; governance gaps block clean closure.  
+> **Tier:** D audit trace — Scratch only; not Living DOC-001 SSOT.  
+> **Package:** `@afenda/master-data` · Neon `br-tiny-hill-ao82jp6f`  
+> **Authority:** package README · `md_*` mutation ownership · platform `ref_*` policy in body below.
+
+## Review verdict
 
 This is a strong ownership README for a highly sensitive foundational package. It correctly establishes:
 
@@ -9,8 +18,6 @@ This is a strong ownership README for a highly sensitive foundational package. I
 * Party-role modeling instead of boolean flags;
 * same-transaction audit and outbox intent;
 * transactional packages as consumers, not co-owners.
-
-**Current score: 8.4/10.**
 
 The main gaps are more serious than ordinary README polish because `@afenda/master-data` is the identity spine for every ERP package. The package needs stronger rules for:
 
@@ -857,3 +864,29 @@ Do not create separate documents for every individual master yet. Keep the deepe
 ```
 
 The most urgent issue is **`mergeParties`**. It must preserve canonical identity without allowing Master Data to rewrite tables owned by Sales, Purchasing, Receivables, Payables, or other packages. A survivor/tombstone model plus a versioned merge event is the safest boundary.
+
+---
+
+# Implementation closeout (2026-07-21)
+
+Scratch review gaps closed in `@afenda/master-data` + web + `md_import_batch` schema. Operative contract: [operational-master-contract.md](../../master-data/operational-master-contract.md). This scratch file is **not** Living SSOT.
+
+| ID | Status |
+|----|--------|
+| MD-01 Ref query auth | Closed — `refs.ts` + `requireMasterQueryPermission` |
+| MD-02 Import validate→manage / apply→import_approve | Closed — manifest + dry-run path |
+| MD-03 Coarse RBAC only | Pass — no `party.merge` |
+| MD-04–05 Merge tombstone + consolidation | Closed — roles/addresses/contacts + `resolveCanonicalPartyId` |
+| MD-06 Import modes/allowlists | Pass |
+| MD-07 Import idempotency | Closed — `md_import_batch` + `idempotencyKey` |
+| MD-08 `MASTER_*` reasons | Closed — incl. `MASTER_DUPLICATE` |
+| MD-09 Base UoM factor 1 | Closed — createItem inserts `md_item_uom` 1/1 |
+| MD-10 Relationship catalog | Closed — `PARTY_RELATIONSHIP_TYPES` |
+| MD-11 Same-TX audit/outbox | Observation — CTE prod; MutationPorts = Memory/test |
+| MD-12 Narrow exports | Closed — `./adapters/drizzle` |
+| MD-13 Search projectors | Pass / Observation |
+| MD-14 Party-role CAS | Pass |
+| MD-15 Web import multi-entity apply | Closed — shared helper |
+| MD-16 `mergedIntoId` comment | Closed |
+
+Do not claim Living MOD Enterprise Readiness from this closeout.

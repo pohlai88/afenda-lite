@@ -15,7 +15,12 @@ import {
 	orgQueryActorSchema,
 } from "./contracts/context";
 import { positiveIntegerFactorSchema } from "./shared/uom-factor";
-import { ITEM_UOM_USAGES, PARTY_ROLE_CODES } from "./types";
+import {
+	ITEM_UOM_ROUNDING_RULES,
+	ITEM_UOM_USAGES,
+	PARTY_RELATIONSHIP_TYPES,
+	PARTY_ROLE_CODES,
+} from "./types";
 
 const systemSchema = z.string().trim().min(1).max(64);
 const namespaceSchema = z.string().trim().max(64).default("");
@@ -85,7 +90,7 @@ export const createPartyExternalIdInputSchema = orgActorContextSchema.extend({
 export const createPartyRelationshipInputSchema = orgActorContextSchema.extend({
 	fromPartyId: partyIdSchema,
 	toPartyId: partyIdSchema,
-	relationshipType: z.string().trim().min(1).max(64),
+	relationshipType: z.enum(PARTY_RELATIONSHIP_TYPES),
 });
 
 export const createItemUomInputSchema = orgActorContextSchema.extend({
@@ -95,7 +100,7 @@ export const createItemUomInputSchema = orgActorContextSchema.extend({
 	toBaseDenominator: positiveIntegerFactorSchema,
 	usage: z.enum(ITEM_UOM_USAGES),
 	barcode: z.string().trim().max(128).optional(),
-	roundingRule: z.string().trim().max(64).optional(),
+	roundingRule: z.enum(ITEM_UOM_ROUNDING_RULES).optional(),
 	minQuantity: z.string().trim().max(40).optional(),
 });
 

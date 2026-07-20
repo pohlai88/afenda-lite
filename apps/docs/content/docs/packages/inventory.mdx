@@ -31,7 +31,7 @@ Org-scoped stock movements (`draft` → `posted` | `cancelled`), immutable ledge
 
 Use this package from Platform / app server code when creating draft stock movements, adding lines, posting, cancelling drafts, reversing posted movements, reserving stock, or releasing reservations. Masters resolve through `@afenda/master-data` lookups — never mutate `md_*` from the inventory store. Toolchain: root `engines` **Node 24.x** · **pnpm ≥10.33.4**.
 
-Scratch contract + completeness ledger: [docs-V2/_scratch/erp/done-inventory.md](https://github.com/pohlai88/afenda-lite/blob/main/docs-V2/_scratch/erp/done-inventory.md).
+Scratch contract + completeness ledger: [docs-V2/_scratch/erp/inventory.md](https://github.com/pohlai88/afenda-lite/blob/main/docs-V2/_scratch/erp/inventory.md).
 
 ## Consume
 
@@ -180,7 +180,7 @@ Do not add to this package: shadow product tables, `md_*` mutations, Receiving /
 
 | Topic | Link |
 |-------|------|
-| Scratch contract · INV-REQ ledger | [docs-V2/_scratch/erp/done-inventory.md](https://github.com/pohlai88/afenda-lite/blob/main/docs-V2/_scratch/erp/done-inventory.md) |
+| Scratch contract · INV-REQ ledger | [docs-V2/_scratch/erp/inventory.md](https://github.com/pohlai88/afenda-lite/blob/main/docs-V2/_scratch/erp/inventory.md) |
 | ARCH-006 consumer contract (Scratch) | [arch-006-consumer-contract.md](https://github.com/pohlai88/afenda-lite/blob/main/docs-V2/master-data/arch-006-consumer-contract.md) |
 | Master-data spine | [docs-V2/master-data](https://github.com/pohlai88/afenda-lite/blob/main/docs-V2/master-data/README.md) |
 | Package DAG | [docs-V2/monorepo](https://github.com/pohlai88/afenda-lite/blob/main/docs-V2/monorepo/README.md) |

@@ -284,6 +284,25 @@ export const ITEM_UOM_USAGES = [
 ] as const;
 export type ItemUomUsage = (typeof ITEM_UOM_USAGES)[number];
 
+/** Controlled rounding modes for item UoM conversions (Scratch §9). */
+export const ITEM_UOM_ROUNDING_RULES = [
+	"half_up",
+	"half_even",
+	"down",
+	"up",
+] as const;
+export type ItemUomRoundingRule = (typeof ITEM_UOM_ROUNDING_RULES)[number];
+
+/** Controlled party relationship types (Scratch §8). */
+export const PARTY_RELATIONSHIP_TYPES = [
+	"parent_of",
+	"subsidiary_of",
+	"contact_for",
+	"bill_to_for",
+	"ship_to_for",
+] as const;
+export type PartyRelationshipType = (typeof PARTY_RELATIONSHIP_TYPES)[number];
+
 export type PartyRole = {
 	id: string;
 	organizationId: string;
@@ -362,7 +381,7 @@ export type PartyRelationship = {
 	organizationId: string;
 	fromPartyId: string;
 	toPartyId: string;
-	relationshipType: string;
+	relationshipType: PartyRelationshipType;
 	status: string;
 	version: number;
 	validFrom: Date | null;
@@ -382,7 +401,7 @@ export type ItemUom = {
 	toBaseDenominator: string;
 	usage: ItemUomUsage;
 	barcode: string | null;
-	roundingRule: string | null;
+	roundingRule: ItemUomRoundingRule | null;
 	minQuantity: string | null;
 	version: number;
 	validFrom: Date | null;

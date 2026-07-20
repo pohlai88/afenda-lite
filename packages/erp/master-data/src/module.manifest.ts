@@ -33,6 +33,7 @@ const MASTER_DATA_MUTATION_TABLES = [
 	"md_item_variant",
 	"md_item_variant_attribute_value",
 	"md_change_request",
+	"md_import_batch",
 ] as const;
 
 function commandAuthorization(): Record<
@@ -49,6 +50,10 @@ function commandAuthorization(): Record<
 			command === "master_data.change_request.reject"
 		) {
 			map[command] = MASTER_DATA_PERMISSION_APPROVE;
+			continue;
+		}
+		if (command === "master_data.import.validate_party_batch") {
+			map[command] = MASTER_DATA_PERMISSION_MANAGE;
 			continue;
 		}
 		if (command.startsWith("master_data.import.")) {

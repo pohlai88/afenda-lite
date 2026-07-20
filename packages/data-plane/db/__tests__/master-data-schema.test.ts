@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { HARD_TENANT_ROOT_TABLE_NAMES } from "../src/hard-tenant-roots";
 import {
 	mdChangeRequest,
+	mdImportBatch,
 	mdItem,
 	mdItemAlias,
 	mdItemBarcode,
@@ -62,6 +63,7 @@ const IN_SCOPE_TABLES = {
 	mdItemVariant,
 	mdItemVariantAttributeValue,
 	mdChangeRequest,
+	mdImportBatch,
 } as const;
 
 describe("@afenda/db master-data schema (Authority B)", () => {
@@ -72,6 +74,7 @@ describe("@afenda/db master-data schema (Authority B)", () => {
 		expect(names.sort()).toEqual(
 			[
 				"md_change_request",
+				"md_import_batch",
 				"md_item",
 				"md_item_alias",
 				"md_item_barcode",
@@ -110,7 +113,8 @@ describe("@afenda/db master-data schema (Authority B)", () => {
 		expect(HARD_TENANT_ROOT_TABLE_NAMES).toContain("md_payment_term");
 		expect(HARD_TENANT_ROOT_TABLE_NAMES).toContain("md_tax_registration");
 		expect(HARD_TENANT_ROOT_TABLE_NAMES).toContain("md_change_request");
-		expect(HARD_TENANT_ROOT_TABLE_NAMES).toHaveLength(64);
+		expect(HARD_TENANT_ROOT_TABLE_NAMES).toContain("md_import_batch");
+		expect(HARD_TENANT_ROOT_TABLE_NAMES).toHaveLength(65);
 		expect(HARD_TENANT_ROOT_TABLE_NAMES).toContain("payment_account");
 	});
 

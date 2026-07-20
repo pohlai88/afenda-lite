@@ -1,8 +1,15 @@
-# Review verdict
+# Accounting — architecture review (Scratch)
+
+> **Status:** `OPEN` — Blocking findings remain; not plan ↔ disk closed. Phase 4.8 closure incomplete.  
+> **As of:** 2026-07-21  
+> **Score:** **7.1/10** — good minimal package summary; foundational accounting gaps remain.  
+> **Tier:** D audit trace — Scratch only; not Living DOC-001 SSOT.  
+> **Package:** `@afenda/accounting` · Neon `br-tiny-hill-ao82jp6f`  
+> **Authority:** package README · journal/ledger ownership in body below.
+
+## Review verdict
 
 This is a **good minimal package summary**, but it is not yet sufficient to close Phase 4.8 at enterprise accounting quality.
-
-**Current score: 7.1/10**
 
 The package correctly establishes:
 

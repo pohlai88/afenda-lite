@@ -197,6 +197,20 @@
       "when": 1784574256943,
       "tag": "0027_schema_snapshot_catchup",
       "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1784575000000,
+      "tag": "0028_receiving_gap_close",
+      "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1784576000000,
+      "tag": "0029_md_import_batch",
+      "breakpoints": true
     }
   ]
 }

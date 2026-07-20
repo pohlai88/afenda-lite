@@ -18,6 +18,7 @@ import type { MasterFailureDetails } from "./contracts/reasons";
 import {
 	MASTER_COMMAND_PARTY_MERGE,
 	MASTER_QUERY_PARTY_FIND_DUPLICATES,
+	MASTER_QUERY_PARTY_GET_BY_ID,
 } from "./module-ids";
 import { parseMasterInput } from "./parse-input";
 import {
@@ -142,10 +143,78 @@ export async function findPartyDuplicateWarnings(
 	return ok(warnings);
 }
 
+const MAX_CANONICAL_HOPS = 16 as const;
+
+/**
+ * Walk `merged_into_id` to the living survivor. Rejects cycles / deep chains.
+ * One-hop tombstones are the merge write model (no merge-of-merged).
+ */
+export async function resolveCanonicalPartyId(
+	input: unknown,
+	options: MasterCommandOptions = {},
+): Promise<Result<{ partyId: string; hops: number }>> {
+	const parsed = parseMasterInput(
+		orgQueryActorSchema.extend({ partyId: partyIdSchema }),
+		input,
+		"Invalid canonical party resolve input",
+	);
+	if (!parsed.ok) {
+		return parsed;
+	}
+	const { store, authorization } = resolveCommandDeps(options);
+	const authorized = await requireMasterQueryPermission(authorization, {
+		organizationId: parsed.data.organizationId,
+		actorUserId: parsed.data.actorUserId,
+		query: MASTER_QUERY_PARTY_GET_BY_ID,
+	});
+	if (!authorized.ok) {
+		return authorized;
+	}
+
+	let currentId = parsed.data.partyId;
+	const seen = new Set<string>();
+	let hops = 0;
+	while (hops < MAX_CANONICAL_HOPS) {
+		if (seen.has(currentId)) {
+			return fail("CONFLICT", "Party merge chain cycle detected", {
+				reason: "MASTER_INVALID_STATE",
+			} satisfies MasterFailureDetails);
+		}
+		seen.add(currentId);
+		const party = await store.getPartyById(
+			parsed.data.organizationId,
+			currentId,
+		);
+		if (!party.ok) {
+			return party;
+		}
+		if (party.data === null) {
+			return fail("NOT_FOUND", "Party not found", {
+				reason: "MASTER_NOT_FOUND",
+			} satisfies MasterFailureDetails);
+		}
+		if (party.data.mergedIntoId === null) {
+			return ok({ partyId: party.data.id, hops });
+		}
+		const nextId = partyIdSchema.safeParse(party.data.mergedIntoId);
+		if (!nextId.success) {
+			return fail("CONFLICT", "Invalid merged_into_id on party", {
+				reason: "MASTER_INVALID_STATE",
+			} satisfies MasterFailureDetails);
+		}
+		currentId = nextId.data;
+		hops += 1;
+	}
+	return fail("CONFLICT", "Party merge chain exceeds hop limit", {
+		reason: "MASTER_INVALID_STATE",
+	} satisfies MasterFailureDetails);
+}
+
 /**
  * Governed party merge — same-org, compatible kinds, CAS, former code +
  * external IDs preserved on survivor, `merged_into_id` on source,
- * `master_data.party.merged.v1` (never delete/created).
+ * role/address/contact consolidation, `master_data.party.merged.v1`
+ * (never delete/created; never rewrite peer ERP tables).
  */
 export async function mergeParties(
 	input: unknown,

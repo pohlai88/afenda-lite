@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createMemoryReceivingStore } from "../src/memory-store";
-import { RECEIVING_PERMISSION_READ } from "../src/permissions";
+import { RECEIVING_PERMISSION_RECEIPT_READ } from "../src/permissions";
 import {
 	createDraftGoodsReceipt,
 	getGoodsReceiptById,
@@ -15,16 +15,17 @@ import { createMemoryMutationPorts } from "./helpers/memory-ports";
 
 const ORG = "org-a";
 const WAREHOUSE = "40000000-0000-4000-8000-000000000001";
+const PO_ID = "50000000-0000-4000-8000-000000000001";
 
 describe("@afenda/receiving authorization", () => {
-	it("separates receiving.manage mutations from receiving.read queries", async () => {
+	it("separates receipt mutations from receipt.read queries", async () => {
 		const store = createMemoryReceivingStore();
 		const ports = createMemoryMutationPorts();
 		const masters = createMemoryMasterLookup({
 			warehouses: [seedWarehouse(ORG, WAREHOUSE, "WH-A")],
 		});
 		const readOnly = createGrantingReceivingAuthorization([
-			RECEIVING_PERMISSION_READ,
+			RECEIVING_PERMISSION_RECEIPT_READ,
 		]);
 		const none = createGrantingReceivingAuthorization([]);
 		const deniedCreate = await createDraftGoodsReceipt(
@@ -32,8 +33,9 @@ describe("@afenda/receiving authorization", () => {
 				organizationId: ORG,
 				actorUserId: "user-1",
 				correlationId: "corr-auth",
+				idempotencyKey: "auth-create",
 				code: "GR-AUTH",
-				sourceType: "unplanned",
+				source: { kind: "purchase_order", purchaseOrderId: PO_ID },
 				warehouseId: WAREHOUSE,
 			},
 			{ store, ports, masters, authorization: readOnly },

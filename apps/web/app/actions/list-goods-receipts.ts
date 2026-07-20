@@ -19,14 +19,7 @@ const listGoodsReceiptsActionSchema = z
 		page: z.number().int().positive().optional(),
 		pageSize: z.number().int().positive().max(100).optional(),
 		status: z.enum(["draft", "posted", "cancelled"]).optional(),
-		sourceType: z
-			.enum([
-				"purchase_order",
-				"expected_receipt",
-				"return_shipment",
-				"unplanned",
-			])
-			.optional(),
+		sourceType: z.enum(["purchase_order"]).optional(),
 	})
 	.optional();
 
@@ -38,7 +31,7 @@ export async function listGoodsReceiptsAction(input?: {
 }): Promise<ActionResult<ListGoodsReceiptsActionData>> {
 	return runOperatorPermissionAction({
 		path: "listGoodsReceiptsAction",
-		permission: "receiving.read",
+		permission: "receiving.receipt.read",
 		safeMessage:
 			"Could not list goods receipts. Try again or contact an admin.",
 		execute: async (session) => {

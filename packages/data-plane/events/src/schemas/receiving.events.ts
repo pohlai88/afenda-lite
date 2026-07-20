@@ -38,6 +38,7 @@ export const receivingDiscrepancyPayloadSchema = goodsReceiptPayloadBase.extend(
 		receiptId: z.string().uuid(),
 		discrepancyType: z.string().trim().min(1),
 		quantity: z.string().trim().min(1),
+		discrepancyStatus: z.string().trim().min(1).optional(),
 	},
 );
 
@@ -45,11 +46,25 @@ export type ReceivingDiscrepancyPayload = z.infer<
 	typeof receivingDiscrepancyPayloadSchema
 >;
 
+export const goodsReceiptReversedPayloadSchema = goodsReceiptPayloadBase.extend(
+	{
+		reversesReceiptId: z.string().uuid(),
+		reverseReason: z.string().trim().min(1),
+	},
+);
+
+export type GoodsReceiptReversedPayload = z.infer<
+	typeof goodsReceiptReversedPayloadSchema
+>;
+
 export const ReceivingEventSchemas = {
 	"receiving.receipt.created.v1": goodsReceiptPayloadSchema,
 	"receiving.receipt.line_added.v1": goodsReceiptLinePayloadSchema,
 	"receiving.receipt.posted.v1": goodsReceiptPayloadSchema,
+	"receiving.receipt.cancelled.v1": goodsReceiptPayloadSchema,
+	"receiving.receipt.reversed.v1": goodsReceiptReversedPayloadSchema,
 	"receiving.discrepancy.recorded.v1": receivingDiscrepancyPayloadSchema,
+	"receiving.discrepancy.resolved.v1": receivingDiscrepancyPayloadSchema,
 } as const;
 
 export type ReceivingEventType = keyof typeof ReceivingEventSchemas;
@@ -60,12 +75,21 @@ export const RECEIVING_RECEIPT_LINE_ADDED_EVENT =
 	"receiving.receipt.line_added.v1" as const;
 export const RECEIVING_RECEIPT_POSTED_EVENT =
 	"receiving.receipt.posted.v1" as const;
+export const RECEIVING_RECEIPT_CANCELLED_EVENT =
+	"receiving.receipt.cancelled.v1" as const;
+export const RECEIVING_RECEIPT_REVERSED_EVENT =
+	"receiving.receipt.reversed.v1" as const;
 export const RECEIVING_DISCREPANCY_RECORDED_EVENT =
 	"receiving.discrepancy.recorded.v1" as const;
+export const RECEIVING_DISCREPANCY_RESOLVED_EVENT =
+	"receiving.discrepancy.resolved.v1" as const;
 
 export const RECEIVING_EVENT_IDS = [
 	RECEIVING_RECEIPT_CREATED_EVENT,
 	RECEIVING_RECEIPT_LINE_ADDED_EVENT,
 	RECEIVING_RECEIPT_POSTED_EVENT,
+	RECEIVING_RECEIPT_CANCELLED_EVENT,
+	RECEIVING_RECEIPT_REVERSED_EVENT,
 	RECEIVING_DISCREPANCY_RECORDED_EVENT,
+	RECEIVING_DISCREPANCY_RESOLVED_EVENT,
 ] as const satisfies readonly ReceivingEventType[];

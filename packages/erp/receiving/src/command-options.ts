@@ -1,5 +1,5 @@
-import type { MasterAuthorizationPort } from "@afenda/master-data";
 import type { InventoryCommandOptions } from "@afenda/inventory";
+import type { MasterAuthorizationPort } from "@afenda/master-data";
 
 import type { ReceivingAuthorizationPort } from "./authorization";
 import { createMasterDataLookupPort } from "./master-lookup";

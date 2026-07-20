@@ -18,7 +18,7 @@ import {
 
 describe("@afenda/db hard tenant roots (N9 / ARCH-023)", () => {
 	it("lists platform IAM + master-data hard tenant root table names", () => {
-		expect(HARD_TENANT_ROOT_TABLE_NAMES).toHaveLength(64);
+		expect(HARD_TENANT_ROOT_TABLE_NAMES).toHaveLength(65);
 		expect([...HARD_TENANT_ROOT_TABLE_NAMES]).toEqual([
 			"platform_role_assignment",
 			"platform_rbac_audit",
@@ -48,6 +48,7 @@ describe("@afenda/db hard tenant roots (N9 / ARCH-023)", () => {
 			"md_item_variant",
 			"md_item_variant_attribute_value",
 			"md_change_request",
+			"md_import_batch",
 			"sales_order",
 			"sales_order_line",
 			"purchase_order",

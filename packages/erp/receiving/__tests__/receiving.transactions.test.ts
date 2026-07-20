@@ -2,8 +2,8 @@ import { fail, ok, type Result } from "@afenda/errors/result";
 import { describe, expect, it } from "vitest";
 import { createMemoryReceivingStore } from "../src/memory-store";
 import {
-	RECEIVING_PERMISSION_MANAGE,
-	RECEIVING_PERMISSION_READ,
+	RECEIVING_PERMISSION_RECEIPT_CREATE,
+	RECEIVING_PERMISSION_RECEIPT_READ,
 } from "../src/permissions";
 import type { MutationPorts, OutboxFactInput } from "../src/ports";
 import { createDraftGoodsReceipt, listGoodsReceipts } from "../src/receipt";
@@ -12,10 +12,16 @@ import {
 	createMemoryMasterLookup,
 	seedWarehouse,
 } from "./helpers/memory-masters";
+import {
+	createMemoryPurchaseOrderReceivingQueryPort,
+	postedPoSnapshot,
+} from "./helpers/memory-po-receiving";
 import { createMemoryMutationPorts } from "./helpers/memory-ports";
 
 const ORG = "org-a";
 const WAREHOUSE = "40000000-0000-4000-8000-000000000001";
+const PO_ID = "50000000-0000-4000-8000-000000000001";
+const PO_LINE = "60000000-0000-4000-8000-000000000001";
 
 describe("@afenda/receiving transactions", () => {
 	it("rolls back the receipt when outbox append fails", async () => {
@@ -24,9 +30,13 @@ describe("@afenda/receiving transactions", () => {
 			warehouses: [seedWarehouse(ORG, WAREHOUSE, "WH-A")],
 		});
 		const authorization = createGrantingReceivingAuthorization([
-			RECEIVING_PERMISSION_READ,
-			RECEIVING_PERMISSION_MANAGE,
+			RECEIVING_PERMISSION_RECEIPT_READ,
+			RECEIVING_PERMISSION_RECEIPT_CREATE,
 		]);
+		const purchaseOrderReceivingQuery =
+			createMemoryPurchaseOrderReceivingQueryPort({
+				[PO_ID]: postedPoSnapshot({ lineId: PO_LINE }),
+			});
 		const ports: MutationPorts = {
 			audit: {
 				async record() {
@@ -43,8 +53,9 @@ describe("@afenda/receiving transactions", () => {
 			organizationId: ORG,
 			actorUserId: "user-1",
 			correlationId: "corr-tx",
+			idempotencyKey: "create-tx",
 			code: "GR-TX",
-			sourceType: "unplanned",
+			source: { kind: "purchase_order" as const, purchaseOrderId: PO_ID },
 			warehouseId: WAREHOUSE,
 		};
 		const failed = await createDraftGoodsReceipt(input, {
@@ -52,6 +63,7 @@ describe("@afenda/receiving transactions", () => {
 			ports,
 			masters,
 			authorization,
+			purchaseOrderReceivingQuery,
 		});
 		expect(failed.ok).toBe(false);
 		const listed = await listGoodsReceipts(
@@ -70,6 +82,7 @@ describe("@afenda/receiving transactions", () => {
 			ports: createMemoryMutationPorts(),
 			masters,
 			authorization,
+			purchaseOrderReceivingQuery,
 		});
 		expect(retry.ok).toBe(true);
 	});

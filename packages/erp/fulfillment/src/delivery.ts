@@ -319,7 +319,11 @@ export async function addDeliveryLine(
 	if (item.data.status !== "active")
 		return fail("CONFLICT", "Item must be active");
 	const uom = requireMaster(
-		await masters.getRefUomById(item.data.baseUomId),
+		await masters.getRefUomById(
+			parsed.data.organizationId,
+			item.data.baseUomId,
+			parsed.data.actorUserId,
+		),
 		"Base UoM not found for item",
 	);
 	if (!uom.ok) return uom;

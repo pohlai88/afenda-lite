@@ -21,7 +21,7 @@ export async function getGoodsReceiptAction(
 ): Promise<ActionResult<GetGoodsReceiptActionData>> {
 	return runOperatorPermissionAction({
 		path: "getGoodsReceiptAction",
-		permission: "receiving.read",
+		permission: "receiving.receipt.read",
 		safeMessage: "Could not load goods receipt. Try again or contact an admin.",
 		execute: async (session) => {
 			const parsed = parseSchema(getGoodsReceiptSchema, receiptId);

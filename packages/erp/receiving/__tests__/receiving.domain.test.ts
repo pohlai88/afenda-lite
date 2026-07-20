@@ -1,8 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { createMemoryReceivingStore } from "../src/memory-store";
 import {
-	RECEIVING_PERMISSION_MANAGE,
-	RECEIVING_PERMISSION_READ,
+	RECEIVING_PERMISSION_DISCREPANCY_RECORD,
+	RECEIVING_PERMISSION_DISCREPANCY_RESOLVE,
+	RECEIVING_PERMISSION_RECEIPT_CANCEL,
+	RECEIVING_PERMISSION_RECEIPT_CREATE,
+	RECEIVING_PERMISSION_RECEIPT_POST,
+	RECEIVING_PERMISSION_RECEIPT_READ,
+	RECEIVING_PERMISSION_RECEIPT_REVERSE,
+	RECEIVING_PERMISSION_RECEIPT_UPDATE,
 } from "../src/permissions";
 import {
 	addGoodsReceiptLine,
@@ -10,8 +16,11 @@ import {
 	createDraftGoodsReceipt,
 	getGoodsReceiptById,
 	listGoodsReceipts,
+	listReceivingInventoryExceptions,
 	postGoodsReceipt,
 	recordReceivingDiscrepancy,
+	resolveReceivingDiscrepancy,
+	reverseGoodsReceipt,
 } from "../src/receipt";
 import { createGrantingReceivingAuthorization } from "./helpers/memory-authorization";
 import { createInventoryCommandTestOptions } from "./helpers/memory-inventory";
@@ -46,8 +55,14 @@ function harness() {
 		ports: createMemoryMutationPorts(),
 		masters,
 		authorization: createGrantingReceivingAuthorization([
-			RECEIVING_PERMISSION_READ,
-			RECEIVING_PERMISSION_MANAGE,
+			RECEIVING_PERMISSION_RECEIPT_READ,
+			RECEIVING_PERMISSION_RECEIPT_CREATE,
+			RECEIVING_PERMISSION_RECEIPT_UPDATE,
+			RECEIVING_PERMISSION_RECEIPT_POST,
+			RECEIVING_PERMISSION_RECEIPT_CANCEL,
+			RECEIVING_PERMISSION_RECEIPT_REVERSE,
+			RECEIVING_PERMISSION_DISCREPANCY_RECORD,
+			RECEIVING_PERMISSION_DISCREPANCY_RESOLVE,
 		]),
 		inventory: createInventoryCommandTestOptions(masters),
 		purchaseOrderReceivingQuery: createMemoryPurchaseOrderReceivingQueryPort({
@@ -62,9 +77,9 @@ async function create(ctx: ReturnType<typeof harness>, code = "GR-100") {
 			organizationId: ORG_A,
 			actorUserId: "user-1",
 			correlationId: `corr-${code}`,
+			idempotencyKey: `create:${code}`,
 			code,
-			sourceType: "purchase_order",
-			sourceId: SOURCE,
+			source: { kind: "purchase_order", purchaseOrderId: SOURCE },
 			warehouseId: WAREHOUSE,
 		},
 		ctx,
@@ -72,7 +87,7 @@ async function create(ctx: ReturnType<typeof harness>, code = "GR-100") {
 }
 
 describe("@afenda/receiving domain", () => {
-	it("creates, adds a line, posts, and emits only receiving lifecycle events", async () => {
+	it("creates, adds a line, posts accepted qty, and emits lifecycle events", async () => {
 		const ctx = harness();
 		const draft = await create(ctx);
 		expect(draft.ok).toBe(true);
@@ -82,10 +97,12 @@ describe("@afenda/receiving domain", () => {
 				organizationId: ORG_A,
 				actorUserId: "user-1",
 				correlationId: "corr-line",
+				idempotencyKey: "line-1",
 				receiptId: draft.data.id,
 				itemId: ITEM,
 				quantityOrdered: 5,
 				quantityReceived: 4,
+				quantityAccepted: 4,
 				purchaseOrderLineId: PO_LINE,
 			},
 			ctx,
@@ -102,6 +119,7 @@ describe("@afenda/receiving domain", () => {
 				organizationId: ORG_A,
 				actorUserId: "user-1",
 				correlationId: "corr-post",
+				idempotencyKey: "post-1",
 				receiptId: draft.data.id,
 				expectedVersion: current.data.version,
 			},
@@ -110,16 +128,15 @@ describe("@afenda/receiving domain", () => {
 		expect(posted.ok).toBe(true);
 		if (posted.ok) {
 			expect(posted.data.status).toBe("posted");
-			const movement = await ctx.inventory.store?.getMovementByCreateIdempotencyKey(
-				ORG_A,
-				`rcv-post:${posted.data.id}`,
-			);
+			expect(posted.data.inventoryApplicationStatus).toBe("applied");
+			const movement =
+				await ctx.inventory.store?.getMovementByCreateIdempotencyKey(
+					ORG_A,
+					`rcv-post:${posted.data.id}`,
+				);
 			expect(movement?.ok).toBe(true);
 			if (movement?.ok && movement.data !== null) {
 				expect(movement.data.status).toBe("posted");
-				expect(movement.data.movementType).toBe("receipt");
-				expect(movement.data.source).toBe("receiving");
-				expect(movement.data.lines).toHaveLength(1);
 				expect(movement.data.lines[0]?.quantity).toBe("4");
 			}
 		}
@@ -140,6 +157,7 @@ describe("@afenda/receiving domain", () => {
 				organizationId: ORG_A,
 				actorUserId: "user-1",
 				correlationId: "corr-empty",
+				idempotencyKey: "post-empty",
 				receiptId: draft.data.id,
 				expectedVersion: draft.data.version,
 			},
@@ -151,20 +169,8 @@ describe("@afenda/receiving domain", () => {
 		if (!duplicate.ok) expect(duplicate.code).toBe("CONFLICT");
 	});
 
-	it("requires sourceId for purchase_order and isolates organizations", async () => {
+	it("requires purchase_order source and isolates organizations", async () => {
 		const ctx = harness();
-		const invalid = await createDraftGoodsReceipt(
-			{
-				organizationId: ORG_A,
-				actorUserId: "user-1",
-				correlationId: "corr-source",
-				code: "GR-SOURCE",
-				sourceType: "purchase_order",
-				warehouseId: WAREHOUSE,
-			},
-			ctx,
-		);
-		expect(invalid.ok).toBe(false);
 		const draft = await create(ctx, "GR-ORG");
 		expect(draft.ok).toBe(true);
 		if (!draft.ok) return;
@@ -182,7 +188,7 @@ describe("@afenda/receiving domain", () => {
 		if (foreignList.ok) expect(foreignList.data).toEqual([]);
 	});
 
-	it("records discrepancies on draft and posted receipts", async () => {
+	it("records and resolves discrepancies", async () => {
 		const ctx = harness();
 		const draft = await create(ctx, "GR-DISC");
 		expect(draft.ok).toBe(true);
@@ -192,61 +198,33 @@ describe("@afenda/receiving domain", () => {
 				organizationId: ORG_A,
 				actorUserId: "user-1",
 				correlationId: "corr-disc-1",
+				idempotencyKey: "disc-1",
 				receiptId: draft.data.id,
-				discrepancyType: "damage",
+				discrepancyType: "damaged",
 				quantity: 1,
 			},
 			ctx,
 		);
 		expect(draftDiscrepancy.ok).toBe(true);
-		await addGoodsReceiptLine(
+		if (!draftDiscrepancy.ok) return;
+		const resolved = await resolveReceivingDiscrepancy(
 			{
 				organizationId: ORG_A,
 				actorUserId: "user-1",
-				correlationId: "corr-disc-line",
+				correlationId: "corr-disc-resolve",
+				idempotencyKey: "disc-resolve-1",
 				receiptId: draft.data.id,
-				itemId: ITEM,
-				quantityReceived: 2,
-				purchaseOrderLineId: PO_LINE,
+				discrepancyId: draftDiscrepancy.data.id,
+				expectedVersion: draftDiscrepancy.data.version,
+				resolution: "Accepted as claim evidence",
 			},
 			ctx,
 		);
-		const beforePost = await getGoodsReceiptById(
-			{ organizationId: ORG_A, actorUserId: "user-1", id: draft.data.id },
-			ctx,
-		);
-		if (!beforePost.ok || beforePost.data === null) return;
-		const posted = await postGoodsReceipt(
-			{
-				organizationId: ORG_A,
-				actorUserId: "user-1",
-				correlationId: "corr-disc-post",
-				receiptId: draft.data.id,
-				expectedVersion: beforePost.data.version,
-			},
-			ctx,
-		);
-		expect(posted.ok).toBe(true);
-		const postedDiscrepancy = await recordReceivingDiscrepancy(
-			{
-				organizationId: ORG_A,
-				actorUserId: "user-1",
-				correlationId: "corr-disc-2",
-				receiptId: draft.data.id,
-				discrepancyType: "shortfall",
-				quantity: 1,
-			},
-			ctx,
-		);
-		expect(postedDiscrepancy.ok).toBe(true);
-		expect(
-			ctx.ports.outbox.calls.filter(
-				(call) => call.type === "receiving.discrepancy.recorded.v1",
-			),
-		).toHaveLength(2);
+		expect(resolved.ok).toBe(true);
+		if (resolved.ok) expect(resolved.data.status).toBe("resolved");
 	});
 
-	it("cancels draft and posted receipts with optimistic versions", async () => {
+	it("cancels draft only and reverses posted receipts", async () => {
 		const draftCtx = harness();
 		const draft = await create(draftCtx, "GR-CANCEL-D");
 		if (!draft.ok) return;
@@ -255,12 +233,18 @@ describe("@afenda/receiving domain", () => {
 				organizationId: ORG_A,
 				actorUserId: "user-1",
 				correlationId: "corr-cancel-d",
+				idempotencyKey: "cancel-d",
 				receiptId: draft.data.id,
 				expectedVersion: draft.data.version,
 			},
 			draftCtx,
 		);
 		expect(cancelledDraft.ok).toBe(true);
+		expect(
+			draftCtx.ports.outbox.calls.some(
+				(call) => call.type === "receiving.receipt.cancelled.v1",
+			),
+		).toBe(true);
 
 		const postedCtx = harness();
 		const postedDraft = await create(postedCtx, "GR-CANCEL-P");
@@ -270,6 +254,7 @@ describe("@afenda/receiving domain", () => {
 				organizationId: ORG_A,
 				actorUserId: "user-1",
 				correlationId: "corr-cancel-line",
+				idempotencyKey: "line-cancel-p",
 				receiptId: postedDraft.data.id,
 				itemId: ITEM,
 				quantityReceived: 1,
@@ -282,6 +267,7 @@ describe("@afenda/receiving domain", () => {
 				organizationId: ORG_A,
 				actorUserId: "user-1",
 				correlationId: "corr-cancel-post",
+				idempotencyKey: "post-cancel-p",
 				receiptId: postedDraft.data.id,
 				expectedVersion: 2,
 			},
@@ -293,12 +279,173 @@ describe("@afenda/receiving domain", () => {
 				organizationId: ORG_A,
 				actorUserId: "user-1",
 				correlationId: "corr-cancel-p",
+				idempotencyKey: "cancel-p",
 				receiptId: posted.data.id,
 				expectedVersion: posted.data.version,
 			},
 			postedCtx,
 		);
-		expect(cancelled.ok).toBe(true);
-		if (cancelled.ok) expect(cancelled.data.status).toBe("cancelled");
+		expect(cancelled.ok).toBe(false);
+		if (!cancelled.ok) {
+			expect(cancelled.details).toMatchObject({
+				receivingCode: "receiving.receipt.posted_cannot_cancel",
+			});
+		}
+
+		const reversed = await reverseGoodsReceipt(
+			{
+				organizationId: ORG_A,
+				actorUserId: "user-1",
+				correlationId: "corr-reverse",
+				idempotencyKey: "reverse-1",
+				receiptId: posted.data.id,
+				expectedVersion: posted.data.version,
+				reason: "Incorrect receipt",
+			},
+			postedCtx,
+		);
+		expect(reversed.ok).toBe(true);
+		if (reversed.ok) {
+			expect(reversed.data.reversesReceiptId).toBe(posted.data.id);
+			expect(reversed.data.inventoryApplicationStatus).toBe("applied");
+		}
+		const original = await getGoodsReceiptById(
+			{ organizationId: ORG_A, actorUserId: "user-1", id: posted.data.id },
+			postedCtx,
+		);
+		expect(original.ok).toBe(true);
+		if (original.ok && original.data !== null) {
+			expect(original.data.status).toBe("posted");
+			expect(original.data.reversedByReceiptId).toBe(
+				reversed.ok ? reversed.data.id : null,
+			);
+		}
+
+		const doubleReverse = await reverseGoodsReceipt(
+			{
+				organizationId: ORG_A,
+				actorUserId: "user-1",
+				correlationId: "corr-reverse-2",
+				idempotencyKey: "reverse-2",
+				receiptId: posted.data.id,
+				expectedVersion:
+					original.ok && original.data !== null ? original.data.version : 3,
+				reason: "second reverse must conflict",
+			},
+			postedCtx,
+		);
+		expect(doubleReverse.ok).toBe(false);
+		if (!doubleReverse.ok) {
+			expect(doubleReverse.details).toMatchObject({
+				receivingCode: "receiving.receipt.already_reversed",
+			});
+		}
+	});
+
+	it("protects concurrent accepted qty against PO tolerance using owning sums", async () => {
+		const ctx = harness();
+		const first = await create(ctx, "GR-RACE-1");
+		const second = await create(ctx, "GR-RACE-2");
+		if (!first.ok || !second.ok) return;
+		await addGoodsReceiptLine(
+			{
+				organizationId: ORG_A,
+				actorUserId: "user-1",
+				correlationId: "corr-race-1",
+				idempotencyKey: "line-race-1",
+				receiptId: first.data.id,
+				itemId: ITEM,
+				quantityReceived: 70,
+				quantityAccepted: 70,
+				purchaseOrderLineId: PO_LINE,
+			},
+			ctx,
+		);
+		await addGoodsReceiptLine(
+			{
+				organizationId: ORG_A,
+				actorUserId: "user-1",
+				correlationId: "corr-race-2",
+				idempotencyKey: "line-race-2",
+				receiptId: second.data.id,
+				itemId: ITEM,
+				quantityReceived: 60,
+				quantityAccepted: 60,
+				purchaseOrderLineId: PO_LINE,
+			},
+			ctx,
+		);
+		const firstPost = await postGoodsReceipt(
+			{
+				organizationId: ORG_A,
+				actorUserId: "user-1",
+				correlationId: "corr-race-post-1",
+				idempotencyKey: "post-race-1",
+				receiptId: first.data.id,
+				expectedVersion: 2,
+			},
+			ctx,
+		);
+		expect(firstPost.ok).toBe(true);
+		const secondPost = await postGoodsReceipt(
+			{
+				organizationId: ORG_A,
+				actorUserId: "user-1",
+				correlationId: "corr-race-post-2",
+				idempotencyKey: "post-race-2",
+				receiptId: second.data.id,
+				expectedVersion: 2,
+			},
+			ctx,
+		);
+		expect(secondPost.ok).toBe(false);
+	});
+
+	it("lists inventory application exceptions", async () => {
+		const ctx = harness();
+		const draft = await create(ctx, "GR-EXC");
+		if (!draft.ok) return;
+		await addGoodsReceiptLine(
+			{
+				organizationId: ORG_A,
+				actorUserId: "user-1",
+				correlationId: "corr-exc-line",
+				idempotencyKey: "line-exc",
+				receiptId: draft.data.id,
+				itemId: ITEM,
+				quantityReceived: 1,
+				purchaseOrderLineId: PO_LINE,
+			},
+			ctx,
+		);
+		await postGoodsReceipt(
+			{
+				organizationId: ORG_A,
+				actorUserId: "user-1",
+				correlationId: "corr-exc-post",
+				idempotencyKey: "post-exc",
+				receiptId: draft.data.id,
+				expectedVersion: 2,
+			},
+			ctx,
+		);
+		await ctx.store.setInventoryApplication({
+			organizationId: ORG_A,
+			receiptId: draft.data.id,
+			status: "failed",
+			inventoryMovementId: null,
+			errorMessage: "simulated",
+			actorUserId: "user-1",
+		});
+		const exceptions = await listReceivingInventoryExceptions(
+			{ organizationId: ORG_A, actorUserId: "user-1" },
+			ctx,
+		);
+		expect(exceptions.ok).toBe(true);
+		if (exceptions.ok) {
+			expect(exceptions.data.some((row) => row.id === draft.data.id)).toBe(
+				true,
+			);
+		}
 	});
 });

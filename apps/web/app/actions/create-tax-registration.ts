@@ -79,9 +79,14 @@ export async function createTaxRegistrationAction(
 	}
 
 	try {
-		const country = await getRefCountryByCode({
-			code: parsed.data.jurisdictionCountryCode.toUpperCase(),
-		});
+		const country = await getRefCountryByCode(
+			{
+				organizationId: session.orgId,
+				actorUserId: session.userId,
+				code: parsed.data.jurisdictionCountryCode.toUpperCase(),
+			},
+			{ authorization: createMasterDataAuthorizationPort() },
+		);
 		if (!country.ok || country.data === null) {
 			return actionFail(
 				"VALIDATION_ERROR",

@@ -30,8 +30,15 @@ export function createMasterDataLookupPort(
 			}
 			return ok(result.data);
 		},
-		async getRefUomById(id: string): Promise<Result<RefUom | null>> {
-			const result = await getRefUomById({ id });
+		async getRefUomById(
+			organizationId: string,
+			id: string,
+			actorUserId: string,
+		): Promise<Result<RefUom | null>> {
+			const result = await getRefUomById(
+				{ organizationId, id, actorUserId },
+				{ authorization },
+			);
 			if (!result.ok) {
 				return result;
 			}

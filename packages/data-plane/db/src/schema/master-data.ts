@@ -173,7 +173,7 @@ export const mdParty = pgTable(
 		defaultCurrencyId: uuid("default_currency_id").references(
 			() => refCurrency.id,
 		),
-		/** Reserved for future merge survivorship — not mutated this scaffold. */
+		/** Survivor pointer after governed merge — source remains historically addressable. */
 		mergedIntoId: uuid("merged_into_id"),
 		createdBy: text("created_by").notNull(),
 		updatedBy: text("updated_by").notNull(),
@@ -967,6 +967,37 @@ export const mdItemVariantAttributeValue = pgTable(
 			t.organizationId,
 			t.variantId,
 			t.attributeId,
+		),
+	],
+);
+
+// ── Import batch idempotency (apply path) ───────────────────────────────────
+
+export const mdImportBatch = pgTable(
+	"md_import_batch",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		idempotencyKey: text("idempotency_key").notNull(),
+		entityType: text("entity_type").notNull(),
+		sourceSystem: text("source_system").notNull(),
+		mode: text("mode").notNull(),
+		status: text("status").notNull().default("applied"),
+		report: jsonb("report").notNull(),
+		actorUserId: text("actor_user_id").notNull(),
+		correlationId: text("correlation_id").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("md_import_batch_org_id_idx").on(t.organizationId, t.id),
+		uniqueIndex("md_import_batch_org_idempotency_uidx").on(
+			t.organizationId,
+			t.idempotencyKey,
 		),
 	],
 );

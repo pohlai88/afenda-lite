@@ -94,15 +94,19 @@ export function RecordReceivingDiscrepancyForm({
 					id="discrepancy-type"
 					name="discrepancyType"
 					required
-					defaultValue="shortfall"
+					defaultValue="short_quantity"
 					list="discrepancy-types"
 					disabled={pending}
 				/>
 				<datalist id="discrepancy-types">
-					<option value="shortfall" />
-					<option value="overage" />
-					<option value="damage" />
+					<option value="short_quantity" />
+					<option value="excess_quantity" />
+					<option value="damaged" />
+					<option value="quality_failure" />
 					<option value="wrong_item" />
+					<option value="wrong_uom" />
+					<option value="documentation" />
+					<option value="temperature" />
 					<option value="other" />
 				</datalist>
 			</FormField>

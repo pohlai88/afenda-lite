@@ -169,10 +169,28 @@ permissions:
   - code: receivables.aging.read
     moduleId: receivables
     namespace: receivables
-  - code: receiving.read
+  - code: receiving.receipt.read
     moduleId: receiving
     namespace: receiving
-  - code: receiving.manage
+  - code: receiving.receipt.create
+    moduleId: receiving
+    namespace: receiving
+  - code: receiving.receipt.update
+    moduleId: receiving
+    namespace: receiving
+  - code: receiving.receipt.post
+    moduleId: receiving
+    namespace: receiving
+  - code: receiving.receipt.cancel
+    moduleId: receiving
+    namespace: receiving
+  - code: receiving.receipt.reverse
+    moduleId: receiving
+    namespace: receiving
+  - code: receiving.discrepancy.record
+    moduleId: receiving
+    namespace: receiving
+  - code: receiving.discrepancy.resolve
     moduleId: receiving
     namespace: receiving
   - code: sales.order.create

@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { createMemoryReceivingStore } from "../src/memory-store";
 import {
-	RECEIVING_PERMISSION_MANAGE,
-	RECEIVING_PERMISSION_READ,
+	RECEIVING_PERMISSION_RECEIPT_CREATE,
+	RECEIVING_PERMISSION_RECEIPT_POST,
+	RECEIVING_PERMISSION_RECEIPT_READ,
+	RECEIVING_PERMISSION_RECEIPT_UPDATE,
 } from "../src/permissions";
 import {
 	addGoodsReceiptLine,
@@ -11,6 +13,7 @@ import {
 	postGoodsReceipt,
 } from "../src/receipt";
 import { createGrantingReceivingAuthorization } from "./helpers/memory-authorization";
+import { createInventoryCommandTestOptions } from "./helpers/memory-inventory";
 import {
 	createMemoryMasterLookup,
 	seedItem,
@@ -21,7 +24,6 @@ import {
 	createMemoryPurchaseOrderReceivingQueryPort,
 	postedPoSnapshot,
 } from "./helpers/memory-po-receiving";
-import { createInventoryCommandTestOptions } from "./helpers/memory-inventory";
 import { createMemoryMutationPorts } from "./helpers/memory-ports";
 
 const ORG_A = "org-a";
@@ -48,8 +50,10 @@ function harness(
 		ports: createMemoryMutationPorts(),
 		masters,
 		authorization: createGrantingReceivingAuthorization([
-			RECEIVING_PERMISSION_READ,
-			RECEIVING_PERMISSION_MANAGE,
+			RECEIVING_PERMISSION_RECEIPT_READ,
+			RECEIVING_PERMISSION_RECEIPT_CREATE,
+			RECEIVING_PERMISSION_RECEIPT_UPDATE,
+			RECEIVING_PERMISSION_RECEIPT_POST,
 		]),
 		inventory: createInventoryCommandTestOptions(masters),
 		purchaseOrderReceivingQuery,
@@ -66,9 +70,9 @@ async function createAgainstPo(
 			organizationId: ORG_A,
 			actorUserId: "user-1",
 			correlationId: `corr-${code}`,
+			idempotencyKey: `create:${code}`,
 			code,
-			sourceType: "purchase_order",
-			sourceId: purchaseOrderId,
+			source: { kind: "purchase_order", purchaseOrderId },
 			warehouseId: WAREHOUSE,
 		},
 		ctx,
@@ -134,9 +138,9 @@ describe("@afenda/receiving PO source-state", () => {
 				organizationId: ORG_A,
 				actorUserId: "user-1",
 				correlationId: "corr-no-port",
+				idempotencyKey: "create-no-port",
 				code: "GR-NO-PORT",
-				sourceType: "purchase_order",
-				sourceId: PO_ID,
+				source: { kind: "purchase_order", purchaseOrderId: PO_ID },
 				warehouseId: WAREHOUSE,
 			},
 			withoutPort,
@@ -145,7 +149,7 @@ describe("@afenda/receiving PO source-state", () => {
 		if (!draft.ok) expect(draft.code).toBe("INTERNAL_ERROR");
 	});
 
-	it("rejects post when quantity exceeds remaining plus over-receipt tolerance", async () => {
+	it("rejects post when accepted quantity exceeds remaining plus over-receipt tolerance", async () => {
 		const ctx = harness({
 			[PO_ID]: postedPoSnapshot({
 				lineId: PO_LINE,
@@ -162,9 +166,11 @@ describe("@afenda/receiving PO source-state", () => {
 				organizationId: ORG_A,
 				actorUserId: "user-1",
 				correlationId: "corr-over-line",
+				idempotencyKey: "line-over",
 				receiptId: draft.data.id,
 				itemId: ITEM,
 				quantityReceived: 12,
+				quantityAccepted: 12,
 				purchaseOrderLineId: PO_LINE,
 			},
 			ctx,
@@ -179,6 +185,7 @@ describe("@afenda/receiving PO source-state", () => {
 				organizationId: ORG_A,
 				actorUserId: "user-1",
 				correlationId: "corr-over-post",
+				idempotencyKey: "post-over",
 				receiptId: draft.data.id,
 				expectedVersion: current.data.version,
 			},
@@ -205,9 +212,11 @@ describe("@afenda/receiving PO source-state", () => {
 				organizationId: ORG_A,
 				actorUserId: "user-1",
 				correlationId: "corr-bound-line",
+				idempotencyKey: "line-bound",
 				receiptId: draft.data.id,
 				itemId: ITEM,
 				quantityReceived: 11,
+				quantityAccepted: 11,
 				purchaseOrderLineId: PO_LINE,
 			},
 			ctx,
@@ -222,6 +231,7 @@ describe("@afenda/receiving PO source-state", () => {
 				organizationId: ORG_A,
 				actorUserId: "user-1",
 				correlationId: "corr-bound-post",
+				idempotencyKey: "post-bound",
 				receiptId: draft.data.id,
 				expectedVersion: current.data.version,
 			},
@@ -242,6 +252,7 @@ describe("@afenda/receiving PO source-state", () => {
 				organizationId: ORG_A,
 				actorUserId: "user-1",
 				correlationId: "corr-race-line",
+				idempotencyKey: "line-close-race",
 				receiptId: draft.data.id,
 				itemId: ITEM,
 				quantityReceived: 1,
@@ -263,6 +274,7 @@ describe("@afenda/receiving PO source-state", () => {
 				organizationId: ORG_A,
 				actorUserId: "user-1",
 				correlationId: "corr-race-post",
+				idempotencyKey: "post-close-race",
 				receiptId: draft.data.id,
 				expectedVersion: current.data.version,
 			},

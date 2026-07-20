@@ -22,6 +22,9 @@ const permissionMocks = vi.hoisted(() => ({
 const importMocks = vi.hoisted(() => ({
 	validatePartyImportBatch: vi.fn(),
 	upsertPartiesByCode: vi.fn(),
+	upsertItemGroupsByCode: vi.fn(),
+	upsertItemsByCode: vi.fn(),
+	upsertWarehousesByCode: vi.fn(),
 }));
 
 vi.mock("@afenda/auth", () => ({
@@ -32,12 +35,19 @@ vi.mock("@/app/actions/permission-gate", () => ({
 	forbidUnlessPermission: permissionMocks.forbidUnlessPermission,
 }));
 
+vi.mock("@/lib/erp/master-data-authorization-port", () => ({
+	createMasterDataAuthorizationPort: () => ({ can: async () => true }),
+}));
+
 vi.mock("@afenda/master-data", async (importOriginal) => {
 	const actual = await importOriginal<typeof import("@afenda/master-data")>();
 	return {
 		...actual,
 		validatePartyImportBatch: importMocks.validatePartyImportBatch,
 		upsertPartiesByCode: importMocks.upsertPartiesByCode,
+		upsertItemGroupsByCode: importMocks.upsertItemGroupsByCode,
+		upsertItemsByCode: importMocks.upsertItemsByCode,
+		upsertWarehousesByCode: importMocks.upsertWarehousesByCode,
 	};
 });
 
@@ -120,6 +130,7 @@ describe("master-data import Actions", () => {
 		const result = await applyMasterDataImportAction({
 			sourceSystem: "erp",
 			entity: "party",
+			idempotencyKey: "key-deny",
 			rows: [{ code: "A", name: "A", partyKind: "organization" }],
 		});
 
@@ -151,6 +162,7 @@ describe("master-data import Actions", () => {
 		const result = await applyMasterDataImportAction({
 			sourceSystem: "erp",
 			entity: "party",
+			idempotencyKey: "key-apply",
 			rows: [{ code: "A", name: "A", partyKind: "organization" }],
 		});
 
@@ -164,6 +176,7 @@ describe("master-data import Actions", () => {
 				organizationId: "org-import",
 				dryRun: false,
 				approved: true,
+				idempotencyKey: "key-apply",
 			}),
 			expect.objectContaining({ authorization: expect.anything() }),
 		);

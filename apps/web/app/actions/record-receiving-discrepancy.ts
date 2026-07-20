@@ -4,12 +4,12 @@ import {
 	type ReceivingDiscrepancy,
 	recordReceivingDiscrepancy,
 } from "@afenda/receiving";
-import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runOperatorPermissionAction } from "@/app/actions/run-operator-permission-action";
 import { createReceivingCommandOptions } from "@/lib/erp/receiving-command-options";
+import { revalidateReceivingPaths } from "@/lib/erp/receiving-revalidate";
 import {
 	type ActionResult,
 	actionFail,
@@ -33,10 +33,14 @@ const recordReceivingDiscrepancyFormSchema = z.object({
 	receiptId: z.string().uuid(),
 	receiptLineId: optionalUuid,
 	discrepancyType: z.enum([
-		"shortfall",
-		"overage",
-		"damage",
+		"short_quantity",
+		"excess_quantity",
+		"damaged",
+		"quality_failure",
 		"wrong_item",
+		"wrong_uom",
+		"documentation",
+		"temperature",
 		"other",
 	]),
 	quantity: z.coerce.number().positive(),
@@ -54,7 +58,7 @@ export async function recordReceivingDiscrepancyAction(
 ): Promise<RecordReceivingDiscrepancyActionState> {
 	return runOperatorPermissionAction({
 		path: "recordReceivingDiscrepancyAction",
-		permission: "receiving.manage",
+		permission: "receiving.discrepancy.record",
 		safeMessage:
 			"Could not record receiving discrepancy. Try again or contact an admin.",
 		execute: async (session, correlationId) => {
@@ -77,14 +81,14 @@ export async function recordReceivingDiscrepancyAction(
 					organizationId: session.orgId,
 					actorUserId: session.userId,
 					correlationId,
+					idempotencyKey: `disc:${correlationId}:${parsed.data.receiptId}:${parsed.data.discrepancyType}`,
 					...parsed.data,
 				},
 				createReceivingCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
 			if (!mapped.ok) return mapped;
-			revalidatePath("/admin/receiving");
-			revalidatePath("/client/receiving");
+			revalidateReceivingPaths();
 			return { ok: true, data: { discrepancy: mapped.data } };
 		},
 	});

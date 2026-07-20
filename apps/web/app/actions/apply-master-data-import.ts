@@ -2,44 +2,21 @@
 
 import { getSession } from "@afenda/auth";
 import { createCorrelationId } from "@afenda/http";
-import {
-	IMPORT_MODES,
-	type ImportReconciliationReport,
-	PARTY_KINDS,
-	upsertPartiesByCode,
-} from "@afenda/master-data";
+import type { ImportReconciliationReport } from "@afenda/master-data";
 import { revalidatePath } from "next/cache";
-import { z } from "zod";
-import { mapPackageResult } from "@/app/actions/map-package-result";
-import { forbidUnlessPermission } from "@/app/actions/permission-gate";
-import { createMasterDataAuthorizationPort } from "@/lib/erp/master-data-authorization-port";
+import { runApplyMasterDataImport } from "@/lib/erp/master-data-import";
 import { logProductEvent } from "@/modules/platform/observability/product-log";
 import {
 	type ActionResult,
-	actionFail,
 	actionFailInternal,
 } from "@/modules/platform/schemas/action-result";
-import { parseSchema } from "@/modules/platform/schemas/common";
 
 export type ApplyMasterDataImportActionData = ImportReconciliationReport;
 
-const partyRowSchema = z.object({
-	code: z.string().trim().min(1).max(64),
-	name: z.string().trim().min(1).max(200),
-	partyKind: z.enum(PARTY_KINDS),
-	expectedVersion: z.number().int().positive().optional(),
-});
-
-const applyImportSchema = z.object({
-	sourceSystem: z.string().trim().min(1).max(64),
-	entity: z.literal("party"),
-	mode: z.enum(IMPORT_MODES).default("create_or_update"),
-	rows: z.array(partyRowSchema).min(1).max(100),
-});
-
 /**
- * Apply bounded party upsert-by-code — `master_data.import_approve`.
+ * Apply bounded upsert-by-code — `master_data.import_approve`.
  * Stamps package `approved: true` after the permission gate (never trust client).
+ * Supports party, item_group, item, and warehouse batches.
  */
 export async function applyMasterDataImportAction(
 	input: unknown,
@@ -47,38 +24,11 @@ export async function applyMasterDataImportAction(
 	const correlationId = createCorrelationId();
 	const session = await getSession();
 
-	const parsed = parseSchema(applyImportSchema, input);
-	if (!parsed.success) {
-		return actionFail(
-			"VALIDATION_ERROR",
-			"Provide a valid party import batch (max 100 rows).",
-			parsed.details,
-		);
-	}
-
-	const permissionDenied = await forbidUnlessPermission(
-		session,
-		"master_data.import_approve",
-	);
-	if (permissionDenied) {
-		return permissionDenied;
-	}
-
 	try {
-		const result = await upsertPartiesByCode(
-			{
-				organizationId: session.orgId,
-				actorUserId: session.userId,
-				correlationId,
-				sourceSystem: parsed.data.sourceSystem,
-				mode: parsed.data.mode,
-				dryRun: false,
-				approved: true,
-				rows: parsed.data.rows,
-			},
-			{ authorization: createMasterDataAuthorizationPort() },
-		);
-		const mapped = mapPackageResult(result);
+		const mapped = await runApplyMasterDataImport({
+			session,
+			raw: input,
+		});
 		if (mapped.ok) {
 			revalidatePath("/admin/master-data");
 			revalidatePath("/client/master-data");

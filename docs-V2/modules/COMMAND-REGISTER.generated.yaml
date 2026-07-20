@@ -357,19 +357,25 @@ commands:
     permission: receivables.invoice.close
   - id: receiving.receipt.create
     moduleId: receiving
-    permission: receiving.manage
+    permission: receiving.receipt.create
   - id: receiving.receipt.line.add
     moduleId: receiving
-    permission: receiving.manage
+    permission: receiving.receipt.update
   - id: receiving.receipt.post
     moduleId: receiving
-    permission: receiving.manage
+    permission: receiving.receipt.post
   - id: receiving.receipt.cancel
     moduleId: receiving
-    permission: receiving.manage
+    permission: receiving.receipt.cancel
+  - id: receiving.receipt.reverse
+    moduleId: receiving
+    permission: receiving.receipt.reverse
   - id: receiving.discrepancy.record
     moduleId: receiving
-    permission: receiving.manage
+    permission: receiving.discrepancy.record
+  - id: receiving.discrepancy.resolve
+    moduleId: receiving
+    permission: receiving.discrepancy.resolve
   - id: sales.order.create
     moduleId: sales
     permission: sales.order.create

@@ -23,7 +23,12 @@ describe("@afenda/db receiving schema", () => {
 		expect(lineCols.itemId.notNull).toBe(true);
 		expect(lineCols.quantityOrdered.notNull).toBe(false);
 		expect(lineCols.quantityReceived.notNull).toBe(true);
+		expect(lineCols.quantityAccepted.notNull).toBe(true);
+		expect(lineCols.quantityRejected.notNull).toBe(true);
+		expect(lineCols.quantityDamaged.notNull).toBe(true);
+		expect(receiptCols.inventoryApplicationStatus.notNull).toBe(true);
 		expect(discrepancyCols.goodsReceiptLineId.notNull).toBe(false);
 		expect(discrepancyCols.discrepancyType.notNull).toBe(true);
+		expect(discrepancyCols.status.notNull).toBe(true);
 	});
 });

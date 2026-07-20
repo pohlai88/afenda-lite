@@ -1,8 +1,15 @@
-# Review verdict
+# Payables — architecture review (Scratch)
+
+> **Status:** `OPEN` — Blocking findings remain; not plan ↔ disk closed. Phase 4.6 closure evidence incomplete.  
+> **As of:** 2026-07-21  
+> **Score:** **6.7/10** — README too thin for enterprise Payables package.  
+> **Tier:** D audit trace — Scratch only; not Living DOC-001 SSOT.  
+> **Package:** `@afenda/payables` · Neon `br-tiny-hill-ao82jp6f`  
+> **Authority:** package README · peer boundary vs `@afenda/payments` unresolved in body below.
+
+## Review verdict
 
 This README is **too thin for an ERP Payables package**. It correctly declares basic table ownership and peer-package boundaries, but it does not yet document enough behavior to serve as Phase 4.6 closure evidence.
-
-**Current score: 6.7/10**
 
 The most important unresolved issue is this overlap:
 

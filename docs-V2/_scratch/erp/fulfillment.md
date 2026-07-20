@@ -1,10 +1,12 @@
-# Fulfillment — completeness ledger (Scratch audit)
+# Fulfillment — completeness ledger (Scratch)
 
-> **Status (2026-07-21):** Plan ↔ disk **complete** for Delivery R1-F surface. Coverage Complete on evaluated controls.  
-> **Authority:** [`@afenda/fulfillment` README](../../../packages/erp/fulfillment/README.md) · package disk · Neon `br-tiny-hill-ao82jp6f`.  
-> **Tier:** This file is Tier D Scratch (audit trace). Do not treat as Living DOC-001 SSOT.
-
-**Score:** architecture review checklist closed against disk → **9.2/10** (cursor pagination / multi-reservation issue split remain Observation — not claimed as shipped).
+> **Status:** `COMPLETE` — Plan ↔ disk closed for Delivery R1-F surface. Coverage Complete on evaluated controls.  
+> **As of:** 2026-07-21  
+> **Score:** **9.2/10** — cursor pagination / multi-reservation issue split remain Observation (not claimed as shipped).  
+> **Tier:** D audit trace — Scratch only; not Living DOC-001 SSOT.  
+> **Package:** `@afenda/fulfillment` · Neon `br-tiny-hill-ao82jp6f`  
+> **Authority:** [package README](../../../packages/erp/fulfillment/README.md) · package disk  
+> **Naming:** `done-*` reserved for Scratch scores **> 9.5**; this ledger stays `fulfillment.md`.
 
 ---
 

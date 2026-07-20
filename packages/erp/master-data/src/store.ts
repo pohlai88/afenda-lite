@@ -263,8 +263,9 @@ export type TaxRegistrationListFilter = ListFilter & {
 };
 
 /**
- * Persistence port for master-data. Production: DrizzleMasterDataStore.
- * Vitest: MemoryMasterDataStore (helpers).
+ * Persistence port for master-data.
+ * Production: `DrizzleMasterDataStore` via `@afenda/master-data/adapters/drizzle`
+ * (resolve-store defaults internally). Vitest: MemoryMasterDataStore (helpers).
  */
 export type MasterDataStore = MasterDataExtensionStore &
 	MasterDataVariantStore & {
@@ -458,4 +459,44 @@ export type MasterDataStore = MasterDataExtensionStore &
 			ports: MutationPorts,
 			meta: { correlationId: string; eventSuffix: string },
 		): Promise<Result<TaxRegistration>>;
+
+		getImportBatchByIdempotencyKey(
+			organizationId: string,
+			idempotencyKey: string,
+		): Promise<Result<ImportBatchRecord | null>>;
+		saveImportBatch(
+			record: ImportBatchCreateRecord,
+		): Promise<Result<ImportBatchRecord>>;
 	};
+
+export type ImportBatchEntityType =
+	| "party"
+	| "item"
+	| "item_group"
+	| "warehouse";
+
+export type ImportBatchRecord = {
+	id: string;
+	organizationId: string;
+	idempotencyKey: string;
+	entityType: ImportBatchEntityType;
+	sourceSystem: string;
+	mode: string;
+	status: "applied";
+	report: unknown;
+	actorUserId: string;
+	correlationId: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type ImportBatchCreateRecord = {
+	organizationId: string;
+	idempotencyKey: string;
+	entityType: ImportBatchEntityType;
+	sourceSystem: string;
+	mode: string;
+	report: unknown;
+	actorUserId: string;
+	correlationId: string;
+};

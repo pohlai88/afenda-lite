@@ -25,6 +25,7 @@ import {
 } from "./schema/inventory";
 import {
 	mdChangeRequest,
+	mdImportBatch,
 	mdItem,
 	mdItemAlias,
 	mdItemBarcode,
@@ -109,6 +110,7 @@ export const HARD_TENANT_ROOT_TABLE_NAMES = [
 	"md_item_variant",
 	"md_item_variant_attribute_value",
 	"md_change_request",
+	"md_import_batch",
 	"sales_order",
 	"sales_order_line",
 	"purchase_order",
@@ -180,6 +182,7 @@ export const HARD_TENANT_ROOT_TABLES = {
 	mdItemVariant,
 	mdItemVariantAttributeValue,
 	mdChangeRequest,
+	mdImportBatch,
 	salesOrder,
 	salesOrderLine,
 	purchaseOrder,

@@ -1,8 +1,11 @@
-# Inventory — Scratch contract (Tier A operative)
+# Inventory — Scratch contract (operative)
 
-Band: **R1-F ERP** · Package: `@afenda/inventory` · Tables: `@afenda/db`
-
-This Scratch pack is the operative architecture contract for Inventory on this checkout (Living `docs/` dormant). Package README is the consumer-facing surface; this file owns the gap ledger and invariants.
+> **Status:** `OPERATIVE` — Tier A Scratch contract; INV-REQ ledger Pass (quantity-only / no in-transit = Observation, not gaps).  
+> **As of:** 2026-07-21  
+> **Score:** **Pass** — REQ ledger closed; no open blocking findings in this file.  
+> **Tier:** A operative contract — Scratch only; not Living DOC-001 SSOT.  
+> **Package:** `@afenda/inventory` · Tables: `@afenda/db` · Band: R1-F ERP · Neon `br-tiny-hill-ao82jp6f`  
+> **Authority:** [package README](../../../packages/erp/inventory/README.md) · this file owns gap ledger + invariants (Living `docs/` dormant).
 
 ## Purpose
 

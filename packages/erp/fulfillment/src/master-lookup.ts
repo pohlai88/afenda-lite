@@ -25,8 +25,15 @@ export function createMasterDataLookupPort(
 				{ authorization },
 			);
 		},
-		async getRefUomById(id: string): Promise<Result<RefUom | null>> {
-			return getRefUomById({ id });
+		async getRefUomById(
+			organizationId: string,
+			id: string,
+			actorUserId: string,
+		): Promise<Result<RefUom | null>> {
+			return getRefUomById(
+				{ organizationId, id, actorUserId },
+				{ authorization },
+			);
 		},
 		async getWarehouseById(
 			organizationId: string,

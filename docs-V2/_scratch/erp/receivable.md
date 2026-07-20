@@ -1,10 +1,12 @@
-# Receivables — completeness ledger (Scratch audit)
+# Receivables — completeness ledger (Scratch)
 
-> **Status (2026-07-21):** Plan ↔ disk **complete** for AR R1-F surface. Coverage Complete on evaluated controls.  
-> **Authority:** [`@afenda/receivables` README](../../../packages/erp/receivables/README.md) · package disk · Neon `br-tiny-hill-ao82jp6f`.  
-> **Tier:** This file is Tier D Scratch (audit trace). Do not treat as Living DOC-001 SSOT.
-
-**Score:** architecture review checklist closed against disk → **9.2/10** (deep AR↔GL control-account reconcile remains Observation — Accounting peer follow-on).
+> **Status:** `COMPLETE` — Plan ↔ disk closed for AR R1-F surface. Coverage Complete on evaluated controls.  
+> **As of:** 2026-07-21  
+> **Score:** **9.2/10** — deep AR↔GL control-account reconcile remains Observation (Accounting peer follow-on).  
+> **Tier:** D audit trace — Scratch only; not Living DOC-001 SSOT.  
+> **Package:** `@afenda/receivables` · Neon `br-tiny-hill-ao82jp6f`  
+> **Authority:** [package README](../../../packages/erp/receivables/README.md) · package disk  
+> **Naming:** `done-*` reserved for Scratch scores **> 9.5**; this ledger stays `receivable.md`.
 
 Review source (historical findings): prior Scratch review body — git history only.
 

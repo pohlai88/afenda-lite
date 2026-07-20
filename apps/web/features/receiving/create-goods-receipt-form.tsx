@@ -38,15 +38,13 @@ export function CreateGoodsReceiptForm({ canManage }: { canManage: boolean }) {
 	}
 
 	const codeError = actionFieldMessage(state, "code");
-	const sourceTypeError = actionFieldMessage(state, "sourceType");
-	const sourceIdError = actionFieldMessage(state, "sourceId");
+	const purchaseOrderError = actionFieldMessage(state, "purchaseOrderId");
 	const warehouseError = actionFieldMessage(state, "warehouseId");
 	const showFormError =
 		!pending &&
 		state?.ok === false &&
 		codeError === undefined &&
-		sourceTypeError === undefined &&
-		sourceIdError === undefined &&
+		purchaseOrderError === undefined &&
 		warehouseError === undefined;
 
 	return (
@@ -59,7 +57,7 @@ export function CreateGoodsReceiptForm({ canManage }: { canManage: boolean }) {
 				<Alert role="status">
 					<AlertTitle>Receipt created</AlertTitle>
 					<AlertDescription>
-						{state.data.receipt.code} · {state.data.receipt.sourceType} · draft.
+						{state.data.receipt.code} · purchase_order · draft.
 					</AlertDescription>
 				</Alert>
 			) : null}
@@ -76,35 +74,15 @@ export function CreateGoodsReceiptForm({ canManage }: { canManage: boolean }) {
 				/>
 			</FormField>
 			<FormField
-				label="Source type"
+				label="Purchase order id"
 				required
-				fieldId="receipt-source-type"
-				error={sourceTypeError}
+				fieldId="receipt-po-id"
+				error={purchaseOrderError}
 			>
 				<Input
-					id="receipt-source-type"
-					name="sourceType"
+					id="receipt-po-id"
+					name="purchaseOrderId"
 					required
-					defaultValue="purchase_order"
-					list="receipt-source-types"
-					autoComplete="off"
-					disabled={pending}
-				/>
-				<datalist id="receipt-source-types">
-					<option value="purchase_order" />
-					<option value="expected_receipt" />
-					<option value="return_shipment" />
-					<option value="unplanned" />
-				</datalist>
-			</FormField>
-			<FormField
-				label="Source id (required for purchase order)"
-				fieldId="receipt-source-id"
-				error={sourceIdError}
-			>
-				<Input
-					id="receipt-source-id"
-					name="sourceId"
 					autoComplete="off"
 					disabled={pending}
 				/>

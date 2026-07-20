@@ -6,6 +6,7 @@ import {
 	db,
 	eq,
 	isNull,
+	mdImportBatch,
 	mdItem,
 	mdItemGroup,
 	mdParty,
@@ -84,6 +85,9 @@ import {
 } from "./map-row";
 import type { MutationPorts } from "./ports";
 import type {
+	ImportBatchCreateRecord,
+	ImportBatchEntityType,
+	ImportBatchRecord,
 	ItemCreateRecord,
 	ItemGroupCreateRecord,
 	ItemGroupUpdateRecord,
@@ -322,15 +326,17 @@ function valueSnapshotJson(value: Record<string, unknown>): string {
 	return JSON.stringify(value);
 }
 
-function eventPayloadJson(input: {
-	organizationId: string;
-	entityType: string;
-	entityId: string;
-	code: string;
-	version: number;
-	actorId: string;
-	correlationId: string;
-}): string {
+function eventPayloadJson(
+	input: {
+		organizationId: string;
+		entityType: string;
+		entityId: string;
+		code: string;
+		version: number;
+		actorId: string;
+		correlationId: string;
+	} & Record<string, unknown>,
+): string {
 	return JSON.stringify(input);
 }
 
@@ -1279,6 +1285,11 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			mergedId: source.id,
 			survivorVersion: nextSurvivorVersion,
 			fieldDecisions: record.fieldDecisions,
+			consolidation: {
+				roles: "reassign_non_colliding_active_retire_colliding",
+				addresses: "repoint_to_survivor",
+				contacts: "repoint_to_survivor",
+			},
 		});
 		const payloadJson = eventPayloadJson({
 			organizationId: record.organizationId,
@@ -1288,6 +1299,11 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			version: nextSurvivorVersion,
 			actorId: record.actorUserId,
 			correlationId: meta.correlationId,
+			consolidation: {
+				roles: "reassign_non_colliding_active_retire_colliding",
+				addresses: "repoint_to_survivor",
+				contacts: "repoint_to_survivor",
+			},
 		});
 
 		const crAuditId = randomUUID();
@@ -1348,6 +1364,76 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 							AND merged_into_id IS NULL
 							AND EXISTS (SELECT 1 FROM claimed)
 						RETURNING *
+					),
+					roles_retired_colliding AS (
+						UPDATE md_party_role r
+						SET
+							status = 'retired',
+							version = version + 1,
+							updated_by = ${record.actorUserId},
+							updated_at = now(),
+							retired_at = now(),
+							retired_by = ${record.actorUserId}
+						WHERE r.party_id = ${source.id}
+							AND r.organization_id = ${record.organizationId}
+							AND r.status = 'active'
+							AND EXISTS (
+								SELECT 1
+								FROM md_party_role s
+								WHERE s.party_id = ${target.id}
+									AND s.organization_id = r.organization_id
+									AND s.role_code = r.role_code
+									AND s.status = 'active'
+							)
+							AND EXISTS (SELECT 1 FROM merged)
+						RETURNING r.id
+					),
+					roles_reassigned AS (
+						UPDATE md_party_role r
+						SET
+							party_id = ${target.id},
+							version = version + 1,
+							updated_by = ${record.actorUserId},
+							updated_at = now()
+						WHERE r.party_id = ${source.id}
+							AND r.organization_id = ${record.organizationId}
+							AND (
+								r.status <> 'active'
+								OR NOT EXISTS (
+									SELECT 1
+									FROM md_party_role s
+									WHERE s.party_id = ${target.id}
+										AND s.organization_id = r.organization_id
+										AND s.role_code = r.role_code
+										AND s.status = 'active'
+								)
+							)
+							AND EXISTS (SELECT 1 FROM merged)
+						RETURNING r.id
+					),
+					addresses_moved AS (
+						UPDATE md_party_address a
+						SET
+							party_id = ${target.id},
+							version = version + 1,
+							updated_by = ${record.actorUserId},
+							updated_at = now()
+						WHERE a.party_id = ${source.id}
+							AND a.organization_id = ${record.organizationId}
+							AND EXISTS (SELECT 1 FROM merged)
+						RETURNING a.id
+					),
+					contacts_moved AS (
+						UPDATE md_party_contact c
+						SET
+							party_id = ${target.id},
+							version = version + 1,
+							updated_by = ${record.actorUserId},
+							updated_at = now()
+						WHERE c.party_id = ${source.id}
+							AND c.organization_id = ${record.organizationId}
+							AND EXISTS (SELECT 1 FROM merged)
+						RETURNING c.id
 					),
 					moved_ext AS (
 						UPDATE md_party_external_id e
@@ -1910,6 +1996,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			return crossOrg("itemGroupId must exist in the same organization");
 		}
 		const entityId = randomUUID();
+		const baseUomRowId = randomUUID();
 		const auditId = randomUUID();
 		const eventId = randomUUID();
 		const changesJson = fieldChangeJson("code", null, record.code);
@@ -1941,6 +2028,17 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 						)
 						RETURNING *
 					),
+					base_uom AS (
+						INSERT INTO md_item_uom (
+							id, organization_id, item_id, uom_id, to_base_numerator, to_base_denominator,
+							usage, version, created_by, updated_by
+						)
+						SELECT
+							${baseUomRowId}, organization_id, id, base_uom_id, 1, 1,
+							'other', 1, created_by, created_by
+						FROM mutated
+						RETURNING id
+					),
 					audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module, entity,
@@ -1963,7 +2061,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 						FROM mutated
 						RETURNING id
 					)
-					SELECT mutated.* FROM mutated, audited, outboxed
+					SELECT mutated.* FROM mutated, base_uom, audited, outboxed
 				`,
 			]);
 			const row = rows[0];
@@ -3473,6 +3571,89 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 	getItemVariantById = drizzleGetItemVariantById;
 	listItemVariantsByTemplate = drizzleListItemVariantsByTemplate;
 	createItemVariant = drizzleCreateItemVariant;
+
+	async getImportBatchByIdempotencyKey(
+		organizationId: string,
+		idempotencyKey: string,
+	): Promise<Result<ImportBatchRecord | null>> {
+		try {
+			const [row] = await db
+				.select()
+				.from(mdImportBatch)
+				.where(
+					and(
+						eq(mdImportBatch.organizationId, organizationId),
+						eq(mdImportBatch.idempotencyKey, idempotencyKey),
+					),
+				)
+				.limit(1);
+			if (row === undefined) {
+				return ok(null);
+			}
+			return ok({
+				id: row.id,
+				organizationId: row.organizationId,
+				idempotencyKey: row.idempotencyKey,
+				entityType: row.entityType as ImportBatchEntityType,
+				sourceSystem: row.sourceSystem,
+				mode: row.mode,
+				status: "applied",
+				report: row.report,
+				actorUserId: row.actorUserId,
+				correlationId: row.correlationId,
+				createdAt: row.createdAt,
+				updatedAt: row.updatedAt,
+			});
+		} catch (error) {
+			return failFromUnknown(error, "Failed to load import batch");
+		}
+	}
+
+	async saveImportBatch(
+		record: ImportBatchCreateRecord,
+	): Promise<Result<ImportBatchRecord>> {
+		const entityId = randomUUID();
+		try {
+			const [row] = await db
+				.insert(mdImportBatch)
+				.values({
+					id: entityId,
+					organizationId: record.organizationId,
+					idempotencyKey: record.idempotencyKey,
+					entityType: record.entityType,
+					sourceSystem: record.sourceSystem,
+					mode: record.mode,
+					status: "applied",
+					report: record.report,
+					actorUserId: record.actorUserId,
+					correlationId: record.correlationId,
+				})
+				.returning();
+			if (row === undefined) {
+				return fail("INTERNAL_ERROR", "Import batch save returned no row");
+			}
+			return ok({
+				id: row.id,
+				organizationId: row.organizationId,
+				idempotencyKey: row.idempotencyKey,
+				entityType: row.entityType as ImportBatchEntityType,
+				sourceSystem: row.sourceSystem,
+				mode: row.mode,
+				status: "applied",
+				report: row.report,
+				actorUserId: row.actorUserId,
+				correlationId: row.correlationId,
+				createdAt: row.createdAt,
+				updatedAt: row.updatedAt,
+			});
+		} catch (error) {
+			return mapWriteError(
+				error,
+				"Import batch idempotency key already exists",
+				"Failed to save import batch",
+			);
+		}
+	}
 }
 
 export function createDrizzleMasterDataStore(): MasterDataStore {

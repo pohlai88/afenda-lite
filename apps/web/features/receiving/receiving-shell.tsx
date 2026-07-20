@@ -1,6 +1,9 @@
 import { getSession, requireRole } from "@afenda/auth";
 import { listItems, listWarehouses } from "@afenda/master-data";
-import { listGoodsReceipts } from "@afenda/receiving";
+import {
+	listGoodsReceipts,
+	listReceivingInventoryExceptions,
+} from "@afenda/receiving";
 import {
 	Alert,
 	AlertDescription,
@@ -19,6 +22,8 @@ import { CancelGoodsReceiptForm } from "@/features/receiving/cancel-goods-receip
 import { CreateGoodsReceiptForm } from "@/features/receiving/create-goods-receipt-form";
 import { PostGoodsReceiptForm } from "@/features/receiving/post-goods-receipt-form";
 import { RecordReceivingDiscrepancyForm } from "@/features/receiving/record-receiving-discrepancy-form";
+import { ResolveReceivingDiscrepancyForm } from "@/features/receiving/resolve-receiving-discrepancy-form";
+import { ReverseGoodsReceiptForm } from "@/features/receiving/reverse-goods-receipt-form";
 import { createMasterDataAuthorizationPort } from "@/lib/erp/master-data-authorization-port";
 import { createReceivingCommandOptions } from "@/lib/erp/receiving-command-options";
 import { sessionHasPermission } from "@/modules/identity/domain/session-permission";
@@ -29,37 +34,64 @@ type ReceivingShellProps = { surface: "admin" | "client" };
 export async function ReceivingShell({ surface }: ReceivingShellProps) {
 	const session =
 		surface === "admin" ? await requireRole("operator") : await getSession();
-	await requirePermission(session, "receiving.read");
-	const canManage = await sessionHasPermission(session, "receiving.manage");
-	const masterOptions = { authorization: createMasterDataAuthorizationPort() };
-
-	const [receiptsResult, itemsResult, warehousesResult] = await Promise.all([
-		listGoodsReceipts(
-			{
-				organizationId: session.orgId,
-				actorUserId: session.userId,
-				pageSize: 50,
-			},
-			createReceivingCommandOptions(),
-		),
-		listItems(
-			{
-				organizationId: session.orgId,
-				actorUserId: session.userId,
-				pageSize: 50,
-			},
-			masterOptions,
-		),
-		listWarehouses(
-			{
-				organizationId: session.orgId,
-				actorUserId: session.userId,
-				pageSize: 50,
-			},
-			masterOptions,
-		),
+	await requirePermission(session, "receiving.receipt.read");
+	const [
+		canCreate,
+		canUpdate,
+		canPost,
+		canCancel,
+		canReverse,
+		canRecordDiscrepancy,
+		canResolveDiscrepancy,
+	] = await Promise.all([
+		sessionHasPermission(session, "receiving.receipt.create"),
+		sessionHasPermission(session, "receiving.receipt.update"),
+		sessionHasPermission(session, "receiving.receipt.post"),
+		sessionHasPermission(session, "receiving.receipt.cancel"),
+		sessionHasPermission(session, "receiving.receipt.reverse"),
+		sessionHasPermission(session, "receiving.discrepancy.record"),
+		sessionHasPermission(session, "receiving.discrepancy.resolve"),
 	]);
+	const masterOptions = { authorization: createMasterDataAuthorizationPort() };
+	const receivingOptions = createReceivingCommandOptions();
+
+	const [receiptsResult, exceptionsResult, itemsResult, warehousesResult] =
+		await Promise.all([
+			listGoodsReceipts(
+				{
+					organizationId: session.orgId,
+					actorUserId: session.userId,
+					pageSize: 50,
+				},
+				receivingOptions,
+			),
+			listReceivingInventoryExceptions(
+				{
+					organizationId: session.orgId,
+					actorUserId: session.userId,
+					pageSize: 50,
+				},
+				receivingOptions,
+			),
+			listItems(
+				{
+					organizationId: session.orgId,
+					actorUserId: session.userId,
+					pageSize: 50,
+				},
+				masterOptions,
+			),
+			listWarehouses(
+				{
+					organizationId: session.orgId,
+					actorUserId: session.userId,
+					pageSize: 50,
+				},
+				masterOptions,
+			),
+		]);
 	const receipts = receiptsResult.ok ? receiptsResult.data : [];
+	const exceptions = exceptionsResult.ok ? exceptionsResult.data : [];
 	const items = itemsResult.ok ? itemsResult.data : [];
 	const warehouses = warehousesResult.ok ? warehousesResult.data : [];
 
@@ -73,8 +105,8 @@ export async function ReceivingShell({ surface }: ReceivingShellProps) {
 					Goods receipts
 				</h1>
 				<p className="max-w-2xl text-sm text-muted-foreground">
-					Record inbound goods, warehouse and item snapshots, receipt
-					discrepancies, posting, and cancellation.
+					Record inbound goods against purchase orders, post accepted quantity
+					to inventory, reverse posted receipts, and manage discrepancies.
 				</p>
 			</div>
 
@@ -83,6 +115,35 @@ export async function ReceivingShell({ surface }: ReceivingShellProps) {
 					<AlertTitle>Could not load receipts</AlertTitle>
 					<AlertDescription>{receiptsResult.message}</AlertDescription>
 				</Alert>
+			) : null}
+
+			{exceptions.length > 0 ? (
+				<Card>
+					<CardHeader>
+						<CardTitle>Inventory application exceptions</CardTitle>
+						<CardDescription>
+							{exceptions.length} posted receipt(s) pending or failed inventory
+							application
+						</CardDescription>
+					</CardHeader>
+					<CardContent className="space-y-2 text-sm">
+						<ul className="space-y-2">
+							{exceptions.map((receipt) => (
+								<li key={receipt.id} className="rounded-md border px-3 py-2">
+									<div className="font-medium">
+										{receipt.code} · {receipt.inventoryApplicationStatus}
+									</div>
+									<div className="text-muted-foreground">
+										id <Code>{receipt.id}</Code>
+										{receipt.inventoryApplicationError
+											? ` · ${receipt.inventoryApplicationError}`
+											: null}
+									</div>
+								</li>
+							))}
+						</ul>
+					</CardContent>
+				</Card>
 			) : null}
 
 			<Card>
@@ -101,6 +162,8 @@ export async function ReceivingShell({ surface }: ReceivingShellProps) {
 								<li key={receipt.id} className="rounded-md border px-3 py-2">
 									<div className="font-medium">
 										{receipt.code} · {receipt.status} · v{receipt.version}
+										{receipt.reversesReceiptId ? " · reverse" : null}
+										{receipt.reversedByReceiptId ? " · reversed" : null}
 									</div>
 									<div className="text-muted-foreground">
 										id <Code>{receipt.id}</Code> · {receipt.sourceType}
@@ -112,7 +175,8 @@ export async function ReceivingShell({ surface }: ReceivingShellProps) {
 										) : null}{" "}
 										· wh {receipt.warehouseCode} ({receipt.warehouseName}) ·{" "}
 										{receipt.lines.length} line(s) ·{" "}
-										{receipt.discrepancies.length} discrepancy record(s)
+										{receipt.discrepancies.length} discrepancy record(s) · inv{" "}
+										{receipt.inventoryApplicationStatus}
 									</div>
 								</li>
 							))}
@@ -161,7 +225,7 @@ export async function ReceivingShell({ surface }: ReceivingShellProps) {
 					<CardTitle>Create draft</CardTitle>
 				</CardHeader>
 				<CardContent>
-					<CreateGoodsReceiptForm canManage={canManage} />
+					<CreateGoodsReceiptForm canManage={canCreate} />
 				</CardContent>
 			</Card>
 			<Card>
@@ -169,18 +233,19 @@ export async function ReceivingShell({ surface }: ReceivingShellProps) {
 					<CardTitle>Add line</CardTitle>
 				</CardHeader>
 				<CardContent>
-					<AddGoodsReceiptLineForm canManage={canManage} />
+					<AddGoodsReceiptLineForm canManage={canUpdate} />
 				</CardContent>
 			</Card>
 			<Card>
 				<CardHeader>
 					<CardTitle>Post receipt</CardTitle>
 					<CardDescription>
-						Requires at least one line and an active warehouse and item.
+						Posts accepted quantity to inventory. Requires lines and active
+						warehouse/items.
 					</CardDescription>
 				</CardHeader>
 				<CardContent>
-					<PostGoodsReceiptForm canManage={canManage} />
+					<PostGoodsReceiptForm canManage={canPost} />
 				</CardContent>
 			</Card>
 			<Card>
@@ -188,18 +253,37 @@ export async function ReceivingShell({ surface }: ReceivingShellProps) {
 					<CardTitle>Record discrepancy</CardTitle>
 				</CardHeader>
 				<CardContent>
-					<RecordReceivingDiscrepancyForm canManage={canManage} />
+					<RecordReceivingDiscrepancyForm canManage={canRecordDiscrepancy} />
 				</CardContent>
 			</Card>
 			<Card>
 				<CardHeader>
-					<CardTitle>Cancel receipt</CardTitle>
+					<CardTitle>Resolve discrepancy</CardTitle>
+				</CardHeader>
+				<CardContent>
+					<ResolveReceivingDiscrepancyForm canResolve={canResolveDiscrepancy} />
+				</CardContent>
+			</Card>
+			<Card>
+				<CardHeader>
+					<CardTitle>Cancel draft receipt</CardTitle>
 					<CardDescription>
-						Cancel draft or posted receipts with an optimistic version check.
+						Draft only. Posted receipts must be reversed.
 					</CardDescription>
 				</CardHeader>
 				<CardContent>
-					<CancelGoodsReceiptForm canManage={canManage} />
+					<CancelGoodsReceiptForm canManage={canCancel} />
+				</CardContent>
+			</Card>
+			<Card>
+				<CardHeader>
+					<CardTitle>Reverse posted receipt</CardTitle>
+					<CardDescription>
+						Creates a linked compensating receipt and inventory reversal.
+					</CardDescription>
+				</CardHeader>
+				<CardContent>
+					<ReverseGoodsReceiptForm canReverse={canReverse} />
 				</CardContent>
 			</Card>
 		</section>

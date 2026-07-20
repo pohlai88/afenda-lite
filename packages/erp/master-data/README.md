@@ -46,9 +46,9 @@ Out of scope: BOM / stock qty / CoA, transactional modules (ARCH-006 lives in `@
 
 | Surface | Backend |
 |---------|---------|
-| Production default | `DrizzleMasterDataStore` → `@afenda/db` — **all** org mutations use `runNeonHttpTransaction` CTE (entity + `platform_audit_log` + `platform_domain_event` same TX) |
+| Production default | `DrizzleMasterDataStore` (`@afenda/master-data/adapters/drizzle`) → `@afenda/db` — **all** org mutations use `runNeonHttpTransaction` CTE (entity + `platform_audit_log` + `platform_domain_event` same TX) |
 | Vitest injection | `MemoryMasterDataStore` + memory `AuditFactPort` / `OutboxPort` (in-process atomic) |
-| Ports | `MutationPorts` remain on the store interface for test injection; Drizzle embeds SQL side-effects and does not call SQL ports |
+| `MutationPorts` | **Memory/test composition only.** Production atomicity is the store CTE contract. Do not wrap Drizzle in fake port calls. |
 
 ## Maintain
 
@@ -64,7 +64,10 @@ Requires root engines: **Node `24.x`**, **pnpm `≥10.33.4`**.
 
 | Path | Role |
 |------|------|
-| `@afenda/master-data` | Commands · queries · Zod schemas · brands · `MasterDataStore` type · Drizzle store · production ports · lifecycle/code helpers |
+| `@afenda/master-data` | Commands · queries · Zod schemas · brands · permissions · reasons · `MasterDataStore` type · lifecycle/code helpers (no Drizzle class) |
+| `@afenda/master-data/adapters/drizzle` | `DrizzleMasterDataStore` · `createDrizzleMasterDataStore` |
+| `@afenda/master-data/types` | Shared domain types |
+| `@afenda/master-data/module-manifest` | Module manifest |
 
 Never re-exports raw Drizzle tables or `db` / `eq`.
 

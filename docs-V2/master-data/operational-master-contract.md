@@ -12,11 +12,14 @@
 
 | Class | Tables | Write path |
 |-------|--------|------------|
-| Platform refs | `ref_country` · `ref_currency` · `ref_language` · `ref_time_zone` · `ref_uom_dimension` · `ref_uom` | Seed / system ops only — package exposes **read** helpers; orgs never mutate refs |
+| Platform refs | `ref_country` · `ref_currency` · `ref_language` · `ref_time_zone` · `ref_uom_dimension` · `ref_uom` | Seed / system ops only — package exposes **read** helpers (`master_data.read` via `requireMasterQueryPermission`); orgs never mutate refs |
 | Org operational masters | `md_party` · `md_item_group` · `md_item` · `md_warehouse` · `md_payment_term` · `md_tax_registration` · templates/variants | Sole writes via `@afenda/master-data` commands |
 | Extensions | `md_party_*` · `md_item_*` · `md_warehouse_external_id` | Same package; lifecycle invariants (e.g. final active role) |
+| Import durability | `md_import_batch` | Apply stores report keyed by org + `idempotencyKey` (unique); replay returns stored report |
 
-UoM remains platform-only: `md_item.base_uom_id` → `ref_uom`; conversions in `md_item_uom` with positive non-zero rational factors.
+UoM remains platform-only: `md_item.base_uom_id` → `ref_uom`; conversions in `md_item_uom` with positive non-zero rational factors. Item create inserts a base `md_item_uom` row for `base_uom_id` with numerator/denominator = 1 (usage `other`). Rounding rules are controlled: `half_up` · `half_even` · `down` · `up`.
+
+Party relationship types are controlled: `parent_of` · `subsidiary_of` · `contact_for` · `bill_to_for` · `ship_to_for`.
 
 ## Permissions (coarse DNA)
 
@@ -37,9 +40,11 @@ Web Actions use authenticated member session + these codes (not operator-only). 
 
 ## Merge
 
-- `mergeParties` requires an **approved** change request (MDG).
+- `mergeParties` requires an **approved** change request (MDG); permission remains `master_data.manage` (Tier A — no fine-grained `party.merge`).
 - Survivor keeps identity; source is tombstoned (`merged_into_id`); former codes preserved.
-- No automatic merge from duplicate warnings alone.
+- Reject merge if source or target is already merged (one-hop tombstone; no merge-of-merged). Readers may use `resolveCanonicalPartyId`.
+- Same-TX consolidation: non-colliding active roles reassigned to survivor; colliding source roles retired; addresses/contacts re-pointed; external IDs moved when non-colliding.
+- No peer ERP table rewrite. No automatic merge from duplicate warnings alone.
 
 ## Import
 
@@ -49,7 +54,16 @@ Web Actions use authenticated member session + these codes (not operator-only). 
 | `update_existing` | Fail if code missing; mutable fields only |
 | `create_or_update` | Default upsert-by-code |
 
-Validate = dry-run (`manage`). Apply = `approved: true` + `import_approve`. Batches ≤ 100 rows. Mutable-field allowlists reject immutable patches fail-closed.
+Validate = dry-run → command `master_data.import.validate_party_batch` → permission `master_data.manage`. Apply upserts (`master_data.import.upsert_*`) → `approved: true` + `master_data.import_approve`. Apply requires `idempotencyKey` (trim, max length); durable `md_import_batch` replay returns the stored report. Batches ≤ 100 rows. Mutable-field allowlists reject immutable patches fail-closed. Web apply covers party · item_group · item · warehouse via shared helper.
+
+## Package exports
+
+| Path | Role |
+|------|------|
+| `@afenda/master-data` | Commands · queries · schemas · brands · permissions · reasons (no Drizzle class) |
+| `@afenda/master-data/adapters/drizzle` | `DrizzleMasterDataStore` · `createDrizzleMasterDataStore` |
+
+Production atomicity = store CTE. `MutationPorts` are Memory/test composition only.
 
 ## Consumer attachment (ARCH-006)
 

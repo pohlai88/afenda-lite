@@ -1,8 +1,15 @@
-# Review verdict
+# Purchasing — architecture review (Scratch)
 
-> **Remediation status (2026-07-21 — five forwards closed):** Package + README + Neon migrations `0012` · `0021` · `0022` aligned. **Closed on disk:** fine-grained `purchasing.order.*` · commercial pricing + line tolerances · `PurchaseOrderCommitmentQueryPort` · `closePurchaseOrder` (posted→closed; cancel draft-only) · metrics name constants + Operations runbook. Disk authority: `packages/erp/purchasing` + `packages_governance.md` §4.1.
+> **Status:** `COMPLETE` — Remediation closed on disk (five forwards). Package + README + Neon migrations `0012` · `0021` · `0022` aligned.  
+> **As of:** 2026-07-21  
+> **Score:** **9.6/10** — enterprise production package guide; Phase 4.1 Done (close + commercial).  
+> **Tier:** D audit trace — Scratch only; not Living DOC-001 SSOT.  
+> **Package:** `@afenda/purchasing` · Neon `br-tiny-hill-ao82jp6f`  
+> **Authority:** `packages/erp/purchasing` · `packages_governance.md` §4.1  
+> **Naming:** sole `done-*` Scratch file in this folder (score **> 9.5**).  
+> **Closed on disk:** fine-grained `purchasing.order.*` · commercial pricing + line tolerances · `PurchaseOrderCommitmentQueryPort` · `closePurchaseOrder` (posted→closed; cancel draft-only) · metrics name constants + Operations runbook.
 
-**Current score: 9.6/10** (enterprise production package guide; Phase 4.1 Done including close + commercial).
+## Review verdict
 
 Historical review text below is retained for traceability. Blocking claims in the original verdict are **resolved** as follows:
 

@@ -1,16 +1,16 @@
+import { randomUUID } from "node:crypto";
+import { ok } from "@afenda/errors/result";
 import {
 	INVENTORY_PERMISSION_CODES,
 	type InventoryAuthorizationPort,
 	type InventoryCommandOptions,
 	type InventoryPermission,
 } from "@afenda/inventory";
-import { ok } from "@afenda/errors/result";
 import {
 	createMemoryInventoryStore,
 	type MasterLookupPort,
 	type MutationPorts,
 } from "@afenda/inventory/testing";
-import { randomUUID } from "node:crypto";
 
 function createGrantingInventoryAuthorization(
 	grants: readonly InventoryPermission[],

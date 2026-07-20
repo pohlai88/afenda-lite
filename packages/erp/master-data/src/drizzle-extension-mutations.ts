@@ -53,6 +53,7 @@ import type {
 	ItemBarcode,
 	ItemExternalId,
 	ItemUom,
+	ItemUomRoundingRule,
 	ItemUomUsage,
 	MasterStatus,
 	Party,
@@ -60,11 +61,51 @@ import type {
 	PartyContact,
 	PartyExternalId,
 	PartyRelationship,
+	PartyRelationshipType,
 	PartyRole,
 	PartyRoleCode,
 	Warehouse,
 	WarehouseExternalId,
 } from "./types";
+import {
+	ITEM_UOM_ROUNDING_RULES,
+	ITEM_UOM_USAGES,
+	PARTY_RELATIONSHIP_TYPES,
+} from "./types";
+
+function parsePartyRelationshipType(
+	value: string,
+): PartyRelationshipType | null {
+	for (const candidate of PARTY_RELATIONSHIP_TYPES) {
+		if (candidate === value) {
+			return candidate;
+		}
+	}
+	return null;
+}
+
+function parseItemUomUsage(value: string): ItemUomUsage | null {
+	for (const candidate of ITEM_UOM_USAGES) {
+		if (candidate === value) {
+			return candidate;
+		}
+	}
+	return null;
+}
+
+function parseItemUomRoundingRule(
+	value: string | null,
+): ItemUomRoundingRule | null {
+	if (value === null) {
+		return null;
+	}
+	for (const candidate of ITEM_UOM_ROUNDING_RULES) {
+		if (candidate === value) {
+			return candidate;
+		}
+	}
+	return null;
+}
 
 function isUniqueViolation(error: unknown): boolean {
 	let current: unknown = error;
@@ -213,13 +254,21 @@ function mapPartyExternalIdRow(
 
 function mapPartyRelationshipRow(
 	row: typeof mdPartyRelationship.$inferSelect,
-): PartyRelationship {
-	return {
+): Result<PartyRelationship> {
+	const relationshipType = parsePartyRelationshipType(row.relationshipType);
+	if (relationshipType === null) {
+		return fail(
+			"INTERNAL_ERROR",
+			"Stored party relationship type is not in the controlled catalog",
+			{ reason: "MASTER_VALIDATION_FAILED" } satisfies MasterFailureDetails,
+		);
+	}
+	return ok({
 		id: row.id,
 		organizationId: row.organizationId,
 		fromPartyId: row.fromPartyId,
 		toPartyId: row.toPartyId,
-		relationshipType: row.relationshipType,
+		relationshipType,
 		status: row.status,
 		version: row.version,
 		validFrom: row.validFrom,
@@ -228,20 +277,36 @@ function mapPartyRelationshipRow(
 		updatedBy: row.updatedBy,
 		createdAt: row.createdAt,
 		updatedAt: row.updatedAt,
-	};
+	});
 }
 
-function mapItemUomRow(row: typeof mdItemUom.$inferSelect): ItemUom {
-	return {
+function mapItemUomRow(row: typeof mdItemUom.$inferSelect): Result<ItemUom> {
+	const usage = parseItemUomUsage(row.usage);
+	if (usage === null) {
+		return fail(
+			"INTERNAL_ERROR",
+			"Stored item UoM usage is not in the controlled catalog",
+			{ reason: "MASTER_VALIDATION_FAILED" } satisfies MasterFailureDetails,
+		);
+	}
+	const roundingRule = parseItemUomRoundingRule(row.roundingRule);
+	if (row.roundingRule !== null && roundingRule === null) {
+		return fail(
+			"INTERNAL_ERROR",
+			"Stored item UoM rounding rule is not in the controlled catalog",
+			{ reason: "MASTER_VALIDATION_FAILED" } satisfies MasterFailureDetails,
+		);
+	}
+	return ok({
 		id: row.id,
 		organizationId: row.organizationId,
 		itemId: row.itemId,
 		uomId: row.uomId,
 		toBaseNumerator: String(row.toBaseNumerator),
 		toBaseDenominator: String(row.toBaseDenominator),
-		usage: row.usage as ItemUomUsage,
+		usage,
 		barcode: row.barcode,
-		roundingRule: row.roundingRule,
+		roundingRule,
 		minQuantity: row.minQuantity === null ? null : String(row.minQuantity),
 		version: row.version,
 		validFrom: row.validFrom,
@@ -250,7 +315,7 @@ function mapItemUomRow(row: typeof mdItemUom.$inferSelect): ItemUom {
 		updatedBy: row.updatedBy,
 		createdAt: row.createdAt,
 		updatedAt: row.updatedAt,
-	};
+	});
 }
 
 function mapItemBarcodeRow(
@@ -1313,23 +1378,21 @@ export async function drizzleCreatePartyRelationship(
 				"Party relationship create returned no row",
 			);
 		}
-		return ok(
-			mapPartyRelationshipRow({
-				id: row.id as string,
-				organizationId: row.organization_id as string,
-				fromPartyId: row.from_party_id as string,
-				toPartyId: row.to_party_id as string,
-				relationshipType: row.relationship_type as string,
-				status: row.status as string,
-				version: Number(row.version),
-				validFrom: (row.valid_from as Date | null) ?? null,
-				validTo: (row.valid_to as Date | null) ?? null,
-				createdBy: row.created_by as string,
-				updatedBy: row.updated_by as string,
-				createdAt: row.created_at as Date,
-				updatedAt: row.updated_at as Date,
-			}),
-		);
+		return mapPartyRelationshipRow({
+			id: row.id as string,
+			organizationId: row.organization_id as string,
+			fromPartyId: row.from_party_id as string,
+			toPartyId: row.to_party_id as string,
+			relationshipType: row.relationship_type as string,
+			status: row.status as string,
+			version: Number(row.version),
+			validFrom: (row.valid_from as Date | null) ?? null,
+			validTo: (row.valid_to as Date | null) ?? null,
+			createdBy: row.created_by as string,
+			updatedBy: row.updated_by as string,
+			createdAt: row.created_at as Date,
+			updatedAt: row.updated_at as Date,
+		});
 	} catch (error) {
 		return mapWriteError(
 			error,
@@ -1354,7 +1417,15 @@ export async function drizzleListItemUoms(
 			)
 			.limit(filter.pageSize)
 			.offset((filter.page - 1) * filter.pageSize);
-		return ok(rows.map(mapItemUomRow));
+		const mapped: ItemUom[] = [];
+		for (const row of rows) {
+			const item = mapItemUomRow(row);
+			if (!item.ok) {
+				return item;
+			}
+			mapped.push(item.data);
+		}
+		return ok(mapped);
 	} catch (error) {
 		return failFromUnknown(error, "Failed to list item UoMs");
 	}
@@ -1477,27 +1548,26 @@ export async function drizzleCreateItemUom(
 		if (row === undefined) {
 			return fail("INTERNAL_ERROR", "Item UoM create returned no row");
 		}
-		return ok(
-			mapItemUomRow({
-				id: row.id as string,
-				organizationId: row.organization_id as string,
-				itemId: row.item_id as string,
-				uomId: row.uom_id as string,
-				toBaseNumerator: row.to_base_numerator as string,
-				toBaseDenominator: row.to_base_denominator as string,
-				usage: row.usage as string,
-				barcode: (row.barcode as string | null) ?? null,
-				roundingRule: (row.rounding_rule as string | null) ?? null,
-				minQuantity: (row.min_quantity as string | null) ?? null,
-				version: Number(row.version),
-				validFrom: (row.valid_from as Date | null) ?? null,
-				validTo: (row.valid_to as Date | null) ?? null,
-				createdBy: row.created_by as string,
-				updatedBy: row.updated_by as string,
-				createdAt: row.created_at as Date,
-				updatedAt: row.updated_at as Date,
-			}),
-		);
+		const mapped = mapItemUomRow({
+			id: row.id as string,
+			organizationId: row.organization_id as string,
+			itemId: row.item_id as string,
+			uomId: row.uom_id as string,
+			toBaseNumerator: row.to_base_numerator as string,
+			toBaseDenominator: row.to_base_denominator as string,
+			usage: row.usage as string,
+			barcode: (row.barcode as string | null) ?? null,
+			roundingRule: (row.rounding_rule as string | null) ?? null,
+			minQuantity: (row.min_quantity as string | null) ?? null,
+			version: Number(row.version),
+			validFrom: (row.valid_from as Date | null) ?? null,
+			validTo: (row.valid_to as Date | null) ?? null,
+			createdBy: row.created_by as string,
+			updatedBy: row.updated_by as string,
+			createdAt: row.created_at as Date,
+			updatedAt: row.updated_at as Date,
+		} as typeof mdItemUom.$inferSelect);
+		return mapped;
 	} catch (error) {
 		return mapWriteError(
 			error,

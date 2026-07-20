@@ -265,7 +265,11 @@ export async function addSalesOrderLine(
 	}
 
 	const uomResult = requireMaster(
-		await masters.getRefUomById(item.baseUomId),
+		await masters.getRefUomById(
+			parsed.data.organizationId,
+			item.baseUomId,
+			parsed.data.actorUserId,
+		),
 		"Base UoM not found for item",
 	);
 	if (!uomResult.ok) {
@@ -453,7 +457,11 @@ export async function postSalesOrder(
 			);
 		}
 		const uomResult = requireMaster(
-			await masters.getRefUomById(itemResult.data.baseUomId),
+			await masters.getRefUomById(
+				parsed.data.organizationId,
+				itemResult.data.baseUomId,
+				parsed.data.actorUserId,
+			),
 			"Base UoM not found for item",
 		);
 		if (!uomResult.ok) {

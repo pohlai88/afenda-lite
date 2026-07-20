@@ -1,12 +1,12 @@
 "use server";
 
 import { cancelGoodsReceipt, type GoodsReceipt } from "@afenda/receiving";
-import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runOperatorPermissionAction } from "@/app/actions/run-operator-permission-action";
 import { createReceivingCommandOptions } from "@/lib/erp/receiving-command-options";
+import { revalidateReceivingPaths } from "@/lib/erp/receiving-revalidate";
 import {
 	type ActionResult,
 	actionFail,
@@ -28,7 +28,7 @@ export async function cancelGoodsReceiptAction(
 ): Promise<CancelGoodsReceiptActionState> {
 	return runOperatorPermissionAction({
 		path: "cancelGoodsReceiptAction",
-		permission: "receiving.manage",
+		permission: "receiving.receipt.cancel",
 		safeMessage:
 			"Could not cancel goods receipt. Try again or contact an admin.",
 		execute: async (session, correlationId) => {
@@ -48,14 +48,14 @@ export async function cancelGoodsReceiptAction(
 					organizationId: session.orgId,
 					actorUserId: session.userId,
 					correlationId,
+					idempotencyKey: `cancel:${correlationId}:${parsed.data.receiptId}`,
 					...parsed.data,
 				},
 				createReceivingCommandOptions(),
 			);
 			const mapped = mapPackageResult(result);
 			if (!mapped.ok) return mapped;
-			revalidatePath("/admin/receiving");
-			revalidatePath("/client/receiving");
+			revalidateReceivingPaths();
 			return { ok: true, data: { receipt: mapped.data } };
 		},
 	});

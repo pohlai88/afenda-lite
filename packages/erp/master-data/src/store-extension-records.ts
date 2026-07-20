@@ -6,12 +6,14 @@ import type {
 	ItemBarcode,
 	ItemExternalId,
 	ItemUom,
+	ItemUomRoundingRule,
 	ItemUomUsage,
 	Party,
 	PartyAddress,
 	PartyContact,
 	PartyExternalId,
 	PartyRelationship,
+	PartyRelationshipType,
 	PartyRole,
 	PartyRoleCode,
 	Warehouse,
@@ -90,7 +92,7 @@ export type PartyRelationshipCreateRecord = {
 	organizationId: string;
 	fromPartyId: string;
 	toPartyId: string;
-	relationshipType: string;
+	relationshipType: PartyRelationshipType;
 	createdBy: string;
 };
 
@@ -102,7 +104,7 @@ export type ItemUomCreateRecord = {
 	toBaseDenominator: string;
 	usage: ItemUomUsage;
 	barcode?: string | null;
-	roundingRule?: string | null;
+	roundingRule?: ItemUomRoundingRule | null;
 	minQuantity?: string | null;
 	createdBy: string;
 };

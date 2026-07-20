@@ -7,9 +7,11 @@ import {
 	createItemAlias,
 	createItemUom,
 	createPartyExternalId,
+	createPartyRelationship,
 	createPartyRole,
 	findItemByAlias,
 	findPartyByExternalId,
+	listItemUoms,
 	retirePartyRole,
 } from "../src/extensions";
 import { createItem } from "../src/item";
@@ -203,6 +205,159 @@ describe("@afenda/master-data extensions", () => {
 			options,
 		);
 		expect(dup.ok).toBe(false);
+	});
+
+	it("inserts base UoM conversion factor 1 on item create", async () => {
+		const { options } = createMasterDataTestHarness();
+
+		const group = await createItemGroup(
+			{ ...ctx(), code: "G-BASE", name: "Base Group" },
+			options,
+		);
+		expect(group.ok).toBe(true);
+		if (!group.ok) {
+			return;
+		}
+
+		const item = await createItem(
+			{
+				...ctx(),
+				code: "SKU-BASE",
+				name: "Base Item",
+				itemType: "stock",
+				baseUomId: EA_UOM_ID,
+				itemGroupId: group.data.id,
+			},
+			options,
+		);
+		expect(item.ok).toBe(true);
+		if (!item.ok) {
+			return;
+		}
+
+		const uoms = await listItemUoms(
+			{
+				organizationId: "org-a",
+				actorUserId: "user-1",
+				parentId: item.data.id,
+			},
+			options,
+		);
+		expect(uoms.ok).toBe(true);
+		if (!uoms.ok) {
+			return;
+		}
+		const base = uoms.data.find(
+			(row) => row.uomId === EA_UOM_ID && row.usage === "other",
+		);
+		expect(base).toBeDefined();
+		expect(base?.toBaseNumerator).toBe("1");
+		expect(base?.toBaseDenominator).toBe("1");
+	});
+
+	it("rejects unknown party relationship types and accepts catalog types", async () => {
+		const { options } = createMasterDataTestHarness();
+
+		const from = await createParty(
+			{
+				...ctx(),
+				code: "REL-A",
+				name: "Rel A",
+				partyKind: "organization",
+			},
+			options,
+		);
+		const to = await createParty(
+			{
+				...ctx(),
+				code: "REL-B",
+				name: "Rel B",
+				partyKind: "organization",
+			},
+			options,
+		);
+		expect(from.ok && to.ok).toBe(true);
+		if (!from.ok || !to.ok) {
+			return;
+		}
+
+		const bad = await createPartyRelationship(
+			{
+				...ctx(),
+				fromPartyId: from.data.id,
+				toPartyId: to.data.id,
+				relationshipType: "invented_edge",
+			},
+			options,
+		);
+		expect(bad.ok).toBe(false);
+
+		const okRel = await createPartyRelationship(
+			{
+				...ctx(),
+				fromPartyId: from.data.id,
+				toPartyId: to.data.id,
+				relationshipType: "parent_of",
+			},
+			options,
+		);
+		expect(okRel.ok).toBe(true);
+	});
+
+	it("rejects uncontrolled item UoM rounding rules", async () => {
+		const { options } = createMasterDataTestHarness();
+
+		const group = await createItemGroup(
+			{ ...ctx(), code: "G-ROUND", name: "Round Group" },
+			options,
+		);
+		expect(group.ok).toBe(true);
+		if (!group.ok) {
+			return;
+		}
+		const item = await createItem(
+			{
+				...ctx(),
+				code: "SKU-ROUND",
+				name: "Round Item",
+				itemType: "stock",
+				baseUomId: EA_UOM_ID,
+				itemGroupId: group.data.id,
+			},
+			options,
+		);
+		expect(item.ok).toBe(true);
+		if (!item.ok) {
+			return;
+		}
+
+		const bad = await createItemUom(
+			{
+				...ctx(),
+				itemId: item.data.id,
+				uomId: EA_UOM_ID,
+				toBaseNumerator: "12",
+				toBaseDenominator: "1",
+				usage: "packaging",
+				roundingRule: "bankers",
+			},
+			options,
+		);
+		expect(bad.ok).toBe(false);
+
+		const good = await createItemUom(
+			{
+				...ctx(),
+				itemId: item.data.id,
+				uomId: EA_UOM_ID,
+				toBaseNumerator: "12",
+				toBaseDenominator: "1",
+				usage: "packaging",
+				roundingRule: "half_even",
+			},
+			options,
+		);
+		expect(good.ok).toBe(true);
 	});
 
 	it("rejects item UoM with zero or non-integer conversion factors", async () => {

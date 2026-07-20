@@ -42,6 +42,11 @@ export type OutboxPort = {
 	append(input: OutboxFactInput): Promise<Result<{ id: string }>>;
 };
 
+/**
+ * Memory/test composition only. Production Drizzle mutations embed audit + outbox
+ * in the same SQL CTE and do not call these ports — do not wrap Drizzle in fake
+ * port invocations.
+ */
 export type MutationPorts = {
 	audit: AuditFactPort;
 	outbox: OutboxPort;

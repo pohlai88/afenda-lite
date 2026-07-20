@@ -1,10 +1,12 @@
-# Sales — completeness ledger (Scratch audit)
+# Sales — completeness ledger (Scratch)
 
-> **Status (2026-07-21):** Plan ↔ disk **complete** for Sales Order R1-F surface. Coverage Complete on evaluated controls.  
-> **Authority:** `@afenda/sales` README · [sales-order-contract.md](../sales/sales-order-contract.md) · `packages_governance.md` · Neon `br-tiny-hill-ao82jp6f`.  
-> **Tier:** This file is Tier D Scratch (audit trace). Do not treat as Living DOC-001 SSOT.
-
-**Score:** architecture review checklist closed against disk → **9.5/10** (cursor pagination / alternate UoM selection remain Observation — not claimed as shipped).
+> **Status:** `COMPLETE` — Plan ↔ disk closed for Sales Order R1-F surface. Coverage Complete on evaluated controls.  
+> **As of:** 2026-07-21  
+> **Score:** **9.5/10** — cursor pagination / alternate UoM selection remain Observation (not claimed as shipped).  
+> **Tier:** D audit trace — Scratch only; not Living DOC-001 SSOT.  
+> **Package:** `@afenda/sales` · Neon `br-tiny-hill-ao82jp6f`  
+> **Authority:** package README · [sales-order-contract.md](../sales/sales-order-contract.md) · `packages_governance.md`  
+> **Naming:** `done-*` reserved for Scratch scores **> 9.5**; this ledger stays `sales.md`.
 
 ---
 

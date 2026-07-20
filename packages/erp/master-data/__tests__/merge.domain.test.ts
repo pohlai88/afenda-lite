@@ -3,10 +3,17 @@ import { randomUUID } from "node:crypto";
 import { describe, expect, it } from "vitest";
 
 import {
+	activatePartyRole,
 	createPartyExternalId,
+	createPartyRole,
 	findPartyByExternalId,
+	listPartyRoles,
 } from "../src/extensions";
-import { findPartyDuplicateWarnings, mergeParties } from "../src/merge";
+import {
+	findPartyDuplicateWarnings,
+	mergeParties,
+	resolveCanonicalPartyId,
+} from "../src/merge";
 import { createParty, getPartyByCode } from "../src/party";
 import { createMasterDataTestHarness } from "./helpers/harness";
 import { approvedMergePartiesChangeRequest } from "./helpers/mdg-approve";
@@ -205,6 +212,209 @@ describe("@afenda/master-data mergeParties", () => {
 			options,
 		);
 		expect(crossOrg.ok).toBe(false);
+	});
+
+	it("consolidates roles on merge and resolves canonical party", async () => {
+		const { options } = createMasterDataTestHarness();
+
+		const source = await createParty(
+			{
+				...ctx(),
+				code: "SRCROLE",
+				name: "Source Roles",
+				partyKind: "organization",
+			},
+			options,
+		);
+		const target = await createParty(
+			{
+				...ctx(),
+				code: "TGTROLE",
+				name: "Target Roles",
+				partyKind: "organization",
+			},
+			options,
+		);
+		expect(source.ok && target.ok).toBe(true);
+		if (!source.ok || !target.ok) {
+			return;
+		}
+
+		const sourceCustomerDraft = await createPartyRole(
+			{
+				...ctx(),
+				partyId: source.data.id,
+				roleCode: "customer",
+			},
+			options,
+		);
+		const sourceSupplierDraft = await createPartyRole(
+			{
+				...ctx(),
+				partyId: source.data.id,
+				roleCode: "supplier",
+			},
+			options,
+		);
+		const targetCustomerDraft = await createPartyRole(
+			{
+				...ctx(),
+				partyId: target.data.id,
+				roleCode: "customer",
+			},
+			options,
+		);
+		expect(
+			sourceCustomerDraft.ok &&
+				sourceSupplierDraft.ok &&
+				targetCustomerDraft.ok,
+		).toBe(true);
+		if (
+			!sourceCustomerDraft.ok ||
+			!sourceSupplierDraft.ok ||
+			!targetCustomerDraft.ok
+		) {
+			return;
+		}
+		const sourceCustomer = await activatePartyRole(
+			{
+				...ctx(),
+				id: sourceCustomerDraft.data.id,
+				expectedVersion: sourceCustomerDraft.data.version,
+			},
+			options,
+		);
+		const sourceSupplier = await activatePartyRole(
+			{
+				...ctx(),
+				id: sourceSupplierDraft.data.id,
+				expectedVersion: sourceSupplierDraft.data.version,
+			},
+			options,
+		);
+		const targetCustomer = await activatePartyRole(
+			{
+				...ctx(),
+				id: targetCustomerDraft.data.id,
+				expectedVersion: targetCustomerDraft.data.version,
+			},
+			options,
+		);
+		expect(
+			sourceCustomer.ok && sourceSupplier.ok && targetCustomer.ok,
+		).toBe(true);
+		if (!sourceCustomer.ok || !sourceSupplier.ok || !targetCustomer.ok) {
+			return;
+		}
+
+		const cr = await approvedMergePartiesChangeRequest(
+			{
+				organizationId: "org-merge",
+				sourcePartyId: source.data.id,
+				targetPartyId: target.data.id,
+			},
+			options,
+		);
+		const merged = await mergeParties(
+			{
+				...ctx(),
+				changeRequestId: cr.id,
+				sourcePartyId: source.data.id,
+				targetPartyId: target.data.id,
+				sourceExpectedVersion: source.data.version,
+				targetExpectedVersion: target.data.version,
+				fieldDecisions: {},
+			},
+			options,
+		);
+		expect(merged.ok).toBe(true);
+		if (!merged.ok) {
+			return;
+		}
+
+		const survivorRoles = await listPartyRoles(
+			{
+				organizationId: "org-merge",
+				actorUserId: "user-1",
+				parentId: target.data.id,
+				page: 1,
+				pageSize: 100,
+			},
+			options,
+		);
+		expect(survivorRoles.ok).toBe(true);
+		if (!survivorRoles.ok) {
+			return;
+		}
+		expect(
+			survivorRoles.data.some(
+				(role) => role.roleCode === "supplier" && role.status === "active",
+			),
+		).toBe(true);
+		expect(
+			survivorRoles.data.some(
+				(role) =>
+					role.id === targetCustomer.data.id && role.status === "active",
+			),
+		).toBe(true);
+
+		const sourceRoles = await listPartyRoles(
+			{
+				organizationId: "org-merge",
+				actorUserId: "user-1",
+				parentId: source.data.id,
+				page: 1,
+				pageSize: 100,
+			},
+			options,
+		);
+		expect(sourceRoles.ok).toBe(true);
+		if (!sourceRoles.ok) {
+			return;
+		}
+		expect(
+			sourceRoles.data.some(
+				(role) =>
+					role.id === sourceCustomer.data.id && role.status === "retired",
+			),
+		).toBe(true);
+
+		const canonical = await resolveCanonicalPartyId(
+			{
+				organizationId: "org-merge",
+				actorUserId: "user-1",
+				partyId: source.data.id,
+			},
+			options,
+		);
+		expect(canonical.ok).toBe(true);
+		if (!canonical.ok) {
+			return;
+		}
+		expect(canonical.data.partyId).toBe(target.data.id);
+		expect(canonical.data.hops).toBe(1);
+
+		const secondCr = await approvedMergePartiesChangeRequest(
+			{
+				organizationId: "org-merge",
+				sourcePartyId: source.data.id,
+				targetPartyId: target.data.id,
+			},
+			options,
+		);
+		const rematch = await mergeParties(
+			{
+				...ctx(),
+				changeRequestId: secondCr.id,
+				sourcePartyId: source.data.id,
+				targetPartyId: target.data.id,
+				sourceExpectedVersion: merged.data.merged.version,
+				targetExpectedVersion: merged.data.survivor.version,
+				fieldDecisions: {},
+			},
+			options,
+		);
+		expect(rematch.ok).toBe(false);
 	});
 
 	it("emits duplicate warnings without auto-merge", async () => {

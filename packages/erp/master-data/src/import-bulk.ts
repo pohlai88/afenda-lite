@@ -81,6 +81,8 @@ const orgImportContextSchema = z.object({
 	dryRun: z.boolean().default(false),
 	/** Required true when dryRun is false (DNA §13 approved → applied). */
 	approved: z.boolean().default(false),
+	/** Required on apply — dry-run/validate may omit. */
+	idempotencyKey: z.string().trim().min(1).max(128).optional(),
 });
 
 function requireApprovedForApply(ctx: {
@@ -93,6 +95,76 @@ function requireApprovedForApply(ctx: {
 		} satisfies MasterFailureDetails);
 	}
 	return ok(undefined);
+}
+
+function requireIdempotencyKeyForApply(ctx: {
+	dryRun: boolean;
+	idempotencyKey?: string;
+}): Result<string | undefined> {
+	if (ctx.dryRun) {
+		return ok(undefined);
+	}
+	if (ctx.idempotencyKey === undefined || ctx.idempotencyKey.length === 0) {
+		return fail("BAD_REQUEST", "Import apply requires idempotencyKey", {
+			reason: "MASTER_VALIDATION_FAILED",
+		} satisfies MasterFailureDetails);
+	}
+	return ok(ctx.idempotencyKey);
+}
+
+async function runImportWithIdempotency(input: {
+	store: Awaited<ReturnType<typeof resolveCommandDeps>>["store"];
+	organizationId: string;
+	actorUserId: string;
+	correlationId: string;
+	sourceSystem: string;
+	mode: ImportMode;
+	idempotencyKey: string | undefined;
+	entityType: "party" | "item" | "item_group" | "warehouse";
+	run: () => Promise<Result<ImportReconciliationReport>>;
+}): Promise<Result<ImportReconciliationReport>> {
+	if (input.idempotencyKey !== undefined) {
+		const existing = await input.store.getImportBatchByIdempotencyKey(
+			input.organizationId,
+			input.idempotencyKey,
+		);
+		if (!existing.ok) {
+			return existing;
+		}
+		if (existing.data !== null) {
+			return ok(existing.data.report as ImportReconciliationReport);
+		}
+	}
+
+	const report = await input.run();
+	if (!report.ok) {
+		return report;
+	}
+
+	if (input.idempotencyKey !== undefined) {
+		const saved = await input.store.saveImportBatch({
+			organizationId: input.organizationId,
+			idempotencyKey: input.idempotencyKey,
+			entityType: input.entityType,
+			sourceSystem: input.sourceSystem,
+			mode: input.mode,
+			report: report.data,
+			actorUserId: input.actorUserId,
+			correlationId: input.correlationId,
+		});
+		if (!saved.ok) {
+			const replay = await input.store.getImportBatchByIdempotencyKey(
+				input.organizationId,
+				input.idempotencyKey,
+			);
+			if (replay.ok && replay.data !== null) {
+				return ok(replay.data.report as ImportReconciliationReport);
+			}
+			return saved;
+		}
+	}
+
+	return report;
 }
 
 const partyImportRowSchema = z.object({
@@ -242,12 +314,36 @@ export async function upsertPartiesByCode(
 	const authorized = await requireMasterCommandPermission(authorization, {
 		organizationId: parsed.data.organizationId,
 		actorUserId: parsed.data.actorUserId,
-		command: MASTER_COMMAND_IMPORT_UPSERT_PARTIES,
+		command: parsed.data.dryRun
+			? MASTER_COMMAND_IMPORT_VALIDATE_PARTY_BATCH
+			: MASTER_COMMAND_IMPORT_UPSERT_PARTIES,
 	});
 	if (!authorized.ok) {
 		return authorized;
 	}
+	const idempotencyKeyResult = requireIdempotencyKeyForApply(parsed.data);
+	if (!idempotencyKeyResult.ok) {
+		return idempotencyKeyResult;
+	}
 	const ctx = parsed.data;
+	return runImportWithIdempotency({
+		store,
+		organizationId: ctx.organizationId,
+		actorUserId: ctx.actorUserId,
+		correlationId: ctx.correlationId,
+		sourceSystem: ctx.sourceSystem,
+		mode: ctx.mode,
+		idempotencyKey: idempotencyKeyResult.data,
+		entityType: "party",
+		run: async () => upsertPartiesByCodeBody(ctx, options),
+	});
+}
+
+async function upsertPartiesByCodeBody(
+	ctx: z.infer<typeof upsertPartiesByCodeInputSchema>,
+	options: MasterCommandOptions,
+): Promise<Result<ImportReconciliationReport>> {
+	const { store } = resolveCommandDeps(options);
 	const results: ImportRowResult[] = [];
 
 	const normalizedRows: Array<{
@@ -538,9 +634,11 @@ async function upsertByCodeGeneric<
 		mode: ImportMode;
 		dryRun: boolean;
 		approved: boolean;
+		idempotencyKey?: string;
+		entityType: "item" | "item_group" | "warehouse";
 		rows: TRow[];
 	},
-	_options: MasterCommandOptions,
+	options: MasterCommandOptions,
 	handlers: {
 		getByCode: (
 			organizationId: string,
@@ -565,7 +663,55 @@ async function upsertByCodeGeneric<
 	if (!approvedGate.ok) {
 		return approvedGate;
 	}
+	const idempotencyKeyResult = requireIdempotencyKeyForApply(input);
+	if (!idempotencyKeyResult.ok) {
+		return idempotencyKeyResult;
+	}
+	const { store } = resolveCommandDeps(options);
+	return runImportWithIdempotency({
+		store,
+		organizationId: input.organizationId,
+		actorUserId: input.actorUserId,
+		correlationId: input.correlationId,
+		sourceSystem: input.sourceSystem,
+		mode: input.mode,
+		idempotencyKey: idempotencyKeyResult.data,
+		entityType: input.entityType,
+		run: async () => upsertByCodeGenericBody(input, handlers),
+	});
+}
 
+async function upsertByCodeGenericBody<
+	TRow extends { code: string; name: string; expectedVersion?: number },
+>(
+	input: {
+		organizationId: string;
+		actorUserId: string;
+		correlationId: string;
+		sourceSystem: string;
+		mode: ImportMode;
+		dryRun: boolean;
+		rows: TRow[];
+	},
+	handlers: {
+		getByCode: (
+			organizationId: string,
+			normalizedCode: string,
+		) => Promise<Result<{ id: string; name: string; version: number } | null>>;
+		create: (row: TRow, code: string) => Promise<Result<{ id: string }>>;
+		update: (
+			row: TRow,
+			existing: { id: string; version: number },
+		) => Promise<Result<{ id: string }>>;
+		isUnchanged: (existing: { name: string }, row: TRow) => boolean;
+		rejectImmutable?: (
+			existing: { id: string; name: string; version: number },
+			row: TRow,
+			rowIndex: number,
+			code: string,
+		) => ImportRowResult | null;
+	},
+): Promise<Result<ImportReconciliationReport>> {
 	const results: ImportRowResult[] = [];
 	const normalizedRows: Array<{
 		rowIndex: number;
@@ -775,7 +921,10 @@ export async function upsertItemGroupsByCode(
 		return authorized;
 	}
 	const ctx = parsed.data;
-	return upsertByCodeGeneric(ctx, options, {
+	return upsertByCodeGeneric(
+		{ ...ctx, entityType: "item_group" },
+		options,
+		{
 		getByCode: async (organizationId, normalizedCode) => {
 			const result = await store.getItemGroupByCode(
 				organizationId,
@@ -817,7 +966,8 @@ export async function upsertItemGroupsByCode(
 				options,
 			),
 		isUnchanged: (existing, row) => existing.name === row.name,
-	});
+	},
+	);
 }
 
 export async function upsertItemsByCode(
@@ -846,7 +996,7 @@ export async function upsertItemsByCode(
 		string,
 		{ itemType: string; baseUomId: string; itemGroupId: string }
 	>();
-	return upsertByCodeGeneric(ctx, options, {
+	return upsertByCodeGeneric({ ...ctx, entityType: "item" }, options, {
 		getByCode: async (organizationId, normalizedCode) => {
 			const result = await store.getItemByCode(organizationId, normalizedCode);
 			if (!result.ok) {
@@ -939,7 +1089,7 @@ export async function upsertWarehousesByCode(
 	}
 	const ctx = parsed.data;
 	const warehouseSnapshot = new Map<string, { locationType: string }>();
-	return upsertByCodeGeneric(ctx, options, {
+	return upsertByCodeGeneric({ ...ctx, entityType: "warehouse" }, options, {
 		getByCode: async (organizationId, normalizedCode) => {
 			const result = await store.getWarehouseByCode(
 				organizationId,
@@ -1003,7 +1153,7 @@ export async function upsertWarehousesByCode(
 	});
 }
 
-/** Validate-only alias — dry-run party upsert. */
+/** Validate-only alias — dry-run party upsert (`master_data.manage`). */
 export async function validatePartyImportBatch(
 	input: unknown,
 	options: MasterCommandOptions = {},
@@ -1016,14 +1166,8 @@ export async function validatePartyImportBatch(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const { authorization } = resolveCommandDeps(options);
-	const authorized = await requireMasterCommandPermission(authorization, {
-		organizationId: parsed.data.organizationId,
-		actorUserId: parsed.data.actorUserId,
-		command: MASTER_COMMAND_IMPORT_VALIDATE_PARTY_BATCH,
-	});
-	if (!authorized.ok) {
-		return authorized;
-	}
-	return upsertPartiesByCode({ ...parsed.data, dryRun: true }, options);
+	return upsertPartiesByCode(
+		{ ...parsed.data, dryRun: true, approved: false },
+		options,
+	);
 }

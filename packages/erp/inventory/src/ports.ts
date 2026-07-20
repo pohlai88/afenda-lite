@@ -44,7 +44,11 @@ export type MasterLookupPort = {
 		id: string,
 		actorUserId: string,
 	): Promise<Result<Item | null>>;
-	getRefUomById(id: string): Promise<Result<RefUom | null>>;
+	getRefUomById(
+		organizationId: string,
+		id: string,
+		actorUserId: string,
+	): Promise<Result<RefUom | null>>;
 	getWarehouseById(
 		organizationId: string,
 		id: string,
