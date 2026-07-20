@@ -1,6 +1,30 @@
 # GENERATED — do not edit by hand. Source: ERP module.manifest.ts
 # Regenerate: pnpm validate:modules --write
 queries:
+  - id: accounting.journal.get
+    moduleId: accounting
+    permission: accounting.read
+  - id: accounting.journal.list
+    moduleId: accounting
+    permission: accounting.read
+  - id: accounting.trial-balance.get
+    moduleId: accounting
+    permission: accounting.read
+  - id: fulfillment.delivery.get
+    moduleId: fulfillment
+    permission: fulfillment.read
+  - id: fulfillment.delivery.list
+    moduleId: fulfillment
+    permission: fulfillment.read
+  - id: inventory.movement.get
+    moduleId: inventory
+    permission: inventory.read
+  - id: inventory.movement.list
+    moduleId: inventory
+    permission: inventory.read
+  - id: inventory.stock.availability
+    moduleId: inventory
+    permission: inventory.read
   - id: master_data.party.get_by_id
     moduleId: master-data
     permission: master_data.read
@@ -136,12 +160,42 @@ queries:
   - id: master_data.search.query
     moduleId: master-data
     permission: master_data.read
+  - id: payables.invoice.get
+    moduleId: payables
+    permission: payables.read
+  - id: payables.invoice.list
+    moduleId: payables
+    permission: payables.read
+  - id: payables.balance.get
+    moduleId: payables
+    permission: payables.read
+  - id: payments.payment.get
+    moduleId: payments
+    permission: payments.read
+  - id: payments.payment.list
+    moduleId: payments
+    permission: payments.read
   - id: purchasing.order.get
     moduleId: purchasing
     permission: purchasing.read
   - id: purchasing.order.list
     moduleId: purchasing
     permission: purchasing.read
+  - id: receivables.invoice.get
+    moduleId: receivables
+    permission: receivables.read
+  - id: receivables.invoice.list
+    moduleId: receivables
+    permission: receivables.read
+  - id: receivables.balance.get
+    moduleId: receivables
+    permission: receivables.read
+  - id: receiving.receipt.get
+    moduleId: receiving
+    permission: receiving.read
+  - id: receiving.receipt.list
+    moduleId: receiving
+    permission: receiving.read
   - id: sales.order.get
     moduleId: sales
     permission: sales.read

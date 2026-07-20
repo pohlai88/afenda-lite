@@ -34,6 +34,20 @@ const ARCH023_V1_CODES = [
 	"sales.manage",
 	"purchasing.read",
 	"purchasing.manage",
+	"inventory.read",
+	"inventory.manage",
+	"receiving.read",
+	"receiving.manage",
+	"fulfillment.read",
+	"fulfillment.manage",
+	"receivables.read",
+	"receivables.manage",
+	"payables.read",
+	"payables.manage",
+	"payments.read",
+	"payments.manage",
+	"accounting.read",
+	"accounting.manage",
 ] as const;
 
 describe("PLATFORM_PERMISSION_V1 (N10 / ARCH-023)", () => {
@@ -41,12 +55,19 @@ describe("PLATFORM_PERMISSION_V1 (N10 / ARCH-023)", () => {
 		expect([...PLATFORM_PERMISSION_CODES_V1].toSorted()).toEqual(
 			[...ARCH023_V1_CODES].toSorted(),
 		);
-		expect(PLATFORM_PERMISSION_V1).toHaveLength(12);
+		expect(PLATFORM_PERMISSION_V1).toHaveLength(26);
 	});
 
 	it("isPlatformPermissionCodeV1 accepts only v1 codes", () => {
 		expect(isPlatformPermissionCodeV1("org.roles.manage")).toBe(true);
 		expect(isPlatformPermissionCodeV1("sales.read")).toBe(true);
+		expect(isPlatformPermissionCodeV1("inventory.read")).toBe(true);
+		expect(isPlatformPermissionCodeV1("receiving.read")).toBe(true);
+		expect(isPlatformPermissionCodeV1("fulfillment.read")).toBe(true);
+		expect(isPlatformPermissionCodeV1("receivables.read")).toBe(true);
+		expect(isPlatformPermissionCodeV1("payables.read")).toBe(true);
+		expect(isPlatformPermissionCodeV1("payments.read")).toBe(true);
+		expect(isPlatformPermissionCodeV1("accounting.read")).toBe(true);
 		expect(isPlatformPermissionCodeV1("fft.orders.manage")).toBe(false);
 		expect(isPlatformPermissionCodeV1("declarations.read")).toBe(false);
 		expect(isPlatformPermissionCodeV1("")).toBe(false);
@@ -70,11 +91,25 @@ describe("PLATFORM_PERMISSION_V1 (N10 / ARCH-023)", () => {
 		expect(editor?.permissionCodes.toSorted()).toEqual(
 			[
 				"account.self",
+				"accounting.manage",
+				"accounting.read",
 				"clients.invite",
+				"inventory.manage",
+				"inventory.read",
+				"fulfillment.manage",
+				"fulfillment.read",
 				"master_data.manage",
 				"master_data.read",
+				"payables.manage",
+				"payables.read",
+				"payments.manage",
+				"payments.read",
 				"purchasing.manage",
 				"purchasing.read",
+				"receiving.manage",
+				"receiving.read",
+				"receivables.manage",
+				"receivables.read",
 				"sales.manage",
 				"sales.read",
 			].toSorted(),
@@ -86,8 +121,15 @@ describe("PLATFORM_PERMISSION_V1 (N10 / ARCH-023)", () => {
 		expect(viewer?.permissionCodes.toSorted()).toEqual(
 			[
 				"account.self",
+				"accounting.read",
+				"fulfillment.read",
+				"inventory.read",
 				"master_data.read",
+				"payables.read",
+				"payments.read",
 				"purchasing.read",
+				"receiving.read",
+				"receivables.read",
 				"sales.read",
 			].toSorted(),
 		);
@@ -97,11 +139,11 @@ describe("PLATFORM_PERMISSION_V1 (N10 / ARCH-023)", () => {
 describe.skipIf(!hasDatabase)("ensurePlatformPermissionCatalog (N10)", () => {
 	it("is idempotent and preserves template_key → role ids", async () => {
 		const first = await ensurePlatformPermissionCatalog(db);
-		expect(first.permissionCount).toBe(12);
+		expect(first.permissionCount).toBe(26);
 		expect(first.templates).toHaveLength(3);
 
 		const second = await ensurePlatformPermissionCatalog(db);
-		expect(second.permissionCount).toBe(12);
+		expect(second.permissionCount).toBe(26);
 		expect(second.templates.map((t) => t.roleId).toSorted()).toEqual(
 			first.templates.map((t) => t.roleId).toSorted(),
 		);

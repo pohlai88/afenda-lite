@@ -69,6 +69,7 @@ Local skills must remain operable if `afenda-Xerp` is absent. Do not edit `agent
 | Skill | Source class | Management | Status | Owns | Invoked by | Controlled authority | Prerequisite | Evidence | Notes |
 |-------|--------------|------------|--------|------|------------|----------------------|--------------|----------|-------|
 | `neon-tenancy-efficiency` | local-domain-farm | local | keep | Neon shared-schema tenancy + ARCH-023 IAM application | Tenancy / Neon ops | ARCH-023 · ARCH-025 · ARCH-027 | none | `.cursor/skills/neon-tenancy-efficiency/SKILL.md` | Wave 2 extend closed → keep; ARCH-027 `@afenda/env` + `.env.local` |
+| `afenda-docs-app` | local-domain-farm | local | keep | Official Fumadocs app `@afenda/docs` — narrative MDX, OpenAPI/package publish, runtime, gates, host locks | apps/docs · docs-V2/docs · generate:openapi-docs · generate:package-docs · check:docs-app · :3001 | docs-V2/docs Scratch · disk apps/docs · OPEN-001 | none | `.cursor/skills/afenda-docs-app/SKILL.md` | Operational contract + completion report; not Living DOC-001; bans 8bitcn/registry templates |
 | `feed-farm-trade` | local-domain-farm | local | forbidden | — (skill directory removed) | — | — | — | — | Nuclear wipe — FFT product module + farm **removed**; do not recreate |
 | `update-mcp-config` | local-domain-farm | local | keep | Project MCP config updates | MCP wiring | AGENTS.md · `.vscode/mcp.json` | none | `.cursor/skills/update-mcp-config/SKILL.md` | |
 | `cursor-mission-compile` | local-agent-ops | local | keep | Compiles raw prose/HTML/logs/tickets into budget Cursor missions | Prompt clean · transform · optimize · compile | Scratch vibe guideline · context-engineering | none | `.cursor/skills/cursor-mission-compile/SKILL.md` | Compile only — does not execute; Agent search owns discovery; no PREFLIGHT paste |
@@ -121,7 +122,7 @@ Management = `local`. Status = `keep`. Method library invoked after a farm is fi
 
 ## Planned (approved backlog — no SKILL.md until authoring mission)
 
-_None. Last authored: `afenda-coding-discipline` 2026-07-17 → keep (local-method)._
+_None. Last authored: `afenda-docs-app` 2026-07-20 → keep (local-domain-farm)._
 
 ## Candidate gaps (not approved for authoring)
 

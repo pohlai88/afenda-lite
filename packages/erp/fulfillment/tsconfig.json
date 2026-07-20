@@ -1,0 +1,7 @@
+{
+	"extends": "@afenda/config/tsconfig/base.json",
+	"compilerOptions": {
+		"rootDir": "."
+	},
+	"include": ["src/**/*.ts", "__tests__/**/*.ts"]
+}

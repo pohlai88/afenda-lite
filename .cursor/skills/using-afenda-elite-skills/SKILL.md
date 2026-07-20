@@ -50,6 +50,7 @@ Task arrives (this repo / Afenda-Lite)
     │
     ├── Product routing, monorepo, docs types, apps/docs? ──→ THIS skill first
     ├── Raw prose / HTML / ticket / log / screenshot → Cursor mission compile? ──→ cursor-mission-compile (compile only; then new Agent chat with paste)
+    ├── Official site `@afenda/docs` / apps/docs MDX · generators · check:docs-app · :3001? → afenda-docs-app (Scratch docs-V2/docs; not Living DOC-001)
     ├── Docs create/update/deprecate/classify? ─────────────→ afenda-elite-doc-control → documentation-and-adrs (prose)
     ├── Docs duplication / conflict / SSOT / register drift? → afenda-elite-doc-integrity
     ├── Authority / plan / code alignment · coverage matrix? → afenda-elite-audit-orchestrator

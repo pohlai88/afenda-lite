@@ -2,6 +2,36 @@
 # Regenerate: pnpm validate:modules --write
 events:
   - direction: emits
+    id: accounting.journal.posted.v1
+    moduleId: accounting
+  - direction: emits
+    id: accounting.journal.reversed.v1
+    moduleId: accounting
+  - direction: emits
+    id: fulfillment.delivery.created.v1
+    moduleId: fulfillment
+  - direction: emits
+    id: fulfillment.pick.confirmed.v1
+    moduleId: fulfillment
+  - direction: emits
+    id: fulfillment.delivery.posted.v1
+    moduleId: fulfillment
+  - direction: emits
+    id: fulfillment.delivery.completed.v1
+    moduleId: fulfillment
+  - direction: emits
+    id: inventory.movement.created.v1
+    moduleId: inventory
+  - direction: emits
+    id: inventory.movement.posted.v1
+    moduleId: inventory
+  - direction: emits
+    id: inventory.stock.reserved.v1
+    moduleId: inventory
+  - direction: emits
+    id: inventory.reservation.released.v1
+    moduleId: inventory
+  - direction: emits
     id: master_data.party.created.v1
     moduleId: master-data
   - direction: emits
@@ -191,6 +221,33 @@ events:
     id: master_data.change_request.applied.v1
     moduleId: master-data
   - direction: emits
+    id: payables.invoice.created.v1
+    moduleId: payables
+  - direction: emits
+    id: payables.invoice.matched.v1
+    moduleId: payables
+  - direction: emits
+    id: payables.invoice.posted.v1
+    moduleId: payables
+  - direction: emits
+    id: payables.credit_note.posted.v1
+    moduleId: payables
+  - direction: emits
+    id: payables.allocation.posted.v1
+    moduleId: payables
+  - direction: emits
+    id: payments.payment.created.v1
+    moduleId: payments
+  - direction: emits
+    id: payments.payment.posted.v1
+    moduleId: payments
+  - direction: emits
+    id: payments.payment.reversed.v1
+    moduleId: payments
+  - direction: emits
+    id: payments.refund.posted.v1
+    moduleId: payments
+  - direction: emits
     id: purchasing.order.created.v1
     moduleId: purchasing
   - direction: emits
@@ -202,6 +259,27 @@ events:
   - direction: emits
     id: purchasing.order.cancelled.v1
     moduleId: purchasing
+  - direction: emits
+    id: receivables.invoice.posted.v1
+    moduleId: receivables
+  - direction: emits
+    id: receivables.credit_note.posted.v1
+    moduleId: receivables
+  - direction: emits
+    id: receivables.allocation.posted.v1
+    moduleId: receivables
+  - direction: emits
+    id: receiving.receipt.created.v1
+    moduleId: receiving
+  - direction: emits
+    id: receiving.receipt.line_added.v1
+    moduleId: receiving
+  - direction: emits
+    id: receiving.receipt.posted.v1
+    moduleId: receiving
+  - direction: emits
+    id: receiving.discrepancy.recorded.v1
+    moduleId: receiving
   - direction: emits
     id: sales.order.created.v1
     moduleId: sales

@@ -210,6 +210,187 @@ edges:
     reason: "FK + snapshots; masters via public API only"
     effectiveDate: "2026-07-20"
 
+  - from: "@afenda/inventory"
+    to: "@afenda/db"
+    status: approved
+    authority: ARCH-006
+    reason: "stock_movement / stock_balance / stock_ledger / stock_reservation schema access"
+    effectiveDate: "2026-07-20"
+  - from: "@afenda/inventory"
+    to: "@afenda/errors"
+    status: approved
+    authority: ARCH-006
+    reason: "Inventory error codes"
+    effectiveDate: "2026-07-20"
+  - from: "@afenda/inventory"
+    to: "@afenda/audit"
+    status: approved
+    authority: ARCH-006
+    reason: "Inventory mutation audit"
+    effectiveDate: "2026-07-20"
+  - from: "@afenda/inventory"
+    to: "@afenda/events"
+    status: approved
+    authority: ARCH-006
+    reason: "Inventory outbox events"
+    effectiveDate: "2026-07-20"
+  - from: "@afenda/inventory"
+    to: "@afenda/master-data"
+    status: approved
+    authority: ARCH-006
+    reason: "FK + snapshots; masters via public API only"
+    effectiveDate: "2026-07-20"
+
+  - from: "@afenda/receiving"
+    to: "@afenda/db"
+    status: approved
+    authority: ARCH-006
+    reason: "goods_receipt / goods_receipt_line / receiving_discrepancy schema access"
+    effectiveDate: "2026-07-20"
+  - from: "@afenda/receiving"
+    to: "@afenda/errors"
+    status: approved
+    authority: ARCH-006
+    reason: "Receiving error codes"
+    effectiveDate: "2026-07-20"
+  - from: "@afenda/receiving"
+    to: "@afenda/audit"
+    status: approved
+    authority: ARCH-006
+    reason: "Goods receipt mutation audit"
+    effectiveDate: "2026-07-20"
+  - from: "@afenda/receiving"
+    to: "@afenda/events"
+    status: approved
+    authority: ARCH-006
+    reason: "Goods receipt outbox events"
+    effectiveDate: "2026-07-20"
+  - from: "@afenda/receiving"
+    to: "@afenda/master-data"
+    status: approved
+    authority: ARCH-006
+    reason: "Goods receipt FK + snapshots; masters via public API only"
+    effectiveDate: "2026-07-20"
+
+  - from: "@afenda/fulfillment"
+    to: "@afenda/db"
+    status: approved
+    authority: ARCH-006
+    reason: "delivery / delivery_line / delivery_pick / delivery_pack / proof_of_delivery schema access"
+    effectiveDate: "2026-07-20"
+  - from: "@afenda/fulfillment"
+    to: "@afenda/errors"
+    status: approved
+    authority: ARCH-006
+    reason: "Fulfillment error codes"
+    effectiveDate: "2026-07-20"
+  - from: "@afenda/fulfillment"
+    to: "@afenda/audit"
+    status: approved
+    authority: ARCH-006
+    reason: "Delivery mutation audit"
+    effectiveDate: "2026-07-20"
+  - from: "@afenda/fulfillment"
+    to: "@afenda/events"
+    status: approved
+    authority: ARCH-006
+    reason: "Delivery outbox events"
+    effectiveDate: "2026-07-20"
+  - from: "@afenda/fulfillment"
+    to: "@afenda/master-data"
+    status: approved
+    authority: ARCH-006
+    reason: "Delivery FK + snapshots; masters via public API only"
+    effectiveDate: "2026-07-20"
+
+  - from: "@afenda/receivables"
+    to: "@afenda/db"
+    status: approved
+    authority: ARCH-006
+    reason: "sales_invoice / sales_invoice_line / sales_credit_note / customer_allocation / customer_balance_projection schema access"
+    effectiveDate: "2026-07-20"
+  - from: "@afenda/receivables"
+    to: "@afenda/errors"
+    status: approved
+    authority: ARCH-006
+    reason: "Receivables error codes"
+    effectiveDate: "2026-07-20"
+  - from: "@afenda/receivables"
+    to: "@afenda/audit"
+    status: approved
+    authority: ARCH-006
+    reason: "Receivables mutation audit"
+    effectiveDate: "2026-07-20"
+  - from: "@afenda/receivables"
+    to: "@afenda/events"
+    status: approved
+    authority: ARCH-006
+    reason: "Receivables outbox events"
+    effectiveDate: "2026-07-20"
+  - from: "@afenda/receivables"
+    to: "@afenda/master-data"
+    status: approved
+    authority: ARCH-006
+    reason: "Customer and item FK + snapshots; masters via public API only"
+    effectiveDate: "2026-07-20"
+
+  - from: "@afenda/payables"
+    to: "@afenda/db"
+    status: approved
+    authority: ARCH-006
+    reason: "Supplier invoice / line / credit note / allocation / balance projection / three-way match schema access"
+    effectiveDate: "2026-07-20"
+  - from: "@afenda/payables"
+    to: "@afenda/errors"
+    status: approved
+    authority: ARCH-006
+    reason: "Payables error codes"
+    effectiveDate: "2026-07-20"
+  - from: "@afenda/payables"
+    to: "@afenda/events"
+    status: approved
+    authority: ARCH-006
+    reason: "Payables outbox events"
+    effectiveDate: "2026-07-20"
+
+  - from: "@afenda/payments"
+    to: "@afenda/db"
+    status: approved
+    authority: ARCH-006
+    reason: "Payment / allocation / reversal schema access"
+    effectiveDate: "2026-07-20"
+  - from: "@afenda/payments"
+    to: "@afenda/errors"
+    status: approved
+    authority: ARCH-006
+    reason: "Payments error codes"
+    effectiveDate: "2026-07-20"
+  - from: "@afenda/payments"
+    to: "@afenda/events"
+    status: approved
+    authority: ARCH-006
+    reason: "Payments outbox events"
+    effectiveDate: "2026-07-20"
+
+  - from: "@afenda/accounting"
+    to: "@afenda/db"
+    status: approved
+    authority: ARCH-006
+    reason: "Journal / journal line / ledger posting / accounting period schema access"
+    effectiveDate: "2026-07-20"
+  - from: "@afenda/accounting"
+    to: "@afenda/errors"
+    status: approved
+    authority: ARCH-006
+    reason: "Accounting error codes"
+    effectiveDate: "2026-07-20"
+  - from: "@afenda/accounting"
+    to: "@afenda/events"
+    status: approved
+    authority: ARCH-006
+    reason: "Accounting outbox events"
+    effectiveDate: "2026-07-20"
+
   - from: "@afenda/ai-the-machine"
     to: "@afenda/errors"
     status: approved

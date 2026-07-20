@@ -1,0 +1,42 @@
+# `@afenda/receivables`
+
+Org-scoped accounts-receivable execution for Afenda-Lite: sales invoice
+creation, line capture, posting, credit notes, customer receipt allocation,
+cancellation, and customer balance queries. The package owns
+`sales_invoice`, `sales_invoice_line`, `sales_credit_note`,
+`customer_allocation`, and `customer_balance_projection` mutations; schemas
+remain in `@afenda/db`.
+
+## Consume
+
+Import the public operations from `@afenda/receivables`:
+`createDraftSalesInvoice`, `addSalesInvoiceLine`, `postSalesInvoice`,
+`issueCreditNote`, `allocateCustomerReceipt`, `cancelSalesInvoice`,
+`getSalesInvoiceById`, `listSalesInvoices`, and `getCustomerBalance`.
+
+Every mutation requires organization, actor, and correlation identity.
+State-changing operations use optimistic versions where the current invoice
+version is part of the command contract.
+
+## ERP boundary
+
+Receivables never imports peer ERP packages directly and never writes sales
+order, payment, ledger, or journal tables. Customer and item references use the
+master-data boundary; cross-module integration uses versioned outbox events.
+
+## Events
+
+- `receivables.invoice.posted.v1`
+- `receivables.credit_note.posted.v1`
+- `receivables.allocation.posted.v1`
+
+## Maintain
+
+```bash
+pnpm --filter @afenda/receivables lint
+pnpm --filter @afenda/receivables typecheck
+pnpm --filter @afenda/receivables test
+pnpm --filter @afenda/receivables check
+```
+
+Permissions are `receivables.read` and `receivables.manage`.

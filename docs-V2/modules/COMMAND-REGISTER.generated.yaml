@@ -1,6 +1,63 @@
 # GENERATED — do not edit by hand. Source: ERP module.manifest.ts
 # Regenerate: pnpm validate:modules --write
 commands:
+  - id: accounting.journal.create
+    moduleId: accounting
+    permission: accounting.manage
+  - id: accounting.journal.line.add
+    moduleId: accounting
+    permission: accounting.manage
+  - id: accounting.journal.post
+    moduleId: accounting
+    permission: accounting.manage
+  - id: accounting.journal.reverse
+    moduleId: accounting
+    permission: accounting.manage
+  - id: accounting.period.open
+    moduleId: accounting
+    permission: accounting.manage
+  - id: accounting.period.close
+    moduleId: accounting
+    permission: accounting.manage
+  - id: fulfillment.delivery.create
+    moduleId: fulfillment
+    permission: fulfillment.manage
+  - id: fulfillment.delivery.line.add
+    moduleId: fulfillment
+    permission: fulfillment.manage
+  - id: fulfillment.delivery.pick.start
+    moduleId: fulfillment
+    permission: fulfillment.manage
+  - id: fulfillment.delivery.pick.confirm
+    moduleId: fulfillment
+    permission: fulfillment.manage
+  - id: fulfillment.delivery.pack.confirm
+    moduleId: fulfillment
+    permission: fulfillment.manage
+  - id: fulfillment.delivery.post
+    moduleId: fulfillment
+    permission: fulfillment.manage
+  - id: fulfillment.delivery.pod.record
+    moduleId: fulfillment
+    permission: fulfillment.manage
+  - id: fulfillment.delivery.cancel
+    moduleId: fulfillment
+    permission: fulfillment.manage
+  - id: inventory.movement.create
+    moduleId: inventory
+    permission: inventory.manage
+  - id: inventory.movement.line.add
+    moduleId: inventory
+    permission: inventory.manage
+  - id: inventory.movement.post
+    moduleId: inventory
+    permission: inventory.manage
+  - id: inventory.stock.reserve
+    moduleId: inventory
+    permission: inventory.manage
+  - id: inventory.reservation.release
+    moduleId: inventory
+    permission: inventory.manage
   - id: master_data.party.create
     moduleId: master-data
     permission: master_data.manage
@@ -202,6 +259,42 @@ commands:
   - id: master_data.search.rebuild
     moduleId: master-data
     permission: master_data.manage
+  - id: payables.invoice.create
+    moduleId: payables
+    permission: payables.manage
+  - id: payables.invoice.line.add
+    moduleId: payables
+    permission: payables.manage
+  - id: payables.invoice.match
+    moduleId: payables
+    permission: payables.manage
+  - id: payables.invoice.post
+    moduleId: payables
+    permission: payables.manage
+  - id: payables.credit_note.issue
+    moduleId: payables
+    permission: payables.manage
+  - id: payables.allocation.create
+    moduleId: payables
+    permission: payables.manage
+  - id: payables.invoice.cancel
+    moduleId: payables
+    permission: payables.manage
+  - id: payments.payment.create
+    moduleId: payments
+    permission: payments.manage
+  - id: payments.allocation.add
+    moduleId: payments
+    permission: payments.manage
+  - id: payments.payment.post
+    moduleId: payments
+    permission: payments.manage
+  - id: payments.payment.reverse
+    moduleId: payments
+    permission: payments.manage
+  - id: payments.refund.post
+    moduleId: payments
+    permission: payments.manage
   - id: purchasing.order.create
     moduleId: purchasing
     permission: purchasing.manage
@@ -214,6 +307,39 @@ commands:
   - id: purchasing.order.cancel
     moduleId: purchasing
     permission: purchasing.manage
+  - id: receivables.invoice.create
+    moduleId: receivables
+    permission: receivables.manage
+  - id: receivables.invoice.line.add
+    moduleId: receivables
+    permission: receivables.manage
+  - id: receivables.invoice.post
+    moduleId: receivables
+    permission: receivables.manage
+  - id: receivables.credit_note.issue
+    moduleId: receivables
+    permission: receivables.manage
+  - id: receivables.allocation.create
+    moduleId: receivables
+    permission: receivables.manage
+  - id: receivables.invoice.cancel
+    moduleId: receivables
+    permission: receivables.manage
+  - id: receiving.receipt.create
+    moduleId: receiving
+    permission: receiving.manage
+  - id: receiving.receipt.line.add
+    moduleId: receiving
+    permission: receiving.manage
+  - id: receiving.receipt.post
+    moduleId: receiving
+    permission: receiving.manage
+  - id: receiving.receipt.cancel
+    moduleId: receiving
+    permission: receiving.manage
+  - id: receiving.discrepancy.record
+    moduleId: receiving
+    permission: receiving.manage
   - id: sales.order.create
     moduleId: sales
     permission: sales.manage

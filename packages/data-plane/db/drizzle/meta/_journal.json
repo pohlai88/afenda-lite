@@ -99,6 +99,48 @@
       "when": 1784550000000,
       "tag": "0013_inventory_stock",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1784560000000,
+      "tag": "0014_receiving_goods_receipt",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1784561000000,
+      "tag": "0015_fulfillment_delivery",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1784562000000,
+      "tag": "0016_receivables_sales_invoice",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1784563000000,
+      "tag": "0017_payables_supplier_invoice",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1784564000000,
+      "tag": "0018_payments",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1784565000000,
+      "tag": "0019_accounting",
+      "breakpoints": true
     }
   ]
 }

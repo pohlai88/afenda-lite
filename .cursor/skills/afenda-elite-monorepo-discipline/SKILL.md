@@ -33,6 +33,7 @@ Rank 2 — Surfaces     : @afenda/ui-system · @afenda/emails
 Rank 1 — Platform     : banded catalog (R1-A…F, R1-X) — see LAYERS.md + packages/README.md
                         Living packages: db · auth · admin · env · errors · logger · rate-limit ·
                         cache · audit · search · notifications · events · master-data · sales ·
+                        purchasing · inventory · receiving · fulfillment · receivables · payables · payments · accounting ·
                         http · security · metrics · openapi · ai-the-machine · config
 ```
 
@@ -120,6 +121,9 @@ Full diagram, forbidden pairs, and violation fixes: [LAYERS.md](LAYERS.md).
 | `@afenda/rate-limit` | `@afenda/env` · `@afenda/errors` | Next.js; Surfaces / `apps/*`; foreign Redis outside Upstash |
 | `@afenda/cache` | `@afenda/env` · `@afenda/errors` | Next.js; Surfaces / `apps/*`; foreign Redis outside Upstash; `FLUSHDB` |
 | `@afenda/master-data` | `@afenda/db` · `@afenda/errors` · `@afenda/audit` · `@afenda/events` | Surfaces / `apps/*`; Next.js; org-scoped `md_uom`; dual-write `md_*` outside package; shadow customer/product tables |
+| `@afenda/payables` | `@afenda/db` · `@afenda/errors` · `@afenda/events` | Surfaces / `apps/*`; Next.js; dual-write into purchasing, receiving, payment, ledger, or journal tables; peer ERP imports |
+| `@afenda/payments` | `@afenda/db` · `@afenda/errors` · `@afenda/events` | Surfaces / `apps/*`; Next.js; separate refund tables; dual-write into receivables, payables, ledger, journal, or accounting tables; peer ERP imports |
+| `@afenda/accounting` | `@afenda/db` · `@afenda/errors` · `@afenda/events` | Surfaces / `apps/*`; Next.js; dual-write into peer ERP tables; mutable posted journal lines; peer ERP imports |
 | `@afenda/ui-system` | platform packages only if client-safe | Server-only code, DB calls, secrets |
 | `@afenda/emails` | (UI/React peers as needed) | Be imported from client components in `apps/web` |
 | `@afenda/config` | (none at runtime) | Be imported as a runtime module; use `extends` / Biome root only |

@@ -98,6 +98,90 @@ export default defineConfig({
 					},
 				},
 			},
+			{
+				...nodeProject(
+					"receiving",
+					path.join(repoRoot, "packages/erp/receiving"),
+				),
+				resolve: {
+					alias: {
+						...testingAlias,
+						"server-only": path.join(repoRoot, "testing/empty-server-only.ts"),
+					},
+				},
+			},
+			{
+				...nodeProject(
+					"receivables",
+					path.join(repoRoot, "packages/erp/receivables"),
+				),
+				resolve: {
+					alias: {
+						...testingAlias,
+						"server-only": path.join(repoRoot, "testing/empty-server-only.ts"),
+					},
+				},
+			},
+			{
+				...nodeProject(
+					"payables",
+					path.join(repoRoot, "packages/erp/payables"),
+				),
+				resolve: {
+					alias: {
+						...testingAlias,
+						"server-only": path.join(repoRoot, "testing/empty-server-only.ts"),
+					},
+				},
+			},
+			{
+				...nodeProject(
+					"payments",
+					path.join(repoRoot, "packages/erp/payments"),
+				),
+				resolve: {
+					alias: {
+						...testingAlias,
+						"server-only": path.join(repoRoot, "testing/empty-server-only.ts"),
+					},
+				},
+			},
+			{
+				...nodeProject(
+					"accounting",
+					path.join(repoRoot, "packages/erp/accounting"),
+				),
+				resolve: {
+					alias: {
+						...testingAlias,
+						"server-only": path.join(repoRoot, "testing/empty-server-only.ts"),
+					},
+				},
+			},
+			{
+				...nodeProject(
+					"fulfillment",
+					path.join(repoRoot, "packages/erp/fulfillment"),
+				),
+				resolve: {
+					alias: {
+						...testingAlias,
+						"server-only": path.join(repoRoot, "testing/empty-server-only.ts"),
+					},
+				},
+			},
+			{
+				...nodeProject(
+					"inventory",
+					path.join(repoRoot, "packages/erp/inventory"),
+				),
+				resolve: {
+					alias: {
+						...testingAlias,
+						"server-only": path.join(repoRoot, "testing/empty-server-only.ts"),
+					},
+				},
+			},
 			nodeProject("http", path.join(repoRoot, "packages/runtime/http")),
 			nodeProject("security", path.join(repoRoot, "packages/runtime/security")),
 			nodeProject("metrics", path.join(repoRoot, "packages/runtime/metrics")),

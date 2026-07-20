@@ -6,7 +6,7 @@ Import by package name only (`@afenda/<name>` or a declared `exports` subpath). 
 
 For engineers extending Platform or Surfaces; each package README is the consume / maintain entry. Agent checkout posture: [AGENTS.md](../AGENTS.md).
 
-**Governance version:** `packages-catalog/2026-07-20` (Phase 1 classification — promoted from packages_refactor_v2.3). Phase 1–2 governance baseline is **done**. Phase 3 one-level category nesting is **done** (`packages/<category>/<name>`; published names unchanged). Phase 4 new ERP packages need a separate MODULE-ROADMAP cut after Phase 3 audit. Status: [docs-V2/monorepo/README.md](../docs-V2/monorepo/README.md) § Phase status · authorization: [phase3_phase4.md](../docs-V2/_scratch/phase3_phase4.md).
+**Governance version:** `packages-catalog/2026-07-20` (Phase 1 classification). Phase 1–2 governance baseline is **done**. Phase 3 one-level category nesting is **done** (`packages/<category>/<name>`; published names unchanged). Phase 4 is **complete** through 4.8 Accounting. Status: [docs-V2/monorepo/README.md](../docs-V2/monorepo/README.md) § Phase status · Scratch program: [packages_governance.md](../docs-V2/_scratch/packages_governance.md).
 
 ## Layers
 
@@ -72,8 +72,15 @@ Application (`apps/web` · `apps/docs`) is Rank 3 — outside this folder. Physi
 | [`@afenda/master-data`](./erp/master-data/README.md) | `ref_*` + org masters (`md_party` · `md_item*` · `md_warehouse`) |
 | [`@afenda/sales`](./erp/sales/README.md) | Sales order/line consumer (ARCH-006) |
 | [`@afenda/purchasing`](./erp/purchasing/README.md) | Purchase order/line consumer (ARCH-006) |
+| [`@afenda/inventory`](./erp/inventory/README.md) | Stock movement / balance / reservation sole mutator (ARCH-006) |
+| [`@afenda/receiving`](./erp/receiving/README.md) | Goods receipt / line / discrepancy sole mutator (ARCH-006) |
+| [`@afenda/fulfillment`](./erp/fulfillment/README.md) | Delivery / line / pick / pack / proof-of-delivery sole mutator (ARCH-006) |
+| [`@afenda/receivables`](./erp/receivables/README.md) | Sales invoice / line / credit note / allocation / customer-balance projection sole mutator (ARCH-006) |
+| [`@afenda/payables`](./erp/payables/README.md) | Supplier invoice / line / credit note / allocation / balance projection / three-way-match result sole mutator (ARCH-006) |
+| [`@afenda/payments`](./erp/payments/README.md) | Payment / allocation / reversal sole mutator; refunds are payment rows with `direction = refund` (ARCH-006) |
+| [`@afenda/accounting`](./erp/accounting/README.md) | Journal / journal line / ledger posting / accounting period sole mutator (ARCH-006) |
 
-Peer R1-F packages do not import each other. Candidates (no package yet): [MODULE-ROADMAP.yaml](../docs-V2/modules/MODULE-ROADMAP.yaml).
+Peer R1-F packages do not import each other. The current candidate roadmap is empty: [MODULE-ROADMAP.yaml](../docs-V2/modules/MODULE-ROADMAP.yaml).
 
 ### Intelligence — Rank 1X — [`intelligence/`](./intelligence/README.md)
 
@@ -116,7 +123,6 @@ Add / rename packages only with a DAG update in [docs-V2/monorepo](../docs-V2/mo
 | Module roadmap | [MODULE-ROADMAP.yaml](../docs-V2/modules/MODULE-ROADMAP.yaml) |
 | pnpm · catalog | [docs-V2/pnpm](../docs-V2/pnpm/README.md) |
 | Tenancy · shared schema | [docs-V2/tenancy](../docs-V2/tenancy/README.md) |
-| Phase 3/4 authorization | [phase3_phase4.md](../docs-V2/_scratch/phase3_phase4.md) |
-| Accepted promotion reference | [packages_refactor_v2.3.md](../docs-V2/_scratch/packages_refactor_v2.3.md) |
+| Packages program (Scratch) | [packages_governance.md](../docs-V2/_scratch/packages_governance.md) |
 | Repo quickstart | [README.md](../README.md) |
 | Agent checkout | [AGENTS.md](../AGENTS.md) |

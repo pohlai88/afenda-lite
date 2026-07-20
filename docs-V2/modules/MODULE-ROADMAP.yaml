@@ -1,37 +1,9 @@
 # Module roadmap (planning only — no workspace packages)
 # Version: module-roadmap/2026-07-20
 # Authority: packages_refactor_v2.3 promotion · docs-V2/monorepo
-# Living (removed from roadmap): master-data · sales · purchasing
+# Living (removed from roadmap): master-data · sales · purchasing · inventory · receiving · fulfillment · receivables · payables · payments · accounting
 
 version: "module-roadmap/2026-07-20"
 updated: "2026-07-20"
 
-modules:
-  - id: inventory
-    planningState: candidate
-    category: supply-chain
-    authority: packages_refactor_v2.3
-  - id: receiving
-    planningState: candidate
-    category: supply-chain
-    authority: packages_refactor_v2.3
-  - id: fulfillment
-    planningState: candidate
-    category: supply-chain
-    authority: packages_refactor_v2.3
-  - id: receivables
-    planningState: candidate
-    category: finance
-    authority: packages_refactor_v2.3
-  - id: payables
-    planningState: candidate
-    category: finance
-    authority: packages_refactor_v2.3
-  - id: payments
-    planningState: candidate
-    category: finance
-    authority: packages_refactor_v2.3
-  - id: accounting
-    planningState: candidate
-    category: finance
-    authority: packages_refactor_v2.3
+modules: []

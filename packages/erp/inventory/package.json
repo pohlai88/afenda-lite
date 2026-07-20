@@ -1,0 +1,36 @@
+{
+	"name": "@afenda/inventory",
+	"version": "0.0.0",
+	"private": true,
+	"type": "module",
+	"exports": {
+		".": {
+			"types": "./src/index.ts",
+			"default": "./src/index.ts"
+		},
+		"./module-manifest": {
+			"types": "./src/module.manifest.ts",
+			"default": "./src/module.manifest.ts"
+		}
+	},
+	"scripts": {
+		"lint": "biome check .",
+		"typecheck": "tsc --noEmit -p tsconfig.json",
+		"test": "vitest run --config ../../../testing/vitest.config.ts --project inventory",
+		"check": "pnpm typecheck && pnpm test"
+	},
+	"dependencies": {
+		"@afenda/audit": "workspace:*",
+		"@afenda/db": "workspace:*",
+		"@afenda/errors": "workspace:*",
+		"@afenda/events": "workspace:*",
+		"@afenda/master-data": "workspace:*",
+		"server-only": "0.0.1",
+		"zod": "catalog:"
+	},
+	"devDependencies": {
+		"@afenda/config": "workspace:*",
+		"@types/node": "catalog:",
+		"typescript": "catalog:"
+	}
+}

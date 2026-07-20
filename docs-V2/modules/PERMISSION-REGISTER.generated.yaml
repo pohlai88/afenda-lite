@@ -1,6 +1,24 @@
 # GENERATED — do not edit by hand. Source: ERP module.manifest.ts
 # Regenerate: pnpm validate:modules --write
 permissions:
+  - code: accounting.read
+    moduleId: accounting
+    namespace: accounting
+  - code: accounting.manage
+    moduleId: accounting
+    namespace: accounting
+  - code: fulfillment.read
+    moduleId: fulfillment
+    namespace: fulfillment
+  - code: fulfillment.manage
+    moduleId: fulfillment
+    namespace: fulfillment
+  - code: inventory.read
+    moduleId: inventory
+    namespace: inventory
+  - code: inventory.manage
+    moduleId: inventory
+    namespace: inventory
   - code: master_data.read
     moduleId: master-data
     namespace: master_data
@@ -13,12 +31,36 @@ permissions:
   - code: master_data.import_approve
     moduleId: master-data
     namespace: master_data
+  - code: payables.read
+    moduleId: payables
+    namespace: payables
+  - code: payables.manage
+    moduleId: payables
+    namespace: payables
+  - code: payments.read
+    moduleId: payments
+    namespace: payments
+  - code: payments.manage
+    moduleId: payments
+    namespace: payments
   - code: purchasing.read
     moduleId: purchasing
     namespace: purchasing
   - code: purchasing.manage
     moduleId: purchasing
     namespace: purchasing
+  - code: receivables.read
+    moduleId: receivables
+    namespace: receivables
+  - code: receivables.manage
+    moduleId: receivables
+    namespace: receivables
+  - code: receiving.read
+    moduleId: receiving
+    namespace: receiving
+  - code: receiving.manage
+    moduleId: receiving
+    namespace: receiving
   - code: sales.read
     moduleId: sales
     namespace: sales

@@ -32,6 +32,26 @@ export const PERMISSION_DENIED_MESSAGE = {
 	"sales.manage": "You do not have permission to manage sales orders.",
 	"purchasing.read": "You do not have permission to read purchase orders.",
 	"purchasing.manage": "You do not have permission to manage purchase orders.",
+	"inventory.read":
+		"You do not have permission to read stock movements and availability.",
+	"inventory.manage":
+		"You do not have permission to manage inventory stock movements.",
+	"receiving.read": "You do not have permission to read goods receipts.",
+	"receiving.manage": "You do not have permission to manage goods receipts.",
+	"fulfillment.read": "You do not have permission to read deliveries.",
+	"fulfillment.manage": "You do not have permission to manage deliveries.",
+	"receivables.read":
+		"You do not have permission to read customer receivables.",
+	"receivables.manage":
+		"You do not have permission to manage customer receivables.",
+	"payables.read": "You do not have permission to read supplier payables.",
+	"payables.manage": "You do not have permission to manage supplier payables.",
+	"payments.read": "You do not have permission to read payments.",
+	"payments.manage": "You do not have permission to manage payments.",
+	"accounting.read":
+		"You do not have permission to read accounting journals and balances.",
+	"accounting.manage":
+		"You do not have permission to manage accounting journals and periods.",
 } as const satisfies Record<PlatformPermissionCodeV1, string>;
 
 /**

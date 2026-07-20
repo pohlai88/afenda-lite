@@ -1,6 +1,31 @@
 # GENERATED — do not edit by hand. Source: ERP module.manifest.ts
 # Regenerate: pnpm validate:modules --write
 modules:
+  - activationMode: organization_toggle
+    aggregates:
+      - journal
+      - accounting_period
+    band: R1-F
+    category: commercial/finance
+    id: accounting
+    lifecycle: active
+    packageName: "@afenda/accounting"
+  - activationMode: organization_toggle
+    aggregates:
+      - delivery
+    band: R1-F
+    category: supply-chain
+    id: fulfillment
+    lifecycle: active
+    packageName: "@afenda/fulfillment"
+  - activationMode: organization_toggle
+    aggregates:
+      - stock_movement
+    band: R1-F
+    category: supply-chain
+    id: inventory
+    lifecycle: active
+    packageName: "@afenda/inventory"
   - activationMode: core
     aggregates:
       - party
@@ -19,12 +44,51 @@ modules:
     packageName: "@afenda/master-data"
   - activationMode: organization_toggle
     aggregates:
+      - supplier_invoice
+      - supplier_allocation
+      - supplier_balance_projection
+      - three_way_match_result
+    band: R1-F
+    category: commercial
+    id: payables
+    lifecycle: active
+    packageName: "@afenda/payables"
+  - activationMode: organization_toggle
+    aggregates:
+      - payment
+      - payment_allocation
+      - payment_reversal
+    band: R1-F
+    category: commercial
+    id: payments
+    lifecycle: active
+    packageName: "@afenda/payments"
+  - activationMode: organization_toggle
+    aggregates:
       - purchase_order
     band: R1-F
     category: commercial
     id: purchasing
     lifecycle: active
     packageName: "@afenda/purchasing"
+  - activationMode: organization_toggle
+    aggregates:
+      - sales_invoice
+      - customer_allocation
+      - customer_balance_projection
+    band: R1-F
+    category: commercial
+    id: receivables
+    lifecycle: active
+    packageName: "@afenda/receivables"
+  - activationMode: organization_toggle
+    aggregates:
+      - goods_receipt
+    band: R1-F
+    category: supply-chain
+    id: receiving
+    lifecycle: active
+    packageName: "@afenda/receiving"
   - activationMode: organization_toggle
     aggregates:
       - sales_order

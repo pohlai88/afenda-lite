@@ -2,6 +2,27 @@
  * ARCH-023 hard tenant roots after domain wipe.
  * Every table has `organization_id … NOT NULL` — CI: `pnpm audit:tenancy-nulls`.
  */
+
+import {
+	accountingPeriod,
+	journal,
+	journalLine,
+	ledgerPosting,
+} from "./schema/accounting";
+import {
+	delivery,
+	deliveryLine,
+	deliveryPack,
+	deliveryPick,
+	proofOfDelivery,
+} from "./schema/fulfillment";
+import {
+	stockBalance,
+	stockLedgerEntry,
+	stockMovement,
+	stockMovementLine,
+	stockReservation,
+} from "./schema/inventory";
 import {
 	mdChangeRequest,
 	mdItem,
@@ -27,6 +48,15 @@ import {
 	mdWarehouseExternalId,
 } from "./schema/master-data";
 import {
+	supplierAllocation,
+	supplierBalanceProjection,
+	supplierCreditNote,
+	supplierInvoice,
+	supplierInvoiceLine,
+	threeWayMatchResult,
+} from "./schema/payables";
+import { payment, paymentAllocation, paymentReversal } from "./schema/payments";
+import {
 	platformAuditLog,
 	platformDomainEvent,
 	platformNotification,
@@ -34,14 +64,19 @@ import {
 	platformRoleAssignment,
 	platformSearchDocument,
 } from "./schema/platform";
-import {
-	stockBalance,
-	stockLedgerEntry,
-	stockMovement,
-	stockMovementLine,
-	stockReservation,
-} from "./schema/inventory";
 import { purchaseOrder, purchaseOrderLine } from "./schema/purchasing";
+import {
+	customerAllocation,
+	customerBalanceProjection,
+	salesCreditNote,
+	salesInvoice,
+	salesInvoiceLine,
+} from "./schema/receivables";
+import {
+	goodsReceipt,
+	goodsReceiptLine,
+	receivingDiscrepancy,
+} from "./schema/receiving";
 import { salesOrder, salesOrderLine } from "./schema/sales";
 
 /** SQL table names for null-org audits (RB-001 §3.4 · ARCH-023). */
@@ -78,11 +113,37 @@ export const HARD_TENANT_ROOT_TABLE_NAMES = [
 	"sales_order_line",
 	"purchase_order",
 	"purchase_order_line",
+	"sales_invoice",
+	"sales_invoice_line",
+	"sales_credit_note",
+	"customer_allocation",
+	"customer_balance_projection",
+	"supplier_invoice",
+	"supplier_invoice_line",
+	"supplier_credit_note",
+	"supplier_allocation",
+	"three_way_match_result",
+	"supplier_balance_projection",
+	"payment",
+	"payment_allocation",
+	"payment_reversal",
 	"stock_movement",
 	"stock_movement_line",
 	"stock_balance",
 	"stock_ledger_entry",
 	"stock_reservation",
+	"goods_receipt",
+	"goods_receipt_line",
+	"receiving_discrepancy",
+	"delivery",
+	"delivery_line",
+	"delivery_pick",
+	"delivery_pack",
+	"proof_of_delivery",
+	"journal",
+	"journal_line",
+	"ledger_posting",
+	"accounting_period",
 ] as const;
 
 export type HardTenantRootTableName =
@@ -122,9 +183,35 @@ export const HARD_TENANT_ROOT_TABLES = {
 	salesOrderLine,
 	purchaseOrder,
 	purchaseOrderLine,
+	salesInvoice,
+	salesInvoiceLine,
+	salesCreditNote,
+	customerAllocation,
+	customerBalanceProjection,
+	supplierInvoice,
+	supplierInvoiceLine,
+	supplierCreditNote,
+	supplierAllocation,
+	threeWayMatchResult,
+	supplierBalanceProjection,
+	payment,
+	paymentAllocation,
+	paymentReversal,
 	stockMovement,
 	stockMovementLine,
 	stockBalance,
 	stockLedgerEntry,
 	stockReservation,
+	goodsReceipt,
+	goodsReceiptLine,
+	receivingDiscrepancy,
+	delivery,
+	deliveryLine,
+	deliveryPick,
+	deliveryPack,
+	proofOfDelivery,
+	journal,
+	journalLine,
+	ledgerPosting,
+	accountingPeriod,
 } as const;

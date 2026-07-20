@@ -1,4 +1,4 @@
-> **Superseded for decisions:** [packages_refactor_v2.3.md](./packages_refactor_v2.3.md) (2026-07-20). Prior: [v2.2](./packages_refactor_v2.2.md) · [v2.1](./packages_refactor_v2.1.md) · [v2](./packages_refactor_v2.md) · this v1.
+> **Superseded for decisions:** [packages_governance.md](./packages_governance.md). Prior: [v2.3](./packages_refactor_v2.3.md) (promotion stamp) · [v2.2](./packages_refactor_v2.2.md) · [v2.1](./packages_refactor_v2.1.md) · [v2](./packages_refactor_v2.md) · this v1.
 
 # Assessment
 

@@ -213,7 +213,7 @@ export function runNegativeFixtures() {
 						required: ["does-not-exist"],
 					}),
 				],
-				[{ id: "inventory" }],
+				[{ id: "treasury" }],
 			),
 		) ?? "",
 	);
@@ -255,12 +255,12 @@ export function runNegativeFixtures() {
 
 	const tmpRoot = mkdtempSync(join(tmpdir(), "afenda-validate-modules-"));
 	try {
-		mkdirSync(join(tmpRoot, "packages", "inventory"), { recursive: true });
+		mkdirSync(join(tmpRoot, "packages", "treasury"), { recursive: true });
 		misses.push(
 			expectFail(
 				"candidate module represented as an on-disk package",
-				"candidate module represented as an on-disk package: packages/inventory",
-				validateCandidatePackagesAbsent(tmpRoot, [{ id: "inventory" }]),
+				"candidate module represented as an on-disk package: packages/treasury",
+				validateCandidatePackagesAbsent(tmpRoot, [{ id: "treasury" }]),
 			) ?? "",
 		);
 

@@ -2,6 +2,62 @@
 # Regenerate: pnpm validate:modules --write
 source: on-disk-module-manifests
 tables:
+  - moduleId: accounting
+    packageName: "@afenda/accounting"
+    schemaOwner: "@afenda/db"
+    table: journal
+  - moduleId: accounting
+    packageName: "@afenda/accounting"
+    schemaOwner: "@afenda/db"
+    table: journal_line
+  - moduleId: accounting
+    packageName: "@afenda/accounting"
+    schemaOwner: "@afenda/db"
+    table: ledger_posting
+  - moduleId: accounting
+    packageName: "@afenda/accounting"
+    schemaOwner: "@afenda/db"
+    table: accounting_period
+  - moduleId: fulfillment
+    packageName: "@afenda/fulfillment"
+    schemaOwner: "@afenda/db"
+    table: delivery
+  - moduleId: fulfillment
+    packageName: "@afenda/fulfillment"
+    schemaOwner: "@afenda/db"
+    table: delivery_line
+  - moduleId: fulfillment
+    packageName: "@afenda/fulfillment"
+    schemaOwner: "@afenda/db"
+    table: delivery_pick
+  - moduleId: fulfillment
+    packageName: "@afenda/fulfillment"
+    schemaOwner: "@afenda/db"
+    table: delivery_pack
+  - moduleId: fulfillment
+    packageName: "@afenda/fulfillment"
+    schemaOwner: "@afenda/db"
+    table: proof_of_delivery
+  - moduleId: inventory
+    packageName: "@afenda/inventory"
+    schemaOwner: "@afenda/db"
+    table: stock_movement
+  - moduleId: inventory
+    packageName: "@afenda/inventory"
+    schemaOwner: "@afenda/db"
+    table: stock_movement_line
+  - moduleId: inventory
+    packageName: "@afenda/inventory"
+    schemaOwner: "@afenda/db"
+    table: stock_balance
+  - moduleId: inventory
+    packageName: "@afenda/inventory"
+    schemaOwner: "@afenda/db"
+    table: stock_ledger_entry
+  - moduleId: inventory
+    packageName: "@afenda/inventory"
+    schemaOwner: "@afenda/db"
+    table: stock_reservation
   - moduleId: master-data
     packageName: "@afenda/master-data"
     schemaOwner: "@afenda/db"
@@ -90,6 +146,42 @@ tables:
     packageName: "@afenda/master-data"
     schemaOwner: "@afenda/db"
     table: md_change_request
+  - moduleId: payables
+    packageName: "@afenda/payables"
+    schemaOwner: "@afenda/db"
+    table: supplier_invoice
+  - moduleId: payables
+    packageName: "@afenda/payables"
+    schemaOwner: "@afenda/db"
+    table: supplier_invoice_line
+  - moduleId: payables
+    packageName: "@afenda/payables"
+    schemaOwner: "@afenda/db"
+    table: supplier_credit_note
+  - moduleId: payables
+    packageName: "@afenda/payables"
+    schemaOwner: "@afenda/db"
+    table: supplier_allocation
+  - moduleId: payables
+    packageName: "@afenda/payables"
+    schemaOwner: "@afenda/db"
+    table: supplier_balance_projection
+  - moduleId: payables
+    packageName: "@afenda/payables"
+    schemaOwner: "@afenda/db"
+    table: three_way_match_result
+  - moduleId: payments
+    packageName: "@afenda/payments"
+    schemaOwner: "@afenda/db"
+    table: payment
+  - moduleId: payments
+    packageName: "@afenda/payments"
+    schemaOwner: "@afenda/db"
+    table: payment_allocation
+  - moduleId: payments
+    packageName: "@afenda/payments"
+    schemaOwner: "@afenda/db"
+    table: payment_reversal
   - moduleId: purchasing
     packageName: "@afenda/purchasing"
     schemaOwner: "@afenda/db"
@@ -98,6 +190,38 @@ tables:
     packageName: "@afenda/purchasing"
     schemaOwner: "@afenda/db"
     table: purchase_order_line
+  - moduleId: receivables
+    packageName: "@afenda/receivables"
+    schemaOwner: "@afenda/db"
+    table: sales_invoice
+  - moduleId: receivables
+    packageName: "@afenda/receivables"
+    schemaOwner: "@afenda/db"
+    table: sales_invoice_line
+  - moduleId: receivables
+    packageName: "@afenda/receivables"
+    schemaOwner: "@afenda/db"
+    table: sales_credit_note
+  - moduleId: receivables
+    packageName: "@afenda/receivables"
+    schemaOwner: "@afenda/db"
+    table: customer_allocation
+  - moduleId: receivables
+    packageName: "@afenda/receivables"
+    schemaOwner: "@afenda/db"
+    table: customer_balance_projection
+  - moduleId: receiving
+    packageName: "@afenda/receiving"
+    schemaOwner: "@afenda/db"
+    table: goods_receipt
+  - moduleId: receiving
+    packageName: "@afenda/receiving"
+    schemaOwner: "@afenda/db"
+    table: goods_receipt_line
+  - moduleId: receiving
+    packageName: "@afenda/receiving"
+    schemaOwner: "@afenda/db"
+    table: receiving_discrepancy
   - moduleId: sales
     packageName: "@afenda/sales"
     schemaOwner: "@afenda/db"

@@ -170,6 +170,66 @@ describe("N11 product authorization wiring", () => {
 			"app/actions/add-purchase-order-line.ts": ["purchasing.manage"],
 			"app/actions/post-purchase-order.ts": ["purchasing.manage"],
 			"app/actions/cancel-purchase-order.ts": ["purchasing.manage"],
+			"app/actions/list-stock-movements.ts": ["inventory.read"],
+			"app/actions/get-stock-movement.ts": ["inventory.read"],
+			"app/actions/get-stock-availability.ts": ["inventory.read"],
+			"app/actions/create-stock-movement.ts": ["inventory.manage"],
+			"app/actions/add-stock-movement-line.ts": ["inventory.manage"],
+			"app/actions/post-stock-movement.ts": ["inventory.manage"],
+			"app/actions/reserve-stock.ts": ["inventory.manage"],
+			"app/actions/release-reservation.ts": ["inventory.manage"],
+			"app/actions/list-goods-receipts.ts": ["receiving.read"],
+			"app/actions/get-goods-receipt.ts": ["receiving.read"],
+			"app/actions/create-goods-receipt.ts": ["receiving.manage"],
+			"app/actions/add-goods-receipt-line.ts": ["receiving.manage"],
+			"app/actions/post-goods-receipt.ts": ["receiving.manage"],
+			"app/actions/record-receiving-discrepancy.ts": ["receiving.manage"],
+			"app/actions/cancel-goods-receipt.ts": ["receiving.manage"],
+			"app/actions/get-delivery.ts": ["fulfillment.read"],
+			"app/actions/list-deliveries.ts": ["fulfillment.read"],
+			"app/actions/create-draft-delivery.ts": ["fulfillment.manage"],
+			"app/actions/add-delivery-line.ts": ["fulfillment.manage"],
+			"app/actions/start-picking.ts": ["fulfillment.manage"],
+			"app/actions/confirm-pick.ts": ["fulfillment.manage"],
+			"app/actions/confirm-pack.ts": ["fulfillment.manage"],
+			"app/actions/post-delivery.ts": ["fulfillment.manage"],
+			"app/actions/record-proof-of-delivery.ts": ["fulfillment.manage"],
+			"app/actions/cancel-delivery.ts": ["fulfillment.manage"],
+			"app/actions/get-sales-invoice.ts": ["receivables.read"],
+			"app/actions/list-sales-invoices.ts": ["receivables.read"],
+			"app/actions/get-customer-balance.ts": ["receivables.read"],
+			"app/actions/create-draft-sales-invoice.ts": ["receivables.manage"],
+			"app/actions/add-sales-invoice-line.ts": ["receivables.manage"],
+			"app/actions/post-sales-invoice.ts": ["receivables.manage"],
+			"app/actions/issue-credit-note.ts": ["receivables.manage"],
+			"app/actions/allocate-customer-receipt.ts": ["receivables.manage"],
+			"app/actions/cancel-sales-invoice.ts": ["receivables.manage"],
+			"app/actions/get-supplier-invoice.ts": ["payables.read"],
+			"app/actions/list-supplier-invoices.ts": ["payables.read"],
+			"app/actions/get-supplier-balance.ts": ["payables.read"],
+			"app/actions/create-draft-supplier-invoice.ts": ["payables.manage"],
+			"app/actions/add-supplier-invoice-line.ts": ["payables.manage"],
+			"app/actions/match-supplier-invoice.ts": ["payables.manage"],
+			"app/actions/post-supplier-invoice.ts": ["payables.manage"],
+			"app/actions/issue-supplier-credit-note.ts": ["payables.manage"],
+			"app/actions/allocate-supplier-payment.ts": ["payables.manage"],
+			"app/actions/cancel-supplier-invoice.ts": ["payables.manage"],
+			"app/actions/get-payment.ts": ["payments.read"],
+			"app/actions/list-payments.ts": ["payments.read"],
+			"app/actions/create-draft-payment.ts": ["payments.manage"],
+			"app/actions/add-payment-allocation.ts": ["payments.manage"],
+			"app/actions/post-payment.ts": ["payments.manage"],
+			"app/actions/reverse-payment.ts": ["payments.manage"],
+			"app/actions/post-refund.ts": ["payments.manage"],
+			"app/actions/get-journal.ts": ["accounting.read"],
+			"app/actions/list-journals.ts": ["accounting.read"],
+			"app/actions/get-trial-balance.ts": ["accounting.read"],
+			"app/actions/create-draft-journal.ts": ["accounting.manage"],
+			"app/actions/add-journal-line.ts": ["accounting.manage"],
+			"app/actions/post-journal.ts": ["accounting.manage"],
+			"app/actions/reverse-journal.ts": ["accounting.manage"],
+			"app/actions/open-accounting-period.ts": ["accounting.manage"],
+			"app/actions/close-accounting-period.ts": ["accounting.manage"],
 			"features/org-admin/org-admin-shell.tsx": [
 				"org.roles.manage",
 				"clients.invite",
@@ -183,6 +243,34 @@ describe("N11 product authorization wiring", () => {
 			"features/purchasing/purchasing-shell.tsx": [
 				"purchasing.read",
 				"purchasing.manage",
+			],
+			"features/inventory/inventory-shell.tsx": [
+				"inventory.read",
+				"inventory.manage",
+			],
+			"features/receiving/receiving-shell.tsx": [
+				"receiving.read",
+				"receiving.manage",
+			],
+			"features/fulfillment/fulfillment-shell.tsx": [
+				"fulfillment.read",
+				"fulfillment.manage",
+			],
+			"features/receivables/receivables-shell.tsx": [
+				"receivables.read",
+				"receivables.manage",
+			],
+			"features/payables/payables-shell.tsx": [
+				"payables.read",
+				"payables.manage",
+			],
+			"features/payments/payments-shell.tsx": [
+				"payments.read",
+				"payments.manage",
+			],
+			"features/accounting/accounting-shell.tsx": [
+				"accounting.read",
+				"accounting.manage",
 			],
 		} as const;
 
@@ -216,6 +304,131 @@ describe("N11 product authorization wiring", () => {
 				source(relativePath),
 				`${relativePath} must delegate to shared lifecycle runner`,
 			).toContain("runTaxRegistrationLifecycle");
+		}
+	});
+
+	it("pins fulfillment Actions to package results and dual route refresh", () => {
+		const fulfillmentActions = [
+			"app/actions/get-delivery.ts",
+			"app/actions/list-deliveries.ts",
+			"app/actions/create-draft-delivery.ts",
+			"app/actions/add-delivery-line.ts",
+			"app/actions/start-picking.ts",
+			"app/actions/confirm-pick.ts",
+			"app/actions/confirm-pack.ts",
+			"app/actions/post-delivery.ts",
+			"app/actions/record-proof-of-delivery.ts",
+			"app/actions/cancel-delivery.ts",
+		] as const;
+		for (const relativePath of fulfillmentActions) {
+			const actionSource = source(relativePath);
+			expect(actionSource).toContain('from "@afenda/fulfillment"');
+			expect(actionSource).toContain("mapPackageResult");
+		}
+
+		for (const relativePath of fulfillmentActions.slice(2)) {
+			const actionSource = source(relativePath);
+			expect(actionSource).toContain('revalidatePath("/admin/fulfillment")');
+			expect(actionSource).toContain('revalidatePath("/client/fulfillment")');
+		}
+	});
+
+	it("pins receivables Actions to package results and dual route refresh", () => {
+		const receivablesActions = [
+			"app/actions/get-sales-invoice.ts",
+			"app/actions/list-sales-invoices.ts",
+			"app/actions/get-customer-balance.ts",
+			"app/actions/create-draft-sales-invoice.ts",
+			"app/actions/add-sales-invoice-line.ts",
+			"app/actions/post-sales-invoice.ts",
+			"app/actions/issue-credit-note.ts",
+			"app/actions/allocate-customer-receipt.ts",
+			"app/actions/cancel-sales-invoice.ts",
+		] as const;
+		for (const relativePath of receivablesActions) {
+			const actionSource = source(relativePath);
+			expect(actionSource).toContain('from "@afenda/receivables"');
+			expect(actionSource).toContain("mapPackageResult");
+		}
+
+		for (const relativePath of receivablesActions.slice(3)) {
+			const actionSource = source(relativePath);
+			expect(actionSource).toContain('revalidatePath("/admin/receivables")');
+			expect(actionSource).toContain('revalidatePath("/client/receivables")');
+		}
+	});
+
+	it("pins payables Actions to package results and dual route refresh", () => {
+		const payablesActions = [
+			"app/actions/get-supplier-invoice.ts",
+			"app/actions/list-supplier-invoices.ts",
+			"app/actions/get-supplier-balance.ts",
+			"app/actions/create-draft-supplier-invoice.ts",
+			"app/actions/add-supplier-invoice-line.ts",
+			"app/actions/match-supplier-invoice.ts",
+			"app/actions/post-supplier-invoice.ts",
+			"app/actions/issue-supplier-credit-note.ts",
+			"app/actions/allocate-supplier-payment.ts",
+			"app/actions/cancel-supplier-invoice.ts",
+		] as const;
+		for (const relativePath of payablesActions) {
+			const actionSource = source(relativePath);
+			expect(actionSource).toContain('from "@afenda/payables"');
+			expect(actionSource).toContain("mapPackageResult");
+		}
+
+		for (const relativePath of payablesActions.slice(3)) {
+			const actionSource = source(relativePath);
+			expect(actionSource).toContain('revalidatePath("/admin/payables")');
+			expect(actionSource).toContain('revalidatePath("/client/payables")');
+		}
+	});
+
+	it("pins payments Actions to package results and dual route refresh", () => {
+		const paymentsActions = [
+			"app/actions/get-payment.ts",
+			"app/actions/list-payments.ts",
+			"app/actions/create-draft-payment.ts",
+			"app/actions/add-payment-allocation.ts",
+			"app/actions/post-payment.ts",
+			"app/actions/reverse-payment.ts",
+			"app/actions/post-refund.ts",
+		] as const;
+		for (const relativePath of paymentsActions) {
+			const actionSource = source(relativePath);
+			expect(actionSource).toContain('from "@afenda/payments"');
+			expect(actionSource).toContain("mapPackageResult");
+		}
+
+		for (const relativePath of paymentsActions.slice(2)) {
+			const actionSource = source(relativePath);
+			expect(actionSource).toContain('revalidatePath("/admin/payments")');
+			expect(actionSource).toContain('revalidatePath("/client/payments")');
+		}
+	});
+
+	it("pins accounting Actions to package results and dual route refresh", () => {
+		const accountingActions = [
+			"app/actions/get-journal.ts",
+			"app/actions/list-journals.ts",
+			"app/actions/get-trial-balance.ts",
+			"app/actions/create-draft-journal.ts",
+			"app/actions/add-journal-line.ts",
+			"app/actions/post-journal.ts",
+			"app/actions/reverse-journal.ts",
+			"app/actions/open-accounting-period.ts",
+			"app/actions/close-accounting-period.ts",
+		] as const;
+		for (const relativePath of accountingActions) {
+			const actionSource = source(relativePath);
+			expect(actionSource).toContain('from "@afenda/accounting"');
+			expect(actionSource).toContain("mapPackageResult");
+		}
+
+		for (const relativePath of accountingActions.slice(3)) {
+			const actionSource = source(relativePath);
+			expect(actionSource).toContain('revalidatePath("/admin/accounting")');
+			expect(actionSource).toContain('revalidatePath("/client/accounting")');
 		}
 	});
 

@@ -6,7 +6,7 @@
 | Role | Pointer pack for package DAG · ERP manifests · dual-control edges |
 | Authority | [docs-V2/monorepo](../monorepo/README.md) · [LAYERS.md](../../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md) |
 | Living versions | `monorepo-governance/2026-07-20` · `layers-governance/2026-07-20` · `packages-catalog/2026-07-20` · `workspace-edges/2026-07-20` |
-| Phase | **2 complete candidate** — manifests · generated registers · `pnpm validate:modules` |
+| Phase | **4 complete** — all roadmap ERP packages promoted; manifests · generated registers · `pnpm validate:modules` |
 
 **Note:** This pack is package-DAG authority. App bounded contexts remain documented in [README.md](./README.md) (`apps/web/modules/*`).
 
@@ -18,7 +18,7 @@
 | [MODULE-ROADMAP.yaml](./MODULE-ROADMAP.yaml) | Manual candidate authority (no on-disk packages) |
 | `MODULE-*.generated.yaml` · `*-REGISTER.generated.yaml` | Generated from on-disk ERP manifests; CI-diffed |
 | `@afenda/db/module-manifest` | `AfendaModuleManifest` contract |
-| `packages/erp/{master-data,sales,purchasing}/src/module.manifest.ts` | Living ERP manifests only |
+| `packages/erp/{master-data,sales,purchasing,inventory,receiving,fulfillment,receivables,payables,payments,accounting}/src/module.manifest.ts` | Living ERP manifests only |
 
 ## Dual control
 

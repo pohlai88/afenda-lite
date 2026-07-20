@@ -84,6 +84,10 @@ Pass request-scoped `organizationId`, `actorUserId`, and `correlationId` on ever
 | `sales.order.created.v1` | sales | order header snapshot + org/actor/correlation |
 | `sales.order.line_added.v1` | sales | line snapshot + order id |
 | `sales.order.posted.v1` | sales | posted order header snapshot |
+| `purchasing.order.created.v1` | purchasing | purchase order header snapshot |
+| `purchasing.order.line_added.v1` | purchasing | line snapshot + order id |
+| `purchasing.order.posted.v1` | purchasing | posted purchase order header |
+| `purchasing.order.cancelled.v1` | purchasing | cancelled purchase order header |
 
 `master_data.*` emitters live in `@afenda/master-data` (same-TX outbox port). `sales.*` emitters live in `@afenda/sales`. No `merged.v1` / `ref_*` mutation events in Authority B.
 

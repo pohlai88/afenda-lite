@@ -1,0 +1,118 @@
+# `@afenda/inventory`
+
+Rank-1 Platform ARCH-006 Inventory consumer for Afenda-Lite: org-scoped stock movements (draft → posted), balances, ledger, and reservations, with master-data FK snapshots and same-TX audit/outbox ports. Outcomes use `@afenda/errors` `Result` — this package does not own HTTP status lines, `NextResponse`, NATS, or Action envelopes.
+
+**Tables live in `@afenda/db`.** Mutations are sole-owned here — do not dual-write `stock_movement` / `stock_balance` / `stock_ledger_entry` / `stock_reservation` from `apps/web`. Do not invent shadow product tables (`inventory_product`, local item catalogs).
+
+Use this package from Platform / app server code when creating draft stock movements, adding lines, posting (with balance + ledger effects), reserving stock, or releasing reservations. Masters resolve through `@afenda/master-data` lookups — never mutate `md_*` from the inventory store.
+
+## Consume
+
+Workspace dependency — import from the root barrel:
+
+```ts
+import {
+  createStockMovement,
+  addStockMovementLine,
+  postStockMovement,
+  reserveStock,
+  releaseReservation,
+  getStockMovementById,
+  listStockMovements,
+  getStockAvailability,
+} from "@afenda/inventory";
+
+const movement = await createStockMovement({
+  organizationId,
+  actorUserId,
+  correlationId,
+  code: "RCPT-1001",
+  movementType: "receipt",
+  warehouseId,
+});
+if (!movement.ok) {
+  // map Result at the adapter — do not invent { success, data }
+}
+```
+
+Pass request-scoped `organizationId`, `actorUserId`, and `correlationId` on every mutation. Item / warehouse refs must be same-org masters; post applies balance effects and ledger entries.
+
+**Event types:** `inventory.movement.created.v1` · `inventory.movement.posted.v1` · `inventory.stock.reserved.v1` · `inventory.reservation.released.v1` (catalog in `@afenda/events`).
+
+**Living consumers:** `apps/web` thin Actions + `features/inventory/*` + `/admin/inventory` · `/client/inventory` (composition-root authorization ports). Pass `correlationId` from the Action boundary on every mutation.
+
+## Store / ports
+
+| Surface | Backend |
+|---------|---------|
+| Production default | `DrizzleInventoryStore` → `@afenda/db` — **all** org mutations use `runNeonHttpTransaction` CTE (entity + balances/ledger/reservation + `platform_audit_log` + `platform_domain_event` same TX) |
+| Vitest injection | `MemoryInventoryStore` + memory `AuditFactPort` / `OutboxPort` (in-process atomic) |
+| Master lookup | `createMasterDataLookupPort` → `@afenda/master-data` (item · warehouse · ref UoM only) |
+| Ports | `MutationPorts` remain on the store interface for test injection; Drizzle embeds SQL side-effects and does not call SQL ports. `createProductionMutationPorts` is the default for memory/test injection only. |
+
+## Maintain
+
+```bash
+pnpm --filter @afenda/inventory lint
+pnpm --filter @afenda/inventory typecheck
+pnpm --filter @afenda/inventory test
+pnpm --filter @afenda/inventory check
+```
+
+Requires root engines: **Node `24.x`**, **pnpm `≥10.33.4`**.
+
+Anti-shadow (every consumer PR):
+
+```bash
+rg "sales_customer|purchase_supplier|inventory_product|finance_vendor" packages apps --glob "!**/node_modules/**"
+```
+
+## Exports
+
+| Path | Role |
+|------|------|
+| `@afenda/inventory` | Commands (`createStockMovement` · `addStockMovementLine` · `postStockMovement` · `reserveStock` · `releaseReservation` · `getStockMovementById` · `listStockMovements` · `getStockAvailability`) · brands · Zod input schemas · `InventoryStore` · Drizzle/memory stores · master lookup · production ports · types |
+
+Never re-exports raw Drizzle tables or `db` / `eq`.
+
+## Ownership
+
+| Surface | Owner |
+|---------|-------|
+| `stock_movement` · `stock_movement_line` · `stock_balance` · `stock_ledger_entry` · `stock_reservation` schema · hard-tenant roots | `@afenda/db` |
+| Domain commands · brands · balance effects · store | `@afenda/inventory` |
+| Item · Warehouse · Ref UoM masters | `@afenda/master-data` |
+| `inventory.*` event contracts | `@afenda/events` |
+| `Result` / error codes | `@afenda/errors` |
+| ActionResult adapters · inventory UI | `apps/web` |
+
+**Layer:** Rank-1 Platform (`@afenda/db` · `@afenda/errors` · `@afenda/audit` · `@afenda/events` · `@afenda/master-data` · zod · server-only). Must not import Surfaces, `apps/*`, or Next.js. See [docs-V2/monorepo](../../docs-V2/monorepo/README.md).
+
+## Operations
+
+| Concern | Guidance |
+|---------|----------|
+| Correlation | Every command input requires `correlationId`; Action adapters stamp from request attribution |
+| Natural key | Org-scoped `normalizedCode` uniqueness — duplicate create returns `CONFLICT` (retry-safe; not silent replay) |
+| Optimistic concurrency | `post` requires matching movement `expectedVersion`; `releaseReservation` matches reservation `expectedVersion` |
+| Migration | Apply `@afenda/db` journal tag `0013_inventory_stock` via package migrate (allow-guarded) |
+| Rollback / repair | Posted movements are not hard-deleted; repair via compensating movements or data-lane SQL under Ops |
+| Permissions | Seed `inventory.read` / `inventory.manage` via `pnpm --filter @afenda/db db:ensure-permission-catalog` |
+| Verify | `pnpm --filter @afenda/inventory check` · `pnpm validate:modules` |
+| Lifecycle note | Movement types include receipt/issue/transfer/adjustment/reservation/reservation_release; v1 public surface posts draft → posted only (no cancel/void command yet) |
+| Metrics / dedicated runbook | Same baseline as `@afenda/purchasing` — structured correlation + Result codes; dedicated mutation metrics dashboards / Ops runbook not package-local yet |
+
+## Out of scope
+
+Do not add to this package: shadow product tables, `md_*` mutations, Receiving / Fulfillment / Purchasing ownership of stock tables, Next.js handlers, tutorial `{ success, data }` envelopes, or a second tenancy model (shared schema · hard `organization_id` only — never multi-DB / project-per-tenant isolation).
+
+## Authority
+
+| Topic | Link |
+|-------|------|
+| ARCH-006 consumer contract (Scratch) | [arch-006-consumer-contract.md](../../docs-V2/master-data/arch-006-consumer-contract.md) |
+| Master-data spine | [docs-V2/master-data](../../docs-V2/master-data/README.md) |
+| Package DAG | [docs-V2/monorepo](../../docs-V2/monorepo/README.md) |
+| Events catalog | [docs-V2/events](../../docs-V2/events/README.md) · [`@afenda/events`](../../data-plane/events/README.md) |
+| Tenancy · shared schema | [docs-V2/tenancy](../../docs-V2/tenancy/README.md) |
+| Agent checkout posture | [AGENTS.md](../../../AGENTS.md) |

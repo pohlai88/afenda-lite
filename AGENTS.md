@@ -51,8 +51,9 @@ Full inventory: [catalog.md](.cursor/skills/using-afenda-elite-skills/catalog.md
 | Need | Skill |
 |------|-------|
 | Pick farm / docs type | `using-afenda-elite-skills` |
+| Official `@afenda/docs` / `apps/docs` site | `afenda-docs-app` (Scratch `docs-V2/docs` — not Living DOC-001) |
 | Controlled docs write | `afenda-elite-doc-control` |
-| Doc↔doc conflict / register drift | `afenda-elite-doc-integrity` |
+| Doc↔doc conflict / register drift | `afenda-elite-doc-integrity`
 | GUIDE-018 Phase I (`I*`) / residual ARCH-028 (`S*`) | `afenda-elite-implementation-slices` + command-sheet |
 | Neon Auth optimisation (`N1`–`N18`) | `afenda-elite-implementation-slices` + neon-command-sheet · Neon Slice Score + independent audit |
 | UI primitives / `@afenda/ui-system` (shadcn·Radix, tokens, barrel) | `shadcn-ui` + ADR-010 owned-source (`pnpm --filter @afenda/ui-system ui:add` → relative → barrel → tests) |
@@ -104,7 +105,7 @@ Full inventory: [catalog.md](.cursor/skills/using-afenda-elite-skills/catalog.md
 
 ## Checkout posture (Living Turborepo on disk)
 
-**Present:** `@afenda/{config,db,auth,env,errors,logger,rate-limit,cache,audit,search,notifications,events,master-data,sales,admin,http,security,metrics,openapi,ai-the-machine,ui-system,emails}` · `apps/web` · `apps/docs` (**official** Fumadocs docs) · `apps/web/proxy.ts` edge session gate · `apps/web/modules/{platform,identity}` · `apps/web/features/{auth,org-admin,ai-the-machine}` · `docs-V2/**` Scratch packs · CI/Deploy (`.github/workflows/{ci,deploy}.yml`).
+**Present:** `@afenda/{config,db,auth,env,errors,logger,rate-limit,cache,audit,search,notifications,events,master-data,sales,purchasing,inventory,receiving,fulfillment,receivables,payables,payments,accounting,admin,http,security,metrics,openapi,ai-the-machine,ui-system,emails}` · `apps/web` · `apps/docs` (**official** Fumadocs docs) · `apps/web/proxy.ts` edge session gate · `apps/web/modules/{platform,identity}` · `apps/web/features/{auth,org-admin,ai-the-machine,sales,purchasing,inventory,receiving,master-data,accounting}` (fulfillment, receivables, payables, and payments governance have no feature/route surface) · `docs-V2/**` Scratch packs · CI/Deploy (`.github/workflows/{ci,deploy}.yml`).
 
 **Absent by design / removed domains:** Living controlled `docs/` (cutover `71176a0`) · product **Declarations** + **Feed Farm Trade (FFT)** modules/features/routes (nuclear wipe) · `feed-farm-trade` skill · repo-root `app/`, `modules/`, `features/`, `components-V2/`, Collapse `lib/`, wiped ops script bodies · `apps/web/app/playground/` · `apps/web/features/playground/` (removed 2026-07-15; do not handroll). Do **not** recreate `modules/declarations`, `modules/fft`, `features/declarations`, `features/fft`, or `/client/declarations` / `/fft` product trees.
 
@@ -204,7 +205,7 @@ Authority: [`testing/README.md`](testing/README.md).
 | `pnpm test:e2e` / `:smoke` / `:journey` | Playwright when specs exist |
 | `pnpm check:docs-naming` | DOC-002 / naming gate |
 | `pnpm validate:neon-env` | Neon Cloud ids vs `.env.local` |
-| `pnpm audit:tenancy-nulls` | Hard tenant roots null-org audit (32 tables via `HARD_TENANT_ROOT_TABLE_NAMES`: platform_* six · `md_party`/`md_item*`/`md_warehouse*` · `md_payment_term` · `md_tax_registration` · MDG/variants · `sales_order`/`sales_order_line` · `purchase_order`/`purchase_order_line`) |
+| `pnpm audit:tenancy-nulls` | Hard tenant roots null-org audit (63 tables via `HARD_TENANT_ROOT_TABLE_NAMES`: platform_* six · `md_party`/`md_item*`/`md_warehouse*` · `md_payment_term` · `md_tax_registration` · MDG/variants · `sales_order`/`sales_order_line` · `purchase_order`/`purchase_order_line` · `sales_invoice`/`sales_invoice_line`/`sales_credit_note`/`customer_allocation`/`customer_balance_projection` · `supplier_invoice`/`supplier_invoice_line`/`supplier_credit_note`/`supplier_allocation`/`supplier_balance_projection`/`three_way_match_result` · `payment`/`payment_allocation`/`payment_reversal` (refunds use `payment.direction = refund`; no refund table) · `journal`/`journal_line`/`ledger_posting`/`accounting_period` · `stock_movement`/`stock_movement_line`/`stock_balance`/`stock_ledger_entry`/`stock_reservation` · `goods_receipt`/`goods_receipt_line`/`receiving_discrepancy` · `delivery`/`delivery_line`/`delivery_pick`/`delivery_pack`/`proof_of_delivery`) |
 | `pnpm audit:github-actions-secrets` | Required Actions secret/var **names** only (Ops; keyring `gh`) |
 | `pnpm protect:main` | Verify (or `-- --apply`) Living `main` required check = `quality` |
 

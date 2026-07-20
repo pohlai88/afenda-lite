@@ -1,6 +1,41 @@
 # GENERATED — do not edit by hand. Source: ERP module.manifest.ts
 # Regenerate: pnpm validate:modules --write
 modules:
+  - id: accounting
+    optionalIntegratesWith:
+      - moduleId: sales
+        style: events
+      - moduleId: purchasing
+        style: events
+      - moduleId: inventory
+        style: events
+      - moduleId: receivables
+        style: events
+      - moduleId: payables
+        style: events
+      - moduleId: payments
+        style: events
+    required: []
+  - id: fulfillment
+    optionalIntegratesWith:
+      - moduleId: sales
+        style: events
+      - moduleId: inventory
+        style: events
+    required:
+      - master-data
+  - id: inventory
+    optionalIntegratesWith:
+      - moduleId: sales
+        style: events
+      - moduleId: purchasing
+        style: events
+      - moduleId: receiving
+        style: events
+      - moduleId: fulfillment
+        style: events
+    required:
+      - master-data
   - id: master-data
     optionalIntegratesWith:
       - moduleId: sales
@@ -10,11 +45,40 @@ modules:
       - moduleId: inventory
         style: events
     required: []
+  - id: payables
+    optionalIntegratesWith:
+      - moduleId: purchasing
+        style: events
+      - moduleId: receiving
+        style: events
+    required:
+      - master-data
+  - id: payments
+    optionalIntegratesWith:
+      - moduleId: receivables
+        style: events
+      - moduleId: payables
+        style: events
+      - moduleId: accounting
+        style: events
+    required: []
   - id: purchasing
     optionalIntegratesWith:
       - moduleId: receiving
         style: events
       - moduleId: payables
+        style: events
+      - moduleId: inventory
+        style: events
+    required:
+      - master-data
+  - id: receivables
+    optionalIntegratesWith: []
+    required:
+      - master-data
+  - id: receiving
+    optionalIntegratesWith:
+      - moduleId: purchasing
         style: events
       - moduleId: inventory
         style: events

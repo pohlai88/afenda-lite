@@ -99,6 +99,86 @@ export const PLATFORM_PERMISSION_V1 = [
 		description: "Create, post, reserve, and release inventory stock",
 		sensitive: true,
 	},
+	{
+		code: "receiving.read",
+		module: "receiving",
+		description: "Read organization goods receipts and discrepancies",
+		sensitive: false,
+	},
+	{
+		code: "receiving.manage",
+		module: "receiving",
+		description: "Create, post, close, cancel, and reconcile goods receipts",
+		sensitive: true,
+	},
+	{
+		code: "fulfillment.read",
+		module: "fulfillment",
+		description:
+			"Read organization deliveries, picks, packs, and proof of delivery",
+		sensitive: false,
+	},
+	{
+		code: "fulfillment.manage",
+		module: "fulfillment",
+		description:
+			"Create, pick, pack, post, deliver, close, and cancel deliveries",
+		sensitive: true,
+	},
+	{
+		code: "receivables.read",
+		module: "receivables",
+		description:
+			"Read organization sales invoices, credit notes, allocations, and balances",
+		sensitive: false,
+	},
+	{
+		code: "receivables.manage",
+		module: "receivables",
+		description: "Create, post, cancel, and allocate organization receivables",
+		sensitive: true,
+	},
+	{
+		code: "payables.read",
+		module: "payables",
+		description:
+			"Read organization supplier invoices, credit notes, matches, allocations, and balances",
+		sensitive: false,
+	},
+	{
+		code: "payables.manage",
+		module: "payables",
+		description:
+			"Create, match, post, cancel, and allocate organization payables",
+		sensitive: true,
+	},
+	{
+		code: "payments.read",
+		module: "payments",
+		description:
+			"Read organization payments, allocations, reversals, and refunds",
+		sensitive: false,
+	},
+	{
+		code: "payments.manage",
+		module: "payments",
+		description:
+			"Create, post, reverse, cancel, allocate, and refund organization payments",
+		sensitive: true,
+	},
+	{
+		code: "accounting.read",
+		module: "accounting",
+		description: "Read organization journals, ledger postings, and periods",
+		sensitive: false,
+	},
+	{
+		code: "accounting.manage",
+		module: "accounting",
+		description:
+			"Create, post, reverse, and close organization accounting records",
+		sensitive: true,
+	},
 ] as const;
 
 /** Retired v1 codes removed by the domain wipe — deleted on ensure. */
@@ -159,19 +239,37 @@ export const PLATFORM_ROLE_TEMPLATES_V1: readonly PlatformRoleTemplateV1[] = [
 			"purchasing.manage",
 			"inventory.read",
 			"inventory.manage",
+			"receiving.read",
+			"receiving.manage",
+			"fulfillment.read",
+			"fulfillment.manage",
+			"receivables.read",
+			"receivables.manage",
+			"payables.read",
+			"payables.manage",
+			"payments.read",
+			"payments.manage",
+			"accounting.read",
+			"accounting.manage",
 		],
 	},
 	{
 		templateKey: "viewer",
 		name: "Viewer",
 		description:
-			"Account self + master-data read + sales/purchasing/inventory read",
+			"Account self + master-data and operational module read access",
 		permissionCodes: [
 			"account.self",
 			"master_data.read",
 			"sales.read",
 			"purchasing.read",
 			"inventory.read",
+			"receiving.read",
+			"fulfillment.read",
+			"receivables.read",
+			"payables.read",
+			"payments.read",
+			"accounting.read",
 		],
 	},
 ] as const;

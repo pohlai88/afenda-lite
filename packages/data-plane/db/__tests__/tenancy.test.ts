@@ -18,7 +18,7 @@ import {
 
 describe("@afenda/db hard tenant roots (N9 / ARCH-023)", () => {
 	it("lists platform IAM + master-data hard tenant root table names", () => {
-		expect(HARD_TENANT_ROOT_TABLE_NAMES).toHaveLength(32);
+		expect(HARD_TENANT_ROOT_TABLE_NAMES).toHaveLength(63);
 		expect([...HARD_TENANT_ROOT_TABLE_NAMES]).toEqual([
 			"platform_role_assignment",
 			"platform_rbac_audit",
@@ -52,6 +52,37 @@ describe("@afenda/db hard tenant roots (N9 / ARCH-023)", () => {
 			"sales_order_line",
 			"purchase_order",
 			"purchase_order_line",
+			"sales_invoice",
+			"sales_invoice_line",
+			"sales_credit_note",
+			"customer_allocation",
+			"customer_balance_projection",
+			"supplier_invoice",
+			"supplier_invoice_line",
+			"supplier_credit_note",
+			"supplier_allocation",
+			"three_way_match_result",
+			"supplier_balance_projection",
+			"payment",
+			"payment_allocation",
+			"payment_reversal",
+			"stock_movement",
+			"stock_movement_line",
+			"stock_balance",
+			"stock_ledger_entry",
+			"stock_reservation",
+			"goods_receipt",
+			"goods_receipt_line",
+			"receiving_discrepancy",
+			"delivery",
+			"delivery_line",
+			"delivery_pick",
+			"delivery_pack",
+			"proof_of_delivery",
+			"journal",
+			"journal_line",
+			"ledger_posting",
+			"accounting_period",
 		]);
 	});
 

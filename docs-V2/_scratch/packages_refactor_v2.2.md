@@ -1,4 +1,4 @@
-> **Superseded for decisions:** [packages_refactor_v2.3.md](./packages_refactor_v2.3.md) (promotion-blocking amendments). Keep this v2.2 file for history only.
+> **Superseded for decisions:** [packages_governance.md](./packages_governance.md). Keep this v2.2 file for history only. Prior decision stamp: [v2.3](./packages_refactor_v2.3.md).
 
 # Packages classification — Technical Specification v2.2
 

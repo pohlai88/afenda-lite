@@ -32,7 +32,7 @@ Parent Scratch index: [`../README.md`](../README.md). Agent checkout: [`AGENTS.m
 | Published MDX under `apps/docs/content/**` | Human-facing pages | Edit / regenerate — not a register or Accept/Living lifecycle |
 | Living `docs/` (ARCH-* · GUIDE-* · MOD-* · control tree) | **Dormant** | Do not recreate; reopen is a separate Docs-lane mission |
 
-Method aids (vendor): `fumadocs-mdx-structure` · `fumadocs-i18n` (structure only). **Not used:** `fumadocs-component-docs` / `fumadocs-registry-integration` (8bitcn / shadcn registry — banned).
+Method aids (vendor): `fumadocs-mdx-structure` · `fumadocs-i18n` (structure only). **Project farm:** `afenda-docs-app`. **Not used:** `fumadocs-component-docs` / `fumadocs-registry-integration` (8bitcn / shadcn registry — banned).
 
 ---
 
