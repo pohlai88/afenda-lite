@@ -9,8 +9,8 @@ import {
 	inArray,
 	runNeonHttpTransaction,
 	supplierAllocation,
-	supplierBalanceProjection,
 	supplierCreditNote,
+	supplierCreditNoteLine,
 	supplierInvoice,
 	supplierInvoiceLine,
 	threeWayMatchResult,
@@ -85,8 +85,39 @@ function mapMatch(
 		purchaseOrderId: row.purchaseOrderId,
 		goodsReceiptId: row.goodsReceiptId,
 		result: mapMatchStatus(row.matchStatus),
+		evidence:
+			row.evidenceJson === null
+				? {
+						quantityTolerancePct: "0",
+						priceTolerancePct: "0",
+						lineResults: [],
+					}
+				: (JSON.parse(row.evidenceJson) as ThreeWayMatchResult["evidence"]),
+		purchaseOrderVersion: row.poEvidenceVersion ?? 0,
+		goodsReceiptVersion: row.grEvidenceVersion ?? 0,
 		matchedBy: row.createdBy,
 		matchedAt: row.createdAt,
+	};
+}
+
+function mapAllocation(
+	row: typeof supplierAllocation.$inferSelect,
+): SupplierAllocation {
+	return {
+		id: row.id,
+		organizationId: row.organizationId,
+		invoiceId: row.supplierInvoiceId,
+		supplierId: row.supplierPartyId,
+		paymentId: row.paymentId,
+		paymentApplicationInstructionId: row.paymentApplicationInstructionId,
+		creditNoteId: row.creditNoteId,
+		status: row.status === "reversed" ? "reversed" : "active",
+		amount: row.amount,
+		applyIdempotencyKey: row.applyIdempotencyKey,
+		reversedAt: row.reversedAt,
+		reversedBy: row.reversedBy,
+		createdBy: row.createdBy,
+		createdAt: row.createdAt,
 	};
 }
 
@@ -287,7 +318,7 @@ export class DrizzlePayablesStore implements PayablesStore {
 				sql`
 					WITH mutated AS (
 						UPDATE supplier_invoice
-						SET status = 'matched',
+						SET status = CASE WHEN ${record.matchStatus} = 'exception' THEN 'draft' ELSE 'matched' END,
 							purchase_order_id = ${record.purchaseOrderId},
 							updated_at = now(),
 							updated_by = ${record.actorUserId}, version = version + 1
@@ -309,10 +340,13 @@ export class DrizzlePayablesStore implements PayablesStore {
 					matched AS (
 						INSERT INTO three_way_match_result (
 							id, organization_id, supplier_invoice_id, purchase_order_id,
-							goods_receipt_id, match_status, version, created_by, updated_by
+							goods_receipt_id, match_status, evidence_json, po_evidence_version,
+							gr_evidence_version, matched_at, matched_by, version, created_by, updated_by
 						)
 						SELECT ${matchId}, organization_id, id, ${record.purchaseOrderId},
-							${record.goodsReceiptId}, ${record.matchStatus}, 1,
+							${record.goodsReceiptId}, ${record.matchStatus}, ${JSON.stringify(record.evidence)},
+							${record.purchaseOrderVersion}, ${record.goodsReceiptVersion}, now(),
+							${record.actorUserId}, 1,
 							${record.actorUserId}, ${record.actorUserId}
 						FROM mutated RETURNING id
 					),
@@ -419,8 +453,239 @@ export class DrizzlePayablesStore implements PayablesStore {
 		}
 	}
 
+	async createCredit(
+		record: SupplierInvoiceCreateRecord,
+	): Promise<Result<SupplierInvoice>> {
+		const id = randomUUID();
+		try {
+			await db.insert(supplierCreditNote).values({
+				id,
+				organizationId: record.organizationId,
+				code: record.code,
+				normalizedCode: record.normalizedCode,
+				status: "draft",
+				supplierPartyId: record.supplierId,
+				supplierPartyCode: record.supplierCode,
+				supplierPartyName: record.supplierName,
+				currencyCode: record.currencyCode,
+				amount: "0",
+				version: 1,
+				createdBy: record.actorUserId,
+				updatedBy: record.actorUserId,
+			});
+			const [credit] = await db
+				.select()
+				.from(supplierCreditNote)
+				.where(
+					and(
+						eq(supplierCreditNote.organizationId, record.organizationId),
+						eq(supplierCreditNote.id, id),
+					),
+				)
+				.limit(1);
+			if (credit === undefined)
+				return fail("INTERNAL_ERROR", "Created supplier credit note missing");
+			return ok({
+				id: credit.id,
+				organizationId: credit.organizationId,
+				code: credit.code,
+				normalizedCode: credit.normalizedCode,
+				documentType: "credit_note",
+				status: invoiceStatus(credit.status),
+				supplierId: credit.supplierPartyId,
+				supplierCode: credit.supplierPartyCode,
+				supplierName: credit.supplierPartyName,
+				currencyCode: credit.currencyCode,
+				totalAmount: credit.amount,
+				openAmount: "0",
+				version: credit.version,
+				createdBy: credit.createdBy,
+				updatedBy: credit.updatedBy,
+				matchedAt: null,
+				matchedBy: null,
+				postedAt: credit.postedAt,
+				postedBy: credit.postedBy,
+				cancelledAt: null,
+				cancelledBy: null,
+				createdAt: credit.createdAt,
+				updatedAt: credit.updatedAt,
+				lines: [],
+				matchResult: null,
+			});
+		} catch (error) {
+			return failFromUnknown(error, "Failed to create supplier credit note");
+		}
+	}
+
+	async addCreditLine(
+		record: Parameters<PayablesStore["addCreditLine"]>[0],
+	): Promise<Result<SupplierInvoiceLine>> {
+		const id = randomUUID();
+		try {
+			const [rows] = await runNeonHttpTransaction<
+				[{ line_no: number; created_at: Date }[]]
+			>((sql) => [
+				sql`
+					WITH eligible AS (
+						SELECT id FROM supplier_credit_note
+						WHERE id = ${record.creditNoteId} AND organization_id = ${record.organizationId}
+							AND status = 'draft'
+					), inserted AS (
+						INSERT INTO supplier_credit_note_line (
+							id, organization_id, credit_note_id, line_no, item_id, item_code, item_name,
+							quantity, unit_price, line_amount, version, created_by, updated_by
+						)
+						SELECT ${id}, ${record.organizationId}, ${record.creditNoteId},
+							(SELECT COALESCE(MAX(line_no), 0) + 1 FROM supplier_credit_note_line
+								WHERE organization_id = ${record.organizationId} AND credit_note_id = ${record.creditNoteId}),
+							${record.itemId}, ${record.itemId}, ${record.description}, ${record.quantity},
+							${record.unitPrice}, (${record.quantity}::numeric * ${record.unitPrice}::numeric)::text,
+							1, ${record.actorUserId}, ${record.actorUserId}
+						FROM eligible RETURNING line_no, created_at
+					), bumped AS (
+						UPDATE supplier_credit_note SET version = version + 1, updated_by = ${record.actorUserId}, updated_at = now()
+						WHERE id = ${record.creditNoteId} AND organization_id = ${record.organizationId}
+							AND EXISTS (SELECT 1 FROM inserted)
+					) SELECT * FROM inserted
+				`,
+			]);
+			const row = rows[0];
+			return row === undefined
+				? fail("CONFLICT", "Supplier credit note line conflict")
+				: ok({
+						id,
+						organizationId: record.organizationId,
+						invoiceId: record.creditNoteId,
+						lineNo: row.line_no,
+						itemId: record.itemId,
+						description: record.description,
+						quantity: record.quantity,
+						unitPrice: record.unitPrice,
+						lineAmount: String(
+							Number(record.quantity) * Number(record.unitPrice),
+						),
+						createdBy: record.actorUserId,
+						createdAt: row.created_at,
+					});
+		} catch (error) {
+			return failFromUnknown(error, "Failed to add supplier credit note line");
+		}
+	}
+
+	async postCredit(
+		record: Parameters<PayablesStore["postCredit"]>[0],
+	): Promise<Result<SupplierInvoice>> {
+		try {
+			const [rows] = await runNeonHttpTransaction<[{ id: string }[]]>((sql) => [
+				sql`
+					WITH totaled AS (
+						SELECT credit.*, (SELECT COALESCE(SUM(line_amount::numeric), 0) FROM supplier_credit_note_line
+							WHERE credit_note_id = credit.id AND organization_id = credit.organization_id) AS total
+						FROM supplier_credit_note credit
+						WHERE id = ${record.creditNoteId} AND organization_id = ${record.organizationId}
+							AND status = 'draft' AND version = ${record.expectedVersion}
+					), mutated AS (
+						UPDATE supplier_credit_note SET status = 'posted', amount = totaled.total::text,
+							posted_at = now(), posted_by = ${record.actorUserId}, version = version + 1,
+							updated_at = now(), updated_by = ${record.actorUserId}
+						FROM totaled WHERE supplier_credit_note.id = totaled.id AND totaled.total > 0 RETURNING supplier_credit_note.*
+					), projected AS (
+						INSERT INTO supplier_balance_projection (id, organization_id, supplier_party_id, currency_code, open_balance, version, created_by, updated_by)
+						SELECT ${randomUUID()}, organization_id, supplier_party_id, currency_code, (-amount::numeric)::text, 1, ${record.actorUserId}, ${record.actorUserId}
+						FROM mutated ON CONFLICT (organization_id, supplier_party_id, currency_code) DO UPDATE SET
+							open_balance = (supplier_balance_projection.open_balance::numeric + EXCLUDED.open_balance::numeric)::text,
+							version = supplier_balance_projection.version + 1, updated_at = now(), updated_by = ${record.actorUserId}
+					) SELECT id FROM mutated
+				`,
+			]);
+			if (rows[0] === undefined)
+				return fail("CONFLICT", "Supplier credit note post conflict");
+			const [credit] = await db
+				.select()
+				.from(supplierCreditNote)
+				.where(
+					and(
+						eq(supplierCreditNote.organizationId, record.organizationId),
+						eq(supplierCreditNote.id, record.creditNoteId),
+					),
+				)
+				.limit(1);
+			if (credit === undefined)
+				return fail("INTERNAL_ERROR", "Posted supplier credit note missing");
+			const lines = await db
+				.select()
+				.from(supplierCreditNoteLine)
+				.where(
+					and(
+						eq(supplierCreditNoteLine.organizationId, record.organizationId),
+						eq(supplierCreditNoteLine.creditNoteId, credit.id),
+					),
+				)
+				.orderBy(asc(supplierCreditNoteLine.lineNo));
+			const emitted = await record.effects.emit({
+				type: "payables.credit_note.posted.v1",
+				organizationId: record.organizationId,
+				actorUserId: record.actorUserId,
+				correlationId: record.correlationId,
+				payload: JSON.parse(
+					eventPayload({
+						organizationId: record.organizationId,
+						entityId: credit.id,
+						supplierId: credit.supplierPartyId,
+						amount: credit.amount,
+						currencyCode: credit.currencyCode,
+						actorUserId: record.actorUserId,
+						correlationId: record.correlationId,
+					}),
+				),
+			});
+			if (!emitted.ok) return emitted;
+			return ok({
+				id: credit.id,
+				organizationId: credit.organizationId,
+				code: credit.code,
+				normalizedCode: credit.normalizedCode,
+				documentType: "credit_note",
+				status: invoiceStatus(credit.status),
+				supplierId: credit.supplierPartyId,
+				supplierCode: credit.supplierPartyCode,
+				supplierName: credit.supplierPartyName,
+				currencyCode: credit.currencyCode,
+				totalAmount: credit.amount,
+				openAmount: credit.amount,
+				version: credit.version,
+				createdBy: credit.createdBy,
+				updatedBy: credit.updatedBy,
+				matchedAt: null,
+				matchedBy: null,
+				postedAt: credit.postedAt,
+				postedBy: credit.postedBy,
+				cancelledAt: null,
+				cancelledBy: null,
+				createdAt: credit.createdAt,
+				updatedAt: credit.updatedAt,
+				lines: lines.map((line) => ({
+					id: line.id,
+					organizationId: line.organizationId,
+					invoiceId: line.creditNoteId,
+					lineNo: line.lineNo,
+					itemId: line.itemId,
+					description: line.itemName,
+					quantity: line.quantity,
+					unitPrice: line.unitPrice,
+					lineAmount: line.lineAmount,
+					createdBy: line.createdBy,
+					createdAt: line.createdAt,
+				})),
+				matchResult: null,
+			});
+		} catch (error) {
+			return failFromUnknown(error, "Failed to post supplier credit note");
+		}
+	}
+
 	async issueCredit(
-		record: Parameters<PayablesStore["issueCredit"]>[0],
+		record: SupplierInvoiceCreateRecord & { amount: string },
 	): Promise<Result<SupplierInvoice>> {
 		const id = randomUUID();
 		const balanceId = randomUUID();
@@ -530,6 +795,17 @@ export class DrizzlePayablesStore implements PayablesStore {
 		const id = randomUUID();
 		const eventId = randomUUID();
 		try {
+			const [replay] = await db
+				.select()
+				.from(supplierAllocation)
+				.where(
+					and(
+						eq(supplierAllocation.organizationId, record.organizationId),
+						eq(supplierAllocation.applyIdempotencyKey, record.idempotencyKey),
+					),
+				)
+				.limit(1);
+			if (replay !== undefined) return ok(mapAllocation(replay));
 			const [rows] = await runNeonHttpTransaction<
 				[
 					Array<{
@@ -572,9 +848,11 @@ export class DrizzlePayablesStore implements PayablesStore {
 					allocated AS (
 						INSERT INTO supplier_allocation (
 							id, organization_id, supplier_party_id, supplier_invoice_id, payment_id,
-							amount, allocated_at, allocated_by, version, created_by, updated_by
+							payment_application_instruction_id, status, apply_idempotency_key, amount,
+							allocated_at, allocated_by, version, created_by, updated_by
 						)
 						SELECT ${id}, organization_id, supplier_party_id, id, ${record.paymentId},
+							${record.paymentApplicationInstructionId}, 'active', ${record.idempotencyKey},
 							${record.amount}, now(), ${record.actorUserId}, 1,
 							${record.actorUserId}, ${record.actorUserId}
 						FROM mutated RETURNING *
@@ -619,7 +897,13 @@ export class DrizzlePayablesStore implements PayablesStore {
 				invoiceId: row.invoice_id,
 				supplierId: row.supplier_id,
 				paymentId: row.payment_id,
+				paymentApplicationInstructionId: record.paymentApplicationInstructionId,
+				creditNoteId: null,
+				status: "active",
 				amount: row.amount,
+				applyIdempotencyKey: record.idempotencyKey,
+				reversedAt: null,
+				reversedBy: null,
 				createdBy: row.created_by,
 				createdAt: row.created_at,
 			});
@@ -628,8 +912,87 @@ export class DrizzlePayablesStore implements PayablesStore {
 		}
 	}
 
-	async reverseAllocationsByPayment(
-		record: Parameters<PayablesStore["reverseAllocationsByPayment"]>[0],
+	async applyCredit(
+		record: Parameters<PayablesStore["applyCredit"]>[0],
+	): Promise<Result<SupplierAllocation>> {
+		const id = randomUUID();
+		try {
+			const [replay] = await db
+				.select()
+				.from(supplierAllocation)
+				.where(
+					and(
+						eq(supplierAllocation.organizationId, record.organizationId),
+						eq(supplierAllocation.applyIdempotencyKey, record.idempotencyKey),
+					),
+				)
+				.limit(1);
+			if (replay !== undefined) return ok(mapAllocation(replay));
+			const [rows] = await runNeonHttpTransaction<[Array<{ id: string }>]>(
+				(sql) => [
+					sql`
+					WITH invoice AS (
+						SELECT row.*, (SELECT COALESCE(SUM(amount::numeric), 0) FROM supplier_allocation
+							WHERE supplier_invoice_id = row.id AND organization_id = row.organization_id AND status = 'active') AS applied
+						FROM supplier_invoice row
+						WHERE id = ${record.invoiceId} AND organization_id = ${record.organizationId} AND status = 'posted'
+					), credit AS (
+						SELECT row.*, (SELECT COALESCE(SUM(amount::numeric), 0) FROM supplier_allocation
+							WHERE credit_note_id = row.id AND organization_id = row.organization_id AND status = 'active') AS applied
+						FROM supplier_credit_note row
+						WHERE id = ${record.creditNoteId} AND organization_id = ${record.organizationId} AND status = 'posted'
+					), allocated AS (
+						INSERT INTO supplier_allocation (
+							id, organization_id, supplier_party_id, supplier_invoice_id, credit_note_id,
+							status, apply_idempotency_key, amount, allocated_at, allocated_by, version, created_by, updated_by
+						)
+						SELECT ${id}, invoice.organization_id, invoice.supplier_party_id, invoice.id, credit.id,
+							'active', ${record.idempotencyKey}, ${record.amount}, now(), ${record.actorUserId}, 1,
+							${record.actorUserId}, ${record.actorUserId}
+						FROM invoice JOIN credit ON credit.organization_id = invoice.organization_id
+							AND credit.supplier_party_id = invoice.supplier_party_id AND credit.currency_code = invoice.currency_code
+						WHERE ${record.amount}::numeric > 0
+							AND (SELECT COALESCE(SUM(line_amount::numeric), 0) FROM supplier_invoice_line WHERE invoice_id = invoice.id) - invoice.applied >= ${record.amount}::numeric
+							AND credit.amount::numeric - credit.applied >= ${record.amount}::numeric
+						RETURNING *
+					), invoice_bumped AS (
+						UPDATE supplier_invoice SET version = version + 1, updated_by = ${record.actorUserId}, updated_at = now()
+						WHERE id = ${record.invoiceId} AND EXISTS (SELECT 1 FROM allocated)
+					), credit_bumped AS (
+						UPDATE supplier_credit_note SET version = version + 1, updated_by = ${record.actorUserId}, updated_at = now()
+						WHERE id = ${record.creditNoteId} AND EXISTS (SELECT 1 FROM allocated)
+					), projected AS (
+						UPDATE supplier_balance_projection SET open_balance = (open_balance::numeric - ${record.amount}::numeric)::text,
+							version = version + 1, updated_by = ${record.actorUserId}, updated_at = now()
+						WHERE organization_id = ${record.organizationId}
+							AND supplier_party_id = (SELECT supplier_party_id FROM allocated)
+							AND currency_code = (SELECT currency_code FROM invoice)
+					) SELECT id FROM allocated
+				`,
+				],
+			);
+			if (rows[0] === undefined)
+				return fail("CONFLICT", "Supplier credit application conflict");
+			const [allocation] = await db
+				.select()
+				.from(supplierAllocation)
+				.where(
+					and(
+						eq(supplierAllocation.organizationId, record.organizationId),
+						eq(supplierAllocation.id, id),
+					),
+				)
+				.limit(1);
+			return allocation === undefined
+				? fail("INTERNAL_ERROR", "Created supplier credit allocation missing")
+				: ok(mapAllocation(allocation));
+		} catch (error) {
+			return failFromUnknown(error, "Failed to apply supplier credit");
+		}
+	}
+
+	async reversePaymentApplication(
+		record: Parameters<PayablesStore["reversePaymentApplication"]>[0],
 	): Promise<Result<SupplierAllocation[]>> {
 		try {
 			const [rows] = await runNeonHttpTransaction<
@@ -648,9 +1011,11 @@ export class DrizzlePayablesStore implements PayablesStore {
 			>((sql) => [
 				sql`
 					WITH deleted AS (
-						DELETE FROM supplier_allocation
+						UPDATE supplier_allocation
+						SET status = 'reversed', reversed_at = now(), reversed_by = ${record.actorUserId},
+							updated_at = now(), updated_by = ${record.actorUserId}, version = version + 1
 						WHERE organization_id = ${record.organizationId}
-							AND payment_id = ${record.paymentId}
+							AND payment_id = ${record.paymentId} AND status = 'active'
 						RETURNING *
 					),
 					by_invoice AS (
@@ -682,7 +1047,7 @@ export class DrizzlePayablesStore implements PayablesStore {
 							payload, status, attempts
 						)
 						SELECT gen_random_uuid(), deleted.organization_id,
-							'payables.allocation.reversed.v1', 'payables',
+							'payables.payment_application.reversed.v1', 'payables',
 							${record.correlationId}, ${record.actorUserId},
 							jsonb_build_object(
 								'organizationId', deleted.organization_id, 'entityId', deleted.id,
@@ -707,7 +1072,13 @@ export class DrizzlePayablesStore implements PayablesStore {
 					invoiceId: row.invoice_id,
 					supplierId: row.supplier_id,
 					paymentId: row.payment_id,
+					paymentApplicationInstructionId: null,
+					creditNoteId: null,
+					status: "reversed",
 					amount: row.amount,
+					applyIdempotencyKey: null,
+					reversedAt: new Date(),
+					reversedBy: record.actorUserId,
 					createdBy: row.created_by,
 					createdAt: row.created_at,
 				})),
@@ -731,9 +1102,23 @@ export class DrizzlePayablesStore implements PayablesStore {
 						WHERE id = ${record.invoiceId} AND organization_id = ${record.organizationId}
 							AND version = ${record.expectedVersion}
 							AND status IN ('draft', 'matched')
-						RETURNING id
+						RETURNING *
+					),
+					outboxed AS (
+						INSERT INTO platform_domain_event (
+							id, organization_id, type, source_module, correlation_id, actor_user_id,
+							payload, status, attempts
+						)
+						SELECT ${randomUUID()}, organization_id, 'payables.invoice.cancelled.v1', 'payables',
+							${record.correlationId}, ${record.actorUserId},
+							jsonb_build_object(
+								'organizationId', organization_id, 'entityId', id,
+								'supplierId', supplier_party_id, 'amount', '0',
+								'currencyCode', currency_code, 'actorId', ${record.actorUserId},
+								'correlationId', ${record.correlationId}
+							), 'pending', 0 FROM mutated
 					)
-					SELECT mutated.id FROM mutated
+					SELECT mutated.id FROM mutated, outboxed
 				`,
 			]);
 			if (rows[0] === undefined)
@@ -796,6 +1181,7 @@ export class DrizzlePayablesStore implements PayablesStore {
 						and(
 							eq(supplierAllocation.organizationId, organizationId),
 							eq(supplierAllocation.supplierInvoiceId, id),
+							eq(supplierAllocation.status, "active"),
 						),
 					),
 			]);
@@ -860,6 +1246,7 @@ export class DrizzlePayablesStore implements PayablesStore {
 						and(
 							eq(supplierAllocation.organizationId, filter.organizationId),
 							inArray(supplierAllocation.supplierInvoiceId, ids),
+							eq(supplierAllocation.status, "active"),
 						),
 					),
 			]);
@@ -902,27 +1289,60 @@ export class DrizzlePayablesStore implements PayablesStore {
 		currencyCode?: string,
 	): Promise<Result<SupplierBalance[]>> {
 		try {
-			const conditions = [
-				eq(supplierBalanceProjection.organizationId, organizationId),
-				eq(supplierBalanceProjection.supplierPartyId, supplierId),
-			];
-			if (currencyCode !== undefined) {
-				conditions.push(
-					eq(supplierBalanceProjection.currencyCode, currencyCode),
-				);
-			}
-			const rows = await db
-				.select()
-				.from(supplierBalanceProjection)
-				.where(and(...conditions))
-				.orderBy(asc(supplierBalanceProjection.currencyCode));
+			const [rows] = await runNeonHttpTransaction<
+				[
+					Array<{
+						organization_id: string;
+						supplier_id: string;
+						currency_code: string;
+						open_balance: string;
+						invoiced_amount: string;
+						credited_amount: string;
+						paid_amount: string;
+						updated_at: Date;
+					}>,
+				]
+			>((sql) => [
+				sql`
+					SELECT balance.organization_id, balance.supplier_party_id AS supplier_id,
+						balance.currency_code, balance.open_balance, balance.updated_at,
+						(SELECT COALESCE(SUM(line.line_amount::numeric), 0)::text
+							FROM supplier_invoice invoice
+							JOIN supplier_invoice_line line ON line.invoice_id = invoice.id
+							WHERE invoice.organization_id = balance.organization_id
+								AND invoice.supplier_party_id = balance.supplier_party_id
+								AND invoice.currency_code = balance.currency_code
+								AND invoice.status = 'posted') AS invoiced_amount,
+						(SELECT COALESCE(SUM(credit.amount::numeric), 0)::text
+							FROM supplier_credit_note credit
+							WHERE credit.organization_id = balance.organization_id
+								AND credit.supplier_party_id = balance.supplier_party_id
+								AND credit.currency_code = balance.currency_code
+								AND credit.status = 'posted') AS credited_amount,
+						(SELECT COALESCE(SUM(allocation.amount::numeric), 0)::text
+							FROM supplier_allocation allocation
+							WHERE allocation.organization_id = balance.organization_id
+								AND allocation.supplier_party_id = balance.supplier_party_id
+								AND allocation.status = 'active' AND allocation.payment_id IS NOT NULL) AS paid_amount
+					FROM supplier_balance_projection balance
+					WHERE balance.organization_id = ${organizationId}
+						AND balance.supplier_party_id = ${supplierId}
+						AND (${currencyCode ?? null}::text IS NULL OR balance.currency_code = ${currencyCode ?? null})
+					ORDER BY balance.currency_code ASC
+				`,
+			]);
 			return ok(
 				rows.map((row) => ({
-					organizationId: row.organizationId,
-					supplierId: row.supplierPartyId,
-					currencyCode: row.currencyCode,
-					openBalance: row.openBalance,
-					updatedAt: row.updatedAt,
+					organizationId: row.organization_id,
+					supplierId: row.supplier_id,
+					currencyCode: row.currency_code,
+					openBalance: row.open_balance,
+					invoicedAmount: row.invoiced_amount,
+					creditedAmount: row.credited_amount,
+					paidAmount: row.paid_amount,
+					outstandingAmount: row.open_balance,
+					asOf: new Date(),
+					updatedAt: row.updated_at,
 				})),
 			);
 		} catch (error) {

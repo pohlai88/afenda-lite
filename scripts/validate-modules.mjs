@@ -21,12 +21,14 @@ import {
 	validateErpAuthorizationPorts,
 	validateEventContracts,
 	validateEvents,
+	validateCatalogDiskParity,
 	validateForeignSchemaImports,
 	validateModuleIdentity,
 	validateModuleReferences,
 	validateMutationTablesExist,
 	validatePermissions,
 	validatePersistenceOwnership,
+	validateSoleMutatorBoundary,
 	validateWorkspaceEdges,
 } from "./validate-modules/checks.mjs";
 import {
@@ -124,6 +126,14 @@ async function main() {
 	);
 	errors.push(...validateDeepImports(root));
 	errors.push(...validateForeignSchemaImports(root, manifests));
+	errors.push(
+		...validateSoleMutatorBoundary(
+			root,
+			manifests,
+			join(modulesDir, "SCHEMA-OWNERSHIP-MANIFEST.yaml"),
+		),
+	);
+	errors.push(...validateCatalogDiskParity(root));
 	errors.push(...validateErpAuthorizationPorts(root));
 	errors.push(...validateCandidatePackagesAbsent(root, roadmap));
 

@@ -53,7 +53,10 @@ export const createDraftPaymentInputSchema = z
 		direction: z.enum(["receipt", "disbursement"]),
 		purpose,
 		counterpartyId: uuid.nullable().optional(),
-		counterpartySnapshot: z.record(z.string(), z.unknown()).nullable().optional(),
+		counterpartySnapshot: z
+			.record(z.string(), z.unknown())
+			.nullable()
+			.optional(),
 		currencyCode,
 		amount: money,
 		reference: z.string().trim().max(256).nullable().optional(),
@@ -79,12 +82,8 @@ export const addPaymentApplicationInstructionInputSchema = z.object({
 	...mutation,
 	paymentId: uuid,
 	targetModule: z.enum(["receivables", "payables"]),
-	targetDocumentType: z.enum([
-		"customer_invoice",
-		"customer_credit",
-		"supplier_invoice",
-		"supplier_credit",
-	]),
+	/** V1: invoice targets only — credit-document apply is out of v1. */
+	targetDocumentType: z.enum(["customer_invoice", "supplier_invoice"]),
 	targetDocumentId: uuid,
 	intendedAmount: money,
 	currencyCode,

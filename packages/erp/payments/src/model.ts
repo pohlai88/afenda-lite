@@ -2,7 +2,11 @@ import type { Result } from "@afenda/errors/result";
 
 import type { PaymentsAuthorizationPort } from "./authorization";
 
-export const PAYMENT_DIRECTIONS = ["receipt", "disbursement", "refund"] as const;
+export const PAYMENT_DIRECTIONS = [
+	"receipt",
+	"disbursement",
+	"refund",
+] as const;
 export type PaymentDirection = (typeof PAYMENT_DIRECTIONS)[number];
 
 /** `posted` is the settled state; no separate settlement lifecycle exists. */
@@ -188,7 +192,12 @@ export type PaymentsStore = {
 	addApplicationInstruction(
 		record: Omit<
 			PaymentApplicationInstruction,
-			"id" | "createdAt" | "updatedAt" | "appliedAmount" | "status" | "rejectionCode"
+			| "id"
+			| "createdAt"
+			| "updatedAt"
+			| "appliedAmount"
+			| "status"
+			| "rejectionCode"
 		> & {
 			idempotencyKey: string;
 			actorUserId: string;
@@ -260,10 +269,7 @@ export type PaymentsStore = {
 		correlationId: string;
 		idempotencyKey: string;
 	}): Promise<Result<PaymentApplicationInstruction>>;
-	getById(
-		organizationId: string,
-		id: string,
-	): Promise<Result<Payment | null>>;
+	getById(organizationId: string, id: string): Promise<Result<Payment | null>>;
 	list(filter: {
 		organizationId: string;
 		page: number;

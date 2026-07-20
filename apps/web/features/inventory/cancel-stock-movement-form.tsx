@@ -13,8 +13,8 @@ import {
 import { useActionState, useMemo } from "react";
 
 import {
-	cancelStockMovementAction,
 	type CancelStockMovementActionState,
+	cancelStockMovementAction,
 } from "@/app/actions/cancel-stock-movement";
 import { actionFieldMessage } from "@/modules/platform/schemas/action-result";
 
@@ -22,10 +22,14 @@ const initialState: CancelStockMovementActionState = null;
 
 type CancelStockMovementFormProps = {
 	canCancel: boolean;
+	defaultMovementId?: string;
+	defaultExpectedVersion?: number;
 };
 
 export function CancelStockMovementForm({
 	canCancel,
+	defaultMovementId,
+	defaultExpectedVersion,
 }: CancelStockMovementFormProps) {
 	const [state, formAction, pending] = useActionState(
 		cancelStockMovementAction,
@@ -73,7 +77,12 @@ export function CancelStockMovementForm({
 			{showFormError && state?.ok === false ? (
 				<FormError>{state.message}</FormError>
 			) : null}
-			<input type="hidden" name="idempotencyKey" value={idempotencyKey} readOnly />
+			<input
+				type="hidden"
+				name="idempotencyKey"
+				value={idempotencyKey}
+				readOnly
+			/>
 			<FormField
 				label="Movement id"
 				required
@@ -86,6 +95,7 @@ export function CancelStockMovementForm({
 					required
 					autoComplete="off"
 					disabled={pending}
+					defaultValue={defaultMovementId ?? ""}
 				/>
 			</FormField>
 			<FormField
@@ -101,6 +111,11 @@ export function CancelStockMovementForm({
 					min="1"
 					required
 					disabled={pending}
+					defaultValue={
+						defaultExpectedVersion !== undefined
+							? String(defaultExpectedVersion)
+							: undefined
+					}
 				/>
 			</FormField>
 			<Button type="submit" disabled={pending}>

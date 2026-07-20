@@ -68,8 +68,8 @@ jobs:
       - name: Docs app gate
         run: pnpm check:docs-app
 
-      - name: Module governance (Phase 2)
-        run: pnpm validate:modules
+      - name: Package governance (catalog · edges · sole-mutator)
+        run: pnpm governance:packages
 
       - name: Typecheck · test
         run: pnpm exec turbo run typecheck test

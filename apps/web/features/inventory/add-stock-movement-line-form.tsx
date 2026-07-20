@@ -8,6 +8,8 @@ import {
 	FormError,
 	FormField,
 	Input,
+	NativeSelect,
+	NativeSelectOption,
 	Spinner,
 } from "@afenda/ui-system";
 import { useActionState, useMemo } from "react";
@@ -16,12 +18,16 @@ import {
 	type AddStockMovementLineActionState,
 	addStockMovementLineAction,
 } from "@/app/actions/add-stock-movement-line";
+import type { InventoryMasterOption } from "@/features/inventory/inventory-master-option";
 import { actionFieldMessage } from "@/modules/platform/schemas/action-result";
 
 const initialState: AddStockMovementLineActionState = null;
 
 type AddStockMovementLineFormProps = {
 	canCreate: boolean;
+	items: InventoryMasterOption[];
+	defaultMovementId?: string;
+	defaultExpectedVersion?: number;
 };
 
 /**
@@ -29,15 +35,15 @@ type AddStockMovementLineFormProps = {
  */
 export function AddStockMovementLineForm({
 	canCreate,
+	items,
+	defaultMovementId,
+	defaultExpectedVersion,
 }: AddStockMovementLineFormProps) {
 	const [state, formAction, pending] = useActionState(
 		addStockMovementLineAction,
 		initialState,
 	);
-	const idempotencyKey = useMemo(
-		() => `line:${crypto.randomUUID()}`,
-		[state],
-	);
+	const idempotencyKey = useMemo(() => `line:${crypto.randomUUID()}`, [state]);
 
 	if (!canCreate) {
 		return (
@@ -81,7 +87,12 @@ export function AddStockMovementLineForm({
 			{showFormError && state?.ok === false ? (
 				<FormError>{state.message}</FormError>
 			) : null}
-			<input type="hidden" name="idempotencyKey" value={idempotencyKey} readOnly />
+			<input
+				type="hidden"
+				name="idempotencyKey"
+				value={idempotencyKey}
+				readOnly
+			/>
 			<FormField
 				label="Movement id"
 				required
@@ -94,21 +105,31 @@ export function AddStockMovementLineForm({
 					required
 					autoComplete="off"
 					disabled={pending}
+					defaultValue={defaultMovementId ?? ""}
 				/>
 			</FormField>
 			<FormField
-				label="Item id"
+				label="Item"
 				required
 				fieldId="stock-line-item"
 				error={itemError}
 			>
-				<Input
+				<NativeSelect
 					id="stock-line-item"
 					name="itemId"
 					required
-					autoComplete="off"
-					disabled={pending}
-				/>
+					disabled={pending || items.length === 0}
+					defaultValue=""
+				>
+					<NativeSelectOption value="" disabled>
+						Select item
+					</NativeSelectOption>
+					{items.map((item) => (
+						<NativeSelectOption key={item.id} value={item.id}>
+							{item.code} · {item.status}
+						</NativeSelectOption>
+					))}
+				</NativeSelect>
 			</FormField>
 			<FormField
 				label="Expected version"
@@ -123,6 +144,11 @@ export function AddStockMovementLineForm({
 					min="1"
 					required
 					disabled={pending}
+					defaultValue={
+						defaultExpectedVersion !== undefined
+							? String(defaultExpectedVersion)
+							: undefined
+					}
 				/>
 			</FormField>
 			<FormField
@@ -139,7 +165,7 @@ export function AddStockMovementLineForm({
 					disabled={pending}
 				/>
 			</FormField>
-			<Button type="submit" disabled={pending}>
+			<Button type="submit" disabled={pending || items.length === 0}>
 				{pending ? <Spinner /> : null}
 				Add line
 			</Button>

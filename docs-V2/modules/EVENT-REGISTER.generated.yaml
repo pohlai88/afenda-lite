@@ -47,6 +47,12 @@ events:
     id: inventory.reservation.released.v1
     moduleId: inventory
   - direction: emits
+    id: inventory.reservation.expired.v1
+    moduleId: inventory
+  - direction: emits
+    id: inventory.reservation.cancelled.v1
+    moduleId: inventory
+  - direction: emits
     id: master_data.party.created.v1
     moduleId: master-data
   - direction: emits
@@ -251,6 +257,12 @@ events:
     id: payables.allocation.posted.v1
     moduleId: payables
   - direction: emits
+    id: payables.invoice.cancelled.v1
+    moduleId: payables
+  - direction: emits
+    id: payables.payment_application.reversed.v1
+    moduleId: payables
+  - direction: emits
     id: payments.payment.created.v1
     moduleId: payments
   - direction: emits
@@ -320,7 +332,16 @@ events:
     id: receiving.receipt.posted.v1
     moduleId: receiving
   - direction: emits
+    id: receiving.receipt.cancelled.v1
+    moduleId: receiving
+  - direction: emits
+    id: receiving.receipt.reversed.v1
+    moduleId: receiving
+  - direction: emits
     id: receiving.discrepancy.recorded.v1
+    moduleId: receiving
+  - direction: emits
+    id: receiving.discrepancy.resolved.v1
     moduleId: receiving
   - direction: emits
     id: sales.order.created.v1

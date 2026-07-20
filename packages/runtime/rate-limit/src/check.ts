@@ -1,3 +1,6 @@
+import { isProductionDeployment } from "@afenda/env";
+
+import { createMemoryRateLimitStore } from "./memory-store";
 import { resolveRateLimitBackend } from "./resolve-store";
 import type {
 	RateLimitBucket,
@@ -50,6 +53,22 @@ function fromHit(hit: RateLimitHitResult): RateLimitResult {
 	};
 }
 
+let memoryFallbackStore: RateLimitStore | undefined;
+
+function memoryFallback(): RateLimitStore {
+	if (!memoryFallbackStore) {
+		memoryFallbackStore = createMemoryRateLimitStore();
+	}
+	return memoryFallbackStore;
+}
+
+function isProductionRateLimitRuntime(): boolean {
+	return isProductionDeployment({
+		nodeEnv: process.env.NODE_ENV,
+		vercelEnv: process.env.VERCEL_ENV,
+	});
+}
+
 async function hitResolvedStore(
 	store: RateLimitStore,
 	input: { bucket: RateLimitBucket; key: string },
@@ -57,7 +76,15 @@ async function hitResolvedStore(
 	try {
 		return fromHit(await store.hit(input));
 	} catch {
-		// Fail closed — Upstash/network faults must not bypass abuse limits as 500s.
+		// Production stays fail-closed. Local/preview with a dead Upstash host
+		// falls back to process memory so auth (and local-dev login) still works.
+		if (!isProductionRateLimitRuntime()) {
+			try {
+				return fromHit(await memoryFallback().hit(input));
+			} catch {
+				return STORE_UNAVAILABLE;
+			}
+		}
 		return STORE_UNAVAILABLE;
 	}
 }

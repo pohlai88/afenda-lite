@@ -14,13 +14,18 @@ import {
 
 import { requirePermission } from "@/features/auth/require-permission";
 import {
+	AddSupplierCreditNoteLineForm,
 	AddSupplierInvoiceLineForm,
+	ApplySupplierCreditForm,
 	ApplySupplierPaymentForm,
 	CancelSupplierInvoiceForm,
+	CreateDraftSupplierCreditNoteForm,
 	CreateDraftSupplierInvoiceForm,
 	IssueSupplierCreditNoteForm,
 	MatchSupplierInvoiceForm,
+	PostSupplierCreditNoteForm,
 	PostSupplierInvoiceForm,
+	ReverseSupplierPaymentApplicationForm,
 } from "@/features/payables/payables-forms";
 import { createPayablesCommandOptions } from "@/lib/erp/payables-command-options";
 import { sessionHasPermission } from "@/modules/identity/domain/session-permission";
@@ -32,8 +37,13 @@ const formSections = [
 	["Add invoice line", AddSupplierInvoiceLineForm],
 	["Match invoice", MatchSupplierInvoiceForm],
 	["Post invoice", PostSupplierInvoiceForm],
-	["Issue credit note", IssueSupplierCreditNoteForm],
+	["Create draft credit note", CreateDraftSupplierCreditNoteForm],
+	["Add credit note line", AddSupplierCreditNoteLineForm],
+	["Post credit note", PostSupplierCreditNoteForm],
+	["Issue credit note (atomic)", IssueSupplierCreditNoteForm],
+	["Apply supplier credit", ApplySupplierCreditForm],
 	["Apply supplier payment", ApplySupplierPaymentForm],
+	["Reverse payment application", ReverseSupplierPaymentApplicationForm],
 	["Cancel invoice", CancelSupplierInvoiceForm],
 ] as const;
 
@@ -63,7 +73,7 @@ export async function PayablesShell({ surface }: PayablesShellProps) {
 					Supplier payables
 				</h1>
 				<p className="max-w-2xl text-sm text-muted-foreground">
-					Create, match, and post supplier invoices, issue credit notes, apply
+					Create, match, and post supplier invoices, manage credit notes, apply
 					posted payments, and track open balances.
 				</p>
 			</div>

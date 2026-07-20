@@ -425,19 +425,22 @@ export function ConfirmPickForm({ canManage }: { canManage: boolean }) {
 				/>
 			</FormField>
 			<FormField
-				label="Reservation id"
-				required
+				label="Reservation id (optional)"
 				fieldId="confirm-pick-reservation"
 				error={reservationError}
 			>
 				<Input
 					id="confirm-pick-reservation"
 					name="reservationId"
-					required
 					autoComplete="off"
 					disabled={pending}
+					placeholder="Leave blank to reserve via Inventory"
 				/>
 			</FormField>
+			<p className="text-sm text-muted-foreground">
+				Omit reservation to call Inventory <code>reserveStock</code> for the
+				pick quantity (<code>inventory.reservation.create</code> required).
+			</p>
 			<FormField
 				label="Quantity picked"
 				required

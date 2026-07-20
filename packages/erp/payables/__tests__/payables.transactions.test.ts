@@ -25,7 +25,8 @@ const purchaseOrderMatch: PurchaseOrderMatchQueryPort = {
 			supplierPartyId: supplierId,
 			status: "posted",
 			currencyCode: "USD",
-			lines: [{ itemId, quantity: "10" }],
+			version: 1,
+			lines: [{ itemId, quantity: "10", unitPrice: "40" }],
 		});
 	},
 };
@@ -38,6 +39,7 @@ const goodsReceiptMatch: GoodsReceiptMatchQueryPort = {
 			status: "posted",
 			sourceType: "purchase_order",
 			sourceId: purchaseOrderId,
+			version: 1,
 			lines: [{ itemId, quantityReceived: "10" }],
 		});
 	},

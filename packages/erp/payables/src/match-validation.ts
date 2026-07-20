@@ -1,5 +1,9 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
-import type { SupplierInvoice, ThreeWayMatchStatus } from "./model";
+import type {
+	SupplierInvoice,
+	ThreeWayMatchEvidence,
+	ThreeWayMatchStatus,
+} from "./model";
 import type { GoodsReceiptMatchBasis, PurchaseOrderMatchBasis } from "./ports";
 
 const SCALE = 1_000_000n;
@@ -11,13 +15,13 @@ function decimal(value: string): bigint {
 
 /**
  * Validates PO + GR basis against invoice lines before store match write.
- * Returns match status for v1 (always `matched` when basis covers lines).
+ * Produces immutable quantity and price evidence from the supplied port snapshots.
  */
 export function evaluateThreeWayMatch(input: {
 	invoice: SupplierInvoice;
 	purchaseOrder: PurchaseOrderMatchBasis;
 	goodsReceipt: GoodsReceiptMatchBasis;
-}): Result<ThreeWayMatchStatus> {
+}): Result<{ status: ThreeWayMatchStatus; evidence: ThreeWayMatchEvidence }> {
 	const { invoice, purchaseOrder, goodsReceipt } = input;
 
 	if (purchaseOrder.status !== "posted") {
@@ -78,29 +82,94 @@ export function evaluateThreeWayMatch(input: {
 			(receivedByItem.get(line.itemId) ?? 0n) + decimal(line.quantityReceived),
 		);
 	}
-	const orderedByItem = new Map<string, bigint>();
+	const orderedByItem = new Map<
+		string,
+		{ quantity: bigint; unitPrice: string }
+	>();
 	for (const line of purchaseOrder.lines) {
-		orderedByItem.set(
-			line.itemId,
-			(orderedByItem.get(line.itemId) ?? 0n) + decimal(line.quantity),
-		);
+		const prior = orderedByItem.get(line.itemId);
+		orderedByItem.set(line.itemId, {
+			quantity: (prior?.quantity ?? 0n) + decimal(line.quantity),
+			unitPrice: line.unitPrice,
+		});
 	}
 
+	const quantityTolerance = decimal(purchaseOrder.quantityTolerancePct ?? "0");
+	const priceTolerance = decimal(purchaseOrder.priceTolerancePct ?? "0");
+	const lineResults: ThreeWayMatchEvidence["lineResults"] = [];
+	let hasTolerance = false;
+	let hasException = false;
 	for (const line of invoice.lines) {
-		const ordered = orderedByItem.get(line.itemId) ?? 0n;
+		const orderedBasis = orderedByItem.get(line.itemId);
+		const ordered = orderedBasis?.quantity ?? 0n;
 		const received = receivedByItem.get(line.itemId) ?? 0n;
 		const invoiced = decimal(line.quantity);
-		if (ordered < invoiced || received < invoiced) {
-			return fail(
-				"CONFLICT",
-				"Invoice line exceeds ordered or received quantity",
-				{
-					itemId: line.itemId,
-					invoiced: line.quantity,
-				},
-			);
-		}
+		const poUnitPrice = decimal(orderedBasis?.unitPrice ?? "0");
+		const invoicedUnitPrice = decimal(line.unitPrice);
+		const quantityBasis = ordered < received ? ordered : received;
+		const quantityVariance =
+			quantityBasis === 0n
+				? invoiced === 0n
+					? 0n
+					: 100n * SCALE
+				: invoiced <= quantityBasis
+					? 0n
+					: ((invoiced - quantityBasis) * 100n * SCALE) / quantityBasis;
+		const priceVariance =
+			poUnitPrice === 0n
+				? invoicedUnitPrice === 0n
+					? 0n
+					: 100n * SCALE
+				: ((invoicedUnitPrice - poUnitPrice < 0n
+						? poUnitPrice - invoicedUnitPrice
+						: invoicedUnitPrice - poUnitPrice) *
+						100n *
+						SCALE) /
+					poUnitPrice;
+		const exact = quantityVariance === 0n && priceVariance === 0n;
+		const withinTolerance =
+			quantityVariance <= quantityTolerance && priceVariance <= priceTolerance;
+		const outcome = exact
+			? "matched"
+			: withinTolerance
+				? "matched_with_tolerance"
+				: "exception";
+		if (outcome === "exception") hasException = true;
+		if (outcome === "matched_with_tolerance") hasTolerance = true;
+		lineResults.push({
+			itemId: line.itemId,
+			invoicedQuantity: line.quantity,
+			invoicedUnitPrice: line.unitPrice,
+			orderedQuantity: format(ordered),
+			receivedQuantity: format(received),
+			purchaseOrderUnitPrice: orderedBasis?.unitPrice ?? "0",
+			quantityVariancePct: format(quantityVariance),
+			priceVariancePct: format(priceVariance),
+			outcome,
+		});
 	}
 
-	return ok("matched");
+	const status = hasException
+		? "exception"
+		: hasTolerance
+			? "matched_with_tolerance"
+			: "matched";
+	return ok({
+		status,
+		evidence: {
+			quantityTolerancePct: purchaseOrder.quantityTolerancePct ?? "0",
+			priceTolerancePct: purchaseOrder.priceTolerancePct ?? "0",
+			lineResults,
+		},
+	});
+}
+
+function format(value: bigint): string {
+	const sign = value < 0n ? "-" : "";
+	const absolute = value < 0n ? -value : value;
+	const fraction = (absolute % SCALE)
+		.toString()
+		.padStart(6, "0")
+		.replace(/0+$/, "");
+	return `${sign}${absolute / SCALE}${fraction.length > 0 ? `.${fraction}` : ""}`;
 }

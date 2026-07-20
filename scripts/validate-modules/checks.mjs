@@ -3,7 +3,7 @@
  */
 
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
-import { join, relative } from "node:path";
+import { join, relative, sep } from "node:path";
 import { parse as parseYaml } from "yaml";
 
 /** @typedef {import("../../packages/data-plane/db/src/module-manifest-contract.ts").AfendaModuleManifest} AfendaModuleManifest */
@@ -128,6 +128,7 @@ export const SCHEMA_SYMBOL_TO_TABLE = {
 	mdItemVariant: "md_item_variant",
 	mdItemVariantAttributeValue: "md_item_variant_attribute_value",
 	mdChangeRequest: "md_change_request",
+	mdImportBatch: "md_import_batch",
 	salesOrder: "sales_order",
 	salesOrderLine: "sales_order_line",
 	purchaseOrder: "purchase_order",
@@ -153,6 +154,7 @@ export const SCHEMA_SYMBOL_TO_TABLE = {
 	supplierInvoice: "supplier_invoice",
 	supplierInvoiceLine: "supplier_invoice_line",
 	supplierCreditNote: "supplier_credit_note",
+	supplierCreditNoteLine: "supplier_credit_note_line",
 	supplierAllocation: "supplier_allocation",
 	supplierBalanceProjection: "supplier_balance_projection",
 	threeWayMatchResult: "three_way_match_result",
@@ -164,6 +166,18 @@ export const SCHEMA_SYMBOL_TO_TABLE = {
 	journalLine: "journal_line",
 	ledgerPosting: "ledger_posting",
 	accountingPeriod: "accounting_period",
+	chartOfAccount: "chart_of_account",
+	ledgerAccount: "ledger_account",
+	accountRoleMapping: "account_role_mapping",
+	postingProfile: "posting_profile",
+	postingProfileLine: "posting_profile_line",
+	sourcePostingLink: "source_posting_link",
+	financialPostingException: "financial_posting_exception",
+	platformAuditLog: "platform_audit_log",
+	platformDomainEvent: "platform_domain_event",
+	platformSearchDocument: "platform_search_document",
+	platformNotification: "platform_notification",
+	platformRbacAudit: "platform_rbac_audit",
 	refCountry: "ref_country",
 	refCurrency: "ref_currency",
 	refLanguage: "ref_language",
@@ -684,6 +698,245 @@ export function reconcileWorkspaceEdges(input) {
 			const key = `${from}→${to}`;
 			if (!approved.has(key)) {
 				errors.push(`peer ERP import without approved edge: ${key}`);
+			}
+		}
+	}
+
+	return errors;
+}
+
+/**
+ * Catalog packages (physical path under packages/) — must match packages/README.md.
+ * Category folders are not packages.
+ */
+export const CATALOG_EXPECTED_PACKAGES = [
+	{ name: "@afenda/ui-system", path: "surfaces/ui-system" },
+	{ name: "@afenda/emails", path: "surfaces/emails" },
+	{ name: "@afenda/config", path: "foundation/config" },
+	{ name: "@afenda/env", path: "foundation/env" },
+	{ name: "@afenda/errors", path: "foundation/errors" },
+	{ name: "@afenda/logger", path: "runtime/logger" },
+	{ name: "@afenda/http", path: "runtime/http" },
+	{ name: "@afenda/security", path: "runtime/security" },
+	{ name: "@afenda/metrics", path: "runtime/metrics" },
+	{ name: "@afenda/openapi", path: "runtime/openapi" },
+	{ name: "@afenda/rate-limit", path: "runtime/rate-limit" },
+	{ name: "@afenda/cache", path: "runtime/cache" },
+	{ name: "@afenda/db", path: "data-plane/db" },
+	{ name: "@afenda/audit", path: "data-plane/audit" },
+	{ name: "@afenda/events", path: "data-plane/events" },
+	{ name: "@afenda/search", path: "data-plane/search" },
+	{ name: "@afenda/notifications", path: "data-plane/notifications" },
+	{ name: "@afenda/auth", path: "control-plane/auth" },
+	{ name: "@afenda/admin", path: "control-plane/admin" },
+	{ name: "@afenda/master-data", path: "erp/master-data" },
+	{ name: "@afenda/sales", path: "erp/sales" },
+	{ name: "@afenda/purchasing", path: "erp/purchasing" },
+	{ name: "@afenda/inventory", path: "erp/inventory" },
+	{ name: "@afenda/receiving", path: "erp/receiving" },
+	{ name: "@afenda/fulfillment", path: "erp/fulfillment" },
+	{ name: "@afenda/receivables", path: "erp/receivables" },
+	{ name: "@afenda/payables", path: "erp/payables" },
+	{ name: "@afenda/payments", path: "erp/payments" },
+	{ name: "@afenda/accounting", path: "erp/accounting" },
+	{ name: "@afenda/ai-the-machine", path: "intelligence/ai-the-machine" },
+];
+
+/**
+ * Catalog-to-disk parity: every catalog row exists with matching package name,
+ * and every on-disk package is listed in the catalog.
+ *
+ * @param {string} root
+ */
+export function validateCatalogDiskParity(root) {
+	/** @type {string[]} */
+	const errors = [];
+	const onDisk = listPackageDirs(root);
+	const onDiskSet = new Set(onDisk);
+	const expectedPaths = new Set(CATALOG_EXPECTED_PACKAGES.map((p) => p.path));
+
+	for (const row of CATALOG_EXPECTED_PACKAGES) {
+		if (!onDiskSet.has(row.path)) {
+			errors.push(
+				`catalog package missing on disk: ${row.name} (expected packages/${row.path})`,
+			);
+			continue;
+		}
+		const pkgPath = join(root, "packages", row.path, "package.json");
+		const pkg = JSON.parse(readFileSync(pkgPath, "utf8"));
+		if (pkg.name !== row.name) {
+			errors.push(
+				`catalog package name mismatch at packages/${row.path}: expected ${row.name}, got ${pkg.name}`,
+			);
+		}
+	}
+
+	for (const dir of onDisk) {
+		if (!expectedPaths.has(dir)) {
+			errors.push(
+				`on-disk package not in catalog: packages/${dir}`,
+			);
+		}
+	}
+
+	return errors;
+}
+
+/**
+ * Sole-mutator boundary: SCHEMA-OWNERSHIP-MANIFEST ↔ ERP manifests + static write scan.
+ *
+ * @param {string} root
+ * @param {AfendaModuleManifest[]} manifests
+ * @param {string} ownershipPath
+ */
+export function validateSoleMutatorBoundary(root, manifests, ownershipPath) {
+	/** @type {string[]} */
+	const errors = [];
+	if (!existsSync(ownershipPath)) {
+		return [`missing schema ownership manifest: ${ownershipPath}`];
+	}
+
+	const doc = parseYaml(readFileSync(ownershipPath, "utf8"));
+	const rows = Array.isArray(doc?.tables) ? doc.tables : [];
+	/** @type {Map<string, string>} */
+	const writeOwnerByTable = new Map();
+	/** @type {Map<string, string>} */
+	const kindByTable = new Map();
+
+	for (const row of rows) {
+		if (!row?.table || !row?.writeOwner) {
+			errors.push("schema ownership row missing table or writeOwner");
+			continue;
+		}
+		if (writeOwnerByTable.has(row.table)) {
+			errors.push(
+				`duplicate schema writeOwner for table: ${row.table}`,
+			);
+			continue;
+		}
+		writeOwnerByTable.set(row.table, row.writeOwner);
+		kindByTable.set(row.table, row.kind ?? "unknown");
+	}
+
+	/** @type {Map<string, Set<string>>} */
+	const erpOwned = new Map();
+	for (const m of manifests) {
+		const set = new Set(m.persistence.mutationTables);
+		erpOwned.set(m.packageName, set);
+		for (const table of m.persistence.mutationTables) {
+			const owner = writeOwnerByTable.get(table);
+			if (!owner) {
+				errors.push(
+					`ERP mutation table missing from SCHEMA-OWNERSHIP-MANIFEST: ${table} (${m.packageName})`,
+				);
+				continue;
+			}
+			if (owner !== m.packageName) {
+				errors.push(
+					`schema writeOwner mismatch for ${table}: manifest ${m.packageName} vs register ${owner}`,
+				);
+			}
+		}
+	}
+
+	for (const [table, owner] of writeOwnerByTable) {
+		if (kindByTable.get(table) !== "erp") {
+			continue;
+		}
+		const owned = erpOwned.get(owner);
+		if (!owned || !owned.has(table)) {
+			errors.push(
+				`SCHEMA-OWNERSHIP-MANIFEST erp table not in owner mutationTables: ${table} (${owner})`,
+			);
+		}
+	}
+
+	/** @type {Map<string, string>} */
+	const symbolToTable = new Map(Object.entries(SCHEMA_SYMBOL_TO_TABLE));
+	/** @type {Map<string, string>} */
+	const tableToSymbol = new Map(
+		[...symbolToTable.entries()].map(([symbol, table]) => [table, symbol]),
+	);
+
+	const packageDirs = listPackageDirs(root);
+	/** @type {Map<string, string>} */
+	const nameToDir = new Map();
+	for (const dir of packageDirs) {
+		const pkg = JSON.parse(
+			readFileSync(join(root, "packages", dir, "package.json"), "utf8"),
+		);
+		if (typeof pkg.name === "string") {
+			nameToDir.set(pkg.name, dir);
+		}
+	}
+
+	for (const [table, owner] of writeOwnerByTable) {
+		const symbol = tableToSymbol.get(table);
+		if (!symbol) {
+			continue;
+		}
+		const ownerDir = nameToDir.get(owner);
+		for (const dir of packageDirs) {
+			if (dir === "data-plane/db") {
+				continue;
+			}
+			if (ownerDir && dir === ownerDir) {
+				continue;
+			}
+			const srcDir = join(root, "packages", dir, "src");
+			for (const file of walkTsFiles(srcDir)) {
+				if (file.includes(`${sep}__tests__${sep}`) || file.includes("/__tests__/")) {
+					continue;
+				}
+				const text = readFileSync(file, "utf8");
+				const importMatch = text.matchAll(
+					/import\s*\{([^}]+)\}\s*from\s*["']@afenda\/db["']/g,
+				);
+				for (const match of importMatch) {
+					const names = match[1]
+						.split(",")
+						.map((s) => s.trim().split(/\s+as\s+/)[0]?.trim())
+						.filter(Boolean);
+					if (names.includes(symbol)) {
+						errors.push(
+							`sole-mutator write-surface import: ${relative(root, file).replaceAll("\\", "/")} imports ${symbol} (writeOwner ${owner})`,
+						);
+					}
+				}
+				const mutation = new RegExp(
+					`\\.(?:insert|update|delete)\\(\\s*${symbol}\\b`,
+				);
+				if (mutation.test(text)) {
+					errors.push(
+						`sole-mutator foreign write: ${relative(root, file).replaceAll("\\", "/")} mutates ${symbol} (writeOwner ${owner})`,
+					);
+				}
+			}
+		}
+
+		const webScanRoots = [
+			join(root, "apps", "web", "features"),
+			join(root, "apps", "web", "app", "actions"),
+			join(root, "apps", "web", "lib"),
+			join(root, "apps", "web", "modules"),
+		];
+		for (const scanRoot of webScanRoots) {
+			if (!existsSync(scanRoot)) {
+				continue;
+			}
+			for (const file of walkTsFiles(scanRoot)) {
+				if (file.includes(`${sep}__tests__${sep}`) || file.includes("/__tests__/")) {
+					continue;
+				}
+				const text = readFileSync(file, "utf8");
+				const mutation = new RegExp(
+					`\\.(?:insert|update|delete)\\(\\s*${symbol}\\b`,
+				);
+				if (mutation.test(text)) {
+					errors.push(
+						`sole-mutator foreign write: ${relative(root, file).replaceAll("\\", "/")} mutates ${symbol} (writeOwner ${owner})`,
+					);
+				}
 			}
 		}
 	}

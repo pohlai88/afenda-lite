@@ -5,6 +5,12 @@ modules:
     aggregates:
       - journal
       - accounting_period
+      - chart_of_account
+      - ledger_account
+      - account_role_mapping
+      - posting_profile
+      - source_posting_link
+      - financial_posting_exception
     band: R1-F
     category: commercial/finance
     id: accounting
@@ -87,6 +93,7 @@ modules:
   - activationMode: organization_toggle
     aggregates:
       - goods_receipt
+      - receiving_discrepancy
     band: R1-F
     category: supply-chain
     id: receiving

@@ -51,7 +51,7 @@ Do not merge invite-link origin with Auth UI callback origin — see [../tenancy
 | Neon Auth BFF `POST` `/api/auth/*` | `auth_bff_post` (20 / 60s, key `IP:pathname`) | `@afenda/auth` → `@afenda/rate-limit` |
 | Path A `signInAction` | `auth_sign_in` (5 / 60s, key `IP:email`) | `apps/web` → `@afenda/rate-limit` |
 
-Outcomes: `toRateLimitAppError` → `RATE_LIMITED` (429 + `Retry-After` on BFF) or `SERVICE_UNAVAILABLE` (prod without Upstash / store fault). Store: Upstash REST when `UPSTASH_REDIS_*` set; process memory only for non-production without keys. Package README: [`packages/runtime/rate-limit`](../../packages/runtime/rate-limit/README.md). Observability: [../observability/README.md](../observability/README.md).
+Outcomes: `toRateLimitAppError` → `RATE_LIMITED` (429 + `Retry-After` on BFF) or `SERVICE_UNAVAILABLE` (prod without Upstash / store fault). Store: Upstash REST when `UPSTASH_REDIS_*` set; process memory for non-production without keys (also when a configured Upstash host faults outside production). **Local hygiene:** if `UPSTASH_REDIS_REST_URL` DNS fails (NXDOMAIN), clear both Upstash keys in `.env.local` rather than leaving a zombie host. Package README: [`packages/runtime/rate-limit`](../../packages/runtime/rate-limit/README.md). Observability: [../observability/README.md](../observability/README.md).
 
 ## Hard stops / Why
 

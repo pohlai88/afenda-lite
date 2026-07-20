@@ -13,8 +13,8 @@ import {
 import { useActionState, useMemo } from "react";
 
 import {
-	createReversalMovementAction,
 	type CreateReversalMovementActionState,
+	createReversalMovementAction,
 } from "@/app/actions/create-reversal-movement";
 import { actionFieldMessage } from "@/modules/platform/schemas/action-result";
 
@@ -22,10 +22,14 @@ const initialState: CreateReversalMovementActionState = null;
 
 type CreateReversalMovementFormProps = {
 	canPost: boolean;
+	defaultMovementId?: string;
+	defaultExpectedVersion?: number;
 };
 
 export function CreateReversalMovementForm({
 	canPost,
+	defaultMovementId,
+	defaultExpectedVersion,
 }: CreateReversalMovementFormProps) {
 	const [state, formAction, pending] = useActionState(
 		createReversalMovementAction,
@@ -76,7 +80,12 @@ export function CreateReversalMovementForm({
 			{showFormError && state?.ok === false ? (
 				<FormError>{state.message}</FormError>
 			) : null}
-			<input type="hidden" name="idempotencyKey" value={idempotencyKey} readOnly />
+			<input
+				type="hidden"
+				name="idempotencyKey"
+				value={idempotencyKey}
+				readOnly
+			/>
 			<FormField
 				label="Posted movement id"
 				required
@@ -89,6 +98,7 @@ export function CreateReversalMovementForm({
 					required
 					autoComplete="off"
 					disabled={pending}
+					defaultValue={defaultMovementId ?? ""}
 				/>
 			</FormField>
 			<FormField
@@ -118,6 +128,11 @@ export function CreateReversalMovementForm({
 					min="1"
 					required
 					disabled={pending}
+					defaultValue={
+						defaultExpectedVersion !== undefined
+							? String(defaultExpectedVersion)
+							: undefined
+					}
 				/>
 			</FormField>
 			<Button type="submit" disabled={pending}>

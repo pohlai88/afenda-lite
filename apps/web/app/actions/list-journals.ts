@@ -29,7 +29,7 @@ export async function listJournalsAction(input?: {
 }): Promise<ActionResult<{ journals: Journal[] }>> {
 	return runOperatorPermissionAction({
 		path: "listJournalsAction",
-		permission: "accounting.read",
+		permission: "accounting.journal.read",
 		safeMessage: "Could not list journals. Try again or contact an admin.",
 		execute: async (session) => {
 			const parsed = parseSchema(schema, input);

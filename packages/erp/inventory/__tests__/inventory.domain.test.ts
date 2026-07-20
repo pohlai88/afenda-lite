@@ -7,8 +7,11 @@ import {
 	cancelStockMovement,
 	createReversalMovement,
 	createStockMovement,
+	cancelReservation,
+	expireReservation,
 	getStockAvailability,
 	getStockMovementById,
+	listStockReservations,
 	postStockMovement,
 	releaseReservation,
 	reserveStock,
@@ -313,6 +316,150 @@ describe("@afenda/inventory domain", () => {
 		expect(afterRelease?.onHandQuantity).toBe("20");
 		expect(afterRelease?.reservedQuantity).toBe("0");
 		expect(afterRelease?.availableQuantity).toBe("20");
+	});
+
+	it("expires and cancels reservations freeing reserved quantity", async () => {
+		const ctx = inventoryHarness();
+		await createOpeningReceipt(ctx, {
+			code: "RCPT-TERM",
+			quantity: 30,
+		});
+
+		const toExpire = await reserveStock(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-expire-create",
+				idempotencyKey: "expire-create",
+				code: "RSV-EXPIRE",
+				warehouseId: WH_A,
+				itemId: ITEM_A,
+				quantity: 4,
+			},
+			ctx,
+		);
+		expect(toExpire.ok).toBe(true);
+		if (!toExpire.ok) return;
+
+		const expired = await expireReservation(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-expire",
+				idempotencyKey: "expire-key",
+				reservationId: toExpire.data.id,
+				expectedVersion: toExpire.data.version,
+			},
+			ctx,
+		);
+		expect(expired.ok).toBe(true);
+		if (!expired.ok) return;
+		expect(expired.data.status).toBe("expired");
+
+		const toCancel = await reserveStock(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-cancel-create",
+				idempotencyKey: "cancel-create",
+				code: "RSV-CANCEL",
+				warehouseId: WH_A,
+				itemId: ITEM_A,
+				quantity: 3,
+			},
+			ctx,
+		);
+		expect(toCancel.ok).toBe(true);
+		if (!toCancel.ok) return;
+
+		const cancelled = await cancelReservation(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-cancel-rsv",
+				idempotencyKey: "cancel-rsv-key",
+				reservationId: toCancel.data.id,
+				expectedVersion: toCancel.data.version,
+			},
+			ctx,
+		);
+		expect(cancelled.ok).toBe(true);
+		if (!cancelled.ok) return;
+		expect(cancelled.data.status).toBe("cancelled");
+
+		const availability = await getAvailabilityRow(ctx, WH_A);
+		expect(availability?.onHandQuantity).toBe("30");
+		expect(availability?.reservedQuantity).toBe("0");
+		expect(availability?.availableQuantity).toBe("30");
+	});
+
+	it("lists reservations with org isolation and status filter", async () => {
+		const ctx = inventoryHarness();
+		await createOpeningReceipt(ctx, {
+			code: "RCPT-LIST-RSV",
+			quantity: 30,
+		});
+
+		const reserved = await reserveStock(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-list-rsv-create",
+				idempotencyKey: "list-reserve-key",
+				code: "RSV-LIST",
+				warehouseId: WH_A,
+				itemId: ITEM_A,
+				quantity: 5,
+			},
+			ctx,
+		);
+		expect(reserved.ok).toBe(true);
+		if (!reserved.ok) {
+			return;
+		}
+
+		const listed = await listStockReservations(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				pageSize: 50,
+				status: "active",
+			},
+			ctx,
+		);
+		expect(listed.ok).toBe(true);
+		if (!listed.ok) {
+			return;
+		}
+		expect(listed.data).toHaveLength(1);
+		expect(listed.data[0]?.id).toBe(reserved.data.id);
+
+		const foreign = await listStockReservations(
+			{
+				organizationId: ORG_B,
+				actorUserId: ACTOR,
+				pageSize: 50,
+			},
+			ctx,
+		);
+		expect(foreign.ok).toBe(true);
+		if (foreign.ok) {
+			expect(foreign.data).toHaveLength(0);
+		}
+
+		const releasedOnly = await listStockReservations(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				pageSize: 50,
+				status: "released",
+			},
+			ctx,
+		);
+		expect(releasedOnly.ok).toBe(true);
+		if (releasedOnly.ok) {
+			expect(releasedOnly.data).toHaveLength(0);
+		}
 	});
 
 	it("transfers stock between warehouses", async () => {

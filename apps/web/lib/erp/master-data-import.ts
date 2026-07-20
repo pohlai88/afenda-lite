@@ -1,7 +1,7 @@
+import type { Session } from "@afenda/auth";
 import { createCorrelationId } from "@afenda/http";
 import {
 	IMPORT_MODES,
-	type ImportMode,
 	type ImportReconciliationReport,
 	ITEM_TYPES,
 	PARTY_KINDS,
@@ -83,13 +83,8 @@ export type ApplyMasterDataImportInput = z.infer<
 	typeof applyMasterDataImportSchema
 >;
 
-type SessionLike = {
-	orgId: string;
-	userId: string;
-};
-
 export async function runApplyMasterDataImport(input: {
-	session: SessionLike;
+	session: Session;
 	raw: unknown;
 }): Promise<ActionResult<ImportReconciliationReport>> {
 	const parsed = parseSchema(applyMasterDataImportSchema, input.raw);
@@ -116,7 +111,7 @@ export async function runApplyMasterDataImport(input: {
 		actorUserId: input.session.userId,
 		correlationId,
 		sourceSystem: parsed.data.sourceSystem,
-		mode: parsed.data.mode as ImportMode,
+		mode: parsed.data.mode,
 		dryRun: false as const,
 		approved: true as const,
 		idempotencyKey: parsed.data.idempotencyKey,

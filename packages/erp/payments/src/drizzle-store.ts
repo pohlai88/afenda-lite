@@ -13,6 +13,14 @@ import {
 } from "@afenda/db";
 import { fail, failFromUnknown, ok, type Result } from "@afenda/errors/result";
 
+import {
+	PAYMENTS_ERROR_INSTRUCTION_NOT_FOUND,
+	PAYMENTS_ERROR_INSUFFICIENT_AVAILABILITY,
+	PAYMENTS_ERROR_PAYMENT_NOT_FOUND,
+	PAYMENTS_ERROR_REFUND_LIMIT_EXCEEDED,
+	PAYMENTS_ERROR_TRANSFER_INVALID,
+} from "./error-codes";
+import { failPayments } from "./fail-payments";
 import type {
 	Payment,
 	PaymentAccount,
@@ -111,7 +119,9 @@ function mapInstruction(
 	};
 }
 
-function mapReversal(row: typeof paymentReversal.$inferSelect): PaymentReversal {
+function mapReversal(
+	row: typeof paymentReversal.$inferSelect,
+): PaymentReversal {
 	return {
 		id: row.id,
 		organizationId: row.organizationId,
@@ -133,7 +143,11 @@ function mapPayment(
 		code: row.code,
 		normalizedCode: row.normalizedCode,
 		paymentAccountId: row.paymentAccountId,
-		direction: parseEnum(row.direction, PAYMENT_DIRECTIONS, "payment.direction"),
+		direction: parseEnum(
+			row.direction,
+			PAYMENT_DIRECTIONS,
+			"payment.direction",
+		),
 		purpose: parseEnum(row.purpose, PAYMENT_PURPOSES, "payment.purpose"),
 		status: parseEnum(row.status, PAYMENT_STATUSES, "payment.status"),
 		counterpartyId: row.counterpartyId,
@@ -427,7 +441,11 @@ export class DrizzlePaymentsStore implements PaymentsStore {
 			]);
 			const row = rows[0];
 			if (row === undefined) {
-				return fail("CONFLICT", "Payment application instruction conflict");
+				return failPayments(
+					"CONFLICT",
+					"Payment application instruction conflict",
+					PAYMENTS_ERROR_INSUFFICIENT_AVAILABILITY,
+				);
 			}
 			return ok({
 				id: row.id,
@@ -598,6 +616,13 @@ export class DrizzlePaymentsStore implements PaymentsStore {
 	async createAndPostTransfer(
 		record: Parameters<PaymentsStore["createAndPostTransfer"]>[0],
 	): Promise<Result<{ outgoing: Payment; incoming: Payment }>> {
+		if (record.fromPaymentAccountId === record.toPaymentAccountId) {
+			return failPayments(
+				"CONFLICT",
+				"Transfer accounts must differ",
+				PAYMENTS_ERROR_TRANSFER_INVALID,
+			);
+		}
 		const groupId = randomUUID();
 		const outgoingId = randomUUID();
 		const incomingId = randomUUID();
@@ -680,7 +705,11 @@ export class DrizzlePaymentsStore implements PaymentsStore {
 				`,
 			]);
 			if (rows[0] === undefined) {
-				return fail("CONFLICT", "Payment transfer conflict");
+				return failPayments(
+					"CONFLICT",
+					"Payment transfer conflict",
+					PAYMENTS_ERROR_TRANSFER_INVALID,
+				);
 			}
 			const [outgoing, incoming] = await Promise.all([
 				this.getById(record.organizationId, outgoingId),
@@ -778,7 +807,11 @@ export class DrizzlePaymentsStore implements PaymentsStore {
 				`,
 			]);
 			if (rows[0] === undefined) {
-				return fail("CONFLICT", "Refund post conflict");
+				return failPayments(
+					"CONFLICT",
+					"Refund post conflict",
+					PAYMENTS_ERROR_REFUND_LIMIT_EXCEEDED,
+				);
 			}
 			return reload(this, record.organizationId, id, "Posted refund missing");
 		} catch (error) {
@@ -858,7 +891,11 @@ export class DrizzlePaymentsStore implements PaymentsStore {
 			]);
 			const row = rows[0];
 			if (row === undefined) {
-				return fail("CONFLICT", "Application instruction apply conflict");
+				return failPayments(
+					"CONFLICT",
+					"Application instruction apply conflict",
+					PAYMENTS_ERROR_INSTRUCTION_NOT_FOUND,
+				);
 			}
 			return ok({
 				id: row.id,
@@ -952,7 +989,11 @@ export class DrizzlePaymentsStore implements PaymentsStore {
 			]);
 			const row = rows[0];
 			if (row === undefined) {
-				return fail("CONFLICT", "Application instruction reject conflict");
+				return failPayments(
+					"CONFLICT",
+					"Application instruction reject conflict",
+					PAYMENTS_ERROR_INSTRUCTION_NOT_FOUND,
+				);
 			}
 			return ok({
 				id: row.id,
@@ -1065,7 +1106,11 @@ export class DrizzlePaymentsStore implements PaymentsStore {
 			const loaded = await this.getById(organizationId, paymentId);
 			if (!loaded.ok) return loaded;
 			if (loaded.data === null) {
-				return fail("NOT_FOUND", "Payment not found");
+				return failPayments(
+					"NOT_FOUND",
+					"Payment not found",
+					PAYMENTS_ERROR_PAYMENT_NOT_FOUND,
+				);
 			}
 			if (loaded.data.status !== "posted") {
 				return fail(
@@ -1079,7 +1124,10 @@ export class DrizzlePaymentsStore implements PaymentsStore {
 						instruction.status,
 					),
 				)
-				.reduce((sum, instruction) => sum + Number(instruction.intendedAmount), 0);
+				.reduce(
+					(sum, instruction) => sum + Number(instruction.intendedAmount),
+					0,
+				);
 			const refundRows = await db
 				.select({ amount: payment.amount })
 				.from(payment)

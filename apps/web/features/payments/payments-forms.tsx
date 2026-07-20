@@ -14,9 +14,10 @@ import type { ComponentProps } from "react";
 import { useActionState } from "react";
 
 import { addPaymentApplicationInstructionAction } from "@/app/actions/add-payment-application-instruction";
-import { createPaymentAccountAction } from "@/app/actions/create-payment-account";
 import { createAndPostPaymentTransferAction } from "@/app/actions/create-and-post-payment-transfer";
 import { createDraftPaymentAction } from "@/app/actions/create-draft-payment";
+import { createPaymentAccountAction } from "@/app/actions/create-payment-account";
+import { getPaymentApplicationAvailabilityAction } from "@/app/actions/get-payment-application-availability";
 import { postPaymentAction } from "@/app/actions/post-payment";
 import { postRefundAction } from "@/app/actions/post-refund";
 import { reversePaymentAction } from "@/app/actions/reverse-payment";
@@ -49,6 +50,7 @@ function PaymentsActionForm({
 	fields,
 	submitLabel,
 	successTitle,
+	successDescription = "The payment record is up to date.",
 }: {
 	action: ComponentProps<"form">["action"];
 	pending: boolean;
@@ -56,6 +58,7 @@ function PaymentsActionForm({
 	fields: readonly Field[];
 	submitLabel: string;
 	successTitle: string;
+	successDescription?: string;
 }) {
 	return (
 		<form
@@ -66,7 +69,7 @@ function PaymentsActionForm({
 			{state?.ok === true ? (
 				<Alert role="status">
 					<AlertTitle>{successTitle}</AlertTitle>
-					<AlertDescription>The payment record is up to date.</AlertDescription>
+					<AlertDescription>{successDescription}</AlertDescription>
 				</Alert>
 			) : null}
 			{!pending && state?.ok === false ? (
@@ -133,7 +136,11 @@ export function CreateDraftPaymentForm({ canManage }: ActionFormProps) {
 					label: "Direction (receipt or disbursement)",
 					required: true,
 				},
-				{ name: "paymentAccountId", label: "Payment account id", required: true },
+				{
+					name: "paymentAccountId",
+					label: "Payment account id",
+					required: true,
+				},
 				{ name: "purpose", label: "Purpose", required: true },
 				{ name: "counterpartyId", label: "Counterparty id" },
 				{ name: "currencyCode", label: "Currency code", required: true },
@@ -153,12 +160,15 @@ export function CreateDraftPaymentForm({ canManage }: ActionFormProps) {
 	);
 }
 
-export function AddPaymentApplicationInstructionForm({ canManage }: ActionFormProps) {
+export function AddPaymentApplicationInstructionForm({
+	canManage,
+}: ActionFormProps) {
 	const [state, action, pending] = useActionState(
 		addPaymentApplicationInstructionAction,
 		null,
 	);
-	if (!canManage) return <ManageUnavailable operation="Add application instruction" />;
+	if (!canManage)
+		return <ManageUnavailable operation="Add application instruction" />;
 	return (
 		<PaymentsActionForm
 			action={action}
@@ -166,9 +176,21 @@ export function AddPaymentApplicationInstructionForm({ canManage }: ActionFormPr
 			state={state}
 			fields={[
 				{ name: "paymentId", label: "Payment id", required: true },
-				{ name: "targetModule", label: "Target module (receivables or payables)", required: true },
-				{ name: "targetDocumentType", label: "Document type", required: true },
-				{ name: "targetDocumentId", label: "Target document id", required: true },
+				{
+					name: "targetModule",
+					label: "Target module (receivables or payables)",
+					required: true,
+				},
+				{
+					name: "targetDocumentType",
+					label: "Document type (customer_invoice or supplier_invoice)",
+					required: true,
+				},
+				{
+					name: "targetDocumentId",
+					label: "Target document id",
+					required: true,
+				},
 				{
 					name: "intendedAmount",
 					label: "Intended amount",
@@ -186,8 +208,12 @@ export function AddPaymentApplicationInstructionForm({ canManage }: ActionFormPr
 }
 
 export function CreatePaymentAccountForm({ canManage }: ActionFormProps) {
-	const [state, action, pending] = useActionState(createPaymentAccountAction, null);
-	if (!canManage) return <ManageUnavailable operation="Create payment account" />;
+	const [state, action, pending] = useActionState(
+		createPaymentAccountAction,
+		null,
+	);
+	if (!canManage)
+		return <ManageUnavailable operation="Create payment account" />;
 	return (
 		<PaymentsActionForm
 			action={action}
@@ -196,7 +222,11 @@ export function CreatePaymentAccountForm({ canManage }: ActionFormProps) {
 			fields={[
 				{ name: "code", label: "Account code", required: true },
 				{ name: "name", label: "Account name", required: true },
-				{ name: "kind", label: "Kind (bank, cash, gateway, or clearing)", required: true },
+				{
+					name: "kind",
+					label: "Kind (bank, cash, gateway, or clearing)",
+					required: true,
+				},
 				{ name: "currencyCode", label: "Currency code", required: true },
 			]}
 			submitLabel="Create payment account"
@@ -205,12 +235,15 @@ export function CreatePaymentAccountForm({ canManage }: ActionFormProps) {
 	);
 }
 
-export function CreateAndPostPaymentTransferForm({ canManage }: ActionFormProps) {
+export function CreateAndPostPaymentTransferForm({
+	canManage,
+}: ActionFormProps) {
 	const [state, action, pending] = useActionState(
 		createAndPostPaymentTransferAction,
 		null,
 	);
-	if (!canManage) return <ManageUnavailable operation="Create payment transfer" />;
+	if (!canManage)
+		return <ManageUnavailable operation="Create payment transfer" />;
 	return (
 		<PaymentsActionForm
 			action={action}
@@ -218,10 +251,25 @@ export function CreateAndPostPaymentTransferForm({ canManage }: ActionFormProps)
 			state={state}
 			fields={[
 				{ name: "code", label: "Transfer code", required: true },
-				{ name: "fromPaymentAccountId", label: "Source payment account id", required: true },
-				{ name: "toPaymentAccountId", label: "Destination payment account id", required: true },
+				{
+					name: "fromPaymentAccountId",
+					label: "Source payment account id",
+					required: true,
+				},
+				{
+					name: "toPaymentAccountId",
+					label: "Destination payment account id",
+					required: true,
+				},
 				{ name: "currencyCode", label: "Currency code", required: true },
-				{ name: "amount", label: "Amount", type: "number", step: "any", min: "0.000001", required: true },
+				{
+					name: "amount",
+					label: "Amount",
+					type: "number",
+					step: "any",
+					min: "0.000001",
+					required: true,
+				},
 				{ name: "reference", label: "Reference" },
 			]}
 			submitLabel="Create and post transfer"
@@ -278,7 +326,11 @@ export function PostRefundForm({ canManage }: ActionFormProps) {
 					label: "Original payment id",
 					required: true,
 				},
-				{ name: "paymentAccountId", label: "Payment account id", required: true },
+				{
+					name: "paymentAccountId",
+					label: "Payment account id",
+					required: true,
+				},
 				{ name: "refundSource", label: "Refund source", required: true },
 				{
 					name: "amount",
@@ -292,6 +344,34 @@ export function PostRefundForm({ canManage }: ActionFormProps) {
 			]}
 			submitLabel="Post refund"
 			successTitle="Refund posted"
+		/>
+	);
+}
+
+export function GetPaymentApplicationAvailabilityForm({
+	canManage,
+}: ActionFormProps) {
+	const [state, action, pending] = useActionState(
+		getPaymentApplicationAvailabilityAction,
+		null,
+	);
+	if (!canManage) {
+		return <ManageUnavailable operation="Read application availability" />;
+	}
+	const availability = state?.ok === true ? state.data.availability : null;
+	return (
+		<PaymentsActionForm
+			action={action}
+			pending={pending}
+			state={state}
+			fields={[{ name: "paymentId", label: "Payment id", required: true }]}
+			submitLabel="Load availability"
+			successTitle="Availability loaded"
+			successDescription={
+				availability === null
+					? "Availability loaded."
+					: `Posted ${availability.currencyCode} ${availability.postedAmount} · intended ${availability.intendedAmount} · refunded ${availability.refundedAmount} · available ${availability.availableToApply}`
+			}
 		/>
 	);
 }

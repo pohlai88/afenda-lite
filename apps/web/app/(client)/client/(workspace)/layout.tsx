@@ -2,6 +2,7 @@ import { requireRole } from "@afenda/auth";
 import type { ReactNode } from "react";
 
 import { MAIN_CONTENT_ID } from "@/features/auth/main-content";
+import { ClientWorkspaceNav } from "@/features/portal-chrome/client-workspace-nav";
 
 /**
  * Authenticated client workspace — fail-closed coarse shell gate (ARCH-012).
@@ -15,8 +16,11 @@ export default async function ClientWorkspaceLayout({
 }) {
 	await requireRole("client");
 	return (
-		<main id={MAIN_CONTENT_ID} tabIndex={-1} className="min-h-dvh">
-			{children}
-		</main>
+		<>
+			<ClientWorkspaceNav />
+			<main id={MAIN_CONTENT_ID} tabIndex={-1} className="min-h-dvh">
+				{children}
+			</main>
+		</>
 	);
 }

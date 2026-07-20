@@ -1,10 +1,10 @@
 "use server";
 
 import { postStockMovement, type StockMovement } from "@afenda/inventory";
-import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { mapPackageResult } from "@/app/actions/map-package-result";
+import { revalidateInventoryPaths } from "@/app/actions/revalidate-inventory-paths";
 import { runOperatorPermissionAction } from "@/app/actions/run-operator-permission-action";
 import { createInventoryCommandOptions } from "@/lib/erp/inventory-command-options";
 import {
@@ -67,8 +67,7 @@ export async function postStockMovementAction(
 			if (!mapped.ok) {
 				return mapped;
 			}
-			revalidatePath("/admin/inventory");
-			revalidatePath("/client/inventory");
+			revalidateInventoryPaths();
 			return { ok: true, data: { movement: mapped.data } };
 		},
 	});

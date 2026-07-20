@@ -47,7 +47,9 @@ import {
 	type MovementPostRecord,
 	parseQuantity,
 	type ReservationCreateRecord,
+	type ReservationListFilter,
 	type ReservationReleaseRecord,
+	reservationTerminalEventType,
 } from "./store";
 import {
 	INVENTORY_MOVEMENT_SOURCES,
@@ -1603,20 +1605,20 @@ export class DrizzleInventoryStore implements InventoryStore {
 		}
 
 		const reservation = reservationResult.data;
-		if (reservation.status === "released") {
+		if (reservation.status === record.terminalStatus) {
 			if (reservation.releaseIdempotencyKey === record.releaseIdempotencyKey) {
 				return ok(reservation);
 			}
 			return fail(
 				"CONFLICT",
-				"Stock reservation is already released",
+				"Stock reservation is already terminated",
 				inventoryErrorDetails(INVENTORY_ERROR_RESERVATION_ALREADY_RELEASED),
 			);
 		}
 		if (!isReleasableReservationStatus(reservation.status)) {
 			return fail(
 				"CONFLICT",
-				"Stock reservation cannot be released",
+				"Stock reservation cannot be terminated",
 				inventoryErrorDetails(INVENTORY_ERROR_RESERVATION_ALREADY_RELEASED),
 			);
 		}
@@ -1669,13 +1671,18 @@ export class DrizzleInventoryStore implements InventoryStore {
 		const eventId = randomUUID();
 		const releasedDelta = formatQuantity(-remainingQuantity);
 		const availableDelta = formatQuantity(remainingQuantity);
-		const changesJson = fieldChangeJson("status", reservation.status, "released");
+		const eventType = reservationTerminalEventType(record.terminalStatus);
+		const changesJson = fieldChangeJson(
+			"status",
+			reservation.status,
+			record.terminalStatus,
+		);
 		const oldValueJson = valueSnapshotJson({
 			status: reservation.status,
 			version: reservation.version,
 		});
 		const newValueJson = valueSnapshotJson({
-			status: "released",
+			status: record.terminalStatus,
 			version: nextVersion,
 		});
 		const payloadJson = json({
@@ -1738,7 +1745,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 				statements.push(sql`
 					WITH mutated AS (
 						UPDATE stock_reservation
-						SET status = 'released',
+						SET status = ${record.terminalStatus},
 							release_idempotency_key = ${record.releaseIdempotencyKey},
 							released_at = now(),
 							released_by = ${record.actorUserId},
@@ -1769,7 +1776,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 							payload, status, attempts
 						)
 						SELECT
-							${eventId}, ${record.organizationId}, 'inventory.reservation.released.v1', 'inventory',
+							${eventId}, ${record.organizationId}, ${eventType}, 'inventory',
 							${meta.correlationId}, ${record.actorUserId}, ${payloadJson}::jsonb, 'pending', 0
 						WHERE EXISTS (SELECT 1 FROM mutated)
 						RETURNING id
@@ -1789,7 +1796,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 				}
 				if (
 					reloaded.data !== null &&
-					reloaded.data.status === "released" &&
+					reloaded.data.status === record.terminalStatus &&
 					reloaded.data.releaseIdempotencyKey === record.releaseIdempotencyKey
 				) {
 					return ok(reloaded.data);
@@ -1804,7 +1811,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 			return this.reloadReservation(
 				record.organizationId,
 				record.reservationId,
-				"Released stock reservation missing after write",
+				"Terminated stock reservation missing after write",
 			);
 		} catch (error) {
 			const message = writeErrorMessage(error);
@@ -1928,6 +1935,38 @@ export class DrizzleInventoryStore implements InventoryStore {
 			);
 		} catch (error) {
 			return failFromUnknown(error, "Failed to list stock movements");
+		}
+	}
+
+	async listReservations(
+		filter: ReservationListFilter,
+	): Promise<Result<StockReservation[]>> {
+		try {
+			const conditions = [
+				eq(stockReservation.organizationId, filter.organizationId),
+			];
+			if (filter.status !== undefined) {
+				conditions.push(eq(stockReservation.status, filter.status));
+			}
+			if (filter.warehouseId !== undefined) {
+				conditions.push(eq(stockReservation.warehouseId, filter.warehouseId));
+			}
+			if (filter.itemId !== undefined) {
+				conditions.push(eq(stockReservation.itemId, filter.itemId));
+			}
+			const rows = await db
+				.select()
+				.from(stockReservation)
+				.where(and(...conditions))
+				.orderBy(
+					desc(stockReservation.updatedAt),
+					desc(stockReservation.id),
+				)
+				.limit(filter.pageSize)
+				.offset((filter.page - 1) * filter.pageSize);
+			return ok(rows.map((row) => mapReservation(row)));
+		} catch (error) {
+			return failFromUnknown(error, "Failed to list stock reservations");
 		}
 	}
 

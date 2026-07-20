@@ -31,10 +31,10 @@ export async function openAccountingPeriodAction(
 ): Promise<OpenAccountingPeriodActionState> {
 	return runOperatorPermissionAction({
 		path: "openAccountingPeriodAction",
-		permission: "accounting.manage",
+		permission: "accounting.period.open",
 		safeMessage:
 			"Could not open accounting period. Try again or contact an admin.",
-		execute: async (session) => {
+		execute: async (session, correlationId) => {
 			const parsed = parseSchema(schema, {
 				code: formData.get("code"),
 				startDate: formData.get("startDate"),
@@ -51,6 +51,7 @@ export async function openAccountingPeriodAction(
 					{
 						organizationId: session.orgId,
 						actorUserId: session.userId,
+						correlationId,
 						...parsed.data,
 					},
 					createAccountingCommandOptions(),

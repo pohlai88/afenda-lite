@@ -9,6 +9,10 @@ export const INVENTORY_COMMAND_REVERSE = "inventory.movement.reverse" as const;
 export const INVENTORY_COMMAND_RESERVE = "inventory.stock.reserve" as const;
 export const INVENTORY_COMMAND_RELEASE =
 	"inventory.reservation.release" as const;
+export const INVENTORY_COMMAND_EXPIRE =
+	"inventory.reservation.expire" as const;
+export const INVENTORY_COMMAND_CANCEL_RESERVATION =
+	"inventory.reservation.cancel" as const;
 
 export const INVENTORY_COMMAND_IDS = [
 	INVENTORY_COMMAND_CREATE,
@@ -18,18 +22,23 @@ export const INVENTORY_COMMAND_IDS = [
 	INVENTORY_COMMAND_REVERSE,
 	INVENTORY_COMMAND_RESERVE,
 	INVENTORY_COMMAND_RELEASE,
+	INVENTORY_COMMAND_EXPIRE,
+	INVENTORY_COMMAND_CANCEL_RESERVATION,
 ] as const;
 
 export type InventoryCommandId = (typeof INVENTORY_COMMAND_IDS)[number];
 
 export const INVENTORY_QUERY_GET = "inventory.movement.get" as const;
 export const INVENTORY_QUERY_LIST = "inventory.movement.list" as const;
+export const INVENTORY_QUERY_RESERVATION_LIST =
+	"inventory.reservation.list" as const;
 export const INVENTORY_QUERY_AVAILABILITY =
 	"inventory.stock.availability" as const;
 
 export const INVENTORY_QUERY_IDS = [
 	INVENTORY_QUERY_GET,
 	INVENTORY_QUERY_LIST,
+	INVENTORY_QUERY_RESERVATION_LIST,
 	INVENTORY_QUERY_AVAILABILITY,
 ] as const;
 

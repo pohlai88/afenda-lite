@@ -58,18 +58,32 @@ unposted document must not invent projection deltas.
 | Code | Duty |
 |------|------|
 | `payables.read` | Get / list invoices · supplier balance |
-| `payables.manage` | Create, line, match, post, credit, apply, cancel |
+| `payables.manage` | Create, line, match, post, credit, apply, reverse, cancel |
 
 Fine-grained codes are out of this contract until a named RBAC mission.
 
-## Credit notes (v1)
+## Credit notes
 
-`issueSupplierCreditNote` is atomic: create and post in one command. Draft/line
-credit lifecycle is a named leftover (AP-CREDIT-DRAFT).
+Lifecycle: draft → line(s) → posted via `createDraftSupplierCreditNote`,
+`addSupplierCreditNoteLine`, `postSupplierCreditNote`.
+`issueSupplierCreditNote` composes that path for a single credit line.
+`applySupplierCredit` writes `supplier_allocation.credit_note_id`.
 
 ## Dual allocation vocabulary
 
 | Term | Module | Meaning |
 |------|--------|---------|
 | `payment_allocation` | Payments | How a payment is split across documents inside Payments |
-| `supplier_allocation` | Payables | AP fact that a posted payment was applied to a supplier invoice |
+| `supplier_allocation` | Payables | AP fact that a posted payment (or credit) was applied to a supplier invoice |
+
+## Payment application
+
+`applySupplierPayment` requires `paymentId`, `paymentApplicationInstructionId`,
+and `idempotencyKey`. Reversal is `reverseSupplierPaymentApplication` (marks
+allocations `reversed`; never deletes).
+
+## Match evidence
+
+PO/GR ports supply line unit prices and evidence versions. Match status may be
+`matched`, `matched_with_tolerance`, or `exception`. Exception retains the
+invoice in `draft`. Post rejects stale PO/GR evidence versions.

@@ -42,6 +42,8 @@ export const InventoryEventSchemas = {
 	"inventory.movement.cancelled.v1": stockMovementPayloadSchema,
 	"inventory.stock.reserved.v1": stockReservationPayloadSchema,
 	"inventory.reservation.released.v1": stockReservationPayloadSchema,
+	"inventory.reservation.expired.v1": stockReservationPayloadSchema,
+	"inventory.reservation.cancelled.v1": stockReservationPayloadSchema,
 } as const;
 
 export type InventoryEventType = keyof typeof InventoryEventSchemas;
@@ -56,6 +58,10 @@ export const INVENTORY_STOCK_RESERVED_EVENT =
 	"inventory.stock.reserved.v1" as const;
 export const INVENTORY_RESERVATION_RELEASED_EVENT =
 	"inventory.reservation.released.v1" as const;
+export const INVENTORY_RESERVATION_EXPIRED_EVENT =
+	"inventory.reservation.expired.v1" as const;
+export const INVENTORY_RESERVATION_CANCELLED_EVENT =
+	"inventory.reservation.cancelled.v1" as const;
 
 export const INVENTORY_EVENT_IDS = [
 	INVENTORY_MOVEMENT_CREATED_EVENT,
@@ -63,4 +69,6 @@ export const INVENTORY_EVENT_IDS = [
 	INVENTORY_MOVEMENT_CANCELLED_EVENT,
 	INVENTORY_STOCK_RESERVED_EVENT,
 	INVENTORY_RESERVATION_RELEASED_EVENT,
+	INVENTORY_RESERVATION_EXPIRED_EVENT,
+	INVENTORY_RESERVATION_CANCELLED_EVENT,
 ] as const satisfies readonly InventoryEventType[];

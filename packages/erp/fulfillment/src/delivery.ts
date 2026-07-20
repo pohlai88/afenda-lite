@@ -4,6 +4,7 @@ import {
 	createStockMovement,
 	type InventoryCommandOptions,
 	postStockMovement,
+	reserveStock,
 } from "@afenda/inventory";
 
 import {
@@ -453,16 +454,41 @@ export async function confirmPick(
 		return fail("NOT_FOUND", "Delivery line not found");
 	}
 
-	if (deps.inventory?.store) {
+	let reservationId = parsed.data.reservationId;
+
+	if (reservationId === undefined) {
+		if (!deps.inventory) {
+			return fail(
+				"INTERNAL_ERROR",
+				"Inventory command options are required to reserve stock for pick",
+			);
+		}
+		const reserved = await reserveStock(
+			{
+				organizationId: parsed.data.organizationId,
+				actorUserId: parsed.data.actorUserId,
+				correlationId: parsed.data.correlationId,
+				idempotencyKey: `ful-pick-reserve:${parsed.data.idempotencyKey}`,
+				code: `RSV-${delivery.data.code}-${line.lineNo}`,
+				warehouseId: delivery.data.warehouseId,
+				itemId: line.itemId,
+				quantity: parsed.data.quantityPicked,
+			},
+			deps.inventory,
+		);
+		if (!reserved.ok) {
+			return reserved;
+		}
+		reservationId = reserved.data.id;
+	} else if (deps.inventory?.store) {
 		const reservation = await deps.inventory.store.getReservationById(
 			parsed.data.organizationId,
-			parsed.data.reservationId,
+			reservationId,
 		);
 		if (!reservation.ok) return reservation;
 		if (!reservation.data) {
 			return fail("NOT_FOUND", "Reservation not found in organization");
 		}
-		// Validate status
 		if (
 			reservation.data.status !== "active" &&
 			reservation.data.status !== "partially_consumed"
@@ -472,25 +498,21 @@ export async function confirmPick(
 				"Reservation must be active or partially consumed",
 			);
 		}
-		// Validate same org
 		if (reservation.data.organizationId !== parsed.data.organizationId) {
 			return fail(
 				"CONFLICT",
 				"Reservation must belong to the same organization",
 			);
 		}
-		// Validate item matches line
 		if (reservation.data.itemId !== line.itemId) {
 			return fail("CONFLICT", "Reservation item must match delivery line item");
 		}
-		// Validate warehouse matches delivery
 		if (reservation.data.warehouseId !== delivery.data.warehouseId) {
 			return fail(
 				"CONFLICT",
 				"Reservation warehouse must match delivery warehouse",
 			);
 		}
-		// Validate remaining qty >= pick
 		const remaining =
 			Number(reservation.data.quantity) -
 			Number(reservation.data.consumedQuantity);
@@ -512,7 +534,7 @@ export async function confirmPick(
 			idempotencyKey: parsed.data.idempotencyKey,
 			deliveryLineId: parsed.data.deliveryLineId,
 			quantityPicked: parsed.data.quantityPicked,
-			reservationId: parsed.data.reservationId,
+			reservationId,
 		},
 		deps.ports,
 		{

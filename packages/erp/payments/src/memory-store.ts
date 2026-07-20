@@ -2,6 +2,16 @@ import { randomUUID } from "node:crypto";
 
 import { fail, ok, type Result } from "@afenda/errors/result";
 
+import {
+	PAYMENTS_ERROR_ACCOUNT_NOT_FOUND,
+	PAYMENTS_ERROR_IDEMPOTENCY_CONFLICT,
+	PAYMENTS_ERROR_INSTRUCTION_NOT_FOUND,
+	PAYMENTS_ERROR_INSUFFICIENT_AVAILABILITY,
+	PAYMENTS_ERROR_PAYMENT_NOT_FOUND,
+	PAYMENTS_ERROR_REFUND_LIMIT_EXCEEDED,
+	PAYMENTS_ERROR_TRANSFER_INVALID,
+} from "./error-codes";
+import { failPayments } from "./fail-payments";
 import type {
 	Payment,
 	PaymentAccount,
@@ -49,17 +59,22 @@ export class MemoryPaymentsStore implements PaymentsStore {
 	private find(organizationId: string, id: string): Result<Payment> {
 		const found = this.payments.get(id);
 		return found === undefined || found.organizationId !== organizationId
-			? fail("NOT_FOUND", "Payment not found")
+			? failPayments(
+					"NOT_FOUND",
+					"Payment not found",
+					PAYMENTS_ERROR_PAYMENT_NOT_FOUND,
+				)
 			: ok(found);
 	}
 
-	private account(
-		organizationId: string,
-		id: string,
-	): Result<PaymentAccount> {
+	private account(organizationId: string, id: string): Result<PaymentAccount> {
 		const found = this.accounts.get(id);
 		return found === undefined || found.organizationId !== organizationId
-			? fail("NOT_FOUND", "Payment account not found")
+			? failPayments(
+					"NOT_FOUND",
+					"Payment account not found",
+					PAYMENTS_ERROR_ACCOUNT_NOT_FOUND,
+				)
 			: ok(found);
 	}
 
@@ -71,7 +86,11 @@ export class MemoryPaymentsStore implements PaymentsStore {
 		const full = `${organizationId}:${key}`;
 		const existing = this.mutationKeys.get(full);
 		if (existing !== undefined && existing !== resourceId) {
-			return fail("CONFLICT", "Idempotency key conflicts with another mutation");
+			return failPayments(
+				"CONFLICT",
+				"Idempotency key conflicts with another mutation",
+				PAYMENTS_ERROR_IDEMPOTENCY_CONFLICT,
+			);
 		}
 		this.mutationKeys.set(full, resourceId);
 		return ok(undefined);
@@ -193,7 +212,10 @@ export class MemoryPaymentsStore implements PaymentsStore {
 		if (!found.ok) return found;
 		const payment = found.data;
 		if (payment.status !== "draft") {
-			return fail("CONFLICT", "Application instructions require a draft payment");
+			return fail(
+				"CONFLICT",
+				"Application instructions require a draft payment",
+			);
 		}
 		if (
 			(payment.direction === "receipt" &&
@@ -208,14 +230,20 @@ export class MemoryPaymentsStore implements PaymentsStore {
 		}
 		const allocated = payment.applicationInstructions
 			.filter((instruction) =>
-				["pending", "applied", "partially_applied"].includes(instruction.status),
+				["pending", "applied", "partially_applied"].includes(
+					instruction.status,
+				),
 			)
 			.reduce(
 				(total, instruction) => total + decimal(instruction.intendedAmount),
 				0n,
 			);
 		if (allocated + decimal(record.intendedAmount) > decimal(payment.amount)) {
-			return fail("CONFLICT", "Application exceeds payment amount");
+			return failPayments(
+				"CONFLICT",
+				"Application exceeds payment amount",
+				PAYMENTS_ERROR_INSUFFICIENT_AVAILABILITY,
+			);
 		}
 		const instruction: PaymentApplicationInstruction = {
 			id: randomUUID(),
@@ -324,6 +352,37 @@ export class MemoryPaymentsStore implements PaymentsStore {
 	async createAndPostTransfer(
 		record: Parameters<PaymentsStore["createAndPostTransfer"]>[0],
 	): Promise<Result<{ outgoing: Payment; incoming: Payment }>> {
+		if (record.fromPaymentAccountId === record.toPaymentAccountId) {
+			return failPayments(
+				"CONFLICT",
+				"Transfer accounts must differ",
+				PAYMENTS_ERROR_TRANSFER_INVALID,
+			);
+		}
+		const from = this.account(
+			record.organizationId,
+			record.fromPaymentAccountId,
+		);
+		if (!from.ok) return from;
+		const to = this.account(record.organizationId, record.toPaymentAccountId);
+		if (!to.ok) return to;
+		if (!from.data.active || !to.data.active) {
+			return failPayments(
+				"CONFLICT",
+				"Transfer requires active payment accounts",
+				PAYMENTS_ERROR_TRANSFER_INVALID,
+			);
+		}
+		if (
+			from.data.currencyCode !== record.currencyCode ||
+			to.data.currencyCode !== record.currencyCode
+		) {
+			return failPayments(
+				"CONFLICT",
+				"Transfer account currencies must match payment currency",
+				PAYMENTS_ERROR_TRANSFER_INVALID,
+			);
+		}
 		const group = randomUUID();
 		const outgoing = this.buildDraft({
 			organizationId: record.organizationId,
@@ -403,7 +462,11 @@ export class MemoryPaymentsStore implements PaymentsStore {
 			)
 			.reduce((total, row) => total + decimal(row.amount), 0n);
 		if (refunded + decimal(record.amount) > decimal(original.amount)) {
-			return fail("CONFLICT", "Refund exceeds remaining refundable amount");
+			return failPayments(
+				"CONFLICT",
+				"Refund exceeds remaining refundable amount",
+				PAYMENTS_ERROR_REFUND_LIMIT_EXCEEDED,
+			);
 		}
 		const draft = this.buildDraft({
 			...record,
@@ -442,7 +505,9 @@ export class MemoryPaymentsStore implements PaymentsStore {
 				instruction !== undefined &&
 				payment.organizationId === record.organizationId
 			) {
-				if (decimal(record.appliedAmount) > decimal(instruction.intendedAmount)) {
+				if (
+					decimal(record.appliedAmount) > decimal(instruction.intendedAmount)
+				) {
 					return fail("CONFLICT", "Applied amount exceeds intended amount");
 				}
 				instruction.appliedAmount = record.appliedAmount;
@@ -454,7 +519,11 @@ export class MemoryPaymentsStore implements PaymentsStore {
 				return ok({ ...instruction });
 			}
 		}
-		return fail("NOT_FOUND", "Payment application instruction not found");
+		return failPayments(
+			"NOT_FOUND",
+			"Payment application instruction not found",
+			PAYMENTS_ERROR_INSTRUCTION_NOT_FOUND,
+		);
 	}
 
 	async markInstructionRejected(
@@ -476,15 +545,17 @@ export class MemoryPaymentsStore implements PaymentsStore {
 					return fail("CONFLICT", "Application instruction cannot be rejected");
 				}
 				instruction.status =
-					record.rejectionCode === "PAYMENT_REVERSED"
-						? "reversed"
-						: "rejected";
+					record.rejectionCode === "PAYMENT_REVERSED" ? "reversed" : "rejected";
 				instruction.rejectionCode = record.rejectionCode;
 				instruction.updatedAt = new Date();
 				return ok({ ...instruction });
 			}
 		}
-		return fail("NOT_FOUND", "Payment application instruction not found");
+		return failPayments(
+			"NOT_FOUND",
+			"Payment application instruction not found",
+			PAYMENTS_ERROR_INSTRUCTION_NOT_FOUND,
+		);
 	}
 
 	async getById(
@@ -536,7 +607,9 @@ export class MemoryPaymentsStore implements PaymentsStore {
 		}
 		const intended = found.data.applicationInstructions
 			.filter((instruction) =>
-				["pending", "applied", "partially_applied"].includes(instruction.status),
+				["pending", "applied", "partially_applied"].includes(
+					instruction.status,
+				),
 			)
 			.reduce(
 				(sum, instruction) => sum + decimal(instruction.intendedAmount),

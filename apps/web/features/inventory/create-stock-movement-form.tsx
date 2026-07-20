@@ -5,57 +5,67 @@ import {
 	AlertDescription,
 	AlertTitle,
 	Button,
+	Code,
 	FormError,
 	FormField,
 	Input,
+	NativeSelect,
+	NativeSelectOption,
 	Spinner,
 } from "@afenda/ui-system";
-import { useActionState, useMemo, useState } from "react";
+import { useActionState, useState } from "react";
 
 import {
 	type CreateStockMovementActionState,
 	createStockMovementAction,
 } from "@/app/actions/create-stock-movement";
+import type { InventoryMasterOption } from "@/features/inventory/inventory-master-option";
 import { actionFieldMessage } from "@/modules/platform/schemas/action-result";
 
 const initialState: CreateStockMovementActionState = null;
 
+type MovementTypeOption = "receipt" | "transfer" | "adjustment";
+
+function parseMovementTypeOption(
+	value: string,
+	options: { canCreate: boolean; canAdjust: boolean },
+): MovementTypeOption | null {
+	if (value === "receipt" && options.canCreate) {
+		return "receipt";
+	}
+	if (value === "transfer" && options.canCreate) {
+		return "transfer";
+	}
+	if (value === "adjustment" && options.canAdjust) {
+		return "adjustment";
+	}
+	return null;
+}
+
 type CreateStockMovementFormProps = {
 	canCreate: boolean;
 	canAdjust: boolean;
+	warehouses: InventoryMasterOption[];
 };
 
 /**
- * Draft stock movement create — UI path for receipt, transfer, and adjustment.
+ * Draft stock movement create — UI path for opening-balance receipt, transfer, and adjustment.
+ * Peer-sourced receipt/issue (receiving/fulfillment) must use peer packages with event linkage.
  */
 export function CreateStockMovementForm({
 	canCreate,
 	canAdjust,
+	warehouses,
 }: CreateStockMovementFormProps) {
 	const [state, formAction, pending] = useActionState(
 		createStockMovementAction,
 		initialState,
 	);
-	const [movementType, setMovementType] = useState<
-		"receipt" | "transfer" | "adjustment"
-	>("receipt");
-	const [receiptSource, setReceiptSource] = useState<
-		"opening_balance" | "receiving"
-	>("opening_balance");
+	const defaultType: MovementTypeOption = canCreate ? "receipt" : "adjustment";
+	const [movementType, setMovementType] =
+		useState<MovementTypeOption>(defaultType);
 
-	const source = useMemo(() => {
-		switch (movementType) {
-			case "transfer":
-				return "transfer";
-			case "adjustment":
-				return "manual_adjustment";
-			case "receipt":
-			default:
-				return receiptSource;
-		}
-	}, [movementType, receiptSource]);
-
-	if (!canCreate) {
+	if (!canCreate && !canAdjust) {
 		return (
 			<Alert role="status">
 				<AlertTitle>Create unavailable</AlertTitle>
@@ -85,6 +95,13 @@ export function CreateStockMovementForm({
 		toWarehouseError === undefined &&
 		reasonError === undefined;
 
+	const source =
+		movementType === "transfer"
+			? "transfer"
+			: movementType === "adjustment"
+				? "manual_adjustment"
+				: "opening_balance";
+
 	return (
 		<form
 			action={formAction}
@@ -95,7 +112,7 @@ export function CreateStockMovementForm({
 				<Alert role="status">
 					<AlertTitle>Movement created</AlertTitle>
 					<AlertDescription>
-						{state.data.movement.code} · {state.data.movement.movementType} ·
+						{state.data.movement.code} · {state.data.movement.movementType} ·{" "}
 						{state.data.movement.source} · draft.
 					</AlertDescription>
 				</Alert>
@@ -123,96 +140,107 @@ export function CreateStockMovementForm({
 				fieldId="stock-movement-type"
 				error={typeError}
 			>
-				<select
+				<NativeSelect
 					id="stock-movement-type"
 					name="movementType"
-					className="border-input bg-background h-9 w-full rounded-md border px-3 text-sm"
 					value={movementType}
-					onChange={(event) =>
-						setMovementType(
-							event.target.value as "receipt" | "transfer" | "adjustment",
-						)
-					}
+					onChange={(event) => {
+						const next = parseMovementTypeOption(event.target.value, {
+							canCreate,
+							canAdjust,
+						});
+						if (next !== null) {
+							setMovementType(next);
+						}
+					}}
 					disabled={pending}
 				>
-					<option value="receipt">receipt</option>
-					<option value="transfer">transfer</option>
-					{canAdjust ? <option value="adjustment">adjustment</option> : null}
-				</select>
-			</FormField>
-			<FormField
-				label="Source"
-				required
-				fieldId="stock-movement-source"
-				error={sourceError}
-			>
-				<select
-					id="stock-movement-source"
-					name="source"
-					className="border-input bg-background h-9 w-full rounded-md border px-3 text-sm"
-					value={source}
-					onChange={(event) =>
-						setReceiptSource(
-							event.target.value as "opening_balance" | "receiving",
-						)
-					}
-					disabled={pending}
-				>
-					{movementType === "receipt" ? (
+					{canCreate ? (
 						<>
-							<option value="opening_balance">opening_balance</option>
-							<option value="receiving">receiving</option>
+							<NativeSelectOption value="receipt">receipt</NativeSelectOption>
+							<NativeSelectOption value="transfer">transfer</NativeSelectOption>
 						</>
-					) : (
-						<option value={source}>{source}</option>
-					)}
-				</select>
+					) : null}
+					{canAdjust ? (
+						<NativeSelectOption value="adjustment">
+							adjustment
+						</NativeSelectOption>
+					) : null}
+				</NativeSelect>
 			</FormField>
+			<input type="hidden" name="source" value={source} />
 			{movementType === "transfer" ? (
 				<>
 					<FormField
-						label="From warehouse id"
+						label="From warehouse"
 						required
 						fieldId="stock-movement-from"
 						error={fromWarehouseError}
 					>
-						<Input
+						<NativeSelect
 							id="stock-movement-from"
 							name="fromWarehouseId"
 							required
-							autoComplete="off"
-							disabled={pending}
-						/>
+							disabled={pending || warehouses.length === 0}
+							defaultValue=""
+						>
+							<NativeSelectOption value="" disabled>
+								Select warehouse
+							</NativeSelectOption>
+							{warehouses.map((warehouse) => (
+								<NativeSelectOption key={warehouse.id} value={warehouse.id}>
+									{warehouse.code} · {warehouse.status}
+								</NativeSelectOption>
+							))}
+						</NativeSelect>
 					</FormField>
 					<FormField
-						label="To warehouse id"
+						label="To warehouse"
 						required
 						fieldId="stock-movement-to"
 						error={toWarehouseError}
 					>
-						<Input
+						<NativeSelect
 							id="stock-movement-to"
 							name="toWarehouseId"
 							required
-							autoComplete="off"
-							disabled={pending}
-						/>
+							disabled={pending || warehouses.length === 0}
+							defaultValue=""
+						>
+							<NativeSelectOption value="" disabled>
+								Select warehouse
+							</NativeSelectOption>
+							{warehouses.map((warehouse) => (
+								<NativeSelectOption key={warehouse.id} value={warehouse.id}>
+									{warehouse.code} · {warehouse.status}
+								</NativeSelectOption>
+							))}
+						</NativeSelect>
 					</FormField>
 				</>
 			) : (
 				<FormField
-					label="Warehouse id"
+					label="Warehouse"
 					required
 					fieldId="stock-movement-warehouse"
 					error={warehouseError}
 				>
-					<Input
+					<NativeSelect
 						id="stock-movement-warehouse"
 						name="warehouseId"
 						required
-						autoComplete="off"
-						disabled={pending}
-					/>
+						disabled={pending || warehouses.length === 0}
+						defaultValue=""
+					>
+						<NativeSelectOption value="" disabled>
+							Select warehouse
+						</NativeSelectOption>
+						{warehouses.map((warehouse) => (
+							<NativeSelectOption key={warehouse.id} value={warehouse.id}>
+								{warehouse.code} · {warehouse.status}
+							</NativeSelectOption>
+						))}
+					</NativeSelect>
 				</FormField>
 			)}
 			{movementType === "adjustment" ? (
@@ -231,10 +259,7 @@ export function CreateStockMovementForm({
 							disabled={pending}
 						/>
 					</FormField>
-					<FormField
-						label="Adjustment note"
-						fieldId="stock-adjustment-note"
-					>
+					<FormField label="Adjustment note" fieldId="stock-adjustment-note">
 						<Input
 							id="stock-adjustment-note"
 							name="adjustmentNote"
@@ -244,14 +269,13 @@ export function CreateStockMovementForm({
 					</FormField>
 				</>
 			) : null}
-			{!canAdjust ? (
+			{canCreate && !canAdjust ? (
 				<p className="text-sm text-muted-foreground">
-					Adjustment create remains hidden until
-					{" "}
-					<code>inventory.adjustment.post</code> is granted.
+					Adjustment create remains hidden until{" "}
+					<Code>inventory.adjustment.post</Code> is granted.
 				</p>
 			) : null}
-			<Button type="submit" disabled={pending}>
+			<Button type="submit" disabled={pending || warehouses.length === 0}>
 				{pending ? <Spinner /> : null}
 				Create draft movement
 			</Button>

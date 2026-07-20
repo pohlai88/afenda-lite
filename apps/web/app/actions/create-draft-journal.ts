@@ -33,9 +33,9 @@ export async function createDraftJournalAction(
 ): Promise<CreateDraftJournalActionState> {
 	return runOperatorPermissionAction({
 		path: "createDraftJournalAction",
-		permission: "accounting.manage",
+		permission: "accounting.journal.create",
 		safeMessage: "Could not create journal. Try again or contact an admin.",
-		execute: async (session) => {
+		execute: async (session, correlationId) => {
 			const parsed = parseSchema(schema, {
 				periodId: formData.get("periodId"),
 				code: formData.get("code"),
@@ -53,6 +53,7 @@ export async function createDraftJournalAction(
 					{
 						organizationId: session.orgId,
 						actorUserId: session.userId,
+						correlationId,
 						...parsed.data,
 					},
 					createAccountingCommandOptions(),

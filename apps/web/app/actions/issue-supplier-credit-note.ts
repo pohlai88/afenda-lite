@@ -26,6 +26,8 @@ const schema = z.object({
 	supplierName: z.string().trim().min(1).max(256),
 	currencyCode: z.string().trim().length(3),
 	amount: z.coerce.number().positive(),
+	itemId: z.string().uuid(),
+	description: z.string().trim().min(1).max(512).optional(),
 });
 
 export async function issueSupplierCreditNoteAction(
@@ -45,11 +47,13 @@ export async function issueSupplierCreditNoteAction(
 				supplierName: formData.get("supplierName"),
 				currencyCode: formData.get("currencyCode"),
 				amount: formData.get("amount"),
+				itemId: formData.get("itemId"),
+				description: formData.get("description") || undefined,
 			});
 			if (!parsed.success)
 				return actionFail(
 					"VALIDATION_ERROR",
-					"Enter a valid credit note, supplier, currency, and amount.",
+					"Enter a valid credit note, supplier, item, currency, and amount.",
 					parsed.details,
 				);
 			const mapped = mapPackageResult(

@@ -24,7 +24,9 @@ const authorization = {
 	},
 };
 
-async function seedAccount(store: ReturnType<typeof createMemoryPaymentsStore>) {
+async function seedAccount(
+	store: ReturnType<typeof createMemoryPaymentsStore>,
+) {
 	const account = await createPaymentAccount(
 		{
 			organizationId,
@@ -148,7 +150,9 @@ describe("payments lifecycle", () => {
 			options,
 		);
 		expect(reversed.ok && reversed.data.status).toBe("reversed");
-		expect(reversed.ok && reversed.data.reversal?.reason).toBe("Bank rejection");
+		expect(reversed.ok && reversed.data.reversal?.reason).toBe(
+			"Bank rejection",
+		);
 
 		const loaded = await getPaymentById(
 			{ organizationId, actorUserId, id: created.data.id },

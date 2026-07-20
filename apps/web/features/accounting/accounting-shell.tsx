@@ -16,7 +16,9 @@ import {
 	CreateDraftJournalForm,
 	OpenAccountingPeriodForm,
 	PostJournalForm,
+	ReopenAccountingPeriodForm,
 	ReverseJournalForm,
+	SoftCloseAccountingPeriodForm,
 } from "@/features/accounting/accounting-forms";
 import {
 	JournalsTable,
@@ -30,7 +32,9 @@ type AccountingShellProps = { surface: "admin" | "client" };
 
 const formSections = [
 	["Open accounting period", OpenAccountingPeriodForm],
+	["Soft-close accounting period", SoftCloseAccountingPeriodForm],
 	["Close accounting period", CloseAccountingPeriodForm],
+	["Reopen accounting period", ReopenAccountingPeriodForm],
 	["Create draft journal", CreateDraftJournalForm],
 	["Add journal line", AddJournalLineForm],
 	["Post journal", PostJournalForm],
@@ -41,8 +45,8 @@ const formSections = [
 export async function AccountingShell({ surface }: AccountingShellProps) {
 	const session =
 		surface === "admin" ? await requireRole("operator") : await getSession();
-	await requirePermission(session, "accounting.read");
-	const canManage = await sessionHasPermission(session, "accounting.manage");
+	await requirePermission(session, "accounting.journal.read");
+	const canManage = await sessionHasPermission(session, "accounting.journal.create");
 	const options = createAccountingCommandOptions();
 	const [journalsResult, trialBalanceResult] = await Promise.all([
 		listJournals(

@@ -6,9 +6,13 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { mapPackageResult } from "@/app/actions/map-package-result";
+import { forbidUnlessPermission } from "@/app/actions/permission-gate";
 import { runOperatorPermissionAction } from "@/app/actions/run-operator-permission-action";
 import { createPaymentsCommandOptions } from "@/lib/erp/payments-command-options";
-import { type ActionResult, actionFail } from "@/modules/platform/schemas/action-result";
+import {
+	type ActionResult,
+	actionFail,
+} from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 export type CreateAndPostPaymentTransferActionState = ActionResult<{
@@ -32,8 +36,14 @@ export async function createAndPostPaymentTransferAction(
 	return runOperatorPermissionAction({
 		path: "createAndPostPaymentTransferAction",
 		permission: "payments.transfer.create",
-		safeMessage: "Could not post payment transfer. Try again or contact an admin.",
+		safeMessage:
+			"Could not post payment transfer. Try again or contact an admin.",
 		execute: async (session, correlationId) => {
+			const postingDenied = await forbidUnlessPermission(
+				session,
+				"payments.transfer.post",
+			);
+			if (postingDenied) return postingDenied;
 			const parsed = parseSchema(schema, {
 				code: formData.get("code"),
 				fromPaymentAccountId: formData.get("fromPaymentAccountId"),
@@ -42,14 +52,24 @@ export async function createAndPostPaymentTransferAction(
 				currencyCode: formData.get("currencyCode"),
 				reference: formData.get("reference"),
 			});
-			if (!parsed.success) return actionFail("VALIDATION_ERROR", "Enter valid transfer details.", parsed.details);
-			const mapped = mapPackageResult(await createAndPostPaymentTransfer({
-				organizationId: session.orgId,
-				actorUserId: session.userId,
-				correlationId,
-				idempotencyKey: randomUUID(),
-				...parsed.data,
-			}, createPaymentsCommandOptions()));
+			if (!parsed.success)
+				return actionFail(
+					"VALIDATION_ERROR",
+					"Enter valid transfer details.",
+					parsed.details,
+				);
+			const mapped = mapPackageResult(
+				await createAndPostPaymentTransfer(
+					{
+						organizationId: session.orgId,
+						actorUserId: session.userId,
+						correlationId,
+						idempotencyKey: randomUUID(),
+						...parsed.data,
+					},
+					createPaymentsCommandOptions(),
+				),
+			);
 			if (!mapped.ok) return mapped;
 			revalidatePath("/admin/payments");
 			revalidatePath("/client/payments");

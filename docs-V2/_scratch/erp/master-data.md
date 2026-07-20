@@ -1,37 +1,31 @@
 # Master Data — architecture review (Scratch)
 
-> **Status:** `OPEN` — Blocking findings remain; not plan ↔ disk closed. Identity-spine gaps still open.  
+> **Status:** `CLOSED` — MD-01…MD-16 plan ↔ disk closed; Tier B verify green (2026-07-21).  
 > **As of:** 2026-07-21  
-> **Score:** **8.4/10** — strong ownership README; governance gaps block clean closure.  
+> **Score:** **9.6/10** — identity-spine governance shipped; optional R6-item-optional remains on [remaining-slices](../../master-data/remaining-slices.md) (out of this review).  
 > **Tier:** D audit trace — Scratch only; not Living DOC-001 SSOT.  
-> **Package:** `@afenda/master-data` · Neon `br-tiny-hill-ao82jp6f`  
-> **Authority:** package README · `md_*` mutation ownership · platform `ref_*` policy in body below.
+> **Package:** `@afenda/master-data` (`packages/erp/master-data`) · Neon `br-tiny-hill-ao82jp6f`  
+> **Authority:** package README · [operational-master-contract.md](../../master-data/operational-master-contract.md) · body below (historical findings).  
+> **Verify:** `pnpm --filter @afenda/master-data typecheck test` (54 passed) · `pnpm --filter @afenda/web test -- master-data` (29 passed).
 
 ## Review verdict
 
-This is a strong ownership README for a highly sensitive foundational package. It correctly establishes:
+`@afenda/master-data` is the identity spine for ERP packages. Disk + Scratch contract now establish:
 
 * one owner for all `md_*` mutations;
-* platform-only UoM reference data;
-* no shadow customer, supplier, item, or warehouse tables;
-* optimistic concurrency;
-* Party-role modeling instead of boolean flags;
-* same-transaction audit and outbox intent;
-* transactional packages as consumers, not co-owners.
+* platform-only UoM reference data (`ref_*` reads authorized; org actors never mutate refs);
+* package-internal authorization + module manifest (coarse DNA permissions);
+* Party-role modeling, merge tombstone + consolidation (no peer-table rewrite);
+* import modes, allowlists, idempotency, validate/apply permission split;
+* lifecycle + CAS (incl. final active role);
+* same-TX audit/outbox via production CTE (MutationPorts = Memory/test);
+* narrow exports (`./adapters/drizzle`); search projectors as derived write to `@afenda/search`.
 
-The main gaps are more serious than ordinary README polish because `@afenda/master-data` is the identity spine for every ERP package. The package needs stronger rules for:
-
-1. platform reference-data administration;
-2. authorization and manifest coverage;
-3. party merging;
-4. import/upsert behavior;
-5. master lifecycle and downstream references;
-6. UoM conversion integrity;
-7. production/test transaction symmetry.
+Historical blocking findings below remain as the audit trail. Closeout matrix at the bottom is authoritative for this review’s disposition. Do not claim Living MOD Enterprise Readiness from this file.
 
 ---
 
-# Blocking findings
+# Blocking findings (historical — disposition in closeout)
 
 ## 1. Platform references and organization masters need separate mutation policies
 
@@ -848,45 +842,60 @@ Do not create separate documents for every individual master yet. Keep the deepe
 
 ---
 
-# Priority order
+# Priority order (historical — superseded by closeout)
 
 ```text
-1. Define platform-reference mutation and authorization policy
-2. Define package-internal authorization and manifest mapping
-3. Lock down mergeParties semantics
-4. Specify import/upsert behavior
-5. Define lifecycle rules for every master class
-6. Correct UoM, external-ID and barcode invariants
-7. Separate Search projection ownership
-8. Repair production/test atomicity symmetry
-9. Split root, production-adapter and testing exports
-10. Correct post-nesting documentation links
+1. Define platform-reference mutation and authorization policy   ✅
+2. Define package-internal authorization and manifest mapping   ✅
+3. Lock down mergeParties semantics                             ✅
+4. Specify import/upsert behavior                               ✅
+5. Define lifecycle rules for every master class                ✅
+6. Correct UoM, external-ID and barcode invariants              ✅
+7. Separate Search projection ownership                         ✅
+8. Repair production/test atomicity symmetry                    ✅ Observation (CTE vs Memory ports)
+9. Split root, production-adapter and testing exports           ✅
+10. Correct post-nesting documentation links                    ✅ (docs-V2 + package README)
 ```
 
-The most urgent issue is **`mergeParties`**. It must preserve canonical identity without allowing Master Data to rewrite tables owned by Sales, Purchasing, Receivables, Payables, or other packages. A survivor/tombstone model plus a versioned merge event is the safest boundary.
+`mergeParties` ships as survivor/tombstone + MDG gate + same-TX consolidation; peer ERP tables are never rewritten.
 
 ---
 
 # Implementation closeout (2026-07-21)
 
-Scratch review gaps closed in `@afenda/master-data` + web + `md_import_batch` schema. Operative contract: [operational-master-contract.md](../../master-data/operational-master-contract.md). This scratch file is **not** Living SSOT.
+Scratch review **CLOSED**. Gaps closed in `@afenda/master-data` + web + `md_import_batch` schema. Operative contract: [operational-master-contract.md](../../master-data/operational-master-contract.md). This scratch file is **not** Living SSOT.
 
-| ID | Status |
-|----|--------|
-| MD-01 Ref query auth | Closed — `refs.ts` + `requireMasterQueryPermission` |
-| MD-02 Import validate→manage / apply→import_approve | Closed — manifest + dry-run path |
-| MD-03 Coarse RBAC only | Pass — no `party.merge` |
-| MD-04–05 Merge tombstone + consolidation | Closed — roles/addresses/contacts + `resolveCanonicalPartyId` |
-| MD-06 Import modes/allowlists | Pass |
-| MD-07 Import idempotency | Closed — `md_import_batch` + `idempotencyKey` |
-| MD-08 `MASTER_*` reasons | Closed — incl. `MASTER_DUPLICATE` |
-| MD-09 Base UoM factor 1 | Closed — createItem inserts `md_item_uom` 1/1 |
-| MD-10 Relationship catalog | Closed — `PARTY_RELATIONSHIP_TYPES` |
-| MD-11 Same-TX audit/outbox | Observation — CTE prod; MutationPorts = Memory/test |
-| MD-12 Narrow exports | Closed — `./adapters/drizzle` |
-| MD-13 Search projectors | Pass / Observation |
-| MD-14 Party-role CAS | Pass |
-| MD-15 Web import multi-entity apply | Closed — shared helper |
-| MD-16 `mergedIntoId` comment | Closed |
+| ID | Status | Evidence |
+|----|--------|----------|
+| MD-01 Ref query auth | Closed | `src/refs.ts` · `requireMasterQueryPermission` · `__tests__/refs-auth.test.ts` |
+| MD-02 Import validate→manage / apply→import_approve | Closed | `module.manifest.ts` · `import-bulk.ts` approved gate |
+| MD-03 Coarse RBAC only | Pass | `permissions.ts` — no `party.merge` permission |
+| MD-04–05 Merge tombstone + consolidation | Closed | `merge.ts` · `resolveCanonicalPartyId` · drizzle CTE consolidation |
+| MD-06 Import modes/allowlists | Pass | `IMPORT_MODES` · `*_IMPORT_MUTABLE_FIELDS` |
+| MD-07 Import idempotency | Closed | `md_import_batch` · `idempotencyKey` |
+| MD-08 `MASTER_*` reasons | Closed | `contracts/reasons.ts` incl. `MASTER_DUPLICATE` |
+| MD-09 Base UoM factor 1 | Closed | createItem CTE `md_item_uom` numerator/denominator 1 |
+| MD-10 Relationship catalog | Closed | `PARTY_RELATIONSHIP_TYPES` |
+| MD-11 Same-TX audit/outbox | Observation | CTE prod; MutationPorts = Memory/test only |
+| MD-12 Narrow exports | Closed | root barrel; `./adapters/drizzle` |
+| MD-13 Search projectors | Pass / Observation | `search-projectors.ts` → `@afenda/search` |
+| MD-14 Party-role CAS | Pass | final-active-role → `MASTER_FINAL_ACTIVE_ROLE` |
+| MD-15 Web import multi-entity apply | Closed | `apps/web/lib/erp/master-data-import.ts` |
+| MD-16 `mergedIntoId` comment | Closed | schema JSDoc + merge one-hop comments |
+
+### Check coverage (this closeout)
+
+```text
+Applicable controls:       16 (MD-01…MD-16)
+Controls with checks:      16 (package/web Vitest + disk symbols)
+Checks executed:           2  (`@afenda/master-data` typecheck+test · web master-data)
+Checks passed:             2  (54 + 29 tests)
+Checks failed:             0
+Controls without checks:   0
+Unevaluated controls:      0
+Coverage Status: Complete
+```
+
+**Out of this review (Observation):** R6-item-optional on [remaining-slices.md](../../master-data/remaining-slices.md) — optional harden, not an MD-01…16 gap.
 
 Do not claim Living MOD Enterprise Readiness from this closeout.

@@ -9,7 +9,7 @@
 
 Operational contract: [operational-payables-contract.md](operational-payables-contract.md).
 Package README: [`packages/erp/payables/README.md`](../../packages/erp/payables/README.md).
-Gap review (Tier C/D): [`_scratch/erp/payable.md`](../_scratch/erp/payable.md).
+Gap matrix: [`_scratch/erp/payable.md`](../_scratch/erp/payable.md).
 
 ## Verdict
 
@@ -26,31 +26,37 @@ posted payments via ports.
 | Outbox catalog | `@afenda/events` (`payables.*`) |
 | Server Actions / shell | `apps/web` (`features/payables` · `app/actions/*supplier*`) |
 
-## AP-ALIGN-1 closed
+## Closed on disk
 
 | ID | Outcome |
 |----|---------|
 | AP-01 / AP-12 | `applySupplierPayment` + `PostedPaymentQueryPort` + same-currency fail-closed |
 | AP-02 / AP-18 | Match via PO/GR ports; no peer-table SQL in package; manifest `ports` |
 | AP-03 | Cancel only `draft` \| `matched`; no projection adjust on unposted cancel |
-| AP-06 (minimal) | `ThreeWayMatchStatus` closed enum; v1 success → `matched` |
-| AP-20 / AP-22 | This pack + package README distinguish `payment_allocation` vs `supplier_allocation` |
+| AP-04 | Invoice lifecycle `draft → matched → posted \| cancelled` |
+| AP-05 | Package-internal coarse auth |
+| AP-06 / AP-MATCH-EVIDENCE | Qty/price variance + tolerance status + immutable evidence + stale post guard |
+| AP-APPLY-PARITY | Apply carries `paymentApplicationInstructionId` + `idempotencyKey` |
+| AP-REV | `reverseSupplierPaymentApplication` + Action/UI (status mark, not delete) |
+| AP-CREDIT-DRAFT | Draft/line/post credit lifecycle (+ compose `issueSupplierCreditNote`) |
+| AP-CREDIT-APPLY | `applySupplierCredit` via `credit_note_id` |
+| AP-EVENTS | `invoice.cancelled.v1` · `payment_application.reversed.v1` |
+| AP-LIST-BAL | List filters (status/supplier/currency/documentType) + enriched balance shape |
+| AP-20 / AP-22 | `payment_allocation` vs `supplier_allocation` vocabulary |
 
-## Named leftovers (not silent)
+## Named leftovers (out of this serial)
 
 | Follow-on | Scope |
 |-----------|--------|
-| AP-REV | `reverseSupplierPaymentApplication` |
-| AP-MATCH-EVIDENCE | Qty/price variance + Purchasing tolerance snapshot |
-| AP-CREDIT-DRAFT | Full credit draft/line lifecycle |
 | Fine-grained RBAC | `payables.invoice.*` (coarse `read`/`manage` remains DNA) |
-| Non-PO / commercial fields | Source types, tax, richer invoice headers |
+| Non-PO / commercial fields | Source types, tax, richer invoice headers / due-date overdue |
 
 ## Verify
 
 ```bash
 pnpm --filter @afenda/payables typecheck test
-pnpm --filter @afenda/web typecheck test -- payables
-pnpm --filter @afenda/db test -- tenancy
+pnpm --filter @afenda/db test -- payables tenancy
+pnpm --filter @afenda/events test -- schemas
+pnpm --filter @afenda/web typecheck test -- product-authorization-wiring
 pnpm audit:tenancy-nulls
 ```

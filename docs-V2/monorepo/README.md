@@ -189,8 +189,9 @@ Do not promote business helpers to `@afenda/shared`, `@afenda/common`, `@afenda/
 2. pnpm typecheck
 3. rg "from [\"']\\.\\./.*/packages/" apps packages --glob "*.{ts,tsx}"
 4. rg "from [\"']@afenda/[^\"']+/src/" apps packages --glob "*.{ts,tsx}"
-5. pnpm validate:modules
-   (Phase 2 Living — WORKSPACE-EDGE-REGISTER ↔ package.json reconcile + living ERP gates; also in CI quality)
+5. pnpm governance:packages
+   (catalog-to-disk · WORKSPACE-EDGE-REGISTER · SCHEMA-OWNERSHIP-MANIFEST · DAG · living ERP gates; also in CI quality)
+   Equivalent Phase 2 entrypoint: `pnpm validate:modules`
 ```
 
 ---

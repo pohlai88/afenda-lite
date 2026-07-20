@@ -4,10 +4,17 @@
  */
 
 import {
+	accountRoleMapping,
 	accountingPeriod,
+	chartOfAccount,
+	financialPostingException,
 	journal,
 	journalLine,
+	ledgerAccount,
 	ledgerPosting,
+	postingProfile,
+	postingProfileLine,
+	sourcePostingLink,
 } from "./schema/accounting";
 import {
 	delivery,
@@ -52,6 +59,7 @@ import {
 	supplierAllocation,
 	supplierBalanceProjection,
 	supplierCreditNote,
+	supplierCreditNoteLine,
 	supplierInvoice,
 	supplierInvoiceLine,
 	threeWayMatchResult,
@@ -123,6 +131,7 @@ export const HARD_TENANT_ROOT_TABLE_NAMES = [
 	"supplier_invoice",
 	"supplier_invoice_line",
 	"supplier_credit_note",
+	"supplier_credit_note_line",
 	"supplier_allocation",
 	"three_way_match_result",
 	"supplier_balance_projection",
@@ -147,6 +156,13 @@ export const HARD_TENANT_ROOT_TABLE_NAMES = [
 	"journal_line",
 	"ledger_posting",
 	"accounting_period",
+	"chart_of_account",
+	"ledger_account",
+	"account_role_mapping",
+	"posting_profile",
+	"posting_profile_line",
+	"source_posting_link",
+	"financial_posting_exception",
 ] as const;
 
 export type HardTenantRootTableName =
@@ -195,6 +211,7 @@ export const HARD_TENANT_ROOT_TABLES = {
 	supplierInvoice,
 	supplierInvoiceLine,
 	supplierCreditNote,
+	supplierCreditNoteLine,
 	supplierAllocation,
 	threeWayMatchResult,
 	supplierBalanceProjection,
@@ -219,4 +236,11 @@ export const HARD_TENANT_ROOT_TABLES = {
 	journalLine,
 	ledgerPosting,
 	accountingPeriod,
+	chartOfAccount,
+	ledgerAccount,
+	accountRoleMapping,
+	postingProfile,
+	postingProfileLine,
+	sourcePostingLink,
+	financialPostingException,
 } as const;

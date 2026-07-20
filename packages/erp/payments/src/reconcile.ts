@@ -14,7 +14,9 @@ const ACTIVE_INSTRUCTION_STATUSES = new Set([
 
 function intendedTotal(instructions: PaymentApplicationInstruction[]): number {
 	return instructions
-		.filter((instruction) => ACTIVE_INSTRUCTION_STATUSES.has(instruction.status))
+		.filter((instruction) =>
+			ACTIVE_INSTRUCTION_STATUSES.has(instruction.status),
+		)
 		.reduce((sum, instruction) => sum + Number(instruction.intendedAmount), 0);
 }
 
@@ -70,9 +72,7 @@ export function reconcilePayments(input: ReconcileInput): ReconcileResult {
 				);
 			}
 			if (peer.amount !== payment.amount) {
-				findings.push(
-					`Transfer pair ${payment.id}/${peer.id} amount mismatch`,
-				);
+				findings.push(`Transfer pair ${payment.id}/${peer.id} amount mismatch`);
 			}
 			if (peer.paymentAccountId === payment.paymentAccountId) {
 				findings.push(

@@ -21,7 +21,9 @@ const confirmPickFormSchema = z.object({
 	expectedVersion: z.coerce.number().int().positive(),
 	deliveryLineId: z.string().uuid(),
 	quantityPicked: z.coerce.number().positive(),
-	reservationId: z.string().uuid(),
+	reservationId: z
+		.union([z.string().uuid(), z.literal(""), z.undefined()])
+		.transform((value) => (value === undefined || value === "" ? undefined : value)),
 });
 
 export async function confirmPickAction(
@@ -43,7 +45,7 @@ export async function confirmPickAction(
 			if (!parsed.success) {
 				return actionFail(
 					"VALIDATION_ERROR",
-					"Enter a valid delivery, line, reservation, version, and picked quantity.",
+					"Enter a valid delivery, line, version, and picked quantity (reservation optional).",
 					parsed.details,
 				);
 			}

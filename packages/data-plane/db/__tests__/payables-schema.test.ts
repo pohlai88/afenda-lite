@@ -5,6 +5,7 @@ import {
 	supplierAllocation,
 	supplierBalanceProjection,
 	supplierCreditNote,
+	supplierCreditNoteLine,
 	supplierInvoice,
 	supplierInvoiceLine,
 	threeWayMatchResult,
@@ -15,6 +16,7 @@ describe("@afenda/db payables schema", () => {
 		const invoiceCols = getTableColumns(supplierInvoice);
 		const lineCols = getTableColumns(supplierInvoiceLine);
 		const creditNoteCols = getTableColumns(supplierCreditNote);
+		const creditLineCols = getTableColumns(supplierCreditNoteLine);
 		const allocationCols = getTableColumns(supplierAllocation);
 		const matchCols = getTableColumns(threeWayMatchResult);
 		const balanceCols = getTableColumns(supplierBalanceProjection);
@@ -23,6 +25,7 @@ describe("@afenda/db payables schema", () => {
 			invoiceCols,
 			lineCols,
 			creditNoteCols,
+			creditLineCols,
 			allocationCols,
 			matchCols,
 			balanceCols,
@@ -39,14 +42,20 @@ describe("@afenda/db payables schema", () => {
 		expect(lineCols.lineAmount.notNull).toBe(true);
 		expect(creditNoteCols.supplierPartyId.notNull).toBe(true);
 		expect(creditNoteCols.supplierInvoiceId.notNull).toBe(false);
+		expect(creditNoteCols.amount.notNull).toBe(true);
+		expect(creditLineCols.creditNoteId.notNull).toBe(true);
 		expect(allocationCols.supplierInvoiceId.notNull).toBe(true);
 		expect(allocationCols.paymentId.notNull).toBe(false);
 		expect(allocationCols.creditNoteId.notNull).toBe(false);
+		expect(allocationCols.status.notNull).toBe(true);
+		expect(allocationCols.paymentApplicationInstructionId.notNull).toBe(false);
+		expect(allocationCols.applyIdempotencyKey.notNull).toBe(false);
 		expect(matchCols.supplierInvoiceId.notNull).toBe(true);
 		expect(matchCols.purchaseOrderId.notNull).toBe(false);
 		expect(matchCols.goodsReceiptId.notNull).toBe(false);
 		expect(matchCols.matchStatus.notNull).toBe(true);
 		expect(matchCols.notes.notNull).toBe(false);
+		expect(matchCols.evidenceJson.notNull).toBe(false);
 		expect(balanceCols.openBalance.notNull).toBe(true);
 		expect(balanceCols.openBalance.default).toBe("0");
 	});

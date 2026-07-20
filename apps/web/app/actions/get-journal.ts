@@ -17,7 +17,7 @@ export async function getJournalAction(
 ): Promise<ActionResult<{ journal: Journal }>> {
 	return runOperatorPermissionAction({
 		path: "getJournalAction",
-		permission: "accounting.read",
+		permission: "accounting.journal.read",
 		safeMessage: "Could not load journal. Try again or contact an admin.",
 		execute: async (session) => {
 			const parsed = parseSchema(z.string().uuid(), journalId);

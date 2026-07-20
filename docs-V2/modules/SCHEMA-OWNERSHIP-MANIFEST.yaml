@@ -1,0 +1,248 @@
+# Schema write-ownership register (sole mutator)
+# Dual control: ERP mutationTables in module.manifest.ts must match writeOwner rows.
+# Platform sole-mutator rows are hand-authored here (no ERP manifest).
+# Schema DDL / migrations stay in @afenda/db — hosting a table does not grant write ownership.
+# Version: schema-ownership/2026-07-21
+# Authority: docs-V2/monorepo · LAYERS.md · packages/README.md · validate:modules
+
+version: "schema-ownership/2026-07-21"
+updated: "2026-07-21"
+authority: packages-catalog-production-governance
+
+invariant: |
+  A package may read a foreign-owned table only through an approved query port,
+  projection, or registered read edge. It may never insert, update, or delete a
+  foreign-owned table. Direct table writes are allowed only inside the package
+  named as writeOwner.
+
+schemaHost: "@afenda/db"
+
+tables:
+  # --- Platform sole mutators (R1-C / R1-D) ---
+  - table: platform_audit_log
+    writeOwner: "@afenda/audit"
+    kind: platform
+  - table: platform_domain_event
+    writeOwner: "@afenda/events"
+    kind: platform
+  - table: platform_search_document
+    writeOwner: "@afenda/search"
+    kind: platform
+  - table: platform_notification
+    writeOwner: "@afenda/notifications"
+    kind: platform
+  - table: platform_rbac_audit
+    writeOwner: "@afenda/admin"
+    kind: platform
+
+  # --- ERP sole mutators (R1-F) — must match module.manifest.ts mutationTables ---
+  - table: md_party
+    writeOwner: "@afenda/master-data"
+    kind: erp
+  - table: md_item_group
+    writeOwner: "@afenda/master-data"
+    kind: erp
+  - table: md_item
+    writeOwner: "@afenda/master-data"
+    kind: erp
+  - table: md_warehouse
+    writeOwner: "@afenda/master-data"
+    kind: erp
+  - table: md_payment_term
+    writeOwner: "@afenda/master-data"
+    kind: erp
+  - table: md_tax_registration
+    writeOwner: "@afenda/master-data"
+    kind: erp
+  - table: md_party_role
+    writeOwner: "@afenda/master-data"
+    kind: erp
+  - table: md_party_address
+    writeOwner: "@afenda/master-data"
+    kind: erp
+  - table: md_party_contact
+    writeOwner: "@afenda/master-data"
+    kind: erp
+  - table: md_party_external_id
+    writeOwner: "@afenda/master-data"
+    kind: erp
+  - table: md_party_relationship
+    writeOwner: "@afenda/master-data"
+    kind: erp
+  - table: md_item_uom
+    writeOwner: "@afenda/master-data"
+    kind: erp
+  - table: md_item_barcode
+    writeOwner: "@afenda/master-data"
+    kind: erp
+  - table: md_item_external_id
+    writeOwner: "@afenda/master-data"
+    kind: erp
+  - table: md_item_alias
+    writeOwner: "@afenda/master-data"
+    kind: erp
+  - table: md_warehouse_external_id
+    writeOwner: "@afenda/master-data"
+    kind: erp
+  - table: md_item_template
+    writeOwner: "@afenda/master-data"
+    kind: erp
+  - table: md_item_template_attribute
+    writeOwner: "@afenda/master-data"
+    kind: erp
+  - table: md_item_template_attribute_option
+    writeOwner: "@afenda/master-data"
+    kind: erp
+  - table: md_item_variant
+    writeOwner: "@afenda/master-data"
+    kind: erp
+  - table: md_item_variant_attribute_value
+    writeOwner: "@afenda/master-data"
+    kind: erp
+  - table: md_change_request
+    writeOwner: "@afenda/master-data"
+    kind: erp
+  - table: md_import_batch
+    writeOwner: "@afenda/master-data"
+    kind: erp
+
+  - table: sales_order
+    writeOwner: "@afenda/sales"
+    kind: erp
+  - table: sales_order_line
+    writeOwner: "@afenda/sales"
+    kind: erp
+
+  - table: purchase_order
+    writeOwner: "@afenda/purchasing"
+    kind: erp
+  - table: purchase_order_line
+    writeOwner: "@afenda/purchasing"
+    kind: erp
+
+  - table: stock_movement
+    writeOwner: "@afenda/inventory"
+    kind: erp
+  - table: stock_movement_line
+    writeOwner: "@afenda/inventory"
+    kind: erp
+  - table: stock_balance
+    writeOwner: "@afenda/inventory"
+    kind: erp
+  - table: stock_ledger_entry
+    writeOwner: "@afenda/inventory"
+    kind: erp
+  - table: stock_reservation
+    writeOwner: "@afenda/inventory"
+    kind: erp
+
+  - table: goods_receipt
+    writeOwner: "@afenda/receiving"
+    kind: erp
+  - table: goods_receipt_line
+    writeOwner: "@afenda/receiving"
+    kind: erp
+  - table: receiving_discrepancy
+    writeOwner: "@afenda/receiving"
+    kind: erp
+
+  - table: delivery
+    writeOwner: "@afenda/fulfillment"
+    kind: erp
+  - table: delivery_line
+    writeOwner: "@afenda/fulfillment"
+    kind: erp
+  - table: delivery_pick
+    writeOwner: "@afenda/fulfillment"
+    kind: erp
+  - table: delivery_pack
+    writeOwner: "@afenda/fulfillment"
+    kind: erp
+  - table: proof_of_delivery
+    writeOwner: "@afenda/fulfillment"
+    kind: erp
+
+  - table: sales_invoice
+    writeOwner: "@afenda/receivables"
+    kind: erp
+  - table: sales_invoice_line
+    writeOwner: "@afenda/receivables"
+    kind: erp
+  - table: sales_credit_note
+    writeOwner: "@afenda/receivables"
+    kind: erp
+  - table: customer_allocation
+    writeOwner: "@afenda/receivables"
+    kind: erp
+  - table: customer_balance_projection
+    writeOwner: "@afenda/receivables"
+    kind: erp
+
+  - table: supplier_invoice
+    writeOwner: "@afenda/payables"
+    kind: erp
+  - table: supplier_invoice_line
+    writeOwner: "@afenda/payables"
+    kind: erp
+  - table: supplier_credit_note
+    writeOwner: "@afenda/payables"
+    kind: erp
+  - table: supplier_credit_note_line
+    writeOwner: "@afenda/payables"
+    kind: erp
+  - table: supplier_allocation
+    writeOwner: "@afenda/payables"
+    kind: erp
+  - table: supplier_balance_projection
+    writeOwner: "@afenda/payables"
+    kind: erp
+  - table: three_way_match_result
+    writeOwner: "@afenda/payables"
+    kind: erp
+
+  - table: payment_account
+    writeOwner: "@afenda/payments"
+    kind: erp
+  - table: payment
+    writeOwner: "@afenda/payments"
+    kind: erp
+  - table: payment_allocation
+    writeOwner: "@afenda/payments"
+    kind: erp
+  - table: payment_reversal
+    writeOwner: "@afenda/payments"
+    kind: erp
+
+  - table: journal
+    writeOwner: "@afenda/accounting"
+    kind: erp
+  - table: journal_line
+    writeOwner: "@afenda/accounting"
+    kind: erp
+  - table: ledger_posting
+    writeOwner: "@afenda/accounting"
+    kind: erp
+  - table: accounting_period
+    writeOwner: "@afenda/accounting"
+    kind: erp
+  - table: chart_of_account
+    writeOwner: "@afenda/accounting"
+    kind: erp
+  - table: ledger_account
+    writeOwner: "@afenda/accounting"
+    kind: erp
+  - table: account_role_mapping
+    writeOwner: "@afenda/accounting"
+    kind: erp
+  - table: posting_profile
+    writeOwner: "@afenda/accounting"
+    kind: erp
+  - table: posting_profile_line
+    writeOwner: "@afenda/accounting"
+    kind: erp
+  - table: source_posting_link
+    writeOwner: "@afenda/accounting"
+    kind: erp
+  - table: financial_posting_exception
+    writeOwner: "@afenda/accounting"
+    kind: erp

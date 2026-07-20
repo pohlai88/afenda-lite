@@ -1,11 +1,12 @@
 # Payments — Scratch contract (operative)
 
-> **Status:** `OPERATIVE` — Tier A Scratch contract; PAY-REQ ledger Pass (v1 carve-outs = Observation, not gaps).  
+> **Status:** `CLOSED` — Tier A Scratch contract; PAY-REQ ledger Pass (v1 carve-outs = Observation, not gaps).  
 > **As of:** 2026-07-21  
-> **Score:** **Pass** — REQ ledger closed; no open blocking findings in this file.  
+> **Score:** **Pass** — E2E stabilize verified; no open blocking findings.  
 > **Tier:** A operative contract — Scratch only; not Living DOC-001 SSOT.  
 > **Package:** `@afenda/payments` · Tables: `@afenda/db` · Band: R1-F ERP · Neon `br-tiny-hill-ao82jp6f`  
-> **Authority:** [package README](../../../packages/erp/payments/README.md) · this file owns gap ledger + invariants (Living `docs/` dormant).
+> **Authority:** [package README](../../../packages/erp/payments/README.md) · this file owns gap ledger + invariants (Living `docs/` dormant).  
+> **Last verify:** `pnpm --filter @afenda/payments check` · `lint` · `pnpm --filter @afenda/payables test` · `product-authorization-wiring` · `pnpm validate:modules` — all Pass (2026-07-21 close-out).
 
 ## Purpose
 
@@ -50,11 +51,13 @@ Org-scoped money movement: receipts, disbursements, internal transfers, and refu
 Table name may remain `payment_allocation`. Domain meaning is **Payment Application Instruction**:
 
 - `targetModule`: `receivables` \| `payables`
-- `targetDocumentType`: customer/supplier invoice or credit
+- `targetDocumentType` (v1 command input): `customer_invoice` \| `supplier_invoice`
 - `intendedAmount` / `appliedAmount` / `currencyCode`
 - `status`: `pending` \| `applied` \| `partially_applied` \| `rejected` \| `reversed`
 
 Receivables/Payables create authoritative customer/supplier allocations at the composition root.
+
+DB may still store historical `customer_credit` / `supplier_credit` instruction rows; **v1 commands reject** credit document types at `addPaymentApplicationInstruction` (Zod). Credit-document apply remains out of v1.
 
 ## Invariants
 
@@ -82,6 +85,7 @@ Receivables/Payables create authoritative customer/supplier allocations at the c
 | Fee / net settlement fields | Not modeled |
 | External bank / gateway sync | Future integration |
 | Accounting auto-journal from events | Accounting farm |
+| Credit-document application targets (`customer_credit` / `supplier_credit`) | Out of v1; command input invoice-only; composition root rejects residual credit instructions |
 
 ## Completeness ledger (PAY-REQ)
 
@@ -91,24 +95,25 @@ Receivables/Payables create authoritative customer/supplier allocations at the c
 | PAY-REQ-002 | Payment Account aggregate + reference on Payment | Pass | S1/S2 | schema + commands |
 | PAY-REQ-003 | Transfer dual legs + transfer_group_id | Pass | S2 | transfer tests |
 | PAY-REQ-004 | Direction vs purpose enums | Pass | S2 | types + schemas |
-| PAY-REQ-005 | Fine-grained permissions | Pass | S3 | catalog + auth tests |
+| PAY-REQ-005 | Fine-grained permissions | Pass | S3 | catalog + auth tests + shell per-form |
 | PAY-REQ-006 | idempotencyKey on material mutations | Pass | S2 | schemas + indexes |
-| PAY-REQ-007 | getPaymentApplicationAvailability + race | Pass | S2/S7 | race test |
-| PAY-REQ-008 | Refund source + max refundable | Pass | S2 | refund tests |
+| PAY-REQ-007 | getPaymentApplicationAvailability + race | Pass | S2/S7 | race test + web Action |
+| PAY-REQ-008 | Refund source + max refundable | Pass | S2 | refund tests + `paymentsCode` |
 | PAY-REQ-009 | Events: payment + instruction + transfer | Pass | S4 | events schema tests |
 | PAY-REQ-010 | Export split; Memory off prod barrel | Pass | S2 | package.json exports |
-| PAY-REQ-011 | Package error codes | Pass | S2 | error-codes.ts |
-| PAY-REQ-012 | Composition-root AR/AP apply on post/reverse | Pass | S5 | web orchestrator |
-| PAY-REQ-013 | module.manifest + catalog aligned | Pass | S3 | validate:modules |
+| PAY-REQ-011 | Package error codes | Pass | S2 | error-codes + failPayments in stores |
+| PAY-REQ-012 | Composition-root AR/AP apply on post/reverse | Pass | S5 | web orchestrator (invoice-only) |
+| PAY-REQ-013 | module.manifest + catalog aligned | Pass | S3 | `pnpm validate:modules` OK (2026-07-21) |
 | PAY-REQ-014 | Counterparty snapshot at post | Pass | S2 | post path |
-| PAY-REQ-015 | Reconcile CLI + README Ops | Pass | S7 | `pnpm --filter @afenda/payments reconcile` |
-| PAY-REQ-016 | Actions/UI/AGENTS surface sync | Pass | S6 | wiring tests + AGENTS |
+| PAY-REQ-015 | Reconcile CLI + README Ops | Pass | S7 | reconcile CLI Pass on prod branch org |
+| PAY-REQ-016 | Actions/UI/AGENTS surface sync | Pass | S6 | wiring tests + dual shell + actions.md |
 | PAY-REQ-017 | release/settlement/FX/fees/bank | Pass | S0 | Out of scope |
 | PAY-REQ-018 | Accounting auto-journal | Pass | S0 | Out of scope |
 | PAY-REQ-019 | Memory ≡ Drizzle atomic contract | Pass | S2 | both adapters |
 | PAY-REQ-020 | No peer ERP imports from payments | Pass | S2 | anti-shadow |
 | PAY-REQ-021 | Posted ≡ settled documented | Pass | S0 | README + this contract |
 | PAY-REQ-022 | Invariants in package contract | Pass | S0 | README |
+| PAY-REQ-023 | Credit-document apply | Observation | S0 | Out of v1 (see carve-outs) |
 
 ## Priority order (execution)
 
@@ -154,3 +159,4 @@ pnpm validate:modules
 | Events | [docs-V2/events/README.md](../../events/README.md) |
 | Tenancy | [docs-V2/tenancy/README.md](../../tenancy/README.md) |
 | Checkout | [AGENTS.md](../../../AGENTS.md) |
+| Actions inventory | [docs-V2/api/actions.md](../../api/actions.md) |

@@ -211,6 +211,27 @@
       "when": 1784576000000,
       "tag": "0029_md_import_batch",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1784577000000,
+      "tag": "0030_payables_gap_close",
+      "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1784577100000,
+      "tag": "0031_payables_credit_line_fks",
+      "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1784578000000,
+      "tag": "0032_accounting_gap_close",
+      "breakpoints": true
     }
   ]
 }

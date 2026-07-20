@@ -1,6 +1,6 @@
-import { db, platformAuditLog, platformDomainEvent } from "@afenda/db";
-import { fail, failFromUnknown, ok, type Result } from "@afenda/errors/result";
-import { publishEventCommandSchema } from "@afenda/events";
+import { createDrizzleAuditStore } from "@afenda/audit";
+import { ok, type Result } from "@afenda/errors/result";
+import { createEventPublisher } from "@afenda/events";
 
 import type {
 	AuditFactInput,
@@ -13,40 +13,34 @@ import type {
 const PURCHASING_MODULE = "purchasing" as const;
 
 export function createSqlAuditFactPort(): AuditFactPort {
+	const store = createDrizzleAuditStore();
 	return {
 		async record(input: AuditFactInput): Promise<Result<{ id: string }>> {
-			try {
-				const [row] = await db
-					.insert(platformAuditLog)
-					.values({
-						organizationId: input.organizationId,
-						actorUserId: input.actorUserId,
-						correlationId: input.correlationId,
-						module: PURCHASING_MODULE,
-						entity: input.entity,
-						entityId: input.entityId,
-						action: input.action,
-						changes: input.changes,
-						oldValue: input.oldValue ?? null,
-						newValue: input.newValue ?? null,
-					})
-					.returning({ id: platformAuditLog.id });
-
-				if (row === undefined) {
-					return fail("INTERNAL_ERROR", "audit fact write returned no row");
-				}
-				return ok({ id: row.id });
-			} catch (error) {
-				return failFromUnknown(error, "Failed to write purchasing audit fact");
+			const result = await store.write({
+				organizationId: input.organizationId,
+				actorUserId: input.actorUserId,
+				correlationId: input.correlationId,
+				module: PURCHASING_MODULE,
+				entity: input.entity,
+				entityId: input.entityId,
+				action: input.action,
+				changes: input.changes,
+				oldValue: input.oldValue ?? null,
+				newValue: input.newValue ?? null,
+			});
+			if (!result.ok) {
+				return result;
 			}
+			return ok({ id: result.data.id });
 		},
 	};
 }
 
 export function createSqlOutboxPort(): OutboxPort {
+	const publisher = createEventPublisher();
 	return {
 		async append(input: OutboxFactInput): Promise<Result<{ id: string }>> {
-			const parsed = publishEventCommandSchema.safeParse({
+			const result = await publisher.publish({
 				type: input.type,
 				sourceModule: PURCHASING_MODULE,
 				organizationId: input.organizationId,
@@ -58,38 +52,10 @@ export function createSqlOutboxPort(): OutboxPort {
 						: undefined,
 				payload: input.payload,
 			});
-			if (!parsed.success) {
-				return fail("BAD_REQUEST", "Invalid purchasing outbox event", {
-					fieldErrors: parsed.error.flatten().fieldErrors,
-				});
+			if (!result.ok) {
+				return result;
 			}
-
-			try {
-				const [row] = await db
-					.insert(platformDomainEvent)
-					.values({
-						organizationId: parsed.data.organizationId,
-						type: parsed.data.type,
-						sourceModule: PURCHASING_MODULE,
-						correlationId: parsed.data.correlationId,
-						causationId: parsed.data.causationId ?? null,
-						actorUserId: parsed.data.actorUserId,
-						payload: parsed.data.payload,
-						status: "pending",
-						attempts: 0,
-					})
-					.returning({ id: platformDomainEvent.id });
-
-				if (row === undefined) {
-					return fail("INTERNAL_ERROR", "outbox append returned no row");
-				}
-				return ok({ id: row.id });
-			} catch (error) {
-				return failFromUnknown(
-					error,
-					"Failed to append purchasing outbox event",
-				);
-			}
+			return ok({ id: result.data.id });
 		},
 	};
 }

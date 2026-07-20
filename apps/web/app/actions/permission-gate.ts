@@ -1,7 +1,6 @@
-import type { Session } from "@afenda/auth";
-
 import {
 	PERMISSION_DENIED_MESSAGE,
+	type PermissionSession,
 	type ProductPermissionCode,
 	sessionHasPermission,
 } from "@/modules/identity/domain/session-permission";
@@ -15,7 +14,7 @@ import {
  * denials use the governed API-002 `FORBIDDEN` failure shape.
  */
 export async function forbidUnlessPermission(
-	session: Session,
+	session: PermissionSession,
 	code: ProductPermissionCode,
 ): Promise<ActionFailure | null> {
 	const allowed = await sessionHasPermission(session, code);

@@ -3,22 +3,52 @@
 commands:
   - id: accounting.journal.create
     moduleId: accounting
-    permission: accounting.manage
+    permission: accounting.journal.create
   - id: accounting.journal.line.add
     moduleId: accounting
-    permission: accounting.manage
+    permission: accounting.journal.create
   - id: accounting.journal.post
     moduleId: accounting
-    permission: accounting.manage
+    permission: accounting.journal.post
   - id: accounting.journal.reverse
     moduleId: accounting
-    permission: accounting.manage
+    permission: accounting.journal.reverse
   - id: accounting.period.open
     moduleId: accounting
-    permission: accounting.manage
+    permission: accounting.period.open
+  - id: accounting.period.soft_close
+    moduleId: accounting
+    permission: accounting.period.soft_close
   - id: accounting.period.close
     moduleId: accounting
-    permission: accounting.manage
+    permission: accounting.period.close
+  - id: accounting.period.reopen
+    moduleId: accounting
+    permission: accounting.period.reopen
+  - id: accounting.chart.create
+    moduleId: accounting
+    permission: accounting.account.manage
+  - id: accounting.ledger_account.create
+    moduleId: accounting
+    permission: accounting.account.manage
+  - id: accounting.ledger_account.update
+    moduleId: accounting
+    permission: accounting.account.manage
+  - id: accounting.ledger_account.deactivate
+    moduleId: accounting
+    permission: accounting.account.manage
+  - id: accounting.account_role.map
+    moduleId: accounting
+    permission: accounting.account.manage
+  - id: accounting.posting_profile.upsert
+    moduleId: accounting
+    permission: accounting.posting_rule.manage
+  - id: accounting.source_event.post
+    moduleId: accounting
+    permission: accounting.journal.post
+  - id: accounting.exception.resolve
+    moduleId: accounting
+    permission: accounting.exception.manage
   - id: fulfillment.delivery.create
     moduleId: fulfillment
     permission: fulfillment.delivery.create
@@ -65,6 +95,12 @@ commands:
     moduleId: inventory
     permission: inventory.reservation.create
   - id: inventory.reservation.release
+    moduleId: inventory
+    permission: inventory.reservation.release
+  - id: inventory.reservation.expire
+    moduleId: inventory
+    permission: inventory.reservation.release
+  - id: inventory.reservation.cancel
     moduleId: inventory
     permission: inventory.reservation.release
   - id: master_data.party.create
@@ -264,7 +300,7 @@ commands:
     permission: master_data.import_approve
   - id: master_data.import.validate_party_batch
     moduleId: master-data
-    permission: master_data.import_approve
+    permission: master_data.manage
   - id: master_data.search.rebuild
     moduleId: master-data
     permission: master_data.manage
@@ -283,7 +319,22 @@ commands:
   - id: payables.credit_note.issue
     moduleId: payables
     permission: payables.manage
+  - id: payables.credit_note.create
+    moduleId: payables
+    permission: payables.manage
+  - id: payables.credit_note.line.add
+    moduleId: payables
+    permission: payables.manage
+  - id: payables.credit_note.post
+    moduleId: payables
+    permission: payables.manage
   - id: payables.payment.apply
+    moduleId: payables
+    permission: payables.manage
+  - id: payables.credit.apply
+    moduleId: payables
+    permission: payables.manage
+  - id: payables.payment_application.reverse
     moduleId: payables
     permission: payables.manage
   - id: payables.invoice.cancel

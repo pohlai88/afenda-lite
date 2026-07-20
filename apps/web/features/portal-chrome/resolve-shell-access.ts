@@ -1,4 +1,5 @@
 import {
+	CLIENT_SHELL_NAV,
 	OPERATOR_SHELL_NAV,
 	type ShellNavItem,
 } from "@/features/portal-chrome/nav-config";
@@ -17,13 +18,9 @@ async function itemVisible(
 	return checks.some(Boolean);
 }
 
-/**
- * Filters module-tagged shell nav via Identity permission ports only.
- * No vertical domain imports (Declarations · FFT domain).
- */
-export async function resolveOperatorShellNav(
+async function filterShellNav(
 	session: PermissionSession,
-	items: readonly ShellNavItem[] = OPERATOR_SHELL_NAV,
+	items: readonly ShellNavItem[],
 ): Promise<ShellNavItem[]> {
 	const visible: ShellNavItem[] = [];
 	for (const item of items) {
@@ -32,4 +29,25 @@ export async function resolveOperatorShellNav(
 		}
 	}
 	return visible;
+}
+
+/**
+ * Filters module-tagged operator shell nav via Identity permission ports only.
+ * No vertical domain package imports.
+ */
+export async function resolveOperatorShellNav(
+	session: PermissionSession,
+	items: readonly ShellNavItem[] = OPERATOR_SHELL_NAV,
+): Promise<ShellNavItem[]> {
+	return filterShellNav(session, items);
+}
+
+/**
+ * Filters client workspace module nav via Identity permission ports only.
+ */
+export async function resolveClientShellNav(
+	session: PermissionSession,
+	items: readonly ShellNavItem[] = CLIENT_SHELL_NAV,
+): Promise<ShellNavItem[]> {
+	return filterShellNav(session, items);
 }

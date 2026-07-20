@@ -3,13 +3,25 @@
 queries:
   - id: accounting.journal.get
     moduleId: accounting
-    permission: accounting.read
+    permission: accounting.journal.read
   - id: accounting.journal.list
     moduleId: accounting
-    permission: accounting.read
+    permission: accounting.journal.read
   - id: accounting.trial-balance.get
     moduleId: accounting
-    permission: accounting.read
+    permission: accounting.trial_balance.read
+  - id: accounting.ledger_account.list
+    moduleId: accounting
+    permission: accounting.account.read
+  - id: accounting.ledger_activity.get
+    moduleId: accounting
+    permission: accounting.ledger.read
+  - id: accounting.source_trace.get
+    moduleId: accounting
+    permission: accounting.journal.read
+  - id: accounting.exceptions.list
+    moduleId: accounting
+    permission: accounting.exception.read
   - id: fulfillment.delivery.get
     moduleId: fulfillment
     permission: fulfillment.delivery.read
@@ -20,6 +32,9 @@ queries:
     moduleId: inventory
     permission: inventory.movement.read
   - id: inventory.movement.list
+    moduleId: inventory
+    permission: inventory.movement.read
+  - id: inventory.reservation.list
     moduleId: inventory
     permission: inventory.movement.read
   - id: inventory.stock.availability

@@ -39,7 +39,7 @@ Purpose enum: `customer_receipt` · `supplier_disbursement` · `customer_refund`
 
 ### Application instructions
 
-`payment_allocation` rows are **PaymentApplicationInstruction** records (`targetModule`, `targetDocumentType`, `targetDocumentId`, `intendedAmount`, `appliedAmount`, `status`). Composition roots mark applied/rejected via `markApplicationInstructionApplied` / `markApplicationInstructionRejected`.
+`payment_allocation` rows are **PaymentApplicationInstruction** records (`targetModule`, `targetDocumentType`, `targetDocumentId`, `intendedAmount`, `appliedAmount`, `status`). V1 command input accepts **invoice** document types only (`customer_invoice` \| `supplier_invoice`). Composition roots mark applied/rejected via `markApplicationInstructionApplied` / `markApplicationInstructionRejected`.
 
 Availability for a posted payment:
 
@@ -82,6 +82,7 @@ Reports unbalanced transfer pairs, pending/rejected instructions on posted payme
 - No fee / net-settlement fields
 - No external bank / gateway sync
 - Accounting auto-journal from payment events is out of this package (events are emitted)
+- Credit-document application targets (`customer_credit` / `supplier_credit`) — out of v1
 
 ### Ops
 

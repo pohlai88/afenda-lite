@@ -6,7 +6,7 @@ Org-scoped stock movements (`draft` → `posted` | `cancelled`), immutable ledge
 
 **Tables live in `@afenda/db`.** Mutations are sole-owned here — do not dual-write `stock_movement` / `stock_balance` / `stock_ledger_entry` / `stock_reservation` from `apps/web` or peer ERP packages. Do not invent shadow product tables (`inventory_product`, local item catalogs).
 
-**Authority:** `stock_ledger_entry` is the immutable quantity history. `stock_balance` is the operational projection. Reservations are a **separate aggregate** (`reserveStock` / `releaseReservation`) — not movement types. Transfer posts both legs atomically; **in-transit is not supported** in v1. Scope is **quantity-only** (valuation belongs to Accounting).
+**Authority:** `stock_ledger_entry` is the immutable quantity history. `stock_balance` is the operational projection. Reservations are a **separate aggregate** (`reserveStock` / `releaseReservation` / `expireReservation` / `cancelReservation`) — not movement types. Transfer posts both legs atomically; **in-transit is not supported** in v1. Scope is **quantity-only** (valuation belongs to Accounting). Bin/lot/serial remain out of scope.
 
 Use this package from Platform / app server code when creating draft stock movements, adding lines, posting, cancelling drafts, reversing posted movements, reserving stock, or releasing reservations. Masters resolve through `@afenda/master-data` lookups — never mutate `md_*` from the inventory store. Toolchain: root `engines` **Node 24.x** · **pnpm ≥10.33.4**.
 
@@ -23,8 +23,11 @@ import {
   createReversalMovement,
   reserveStock,
   releaseReservation,
+  expireReservation,
+  cancelReservation,
   getStockMovementById,
   listStockMovements,
+  listStockReservations,
   getStockAvailability,
 } from "@afenda/inventory";
 
@@ -57,13 +60,13 @@ Pass request-scoped `organizationId`, `actorUserId`, `correlationId`, and `idemp
 | `cancelStockMovement` | `inventory.movement.cancel` |
 | Adjustment post (source `manual_adjustment`) | `inventory.adjustment.post` |
 | `reserveStock` | `inventory.reservation.create` |
-| `releaseReservation` | `inventory.reservation.release` |
-| `getStockMovementById` / `listStockMovements` | `inventory.movement.read` |
+| `releaseReservation` / `expireReservation` / `cancelReservation` | `inventory.reservation.release` |
+| `getStockMovementById` / `listStockMovements` / `listStockReservations` | `inventory.movement.read` |
 | `getStockAvailability` | `inventory.availability.read` |
 
-**Event types:** `inventory.movement.created.v1` · `inventory.movement.posted.v1` · `inventory.movement.cancelled.v1` · `inventory.stock.reserved.v1` · `inventory.reservation.released.v1` (catalog in `@afenda/events`).
+**Event types:** `inventory.movement.created.v1` · `inventory.movement.posted.v1` · `inventory.movement.cancelled.v1` · `inventory.stock.reserved.v1` · `inventory.reservation.released.v1` · `inventory.reservation.expired.v1` · `inventory.reservation.cancelled.v1` (catalog in `@afenda/events`).
 
-**Living consumers:** `apps/web` thin Actions + `features/inventory/*` + `/admin/inventory` · `/client/inventory`. Peers: `@afenda/receiving` and `@afenda/fulfillment` call Inventory on post (Inventory never imports them).
+**Living consumers:** `apps/web` thin Actions + `features/inventory/*` + `/admin/inventory` (operator mutations) · `/client/inventory` (read-only — client role cannot call operator Actions). Both surfaces are linked from permission-gated shell nav (`inventory.movement.read`). DataTables, master selects, `?movementId=` detail, reservation list. UI create is opening-balance receipt / transfer / adjustment only — peer `receiving`/`fulfillment` movements must carry source-event linkage from those packages. Peers: `@afenda/receiving` and `@afenda/fulfillment` call Inventory on post (Inventory never imports them).
 
 ## Store / ports
 

@@ -1,5 +1,5 @@
 import { getSession, requireRole } from "@afenda/auth";
-import { listPayments } from "@afenda/payments";
+import { listPaymentAccounts, listPayments } from "@afenda/payments";
 import {
 	Alert,
 	AlertDescription,
@@ -12,11 +12,13 @@ import {
 } from "@afenda/ui-system";
 
 import { requirePermission } from "@/features/auth/require-permission";
+import { PaymentAccountsTable } from "@/features/payments/payment-accounts-table";
 import {
 	AddPaymentApplicationInstructionForm,
 	CreateAndPostPaymentTransferForm,
-	CreatePaymentAccountForm,
 	CreateDraftPaymentForm,
+	CreatePaymentAccountForm,
+	GetPaymentApplicationAvailabilityForm,
 	PostPaymentForm,
 	PostRefundForm,
 	ReversePaymentForm,
@@ -28,13 +30,30 @@ import { sessionHasPermission } from "@/modules/identity/domain/session-permissi
 type PaymentsShellProps = { surface: "admin" | "client" };
 
 const formSections = [
-	["Create draft payment", CreateDraftPaymentForm],
-	["Create payment account", CreatePaymentAccountForm],
-	["Add application instruction", AddPaymentApplicationInstructionForm],
-	["Create and post transfer", CreateAndPostPaymentTransferForm],
-	["Post payment", PostPaymentForm],
-	["Reverse payment", ReversePaymentForm],
-	["Post refund", PostRefundForm],
+	["Create draft payment", CreateDraftPaymentForm, "payments.payment.create"],
+	[
+		"Create payment account",
+		CreatePaymentAccountForm,
+		"payments.account.manage",
+	],
+	[
+		"Add application instruction",
+		AddPaymentApplicationInstructionForm,
+		"payments.application_instruction.manage",
+	],
+	[
+		"Create and post transfer",
+		CreateAndPostPaymentTransferForm,
+		"payments.transfer.create",
+	],
+	["Post payment", PostPaymentForm, "payments.payment.post"],
+	["Reverse payment", ReversePaymentForm, "payments.payment.reverse"],
+	["Post refund", PostRefundForm, "payments.refund.create"],
+	[
+		"Application availability",
+		GetPaymentApplicationAvailabilityForm,
+		"payments.availability.read",
+	],
 ] as const;
 
 /** Payments console — RSC reads via `@afenda/payments`; mutations via Actions. */
@@ -42,22 +61,35 @@ export async function PaymentsShell({ surface }: PaymentsShellProps) {
 	const session =
 		surface === "admin" ? await requireRole("operator") : await getSession();
 	await requirePermission(session, "payments.payment.read");
-	const canManage = (
-		await Promise.all([
-			sessionHasPermission(session, "payments.payment.create"),
-			sessionHasPermission(session, "payments.account.manage"),
-			sessionHasPermission(session, "payments.application_instruction.manage"),
-			sessionHasPermission(session, "payments.payment.post"),
-		])
-	).some(Boolean);
-	const paymentsResult = await listPayments(
-		{
-			organizationId: session.orgId,
-			actorUserId: session.userId,
-			pageSize: 50,
-		},
-		createPaymentsCommandOptions(),
+	const formPermissions = await Promise.all(
+		formSections.map(([, , permission]) =>
+			sessionHasPermission(session, permission),
+		),
 	);
+	const canReadAccounts = await sessionHasPermission(
+		session,
+		"payments.account.read",
+	);
+	const options = createPaymentsCommandOptions();
+	const [paymentsResult, accountsResult] = await Promise.all([
+		listPayments(
+			{
+				organizationId: session.orgId,
+				actorUserId: session.userId,
+				pageSize: 50,
+			},
+			options,
+		),
+		canReadAccounts
+			? listPaymentAccounts(
+					{
+						organizationId: session.orgId,
+						actorUserId: session.userId,
+					},
+					options,
+				)
+			: Promise.resolve(null),
+	]);
 	const payments = paymentsResult.ok ? paymentsResult.data : [];
 	const paymentRows = payments.map((payment) => ({
 		id: payment.id,
@@ -69,6 +101,15 @@ export async function PaymentsShell({ surface }: PaymentsShellProps) {
 		amount: payment.amount,
 		purpose: payment.purpose,
 		instructionCount: payment.applicationInstructions.length,
+	}));
+	const accounts = accountsResult?.ok ? accountsResult.data : [];
+	const accountRows = accounts.map((account) => ({
+		id: account.id,
+		code: account.code,
+		name: account.name,
+		kind: account.kind,
+		currencyCode: account.currencyCode,
+		active: account.active,
 	}));
 
 	return (
@@ -91,6 +132,25 @@ export async function PaymentsShell({ surface }: PaymentsShellProps) {
 				</Alert>
 			) : null}
 
+			{canReadAccounts && accountsResult !== null && !accountsResult.ok ? (
+				<Alert>
+					<AlertTitle>Could not load payment accounts</AlertTitle>
+					<AlertDescription>{accountsResult.message}</AlertDescription>
+				</Alert>
+			) : null}
+
+			{canReadAccounts ? (
+				<Card>
+					<CardHeader>
+						<CardTitle>Payment accounts</CardTitle>
+						<CardDescription>{accounts.length} account(s)</CardDescription>
+					</CardHeader>
+					<CardContent>
+						<PaymentAccountsTable rows={accountRows} />
+					</CardContent>
+				</Card>
+			) : null}
+
 			<Card>
 				<CardHeader>
 					<CardTitle>Payment register</CardTitle>
@@ -103,13 +163,13 @@ export async function PaymentsShell({ surface }: PaymentsShellProps) {
 				</CardContent>
 			</Card>
 
-			{formSections.map(([title, Form]) => (
+			{formSections.map(([title, Form], index) => (
 				<Card key={title}>
 					<CardHeader>
 						<CardTitle>{title}</CardTitle>
 					</CardHeader>
 					<CardContent>
-						<Form canManage={canManage} />
+						<Form canManage={formPermissions[index] ?? false} />
 					</CardContent>
 				</Card>
 			))}

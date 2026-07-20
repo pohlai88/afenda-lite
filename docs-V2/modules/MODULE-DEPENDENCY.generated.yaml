@@ -82,10 +82,13 @@ modules:
   - id: receiving
     optionalIntegratesWith:
       - moduleId: purchasing
+        style: ports
+      - moduleId: inventory
+        style: events
+      - moduleId: payables
         style: events
     required:
       - master-data
-      - inventory
   - id: sales
     optionalIntegratesWith:
       - moduleId: inventory

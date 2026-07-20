@@ -23,6 +23,8 @@ const schema = z.object({
 	invoiceId: z.string().uuid(),
 	amount: z.coerce.number().positive(),
 	paymentId: z.string().uuid(),
+	paymentApplicationInstructionId: z.string().uuid(),
+	idempotencyKey: z.string().trim().min(1).max(128),
 });
 
 export async function applySupplierPaymentAction(
@@ -39,11 +41,15 @@ export async function applySupplierPaymentAction(
 				invoiceId: formData.get("invoiceId"),
 				amount: formData.get("amount"),
 				paymentId: formData.get("paymentId"),
+				paymentApplicationInstructionId: formData.get(
+					"paymentApplicationInstructionId",
+				),
+				idempotencyKey: formData.get("idempotencyKey"),
 			});
 			if (!parsed.success)
 				return actionFail(
 					"VALIDATION_ERROR",
-					"Enter a valid invoice, amount, and payment.",
+					"Enter a valid invoice, amount, payment, instruction, and idempotency key.",
 					parsed.details,
 				);
 			const mapped = mapPackageResult(

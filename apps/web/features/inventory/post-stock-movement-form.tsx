@@ -22,6 +22,8 @@ const initialState: PostStockMovementActionState = null;
 
 type PostStockMovementFormProps = {
 	canPost: boolean;
+	defaultMovementId?: string;
+	defaultExpectedVersion?: number;
 };
 
 /**
@@ -29,15 +31,14 @@ type PostStockMovementFormProps = {
  */
 export function PostStockMovementForm({
 	canPost,
+	defaultMovementId,
+	defaultExpectedVersion,
 }: PostStockMovementFormProps) {
 	const [state, formAction, pending] = useActionState(
 		postStockMovementAction,
 		initialState,
 	);
-	const idempotencyKey = useMemo(
-		() => `post:${crypto.randomUUID()}`,
-		[state],
-	);
+	const idempotencyKey = useMemo(() => `post:${crypto.randomUUID()}`, [state]);
 
 	if (!canPost) {
 		return (
@@ -79,7 +80,12 @@ export function PostStockMovementForm({
 			{showFormError && state?.ok === false ? (
 				<FormError>{state.message}</FormError>
 			) : null}
-			<input type="hidden" name="idempotencyKey" value={idempotencyKey} readOnly />
+			<input
+				type="hidden"
+				name="idempotencyKey"
+				value={idempotencyKey}
+				readOnly
+			/>
 			<FormField
 				label="Movement id"
 				required
@@ -92,6 +98,7 @@ export function PostStockMovementForm({
 					required
 					autoComplete="off"
 					disabled={pending}
+					defaultValue={defaultMovementId ?? ""}
 				/>
 			</FormField>
 			<FormField
@@ -107,6 +114,11 @@ export function PostStockMovementForm({
 					min="1"
 					required
 					disabled={pending}
+					defaultValue={
+						defaultExpectedVersion !== undefined
+							? String(defaultExpectedVersion)
+							: undefined
+					}
 				/>
 			</FormField>
 			<Button type="submit" disabled={pending}>

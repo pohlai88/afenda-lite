@@ -38,9 +38,11 @@ export function createPurchaseOrderMatchQueryPort(
 				supplierPartyId: order.partyId,
 				status: order.status,
 				currencyCode: order.currencyCode,
+				version: order.version,
 				lines: order.lines.map((line) => ({
 					itemId: line.itemId,
 					quantity: line.quantity,
+					unitPrice: line.unitPrice,
 				})),
 			});
 		},
@@ -84,6 +86,7 @@ export function createGoodsReceiptMatchQueryPort(
 				status: receipt.status,
 				sourceType: receipt.sourceType,
 				sourceId: receipt.sourceId,
+				version: receipt.version,
 				lines: receipt.lines.map((line) => ({
 					itemId: line.itemId,
 					quantityReceived: line.quantityReceived,

@@ -3,10 +3,7 @@ import "server-only";
 import { fail, ok, type Result } from "@afenda/errors/result";
 import type { z } from "zod";
 
-import {
-	type PaymentsAuthorizationPort,
-	requirePaymentsPermission,
-} from "./authorization";
+import { requirePaymentsPermission } from "./authorization";
 import type {
 	Payment,
 	PaymentAccount,
@@ -32,6 +29,7 @@ import {
 } from "./schemas";
 
 export type { PaymentsAuthorizationPort } from "./authorization";
+export * from "./error-codes";
 export type {
 	Payment,
 	PaymentAccount,
@@ -46,10 +44,9 @@ export type {
 	PaymentsStore,
 	RefundSource,
 } from "./model";
-export * from "./error-codes";
 export * from "./permissions";
-export * from "./schemas";
 export { reconcilePayments } from "./reconcile";
+export * from "./schemas";
 
 const parse = <T>(
 	schema: z.ZodType<T>,
@@ -87,11 +84,7 @@ export async function createPaymentAccount(
 		"Invalid payment-account input",
 	);
 	if (!parsed.ok) return parsed;
-	const allowed = await permit(
-		options,
-		parsed.data,
-		"payments.account.manage",
-	);
+	const allowed = await permit(options, parsed.data, "payments.account.manage");
 	if (!allowed.ok) return allowed;
 	return resolvePaymentsStore(options.store).createPaymentAccount({
 		organizationId: parsed.data.organizationId,
@@ -132,11 +125,7 @@ export async function createDraftPayment(
 		"Invalid payment create input",
 	);
 	if (!parsed.ok) return parsed;
-	const allowed = await permit(
-		options,
-		parsed.data,
-		"payments.payment.create",
-	);
+	const allowed = await permit(options, parsed.data, "payments.payment.create");
 	if (!allowed.ok) return allowed;
 	const data = parsed.data;
 	return resolvePaymentsStore(options.store).createDraft({
@@ -236,11 +225,7 @@ export async function createAndPostPaymentTransfer(
 		"Invalid payment transfer input",
 	);
 	if (!parsed.ok) return parsed;
-	const create = await permit(
-		options,
-		parsed.data,
-		"payments.transfer.create",
-	);
+	const create = await permit(options, parsed.data, "payments.transfer.create");
 	if (!create.ok) return create;
 	const post = await permit(options, parsed.data, "payments.transfer.post");
 	if (!post.ok) return post;
@@ -296,7 +281,9 @@ export async function markApplicationInstructionApplied(
 		"payments.application_instruction.manage",
 	);
 	if (!allowed.ok) return allowed;
-	return resolvePaymentsStore(options.store).markInstructionApplied(parsed.data);
+	return resolvePaymentsStore(options.store).markInstructionApplied(
+		parsed.data,
+	);
 }
 
 export async function markApplicationInstructionRejected(

@@ -18,6 +18,34 @@ tables:
     packageName: "@afenda/accounting"
     schemaOwner: "@afenda/db"
     table: accounting_period
+  - moduleId: accounting
+    packageName: "@afenda/accounting"
+    schemaOwner: "@afenda/db"
+    table: chart_of_account
+  - moduleId: accounting
+    packageName: "@afenda/accounting"
+    schemaOwner: "@afenda/db"
+    table: ledger_account
+  - moduleId: accounting
+    packageName: "@afenda/accounting"
+    schemaOwner: "@afenda/db"
+    table: account_role_mapping
+  - moduleId: accounting
+    packageName: "@afenda/accounting"
+    schemaOwner: "@afenda/db"
+    table: posting_profile
+  - moduleId: accounting
+    packageName: "@afenda/accounting"
+    schemaOwner: "@afenda/db"
+    table: posting_profile_line
+  - moduleId: accounting
+    packageName: "@afenda/accounting"
+    schemaOwner: "@afenda/db"
+    table: source_posting_link
+  - moduleId: accounting
+    packageName: "@afenda/accounting"
+    schemaOwner: "@afenda/db"
+    table: financial_posting_exception
   - moduleId: fulfillment
     packageName: "@afenda/fulfillment"
     schemaOwner: "@afenda/db"
@@ -146,6 +174,10 @@ tables:
     packageName: "@afenda/master-data"
     schemaOwner: "@afenda/db"
     table: md_change_request
+  - moduleId: master-data
+    packageName: "@afenda/master-data"
+    schemaOwner: "@afenda/db"
+    table: md_import_batch
   - moduleId: payables
     packageName: "@afenda/payables"
     schemaOwner: "@afenda/db"
@@ -158,6 +190,10 @@ tables:
     packageName: "@afenda/payables"
     schemaOwner: "@afenda/db"
     table: supplier_credit_note
+  - moduleId: payables
+    packageName: "@afenda/payables"
+    schemaOwner: "@afenda/db"
+    table: supplier_credit_note_line
   - moduleId: payables
     packageName: "@afenda/payables"
     schemaOwner: "@afenda/db"

@@ -178,6 +178,7 @@ describe("N11 product authorization wiring", () => {
 			"app/actions/cancel-purchase-order.ts": ["purchasing.order.cancel"],
 			"app/actions/close-purchase-order.ts": ["purchasing.order.close"],
 			"app/actions/list-stock-movements.ts": ["inventory.movement.read"],
+			"app/actions/list-stock-reservations.ts": ["inventory.movement.read"],
 			"app/actions/get-stock-movement.ts": ["inventory.movement.read"],
 			"app/actions/get-stock-availability.ts": ["inventory.availability.read"],
 			"app/actions/create-stock-movement.ts": [
@@ -190,6 +191,8 @@ describe("N11 product authorization wiring", () => {
 			"app/actions/create-reversal-movement.ts": ["inventory.movement.post"],
 			"app/actions/reserve-stock.ts": ["inventory.reservation.create"],
 			"app/actions/release-reservation.ts": ["inventory.reservation.release"],
+			"app/actions/expire-reservation.ts": ["inventory.reservation.release"],
+			"app/actions/cancel-reservation.ts": ["inventory.reservation.release"],
 			"app/actions/list-goods-receipts.ts": ["receiving.receipt.read"],
 			"app/actions/get-goods-receipt.ts": ["receiving.receipt.read"],
 			"app/actions/create-goods-receipt.ts": ["receiving.receipt.create"],
@@ -236,7 +239,12 @@ describe("N11 product authorization wiring", () => {
 			"app/actions/match-supplier-invoice.ts": ["payables.manage"],
 			"app/actions/post-supplier-invoice.ts": ["payables.manage"],
 			"app/actions/issue-supplier-credit-note.ts": ["payables.manage"],
+			"app/actions/create-draft-supplier-credit-note.ts": ["payables.manage"],
+			"app/actions/add-supplier-credit-note-line.ts": ["payables.manage"],
+			"app/actions/post-supplier-credit-note.ts": ["payables.manage"],
+			"app/actions/apply-supplier-credit.ts": ["payables.manage"],
 			"app/actions/apply-supplier-payment.ts": ["payables.manage"],
+			"app/actions/reverse-supplier-payment-application.ts": ["payables.manage"],
 			"app/actions/cancel-supplier-invoice.ts": ["payables.manage"],
 			"app/actions/get-payment.ts": ["payments.payment.read"],
 			"app/actions/list-payments.ts": ["payments.payment.read"],
@@ -244,19 +252,31 @@ describe("N11 product authorization wiring", () => {
 			"app/actions/create-payment-account.ts": ["payments.account.manage"],
 			"app/actions/list-payment-accounts.ts": ["payments.account.read"],
 			"app/actions/add-payment-application-instruction.ts": ["payments.application_instruction.manage"],
-			"app/actions/create-and-post-payment-transfer.ts": ["payments.transfer.create"],
+			"app/actions/create-and-post-payment-transfer.ts": [
+				"payments.transfer.create",
+				"payments.transfer.post",
+			],
 			"app/actions/post-payment.ts": ["payments.payment.post"],
 			"app/actions/reverse-payment.ts": ["payments.payment.reverse"],
 			"app/actions/post-refund.ts": ["payments.refund.create", "payments.refund.post"],
-			"app/actions/get-journal.ts": ["accounting.read"],
-			"app/actions/list-journals.ts": ["accounting.read"],
-			"app/actions/get-trial-balance.ts": ["accounting.read"],
-			"app/actions/create-draft-journal.ts": ["accounting.manage"],
-			"app/actions/add-journal-line.ts": ["accounting.manage"],
-			"app/actions/post-journal.ts": ["accounting.manage"],
-			"app/actions/reverse-journal.ts": ["accounting.manage"],
-			"app/actions/open-accounting-period.ts": ["accounting.manage"],
-			"app/actions/close-accounting-period.ts": ["accounting.manage"],
+			"app/actions/get-payment-application-availability.ts": [
+				"payments.availability.read",
+			],
+			"app/actions/get-journal.ts": ["accounting.journal.read"],
+			"app/actions/list-journals.ts": ["accounting.journal.read"],
+			"app/actions/get-trial-balance.ts": ["accounting.trial_balance.read"],
+			"app/actions/create-draft-journal.ts": ["accounting.journal.create"],
+			"app/actions/add-journal-line.ts": ["accounting.journal.create"],
+			"app/actions/post-journal.ts": ["accounting.journal.post"],
+			"app/actions/reverse-journal.ts": ["accounting.journal.reverse"],
+			"app/actions/open-accounting-period.ts": ["accounting.period.open"],
+			"app/actions/soft-close-accounting-period.ts": [
+				"accounting.period.soft_close",
+			],
+			"app/actions/close-accounting-period.ts": ["accounting.period.close"],
+			"app/actions/reopen-accounting-period.ts": [
+				"accounting.period.reopen",
+			],
 			"features/org-admin/org-admin-shell.tsx": [
 				"org.roles.manage",
 				"clients.invite",
@@ -284,6 +304,7 @@ describe("N11 product authorization wiring", () => {
 			],
 			"features/inventory/inventory-shell.tsx": [
 				"inventory.movement.read",
+				"inventory.availability.read",
 				"inventory.movement.create",
 				"inventory.movement.post",
 				"inventory.movement.cancel",
@@ -329,12 +350,17 @@ describe("N11 product authorization wiring", () => {
 				"payments.payment.read",
 				"payments.payment.create",
 				"payments.account.manage",
+				"payments.account.read",
 				"payments.application_instruction.manage",
+				"payments.transfer.create",
 				"payments.payment.post",
+				"payments.payment.reverse",
+				"payments.refund.create",
+				"payments.availability.read",
 			],
 			"features/accounting/accounting-shell.tsx": [
-				"accounting.read",
-				"accounting.manage",
+				"accounting.journal.read",
+				"accounting.journal.create",
 			],
 		} as const;
 
@@ -436,7 +462,12 @@ describe("N11 product authorization wiring", () => {
 			"app/actions/match-supplier-invoice.ts",
 			"app/actions/post-supplier-invoice.ts",
 			"app/actions/issue-supplier-credit-note.ts",
+			"app/actions/create-draft-supplier-credit-note.ts",
+			"app/actions/add-supplier-credit-note-line.ts",
+			"app/actions/post-supplier-credit-note.ts",
+			"app/actions/apply-supplier-credit.ts",
 			"app/actions/apply-supplier-payment.ts",
+			"app/actions/reverse-supplier-payment-application.ts",
 			"app/actions/cancel-supplier-invoice.ts",
 		] as const;
 		for (const relativePath of payablesActions) {
@@ -476,6 +507,7 @@ describe("N11 product authorization wiring", () => {
 			"app/actions/post-payment.ts",
 			"app/actions/reverse-payment.ts",
 			"app/actions/post-refund.ts",
+			"app/actions/get-payment-application-availability.ts",
 		] as const;
 		for (const relativePath of paymentsActions) {
 			const actionSource = source(relativePath);
@@ -508,7 +540,9 @@ describe("N11 product authorization wiring", () => {
 			"app/actions/post-journal.ts",
 			"app/actions/reverse-journal.ts",
 			"app/actions/open-accounting-period.ts",
+			"app/actions/soft-close-accounting-period.ts",
 			"app/actions/close-accounting-period.ts",
+			"app/actions/reopen-accounting-period.ts",
 		] as const;
 		for (const relativePath of accountingActions) {
 			const actionSource = source(relativePath);

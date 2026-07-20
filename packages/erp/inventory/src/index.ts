@@ -41,12 +41,15 @@ export {
 export { createMasterDataLookupPort } from "./master-lookup";
 export {
 	addStockMovementLine,
+	cancelReservation,
 	cancelStockMovement,
 	createReversalMovement,
 	createStockMovement,
+	expireReservation,
 	getStockAvailability,
 	getStockMovementById,
 	listStockMovements,
+	listStockReservations,
 	postStockMovement,
 	releaseReservation,
 	reserveStock,
@@ -64,12 +67,15 @@ export {
 } from "./permissions";
 export {
 	addStockMovementLineInputSchema,
+	cancelReservationInputSchema,
 	cancelStockMovementInputSchema,
 	createReversalMovementInputSchema,
 	createStockMovementInputSchema,
+	expireReservationInputSchema,
 	getStockAvailabilityInputSchema,
 	getStockMovementByIdInputSchema,
 	listStockMovementsInputSchema,
+	listStockReservationsInputSchema,
 	postStockMovementInputSchema,
 	releaseReservationInputSchema,
 	reserveStockInputSchema,
@@ -83,8 +89,12 @@ export type {
 	MovementListFilter,
 	MovementPostRecord,
 	ReservationCreateRecord,
+	ReservationListFilter,
 	ReservationReleaseRecord,
+	ReservationTerminalEventType,
+	ReservationTerminalStatus,
 } from "./store";
+export { reservationTerminalEventType } from "./store";
 export {
 	INVENTORY_MOVEMENT_SOURCES,
 	STOCK_MOVEMENT_STATUSES,

@@ -19,12 +19,14 @@ import {
 	validateErpAuthorizationPorts,
 	validateEventContracts,
 	validateEvents,
+	validateCatalogDiskParity,
 	validateForeignSchemaImports,
 	validateModuleIdentity,
 	validateModuleReferences,
 	validateMutationTablesExist,
 	validatePermissions,
 	validatePersistenceOwnership,
+	validateSoleMutatorBoundary,
 } from "./checks.mjs";
 
 /**
@@ -268,6 +270,11 @@ export function runNegativeFixtures() {
 			recursive: true,
 		});
 		writeFileSync(
+			join(tmpRoot, "packages", "erp", "sales", "package.json"),
+			JSON.stringify({ name: "@afenda/sales" }),
+			"utf8",
+		);
+		writeFileSync(
 			join(tmpRoot, "packages", "erp", "sales", "src", "bad.ts"),
 			`import { x } from "@afenda/master-data/src/party";\n`,
 			"utf8",
@@ -307,6 +314,11 @@ export function runNegativeFixtures() {
 		mkdirSync(join(tmpRoot, "packages", "erp", "master-data", "src"), {
 			recursive: true,
 		});
+		writeFileSync(
+			join(tmpRoot, "packages", "erp", "master-data", "package.json"),
+			JSON.stringify({ name: "@afenda/master-data" }),
+			"utf8",
+		);
 		mkdirSync(join(tmpRoot, "apps", "web", "lib", "erp"), {
 			recursive: true,
 		});
@@ -317,9 +329,60 @@ export function runNegativeFixtures() {
 				validateErpAuthorizationPorts(tmpRoot),
 			) ?? "",
 		);
+
+		const ownershipPath = join(tmpRoot, "SCHEMA-OWNERSHIP-MANIFEST.yaml");
+		writeFileSync(
+			ownershipPath,
+			[
+				"tables:",
+				'  - table: sales_order',
+				'    writeOwner: "@afenda/sales"',
+				"    kind: erp",
+				'  - table: md_party',
+				'    writeOwner: "@afenda/master-data"',
+				"    kind: erp",
+				"",
+			].join("\n"),
+			"utf8",
+		);
+		writeFileSync(
+			join(tmpRoot, "packages", "erp", "sales", "src", "steal.ts"),
+			`import { mdParty } from "@afenda/db";\ndb.insert(mdParty);\n`,
+			"utf8",
+		);
+		misses.push(
+			expectFail(
+				"sole-mutator write-surface import",
+				"sole-mutator write-surface import",
+				validateSoleMutatorBoundary(
+					tmpRoot,
+					[
+						baseManifest({
+							id: "sales",
+							packageName: "@afenda/sales",
+							mutationTables: ["sales_order"],
+						}),
+						baseManifest({
+							id: "master-data",
+							packageName: "@afenda/master-data",
+							mutationTables: ["md_party"],
+						}),
+					],
+					ownershipPath,
+				),
+			) ?? "",
+		);
 	} finally {
 		rmSync(tmpRoot, { recursive: true, force: true });
 	}
+
+	misses.push(
+		expectFail(
+			"catalog package missing on disk",
+			"catalog package missing on disk",
+			validateCatalogDiskParity(join(tmpdir(), "afenda-empty-catalog-root")),
+		) ?? "",
+	);
 
 	misses.push(
 		expectFail(

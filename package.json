@@ -20,6 +20,7 @@
 		"validate:neon-env": "node --experimental-strip-types scripts/validate-neon-env.mjs",
 		"validate:modules": "pnpm exec tsx scripts/validate-modules.mjs",
 		"validate:modules:write": "pnpm exec tsx scripts/validate-modules.mjs --write",
+		"governance:packages": "node scripts/governance-packages.mjs",
 		"test:validate-modules": "pnpm exec tsx --test scripts/validate-modules/negative-fixtures.test.mjs",
 		"monitor:neon-performance": "node --experimental-strip-types scripts/monitor-neon-performance.mjs",
 		"audit:neon-auth-production": "node --experimental-strip-types scripts/audit-neon-auth-production.mjs",

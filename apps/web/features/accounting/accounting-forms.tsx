@@ -18,7 +18,9 @@ import { closeAccountingPeriodAction } from "@/app/actions/close-accounting-peri
 import { createDraftJournalAction } from "@/app/actions/create-draft-journal";
 import { openAccountingPeriodAction } from "@/app/actions/open-accounting-period";
 import { postJournalAction } from "@/app/actions/post-journal";
+import { reopenAccountingPeriodAction } from "@/app/actions/reopen-accounting-period";
 import { reverseJournalAction } from "@/app/actions/reverse-journal";
+import { softCloseAccountingPeriodAction } from "@/app/actions/soft-close-accounting-period";
 import type { ActionResult } from "@/modules/platform/schemas/action-result";
 
 type Field = {
@@ -258,6 +260,61 @@ export function ReverseJournalForm({ canManage }: ActionFormProps) {
 			]}
 			submitLabel="Reverse journal"
 			successTitle="Journal reversed"
+		/>
+	);
+}
+
+export function SoftCloseAccountingPeriodForm({ canManage }: ActionFormProps) {
+	const [state, action, pending] = useActionState(
+		softCloseAccountingPeriodAction,
+		null,
+	);
+	if (!canManage) return <ManageUnavailable operation="Soft-close period" />;
+	return (
+		<AccountingActionForm
+			action={action}
+			pending={pending}
+			state={state}
+			fields={[
+				{ name: "periodId", label: "Period id", required: true },
+				{
+					name: "expectedVersion",
+					label: "Expected version",
+					type: "number",
+					min: "1",
+					required: true,
+				},
+			]}
+			submitLabel="Soft-close accounting period"
+			successTitle="Accounting period soft-closed"
+		/>
+	);
+}
+
+export function ReopenAccountingPeriodForm({ canManage }: ActionFormProps) {
+	const [state, action, pending] = useActionState(
+		reopenAccountingPeriodAction,
+		null,
+	);
+	if (!canManage) return <ManageUnavailable operation="Reopen period" />;
+	return (
+		<AccountingActionForm
+			action={action}
+			pending={pending}
+			state={state}
+			fields={[
+				{ name: "periodId", label: "Period id", required: true },
+				{
+					name: "expectedVersion",
+					label: "Expected version",
+					type: "number",
+					min: "1",
+					required: true,
+				},
+				{ name: "reason", label: "Reopen reason", required: true },
+			]}
+			submitLabel="Reopen accounting period"
+			successTitle="Accounting period reopened"
 		/>
 	);
 }

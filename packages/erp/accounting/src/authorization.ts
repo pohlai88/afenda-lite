@@ -1,6 +1,23 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
 
-export type AccountingPermission = "accounting.read" | "accounting.manage";
+export type AccountingPermission =
+	| "accounting.journal.read"
+	| "accounting.journal.create"
+	| "accounting.journal.update"
+	| "accounting.journal.post"
+	| "accounting.journal.reverse"
+	| "accounting.trial_balance.read"
+	| "accounting.ledger.read"
+	| "accounting.period.read"
+	| "accounting.period.open"
+	| "accounting.period.soft_close"
+	| "accounting.period.close"
+	| "accounting.period.reopen"
+	| "accounting.account.read"
+	| "accounting.account.manage"
+	| "accounting.posting_rule.manage"
+	| "accounting.exception.read"
+	| "accounting.exception.manage";
 
 export type AccountingAuthorizationPort = {
 	can(input: {

@@ -4,7 +4,7 @@
 |-------|-------|
 | Surface | `docs-V2/api/actions.md` |
 | Authority | **Scratch** — api-and-interface-design + disk `apps/web/app/actions/**` |
-| Updated | 2026-07-20 |
+| Updated | 2026-07-21 |
 
 UI mutation adapters only. Contract: `ActionResult<T>` (`ok: true | false`) — see [README.md](README.md). RH paths stay in [rest.md](rest.md). Re-probe disk after Action add/remove — do not invent rows. Companion map: [adapter-map.md](../../.cursor/skills/afenda-elite-backend-modules/adapter-map.md).
 
@@ -69,6 +69,19 @@ UI mutation adapters only. Contract: `ActionResult<T>` (`ok: true | false`) — 
 | `add-sales-order-line.ts` | `addSalesOrderLineAction` | sales | Add order line (`sales.order.update`) |
 | `post-sales-order.ts` | `postSalesOrderAction` | sales | Post order / freeze snapshots (`sales.order.post`) |
 | `cancel-sales-order.ts` | `cancelSalesOrderAction` | sales | Cancel draft or posted order (`sales.order.cancel`) |
+| `get-payment.ts` | `getPaymentAction` | payments | Get payment by id (`payments.payment.read`) |
+| `list-payments.ts` | `listPaymentsAction` | payments | List payments (`payments.payment.read`) |
+| `create-draft-payment.ts` | `createDraftPaymentAction` | payments | Create draft payment (`payments.payment.create`) |
+| `create-payment-account.ts` | `createPaymentAccountAction` | payments | Create payment account (`payments.account.manage`) |
+| `list-payment-accounts.ts` | `listPaymentAccountsAction` | payments | List payment accounts (`payments.account.read`) |
+| `add-payment-application-instruction.ts` | `addPaymentApplicationInstructionAction` | payments | Add application instruction (`payments.application_instruction.manage`) |
+| `create-and-post-payment-transfer.ts` | `createAndPostPaymentTransferAction` | payments | Transfer create+post (`payments.transfer.create` + `payments.transfer.post`) |
+| `post-payment.ts` | `postPaymentAction` | payments | Post payment + composition-root AR/AP apply (`payments.payment.post`) |
+| `reverse-payment.ts` | `reversePaymentAction` | payments | Reverse payment + composition-root unapply (`payments.payment.reverse`) |
+| `post-refund.ts` | `postRefundAction` | payments | Post refund (`payments.refund.create` + `payments.refund.post`) |
+| `get-payment-application-availability.ts` | `getPaymentApplicationAvailabilityAction` | payments | Application availability query (`payments.availability.read`) |
+| `apply-supplier-payment.ts` | `applySupplierPaymentAction` | payables | Apply posted payment to supplier invoice (`payables.manage`; instruction + idempotency) |
+| `reverse-supplier-payment-application.ts` | `reverseSupplierPaymentApplicationAction` | payables | Reverse supplier allocations by payment (`payables.manage`) |
 | `list-my-notifications.ts` | `listMyNotificationsAction` | notifications | List IN_APP inbox |
 | `get-unread-notification-count.ts` | `getUnreadNotificationCountAction` | notifications | Unread count |
 | `mark-notification-read.ts` | `markNotificationReadAction` | notifications | Mark one read |

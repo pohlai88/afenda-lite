@@ -1,16 +1,22 @@
 import { describe, expect, it } from "vitest";
 
 import {
+	addPaymentApplicationInstruction,
 	createAndPostPaymentTransfer,
 	createDraftPayment,
 	createPaymentAccount,
+	getPaymentApplicationAvailability,
 	getPaymentById,
+	PAYMENTS_ERROR_PAYMENT_NOT_FOUND,
+	PAYMENTS_ERROR_REFUND_LIMIT_EXCEEDED,
+	PAYMENTS_ERROR_TRANSFER_INVALID,
 	postPayment,
 	postRefund,
 	reversePayment,
 } from "../src/index";
-import { createMemoryPaymentsStore } from "../src/testing";
+import type { PaymentsStore } from "../src/model";
 import { reconcilePayments } from "../src/reconcile";
+import { createMemoryPaymentsStore } from "../src/testing";
 
 const organizationId = "org-1";
 const actorUserId = "user-1";
@@ -180,6 +186,106 @@ describe("payments domain conflicts", () => {
 			options,
 		);
 		expect(excessive.ok).toBe(false);
+		if (excessive.ok) return;
+		expect(
+			(excessive.details as { paymentsCode?: string } | undefined)
+				?.paymentsCode,
+		).toBe(PAYMENTS_ERROR_REFUND_LIMIT_EXCEEDED);
+	});
+
+	it("attaches domain paymentsCode on not-found, transfer, and credit-target rejects", async () => {
+		const store = createMemoryPaymentsStore();
+		const options = { store, authorization };
+		const missing = await getPaymentApplicationAvailability(
+			{
+				organizationId,
+				actorUserId,
+				paymentId: "00000000-0000-4000-8000-000000000099",
+			},
+			options,
+		);
+		expect(missing.ok).toBe(false);
+		if (!missing.ok) {
+			expect(
+				(missing.details as { paymentsCode?: string } | undefined)
+					?.paymentsCode,
+			).toBe(PAYMENTS_ERROR_PAYMENT_NOT_FOUND);
+		}
+
+		const account = await createPaymentAccount(
+			{
+				organizationId,
+				actorUserId,
+				correlationId: "account-codes",
+				idempotencyKey: "account-codes",
+				code: "CASH-CODES",
+				name: "Cash",
+				currencyCode: "USD",
+			},
+			options,
+		);
+		expect(account.ok).toBe(true);
+		if (!account.ok) return;
+
+		const sameAccount = await (store as PaymentsStore).createAndPostTransfer({
+			organizationId,
+			actorUserId,
+			correlationId: "transfer-same",
+			idempotencyKey: "transfer-same",
+			code: "XFER-SAME",
+			normalizedCode: "XFER-SAME",
+			fromPaymentAccountId: account.data.id,
+			toPaymentAccountId: account.data.id,
+			amount: "5",
+			currencyCode: "USD",
+			reference: null,
+		});
+		expect(sameAccount.ok).toBe(false);
+		if (!sameAccount.ok) {
+			expect(
+				(sameAccount.details as { paymentsCode?: string } | undefined)
+					?.paymentsCode,
+			).toBe(PAYMENTS_ERROR_TRANSFER_INVALID);
+		}
+
+		const draft = await createDraftPayment(
+			{
+				organizationId,
+				actorUserId,
+				correlationId: "draft-credit",
+				idempotencyKey: "draft-credit",
+				code: "PAY-CREDIT-REJECT",
+				paymentAccountId: account.data.id,
+				direction: "receipt",
+				purpose: "customer_receipt",
+				counterpartyId: "00000000-0000-4000-8000-000000000001",
+				currencyCode: "USD",
+				amount: "10",
+			},
+			options,
+		);
+		expect(draft.ok).toBe(true);
+		if (!draft.ok) return;
+
+		const creditTarget = await addPaymentApplicationInstruction(
+			{
+				organizationId,
+				actorUserId,
+				correlationId: "credit-target",
+				idempotencyKey: "credit-target",
+				paymentId: draft.data.id,
+				targetModule: "receivables",
+				targetDocumentType: "customer_credit",
+				targetDocumentId: "00000000-0000-4000-8000-000000000002",
+				intendedAmount: "5",
+				currencyCode: "USD",
+			},
+			options,
+		);
+		expect(creditTarget.ok).toBe(false);
+		if (!creditTarget.ok) {
+			expect(creditTarget.code).toBe("BAD_REQUEST");
+		}
 	});
 
 	it("reconciles paired transfers as consistent", async () => {

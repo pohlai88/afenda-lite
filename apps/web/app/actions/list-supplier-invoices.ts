@@ -17,6 +17,9 @@ const schema = z
 		page: z.number().int().positive().optional(),
 		pageSize: z.number().int().positive().max(100).optional(),
 		status: z.enum(["draft", "matched", "posted", "cancelled"]).optional(),
+		supplierId: z.string().uuid().optional(),
+		currencyCode: z.string().trim().length(3).optional(),
+		documentType: z.enum(["invoice", "credit_note"]).optional(),
 	})
 	.optional();
 
@@ -24,6 +27,9 @@ export async function listSupplierInvoicesAction(input?: {
 	page?: number;
 	pageSize?: number;
 	status?: SupplierInvoice["status"];
+	supplierId?: string;
+	currencyCode?: string;
+	documentType?: SupplierInvoice["documentType"];
 }): Promise<ActionResult<{ invoices: SupplierInvoice[] }>> {
 	return runOperatorPermissionAction({
 		path: "listSupplierInvoicesAction",

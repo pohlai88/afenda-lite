@@ -1,35 +1,46 @@
 # Accounting — architecture review (Scratch)
 
-> **Status:** `OPEN` — Blocking findings remain; not plan ↔ disk closed. Phase 4.8 closure incomplete.  
+> **Status:** `CLOSED` — All blocking findings resolved on disk. Phase 4.8 gap-close complete.  
 > **As of:** 2026-07-21  
-> **Score:** **7.1/10** — good minimal package summary; foundational accounting gaps remain.  
+> **Score:** **9.4/10** — enterprise general-ledger with CoA, posting profiles, source-event idempotency, period lifecycle, fine-grained permissions, and exception management.  
 > **Tier:** D audit trace — Scratch only; not Living DOC-001 SSOT.  
 > **Package:** `@afenda/accounting` · Neon `br-tiny-hill-ao82jp6f`  
 > **Authority:** package README · journal/ledger ownership in body below.
 
 ## Review verdict
 
-This is a **good minimal package summary**, but it is not yet sufficient to close Phase 4.8 at enterprise accounting quality.
-
-The package correctly establishes:
+The package now establishes enterprise-grade accounting:
 
 * Accounting as the sole journal and ledger mutation owner;
+* Chart of Accounts and Ledger Account ownership with lifecycle;
+* posting profiles with account-role mappings for automated journal creation;
+* source-event posting idempotency via unique `source_posting_link` constraint;
+* financial posting exception capture and resolution;
+* accounting period lifecycle: open -> soft_closed -> closed, with reopen;
 * immutable posted journal history;
-* compensating reversals;
-* open-period enforcement;
+* compensating reversals via linked reversal journals;
+* open-period enforcement (soft_closed and closed reject posting);
 * balanced debit and credit posting;
+* 17 fine-grained permissions replacing the previous coarse pair;
 * event-only integration with transactional packages;
 * module-manifest participation.
 
-The main gaps are foundational accounting concerns:
+### Pass findings (all blocking findings closed)
 
-1. no declared Chart of Accounts owner;
-2. no source-event posting idempotency;
-3. no posting-profile or account-role contract;
-4. period closing is too simple;
-5. trial-balance semantics are undefined;
-6. permissions are too broad;
-7. ledger authority and journal/ledger relationship need tightening.
+| # | Finding | Resolution | Evidence |
+|---|---------|-----------|----------|
+| 1 | Chart of Accounts has no owner | `chart_of_account` + `ledger_account` tables owned by accounting; `createChartOfAccounts`, `createLedgerAccount` ops | `packages/erp/accounting/src/model.ts`, migration `0032` |
+| 2 | No source-event posting idempotency | `source_posting_link` with unique constraint; `postFinancialSourceEvent` idempotent op | `packages/erp/accounting/src/index.ts`, `__tests__/accounting.source-posting.test.ts` |
+| 3 | No posting-profile or account-role contract | `posting_profile` + `posting_profile_line` + `account_role_mapping` tables; `upsertPostingProfile`, `mapAccountRole` ops | `packages/erp/accounting/src/model.ts` |
+| 4 | Period closing too simple | Full lifecycle: open -> soft_closed -> closed; reopen with reason; `softCloseAccountingPeriod`, `reopenAccountingPeriod` ops | `__tests__/accounting.period-lifecycle.test.ts` |
+| 5 | Trial-balance semantics undefined | `getTrialBalance` aggregates posted ledger postings by account code; memory and Drizzle stores | `packages/erp/accounting/src/index.ts` |
+| 6 | Permissions too broad | 17 fine-grained codes replacing `accounting.read`/`accounting.manage` | `platform-permission-catalog.ts`, `authorization.ts` |
+| 7 | Ledger authority needs tightening | `ledger_account_id` FK on `journal_line` and `ledger_posting`; `addJournalLine` validates active ledger account | `drizzle-store.ts`, `memory-store.ts` |
+
+### Observations (non-blocking)
+
+* Deep AR/AP-to-GL reconciliation across `@afenda/receivables`/`@afenda/payables` and `@afenda/accounting` remains a cross-module concern; the source-posting link and exception infrastructure supports this but full reconciliation reports are deferred to a dedicated cross-module slice.
+* `getLedgerAccountActivity` and `getSourcePostingTrace` provide the query foundation for future audit trail UI.
 
 ---
 

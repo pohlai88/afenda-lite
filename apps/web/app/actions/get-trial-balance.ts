@@ -19,7 +19,7 @@ export async function getTrialBalanceAction(input?: {
 }): Promise<ActionResult<{ rows: TrialBalanceRow[] }>> {
 	return runOperatorPermissionAction({
 		path: "getTrialBalanceAction",
-		permission: "accounting.read",
+		permission: "accounting.trial_balance.read",
 		safeMessage: "Could not load trial balance. Try again or contact an admin.",
 		execute: async (session) => {
 			const parsed = parseSchema(schema, input);

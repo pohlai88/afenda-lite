@@ -30,10 +30,10 @@ export async function closeAccountingPeriodAction(
 ): Promise<CloseAccountingPeriodActionState> {
 	return runOperatorPermissionAction({
 		path: "closeAccountingPeriodAction",
-		permission: "accounting.manage",
+		permission: "accounting.period.close",
 		safeMessage:
 			"Could not close accounting period. Try again or contact an admin.",
-		execute: async (session) => {
+		execute: async (session, correlationId) => {
 			const parsed = parseSchema(schema, {
 				periodId: formData.get("periodId"),
 				expectedVersion: formData.get("expectedVersion"),
@@ -49,6 +49,7 @@ export async function closeAccountingPeriodAction(
 					{
 						organizationId: session.orgId,
 						actorUserId: session.userId,
+						correlationId,
 						...parsed.data,
 					},
 					createAccountingCommandOptions(),

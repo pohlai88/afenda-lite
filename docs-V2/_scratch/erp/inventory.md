@@ -2,7 +2,7 @@
 
 > **Status:** `OPERATIVE` — Tier A Scratch contract; INV-REQ ledger Pass (quantity-only / no in-transit = Observation, not gaps).  
 > **As of:** 2026-07-21  
-> **Score:** **Pass** — REQ ledger closed; no open blocking findings in this file.  
+> **Score:** **Pass** — REQ ledger closed; no open repair gaps. Bin/lot/serial, valuation/GL, in-transit, and ATP are absent-by-design (INV-REQ-035 Observation + scope-contract test). Dual-surface + nav SSOT closed (INV-REQ-034 / INV-REQ-036).  
 > **Tier:** A operative contract — Scratch only; not Living DOC-001 SSOT.  
 > **Package:** `@afenda/inventory` · Tables: `@afenda/db` · Band: R1-F ERP · Neon `br-tiny-hill-ao82jp6f`  
 > **Authority:** [package README](../../../packages/erp/inventory/README.md) · this file owns gap ledger + invariants (Living `docs/` dormant).
@@ -41,8 +41,8 @@ Org-scoped stock movements, immutable ledger, balance projection, and reservatio
 | `cancelStockMovement` | `inventory.movement.cancel` |
 | `createReversalMovement` | `inventory.movement.post` |
 | `reserveStock` | `inventory.reservation.create` |
-| `releaseReservation` | `inventory.reservation.release` |
-| `getStockMovementById` / `listStockMovements` | `inventory.movement.read` |
+| `releaseReservation` / `expireReservation` / `cancelReservation` | `inventory.reservation.release` |
+| `getStockMovementById` / `listStockMovements` / `listStockReservations` | `inventory.movement.read` |
 | `getStockAvailability` | `inventory.availability.read` |
 | Manual adjustment posting | `inventory.adjustment.post` |
 
@@ -84,7 +84,7 @@ Receipt/issue from UI without peer source is denied. Receiving / Fulfillment pos
 | INV-REQ-001 | Ledger authoritative; balance projection | Pass | S2 | package test + README |
 | INV-REQ-002 | Every on-hand Δ ↔ ledger row(s) | Pass | S2 | reconcile + domain tests |
 | INV-REQ-003 | Reservations ≠ movement types | Pass | S1 | types + domain tests |
-| INV-REQ-004 | Reservation status model | Pass | S1 | types + schema |
+| INV-REQ-004 | Reservation status model | Pass | S1 | types + schema + expire/cancel cmds |
 | INV-REQ-005 | Reservations change reserved/available only | Pass | S1 | store effects |
 | INV-REQ-006 | Transfer source+dest + net zero | Pass | S3 | schemas + post tests |
 | INV-REQ-007 | Transfer invariants; no in-transit | Pass | S3 | contract + tests |
@@ -114,6 +114,9 @@ Receipt/issue from UI without peer source is denied. Receiving / Fulfillment pos
 | INV-REQ-031 | Inventory-specific error codes | Pass | S6 | error-codes.ts |
 | INV-REQ-032 | Invariants in package contract | Pass | S0 | README |
 | INV-REQ-033 | Priority repair order followed | Pass | All | this ledger |
+| INV-REQ-034 | Dual-surface role split | Pass | Web | Client console read-only; admin mutations (operator Actions) |
+| INV-REQ-035 | V1 exclusions locked | Observation | S0 | scope-contract test — no in-transit / ATP / bin / lot / serial / valuation types |
+| INV-REQ-036 | Nav discoverability | Pass | Web | Operator + client shell nav gated on `inventory.movement.read` |
 
 ## Priority order (execution)
 
@@ -134,16 +137,18 @@ Receipt/issue from UI without peer source is denied. Receiving / Fulfillment pos
 
 | Path | Role |
 | --- | --- |
-| `@afenda/inventory` | Commands, queries, schemas, types, permissions, error codes, auth port |
+| `@afenda/inventory` | Commands, queries (incl. `listStockReservations`), schemas, types, permissions, error codes, auth port |
 | `@afenda/inventory/adapters/drizzle` | Production store |
 | `@afenda/inventory/testing` | Memory store + MutationPorts |
 | `@afenda/inventory/module-manifest` | R1-F manifest |
+| `apps/web` inventory console | `/admin/inventory` — mutations (operator Actions) · `/client/inventory` — **read-only**; both linked from permission-gated shell nav; DataTables + `?movementId=` detail; UI create = `opening_balance` receipt / transfer / adjustment only (peer `receiving`/`fulfillment` via packages) |
 
 ## Verify
 
 ```bash
 pnpm --filter @afenda/inventory check
-pnpm --filter @afenda/inventory reconcile
+pnpm --filter @afenda/inventory reconcile -- --organizationId=<org>
+# CLI loads repo-root .env.local when DATABASE_URL is unset
 pnpm --filter @afenda/receiving test
 pnpm --filter @afenda/fulfillment test
 pnpm validate:modules

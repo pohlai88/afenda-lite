@@ -30,15 +30,19 @@ import {
 import { requireMaster } from "./master-lookup";
 import {
 	INVENTORY_COMMAND_CANCEL,
+	INVENTORY_COMMAND_CANCEL_RESERVATION,
 	INVENTORY_COMMAND_CREATE,
+	INVENTORY_COMMAND_EXPIRE,
 	INVENTORY_COMMAND_LINE_ADD,
 	INVENTORY_COMMAND_POST,
 	INVENTORY_COMMAND_RELEASE,
 	INVENTORY_COMMAND_RESERVE,
 	INVENTORY_COMMAND_REVERSE,
+	type InventoryCommandId,
 	INVENTORY_QUERY_AVAILABILITY,
 	INVENTORY_QUERY_GET,
 	INVENTORY_QUERY_LIST,
+	INVENTORY_QUERY_RESERVATION_LIST,
 } from "./module-ids";
 import { parseInventoryInput } from "./parse-input";
 import { INVENTORY_PERMISSION_ADJUSTMENT_POST } from "./permissions";
@@ -50,6 +54,7 @@ import {
 	getStockAvailabilityInputSchema,
 	getStockMovementByIdInputSchema,
 	listStockMovementsInputSchema,
+	listStockReservationsInputSchema,
 	positiveQuantitySchema,
 	postStockMovementInputSchema,
 	releaseReservationInputSchema,
@@ -61,6 +66,7 @@ import {
 	formatQuantity,
 	type MovementCreateRecord,
 	parseQuantity,
+	type ReservationTerminalStatus,
 } from "./store";
 import type {
 	InventoryMovementSource,
@@ -1391,14 +1397,19 @@ export async function reserveStock(
 	return annotateAvailabilityFailure(reserved);
 }
 
-export async function releaseReservation(
+async function terminateReservationCommand(
 	input: unknown,
-	options: InventoryCommandOptions = {},
+	options: InventoryCommandOptions,
+	args: {
+		invalidMessage: string;
+		command: InventoryCommandId;
+		terminalStatus: ReservationTerminalStatus;
+	},
 ): Promise<Result<StockReservation>> {
 	const parsed = parseInventoryInput(
 		releaseReservationInputSchema,
 		input,
-		"Invalid release reservation input",
+		args.invalidMessage,
 	);
 	if (!parsed.ok) {
 		return parsed;
@@ -1410,7 +1421,7 @@ export async function releaseReservation(
 		{
 			organizationId: parsed.data.organizationId,
 			actorUserId: parsed.data.actorUserId,
-			command: INVENTORY_COMMAND_RELEASE,
+			command: args.command,
 		},
 	);
 	if (!authorized.ok) {
@@ -1433,13 +1444,13 @@ export async function releaseReservation(
 	}
 
 	const reservation = reservationResult.data;
-	if (reservation.status === "released") {
+	if (reservation.status === args.terminalStatus) {
 		if (reservation.releaseIdempotencyKey === parsed.data.idempotencyKey) {
 			return ok(reservation);
 		}
 		return inventoryFail(
 			"CONFLICT",
-			"Stock reservation has already been released",
+			"Stock reservation has already been terminated",
 			INVENTORY_ERROR_RESERVATION_ALREADY_RELEASED,
 		);
 	}
@@ -1457,11 +1468,12 @@ export async function releaseReservation(
 	if (
 		reservation.status === "expired" ||
 		reservation.status === "cancelled" ||
-		reservation.status === "consumed"
+		reservation.status === "consumed" ||
+		reservation.status === "released"
 	) {
 		return inventoryFail(
 			"CONFLICT",
-			"Stock reservation has already been released",
+			"Stock reservation has already been terminated",
 			INVENTORY_ERROR_RESERVATION_ALREADY_RELEASED,
 		);
 	}
@@ -1473,10 +1485,44 @@ export async function releaseReservation(
 			expectedVersion: parsed.data.expectedVersion,
 			actorUserId: parsed.data.actorUserId,
 			releaseIdempotencyKey: parsed.data.idempotencyKey,
+			terminalStatus: args.terminalStatus,
 		},
 		deps.ports,
 		{ correlationId: parsed.data.correlationId },
 	);
+}
+
+export async function releaseReservation(
+	input: unknown,
+	options: InventoryCommandOptions = {},
+): Promise<Result<StockReservation>> {
+	return terminateReservationCommand(input, options, {
+		invalidMessage: "Invalid release reservation input",
+		command: INVENTORY_COMMAND_RELEASE,
+		terminalStatus: "released",
+	});
+}
+
+export async function expireReservation(
+	input: unknown,
+	options: InventoryCommandOptions = {},
+): Promise<Result<StockReservation>> {
+	return terminateReservationCommand(input, options, {
+		invalidMessage: "Invalid expire reservation input",
+		command: INVENTORY_COMMAND_EXPIRE,
+		terminalStatus: "expired",
+	});
+}
+
+export async function cancelReservation(
+	input: unknown,
+	options: InventoryCommandOptions = {},
+): Promise<Result<StockReservation>> {
+	return terminateReservationCommand(input, options, {
+		invalidMessage: "Invalid cancel reservation input",
+		command: INVENTORY_COMMAND_CANCEL_RESERVATION,
+		terminalStatus: "cancelled",
+	});
 }
 
 export async function getStockMovementById(
@@ -1534,6 +1580,39 @@ export async function listStockMovements(
 		pageSize: parsed.data.pageSize,
 		status: parsed.data.status,
 		movementType: parsed.data.movementType,
+	});
+}
+
+export async function listStockReservations(
+	input: unknown,
+	options: InventoryCommandOptions = {},
+): Promise<Result<StockReservation[]>> {
+	const parsed = parseInventoryInput(
+		listStockReservationsInputSchema,
+		input,
+		"Invalid stock reservation list input",
+	);
+	if (!parsed.ok) {
+		return parsed;
+	}
+
+	const deps = resolveCommandDeps(options);
+	const authorized = await requireInventoryQueryPermission(deps.authorization, {
+		organizationId: parsed.data.organizationId,
+		actorUserId: parsed.data.actorUserId,
+		query: INVENTORY_QUERY_RESERVATION_LIST,
+	});
+	if (!authorized.ok) {
+		return authorized;
+	}
+
+	return deps.store.listReservations({
+		organizationId: parsed.data.organizationId,
+		page: parsed.data.page,
+		pageSize: parsed.data.pageSize,
+		status: parsed.data.status,
+		warehouseId: parsed.data.warehouseId,
+		itemId: parsed.data.itemId,
 	});
 }
 

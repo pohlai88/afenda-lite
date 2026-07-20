@@ -34,9 +34,9 @@ export async function addJournalLineAction(
 ): Promise<AddJournalLineActionState> {
 	return runOperatorPermissionAction({
 		path: "addJournalLineAction",
-		permission: "accounting.manage",
+		permission: "accounting.journal.create",
 		safeMessage: "Could not add journal line. Try again or contact an admin.",
-		execute: async (session) => {
+		execute: async (session, correlationId) => {
 			const parsed = parseSchema(schema, {
 				journalId: formData.get("journalId"),
 				accountCode: formData.get("accountCode"),
@@ -55,7 +55,12 @@ export async function addJournalLineAction(
 					{
 						organizationId: session.orgId,
 						actorUserId: session.userId,
-						...parsed.data,
+						correlationId,
+						debit: String(parsed.data.debit),
+						credit: String(parsed.data.credit),
+						journalId: parsed.data.journalId,
+						accountCode: parsed.data.accountCode,
+						description: parsed.data.description ?? null,
 					},
 					createAccountingCommandOptions(),
 				),

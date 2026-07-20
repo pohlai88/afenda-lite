@@ -1,1 +1,4 @@
-export { createMemoryPaymentsStore, MemoryPaymentsStore } from "../memory-store";
+export {
+	createMemoryPaymentsStore,
+	MemoryPaymentsStore,
+} from "../memory-store";

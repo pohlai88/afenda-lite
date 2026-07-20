@@ -1,10 +1,55 @@
 # GENERATED — do not edit by hand. Source: ERP module.manifest.ts
 # Regenerate: pnpm validate:modules --write
 permissions:
-  - code: accounting.read
+  - code: accounting.journal.read
     moduleId: accounting
     namespace: accounting
-  - code: accounting.manage
+  - code: accounting.journal.create
+    moduleId: accounting
+    namespace: accounting
+  - code: accounting.journal.update
+    moduleId: accounting
+    namespace: accounting
+  - code: accounting.journal.post
+    moduleId: accounting
+    namespace: accounting
+  - code: accounting.journal.reverse
+    moduleId: accounting
+    namespace: accounting
+  - code: accounting.trial_balance.read
+    moduleId: accounting
+    namespace: accounting
+  - code: accounting.ledger.read
+    moduleId: accounting
+    namespace: accounting
+  - code: accounting.period.read
+    moduleId: accounting
+    namespace: accounting
+  - code: accounting.period.open
+    moduleId: accounting
+    namespace: accounting
+  - code: accounting.period.soft_close
+    moduleId: accounting
+    namespace: accounting
+  - code: accounting.period.close
+    moduleId: accounting
+    namespace: accounting
+  - code: accounting.period.reopen
+    moduleId: accounting
+    namespace: accounting
+  - code: accounting.account.read
+    moduleId: accounting
+    namespace: accounting
+  - code: accounting.account.manage
+    moduleId: accounting
+    namespace: accounting
+  - code: accounting.posting_rule.manage
+    moduleId: accounting
+    namespace: accounting
+  - code: accounting.exception.read
+    moduleId: accounting
+    namespace: accounting
+  - code: accounting.exception.manage
     moduleId: accounting
     namespace: accounting
   - code: fulfillment.delivery.read

@@ -3,6 +3,7 @@ import { GeistSans } from "geist/font/sans";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
+import { DevLoginFabHost } from "@/features/auth/dev-login-fab-host";
 import { SkipToMainContent } from "@/features/auth/skip-to-main-content";
 
 import "../globals.css";
@@ -25,6 +26,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
 			<body>
 				<SkipToMainContent />
 				{children}
+				<DevLoginFabHost />
 			</body>
 		</html>
 	);

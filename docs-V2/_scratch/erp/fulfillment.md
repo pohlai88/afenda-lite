@@ -16,7 +16,7 @@
 |----|-------------|-------------|----------|----------|----------|
 | F1 | Lifecycle through `closed` + `closeDelivery` | Yes | Yes | Pass | `delivery.ts` · memory/drizzle stores · `close-delivery` Action · domain test |
 | F2 | `SalesFulfillmentQueryPort` + Sales query | Yes | Yes | Pass | `ports.ts` · `getFulfillableSalesOrder` · web adapter · create/post validation |
-| F3 | Reservation-aware pick + Inventory issue on post | Yes | Yes | Pass | `reservationId` on pick · `getReservationById` assert · `InventoryCommandOptions` on post |
+| F3 | Reservation-aware pick + Inventory issue on post | Yes | Yes | Pass | optional `reservationId` · auto `reserveStock` when omitted · `getReservationById` assert when provided · issue on post |
 | F4 | Qty ladder + full-pick pack gate | Yes | Yes | Pass | over-pick reject · pack requires full pick per line (memory + drizzle) |
 | F5 | Fine-grained permissions | Yes | Yes | Pass | catalog · manifest · Actions · retired `fulfillment.read`/`manage` |
 | F6 | `idempotencyKey` + OCC | Yes | Yes | Pass | schemas · delivery/line/pick keys · migration `0024` · Actions |
@@ -60,6 +60,7 @@ pnpm --filter @afenda/web test -- product-authorization-wiring
 | O2 | One warehouse per Delivery (header) — bin/lot/serial out of scope |
 | O3 | Multi-line picks with distinct reservation ids post issue without a single reservation attach — same-reservation coalesce when shared |
 | O4 | Peer `@afenda/inventory` import matches receiving; Inventory Scratch authorizes one-way command calls |
+| O6 | Auto-reserve on pick requires actor `inventory.reservation.create` in addition to pick confirm |
 | O5 | Returns / reverse posted deliveries owned by a later package |
 
 ---

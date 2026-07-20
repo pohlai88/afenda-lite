@@ -1,14 +1,14 @@
 "use server";
 
-import { createStockMovement, type StockMovement } from "@afenda/inventory";
+import { randomUUID } from "node:crypto";
 import { requireRole } from "@afenda/auth";
 import { createCorrelationId } from "@afenda/http";
-import { revalidatePath } from "next/cache";
-import { randomUUID } from "node:crypto";
+import { createStockMovement, type StockMovement } from "@afenda/inventory";
 import { z } from "zod";
 
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { forbidUnlessPermission } from "@/app/actions/permission-gate";
+import { revalidateInventoryPaths } from "@/app/actions/revalidate-inventory-paths";
 import { createInventoryCommandOptions } from "@/lib/erp/inventory-command-options";
 import { logProductEvent } from "@/modules/platform/observability/product-log";
 import {
@@ -27,27 +27,20 @@ export type CreateStockMovementActionState =
 
 const optionalTextField = z
 	.union([z.string().trim().max(512), z.literal(""), z.undefined()])
-	.transform((value) => (value === undefined || value === "" ? undefined : value));
+	.transform((value) =>
+		value === undefined || value === "" ? undefined : value,
+	);
 
 function formValue(value: FormDataEntryValue | null): string | undefined {
 	return typeof value === "string" && value !== "" ? value : undefined;
 }
 
+/** UI create — opening-balance receipt, transfer, adjustment only (no peer sources). */
 const createStockMovementFormSchema = z.discriminatedUnion("movementType", [
 	z.object({
 		code: z.string().trim().min(1).max(64),
 		movementType: z.literal("receipt"),
-		source: z.enum(["opening_balance", "receiving"]).default("opening_balance"),
-		warehouseId: z.string().uuid(),
-		fromWarehouseId: z.undefined().optional(),
-		toWarehouseId: z.undefined().optional(),
-		adjustmentReasonCode: z.undefined().optional(),
-		adjustmentNote: z.undefined().optional(),
-	}),
-	z.object({
-		code: z.string().trim().min(1).max(64),
-		movementType: z.literal("issue"),
-		source: z.literal("fulfillment"),
+		source: z.literal("opening_balance"),
 		warehouseId: z.string().uuid(),
 		fromWarehouseId: z.undefined().optional(),
 		toWarehouseId: z.undefined().optional(),
@@ -78,7 +71,8 @@ const createStockMovementFormSchema = z.discriminatedUnion("movementType", [
 
 /**
  * Inventory draft stock movement create — session org stamp + governed create or
- * adjustment permission.
+ * adjustment permission. Permission is type-dependent (cannot use a single
+ * runOperatorPermissionAction permission code).
  */
 export async function createStockMovementAction(
 	_prev: CreateStockMovementActionState,
@@ -139,8 +133,7 @@ export async function createStockMovementAction(
 		if (!mapped.ok) {
 			return mapped;
 		}
-		revalidatePath("/admin/inventory");
-		revalidatePath("/client/inventory");
+		revalidateInventoryPaths();
 		return { ok: true, data: { movement: mapped.data } };
 	} catch {
 		logProductEvent({

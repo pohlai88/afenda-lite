@@ -8,18 +8,27 @@ import {
 } from "../src/resolve-store";
 import { toRateLimitAppError } from "../src/to-app-error";
 
-vi.mock("@afenda/env", () => ({
-	env: {
-		UPSTASH_REDIS_REST_URL: undefined,
-		UPSTASH_REDIS_REST_TOKEN: undefined,
-	},
+const envMocks = vi.hoisted(() => ({
 	isProductionDeployment: vi.fn(() => false),
+	env: {
+		UPSTASH_REDIS_REST_URL: undefined as string | undefined,
+		UPSTASH_REDIS_REST_TOKEN: undefined as string | undefined,
+	},
+}));
+
+vi.mock("@afenda/env", () => ({
+	env: envMocks.env,
+	isProductionDeployment: (ctx?: unknown) =>
+		envMocks.isProductionDeployment(ctx),
 }));
 
 describe("checkRateLimit (memory store)", () => {
 	afterEach(() => {
 		resetResolvedRateLimitBackend();
 		vi.unstubAllEnvs();
+		envMocks.isProductionDeployment.mockReturnValue(false);
+		envMocks.env.UPSTASH_REDIS_REST_URL = undefined;
+		envMocks.env.UPSTASH_REDIS_REST_TOKEN = undefined;
 	});
 
 	it("allows then denies within the same window", async () => {
@@ -91,8 +100,7 @@ describe("checkRateLimit (memory store)", () => {
 	});
 
 	it("fails closed when production has no Upstash keys", async () => {
-		const { isProductionDeployment } = await import("@afenda/env");
-		vi.mocked(isProductionDeployment).mockReturnValue(true);
+		envMocks.isProductionDeployment.mockReturnValue(true);
 		resetResolvedRateLimitBackend();
 
 		const backend = resolveRateLimitBackend();
@@ -112,9 +120,31 @@ describe("checkRateLimit (memory store)", () => {
 		});
 	});
 
-	it("fails closed when the resolved store throws", async () => {
-		const { isProductionDeployment } = await import("@afenda/env");
-		vi.mocked(isProductionDeployment).mockReturnValue(false);
+	it("falls back to memory when the resolved store throws outside production", async () => {
+		envMocks.isProductionDeployment.mockReturnValue(false);
+		resetResolvedRateLimitBackend();
+
+		const backend = resolveRateLimitBackend();
+		expect(backend.kind).toBe("store");
+		if (backend.kind !== "store") {
+			return;
+		}
+
+		vi.spyOn(backend.store, "hit").mockRejectedValueOnce(
+			new Error("upstash network down"),
+		);
+
+		const result = await checkRateLimit({
+			bucket: "auth_bff_post",
+			key: "203.0.113.10:/api/auth/sign-in",
+		});
+		expect(result.ok).toBe(true);
+	});
+
+	it("fails closed when the resolved store throws in production", async () => {
+		envMocks.isProductionDeployment.mockReturnValue(true);
+		envMocks.env.UPSTASH_REDIS_REST_URL = "https://example.upstash.io";
+		envMocks.env.UPSTASH_REDIS_REST_TOKEN = "test-token";
 		resetResolvedRateLimitBackend();
 
 		const backend = resolveRateLimitBackend();

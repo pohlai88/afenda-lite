@@ -3,8 +3,10 @@ import { describe, expect, it } from "vitest";
 
 import {
 	addJournalLine,
+	createChartOfAccounts,
 	createDraftJournal,
-	createMemoryAccountingStore,
+	createLedgerAccount,
+	createMemoryStore,
 	getJournalById,
 	listJournals,
 	openAccountingPeriod,
@@ -12,8 +14,8 @@ import {
 	reverseJournal,
 } from "../src/index";
 
-const organizationId = "org-1";
-const actorUserId = "user-1";
+const organizationId = "f47ac10b-58cc-4372-a567-0e02b2c3d479";
+const actorUserId = "a47ac10b-58cc-4372-a567-0e02b2c3d479";
 const authorization = {
 	async can() {
 		return true;
@@ -26,12 +28,52 @@ const successfulEffects = {
 };
 
 async function postedJournal() {
-	const store = createMemoryAccountingStore();
+	const store = createMemoryStore();
 	const options = { store, authorization, effects: successfulEffects };
+
+	const coa = await createChartOfAccounts(
+		{
+			organizationId,
+			actorUserId,
+			correlationId: "setup-coa",
+			code: "MAIN",
+			name: "Main chart",
+		},
+		options,
+	);
+	if (!coa.ok) throw new Error(coa.message);
+	await createLedgerAccount(
+		{
+			organizationId,
+			actorUserId,
+			correlationId: "setup-acct-1",
+			chartOfAccountId: coa.data.id,
+			code: "1000",
+			name: "Cash",
+			accountType: "asset",
+			normalBalance: "debit",
+		},
+		options,
+	);
+	await createLedgerAccount(
+		{
+			organizationId,
+			actorUserId,
+			correlationId: "setup-acct-2",
+			chartOfAccountId: coa.data.id,
+			code: "2000",
+			name: "Liability",
+			accountType: "liability",
+			normalBalance: "credit",
+		},
+		options,
+	);
+
 	const period = await openAccountingPeriod(
 		{
 			organizationId,
 			actorUserId,
+			correlationId: "open-period",
 			code: "2026-07",
 			startDate: "2026-07-01",
 			endDate: "2026-07-31",
@@ -43,8 +85,10 @@ async function postedJournal() {
 		{
 			organizationId,
 			actorUserId,
+			correlationId: "create-draft",
 			periodId: period.data.id,
 			code: "TX-1",
+			currencyCode: "USD",
 		},
 		options,
 	);
@@ -54,7 +98,13 @@ async function postedJournal() {
 		{ accountCode: "2000", debit: "0", credit: "10" },
 	]) {
 		await addJournalLine(
-			{ organizationId, actorUserId, journalId: created.data.id, ...line },
+			{
+				organizationId,
+				actorUserId,
+				correlationId: "add-line",
+				journalId: created.data.id,
+				...line,
+			},
 			options,
 		);
 	}
@@ -70,7 +120,7 @@ describe("accounting transaction rollback", () => {
 				actorUserId,
 				correlationId: "post",
 				journalId,
-				expectedVersion: 3,
+				expectedVersion: 1,
 			},
 			{
 				...options,
@@ -83,7 +133,7 @@ describe("accounting transaction rollback", () => {
 		);
 		expect(result.ok).toBe(false);
 		const loaded = await getJournalById(
-			{ organizationId, actorUserId, id: journalId },
+			{ organizationId, actorUserId, journalId },
 			options,
 		);
 		expect(loaded.ok && loaded.data?.status).toBe("draft");
@@ -98,7 +148,7 @@ describe("accounting transaction rollback", () => {
 				actorUserId,
 				correlationId: "post",
 				journalId,
-				expectedVersion: 3,
+				expectedVersion: 1,
 			},
 			options,
 		);
@@ -109,7 +159,7 @@ describe("accounting transaction rollback", () => {
 				actorUserId,
 				correlationId: "reverse",
 				journalId,
-				expectedVersion: 4,
+				expectedVersion: 2,
 				reason: "Correction",
 			},
 			{
@@ -123,7 +173,7 @@ describe("accounting transaction rollback", () => {
 		);
 		expect(reversed.ok).toBe(false);
 		const original = await getJournalById(
-			{ organizationId, actorUserId, id: journalId },
+			{ organizationId, actorUserId, journalId },
 			options,
 		);
 		expect(original.ok && original.data?.status).toBe("posted");

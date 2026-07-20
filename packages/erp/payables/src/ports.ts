@@ -18,6 +18,7 @@ export type PostedPaymentQueryPort = {
 export type PurchaseOrderMatchLineBasis = {
 	itemId: string;
 	quantity: string;
+	unitPrice: string;
 };
 
 /** PO match basis from composition-root adapter — Payables never queries PO tables. */
@@ -26,6 +27,9 @@ export type PurchaseOrderMatchBasis = {
 	supplierPartyId: string;
 	status: string;
 	currencyCode: string;
+	version: number;
+	quantityTolerancePct?: string;
+	priceTolerancePct?: string;
 	lines: PurchaseOrderMatchLineBasis[];
 };
 
@@ -48,6 +52,7 @@ export type GoodsReceiptMatchBasis = {
 	status: string;
 	sourceType: string;
 	sourceId: string;
+	version: number;
 	lines: GoodsReceiptMatchLineBasis[];
 };
 

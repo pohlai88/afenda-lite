@@ -10,6 +10,7 @@ import type {
 	StockMovementStatus,
 	StockMovementType,
 	StockReservation,
+	StockReservationStatus,
 } from "./types";
 
 export type MovementCreateRecord = {
@@ -87,12 +88,38 @@ export type ReservationCreateRecord = {
 	createdBy: string;
 };
 
+export type ReservationTerminalStatus = "released" | "expired" | "cancelled";
+
+export type ReservationTerminalEventType =
+	| "inventory.reservation.released.v1"
+	| "inventory.reservation.expired.v1"
+	| "inventory.reservation.cancelled.v1";
+
+export function reservationTerminalEventType(
+	terminalStatus: ReservationTerminalStatus,
+): ReservationTerminalEventType {
+	switch (terminalStatus) {
+		case "released":
+			return "inventory.reservation.released.v1";
+		case "expired":
+			return "inventory.reservation.expired.v1";
+		case "cancelled":
+			return "inventory.reservation.cancelled.v1";
+		default: {
+			const _exhaustive: never = terminalStatus;
+			return _exhaustive;
+		}
+	}
+}
+
 export type ReservationReleaseRecord = {
 	organizationId: string;
 	reservationId: string;
 	expectedVersion: number;
 	actorUserId: string;
 	releaseIdempotencyKey: string;
+	/** Balance-freeing terminal; release / expire / cancel share one store path. */
+	terminalStatus: ReservationTerminalStatus;
 };
 
 export type MovementListFilter = {
@@ -101,6 +128,15 @@ export type MovementListFilter = {
 	pageSize: number;
 	status?: StockMovementStatus;
 	movementType?: StockMovementType;
+};
+
+export type ReservationListFilter = {
+	organizationId: string;
+	page: number;
+	pageSize: number;
+	status?: StockReservationStatus;
+	warehouseId?: string;
+	itemId?: string;
 };
 
 export type AvailabilityFilter = {
@@ -149,6 +185,9 @@ export type InventoryStore = {
 		createIdempotencyKey: string,
 	): Promise<Result<StockMovement | null>>;
 	listMovements(filter: MovementListFilter): Promise<Result<StockMovement[]>>;
+	listReservations(
+		filter: ReservationListFilter,
+	): Promise<Result<StockReservation[]>>;
 	getAvailability(
 		filter: AvailabilityFilter,
 	): Promise<Result<StockAvailability[]>>;

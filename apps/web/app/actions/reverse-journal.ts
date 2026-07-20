@@ -28,7 +28,7 @@ export async function reverseJournalAction(
 ): Promise<ReverseJournalActionState> {
 	return runOperatorPermissionAction({
 		path: "reverseJournalAction",
-		permission: "accounting.manage",
+		permission: "accounting.journal.reverse",
 		safeMessage: "Could not reverse journal. Try again or contact an admin.",
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(schema, {

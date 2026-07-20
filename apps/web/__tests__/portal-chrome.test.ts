@@ -8,8 +8,14 @@ import { fileURLToPath } from "node:url";
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { OPERATOR_SHELL_NAV } from "../features/portal-chrome/nav-config";
-import { resolveOperatorShellNav } from "../features/portal-chrome/resolve-shell-access";
+import {
+	CLIENT_SHELL_NAV,
+	OPERATOR_SHELL_NAV,
+} from "../features/portal-chrome/nav-config";
+import {
+	resolveClientShellNav,
+	resolveOperatorShellNav,
+} from "../features/portal-chrome/resolve-shell-access";
 
 const webRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -39,11 +45,12 @@ describe("portal-chrome (N16)", () => {
 	it("filters operator nav via Identity permission ports (OR per item)", async () => {
 		hasPermissionMock.mockImplementation(async ({ code }) => {
 			if (code === "org.roles.manage") return true;
+			if (code === "inventory.movement.read") return true;
 			return false;
 		});
 
 		const nav = await resolveOperatorShellNav(session);
-		expect(nav.map((item) => item.id)).toEqual(["org-admin"]);
+		expect(nav.map((item) => item.id)).toEqual(["org-admin", "inventory"]);
 	});
 
 	it("hides org-admin nav when no listed permission is granted", async () => {
@@ -53,9 +60,28 @@ describe("portal-chrome (N16)", () => {
 		expect(nav.map((item) => item.id)).toEqual([]);
 	});
 
+	it("filters client nav for inventory read without operator-only items", async () => {
+		hasPermissionMock.mockImplementation(async ({ code }) => {
+			if (code === "inventory.movement.read") return true;
+			return false;
+		});
+
+		const nav = await resolveClientShellNav({
+			...session,
+			role: "client",
+		});
+		expect(nav.map((item) => item.id)).toEqual(["inventory"]);
+		expect(nav.every((item) => item.href.startsWith("/client/"))).toBe(true);
+		expect(CLIENT_SHELL_NAV.some((item) => item.id === "org-admin")).toBe(
+			false,
+		);
+	});
+
 	it("exposes module-tagged nav for on-disk operator routes only", () => {
 		const hrefs = OPERATOR_SHELL_NAV.map((item) => item.href);
-		expect(hrefs).toEqual(["/admin"]);
+		expect(hrefs).toContain("/admin");
+		expect(hrefs).toContain("/admin/inventory");
+		expect(hrefs.every((href) => href.startsWith("/admin"))).toBe(true);
 		expect(OPERATOR_SHELL_NAV.every((item) => item.kind === "module")).toBe(
 			true,
 		);
@@ -67,6 +93,7 @@ describe("portal-chrome (N16)", () => {
 			"features/portal-chrome/resolve-shell-access.ts",
 			"features/portal-chrome/operator-platform-shell.tsx",
 			"features/portal-chrome/operator-platform-chrome.tsx",
+			"features/portal-chrome/client-workspace-nav.tsx",
 		];
 
 		for (const file of portalChromeSources) {
@@ -79,6 +106,12 @@ describe("portal-chrome (N16)", () => {
 		const layout = source("app/(operator)/layout.tsx");
 		expect(layout).toContain("OperatorPlatformShell");
 		expect(layout).toContain('requireRole("operator")');
+	});
+
+	it("wires client workspace layout to ClientWorkspaceNav", () => {
+		const layout = source("app/(client)/client/(workspace)/layout.tsx");
+		expect(layout).toContain("ClientWorkspaceNav");
+		expect(layout).toContain('requireRole("client")');
 	});
 
 	it("passes server-read sidebar cookie into SidebarProvider defaultOpen", () => {

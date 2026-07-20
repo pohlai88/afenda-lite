@@ -44,8 +44,27 @@ export type ThreeWayMatchResult = {
 	purchaseOrderId: string;
 	goodsReceiptId: string;
 	result: ThreeWayMatchStatus;
+	evidence: ThreeWayMatchEvidence;
+	purchaseOrderVersion: number;
+	goodsReceiptVersion: number;
 	matchedBy: string;
 	matchedAt: Date;
+};
+
+export type ThreeWayMatchEvidence = {
+	quantityTolerancePct: string;
+	priceTolerancePct: string;
+	lineResults: Array<{
+		itemId: string;
+		invoicedQuantity: string;
+		invoicedUnitPrice: string;
+		orderedQuantity: string;
+		receivedQuantity: string;
+		purchaseOrderUnitPrice: string;
+		quantityVariancePct: string;
+		priceVariancePct: string;
+		outcome: "matched" | "matched_with_tolerance" | "exception";
+	}>;
 };
 
 export type SupplierInvoice = {
@@ -81,8 +100,14 @@ export type SupplierAllocation = {
 	organizationId: string;
 	invoiceId: string;
 	supplierId: string;
-	paymentId: string;
+	paymentId: string | null;
+	paymentApplicationInstructionId: string | null;
+	creditNoteId: string | null;
+	status: "active" | "reversed";
 	amount: string;
+	applyIdempotencyKey: string | null;
+	reversedAt: Date | null;
+	reversedBy: string | null;
 	createdBy: string;
 	createdAt: Date;
 };
@@ -92,6 +117,11 @@ export type SupplierBalance = {
 	supplierId: string;
 	currencyCode: string;
 	openBalance: string;
+	invoicedAmount: string;
+	creditedAmount: string;
+	paidAmount: string;
+	outstandingAmount: string;
+	asOf: Date;
 	updatedAt: Date;
 };
 
@@ -99,9 +129,11 @@ export type PayablesEventType =
 	| "payables.invoice.created.v1"
 	| "payables.invoice.matched.v1"
 	| "payables.invoice.posted.v1"
+	| "payables.invoice.cancelled.v1"
 	| "payables.credit_note.posted.v1"
 	| "payables.allocation.posted.v1"
-	| "payables.allocation.reversed.v1";
+	| "payables.allocation.reversed.v1"
+	| "payables.payment_application.reversed.v1";
 
 export type PayablesEffects = {
 	emit(event: {
@@ -147,6 +179,9 @@ export type PayablesStore = {
 		purchaseOrderId: string;
 		goodsReceiptId: string;
 		matchStatus: ThreeWayMatchStatus;
+		evidence: ThreeWayMatchEvidence;
+		purchaseOrderVersion: number;
+		goodsReceiptVersion: number;
 		expectedVersion: number;
 		actorUserId: string;
 		correlationId: string;
@@ -160,21 +195,48 @@ export type PayablesStore = {
 		correlationId: string;
 		effects: PayablesEffects;
 	}): Promise<Result<SupplierInvoice>>;
-	issueCredit(
-		record: SupplierInvoiceCreateRecord & {
-			amount: string;
-		},
+	createCredit(
+		record: SupplierInvoiceCreateRecord,
 	): Promise<Result<SupplierInvoice>>;
+	addCreditLine(record: {
+		organizationId: string;
+		creditNoteId: string;
+		itemId: string;
+		description: string;
+		quantity: string;
+		unitPrice: string;
+		actorUserId: string;
+	}): Promise<Result<SupplierInvoiceLine>>;
+	postCredit(record: {
+		organizationId: string;
+		creditNoteId: string;
+		expectedVersion: number;
+		actorUserId: string;
+		correlationId: string;
+		effects: PayablesEffects;
+	}): Promise<Result<SupplierInvoice>>;
 	applyPayment(record: {
 		organizationId: string;
 		invoiceId: string;
 		amount: string;
 		paymentId: string;
+		paymentApplicationInstructionId: string;
+		idempotencyKey: string;
 		actorUserId: string;
 		correlationId: string;
 		effects: PayablesEffects;
 	}): Promise<Result<SupplierAllocation>>;
-	reverseAllocationsByPayment(record: {
+	applyCredit(record: {
+		organizationId: string;
+		invoiceId: string;
+		creditNoteId: string;
+		amount: string;
+		actorUserId: string;
+		correlationId: string;
+		idempotencyKey: string;
+		effects: PayablesEffects;
+	}): Promise<Result<SupplierAllocation>>;
+	reversePaymentApplication(record: {
 		organizationId: string;
 		paymentId: string;
 		actorUserId: string;
@@ -186,6 +248,8 @@ export type PayablesStore = {
 		invoiceId: string;
 		expectedVersion: number;
 		actorUserId: string;
+		correlationId: string;
+		effects: PayablesEffects;
 	}): Promise<Result<SupplierInvoice>>;
 	getById(
 		organizationId: string,
@@ -196,6 +260,9 @@ export type PayablesStore = {
 		page: number;
 		pageSize: number;
 		status?: SupplierInvoiceStatus;
+		supplierId?: string;
+		currencyCode?: string;
+		documentType?: SupplierInvoice["documentType"];
 	}): Promise<Result<SupplierInvoice[]>>;
 	getBalance(
 		organizationId: string,

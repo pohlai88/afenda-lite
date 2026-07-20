@@ -14,7 +14,7 @@ import {
 	type PostedPaymentQueryPort,
 	type PurchaseOrderMatchQueryPort,
 	postSupplierInvoice,
-	reverseSupplierAllocationsByPayment,
+	reverseSupplierPaymentApplication,
 } from "../src/index";
 
 const organizationId = "org-1";
@@ -42,7 +42,9 @@ const purchaseOrderMatch: PurchaseOrderMatchQueryPort = {
 			supplierPartyId: supplierId,
 			status: "posted",
 			currencyCode: "USD",
-			lines: [{ itemId, quantity: "10" }],
+			version: 1,
+			priceTolerancePct: "100",
+			lines: [{ itemId, quantity: "10", unitPrice: "50" }],
 		});
 	},
 };
@@ -55,6 +57,7 @@ const goodsReceiptMatch: GoodsReceiptMatchQueryPort = {
 			status: "posted",
 			sourceType: "purchase_order",
 			sourceId: purchaseOrderId,
+			version: 1,
 			lines: [{ itemId, quantityReceived: "10" }],
 		});
 	},
@@ -142,6 +145,8 @@ describe("payables lifecycle", () => {
 				correlationId: "apply",
 				invoiceId: created.data.id,
 				paymentId,
+				paymentApplicationInstructionId: "00000000-0000-4000-8000-000000000006",
+				idempotencyKey: "apply-1",
 				amount: "25",
 			},
 			options,
@@ -157,6 +162,7 @@ describe("payables lifecycle", () => {
 				supplierName: "Supplier One",
 				currencyCode: "USD",
 				amount: "10",
+				itemId,
 			},
 			options,
 		);
@@ -299,7 +305,8 @@ describe("payables lifecycle", () => {
 					supplierPartyId: supplierId,
 					status: "posted",
 					currencyCode: "EUR",
-					lines: [{ itemId, quantity: "10" }],
+					version: 1,
+					lines: [{ itemId, quantity: "10", unitPrice: "50" }],
 				});
 			},
 		};
@@ -357,30 +364,84 @@ describe("payables lifecycle", () => {
 
 	it("restores the supplier invoice and balance when reversing payment allocations", async () => {
 		const store = createMemoryPayablesStore();
-		const options = { store, authorization, effects, purchaseOrderMatch, goodsReceiptMatch, postedPayment };
+		const options = {
+			store,
+			authorization,
+			effects,
+			purchaseOrderMatch,
+			goodsReceiptMatch,
+			postedPayment,
+		};
 		const created = await createDraftSupplierInvoice(
-			{ organizationId, actorUserId, correlationId: "reverse-create", code: "SI-REVERSE", supplierId, supplierCode: "S-1", supplierName: "Supplier One", currencyCode: "USD" },
+			{
+				organizationId,
+				actorUserId,
+				correlationId: "reverse-create",
+				code: "SI-REVERSE",
+				supplierId,
+				supplierCode: "S-1",
+				supplierName: "Supplier One",
+				currencyCode: "USD",
+			},
 			options,
 		);
 		if (!created.ok) return;
 		await addSupplierInvoiceLine(
-			{ organizationId, actorUserId, correlationId: "reverse-line", invoiceId: created.data.id, itemId, description: "Materials", quantity: "1", unitPrice: "100" },
+			{
+				organizationId,
+				actorUserId,
+				correlationId: "reverse-line",
+				invoiceId: created.data.id,
+				itemId,
+				description: "Materials",
+				quantity: "1",
+				unitPrice: "100",
+			},
 			options,
 		);
 		await matchSupplierInvoice(
-			{ organizationId, actorUserId, correlationId: "reverse-match", invoiceId: created.data.id, purchaseOrderId, goodsReceiptId, expectedVersion: 2 },
+			{
+				organizationId,
+				actorUserId,
+				correlationId: "reverse-match",
+				invoiceId: created.data.id,
+				purchaseOrderId,
+				goodsReceiptId,
+				expectedVersion: 2,
+			},
 			options,
 		);
 		await postSupplierInvoice(
-			{ organizationId, actorUserId, correlationId: "reverse-post", invoiceId: created.data.id, expectedVersion: 3 },
+			{
+				organizationId,
+				actorUserId,
+				correlationId: "reverse-post",
+				invoiceId: created.data.id,
+				expectedVersion: 3,
+			},
 			options,
 		);
 		await applySupplierPayment(
-			{ organizationId, actorUserId, correlationId: "reverse-apply", invoiceId: created.data.id, paymentId, amount: "25" },
+			{
+				organizationId,
+				actorUserId,
+				correlationId: "reverse-apply",
+				invoiceId: created.data.id,
+				paymentId,
+				paymentApplicationInstructionId: "00000000-0000-4000-8000-000000000006",
+				idempotencyKey: "reverse-apply-1",
+				amount: "25",
+			},
 			options,
 		);
-		const reversed = await reverseSupplierAllocationsByPayment(
-			{ organizationId, actorUserId, correlationId: "reverse", paymentId, idempotencyKey: "reverse-supplier-1" },
+		const reversed = await reverseSupplierPaymentApplication(
+			{
+				organizationId,
+				actorUserId,
+				correlationId: "reverse",
+				paymentId,
+				idempotencyKey: "reverse-supplier-1",
+			},
 			options,
 		);
 		expect(reversed.ok && reversed.data).toHaveLength(1);
@@ -469,6 +530,8 @@ describe("payables lifecycle", () => {
 				correlationId: "apply-fx",
 				invoiceId: created.data.id,
 				paymentId,
+				paymentApplicationInstructionId: "00000000-0000-4000-8000-000000000006",
+				idempotencyKey: "apply-fx",
 				amount: "5",
 			},
 			options,

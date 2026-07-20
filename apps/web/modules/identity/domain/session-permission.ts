@@ -140,10 +140,40 @@ export const PERMISSION_DENIED_MESSAGE: Record<PlatformPermissionCodeV1, string>
 	"payments.account.read": "You do not have permission to read payment accounts.",
 	"payments.availability.read":
 		"You do not have permission to read payment application availability.",
-	"accounting.read":
-		"You do not have permission to read accounting journals and balances.",
-	"accounting.manage":
-		"You do not have permission to manage accounting journals and periods.",
+	"accounting.journal.read":
+		"You do not have permission to read accounting journals.",
+	"accounting.journal.create":
+		"You do not have permission to create accounting journals.",
+	"accounting.journal.update":
+		"You do not have permission to update accounting journals.",
+	"accounting.journal.post":
+		"You do not have permission to post accounting journals.",
+	"accounting.journal.reverse":
+		"You do not have permission to reverse accounting journals.",
+	"accounting.trial_balance.read":
+		"You do not have permission to read the trial balance.",
+	"accounting.ledger.read":
+		"You do not have permission to read ledger activity.",
+	"accounting.period.read":
+		"You do not have permission to read accounting periods.",
+	"accounting.period.open":
+		"You do not have permission to open accounting periods.",
+	"accounting.period.soft_close":
+		"You do not have permission to soft-close accounting periods.",
+	"accounting.period.close":
+		"You do not have permission to close accounting periods.",
+	"accounting.period.reopen":
+		"You do not have permission to reopen accounting periods.",
+	"accounting.account.read":
+		"You do not have permission to read charts of accounts.",
+	"accounting.account.manage":
+		"You do not have permission to manage charts of accounts.",
+	"accounting.posting_rule.manage":
+		"You do not have permission to manage posting rules.",
+	"accounting.exception.read":
+		"You do not have permission to read posting exceptions.",
+	"accounting.exception.manage":
+		"You do not have permission to manage posting exceptions.",
 } as const satisfies Record<PlatformPermissionCodeV1, string>;
 
 /**

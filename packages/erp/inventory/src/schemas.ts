@@ -6,6 +6,7 @@ import {
 	INVENTORY_MOVEMENT_SOURCES,
 	STOCK_MOVEMENT_STATUSES,
 	STOCK_MOVEMENT_TYPES,
+	STOCK_RESERVATION_STATUSES,
 } from "./types";
 
 const organizationIdSchema = z.string().trim().min(1);
@@ -178,6 +179,10 @@ export const releaseReservationInputSchema = z.object({
 	expectedVersion: z.number().int().positive(),
 });
 
+/** Expire / cancel share the release input shape (balance-freeing terminals). */
+export const expireReservationInputSchema = releaseReservationInputSchema;
+export const cancelReservationInputSchema = releaseReservationInputSchema;
+
 export const getStockMovementByIdInputSchema = z.object({
 	organizationId: organizationIdSchema,
 	actorUserId: actorUserIdSchema,
@@ -193,6 +198,17 @@ export const listStockMovementsInputSchema = z.object({
 	pageSize: z.number().int().positive().max(100).default(50),
 	status: z.enum(STOCK_MOVEMENT_STATUSES).optional(),
 	movementType: z.enum(STOCK_MOVEMENT_TYPES).optional(),
+});
+
+export const listStockReservationsInputSchema = z.object({
+	organizationId: organizationIdSchema,
+	actorUserId: actorUserIdSchema,
+	correlationId: correlationIdSchema.optional(),
+	page: z.number().int().positive().default(1),
+	pageSize: z.number().int().positive().max(100).default(50),
+	status: z.enum(STOCK_RESERVATION_STATUSES).optional(),
+	warehouseId: warehouseIdSchema.optional(),
+	itemId: itemIdSchema.optional(),
 });
 
 export const getStockAvailabilityInputSchema = z.object({

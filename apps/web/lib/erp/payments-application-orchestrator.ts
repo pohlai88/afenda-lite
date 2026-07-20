@@ -1,7 +1,7 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
 import {
 	applySupplierPayment,
-	reverseSupplierAllocationsByPayment,
+	reverseSupplierPaymentApplication,
 } from "@afenda/payables";
 import {
 	getPaymentById,
@@ -43,10 +43,15 @@ export async function applyPaymentInstructionsAfterPost(
 								invoiceId: instruction.targetDocumentId,
 								amount: instruction.intendedAmount,
 								paymentId: input.payment.id,
+								paymentApplicationInstructionId: instruction.id,
+								idempotencyKey: `${input.payment.id}:${instruction.id}:apply`,
 							},
 							createPayablesCommandOptions(input.actorUserId),
 						)
-					: fail("BAD_REQUEST", "Unsupported payment application target");
+					: fail(
+							"BAD_REQUEST",
+							"Unsupported payment application target (v1 invoice-only)",
+						);
 
 		const instructionResult = application.ok
 			? await markApplicationInstructionApplied(
@@ -86,7 +91,8 @@ async function applyCustomerReceiptForInstruction(
 		options,
 	);
 	if (!invoice.ok) return invoice;
-	if (invoice.data === null) return fail("NOT_FOUND", "Sales invoice not found");
+	if (invoice.data === null)
+		return fail("NOT_FOUND", "Sales invoice not found");
 
 	return applyCustomerReceipt(
 		{
@@ -114,7 +120,7 @@ export async function reversePaymentApplications(
 			},
 			createReceivablesCommandOptions(),
 		),
-		reverseSupplierAllocationsByPayment(
+		reverseSupplierPaymentApplication(
 			{
 				...input,
 				paymentId: input.paymentId,

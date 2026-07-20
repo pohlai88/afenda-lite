@@ -123,6 +123,7 @@ export const supplierCreditNote = pgTable(
 			() => supplierInvoice.id,
 		),
 		currencyCode: text("currency_code").notNull(),
+		amount: text("amount").notNull().default("0"),
 		version: integer("version").notNull().default(1),
 		createdBy: text("created_by").notNull(),
 		updatedBy: text("updated_by").notNull(),
@@ -153,6 +154,47 @@ export const supplierCreditNote = pgTable(
 	],
 );
 
+export const supplierCreditNoteLine = pgTable(
+	"supplier_credit_note_line",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		creditNoteId: uuid("credit_note_id")
+			.notNull()
+			.references(() => supplierCreditNote.id),
+		lineNo: integer("line_no").notNull(),
+		itemId: uuid("item_id")
+			.notNull()
+			.references(() => mdItem.id),
+		itemCode: text("item_code").notNull(),
+		itemName: text("item_name").notNull(),
+		quantity: text("quantity").notNull(),
+		unitPrice: text("unit_price").notNull(),
+		lineAmount: text("line_amount").notNull(),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("supplier_credit_note_line_org_id_idx").on(t.organizationId, t.id),
+		index("supplier_credit_note_line_org_credit_note_idx").on(
+			t.organizationId,
+			t.creditNoteId,
+		),
+		uniqueIndex("supplier_credit_note_line_org_credit_note_line_no_uidx").on(
+			t.organizationId,
+			t.creditNoteId,
+			t.lineNo,
+		),
+	],
+);
+
 export const supplierAllocation = pgTable(
 	"supplier_allocation",
 	{
@@ -165,12 +207,20 @@ export const supplierAllocation = pgTable(
 			.notNull()
 			.references(() => supplierInvoice.id),
 		paymentId: uuid("payment_id"),
+		paymentApplicationInstructionId: uuid(
+			"payment_application_instruction_id",
+		),
 		creditNoteId: uuid("credit_note_id").references(
 			() => supplierCreditNote.id,
 		),
+		/** active | reversed */
+		status: text("status").notNull().default("active"),
 		amount: text("amount").notNull(),
 		allocatedAt: timestamp("allocated_at", { withTimezone: true }).notNull(),
 		allocatedBy: text("allocated_by").notNull(),
+		applyIdempotencyKey: text("apply_idempotency_key"),
+		reversedAt: timestamp("reversed_at", { withTimezone: true }),
+		reversedBy: text("reversed_by"),
 		version: integer("version").notNull().default(1),
 		createdBy: text("created_by").notNull(),
 		updatedBy: text("updated_by").notNull(),
@@ -213,6 +263,11 @@ export const threeWayMatchResult = pgTable(
 		/** pending | matched | matched_with_tolerance | exception */
 		matchStatus: text("match_status").notNull(),
 		notes: text("notes"),
+		evidenceJson: text("evidence_json"),
+		poEvidenceVersion: integer("po_evidence_version"),
+		grEvidenceVersion: integer("gr_evidence_version"),
+		matchedAt: timestamp("matched_at", { withTimezone: true }),
+		matchedBy: text("matched_by"),
 		version: integer("version").notNull().default(1),
 		createdBy: text("created_by").notNull(),
 		updatedBy: text("updated_by").notNull(),

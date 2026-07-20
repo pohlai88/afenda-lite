@@ -25,7 +25,7 @@ export async function postJournalAction(
 ): Promise<PostJournalActionState> {
 	return runOperatorPermissionAction({
 		path: "postJournalAction",
-		permission: "accounting.manage",
+		permission: "accounting.journal.post",
 		safeMessage: "Could not post journal. Try again or contact an admin.",
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(schema, {

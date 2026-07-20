@@ -227,6 +227,78 @@ describe("@afenda/fulfillment domain", () => {
 		]);
 	});
 
+	it("auto-reserves via Inventory reserveStock when pick omits reservationId", async () => {
+		const ctx = harness();
+		await seedInventoryOnHand(ctx.inventory, {
+			organizationId: ORG,
+			actorUserId: "user-1",
+			correlationId: "corr-seed-auto",
+			code: "OPEN-AUTO",
+			warehouseId: WAREHOUSE,
+			itemId: ITEM,
+			quantity: 10,
+		});
+		const draft = await create(ctx, "DLV-AUTO");
+		expect(draft.ok).toBe(true);
+		if (!draft.ok) return;
+		const line = await addDeliveryLine(
+			{
+				organizationId: ORG,
+				actorUserId: "user-1",
+				correlationId: "corr-line-auto",
+				idempotencyKey: "idem-line-auto",
+				deliveryId: draft.data.id,
+				expectedVersion: draft.data.version,
+				itemId: ITEM,
+				quantityOrdered: 4,
+				quantityToDeliver: 4,
+			},
+			ctx,
+		);
+		expect(line.ok).toBe(true);
+		if (!line.ok) return;
+		const picking = await startPicking(
+			{
+				organizationId: ORG,
+				actorUserId: "user-1",
+				correlationId: "corr-start-auto",
+				idempotencyKey: "idem-start-auto",
+				deliveryId: draft.data.id,
+				expectedVersion: 2,
+			},
+			ctx,
+		);
+		expect(picking.ok).toBe(true);
+		if (!picking.ok) return;
+		const pick = await confirmPick(
+			{
+				organizationId: ORG,
+				actorUserId: "user-1",
+				correlationId: "corr-pick-auto",
+				idempotencyKey: "idem-pick-auto",
+				deliveryId: draft.data.id,
+				deliveryLineId: line.data.id,
+				quantityPicked: 4,
+				expectedVersion: picking.data.version,
+			},
+			ctx,
+		);
+		expect(pick.ok).toBe(true);
+		if (!pick.ok) return;
+		const reservationId = pick.data.reservationId;
+		expect(reservationId).toBeTruthy();
+		if (reservationId === null) return;
+		const reservation = await ctx.inventory.store?.getReservationById(
+			ORG,
+			reservationId,
+		);
+		expect(reservation?.ok).toBe(true);
+		if (reservation?.ok && reservation.data !== null) {
+			expect(reservation.data.quantity).toBe("4");
+			expect(reservation.data.status).toBe("active");
+		}
+	});
+
 	it("enforces lines, picks, pick bounds, and optimistic versions", async () => {
 		const ctx = harness();
 		await seedInventoryOnHand(ctx.inventory, {

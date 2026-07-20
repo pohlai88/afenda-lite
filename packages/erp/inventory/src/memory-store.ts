@@ -33,7 +33,9 @@ import {
 	type MovementPostRecord,
 	parseQuantity,
 	type ReservationCreateRecord,
+	type ReservationListFilter,
 	type ReservationReleaseRecord,
+	reservationTerminalEventType,
 } from "./store";
 import type {
 	StockAvailability,
@@ -836,20 +838,20 @@ export class MemoryInventoryStore implements InventoryStore {
 		) {
 			return reservationNotFound();
 		}
-		if (reservation.status === "released") {
+		if (reservation.status === record.terminalStatus) {
 			if (reservation.releaseIdempotencyKey === record.releaseIdempotencyKey) {
 				return ok(cloneReservation(reservation));
 			}
 			return fail(
 				"CONFLICT",
-				"Stock reservation is already released",
+				"Stock reservation is already terminated",
 				inventoryErrorDetails(INVENTORY_ERROR_RESERVATION_ALREADY_RELEASED),
 			);
 		}
 		if (!isReleasableReservationStatus(reservation.status)) {
 			return fail(
 				"CONFLICT",
-				"Stock reservation cannot be released",
+				"Stock reservation cannot be terminated",
 				inventoryErrorDetails(INVENTORY_ERROR_RESERVATION_ALREADY_RELEASED),
 			);
 		}
@@ -894,7 +896,8 @@ export class MemoryInventoryStore implements InventoryStore {
 
 		const previous = cloneReservation(reservation);
 		const now = new Date();
-		reservation.status = "released";
+		const eventType = reservationTerminalEventType(record.terminalStatus);
+		reservation.status = record.terminalStatus;
 		reservation.releaseIdempotencyKey = record.releaseIdempotencyKey;
 		reservation.releasedAt = now;
 		reservation.releasedBy = record.actorUserId;
@@ -913,7 +916,7 @@ export class MemoryInventoryStore implements InventoryStore {
 				{
 					field: "status",
 					oldValue: previous.status,
-					newValue: "released",
+					newValue: record.terminalStatus,
 				},
 			],
 			oldValue: { status: previous.status, version: previous.version },
@@ -929,7 +932,7 @@ export class MemoryInventoryStore implements InventoryStore {
 			organizationId: reservation.organizationId,
 			actorUserId: record.actorUserId,
 			correlationId: meta.correlationId,
-			type: "inventory.reservation.released.v1",
+			type: eventType,
 			payload: {
 				organizationId: reservation.organizationId,
 				entityType: "stock_reservation",
@@ -1001,6 +1004,36 @@ export class MemoryInventoryStore implements InventoryStore {
 				return right.id.localeCompare(left.id);
 			})
 			.map(cloneMovement);
+		return ok(paginate(rows, filter.page, filter.pageSize));
+	}
+
+	async listReservations(
+		filter: ReservationListFilter,
+	): Promise<Result<StockReservation[]>> {
+		const rows = [...this.reservations.values()]
+			.filter((reservation) => reservation.organizationId === filter.organizationId)
+			.filter(
+				(reservation) =>
+					filter.status === undefined || reservation.status === filter.status,
+			)
+			.filter(
+				(reservation) =>
+					filter.warehouseId === undefined ||
+					reservation.warehouseId === filter.warehouseId,
+			)
+			.filter(
+				(reservation) =>
+					filter.itemId === undefined || reservation.itemId === filter.itemId,
+			)
+			.sort((left, right) => {
+				const updatedDelta =
+					right.updatedAt.getTime() - left.updatedAt.getTime();
+				if (updatedDelta !== 0) {
+					return updatedDelta;
+				}
+				return right.id.localeCompare(left.id);
+			})
+			.map(cloneReservation);
 		return ok(paginate(rows, filter.page, filter.pageSize));
 	}
 

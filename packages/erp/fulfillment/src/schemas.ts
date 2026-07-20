@@ -62,7 +62,8 @@ export const confirmPickInputSchema = z.object({
 	idempotencyKey: idempotencyKeySchema,
 	deliveryLineId: deliveryLineIdSchema,
 	quantityPicked: positiveQuantitySchema,
-	reservationId: z.string().uuid(),
+	/** When omitted, Inventory `reserveStock` creates a reservation for the pick qty. */
+	reservationId: z.string().uuid().optional(),
 });
 
 export const confirmPackInputSchema = z.object({
