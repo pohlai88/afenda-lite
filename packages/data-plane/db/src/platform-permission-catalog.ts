@@ -75,6 +75,30 @@ export const PLATFORM_PERMISSION_V1 = [
 		description: "Create, line, and post sales orders",
 		sensitive: true,
 	},
+	{
+		code: "purchasing.read",
+		module: "purchasing",
+		description: "Read organization purchase orders",
+		sensitive: false,
+	},
+	{
+		code: "purchasing.manage",
+		module: "purchasing",
+		description: "Create, line, post, and cancel purchase orders",
+		sensitive: true,
+	},
+	{
+		code: "inventory.read",
+		module: "inventory",
+		description: "Read organization stock movements and availability",
+		sensitive: false,
+	},
+	{
+		code: "inventory.manage",
+		module: "inventory",
+		description: "Create, post, reserve, and release inventory stock",
+		sensitive: true,
+	},
 ] as const;
 
 /** Retired v1 codes removed by the domain wipe — deleted on ensure. */
@@ -131,13 +155,24 @@ export const PLATFORM_ROLE_TEMPLATES_V1: readonly PlatformRoleTemplateV1[] = [
 			"master_data.manage",
 			"sales.read",
 			"sales.manage",
+			"purchasing.read",
+			"purchasing.manage",
+			"inventory.read",
+			"inventory.manage",
 		],
 	},
 	{
 		templateKey: "viewer",
 		name: "Viewer",
-		description: "Account self + master-data read + sales read",
-		permissionCodes: ["account.self", "master_data.read", "sales.read"],
+		description:
+			"Account self + master-data read + sales/purchasing/inventory read",
+		permissionCodes: [
+			"account.self",
+			"master_data.read",
+			"sales.read",
+			"purchasing.read",
+			"inventory.read",
+		],
 	},
 ] as const;
 

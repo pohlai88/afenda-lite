@@ -74,6 +74,10 @@ describe("@afenda/events schemas", () => {
 			"master_data.warehouse.updated.v1",
 			"master_data.warehouse_external_id.created.v1",
 			"platform.organization.deleted",
+			"purchasing.order.cancelled.v1",
+			"purchasing.order.created.v1",
+			"purchasing.order.line_added.v1",
+			"purchasing.order.posted.v1",
 			"sales.order.created.v1",
 			"sales.order.line_added.v1",
 			"sales.order.posted.v1",
@@ -81,6 +85,7 @@ describe("@afenda/events schemas", () => {
 		expect(isKnownEventType("identity.org_role.assigned")).toBe(true);
 		expect(isKnownEventType("master_data.party.created.v1")).toBe(true);
 		expect(isKnownEventType("master_data.payment_term.created.v1")).toBe(true);
+		expect(isKnownEventType("purchasing.order.created.v1")).toBe(true);
 		expect(isKnownEventType("sales.order.created.v1")).toBe(true);
 		expect(isKnownEventType("crm.deal.won")).toBe(false);
 	});

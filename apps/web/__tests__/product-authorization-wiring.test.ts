@@ -164,6 +164,12 @@ describe("N11 product authorization wiring", () => {
 			"app/actions/create-sales-order.ts": ["sales.manage"],
 			"app/actions/add-sales-order-line.ts": ["sales.manage"],
 			"app/actions/post-sales-order.ts": ["sales.manage"],
+			"app/actions/list-purchase-orders.ts": ["purchasing.read"],
+			"app/actions/get-purchase-order.ts": ["purchasing.read"],
+			"app/actions/create-purchase-order.ts": ["purchasing.manage"],
+			"app/actions/add-purchase-order-line.ts": ["purchasing.manage"],
+			"app/actions/post-purchase-order.ts": ["purchasing.manage"],
+			"app/actions/cancel-purchase-order.ts": ["purchasing.manage"],
 			"features/org-admin/org-admin-shell.tsx": [
 				"org.roles.manage",
 				"clients.invite",
@@ -174,6 +180,10 @@ describe("N11 product authorization wiring", () => {
 				"master_data.approve",
 			],
 			"features/sales/sales-shell.tsx": ["sales.read", "sales.manage"],
+			"features/purchasing/purchasing-shell.tsx": [
+				"purchasing.read",
+				"purchasing.manage",
+			],
 		} as const;
 
 		for (const [relativePath, codes] of Object.entries(expectedCodesByPort)) {

@@ -30,6 +30,8 @@ export const PERMISSION_DENIED_MESSAGE = {
 		"You do not have permission to approve and apply master-data import.",
 	"sales.read": "You do not have permission to read sales orders.",
 	"sales.manage": "You do not have permission to manage sales orders.",
+	"purchasing.read": "You do not have permission to read purchase orders.",
+	"purchasing.manage": "You do not have permission to manage purchase orders.",
 } as const satisfies Record<PlatformPermissionCodeV1, string>;
 
 /**

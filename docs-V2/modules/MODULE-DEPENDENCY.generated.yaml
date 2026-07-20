@@ -10,6 +10,16 @@ modules:
       - moduleId: inventory
         style: events
     required: []
+  - id: purchasing
+    optionalIntegratesWith:
+      - moduleId: receiving
+        style: events
+      - moduleId: payables
+        style: events
+      - moduleId: inventory
+        style: events
+    required:
+      - master-data
   - id: sales
     optionalIntegratesWith:
       - moduleId: inventory

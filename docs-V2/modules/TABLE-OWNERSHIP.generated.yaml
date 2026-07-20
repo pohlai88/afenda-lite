@@ -90,6 +90,14 @@ tables:
     packageName: "@afenda/master-data"
     schemaOwner: "@afenda/db"
     table: md_change_request
+  - moduleId: purchasing
+    packageName: "@afenda/purchasing"
+    schemaOwner: "@afenda/db"
+    table: purchase_order
+  - moduleId: purchasing
+    packageName: "@afenda/purchasing"
+    schemaOwner: "@afenda/db"
+    table: purchase_order_line
   - moduleId: sales
     packageName: "@afenda/sales"
     schemaOwner: "@afenda/db"

@@ -34,6 +34,14 @@ import {
 	platformRoleAssignment,
 	platformSearchDocument,
 } from "./schema/platform";
+import {
+	stockBalance,
+	stockLedgerEntry,
+	stockMovement,
+	stockMovementLine,
+	stockReservation,
+} from "./schema/inventory";
+import { purchaseOrder, purchaseOrderLine } from "./schema/purchasing";
 import { salesOrder, salesOrderLine } from "./schema/sales";
 
 /** SQL table names for null-org audits (RB-001 §3.4 · ARCH-023). */
@@ -68,6 +76,13 @@ export const HARD_TENANT_ROOT_TABLE_NAMES = [
 	"md_change_request",
 	"sales_order",
 	"sales_order_line",
+	"purchase_order",
+	"purchase_order_line",
+	"stock_movement",
+	"stock_movement_line",
+	"stock_balance",
+	"stock_ledger_entry",
+	"stock_reservation",
 ] as const;
 
 export type HardTenantRootTableName =
@@ -105,4 +120,11 @@ export const HARD_TENANT_ROOT_TABLES = {
 	mdChangeRequest,
 	salesOrder,
 	salesOrderLine,
+	purchaseOrder,
+	purchaseOrderLine,
+	stockMovement,
+	stockMovementLine,
+	stockBalance,
+	stockLedgerEntry,
+	stockReservation,
 } as const;

@@ -179,6 +179,37 @@ edges:
     reason: "FK + snapshots; masters via public API only"
     effectiveDate: "2026-07-20"
 
+  - from: "@afenda/purchasing"
+    to: "@afenda/db"
+    status: approved
+    authority: ARCH-006
+    reason: "purchase_order schema access"
+    effectiveDate: "2026-07-20"
+  - from: "@afenda/purchasing"
+    to: "@afenda/errors"
+    status: approved
+    authority: ARCH-006
+    reason: "Purchasing error codes"
+    effectiveDate: "2026-07-20"
+  - from: "@afenda/purchasing"
+    to: "@afenda/audit"
+    status: approved
+    authority: ARCH-006
+    reason: "Purchasing mutation audit"
+    effectiveDate: "2026-07-20"
+  - from: "@afenda/purchasing"
+    to: "@afenda/events"
+    status: approved
+    authority: ARCH-006
+    reason: "Purchasing outbox events"
+    effectiveDate: "2026-07-20"
+  - from: "@afenda/purchasing"
+    to: "@afenda/master-data"
+    status: approved
+    authority: ARCH-006
+    reason: "FK + snapshots; masters via public API only"
+    effectiveDate: "2026-07-20"
+
   - from: "@afenda/ai-the-machine"
     to: "@afenda/errors"
     status: approved

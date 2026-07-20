@@ -21,10 +21,15 @@ export const LIVING_ERP_MANIFEST_PACKAGES = [
 		dir: "packages/erp/sales",
 		manifestExport: "salesModuleManifest",
 	},
+	{
+		id: "purchasing",
+		packageName: "@afenda/purchasing",
+		dir: "packages/erp/purchasing",
+		manifestExport: "purchasingModuleManifest",
+	},
 ];
 
 export const FORBIDDEN_PHASE_PACKAGE_DIRS = [
-	"purchasing",
 	"inventory",
 	"receiving",
 	"fulfillment",
@@ -90,6 +95,8 @@ export const SCHEMA_SYMBOL_TO_TABLE = {
 	mdChangeRequest: "md_change_request",
 	salesOrder: "sales_order",
 	salesOrderLine: "sales_order_line",
+	purchaseOrder: "purchase_order",
+	purchaseOrderLine: "purchase_order_line",
 	refCountry: "ref_country",
 	refCurrency: "ref_currency",
 	refLanguage: "ref_language",

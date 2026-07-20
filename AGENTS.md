@@ -204,7 +204,7 @@ Authority: [`testing/README.md`](testing/README.md).
 | `pnpm test:e2e` / `:smoke` / `:journey` | Playwright when specs exist |
 | `pnpm check:docs-naming` | DOC-002 / naming gate |
 | `pnpm validate:neon-env` | Neon Cloud ids vs `.env.local` |
-| `pnpm audit:tenancy-nulls` | Hard tenant roots null-org audit (30 tables via `HARD_TENANT_ROOT_TABLE_NAMES`: platform_* six · `md_party`/`md_item*`/`md_warehouse*` · `md_payment_term` · `md_tax_registration` · MDG/variants · `sales_order`/`sales_order_line`) |
+| `pnpm audit:tenancy-nulls` | Hard tenant roots null-org audit (32 tables via `HARD_TENANT_ROOT_TABLE_NAMES`: platform_* six · `md_party`/`md_item*`/`md_warehouse*` · `md_payment_term` · `md_tax_registration` · MDG/variants · `sales_order`/`sales_order_line` · `purchase_order`/`purchase_order_line`) |
 | `pnpm audit:github-actions-secrets` | Required Actions secret/var **names** only (Ops; keyring `gh`) |
 | `pnpm protect:main` | Verify (or `-- --apply`) Living `main` required check = `quality` |
 

@@ -18,7 +18,8 @@ Re-probe after package add/rename or DAG change. Controlled Living `docs/` remai
 |-------|---------|--------|
 | **1** | Classification + banded catalog | **Done** — [packages/README.md](../../packages/README.md) |
 | **2** | Dual-control validators (`pnpm validate:modules`) | **Done** — Living in CI; [PHASE-2-REPORT.md](../modules/PHASE-2-REPORT.md) |
-| **3** | One-level category folders under `packages/` (imports stay `@afenda/<name>`) | **Done** — living shape `packages/<category>/<name>` (22 packages). Evidence gate waived in writing 2026-07-20; authorization: [phase3_phase4.md](../_scratch/phase3_phase4.md). Categories are not packages (no `@afenda/foundation` etc.). Ready for independent audit before Phase 4. |
+| **3** | One-level category folders under `packages/` (imports stay `@afenda/<name>`) | **Done** — living shape `packages/<category>/<name>`. Evidence gate waived in writing 2026-07-20; authorization: [phase3_phase4.md](../_scratch/phase3_phase4.md). Categories are not packages (no `@afenda/foundation` etc.). |
+| **4.1** | `@afenda/purchasing` P0 transactional package | **Done** — nest under `packages/erp/purchasing`; dual-control edges + manifest + permission catalog. Next slice: 4.2 Inventory (after 4.1 close). |
 | **4** | New ERP packages from MODULE-ROADMAP | Authorized after Phase 3 independent approval — execute package-by-package ([phase3_phase4.md](../_scratch/phase3_phase4.md)); not opened by Phase 1–2 close alone |
 
 Still out of scope for this pack (separate missions): `@afenda/module-catalog` runtime · `@afenda/authorization` extraction · `@afenda/jobs` · new transaction-core packages.
@@ -33,7 +34,7 @@ Imports flow **down** only. Packages never import `apps/*`. No cycles.
 |------|-------|----------|
 | 3 | Application | `apps/web` · `apps/docs` (`@afenda/docs`) |
 | 2 | Surfaces | `@afenda/ui-system` · `@afenda/emails` |
-| 1 | Platform | `@afenda/db` · `@afenda/auth` · `@afenda/admin` · `@afenda/env` · `@afenda/errors` · `@afenda/logger` · `@afenda/rate-limit` · `@afenda/cache` · `@afenda/audit` · `@afenda/search` · `@afenda/notifications` · `@afenda/events` · `@afenda/master-data` · `@afenda/sales` · `@afenda/http` · `@afenda/security` · `@afenda/metrics` · `@afenda/openapi` · `@afenda/ai-the-machine` · `@afenda/config` |
+| 1 | Platform | `@afenda/db` · `@afenda/auth` · `@afenda/admin` · `@afenda/env` · `@afenda/errors` · `@afenda/logger` · `@afenda/rate-limit` · `@afenda/cache` · `@afenda/audit` · `@afenda/search` · `@afenda/notifications` · `@afenda/events` · `@afenda/master-data` · `@afenda/sales` · `@afenda/purchasing` · `@afenda/http` · `@afenda/security` · `@afenda/metrics` · `@afenda/openapi` · `@afenda/ai-the-machine` · `@afenda/config` |
 
 ### Rank-1 bands (classification only)
 
@@ -45,7 +46,7 @@ Bands never grant import rights. Every edge is package-specific via dual-control
 | R1-B | Runtime | `packages/runtime/{logger,http,security,metrics,openapi,rate-limit,cache}` |
 | R1-C | Data plane | `packages/data-plane/{db,audit,events,search,notifications}` |
 | R1-D | Control plane | `packages/control-plane/{auth,admin}` |
-| R1-F | ERP | `packages/erp/{master-data,sales}` |
+| R1-F | ERP | `packages/erp/{master-data,sales,purchasing}` |
 | R1-X | Optional capability | `packages/intelligence/ai-the-machine` |
 | R2 | Surfaces | `packages/surfaces/{ui-system,emails}` |
 
@@ -85,7 +86,7 @@ An edge in package.json without an approved register row fails CI.
 An approved register row without package.json fails CI unless status is planned.
 ```
 
-**Default:** peer ERP packages (`R1-F`) do **not** import each other. Living dual-control edges for `@afenda/sales` → `@afenda/master-data` (and platform leaves) are listed in the register.
+**Default:** peer ERP packages (`R1-F`) do **not** import each other. Living dual-control edges for `@afenda/sales` / `@afenda/purchasing` → `@afenda/master-data` (and platform leaves) are listed in the register.
 
 ### Persistence and queries
 
@@ -143,6 +144,7 @@ Do not promote business helpers to `@afenda/shared`, `@afenda/common`, `@afenda/
 | `@afenda/events` | Next.js; Surfaces / `apps/*`; NATS / Redis bus; dual-write into `platform_domain_event`; importing `@afenda/notifications` (handlers stay in web) |
 | `@afenda/master-data` | Next.js; Surfaces / `apps/*`; org-scoped `md_uom`; dual-write `md_*` outside package; shadow customer/product/vendor tables |
 | `@afenda/sales` | Next.js; Surfaces / `apps/*`; dual-write `md_*`; local customer/product shadow tables; Purchasing/Inventory ownership; peer ERP `package.json` edges without WORKSPACE-EDGE-REGISTER approval |
+| `@afenda/purchasing` | Next.js; Surfaces / `apps/*`; dual-write `md_*`; local supplier/product shadow tables; peer ERP `package.json` edges without WORKSPACE-EDGE-REGISTER approval |
 | `@afenda/ui-system` | Server-only / DB / secrets |
 | `@afenda/emails` | Import from client components in `apps/web` |
 | Any R1-F ERP | Peer R1-F package imports without dual-control approved edge; `@afenda/admin` |

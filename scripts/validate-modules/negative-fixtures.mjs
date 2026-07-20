@@ -255,12 +255,12 @@ export function runNegativeFixtures() {
 
 	const tmpRoot = mkdtempSync(join(tmpdir(), "afenda-validate-modules-"));
 	try {
-		mkdirSync(join(tmpRoot, "packages", "purchasing"), { recursive: true });
+		mkdirSync(join(tmpRoot, "packages", "inventory"), { recursive: true });
 		misses.push(
 			expectFail(
 				"candidate module represented as an on-disk package",
-				"candidate module represented as an on-disk package: packages/purchasing",
-				validateCandidatePackagesAbsent(tmpRoot, [{ id: "purchasing" }]),
+				"candidate module represented as an on-disk package: packages/inventory",
+				validateCandidatePackagesAbsent(tmpRoot, [{ id: "inventory" }]),
 			) ?? "",
 		);
 

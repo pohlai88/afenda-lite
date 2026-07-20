@@ -191,6 +191,18 @@ events:
     id: master_data.change_request.applied.v1
     moduleId: master-data
   - direction: emits
+    id: purchasing.order.created.v1
+    moduleId: purchasing
+  - direction: emits
+    id: purchasing.order.line_added.v1
+    moduleId: purchasing
+  - direction: emits
+    id: purchasing.order.posted.v1
+    moduleId: purchasing
+  - direction: emits
+    id: purchasing.order.cancelled.v1
+    moduleId: purchasing
+  - direction: emits
     id: sales.order.created.v1
     moduleId: sales
   - direction: emits

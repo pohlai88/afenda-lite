@@ -7,6 +7,8 @@ export const EVENT_SOURCE_MODULES = [
 	"identity",
 	"master_data",
 	"sales",
+	"purchasing",
+	"inventory",
 ] as const;
 
 export type EventSourceModule = (typeof EVENT_SOURCE_MODULES)[number];

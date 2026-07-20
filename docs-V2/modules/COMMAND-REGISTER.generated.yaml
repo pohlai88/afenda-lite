@@ -202,6 +202,18 @@ commands:
   - id: master_data.search.rebuild
     moduleId: master-data
     permission: master_data.manage
+  - id: purchasing.order.create
+    moduleId: purchasing
+    permission: purchasing.manage
+  - id: purchasing.order.line.add
+    moduleId: purchasing
+    permission: purchasing.manage
+  - id: purchasing.order.post
+    moduleId: purchasing
+    permission: purchasing.manage
+  - id: purchasing.order.cancel
+    moduleId: purchasing
+    permission: purchasing.manage
   - id: sales.order.create
     moduleId: sales
     permission: sales.manage

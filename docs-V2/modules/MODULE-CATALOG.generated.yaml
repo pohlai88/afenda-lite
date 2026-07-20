@@ -19,6 +19,14 @@ modules:
     packageName: "@afenda/master-data"
   - activationMode: organization_toggle
     aggregates:
+      - purchase_order
+    band: R1-F
+    category: commercial
+    id: purchasing
+    lifecycle: active
+    packageName: "@afenda/purchasing"
+  - activationMode: organization_toggle
+    aggregates:
       - sales_order
     band: R1-F
     category: commercial

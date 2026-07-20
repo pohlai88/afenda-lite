@@ -18,7 +18,7 @@
 | [MODULE-ROADMAP.yaml](./MODULE-ROADMAP.yaml) | Manual candidate authority (no on-disk packages) |
 | `MODULE-*.generated.yaml` · `*-REGISTER.generated.yaml` | Generated from on-disk ERP manifests; CI-diffed |
 | `@afenda/db/module-manifest` | `AfendaModuleManifest` contract |
-| `packages/{master-data,sales}/src/module.manifest.ts` | Living ERP manifests only |
+| `packages/erp/{master-data,sales,purchasing}/src/module.manifest.ts` | Living ERP manifests only |
 
 ## Dual control
 

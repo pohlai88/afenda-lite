@@ -1,0 +1,117 @@
+# `@afenda/purchasing`
+
+Rank-1 Platform ARCH-006 Purchasing consumer for Afenda-Lite: org-scoped purchase orders (draft → posted → cancelled), master-data FK + commercial snapshots, same-TX audit/outbox ports. Outcomes use `@afenda/errors` `Result` — this package does not own HTTP status lines, `NextResponse`, NATS, or Action envelopes.
+
+**Tables live in `@afenda/db`.** Mutations are sole-owned here — do not dual-write `purchase_order` / `purchase_order_line` from `apps/web`. Do not invent shadow supplier/product tables (`purchase_supplier`, local item catalogs).
+
+Use this package from Platform / app server code when creating draft purchase orders, adding lines, posting, or cancelling. Masters resolve through `@afenda/master-data` lookups — never mutate `md_*` from the purchasing store. Supplier parties must carry an active `supplier` role in `md_party_role`.
+
+## Consume
+
+Workspace dependency — import from the root barrel:
+
+```ts
+import {
+  createDraftPurchaseOrder,
+  addPurchaseOrderLine,
+  postPurchaseOrder,
+  cancelPurchaseOrder,
+  getPurchaseOrderById,
+  listPurchaseOrders,
+} from "@afenda/purchasing";
+
+const order = await createDraftPurchaseOrder({
+  organizationId,
+  actorUserId,
+  correlationId,
+  code: "PO-1001",
+  partyId,
+  paymentTermId, // optional
+  warehouseId, // optional receiving destination
+});
+if (!order.ok) {
+  // map Result at the adapter — do not invent { success, data }
+}
+```
+
+Pass request-scoped `organizationId`, `actorUserId`, and `correlationId` on every mutation. Party must have an active supplier role; item / payment-term / warehouse refs must be same-org masters; post freezes commercial snapshots.
+
+**Event types:** `purchasing.order.created.v1` · `purchasing.order.line_added.v1` · `purchasing.order.posted.v1` · `purchasing.order.cancelled.v1` (catalog in `@afenda/events`).
+
+**Living consumers:** `apps/web` thin Actions + `features/purchasing/*` + `/admin/purchasing` · `/client/purchasing` (composition-root authorization ports). Pass `correlationId` from the Action boundary on every mutation.
+
+## Store / ports
+
+| Surface | Backend |
+|---------|---------|
+| Production default | `DrizzlePurchasingStore` → `@afenda/db` — **all** org mutations use `runNeonHttpTransaction` CTE (entity + `platform_audit_log` + `platform_domain_event` same TX) |
+| Vitest injection | `MemoryPurchasingStore` + memory `AuditFactPort` / `OutboxPort` (in-process atomic) |
+| Master lookup | `createMasterDataLookupPort` → `@afenda/master-data` (read FK / code / snapshot / supplier role / warehouse only) |
+| Ports | `MutationPorts` remain on the store interface for test injection; Drizzle embeds SQL side-effects and does not call SQL ports. `createProductionMutationPorts` is the default for memory/test injection only. |
+
+## Maintain
+
+```bash
+pnpm --filter @afenda/purchasing lint
+pnpm --filter @afenda/purchasing typecheck
+pnpm --filter @afenda/purchasing test
+pnpm --filter @afenda/purchasing check
+```
+
+Requires root engines: **Node `24.x`**, **pnpm `≥10.33.4`**.
+
+Anti-shadow (every consumer PR):
+
+```bash
+rg "sales_customer|purchase_supplier|inventory_product|finance_vendor" packages apps --glob "!**/node_modules/**"
+```
+
+## Exports
+
+| Path | Role |
+|------|------|
+| `@afenda/purchasing` | Commands (`createDraftPurchaseOrder` · `addPurchaseOrderLine` · `postPurchaseOrder` · `cancelPurchaseOrder` · `getPurchaseOrderById` · `listPurchaseOrders`) · brands · Zod input schemas · `PurchasingStore` · Drizzle/memory stores · master lookup · production ports · status/types |
+
+Never re-exports raw Drizzle tables or `db` / `eq`.
+
+## Ownership
+
+| Surface | Owner |
+|---------|-------|
+| `purchase_order` / `purchase_order_line` schema · hard-tenant roots | `@afenda/db` |
+| Domain commands · brands · snapshots · store | `@afenda/purchasing` |
+| Party · Item · Payment term · Warehouse masters | `@afenda/master-data` |
+| `purchasing.*` event contracts | `@afenda/events` |
+| `Result` / error codes | `@afenda/errors` |
+| ActionResult adapters · purchasing UI | `apps/web` |
+
+**Layer:** Rank-1 Platform (`@afenda/db` · `@afenda/errors` · `@afenda/audit` · `@afenda/events` · `@afenda/master-data` · zod · server-only). Must not import Surfaces, `apps/*`, or Next.js. See [docs-V2/monorepo](../../docs-V2/monorepo/README.md).
+
+## Operations
+
+| Concern | Guidance |
+|---------|----------|
+| Correlation | Every command input requires `correlationId`; Action adapters stamp from request attribution |
+| Natural key | Org-scoped `normalizedCode` uniqueness — duplicate create returns `CONFLICT` (retry-safe; not silent replay) |
+| Optimistic concurrency | `post` / `cancel` require matching `expectedVersion` |
+| Migration | Apply `@afenda/db` journal tag `0012_purchase_order` via package migrate (allow-guarded) |
+| Rollback / repair | Posted/cancelled rows are not hard-deleted; cancel is the explicit transition; repair via compensating cancel or data-lane SQL under Ops |
+| Permissions | Seed `purchasing.read` / `purchasing.manage` via `pnpm --filter @afenda/db db:ensure-permission-catalog` |
+| Verify | `pnpm --filter @afenda/purchasing check` · `pnpm validate:modules` · `pnpm --filter @afenda/web test -- product-authorization-wiring` |
+| Lifecycle note | Plan lifecycle includes `closed`; v1 public surface implements `draft \| posted \| cancelled` only (no `closePurchaseOrder` yet) |
+| Metrics / dedicated runbook | Same baseline as `@afenda/sales` — structured correlation + Result codes; dedicated mutation metrics dashboards / Ops runbook not package-local yet |
+
+## Out of scope
+
+Do not add to this package: shadow supplier/product tables, `md_*` mutations, Receiving / Inventory / Payables ownership, Next.js handlers, tutorial `{ success, data }` envelopes, or a second tenancy model (shared schema · hard `organization_id` only — never multi-DB / project-per-tenant isolation).
+
+## Authority
+
+| Topic | Link |
+|-------|------|
+| ARCH-006 consumer contract (Scratch) | [arch-006-consumer-contract.md](../../docs-V2/master-data/arch-006-consumer-contract.md) |
+| Master-data spine | [docs-V2/master-data](../../docs-V2/master-data/README.md) |
+| Package DAG | [docs-V2/monorepo](../../docs-V2/monorepo/README.md) |
+| Events catalog | [docs-V2/events](../../docs-V2/events/README.md) · [`@afenda/events`](../events/README.md) |
+| Tenancy · shared schema | [docs-V2/tenancy](../../docs-V2/tenancy/README.md) |
+| Agent checkout posture | [AGENTS.md](../../AGENTS.md) |

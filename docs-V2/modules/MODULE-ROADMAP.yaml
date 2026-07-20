@@ -1,15 +1,12 @@
 # Module roadmap (planning only — no workspace packages)
 # Version: module-roadmap/2026-07-20
 # Authority: packages_refactor_v2.3 promotion · docs-V2/monorepo
+# Living (removed from roadmap): master-data · sales · purchasing
 
 version: "module-roadmap/2026-07-20"
 updated: "2026-07-20"
 
 modules:
-  - id: purchasing
-    planningState: candidate
-    category: commercial
-    authority: packages_refactor_v2.3
   - id: inventory
     planningState: candidate
     category: supply-chain

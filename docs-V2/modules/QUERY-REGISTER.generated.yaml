@@ -136,6 +136,12 @@ queries:
   - id: master_data.search.query
     moduleId: master-data
     permission: master_data.read
+  - id: purchasing.order.get
+    moduleId: purchasing
+    permission: purchasing.read
+  - id: purchasing.order.list
+    moduleId: purchasing
+    permission: purchasing.read
   - id: sales.order.get
     moduleId: sales
     permission: sales.read

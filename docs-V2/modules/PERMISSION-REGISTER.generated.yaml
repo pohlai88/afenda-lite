@@ -13,6 +13,12 @@ permissions:
   - code: master_data.import_approve
     moduleId: master-data
     namespace: master_data
+  - code: purchasing.read
+    moduleId: purchasing
+    namespace: purchasing
+  - code: purchasing.manage
+    moduleId: purchasing
+    namespace: purchasing
   - code: sales.read
     moduleId: sales
     namespace: sales

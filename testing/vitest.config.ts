@@ -86,6 +86,18 @@ export default defineConfig({
 					},
 				},
 			},
+			{
+				...nodeProject(
+					"purchasing",
+					path.join(repoRoot, "packages/erp/purchasing"),
+				),
+				resolve: {
+					alias: {
+						...testingAlias,
+						"server-only": path.join(repoRoot, "testing/empty-server-only.ts"),
+					},
+				},
+			},
 			nodeProject("http", path.join(repoRoot, "packages/runtime/http")),
 			nodeProject("security", path.join(repoRoot, "packages/runtime/security")),
 			nodeProject("metrics", path.join(repoRoot, "packages/runtime/metrics")),

@@ -85,6 +85,20 @@
       "when": 1784548000000,
       "tag": "0011_sales_order",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1784549000000,
+      "tag": "0012_purchase_order",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1784550000000,
+      "tag": "0013_inventory_stock",
+      "breakpoints": true
     }
   ]
 }

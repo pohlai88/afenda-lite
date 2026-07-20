@@ -71,6 +71,7 @@ Application (`apps/web` · `apps/docs`) is Rank 3 — outside this folder. Physi
 |---------|------|
 | [`@afenda/master-data`](./erp/master-data/README.md) | `ref_*` + org masters (`md_party` · `md_item*` · `md_warehouse`) |
 | [`@afenda/sales`](./erp/sales/README.md) | Sales order/line consumer (ARCH-006) |
+| [`@afenda/purchasing`](./erp/purchasing/README.md) | Purchase order/line consumer (ARCH-006) |
 
 Peer R1-F packages do not import each other. Candidates (no package yet): [MODULE-ROADMAP.yaml](../docs-V2/modules/MODULE-ROADMAP.yaml).
 
