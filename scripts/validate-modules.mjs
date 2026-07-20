@@ -23,6 +23,7 @@ import {
 	validateEvents,
 	validateCatalogDiskParity,
 	validateForeignSchemaImports,
+	validateMetricsImports,
 	validateModuleIdentity,
 	validateModuleReferences,
 	validateMutationTablesExist,
@@ -125,6 +126,7 @@ async function main() {
 		),
 	);
 	errors.push(...validateDeepImports(root));
+	errors.push(...validateMetricsImports(root));
 	errors.push(...validateForeignSchemaImports(root, manifests));
 	errors.push(
 		...validateSoleMutatorBoundary(

@@ -535,6 +535,40 @@ export function validateDeepImports(root) {
 }
 
 /**
+ * Validate @afenda/metrics runtime isolation — prevent bare/deep imports.
+ * @param {string} root
+ */
+export function validateMetricsImports(root) {
+	/** @type {string[]} */
+	const errors = [];
+	const bareMetrics = /from\s+["']@afenda\/metrics["']/;
+	const deepMetrics = /from\s+["']@afenda\/metrics\/src\//;
+	const scanRoots = [
+		join(root, "packages"),
+		join(root, "apps", "web"),
+	];
+	for (const scanRoot of scanRoots) {
+		if (!existsSync(scanRoot)) {
+			continue;
+		}
+		for (const file of walkTsFiles(scanRoot)) {
+			const text = readFileSync(file, "utf8");
+			if (bareMetrics.test(text)) {
+				errors.push(
+					`bare @afenda/metrics import (use /core, /node, or /testing): ${relative(root, file).replaceAll("\\", "/")}`,
+				);
+			}
+			if (deepMetrics.test(text)) {
+				errors.push(
+					`deep @afenda/metrics/src/* import: ${relative(root, file).replaceAll("\\", "/")}`,
+				);
+			}
+		}
+	}
+	return errors;
+}
+
+/**
  * @param {string} root
  * @param {AfendaModuleManifest[]} manifests
  */
