@@ -7,6 +7,7 @@ import { DELIVERY_STATUSES } from "./types";
 const organizationIdSchema = z.string().trim().min(1);
 const actorUserIdSchema = z.string().trim().min(1);
 const correlationIdSchema = z.string().trim().min(1);
+const idempotencyKeySchema = z.string().trim().min(1).max(128);
 const expectedVersionSchema = z.number().int().positive();
 const positiveQuantitySchema = z
 	.union([z.number().positive(), z.string().trim().min(1)])
@@ -31,6 +32,7 @@ const stateChangeContext = {
 
 export const createDraftDeliveryInputSchema = z.object({
 	...mutationContext,
+	idempotencyKey: idempotencyKeySchema,
 	code: z.string().trim().min(1).max(64),
 	salesOrderId: z.string().uuid().optional(),
 	warehouseId: warehouseIdSchema,
@@ -41,6 +43,7 @@ export const createDraftDeliveryInputSchema = z.object({
 
 export const addDeliveryLineInputSchema = z.object({
 	...mutationContext,
+	idempotencyKey: idempotencyKeySchema,
 	deliveryId: deliveryIdSchema,
 	expectedVersion: expectedVersionSchema,
 	itemId: itemIdSchema,
@@ -49,36 +52,60 @@ export const addDeliveryLineInputSchema = z.object({
 	salesOrderLineId: z.string().uuid().optional(),
 });
 
-export const startPickingInputSchema = z.object(stateChangeContext);
+export const startPickingInputSchema = z.object({
+	...stateChangeContext,
+	idempotencyKey: idempotencyKeySchema,
+});
 
 export const confirmPickInputSchema = z.object({
 	...stateChangeContext,
+	idempotencyKey: idempotencyKeySchema,
 	deliveryLineId: deliveryLineIdSchema,
 	quantityPicked: positiveQuantitySchema,
+	reservationId: z.string().uuid(),
 });
 
 export const confirmPackInputSchema = z.object({
 	...stateChangeContext,
+	idempotencyKey: idempotencyKeySchema,
 	packageCode: z.string().trim().min(1).max(128).optional(),
 	notes: z.string().trim().max(2000).optional(),
 });
 
-export const postDeliveryInputSchema = z.object(stateChangeContext);
+export const postDeliveryInputSchema = z.object({
+	...stateChangeContext,
+	idempotencyKey: idempotencyKeySchema,
+});
 
 export const recordProofOfDeliveryInputSchema = z.object({
 	...stateChangeContext,
+	idempotencyKey: idempotencyKeySchema,
 	receivedByName: z.string().trim().min(1).max(300),
+	outcome: z.enum(["delivered", "partially_delivered", "refused", "failed"]),
+	proofType: z.string().trim().min(1).max(128).optional(),
+	evidenceRef: z.string().trim().min(1).max(512).optional(),
+	carrierRef: z.string().trim().min(1).max(256).optional(),
 	notes: z.string().trim().max(2000).optional(),
 	recordedAt: z.coerce.date().optional(),
 });
 
-export const cancelDeliveryInputSchema = z.object(stateChangeContext);
+export const cancelDeliveryInputSchema = z.object({
+	...stateChangeContext,
+	idempotencyKey: idempotencyKeySchema,
+});
+
+export const closeDeliveryInputSchema = z.object({
+	...stateChangeContext,
+	idempotencyKey: idempotencyKeySchema,
+});
 
 export const getDeliveryByIdInputSchema = z.object({
 	organizationId: organizationIdSchema,
 	actorUserId: actorUserIdSchema,
 	id: deliveryIdSchema,
 });
+
+const DELIVERY_LIST_SORTS = ["created_at", "code", "status"] as const;
 
 export const listDeliveriesInputSchema = z.object({
 	organizationId: organizationIdSchema,
@@ -88,4 +115,5 @@ export const listDeliveriesInputSchema = z.object({
 	status: z.enum(DELIVERY_STATUSES).optional(),
 	warehouseId: warehouseIdSchema.optional(),
 	salesOrderId: z.string().uuid().optional(),
+	sort: z.enum(DELIVERY_LIST_SORTS).default("created_at"),
 });

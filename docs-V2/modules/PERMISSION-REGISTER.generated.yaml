@@ -7,10 +7,31 @@ permissions:
   - code: accounting.manage
     moduleId: accounting
     namespace: accounting
-  - code: fulfillment.read
+  - code: fulfillment.delivery.read
     moduleId: fulfillment
     namespace: fulfillment
-  - code: fulfillment.manage
+  - code: fulfillment.delivery.create
+    moduleId: fulfillment
+    namespace: fulfillment
+  - code: fulfillment.delivery.update
+    moduleId: fulfillment
+    namespace: fulfillment
+  - code: fulfillment.picking.confirm
+    moduleId: fulfillment
+    namespace: fulfillment
+  - code: fulfillment.packing.confirm
+    moduleId: fulfillment
+    namespace: fulfillment
+  - code: fulfillment.delivery.post
+    moduleId: fulfillment
+    namespace: fulfillment
+  - code: fulfillment.delivery.cancel
+    moduleId: fulfillment
+    namespace: fulfillment
+  - code: fulfillment.pod.record
+    moduleId: fulfillment
+    namespace: fulfillment
+  - code: fulfillment.delivery.close
     moduleId: fulfillment
     namespace: fulfillment
   - code: inventory.movement.create
@@ -55,10 +76,43 @@ permissions:
   - code: payables.manage
     moduleId: payables
     namespace: payables
-  - code: payments.read
+  - code: payments.payment.read
     moduleId: payments
     namespace: payments
-  - code: payments.manage
+  - code: payments.payment.create
+    moduleId: payments
+    namespace: payments
+  - code: payments.payment.update
+    moduleId: payments
+    namespace: payments
+  - code: payments.payment.post
+    moduleId: payments
+    namespace: payments
+  - code: payments.payment.reverse
+    moduleId: payments
+    namespace: payments
+  - code: payments.refund.create
+    moduleId: payments
+    namespace: payments
+  - code: payments.refund.post
+    moduleId: payments
+    namespace: payments
+  - code: payments.transfer.create
+    moduleId: payments
+    namespace: payments
+  - code: payments.transfer.post
+    moduleId: payments
+    namespace: payments
+  - code: payments.application_instruction.manage
+    moduleId: payments
+    namespace: payments
+  - code: payments.account.manage
+    moduleId: payments
+    namespace: payments
+  - code: payments.account.read
+    moduleId: payments
+    namespace: payments
+  - code: payments.availability.read
     moduleId: payments
     namespace: payments
   - code: purchasing.order.create
@@ -82,10 +136,37 @@ permissions:
   - code: purchasing.order.list
     moduleId: purchasing
     namespace: purchasing
-  - code: receivables.read
+  - code: receivables.invoice.read
     moduleId: receivables
     namespace: receivables
-  - code: receivables.manage
+  - code: receivables.invoice.create
+    moduleId: receivables
+    namespace: receivables
+  - code: receivables.invoice.update
+    moduleId: receivables
+    namespace: receivables
+  - code: receivables.invoice.post
+    moduleId: receivables
+    namespace: receivables
+  - code: receivables.invoice.cancel
+    moduleId: receivables
+    namespace: receivables
+  - code: receivables.invoice.close
+    moduleId: receivables
+    namespace: receivables
+  - code: receivables.credit_note.issue
+    moduleId: receivables
+    namespace: receivables
+  - code: receivables.receipt.apply
+    moduleId: receivables
+    namespace: receivables
+  - code: receivables.receipt_application.reverse
+    moduleId: receivables
+    namespace: receivables
+  - code: receivables.balance.read
+    moduleId: receivables
+    namespace: receivables
+  - code: receivables.aging.read
     moduleId: receivables
     namespace: receivables
   - code: receiving.read

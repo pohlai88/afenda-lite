@@ -17,7 +17,8 @@
 		"lint": "biome check .",
 		"typecheck": "tsc --noEmit -p tsconfig.json",
 		"test": "vitest run --config ../../../testing/vitest.config.ts --project receivables",
-		"check": "pnpm typecheck && pnpm test"
+		"check": "pnpm typecheck && pnpm test",
+		"reconcile": "tsx src/reconcile-cli.ts"
 	},
 	"dependencies": {
 		"@afenda/audit": "workspace:*",
@@ -31,6 +32,7 @@
 	"devDependencies": {
 		"@afenda/config": "workspace:*",
 		"@types/node": "catalog:",
+		"tsx": "catalog:",
 		"typescript": "catalog:"
 	}
 }

@@ -17,6 +17,7 @@ import { requirePermission } from "@/features/auth/require-permission";
 import {
 	AddDeliveryLineForm,
 	CancelDeliveryForm,
+	CloseDeliveryForm,
 	ConfirmPackForm,
 	ConfirmPickForm,
 	CreateDraftDeliveryForm,
@@ -34,8 +35,19 @@ type FulfillmentShellProps = { surface: "admin" | "client" };
 export async function FulfillmentShell({ surface }: FulfillmentShellProps) {
 	const session =
 		surface === "admin" ? await requireRole("operator") : await getSession();
-	await requirePermission(session, "fulfillment.read");
-	const canManage = await sessionHasPermission(session, "fulfillment.manage");
+	await requirePermission(session, "fulfillment.delivery.read");
+	const canManage = (
+		await Promise.all([
+			sessionHasPermission(session, "fulfillment.delivery.create"),
+			sessionHasPermission(session, "fulfillment.delivery.update"),
+			sessionHasPermission(session, "fulfillment.picking.confirm"),
+			sessionHasPermission(session, "fulfillment.packing.confirm"),
+			sessionHasPermission(session, "fulfillment.delivery.post"),
+			sessionHasPermission(session, "fulfillment.delivery.cancel"),
+			sessionHasPermission(session, "fulfillment.pod.record"),
+			sessionHasPermission(session, "fulfillment.delivery.close"),
+		])
+	).some(Boolean);
 	const masterOptions = { authorization: createMasterDataAuthorizationPort() };
 
 	const [deliveriesResult, itemsResult, warehousesResult] = await Promise.all([
@@ -77,7 +89,7 @@ export async function FulfillmentShell({ surface }: FulfillmentShellProps) {
 				<h1 className="text-2xl font-semibold tracking-tight">Deliveries</h1>
 				<p className="max-w-2xl text-sm text-muted-foreground">
 					Create outbound deliveries, add lines, pick, pack, post, record proof
-					of delivery, and cancel eligible deliveries.
+					of delivery, close delivered deliveries, and cancel eligible drafts.
 				</p>
 			</div>
 
@@ -216,6 +228,14 @@ export async function FulfillmentShell({ surface }: FulfillmentShellProps) {
 				</CardHeader>
 				<CardContent>
 					<CancelDeliveryForm canManage={canManage} />
+				</CardContent>
+			</Card>
+			<Card>
+				<CardHeader>
+					<CardTitle>Close delivery</CardTitle>
+				</CardHeader>
+				<CardContent>
+					<CloseDeliveryForm canManage={canManage} />
 				</CardContent>
 			</Card>
 		</section>

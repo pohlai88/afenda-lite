@@ -621,3 +621,159 @@ export async function listSalesOrders(
 		sort: parsed.data.sort,
 	});
 }
+
+export async function getFulfillableSalesOrder(
+	input: {
+		organizationId: string;
+		salesOrderId: string;
+		actorUserId: string;
+	},
+	options: SalesCommandOptions = {},
+): Promise<
+	Result<{
+		status: string;
+		version: number;
+		customerPartyId: string;
+		customerPartyCode: string;
+		customerPartyName: string;
+		shipToSnapshot: {
+			name: string;
+			addressLines: string[];
+			countryCode: string;
+		} | null;
+		lines: Array<{
+			salesOrderLineId: string;
+			itemId: string;
+			uomId: string;
+			orderedQuantity: string;
+		}>;
+	} | null>
+> {
+	const { store, authorization } = resolveCommandDeps(options);
+	const authorized = await requireSalesQueryPermission(authorization, {
+		organizationId: input.organizationId,
+		actorUserId: input.actorUserId,
+		query: SALES_QUERY_GET,
+	});
+	if (!authorized.ok) {
+		return authorized;
+	}
+
+	const order = await store.getOrderById(
+		input.organizationId,
+		input.salesOrderId,
+	);
+	if (!order.ok) {
+		return order;
+	}
+	if (order.data === null) {
+		return ok(null);
+	}
+
+	// Reject if status is draft or cancelled
+	if (order.data.status === "draft" || order.data.status === "cancelled") {
+		return fail("CONFLICT", "Sales order is not fulfillable");
+	}
+
+	// Parse shipToAddressSnapshot
+	let shipToSnapshot: {
+		name: string;
+		addressLines: string[];
+		countryCode: string;
+	} | null = null;
+	if (order.data.shipToAddressSnapshot) {
+		const lines = order.data.shipToAddressSnapshot.split("\n");
+		const name = lines[0] ?? "";
+		const addressLines = lines.slice(1);
+		shipToSnapshot = {
+			name,
+			addressLines,
+			countryCode: "", // Not available in current schema
+		};
+	}
+
+	return ok({
+		status: order.data.status,
+		version: order.data.version,
+		customerPartyId: order.data.partyId,
+		customerPartyCode: order.data.partyCode,
+		customerPartyName: order.data.partyName,
+		shipToSnapshot,
+		lines: order.data.lines.map((line) => ({
+			salesOrderLineId: line.id,
+			itemId: line.itemId,
+			uomId: line.baseUomId,
+			orderedQuantity: line.quantity,
+		})),
+	});
+}
+
+export async function getInvoiceableSalesOrder(
+	input: {
+		organizationId: string;
+		salesOrderId: string;
+		actorUserId: string;
+	},
+	options: SalesCommandOptions = {},
+): Promise<
+	Result<{
+		salesOrderId: string;
+		status: string;
+		customerPartyId: string;
+		customerPartyCode: string;
+		customerPartyName: string;
+		currencyCode: string;
+		lines: Array<{
+			salesOrderLineId: string;
+			itemId: string;
+			itemCode: string;
+			itemName: string;
+			authorizedQuantity: string;
+			remainingInvoiceableQuantity: string;
+		}>;
+	} | null>
+> {
+	const { store, authorization } = resolveCommandDeps(options);
+	const authorized = await requireSalesQueryPermission(authorization, {
+		organizationId: input.organizationId,
+		actorUserId: input.actorUserId,
+		query: SALES_QUERY_GET,
+	});
+	if (!authorized.ok) {
+		return authorized;
+	}
+
+	const order = await store.getOrderById(
+		input.organizationId,
+		input.salesOrderId,
+	);
+	if (!order.ok) {
+		return order;
+	}
+	if (order.data === null) {
+		return ok(null);
+	}
+	if (
+		order.data.status === "draft" ||
+		order.data.status === "cancelled"
+	) {
+		return fail("CONFLICT", "Sales order is not invoiceable");
+	}
+
+	return ok({
+		salesOrderId: order.data.id,
+		status: order.data.status,
+		customerPartyId: order.data.partyId,
+		customerPartyCode: order.data.partyCode,
+		customerPartyName: order.data.partyName,
+		currencyCode: order.data.currencyCode,
+		lines: order.data.lines.map((line) => ({
+			salesOrderLineId: line.id,
+			itemId: line.itemId,
+			itemCode: line.itemCode,
+			itemName: line.itemName,
+			authorizedQuantity: line.quantity,
+			remainingInvoiceableQuantity: line.quantity,
+		})),
+	});
+}

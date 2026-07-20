@@ -22,6 +22,10 @@ import {
 	cancelDeliveryAction,
 } from "@/app/actions/cancel-delivery";
 import {
+	type CloseDeliveryActionState,
+	closeDeliveryAction,
+} from "@/app/actions/close-delivery";
+import {
 	type ConfirmPackActionState,
 	confirmPackAction,
 } from "@/app/actions/confirm-pack";
@@ -379,6 +383,7 @@ export function ConfirmPickForm({ canManage }: { canManage: boolean }) {
 	const deliveryError = actionFieldMessage(state, "deliveryId");
 	const versionError = actionFieldMessage(state, "expectedVersion");
 	const lineError = actionFieldMessage(state, "deliveryLineId");
+	const reservationError = actionFieldMessage(state, "reservationId");
 	const quantityError = actionFieldMessage(state, "quantityPicked");
 	return (
 		<ActionForm action={formAction} pending={pending}>
@@ -391,9 +396,13 @@ export function ConfirmPickForm({ canManage }: { canManage: boolean }) {
 				</Alert>
 			) : null}
 			{state?.ok === false &&
-			[deliveryError, versionError, lineError, quantityError].every(
-				(message) => message === undefined,
-			) ? (
+			[
+				deliveryError,
+				versionError,
+				lineError,
+				reservationError,
+				quantityError,
+			].every((message) => message === undefined) ? (
 				<FormError>{state.message}</FormError>
 			) : null}
 			<DeliveryVersionFields
@@ -412,6 +421,20 @@ export function ConfirmPickForm({ canManage }: { canManage: boolean }) {
 					id="confirm-pick-line"
 					name="deliveryLineId"
 					required
+					disabled={pending}
+				/>
+			</FormField>
+			<FormField
+				label="Reservation id"
+				required
+				fieldId="confirm-pick-reservation"
+				error={reservationError}
+			>
+				<Input
+					id="confirm-pick-reservation"
+					name="reservationId"
+					required
+					autoComplete="off"
 					disabled={pending}
 				/>
 			</FormField>
@@ -523,20 +546,25 @@ export function RecordProofOfDeliveryForm({
 	const deliveryError = actionFieldMessage(state, "deliveryId");
 	const versionError = actionFieldMessage(state, "expectedVersion");
 	const recipientError = actionFieldMessage(state, "receivedByName");
+	const outcomeError = actionFieldMessage(state, "outcome");
 	return (
 		<ActionForm action={formAction} pending={pending}>
 			{state?.ok === true ? (
 				<Alert role="status">
 					<AlertTitle>Proof recorded</AlertTitle>
 					<AlertDescription>
-						Received by {state.data.proofOfDelivery.receivedByName}.
+						{state.data.proofOfDelivery.outcome} · received by{" "}
+						{state.data.proofOfDelivery.receivedByName}.
 					</AlertDescription>
 				</Alert>
 			) : null}
 			{state?.ok === false &&
-			deliveryError === undefined &&
-			versionError === undefined &&
-			recipientError === undefined ? (
+			[
+				deliveryError,
+				versionError,
+				recipientError,
+				outcomeError,
+			].every((message) => message === undefined) ? (
 				<FormError>{state.message}</FormError>
 			) : null}
 			<DeliveryVersionFields
@@ -545,6 +573,29 @@ export function RecordProofOfDeliveryForm({
 				deliveryError={deliveryError}
 				versionError={versionError}
 			/>
+			<FormField
+				label="Outcome"
+				required
+				fieldId="delivery-pod-outcome"
+				error={outcomeError}
+			>
+				<select
+					id="delivery-pod-outcome"
+					name="outcome"
+					required
+					className="border-input bg-background h-9 w-full rounded-md border px-3 text-sm"
+					disabled={pending}
+					defaultValue=""
+				>
+					<option value="" disabled>
+						Select outcome
+					</option>
+					<option value="delivered">delivered</option>
+					<option value="partially_delivered">partially_delivered</option>
+					<option value="refused">refused</option>
+					<option value="failed">failed</option>
+				</select>
+			</FormField>
 			<FormField
 				label="Received by"
 				required
@@ -555,6 +606,33 @@ export function RecordProofOfDeliveryForm({
 					id="delivery-pod-recipient"
 					name="receivedByName"
 					required
+					disabled={pending}
+				/>
+			</FormField>
+			<FormField label="Proof type (optional)" fieldId="delivery-pod-proof-type">
+				<Input
+					id="delivery-pod-proof-type"
+					name="proofType"
+					autoComplete="off"
+					disabled={pending}
+				/>
+			</FormField>
+			<FormField
+				label="Evidence ref (optional)"
+				fieldId="delivery-pod-evidence"
+			>
+				<Input
+					id="delivery-pod-evidence"
+					name="evidenceRef"
+					autoComplete="off"
+					disabled={pending}
+				/>
+			</FormField>
+			<FormField label="Carrier ref (optional)" fieldId="delivery-pod-carrier">
+				<Input
+					id="delivery-pod-carrier"
+					name="carrierRef"
+					autoComplete="off"
 					disabled={pending}
 				/>
 			</FormField>
@@ -604,6 +682,40 @@ export function CancelDeliveryForm({ canManage }: { canManage: boolean }) {
 				versionError={versionError}
 			/>
 			<Submit pending={pending}>Cancel delivery</Submit>
+		</ActionForm>
+	);
+}
+
+export function CloseDeliveryForm({ canManage }: { canManage: boolean }) {
+	const [state, formAction, pending] = useActionState(
+		closeDeliveryAction,
+		null satisfies CloseDeliveryActionState,
+	);
+	if (!canManage) return <ManageUnavailable operation="Close" />;
+	const deliveryError = actionFieldMessage(state, "deliveryId");
+	const versionError = actionFieldMessage(state, "expectedVersion");
+	return (
+		<ActionForm action={formAction} pending={pending}>
+			{state?.ok === true ? (
+				<Alert role="status">
+					<AlertTitle>Delivery closed</AlertTitle>
+					<AlertDescription>
+						{state.data.delivery.code} · closed.
+					</AlertDescription>
+				</Alert>
+			) : null}
+			{state?.ok === false &&
+			deliveryError === undefined &&
+			versionError === undefined ? (
+				<FormError>{state.message}</FormError>
+			) : null}
+			<DeliveryVersionFields
+				prefix="close-delivery"
+				pending={pending}
+				deliveryError={deliveryError}
+				versionError={versionError}
+			/>
+			<Submit pending={pending}>Close delivery</Submit>
 		</ActionForm>
 	);
 }

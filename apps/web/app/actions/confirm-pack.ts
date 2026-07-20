@@ -36,7 +36,7 @@ export async function confirmPackAction(
 ): Promise<ConfirmPackActionState> {
 	return runOperatorPermissionAction({
 		path: "confirmPackAction",
-		permission: "fulfillment.manage",
+		permission: "fulfillment.packing.confirm",
 		safeMessage: "Could not confirm pack. Try again or contact an admin.",
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(confirmPackFormSchema, {
@@ -57,6 +57,7 @@ export async function confirmPackAction(
 					organizationId: session.orgId,
 					actorUserId: session.userId,
 					correlationId,
+					idempotencyKey: `pack:${correlationId}`,
 					...parsed.data,
 				},
 				createFulfillmentCommandOptions(),

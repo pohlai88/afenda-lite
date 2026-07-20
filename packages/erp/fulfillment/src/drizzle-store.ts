@@ -15,10 +15,15 @@ import {
 } from "@afenda/db";
 import { fail, failFromUnknown, ok, type Result } from "@afenda/errors/result";
 import {
+	FULFILLMENT_DELIVERY_CANCELLED_EVENT,
+	FULFILLMENT_DELIVERY_CLOSED_EVENT,
 	FULFILLMENT_DELIVERY_COMPLETED_EVENT,
 	FULFILLMENT_DELIVERY_CREATED_EVENT,
 	FULFILLMENT_DELIVERY_POSTED_EVENT,
+	FULFILLMENT_PACK_CONFIRMED_EVENT,
 	FULFILLMENT_PICK_CONFIRMED_EVENT,
+	FULFILLMENT_POD_RECORDED_EVENT,
+	type FulfillmentEventType,
 } from "@afenda/events/schemas";
 
 import type { MutationPorts } from "./ports";
@@ -52,6 +57,9 @@ function parseStatus(value: string): DeliveryStatus {
 }
 
 function mapLine(row: typeof deliveryLine.$inferSelect): DeliveryLine {
+	if (row.lineIdempotencyKey === null) {
+		throw new Error("lineIdempotencyKey is null in database");
+	}
 	return {
 		id: row.id,
 		organizationId: row.organizationId,
@@ -65,6 +73,7 @@ function mapLine(row: typeof deliveryLine.$inferSelect): DeliveryLine {
 		quantityOrdered: row.quantityOrdered,
 		quantityToDeliver: row.quantityToDeliver,
 		salesOrderLineId: row.salesOrderLineId,
+		lineIdempotencyKey: row.lineIdempotencyKey,
 		version: row.version,
 		createdBy: row.createdBy,
 		updatedBy: row.updatedBy,
@@ -74,7 +83,25 @@ function mapLine(row: typeof deliveryLine.$inferSelect): DeliveryLine {
 }
 
 function mapPick(row: typeof deliveryPick.$inferSelect): DeliveryPick {
-	return { ...row };
+	if (row.pickIdempotencyKey === null) {
+		throw new Error("pickIdempotencyKey is null in database");
+	}
+	return {
+		id: row.id,
+		organizationId: row.organizationId,
+		deliveryId: row.deliveryId,
+		deliveryLineId: row.deliveryLineId,
+		quantityPicked: row.quantityPicked,
+		reservationId: row.reservationId,
+		pickIdempotencyKey: row.pickIdempotencyKey,
+		pickedAt: row.pickedAt,
+		pickedBy: row.pickedBy,
+		version: row.version,
+		createdBy: row.createdBy,
+		updatedBy: row.updatedBy,
+		createdAt: row.createdAt,
+		updatedAt: row.updatedAt,
+	};
 }
 
 function mapPack(row: typeof deliveryPack.$inferSelect): DeliveryPack {
@@ -82,7 +109,29 @@ function mapPack(row: typeof deliveryPack.$inferSelect): DeliveryPack {
 }
 
 function mapProof(row: typeof proofOfDelivery.$inferSelect): ProofOfDelivery {
-	return { ...row };
+	const outcome = row.outcome as
+		| "delivered"
+		| "partially_delivered"
+		| "refused"
+		| "failed";
+	return {
+		id: row.id,
+		organizationId: row.organizationId,
+		deliveryId: row.deliveryId,
+		receivedByName: row.receivedByName,
+		outcome,
+		proofType: row.proofType,
+		evidenceRef: row.evidenceRef,
+		carrierRef: row.carrierRef,
+		notes: row.notes,
+		recordedAt: row.recordedAt,
+		recordedBy: row.recordedBy,
+		version: row.version,
+		createdBy: row.createdBy,
+		updatedBy: row.updatedBy,
+		createdAt: row.createdAt,
+		updatedAt: row.updatedAt,
+	};
 }
 
 function mapDelivery(
@@ -92,9 +141,42 @@ function mapDelivery(
 	packs: DeliveryPack[],
 	proof: ProofOfDelivery | null,
 ): Delivery {
+	if (row.createIdempotencyKey === null) {
+		throw new Error("createIdempotencyKey is null in database");
+	}
 	return {
-		...row,
+		id: row.id,
+		organizationId: row.organizationId,
+		code: row.code,
+		normalizedCode: row.normalizedCode,
 		status: parseStatus(row.status),
+		salesOrderId: row.salesOrderId,
+		warehouseId: row.warehouseId,
+		warehouseCode: row.warehouseCode,
+		warehouseName: row.warehouseName,
+		shipToPartyId: row.shipToPartyId,
+		shipToPartyCode: row.shipToPartyCode,
+		shipToPartyName: row.shipToPartyName,
+		createIdempotencyKey: row.createIdempotencyKey,
+		pickStartIdempotencyKey: row.pickStartIdempotencyKey,
+		packIdempotencyKey: row.packIdempotencyKey,
+		postIdempotencyKey: row.postIdempotencyKey,
+		podIdempotencyKey: row.podIdempotencyKey,
+		cancelIdempotencyKey: row.cancelIdempotencyKey,
+		closeIdempotencyKey: row.closeIdempotencyKey,
+		version: row.version,
+		createdBy: row.createdBy,
+		updatedBy: row.updatedBy,
+		postedAt: row.postedAt,
+		postedBy: row.postedBy,
+		deliveredAt: row.deliveredAt,
+		deliveredBy: row.deliveredBy,
+		cancelledAt: row.cancelledAt,
+		cancelledBy: row.cancelledBy,
+		closedAt: row.closedAt,
+		closedBy: row.closedBy,
+		createdAt: row.createdAt,
+		updatedAt: row.updatedAt,
 		lines,
 		picks,
 		packs,
@@ -435,24 +517,58 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 		_ports: MutationPorts,
 		meta: MutationMeta,
 	): Promise<Result<DeliveryPack>> {
+		const existing = await this.getDeliveryById(
+			record.organizationId,
+			record.deliveryId,
+		);
+		if (!existing.ok) return existing;
+		if (existing.data === null) return fail("NOT_FOUND", "Delivery not found");
+		if (
+			existing.data.packIdempotencyKey !== null &&
+			existing.data.packIdempotencyKey === record.idempotencyKey
+		) {
+			const last = existing.data.packs[existing.data.packs.length - 1];
+			return last === undefined
+				? fail("INTERNAL_ERROR", "Packed delivery missing pack row")
+				: ok(last);
+		}
+		if (existing.data.status !== "picking")
+			return fail("CONFLICT", "Packing requires picking status");
+		if (existing.data.version !== record.expectedVersion)
+			return fail("CONFLICT", "Delivery version conflict");
+		for (const line of existing.data.lines) {
+			const picked = existing.data.picks
+				.filter((row) => row.deliveryLineId === line.id)
+				.reduce((sum, row) => sum + Number(row.quantityPicked), 0);
+			if (picked < Number(line.quantityToDeliver)) {
+				return fail(
+					"CONFLICT",
+					"Packing requires every line to be fully picked",
+				);
+			}
+		}
 		const id = randomUUID();
 		const auditId = randomUUID();
+		const eventId = randomUUID();
 		const nextVersion = record.expectedVersion + 1;
+		const eventPayload = json(
+			payload(
+				{ ...existing.data, version: nextVersion, status: "packed" },
+				record.actorUserId,
+				meta.correlationId,
+			),
+		);
 		try {
 			const [rows] = await runNeonHttpTransaction<[TxIdRow[]]>((sql) => [
 				sql`
 					WITH parent AS (
 						UPDATE delivery
 						SET status = 'packed', version = ${nextVersion},
+							pack_idempotency_key = ${record.idempotencyKey},
 							updated_by = ${record.actorUserId}, updated_at = now()
 						WHERE id = ${record.deliveryId}
 							AND organization_id = ${record.organizationId}
 							AND status = 'picking' AND version = ${record.expectedVersion}
-							AND EXISTS (
-								SELECT 1 FROM delivery_pick
-								WHERE organization_id = ${record.organizationId}
-									AND delivery_id = ${record.deliveryId}
-							)
 						RETURNING *
 					), mutated AS (
 						INSERT INTO delivery_pack (
@@ -475,8 +591,18 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 							${json({ status: "picking", version: record.expectedVersion })}::jsonb,
 							${json({ status: "packed", version: nextVersion })}::jsonb
 						FROM mutated RETURNING id
+					), outboxed AS (
+						INSERT INTO platform_domain_event (
+							id, organization_id, type, source_module, correlation_id,
+							actor_user_id, payload, status, attempts
+						)
+						SELECT ${eventId}, organization_id,
+							${FULFILLMENT_PACK_CONFIRMED_EVENT}, 'fulfillment',
+							${meta.correlationId}, ${record.actorUserId},
+							${eventPayload}::jsonb, 'pending', 0
+						FROM mutated RETURNING id
 					)
-					SELECT mutated.id FROM mutated, audited
+					SELECT mutated.id FROM mutated, audited, outboxed
 				`,
 			]);
 			if (rows[0] === undefined)
@@ -529,17 +655,29 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 		);
 		if (!existing.ok) return existing;
 		if (existing.data === null) return fail("NOT_FOUND", "Delivery not found");
+		if (
+			existing.data.podIdempotencyKey !== null &&
+			existing.data.podIdempotencyKey === record.idempotencyKey &&
+			existing.data.proofOfDelivery !== null
+		) {
+			return ok(existing.data.proofOfDelivery);
+		}
+		if (existing.data.proofOfDelivery !== null)
+			return fail("CONFLICT", "Proof of delivery already exists");
+		if (existing.data.status !== "posted")
+			return fail("CONFLICT", "Proof of delivery requires posted status");
+		if (existing.data.version !== record.expectedVersion)
+			return fail("CONFLICT", "Delivery version conflict");
+		const advances = record.outcome === "delivered";
+		const nextStatus = advances ? "delivered" : "posted";
 		const id = randomUUID();
 		const auditId = randomUUID();
-		const eventId = randomUUID();
+		const podEventId = randomUUID();
+		const completedEventId = randomUUID();
 		const nextVersion = record.expectedVersion + 1;
 		const eventPayload = json(
 			payload(
-				{
-					...existing.data,
-					version: nextVersion,
-					status: "delivered",
-				},
+				{ ...existing.data, version: nextVersion, status: nextStatus },
 				record.actorUserId,
 				meta.correlationId,
 			),
@@ -549,8 +687,11 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 				sql`
 					WITH parent AS (
 						UPDATE delivery
-						SET status = 'delivered', delivered_at = ${record.recordedAt},
-							delivered_by = ${record.actorUserId}, version = ${nextVersion},
+						SET status = ${nextStatus},
+							delivered_at = CASE WHEN ${advances} THEN ${record.recordedAt} ELSE delivered_at END,
+							delivered_by = CASE WHEN ${advances} THEN ${record.actorUserId} ELSE delivered_by END,
+							pod_idempotency_key = ${record.idempotencyKey},
+							version = ${nextVersion},
 							updated_by = ${record.actorUserId}, updated_at = ${record.recordedAt}
 						WHERE id = ${record.deliveryId}
 							AND organization_id = ${record.organizationId}
@@ -558,12 +699,14 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 						RETURNING *
 					), mutated AS (
 						INSERT INTO proof_of_delivery (
-							id, organization_id, delivery_id, received_by_name, notes,
+							id, organization_id, delivery_id, received_by_name, outcome,
+							proof_type, evidence_ref, carrier_ref, notes,
 							recorded_at, recorded_by, version, created_by, updated_by
 						)
 						SELECT ${id}, organization_id, id, ${record.receivedByName},
-							${record.notes}, ${record.recordedAt}, ${record.actorUserId}, 1,
-							${record.actorUserId}, ${record.actorUserId}
+							${record.outcome}, ${record.proofType}, ${record.evidenceRef},
+							${record.carrierRef}, ${record.notes}, ${record.recordedAt},
+							${record.actorUserId}, 1, ${record.actorUserId}, ${record.actorUserId}
 						FROM parent RETURNING *
 					), audited AS (
 						INSERT INTO platform_audit_log (
@@ -573,22 +716,33 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 						SELECT ${auditId}, organization_id, ${record.actorUserId},
 							${meta.correlationId}, 'fulfillment', 'delivery', delivery_id,
 							'UPDATE',
-							${json([{ field: "status", oldValue: "posted", newValue: "delivered" }])}::jsonb,
+							${json([{ field: "status", oldValue: "posted", newValue: nextStatus }])}::jsonb,
 							${json({ status: "posted", version: record.expectedVersion })}::jsonb,
-							${json({ status: "delivered", version: nextVersion })}::jsonb
+							${json({ status: nextStatus, version: nextVersion })}::jsonb
 						FROM mutated RETURNING id
-					), outboxed AS (
+					), pod_outboxed AS (
 						INSERT INTO platform_domain_event (
 							id, organization_id, type, source_module, correlation_id,
 							actor_user_id, payload, status, attempts
 						)
-						SELECT ${eventId}, organization_id,
-							${FULFILLMENT_DELIVERY_COMPLETED_EVENT}, 'fulfillment',
+						SELECT ${podEventId}, organization_id,
+							${FULFILLMENT_POD_RECORDED_EVENT}, 'fulfillment',
 							${meta.correlationId}, ${record.actorUserId},
 							${eventPayload}::jsonb, 'pending', 0
 						FROM mutated RETURNING id
+					), completed_outboxed AS (
+						INSERT INTO platform_domain_event (
+							id, organization_id, type, source_module, correlation_id,
+							actor_user_id, payload, status, attempts
+						)
+						SELECT ${completedEventId}, organization_id,
+							${FULFILLMENT_DELIVERY_COMPLETED_EVENT}, 'fulfillment',
+							${meta.correlationId}, ${record.actorUserId},
+							${eventPayload}::jsonb, 'pending', 0
+						FROM mutated WHERE ${advances} RETURNING id
 					)
-					SELECT mutated.id FROM mutated, audited, outboxed
+					SELECT mutated.id FROM mutated, audited, pod_outboxed
+					WHERE ${advances} = false OR EXISTS (SELECT 1 FROM completed_outboxed)
 				`,
 			]);
 			if (rows[0] === undefined)
@@ -626,6 +780,12 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 		);
 		if (!existing.ok) return existing;
 		if (existing.data === null) return fail("NOT_FOUND", "Delivery not found");
+		if (
+			existing.data.cancelIdempotencyKey !== null &&
+			existing.data.cancelIdempotencyKey === record.idempotencyKey
+		) {
+			return ok(existing.data);
+		}
 		if (!["draft", "picking", "packed"].includes(existing.data.status))
 			return fail("CONFLICT", "Delivery cannot be cancelled after posting");
 		return this.transition(
@@ -633,7 +793,34 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 			meta,
 			existing.data.status,
 			"cancelled",
-			null,
+			FULFILLMENT_DELIVERY_CANCELLED_EVENT,
+			false,
+		);
+	}
+
+	async closeDelivery(
+		record: DeliveryStateRecord,
+		_ports: MutationPorts,
+		meta: MutationMeta,
+	): Promise<Result<Delivery>> {
+		const existing = await this.getDeliveryById(
+			record.organizationId,
+			record.deliveryId,
+		);
+		if (!existing.ok) return existing;
+		if (existing.data === null) return fail("NOT_FOUND", "Delivery not found");
+		if (
+			existing.data.closeIdempotencyKey !== null &&
+			existing.data.closeIdempotencyKey === record.idempotencyKey
+		) {
+			return ok(existing.data);
+		}
+		return this.transition(
+			record,
+			meta,
+			"delivered",
+			"closed",
+			FULFILLMENT_DELIVERY_CLOSED_EVENT,
 			false,
 		);
 	}
@@ -718,11 +905,18 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 				conditions.push(eq(delivery.warehouseId, filter.warehouseId));
 			if (filter.salesOrderId !== undefined)
 				conditions.push(eq(delivery.salesOrderId, filter.salesOrderId));
+			const sort = filter.sort ?? "created_at";
+			const primaryOrder =
+				sort === "code"
+					? desc(delivery.code)
+					: sort === "status"
+						? desc(delivery.status)
+						: desc(delivery.createdAt);
 			const headers = await db
 				.select()
 				.from(delivery)
 				.where(and(...conditions))
-				.orderBy(desc(delivery.updatedAt), desc(delivery.id))
+				.orderBy(primaryOrder, desc(delivery.id))
 				.limit(filter.pageSize)
 				.offset((filter.page - 1) * filter.pageSize);
 			if (headers.length === 0) return ok([]);
@@ -802,7 +996,7 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 		meta: MutationMeta,
 		from: DeliveryStatus,
 		to: DeliveryStatus,
-		eventType: typeof FULFILLMENT_DELIVERY_POSTED_EVENT | null,
+		eventType: FulfillmentEventType | null,
 		requireLines: boolean,
 	): Promise<Result<Delivery>> {
 		const existing = await this.getDeliveryById(
@@ -837,7 +1031,13 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 							posted_at = CASE WHEN ${to} = 'posted' THEN now() ELSE posted_at END,
 							posted_by = CASE WHEN ${to} = 'posted' THEN ${record.actorUserId} ELSE posted_by END,
 							cancelled_at = CASE WHEN ${to} = 'cancelled' THEN now() ELSE cancelled_at END,
-							cancelled_by = CASE WHEN ${to} = 'cancelled' THEN ${record.actorUserId} ELSE cancelled_by END
+							cancelled_by = CASE WHEN ${to} = 'cancelled' THEN ${record.actorUserId} ELSE cancelled_by END,
+							closed_at = CASE WHEN ${to} = 'closed' THEN now() ELSE closed_at END,
+							closed_by = CASE WHEN ${to} = 'closed' THEN ${record.actorUserId} ELSE closed_by END,
+							post_idempotency_key = CASE WHEN ${to} = 'posted' THEN ${record.idempotencyKey} ELSE post_idempotency_key END,
+							cancel_idempotency_key = CASE WHEN ${to} = 'cancelled' THEN ${record.idempotencyKey} ELSE cancel_idempotency_key END,
+							close_idempotency_key = CASE WHEN ${to} = 'closed' THEN ${record.idempotencyKey} ELSE close_idempotency_key END,
+							pick_start_idempotency_key = CASE WHEN ${to} = 'picking' THEN ${record.idempotencyKey} ELSE pick_start_idempotency_key END
 						WHERE id = ${record.deliveryId}
 							AND organization_id = ${record.organizationId}
 							AND status = ${from} AND version = ${record.expectedVersion}
@@ -887,6 +1087,29 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 				error,
 				"Delivery transition conflict",
 				"Failed to transition delivery",
+			);
+		}
+	}
+
+	async sumPostedQuantityForSalesOrderLine(
+		organizationId: string,
+		salesOrderLineId: string,
+	): Promise<Result<string>> {
+		try {
+			const result = await db.execute(/*sql*/ `
+				SELECT COALESCE(SUM(dl.quantity_to_deliver::numeric), 0) as total
+				FROM delivery_line dl
+				JOIN delivery d ON d.id = dl.delivery_id
+				WHERE dl.organization_id = ${organizationId}
+					AND dl.sales_order_line_id = ${salesOrderLineId}
+					AND d.status IN ('posted', 'delivered', 'closed')
+			`);
+			const total = (result.rows[0] as { total: string })?.total ?? "0";
+			return ok(String(total));
+		} catch (error) {
+			return failFromUnknown(
+				error,
+				"Failed to sum posted quantity for sales order line",
 			);
 		}
 	}

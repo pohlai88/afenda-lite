@@ -22,8 +22,10 @@ export const salesInvoice = pgTable(
 		organizationId: text("organization_id").notNull(),
 		code: text("code").notNull(),
 		normalizedCode: text("normalized_code").notNull(),
-		/** draft | posted | cancelled | allocated */
+		/** draft | posted | closed | cancelled */
 		status: text("status").notNull().default("draft"),
+		/** sales_order | delivery | manual | opening_balance */
+		invoiceSource: text("invoice_source").notNull().default("manual"),
 		customerPartyId: uuid("customer_party_id")
 			.notNull()
 			.references(() => mdParty.id),
@@ -31,13 +33,26 @@ export const salesInvoice = pgTable(
 		customerPartyName: text("customer_party_name").notNull(),
 		currencyCode: text("currency_code").notNull(),
 		salesOrderId: uuid("sales_order_id").references(() => salesOrder.id),
+		deliveryId: uuid("delivery_id"),
+		invoiceDate: timestamp("invoice_date", { withTimezone: true }),
+		accountingDate: timestamp("accounting_date", { withTimezone: true }),
+		dueDate: timestamp("due_date", { withTimezone: true }),
+		paymentTermCode: text("payment_term_code"),
+		paymentTermDescription: text("payment_term_description"),
+		manualReason: text("manual_reason"),
 		version: integer("version").notNull().default(1),
 		createdBy: text("created_by").notNull(),
 		updatedBy: text("updated_by").notNull(),
 		postedAt: timestamp("posted_at", { withTimezone: true }),
 		postedBy: text("posted_by"),
+		closedAt: timestamp("closed_at", { withTimezone: true }),
+		closedBy: text("closed_by"),
 		cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
 		cancelledBy: text("cancelled_by"),
+		createIdempotencyKey: text("create_idempotency_key"),
+		postIdempotencyKey: text("post_idempotency_key"),
+		cancelIdempotencyKey: text("cancel_idempotency_key"),
+		closeIdempotencyKey: text("close_idempotency_key"),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),
@@ -80,6 +95,9 @@ export const salesInvoiceLine = pgTable(
 		quantity: text("quantity").notNull(),
 		unitPrice: text("unit_price").notNull(),
 		lineAmount: text("line_amount").notNull(),
+		salesOrderLineId: uuid("sales_order_line_id"),
+		deliveryLineId: uuid("delivery_line_id"),
+		lineIdempotencyKey: text("line_idempotency_key"),
 		version: integer("version").notNull().default(1),
 		createdBy: text("created_by").notNull(),
 		updatedBy: text("updated_by").notNull(),
@@ -121,11 +139,13 @@ export const salesCreditNote = pgTable(
 		customerPartyName: text("customer_party_name").notNull(),
 		salesInvoiceId: uuid("sales_invoice_id").references(() => salesInvoice.id),
 		currencyCode: text("currency_code").notNull(),
+		amount: text("amount").notNull().default("0"),
 		version: integer("version").notNull().default(1),
 		createdBy: text("created_by").notNull(),
 		updatedBy: text("updated_by").notNull(),
 		postedAt: timestamp("posted_at", { withTimezone: true }),
 		postedBy: text("posted_by"),
+		issueIdempotencyKey: text("issue_idempotency_key"),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),
@@ -163,10 +183,16 @@ export const customerAllocation = pgTable(
 			.notNull()
 			.references(() => salesInvoice.id),
 		paymentId: uuid("payment_id"),
+		paymentApplicationInstructionId: uuid("payment_application_instruction_id"),
 		creditNoteId: uuid("credit_note_id").references(() => salesCreditNote.id),
+		/** active | reversed */
+		status: text("status").notNull().default("active"),
 		amount: text("amount").notNull(),
 		allocatedAt: timestamp("allocated_at", { withTimezone: true }).notNull(),
 		allocatedBy: text("allocated_by").notNull(),
+		applyIdempotencyKey: text("apply_idempotency_key"),
+		reversedAt: timestamp("reversed_at", { withTimezone: true }),
+		reversedBy: text("reversed_by"),
 		version: integer("version").notNull().default(1),
 		createdBy: text("created_by").notNull(),
 		updatedBy: text("updated_by").notNull(),

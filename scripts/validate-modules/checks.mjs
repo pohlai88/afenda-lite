@@ -157,6 +157,7 @@ export const SCHEMA_SYMBOL_TO_TABLE = {
 	supplierBalanceProjection: "supplier_balance_projection",
 	threeWayMatchResult: "three_way_match_result",
 	payment: "payment",
+	paymentAccount: "payment_account",
 	paymentAllocation: "payment_allocation",
 	paymentReversal: "payment_reversal",
 	journal: "journal",

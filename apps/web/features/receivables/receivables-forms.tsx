@@ -18,9 +18,9 @@ import {
 	addSalesInvoiceLineAction,
 } from "@/app/actions/add-sales-invoice-line";
 import {
-	type AllocateCustomerReceiptActionState,
-	allocateCustomerReceiptAction,
-} from "@/app/actions/allocate-customer-receipt";
+	type ApplyCustomerReceiptActionState,
+	applyCustomerReceiptAction,
+} from "@/app/actions/apply-customer-receipt";
 import {
 	type CancelSalesInvoiceActionState,
 	cancelSalesInvoiceAction,
@@ -127,6 +127,7 @@ const customerFields = [
 	{ name: "customerCode", label: "Customer code", required: true },
 	{ name: "customerName", label: "Customer name", required: true },
 	{ name: "currencyCode", label: "Currency code", required: true },
+	{ name: "idempotencyKey", label: "Idempotency key", required: true },
 ] as const;
 
 const invoiceVersionFields = [
@@ -138,6 +139,7 @@ const invoiceVersionFields = [
 		min: "1",
 		required: true,
 	},
+	{ name: "idempotencyKey", label: "Idempotency key", required: true },
 ] as const satisfies readonly Field[];
 
 export function CreateDraftSalesInvoiceForm({
@@ -155,7 +157,10 @@ export function CreateDraftSalesInvoiceForm({
 			action={action}
 			pending={pending}
 			state={state}
-			fields={customerFields}
+			fields={[
+				...customerFields,
+				{ name: "manualReason", label: "Manual reason" },
+			]}
 			submitLabel="Create draft sales invoice"
 			successTitle="Sales invoice created"
 		/>
@@ -176,6 +181,8 @@ export function AddSalesInvoiceLineForm({ canManage }: { canManage: boolean }) {
 			fields={[
 				{ name: "invoiceId", label: "Invoice id", required: true },
 				{ name: "itemId", label: "Item id", required: true },
+				{ name: "itemCode", label: "Item code", required: true },
+				{ name: "itemName", label: "Item name", required: true },
 				{ name: "description", label: "Description", required: true },
 				{
 					name: "quantity",
@@ -185,6 +192,7 @@ export function AddSalesInvoiceLineForm({ canManage }: { canManage: boolean }) {
 					min: "0.000001",
 					required: true,
 				},
+				{ name: "idempotencyKey", label: "Idempotency key", required: true },
 				{
 					name: "unitPrice",
 					label: "Unit price",
@@ -231,6 +239,7 @@ export function IssueCreditNoteForm({ canManage }: { canManage: boolean }) {
 			state={state}
 			fields={[
 				...customerFields,
+				{ name: "salesInvoiceId", label: "Sales invoice id", required: true },
 				{
 					name: "amount",
 					label: "Credit amount",
@@ -246,23 +255,29 @@ export function IssueCreditNoteForm({ canManage }: { canManage: boolean }) {
 	);
 }
 
-export function AllocateCustomerReceiptForm({
+export function ApplyCustomerReceiptForm({
 	canManage,
 }: {
 	canManage: boolean;
 }) {
 	const [state, action, pending] = useActionState(
-		allocateCustomerReceiptAction,
-		null satisfies AllocateCustomerReceiptActionState,
+		applyCustomerReceiptAction,
+		null satisfies ApplyCustomerReceiptActionState,
 	);
-	if (!canManage) return <ManageUnavailable operation="Allocate receipt" />;
+	if (!canManage) return <ManageUnavailable operation="Apply receipt" />;
 	return (
 		<ReceivablesActionForm
 			action={action}
 			pending={pending}
 			state={state}
 			fields={[
-				{ name: "invoiceId", label: "Invoice id", required: true },
+				{ name: "paymentId", label: "Payment id", required: true },
+				{
+					name: "paymentApplicationInstructionId",
+					label: "Payment application instruction id",
+					required: true,
+				},
+				{ name: "salesInvoiceId", label: "Sales invoice id", required: true },
 				{
 					name: "amount",
 					label: "Allocation amount",
@@ -271,10 +286,17 @@ export function AllocateCustomerReceiptForm({
 					min: "0.01",
 					required: true,
 				},
-				{ name: "paymentId", label: "Payment id (optional)" },
+				{
+					name: "expectedInvoiceVersion",
+					label: "Expected invoice version",
+					type: "number",
+					min: "1",
+					required: true,
+				},
+				{ name: "idempotencyKey", label: "Idempotency key", required: true },
 			]}
-			submitLabel="Allocate customer receipt"
-			successTitle="Receipt allocated"
+			submitLabel="Apply customer receipt"
+			successTitle="Customer receipt applied"
 		/>
 	);
 }

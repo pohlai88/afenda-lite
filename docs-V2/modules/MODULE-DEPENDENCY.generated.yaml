@@ -19,7 +19,7 @@ modules:
   - id: fulfillment
     optionalIntegratesWith:
       - moduleId: sales
-        style: events
+        style: ports
     required:
       - master-data
       - inventory
@@ -68,7 +68,15 @@ modules:
     required:
       - master-data
   - id: receivables
-    optionalIntegratesWith: []
+    optionalIntegratesWith:
+      - moduleId: sales
+        style: ports
+      - moduleId: fulfillment
+        style: ports
+      - moduleId: payments
+        style: events
+      - moduleId: accounting
+        style: events
     required:
       - master-data
   - id: receiving

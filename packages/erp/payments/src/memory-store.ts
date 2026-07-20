@@ -4,9 +4,10 @@ import { fail, ok, type Result } from "@afenda/errors/result";
 
 import type {
 	Payment,
-	PaymentAllocation,
+	PaymentAccount,
+	PaymentApplicationAvailability,
+	PaymentApplicationInstruction,
 	PaymentCreateRecord,
-	PaymentRefundRecord,
 	PaymentsStore,
 } from "./model";
 
@@ -17,60 +18,84 @@ function decimal(value: string): bigint {
 	return BigInt(whole) * SCALE + BigInt(fraction.padEnd(6, "0").slice(0, 6));
 }
 
+function formatDecimal(value: bigint): string {
+	const whole = value / SCALE;
+	const fraction = (value % SCALE)
+		.toString()
+		.padStart(6, "0")
+		.replace(/0+$/, "");
+	return fraction.length > 0 ? `${whole}.${fraction}` : whole.toString();
+}
+
 function clonePayment(payment: Payment): Payment {
 	return {
 		...payment,
-		allocations: payment.allocations.map((allocation) => ({ ...allocation })),
+		counterpartySnapshot:
+			payment.counterpartySnapshot === null
+				? null
+				: { ...payment.counterpartySnapshot },
+		applicationInstructions: payment.applicationInstructions.map(
+			(instruction) => ({ ...instruction }),
+		),
 		reversal: payment.reversal === null ? null : { ...payment.reversal },
-	};
-}
-
-function payload(payment: Payment, actorUserId: string, correlationId: string) {
-	return {
-		organizationId: payment.organizationId,
-		entityId: payment.id,
-		direction: payment.direction,
-		counterpartyId: payment.counterpartyId,
-		amount: payment.amount,
-		currencyCode: payment.currencyCode,
-		allocations: payment.allocations.map((allocation) => ({
-			targetType: allocation.targetType,
-			targetId: allocation.targetId,
-			amount: allocation.amount,
-		})),
-		actorId: actorUserId,
-		correlationId,
 	};
 }
 
 export class MemoryPaymentsStore implements PaymentsStore {
 	private readonly payments = new Map<string, Payment>();
+	private readonly accounts = new Map<string, PaymentAccount>();
+	private readonly mutationKeys = new Map<string, string>();
 
-	private find(organizationId: string, paymentId: string): Result<Payment> {
-		const found = this.payments.get(paymentId);
+	private find(organizationId: string, id: string): Result<Payment> {
+		const found = this.payments.get(id);
 		return found === undefined || found.organizationId !== organizationId
 			? fail("NOT_FOUND", "Payment not found")
 			: ok(found);
 	}
 
-	private codeAvailable(
+	private account(
 		organizationId: string,
-		normalizedCode: string,
-	): boolean {
-		for (const row of this.payments.values()) {
-			if (
-				row.organizationId === organizationId &&
-				row.normalizedCode === normalizedCode
-			) {
-				return false;
-			}
-		}
-		return true;
+		id: string,
+	): Result<PaymentAccount> {
+		const found = this.accounts.get(id);
+		return found === undefined || found.organizationId !== organizationId
+			? fail("NOT_FOUND", "Payment account not found")
+			: ok(found);
 	}
 
-	private draft(record: PaymentCreateRecord): Result<Payment> {
-		if (!this.codeAvailable(record.organizationId, record.normalizedCode)) {
-			return fail("CONFLICT", "Payment code already exists");
+	private idempotent(
+		organizationId: string,
+		key: string,
+		resourceId: string,
+	): Result<void> {
+		const full = `${organizationId}:${key}`;
+		const existing = this.mutationKeys.get(full);
+		if (existing !== undefined && existing !== resourceId) {
+			return fail("CONFLICT", "Idempotency key conflicts with another mutation");
+		}
+		this.mutationKeys.set(full, resourceId);
+		return ok(undefined);
+	}
+
+	private buildDraft(record: PaymentCreateRecord): Result<Payment> {
+		const account = this.account(
+			record.organizationId,
+			record.paymentAccountId,
+		);
+		if (!account.ok) return account;
+		if (account.data.currencyCode !== record.currencyCode) {
+			return fail(
+				"CONFLICT",
+				"Payment account currency differs from payment currency",
+			);
+		}
+		for (const payment of this.payments.values()) {
+			if (
+				payment.organizationId === record.organizationId &&
+				payment.normalizedCode === record.normalizedCode
+			) {
+				return fail("CONFLICT", "Payment code already exists");
+			}
 		}
 		const now = new Date();
 		return ok({
@@ -78,13 +103,22 @@ export class MemoryPaymentsStore implements PaymentsStore {
 			organizationId: record.organizationId,
 			code: record.code,
 			normalizedCode: record.normalizedCode,
+			paymentAccountId: record.paymentAccountId,
 			direction: record.direction,
+			purpose: record.purpose,
 			status: "draft",
 			counterpartyId: record.counterpartyId,
-			originalPaymentId: null,
+			counterpartySnapshot: record.counterpartySnapshot,
+			transferGroupId: record.transferGroupId,
+			linkedPaymentId: record.linkedPaymentId,
+			originalPaymentId: record.originalPaymentId,
+			refundSource: record.refundSource,
 			currencyCode: record.currencyCode,
 			amount: record.amount,
 			reference: record.reference,
+			createIdempotencyKey: record.createIdempotencyKey,
+			postIdempotencyKey: null,
+			reverseIdempotencyKey: null,
 			version: 1,
 			createdBy: record.actorUserId,
 			updatedBy: record.actorUserId,
@@ -94,69 +128,122 @@ export class MemoryPaymentsStore implements PaymentsStore {
 			reversedBy: null,
 			createdAt: now,
 			updatedAt: now,
-			allocations: [],
+			applicationInstructions: [],
 			reversal: null,
 		});
 	}
 
-	async createDraft(record: PaymentCreateRecord): Promise<Result<Payment>> {
-		const created = this.draft(record);
-		if (!created.ok) return created;
-		this.payments.set(created.data.id, created.data);
-		const emitted = await record.effects.emit({
-			type: "payments.payment.created.v1",
-			organizationId: record.organizationId,
-			actorUserId: record.actorUserId,
-			correlationId: record.correlationId,
-			payload: payload(created.data, record.actorUserId, record.correlationId),
-		});
-		if (!emitted.ok) {
-			this.payments.delete(created.data.id);
-			return emitted;
+	async createPaymentAccount(
+		record: Omit<PaymentAccount, "id" | "createdAt" | "updatedAt">,
+	): Promise<Result<PaymentAccount>> {
+		for (const account of this.accounts.values()) {
+			if (
+				account.organizationId === record.organizationId &&
+				account.normalizedCode === record.normalizedCode
+			) {
+				return fail("CONFLICT", "Payment account code already exists");
+			}
 		}
+		const now = new Date();
+		const account: PaymentAccount = {
+			...record,
+			id: randomUUID(),
+			createdAt: now,
+			updatedAt: now,
+		};
+		this.accounts.set(account.id, account);
+		return ok({ ...account });
+	}
+
+	async listPaymentAccounts(
+		organizationId: string,
+	): Promise<Result<PaymentAccount[]>> {
+		return ok(
+			[...this.accounts.values()]
+				.filter((account) => account.organizationId === organizationId)
+				.map((account) => ({ ...account })),
+		);
+	}
+
+	async createDraft(record: PaymentCreateRecord): Promise<Result<Payment>> {
+		for (const payment of this.payments.values()) {
+			if (
+				payment.organizationId === record.organizationId &&
+				payment.createIdempotencyKey === record.createIdempotencyKey
+			) {
+				return ok(clonePayment(payment));
+			}
+		}
+		const created = this.buildDraft(record);
+		if (!created.ok) return created;
+		const idem = this.idempotent(
+			record.organizationId,
+			record.createIdempotencyKey,
+			created.data.id,
+		);
+		if (!idem.ok) return idem;
+		this.payments.set(created.data.id, created.data);
 		return ok(clonePayment(created.data));
 	}
 
-	async addAllocation(
-		record: Parameters<PaymentsStore["addAllocation"]>[0],
-	): Promise<Result<PaymentAllocation>> {
+	async addApplicationInstruction(
+		record: Parameters<PaymentsStore["addApplicationInstruction"]>[0],
+	): Promise<Result<PaymentApplicationInstruction>> {
 		const found = this.find(record.organizationId, record.paymentId);
 		if (!found.ok) return found;
 		const payment = found.data;
 		if (payment.status !== "draft") {
-			return fail("CONFLICT", "Allocations require a draft payment");
+			return fail("CONFLICT", "Application instructions require a draft payment");
 		}
-		const allowedTarget =
-			(payment.direction === "receipt" && record.targetType === "receivable") ||
-			(payment.direction === "disbursement" && record.targetType === "payable");
-		if (!allowedTarget) {
+		if (
+			(payment.direction === "receipt" &&
+				record.targetModule !== "receivables") ||
+			(payment.direction === "disbursement" &&
+				record.targetModule !== "payables")
+		) {
 			return fail(
 				"CONFLICT",
-				"Allocation target is incompatible with payment direction",
+				"Application target is incompatible with payment direction",
 			);
 		}
-		const allocated = payment.allocations.reduce(
-			(total, allocation) => total + decimal(allocation.amount),
-			0n,
-		);
-		if (allocated + decimal(record.amount) > decimal(payment.amount)) {
-			return fail("CONFLICT", "Allocation exceeds payment amount");
+		const allocated = payment.applicationInstructions
+			.filter((instruction) =>
+				["pending", "applied", "partially_applied"].includes(instruction.status),
+			)
+			.reduce(
+				(total, instruction) => total + decimal(instruction.intendedAmount),
+				0n,
+			);
+		if (allocated + decimal(record.intendedAmount) > decimal(payment.amount)) {
+			return fail("CONFLICT", "Application exceeds payment amount");
 		}
-		const allocation: PaymentAllocation = {
+		const instruction: PaymentApplicationInstruction = {
 			id: randomUUID(),
 			organizationId: record.organizationId,
 			paymentId: payment.id,
-			targetType: record.targetType,
-			targetId: record.targetId,
-			amount: record.amount,
+			targetModule: record.targetModule,
+			targetDocumentType: record.targetDocumentType,
+			targetDocumentId: record.targetDocumentId,
+			intendedAmount: record.intendedAmount,
+			appliedAmount: "0",
+			currencyCode: record.currencyCode,
+			status: "pending",
+			rejectionCode: null,
 			createdBy: record.actorUserId,
 			createdAt: new Date(),
+			updatedAt: new Date(),
 		};
-		payment.allocations.push(allocation);
+		const idempotent = this.idempotent(
+			record.organizationId,
+			record.idempotencyKey,
+			instruction.id,
+		);
+		if (!idempotent.ok) return idempotent;
+		payment.applicationInstructions.push(instruction);
 		payment.version += 1;
 		payment.updatedBy = record.actorUserId;
-		payment.updatedAt = allocation.createdAt;
-		return ok({ ...allocation });
+		payment.updatedAt = instruction.createdAt;
+		return ok({ ...instruction });
 	}
 
 	async post(
@@ -174,21 +261,20 @@ export class MemoryPaymentsStore implements PaymentsStore {
 		const previous = clonePayment(payment);
 		const now = new Date();
 		payment.status = "posted";
+		payment.postIdempotencyKey = record.idempotencyKey;
 		payment.postedAt = now;
 		payment.postedBy = record.actorUserId;
 		payment.updatedAt = now;
 		payment.updatedBy = record.actorUserId;
 		payment.version += 1;
-		const emitted = await record.effects.emit({
-			type: "payments.payment.posted.v1",
-			organizationId: payment.organizationId,
-			actorUserId: record.actorUserId,
-			correlationId: record.correlationId,
-			payload: payload(payment, record.actorUserId, record.correlationId),
-		});
-		if (!emitted.ok) {
+		const idempotent = this.idempotent(
+			record.organizationId,
+			record.idempotencyKey,
+			payment.id,
+		);
+		if (!idempotent.ok) {
 			this.payments.set(payment.id, previous);
-			return emitted;
+			return idempotent;
 		}
 		return ok(clonePayment(payment));
 	}
@@ -216,31 +302,89 @@ export class MemoryPaymentsStore implements PaymentsStore {
 			reversedAt: now,
 		};
 		payment.status = "reversed";
+		payment.reverseIdempotencyKey = record.idempotencyKey;
 		payment.reversal = reversal;
 		payment.reversedAt = now;
 		payment.reversedBy = record.actorUserId;
 		payment.updatedAt = now;
 		payment.updatedBy = record.actorUserId;
 		payment.version += 1;
-		const emitted = await record.effects.emit({
-			type: "payments.payment.reversed.v1",
-			organizationId: payment.organizationId,
-			actorUserId: record.actorUserId,
-			correlationId: record.correlationId,
-			payload: {
-				...payload(payment, record.actorUserId, record.correlationId),
-				reversalId: reversal.id,
-				reason: record.reason,
-			},
-		});
-		if (!emitted.ok) {
+		const idempotent = this.idempotent(
+			record.organizationId,
+			record.idempotencyKey,
+			payment.id,
+		);
+		if (!idempotent.ok) {
 			this.payments.set(payment.id, previous);
-			return emitted;
+			return idempotent;
 		}
 		return ok(clonePayment(payment));
 	}
 
-	async postRefund(record: PaymentRefundRecord): Promise<Result<Payment>> {
+	async createAndPostTransfer(
+		record: Parameters<PaymentsStore["createAndPostTransfer"]>[0],
+	): Promise<Result<{ outgoing: Payment; incoming: Payment }>> {
+		const group = randomUUID();
+		const outgoing = this.buildDraft({
+			organizationId: record.organizationId,
+			code: `${record.code}-OUT`,
+			normalizedCode: `${record.normalizedCode}-OUT`,
+			paymentAccountId: record.fromPaymentAccountId,
+			direction: "disbursement",
+			purpose: "internal_transfer",
+			counterpartyId: null,
+			counterpartySnapshot: null,
+			transferGroupId: group,
+			linkedPaymentId: null,
+			originalPaymentId: null,
+			refundSource: null,
+			currencyCode: record.currencyCode,
+			amount: record.amount,
+			reference: record.reference,
+			createIdempotencyKey: `${record.idempotencyKey}:out`,
+			actorUserId: record.actorUserId,
+			correlationId: record.correlationId,
+		});
+		if (!outgoing.ok) return outgoing;
+		const incoming = this.buildDraft({
+			organizationId: record.organizationId,
+			code: `${record.code}-IN`,
+			normalizedCode: `${record.normalizedCode}-IN`,
+			paymentAccountId: record.toPaymentAccountId,
+			direction: "receipt",
+			purpose: "internal_transfer",
+			counterpartyId: null,
+			counterpartySnapshot: null,
+			transferGroupId: group,
+			linkedPaymentId: outgoing.data.id,
+			originalPaymentId: null,
+			refundSource: null,
+			currencyCode: record.currencyCode,
+			amount: record.amount,
+			reference: record.reference,
+			createIdempotencyKey: `${record.idempotencyKey}:in`,
+			actorUserId: record.actorUserId,
+			correlationId: record.correlationId,
+		});
+		if (!incoming.ok) return incoming;
+		const now = new Date();
+		outgoing.data.linkedPaymentId = incoming.data.id;
+		for (const payment of [outgoing.data, incoming.data]) {
+			payment.status = "posted";
+			payment.postedAt = now;
+			payment.postedBy = record.actorUserId;
+			payment.postIdempotencyKey = record.idempotencyKey;
+			this.payments.set(payment.id, payment);
+		}
+		return ok({
+			outgoing: clonePayment(outgoing.data),
+			incoming: clonePayment(incoming.data),
+		});
+	}
+
+	async postRefund(
+		record: Parameters<PaymentsStore["postRefund"]>[0],
+	): Promise<Result<Payment>> {
 		const originalResult = this.find(
 			record.organizationId,
 			record.originalPaymentId,
@@ -249,9 +393,6 @@ export class MemoryPaymentsStore implements PaymentsStore {
 		const original = originalResult.data;
 		if (original.status !== "posted" || original.direction === "refund") {
 			return fail("CONFLICT", "Refund requires an active posted payment");
-		}
-		if (!this.codeAvailable(record.organizationId, record.normalizedCode)) {
-			return fail("CONFLICT", "Payment code already exists");
 		}
 		const refunded = [...this.payments.values()]
 			.filter(
@@ -264,47 +405,86 @@ export class MemoryPaymentsStore implements PaymentsStore {
 		if (refunded + decimal(record.amount) > decimal(original.amount)) {
 			return fail("CONFLICT", "Refund exceeds remaining refundable amount");
 		}
-		const now = new Date();
-		const refund: Payment = {
-			id: randomUUID(),
-			organizationId: record.organizationId,
-			code: record.code,
-			normalizedCode: record.normalizedCode,
+		const draft = this.buildDraft({
+			...record,
 			direction: "refund",
-			status: "posted",
-			counterpartyId: original.counterpartyId,
-			originalPaymentId: original.id,
+			purpose:
+				original.direction === "receipt"
+					? "customer_refund"
+					: "supplier_refund_receipt",
 			currencyCode: original.currencyCode,
-			amount: record.amount,
-			reference: record.reference,
-			version: 1,
-			createdBy: record.actorUserId,
-			updatedBy: record.actorUserId,
-			postedAt: now,
-			postedBy: record.actorUserId,
-			reversedAt: null,
-			reversedBy: null,
-			createdAt: now,
-			updatedAt: now,
-			allocations: [],
-			reversal: null,
-		};
-		this.payments.set(refund.id, refund);
-		const emitted = await record.effects.emit({
-			type: "payments.refund.posted.v1",
-			organizationId: refund.organizationId,
-			actorUserId: record.actorUserId,
-			correlationId: record.correlationId,
-			payload: {
-				...payload(refund, record.actorUserId, record.correlationId),
-				originalPaymentId: original.id,
-			},
+			counterpartyId: original.counterpartyId,
+			counterpartySnapshot: original.counterpartySnapshot,
+			transferGroupId: null,
+			linkedPaymentId: null,
+			originalPaymentId: original.id,
+			refundSource: record.refundSource,
+			createIdempotencyKey: record.createIdempotencyKey,
 		});
-		if (!emitted.ok) {
-			this.payments.delete(refund.id);
-			return emitted;
-		}
+		if (!draft.ok) return draft;
+		const refund = draft.data;
+		refund.status = "posted";
+		refund.postedAt = new Date();
+		refund.postedBy = record.actorUserId;
+		refund.postIdempotencyKey = record.createIdempotencyKey;
+		this.payments.set(refund.id, refund);
 		return ok(clonePayment(refund));
+	}
+
+	async markInstructionApplied(
+		record: Parameters<PaymentsStore["markInstructionApplied"]>[0],
+	): Promise<Result<PaymentApplicationInstruction>> {
+		for (const payment of this.payments.values()) {
+			const instruction = payment.applicationInstructions.find(
+				(candidate) => candidate.id === record.instructionId,
+			);
+			if (
+				instruction !== undefined &&
+				payment.organizationId === record.organizationId
+			) {
+				if (decimal(record.appliedAmount) > decimal(instruction.intendedAmount)) {
+					return fail("CONFLICT", "Applied amount exceeds intended amount");
+				}
+				instruction.appliedAmount = record.appliedAmount;
+				instruction.status =
+					decimal(record.appliedAmount) === decimal(instruction.intendedAmount)
+						? "applied"
+						: "partially_applied";
+				instruction.updatedAt = new Date();
+				return ok({ ...instruction });
+			}
+		}
+		return fail("NOT_FOUND", "Payment application instruction not found");
+	}
+
+	async markInstructionRejected(
+		record: Parameters<PaymentsStore["markInstructionRejected"]>[0],
+	): Promise<Result<PaymentApplicationInstruction>> {
+		for (const payment of this.payments.values()) {
+			const instruction = payment.applicationInstructions.find(
+				(candidate) => candidate.id === record.instructionId,
+			);
+			if (
+				instruction !== undefined &&
+				payment.organizationId === record.organizationId
+			) {
+				if (
+					instruction.status !== "pending" &&
+					instruction.status !== "partially_applied" &&
+					instruction.status !== "applied"
+				) {
+					return fail("CONFLICT", "Application instruction cannot be rejected");
+				}
+				instruction.status =
+					record.rejectionCode === "PAYMENT_REVERSED"
+						? "reversed"
+						: "rejected";
+				instruction.rejectionCode = record.rejectionCode;
+				instruction.updatedAt = new Date();
+				return ok({ ...instruction });
+			}
+		}
+		return fail("NOT_FOUND", "Payment application instruction not found");
 	}
 
 	async getById(
@@ -340,6 +520,46 @@ export class MemoryPaymentsStore implements PaymentsStore {
 				.slice(start, start + filter.pageSize)
 				.map(clonePayment),
 		);
+	}
+
+	async getApplicationAvailability(
+		organizationId: string,
+		paymentId: string,
+	): Promise<Result<PaymentApplicationAvailability>> {
+		const found = this.find(organizationId, paymentId);
+		if (!found.ok) return found;
+		if (found.data.status !== "posted") {
+			return fail(
+				"CONFLICT",
+				"Application availability requires a posted payment",
+			);
+		}
+		const intended = found.data.applicationInstructions
+			.filter((instruction) =>
+				["pending", "applied", "partially_applied"].includes(instruction.status),
+			)
+			.reduce(
+				(sum, instruction) => sum + decimal(instruction.intendedAmount),
+				0n,
+			);
+		const refunded = [...this.payments.values()]
+			.filter(
+				(payment) =>
+					payment.organizationId === organizationId &&
+					payment.originalPaymentId === paymentId &&
+					payment.status === "posted",
+			)
+			.reduce((sum, payment) => sum + decimal(payment.amount), 0n);
+		return ok({
+			paymentId,
+			currencyCode: found.data.currencyCode,
+			postedAmount: found.data.amount,
+			intendedAmount: formatDecimal(intended),
+			refundedAmount: formatDecimal(refunded),
+			availableToApply: formatDecimal(
+				decimal(found.data.amount) - intended - refunded,
+			),
+		});
 	}
 }
 

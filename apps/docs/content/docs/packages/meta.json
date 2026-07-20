@@ -3,6 +3,7 @@
 	"icon": "Package",
 	"pages": [
 		"index",
+		"accounting",
 		"admin",
 		"ai-the-machine",
 		"audit",
@@ -22,6 +23,8 @@
 		"metrics",
 		"notifications",
 		"openapi",
+		"payables",
+		"payments",
 		"purchasing",
 		"rate-limit",
 		"receivables",

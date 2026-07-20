@@ -43,3 +43,32 @@ export type MasterLookupPort = {
 		actorUserId: string,
 	): Promise<Result<Warehouse | null>>;
 };
+
+export type FulfillableSalesOrderLine = {
+	salesOrderLineId: string;
+	itemId: string;
+	uomId: string;
+	orderedQuantity: string;
+};
+
+export type FulfillableSalesOrder = {
+	status: string;
+	version: number;
+	customerPartyId: string;
+	customerPartyCode: string;
+	customerPartyName: string;
+	shipToSnapshot: {
+		name: string;
+		addressLines: string[];
+		countryCode: string;
+	} | null;
+	lines: FulfillableSalesOrderLine[];
+};
+
+export type SalesFulfillmentQueryPort = {
+	getFulfillableSalesOrder(input: {
+		organizationId: string;
+		salesOrderId: string;
+		actorUserId: string;
+	}): Promise<Result<FulfillableSalesOrder | null>>;
+};

@@ -1,7 +1,30 @@
-export const FULFILLMENT_PERMISSION_READ = "fulfillment.read" as const;
-export const FULFILLMENT_PERMISSION_MANAGE = "fulfillment.manage" as const;
+export const FULFILLMENT_PERMISSION_DELIVERY_READ =
+	"fulfillment.delivery.read" as const;
+export const FULFILLMENT_PERMISSION_DELIVERY_CREATE =
+	"fulfillment.delivery.create" as const;
+export const FULFILLMENT_PERMISSION_DELIVERY_UPDATE =
+	"fulfillment.delivery.update" as const;
+export const FULFILLMENT_PERMISSION_PICKING_CONFIRM =
+	"fulfillment.picking.confirm" as const;
+export const FULFILLMENT_PERMISSION_PACKING_CONFIRM =
+	"fulfillment.packing.confirm" as const;
+export const FULFILLMENT_PERMISSION_DELIVERY_POST =
+	"fulfillment.delivery.post" as const;
+export const FULFILLMENT_PERMISSION_DELIVERY_CANCEL =
+	"fulfillment.delivery.cancel" as const;
+export const FULFILLMENT_PERMISSION_POD_RECORD =
+	"fulfillment.pod.record" as const;
+export const FULFILLMENT_PERMISSION_DELIVERY_CLOSE =
+	"fulfillment.delivery.close" as const;
 
 export const FULFILLMENT_PERMISSION_CODES = [
-	FULFILLMENT_PERMISSION_READ,
-	FULFILLMENT_PERMISSION_MANAGE,
+	FULFILLMENT_PERMISSION_DELIVERY_READ,
+	FULFILLMENT_PERMISSION_DELIVERY_CREATE,
+	FULFILLMENT_PERMISSION_DELIVERY_UPDATE,
+	FULFILLMENT_PERMISSION_PICKING_CONFIRM,
+	FULFILLMENT_PERMISSION_PACKING_CONFIRM,
+	FULFILLMENT_PERMISSION_DELIVERY_POST,
+	FULFILLMENT_PERMISSION_DELIVERY_CANCEL,
+	FULFILLMENT_PERMISSION_POD_RECORD,
+	FULFILLMENT_PERMISSION_DELIVERY_CLOSE,
 ] as const;

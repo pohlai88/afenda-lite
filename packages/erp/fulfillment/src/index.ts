@@ -20,10 +20,12 @@ export type { FulfillmentCommandOptions } from "./command-options";
 export {
 	addDeliveryLine,
 	cancelDelivery,
+	closeDelivery,
 	confirmPack,
 	confirmPick,
 	createDraftDelivery,
 	getDeliveryById,
+	getInvoiceableDelivery,
 	listDeliveries,
 	postDelivery,
 	recordProofOfDelivery,
@@ -41,15 +43,19 @@ export {
 export type {
 	AuditFactInput,
 	AuditFactPort,
+	FulfillableSalesOrder,
+	FulfillableSalesOrderLine,
 	MasterLookupPort,
 	MutationPorts,
 	OutboxFactInput,
 	OutboxPort,
+	SalesFulfillmentQueryPort,
 } from "./ports";
 export { createProductionMutationPorts } from "./production-ports";
 export {
 	addDeliveryLineInputSchema,
 	cancelDeliveryInputSchema,
+	closeDeliveryInputSchema,
 	confirmPackInputSchema,
 	confirmPickInputSchema,
 	createDraftDeliveryInputSchema,
@@ -76,5 +82,7 @@ export {
 	type DeliveryPack,
 	type DeliveryPick,
 	type DeliveryStatus,
+	POD_OUTCOMES,
+	type PodOutcome,
 	type ProofOfDelivery,
 } from "./types";

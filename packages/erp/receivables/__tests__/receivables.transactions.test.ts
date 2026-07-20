@@ -13,21 +13,36 @@ import {
 describe("receivables transaction rollback", () => {
 	it("rolls back invoice and balance when outbox emission fails", async () => {
 		const store = createMemoryReceivablesStore();
-		const authorization = { async can() { return true; } };
+		const authorization = {
+			async can() {
+				return true;
+			},
+		};
 		const organizationId = "org-1";
 		const actorUserId = "user-1";
 		const customerId = "00000000-0000-4000-8000-000000000001";
-		const common = { store, authorization };
+		const common = {
+			store,
+			authorization,
+			effects: {
+				async emit() {
+					return ok(undefined);
+				},
+			},
+		};
 		const created = await createDraftSalesInvoice(
 			{
 				organizationId,
 				actorUserId,
 				correlationId: "create",
+				idempotencyKey: "idem-tx-create",
 				code: "INV-ROLLBACK",
 				customerId,
 				customerCode: "C-1",
 				customerName: "Customer",
 				currencyCode: "USD",
+				invoiceSource: "manual",
+				manualReason: "Rollback test",
 			},
 			common,
 		);
@@ -38,8 +53,11 @@ describe("receivables transaction rollback", () => {
 				organizationId,
 				actorUserId,
 				correlationId: "line",
+				idempotencyKey: "idem-tx-line",
 				invoiceId: created.data.id,
 				itemId: "00000000-0000-4000-8000-000000000002",
+				itemCode: "ITEM-1",
+				itemName: "Line",
 				description: "Line",
 				quantity: "1",
 				unitPrice: "40",
@@ -51,12 +69,17 @@ describe("receivables transaction rollback", () => {
 				organizationId,
 				actorUserId,
 				correlationId: "post",
+				idempotencyKey: "idem-tx-post",
 				invoiceId: created.data.id,
 				expectedVersion: 2,
 			},
 			{
 				...common,
-				effects: { async emit() { return fail("INTERNAL_ERROR", "outbox failed"); } },
+				effects: {
+					async emit() {
+						return fail("INTERNAL_ERROR", "outbox failed");
+					},
+				},
 			},
 		);
 		expect(posted.ok).toBe(false);

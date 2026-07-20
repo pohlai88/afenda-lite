@@ -14,10 +14,22 @@ events:
     id: fulfillment.pick.confirmed.v1
     moduleId: fulfillment
   - direction: emits
+    id: fulfillment.pack.confirmed.v1
+    moduleId: fulfillment
+  - direction: emits
     id: fulfillment.delivery.posted.v1
     moduleId: fulfillment
   - direction: emits
     id: fulfillment.delivery.completed.v1
+    moduleId: fulfillment
+  - direction: emits
+    id: fulfillment.delivery.cancelled.v1
+    moduleId: fulfillment
+  - direction: emits
+    id: fulfillment.pod.recorded.v1
+    moduleId: fulfillment
+  - direction: emits
+    id: fulfillment.delivery.closed.v1
     moduleId: fulfillment
   - direction: emits
     id: inventory.movement.created.v1
@@ -251,6 +263,18 @@ events:
     id: payments.refund.posted.v1
     moduleId: payments
   - direction: emits
+    id: payments.application_instruction.created.v1
+    moduleId: payments
+  - direction: emits
+    id: payments.application_instruction.applied.v1
+    moduleId: payments
+  - direction: emits
+    id: payments.application_instruction.rejected.v1
+    moduleId: payments
+  - direction: emits
+    id: payments.transfer.posted.v1
+    moduleId: payments
+  - direction: emits
     id: purchasing.order.created.v1
     moduleId: purchasing
   - direction: emits
@@ -266,13 +290,25 @@ events:
     id: purchasing.order.closed.v1
     moduleId: purchasing
   - direction: emits
+    id: receivables.invoice.created.v1
+    moduleId: receivables
+  - direction: emits
     id: receivables.invoice.posted.v1
+    moduleId: receivables
+  - direction: emits
+    id: receivables.invoice.cancelled.v1
+    moduleId: receivables
+  - direction: emits
+    id: receivables.invoice.closed.v1
     moduleId: receivables
   - direction: emits
     id: receivables.credit_note.posted.v1
     moduleId: receivables
   - direction: emits
     id: receivables.allocation.posted.v1
+    moduleId: receivables
+  - direction: emits
+    id: receivables.allocation.reversed.v1
     moduleId: receivables
   - direction: emits
     id: receiving.receipt.created.v1

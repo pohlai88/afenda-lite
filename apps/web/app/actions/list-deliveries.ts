@@ -37,7 +37,7 @@ export async function listDeliveriesAction(input?: {
 }): Promise<ActionResult<ListDeliveriesActionData>> {
 	return runOperatorPermissionAction({
 		path: "listDeliveriesAction",
-		permission: "fulfillment.read",
+		permission: "fulfillment.delivery.read",
 		safeMessage: "Could not list deliveries. Try again or contact an admin.",
 		execute: async (session) => {
 			const parsed = parseSchema(listDeliveriesActionSchema, input);

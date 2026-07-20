@@ -1,5 +1,6 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
 import { type Payment, postPayment } from "@afenda/payments";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -7,6 +8,7 @@ import { z } from "zod";
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runOperatorPermissionAction } from "@/app/actions/run-operator-permission-action";
 import { createPaymentsCommandOptions } from "@/lib/erp/payments-command-options";
+import { applyPaymentInstructionsAfterPost } from "@/lib/erp/payments-application-orchestrator";
 import {
 	type ActionResult,
 	actionFail,
@@ -26,7 +28,7 @@ export async function postPaymentAction(
 ): Promise<PostPaymentActionState> {
 	return runOperatorPermissionAction({
 		path: "postPaymentAction",
-		permission: "payments.manage",
+		permission: "payments.payment.post",
 		safeMessage: "Could not post payment. Try again or contact an admin.",
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(schema, {
@@ -45,12 +47,20 @@ export async function postPaymentAction(
 						organizationId: session.orgId,
 						actorUserId: session.userId,
 						correlationId,
+						idempotencyKey: randomUUID(),
 						...parsed.data,
 					},
 					createPaymentsCommandOptions(),
 				),
 			);
 			if (!mapped.ok) return mapped;
+			const applications = await applyPaymentInstructionsAfterPost({
+				organizationId: session.orgId,
+				actorUserId: session.userId,
+				correlationId,
+				payment: mapped.data,
+			});
+			if (!applications.ok) return mapPackageResult(applications);
 			revalidatePath("/admin/payments");
 			revalidatePath("/client/payments");
 			return { ok: true, data: { payment: mapped.data } };

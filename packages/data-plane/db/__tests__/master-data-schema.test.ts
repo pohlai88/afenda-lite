@@ -110,7 +110,8 @@ describe("@afenda/db master-data schema (Authority B)", () => {
 		expect(HARD_TENANT_ROOT_TABLE_NAMES).toContain("md_payment_term");
 		expect(HARD_TENANT_ROOT_TABLE_NAMES).toContain("md_tax_registration");
 		expect(HARD_TENANT_ROOT_TABLE_NAMES).toContain("md_change_request");
-		expect(HARD_TENANT_ROOT_TABLE_NAMES).toHaveLength(63);
+		expect(HARD_TENANT_ROOT_TABLE_NAMES).toHaveLength(64);
+		expect(HARD_TENANT_ROOT_TABLE_NAMES).toContain("payment_account");
 	});
 
 	it("requires organization_id NOT NULL on md_* roots", () => {

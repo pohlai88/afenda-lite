@@ -21,7 +21,7 @@ export async function getDeliveryAction(
 ): Promise<ActionResult<GetDeliveryActionData>> {
 	return runOperatorPermissionAction({
 		path: "getDeliveryAction",
-		permission: "fulfillment.read",
+		permission: "fulfillment.delivery.read",
 		safeMessage: "Could not load delivery. Try again or contact an admin.",
 		execute: async (session) => {
 			const parsed = parseSchema(getDeliverySchema, deliveryId);

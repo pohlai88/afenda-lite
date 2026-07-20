@@ -9,6 +9,14 @@ export const DELIVERY_STATUSES = [
 ] as const;
 export type DeliveryStatus = (typeof DELIVERY_STATUSES)[number];
 
+export const POD_OUTCOMES = [
+	"delivered",
+	"partially_delivered",
+	"refused",
+	"failed",
+] as const;
+export type PodOutcome = (typeof POD_OUTCOMES)[number];
+
 export type DeliveryLine = {
 	id: string;
 	organizationId: string;
@@ -22,6 +30,7 @@ export type DeliveryLine = {
 	quantityOrdered: string | null;
 	quantityToDeliver: string;
 	salesOrderLineId: string | null;
+	lineIdempotencyKey: string;
 	version: number;
 	createdBy: string;
 	updatedBy: string;
@@ -35,6 +44,8 @@ export type DeliveryPick = {
 	deliveryId: string;
 	deliveryLineId: string | null;
 	quantityPicked: string;
+	reservationId: string | null;
+	pickIdempotencyKey: string;
 	pickedAt: Date;
 	pickedBy: string;
 	version: number;
@@ -64,6 +75,10 @@ export type ProofOfDelivery = {
 	organizationId: string;
 	deliveryId: string;
 	receivedByName: string;
+	outcome: PodOutcome;
+	proofType: string | null;
+	evidenceRef: string | null;
+	carrierRef: string | null;
 	notes: string | null;
 	recordedAt: Date;
 	recordedBy: string;
@@ -87,6 +102,13 @@ export type Delivery = {
 	shipToPartyId: string | null;
 	shipToPartyCode: string | null;
 	shipToPartyName: string | null;
+	createIdempotencyKey: string;
+	pickStartIdempotencyKey: string | null;
+	packIdempotencyKey: string | null;
+	postIdempotencyKey: string | null;
+	podIdempotencyKey: string | null;
+	cancelIdempotencyKey: string | null;
+	closeIdempotencyKey: string | null;
 	version: number;
 	createdBy: string;
 	updatedBy: string;

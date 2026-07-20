@@ -17,7 +17,7 @@ export async function getPaymentAction(
 ): Promise<ActionResult<{ payment: Payment }>> {
 	return runOperatorPermissionAction({
 		path: "getPaymentAction",
-		permission: "payments.read",
+		permission: "payments.payment.read",
 		safeMessage: "Could not load payment. Try again or contact an admin.",
 		execute: async (session) => {
 			const parsed = parseSchema(z.string().uuid(), paymentId);

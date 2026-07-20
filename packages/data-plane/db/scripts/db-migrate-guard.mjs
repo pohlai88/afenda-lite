@@ -21,7 +21,8 @@ import { assertAdditiveMigrations } from "./lib/assert-additive-migration.mjs";
 import { requireMigrationDatabaseUrl } from "./lib/database-url.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const repoRoot = join(root, "../..");
+// packages/data-plane/db → repo root (three levels up)
+const repoRoot = join(root, "../../..");
 const drizzleDir = join(root, "drizzle");
 
 /** Same load path as ensure-platform-permission-catalog — never print values. */

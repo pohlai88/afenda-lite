@@ -12,6 +12,7 @@ import type {
 
 export type DeliveryCreateRecord = {
 	organizationId: string;
+	idempotencyKey: string;
 	code: string;
 	normalizedCode: string;
 	salesOrderId: string | null;
@@ -25,6 +26,7 @@ export type DeliveryCreateRecord = {
 };
 export type DeliveryLineCreateRecord = {
 	organizationId: string;
+	idempotencyKey: string;
 	deliveryId: string;
 	expectedVersion: number;
 	itemId: string;
@@ -42,10 +44,12 @@ export type DeliveryStateRecord = {
 	deliveryId: string;
 	expectedVersion: number;
 	actorUserId: string;
+	idempotencyKey: string;
 };
 export type DeliveryPickCreateRecord = DeliveryStateRecord & {
 	deliveryLineId: string;
 	quantityPicked: string;
+	reservationId: string;
 };
 export type DeliveryPackCreateRecord = DeliveryStateRecord & {
 	packageCode: string | null;
@@ -53,6 +57,10 @@ export type DeliveryPackCreateRecord = DeliveryStateRecord & {
 };
 export type ProofOfDeliveryCreateRecord = DeliveryStateRecord & {
 	receivedByName: string;
+	outcome: "delivered" | "partially_delivered" | "refused" | "failed";
+	proofType: string | null;
+	evidenceRef: string | null;
+	carrierRef: string | null;
 	notes: string | null;
 	recordedAt: Date;
 };
@@ -63,6 +71,7 @@ export type DeliveryListFilter = {
 	status?: DeliveryStatus;
 	warehouseId?: string;
 	salesOrderId?: string;
+	sort?: "created_at" | "code" | "status";
 };
 export type MutationMeta = { correlationId: string };
 
@@ -107,9 +116,18 @@ export type FulfillmentStore = {
 		ports: MutationPorts,
 		meta: MutationMeta,
 	): Promise<Result<Delivery>>;
+	closeDelivery(
+		record: DeliveryStateRecord,
+		ports: MutationPorts,
+		meta: MutationMeta,
+	): Promise<Result<Delivery>>;
 	getDeliveryById(
 		organizationId: string,
 		id: string,
 	): Promise<Result<Delivery | null>>;
 	listDeliveries(filter: DeliveryListFilter): Promise<Result<Delivery[]>>;
+	sumPostedQuantityForSalesOrderLine(
+		organizationId: string,
+		salesOrderLineId: string,
+	): Promise<Result<string>>;
 };

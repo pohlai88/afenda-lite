@@ -29,7 +29,7 @@ export async function listSalesInvoicesAction(input?: {
 }): Promise<ActionResult<ListSalesInvoicesActionData>> {
 	return runOperatorPermissionAction({
 		path: "listSalesInvoicesAction",
-		permission: "receivables.read",
+		permission: "receivables.invoice.read",
 		safeMessage:
 			"Could not list sales invoices. Try again or contact an admin.",
 		execute: async (session) => {

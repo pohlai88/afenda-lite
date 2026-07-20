@@ -13,7 +13,9 @@ import {
 
 import { requirePermission } from "@/features/auth/require-permission";
 import {
-	AddPaymentAllocationForm,
+	AddPaymentApplicationInstructionForm,
+	CreateAndPostPaymentTransferForm,
+	CreatePaymentAccountForm,
 	CreateDraftPaymentForm,
 	PostPaymentForm,
 	PostRefundForm,
@@ -27,7 +29,9 @@ type PaymentsShellProps = { surface: "admin" | "client" };
 
 const formSections = [
 	["Create draft payment", CreateDraftPaymentForm],
-	["Add allocation", AddPaymentAllocationForm],
+	["Create payment account", CreatePaymentAccountForm],
+	["Add application instruction", AddPaymentApplicationInstructionForm],
+	["Create and post transfer", CreateAndPostPaymentTransferForm],
 	["Post payment", PostPaymentForm],
 	["Reverse payment", ReversePaymentForm],
 	["Post refund", PostRefundForm],
@@ -37,8 +41,15 @@ const formSections = [
 export async function PaymentsShell({ surface }: PaymentsShellProps) {
 	const session =
 		surface === "admin" ? await requireRole("operator") : await getSession();
-	await requirePermission(session, "payments.read");
-	const canManage = await sessionHasPermission(session, "payments.manage");
+	await requirePermission(session, "payments.payment.read");
+	const canManage = (
+		await Promise.all([
+			sessionHasPermission(session, "payments.payment.create"),
+			sessionHasPermission(session, "payments.account.manage"),
+			sessionHasPermission(session, "payments.application_instruction.manage"),
+			sessionHasPermission(session, "payments.payment.post"),
+		])
+	).some(Boolean);
 	const paymentsResult = await listPayments(
 		{
 			organizationId: session.orgId,
@@ -56,7 +67,8 @@ export async function PaymentsShell({ surface }: PaymentsShellProps) {
 		version: payment.version,
 		currencyCode: payment.currencyCode,
 		amount: payment.amount,
-		allocationCount: payment.allocations.length,
+		purpose: payment.purpose,
+		instructionCount: payment.applicationInstructions.length,
 	}));
 
 	return (

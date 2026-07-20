@@ -1,15 +1,16 @@
-import { fail, ok } from "@afenda/errors/result";
 import { describe, expect, it } from "vitest";
 
 import {
+	createAndPostPaymentTransfer,
 	createDraftPayment,
-	createMemoryPaymentsStore,
+	createPaymentAccount,
 	getPaymentById,
-	listPayments,
 	postPayment,
 	postRefund,
 	reversePayment,
 } from "../src/index";
+import { createMemoryPaymentsStore } from "../src/testing";
+import { reconcilePayments } from "../src/reconcile";
 
 const organizationId = "org-1";
 const actorUserId = "user-1";
@@ -18,122 +19,218 @@ const authorization = {
 		return true;
 	},
 };
-const successfulEffects = {
-	async emit() {
-		return ok(undefined);
-	},
-};
 
-describe("payments transaction rollback", () => {
-	it("rolls back posting when event emission fails", async () => {
+describe("payments domain conflicts", () => {
+	it("rejects version conflicts on post and reverse", async () => {
 		const store = createMemoryPaymentsStore();
-		const common = { store, authorization, effects: successfulEffects };
+		const options = { store, authorization };
+		const account = await createPaymentAccount(
+			{
+				organizationId,
+				actorUserId,
+				correlationId: "account",
+				idempotencyKey: "account-1",
+				code: "CASH-1",
+				name: "Cash",
+				currencyCode: "USD",
+			},
+			options,
+		);
+		if (!account.ok) return;
+
 		const created = await createDraftPayment(
 			{
 				organizationId,
 				actorUserId,
 				correlationId: "create",
+				idempotencyKey: "pay-tx-1",
 				code: "PAY-TX-1",
-				direction: "transfer",
+				paymentAccountId: account.data.id,
+				direction: "receipt",
+				purpose: "manual_receipt",
 				currencyCode: "USD",
 				amount: "20",
 			},
-			common,
+			options,
 		);
 		if (!created.ok) return;
-		const posted = await postPayment(
-			{
-				organizationId,
-				actorUserId,
-				correlationId: "post",
-				paymentId: created.data.id,
-				expectedVersion: 1,
-			},
-			{
-				...common,
-				effects: {
-					async emit() {
-						return fail("INTERNAL_ERROR", "outbox failed");
-					},
-				},
-			},
-		);
-		expect(posted.ok).toBe(false);
-		const loaded = await getPaymentById(
-			{ organizationId, actorUserId, id: created.data.id },
-			common,
-		);
-		expect(loaded.ok && loaded.data?.status).toBe("draft");
-		expect(loaded.ok && loaded.data?.version).toBe(1);
-	});
 
-	it("rolls back reversal and refund creation when events fail", async () => {
-		const store = createMemoryPaymentsStore();
-		const common = { store, authorization, effects: successfulEffects };
-		const created = await createDraftPayment(
+		const stalePost = await postPayment(
 			{
 				organizationId,
 				actorUserId,
-				correlationId: "create",
-				code: "PAY-TX-2",
-				direction: "transfer",
-				currencyCode: "USD",
-				amount: "20",
+				correlationId: "post",
+				idempotencyKey: "post-stale",
+				paymentId: created.data.id,
+				expectedVersion: 99,
 			},
-			common,
+			options,
 		);
-		if (!created.ok) return;
+		expect(stalePost.ok).toBe(false);
+
 		const posted = await postPayment(
 			{
 				organizationId,
 				actorUserId,
 				correlationId: "post",
+				idempotencyKey: "post-ok",
 				paymentId: created.data.id,
 				expectedVersion: 1,
 			},
-			common,
+			options,
 		);
+		expect(posted.ok).toBe(true);
 		if (!posted.ok) return;
-		const failedEffects = {
-			async emit() {
-				return fail("INTERNAL_ERROR", "outbox failed");
-			},
-		};
-		const reversed = await reversePayment(
+
+		const staleReverse = await reversePayment(
 			{
 				organizationId,
 				actorUserId,
 				correlationId: "reverse",
+				idempotencyKey: "reverse-stale",
 				paymentId: created.data.id,
-				expectedVersion: 2,
+				expectedVersion: 1,
 				reason: "Rejected",
 			},
-			{ ...common, effects: failedEffects },
+			options,
 		);
-		expect(reversed.ok).toBe(false);
+		expect(staleReverse.ok).toBe(false);
+
 		const loaded = await getPaymentById(
 			{ organizationId, actorUserId, id: created.data.id },
-			common,
+			options,
 		);
 		expect(loaded.ok && loaded.data?.status).toBe("posted");
-		expect(loaded.ok && loaded.data?.reversal).toBeNull();
+	});
 
-		const refund = await postRefund(
+	it("rejects refunds that exceed the remaining refundable amount", async () => {
+		const store = createMemoryPaymentsStore();
+		const options = { store, authorization };
+		const account = await createPaymentAccount(
 			{
 				organizationId,
 				actorUserId,
-				correlationId: "refund",
-				code: "REF-TX-1",
-				originalPaymentId: created.data.id,
-				amount: "5",
+				correlationId: "account",
+				idempotencyKey: "account-2",
+				code: "CASH-2",
+				name: "Cash",
+				currencyCode: "USD",
 			},
-			{ ...common, effects: failedEffects },
+			options,
 		);
-		expect(refund.ok).toBe(false);
-		const refunds = await listPayments(
-			{ organizationId, actorUserId, direction: "refund" },
-			common,
+		if (!account.ok) return;
+		const created = await createDraftPayment(
+			{
+				organizationId,
+				actorUserId,
+				correlationId: "create",
+				idempotencyKey: "pay-tx-2",
+				code: "PAY-TX-2",
+				paymentAccountId: account.data.id,
+				direction: "receipt",
+				purpose: "customer_receipt",
+				counterpartyId: "00000000-0000-4000-8000-000000000001",
+				currencyCode: "USD",
+				amount: "20",
+			},
+			options,
 		);
-		expect(refunds.ok && refunds.data).toEqual([]);
+		if (!created.ok) return;
+		const posted = await postPayment(
+			{
+				organizationId,
+				actorUserId,
+				correlationId: "post",
+				idempotencyKey: "post-2",
+				paymentId: created.data.id,
+				expectedVersion: 1,
+			},
+			options,
+		);
+		if (!posted.ok) return;
+
+		const first = await postRefund(
+			{
+				organizationId,
+				actorUserId,
+				correlationId: "refund-1",
+				idempotencyKey: "refund-1",
+				code: "REF-1",
+				originalPaymentId: created.data.id,
+				paymentAccountId: account.data.id,
+				refundSource: "customer_payment",
+				amount: "15",
+			},
+			options,
+		);
+		expect(first.ok).toBe(true);
+
+		const excessive = await postRefund(
+			{
+				organizationId,
+				actorUserId,
+				correlationId: "refund-2",
+				idempotencyKey: "refund-2",
+				code: "REF-2",
+				originalPaymentId: created.data.id,
+				paymentAccountId: account.data.id,
+				refundSource: "customer_payment",
+				amount: "10",
+			},
+			options,
+		);
+		expect(excessive.ok).toBe(false);
+	});
+
+	it("reconciles paired transfers as consistent", async () => {
+		const store = createMemoryPaymentsStore();
+		const options = { store, authorization };
+		const from = await createPaymentAccount(
+			{
+				organizationId,
+				actorUserId,
+				correlationId: "from",
+				idempotencyKey: "from",
+				code: "OUT",
+				name: "Out",
+				kind: "bank",
+				currencyCode: "USD",
+			},
+			options,
+		);
+		const to = await createPaymentAccount(
+			{
+				organizationId,
+				actorUserId,
+				correlationId: "to",
+				idempotencyKey: "to",
+				code: "IN",
+				name: "In",
+				kind: "bank",
+				currencyCode: "USD",
+			},
+			options,
+		);
+		if (!from.ok || !to.ok) return;
+		const transfer = await createAndPostPaymentTransfer(
+			{
+				organizationId,
+				actorUserId,
+				correlationId: "xfer",
+				idempotencyKey: "xfer",
+				code: "XFER",
+				fromPaymentAccountId: from.data.id,
+				toPaymentAccountId: to.data.id,
+				amount: "12",
+				currencyCode: "USD",
+			},
+			options,
+		);
+		expect(transfer.ok).toBe(true);
+		if (!transfer.ok) return;
+		const reconciled = reconcilePayments({
+			payments: [transfer.data.outgoing, transfer.data.incoming],
+		});
+		expect(reconciled).toEqual({ ok: true });
 	});
 });

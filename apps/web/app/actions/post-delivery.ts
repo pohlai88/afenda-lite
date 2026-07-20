@@ -28,7 +28,7 @@ export async function postDeliveryAction(
 ): Promise<PostDeliveryActionState> {
 	return runOperatorPermissionAction({
 		path: "postDeliveryAction",
-		permission: "fulfillment.manage",
+		permission: "fulfillment.delivery.post",
 		safeMessage: "Could not post delivery. Try again or contact an admin.",
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(postDeliveryFormSchema, {
@@ -47,6 +47,7 @@ export async function postDeliveryAction(
 					organizationId: session.orgId,
 					actorUserId: session.userId,
 					correlationId,
+					idempotencyKey: `post:${correlationId}`,
 					...parsed.data,
 				},
 				createFulfillmentCommandOptions(),

@@ -21,28 +21,31 @@ commands:
     permission: accounting.manage
   - id: fulfillment.delivery.create
     moduleId: fulfillment
-    permission: fulfillment.manage
+    permission: fulfillment.delivery.create
   - id: fulfillment.delivery.line.add
     moduleId: fulfillment
-    permission: fulfillment.manage
+    permission: fulfillment.delivery.update
   - id: fulfillment.delivery.pick.start
     moduleId: fulfillment
-    permission: fulfillment.manage
+    permission: fulfillment.picking.confirm
   - id: fulfillment.delivery.pick.confirm
     moduleId: fulfillment
-    permission: fulfillment.manage
+    permission: fulfillment.picking.confirm
   - id: fulfillment.delivery.pack.confirm
     moduleId: fulfillment
-    permission: fulfillment.manage
+    permission: fulfillment.packing.confirm
   - id: fulfillment.delivery.post
     moduleId: fulfillment
-    permission: fulfillment.manage
+    permission: fulfillment.delivery.post
   - id: fulfillment.delivery.pod.record
     moduleId: fulfillment
-    permission: fulfillment.manage
+    permission: fulfillment.pod.record
   - id: fulfillment.delivery.cancel
     moduleId: fulfillment
-    permission: fulfillment.manage
+    permission: fulfillment.delivery.cancel
+  - id: fulfillment.delivery.close
+    moduleId: fulfillment
+    permission: fulfillment.delivery.close
   - id: inventory.movement.create
     moduleId: inventory
     permission: inventory.movement.create
@@ -286,21 +289,33 @@ commands:
   - id: payables.invoice.cancel
     moduleId: payables
     permission: payables.manage
+  - id: payments.account.create
+    moduleId: payments
+    permission: payments.account.manage
   - id: payments.payment.create
     moduleId: payments
-    permission: payments.manage
-  - id: payments.allocation.add
+    permission: payments.payment.create
+  - id: payments.application_instruction.add
     moduleId: payments
-    permission: payments.manage
+    permission: payments.application_instruction.manage
   - id: payments.payment.post
     moduleId: payments
-    permission: payments.manage
+    permission: payments.payment.post
   - id: payments.payment.reverse
     moduleId: payments
-    permission: payments.manage
+    permission: payments.payment.reverse
+  - id: payments.transfer.create_and_post
+    moduleId: payments
+    permission: payments.transfer.post
   - id: payments.refund.post
     moduleId: payments
-    permission: payments.manage
+    permission: payments.refund.post
+  - id: payments.application_instruction.mark_applied
+    moduleId: payments
+    permission: payments.application_instruction.manage
+  - id: payments.application_instruction.mark_rejected
+    moduleId: payments
+    permission: payments.application_instruction.manage
   - id: purchasing.order.create
     moduleId: purchasing
     permission: purchasing.order.create
@@ -318,22 +333,28 @@ commands:
     permission: purchasing.order.close
   - id: receivables.invoice.create
     moduleId: receivables
-    permission: receivables.manage
+    permission: receivables.invoice.create
   - id: receivables.invoice.line.add
     moduleId: receivables
-    permission: receivables.manage
+    permission: receivables.invoice.update
   - id: receivables.invoice.post
     moduleId: receivables
-    permission: receivables.manage
+    permission: receivables.invoice.post
   - id: receivables.credit_note.issue
     moduleId: receivables
-    permission: receivables.manage
-  - id: receivables.allocation.create
+    permission: receivables.credit_note.issue
+  - id: receivables.receipt.apply
     moduleId: receivables
-    permission: receivables.manage
+    permission: receivables.receipt.apply
+  - id: receivables.receipt_application.reverse
+    moduleId: receivables
+    permission: receivables.receipt_application.reverse
   - id: receivables.invoice.cancel
     moduleId: receivables
-    permission: receivables.manage
+    permission: receivables.invoice.cancel
+  - id: receivables.invoice.close
+    moduleId: receivables
+    permission: receivables.invoice.close
   - id: receiving.receipt.create
     moduleId: receiving
     permission: receiving.manage

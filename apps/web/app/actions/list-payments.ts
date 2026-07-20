@@ -31,7 +31,7 @@ export async function listPaymentsAction(input?: {
 }): Promise<ActionResult<{ payments: Payment[] }>> {
 	return runOperatorPermissionAction({
 		path: "listPaymentsAction",
-		permission: "payments.read",
+		permission: "payments.payment.read",
 		safeMessage: "Could not list payments. Try again or contact an admin.",
 		execute: async (session) => {
 			const parsed = parseSchema(schema, input);

@@ -21,6 +21,7 @@ const confirmPickFormSchema = z.object({
 	expectedVersion: z.coerce.number().int().positive(),
 	deliveryLineId: z.string().uuid(),
 	quantityPicked: z.coerce.number().positive(),
+	reservationId: z.string().uuid(),
 });
 
 export async function confirmPickAction(
@@ -29,7 +30,7 @@ export async function confirmPickAction(
 ): Promise<ConfirmPickActionState> {
 	return runOperatorPermissionAction({
 		path: "confirmPickAction",
-		permission: "fulfillment.manage",
+		permission: "fulfillment.picking.confirm",
 		safeMessage: "Could not confirm pick. Try again or contact an admin.",
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(confirmPickFormSchema, {
@@ -37,11 +38,12 @@ export async function confirmPickAction(
 				expectedVersion: formData.get("expectedVersion"),
 				deliveryLineId: formData.get("deliveryLineId"),
 				quantityPicked: formData.get("quantityPicked"),
+				reservationId: formData.get("reservationId"),
 			});
 			if (!parsed.success) {
 				return actionFail(
 					"VALIDATION_ERROR",
-					"Enter a valid delivery, line, version, and picked quantity.",
+					"Enter a valid delivery, line, reservation, version, and picked quantity.",
 					parsed.details,
 				);
 			}
@@ -50,6 +52,7 @@ export async function confirmPickAction(
 					organizationId: session.orgId,
 					actorUserId: session.userId,
 					correlationId,
+					idempotencyKey: `pick:${correlationId}`,
 					...parsed.data,
 				},
 				createFulfillmentCommandOptions(),

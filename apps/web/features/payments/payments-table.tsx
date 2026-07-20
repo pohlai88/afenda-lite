@@ -10,12 +10,14 @@ export type PaymentTableRow = Record<string, unknown> & {
 	version: number;
 	currencyCode: string;
 	amount: string;
-	allocationCount: number;
+	purpose: string;
+	instructionCount: number;
 };
 
 const columns: DataTableColumn<PaymentTableRow>[] = [
 	{ key: "code", title: "Code" },
 	{ key: "direction", title: "Direction" },
+	{ key: "purpose", title: "Purpose" },
 	{ key: "status", title: "Status" },
 	{ key: "version", title: "Version" },
 	{
@@ -28,7 +30,7 @@ const columns: DataTableColumn<PaymentTableRow>[] = [
 		title: "Amount",
 		render: (value, row) => `${row.currencyCode} ${String(value)}`,
 	},
-	{ key: "allocationCount", title: "Allocations" },
+	{ key: "instructionCount", title: "Instructions" },
 ];
 
 export function PaymentsTable({ rows }: { rows: PaymentTableRow[] }) {

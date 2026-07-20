@@ -58,6 +58,7 @@ const HARD_TENANT_ROOT_TABLE_NAMES = [
 	"supplier_allocation",
 	"three_way_match_result",
 	"supplier_balance_projection",
+	"payment_account",
 	"payment",
 	"payment_allocation",
 	"payment_reversal",
@@ -187,6 +188,8 @@ const NULL_COUNT_BY_TABLE = {
 		sql`SELECT count(*)::int AS null_count FROM three_way_match_result WHERE organization_id IS NULL`,
 	supplier_balance_projection: () =>
 		sql`SELECT count(*)::int AS null_count FROM supplier_balance_projection WHERE organization_id IS NULL`,
+	payment_account: () =>
+		sql`SELECT count(*)::int AS null_count FROM payment_account WHERE organization_id IS NULL`,
 	payment: () =>
 		sql`SELECT count(*)::int AS null_count FROM payment WHERE organization_id IS NULL`,
 	payment_allocation: () =>

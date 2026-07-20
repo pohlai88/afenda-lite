@@ -6,7 +6,7 @@ import {
 	listDeliveries,
 } from "../src/delivery";
 import { createMemoryFulfillmentStore } from "../src/memory-store";
-import { FULFILLMENT_PERMISSION_READ } from "../src/permissions";
+import { FULFILLMENT_PERMISSION_DELIVERY_READ } from "../src/permissions";
 import { createGrantingFulfillmentAuthorization } from "./helpers/memory-authorization";
 import {
 	createMemoryMasterLookup,
@@ -25,7 +25,7 @@ describe("@afenda/fulfillment authorization", () => {
 			warehouses: [seedWarehouse(ORG, WAREHOUSE, "WH-A")],
 		});
 		const readOnly = createGrantingFulfillmentAuthorization([
-			FULFILLMENT_PERMISSION_READ,
+			FULFILLMENT_PERMISSION_DELIVERY_READ,
 		]);
 		const none = createGrantingFulfillmentAuthorization([]);
 		const deniedCreate = await createDraftDelivery(
@@ -33,6 +33,7 @@ describe("@afenda/fulfillment authorization", () => {
 				organizationId: ORG,
 				actorUserId: "user-1",
 				correlationId: "corr-auth",
+				idempotencyKey: "idem-auth",
 				code: "DLV-AUTH",
 				warehouseId: WAREHOUSE,
 			},

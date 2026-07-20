@@ -109,6 +109,11 @@ const applySchema = z.object({
 	amount: positiveDecimal,
 	paymentId: uuid,
 });
+const reverseAllocationsByPaymentSchema = z.object({
+	...correlated,
+	paymentId: uuid,
+	idempotencyKey: z.string().trim().min(1).max(128),
+});
 const getSchema = z.object({ ...identity, id: uuid });
 const listSchema = z.object({
 	...identity,
@@ -414,6 +419,24 @@ export async function applySupplierPayment(
 	}
 
 	return store.applyPayment({
+		...parsed.data,
+		effects: resolveEffects(options.effects),
+	});
+}
+
+export async function reverseSupplierAllocationsByPayment(
+	input: unknown,
+	options: PayablesCommandOptions = {},
+): Promise<Result<SupplierAllocation[]>> {
+	const parsed = parse(
+		reverseAllocationsByPaymentSchema,
+		input,
+		"Invalid supplier allocation reversal input",
+	);
+	if (!parsed.ok) return parsed;
+	const allowed = await authorize(options.authorization, parsed.data, "payables.manage");
+	if (!allowed.ok) return allowed;
+	return resolveStore(options.store).reverseAllocationsByPayment({
 		...parsed.data,
 		effects: resolveEffects(options.effects),
 	});

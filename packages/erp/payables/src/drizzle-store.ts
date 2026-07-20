@@ -222,11 +222,11 @@ export class DrizzlePayablesStore implements PayablesStore {
 						SELECT COALESCE(MAX(line_no), 0) + 1 AS line_no
 						FROM supplier_invoice_line
 						WHERE organization_id = ${record.organizationId}
-							AND supplier_invoice_id = ${record.invoiceId}
+							AND invoice_id = ${record.invoiceId}
 					),
 					inserted AS (
 						INSERT INTO supplier_invoice_line (
-							id, organization_id, supplier_invoice_id, line_no, item_id, item_code,
+							id, organization_id, invoice_id, line_no, item_id, item_code,
 							item_name, quantity, unit_price, line_amount, version, created_by, updated_by
 						)
 						SELECT ${id}, ${record.organizationId}, ${record.invoiceId}, numbered.line_no,
@@ -295,13 +295,13 @@ export class DrizzlePayablesStore implements PayablesStore {
 							AND status = 'draft' AND version = ${record.expectedVersion}
 							AND EXISTS (
 								SELECT 1 FROM supplier_invoice_line
-								WHERE supplier_invoice_id = ${record.invoiceId}
+								WHERE invoice_id = ${record.invoiceId}
 									AND organization_id = ${record.organizationId}
 							)
 							AND (
 								SELECT COALESCE(SUM(line_amount::numeric), 0)
 								FROM supplier_invoice_line
-								WHERE supplier_invoice_id = ${record.invoiceId}
+								WHERE invoice_id = ${record.invoiceId}
 									AND organization_id = ${record.organizationId}
 							) > 0
 						RETURNING *
@@ -326,7 +326,7 @@ export class DrizzlePayablesStore implements PayablesStore {
 							(${payload}::jsonb || jsonb_build_object(
 								'supplierId', supplier_party_id,
 								'amount', (SELECT SUM(line_amount::numeric)::text
-									FROM supplier_invoice_line WHERE supplier_invoice_id = mutated.id),
+									FROM supplier_invoice_line WHERE invoice_id = mutated.id),
 								'currencyCode', currency_code
 							)), 'pending', 0 FROM mutated RETURNING id
 					)
@@ -371,7 +371,7 @@ export class DrizzlePayablesStore implements PayablesStore {
 					totaled AS (
 						SELECT mutated.*, (
 							SELECT SUM(line_amount::numeric) FROM supplier_invoice_line
-							WHERE supplier_invoice_id = mutated.id
+							WHERE invoice_id = mutated.id
 								AND organization_id = mutated.organization_id
 						) AS total_amount FROM mutated
 					),
@@ -549,7 +549,7 @@ export class DrizzlePayablesStore implements PayablesStore {
 						SELECT invoice.*, (
 							SELECT COALESCE(SUM(line_amount::numeric), 0)
 							FROM supplier_invoice_line
-							WHERE supplier_invoice_id = invoice.id
+							WHERE invoice_id = invoice.id
 								AND organization_id = invoice.organization_id
 						) - (
 							SELECT COALESCE(SUM(amount::numeric), 0)
@@ -625,6 +625,95 @@ export class DrizzlePayablesStore implements PayablesStore {
 			});
 		} catch (error) {
 			return failFromUnknown(error, "Failed to apply supplier payment");
+		}
+	}
+
+	async reverseAllocationsByPayment(
+		record: Parameters<PayablesStore["reverseAllocationsByPayment"]>[0],
+	): Promise<Result<SupplierAllocation[]>> {
+		try {
+			const [rows] = await runNeonHttpTransaction<
+				[
+					Array<{
+						id: string;
+						organization_id: string;
+						invoice_id: string;
+						supplier_id: string;
+						payment_id: string;
+						amount: string;
+						created_by: string;
+						created_at: Date;
+					}>,
+				]
+			>((sql) => [
+				sql`
+					WITH deleted AS (
+						DELETE FROM supplier_allocation
+						WHERE organization_id = ${record.organizationId}
+							AND payment_id = ${record.paymentId}
+						RETURNING *
+					),
+					by_invoice AS (
+						SELECT supplier_invoice_id, supplier_party_id, SUM(amount::numeric) AS amount
+						FROM deleted GROUP BY supplier_invoice_id, supplier_party_id
+					),
+					mutated AS (
+						UPDATE supplier_invoice invoice
+						SET version = version + 1, updated_by = ${record.actorUserId}, updated_at = now()
+						FROM by_invoice
+						WHERE invoice.id = by_invoice.supplier_invoice_id
+							AND invoice.organization_id = ${record.organizationId}
+						RETURNING invoice.id, invoice.supplier_party_id, invoice.currency_code
+					),
+					projected AS (
+						UPDATE supplier_balance_projection balance
+						SET open_balance = (balance.open_balance::numeric + by_invoice.amount)::text,
+							version = balance.version + 1, updated_by = ${record.actorUserId}, updated_at = now()
+						FROM by_invoice, mutated
+						WHERE balance.organization_id = ${record.organizationId}
+							AND balance.supplier_party_id = by_invoice.supplier_party_id
+							AND mutated.id = by_invoice.supplier_invoice_id
+							AND balance.currency_code = mutated.currency_code
+						RETURNING balance.id
+					),
+					outboxed AS (
+						INSERT INTO platform_domain_event (
+							id, organization_id, type, source_module, correlation_id, actor_user_id,
+							payload, status, attempts
+						)
+						SELECT gen_random_uuid(), deleted.organization_id,
+							'payables.allocation.reversed.v1', 'payables',
+							${record.correlationId}, ${record.actorUserId},
+							jsonb_build_object(
+								'organizationId', deleted.organization_id, 'entityId', deleted.id,
+								'supplierId', deleted.supplier_party_id, 'amount', deleted.amount,
+								'currencyCode', mutated.currency_code, 'actorId', ${record.actorUserId},
+								'correlationId', ${record.correlationId}
+							), 'pending', 0
+						FROM deleted
+						JOIN mutated ON mutated.id = deleted.supplier_invoice_id
+					)
+					SELECT deleted.id, deleted.organization_id,
+						deleted.supplier_invoice_id AS invoice_id,
+						deleted.supplier_party_id AS supplier_id, deleted.payment_id, deleted.amount,
+						deleted.created_by, deleted.created_at
+					FROM deleted
+				`,
+			]);
+			return ok(
+				rows.map((row) => ({
+					id: row.id,
+					organizationId: row.organization_id,
+					invoiceId: row.invoice_id,
+					supplierId: row.supplier_id,
+					paymentId: row.payment_id,
+					amount: row.amount,
+					createdBy: row.created_by,
+					createdAt: row.created_at,
+				})),
+			);
+		} catch (error) {
+			return failFromUnknown(error, "Failed to reverse supplier allocations");
 		}
 	}
 

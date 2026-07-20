@@ -23,9 +23,12 @@ export type AddSalesInvoiceLineActionState =
 const schema = z.object({
 	invoiceId: z.string().uuid(),
 	itemId: z.string().uuid(),
+	itemCode: z.string().trim().min(1).max(64),
+	itemName: z.string().trim().min(1).max(256),
 	description: z.string().trim().min(1).max(512),
 	quantity: z.coerce.number().positive(),
 	unitPrice: z.coerce.number().positive(),
+	idempotencyKey: z.string().trim().min(1).max(128),
 });
 
 export async function addSalesInvoiceLineAction(
@@ -34,16 +37,19 @@ export async function addSalesInvoiceLineAction(
 ): Promise<AddSalesInvoiceLineActionState> {
 	return runOperatorPermissionAction({
 		path: "addSalesInvoiceLineAction",
-		permission: "receivables.manage",
+		permission: "receivables.invoice.update",
 		safeMessage:
 			"Could not add sales invoice line. Try again or contact an admin.",
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(schema, {
 				invoiceId: formData.get("invoiceId"),
 				itemId: formData.get("itemId"),
+				itemCode: formData.get("itemCode"),
+				itemName: formData.get("itemName"),
 				description: formData.get("description"),
 				quantity: formData.get("quantity"),
 				unitPrice: formData.get("unitPrice"),
+				idempotencyKey: formData.get("idempotencyKey"),
 			});
 			if (!parsed.success) {
 				return actionFail(

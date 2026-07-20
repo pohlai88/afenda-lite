@@ -12,10 +12,10 @@ queries:
     permission: accounting.read
   - id: fulfillment.delivery.get
     moduleId: fulfillment
-    permission: fulfillment.read
+    permission: fulfillment.delivery.read
   - id: fulfillment.delivery.list
     moduleId: fulfillment
-    permission: fulfillment.read
+    permission: fulfillment.delivery.read
   - id: inventory.movement.get
     moduleId: inventory
     permission: inventory.movement.read
@@ -169,12 +169,18 @@ queries:
   - id: payables.balance.get
     moduleId: payables
     permission: payables.read
+  - id: payments.account.list
+    moduleId: payments
+    permission: payments.account.read
   - id: payments.payment.get
     moduleId: payments
-    permission: payments.read
+    permission: payments.payment.read
   - id: payments.payment.list
     moduleId: payments
-    permission: payments.read
+    permission: payments.payment.read
+  - id: payments.availability.get
+    moduleId: payments
+    permission: payments.availability.read
   - id: purchasing.order.get
     moduleId: purchasing
     permission: purchasing.order.read
@@ -183,13 +189,16 @@ queries:
     permission: purchasing.order.list
   - id: receivables.invoice.get
     moduleId: receivables
-    permission: receivables.read
+    permission: receivables.invoice.read
   - id: receivables.invoice.list
     moduleId: receivables
-    permission: receivables.read
+    permission: receivables.invoice.read
   - id: receivables.balance.get
     moduleId: receivables
-    permission: receivables.read
+    permission: receivables.balance.read
+  - id: receivables.aging.get
+    moduleId: receivables
+    permission: receivables.aging.read
   - id: receiving.receipt.get
     moduleId: receiving
     permission: receiving.read

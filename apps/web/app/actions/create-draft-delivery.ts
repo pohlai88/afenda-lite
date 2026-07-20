@@ -46,7 +46,7 @@ export async function createDraftDeliveryAction(
 ): Promise<CreateDraftDeliveryActionState> {
 	return runOperatorPermissionAction({
 		path: "createDraftDeliveryAction",
-		permission: "fulfillment.manage",
+		permission: "fulfillment.delivery.create",
 		safeMessage: "Could not create delivery. Try again or contact an admin.",
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(createDraftDeliveryFormSchema, {
@@ -69,6 +69,7 @@ export async function createDraftDeliveryAction(
 					organizationId: session.orgId,
 					actorUserId: session.userId,
 					correlationId,
+					idempotencyKey: `create:${correlationId}`,
 					...parsed.data,
 				},
 				createFulfillmentCommandOptions(),

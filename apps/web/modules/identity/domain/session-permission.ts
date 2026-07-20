@@ -13,7 +13,7 @@ export type PermissionSession = {
 	role: PermissionBootstrapRole;
 };
 
-export const PERMISSION_DENIED_MESSAGE = {
+export const PERMISSION_DENIED_MESSAGE: Record<PlatformPermissionCodeV1, string> = {
 	"org.users.manage":
 		"You do not have permission to manage organization users.",
 	"org.roles.manage":
@@ -66,16 +66,66 @@ export const PERMISSION_DENIED_MESSAGE = {
 		"You do not have permission to post stock adjustments.",
 	"receiving.read": "You do not have permission to read goods receipts.",
 	"receiving.manage": "You do not have permission to manage goods receipts.",
-	"fulfillment.read": "You do not have permission to read deliveries.",
-	"fulfillment.manage": "You do not have permission to manage deliveries.",
-	"receivables.read":
-		"You do not have permission to read customer receivables.",
-	"receivables.manage":
-		"You do not have permission to manage customer receivables.",
+	"fulfillment.delivery.read":
+		"You do not have permission to read deliveries.",
+	"fulfillment.delivery.create":
+		"You do not have permission to create deliveries.",
+	"fulfillment.delivery.update":
+		"You do not have permission to update deliveries.",
+	"fulfillment.picking.confirm":
+		"You do not have permission to confirm picking.",
+	"fulfillment.packing.confirm":
+		"You do not have permission to confirm packing.",
+	"fulfillment.delivery.post":
+		"You do not have permission to post deliveries.",
+	"fulfillment.delivery.cancel":
+		"You do not have permission to cancel deliveries.",
+	"fulfillment.pod.record":
+		"You do not have permission to record proof of delivery.",
+	"fulfillment.delivery.close":
+		"You do not have permission to close deliveries.",
+	"receivables.invoice.read":
+		"You do not have permission to read sales invoices.",
+	"receivables.invoice.create":
+		"You do not have permission to create sales invoices.",
+	"receivables.invoice.update":
+		"You do not have permission to update sales invoices.",
+	"receivables.invoice.post":
+		"You do not have permission to post sales invoices.",
+	"receivables.invoice.cancel":
+		"You do not have permission to cancel sales invoices.",
+	"receivables.invoice.close":
+		"You do not have permission to close sales invoices.",
+	"receivables.credit_note.issue":
+		"You do not have permission to issue sales credit notes.",
+	"receivables.receipt.apply":
+		"You do not have permission to apply customer receipts.",
+	"receivables.receipt_application.reverse":
+		"You do not have permission to reverse customer receipt applications.",
+	"receivables.balance.read":
+		"You do not have permission to read customer balances.",
+	"receivables.aging.read":
+		"You do not have permission to read customer aging.",
 	"payables.read": "You do not have permission to read supplier payables.",
 	"payables.manage": "You do not have permission to manage supplier payables.",
-	"payments.read": "You do not have permission to read payments.",
-	"payments.manage": "You do not have permission to manage payments.",
+	"payments.payment.read": "You do not have permission to read payments.",
+	"payments.payment.create": "You do not have permission to create payments.",
+	"payments.payment.update": "You do not have permission to update payments.",
+	"payments.payment.post": "You do not have permission to post payments.",
+	"payments.payment.reverse": "You do not have permission to reverse payments.",
+	"payments.refund.create": "You do not have permission to create refunds.",
+	"payments.refund.post": "You do not have permission to post refunds.",
+	"payments.transfer.create":
+		"You do not have permission to create payment transfers.",
+	"payments.transfer.post":
+		"You do not have permission to post payment transfers.",
+	"payments.application_instruction.manage":
+		"You do not have permission to manage payment application instructions.",
+	"payments.account.manage":
+		"You do not have permission to manage payment accounts.",
+	"payments.account.read": "You do not have permission to read payment accounts.",
+	"payments.availability.read":
+		"You do not have permission to read payment application availability.",
 	"accounting.read":
 		"You do not have permission to read accounting journals and balances.",
 	"accounting.manage":

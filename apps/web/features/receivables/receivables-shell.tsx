@@ -15,7 +15,7 @@ import {
 import { requirePermission } from "@/features/auth/require-permission";
 import {
 	AddSalesInvoiceLineForm,
-	AllocateCustomerReceiptForm,
+	ApplyCustomerReceiptForm,
 	CancelSalesInvoiceForm,
 	CreateDraftSalesInvoiceForm,
 	IssueCreditNoteForm,
@@ -27,20 +27,24 @@ import { sessionHasPermission } from "@/modules/identity/domain/session-permissi
 type ReceivablesShellProps = { surface: "admin" | "client" };
 
 const formSections = [
-	["Create draft invoice", CreateDraftSalesInvoiceForm],
-	["Add invoice line", AddSalesInvoiceLineForm],
-	["Post invoice", PostSalesInvoiceForm],
-	["Issue credit note", IssueCreditNoteForm],
-	["Allocate customer receipt", AllocateCustomerReceiptForm],
-	["Cancel invoice", CancelSalesInvoiceForm],
+	["Create draft invoice", CreateDraftSalesInvoiceForm, "receivables.invoice.create"],
+	["Add invoice line", AddSalesInvoiceLineForm, "receivables.invoice.update"],
+	["Post invoice", PostSalesInvoiceForm, "receivables.invoice.post"],
+	["Issue credit note", IssueCreditNoteForm, "receivables.credit_note.issue"],
+	["Apply customer receipt", ApplyCustomerReceiptForm, "receivables.receipt.apply"],
+	["Cancel draft invoice", CancelSalesInvoiceForm, "receivables.invoice.cancel"],
 ] as const;
 
 /** Receivables console — RSC reads via `@afenda/receivables`; mutations via Actions. */
 export async function ReceivablesShell({ surface }: ReceivablesShellProps) {
 	const session =
 		surface === "admin" ? await requireRole("operator") : await getSession();
-	await requirePermission(session, "receivables.read");
-	const canManage = await sessionHasPermission(session, "receivables.manage");
+	await requirePermission(session, "receivables.invoice.read");
+	const formPermissions = await Promise.all(
+		formSections.map(([, , permission]) =>
+			sessionHasPermission(session, permission),
+		),
+	);
 	const invoicesResult = await listSalesInvoices(
 		{
 			organizationId: session.orgId,
@@ -61,7 +65,7 @@ export async function ReceivablesShell({ surface }: ReceivablesShellProps) {
 					Customer receivables
 				</h1>
 				<p className="max-w-2xl text-sm text-muted-foreground">
-					Create and post sales invoices, issue credit notes, allocate customer
+					Create and post sales invoices, issue credit notes, apply customer
 					receipts, and track open balances.
 				</p>
 			</div>
@@ -90,7 +94,7 @@ export async function ReceivablesShell({ surface }: ReceivablesShellProps) {
 							{invoices.map((invoice) => (
 								<li key={invoice.id} className="rounded-md border px-3 py-2">
 									<div className="font-medium">
-										{invoice.code} · {invoice.documentType} · {invoice.status} ·
+										{invoice.code} · {invoice.invoiceSource} · {invoice.status} ·
 										v{invoice.version}
 									</div>
 									<div className="text-muted-foreground">
@@ -105,13 +109,13 @@ export async function ReceivablesShell({ surface }: ReceivablesShellProps) {
 				</CardContent>
 			</Card>
 
-			{formSections.map(([title, Form]) => (
+			{formSections.map(([title, Form], index) => (
 				<Card key={title}>
 					<CardHeader>
 						<CardTitle>{title}</CardTitle>
 					</CardHeader>
 					<CardContent>
-						<Form canManage={canManage} />
+						<Form canManage={formPermissions[index] ?? false} />
 					</CardContent>
 				</Card>
 			))}

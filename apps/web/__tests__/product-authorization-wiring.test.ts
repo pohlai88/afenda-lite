@@ -197,25 +197,31 @@ describe("N11 product authorization wiring", () => {
 			"app/actions/post-goods-receipt.ts": ["receiving.manage"],
 			"app/actions/record-receiving-discrepancy.ts": ["receiving.manage"],
 			"app/actions/cancel-goods-receipt.ts": ["receiving.manage"],
-			"app/actions/get-delivery.ts": ["fulfillment.read"],
-			"app/actions/list-deliveries.ts": ["fulfillment.read"],
-			"app/actions/create-draft-delivery.ts": ["fulfillment.manage"],
-			"app/actions/add-delivery-line.ts": ["fulfillment.manage"],
-			"app/actions/start-picking.ts": ["fulfillment.manage"],
-			"app/actions/confirm-pick.ts": ["fulfillment.manage"],
-			"app/actions/confirm-pack.ts": ["fulfillment.manage"],
-			"app/actions/post-delivery.ts": ["fulfillment.manage"],
-			"app/actions/record-proof-of-delivery.ts": ["fulfillment.manage"],
-			"app/actions/cancel-delivery.ts": ["fulfillment.manage"],
-			"app/actions/get-sales-invoice.ts": ["receivables.read"],
-			"app/actions/list-sales-invoices.ts": ["receivables.read"],
-			"app/actions/get-customer-balance.ts": ["receivables.read"],
-			"app/actions/create-draft-sales-invoice.ts": ["receivables.manage"],
-			"app/actions/add-sales-invoice-line.ts": ["receivables.manage"],
-			"app/actions/post-sales-invoice.ts": ["receivables.manage"],
-			"app/actions/issue-credit-note.ts": ["receivables.manage"],
-			"app/actions/allocate-customer-receipt.ts": ["receivables.manage"],
-			"app/actions/cancel-sales-invoice.ts": ["receivables.manage"],
+			"app/actions/get-delivery.ts": ["fulfillment.delivery.read"],
+			"app/actions/list-deliveries.ts": ["fulfillment.delivery.read"],
+			"app/actions/create-draft-delivery.ts": ["fulfillment.delivery.create"],
+			"app/actions/add-delivery-line.ts": ["fulfillment.delivery.update"],
+			"app/actions/start-picking.ts": ["fulfillment.picking.confirm"],
+			"app/actions/confirm-pick.ts": ["fulfillment.picking.confirm"],
+			"app/actions/confirm-pack.ts": ["fulfillment.packing.confirm"],
+			"app/actions/post-delivery.ts": ["fulfillment.delivery.post"],
+			"app/actions/record-proof-of-delivery.ts": ["fulfillment.pod.record"],
+			"app/actions/cancel-delivery.ts": ["fulfillment.delivery.cancel"],
+			"app/actions/close-delivery.ts": ["fulfillment.delivery.close"],
+			"app/actions/get-sales-invoice.ts": ["receivables.invoice.read"],
+			"app/actions/list-sales-invoices.ts": ["receivables.invoice.read"],
+			"app/actions/get-customer-balance.ts": ["receivables.balance.read"],
+			"app/actions/get-customer-aging.ts": ["receivables.aging.read"],
+			"app/actions/create-draft-sales-invoice.ts": ["receivables.invoice.create"],
+			"app/actions/add-sales-invoice-line.ts": ["receivables.invoice.update"],
+			"app/actions/post-sales-invoice.ts": ["receivables.invoice.post"],
+			"app/actions/issue-credit-note.ts": ["receivables.credit_note.issue"],
+			"app/actions/apply-customer-receipt.ts": ["receivables.receipt.apply"],
+			"app/actions/cancel-sales-invoice.ts": ["receivables.invoice.cancel"],
+			"app/actions/close-sales-invoice.ts": ["receivables.invoice.close"],
+			"app/actions/reverse-customer-receipt-application.ts": [
+				"receivables.receipt_application.reverse",
+			],
 			"app/actions/get-supplier-invoice.ts": ["payables.read"],
 			"app/actions/list-supplier-invoices.ts": ["payables.read"],
 			"app/actions/get-supplier-balance.ts": ["payables.read"],
@@ -226,13 +232,16 @@ describe("N11 product authorization wiring", () => {
 			"app/actions/issue-supplier-credit-note.ts": ["payables.manage"],
 			"app/actions/apply-supplier-payment.ts": ["payables.manage"],
 			"app/actions/cancel-supplier-invoice.ts": ["payables.manage"],
-			"app/actions/get-payment.ts": ["payments.read"],
-			"app/actions/list-payments.ts": ["payments.read"],
-			"app/actions/create-draft-payment.ts": ["payments.manage"],
-			"app/actions/add-payment-allocation.ts": ["payments.manage"],
-			"app/actions/post-payment.ts": ["payments.manage"],
-			"app/actions/reverse-payment.ts": ["payments.manage"],
-			"app/actions/post-refund.ts": ["payments.manage"],
+			"app/actions/get-payment.ts": ["payments.payment.read"],
+			"app/actions/list-payments.ts": ["payments.payment.read"],
+			"app/actions/create-draft-payment.ts": ["payments.payment.create"],
+			"app/actions/create-payment-account.ts": ["payments.account.manage"],
+			"app/actions/list-payment-accounts.ts": ["payments.account.read"],
+			"app/actions/add-payment-application-instruction.ts": ["payments.application_instruction.manage"],
+			"app/actions/create-and-post-payment-transfer.ts": ["payments.transfer.create"],
+			"app/actions/post-payment.ts": ["payments.payment.post"],
+			"app/actions/reverse-payment.ts": ["payments.payment.reverse"],
+			"app/actions/post-refund.ts": ["payments.refund.create", "payments.refund.post"],
 			"app/actions/get-journal.ts": ["accounting.read"],
 			"app/actions/list-journals.ts": ["accounting.read"],
 			"app/actions/get-trial-balance.ts": ["accounting.read"],
@@ -281,20 +290,35 @@ describe("N11 product authorization wiring", () => {
 				"receiving.manage",
 			],
 			"features/fulfillment/fulfillment-shell.tsx": [
-				"fulfillment.read",
-				"fulfillment.manage",
+				"fulfillment.delivery.read",
+				"fulfillment.delivery.create",
+				"fulfillment.delivery.update",
+				"fulfillment.picking.confirm",
+				"fulfillment.packing.confirm",
+				"fulfillment.delivery.post",
+				"fulfillment.delivery.cancel",
+				"fulfillment.pod.record",
+				"fulfillment.delivery.close",
 			],
 			"features/receivables/receivables-shell.tsx": [
-				"receivables.read",
-				"receivables.manage",
+				"receivables.invoice.read",
+				"receivables.invoice.create",
+				"receivables.invoice.update",
+				"receivables.invoice.post",
+				"receivables.credit_note.issue",
+				"receivables.receipt.apply",
+				"receivables.invoice.cancel",
 			],
 			"features/payables/payables-shell.tsx": [
 				"payables.read",
 				"payables.manage",
 			],
 			"features/payments/payments-shell.tsx": [
-				"payments.read",
-				"payments.manage",
+				"payments.payment.read",
+				"payments.payment.create",
+				"payments.account.manage",
+				"payments.application_instruction.manage",
+				"payments.payment.post",
 			],
 			"features/accounting/accounting-shell.tsx": [
 				"accounting.read",
@@ -347,6 +371,7 @@ describe("N11 product authorization wiring", () => {
 			"app/actions/post-delivery.ts",
 			"app/actions/record-proof-of-delivery.ts",
 			"app/actions/cancel-delivery.ts",
+			"app/actions/close-delivery.ts",
 		] as const;
 		for (const relativePath of fulfillmentActions) {
 			const actionSource = source(relativePath);
@@ -366,12 +391,15 @@ describe("N11 product authorization wiring", () => {
 			"app/actions/get-sales-invoice.ts",
 			"app/actions/list-sales-invoices.ts",
 			"app/actions/get-customer-balance.ts",
+			"app/actions/get-customer-aging.ts",
 			"app/actions/create-draft-sales-invoice.ts",
 			"app/actions/add-sales-invoice-line.ts",
 			"app/actions/post-sales-invoice.ts",
 			"app/actions/issue-credit-note.ts",
-			"app/actions/allocate-customer-receipt.ts",
+			"app/actions/apply-customer-receipt.ts",
 			"app/actions/cancel-sales-invoice.ts",
+			"app/actions/close-sales-invoice.ts",
+			"app/actions/reverse-customer-receipt-application.ts",
 		] as const;
 		for (const relativePath of receivablesActions) {
 			const actionSource = source(relativePath);
@@ -379,7 +407,7 @@ describe("N11 product authorization wiring", () => {
 			expect(actionSource).toContain("mapPackageResult");
 		}
 
-		for (const relativePath of receivablesActions.slice(3)) {
+		for (const relativePath of receivablesActions.slice(4)) {
 			const actionSource = source(relativePath);
 			expect(actionSource).toContain('revalidatePath("/admin/receivables")');
 			expect(actionSource).toContain('revalidatePath("/client/receivables")');
@@ -429,7 +457,10 @@ describe("N11 product authorization wiring", () => {
 			"app/actions/get-payment.ts",
 			"app/actions/list-payments.ts",
 			"app/actions/create-draft-payment.ts",
-			"app/actions/add-payment-allocation.ts",
+			"app/actions/create-payment-account.ts",
+			"app/actions/list-payment-accounts.ts",
+			"app/actions/add-payment-application-instruction.ts",
+			"app/actions/create-and-post-payment-transfer.ts",
 			"app/actions/post-payment.ts",
 			"app/actions/reverse-payment.ts",
 			"app/actions/post-refund.ts",
@@ -440,7 +471,15 @@ describe("N11 product authorization wiring", () => {
 			expect(actionSource).toContain("mapPackageResult");
 		}
 
-		for (const relativePath of paymentsActions.slice(2)) {
+		for (const relativePath of [
+			"app/actions/create-draft-payment.ts",
+			"app/actions/create-payment-account.ts",
+			"app/actions/add-payment-application-instruction.ts",
+			"app/actions/create-and-post-payment-transfer.ts",
+			"app/actions/post-payment.ts",
+			"app/actions/reverse-payment.ts",
+			"app/actions/post-refund.ts",
+		]) {
 			const actionSource = source(relativePath);
 			expect(actionSource).toContain('revalidatePath("/admin/payments")');
 			expect(actionSource).toContain('revalidatePath("/client/payments")');

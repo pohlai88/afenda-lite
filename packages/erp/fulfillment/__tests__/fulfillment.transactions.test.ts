@@ -3,10 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import { createDraftDelivery, listDeliveries } from "../src/delivery";
 import { createMemoryFulfillmentStore } from "../src/memory-store";
-import {
-	FULFILLMENT_PERMISSION_MANAGE,
-	FULFILLMENT_PERMISSION_READ,
-} from "../src/permissions";
+import { FULFILLMENT_PERMISSION_CODES } from "../src/permissions";
 import type { MutationPorts, OutboxFactInput } from "../src/ports";
 import { createGrantingFulfillmentAuthorization } from "./helpers/memory-authorization";
 import {
@@ -25,8 +22,7 @@ describe("@afenda/fulfillment transactions", () => {
 			warehouses: [seedWarehouse(ORG, WAREHOUSE, "WH-A")],
 		});
 		const authorization = createGrantingFulfillmentAuthorization([
-			FULFILLMENT_PERMISSION_READ,
-			FULFILLMENT_PERMISSION_MANAGE,
+			...FULFILLMENT_PERMISSION_CODES,
 		]);
 		const ports: MutationPorts = {
 			audit: {
@@ -44,6 +40,7 @@ describe("@afenda/fulfillment transactions", () => {
 			organizationId: ORG,
 			actorUserId: "user-1",
 			correlationId: "corr-tx",
+			idempotencyKey: "idem-tx",
 			code: "DLV-TX",
 			warehouseId: WAREHOUSE,
 		};

@@ -1,6 +1,9 @@
 "use server";
 
-import { cancelSalesInvoice, type SalesInvoice } from "@afenda/receivables";
+import {
+	cancelDraftSalesInvoice,
+	type SalesInvoice,
+} from "@afenda/receivables";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
@@ -20,6 +23,7 @@ export type CancelSalesInvoiceActionState =
 const schema = z.object({
 	invoiceId: z.string().uuid(),
 	expectedVersion: z.coerce.number().int().positive(),
+	idempotencyKey: z.string().trim().min(1).max(128),
 });
 
 export async function cancelSalesInvoiceAction(
@@ -28,13 +32,14 @@ export async function cancelSalesInvoiceAction(
 ): Promise<CancelSalesInvoiceActionState> {
 	return runOperatorPermissionAction({
 		path: "cancelSalesInvoiceAction",
-		permission: "receivables.manage",
+		permission: "receivables.invoice.cancel",
 		safeMessage:
 			"Could not cancel sales invoice. Try again or contact an admin.",
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(schema, {
 				invoiceId: formData.get("invoiceId"),
 				expectedVersion: formData.get("expectedVersion"),
+				idempotencyKey: formData.get("idempotencyKey"),
 			});
 			if (!parsed.success) {
 				return actionFail(
@@ -43,7 +48,7 @@ export async function cancelSalesInvoiceAction(
 					parsed.details,
 				);
 			}
-			const result = await cancelSalesInvoice(
+			const result = await cancelDraftSalesInvoice(
 				{
 					organizationId: session.orgId,
 					actorUserId: session.userId,

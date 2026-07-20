@@ -32,6 +32,8 @@ export {
 	addSalesOrderLine,
 	cancelSalesOrder,
 	createDraftSalesOrder,
+	getFulfillableSalesOrder,
+	getInvoiceableSalesOrder,
 	getSalesOrderById,
 	listSalesOrders,
 	postSalesOrder,

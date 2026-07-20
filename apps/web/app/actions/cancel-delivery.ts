@@ -28,7 +28,7 @@ export async function cancelDeliveryAction(
 ): Promise<CancelDeliveryActionState> {
 	return runOperatorPermissionAction({
 		path: "cancelDeliveryAction",
-		permission: "fulfillment.manage",
+		permission: "fulfillment.delivery.cancel",
 		safeMessage: "Could not cancel delivery. Try again or contact an admin.",
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(cancelDeliveryFormSchema, {
@@ -47,6 +47,7 @@ export async function cancelDeliveryAction(
 					organizationId: session.orgId,
 					actorUserId: session.userId,
 					correlationId,
+					idempotencyKey: `cancel:${correlationId}`,
 					...parsed.data,
 				},
 				createFulfillmentCommandOptions(),

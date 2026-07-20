@@ -1,6 +1,7 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
 
-export type PaymentsPermission = "payments.read" | "payments.manage";
+import type { PaymentsPermission } from "./permissions";
+export type { PaymentsPermission } from "./permissions";
 
 export type PaymentsAuthorizationPort = {
 	can(input: {
