@@ -21,21 +21,21 @@ import { actionFieldMessage } from "@/modules/platform/schemas/action-result";
 const initialState: CreatePurchaseOrderActionState = null;
 
 type CreatePurchaseOrderFormProps = {
-	canManage: boolean;
+	canCreate: boolean;
 };
 
 /**
- * Draft purchase order create — CAPABLE when `purchasing.manage` is granted.
+ * Draft purchase order create — CAPABLE when `purchasing.order.create` is granted.
  */
 export function CreatePurchaseOrderForm({
-	canManage,
+	canCreate,
 }: CreatePurchaseOrderFormProps) {
 	const [state, formAction, pending] = useActionState(
 		createPurchaseOrderAction,
 		initialState,
 	);
 
-	if (!canManage) {
+	if (!canCreate) {
 		return (
 			<Alert role="status">
 				<AlertTitle>Create unavailable</AlertTitle>
@@ -49,11 +49,13 @@ export function CreatePurchaseOrderForm({
 
 	const codeError = actionFieldMessage(state, "code");
 	const partyError = actionFieldMessage(state, "partyId");
+	const currencyError = actionFieldMessage(state, "currencyCode");
 	const showFormError =
 		!pending &&
 		state?.ok === false &&
 		codeError === undefined &&
-		partyError === undefined;
+		partyError === undefined &&
+		currencyError === undefined;
 
 	return (
 		<form
@@ -66,7 +68,8 @@ export function CreatePurchaseOrderForm({
 					<AlertTitle>Order created</AlertTitle>
 					<AlertDescription>
 						{state.data.order.code} · party {state.data.order.partyCode} (
-						{state.data.order.partyName}) · draft.
+						{state.data.order.partyName}) · {state.data.order.currencyCode} ·
+						draft.
 					</AlertDescription>
 				</Alert>
 			) : null}
@@ -98,6 +101,35 @@ export function CreatePurchaseOrderForm({
 					name="partyId"
 					required
 					autoComplete="off"
+					disabled={pending}
+				/>
+			</FormField>
+			<FormField
+				label="Currency code"
+				required
+				fieldId="purchase-order-currency"
+				error={currencyError}
+			>
+				<Input
+					id="purchase-order-currency"
+					name="currencyCode"
+					required
+					maxLength={3}
+					autoComplete="off"
+					disabled={pending}
+					placeholder="USD"
+				/>
+			</FormField>
+			<FormField
+				label="Exchange rate (optional)"
+				fieldId="purchase-order-fx"
+			>
+				<Input
+					id="purchase-order-fx"
+					name="exchangeRate"
+					type="number"
+					step="any"
+					min="0"
 					disabled={pending}
 				/>
 			</FormField>

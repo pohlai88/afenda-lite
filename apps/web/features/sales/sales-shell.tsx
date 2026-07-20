@@ -1,6 +1,6 @@
 import { getSession, requireRole } from "@afenda/auth";
 import { listItems, listParties, listPaymentTerms } from "@afenda/master-data";
-import { listOrders } from "@afenda/sales";
+import { listSalesOrders } from "@afenda/sales";
 import {
 	Alert,
 	AlertDescription,
@@ -15,6 +15,7 @@ import {
 
 import { requirePermission } from "@/features/auth/require-permission";
 import { AddSalesOrderLineForm } from "@/features/sales/add-sales-order-line-form";
+import { CancelSalesOrderForm } from "@/features/sales/cancel-sales-order-form";
 import { CreateSalesOrderForm } from "@/features/sales/create-sales-order-form";
 import { PostSalesOrderForm } from "@/features/sales/post-sales-order-form";
 import { createMasterDataAuthorizationPort } from "@/lib/erp/master-data-authorization-port";
@@ -32,15 +33,21 @@ export async function SalesShell({ surface }: SalesShellProps) {
 	const session =
 		surface === "admin" ? await requireRole("operator") : await getSession();
 
-	await requirePermission(session, "sales.read");
-	const canManage = await sessionHasPermission(session, "sales.manage");
+	await requirePermission(session, "sales.order.read");
+	const [canCreate, canUpdate, canPost, canCancel] = await Promise.all([
+		sessionHasPermission(session, "sales.order.create"),
+		sessionHasPermission(session, "sales.order.update"),
+		sessionHasPermission(session, "sales.order.post"),
+		sessionHasPermission(session, "sales.order.cancel"),
+	]);
 
 	const [ordersResult, partiesResult, itemsResult, termsResult] =
 		await Promise.all([
-			listOrders(
+			listSalesOrders(
 				{
 					organizationId: session.orgId,
 					actorUserId: session.userId,
+					correlationId: `sales-shell:${session.orgId}:${session.userId}`,
 					pageSize: 50,
 				},
 				createSalesCommandOptions(),
@@ -116,7 +123,11 @@ export async function SalesShell({ surface }: SalesShellProps) {
 									</div>
 									<div className="text-muted-foreground">
 										id <Code>{order.id}</Code> · party {order.partyCode} (
-										{order.partyName}) · {order.lines.length} line(s)
+										{order.partyName}) · {order.currencyCode}
+										{order.documentTotal
+											? ` ${order.documentTotal}`
+											: ""}{" "}
+										· {order.lines.length} line(s)
 										{order.paymentTermCode
 											? ` · ${order.paymentTermCode} / net ${order.netDays}`
 											: ""}
@@ -180,7 +191,7 @@ export async function SalesShell({ surface }: SalesShellProps) {
 					<CardTitle>Create draft</CardTitle>
 				</CardHeader>
 				<CardContent>
-					<CreateSalesOrderForm canManage={canManage} />
+					<CreateSalesOrderForm canCreate={canCreate} />
 				</CardContent>
 			</Card>
 
@@ -189,7 +200,7 @@ export async function SalesShell({ surface }: SalesShellProps) {
 					<CardTitle>Add line</CardTitle>
 				</CardHeader>
 				<CardContent>
-					<AddSalesOrderLineForm canManage={canManage} />
+					<AddSalesOrderLineForm canUpdate={canUpdate} />
 				</CardContent>
 			</Card>
 
@@ -202,7 +213,20 @@ export async function SalesShell({ surface }: SalesShellProps) {
 					</CardDescription>
 				</CardHeader>
 				<CardContent>
-					<PostSalesOrderForm canManage={canManage} />
+					<PostSalesOrderForm canPost={canPost} />
+				</CardContent>
+			</Card>
+
+			<Card>
+				<CardHeader>
+					<CardTitle>Cancel order</CardTitle>
+					<CardDescription>
+						Cancels draft or posted orders; posted cancel is an explicit
+						reversal path.
+					</CardDescription>
+				</CardHeader>
+				<CardContent>
+					<CancelSalesOrderForm canCancel={canCancel} />
 				</CardContent>
 			</Card>
 		</section>

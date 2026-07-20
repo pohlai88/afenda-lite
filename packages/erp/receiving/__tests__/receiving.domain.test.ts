@@ -20,6 +20,10 @@ import {
 	seedUom,
 	seedWarehouse,
 } from "./helpers/memory-masters";
+import {
+	createMemoryPurchaseOrderReceivingQueryPort,
+	postedPoSnapshot,
+} from "./helpers/memory-po-receiving";
 import { createMemoryMutationPorts } from "./helpers/memory-ports";
 
 const ORG_A = "org-a";
@@ -28,6 +32,7 @@ const ITEM = "20000000-0000-4000-8000-000000000001";
 const WAREHOUSE = "40000000-0000-4000-8000-000000000001";
 const UOM = "b1000000-0000-4000-8000-000000000001";
 const SOURCE = "50000000-0000-4000-8000-000000000001";
+const PO_LINE = "60000000-0000-4000-8000-000000000001";
 
 function harness() {
 	return {
@@ -42,6 +47,9 @@ function harness() {
 			RECEIVING_PERMISSION_READ,
 			RECEIVING_PERMISSION_MANAGE,
 		]),
+		purchaseOrderReceivingQuery: createMemoryPurchaseOrderReceivingQueryPort({
+			[SOURCE]: postedPoSnapshot({ lineId: PO_LINE, ordered: "100" }),
+		}),
 	};
 }
 
@@ -75,6 +83,7 @@ describe("@afenda/receiving domain", () => {
 				itemId: ITEM,
 				quantityOrdered: 5,
 				quantityReceived: 4,
+				purchaseOrderLineId: PO_LINE,
 			},
 			ctx,
 		);
@@ -181,6 +190,7 @@ describe("@afenda/receiving domain", () => {
 				receiptId: draft.data.id,
 				itemId: ITEM,
 				quantityReceived: 2,
+				purchaseOrderLineId: PO_LINE,
 			},
 			ctx,
 		);
@@ -246,6 +256,7 @@ describe("@afenda/receiving domain", () => {
 				receiptId: postedDraft.data.id,
 				itemId: ITEM,
 				quantityReceived: 1,
+				purchaseOrderLineId: PO_LINE,
 			},
 			postedCtx,
 		);

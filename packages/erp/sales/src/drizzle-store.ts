@@ -13,8 +13,19 @@ import {
 } from "@afenda/db";
 import { fail, failFromUnknown, ok, type Result } from "@afenda/errors/result";
 
+import {
+	SALES_ERROR_CODE_CONFLICT,
+	SALES_ERROR_ORDER_ALREADY_CANCELLED,
+	SALES_ERROR_ORDER_ALREADY_POSTED,
+	SALES_ERROR_ORDER_EMPTY_LINES,
+	SALES_ERROR_ORDER_NOT_DRAFT,
+	SALES_ERROR_ORDER_NOT_FOUND,
+	SALES_ERROR_ORDER_VERSION_CONFLICT,
+	salesErrorDetails,
+} from "./error-codes";
 import type { MutationPorts } from "./ports";
 import type {
+	OrderCancelRecord,
 	OrderCreateRecord,
 	OrderLineCreateRecord,
 	OrderListFilter,
@@ -37,14 +48,28 @@ type OrderSqlRow = {
 	party_id: string;
 	party_code: string;
 	party_name: string;
+	bill_to_address_snapshot: string | null;
+	ship_to_address_snapshot: string | null;
 	payment_term_id: string | null;
 	payment_term_code: string | null;
+	payment_term_name: string | null;
 	net_days: number | null;
+	currency_code: string;
+	exchange_rate: string | null;
+	subtotal_amount: string | null;
+	discount_total: string | null;
+	tax_total: string | null;
+	document_total: string | null;
+	create_idempotency_key: string;
+	post_idempotency_key: string | null;
+	cancel_idempotency_key: string | null;
 	version: number;
 	created_by: string;
 	updated_by: string;
 	posted_at: Date | null;
 	posted_by: string | null;
+	cancelled_at: Date | null;
+	cancelled_by: string | null;
 	created_at: Date;
 	updated_at: Date;
 };
@@ -60,6 +85,11 @@ type LineSqlRow = {
 	base_uom_id: string;
 	base_uom_code: string;
 	quantity: string;
+	unit_price: string;
+	discount_amount: string;
+	tax_classification: string | null;
+	line_amount: string;
+	line_idempotency_key: string;
 	version: number;
 	created_by: string;
 	updated_by: string;
@@ -79,6 +109,11 @@ function mapLine(row: LineSqlRow): SalesOrderLine {
 		baseUomId: row.base_uom_id,
 		baseUomCode: row.base_uom_code,
 		quantity: row.quantity,
+		unitPrice: row.unit_price,
+		discountAmount: row.discount_amount,
+		taxClassification: row.tax_classification,
+		lineAmount: row.line_amount,
+		lineIdempotencyKey: row.line_idempotency_key,
 		version: row.version,
 		createdBy: row.created_by,
 		updatedBy: row.updated_by,
@@ -106,14 +141,28 @@ function mapOrder(row: OrderSqlRow, lines: SalesOrderLine[]): SalesOrder {
 		partyId: row.party_id,
 		partyCode: row.party_code,
 		partyName: row.party_name,
+		billToAddressSnapshot: row.bill_to_address_snapshot,
+		shipToAddressSnapshot: row.ship_to_address_snapshot,
 		paymentTermId: row.payment_term_id,
 		paymentTermCode: row.payment_term_code,
+		paymentTermName: row.payment_term_name,
 		netDays: row.net_days,
+		currencyCode: row.currency_code,
+		exchangeRate: row.exchange_rate,
+		subtotalAmount: row.subtotal_amount,
+		discountTotal: row.discount_total,
+		taxTotal: row.tax_total,
+		documentTotal: row.document_total,
+		createIdempotencyKey: row.create_idempotency_key,
+		postIdempotencyKey: row.post_idempotency_key,
+		cancelIdempotencyKey: row.cancel_idempotency_key,
 		version: row.version,
 		createdBy: row.created_by,
 		updatedBy: row.updated_by,
 		postedAt: row.posted_at,
 		postedBy: row.posted_by,
+		cancelledAt: row.cancelled_at,
+		cancelledBy: row.cancelled_by,
 		createdAt: row.created_at,
 		updatedAt: row.updated_at,
 		lines,
@@ -130,14 +179,28 @@ function mapHeaderRow(header: typeof salesOrder.$inferSelect): OrderSqlRow {
 		party_id: header.partyId,
 		party_code: header.partyCode,
 		party_name: header.partyName,
+		bill_to_address_snapshot: header.billToAddressSnapshot,
+		ship_to_address_snapshot: header.shipToAddressSnapshot,
 		payment_term_id: header.paymentTermId,
 		payment_term_code: header.paymentTermCode,
+		payment_term_name: header.paymentTermName,
 		net_days: header.netDays,
+		currency_code: header.currencyCode,
+		exchange_rate: header.exchangeRate,
+		subtotal_amount: header.subtotalAmount,
+		discount_total: header.discountTotal,
+		tax_total: header.taxTotal,
+		document_total: header.documentTotal,
+		create_idempotency_key: header.createIdempotencyKey,
+		post_idempotency_key: header.postIdempotencyKey,
+		cancel_idempotency_key: header.cancelIdempotencyKey,
 		version: header.version,
 		created_by: header.createdBy,
 		updated_by: header.updatedBy,
 		posted_at: header.postedAt,
 		posted_by: header.postedBy,
+		cancelled_at: header.cancelledAt,
+		cancelled_by: header.cancelledBy,
 		created_at: header.createdAt,
 		updated_at: header.updatedAt,
 	};
@@ -157,6 +220,11 @@ function mapLineFromSelect(
 		base_uom_id: line.baseUomId,
 		base_uom_code: line.baseUomCode,
 		quantity: line.quantity,
+		unit_price: line.unitPrice,
+		discount_amount: line.discountAmount,
+		tax_classification: line.taxClassification,
+		line_amount: line.lineAmount,
+		line_idempotency_key: line.lineIdempotencyKey,
 		version: line.version,
 		created_by: line.createdBy,
 		updated_by: line.updatedBy,
@@ -181,13 +249,32 @@ function valueSnapshotJson(value: Record<string, unknown>): string {
 	return JSON.stringify(value);
 }
 
+function writeErrorMessage(error: unknown): string {
+	return error instanceof Error ? error.message : String(error);
+}
+
+function isUniqueViolation(error: unknown): boolean {
+	return /unique|duplicate/i.test(writeErrorMessage(error));
+}
+
+function isCreateIdempotencyConflict(error: unknown): boolean {
+	return /sales_order_org_create_idempotency_uidx|create_idempotency_key/i.test(
+		writeErrorMessage(error),
+	);
+}
+
+function isLineIdempotencyConflict(error: unknown): boolean {
+	return /sales_order_line_org_order_idempotency_uidx|line_idempotency_key/i.test(
+		writeErrorMessage(error),
+	);
+}
+
 function mapWriteError(
 	error: unknown,
 	conflictMessage: string,
 	fallbackMessage: string,
 ): Result<never> {
-	const message = error instanceof Error ? error.message : String(error);
-	if (/unique|duplicate/i.test(message)) {
+	if (isUniqueViolation(error)) {
 		return fail("CONFLICT", conflictMessage);
 	}
 	return failFromUnknown(error, fallbackMessage);
@@ -223,12 +310,18 @@ export class DrizzleSalesStore implements SalesStore {
 						INSERT INTO sales_order (
 							id, organization_id, code, normalized_code, status,
 							party_id, party_code, party_name,
-							payment_term_id, payment_term_code, net_days,
+							bill_to_address_snapshot, ship_to_address_snapshot,
+							payment_term_id, payment_term_code, payment_term_name, net_days,
+							currency_code, exchange_rate,
+							create_idempotency_key,
 							version, created_by, updated_by
 						) VALUES (
 							${entityId}, ${record.organizationId}, ${record.code}, ${record.normalizedCode}, 'draft',
 							${record.partyId}, ${record.partyCode}, ${record.partyName},
-							${record.paymentTermId}, ${record.paymentTermCode}, ${record.netDays},
+							${record.billToAddressSnapshot}, ${record.shipToAddressSnapshot},
+							${record.paymentTermId}, ${record.paymentTermCode}, ${record.paymentTermName}, ${record.netDays},
+							${record.currencyCode}, ${record.exchangeRate},
+							${record.createIdempotencyKey},
 							1, ${record.createdBy}, ${record.createdBy}
 						)
 						RETURNING *
@@ -264,11 +357,26 @@ export class DrizzleSalesStore implements SalesStore {
 			}
 			return ok(mapOrder(row, []));
 		} catch (error) {
-			return mapWriteError(
-				error,
-				"Sales order code already exists",
-				"Failed to create sales order",
-			);
+			if (isCreateIdempotencyConflict(error)) {
+				const existing = await this.getOrderByCreateIdempotencyKey(
+					record.organizationId,
+					record.createIdempotencyKey,
+				);
+				if (!existing.ok) {
+					return existing;
+				}
+				if (existing.data !== null) {
+					return ok(existing.data);
+				}
+			}
+			if (isUniqueViolation(error)) {
+				return fail(
+					"CONFLICT",
+					"Sales order code already exists",
+					salesErrorDetails(SALES_ERROR_CODE_CONFLICT),
+				);
+			}
+			return failFromUnknown(error, "Failed to create sales order");
 		}
 	}
 
@@ -285,10 +393,31 @@ export class DrizzleSalesStore implements SalesStore {
 			return orderResult;
 		}
 		if (orderResult.data === null) {
-			return fail("NOT_FOUND", "Sales order not found");
+			return fail(
+				"NOT_FOUND",
+				"Sales order not found",
+				salesErrorDetails(SALES_ERROR_ORDER_NOT_FOUND),
+			);
+		}
+		const replay = orderResult.data.lines.find(
+			(line) => line.lineIdempotencyKey === record.lineIdempotencyKey,
+		);
+		if (replay !== undefined) {
+			return ok(replay);
 		}
 		if (orderResult.data.status !== "draft") {
-			return fail("CONFLICT", "Cannot add lines to a posted order");
+			return fail(
+				"CONFLICT",
+				"Cannot add lines to a posted or cancelled order",
+				salesErrorDetails(SALES_ERROR_ORDER_NOT_DRAFT),
+			);
+		}
+		if (orderResult.data.version !== record.expectedVersion) {
+			return fail(
+				"CONFLICT",
+				"Sales order version conflict",
+				salesErrorDetails(SALES_ERROR_ORDER_VERSION_CONFLICT),
+			);
 		}
 		const lineNo =
 			orderResult.data.lines.reduce(
@@ -323,12 +452,16 @@ export class DrizzleSalesStore implements SalesStore {
 						INSERT INTO sales_order_line (
 							id, organization_id, order_id, line_no,
 							item_id, item_code, item_name, base_uom_id, base_uom_code,
-							quantity, version, created_by, updated_by
+							quantity, unit_price, discount_amount, tax_classification, line_amount,
+							line_idempotency_key, version, created_by, updated_by
 						) VALUES (
 							${lineId}, ${record.organizationId}, ${record.orderId}, ${lineNo},
 							${record.itemId}, ${record.itemCode}, ${record.itemName},
 							${record.baseUomId}, ${record.baseUomCode},
-							${record.quantity}, 1, ${record.createdBy}, ${record.createdBy}
+							${record.quantity}, ${record.unitPrice}, ${record.discountAmount},
+							${record.taxClassification}, ${record.lineAmount},
+							${record.lineIdempotencyKey}, 1,
+							${record.createdBy}, ${record.createdBy}
 						)
 						RETURNING *
 					),
@@ -340,6 +473,7 @@ export class DrizzleSalesStore implements SalesStore {
 						WHERE id = ${record.orderId}
 							AND organization_id = ${record.organizationId}
 							AND status = 'draft'
+							AND version = ${record.expectedVersion}
 						RETURNING id
 					),
 					audited AS (
@@ -370,12 +504,28 @@ export class DrizzleSalesStore implements SalesStore {
 			const row = rows[0];
 			if (row === undefined) {
 				return fail(
-					"INTERNAL_ERROR",
-					"Sales order line create returned no row",
+					"CONFLICT",
+					"Sales order version conflict",
+					salesErrorDetails(SALES_ERROR_ORDER_VERSION_CONFLICT),
 				);
 			}
 			return ok(mapLine(row));
 		} catch (error) {
+			if (isLineIdempotencyConflict(error)) {
+				const reloaded = await this.getOrderById(
+					record.organizationId,
+					record.orderId,
+				);
+				if (!reloaded.ok) {
+					return reloaded;
+				}
+				const line = reloaded.data?.lines.find(
+					(row) => row.lineIdempotencyKey === record.lineIdempotencyKey,
+				);
+				if (line !== undefined) {
+					return ok(line);
+				}
+			}
 			return mapWriteError(
 				error,
 				"Sales order line conflict",
@@ -397,17 +547,43 @@ export class DrizzleSalesStore implements SalesStore {
 			return existing;
 		}
 		if (existing.data === null) {
-			return fail("NOT_FOUND", "Sales order not found");
+			return fail(
+				"NOT_FOUND",
+				"Sales order not found",
+				salesErrorDetails(SALES_ERROR_ORDER_NOT_FOUND),
+			);
 		}
 		const currentOrder = existing.data;
+		if (currentOrder.status === "posted") {
+			if (currentOrder.postIdempotencyKey === record.postIdempotencyKey) {
+				return ok(currentOrder);
+			}
+			return fail(
+				"CONFLICT",
+				"Sales order is already posted",
+				salesErrorDetails(SALES_ERROR_ORDER_ALREADY_POSTED),
+			);
+		}
 		if (currentOrder.status !== "draft") {
-			return fail("CONFLICT", "Sales order is already posted");
+			return fail(
+				"CONFLICT",
+				"Sales order cannot be posted",
+				salesErrorDetails(SALES_ERROR_ORDER_NOT_DRAFT),
+			);
 		}
 		if (currentOrder.version !== record.expectedVersion) {
-			return fail("CONFLICT", "Sales order version conflict");
+			return fail(
+				"CONFLICT",
+				"Sales order version conflict",
+				salesErrorDetails(SALES_ERROR_ORDER_VERSION_CONFLICT),
+			);
 		}
 		if (currentOrder.lines.length === 0) {
-			return fail("CONFLICT", "Cannot post order without lines");
+			return fail(
+				"CONFLICT",
+				"Cannot post order without lines",
+				salesErrorDetails(SALES_ERROR_ORDER_EMPTY_LINES),
+			);
 		}
 
 		const auditId = randomUUID();
@@ -443,7 +619,13 @@ export class DrizzleSalesStore implements SalesStore {
 								party_name = ${record.partyName},
 								payment_term_id = ${record.paymentTermId},
 								payment_term_code = ${record.paymentTermCode},
+								payment_term_name = ${record.paymentTermName},
 								net_days = ${record.netDays},
+								subtotal_amount = ${record.subtotalAmount},
+								discount_total = ${record.discountTotal},
+								tax_total = ${record.taxTotal},
+								document_total = ${record.documentTotal},
+								post_idempotency_key = ${record.postIdempotencyKey},
 								posted_at = now(),
 								posted_by = ${record.actorUserId},
 								updated_by = ${record.actorUserId},
@@ -493,6 +675,10 @@ export class DrizzleSalesStore implements SalesStore {
 							item_name = ${snap.itemName},
 							base_uom_id = ${snap.baseUomId},
 							base_uom_code = ${snap.baseUomCode},
+							unit_price = ${snap.unitPrice},
+							discount_amount = ${snap.discountAmount},
+							tax_classification = ${snap.taxClassification},
+							line_amount = ${snap.lineAmount},
 							updated_by = ${record.actorUserId},
 							updated_at = now(),
 							version = ${nextLineVersion}
@@ -513,7 +699,11 @@ export class DrizzleSalesStore implements SalesStore {
 			});
 			const row = rows[0];
 			if (row === undefined) {
-				return fail("CONFLICT", "Sales order version conflict");
+				return fail(
+					"CONFLICT",
+					"Sales order version conflict",
+					salesErrorDetails(SALES_ERROR_ORDER_VERSION_CONFLICT),
+				);
 			}
 			const reloaded = await this.getOrderById(
 				record.organizationId,
@@ -531,6 +721,148 @@ export class DrizzleSalesStore implements SalesStore {
 				error,
 				"Sales order post conflict",
 				"Failed to post sales order",
+			);
+		}
+	}
+
+	async cancelOrder(
+		record: OrderCancelRecord,
+		_ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<SalesOrder>> {
+		const existing = await this.getOrderById(
+			record.organizationId,
+			record.orderId,
+		);
+		if (!existing.ok) {
+			return existing;
+		}
+		if (existing.data === null) {
+			return fail(
+				"NOT_FOUND",
+				"Sales order not found",
+				salesErrorDetails(SALES_ERROR_ORDER_NOT_FOUND),
+			);
+		}
+		const currentOrder = existing.data;
+		if (currentOrder.status === "cancelled") {
+			if (currentOrder.cancelIdempotencyKey === record.cancelIdempotencyKey) {
+				return ok(currentOrder);
+			}
+			return fail(
+				"CONFLICT",
+				"Sales order is already cancelled",
+				salesErrorDetails(SALES_ERROR_ORDER_ALREADY_CANCELLED),
+			);
+		}
+		if (currentOrder.status !== "draft" && currentOrder.status !== "posted") {
+			return fail("CONFLICT", "Sales order cannot be cancelled");
+		}
+		if (currentOrder.version !== record.expectedVersion) {
+			return fail(
+				"CONFLICT",
+				"Sales order version conflict",
+				salesErrorDetails(SALES_ERROR_ORDER_VERSION_CONFLICT),
+			);
+		}
+
+		const auditId = randomUUID();
+		const eventId = randomUUID();
+		const nextVersion = currentOrder.version + 1;
+		const changesJson = fieldChangeJson(
+			"status",
+			currentOrder.status,
+			"cancelled",
+		);
+		const oldValueJson = valueSnapshotJson({
+			status: currentOrder.status,
+			version: currentOrder.version,
+		});
+		const newValueJson = valueSnapshotJson({
+			status: "cancelled",
+			version: nextVersion,
+		});
+		const payloadJson = eventPayloadJson({
+			organizationId: record.organizationId,
+			entityType: "sales_order",
+			entityId: record.orderId,
+			code: currentOrder.code,
+			version: nextVersion,
+			actorId: record.actorUserId,
+			correlationId: meta.correlationId,
+		});
+
+		try {
+			const [rows] = await runNeonHttpTransaction<[OrderSqlRow[]]>((sql) => [
+				sql`
+					WITH mutated AS (
+						UPDATE sales_order
+						SET status = 'cancelled',
+							cancelled_at = now(),
+							cancelled_by = ${record.actorUserId},
+							cancel_idempotency_key = ${record.cancelIdempotencyKey},
+							updated_by = ${record.actorUserId},
+							updated_at = now(),
+							version = ${nextVersion}
+						WHERE id = ${record.orderId}
+							AND organization_id = ${record.organizationId}
+							AND status IN ('draft', 'posted')
+							AND version = ${record.expectedVersion}
+						RETURNING *
+					),
+					audited AS (
+						INSERT INTO platform_audit_log (
+							id, organization_id, actor_user_id, correlation_id, module, entity,
+							entity_id, action, changes, old_value, new_value
+						)
+						SELECT
+							${auditId}, organization_id, ${record.actorUserId}, ${meta.correlationId},
+							'sales', 'sales_order', id, 'UPDATE', ${changesJson}::jsonb,
+							${oldValueJson}::jsonb, ${newValueJson}::jsonb
+						FROM mutated
+						RETURNING id
+					),
+					outboxed AS (
+						INSERT INTO platform_domain_event (
+							id, organization_id, type, source_module, correlation_id, actor_user_id,
+							payload, status, attempts
+						)
+						SELECT
+							${eventId}, organization_id, 'sales.order.cancelled.v1', 'sales',
+							${meta.correlationId}, ${record.actorUserId}, ${payloadJson}::jsonb, 'pending', 0
+						FROM mutated
+						RETURNING id
+					)
+					SELECT mutated.* FROM mutated, audited, outboxed
+				`,
+			]);
+			const row = rows[0];
+			if (row === undefined) {
+				return fail(
+					"CONFLICT",
+					"Sales order version conflict",
+					salesErrorDetails(SALES_ERROR_ORDER_VERSION_CONFLICT),
+				);
+			}
+			const reloaded = await this.getOrderById(
+				record.organizationId,
+				record.orderId,
+			);
+			if (!reloaded.ok) {
+				return reloaded;
+			}
+			if (reloaded.data === null) {
+				return fail(
+					"INTERNAL_ERROR",
+					"Cancelled sales order missing after write",
+				);
+			}
+			return ok(reloaded.data);
+		} catch (error) {
+			return mapWriteError(
+				error,
+				"Sales order cancel conflict",
+				"Failed to cancel sales order",
 			);
 		}
 	}
@@ -574,17 +906,85 @@ export class DrizzleSalesStore implements SalesStore {
 		}
 	}
 
+	async getOrderByCreateIdempotencyKey(
+		organizationId: string,
+		createIdempotencyKey: string,
+	): Promise<Result<SalesOrder | null>> {
+		try {
+			const [header] = await db
+				.select()
+				.from(salesOrder)
+				.where(
+					and(
+						eq(salesOrder.organizationId, organizationId),
+						eq(salesOrder.createIdempotencyKey, createIdempotencyKey),
+					),
+				)
+				.limit(1);
+			if (header === undefined) {
+				return ok(null);
+			}
+			const lines = await db
+				.select()
+				.from(salesOrderLine)
+				.where(
+					and(
+						eq(salesOrderLine.organizationId, organizationId),
+						eq(salesOrderLine.orderId, header.id),
+					),
+				)
+				.orderBy(asc(salesOrderLine.lineNo));
+			return ok(
+				mapOrder(
+					mapHeaderRow(header),
+					lines.map((line) => mapLineFromSelect(line)),
+				),
+			);
+		} catch (error) {
+			return failFromUnknown(
+				error,
+				"Failed to load sales order by create idempotency key",
+			);
+		}
+	}
+
 	async listOrders(filter: OrderListFilter): Promise<Result<SalesOrder[]>> {
 		try {
 			const conditions = [eq(salesOrder.organizationId, filter.organizationId)];
 			if (filter.status !== undefined) {
 				conditions.push(eq(salesOrder.status, filter.status));
 			}
+			const primaryOrderBy = (() => {
+				switch (filter.sort) {
+					case "updatedAt:desc":
+						return [desc(salesOrder.updatedAt), desc(salesOrder.id)] as const;
+					case "updatedAt:asc":
+						return [asc(salesOrder.updatedAt), asc(salesOrder.id)] as const;
+					case "createdAt:desc":
+						return [desc(salesOrder.createdAt), desc(salesOrder.id)] as const;
+					case "createdAt:asc":
+						return [asc(salesOrder.createdAt), asc(salesOrder.id)] as const;
+					case "code:asc":
+						return [
+							asc(salesOrder.normalizedCode),
+							asc(salesOrder.id),
+						] as const;
+					case "code:desc":
+						return [
+							desc(salesOrder.normalizedCode),
+							desc(salesOrder.id),
+						] as const;
+					default: {
+						const _exhaustive: never = filter.sort;
+						return _exhaustive;
+					}
+				}
+			})();
 			const headers = await db
 				.select()
 				.from(salesOrder)
 				.where(and(...conditions))
-				.orderBy(desc(salesOrder.updatedAt), desc(salesOrder.id))
+				.orderBy(...primaryOrderBy)
 				.limit(filter.pageSize)
 				.offset((filter.page - 1) * filter.pageSize);
 

@@ -510,6 +510,8 @@ Historical acceptance probe (pre-waiver): root packages 22; evidence gate was GA
 
 Authorized as one program; executed as eight independently closable slices. No eight-package empty scaffold mission.
 
+**Pre-Phase-4 spine (Done):** `@afenda/master-data` · `@afenda/sales` — sales order R1-F complete (fine `sales.order.*` perms, commercial snapshots, cancel/idempotency/OCC including line-add, migration `0020`). See [sales-order-contract.md](../sales/sales-order-contract.md). **Recorded (forward):** `closed` / `closeSalesOrder`.
+
 | Slice | Package | Status |
 |-------|---------|--------|
 | 4.1 | `@afenda/purchasing` | **Done** |
@@ -566,15 +568,41 @@ Forbidden: empty barrel · placeholder package · route-only shell · TODO imple
 
 ---
 
+### 4.0 `@afenda/sales` — Done (close deferred)
+
+**Owns:** Sales Order · Sales Order Line.
+
+**v1 lifecycle (shipped):** `draft → posted | cancelled` (including `posted → cancelled`). Statuses: `draft | posted | cancelled`.
+
+**Recorded (forward):** `closed` / `closeSalesOrder` — not on the public surface; do not treat as shipped.
+
+**Surface:** `createDraftSalesOrder` · `addSalesOrderLine` · `postSalesOrder` · `cancelSalesOrder` · `getSalesOrderById` · `listSalesOrders`.
+
+**Permissions:** fine `sales.order.create|update|post|cancel|read|list` (coarse `sales.read` / `sales.manage` retired).
+
+**Masters:** customer → `md_party` (customer role) · item → `md_item` · payment term via master-data. Commercial snapshots; OCC on line-add / post / cancel.
+
+**Events:** `sales.order.created.v1` · `line_added` · `posted` · `cancelled`. Optional: inventory · fulfillment · receivables (events).
+
+Contract: [sales-order-contract.md](../sales/sales-order-contract.md).
+
 ### 4.1 `@afenda/purchasing` — Done
 
-**Owns:** Purchase Order · Purchase Order Line. Lifecycle: `draft → posted → closed` (↘ cancelled).
+**Owns:** Purchase Order · Purchase Order Line.
 
-**Surface:** `createDraftPurchaseOrder` · `addPurchaseOrderLine` · `postPurchaseOrder` · `cancelPurchaseOrder` · `getPurchaseOrderById` · `listPurchaseOrders`.
+**v1 lifecycle (shipped):** `draft → posted → closed` (↘ `cancelled` from draft only). Statuses: `draft | posted | cancelled | closed`.
+
+**Surface:** `createDraftPurchaseOrder` · `addPurchaseOrderLine` · `postPurchaseOrder` · `cancelPurchaseOrder` · `closePurchaseOrder` · `getPurchaseOrderById` · `listPurchaseOrders`.
+
+**Permissions:** fine-grained `purchasing.order.create|update|post|cancel|close|read|list` (coarse `purchasing.read`/`manage` removed).
+
+**Commercial:** header currency/exchange/totals · line unit price/discount/tax/line amount · Purchasing-owned receipt/invoice tolerance percents.
+
+**Commitment:** `PurchaseOrderCommitmentQueryPort` injected at composition root (apps/web SQL adapter); close always allowed on posted (partial fulfilment OK).
 
 **Masters:** supplier → `md_party` (supplier role) · item → `md_item` · payment term / warehouse references via master-data.
 
-**Events:** `purchasing.order.created.v1` · `line_added` · `posted` · `cancelled`. Optional: receiving · payables · inventory (events).
+**Events:** `purchasing.order.created.v1` · `line_added` · `posted` · `cancelled` · `closed`. Optional: receiving · payables · inventory (events).
 
 ### 4.2 `@afenda/inventory` — Done
 

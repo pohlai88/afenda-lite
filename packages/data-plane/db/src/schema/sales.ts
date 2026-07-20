@@ -13,7 +13,7 @@ import { mdItem, mdParty, mdPaymentTerm } from "./master-data";
 
 /**
  * Sales transactional documents — FK masters in `@afenda/master-data`.
- * ARCH-006 consumer: party/item/payment-term FKs + snapshots only.
+ * ARCH-006 consumer: party/item/payment-term FKs + commercial snapshots.
  */
 export const salesOrder = pgTable(
 	"sales_order",
@@ -22,21 +22,35 @@ export const salesOrder = pgTable(
 		organizationId: text("organization_id").notNull(),
 		code: text("code").notNull(),
 		normalizedCode: text("normalized_code").notNull(),
-		/** draft | posted */
+		/** draft | posted | cancelled */
 		status: text("status").notNull().default("draft"),
 		partyId: uuid("party_id")
 			.notNull()
 			.references(() => mdParty.id),
 		partyCode: text("party_code").notNull(),
 		partyName: text("party_name").notNull(),
+		billToAddressSnapshot: text("bill_to_address_snapshot"),
+		shipToAddressSnapshot: text("ship_to_address_snapshot"),
 		paymentTermId: uuid("payment_term_id").references(() => mdPaymentTerm.id),
 		paymentTermCode: text("payment_term_code"),
+		paymentTermName: text("payment_term_name"),
 		netDays: integer("net_days"),
+		currencyCode: text("currency_code").notNull(),
+		exchangeRate: text("exchange_rate"),
+		subtotalAmount: text("subtotal_amount"),
+		discountTotal: text("discount_total"),
+		taxTotal: text("tax_total"),
+		documentTotal: text("document_total"),
+		createIdempotencyKey: text("create_idempotency_key").notNull(),
+		postIdempotencyKey: text("post_idempotency_key"),
+		cancelIdempotencyKey: text("cancel_idempotency_key"),
 		version: integer("version").notNull().default(1),
 		createdBy: text("created_by").notNull(),
 		updatedBy: text("updated_by").notNull(),
 		postedAt: timestamp("posted_at", { withTimezone: true }),
 		postedBy: text("posted_by"),
+		cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
+		cancelledBy: text("cancelled_by"),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),
@@ -56,6 +70,10 @@ export const salesOrder = pgTable(
 		uniqueIndex("sales_order_org_normalized_code_uidx").on(
 			t.organizationId,
 			t.normalizedCode,
+		),
+		uniqueIndex("sales_order_org_create_idempotency_uidx").on(
+			t.organizationId,
+			t.createIdempotencyKey,
 		),
 	],
 );
@@ -77,6 +95,11 @@ export const salesOrderLine = pgTable(
 		baseUomId: uuid("base_uom_id").notNull(),
 		baseUomCode: text("base_uom_code").notNull(),
 		quantity: numeric("quantity", { precision: 24, scale: 12 }).notNull(),
+		unitPrice: text("unit_price").notNull(),
+		discountAmount: text("discount_amount").notNull().default("0"),
+		taxClassification: text("tax_classification"),
+		lineAmount: text("line_amount").notNull(),
+		lineIdempotencyKey: text("line_idempotency_key").notNull(),
 		version: integer("version").notNull().default(1),
 		createdBy: text("created_by").notNull(),
 		updatedBy: text("updated_by").notNull(),
@@ -95,6 +118,11 @@ export const salesOrderLine = pgTable(
 			t.organizationId,
 			t.orderId,
 			t.lineNo,
+		),
+		uniqueIndex("sales_order_line_org_order_idempotency_uidx").on(
+			t.organizationId,
+			t.orderId,
+			t.lineIdempotencyKey,
 		),
 	],
 );

@@ -21,21 +21,19 @@ import { actionFieldMessage } from "@/modules/platform/schemas/action-result";
 const initialState: PostPurchaseOrderActionState = null;
 
 type PostPurchaseOrderFormProps = {
-	canManage: boolean;
+	canPost: boolean;
 };
 
 /**
- * Post draft purchase order — freezes party/item/payment/warehouse snapshots.
+ * Post draft purchase order — CAPABLE when `purchasing.order.post` is granted.
  */
-export function PostPurchaseOrderForm({
-	canManage,
-}: PostPurchaseOrderFormProps) {
+export function PostPurchaseOrderForm({ canPost }: PostPurchaseOrderFormProps) {
 	const [state, formAction, pending] = useActionState(
 		postPurchaseOrderAction,
 		initialState,
 	);
 
-	if (!canManage) {
+	if (!canPost) {
 		return (
 			<Alert role="status">
 				<AlertTitle>Post unavailable</AlertTitle>
@@ -66,7 +64,8 @@ export function PostPurchaseOrderForm({
 					<AlertTitle>Order posted</AlertTitle>
 					<AlertDescription>
 						{state.data.order.code} · party {state.data.order.partyCode} ·{" "}
-						{state.data.order.lines.length} line(s) frozen.
+						{state.data.order.currencyCode} · {state.data.order.lines.length}{" "}
+						line(s) · total {state.data.order.documentTotal ?? "—"}.
 					</AlertDescription>
 				</Alert>
 			) : null}
@@ -99,6 +98,16 @@ export function PostPurchaseOrderForm({
 					type="number"
 					min="1"
 					required
+					disabled={pending}
+				/>
+			</FormField>
+			<FormField label="Tax total (optional)" fieldId="purchase-post-tax">
+				<Input
+					id="purchase-post-tax"
+					name="taxTotal"
+					type="number"
+					step="any"
+					min="0"
 					disabled={pending}
 				/>
 			</FormField>

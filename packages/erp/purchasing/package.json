@@ -8,6 +8,14 @@
 			"types": "./src/index.ts",
 			"default": "./src/index.ts"
 		},
+		"./adapters/drizzle": {
+			"types": "./src/adapters/drizzle/index.ts",
+			"default": "./src/adapters/drizzle/index.ts"
+		},
+		"./testing": {
+			"types": "./src/testing/index.ts",
+			"default": "./src/testing/index.ts"
+		},
 		"./module-manifest": {
 			"types": "./src/module.manifest.ts",
 			"default": "./src/module.manifest.ts"

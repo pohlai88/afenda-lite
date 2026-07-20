@@ -22,7 +22,7 @@ export const purchaseOrder = pgTable(
 		organizationId: text("organization_id").notNull(),
 		code: text("code").notNull(),
 		normalizedCode: text("normalized_code").notNull(),
-		/** draft | posted | cancelled */
+		/** draft | posted | cancelled | closed */
 		status: text("status").notNull().default("draft"),
 		partyId: uuid("party_id")
 			.notNull()
@@ -31,10 +31,21 @@ export const purchaseOrder = pgTable(
 		partyName: text("party_name").notNull(),
 		paymentTermId: uuid("payment_term_id").references(() => mdPaymentTerm.id),
 		paymentTermCode: text("payment_term_code"),
+		paymentTermName: text("payment_term_name"),
 		netDays: integer("net_days"),
 		warehouseId: uuid("warehouse_id").references(() => mdWarehouse.id),
 		warehouseCode: text("warehouse_code"),
 		warehouseName: text("warehouse_name"),
+		currencyCode: text("currency_code").notNull(),
+		exchangeRate: text("exchange_rate"),
+		subtotalAmount: text("subtotal_amount"),
+		discountTotal: text("discount_total"),
+		taxTotal: text("tax_total"),
+		documentTotal: text("document_total"),
+		createIdempotencyKey: text("create_idempotency_key").notNull(),
+		postIdempotencyKey: text("post_idempotency_key"),
+		cancelIdempotencyKey: text("cancel_idempotency_key"),
+		closeIdempotencyKey: text("close_idempotency_key"),
 		version: integer("version").notNull().default(1),
 		createdBy: text("created_by").notNull(),
 		updatedBy: text("updated_by").notNull(),
@@ -42,6 +53,8 @@ export const purchaseOrder = pgTable(
 		postedBy: text("posted_by"),
 		cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
 		cancelledBy: text("cancelled_by"),
+		closedAt: timestamp("closed_at", { withTimezone: true }),
+		closedBy: text("closed_by"),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),
@@ -61,6 +74,10 @@ export const purchaseOrder = pgTable(
 		uniqueIndex("purchase_order_org_normalized_code_uidx").on(
 			t.organizationId,
 			t.normalizedCode,
+		),
+		uniqueIndex("purchase_order_org_create_idempotency_uidx").on(
+			t.organizationId,
+			t.createIdempotencyKey,
 		),
 	],
 );
@@ -82,6 +99,19 @@ export const purchaseOrderLine = pgTable(
 		baseUomId: uuid("base_uom_id").notNull(),
 		baseUomCode: text("base_uom_code").notNull(),
 		quantity: numeric("quantity", { precision: 24, scale: 12 }).notNull(),
+		unitPrice: text("unit_price").notNull(),
+		discountAmount: text("discount_amount").notNull().default("0"),
+		taxClassification: text("tax_classification"),
+		lineAmount: text("line_amount").notNull(),
+		overReceiptPercent: text("over_receipt_percent").notNull().default("0"),
+		underReceiptPercent: text("under_receipt_percent").notNull().default("0"),
+		invoiceQuantityTolerancePercent: text("invoice_quantity_tolerance_percent")
+			.notNull()
+			.default("0"),
+		invoicePriceTolerancePercent: text("invoice_price_tolerance_percent")
+			.notNull()
+			.default("0"),
+		lineIdempotencyKey: text("line_idempotency_key").notNull(),
 		version: integer("version").notNull().default(1),
 		createdBy: text("created_by").notNull(),
 		updatedBy: text("updated_by").notNull(),
@@ -100,6 +130,11 @@ export const purchaseOrderLine = pgTable(
 			t.organizationId,
 			t.orderId,
 			t.lineNo,
+		),
+		uniqueIndex("purchase_order_line_org_order_idempotency_uidx").on(
+			t.organizationId,
+			t.orderId,
+			t.lineIdempotencyKey,
 		),
 	],
 );

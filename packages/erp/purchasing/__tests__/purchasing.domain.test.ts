@@ -3,15 +3,14 @@ import { createMemoryPurchasingStore } from "../src/memory-store";
 import {
 	addPurchaseOrderLine,
 	cancelPurchaseOrder,
+	closePurchaseOrder,
 	createDraftPurchaseOrder,
 	getPurchaseOrderById,
 	listPurchaseOrders,
 	postPurchaseOrder,
 } from "../src/order";
-import {
-	PURCHASING_PERMISSION_MANAGE,
-	PURCHASING_PERMISSION_READ,
-} from "../src/permissions";
+import { PURCHASING_PERMISSION_CODES } from "../src/permissions";
+import { createMemoryCommitmentQueryPort } from "../src/testing";
 import { createGrantingPurchasingAuthorization } from "./helpers/memory-authorization";
 import {
 	createMemoryMasterLookup,
@@ -64,8 +63,7 @@ function harness(options?: {
 		supplierPartyIds,
 	});
 	const authorization = createGrantingPurchasingAuthorization([
-		PURCHASING_PERMISSION_READ,
-		PURCHASING_PERMISSION_MANAGE,
+		...PURCHASING_PERMISSION_CODES,
 	]);
 	return { store, ports, masters, authorization };
 }
@@ -78,10 +76,12 @@ describe("@afenda/purchasing domain", () => {
 				organizationId: ORG_A,
 				actorUserId: "user-1",
 				correlationId: "corr-1",
+				idempotencyKey: "create:corr-1",
 				code: "PO-100",
 				partyId: PARTY_A,
 				paymentTermId: TERM_A,
 				warehouseId: WH_A,
+				currencyCode: "USD",
 			},
 			{ store, ports, masters, authorization },
 		);
@@ -97,7 +97,12 @@ describe("@afenda/purchasing domain", () => {
 		expect(created.data.status).toBe("draft");
 
 		const foreign = await getPurchaseOrderById(
-			{ organizationId: ORG_B, actorUserId: "user-1", id: created.data.id },
+			{
+				organizationId: ORG_B,
+				actorUserId: "user-1",
+				correlationId: "corr-get-foreign",
+				id: created.data.id,
+			},
 			{ store, ports, masters, authorization },
 		);
 		expect(foreign.ok).toBe(true);
@@ -106,7 +111,13 @@ describe("@afenda/purchasing domain", () => {
 		}
 
 		const listed = await listPurchaseOrders(
-			{ organizationId: ORG_A, actorUserId: "user-1", page: 1, pageSize: 50 },
+			{
+				organizationId: ORG_A,
+				actorUserId: "user-1",
+				correlationId: "corr-list-1",
+				page: 1,
+				pageSize: 50,
+			},
 			{ store, ports, masters, authorization },
 		);
 		expect(listed.ok).toBe(true);
@@ -123,8 +134,10 @@ describe("@afenda/purchasing domain", () => {
 				organizationId: ORG_A,
 				actorUserId: "user-1",
 				correlationId: "corr-dup-1",
+				idempotencyKey: "create:corr-dup-1",
 				code: "po-dup",
 				partyId: PARTY_A,
+				currencyCode: "USD",
 			},
 			ctx,
 		);
@@ -135,8 +148,10 @@ describe("@afenda/purchasing domain", () => {
 				organizationId: ORG_A,
 				actorUserId: "user-1",
 				correlationId: "corr-dup-2",
+				idempotencyKey: "create:corr-dup-2",
 				code: "PO-DUP",
 				partyId: PARTY_A,
+				currencyCode: "USD",
 			},
 			ctx,
 		);
@@ -147,6 +162,83 @@ describe("@afenda/purchasing domain", () => {
 		}
 	});
 
+	it("replays create and post under the same idempotency key", async () => {
+		const ready = harness();
+		const first = await createDraftPurchaseOrder(
+			{
+				organizationId: ORG_A,
+				actorUserId: "user-1",
+				correlationId: "corr-idem-1",
+				idempotencyKey: "idem-create",
+				code: "PO-IDEM",
+				partyId: PARTY_A,
+				currencyCode: "USD",
+			},
+			ready,
+		);
+		expect(first.ok).toBe(true);
+		if (!first.ok) {
+			return;
+		}
+		const second = await createDraftPurchaseOrder(
+			{
+				organizationId: ORG_A,
+				actorUserId: "user-1",
+				correlationId: "corr-idem-2",
+				idempotencyKey: "idem-create",
+				code: "PO-IDEM",
+				partyId: PARTY_A,
+				currencyCode: "USD",
+			},
+			ready,
+		);
+		expect(second.ok).toBe(true);
+		if (second.ok) {
+			expect(second.data.id).toBe(first.data.id);
+		}
+
+		await addPurchaseOrderLine(
+			{
+				organizationId: ORG_A,
+				actorUserId: "user-1",
+				correlationId: "corr-idem-3",
+				idempotencyKey: "idem-line",
+				orderId: first.data.id,
+				itemId: ITEM_A,
+				quantity: 1,
+				unitPrice: "10",
+			},
+			ready,
+		);
+		const posted = await postPurchaseOrder(
+			{
+				organizationId: ORG_A,
+				actorUserId: "user-1",
+				correlationId: "corr-idem-4",
+				idempotencyKey: "idem-post",
+				orderId: first.data.id,
+				expectedVersion: 2,
+			},
+			ready,
+		);
+		expect(posted.ok).toBe(true);
+		const replayPost = await postPurchaseOrder(
+			{
+				organizationId: ORG_A,
+				actorUserId: "user-1",
+				correlationId: "corr-idem-5",
+				idempotencyKey: "idem-post",
+				orderId: first.data.id,
+				expectedVersion: 99,
+			},
+			ready,
+		);
+		expect(replayPost.ok).toBe(true);
+		if (replayPost.ok) {
+			expect(replayPost.data.status).toBe("posted");
+		}
+	});
+
 	it("rejects cross-org party and item FK resolution", async () => {
 		const { store, ports, masters, authorization } = harness();
 		const crossParty = await createDraftPurchaseOrder(
@@ -154,8 +246,10 @@ describe("@afenda/purchasing domain", () => {
 				organizationId: ORG_A,
 				actorUserId: "user-1",
 				correlationId: "corr-2",
+				idempotencyKey: "create:corr-2",
 				code: "PO-200",
 				partyId: PARTY_B,
+				currencyCode: "USD",
 			},
 			{ store, ports, masters, authorization },
 		);
@@ -169,8 +263,10 @@ describe("@afenda/purchasing domain", () => {
 				organizationId: ORG_A,
 				actorUserId: "user-1",
 				correlationId: "corr-3",
+				idempotencyKey: "create:corr-3",
 				code: "PO-201",
 				partyId: PARTY_A,
+				currencyCode: "USD",
 			},
 			{ store, ports, masters, authorization },
 		);
@@ -184,9 +280,11 @@ describe("@afenda/purchasing domain", () => {
 				organizationId: ORG_A,
 				actorUserId: "user-1",
 				correlationId: "corr-4",
+				idempotencyKey: "line:corr-4",
 				orderId: created.data.id,
 				itemId: "20000000-0000-4000-8000-000000000099",
 				quantity: 2,
+				unitPrice: "10",
 			},
 			{ store, ports, masters, authorization },
 		);
@@ -203,8 +301,10 @@ describe("@afenda/purchasing domain", () => {
 				organizationId: ORG_A,
 				actorUserId: "user-1",
 				correlationId: "corr-5",
+				idempotencyKey: "create:corr-5",
 				code: "PO-300",
 				partyId: PARTY_A,
+				currencyCode: "USD",
 			},
 			noSupplier,
 		);
@@ -219,8 +319,10 @@ describe("@afenda/purchasing domain", () => {
 				organizationId: ORG_A,
 				actorUserId: "user-1",
 				correlationId: "corr-6",
+				idempotencyKey: "create:corr-6",
 				code: "PO-301",
 				partyId: PARTY_NO_SUPPLIER,
+				currencyCode: "USD",
 			},
 			missingRole,
 		);
@@ -237,8 +339,10 @@ describe("@afenda/purchasing domain", () => {
 				organizationId: ORG_A,
 				actorUserId: "user-1",
 				correlationId: "corr-7",
+				idempotencyKey: "create:corr-7",
 				code: "PO-400",
 				partyId: PARTY_A,
+				currencyCode: "USD",
 			},
 			emptyHarness,
 		);
@@ -251,6 +355,7 @@ describe("@afenda/purchasing domain", () => {
 				organizationId: ORG_A,
 				actorUserId: "user-1",
 				correlationId: "corr-8",
+				idempotencyKey: "post:corr-8",
 				orderId: emptyOrder.data.id,
 				expectedVersion: emptyOrder.data.version,
 			},
@@ -264,10 +369,12 @@ describe("@afenda/purchasing domain", () => {
 				organizationId: ORG_A,
 				actorUserId: "user-1",
 				correlationId: "corr-9",
+				idempotencyKey: "create:corr-9",
 				code: "PO-401",
 				partyId: PARTY_A,
 				paymentTermId: TERM_A,
 				warehouseId: WH_A,
+				currencyCode: "USD",
 			},
 			ready,
 		);
@@ -280,9 +387,11 @@ describe("@afenda/purchasing domain", () => {
 				organizationId: ORG_A,
 				actorUserId: "user-1",
 				correlationId: "corr-10",
+				idempotencyKey: "line:corr-10",
 				orderId: draft.data.id,
 				itemId: ITEM_A,
 				quantity: "3.5",
+				unitPrice: "10",
 			},
 			ready,
 		);
@@ -294,7 +403,12 @@ describe("@afenda/purchasing domain", () => {
 		expect(line.data.baseUomCode).toBe("EA");
 
 		const current = await getPurchaseOrderById(
-			{ organizationId: ORG_A, actorUserId: "user-1", id: draft.data.id },
+			{
+				organizationId: ORG_A,
+				actorUserId: "user-1",
+				correlationId: "corr-get-current",
+				id: draft.data.id,
+			},
 			ready,
 		);
 		expect(current.ok).toBe(true);
@@ -307,6 +421,7 @@ describe("@afenda/purchasing domain", () => {
 				organizationId: ORG_A,
 				actorUserId: "user-1",
 				correlationId: "corr-11",
+				idempotencyKey: "post:corr-11",
 				orderId: draft.data.id,
 				expectedVersion: current.data.version,
 			},
@@ -332,8 +447,10 @@ describe("@afenda/purchasing domain", () => {
 				organizationId: ORG_A,
 				actorUserId: "user-1",
 				correlationId: "corr-12",
+				idempotencyKey: "create:corr-12",
 				code: "PO-402",
 				partyId: PARTY_A,
+				currencyCode: "USD",
 			},
 			inactiveParty,
 		);
@@ -346,9 +463,11 @@ describe("@afenda/purchasing domain", () => {
 				organizationId: ORG_A,
 				actorUserId: "user-1",
 				correlationId: "corr-13",
+				idempotencyKey: "line:corr-13",
 				orderId: inactiveDraft.data.id,
 				itemId: ITEM_A,
 				quantity: 1,
+				unitPrice: "10",
 			},
 			inactiveParty,
 		);
@@ -357,6 +476,7 @@ describe("@afenda/purchasing domain", () => {
 				organizationId: ORG_A,
 				actorUserId: "user-1",
 				correlationId: "corr-14",
+				idempotencyKey: "post:corr-14",
 				orderId: inactiveDraft.data.id,
 				expectedVersion: 2,
 			},
@@ -373,8 +493,10 @@ describe("@afenda/purchasing domain", () => {
 				organizationId: ORG_A,
 				actorUserId: "user-1",
 				correlationId: "corr-15",
+				idempotencyKey: "create:corr-15",
 				code: "PO-403",
 				partyId: PARTY_A,
+				currencyCode: "USD",
 			},
 			inactiveItem,
 		);
@@ -382,28 +504,20 @@ describe("@afenda/purchasing domain", () => {
 		if (!itemDraft.ok) {
 			return;
 		}
-		await addPurchaseOrderLine(
+		const inactiveLine = await addPurchaseOrderLine(
 			{
 				organizationId: ORG_A,
 				actorUserId: "user-1",
 				correlationId: "corr-16",
+				idempotencyKey: "line:corr-16",
 				orderId: itemDraft.data.id,
 				itemId: ITEM_A,
 				quantity: 1,
+				unitPrice: "10",
 			},
 			inactiveItem,
 		);
-		const itemBlocked = await postPurchaseOrder(
-			{
-				organizationId: ORG_A,
-				actorUserId: "user-1",
-				correlationId: "corr-17",
-				orderId: itemDraft.data.id,
-				expectedVersion: 2,
-			},
-			inactiveItem,
-		);
-		expect(itemBlocked.ok).toBe(false);
+		expect(inactiveLine.ok).toBe(false);
 
 		const inactiveWarehouse = harness({ warehouseStatus: "draft" });
 		const whDraft = await createDraftPurchaseOrder(
@@ -411,9 +525,11 @@ describe("@afenda/purchasing domain", () => {
 				organizationId: ORG_A,
 				actorUserId: "user-1",
 				correlationId: "corr-18",
+				idempotencyKey: "create:corr-18",
 				code: "PO-404",
 				partyId: PARTY_A,
 				warehouseId: WH_DRAFT,
+				currencyCode: "USD",
 			},
 			inactiveWarehouse,
 		);
@@ -426,9 +542,11 @@ describe("@afenda/purchasing domain", () => {
 				organizationId: ORG_A,
 				actorUserId: "user-1",
 				correlationId: "corr-19",
+				idempotencyKey: "line:corr-19",
 				orderId: whDraft.data.id,
 				itemId: ITEM_A,
 				quantity: 1,
+				unitPrice: "10",
 			},
 			inactiveWarehouse,
 		);
@@ -437,6 +555,7 @@ describe("@afenda/purchasing domain", () => {
 				organizationId: ORG_A,
 				actorUserId: "user-1",
 				correlationId: "corr-20",
+				idempotencyKey: "post:corr-20",
 				orderId: whDraft.data.id,
 				expectedVersion: 2,
 			},
@@ -448,15 +567,17 @@ describe("@afenda/purchasing domain", () => {
 		}
 	});
 
-	it("cancels draft and posted orders and rejects duplicate cancel", async () => {
+	it("cancels draft orders and rejects cancel on posted / duplicate cancel", async () => {
 		const ctx = harness();
 		const draft = await createDraftPurchaseOrder(
 			{
 				organizationId: ORG_A,
 				actorUserId: "user-1",
 				correlationId: "corr-21",
+				idempotencyKey: "create:corr-21",
 				code: "PO-500",
 				partyId: PARTY_A,
+				currencyCode: "USD",
 			},
 			ctx,
 		);
@@ -470,6 +591,7 @@ describe("@afenda/purchasing domain", () => {
 				organizationId: ORG_A,
 				actorUserId: "user-1",
 				correlationId: "corr-22",
+				idempotencyKey: "cancel:corr-22",
 				orderId: draft.data.id,
 				expectedVersion: draft.data.version,
 			},
@@ -491,6 +613,7 @@ describe("@afenda/purchasing domain", () => {
 				organizationId: ORG_A,
 				actorUserId: "user-1",
 				correlationId: "corr-23",
+				idempotencyKey: "cancel:corr-23",
 				orderId: draft.data.id,
 				expectedVersion: cancelledDraft.data.version,
 			},
@@ -507,8 +630,10 @@ describe("@afenda/purchasing domain", () => {
 				organizationId: ORG_A,
 				actorUserId: "user-1",
 				correlationId: "corr-24",
+				idempotencyKey: "create:corr-24",
 				code: "PO-501",
 				partyId: PARTY_A,
+				currencyCode: "USD",
 			},
 			postedCtx,
 		);
@@ -521,9 +646,11 @@ describe("@afenda/purchasing domain", () => {
 				organizationId: ORG_A,
 				actorUserId: "user-1",
 				correlationId: "corr-25",
+				idempotencyKey: "line:corr-25",
 				orderId: postedDraft.data.id,
 				itemId: ITEM_A,
 				quantity: 1,
+				unitPrice: "10",
 			},
 			postedCtx,
 		);
@@ -532,6 +659,7 @@ describe("@afenda/purchasing domain", () => {
 				organizationId: ORG_A,
 				actorUserId: "user-1",
 				correlationId: "corr-26",
+				idempotencyKey: "post:corr-26",
 				orderId: postedDraft.data.id,
 				expectedVersion: 2,
 			},
@@ -541,26 +669,166 @@ describe("@afenda/purchasing domain", () => {
 		if (!posted.ok) {
 			return;
 		}
-		const cancelledPosted = await cancelPurchaseOrder(
+		const cancelPosted = await cancelPurchaseOrder(
 			{
 				organizationId: ORG_A,
 				actorUserId: "user-1",
 				correlationId: "corr-27",
+				idempotencyKey: "cancel:corr-27",
 				orderId: posted.data.id,
 				expectedVersion: posted.data.version,
 			},
 			postedCtx,
 		);
-		expect(cancelledPosted.ok).toBe(true);
-		if (cancelledPosted.ok) {
-			expect(cancelledPosted.data.status).toBe("cancelled");
+		expect(cancelPosted.ok).toBe(false);
+		if (!cancelPosted.ok) {
+			expect(cancelPosted.code).toBe("CONFLICT");
+			expect(
+				(cancelPosted.details as { purchasingCode?: string } | undefined)
+					?.purchasingCode,
+			).toBe("purchasing.order.not_draft");
+		}
+	});
+
+	it("closes posted orders, replays close idempotently, and rejects close on draft / without commitment port", async () => {
+		const ctx = harness();
+		const commitmentQuery = createMemoryCommitmentQueryPort();
+		const draft = await createDraftPurchaseOrder(
+			{
+				organizationId: ORG_A,
+				actorUserId: "user-1",
+				correlationId: "corr-close-1",
+				idempotencyKey: "create:corr-close-1",
+				code: "PO-600",
+				partyId: PARTY_A,
+				currencyCode: "USD",
+			},
+			ctx,
+		);
+		expect(draft.ok).toBe(true);
+		if (!draft.ok) {
+			return;
+		}
+
+		const closeOnDraft = await closePurchaseOrder(
+			{
+				organizationId: ORG_A,
+				actorUserId: "user-1",
+				correlationId: "corr-close-2",
+				idempotencyKey: "close:corr-close-2",
+				orderId: draft.data.id,
+				expectedVersion: draft.data.version,
+			},
+			{ ...ctx, commitmentQuery },
+		);
+		expect(closeOnDraft.ok).toBe(false);
+		if (!closeOnDraft.ok) {
+			expect(closeOnDraft.code).toBe("CONFLICT");
+			expect(
+				(closeOnDraft.details as { purchasingCode?: string } | undefined)
+					?.purchasingCode,
+			).toBe("purchasing.order.not_posted");
+		}
+
+		await addPurchaseOrderLine(
+			{
+				organizationId: ORG_A,
+				actorUserId: "user-1",
+				correlationId: "corr-close-3",
+				idempotencyKey: "line:corr-close-3",
+				orderId: draft.data.id,
+				itemId: ITEM_A,
+				quantity: 1,
+				unitPrice: "10",
+			},
+			ctx,
+		);
+		const posted = await postPurchaseOrder(
+			{
+				organizationId: ORG_A,
+				actorUserId: "user-1",
+				correlationId: "corr-close-4",
+				idempotencyKey: "post:corr-close-4",
+				orderId: draft.data.id,
+				expectedVersion: 2,
+			},
+			ctx,
+		);
+		expect(posted.ok).toBe(true);
+		if (!posted.ok) {
+			return;
+		}
+
+		const missingPort = await closePurchaseOrder(
+			{
+				organizationId: ORG_A,
+				actorUserId: "user-1",
+				correlationId: "corr-close-5",
+				idempotencyKey: "close:corr-close-5",
+				orderId: posted.data.id,
+				expectedVersion: posted.data.version,
+			},
+			ctx,
+		);
+		expect(missingPort.ok).toBe(false);
+		if (!missingPort.ok) {
+			expect(missingPort.code).toBe("INTERNAL_ERROR");
+			expect(
+				(missingPort.details as { purchasingCode?: string } | undefined)
+					?.purchasingCode,
+			).toBe("purchasing.order.commitment_port_required");
+		}
+
+		const closed = await closePurchaseOrder(
+			{
+				organizationId: ORG_A,
+				actorUserId: "user-1",
+				correlationId: "corr-close-6",
+				idempotencyKey: "close:corr-close-6",
+				orderId: posted.data.id,
+				expectedVersion: posted.data.version,
+			},
+			{ ...ctx, commitmentQuery },
+		);
+		expect(closed.ok).toBe(true);
+		if (!closed.ok) {
+			return;
+		}
+		expect(closed.data.status).toBe("closed");
+		expect(
+			ctx.ports.outbox.calls.some(
+				(c) => c.type === "purchasing.order.closed.v1",
+			),
+		).toBe(true);
+
+		const replay = await closePurchaseOrder(
+			{
+				organizationId: ORG_A,
+				actorUserId: "user-1",
+				correlationId: "corr-close-7",
+				idempotencyKey: "close:corr-close-6",
+				orderId: posted.data.id,
+				expectedVersion: 99,
+			},
+			{ ...ctx, commitmentQuery },
+		);
+		expect(replay.ok).toBe(true);
+		if (replay.ok) {
+			expect(replay.data.status).toBe("closed");
+			expect(replay.data.id).toBe(closed.data.id);
 		}
 	});
 
 	it("rejects pageSize above 100", async () => {
 		const { store, ports, masters, authorization } = harness();
 		const listed = await listPurchaseOrders(
-			{ organizationId: ORG_A, actorUserId: "user-1", page: 1, pageSize: 101 },
+			{
+				organizationId: ORG_A,
+				actorUserId: "user-1",
+				correlationId: "corr-list-page",
+				page: 1,
+				pageSize: 101,
+			},
 			{ store, ports, masters, authorization },
 		);
 		expect(listed.ok).toBe(false);

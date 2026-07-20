@@ -2,7 +2,11 @@ import type { MasterAuthorizationPort } from "@afenda/master-data";
 
 import type { PurchasingAuthorizationPort } from "./authorization";
 import { createMasterDataLookupPort } from "./master-lookup";
-import type { MasterLookupPort, MutationPorts } from "./ports";
+import type {
+	MasterLookupPort,
+	MutationPorts,
+	PurchaseOrderCommitmentQueryPort,
+} from "./ports";
 import { createProductionMutationPorts } from "./production-ports";
 import { resolvePurchasingStore } from "./resolve-store";
 import type { PurchasingStore } from "./store";
@@ -15,6 +19,11 @@ export type PurchasingCommandOptions = {
 	authorization?: PurchasingAuthorizationPort;
 	/** Forwarded to master-data public lookups (read permission). */
 	masterAuthorization?: MasterAuthorizationPort;
+	/**
+	 * Required for `closePurchaseOrder` — apps/web injects SQL adapter;
+	 * tests inject memory zero-commitment helper.
+	 */
+	commitmentQuery?: PurchaseOrderCommitmentQueryPort;
 };
 
 export function resolvePorts(ports?: MutationPorts): MutationPorts {
@@ -37,11 +46,13 @@ export function resolveCommandDeps(options: PurchasingCommandOptions = {}): {
 	ports: MutationPorts;
 	masters: MasterLookupPort;
 	authorization: PurchasingAuthorizationPort | undefined;
+	commitmentQuery: PurchaseOrderCommitmentQueryPort | undefined;
 } {
 	return {
 		store: resolveStore(options.store),
 		ports: resolvePorts(options.ports),
 		masters: resolveMasters(options.masters, options.masterAuthorization),
 		authorization: options.authorization,
+		commitmentQuery: options.commitmentQuery,
 	};
 }

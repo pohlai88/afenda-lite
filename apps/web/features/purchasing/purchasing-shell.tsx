@@ -21,6 +21,7 @@ import {
 import { requirePermission } from "@/features/auth/require-permission";
 import { AddPurchaseOrderLineForm } from "@/features/purchasing/add-purchase-order-line-form";
 import { CancelPurchaseOrderForm } from "@/features/purchasing/cancel-purchase-order-form";
+import { ClosePurchaseOrderForm } from "@/features/purchasing/close-purchase-order-form";
 import { CreatePurchaseOrderForm } from "@/features/purchasing/create-purchase-order-form";
 import { PostPurchaseOrderForm } from "@/features/purchasing/post-purchase-order-form";
 import { createMasterDataAuthorizationPort } from "@/lib/erp/master-data-authorization-port";
@@ -38,8 +39,15 @@ export async function PurchasingShell({ surface }: PurchasingShellProps) {
 	const session =
 		surface === "admin" ? await requireRole("operator") : await getSession();
 
-	await requirePermission(session, "purchasing.read");
-	const canManage = await sessionHasPermission(session, "purchasing.manage");
+	await requirePermission(session, "purchasing.order.read");
+	const [canCreate, canUpdate, canPost, canCancel, canClose] =
+		await Promise.all([
+			sessionHasPermission(session, "purchasing.order.create"),
+			sessionHasPermission(session, "purchasing.order.update"),
+			sessionHasPermission(session, "purchasing.order.post"),
+			sessionHasPermission(session, "purchasing.order.cancel"),
+			sessionHasPermission(session, "purchasing.order.close"),
+		]);
 
 	const masterOptions = { authorization: createMasterDataAuthorizationPort() };
 
@@ -54,6 +62,7 @@ export async function PurchasingShell({ surface }: PurchasingShellProps) {
 			{
 				organizationId: session.orgId,
 				actorUserId: session.userId,
+				correlationId: `purchasing-shell:${session.orgId}:${session.userId}`,
 				pageSize: 50,
 			},
 			createPurchasingCommandOptions(),
@@ -110,7 +119,8 @@ export async function PurchasingShell({ surface }: PurchasingShellProps) {
 				<p className="max-w-2xl text-sm text-muted-foreground">
 					Orders reference <Code>md_party</Code> / <Code>md_item</Code> (and
 					optional <Code>md_payment_term</Code> / <Code>md_warehouse</Code>)
-					with snapshots at create and post.
+					with commercial pricing at create/line and totals frozen on post.
+					Lifecycle: draft → posted → closed (↘ cancelled from draft only).
 				</p>
 			</div>
 
@@ -136,11 +146,15 @@ export async function PurchasingShell({ surface }: PurchasingShellProps) {
 							{orders.map((order) => (
 								<li key={order.id} className="rounded-md border px-3 py-2">
 									<div className="font-medium">
-										{order.code} · {order.status} · v{order.version}
+										{order.code} · {order.status} · {order.currencyCode} · v
+										{order.version}
 									</div>
 									<div className="text-muted-foreground">
 										id <Code>{order.id}</Code> · party {order.partyCode} (
 										{order.partyName}) · {order.lines.length} line(s)
+										{order.documentTotal
+											? ` · total ${order.documentTotal}`
+											: ""}
 										{order.paymentTermCode
 											? ` · ${order.paymentTermCode} / net ${order.netDays}`
 											: ""}
@@ -219,7 +233,7 @@ export async function PurchasingShell({ surface }: PurchasingShellProps) {
 					<CardTitle>Create draft</CardTitle>
 				</CardHeader>
 				<CardContent>
-					<CreatePurchaseOrderForm canManage={canManage} />
+					<CreatePurchaseOrderForm canCreate={canCreate} />
 				</CardContent>
 			</Card>
 
@@ -228,7 +242,7 @@ export async function PurchasingShell({ surface }: PurchasingShellProps) {
 					<CardTitle>Add line</CardTitle>
 				</CardHeader>
 				<CardContent>
-					<AddPurchaseOrderLineForm canManage={canManage} />
+					<AddPurchaseOrderLineForm canUpdate={canUpdate} />
 				</CardContent>
 			</Card>
 
@@ -236,24 +250,36 @@ export async function PurchasingShell({ surface }: PurchasingShellProps) {
 				<CardHeader>
 					<CardTitle>Post order</CardTitle>
 					<CardDescription>
-						Requires active party and line items; re-stamps then freezes
+						Requires active party and line items; freezes commercial totals and
 						snapshots.
 					</CardDescription>
 				</CardHeader>
 				<CardContent>
-					<PostPurchaseOrderForm canManage={canManage} />
+					<PostPurchaseOrderForm canPost={canPost} />
 				</CardContent>
 			</Card>
 
 			<Card>
 				<CardHeader>
-					<CardTitle>Cancel order</CardTitle>
+					<CardTitle>Cancel draft</CardTitle>
 					<CardDescription>
-						Cancel draft or posted orders with optimistic version check.
+						Draft only — posted orders use close instead.
 					</CardDescription>
 				</CardHeader>
 				<CardContent>
-					<CancelPurchaseOrderForm canManage={canManage} />
+					<CancelPurchaseOrderForm canCancel={canCancel} />
+				</CardContent>
+			</Card>
+
+			<Card>
+				<CardHeader>
+					<CardTitle>Close posted</CardTitle>
+					<CardDescription>
+						Terminates remaining commitment; partial fulfilment is allowed.
+					</CardDescription>
+				</CardHeader>
+				<CardContent>
+					<ClosePurchaseOrderForm canClose={canClose} />
 				</CardContent>
 			</Card>
 		</section>

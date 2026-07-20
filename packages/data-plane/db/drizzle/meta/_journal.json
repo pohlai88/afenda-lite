@@ -141,6 +141,27 @@
       "when": 1784565000000,
       "tag": "0019_accounting",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1784566000000,
+      "tag": "0020_sales_order_cancel_idempotency",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1784567000000,
+      "tag": "0021_purchase_order_idempotency",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1784568000000,
+      "tag": "0022_purchase_order_close_commercial",
+      "breakpoints": true
     }
   ]
 }

@@ -38,10 +38,21 @@ const createPurchaseOrderFormSchema = z.object({
 		.transform((value) =>
 			value === undefined || value === "" ? undefined : value,
 		),
+	currencyCode: z
+		.string()
+		.trim()
+		.length(3)
+		.transform((value) => value.toUpperCase()),
+	exchangeRate: z
+		.union([z.coerce.number().nonnegative(), z.literal("")])
+		.optional()
+		.transform((value) =>
+			value === undefined || value === "" ? undefined : String(value),
+		),
 });
 
 /**
- * Purchasing draft order create — session org stamp + `purchasing.manage`.
+ * Purchasing draft order create — session org stamp + `purchasing.order.create`.
  */
 export async function createPurchaseOrderAction(
 	_prev: CreatePurchaseOrderActionState,
@@ -49,7 +60,7 @@ export async function createPurchaseOrderAction(
 ): Promise<CreatePurchaseOrderActionState> {
 	return runOperatorPermissionAction({
 		path: "createPurchaseOrderAction",
-		permission: "purchasing.manage",
+		permission: "purchasing.order.create",
 		safeMessage:
 			"Could not create purchase order. Try again or contact an admin.",
 		execute: async (session, correlationId) => {
@@ -58,11 +69,13 @@ export async function createPurchaseOrderAction(
 				partyId: formData.get("partyId"),
 				paymentTermId: formData.get("paymentTermId") ?? undefined,
 				warehouseId: formData.get("warehouseId") ?? undefined,
+				currencyCode: formData.get("currencyCode"),
+				exchangeRate: formData.get("exchangeRate") ?? undefined,
 			});
 			if (!parsed.success) {
 				return actionFail(
 					"VALIDATION_ERROR",
-					"Enter a valid order code, party, and optional payment term or warehouse.",
+					"Enter a valid order code, party, currency, and optional commercial fields.",
 					parsed.details,
 				);
 			}
@@ -72,10 +85,13 @@ export async function createPurchaseOrderAction(
 					organizationId: session.orgId,
 					actorUserId: session.userId,
 					correlationId,
+					idempotencyKey: `create:${correlationId}`,
 					code: parsed.data.code,
 					partyId: parsed.data.partyId,
 					paymentTermId: parsed.data.paymentTermId,
 					warehouseId: parsed.data.warehouseId,
+					currencyCode: parsed.data.currencyCode,
+					exchangeRate: parsed.data.exchangeRate,
 				},
 				createPurchasingCommandOptions(),
 			);

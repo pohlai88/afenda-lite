@@ -12,7 +12,7 @@ export type ListPurchaseOrdersActionData = {
 };
 
 /**
- * Purchase order list — session org stamp + `purchasing.read`.
+ * Purchase order list — session org stamp + `purchasing.order.list`.
  */
 export async function listPurchaseOrdersAction(input?: {
 	page?: number;
@@ -21,14 +21,15 @@ export async function listPurchaseOrdersAction(input?: {
 }): Promise<ActionResult<ListPurchaseOrdersActionData>> {
 	return runOperatorPermissionAction({
 		path: "listPurchaseOrdersAction",
-		permission: "purchasing.read",
+		permission: "purchasing.order.list",
 		safeMessage:
 			"Could not list purchase orders. Try again or contact an admin.",
-		execute: async (session) => {
+		execute: async (session, correlationId) => {
 			const result = await listPurchaseOrders(
 				{
 					organizationId: session.orgId,
 					actorUserId: session.userId,
+					correlationId,
 					page: input?.page,
 					pageSize: input?.pageSize,
 					status: input?.status,

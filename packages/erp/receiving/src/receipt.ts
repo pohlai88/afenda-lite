@@ -20,6 +20,11 @@ import {
 } from "./module-ids";
 import { parseReceivingInput } from "./parse-input";
 import {
+	assertPurchaseOrderPostedForCreate,
+	assertPurchaseOrderReceivableForPost,
+	loadPurchaseOrderReceivingSnapshot,
+} from "./po-receiving-guard";
+import {
 	addGoodsReceiptLineInputSchema,
 	cancelGoodsReceiptInputSchema,
 	createDraftGoodsReceiptInputSchema,
@@ -45,7 +50,8 @@ export async function createDraftGoodsReceipt(
 		"Invalid goods receipt create input",
 	);
 	if (!parsed.ok) return parsed;
-	const { store, ports, masters, authorization } = resolveCommandDeps(options);
+	const { store, ports, masters, authorization, purchaseOrderReceivingQuery } =
+		resolveCommandDeps(options);
 	const authorized = await requireReceivingCommandPermission(authorization, {
 		organizationId: parsed.data.organizationId,
 		actorUserId: parsed.data.actorUserId,
@@ -65,6 +71,25 @@ export async function createDraftGoodsReceipt(
 	if (!warehouse.ok) return warehouse;
 	if (warehouse.data.status !== "active") {
 		return fail("CONFLICT", "Warehouse must be active");
+	}
+	if (parsed.data.sourceType === "purchase_order") {
+		const sourceId = parsed.data.sourceId;
+		if (sourceId === undefined) {
+			return fail(
+				"BAD_REQUEST",
+				"sourceId is required for purchase_order receipts",
+			);
+		}
+		const snapshot = await loadPurchaseOrderReceivingSnapshot(
+			purchaseOrderReceivingQuery,
+			{
+				organizationId: parsed.data.organizationId,
+				purchaseOrderId: sourceId,
+			},
+		);
+		if (!snapshot.ok) return snapshot;
+		const receivable = assertPurchaseOrderPostedForCreate(snapshot.data);
+		if (!receivable.ok) return receivable;
 	}
 	return store.createReceipt(
 		{
@@ -156,7 +181,8 @@ export async function postGoodsReceipt(
 		"Invalid goods receipt post input",
 	);
 	if (!parsed.ok) return parsed;
-	const { store, ports, masters, authorization } = resolveCommandDeps(options);
+	const { store, ports, masters, authorization, purchaseOrderReceivingQuery } =
+		resolveCommandDeps(options);
 	const authorized = await requireReceivingCommandPermission(authorization, {
 		organizationId: parsed.data.organizationId,
 		actorUserId: parsed.data.actorUserId,
@@ -175,6 +201,27 @@ export async function postGoodsReceipt(
 	}
 	if (receipt.data.lines.length === 0) {
 		return fail("CONFLICT", "Cannot post goods receipt without lines");
+	}
+	if (receipt.data.sourceType === "purchase_order") {
+		if (receipt.data.sourceId === null) {
+			return fail(
+				"CONFLICT",
+				"Purchase order source id is required to post purchase_order receipts",
+			);
+		}
+		const snapshot = await loadPurchaseOrderReceivingSnapshot(
+			purchaseOrderReceivingQuery,
+			{
+				organizationId: parsed.data.organizationId,
+				purchaseOrderId: receipt.data.sourceId,
+			},
+		);
+		if (!snapshot.ok) return snapshot;
+		const receivable = assertPurchaseOrderReceivableForPost(
+			snapshot.data,
+			receipt.data.lines,
+		);
+		if (!receivable.ok) return receivable;
 	}
 	const warehouse = requireMaster(
 		await masters.getWarehouseById(

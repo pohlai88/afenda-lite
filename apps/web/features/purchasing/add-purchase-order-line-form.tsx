@@ -21,21 +21,21 @@ import { actionFieldMessage } from "@/modules/platform/schemas/action-result";
 const initialState: AddPurchaseOrderLineActionState = null;
 
 type AddPurchaseOrderLineFormProps = {
-	canManage: boolean;
+	canUpdate: boolean;
 };
 
 /**
- * Add line to draft purchase order — CAPABLE when `purchasing.manage` is granted.
+ * Add line to draft purchase order — CAPABLE when `purchasing.order.update` is granted.
  */
 export function AddPurchaseOrderLineForm({
-	canManage,
+	canUpdate,
 }: AddPurchaseOrderLineFormProps) {
 	const [state, formAction, pending] = useActionState(
 		addPurchaseOrderLineAction,
 		initialState,
 	);
 
-	if (!canManage) {
+	if (!canUpdate) {
 		return (
 			<Alert role="status">
 				<AlertTitle>Add line unavailable</AlertTitle>
@@ -50,12 +50,14 @@ export function AddPurchaseOrderLineForm({
 	const orderError = actionFieldMessage(state, "orderId");
 	const itemError = actionFieldMessage(state, "itemId");
 	const qtyError = actionFieldMessage(state, "quantity");
+	const priceError = actionFieldMessage(state, "unitPrice");
 	const showFormError =
 		!pending &&
 		state?.ok === false &&
 		orderError === undefined &&
 		itemError === undefined &&
-		qtyError === undefined;
+		qtyError === undefined &&
+		priceError === undefined;
 
 	return (
 		<form
@@ -68,7 +70,8 @@ export function AddPurchaseOrderLineForm({
 					<AlertTitle>Line added</AlertTitle>
 					<AlertDescription>
 						Line {state.data.line.lineNo} · {state.data.line.itemCode} ×{" "}
-						{state.data.line.quantity} {state.data.line.baseUomCode}.
+						{state.data.line.quantity} {state.data.line.baseUomCode} @{" "}
+						{state.data.line.unitPrice} = {state.data.line.lineAmount}.
 					</AlertDescription>
 				</Alert>
 			) : null}
@@ -116,6 +119,46 @@ export function AddPurchaseOrderLineForm({
 					step="any"
 					min="0.000001"
 					required
+					disabled={pending}
+				/>
+			</FormField>
+			<FormField
+				label="Unit price"
+				required
+				fieldId="purchase-line-price"
+				error={priceError}
+			>
+				<Input
+					id="purchase-line-price"
+					name="unitPrice"
+					type="number"
+					step="any"
+					min="0"
+					required
+					disabled={pending}
+				/>
+			</FormField>
+			<FormField
+				label="Discount amount (optional)"
+				fieldId="purchase-line-discount"
+			>
+				<Input
+					id="purchase-line-discount"
+					name="discountAmount"
+					type="number"
+					step="any"
+					min="0"
+					disabled={pending}
+				/>
+			</FormField>
+			<FormField
+				label="Tax classification (optional)"
+				fieldId="purchase-line-tax"
+			>
+				<Input
+					id="purchase-line-tax"
+					name="taxClassification"
+					autoComplete="off"
 					disabled={pending}
 				/>
 			</FormField>

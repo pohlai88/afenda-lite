@@ -16,10 +16,14 @@ export type OrderCreateRecord = {
 	partyName: string;
 	paymentTermId: string | null;
 	paymentTermCode: string | null;
+	paymentTermName: string | null;
 	netDays: number | null;
 	warehouseId: string | null;
 	warehouseCode: string | null;
 	warehouseName: string | null;
+	currencyCode: string;
+	exchangeRate: string | null;
+	createIdempotencyKey: string;
 	createdBy: string;
 };
 
@@ -32,6 +36,15 @@ export type OrderLineCreateRecord = {
 	baseUomId: string;
 	baseUomCode: string;
 	quantity: string;
+	unitPrice: string;
+	discountAmount: string;
+	taxClassification: string | null;
+	lineAmount: string;
+	overReceiptPercent: string;
+	underReceiptPercent: string;
+	invoiceQuantityTolerancePercent: string;
+	invoicePriceTolerancePercent: string;
+	lineIdempotencyKey: string;
 	createdBy: string;
 };
 
@@ -40,20 +53,30 @@ export type OrderPostRecord = {
 	orderId: string;
 	expectedVersion: number;
 	actorUserId: string;
+	postIdempotencyKey: string;
 	partyCode: string;
 	partyName: string;
 	paymentTermId: string | null;
 	paymentTermCode: string | null;
+	paymentTermName: string | null;
 	netDays: number | null;
 	warehouseId: string | null;
 	warehouseCode: string | null;
 	warehouseName: string | null;
+	subtotalAmount: string;
+	discountTotal: string;
+	taxTotal: string;
+	documentTotal: string;
 	lineSnapshots: Array<{
 		lineId: string;
 		itemCode: string;
 		itemName: string;
 		baseUomId: string;
 		baseUomCode: string;
+		unitPrice: string;
+		discountAmount: string;
+		taxClassification: string | null;
+		lineAmount: string;
 	}>;
 };
 
@@ -62,6 +85,15 @@ export type OrderCancelRecord = {
 	orderId: string;
 	expectedVersion: number;
 	actorUserId: string;
+	cancelIdempotencyKey: string;
+};
+
+export type OrderCloseRecord = {
+	organizationId: string;
+	orderId: string;
+	expectedVersion: number;
+	actorUserId: string;
+	closeIdempotencyKey: string;
 };
 
 export type OrderListFilter = {
@@ -71,6 +103,11 @@ export type OrderListFilter = {
 	status?: PurchaseOrderStatus;
 };
 
+/**
+ * Atomic mutation boundary for Purchasing — both Memory and Drizzle adapters commit
+ * aggregate mutation + audit fact + outbox event as one unit of work.
+ * Memory uses injectable MutationPorts; Drizzle embeds equivalent SQL in one TX.
+ */
 export type PurchasingStore = {
 	createOrder(
 		record: OrderCreateRecord,
@@ -92,9 +129,18 @@ export type PurchasingStore = {
 		ports: MutationPorts,
 		meta: { correlationId: string },
 	): Promise<Result<PurchaseOrder>>;
+	closeOrder(
+		record: OrderCloseRecord,
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<PurchaseOrder>>;
 	getOrderById(
 		organizationId: string,
 		id: string,
+	): Promise<Result<PurchaseOrder | null>>;
+	getOrderByCreateIdempotencyKey(
+		organizationId: string,
+		createIdempotencyKey: string,
 	): Promise<Result<PurchaseOrder | null>>;
 	listOrders(filter: OrderListFilter): Promise<Result<PurchaseOrder[]>>;
 };

@@ -21,19 +21,20 @@ import { actionFieldMessage } from "@/modules/platform/schemas/action-result";
 const initialState: PostSalesOrderActionState = null;
 
 type PostSalesOrderFormProps = {
-	canManage: boolean;
+	canPost: boolean;
 };
 
 /**
  * Post draft sales order — freezes party/item/payment snapshots.
+ * CAPABLE when `sales.order.post` is granted.
  */
-export function PostSalesOrderForm({ canManage }: PostSalesOrderFormProps) {
+export function PostSalesOrderForm({ canPost }: PostSalesOrderFormProps) {
 	const [state, formAction, pending] = useActionState(
 		postSalesOrderAction,
 		initialState,
 	);
 
-	if (!canManage) {
+	if (!canPost) {
 		return (
 			<Alert role="status">
 				<AlertTitle>Post unavailable</AlertTitle>
@@ -63,6 +64,8 @@ export function PostSalesOrderForm({ canManage }: PostSalesOrderFormProps) {
 					<AlertTitle>Order posted</AlertTitle>
 					<AlertDescription>
 						{state.data.order.code} · party {state.data.order.partyCode} ·{" "}
+						{state.data.order.currencyCode}{" "}
+						{state.data.order.documentTotal ?? "0"} ·{" "}
 						{state.data.order.lines.length} line(s) frozen.
 					</AlertDescription>
 				</Alert>
@@ -96,6 +99,16 @@ export function PostSalesOrderForm({ canManage }: PostSalesOrderFormProps) {
 					type="number"
 					min="1"
 					required
+					disabled={pending}
+				/>
+			</FormField>
+			<FormField label="Tax total (optional)" fieldId="sales-post-tax">
+				<Input
+					id="sales-post-tax"
+					name="taxTotal"
+					type="number"
+					step="any"
+					min="0"
 					disabled={pending}
 				/>
 			</FormField>

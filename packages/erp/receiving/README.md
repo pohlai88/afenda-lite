@@ -8,13 +8,15 @@ Import the public commands from `@afenda/receiving`: `createDraftGoodsReceipt`, 
 
 Every mutation requires `organizationId`, `actorUserId`, and `correlationId`. Purchase-order receipts require `sourceId`. Warehouse and item references resolve through `MasterLookupPort` and must be active. Posting and cancellation require `expectedVersion`.
 
+`purchase_order` source create/post require an injected `PurchaseOrderReceivingQueryPort` (apps/web SQL adapter; Vitest memory helper). Create and post reject non-posted / missing / cross-org POs; post also enforces line qty against remaining plus over-receipt tolerance.
+
 Living consumers are `apps/web` server adapters when wired by the composition root.
 
 ## Inventory boundary
 
 Receiving never writes inventory or `stock_*` tables. `postGoodsReceipt` atomically updates the receipt, writes its audit fact, and emits `receiving.receipt.posted.v1`. Inventory movement is an event-driven composition-root responsibility.
 
-Optional purchasing and inventory integration is events-only; this package imports neither package.
+Optional purchasing and inventory integration is events-only / Receiving-owned query ports at the composition root; this package imports neither `@afenda/purchasing` nor inventory.
 
 ## Events
 

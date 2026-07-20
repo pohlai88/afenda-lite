@@ -55,4 +55,9 @@ export type MasterLookupPort = {
 		actorUserId: string,
 	): Promise<Result<PaymentTerm | null>>;
 	getRefUomById(id: string): Promise<Result<RefUom | null>>;
+	hasActiveCustomerRole(
+		organizationId: string,
+		partyId: string,
+		actorUserId: string,
+	): Promise<Result<boolean>>;
 };

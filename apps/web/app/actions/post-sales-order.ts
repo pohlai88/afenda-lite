@@ -1,6 +1,6 @@
 "use server";
 
-import { postOrder, type SalesOrder } from "@afenda/sales";
+import { postSalesOrder, type SalesOrder } from "@afenda/sales";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
@@ -23,10 +23,16 @@ export type PostSalesOrderActionState =
 const postSalesOrderFormSchema = z.object({
 	orderId: z.string().uuid(),
 	expectedVersion: z.coerce.number().int().positive(),
+	taxTotal: z
+		.union([z.coerce.number().nonnegative(), z.literal("")])
+		.optional()
+		.transform((value) =>
+			value === undefined || value === "" ? undefined : String(value),
+		),
 });
 
 /**
- * Sales order post — freeze snapshots + `sales.manage`.
+ * Sales order post — freeze snapshots + `sales.order.post`.
  */
 export async function postSalesOrderAction(
 	_prev: PostSalesOrderActionState,
@@ -34,28 +40,31 @@ export async function postSalesOrderAction(
 ): Promise<PostSalesOrderActionState> {
 	return runOperatorPermissionAction({
 		path: "postSalesOrderAction",
-		permission: "sales.manage",
+		permission: "sales.order.post",
 		safeMessage: "Could not post sales order. Try again or contact an admin.",
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(postSalesOrderFormSchema, {
 				orderId: formData.get("orderId"),
 				expectedVersion: formData.get("expectedVersion"),
+				taxTotal: formData.get("taxTotal") ?? undefined,
 			});
 			if (!parsed.success) {
 				return actionFail(
 					"VALIDATION_ERROR",
-					"Enter a valid order and expected version.",
+					"Enter a valid order, expected version, and optional tax total.",
 					parsed.details,
 				);
 			}
 
-			const result = await postOrder(
+			const result = await postSalesOrder(
 				{
 					organizationId: session.orgId,
 					actorUserId: session.userId,
 					correlationId,
+					idempotencyKey: `post:${correlationId}:${parsed.data.orderId}`,
 					orderId: parsed.data.orderId,
 					expectedVersion: parsed.data.expectedVersion,
+					taxTotal: parsed.data.taxTotal,
 				},
 				createSalesCommandOptions(),
 			);

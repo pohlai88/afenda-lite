@@ -177,10 +177,10 @@ queries:
     permission: payments.read
   - id: purchasing.order.get
     moduleId: purchasing
-    permission: purchasing.read
+    permission: purchasing.order.read
   - id: purchasing.order.list
     moduleId: purchasing
-    permission: purchasing.read
+    permission: purchasing.order.list
   - id: receivables.invoice.get
     moduleId: receivables
     permission: receivables.read
@@ -198,9 +198,9 @@ queries:
     permission: receiving.read
   - id: sales.order.get
     moduleId: sales
-    permission: sales.read
+    permission: sales.order.read
   - id: sales.order.list
     moduleId: sales
-    permission: sales.read
+    permission: sales.order.list
 source: on-disk-module-manifests
 version: phase-2/2026-07-20

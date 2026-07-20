@@ -260,6 +260,9 @@ events:
     id: purchasing.order.cancelled.v1
     moduleId: purchasing
   - direction: emits
+    id: purchasing.order.closed.v1
+    moduleId: purchasing
+  - direction: emits
     id: receivables.invoice.posted.v1
     moduleId: receivables
   - direction: emits
@@ -288,6 +291,9 @@ events:
     moduleId: sales
   - direction: emits
     id: sales.order.posted.v1
+    moduleId: sales
+  - direction: emits
+    id: sales.order.cancelled.v1
     moduleId: sales
 source: on-disk-module-manifests
 version: phase-2/2026-07-20

@@ -29,6 +29,10 @@ export type {
 	MutationPorts,
 	OutboxFactInput,
 	OutboxPort,
+	PurchaseOrderReceivingLineSnapshot,
+	PurchaseOrderReceivingQueryPort,
+	PurchaseOrderReceivingSnapshot,
+	PurchaseOrderReceivingStatus,
 } from "./ports";
 export { createProductionMutationPorts } from "./production-ports";
 export {

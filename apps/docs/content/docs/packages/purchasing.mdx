@@ -55,7 +55,7 @@ if (!order.ok) {
 
 Pass request-scoped `organizationId`, `actorUserId`, and `correlationId` on every mutation. Party must have an active supplier role; item / payment-term / warehouse refs must be same-org masters; post freezes commercial snapshots.
 
-**Event types:** `purchasing.order.created.v1` · `purchasing.order.line_added.v1` · `purchasing.order.posted.v1` · `purchasing.order.cancelled.v1` (catalog in `@afenda/events`).
+**Event types:** `purchasing.order.created.v1` · `purchasing.order.line_added.v1` · `purchasing.order.posted.v1` · `purchasing.order.cancelled.v1` · `purchasing.order.closed.v1` (catalog in `@afenda/events`).
 
 **Living consumers:** `apps/web` thin Actions + `features/purchasing/*` + `/admin/purchasing` · `/client/purchasing` (composition-root authorization ports). Pass `correlationId` from the Action boundary on every mutation.
 
@@ -89,7 +89,7 @@ rg "sales_customer|purchase_supplier|inventory_product|finance_vendor" packages 
 
 | Path | Role |
 |------|------|
-| `@afenda/purchasing` | Commands (`createDraftPurchaseOrder` · `addPurchaseOrderLine` · `postPurchaseOrder` · `cancelPurchaseOrder` · `getPurchaseOrderById` · `listPurchaseOrders`) · brands · Zod input schemas · `PurchasingStore` · Drizzle/memory stores · master lookup · production ports · status/types |
+| `@afenda/purchasing` | Commands (`createDraftPurchaseOrder` · `addPurchaseOrderLine` · `postPurchaseOrder` · `cancelPurchaseOrder` · `closePurchaseOrder` · `getPurchaseOrderById` · `listPurchaseOrders`) · brands · Zod input schemas · `PurchasingStore` · commitment port types · metrics name constants · status/types |
 
 Never re-exports raw Drizzle tables or `db` / `eq`.
 
@@ -115,7 +115,7 @@ Never re-exports raw Drizzle tables or `db` / `eq`.
 | Optimistic concurrency | `post` / `cancel` require matching `expectedVersion` |
 | Migration | Apply `@afenda/db` journal tag `0012_purchase_order` via package migrate (allow-guarded) |
 | Rollback / repair | Posted/cancelled rows are not hard-deleted; cancel is the explicit transition; repair via compensating cancel or data-lane SQL under Ops |
-| Permissions | Seed `purchasing.read` / `purchasing.manage` via `pnpm --filter @afenda/db db:ensure-permission-catalog` |
+| Permissions | Seed `purchasing.order.*` via `pnpm --filter @afenda/db db:ensure-permission-catalog` |
 | Verify | `pnpm --filter @afenda/purchasing check` · `pnpm validate:modules` · `pnpm --filter @afenda/web test -- product-authorization-wiring` |
 | Lifecycle note | Plan lifecycle includes `closed`; v1 public surface implements `draft \| posted \| cancelled` only (no `closePurchaseOrder` yet) |
 | Metrics / dedicated runbook | Same baseline as `@afenda/sales` — structured correlation + Result codes; dedicated mutation metrics dashboards / Ops runbook not package-local yet |

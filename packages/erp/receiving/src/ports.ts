@@ -43,3 +43,36 @@ export type MasterLookupPort = {
 		actorUserId: string,
 	): Promise<Result<Warehouse | null>>;
 };
+
+/**
+ * Receiving-owned PO snapshot for create/post guards.
+ * Adapters live in apps/web — package must NOT import @afenda/purchasing.
+ */
+export type PurchaseOrderReceivingLineSnapshot = {
+	purchaseOrderLineId: string;
+	ordered: string;
+	/** Sum from posted|closed goods receipts for this PO line. */
+	received: string;
+	/** max(0, ordered - received) */
+	remaining: string;
+	overReceiptTolerancePercent: string;
+};
+
+export type PurchaseOrderReceivingStatus =
+	| "draft"
+	| "posted"
+	| "cancelled"
+	| "closed";
+
+export type PurchaseOrderReceivingSnapshot = {
+	status: PurchaseOrderReceivingStatus;
+	version: number;
+	lines: PurchaseOrderReceivingLineSnapshot[];
+};
+
+export type PurchaseOrderReceivingQueryPort = {
+	getReceivingSnapshot(input: {
+		organizationId: string;
+		purchaseOrderId: string;
+	}): Promise<Result<PurchaseOrderReceivingSnapshot | null>>;
+};

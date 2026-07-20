@@ -63,11 +63,12 @@ UI mutation adapters only. Contract: `ActionResult<T>` (`ok: true | false`) — 
 | `rebuild-master-data-search.ts` | `rebuildMasterDataSearchAction` | master-data | Rebuild search from SSOT (`master_data.manage`) |
 | `validate-master-data-import.ts` | `validateMasterDataImportAction` | master-data | Dry-run party import reconcile (`master_data.manage`) |
 | `apply-master-data-import.ts` | `applyMasterDataImportAction` | master-data | Apply bounded party upsert-by-code (`master_data.import_approve`) |
-| `list-sales-orders.ts` | `listSalesOrdersAction` | sales | List sales orders (`sales.read`) |
-| `get-sales-order.ts` | `getSalesOrderAction` | sales | Get sales order (`sales.read`) |
-| `create-sales-order.ts` | `createSalesOrderAction` | sales | Create draft order (`sales.manage`) |
-| `add-sales-order-line.ts` | `addSalesOrderLineAction` | sales | Add order line (`sales.manage`) |
-| `post-sales-order.ts` | `postSalesOrderAction` | sales | Post order / freeze snapshots (`sales.manage`) |
+| `list-sales-orders.ts` | `listSalesOrdersAction` | sales | List sales orders (`sales.order.list`) |
+| `get-sales-order.ts` | `getSalesOrderAction` | sales | Get sales order (`sales.order.read`) |
+| `create-sales-order.ts` | `createSalesOrderAction` | sales | Create draft order (`sales.order.create`) |
+| `add-sales-order-line.ts` | `addSalesOrderLineAction` | sales | Add order line (`sales.order.update`) |
+| `post-sales-order.ts` | `postSalesOrderAction` | sales | Post order / freeze snapshots (`sales.order.post`) |
+| `cancel-sales-order.ts` | `cancelSalesOrderAction` | sales | Cancel draft or posted order (`sales.order.cancel`) |
 | `list-my-notifications.ts` | `listMyNotificationsAction` | notifications | List IN_APP inbox |
 | `get-unread-notification-count.ts` | `getUnreadNotificationCountAction` | notifications | Unread count |
 | `mark-notification-read.ts` | `markNotificationReadAction` | notifications | Mark one read |

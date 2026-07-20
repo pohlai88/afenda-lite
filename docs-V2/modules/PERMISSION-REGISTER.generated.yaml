@@ -43,10 +43,25 @@ permissions:
   - code: payments.manage
     moduleId: payments
     namespace: payments
-  - code: purchasing.read
+  - code: purchasing.order.create
     moduleId: purchasing
     namespace: purchasing
-  - code: purchasing.manage
+  - code: purchasing.order.update
+    moduleId: purchasing
+    namespace: purchasing
+  - code: purchasing.order.post
+    moduleId: purchasing
+    namespace: purchasing
+  - code: purchasing.order.cancel
+    moduleId: purchasing
+    namespace: purchasing
+  - code: purchasing.order.close
+    moduleId: purchasing
+    namespace: purchasing
+  - code: purchasing.order.read
+    moduleId: purchasing
+    namespace: purchasing
+  - code: purchasing.order.list
     moduleId: purchasing
     namespace: purchasing
   - code: receivables.read
@@ -61,10 +76,22 @@ permissions:
   - code: receiving.manage
     moduleId: receiving
     namespace: receiving
-  - code: sales.read
+  - code: sales.order.create
     moduleId: sales
     namespace: sales
-  - code: sales.manage
+  - code: sales.order.update
+    moduleId: sales
+    namespace: sales
+  - code: sales.order.post
+    moduleId: sales
+    namespace: sales
+  - code: sales.order.cancel
+    moduleId: sales
+    namespace: sales
+  - code: sales.order.read
+    moduleId: sales
+    namespace: sales
+  - code: sales.order.list
     moduleId: sales
     namespace: sales
 source: on-disk-module-manifests

@@ -26,7 +26,7 @@ const cancelPurchaseOrderFormSchema = z.object({
 });
 
 /**
- * Purchase order cancel — optimistic version + `purchasing.manage`.
+ * Purchase order cancel (draft only) — optimistic version + `purchasing.order.cancel`.
  */
 export async function cancelPurchaseOrderAction(
 	_prev: CancelPurchaseOrderActionState,
@@ -34,7 +34,7 @@ export async function cancelPurchaseOrderAction(
 ): Promise<CancelPurchaseOrderActionState> {
 	return runOperatorPermissionAction({
 		path: "cancelPurchaseOrderAction",
-		permission: "purchasing.manage",
+		permission: "purchasing.order.cancel",
 		safeMessage:
 			"Could not cancel purchase order. Try again or contact an admin.",
 		execute: async (session, correlationId) => {
@@ -55,6 +55,7 @@ export async function cancelPurchaseOrderAction(
 					organizationId: session.orgId,
 					actorUserId: session.userId,
 					correlationId,
+					idempotencyKey: `cancel:${correlationId}:${parsed.data.orderId}`,
 					orderId: parsed.data.orderId,
 					expectedVersion: parsed.data.expectedVersion,
 				},

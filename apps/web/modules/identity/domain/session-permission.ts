@@ -28,10 +28,26 @@ export const PERMISSION_DENIED_MESSAGE = {
 		"You do not have permission to approve master-data change requests.",
 	"master_data.import_approve":
 		"You do not have permission to approve and apply master-data import.",
-	"sales.read": "You do not have permission to read sales orders.",
-	"sales.manage": "You do not have permission to manage sales orders.",
-	"purchasing.read": "You do not have permission to read purchase orders.",
-	"purchasing.manage": "You do not have permission to manage purchase orders.",
+	"sales.order.create": "You do not have permission to create sales orders.",
+	"sales.order.update": "You do not have permission to update sales orders.",
+	"sales.order.post": "You do not have permission to post sales orders.",
+	"sales.order.cancel": "You do not have permission to cancel sales orders.",
+	"sales.order.read": "You do not have permission to read sales orders.",
+	"sales.order.list": "You do not have permission to list sales orders.",
+	"purchasing.order.create":
+		"You do not have permission to create purchase orders.",
+	"purchasing.order.update":
+		"You do not have permission to update purchase orders.",
+	"purchasing.order.post":
+		"You do not have permission to post purchase orders.",
+	"purchasing.order.cancel":
+		"You do not have permission to cancel purchase orders.",
+	"purchasing.order.close":
+		"You do not have permission to close purchase orders.",
+	"purchasing.order.read":
+		"You do not have permission to read purchase orders.",
+	"purchasing.order.list":
+		"You do not have permission to list purchase orders.",
 	"inventory.read":
 		"You do not have permission to read stock movements and availability.",
 	"inventory.manage":

@@ -3,11 +3,13 @@
 export const SALES_COMMAND_CREATE = "sales.order.create" as const;
 export const SALES_COMMAND_LINE_ADD = "sales.order.line.add" as const;
 export const SALES_COMMAND_POST = "sales.order.post" as const;
+export const SALES_COMMAND_CANCEL = "sales.order.cancel" as const;
 
 export const SALES_COMMAND_IDS = [
 	SALES_COMMAND_CREATE,
 	SALES_COMMAND_LINE_ADD,
 	SALES_COMMAND_POST,
+	SALES_COMMAND_CANCEL,
 ] as const;
 
 export type SalesCommandId = (typeof SALES_COMMAND_IDS)[number];

@@ -2,9 +2,22 @@ import { randomUUID } from "node:crypto";
 
 import { fail, ok, type Result } from "@afenda/errors/result";
 
+import {
+	PURCHASING_ERROR_CODE_CONFLICT,
+	PURCHASING_ERROR_ORDER_ALREADY_CANCELLED,
+	PURCHASING_ERROR_ORDER_ALREADY_CLOSED,
+	PURCHASING_ERROR_ORDER_ALREADY_POSTED,
+	PURCHASING_ERROR_ORDER_EMPTY_LINES,
+	PURCHASING_ERROR_ORDER_NOT_DRAFT,
+	PURCHASING_ERROR_ORDER_NOT_FOUND,
+	PURCHASING_ERROR_ORDER_NOT_POSTED,
+	PURCHASING_ERROR_ORDER_VERSION_CONFLICT,
+	purchasingErrorDetails,
+} from "./error-codes";
 import type { MutationPorts } from "./ports";
 import type {
 	OrderCancelRecord,
+	OrderCloseRecord,
 	OrderCreateRecord,
 	OrderLineCreateRecord,
 	OrderListFilter,
@@ -37,9 +50,19 @@ export class MemoryPurchasingStore implements PurchasingStore {
 		for (const existing of this.orders.values()) {
 			if (
 				existing.organizationId === record.organizationId &&
+				existing.createIdempotencyKey === record.createIdempotencyKey
+			) {
+				return ok(cloneOrder(existing));
+			}
+			if (
+				existing.organizationId === record.organizationId &&
 				existing.normalizedCode === record.normalizedCode
 			) {
-				return fail("CONFLICT", "Purchase order code already exists");
+				return fail(
+					"CONFLICT",
+					"Purchase order code already exists",
+					purchasingErrorDetails(PURCHASING_ERROR_CODE_CONFLICT),
+				);
 			}
 		}
 		const now = new Date();
@@ -54,10 +77,21 @@ export class MemoryPurchasingStore implements PurchasingStore {
 			partyName: record.partyName,
 			paymentTermId: record.paymentTermId,
 			paymentTermCode: record.paymentTermCode,
+			paymentTermName: record.paymentTermName,
 			netDays: record.netDays,
 			warehouseId: record.warehouseId,
 			warehouseCode: record.warehouseCode,
 			warehouseName: record.warehouseName,
+			currencyCode: record.currencyCode,
+			exchangeRate: record.exchangeRate,
+			subtotalAmount: null,
+			discountTotal: null,
+			taxTotal: null,
+			documentTotal: null,
+			createIdempotencyKey: record.createIdempotencyKey,
+			postIdempotencyKey: null,
+			cancelIdempotencyKey: null,
+			closeIdempotencyKey: null,
 			version: 1,
 			createdBy: record.createdBy,
 			updatedBy: record.createdBy,
@@ -65,6 +99,8 @@ export class MemoryPurchasingStore implements PurchasingStore {
 			postedBy: null,
 			cancelledAt: null,
 			cancelledBy: null,
+			closedAt: null,
+			closedBy: null,
 			createdAt: now,
 			updatedAt: now,
 			lines: [],
@@ -114,25 +150,46 @@ export class MemoryPurchasingStore implements PurchasingStore {
 	): Promise<Result<PurchaseOrderLine>> {
 		const order = this.orders.get(record.orderId);
 		if (order === undefined || order.organizationId !== record.organizationId) {
-			return fail("NOT_FOUND", "Purchase order not found");
+			return fail(
+				"NOT_FOUND",
+				"Purchase order not found",
+				purchasingErrorDetails(PURCHASING_ERROR_ORDER_NOT_FOUND),
+			);
+		}
+		const replay = order.lines.find(
+			(line) => line.lineIdempotencyKey === record.lineIdempotencyKey,
+		);
+		if (replay !== undefined) {
+			return ok({ ...replay });
 		}
 		if (order.status !== "draft") {
-			return fail("CONFLICT", "Cannot add lines to a non-draft purchase order");
+			return fail(
+				"CONFLICT",
+				"Cannot add lines to a posted, cancelled, or closed order",
+				purchasingErrorDetails(PURCHASING_ERROR_ORDER_NOT_DRAFT),
+			);
 		}
 		const now = new Date();
-		const lineNo =
-			order.lines.reduce((max, line) => Math.max(max, line.lineNo), 0) + 1;
 		const line: PurchaseOrderLine = {
 			id: randomUUID(),
 			organizationId: record.organizationId,
 			orderId: record.orderId,
-			lineNo,
+			lineNo: order.lines.length + 1,
 			itemId: record.itemId,
 			itemCode: record.itemCode,
 			itemName: record.itemName,
 			baseUomId: record.baseUomId,
 			baseUomCode: record.baseUomCode,
 			quantity: record.quantity,
+			unitPrice: record.unitPrice,
+			discountAmount: record.discountAmount,
+			taxClassification: record.taxClassification,
+			lineAmount: record.lineAmount,
+			overReceiptPercent: record.overReceiptPercent,
+			underReceiptPercent: record.underReceiptPercent,
+			invoiceQuantityTolerancePercent: record.invoiceQuantityTolerancePercent,
+			invoicePriceTolerancePercent: record.invoicePriceTolerancePercent,
+			lineIdempotencyKey: record.lineIdempotencyKey,
 			version: 1,
 			createdBy: record.createdBy,
 			updatedBy: record.createdBy,
@@ -140,9 +197,9 @@ export class MemoryPurchasingStore implements PurchasingStore {
 			updatedAt: now,
 		};
 		order.lines.push(line);
-		order.version += 1;
-		order.updatedBy = record.createdBy;
 		order.updatedAt = now;
+		order.updatedBy = record.createdBy;
+		order.version += 1;
 
 		const audit = await ports.audit.record({
 			organizationId: order.organizationId,
@@ -152,12 +209,12 @@ export class MemoryPurchasingStore implements PurchasingStore {
 			entityId: line.id,
 			action: "CREATE",
 			changes: [
-				{ field: "item_code", oldValue: null, newValue: line.itemCode },
+				{ field: "itemId", oldValue: null, newValue: line.itemId },
+				{ field: "quantity", oldValue: null, newValue: line.quantity },
 			],
 			newValue: {
 				orderId: line.orderId,
-				lineNo: line.lineNo,
-				itemCode: line.itemCode,
+				itemId: line.itemId,
 				quantity: line.quantity,
 			},
 		});
@@ -175,12 +232,12 @@ export class MemoryPurchasingStore implements PurchasingStore {
 				organizationId: order.organizationId,
 				entityType: "purchase_order_line",
 				entityId: line.id,
+				orderId: order.id,
+				lineNo: line.lineNo,
 				code: order.code,
 				version: line.version,
 				actorId: record.createdBy,
 				correlationId: meta.correlationId,
-				orderId: order.id,
-				lineNo: line.lineNo,
 			},
 		});
 		if (!outbox.ok) {
@@ -198,16 +255,42 @@ export class MemoryPurchasingStore implements PurchasingStore {
 	): Promise<Result<PurchaseOrder>> {
 		const order = this.orders.get(record.orderId);
 		if (order === undefined || order.organizationId !== record.organizationId) {
-			return fail("NOT_FOUND", "Purchase order not found");
+			return fail(
+				"NOT_FOUND",
+				"Purchase order not found",
+				purchasingErrorDetails(PURCHASING_ERROR_ORDER_NOT_FOUND),
+			);
+		}
+		if (order.status === "posted") {
+			if (order.postIdempotencyKey === record.postIdempotencyKey) {
+				return ok(cloneOrder(order));
+			}
+			return fail(
+				"CONFLICT",
+				"Purchase order is already posted",
+				purchasingErrorDetails(PURCHASING_ERROR_ORDER_ALREADY_POSTED),
+			);
 		}
 		if (order.status !== "draft") {
-			return fail("CONFLICT", "Purchase order is not in draft status");
+			return fail(
+				"CONFLICT",
+				"Purchase order cannot be posted",
+				purchasingErrorDetails(PURCHASING_ERROR_ORDER_NOT_DRAFT),
+			);
 		}
 		if (order.version !== record.expectedVersion) {
-			return fail("CONFLICT", "Purchase order version conflict");
+			return fail(
+				"CONFLICT",
+				"Purchase order version conflict",
+				purchasingErrorDetails(PURCHASING_ERROR_ORDER_VERSION_CONFLICT),
+			);
 		}
 		if (order.lines.length === 0) {
-			return fail("CONFLICT", "Cannot post purchase order without lines");
+			return fail(
+				"CONFLICT",
+				"Cannot post purchase order without lines",
+				purchasingErrorDetails(PURCHASING_ERROR_ORDER_EMPTY_LINES),
+			);
 		}
 		const now = new Date();
 		const previous = cloneOrder(order);
@@ -215,10 +298,16 @@ export class MemoryPurchasingStore implements PurchasingStore {
 		order.partyName = record.partyName;
 		order.paymentTermId = record.paymentTermId;
 		order.paymentTermCode = record.paymentTermCode;
+		order.paymentTermName = record.paymentTermName;
 		order.netDays = record.netDays;
 		order.warehouseId = record.warehouseId;
 		order.warehouseCode = record.warehouseCode;
 		order.warehouseName = record.warehouseName;
+		order.subtotalAmount = record.subtotalAmount;
+		order.discountTotal = record.discountTotal;
+		order.taxTotal = record.taxTotal;
+		order.documentTotal = record.documentTotal;
+		order.postIdempotencyKey = record.postIdempotencyKey;
 		for (const snap of record.lineSnapshots) {
 			const line = order.lines.find((row) => row.id === snap.lineId);
 			if (line === undefined) {
@@ -228,6 +317,10 @@ export class MemoryPurchasingStore implements PurchasingStore {
 			line.itemName = snap.itemName;
 			line.baseUomId = snap.baseUomId;
 			line.baseUomCode = snap.baseUomCode;
+			line.unitPrice = snap.unitPrice;
+			line.discountAmount = snap.discountAmount;
+			line.taxClassification = snap.taxClassification;
+			line.lineAmount = snap.lineAmount;
 			line.updatedAt = now;
 			line.updatedBy = record.actorUserId;
 			line.version += 1;
@@ -283,22 +376,42 @@ export class MemoryPurchasingStore implements PurchasingStore {
 	): Promise<Result<PurchaseOrder>> {
 		const order = this.orders.get(record.orderId);
 		if (order === undefined || order.organizationId !== record.organizationId) {
-			return fail("NOT_FOUND", "Purchase order not found");
+			return fail(
+				"NOT_FOUND",
+				"Purchase order not found",
+				purchasingErrorDetails(PURCHASING_ERROR_ORDER_NOT_FOUND),
+			);
 		}
 		if (order.status === "cancelled") {
-			return fail("CONFLICT", "Purchase order is already cancelled");
+			if (order.cancelIdempotencyKey === record.cancelIdempotencyKey) {
+				return ok(cloneOrder(order));
+			}
+			return fail(
+				"CONFLICT",
+				"Purchase order is already cancelled",
+				purchasingErrorDetails(PURCHASING_ERROR_ORDER_ALREADY_CANCELLED),
+			);
 		}
-		if (order.status !== "draft" && order.status !== "posted") {
-			return fail("CONFLICT", "Purchase order cannot be cancelled");
+		if (order.status !== "draft") {
+			return fail(
+				"CONFLICT",
+				"Only draft purchase orders can be cancelled",
+				purchasingErrorDetails(PURCHASING_ERROR_ORDER_NOT_DRAFT),
+			);
 		}
 		if (order.version !== record.expectedVersion) {
-			return fail("CONFLICT", "Purchase order version conflict");
+			return fail(
+				"CONFLICT",
+				"Purchase order version conflict",
+				purchasingErrorDetails(PURCHASING_ERROR_ORDER_VERSION_CONFLICT),
+			);
 		}
 		const now = new Date();
 		const previous = cloneOrder(order);
 		order.status = "cancelled";
 		order.cancelledAt = now;
 		order.cancelledBy = record.actorUserId;
+		order.cancelIdempotencyKey = record.cancelIdempotencyKey;
 		order.updatedBy = record.actorUserId;
 		order.updatedAt = now;
 		order.version += 1;
@@ -346,6 +459,96 @@ export class MemoryPurchasingStore implements PurchasingStore {
 		return ok(cloneOrder(order));
 	}
 
+	async closeOrder(
+		record: OrderCloseRecord,
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<PurchaseOrder>> {
+		const order = this.orders.get(record.orderId);
+		if (order === undefined || order.organizationId !== record.organizationId) {
+			return fail(
+				"NOT_FOUND",
+				"Purchase order not found",
+				purchasingErrorDetails(PURCHASING_ERROR_ORDER_NOT_FOUND),
+			);
+		}
+		if (order.status === "closed") {
+			if (order.closeIdempotencyKey === record.closeIdempotencyKey) {
+				return ok(cloneOrder(order));
+			}
+			return fail(
+				"CONFLICT",
+				"Purchase order is already closed",
+				purchasingErrorDetails(PURCHASING_ERROR_ORDER_ALREADY_CLOSED),
+			);
+		}
+		if (order.status !== "posted") {
+			return fail(
+				"CONFLICT",
+				"Only posted purchase orders can be closed",
+				purchasingErrorDetails(PURCHASING_ERROR_ORDER_NOT_POSTED),
+			);
+		}
+		if (order.version !== record.expectedVersion) {
+			return fail(
+				"CONFLICT",
+				"Purchase order version conflict",
+				purchasingErrorDetails(PURCHASING_ERROR_ORDER_VERSION_CONFLICT),
+			);
+		}
+		const now = new Date();
+		const previous = cloneOrder(order);
+		order.status = "closed";
+		order.closedAt = now;
+		order.closedBy = record.actorUserId;
+		order.closeIdempotencyKey = record.closeIdempotencyKey;
+		order.updatedBy = record.actorUserId;
+		order.updatedAt = now;
+		order.version += 1;
+
+		const audit = await ports.audit.record({
+			organizationId: order.organizationId,
+			actorUserId: record.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "purchase_order",
+			entityId: order.id,
+			action: "UPDATE",
+			changes: [
+				{
+					field: "status",
+					oldValue: previous.status,
+					newValue: "closed",
+				},
+			],
+			oldValue: { status: previous.status, version: previous.version },
+			newValue: { status: order.status, version: order.version },
+		});
+		if (!audit.ok) {
+			Object.assign(order, previous);
+			return audit;
+		}
+		const outbox = await ports.outbox.append({
+			organizationId: order.organizationId,
+			actorUserId: record.actorUserId,
+			correlationId: meta.correlationId,
+			type: "purchasing.order.closed.v1",
+			payload: {
+				organizationId: order.organizationId,
+				entityType: "purchase_order",
+				entityId: order.id,
+				code: order.code,
+				version: order.version,
+				actorId: record.actorUserId,
+				correlationId: meta.correlationId,
+			},
+		});
+		if (!outbox.ok) {
+			Object.assign(order, previous);
+			return outbox;
+		}
+		return ok(cloneOrder(order));
+	}
+
 	async getOrderById(
 		organizationId: string,
 		id: string,
@@ -355,6 +558,21 @@ export class MemoryPurchasingStore implements PurchasingStore {
 			return ok(null);
 		}
 		return ok(cloneOrder(order));
+	}
+
+	async getOrderByCreateIdempotencyKey(
+		organizationId: string,
+		createIdempotencyKey: string,
+	): Promise<Result<PurchaseOrder | null>> {
+		for (const order of this.orders.values()) {
+			if (
+				order.organizationId === organizationId &&
+				order.createIdempotencyKey === createIdempotencyKey
+			) {
+				return ok(cloneOrder(order));
+			}
+		}
+		return ok(null);
 	}
 
 	async listOrders(filter: OrderListFilter): Promise<Result<PurchaseOrder[]>> {

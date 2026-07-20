@@ -21,21 +21,21 @@ import { actionFieldMessage } from "@/modules/platform/schemas/action-result";
 const initialState: CancelPurchaseOrderActionState = null;
 
 type CancelPurchaseOrderFormProps = {
-	canManage: boolean;
+	canCancel: boolean;
 };
 
 /**
- * Cancel draft or posted purchase order — optimistic version check.
+ * Cancel draft purchase order — CAPABLE when `purchasing.order.cancel` is granted.
  */
 export function CancelPurchaseOrderForm({
-	canManage,
+	canCancel,
 }: CancelPurchaseOrderFormProps) {
 	const [state, formAction, pending] = useActionState(
 		cancelPurchaseOrderAction,
 		initialState,
 	);
 
-	if (!canManage) {
+	if (!canCancel) {
 		return (
 			<Alert role="status">
 				<AlertTitle>Cancel unavailable</AlertTitle>
@@ -104,7 +104,7 @@ export function CancelPurchaseOrderForm({
 			</FormField>
 			<Button type="submit" disabled={pending}>
 				{pending ? <Spinner /> : null}
-				Cancel order
+				Cancel draft order
 			</Button>
 		</form>
 	);

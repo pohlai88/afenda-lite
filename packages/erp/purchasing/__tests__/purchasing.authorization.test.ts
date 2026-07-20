@@ -5,7 +5,10 @@ import {
 	getPurchaseOrderById,
 	listPurchaseOrders,
 } from "../src/order";
-import { PURCHASING_PERMISSION_READ } from "../src/permissions";
+import {
+	PURCHASING_PERMISSION_ORDER_LIST,
+	PURCHASING_PERMISSION_ORDER_READ,
+} from "../src/permissions";
 import { createGrantingPurchasingAuthorization } from "./helpers/memory-authorization";
 import {
 	createMemoryMasterLookup,
@@ -19,7 +22,7 @@ const PARTY = "10000000-0000-4000-8000-000000000001";
 const UOM = "b1000000-0000-4000-8000-000000000001";
 
 describe("@afenda/purchasing authorization", () => {
-	it("denies mutations without purchasing.manage and queries without purchasing.read", async () => {
+	it("denies mutations without create and queries without READ/LIST", async () => {
 		const store = createMemoryPurchasingStore();
 		const ports = createMemoryMutationPorts();
 		const masters = createMemoryMasterLookup({
@@ -28,7 +31,8 @@ describe("@afenda/purchasing authorization", () => {
 			supplierPartyIds: [PARTY],
 		});
 		const readOnly = createGrantingPurchasingAuthorization([
-			PURCHASING_PERMISSION_READ,
+			PURCHASING_PERMISSION_ORDER_READ,
+			PURCHASING_PERMISSION_ORDER_LIST,
 		]);
 		const none = createGrantingPurchasingAuthorization([]);
 
@@ -37,8 +41,10 @@ describe("@afenda/purchasing authorization", () => {
 				organizationId: ORG,
 				actorUserId: "user-1",
 				correlationId: "corr-auth-1",
+				idempotencyKey: "create:corr-auth-1",
 				code: "PO-AUTH-1",
 				partyId: PARTY,
+				currencyCode: "USD",
 			},
 			{ store, ports, masters, authorization: readOnly },
 		);
@@ -52,8 +58,10 @@ describe("@afenda/purchasing authorization", () => {
 				organizationId: ORG,
 				actorUserId: "user-1",
 				correlationId: "corr-auth-2",
+				idempotencyKey: "create:corr-auth-2",
 				code: "PO-AUTH-2",
 				partyId: PARTY,
+				currencyCode: "USD",
 			},
 			{ store, ports, masters },
 		);
@@ -63,7 +71,12 @@ describe("@afenda/purchasing authorization", () => {
 		}
 
 		const getDenied = await getPurchaseOrderById(
-			{ organizationId: ORG, actorUserId: "user-1", id: PARTY },
+			{
+				organizationId: ORG,
+				actorUserId: "user-1",
+				correlationId: "corr-get-denied",
+				id: PARTY,
+			},
 			{ store, ports, masters, authorization: none },
 		);
 		expect(getDenied.ok).toBe(false);
@@ -72,7 +85,13 @@ describe("@afenda/purchasing authorization", () => {
 		}
 
 		const listDenied = await listPurchaseOrders(
-			{ organizationId: ORG, actorUserId: "user-1", page: 1, pageSize: 10 },
+			{
+				organizationId: ORG,
+				actorUserId: "user-1",
+				correlationId: "corr-list-denied",
+				page: 1,
+				pageSize: 10,
+			},
 			{ store, ports, masters, authorization: none },
 		);
 		expect(listDenied.ok).toBe(false);

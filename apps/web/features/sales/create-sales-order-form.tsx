@@ -21,19 +21,19 @@ import { actionFieldMessage } from "@/modules/platform/schemas/action-result";
 const initialState: CreateSalesOrderActionState = null;
 
 type CreateSalesOrderFormProps = {
-	canManage: boolean;
+	canCreate: boolean;
 };
 
 /**
- * Draft sales order create — CAPABLE when `sales.manage` is granted.
+ * Draft sales order create — CAPABLE when `sales.order.create` is granted.
  */
-export function CreateSalesOrderForm({ canManage }: CreateSalesOrderFormProps) {
+export function CreateSalesOrderForm({ canCreate }: CreateSalesOrderFormProps) {
 	const [state, formAction, pending] = useActionState(
 		createSalesOrderAction,
 		initialState,
 	);
 
-	if (!canManage) {
+	if (!canCreate) {
 		return (
 			<Alert role="status">
 				<AlertTitle>Create unavailable</AlertTitle>
@@ -46,11 +46,13 @@ export function CreateSalesOrderForm({ canManage }: CreateSalesOrderFormProps) {
 
 	const codeError = actionFieldMessage(state, "code");
 	const partyError = actionFieldMessage(state, "partyId");
+	const currencyError = actionFieldMessage(state, "currencyCode");
 	const showFormError =
 		!pending &&
 		state?.ok === false &&
 		codeError === undefined &&
-		partyError === undefined;
+		partyError === undefined &&
+		currencyError === undefined;
 
 	return (
 		<form
@@ -63,7 +65,8 @@ export function CreateSalesOrderForm({ canManage }: CreateSalesOrderFormProps) {
 					<AlertTitle>Order created</AlertTitle>
 					<AlertDescription>
 						{state.data.order.code} · party {state.data.order.partyCode} (
-						{state.data.order.partyName}) · draft.
+						{state.data.order.partyName}) · {state.data.order.currencyCode} ·
+						draft.
 					</AlertDescription>
 				</Alert>
 			) : null}
@@ -94,6 +97,51 @@ export function CreateSalesOrderForm({ canManage }: CreateSalesOrderFormProps) {
 					id="sales-order-party"
 					name="partyId"
 					required
+					autoComplete="off"
+					disabled={pending}
+				/>
+			</FormField>
+			<FormField
+				label="Currency code"
+				required
+				fieldId="sales-order-currency"
+				error={currencyError}
+			>
+				<Input
+					id="sales-order-currency"
+					name="currencyCode"
+					required
+					maxLength={3}
+					autoComplete="off"
+					disabled={pending}
+					placeholder="USD"
+				/>
+			</FormField>
+			<FormField
+				label="Exchange rate (optional)"
+				fieldId="sales-order-fx"
+			>
+				<Input
+					id="sales-order-fx"
+					name="exchangeRate"
+					type="number"
+					step="any"
+					min="0"
+					disabled={pending}
+				/>
+			</FormField>
+			<FormField label="Bill-to address (optional)" fieldId="sales-order-bill">
+				<Input
+					id="sales-order-bill"
+					name="billToAddressSnapshot"
+					autoComplete="off"
+					disabled={pending}
+				/>
+			</FormField>
+			<FormField label="Ship-to address (optional)" fieldId="sales-order-ship">
+				<Input
+					id="sales-order-ship"
+					name="shipToAddressSnapshot"
 					autoComplete="off"
 					disabled={pending}
 				/>

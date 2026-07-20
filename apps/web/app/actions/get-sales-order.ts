@@ -1,6 +1,6 @@
 "use server";
 
-import { getOrderById, type SalesOrder } from "@afenda/sales";
+import { getSalesOrderById, type SalesOrder } from "@afenda/sales";
 
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runOperatorPermissionAction } from "@/app/actions/run-operator-permission-action";
@@ -15,20 +15,21 @@ export type GetSalesOrderActionData = {
 };
 
 /**
- * Sales order get — session org stamp + `sales.read`.
+ * Sales order get — session org stamp + `sales.order.read`.
  */
 export async function getSalesOrderAction(
 	orderId: string,
 ): Promise<ActionResult<GetSalesOrderActionData>> {
 	return runOperatorPermissionAction({
 		path: "getSalesOrderAction",
-		permission: "sales.read",
+		permission: "sales.order.read",
 		safeMessage: "Could not load sales order. Try again or contact an admin.",
-		execute: async (session) => {
-			const result = await getOrderById(
+		execute: async (session, correlationId) => {
+			const result = await getSalesOrderById(
 				{
 					organizationId: session.orgId,
 					actorUserId: session.userId,
+					correlationId,
 					id: orderId,
 				},
 				createSalesCommandOptions(),

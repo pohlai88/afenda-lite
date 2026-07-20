@@ -43,6 +43,25 @@ export type MutationPorts = {
 	outbox: OutboxPort;
 };
 
+/**
+ * Downstream commitment snapshot for close — adapters live in apps/web.
+ * Package must NOT import receiving/payables.
+ */
+export type PurchaseOrderCommitmentStatus = {
+	orderedQuantity: string;
+	receivedQuantity: string;
+	invoicedQuantity: string;
+	hasPostedReceipt: boolean;
+	hasPostedSupplierInvoice: boolean;
+};
+
+export type PurchaseOrderCommitmentQueryPort = {
+	getCommitmentStatus(input: {
+		organizationId: string;
+		purchaseOrderId: string;
+	}): Promise<Result<PurchaseOrderCommitmentStatus>>;
+};
+
 /** Resolve Authority B masters — never dual-write `md_*`. */
 export type MasterLookupPort = {
 	getPartyById(

@@ -2,7 +2,11 @@ import type { MasterAuthorizationPort } from "@afenda/master-data";
 
 import type { ReceivingAuthorizationPort } from "./authorization";
 import { createMasterDataLookupPort } from "./master-lookup";
-import type { MasterLookupPort, MutationPorts } from "./ports";
+import type {
+	MasterLookupPort,
+	MutationPorts,
+	PurchaseOrderReceivingQueryPort,
+} from "./ports";
 import { createProductionMutationPorts } from "./production-ports";
 import { resolveReceivingStore } from "./resolve-store";
 import type { ReceivingStore } from "./store";
@@ -13,6 +17,11 @@ export type ReceivingCommandOptions = {
 	masters?: MasterLookupPort;
 	authorization?: ReceivingAuthorizationPort;
 	masterAuthorization?: MasterAuthorizationPort;
+	/**
+	 * Required for purchase_order source create/post — apps/web injects SQL adapter;
+	 * tests inject memory helper.
+	 */
+	purchaseOrderReceivingQuery?: PurchaseOrderReceivingQueryPort;
 };
 
 export function resolveCommandDeps(options: ReceivingCommandOptions = {}): {
@@ -20,6 +29,7 @@ export function resolveCommandDeps(options: ReceivingCommandOptions = {}): {
 	ports: MutationPorts;
 	masters: MasterLookupPort;
 	authorization: ReceivingAuthorizationPort | undefined;
+	purchaseOrderReceivingQuery: PurchaseOrderReceivingQueryPort | undefined;
 } {
 	return {
 		store: resolveReceivingStore(options.store),
@@ -28,5 +38,6 @@ export function resolveCommandDeps(options: ReceivingCommandOptions = {}): {
 			options.masters ??
 			createMasterDataLookupPort(options.masterAuthorization),
 		authorization: options.authorization,
+		purchaseOrderReceivingQuery: options.purchaseOrderReceivingQuery,
 	};
 }

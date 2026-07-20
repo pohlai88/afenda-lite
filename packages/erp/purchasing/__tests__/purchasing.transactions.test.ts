@@ -7,10 +7,7 @@ import {
 	listPurchaseOrders,
 	postPurchaseOrder,
 } from "../src/order";
-import {
-	PURCHASING_PERMISSION_MANAGE,
-	PURCHASING_PERMISSION_READ,
-} from "../src/permissions";
+import { PURCHASING_PERMISSION_CODES } from "../src/permissions";
 import type { MutationPorts, OutboxFactInput } from "../src/ports";
 import { createGrantingPurchasingAuthorization } from "./helpers/memory-authorization";
 import {
@@ -35,8 +32,7 @@ function harness(ports?: MutationPorts) {
 		supplierPartyIds: [PARTY],
 	});
 	const authorization = createGrantingPurchasingAuthorization([
-		PURCHASING_PERMISSION_READ,
-		PURCHASING_PERMISSION_MANAGE,
+		...PURCHASING_PERMISSION_CODES,
 	]);
 	return {
 		store,
@@ -66,15 +62,23 @@ describe("@afenda/purchasing transactions", () => {
 				organizationId: ORG,
 				actorUserId: "user-1",
 				correlationId: "corr-tx-1",
+				idempotencyKey: "create:corr-tx-1",
 				code: "PO-TX-1",
 				partyId: PARTY,
+				currencyCode: "USD",
 			},
 			ctx,
 		);
 		expect(created.ok).toBe(false);
 
 		const empty = await listPurchaseOrders(
-			{ organizationId: ORG, actorUserId: "user-1", page: 1, pageSize: 50 },
+			{
+				organizationId: ORG,
+				actorUserId: "user-1",
+				correlationId: "corr-list-empty",
+				page: 1,
+				pageSize: 50,
+			},
 			{ ...ctx, ports: createMemoryMutationPorts() },
 		);
 		expect(empty.ok).toBe(true);
@@ -88,8 +92,10 @@ describe("@afenda/purchasing transactions", () => {
 				organizationId: ORG,
 				actorUserId: "user-1",
 				correlationId: "corr-tx-2",
+				idempotencyKey: "create:corr-tx-2",
 				code: "PO-TX-1",
 				partyId: PARTY,
+				currencyCode: "USD",
 			},
 			{ ...ctx, ports: createMemoryMutationPorts() },
 		);
@@ -103,8 +109,10 @@ describe("@afenda/purchasing transactions", () => {
 				organizationId: ORG,
 				actorUserId: "user-1",
 				correlationId: "corr-tx-3",
+				idempotencyKey: "create:corr-tx-3",
 				code: "PO-TX-2",
 				partyId: PARTY,
+				currencyCode: "USD",
 			},
 			ctx,
 		);
@@ -117,9 +125,11 @@ describe("@afenda/purchasing transactions", () => {
 				organizationId: ORG,
 				actorUserId: "user-1",
 				correlationId: "corr-tx-4",
+				idempotencyKey: "line:corr-tx-4",
 				orderId: draft.data.id,
 				itemId: ITEM,
 				quantity: 1,
+				unitPrice: "10",
 			},
 			ctx,
 		);
@@ -128,6 +138,7 @@ describe("@afenda/purchasing transactions", () => {
 				organizationId: ORG,
 				actorUserId: "user-1",
 				correlationId: "corr-tx-5",
+				idempotencyKey: "post:corr-tx-5",
 				orderId: draft.data.id,
 				expectedVersion: 1,
 			},

@@ -15,21 +15,22 @@ export type GetPurchaseOrderActionData = {
 };
 
 /**
- * Purchase order get — session org stamp + `purchasing.read`.
+ * Purchase order get — session org stamp + `purchasing.order.read`.
  */
 export async function getPurchaseOrderAction(
 	orderId: string,
 ): Promise<ActionResult<GetPurchaseOrderActionData>> {
 	return runOperatorPermissionAction({
 		path: "getPurchaseOrderAction",
-		permission: "purchasing.read",
+		permission: "purchasing.order.read",
 		safeMessage:
 			"Could not load purchase order. Try again or contact an admin.",
-		execute: async (session) => {
+		execute: async (session, correlationId) => {
 			const result = await getPurchaseOrderById(
 				{
 					organizationId: session.orgId,
 					actorUserId: session.userId,
+					correlationId,
 					id: orderId,
 				},
 				createPurchasingCommandOptions(),

@@ -1,6 +1,6 @@
 "use server";
 
-import { listOrders, type SalesOrder } from "@afenda/sales";
+import { listSalesOrders, type SalesOrder } from "@afenda/sales";
 
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runOperatorPermissionAction } from "@/app/actions/run-operator-permission-action";
@@ -12,7 +12,7 @@ export type ListSalesOrdersActionData = {
 };
 
 /**
- * Sales order list — session org stamp + `sales.read`.
+ * Sales order list — session org stamp + `sales.order.list`.
  */
 export async function listSalesOrdersAction(input?: {
 	page?: number;
@@ -21,13 +21,14 @@ export async function listSalesOrdersAction(input?: {
 }): Promise<ActionResult<ListSalesOrdersActionData>> {
 	return runOperatorPermissionAction({
 		path: "listSalesOrdersAction",
-		permission: "sales.read",
+		permission: "sales.order.list",
 		safeMessage: "Could not list sales orders. Try again or contact an admin.",
-		execute: async (session) => {
-			const result = await listOrders(
+		execute: async (session, correlationId) => {
+			const result = await listSalesOrders(
 				{
 					organizationId: session.orgId,
 					actorUserId: session.userId,
+					correlationId,
 					page: input?.page,
 					pageSize: input?.pageSize,
 					status: input?.status,

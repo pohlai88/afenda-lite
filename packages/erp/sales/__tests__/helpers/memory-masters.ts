@@ -8,6 +8,8 @@ export type MemoryMastersSeed = {
 	items?: Item[];
 	paymentTerms?: PaymentTerm[];
 	uoms?: RefUom[];
+	/** partyId → has active customer role */
+	customerRoles?: Record<string, boolean>;
 };
 
 export function createMemoryMasterLookup(
@@ -17,6 +19,7 @@ export function createMemoryMasterLookup(
 	const items = new Map((seed.items ?? []).map((row) => [row.id, row]));
 	const terms = new Map((seed.paymentTerms ?? []).map((row) => [row.id, row]));
 	const uoms = new Map((seed.uoms ?? []).map((row) => [row.id, row]));
+	const customerRoles = seed.customerRoles ?? {};
 
 	return {
 		async getPartyById(
@@ -54,6 +57,13 @@ export function createMemoryMasterLookup(
 		},
 		async getRefUomById(id: string): Promise<Result<RefUom | null>> {
 			return ok(uoms.get(id) ?? null);
+		},
+		async hasActiveCustomerRole(
+			_organizationId: string,
+			partyId: string,
+			_actorUserId: string,
+		): Promise<Result<boolean>> {
+			return ok(customerRoles[partyId] ?? false);
 		},
 	};
 }

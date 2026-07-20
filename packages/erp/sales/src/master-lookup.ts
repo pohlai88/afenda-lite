@@ -5,6 +5,7 @@ import {
 	getPaymentTermById,
 	getRefUomById,
 	type Item,
+	listPartyRoles,
 	type MasterAuthorizationPort,
 	type Party,
 	type PaymentTerm,
@@ -66,6 +67,29 @@ export function createMasterDataLookupPort(
 				return result;
 			}
 			return ok(result.data);
+		},
+		async hasActiveCustomerRole(
+			organizationId: string,
+			partyId: string,
+			actorUserId: string,
+		): Promise<Result<boolean>> {
+			const roles = await listPartyRoles(
+				{
+					organizationId,
+					actorUserId,
+					parentId: partyId,
+					page: 1,
+					pageSize: 100,
+				},
+				{ authorization },
+			);
+			if (!roles.ok) {
+				return roles;
+			}
+			const active = roles.data.some(
+				(role) => role.roleCode === "customer" && role.status === "active",
+			);
+			return ok(active);
 		},
 	};
 }
