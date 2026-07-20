@@ -130,7 +130,7 @@ apps/docs/
   content/docs/**/*.mdx        # validated corpus
 ```
 
-Root: `package.json` → `check:docs-app` runs generate OpenAPI MDX + `lint:links`.
+Root: `package.json` → `check:docs-app` runs generate OpenAPI MDX + package MDX + `lint:links`.
 
 ---
 

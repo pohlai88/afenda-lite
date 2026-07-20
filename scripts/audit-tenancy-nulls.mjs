@@ -20,6 +20,31 @@ const HARD_TENANT_ROOT_TABLE_NAMES = [
 	"platform_audit_log",
 	"platform_search_document",
 	"platform_notification",
+	"platform_domain_event",
+	"md_party",
+	"md_item_group",
+	"md_item",
+	"md_warehouse",
+	"md_payment_term",
+	"md_tax_registration",
+	"md_party_role",
+	"md_party_address",
+	"md_party_contact",
+	"md_party_external_id",
+	"md_party_relationship",
+	"md_item_uom",
+	"md_item_barcode",
+	"md_item_external_id",
+	"md_item_alias",
+	"md_warehouse_external_id",
+	"md_item_template",
+	"md_item_template_attribute",
+	"md_item_template_attribute_option",
+	"md_item_variant",
+	"md_item_variant_attribute_value",
+	"md_change_request",
+	"sales_order",
+	"sales_order_line",
 ];
 
 const fileEnv = loadLocalEnv();
@@ -53,6 +78,56 @@ const NULL_COUNT_BY_TABLE = {
 		sql`SELECT count(*)::int AS null_count FROM platform_search_document WHERE organization_id IS NULL`,
 	platform_notification: () =>
 		sql`SELECT count(*)::int AS null_count FROM platform_notification WHERE organization_id IS NULL`,
+	platform_domain_event: () =>
+		sql`SELECT count(*)::int AS null_count FROM platform_domain_event WHERE organization_id IS NULL`,
+	md_party: () =>
+		sql`SELECT count(*)::int AS null_count FROM md_party WHERE organization_id IS NULL`,
+	md_item_group: () =>
+		sql`SELECT count(*)::int AS null_count FROM md_item_group WHERE organization_id IS NULL`,
+	md_item: () =>
+		sql`SELECT count(*)::int AS null_count FROM md_item WHERE organization_id IS NULL`,
+	md_warehouse: () =>
+		sql`SELECT count(*)::int AS null_count FROM md_warehouse WHERE organization_id IS NULL`,
+	md_payment_term: () =>
+		sql`SELECT count(*)::int AS null_count FROM md_payment_term WHERE organization_id IS NULL`,
+	md_tax_registration: () =>
+		sql`SELECT count(*)::int AS null_count FROM md_tax_registration WHERE organization_id IS NULL`,
+	md_party_role: () =>
+		sql`SELECT count(*)::int AS null_count FROM md_party_role WHERE organization_id IS NULL`,
+	md_party_address: () =>
+		sql`SELECT count(*)::int AS null_count FROM md_party_address WHERE organization_id IS NULL`,
+	md_party_contact: () =>
+		sql`SELECT count(*)::int AS null_count FROM md_party_contact WHERE organization_id IS NULL`,
+	md_party_external_id: () =>
+		sql`SELECT count(*)::int AS null_count FROM md_party_external_id WHERE organization_id IS NULL`,
+	md_party_relationship: () =>
+		sql`SELECT count(*)::int AS null_count FROM md_party_relationship WHERE organization_id IS NULL`,
+	md_item_uom: () =>
+		sql`SELECT count(*)::int AS null_count FROM md_item_uom WHERE organization_id IS NULL`,
+	md_item_barcode: () =>
+		sql`SELECT count(*)::int AS null_count FROM md_item_barcode WHERE organization_id IS NULL`,
+	md_item_external_id: () =>
+		sql`SELECT count(*)::int AS null_count FROM md_item_external_id WHERE organization_id IS NULL`,
+	md_item_alias: () =>
+		sql`SELECT count(*)::int AS null_count FROM md_item_alias WHERE organization_id IS NULL`,
+	md_warehouse_external_id: () =>
+		sql`SELECT count(*)::int AS null_count FROM md_warehouse_external_id WHERE organization_id IS NULL`,
+	md_item_template: () =>
+		sql`SELECT count(*)::int AS null_count FROM md_item_template WHERE organization_id IS NULL`,
+	md_item_template_attribute: () =>
+		sql`SELECT count(*)::int AS null_count FROM md_item_template_attribute WHERE organization_id IS NULL`,
+	md_item_template_attribute_option: () =>
+		sql`SELECT count(*)::int AS null_count FROM md_item_template_attribute_option WHERE organization_id IS NULL`,
+	md_item_variant: () =>
+		sql`SELECT count(*)::int AS null_count FROM md_item_variant WHERE organization_id IS NULL`,
+	md_item_variant_attribute_value: () =>
+		sql`SELECT count(*)::int AS null_count FROM md_item_variant_attribute_value WHERE organization_id IS NULL`,
+	md_change_request: () =>
+		sql`SELECT count(*)::int AS null_count FROM md_change_request WHERE organization_id IS NULL`,
+	sales_order: () =>
+		sql`SELECT count(*)::int AS null_count FROM sales_order WHERE organization_id IS NULL`,
+	sales_order_line: () =>
+		sql`SELECT count(*)::int AS null_count FROM sales_order_line WHERE organization_id IS NULL`,
 };
 
 console.log(

@@ -30,7 +30,7 @@ const usagePeriodFormSchema = z.object({
 /**
  * Operator org-console usage refresh — active session org only.
  * `orgId` is stamped from session (never client-trusted). Metrics via
- * `@afenda/admin/usage` `getOrganizationUsageMetrics`.
+ * `@afenda/admin/usage` `getOrganizationUsageMetrics` (counts + ops bands).
  */
 export async function getOrganizationUsageAction(
 	_prev: GetOrganizationUsageActionState,

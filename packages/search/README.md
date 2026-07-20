@@ -63,9 +63,16 @@ Requires root engines: **Node `24.x`**, **pnpm `≥10.33.4`**.
 |------|------|
 | `@afenda/search` | Store factories, upsert / delete / batch, `listSearchDocumentIds`, `searchDocuments`, schemas, types |
 
-## Must not
+## Out of scope
 
-- Import Next.js / Surfaces / `apps/*`
-- Dual-write `platform_search_document` from `apps/web` around this package
-- Depend on paid search SaaS or a second search engine SDK
-- Skip `organizationId` on any store call
+Do not add to this package: Next.js / Surfaces / `apps/*` imports, dual-write of `platform_search_document` from `apps/web`, paid search SaaS / second search SDKs, or ambient org stamping (always pass `organizationId`). Shared schema · hard `organization_id` only — never multi-DB / project-per-tenant isolation. Docs search stays Orama in `@afenda/docs`.
+
+## Authority
+
+| Topic | Link |
+|-------|------|
+| Product search Scratch | [docs-V2/search](../../docs-V2/search/README.md) |
+| Docs Orama (not this package) | [docs-V2/docs/search-orama.md](../../docs-V2/docs/search-orama.md) |
+| Package DAG | [docs-V2/monorepo](../../docs-V2/monorepo/README.md) · [LAYERS.md](../../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md) |
+| Tenancy · shared schema | [docs-V2/tenancy](../../docs-V2/tenancy/README.md) |
+| Agent checkout posture | [AGENTS.md](../../AGENTS.md) |

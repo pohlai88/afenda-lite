@@ -51,7 +51,7 @@ Requires root engines: **Node `24.x`**, **pnpm `≥10.33.4`**.
 | `@afenda/admin` | Org-console (`listOrganizations` · `createOrganization` · `provisionOrganization` · `deleteOrganization`) + Zod input/result schemas + re-exports of audit/health/usage |
 | `@afenda/admin/audit` | `recordRbacAudit` · `listRbacAudit` · `deleteRbacAuditRow` + action constants — **no** Neon Auth org client |
 | `@afenda/admin/health` | Liveness / readiness / DB inspect + `latencyMs` SSOT — **no** Neon Auth org client |
-| `@afenda/admin/usage` | `getOrganizationUsageMetrics` · `usagePeriodUtcBounds` (active session org + `YYYY-MM`) |
+| `@afenda/admin/usage` | `getOrganizationUsageMetrics` · `buildUsagePosition` · `usagePeriodUtcBounds` (active session org + `YYYY-MM` position matrix) |
 
 **Org-console notes**
 
@@ -60,13 +60,13 @@ Requires root engines: **Node `24.x`**, **pnpm `≥10.33.4`**.
 | `listOrganizations` | Session memberships + `lastActivityAt` from audit max |
 | `provisionOrganization` | Create → `persistActiveOrganization` → invite first admin; partial failures return `INTERNAL_ERROR` + disposition (no fake rollback) |
 | `deleteOrganization` | Neon Auth **hard-delete** — not soft-deactivate |
-| `getOrganizationUsageMetrics` | Active org only; members + audit events + active role assignments for a UTC month |
+| `getOrganizationUsageMetrics` | Active org only; living counts + ops bands/alerts for a UTC month (not SKU / module limits) |
 
 ## Ownership
 
 | Surface | Owner |
 |---------|-------|
-| Org-console Neon Auth ops · RBAC audit SSOT · health probes · usage counts | `@afenda/admin` |
+| Org-console Neon Auth ops · RBAC audit SSOT · health probes · usage position | `@afenda/admin` |
 | Session / invite / membership primitives | `@afenda/auth` |
 | Drizzle schema · `platform_*` tables | `@afenda/db` |
 | ActionResult adapters · org-admin UI | `apps/web` |

@@ -1,0 +1,29 @@
+{
+	"title": "Packages",
+	"icon": "Package",
+	"pages": [
+		"index",
+		"admin",
+		"ai-the-machine",
+		"audit",
+		"auth",
+		"cache",
+		"config",
+		"db",
+		"emails",
+		"env",
+		"errors",
+		"events",
+		"http",
+		"logger",
+		"master-data",
+		"metrics",
+		"notifications",
+		"openapi",
+		"rate-limit",
+		"sales",
+		"search",
+		"security",
+		"ui-system"
+	]
+}

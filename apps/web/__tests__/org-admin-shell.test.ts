@@ -199,9 +199,12 @@ describe("OrgAdminShell — RSC STABILITY", () => {
 			data: {
 				orgId: "org-admin",
 				period: "2026-07",
-				activeMembers: 1,
-				rbacAuditEvents: 2,
-				activeRoleAssignments: 1,
+				metrics: {
+					activeMembers: { current: 1, band: "quiet" },
+					rbacAuditEvents: { current: 2, band: "quiet" },
+					activeRoleAssignments: { current: 1, band: "quiet" },
+				},
+				alerts: [],
 			},
 		});
 	});

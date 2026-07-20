@@ -15,8 +15,8 @@ import {
 	type GetOrganizationUsageInput,
 	getOrganizationUsageInputSchema,
 	type OrganizationUsageMetrics,
-	organizationUsageMetricsSchema,
 } from "./schemas/usage";
+import { buildUsagePosition } from "./usage-position";
 
 const PERIOD_YEAR_MONTH_SEPARATOR = "-" as const;
 const MONTH_INDEX_OFFSET = 1;
@@ -59,8 +59,9 @@ function mapUsageFailure(error: unknown): Result<never> {
 }
 
 /**
- * Real org-console usage for a UTC calendar month.
- * Members via Neon Auth; audit events + active assignments via Drizzle counts.
+ * Real org-console usage position for a UTC calendar month.
+ * Members via Neon Auth; audit events + active assignments via Drizzle counts;
+ * bands/alerts via pure `buildUsagePosition`.
  */
 export async function getOrganizationUsageMetrics(
 	input: unknown,
@@ -107,12 +108,14 @@ export async function getOrganizationUsageMetrics(
 		]);
 
 		return ok(
-			organizationUsageMetricsSchema.parse({
+			buildUsagePosition({
 				orgId: command.orgId,
 				period: command.period,
-				activeMembers: members.length,
-				rbacAuditEvents: Number(auditCountRow?.value ?? 0),
-				activeRoleAssignments: Number(assignmentCountRow?.value ?? 0),
+				counts: {
+					activeMembers: members.length,
+					rbacAuditEvents: Number(auditCountRow?.value ?? 0),
+					activeRoleAssignments: Number(assignmentCountRow?.value ?? 0),
+				},
 			}),
 		);
 	} catch (error) {

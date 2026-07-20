@@ -1,5 +1,5 @@
 import type { BaseLayoutProps } from "fumadocs-ui/layouts/shared";
-import { BookOpen, CodeXml } from "lucide-react";
+import { BookOpen, CodeXml, Package } from "lucide-react";
 import { GithubInfo } from "@/components/github-info";
 
 /**
@@ -26,6 +26,13 @@ export function baseOptions(): BaseLayoutProps {
 				icon: <CodeXml aria-hidden />,
 				text: "API",
 				url: "/docs/api",
+				active: "nested-url",
+				secondary: false,
+			},
+			{
+				icon: <Package aria-hidden />,
+				text: "Packages",
+				url: "/docs/packages",
 				active: "nested-url",
 				secondary: false,
 			},

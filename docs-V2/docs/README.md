@@ -99,7 +99,7 @@ After Zod/handler contract changes that affect the published OAS:
 ```bash
 pnpm openapi:generate && pnpm check:openapi
 pnpm --filter @afenda/docs generate:openapi-docs
-pnpm check:docs-app                            # generate OpenAPI MDX + lint:links
+pnpm check:docs-app                            # generate OpenAPI + package MDX + lint:links
 ```
 
 Set `GITHUB_APP_*` in `.env.local` (and the docs host) after App install — see [feedback.md](feedback.md) and root `.env.example`.
@@ -112,6 +112,7 @@ Set `GITHUB_APP_*` in `.env.local` (and the docs host) after App install — see
 pnpm --filter @afenda/docs dev                 # :3001
 pnpm --filter @afenda/docs generate:source
 pnpm --filter @afenda/docs generate:openapi-docs
+pnpm --filter @afenda/docs generate:package-docs
 pnpm --filter @afenda/docs lint:links
 pnpm --filter @afenda/docs list:source-pages   # Node inventory (fumadocs-mdx-node.md)
 pnpm --filter @afenda/docs test
@@ -131,11 +132,12 @@ pnpm checks                                    # includes check:docs-app when ap
 Zod (apps/web modules) → pnpm openapi:generate → docs-V2/api/OPEN-001-openapi.yaml
        → pnpm check:openapi
        → apps/docs createOpenAPI + generateFiles → content/docs/api/*.mdx
+       → generate:package-docs → content/docs/packages/*.mdx
        → fumadocs-mdx → .source/
        → typecheck / lint:links / build (:3001)
 ```
 
-Lean gate: `pnpm check:docs-app` (generate OpenAPI MDX + `lint:links`). CI `quality` runs it — [automation.md](automation.md).
+Lean gate: `pnpm check:docs-app` (generate OpenAPI MDX + package MDX + `lint:links`). CI `quality` runs it — [automation.md](automation.md).
 
 **OAS SSOT:** committed YAML must stay generator-aligned with Zod — run `pnpm openapi:generate && pnpm check:openapi` after contract changes; never hand-edit YAML to “pass”. Dual copy `apps/docs/openapi/` remains absent. Product schemas: [`../api/README.md`](../api/README.md).
 

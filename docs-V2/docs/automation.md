@@ -18,6 +18,7 @@ This guide is the **internal runbook** for the official docs pipeline. It assume
 | 1. Zod → OAS | `pnpm openapi:generate` | [`../api/OPEN-001-openapi.yaml`](../api/OPEN-001-openapi.yaml) |
 | 2. OAS honesty | `pnpm check:openapi` | Drift + Spectral + api-now `route.ts` on disk |
 | 3. OAS → MDX | `pnpm --filter @afenda/docs generate:openapi-docs` | `content/docs/api/*` via `generateFiles` — [openapi-generate-files.md](openapi-generate-files.md) · AsyncAPI Outside — [asyncapi.md](asyncapi.md) |
+| 3b. Packages → MDX | `pnpm --filter @afenda/docs generate:package-docs` | `content/docs/packages/*` from `packages/*/package.json` + `README.md` — [content.md](content.md) |
 | 4. MDX → collections | `pnpm --filter @afenda/docs generate:source` | `.source/` (gitignored) |
 | 4b. Node inventory | `pnpm --filter @afenda/docs list:source-pages` | Offline `source.getPages()` via `register()` — [fumadocs-mdx-node.md](fumadocs-mdx-node.md) |
 | 5. Links | `pnpm --filter @afenda/docs lint:links` | Broken internal links fail — [validate-links.md](validate-links.md) |
@@ -26,7 +27,7 @@ This guide is the **internal runbook** for the official docs pipeline. It assume
 
 Search UI: stock `<RootProvider>` dialog (⌘K / Ctrl+K) + `app/api/search/route.ts` → `createFromSource(source)` (bundled Orama — no Cloud). Covered by `typecheck` / `build` / wire `test`. SSOT: [search-orama.md](search-orama.md) · [ui.md](ui.md) Search UI · Themes. Ban scan: `rg -n "8bitcn|ComponentPreview" apps/docs` must exit with no matches (rg exit `1` = clean).
 
-Lean monorepo gate (no full Next build): `pnpm check:docs-app` → generate OpenAPI MDX + lint:links. Link tool SSOT: [validate-links.md](validate-links.md).
+Lean monorepo gate (no full Next build): `pnpm check:docs-app` → generate OpenAPI MDX + package MDX + lint:links. Link tool SSOT: [validate-links.md](validate-links.md).
 
 ---
 
@@ -67,6 +68,7 @@ Lite script: `apps/docs/scripts/generate-openapi-docs.mts` (`createOpenAPI` → 
 | Change | Run |
 |--------|-----|
 | Handler / Zod / envelope | Stages 1–3 · preferably 5–7 |
+| Package README / `package.json` exports | Stage 3b · 5 |
 | Narrative MDX only | Stage 4 · 5 · spot `dev` |
 | Document id / openapi.server.ts | Stages 3–6 |
 | Tailwind / fumadocs CSS | Stage 7 `build` |
@@ -77,7 +79,7 @@ Lite script: `apps/docs/scripts/generate-openapi-docs.mts` (`createOpenAPI` → 
 
 | Job | Include |
 |-----|---------|
-| Fast docs gate | `.github/workflows/ci.yml` `quality` → `pnpm check:docs-app` (`generate:openapi-docs` + `lint:links`) |
+| Fast docs gate | `.github/workflows/ci.yml` `quality` → `pnpm check:docs-app` (`generate:openapi-docs` + `generate:package-docs` + `lint:links`) |
 | Local lean gate | `pnpm checks` includes `check:docs-app` when `apps/docs` exists |
 | Product OAS | `check:openapi` (in `pnpm checks`; not duplicated in CI quality) |
 | Docs typecheck / wire test | CI `turbo run typecheck test` covers `@afenda/docs` |

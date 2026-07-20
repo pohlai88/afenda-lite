@@ -395,6 +395,9 @@ importers:
       '@afenda/logger':
         specifier: workspace:*
         version: link:../../packages/logger
+      '@afenda/master-data':
+        specifier: workspace:*
+        version: link:../../packages/master-data
       '@afenda/metrics':
         specifier: workspace:*
         version: link:../../packages/metrics
@@ -407,6 +410,9 @@ importers:
       '@afenda/rate-limit':
         specifier: workspace:*
         version: link:../../packages/rate-limit
+      '@afenda/sales':
+        specifier: workspace:*
+        version: link:../../packages/sales
       '@afenda/search':
         specifier: workspace:*
         version: link:../../packages/search
@@ -766,6 +772,40 @@ importers:
         specifier: 'catalog:'
         version: 5.9.3
 
+  packages/master-data:
+    dependencies:
+      '@afenda/audit':
+        specifier: workspace:*
+        version: link:../audit
+      '@afenda/db':
+        specifier: workspace:*
+        version: link:../db
+      '@afenda/errors':
+        specifier: workspace:*
+        version: link:../errors
+      '@afenda/events':
+        specifier: workspace:*
+        version: link:../events
+      '@afenda/search':
+        specifier: workspace:*
+        version: link:../search
+      server-only:
+        specifier: 0.0.1
+        version: 0.0.1
+      zod:
+        specifier: 'catalog:'
+        version: 4.4.3
+    devDependencies:
+      '@afenda/config':
+        specifier: workspace:*
+        version: link:../config
+      '@types/node':
+        specifier: 'catalog:'
+        version: 20.19.30
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
+
   packages/metrics:
     dependencies:
       prom-client:
@@ -843,6 +883,40 @@ importers:
       '@upstash/redis':
         specifier: 'catalog:'
         version: 1.38.0
+    devDependencies:
+      '@afenda/config':
+        specifier: workspace:*
+        version: link:../config
+      '@types/node':
+        specifier: 'catalog:'
+        version: 20.19.30
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
+
+  packages/sales:
+    dependencies:
+      '@afenda/audit':
+        specifier: workspace:*
+        version: link:../audit
+      '@afenda/db':
+        specifier: workspace:*
+        version: link:../db
+      '@afenda/errors':
+        specifier: workspace:*
+        version: link:../errors
+      '@afenda/events':
+        specifier: workspace:*
+        version: link:../events
+      '@afenda/master-data':
+        specifier: workspace:*
+        version: link:../master-data
+      server-only:
+        specifier: 0.0.1
+        version: 0.0.1
+      zod:
+        specifier: 'catalog:'
+        version: 4.4.3
     devDependencies:
       '@afenda/config':
         specifier: workspace:*

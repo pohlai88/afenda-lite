@@ -67,7 +67,7 @@ Wire test enforces: `vercel.json` filter + build commands, no Edge runtime, no `
 | `ignoreCommand` production skip | Git push must not auto-promote docs prod — explicit promote (CLI or future Docs Deploy workflow) |
 | Region `sin1` | Align with product / Neon APSE1 — [../deploy/README.md](../deploy/README.md) |
 
-`prebuild` on `@afenda/docs` already runs `generate:source` + `generate:openapi-docs`. OAS YAML must exist at [`../api/OPEN-001-openapi.yaml`](../api/OPEN-001-openapi.yaml) in the checkout (committed SSOT).
+`prebuild` on `@afenda/docs` already runs `generate:source` + `generate:openapi-docs` + `generate:package-docs`. OAS YAML must exist at [`../api/OPEN-001-openapi.yaml`](../api/OPEN-001-openapi.yaml) in the checkout (committed SSOT).
 
 ### Project split (must)
 

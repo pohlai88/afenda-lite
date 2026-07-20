@@ -51,3 +51,18 @@ Requires root engines: **Node `24.x`**, **pnpm `≥10.33.4`**.
 | Engine + assistants + schemas | this package |
 | Gateway key / model env | `@afenda/env` + web RH |
 | Session mint + rate limit + UI | `apps/web` |
+
+**Layer:** Rank-1 Platform (`ai` SDK; no `@afenda/db` · no Surfaces · no `apps/*` imports). See [docs-V2/monorepo](../../docs-V2/monorepo/README.md).
+
+## Out of scope
+
+Do not add to this package: DB tool executors, product UI shells, a second model gateway outside Vercel AI Gateway, or Next.js Route Handler ownership (stays in `apps/web`).
+
+## Authority
+
+| Topic | Link |
+|-------|------|
+| AI Scratch · DNA absorb/reject | [docs-V2/ai](../../docs-V2/ai/README.md) · [ai-the-machine-dna.md](../../docs-V2/ai/ai-the-machine-dna.md) |
+| Package DAG | [docs-V2/monorepo](../../docs-V2/monorepo/README.md) · [LAYERS.md](../../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md) |
+| Typed product env | [`@afenda/env`](../env/README.md) |
+| Agent checkout posture | [AGENTS.md](../../AGENTS.md) |

@@ -22,6 +22,8 @@
 		"@afenda/events": "workspace:*",
 		"@afenda/http": "workspace:*",
 		"@afenda/logger": "workspace:*",
+		"@afenda/master-data": "workspace:*",
+		"@afenda/sales": "workspace:*",
 		"@afenda/metrics": "workspace:*",
 		"@afenda/notifications": "workspace:*",
 		"@afenda/openapi": "workspace:*",

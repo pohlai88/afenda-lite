@@ -64,10 +64,16 @@ Requires root engines: **Node `24.x`**, **pnpm `≥10.33.4`**.
 |------|------|
 | `.` | Recorder, query helpers, schemas, types, Drizzle store |
 
-## Must not
+## Out of scope
 
-- WebSocket / JWT realtime server inside this package
-- Redis primary store
-- Next.js / `ActionResult` / `process.env`
-- Surfaces / `apps/*` imports
-- Dual-write around the package
+Do not add to this package: WebSocket / JWT realtime servers, Redis as primary store, EMAIL/SMS/PUSH transports, Next.js / `ActionResult` / raw `process.env`, Surfaces / `apps/*` imports, or dual-write around the package. Shared schema · hard `organization_id` only — never multi-DB / project-per-tenant isolation.
+
+## Authority
+
+| Topic | Link |
+|-------|------|
+| Notifications Scratch | [docs-V2/notifications](../../docs-V2/notifications/README.md) |
+| Events → inbox handlers | [docs-V2/events](../../docs-V2/events/README.md) · [`@afenda/events`](../events/README.md) |
+| Package DAG | [docs-V2/monorepo](../../docs-V2/monorepo/README.md) · [LAYERS.md](../../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md) |
+| Tenancy · shared schema | [docs-V2/tenancy](../../docs-V2/tenancy/README.md) |
+| Agent checkout posture | [AGENTS.md](../../AGENTS.md) |

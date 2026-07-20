@@ -20,6 +20,16 @@ export const PERMISSION_DENIED_MESSAGE = {
 		"You do not have permission to manage organization roles.",
 	"clients.invite": "You do not have permission to invite members.",
 	"account.self": "You do not have permission to manage this account.",
+	"master_data.read":
+		"You do not have permission to read organization master data.",
+	"master_data.manage":
+		"You do not have permission to manage organization master data.",
+	"master_data.approve":
+		"You do not have permission to approve master-data change requests.",
+	"master_data.import_approve":
+		"You do not have permission to approve and apply master-data import.",
+	"sales.read": "You do not have permission to read sales orders.",
+	"sales.manage": "You do not have permission to manage sales orders.",
 } as const satisfies Record<PlatformPermissionCodeV1, string>;
 
 /**

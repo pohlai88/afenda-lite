@@ -60,9 +60,18 @@ export {
 export type {
 	GetOrganizationUsageInput,
 	OrganizationUsageMetrics,
+	UsageAlert,
+	UsageAlertLevel,
+	UsageBand,
+	UsageMetricCell,
+	UsageMetricKey,
 	UsagePeriod,
 } from "./usage-entry";
 export {
+	bandFor,
+	buildUsagePosition,
 	getOrganizationUsageMetrics,
+	USAGE_BANDS,
+	USAGE_METRIC_KEYS,
 	usagePeriodUtcBounds,
 } from "./usage-entry";

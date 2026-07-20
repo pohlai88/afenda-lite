@@ -24,6 +24,8 @@ DNA borrow/reject: [events-dna.md](events-dna.md).
 |---------|---------|------------|-------|
 | `assignOrgRoleAction` | `recordOrgRoleAssignedEvent` | `identity.org_role.assigned` | Handler → IN_APP inbox via `@afenda/notifications` |
 | `deleteOrganizationAction` | `recordOrganizationDeletedEvent` | `platform.organization.deleted` | Append-only outbox (audit stays `@afenda/audit`) |
+| `@afenda/master-data` mutations | OutboxPort / same-TX CTE | `master_data.{party,item,item_group,warehouse,payment_term,tax_registration,change_request,item_template,item_variant}.*.v1` | MDG CR lifecycle + gated activate/merge; projectors may sync `@afenda/search` |
+| `@afenda/sales` mutations | OutboxPort / same-TX CTE | `sales.order.{created,line_added,posted}.v1` | ARCH-006 R5-1; FK + snapshots only — no `md_*` dual-write |
 
 ## Must not
 

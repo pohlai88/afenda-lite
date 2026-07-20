@@ -82,7 +82,12 @@ Full surface: [`src/index.ts`](./src/index.ts).
 | Import `apps/*` from this package | Packages never import apps |
 | OpenAPI 3.1 bump without docs cutover | Living artifact is OAS 3.0.3 |
 
-## Scratch
+## Authority
 
-- [docs-V2/api/README.md](../../docs-V2/api/README.md) · [docs-V2/api/rest.md](../../docs-V2/api/rest.md)
-- Farm: `afenda-elite-api-contract` · `openapi.md`
+| Topic | Link |
+|-------|------|
+| API Scratch · REST · OPEN-001 | [docs-V2/api](../../docs-V2/api/README.md) · [rest.md](../../docs-V2/api/rest.md) · [OPEN-001-openapi.yaml](../../docs-V2/api/OPEN-001-openapi.yaml) |
+| Package DAG | [docs-V2/monorepo](../../docs-V2/monorepo/README.md) · [LAYERS.md](../../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md) |
+| API contract farm | [afenda-elite-api-contract](../../.cursor/skills/afenda-elite-api-contract/SKILL.md) · [openapi.md](../../.cursor/skills/afenda-elite-api-contract/openapi.md) |
+| Official docs site | [`@afenda/docs`](../../apps/docs) |
+| Agent checkout posture | [AGENTS.md](../../AGENTS.md) |
