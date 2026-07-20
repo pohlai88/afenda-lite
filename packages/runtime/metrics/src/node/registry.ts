@@ -1,14 +1,15 @@
 import { collectDefaultMetrics, Registry } from "prom-client";
 
+import { DEFAULT_METRICS_SERVICE } from "../core/constants";
+
 import {
 	createCacheInstruments,
 	createDbInstruments,
 	createHttpInstruments,
 } from "./instruments";
-import {
-	type CreateMetricsRegistryOptions,
-	DEFAULT_METRICS_SERVICE,
-	type MetricsRegistryBundle,
+import type {
+	CreateMetricsRegistryOptions,
+	MetricsRegistryBundle,
 } from "./types";
 
 let defaultBundle: MetricsRegistryBundle | undefined;

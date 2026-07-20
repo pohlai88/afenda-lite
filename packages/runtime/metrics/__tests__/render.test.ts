@@ -1,10 +1,11 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { recordHttpRequest } from "../src/record";
 import {
 	createMetricsRegistry,
-	resetDefaultMetricsRegistryForTests,
-} from "../src/registry";
-import { PROMETHEUS_CONTENT_TYPE, renderPrometheusText } from "../src/render";
+	PROMETHEUS_CONTENT_TYPE,
+	recordHttpRequest,
+	renderPrometheusText,
+} from "../src/node";
+import { resetDefaultMetricsRegistryForTests } from "../src/testing";
 
 describe("@afenda/metrics renderPrometheusText", () => {
 	afterEach(() => {

@@ -1,12 +1,6 @@
 import { Counter, Histogram, type Registry } from "prom-client";
 
-/** HTTP latency buckets (seconds) — borrowed from Vierp DNA, tunable. */
-export const HTTP_DURATION_BUCKETS = [0.01, 0.05, 0.1, 0.5, 1, 2, 5] as const;
-
-/** DB latency buckets (seconds) — borrowed from Vierp DNA, tunable. */
-export const DB_DURATION_BUCKETS = [
-	0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1,
-] as const;
+import { DB_DURATION_BUCKETS, HTTP_DURATION_BUCKETS } from "../core/constants";
 
 export function createHttpInstruments(registry: Registry) {
 	const httpRequestDuration = new Histogram({

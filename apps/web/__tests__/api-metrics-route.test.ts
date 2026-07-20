@@ -59,7 +59,7 @@ vi.mock("@/modules/platform/domain/health", () => ({
 	}),
 }));
 
-import { resetDefaultMetricsRegistryForTests } from "@afenda/metrics";
+import { resetDefaultMetricsRegistryForTests } from "@afenda/metrics/testing";
 
 import { GET as getLiveness } from "../app/api/health/liveness/route";
 import { GET as getMetrics } from "../app/api/metrics/route";

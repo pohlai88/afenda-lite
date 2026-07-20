@@ -1,13 +1,16 @@
-import { getDefaultMetricsRegistry } from "./registry";
+import { assertRouteTemplate } from "../core/route-template";
 import type {
 	RecordCacheAccessInput,
 	RecordDbQueryInput,
 	RecordHttpRequestInput,
-} from "./types";
+} from "../core/types";
+
+import { getDefaultMetricsRegistry } from "./registry";
+import type { MetricsRegistryBundle } from "./types";
 
 function resolveBundle(input: {
-	readonly registry?: RecordHttpRequestInput["registry"];
-}) {
+	readonly registry?: MetricsRegistryBundle;
+}): MetricsRegistryBundle {
 	return input.registry ?? getDefaultMetricsRegistry();
 }
 
@@ -20,28 +23,12 @@ function normalizeMethod(method: string): string {
 }
 
 /**
- * Accept only low-cardinality path templates — never raw URLs or query strings.
- */
-export function assertRouteTemplate(routeTemplate: string): string {
-	const trimmed = routeTemplate.trim();
-	if (trimmed.length === 0) {
-		throw new Error(
-			"@afenda/metrics: routeTemplate must be a non-empty path template",
-		);
-	}
-	if (trimmed.includes("?") || trimmed.includes("://")) {
-		throw new Error(
-			"@afenda/metrics: routeTemplate must not include query strings or absolute URLs",
-		);
-	}
-	return trimmed;
-}
-
-/**
  * Record one HTTP request (duration + count).
  * `routeTemplate` must be a static path template — never raw URLs.
  */
-export function recordHttpRequest(input: RecordHttpRequestInput): void {
+export function recordHttpRequest(
+	input: RecordHttpRequestInput & { readonly registry?: MetricsRegistryBundle },
+): void {
 	const bundle = resolveBundle(input);
 	const method = normalizeMethod(input.method);
 	const route = assertRouteTemplate(input.routeTemplate);
@@ -58,7 +45,9 @@ export function recordHttpRequest(input: RecordHttpRequestInput): void {
 }
 
 /** Record one database query duration. */
-export function recordDbQuery(input: RecordDbQueryInput): void {
+export function recordDbQuery(
+	input: RecordDbQueryInput & { readonly registry?: MetricsRegistryBundle },
+): void {
 	const bundle = resolveBundle(input);
 	bundle.dbQueryDuration.observe(
 		{
@@ -71,7 +60,9 @@ export function recordDbQuery(input: RecordDbQueryInput): void {
 }
 
 /** Record one cache hit or miss. */
-export function recordCacheAccess(input: RecordCacheAccessInput): void {
+export function recordCacheAccess(
+	input: RecordCacheAccessInput & { readonly registry?: MetricsRegistryBundle },
+): void {
 	const bundle = resolveBundle(input);
 	bundle.cacheAccessTotal.inc({
 		operation: input.operation,
