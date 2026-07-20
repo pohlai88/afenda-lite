@@ -1,8 +1,14 @@
 # `@afenda/auth`
 
-Rank-1 Platform Neon Auth adapter for Afenda-Lite: session reads, edge session proxy, Auth BFF handlers, Path A credential sign-in/sign-out, org invitations, and organization-console primitives — **server-only** on the root barrel.
+**What it is** — Rank-1 Platform (R1-D) Neon Auth adapter for Afenda-Lite.
 
-Use this package from `apps/web` (proxy, route handlers, Server Actions, auth features) and sibling Platform packages such as `@afenda/admin`. Browser Neon Auth UI talks through `@afenda/auth/client` only. Password-reset and invite **mail** is Zoho SMTP configured in the Neon Auth console (`smtp.zoho.com`) — not app-side SMTP. Join entry is `/join?invitationId=…`. Maintainers run lint / typecheck / Vitest via the filter scripts below (Node `24.x`, pnpm `≥10.33.4` from the repo root `engines`).
+**What it does** — Session reads, edge session proxy, Auth BFF handlers, Path A credential sign-in/sign-out, org invitations, and organization-console primitives. Root barrel is **server-only**; browser Neon Auth UI uses `@afenda/auth/client` only.
+
+**When you need it** — `apps/web` proxy, route handlers, Server Actions, auth features, and sibling Platform packages such as `@afenda/admin`.
+
+**Who it is for** — App and Platform maintainers. Password-reset and invite **mail** is Zoho SMTP in the Neon Auth console (`smtp.zoho.com`) — not app-side SMTP. Join entry is `/join?invitationId=…`. Maintainers run lint / typecheck / Vitest via the filter scripts below (Node `24.x`, pnpm `≥10.33.4` from the repo root `engines`).
+
+Category index: [control-plane/README.md](../README.md). Catalog: [packages/README.md](../../README.md).
 
 ## Consume
 
@@ -73,7 +79,7 @@ Invite / org-console primitives return `@afenda/errors` `Result` (closed `ErrorC
 | Session-gate policy matcher · auth UI shells · ActionResult adapters | `apps/web` |
 | Typed product env | `@afenda/env` |
 
-**Layer:** Rank-1 Platform (`@afenda/env` · `@afenda/errors` · `@afenda/http` · `@afenda/logger` · `@afenda/rate-limit`). Must not import Surfaces or `apps/*`. See [docs-V2/monorepo](../../docs-V2/monorepo/README.md).
+**Layer:** Rank-1 Platform (`@afenda/env` · `@afenda/errors` · `@afenda/http` · `@afenda/logger` · `@afenda/rate-limit`). Must not import Surfaces or `apps/*`. See [docs-V2/monorepo](../../../docs-V2/monorepo/README.md).
 
 ## Out of scope
 
@@ -98,10 +104,10 @@ Structural ideas already remapped here: explicit `Result` failure codes on invit
 
 | Topic | Link |
 |-------|------|
-| Auth surfaces · mail · join · proxy | [docs-V2/auth](../../docs-V2/auth/README.md) |
-| Invite vs Auth UI origins | [docs-V2/tenancy/urls.md](../../docs-V2/tenancy/urls.md) |
-| Tenancy · shared schema | [docs-V2/tenancy](../../docs-V2/tenancy/README.md) |
-| Package DAG | [docs-V2/monorepo](../../docs-V2/monorepo/README.md) · [LAYERS.md](../../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md) |
-| Neon Auth ops skill | [`.agents/skills/neon`](../../.agents/skills/neon/SKILL.md) |
-| Neon Auth `N*` map | [neon-auth-slice-map](../../.cursor/skills/afenda-elite-implementation-slices/neon-auth-slice-map.md) |
-| Agent checkout posture | [AGENTS.md](../../AGENTS.md) |
+| Auth surfaces · mail · join · proxy | [docs-V2/auth](../../../docs-V2/auth/README.md) |
+| Invite vs Auth UI origins | [docs-V2/tenancy/urls.md](../../../docs-V2/tenancy/urls.md) |
+| Tenancy · shared schema | [docs-V2/tenancy](../../../docs-V2/tenancy/README.md) |
+| Package DAG | [docs-V2/monorepo](../../../docs-V2/monorepo/README.md) · [LAYERS.md](../../../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md) |
+| Neon Auth ops skill | [`.agents/skills/neon`](../../../.agents/skills/neon/SKILL.md) |
+| Neon Auth `N*` map | [neon-auth-slice-map](../../../.cursor/skills/afenda-elite-implementation-slices/neon-auth-slice-map.md) |
+| Agent checkout posture | [AGENTS.md](../../../AGENTS.md) |

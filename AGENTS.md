@@ -39,8 +39,11 @@ Do not start skill loads or MCP calls before the PREFLIGHT block is in the visib
 
 1. **Route product work** through [`/using-afenda-elite-skills`](.cursor/skills/using-afenda-elite-skills/SKILL.md) — sole product entry. Vendor phase skills under `agent-skills/` are a **method library after** the farm is fixed, not competing entry points.
 2. **One mission per chat** when shipping product work — ARCH-028 coding slices are **closed**; use GUIDE-018 phases (farm map + [docs-V2](docs-V2/README.md) Scratch packs) from the router. Residual scaffold / Neon Auth `N*` missions: [implementation-slices](.cursor/skills/afenda-elite-implementation-slices/SKILL.md) (+ command-sheet or neon-command-sheet).
+   - **Start a fresh session** when switching major features or domains (e.g. auth → accounting) so stale context does not drive the next mission.
+   - **Compact deliberately** before a critical cutover: summarize completed work, open blockers, and the next acceptance checks in a short block; then continue or open a new chat with that summary as the brain dump.
+   - Long threads that mix unrelated packages or farms are a red flag — split rather than pile on.
 3. **Prefer Agent** for implement/verify; use **Plan** only when the slice cutover has a real choice; use **Ask** for read-only navigation.
-4. **Verify with evidence** (commands, CI/Deploy runs, `Test-Path` / `git ls-files`) — never trust a stale Cursor index alone.
+4. **Verify with evidence** (commands, CI/Deploy runs, `Test-Path` / `git ls-files`) — never trust a stale Cursor index alone. When feeding failures back, paste the **specific** error / failing test — not a full 500-line log dump.
 5. **Commit/push only when the user asks.** Never force-push `main`; never amend remote commits without explicit request.
 6. **Do not print secrets.** Validate tokens via HTTP status / presence checks only.
 
@@ -89,11 +92,171 @@ Full inventory: [catalog.md](.cursor/skills/using-afenda-elite-skills/catalog.md
 | **Scratch docs** under **`docs-V2/`** — never recreate `doc/`; do **not** recreate Living `docs/` without Docs-lane reopen | [docs-V2/README.md](docs-V2/README.md) · cutover `71176a0` |
 | Shrink **scope** via Approved slices / MOD readiness — never shrink **quality** | Farm maps · module-readiness |
 
+## Patterns (canonical examples)
+
+Copy these shapes — do not invent parallel envelopes, barrels, or repository mega-packages. Living sources: `apps/web/app/actions/list-deliveries.ts` · `apps/web/features/master-data/master-data-shell.tsx` · `packages/erp/sales/src/ports.ts` · `apps/web/__tests__/action-result-contract.test.ts`.
+
+### Server Action
+
+Authz + Zod inside the Action; stamp org/actor from session; return `ActionResult<T>` (`ok: true | false`) — never `{ success, data }`.
+
+```ts
+"use server";
+
+import { listDeliveries } from "@afenda/fulfillment";
+import { z } from "zod";
+import { mapPackageResult } from "@/app/actions/map-package-result";
+import { runOperatorPermissionAction } from "@/app/actions/run-operator-permission-action";
+import { createFulfillmentCommandOptions } from "@/lib/erp/fulfillment-command-options";
+import {
+	type ActionResult,
+	actionFail,
+} from "@/modules/platform/schemas/action-result";
+import { parseSchema } from "@/modules/platform/schemas/common";
+
+export async function listDeliveriesAction(input?: {
+	page?: number;
+}): Promise<ActionResult<{ deliveries: unknown[] }>> {
+	return runOperatorPermissionAction({
+		path: "listDeliveriesAction",
+		permission: "fulfillment.delivery.read",
+		safeMessage: "Could not list deliveries.",
+		execute: async (session) => {
+			const parsed = parseSchema(
+				z.object({ page: z.number().int().positive().optional() }).optional(),
+				input,
+			);
+			if (!parsed.success) {
+				return actionFail("VALIDATION_ERROR", "Enter valid filters.", parsed.details);
+			}
+			const result = await listDeliveries(
+				{
+					organizationId: session.orgId,
+					actorUserId: session.userId,
+					...parsed.data,
+				},
+				createFulfillmentCommandOptions(),
+			);
+			const mapped = mapPackageResult(result);
+			if (!mapped.ok) return mapped;
+			return { ok: true, data: { deliveries: mapped.data } };
+		},
+	});
+}
+```
+
+### UI (RSC) — `@afenda/ui-system` barrel only
+
+```tsx
+import { Alert, AlertDescription, AlertTitle, Card, CardHeader, CardTitle } from "@afenda/ui-system";
+
+export async function ExamplePanel({ title, message }: { title: string; message: string }) {
+	return (
+		<Card>
+			<CardHeader>
+				<CardTitle>{title}</CardTitle>
+			</CardHeader>
+			<Alert>
+				<AlertTitle>Notice</AlertTitle>
+				<AlertDescription>{message}</AlertDescription>
+			</Alert>
+		</Card>
+	);
+}
+```
+
+### ERP port (inject at composition root — no peer ERP imports)
+
+```ts
+import type { Result } from "@afenda/errors/result";
+
+export type AuditFactPort = {
+	record(input: {
+		organizationId: string;
+		actorUserId: string;
+		correlationId: string;
+		entity: string;
+		entityId: string;
+		action: "CREATE" | "UPDATE" | "DELETE";
+	}): Promise<Result<{ id: string }>>;
+};
+
+export type MutationPorts = {
+	audit: AuditFactPort;
+	// outbox / lookups as needed — wired in apps/web production-ports
+};
+```
+
+### Vitest (discriminated `ActionResult`)
+
+```ts
+import { describe, expect, it } from "vitest";
+import { actionFail, actionOk } from "@/modules/platform/schemas/action-result";
+
+describe("ActionResult", () => {
+	it("discriminates success and failure via ok", () => {
+		const ok = actionOk({ id: "1" });
+		const fail = actionFail("FORBIDDEN", "Not allowed.");
+		expect(ok.ok).toBe(true);
+		expect(fail.ok).toBe(false);
+	});
+});
+```
+
+## Confusion management
+
+When context conflicts or a requirement is missing, **stop** and surface it — never silently guess architecture:
+
+```text
+CONFUSION:
+[Describe the conflict or gap — cite files / authority]
+
+Options:
+A) [Option 1 + trade-off]
+B) [Option 2 + trade-off]
+C) Ask — [why this needs an explicit user decision]
+
+→ Which approach should I take?
+```
+
+## Planning pattern (multi-step tasks)
+
+Before executing **3+** steps that change product/package code, emit a short plan:
+
+```text
+PLAN:
+1. [Step 1 + artifact path]
+2. [Step 2 + artifact path]
+3. [Step 3 + verify command]
+→ Executing unless you redirect.
+```
+
+Skip the plan only for single-file trivial edits the user already named.
+
+## Red flags / anti-patterns
+
+| Red flag | Fix |
+|----------|-----|
+| Invented APIs / imports that do not exist on disk | Read the living file or package `exports` first |
+| Re-implementing a helper that already lives in `@afenda/*` or `apps/web/modules` | Grep / package README before writing |
+| `{ success, data }` or non-`ok` Action envelopes | Use `ActionResult` / `@afenda/errors/result` |
+| Deep import `@afenda/*/src/...` or relative `../../packages/` | Package name or declared `exports` only |
+| UI import bypass of `@afenda/ui-system` | Flat barrel only (ADR-010 / ui-compose) |
+| Raw `process.env` for product config | `import { env } from "@afenda/env"` |
+| New `@afenda/repositories` · `@afenda/data-access` · `@afenda/orm` · `@afenda/shared` | Domain ports in owning packages; `@afenda/db` stays infrastructure |
+| Business writes inside `@afenda/db` | Schema host only — `writeOwner` in SCHEMA-OWNERSHIP-MANIFEST |
+| Citing missing Living `docs/architecture/ARCH-*` as on-disk SSOT | Use `docs-V2/**` · farm companions · AGENTS.md |
+| Collapse path restore (`app/`, root `modules/`, `features/`, …) | Greenfield under `apps/web/**` · `packages/*` only |
+| Output ignores project conventions as the chat gets long | Fresh session + compact summary (one mission per chat) |
+| Silent pick when Spec vs disk disagree | Use **Confusion management** above |
+
+Cross-tool pointers (do not duplicate this file): [`.cursorrules`](.cursorrules) · [`CLAUDE.md`](CLAUDE.md) · [`.windsurfrules`](.windsurfrules) · [`.github/copilot-instructions.md`](.github/copilot-instructions.md). Condensed map: [docs-V2/project-map.md](docs-V2/project-map.md).
+
 ## Documentation & architecture authority
 
 | Surface | Use for |
 |---------|---------|
-| [docs-V2/README.md](docs-V2/README.md) | Scratch E2E architecture packs (day-to-day agent ops) |
+| [docs-V2/README.md](docs-V2/README.md) · [docs-V2/project-map.md](docs-V2/project-map.md) | Scratch E2E architecture packs · condensed navigation index |
 | [docs-V2/system/README.md](docs-V2/system/README.md) · [monorepo](docs-V2/monorepo/README.md) · [pnpm](docs-V2/pnpm/README.md) · [api](docs-V2/api/README.md) · [tenancy](docs-V2/tenancy/README.md) | System · DAG · install · contracts · tenancy |
 | [`@afenda/docs`](apps/docs) | **Official** human-facing documentation site (Fumadocs) — active config; enterprise production bar |
 | [docs-V2/api/OPEN-001-openapi.yaml](docs-V2/api/OPEN-001-openapi.yaml) | OpenAPI machine SSOT consumed by `@afenda/docs` |

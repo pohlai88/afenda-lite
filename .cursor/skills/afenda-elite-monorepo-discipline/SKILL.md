@@ -104,7 +104,7 @@ Full diagram, forbidden pairs, and violation fixes: [LAYERS.md](LAYERS.md).
 
 7. **No phantom dependencies.** A package may only import what is in its own `package.json` `dependencies` / `devDependencies`. Hoisting is not a contract.
 
-8. **No mega-package.** Do not create `@afenda/shared` or dump unrelated code into an existing package — ARCH-024.
+8. **No mega-package.** Do not create `@afenda/shared`, `@afenda/common`, `@afenda/utils`, `@afenda/types`, `@afenda/helpers`, or dump unrelated code into an existing package. These become dependency escape hatches that bypass layer discipline — ARCH-024.
 
 ---
 

@@ -1,8 +1,14 @@
 # `@afenda/admin`
 
-Rank-1 Platform org-console + ops services for Afenda-Lite: Neon Auth organization list / provision / hard-delete, sole `platform_rbac_audit` write·list SSOT, health/readiness probes, and active-org usage metrics — **server-only**, returning `@afenda/errors` `Result`.
+**What it is** — Rank-1 Platform (R1-D) org-console and ops services for Afenda-Lite.
 
-Use this package from Server Actions, RSC shells, and Platform domain adapters under `apps/web`. Prefer the **subpath exports** (`./audit` · `./health` · `./usage`) when you do not need org-console APIs — those entry points avoid loading the Neon Auth org client. Org APIs live on the root barrel only (there is no `@afenda/admin/org` export). Maintainers run lint / typecheck / Vitest via the filter scripts below (Node `24.x`, pnpm `≥10.33.4` from the repo root `engines`).
+**What it does** — Neon Auth organization list / provision / hard-delete, sole `platform_rbac_audit` write·list SSOT, health/readiness probes, and active-org usage metrics. Root and subpath barrels are **server-only**; outcomes use `@afenda/errors` `Result`.
+
+**When you need it** — Server Actions, RSC shells, and Platform domain adapters under `apps/web` that must call org-console, RBAC audit, health, or usage APIs without dual-writing audit tables.
+
+**Who it is for** — App and Platform maintainers consuming `@afenda/admin` (not UI authors — no client components here). Prefer subpaths `./audit` · `./health` · `./usage` when you do not need org-console APIs (those entry points avoid loading the Neon Auth org client). Org APIs live on the root barrel only (there is no `@afenda/admin/org` export).
+
+Category index: [control-plane/README.md](../README.md). Catalog: [packages/README.md](../../README.md).
 
 ## Consume
 
@@ -42,7 +48,7 @@ pnpm --filter @afenda/admin typecheck
 pnpm --filter @afenda/admin test
 ```
 
-Requires root engines: **Node `24.x`**, **pnpm `≥10.33.4`**.
+Requires root engines: **Node `24.x`**, **pnpm `≥10.33.4`**. No package-local `build` script — `typecheck` is the compile gate.
 
 ## Exports
 
@@ -68,10 +74,11 @@ Requires root engines: **Node `24.x`**, **pnpm `≥10.33.4`**.
 |---------|-------|
 | Org-console Neon Auth ops · RBAC audit SSOT · health probes · usage position | `@afenda/admin` |
 | Session / invite / membership primitives | `@afenda/auth` |
-| Drizzle schema · `platform_*` tables | `@afenda/db` |
+| Drizzle schema · `platform_*` tables (host) | `@afenda/db` |
+| `platform_rbac_audit` write ownership | `@afenda/admin` ([SCHEMA-OWNERSHIP-MANIFEST](../../../docs-V2/modules/SCHEMA-OWNERSHIP-MANIFEST.yaml)) |
 | ActionResult adapters · org-admin UI | `apps/web` |
 
-**Layer:** Rank-1 Platform (`@afenda/auth` · `@afenda/db` · `@afenda/env` · `@afenda/errors`). Must not import Surfaces or `apps/*`. See [docs-V2/monorepo](../../docs-V2/monorepo/README.md).
+**Layer:** Rank-1 Platform (`@afenda/auth` · `@afenda/db` · `@afenda/env` · `@afenda/errors`). Must not import Surfaces or `apps/*`. See [docs-V2/monorepo](../../../docs-V2/monorepo/README.md).
 
 ## Out of scope
 
@@ -81,8 +88,8 @@ Do not add to this package: dual audit writers, soft-delete org flags, client/UI
 
 | Topic | Link |
 |-------|------|
-| Tenancy · pooler · shared schema (Scratch; Living ARCH-023 dormant) | [docs-V2/tenancy](../../docs-V2/tenancy/README.md) · [neon-optimize](../../docs-V2/tenancy/neon-optimize.md) |
-| Auth / Neon Auth ops | [docs-V2/auth](../../docs-V2/auth/README.md) |
-| ActionResult · API wire | [docs-V2/api](../../docs-V2/api/README.md) |
-| Package DAG | [docs-V2/monorepo](../../docs-V2/monorepo/README.md) · [LAYERS.md](../../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md) |
-| Agent checkout posture | [AGENTS.md](../../AGENTS.md) |
+| Tenancy · pooler · shared schema (Scratch; Living ARCH-023 dormant) | [docs-V2/tenancy](../../../docs-V2/tenancy/README.md) · [neon-optimize](../../../docs-V2/tenancy/neon-optimize.md) |
+| Auth / Neon Auth ops | [docs-V2/auth](../../../docs-V2/auth/README.md) |
+| ActionResult · API wire | [docs-V2/api](../../../docs-V2/api/README.md) |
+| Package DAG | [docs-V2/monorepo](../../../docs-V2/monorepo/README.md) · [LAYERS.md](../../../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md) |
+| Agent checkout posture | [AGENTS.md](../../../AGENTS.md) |

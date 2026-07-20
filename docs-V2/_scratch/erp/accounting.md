@@ -39,12 +39,27 @@ The package now establishes enterprise-grade accounting:
 
 ### Observations (non-blocking)
 
-* Deep AR/AP-to-GL reconciliation across `@afenda/receivables`/`@afenda/payables` and `@afenda/accounting` remains a cross-module concern; the source-posting link and exception infrastructure supports this but full reconciliation reports are deferred to a dedicated cross-module slice.
-* `getLedgerAccountActivity` and `getSourcePostingTrace` provide the query foundation for future audit trail UI.
+* Deep AR/AP-to-GL reconciliation across `@afenda/receivables`/`@afenda/payables` and `@afenda/accounting` remains a cross-module concern; the source-posting link and exception infrastructure are in place; full reconciliation reports are a separate cross-module mission (not a Phase 4.8 package gap).
+* `getLedgerAccountActivity` and `getSourcePostingTrace` provide the query foundation for audit trail UI.
+
+### Last verify (ops + package)
+
+| Check | Result |
+|-------|--------|
+| `pnpm --filter @afenda/accounting test` | 16 pass |
+| `pnpm --filter @afenda/accounting typecheck` | OK |
+| Migrations `0032_accounting_gap_close` · `0033_schema_snapshot_catchup` | applied on Neon `br-tiny-hill-ao82jp6f` |
+| `pnpm --filter @afenda/db db:generate` | No schema changes |
+| `pnpm --filter @afenda/db db:migrate` (`AFENDA_ALLOW_DB_MIGRATE=1`) | OK |
+| `pnpm --filter @afenda/db db:ensure-permission-catalog` | OK — 89 perms; accounting 17 |
+| `pnpm validate:modules` | OK |
+| Parent Scratch | [packages_governance.md](../packages_governance.md) §4.8 Done · [packages_boundaries.md](../packages_boundaries.md) disk stamp |
+
+Historical sections below are the original blocking-finding write-up kept as design archive; resolutions are in the Pass findings table above.
 
 ---
 
-# Blocking findings
+# Blocking findings (archive — resolved)
 
 ## 1. Chart of Accounts has no owner
 
@@ -1009,19 +1024,22 @@ listPostingExceptions;
 
 `postFinancialSourceEvent` may remain an internal application service rather than a general public command, but its idempotent contract must exist somewhere.
 
-# Priority order
+# Priority order (archive — items 1–9 closed on disk)
 
 ```text
+DONE (Phase 4.8 gap-close):
 1. Add Chart of Accounts and Ledger Account ownership
 2. Add Source Posting Link and source-event idempotency
 3. Define versioned posting rules and account roles
 4. Clarify journal-line versus ledger-posting authority
 5. Expand Accounting Period lifecycle and close controls
 6. Add fine-grained package-internal authorization
-7. Define functional currency and amount policy
+7. Define functional currency and amount policy (package amount model)
 8. Formalize trial balance and account-activity queries
 9. Add posting exceptions and retry behavior
-10. Add reconciliation, metrics, and recovery evidence
+
+SEPARATE MISSION (cross-module):
+10. Deep AR/AP/Payment/GL reconciliation reports, metrics, and recovery evidence packs
 ```
 
-The immediate blocker is **source-event idempotency**. Accounting must be able to prove that a duplicated Payments, Payables, or Receivables event cannot create a duplicated journal.
+Source-event idempotency is closed via `source_posting_link` + `postFinancialSourceEvent` (duplicate delivery returns the original journal).

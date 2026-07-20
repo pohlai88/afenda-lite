@@ -100,7 +100,7 @@ Emit metrics using constants from `@afenda/receiving` (`RECEIVING_METRIC_*`) at 
 | Scenario | Response |
 |----------|----------|
 | PO closes after receipt draft creation | Post fails with PO closed; cancel draft or wait for reopen |
-| Concurrent over-receipt attempt | Second post fails on Receiving-owned accepted sum + tolerance |
+| Concurrent over-receipt attempt | Second post fails under PO advisory lock + in-TX accepted sum + tolerance |
 | Inventory handler unavailable | Receipt stays posted with `inventory_application_status=failed`; list via `listReceivingInventoryExceptions` |
 | Duplicate receipt-posted event | Inventory create uses idempotency keys; post command replay returns original |
 | Incorrect posted receipt | `reverseGoodsReceipt` + inventory compensating movement |

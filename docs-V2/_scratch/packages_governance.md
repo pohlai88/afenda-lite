@@ -5,26 +5,23 @@
 | Mode | Architecture + program specification |
 | Status | **Scratch accepted reference** — single consolidate of packages classification + Phase 3/4 authorization |
 | Audience | Engineers and agents maintaining `@afenda/*` |
-| Decision enabled | Apply Living Scratch authority for laws; execute remaining Phase 4 slices under this authorization |
+| Decision enabled | Apply Living Scratch authority for laws; Phase 4 ERP domain packages closed on disk through Accounting |
 | Operative authority | [docs-V2/monorepo](../monorepo/README.md) · [LAYERS.md](../../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md) · [WORKSPACE-EDGE-REGISTER.yaml](../modules/WORKSPACE-EDGE-REGISTER.yaml) · [MODULE-ROADMAP.yaml](../modules/MODULE-ROADMAP.yaml) · [packages/README.md](../../packages/README.md) |
 | Supersedes | [packages_refactor_v2.3.md](./packages_refactor_v2.3.md) · [phase3_phase4.md](./phase3_phase4.md) · [v2.2](./packages_refactor_v2.2.md) · earlier refactor drafts |
-| Date | 2026-07-20 |
+| Date | 2026-07-20 · Accounting close stamp 2026-07-21 |
 | Promoted (Phase 1–2) | `monorepo-governance/2026-07-20` · `layers-governance/2026-07-20` · `packages-catalog/2026-07-20` · `workspace-edges/2026-07-20` |
 
-**Scratch accepted reference only.** Scratch never becomes interim implementation authority for laws already promoted. Implement laws against the operative surfaces above. Phase 4 remaining slices use this document as the human authorization record plus MODULE-ROADMAP cuts.
+**Scratch accepted reference only.** Scratch never becomes interim implementation authority for laws already promoted. Implement laws against the operative surfaces above. Phase 4.1–4.8 closed on disk; this document remains the human authorization / ownership record plus MODULE-ROADMAP cuts.
 
 ```text
-PROGRAM STATUS (disk + Living Scratch — 2026-07-20)
+PROGRAM STATUS (disk + Living Scratch — 2026-07-21)
 
 DONE:
   Phase 1 — band classification + Living Scratch promotion
   Phase 2 — manifests, generated registers, validators, negative fixtures
   Phase 3 — one-level category nesting (22 packages; published names unchanged)
-  Phase 4.1–4.7 — purchasing · inventory · receiving · fulfillment · receivables · payables · payments
-
-AUTHORIZED / NEXT:
-  Phase 4.8 Accounting
-  (package-by-package; each slice closes before the next)
+  Phase 4.1–4.8 — purchasing · inventory · receiving · fulfillment ·
+    receivables · payables · payments · accounting
 
 STILL NOT AUTHORIZED:
   @afenda/module-catalog runtime
@@ -521,7 +518,7 @@ Authorized as one program; executed as eight independently closable slices. No e
 | 4.5 | `@afenda/receivables` | **Done** |
 | 4.6 | `@afenda/payables` | **Done** |
 | 4.7 | `@afenda/payments` | **Done** |
-| 4.8 | `@afenda/accounting` | **Next** |
+| 4.8 | `@afenda/accounting` | **Done** |
 
 ```text
 Delivery chains (progressive close):
@@ -665,15 +662,17 @@ getSupplierBalance;
 
 Does not directly mutate Receivables, Payables, or Accounting tables.
 
-### 4.8 `@afenda/accounting` — Authorized
+### 4.8 `@afenda/accounting` — Done
 
-**Owns:** Journal · Journal Line · Ledger Posting · Accounting Period.
+**Owns:** Chart of Accounts · Ledger Account · Account Role Mapping · Posting Profile (+ lines) · Journal · Journal Line · Ledger Posting · Accounting Period · Source Posting Link · Financial Posting Exception.
 
-**Surface:** create/add/post/reverse journal · open/close period · get/list · `getTrialBalance`.
+**Surface:** CoA/ledger account lifecycle · map account roles · upsert posting profiles · create/add/post/reverse journal · open/soft-close/close/reopen period · `postFinancialSourceEvent` (idempotent) · get/list · `getTrialBalance` · ledger activity · source trace · posting exceptions.
 
-**Invariants:** total debit = total credit · posted journal immutable · reversal creates new journal · closed period rejects posting · organization scope mandatory · currency precision deterministic.
+**Invariants:** total debit = total credit · posted journal immutable · reversal creates new linked journal · soft_closed/closed reject ordinary posting · one source event → at most one journal per posting-rule version · organization scope mandatory · currency precision deterministic · 17 fine-grained permissions (coarse `accounting.read`/`manage` retired).
 
-Consumes approved financial events through application-composed handlers. Does not import every transaction package.
+**Disk evidence:** migration `0032_accounting_gap_close` · snapshot catch-up `0033_schema_snapshot_catchup` · Scratch [erp/accounting.md](./erp/accounting.md) CLOSED 9.4/10 · package README.
+
+Consumes approved financial events via `postFinancialSourceEvent` (application-composed). Does not import peer ERP packages.
 
 ---
 
@@ -710,10 +709,9 @@ AUTHORIZED:
 PHASE 3 (complete on disk)
 - One-level categories; @afenda/<name> unchanged; no shims or category barrels.
 
-PHASE 4 (serial)
-- 4.1–4.7 done on disk.
-- Create and implement remaining:
-  @afenda/accounting
+PHASE 4 (serial) — COMPLETE on disk
+- 4.1–4.8 done: purchasing · inventory · receiving · fulfillment ·
+  receivables · payables · payments · accounting.
 
 EXECUTION LAW:
 - Each Phase 4 slice closes before the next begins.

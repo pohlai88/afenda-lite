@@ -1,11 +1,12 @@
 # Inventory — Scratch contract (operative)
 
-> **Status:** `OPERATIVE` — Tier A Scratch contract; INV-REQ ledger Pass (quantity-only / no in-transit = Observation, not gaps).  
+> **Status:** `CLOSED` — Tier A Scratch contract; INV-REQ ledger Pass (v1 carve-outs = Observation, not gaps).  
 > **As of:** 2026-07-21  
-> **Score:** **Pass** — REQ ledger closed; no open repair gaps. Bin/lot/serial, valuation/GL, in-transit, and ATP are absent-by-design (INV-REQ-035 Observation + scope-contract test). Dual-surface + nav SSOT closed (INV-REQ-034 / INV-REQ-036).  
+> **Score:** **Pass** — REQ ledger closed; no open repair gaps. Bin/lot/serial, valuation/GL, in-transit, and ATP are absent-by-design (INV-REQ-035 Observation + scope-contract test). Dual-surface + nav SSOT closed (INV-REQ-034 / INV-REQ-036). Optional follow-ups closed: create-form select parse/guard; org-scoped reconcile CLI loads repo-root `.env.local`.  
 > **Tier:** A operative contract — Scratch only; not Living DOC-001 SSOT.  
 > **Package:** `@afenda/inventory` · Tables: `@afenda/db` · Band: R1-F ERP · Neon `br-tiny-hill-ao82jp6f`  
-> **Authority:** [package README](../../../packages/erp/inventory/README.md) · this file owns gap ledger + invariants (Living `docs/` dormant).
+> **Authority:** [package README](../../../packages/erp/inventory/README.md) · this file owns gap ledger + invariants (Living `docs/` dormant).  
+> **Last verify:** `pnpm --filter @afenda/web typecheck` · `pnpm --filter @afenda/inventory reconcile -- --organizationId=org-fragrant-lake-90358173` (Pass / EXIT=0; CLI loads `.env.local` when `DATABASE_URL` unset) — 2026-07-21 close-out.
 
 ## Purpose
 
@@ -106,7 +107,7 @@ Receipt/issue from UI without peer source is denied. Receiving / Fulfillment pos
 | INV-REQ-023 | Draft cancel + compensating reverse | Pass | S7 | commands + UI |
 | INV-REQ-024 | Adjustment controls | Pass | S7 | reason + perm |
 | INV-REQ-025 | Quantity-only vs Accounting | Pass | S0 | Out of scope |
-| INV-REQ-026 | Reconciliation contract + CLI | Pass | S8 | `pnpm --filter @afenda/inventory reconcile` |
+| INV-REQ-026 | Reconciliation contract + CLI | Pass | S8 | `pnpm --filter @afenda/inventory reconcile -- --organizationId=<org>` (loads `.env.local`) |
 | INV-REQ-027 | Ops metrics / runbook | Pass | S8 | README Ops |
 | INV-REQ-028 | Repair = compensating movements | Pass | S7/S8 | README |
 | INV-REQ-029 | Memory ≡ Drizzle atomic contract | Pass | S1/S5 | both adapters |

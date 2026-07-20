@@ -89,7 +89,7 @@ package.json realizes; CI reconciles (Phase 2 validator).
 | `@afenda/ui-system` | `@afenda/db`, server-only auth paths | UI is client/surface |
 | Any package | Relative `../../packages/...` | Cross-boundary package name required |
 | Any consumer | `@afenda/<pkg>/src/...` | Public `exports` only |
-| Any package | `@afenda/shared` · `@afenda/common` · `@afenda/erp-utils` · `@afenda/domain-kit` | Mega-package / premature shared helpers banned |
+| Any package | `@afenda/shared` · `@afenda/common` · `@afenda/utils` · `@afenda/types` · `@afenda/helpers` · `@afenda/erp-utils` · `@afenda/domain-kit` | Mega-package / catch-all / premature shared helpers banned — dependency escape hatches |
 
 ## Same-layer rules
 

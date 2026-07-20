@@ -26,7 +26,7 @@ Re-probe after package add/rename or DAG change. Controlled Living `docs/` remai
 | **4.5** | `@afenda/receivables` P0 transactional package | **Done** — nest under `packages/erp/receivables`; sole mutator of invoice/line/credit-note/allocation/balance-projection; dual-control edges + manifest + permission catalog. |
 | **4.6** | `@afenda/payables` P0 transactional package | **Done** — nest under `packages/erp/payables`; sole mutator of supplier invoice/line/credit-note/allocation/balance-projection/three-way-match result; dual-control edges + manifest + permission catalog. |
 | **4.7** | `@afenda/payments` P0 transactional package | **Done** — nest under `packages/erp/payments`; sole mutator of payment/allocation/reversal; refunds use `payment.direction = refund` with no separate refund table; dual-control edges + manifest + permission catalog. |
-| **4.8** | `@afenda/accounting` P0 transactional package | **Done** — nest under `packages/erp/accounting`; sole mutator of journal/journal-line/ledger-posting/accounting-period; dual-control edges + manifest + permission catalog. |
+| **4.8** | `@afenda/accounting` P0 transactional package | **Done** — nest under `packages/erp/accounting`; sole mutator of chart-of-account / ledger-account / account-role-mapping / posting-profile(+lines) / journal / journal-line / ledger-posting / accounting-period / source-posting-link / financial-posting-exception; period open→soft_closed→closed+reopen; 17 fine permissions; dual-control edges + manifest + permission catalog; Scratch [erp/accounting.md](../_scratch/erp/accounting.md) CLOSED 9.4/10. |
 | **4** | New ERP packages from MODULE-ROADMAP | **Done — Phase 4 complete.** All authorized roadmap ERP packages were promoted package-by-package ([packages_governance.md](../_scratch/packages_governance.md)). |
 
 Still out of scope for this pack (separate missions): `@afenda/module-catalog` runtime · `@afenda/authorization` extraction · `@afenda/jobs` · new transaction-core packages.
@@ -119,7 +119,7 @@ Do not promote business helpers to `@afenda/shared`, `@afenda/common`, `@afenda/
 
 `@afenda/payments` → `@afenda/db` · `@afenda/errors` · `@afenda/events` (payment / payment_allocation / payment_reversal transactional owner; refunds are payment rows with `direction = refund`; Receivables, Payables, and Accounting integration is events-only — ARCH-006).
 
-`@afenda/accounting` → `@afenda/db` · `@afenda/errors` · `@afenda/events` (journal / journal_line / ledger_posting / accounting_period transactional owner; integrations with peer ERP packages are events-only — ARCH-006).
+`@afenda/accounting` → `@afenda/db` · `@afenda/errors` · `@afenda/events` (chart_of_account / ledger_account / account_role_mapping / posting_profile(+lines) / journal / journal_line / ledger_posting / accounting_period / source_posting_link / financial_posting_exception transactional owner; peer ERP integrations are events-only via `postFinancialSourceEvent` — ARCH-006 label).
 
 `@afenda/docs` = official documentation site — may depend on workspace `@afenda/config` only; **must not** import `@afenda/db` · `@afenda/auth` · `@afenda/env` product secrets. OpenAPI consumer rules: [../docs/README.md](../docs/README.md).
 
