@@ -173,6 +173,10 @@ tables:
   - moduleId: payments
     packageName: "@afenda/payments"
     schemaOwner: "@afenda/db"
+    table: payment_account
+  - moduleId: payments
+    packageName: "@afenda/payments"
+    schemaOwner: "@afenda/db"
     table: payment
   - moduleId: payments
     packageName: "@afenda/payments"

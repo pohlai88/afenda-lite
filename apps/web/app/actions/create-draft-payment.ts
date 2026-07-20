@@ -1,5 +1,6 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
 import { createDraftPayment, type Payment } from "@afenda/payments";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -27,7 +28,14 @@ const optionalReference = z.preprocess(
 );
 const schema = z.object({
 	code: z.string().trim().min(1).max(64),
-	direction: z.enum(["receipt", "disbursement", "transfer"]),
+	paymentAccountId: z.string().uuid(),
+	direction: z.enum(["receipt", "disbursement"]),
+	purpose: z.enum([
+		"customer_receipt",
+		"supplier_disbursement",
+		"manual_receipt",
+		"manual_disbursement",
+	]),
 	counterpartyId: optionalUuid,
 	currencyCode: z.string().trim().length(3),
 	amount: z.coerce.number().positive(),
@@ -40,12 +48,14 @@ export async function createDraftPaymentAction(
 ): Promise<CreateDraftPaymentActionState> {
 	return runOperatorPermissionAction({
 		path: "createDraftPaymentAction",
-		permission: "payments.manage",
+		permission: "payments.payment.create",
 		safeMessage: "Could not create payment. Try again or contact an admin.",
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(schema, {
 				code: formData.get("code"),
+				paymentAccountId: formData.get("paymentAccountId"),
 				direction: formData.get("direction"),
+				purpose: formData.get("purpose"),
 				counterpartyId: formData.get("counterpartyId"),
 				currencyCode: formData.get("currencyCode"),
 				amount: formData.get("amount"),
@@ -63,6 +73,7 @@ export async function createDraftPaymentAction(
 						organizationId: session.orgId,
 						actorUserId: session.userId,
 						correlationId,
+						idempotencyKey: randomUUID(),
 						...parsed.data,
 					},
 					createPaymentsCommandOptions(),

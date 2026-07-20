@@ -20,6 +20,7 @@ export const PayablesEventSchemas = {
 	"payables.invoice.posted.v1": payablesPayloadSchema,
 	"payables.credit_note.posted.v1": payablesPayloadSchema,
 	"payables.allocation.posted.v1": payablesPayloadSchema,
+	"payables.allocation.reversed.v1": payablesPayloadSchema,
 } as const;
 
 export type PayablesEventType = keyof typeof PayablesEventSchemas;
@@ -34,6 +35,8 @@ export const PAYABLES_CREDIT_NOTE_POSTED_EVENT =
 	"payables.credit_note.posted.v1" as const;
 export const PAYABLES_ALLOCATION_POSTED_EVENT =
 	"payables.allocation.posted.v1" as const;
+export const PAYABLES_ALLOCATION_REVERSED_EVENT =
+	"payables.allocation.reversed.v1" as const;
 
 export const PAYABLES_EVENT_IDS = [
 	PAYABLES_INVOICE_CREATED_EVENT,
@@ -41,4 +44,5 @@ export const PAYABLES_EVENT_IDS = [
 	PAYABLES_INVOICE_POSTED_EVENT,
 	PAYABLES_CREDIT_NOTE_POSTED_EVENT,
 	PAYABLES_ALLOCATION_POSTED_EVENT,
+	PAYABLES_ALLOCATION_REVERSED_EVENT,
 ] as const satisfies readonly PayablesEventType[];

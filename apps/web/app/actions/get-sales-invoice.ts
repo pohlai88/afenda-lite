@@ -21,7 +21,7 @@ export async function getSalesInvoiceAction(
 ): Promise<ActionResult<GetSalesInvoiceActionData>> {
 	return runOperatorPermissionAction({
 		path: "getSalesInvoiceAction",
-		permission: "receivables.read",
+		permission: "receivables.invoice.read",
 		safeMessage: "Could not load sales invoice. Try again or contact an admin.",
 		execute: async (session) => {
 			const parsed = parseSchema(schema, invoiceId);

@@ -13,6 +13,7 @@ export const FULFILLMENT_COMMAND_POD_RECORD =
 	"fulfillment.delivery.pod.record" as const;
 export const FULFILLMENT_COMMAND_CANCEL =
 	"fulfillment.delivery.cancel" as const;
+export const FULFILLMENT_COMMAND_CLOSE = "fulfillment.delivery.close" as const;
 export const FULFILLMENT_QUERY_GET = "fulfillment.delivery.get" as const;
 export const FULFILLMENT_QUERY_LIST = "fulfillment.delivery.list" as const;
 
@@ -25,6 +26,7 @@ export const FULFILLMENT_COMMAND_IDS = [
 	FULFILLMENT_COMMAND_POST,
 	FULFILLMENT_COMMAND_POD_RECORD,
 	FULFILLMENT_COMMAND_CANCEL,
+	FULFILLMENT_COMMAND_CLOSE,
 ] as const;
 export type FulfillmentCommandId = (typeof FULFILLMENT_COMMAND_IDS)[number];
 

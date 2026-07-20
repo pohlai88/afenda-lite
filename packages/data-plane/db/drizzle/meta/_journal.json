@@ -169,6 +169,34 @@
       "when": 1784569000000,
       "tag": "0023_inventory_gap_close",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1784570000000,
+      "tag": "0024_fulfillment_gap_close",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1784571000000,
+      "tag": "0025_payments_gap_close",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1784572000000,
+      "tag": "0026_receivables_gap_close",
+      "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1784574256943,
+      "tag": "0027_schema_snapshot_catchup",
+      "breakpoints": true
     }
   ]
 }

@@ -26,6 +26,8 @@ const schema = z.object({
 	customerCode: z.string().trim().min(1).max(64),
 	customerName: z.string().trim().min(1).max(256),
 	currencyCode: z.string().trim().length(3),
+	idempotencyKey: z.string().trim().min(1).max(128),
+	manualReason: z.string().trim().min(1).max(512).default("Manual sales invoice"),
 });
 
 export async function createDraftSalesInvoiceAction(
@@ -34,7 +36,7 @@ export async function createDraftSalesInvoiceAction(
 ): Promise<CreateDraftSalesInvoiceActionState> {
 	return runOperatorPermissionAction({
 		path: "createDraftSalesInvoiceAction",
-		permission: "receivables.manage",
+		permission: "receivables.invoice.create",
 		safeMessage:
 			"Could not create sales invoice. Try again or contact an admin.",
 		execute: async (session, correlationId) => {
@@ -44,6 +46,8 @@ export async function createDraftSalesInvoiceAction(
 				customerCode: formData.get("customerCode"),
 				customerName: formData.get("customerName"),
 				currencyCode: formData.get("currencyCode"),
+				idempotencyKey: formData.get("idempotencyKey"),
+				manualReason: formData.get("manualReason") || undefined,
 			});
 			if (!parsed.success) {
 				return actionFail(
@@ -57,6 +61,7 @@ export async function createDraftSalesInvoiceAction(
 					organizationId: session.orgId,
 					actorUserId: session.userId,
 					correlationId,
+					invoiceSource: "manual",
 					...parsed.data,
 				},
 				createReceivablesCommandOptions(),

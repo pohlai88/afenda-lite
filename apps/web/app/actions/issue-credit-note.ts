@@ -1,6 +1,6 @@
 "use server";
 
-import { issueCreditNote, type SalesInvoice } from "@afenda/receivables";
+import { issueCreditNote, type SalesCreditNote } from "@afenda/receivables";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
@@ -13,17 +13,19 @@ import {
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
-export type IssueCreditNoteActionData = { creditNote: SalesInvoice };
+export type IssueCreditNoteActionData = { creditNote: SalesCreditNote };
 export type IssueCreditNoteActionState =
 	ActionResult<IssueCreditNoteActionData> | null;
 
 const schema = z.object({
 	code: z.string().trim().min(1).max(64),
+	salesInvoiceId: z.string().uuid(),
 	customerId: z.string().uuid(),
 	customerCode: z.string().trim().min(1).max(64),
 	customerName: z.string().trim().min(1).max(256),
 	currencyCode: z.string().trim().length(3),
 	amount: z.coerce.number().positive(),
+	idempotencyKey: z.string().trim().min(1).max(128),
 });
 
 export async function issueCreditNoteAction(
@@ -32,16 +34,18 @@ export async function issueCreditNoteAction(
 ): Promise<IssueCreditNoteActionState> {
 	return runOperatorPermissionAction({
 		path: "issueCreditNoteAction",
-		permission: "receivables.manage",
+		permission: "receivables.credit_note.issue",
 		safeMessage: "Could not issue credit note. Try again or contact an admin.",
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(schema, {
 				code: formData.get("code"),
+				salesInvoiceId: formData.get("salesInvoiceId"),
 				customerId: formData.get("customerId"),
 				customerCode: formData.get("customerCode"),
 				customerName: formData.get("customerName"),
 				currencyCode: formData.get("currencyCode"),
 				amount: formData.get("amount"),
+				idempotencyKey: formData.get("idempotencyKey"),
 			});
 			if (!parsed.success) {
 				return actionFail(

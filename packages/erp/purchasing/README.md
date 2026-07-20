@@ -178,7 +178,7 @@ Do not add to this package: shadow supplier/product tables, `md_*` mutations, Re
 
 | Topic | Link |
 |-------|------|
-| Scratch package notes | [purchasing.md](../../../docs-V2/_scratch/erp/purchasing.md) |
+| Scratch package notes | [done-purchasing.md](../../../docs-V2/_scratch/erp/done-purchasing.md) |
 | ARCH-006 consumer contract (Scratch) | [arch-006-consumer-contract.md](../../../docs-V2/master-data/arch-006-consumer-contract.md) |
 | Master-data spine | [docs-V2/master-data](../../../docs-V2/master-data/README.md) |
 | Package DAG | [docs-V2/monorepo](../../../docs-V2/monorepo/README.md) · [LAYERS.md](../../../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md) |

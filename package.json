@@ -54,6 +54,7 @@
 		"check:copy": "node scripts/collapse-script-unavailable.mjs \"check:copy\"",
 		"check:docs-naming": "node scripts/check-docs-naming.mjs",
 		"check:docs-trunk-ban": "node scripts/check-docs-trunk-ban.mjs",
+		"check:readme": "node scripts/check-readme.mjs",
 		"check:tsconfig-no-baseurl": "node scripts/check-tsconfig-no-baseurl.mjs",
 		"check:ui-system": "turbo run typecheck test --filter=@afenda/ui-system... --filter=@afenda/web",
 		"check:doc-integrity": "node .cursor/skills/afenda-elite-doc-integrity/scripts/audit-docs.mjs --scope docs/api --format markdown",

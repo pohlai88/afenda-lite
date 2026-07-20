@@ -100,7 +100,8 @@ export type PayablesEventType =
 	| "payables.invoice.matched.v1"
 	| "payables.invoice.posted.v1"
 	| "payables.credit_note.posted.v1"
-	| "payables.allocation.posted.v1";
+	| "payables.allocation.posted.v1"
+	| "payables.allocation.reversed.v1";
 
 export type PayablesEffects = {
 	emit(event: {
@@ -173,6 +174,13 @@ export type PayablesStore = {
 		correlationId: string;
 		effects: PayablesEffects;
 	}): Promise<Result<SupplierAllocation>>;
+	reverseAllocationsByPayment(record: {
+		organizationId: string;
+		paymentId: string;
+		actorUserId: string;
+		correlationId: string;
+		effects: PayablesEffects;
+	}): Promise<Result<SupplierAllocation[]>>;
 	cancel(record: {
 		organizationId: string;
 		invoiceId: string;

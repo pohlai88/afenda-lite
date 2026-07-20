@@ -19,7 +19,10 @@ export async function forbidUnlessPermission(
 	code: ProductPermissionCode,
 ): Promise<ActionFailure | null> {
 	const allowed = await sessionHasPermission(session, code);
-	return allowed
-		? null
-		: actionFail("FORBIDDEN", PERMISSION_DENIED_MESSAGE[code]);
+	if (allowed) return null;
+	const message = PERMISSION_DENIED_MESSAGE[code];
+	if (message === undefined) {
+		throw new Error(`Missing denial message for permission ${code}`);
+	}
+	return actionFail("FORBIDDEN", message);
 }

@@ -387,6 +387,54 @@ export class MemoryPayablesStore implements PayablesStore {
 		return ok({ ...allocation });
 	}
 
+	async reverseAllocationsByPayment(
+		record: Parameters<PayablesStore["reverseAllocationsByPayment"]>[0],
+	): Promise<Result<SupplierAllocation[]>> {
+		const allocations = [...this.allocations.values()].filter(
+			(allocation) =>
+				allocation.organizationId === record.organizationId &&
+				allocation.paymentId === record.paymentId,
+		);
+		const invoices = new Map<string, SupplierInvoice>();
+		const balances = new Map(this.balances);
+		for (const allocation of allocations) {
+			const found = this.findInvoice(record.organizationId, allocation.invoiceId);
+			if (!found.ok) return fail("INTERNAL_ERROR", "Supplier allocation invoice is missing");
+			const invoice = found.data;
+			invoices.set(invoice.id, cloneInvoice(invoice));
+			const amount = decimal(allocation.amount);
+			invoice.openAmount = format(decimal(invoice.openAmount) + amount);
+			invoice.version += 1;
+			invoice.updatedBy = record.actorUserId;
+			invoice.updatedAt = new Date();
+			this.adjustBalance(invoice, amount);
+			this.allocations.delete(allocation.id);
+			const emitted = await record.effects.emit({
+				type: "payables.allocation.reversed.v1",
+				organizationId: invoice.organizationId,
+				actorUserId: record.actorUserId,
+				correlationId: record.correlationId,
+				payload: {
+					organizationId: invoice.organizationId,
+					entityId: allocation.id,
+					supplierId: invoice.supplierId,
+					amount: allocation.amount,
+					currencyCode: invoice.currencyCode,
+					actorId: record.actorUserId,
+					correlationId: record.correlationId,
+				},
+			});
+			if (!emitted.ok) {
+				for (const [id, previous] of invoices) this.invoices.set(id, previous);
+				this.balances.clear();
+				for (const [key, balance] of balances) this.balances.set(key, balance);
+				for (const removed of allocations) this.allocations.set(removed.id, removed);
+				return emitted;
+			}
+		}
+		return ok(allocations.map((allocation) => ({ ...allocation })));
+	}
+
 	async cancel(
 		record: Parameters<PayablesStore["cancel"]>[0],
 	): Promise<Result<SupplierInvoice>> {

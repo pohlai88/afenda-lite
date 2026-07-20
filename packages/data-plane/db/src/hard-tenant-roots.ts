@@ -55,7 +55,7 @@ import {
 	supplierInvoiceLine,
 	threeWayMatchResult,
 } from "./schema/payables";
-import { payment, paymentAllocation, paymentReversal } from "./schema/payments";
+import { payment, paymentAccount, paymentAllocation, paymentReversal } from "./schema/payments";
 import {
 	platformAuditLog,
 	platformDomainEvent,
@@ -124,6 +124,7 @@ export const HARD_TENANT_ROOT_TABLE_NAMES = [
 	"supplier_allocation",
 	"three_way_match_result",
 	"supplier_balance_projection",
+	"payment_account",
 	"payment",
 	"payment_allocation",
 	"payment_reversal",
@@ -194,6 +195,7 @@ export const HARD_TENANT_ROOT_TABLES = {
 	supplierAllocation,
 	threeWayMatchResult,
 	supplierBalanceProjection,
+	paymentAccount,
 	payment,
 	paymentAllocation,
 	paymentReversal,

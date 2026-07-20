@@ -13,7 +13,7 @@ const base = {
 };
 
 describe("receivables authorization", () => {
-	it("requires manage for commands and read for queries", async () => {
+	it("requires fine-grained permissions for commands and queries", async () => {
 		const store = createMemoryReceivablesStore();
 		const seen: string[] = [];
 		const authorization = {
@@ -25,11 +25,14 @@ describe("receivables authorization", () => {
 		const command = await createDraftSalesInvoice(
 			{
 				...base,
+				idempotencyKey: "idem-auth-create",
 				code: "INV-1",
 				customerId: "00000000-0000-4000-8000-000000000001",
 				customerCode: "C-1",
 				customerName: "Customer",
 				currencyCode: "USD",
+				invoiceSource: "manual",
+				manualReason: "Auth test",
 			},
 			{ store, authorization },
 		);
@@ -43,6 +46,9 @@ describe("receivables authorization", () => {
 			{ store, authorization },
 		);
 		expect(query.ok).toBe(false);
-		expect(seen).toEqual(["receivables.manage", "receivables.read"]);
+		expect(seen).toEqual([
+			"receivables.invoice.create",
+			"receivables.balance.read",
+		]);
 	});
 });

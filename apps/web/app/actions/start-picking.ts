@@ -28,7 +28,7 @@ export async function startPickingAction(
 ): Promise<StartPickingActionState> {
 	return runOperatorPermissionAction({
 		path: "startPickingAction",
-		permission: "fulfillment.manage",
+		permission: "fulfillment.picking.confirm",
 		safeMessage: "Could not start picking. Try again or contact an admin.",
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(startPickingFormSchema, {
@@ -47,6 +47,7 @@ export async function startPickingAction(
 					organizationId: session.orgId,
 					actorUserId: session.userId,
 					correlationId,
+					idempotencyKey: `pick-start:${correlationId}`,
 					...parsed.data,
 				},
 				createFulfillmentCommandOptions(),

@@ -12,7 +12,8 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
-const repoRoot = join(packageRoot, "../..");
+// packages/data-plane/db → repo root (three levels up)
+const repoRoot = join(packageRoot, "../../..");
 
 function loadEnvLocal() {
 	if (process.env.DATABASE_URL) {

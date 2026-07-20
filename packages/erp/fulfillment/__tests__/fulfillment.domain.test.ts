@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
 	addDeliveryLine,
 	cancelDelivery,
+	closeDelivery,
 	confirmPack,
 	confirmPick,
 	createDraftDelivery,
@@ -12,14 +13,12 @@ import {
 	startPicking,
 } from "../src/delivery";
 import { createMemoryFulfillmentStore } from "../src/memory-store";
-import {
-	FULFILLMENT_PERMISSION_MANAGE,
-	FULFILLMENT_PERMISSION_READ,
-} from "../src/permissions";
+import { FULFILLMENT_PERMISSION_CODES } from "../src/permissions";
 import { createGrantingFulfillmentAuthorization } from "./helpers/memory-authorization";
 import {
 	createInventoryCommandTestOptions,
 	seedInventoryOnHand,
+	seedReservation,
 } from "./helpers/memory-inventory";
 import {
 	createMemoryMasterLookup,
@@ -33,7 +32,7 @@ const ORG = "org-a";
 const ITEM = "20000000-0000-4000-8000-000000000001";
 const WAREHOUSE = "40000000-0000-4000-8000-000000000001";
 const UOM = "b1000000-0000-4000-8000-000000000001";
-const SALES_ORDER = "50000000-0000-4000-8000-000000000001";
+const _SALES_ORDER = "50000000-0000-4000-8000-000000000001";
 
 function harness() {
 	const masters = createMemoryMasterLookup({
@@ -46,8 +45,7 @@ function harness() {
 		ports: createMemoryMutationPorts(),
 		masters,
 		authorization: createGrantingFulfillmentAuthorization([
-			FULFILLMENT_PERMISSION_READ,
-			FULFILLMENT_PERMISSION_MANAGE,
+			...FULFILLMENT_PERMISSION_CODES,
 		]),
 		inventory: createInventoryCommandTestOptions(masters),
 	};
@@ -59,8 +57,8 @@ async function create(ctx: ReturnType<typeof harness>, code = "DLV-100") {
 			organizationId: ORG,
 			actorUserId: "user-1",
 			correlationId: `corr-${code}`,
+			idempotencyKey: `idem-${code}`,
 			code,
-			salesOrderId: SALES_ORDER,
 			warehouseId: WAREHOUSE,
 		},
 		ctx,
@@ -86,6 +84,15 @@ describe("@afenda/fulfillment domain", () => {
 			itemId: ITEM,
 			quantity: 10,
 		});
+		const reservationId = await seedReservation(ctx.inventory, {
+			organizationId: ORG,
+			actorUserId: "user-1",
+			correlationId: "corr-reserve",
+			code: "RSV-100",
+			warehouseId: WAREHOUSE,
+			itemId: ITEM,
+			quantity: 5,
+		});
 		const draft = await create(ctx);
 		expect(draft.ok).toBe(true);
 		if (!draft.ok) return;
@@ -94,6 +101,7 @@ describe("@afenda/fulfillment domain", () => {
 				organizationId: ORG,
 				actorUserId: "user-1",
 				correlationId: "corr-line",
+				idempotencyKey: "idem-line",
 				deliveryId: draft.data.id,
 				expectedVersion: draft.data.version,
 				itemId: ITEM,
@@ -108,6 +116,7 @@ describe("@afenda/fulfillment domain", () => {
 				organizationId: ORG,
 				actorUserId: "user-1",
 				correlationId: "corr-start",
+				idempotencyKey: "idem-start",
 				deliveryId: draft.data.id,
 				expectedVersion: 2,
 			},
@@ -120,9 +129,11 @@ describe("@afenda/fulfillment domain", () => {
 				organizationId: ORG,
 				actorUserId: "user-1",
 				correlationId: "corr-pick-1",
+				idempotencyKey: "idem-pick-1",
 				deliveryId: draft.data.id,
 				deliveryLineId: line.data.id,
 				quantityPicked: 2,
+				reservationId,
 				expectedVersion: picking.data.version,
 			},
 			ctx,
@@ -133,9 +144,11 @@ describe("@afenda/fulfillment domain", () => {
 				organizationId: ORG,
 				actorUserId: "user-1",
 				correlationId: "corr-pick-2",
+				idempotencyKey: "idem-pick-2",
 				deliveryId: draft.data.id,
 				deliveryLineId: line.data.id,
 				quantityPicked: 3,
+				reservationId,
 				expectedVersion: 4,
 			},
 			ctx,
@@ -146,6 +159,7 @@ describe("@afenda/fulfillment domain", () => {
 				organizationId: ORG,
 				actorUserId: "user-1",
 				correlationId: "corr-pack",
+				idempotencyKey: "idem-pack",
 				deliveryId: draft.data.id,
 				expectedVersion: 5,
 				packageCode: "PKG-1",
@@ -158,6 +172,7 @@ describe("@afenda/fulfillment domain", () => {
 				organizationId: ORG,
 				actorUserId: "user-1",
 				correlationId: "corr-post",
+				idempotencyKey: "idem-post",
 				deliveryId: draft.data.id,
 				expectedVersion: 6,
 			},
@@ -165,10 +180,11 @@ describe("@afenda/fulfillment domain", () => {
 		);
 		expect(posted.ok).toBe(true);
 		if (!posted.ok) return;
-		const movement = await ctx.inventory.store?.getMovementByCreateIdempotencyKey(
-			ORG,
-			`ful-post:${posted.data.id}`,
-		);
+		const movement =
+			await ctx.inventory.store?.getMovementByCreateIdempotencyKey(
+				ORG,
+				`ful-post:${posted.data.id}`,
+			);
 		expect(movement?.ok).toBe(true);
 		if (movement?.ok && movement.data !== null) {
 			expect(movement.data.status).toBe("posted");
@@ -182,9 +198,11 @@ describe("@afenda/fulfillment domain", () => {
 				organizationId: ORG,
 				actorUserId: "user-1",
 				correlationId: "corr-pod",
+				idempotencyKey: "idem-pod",
 				deliveryId: draft.data.id,
 				expectedVersion: posted.data.version,
 				receivedByName: "Alex Receiver",
+				outcome: "delivered",
 			},
 			ctx,
 		);
@@ -202,13 +220,33 @@ describe("@afenda/fulfillment domain", () => {
 			"fulfillment.delivery.created.v1",
 			"fulfillment.pick.confirmed.v1",
 			"fulfillment.pick.confirmed.v1",
+			"fulfillment.pack.confirmed.v1",
 			"fulfillment.delivery.posted.v1",
+			"fulfillment.pod.recorded.v1",
 			"fulfillment.delivery.completed.v1",
 		]);
 	});
 
 	it("enforces lines, picks, pick bounds, and optimistic versions", async () => {
 		const ctx = harness();
+		await seedInventoryOnHand(ctx.inventory, {
+			organizationId: ORG,
+			actorUserId: "user-1",
+			correlationId: "corr-seed-rules",
+			code: "OPEN-RULES",
+			warehouseId: WAREHOUSE,
+			itemId: ITEM,
+			quantity: 10,
+		});
+		const reservationId = await seedReservation(ctx.inventory, {
+			organizationId: ORG,
+			actorUserId: "user-1",
+			correlationId: "corr-reserve-rules",
+			code: "RSV-RULES",
+			warehouseId: WAREHOUSE,
+			itemId: ITEM,
+			quantity: 5,
+		});
 		const draft = await create(ctx, "DLV-RULES");
 		if (!draft.ok) return;
 		const empty = await startPicking(
@@ -216,6 +254,7 @@ describe("@afenda/fulfillment domain", () => {
 				organizationId: ORG,
 				actorUserId: "user-1",
 				correlationId: "corr-empty",
+				idempotencyKey: "idem-empty",
 				deliveryId: draft.data.id,
 				expectedVersion: 1,
 			},
@@ -227,6 +266,7 @@ describe("@afenda/fulfillment domain", () => {
 				organizationId: ORG,
 				actorUserId: "user-1",
 				correlationId: "corr-line",
+				idempotencyKey: "idem-line-rules",
 				deliveryId: draft.data.id,
 				expectedVersion: 1,
 				itemId: ITEM,
@@ -240,6 +280,7 @@ describe("@afenda/fulfillment domain", () => {
 				organizationId: ORG,
 				actorUserId: "user-1",
 				correlationId: "corr-stale",
+				idempotencyKey: "idem-stale",
 				deliveryId: draft.data.id,
 				expectedVersion: 1,
 			},
@@ -251,6 +292,7 @@ describe("@afenda/fulfillment domain", () => {
 				organizationId: ORG,
 				actorUserId: "user-1",
 				correlationId: "corr-start",
+				idempotencyKey: "idem-start-rules",
 				deliveryId: draft.data.id,
 				expectedVersion: 2,
 			},
@@ -261,6 +303,7 @@ describe("@afenda/fulfillment domain", () => {
 				organizationId: ORG,
 				actorUserId: "user-1",
 				correlationId: "corr-pack",
+				idempotencyKey: "idem-pack-nopick",
 				deliveryId: draft.data.id,
 				expectedVersion: 3,
 			},
@@ -272,9 +315,11 @@ describe("@afenda/fulfillment domain", () => {
 				organizationId: ORG,
 				actorUserId: "user-1",
 				correlationId: "corr-excess",
+				idempotencyKey: "idem-excess",
 				deliveryId: draft.data.id,
 				deliveryLineId: line.data.id,
 				quantityPicked: 3,
+				reservationId,
 				expectedVersion: 3,
 			},
 			ctx,
@@ -291,6 +336,7 @@ describe("@afenda/fulfillment domain", () => {
 				organizationId: ORG,
 				actorUserId: "user-1",
 				correlationId: "corr-cancel",
+				idempotencyKey: "idem-cancel",
 				deliveryId: draft.data.id,
 				expectedVersion: 1,
 			},
@@ -315,6 +361,7 @@ describe("@afenda/fulfillment domain", () => {
 				organizationId: ORG,
 				actorUserId: "user-1",
 				correlationId: "corr-l",
+				idempotencyKey: "idem-l",
 				deliveryId: postedDraft.data.id,
 				expectedVersion: 1,
 				itemId: ITEM,
@@ -323,11 +370,21 @@ describe("@afenda/fulfillment domain", () => {
 			ctx,
 		);
 		if (!line.ok) return;
+		const reservationId = await seedReservation(ctx.inventory, {
+			organizationId: ORG,
+			actorUserId: "user-1",
+			correlationId: "corr-reserve-posted",
+			code: "RSV-POSTED",
+			warehouseId: WAREHOUSE,
+			itemId: ITEM,
+			quantity: 1,
+		});
 		await startPicking(
 			{
 				organizationId: ORG,
 				actorUserId: "user-1",
 				correlationId: "corr-s",
+				idempotencyKey: "idem-s",
 				deliveryId: postedDraft.data.id,
 				expectedVersion: 2,
 			},
@@ -338,9 +395,11 @@ describe("@afenda/fulfillment domain", () => {
 				organizationId: ORG,
 				actorUserId: "user-1",
 				correlationId: "corr-p",
+				idempotencyKey: "idem-p",
 				deliveryId: postedDraft.data.id,
 				deliveryLineId: line.data.id,
 				quantityPicked: 1,
+				reservationId,
 				expectedVersion: 3,
 			},
 			ctx,
@@ -350,6 +409,7 @@ describe("@afenda/fulfillment domain", () => {
 				organizationId: ORG,
 				actorUserId: "user-1",
 				correlationId: "corr-k",
+				idempotencyKey: "idem-k",
 				deliveryId: postedDraft.data.id,
 				expectedVersion: 4,
 			},
@@ -360,6 +420,7 @@ describe("@afenda/fulfillment domain", () => {
 				organizationId: ORG,
 				actorUserId: "user-1",
 				correlationId: "corr-o",
+				idempotencyKey: "idem-o",
 				deliveryId: postedDraft.data.id,
 				expectedVersion: 5,
 			},
@@ -371,11 +432,141 @@ describe("@afenda/fulfillment domain", () => {
 				organizationId: ORG,
 				actorUserId: "user-1",
 				correlationId: "corr-reject",
+				idempotencyKey: "idem-reject",
 				deliveryId: posted.data.id,
 				expectedVersion: posted.data.version,
 			},
 			ctx,
 		);
 		expect(rejected.ok).toBe(false);
+	});
+
+	it("closes delivered deliveries and rejects close before delivered", async () => {
+		const ctx = harness();
+		await seedInventoryOnHand(ctx.inventory, {
+			organizationId: ORG,
+			actorUserId: "user-1",
+			correlationId: "corr-seed-close",
+			code: "OPEN-CLOSE",
+			warehouseId: WAREHOUSE,
+			itemId: ITEM,
+			quantity: 2,
+		});
+		const draft = await create(ctx, "DLV-CLOSE");
+		if (!draft.ok) return;
+		const early = await closeDelivery(
+			{
+				organizationId: ORG,
+				actorUserId: "user-1",
+				correlationId: "corr-close-early",
+				idempotencyKey: "idem-close-early",
+				deliveryId: draft.data.id,
+				expectedVersion: 1,
+			},
+			ctx,
+		);
+		expect(early.ok).toBe(false);
+		const line = await addDeliveryLine(
+			{
+				organizationId: ORG,
+				actorUserId: "user-1",
+				correlationId: "corr-close-line",
+				idempotencyKey: "idem-close-line",
+				deliveryId: draft.data.id,
+				expectedVersion: 1,
+				itemId: ITEM,
+				quantityToDeliver: 1,
+			},
+			ctx,
+		);
+		if (!line.ok) return;
+		const reservationId2 = await seedReservation(ctx.inventory, {
+			organizationId: ORG,
+			actorUserId: "user-1",
+			correlationId: "corr-reserve-close",
+			code: "RSV-CLOSE",
+			warehouseId: WAREHOUSE,
+			itemId: ITEM,
+			quantity: 1,
+		});
+		await startPicking(
+			{
+				organizationId: ORG,
+				actorUserId: "user-1",
+				correlationId: "corr-close-start",
+				idempotencyKey: "idem-close-start",
+				deliveryId: draft.data.id,
+				expectedVersion: 2,
+			},
+			ctx,
+		);
+		await confirmPick(
+			{
+				organizationId: ORG,
+				actorUserId: "user-1",
+				correlationId: "corr-close-pick",
+				idempotencyKey: "idem-close-pick",
+				deliveryId: draft.data.id,
+				deliveryLineId: line.data.id,
+				quantityPicked: 1,
+				reservationId: reservationId2,
+				expectedVersion: 3,
+			},
+			ctx,
+		);
+		await confirmPack(
+			{
+				organizationId: ORG,
+				actorUserId: "user-1",
+				correlationId: "corr-close-pack",
+				idempotencyKey: "idem-close-pack",
+				deliveryId: draft.data.id,
+				expectedVersion: 4,
+			},
+			ctx,
+		);
+		const posted = await postDelivery(
+			{
+				organizationId: ORG,
+				actorUserId: "user-1",
+				correlationId: "corr-close-post",
+				idempotencyKey: "idem-close-post",
+				deliveryId: draft.data.id,
+				expectedVersion: 5,
+			},
+			ctx,
+		);
+		if (!posted.ok) return;
+		const proof = await recordProofOfDelivery(
+			{
+				organizationId: ORG,
+				actorUserId: "user-1",
+				correlationId: "corr-close-pod",
+				idempotencyKey: "idem-close-pod",
+				deliveryId: draft.data.id,
+				expectedVersion: posted.data.version,
+				receivedByName: "Closer",
+				outcome: "delivered",
+			},
+			ctx,
+		);
+		if (!proof.ok) return;
+		const delivered = await load(ctx, draft.data.id);
+		if (!delivered.ok || delivered.data === null) return;
+		const closed = await closeDelivery(
+			{
+				organizationId: ORG,
+				actorUserId: "user-1",
+				correlationId: "corr-close",
+				idempotencyKey: "idem-close",
+				deliveryId: draft.data.id,
+				expectedVersion: delivered.data.version,
+			},
+			ctx,
+		);
+		expect(closed.ok).toBe(true);
+		if (!closed.ok) return;
+		expect(closed.data.status).toBe("closed");
+		expect(closed.data.closedBy).toBe("user-1");
 	});
 });

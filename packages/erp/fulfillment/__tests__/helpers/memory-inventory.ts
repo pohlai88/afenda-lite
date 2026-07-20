@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+import { ok } from "@afenda/errors/result";
 import {
 	addStockMovementLine,
 	createStockMovement,
@@ -6,14 +8,13 @@ import {
 	type InventoryCommandOptions,
 	type InventoryPermission,
 	postStockMovement,
+	reserveStock,
 } from "@afenda/inventory";
-import { ok } from "@afenda/errors/result";
 import {
 	createMemoryInventoryStore,
 	type MasterLookupPort,
 	type MutationPorts,
 } from "@afenda/inventory/testing";
-import { randomUUID } from "node:crypto";
 
 function createGrantingInventoryAuthorization(
 	grants: readonly InventoryPermission[],
@@ -113,4 +114,35 @@ export async function seedInventoryOnHand(
 	if (!posted.ok) {
 		throw new Error(posted.message);
 	}
+}
+
+export async function seedReservation(
+	inventory: InventoryCommandOptions,
+	input: {
+		organizationId: string;
+		actorUserId: string;
+		correlationId: string;
+		code: string;
+		warehouseId: string;
+		itemId: string;
+		quantity: number | string;
+	},
+): Promise<string> {
+	const reserved = await reserveStock(
+		{
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: input.correlationId,
+			idempotencyKey: `${input.code}:reserve`,
+			code: input.code,
+			warehouseId: input.warehouseId,
+			itemId: input.itemId,
+			quantity: input.quantity,
+		},
+		inventory,
+	);
+	if (!reserved.ok) {
+		throw new Error(reserved.message);
+	}
+	return reserved.data.id;
 }

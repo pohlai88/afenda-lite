@@ -1,10 +1,14 @@
 import { randomUUID } from "node:crypto";
 import { fail, ok, type Result } from "@afenda/errors/result";
 import {
+	FULFILLMENT_DELIVERY_CANCELLED_EVENT,
+	FULFILLMENT_DELIVERY_CLOSED_EVENT,
 	FULFILLMENT_DELIVERY_COMPLETED_EVENT,
 	FULFILLMENT_DELIVERY_CREATED_EVENT,
 	FULFILLMENT_DELIVERY_POSTED_EVENT,
+	FULFILLMENT_PACK_CONFIRMED_EVENT,
 	FULFILLMENT_PICK_CONFIRMED_EVENT,
+	FULFILLMENT_POD_RECORDED_EVENT,
 } from "@afenda/events/schemas";
 
 import type { MutationPorts } from "./ports";
@@ -85,6 +89,27 @@ export class MemoryFulfillmentStore implements FulfillmentStore {
 		ports: MutationPorts,
 		meta: MutationMeta,
 	): Promise<Result<Delivery>> {
+		// Idempotency check: if org+createIdempotencyKey exists, return clone
+		for (const value of this.deliveries.values()) {
+			if (
+				value.organizationId === record.organizationId &&
+				value.createIdempotencyKey === record.idempotencyKey
+			) {
+				// Same key same code → replay
+				if (
+					value.normalizedCode === record.normalizedCode &&
+					value.code === record.code
+				) {
+					return ok(cloneDelivery(value));
+				}
+				// Same key different code → CONFLICT
+				return fail(
+					"CONFLICT",
+					"Create idempotency key already used with different code",
+				);
+			}
+		}
+		// Check for duplicate code
 		for (const value of this.deliveries.values()) {
 			if (
 				value.organizationId === record.organizationId &&
@@ -97,6 +122,13 @@ export class MemoryFulfillmentStore implements FulfillmentStore {
 		const value: Delivery = {
 			id: randomUUID(),
 			...record,
+			createIdempotencyKey: record.idempotencyKey,
+			pickStartIdempotencyKey: null,
+			packIdempotencyKey: null,
+			postIdempotencyKey: null,
+			podIdempotencyKey: null,
+			cancelIdempotencyKey: null,
+			closeIdempotencyKey: null,
 			status: "draft",
 			version: 1,
 			updatedBy: record.createdBy,
@@ -153,6 +185,12 @@ export class MemoryFulfillmentStore implements FulfillmentStore {
 		if (value === undefined || value.organizationId !== record.organizationId) {
 			return fail("NOT_FOUND", "Delivery not found");
 		}
+		// Idempotency: if line with same lineIdempotencyKey on delivery → return that line
+		for (const existing of value.lines) {
+			if (existing.lineIdempotencyKey === record.idempotencyKey) {
+				return ok({ ...existing });
+			}
+		}
 		if (value.status !== "draft")
 			return fail("CONFLICT", "Cannot add lines outside draft");
 		if (value.version !== record.expectedVersion)
@@ -173,6 +211,7 @@ export class MemoryFulfillmentStore implements FulfillmentStore {
 			quantityOrdered: record.quantityOrdered,
 			quantityToDeliver: record.quantityToDeliver,
 			salesOrderLineId: record.salesOrderLineId,
+			lineIdempotencyKey: record.idempotencyKey,
 			version: 1,
 			createdBy: record.createdBy,
 			updatedBy: record.createdBy,
@@ -210,12 +249,28 @@ export class MemoryFulfillmentStore implements FulfillmentStore {
 		const value = this.deliveries.get(record.deliveryId);
 		if (value === undefined || value.organizationId !== record.organizationId)
 			return fail("NOT_FOUND", "Delivery not found");
+		// Idempotency: if pickStartIdempotencyKey matches → return delivery
+		if (value.pickStartIdempotencyKey === record.idempotencyKey) {
+			return ok(cloneDelivery(value));
+		}
+		// Already picking with different key → CONFLICT
+		if (
+			value.status === "picking" &&
+			value.pickStartIdempotencyKey !== null &&
+			value.pickStartIdempotencyKey !== record.idempotencyKey
+		) {
+			return fail(
+				"CONFLICT",
+				"Delivery is already picking with different idempotency key",
+			);
+		}
 		if (value.status !== "draft" || value.lines.length === 0)
 			return fail("CONFLICT", "Picking requires a draft delivery with lines");
 		if (value.version !== record.expectedVersion)
 			return fail("CONFLICT", "Delivery version conflict");
 		const previous = cloneDelivery(value);
 		value.status = "picking";
+		value.pickStartIdempotencyKey = record.idempotencyKey;
 		value.version += 1;
 		value.updatedBy = record.actorUserId;
 		value.updatedAt = new Date();
@@ -241,6 +296,12 @@ export class MemoryFulfillmentStore implements FulfillmentStore {
 		const value = this.deliveries.get(record.deliveryId);
 		if (value === undefined || value.organizationId !== record.organizationId)
 			return fail("NOT_FOUND", "Delivery not found");
+		// Idempotency: if pick with same pickIdempotencyKey → return that pick
+		for (const existing of value.picks) {
+			if (existing.pickIdempotencyKey === record.idempotencyKey) {
+				return ok({ ...existing });
+			}
+		}
 		if (value.status !== "picking")
 			return fail("CONFLICT", "Pick confirmation requires picking status");
 		if (value.version !== record.expectedVersion)
@@ -264,6 +325,8 @@ export class MemoryFulfillmentStore implements FulfillmentStore {
 			deliveryId: value.id,
 			deliveryLineId: line.id,
 			quantityPicked: record.quantityPicked,
+			reservationId: record.reservationId,
+			pickIdempotencyKey: record.idempotencyKey,
 			pickedAt: now,
 			pickedBy: record.actorUserId,
 			version: 1,
@@ -325,10 +388,27 @@ export class MemoryFulfillmentStore implements FulfillmentStore {
 		const value = this.deliveries.get(record.deliveryId);
 		if (value === undefined || value.organizationId !== record.organizationId)
 			return fail("NOT_FOUND", "Delivery not found");
+		// Idempotency: if packIdempotencyKey matches → return last pack
+		if (value.packIdempotencyKey === record.idempotencyKey) {
+			const lastPack = value.packs[value.packs.length - 1];
+			if (lastPack) return ok({ ...lastPack });
+		}
 		if (value.status !== "picking" || value.picks.length === 0)
 			return fail("CONFLICT", "Packing requires at least one confirmed pick");
 		if (value.version !== record.expectedVersion)
 			return fail("CONFLICT", "Delivery version conflict");
+		// Pack gate F4: for each line, sum(picks) >= quantityToDeliver
+		for (const line of value.lines) {
+			const picked = value.picks
+				.filter((row) => row.deliveryLineId === line.id)
+				.reduce((sum, row) => sum + Number(row.quantityPicked), 0);
+			if (picked < Number(line.quantityToDeliver)) {
+				return fail(
+					"CONFLICT",
+					`Line ${line.lineNo} has not been fully picked (${picked} < ${line.quantityToDeliver})`,
+				);
+			}
+		}
 		const previous = cloneDelivery(value);
 		const now = new Date();
 		const pack: DeliveryPack = {
@@ -346,6 +426,7 @@ export class MemoryFulfillmentStore implements FulfillmentStore {
 			updatedAt: now,
 		};
 		value.packs.push(pack);
+		value.packIdempotencyKey = record.idempotencyKey;
 		value.status = "packed";
 		value.version += 1;
 		value.updatedBy = record.actorUserId;
@@ -361,6 +442,23 @@ export class MemoryFulfillmentStore implements FulfillmentStore {
 			this.deliveries.set(value.id, previous);
 			return audit;
 		}
+		const outbox = await ports.outbox.append({
+			organizationId: value.organizationId,
+			actorUserId: record.actorUserId,
+			correlationId: meta.correlationId,
+			type: FULFILLMENT_PACK_CONFIRMED_EVENT,
+			payload: {
+				...eventPayload(value, record.actorUserId, meta.correlationId),
+				entityType: "pack",
+				entityId: pack.id,
+				deliveryId: value.id,
+				packageCode: pack.packageCode ?? undefined,
+			},
+		});
+		if (!outbox.ok) {
+			this.deliveries.set(value.id, previous);
+			return outbox;
+		}
 		return ok({ ...pack });
 	}
 
@@ -369,14 +467,49 @@ export class MemoryFulfillmentStore implements FulfillmentStore {
 		ports: MutationPorts,
 		meta: MutationMeta,
 	): Promise<Result<Delivery>> {
-		return this.transitionWithEvent(
-			record,
+		const value = this.deliveries.get(record.deliveryId);
+		if (value === undefined || value.organizationId !== record.organizationId)
+			return fail("NOT_FOUND", "Delivery not found");
+		// Idempotency: if postIdempotencyKey matches → return delivery
+		if (value.postIdempotencyKey === record.idempotencyKey) {
+			return ok(cloneDelivery(value));
+		}
+		if (value.status !== "packed")
+			return fail("CONFLICT", "Delivery must be packed");
+		if (value.version !== record.expectedVersion)
+			return fail("CONFLICT", "Delivery version conflict");
+		const previous = cloneDelivery(value);
+		const now = new Date();
+		value.status = "posted";
+		value.postIdempotencyKey = record.idempotencyKey;
+		value.postedAt = now;
+		value.postedBy = record.actorUserId;
+		value.version += 1;
+		value.updatedBy = record.actorUserId;
+		value.updatedAt = now;
+		const audit = await auditStatus(
 			ports,
-			meta,
+			value,
+			record.actorUserId,
+			meta.correlationId,
 			"packed",
-			"posted",
-			FULFILLMENT_DELIVERY_POSTED_EVENT,
 		);
+		if (!audit.ok) {
+			this.deliveries.set(value.id, previous);
+			return audit;
+		}
+		const outbox = await ports.outbox.append({
+			organizationId: value.organizationId,
+			actorUserId: record.actorUserId,
+			correlationId: meta.correlationId,
+			type: FULFILLMENT_DELIVERY_POSTED_EVENT,
+			payload: eventPayload(value, record.actorUserId, meta.correlationId),
+		});
+		if (!outbox.ok) {
+			this.deliveries.set(value.id, previous);
+			return outbox;
+		}
+		return ok(cloneDelivery(value));
 	}
 
 	async recordProofOfDelivery(
@@ -387,18 +520,31 @@ export class MemoryFulfillmentStore implements FulfillmentStore {
 		const value = this.deliveries.get(record.deliveryId);
 		if (value === undefined || value.organizationId !== record.organizationId)
 			return fail("NOT_FOUND", "Delivery not found");
+		// Idempotency: if podIdempotencyKey matches → return existing POD
+		if (value.podIdempotencyKey === record.idempotencyKey) {
+			if (value.proofOfDelivery) return ok({ ...value.proofOfDelivery });
+		}
+		// If POD exists with different key → CONFLICT
+		if (
+			value.proofOfDelivery !== null &&
+			value.podIdempotencyKey !== record.idempotencyKey
+		) {
+			return fail("CONFLICT", "Proof of delivery already exists");
+		}
 		if (value.status !== "posted")
 			return fail("CONFLICT", "Proof of delivery requires posted status");
 		if (value.version !== record.expectedVersion)
 			return fail("CONFLICT", "Delivery version conflict");
-		if (value.proofOfDelivery !== null)
-			return fail("CONFLICT", "Proof of delivery already exists");
 		const previous = cloneDelivery(value);
 		const proof: ProofOfDelivery = {
 			id: randomUUID(),
 			organizationId: value.organizationId,
 			deliveryId: value.id,
 			receivedByName: record.receivedByName,
+			outcome: record.outcome,
+			proofType: record.proofType,
+			evidenceRef: record.evidenceRef,
+			carrierRef: record.carrierRef,
 			notes: record.notes,
 			recordedAt: record.recordedAt,
 			recordedBy: record.actorUserId,
@@ -409,33 +555,54 @@ export class MemoryFulfillmentStore implements FulfillmentStore {
 			updatedAt: record.recordedAt,
 		};
 		value.proofOfDelivery = proof;
-		value.status = "delivered";
-		value.deliveredAt = record.recordedAt;
-		value.deliveredBy = record.actorUserId;
+		value.podIdempotencyKey = record.idempotencyKey;
+		// Only set status to delivered if outcome==='delivered'
+		if (record.outcome === "delivered") {
+			value.status = "delivered";
+			value.deliveredAt = record.recordedAt;
+			value.deliveredBy = record.actorUserId;
+		}
 		value.version += 1;
 		value.updatedBy = record.actorUserId;
 		value.updatedAt = record.recordedAt;
+		const oldStatus: typeof value.status =
+			record.outcome === "delivered" ? "posted" : value.status;
 		const audit = await auditStatus(
 			ports,
 			value,
 			record.actorUserId,
 			meta.correlationId,
-			"posted",
+			oldStatus,
 		);
 		if (!audit.ok) {
 			this.deliveries.set(value.id, previous);
 			return audit;
 		}
-		const outbox = await ports.outbox.append({
+		// Always emit pod.recorded
+		const podRecorded = await ports.outbox.append({
 			organizationId: value.organizationId,
 			actorUserId: record.actorUserId,
 			correlationId: meta.correlationId,
-			type: FULFILLMENT_DELIVERY_COMPLETED_EVENT,
+			type: FULFILLMENT_POD_RECORDED_EVENT,
 			payload: eventPayload(value, record.actorUserId, meta.correlationId),
 		});
-		if (!outbox.ok) {
+		if (!podRecorded.ok) {
 			this.deliveries.set(value.id, previous);
-			return outbox;
+			return podRecorded;
+		}
+		// Also emit completed ONLY if outcome==='delivered'
+		if (record.outcome === "delivered") {
+			const completed = await ports.outbox.append({
+				organizationId: value.organizationId,
+				actorUserId: record.actorUserId,
+				correlationId: meta.correlationId,
+				type: FULFILLMENT_DELIVERY_COMPLETED_EVENT,
+				payload: eventPayload(value, record.actorUserId, meta.correlationId),
+			});
+			if (!completed.ok) {
+				this.deliveries.set(value.id, previous);
+				return completed;
+			}
 		}
 		return ok({ ...proof });
 	}
@@ -448,6 +615,10 @@ export class MemoryFulfillmentStore implements FulfillmentStore {
 		const value = this.deliveries.get(record.deliveryId);
 		if (value === undefined || value.organizationId !== record.organizationId)
 			return fail("NOT_FOUND", "Delivery not found");
+		// Idempotency: if cancelIdempotencyKey matches → return delivery
+		if (value.cancelIdempotencyKey === record.idempotencyKey) {
+			return ok(cloneDelivery(value));
+		}
 		if (!["draft", "picking", "packed"].includes(value.status))
 			return fail("CONFLICT", "Delivery cannot be cancelled after posting");
 		if (value.version !== record.expectedVersion)
@@ -456,6 +627,7 @@ export class MemoryFulfillmentStore implements FulfillmentStore {
 		const oldStatus = value.status;
 		const now = new Date();
 		value.status = "cancelled";
+		value.cancelIdempotencyKey = record.idempotencyKey;
 		value.cancelledAt = now;
 		value.cancelledBy = record.actorUserId;
 		value.version += 1;
@@ -471,6 +643,67 @@ export class MemoryFulfillmentStore implements FulfillmentStore {
 		if (!audit.ok) {
 			this.deliveries.set(value.id, previous);
 			return audit;
+		}
+		const outbox = await ports.outbox.append({
+			organizationId: value.organizationId,
+			actorUserId: record.actorUserId,
+			correlationId: meta.correlationId,
+			type: FULFILLMENT_DELIVERY_CANCELLED_EVENT,
+			payload: eventPayload(value, record.actorUserId, meta.correlationId),
+		});
+		if (!outbox.ok) {
+			this.deliveries.set(value.id, previous);
+			return outbox;
+		}
+		return ok(cloneDelivery(value));
+	}
+
+	async closeDelivery(
+		record: DeliveryStateRecord,
+		ports: MutationPorts,
+		meta: MutationMeta,
+	): Promise<Result<Delivery>> {
+		const value = this.deliveries.get(record.deliveryId);
+		if (value === undefined || value.organizationId !== record.organizationId)
+			return fail("NOT_FOUND", "Delivery not found");
+		// Idempotency: if closeIdempotencyKey matches → return delivery
+		if (value.closeIdempotencyKey === record.idempotencyKey) {
+			return ok(cloneDelivery(value));
+		}
+		if (value.status !== "delivered")
+			return fail("CONFLICT", "Delivery must be delivered");
+		if (value.version !== record.expectedVersion)
+			return fail("CONFLICT", "Delivery version conflict");
+		const previous = cloneDelivery(value);
+		const now = new Date();
+		value.status = "closed";
+		value.closeIdempotencyKey = record.idempotencyKey;
+		value.closedAt = now;
+		value.closedBy = record.actorUserId;
+		value.version += 1;
+		value.updatedBy = record.actorUserId;
+		value.updatedAt = now;
+		const audit = await auditStatus(
+			ports,
+			value,
+			record.actorUserId,
+			meta.correlationId,
+			"delivered",
+		);
+		if (!audit.ok) {
+			this.deliveries.set(value.id, previous);
+			return audit;
+		}
+		const outbox = await ports.outbox.append({
+			organizationId: value.organizationId,
+			actorUserId: record.actorUserId,
+			correlationId: meta.correlationId,
+			type: FULFILLMENT_DELIVERY_CLOSED_EVENT,
+			payload: eventPayload(value, record.actorUserId, meta.correlationId),
+		});
+		if (!outbox.ok) {
+			this.deliveries.set(value.id, previous);
+			return outbox;
 		}
 		return ok(cloneDelivery(value));
 	}
@@ -491,74 +724,58 @@ export class MemoryFulfillmentStore implements FulfillmentStore {
 		filter: DeliveryListFilter,
 	): Promise<Result<Delivery[]>> {
 		const start = (filter.page - 1) * filter.pageSize;
-		return ok(
-			[...this.deliveries.values()]
-				.filter((row) => row.organizationId === filter.organizationId)
-				.filter(
-					(row) => filter.status === undefined || row.status === filter.status,
-				)
-				.filter(
-					(row) =>
-						filter.warehouseId === undefined ||
-						row.warehouseId === filter.warehouseId,
-				)
-				.filter(
-					(row) =>
-						filter.salesOrderId === undefined ||
-						row.salesOrderId === filter.salesOrderId,
-				)
-				.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
-				.slice(start, start + filter.pageSize)
-				.map(cloneDelivery),
-		);
+		const sort = filter.sort ?? "created_at";
+		const items = [...this.deliveries.values()]
+			.filter((row) => row.organizationId === filter.organizationId)
+			.filter(
+				(row) => filter.status === undefined || row.status === filter.status,
+			)
+			.filter(
+				(row) =>
+					filter.warehouseId === undefined ||
+					row.warehouseId === filter.warehouseId,
+			)
+			.filter(
+				(row) =>
+					filter.salesOrderId === undefined ||
+					row.salesOrderId === filter.salesOrderId,
+			);
+		// Sort by created_at|code|status with id secondary desc as tie-breaker. Default created_at.
+		items.sort((a, b) => {
+			let cmp = 0;
+			if (sort === "created_at") {
+				cmp = b.createdAt.getTime() - a.createdAt.getTime();
+			} else if (sort === "code") {
+				cmp = a.code.localeCompare(b.code);
+			} else if (sort === "status") {
+				cmp = a.status.localeCompare(b.status);
+			}
+			if (cmp !== 0) return cmp;
+			// Tie-breaker: id desc
+			return b.id.localeCompare(a.id);
+		});
+		return ok(items.slice(start, start + filter.pageSize).map(cloneDelivery));
 	}
 
-	private async transitionWithEvent(
-		record: DeliveryStateRecord,
-		ports: MutationPorts,
-		meta: MutationMeta,
-		from: Delivery["status"],
-		to: Delivery["status"],
-		type: typeof FULFILLMENT_DELIVERY_POSTED_EVENT,
-	): Promise<Result<Delivery>> {
-		const value = this.deliveries.get(record.deliveryId);
-		if (value === undefined || value.organizationId !== record.organizationId)
-			return fail("NOT_FOUND", "Delivery not found");
-		if (value.status !== from)
-			return fail("CONFLICT", `Delivery must be ${from}`);
-		if (value.version !== record.expectedVersion)
-			return fail("CONFLICT", "Delivery version conflict");
-		const previous = cloneDelivery(value);
-		const now = new Date();
-		value.status = to;
-		value.postedAt = now;
-		value.postedBy = record.actorUserId;
-		value.version += 1;
-		value.updatedBy = record.actorUserId;
-		value.updatedAt = now;
-		const audit = await auditStatus(
-			ports,
-			value,
-			record.actorUserId,
-			meta.correlationId,
-			from,
-		);
-		if (!audit.ok) {
-			this.deliveries.set(value.id, previous);
-			return audit;
+	async sumPostedQuantityForSalesOrderLine(
+		organizationId: string,
+		salesOrderLineId: string,
+	): Promise<Result<string>> {
+		let sum = 0;
+		for (const delivery of this.deliveries.values()) {
+			if (
+				delivery.organizationId !== organizationId ||
+				!["posted", "delivered", "closed"].includes(delivery.status)
+			) {
+				continue;
+			}
+			for (const line of delivery.lines) {
+				if (line.salesOrderLineId === salesOrderLineId) {
+					sum += Number(line.quantityToDeliver);
+				}
+			}
 		}
-		const outbox = await ports.outbox.append({
-			organizationId: value.organizationId,
-			actorUserId: record.actorUserId,
-			correlationId: meta.correlationId,
-			type,
-			payload: eventPayload(value, record.actorUserId, meta.correlationId),
-		});
-		if (!outbox.ok) {
-			this.deliveries.set(value.id, previous);
-			return outbox;
-		}
-		return ok(cloneDelivery(value));
+		return ok(String(sum));
 	}
 }
 

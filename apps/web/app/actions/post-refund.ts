@@ -1,10 +1,12 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
 import { type Payment, postRefund } from "@afenda/payments";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { mapPackageResult } from "@/app/actions/map-package-result";
+import { forbidUnlessPermission } from "@/app/actions/permission-gate";
 import { runOperatorPermissionAction } from "@/app/actions/run-operator-permission-action";
 import { createPaymentsCommandOptions } from "@/lib/erp/payments-command-options";
 import {
@@ -22,6 +24,8 @@ const optionalReference = z.preprocess(
 const schema = z.object({
 	code: z.string().trim().min(1).max(64),
 	originalPaymentId: z.string().uuid(),
+	paymentAccountId: z.string().uuid(),
+	refundSource: z.enum(["customer_payment", "customer_credit", "manual"]),
 	amount: z.coerce.number().positive(),
 	reference: optionalReference,
 });
@@ -32,12 +36,16 @@ export async function postRefundAction(
 ): Promise<PostRefundActionState> {
 	return runOperatorPermissionAction({
 		path: "postRefundAction",
-		permission: "payments.manage",
+		permission: "payments.refund.create",
 		safeMessage: "Could not post refund. Try again or contact an admin.",
 		execute: async (session, correlationId) => {
+			const postingDenied = await forbidUnlessPermission(session, "payments.refund.post");
+			if (postingDenied) return postingDenied;
 			const parsed = parseSchema(schema, {
 				code: formData.get("code"),
 				originalPaymentId: formData.get("originalPaymentId"),
+				paymentAccountId: formData.get("paymentAccountId"),
+				refundSource: formData.get("refundSource"),
 				amount: formData.get("amount"),
 				reference: formData.get("reference"),
 			});
@@ -53,6 +61,7 @@ export async function postRefundAction(
 						organizationId: session.orgId,
 						actorUserId: session.userId,
 						correlationId,
+						idempotencyKey: randomUUID(),
 						...parsed.data,
 					},
 					createPaymentsCommandOptions(),

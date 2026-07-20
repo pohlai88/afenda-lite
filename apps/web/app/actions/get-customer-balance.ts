@@ -25,7 +25,7 @@ export async function getCustomerBalanceAction(input: {
 }): Promise<ActionResult<GetCustomerBalanceActionData>> {
 	return runOperatorPermissionAction({
 		path: "getCustomerBalanceAction",
-		permission: "receivables.read",
+		permission: "receivables.balance.read",
 		safeMessage:
 			"Could not load customer balance. Try again or contact an admin.",
 		execute: async (session) => {

@@ -44,7 +44,7 @@ export async function addDeliveryLineAction(
 ): Promise<AddDeliveryLineActionState> {
 	return runOperatorPermissionAction({
 		path: "addDeliveryLineAction",
-		permission: "fulfillment.manage",
+		permission: "fulfillment.delivery.update",
 		safeMessage: "Could not add delivery line. Try again or contact an admin.",
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(addDeliveryLineFormSchema, {
@@ -67,6 +67,7 @@ export async function addDeliveryLineAction(
 					organizationId: session.orgId,
 					actorUserId: session.userId,
 					correlationId,
+					idempotencyKey: `line:${correlationId}`,
 					...parsed.data,
 				},
 				createFulfillmentCommandOptions(),

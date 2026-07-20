@@ -14,6 +14,7 @@ import {
 	type PostedPaymentQueryPort,
 	type PurchaseOrderMatchQueryPort,
 	postSupplierInvoice,
+	reverseSupplierAllocationsByPayment,
 } from "../src/index";
 
 const organizationId = "org-1";
@@ -352,6 +353,44 @@ describe("payables lifecycle", () => {
 		expect(matched.ok).toBe(false);
 		if (matched.ok) return;
 		expect(matched.message).toMatch(/currenc/i);
+	});
+
+	it("restores the supplier invoice and balance when reversing payment allocations", async () => {
+		const store = createMemoryPayablesStore();
+		const options = { store, authorization, effects, purchaseOrderMatch, goodsReceiptMatch, postedPayment };
+		const created = await createDraftSupplierInvoice(
+			{ organizationId, actorUserId, correlationId: "reverse-create", code: "SI-REVERSE", supplierId, supplierCode: "S-1", supplierName: "Supplier One", currencyCode: "USD" },
+			options,
+		);
+		if (!created.ok) return;
+		await addSupplierInvoiceLine(
+			{ organizationId, actorUserId, correlationId: "reverse-line", invoiceId: created.data.id, itemId, description: "Materials", quantity: "1", unitPrice: "100" },
+			options,
+		);
+		await matchSupplierInvoice(
+			{ organizationId, actorUserId, correlationId: "reverse-match", invoiceId: created.data.id, purchaseOrderId, goodsReceiptId, expectedVersion: 2 },
+			options,
+		);
+		await postSupplierInvoice(
+			{ organizationId, actorUserId, correlationId: "reverse-post", invoiceId: created.data.id, expectedVersion: 3 },
+			options,
+		);
+		await applySupplierPayment(
+			{ organizationId, actorUserId, correlationId: "reverse-apply", invoiceId: created.data.id, paymentId, amount: "25" },
+			options,
+		);
+		const reversed = await reverseSupplierAllocationsByPayment(
+			{ organizationId, actorUserId, correlationId: "reverse", paymentId, idempotencyKey: "reverse-supplier-1" },
+			options,
+		);
+		expect(reversed.ok && reversed.data).toHaveLength(1);
+		const invoice = await store.getById(organizationId, created.data.id);
+		expect(invoice.ok && invoice.data?.openAmount).toBe("100");
+		const balance = await getSupplierBalance(
+			{ organizationId, actorUserId, supplierId, currencyCode: "USD" },
+			options,
+		);
+		expect(balance.ok && balance.data[0]?.openBalance).toBe("100");
 	});
 
 	it("rejects currency mismatch on payment application", async () => {

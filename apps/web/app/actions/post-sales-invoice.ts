@@ -20,6 +20,7 @@ export type PostSalesInvoiceActionState =
 const schema = z.object({
 	invoiceId: z.string().uuid(),
 	expectedVersion: z.coerce.number().int().positive(),
+	idempotencyKey: z.string().trim().min(1).max(128),
 });
 
 export async function postSalesInvoiceAction(
@@ -28,12 +29,13 @@ export async function postSalesInvoiceAction(
 ): Promise<PostSalesInvoiceActionState> {
 	return runOperatorPermissionAction({
 		path: "postSalesInvoiceAction",
-		permission: "receivables.manage",
+		permission: "receivables.invoice.post",
 		safeMessage: "Could not post sales invoice. Try again or contact an admin.",
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(schema, {
 				invoiceId: formData.get("invoiceId"),
 				expectedVersion: formData.get("expectedVersion"),
+				idempotencyKey: formData.get("idempotencyKey"),
 			});
 			if (!parsed.success) {
 				return actionFail(

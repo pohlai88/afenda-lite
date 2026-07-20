@@ -1,10 +1,13 @@
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { describe, expect, it } from "vitest";
 
-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../src");
+const ROOT = path.resolve(
+	path.dirname(fileURLToPath(import.meta.url)),
+	"../src",
+);
 const FOREIGN_WRITE =
 	/\b(?:insert\s+into|update|delete\s+from)\s+(?:sales_order|delivery|proof_of_delivery|payment|account|ledger|journal)\b/i;
 

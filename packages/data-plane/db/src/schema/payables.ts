@@ -68,7 +68,7 @@ export const supplierInvoiceLine = pgTable(
 	{
 		id: uuid("id").primaryKey().defaultRandom(),
 		organizationId: text("organization_id").notNull(),
-		invoiceId: uuid("supplier_invoice_id")
+		invoiceId: uuid("invoice_id")
 			.notNull()
 			.references(() => supplierInvoice.id),
 		lineNo: integer("line_no").notNull(),

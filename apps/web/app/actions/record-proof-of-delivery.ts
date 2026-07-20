@@ -22,16 +22,23 @@ export type RecordProofOfDeliveryActionData = {
 export type RecordProofOfDeliveryActionState =
 	ActionResult<RecordProofOfDeliveryActionData> | null;
 
+const optionalText = (max: number) =>
+	z
+		.string()
+		.trim()
+		.max(max)
+		.optional()
+		.transform((value) => (value === "" ? undefined : value));
+
 const recordProofOfDeliveryFormSchema = z.object({
 	deliveryId: z.string().uuid(),
 	expectedVersion: z.coerce.number().int().positive(),
 	receivedByName: z.string().trim().min(1).max(300),
-	notes: z
-		.string()
-		.trim()
-		.max(2000)
-		.optional()
-		.transform((value) => (value === "" ? undefined : value)),
+	outcome: z.enum(["delivered", "partially_delivered", "refused", "failed"]),
+	proofType: optionalText(128),
+	evidenceRef: optionalText(512),
+	carrierRef: optionalText(256),
+	notes: optionalText(2000),
 	recordedAt: z
 		.union([z.coerce.date(), z.literal("")])
 		.optional()
@@ -46,7 +53,7 @@ export async function recordProofOfDeliveryAction(
 ): Promise<RecordProofOfDeliveryActionState> {
 	return runOperatorPermissionAction({
 		path: "recordProofOfDeliveryAction",
-		permission: "fulfillment.manage",
+		permission: "fulfillment.pod.record",
 		safeMessage:
 			"Could not record proof of delivery. Try again or contact an admin.",
 		execute: async (session, correlationId) => {
@@ -54,13 +61,17 @@ export async function recordProofOfDeliveryAction(
 				deliveryId: formData.get("deliveryId"),
 				expectedVersion: formData.get("expectedVersion"),
 				receivedByName: formData.get("receivedByName"),
+				outcome: formData.get("outcome"),
+				proofType: formData.get("proofType") ?? undefined,
+				evidenceRef: formData.get("evidenceRef") ?? undefined,
+				carrierRef: formData.get("carrierRef") ?? undefined,
 				notes: formData.get("notes") ?? undefined,
 				recordedAt: formData.get("recordedAt") ?? undefined,
 			});
 			if (!parsed.success) {
 				return actionFail(
 					"VALIDATION_ERROR",
-					"Enter a valid delivery, version, recipient, and recorded time.",
+					"Enter a valid delivery, version, recipient, outcome, and recorded time.",
 					parsed.details,
 				);
 			}
@@ -69,6 +80,7 @@ export async function recordProofOfDeliveryAction(
 					organizationId: session.orgId,
 					actorUserId: session.userId,
 					correlationId,
+					idempotencyKey: `pod:${correlationId}`,
 					...parsed.data,
 				},
 				createFulfillmentCommandOptions(),
