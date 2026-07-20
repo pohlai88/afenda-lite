@@ -65,6 +65,27 @@ export default defineConfig({
 				path.join(repoRoot, "packages/notifications"),
 			),
 			nodeProject("events", path.join(repoRoot, "packages/events")),
+			{
+				...nodeProject(
+					"master-data",
+					path.join(repoRoot, "packages/master-data"),
+				),
+				resolve: {
+					alias: {
+						...testingAlias,
+						"server-only": path.join(repoRoot, "testing/empty-server-only.ts"),
+					},
+				},
+			},
+			{
+				...nodeProject("sales", path.join(repoRoot, "packages/sales")),
+				resolve: {
+					alias: {
+						...testingAlias,
+						"server-only": path.join(repoRoot, "testing/empty-server-only.ts"),
+					},
+				},
+			},
 			nodeProject("http", path.join(repoRoot, "packages/http")),
 			nodeProject("security", path.join(repoRoot, "packages/security")),
 			nodeProject("metrics", path.join(repoRoot, "packages/metrics")),

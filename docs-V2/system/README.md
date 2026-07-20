@@ -39,6 +39,7 @@ One screen for “what ships.” Re-probe disk after package or route-group chan
 | Import | `import { env } from "@afenda/env"` — schema `packages/env` |
 | Local runtime | `.env.local` only (gitignored) |
 | Template | `.env.example` — keys, no secrets |
+| Ops toggles | Named booleans on `@afenda/env` (`PORTAL_ORG_SWITCHER_ENABLED` · `GUARDIAN_AUTH_SHELL` · `PLAYGROUND_ENABLED`) — not a feature-flags package; DNA: [../entitlements/README.md](../entitlements/README.md) |
 | Never sync to Vercel prod | `PLAYGROUND_*` · `NEON_API_KEY` · `NEON_ORG_ID` · `NEON_PROJECT_ID` · `NEON_BRANCH_ID` · Shadcn Studio keys |
 | Validate | `pnpm validate:neon-env` |
 

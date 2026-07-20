@@ -61,9 +61,12 @@ describe("getOrganizationUsageAction", () => {
 			data: {
 				orgId: "org-active-session",
 				period: "2026-07",
-				activeMembers: 3,
-				rbacAuditEvents: 12,
-				activeRoleAssignments: 5,
+				metrics: {
+					activeMembers: { current: 3, band: "quiet" },
+					rbacAuditEvents: { current: 12, band: "quiet" },
+					activeRoleAssignments: { current: 5, band: "active" },
+				},
+				alerts: [],
 			},
 		});
 
@@ -78,9 +81,12 @@ describe("getOrganizationUsageAction", () => {
 			data: {
 				orgId: "org-active-session",
 				period: "2026-07",
-				activeMembers: 3,
-				rbacAuditEvents: 12,
-				activeRoleAssignments: 5,
+				metrics: {
+					activeMembers: { current: 3, band: "quiet" },
+					rbacAuditEvents: { current: 12, band: "quiet" },
+					activeRoleAssignments: { current: 5, band: "active" },
+				},
+				alerts: [],
 			},
 		});
 		expect(usageMocks.getOrganizationUsageMetrics).toHaveBeenCalledWith({

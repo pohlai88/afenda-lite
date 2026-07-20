@@ -30,10 +30,13 @@ Historical provenance: patterns adapted from Xerp `monorepo-discipline`; rewritt
 ```
 Rank 3 — Application  : apps/web  (sole deployable; future apps/* follow same rule)
 Rank 2 — Surfaces     : @afenda/ui-system · @afenda/emails
-Rank 1 — Platform     : @afenda/db · @afenda/auth · @afenda/admin · @afenda/env · @afenda/errors · @afenda/logger · @afenda/rate-limit · @afenda/cache · @afenda/audit · @afenda/search · @afenda/notifications · @afenda/events · @afenda/http · @afenda/security · @afenda/metrics · @afenda/openapi · @afenda/ai-the-machine · @afenda/config
+Rank 1 — Platform     : banded catalog (R1-A…F, R1-X) — see LAYERS.md + packages/README.md
+                        Living packages: db · auth · admin · env · errors · logger · rate-limit ·
+                        cache · audit · search · notifications · events · master-data · sales ·
+                        http · security · metrics · openapi · ai-the-machine · config
 ```
 
-**Direction rule:** imports flow **down** only (higher rank → same or lower). Packages never import `apps/*`. No cycles.
+**Direction rule:** imports flow **down** only (higher rank → same or lower). Packages never import `apps/*`. No cycles. **Bands classify only; they never grant dependency rights.** Workspace edges: `package.json` realizes + [WORKSPACE-EDGE-REGISTER.yaml](../../../docs-V2/modules/WORKSPACE-EDGE-REGISTER.yaml) authorizes. Peer R1-F ERP packages do not import each other.
 
 Dependency graph (runtime):
 
@@ -55,6 +58,7 @@ apps/web
   ├── @afenda/search     ──→  @afenda/db · @afenda/errors
   ├── @afenda/notifications ──→  @afenda/db · @afenda/errors
   ├── @afenda/events         ──→  @afenda/db · @afenda/errors
+  ├── @afenda/master-data    ──→  @afenda/db · @afenda/errors · @afenda/audit · @afenda/events
   ├── @afenda/ai-the-machine ──→  @afenda/errors  (+ ai SDK)
   ├── @afenda/ui-system
   └── @afenda/emails
@@ -115,6 +119,7 @@ Full diagram, forbidden pairs, and violation fixes: [LAYERS.md](LAYERS.md).
 | `@afenda/logger` | (none of `@afenda/*`) | Next.js; APM SDKs; Surfaces / `apps/*` |
 | `@afenda/rate-limit` | `@afenda/env` · `@afenda/errors` | Next.js; Surfaces / `apps/*`; foreign Redis outside Upstash |
 | `@afenda/cache` | `@afenda/env` · `@afenda/errors` | Next.js; Surfaces / `apps/*`; foreign Redis outside Upstash; `FLUSHDB` |
+| `@afenda/master-data` | `@afenda/db` · `@afenda/errors` · `@afenda/audit` · `@afenda/events` | Surfaces / `apps/*`; Next.js; org-scoped `md_uom`; dual-write `md_*` outside package; shadow customer/product tables |
 | `@afenda/ui-system` | platform packages only if client-safe | Server-only code, DB calls, secrets |
 | `@afenda/emails` | (UI/React peers as needed) | Be imported from client components in `apps/web` |
 | `@afenda/config` | (none at runtime) | Be imported as a runtime module; use `extends` / Biome root only |

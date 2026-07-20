@@ -7,6 +7,7 @@
 	"scripts": {
 		"generate:source": "fumadocs-mdx",
 		"generate:openapi-docs": "pnpm exec tsx scripts/generate-openapi-docs.mts",
+		"generate:package-docs": "pnpm exec tsx scripts/generate-package-docs.mts",
 		"lint:links": "pnpm exec tsx scripts/lint-links.mts",
 		"list:source-pages": "node --import tsx ./scripts/list-source-pages.mjs",
 		"fd": "cli",
@@ -16,7 +17,7 @@
 		"fd:tree": "cli tree",
 		"test": "vitest run --config ../../testing/vitest.config.ts --project docs",
 		"predev": "pnpm generate:source",
-		"prebuild": "pnpm generate:source && pnpm generate:openapi-docs",
+		"prebuild": "pnpm generate:source && pnpm generate:openapi-docs && pnpm generate:package-docs",
 		"pretypecheck": "pnpm generate:source",
 		"dev": "next dev --port 3001",
 		"build": "next build",

@@ -18,13 +18,17 @@ Content lifecycle: [content.md](content.md). Frontmatter habits: [practices.md](
 
 ```text
 apps/docs/content/docs/
-  meta.json                 # pages: index, guide, api
+  meta.json                 # pages: index, guide, api, packages
   index.mdx                 # slugs [] → /docs
   guide.mdx                 # slugs ['guide'] → /docs/guide
   api/
     meta.json               # title "HTTP API" · pages from generateFiles
     index.mdx               # slugs ['api'] → /docs/api
     <op>.mdx                # slugs ['api', '<op>'] → /docs/api/<op>
+  packages/
+    meta.json               # title "Packages" · pages from generate:package-docs
+    index.mdx               # slugs ['packages'] → /docs/packages
+    <slug>.mdx              # slugs ['packages', '<slug>'] → /docs/packages/<slug>
 ```
 
 | Concern | Lite |
@@ -74,15 +78,19 @@ Do not extend frontmatter schema for access/icons without a named Docs slice.
 
 ```json
 {
-  "pages": ["index", "guide", "api"]
+  "pages": ["index", "guide", "api", "packages"]
 }
 ```
 
-Configured: explicit order · all three sections listed · no separators/links/`...` rest syntax unless a named slice needs them.
+Configured: explicit order · all four sections listed · no separators/links/`...` rest syntax unless a named slice needs them.
 
 ### API folder (`content/docs/api/meta.json`)
 
 Owned by `generate:openapi-docs` (`meta: true`): `title: "HTTP API"` + `pages` listing `index` then operation slugs. Do not hand-maintain op order across regenerations — [openapi.md](openapi.md) · [content.md](content.md).
+
+### Packages folder (`content/docs/packages/meta.json`)
+
+Owned by `generate:package-docs`: `title: "Packages"` + `pages` listing `index` then sorted package slugs. Do not hand-edit generated `<slug>.mdx` — [content.md](content.md) · [automation.md](automation.md).
 
 ### Supported upstream knobs (Lite usage)
 
@@ -158,7 +166,7 @@ OpenAPI ops: regenerate via `generate:openapi-docs` (updates `api/meta.json`).
 ## Verify
 
 ```text
-1. content/docs/meta.json pages = index, guide, api
+1. content/docs/meta.json pages = index, guide, api, packages
 2. No meta.json contains "root": true
 3. No (paren) folder groups under content/docs
 4. lib/source.ts has no icon: handler

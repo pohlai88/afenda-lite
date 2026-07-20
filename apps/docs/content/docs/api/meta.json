@@ -2,7 +2,8 @@
   "pages": [
     "index",
     "getHealthLiveness",
-    "getHealthReadiness"
+    "getHealthReadiness",
+    "getMetricsScrape"
   ],
   "title": "HTTP API",
   "icon": "CodeXml"

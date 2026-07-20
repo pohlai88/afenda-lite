@@ -65,13 +65,14 @@ Schema home: `packages/env/src/web.ts` (product) · `packages/env/src/docs.ts` (
 
 ## Out of scope
 
-Do not add to this package: database clients, Neon Auth SDK calls, Next route handlers, UI, a second env SSOT (compose / `env.config`), or claims of multi-DB / project-per-tenant isolation (shared schema · organization-scoped rows only).
+Do not add to this package: database clients, Neon Auth SDK calls, Next route handlers, UI, a second env SSOT (compose / `env.config`), a progressive-delivery flags SDK, plan/tier entitlement matrices (see entitlements DNA), or claims of multi-DB / project-per-tenant isolation (shared schema · organization-scoped rows only).
 
 ## Authority
 
 | Topic | Link |
 |-------|------|
 | Env import · `.env.local` · hard stops | [docs-V2/system](../../docs-V2/system/README.md) |
+| Ops toggles · entitlements DNA (no `@afenda/feature-flags`) | [docs-V2/entitlements](../../docs-V2/entitlements/README.md) |
 | Docs typed env (`docsEnv`) | [docs-V2/docs](../../docs-V2/docs/README.md) |
 | Discipline pointer (`@afenda/env`) | [docs-V2/discipline](../../docs-V2/discipline/README.md) |
 | Tenancy · pooler · shared schema | [docs-V2/tenancy](../../docs-V2/tenancy/README.md) |

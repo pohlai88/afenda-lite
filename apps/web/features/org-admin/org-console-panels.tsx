@@ -37,6 +37,7 @@ import {
 	Spinner,
 } from "@afenda/ui-system";
 import { Activity, ClipboardList, Users } from "lucide-react";
+import type { ReactNode } from "react";
 import { useActionState, useEffect, useMemo, useState } from "react";
 
 import {
@@ -44,6 +45,7 @@ import {
 	deleteOrganizationAction,
 } from "@/app/actions/delete-organization";
 import {
+	type GetOrganizationUsageActionData,
 	type GetOrganizationUsageActionState,
 	getOrganizationUsageAction,
 } from "@/app/actions/get-organization-usage";
@@ -67,16 +69,8 @@ export type OrgListLoadState =
 	| { status: "empty"; organizations: [] }
 	| { status: "unavailable"; organizations: []; message: string };
 
-type UsageMetricsView = {
-	orgId: string;
-	period: string;
-	activeMembers: number;
-	rbacAuditEvents: number;
-	activeRoleAssignments: number;
-};
-
 export type UsageLoadState =
-	| { status: "ready"; metrics: UsageMetricsView }
+	| { status: "ready"; metrics: GetOrganizationUsageActionData }
 	| { status: "unavailable"; message: string };
 
 type OrgConsolePanelsProps = {
@@ -84,6 +78,33 @@ type OrgConsolePanelsProps = {
 	usage: UsageLoadState;
 	activeOrgId: string;
 };
+
+/** Display order + copy for living usage-position metrics (UI owns labels). */
+const USAGE_METRIC_CARDS: ReadonlyArray<{
+	key: keyof GetOrganizationUsageActionData["metrics"];
+	title: string;
+	descriptionSuffix: string;
+	icon: ReactNode;
+}> = [
+	{
+		key: "activeMembers",
+		title: "Active members",
+		descriptionSuffix: "Period",
+		icon: <Users className="size-4" aria-hidden />,
+	},
+	{
+		key: "rbacAuditEvents",
+		title: "RBAC audit events",
+		descriptionSuffix: "UTC month",
+		icon: <ClipboardList className="size-4" aria-hidden />,
+	},
+	{
+		key: "activeRoleAssignments",
+		title: "Active role assignments",
+		descriptionSuffix: "Active rows",
+		icon: <Activity className="size-4" aria-hidden />,
+	},
+];
 
 const orgColumns: DataTableColumn<OrgConsoleRow>[] = [
 	{
@@ -404,14 +425,14 @@ function UsageMetricsPanel({
 		usageInitialState,
 	);
 
-	const metrics =
+	const position =
 		state?.ok === true
 			? state.data
 			: usage.status === "ready"
 				? usage.metrics
 				: null;
 	const defaultPeriod =
-		usage.status === "ready" ? usage.metrics.period : (metrics?.period ?? "");
+		usage.status === "ready" ? usage.metrics.period : (position?.period ?? "");
 	const periodError = actionFieldMessage(state, "period");
 	const showFormError =
 		!pending && state?.ok === false && periodError === undefined;
@@ -423,7 +444,7 @@ function UsageMetricsPanel({
 			<CardHeader>
 				<CardTitle>Active organization usage</CardTitle>
 				<CardDescription>
-					UTC calendar-month counts for active session org{" "}
+					UTC calendar-month position for active session org{" "}
 					<Code>{activeOrgId}</Code>. Requires the requested org to be the
 					active session organization.
 				</CardDescription>
@@ -468,36 +489,36 @@ function UsageMetricsPanel({
 
 				{showFormError ? <FormError message={state.message} /> : null}
 
-				{unavailableMessage && metrics === null ? (
+				{unavailableMessage && position === null ? (
 					<Alert role="status">
 						<AlertTitle>Usage unavailable</AlertTitle>
 						<AlertDescription>{unavailableMessage}</AlertDescription>
 					</Alert>
 				) : null}
 
-				{metrics ? (
+				{position && position.alerts.length > 0 ? (
+					<Alert role="status">
+						<AlertTitle>Usage position</AlertTitle>
+						<AlertDescription>
+							{position.alerts
+								.map((alert) => `${alert.metric}: ${alert.level}`)
+								.join(" · ")}
+						</AlertDescription>
+					</Alert>
+				) : null}
+
+				{position ? (
 					<MetricGrid
 						columns={3}
-						metrics={[
-							{
-								title: "Active members",
-								value: metrics.activeMembers,
-								description: `Period ${metrics.period}`,
-								icon: <Users className="size-4" aria-hidden />,
-							},
-							{
-								title: "RBAC audit events",
-								value: metrics.rbacAuditEvents,
-								description: "UTC month half-open window",
-								icon: <ClipboardList className="size-4" aria-hidden />,
-							},
-							{
-								title: "Active role assignments",
-								value: metrics.activeRoleAssignments,
-								description: "platform_role_assignment active rows",
-								icon: <Activity className="size-4" aria-hidden />,
-							},
-						]}
+						metrics={USAGE_METRIC_CARDS.map((card) => {
+							const cell = position.metrics[card.key];
+							return {
+								title: card.title,
+								value: cell.current,
+								description: `Band ${cell.band} · ${card.descriptionSuffix} ${position.period}`,
+								icon: card.icon,
+							};
+						})}
 					/>
 				) : null}
 			</CardContent>

@@ -150,13 +150,7 @@ async function loadUsage(
 	}
 	return {
 		status: "ready",
-		metrics: {
-			orgId: result.data.orgId,
-			period: result.data.period,
-			activeMembers: result.data.activeMembers,
-			rbacAuditEvents: result.data.rbacAuditEvents,
-			activeRoleAssignments: result.data.activeRoleAssignments,
-		},
+		metrics: result.data,
 	};
 }
 

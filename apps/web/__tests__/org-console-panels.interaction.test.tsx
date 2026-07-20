@@ -55,9 +55,12 @@ const READY_USAGE: UsageLoadState = {
 	metrics: {
 		orgId: "org_active",
 		period: "2026-07",
-		activeMembers: 2,
-		rbacAuditEvents: 4,
-		activeRoleAssignments: 1,
+		metrics: {
+			activeMembers: { current: 2, band: "quiet" },
+			rbacAuditEvents: { current: 4, band: "quiet" },
+			activeRoleAssignments: { current: 1, band: "quiet" },
+		},
+		alerts: [],
 	},
 };
 
@@ -254,9 +257,12 @@ describe("OrgConsolePanels interaction", () => {
 			data: {
 				orgId: "org_active",
 				period: "2026-06",
-				activeMembers: 9,
-				rbacAuditEvents: 1,
-				activeRoleAssignments: 2,
+				metrics: {
+					activeMembers: { current: 9, band: "active" },
+					rbacAuditEvents: { current: 1, band: "quiet" },
+					activeRoleAssignments: { current: 2, band: "quiet" },
+				},
+				alerts: [],
 			},
 		});
 

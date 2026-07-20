@@ -57,6 +57,8 @@ Runtime SSOT: `@afenda/admin/health` (re-exported via `modules/platform/domain/h
 
 DNA absorb/reject: [metrics-dna.md](metrics-dna.md).
 
+**Not this pack:** org usage-position matrix (`@afenda/admin/usage` capacity bands) — see [../usage/README.md](../usage/README.md). That is product org-console telemetry, not Prometheus scrape.
+
 ---
 
 ## Where to read logs (ops)
@@ -97,4 +99,4 @@ Health RHs and auth BFF also emit `Server-Timing` (`health_*` / `auth_bff` metri
 4. Authorized GET /api/metrics → Prometheus text (token from METRICS_SCRAPE_TOKEN)
 ```
 
-Companion: [metrics-dna.md](metrics-dna.md) · [../api/README.md](../api/README.md) · [../deploy/README.md](../deploy/README.md) · [../auth/README.md](../auth/README.md).
+Companion: [metrics-dna.md](metrics-dna.md) · [../usage/README.md](../usage/README.md) · [../api/README.md](../api/README.md) · [../deploy/README.md](../deploy/README.md) · [../auth/README.md](../auth/README.md).

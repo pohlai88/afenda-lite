@@ -19,11 +19,15 @@
 apps/docs/content/docs/
   index.mdx                 # Home — Callout + Cards (hand)
   guide.mdx                 # Maintainer guide — stock MDX surfaces (hand)
-  meta.json                 # Root sidebar: index, guide, api
+  meta.json                 # Root sidebar: index, guide, api, packages
   api/
     index.mdx               # API section intro — Callout + Cards (hand)
     meta.json               # From generateFiles meta: true (ops + index)
     <generated-op>.mdx      # generateFiles — do not hand-edit forever
+  packages/
+    index.mdx               # Packages section intro — Callout + Cards (hand)
+    meta.json               # From generate:package-docs
+    <pkg-slug>.mdx          # generate:package-docs — do not hand-edit
 ```
 
 `source.config.ts` points `defineDocs({ dir: "content/docs" })` and `providerImportSource: "@/components/mdx"`. Loader `baseUrl: "/docs"` + `docs.toFumadocsSource()` — **not** BaseHub / Sanity / Payload — [content-source.md](content-source.md). Sidebar items come from this tree via `DocsLayout` `tree={source.pageTree}` — [ui-layouts.md](ui-layouts.md) DocsLayout.
@@ -43,11 +47,15 @@ Do **not** add `permission` (or other access) frontmatter for gated Loader filte
 | Narrative MDX (`index.mdx`, `guide.mdx`, section intros) | Humans | Direct edit | Commit |
 | OpenAPI operation MDX | `generate:openapi-docs` | Regenerate after YAML change | Commit regenerated output |
 | `api/meta.json` (ops listing) | Generator | Regenerate | Commit |
+| Package pages (`packages/<slug>.mdx`) | `generate:package-docs` | Regenerate after package README / exports change | Commit regenerated output |
+| `packages/meta.json` | Generator | Regenerate | Commit |
 | `.source/**` | `fumadocs-mdx` | `generate:source` | **Gitignore** |
 
 **Lifecycle:** change OAS → `pnpm openapi:generate` + `check:openapi` → `generate:openapi-docs` → commit new/changed op MDX + meta. Do not leave generated ops stale relative to committed YAML.
 
-Hand `api/index.mdx` is the narrative landing page; regenerating ops must **preserve** that file (generator clears other files under `api/` or writes only operation outputs + meta).
+Package lifecycle: change `packages/*/package.json` or `README.md` → `generate:package-docs` → commit new/changed package MDX + meta. Outbound repo-relative README links are rewritten to GitHub blob URLs so `lint:links` stays green.
+
+Hand `api/index.mdx` and `packages/index.mdx` are narrative landing pages; regenerators must **preserve** those files.
 
 ---
 
@@ -57,8 +65,9 @@ Hand `api/index.mdx` is the narrative landing page; regenerating ops must **pres
 |--------|------|
 | `generate:source` | `fumadocs-mdx` → `.source/` |
 | `generate:openapi-docs` | `generateFiles({ input: openapi })` → EN operation MDX |
+| `generate:package-docs` | `packages/*` → `content/docs/packages/<slug>.mdx` + meta |
 | `lint:links` | `next-validate-link` over content — [validate-links.md](validate-links.md) |
-| `predev` / `prebuild` | Ensure source (+ OpenAPI pages on build) |
+| `predev` / `prebuild` | Ensure source (+ OpenAPI + package pages on build) |
 
 See [automation.md](automation.md).
 
@@ -92,8 +101,9 @@ See [automation.md](automation.md).
 1. Test-Path apps/docs/content/docs/index.mdx
 2. pnpm --filter @afenda/docs generate:source
 3. pnpm --filter @afenda/docs generate:openapi-docs   # when OAS changed
-4. pnpm --filter @afenda/docs lint:links
-5. pnpm --filter @afenda/docs build                   # SSG smoke
+4. pnpm --filter @afenda/docs generate:package-docs   # when packages/* changed
+5. pnpm --filter @afenda/docs lint:links
+6. pnpm --filter @afenda/docs build                   # SSG smoke
 ```
 
 Companion: [page-conventions.md](page-conventions.md) · [practices.md](practices.md) · [ui.md](ui.md) · [openapi.md](openapi.md) · [automation.md](automation.md).

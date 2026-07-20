@@ -40,6 +40,18 @@ Hand-maintained `content/docs/api/index.mdx` must stay; operation pages and
 </Step>
 <Step>
 
+### Refresh package MDX
+
+```bash
+pnpm --filter @afenda/docs generate:package-docs
+```
+
+Hand-maintained `content/docs/packages/index.mdx` must stay; package pages and
+`packages/meta.json` come from `packages/*/package.json` + `README.md`.
+
+</Step>
+<Step>
+
 ### Source, links, build
 
 ```bash
@@ -56,7 +68,7 @@ Lean gate without a full Next build: `pnpm check:docs-app`.
 
 ## Commands by change
 
-<Tabs items={["Narrative MDX", "OpenAPI / handlers", "Search / layout"]}>
+<Tabs items={["Narrative MDX", "OpenAPI / handlers", "Packages", "Search / layout"]}>
   <Tab>
 
 ```bash
@@ -73,6 +85,14 @@ pnpm openapi:generate && pnpm check:openapi
 pnpm --filter @afenda/docs generate:openapi-docs
 pnpm check:docs-app
 pnpm --filter @afenda/docs test
+```
+
+  </Tab>
+  <Tab>
+
+```bash
+pnpm --filter @afenda/docs generate:package-docs
+pnpm check:docs-app
 ```
 
   </Tab>
@@ -96,6 +116,11 @@ docs layouts. After edits, run `typecheck` and `build`, then smoke `:3001`.
       <File name="index.mdx" />
       <File name="meta.json" />
       <File name="getHealthLiveness.mdx" />
+    </Folder>
+    <Folder name="packages" defaultOpen>
+      <File name="index.mdx" />
+      <File name="meta.json" />
+      <File name="errors.mdx" />
     </Folder>
   </Folder>
 </Files>

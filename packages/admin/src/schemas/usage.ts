@@ -1,5 +1,12 @@
 import { z } from "zod";
 
+import {
+	USAGE_BANDS,
+	USAGE_METRIC_KEYS,
+	type UsageBand,
+	type UsageMetricKey,
+} from "../usage-bands";
+
 /** Calendar month key `YYYY-MM` (UTC bounds). */
 export const usagePeriodSchema = z
 	.string()
@@ -17,18 +24,48 @@ export type GetOrganizationUsageInput = z.infer<
 	typeof getOrganizationUsageInputSchema
 >;
 
+export const usageBandSchema = z.enum(USAGE_BANDS);
+
+export const usageMetricKeySchema = z.enum(USAGE_METRIC_KEYS);
+
+export const usageMetricCellSchema = z.object({
+	current: z.number().int().min(0),
+	band: usageBandSchema,
+});
+
+export type UsageMetricCell = z.infer<typeof usageMetricCellSchema>;
+
+export const usageAlertLevelSchema = z.enum(["warning", "critical"]);
+
+export type UsageAlertLevel = z.infer<typeof usageAlertLevelSchema>;
+
+export const usageAlertSchema = z.object({
+	metric: usageMetricKeySchema,
+	level: usageAlertLevelSchema,
+});
+
+export type UsageAlert = z.infer<typeof usageAlertSchema>;
+
+/** Living metric cells — keys locked to `USAGE_METRIC_KEYS` (no placeholders). */
+const organizationUsageMetricsCellsSchema = z.object({
+	activeMembers: usageMetricCellSchema,
+	rbacAuditEvents: usageMetricCellSchema,
+	activeRoleAssignments: usageMetricCellSchema,
+} satisfies Record<UsageMetricKey, typeof usageMetricCellSchema>);
+
 /**
- * Org-console usage for a calendar month — only fields backed by live counts.
- * No storage / API-call / ERP invoice placeholders.
+ * Org-console usage position for a calendar month — living counters + ops bands.
+ * No storage / API-call / ERP invoice placeholders. No SKU limits / percentages.
  */
 export const organizationUsageMetricsSchema = z.object({
 	orgId: z.string().min(1),
 	period: usagePeriodSchema,
-	activeMembers: z.number().int().min(0),
-	rbacAuditEvents: z.number().int().min(0),
-	activeRoleAssignments: z.number().int().min(0),
+	metrics: organizationUsageMetricsCellsSchema,
+	alerts: z.array(usageAlertSchema),
 });
 
 export type OrganizationUsageMetrics = z.infer<
 	typeof organizationUsageMetricsSchema
 >;
+
+export type { UsageBand, UsageMetricKey };

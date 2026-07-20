@@ -28,6 +28,8 @@ No controlled-document register. No links outside this tree into other doc homes
 | HTTP Route Handlers | [api/rest.md](api/rest.md) | api-and-interface-design |
 | Server Actions | [api/actions.md](api/actions.md) | api-and-interface-design |
 | API middleware DNA (borrow/reject) | [api/middleware-dna.md](api/middleware-dna.md) | api-and-interface-design · monorepo-discipline |
+| Entitlements / ops toggles (borrow/reject) | [entitlements/README.md](entitlements/README.md) · [entitlements/entitlements-dna.md](entitlements/entitlements-dna.md) | monorepo-discipline · shipping boundary |
+| Org usage position (capacity bands) | [usage/README.md](usage/README.md) · [usage/usage-position-dna.md](usage/usage-position-dna.md) | monorepo-discipline · observability-and-instrumentation |
 | Next.js App Router | [nextjs/README.md](nextjs/README.md) | incremental FE + App Router |
 | UI consume | [nextjs/ui.md](nextjs/ui.md) | frontend-ui-engineering |
 | Official docs app (`@afenda/docs`) | [docs/README.md](docs/README.md) | documentation-and-adrs · fumadocs-mdx-structure · [docs/automation.md](docs/automation.md) |
@@ -41,6 +43,8 @@ No controlled-document register. No links outside this tree into other doc homes
 | Product search (Neon FTS) | [search/README.md](search/README.md) | monorepo-discipline · planning dependency graph |
 | In-app notifications | [notifications/README.md](notifications/README.md) | monorepo-discipline · planning dependency graph |
 | Domain events / outbox | [events/README.md](events/README.md) · [events/events-dna.md](events/events-dna.md) | monorepo-discipline · planning dependency graph |
+| Master data (ERP spine) | [master-data/README.md](master-data/README.md) · [master-data/master-data-dna.md](master-data/master-data-dna.md) · [master-data/development-method.md](master-data/development-method.md) · [master-data/remaining-slices.md](master-data/remaining-slices.md) | monorepo-discipline · planning dependency graph |
+| Tax architecture (R4 gate) | [tax/README.md](tax/README.md) · [tax/tax-architecture.md](tax/tax-architecture.md) | monorepo-discipline · planning dependency graph |
 | AI The Machine | [ai/README.md](ai/README.md) · [ai/ai-the-machine-dna.md](ai/ai-the-machine-dna.md) | monorepo-discipline · ai-sdk · vercel-agent |
 
 ---

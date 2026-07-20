@@ -75,9 +75,12 @@ describe("@afenda/admin usage metrics", () => {
 			data: {
 				orgId: "org-1",
 				period: "2026-07",
-				activeMembers: 2,
-				rbacAuditEvents: 7,
-				activeRoleAssignments: 3,
+				metrics: {
+					activeMembers: { current: 2, band: "quiet" },
+					rbacAuditEvents: { current: 7, band: "quiet" },
+					activeRoleAssignments: { current: 3, band: "quiet" },
+				},
+				alerts: [],
 			},
 		});
 		expect(listOrgMembers).toHaveBeenCalledWith("org-1");

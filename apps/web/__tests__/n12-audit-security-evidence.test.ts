@@ -430,6 +430,7 @@ describe("N12 join accept NOT APPLICABLE (ARCH-023 Tier-1)", () => {
 			"modules/platform/domain/record-organization-deleted-audit.ts",
 		);
 		expect(deleteOrg).toContain("recordOrganizationDeletedAudit");
+		expect(deleteOrg).toContain("recordOrganizationDeletedEvent");
 		expect(deleteOrg).toContain("platform_audit_log");
 		expect(deleteOrg).not.toContain("recordRbacAudit");
 		expect(deleteOrg).not.toContain("createAuditRecorder");
