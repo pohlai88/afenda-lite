@@ -64,15 +64,17 @@ Same-band imports are allowed only when listed in the edge register. One data-pl
 
 ### Runtime Infrastructure — Rank 1B — [`runtime/`](./runtime/README.md)
 
-| Package | Runtime | Status | Role |
-|---------|---------|--------|------|
-| [`@afenda/logger`](./runtime/logger/README.md) | Node + edge emit | Active | Pino Node logger + edge-safe emit |
-| [`@afenda/http`](./runtime/http/README.md) | Node/Edge by export | Active | Fetch compose · correlation · pagination · rate-limit / timing headers |
-| [`@afenda/security`](./runtime/security/README.md) | Node/Edge | Active | Security headers · CSP · CORS builders |
-| [`@afenda/metrics`](./runtime/metrics/README.md) | Node | Active | Prometheus registry · HTTP/DB/cache instruments |
-| [`@afenda/openapi`](./runtime/openapi/README.md) | Node/build | Active | Zod→OpenAPI glue · `{ data }` envelope · YAML emit |
-| [`@afenda/rate-limit`](./runtime/rate-limit/README.md) | Node | Active | Sliding-window abuse limiter (Upstash; memory = local/test only) |
-| [`@afenda/cache`](./runtime/cache/README.md) | Node | Active | L1 process + Upstash Redis L2 (fail closed in production without Upstash) |
+| Package | Runtime | Exports | Status | Role |
+|---------|---------|---------|--------|------|
+| [`@afenda/logger`](./runtime/logger/README.md) | Node + Edge | `.` (Node), `/edge` | Active | Pino Node logger + edge-safe console emit |
+| [`@afenda/http`](./runtime/http/README.md) | Universal | `.` | Active | Fetch compose · correlation · pagination · rate-limit / timing headers |
+| [`@afenda/security`](./runtime/security/README.md) | Universal | `.` | Active | Security headers · CSP · CORS builders |
+| [`@afenda/metrics`](./runtime/metrics/README.md) | Node + Edge | `.` → split planned | Active | Prometheus registry · HTTP/DB/cache instruments |
+| [`@afenda/openapi`](./runtime/openapi/README.md) | Node/build | `.`, `/zod`, `/document` | Active | Zod→OpenAPI glue · `{ data }` envelope · YAML emit |
+| [`@afenda/rate-limit`](./runtime/rate-limit/README.md) | Universal | `.` | Active | Sliding-window abuse limiter (Upstash; memory = local/test only) |
+| [`@afenda/cache`](./runtime/cache/README.md) | Universal | `.` | Active | L1 process + Upstash Redis L2 (fail closed in production without Upstash) |
+
+**Runtime-specific subpath exports:** Packages with Node-only dependencies (e.g., `prom-client`, `pino`, `node:fs`) expose runtime-specific subpaths to prevent accidental bundling into Edge/Vercel Functions. Pattern: `/core` (types), `/node` (Node implementation), `/edge` (Edge-safe emit), `/testing` (test utilities). See `@afenda/logger` for reference implementation; `@afenda/metrics` migration planned ([docs-V2/_scratch/runtime-subpath-exports-audit.md](../docs-V2/_scratch/runtime-subpath-exports-audit.md)).
 
 Memory adapters for rate-limit and cache are test and local-development only unless a deployment explicitly declares degraded single-instance operation. Production must fail closed or report a startup error when the required distributed backend is unavailable. Cache may fail open for availability only where designed; authorization, idempotency, and rate limiting must not depend on an unsafe local fallback.
 

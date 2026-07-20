@@ -1,0 +1,21 @@
+# Afenda-Lite — Cursor fallback rules
+
+**SSOT:** [AGENTS.md](AGENTS.md). This file is a short pointer — do not duplicate doctrine here.
+
+## Quick reference
+
+- **Engines:** Node `24.x` · pnpm `>=10.33.4` (root `package.json`)
+- **Stack:** Next.js App Router · React 19 · TypeScript · Turbo · pnpm workspaces · Neon Postgres · Neon Auth · Drizzle
+- **Commands:** `pnpm --filter @afenda/web dev` · `pnpm lint` · `pnpm typecheck` · `pnpm test` · `pnpm governance:packages` · `pnpm checks`
+- **Product entry:** [AGENTS.md](AGENTS.md) skill router · `.cursor/skills/using-afenda-elite-skills/SKILL.md`
+- **Always-apply rules:** `.cursor/rules/*.mdc` (PREFLIGHT · coding-discipline · enterprise bar · no-shim · no-park · no Living ARCH ghost SSOT)
+- **Scratch ops:** `docs-V2/` (Living `docs/` absent by design until Docs-lane reopen)
+- **Map:** [docs-V2/project-map.md](docs-V2/project-map.md)
+
+## Hard stops
+
+- Greenfield only under `apps/web/**` and `packages/*`
+- UI: `import { … } from "@afenda/ui-system"` only
+- Env: `import { env } from "@afenda/env"` — never raw `process.env` for product config
+- No `@afenda/repositories` · `@afenda/data-access` · `@afenda/orm` mega-packages
+- Commit/push only when the user asks; never print secrets

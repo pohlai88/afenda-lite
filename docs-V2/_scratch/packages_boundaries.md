@@ -1,5 +1,7 @@
 # Review verdict
 
+> **Disk stamp (2026-07-21):** Phase **4.7 Payments** and **4.8 Accounting** are **Done** on disk. Parent ownership in [packages_governance.md](./packages_governance.md) matches expanded Accounting (CoA · posting profiles · source posting link · exceptions · period soft-close/reopen). Remaining open work is cross-module AR/AP↔GL reconciliation depth (non-blocking observation in [erp/accounting.md](./erp/accounting.md)), not package creation. Body below is the original financial-boundary design review kept as rationale.
+
 The consolidated specification is a strong **parent governance and authorization document**. It successfully establishes:
 
 * package classification and ownership law;
@@ -8,9 +10,7 @@ The consolidated specification is a strong **parent governance and authorization
 * the universal Phase 4 quality gate;
 * authorization to implement Payments and Accounting serially.
 
-However, it is **not yet sufficient as the direct implementation contract for Phase 4.7 and 4.8**. The document intentionally describes Payments and Accounting only at summary level, while several financial ownership decisions remain unresolved.
-
-The next documentation should therefore deepen the **financial boundary**, not create more general package-governance documents.
+At authoring time it was **not yet sufficient as the direct implementation contract for Phase 4.7 and 4.8** (summary-level Payments/Accounting only). Those gaps were closed on disk via package implementation + Scratch ERP reviews; this file remains the boundary rationale, not an open Phase 4 execution queue.
 
 ---
 
@@ -741,6 +741,8 @@ Reversal cannot exceed or duplicate original
 
 # Small amendment required in the current parent document
 
+> **Applied on disk (2026-07-21):** parent [packages_governance.md](./packages_governance.md) §4.7–4.8 ownership matches the recommended expansions below. Historical instruction text retained.
+
 Before Phase 4.7 starts, amend the consolidated document in three places.
 
 ## Replace Payments ownership
@@ -820,14 +822,17 @@ Those should remain roadmap candidates until a real delivery slice requires them
 # Recommended execution order
 
 ```text
+DONE:
 1. Patch the consolidated parent specification
-2. Author FIN-001 Financial Boundary and Ownership
 3. Author and execute Phase 4.7 Payments
-4. Author Phase 4.8 Accounting
-5. Create the posting-rule register
-6. Author reconciliation and period-close controls
-7. Execute finance integration and closure evidence
-8. Mark Phase 4 complete only after end-to-end reconciliation passes
+4. Author and execute Phase 4.8 Accounting
+7. Package-level finance closure evidence (migrate 0032/0033 · catalog · tests)
+
+OPEN / SEPARATE MISSION (not Phase 4 package creation):
+2. Author FIN-001 Financial Boundary and Ownership (Scratch/Living when Docs-lane allows)
+5. Formalize posting-rule register beyond package tables/ops
+6. Author deep reconciliation and period-close control pack
+8. End-to-end AR/AP/Payment/GL reconciliation evidence beyond package gates
 ```
 
-The immediate next document should be **`FIN-001-financial-boundary-and-ownership.md`**. It removes the ownership ambiguity that would otherwise allow Payments, Receivables, Payables, and Accounting to develop conflicting records.
+Phase 4 package promotion is complete. A dedicated **FIN-001** Scratch pack remains valuable for Living/register promotion of boundary law; it is not a blocker for `@afenda/accounting` CLOSED status.

@@ -5,7 +5,7 @@
 | Surface | `docs-V2/README.md` |
 | Authority | **Scratch** — using-agent-skills phases + MCP (read-only) + disk under `apps/web/**` · `packages/*` |
 | Purpose | Lean full-stack E2E architecture packs (read → mutate → ship) |
-| Updated | 2026-07-20 |
+| Updated | 2026-07-21 |
 
 No controlled-document register. No links outside this tree into other doc homes. When product code changes, re-probe MCP (`get_routes` · `get_errors` · Neon/Vercel read tools).
 
@@ -13,12 +13,15 @@ No controlled-document register. No links outside this tree into other doc homes
 
 **Hard stop:** Do **not** recreate Living controlled `docs/` (register / ARCH-* · GUIDE-* · MOD-* tree) without an explicit Docs-lane reopen + named recovery. Cutover `71176a0` made Living `docs/` absent by design; this Scratch tree is the day-to-day surface. Never recreate `doc/`.
 
+**Condensed navigation:** [project-map.md](project-map.md) — agents/humans “where do I start?” index (points here + AGENTS.md; not a second SSOT).
+
 ---
 
 ## Packs
 
 | Pack | Entry | Owning skill phase |
 |------|-------|--------------------|
+| Project map (index) | [project-map.md](project-map.md) | context-engineering |
 | System overview | [system/README.md](system/README.md) | context-engineering · documentation-and-adrs |
 | Modules / ports | [modules/README.md](modules/README.md) | context-engineering · afenda-elite-backend-modules |
 | Auth + session | [auth/README.md](auth/README.md) | security-and-hardening |

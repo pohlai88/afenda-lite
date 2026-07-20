@@ -43,7 +43,9 @@ pnpm --filter @afenda/db db:verify-migrate-ban
 pnpm --filter @afenda/db db:introspect
 ```
 
-`db:migrate` runs the guarded migrate path (`scripts/db-migrate-guard.mjs`), not raw `drizzle-kit migrate`. Requires `AFENDA_ALLOW_DB_MIGRATE=1`. A sole `0000_*.sql` baseline also needs `AFENDA_ALLOW_BASELINE_MIGRATE=1` (empty-DB / Mode C apply only).
+`db:migrate` runs the guarded migrate path (`scripts/db-migrate-guard.mjs`), not raw `drizzle-kit migrate`. Requires `AFENDA_ALLOW_DB_MIGRATE=1`. A sole `0000_*.sql` baseline also needs `AFENDA_ALLOW_BASELINE_MIGRATE=1` (empty-DB / Mode C apply only). Migrations that the guard classifies as destructive also require `AFENDA_ALLOW_DESTRUCTIVE_MIGRATE=1` (explicit ops approval — never set in CI by default).
+
+ERP domain DDL (including Accounting CoA / posting / source-link tables in `0032`–`0033`) lives in this package’s Drizzle migrations; table mutation ownership stays with the owning `@afenda/*` ERP packages.
 
 ## Permission catalog
 
@@ -53,7 +55,7 @@ Seed / refresh is **not** part of baseline migrate:
 pnpm --filter @afenda/db db:ensure-permission-catalog
 ```
 
-Living v1 codes are platform / org / account only (`org.users.manage` · `org.roles.manage` · `clients.invite` · `account.self`). Retired domain codes (`declarations.*` · `fft.access`) are removed on ensure — they are not living catalog rows. See [AGENTS.md](../../AGENTS.md).
+Catalog includes platform / org / account codes plus living ERP fine-grained permissions (Sales through Accounting — e.g. 17 `accounting.*` codes). Retired domain codes (`declarations.*` · `fft.access`) are removed on ensure — they are not living catalog rows. See [AGENTS.md](../../../AGENTS.md).
 
 ## Maintain
 

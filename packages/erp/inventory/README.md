@@ -103,7 +103,7 @@ pnpm --filter @afenda/inventory lint
 pnpm --filter @afenda/inventory typecheck
 pnpm --filter @afenda/inventory test
 pnpm --filter @afenda/inventory check
-pnpm --filter @afenda/inventory reconcile
+pnpm --filter @afenda/inventory reconcile -- --organizationId=<org>
 pnpm validate:modules
 ```
 
@@ -149,7 +149,7 @@ Never re-exports raw Drizzle tables or `db` / `eq`.
 | Source dedupe | Downstream movements persist source module/aggregate/event; duplicate event → no second ledger |
 | Migration | Apply `@afenda/db` journal tags `0013_inventory_stock` + `0023_inventory_gap_close` via package migrate |
 | Rollback / repair | Posted movements are not hard-deleted; repair via compensating movements (`createReversalMovement`) or data-lane SQL under Ops with evidence/audit — never delete ledger rows |
-| Reconciliation | `pnpm --filter @afenda/inventory reconcile` — ledger↔balance, reservation totals, transfer conservation |
+| Reconciliation | `pnpm --filter @afenda/inventory reconcile -- --organizationId=<org>` — ledger↔balance, reservation totals, transfer conservation; CLI loads repo-root `.env.local` when `DATABASE_URL` unset |
 | Permissions | Seed fine-grained `inventory.*` via `pnpm --filter @afenda/db db:ensure-permission-catalog` |
 | Metrics | Structured correlation + Inventory error codes on every Result; no separate dashboard product in-package |
 | Verify | `pnpm --filter @afenda/inventory check` · `pnpm validate:modules` |

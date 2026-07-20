@@ -89,6 +89,17 @@ events-only via `postFinancialSourceEvent`.
 | `accounting.exception.read` | View posting exceptions |
 | `accounting.exception.manage` | Resolve posting exceptions |
 
+## Schema / ops evidence
+
+| Surface | Location |
+|---------|----------|
+| Drizzle tables | `@afenda/db` (`chart_of_account` · `ledger_account` · posting profiles · journals · periods · `source_posting_link` · `financial_posting_exception`) |
+| Migrations | `packages/data-plane/db/drizzle/0032_accounting_gap_close.sql` · `0033_schema_snapshot_catchup.sql` |
+| Scratch review | [docs-V2/_scratch/erp/accounting.md](../../../docs-V2/_scratch/erp/accounting.md) — CLOSED 9.4/10 |
+| Permission catalog | 17 `accounting.*` codes via `pnpm --filter @afenda/db db:ensure-permission-catalog` |
+
+Last verify stamp: `2026-07-21` — package tests + typecheck green; Neon migrate + catalog ensure on `br-tiny-hill-ao82jp6f`.
+
 ## Maintain
 
 ```bash

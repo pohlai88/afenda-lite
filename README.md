@@ -38,6 +38,7 @@ Env SSOT: `import { env } from '@afenda/env'` · local file `.env.local` (templa
 | Need | Start here |
 |------|------------|
 | Scratch packs | [docs-V2/README.md](docs-V2/README.md) |
+| Project map (quick index) | [docs-V2/project-map.md](docs-V2/project-map.md) |
 | System layout | [docs-V2/system/README.md](docs-V2/system/README.md) |
 | Tenancy | [docs-V2/tenancy/README.md](docs-V2/tenancy/README.md) |
 | Modules | [docs-V2/modules/README.md](docs-V2/modules/README.md) |
