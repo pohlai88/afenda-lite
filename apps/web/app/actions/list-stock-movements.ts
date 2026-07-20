@@ -12,14 +12,14 @@ export type ListStockMovementsActionData = {
 };
 
 /**
- * List stock movements — `inventory.read`.
+ * List stock movements — `inventory.movement.read`.
  */
 export async function listStockMovementsAction(): Promise<
 	ActionResult<ListStockMovementsActionData>
 > {
 	return runOperatorPermissionAction({
 		path: "listStockMovementsAction",
-		permission: "inventory.read",
+		permission: "inventory.movement.read",
 		safeMessage:
 			"Could not list stock movements. Try again or contact an admin.",
 		execute: async (session) => {

@@ -1,20 +1,26 @@
 # `@afenda/inventory`
 
-Rank-1 Platform ARCH-006 Inventory consumer for Afenda-Lite: org-scoped stock movements (draft → posted), balances, ledger, and reservations, with master-data FK snapshots and same-TX audit/outbox ports. Outcomes use `@afenda/errors` `Result` — this package does not own HTTP status lines, `NextResponse`, NATS, or Action envelopes.
+Band: **R1-F ERP** · Layer: Rank-1 · Package: `@afenda/inventory`
 
-**Tables live in `@afenda/db`.** Mutations are sole-owned here — do not dual-write `stock_movement` / `stock_balance` / `stock_ledger_entry` / `stock_reservation` from `apps/web`. Do not invent shadow product tables (`inventory_product`, local item catalogs).
+Org-scoped stock movements (`draft` → `posted` | `cancelled`), immutable ledger, balance projection, and reservations, with master-data FK snapshots and same-TX audit/outbox. Outcomes use `@afenda/errors` `Result` — this package does not own HTTP status lines, `NextResponse`, NATS, or Action envelopes.
 
-Use this package from Platform / app server code when creating draft stock movements, adding lines, posting (with balance + ledger effects), reserving stock, or releasing reservations. Masters resolve through `@afenda/master-data` lookups — never mutate `md_*` from the inventory store.
+**Tables live in `@afenda/db`.** Mutations are sole-owned here — do not dual-write `stock_movement` / `stock_balance` / `stock_ledger_entry` / `stock_reservation` from `apps/web` or peer ERP packages. Do not invent shadow product tables (`inventory_product`, local item catalogs).
+
+**Authority:** `stock_ledger_entry` is the immutable quantity history. `stock_balance` is the operational projection. Reservations are a **separate aggregate** (`reserveStock` / `releaseReservation`) — not movement types. Transfer posts both legs atomically; **in-transit is not supported** in v1. Scope is **quantity-only** (valuation belongs to Accounting).
+
+Use this package from Platform / app server code when creating draft stock movements, adding lines, posting, cancelling drafts, reversing posted movements, reserving stock, or releasing reservations. Masters resolve through `@afenda/master-data` lookups — never mutate `md_*` from the inventory store. Toolchain: root `engines` **Node 24.x** · **pnpm ≥10.33.4**.
+
+Scratch contract + completeness ledger: [docs-V2/_scratch/erp/inventory.md](../../../docs-V2/_scratch/erp/inventory.md).
 
 ## Consume
-
-Workspace dependency — import from the root barrel:
 
 ```ts
 import {
   createStockMovement,
   addStockMovementLine,
   postStockMovement,
+  cancelStockMovement,
+  createReversalMovement,
   reserveStock,
   releaseReservation,
   getStockMovementById,
@@ -26,29 +32,66 @@ const movement = await createStockMovement({
   organizationId,
   actorUserId,
   correlationId,
+  idempotencyKey,
   code: "RCPT-1001",
   movementType: "receipt",
+  source: "receiving",
   warehouseId,
+  sourceModule: "receiving",
+  sourceAggregateId: receiptId,
+  sourceEventId: eventId,
 });
 if (!movement.ok) {
   // map Result at the adapter — do not invent { success, data }
 }
 ```
 
-Pass request-scoped `organizationId`, `actorUserId`, and `correlationId` on every mutation. Item / warehouse refs must be same-org masters; post applies balance effects and ledger entries.
+Pass request-scoped `organizationId`, `actorUserId`, `correlationId`, and `idempotencyKey` on every material mutation. Queries require `organizationId`, `actorUserId`, and `correlationId`. Item / warehouse refs must be same-org masters; post applies balance effects and ledger entries for physical types only.
 
-**Event types:** `inventory.movement.created.v1` · `inventory.movement.posted.v1` · `inventory.stock.reserved.v1` · `inventory.reservation.released.v1` (catalog in `@afenda/events`).
+**Authorization:** every public command and org-scoped query enforces its declared permission through an injected `InventoryAuthorizationPort` (composition root — never import `@afenda/admin` here).
 
-**Living consumers:** `apps/web` thin Actions + `features/inventory/*` + `/admin/inventory` · `/client/inventory` (composition-root authorization ports). Pass `correlationId` from the Action boundary on every mutation.
+| Operation | Permission |
+| --- | --- |
+| `createStockMovement` / `addStockMovementLine` | `inventory.movement.create` |
+| `postStockMovement` / `createReversalMovement` | `inventory.movement.post` |
+| `cancelStockMovement` | `inventory.movement.cancel` |
+| Adjustment post (source `manual_adjustment`) | `inventory.adjustment.post` |
+| `reserveStock` | `inventory.reservation.create` |
+| `releaseReservation` | `inventory.reservation.release` |
+| `getStockMovementById` / `listStockMovements` | `inventory.movement.read` |
+| `getStockAvailability` | `inventory.availability.read` |
+
+**Event types:** `inventory.movement.created.v1` · `inventory.movement.posted.v1` · `inventory.movement.cancelled.v1` · `inventory.stock.reserved.v1` · `inventory.reservation.released.v1` (catalog in `@afenda/events`).
+
+**Living consumers:** `apps/web` thin Actions + `features/inventory/*` + `/admin/inventory` · `/client/inventory`. Peers: `@afenda/receiving` and `@afenda/fulfillment` call Inventory on post (Inventory never imports them).
 
 ## Store / ports
 
 | Surface | Backend |
 |---------|---------|
-| Production default | `DrizzleInventoryStore` → `@afenda/db` — **all** org mutations use `runNeonHttpTransaction` CTE (entity + balances/ledger/reservation + `platform_audit_log` + `platform_domain_event` same TX) |
-| Vitest injection | `MemoryInventoryStore` + memory `AuditFactPort` / `OutboxPort` (in-process atomic) |
+| Production default | `DrizzleInventoryStore` (`@afenda/inventory/adapters/drizzle`) → `@afenda/db` — **all** org mutations use `runNeonHttpTransaction` CTE (entity + balances/ledger/reservation + `platform_audit_log` + `platform_domain_event` same TX) |
+| Vitest injection | `MemoryInventoryStore` (`@afenda/inventory/testing`) + memory `AuditFactPort` / `OutboxPort` (in-process atomic) |
 | Master lookup | `createMasterDataLookupPort` → `@afenda/master-data` (item · warehouse · ref UoM only) |
-| Ports | `MutationPorts` remain on the store interface for test injection; Drizzle embeds SQL side-effects and does not call SQL ports. `createProductionMutationPorts` is the default for memory/test injection only. |
+
+`MutationPorts` remain on the store interface for test injection; Drizzle embeds SQL side-effects and does not call SQL ports. Export hygiene: Memory and `MutationPorts` are published from `@afenda/inventory/testing` only — not from the root barrel.
+
+## Invariants
+
+- Inventory is the sole mutator of stock movement, ledger, balance and reservation tables.
+- Every stock row belongs to exactly one organization.
+- Item, warehouse and UoM references must be active and valid within that organization.
+- Posted movements are immutable; draft movements may be cancelled.
+- Posted corrections use linked compensating movements.
+- The stock ledger is the immutable quantity authority.
+- Stock balances are projections of posted ledger entries (plus reservation reserved/available).
+- Every on-hand balance change must be explainable by one or more ledger rows.
+- Reservations affect reserved and available quantity, not on-hand quantity.
+- Negative on-hand and over-reservation are rejected by default.
+- Transfers conserve quantity and post both warehouse effects atomically.
+- Movement UoM conversions are frozen at posting.
+- Every material mutation is authorized, idempotent and concurrency-safe.
+- Aggregate, ledger, balance, audit and outbox effects commit or roll back together.
+- No peer module directly mutates Inventory tables.
 
 ## Maintain
 
@@ -57,9 +100,9 @@ pnpm --filter @afenda/inventory lint
 pnpm --filter @afenda/inventory typecheck
 pnpm --filter @afenda/inventory test
 pnpm --filter @afenda/inventory check
+pnpm --filter @afenda/inventory reconcile
+pnpm validate:modules
 ```
-
-Requires root engines: **Node `24.x`**, **pnpm `≥10.33.4`**.
 
 Anti-shadow (every consumer PR):
 
@@ -67,11 +110,14 @@ Anti-shadow (every consumer PR):
 rg "sales_customer|purchase_supplier|inventory_product|finance_vendor" packages apps --glob "!**/node_modules/**"
 ```
 
-## Exports
+## Public surfaces
 
 | Path | Role |
 |------|------|
-| `@afenda/inventory` | Commands (`createStockMovement` · `addStockMovementLine` · `postStockMovement` · `reserveStock` · `releaseReservation` · `getStockMovementById` · `listStockMovements` · `getStockAvailability`) · brands · Zod input schemas · `InventoryStore` · Drizzle/memory stores · master lookup · production ports · types |
+| `@afenda/inventory` | Commands/queries, schemas, types, permissions, error codes, authorization port |
+| `@afenda/inventory/adapters/drizzle` | Production Drizzle store |
+| `@afenda/inventory/testing` | Memory store + MutationPorts |
+| `@afenda/inventory/module-manifest` | R1-F manifest |
 
 Never re-exports raw Drizzle tables or `db` / `eq`.
 
@@ -83,36 +129,40 @@ Never re-exports raw Drizzle tables or `db` / `eq`.
 | Domain commands · brands · balance effects · store | `@afenda/inventory` |
 | Item · Warehouse · Ref UoM masters | `@afenda/master-data` |
 | `inventory.*` event contracts | `@afenda/events` |
-| `Result` / error codes | `@afenda/errors` |
+| `Result` / error primitives | `@afenda/errors` |
+| Inventory-specific error codes | `@afenda/inventory` |
 | ActionResult adapters · inventory UI | `apps/web` |
 
-**Layer:** Rank-1 Platform (`@afenda/db` · `@afenda/errors` · `@afenda/audit` · `@afenda/events` · `@afenda/master-data` · zod · server-only). Must not import Surfaces, `apps/*`, or Next.js. See [docs-V2/monorepo](../../docs-V2/monorepo/README.md).
+**Layer:** Rank-1 Platform (`@afenda/db` · `@afenda/errors` · `@afenda/audit` · `@afenda/events` · `@afenda/master-data` · zod · server-only). Must not import Surfaces, `apps/*`, Receiving, Fulfillment, or Next.js. See [docs-V2/monorepo](../../../docs-V2/monorepo/README.md).
 
 ## Operations
 
 | Concern | Guidance |
 |---------|----------|
 | Correlation | Every command input requires `correlationId`; Action adapters stamp from request attribution |
-| Natural key | Org-scoped `normalizedCode` uniqueness — duplicate create returns `CONFLICT` (retry-safe; not silent replay) |
-| Optimistic concurrency | `post` requires matching movement `expectedVersion`; `releaseReservation` matches reservation `expectedVersion` |
-| Migration | Apply `@afenda/db` journal tag `0013_inventory_stock` via package migrate (allow-guarded) |
-| Rollback / repair | Posted movements are not hard-deleted; repair via compensating movements or data-lane SQL under Ops |
-| Permissions | Seed `inventory.read` / `inventory.manage` via `pnpm --filter @afenda/db db:ensure-permission-catalog` |
+| Idempotency | Material mutations require `idempotencyKey`; same key + payload → original outcome; mismatch → `inventory.idempotency.conflict` |
+| Natural key | Org-scoped `normalizedCode` uniqueness — duplicate create returns conflict |
+| Optimistic concurrency | `post` / `cancel` / `releaseReservation` require matching `expectedVersion` |
+| Source dedupe | Downstream movements persist source module/aggregate/event; duplicate event → no second ledger |
+| Migration | Apply `@afenda/db` journal tags `0013_inventory_stock` + `0023_inventory_gap_close` via package migrate |
+| Rollback / repair | Posted movements are not hard-deleted; repair via compensating movements (`createReversalMovement`) or data-lane SQL under Ops with evidence/audit — never delete ledger rows |
+| Reconciliation | `pnpm --filter @afenda/inventory reconcile` — ledger↔balance, reservation totals, transfer conservation |
+| Permissions | Seed fine-grained `inventory.*` via `pnpm --filter @afenda/db db:ensure-permission-catalog` |
+| Metrics | Structured correlation + Inventory error codes on every Result; no separate dashboard product in-package |
 | Verify | `pnpm --filter @afenda/inventory check` · `pnpm validate:modules` |
-| Lifecycle note | Movement types include receipt/issue/transfer/adjustment/reservation/reservation_release; v1 public surface posts draft → posted only (no cancel/void command yet) |
-| Metrics / dedicated runbook | Same baseline as `@afenda/purchasing` — structured correlation + Result codes; dedicated mutation metrics dashboards / Ops runbook not package-local yet |
 
 ## Out of scope
 
-Do not add to this package: shadow product tables, `md_*` mutations, Receiving / Fulfillment / Purchasing ownership of stock tables, Next.js handlers, tutorial `{ success, data }` envelopes, or a second tenancy model (shared schema · hard `organization_id` only — never multi-DB / project-per-tenant isolation).
+Do not add to this package: shadow product tables, `md_*` mutations, Receiving / Fulfillment / Purchasing ownership of stock tables, in-transit transfer state, bin/lot/serial/expiry dimensions, valuation/cost layers, Next.js handlers, tutorial `{ success, data }` envelopes, or a second tenancy model (shared schema · hard `organization_id` only).
 
 ## Authority
 
 | Topic | Link |
 |-------|------|
-| ARCH-006 consumer contract (Scratch) | [arch-006-consumer-contract.md](../../docs-V2/master-data/arch-006-consumer-contract.md) |
-| Master-data spine | [docs-V2/master-data](../../docs-V2/master-data/README.md) |
-| Package DAG | [docs-V2/monorepo](../../docs-V2/monorepo/README.md) |
-| Events catalog | [docs-V2/events](../../docs-V2/events/README.md) · [`@afenda/events`](../../data-plane/events/README.md) |
-| Tenancy · shared schema | [docs-V2/tenancy](../../docs-V2/tenancy/README.md) |
+| Scratch contract · INV-REQ ledger | [docs-V2/_scratch/erp/inventory.md](../../../docs-V2/_scratch/erp/inventory.md) |
+| ARCH-006 consumer contract (Scratch) | [arch-006-consumer-contract.md](../../../docs-V2/master-data/arch-006-consumer-contract.md) |
+| Master-data spine | [docs-V2/master-data](../../../docs-V2/master-data/README.md) |
+| Package DAG | [docs-V2/monorepo](../../../docs-V2/monorepo/README.md) |
+| Events catalog | [docs-V2/events](../../../docs-V2/events/README.md) · [`@afenda/events`](../../data-plane/events/README.md) |
+| Tenancy · shared schema | [docs-V2/tenancy](../../../docs-V2/tenancy/README.md) |
 | Agent checkout posture | [AGENTS.md](../../../AGENTS.md) |

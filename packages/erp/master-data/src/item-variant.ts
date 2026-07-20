@@ -2,7 +2,7 @@
  * Item templates + concrete variant items (DNA §7.3 / R1).
  * Sellable identity = md_item; attribute values are typed rows — never JSON bag.
  */
-import { fail, type Result } from "@afenda/errors/result";
+import { fail, ok, type Result } from "@afenda/errors/result";
 
 import {
 	requireMasterCommandPermission,
@@ -22,6 +22,7 @@ import {
 	MASTER_COMMAND_ITEM_TEMPLATE_RETIRE,
 	MASTER_COMMAND_ITEM_TEMPLATE_UPDATE,
 	MASTER_COMMAND_ITEM_VARIANT_CREATE,
+	MASTER_COMMAND_ITEM_VARIANT_RETIRE,
 	MASTER_QUERY_ITEM_TEMPLATE_ATTRIBUTE_LIST,
 	MASTER_QUERY_ITEM_TEMPLATE_ATTRIBUTE_OPTION_LIST,
 	MASTER_QUERY_ITEM_TEMPLATE_GET_BY_CODE,
@@ -31,6 +32,7 @@ import {
 	MASTER_QUERY_ITEM_VARIANT_LIST_BY_TEMPLATE,
 	type MasterCommandId,
 } from "./module-ids";
+import { retireItem } from "./item";
 import { parseMasterInput } from "./parse-input";
 import {
 	addItemTemplateAttributeInputSchema,
@@ -45,6 +47,7 @@ import {
 	listItemTemplateAttributesInputSchema,
 	listItemVariantsByTemplateInputSchema,
 	masterListOptionsSchema,
+	retireItemVariantInputSchema,
 	updateItemTemplateInputSchema,
 } from "./schemas";
 import { normalizeMasterCode } from "./shared/code";
@@ -641,6 +644,88 @@ export async function createItemVariant(
 		ports,
 		{ correlationId: parsed.data.correlationId },
 	);
+}
+
+/**
+ * Retire a concrete variant: CAS on membership version, then retire the linked
+ * `md_item` (same-TX variant membership retire via store transition).
+ */
+export async function retireItemVariant(
+	input: unknown,
+	options: MasterCommandOptions = {},
+): Promise<Result<ItemVariant>> {
+	const parsed = parseMasterInput(
+		retireItemVariantInputSchema,
+		input,
+		"Invalid retire item variant input",
+	);
+	if (!parsed.ok) {
+		return parsed;
+	}
+	const { store, authorization } = resolveCommandDeps(options);
+	const authorized = await requireMasterCommandPermission(authorization, {
+		organizationId: parsed.data.organizationId,
+		actorUserId: parsed.data.actorUserId,
+		command: MASTER_COMMAND_ITEM_VARIANT_RETIRE,
+	});
+	if (!authorized.ok) {
+		return authorized;
+	}
+	const current = await store.getItemVariantById(
+		parsed.data.organizationId,
+		parsed.data.id,
+	);
+	if (!current.ok) {
+		return current;
+	}
+	if (current.data === null) {
+		return fail("NOT_FOUND", "Item variant not found", {
+			reason: "MASTER_NOT_FOUND",
+		} satisfies MasterFailureDetails);
+	}
+	if (current.data.retiredAt !== null) {
+		return fail("CONFLICT", "Item variant is already retired", {
+			reason: "MASTER_INVALID_STATE",
+		} satisfies MasterFailureDetails);
+	}
+	if (current.data.version !== parsed.data.expectedVersion) {
+		return fail("CONFLICT", "Item variant version conflict", {
+			reason: "MASTER_VERSION_CONFLICT",
+		} satisfies MasterFailureDetails);
+	}
+	const lifecycle = assertLifecycleTransition(
+		current.data.item.status,
+		"retired",
+	);
+	if (!lifecycle.ok) {
+		return lifecycle;
+	}
+	const retiredItem = await retireItem(
+		{
+			organizationId: parsed.data.organizationId,
+			actorUserId: parsed.data.actorUserId,
+			correlationId: parsed.data.correlationId,
+			id: current.data.itemId,
+			expectedVersion: current.data.item.version,
+		},
+		options,
+	);
+	if (!retiredItem.ok) {
+		return retiredItem;
+	}
+	const refreshed = await store.getItemVariantById(
+		parsed.data.organizationId,
+		parsed.data.id,
+	);
+	if (!refreshed.ok) {
+		return refreshed;
+	}
+	if (refreshed.data === null) {
+		return fail("NOT_FOUND", "Item variant not found after retire", {
+			reason: "MASTER_NOT_FOUND",
+		} satisfies MasterFailureDetails);
+	}
+	return ok(refreshed.data);
 }
 
 export async function getItemVariantById(

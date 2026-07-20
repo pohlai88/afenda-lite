@@ -1,7 +1,8 @@
 "use server";
 
-import { releaseReservation, type StockMovement } from "@afenda/inventory";
+import { releaseReservation, type StockReservation } from "@afenda/inventory";
 import { revalidatePath } from "next/cache";
+import { randomUUID } from "node:crypto";
 import { z } from "zod";
 
 import { mapPackageResult } from "@/app/actions/map-package-result";
@@ -14,20 +15,26 @@ import {
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 export type ReleaseReservationActionData = {
-	movement: StockMovement;
+	reservation: StockReservation;
 };
 
 export type ReleaseReservationActionState =
 	ActionResult<ReleaseReservationActionData> | null;
 
 const releaseReservationFormSchema = z.object({
-	code: z.string().trim().min(1).max(64),
 	reservationId: z.string().uuid(),
 	expectedVersion: z.coerce.number().int().positive(),
+	idempotencyKey: z
+		.string()
+		.trim()
+		.min(1)
+		.max(128)
+		.optional()
+		.transform((value) => value ?? `release:${randomUUID()}`),
 });
 
 /**
- * Release active stock reservation — `inventory.manage`.
+ * Release active stock reservation — `inventory.reservation.release`.
  */
 export async function releaseReservationAction(
 	_prev: ReleaseReservationActionState,
@@ -35,19 +42,19 @@ export async function releaseReservationAction(
 ): Promise<ReleaseReservationActionState> {
 	return runOperatorPermissionAction({
 		path: "releaseReservationAction",
-		permission: "inventory.manage",
+		permission: "inventory.reservation.release",
 		safeMessage:
 			"Could not release reservation. Try again or contact an admin.",
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(releaseReservationFormSchema, {
-				code: formData.get("code"),
 				reservationId: formData.get("reservationId"),
 				expectedVersion: formData.get("expectedVersion"),
+				idempotencyKey: formData.get("idempotencyKey") ?? undefined,
 			});
 			if (!parsed.success) {
 				return actionFail(
 					"VALIDATION_ERROR",
-					"Enter a valid release code, reservation, and expected version.",
+					"Enter a valid reservation, expected version, and idempotency key.",
 					parsed.details,
 				);
 			}
@@ -57,9 +64,9 @@ export async function releaseReservationAction(
 					organizationId: session.orgId,
 					actorUserId: session.userId,
 					correlationId,
-					code: parsed.data.code,
 					reservationId: parsed.data.reservationId,
 					expectedVersion: parsed.data.expectedVersion,
+					idempotencyKey: parsed.data.idempotencyKey,
 				},
 				createInventoryCommandOptions(),
 			);
@@ -69,7 +76,7 @@ export async function releaseReservationAction(
 			}
 			revalidatePath("/admin/inventory");
 			revalidatePath("/client/inventory");
-			return { ok: true, data: { movement: mapped.data } };
+			return { ok: true, data: { reservation: mapped.data } };
 		},
 	});
 }

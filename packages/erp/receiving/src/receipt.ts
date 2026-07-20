@@ -1,4 +1,10 @@
-import { fail, type Result } from "@afenda/errors/result";
+import { fail, ok, type Result } from "@afenda/errors/result";
+import {
+	addStockMovementLine,
+	createStockMovement,
+	postStockMovement,
+	type InventoryCommandOptions,
+} from "@afenda/inventory";
 
 import {
 	requireReceivingCommandPermission,
@@ -39,6 +45,79 @@ import type {
 	GoodsReceiptLine,
 	ReceivingDiscrepancy,
 } from "./types";
+
+async function postReceiptInventoryMovement(
+	receipt: GoodsReceipt,
+	actorUserId: string,
+	correlationId: string,
+	inventory: InventoryCommandOptions | undefined,
+): Promise<Result<void>> {
+	if (!inventory) {
+		return fail(
+			"INTERNAL_ERROR",
+			"Inventory command options are required to post goods receipt stock",
+		);
+	}
+
+	const created = await createStockMovement(
+		{
+			organizationId: receipt.organizationId,
+			actorUserId,
+			correlationId,
+			idempotencyKey: `rcv-post:${receipt.id}`,
+			code: receipt.code,
+			movementType: "receipt",
+			source: "receiving",
+			warehouseId: receipt.warehouseId,
+			sourceModule: "receiving",
+			sourceAggregateId: receipt.id,
+			sourceEventId: `receiving.receipt.posted:${receipt.id}:${receipt.version}`,
+			sourceEventVersion: receipt.version,
+		},
+		inventory,
+	);
+	if (!created.ok) {
+		return created;
+	}
+
+	let expectedVersion = created.data.version;
+	for (const line of receipt.lines) {
+		const added = await addStockMovementLine(
+			{
+				organizationId: receipt.organizationId,
+				actorUserId,
+				correlationId,
+				idempotencyKey: `rcv-post:${receipt.id}:line:${line.id}`,
+				movementId: created.data.id,
+				itemId: line.itemId,
+				quantity: line.quantityReceived,
+				expectedVersion,
+			},
+			inventory,
+		);
+		if (!added.ok) {
+			return added;
+		}
+		expectedVersion += 1;
+	}
+
+	const posted = await postStockMovement(
+		{
+			organizationId: receipt.organizationId,
+			actorUserId,
+			correlationId,
+			idempotencyKey: `rcv-post-finalize:${receipt.id}`,
+			movementId: created.data.id,
+			expectedVersion,
+		},
+		inventory,
+	);
+	if (!posted.ok) {
+		return posted;
+	}
+
+	return ok(undefined);
+}
 
 export async function createDraftGoodsReceipt(
 	input: unknown,
@@ -181,8 +260,14 @@ export async function postGoodsReceipt(
 		"Invalid goods receipt post input",
 	);
 	if (!parsed.ok) return parsed;
-	const { store, ports, masters, authorization, purchaseOrderReceivingQuery } =
-		resolveCommandDeps(options);
+	const {
+		store,
+		ports,
+		masters,
+		authorization,
+		inventory,
+		purchaseOrderReceivingQuery,
+	} = resolveCommandDeps(options);
 	const authorized = await requireReceivingCommandPermission(authorization, {
 		organizationId: parsed.data.organizationId,
 		actorUserId: parsed.data.actorUserId,
@@ -201,6 +286,12 @@ export async function postGoodsReceipt(
 	}
 	if (receipt.data.lines.length === 0) {
 		return fail("CONFLICT", "Cannot post goods receipt without lines");
+	}
+	if (!inventory) {
+		return fail(
+			"INTERNAL_ERROR",
+			"Inventory command options are required to post goods receipt stock",
+		);
 	}
 	if (receipt.data.sourceType === "purchase_order") {
 		if (receipt.data.sourceId === null) {
@@ -262,7 +353,7 @@ export async function postGoodsReceipt(
 			baseUomCode: uom.data.code,
 		});
 	}
-	return store.postReceipt(
+	const posted = await store.postReceipt(
 		{
 			organizationId: parsed.data.organizationId,
 			receiptId: parsed.data.receiptId,
@@ -275,6 +366,23 @@ export async function postGoodsReceipt(
 		ports,
 		{ correlationId: parsed.data.correlationId },
 	);
+	if (!posted.ok) return posted;
+
+	const inventoryPosted = await postReceiptInventoryMovement(
+		posted.data,
+		parsed.data.actorUserId,
+		parsed.data.correlationId,
+		inventory,
+	);
+	if (!inventoryPosted.ok) {
+		return fail(
+			inventoryPosted.code === "CONFLICT" ? "CONFLICT" : "INTERNAL_ERROR",
+			`Goods receipt posted but inventory stock movement failed: ${inventoryPosted.message}`,
+			inventoryPosted.details,
+		);
+	}
+
+	return posted;
 }
 
 export async function cancelGoodsReceipt(

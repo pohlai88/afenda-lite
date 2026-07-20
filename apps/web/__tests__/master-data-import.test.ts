@@ -12,7 +12,7 @@ const operatorSession = {
 };
 
 const authMocks = vi.hoisted(() => ({
-	requireRole: vi.fn(),
+	getSession: vi.fn(),
 }));
 
 const permissionMocks = vi.hoisted(() => ({
@@ -25,7 +25,7 @@ const importMocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@afenda/auth", () => ({
-	requireRole: authMocks.requireRole,
+	getSession: authMocks.getSession,
 }));
 
 vi.mock("@/app/actions/permission-gate", () => ({
@@ -51,7 +51,7 @@ import { validateMasterDataImportAction } from "../app/actions/validate-master-d
 describe("master-data import Actions", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		authMocks.requireRole.mockResolvedValue(operatorSession);
+		authMocks.getSession.mockResolvedValue(operatorSession);
 		permissionMocks.forbidUnlessPermission.mockResolvedValue(null);
 	});
 

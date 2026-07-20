@@ -18,6 +18,10 @@ import {
 } from "../src/permissions";
 import { createGrantingFulfillmentAuthorization } from "./helpers/memory-authorization";
 import {
+	createInventoryCommandTestOptions,
+	seedInventoryOnHand,
+} from "./helpers/memory-inventory";
+import {
 	createMemoryMasterLookup,
 	seedItem,
 	seedUom,
@@ -32,18 +36,20 @@ const UOM = "b1000000-0000-4000-8000-000000000001";
 const SALES_ORDER = "50000000-0000-4000-8000-000000000001";
 
 function harness() {
+	const masters = createMemoryMasterLookup({
+		items: [seedItem(ORG, ITEM, "SKU-A", UOM)],
+		warehouses: [seedWarehouse(ORG, WAREHOUSE, "WH-A")],
+		uoms: [seedUom(UOM, "EA")],
+	});
 	return {
 		store: createMemoryFulfillmentStore(),
 		ports: createMemoryMutationPorts(),
-		masters: createMemoryMasterLookup({
-			items: [seedItem(ORG, ITEM, "SKU-A", UOM)],
-			warehouses: [seedWarehouse(ORG, WAREHOUSE, "WH-A")],
-			uoms: [seedUom(UOM, "EA")],
-		}),
+		masters,
 		authorization: createGrantingFulfillmentAuthorization([
 			FULFILLMENT_PERMISSION_READ,
 			FULFILLMENT_PERMISSION_MANAGE,
 		]),
+		inventory: createInventoryCommandTestOptions(masters),
 	};
 }
 
@@ -71,6 +77,15 @@ async function load(ctx: ReturnType<typeof harness>, id: string) {
 describe("@afenda/fulfillment domain", () => {
 	it("executes draft through delivered and emits only integration events", async () => {
 		const ctx = harness();
+		await seedInventoryOnHand(ctx.inventory, {
+			organizationId: ORG,
+			actorUserId: "user-1",
+			correlationId: "corr-seed",
+			code: "OPEN-100",
+			warehouseId: WAREHOUSE,
+			itemId: ITEM,
+			quantity: 10,
+		});
 		const draft = await create(ctx);
 		expect(draft.ok).toBe(true);
 		if (!draft.ok) return;
@@ -150,6 +165,18 @@ describe("@afenda/fulfillment domain", () => {
 		);
 		expect(posted.ok).toBe(true);
 		if (!posted.ok) return;
+		const movement = await ctx.inventory.store?.getMovementByCreateIdempotencyKey(
+			ORG,
+			`ful-post:${posted.data.id}`,
+		);
+		expect(movement?.ok).toBe(true);
+		if (movement?.ok && movement.data !== null) {
+			expect(movement.data.status).toBe("posted");
+			expect(movement.data.movementType).toBe("issue");
+			expect(movement.data.source).toBe("fulfillment");
+			expect(movement.data.lines).toHaveLength(1);
+			expect(movement.data.lines[0]?.quantity).toBe("5");
+		}
 		const proof = await recordProofOfDelivery(
 			{
 				organizationId: ORG,
@@ -272,6 +299,15 @@ describe("@afenda/fulfillment domain", () => {
 		expect(cancelled.ok).toBe(true);
 
 		const ctx = harness();
+		await seedInventoryOnHand(ctx.inventory, {
+			organizationId: ORG,
+			actorUserId: "user-1",
+			correlationId: "corr-seed-posted",
+			code: "OPEN-CANCEL",
+			warehouseId: WAREHOUSE,
+			itemId: ITEM,
+			quantity: 2,
+		});
 		const postedDraft = await create(ctx, "DLV-POSTED");
 		if (!postedDraft.ok) return;
 		const line = await addDeliveryLine(

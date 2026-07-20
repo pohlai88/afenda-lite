@@ -5,6 +5,7 @@ import type { MasterDataEventType } from "@afenda/events";
 
 import type { MasterFailureDetails } from "../../src/contracts/reasons";
 import type { MutationPorts } from "../../src/ports";
+import { isPositiveIntegerFactor } from "../../src/shared/uom-factor";
 import type {
 	ChangeRequestCreateRecord,
 	ChangeRequestListFilter,
@@ -3064,6 +3065,32 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				versionConflictDetails(),
 			);
 		}
+		// Active party cannot lose its final active role (reverse of activation invariant).
+		if (
+			record.toStatus === "retired" &&
+			role.status === "active" &&
+			role.retiredAt === null
+		) {
+			const party = this.parties.get(role.partyId);
+			if (party?.organizationId === record.organizationId && party.status === "active") {
+				const activeCount = await this.countActivePartyRoles(
+					record.organizationId,
+					role.partyId,
+				);
+				if (!activeCount.ok) {
+					return activeCount;
+				}
+				if (activeCount.data <= 1) {
+					return fail(
+						"CONFLICT",
+						"An active party cannot lose its final active role",
+						{
+							reason: "MASTER_FINAL_ACTIVE_ROLE",
+						},
+					);
+				}
+			}
+		}
 		const next: PartyRole = {
 			...role,
 			status: record.toStatus,
@@ -3507,6 +3534,16 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			return fail("BAD_REQUEST", "UoM dimension mismatch", {
 				reason: "MASTER_INVALID_UOM_CONVERSION",
 			});
+		}
+		if (
+			!isPositiveIntegerFactor(record.toBaseNumerator) ||
+			!isPositiveIntegerFactor(record.toBaseDenominator)
+		) {
+			return fail(
+				"BAD_REQUEST",
+				"UoM conversion factors must be positive non-zero integers",
+				{ reason: "MASTER_INVALID_UOM_CONVERSION" },
+			);
 		}
 		const now = new Date();
 		const row: ItemUom = {

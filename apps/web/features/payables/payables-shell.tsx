@@ -15,7 +15,7 @@ import {
 import { requirePermission } from "@/features/auth/require-permission";
 import {
 	AddSupplierInvoiceLineForm,
-	AllocateSupplierPaymentForm,
+	ApplySupplierPaymentForm,
 	CancelSupplierInvoiceForm,
 	CreateDraftSupplierInvoiceForm,
 	IssueSupplierCreditNoteForm,
@@ -33,7 +33,7 @@ const formSections = [
 	["Match invoice", MatchSupplierInvoiceForm],
 	["Post invoice", PostSupplierInvoiceForm],
 	["Issue credit note", IssueSupplierCreditNoteForm],
-	["Allocate supplier payment", AllocateSupplierPaymentForm],
+	["Apply supplier payment", ApplySupplierPaymentForm],
 	["Cancel invoice", CancelSupplierInvoiceForm],
 ] as const;
 
@@ -49,7 +49,7 @@ export async function PayablesShell({ surface }: PayablesShellProps) {
 			actorUserId: session.userId,
 			pageSize: 50,
 		},
-		createPayablesCommandOptions(),
+		createPayablesCommandOptions(session.userId),
 	);
 	const invoices = invoicesResult.ok ? invoicesResult.data : [];
 
@@ -63,8 +63,8 @@ export async function PayablesShell({ surface }: PayablesShellProps) {
 					Supplier payables
 				</h1>
 				<p className="max-w-2xl text-sm text-muted-foreground">
-					Create, match, and post supplier invoices, issue credit notes,
-					allocate payments, and track open balances.
+					Create, match, and post supplier invoices, issue credit notes, apply
+					posted payments, and track open balances.
 				</p>
 			</div>
 

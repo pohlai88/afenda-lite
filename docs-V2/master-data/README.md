@@ -5,9 +5,9 @@
 | Surface | `docs-V2/master-data/README.md` |
 | Authority | **Scratch** — monorepo-discipline · data layer · `@afenda/master-data` |
 | Purpose | ERP reference-data spine: Party · UoM · Item · Warehouse (+ aggregate extensions) — scalable, integration-ready, stable |
-| Updated | 2026-07-20 |
+| Updated | 2026-07-21 |
 
-DNA borrow/reject: [master-data-dna.md](master-data-dna.md). Leftovers method: [development-method.md](development-method.md) · [remaining-slices.md](remaining-slices.md). Tax R4-0: [../tax/README.md](../tax/README.md).
+DNA borrow/reject: [master-data-dna.md](master-data-dna.md). Operational contract: [operational-master-contract.md](operational-master-contract.md). Leftovers method: [development-method.md](development-method.md) · [remaining-slices.md](remaining-slices.md). Tax R4-0: [../tax/README.md](../tax/README.md).
 
 ## Verdict
 

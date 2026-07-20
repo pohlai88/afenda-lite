@@ -59,14 +59,15 @@ pnpm audit:tenancy-nulls
 
 ---
 
-## R6-dna-prose
+## R6-dna-prose — **SHIPPED** 2026-07-21
 
 | | |
 |--|--|
 | **DNA** | Stale §13 line: “Bulk APIs are a named importer slice…” |
-| **Ship** | Doc-only edit of [master-data-dna.md](master-data-dna.md) §13 to match §23 **Shipped** import |
-| **Must not** | Product code changes |
+| **Ship** | Doc-only edit of [master-data-dna.md](master-data-dna.md) §13 to match §23 **Shipped** import · [operational-master-contract.md](operational-master-contract.md) |
+| **Must not** | Product code changes (this row) |
 | **Verify** | `rg` shows no contradictory “not required / named importer slice” claim vs Shipped matrix |
+| **Evidence** | DNA §13 closing paragraph · package README ref/search/merge policy · Scratch operational contract |
 
 ---
 

@@ -1,7 +1,8 @@
 "use server";
 
-import { reserveStock, type StockMovement } from "@afenda/inventory";
+import { reserveStock, type StockReservation } from "@afenda/inventory";
 import { revalidatePath } from "next/cache";
+import { randomUUID } from "node:crypto";
 import { z } from "zod";
 
 import { mapPackageResult } from "@/app/actions/map-package-result";
@@ -14,7 +15,7 @@ import {
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 export type ReserveStockActionData = {
-	movement: StockMovement;
+	reservation: StockReservation;
 };
 
 export type ReserveStockActionState =
@@ -25,10 +26,17 @@ const reserveStockFormSchema = z.object({
 	warehouseId: z.string().uuid(),
 	itemId: z.string().uuid(),
 	quantity: z.string().trim().min(1),
+	idempotencyKey: z
+		.string()
+		.trim()
+		.min(1)
+		.max(128)
+		.optional()
+		.transform((value) => value ?? `reserve:${randomUUID()}`),
 });
 
 /**
- * Reserve available stock — one-shot create+post + `inventory.manage`.
+ * Reserve available stock — one-shot reservation create.
  */
 export async function reserveStockAction(
 	_prev: ReserveStockActionState,
@@ -36,7 +44,7 @@ export async function reserveStockAction(
 ): Promise<ReserveStockActionState> {
 	return runOperatorPermissionAction({
 		path: "reserveStockAction",
-		permission: "inventory.manage",
+		permission: "inventory.reservation.create",
 		safeMessage: "Could not reserve stock. Try again or contact an admin.",
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(reserveStockFormSchema, {
@@ -44,11 +52,12 @@ export async function reserveStockAction(
 				warehouseId: formData.get("warehouseId"),
 				itemId: formData.get("itemId"),
 				quantity: formData.get("quantity"),
+				idempotencyKey: formData.get("idempotencyKey") ?? undefined,
 			});
 			if (!parsed.success) {
 				return actionFail(
 					"VALIDATION_ERROR",
-					"Enter a valid code, warehouse, item, and quantity.",
+					"Enter a valid code, warehouse, item, quantity, and idempotency key.",
 					parsed.details,
 				);
 			}
@@ -62,6 +71,7 @@ export async function reserveStockAction(
 					warehouseId: parsed.data.warehouseId,
 					itemId: parsed.data.itemId,
 					quantity: parsed.data.quantity,
+					idempotencyKey: parsed.data.idempotencyKey,
 				},
 				createInventoryCommandOptions(),
 			);
@@ -71,7 +81,7 @@ export async function reserveStockAction(
 			}
 			revalidatePath("/admin/inventory");
 			revalidatePath("/client/inventory");
-			return { ok: true, data: { movement: mapped.data } };
+			return { ok: true, data: { reservation: mapped.data } };
 		},
 	});
 }

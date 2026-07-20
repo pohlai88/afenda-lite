@@ -162,6 +162,13 @@
       "when": 1784568000000,
       "tag": "0022_purchase_order_close_commercial",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1784569000000,
+      "tag": "0023_inventory_gap_close",
+      "breakpoints": true
     }
   ]
 }

@@ -200,7 +200,7 @@ export class MemoryPayablesStore implements PayablesStore {
 			invoiceId: invoice.id,
 			purchaseOrderId: record.purchaseOrderId,
 			goodsReceiptId: record.goodsReceiptId,
-			result: "matched",
+			result: record.matchStatus,
 			matchedBy: record.actorUserId,
 			matchedAt: now,
 		};
@@ -324,20 +324,23 @@ export class MemoryPayablesStore implements PayablesStore {
 		return ok(cloneInvoice(invoice));
 	}
 
-	async allocate(
-		record: Parameters<PayablesStore["allocate"]>[0],
+	async applyPayment(
+		record: Parameters<PayablesStore["applyPayment"]>[0],
 	): Promise<Result<SupplierAllocation>> {
 		const found = this.findInvoice(record.organizationId, record.invoiceId);
 		if (!found.ok) return found;
 		const invoice = found.data;
 		const amount = decimal(record.amount);
 		if (invoice.status !== "posted" || invoice.documentType !== "invoice") {
-			return fail("CONFLICT", "Allocation requires a posted supplier invoice");
+			return fail(
+				"CONFLICT",
+				"Payment application requires a posted supplier invoice",
+			);
 		}
 		if (amount <= 0n || amount > decimal(invoice.openAmount)) {
 			return fail(
 				"CONFLICT",
-				"Allocation exceeds supplier invoice open amount",
+				"Payment application exceeds supplier invoice open amount",
 			);
 		}
 		const previous = cloneInvoice(invoice);
@@ -396,19 +399,11 @@ export class MemoryPayablesStore implements PayablesStore {
 		if (invoice.version !== record.expectedVersion) {
 			return fail("CONFLICT", "Supplier invoice version conflict");
 		}
-		if (
-			invoice.status === "posted" &&
-			invoice.documentType === "invoice" &&
-			decimal(invoice.openAmount) !== decimal(invoice.totalAmount)
-		) {
+		if (invoice.status !== "draft" && invoice.status !== "matched") {
 			return fail(
 				"CONFLICT",
-				"Cannot cancel a supplier invoice with allocations",
+				"Only draft or matched supplier invoices may be cancelled",
 			);
-		}
-		if (invoice.status === "posted") {
-			const direction = invoice.documentType === "invoice" ? -1n : 1n;
-			this.adjustBalance(invoice, direction * decimal(invoice.totalAmount));
 		}
 		const now = new Date();
 		invoice.status = "cancelled";

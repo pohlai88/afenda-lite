@@ -41,7 +41,7 @@ export async function getSupplierBalanceAction(input: {
 						actorUserId: session.userId,
 						...parsed.data,
 					},
-					createPayablesCommandOptions(),
+					createPayablesCommandOptions(session.userId),
 				),
 			);
 			if (!mapped.ok) return mapped;

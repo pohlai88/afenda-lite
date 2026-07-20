@@ -19,6 +19,7 @@ describe("@afenda/events schemas", () => {
 			"fulfillment.delivery.posted.v1",
 			"fulfillment.pick.confirmed.v1",
 			"identity.org_role.assigned",
+			"inventory.movement.cancelled.v1",
 			"inventory.movement.created.v1",
 			"inventory.movement.posted.v1",
 			"inventory.reservation.released.v1",

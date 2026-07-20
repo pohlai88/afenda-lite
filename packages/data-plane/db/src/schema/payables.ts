@@ -20,7 +20,7 @@ export const supplierInvoice = pgTable(
 		organizationId: text("organization_id").notNull(),
 		code: text("code").notNull(),
 		normalizedCode: text("normalized_code").notNull(),
-		/** draft | matched | posted | cancelled | allocated */
+		/** draft | matched | posted | cancelled */
 		status: text("status").notNull().default("draft"),
 		supplierPartyId: uuid("supplier_party_id")
 			.notNull()
@@ -210,7 +210,7 @@ export const threeWayMatchResult = pgTable(
 			() => purchaseOrder.id,
 		),
 		goodsReceiptId: uuid("goods_receipt_id").references(() => goodsReceipt.id),
-		/** matched | partial | mismatch */
+		/** pending | matched | matched_with_tolerance | exception */
 		matchStatus: text("match_status").notNull(),
 		notes: text("notes"),
 		version: integer("version").notNull().default(1),

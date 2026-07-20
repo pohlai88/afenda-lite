@@ -24,6 +24,7 @@
 		"@afenda/db": "workspace:*",
 		"@afenda/errors": "workspace:*",
 		"@afenda/events": "workspace:*",
+		"@afenda/inventory": "workspace:*",
 		"@afenda/master-data": "workspace:*",
 		"server-only": "0.0.1",
 		"zod": "catalog:"

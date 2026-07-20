@@ -10,6 +10,7 @@ import {
 	requirePayablesPermission,
 } from "./authorization";
 import { createDrizzlePayablesStore } from "./drizzle-store";
+import { evaluateThreeWayMatch } from "./match-validation";
 import type {
 	PayablesCommandOptions,
 	PayablesEffects,
@@ -31,15 +32,26 @@ export {
 } from "./drizzle-store";
 export { createMemoryPayablesStore, MemoryPayablesStore } from "./memory-store";
 export type {
+	GoodsReceiptMatchBasis,
+	GoodsReceiptMatchQueryPort,
 	PayablesCommandOptions,
 	PayablesEffects,
 	PayablesStore,
+	PostedPaymentBasis,
+	PostedPaymentQueryPort,
+	PurchaseOrderMatchBasis,
+	PurchaseOrderMatchQueryPort,
 	SupplierAllocation,
 	SupplierBalance,
 	SupplierInvoice,
 	SupplierInvoiceLine,
 	SupplierInvoiceStatus,
 	ThreeWayMatchResult,
+	ThreeWayMatchStatus,
+} from "./model";
+export {
+	SUPPLIER_INVOICE_STATUSES,
+	THREE_WAY_MATCH_STATUSES,
 } from "./model";
 
 const identity = {
@@ -91,7 +103,7 @@ const versionedSchema = z.object({
 	expectedVersion: z.number().int().positive(),
 });
 const creditSchema = createSchema.extend({ amount: positiveDecimal });
-const allocationSchema = z.object({
+const applySchema = z.object({
 	...correlated,
 	invoiceId: uuid,
 	amount: positiveDecimal,
@@ -225,8 +237,68 @@ export async function matchSupplierInvoice(
 		"payables.manage",
 	);
 	if (!allowed.ok) return allowed;
-	return resolveStore(options.store).matchInvoice({
+
+	if (
+		options.purchaseOrderMatch === undefined ||
+		options.goodsReceiptMatch === undefined
+	) {
+		return fail(
+			"UNAUTHORIZED",
+			"Purchase order and goods receipt match ports are required",
+		);
+	}
+
+	const store = resolveStore(options.store);
+	const invoiceResult = await store.getById(
+		parsed.data.organizationId,
+		parsed.data.invoiceId,
+	);
+	if (!invoiceResult.ok) return invoiceResult;
+	if (invoiceResult.data === null) {
+		return fail("NOT_FOUND", "Supplier invoice not found");
+	}
+	const invoice = invoiceResult.data;
+	if (invoice.version !== parsed.data.expectedVersion) {
+		return fail("CONFLICT", "Supplier invoice version conflict");
+	}
+	if (invoice.status !== "draft" || invoice.documentType !== "invoice") {
+		return fail("CONFLICT", "Only draft supplier invoices can be matched");
+	}
+	if (invoice.lines.length === 0) {
+		return fail("CONFLICT", "Cannot match an invoice without lines");
+	}
+	if (Number(invoice.totalAmount) <= 0) {
+		return fail("CONFLICT", "Cannot match an invoice without a positive total");
+	}
+
+	const poBasis = await options.purchaseOrderMatch.getPurchaseOrderMatchBasis({
+		organizationId: parsed.data.organizationId,
+		purchaseOrderId: parsed.data.purchaseOrderId,
+	});
+	if (!poBasis.ok) return poBasis;
+	if (poBasis.data === null) {
+		return fail("NOT_FOUND", "Purchase order not found for matching");
+	}
+
+	const grBasis = await options.goodsReceiptMatch.getGoodsReceiptMatchBasis({
+		organizationId: parsed.data.organizationId,
+		goodsReceiptId: parsed.data.goodsReceiptId,
+	});
+	if (!grBasis.ok) return grBasis;
+	if (grBasis.data === null) {
+		return fail("NOT_FOUND", "Goods receipt not found for matching");
+	}
+
+	const matchStatus = evaluateThreeWayMatch({
+		invoice,
+		purchaseOrder: poBasis.data,
+		goodsReceipt: grBasis.data,
+	});
+	if (!matchStatus.ok) return matchStatus;
+
+	return store.matchInvoice({
 		...parsed.data,
+		matchStatus: matchStatus.data,
 		effects: resolveEffects(options.effects),
 	});
 }
@@ -277,14 +349,18 @@ export async function issueSupplierCreditNote(
 	});
 }
 
-export async function allocateSupplierPayment(
+/**
+ * Apply a posted Payment to a posted supplier invoice.
+ * Payables owns `supplier_allocation` only — never creates Payment rows.
+ */
+export async function applySupplierPayment(
 	input: unknown,
 	options: PayablesCommandOptions = {},
 ): Promise<Result<SupplierAllocation>> {
 	const parsed = parse(
-		allocationSchema,
+		applySchema,
 		input,
-		"Invalid supplier allocation input",
+		"Invalid supplier payment apply input",
 	);
 	if (!parsed.ok) return parsed;
 	const allowed = await authorize(
@@ -293,7 +369,51 @@ export async function allocateSupplierPayment(
 		"payables.manage",
 	);
 	if (!allowed.ok) return allowed;
-	return resolveStore(options.store).allocate({
+
+	if (options.postedPayment === undefined) {
+		return fail("UNAUTHORIZED", "Posted payment query port is required");
+	}
+
+	const store = resolveStore(options.store);
+	const invoiceResult = await store.getById(
+		parsed.data.organizationId,
+		parsed.data.invoiceId,
+	);
+	if (!invoiceResult.ok) return invoiceResult;
+	if (invoiceResult.data === null) {
+		return fail("NOT_FOUND", "Supplier invoice not found");
+	}
+	const invoice = invoiceResult.data;
+	if (invoice.status !== "posted" || invoice.documentType !== "invoice") {
+		return fail(
+			"CONFLICT",
+			"Payment application requires a posted supplier invoice",
+		);
+	}
+
+	const paymentBasis = await options.postedPayment.getPostedPayment({
+		organizationId: parsed.data.organizationId,
+		paymentId: parsed.data.paymentId,
+	});
+	if (!paymentBasis.ok) return paymentBasis;
+	if (paymentBasis.data === null) {
+		return fail("NOT_FOUND", "Posted payment not found for application");
+	}
+	if (paymentBasis.data.status !== "posted") {
+		return fail("CONFLICT", "Payment must be posted before application");
+	}
+	if (paymentBasis.data.currencyCode !== invoice.currencyCode) {
+		return fail(
+			"CONFLICT",
+			"Payment and invoice currencies must match for application",
+			{
+				paymentCurrency: paymentBasis.data.currencyCode,
+				invoiceCurrency: invoice.currencyCode,
+			},
+		);
+	}
+
+	return store.applyPayment({
 		...parsed.data,
 		effects: resolveEffects(options.effects),
 	});

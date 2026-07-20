@@ -15,7 +15,9 @@ import {
 
 import { requirePermission } from "@/features/auth/require-permission";
 import { AddStockMovementLineForm } from "@/features/inventory/add-stock-movement-line-form";
+import { CancelStockMovementForm } from "@/features/inventory/cancel-stock-movement-form";
 import { CreateStockMovementForm } from "@/features/inventory/create-stock-movement-form";
+import { CreateReversalMovementForm } from "@/features/inventory/create-reversal-movement-form";
 import { PostStockMovementForm } from "@/features/inventory/post-stock-movement-form";
 import { ReleaseReservationForm } from "@/features/inventory/release-reservation-form";
 import { ReserveStockForm } from "@/features/inventory/reserve-stock-form";
@@ -34,8 +36,22 @@ export async function InventoryShell({ surface }: InventoryShellProps) {
 	const session =
 		surface === "admin" ? await requireRole("operator") : await getSession();
 
-	await requirePermission(session, "inventory.read");
-	const canManage = await sessionHasPermission(session, "inventory.manage");
+	await requirePermission(session, "inventory.movement.read");
+	const [
+		canCreate,
+		canPost,
+		canCancel,
+		canReserve,
+		canRelease,
+		canAdjust,
+	] = await Promise.all([
+		sessionHasPermission(session, "inventory.movement.create"),
+		sessionHasPermission(session, "inventory.movement.post"),
+		sessionHasPermission(session, "inventory.movement.cancel"),
+		sessionHasPermission(session, "inventory.reservation.create"),
+		sessionHasPermission(session, "inventory.reservation.release"),
+		sessionHasPermission(session, "inventory.adjustment.post"),
+	]);
 
 	const masterOptions = { authorization: createMasterDataAuthorizationPort() };
 	const inventoryOptions = createInventoryCommandOptions();
@@ -76,7 +92,7 @@ export async function InventoryShell({ surface }: InventoryShellProps) {
 		]);
 
 	const movements = movementsResult.ok ? movementsResult.data : [];
-	const balances = availabilityResult.ok ? availabilityResult.data : [];
+	const availability = availabilityResult.ok ? availabilityResult.data : [];
 	const items = itemsResult.ok ? itemsResult.data : [];
 	const warehouses = warehousesResult.ok ? warehousesResult.data : [];
 
@@ -119,7 +135,7 @@ export async function InventoryShell({ surface }: InventoryShellProps) {
 								<li key={movement.id} className="rounded-md border px-3 py-2">
 									<div className="font-medium">
 										{movement.code} · {movement.movementType} ·{" "}
-										{movement.status} · v{movement.version}
+										{movement.source} · {movement.status} · v{movement.version}
 									</div>
 									<div className="text-muted-foreground">
 										id <Code>{movement.id}</Code> · {movement.lines.length}{" "}
@@ -133,6 +149,9 @@ export async function InventoryShell({ surface }: InventoryShellProps) {
 										{movement.toWarehouseCode
 											? ` · to ${movement.toWarehouseCode}`
 											: ""}
+										{movement.adjustmentReasonCode
+											? ` · reason ${movement.adjustmentReasonCode}`
+											: ""}
 									</div>
 								</li>
 							))}
@@ -145,7 +164,7 @@ export async function InventoryShell({ surface }: InventoryShellProps) {
 				<CardHeader>
 					<CardTitle>Availability</CardTitle>
 					<CardDescription>
-						{balances.length} balance row(s) · org-scoped
+						{availability.length} availability row(s) · org-scoped
 					</CardDescription>
 				</CardHeader>
 				<CardContent className="space-y-2 text-sm">
@@ -153,15 +172,18 @@ export async function InventoryShell({ surface }: InventoryShellProps) {
 						<p className="text-muted-foreground">
 							{availabilityResult.message}
 						</p>
-					) : balances.length === 0 ? (
+					) : availability.length === 0 ? (
 						<p className="text-muted-foreground">No stock balances yet.</p>
 					) : (
 						<ul className="space-y-2">
-							{balances.slice(0, 20).map((balance) => (
-								<li key={balance.id} className="rounded-md border px-3 py-2">
-									{balance.warehouseCode} · {balance.itemCode} · on_hand{" "}
-									{balance.onHand} · reserved {balance.reserved} · available{" "}
-									{balance.available}
+							{availability.slice(0, 20).map((row) => (
+								<li
+									key={`${row.warehouseId}:${row.itemId}`}
+									className="rounded-md border px-3 py-2"
+								>
+									{row.warehouseCode} · {row.itemCode} · on_hand{" "}
+									{row.onHandQuantity} · reserved {row.reservedQuantity} ·
+									available {row.availableQuantity}
 								</li>
 							))}
 						</ul>
@@ -209,7 +231,10 @@ export async function InventoryShell({ surface }: InventoryShellProps) {
 					<CardTitle>Create draft</CardTitle>
 				</CardHeader>
 				<CardContent>
-					<CreateStockMovementForm canManage={canManage} />
+					<CreateStockMovementForm
+						canCreate={canCreate}
+						canAdjust={canAdjust}
+					/>
 				</CardContent>
 			</Card>
 
@@ -218,7 +243,7 @@ export async function InventoryShell({ surface }: InventoryShellProps) {
 					<CardTitle>Add line</CardTitle>
 				</CardHeader>
 				<CardContent>
-					<AddStockMovementLineForm canManage={canManage} />
+					<AddStockMovementLineForm canCreate={canCreate} />
 				</CardContent>
 			</Card>
 
@@ -230,7 +255,28 @@ export async function InventoryShell({ surface }: InventoryShellProps) {
 					</CardDescription>
 				</CardHeader>
 				<CardContent>
-					<PostStockMovementForm canManage={canManage} />
+					<PostStockMovementForm canPost={canPost} />
+				</CardContent>
+			</Card>
+
+			<Card>
+				<CardHeader>
+					<CardTitle>Cancel draft movement</CardTitle>
+				</CardHeader>
+				<CardContent>
+					<CancelStockMovementForm canCancel={canCancel} />
+				</CardContent>
+			</Card>
+
+			<Card>
+				<CardHeader>
+					<CardTitle>Create reversal movement</CardTitle>
+					<CardDescription>
+						Posts a compensating movement for a posted stock movement.
+					</CardDescription>
+				</CardHeader>
+				<CardContent>
+					<CreateReversalMovementForm canPost={canPost} />
 				</CardContent>
 			</Card>
 
@@ -239,7 +285,7 @@ export async function InventoryShell({ surface }: InventoryShellProps) {
 					<CardTitle>Reserve stock</CardTitle>
 				</CardHeader>
 				<CardContent>
-					<ReserveStockForm canManage={canManage} />
+					<ReserveStockForm canReserve={canReserve} />
 				</CardContent>
 			</Card>
 
@@ -248,7 +294,7 @@ export async function InventoryShell({ surface }: InventoryShellProps) {
 					<CardTitle>Release reservation</CardTitle>
 				</CardHeader>
 				<CardContent>
-					<ReleaseReservationForm canManage={canManage} />
+					<ReleaseReservationForm canRelease={canRelease} />
 				</CardContent>
 			</Card>
 		</section>

@@ -1,6 +1,6 @@
 "use server";
 
-import { requireRole } from "@afenda/auth";
+import { getSession } from "@afenda/auth";
 import { createCorrelationId } from "@afenda/http";
 import { listParties, type Party } from "@afenda/master-data";
 import { mapPackageResult } from "@/app/actions/map-package-result";
@@ -26,7 +26,7 @@ export async function listPartiesAction(input?: {
 	status?: Party["status"];
 }): Promise<ActionResult<ListPartiesActionData>> {
 	const correlationId = createCorrelationId();
-	const session = await requireRole("operator");
+	const session = await getSession();
 
 	const permissionDenied = await forbidUnlessPermission(
 		session,

@@ -288,6 +288,12 @@ export const createItemVariantInputSchema = orgActorContextSchema.extend({
 		.max(50),
 });
 
+/** CAS `expectedVersion` is the variant membership version (`md_item_variant.version`). */
+export const retireItemVariantInputSchema = orgActorContextSchema.extend({
+	id: itemVariantIdSchema,
+	expectedVersion: z.number().int().positive(),
+});
+
 export const listItemVariantsByTemplateInputSchema = z
 	.object({
 		organizationId: z.string().trim().min(1),

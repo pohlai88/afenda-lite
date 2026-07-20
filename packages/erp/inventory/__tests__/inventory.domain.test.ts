@@ -1,20 +1,19 @@
 import { describe, expect, it } from "vitest";
+
+import { INVENTORY_ERROR_IDEMPOTENCY_CONFLICT, INVENTORY_ERROR_INSUFFICIENT_AVAILABLE } from "../src/error-codes";
 import { createMemoryInventoryStore } from "../src/memory-store";
 import {
 	addStockMovementLine,
+	cancelStockMovement,
+	createReversalMovement,
 	createStockMovement,
 	getStockAvailability,
 	getStockMovementById,
-	listStockMovements,
 	postStockMovement,
 	releaseReservation,
 	reserveStock,
 } from "../src/movement";
-import {
-	INVENTORY_PERMISSION_MANAGE,
-	INVENTORY_PERMISSION_READ,
-} from "../src/permissions";
-import { createGrantingInventoryAuthorization } from "./helpers/memory-authorization";
+import { createAllowAllInventoryAuthorization } from "./helpers/memory-authorization";
 import {
 	createMemoryMasterLookup,
 	seedItem,
@@ -23,6 +22,7 @@ import {
 } from "./helpers/memory-masters";
 import { createMemoryMutationPorts } from "./helpers/memory-ports";
 
+const ACTOR = "user-1";
 const ORG_A = "org-a";
 const ORG_B = "org-b";
 const ITEM_A = "20000000-0000-4000-8000-000000000001";
@@ -30,7 +30,7 @@ const WH_A = "40000000-0000-4000-8000-000000000001";
 const WH_B = "40000000-0000-4000-8000-000000000002";
 const UOM_EA = "b1000000-0000-4000-8000-000000000001";
 
-function harness() {
+function inventoryHarness() {
 	const store = createMemoryInventoryStore();
 	const ports = createMemoryMutationPorts();
 	const masters = createMemoryMasterLookup({
@@ -41,66 +41,114 @@ function harness() {
 		],
 		uoms: [seedUom(UOM_EA, "EA")],
 	});
-	const authorization = createGrantingInventoryAuthorization([
-		INVENTORY_PERMISSION_READ,
-		INVENTORY_PERMISSION_MANAGE,
-	]);
-	return { store, ports, masters, authorization };
+	return {
+		store,
+		ports,
+		masters,
+		authorization: createAllowAllInventoryAuthorization(),
+	};
 }
 
-async function receiveStock(
-	ctx: ReturnType<typeof harness>,
-	code: string,
-	quantity: number,
-	warehouseId = WH_A,
+async function createOpeningReceipt(
+	ctx: ReturnType<typeof inventoryHarness>,
+	input: {
+		code: string;
+		warehouseId?: string;
+		quantity: number;
+		createKey?: string;
+		lineKey?: string;
+		postKey?: string;
+	},
 ) {
 	const created = await createStockMovement(
 		{
 			organizationId: ORG_A,
-			actorUserId: "user-1",
-			correlationId: `corr-${code}-create`,
-			code,
+			actorUserId: ACTOR,
+			correlationId: `corr-${input.code}-create`,
+			idempotencyKey: input.createKey ?? `${input.code}-create`,
+			code: input.code,
 			movementType: "receipt",
-			warehouseId,
+			source: "opening_balance",
+			warehouseId: input.warehouseId ?? WH_A,
 		},
 		ctx,
 	);
+	expect(created.ok).toBe(true);
 	if (!created.ok) {
-		return created;
+		throw new Error(created.message);
 	}
-	await addStockMovementLine(
+
+	const line = await addStockMovementLine(
 		{
 			organizationId: ORG_A,
-			actorUserId: "user-1",
-			correlationId: `corr-${code}-line`,
+			actorUserId: ACTOR,
+			correlationId: `corr-${input.code}-line`,
+			idempotencyKey: input.lineKey ?? `${input.code}-line`,
 			movementId: created.data.id,
 			itemId: ITEM_A,
-			quantity,
+			quantity: input.quantity,
+			expectedVersion: created.data.version,
 		},
 		ctx,
 	);
-	return postStockMovement(
+	expect(line.ok).toBe(true);
+	if (!line.ok) {
+		throw new Error(line.message);
+	}
+
+	const posted = await postStockMovement(
 		{
 			organizationId: ORG_A,
-			actorUserId: "user-1",
-			correlationId: `corr-${code}-post`,
+			actorUserId: ACTOR,
+			correlationId: `corr-${input.code}-post`,
+			idempotencyKey: input.postKey ?? `${input.code}-post`,
 			movementId: created.data.id,
-			expectedVersion: 2,
+			expectedVersion: created.data.version + 1,
 		},
 		ctx,
 	);
+	expect(posted.ok).toBe(true);
+	if (!posted.ok) {
+		throw new Error(posted.message);
+	}
+	return posted.data;
+}
+
+async function getAvailabilityRow(
+	ctx: ReturnType<typeof inventoryHarness>,
+	warehouseId: string,
+) {
+	const availability = await getStockAvailability(
+		{
+			organizationId: ORG_A,
+			actorUserId: ACTOR,
+			correlationId: `corr-availability-${warehouseId}`,
+			warehouseId,
+			itemId: ITEM_A,
+		},
+		ctx,
+	);
+	expect(availability.ok).toBe(true);
+	if (!availability.ok) {
+		throw new Error(availability.message);
+	}
+	expect(availability.data).toHaveLength(1);
+	return availability.data[0];
 }
 
 describe("@afenda/inventory domain", () => {
-	it("create/add/post receipt updates availability and stamps audit/outbox", async () => {
-		const ctx = harness();
+	it("creates receipt from opening balance, adds a line, posts it, and updates availability", async () => {
+		const ctx = inventoryHarness();
+
 		const created = await createStockMovement(
 			{
 				organizationId: ORG_A,
-				actorUserId: "user-1",
-				correlationId: "corr-rcpt-1",
+				actorUserId: ACTOR,
+				correlationId: "corr-rcpt-create",
+				idempotencyKey: "rcpt-create",
 				code: "RCPT-100",
 				movementType: "receipt",
+				source: "opening_balance",
 				warehouseId: WH_A,
 			},
 			ctx,
@@ -110,32 +158,35 @@ describe("@afenda/inventory domain", () => {
 			return;
 		}
 		expect(created.data.status).toBe("draft");
-		expect(created.data.warehouseCode).toBe("WH-A");
-		expect(ctx.ports.audit.calls).toHaveLength(1);
-		expect(ctx.ports.outbox.calls[0]?.type).toBe(
-			"inventory.movement.created.v1",
-		);
+		expect(created.data.source).toBe("opening_balance");
 
 		const line = await addStockMovementLine(
 			{
 				organizationId: ORG_A,
-				actorUserId: "user-1",
-				correlationId: "corr-rcpt-2",
+				actorUserId: ACTOR,
+				correlationId: "corr-rcpt-line",
+				idempotencyKey: "rcpt-line",
 				movementId: created.data.id,
 				itemId: ITEM_A,
 				quantity: 10,
+				expectedVersion: created.data.version,
 			},
 			ctx,
 		);
 		expect(line.ok).toBe(true);
+		if (!line.ok) {
+			return;
+		}
+		expect(line.data.quantity).toBe("10");
 
 		const posted = await postStockMovement(
 			{
 				organizationId: ORG_A,
-				actorUserId: "user-1",
-				correlationId: "corr-rcpt-3",
+				actorUserId: ACTOR,
+				correlationId: "corr-rcpt-post",
+				idempotencyKey: "rcpt-post",
 				movementId: created.data.id,
-				expectedVersion: 2,
+				expectedVersion: created.data.version + 1,
 			},
 			ctx,
 		);
@@ -144,40 +195,28 @@ describe("@afenda/inventory domain", () => {
 			return;
 		}
 		expect(posted.data.status).toBe("posted");
-		expect(
-			ctx.ports.outbox.calls.some(
-				(call) => call.type === "inventory.movement.posted.v1",
-			),
-		).toBe(true);
 
-		const availability = await getStockAvailability(
-			{
-				organizationId: ORG_A,
-				actorUserId: "user-1",
-				warehouseId: WH_A,
-				itemId: ITEM_A,
-			},
-			ctx,
-		);
-		expect(availability.ok).toBe(true);
-		if (availability.ok) {
-			expect(availability.data).toHaveLength(1);
-			expect(availability.data[0]?.onHand).toBe("10");
-			expect(availability.data[0]?.available).toBe("10");
-			expect(availability.data[0]?.reserved).toBe("0");
-		}
+		const availability = await getAvailabilityRow(ctx, WH_A);
+		expect(availability?.onHandQuantity).toBe("10");
+		expect(availability?.reservedQuantity).toBe("0");
+		expect(availability?.availableQuantity).toBe("10");
 	});
 
-	it("issue fails without available stock", async () => {
-		const ctx = harness();
+	it("fails to issue stock when available quantity is insufficient", async () => {
+		const ctx = inventoryHarness();
 		const created = await createStockMovement(
 			{
 				organizationId: ORG_A,
-				actorUserId: "user-1",
-				correlationId: "corr-issue-1",
+				actorUserId: ACTOR,
+				correlationId: "corr-issue-create",
+				idempotencyKey: "issue-create",
 				code: "ISS-100",
 				movementType: "issue",
+				source: "fulfillment",
 				warehouseId: WH_A,
+				sourceModule: "fulfillment",
+				sourceAggregateId: "delivery-1",
+				sourceEventId: "delivery-1:issue",
 			},
 			ctx,
 		);
@@ -185,78 +224,55 @@ describe("@afenda/inventory domain", () => {
 		if (!created.ok) {
 			return;
 		}
-		await addStockMovementLine(
+
+		const line = await addStockMovementLine(
 			{
 				organizationId: ORG_A,
-				actorUserId: "user-1",
-				correlationId: "corr-issue-2",
+				actorUserId: ACTOR,
+				correlationId: "corr-issue-line",
+				idempotencyKey: "issue-line",
 				movementId: created.data.id,
 				itemId: ITEM_A,
 				quantity: 5,
+				expectedVersion: created.data.version,
 			},
 			ctx,
 		);
+		expect(line.ok).toBe(true);
+
 		const posted = await postStockMovement(
 			{
 				organizationId: ORG_A,
-				actorUserId: "user-1",
-				correlationId: "corr-issue-3",
+				actorUserId: ACTOR,
+				correlationId: "corr-issue-post",
+				idempotencyKey: "issue-post",
 				movementId: created.data.id,
-				expectedVersion: 2,
+				expectedVersion: created.data.version + 1,
 			},
 			ctx,
 		);
 		expect(posted.ok).toBe(false);
 		if (!posted.ok) {
 			expect(posted.code).toBe("CONFLICT");
-			expect(posted.message).toMatch(/available/i);
+			expect(posted.details?.inventoryCode).toBe(
+				INVENTORY_ERROR_INSUFFICIENT_AVAILABLE,
+			);
 		}
 	});
 
-	it("reserve + release round trip restores availability", async () => {
-		const ctx = harness();
-		const receipt = await createStockMovement(
-			{
-				organizationId: ORG_A,
-				actorUserId: "user-1",
-				correlationId: "corr-rsv-1",
-				code: "RCPT-RSV",
-				movementType: "receipt",
-				warehouseId: WH_A,
-			},
-			ctx,
-		);
-		expect(receipt.ok).toBe(true);
-		if (!receipt.ok) {
-			return;
-		}
-		await addStockMovementLine(
-			{
-				organizationId: ORG_A,
-				actorUserId: "user-1",
-				correlationId: "corr-rsv-2",
-				movementId: receipt.data.id,
-				itemId: ITEM_A,
-				quantity: 20,
-			},
-			ctx,
-		);
-		await postStockMovement(
-			{
-				organizationId: ORG_A,
-				actorUserId: "user-1",
-				correlationId: "corr-rsv-3",
-				movementId: receipt.data.id,
-				expectedVersion: 2,
-			},
-			ctx,
-		);
+	it("reserves then releases stock and updates reserved and available quantities", async () => {
+		const ctx = inventoryHarness();
+		await createOpeningReceipt(ctx, {
+			code: "RCPT-RSV",
+			quantity: 20,
+		});
 
 		const reserved = await reserveStock(
 			{
 				organizationId: ORG_A,
-				actorUserId: "user-1",
-				correlationId: "corr-rsv-4",
+				actorUserId: ACTOR,
+				correlationId: "corr-rsv-create",
+				idempotencyKey: "reserve-key",
 				code: "RSV-100",
 				warehouseId: WH_A,
 				itemId: ITEM_A,
@@ -268,53 +284,22 @@ describe("@afenda/inventory domain", () => {
 		if (!reserved.ok) {
 			return;
 		}
-		expect(reserved.data.status).toBe("posted");
-		expect(reserved.data.movementType).toBe("reservation");
-		expect(reserved.data.reservationId).not.toBeNull();
-		expect(
-			ctx.ports.outbox.calls.some(
-				(call) => call.type === "inventory.stock.reserved.v1",
-			),
-		).toBe(true);
+		expect(reserved.data.status).toBe("active");
+		expect(reserved.data.quantity).toBe("7");
 
-		const afterReserve = await getStockAvailability(
-			{
-				organizationId: ORG_A,
-				actorUserId: "user-1",
-				warehouseId: WH_A,
-				itemId: ITEM_A,
-			},
-			ctx,
-		);
-		expect(afterReserve.ok).toBe(true);
-		if (afterReserve.ok) {
-			expect(afterReserve.data[0]?.onHand).toBe("20");
-			expect(afterReserve.data[0]?.reserved).toBe("7");
-			expect(afterReserve.data[0]?.available).toBe("13");
-		}
-
-		const reservationId = reserved.data.reservationId;
-		expect(reservationId).not.toBeNull();
-		if (reservationId === null) {
-			return;
-		}
-		const reservation = await ctx.store.getReservationById(
-			ORG_A,
-			reservationId,
-		);
-		expect(reservation.ok).toBe(true);
-		if (!reservation.ok || reservation.data === null) {
-			return;
-		}
+		const afterReserve = await getAvailabilityRow(ctx, WH_A);
+		expect(afterReserve?.onHandQuantity).toBe("20");
+		expect(afterReserve?.reservedQuantity).toBe("7");
+		expect(afterReserve?.availableQuantity).toBe("13");
 
 		const released = await releaseReservation(
 			{
 				organizationId: ORG_A,
-				actorUserId: "user-1",
-				correlationId: "corr-rsv-5",
-				code: "REL-100",
-				reservationId,
-				expectedVersion: reservation.data.version,
+				actorUserId: ACTOR,
+				correlationId: "corr-rsv-release",
+				idempotencyKey: "release-key",
+				reservationId: reserved.data.id,
+				expectedVersion: reserved.data.version,
 			},
 			ctx,
 		);
@@ -322,42 +307,30 @@ describe("@afenda/inventory domain", () => {
 		if (!released.ok) {
 			return;
 		}
-		expect(released.data.movementType).toBe("reservation_release");
-		expect(
-			ctx.ports.outbox.calls.some(
-				(call) => call.type === "inventory.reservation.released.v1",
-			),
-		).toBe(true);
+		expect(released.data.status).toBe("released");
 
-		const afterRelease = await getStockAvailability(
-			{
-				organizationId: ORG_A,
-				actorUserId: "user-1",
-				warehouseId: WH_A,
-				itemId: ITEM_A,
-			},
-			ctx,
-		);
-		expect(afterRelease.ok).toBe(true);
-		if (afterRelease.ok) {
-			expect(afterRelease.data[0]?.onHand).toBe("20");
-			expect(afterRelease.data[0]?.reserved).toBe("0");
-			expect(afterRelease.data[0]?.available).toBe("20");
-		}
+		const afterRelease = await getAvailabilityRow(ctx, WH_A);
+		expect(afterRelease?.onHandQuantity).toBe("20");
+		expect(afterRelease?.reservedQuantity).toBe("0");
+		expect(afterRelease?.availableQuantity).toBe("20");
 	});
 
-	it("transfer moves availability between warehouses", async () => {
-		const ctx = harness();
-		const stocked = await receiveStock(ctx, "RCPT-XFER", 15);
-		expect(stocked.ok).toBe(true);
+	it("transfers stock between warehouses", async () => {
+		const ctx = inventoryHarness();
+		await createOpeningReceipt(ctx, {
+			code: "RCPT-XFER",
+			quantity: 15,
+		});
 
 		const created = await createStockMovement(
 			{
 				organizationId: ORG_A,
-				actorUserId: "user-1",
-				correlationId: "corr-xfer-1",
+				actorUserId: ACTOR,
+				correlationId: "corr-xfer-create",
+				idempotencyKey: "xfer-create",
 				code: "XFER-100",
 				movementType: "transfer",
+				source: "transfer",
 				fromWarehouseId: WH_A,
 				toWarehouseId: WH_B,
 			},
@@ -367,67 +340,118 @@ describe("@afenda/inventory domain", () => {
 		if (!created.ok) {
 			return;
 		}
-		await addStockMovementLine(
+
+		const line = await addStockMovementLine(
 			{
 				organizationId: ORG_A,
-				actorUserId: "user-1",
-				correlationId: "corr-xfer-2",
+				actorUserId: ACTOR,
+				correlationId: "corr-xfer-line",
+				idempotencyKey: "xfer-line",
 				movementId: created.data.id,
 				itemId: ITEM_A,
 				quantity: 6,
+				expectedVersion: created.data.version,
 			},
 			ctx,
 		);
+		expect(line.ok).toBe(true);
+
 		const posted = await postStockMovement(
 			{
 				organizationId: ORG_A,
-				actorUserId: "user-1",
-				correlationId: "corr-xfer-3",
+				actorUserId: ACTOR,
+				correlationId: "corr-xfer-post",
+				idempotencyKey: "xfer-post",
 				movementId: created.data.id,
-				expectedVersion: 2,
+				expectedVersion: created.data.version + 1,
 			},
 			ctx,
 		);
 		expect(posted.ok).toBe(true);
 
-		const fromWh = await getStockAvailability(
-			{
-				organizationId: ORG_A,
-				actorUserId: "user-1",
-				warehouseId: WH_A,
-				itemId: ITEM_A,
-			},
-			ctx,
-		);
-		const toWh = await getStockAvailability(
-			{
-				organizationId: ORG_A,
-				actorUserId: "user-1",
-				warehouseId: WH_B,
-				itemId: ITEM_A,
-			},
-			ctx,
-		);
-		expect(fromWh.ok).toBe(true);
-		expect(toWh.ok).toBe(true);
-		if (fromWh.ok && toWh.ok) {
-			expect(fromWh.data[0]?.available).toBe("9");
-			expect(toWh.data[0]?.available).toBe("6");
-		}
+		const fromWarehouse = await getAvailabilityRow(ctx, WH_A);
+		const toWarehouse = await getAvailabilityRow(ctx, WH_B);
+		expect(fromWarehouse?.onHandQuantity).toBe("9");
+		expect(fromWarehouse?.availableQuantity).toBe("9");
+		expect(toWarehouse?.onHandQuantity).toBe("6");
+		expect(toWarehouse?.availableQuantity).toBe("6");
 	});
 
-	it("adjustment applies signed quantity to on_hand and available", async () => {
-		const ctx = harness();
-		const stocked = await receiveStock(ctx, "RCPT-ADJ", 10);
-		expect(stocked.ok).toBe(true);
+	it("posts manual adjustments with an adjustment reason code", async () => {
+		const ctx = inventoryHarness();
+		await createOpeningReceipt(ctx, {
+			code: "RCPT-ADJ",
+			quantity: 10,
+		});
 
 		const created = await createStockMovement(
 			{
 				organizationId: ORG_A,
-				actorUserId: "user-1",
-				correlationId: "corr-adj-1",
+				actorUserId: ACTOR,
+				correlationId: "corr-adj-create",
+				idempotencyKey: "adj-create",
 				code: "ADJ-100",
 				movementType: "adjustment",
+				source: "manual_adjustment",
+				warehouseId: WH_A,
+				adjustmentReasonCode: "COUNT_CORRECTION",
+			},
+			ctx,
+		);
+		expect(created.ok).toBe(true);
+		if (!created.ok) {
+			return;
+		}
+		expect(created.data.adjustmentReasonCode).toBe("COUNT_CORRECTION");
+
+		const line = await addStockMovementLine(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-adj-line",
+				idempotencyKey: "adj-line",
+				movementId: created.data.id,
+				itemId: ITEM_A,
+				quantity: -3,
+				expectedVersion: created.data.version,
+			},
+			ctx,
+		);
+		expect(line.ok).toBe(true);
+
+		const posted = await postStockMovement(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-adj-post",
+				idempotencyKey: "adj-post",
+				movementId: created.data.id,
+				expectedVersion: created.data.version + 1,
+			},
+			ctx,
+		);
+		expect(posted.ok).toBe(true);
+		if (!posted.ok) {
+			return;
+		}
+		expect(posted.data.adjustmentReasonCode).toBe("COUNT_CORRECTION");
+
+		const availability = await getAvailabilityRow(ctx, WH_A);
+		expect(availability?.onHandQuantity).toBe("7");
+		expect(availability?.availableQuantity).toBe("7");
+	});
+
+	it("cancels a draft movement", async () => {
+		const ctx = inventoryHarness();
+		const created = await createStockMovement(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-cancel-create",
+				idempotencyKey: "cancel-create",
+				code: "RCPT-CANCEL",
+				movementType: "receipt",
+				source: "opening_balance",
 				warehouseId: WH_A,
 			},
 			ctx,
@@ -436,54 +460,82 @@ describe("@afenda/inventory domain", () => {
 		if (!created.ok) {
 			return;
 		}
-		await addStockMovementLine(
-			{
-				organizationId: ORG_A,
-				actorUserId: "user-1",
-				correlationId: "corr-adj-2",
-				movementId: created.data.id,
-				itemId: ITEM_A,
-				quantity: -3,
-			},
-			ctx,
-		);
-		const posted = await postStockMovement(
-			{
-				organizationId: ORG_A,
-				actorUserId: "user-1",
-				correlationId: "corr-adj-3",
-				movementId: created.data.id,
-				expectedVersion: 2,
-			},
-			ctx,
-		);
-		expect(posted.ok).toBe(true);
 
-		const availability = await getStockAvailability(
+		const line = await addStockMovementLine(
 			{
 				organizationId: ORG_A,
-				actorUserId: "user-1",
-				warehouseId: WH_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-cancel-line",
+				idempotencyKey: "cancel-line",
+				movementId: created.data.id,
 				itemId: ITEM_A,
+				quantity: 2,
+				expectedVersion: created.data.version,
 			},
 			ctx,
 		);
-		expect(availability.ok).toBe(true);
-		if (availability.ok) {
-			expect(availability.data[0]?.onHand).toBe("7");
-			expect(availability.data[0]?.available).toBe("7");
+		expect(line.ok).toBe(true);
+
+		const cancelled = await cancelStockMovement(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-cancel-post",
+				idempotencyKey: "cancel-key",
+				movementId: created.data.id,
+				expectedVersion: created.data.version + 1,
+			},
+			ctx,
+		);
+		expect(cancelled.ok).toBe(true);
+		if (cancelled.ok) {
+			expect(cancelled.data.status).toBe("cancelled");
 		}
 	});
 
-	it("binds get to organization (cross-tenant isolation)", async () => {
-		const ctx = harness();
+	it("creates and posts a reversal movement for a posted movement", async () => {
+		const ctx = inventoryHarness();
+		const original = await createOpeningReceipt(ctx, {
+			code: "RCPT-REV",
+			quantity: 8,
+		});
+
+		const reversed = await createReversalMovement(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-reversal",
+				idempotencyKey: "reversal-key",
+				movementId: original.id,
+				code: "REV-100",
+				expectedVersion: original.version,
+			},
+			ctx,
+		);
+		expect(reversed.ok).toBe(true);
+		if (!reversed.ok) {
+			return;
+		}
+		expect(reversed.data.status).toBe("posted");
+		expect(reversed.data.reversesMovementId).toBe(original.id);
+		expect(reversed.data.movementType).toBe("issue");
+
+		const availability = await getAvailabilityRow(ctx, WH_A);
+		expect(availability?.onHandQuantity).toBe("0");
+		expect(availability?.availableQuantity).toBe("0");
+	});
+
+	it("isolates get-by-id by organization", async () => {
+		const ctx = inventoryHarness();
 		const created = await createStockMovement(
 			{
 				organizationId: ORG_A,
-				actorUserId: "user-1",
-				correlationId: "corr-iso-1",
+				actorUserId: ACTOR,
+				correlationId: "corr-iso-create",
+				idempotencyKey: "iso-create",
 				code: "RCPT-ISO",
 				movementType: "receipt",
+				source: "opening_balance",
 				warehouseId: WH_A,
 			},
 			ctx,
@@ -494,21 +546,56 @@ describe("@afenda/inventory domain", () => {
 		}
 
 		const foreign = await getStockMovementById(
-			{ organizationId: ORG_B, actorUserId: "user-1", id: created.data.id },
+			{
+				organizationId: ORG_B,
+				actorUserId: ACTOR,
+				correlationId: "corr-iso-get",
+				id: created.data.id,
+			},
 			ctx,
 		);
 		expect(foreign.ok).toBe(true);
 		if (foreign.ok) {
 			expect(foreign.data).toBeNull();
 		}
+	});
 
-		const listed = await listStockMovements(
-			{ organizationId: ORG_A, actorUserId: "user-1", page: 1, pageSize: 50 },
+	it("rejects reused create idempotency keys with different payloads", async () => {
+		const ctx = inventoryHarness();
+		const created = await createStockMovement(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-idem-a",
+				idempotencyKey: "shared-key",
+				code: "RCPT-IDEM-A",
+				movementType: "receipt",
+				source: "opening_balance",
+				warehouseId: WH_A,
+			},
 			ctx,
 		);
-		expect(listed.ok).toBe(true);
-		if (listed.ok) {
-			expect(listed.data).toHaveLength(1);
+		expect(created.ok).toBe(true);
+
+		const conflict = await createStockMovement(
+			{
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+				correlationId: "corr-idem-b",
+				idempotencyKey: "shared-key",
+				code: "RCPT-IDEM-B",
+				movementType: "receipt",
+				source: "opening_balance",
+				warehouseId: WH_B,
+			},
+			ctx,
+		);
+		expect(conflict.ok).toBe(false);
+		if (!conflict.ok) {
+			expect(conflict.code).toBe("CONFLICT");
+			expect(conflict.details?.inventoryCode).toBe(
+				INVENTORY_ERROR_IDEMPOTENCY_CONFLICT,
+			);
 		}
 	});
 });

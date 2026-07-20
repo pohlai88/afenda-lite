@@ -88,11 +88,17 @@ export {
 	updatePartyContact,
 } from "./extensions";
 export {
+	IMPORT_MODES,
 	IMPORT_ROW_OUTCOMES,
+	ITEM_GROUP_IMPORT_MUTABLE_FIELDS,
+	ITEM_IMPORT_MUTABLE_FIELDS,
+	type ImportMode,
 	type ImportReconciliationReport,
 	type ImportRowOutcome,
 	type ImportRowResult,
 	MAX_IMPORT_BATCH_SIZE,
+	PARTY_IMPORT_MUTABLE_FIELDS,
+	WAREHOUSE_IMPORT_MUTABLE_FIELDS,
 	upsertItemGroupsByCode,
 	upsertItemsByCode,
 	upsertPartiesByCode,
@@ -134,6 +140,7 @@ export {
 	listItemTemplates,
 	listItemVariantsByTemplate,
 	retireItemTemplate,
+	retireItemVariant,
 	updateItemTemplate,
 } from "./item-variant";
 export {
@@ -204,6 +211,7 @@ export {
 	createItemInputSchema,
 	createItemTemplateInputSchema,
 	createItemVariantInputSchema,
+	retireItemVariantInputSchema,
 	createPartyInputSchema,
 	createPaymentTermInputSchema,
 	createTaxRegistrationInputSchema,

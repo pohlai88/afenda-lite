@@ -10,6 +10,7 @@ import {
 	createItemTemplate,
 	createItemVariant,
 	getItemVariantById,
+	retireItemVariant,
 	updateItemTemplate,
 } from "../src/item-variant";
 import { createMasterDataTestHarness } from "./helpers/harness";
@@ -239,6 +240,44 @@ describe("@afenda/master-data item variants (R1)", () => {
 				reason: "MASTER_CODE_CONFLICT",
 			});
 		}
+	});
+
+	it("retires variant via retireItemVariant and keeps it resolvable", async () => {
+		const { options } = createMasterDataTestHarness();
+		const seeded = await seedActiveTemplate(options);
+		const variant = await createItemVariant(
+			{
+				...ctx(),
+				templateId: seeded.template.id,
+				code: "TEE-RV",
+				name: "Tee retire cmd",
+				itemType: "stock",
+				baseUomId: EA_UOM_ID,
+				itemGroupId: seeded.group.id,
+				attributeValues: [
+					{ attributeId: seeded.color.id, optionId: seeded.red.id },
+				],
+			},
+			options,
+		);
+		expect(variant.ok).toBe(true);
+		if (!variant.ok) {
+			return;
+		}
+		const retired = await retireItemVariant(
+			{
+				...ctx(),
+				id: variant.data.id,
+				expectedVersion: variant.data.version,
+			},
+			options,
+		);
+		expect(retired.ok).toBe(true);
+		if (!retired.ok) {
+			return;
+		}
+		expect(retired.data.retiredAt).not.toBeNull();
+		expect(retired.data.item.status).toBe("retired");
 	});
 
 	it("keeps retired variants resolvable by id", async () => {

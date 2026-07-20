@@ -14,7 +14,7 @@ import type { ComponentProps } from "react";
 import { useActionState } from "react";
 
 import { addSupplierInvoiceLineAction } from "@/app/actions/add-supplier-invoice-line";
-import { allocateSupplierPaymentAction } from "@/app/actions/allocate-supplier-payment";
+import { applySupplierPaymentAction } from "@/app/actions/apply-supplier-payment";
 import { cancelSupplierInvoiceAction } from "@/app/actions/cancel-supplier-invoice";
 import { createDraftSupplierInvoiceAction } from "@/app/actions/create-draft-supplier-invoice";
 import { issueSupplierCreditNoteAction } from "@/app/actions/issue-supplier-credit-note";
@@ -256,12 +256,12 @@ export function IssueSupplierCreditNoteForm({ canManage }: ActionFormProps) {
 	);
 }
 
-export function AllocateSupplierPaymentForm({ canManage }: ActionFormProps) {
+export function ApplySupplierPaymentForm({ canManage }: ActionFormProps) {
 	const [state, action, pending] = useActionState(
-		allocateSupplierPaymentAction,
+		applySupplierPaymentAction,
 		null,
 	);
-	if (!canManage) return <ManageUnavailable operation="Allocate payment" />;
+	if (!canManage) return <ManageUnavailable operation="Apply payment" />;
 	return (
 		<PayablesActionForm
 			action={action}
@@ -271,7 +271,7 @@ export function AllocateSupplierPaymentForm({ canManage }: ActionFormProps) {
 				{ name: "invoiceId", label: "Invoice id", required: true },
 				{
 					name: "amount",
-					label: "Allocation amount",
+					label: "Application amount",
 					type: "number",
 					step: "any",
 					min: "0.01",
@@ -279,8 +279,8 @@ export function AllocateSupplierPaymentForm({ canManage }: ActionFormProps) {
 				},
 				{ name: "paymentId", label: "Payment id", required: true },
 			]}
-			submitLabel="Allocate supplier payment"
-			successTitle="Supplier payment allocated"
+			submitLabel="Apply supplier payment"
+			successTitle="Supplier payment applied"
 		/>
 	);
 }

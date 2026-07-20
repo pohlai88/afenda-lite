@@ -1,8 +1,9 @@
 "use server";
 
-import { requireRole } from "@afenda/auth";
+import { getSession } from "@afenda/auth";
 import { createCorrelationId } from "@afenda/http";
 import {
+	IMPORT_MODES,
 	type ImportReconciliationReport,
 	PARTY_KINDS,
 	upsertPartiesByCode,
@@ -32,6 +33,7 @@ const partyRowSchema = z.object({
 const applyImportSchema = z.object({
 	sourceSystem: z.string().trim().min(1).max(64),
 	entity: z.literal("party"),
+	mode: z.enum(IMPORT_MODES).default("create_or_update"),
 	rows: z.array(partyRowSchema).min(1).max(100),
 });
 
@@ -43,7 +45,7 @@ export async function applyMasterDataImportAction(
 	input: unknown,
 ): Promise<ActionResult<ApplyMasterDataImportActionData>> {
 	const correlationId = createCorrelationId();
-	const session = await requireRole("operator");
+	const session = await getSession();
 
 	const parsed = parseSchema(applyImportSchema, input);
 	if (!parsed.success) {
@@ -69,6 +71,7 @@ export async function applyMasterDataImportAction(
 				actorUserId: session.userId,
 				correlationId,
 				sourceSystem: parsed.data.sourceSystem,
+				mode: parsed.data.mode,
 				dryRun: false,
 				approved: true,
 				rows: parsed.data.rows,

@@ -12,7 +12,7 @@ const operatorSession = {
 };
 
 const authMocks = vi.hoisted(() => ({
-	requireRole: vi.fn(),
+	getSession: vi.fn(),
 }));
 
 const permissionMocks = vi.hoisted(() => ({
@@ -24,7 +24,7 @@ const mergeMocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@afenda/auth", () => ({
-	requireRole: authMocks.requireRole,
+	getSession: authMocks.getSession,
 }));
 
 vi.mock("@/app/actions/permission-gate", () => ({
@@ -48,7 +48,7 @@ import { mergePartiesAction } from "../app/actions/merge-parties";
 describe("mergePartiesAction", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		authMocks.requireRole.mockResolvedValue(operatorSession);
+		authMocks.getSession.mockResolvedValue(operatorSession);
 		permissionMocks.forbidUnlessPermission.mockResolvedValue(null);
 	});
 

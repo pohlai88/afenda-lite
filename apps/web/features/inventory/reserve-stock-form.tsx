@@ -10,7 +10,7 @@ import {
 	Input,
 	Spinner,
 } from "@afenda/ui-system";
-import { useActionState } from "react";
+import { useActionState, useMemo } from "react";
 
 import {
 	type ReserveStockActionState,
@@ -21,19 +21,23 @@ import { actionFieldMessage } from "@/modules/platform/schemas/action-result";
 const initialState: ReserveStockActionState = null;
 
 type ReserveStockFormProps = {
-	canManage: boolean;
+	canReserve: boolean;
 };
 
 /**
- * One-shot reserve stock — CAPABLE when `inventory.manage` is granted.
+ * One-shot reserve stock — returns a `StockReservation`.
  */
-export function ReserveStockForm({ canManage }: ReserveStockFormProps) {
+export function ReserveStockForm({ canReserve }: ReserveStockFormProps) {
 	const [state, formAction, pending] = useActionState(
 		reserveStockAction,
 		initialState,
 	);
+	const idempotencyKey = useMemo(
+		() => `reserve:${crypto.randomUUID()}`,
+		[state],
+	);
 
-	if (!canManage) {
+	if (!canReserve) {
 		return (
 			<Alert role="status">
 				<AlertTitle>Reserve unavailable</AlertTitle>
@@ -58,13 +62,15 @@ export function ReserveStockForm({ canManage }: ReserveStockFormProps) {
 				<Alert role="status">
 					<AlertTitle>Stock reserved</AlertTitle>
 					<AlertDescription>
-						{state.data.movement.code} · posted reservation movement.
+						{state.data.reservation.code} · {state.data.reservation.status} · qty{" "}
+						{state.data.reservation.quantity}.
 					</AlertDescription>
 				</Alert>
 			) : null}
 			{showFormError && state?.ok === false ? (
 				<FormError>{state.message}</FormError>
 			) : null}
+			<input type="hidden" name="idempotencyKey" value={idempotencyKey} readOnly />
 			<FormField
 				label="Reservation code"
 				required

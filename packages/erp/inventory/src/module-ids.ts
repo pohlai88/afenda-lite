@@ -4,6 +4,8 @@ export const INVENTORY_COMMAND_CREATE = "inventory.movement.create" as const;
 export const INVENTORY_COMMAND_LINE_ADD =
 	"inventory.movement.line.add" as const;
 export const INVENTORY_COMMAND_POST = "inventory.movement.post" as const;
+export const INVENTORY_COMMAND_CANCEL = "inventory.movement.cancel" as const;
+export const INVENTORY_COMMAND_REVERSE = "inventory.movement.reverse" as const;
 export const INVENTORY_COMMAND_RESERVE = "inventory.stock.reserve" as const;
 export const INVENTORY_COMMAND_RELEASE =
 	"inventory.reservation.release" as const;
@@ -12,6 +14,8 @@ export const INVENTORY_COMMAND_IDS = [
 	INVENTORY_COMMAND_CREATE,
 	INVENTORY_COMMAND_LINE_ADD,
 	INVENTORY_COMMAND_POST,
+	INVENTORY_COMMAND_CANCEL,
+	INVENTORY_COMMAND_REVERSE,
 	INVENTORY_COMMAND_RESERVE,
 	INVENTORY_COMMAND_RELEASE,
 ] as const;

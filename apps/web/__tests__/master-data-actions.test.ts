@@ -12,7 +12,7 @@ const operatorSession = {
 };
 
 const authMocks = vi.hoisted(() => ({
-	requireRole: vi.fn(),
+	getSession: vi.fn(),
 }));
 
 const permissionMocks = vi.hoisted(() => ({
@@ -39,7 +39,7 @@ const masterDataMocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@afenda/auth", () => ({
-	requireRole: authMocks.requireRole,
+	getSession: authMocks.getSession,
 }));
 
 vi.mock("@/app/actions/permission-gate", () => ({
@@ -92,7 +92,7 @@ import { listTaxRegistrationsAction } from "../app/actions/list-tax-registration
 describe("master-data Server Actions", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		authMocks.requireRole.mockResolvedValue(operatorSession);
+		authMocks.getSession.mockResolvedValue(operatorSession);
 		permissionMocks.forbidUnlessPermission.mockResolvedValue(null);
 		masterDataMocks.findPartyDuplicateWarnings.mockResolvedValue({
 			ok: true,

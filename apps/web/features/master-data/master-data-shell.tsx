@@ -16,6 +16,7 @@ import {
 	type MergePartiesChangePayload,
 	PARTY_KINDS,
 	PARTY_ROLE_CODES,
+	WAREHOUSE_LOCATION_TYPES,
 } from "@afenda/master-data";
 import {
 	Alert,
@@ -35,12 +36,18 @@ import { requirePermission } from "@/features/auth/require-permission";
 import { AddItemTemplateAttributeForm } from "@/features/master-data/add-item-template-attribute-form";
 import { AddItemTemplateAttributeOptionForm } from "@/features/master-data/add-item-template-attribute-option-form";
 import { ChangeRequestPanel } from "@/features/master-data/change-request-panel";
+import { CreateItemForm } from "@/features/master-data/create-item-form";
+import { CreateItemGroupForm } from "@/features/master-data/create-item-group-form";
 import { CreateItemTemplateForm } from "@/features/master-data/create-item-template-form";
 import { CreateItemVariantForm } from "@/features/master-data/create-item-variant-form";
 import { CreatePartyForm } from "@/features/master-data/create-party-form";
 import { CreatePartyRoleForm } from "@/features/master-data/create-party-role-form";
 import { CreatePaymentTermForm } from "@/features/master-data/create-payment-term-form";
 import { CreateTaxRegistrationForm } from "@/features/master-data/create-tax-registration-form";
+import { CreateWarehouseForm } from "@/features/master-data/create-warehouse-form";
+import { MasterDataImportPanel } from "@/features/master-data/master-data-import-panel";
+import { MasterDataSearchPanel } from "@/features/master-data/master-data-search-panel";
+import { MasterRootLifecycleForm } from "@/features/master-data/master-root-lifecycle-form";
 import { MergePartiesForm } from "@/features/master-data/merge-parties-form";
 import { PaymentTermLifecycleForm } from "@/features/master-data/payment-term-lifecycle-form";
 import { TaxRegistrationLifecycleForm } from "@/features/master-data/tax-registration-lifecycle-form";
@@ -65,6 +72,10 @@ export async function MasterDataShell({ surface }: MasterDataShellProps) {
 	await requirePermission(session, "master_data.read");
 	const canManage = await sessionHasPermission(session, "master_data.manage");
 	const canApprove = await sessionHasPermission(session, "master_data.approve");
+	const canImportApprove = await sessionHasPermission(
+		session,
+		"master_data.import_approve",
+	);
 	const masterDataAuth = { authorization: createMasterDataAuthorizationPort() };
 	const listActor = {
 		organizationId: session.orgId,
@@ -254,6 +265,34 @@ export async function MasterDataShell({ surface }: MasterDataShellProps) {
 					</AlertDescription>
 				</Alert>
 			) : null}
+
+			<div className="grid gap-6 lg:grid-cols-2">
+				<Card>
+					<CardHeader>
+						<CardTitle>Search</CardTitle>
+						<CardDescription>
+							Derived FTS index — never authorizes writes.
+						</CardDescription>
+					</CardHeader>
+					<CardContent>
+						<MasterDataSearchPanel />
+					</CardContent>
+				</Card>
+				<Card>
+					<CardHeader>
+						<CardTitle>Party import</CardTitle>
+						<CardDescription>
+							Validate dry-run, then apply with import_approve. Max 100 rows.
+						</CardDescription>
+					</CardHeader>
+					<CardContent>
+						<MasterDataImportPanel
+							canManage={canManage}
+							canImportApprove={canImportApprove}
+						/>
+					</CardContent>
+				</Card>
+			</div>
 
 			<div className="grid gap-6 lg:grid-cols-2">
 				<Card>
@@ -618,59 +657,188 @@ export async function MasterDataShell({ surface }: MasterDataShellProps) {
 				</Card>
 			</div>
 
-			<div className="grid gap-6 md:grid-cols-3">
+			<div className="grid gap-6 lg:grid-cols-2">
+				<Card>
+					<CardHeader>
+						<CardTitle>Create item group</CardTitle>
+						<CardDescription>
+							Draft group for catalog hierarchy. Activate before attaching
+							items that require an active group.
+						</CardDescription>
+					</CardHeader>
+					<CardContent>
+						<CreateItemGroupForm canManage={canManage} />
+					</CardContent>
+				</Card>
 				<Card>
 					<CardHeader>
 						<CardTitle>Item groups</CardTitle>
-						<CardDescription>{itemGroups.length} loaded</CardDescription>
+						<CardDescription>
+							{itemGroups.length} loaded (page size ≤ 50).
+						</CardDescription>
 					</CardHeader>
 					<CardContent>
-						<ul className="space-y-2 text-sm">
-							{itemGroups.map((group) => (
-								<li key={group.id}>
-									<Code>{group.code}</Code> {group.name}
-								</li>
-							))}
-							{itemGroups.length === 0 ? (
-								<li className="text-muted-foreground">None</li>
-							) : null}
-						</ul>
+						{itemGroups.length === 0 ? (
+							<p className="text-sm text-muted-foreground">No item groups yet.</p>
+						) : (
+							<ul className="divide-y divide-border">
+								{itemGroups.map((group) => (
+									<li
+										key={group.id}
+										className="flex flex-wrap items-baseline justify-between gap-2 py-3 text-sm"
+									>
+										<span>
+											<Code>{group.code}</Code> {group.name}
+										</span>
+										<span className="text-muted-foreground">
+											{group.status} · v{group.version}
+										</span>
+									</li>
+								))}
+							</ul>
+						)}
+						<div className="mt-6 border-t border-border pt-4">
+							<p className="mb-3 text-sm font-medium">Lifecycle</p>
+							<MasterRootLifecycleForm
+								canManage={canManage}
+								entity="itemGroup"
+								title="Item group"
+								options={itemGroups.map((group) => ({
+									id: group.id,
+									label: `${group.code} · ${group.name}`,
+									version: group.version,
+									status: group.status,
+								}))}
+							/>
+						</div>
+					</CardContent>
+				</Card>
+			</div>
+
+			<div className="grid gap-6 lg:grid-cols-2">
+				<Card>
+					<CardHeader>
+						<CardTitle>Create item</CardTitle>
+						<CardDescription>
+							Draft catalog item (non-variant). Variants use Create item
+							variant under an active template.
+						</CardDescription>
+					</CardHeader>
+					<CardContent>
+						<CreateItemForm
+							canManage={canManage}
+							itemTypes={ITEM_TYPES}
+							baseUomId={EA_UOM_ID}
+							itemGroups={itemGroups.map((group) => ({
+								id: group.id,
+								label: `${group.code} · ${group.name}`,
+							}))}
+						/>
 					</CardContent>
 				</Card>
 				<Card>
 					<CardHeader>
 						<CardTitle>Items</CardTitle>
-						<CardDescription>{items.length} loaded</CardDescription>
+						<CardDescription>
+							{items.length} loaded (page size ≤ 50).
+						</CardDescription>
 					</CardHeader>
 					<CardContent>
-						<ul className="space-y-2 text-sm">
-							{items.map((item) => (
-								<li key={item.id}>
-									<Code>{item.code}</Code> {item.name}
-								</li>
-							))}
-							{items.length === 0 ? (
-								<li className="text-muted-foreground">None</li>
-							) : null}
-						</ul>
+						{items.length === 0 ? (
+							<p className="text-sm text-muted-foreground">No items yet.</p>
+						) : (
+							<ul className="divide-y divide-border">
+								{items.map((item) => (
+									<li
+										key={item.id}
+										className="flex flex-wrap items-baseline justify-between gap-2 py-3 text-sm"
+									>
+										<span>
+											<Code>{item.code}</Code> {item.name}
+										</span>
+										<span className="text-muted-foreground">
+											{item.itemType} · {item.status} · v{item.version}
+										</span>
+									</li>
+								))}
+							</ul>
+						)}
+						<div className="mt-6 border-t border-border pt-4">
+							<p className="mb-3 text-sm font-medium">Lifecycle</p>
+							<MasterRootLifecycleForm
+								canManage={canManage}
+								entity="item"
+								title="Item"
+								options={items.map((item) => ({
+									id: item.id,
+									label: `${item.code} · ${item.name}`,
+									version: item.version,
+									status: item.status,
+								}))}
+							/>
+						</div>
+					</CardContent>
+				</Card>
+			</div>
+
+			<div className="grid gap-6 lg:grid-cols-2">
+				<Card>
+					<CardHeader>
+						<CardTitle>Create warehouse</CardTitle>
+						<CardDescription>
+							Draft stock location. Inventory modules reference active
+							warehouses only.
+						</CardDescription>
+					</CardHeader>
+					<CardContent>
+						<CreateWarehouseForm
+							canManage={canManage}
+							locationTypes={WAREHOUSE_LOCATION_TYPES}
+						/>
 					</CardContent>
 				</Card>
 				<Card>
 					<CardHeader>
 						<CardTitle>Warehouses</CardTitle>
-						<CardDescription>{warehouses.length} loaded</CardDescription>
+						<CardDescription>
+							{warehouses.length} loaded (page size ≤ 50).
+						</CardDescription>
 					</CardHeader>
 					<CardContent>
-						<ul className="space-y-2 text-sm">
-							{warehouses.map((warehouse) => (
-								<li key={warehouse.id}>
-									<Code>{warehouse.code}</Code> {warehouse.name}
-								</li>
-							))}
-							{warehouses.length === 0 ? (
-								<li className="text-muted-foreground">None</li>
-							) : null}
-						</ul>
+						{warehouses.length === 0 ? (
+							<p className="text-sm text-muted-foreground">No warehouses yet.</p>
+						) : (
+							<ul className="divide-y divide-border">
+								{warehouses.map((warehouse) => (
+									<li
+										key={warehouse.id}
+										className="flex flex-wrap items-baseline justify-between gap-2 py-3 text-sm"
+									>
+										<span>
+											<Code>{warehouse.code}</Code> {warehouse.name}
+										</span>
+										<span className="text-muted-foreground">
+											{warehouse.locationType} · {warehouse.status} · v
+											{warehouse.version}
+										</span>
+									</li>
+								))}
+							</ul>
+						)}
+						<div className="mt-6 border-t border-border pt-4">
+							<p className="mb-3 text-sm font-medium">Lifecycle</p>
+							<MasterRootLifecycleForm
+								canManage={canManage}
+								entity="warehouse"
+								title="Warehouse"
+								options={warehouses.map((warehouse) => ({
+									id: warehouse.id,
+									label: `${warehouse.code} · ${warehouse.name}`,
+									version: warehouse.version,
+									status: warehouse.status,
+								}))}
+							/>
+						</div>
 					</CardContent>
 				</Card>
 			</div>

@@ -1,18 +1,17 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
 import { describe, expect, it } from "vitest";
+
 import { createMemoryInventoryStore } from "../src/memory-store";
 import {
 	addStockMovementLine,
 	createStockMovement,
-	listStockMovements,
+	getStockAvailability,
+	getStockMovementById,
 	postStockMovement,
+	reserveStock,
 } from "../src/movement";
-import {
-	INVENTORY_PERMISSION_MANAGE,
-	INVENTORY_PERMISSION_READ,
-} from "../src/permissions";
 import type { MutationPorts, OutboxFactInput } from "../src/ports";
-import { createGrantingInventoryAuthorization } from "./helpers/memory-authorization";
+import { createAllowAllInventoryAuthorization } from "./helpers/memory-authorization";
 import {
 	createMemoryMasterLookup,
 	seedItem,
@@ -25,6 +24,7 @@ const ORG = "org-a";
 const ITEM = "20000000-0000-4000-8000-000000000001";
 const WH = "40000000-0000-4000-8000-000000000001";
 const UOM = "b1000000-0000-4000-8000-000000000001";
+const ACTOR = "user-1";
 
 function harness(ports?: MutationPorts) {
 	const store = createMemoryInventoryStore();
@@ -33,10 +33,7 @@ function harness(ports?: MutationPorts) {
 		warehouses: [seedWarehouse(ORG, WH, "WH-A", "active")],
 		uoms: [seedUom(UOM, "EA")],
 	});
-	const authorization = createGrantingInventoryAuthorization([
-		INVENTORY_PERMISSION_READ,
-		INVENTORY_PERMISSION_MANAGE,
-	]);
+	const authorization = createAllowAllInventoryAuthorization();
 	return {
 		store,
 		ports: ports ?? createMemoryMutationPorts(),
@@ -45,8 +42,145 @@ function harness(ports?: MutationPorts) {
 	};
 }
 
+async function createDraftReceipt(ctx: ReturnType<typeof harness>, code: string) {
+	const created = await createStockMovement(
+		{
+			organizationId: ORG,
+			actorUserId: ACTOR,
+			correlationId: `corr-${code}-create`,
+			idempotencyKey: `${code}-create`,
+			code,
+			movementType: "receipt",
+			source: "opening_balance",
+			warehouseId: WH,
+		},
+		ctx,
+	);
+	expect(created.ok).toBe(true);
+	if (!created.ok) {
+		throw new Error(created.message);
+	}
+	return created.data;
+}
+
+async function addReceiptLine(
+	ctx: ReturnType<typeof harness>,
+	movementId: string,
+	expectedVersion: number,
+	code: string,
+	quantity: number,
+) {
+	const line = await addStockMovementLine(
+		{
+			organizationId: ORG,
+			actorUserId: ACTOR,
+			correlationId: `corr-${code}-line`,
+			idempotencyKey: `${code}-line`,
+			movementId,
+			itemId: ITEM,
+			quantity,
+			expectedVersion,
+		},
+		ctx,
+	);
+	expect(line.ok).toBe(true);
+	if (!line.ok) {
+		throw new Error(line.message);
+	}
+}
+
 describe("@afenda/inventory transactions", () => {
-	it("rolls back entity write when outbox append fails", async () => {
+	it("records audit and outbox facts for create, post, and reserve", async () => {
+		const ctx = harness();
+		const draft = await createDraftReceipt(ctx, "RCPT-TX-EVENTS");
+		await addReceiptLine(ctx, draft.id, draft.version, "RCPT-TX-EVENTS", 3);
+
+		const posted = await postStockMovement(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-rcpt-events-post",
+				idempotencyKey: "rcpt-events-post",
+				movementId: draft.id,
+				expectedVersion: draft.version + 1,
+			},
+			ctx,
+		);
+		expect(posted.ok).toBe(true);
+
+		const reserved = await reserveStock(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-rsv-events-create",
+				idempotencyKey: "rsv-events-create",
+				code: "RSV-TX-1",
+				warehouseId: WH,
+				itemId: ITEM,
+				quantity: 2,
+			},
+			ctx,
+		);
+		expect(reserved.ok).toBe(true);
+
+		expect(ctx.ports.audit.calls.map((call) => call.entity)).toEqual([
+			"stock_movement",
+			"stock_movement_line",
+			"stock_movement",
+			"stock_reservation",
+		]);
+		expect(ctx.ports.outbox.calls.map((call) => call.type)).toEqual([
+			"inventory.movement.created.v1",
+			"inventory.movement.posted.v1",
+			"inventory.stock.reserved.v1",
+		]);
+	});
+
+	it("rolls back create when audit recording fails", async () => {
+		const failingAudit: MutationPorts = {
+			audit: {
+				async record() {
+					return fail("INTERNAL_ERROR", "forced audit failure");
+				},
+			},
+			outbox: {
+				async append(_input: OutboxFactInput): Promise<Result<{ id: string }>> {
+					return ok({ id: "outbox-1" });
+				},
+			},
+		};
+		const ctx = harness(failingAudit);
+		const created = await createStockMovement(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-tx-audit-fail",
+				idempotencyKey: "tx-audit-fail",
+				code: "RCPT-TX-AUDIT",
+				movementType: "receipt",
+				source: "opening_balance",
+				warehouseId: WH,
+			},
+			ctx,
+		);
+		expect(created.ok).toBe(false);
+
+		const listed = await ctx.store.listMovements({
+			organizationId: ORG,
+			page: 1,
+			pageSize: 10,
+		});
+		expect(listed.ok).toBe(true);
+		if (listed.ok) {
+			expect(listed.data).toEqual([]);
+		}
+	});
+
+	it("rolls back post when outbox append fails", async () => {
+		const base = harness();
+		const draft = await createDraftReceipt(base, "RCPT-TX-POST");
+		await addReceiptLine(base, draft.id, draft.version, "RCPT-TX-POST", 4);
+
 		const failingOutbox: MutationPorts = {
 			audit: {
 				async record() {
@@ -59,85 +193,109 @@ describe("@afenda/inventory transactions", () => {
 				},
 			},
 		};
-		const ctx = harness(failingOutbox);
-		const created = await createStockMovement(
+		const posted = await postStockMovement(
 			{
 				organizationId: ORG,
-				actorUserId: "user-1",
-				correlationId: "corr-tx-1",
-				code: "RCPT-TX-1",
-				movementType: "receipt",
-				warehouseId: WH,
+				actorUserId: ACTOR,
+				correlationId: "corr-tx-post-fail",
+				idempotencyKey: "tx-post-fail",
+				movementId: draft.id,
+				expectedVersion: draft.version + 1,
 			},
-			ctx,
+			{ ...base, ports: failingOutbox },
 		);
-		expect(created.ok).toBe(false);
+		expect(posted.ok).toBe(false);
 
-		const empty = await listStockMovements(
-			{ organizationId: ORG, actorUserId: "user-1", page: 1, pageSize: 50 },
-			{ ...ctx, ports: createMemoryMutationPorts() },
+		const reloaded = await getStockMovementById(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-tx-post-check",
+				id: draft.id,
+			},
+			base,
 		);
-		expect(empty.ok).toBe(true);
-		if (empty.ok) {
-			expect(empty.data).toHaveLength(0);
+		expect(reloaded.ok).toBe(true);
+		if (reloaded.ok && reloaded.data !== null) {
+			expect(reloaded.data.status).toBe("draft");
+			expect(reloaded.data.postIdempotencyKey).toBeNull();
 		}
 
-		const retry = await createStockMovement(
+		const availability = await getStockAvailability(
 			{
 				organizationId: ORG,
-				actorUserId: "user-1",
-				correlationId: "corr-tx-2",
-				code: "RCPT-TX-1",
-				movementType: "receipt",
+				actorUserId: ACTOR,
+				correlationId: "corr-tx-post-availability",
 				warehouseId: WH,
+				itemId: ITEM,
 			},
-			{ ...ctx, ports: createMemoryMutationPorts() },
+			base,
 		);
-		expect(retry.ok).toBe(true);
+		expect(availability.ok).toBe(true);
+		if (availability.ok) {
+			expect(availability.data).toEqual([]);
+		}
 	});
 
-	it("rejects post when expectedVersion does not match", async () => {
-		const ctx = harness();
-		const draft = await createStockMovement(
+	it("rolls back reserve when outbox append fails", async () => {
+		const base = harness();
+		const stocked = await createDraftReceipt(base, "RCPT-TX-RSV-2");
+		await addReceiptLine(base, stocked.id, stocked.version, "RCPT-TX-RSV-2", 5);
+		const posted = await postStockMovement(
 			{
 				organizationId: ORG,
-				actorUserId: "user-1",
-				correlationId: "corr-tx-3",
-				code: "RCPT-TX-2",
-				movementType: "receipt",
+				actorUserId: ACTOR,
+				correlationId: "corr-rsv-stock-post",
+				idempotencyKey: "rsv-stock-post",
+				movementId: stocked.id,
+				expectedVersion: stocked.version + 1,
+			},
+			base,
+		);
+		expect(posted.ok).toBe(true);
+
+		const failingOutbox: MutationPorts = {
+			audit: {
+				async record() {
+					return ok({ id: "audit-1" });
+				},
+			},
+			outbox: {
+				async append(_input: OutboxFactInput): Promise<Result<{ id: string }>> {
+					return fail("INTERNAL_ERROR", "forced outbox failure");
+				},
+			},
+		};
+		const reserved = await reserveStock(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-rsv-fail",
+				idempotencyKey: "rsv-fail",
+				code: "RSV-TX-FAIL",
 				warehouseId: WH,
-			},
-			ctx,
-		);
-		expect(draft.ok).toBe(true);
-		if (!draft.ok) {
-			return;
-		}
-		await addStockMovementLine(
-			{
-				organizationId: ORG,
-				actorUserId: "user-1",
-				correlationId: "corr-tx-4",
-				movementId: draft.data.id,
 				itemId: ITEM,
-				quantity: 1,
+				quantity: 2,
 			},
-			ctx,
+			{ ...base, ports: failingOutbox },
 		);
-		const conflict = await postStockMovement(
+		expect(reserved.ok).toBe(false);
+
+		const availability = await getStockAvailability(
 			{
 				organizationId: ORG,
-				actorUserId: "user-1",
-				correlationId: "corr-tx-5",
-				movementId: draft.data.id,
-				expectedVersion: 1,
+				actorUserId: ACTOR,
+				correlationId: "corr-rsv-fail-check",
+				warehouseId: WH,
+				itemId: ITEM,
 			},
-			ctx,
+			base,
 		);
-		expect(conflict.ok).toBe(false);
-		if (!conflict.ok) {
-			expect(conflict.code).toBe("CONFLICT");
-			expect(conflict.message).toMatch(/version/i);
+		expect(availability.ok).toBe(true);
+		if (availability.ok) {
+			expect(availability.data[0]?.onHandQuantity).toBe("5");
+			expect(availability.data[0]?.reservedQuantity).toBe("0");
+			expect(availability.data[0]?.availableQuantity).toBe("5");
 		}
 	});
 });

@@ -14,6 +14,7 @@ import {
 	recordReceivingDiscrepancy,
 } from "../src/receipt";
 import { createGrantingReceivingAuthorization } from "./helpers/memory-authorization";
+import { createInventoryCommandTestOptions } from "./helpers/memory-inventory";
 import {
 	createMemoryMasterLookup,
 	seedItem,
@@ -35,18 +36,20 @@ const SOURCE = "50000000-0000-4000-8000-000000000001";
 const PO_LINE = "60000000-0000-4000-8000-000000000001";
 
 function harness() {
+	const masters = createMemoryMasterLookup({
+		items: [seedItem(ORG_A, ITEM, "SKU-A", UOM)],
+		warehouses: [seedWarehouse(ORG_A, WAREHOUSE, "WH-A")],
+		uoms: [seedUom(UOM, "EA")],
+	});
 	return {
 		store: createMemoryReceivingStore(),
 		ports: createMemoryMutationPorts(),
-		masters: createMemoryMasterLookup({
-			items: [seedItem(ORG_A, ITEM, "SKU-A", UOM)],
-			warehouses: [seedWarehouse(ORG_A, WAREHOUSE, "WH-A")],
-			uoms: [seedUom(UOM, "EA")],
-		}),
+		masters,
 		authorization: createGrantingReceivingAuthorization([
 			RECEIVING_PERMISSION_READ,
 			RECEIVING_PERMISSION_MANAGE,
 		]),
+		inventory: createInventoryCommandTestOptions(masters),
 		purchaseOrderReceivingQuery: createMemoryPurchaseOrderReceivingQueryPort({
 			[SOURCE]: postedPoSnapshot({ lineId: PO_LINE, ordered: "100" }),
 		}),
@@ -105,7 +108,21 @@ describe("@afenda/receiving domain", () => {
 			ctx,
 		);
 		expect(posted.ok).toBe(true);
-		if (posted.ok) expect(posted.data.status).toBe("posted");
+		if (posted.ok) {
+			expect(posted.data.status).toBe("posted");
+			const movement = await ctx.inventory.store?.getMovementByCreateIdempotencyKey(
+				ORG_A,
+				`rcv-post:${posted.data.id}`,
+			);
+			expect(movement?.ok).toBe(true);
+			if (movement?.ok && movement.data !== null) {
+				expect(movement.data.status).toBe("posted");
+				expect(movement.data.movementType).toBe("receipt");
+				expect(movement.data.source).toBe("receiving");
+				expect(movement.data.lines).toHaveLength(1);
+				expect(movement.data.lines[0]?.quantity).toBe("4");
+			}
+		}
 		expect(ctx.ports.outbox.calls.map((call) => call.type)).toEqual([
 			"receiving.receipt.created.v1",
 			"receiving.receipt.line_added.v1",

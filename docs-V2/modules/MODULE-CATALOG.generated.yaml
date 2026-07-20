@@ -21,6 +21,7 @@ modules:
   - activationMode: organization_toggle
     aggregates:
       - stock_movement
+      - stock_reservation
     band: R1-F
     category: supply-chain
     id: inventory

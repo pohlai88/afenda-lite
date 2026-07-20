@@ -227,6 +227,134 @@ describe("@afenda/master-data import bulk", () => {
 		expect(second.data.created).toBe(0);
 	});
 
+	it("honors import mode create_only and update_existing", async () => {
+		const { options } = createMasterDataTestHarness();
+
+		const existing = await createParty(
+			{
+				...ctx(),
+				code: "MODE1",
+				name: "Mode Co",
+				partyKind: "organization",
+			},
+			options,
+		);
+		expect(existing.ok).toBe(true);
+		if (!existing.ok) {
+			return;
+		}
+
+		const createOnlyUpdate = await upsertPartiesByCode(
+			{
+				...ctx(),
+				mode: "create_only",
+				dryRun: false,
+				approved: true,
+				rows: [
+					{
+						code: "MODE1",
+						name: "Renamed Mode",
+						partyKind: "organization",
+					},
+				],
+			},
+			options,
+		);
+		expect(createOnlyUpdate.ok).toBe(true);
+		if (!createOnlyUpdate.ok) {
+			return;
+		}
+		expect(createOnlyUpdate.data.mode).toBe("create_only");
+		expect(createOnlyUpdate.data.rejected).toBe(1);
+		expect(createOnlyUpdate.data.rows[0]?.reason).toBe(
+			"MASTER_VALIDATION_FAILED",
+		);
+
+		const updateExistingCreate = await upsertPartiesByCode(
+			{
+				...ctx(),
+				mode: "update_existing",
+				dryRun: false,
+				approved: true,
+				rows: [
+					{
+						code: "MODE2",
+						name: "New Mode",
+						partyKind: "organization",
+					},
+				],
+			},
+			options,
+		);
+		expect(updateExistingCreate.ok).toBe(true);
+		if (!updateExistingCreate.ok) {
+			return;
+		}
+		expect(updateExistingCreate.data.rejected).toBe(1);
+
+		const updateExistingApply = await upsertPartiesByCode(
+			{
+				...ctx(),
+				mode: "update_existing",
+				dryRun: false,
+				approved: true,
+				rows: [
+					{
+						code: "MODE1",
+						name: "Renamed Mode",
+						partyKind: "organization",
+					},
+				],
+			},
+			options,
+		);
+		expect(updateExistingApply.ok).toBe(true);
+		if (!updateExistingApply.ok) {
+			return;
+		}
+		expect(updateExistingApply.data.updated).toBe(1);
+	});
+
+	it("rejects immutable partyKind changes on import update", async () => {
+		const { options } = createMasterDataTestHarness();
+
+		const existing = await createParty(
+			{
+				...ctx(),
+				code: "KIND1",
+				name: "Kind Co",
+				partyKind: "organization",
+			},
+			options,
+		);
+		expect(existing.ok).toBe(true);
+		if (!existing.ok) {
+			return;
+		}
+
+		const report = await upsertPartiesByCode(
+			{
+				...ctx(),
+				dryRun: false,
+				approved: true,
+				rows: [
+					{
+						code: "KIND1",
+						name: "Kind Co",
+						partyKind: "person",
+					},
+				],
+			},
+			options,
+		);
+		expect(report.ok).toBe(true);
+		if (!report.ok) {
+			return;
+		}
+		expect(report.data.rejected).toBe(1);
+		expect(report.data.rows[0]?.reason).toBe("MASTER_VALIDATION_FAILED");
+	});
+
 	it("binds org from input and does not cross tenants", async () => {
 		const { options, store } = createMasterDataTestHarness();
 

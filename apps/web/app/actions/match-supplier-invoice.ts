@@ -1,12 +1,11 @@
 "use server";
 
 import { matchSupplierInvoice, type SupplierInvoice } from "@afenda/payables";
-import { revalidatePath } from "next/cache";
 import { z } from "zod";
-
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runOperatorPermissionAction } from "@/app/actions/run-operator-permission-action";
 import { createPayablesCommandOptions } from "@/lib/erp/payables-command-options";
+import { revalidatePayablesPaths } from "@/lib/erp/revalidate-payables-paths";
 import {
 	type ActionResult,
 	actionFail,
@@ -54,12 +53,11 @@ export async function matchSupplierInvoiceAction(
 						correlationId,
 						...parsed.data,
 					},
-					createPayablesCommandOptions(),
+					createPayablesCommandOptions(session.userId),
 				),
 			);
 			if (!mapped.ok) return mapped;
-			revalidatePath("/admin/payables");
-			revalidatePath("/client/payables");
+			revalidatePayablesPaths();
 			return { ok: true, data: { invoice: mapped.data } };
 		},
 	});

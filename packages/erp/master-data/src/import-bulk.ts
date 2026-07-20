@@ -25,6 +25,20 @@ import { createWarehouse, updateWarehouse } from "./warehouse";
 
 export const MAX_IMPORT_BATCH_SIZE = 100 as const;
 
+export const IMPORT_MODES = [
+	"create_only",
+	"update_existing",
+	"create_or_update",
+] as const;
+
+export type ImportMode = (typeof IMPORT_MODES)[number];
+
+/** Fields upsert-by-code may mutate; lifecycle / codes / kinds use named commands. */
+export const PARTY_IMPORT_MUTABLE_FIELDS = ["name"] as const;
+export const ITEM_GROUP_IMPORT_MUTABLE_FIELDS = ["name"] as const;
+export const ITEM_IMPORT_MUTABLE_FIELDS = ["name"] as const;
+export const WAREHOUSE_IMPORT_MUTABLE_FIELDS = ["name"] as const;
+
 export const IMPORT_ROW_OUTCOMES = [
 	"create",
 	"update",
@@ -47,6 +61,7 @@ export type ImportRowResult = {
 export type ImportReconciliationReport = {
 	sourceSystem: string;
 	dryRun: boolean;
+	mode: ImportMode;
 	organizationId: string;
 	total: number;
 	created: number;
@@ -62,6 +77,7 @@ const orgImportContextSchema = z.object({
 	actorUserId: z.string().trim().min(1),
 	correlationId: z.string().trim().min(1),
 	sourceSystem: z.string().trim().min(1).max(64),
+	mode: z.enum(IMPORT_MODES).default("create_or_update"),
 	dryRun: z.boolean().default(false),
 	/** Required true when dryRun is false (DNA §13 approved → applied). */
 	approved: z.boolean().default(false),
@@ -135,7 +151,7 @@ function summarize(
 	rows: ImportRowResult[],
 ): Omit<
 	ImportReconciliationReport,
-	"sourceSystem" | "dryRun" | "organizationId" | "rows"
+	"sourceSystem" | "dryRun" | "mode" | "organizationId" | "rows"
 > {
 	return {
 		total: rows.length,
@@ -145,6 +161,42 @@ function summarize(
 		rejected: rows.filter((r) => r.outcome === "rejected").length,
 		conflicted: rows.filter((r) => r.outcome === "conflict").length,
 	};
+}
+
+function modeBlocksCreate(
+	mode: ImportMode,
+	rowIndex: number,
+	code: string,
+): ImportRowResult | null {
+	if (mode === "update_existing") {
+		return {
+			rowIndex,
+			code,
+			outcome: "rejected",
+			message: "Import mode update_existing forbids creates",
+			reason: "MASTER_VALIDATION_FAILED",
+		};
+	}
+	return null;
+}
+
+function modeBlocksUpdate(
+	mode: ImportMode,
+	rowIndex: number,
+	code: string,
+	entityId: string,
+): ImportRowResult | null {
+	if (mode === "create_only") {
+		return {
+			rowIndex,
+			code,
+			outcome: "rejected",
+			entityId,
+			message: "Import mode create_only forbids updates",
+			reason: "MASTER_VALIDATION_FAILED",
+		};
+	}
+	return null;
 }
 
 function markInFileDuplicates(
@@ -299,6 +351,15 @@ export async function upsertPartiesByCode(
 		}
 
 		if (existing.data === null) {
+			const createBlocked = modeBlocksCreate(
+				ctx.mode,
+				entry.rowIndex,
+				entry.code,
+			);
+			if (createBlocked) {
+				results.push(createBlocked);
+				continue;
+			}
 			if (ctx.dryRun) {
 				results.push({
 					rowIndex: entry.rowIndex,
@@ -364,6 +425,18 @@ export async function upsertPartiesByCode(
 		}
 
 		const current = existing.data;
+		if (current.partyKind !== entry.row.partyKind) {
+			results.push({
+				rowIndex: entry.rowIndex,
+				code: entry.code,
+				outcome: "rejected",
+				entityId: current.id,
+				message:
+					"partyKind is immutable on import; only name may update via upsert",
+				reason: "MASTER_VALIDATION_FAILED",
+			});
+			continue;
+		}
 		if (
 			entry.row.expectedVersion !== undefined &&
 			entry.row.expectedVersion !== current.version
@@ -379,16 +452,24 @@ export async function upsertPartiesByCode(
 			continue;
 		}
 
-		if (
-			current.name === entry.row.name &&
-			current.partyKind === entry.row.partyKind
-		) {
+		if (current.name === entry.row.name) {
 			results.push({
 				rowIndex: entry.rowIndex,
 				code: entry.code,
 				outcome: "unchanged",
 				entityId: current.id,
 			});
+			continue;
+		}
+
+		const updateBlocked = modeBlocksUpdate(
+			ctx.mode,
+			entry.rowIndex,
+			entry.code,
+			current.id,
+		);
+		if (updateBlocked) {
+			results.push(updateBlocked);
 			continue;
 		}
 
@@ -439,6 +520,7 @@ export async function upsertPartiesByCode(
 	return ok({
 		sourceSystem: ctx.sourceSystem,
 		dryRun: ctx.dryRun,
+		mode: ctx.mode,
 		organizationId: ctx.organizationId,
 		...summarize(results),
 		rows: results,
@@ -453,6 +535,7 @@ async function upsertByCodeGeneric<
 		actorUserId: string;
 		correlationId: string;
 		sourceSystem: string;
+		mode: ImportMode;
 		dryRun: boolean;
 		approved: boolean;
 		rows: TRow[];
@@ -469,6 +552,13 @@ async function upsertByCodeGeneric<
 			existing: { id: string; version: number },
 		) => Promise<Result<{ id: string }>>;
 		isUnchanged: (existing: { name: string }, row: TRow) => boolean;
+		/** Reject when row tries to change fields outside the mutable allowlist. */
+		rejectImmutable?: (
+			existing: { id: string; name: string; version: number },
+			row: TRow,
+			rowIndex: number,
+			code: string,
+		) => ImportRowResult | null;
 	},
 ): Promise<Result<ImportReconciliationReport>> {
 	const approvedGate = requireApprovedForApply(input);
@@ -539,6 +629,15 @@ async function upsertByCodeGeneric<
 			continue;
 		}
 		if (existing.data === null) {
+			const createBlocked = modeBlocksCreate(
+				input.mode,
+				entry.rowIndex,
+				entry.code,
+			);
+			if (createBlocked) {
+				results.push(createBlocked);
+				continue;
+			}
 			if (input.dryRun) {
 				results.push({
 					rowIndex: entry.rowIndex,
@@ -568,6 +667,16 @@ async function upsertByCodeGeneric<
 		}
 
 		const current = existing.data;
+		const immutableReject = handlers.rejectImmutable?.(
+			current,
+			entry.row,
+			entry.rowIndex,
+			entry.code,
+		);
+		if (immutableReject) {
+			results.push(immutableReject);
+			continue;
+		}
 		if (
 			entry.row.expectedVersion !== undefined &&
 			entry.row.expectedVersion !== current.version
@@ -589,6 +698,16 @@ async function upsertByCodeGeneric<
 				outcome: "unchanged",
 				entityId: current.id,
 			});
+			continue;
+		}
+		const updateBlocked = modeBlocksUpdate(
+			input.mode,
+			entry.rowIndex,
+			entry.code,
+			current.id,
+		);
+		if (updateBlocked) {
+			results.push(updateBlocked);
 			continue;
 		}
 		if (input.dryRun) {
@@ -627,6 +746,7 @@ async function upsertByCodeGeneric<
 	return ok({
 		sourceSystem: input.sourceSystem,
 		dryRun: input.dryRun,
+		mode: input.mode,
 		organizationId: input.organizationId,
 		...summarize(results),
 		rows: results,
@@ -722,6 +842,10 @@ export async function upsertItemsByCode(
 		return authorized;
 	}
 	const ctx = parsed.data;
+	const itemSnapshot = new Map<
+		string,
+		{ itemType: string; baseUomId: string; itemGroupId: string }
+	>();
 	return upsertByCodeGeneric(ctx, options, {
 		getByCode: async (organizationId, normalizedCode) => {
 			const result = await store.getItemByCode(organizationId, normalizedCode);
@@ -731,6 +855,11 @@ export async function upsertItemsByCode(
 			if (result.data === null) {
 				return ok(null);
 			}
+			itemSnapshot.set(result.data.id, {
+				itemType: result.data.itemType,
+				baseUomId: result.data.baseUomId,
+				itemGroupId: result.data.itemGroupId,
+			});
 			return ok({
 				id: result.data.id,
 				name: result.data.name,
@@ -760,13 +889,30 @@ export async function upsertItemsByCode(
 					id: existing.id,
 					expectedVersion: existing.version,
 					name: row.name,
-					itemType: row.itemType,
-					baseUomId: row.baseUomId,
-					itemGroupId: row.itemGroupId,
 				},
 				options,
 			),
 		isUnchanged: (existing, row) => existing.name === row.name,
+		rejectImmutable: (existing, row, rowIndex, code) => {
+			const snap = itemSnapshot.get(existing.id);
+			if (
+				snap !== undefined &&
+				(snap.itemType !== row.itemType ||
+					snap.baseUomId !== row.baseUomId ||
+					snap.itemGroupId !== row.itemGroupId)
+			) {
+				return {
+					rowIndex,
+					code,
+					outcome: "rejected",
+					entityId: existing.id,
+					message:
+						"itemType, baseUomId, and itemGroupId are immutable on import; only name may update",
+					reason: "MASTER_VALIDATION_FAILED",
+				};
+			}
+			return null;
+		},
 	});
 }
 
@@ -792,6 +938,7 @@ export async function upsertWarehousesByCode(
 		return authorized;
 	}
 	const ctx = parsed.data;
+	const warehouseSnapshot = new Map<string, { locationType: string }>();
 	return upsertByCodeGeneric(ctx, options, {
 		getByCode: async (organizationId, normalizedCode) => {
 			const result = await store.getWarehouseByCode(
@@ -804,6 +951,9 @@ export async function upsertWarehousesByCode(
 			if (result.data === null) {
 				return ok(null);
 			}
+			warehouseSnapshot.set(result.data.id, {
+				locationType: result.data.locationType,
+			});
 			return ok({
 				id: result.data.id,
 				name: result.data.name,
@@ -831,11 +981,25 @@ export async function upsertWarehousesByCode(
 					id: existing.id,
 					expectedVersion: existing.version,
 					name: row.name,
-					locationType: row.locationType,
 				},
 				options,
 			),
 		isUnchanged: (existing, row) => existing.name === row.name,
+		rejectImmutable: (existing, row, rowIndex, code) => {
+			const snap = warehouseSnapshot.get(existing.id);
+			if (snap !== undefined && snap.locationType !== row.locationType) {
+				return {
+					rowIndex,
+					code,
+					outcome: "rejected",
+					entityId: existing.id,
+					message:
+						"locationType is immutable on import; only name may update",
+					reason: "MASTER_VALIDATION_FAILED",
+				};
+			}
+			return null;
+		},
 	});
 }
 

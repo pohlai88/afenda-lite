@@ -48,10 +48,22 @@ export const PERMISSION_DENIED_MESSAGE = {
 		"You do not have permission to read purchase orders.",
 	"purchasing.order.list":
 		"You do not have permission to list purchase orders.",
-	"inventory.read":
-		"You do not have permission to read stock movements and availability.",
-	"inventory.manage":
-		"You do not have permission to manage inventory stock movements.",
+	"inventory.movement.create":
+		"You do not have permission to create stock movements.",
+	"inventory.movement.post":
+		"You do not have permission to post stock movements.",
+	"inventory.movement.cancel":
+		"You do not have permission to cancel stock movements.",
+	"inventory.movement.read":
+		"You do not have permission to read stock movements.",
+	"inventory.reservation.create":
+		"You do not have permission to create stock reservations.",
+	"inventory.reservation.release":
+		"You do not have permission to release stock reservations.",
+	"inventory.availability.read":
+		"You do not have permission to read stock availability.",
+	"inventory.adjustment.post":
+		"You do not have permission to post stock adjustments.",
 	"receiving.read": "You do not have permission to read goods receipts.",
 	"receiving.manage": "You do not have permission to manage goods receipts.",
 	"fulfillment.read": "You do not have permission to read deliveries.",

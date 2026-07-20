@@ -79,7 +79,25 @@ Never re-exports raw Drizzle tables or `db` / `eq`.
 
 **Also shipped:** search projectors (`md_*` → `@afenda/search`) · bounded import upsert-by-code · `mergeParties` + duplicate warnings.
 
-**Layer:** Rank-1 Platform (`@afenda/db` · `@afenda/errors` · `@afenda/audit` · `@afenda/events` · `@afenda/search` · zod · server-only). Must not import Surfaces, `apps/*`, or Next.js. See [docs-V2/monorepo](../../docs-V2/monorepo/README.md).
+**Layer:** Rank-1 Platform (`@afenda/db` · `@afenda/errors` · `@afenda/audit` · `@afenda/events` · `@afenda/search` · zod · server-only). Must not import Surfaces, `apps/*`, or Next.js. See [docs-V2/monorepo](../../../docs-V2/monorepo/README.md).
+
+## Platform `ref_*` mutation policy
+
+| Surface | Mutate | Read |
+|---------|--------|------|
+| `ref_country` · `ref_currency` · `ref_language` · `ref_time_zone` · `ref_uom_dimension` · `ref_uom` | Platform seed / system admin only (outside this package) | Package query helpers (`getRef*`) — org callers never upsert refs |
+
+There is no org-scoped `md_uom`. Item packaging conversions live in `md_item_uom` and reference `ref_uom`.
+
+## Search and merge boundaries
+
+| Concern | Rule |
+|---------|------|
+| Search projectors | Package may call `@afenda/search` upsert/rebuild APIs after master writes; search never authorizes masters |
+| Merge | `mergeParties` is MDG-gated (approved change request); no peer-table rewrite; source gets `merged_into_id` |
+| Import modes | `create_only` · `update_existing` · `create_or_update` (default) + mutable-field allowlist; apply requires `approved` + `master_data.import_approve` |
+
+Operational contract (Scratch): [operational-master-contract.md](../../../docs-V2/master-data/operational-master-contract.md).
 
 ## Code policy
 
@@ -89,7 +107,7 @@ Trim → Unicode NFC → uppercase for `normalized_code`. Max length 64. Charset
 
 | Topic | Link |
 |-------|------|
-| Scratch DNA | [docs-V2/master-data](../../docs-V2/master-data/README.md) · [master-data-dna.md](../../docs-V2/master-data/master-data-dna.md) |
-| Package DAG | [docs-V2/monorepo](../../docs-V2/monorepo/README.md) · [LAYERS.md](../../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md) |
-| Events catalog | [docs-V2/events](../../docs-V2/events/README.md) · [`@afenda/events`](../events/README.md) |
-| Agent checkout posture | [AGENTS.md](../../AGENTS.md) |
+| Scratch DNA | [docs-V2/master-data](../../../docs-V2/master-data/README.md) · [master-data-dna.md](../../../docs-V2/master-data/master-data-dna.md) · [operational-master-contract.md](../../../docs-V2/master-data/operational-master-contract.md) |
+| Package DAG | [docs-V2/monorepo](../../../docs-V2/monorepo/README.md) · [LAYERS.md](../../../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md) |
+| Events catalog | [docs-V2/events](../../../docs-V2/events/README.md) · [`@afenda/events`](../../data-plane/events/README.md) |
+| Agent checkout posture | [AGENTS.md](../../../AGENTS.md) |
