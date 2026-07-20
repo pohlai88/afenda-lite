@@ -1,6 +1,6 @@
 "use server";
 
-import { requireRole } from "@afenda/auth";
+import { getSession } from "@afenda/auth";
 import { createCorrelationId } from "@afenda/http";
 import { type PaymentTerm, updatePaymentTerm } from "@afenda/master-data";
 import { revalidatePath } from "next/cache";
@@ -38,7 +38,7 @@ export async function updatePaymentTermAction(
 	formData: FormData,
 ): Promise<UpdatePaymentTermActionState> {
 	const correlationId = createCorrelationId();
-	const session = await requireRole("operator");
+	const session = await getSession();
 
 	const nameRaw = formData.get("name");
 	const netDaysRaw = formData.get("netDays");

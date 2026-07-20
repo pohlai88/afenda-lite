@@ -16,14 +16,14 @@ export type GetStockMovementActionData = {
 };
 
 /**
- * Get stock movement by id — `inventory.read`.
+ * Get stock movement by id — `inventory.movement.read`.
  */
 export async function getStockMovementAction(
 	input: unknown,
 ): Promise<ActionResult<GetStockMovementActionData>> {
 	return runOperatorPermissionAction({
 		path: "getStockMovementAction",
-		permission: "inventory.read",
+		permission: "inventory.movement.read",
 		safeMessage:
 			"Could not load stock movement. Try again or contact an admin.",
 		execute: async (session) => {

@@ -1,6 +1,6 @@
 "use server";
 
-import { getStockAvailability, type StockBalance } from "@afenda/inventory";
+import { getStockAvailability, type StockAvailability } from "@afenda/inventory";
 import { z } from "zod";
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runOperatorPermissionAction } from "@/app/actions/run-operator-permission-action";
@@ -12,18 +12,18 @@ import {
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 export type GetStockAvailabilityActionData = {
-	balances: StockBalance[];
+	availability: StockAvailability[];
 };
 
 /**
- * Get stock availability — `inventory.read`.
+ * Get stock availability — `inventory.availability.read`.
  */
 export async function getStockAvailabilityAction(
 	input: unknown = {},
 ): Promise<ActionResult<GetStockAvailabilityActionData>> {
 	return runOperatorPermissionAction({
 		path: "getStockAvailabilityAction",
-		permission: "inventory.read",
+		permission: "inventory.availability.read",
 		safeMessage:
 			"Could not load stock availability. Try again or contact an admin.",
 		execute: async (session) => {
@@ -55,7 +55,7 @@ export async function getStockAvailabilityAction(
 			if (!mapped.ok) {
 				return mapped;
 			}
-			return { ok: true, data: { balances: mapped.data } };
+			return { ok: true, data: { availability: mapped.data } };
 		},
 	});
 }

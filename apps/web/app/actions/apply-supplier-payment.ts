@@ -1,22 +1,21 @@
 "use server";
 
 import {
-	allocateSupplierPayment,
+	applySupplierPayment,
 	type SupplierAllocation,
 } from "@afenda/payables";
-import { revalidatePath } from "next/cache";
 import { z } from "zod";
-
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runOperatorPermissionAction } from "@/app/actions/run-operator-permission-action";
 import { createPayablesCommandOptions } from "@/lib/erp/payables-command-options";
+import { revalidatePayablesPaths } from "@/lib/erp/revalidate-payables-paths";
 import {
 	type ActionResult,
 	actionFail,
 } from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
-export type AllocateSupplierPaymentActionState = ActionResult<{
+export type ApplySupplierPaymentActionState = ActionResult<{
 	allocation: SupplierAllocation;
 }> | null;
 
@@ -26,15 +25,15 @@ const schema = z.object({
 	paymentId: z.string().uuid(),
 });
 
-export async function allocateSupplierPaymentAction(
-	_prev: AllocateSupplierPaymentActionState,
+export async function applySupplierPaymentAction(
+	_prev: ApplySupplierPaymentActionState,
 	formData: FormData,
-): Promise<AllocateSupplierPaymentActionState> {
+): Promise<ApplySupplierPaymentActionState> {
 	return runOperatorPermissionAction({
-		path: "allocateSupplierPaymentAction",
+		path: "applySupplierPaymentAction",
 		permission: "payables.manage",
 		safeMessage:
-			"Could not allocate supplier payment. Try again or contact an admin.",
+			"Could not apply supplier payment. Try again or contact an admin.",
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(schema, {
 				invoiceId: formData.get("invoiceId"),
@@ -48,19 +47,18 @@ export async function allocateSupplierPaymentAction(
 					parsed.details,
 				);
 			const mapped = mapPackageResult(
-				await allocateSupplierPayment(
+				await applySupplierPayment(
 					{
 						organizationId: session.orgId,
 						actorUserId: session.userId,
 						correlationId,
 						...parsed.data,
 					},
-					createPayablesCommandOptions(),
+					createPayablesCommandOptions(session.userId),
 				),
 			);
 			if (!mapped.ok) return mapped;
-			revalidatePath("/admin/payables");
-			revalidatePath("/client/payables");
+			revalidatePayablesPaths();
 			return { ok: true, data: { allocation: mapped.data } };
 		},
 	});

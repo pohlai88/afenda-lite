@@ -35,7 +35,7 @@ export async function getSupplierInvoiceAction(
 						actorUserId: session.userId,
 						id: parsed.data,
 					},
-					createPayablesCommandOptions(),
+					createPayablesCommandOptions(session.userId),
 				),
 			);
 			if (!mapped.ok) return mapped;

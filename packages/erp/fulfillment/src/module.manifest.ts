@@ -80,9 +80,6 @@ export const fulfillmentModuleManifest = {
 			[FULFILLMENT_QUERY_LIST]: FULFILLMENT_PERMISSION_READ,
 		},
 	},
-	moduleDependencies: { required: ["master-data"] },
-	optionalIntegratesWith: [
-		{ moduleId: "sales", style: "events" },
-		{ moduleId: "inventory", style: "events" },
-	],
+	moduleDependencies: { required: ["master-data", "inventory"] },
+	optionalIntegratesWith: [{ moduleId: "sales", style: "events" }],
 } as const satisfies AfendaModuleManifest;

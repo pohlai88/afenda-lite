@@ -1,4 +1,5 @@
 import {
+	type AnyPgColumn,
 	index,
 	integer,
 	numeric,
@@ -22,10 +23,12 @@ export const stockMovement = pgTable(
 		organizationId: text("organization_id").notNull(),
 		code: text("code").notNull(),
 		normalizedCode: text("normalized_code").notNull(),
-		/** receipt | issue | transfer | adjustment | reservation | reservation_release */
+		/** receipt | issue | transfer | adjustment */
 		movementType: text("movement_type").notNull(),
-		/** draft | posted */
+		/** draft | posted | cancelled */
 		status: text("status").notNull().default("draft"),
+		/** receiving | fulfillment | manual_adjustment | opening_balance | transfer */
+		source: text("source").notNull(),
 		warehouseId: uuid("warehouse_id").references(() => mdWarehouse.id),
 		warehouseCode: text("warehouse_code"),
 		warehouseName: text("warehouse_name"),
@@ -35,13 +38,29 @@ export const stockMovement = pgTable(
 		toWarehouseId: uuid("to_warehouse_id").references(() => mdWarehouse.id),
 		toWarehouseCode: text("to_warehouse_code"),
 		toWarehouseName: text("to_warehouse_name"),
-		/** For reservation_release movements — links to the reservation being released. */
+		/** For issue movements that consume a reservation. */
 		reservationId: uuid("reservation_id"),
+		/** Compensating movement link for reversals. */
+		reversesMovementId: uuid("reverses_movement_id").references(
+			(): AnyPgColumn => stockMovement.id,
+		),
+		adjustmentReasonCode: text("adjustment_reason_code"),
+		adjustmentNote: text("adjustment_note"),
+		sourceModule: text("source_module"),
+		sourceAggregateId: text("source_aggregate_id"),
+		sourceEventId: text("source_event_id"),
+		sourceEventVersion: integer("source_event_version"),
+		sourceLineId: text("source_line_id"),
+		createIdempotencyKey: text("create_idempotency_key").notNull(),
+		postIdempotencyKey: text("post_idempotency_key"),
+		cancelIdempotencyKey: text("cancel_idempotency_key"),
 		version: integer("version").notNull().default(1),
 		createdBy: text("created_by").notNull(),
 		updatedBy: text("updated_by").notNull(),
 		postedAt: timestamp("posted_at", { withTimezone: true }),
 		postedBy: text("posted_by"),
+		cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
+		cancelledBy: text("cancelled_by"),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),
@@ -61,6 +80,15 @@ export const stockMovement = pgTable(
 		uniqueIndex("stock_movement_org_normalized_code_uidx").on(
 			t.organizationId,
 			t.normalizedCode,
+		),
+		uniqueIndex("stock_movement_org_create_idempotency_uidx").on(
+			t.organizationId,
+			t.createIdempotencyKey,
+		),
+		uniqueIndex("stock_movement_org_source_event_uidx").on(
+			t.organizationId,
+			t.sourceModule,
+			t.sourceEventId,
 		),
 	],
 );
@@ -82,6 +110,7 @@ export const stockMovementLine = pgTable(
 		baseUomId: uuid("base_uom_id").notNull(),
 		baseUomCode: text("base_uom_code").notNull(),
 		quantity: numeric("quantity", { precision: 24, scale: 12 }).notNull(),
+		lineIdempotencyKey: text("line_idempotency_key").notNull(),
 		version: integer("version").notNull().default(1),
 		createdBy: text("created_by").notNull(),
 		updatedBy: text("updated_by").notNull(),
@@ -104,6 +133,11 @@ export const stockMovementLine = pgTable(
 			t.movementId,
 			t.lineNo,
 		),
+		uniqueIndex("stock_movement_line_org_movement_idempotency_uidx").on(
+			t.organizationId,
+			t.movementId,
+			t.lineIdempotencyKey,
+		),
 	],
 );
 
@@ -120,6 +154,8 @@ export const stockBalance = pgTable(
 			.notNull()
 			.references(() => mdItem.id),
 		itemCode: text("item_code").notNull(),
+		baseUomId: uuid("base_uom_id"),
+		baseUomCode: text("base_uom_code"),
 		onHand: numeric("on_hand", { precision: 24, scale: 12 }).notNull().default("0"),
 		reserved: numeric("reserved", { precision: 24, scale: 12 })
 			.notNull()
@@ -188,6 +224,8 @@ export const stockLedgerEntry = pgTable(
 			precision: 24,
 			scale: 12,
 		}).notNull(),
+		/** Org-scoped monotonic sequence; app assigns MAX + 1 per organization. */
+		ledgerSequence: integer("ledger_sequence").notNull().default(0),
 		actorUserId: text("actor_user_id").notNull(),
 		correlationId: text("correlation_id").notNull(),
 		createdAt: timestamp("created_at", { withTimezone: true })
@@ -210,6 +248,10 @@ export const stockLedgerEntry = pgTable(
 			t.createdAt,
 			t.id,
 		),
+		index("stock_ledger_entry_org_ledger_sequence_idx").on(
+			t.organizationId,
+			t.ledgerSequence,
+		),
 	],
 );
 
@@ -220,7 +262,7 @@ export const stockReservation = pgTable(
 		organizationId: text("organization_id").notNull(),
 		code: text("code").notNull(),
 		normalizedCode: text("normalized_code").notNull(),
-		/** active | released */
+		/** active | partially_consumed | consumed | released | expired | cancelled */
 		status: text("status").notNull().default("active"),
 		warehouseId: uuid("warehouse_id")
 			.notNull()
@@ -235,12 +277,14 @@ export const stockReservation = pgTable(
 		baseUomId: uuid("base_uom_id").notNull(),
 		baseUomCode: text("base_uom_code").notNull(),
 		quantity: numeric("quantity", { precision: 24, scale: 12 }).notNull(),
-		sourceMovementId: uuid("source_movement_id").references(
-			() => stockMovement.id,
-		),
-		releaseMovementId: uuid("release_movement_id").references(
-			() => stockMovement.id,
-		),
+		consumedQuantity: numeric("consumed_quantity", {
+			precision: 24,
+			scale: 12,
+		})
+			.notNull()
+			.default("0"),
+		createIdempotencyKey: text("create_idempotency_key").notNull(),
+		releaseIdempotencyKey: text("release_idempotency_key"),
 		version: integer("version").notNull().default(1),
 		createdBy: text("created_by").notNull(),
 		updatedBy: text("updated_by").notNull(),
@@ -264,6 +308,10 @@ export const stockReservation = pgTable(
 		uniqueIndex("stock_reservation_org_normalized_code_uidx").on(
 			t.organizationId,
 			t.normalizedCode,
+		),
+		uniqueIndex("stock_reservation_org_create_idempotency_uidx").on(
+			t.organizationId,
+			t.createIdempotencyKey,
 		),
 	],
 );

@@ -10,7 +10,7 @@ import {
 	Input,
 	Spinner,
 } from "@afenda/ui-system";
-import { useActionState } from "react";
+import { useActionState, useMemo } from "react";
 
 import {
 	type AddStockMovementLineActionState,
@@ -21,21 +21,25 @@ import { actionFieldMessage } from "@/modules/platform/schemas/action-result";
 const initialState: AddStockMovementLineActionState = null;
 
 type AddStockMovementLineFormProps = {
-	canManage: boolean;
+	canCreate: boolean;
 };
 
 /**
- * Add line to draft stock movement — CAPABLE when `inventory.manage` is granted.
+ * Add line to draft stock movement — gated by `inventory.movement.create`.
  */
 export function AddStockMovementLineForm({
-	canManage,
+	canCreate,
 }: AddStockMovementLineFormProps) {
 	const [state, formAction, pending] = useActionState(
 		addStockMovementLineAction,
 		initialState,
 	);
+	const idempotencyKey = useMemo(
+		() => `line:${crypto.randomUUID()}`,
+		[state],
+	);
 
-	if (!canManage) {
+	if (!canCreate) {
 		return (
 			<Alert role="status">
 				<AlertTitle>Add line unavailable</AlertTitle>
@@ -50,12 +54,14 @@ export function AddStockMovementLineForm({
 	const movementError = actionFieldMessage(state, "movementId");
 	const itemError = actionFieldMessage(state, "itemId");
 	const quantityError = actionFieldMessage(state, "quantity");
+	const versionError = actionFieldMessage(state, "expectedVersion");
 	const showFormError =
 		!pending &&
 		state?.ok === false &&
 		movementError === undefined &&
 		itemError === undefined &&
-		quantityError === undefined;
+		quantityError === undefined &&
+		versionError === undefined;
 
 	return (
 		<form
@@ -75,6 +81,7 @@ export function AddStockMovementLineForm({
 			{showFormError && state?.ok === false ? (
 				<FormError>{state.message}</FormError>
 			) : null}
+			<input type="hidden" name="idempotencyKey" value={idempotencyKey} readOnly />
 			<FormField
 				label="Movement id"
 				required
@@ -100,6 +107,21 @@ export function AddStockMovementLineForm({
 					name="itemId"
 					required
 					autoComplete="off"
+					disabled={pending}
+				/>
+			</FormField>
+			<FormField
+				label="Expected version"
+				required
+				fieldId="stock-line-version"
+				error={versionError}
+			>
+				<Input
+					id="stock-line-version"
+					name="expectedVersion"
+					type="number"
+					min="1"
+					required
 					disabled={pending}
 				/>
 			</FormField>

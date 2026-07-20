@@ -752,6 +752,9 @@ importers:
       '@afenda/events':
         specifier: workspace:*
         version: link:../../data-plane/events
+      '@afenda/inventory':
+        specifier: workspace:*
+        version: link:../inventory
       '@afenda/master-data':
         specifier: workspace:*
         version: link:../master-data
@@ -802,6 +805,9 @@ importers:
       '@types/node':
         specifier: 'catalog:'
         version: 20.19.30
+      tsx:
+        specifier: 'catalog:'
+        version: 4.23.0
       typescript:
         specifier: 'catalog:'
         version: 5.9.3
@@ -978,6 +984,9 @@ importers:
       '@afenda/events':
         specifier: workspace:*
         version: link:../../data-plane/events
+      '@afenda/inventory':
+        specifier: workspace:*
+        version: link:../inventory
       '@afenda/master-data':
         specifier: workspace:*
         version: link:../master-data

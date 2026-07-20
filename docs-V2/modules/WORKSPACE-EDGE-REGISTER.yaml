@@ -271,6 +271,12 @@ edges:
     authority: ARCH-006
     reason: "Goods receipt FK + snapshots; masters via public API only"
     effectiveDate: "2026-07-20"
+  - from: "@afenda/receiving"
+    to: "@afenda/inventory"
+    status: approved
+    authority: ARCH-006
+    reason: "Post goods receipt creates inventory receipt movement; Inventory sole stock mutator"
+    effectiveDate: "2026-07-21"
 
   - from: "@afenda/fulfillment"
     to: "@afenda/db"
@@ -302,6 +308,12 @@ edges:
     authority: ARCH-006
     reason: "Delivery FK + snapshots; masters via public API only"
     effectiveDate: "2026-07-20"
+  - from: "@afenda/fulfillment"
+    to: "@afenda/inventory"
+    status: approved
+    authority: ARCH-006
+    reason: "Post delivery creates inventory issue movement; Inventory sole stock mutator"
+    effectiveDate: "2026-07-21"
 
   - from: "@afenda/receivables"
     to: "@afenda/db"

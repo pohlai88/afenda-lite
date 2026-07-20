@@ -1,6 +1,6 @@
 "use server";
 
-import { requireRole } from "@afenda/auth";
+import { getSession } from "@afenda/auth";
 import { createCorrelationId } from "@afenda/http";
 import {
 	type TaxRegistration,
@@ -42,7 +42,7 @@ export async function updateTaxRegistrationAction(
 	formData: FormData,
 ): Promise<UpdateTaxRegistrationActionState> {
 	const correlationId = createCorrelationId();
-	const session = await requireRole("operator");
+	const session = await getSession();
 
 	const nameRaw = formData.get("name");
 	const validFromRaw = formData.get("validFrom");

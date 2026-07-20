@@ -72,9 +72,6 @@ export const receivingModuleManifest = {
 			[RECEIVING_QUERY_LIST]: RECEIVING_PERMISSION_READ,
 		},
 	},
-	moduleDependencies: { required: ["master-data"] },
-	optionalIntegratesWith: [
-		{ moduleId: "purchasing", style: "events" },
-		{ moduleId: "inventory", style: "events" },
-	],
+	moduleDependencies: { required: ["master-data", "inventory"] },
+	optionalIntegratesWith: [{ moduleId: "purchasing", style: "events" }],
 } as const satisfies AfendaModuleManifest;

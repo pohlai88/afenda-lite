@@ -1,6 +1,6 @@
 "use server";
 
-import { requireRole } from "@afenda/auth";
+import { getSession } from "@afenda/auth";
 import { createCorrelationId } from "@afenda/http";
 import {
 	activateParty,
@@ -42,7 +42,7 @@ export async function activatePartyAction(
 	formData: FormData,
 ): Promise<ActivatePartyActionState> {
 	const correlationId = createCorrelationId();
-	const session = await requireRole("operator");
+	const session = await getSession();
 
 	const parsed = parseSchema(activatePartyFormSchema, {
 		partyId: formData.get("partyId"),

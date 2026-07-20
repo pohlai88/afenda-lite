@@ -23,10 +23,11 @@ export type PostStockMovementActionState =
 const postStockMovementFormSchema = z.object({
 	movementId: z.string().uuid(),
 	expectedVersion: z.coerce.number().int().positive(),
+	idempotencyKey: z.string().trim().min(1).max(128),
 });
 
 /**
- * Post draft stock movement — apply ledger/balance + `inventory.manage`.
+ * Post draft stock movement — apply ledger/balance + `inventory.movement.post`.
  */
 export async function postStockMovementAction(
 	_prev: PostStockMovementActionState,
@@ -34,18 +35,19 @@ export async function postStockMovementAction(
 ): Promise<PostStockMovementActionState> {
 	return runOperatorPermissionAction({
 		path: "postStockMovementAction",
-		permission: "inventory.manage",
+		permission: "inventory.movement.post",
 		safeMessage:
 			"Could not post stock movement. Try again or contact an admin.",
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(postStockMovementFormSchema, {
 				movementId: formData.get("movementId"),
 				expectedVersion: formData.get("expectedVersion"),
+				idempotencyKey: formData.get("idempotencyKey"),
 			});
 			if (!parsed.success) {
 				return actionFail(
 					"VALIDATION_ERROR",
-					"Enter a valid movement and expected version.",
+					"Enter a valid movement, expected version, and idempotency key.",
 					parsed.details,
 				);
 			}
@@ -57,6 +59,7 @@ export async function postStockMovementAction(
 					correlationId,
 					movementId: parsed.data.movementId,
 					expectedVersion: parsed.data.expectedVersion,
+					idempotencyKey: parsed.data.idempotencyKey,
 				},
 				createInventoryCommandOptions(),
 			);

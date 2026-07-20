@@ -1,6 +1,6 @@
 "use server";
 
-import { requireRole } from "@afenda/auth";
+import { getSession } from "@afenda/auth";
 import { createCorrelationId } from "@afenda/http";
 import { listPartyRoles, type PartyRole } from "@afenda/master-data";
 import { z } from "zod";
@@ -32,7 +32,7 @@ export async function listPartyRolesAction(
 	input: unknown,
 ): Promise<ActionResult<ListPartyRolesActionData>> {
 	const correlationId = createCorrelationId();
-	const session = await requireRole("operator");
+	const session = await getSession();
 
 	const parsed = parseSchema(listPartyRolesQuerySchema, input);
 	if (!parsed.success) {

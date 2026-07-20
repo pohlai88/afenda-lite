@@ -852,7 +852,7 @@ Bulk upsert-by-code must:
 - Never silently overwrite a newer version.
 - Distinguish create, update, unchanged, rejected, and conflicted rows.
 
-Bulk APIs are a named importer slice, not required to be fully exposed in the initial package scaffold unless explicitly included.
+Bulk import is **Shipped** on the Authority B spine (§23): package `import-bulk` (validate dry-run · apply with `approved` · modes `create_only` \| `update_existing` \| `create_or_update`) plus web validate/apply Actions and console panel. File parsing remains at the application boundary.
 
 ---
 

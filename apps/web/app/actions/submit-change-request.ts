@@ -1,6 +1,6 @@
 "use server";
 
-import { requireRole } from "@afenda/auth";
+import { getSession } from "@afenda/auth";
 import { createCorrelationId } from "@afenda/http";
 import {
 	type ChangeRequest,
@@ -50,7 +50,7 @@ export async function submitChangeRequestAction(
 	formData: FormData,
 ): Promise<SubmitChangeRequestActionState> {
 	const correlationId = createCorrelationId();
-	const session = await requireRole("operator");
+	const session = await getSession();
 
 	const commandKind = formData.get("commandKind");
 	const parsed = parseSchema(submitChangeRequestFormSchema, {

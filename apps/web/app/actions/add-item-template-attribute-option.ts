@@ -1,6 +1,6 @@
 "use server";
 
-import { requireRole } from "@afenda/auth";
+import { getSession } from "@afenda/auth";
 import { createCorrelationId } from "@afenda/http";
 import {
 	addItemTemplateAttributeOption,
@@ -38,7 +38,7 @@ export async function addItemTemplateAttributeOptionAction(
 	formData: FormData,
 ): Promise<AddItemTemplateAttributeOptionActionState> {
 	const correlationId = createCorrelationId();
-	const session = await requireRole("operator");
+	const session = await getSession();
 
 	const parsed = parseSchema(addOptionFormSchema, {
 		attributeId: formData.get("attributeId"),

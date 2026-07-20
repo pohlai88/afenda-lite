@@ -166,7 +166,7 @@ These improve fidelity to DNA prose; they are **not** missing spine stages. **On
 |------|---------|----------------|-------|--------|
 | Importer **approved** gate | §13 lifecycle `… → approved → applied → …` | Explicit approve step / permission before apply; keep dry-run + reconcile | R6-import-approve | **SHIPPED** 2026-07-20 — `approved` gate + `master_data.import_approve` · evidence in [r6-harden-missions.md](r6-harden-missions.md) |
 | Item optional commercial fields | §7.2 | Brand, manufacturer party, tax class, origin, shelf-life, dims — controlled columns or typed extensions, not free JSON | R6-item-optional | open |
-| Stale §13 wording | “Bulk APIs are a named importer slice…” | Doc-only: align DNA prose with §23 **Shipped** | R6-dna-prose | open |
+| Stale §13 wording | “Bulk APIs are a named importer slice…” | Doc-only: align DNA prose with §23 **Shipped** | R6-dna-prose | **SHIPPED** 2026-07-21 — DNA §13 + [operational-master-contract.md](operational-master-contract.md) |
 
 ---
 
@@ -283,6 +283,7 @@ PROJECT CONTEXT:
 ## Companions
 
 - [README.md](README.md) — shipped capability matrix
+- [operational-master-contract.md](operational-master-contract.md) — refs · search · merge · import modes
 - [development-method.md](development-method.md) — R4–R6 pipeline
 - [arch-006-consumer-contract.md](arch-006-consumer-contract.md) — R5-0
 - [r6-harden-missions.md](r6-harden-missions.md) — R6 briefs

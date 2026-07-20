@@ -19,7 +19,7 @@ import type {
 /**
  * Composition-root SQL adapter — purchasing package only sees the port interface.
  * Receipts: source_type = purchase_order, status posted|closed.
- * Invoices: purchase_order_id set, status matched|posted|allocated.
+ * Invoices: purchase_order_id set, status matched|posted.
  */
 export function createPurchasingCommitmentQueryPort(): PurchaseOrderCommitmentQueryPort {
 	return {
@@ -76,11 +76,7 @@ export function createPurchasingCommitmentQueryPort(): PurchaseOrderCommitmentQu
 						and(
 							eq(supplierInvoice.organizationId, input.organizationId),
 							eq(supplierInvoice.purchaseOrderId, input.purchaseOrderId),
-							inArray(supplierInvoice.status, [
-								"matched",
-								"posted",
-								"allocated",
-							]),
+							inArray(supplierInvoice.status, ["matched", "posted"]),
 						),
 					);
 

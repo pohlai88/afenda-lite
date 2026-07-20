@@ -21,6 +21,7 @@ import {
 	createMemoryPurchaseOrderReceivingQueryPort,
 	postedPoSnapshot,
 } from "./helpers/memory-po-receiving";
+import { createInventoryCommandTestOptions } from "./helpers/memory-inventory";
 import { createMemoryMutationPorts } from "./helpers/memory-ports";
 
 const ORG_A = "org-a";
@@ -37,18 +38,20 @@ function harness(
 ) {
 	const purchaseOrderReceivingQuery =
 		createMemoryPurchaseOrderReceivingQueryPort(poSeed);
+	const masters = createMemoryMasterLookup({
+		items: [seedItem(ORG_A, ITEM, "SKU-A", UOM)],
+		warehouses: [seedWarehouse(ORG_A, WAREHOUSE, "WH-A")],
+		uoms: [seedUom(UOM, "EA")],
+	});
 	return {
 		store: createMemoryReceivingStore(),
 		ports: createMemoryMutationPorts(),
-		masters: createMemoryMasterLookup({
-			items: [seedItem(ORG_A, ITEM, "SKU-A", UOM)],
-			warehouses: [seedWarehouse(ORG_A, WAREHOUSE, "WH-A")],
-			uoms: [seedUom(UOM, "EA")],
-		}),
+		masters,
 		authorization: createGrantingReceivingAuthorization([
 			RECEIVING_PERMISSION_READ,
 			RECEIVING_PERMISSION_MANAGE,
 		]),
+		inventory: createInventoryCommandTestOptions(masters),
 		purchaseOrderReceivingQuery,
 	};
 }

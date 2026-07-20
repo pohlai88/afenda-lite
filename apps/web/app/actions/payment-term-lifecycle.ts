@@ -1,4 +1,4 @@
-import { requireRole } from "@afenda/auth";
+import { getSession } from "@afenda/auth";
 import type { Result } from "@afenda/errors/result";
 import { createCorrelationId } from "@afenda/http";
 import type { PaymentTerm } from "@afenda/master-data";
@@ -54,7 +54,7 @@ export async function runPaymentTermLifecycle(
 	formData: FormData,
 ): Promise<PaymentTermLifecycleActionState> {
 	const correlationId = createCorrelationId();
-	const session = await requireRole("operator");
+	const session = await getSession();
 
 	const parsed = parseSchema(paymentTermLifecycleFormSchema, {
 		paymentTermId: formData.get("paymentTermId"),

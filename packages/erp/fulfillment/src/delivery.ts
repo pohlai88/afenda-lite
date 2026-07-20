@@ -1,4 +1,10 @@
-import { fail, type Result } from "@afenda/errors/result";
+import { fail, ok, type Result } from "@afenda/errors/result";
+import {
+	addStockMovementLine,
+	createStockMovement,
+	postStockMovement,
+	type InventoryCommandOptions,
+} from "@afenda/inventory";
 
 import {
 	requireFulfillmentCommandPermission,
@@ -42,6 +48,79 @@ import type {
 	DeliveryPick,
 	ProofOfDelivery,
 } from "./types";
+
+async function postDeliveryInventoryMovement(
+	delivery: Delivery,
+	actorUserId: string,
+	correlationId: string,
+	inventory: InventoryCommandOptions | undefined,
+): Promise<Result<void>> {
+	if (!inventory) {
+		return fail(
+			"INTERNAL_ERROR",
+			"Inventory command options are required to post delivery stock",
+		);
+	}
+
+	const created = await createStockMovement(
+		{
+			organizationId: delivery.organizationId,
+			actorUserId,
+			correlationId,
+			idempotencyKey: `ful-post:${delivery.id}`,
+			code: delivery.code,
+			movementType: "issue",
+			source: "fulfillment",
+			warehouseId: delivery.warehouseId,
+			sourceModule: "fulfillment",
+			sourceAggregateId: delivery.id,
+			sourceEventId: `fulfillment.delivery.posted:${delivery.id}:${delivery.version}`,
+			sourceEventVersion: delivery.version,
+		},
+		inventory,
+	);
+	if (!created.ok) {
+		return created;
+	}
+
+	let expectedVersion = created.data.version;
+	for (const line of delivery.lines) {
+		const added = await addStockMovementLine(
+			{
+				organizationId: delivery.organizationId,
+				actorUserId,
+				correlationId,
+				idempotencyKey: `ful-post:${delivery.id}:line:${line.id}`,
+				movementId: created.data.id,
+				itemId: line.itemId,
+				quantity: line.quantityToDeliver,
+				expectedVersion,
+			},
+			inventory,
+		);
+		if (!added.ok) {
+			return added;
+		}
+		expectedVersion += 1;
+	}
+
+	const posted = await postStockMovement(
+		{
+			organizationId: delivery.organizationId,
+			actorUserId,
+			correlationId,
+			idempotencyKey: `ful-post-finalize:${delivery.id}`,
+			movementId: created.data.id,
+			expectedVersion,
+		},
+		inventory,
+	);
+	if (!posted.ok) {
+		return posted;
+	}
+
+	return ok(undefined);
+}
 
 export async function createDraftDelivery(
 	input: unknown,
@@ -265,9 +344,32 @@ export async function postDelivery(
 	);
 	if (!context.ok) return context;
 	const { data, deps } = context.data;
-	return deps.store.postDelivery(data, deps.ports, {
+	if (!deps.inventory) {
+		return fail(
+			"INTERNAL_ERROR",
+			"Inventory command options are required to post delivery stock",
+		);
+	}
+	const posted = await deps.store.postDelivery(data, deps.ports, {
 		correlationId: data.correlationId,
 	});
+	if (!posted.ok) return posted;
+
+	const inventoryPosted = await postDeliveryInventoryMovement(
+		posted.data,
+		data.actorUserId,
+		data.correlationId,
+		deps.inventory,
+	);
+	if (!inventoryPosted.ok) {
+		return fail(
+			inventoryPosted.code === "CONFLICT" ? "CONFLICT" : "INTERNAL_ERROR",
+			`Delivery posted but inventory stock movement failed: ${inventoryPosted.message}`,
+			inventoryPosted.details,
+		);
+	}
+
+	return posted;
 }
 
 export async function recordProofOfDelivery(

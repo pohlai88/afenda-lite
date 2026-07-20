@@ -58,14 +58,21 @@ function mapLine(
 	};
 }
 
+function mapMatchStatus(status: string): ThreeWayMatchResult["result"] {
+	switch (status) {
+		case "pending":
+		case "matched":
+		case "matched_with_tolerance":
+		case "exception":
+			return status;
+		default:
+			throw new Error(`Invalid three_way_match_result.match_status: ${status}`);
+	}
+}
+
 function mapMatch(
 	row: typeof threeWayMatchResult.$inferSelect,
 ): ThreeWayMatchResult {
-	if (row.matchStatus !== "matched") {
-		throw new Error(
-			`Invalid three_way_match_result.match_status: ${row.matchStatus}`,
-		);
-	}
 	if (row.purchaseOrderId === null || row.goodsReceiptId === null) {
 		throw new Error(
 			"Matched three-way result requires purchase order and goods receipt",
@@ -77,7 +84,7 @@ function mapMatch(
 		invoiceId: row.supplierInvoiceId,
 		purchaseOrderId: row.purchaseOrderId,
 		goodsReceiptId: row.goodsReceiptId,
-		result: row.matchStatus,
+		result: mapMatchStatus(row.matchStatus),
 		matchedBy: row.createdBy,
 		matchedAt: row.createdAt,
 	};
@@ -280,7 +287,9 @@ export class DrizzlePayablesStore implements PayablesStore {
 				sql`
 					WITH mutated AS (
 						UPDATE supplier_invoice
-						SET status = 'matched', updated_at = now(),
+						SET status = 'matched',
+							purchase_order_id = ${record.purchaseOrderId},
+							updated_at = now(),
 							updated_by = ${record.actorUserId}, version = version + 1
 						WHERE id = ${record.invoiceId} AND organization_id = ${record.organizationId}
 							AND status = 'draft' AND version = ${record.expectedVersion}
@@ -289,40 +298,12 @@ export class DrizzlePayablesStore implements PayablesStore {
 								WHERE supplier_invoice_id = ${record.invoiceId}
 									AND organization_id = ${record.organizationId}
 							)
-							AND EXISTS (
-								SELECT 1 FROM purchase_order
-								WHERE id = ${record.purchaseOrderId}
+							AND (
+								SELECT COALESCE(SUM(line_amount::numeric), 0)
+								FROM supplier_invoice_line
+								WHERE supplier_invoice_id = ${record.invoiceId}
 									AND organization_id = ${record.organizationId}
-									AND status = 'posted'
-									AND party_id = supplier_invoice.supplier_party_id
-							)
-							AND EXISTS (
-								SELECT 1 FROM goods_receipt
-								WHERE id = ${record.goodsReceiptId}
-									AND organization_id = ${record.organizationId}
-									AND status IN ('posted', 'closed')
-									AND source_type = 'purchase_order'
-									AND source_id = ${record.purchaseOrderId}
-							)
-							AND NOT EXISTS (
-								SELECT 1
-								FROM supplier_invoice_line invoice_line
-								WHERE invoice_line.supplier_invoice_id = supplier_invoice.id
-									AND invoice_line.organization_id = supplier_invoice.organization_id
-									AND NOT EXISTS (
-										SELECT 1
-										FROM purchase_order_line po_line
-										JOIN goods_receipt_line receipt_line
-											ON receipt_line.purchase_order_line_id = po_line.id
-											AND receipt_line.organization_id = po_line.organization_id
-										WHERE po_line.order_id = ${record.purchaseOrderId}
-											AND po_line.organization_id = ${record.organizationId}
-											AND receipt_line.goods_receipt_id = ${record.goodsReceiptId}
-											AND po_line.item_id = invoice_line.item_id
-											AND po_line.quantity >= invoice_line.quantity::numeric
-											AND receipt_line.quantity_received::numeric >= invoice_line.quantity::numeric
-									)
-							)
+							) > 0
 						RETURNING *
 					),
 					matched AS (
@@ -331,7 +312,7 @@ export class DrizzlePayablesStore implements PayablesStore {
 							goods_receipt_id, match_status, version, created_by, updated_by
 						)
 						SELECT ${matchId}, organization_id, id, ${record.purchaseOrderId},
-							${record.goodsReceiptId}, 'matched', 1,
+							${record.goodsReceiptId}, ${record.matchStatus}, 1,
 							${record.actorUserId}, ${record.actorUserId}
 						FROM mutated RETURNING id
 					),
@@ -543,8 +524,8 @@ export class DrizzlePayablesStore implements PayablesStore {
 		}
 	}
 
-	async allocate(
-		record: Parameters<PayablesStore["allocate"]>[0],
+	async applyPayment(
+		record: Parameters<PayablesStore["applyPayment"]>[0],
 	): Promise<Result<SupplierAllocation>> {
 		const id = randomUUID();
 		const eventId = randomUUID();
@@ -643,7 +624,7 @@ export class DrizzlePayablesStore implements PayablesStore {
 				createdAt: row.created_at,
 			});
 		} catch (error) {
-			return failFromUnknown(error, "Failed to allocate supplier payment");
+			return failFromUnknown(error, "Failed to apply supplier payment");
 		}
 	}
 
@@ -653,50 +634,24 @@ export class DrizzlePayablesStore implements PayablesStore {
 		try {
 			const [rows] = await runNeonHttpTransaction<[{ id: string }[]]>((sql) => [
 				sql`
-					WITH eligible AS (
-						SELECT invoice.*, (
-							SELECT COALESCE(SUM(line_amount::numeric), 0)
-							FROM supplier_invoice_line
-							WHERE supplier_invoice_id = invoice.id
-								AND organization_id = invoice.organization_id
-						) AS total_amount
-						FROM supplier_invoice invoice
-						WHERE id = ${record.invoiceId} AND organization_id = ${record.organizationId}
-							AND version = ${record.expectedVersion}
-							AND status IN ('draft', 'matched', 'posted')
-							AND NOT EXISTS (
-								SELECT 1 FROM supplier_allocation
-								WHERE supplier_invoice_id = invoice.id
-									AND organization_id = invoice.organization_id
-							)
-					),
-					mutated AS (
+					WITH mutated AS (
 						UPDATE supplier_invoice
 						SET status = 'cancelled', cancelled_at = now(),
 							cancelled_by = ${record.actorUserId}, updated_by = ${record.actorUserId},
 							updated_at = now(), version = version + 1
 						WHERE id = ${record.invoiceId} AND organization_id = ${record.organizationId}
-							AND EXISTS (SELECT 1 FROM eligible)
-						RETURNING id
-					),
-					projected AS (
-						UPDATE supplier_balance_projection
-						SET open_balance = (
-							open_balance::numeric - (SELECT total_amount FROM eligible)
-						)::text, version = version + 1,
-							updated_by = ${record.actorUserId}, updated_at = now()
-						WHERE organization_id = ${record.organizationId}
-							AND supplier_party_id = (SELECT supplier_party_id FROM eligible)
-							AND currency_code = (SELECT currency_code FROM eligible)
-							AND (SELECT status FROM eligible) = 'posted'
-							AND EXISTS (SELECT 1 FROM mutated)
+							AND version = ${record.expectedVersion}
+							AND status IN ('draft', 'matched')
 						RETURNING id
 					)
 					SELECT mutated.id FROM mutated
 				`,
 			]);
 			if (rows[0] === undefined)
-				return fail("CONFLICT", "Supplier invoice cancel conflict");
+				return fail(
+					"CONFLICT",
+					"Supplier invoice cancel conflict — only draft or matched invoices may be cancelled",
+				);
 			return reload(
 				this,
 				record.organizationId,

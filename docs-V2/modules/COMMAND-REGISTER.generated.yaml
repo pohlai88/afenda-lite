@@ -45,19 +45,25 @@ commands:
     permission: fulfillment.manage
   - id: inventory.movement.create
     moduleId: inventory
-    permission: inventory.manage
+    permission: inventory.movement.create
   - id: inventory.movement.line.add
     moduleId: inventory
-    permission: inventory.manage
+    permission: inventory.movement.create
   - id: inventory.movement.post
     moduleId: inventory
-    permission: inventory.manage
+    permission: inventory.movement.post
+  - id: inventory.movement.cancel
+    moduleId: inventory
+    permission: inventory.movement.cancel
+  - id: inventory.movement.reverse
+    moduleId: inventory
+    permission: inventory.movement.post
   - id: inventory.stock.reserve
     moduleId: inventory
-    permission: inventory.manage
+    permission: inventory.reservation.create
   - id: inventory.reservation.release
     moduleId: inventory
-    permission: inventory.manage
+    permission: inventory.reservation.release
   - id: master_data.party.create
     moduleId: master-data
     permission: master_data.manage
@@ -274,7 +280,7 @@ commands:
   - id: payables.credit_note.issue
     moduleId: payables
     permission: payables.manage
-  - id: payables.allocation.create
+  - id: payables.payment.apply
     moduleId: payables
     permission: payables.manage
   - id: payables.invoice.cancel

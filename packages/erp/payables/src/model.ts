@@ -1,6 +1,11 @@
 import type { Result } from "@afenda/errors/result";
 
 import type { PayablesAuthorizationPort } from "./authorization";
+import type {
+	GoodsReceiptMatchQueryPort,
+	PostedPaymentQueryPort,
+	PurchaseOrderMatchQueryPort,
+} from "./ports";
 
 export const SUPPLIER_INVOICE_STATUSES = [
 	"draft",
@@ -9,6 +14,14 @@ export const SUPPLIER_INVOICE_STATUSES = [
 	"cancelled",
 ] as const;
 export type SupplierInvoiceStatus = (typeof SUPPLIER_INVOICE_STATUSES)[number];
+
+export const THREE_WAY_MATCH_STATUSES = [
+	"pending",
+	"matched",
+	"matched_with_tolerance",
+	"exception",
+] as const;
+export type ThreeWayMatchStatus = (typeof THREE_WAY_MATCH_STATUSES)[number];
 
 export type SupplierInvoiceLine = {
 	id: string;
@@ -30,7 +43,7 @@ export type ThreeWayMatchResult = {
 	invoiceId: string;
 	purchaseOrderId: string;
 	goodsReceiptId: string;
-	result: "matched";
+	result: ThreeWayMatchStatus;
 	matchedBy: string;
 	matchedAt: Date;
 };
@@ -132,6 +145,7 @@ export type PayablesStore = {
 		invoiceId: string;
 		purchaseOrderId: string;
 		goodsReceiptId: string;
+		matchStatus: ThreeWayMatchStatus;
 		expectedVersion: number;
 		actorUserId: string;
 		correlationId: string;
@@ -150,7 +164,7 @@ export type PayablesStore = {
 			amount: string;
 		},
 	): Promise<Result<SupplierInvoice>>;
-	allocate(record: {
+	applyPayment(record: {
 		organizationId: string;
 		invoiceId: string;
 		amount: string;
@@ -186,4 +200,16 @@ export type PayablesCommandOptions = {
 	store?: PayablesStore;
 	authorization?: PayablesAuthorizationPort;
 	effects?: PayablesEffects;
+	postedPayment?: PostedPaymentQueryPort;
+	purchaseOrderMatch?: PurchaseOrderMatchQueryPort;
+	goodsReceiptMatch?: GoodsReceiptMatchQueryPort;
 };
+
+export type {
+	GoodsReceiptMatchBasis,
+	GoodsReceiptMatchQueryPort,
+	PostedPaymentBasis,
+	PostedPaymentQueryPort,
+	PurchaseOrderMatchBasis,
+	PurchaseOrderMatchQueryPort,
+} from "./ports";

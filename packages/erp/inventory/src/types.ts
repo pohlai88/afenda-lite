@@ -3,17 +3,36 @@ export const STOCK_MOVEMENT_TYPES = [
 	"issue",
 	"transfer",
 	"adjustment",
-	"reservation",
-	"reservation_release",
 ] as const;
 export type StockMovementType = (typeof STOCK_MOVEMENT_TYPES)[number];
 
-export const STOCK_MOVEMENT_STATUSES = ["draft", "posted"] as const;
+export const STOCK_MOVEMENT_STATUSES = [
+	"draft",
+	"posted",
+	"cancelled",
+] as const;
 export type StockMovementStatus = (typeof STOCK_MOVEMENT_STATUSES)[number];
 
-export const STOCK_RESERVATION_STATUSES = ["active", "released"] as const;
+export const STOCK_RESERVATION_STATUSES = [
+	"active",
+	"partially_consumed",
+	"consumed",
+	"released",
+	"expired",
+	"cancelled",
+] as const;
 export type StockReservationStatus =
 	(typeof STOCK_RESERVATION_STATUSES)[number];
+
+export const INVENTORY_MOVEMENT_SOURCES = [
+	"receiving",
+	"fulfillment",
+	"manual_adjustment",
+	"opening_balance",
+	"transfer",
+] as const;
+export type InventoryMovementSource =
+	(typeof INVENTORY_MOVEMENT_SOURCES)[number];
 
 export type StockMovementLine = {
 	id: string;
@@ -27,6 +46,7 @@ export type StockMovementLine = {
 	baseUomCode: string;
 	/** Decimal quantity as normalized string (precision preserved). */
 	quantity: string;
+	lineIdempotencyKey: string;
 	version: number;
 	createdBy: string;
 	updatedBy: string;
@@ -41,6 +61,7 @@ export type StockMovement = {
 	normalizedCode: string;
 	movementType: StockMovementType;
 	status: StockMovementStatus;
+	source: InventoryMovementSource;
 	warehouseId: string | null;
 	warehouseCode: string | null;
 	warehouseName: string | null;
@@ -50,12 +71,27 @@ export type StockMovement = {
 	toWarehouseId: string | null;
 	toWarehouseCode: string | null;
 	toWarehouseName: string | null;
+	/** Linked reservation when issue consumes a reservation. */
 	reservationId: string | null;
+	/** Posted movement this reverses (compensating movement). */
+	reversesMovementId: string | null;
+	adjustmentReasonCode: string | null;
+	adjustmentNote: string | null;
+	sourceModule: string | null;
+	sourceAggregateId: string | null;
+	sourceEventId: string | null;
+	sourceEventVersion: number | null;
+	sourceLineId: string | null;
+	createIdempotencyKey: string;
+	postIdempotencyKey: string | null;
+	cancelIdempotencyKey: string | null;
 	version: number;
 	createdBy: string;
 	updatedBy: string;
 	postedAt: Date | null;
 	postedBy: string | null;
+	cancelledAt: Date | null;
+	cancelledBy: string | null;
 	createdAt: Date;
 	updatedAt: Date;
 	lines: StockMovementLine[];
@@ -68,6 +104,8 @@ export type StockBalance = {
 	warehouseCode: string;
 	itemId: string;
 	itemCode: string;
+	baseUomId: string | null;
+	baseUomCode: string | null;
 	onHand: string;
 	reserved: string;
 	available: string;
@@ -75,6 +113,22 @@ export type StockBalance = {
 	updatedBy: string;
 	createdAt: Date;
 	updatedAt: Date;
+};
+
+/** Availability projection — available = onHand − active reserved (no ATP). */
+export type StockAvailability = {
+	organizationId: string;
+	warehouseId: string;
+	warehouseCode: string;
+	itemId: string;
+	itemCode: string;
+	baseUomId: string | null;
+	baseUomCode: string | null;
+	onHandQuantity: string;
+	reservedQuantity: string;
+	availableQuantity: string;
+	asOfLedgerSequence: number;
+	balanceVersion: number;
 };
 
 export type StockReservation = {
@@ -92,8 +146,9 @@ export type StockReservation = {
 	baseUomId: string;
 	baseUomCode: string;
 	quantity: string;
-	sourceMovementId: string | null;
-	releaseMovementId: string | null;
+	consumedQuantity: string;
+	createIdempotencyKey: string;
+	releaseIdempotencyKey: string | null;
 	version: number;
 	createdBy: string;
 	updatedBy: string;
@@ -118,6 +173,7 @@ export type StockLedgerEntry = {
 	onHandAfter: string;
 	reservedAfter: string;
 	availableAfter: string;
+	ledgerSequence: number;
 	actorUserId: string;
 	correlationId: string;
 	createdAt: Date;

@@ -1,6 +1,6 @@
 "use server";
 
-import { requireRole } from "@afenda/auth";
+import { getSession } from "@afenda/auth";
 import { createCorrelationId } from "@afenda/http";
 import {
 	createItemVariant,
@@ -116,7 +116,7 @@ export async function createItemVariantAction(
 	formData: FormData,
 ): Promise<CreateItemVariantActionState> {
 	const correlationId = createCorrelationId();
-	const session = await requireRole("operator");
+	const session = await getSession();
 
 	const parsed = parseSchema(createItemVariantFormSchema, {
 		templateId: formData.get("templateId"),

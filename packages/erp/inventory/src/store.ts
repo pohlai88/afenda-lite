@@ -2,6 +2,8 @@ import type { Result } from "@afenda/errors/result";
 
 import type { MutationPorts } from "./ports";
 import type {
+	InventoryMovementSource,
+	StockAvailability,
 	StockBalance,
 	StockMovement,
 	StockMovementLine,
@@ -15,6 +17,7 @@ export type MovementCreateRecord = {
 	code: string;
 	normalizedCode: string;
 	movementType: StockMovementType;
+	source: InventoryMovementSource;
 	warehouseId: string | null;
 	warehouseCode: string | null;
 	warehouseName: string | null;
@@ -25,6 +28,15 @@ export type MovementCreateRecord = {
 	toWarehouseCode: string | null;
 	toWarehouseName: string | null;
 	reservationId: string | null;
+	reversesMovementId: string | null;
+	adjustmentReasonCode: string | null;
+	adjustmentNote: string | null;
+	sourceModule: string | null;
+	sourceAggregateId: string | null;
+	sourceEventId: string | null;
+	sourceEventVersion: number | null;
+	sourceLineId: string | null;
+	createIdempotencyKey: string;
 	createdBy: string;
 };
 
@@ -37,6 +49,8 @@ export type MovementLineCreateRecord = {
 	baseUomId: string;
 	baseUomCode: string;
 	quantity: string;
+	lineIdempotencyKey: string;
+	expectedVersion: number;
 	createdBy: string;
 };
 
@@ -45,8 +59,40 @@ export type MovementPostRecord = {
 	movementId: string;
 	expectedVersion: number;
 	actorUserId: string;
-	/** Required when posting reservation_release — optimistic concurrency on reservation. */
-	reservationExpectedVersion?: number;
+	postIdempotencyKey: string;
+};
+
+export type MovementCancelRecord = {
+	organizationId: string;
+	movementId: string;
+	expectedVersion: number;
+	actorUserId: string;
+	cancelIdempotencyKey: string;
+};
+
+export type ReservationCreateRecord = {
+	organizationId: string;
+	code: string;
+	normalizedCode: string;
+	warehouseId: string;
+	warehouseCode: string;
+	warehouseName: string;
+	itemId: string;
+	itemCode: string;
+	itemName: string;
+	baseUomId: string;
+	baseUomCode: string;
+	quantity: string;
+	createIdempotencyKey: string;
+	createdBy: string;
+};
+
+export type ReservationReleaseRecord = {
+	organizationId: string;
+	reservationId: string;
+	expectedVersion: number;
+	actorUserId: string;
+	releaseIdempotencyKey: string;
 };
 
 export type MovementListFilter = {
@@ -79,16 +125,63 @@ export type InventoryStore = {
 		ports: MutationPorts,
 		meta: { correlationId: string },
 	): Promise<Result<StockMovement>>;
+	cancelMovement(
+		record: MovementCancelRecord,
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<StockMovement>>;
+	reserveStock(
+		record: ReservationCreateRecord,
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<StockReservation>>;
+	releaseReservation(
+		record: ReservationReleaseRecord,
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<StockReservation>>;
 	getMovementById(
 		organizationId: string,
 		id: string,
 	): Promise<Result<StockMovement | null>>;
+	getMovementByCreateIdempotencyKey(
+		organizationId: string,
+		createIdempotencyKey: string,
+	): Promise<Result<StockMovement | null>>;
 	listMovements(filter: MovementListFilter): Promise<Result<StockMovement[]>>;
-	getAvailability(filter: AvailabilityFilter): Promise<Result<StockBalance[]>>;
+	getAvailability(
+		filter: AvailabilityFilter,
+	): Promise<Result<StockAvailability[]>>;
 	getReservationById(
 		organizationId: string,
 		id: string,
 	): Promise<Result<StockReservation | null>>;
+	getReservationByCreateIdempotencyKey(
+		organizationId: string,
+		createIdempotencyKey: string,
+	): Promise<Result<StockReservation | null>>;
+	/** Ledger row count for availability asOfLedgerSequence (org-scoped). */
+	getLedgerSequence(organizationId: string): Promise<Result<number>>;
+	listLedgerEntries(organizationId: string): Promise<
+		Result<
+			Array<{
+				warehouseId: string;
+				itemId: string;
+				quantityDelta: string;
+			}>
+		>
+	>;
+	listBalances(organizationId: string): Promise<Result<StockBalance[]>>;
+	listActiveReservations(organizationId: string): Promise<
+		Result<
+			Array<{
+				warehouseId: string;
+				itemId: string;
+				quantity: string;
+				consumedQuantity: string;
+			}>
+		>
+	>;
 };
 
 export function parseQuantity(value: string): number {
@@ -114,6 +207,8 @@ export type BalanceEffect = {
 	warehouseCode: string;
 	itemId: string;
 	itemCode: string;
+	baseUomId: string | null;
+	baseUomCode: string | null;
 	onHandDelta: number;
 	reservedDelta: number;
 	availableDelta: number;
@@ -122,8 +217,9 @@ export type BalanceEffect = {
 };
 
 /**
- * Compute per-warehouse balance deltas for a posted movement.
- * Callers must enforce stock availability before applying.
+ * Compute per-warehouse balance deltas for a posted physical movement.
+ * Reservations never flow through this helper — they use reserve/release store methods.
+ * In-transit transfers are not supported; both legs apply in one post.
  */
 export function computeBalanceEffects(
 	movement: StockMovement,
@@ -131,6 +227,10 @@ export function computeBalanceEffects(
 	const effects: BalanceEffect[] = [];
 	for (const line of movement.lines) {
 		const qty = parseQuantity(line.quantity);
+		const uom = {
+			baseUomId: line.baseUomId,
+			baseUomCode: line.baseUomCode,
+		};
 		switch (movement.movementType) {
 			case "receipt": {
 				if (movement.warehouseId === null || movement.warehouseCode === null) {
@@ -141,6 +241,7 @@ export function computeBalanceEffects(
 					warehouseCode: movement.warehouseCode,
 					itemId: line.itemId,
 					itemCode: line.itemCode,
+					...uom,
 					onHandDelta: qty,
 					reservedDelta: 0,
 					availableDelta: qty,
@@ -158,6 +259,7 @@ export function computeBalanceEffects(
 					warehouseCode: movement.warehouseCode,
 					itemId: line.itemId,
 					itemCode: line.itemCode,
+					...uom,
 					onHandDelta: -qty,
 					reservedDelta: 0,
 					availableDelta: -qty,
@@ -180,6 +282,7 @@ export function computeBalanceEffects(
 					warehouseCode: movement.fromWarehouseCode,
 					itemId: line.itemId,
 					itemCode: line.itemCode,
+					...uom,
 					onHandDelta: -qty,
 					reservedDelta: 0,
 					availableDelta: -qty,
@@ -191,6 +294,7 @@ export function computeBalanceEffects(
 					warehouseCode: movement.toWarehouseCode,
 					itemId: line.itemId,
 					itemCode: line.itemCode,
+					...uom,
 					onHandDelta: qty,
 					reservedDelta: 0,
 					availableDelta: qty,
@@ -208,44 +312,11 @@ export function computeBalanceEffects(
 					warehouseCode: movement.warehouseCode,
 					itemId: line.itemId,
 					itemCode: line.itemCode,
+					...uom,
 					onHandDelta: qty,
 					reservedDelta: 0,
 					availableDelta: qty,
 					quantityDelta: qty,
-					movementLineId: line.id,
-				});
-				break;
-			}
-			case "reservation": {
-				if (movement.warehouseId === null || movement.warehouseCode === null) {
-					throw new Error("Reservation movement missing warehouse");
-				}
-				effects.push({
-					warehouseId: movement.warehouseId,
-					warehouseCode: movement.warehouseCode,
-					itemId: line.itemId,
-					itemCode: line.itemCode,
-					onHandDelta: 0,
-					reservedDelta: qty,
-					availableDelta: -qty,
-					quantityDelta: 0,
-					movementLineId: line.id,
-				});
-				break;
-			}
-			case "reservation_release": {
-				if (movement.warehouseId === null || movement.warehouseCode === null) {
-					throw new Error("Reservation release movement missing warehouse");
-				}
-				effects.push({
-					warehouseId: movement.warehouseId,
-					warehouseCode: movement.warehouseCode,
-					itemId: line.itemId,
-					itemCode: line.itemCode,
-					onHandDelta: 0,
-					reservedDelta: -qty,
-					availableDelta: qty,
-					quantityDelta: 0,
 					movementLineId: line.id,
 				});
 				break;

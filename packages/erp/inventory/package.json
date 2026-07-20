@@ -8,6 +8,14 @@
 			"types": "./src/index.ts",
 			"default": "./src/index.ts"
 		},
+		"./adapters/drizzle": {
+			"types": "./src/adapters/drizzle/index.ts",
+			"default": "./src/adapters/drizzle/index.ts"
+		},
+		"./testing": {
+			"types": "./src/testing/index.ts",
+			"default": "./src/testing/index.ts"
+		},
 		"./module-manifest": {
 			"types": "./src/module.manifest.ts",
 			"default": "./src/module.manifest.ts"
@@ -17,7 +25,8 @@
 		"lint": "biome check .",
 		"typecheck": "tsc --noEmit -p tsconfig.json",
 		"test": "vitest run --config ../../../testing/vitest.config.ts --project inventory",
-		"check": "pnpm typecheck && pnpm test"
+		"check": "pnpm typecheck && pnpm test",
+		"reconcile": "tsx src/reconcile-cli.ts"
 	},
 	"dependencies": {
 		"@afenda/audit": "workspace:*",
@@ -31,6 +40,7 @@
 	"devDependencies": {
 		"@afenda/config": "workspace:*",
 		"@types/node": "catalog:",
+		"tsx": "catalog:",
 		"typescript": "catalog:"
 	}
 }

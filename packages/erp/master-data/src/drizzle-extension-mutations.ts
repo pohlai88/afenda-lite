@@ -30,6 +30,7 @@ import { fail, failFromUnknown, ok, type Result } from "@afenda/errors/result";
 import type { MasterFailureDetails } from "./contracts/reasons";
 import { mapItem, mapParty, mapWarehouse } from "./map-row";
 import type { MutationPorts } from "./ports";
+import { isPositiveIntegerFactor } from "./shared/uom-factor";
 import type { LifecycleRecord } from "./store";
 import type {
 	ItemAliasCreateRecord,
@@ -489,6 +490,41 @@ export async function drizzleTransitionPartyRole(
 			return fail("CONFLICT", "Party role version conflict", {
 				reason: "MASTER_VERSION_CONFLICT",
 			} satisfies MasterFailureDetails);
+		}
+		// Active party cannot lose its final active role (reverse of activation invariant).
+		if (
+			record.toStatus === "retired" &&
+			existing.status === "active" &&
+			existing.retiredAt === null
+		) {
+			const [partyRow] = await db
+				.select({ status: mdParty.status })
+				.from(mdParty)
+				.where(
+					and(
+						eq(mdParty.id, existing.partyId),
+						eq(mdParty.organizationId, record.organizationId),
+					),
+				)
+				.limit(1);
+			if (partyRow?.status === "active") {
+				const activeCount = await drizzleCountActivePartyRoles(
+					record.organizationId,
+					existing.partyId,
+				);
+				if (!activeCount.ok) {
+					return activeCount;
+				}
+				if (activeCount.data <= 1) {
+					return fail(
+						"CONFLICT",
+						"An active party cannot lose its final active role",
+						{
+							reason: "MASTER_FINAL_ACTIVE_ROLE",
+						} satisfies MasterFailureDetails,
+					);
+				}
+			}
 		}
 		const changesJson = fieldChangeJson(
 			"status",
@@ -1364,6 +1400,18 @@ export async function drizzleCreateItemUom(
 			return fail("BAD_REQUEST", "UoM dimension mismatch", {
 				reason: "MASTER_INVALID_UOM_CONVERSION",
 			} satisfies MasterFailureDetails);
+		}
+		if (
+			!isPositiveIntegerFactor(record.toBaseNumerator) ||
+			!isPositiveIntegerFactor(record.toBaseDenominator)
+		) {
+			return fail(
+				"BAD_REQUEST",
+				"UoM conversion factors must be positive non-zero integers",
+				{
+					reason: "MASTER_INVALID_UOM_CONVERSION",
+				} satisfies MasterFailureDetails,
+			);
 		}
 	} catch (error) {
 		return failFromUnknown(error, "Failed to validate item UoM");

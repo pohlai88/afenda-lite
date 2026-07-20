@@ -10,7 +10,7 @@ import {
 	Input,
 	Spinner,
 } from "@afenda/ui-system";
-import { useActionState } from "react";
+import { useActionState, useMemo } from "react";
 
 import {
 	type ReleaseReservationActionState,
@@ -21,21 +21,25 @@ import { actionFieldMessage } from "@/modules/platform/schemas/action-result";
 const initialState: ReleaseReservationActionState = null;
 
 type ReleaseReservationFormProps = {
-	canManage: boolean;
+	canRelease: boolean;
 };
 
 /**
- * Release active reservation — CAPABLE when `inventory.manage` is granted.
+ * Release active reservation — returns the released `StockReservation`.
  */
 export function ReleaseReservationForm({
-	canManage,
+	canRelease,
 }: ReleaseReservationFormProps) {
 	const [state, formAction, pending] = useActionState(
 		releaseReservationAction,
 		initialState,
 	);
+	const idempotencyKey = useMemo(
+		() => `release:${crypto.randomUUID()}`,
+		[state],
+	);
 
-	if (!canManage) {
+	if (!canRelease) {
 		return (
 			<Alert role="status">
 				<AlertTitle>Release unavailable</AlertTitle>
@@ -47,13 +51,11 @@ export function ReleaseReservationForm({
 		);
 	}
 
-	const codeError = actionFieldMessage(state, "code");
 	const reservationError = actionFieldMessage(state, "reservationId");
 	const versionError = actionFieldMessage(state, "expectedVersion");
 	const showFormError =
 		!pending &&
 		state?.ok === false &&
-		codeError === undefined &&
 		reservationError === undefined &&
 		versionError === undefined;
 
@@ -67,27 +69,15 @@ export function ReleaseReservationForm({
 				<Alert role="status">
 					<AlertTitle>Reservation released</AlertTitle>
 					<AlertDescription>
-						{state.data.movement.code} · reservation_release posted.
+						{state.data.reservation.code} · {state.data.reservation.status} ·
+						released.
 					</AlertDescription>
 				</Alert>
 			) : null}
 			{showFormError && state?.ok === false ? (
 				<FormError>{state.message}</FormError>
 			) : null}
-			<FormField
-				label="Release movement code"
-				required
-				fieldId="stock-release-code"
-				error={codeError}
-			>
-				<Input
-					id="stock-release-code"
-					name="code"
-					required
-					autoComplete="off"
-					disabled={pending}
-				/>
-			</FormField>
+			<input type="hidden" name="idempotencyKey" value={idempotencyKey} readOnly />
 			<FormField
 				label="Reservation id"
 				required

@@ -1,6 +1,6 @@
 "use server";
 
-import { requireRole } from "@afenda/auth";
+import { getSession } from "@afenda/auth";
 import { createCorrelationId } from "@afenda/http";
 import { type ItemTemplate, listItemTemplates } from "@afenda/master-data";
 import { mapPackageResult } from "@/app/actions/map-package-result";
@@ -21,7 +21,7 @@ export async function listItemTemplatesAction(): Promise<
 	ActionResult<ListItemTemplatesActionData>
 > {
 	const correlationId = createCorrelationId();
-	const session = await requireRole("operator");
+	const session = await getSession();
 
 	const permissionDenied = await forbidUnlessPermission(
 		session,

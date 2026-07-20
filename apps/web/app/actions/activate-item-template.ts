@@ -1,6 +1,6 @@
 "use server";
 
-import { requireRole } from "@afenda/auth";
+import { getSession } from "@afenda/auth";
 import { createCorrelationId } from "@afenda/http";
 import { activateItemTemplate, type ItemTemplate } from "@afenda/master-data";
 import { revalidatePath } from "next/cache";
@@ -41,7 +41,7 @@ export async function activateItemTemplateAction(
 	formData: FormData,
 ): Promise<ActivateItemTemplateActionState> {
 	const correlationId = createCorrelationId();
-	const session = await requireRole("operator");
+	const session = await getSession();
 
 	const parsed = parseSchema(activateItemTemplateFormSchema, {
 		id: formData.get("id"),

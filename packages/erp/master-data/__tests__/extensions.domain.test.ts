@@ -10,6 +10,7 @@ import {
 	createPartyRole,
 	findItemByAlias,
 	findPartyByExternalId,
+	retirePartyRole,
 } from "../src/extensions";
 import { createItem } from "../src/item";
 import { createItemGroup } from "../src/item-group";
@@ -65,6 +66,84 @@ describe("@afenda/master-data extensions", () => {
 		}
 		expect((activated.details as { reason?: string }).reason).toBe(
 			"MASTER_INVALID_STATE",
+		);
+	});
+
+	it("rejects retiring the final active role of an active party", async () => {
+		const { options } = createMasterDataTestHarness();
+
+		const party = await createParty(
+			{
+				...ctx(),
+				code: "FINALROLE",
+				name: "Final Role Co",
+				partyKind: "organization",
+			},
+			options,
+		);
+		expect(party.ok).toBe(true);
+		if (!party.ok) {
+			return;
+		}
+
+		const role = await createPartyRole(
+			{
+				...ctx(),
+				partyId: party.data.id,
+				roleCode: "customer",
+			},
+			options,
+		);
+		expect(role.ok).toBe(true);
+		if (!role.ok) {
+			return;
+		}
+
+		const activatedRole = await activatePartyRole(
+			{
+				...ctx(),
+				id: role.data.id,
+				expectedVersion: role.data.version,
+			},
+			options,
+		);
+		expect(activatedRole.ok).toBe(true);
+		if (!activatedRole.ok) {
+			return;
+		}
+
+		const cr = await approvedActivatePartyChangeRequest(
+			{ organizationId: ctx().organizationId, partyId: party.data.id },
+			options,
+		);
+		const activatedParty = await activateParty(
+			{
+				...ctx(),
+				id: party.data.id,
+				expectedVersion: party.data.version,
+				changeRequestId: cr.id,
+			},
+			options,
+		);
+		expect(activatedParty.ok).toBe(true);
+		if (!activatedParty.ok) {
+			return;
+		}
+
+		const retired = await retirePartyRole(
+			{
+				...ctx(),
+				id: activatedRole.data.id,
+				expectedVersion: activatedRole.data.version,
+			},
+			options,
+		);
+		expect(retired.ok).toBe(false);
+		if (retired.ok) {
+			return;
+		}
+		expect((retired.details as { reason?: string }).reason).toBe(
+			"MASTER_FINAL_ACTIVE_ROLE",
 		);
 	});
 
@@ -124,6 +203,61 @@ describe("@afenda/master-data extensions", () => {
 			options,
 		);
 		expect(dup.ok).toBe(false);
+	});
+
+	it("rejects item UoM with zero or non-integer conversion factors", async () => {
+		const { options } = createMasterDataTestHarness();
+
+		const group = await createItemGroup(
+			{ ...ctx(), code: "G-FACTOR", name: "Factor Group" },
+			options,
+		);
+		expect(group.ok).toBe(true);
+		if (!group.ok) {
+			return;
+		}
+
+		const item = await createItem(
+			{
+				...ctx(),
+				code: "SKU-FACTOR",
+				name: "Factor Item",
+				itemType: "stock",
+				baseUomId: EA_UOM_ID,
+				itemGroupId: group.data.id,
+			},
+			options,
+		);
+		expect(item.ok).toBe(true);
+		if (!item.ok) {
+			return;
+		}
+
+		const zero = await createItemUom(
+			{
+				...ctx(),
+				itemId: item.data.id,
+				uomId: EA_UOM_ID,
+				toBaseNumerator: "0",
+				toBaseDenominator: "1",
+				usage: "purchase",
+			},
+			options,
+		);
+		expect(zero.ok).toBe(false);
+
+		const decimal = await createItemUom(
+			{
+				...ctx(),
+				itemId: item.data.id,
+				uomId: EA_UOM_ID,
+				toBaseNumerator: "1.5",
+				toBaseDenominator: "1",
+				usage: "purchase",
+			},
+			options,
+		);
+		expect(decimal.ok).toBe(false);
 	});
 
 	it("rejects item UoM when dimension mismatches base UoM", async () => {

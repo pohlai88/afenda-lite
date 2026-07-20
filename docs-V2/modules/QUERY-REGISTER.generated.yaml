@@ -18,13 +18,13 @@ queries:
     permission: fulfillment.read
   - id: inventory.movement.get
     moduleId: inventory
-    permission: inventory.read
+    permission: inventory.movement.read
   - id: inventory.movement.list
     moduleId: inventory
-    permission: inventory.read
+    permission: inventory.movement.read
   - id: inventory.stock.availability
     moduleId: inventory
-    permission: inventory.read
+    permission: inventory.availability.read
   - id: master_data.party.get_by_id
     moduleId: master-data
     permission: master_data.read

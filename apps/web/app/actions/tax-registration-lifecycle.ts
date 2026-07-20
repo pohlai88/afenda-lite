@@ -1,4 +1,4 @@
-import { requireRole } from "@afenda/auth";
+import { getSession } from "@afenda/auth";
 import type { Result } from "@afenda/errors/result";
 import { createCorrelationId } from "@afenda/http";
 import type { TaxRegistration } from "@afenda/master-data";
@@ -56,7 +56,7 @@ export async function runTaxRegistrationLifecycle(
 	formData: FormData,
 ): Promise<TaxRegistrationLifecycleActionState> {
 	const correlationId = createCorrelationId();
-	const session = await requireRole("operator");
+	const session = await getSession();
 
 	const parsed = parseSchema(taxRegistrationLifecycleFormSchema, {
 		taxRegistrationId: formData.get("taxRegistrationId"),

@@ -1,6 +1,6 @@
 "use server";
 
-import { requireRole } from "@afenda/auth";
+import { getSession } from "@afenda/auth";
 import { createCorrelationId } from "@afenda/http";
 import {
 	listTaxRegistrations,
@@ -29,7 +29,7 @@ export async function listTaxRegistrationsAction(input?: {
 	partyId?: string;
 }): Promise<ActionResult<ListTaxRegistrationsActionData>> {
 	const correlationId = createCorrelationId();
-	const session = await requireRole("operator");
+	const session = await getSession();
 
 	const permissionDenied = await forbidUnlessPermission(
 		session,

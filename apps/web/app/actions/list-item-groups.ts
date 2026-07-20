@@ -1,6 +1,6 @@
 "use server";
 
-import { requireRole } from "@afenda/auth";
+import { getSession } from "@afenda/auth";
 import { createCorrelationId } from "@afenda/http";
 import { type ItemGroup, listItemGroups } from "@afenda/master-data";
 import { mapPackageResult } from "@/app/actions/map-package-result";
@@ -25,7 +25,7 @@ export async function listItemGroupsAction(input?: {
 	status?: ItemGroup["status"];
 }): Promise<ActionResult<ListItemGroupsActionData>> {
 	const correlationId = createCorrelationId();
-	const session = await requireRole("operator");
+	const session = await getSession();
 
 	const permissionDenied = await forbidUnlessPermission(
 		session,

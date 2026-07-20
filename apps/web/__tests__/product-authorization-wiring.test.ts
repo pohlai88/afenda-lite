@@ -146,6 +146,10 @@ describe("N11 product authorization wiring", () => {
 			"app/actions/activate-party.ts": ["master_data.manage"],
 			"app/actions/merge-parties.ts": ["master_data.manage"],
 			"app/actions/create-party-role.ts": ["master_data.manage"],
+			"app/actions/create-item.ts": ["master_data.manage"],
+			"app/actions/create-item-group.ts": ["master_data.manage"],
+			"app/actions/create-warehouse.ts": ["master_data.manage"],
+			"app/actions/master-root-lifecycle.ts": ["master_data.manage"],
 			"app/actions/list-payment-terms.ts": ["master_data.read"],
 			"app/actions/create-payment-term.ts": ["master_data.manage"],
 			"app/actions/update-payment-term.ts": ["master_data.manage"],
@@ -159,6 +163,7 @@ describe("N11 product authorization wiring", () => {
 			"app/actions/reject-change-request.ts": ["master_data.approve"],
 			"app/actions/validate-master-data-import.ts": ["master_data.manage"],
 			"app/actions/apply-master-data-import.ts": ["master_data.import_approve"],
+			"app/actions/search-master-data.ts": ["master_data.read"],
 			"app/actions/list-sales-orders.ts": ["sales.order.list"],
 			"app/actions/get-sales-order.ts": ["sales.order.read"],
 			"app/actions/create-sales-order.ts": ["sales.order.create"],
@@ -172,14 +177,19 @@ describe("N11 product authorization wiring", () => {
 			"app/actions/post-purchase-order.ts": ["purchasing.order.post"],
 			"app/actions/cancel-purchase-order.ts": ["purchasing.order.cancel"],
 			"app/actions/close-purchase-order.ts": ["purchasing.order.close"],
-			"app/actions/list-stock-movements.ts": ["inventory.read"],
-			"app/actions/get-stock-movement.ts": ["inventory.read"],
-			"app/actions/get-stock-availability.ts": ["inventory.read"],
-			"app/actions/create-stock-movement.ts": ["inventory.manage"],
-			"app/actions/add-stock-movement-line.ts": ["inventory.manage"],
-			"app/actions/post-stock-movement.ts": ["inventory.manage"],
-			"app/actions/reserve-stock.ts": ["inventory.manage"],
-			"app/actions/release-reservation.ts": ["inventory.manage"],
+			"app/actions/list-stock-movements.ts": ["inventory.movement.read"],
+			"app/actions/get-stock-movement.ts": ["inventory.movement.read"],
+			"app/actions/get-stock-availability.ts": ["inventory.availability.read"],
+			"app/actions/create-stock-movement.ts": [
+				"inventory.movement.create",
+				"inventory.adjustment.post",
+			],
+			"app/actions/add-stock-movement-line.ts": ["inventory.movement.create"],
+			"app/actions/post-stock-movement.ts": ["inventory.movement.post"],
+			"app/actions/cancel-stock-movement.ts": ["inventory.movement.cancel"],
+			"app/actions/create-reversal-movement.ts": ["inventory.movement.post"],
+			"app/actions/reserve-stock.ts": ["inventory.reservation.create"],
+			"app/actions/release-reservation.ts": ["inventory.reservation.release"],
 			"app/actions/list-goods-receipts.ts": ["receiving.read"],
 			"app/actions/get-goods-receipt.ts": ["receiving.read"],
 			"app/actions/create-goods-receipt.ts": ["receiving.manage"],
@@ -214,7 +224,7 @@ describe("N11 product authorization wiring", () => {
 			"app/actions/match-supplier-invoice.ts": ["payables.manage"],
 			"app/actions/post-supplier-invoice.ts": ["payables.manage"],
 			"app/actions/issue-supplier-credit-note.ts": ["payables.manage"],
-			"app/actions/allocate-supplier-payment.ts": ["payables.manage"],
+			"app/actions/apply-supplier-payment.ts": ["payables.manage"],
 			"app/actions/cancel-supplier-invoice.ts": ["payables.manage"],
 			"app/actions/get-payment.ts": ["payments.read"],
 			"app/actions/list-payments.ts": ["payments.read"],
@@ -240,6 +250,7 @@ describe("N11 product authorization wiring", () => {
 				"master_data.read",
 				"master_data.manage",
 				"master_data.approve",
+				"master_data.import_approve",
 			],
 			"features/sales/sales-shell.tsx": [
 				"sales.order.read",
@@ -257,8 +268,13 @@ describe("N11 product authorization wiring", () => {
 				"purchasing.order.close",
 			],
 			"features/inventory/inventory-shell.tsx": [
-				"inventory.read",
-				"inventory.manage",
+				"inventory.movement.read",
+				"inventory.movement.create",
+				"inventory.movement.post",
+				"inventory.movement.cancel",
+				"inventory.reservation.create",
+				"inventory.reservation.release",
+				"inventory.adjustment.post",
 			],
 			"features/receiving/receiving-shell.tsx": [
 				"receiving.read",
@@ -380,19 +396,31 @@ describe("N11 product authorization wiring", () => {
 			"app/actions/match-supplier-invoice.ts",
 			"app/actions/post-supplier-invoice.ts",
 			"app/actions/issue-supplier-credit-note.ts",
-			"app/actions/allocate-supplier-payment.ts",
+			"app/actions/apply-supplier-payment.ts",
 			"app/actions/cancel-supplier-invoice.ts",
 		] as const;
 		for (const relativePath of payablesActions) {
 			const actionSource = source(relativePath);
 			expect(actionSource).toContain('from "@afenda/payables"');
-			expect(actionSource).toContain("mapPackageResult");
+			expect(
+				actionSource.includes("mapPackageResult") ||
+					actionSource.includes("runVersionedSupplierInvoiceMutation"),
+			).toBe(true);
 		}
+
+		const versionedHelper = source(
+			"app/actions/run-versioned-supplier-invoice-mutation.ts",
+		);
+		expect(versionedHelper).toContain("mapPackageResult");
+		expect(versionedHelper).toContain("revalidatePayablesPaths");
 
 		for (const relativePath of payablesActions.slice(3)) {
 			const actionSource = source(relativePath);
-			expect(actionSource).toContain('revalidatePath("/admin/payables")');
-			expect(actionSource).toContain('revalidatePath("/client/payables")');
+			expect(
+				actionSource.includes('revalidatePath("/admin/payables")') ||
+					actionSource.includes("revalidatePayablesPaths") ||
+					actionSource.includes("runVersionedSupplierInvoiceMutation"),
+			).toBe(true);
 		}
 	});
 
@@ -461,7 +489,6 @@ describe("N11 product authorization wiring", () => {
 			"app/actions/merge-parties.ts",
 			"app/actions/list-parties.ts",
 			"app/actions/list-payment-terms.ts",
-			"app/actions/create-payment-term.ts",
 			"app/actions/update-payment-term.ts",
 			"app/actions/payment-term-lifecycle.ts",
 			"app/actions/list-tax-registrations.ts",
@@ -473,6 +500,18 @@ describe("N11 product authorization wiring", () => {
 			"app/actions/reject-change-request.ts",
 		]) {
 			expect(source(relativePath)).toContain("forbidUnlessPermission");
+		}
+		for (const relativePath of [
+			"app/actions/create-payment-term.ts",
+			"app/actions/create-item.ts",
+			"app/actions/create-item-group.ts",
+			"app/actions/create-warehouse.ts",
+			"app/actions/master-root-lifecycle.ts",
+		]) {
+			expect(
+				source(relativePath),
+				`${relativePath} must use member permission helper`,
+			).toContain("runMemberPermissionAction");
 		}
 	});
 });

@@ -10,7 +10,7 @@ import {
 	Input,
 	Spinner,
 } from "@afenda/ui-system";
-import { useActionState } from "react";
+import { useActionState, useMemo } from "react";
 
 import {
 	type PostStockMovementActionState,
@@ -21,21 +21,25 @@ import { actionFieldMessage } from "@/modules/platform/schemas/action-result";
 const initialState: PostStockMovementActionState = null;
 
 type PostStockMovementFormProps = {
-	canManage: boolean;
+	canPost: boolean;
 };
 
 /**
  * Post draft stock movement — applies ledger and balance effects.
  */
 export function PostStockMovementForm({
-	canManage,
+	canPost,
 }: PostStockMovementFormProps) {
 	const [state, formAction, pending] = useActionState(
 		postStockMovementAction,
 		initialState,
 	);
+	const idempotencyKey = useMemo(
+		() => `post:${crypto.randomUUID()}`,
+		[state],
+	);
 
-	if (!canManage) {
+	if (!canPost) {
 		return (
 			<Alert role="status">
 				<AlertTitle>Post unavailable</AlertTitle>
@@ -49,11 +53,13 @@ export function PostStockMovementForm({
 
 	const movementError = actionFieldMessage(state, "movementId");
 	const versionError = actionFieldMessage(state, "expectedVersion");
+	const idempotencyError = actionFieldMessage(state, "idempotencyKey");
 	const showFormError =
 		!pending &&
 		state?.ok === false &&
 		movementError === undefined &&
-		versionError === undefined;
+		versionError === undefined &&
+		idempotencyError === undefined;
 
 	return (
 		<form
@@ -73,6 +79,7 @@ export function PostStockMovementForm({
 			{showFormError && state?.ok === false ? (
 				<FormError>{state.message}</FormError>
 			) : null}
+			<input type="hidden" name="idempotencyKey" value={idempotencyKey} readOnly />
 			<FormField
 				label="Movement id"
 				required

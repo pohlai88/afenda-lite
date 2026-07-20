@@ -27,10 +27,12 @@ const addStockMovementLineFormSchema = z.object({
 	movementId: z.string().uuid(),
 	itemId: z.string().uuid(),
 	quantity: z.string().trim().min(1),
+	expectedVersion: z.coerce.number().int().positive(),
+	idempotencyKey: z.string().trim().min(1).max(128),
 });
 
 /**
- * Add line to draft stock movement — `inventory.manage`.
+ * Add line to draft stock movement — `inventory.movement.create`.
  */
 export async function addStockMovementLineAction(
 	_prev: AddStockMovementLineActionState,
@@ -38,7 +40,7 @@ export async function addStockMovementLineAction(
 ): Promise<AddStockMovementLineActionState> {
 	return runOperatorPermissionAction({
 		path: "addStockMovementLineAction",
-		permission: "inventory.manage",
+		permission: "inventory.movement.create",
 		safeMessage:
 			"Could not add stock movement line. Try again or contact an admin.",
 		execute: async (session, correlationId) => {
@@ -46,11 +48,13 @@ export async function addStockMovementLineAction(
 				movementId: formData.get("movementId"),
 				itemId: formData.get("itemId"),
 				quantity: formData.get("quantity"),
+				expectedVersion: formData.get("expectedVersion"),
+				idempotencyKey: formData.get("idempotencyKey"),
 			});
 			if (!parsed.success) {
 				return actionFail(
 					"VALIDATION_ERROR",
-					"Enter a valid movement, item, and quantity.",
+					"Enter a valid movement, item, quantity, and expected version.",
 					parsed.details,
 				);
 			}
@@ -63,6 +67,8 @@ export async function addStockMovementLineAction(
 					movementId: parsed.data.movementId,
 					itemId: parsed.data.itemId,
 					quantity: parsed.data.quantity,
+					expectedVersion: parsed.data.expectedVersion,
+					idempotencyKey: parsed.data.idempotencyKey,
 				},
 				createInventoryCommandOptions(),
 			);

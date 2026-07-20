@@ -1,6 +1,6 @@
 "use server";
 
-import { requireRole } from "@afenda/auth";
+import { getSession } from "@afenda/auth";
 import { createCorrelationId } from "@afenda/http";
 import {
 	MASTER_SEARCH_ENTITY_VALUES,
@@ -32,7 +32,7 @@ export async function rebuildMasterDataSearchAction(
 	input?: unknown,
 ): Promise<ActionResult<RebuildMasterDataSearchActionData>> {
 	const correlationId = createCorrelationId();
-	const session = await requireRole("operator");
+	const session = await getSession();
 
 	const parsed = parseSchema(rebuildFormSchema, input ?? {});
 	if (!parsed.success) {

@@ -1,13 +1,47 @@
-import { fail } from "@afenda/errors/result";
+import { fail, ok } from "@afenda/errors/result";
 import { describe, expect, it } from "vitest";
 
 import {
 	addSupplierInvoiceLine,
 	createDraftSupplierInvoice,
 	createMemoryPayablesStore,
+	type GoodsReceiptMatchQueryPort,
 	getSupplierInvoiceById,
 	matchSupplierInvoice,
+	type PurchaseOrderMatchQueryPort,
 } from "../src/index";
+
+const organizationId = "org-1";
+const actorUserId = "user-1";
+const supplierId = "00000000-0000-4000-8000-000000000001";
+const itemId = "00000000-0000-4000-8000-000000000002";
+const purchaseOrderId = "00000000-0000-4000-8000-000000000003";
+const goodsReceiptId = "00000000-0000-4000-8000-000000000004";
+
+const purchaseOrderMatch: PurchaseOrderMatchQueryPort = {
+	async getPurchaseOrderMatchBasis() {
+		return ok({
+			purchaseOrderId,
+			supplierPartyId: supplierId,
+			status: "posted",
+			currencyCode: "USD",
+			lines: [{ itemId, quantity: "10" }],
+		});
+	},
+};
+
+const goodsReceiptMatch: GoodsReceiptMatchQueryPort = {
+	async getGoodsReceiptMatchBasis() {
+		return ok({
+			goodsReceiptId,
+			purchaseOrderId,
+			status: "posted",
+			sourceType: "purchase_order",
+			sourceId: purchaseOrderId,
+			lines: [{ itemId, quantityReceived: "10" }],
+		});
+	},
+};
 
 describe("payables transaction rollback", () => {
 	it("rolls back match state when event emission fails", async () => {
@@ -19,17 +53,23 @@ describe("payables transaction rollback", () => {
 		};
 		const effects = {
 			async emit() {
-				return { ok: true as const, data: undefined };
+				return ok(undefined);
 			},
 		};
-		const common = { store, authorization, effects };
+		const common = {
+			store,
+			authorization,
+			effects,
+			purchaseOrderMatch,
+			goodsReceiptMatch,
+		};
 		const created = await createDraftSupplierInvoice(
 			{
-				organizationId: "org-1",
-				actorUserId: "user-1",
+				organizationId,
+				actorUserId,
 				correlationId: "create",
 				code: "SI-ROLLBACK",
-				supplierId: "00000000-0000-4000-8000-000000000001",
+				supplierId,
 				supplierCode: "S-1",
 				supplierName: "Supplier",
 				currencyCode: "USD",
@@ -39,11 +79,11 @@ describe("payables transaction rollback", () => {
 		if (!created.ok) return;
 		await addSupplierInvoiceLine(
 			{
-				organizationId: "org-1",
-				actorUserId: "user-1",
+				organizationId,
+				actorUserId,
 				correlationId: "line",
 				invoiceId: created.data.id,
-				itemId: "00000000-0000-4000-8000-000000000002",
+				itemId,
 				description: "Line",
 				quantity: "1",
 				unitPrice: "40",
@@ -52,12 +92,12 @@ describe("payables transaction rollback", () => {
 		);
 		const matched = await matchSupplierInvoice(
 			{
-				organizationId: "org-1",
-				actorUserId: "user-1",
+				organizationId,
+				actorUserId,
 				correlationId: "match",
 				invoiceId: created.data.id,
-				purchaseOrderId: "00000000-0000-4000-8000-000000000003",
-				goodsReceiptId: "00000000-0000-4000-8000-000000000004",
+				purchaseOrderId,
+				goodsReceiptId,
 				expectedVersion: 2,
 			},
 			{
@@ -71,7 +111,7 @@ describe("payables transaction rollback", () => {
 		);
 		expect(matched.ok).toBe(false);
 		const invoice = await getSupplierInvoiceById(
-			{ organizationId: "org-1", actorUserId: "user-1", id: created.data.id },
+			{ organizationId, actorUserId, id: created.data.id },
 			common,
 		);
 		expect(invoice.ok && invoice.data?.status).toBe("draft");

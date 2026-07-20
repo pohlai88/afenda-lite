@@ -10,6 +10,8 @@ const ROOT = path.resolve(
 );
 const FOREIGN_WRITE =
 	/\b(?:insert\s+into|update|delete\s+from)\s+(?:purchase_order(?:_line)?|goods_receipt(?:_line)?|receiving_discrepancy|payment|account|ledger|journal)\b/i;
+const FOREIGN_READ =
+	/\b(?:from|join)\s+(?:purchase_order(?:_line)?|goods_receipt(?:_line)?)\b/i;
 
 function sources(directory: string): string[] {
 	const result: string[] = [];
@@ -28,6 +30,13 @@ describe("payables anti-shadow boundary", () => {
 	it("does not write Purchasing, Receiving, Payments, or Accounting tables", () => {
 		const hits = sources(ROOT).filter((file) =>
 			FOREIGN_WRITE.test(readFileSync(file, "utf8")),
+		);
+		expect(hits).toEqual([]);
+	});
+
+	it("does not query purchase_order or goods_receipt tables directly", () => {
+		const hits = sources(ROOT).filter((file) =>
+			FOREIGN_READ.test(readFileSync(file, "utf8")),
 		);
 		expect(hits).toEqual([]);
 	});

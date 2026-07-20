@@ -28,7 +28,7 @@ export const payablesModuleManifest = {
 			"payables.invoice.match",
 			"payables.invoice.post",
 			"payables.credit_note.issue",
-			"payables.allocation.create",
+			"payables.payment.apply",
 			"payables.invoice.cancel",
 		],
 		queryNamespace: "payables",
@@ -71,7 +71,7 @@ export const payablesModuleManifest = {
 			"payables.invoice.match": "payables.manage",
 			"payables.invoice.post": "payables.manage",
 			"payables.credit_note.issue": "payables.manage",
-			"payables.allocation.create": "payables.manage",
+			"payables.payment.apply": "payables.manage",
 			"payables.invoice.cancel": "payables.manage",
 		},
 		queries: {
@@ -84,7 +84,9 @@ export const payablesModuleManifest = {
 		required: ["master-data"],
 	},
 	optionalIntegratesWith: [
-		{ moduleId: "purchasing", style: "events" },
-		{ moduleId: "receiving", style: "events" },
+		{ moduleId: "purchasing", style: "ports" },
+		{ moduleId: "receiving", style: "ports" },
+		{ moduleId: "payments", style: "ports" },
+		{ moduleId: "accounting", style: "events" },
 	],
 } as const satisfies AfendaModuleManifest;

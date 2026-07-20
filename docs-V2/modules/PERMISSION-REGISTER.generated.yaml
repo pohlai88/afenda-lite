@@ -13,10 +13,28 @@ permissions:
   - code: fulfillment.manage
     moduleId: fulfillment
     namespace: fulfillment
-  - code: inventory.read
+  - code: inventory.movement.create
     moduleId: inventory
     namespace: inventory
-  - code: inventory.manage
+  - code: inventory.movement.post
+    moduleId: inventory
+    namespace: inventory
+  - code: inventory.movement.cancel
+    moduleId: inventory
+    namespace: inventory
+  - code: inventory.movement.read
+    moduleId: inventory
+    namespace: inventory
+  - code: inventory.reservation.create
+    moduleId: inventory
+    namespace: inventory
+  - code: inventory.reservation.release
+    moduleId: inventory
+    namespace: inventory
+  - code: inventory.availability.read
+    moduleId: inventory
+    namespace: inventory
+  - code: inventory.adjustment.post
     moduleId: inventory
     namespace: inventory
   - code: master_data.read

@@ -26,6 +26,9 @@ events:
     id: inventory.movement.posted.v1
     moduleId: inventory
   - direction: emits
+    id: inventory.movement.cancelled.v1
+    moduleId: inventory
+  - direction: emits
     id: inventory.stock.reserved.v1
     moduleId: inventory
   - direction: emits

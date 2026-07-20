@@ -20,20 +20,11 @@ modules:
     optionalIntegratesWith:
       - moduleId: sales
         style: events
-      - moduleId: inventory
-        style: events
     required:
       - master-data
+      - inventory
   - id: inventory
-    optionalIntegratesWith:
-      - moduleId: sales
-        style: events
-      - moduleId: purchasing
-        style: events
-      - moduleId: receiving
-        style: events
-      - moduleId: fulfillment
-        style: events
+    optionalIntegratesWith: []
     required:
       - master-data
   - id: master-data
@@ -48,8 +39,12 @@ modules:
   - id: payables
     optionalIntegratesWith:
       - moduleId: purchasing
-        style: events
+        style: ports
       - moduleId: receiving
+        style: ports
+      - moduleId: payments
+        style: ports
+      - moduleId: accounting
         style: events
     required:
       - master-data
@@ -80,10 +75,9 @@ modules:
     optionalIntegratesWith:
       - moduleId: purchasing
         style: events
-      - moduleId: inventory
-        style: events
     required:
       - master-data
+      - inventory
   - id: sales
     optionalIntegratesWith:
       - moduleId: inventory

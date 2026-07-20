@@ -43,8 +43,14 @@ const ARCH023_V1_CODES = [
 	"purchasing.order.close",
 	"purchasing.order.read",
 	"purchasing.order.list",
-	"inventory.read",
-	"inventory.manage",
+	"inventory.movement.create",
+	"inventory.movement.post",
+	"inventory.movement.cancel",
+	"inventory.movement.read",
+	"inventory.reservation.create",
+	"inventory.reservation.release",
+	"inventory.availability.read",
+	"inventory.adjustment.post",
 	"receiving.read",
 	"receiving.manage",
 	"fulfillment.read",
@@ -64,7 +70,7 @@ describe("PLATFORM_PERMISSION_V1 (N10 / ARCH-023)", () => {
 		expect([...PLATFORM_PERMISSION_CODES_V1].toSorted()).toEqual(
 			[...ARCH023_V1_CODES].toSorted(),
 		);
-		expect(PLATFORM_PERMISSION_V1).toHaveLength(35);
+		expect(PLATFORM_PERMISSION_V1).toHaveLength(41);
 	});
 
 	it("isPlatformPermissionCodeV1 accepts only v1 codes", () => {
@@ -77,7 +83,9 @@ describe("PLATFORM_PERMISSION_V1 (N10 / ARCH-023)", () => {
 		expect(isPlatformPermissionCodeV1("purchasing.order.close")).toBe(true);
 		expect(isPlatformPermissionCodeV1("purchasing.read")).toBe(false);
 		expect(isPlatformPermissionCodeV1("purchasing.manage")).toBe(false);
-		expect(isPlatformPermissionCodeV1("inventory.read")).toBe(true);
+		expect(isPlatformPermissionCodeV1("inventory.movement.read")).toBe(true);
+		expect(isPlatformPermissionCodeV1("inventory.read")).toBe(false);
+		expect(isPlatformPermissionCodeV1("inventory.manage")).toBe(false);
 		expect(isPlatformPermissionCodeV1("receiving.read")).toBe(true);
 		expect(isPlatformPermissionCodeV1("fulfillment.read")).toBe(true);
 		expect(isPlatformPermissionCodeV1("receivables.read")).toBe(true);
@@ -110,10 +118,16 @@ describe("PLATFORM_PERMISSION_V1 (N10 / ARCH-023)", () => {
 				"accounting.manage",
 				"accounting.read",
 				"clients.invite",
-				"inventory.manage",
-				"inventory.read",
 				"fulfillment.manage",
 				"fulfillment.read",
+				"inventory.adjustment.post",
+				"inventory.availability.read",
+				"inventory.movement.cancel",
+				"inventory.movement.create",
+				"inventory.movement.post",
+				"inventory.movement.read",
+				"inventory.reservation.create",
+				"inventory.reservation.release",
 				"master_data.manage",
 				"master_data.read",
 				"payables.manage",
@@ -148,7 +162,8 @@ describe("PLATFORM_PERMISSION_V1 (N10 / ARCH-023)", () => {
 				"account.self",
 				"accounting.read",
 				"fulfillment.read",
-				"inventory.read",
+				"inventory.availability.read",
+				"inventory.movement.read",
 				"master_data.read",
 				"payables.read",
 				"payments.read",
@@ -166,7 +181,7 @@ describe("PLATFORM_PERMISSION_V1 (N10 / ARCH-023)", () => {
 describe.skipIf(!hasDatabase)("ensurePlatformPermissionCatalog (N10)", () => {
 	it("is idempotent and preserves template_key → role ids", async () => {
 		const first = await ensurePlatformPermissionCatalog(db);
-		expect(first.permissionCount).toBe(35);
+		expect(first.permissionCount).toBe(41);
 		expect(first.templates).toHaveLength(3);
 
 		const second = await ensurePlatformPermissionCatalog(db);
