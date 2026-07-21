@@ -27,6 +27,7 @@ import {
 	validateModuleIdentity,
 	validateModuleReferences,
 	validateMutationTablesExist,
+	validateOpenApiImports,
 	validatePermissions,
 	validatePersistenceOwnership,
 	validateSoleMutatorBoundary,
@@ -127,6 +128,7 @@ async function main() {
 	);
 	errors.push(...validateDeepImports(root));
 	errors.push(...validateMetricsImports(root));
+	errors.push(...validateOpenApiImports(root));
 	errors.push(...validateForeignSchemaImports(root, manifests));
 	errors.push(
 		...validateSoleMutatorBoundary(

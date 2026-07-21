@@ -1,7 +1,7 @@
 import { writeFileSync } from "node:fs";
 import { stringify as stringifyYaml } from "yaml";
 
-import { z } from "./zod";
+import { z } from "../zod";
 
 /** Living OPEN-001 OpenAPI version (Fumadocs + Spectral). */
 export const OPENAPI_VERSION = "3.0.3" as const;
