@@ -28,6 +28,9 @@ queries:
   - id: fulfillment.delivery.list
     moduleId: fulfillment
     permission: fulfillment.delivery.read
+  - id: human-resources.employee.get
+    moduleId: human-resources
+    permission: human-resources.employee.read
   - id: inventory.movement.get
     moduleId: inventory
     permission: inventory.movement.read

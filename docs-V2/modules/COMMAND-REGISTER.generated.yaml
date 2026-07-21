@@ -76,6 +76,9 @@ commands:
   - id: fulfillment.delivery.close
     moduleId: fulfillment
     permission: fulfillment.delivery.close
+  - id: human-resources.employee.create
+    moduleId: human-resources
+    permission: human-resources.employee.create
   - id: inventory.movement.create
     moduleId: inventory
     permission: inventory.movement.create

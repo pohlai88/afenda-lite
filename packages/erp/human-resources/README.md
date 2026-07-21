@@ -10,17 +10,26 @@ Toolchain: root `engines` **Node 24.x** · **pnpm ≥10.33.4** (`packageManager`
 
 ## Consume
 
-Workspace dependency — import permissions, port types, brands, and tenant schemas from the root barrel:
+Workspace dependency — import permissions, port types, brands, shipped commands/queries, and tenant schemas from the root barrel:
 
 ```ts
 import {
+  createEmployee,
+  getEmployeeById,
   HUMAN_RESOURCES_PERMISSION_EMPLOYEE_READ,
   type HumanResourcesAuthorizationPort,
   type MutationPorts,
 } from "@afenda/human-resources";
 ```
 
-The root barrel does not export public commands or queries today (`module-ids` command/query lists are empty). Operation IDs, mutation tables, permission codes, and event emits live in `src/module.manifest.ts` (export `@afenda/human-resources/module-manifest`).
+**Shipped public API (HR-00 disk truth):**
+
+| Id | Kind | Permission |
+| -- | ---- | ---------- |
+| `human-resources.employee.create` | command | `human-resources.employee.create` |
+| `human-resources.employee.get` | query | `human-resources.employee.read` |
+
+`HumanResourcesStore` (memory + drizzle) implements the employee create / get / idempotency path. Other capability folders under `src/{organization,recruitment,lifecycle,time,leave,performance,talent,learning,compensation-benefits}/` remain aggregate boundary markers until their domain DDL and commands land. Operation IDs, mutation tables, permission codes, and event emits live in `src/module.manifest.ts` (export `@afenda/human-resources/module-manifest`).
 
 **Authorization:** permission checks go through an injected `HumanResourcesAuthorizationPort` at the composition root — never import `@afenda/admin` here. Route-level checks in `apps/web` are not sufficient.
 
@@ -30,7 +39,7 @@ The root barrel does not export public commands or queries today (`module-ids` c
 
 | Path | Role |
 |------|------|
-| `@afenda/human-resources` | Permission codes, brands, error codes, authorization / mutation port types, tenant schemas |
+| `@afenda/human-resources` | Shipped `createEmployee` / `getEmployeeById`, permission codes, brands, error codes, authorization / mutation port types, tenant schemas |
 | `@afenda/human-resources/adapters/drizzle` | `HumanResourcesStore` type (Drizzle adapter surface) |
 | `@afenda/human-resources/testing` | Test helpers export surface |
 | `@afenda/human-resources/module-manifest` | Module manifest (`band: R1-F`, `lifecycle: scaffolded`) |
@@ -77,6 +86,7 @@ Must not import Surfaces, `apps/*`, or Next.js. See [docs-V2/monorepo](../../../
 
 | Topic | Link |
 |-------|------|
+| HR-00 implementation audit (Scratch) | [human-resources-implementation-audit.md](../../../docs-V2/_scratch/erp/human-resources-implementation-audit.md) |
 | Bounded-context architecture (Scratch) | [human-resource.md](../../../docs-V2/_scratch/erp/human-resource.md) |
 | Phase sequencing (Scratch) | [human-resources-roadmap.md](../../../docs-V2/_scratch/erp/human-resources-roadmap.md) |
 | ERP scaffold rules | [SCAFFOLDING.md](../SCAFFOLDING.md) |
