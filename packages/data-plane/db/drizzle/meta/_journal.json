@@ -260,6 +260,13 @@
 			"when": 1784586000000,
 			"tag": "0036_hr_core_workforce_ddl",
 			"breakpoints": true
+		},
+		{
+			"idx": 37,
+			"version": "7",
+			"when": 1784587000000,
+			"tag": "0037_hr_organization_structure_ddl",
+			"breakpoints": true
 		}
 	]
 }

@@ -143,7 +143,8 @@ Each phase = **one Agent chat**. Pattern per slice (sales reference): **DDL (if 
 | **In scope** | `employee.update` / `.list`; `employment.create` / `.amend` / `.get`; `employment-contract.create` / `.get`; memory + drizzle; events `employment.started.v1` / `employment.changed.v1` |
 | **Out of scope** | Recruitment; auto-create employment on employee create |
 | **Verify** | `pnpm --filter @afenda/human-resources check` · `pnpm governance:packages` |
-| **Evidence** | 52 package tests; manifest auth maps shipped |
+| **Evidence** | Package tests include create/update/list + employment/contract matrix; manifest auth maps shipped |
+| **Mission alias** | Part of chat mission **HR-02** (core workforce vertical slice) |
 
 ---
 
@@ -153,10 +154,24 @@ Each phase = **one Agent chat**. Pattern per slice (sales reference): **DDL (if 
 | --- | --- |
 | **Depends on** | HR3 |
 | **In scope** | `position.create` / `.get` / `.list`; `assignment.create` / `.end` / `.get` (writes via `employment.manage`) |
-| **Still open** | Department, job, reporting-line domain DDL + commands (next roadmap remainder) |
+| **Still open** | ~~Department, job, reporting-line~~ → closed by HR-03 below |
 | **Out of scope** | Recruitment; lifecycle |
 | **Verify** | `pnpm --filter @afenda/human-resources check` |
 | **Done when** | Position + assignment mutable under tenant; org-scoped lookups |
+| **Mission alias** | Part of chat mission **HR-02** (core workforce vertical slice) |
+
+---
+
+### HR4.1 / mission HR-03 — Organization structure + reporting-line — **DONE** (2026-07-22)
+
+| | |
+| --- | --- |
+| **Depends on** | HR4 |
+| **In scope** | Domain DDL `0037` for `hr_department` / `hr_job` / `hr_reporting_line` + position `department_id`/`job_id` + status `active\|frozen\|closed`; department/job/position/reporting commands + bounded `organization.tree`; permissions `organization.read` / `organization.manage` |
+| **Out of scope** | Headcount budgets; recruitment; `lifecycle: active` |
+| **Verify** | `pnpm --filter @afenda/human-resources check` · `pnpm validate:modules` · `pnpm governance:packages` |
+| **Done when** | Hierarchy + reporting invariants tested (memory + Neon parity); manifest registers only shipped ids; lifecycle stays `scaffolded` |
+| **Mission alias** | Chat mission **HR-03** |
 
 ---
 

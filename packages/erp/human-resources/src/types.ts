@@ -1,11 +1,20 @@
 import type {
 	HumanResourcesAssignmentId,
+	HumanResourcesDepartmentId,
 	HumanResourcesEmployeeId,
 	HumanResourcesEmploymentContractId,
 	HumanResourcesEmploymentId,
+	HumanResourcesJobId,
 	HumanResourcesPositionId,
+	HumanResourcesReportingLineId,
 } from "./brands";
-import type { EmploymentStatus, PositionStatus } from "./shared/employment-status";
+import type {
+	DepartmentStatus,
+	EmploymentStatus,
+	JobStatus,
+	PositionStatus,
+	ReportingRelationshipKind,
+} from "./shared/employment-status";
 
 export type Employee = {
 	id: HumanResourcesEmployeeId;
@@ -48,11 +57,40 @@ export type EmploymentContract = {
 	updatedAt: Date;
 };
 
+export type Department = {
+	id: HumanResourcesDepartmentId;
+	organizationId: string;
+	code: string;
+	name: string;
+	parentDepartmentId: HumanResourcesDepartmentId | null;
+	status: DepartmentStatus;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type Job = {
+	id: HumanResourcesJobId;
+	organizationId: string;
+	code: string;
+	title: string;
+	status: JobStatus;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
 export type Position = {
 	id: HumanResourcesPositionId;
 	organizationId: string;
 	code: string;
 	title: string;
+	departmentId: HumanResourcesDepartmentId | null;
+	jobId: HumanResourcesJobId | null;
 	status: PositionStatus;
 	version: number;
 	createdBy: string;
@@ -74,6 +112,35 @@ export type WorkAssignment = {
 	updatedBy: string;
 	createdAt: Date;
 	updatedAt: Date;
+};
+
+export type ReportingLine = {
+	id: HumanResourcesReportingLineId;
+	organizationId: string;
+	employeeId: HumanResourcesEmployeeId;
+	managerEmployeeId: HumanResourcesEmployeeId;
+	relationshipKind: ReportingRelationshipKind;
+	startsOn: string;
+	endsOn: string | null;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type OrganizationTreeNode = {
+	id: HumanResourcesDepartmentId;
+	parentDepartmentId: HumanResourcesDepartmentId | null;
+	code: string;
+	name: string;
+	status: DepartmentStatus;
+	depth: number;
+};
+
+export type OrganizationTreePage = {
+	nodes: OrganizationTreeNode[];
+	truncated: boolean;
 };
 
 export type EmployeeListPage = {

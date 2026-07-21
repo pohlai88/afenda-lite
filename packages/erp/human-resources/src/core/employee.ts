@@ -112,7 +112,7 @@ export async function updateEmployee(
 		return parsed;
 	}
 
-	const { store, authorization } = resolveCommandDeps(options);
+	const { store, ports, authorization } = resolveCommandDeps(options);
 	const authorized = await requireHumanResourcesCommandPermission(
 		authorization,
 		{
@@ -125,14 +125,17 @@ export async function updateEmployee(
 		return authorized;
 	}
 
-	return store.updateEmployee({
-		organizationId: parsed.data.organizationId,
-		employeeId: parsed.data.employeeId,
-		legalName: parsed.data.legalName.trim(),
-		expectedVersion: parsed.data.expectedVersion,
-		actorUserId: parsed.data.actorUserId,
-		correlationId: parsed.data.correlationId,
-	});
+	return store.updateEmployee(
+		{
+			organizationId: parsed.data.organizationId,
+			employeeId: parsed.data.employeeId,
+			legalName: parsed.data.legalName.trim(),
+			expectedVersion: parsed.data.expectedVersion,
+			actorUserId: parsed.data.actorUserId,
+		},
+		ports,
+		{ correlationId: parsed.data.correlationId },
+	);
 }
 
 export async function getEmployeeById(

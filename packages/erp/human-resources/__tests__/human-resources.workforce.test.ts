@@ -1,22 +1,16 @@
 import { describe, expect, it } from "vitest";
 
-import {
-	createAssignment,
-	endAssignment,
-} from "../src/core/assignment";
+import { createAssignment, endAssignment } from "../src/core/assignment";
 import {
 	createEmployee,
 	listEmployees,
 	updateEmployee,
 } from "../src/core/employee";
-import {
-	amendEmployment,
-	createEmployment,
-} from "../src/core/employment";
+import { amendEmployment, createEmployment } from "../src/core/employment";
 import { createEmploymentContract } from "../src/core/employment-contract";
-import { createPosition } from "../src/organization/position";
 import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
+	HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
 	HUMAN_RESOURCES_ERROR_DUPLICATE,
 	HUMAN_RESOURCES_ERROR_FORBIDDEN,
 	HUMAN_RESOURCES_ERROR_INVALID_INPUT,
@@ -25,17 +19,13 @@ import {
 	HUMAN_RESOURCES_ERROR_STALE_VERSION,
 	HUMAN_RESOURCES_ERROR_UNAUTHORIZED,
 } from "../src/error-codes";
-import {
-	HUMAN_RESOURCES_PERMISSION_CODES,
-	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_READ,
-	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_WRITE,
-	HUMAN_RESOURCES_PERMISSION_EMPLOYMENT_WRITE,
-	HUMAN_RESOURCES_PERMISSION_POSITION_WRITE,
-} from "../src/permissions";
+import { createPosition } from "../src/organization/position";
+import { HUMAN_RESOURCES_PERMISSION_CODES } from "../src/permissions";
 import { createMemoryHumanResourcesStore } from "../src/testing";
 import { createGrantingHumanResourcesAuthorization } from "./helpers/memory-authorization";
 import { createMemoryMutationPorts } from "./helpers/memory-ports";
 import { humanResourcesCodeFromResult } from "./helpers/result-details";
+import { seedDepartmentAndJob } from "./helpers/seed-department-and-job";
 
 const ORG_A = "org-a";
 const ORG_B = "org-b";
@@ -435,6 +425,61 @@ describe("@afenda/human-resources workforce operations", () => {
 			}
 		});
 
+		it("rejects missing employee", async () => {
+			const ready = harness();
+			const employment = await createEmployment(
+				{
+					organizationId: ORG_A,
+					actorUserId: ACTOR,
+					correlationId: "corr-missing-employee",
+					employeeId: "00000000-0000-4000-8000-000000000001" as never,
+					startsOn: "2025-01-01",
+					endsOn: null,
+				},
+				ready,
+			);
+			expect(employment.ok).toBe(false);
+			if (!employment.ok) {
+				expect(employment.code).toBe("NOT_FOUND");
+			}
+		});
+
+		it("rejects cross-org employee reference", async () => {
+			const ready = harness();
+			const employee = await createEmployee(
+				{
+					organizationId: ORG_A,
+					actorUserId: ACTOR,
+					correlationId: "corr-xorg-1",
+					idempotencyKey: "idem-xorg-1",
+					employeeNumber: "E-XORG",
+					legalName: "Name",
+				},
+				ready,
+			);
+			expect(employee.ok).toBe(true);
+			if (!employee.ok) return;
+
+			const employment = await createEmployment(
+				{
+					organizationId: ORG_B,
+					actorUserId: ACTOR,
+					correlationId: "corr-xorg-2",
+					employeeId: employee.data.id,
+					startsOn: "2025-01-01",
+					endsOn: null,
+				},
+				ready,
+			);
+			expect(employment.ok).toBe(false);
+			if (!employment.ok) {
+				expect(employment.code).toBe("NOT_FOUND");
+				expect(humanResourcesCodeFromResult(employment)).toBe(
+					HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+				);
+			}
+		});
+
 		it("rejects duplicate open employment", async () => {
 			const ready = harness();
 			const employee = await createEmployee(
@@ -513,7 +558,7 @@ describe("@afenda/human-resources workforce operations", () => {
 			expect(employment.ok).toBe(false);
 			if (!employment.ok) {
 				expect(humanResourcesCodeFromResult(employment)).toBe(
-					HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
+					HUMAN_RESOURCES_ERROR_INVALID_INPUT,
 				);
 			}
 		});
@@ -628,7 +673,21 @@ describe("@afenda/human-resources workforce operations", () => {
 			expect(terminated.ok).toBe(true);
 			if (terminated.ok) {
 				expect(terminated.data.status).toBe("terminated");
+				expect(terminated.data.endsOn).toBe("2025-01-01");
 			}
+
+			const rehire = await createEmployment(
+				{
+					organizationId: ORG_A,
+					actorUserId: ACTOR,
+					correlationId: "corr-rehire",
+					employeeId: employee.data.id,
+					startsOn: "2025-07-01",
+					endsOn: null,
+				},
+				ready,
+			);
+			expect(rehire.ok).toBe(true);
 		});
 
 		it("rejects terminated→active transition", async () => {
@@ -707,7 +766,7 @@ describe("@afenda/human-resources workforce operations", () => {
 				},
 				ready,
 			);
-			expect(employee.ok) .toBe(true);
+			expect(employee.ok).toBe(true);
 			if (!employee.ok) return;
 
 			const employment = await createEmployment(
@@ -842,19 +901,19 @@ describe("@afenda/human-resources workforce operations", () => {
 					organizationId: ORG_A,
 					actorUserId: ACTOR,
 					correlationId: "corr-4",
-			employmentId: employment.data.id,
-			referenceCode: "CONTRACT-DUP",
-			startsOn: "2025-01-01",
-			endsOn: null,
-		},
-		ready,
-	);
-	expect(second.ok).toBe(false);
-	if (!second.ok) {
-		expect(humanResourcesCodeFromResult(second)).toBe(
-			HUMAN_RESOURCES_ERROR_DUPLICATE,
-		);
-	}
+					employmentId: employment.data.id,
+					referenceCode: "CONTRACT-DUP",
+					startsOn: "2025-01-01",
+					endsOn: null,
+				},
+				ready,
+			);
+			expect(second.ok).toBe(false);
+			if (!second.ok) {
+				expect(humanResourcesCodeFromResult(second)).toBe(
+					HUMAN_RESOURCES_ERROR_DUPLICATE,
+				);
+			}
 		});
 
 		it("rejects invalid date range", async () => {
@@ -892,25 +951,32 @@ describe("@afenda/human-resources workforce operations", () => {
 					organizationId: ORG_A,
 					actorUserId: ACTOR,
 					correlationId: "corr-3",
-			employmentId: employment.data.id,
-			referenceCode: "CONTRACT-002",
-			startsOn: "2025-12-31",
-			endsOn: "2025-01-01",
-		},
-		ready,
-	);
-	expect(contract.ok).toBe(false);
-	if (!contract.ok) {
-		expect(humanResourcesCodeFromResult(contract)).toBe(
-			HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
-		);
-	}
+					employmentId: employment.data.id,
+					referenceCode: "CONTRACT-002",
+					startsOn: "2025-12-31",
+					endsOn: "2025-01-01",
+				},
+				ready,
+			);
+			expect(contract.ok).toBe(false);
+			if (!contract.ok) {
+				expect(humanResourcesCodeFromResult(contract)).toBe(
+					HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+				);
+			}
 		});
 	});
 
 	describe("createPosition", () => {
 		it("creates a position successfully", async () => {
 			const ready = harness();
+			const seeded = await seedDepartmentAndJob(ready, {
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+			});
+			expect(seeded).not.toBeNull();
+			if (!seeded) return;
+
 			const position = await createPosition(
 				{
 					organizationId: ORG_A,
@@ -919,6 +985,7 @@ describe("@afenda/human-resources workforce operations", () => {
 					code: "POS-001",
 					title: "Software Engineer",
 					status: "active",
+					...seeded,
 				},
 				ready,
 			);
@@ -931,6 +998,13 @@ describe("@afenda/human-resources workforce operations", () => {
 
 		it("rejects malformed input", async () => {
 			const ready = harness();
+			const seeded = await seedDepartmentAndJob(ready, {
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+			});
+			expect(seeded).not.toBeNull();
+			if (!seeded) return;
+
 			const position = await createPosition(
 				{
 					organizationId: ORG_A,
@@ -939,6 +1013,7 @@ describe("@afenda/human-resources workforce operations", () => {
 					code: "",
 					title: "",
 					status: "invalid" as never,
+					...seeded,
 				},
 				ready,
 			);
@@ -952,6 +1027,13 @@ describe("@afenda/human-resources workforce operations", () => {
 
 		it("rejects unauthorized actor", async () => {
 			const ready = harness();
+			const seeded = await seedDepartmentAndJob(ready, {
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+			});
+			expect(seeded).not.toBeNull();
+			if (!seeded) return;
+
 			ready.authorization = createGrantingHumanResourcesAuthorization([]);
 			const position = await createPosition(
 				{
@@ -961,6 +1043,7 @@ describe("@afenda/human-resources workforce operations", () => {
 					code: "POS-002",
 					title: "Position",
 					status: "active",
+					...seeded,
 				},
 				ready,
 			);
@@ -1004,6 +1087,13 @@ describe("@afenda/human-resources workforce operations", () => {
 			expect(employment.ok).toBe(true);
 			if (!employment.ok) return;
 
+			const seeded = await seedDepartmentAndJob(ready, {
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+			});
+			expect(seeded).not.toBeNull();
+			if (!seeded) return;
+
 			const position = await createPosition(
 				{
 					organizationId: ORG_A,
@@ -1012,28 +1102,29 @@ describe("@afenda/human-resources workforce operations", () => {
 					code: "POS-100",
 					title: "Role",
 					status: "active",
+					...seeded,
 				},
 				ready,
 			);
 			expect(position.ok).toBe(true);
 			if (!position.ok) return;
 
-		const assignment = await createAssignment(
-			{
-				organizationId: ORG_A,
-				actorUserId: ACTOR,
-				correlationId: "corr-4",
-				employmentId: employment.data.id,
-				positionId: position.data.id,
-				startsOn: "2025-01-01",
-				endsOn: null,
-			},
-			ready,
-		);
-		expect(assignment.ok).toBe(true);
-		if (assignment.ok) {
-			expect(assignment.data.positionId).toBe(position.data.id);
-		}
+			const assignment = await createAssignment(
+				{
+					organizationId: ORG_A,
+					actorUserId: ACTOR,
+					correlationId: "corr-4",
+					employmentId: employment.data.id,
+					positionId: position.data.id,
+					startsOn: "2025-01-01",
+					endsOn: null,
+				},
+				ready,
+			);
+			expect(assignment.ok).toBe(true);
+			if (assignment.ok) {
+				expect(assignment.data.positionId).toBe(position.data.id);
+			}
 		});
 
 		it("rejects duplicate open assignment", async () => {
@@ -1066,6 +1157,13 @@ describe("@afenda/human-resources workforce operations", () => {
 			expect(employment.ok).toBe(true);
 			if (!employment.ok) return;
 
+			const seeded = await seedDepartmentAndJob(ready, {
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+			});
+			expect(seeded).not.toBeNull();
+			if (!seeded) return;
+
 			const position = await createPosition(
 				{
 					organizationId: ORG_A,
@@ -1074,6 +1172,7 @@ describe("@afenda/human-resources workforce operations", () => {
 					code: "POS-101",
 					title: "Role",
 					status: "active",
+					...seeded,
 				},
 				ready,
 			);
@@ -1114,7 +1213,7 @@ describe("@afenda/human-resources workforce operations", () => {
 			}
 		});
 
-		it("rejects inactive position", async () => {
+		it("rejects closed position", async () => {
 			const ready = harness();
 			const employee = await createEmployee(
 				{
@@ -1144,14 +1243,22 @@ describe("@afenda/human-resources workforce operations", () => {
 			expect(employment.ok).toBe(true);
 			if (!employment.ok) return;
 
+			const seeded = await seedDepartmentAndJob(ready, {
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+			});
+			expect(seeded).not.toBeNull();
+			if (!seeded) return;
+
 			const position = await createPosition(
 				{
 					organizationId: ORG_A,
 					actorUserId: ACTOR,
 					correlationId: "corr-3",
 					code: "POS-102",
-					title: "Inactive Role",
-					status: "inactive",
+					title: "Closed Role",
+					status: "closed",
+					...seeded,
 				},
 				ready,
 			);
@@ -1163,21 +1270,21 @@ describe("@afenda/human-resources workforce operations", () => {
 					organizationId: ORG_A,
 					actorUserId: ACTOR,
 					correlationId: "corr-4",
-			employmentId: employment.data.id,
-			positionId: position.data.id,
-			startsOn: "2025-01-01",
-			endsOn: null,
-		},
-		ready,
-	);
-	expect(assignment.ok).toBe(false);
-	if (!assignment.ok) {
-		expect(humanResourcesCodeFromResult(assignment)).toBe(
-			HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
-		);
-	}
-});
-});
+					employmentId: employment.data.id,
+					positionId: position.data.id,
+					startsOn: "2025-01-01",
+					endsOn: null,
+				},
+				ready,
+			);
+			expect(assignment.ok).toBe(false);
+			if (!assignment.ok) {
+				expect(humanResourcesCodeFromResult(assignment)).toBe(
+					HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
+				);
+			}
+		});
+	});
 
 	describe("endAssignment", () => {
 		it("ends an assignment successfully", async () => {
@@ -1210,6 +1317,13 @@ describe("@afenda/human-resources workforce operations", () => {
 			expect(employment.ok).toBe(true);
 			if (!employment.ok) return;
 
+			const seeded = await seedDepartmentAndJob(ready, {
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+			});
+			expect(seeded).not.toBeNull();
+			if (!seeded) return;
+
 			const position = await createPosition(
 				{
 					organizationId: ORG_A,
@@ -1218,6 +1332,7 @@ describe("@afenda/human-resources workforce operations", () => {
 					code: "POS-200",
 					title: "Role",
 					status: "active",
+					...seeded,
 				},
 				ready,
 			);
@@ -1287,6 +1402,13 @@ describe("@afenda/human-resources workforce operations", () => {
 			expect(employment.ok).toBe(true);
 			if (!employment.ok) return;
 
+			const seeded = await seedDepartmentAndJob(ready, {
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+			});
+			expect(seeded).not.toBeNull();
+			if (!seeded) return;
+
 			const position = await createPosition(
 				{
 					organizationId: ORG_A,
@@ -1295,6 +1417,7 @@ describe("@afenda/human-resources workforce operations", () => {
 					code: "POS-201",
 					title: "Role",
 					status: "active",
+					...seeded,
 				},
 				ready,
 			);
@@ -1332,6 +1455,120 @@ describe("@afenda/human-resources workforce operations", () => {
 				expect(humanResourcesCodeFromResult(ended)).toBe(
 					HUMAN_RESOURCES_ERROR_STALE_VERSION,
 				);
+			}
+		});
+
+		it("supersedes an ended assignment with a new open assignment", async () => {
+			const ready = harness();
+			const employee = await createEmployee(
+				{
+					organizationId: ORG_A,
+					actorUserId: ACTOR,
+					correlationId: "corr-super-1",
+					idempotencyKey: "idem-super-1",
+					employeeNumber: "E-802",
+					legalName: "Name",
+				},
+				ready,
+			);
+			expect(employee.ok).toBe(true);
+			if (!employee.ok) return;
+
+			const employment = await createEmployment(
+				{
+					organizationId: ORG_A,
+					actorUserId: ACTOR,
+					correlationId: "corr-super-2",
+					employeeId: employee.data.id,
+					startsOn: "2025-01-01",
+					endsOn: null,
+				},
+				ready,
+			);
+			expect(employment.ok).toBe(true);
+			if (!employment.ok) return;
+
+			const seeded = await seedDepartmentAndJob(ready, {
+				organizationId: ORG_A,
+				actorUserId: ACTOR,
+			});
+			expect(seeded).not.toBeNull();
+			if (!seeded) return;
+
+			const positionA = await createPosition(
+				{
+					organizationId: ORG_A,
+					actorUserId: ACTOR,
+					correlationId: "corr-super-3",
+					code: "POS-SUPER-A",
+					title: "Role A",
+					status: "active",
+					...seeded,
+				},
+				ready,
+			);
+			expect(positionA.ok).toBe(true);
+			if (!positionA.ok) return;
+
+			const positionB = await createPosition(
+				{
+					organizationId: ORG_A,
+					actorUserId: ACTOR,
+					correlationId: "corr-super-4",
+					code: "POS-SUPER-B",
+					title: "Role B",
+					status: "active",
+					...seeded,
+				},
+				ready,
+			);
+			expect(positionB.ok).toBe(true);
+			if (!positionB.ok) return;
+
+			const first = await createAssignment(
+				{
+					organizationId: ORG_A,
+					actorUserId: ACTOR,
+					correlationId: "corr-super-5",
+					employmentId: employment.data.id,
+					positionId: positionA.data.id,
+					startsOn: "2025-01-01",
+					endsOn: null,
+				},
+				ready,
+			);
+			expect(first.ok).toBe(true);
+			if (!first.ok) return;
+
+			const ended = await endAssignment(
+				{
+					organizationId: ORG_A,
+					actorUserId: ACTOR,
+					correlationId: "corr-super-6",
+					assignmentId: first.data.id,
+					endsOn: "2025-06-30",
+					expectedVersion: 1,
+				},
+				ready,
+			);
+			expect(ended.ok).toBe(true);
+
+			const next = await createAssignment(
+				{
+					organizationId: ORG_A,
+					actorUserId: ACTOR,
+					correlationId: "corr-super-7",
+					employmentId: employment.data.id,
+					positionId: positionB.data.id,
+					startsOn: "2025-07-01",
+					endsOn: null,
+				},
+				ready,
+			);
+			expect(next.ok).toBe(true);
+			if (next.ok) {
+				expect(next.data.positionId).toBe(positionB.data.id);
+				expect(next.data.endsOn).toBeNull();
 			}
 		});
 	});

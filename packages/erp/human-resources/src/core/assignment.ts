@@ -94,7 +94,7 @@ export async function endAssignment(
 		return parsed;
 	}
 
-	const { store, authorization } = resolveCommandDeps(options);
+	const { store, ports, authorization } = resolveCommandDeps(options);
 	const authorized = await requireHumanResourcesCommandPermission(
 		authorization,
 		{
@@ -107,14 +107,17 @@ export async function endAssignment(
 		return authorized;
 	}
 
-	return store.endAssignment({
-		organizationId: parsed.data.organizationId,
-		assignmentId: parsed.data.assignmentId,
-		endsOn: parsed.data.endsOn,
-		expectedVersion: parsed.data.expectedVersion,
-		actorUserId: parsed.data.actorUserId,
-		correlationId: parsed.data.correlationId,
-	});
+	return store.endAssignment(
+		{
+			organizationId: parsed.data.organizationId,
+			assignmentId: parsed.data.assignmentId,
+			endsOn: parsed.data.endsOn,
+			expectedVersion: parsed.data.expectedVersion,
+			actorUserId: parsed.data.actorUserId,
+		},
+		ports,
+		{ correlationId: parsed.data.correlationId },
+	);
 }
 
 export async function getAssignment(

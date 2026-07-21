@@ -1,3 +1,4 @@
+export { createDrizzleHumanResourcesStore } from "../drizzle-store";
 export {
 	createMemoryHumanResourcesStore,
 	MemoryHumanResourcesStore,

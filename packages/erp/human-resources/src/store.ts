@@ -2,19 +2,31 @@ import type { Result } from "@afenda/errors/result";
 
 import type {
 	HumanResourcesAssignmentId,
+	HumanResourcesDepartmentId,
 	HumanResourcesEmployeeId,
 	HumanResourcesEmploymentContractId,
 	HumanResourcesEmploymentId,
+	HumanResourcesJobId,
 	HumanResourcesPositionId,
+	HumanResourcesReportingLineId,
 } from "./brands";
 import type { MutationPorts } from "./ports";
-import type { EmploymentStatus } from "./shared/employment-status";
 import type {
+	DepartmentStatus,
+	EmploymentStatus,
+	JobStatus,
+	PositionStatus,
+} from "./shared/employment-status";
+import type {
+	Department,
 	Employee,
 	EmployeeListPage,
 	Employment,
 	EmploymentContract,
+	Job,
+	OrganizationTreePage,
 	Position,
+	ReportingLine,
 	WorkAssignment,
 } from "./types";
 
@@ -51,11 +63,30 @@ export type EmploymentContractCreateRecord = {
 	createdBy: string;
 };
 
+export type DepartmentCreateRecord = {
+	organizationId: string;
+	code: string;
+	name: string;
+	parentDepartmentId: HumanResourcesDepartmentId | null;
+	status: DepartmentStatus;
+	createdBy: string;
+};
+
+export type JobCreateRecord = {
+	organizationId: string;
+	code: string;
+	title: string;
+	status: JobStatus;
+	createdBy: string;
+};
+
 export type PositionCreateRecord = {
 	organizationId: string;
 	code: string;
 	title: string;
-	status: string;
+	departmentId: HumanResourcesDepartmentId;
+	jobId: HumanResourcesJobId;
+	status: PositionStatus;
 	createdBy: string;
 };
 
@@ -69,8 +100,17 @@ export type AssignmentCreateRecord = {
 	createdBy: string;
 };
 
+export type ReportingLineCreateRecord = {
+	organizationId: string;
+	employeeId: HumanResourcesEmployeeId;
+	managerEmployeeId: HumanResourcesEmployeeId;
+	startsOn: string;
+	endsOn: string | null;
+	createdBy: string;
+};
+
 /**
- * Persistence contract for Human Resources (HR-00 justified surface).
+ * Persistence contract for Human Resources.
  *
  * Transaction semantics for mutations:
  * - Atomic unit = aggregate row + audit fact + (optional) outbox event.
@@ -78,9 +118,6 @@ export type AssignmentCreateRecord = {
  * - Drizzle adapter: single `runNeonHttpTransaction` CTE inserting rows +
  *   `platform_audit_log` + `platform_domain_event` (ports argument reserved for
  *   memory / test injection; production path embeds SQL in the same TX).
- *
- * All org-scoped methods require `organizationId`. Cross-org lookup by bare id
- * is prohibited — missing or wrong-org rows return null / not found at the command layer.
  */
 export type HumanResourcesStore = {
 	// Employee
@@ -100,14 +137,17 @@ export type HumanResourcesStore = {
 		meta: { correlationId: string },
 	): Promise<Result<Employee>>;
 
-	updateEmployee(input: {
-		organizationId: string;
-		employeeId: HumanResourcesEmployeeId;
-		legalName: string;
-		expectedVersion: number;
-		actorUserId: string;
-		correlationId: string;
-	}): Promise<Result<Employee>>;
+	updateEmployee(
+		input: {
+			organizationId: string;
+			employeeId: HumanResourcesEmployeeId;
+			legalName: string;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<Employee>>;
 
 	listEmployees(input: {
 		organizationId: string;
@@ -135,15 +175,19 @@ export type HumanResourcesStore = {
 		meta: { correlationId: string },
 	): Promise<Result<Employment>>;
 
-	amendEmployment(input: {
-		organizationId: string;
-		employmentId: HumanResourcesEmploymentId;
-		status?: EmploymentStatus;
-		startsOn?: string;
-		endsOn?: string | null;
-		expectedVersion: number;
-		actorUserId: string;
-	}, ports: MutationPorts, meta: { correlationId: string }): Promise<Result<Employment>>;
+	amendEmployment(
+		input: {
+			organizationId: string;
+			employmentId: HumanResourcesEmploymentId;
+			status?: EmploymentStatus;
+			startsOn?: string;
+			endsOn?: string | null;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<Employment>>;
 
 	// Employment Contract
 	getEmploymentContractById(input: {
@@ -163,6 +207,108 @@ export type HumanResourcesStore = {
 		meta: { correlationId: string },
 	): Promise<Result<EmploymentContract>>;
 
+	// Department
+	getDepartmentById(input: {
+		organizationId: string;
+		departmentId: HumanResourcesDepartmentId;
+	}): Promise<Result<Department | null>>;
+
+	findDepartmentByCode(input: {
+		organizationId: string;
+		code: string;
+	}): Promise<Result<Department | null>>;
+
+	createDepartment(
+		record: DepartmentCreateRecord,
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<Department>>;
+
+	updateDepartment(
+		input: {
+			organizationId: string;
+			departmentId: HumanResourcesDepartmentId;
+			name?: string;
+			parentDepartmentId?: HumanResourcesDepartmentId | null;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<Department>>;
+
+	setDepartmentStatus(
+		input: {
+			organizationId: string;
+			departmentId: HumanResourcesDepartmentId;
+			status: DepartmentStatus;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<Department>>;
+
+	listDepartments(input: {
+		organizationId: string;
+		page: number;
+		pageSize: number;
+		status?: DepartmentStatus;
+		parentDepartmentId?: HumanResourcesDepartmentId | null;
+	}): Promise<Result<{ departments: Department[]; totalCount: number }>>;
+
+	listAllDepartments(input: {
+		organizationId: string;
+	}): Promise<Result<Department[]>>;
+
+	// Job
+	getJobById(input: {
+		organizationId: string;
+		jobId: HumanResourcesJobId;
+	}): Promise<Result<Job | null>>;
+
+	findJobByCode(input: {
+		organizationId: string;
+		code: string;
+	}): Promise<Result<Job | null>>;
+
+	createJob(
+		record: JobCreateRecord,
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<Job>>;
+
+	updateJob(
+		input: {
+			organizationId: string;
+			jobId: HumanResourcesJobId;
+			title: string;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<Job>>;
+
+	setJobStatus(
+		input: {
+			organizationId: string;
+			jobId: HumanResourcesJobId;
+			status: JobStatus;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<Job>>;
+
+	listJobs(input: {
+		organizationId: string;
+		page: number;
+		pageSize: number;
+		status?: JobStatus;
+	}): Promise<Result<{ jobs: Job[]; totalCount: number }>>;
+
 	// Position
 	getPositionById(input: {
 		organizationId: string;
@@ -180,12 +326,60 @@ export type HumanResourcesStore = {
 		meta: { correlationId: string },
 	): Promise<Result<Position>>;
 
+	updatePosition(
+		input: {
+			organizationId: string;
+			positionId: HumanResourcesPositionId;
+			title?: string;
+			departmentId?: HumanResourcesDepartmentId;
+			jobId?: HumanResourcesJobId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<Position>>;
+
+	setPositionStatus(
+		input: {
+			organizationId: string;
+			positionId: HumanResourcesPositionId;
+			status: PositionStatus;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<Position>>;
+
 	listPositions(input: {
 		organizationId: string;
 		page: number;
 		pageSize: number;
 		status?: string;
+		departmentId?: HumanResourcesDepartmentId;
+		jobId?: HumanResourcesJobId;
 	}): Promise<Result<{ positions: Position[]; totalCount: number }>>;
+
+	countOpenAssignmentsForPosition(input: {
+		organizationId: string;
+		positionId: HumanResourcesPositionId;
+	}): Promise<Result<number>>;
+
+	countActiveOrFrozenPositionsForDepartment(input: {
+		organizationId: string;
+		departmentId: HumanResourcesDepartmentId;
+	}): Promise<Result<number>>;
+
+	countActiveOrFrozenPositionsForJob(input: {
+		organizationId: string;
+		jobId: HumanResourcesJobId;
+	}): Promise<Result<number>>;
+
+	countActiveChildDepartments(input: {
+		organizationId: string;
+		parentDepartmentId: HumanResourcesDepartmentId;
+	}): Promise<Result<number>>;
 
 	// Assignment
 	getAssignmentById(input: {
@@ -204,12 +398,84 @@ export type HumanResourcesStore = {
 		meta: { correlationId: string },
 	): Promise<Result<WorkAssignment>>;
 
-	endAssignment(input: {
+	endAssignment(
+		input: {
+			organizationId: string;
+			assignmentId: HumanResourcesAssignmentId;
+			endsOn: string;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<WorkAssignment>>;
+
+	// Reporting line
+	getReportingLineById(input: {
 		organizationId: string;
-		assignmentId: HumanResourcesAssignmentId;
-		endsOn: string;
-		expectedVersion: number;
-		actorUserId: string;
-		correlationId: string;
-	}): Promise<Result<WorkAssignment>>;
+		reportingLineId: HumanResourcesReportingLineId;
+	}): Promise<Result<ReportingLine | null>>;
+
+	listReportingLinesForEmployee(input: {
+		organizationId: string;
+		employeeId: HumanResourcesEmployeeId;
+	}): Promise<Result<ReportingLine[]>>;
+
+	findOpenPrimaryReportingLine(input: {
+		organizationId: string;
+		employeeId: HumanResourcesEmployeeId;
+	}): Promise<Result<ReportingLine | null>>;
+
+	resolvePrimaryManager(input: {
+		organizationId: string;
+		employeeId: HumanResourcesEmployeeId;
+		asOf: string;
+	}): Promise<Result<ReportingLine | null>>;
+
+	listDirectReports(input: {
+		organizationId: string;
+		managerEmployeeId: HumanResourcesEmployeeId;
+		asOf: string;
+		page: number;
+		pageSize: number;
+	}): Promise<Result<{ reportingLines: ReportingLine[]; totalCount: number }>>;
+
+	assignPrimaryReportingLine(
+		record: ReportingLineCreateRecord,
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<ReportingLine>>;
+
+	closeReportingLine(
+		input: {
+			organizationId: string;
+			reportingLineId: HumanResourcesReportingLineId;
+			endsOn: string;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<ReportingLine>>;
+
+	replacePrimaryReportingLine(
+		input: {
+			organizationId: string;
+			employeeId: HumanResourcesEmployeeId;
+			managerEmployeeId: HumanResourcesEmployeeId;
+			startsOn: string;
+			endsOn: string | null;
+			closePriorOn: string;
+			createdBy: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<ReportingLine>>;
+
+	getOrganizationTree(input: {
+		organizationId: string;
+		rootDepartmentId: HumanResourcesDepartmentId | null;
+		maxDepth: number;
+		maxNodes: number;
+	}): Promise<Result<OrganizationTreePage>>;
 };
