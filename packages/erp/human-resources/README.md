@@ -15,14 +15,22 @@ Workspace dependency — import permissions, port types, brands, shipped command
 ```ts
 import {
   createEmployee,
+  updateEmployee,
+  createEmployment,
+  amendEmployment,
+  createEmploymentContract,
+  createAssignment,
+  endAssignment,
   getEmployeeById,
-  HUMAN_RESOURCES_PERMISSION_EMPLOYEE_READ,
-  type HumanResourcesAuthorizationPort,
-  type MutationPorts,
+  listEmployees,
+  type CreateEmployeeInput,
+  type HumanResourcesCommandOptions,
 } from "@afenda/human-resources";
 ```
 
-**Shipped public API (HR3 + HR4):**
+Also shipped on the same barrel (schema-backed): organization structure (department / job / position / reporting-line), plus employment / contract / assignment helpers. Naming follows ERP `create*` / verb conventions — not `startEmployment` / `recordEmploymentContract`.
+
+**Shipped public API (missions HR-02 + HR-03):**
 
 | Id | Kind | Permission | Slice |
 | -- | ---- | ---------- | ----- |
@@ -35,14 +43,16 @@ import {
 | `human-resources.employment.get` | query | `employee.read` | HR3 |
 | `human-resources.employment-contract.create` | command | `employment.manage` | HR3 |
 | `human-resources.employment-contract.get` | query | `employee.read` | HR3 |
-| `human-resources.position.create` | command | `employment.manage` | HR4 |
-| `human-resources.position.get` / `.list` | query | `employee.read` | HR4 |
+| `human-resources.department.*` / `job.*` | command/query | `organization.manage` / `organization.read` | HR-03 |
+| `human-resources.position.create` / `.update` / `.activate` / `.freeze` / `.close` | command | `organization.manage` | HR4 / HR-03 |
+| `human-resources.position.get` / `.list` | query | `organization.read` | HR4 / HR-03 |
+| `human-resources.reporting-line.*` / `organization.tree` | command/query | `organization.manage` / `organization.read` | HR-03 |
 | `human-resources.assignment.create` / `.end` | command | `employment.manage` | HR4 |
 | `human-resources.assignment.get` | query | `employee.read` | HR4 |
 
-**Employment status (Q5):** `active` → `notice` \| `terminated`; `notice` → `terminated`; no exit from `terminated`. Stored on `hr_employment.status` (CHECK). Employee create does **not** auto-create employment. No `md_party` FK (Q4). Position/assignment validity is org-scoped store lookup (active position required) — no `MasterLookupPort`.
+**Employment status (Q5):** `active` → `notice` \| `terminated`; `notice` → `terminated`; no exit from `terminated`. Stored on `hr_employment.status` (CHECK). Employee create does **not** auto-create employment. No `md_party` FK (Q4). Position status: `active` \| `frozen` \| `closed` — assignment create requires `active`. Department/job status: `active` \| `archived`. Position create requires active department + job. No headcount authority — not enforced. `employee.read` is **not** sufficient for organization-structure mutation.
 
-`HumanResourcesStore` (memory + drizzle) covers employee, employment, contract, position, and assignment. Remaining folders under recruitment/lifecycle/time/leave/… stay markers until their DDL. Manifest: `@afenda/human-resources/module-manifest`.
+`HumanResourcesStore` (memory + drizzle) covers employee, employment, contract, department, job, position, assignment, and reporting line. Remaining folders under recruitment/lifecycle/time/leave/… stay markers until their DDL. Manifest: `@afenda/human-resources/module-manifest`.
 
 **Authorization:** permission checks go through an injected `HumanResourcesAuthorizationPort` at the composition root — never import `@afenda/admin` here. Route-level checks in `apps/web` are not sufficient.
 
@@ -67,8 +77,9 @@ Command schemas are `.strict()` and keep tenant fields only at the top level (no
 | Mutation roots | All **43** `hr_*` tables are `HARD_TENANT_ROOT` in `@afenda/db` (`hard-tenant-roots.ts`) and `pnpm audit:tenancy-nulls` |
 | Lookup contract | Store methods require `organizationId`; bare-ID cross-org get is prohibited |
 | Stamp last | Composition root stamps `organizationId` after client payload; DB `NOT NULL` is the final integrity boundary |
-| Domain DDL (HR2) | `hr_employment`, `hr_employment_contract`, `hr_position`, `hr_work_assignment` have domain columns + org-scoped FKs; other `hr_*` remain scaffold |
-| Parent/child cross-org | Employment → employee; contract/assignment → employment + employee; assignment → active position — all org-scoped |
+| Domain DDL (HR2 + HR-03) | Core workforce columns via `0036`; organization structure via `0037` (`hr_department`, `hr_job`, `hr_reporting_line` + position FKs/status); other `hr_*` remain scaffold |
+| Parent/child cross-org | Employment → employee; contract/assignment → employment + employee; assignment → active position; reporting → same-org employees — enforced in memory + Drizzle |
+| Terminate closes open | Status → `terminated` always sets `ends_on` (caller value or startsOn) so open unique index releases; emits `employee.terminated.v1` |
 
 **Integration:** Payroll consumes approved workforce facts via app-injected adapters (`PayrollEmployeeQueryPort` is owned by `@afenda/payroll` — not exported from this package). Auth and Admin reactions to HR events use app-saga orchestration — not peer ERP imports.
 
@@ -78,7 +89,7 @@ Command schemas are `.strict()` and keep tenant fields only at the top level (no
 |------|------|
 | `@afenda/human-resources` | Employee / employment / contract / position / assignment commands & queries, brands, schemas, permissions, errors, authz / mutation port types |
 | `@afenda/human-resources/adapters/drizzle` | `createDrizzleHumanResourcesStore` + `HumanResourcesStore` type |
-| `@afenda/human-resources/testing` | Memory store factory + `HumanResourcesStore` / `MutationPorts` types for Vitest |
+| `@afenda/human-resources/testing` | Memory + Drizzle store factories + `HumanResourcesStore` / `MutationPorts` types for Vitest (Neon Drizzle suites skip when `DATABASE_URL` is absent) |
 | `@afenda/human-resources/module-manifest` | Module manifest (`band: R1-F`, `lifecycle: scaffolded`) |
 
 The root surface never exports raw Drizzle tables, query builders, database handles, Next.js types, or HTTP envelopes.

@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
+	type AnyPgColumn,
 	date,
 	index,
 	integer,
@@ -52,6 +53,65 @@ export const hrEmployee = pgTable(
 	],
 );
 
+export const hrDepartment = pgTable(
+	"hr_department",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		code: text("code").notNull(),
+		name: text("name").notNull(),
+		parentDepartmentId: uuid("parent_department_id").references(
+			(): AnyPgColumn => hrDepartment.id,
+		),
+		/** active | archived */
+		status: text("status").notNull(),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_department_org_id_idx").on(t.organizationId, t.id),
+		index("hr_department_org_parent_idx").on(
+			t.organizationId,
+			t.parentDepartmentId,
+		),
+		index("hr_department_org_status_idx").on(t.organizationId, t.status),
+		uniqueIndex("hr_department_org_code_uidx").on(t.organizationId, t.code),
+	],
+);
+
+export const hrJob = pgTable(
+	"hr_job",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		code: text("code").notNull(),
+		title: text("title").notNull(),
+		/** active | archived */
+		status: text("status").notNull(),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_job_org_id_idx").on(t.organizationId, t.id),
+		index("hr_job_org_status_idx").on(t.organizationId, t.status),
+		uniqueIndex("hr_job_org_code_uidx").on(t.organizationId, t.code),
+	],
+);
+
 export const hrEmployment = pgTable(
 	"hr_employment",
 	{
@@ -90,7 +150,9 @@ export const hrPosition = pgTable(
 		organizationId: text("organization_id").notNull(),
 		code: text("code").notNull(),
 		title: text("title").notNull(),
-		/** active | inactive */
+		departmentId: uuid("department_id").references(() => hrDepartment.id),
+		jobId: uuid("job_id").references(() => hrJob.id),
+		/** active | frozen | closed */
 		status: text("status").notNull(),
 		version: integer("version").notNull().default(1),
 		createdBy: text("created_by").notNull(),
@@ -105,6 +167,11 @@ export const hrPosition = pgTable(
 	(t) => [
 		index("hr_position_org_id_idx").on(t.organizationId, t.id),
 		index("hr_position_org_status_idx").on(t.organizationId, t.status),
+		index("hr_position_org_department_idx").on(
+			t.organizationId,
+			t.departmentId,
+		),
+		index("hr_position_org_job_idx").on(t.organizationId, t.jobId),
 		uniqueIndex("hr_position_org_code_uidx").on(t.organizationId, t.code),
 	],
 );
@@ -189,9 +256,49 @@ export const hrWorkAssignment = pgTable(
 	],
 );
 
-export const hrDepartment = createErpScaffoldTable("hr_department");
-export const hrJob = createErpScaffoldTable("hr_job");
-export const hrReportingLine = createErpScaffoldTable("hr_reporting_line");
+export const hrReportingLine = pgTable(
+	"hr_reporting_line",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		employeeId: uuid("employee_id")
+			.notNull()
+			.references(() => hrEmployee.id),
+		managerEmployeeId: uuid("manager_employee_id")
+			.notNull()
+			.references(() => hrEmployee.id),
+		/** primary */
+		relationshipKind: text("relationship_kind").notNull(),
+		startsOn: date("starts_on", { mode: "string" }).notNull(),
+		endsOn: date("ends_on", { mode: "string" }),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_reporting_line_org_id_idx").on(t.organizationId, t.id),
+		index("hr_reporting_line_org_employee_idx").on(
+			t.organizationId,
+			t.employeeId,
+		),
+		index("hr_reporting_line_org_manager_idx").on(
+			t.organizationId,
+			t.managerEmployeeId,
+		),
+		uniqueIndex("hr_reporting_line_org_employee_open_primary_uidx")
+			.on(t.organizationId, t.employeeId)
+			.where(
+				sql`${t.endsOn} IS NULL AND ${t.relationshipKind} = 'primary'`,
+			),
+	],
+);
+
 export const hrEmploymentMovement = createErpScaffoldTable(
 	"hr_employment_movement",
 );

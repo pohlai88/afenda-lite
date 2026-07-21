@@ -23,6 +23,7 @@ import {
 	createEmploymentInputSchema,
 	getEmploymentInputSchema,
 } from "../schemas";
+import { resolveAmendEndsOn } from "../shared/domain-guards";
 import { assertEmploymentStatusTransition } from "../shared/employment-status";
 import type { Employment } from "../types";
 
@@ -116,13 +117,24 @@ export async function amendEmployment(
 		}
 	}
 
+	const startsOn = parsed.data.startsOn ?? existing.data.startsOn;
+	const endsOnResolved = resolveAmendEndsOn({
+		nextStatus: parsed.data.status,
+		startsOn,
+		endsOn: parsed.data.endsOn,
+		previousEndsOn: existing.data.endsOn,
+	});
+	if (!endsOnResolved.ok) {
+		return endsOnResolved;
+	}
+
 	return store.amendEmployment(
 		{
 			organizationId: parsed.data.organizationId,
 			employmentId: parsed.data.employmentId,
 			status: parsed.data.status,
 			startsOn: parsed.data.startsOn,
-			endsOn: parsed.data.endsOn,
+			endsOn: endsOnResolved.data,
 			expectedVersion: parsed.data.expectedVersion,
 			actorUserId: parsed.data.actorUserId,
 		},

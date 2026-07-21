@@ -46,6 +46,28 @@ export type HumanResourcesAssignmentId = z.infer<
 	typeof humanResourcesAssignmentIdSchema
 >;
 
+export const humanResourcesDepartmentIdSchema = z
+	.string()
+	.uuid()
+	.brand<"HumanResourcesDepartmentId">();
+export type HumanResourcesDepartmentId = z.infer<
+	typeof humanResourcesDepartmentIdSchema
+>;
+
+export const humanResourcesJobIdSchema = z
+	.string()
+	.uuid()
+	.brand<"HumanResourcesJobId">();
+export type HumanResourcesJobId = z.infer<typeof humanResourcesJobIdSchema>;
+
+export const humanResourcesReportingLineIdSchema = z
+	.string()
+	.uuid()
+	.brand<"HumanResourcesReportingLineId">();
+export type HumanResourcesReportingLineId = z.infer<
+	typeof humanResourcesReportingLineIdSchema
+>;
+
 /** Brand after UUID generation or trusted DB load — never cast without parse. */
 export function parseHumanResourcesEmployeeId(
 	id: string,
@@ -111,6 +133,48 @@ export function parseHumanResourcesAssignmentId(
 		return fail(
 			"INTERNAL_ERROR",
 			"Invalid assignment identifier",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
+		);
+	}
+	return ok(parsed.data);
+}
+
+export function parseHumanResourcesDepartmentId(
+	id: string,
+): Result<HumanResourcesDepartmentId> {
+	const parsed = humanResourcesDepartmentIdSchema.safeParse(id);
+	if (!parsed.success) {
+		return fail(
+			"INTERNAL_ERROR",
+			"Invalid department identifier",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
+		);
+	}
+	return ok(parsed.data);
+}
+
+export function parseHumanResourcesJobId(
+	id: string,
+): Result<HumanResourcesJobId> {
+	const parsed = humanResourcesJobIdSchema.safeParse(id);
+	if (!parsed.success) {
+		return fail(
+			"INTERNAL_ERROR",
+			"Invalid job identifier",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
+		);
+	}
+	return ok(parsed.data);
+}
+
+export function parseHumanResourcesReportingLineId(
+	id: string,
+): Result<HumanResourcesReportingLineId> {
+	const parsed = humanResourcesReportingLineIdSchema.safeParse(id);
+	if (!parsed.success) {
+		return fail(
+			"INTERNAL_ERROR",
+			"Invalid reporting line identifier",
 			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
 		);
 	}

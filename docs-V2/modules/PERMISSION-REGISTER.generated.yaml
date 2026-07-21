@@ -91,6 +91,12 @@ permissions:
   - code: human-resources.employment.manage
     moduleId: human-resources
     namespace: human-resources
+  - code: human-resources.organization.read
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.organization.manage
+    moduleId: human-resources
+    namespace: human-resources
   - code: human-resources.requisition.create
     moduleId: human-resources
     namespace: human-resources

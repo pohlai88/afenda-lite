@@ -322,8 +322,9 @@ organizationId, entityType, entityId, actorId, correlationId [, causationId?]
 | Event id | Emitter status |
 | -------- | -------------- |
 | `human-resources.employee.created.v1` | **Live** — memory + drizzle store on create |
-| `human-resources.employment.started.v1` | Catalog only — blocked until employment mutations |
-| `human-resources.employment.changed.v1` | Catalog only |
+| `human-resources.employment.started.v1` | **Live** — memory + drizzle on employment create |
+| `human-resources.employment.changed.v1` | **Live** — memory + drizzle on employment amend |
+| `human-resources.employee.terminated.v1` | **Live** — memory + drizzle when status transitions to `terminated` (also closes `ends_on`) |
 | `human-resources.employee.transferred.v1` | Catalog only |
 | `human-resources.employee.terminated.v1` | Catalog only |
 | `human-resources.requisition.approved.v1` | Catalog only |
@@ -410,8 +411,9 @@ Q3 remains open for leave/time work.
 | **HR1** (tenancy hardening) | **DONE / CLOSED** |
 | **HR2** (core workforce DDL) | **DONE** — `0036_hr_core_workforce_ddl` applied |
 | **HR3** (employee/employment/contract commands) | **DONE** |
-| **HR4** (position/assignment commands) | **DONE** for position/assignment; dept/job/reporting-line remain scaffold |
-| **Next** | Org structure remainder (dept/job/reporting-line) or recruitment HR5 |
+| **HR4** (position/assignment commands) | **DONE** for position/assignment |
+| **HR-03** (dept/job/reporting-line + position FKs) | **DONE** — `0037_hr_organization_structure_ddl` |
+| **Next** | Recruitment HR5 (chat mission HR-04) |
 
 ---
 

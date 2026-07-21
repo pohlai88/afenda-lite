@@ -538,6 +538,18 @@ export const PLATFORM_PERMISSION_V1 = [
 		sensitive: true,
 	},
 	{
+		code: "human-resources.organization.read",
+		module: "human_resources",
+		description: "Read organization structure (departments, jobs, positions, reporting lines)",
+		sensitive: false,
+	},
+	{
+		code: "human-resources.organization.manage",
+		module: "human_resources",
+		description: "Manage organization structure (departments, jobs, positions, reporting lines)",
+		sensitive: true,
+	},
+	{
 		code: "human-resources.requisition.create",
 		module: "human_resources",
 		description: "Create job requisitions",

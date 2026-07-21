@@ -40,15 +40,36 @@ queries:
   - id: human-resources.employment-contract.get
     moduleId: human-resources
     permission: human-resources.employee.read
+  - id: human-resources.department.get
+    moduleId: human-resources
+    permission: human-resources.organization.read
+  - id: human-resources.department.list
+    moduleId: human-resources
+    permission: human-resources.organization.read
+  - id: human-resources.job.get
+    moduleId: human-resources
+    permission: human-resources.organization.read
+  - id: human-resources.job.list
+    moduleId: human-resources
+    permission: human-resources.organization.read
   - id: human-resources.position.get
     moduleId: human-resources
-    permission: human-resources.employee.read
+    permission: human-resources.organization.read
   - id: human-resources.position.list
     moduleId: human-resources
-    permission: human-resources.employee.read
+    permission: human-resources.organization.read
   - id: human-resources.assignment.get
     moduleId: human-resources
     permission: human-resources.employee.read
+  - id: human-resources.reporting-line.resolve-primary-manager
+    moduleId: human-resources
+    permission: human-resources.organization.read
+  - id: human-resources.reporting-line.list-direct-reports
+    moduleId: human-resources
+    permission: human-resources.organization.read
+  - id: human-resources.organization.tree
+    moduleId: human-resources
+    permission: human-resources.organization.read
   - id: inventory.movement.get
     moduleId: inventory
     permission: inventory.movement.read

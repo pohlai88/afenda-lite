@@ -91,15 +91,60 @@ commands:
   - id: human-resources.employment-contract.create
     moduleId: human-resources
     permission: human-resources.employment.manage
+  - id: human-resources.department.create
+    moduleId: human-resources
+    permission: human-resources.organization.manage
+  - id: human-resources.department.update
+    moduleId: human-resources
+    permission: human-resources.organization.manage
+  - id: human-resources.department.activate
+    moduleId: human-resources
+    permission: human-resources.organization.manage
+  - id: human-resources.department.archive
+    moduleId: human-resources
+    permission: human-resources.organization.manage
+  - id: human-resources.job.create
+    moduleId: human-resources
+    permission: human-resources.organization.manage
+  - id: human-resources.job.update
+    moduleId: human-resources
+    permission: human-resources.organization.manage
+  - id: human-resources.job.activate
+    moduleId: human-resources
+    permission: human-resources.organization.manage
+  - id: human-resources.job.archive
+    moduleId: human-resources
+    permission: human-resources.organization.manage
   - id: human-resources.position.create
     moduleId: human-resources
-    permission: human-resources.employment.manage
+    permission: human-resources.organization.manage
+  - id: human-resources.position.update
+    moduleId: human-resources
+    permission: human-resources.organization.manage
+  - id: human-resources.position.activate
+    moduleId: human-resources
+    permission: human-resources.organization.manage
+  - id: human-resources.position.freeze
+    moduleId: human-resources
+    permission: human-resources.organization.manage
+  - id: human-resources.position.close
+    moduleId: human-resources
+    permission: human-resources.organization.manage
   - id: human-resources.assignment.create
     moduleId: human-resources
     permission: human-resources.employment.manage
   - id: human-resources.assignment.end
     moduleId: human-resources
     permission: human-resources.employment.manage
+  - id: human-resources.reporting-line.assign-primary
+    moduleId: human-resources
+    permission: human-resources.organization.manage
+  - id: human-resources.reporting-line.close
+    moduleId: human-resources
+    permission: human-resources.organization.manage
+  - id: human-resources.reporting-line.replace-primary
+    moduleId: human-resources
+    permission: human-resources.organization.manage
   - id: inventory.movement.create
     moduleId: inventory
     permission: inventory.movement.create

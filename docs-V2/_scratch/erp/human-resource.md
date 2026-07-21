@@ -767,6 +767,8 @@ human-resources.employee.create
 human-resources.employee.read
 human-resources.employee.update
 human-resources.employment.manage
+human-resources.organization.read
+human-resources.organization.manage
 
 human-resources.requisition.create
 human-resources.candidate.manage
