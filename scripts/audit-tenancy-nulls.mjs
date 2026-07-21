@@ -56,6 +56,7 @@ const HARD_TENANT_ROOT_TABLE_NAMES = [
 	"supplier_invoice",
 	"supplier_invoice_line",
 	"supplier_credit_note",
+	"supplier_credit_note_line",
 	"supplier_allocation",
 	"three_way_match_result",
 	"supplier_balance_projection",
@@ -80,6 +81,56 @@ const HARD_TENANT_ROOT_TABLE_NAMES = [
 	"journal_line",
 	"ledger_posting",
 	"accounting_period",
+	"chart_of_account",
+	"ledger_account",
+	"account_role_mapping",
+	"posting_profile",
+	"posting_profile_line",
+	"source_posting_link",
+	"financial_posting_exception",
+	"hr_employee",
+	"hr_employment",
+	"hr_employment_contract",
+	"hr_work_assignment",
+	"hr_department",
+	"hr_job",
+	"hr_position",
+	"hr_reporting_line",
+	"hr_employment_movement",
+	"hr_job_requisition",
+	"hr_candidate",
+	"hr_candidate_application",
+	"hr_interview",
+	"hr_interview_evaluation",
+	"hr_employment_offer",
+	"hr_onboarding_case",
+	"hr_onboarding_task",
+	"hr_probation_review",
+	"hr_employment_confirmation",
+	"hr_termination",
+	"hr_offboarding_case",
+	"hr_offboarding_task",
+	"hr_exit_interview",
+	"hr_clearance",
+	"hr_learning_course",
+	"hr_learning_program",
+	"hr_learning_session",
+	"hr_learning_assignment",
+	"hr_learning_attendance",
+	"hr_learning_assessment",
+	"hr_learning_completion",
+	"hr_employee_certification",
+	"hr_development_plan",
+	"hr_compensation_grade",
+	"hr_salary_band",
+	"hr_employee_compensation",
+	"hr_allowance_entitlement",
+	"hr_bonus_eligibility",
+	"hr_benefit_plan",
+	"hr_benefit_eligibility",
+	"hr_benefit_enrollment",
+	"hr_compensation_review_cycle",
+	"hr_compensation_review",
 ];
 
 const fileEnv = loadLocalEnv();
@@ -185,6 +236,8 @@ const NULL_COUNT_BY_TABLE = {
 		sql`SELECT count(*)::int AS null_count FROM supplier_invoice_line WHERE organization_id IS NULL`,
 	supplier_credit_note: () =>
 		sql`SELECT count(*)::int AS null_count FROM supplier_credit_note WHERE organization_id IS NULL`,
+	supplier_credit_note_line: () =>
+		sql`SELECT count(*)::int AS null_count FROM supplier_credit_note_line WHERE organization_id IS NULL`,
 	supplier_allocation: () =>
 		sql`SELECT count(*)::int AS null_count FROM supplier_allocation WHERE organization_id IS NULL`,
 	three_way_match_result: () =>
@@ -233,6 +286,106 @@ const NULL_COUNT_BY_TABLE = {
 		sql`SELECT count(*)::int AS null_count FROM ledger_posting WHERE organization_id IS NULL`,
 	accounting_period: () =>
 		sql`SELECT count(*)::int AS null_count FROM accounting_period WHERE organization_id IS NULL`,
+	chart_of_account: () =>
+		sql`SELECT count(*)::int AS null_count FROM chart_of_account WHERE organization_id IS NULL`,
+	ledger_account: () =>
+		sql`SELECT count(*)::int AS null_count FROM ledger_account WHERE organization_id IS NULL`,
+	account_role_mapping: () =>
+		sql`SELECT count(*)::int AS null_count FROM account_role_mapping WHERE organization_id IS NULL`,
+	posting_profile: () =>
+		sql`SELECT count(*)::int AS null_count FROM posting_profile WHERE organization_id IS NULL`,
+	posting_profile_line: () =>
+		sql`SELECT count(*)::int AS null_count FROM posting_profile_line WHERE organization_id IS NULL`,
+	source_posting_link: () =>
+		sql`SELECT count(*)::int AS null_count FROM source_posting_link WHERE organization_id IS NULL`,
+	financial_posting_exception: () =>
+		sql`SELECT count(*)::int AS null_count FROM financial_posting_exception WHERE organization_id IS NULL`,
+	hr_employee: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_employee WHERE organization_id IS NULL`,
+	hr_employment: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_employment WHERE organization_id IS NULL`,
+	hr_employment_contract: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_employment_contract WHERE organization_id IS NULL`,
+	hr_work_assignment: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_work_assignment WHERE organization_id IS NULL`,
+	hr_department: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_department WHERE organization_id IS NULL`,
+	hr_job: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_job WHERE organization_id IS NULL`,
+	hr_position: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_position WHERE organization_id IS NULL`,
+	hr_reporting_line: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_reporting_line WHERE organization_id IS NULL`,
+	hr_employment_movement: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_employment_movement WHERE organization_id IS NULL`,
+	hr_job_requisition: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_job_requisition WHERE organization_id IS NULL`,
+	hr_candidate: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_candidate WHERE organization_id IS NULL`,
+	hr_candidate_application: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_candidate_application WHERE organization_id IS NULL`,
+	hr_interview: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_interview WHERE organization_id IS NULL`,
+	hr_interview_evaluation: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_interview_evaluation WHERE organization_id IS NULL`,
+	hr_employment_offer: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_employment_offer WHERE organization_id IS NULL`,
+	hr_onboarding_case: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_onboarding_case WHERE organization_id IS NULL`,
+	hr_onboarding_task: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_onboarding_task WHERE organization_id IS NULL`,
+	hr_probation_review: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_probation_review WHERE organization_id IS NULL`,
+	hr_employment_confirmation: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_employment_confirmation WHERE organization_id IS NULL`,
+	hr_termination: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_termination WHERE organization_id IS NULL`,
+	hr_offboarding_case: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_offboarding_case WHERE organization_id IS NULL`,
+	hr_offboarding_task: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_offboarding_task WHERE organization_id IS NULL`,
+	hr_exit_interview: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_exit_interview WHERE organization_id IS NULL`,
+	hr_clearance: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_clearance WHERE organization_id IS NULL`,
+	hr_learning_course: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_learning_course WHERE organization_id IS NULL`,
+	hr_learning_program: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_learning_program WHERE organization_id IS NULL`,
+	hr_learning_session: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_learning_session WHERE organization_id IS NULL`,
+	hr_learning_assignment: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_learning_assignment WHERE organization_id IS NULL`,
+	hr_learning_attendance: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_learning_attendance WHERE organization_id IS NULL`,
+	hr_learning_assessment: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_learning_assessment WHERE organization_id IS NULL`,
+	hr_learning_completion: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_learning_completion WHERE organization_id IS NULL`,
+	hr_employee_certification: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_employee_certification WHERE organization_id IS NULL`,
+	hr_development_plan: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_development_plan WHERE organization_id IS NULL`,
+	hr_compensation_grade: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_compensation_grade WHERE organization_id IS NULL`,
+	hr_salary_band: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_salary_band WHERE organization_id IS NULL`,
+	hr_employee_compensation: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_employee_compensation WHERE organization_id IS NULL`,
+	hr_allowance_entitlement: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_allowance_entitlement WHERE organization_id IS NULL`,
+	hr_bonus_eligibility: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_bonus_eligibility WHERE organization_id IS NULL`,
+	hr_benefit_plan: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_benefit_plan WHERE organization_id IS NULL`,
+	hr_benefit_eligibility: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_benefit_eligibility WHERE organization_id IS NULL`,
+	hr_benefit_enrollment: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_benefit_enrollment WHERE organization_id IS NULL`,
+	hr_compensation_review_cycle: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_compensation_review_cycle WHERE organization_id IS NULL`,
+	hr_compensation_review: () =>
+		sql`SELECT count(*)::int AS null_count FROM hr_compensation_review WHERE organization_id IS NULL`,
 };
 
 console.log(

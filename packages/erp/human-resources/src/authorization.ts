@@ -1,5 +1,10 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
 
+import {
+	HUMAN_RESOURCES_ERROR_FORBIDDEN,
+	HUMAN_RESOURCES_ERROR_UNAUTHORIZED,
+	humanResourcesErrorDetails,
+} from "./error-codes";
 import { humanResourcesModuleManifest } from "./module.manifest";
 import type {
 	HumanResourcesCommandId,
@@ -65,6 +70,7 @@ async function requireHumanResourcesPermission(
 			"UNAUTHORIZED",
 			"Human Resources authorization port is required",
 			{
+				...humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_UNAUTHORIZED),
 				permission: input.permission,
 			},
 		);
@@ -72,6 +78,7 @@ async function requireHumanResourcesPermission(
 	const allowed = await authorization.can(input);
 	if (!allowed) {
 		return fail("FORBIDDEN", "Missing required human resources permission", {
+			...humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_FORBIDDEN),
 			permission: input.permission,
 		});
 	}

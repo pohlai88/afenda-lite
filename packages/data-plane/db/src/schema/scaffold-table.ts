@@ -1,10 +1,4 @@
-import {
-	index,
-	pgTable,
-	text,
-	timestamp,
-	uuid,
-} from "drizzle-orm/pg-core";
+import { index, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
 /**
  * Minimal tenant-root scaffold for ERP packages awaiting column design.

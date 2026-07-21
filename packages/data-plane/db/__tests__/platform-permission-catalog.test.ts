@@ -1,5 +1,6 @@
 /**
- * N10 — ARCH-023 v1 permission catalog + idempotent ensure.
+ * N10 — living PLATFORM_PERMISSION_V1 catalog + idempotent ensure.
+ * SSOT = platform-permission-catalog.ts (no frozen ARCH-023 snapshot duplicate).
  */
 
 import { resolveDatabaseUrlForTests } from "@afenda/testing/require-database-for-ci";
@@ -21,92 +22,30 @@ import {
 
 const { hasDatabase } = resolveDatabaseUrlForTests();
 
-const ARCH023_V1_CODES = [
-	"org.users.manage",
-	"org.roles.manage",
-	"clients.invite",
-	"account.self",
-	"master_data.read",
-	"master_data.manage",
-	"master_data.approve",
-	"master_data.import_approve",
-	"sales.order.create",
-	"sales.order.update",
-	"sales.order.post",
-	"sales.order.cancel",
-	"sales.order.read",
-	"sales.order.list",
-	"purchasing.order.create",
-	"purchasing.order.update",
-	"purchasing.order.post",
-	"purchasing.order.cancel",
-	"purchasing.order.close",
-	"purchasing.order.read",
-	"purchasing.order.list",
-	"inventory.movement.create",
-	"inventory.movement.post",
-	"inventory.movement.cancel",
-	"inventory.movement.read",
-	"inventory.reservation.create",
-	"inventory.reservation.release",
-	"inventory.availability.read",
-	"inventory.adjustment.post",
-	"receiving.receipt.read",
-	"receiving.receipt.create",
-	"receiving.receipt.update",
-	"receiving.receipt.post",
-	"receiving.receipt.cancel",
-	"receiving.receipt.reverse",
-	"receiving.discrepancy.record",
-	"receiving.discrepancy.resolve",
-	"fulfillment.delivery.read",
-	"fulfillment.delivery.create",
-	"fulfillment.delivery.update",
-	"fulfillment.picking.confirm",
-	"fulfillment.packing.confirm",
-	"fulfillment.delivery.post",
-	"fulfillment.delivery.cancel",
-	"fulfillment.pod.record",
-	"fulfillment.delivery.close",
-	"receivables.invoice.read",
-	"receivables.invoice.create",
-	"receivables.invoice.update",
-	"receivables.invoice.post",
-	"receivables.invoice.cancel",
-	"receivables.invoice.close",
-	"receivables.credit_note.issue",
-	"receivables.receipt.apply",
-	"receivables.receipt_application.reverse",
-	"receivables.balance.read",
-	"receivables.aging.read",
-	"payables.read",
-	"payables.manage",
-	"payments.payment.read",
-	"payments.payment.create",
-	"payments.payment.update",
-	"payments.payment.post",
-	"payments.payment.reverse",
-	"payments.refund.create",
-	"payments.refund.post",
-	"payments.transfer.create",
-	"payments.transfer.post",
-	"payments.application_instruction.manage",
-	"payments.account.manage",
-	"payments.account.read",
-	"payments.availability.read",
-	"accounting.read",
-	"accounting.manage",
-] as const;
+const V1_COUNT = PLATFORM_PERMISSION_CODES_V1.length;
+
+function templateCodes(templateKey: string): readonly string[] {
+	const template = PLATFORM_ROLE_TEMPLATES_V1.find(
+		(row) => row.templateKey === templateKey,
+	);
+	expect(template).toBeDefined();
+	return template?.permissionCodes ?? [];
+}
 
 describe("PLATFORM_PERMISSION_V1 (N10 / ARCH-023)", () => {
-	it("matches ARCH-023 §3.2 seed codes exactly", () => {
-		expect([...PLATFORM_PERMISSION_CODES_V1].toSorted()).toEqual(
-			[...ARCH023_V1_CODES].toSorted(),
+	it("keeps unique living catalog codes as SSOT", () => {
+		expect(PLATFORM_PERMISSION_V1).toHaveLength(V1_COUNT);
+		expect(new Set(PLATFORM_PERMISSION_CODES_V1).size).toBe(V1_COUNT);
+		expect(V1_COUNT).toBeGreaterThan(74);
+		expect(PLATFORM_PERMISSION_CODES_V1).toContain(
+			"human-resources.employee.create",
 		);
-		expect(PLATFORM_PERMISSION_V1).toHaveLength(74);
+		expect(PLATFORM_PERMISSION_CODES_V1).toContain("accounting.journal.read");
+		expect(PLATFORM_PERMISSION_CODES_V1).not.toContain("accounting.read");
+		expect(PLATFORM_PERMISSION_CODES_V1).not.toContain("accounting.manage");
 	});
 
-	it("isPlatformPermissionCodeV1 accepts only v1 codes", () => {
+	it("isPlatformPermissionCodeV1 accepts only living v1 codes", () => {
 		expect(isPlatformPermissionCodeV1("org.roles.manage")).toBe(true);
 		expect(isPlatformPermissionCodeV1("sales.order.read")).toBe(true);
 		expect(isPlatformPermissionCodeV1("sales.order.list")).toBe(true);
@@ -128,138 +67,57 @@ describe("PLATFORM_PERMISSION_V1 (N10 / ARCH-023)", () => {
 		expect(isPlatformPermissionCodeV1("payments.payment.read")).toBe(true);
 		expect(isPlatformPermissionCodeV1("payments.read")).toBe(false);
 		expect(isPlatformPermissionCodeV1("payments.manage")).toBe(false);
-		expect(isPlatformPermissionCodeV1("accounting.read")).toBe(true);
+		expect(isPlatformPermissionCodeV1("accounting.journal.read")).toBe(true);
+		expect(isPlatformPermissionCodeV1("accounting.read")).toBe(false);
+		expect(isPlatformPermissionCodeV1("accounting.manage")).toBe(false);
+		expect(isPlatformPermissionCodeV1("human-resources.employee.read")).toBe(
+			true,
+		);
 		expect(isPlatformPermissionCodeV1("fft.orders.manage")).toBe(false);
 		expect(isPlatformPermissionCodeV1("declarations.read")).toBe(false);
 		expect(isPlatformPermissionCodeV1("")).toBe(false);
 	});
 
-	it("defines Org Admin / Editor / Viewer templates only", () => {
+	it("defines Org Admin / Editor / Viewer templates with subset integrity", () => {
 		expect(
 			PLATFORM_ROLE_TEMPLATES_V1.map((t) => t.templateKey).toSorted(),
 		).toEqual(["editor", "org_admin", "viewer"]);
 
-		const orgAdmin = PLATFORM_ROLE_TEMPLATES_V1.find(
-			(t) => t.templateKey === "org_admin",
-		);
-		expect(orgAdmin?.permissionCodes.toSorted()).toEqual(
-			[...ARCH023_V1_CODES].toSorted(),
-		);
+		const orgAdminCodes = templateCodes("org_admin");
+		const editorCodes = templateCodes("editor");
+		const viewerCodes = templateCodes("viewer");
+		const orgAdminSet = new Set(orgAdminCodes);
 
-		const editor = PLATFORM_ROLE_TEMPLATES_V1.find(
-			(t) => t.templateKey === "editor",
+		expect([...orgAdminCodes].toSorted()).toEqual(
+			[...PLATFORM_PERMISSION_CODES_V1].toSorted(),
 		);
-		expect(editor?.permissionCodes.toSorted()).toEqual(
-			[
-				"account.self",
-				"accounting.manage",
-				"accounting.read",
-				"clients.invite",
-				"fulfillment.delivery.cancel",
-				"fulfillment.delivery.close",
-				"fulfillment.delivery.create",
-				"fulfillment.delivery.post",
-				"fulfillment.delivery.read",
-				"fulfillment.delivery.update",
-				"fulfillment.packing.confirm",
-				"fulfillment.picking.confirm",
-				"fulfillment.pod.record",
-				"inventory.adjustment.post",
-				"inventory.availability.read",
-				"inventory.movement.cancel",
-				"inventory.movement.create",
-				"inventory.movement.post",
-				"inventory.movement.read",
-				"inventory.reservation.create",
-				"inventory.reservation.release",
-				"master_data.manage",
-				"master_data.read",
-				"payables.manage",
-				"payables.read",
-				"payments.account.manage",
-				"payments.account.read",
-				"payments.application_instruction.manage",
-				"payments.availability.read",
-				"payments.payment.create",
-				"payments.payment.post",
-				"payments.payment.read",
-				"payments.payment.reverse",
-				"payments.payment.update",
-				"payments.refund.create",
-				"payments.refund.post",
-				"payments.transfer.create",
-				"payments.transfer.post",
-				"purchasing.order.cancel",
-				"purchasing.order.close",
-				"purchasing.order.create",
-				"purchasing.order.list",
-				"purchasing.order.post",
-				"purchasing.order.read",
-				"purchasing.order.update",
-				"receiving.discrepancy.record",
-				"receiving.discrepancy.resolve",
-				"receiving.receipt.cancel",
-				"receiving.receipt.create",
-				"receiving.receipt.post",
-				"receiving.receipt.read",
-				"receiving.receipt.reverse",
-				"receiving.receipt.update",
-				"receivables.aging.read",
-				"receivables.balance.read",
-				"receivables.credit_note.issue",
-				"receivables.invoice.cancel",
-				"receivables.invoice.close",
-				"receivables.invoice.create",
-				"receivables.invoice.post",
-				"receivables.invoice.read",
-				"receivables.invoice.update",
-				"receivables.receipt.apply",
-				"receivables.receipt_application.reverse",
-				"sales.order.cancel",
-				"sales.order.create",
-				"sales.order.list",
-				"sales.order.post",
-				"sales.order.read",
-				"sales.order.update",
-			].toSorted(),
-		);
+		expect(editorCodes.length).toBeLessThan(orgAdminCodes.length);
+		expect(viewerCodes.length).toBeLessThan(editorCodes.length);
 
-		const viewer = PLATFORM_ROLE_TEMPLATES_V1.find(
-			(t) => t.templateKey === "viewer",
-		);
-		expect(viewer?.permissionCodes.toSorted()).toEqual(
-			[
-				"account.self",
-				"accounting.read",
-				"fulfillment.delivery.read",
-				"inventory.availability.read",
-				"inventory.movement.read",
-				"master_data.read",
-				"payables.read",
-				"payments.account.read",
-				"payments.availability.read",
-				"payments.payment.read",
-				"purchasing.order.list",
-				"purchasing.order.read",
-				"receiving.receipt.read",
-				"receivables.aging.read",
-				"receivables.balance.read",
-				"receivables.invoice.read",
-				"sales.order.list",
-				"sales.order.read",
-			].toSorted(),
-		);
+		for (const code of editorCodes) {
+			expect(orgAdminSet.has(code)).toBe(true);
+		}
+		for (const code of viewerCodes) {
+			expect(orgAdminSet.has(code)).toBe(true);
+		}
+
+		expect(editorCodes).toContain("master_data.manage");
+		expect(editorCodes).not.toContain("master_data.approve");
+		expect(viewerCodes).toContain("master_data.read");
+		expect(viewerCodes).not.toContain("master_data.manage");
+		expect(viewerCodes).toContain("accounting.journal.read");
+		expect(viewerCodes).not.toContain("accounting.journal.post");
 	});
 });
 
 describe.skipIf(!hasDatabase)("ensurePlatformPermissionCatalog (N10)", () => {
 	it("is idempotent and preserves template_key → role ids", async () => {
 		const first = await ensurePlatformPermissionCatalog(db);
-		expect(first.permissionCount).toBe(74);
+		expect(first.permissionCount).toBe(V1_COUNT);
 		expect(first.templates).toHaveLength(3);
 
 		const second = await ensurePlatformPermissionCatalog(db);
-		expect(second.permissionCount).toBe(74);
+		expect(second.permissionCount).toBe(V1_COUNT);
 		expect(second.templates.map((t) => t.roleId).toSorted()).toEqual(
 			first.templates.map((t) => t.roleId).toSorted(),
 		);

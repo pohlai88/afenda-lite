@@ -5,34 +5,86 @@ export type {
 	HumanResourcesPermission,
 } from "./authorization";
 export {
+	type HumanResourcesAssignmentId,
 	type HumanResourcesEmployeeId,
+	type HumanResourcesEmploymentContractId,
+	type HumanResourcesEmploymentId,
+	type HumanResourcesPositionId,
+	humanResourcesAssignmentIdSchema,
 	humanResourcesEmployeeIdSchema,
+	humanResourcesEmploymentContractIdSchema,
+	humanResourcesEmploymentIdSchema,
+	humanResourcesPositionIdSchema,
+	parseHumanResourcesAssignmentId,
+	parseHumanResourcesEmployeeId,
+	parseHumanResourcesEmploymentContractId,
+	parseHumanResourcesEmploymentId,
+	parseHumanResourcesPositionId,
 } from "./brands";
 export type { HumanResourcesCommandOptions } from "./command-options";
-export { createEmployee, getEmployeeById } from "./core/employee";
+export {
+	createAssignment,
+	endAssignment,
+	getAssignment,
+} from "./core/assignment";
+export {
+	createEmployee,
+	getEmployeeById,
+	listEmployees,
+	updateEmployee,
+} from "./core/employee";
+export {
+	amendEmployment,
+	createEmployment,
+	getEmployment,
+} from "./core/employment";
+export {
+	createEmploymentContract,
+	getEmploymentContract,
+} from "./core/employment-contract";
 export {
 	HUMAN_RESOURCES_ERROR_CODE_LIST,
 	HUMAN_RESOURCES_ERROR_CODES,
-	HUMAN_RESOURCES_ERROR_EMPLOYEE_DUPLICATE,
-	HUMAN_RESOURCES_ERROR_EMPLOYEE_NOT_FOUND,
+	HUMAN_RESOURCES_ERROR_CONFLICT,
+	HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+	HUMAN_RESOURCES_ERROR_DEPENDENCY_UNAVAILABLE,
+	HUMAN_RESOURCES_ERROR_DUPLICATE,
 	HUMAN_RESOURCES_ERROR_FORBIDDEN,
-	HUMAN_RESOURCES_ERROR_IDEMPOTENCY_CONFLICT,
+	HUMAN_RESOURCES_ERROR_INVALID_INPUT,
 	HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
+	HUMAN_RESOURCES_ERROR_NOT_FOUND,
 	HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+	HUMAN_RESOURCES_ERROR_STALE_VERSION,
 	HUMAN_RESOURCES_ERROR_UNAUTHORIZED,
-	HUMAN_RESOURCES_ERROR_VALIDATION,
-	HUMAN_RESOURCES_ERROR_VERSION_CONFLICT,
 	type HumanResourcesErrorCode,
 	humanResourcesErrorDetails,
 } from "./error-codes";
 export {
+	HUMAN_RESOURCES_COMMAND_ASSIGNMENT_CREATE,
+	HUMAN_RESOURCES_COMMAND_ASSIGNMENT_END,
 	HUMAN_RESOURCES_COMMAND_EMPLOYEE_CREATE,
+	HUMAN_RESOURCES_COMMAND_EMPLOYEE_UPDATE,
+	HUMAN_RESOURCES_COMMAND_EMPLOYMENT_AMEND,
+	HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CONTRACT_CREATE,
+	HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CREATE,
 	HUMAN_RESOURCES_COMMAND_IDS,
+	HUMAN_RESOURCES_COMMAND_POSITION_CREATE,
+	HUMAN_RESOURCES_QUERY_ASSIGNMENT_GET,
 	HUMAN_RESOURCES_QUERY_EMPLOYEE_GET,
+	HUMAN_RESOURCES_QUERY_EMPLOYEE_LIST,
+	HUMAN_RESOURCES_QUERY_EMPLOYMENT_CONTRACT_GET,
+	HUMAN_RESOURCES_QUERY_EMPLOYMENT_GET,
 	HUMAN_RESOURCES_QUERY_IDS,
+	HUMAN_RESOURCES_QUERY_POSITION_GET,
+	HUMAN_RESOURCES_QUERY_POSITION_LIST,
 	type HumanResourcesCommandId,
 	type HumanResourcesQueryId,
 } from "./module-ids";
+export {
+	createPosition,
+	getPosition,
+	listPositions,
+} from "./organization/position";
 export {
 	HUMAN_RESOURCES_PERMISSION_ATTENDANCE_MANAGE,
 	HUMAN_RESOURCES_PERMISSION_BENEFITS_MANAGE,
@@ -62,12 +114,35 @@ export type {
 	OutboxPort,
 } from "./ports";
 export {
+	type AmendEmploymentInput,
+	type CreateAssignmentInput,
 	type CreateEmployeeInput,
-	createEmployeeInputSchema,
+	type CreateEmploymentContractInput,
+	type CreateEmploymentInput,
+	type CreatePositionInput,
+	type EndAssignmentInput,
+	type GetAssignmentInput,
 	type GetEmployeeByIdInput,
-	getEmployeeByIdInputSchema,
+	type GetEmploymentContractInput,
+	type GetEmploymentInput,
+	type GetPositionInput,
 	type HumanResourcesMutationContext,
 	type HumanResourcesTenantContext,
+	type ListEmployeesInput,
+	type ListPositionsInput,
+	type UpdateEmployeeInput,
+	amendEmploymentInputSchema,
+	createAssignmentInputSchema,
+	createEmployeeInputSchema,
+	createEmploymentContractInputSchema,
+	createEmploymentInputSchema,
+	createPositionInputSchema,
+	endAssignmentInputSchema,
+	getAssignmentInputSchema,
+	getEmployeeByIdInputSchema,
+	getEmploymentContractInputSchema,
+	getEmploymentInputSchema,
+	getPositionInputSchema,
 	humanResourcesActorUserIdSchema,
 	humanResourcesCorrelationIdSchema,
 	humanResourcesExpectedVersionSchema,
@@ -75,5 +150,15 @@ export {
 	humanResourcesMutationContextSchema,
 	humanResourcesOrganizationIdSchema,
 	humanResourcesTenantContextSchema,
+	listEmployeesInputSchema,
+	listPositionsInputSchema,
+	updateEmployeeInputSchema,
 } from "./schemas";
-export type { Employee } from "./types";
+export type {
+	Employee,
+	EmployeeListPage,
+	Employment,
+	EmploymentContract,
+	Position,
+	WorkAssignment,
+} from "./types";

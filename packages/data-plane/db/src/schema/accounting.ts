@@ -104,7 +104,10 @@ export const ledgerAccount = pgTable(
 			t.normalizedCode,
 		),
 		index("ledger_account_org_id_idx").on(t.organizationId, t.id),
-		index("ledger_account_org_coa_idx").on(t.organizationId, t.chartOfAccountId),
+		index("ledger_account_org_coa_idx").on(
+			t.organizationId,
+			t.chartOfAccountId,
+		),
 	],
 );
 
@@ -308,10 +311,7 @@ export const ledgerPosting = pgTable(
 		index("ledger_posting_org_id_idx").on(t.organizationId, t.id),
 		index("ledger_posting_org_journal_idx").on(t.organizationId, t.journalId),
 		index("ledger_posting_org_line_idx").on(t.organizationId, t.journalLineId),
-		index("ledger_posting_org_account_idx").on(
-			t.organizationId,
-			t.accountCode,
-		),
+		index("ledger_posting_org_account_idx").on(t.organizationId, t.accountCode),
 		index("ledger_posting_org_period_idx").on(t.organizationId, t.periodId),
 	],
 );

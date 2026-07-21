@@ -50,7 +50,7 @@ Phases **HR0–HR16** walk scaffolded → enterprise production compliance. Phas
 | **Commands / queries** | `module-ids.ts` → `[]` | Full capability per domain | `Result<T>` public API | ❌ |
 | **Events** | 16 ids in `@afenda/events` + manifest | §9 event list | Append on mutation TX | ✅ Catalog; ❌ emitters |
 | **Permissions** | 20 codes in package + PERMISSION-REGISTER | §10 permission list | Manifest auth map per cmd/qry | ✅ Codes; ❌ maps |
-| **Tenancy audit** | 43 roots in ownership manifest | Hard `organization_id` | `hard-tenant-roots.ts` + `audit:tenancy-nulls` | ❌ Not in audit list |
+| **Tenancy audit** | 43 roots in ownership manifest | Hard `organization_id` | `hard-tenant-roots.ts` + `audit:tenancy-nulls` | ✅ HR1 DONE — 43/43 registered |
 | **App wiring** | `human-resources-authorization-port.ts` only | Actions + features per domain | `*-command-options.ts` + Actions | ❌ No command-options / Actions / features |
 | **Payroll consumer** | `optionalIntegratesWith: payroll (events)` | `PayrollEmployeeQueryPort` owned by payroll | App adapter from HR queries | ❌ Port + adapter (payroll package) |
 | **Module readiness** | No Living `*-MOD-009/010` | Enterprise evidence | `afenda-elite-module-readiness` | **BLOCKED** — Docs-lane dormant |
@@ -109,7 +109,7 @@ Each phase = **one Agent chat**. Pattern per slice (sales reference): **DDL (if 
 
 ---
 
-### HR1 — Tenancy hardening
+### HR1 — Tenancy hardening — **DONE** (2026-07-21)
 
 | | |
 | --- | --- |
@@ -119,44 +119,44 @@ Each phase = **one Agent chat**. Pattern per slice (sales reference): **DDL (if 
 | **Reference** | SCAFFOLDING §6 Tenancy |
 | **Verify** | `pnpm audit:tenancy-nulls` · `pnpm governance:packages` |
 | **Done when** | All 43 tables appear in audit script; null-org probe passes |
+| **Evidence** | Journaled `0034_hr_employee` + applied `0035_hr_scaffold_tables` (42 CREATE); Neon `hr_%` = **43**; `HARD_TENANT_ROOT_TABLE_NAMES` = **116** (43 `hr_*`); opaque org id (no Neon Auth FK); HR-01 store remains org-scoped; lifecycle stays `scaffolded` |
 
 ---
 
-### HR2 — Core + organization DDL (first real columns)
+### HR2 — Core workforce DDL — **DONE** (2026-07-21)
 
 | | |
 | --- | --- |
 | **Depends on** | HR1 |
-| **In scope** | Replace scaffold-only columns for: `hr_employee`, `hr_employment`, `hr_employment_contract`, `hr_work_assignment`, `hr_department`, `hr_job`, `hr_position`, `hr_reporting_line`, `hr_employment_movement` |
-| **Out of scope** | Commands; recruitment+ tables |
-| **Reference** | Scratch §2 core HR aggregates; `sales` drizzle column patterns in `@afenda/db` |
-| **Verify** | `pnpm --filter @afenda/db typecheck` · `pnpm governance:packages` |
-| **Done when** | Migration applied locally; ownership manifest unchanged; tables have domain FKs + `organization_id` NOT NULL |
+| **In scope** | Domain columns for `hr_employment`, `hr_employment_contract`, `hr_position`, `hr_work_assignment` + employee list indexes (`0036_hr_core_workforce_ddl`) |
+| **Out of scope** | Commands; `hr_department` / `hr_job` / `hr_reporting_line` / `hr_employment_movement` remain scaffold; no `md_party` |
+| **Locks** | Q4 omit party; Q5 `status` ∈ `active\|notice\|terminated` |
+| **Evidence** | Migration applied; `db:check` OK; FKs employee→employment→contract/assignment; position status CHECK |
 
 ---
 
-### HR3 — Core employee vertical slice (commands)
+### HR3 — Core employee / employment / contract commands — **DONE** (2026-07-21)
 
 | | |
 | --- | --- |
 | **Depends on** | HR2 |
-| **In scope** | `human-resources.employee.create`, `.read` queries; `human-resources.employment.manage` (start employment); store memory + drizzle; emit `employee.created.v1`, `employment.started.v1`; manifest auth map for shipped ids |
-| **Out of scope** | Recruitment; org structure mutations beyond read |
-| **Reference** | `packages/erp/sales/src/order.ts` command anatomy (parse → auth → store → audit/outbox) |
-| **Verify** | `pnpm --filter @afenda/human-resources lint typecheck test` |
-| **Done when** | ≥1 create + ≥1 query return `Result<T>`; tests use memory store; manifest `commands`/`queries` non-empty for core |
+| **In scope** | `employee.update` / `.list`; `employment.create` / `.amend` / `.get`; `employment-contract.create` / `.get`; memory + drizzle; events `employment.started.v1` / `employment.changed.v1` |
+| **Out of scope** | Recruitment; auto-create employment on employee create |
+| **Verify** | `pnpm --filter @afenda/human-resources check` · `pnpm governance:packages` |
+| **Evidence** | 52 package tests; manifest auth maps shipped |
 
 ---
 
-### HR4 — Organization structure commands
+### HR4 — Position / assignment commands — **DONE** (2026-07-21) (partial vs original org tree)
 
 | | |
 | --- | --- |
 | **Depends on** | HR3 |
-| **In scope** | Department, job, position, reporting-line CRUD/list; work assignment link to employment |
+| **In scope** | `position.create` / `.get` / `.list`; `assignment.create` / `.end` / `.get` (writes via `employment.manage`) |
+| **Still open** | Department, job, reporting-line domain DDL + commands (next roadmap remainder) |
 | **Out of scope** | Recruitment; lifecycle |
-| **Verify** | `pnpm --filter @afenda/human-resources test` |
-| **Done when** | Org tree mutable under tenant; lookups always filter `organization_id` |
+| **Verify** | `pnpm --filter @afenda/human-resources check` |
+| **Done when** | Position + assignment mutable under tenant; org-scoped lookups |
 
 ---
 

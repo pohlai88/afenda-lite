@@ -22,16 +22,53 @@ import {
 } from "@afenda/human-resources";
 ```
 
-**Shipped public API (HR-00 disk truth):**
+**Shipped public API (HR3 + HR4):**
 
-| Id | Kind | Permission |
-| -- | ---- | ---------- |
-| `human-resources.employee.create` | command | `human-resources.employee.create` |
-| `human-resources.employee.get` | query | `human-resources.employee.read` |
+| Id | Kind | Permission | Slice |
+| -- | ---- | ---------- | ----- |
+| `human-resources.employee.create` | command | `employee.create` | HR-00 |
+| `human-resources.employee.update` | command | `employee.update` | HR3 |
+| `human-resources.employee.get` | query | `employee.read` | HR-00 |
+| `human-resources.employee.list` | query | `employee.read` | HR3 |
+| `human-resources.employment.create` | command | `employment.manage` | HR3 |
+| `human-resources.employment.amend` | command | `employment.manage` | HR3 |
+| `human-resources.employment.get` | query | `employee.read` | HR3 |
+| `human-resources.employment-contract.create` | command | `employment.manage` | HR3 |
+| `human-resources.employment-contract.get` | query | `employee.read` | HR3 |
+| `human-resources.position.create` | command | `employment.manage` | HR4 |
+| `human-resources.position.get` / `.list` | query | `employee.read` | HR4 |
+| `human-resources.assignment.create` / `.end` | command | `employment.manage` | HR4 |
+| `human-resources.assignment.get` | query | `employee.read` | HR4 |
 
-`HumanResourcesStore` (memory + drizzle) implements the employee create / get / idempotency path. Other capability folders under `src/{organization,recruitment,lifecycle,time,leave,performance,talent,learning,compensation-benefits}/` remain aggregate boundary markers until their domain DDL and commands land. Operation IDs, mutation tables, permission codes, and event emits live in `src/module.manifest.ts` (export `@afenda/human-resources/module-manifest`).
+**Employment status (Q5):** `active` → `notice` \| `terminated`; `notice` → `terminated`; no exit from `terminated`. Stored on `hr_employment.status` (CHECK). Employee create does **not** auto-create employment. No `md_party` FK (Q4). Position/assignment validity is org-scoped store lookup (active position required) — no `MasterLookupPort`.
+
+`HumanResourcesStore` (memory + drizzle) covers employee, employment, contract, position, and assignment. Remaining folders under recruitment/lifecycle/time/leave/… stay markers until their DDL. Manifest: `@afenda/human-resources/module-manifest`.
 
 **Authorization:** permission checks go through an injected `HumanResourcesAuthorizationPort` at the composition root — never import `@afenda/admin` here. Route-level checks in `apps/web` are not sufficient.
+
+**Trusted mutation context (stamp last):** composition-root Actions must stamp `organizationId`, `actorUserId`, and `correlationId` onto the command input **after** any client/domain payload so client values cannot override tenancy. Do not forward a raw request body into HR commands.
+
+```ts
+const commandInput = {
+  ...parsedDomainPayload,
+  organizationId: session.organizationId,
+  actorUserId: session.userId,
+  correlationId,
+};
+```
+
+Command schemas are `.strict()` and keep tenant fields only at the top level (no nested `organizationId` / `actorUserId` / `correlationId`). Store lookups are always organization-scoped.
+
+### Tenancy (HR1)
+
+| Rule | Detail |
+| ---- | ------ |
+| Org id shape | Opaque trusted `organization_id text NOT NULL` from the auth/composition layer — **no** FK to `neon_auth.organization` |
+| Mutation roots | All **43** `hr_*` tables are `HARD_TENANT_ROOT` in `@afenda/db` (`hard-tenant-roots.ts`) and `pnpm audit:tenancy-nulls` |
+| Lookup contract | Store methods require `organizationId`; bare-ID cross-org get is prohibited |
+| Stamp last | Composition root stamps `organizationId` after client payload; DB `NOT NULL` is the final integrity boundary |
+| Domain DDL (HR2) | `hr_employment`, `hr_employment_contract`, `hr_position`, `hr_work_assignment` have domain columns + org-scoped FKs; other `hr_*` remain scaffold |
+| Parent/child cross-org | Employment → employee; contract/assignment → employment + employee; assignment → active position — all org-scoped |
 
 **Integration:** Payroll consumes approved workforce facts via app-injected adapters (`PayrollEmployeeQueryPort` is owned by `@afenda/payroll` — not exported from this package). Auth and Admin reactions to HR events use app-saga orchestration — not peer ERP imports.
 
@@ -39,9 +76,9 @@ import {
 
 | Path | Role |
 |------|------|
-| `@afenda/human-resources` | Shipped `createEmployee` / `getEmployeeById`, permission codes, brands, error codes, authorization / mutation port types, tenant schemas |
-| `@afenda/human-resources/adapters/drizzle` | `HumanResourcesStore` type (Drizzle adapter surface) |
-| `@afenda/human-resources/testing` | Test helpers export surface |
+| `@afenda/human-resources` | Employee / employment / contract / position / assignment commands & queries, brands, schemas, permissions, errors, authz / mutation port types |
+| `@afenda/human-resources/adapters/drizzle` | `createDrizzleHumanResourcesStore` + `HumanResourcesStore` type |
+| `@afenda/human-resources/testing` | Memory store factory + `HumanResourcesStore` / `MutationPorts` types for Vitest |
 | `@afenda/human-resources/module-manifest` | Module manifest (`band: R1-F`, `lifecycle: scaffolded`) |
 
 The root surface never exports raw Drizzle tables, query builders, database handles, Next.js types, or HTTP envelopes.

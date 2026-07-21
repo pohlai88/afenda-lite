@@ -85,7 +85,10 @@ export const payment = pgTable(
 		index("payment_org_id_idx").on(t.organizationId, t.id),
 		index("payment_org_status_idx").on(t.organizationId, t.status),
 		index("payment_org_direction_idx").on(t.organizationId, t.direction),
-		index("payment_org_counterparty_idx").on(t.organizationId, t.counterpartyId),
+		index("payment_org_counterparty_idx").on(
+			t.organizationId,
+			t.counterpartyId,
+		),
 		index("payment_org_account_idx").on(t.organizationId, t.paymentAccountId),
 		index("payment_org_transfer_group_idx").on(
 			t.organizationId,

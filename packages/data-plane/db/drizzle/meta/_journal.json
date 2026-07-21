@@ -239,6 +239,27 @@
 			"when": 1784584406191,
 			"tag": "0033_schema_snapshot_catchup",
 			"breakpoints": true
+		},
+		{
+			"idx": 34,
+			"version": "7",
+			"when": 1784585000000,
+			"tag": "0034_hr_employee",
+			"breakpoints": true
+		},
+		{
+			"idx": 35,
+			"version": "7",
+			"when": 1784585100000,
+			"tag": "0035_hr_scaffold_tables",
+			"breakpoints": true
+		},
+		{
+			"idx": 36,
+			"version": "7",
+			"when": 1784586000000,
+			"tag": "0036_hr_core_workforce_ddl",
+			"breakpoints": true
 		}
 	]
 }

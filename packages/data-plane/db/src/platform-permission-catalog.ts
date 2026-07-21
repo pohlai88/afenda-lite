@@ -126,7 +126,8 @@ export const PLATFORM_PERMISSION_V1 = [
 	{
 		code: "purchasing.order.close",
 		module: "purchasing",
-		description: "Close posted purchase orders (terminate remaining commitment)",
+		description:
+			"Close posted purchase orders (terminate remaining commitment)",
 		sensitive: true,
 	},
 	{
@@ -372,8 +373,12 @@ export const PLATFORM_PERMISSION_V1 = [
 			"Create, match, post, cancel, and allocate organization payables",
 		sensitive: true,
 	},
-	...[
-		["payments.payment.read", "Read payments and their application instructions", false],
+	...([
+		[
+			"payments.payment.read",
+			"Read payments and their application instructions",
+			false,
+		],
 		["payments.payment.create", "Create draft payments", true],
 		["payments.payment.update", "Update draft payments", true],
 		["payments.payment.post", "Post payments (settle money movement)", true],
@@ -382,11 +387,29 @@ export const PLATFORM_PERMISSION_V1 = [
 		["payments.refund.post", "Post refunds", true],
 		["payments.transfer.create", "Create internal payment transfers", true],
 		["payments.transfer.post", "Post internal payment transfers", true],
-		["payments.application_instruction.manage", "Manage payment application instructions", true],
+		[
+			"payments.application_instruction.manage",
+			"Manage payment application instructions",
+			true,
+		],
 		["payments.account.manage", "Manage payment accounts", true],
 		["payments.account.read", "Read payment accounts", false],
-		["payments.availability.read", "Read payment application availability", false],
-	].map(([code, description, sensitive]) => ({ code, module: "payments", description, sensitive })) as Array<{ code: string; module: string; description: string; sensitive: boolean }>,
+		[
+			"payments.availability.read",
+			"Read payment application availability",
+			false,
+		],
+	].map(([code, description, sensitive]) => ({
+		code,
+		module: "payments",
+		description,
+		sensitive,
+	})) as Array<{
+		code: string;
+		module: string;
+		description: string;
+		sensitive: boolean;
+	}>),
 	{
 		code: "accounting.journal.read",
 		module: "accounting",
@@ -468,7 +491,8 @@ export const PLATFORM_PERMISSION_V1 = [
 	{
 		code: "accounting.account.manage",
 		module: "accounting",
-		description: "Create and manage charts of accounts, ledger accounts, and role mappings",
+		description:
+			"Create and manage charts of accounts, ledger accounts, and role mappings",
 		sensitive: true,
 	},
 	{

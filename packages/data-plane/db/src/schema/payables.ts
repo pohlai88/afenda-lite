@@ -207,9 +207,7 @@ export const supplierAllocation = pgTable(
 			.notNull()
 			.references(() => supplierInvoice.id),
 		paymentId: uuid("payment_id"),
-		paymentApplicationInstructionId: uuid(
-			"payment_application_instruction_id",
-		),
+		paymentApplicationInstructionId: uuid("payment_application_instruction_id"),
 		creditNoteId: uuid("credit_note_id").references(
 			() => supplierCreditNote.id,
 		),

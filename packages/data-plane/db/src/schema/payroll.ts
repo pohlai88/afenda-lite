@@ -7,7 +7,9 @@ export const payrollPeriod = createErpScaffoldTable("payroll_period");
 export const payrollEmployeeAssignment = createErpScaffoldTable(
 	"payroll_employee_assignment",
 );
-export const payrollEarningRule = createErpScaffoldTable("payroll_earning_rule");
+export const payrollEarningRule = createErpScaffoldTable(
+	"payroll_earning_rule",
+);
 export const payrollDeductionRule = createErpScaffoldTable(
 	"payroll_deduction_rule",
 );
@@ -24,7 +26,9 @@ export const payrollVariableInput = createErpScaffoldTable(
 	"payroll_variable_input",
 );
 export const payrollRun = createErpScaffoldTable("payroll_run");
-export const payrollRunEmployee = createErpScaffoldTable("payroll_run_employee");
+export const payrollRunEmployee = createErpScaffoldTable(
+	"payroll_run_employee",
+);
 export const payrollResultLine = createErpScaffoldTable("payroll_result_line");
 export const payrollStatutoryResult = createErpScaffoldTable(
 	"payroll_statutory_result",

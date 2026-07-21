@@ -1,32 +1,67 @@
 import { randomUUID } from "node:crypto";
 
 import { fail, ok, type Result } from "@afenda/errors/result";
-import { HUMAN_RESOURCES_EMPLOYEE_CREATED_EVENT } from "@afenda/events/schemas";
-
-import type { HumanResourcesEmployeeId } from "./brands";
 import {
-	HUMAN_RESOURCES_ERROR_EMPLOYEE_DUPLICATE,
+	HUMAN_RESOURCES_EMPLOYEE_CREATED_EVENT,
+	HUMAN_RESOURCES_EMPLOYMENT_CHANGED_EVENT,
+	HUMAN_RESOURCES_EMPLOYMENT_STARTED_EVENT,
+} from "@afenda/events/schemas";
+
+import {
+	type HumanResourcesAssignmentId,
+	type HumanResourcesEmployeeId,
+	type HumanResourcesEmploymentContractId,
+	type HumanResourcesEmploymentId,
+	type HumanResourcesPositionId,
+	parseHumanResourcesAssignmentId,
+	parseHumanResourcesEmployeeId,
+	parseHumanResourcesEmploymentContractId,
+	parseHumanResourcesEmploymentId,
+	parseHumanResourcesPositionId,
+} from "./brands";
+import {
+	HUMAN_RESOURCES_ERROR_CONFLICT,
+	HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+	HUMAN_RESOURCES_ERROR_DUPLICATE,
+	HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+	HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
+	HUMAN_RESOURCES_ERROR_NOT_FOUND,
+	HUMAN_RESOURCES_ERROR_STALE_VERSION,
 	humanResourcesErrorDetails,
 } from "./error-codes";
 import type { MutationPorts } from "./ports";
+import { assertExpectedVersion } from "./shared/concurrency";
+import { assertValidDateRange } from "./shared/employment-status";
+import { mapEmployeeNumberDuplicate } from "./shared/persistence-errors";
 import type {
+	AssignmentCreateRecord,
 	EmployeeCreateRecord,
+	EmploymentContractCreateRecord,
+	EmploymentCreateRecord,
 	HumanResourcesStore,
 	IdempotentEmployeeRecord,
+	PositionCreateRecord,
 } from "./store";
-import type { Employee } from "./types";
+import type {
+	Employee,
+	EmployeeListPage,
+	Employment,
+	EmploymentContract,
+	Position,
+	WorkAssignment,
+} from "./types";
 
 function cloneEmployee(employee: Employee): Employee {
 	return { ...employee };
 }
 
 function mapEmployee(
-	id: string,
+	id: HumanResourcesEmployeeId,
 	record: EmployeeCreateRecord,
 	now: Date,
 ): Employee {
 	return {
-		id: id as HumanResourcesEmployeeId,
+		id,
 		organizationId: record.organizationId,
 		employeeNumber: record.employeeNumber,
 		legalName: record.legalName,
@@ -45,11 +80,26 @@ export class MemoryHumanResourcesStore implements HumanResourcesStore {
 		string,
 		IdempotentEmployeeRecord
 	>();
+	private readonly employments = new Map<string, Employment>();
+	private readonly contracts = new Map<string, EmploymentContract>();
+	private readonly positions = new Map<string, Position>();
+	private readonly assignments = new Map<string, WorkAssignment>();
 
 	private idempotencyMapKey(organizationId: string, idempotencyKey: string) {
 		return `${organizationId}:${idempotencyKey}`;
 	}
 
+	/** Clear all in-memory state for test isolation. */
+	reset(): void {
+		this.employees.clear();
+		this.idempotencyByKey.clear();
+		this.employments.clear();
+		this.contracts.clear();
+		this.positions.clear();
+		this.assignments.clear();
+	}
+
+	// Employee methods
 	async getEmployeeById(input: {
 		organizationId: string;
 		employeeId: HumanResourcesEmployeeId;
@@ -102,17 +152,17 @@ export class MemoryHumanResourcesStore implements HumanResourcesStore {
 				employee.employeeNumber.toUpperCase() ===
 					record.normalizedEmployeeNumber
 			) {
-				return fail(
-					"CONFLICT",
-					"Employee number already exists",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_EMPLOYEE_DUPLICATE),
-				);
+				return mapEmployeeNumberDuplicate();
 			}
 		}
 
+		const idResult = parseHumanResourcesEmployeeId(randomUUID());
+		if (!idResult.ok) {
+			return idResult;
+		}
+
 		const now = new Date();
-		const id = randomUUID();
-		const employee = mapEmployee(id, record, now);
+		const employee = mapEmployee(idResult.data, record, now);
 		this.employees.set(employee.id, employee);
 		this.idempotencyByKey.set(
 			this.idempotencyMapKey(
@@ -132,17 +182,7 @@ export class MemoryHumanResourcesStore implements HumanResourcesStore {
 			entity: "hr_employee",
 			entityId: employee.id,
 			action: "CREATE",
-			changes: [
-				{
-					field: "employeeNumber",
-					oldValue: null,
-					newValue: employee.employeeNumber,
-				},
-			],
-			newValue: {
-				employeeNumber: employee.employeeNumber,
-				legalName: employee.legalName,
-			},
+			changes: [],
 		});
 		if (!audit.ok) {
 			this.employees.delete(employee.id);
@@ -180,6 +220,704 @@ export class MemoryHumanResourcesStore implements HumanResourcesStore {
 		}
 
 		return ok(cloneEmployee(employee));
+	}
+
+	async updateEmployee(input: {
+		organizationId: string;
+		employeeId: HumanResourcesEmployeeId;
+		legalName: string;
+		expectedVersion: number;
+		actorUserId: string;
+		correlationId: string;
+	}): Promise<Result<Employee>> {
+		const employee = this.employees.get(input.employeeId);
+		if (!employee || employee.organizationId !== input.organizationId) {
+			return fail(
+				"NOT_FOUND",
+				"Employee not found",
+				humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
+			);
+		}
+
+		const versionCheck = assertExpectedVersion(
+			employee.version,
+			input.expectedVersion,
+		);
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
+
+		const now = new Date();
+		const updated: Employee = {
+			...employee,
+			legalName: input.legalName,
+			version: employee.version + 1,
+			updatedBy: input.actorUserId,
+			updatedAt: now,
+		};
+
+		this.employees.set(input.employeeId, updated);
+		return ok(cloneEmployee(updated));
+	}
+
+	async listEmployees(input: {
+		organizationId: string;
+		page: number;
+		pageSize: number;
+		employeeNumberPrefix?: string;
+		legalNamePrefix?: string;
+		employmentStatus?: string;
+	}): Promise<Result<EmployeeListPage>> {
+		let filtered = Array.from(this.employees.values()).filter(
+			(e) => e.organizationId === input.organizationId,
+		);
+
+		if (input.employeeNumberPrefix) {
+			const prefix = input.employeeNumberPrefix.toUpperCase();
+			filtered = filtered.filter((e) =>
+				e.employeeNumber.toUpperCase().startsWith(prefix),
+			);
+		}
+
+		if (input.legalNamePrefix) {
+			const prefix = input.legalNamePrefix.toUpperCase();
+			filtered = filtered.filter((e) =>
+				e.legalName.toUpperCase().startsWith(prefix),
+			);
+		}
+
+		if (input.employmentStatus) {
+			const employeeIds = Array.from(this.employments.values())
+				.filter(
+					(emp) =>
+						emp.organizationId === input.organizationId &&
+						emp.status === input.employmentStatus,
+				)
+				.map((emp) => emp.employeeId);
+			filtered = filtered.filter((e) => employeeIds.includes(e.id));
+		}
+
+		filtered.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+
+		const totalCount = filtered.length;
+		const start = (input.page - 1) * input.pageSize;
+		const employees = filtered.slice(start, start + input.pageSize).map(cloneEmployee);
+
+		return ok({
+			employees,
+			totalCount,
+			page: input.page,
+			pageSize: input.pageSize,
+		});
+	}
+
+	// Employment methods
+	async getEmploymentById(input: {
+		organizationId: string;
+		employmentId: HumanResourcesEmploymentId;
+	}): Promise<Result<Employment | null>> {
+		const employment = this.employments.get(input.employmentId);
+		if (!employment || employment.organizationId !== input.organizationId) {
+			return ok(null);
+		}
+		return ok({ ...employment });
+	}
+
+	async findOpenEmploymentByEmployee(input: {
+		organizationId: string;
+		employeeId: HumanResourcesEmployeeId;
+	}): Promise<Result<Employment | null>> {
+		for (const employment of this.employments.values()) {
+			if (
+				employment.organizationId === input.organizationId &&
+				employment.employeeId === input.employeeId &&
+				employment.endsOn === null
+			) {
+				return ok({ ...employment });
+			}
+		}
+		return ok(null);
+	}
+
+	async createEmployment(
+		record: EmploymentCreateRecord,
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<Employment>> {
+		const employee = this.employees.get(record.employeeId);
+		if (!employee || employee.organizationId !== record.organizationId) {
+			return fail(
+				"NOT_FOUND",
+				"Employee not found",
+				humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE),
+			);
+		}
+
+		const dateCheck = assertValidDateRange(record.startsOn, record.endsOn);
+		if (!dateCheck.ok) {
+			return dateCheck;
+		}
+
+		const existingOpen = await this.findOpenEmploymentByEmployee({
+			organizationId: record.organizationId,
+			employeeId: record.employeeId,
+		});
+		if (!existingOpen.ok) {
+			return existingOpen;
+		}
+		if (existingOpen.data !== null) {
+			return fail(
+				"CONFLICT",
+				"Employee already has an open employment",
+				humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
+			);
+		}
+
+		const idResult = parseHumanResourcesEmploymentId(randomUUID());
+		if (!idResult.ok) {
+			return idResult;
+		}
+
+		const now = new Date();
+		const employment: Employment = {
+			id: idResult.data,
+			organizationId: record.organizationId,
+			employeeId: record.employeeId,
+			status: "active",
+			startsOn: record.startsOn,
+			endsOn: record.endsOn,
+			version: 1,
+			createdBy: record.createdBy,
+			updatedBy: record.createdBy,
+			createdAt: now,
+			updatedAt: now,
+		};
+
+		this.employments.set(employment.id, employment);
+
+		const audit = await ports.audit.record({
+			organizationId: employment.organizationId,
+			actorUserId: employment.createdBy,
+			correlationId: meta.correlationId,
+			entity: "hr_employment",
+			entityId: employment.id,
+			action: "CREATE",
+			changes: [],
+		});
+		if (!audit.ok) {
+			this.employments.delete(employment.id);
+			return audit;
+		}
+
+		const outbox = await ports.outbox.append({
+			organizationId: employment.organizationId,
+			actorUserId: employment.createdBy,
+			correlationId: meta.correlationId,
+			type: HUMAN_RESOURCES_EMPLOYMENT_STARTED_EVENT,
+			payload: {
+				organizationId: employment.organizationId,
+				entityType: "hr_employment",
+				entityId: employment.id,
+				actorId: employment.createdBy,
+				correlationId: meta.correlationId,
+			},
+		});
+		if (!outbox.ok) {
+			this.employments.delete(employment.id);
+			return outbox;
+		}
+
+		return ok({ ...employment });
+	}
+
+	async amendEmployment(input: {
+		organizationId: string;
+		employmentId: HumanResourcesEmploymentId;
+		status?: string;
+		startsOn?: string;
+		endsOn?: string | null;
+		expectedVersion: number;
+		actorUserId: string;
+	}, ports: MutationPorts, meta: { correlationId: string }): Promise<Result<Employment>> {
+		const employment = this.employments.get(input.employmentId);
+		if (!employment || employment.organizationId !== input.organizationId) {
+			return fail(
+				"NOT_FOUND",
+				"Employment not found",
+				humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
+			);
+		}
+
+		const versionCheck = assertExpectedVersion(
+			employment.version,
+			input.expectedVersion,
+		);
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
+
+		const newStartsOn = input.startsOn ?? employment.startsOn;
+		const newEndsOn = input.endsOn !== undefined ? input.endsOn : employment.endsOn;
+
+		const dateCheck = assertValidDateRange(newStartsOn, newEndsOn);
+		if (!dateCheck.ok) {
+			return dateCheck;
+		}
+
+		const now = new Date();
+		const updated: Employment = {
+			...employment,
+			status: (input.status ?? employment.status) as "active" | "notice" | "terminated",
+			startsOn: newStartsOn,
+			endsOn: newEndsOn,
+			version: employment.version + 1,
+			updatedBy: input.actorUserId,
+			updatedAt: now,
+		};
+
+		this.employments.set(input.employmentId, updated);
+
+		const audit = await ports.audit.record({
+			organizationId: updated.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_employment",
+			entityId: updated.id,
+			action: "UPDATE",
+			changes: [],
+		});
+		if (!audit.ok) {
+			this.employments.set(input.employmentId, employment);
+			return audit;
+		}
+
+		const outbox = await ports.outbox.append({
+			organizationId: updated.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			type: HUMAN_RESOURCES_EMPLOYMENT_CHANGED_EVENT,
+			payload: {
+				organizationId: updated.organizationId,
+				entityType: "hr_employment",
+				entityId: updated.id,
+				actorId: input.actorUserId,
+				correlationId: meta.correlationId,
+			},
+		});
+		if (!outbox.ok) {
+			this.employments.set(input.employmentId, employment);
+			return outbox;
+		}
+
+		return ok({ ...updated });
+	}
+
+	// Employment Contract methods
+	async getEmploymentContractById(input: {
+		organizationId: string;
+		employmentContractId: HumanResourcesEmploymentContractId;
+	}): Promise<Result<EmploymentContract | null>> {
+		const contract = this.contracts.get(input.employmentContractId);
+		if (!contract || contract.organizationId !== input.organizationId) {
+			return ok(null);
+		}
+		return ok({ ...contract });
+	}
+
+	async findContractByEmploymentAndCode(input: {
+		organizationId: string;
+		employmentId: HumanResourcesEmploymentId;
+		referenceCode: string;
+	}): Promise<Result<EmploymentContract | null>> {
+		for (const contract of this.contracts.values()) {
+			if (
+				contract.organizationId === input.organizationId &&
+				contract.employmentId === input.employmentId &&
+				contract.referenceCode === input.referenceCode
+			) {
+				return ok({ ...contract });
+			}
+		}
+		return ok(null);
+	}
+
+	async createEmploymentContract(
+		record: EmploymentContractCreateRecord,
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<EmploymentContract>> {
+		const employment = this.employments.get(record.employmentId);
+		if (!employment || employment.organizationId !== record.organizationId) {
+			return fail(
+				"NOT_FOUND",
+				"Employment not found",
+				humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE),
+			);
+		}
+
+		if (employment.employeeId !== record.employeeId) {
+			return fail(
+				"BAD_REQUEST",
+				"Employee does not match employment",
+				humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
+			);
+		}
+
+		const dateCheck = assertValidDateRange(record.startsOn, record.endsOn);
+		if (!dateCheck.ok) {
+			return dateCheck;
+		}
+
+		const existing = await this.findContractByEmploymentAndCode({
+			organizationId: record.organizationId,
+			employmentId: record.employmentId,
+			referenceCode: record.referenceCode,
+		});
+		if (!existing.ok) {
+			return existing;
+		}
+		if (existing.data !== null) {
+			return fail(
+				"CONFLICT",
+				"Contract with this reference code already exists",
+				humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_DUPLICATE),
+			);
+		}
+
+		const idResult = parseHumanResourcesEmploymentContractId(randomUUID());
+		if (!idResult.ok) {
+			return idResult;
+		}
+
+		const now = new Date();
+		const contract: EmploymentContract = {
+			id: idResult.data,
+			organizationId: record.organizationId,
+			employmentId: record.employmentId,
+			employeeId: record.employeeId,
+			referenceCode: record.referenceCode,
+			startsOn: record.startsOn,
+			endsOn: record.endsOn,
+			version: 1,
+			createdBy: record.createdBy,
+			updatedBy: record.createdBy,
+			createdAt: now,
+			updatedAt: now,
+		};
+
+		this.contracts.set(contract.id, contract);
+
+		const audit = await ports.audit.record({
+			organizationId: contract.organizationId,
+			actorUserId: contract.createdBy,
+			correlationId: meta.correlationId,
+			entity: "hr_employment_contract",
+			entityId: contract.id,
+			action: "CREATE",
+			changes: [],
+		});
+		if (!audit.ok) {
+			this.contracts.delete(contract.id);
+			return audit;
+		}
+
+		const outbox = await ports.outbox.append({
+			organizationId: contract.organizationId,
+			actorUserId: contract.createdBy,
+			correlationId: meta.correlationId,
+			type: HUMAN_RESOURCES_EMPLOYMENT_CHANGED_EVENT,
+			payload: {
+				organizationId: contract.organizationId,
+				entityType: "hr_employment_contract",
+				entityId: contract.id,
+				actorId: contract.createdBy,
+				correlationId: meta.correlationId,
+			},
+		});
+		if (!outbox.ok) {
+			this.contracts.delete(contract.id);
+			return outbox;
+		}
+
+		return ok({ ...contract });
+	}
+
+	// Position methods
+	async getPositionById(input: {
+		organizationId: string;
+		positionId: HumanResourcesPositionId;
+	}): Promise<Result<Position | null>> {
+		const position = this.positions.get(input.positionId);
+		if (!position || position.organizationId !== input.organizationId) {
+			return ok(null);
+		}
+		return ok({ ...position });
+	}
+
+	async findPositionByCode(input: {
+		organizationId: string;
+		code: string;
+	}): Promise<Result<Position | null>> {
+		for (const position of this.positions.values()) {
+			if (
+				position.organizationId === input.organizationId &&
+				position.code === input.code
+			) {
+				return ok({ ...position });
+			}
+		}
+		return ok(null);
+	}
+
+	async createPosition(
+		record: PositionCreateRecord,
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<Position>> {
+		const existing = await this.findPositionByCode({
+			organizationId: record.organizationId,
+			code: record.code,
+		});
+		if (!existing.ok) {
+			return existing;
+		}
+		if (existing.data !== null) {
+			return fail(
+				"CONFLICT",
+				"Position with this code already exists",
+				humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_DUPLICATE),
+			);
+		}
+
+		const idResult = parseHumanResourcesPositionId(randomUUID());
+		if (!idResult.ok) {
+			return idResult;
+		}
+
+		const now = new Date();
+		const position: Position = {
+			id: idResult.data,
+			organizationId: record.organizationId,
+			code: record.code,
+			title: record.title,
+			status: record.status as "active" | "inactive",
+			version: 1,
+			createdBy: record.createdBy,
+			updatedBy: record.createdBy,
+			createdAt: now,
+			updatedAt: now,
+		};
+
+		this.positions.set(position.id, position);
+
+		const audit = await ports.audit.record({
+			organizationId: position.organizationId,
+			actorUserId: position.createdBy,
+			correlationId: meta.correlationId,
+			entity: "hr_position",
+			entityId: position.id,
+			action: "CREATE",
+			changes: [],
+		});
+		if (!audit.ok) {
+			this.positions.delete(position.id);
+			return audit;
+		}
+
+		return ok({ ...position });
+	}
+
+	async listPositions(input: {
+		organizationId: string;
+		page: number;
+		pageSize: number;
+		status?: string;
+	}): Promise<Result<{ positions: Position[]; totalCount: number }>> {
+		let filtered = Array.from(this.positions.values()).filter(
+			(p) => p.organizationId === input.organizationId,
+		);
+
+		if (input.status) {
+			filtered = filtered.filter((p) => p.status === input.status);
+		}
+
+		filtered.sort((a, b) => a.title.localeCompare(b.title));
+
+		const totalCount = filtered.length;
+		const start = (input.page - 1) * input.pageSize;
+		const positions = filtered.slice(start, start + input.pageSize).map((p) => ({ ...p }));
+
+		return ok({ positions, totalCount });
+	}
+
+	// Assignment methods
+	async getAssignmentById(input: {
+		organizationId: string;
+		assignmentId: HumanResourcesAssignmentId;
+	}): Promise<Result<WorkAssignment | null>> {
+		const assignment = this.assignments.get(input.assignmentId);
+		if (!assignment || assignment.organizationId !== input.organizationId) {
+			return ok(null);
+		}
+		return ok({ ...assignment });
+	}
+
+	async findOpenAssignmentByEmployment(input: {
+		organizationId: string;
+		employmentId: HumanResourcesEmploymentId;
+	}): Promise<Result<WorkAssignment | null>> {
+		for (const assignment of this.assignments.values()) {
+			if (
+				assignment.organizationId === input.organizationId &&
+				assignment.employmentId === input.employmentId &&
+				assignment.endsOn === null
+			) {
+				return ok({ ...assignment });
+			}
+		}
+		return ok(null);
+	}
+
+	async createAssignment(
+		record: AssignmentCreateRecord,
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<WorkAssignment>> {
+		const employment = this.employments.get(record.employmentId);
+		if (!employment || employment.organizationId !== record.organizationId) {
+			return fail(
+				"NOT_FOUND",
+				"Employment not found",
+				humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE),
+			);
+		}
+
+		if (employment.employeeId !== record.employeeId) {
+			return fail(
+				"BAD_REQUEST",
+				"Employee does not match employment",
+				humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
+			);
+		}
+
+		const position = this.positions.get(record.positionId);
+		if (!position || position.organizationId !== record.organizationId) {
+			return fail(
+				"NOT_FOUND",
+				"Position not found",
+				humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE),
+			);
+		}
+
+		if (position.status !== "active") {
+			return fail(
+				"BAD_REQUEST",
+				"Position must be active",
+				humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION),
+			);
+		}
+
+		const dateCheck = assertValidDateRange(record.startsOn, record.endsOn);
+		if (!dateCheck.ok) {
+			return dateCheck;
+		}
+
+		const existingOpen = await this.findOpenAssignmentByEmployment({
+			organizationId: record.organizationId,
+			employmentId: record.employmentId,
+		});
+		if (!existingOpen.ok) {
+			return existingOpen;
+		}
+		if (existingOpen.data !== null) {
+			return fail(
+				"CONFLICT",
+				"Employment already has an open assignment",
+				humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
+			);
+		}
+
+		const idResult = parseHumanResourcesAssignmentId(randomUUID());
+		if (!idResult.ok) {
+			return idResult;
+		}
+
+		const now = new Date();
+		const assignment: WorkAssignment = {
+			id: idResult.data,
+			organizationId: record.organizationId,
+			employmentId: record.employmentId,
+			employeeId: record.employeeId,
+			positionId: record.positionId,
+			startsOn: record.startsOn,
+			endsOn: record.endsOn,
+			version: 1,
+			createdBy: record.createdBy,
+			updatedBy: record.createdBy,
+			createdAt: now,
+			updatedAt: now,
+		};
+
+		this.assignments.set(assignment.id, assignment);
+
+		const audit = await ports.audit.record({
+			organizationId: assignment.organizationId,
+			actorUserId: assignment.createdBy,
+			correlationId: meta.correlationId,
+			entity: "hr_work_assignment",
+			entityId: assignment.id,
+			action: "CREATE",
+			changes: [],
+		});
+		if (!audit.ok) {
+			this.assignments.delete(assignment.id);
+			return audit;
+		}
+
+		return ok({ ...assignment });
+	}
+
+	async endAssignment(input: {
+		organizationId: string;
+		assignmentId: HumanResourcesAssignmentId;
+		endsOn: string;
+		expectedVersion: number;
+		actorUserId: string;
+		correlationId: string;
+	}): Promise<Result<WorkAssignment>> {
+		const assignment = this.assignments.get(input.assignmentId);
+		if (!assignment || assignment.organizationId !== input.organizationId) {
+			return fail(
+				"NOT_FOUND",
+				"Assignment not found",
+				humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
+			);
+		}
+
+		const versionCheck = assertExpectedVersion(
+			assignment.version,
+			input.expectedVersion,
+		);
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
+
+		const dateCheck = assertValidDateRange(assignment.startsOn, input.endsOn);
+		if (!dateCheck.ok) {
+			return dateCheck;
+		}
+
+		const now = new Date();
+		const updated: WorkAssignment = {
+			...assignment,
+			endsOn: input.endsOn,
+			version: assignment.version + 1,
+			updatedBy: input.actorUserId,
+			updatedAt: now,
+		};
+
+		this.assignments.set(input.assignmentId, updated);
+		return ok({ ...updated });
 	}
 }
 

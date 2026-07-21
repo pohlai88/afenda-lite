@@ -17,76 +17,19 @@ import {
 } from "../src/schema/platform";
 
 describe("@afenda/db hard tenant roots (N9 / ARCH-023)", () => {
-	it("lists platform IAM + master-data hard tenant root table names", () => {
-		expect(HARD_TENANT_ROOT_TABLE_NAMES).toHaveLength(66);
-		expect([...HARD_TENANT_ROOT_TABLE_NAMES]).toEqual([
-			"platform_role_assignment",
-			"platform_rbac_audit",
-			"platform_audit_log",
-			"platform_search_document",
-			"platform_notification",
-			"platform_domain_event",
-			"md_party",
-			"md_item_group",
-			"md_item",
-			"md_warehouse",
-			"md_payment_term",
-			"md_tax_registration",
-			"md_party_role",
-			"md_party_address",
-			"md_party_contact",
-			"md_party_external_id",
-			"md_party_relationship",
-			"md_item_uom",
-			"md_item_barcode",
-			"md_item_external_id",
-			"md_item_alias",
-			"md_warehouse_external_id",
-			"md_item_template",
-			"md_item_template_attribute",
-			"md_item_template_attribute_option",
-			"md_item_variant",
-			"md_item_variant_attribute_value",
-			"md_change_request",
-			"md_import_batch",
-			"sales_order",
-			"sales_order_line",
-			"purchase_order",
-			"purchase_order_line",
-			"sales_invoice",
-			"sales_invoice_line",
-			"sales_credit_note",
-			"customer_allocation",
-			"customer_balance_projection",
-			"supplier_invoice",
-			"supplier_invoice_line",
-			"supplier_credit_note",
-			"supplier_credit_note_line",
-			"supplier_allocation",
-			"three_way_match_result",
-			"supplier_balance_projection",
-			"payment_account",
-			"payment",
-			"payment_allocation",
-			"payment_reversal",
-			"stock_movement",
-			"stock_movement_line",
-			"stock_balance",
-			"stock_ledger_entry",
-			"stock_reservation",
-			"goods_receipt",
-			"goods_receipt_line",
-			"receiving_discrepancy",
-			"delivery",
-			"delivery_line",
-			"delivery_pick",
-			"delivery_pack",
-			"proof_of_delivery",
-			"journal",
-			"journal_line",
-			"ledger_posting",
-			"accounting_period",
-		]);
+	it("lists hard tenant root table names including all HR roots", () => {
+		expect(HARD_TENANT_ROOT_TABLE_NAMES).toHaveLength(116);
+		expect(Object.keys(HARD_TENANT_ROOT_TABLES)).toHaveLength(116);
+		const hrRoots = HARD_TENANT_ROOT_TABLE_NAMES.filter((name) =>
+			name.startsWith("hr_"),
+		);
+		expect(hrRoots).toHaveLength(43);
+		expect(hrRoots[0]).toBe("hr_employee");
+		expect(hrRoots.at(-1)).toBe("hr_compensation_review");
+		expect(HARD_TENANT_ROOT_TABLE_NAMES).toContain("supplier_credit_note_line");
+		expect(HARD_TENANT_ROOT_TABLE_NAMES).toContain(
+			"financial_posting_exception",
+		);
 	});
 
 	it("exposes organization_id NOT NULL on every hard tenant root", () => {

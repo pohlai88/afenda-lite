@@ -1,4 +1,6 @@
+import { sql } from "drizzle-orm";
 import {
+	date,
 	index,
 	integer,
 	pgTable,
@@ -33,6 +35,12 @@ export const hrEmployee = pgTable(
 	},
 	(t) => [
 		index("hr_employee_org_id_idx").on(t.organizationId, t.id),
+		index("hr_employee_org_updated_at_idx").on(
+			t.organizationId,
+			t.updatedAt,
+			t.id,
+		),
+		index("hr_employee_org_legal_name_idx").on(t.organizationId, t.legalName),
 		uniqueIndex("hr_employee_org_normalized_number_uidx").on(
 			t.organizationId,
 			t.normalizedEmployeeNumber,
@@ -43,14 +51,146 @@ export const hrEmployee = pgTable(
 		),
 	],
 );
-export const hrEmployment = createErpScaffoldTable("hr_employment");
-export const hrEmploymentContract = createErpScaffoldTable(
-	"hr_employment_contract",
+
+export const hrEmployment = pgTable(
+	"hr_employment",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		employeeId: uuid("employee_id")
+			.notNull()
+			.references(() => hrEmployee.id),
+		/** active | notice | terminated */
+		status: text("status").notNull(),
+		startsOn: date("starts_on", { mode: "string" }).notNull(),
+		endsOn: date("ends_on", { mode: "string" }),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_employment_org_id_idx").on(t.organizationId, t.id),
+		index("hr_employment_org_employee_idx").on(t.organizationId, t.employeeId),
+		uniqueIndex("hr_employment_org_employee_open_uidx")
+			.on(t.organizationId, t.employeeId)
+			.where(sql`${t.endsOn} IS NULL`),
+	],
 );
-export const hrWorkAssignment = createErpScaffoldTable("hr_work_assignment");
+
+export const hrPosition = pgTable(
+	"hr_position",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		code: text("code").notNull(),
+		title: text("title").notNull(),
+		/** active | inactive */
+		status: text("status").notNull(),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_position_org_id_idx").on(t.organizationId, t.id),
+		index("hr_position_org_status_idx").on(t.organizationId, t.status),
+		uniqueIndex("hr_position_org_code_uidx").on(t.organizationId, t.code),
+	],
+);
+
+export const hrEmploymentContract = pgTable(
+	"hr_employment_contract",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		employmentId: uuid("employment_id")
+			.notNull()
+			.references(() => hrEmployment.id),
+		employeeId: uuid("employee_id")
+			.notNull()
+			.references(() => hrEmployee.id),
+		referenceCode: text("reference_code").notNull(),
+		startsOn: date("starts_on", { mode: "string" }).notNull(),
+		endsOn: date("ends_on", { mode: "string" }),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_employment_contract_org_id_idx").on(t.organizationId, t.id),
+		index("hr_employment_contract_org_employment_idx").on(
+			t.organizationId,
+			t.employmentId,
+		),
+		uniqueIndex("hr_employment_contract_org_employment_ref_uidx").on(
+			t.organizationId,
+			t.employmentId,
+			t.referenceCode,
+		),
+	],
+);
+
+export const hrWorkAssignment = pgTable(
+	"hr_work_assignment",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		employmentId: uuid("employment_id")
+			.notNull()
+			.references(() => hrEmployment.id),
+		employeeId: uuid("employee_id")
+			.notNull()
+			.references(() => hrEmployee.id),
+		positionId: uuid("position_id")
+			.notNull()
+			.references(() => hrPosition.id),
+		startsOn: date("starts_on", { mode: "string" }).notNull(),
+		endsOn: date("ends_on", { mode: "string" }),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_work_assignment_org_id_idx").on(t.organizationId, t.id),
+		index("hr_work_assignment_org_employment_idx").on(
+			t.organizationId,
+			t.employmentId,
+		),
+		index("hr_work_assignment_org_position_idx").on(
+			t.organizationId,
+			t.positionId,
+		),
+		uniqueIndex("hr_work_assignment_org_employment_open_uidx")
+			.on(t.organizationId, t.employmentId)
+			.where(sql`${t.endsOn} IS NULL`),
+	],
+);
+
 export const hrDepartment = createErpScaffoldTable("hr_department");
 export const hrJob = createErpScaffoldTable("hr_job");
-export const hrPosition = createErpScaffoldTable("hr_position");
 export const hrReportingLine = createErpScaffoldTable("hr_reporting_line");
 export const hrEmploymentMovement = createErpScaffoldTable(
 	"hr_employment_movement",
@@ -109,7 +249,9 @@ export const hrEmployeeCompensation = createErpScaffoldTable(
 export const hrAllowanceEntitlement = createErpScaffoldTable(
 	"hr_allowance_entitlement",
 );
-export const hrBonusEligibility = createErpScaffoldTable("hr_bonus_eligibility");
+export const hrBonusEligibility = createErpScaffoldTable(
+	"hr_bonus_eligibility",
+);
 export const hrBenefitPlan = createErpScaffoldTable("hr_benefit_plan");
 export const hrBenefitEligibility = createErpScaffoldTable(
 	"hr_benefit_eligibility",

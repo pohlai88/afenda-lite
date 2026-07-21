@@ -23,7 +23,7 @@
 | ---- | -------- |
 | **`hr_*` mutation table count** | **43** — `HUMAN_RESOURCES_MUTATION_TABLES`, SCHEMA-OWNERSHIP-MANIFEST, TABLE-OWNERSHIP.generated.yaml, Drizzle exports |
 | **Domain DDL columns** | **1** table (`hr_employee`) — remainder use `createErpScaffoldTable` |
-| **Hard-tenant audit roots** | **1** (`hr_employee` only) in `hard-tenant-roots.ts` |
+| **Hard-tenant audit roots** | **43** / 43 `hr_*` in `hard-tenant-roots.ts` (SSOT total roots **116**) — HR1 DONE |
 | **Shipped commands / queries** | **2** — `human-resources.employee.create`, `human-resources.employee.get` |
 | **Manifest lifecycle** | `scaffolded` |
 | **Ownership drift (manifest ↔ package)** | **None** — sole writeOwner `@afenda/human-resources` for all 43 |
@@ -77,7 +77,7 @@ Sources: `packages/data-plane/db/src/schema/human-resources.ts` · `packages/dat
 | Domain columns | Yes | `employee_number`, `normalized_employee_number`, `legal_name`, `create_idempotency_key`, `create_request_fingerprint` |
 | Soft-delete / archival | **No** | — |
 
-**Migration journal gap:** `0034_hr_employee.sql` exists on disk but is **not** listed in `packages/data-plane/db/drizzle/meta/_journal.json` (journal ends at tag `0033_schema_snapshot_catchup`). Resolve in HR1.
+**Migration journal (HR1 closed):** `0034_hr_employee` and `0035_hr_scaffold_tables` are journaled and applied on `br-tiny-hill-ao82jp6f` (`drizzle.__drizzle_migrations` count **36**).
 
 ---
 
@@ -217,9 +217,7 @@ Folder markers under those paths are **aggregate boundary constants only** — n
 
 | Gap | Detail | Owner phase |
 | --- | ------ | ----------- |
-| 42 tables TS-only scaffold | No SQL migration creating those tables found under `drizzle/` (only `0034_hr_employee.sql`) | HR1 / HR2+ |
-| `0034` journal orphan | SQL file present; `_journal.json` lacks entry | HR1 |
-| Tenancy audit incomplete | `HARD_TENANT_ROOT_TABLE_NAMES` includes only `hr_employee` | HR1 |
+| 42 scaffold tables | Physical CREATE applied in `0035_hr_scaffold_tables.sql`; domain columns still scaffold-only | HR2+ |
 | Domain FKs / status / effective dates | Absent on all tables except employee operational fields | HR2+ |
 
 ### 5.3 Naming mismatches
@@ -386,13 +384,13 @@ HR-00 (this audit + README lock)
 
 ## 12. Open questions that genuinely prevent implementation
 
-1. **Journal:** Register `0034_hr_employee.sql` in `_journal.json`, or fold employee DDL into the next bulk HR migration?
-2. **Scaffold DDL strategy:** One bulk migration creating 42 `hr_*` ScaffoldStandard tables, or per-slice migrations in HR2–HR8?
+1. **Journal:** ~~Register `0034_hr_employee.sql`~~ — **CLOSED (HR1):** journaled + applied with `0035_hr_scaffold_tables`.
+2. **Scaffold DDL strategy:** ~~bulk vs per-slice~~ — **CLOSED (HR1):** bulk ScaffoldStandard in `0035`; domain columns via per-slice migrations from HR2.
 3. **GATE-TL:** Approve roadmap HR9 draft table names in scratch before any leave/time work?
-4. **`md_party`:** Is `hr_employee` → `md_party` FK required before HR2 employment start, or deferred?
-5. **`employmentStatus`:** Column on `hr_employment` vs derived query — blocks credible `PayrollEmployeeQueryPort` adapter design (HR14).
+4. **`md_party`:** **LOCKED (HR2 mission):** omit `md_party` FK and any `party_id` column. Employment references `hr_employee` only. Future party linkage = additive migration after Master Data ownership approved. No `MasterLookupPort` this mission.
+5. **`employmentStatus`:** **LOCKED (HR2 mission):** store `hr_employment.status text NOT NULL` with `active | notice | terminated` (+ CHECK, typed transitions). Not derived.
 
-Until (4) and (5) are answered, do **not** invent employment status enums or party FK columns in commands.
+Q3 remains open for leave/time work.
 
 ---
 
@@ -409,8 +407,11 @@ Until (4) and (5) are answered, do **not** invent employment status enums or par
 
 | Next mission | Readiness |
 | ------------ | --------- |
-| **HR1** (tenancy hardening: 42 roots + `0034` journal) | **CONDITIONAL GO** — ownership locked; tenancy gap is the work of HR1 |
-| **HR2+** (domain DDL / additional commands) | **NOT READY** until open questions 4–5 resolved and this audit accepted |
+| **HR1** (tenancy hardening) | **DONE / CLOSED** |
+| **HR2** (core workforce DDL) | **DONE** — `0036_hr_core_workforce_ddl` applied |
+| **HR3** (employee/employment/contract commands) | **DONE** |
+| **HR4** (position/assignment commands) | **DONE** for position/assignment; dept/job/reporting-line remain scaffold |
+| **Next** | Org structure remainder (dept/job/reporting-line) or recruitment HR5 |
 
 ---
 

@@ -79,6 +79,27 @@ commands:
   - id: human-resources.employee.create
     moduleId: human-resources
     permission: human-resources.employee.create
+  - id: human-resources.employee.update
+    moduleId: human-resources
+    permission: human-resources.employee.update
+  - id: human-resources.employment.create
+    moduleId: human-resources
+    permission: human-resources.employment.manage
+  - id: human-resources.employment.amend
+    moduleId: human-resources
+    permission: human-resources.employment.manage
+  - id: human-resources.employment-contract.create
+    moduleId: human-resources
+    permission: human-resources.employment.manage
+  - id: human-resources.position.create
+    moduleId: human-resources
+    permission: human-resources.employment.manage
+  - id: human-resources.assignment.create
+    moduleId: human-resources
+    permission: human-resources.employment.manage
+  - id: human-resources.assignment.end
+    moduleId: human-resources
+    permission: human-resources.employment.manage
   - id: inventory.movement.create
     moduleId: inventory
     permission: inventory.movement.create

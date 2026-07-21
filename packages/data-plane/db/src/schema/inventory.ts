@@ -156,7 +156,9 @@ export const stockBalance = pgTable(
 		itemCode: text("item_code").notNull(),
 		baseUomId: uuid("base_uom_id"),
 		baseUomCode: text("base_uom_code"),
-		onHand: numeric("on_hand", { precision: 24, scale: 12 }).notNull().default("0"),
+		onHand: numeric("on_hand", { precision: 24, scale: 12 })
+			.notNull()
+			.default("0"),
 		reserved: numeric("reserved", { precision: 24, scale: 12 })
 			.notNull()
 			.default("0"),
