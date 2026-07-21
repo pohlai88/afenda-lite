@@ -12,9 +12,9 @@
 			"types": "./src/zod.ts",
 			"default": "./src/zod.ts"
 		},
-		"./document": {
-			"types": "./src/document.ts",
-			"default": "./src/document.ts"
+		"./node": {
+			"types": "./src/node/index.ts",
+			"default": "./src/node/index.ts"
 		}
 	},
 	"scripts": {

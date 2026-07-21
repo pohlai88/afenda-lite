@@ -13,32 +13,26 @@
 Workspace dependency — prefer subpaths for concern split:
 
 ```ts
-import { z } from "@afenda/openapi/zod";
+// Universal: schema definition and registration
+import { OpenAPIRegistry, OpenApiGeneratorV3, z } from "@afenda/openapi";
+
+// Node.js only: document stamping and file writing
 import {
-	OPENAPI_VERSION,
-	dataEnvelope,
-	stampAfendaDocument,
-	stampOperationMetadata,
-	writeOpenApiYaml,
-} from "@afenda/openapi/document";
+  OPENAPI_VERSION,
+  OPENAPI_DOCUMENT_ID,
+  dataEnvelope,
+  stampAfendaDocument,
+  stampOperationMetadata,
+  writeOpenApiYaml,
+} from "@afenda/openapi/node";
 
 const envelope = dataEnvelope(
-	z.object({ status: z.literal("ok") }),
-	"ExampleEnvelope",
+  z.object({ status: z.literal("ok") }),
+  "ExampleEnvelope",
 );
 ```
 
-Or the barrel:
-
-```ts
-import {
-	OPENAPI_VERSION,
-	dataEnvelope,
-	z,
-} from "@afenda/openapi";
-```
-
-**Living consumers:** `scripts/generate-openapi.mts` (composition root — registers paths from `apps/web` schemas); web schemas via `@/modules/platform/schemas/openapi-zod` re-export. Committed YAML + Spectral + api-now disk honesty stay at repo root (`pnpm openapi:generate` · `pnpm check:openapi`).
+**Living consumers:** `scripts/generate-openapi.mts` (composition root — registers paths from `apps/web` schemas); web platform schemas via `@/modules/platform/schemas/openapi-zod` re-export. Committed YAML + Spectral + api-now disk honesty stay at repo root (`pnpm openapi:generate` · `pnpm check:openapi`).
 
 ## Maintain
 
@@ -52,13 +46,15 @@ Requires root engines: **Node `24.x`**, **pnpm `≥10.33.4`**.
 
 ## Exports
 
-| Path | Role |
-|------|------|
-| `@afenda/openapi` | Barrel — `z` + document helpers + registry re-exports |
-| `@afenda/openapi/zod` | Single Zod instance extended for OPEN-001 generation |
-| `@afenda/openapi/document` | `dataEnvelope` · metadata stamps · YAML emit · `OPENAPI_VERSION` · `OPENAPI_DOCUMENT_ID` (`x-afenda-document.id`; not the Fumadocs SchemaRecord path key in `@afenda/docs`) |
+| Path | Runtime | Role |
+|------|---------|------|
+| `@afenda/openapi` | Universal | `OpenAPIRegistry`, `OpenApiGeneratorV3`, `z` |
+| `@afenda/openapi/zod` | Universal | Single Zod instance extended for OPEN-001 generation |
+| `@afenda/openapi/node` | Node.js | `dataEnvelope` · metadata stamps · YAML emit · `OPENAPI_VERSION` · `OPENAPI_DOCUMENT_ID` (`x-afenda-document.id`; not the Fumadocs SchemaRecord path key in `@afenda/docs`) |
 
-Full surface: [`src/index.ts`](./src/index.ts).
+**Architecture:** Node-only functions (those using `node:fs`) are isolated in `/node`. Core utilities remain universal.
+
+Full surface: [`src/index.ts`](./src/index.ts) · [`src/node/index.ts`](./src/node/index.ts).
 
 ## Ownership
 
@@ -78,7 +74,7 @@ Full surface: [`src/index.ts`](./src/index.ts).
 |--------|-----|
 | Product Swagger / Scalar under `apps/web` | Docs SSOT is `@afenda/docs` |
 | Manual OAS builders (`createOpenAPISpec` / mutative path maps) | Zod registry is SSOT |
-| Hand-edit committed YAML to “pass” gates | Fix Zod / generator, then regenerate |
+| Hand-edit committed YAML to "pass" gates | Fix Zod / generator, then regenerate |
 | Import `apps/*` from this package | Packages never import apps |
 | OpenAPI 3.1 bump without docs cutover | Living artifact is OAS 3.0.3 |
 
@@ -91,3 +87,10 @@ Full surface: [`src/index.ts`](./src/index.ts).
 | API contract farm | [afenda-elite-api-contract](../../.cursor/skills/afenda-elite-api-contract/SKILL.md) · [openapi.md](../../.cursor/skills/afenda-elite-api-contract/openapi.md) |
 | Official docs site | [`@afenda/docs`](../../apps/docs) |
 | Agent checkout posture | [AGENTS.md](../../AGENTS.md) |
+
+## Package Boundary Gates
+
+Automated import governance (via `pnpm governance:packages`) enforces:
+- ❌ No `@afenda/openapi/document` (legacy path — renamed to `/node`)
+- ❌ No `@afenda/openapi/src/*` (internal paths)
+- ✅ Only `.`, `./zod`, `./node` allowed

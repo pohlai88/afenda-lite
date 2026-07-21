@@ -8,18 +8,16 @@
  */
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { OpenAPIRegistry, OpenApiGeneratorV3, z } from "@afenda/openapi";
 import {
 	dataEnvelope,
 	OPENAPI_DOCUMENT_ID,
 	OPENAPI_VERSION,
-	OpenAPIRegistry,
-	OpenApiGeneratorV3,
 	type OperationMetadataMap,
 	stampAfendaDocument,
 	stampOperationMetadata,
 	writeOpenApiYaml,
-	z,
-} from "@afenda/openapi";
+} from "@afenda/openapi/node";
 
 import { apiErrorBodySchema } from "../apps/web/modules/platform/schemas/api-error";
 import {

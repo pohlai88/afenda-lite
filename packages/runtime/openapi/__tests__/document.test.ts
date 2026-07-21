@@ -4,18 +4,16 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { parse as parseYaml } from "yaml";
 
+import { OpenAPIRegistry, OpenApiGeneratorV3, z } from "../src/index";
 import {
 	dataEnvelope,
 	formatOpenApiYaml,
 	OPENAPI_DOCUMENT_ID,
 	OPENAPI_VERSION,
-	OpenAPIRegistry,
-	OpenApiGeneratorV3,
 	stampAfendaDocument,
 	stampOperationMetadata,
 	writeOpenApiYaml,
-	z,
-} from "../src/index";
+} from "../src/node/index";
 
 describe("@afenda/openapi document helpers", () => {
 	it("exposes living OAS 3.0.3 constant", () => {

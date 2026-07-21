@@ -568,6 +568,37 @@ export function validateMetricsImports(root) {
 	return errors;
 }
 
+export function validateOpenApiImports(root) {
+	/** @type {string[]} */
+	const errors = [];
+	const deepOpenapi = /from\s+["']@afenda\/openapi\/src\//;
+	const legacyDocument = /from\s+["']@afenda\/openapi\/document["']/;
+	const scanRoots = [
+		join(root, "packages"),
+		join(root, "apps", "web"),
+		join(root, "scripts"),
+	];
+	for (const scanRoot of scanRoots) {
+		if (!existsSync(scanRoot)) {
+			continue;
+		}
+		for (const file of walkTsFiles(scanRoot)) {
+			const text = readFileSync(file, "utf8");
+			if (deepOpenapi.test(text)) {
+				errors.push(
+					`deep @afenda/openapi/src/* import: ${relative(root, file).replaceAll("\\", "/")}`,
+				);
+			}
+			if (legacyDocument.test(text)) {
+				errors.push(
+					`legacy @afenda/openapi/document import (use /node): ${relative(root, file).replaceAll("\\", "/")}`,
+				);
+			}
+		}
+	}
+	return errors;
+}
+
 /**
  * @param {string} root
  * @param {AfendaModuleManifest[]} manifests
