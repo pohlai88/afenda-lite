@@ -53,6 +53,7 @@ export async function AccountingShell({ surface }: AccountingShellProps) {
 			{
 				organizationId: session.orgId,
 				actorUserId: session.userId,
+				page: 1,
 				pageSize: 50,
 			},
 			options,

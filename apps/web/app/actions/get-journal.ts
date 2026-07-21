@@ -32,7 +32,7 @@ export async function getJournalAction(
 					{
 						organizationId: session.orgId,
 						actorUserId: session.userId,
-						id: parsed.data,
+						journalId: parsed.data,
 					},
 					createAccountingCommandOptions(),
 				),

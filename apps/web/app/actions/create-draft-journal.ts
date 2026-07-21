@@ -55,6 +55,8 @@ export async function createDraftJournalAction(
 						actorUserId: session.userId,
 						correlationId,
 						...parsed.data,
+						description: parsed.data.description ?? null,
+						journalType: "manual",
 					},
 					createAccountingCommandOptions(),
 				),

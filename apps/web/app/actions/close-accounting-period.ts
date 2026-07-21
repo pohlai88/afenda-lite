@@ -51,6 +51,7 @@ export async function closeAccountingPeriodAction(
 						actorUserId: session.userId,
 						correlationId,
 						...parsed.data,
+						closeReason: null,
 					},
 					createAccountingCommandOptions(),
 				),
