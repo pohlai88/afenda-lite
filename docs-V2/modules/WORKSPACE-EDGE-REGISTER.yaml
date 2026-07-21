@@ -403,6 +403,62 @@ edges:
     reason: "Accounting outbox events"
     effectiveDate: "2026-07-20"
 
+  - from: "@afenda/human-resources"
+    to: "@afenda/db"
+    status: approved
+    authority: ARCH-006
+    reason: "hr_* schema access"
+    effectiveDate: "2026-07-21"
+  - from: "@afenda/human-resources"
+    to: "@afenda/errors"
+    status: approved
+    authority: ARCH-006
+    reason: "Human Resources error codes"
+    effectiveDate: "2026-07-21"
+  - from: "@afenda/human-resources"
+    to: "@afenda/audit"
+    status: approved
+    authority: ARCH-006
+    reason: "Human Resources mutation audit"
+    effectiveDate: "2026-07-21"
+  - from: "@afenda/human-resources"
+    to: "@afenda/events"
+    status: approved
+    authority: ARCH-006
+    reason: "Human Resources outbox events"
+    effectiveDate: "2026-07-21"
+  - from: "@afenda/human-resources"
+    to: "@afenda/master-data"
+    status: approved
+    authority: ARCH-006
+    reason: "FK + snapshots; masters via public API only"
+    effectiveDate: "2026-07-21"
+
+  - from: "@afenda/payroll"
+    to: "@afenda/db"
+    status: approved
+    authority: ARCH-006
+    reason: "payroll_* schema access"
+    effectiveDate: "2026-07-21"
+  - from: "@afenda/payroll"
+    to: "@afenda/errors"
+    status: approved
+    authority: ARCH-006
+    reason: "Payroll error codes"
+    effectiveDate: "2026-07-21"
+  - from: "@afenda/payroll"
+    to: "@afenda/audit"
+    status: approved
+    authority: ARCH-006
+    reason: "Payroll mutation audit"
+    effectiveDate: "2026-07-21"
+  - from: "@afenda/payroll"
+    to: "@afenda/events"
+    status: approved
+    authority: ARCH-006
+    reason: "Payroll outbox events"
+    effectiveDate: "2026-07-21"
+
   - from: "@afenda/ai-the-machine"
     to: "@afenda/errors"
     status: approved

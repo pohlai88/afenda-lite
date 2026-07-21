@@ -26,6 +26,61 @@ modules:
     packageName: "@afenda/fulfillment"
   - activationMode: organization_toggle
     aggregates:
+      - employee
+      - employment
+      - assignment
+      - employment_contract
+      - department
+      - job
+      - position
+      - reporting_line
+      - job_requisition
+      - candidate
+      - application
+      - interview
+      - offer
+      - onboarding
+      - probation
+      - confirmation
+      - transfer
+      - termination
+      - offboarding
+      - shift
+      - attendance_event
+      - attendance_record
+      - timesheet
+      - attendance_exception
+      - leave_policy
+      - entitlement
+      - leave_request
+      - leave_adjustment
+      - performance_cycle
+      - goal
+      - review
+      - improvement_plan
+      - competency
+      - talent_profile
+      - talent_pool
+      - succession_plan
+      - career_plan
+      - course
+      - learning_session
+      - learning_assignment
+      - completion
+      - certification
+      - compensation_grade
+      - salary_band
+      - employee_compensation
+      - benefit_plan
+      - benefit_enrollment
+      - compensation_review
+    band: R1-F
+    category: erp
+    id: human-resources
+    lifecycle: scaffolded
+    packageName: "@afenda/human-resources"
+  - activationMode: organization_toggle
+    aggregates:
       - stock_movement
       - stock_reservation
     band: R1-F
@@ -71,6 +126,42 @@ modules:
     id: payments
     lifecycle: active
     packageName: "@afenda/payments"
+  - activationMode: organization_toggle
+    aggregates:
+      - calendar
+      - pay_group
+      - earning_rule
+      - deduction_rule
+      - statutory_rule
+      - employee_payroll_assignment
+      - recurring_earning
+      - recurring_deduction
+      - variable_input
+      - overtime_input
+      - leave_adjustment
+      - one_time_adjustment
+      - payroll_period
+      - payroll_run
+      - calculation
+      - exception
+      - finalization
+      - reversal
+      - employee_contribution
+      - employer_contribution
+      - tax_result
+      - statutory_submission
+      - payroll_result
+      - payslip
+      - payment_instruction
+      - accounting_posting
+      - payroll_reconciliation
+      - payment_reconciliation
+      - accounting_reconciliation
+    band: R1-F
+    category: erp
+    id: payroll
+    lifecycle: scaffolded
+    packageName: "@afenda/payroll"
   - activationMode: organization_toggle
     aggregates:
       - purchase_order

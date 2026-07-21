@@ -22,6 +22,22 @@ describe("@afenda/events schemas", () => {
 			"fulfillment.pack.confirmed.v1",
 			"fulfillment.pick.confirmed.v1",
 			"fulfillment.pod.recorded.v1",
+			"human-resources.benefit-enrollment.changed.v1",
+			"human-resources.certification.expiring.v1",
+			"human-resources.compensation.changed.v1",
+			"human-resources.employee.created.v1",
+			"human-resources.employee.terminated.v1",
+			"human-resources.employee.transferred.v1",
+			"human-resources.employment.changed.v1",
+			"human-resources.employment.started.v1",
+			"human-resources.leave.approved.v1",
+			"human-resources.offboarding.completed.v1",
+			"human-resources.offboarding.started.v1",
+			"human-resources.offer.accepted.v1",
+			"human-resources.onboarding.completed.v1",
+			"human-resources.onboarding.started.v1",
+			"human-resources.requisition.approved.v1",
+			"human-resources.timesheet.approved.v1",
 			"identity.org_role.assigned",
 			"inventory.movement.cancelled.v1",
 			"inventory.movement.created.v1",
@@ -109,6 +125,13 @@ describe("@afenda/events schemas", () => {
 			"payments.payment.reversed.v1",
 			"payments.refund.posted.v1",
 			"payments.transfer.posted.v1",
+			"payroll.payment-requested.v1",
+			"payroll.payslip.published.v1",
+			"payroll.posting-requested.v1",
+			"payroll.run.calculated.v1",
+			"payroll.run.finalized.v1",
+			"payroll.run.reversed.v1",
+			"payroll.run.started.v1",
 			"platform.organization.deleted",
 			"purchasing.order.cancelled.v1",
 			"purchasing.order.closed.v1",
@@ -161,6 +184,14 @@ describe("@afenda/events schemas", () => {
 
 	it("registers accounting as an event source module", () => {
 		expect(EVENT_SOURCE_MODULES).toContain("accounting");
+	});
+
+	it("registers human-resources as an event source module", () => {
+		expect(EVENT_SOURCE_MODULES).toContain("human-resources");
+	});
+
+	it("registers payroll as an event source module", () => {
+		expect(EVENT_SOURCE_MODULES).toContain("payroll");
 	});
 
 	it("accepts a valid publish command", () => {

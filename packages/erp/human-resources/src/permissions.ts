@@ -1,0 +1,68 @@
+/**
+ * Human Resources permission codes — ERP-owned; must stay aligned with
+ * `@afenda/db` PLATFORM_PERMISSION_V1 (human-resources.*).
+ */
+
+export const HUMAN_RESOURCES_PERMISSION_EMPLOYEE_CREATE =
+	"human-resources.employee.create" as const;
+export const HUMAN_RESOURCES_PERMISSION_EMPLOYEE_READ =
+	"human-resources.employee.read" as const;
+export const HUMAN_RESOURCES_PERMISSION_EMPLOYEE_UPDATE =
+	"human-resources.employee.update" as const;
+export const HUMAN_RESOURCES_PERMISSION_EMPLOYMENT_MANAGE =
+	"human-resources.employment.manage" as const;
+export const HUMAN_RESOURCES_PERMISSION_REQUISITION_CREATE =
+	"human-resources.requisition.create" as const;
+export const HUMAN_RESOURCES_PERMISSION_CANDIDATE_MANAGE =
+	"human-resources.candidate.manage" as const;
+export const HUMAN_RESOURCES_PERMISSION_INTERVIEW_RECORD =
+	"human-resources.interview.record" as const;
+export const HUMAN_RESOURCES_PERMISSION_OFFER_APPROVE =
+	"human-resources.offer.approve" as const;
+export const HUMAN_RESOURCES_PERMISSION_ONBOARDING_MANAGE =
+	"human-resources.onboarding.manage" as const;
+export const HUMAN_RESOURCES_PERMISSION_OFFBOARDING_MANAGE =
+	"human-resources.offboarding.manage" as const;
+export const HUMAN_RESOURCES_PERMISSION_LEAVE_REQUEST =
+	"human-resources.leave.request" as const;
+export const HUMAN_RESOURCES_PERMISSION_LEAVE_APPROVE =
+	"human-resources.leave.approve" as const;
+export const HUMAN_RESOURCES_PERMISSION_ATTENDANCE_MANAGE =
+	"human-resources.attendance.manage" as const;
+export const HUMAN_RESOURCES_PERMISSION_TIMESHEET_APPROVE =
+	"human-resources.timesheet.approve" as const;
+export const HUMAN_RESOURCES_PERMISSION_PERFORMANCE_MANAGE =
+	"human-resources.performance.manage" as const;
+export const HUMAN_RESOURCES_PERMISSION_LEARNING_MANAGE =
+	"human-resources.learning.manage" as const;
+export const HUMAN_RESOURCES_PERMISSION_CERTIFICATION_MANAGE =
+	"human-resources.certification.manage" as const;
+export const HUMAN_RESOURCES_PERMISSION_COMPENSATION_READ =
+	"human-resources.compensation.read" as const;
+export const HUMAN_RESOURCES_PERMISSION_COMPENSATION_MANAGE =
+	"human-resources.compensation.manage" as const;
+export const HUMAN_RESOURCES_PERMISSION_BENEFITS_MANAGE =
+	"human-resources.benefits.manage" as const;
+
+export const HUMAN_RESOURCES_PERMISSION_CODES = [
+	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_CREATE,
+	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_READ,
+	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_UPDATE,
+	HUMAN_RESOURCES_PERMISSION_EMPLOYMENT_MANAGE,
+	HUMAN_RESOURCES_PERMISSION_REQUISITION_CREATE,
+	HUMAN_RESOURCES_PERMISSION_CANDIDATE_MANAGE,
+	HUMAN_RESOURCES_PERMISSION_INTERVIEW_RECORD,
+	HUMAN_RESOURCES_PERMISSION_OFFER_APPROVE,
+	HUMAN_RESOURCES_PERMISSION_ONBOARDING_MANAGE,
+	HUMAN_RESOURCES_PERMISSION_OFFBOARDING_MANAGE,
+	HUMAN_RESOURCES_PERMISSION_LEAVE_REQUEST,
+	HUMAN_RESOURCES_PERMISSION_LEAVE_APPROVE,
+	HUMAN_RESOURCES_PERMISSION_ATTENDANCE_MANAGE,
+	HUMAN_RESOURCES_PERMISSION_TIMESHEET_APPROVE,
+	HUMAN_RESOURCES_PERMISSION_PERFORMANCE_MANAGE,
+	HUMAN_RESOURCES_PERMISSION_LEARNING_MANAGE,
+	HUMAN_RESOURCES_PERMISSION_CERTIFICATION_MANAGE,
+	HUMAN_RESOURCES_PERMISSION_COMPENSATION_READ,
+	HUMAN_RESOURCES_PERMISSION_COMPENSATION_MANAGE,
+	HUMAN_RESOURCES_PERMISSION_BENEFITS_MANAGE,
+] as const;

@@ -86,6 +86,7 @@ import {
 	goodsReceiptLine,
 	receivingDiscrepancy,
 } from "./schema/receiving";
+import { hrEmployee } from "./schema/human-resources";
 import { salesOrder, salesOrderLine } from "./schema/sales";
 
 /** SQL table names for null-org audits (RB-001 §3.4 · ARCH-023). */
@@ -163,6 +164,7 @@ export const HARD_TENANT_ROOT_TABLE_NAMES = [
 	"posting_profile_line",
 	"source_posting_link",
 	"financial_posting_exception",
+	"hr_employee",
 ] as const;
 
 export type HardTenantRootTableName =
@@ -243,4 +245,5 @@ export const HARD_TENANT_ROOT_TABLES = {
 	postingProfileLine,
 	sourcePostingLink,
 	financialPostingException,
+	hrEmployee,
 } as const;

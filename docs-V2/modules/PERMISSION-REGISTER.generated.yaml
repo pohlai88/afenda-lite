@@ -79,6 +79,66 @@ permissions:
   - code: fulfillment.delivery.close
     moduleId: fulfillment
     namespace: fulfillment
+  - code: human-resources.employee.create
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.employee.read
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.employee.update
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.employment.manage
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.requisition.create
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.candidate.manage
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.interview.record
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.offer.approve
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.onboarding.manage
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.offboarding.manage
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.leave.request
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.leave.approve
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.attendance.manage
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.timesheet.approve
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.performance.manage
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.learning.manage
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.certification.manage
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.compensation.read
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.compensation.manage
+    moduleId: human-resources
+    namespace: human-resources
+  - code: human-resources.benefits.manage
+    moduleId: human-resources
+    namespace: human-resources
   - code: inventory.movement.create
     moduleId: inventory
     namespace: inventory
@@ -160,6 +220,36 @@ permissions:
   - code: payments.availability.read
     moduleId: payments
     namespace: payments
+  - code: payroll.setup.manage
+    moduleId: payroll
+    namespace: payroll
+  - code: payroll.input.manage
+    moduleId: payroll
+    namespace: payroll
+  - code: payroll.run.create
+    moduleId: payroll
+    namespace: payroll
+  - code: payroll.run.calculate
+    moduleId: payroll
+    namespace: payroll
+  - code: payroll.run.review
+    moduleId: payroll
+    namespace: payroll
+  - code: payroll.run.finalize
+    moduleId: payroll
+    namespace: payroll
+  - code: payroll.run.reverse
+    moduleId: payroll
+    namespace: payroll
+  - code: payroll.payslip.read-own
+    moduleId: payroll
+    namespace: payroll
+  - code: payroll.payslip.read-all
+    moduleId: payroll
+    namespace: payroll
+  - code: payroll.reconciliation.manage
+    moduleId: payroll
+    namespace: payroll
   - code: purchasing.order.create
     moduleId: purchasing
     namespace: purchasing

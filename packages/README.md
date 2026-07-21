@@ -111,6 +111,8 @@ Memory adapters for rate-limit and cache are test and local-development only unl
 | [`@afenda/payables`](./erp/payables/README.md) | Node | Active | Supplier invoice / line / credit note / allocation / balance projection / three-way-match result sole mutator (ARCH-006) |
 | [`@afenda/payments`](./erp/payments/README.md) | Node | Active | Payment / allocation / reversal sole mutator; refunds are payment rows with `direction = refund` (ARCH-006) |
 | [`@afenda/accounting`](./erp/accounting/README.md) | Node | Active | Journal / journal line / ledger posting / accounting period / CoA / posting profile sole mutator (ARCH-006) |
+| [`@afenda/human-resources`](./erp/human-resources/README.md) | Node | Scaffolded | Workforce relationship sole mutator (`hr_*`) |
+| [`@afenda/payroll`](./erp/payroll/README.md) | Node | Scaffolded | Payroll calculation sole mutator (`payroll_*`) |
 
 Peer R1-F packages do not import each other by default. ERP peer collaboration occurs only through:
 

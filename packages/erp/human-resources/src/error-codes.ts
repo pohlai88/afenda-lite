@@ -1,0 +1,61 @@
+/**
+ * Human Resources semantic error codes — package authority.
+ * Platform `Result` uses `@afenda/errors` ErrorCode; attach these via details.humanResourcesCode.
+ */
+
+export const HUMAN_RESOURCES_ERROR_VALIDATION =
+	"human_resources.validation" as const;
+export const HUMAN_RESOURCES_ERROR_UNAUTHORIZED =
+	"human_resources.unauthorized" as const;
+export const HUMAN_RESOURCES_ERROR_FORBIDDEN =
+	"human_resources.forbidden" as const;
+export const HUMAN_RESOURCES_ERROR_EMPLOYEE_NOT_FOUND =
+	"human_resources.employee_not_found" as const;
+export const HUMAN_RESOURCES_ERROR_EMPLOYEE_DUPLICATE =
+	"human_resources.employee_duplicate" as const;
+export const HUMAN_RESOURCES_ERROR_IDEMPOTENCY_CONFLICT =
+	"human_resources.idempotency_conflict" as const;
+export const HUMAN_RESOURCES_ERROR_VERSION_CONFLICT =
+	"human_resources.version_conflict" as const;
+export const HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION =
+	"human_resources.invalid_state_transition" as const;
+export const HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE =
+	"human_resources.cross_organization_reference" as const;
+export const HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE =
+	"human_resources.persistence_failure" as const;
+
+export const HUMAN_RESOURCES_ERROR_CODES = {
+	VALIDATION: HUMAN_RESOURCES_ERROR_VALIDATION,
+	UNAUTHORIZED: HUMAN_RESOURCES_ERROR_UNAUTHORIZED,
+	FORBIDDEN: HUMAN_RESOURCES_ERROR_FORBIDDEN,
+	EMPLOYEE_NOT_FOUND: HUMAN_RESOURCES_ERROR_EMPLOYEE_NOT_FOUND,
+	EMPLOYEE_DUPLICATE: HUMAN_RESOURCES_ERROR_EMPLOYEE_DUPLICATE,
+	IDEMPOTENCY_CONFLICT: HUMAN_RESOURCES_ERROR_IDEMPOTENCY_CONFLICT,
+	VERSION_CONFLICT: HUMAN_RESOURCES_ERROR_VERSION_CONFLICT,
+	INVALID_STATE_TRANSITION: HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
+	CROSS_ORGANIZATION_REFERENCE:
+		HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+	PERSISTENCE_FAILURE: HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+} as const;
+
+export const HUMAN_RESOURCES_ERROR_CODE_LIST = [
+	HUMAN_RESOURCES_ERROR_VALIDATION,
+	HUMAN_RESOURCES_ERROR_UNAUTHORIZED,
+	HUMAN_RESOURCES_ERROR_FORBIDDEN,
+	HUMAN_RESOURCES_ERROR_EMPLOYEE_NOT_FOUND,
+	HUMAN_RESOURCES_ERROR_EMPLOYEE_DUPLICATE,
+	HUMAN_RESOURCES_ERROR_IDEMPOTENCY_CONFLICT,
+	HUMAN_RESOURCES_ERROR_VERSION_CONFLICT,
+	HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
+	HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+	HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+] as const;
+
+export type HumanResourcesErrorCode =
+	(typeof HUMAN_RESOURCES_ERROR_CODE_LIST)[number];
+
+export function humanResourcesErrorDetails(
+	humanResourcesCode: HumanResourcesErrorCode,
+): { humanResourcesCode: HumanResourcesErrorCode } {
+	return { humanResourcesCode };
+}
