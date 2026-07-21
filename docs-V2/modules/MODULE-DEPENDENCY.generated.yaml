@@ -23,6 +23,16 @@ modules:
     required:
       - master-data
       - inventory
+  - id: human-resources
+    optionalIntegratesWith:
+      - moduleId: payroll
+        style: events
+      - moduleId: payments
+        style: events
+      - moduleId: accounting
+        style: events
+    required:
+      - master-data
   - id: inventory
     optionalIntegratesWith: []
     required:
@@ -57,6 +67,16 @@ modules:
       - moduleId: accounting
         style: events
     required: []
+  - id: payroll
+    optionalIntegratesWith:
+      - moduleId: payments
+        style: events
+      - moduleId: accounting
+        style: events
+      - moduleId: payables
+        style: events
+    required:
+      - human-resources
   - id: purchasing
     optionalIntegratesWith:
       - moduleId: receiving

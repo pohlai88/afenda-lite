@@ -160,6 +160,27 @@ export default defineConfig({
 			},
 			{
 				...nodeProject(
+					"human-resources",
+					path.join(repoRoot, "packages/erp/human-resources"),
+				),
+				resolve: {
+					alias: {
+						...testingAlias,
+						"server-only": path.join(repoRoot, "testing/empty-server-only.ts"),
+					},
+				},
+			},
+			{
+				...nodeProject("payroll", path.join(repoRoot, "packages/erp/payroll")),
+				resolve: {
+					alias: {
+						...testingAlias,
+						"server-only": path.join(repoRoot, "testing/empty-server-only.ts"),
+					},
+				},
+			},
+			{
+				...nodeProject(
 					"fulfillment",
 					path.join(repoRoot, "packages/erp/fulfillment"),
 				),

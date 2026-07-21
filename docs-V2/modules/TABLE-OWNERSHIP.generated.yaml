@@ -66,6 +66,178 @@ tables:
     packageName: "@afenda/fulfillment"
     schemaOwner: "@afenda/db"
     table: proof_of_delivery
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_employee
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_employment
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_employment_contract
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_work_assignment
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_department
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_job
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_position
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_reporting_line
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_employment_movement
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_job_requisition
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_candidate
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_candidate_application
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_interview
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_interview_evaluation
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_employment_offer
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_onboarding_case
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_onboarding_task
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_probation_review
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_employment_confirmation
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_termination
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_offboarding_case
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_offboarding_task
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_exit_interview
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_clearance
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_learning_course
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_learning_program
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_learning_session
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_learning_assignment
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_learning_attendance
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_learning_assessment
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_learning_completion
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_employee_certification
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_development_plan
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_compensation_grade
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_salary_band
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_employee_compensation
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_allowance_entitlement
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_bonus_eligibility
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_benefit_plan
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_benefit_eligibility
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_benefit_enrollment
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_compensation_review_cycle
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_compensation_review
   - moduleId: inventory
     packageName: "@afenda/inventory"
     schemaOwner: "@afenda/db"
@@ -222,6 +394,78 @@ tables:
     packageName: "@afenda/payments"
     schemaOwner: "@afenda/db"
     table: payment_reversal
+  - moduleId: payroll
+    packageName: "@afenda/payroll"
+    schemaOwner: "@afenda/db"
+    table: payroll_calendar
+  - moduleId: payroll
+    packageName: "@afenda/payroll"
+    schemaOwner: "@afenda/db"
+    table: payroll_pay_group
+  - moduleId: payroll
+    packageName: "@afenda/payroll"
+    schemaOwner: "@afenda/db"
+    table: payroll_period
+  - moduleId: payroll
+    packageName: "@afenda/payroll"
+    schemaOwner: "@afenda/db"
+    table: payroll_employee_assignment
+  - moduleId: payroll
+    packageName: "@afenda/payroll"
+    schemaOwner: "@afenda/db"
+    table: payroll_earning_rule
+  - moduleId: payroll
+    packageName: "@afenda/payroll"
+    schemaOwner: "@afenda/db"
+    table: payroll_deduction_rule
+  - moduleId: payroll
+    packageName: "@afenda/payroll"
+    schemaOwner: "@afenda/db"
+    table: payroll_statutory_rule
+  - moduleId: payroll
+    packageName: "@afenda/payroll"
+    schemaOwner: "@afenda/db"
+    table: payroll_recurring_earning
+  - moduleId: payroll
+    packageName: "@afenda/payroll"
+    schemaOwner: "@afenda/db"
+    table: payroll_recurring_deduction
+  - moduleId: payroll
+    packageName: "@afenda/payroll"
+    schemaOwner: "@afenda/db"
+    table: payroll_variable_input
+  - moduleId: payroll
+    packageName: "@afenda/payroll"
+    schemaOwner: "@afenda/db"
+    table: payroll_run
+  - moduleId: payroll
+    packageName: "@afenda/payroll"
+    schemaOwner: "@afenda/db"
+    table: payroll_run_employee
+  - moduleId: payroll
+    packageName: "@afenda/payroll"
+    schemaOwner: "@afenda/db"
+    table: payroll_result_line
+  - moduleId: payroll
+    packageName: "@afenda/payroll"
+    schemaOwner: "@afenda/db"
+    table: payroll_statutory_result
+  - moduleId: payroll
+    packageName: "@afenda/payroll"
+    schemaOwner: "@afenda/db"
+    table: payroll_exception
+  - moduleId: payroll
+    packageName: "@afenda/payroll"
+    schemaOwner: "@afenda/db"
+    table: payroll_payslip
+  - moduleId: payroll
+    packageName: "@afenda/payroll"
+    schemaOwner: "@afenda/db"
+    table: payroll_adjustment
+  - moduleId: payroll
+    packageName: "@afenda/payroll"
+    schemaOwner: "@afenda/db"
+    table: payroll_reconciliation
   - moduleId: purchasing
     packageName: "@afenda/purchasing"
     schemaOwner: "@afenda/db"

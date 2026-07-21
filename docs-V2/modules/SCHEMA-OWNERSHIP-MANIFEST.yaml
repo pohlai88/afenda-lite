@@ -246,3 +246,188 @@ tables:
   - table: financial_posting_exception
     writeOwner: "@afenda/accounting"
     kind: erp
+
+  - table: hr_employee
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_employment
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_employment_contract
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_work_assignment
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_department
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_job
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_position
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_reporting_line
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_employment_movement
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_job_requisition
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_candidate
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_candidate_application
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_interview
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_interview_evaluation
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_employment_offer
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_onboarding_case
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_onboarding_task
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_probation_review
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_employment_confirmation
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_termination
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_offboarding_case
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_offboarding_task
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_exit_interview
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_clearance
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_learning_course
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_learning_program
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_learning_session
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_learning_assignment
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_learning_attendance
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_learning_assessment
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_learning_completion
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_employee_certification
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_development_plan
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_compensation_grade
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_salary_band
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_employee_compensation
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_allowance_entitlement
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_bonus_eligibility
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_benefit_plan
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_benefit_eligibility
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_benefit_enrollment
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_compensation_review_cycle
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_compensation_review
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+
+  - table: payroll_calendar
+    writeOwner: "@afenda/payroll"
+    kind: erp
+  - table: payroll_pay_group
+    writeOwner: "@afenda/payroll"
+    kind: erp
+  - table: payroll_period
+    writeOwner: "@afenda/payroll"
+    kind: erp
+  - table: payroll_employee_assignment
+    writeOwner: "@afenda/payroll"
+    kind: erp
+  - table: payroll_earning_rule
+    writeOwner: "@afenda/payroll"
+    kind: erp
+  - table: payroll_deduction_rule
+    writeOwner: "@afenda/payroll"
+    kind: erp
+  - table: payroll_statutory_rule
+    writeOwner: "@afenda/payroll"
+    kind: erp
+  - table: payroll_recurring_earning
+    writeOwner: "@afenda/payroll"
+    kind: erp
+  - table: payroll_recurring_deduction
+    writeOwner: "@afenda/payroll"
+    kind: erp
+  - table: payroll_variable_input
+    writeOwner: "@afenda/payroll"
+    kind: erp
+  - table: payroll_run
+    writeOwner: "@afenda/payroll"
+    kind: erp
+  - table: payroll_run_employee
+    writeOwner: "@afenda/payroll"
+    kind: erp
+  - table: payroll_result_line
+    writeOwner: "@afenda/payroll"
+    kind: erp
+  - table: payroll_statutory_result
+    writeOwner: "@afenda/payroll"
+    kind: erp
+  - table: payroll_exception
+    writeOwner: "@afenda/payroll"
+    kind: erp
+  - table: payroll_payslip
+    writeOwner: "@afenda/payroll"
+    kind: erp
+  - table: payroll_adjustment
+    writeOwner: "@afenda/payroll"
+    kind: erp
+  - table: payroll_reconciliation
+    writeOwner: "@afenda/payroll"
+    kind: erp

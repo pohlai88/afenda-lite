@@ -32,6 +32,54 @@ events:
     id: fulfillment.delivery.closed.v1
     moduleId: fulfillment
   - direction: emits
+    id: human-resources.employee.created.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.employment.started.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.employment.changed.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.employee.transferred.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.employee.terminated.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.requisition.approved.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.offer.accepted.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.onboarding.started.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.onboarding.completed.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.offboarding.started.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.offboarding.completed.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.compensation.changed.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.benefit-enrollment.changed.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.leave.approved.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.timesheet.approved.v1
+    moduleId: human-resources
+  - direction: emits
+    id: human-resources.certification.expiring.v1
+    moduleId: human-resources
+  - direction: emits
     id: inventory.movement.created.v1
     moduleId: inventory
   - direction: emits
@@ -286,6 +334,27 @@ events:
   - direction: emits
     id: payments.transfer.posted.v1
     moduleId: payments
+  - direction: emits
+    id: payroll.run.started.v1
+    moduleId: payroll
+  - direction: emits
+    id: payroll.run.calculated.v1
+    moduleId: payroll
+  - direction: emits
+    id: payroll.run.finalized.v1
+    moduleId: payroll
+  - direction: emits
+    id: payroll.run.reversed.v1
+    moduleId: payroll
+  - direction: emits
+    id: payroll.payment-requested.v1
+    moduleId: payroll
+  - direction: emits
+    id: payroll.posting-requested.v1
+    moduleId: payroll
+  - direction: emits
+    id: payroll.payslip.published.v1
+    moduleId: payroll
   - direction: emits
     id: purchasing.order.created.v1
     moduleId: purchasing

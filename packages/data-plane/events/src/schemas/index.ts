@@ -1,10 +1,12 @@
 import { AccountingEventSchemas } from "./accounting.events";
 import { FulfillmentEventSchemas } from "./fulfillment.events";
+import { HumanResourcesEventSchemas } from "./human-resources.events";
 import { IdentityEventSchemas } from "./identity.events";
 import { InventoryEventSchemas } from "./inventory.events";
 import { MasterDataEventSchemas } from "./master-data.events";
 import { PayablesEventSchemas } from "./payables.events";
 import { PaymentsEventSchemas } from "./payments.events";
+import { PayrollEventSchemas } from "./payroll.events";
 import { PlatformEventSchemas } from "./platform.events";
 import { PurchasingEventSchemas } from "./purchasing.events";
 import { ReceivablesEventSchemas } from "./receivables.events";
@@ -17,8 +19,8 @@ export {
 	ACCOUNTING_JOURNAL_POSTED_EVENT,
 	ACCOUNTING_JOURNAL_REVERSED_EVENT,
 	ACCOUNTING_PERIOD_CLOSED_EVENT,
-	type AccountingEventType,
 	AccountingEventSchemas,
+	type AccountingEventType,
 	type AccountingPayload,
 	accountingPayloadSchema,
 } from "./accounting.events";
@@ -41,6 +43,29 @@ export {
 	packPayloadSchema,
 	pickPayloadSchema,
 } from "./fulfillment.events";
+export {
+	HUMAN_RESOURCES_BENEFIT_ENROLLMENT_CHANGED_EVENT,
+	HUMAN_RESOURCES_CERTIFICATION_EXPIRING_EVENT,
+	HUMAN_RESOURCES_COMPENSATION_CHANGED_EVENT,
+	HUMAN_RESOURCES_EMPLOYEE_CREATED_EVENT,
+	HUMAN_RESOURCES_EMPLOYEE_TERMINATED_EVENT,
+	HUMAN_RESOURCES_EMPLOYEE_TRANSFERRED_EVENT,
+	HUMAN_RESOURCES_EMPLOYMENT_CHANGED_EVENT,
+	HUMAN_RESOURCES_EMPLOYMENT_STARTED_EVENT,
+	HUMAN_RESOURCES_EVENT_IDS,
+	HUMAN_RESOURCES_LEAVE_APPROVED_EVENT,
+	HUMAN_RESOURCES_OFFBOARDING_COMPLETED_EVENT,
+	HUMAN_RESOURCES_OFFBOARDING_STARTED_EVENT,
+	HUMAN_RESOURCES_OFFER_ACCEPTED_EVENT,
+	HUMAN_RESOURCES_ONBOARDING_COMPLETED_EVENT,
+	HUMAN_RESOURCES_ONBOARDING_STARTED_EVENT,
+	HUMAN_RESOURCES_REQUISITION_APPROVED_EVENT,
+	HUMAN_RESOURCES_TIMESHEET_APPROVED_EVENT,
+	type HumanResourcesEntityPayload,
+	HumanResourcesEventSchemas,
+	type HumanResourcesEventType,
+	humanResourcesEntityPayloadSchema,
+} from "./human-resources.events";
 export {
 	IdentityEventSchemas,
 	type IdentityEventType,
@@ -86,6 +111,7 @@ export {
 	payablesPayloadSchema,
 } from "./payables.events";
 export {
+	applicationInstructionPayloadSchema,
 	PAYMENTS_APPLICATION_INSTRUCTION_APPLIED_EVENT,
 	PAYMENTS_APPLICATION_INSTRUCTION_CREATED_EVENT,
 	PAYMENTS_APPLICATION_INSTRUCTION_REJECTED_EVENT,
@@ -95,12 +121,25 @@ export {
 	PAYMENTS_PAYMENT_REVERSED_EVENT,
 	PAYMENTS_REFUND_POSTED_EVENT,
 	PAYMENTS_TRANSFER_POSTED_EVENT,
-	applicationInstructionPayloadSchema,
 	type PaymentPayload,
 	PaymentsEventSchemas,
 	type PaymentsEventType,
 	paymentPayloadSchema,
 } from "./payments.events";
+export {
+	PAYROLL_EVENT_IDS,
+	PAYROLL_PAYMENT_REQUESTED_EVENT,
+	PAYROLL_PAYSLIP_PUBLISHED_EVENT,
+	PAYROLL_POSTING_REQUESTED_EVENT,
+	PAYROLL_RUN_CALCULATED_EVENT,
+	PAYROLL_RUN_FINALIZED_EVENT,
+	PAYROLL_RUN_REVERSED_EVENT,
+	PAYROLL_RUN_STARTED_EVENT,
+	type PayrollEntityPayload,
+	PayrollEventSchemas,
+	type PayrollEventType,
+	payrollEntityPayloadSchema,
+} from "./payroll.events";
 export {
 	PlatformEventSchemas,
 	type PlatformEventType,
@@ -178,12 +217,14 @@ export const AllEventSchemas = {
 	...MasterDataEventSchemas,
 	...PayablesEventSchemas,
 	...PaymentsEventSchemas,
+	...PayrollEventSchemas,
 	...PurchasingEventSchemas,
 	...ReceivingEventSchemas,
 	...FulfillmentEventSchemas,
 	...ReceivablesEventSchemas,
 	...SalesEventSchemas,
 	...InventoryEventSchemas,
+	...HumanResourcesEventSchemas,
 } as const;
 
 export type AllEventType = keyof typeof AllEventSchemas;
