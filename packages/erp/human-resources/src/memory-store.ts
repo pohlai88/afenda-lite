@@ -120,6 +120,10 @@ import {
 	attachMemoryEmployeeRelations,
 	resetEmployeeRelationsMemoryState,
 } from "./employee-relations/memory-store";
+import {
+	attachMemoryTalent,
+	resetTalentMemoryState,
+} from "./adapters/memory/talent";
 import type { MutationPorts } from "./ports";
 import {
 	attachLeaveMemory,
@@ -622,6 +626,7 @@ export class MemoryHumanResourcesStore {
 	constructor() {
 		attachMemoryPerformance(this, this.performanceState);
 		attachMemoryEmployeeRelations(this);
+		attachMemoryTalent(this);
 	}
 
 	private idempotencyMapKey(organizationId: string, idempotencyKey: string) {
@@ -695,6 +700,7 @@ export class MemoryHumanResourcesStore {
 		this.leave.leaveApprovalDecisions.clear();
 		resetPerformanceMemoryState(this.performanceState);
 		resetEmployeeRelationsMemoryState(this);
+		resetTalentMemoryState(this);
 		this.wfp.headcountPlans.clear();
 		this.wfp.headcountPlanIdempotency.clear();
 		this.wfp.headcountPlanLines.clear();

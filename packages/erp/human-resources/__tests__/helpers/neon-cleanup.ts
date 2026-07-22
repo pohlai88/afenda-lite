@@ -57,9 +57,98 @@ import {
 	hrTermination,
 	hrWorkAssignment,
 	hrWorkEligibility,
+	inArray,
 	platformAuditLog,
 	platformDomainEvent,
 } from "@afenda/db";
+
+function isForeignKeyViolation(error: unknown): boolean {
+	let current: unknown = error;
+	for (let depth = 0; depth < 4 && current != null; depth += 1) {
+		if (
+			typeof current === "object" &&
+			"code" in current &&
+			(current as { code: unknown }).code === "23503"
+		) {
+			return true;
+		}
+		if (
+			current instanceof Error &&
+			/foreign key constraint/i.test(current.message)
+		) {
+			return true;
+		}
+		current =
+			typeof current === "object" &&
+			current !== null &&
+			"cause" in current
+				? (current as { cause: unknown }).cause
+				: null;
+	}
+	return false;
+}
+
+async function deleteLeaveChildrenForOrganization(
+	organizationId: string,
+): Promise<void> {
+	const leaveRequests = await db
+		.select({ id: hrLeaveRequest.id })
+		.from(hrLeaveRequest)
+		.where(eq(hrLeaveRequest.organizationId, organizationId));
+	const leaveRequestIds = leaveRequests.map((row) => row.id);
+
+	await db
+		.delete(hrLeaveApprovalDecision)
+		.where(eq(hrLeaveApprovalDecision.organizationId, organizationId));
+	await db
+		.delete(hrLeaveRequestSegment)
+		.where(eq(hrLeaveRequestSegment.organizationId, organizationId));
+	await db
+		.delete(hrLeaveAdjustment)
+		.where(eq(hrLeaveAdjustment.organizationId, organizationId));
+
+	// Request-id deletes catch mismatched organization_id and late writers.
+	if (leaveRequestIds.length > 0) {
+		await db
+			.delete(hrLeaveApprovalDecision)
+			.where(inArray(hrLeaveApprovalDecision.requestId, leaveRequestIds));
+		await db
+			.delete(hrLeaveRequestSegment)
+			.where(inArray(hrLeaveRequestSegment.requestId, leaveRequestIds));
+		await db
+			.delete(hrLeaveAdjustment)
+			.where(inArray(hrLeaveAdjustment.sourceRequestId, leaveRequestIds));
+	}
+}
+
+async function deleteLeaveGraphForOrganization(
+	organizationId: string,
+): Promise<void> {
+	const maxAttempts = 3;
+	for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+		await deleteLeaveChildrenForOrganization(organizationId);
+		try {
+			await db
+				.delete(hrLeaveRequest)
+				.where(eq(hrLeaveRequest.organizationId, organizationId));
+			break;
+		} catch (error) {
+			if (!isForeignKeyViolation(error) || attempt === maxAttempts) {
+				throw error;
+			}
+		}
+	}
+
+	await db
+		.delete(hrLeaveEntitlement)
+		.where(eq(hrLeaveEntitlement.organizationId, organizationId));
+	await db
+		.delete(hrLeavePolicyEligibility)
+		.where(eq(hrLeavePolicyEligibility.organizationId, organizationId));
+	await db
+		.delete(hrLeavePolicy)
+		.where(eq(hrLeavePolicy.organizationId, organizationId));
+}
 
 /** Wipe synthetic-org HR fixtures and co-written audit / domain-event rows. */
 export async function cleanupHumanResourcesNeonOrgs(
@@ -159,27 +248,7 @@ export async function cleanupHumanResourcesNeonOrgs(
 		await db
 			.delete(hrPerformanceCycle)
 			.where(eq(hrPerformanceCycle.organizationId, organizationId));
-		await db
-			.delete(hrLeaveApprovalDecision)
-			.where(eq(hrLeaveApprovalDecision.organizationId, organizationId));
-		await db
-			.delete(hrLeaveRequestSegment)
-			.where(eq(hrLeaveRequestSegment.organizationId, organizationId));
-		await db
-			.delete(hrLeaveAdjustment)
-			.where(eq(hrLeaveAdjustment.organizationId, organizationId));
-		await db
-			.delete(hrLeaveRequest)
-			.where(eq(hrLeaveRequest.organizationId, organizationId));
-		await db
-			.delete(hrLeaveEntitlement)
-			.where(eq(hrLeaveEntitlement.organizationId, organizationId));
-		await db
-			.delete(hrLeavePolicyEligibility)
-			.where(eq(hrLeavePolicyEligibility.organizationId, organizationId));
-		await db
-			.delete(hrLeavePolicy)
-			.where(eq(hrLeavePolicy.organizationId, organizationId));
+		await deleteLeaveGraphForOrganization(organizationId);
 		await db
 			.delete(hrEmployeeCaseEvent)
 			.where(eq(hrEmployeeCaseEvent.organizationId, organizationId));

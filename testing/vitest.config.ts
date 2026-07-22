@@ -32,6 +32,10 @@ const nodeProject = (name: string, root: string) => ({
 });
 
 const authProject = nodeProject("auth", path.join(repoRoot, "packages/control-plane/auth"));
+const humanResourcesProject = nodeProject(
+	"human-resources",
+	path.join(repoRoot, "packages/erp/human-resources"),
+);
 
 export default defineConfig({
 	root: repoRoot,
@@ -159,15 +163,21 @@ export default defineConfig({
 				},
 			},
 			{
-				...nodeProject(
-					"human-resources",
-					path.join(repoRoot, "packages/erp/human-resources"),
-				),
+				...humanResourcesProject,
 				resolve: {
 					alias: {
 						...testingAlias,
 						"server-only": path.join(repoRoot, "testing/empty-server-only.ts"),
 					},
+				},
+				test: {
+					...humanResourcesProject.test,
+					// Neon parity suites: cold import + multi-round-trip workflows exceed 5s.
+					testTimeout: 30_000,
+					// Org cleanup is many sequential deletes; parallel files amplify hook cost.
+					hookTimeout: 90_000,
+					// Shared Neon branch: serial files avoid timeout-aborted writers racing afterAll.
+					fileParallelism: false,
 				},
 			},
 			{
