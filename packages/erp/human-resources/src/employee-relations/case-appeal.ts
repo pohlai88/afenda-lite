@@ -9,12 +9,12 @@ import {
 	HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_RECORD_APPEAL,
 	HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_RESOLVE_APPEAL,
 } from "../module-ids";
+import { runEmployeeRelationsCommand } from "../shared/employee-relations-command";
+import { fingerprintEmployeeCaseAppeal } from "../shared/fingerprint";
 import {
 	recordEmployeeCaseAppealInputSchema,
 	resolveEmployeeCaseAppealInputSchema,
 } from "./schemas";
-import { fingerprintEmployeeCaseAppeal } from "../shared/fingerprint";
-import { runEmployeeRelationsCommand } from "../shared/employee-relations-command";
 import type { EmployeeCaseAppeal } from "./types";
 
 export const HUMAN_RESOURCES_AGGREGATE_EMPLOYEE_CASE_APPEAL =
@@ -48,8 +48,7 @@ export async function recordEmployeeCaseAppeal(
 			const fingerprint = fingerprintEmployeeCaseAppeal({
 				caseId: data.caseId,
 				originalFindingCode: loaded.data.findingCode,
-				originalFindingRecordedAt:
-					loaded.data.findingRecordedAt.toISOString(),
+				originalFindingRecordedAt: loaded.data.findingRecordedAt.toISOString(),
 			});
 			const existing = await store.findEmployeeCaseAppealByIdempotencyKey({
 				organizationId: data.organizationId,

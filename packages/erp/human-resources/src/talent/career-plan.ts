@@ -26,10 +26,7 @@ import {
 	updateCareerPlanInputSchema,
 } from "../schemas";
 import { fingerprintCareerPlanCreate } from "../shared/fingerprint";
-import {
-	runTalentCommand,
-	runTalentQuery,
-} from "../shared/talent-command";
+import { runTalentCommand, runTalentQuery } from "../shared/talent-command";
 import type {
 	CareerPlan,
 	CareerPlanAction,

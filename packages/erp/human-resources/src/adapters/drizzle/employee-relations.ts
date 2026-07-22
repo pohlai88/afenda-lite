@@ -23,21 +23,17 @@ import {
 } from "@afenda/events/schemas";
 
 import {
+	type HumanResourcesEmployeeCaseActionId,
+	type HumanResourcesEmployeeCaseAppealId,
+	type HumanResourcesEmployeeCaseEventId,
+	type HumanResourcesEmployeeCaseId,
 	parseHumanResourcesEmployeeCaseActionId,
 	parseHumanResourcesEmployeeCaseAppealId,
 	parseHumanResourcesEmployeeCaseEventId,
 	parseHumanResourcesEmployeeCaseId,
 	parseHumanResourcesEmployeeId,
 	parseHumanResourcesEmploymentId,
-	type HumanResourcesEmployeeCaseActionId,
-	type HumanResourcesEmployeeCaseAppealId,
-	type HumanResourcesEmployeeCaseEventId,
-	type HumanResourcesEmployeeCaseId,
 } from "../../brands";
-import {
-	HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
-	HUMAN_RESOURCES_ERROR_NOT_FOUND,
-} from "../../error-codes";
 import type {
 	EmployeeCase,
 	EmployeeCaseAction,
@@ -48,6 +44,10 @@ import type {
 	EmployeeCaseParticipant,
 	EmployeeCaseTimeline,
 } from "../../employee-relations/types";
+import {
+	HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+	HUMAN_RESOURCES_ERROR_NOT_FOUND,
+} from "../../error-codes";
 import { assertExpectedVersion } from "../../shared/concurrency";
 import {
 	conflict,
@@ -670,7 +670,7 @@ async function listCasesForOrg(
 	}
 }
 
-const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
+export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 	ThisType<EmployeeRelationsHost & DrizzleEmployeeRelationsMethods> = {
 	async findEmployeeCaseByIdempotencyKey(input) {
 		try {
@@ -709,7 +709,8 @@ const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 		if (!existing.ok) return existing;
 		if (existing.data !== null) {
 			if (
-				existing.data.createRequestFingerprint !== record.createRequestFingerprint
+				existing.data.createRequestFingerprint !==
+				record.createRequestFingerprint
 			) {
 				return idempotencyConflict();
 			}
@@ -832,7 +833,8 @@ const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 				if (!replay.ok) return replay;
 				if (replay.data !== null) {
 					if (
-						replay.data.createRequestFingerprint === record.createRequestFingerprint
+						replay.data.createRequestFingerprint ===
+						record.createRequestFingerprint
 					) {
 						return ok(replay.data.case);
 					}
@@ -896,7 +898,6 @@ const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 		);
 		return ok(paginateCases(filtered, page, pageSize));
 	},
-
 
 	async updateEmployeeCaseClassification(input, _ports, meta) {
 		const loaded = await fetchCaseInOrg({
@@ -1053,7 +1054,10 @@ const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			}
 			return mapCaseSql(row);
 		} catch (error) {
-			return mapPersistenceFailure(error, "Failed to assign employee case owner");
+			return mapPersistenceFailure(
+				error,
+				"Failed to assign employee case owner",
+			);
 		}
 	},
 
@@ -1144,7 +1148,10 @@ const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			}
 			return mapCaseSql(row);
 		} catch (error) {
-			return mapPersistenceFailure(error, "Failed to add employee case participant");
+			return mapPersistenceFailure(
+				error,
+				"Failed to add employee case participant",
+			);
 		}
 	},
 
@@ -1164,7 +1171,9 @@ const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 				? null
 				: JSON.stringify(input.payloadJson);
 		const bumpCase = input.eventKind === "investigation_note";
-		const nextVersion = bumpCase ? loaded.data.version + 1 : loaded.data.version;
+		const nextVersion = bumpCase
+			? loaded.data.version + 1
+			: loaded.data.version;
 		try {
 			const [rows] = await runNeonHttpTransaction<[EventSqlRow[]]>((sqlTag) => [
 				sqlTag`
@@ -1227,7 +1236,10 @@ const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			}
 			return mapEventSql(row);
 		} catch (error) {
-			return mapPersistenceFailure(error, "Failed to record employee case event");
+			return mapPersistenceFailure(
+				error,
+				"Failed to record employee case event",
+			);
 		}
 	},
 
@@ -1482,7 +1494,10 @@ const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			}
 			return mapCaseSql(row);
 		} catch (error) {
-			return mapPersistenceFailure(error, "Failed to issue interim employee measure");
+			return mapPersistenceFailure(
+				error,
+				"Failed to issue interim employee measure",
+			);
 		}
 	},
 
@@ -1494,7 +1509,9 @@ const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 		if (!loaded.ok) return loaded;
 		const mutable = assertEmployeeCaseMutable(loaded.data.status);
 		if (!mutable.ok) return mutable;
-		const allowsFinding = assertEmployeeCaseStatusAllowsFinding(loaded.data.status);
+		const allowsFinding = assertEmployeeCaseStatusAllowsFinding(
+			loaded.data.status,
+		);
 		if (!allowsFinding.ok) return allowsFinding;
 		const versionCheck = assertExpectedVersion(
 			loaded.data.version,
@@ -1582,10 +1599,12 @@ const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			}
 			return mapCaseSql(row);
 		} catch (error) {
-			return mapPersistenceFailure(error, "Failed to record employee case finding");
+			return mapPersistenceFailure(
+				error,
+				"Failed to record employee case finding",
+			);
 		}
 	},
-
 
 	async findEmployeeCaseActionByIdempotencyKey(input) {
 		try {
@@ -1624,7 +1643,8 @@ const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 		if (!existing.ok) return existing;
 		if (existing.data !== null) {
 			if (
-				existing.data.createRequestFingerprint !== record.createRequestFingerprint
+				existing.data.createRequestFingerprint !==
+				record.createRequestFingerprint
 			) {
 				return idempotencyConflict();
 			}
@@ -1653,8 +1673,9 @@ const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 		const auditId = randomUUID();
 		const nextCaseVersion = record.expectedVersion + 1;
 		try {
-			const [rows] = await runNeonHttpTransaction<[ActionSqlRow[]]>((sqlTag) => [
-				sqlTag`
+			const [rows] = await runNeonHttpTransaction<[ActionSqlRow[]]>(
+				(sqlTag) => [
+					sqlTag`
 					WITH next_seq AS (
 						SELECT COALESCE(MAX(sequence_no), 0) + 1 AS seq
 						FROM hr_employee_case_event
@@ -1719,7 +1740,8 @@ const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 					)
 					SELECT inserted_action.* FROM inserted_action, audited, case_update, inserted_event
 				`,
-			]);
+				],
+			);
 			const row = rows[0];
 			if (!row) {
 				return missAfterOptimisticUpdate({
@@ -1737,14 +1759,18 @@ const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 				if (!replay.ok) return replay;
 				if (replay.data !== null) {
 					if (
-						replay.data.createRequestFingerprint === record.createRequestFingerprint
+						replay.data.createRequestFingerprint ===
+						record.createRequestFingerprint
 					) {
 						return ok(replay.data.action);
 					}
 					return idempotencyConflict();
 				}
 			}
-			return mapPersistenceFailure(error, "Failed to recommend employee case action");
+			return mapPersistenceFailure(
+				error,
+				"Failed to recommend employee case action",
+			);
 		}
 	},
 
@@ -1757,7 +1783,9 @@ const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 		const mutable = assertEmployeeCaseMutable(loaded.data.status);
 		if (!mutable.ok) return mutable;
 		if (loaded.data.status !== "action_pending") {
-			return invalidState("Action cannot be approved in the current case status");
+			return invalidState(
+				"Action cannot be approved in the current case status",
+			);
 		}
 		const versionCheck = assertExpectedVersion(
 			loaded.data.version,
@@ -1792,8 +1820,9 @@ const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			correlationId: meta.correlationId,
 		});
 		try {
-			const [rows] = await runNeonHttpTransaction<[ActionSqlRow[]]>((sqlTag) => [
-				sqlTag`
+			const [rows] = await runNeonHttpTransaction<[ActionSqlRow[]]>(
+				(sqlTag) => [
+					sqlTag`
 					WITH next_seq AS (
 						SELECT COALESCE(MAX(sequence_no), 0) + 1 AS seq
 						FROM hr_employee_case_event
@@ -1860,7 +1889,8 @@ const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 					)
 					SELECT mutated_action.* FROM mutated_action, audited, case_update, outboxed, inserted_event
 				`,
-			]);
+				],
+			);
 			const row = rows[0];
 			if (!row) {
 				return missAfterOptimisticUpdate({
@@ -1870,7 +1900,10 @@ const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			}
 			return mapActionSql(row);
 		} catch (error) {
-			return mapPersistenceFailure(error, "Failed to approve employee case action");
+			return mapPersistenceFailure(
+				error,
+				"Failed to approve employee case action",
+			);
 		}
 	},
 
@@ -1911,7 +1944,8 @@ const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 		if (!existing.ok) return existing;
 		if (existing.data !== null) {
 			if (
-				existing.data.createRequestFingerprint !== record.createRequestFingerprint
+				existing.data.createRequestFingerprint !==
+				record.createRequestFingerprint
 			) {
 				return idempotencyConflict();
 			}
@@ -1924,7 +1958,9 @@ const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 		if (!loaded.ok) return loaded;
 		const mutable = assertEmployeeCaseMutable(loaded.data.status);
 		if (!mutable.ok) return mutable;
-		const allowsAppeal = assertEmployeeCaseStatusAllowsAppeal(loaded.data.status);
+		const allowsAppeal = assertEmployeeCaseStatusAllowsAppeal(
+			loaded.data.status,
+		);
 		if (!allowsAppeal.ok) return allowsAppeal;
 		if (
 			loaded.data.findingCode === null ||
@@ -1944,8 +1980,9 @@ const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 		const auditId = randomUUID();
 		const nextCaseVersion = record.expectedVersion + 1;
 		try {
-			const [rows] = await runNeonHttpTransaction<[AppealSqlRow[]]>((sqlTag) => [
-				sqlTag`
+			const [rows] = await runNeonHttpTransaction<[AppealSqlRow[]]>(
+				(sqlTag) => [
+					sqlTag`
 					WITH next_seq AS (
 						SELECT COALESCE(MAX(sequence_no), 0) + 1 AS seq
 						FROM hr_employee_case_event
@@ -2011,7 +2048,8 @@ const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 					)
 					SELECT inserted_appeal.* FROM inserted_appeal, audited, case_update, inserted_event
 				`,
-			]);
+				],
+			);
 			const row = rows[0];
 			if (!row) {
 				return missAfterOptimisticUpdate({
@@ -2029,14 +2067,18 @@ const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 				if (!replay.ok) return replay;
 				if (replay.data !== null) {
 					if (
-						replay.data.createRequestFingerprint === record.createRequestFingerprint
+						replay.data.createRequestFingerprint ===
+						record.createRequestFingerprint
 					) {
 						return ok(replay.data.appeal);
 					}
 					return idempotencyConflict();
 				}
 			}
-			return mapPersistenceFailure(error, "Failed to record employee case appeal");
+			return mapPersistenceFailure(
+				error,
+				"Failed to record employee case appeal",
+			);
 		}
 	},
 
@@ -2079,8 +2121,9 @@ const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			correlationId: meta.correlationId,
 		});
 		try {
-			const [rows] = await runNeonHttpTransaction<[AppealSqlRow[]]>((sqlTag) => [
-				sqlTag`
+			const [rows] = await runNeonHttpTransaction<[AppealSqlRow[]]>(
+				(sqlTag) => [
+					sqlTag`
 					WITH next_seq AS (
 						SELECT COALESCE(MAX(sequence_no), 0) + 1 AS seq
 						FROM hr_employee_case_event
@@ -2148,7 +2191,8 @@ const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 					)
 					SELECT mutated_appeal.* FROM mutated_appeal, audited, case_update, outboxed, inserted_event
 				`,
-			]);
+				],
+			);
 			const row = rows[0];
 			if (!row) {
 				return missAfterOptimisticUpdate({
@@ -2158,7 +2202,10 @@ const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			}
 			return mapAppealSql(row);
 		} catch (error) {
-			return mapPersistenceFailure(error, "Failed to resolve employee case appeal");
+			return mapPersistenceFailure(
+				error,
+				"Failed to resolve employee case appeal",
+			);
 		}
 	},
 
@@ -2372,7 +2419,10 @@ const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			};
 			return ok(timeline);
 		} catch (error) {
-			return mapPersistenceFailure(error, "Failed to load employee case timeline");
+			return mapPersistenceFailure(
+				error,
+				"Failed to load employee case timeline",
+			);
 		}
 	},
 
@@ -2435,12 +2485,16 @@ const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			};
 			return ok(outcome);
 		} catch (error) {
-			return mapPersistenceFailure(error, "Failed to load employee case outcome");
+			return mapPersistenceFailure(
+				error,
+				"Failed to load employee case outcome",
+			);
 		}
 	},
 };
 
-export function attachDrizzleEmployeeRelations(target: EmployeeRelationsHost): void {
+export function attachDrizzleEmployeeRelations(
+	target: EmployeeRelationsHost,
+): void {
 	Object.assign(target, drizzleEmployeeRelationsMethods);
 }
-

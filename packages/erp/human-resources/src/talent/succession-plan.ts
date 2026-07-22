@@ -35,10 +35,7 @@ import {
 	fingerprintSuccessionCandidateCreate,
 	fingerprintSuccessionPlanCreate,
 } from "../shared/fingerprint";
-import {
-	runTalentCommand,
-	runTalentQuery,
-} from "../shared/talent-command";
+import { runTalentCommand, runTalentQuery } from "../shared/talent-command";
 import type {
 	PositionSuccessionCoverage,
 	SuccessionCandidate,
@@ -148,11 +145,12 @@ export async function nominateSuccessionCandidate(
 				nominatorUserId: data.nominatorUserId,
 			});
 
-			const existingByKey =
-				await store.findSuccessionCandidateByIdempotencyKey({
+			const existingByKey = await store.findSuccessionCandidateByIdempotencyKey(
+				{
 					organizationId: data.organizationId,
 					idempotencyKey: data.idempotencyKey,
-				});
+				},
+			);
 			if (!existingByKey.ok) {
 				return existingByKey;
 			}

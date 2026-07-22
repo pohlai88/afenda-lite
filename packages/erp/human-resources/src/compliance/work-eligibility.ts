@@ -22,20 +22,15 @@ import {
 	verifyWorkEligibilityInputSchema,
 	workEligibilityTransitionInputSchema,
 } from "../schemas-compliance";
-import { assertValidDocumentDateRange } from "../shared/compliance-guards";
 import {
 	requireComplianceEmployeeReadScope,
 	runComplianceCommand,
 	runComplianceEmployeeScopedQuery,
 	runComplianceQuery,
 } from "../shared/compliance-command";
-import {
-	fingerprintWorkEligibilityRecord,
-} from "../shared/fingerprint";
-import type {
-	WorkEligibility,
-	WorkEligibilityRiskListPage,
-} from "../types";
+import { assertValidDocumentDateRange } from "../shared/compliance-guards";
+import { fingerprintWorkEligibilityRecord } from "../shared/fingerprint";
+import type { WorkEligibility, WorkEligibilityRiskListPage } from "../types";
 
 export const HUMAN_RESOURCES_AGGREGATE_WORK_ELIGIBILITY =
 	"work_eligibility" as const;

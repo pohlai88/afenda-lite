@@ -27,9 +27,9 @@ import {
 	archiveLeavePolicy,
 	createLeavePolicy,
 	publishLeavePolicy,
+	resolveApplicableLeavePolicy,
 	updateLeavePolicy,
 } from "../src/leave/leave-policy";
-import { assignPrimaryReportingLine } from "../src/organization/reporting-line";
 import {
 	amendLeaveRequest,
 	approveLeaveRequest,
@@ -41,7 +41,7 @@ import {
 	submitLeaveRequest,
 	withdrawLeaveRequest,
 } from "../src/leave/leave-request";
-import { resolveApplicableLeavePolicy } from "../src/leave/leave-policy";
+import { assignPrimaryReportingLine } from "../src/organization/reporting-line";
 import {
 	HUMAN_RESOURCES_PERMISSION_CODES,
 	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_CREATE,
@@ -121,7 +121,11 @@ async function seedEmployeeEmployment(ready: ReturnType<typeof harness>) {
 	);
 	if (!employment.ok) return employment;
 
-	return { ok: true as const, employee: employee.data, employment: employment.data };
+	return {
+		ok: true as const,
+		employee: employee.data,
+		employment: employment.data,
+	};
 }
 
 async function seedPublishedPolicy(ready: ReturnType<typeof harness>) {
@@ -385,9 +389,11 @@ describe("Leave request workflow", () => {
 		);
 		expect(submitted.ok).toBe(true);
 		if (!submitted.ok) return;
-		expect(ready.ports.outbox.calls.some((e) => e.type === HUMAN_RESOURCES_LEAVE_REQUESTED_EVENT)).toBe(
-			true,
-		);
+		expect(
+			ready.ports.outbox.calls.some(
+				(e) => e.type === HUMAN_RESOURCES_LEAVE_REQUESTED_EVENT,
+			),
+		).toBe(true);
 
 		const approved = await approveLeaveRequest(
 			{
@@ -401,9 +407,11 @@ describe("Leave request workflow", () => {
 		);
 		expect(approved.ok).toBe(true);
 		if (!approved.ok) return;
-		expect(ready.ports.outbox.calls.some((e) => e.type === HUMAN_RESOURCES_LEAVE_APPROVED_EVENT)).toBe(
-			true,
-		);
+		expect(
+			ready.ports.outbox.calls.some(
+				(e) => e.type === HUMAN_RESOURCES_LEAVE_APPROVED_EVENT,
+			),
+		).toBe(true);
 
 		const balance = await getLeaveBalance(
 			{
@@ -1343,9 +1351,7 @@ describe("Leave plan matrix (HR-LEAVE-01)", () => {
 	});
 
 	it("requires backdate permission for backdated create", async () => {
-		const ready = harness([
-			...LEAVE_REQUEST_WORKFLOW_PERMISSIONS,
-		]);
+		const ready = harness([...LEAVE_REQUEST_WORKFLOW_PERMISSIONS]);
 		const seeded = await seedEmployeeEmployment(ready);
 		expect(seeded.ok).toBe(true);
 		if (!seeded.ok) return;

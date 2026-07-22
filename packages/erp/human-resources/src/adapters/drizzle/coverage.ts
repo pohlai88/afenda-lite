@@ -1,6 +1,6 @@
 import type { HumanResourcesStore } from "../../store";
 
-import type { DrizzleCompensationMethods } from "./compensation";
+import type { DrizzleCompensationBenefitsMethods } from "./compensation-benefits";
 import type { DrizzleComplianceMethods } from "./compliance";
 import type { DrizzleCoreMethods } from "./core";
 import type { DrizzleEmployeeRelationsMethods } from "./employee-relations";
@@ -10,26 +10,26 @@ import type { DrizzleLifecycleMethods } from "./lifecycle";
 import type { DrizzleOrganizationMethods } from "./organization";
 import type { DrizzlePerformanceMethods } from "./performance";
 import type { DrizzleRecruitmentMethods } from "./recruitment";
+import type { DrizzleTalentMethods } from "./talent";
 import type { DrizzleWorkforcePlanningMethods } from "./workforce-planning";
 
 /** Every method currently supplied by the composed Drizzle adapter. */
-export type DrizzleImplementedHumanResourcesMethods =
-	& DrizzleCoreMethods
-	& DrizzleOrganizationMethods
-	& DrizzleRecruitmentMethods
-	& DrizzleLifecycleMethods
-	& DrizzleLeaveMethods
-	& DrizzleCompensationMethods
-	& DrizzlePerformanceMethods
-	& DrizzleLearningMethods
-	& DrizzleWorkforcePlanningMethods
-	& DrizzleComplianceMethods
-	& DrizzleEmployeeRelationsMethods;
+export type DrizzleImplementedHumanResourcesMethods = DrizzleCoreMethods &
+	DrizzleOrganizationMethods &
+	DrizzleRecruitmentMethods &
+	DrizzleLifecycleMethods &
+	DrizzleLeaveMethods &
+	DrizzleCompensationBenefitsMethods &
+	DrizzlePerformanceMethods &
+	DrizzleLearningMethods &
+	DrizzleTalentMethods &
+	DrizzleWorkforcePlanningMethods &
+	DrizzleComplianceMethods &
+	DrizzleEmployeeRelationsMethods;
 
 /**
  * Compile-time inventory of HumanResourcesStore methods without a Drizzle owner.
- * This should currently expose the authoritative time and talent gaps, if those
- * contracts are already present in HumanResourcesStore.
+ * Time persistence remains blocked until store methods and DDL exist.
  */
 export type MissingDrizzleHumanResourcesMethods = Exclude<
 	keyof HumanResourcesStore,

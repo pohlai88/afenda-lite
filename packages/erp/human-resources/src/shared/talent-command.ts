@@ -17,8 +17,8 @@ import type {
 	HumanResourcesQueryId,
 } from "../module-ids";
 import { parseHumanResourcesInput } from "../parse-input";
-import type { MutationPorts } from "../ports";
 import { HUMAN_RESOURCES_PERMISSION_TALENT_PROFILE_SENSITIVE_READ } from "../permissions";
+import type { MutationPorts } from "../ports";
 import type { HumanResourcesStore } from "../store";
 
 type ActorScoped = {

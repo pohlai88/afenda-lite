@@ -59,7 +59,9 @@ export function isEmployeeDocumentVerified(
 	return status === "verified";
 }
 
-export function isWorkEligibilityAtRisk(status: WorkEligibilityStatus): boolean {
+export function isWorkEligibilityAtRisk(
+	status: WorkEligibilityStatus,
+): boolean {
 	return (
 		status === "suspended" ||
 		status === "expired" ||

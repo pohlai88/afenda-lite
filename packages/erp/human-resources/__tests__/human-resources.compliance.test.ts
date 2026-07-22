@@ -12,8 +12,6 @@ import {
 import { describe, expect, it } from "vitest";
 
 import type { HumanResourcesPermission } from "../src/authorization";
-import { createEmployment } from "../src/core/employment";
-import { createEmployee } from "../src/core/employee";
 import {
 	createDocumentRequirement,
 	publishDocumentRequirement,
@@ -39,6 +37,8 @@ import {
 	suspendWorkEligibility,
 	verifyWorkEligibility,
 } from "../src/compliance/work-eligibility";
+import { createEmployee } from "../src/core/employee";
+import { createEmployment } from "../src/core/employment";
 import {
 	HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
 	HUMAN_RESOURCES_ERROR_FORBIDDEN,
@@ -156,7 +156,8 @@ describe("human-resources compliance (memory)", () => {
 
 		expect(
 			ready.ports.outbox.calls.some(
-				(call) => call.type === HUMAN_RESOURCES_EMPLOYEE_DOCUMENT_REGISTERED_EVENT,
+				(call) =>
+					call.type === HUMAN_RESOURCES_EMPLOYEE_DOCUMENT_REGISTERED_EVENT,
 			),
 		).toBe(true);
 	});
@@ -343,7 +344,8 @@ describe("human-resources compliance (memory)", () => {
 		).toBeGreaterThanOrEqual(3);
 		expect(
 			ready.ports.outbox.calls.some(
-				(call) => call.type === HUMAN_RESOURCES_EMPLOYEE_DOCUMENT_VERIFIED_EVENT,
+				(call) =>
+					call.type === HUMAN_RESOURCES_EMPLOYEE_DOCUMENT_VERIFIED_EVENT,
 			),
 		).toBe(true);
 	});
@@ -520,7 +522,8 @@ describe("human-resources compliance (memory)", () => {
 		if (!suspended.ok) return;
 		expect(
 			ready.ports.outbox.calls.some(
-				(call) => call.type === HUMAN_RESOURCES_WORK_ELIGIBILITY_SUSPENDED_EVENT,
+				(call) =>
+					call.type === HUMAN_RESOURCES_WORK_ELIGIBILITY_SUSPENDED_EVENT,
 			),
 		).toBe(true);
 
@@ -565,7 +568,8 @@ describe("human-resources compliance (memory)", () => {
 		expect(
 			ready.ports.outbox.calls.some(
 				(call) =>
-					call.type === HUMAN_RESOURCES_POLICY_ACKNOWLEDGEMENT_OUTSTANDING_EVENT,
+					call.type ===
+					HUMAN_RESOURCES_POLICY_ACKNOWLEDGEMENT_OUTSTANDING_EVENT,
 			),
 		).toBe(true);
 
@@ -583,7 +587,8 @@ describe("human-resources compliance (memory)", () => {
 		expect(
 			ready.ports.outbox.calls.some(
 				(call) =>
-					call.type === HUMAN_RESOURCES_POLICY_ACKNOWLEDGEMENT_ACKNOWLEDGED_EVENT,
+					call.type ===
+					HUMAN_RESOURCES_POLICY_ACKNOWLEDGEMENT_ACKNOWLEDGED_EVENT,
 			),
 		).toBe(true);
 

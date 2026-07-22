@@ -1,8 +1,9 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
 import { z } from "zod";
-
-import { humanResourcesErrorDetails } from "../error-codes";
-import { HUMAN_RESOURCES_ERROR_INVALID_INPUT } from "../error-codes";
+import {
+	HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+	humanResourcesErrorDetails,
+} from "../error-codes";
 
 export type PerformanceRatingScale = {
 	codes: string[];
@@ -14,7 +15,9 @@ export const performanceRatingScaleSchema = z
 	})
 	.strict();
 
-export function parseRatingScale(value: unknown): Result<PerformanceRatingScale> {
+export function parseRatingScale(
+	value: unknown,
+): Result<PerformanceRatingScale> {
 	if (
 		typeof value !== "object" ||
 		value === null ||

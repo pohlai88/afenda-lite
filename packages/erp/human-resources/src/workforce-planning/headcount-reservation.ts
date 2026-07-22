@@ -57,12 +57,11 @@ export async function reserveHeadcount(
 				reservedHeadcount: data.reservedHeadcount,
 			});
 
-			const existingByKey = await store.findHeadcountReservationByIdempotencyKey(
-				{
+			const existingByKey =
+				await store.findHeadcountReservationByIdempotencyKey({
 					organizationId: data.organizationId,
 					idempotencyKey: data.idempotencyKey,
-				},
-			);
+				});
 			if (!existingByKey.ok) {
 				return existingByKey;
 			}

@@ -77,12 +77,12 @@ function eventPayloadJson(value: Record<string, unknown>): string {
 	return JSON.stringify(value);
 }
 
-type CompensationHost = {
+type CompensationBenefitsHost = {
 	getEmploymentById: HumanResourcesStore["getEmploymentById"];
 	getEmployeeById: HumanResourcesStore["getEmployeeById"];
 };
 
-export type DrizzleCompensationMethods = Pick<
+export type DrizzleCompensationBenefitsMethods = Pick<
 	HumanResourcesStore,
 	| "getCompensationGrade"
 	| "findCompensationGradeByCode"
@@ -585,8 +585,8 @@ function mapBenefitEnrollmentSql(
 	});
 }
 
-export const drizzleCompensationMethods: DrizzleCompensationMethods &
-	ThisType<CompensationHost & DrizzleCompensationMethods> = {
+export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMethods &
+	ThisType<CompensationBenefitsHost & DrizzleCompensationBenefitsMethods> = {
 	async getCompensationGrade(input) {
 		try {
 			const rows = await db
@@ -2711,6 +2711,8 @@ export const drizzleCompensationMethods: DrizzleCompensationMethods &
 	},
 };
 
-export function attachDrizzleCompensation(target: CompensationHost): void {
-	Object.assign(target, drizzleCompensationMethods);
+export function attachDrizzleCompensationBenefits(
+	target: CompensationBenefitsHost,
+): void {
+	Object.assign(target, drizzleCompensationBenefitsMethods);
 }

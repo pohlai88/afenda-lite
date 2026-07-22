@@ -1,6 +1,4 @@
-import {
-	randomUUID,
-} from "node:crypto";
+import { randomUUID } from "node:crypto";
 import {
 	and,
 	asc,
@@ -18,11 +16,7 @@ import {
 	runNeonHttpTransaction,
 	sql,
 } from "@afenda/db";
-import {
-	fail,
-	ok,
-	type Result,
-} from "@afenda/errors/result";
+import { fail, ok, type Result } from "@afenda/errors/result";
 import {
 	type HumanResourcesDepartmentId,
 	type HumanResourcesEmployeeId,
@@ -41,9 +35,7 @@ import {
 	HUMAN_RESOURCES_ERROR_INVALID_INPUT,
 	humanResourcesErrorDetails,
 } from "../../error-codes";
-import type {
-	MutationPorts,
-} from "../../ports";
+import type { MutationPorts } from "../../ports";
 import {
 	conflict,
 	missAfterOptimisticUpdate,
@@ -356,8 +348,7 @@ function mapReportingLineSqlRow(
 
 type DrizzleOrganizationHost = Pick<
 	HumanResourcesStore,
-	| "getEmployeeById"
-	| "countOpenAssignmentsForPosition"
+	"getEmployeeById" | "countOpenAssignmentsForPosition"
 >;
 
 export type DrizzleOrganizationMethods = Pick<
@@ -395,14 +386,17 @@ export type DrizzleOrganizationMethods = Pick<
 	| "getOrganizationTree"
 >;
 
-async function assertReportingLineAssignable(host: DrizzleOrganizationHost & DrizzleOrganizationMethods, input: {
-	organizationId: string;
-	employeeId: HumanResourcesEmployeeId;
-	managerEmployeeId: HumanResourcesEmployeeId;
-	startsOn: string;
-	endsOn: string | null;
-	excludeReportingLineId?: HumanResourcesReportingLineId;
-}): Promise<Result<void>> {
+async function assertReportingLineAssignable(
+	host: DrizzleOrganizationHost & DrizzleOrganizationMethods,
+	input: {
+		organizationId: string;
+		employeeId: HumanResourcesEmployeeId;
+		managerEmployeeId: HumanResourcesEmployeeId;
+		startsOn: string;
+		endsOn: string | null;
+		excludeReportingLineId?: HumanResourcesReportingLineId;
+	},
+): Promise<Result<void>> {
 	const dateCheck = assertValidDateRange(input.startsOn, input.endsOn);
 	if (!dateCheck.ok) return dateCheck;
 
@@ -532,7 +526,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 	async createDepartment(
 		record: DepartmentCreateRecord,
 		_ports: MutationPorts,
-		meta: { correlationId: string; },
+		meta: { correlationId: string },
 	): Promise<Result<Department>> {
 		const existing = await this.findDepartmentByCode({
 			organizationId: record.organizationId,
@@ -659,7 +653,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 			actorUserId: string;
 		},
 		_ports: MutationPorts,
-		meta: { correlationId: string; },
+		meta: { correlationId: string },
 	): Promise<Result<Department>> {
 		const existing = await this.getDepartmentById({
 			organizationId: input.organizationId,
@@ -789,7 +783,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 			actorUserId: string;
 		},
 		_ports: MutationPorts,
-		meta: { correlationId: string; },
+		meta: { correlationId: string },
 	): Promise<Result<Department>> {
 		const existing = await this.getDepartmentById({
 			organizationId: input.organizationId,
@@ -884,7 +878,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 		pageSize: number;
 		status?: DepartmentStatus;
 		parentDepartmentId?: HumanResourcesDepartmentId | null;
-	}): Promise<Result<{ departments: Department[]; totalCount: number; }>> {
+	}): Promise<Result<{ departments: Department[]; totalCount: number }>> {
 		try {
 			const conditions = [
 				eq(hrDepartment.organizationId, input.organizationId),
@@ -1000,7 +994,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 	async createJob(
 		record: JobCreateRecord,
 		_ports: MutationPorts,
-		meta: { correlationId: string; },
+		meta: { correlationId: string },
 	): Promise<Result<Job>> {
 		const existing = await this.findJobByCode({
 			organizationId: record.organizationId,
@@ -1072,7 +1066,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 			actorUserId: string;
 		},
 		_ports: MutationPorts,
-		meta: { correlationId: string; },
+		meta: { correlationId: string },
 	): Promise<Result<Job>> {
 		const auditId = randomUUID();
 		const nextVersion = input.expectedVersion + 1;
@@ -1131,7 +1125,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 			actorUserId: string;
 		},
 		_ports: MutationPorts,
-		meta: { correlationId: string; },
+		meta: { correlationId: string },
 	): Promise<Result<Job>> {
 		const existing = await this.getJobById({
 			organizationId: input.organizationId,
@@ -1211,7 +1205,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 		page: number;
 		pageSize: number;
 		status?: JobStatus;
-	}): Promise<Result<{ jobs: Job[]; totalCount: number; }>> {
+	}): Promise<Result<{ jobs: Job[]; totalCount: number }>> {
 		try {
 			const conditions = [eq(hrJob.organizationId, input.organizationId)];
 			if (input.status) {
@@ -1293,7 +1287,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 	async createPosition(
 		record: PositionCreateRecord,
 		_ports: MutationPorts,
-		meta: { correlationId: string; },
+		meta: { correlationId: string },
 	): Promise<Result<Position>> {
 		const entityId = randomUUID();
 		const brandedId = parseHumanResourcesPositionId(entityId);
@@ -1394,7 +1388,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 			actorUserId: string;
 		},
 		_ports: MutationPorts,
-		meta: { correlationId: string; },
+		meta: { correlationId: string },
 	): Promise<Result<Position>> {
 		if (input.departmentId !== undefined) {
 			const department = await this.getDepartmentById({
@@ -1503,7 +1497,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 			actorUserId: string;
 		},
 		_ports: MutationPorts,
-		meta: { correlationId: string; },
+		meta: { correlationId: string },
 	): Promise<Result<Position>> {
 		const existing = await this.getPositionById({
 			organizationId: input.organizationId,
@@ -1587,7 +1581,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 		status?: string;
 		departmentId?: HumanResourcesDepartmentId;
 		jobId?: HumanResourcesJobId;
-	}): Promise<Result<{ positions: Position[]; totalCount: number; }>> {
+	}): Promise<Result<{ positions: Position[]; totalCount: number }>> {
 		try {
 			const conditions = [eq(hrPosition.organizationId, input.organizationId)];
 			if (input.status) {
@@ -1825,7 +1819,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 		asOf: string;
 		page: number;
 		pageSize: number;
-	}): Promise<Result<{ reportingLines: ReportingLine[]; totalCount: number; }>> {
+	}): Promise<Result<{ reportingLines: ReportingLine[]; totalCount: number }>> {
 		try {
 			const conditions = and(
 				eq(hrReportingLine.organizationId, input.organizationId),
@@ -1869,7 +1863,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 	async assignPrimaryReportingLine(
 		record: ReportingLineCreateRecord,
 		_ports: MutationPorts,
-		meta: { correlationId: string; },
+		meta: { correlationId: string },
 	): Promise<Result<ReportingLine>> {
 		const assignable = await assertReportingLineAssignable(this, {
 			organizationId: record.organizationId,
@@ -1960,7 +1954,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 			actorUserId: string;
 		},
 		_ports: MutationPorts,
-		meta: { correlationId: string; },
+		meta: { correlationId: string },
 	): Promise<Result<ReportingLine>> {
 		const existing = await this.getReportingLineById({
 			organizationId: input.organizationId,
@@ -2037,7 +2031,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 			createdBy: string;
 		},
 		_ports: MutationPorts,
-		meta: { correlationId: string; },
+		meta: { correlationId: string },
 	): Promise<Result<ReportingLine>> {
 		const prior = await this.findOpenPrimaryReportingLine({
 			organizationId: input.organizationId,
@@ -2187,6 +2181,8 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 	},
 };
 
-export function attachDrizzleOrganization(target: DrizzleOrganizationHost): void {
+export function attachDrizzleOrganization(
+	target: DrizzleOrganizationHost,
+): void {
 	Object.assign(target, drizzleOrganizationMethods);
 }

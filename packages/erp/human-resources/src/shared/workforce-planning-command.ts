@@ -82,10 +82,7 @@ export async function runWorkforcePlanningQuery<
 		schema: TSchema;
 		invalidMessage: string;
 		query: HumanResourcesQueryId;
-		execute: (
-			data: z.infer<TSchema>,
-			deps: QueryDeps,
-		) => Promise<Result<TOut>>;
+		execute: (data: z.infer<TSchema>, deps: QueryDeps) => Promise<Result<TOut>>;
 	},
 ): Promise<Result<TOut>> {
 	const parsed = parseHumanResourcesInput(

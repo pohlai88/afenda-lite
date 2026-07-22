@@ -1,9 +1,8 @@
 /**
- * In-memory performance domain method implementations for MemoryHumanResourcesStore.
+ * In-memory performance domain state and methods for composed HumanResourcesStore hosts.
  */
-
 import { randomUUID } from "node:crypto";
-
+import { fail, ok, type Result } from "@afenda/errors/result";
 import {
 	HUMAN_RESOURCES_IMPROVEMENT_PLAN_COMPLETED_EVENT,
 	HUMAN_RESOURCES_IMPROVEMENT_PLAN_STARTED_EVENT,
@@ -13,15 +12,9 @@ import {
 	HUMAN_RESOURCES_PERFORMANCE_REVIEW_REOPENED_EVENT,
 	type HumanResourcesEventType,
 } from "@afenda/events/schemas";
-import { fail, ok, type Result } from "@afenda/errors/result";
 import type { z } from "zod";
 
 import {
-	humanResourcesAssessmentIdSchema,
-	humanResourcesGoalProgressIdSchema,
-	humanResourcesImprovementCheckpointIdSchema,
-	humanResourcesPerformanceCycleParticipantIdSchema,
-	humanResourcesReviewParticipantIdSchema,
 	type HumanResourcesEmployeeId,
 	type HumanResourcesEmploymentId,
 	type HumanResourcesGoalId,
@@ -29,21 +22,30 @@ import {
 	type HumanResourcesPerformanceCycleId,
 	type HumanResourcesPerformanceCycleParticipantId,
 	type HumanResourcesReviewId,
+	humanResourcesAssessmentIdSchema,
+	humanResourcesGoalProgressIdSchema,
+	humanResourcesImprovementCheckpointIdSchema,
+	humanResourcesPerformanceCycleParticipantIdSchema,
+	humanResourcesReviewParticipantIdSchema,
 	parseHumanResourcesGoalId,
 	parseHumanResourcesImprovementPlanId,
 	parseHumanResourcesPerformanceCycleId,
 	parseHumanResourcesReviewId,
-} from "./brands";
+} from "../../brands";
 import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
 	HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
 	HUMAN_RESOURCES_ERROR_NOT_FOUND,
 	humanResourcesErrorDetails,
-} from "./error-codes";
-import type { MemoryHumanResourcesStore } from "./memory-store";
-import type { MutationPorts } from "./ports";
-import { assertExpectedVersion } from "./shared/concurrency";
-import { conflict, invalidInput, invalidState, notFound } from "./shared/domain-guards";
+} from "../../error-codes";
+import type { MutationPorts } from "../../ports";
+import { assertExpectedVersion } from "../../shared/concurrency";
+import {
+	conflict,
+	invalidInput,
+	invalidState,
+	notFound,
+} from "../../shared/domain-guards";
 import {
 	assertCheckpointOutcomeTransition,
 	assertCycleStatusTransition,
@@ -55,21 +57,22 @@ import {
 	assertReviewNotFinalized,
 	assertReviewStatusTransition,
 	assertValidCyclePeriod,
-} from "./shared/performance-guards";
-import { validateRatingInScale } from "./shared/performance-rating";
+} from "../../shared/performance-guards";
+import { validateRatingInScale } from "../../shared/performance-rating";
 import {
 	isPerformanceCycleOpen,
 	isPerformanceGoalProgressable,
 	isPerformanceReviewFinalized,
-} from "./shared/performance-status";
+} from "../../shared/performance-status";
 import type {
+	HumanResourcesStore,
 	IdempotentImprovementPlanRecord,
 	IdempotentPerformanceCycleRecord,
 	IdempotentPerformanceGoalRecord,
 	ImprovementPlanCreateRecord,
 	PerformanceCycleCreateRecord,
 	PerformanceGoalCreateRecord,
-} from "./store";
+} from "../../store";
 import type {
 	EmployeePerformanceHistory,
 	PerformanceAssessment,
@@ -86,9 +89,121 @@ import type {
 	PerformanceReviewDetail,
 	PerformanceReviewListPage,
 	PerformanceReviewParticipant,
-} from "./types";
-import { projectPerformanceReviewDetail } from "./types";
-import type { PerformanceMemoryMethods, PerformanceMemoryState } from "./memory-performance";
+} from "../../types";
+import { projectPerformanceReviewDetail } from "../../types";
+
+export type PerformanceMemoryState = {
+	cycles: Map<HumanResourcesPerformanceCycleId, PerformanceCycle>;
+	cycleIdempotency: Map<string, IdempotentPerformanceCycleRecord>;
+	cycleParticipants: Map<
+		HumanResourcesPerformanceCycleParticipantId,
+		PerformanceCycleParticipant
+	>;
+	goals: Map<HumanResourcesGoalId, PerformanceGoal>;
+	goalIdempotency: Map<string, IdempotentPerformanceGoalRecord>;
+	goalProgress: Map<string, PerformanceGoalProgress>;
+	reviews: Map<HumanResourcesReviewId, PerformanceReview>;
+	reviewFinalizeIdempotency: Map<string, PerformanceReview>;
+	reviewParticipants: Map<string, PerformanceReviewParticipant>;
+	assessments: Map<string, PerformanceAssessment>;
+	improvementPlans: Map<
+		HumanResourcesImprovementPlanId,
+		PerformanceImprovementPlan
+	>;
+	planIdempotency: Map<string, IdempotentImprovementPlanRecord>;
+	checkpoints: Map<string, PerformanceImprovementCheckpoint>;
+};
+
+export type MemoryPerformanceHost = Pick<
+	HumanResourcesStore,
+	"getEmployeeById" | "getEmploymentById"
+>;
+
+export type PerformanceMemoryMethods = Pick<
+	HumanResourcesStore,
+	| "getPerformanceCycleById"
+	| "findPerformanceCycleByIdempotencyKey"
+	| "createPerformanceCycle"
+	| "updatePerformanceCycle"
+	| "openPerformanceCycle"
+	| "closePerformanceCycle"
+	| "cancelPerformanceCycle"
+	| "addCycleParticipant"
+	| "removeCycleParticipant"
+	| "listPerformanceCycles"
+	| "listCycleParticipants"
+	| "getPerformanceGoalById"
+	| "findPerformanceGoalByIdempotencyKey"
+	| "createPerformanceGoal"
+	| "updatePerformanceGoal"
+	| "submitPerformanceGoal"
+	| "approvePerformanceGoal"
+	| "rejectPerformanceGoal"
+	| "recordGoalProgress"
+	| "closePerformanceGoal"
+	| "cancelPerformanceGoal"
+	| "listEmployeeGoals"
+	| "startPerformanceReview"
+	| "submitSelfAssessment"
+	| "submitManagerAssessment"
+	| "returnPerformanceReviewForCorrection"
+	| "acknowledgePerformanceReview"
+	| "finalizePerformanceReview"
+	| "reopenPerformanceReview"
+	| "getPerformanceReviewById"
+	| "listEmployeePerformanceReviews"
+	| "listReviewsPendingManagerAction"
+	| "getImprovementPlanById"
+	| "findImprovementPlanByIdempotencyKey"
+	| "createImprovementPlan"
+	| "openImprovementPlan"
+	| "acknowledgeImprovementPlan"
+	| "recordImprovementCheckpoint"
+	| "amendImprovementPlan"
+	| "completeImprovementPlan"
+	| "closeImprovementPlanUnsuccessful"
+	| "cancelImprovementPlan"
+	| "listActiveImprovementPlans"
+	| "getEmployeePerformanceHistory"
+>;
+
+export type MemoryPerformanceMethods = PerformanceMemoryMethods;
+
+export function createPerformanceMemoryState(): PerformanceMemoryState {
+	return {
+		cycles: new Map(),
+		cycleIdempotency: new Map(),
+		cycleParticipants: new Map(),
+		goals: new Map(),
+		goalIdempotency: new Map(),
+		goalProgress: new Map(),
+		reviews: new Map(),
+		reviewFinalizeIdempotency: new Map(),
+		reviewParticipants: new Map(),
+		assessments: new Map(),
+		improvementPlans: new Map(),
+		planIdempotency: new Map(),
+		checkpoints: new Map(),
+	};
+}
+
+export function resetPerformanceMemoryState(
+	state: PerformanceMemoryState,
+): void {
+	state.cycles.clear();
+	state.cycleIdempotency.clear();
+	state.cycleParticipants.clear();
+	state.goals.clear();
+	state.goalIdempotency.clear();
+	state.goalProgress.clear();
+	state.reviews.clear();
+	state.reviewFinalizeIdempotency.clear();
+	state.reviewParticipants.clear();
+	state.assessments.clear();
+	state.improvementPlans.clear();
+	state.planIdempotency.clear();
+	state.checkpoints.clear();
+}
 
 function idemKey(organizationId: string, idempotencyKey: string): string {
 	return `${organizationId}:${idempotencyKey}`;
@@ -183,7 +298,10 @@ function getGoal(
 ): Result<PerformanceGoal> {
 	const goal = state.goals.get(goalId);
 	if (!goal || goal.organizationId !== organizationId) {
-		return notFound("Performance goal not found", HUMAN_RESOURCES_ERROR_NOT_FOUND);
+		return notFound(
+			"Performance goal not found",
+			HUMAN_RESOURCES_ERROR_NOT_FOUND,
+		);
 	}
 	return ok(goal);
 }
@@ -264,16 +382,22 @@ function participantsForReview(
 }
 
 async function assertEmployeeEmployment(
-	store: MemoryHumanResourcesStore,
+	host: MemoryPerformanceHost,
 	organizationId: string,
 	employeeId: HumanResourcesEmployeeId,
 	employmentId: HumanResourcesEmploymentId,
 ): Promise<Result<true>> {
-	const employee = await store.getEmployeeById({ organizationId, employeeId });
+	const employee = await host.getEmployeeById({ organizationId, employeeId });
 	if (!employee.ok || employee.data === null) {
-		return notFound("Employee not found", HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE);
+		return notFound(
+			"Employee not found",
+			HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+		);
 	}
-	const employment = await store.getEmploymentById({ organizationId, employmentId });
+	const employment = await host.getEmploymentById({
+		organizationId,
+		employmentId,
+	});
 	if (!employment.ok || employment.data === null) {
 		return notFound(
 			"Employment not found",
@@ -299,10 +423,7 @@ function redactReviewList(
 	}));
 }
 
-function buildPerformanceMemoryMethods(
-	store: MemoryHumanResourcesStore,
-	state: PerformanceMemoryState,
-) {
+function buildPerformanceMemoryMethods(state: PerformanceMemoryState) {
 	return {
 		async getPerformanceCycleById(input: {
 			organizationId: string;
@@ -672,7 +793,7 @@ function buildPerformanceMemoryMethods(
 			}
 
 			const refs = await assertEmployeeEmployment(
-				store,
+				this as unknown as unknown as unknown as unknown as unknown as MemoryPerformanceHost,
 				input.organizationId,
 				input.employeeId,
 				input.employmentId,
@@ -717,7 +838,9 @@ function buildPerformanceMemoryMethods(
 				return ok({ ...updated });
 			}
 
-			const idResult = newBrandId(humanResourcesPerformanceCycleParticipantIdSchema);
+			const idResult = newBrandId(
+				humanResourcesPerformanceCycleParticipantIdSchema,
+			);
 			if (!idResult.ok) {
 				return idResult;
 			}
@@ -893,7 +1016,11 @@ function buildPerformanceMemoryMethods(
 				return conflict("Idempotency key already used with different data");
 			}
 
-			const cycleResult = getCycle(state, record.organizationId, record.cycleId);
+			const cycleResult = getCycle(
+				state,
+				record.organizationId,
+				record.cycleId,
+			);
 			if (!cycleResult.ok) {
 				return cycleResult;
 			}
@@ -913,7 +1040,7 @@ function buildPerformanceMemoryMethods(
 			}
 
 			const refs = await assertEmployeeEmployment(
-				store,
+				this as unknown as unknown as unknown as unknown as unknown as MemoryPerformanceHost,
 				record.organizationId,
 				record.employeeId,
 				record.employmentId,
@@ -1035,7 +1162,9 @@ function buildPerformanceMemoryMethods(
 				...goal,
 				title: input.title ?? goal.title,
 				description:
-					input.description !== undefined ? input.description : goal.description,
+					input.description !== undefined
+						? input.description
+						: goal.description,
 				weight: input.weight !== undefined ? input.weight : goal.weight,
 				periodStart,
 				periodEnd,
@@ -1339,7 +1468,9 @@ function buildPerformanceMemoryMethods(
 			meta: { correlationId: string },
 		): Promise<Result<PerformanceReview>> {
 			if (input.managerEmployeeId === input.employeeId) {
-				return invalidInput("Manager cannot be the same as the review employee");
+				return invalidInput(
+					"Manager cannot be the same as the review employee",
+				);
 			}
 
 			const cycleResult = getCycle(state, input.organizationId, input.cycleId);
@@ -1361,7 +1492,7 @@ function buildPerformanceMemoryMethods(
 			}
 
 			const refs = await assertEmployeeEmployment(
-				store,
+				this as unknown as unknown as unknown as unknown as unknown as MemoryPerformanceHost,
 				input.organizationId,
 				input.employeeId,
 				input.employmentId,
@@ -1377,7 +1508,9 @@ function buildPerformanceMemoryMethods(
 					review.employeeId === input.employeeId,
 			);
 			if (duplicate) {
-				return conflict("Performance review already exists for this employee in cycle");
+				return conflict(
+					"Performance review already exists for this employee in cycle",
+				);
 			}
 
 			const reviewIdResult = parseHumanResourcesReviewId(randomUUID());
@@ -1403,7 +1536,9 @@ function buildPerformanceMemoryMethods(
 			};
 			state.reviews.set(review.id, review);
 
-			const selfParticipantId = newBrandId(humanResourcesReviewParticipantIdSchema);
+			const selfParticipantId = newBrandId(
+				humanResourcesReviewParticipantIdSchema,
+			);
 			const managerParticipantId = newBrandId(
 				humanResourcesReviewParticipantIdSchema,
 			);
@@ -1519,7 +1654,14 @@ function buildPerformanceMemoryMethods(
 			ports: MutationPorts,
 			meta: { correlationId: string },
 		): Promise<Result<PerformanceReview>> {
-			return submitAssessment(state, store, ports, meta, input, "self", "self_submitted");
+			return submitAssessment(
+				state,
+				ports,
+				meta,
+				input,
+				"self",
+				"self_submitted",
+			);
 		},
 
 		async submitManagerAssessment(
@@ -1535,16 +1677,21 @@ function buildPerformanceMemoryMethods(
 			ports: MutationPorts,
 			meta: { correlationId: string },
 		): Promise<Result<PerformanceReview>> {
-			const reviewResult = getReview(state, input.organizationId, input.reviewId);
+			const reviewResult = getReview(
+				state,
+				input.organizationId,
+				input.reviewId,
+			);
 			if (!reviewResult.ok) {
 				return reviewResult;
 			}
 			if (input.managerEmployeeId === reviewResult.data.employeeId) {
-				return invalidInput("Manager cannot be the same as the review employee");
+				return invalidInput(
+					"Manager cannot be the same as the review employee",
+				);
 			}
 			return submitAssessment(
 				state,
-				store,
 				ports,
 				meta,
 				{
@@ -1669,12 +1816,19 @@ function buildPerformanceMemoryMethods(
 			if (!versionCheck.ok) {
 				return versionCheck;
 			}
-			const transition = assertReviewStatusTransition(review.status, "finalized");
+			const transition = assertReviewStatusTransition(
+				review.status,
+				"finalized",
+			);
 			if (!transition.ok) {
 				return transition;
 			}
 
-			const cycleResult = getCycle(state, review.organizationId, review.cycleId);
+			const cycleResult = getCycle(
+				state,
+				review.organizationId,
+				review.cycleId,
+			);
 			if (!cycleResult.ok) {
 				return cycleResult;
 			}
@@ -1697,7 +1851,9 @@ function buildPerformanceMemoryMethods(
 				return invalidState("Review is missing required assessments");
 			}
 			if (!selfAssessment.submittedAt || !managerAssessment.submittedAt) {
-				return invalidState("Both self and manager assessments must be submitted");
+				return invalidState(
+					"Both self and manager assessments must be submitted",
+				);
 			}
 			if (selfAssessment.id === managerAssessment.id) {
 				return invalidState("Self and manager assessments must be distinct");
@@ -1774,7 +1930,10 @@ function buildPerformanceMemoryMethods(
 			if (!versionCheck.ok) {
 				return versionCheck;
 			}
-			const transition = assertReviewStatusTransition(review.status, "reopened");
+			const transition = assertReviewStatusTransition(
+				review.status,
+				"reopened",
+			);
 			if (!transition.ok) {
 				return transition;
 			}
@@ -1945,7 +2104,11 @@ function buildPerformanceMemoryMethods(
 				return conflict("Idempotency key already used with different data");
 			}
 
-			const reviewResult = getReview(state, record.organizationId, record.reviewId);
+			const reviewResult = getReview(
+				state,
+				record.organizationId,
+				record.reviewId,
+			);
 			if (!reviewResult.ok) {
 				return reviewResult;
 			}
@@ -1954,7 +2117,7 @@ function buildPerformanceMemoryMethods(
 			}
 
 			const refs = await assertEmployeeEmployment(
-				store,
+				this as unknown as unknown as unknown as unknown as unknown as MemoryPerformanceHost,
 				record.organizationId,
 				record.employeeId,
 				record.employmentId,
@@ -1994,7 +2157,9 @@ function buildPerformanceMemoryMethods(
 				createRequestFingerprint: record.createRequestFingerprint,
 			});
 
-			const checkpointId = newBrandId(humanResourcesImprovementCheckpointIdSchema);
+			const checkpointId = newBrandId(
+				humanResourcesImprovementCheckpointIdSchema,
+			);
 			if (!checkpointId.ok) {
 				state.improvementPlans.delete(plan.id);
 				state.planIdempotency.delete(key);
@@ -2058,7 +2223,10 @@ function buildPerformanceMemoryMethods(
 			if (!versionCheck.ok) {
 				return versionCheck;
 			}
-			const transition = assertImprovementPlanStatusTransition(plan.status, "open");
+			const transition = assertImprovementPlanStatusTransition(
+				plan.status,
+				"open",
+			);
 			if (!transition.ok) {
 				return transition;
 			}
@@ -2416,14 +2584,18 @@ function buildPerformanceMemoryMethods(
 						goal.employeeId === input.employeeId &&
 						goal.cycleId === review.cycleId,
 				);
-				const improvementPlans = Array.from(state.improvementPlans.values()).filter(
+				const improvementPlans = Array.from(
+					state.improvementPlans.values(),
+				).filter(
 					(plan) =>
 						plan.organizationId === input.organizationId &&
 						plan.reviewId === review.id,
 				);
 				return {
 					review: detail.review,
-					overallRating: input.includeConfidential ? review.overallRating : null,
+					overallRating: input.includeConfidential
+						? review.overallRating
+						: null,
 					assessments: detail.assessments,
 					goals: goals.map((goal) => ({ ...goal })),
 					improvementPlans: improvementPlans.map((plan) => ({ ...plan })),
@@ -2459,7 +2631,10 @@ async function transitionGoalStatus(
 		return current;
 	}
 	const goal = current.data;
-	const versionCheck = assertExpectedVersion(goal.version, input.expectedVersion);
+	const versionCheck = assertExpectedVersion(
+		goal.version,
+		input.expectedVersion,
+	);
 	if (!versionCheck.ok) {
 		return versionCheck;
 	}
@@ -2519,7 +2694,10 @@ async function transitionReviewStatus(
 	if (!immutable.ok) {
 		return immutable;
 	}
-	const versionCheck = assertExpectedVersion(review.version, input.expectedVersion);
+	const versionCheck = assertExpectedVersion(
+		review.version,
+		input.expectedVersion,
+	);
 	if (!versionCheck.ok) {
 		return versionCheck;
 	}
@@ -2575,7 +2753,10 @@ async function transitionPlanStatus(
 		return current;
 	}
 	const plan = current.data;
-	const versionCheck = assertExpectedVersion(plan.version, input.expectedVersion);
+	const versionCheck = assertExpectedVersion(
+		plan.version,
+		input.expectedVersion,
+	);
 	if (!versionCheck.ok) {
 		return versionCheck;
 	}
@@ -2612,7 +2793,6 @@ async function transitionPlanStatus(
 
 async function submitAssessment(
 	state: PerformanceMemoryState,
-	_ports: MemoryHumanResourcesStore,
 	ports: MutationPorts,
 	meta: { correlationId: string },
 	input: {
@@ -2636,7 +2816,10 @@ async function submitAssessment(
 	if (!immutable.ok) {
 		return immutable;
 	}
-	const versionCheck = assertExpectedVersion(review.version, input.expectedVersion);
+	const versionCheck = assertExpectedVersion(
+		review.version,
+		input.expectedVersion,
+	);
 	if (!versionCheck.ok) {
 		return versionCheck;
 	}
@@ -2713,9 +2896,9 @@ async function submitAssessment(
 	return ok({ ...updatedReview });
 }
 
-export function createPerformanceMemoryMethods(
-	store: MemoryHumanResourcesStore,
-	stateOf: (store: MemoryHumanResourcesStore) => PerformanceMemoryState,
-): PerformanceMemoryMethods {
-	return buildPerformanceMemoryMethods(store, stateOf(store));
+export function createMemoryPerformanceMethods(
+	state: PerformanceMemoryState,
+): PerformanceMemoryMethods &
+	ThisType<MemoryPerformanceHost & PerformanceMemoryMethods> {
+	return buildPerformanceMemoryMethods(state);
 }

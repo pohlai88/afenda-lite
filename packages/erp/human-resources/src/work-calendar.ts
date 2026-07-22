@@ -84,10 +84,7 @@ export function createMemoryWorkCalendar(): WorkCalendarPort {
 
 			while (cursor <= end) {
 				const date = formatIsoDate(cursor);
-				const working =
-					input.unit === "hours"
-						? true
-						: !isWeekend(cursor);
+				const working = input.unit === "hours" ? true : !isWeekend(cursor);
 				if (working) {
 					segments.push({
 						date,

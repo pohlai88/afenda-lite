@@ -7,15 +7,6 @@ import type {
 	HumanResourcesEmployeeId,
 	HumanResourcesEmploymentId,
 } from "../brands";
-import type { MutationPorts } from "../ports";
-import type {
-	EmployeeCaseActionType,
-	EmployeeCaseEventKind,
-	EmployeeCaseParticipantRole,
-	EmployeeCaseSeverity,
-	EmployeeCaseStatus,
-	EmployeeCaseType,
-} from "../shared/employee-relations-status";
 import type {
 	EmployeeCase,
 	EmployeeCaseAction,
@@ -25,6 +16,15 @@ import type {
 	EmployeeCaseOutcome,
 	EmployeeCaseTimeline,
 } from "../employee-relations/types";
+import type { MutationPorts } from "../ports";
+import type {
+	EmployeeCaseActionType,
+	EmployeeCaseEventKind,
+	EmployeeCaseParticipantRole,
+	EmployeeCaseSeverity,
+	EmployeeCaseStatus,
+	EmployeeCaseType,
+} from "../shared/employee-relations-status";
 
 /**
  * Persistence contract for Employee relations.
@@ -90,10 +90,7 @@ export type HumanResourcesEmployeeRelationsStore = {
 		organizationId: string;
 		idempotencyKey: string;
 	}): Promise<
-		Result<
-			| (IdempotentEmployeeCaseOpenRecord & { case: EmployeeCase })
-			| null
-		>
+		Result<(IdempotentEmployeeCaseOpenRecord & { case: EmployeeCase }) | null>
 	>;
 
 	openEmployeeCase(
@@ -242,7 +239,9 @@ export type HumanResourcesEmployeeRelationsStore = {
 		idempotencyKey: string;
 	}): Promise<
 		Result<
-			| (IdempotentEmployeeCaseActionOpenRecord & { action: EmployeeCaseAction })
+			| (IdempotentEmployeeCaseActionOpenRecord & {
+					action: EmployeeCaseAction;
+			  })
 			| null
 		>
 	>;
@@ -271,7 +270,9 @@ export type HumanResourcesEmployeeRelationsStore = {
 		idempotencyKey: string;
 	}): Promise<
 		Result<
-			| (IdempotentEmployeeCaseAppealOpenRecord & { appeal: EmployeeCaseAppeal })
+			| (IdempotentEmployeeCaseAppealOpenRecord & {
+					appeal: EmployeeCaseAppeal;
+			  })
 			| null
 		>
 	>;

@@ -28,7 +28,6 @@ import {
 	updateEmployeeDocumentMetadataInputSchema,
 	verifyEmployeeDocumentInputSchema,
 } from "../schemas-compliance";
-import { assertValidDocumentDateRange } from "../shared/compliance-guards";
 import {
 	requireComplianceEmployeeReadScope,
 	requireIdentityDocumentSensitiveRead,
@@ -36,6 +35,7 @@ import {
 	runComplianceEmployeeScopedQuery,
 	runComplianceQuery,
 } from "../shared/compliance-command";
+import { assertValidDocumentDateRange } from "../shared/compliance-guards";
 import {
 	fingerprintDocumentIdentifier,
 	last4DocumentIdentifier,
@@ -283,7 +283,9 @@ export async function markEmployeeDocumentExpired(
 					actorUserId: data.actorUserId,
 				},
 				ports,
-				{ correlationId: HUMAN_RESOURCES_COMMAND_EMPLOYEE_DOCUMENT_MARK_EXPIRED },
+				{
+					correlationId: HUMAN_RESOURCES_COMMAND_EMPLOYEE_DOCUMENT_MARK_EXPIRED,
+				},
 			),
 	});
 }
@@ -291,9 +293,7 @@ export async function markEmployeeDocumentExpired(
 export async function getEmployeeDocument(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
-): Promise<
-	Result<EmployeeDocumentListItem | EmployeeDocumentSensitiveDetail>
-> {
+): Promise<Result<EmployeeDocumentListItem | EmployeeDocumentSensitiveDetail>> {
 	return runComplianceEmployeeScopedQuery(input, options, {
 		schema: getEmployeeDocumentInputSchema,
 		invalidMessage: "Invalid employee document get input",

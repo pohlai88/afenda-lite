@@ -28,9 +28,11 @@ import type {
 	HumanResourcesEmploymentConfirmationId,
 	HumanResourcesEmploymentContractId,
 	HumanResourcesEmploymentId,
+	HumanResourcesGoalId,
 	HumanResourcesHeadcountPlanId,
 	HumanResourcesHeadcountPlanLineId,
 	HumanResourcesHeadcountReservationId,
+	HumanResourcesImprovementPlanId,
 	HumanResourcesInterviewId,
 	HumanResourcesJobCompetencyId,
 	HumanResourcesJobId,
@@ -41,8 +43,6 @@ import type {
 	HumanResourcesLeaveRequestId,
 	HumanResourcesOffboardingCaseId,
 	HumanResourcesOffboardingTaskId,
-	HumanResourcesGoalId,
-	HumanResourcesImprovementPlanId,
 	HumanResourcesOfferId,
 	HumanResourcesOnboardingCaseId,
 	HumanResourcesOnboardingTaskId,
@@ -65,6 +65,15 @@ import type {
 	HumanResourcesTerminationId,
 	HumanResourcesWorkEligibilityId,
 } from "./brands";
+import type {
+	EmployeeCase,
+	EmployeeCaseAction,
+	EmployeeCaseAppeal,
+	EmployeeCaseEvent,
+	EmployeeCaseListPage,
+	EmployeeCaseOutcome,
+	EmployeeCaseTimeline,
+} from "./employee-relations/types";
 import type { MutationPorts } from "./ports";
 import type {
 	BenefitPlanStatus,
@@ -77,6 +86,14 @@ import type {
 	PolicyAcknowledgementStatus,
 	WorkEligibilityStatus,
 } from "./shared/compliance-status";
+import type {
+	EmployeeCaseActionType,
+	EmployeeCaseEventKind,
+	EmployeeCaseParticipantRole,
+	EmployeeCaseSeverity,
+	EmployeeCaseStatus,
+	EmployeeCaseType,
+} from "./shared/employee-relations-status";
 import type {
 	DepartmentStatus,
 	EmploymentStatus,
@@ -99,6 +116,10 @@ import type {
 	LeaveType,
 	LeaveUnit,
 } from "./shared/leave-status";
+import type {
+	LifecycleTaskStatus,
+	ProbationOutcome,
+} from "./shared/lifecycle-status";
 import type { PerformanceRatingScale } from "./shared/performance-rating";
 import type {
 	PerformanceCycleStatus,
@@ -106,22 +127,12 @@ import type {
 	PerformanceWeightingModel,
 } from "./shared/performance-status";
 import type {
-	LifecycleTaskStatus,
-	ProbationOutcome,
-} from "./shared/lifecycle-status";
-import type {
-	HeadcountEmploymentType,
-	HeadcountPlanStatus,
-	HeadcountReservationStatus,
-} from "./shared/workforce-planning-status";
-import type {
-	EmployeeCaseActionType,
-	EmployeeCaseEventKind,
-	EmployeeCaseParticipantRole,
-	EmployeeCaseSeverity,
-	EmployeeCaseStatus,
-	EmployeeCaseType,
-} from "./shared/employee-relations-status";
+	ApplicationStatus,
+	CandidateStatus,
+	InterviewEvaluationResult,
+	OfferStatus,
+	RequisitionStatus,
+} from "./shared/recruitment-status";
 import type {
 	CareerPlanStatus,
 	CompetencyScaleCode,
@@ -133,24 +144,14 @@ import type {
 	TalentProfileAssessmentMethodCode,
 } from "./shared/talent-status";
 import type {
-	EmployeeCase,
-	EmployeeCaseAction,
-	EmployeeCaseAppeal,
-	EmployeeCaseEvent,
-	EmployeeCaseListPage,
-	EmployeeCaseOutcome,
-	EmployeeCaseTimeline,
-} from "./employee-relations/types";
-import type {
-	ApplicationStatus,
-	CandidateStatus,
-	InterviewEvaluationResult,
-	OfferStatus,
-	RequisitionStatus,
-} from "./shared/recruitment-status";
+	HeadcountEmploymentType,
+	HeadcountPlanStatus,
+	HeadcountReservationStatus,
+} from "./shared/workforce-planning-status";
 import type {
 	ApplicationListPage,
 	ApprovedCompensationHandoff,
+	ApprovedLeaveHandoff,
 	BenefitEnrollment,
 	BenefitEnrollmentListPage,
 	BenefitPlan,
@@ -158,12 +159,19 @@ import type {
 	Candidate,
 	CandidateApplication,
 	CandidateListPage,
+	CareerPlan,
+	CareerPlanAction,
+	CareerPlanListPage,
+	CareerPlanWithActions,
 	CertificationListPage,
 	Clearance,
 	CompensationGrade,
 	CompensationGradeListPage,
 	CompensationReview,
 	CompensationReviewListPage,
+	Competency,
+	CompetencyAssessment,
+	CompetencyListPage,
 	CompletionListPage,
 	CourseListPage,
 	Department,
@@ -171,12 +179,14 @@ import type {
 	DocumentRequirementListPage,
 	Employee,
 	EmployeeCertification,
+	EmployeeCompensation,
+	EmployeeCompensationListPage,
+	EmployeeCompetencyProfile,
 	EmployeeComplianceSummary,
 	EmployeeDocument,
 	EmployeeDocumentListPage,
-	EmployeeCompensation,
-	EmployeeCompensationListPage,
 	EmployeeListPage,
+	EmployeePerformanceHistory,
 	Employment,
 	EmploymentConfirmation,
 	EmploymentContract,
@@ -188,10 +198,23 @@ import type {
 	HeadcountPlanListPage,
 	HeadcountReservation,
 	HeadcountReservationListPage,
+	IdempotentCareerPlanRecord,
+	IdempotentCompetencyAssessmentRecord,
+	IdempotentCompetencyRecord,
+	IdempotentEmployeeDocumentRecord,
+	IdempotentPolicyAcknowledgementRecord,
+	IdempotentSuccessionCandidateRecord,
+	IdempotentSuccessionPlanRecord,
+	IdempotentTalentPoolMemberRecord,
+	IdempotentTalentPoolRecord,
+	IdempotentTalentProfileRecord,
+	IdempotentWorkEligibilityRecord,
 	Interview,
 	InterviewEvaluation,
 	InterviewListPage,
 	Job,
+	JobCompetency,
+	JobCompetencyListPage,
 	JobRequisition,
 	LearningAssignment,
 	LearningAssignmentListPage,
@@ -208,10 +231,6 @@ import type {
 	LeaveRequest,
 	LeaveRequestListPage,
 	LeaveRequestSegment,
-	ApprovedLeaveHandoff,
-	ResolvedLeavePolicy,
-	TeamCalendarLeavePage,
-	EmployeePerformanceHistory,
 	OffboardingCase,
 	OffboardingTask,
 	OfferAcceptanceHandoff,
@@ -231,52 +250,33 @@ import type {
 	PerformanceReview,
 	PerformanceReviewDetail,
 	PerformanceReviewListPage,
-	Position,
 	PolicyAcknowledgement,
 	PolicyAcknowledgementListPage,
+	Position,
+	PositionSuccessionCoverage,
 	ProbationReview,
 	RecruitmentHeadcountHandoff,
 	ReportingLine,
 	RequisitionListPage,
+	ResolvedLeavePolicy,
 	SalaryBand,
 	SalaryBandListPage,
 	SessionListPage,
+	SuccessionCandidate,
+	SuccessionCandidateListPage,
+	SuccessionPlan,
+	SuccessionPlanListPage,
+	TalentPool,
+	TalentPoolMember,
+	TalentPoolMemberListPage,
+	TalentProfile,
+	TalentProfileAssessment,
+	TeamCalendarLeavePage,
 	Termination,
 	WorkAssignment,
 	WorkEligibility,
 	WorkEligibilityRiskListPage,
 	WorkforcePlanVariance,
-	IdempotentEmployeeDocumentRecord,
-	IdempotentPolicyAcknowledgementRecord,
-	IdempotentWorkEligibilityRecord,
-	Competency,
-	CompetencyAssessment,
-	CompetencyListPage,
-	EmployeeCompetencyProfile,
-	JobCompetency,
-	JobCompetencyListPage,
-	TalentProfile,
-	TalentProfileAssessment,
-	TalentPool,
-	TalentPoolMember,
-	TalentPoolMemberListPage,
-	CareerPlan,
-	CareerPlanAction,
-	CareerPlanWithActions,
-	CareerPlanListPage,
-	SuccessionPlan,
-	SuccessionPlanListPage,
-	SuccessionCandidate,
-	SuccessionCandidateListPage,
-	PositionSuccessionCoverage,
-	IdempotentCompetencyRecord,
-	IdempotentCompetencyAssessmentRecord,
-	IdempotentTalentProfileRecord,
-	IdempotentTalentPoolRecord,
-	IdempotentTalentPoolMemberRecord,
-	IdempotentCareerPlanRecord,
-	IdempotentSuccessionPlanRecord,
-	IdempotentSuccessionCandidateRecord,
 } from "./types";
 
 export type EmployeeCreateRecord = {
@@ -3319,10 +3319,7 @@ export type HumanResourcesStore = {
 		organizationId: string;
 		idempotencyKey: string;
 	}): Promise<
-		Result<
-			| (IdempotentEmployeeCaseOpenRecord & { case: EmployeeCase })
-			| null
-		>
+		Result<(IdempotentEmployeeCaseOpenRecord & { case: EmployeeCase }) | null>
 	>;
 
 	openEmployeeCase(
@@ -3471,7 +3468,9 @@ export type HumanResourcesStore = {
 		idempotencyKey: string;
 	}): Promise<
 		Result<
-			| (IdempotentEmployeeCaseActionOpenRecord & { action: EmployeeCaseAction })
+			| (IdempotentEmployeeCaseActionOpenRecord & {
+					action: EmployeeCaseAction;
+			  })
 			| null
 		>
 	>;
@@ -3500,7 +3499,9 @@ export type HumanResourcesStore = {
 		idempotencyKey: string;
 	}): Promise<
 		Result<
-			| (IdempotentEmployeeCaseAppealOpenRecord & { appeal: EmployeeCaseAppeal })
+			| (IdempotentEmployeeCaseAppealOpenRecord & {
+					appeal: EmployeeCaseAppeal;
+			  })
 			| null
 		>
 	>;

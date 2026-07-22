@@ -27,8 +27,8 @@ import {
 	fingerprintLeaveAdjustment,
 	fingerprintLeaveEntitlementGrant,
 } from "../shared/fingerprint";
-import { assertLeavePolicyPublished } from "../shared/leave-guards";
 import { runLeaveCommand, runLeaveQuery } from "../shared/leave-command";
+import { assertLeavePolicyPublished } from "../shared/leave-guards";
 import type {
 	LeaveAdjustment,
 	LeaveBalance,

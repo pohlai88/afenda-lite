@@ -15,17 +15,6 @@ import {
 } from "@afenda/events/schemas";
 
 import {
-	parseHumanResourcesCareerPlanActionId,
-	parseHumanResourcesCareerPlanId,
-	parseHumanResourcesCompetencyAssessmentId,
-	parseHumanResourcesCompetencyId,
-	parseHumanResourcesJobCompetencyId,
-	parseHumanResourcesSuccessionCandidateId,
-	parseHumanResourcesSuccessionPlanId,
-	parseHumanResourcesTalentPoolId,
-	parseHumanResourcesTalentPoolMemberId,
-	parseHumanResourcesTalentProfileAssessmentId,
-	parseHumanResourcesTalentProfileId,
 	type HumanResourcesCareerPlanActionId,
 	type HumanResourcesCareerPlanId,
 	type HumanResourcesCompetencyAssessmentId,
@@ -37,12 +26,22 @@ import {
 	type HumanResourcesTalentPoolMemberId,
 	type HumanResourcesTalentProfileAssessmentId,
 	type HumanResourcesTalentProfileId,
+	parseHumanResourcesCareerPlanActionId,
+	parseHumanResourcesCareerPlanId,
+	parseHumanResourcesCompetencyAssessmentId,
+	parseHumanResourcesCompetencyId,
+	parseHumanResourcesJobCompetencyId,
+	parseHumanResourcesSuccessionCandidateId,
+	parseHumanResourcesSuccessionPlanId,
+	parseHumanResourcesTalentPoolId,
+	parseHumanResourcesTalentPoolMemberId,
+	parseHumanResourcesTalentProfileAssessmentId,
+	parseHumanResourcesTalentProfileId,
 } from "../../brands";
 import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
 	humanResourcesErrorDetails,
 } from "../../error-codes";
-import type { MemoryHumanResourcesStore } from "../../memory-store";
 import type { MutationPorts } from "../../ports";
 import { assertExpectedVersion } from "../../shared/concurrency";
 import { conflict, invalidState, notFound } from "../../shared/domain-guards";
@@ -82,7 +81,6 @@ import type {
 	CareerPlanWithActions,
 	Competency,
 	CompetencyAssessment,
-	EmployeeCompetencyProfile,
 	IdempotentCareerPlanRecord,
 	IdempotentCompetencyAssessmentRecord,
 	IdempotentCompetencyRecord,
@@ -100,6 +98,7 @@ import type {
 	TalentProfile,
 	TalentProfileAssessment,
 } from "../../types";
+import { idempotencyMapKey } from "./shared";
 
 export type TalentMemoryState = {
 	competencies: Map<HumanResourcesCompetencyId, Competency>;
@@ -138,15 +137,15 @@ export type TalentMemoryState = {
 	>;
 };
 
-export type TalentHost = {
-	getEmployeeById: HumanResourcesStore["getEmployeeById"];
-	getJobById: HumanResourcesStore["getJobById"];
-	getPositionById: HumanResourcesStore["getPositionById"];
-	findOpenEmploymentByEmployee: HumanResourcesStore["findOpenEmploymentByEmployee"];
-	idempotencyMapKey(organizationId: string, idempotencyKey: string): string;
-};
+export type TalentHost = Pick<
+	HumanResourcesStore,
+	| "getEmployeeById"
+	| "getJobById"
+	| "getPositionById"
+	| "findOpenEmploymentByEmployee"
+>;
 
-export type TalentMemoryMethods = Pick<
+export type MemoryTalentMethods = Pick<
 	HumanResourcesStore,
 	| "getCompetencyById"
 	| "findCompetencyByIdempotencyKey"
@@ -207,8 +206,6 @@ export type TalentMemoryMethods = Pick<
 	| "getPositionSuccessionCoverage"
 >;
 
-const TALENT_STATE = new WeakMap<object, TalentMemoryState>();
-
 function todayIsoDate(): string {
 	return new Date().toISOString().slice(0, 10);
 }
@@ -222,7 +219,10 @@ function paginate<T extends { createdAt: Date }>(
 		(a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
 	);
 	const offset = (page - 1) * pageSize;
-	return { items: sorted.slice(offset, offset + pageSize), totalCount: sorted.length };
+	return {
+		items: sorted.slice(offset, offset + pageSize),
+		totalCount: sorted.length,
+	};
 }
 
 async function recordAudit(
@@ -297,11 +297,7 @@ export function createTalentMemoryState(): TalentMemoryState {
 	};
 }
 
-export function resetTalentMemoryState(host: object): void {
-	const state = TALENT_STATE.get(host);
-	if (!state) {
-		return;
-	}
+export function resetTalentMemoryState(state: TalentMemoryState): void {
 	state.competencies.clear();
 	state.competencyIdempotency.clear();
 	state.jobCompetencies.clear();
@@ -455,10 +451,10 @@ function getSuccessionCandidateInOrg(
 	return ok(record);
 }
 
-export function createTalentMemoryMethods(
-	host: TalentHost,
-	getState: () => TalentMemoryState,
-): TalentMemoryMethods {
+export function createMemoryTalentMethods(
+	state: TalentMemoryState,
+): MemoryTalentMethods & ThisType<TalentHost & MemoryTalentMethods> {
+	const getState = () => state;
 	return {
 		// Competency
 
@@ -473,10 +469,7 @@ export function createTalentMemoryMethods(
 
 		async findCompetencyByIdempotencyKey(input) {
 			const state = getState();
-			const key = host.idempotencyMapKey(
-				input.organizationId,
-				input.idempotencyKey,
-			);
+			const key = idempotencyMapKey(input.organizationId, input.idempotencyKey);
 			const record = state.competencyIdempotency.get(key);
 			if (!record) {
 				return ok(null);
@@ -518,7 +511,7 @@ export function createTalentMemoryMethods(
 			};
 			state.competencies.set(competency.id, competency);
 
-			const idempotencyKey = host.idempotencyMapKey(
+			const idempotencyKey = idempotencyMapKey(
 				record.organizationId,
 				record.createIdempotencyKey,
 			);
@@ -673,7 +666,7 @@ export function createTalentMemoryMethods(
 
 		async mapCompetencyToJob(input, ports, meta) {
 			const state = getState();
-			const job = await host.getJobById({
+			const job = await this.getJobById({
 				organizationId: input.organizationId,
 				jobId: input.jobId,
 			});
@@ -836,10 +829,7 @@ export function createTalentMemoryMethods(
 
 		async findCompetencyAssessmentByIdempotencyKey(input) {
 			const state = getState();
-			const key = host.idempotencyMapKey(
-				input.organizationId,
-				input.idempotencyKey,
-			);
+			const key = idempotencyMapKey(input.organizationId, input.idempotencyKey);
 			const record = state.competencyAssessmentIdempotency.get(key);
 			if (!record) {
 				return ok(null);
@@ -886,9 +876,7 @@ export function createTalentMemoryMethods(
 				);
 			}
 
-			const idResult = parseHumanResourcesCompetencyAssessmentId(
-				randomUUID(),
-			);
+			const idResult = parseHumanResourcesCompetencyAssessmentId(randomUUID());
 			if (!idResult.ok) {
 				return idResult;
 			}
@@ -915,7 +903,7 @@ export function createTalentMemoryMethods(
 			};
 			state.competencyAssessments.set(assessment.id, assessment);
 
-			const idempotencyKey = host.idempotencyMapKey(
+			const idempotencyKey = idempotencyMapKey(
 				record.organizationId,
 				record.createIdempotencyKey,
 			);
@@ -955,7 +943,7 @@ export function createTalentMemoryMethods(
 
 		async supersedeCompetencyAssessment(record, ports, meta) {
 			const state = getState();
-			const idempotencyKey = host.idempotencyMapKey(
+			const idempotencyKey = idempotencyMapKey(
 				record.organizationId,
 				record.createIdempotencyKey,
 			);
@@ -1016,9 +1004,7 @@ export function createTalentMemoryMethods(
 				return validInput;
 			}
 
-			const idResult = parseHumanResourcesCompetencyAssessmentId(
-				randomUUID(),
-			);
+			const idResult = parseHumanResourcesCompetencyAssessmentId(randomUUID());
 			if (!idResult.ok) {
 				return idResult;
 			}
@@ -1092,7 +1078,7 @@ export function createTalentMemoryMethods(
 		},
 
 		async getEmployeeCompetencyProfile(input) {
-			const employee = await host.getEmployeeById({
+			const employee = await this.getEmployeeById({
 				organizationId: input.organizationId,
 				employeeId: input.employeeId,
 			});
@@ -1144,10 +1130,7 @@ export function createTalentMemoryMethods(
 
 		async findTalentProfileByIdempotencyKey(input) {
 			const state = getState();
-			const key = host.idempotencyMapKey(
-				input.organizationId,
-				input.idempotencyKey,
-			);
+			const key = idempotencyMapKey(input.organizationId, input.idempotencyKey);
 			const record = state.talentProfileIdempotency.get(key);
 			if (!record) {
 				return ok(null);
@@ -1157,7 +1140,7 @@ export function createTalentMemoryMethods(
 
 		async createTalentProfile(record, ports, meta) {
 			const state = getState();
-			const employee = await host.getEmployeeById({
+			const employee = await this.getEmployeeById({
 				organizationId: record.organizationId,
 				employeeId: record.employeeId,
 			});
@@ -1197,7 +1180,7 @@ export function createTalentMemoryMethods(
 			};
 			state.talentProfiles.set(profile.id, profile);
 
-			const idempotencyKey = host.idempotencyMapKey(
+			const idempotencyKey = idempotencyMapKey(
 				record.organizationId,
 				record.createIdempotencyKey,
 			);
@@ -1247,7 +1230,8 @@ export function createTalentMemoryMethods(
 			const now = new Date();
 			const updated: TalentProfile = {
 				...loaded.data,
-				summary: input.summary !== undefined ? input.summary : loaded.data.summary,
+				summary:
+					input.summary !== undefined ? input.summary : loaded.data.summary,
 				version: loaded.data.version + 1,
 				updatedBy: input.actorUserId,
 				updatedAt: now,
@@ -1496,10 +1480,7 @@ export function createTalentMemoryMethods(
 
 		async findTalentPoolByIdempotencyKey(input) {
 			const state = getState();
-			const key = host.idempotencyMapKey(
-				input.organizationId,
-				input.idempotencyKey,
-			);
+			const key = idempotencyMapKey(input.organizationId, input.idempotencyKey);
 			const record = state.talentPoolIdempotency.get(key);
 			if (!record) {
 				return ok(null);
@@ -1539,7 +1520,7 @@ export function createTalentMemoryMethods(
 			};
 			state.talentPools.set(pool.id, pool);
 
-			const idempotencyKey = host.idempotencyMapKey(
+			const idempotencyKey = idempotencyMapKey(
 				record.organizationId,
 				record.createIdempotencyKey,
 			);
@@ -1666,10 +1647,7 @@ export function createTalentMemoryMethods(
 
 		async findTalentPoolMemberByIdempotencyKey(input) {
 			const state = getState();
-			const key = host.idempotencyMapKey(
-				input.organizationId,
-				input.idempotencyKey,
-			);
+			const key = idempotencyMapKey(input.organizationId, input.idempotencyKey);
 			const record = state.talentPoolMemberIdempotency.get(key);
 			if (!record) {
 				return ok(null);
@@ -1687,7 +1665,7 @@ export function createTalentMemoryMethods(
 			if (!pool.ok) {
 				return pool;
 			}
-			const employee = await host.getEmployeeById({
+			const employee = await this.getEmployeeById({
 				organizationId: record.organizationId,
 				employeeId: record.employeeId,
 			});
@@ -1698,9 +1676,7 @@ export function createTalentMemoryMethods(
 				return notFound("Employee not found");
 			}
 
-			const existingMember = Array.from(
-				state.talentPoolMembers.values(),
-			).find(
+			const existingMember = Array.from(state.talentPoolMembers.values()).find(
 				(member) =>
 					member.organizationId === record.organizationId &&
 					member.poolId === record.poolId &&
@@ -1741,7 +1717,7 @@ export function createTalentMemoryMethods(
 			};
 			state.talentPoolMembers.set(member.id, member);
 
-			const idempotencyKey = host.idempotencyMapKey(
+			const idempotencyKey = idempotencyMapKey(
 				record.organizationId,
 				record.createIdempotencyKey,
 			);
@@ -1909,10 +1885,7 @@ export function createTalentMemoryMethods(
 
 		async findCareerPlanByIdempotencyKey(input) {
 			const state = getState();
-			const key = host.idempotencyMapKey(
-				input.organizationId,
-				input.idempotencyKey,
-			);
+			const key = idempotencyMapKey(input.organizationId, input.idempotencyKey);
 			const record = state.careerPlanIdempotency.get(key);
 			if (!record) {
 				return ok(null);
@@ -1922,7 +1895,7 @@ export function createTalentMemoryMethods(
 
 		async createCareerPlan(record, ports, meta) {
 			const state = getState();
-			const employee = await host.getEmployeeById({
+			const employee = await this.getEmployeeById({
 				organizationId: record.organizationId,
 				employeeId: record.employeeId,
 			});
@@ -1964,7 +1937,7 @@ export function createTalentMemoryMethods(
 			};
 			state.careerPlans.set(plan.id, plan);
 
-			const idempotencyKey = host.idempotencyMapKey(
+			const idempotencyKey = idempotencyMapKey(
 				record.organizationId,
 				record.createIdempotencyKey,
 			);
@@ -2170,20 +2143,18 @@ export function createTalentMemoryMethods(
 			const state = getState();
 			const page = input.page ?? 1;
 			const pageSize = input.pageSize ?? 20;
-			const filtered = Array.from(state.careerPlans.values()).filter(
-				(plan) => {
-					if (plan.organizationId !== input.organizationId) {
-						return false;
-					}
-					if (plan.employeeId !== input.employeeId) {
-						return false;
-					}
-					if (input.status !== undefined && plan.status !== input.status) {
-						return false;
-					}
-					return true;
-				},
-			);
+			const filtered = Array.from(state.careerPlans.values()).filter((plan) => {
+				if (plan.organizationId !== input.organizationId) {
+					return false;
+				}
+				if (plan.employeeId !== input.employeeId) {
+					return false;
+				}
+				if (input.status !== undefined && plan.status !== input.status) {
+					return false;
+				}
+				return true;
+			});
 			const { items, totalCount } = paginate(filtered, page, pageSize);
 			return ok({
 				careerPlans: items.map((item) => ({ ...item })),
@@ -2257,9 +2228,7 @@ export function createTalentMemoryMethods(
 			if (!loaded.ok) {
 				return loaded;
 			}
-			const completable = assertCareerPlanActionCompletable(
-				loaded.data.status,
-			);
+			const completable = assertCareerPlanActionCompletable(loaded.data.status);
 			if (!completable.ok) {
 				return completable;
 			}
@@ -2309,10 +2278,7 @@ export function createTalentMemoryMethods(
 
 		async findSuccessionPlanByIdempotencyKey(input) {
 			const state = getState();
-			const key = host.idempotencyMapKey(
-				input.organizationId,
-				input.idempotencyKey,
-			);
+			const key = idempotencyMapKey(input.organizationId, input.idempotencyKey);
 			const record = state.successionPlanIdempotency.get(key);
 			if (!record) {
 				return ok(null);
@@ -2325,7 +2291,7 @@ export function createTalentMemoryMethods(
 
 		async createSuccessionPlan(record, ports, meta) {
 			const state = getState();
-			const position = await host.getPositionById({
+			const position = await this.getPositionById({
 				organizationId: record.organizationId,
 				positionId: record.positionId,
 			});
@@ -2366,7 +2332,7 @@ export function createTalentMemoryMethods(
 			};
 			state.successionPlans.set(plan.id, plan);
 
-			const idempotencyKey = host.idempotencyMapKey(
+			const idempotencyKey = idempotencyMapKey(
 				record.organizationId,
 				record.createIdempotencyKey,
 			);
@@ -2417,7 +2383,8 @@ export function createTalentMemoryMethods(
 				...loaded.data,
 				title: input.title ?? loaded.data.title,
 				allowsExternalCandidates:
-					input.allowsExternalCandidates ?? loaded.data.allowsExternalCandidates,
+					input.allowsExternalCandidates ??
+					loaded.data.allowsExternalCandidates,
 				version: loaded.data.version + 1,
 				updatedBy: input.actorUserId,
 				updatedAt: now,
@@ -2532,10 +2499,7 @@ export function createTalentMemoryMethods(
 
 		async findSuccessionCandidateByIdempotencyKey(input) {
 			const state = getState();
-			const key = host.idempotencyMapKey(
-				input.organizationId,
-				input.idempotencyKey,
-			);
+			const key = idempotencyMapKey(input.organizationId, input.idempotencyKey);
 			const record = state.successionCandidateIdempotency.get(key);
 			if (!record) {
 				return ok(null);
@@ -2556,7 +2520,7 @@ export function createTalentMemoryMethods(
 
 			let employmentStatus: EmploymentStatus | null = null;
 			if (record.employeeId !== null) {
-				const employee = await host.getEmployeeById({
+				const employee = await this.getEmployeeById({
 					organizationId: record.organizationId,
 					employeeId: record.employeeId,
 				});
@@ -2566,7 +2530,7 @@ export function createTalentMemoryMethods(
 				if (employee.data === null) {
 					return notFound("Employee not found");
 				}
-				const employment = await host.findOpenEmploymentByEmployee({
+				const employment = await this.findOpenEmploymentByEmployee({
 					organizationId: record.organizationId,
 					employeeId: record.employeeId,
 				});
@@ -2588,9 +2552,7 @@ export function createTalentMemoryMethods(
 				return nominatable;
 			}
 
-			const idResult = parseHumanResourcesSuccessionCandidateId(
-				randomUUID(),
-			);
+			const idResult = parseHumanResourcesSuccessionCandidateId(randomUUID());
 			if (!idResult.ok) {
 				return idResult;
 			}
@@ -2615,7 +2577,7 @@ export function createTalentMemoryMethods(
 			};
 			state.successionCandidates.set(candidate.id, candidate);
 
-			const idempotencyKey = host.idempotencyMapKey(
+			const idempotencyKey = idempotencyMapKey(
 				record.organizationId,
 				record.createIdempotencyKey,
 			);
@@ -2795,9 +2757,7 @@ export function createTalentMemoryMethods(
 			if (!loaded.ok) {
 				return loaded;
 			}
-			const removable = assertSuccessionCandidateRemovable(
-				loaded.data.status,
-			);
+			const removable = assertSuccessionCandidateRemovable(loaded.data.status);
 			if (!removable.ok) {
 				return removable;
 			}
@@ -2846,10 +2806,7 @@ export function createTalentMemoryMethods(
 					if (candidate.successionPlanId !== input.successionPlanId) {
 						return false;
 					}
-					if (
-						input.status !== undefined &&
-						candidate.status !== input.status
-					) {
+					if (input.status !== undefined && candidate.status !== input.status) {
 						return false;
 					}
 					return true;
@@ -2885,7 +2842,10 @@ export function createTalentMemoryMethods(
 				) {
 					continue;
 				}
-				if (candidate.status !== "nominated" && candidate.status !== "approved") {
+				if (
+					candidate.status !== "nominated" &&
+					candidate.status !== "approved"
+				) {
 					continue;
 				}
 				totalActiveCandidateCount += 1;
@@ -2915,22 +2875,4 @@ export function createTalentMemoryMethods(
 			return ok(coverage);
 		},
 	};
-}
-
-export function attachMemoryTalent(
-	target: MemoryHumanResourcesStore,
-	state?: TalentMemoryState,
-): void {
-	const resolved = state ?? TALENT_STATE.get(target) ?? createTalentMemoryState();
-	TALENT_STATE.set(target, resolved);
-	const host: TalentHost = {
-		getEmployeeById: target.getEmployeeById.bind(target),
-		getJobById: target.getJobById.bind(target),
-		getPositionById: target.getPositionById.bind(target),
-		findOpenEmploymentByEmployee:
-			target.findOpenEmploymentByEmployee.bind(target),
-		idempotencyMapKey: (organizationId, idempotencyKey) =>
-			`${organizationId}:${idempotencyKey}`,
-	};
-	Object.assign(target, createTalentMemoryMethods(host, () => resolved));
 }

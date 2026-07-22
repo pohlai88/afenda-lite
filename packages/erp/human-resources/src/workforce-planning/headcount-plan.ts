@@ -31,11 +31,11 @@ import {
 	updateHeadcountPlanInputSchema,
 } from "../schemas";
 import { fingerprintHeadcountPlanCreate } from "../shared/fingerprint";
-import type { HeadcountPlanStatus } from "../shared/workforce-planning-status";
 import {
 	runWorkforcePlanningCommand,
 	runWorkforcePlanningQuery,
 } from "../shared/workforce-planning-command";
+import type { HeadcountPlanStatus } from "../shared/workforce-planning-status";
 import type {
 	HeadcountPlan,
 	HeadcountPlanListPage,

@@ -69,15 +69,21 @@ export type PerformanceWeightingModel =
 export const performanceCycleParticipantStatusSchema = z.enum(
 	PERFORMANCE_CYCLE_PARTICIPANT_STATUSES,
 );
-export const performanceAssessmentKindSchema = z.enum(PERFORMANCE_ASSESSMENT_KINDS);
+export const performanceAssessmentKindSchema = z.enum(
+	PERFORMANCE_ASSESSMENT_KINDS,
+);
 export const performanceCheckpointOutcomeSchema = z.enum(
 	PERFORMANCE_CHECKPOINT_OUTCOMES,
 );
-export const performanceWeightingModelSchema = z.enum(PERFORMANCE_WEIGHTING_MODELS);
+export const performanceWeightingModelSchema = z.enum(
+	PERFORMANCE_WEIGHTING_MODELS,
+);
 
 export const performanceCycleStatusSchema = z.enum(PERFORMANCE_CYCLE_STATUSES);
 export const performanceGoalStatusSchema = z.enum(PERFORMANCE_GOAL_STATUSES);
-export const performanceReviewStatusSchema = z.enum(PERFORMANCE_REVIEW_STATUSES);
+export const performanceReviewStatusSchema = z.enum(
+	PERFORMANCE_REVIEW_STATUSES,
+);
 export const performanceImprovementPlanStatusSchema = z.enum(
 	PERFORMANCE_IMPROVEMENT_PLAN_STATUSES,
 );
@@ -94,7 +100,9 @@ export function isPerformanceCycleTerminal(
 	return status === "closed" || status === "cancelled";
 }
 
-export function isPerformanceGoalEditable(status: PerformanceGoalStatus): boolean {
+export function isPerformanceGoalEditable(
+	status: PerformanceGoalStatus,
+): boolean {
 	return status === "draft" || status === "rejected";
 }
 
@@ -113,7 +121,5 @@ export function isPerformanceReviewFinalized(
 export function isPerformanceImprovementPlanActive(
 	status: PerformanceImprovementPlanStatus,
 ): boolean {
-	return (
-		status === "open" || status === "acknowledged" || status === "draft"
-	);
+	return status === "open" || status === "acknowledged" || status === "draft";
 }

@@ -14,13 +14,11 @@ import {
 	submitRequisition,
 } from "../src/recruitment/requisition";
 import {
-	addHeadcountPlanLine,
-} from "../src/workforce-planning/headcount-plan-line";
-import {
 	approveHeadcountPlan,
 	createHeadcountPlan,
 	submitHeadcountPlan,
 } from "../src/workforce-planning/headcount-plan";
+import { addHeadcountPlanLine } from "../src/workforce-planning/headcount-plan-line";
 import {
 	getHeadcountAvailability,
 	listHeadcountReservations,
@@ -164,7 +162,9 @@ async function openRequisitionPipeline(
 	return { ok: true as const, data: requisition };
 }
 
-function defineWorkforcePlanningParitySuite(adapter: WorkforceStoreAdapter): void {
+function defineWorkforcePlanningParitySuite(
+	adapter: WorkforceStoreAdapter,
+): void {
 	const suffix = uniqueSuffix(adapter);
 	const ORG = `org-hr-wfp-parity-${suffix}`;
 	const ACTOR = `user-hr-wfp-parity-${suffix}`;
@@ -220,7 +220,9 @@ function defineWorkforcePlanningParitySuite(adapter: WorkforceStoreAdapter): voi
 		);
 		expect(availabilityAfterReserve.ok).toBe(true);
 		if (availabilityAfterReserve.ok) {
-			expect(availabilityAfterReserve.data.lines[0]?.availableHeadcount).toBe(0);
+			expect(availabilityAfterReserve.data.lines[0]?.availableHeadcount).toBe(
+				0,
+			);
 		}
 
 		const cancelled = await cancelRequisition(
@@ -260,7 +262,9 @@ function defineWorkforcePlanningParitySuite(adapter: WorkforceStoreAdapter): voi
 		);
 		expect(availabilityAfterRelease.ok).toBe(true);
 		if (availabilityAfterRelease.ok) {
-			expect(availabilityAfterRelease.data.lines[0]?.availableHeadcount).toBe(1);
+			expect(availabilityAfterRelease.data.lines[0]?.availableHeadcount).toBe(
+				1,
+			);
 		}
 	});
 

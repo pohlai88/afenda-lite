@@ -399,9 +399,11 @@ describe("Employee relations case lifecycle", () => {
 		);
 		expect(timeline.ok).toBe(true);
 		if (!timeline.ok) return;
-		expect(timeline.data.events.some((e) => e.eventKind === "evidence_reference_added")).toBe(
-			true,
-		);
+		expect(
+			timeline.data.events.some(
+				(e) => e.eventKind === "evidence_reference_added",
+			),
+		).toBe(true);
 	});
 
 	it("validates interim review date", async () => {

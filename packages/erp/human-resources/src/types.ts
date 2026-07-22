@@ -1,5 +1,6 @@
 import type {
 	HumanResourcesApplicationId,
+	HumanResourcesAssessmentId,
 	HumanResourcesAssignmentId,
 	HumanResourcesBenefitEnrollmentId,
 	HumanResourcesBenefitPlanId,
@@ -7,23 +8,11 @@ import type {
 	HumanResourcesCareerPlanActionId,
 	HumanResourcesCareerPlanId,
 	HumanResourcesCertificationId,
-	HumanResourcesCompetencyAssessmentId,
-	HumanResourcesCompetencyId,
-	HumanResourcesGoalId,
-	HumanResourcesHeadcountPlanId,
-	HumanResourcesHeadcountPlanLineId,
-	HumanResourcesHeadcountReservationId,
-	HumanResourcesImprovementPlanId,
-	HumanResourcesImprovementCheckpointId,
-	HumanResourcesPerformanceCycleId,
-	HumanResourcesPerformanceCycleParticipantId,
-	HumanResourcesGoalProgressId,
-	HumanResourcesReviewId,
-	HumanResourcesReviewParticipantId,
-	HumanResourcesAssessmentId,
 	HumanResourcesClearanceId,
 	HumanResourcesCompensationGradeId,
 	HumanResourcesCompensationReviewId,
+	HumanResourcesCompetencyAssessmentId,
+	HumanResourcesCompetencyId,
 	HumanResourcesCompletionId,
 	HumanResourcesCourseId,
 	HumanResourcesDepartmentId,
@@ -36,6 +25,13 @@ import type {
 	HumanResourcesEmploymentId,
 	HumanResourcesEmploymentMovementId,
 	HumanResourcesExitInterviewId,
+	HumanResourcesGoalId,
+	HumanResourcesGoalProgressId,
+	HumanResourcesHeadcountPlanId,
+	HumanResourcesHeadcountPlanLineId,
+	HumanResourcesHeadcountReservationId,
+	HumanResourcesImprovementCheckpointId,
+	HumanResourcesImprovementPlanId,
 	HumanResourcesInterviewEvaluationId,
 	HumanResourcesInterviewId,
 	HumanResourcesJobCompetencyId,
@@ -52,11 +48,15 @@ import type {
 	HumanResourcesOfferId,
 	HumanResourcesOnboardingCaseId,
 	HumanResourcesOnboardingTaskId,
-	HumanResourcesPositionId,
+	HumanResourcesPerformanceCycleId,
+	HumanResourcesPerformanceCycleParticipantId,
 	HumanResourcesPolicyAcknowledgementId,
+	HumanResourcesPositionId,
 	HumanResourcesProbationReviewId,
 	HumanResourcesReportingLineId,
 	HumanResourcesRequisitionId,
+	HumanResourcesReviewId,
+	HumanResourcesReviewParticipantId,
 	HumanResourcesSalaryBandId,
 	HumanResourcesSessionId,
 	HumanResourcesSuccessionCandidateId,
@@ -95,12 +95,28 @@ import type {
 	CourseStatus,
 	SessionStatus,
 } from "./shared/learning-status";
-import type { PerformanceRatingScale } from "./shared/performance-rating";
 import type {
-	HeadcountEmploymentType,
-	HeadcountPlanStatus,
-	HeadcountReservationStatus,
-} from "./shared/workforce-planning-status";
+	ApprovalDecision,
+	DayPortion,
+	LeaveAdjustmentKind,
+	LeaveAdjustmentStatus,
+	LeaveEntitlementStatus,
+	LeavePolicyStatus,
+	LeaveRequestStatus,
+	LeaveType,
+	LeaveUnit,
+} from "./shared/leave-status";
+import type {
+	ClearanceStatus,
+	LifecycleTaskStatus,
+	MovementKind,
+	OffboardingCaseStatus,
+	OnboardingCaseStatus,
+	ProbationOutcome,
+	ProbationStatus,
+	TerminationStatus,
+} from "./shared/lifecycle-status";
+import type { PerformanceRatingScale } from "./shared/performance-rating";
 import type {
 	PerformanceAssessmentKind,
 	PerformanceCheckpointOutcome,
@@ -112,15 +128,13 @@ import type {
 	PerformanceWeightingModel,
 } from "./shared/performance-status";
 import type {
-	ClearanceStatus,
-	LifecycleTaskStatus,
-	MovementKind,
-	OffboardingCaseStatus,
-	OnboardingCaseStatus,
-	ProbationOutcome,
-	ProbationStatus,
-	TerminationStatus,
-} from "./shared/lifecycle-status";
+	ApplicationStatus,
+	CandidateStatus,
+	InterviewEvaluationResult,
+	InterviewStatus,
+	OfferStatus,
+	RequisitionStatus,
+} from "./shared/recruitment-status";
 import type {
 	CareerPlanActionStatus,
 	CareerPlanStatus,
@@ -138,24 +152,10 @@ import type {
 	TalentProfileStatus,
 } from "./shared/talent-status";
 import type {
-	ApplicationStatus,
-	CandidateStatus,
-	InterviewEvaluationResult,
-	InterviewStatus,
-	OfferStatus,
-	RequisitionStatus,
-} from "./shared/recruitment-status";
-import type {
-	ApprovalDecision,
-	DayPortion,
-	LeaveAdjustmentKind,
-	LeaveAdjustmentStatus,
-	LeaveEntitlementStatus,
-	LeavePolicyStatus,
-	LeaveRequestStatus,
-	LeaveType,
-	LeaveUnit,
-} from "./shared/leave-status";
+	HeadcountEmploymentType,
+	HeadcountPlanStatus,
+	HeadcountReservationStatus,
+} from "./shared/workforce-planning-status";
 
 export type Employee = {
 	id: HumanResourcesEmployeeId;

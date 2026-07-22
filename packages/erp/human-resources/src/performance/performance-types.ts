@@ -6,6 +6,7 @@ import type {
 	HumanResourcesPerformanceImprovementPlanId,
 	HumanResourcesPerformanceReviewId,
 } from "../brands";
+import type { PerformanceRatingScale } from "../shared/performance-rating";
 import type {
 	PerformanceAssessmentKind,
 	PerformanceCheckpointOutcome,
@@ -15,7 +16,6 @@ import type {
 	PerformanceReviewStatus,
 	PerformanceWeightingModel,
 } from "../shared/performance-status";
-import type { PerformanceRatingScale } from "../shared/performance-rating";
 
 export type PerformanceCycle = {
 	id: HumanResourcesPerformanceCycleId;

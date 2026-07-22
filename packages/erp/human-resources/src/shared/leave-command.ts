@@ -22,12 +22,12 @@ import type {
 	HumanResourcesQueryId,
 } from "../module-ids";
 import { parseHumanResourcesInput } from "../parse-input";
-import type { MutationPorts } from "../ports";
 import {
 	HUMAN_RESOURCES_PERMISSION_LEAVE_REQUEST_APPROVE_TEAM,
 	HUMAN_RESOURCES_PERMISSION_LEAVE_REQUEST_BACKDATE,
 	HUMAN_RESOURCES_PERMISSION_LEAVE_REQUEST_SENSITIVE_READ,
 } from "../permissions";
+import type { MutationPorts } from "../ports";
 import type { HumanResourcesStore } from "../store";
 import type { LeavePolicy, LeaveRequest } from "../types";
 import type { WorkCalendarPort } from "../work-calendar";

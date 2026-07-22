@@ -11,6 +11,26 @@ import { describe, expect, it } from "vitest";
 import type { HumanResourcesPermission } from "../src/authorization";
 import { createEmployee } from "../src/core/employee";
 import {
+	HUMAN_RESOURCES_ERROR_CONFLICT,
+	HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+	HUMAN_RESOURCES_ERROR_FORBIDDEN,
+	HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+	HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
+	HUMAN_RESOURCES_ERROR_NOT_FOUND,
+	HUMAN_RESOURCES_ERROR_STALE_VERSION,
+} from "../src/error-codes";
+import {
+	getCertification,
+	issueCertification,
+	listCertifications,
+	revokeCertification,
+} from "../src/learning/certification";
+import {
+	getCompletion,
+	listCompletions,
+	recordCompletion,
+} from "../src/learning/completion";
+import {
 	archiveCourse,
 	createCourse,
 	getCourse,
@@ -32,26 +52,6 @@ import {
 	listSessions,
 	startSession,
 } from "../src/learning/learning-session";
-import {
-	getCompletion,
-	listCompletions,
-	recordCompletion,
-} from "../src/learning/completion";
-import {
-	getCertification,
-	issueCertification,
-	listCertifications,
-	revokeCertification,
-} from "../src/learning/certification";
-import {
-	HUMAN_RESOURCES_ERROR_CONFLICT,
-	HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
-	HUMAN_RESOURCES_ERROR_FORBIDDEN,
-	HUMAN_RESOURCES_ERROR_INVALID_INPUT,
-	HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
-	HUMAN_RESOURCES_ERROR_NOT_FOUND,
-	HUMAN_RESOURCES_ERROR_STALE_VERSION,
-} from "../src/error-codes";
 import {
 	HUMAN_RESOURCES_PERMISSION_CERTIFICATION_MANAGE,
 	HUMAN_RESOURCES_PERMISSION_CODES,

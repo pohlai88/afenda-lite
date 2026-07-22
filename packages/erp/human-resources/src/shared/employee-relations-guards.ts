@@ -42,9 +42,13 @@ export function assertPolicyValidationForAction(input: {
 			input.actionType === "suspension_recommendation") &&
 		!input.policyValidationRecorded
 	) {
-		return fail("BAD_REQUEST", "Policy validation is required for this action", {
-			humanResourcesCode: "human_resources.invalid_input",
-		});
+		return fail(
+			"BAD_REQUEST",
+			"Policy validation is required for this action",
+			{
+				humanResourcesCode: "human_resources.invalid_input",
+			},
+		);
 	}
 	return { ok: true, data: undefined };
 }
@@ -54,9 +58,13 @@ export function assertInterimMeasureDates(input: {
 	reviewOn: string;
 }): Result<void> {
 	if (input.reviewOn < input.startsOn) {
-		return fail("BAD_REQUEST", "Interim review date must be on or after start date", {
-			humanResourcesCode: "human_resources.invalid_input",
-		});
+		return fail(
+			"BAD_REQUEST",
+			"Interim review date must be on or after start date",
+			{
+				humanResourcesCode: "human_resources.invalid_input",
+			},
+		);
 	}
 	return { ok: true, data: undefined };
 }
@@ -65,7 +73,9 @@ export function assertEmployeeCaseStatusAllowsFinding(
 	status: EmployeeCaseStatus,
 ): Result<void> {
 	if (status !== "open" && status !== "investigating") {
-		return invalidState("Finding cannot be recorded in the current case status");
+		return invalidState(
+			"Finding cannot be recorded in the current case status",
+		);
 	}
 	return { ok: true, data: undefined };
 }
@@ -74,7 +84,9 @@ export function assertEmployeeCaseStatusAllowsActionRecommend(
 	status: EmployeeCaseStatus,
 ): Result<void> {
 	if (status !== "finding_recorded" && status !== "action_pending") {
-		return invalidState("Action cannot be recommended in the current case status");
+		return invalidState(
+			"Action cannot be recommended in the current case status",
+		);
 	}
 	return { ok: true, data: undefined };
 }

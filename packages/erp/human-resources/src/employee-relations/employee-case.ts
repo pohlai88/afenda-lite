@@ -23,6 +23,11 @@ import {
 	HUMAN_RESOURCES_QUERY_EMPLOYEE_RELATIONS_HISTORY_BY_EMPLOYEE,
 } from "../module-ids";
 import {
+	runEmployeeRelationsCommand,
+	runEmployeeRelationsQuery,
+} from "../shared/employee-relations-command";
+import { fingerprintEmployeeCaseOpen } from "../shared/fingerprint";
+import {
 	addEmployeeCaseParticipantInputSchema,
 	assignEmployeeCaseOwnerInputSchema,
 	closeEmployeeCaseInputSchema,
@@ -39,11 +44,6 @@ import {
 	reopenEmployeeCaseInputSchema,
 	updateEmployeeCaseClassificationInputSchema,
 } from "./schemas";
-import { fingerprintEmployeeCaseOpen } from "../shared/fingerprint";
-import {
-	runEmployeeRelationsCommand,
-	runEmployeeRelationsQuery,
-} from "../shared/employee-relations-command";
 import type {
 	EmployeeCase,
 	EmployeeCaseListPage,

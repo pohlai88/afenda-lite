@@ -11,6 +11,11 @@ import {
 	type HumanResourcesCommandOptions,
 	resolveCommandDeps,
 } from "../command-options";
+import {
+	HUMAN_RESOURCES_ERROR_FORBIDDEN,
+	HUMAN_RESOURCES_ERROR_UNAUTHORIZED,
+	humanResourcesErrorDetails,
+} from "../error-codes";
 import type {
 	HumanResourcesCommandId,
 	HumanResourcesQueryId,
@@ -23,11 +28,6 @@ import {
 } from "../permissions";
 import type { DocumentReferencePort, MutationPorts } from "../ports";
 import type { HumanResourcesStore } from "../store";
-import {
-	HUMAN_RESOURCES_ERROR_FORBIDDEN,
-	HUMAN_RESOURCES_ERROR_UNAUTHORIZED,
-	humanResourcesErrorDetails,
-} from "../error-codes";
 
 type ActorScoped = {
 	organizationId: string;

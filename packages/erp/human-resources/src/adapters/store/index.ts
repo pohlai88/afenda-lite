@@ -1,26 +1,26 @@
-import type { HumanResourcesCoreStore } from "./core";
-import type { HumanResourcesRecruitmentStore } from "./recruitment";
-import type { HumanResourcesLifecycleStore } from "./lifecycle";
 import type { HumanResourcesCompensationStore } from "./compensation";
+import type { HumanResourcesComplianceStore } from "./compliance";
+import type { HumanResourcesCoreStore } from "./core";
+import type { HumanResourcesEmployeeRelationsStore } from "./employee-relations";
 import type { HumanResourcesLearningStore } from "./learning";
 import type { HumanResourcesLeaveStore } from "./leave";
-import type { HumanResourcesComplianceStore } from "./compliance";
+import type { HumanResourcesLifecycleStore } from "./lifecycle";
 import type { HumanResourcesPerformanceStore } from "./performance";
-import type { HumanResourcesEmployeeRelationsStore } from "./employee-relations";
-import type { HumanResourcesWorkforcePlanningStore } from "./workforce-planning";
+import type { HumanResourcesRecruitmentStore } from "./recruitment";
 import type { HumanResourcesTalentStore } from "./talent";
+import type { HumanResourcesWorkforcePlanningStore } from "./workforce-planning";
 
-export * from "./core";
-export * from "./recruitment";
-export * from "./lifecycle";
 export * from "./compensation";
+export * from "./compliance";
+export * from "./core";
+export * from "./employee-relations";
 export * from "./learning";
 export * from "./leave";
-export * from "./compliance";
+export * from "./lifecycle";
 export * from "./performance";
-export * from "./employee-relations";
-export * from "./workforce-planning";
+export * from "./recruitment";
 export * from "./talent";
+export * from "./workforce-planning";
 
 /**
  * Complete Human Resources persistence contract.
@@ -33,8 +33,7 @@ export * from "./talent";
  * Existing adapters may continue to implement this aggregate type. New domain-specific
  * adapters and tests should depend on the smallest store slice they actually use.
  */
-export type HumanResourcesStore =
-	HumanResourcesCoreStore &
+export type HumanResourcesStore = HumanResourcesCoreStore &
 	HumanResourcesRecruitmentStore &
 	HumanResourcesLifecycleStore &
 	HumanResourcesCompensationStore &

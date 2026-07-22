@@ -6,6 +6,18 @@ import { resolveDatabaseUrlForTests } from "@afenda/testing/require-database-for
 import { afterAll, describe, expect, it } from "vitest";
 
 import { createEmployee } from "../src/core/employee";
+import { HUMAN_RESOURCES_ERROR_CONFLICT } from "../src/error-codes";
+import {
+	getCertification,
+	issueCertification,
+	listCertifications,
+	revokeCertification,
+} from "../src/learning/certification";
+import {
+	getCompletion,
+	listCompletions,
+	recordCompletion,
+} from "../src/learning/completion";
 import {
 	archiveCourse,
 	createCourse,
@@ -28,18 +40,6 @@ import {
 	listSessions,
 	startSession,
 } from "../src/learning/learning-session";
-import {
-	getCompletion,
-	listCompletions,
-	recordCompletion,
-} from "../src/learning/completion";
-import {
-	getCertification,
-	issueCertification,
-	listCertifications,
-	revokeCertification,
-} from "../src/learning/certification";
-import { HUMAN_RESOURCES_ERROR_CONFLICT } from "../src/error-codes";
 import { cleanupHumanResourcesNeonOrgs } from "./helpers/neon-cleanup";
 import { humanResourcesCodeFromResult } from "./helpers/result-details";
 import {

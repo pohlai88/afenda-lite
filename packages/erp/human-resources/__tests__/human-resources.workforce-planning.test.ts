@@ -28,15 +28,15 @@ import {
 	submitRequisition,
 } from "../src/recruitment/requisition";
 import {
-	addHeadcountPlanLine,
-	updateHeadcountPlanLine,
-} from "../src/workforce-planning/headcount-plan-line";
-import {
 	approveHeadcountPlan,
 	createHeadcountPlan,
 	submitHeadcountPlan,
 	updateHeadcountPlan,
 } from "../src/workforce-planning/headcount-plan";
+import {
+	addHeadcountPlanLine,
+	updateHeadcountPlanLine,
+} from "../src/workforce-planning/headcount-plan-line";
 import {
 	getHeadcountAvailability,
 	getRecruitmentHeadcountHandoff,

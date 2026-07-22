@@ -1,6 +1,4 @@
-import {
-	randomUUID,
-} from "node:crypto";
+import { randomUUID } from "node:crypto";
 import {
 	and,
 	db,
@@ -14,11 +12,7 @@ import {
 	runNeonHttpTransaction,
 	sql,
 } from "@afenda/db";
-import {
-	fail,
-	ok,
-	type Result,
-} from "@afenda/errors/result";
+import { fail, ok, type Result } from "@afenda/errors/result";
 import {
 	HUMAN_RESOURCES_EMPLOYEE_CREATED_EVENT,
 	HUMAN_RESOURCES_EMPLOYEE_TERMINATED_EVENT,
@@ -44,12 +38,8 @@ import {
 	HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
 	humanResourcesErrorDetails,
 } from "../../error-codes";
-import type {
-	MutationPorts,
-} from "../../ports";
-import {
-	missAfterOptimisticUpdate,
-} from "../../shared/domain-guards";
+import type { MutationPorts } from "../../ports";
+import { missAfterOptimisticUpdate } from "../../shared/domain-guards";
 import {
 	assertValidDateRange,
 	employmentStatusSchema,
@@ -242,10 +232,7 @@ function eventPayloadJson(value: Record<string, unknown>): string {
 	return JSON.stringify(value);
 }
 
-type DrizzleCoreHost = Pick<
-	HumanResourcesStore,
-	| "getPositionById"
->;
+type DrizzleCoreHost = Pick<HumanResourcesStore, "getPositionById">;
 
 export type DrizzleCoreMethods = Pick<
 	HumanResourcesStore,
@@ -333,7 +320,7 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 	async createEmployee(
 		record: EmployeeCreateRecord,
 		_ports: MutationPorts,
-		meta: { correlationId: string; },
+		meta: { correlationId: string },
 	): Promise<Result<Employee>> {
 		const entityId = randomUUID();
 		const brandedId = parseHumanResourcesEmployeeId(entityId);
@@ -433,7 +420,7 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 			actorUserId: string;
 		},
 		_ports: MutationPorts,
-		meta: { correlationId: string; },
+		meta: { correlationId: string },
 	): Promise<Result<Employee>> {
 		const auditId = randomUUID();
 		const nextVersion = input.expectedVersion + 1;
@@ -621,7 +608,7 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 	async createEmployment(
 		record: EmploymentCreateRecord,
 		_ports: MutationPorts,
-		meta: { correlationId: string; },
+		meta: { correlationId: string },
 	): Promise<Result<Employment>> {
 		const dateCheck = assertValidDateRange(record.startsOn, record.endsOn);
 		if (!dateCheck.ok) {
@@ -768,7 +755,7 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 			actorUserId: string;
 		},
 		_ports: MutationPorts,
-		meta: { correlationId: string; },
+		meta: { correlationId: string },
 	): Promise<Result<Employment>> {
 		const auditId = randomUUID();
 		const eventId = randomUUID();
@@ -957,7 +944,7 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 	async createEmploymentContract(
 		record: EmploymentContractCreateRecord,
 		_ports: MutationPorts,
-		meta: { correlationId: string; },
+		meta: { correlationId: string },
 	): Promise<Result<EmploymentContract>> {
 		const dateCheck = assertValidDateRange(record.startsOn, record.endsOn);
 		if (!dateCheck.ok) {
@@ -1147,7 +1134,7 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 	async createAssignment(
 		record: AssignmentCreateRecord,
 		_ports: MutationPorts,
-		meta: { correlationId: string; },
+		meta: { correlationId: string },
 	): Promise<Result<WorkAssignment>> {
 		const dateCheck = assertValidDateRange(record.startsOn, record.endsOn);
 		if (!dateCheck.ok) {
@@ -1303,7 +1290,7 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 			actorUserId: string;
 		},
 		_ports: MutationPorts,
-		meta: { correlationId: string; },
+		meta: { correlationId: string },
 	): Promise<Result<WorkAssignment>> {
 		const existing = await this.getAssignmentById({
 			organizationId: input.organizationId,

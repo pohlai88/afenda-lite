@@ -14,6 +14,9 @@ import {
 import { fail, ok, type Result } from "@afenda/errors/result";
 
 import {
+	type HumanResourcesHeadcountPlanId,
+	type HumanResourcesHeadcountPlanLineId,
+	type HumanResourcesHeadcountReservationId,
 	parseHumanResourcesDepartmentId,
 	parseHumanResourcesHeadcountPlanId,
 	parseHumanResourcesHeadcountPlanLineId,
@@ -21,9 +24,6 @@ import {
 	parseHumanResourcesJobId,
 	parseHumanResourcesPositionId,
 	parseHumanResourcesRequisitionId,
-	type HumanResourcesHeadcountPlanId,
-	type HumanResourcesHeadcountPlanLineId,
-	type HumanResourcesHeadcountReservationId,
 } from "../../brands";
 import { HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE } from "../../error-codes";
 import { assertExpectedVersion } from "../../shared/concurrency";
@@ -44,10 +44,10 @@ import {
 	assertValidHeadcountPeriod,
 } from "../../shared/workforce-planning-guards";
 import {
+	type HeadcountReservationStatus,
 	headcountEmploymentTypeSchema,
 	headcountPlanStatusSchema,
 	headcountReservationStatusSchema,
-	type HeadcountReservationStatus,
 } from "../../shared/workforce-planning-status";
 import type { HumanResourcesStore } from "../../store";
 import type {
@@ -248,7 +248,10 @@ function mapHeadcountPlanLine(
 		.nullable()
 		.safeParse(row.employmentType);
 	if (!employmentType.success) {
-		return fail("INTERNAL_ERROR", "Invalid headcount plan line employment type");
+		return fail(
+			"INTERNAL_ERROR",
+			"Invalid headcount plan line employment type",
+		);
 	}
 	return ok({
 		id: id.data,
@@ -300,7 +303,10 @@ function mapHeadcountPlanLineSql(
 		.nullable()
 		.safeParse(row.employment_type);
 	if (!employmentType.success) {
-		return fail("INTERNAL_ERROR", "Invalid headcount plan line employment type");
+		return fail(
+			"INTERNAL_ERROR",
+			"Invalid headcount plan line employment type",
+		);
 	}
 	return ok({
 		id: id.data,
@@ -474,7 +480,8 @@ async function transitionHeadcountReservationStatus(
 				reservationId: input.reservationId,
 			});
 			if (!again.ok) return again;
-			if (again.data === null) return notFound("Headcount reservation not found");
+			if (again.data === null)
+				return notFound("Headcount reservation not found");
 			if (again.data.status !== "active") {
 				return invalidState(
 					`Cannot transition headcount reservation from ${again.data.status} to ${nextStatus}`,
@@ -756,7 +763,7 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 		const auditId = randomUUID();
 		const supersedeAuditId = randomUUID();
 		const rejectionReason =
-			input.status === "rejected" ? input.rejectionReason ?? null : null;
+			input.status === "rejected" ? (input.rejectionReason ?? null) : null;
 
 		try {
 			const [rows] = await runNeonHttpTransaction<[HeadcountPlanSqlRow[]]>(
@@ -1266,9 +1273,8 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction<[{ id: string }[]]>(
-				(sql) => [
-					sql`
+			const [rows] = await runNeonHttpTransaction<[{ id: string }[]]>((sql) => [
+				sql`
 						WITH mutated AS (
 							DELETE FROM hr_headcount_plan_line l
 							USING hr_headcount_plan p
@@ -1292,8 +1298,7 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 						)
 						SELECT mutated.id FROM mutated JOIN audited ON true
 					`,
-				],
-			);
+			]);
 			const row = rows[0];
 			if (!row) {
 				const again = await this.getHeadcountPlanLineById({
@@ -1394,12 +1399,11 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 	},
 
 	async reserveHeadcount(record, ports, meta) {
-		const existingIdempotent = await this.findHeadcountReservationByIdempotencyKey(
-			{
+		const existingIdempotent =
+			await this.findHeadcountReservationByIdempotencyKey({
 				organizationId: record.organizationId,
 				idempotencyKey: record.createIdempotencyKey,
-			},
-		);
+			});
 		if (!existingIdempotent.ok) return existingIdempotent;
 		if (existingIdempotent.data !== null) {
 			if (
@@ -1440,12 +1444,11 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 			return invalidState("Headcount reservations require an approved plan");
 		}
 
-		const existingReservations = await this.listHeadcountReservationsByPlanLineId(
-			{
+		const existingReservations =
+			await this.listHeadcountReservationsByPlanLineId({
 				organizationId: record.organizationId,
 				planLineId: record.planLineId,
-			},
-		);
+			});
 		if (!existingReservations.ok) return existingReservations;
 		const availability = computeLineAvailability({
 			line: planLine,
@@ -1464,9 +1467,10 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction<[HeadcountReservationSqlRow[]]>(
-				(sql) => [
-					sql`
+			const [rows] = await runNeonHttpTransaction<
+				[HeadcountReservationSqlRow[]]
+			>((sql) => [
+				sql`
 						WITH mutated AS (
 							INSERT INTO hr_headcount_reservation (
 								id, organization_id, plan_id, plan_line_id, requisition_id,
@@ -1493,8 +1497,7 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 						)
 						SELECT mutated.* FROM mutated JOIN audited ON true
 					`,
-				],
-			);
+			]);
 			const row = rows[0];
 			if (!row) return conflict("Unable to reserve headcount");
 			return mapHeadcountReservationSql(row);
@@ -1517,7 +1520,9 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 			}
 			if (isPostgresUniqueViolation(error)) {
 				const message = uniqueConstraintMessage(error);
-				if (/hr_headcount_reservation_org_requisition_active_uidx/i.test(message)) {
+				if (
+					/hr_headcount_reservation_org_requisition_active_uidx/i.test(message)
+				) {
 					return conflict(
 						"Requisition already has an active headcount reservation",
 					);
@@ -1528,28 +1533,14 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 	},
 
 	async releaseHeadcountReservation(input, _ports, meta) {
-		return transitionHeadcountReservationStatus(
-			this,
-			input,
-			"released",
-			meta,
-		);
+		return transitionHeadcountReservationStatus(this, input, "released", meta);
 	},
 
 	async consumeHeadcountReservation(input, _ports, meta) {
-		return transitionHeadcountReservationStatus(
-			this,
-			input,
-			"consumed",
-			meta,
-		);
+		return transitionHeadcountReservationStatus(this, input, "consumed", meta);
 	},
 
-	async releaseActiveHeadcountReservationsForRequisition(
-		input,
-		ports,
-		meta,
-	) {
+	async releaseActiveHeadcountReservationsForRequisition(input, ports, meta) {
 		try {
 			const rows = await db
 				.select()
@@ -1585,11 +1576,7 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 		}
 	},
 
-	async consumeActiveHeadcountReservationForRequisition(
-		input,
-		ports,
-		meta,
-	) {
+	async consumeActiveHeadcountReservationForRequisition(input, ports, meta) {
 		const active = await this.findActiveHeadcountReservationForRequisition({
 			organizationId: input.organizationId,
 			requisitionId: input.requisitionId,
@@ -1755,7 +1742,9 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 			organizationId: input.organizationId,
 			requisitionId: input.requisitionId,
 			approvedPlan: plan.data,
-			availability: availability.data ? availability.data.lines[0] ?? null : null,
+			availability: availability.data
+				? (availability.data.lines[0] ?? null)
+				: null,
 			activeReservation: active.data,
 		});
 	},

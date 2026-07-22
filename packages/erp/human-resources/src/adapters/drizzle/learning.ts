@@ -525,12 +525,16 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 
 	async findCourseByIdempotencyKey(input) {
 		try {
-			const rows = await db.select().from(hrLearningCourse).where(
-				and(
-					eq(hrLearningCourse.organizationId, input.organizationId),
-					eq(hrLearningCourse.createIdempotencyKey, input.idempotencyKey),
-				),
-			).limit(1);
+			const rows = await db
+				.select()
+				.from(hrLearningCourse)
+				.where(
+					and(
+						eq(hrLearningCourse.organizationId, input.organizationId),
+						eq(hrLearningCourse.createIdempotencyKey, input.idempotencyKey),
+					),
+				)
+				.limit(1);
 			const row = rows[0];
 			if (!row) return ok(null);
 			const course = mapCourse(row);
@@ -547,7 +551,10 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 				createRequestFingerprint: row.createRequestFingerprint,
 			});
 		} catch (error) {
-			return mapPersistenceFailure(error, "Failed to find course by idempotency key");
+			return mapPersistenceFailure(
+				error,
+				"Failed to find course by idempotency key",
+			);
 		}
 	},
 
@@ -570,8 +577,6 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 		const brandedId = parseHumanResourcesCourseId(id);
 		if (!brandedId.ok) return brandedId;
 		const auditId = randomUUID();
-
-
 
 		try {
 			const [rows] = await runNeonHttpTransaction<[CourseSqlRow[]]>(
@@ -624,7 +629,10 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 				});
 				if (!replay.ok) return replay;
 				if (replay.data !== null) {
-					if (replay.data.createRequestFingerprint === record.createRequestFingerprint) {
+					if (
+						replay.data.createRequestFingerprint ===
+						record.createRequestFingerprint
+					) {
 						return ok(replay.data.course);
 					}
 					return conflict("Idempotency key already used with different data");
@@ -933,22 +941,39 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 
 	async findSessionByIdempotencyKey(input) {
 		try {
-			const rows = await db.select().from(hrLearningSession).where(
-				and(
-					eq(hrLearningSession.organizationId, input.organizationId),
-					eq(hrLearningSession.createIdempotencyKey, input.idempotencyKey),
-				),
-			).limit(1);
+			const rows = await db
+				.select()
+				.from(hrLearningSession)
+				.where(
+					and(
+						eq(hrLearningSession.organizationId, input.organizationId),
+						eq(hrLearningSession.createIdempotencyKey, input.idempotencyKey),
+					),
+				)
+				.limit(1);
 			const row = rows[0];
 			if (!row) return ok(null);
 			const session = mapSession(row);
 			if (!session.ok) return session;
-			if (row.createIdempotencyKey === null || row.createRequestFingerprint === null) {
-				return fail("INTERNAL_ERROR", "Session idempotency metadata is missing");
+			if (
+				row.createIdempotencyKey === null ||
+				row.createRequestFingerprint === null
+			) {
+				return fail(
+					"INTERNAL_ERROR",
+					"Session idempotency metadata is missing",
+				);
 			}
-			return ok({ session: session.data, createIdempotencyKey: row.createIdempotencyKey, createRequestFingerprint: row.createRequestFingerprint });
+			return ok({
+				session: session.data,
+				createIdempotencyKey: row.createIdempotencyKey,
+				createRequestFingerprint: row.createRequestFingerprint,
+			});
 		} catch (error) {
-			return mapPersistenceFailure(error, "Failed to find session by idempotency key");
+			return mapPersistenceFailure(
+				error,
+				"Failed to find session by idempotency key",
+			);
 		}
 	},
 
@@ -959,7 +984,10 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 		});
 		if (!existing.ok) return existing;
 		if (existing.data !== null) {
-			if (existing.data.createRequestFingerprint === record.createRequestFingerprint) {
+			if (
+				existing.data.createRequestFingerprint ===
+				record.createRequestFingerprint
+			) {
 				return ok(existing.data.session);
 			}
 			return conflict("Idempotency key already used with different data");
@@ -989,8 +1017,6 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 		const brandedId = parseHumanResourcesSessionId(id);
 		if (!brandedId.ok) return brandedId;
 		const auditId = randomUUID();
-
-
 
 		try {
 			const [rows] = await runNeonHttpTransaction<[SessionSqlRow[]]>(
@@ -1048,7 +1074,10 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 				});
 				if (!replay.ok) return replay;
 				if (replay.data !== null) {
-					if (replay.data.createRequestFingerprint === record.createRequestFingerprint) {
+					if (
+						replay.data.createRequestFingerprint ===
+						record.createRequestFingerprint
+					) {
 						return ok(replay.data.session);
 					}
 					return conflict("Idempotency key already used with different data");
@@ -1341,22 +1370,39 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 
 	async findLearningAssignmentByIdempotencyKey(input) {
 		try {
-			const rows = await db.select().from(hrLearningAssignment).where(
-				and(
-					eq(hrLearningAssignment.organizationId, input.organizationId),
-					eq(hrLearningAssignment.createIdempotencyKey, input.idempotencyKey),
-				),
-			).limit(1);
+			const rows = await db
+				.select()
+				.from(hrLearningAssignment)
+				.where(
+					and(
+						eq(hrLearningAssignment.organizationId, input.organizationId),
+						eq(hrLearningAssignment.createIdempotencyKey, input.idempotencyKey),
+					),
+				)
+				.limit(1);
 			const row = rows[0];
 			if (!row) return ok(null);
 			const assignment = mapLearningAssignment(row);
 			if (!assignment.ok) return assignment;
-			if (row.createIdempotencyKey === null || row.createRequestFingerprint === null) {
-				return fail("INTERNAL_ERROR", "Assignment idempotency metadata is missing");
+			if (
+				row.createIdempotencyKey === null ||
+				row.createRequestFingerprint === null
+			) {
+				return fail(
+					"INTERNAL_ERROR",
+					"Assignment idempotency metadata is missing",
+				);
 			}
-			return ok({ assignment: assignment.data, createIdempotencyKey: row.createIdempotencyKey, createRequestFingerprint: row.createRequestFingerprint });
+			return ok({
+				assignment: assignment.data,
+				createIdempotencyKey: row.createIdempotencyKey,
+				createRequestFingerprint: row.createRequestFingerprint,
+			});
 		} catch (error) {
-			return mapPersistenceFailure(error, "Failed to find assignment by idempotency key");
+			return mapPersistenceFailure(
+				error,
+				"Failed to find assignment by idempotency key",
+			);
 		}
 	},
 
@@ -1367,7 +1413,10 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 		});
 		if (!existing.ok) return existing;
 		if (existing.data !== null) {
-			if (existing.data.createRequestFingerprint === record.createRequestFingerprint) {
+			if (
+				existing.data.createRequestFingerprint ===
+				record.createRequestFingerprint
+			) {
 				return ok(existing.data.assignment);
 			}
 			return conflict("Idempotency key already used with different data");
@@ -1513,14 +1562,19 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 				});
 				if (!replay.ok) return replay;
 				if (replay.data !== null) {
-					if (replay.data.createRequestFingerprint === record.createRequestFingerprint) {
+					if (
+						replay.data.createRequestFingerprint ===
+						record.createRequestFingerprint
+					) {
 						return ok(replay.data.assignment);
 					}
 					return conflict("Idempotency key already used with different data");
 				}
 			}
 			if (isPostgresUniqueViolation(error)) {
-				return conflict("Employee already has an active assignment for this course");
+				return conflict(
+					"Employee already has an active assignment for this course",
+				);
 			}
 			return mapPersistenceFailure(
 				error,
@@ -1807,22 +1861,39 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 
 	async findCompletionByIdempotencyKey(input) {
 		try {
-			const rows = await db.select().from(hrLearningCompletion).where(
-				and(
-					eq(hrLearningCompletion.organizationId, input.organizationId),
-					eq(hrLearningCompletion.createIdempotencyKey, input.idempotencyKey),
-				),
-			).limit(1);
+			const rows = await db
+				.select()
+				.from(hrLearningCompletion)
+				.where(
+					and(
+						eq(hrLearningCompletion.organizationId, input.organizationId),
+						eq(hrLearningCompletion.createIdempotencyKey, input.idempotencyKey),
+					),
+				)
+				.limit(1);
 			const row = rows[0];
 			if (!row) return ok(null);
 			const completion = mapCompletion(row);
 			if (!completion.ok) return completion;
-			if (row.createIdempotencyKey === null || row.createRequestFingerprint === null) {
-				return fail("INTERNAL_ERROR", "Completion idempotency metadata is missing");
+			if (
+				row.createIdempotencyKey === null ||
+				row.createRequestFingerprint === null
+			) {
+				return fail(
+					"INTERNAL_ERROR",
+					"Completion idempotency metadata is missing",
+				);
 			}
-			return ok({ completion: completion.data, createIdempotencyKey: row.createIdempotencyKey, createRequestFingerprint: row.createRequestFingerprint });
+			return ok({
+				completion: completion.data,
+				createIdempotencyKey: row.createIdempotencyKey,
+				createRequestFingerprint: row.createRequestFingerprint,
+			});
 		} catch (error) {
-			return mapPersistenceFailure(error, "Failed to find completion by idempotency key");
+			return mapPersistenceFailure(
+				error,
+				"Failed to find completion by idempotency key",
+			);
 		}
 	},
 
@@ -2044,7 +2115,10 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 				});
 				if (!replay.ok) return replay;
 				if (replay.data !== null) {
-					if (replay.data.createRequestFingerprint === record.createRequestFingerprint) {
+					if (
+						replay.data.createRequestFingerprint ===
+						record.createRequestFingerprint
+					) {
 						return ok(replay.data.completion);
 					}
 					return conflict("Idempotency key already used with different data");
@@ -2119,22 +2193,42 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 
 	async findCertificationByIdempotencyKey(input) {
 		try {
-			const rows = await db.select().from(hrEmployeeCertification).where(
-				and(
-					eq(hrEmployeeCertification.organizationId, input.organizationId),
-					eq(hrEmployeeCertification.createIdempotencyKey, input.idempotencyKey),
-				),
-			).limit(1);
+			const rows = await db
+				.select()
+				.from(hrEmployeeCertification)
+				.where(
+					and(
+						eq(hrEmployeeCertification.organizationId, input.organizationId),
+						eq(
+							hrEmployeeCertification.createIdempotencyKey,
+							input.idempotencyKey,
+						),
+					),
+				)
+				.limit(1);
 			const row = rows[0];
 			if (!row) return ok(null);
 			const certification = mapCertification(row);
 			if (!certification.ok) return certification;
-			if (row.createIdempotencyKey === null || row.createRequestFingerprint === null) {
-				return fail("INTERNAL_ERROR", "Certification idempotency metadata is missing");
+			if (
+				row.createIdempotencyKey === null ||
+				row.createRequestFingerprint === null
+			) {
+				return fail(
+					"INTERNAL_ERROR",
+					"Certification idempotency metadata is missing",
+				);
 			}
-			return ok({ certification: certification.data, createIdempotencyKey: row.createIdempotencyKey, createRequestFingerprint: row.createRequestFingerprint });
+			return ok({
+				certification: certification.data,
+				createIdempotencyKey: row.createIdempotencyKey,
+				createRequestFingerprint: row.createRequestFingerprint,
+			});
 		} catch (error) {
-			return mapPersistenceFailure(error, "Failed to find certification by idempotency key");
+			return mapPersistenceFailure(
+				error,
+				"Failed to find certification by idempotency key",
+			);
 		}
 	},
 
@@ -2145,7 +2239,10 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 		});
 		if (!existing.ok) return existing;
 		if (existing.data !== null) {
-			if (existing.data.createRequestFingerprint === record.createRequestFingerprint) {
+			if (
+				existing.data.createRequestFingerprint ===
+				record.createRequestFingerprint
+			) {
 				return ok(existing.data.certification);
 			}
 			return conflict("Idempotency key already used with different data");
@@ -2198,8 +2295,6 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 		const brandedId = parseHumanResourcesCertificationId(id);
 		if (!brandedId.ok) return brandedId;
 		const auditId = randomUUID();
-
-
 
 		try {
 			const [rows] = await runNeonHttpTransaction<[CertificationSqlRow[]]>(
@@ -2269,7 +2364,10 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 				});
 				if (!replay.ok) return replay;
 				if (replay.data !== null) {
-					if (replay.data.createRequestFingerprint === record.createRequestFingerprint) {
+					if (
+						replay.data.createRequestFingerprint ===
+						record.createRequestFingerprint
+					) {
 						return ok(replay.data.certification);
 					}
 					return conflict("Idempotency key already used with different data");

@@ -1,10 +1,14 @@
 import type { HumanResourcesAuthorizationPort } from "./authorization";
 import { createProductionCurrencyLookup } from "./currency-lookup";
-import type { CurrencyLookupPort, DocumentReferencePort, MutationPorts } from "./ports";
+import { createDefaultDocumentReferencePort } from "./document-reference";
+import type {
+	CurrencyLookupPort,
+	DocumentReferencePort,
+	MutationPorts,
+} from "./ports";
 import { createProductionMutationPorts } from "./production-ports";
 import { resolveHumanResourcesStore } from "./resolve-store";
 import type { HumanResourcesStore } from "./store";
-import { createDefaultDocumentReferencePort } from "./document-reference";
 import {
 	createMemoryWorkCalendar,
 	type WorkCalendarPort,

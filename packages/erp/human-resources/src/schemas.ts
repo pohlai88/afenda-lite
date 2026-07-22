@@ -22,9 +22,11 @@ import {
 	humanResourcesEmploymentConfirmationIdSchema,
 	humanResourcesEmploymentContractIdSchema,
 	humanResourcesEmploymentIdSchema,
+	humanResourcesGoalIdSchema,
 	humanResourcesHeadcountPlanIdSchema,
 	humanResourcesHeadcountPlanLineIdSchema,
 	humanResourcesHeadcountReservationIdSchema,
+	humanResourcesImprovementPlanIdSchema,
 	humanResourcesInterviewIdSchema,
 	humanResourcesJobCompetencyIdSchema,
 	humanResourcesJobIdSchema,
@@ -38,10 +40,13 @@ import {
 	humanResourcesOfferIdSchema,
 	humanResourcesOnboardingCaseIdSchema,
 	humanResourcesOnboardingTaskIdSchema,
+	humanResourcesPerformanceCycleIdSchema,
+	humanResourcesPerformanceCycleParticipantIdSchema,
 	humanResourcesPositionIdSchema,
 	humanResourcesProbationReviewIdSchema,
 	humanResourcesReportingLineIdSchema,
 	humanResourcesRequisitionIdSchema,
+	humanResourcesReviewIdSchema,
 	humanResourcesSalaryBandIdSchema,
 	humanResourcesSessionIdSchema,
 	humanResourcesSuccessionCandidateIdSchema,
@@ -51,11 +56,6 @@ import {
 	humanResourcesTalentProfileAssessmentIdSchema,
 	humanResourcesTalentProfileIdSchema,
 	humanResourcesTerminationIdSchema,
-	humanResourcesGoalIdSchema,
-	humanResourcesImprovementPlanIdSchema,
-	humanResourcesPerformanceCycleIdSchema,
-	humanResourcesPerformanceCycleParticipantIdSchema,
-	humanResourcesReviewIdSchema,
 } from "./brands";
 import {
 	departmentStatusSchema,
@@ -71,6 +71,13 @@ import {
 	sessionStatusSchema,
 } from "./shared/learning-status";
 import {
+	dayPortionSchema,
+	leavePolicyStatusSchema,
+	leaveRequestStatusSchema,
+	leaveTypeSchema,
+	leaveUnitSchema,
+} from "./shared/leave-status";
+import {
 	lifecycleTaskStatusSchema,
 	probationOutcomeSchema,
 } from "./shared/lifecycle-status";
@@ -80,6 +87,7 @@ import {
 	ORGANIZATION_TREE_HARD_MAX_DEPTH,
 	ORGANIZATION_TREE_HARD_MAX_NODES,
 } from "./shared/organization-guards";
+import { performanceRatingScaleSchema } from "./shared/performance-rating";
 import {
 	performanceCycleStatusSchema,
 	performanceGoalStatusSchema,
@@ -87,7 +95,6 @@ import {
 	performanceReviewStatusSchema,
 	performanceWeightingModelSchema,
 } from "./shared/performance-status";
-import { performanceRatingScaleSchema } from "./shared/performance-rating";
 import {
 	applicationStatusSchema,
 	candidateStatusSchema,
@@ -95,17 +102,6 @@ import {
 	offerStatusSchema,
 	requisitionStatusSchema,
 } from "./shared/recruitment-status";
-import {
-	dayPortionSchema,
-	leavePolicyStatusSchema,
-	leaveRequestStatusSchema,
-	leaveTypeSchema,
-	leaveUnitSchema,
-} from "./shared/leave-status";
-import {
-	headcountEmploymentTypeSchema,
-	headcountPlanStatusSchema,
-} from "./shared/workforce-planning-status";
 import {
 	careerPlanStatusSchema,
 	competencyScaleCodeSchema,
@@ -116,6 +112,10 @@ import {
 	talentPoolMemberStatusSchema,
 	talentProfileAssessmentMethodCodeSchema,
 } from "./shared/talent-status";
+import {
+	headcountEmploymentTypeSchema,
+	headcountPlanStatusSchema,
+} from "./shared/workforce-planning-status";
 
 export const humanResourcesOrganizationIdSchema = z.string().trim().min(1);
 export const humanResourcesActorUserIdSchema = z.string().trim().min(1);
@@ -1625,7 +1625,12 @@ export const updateHeadcountPlanInputSchema =
 			planId: humanResourcesHeadcountPlanIdSchema,
 			title: z.string().trim().min(1).max(200).optional(),
 			costEnvelopeAmount: z.string().trim().nullable().optional(),
-			costEnvelopeCurrencyCode: z.string().trim().length(3).nullable().optional(),
+			costEnvelopeCurrencyCode: z
+				.string()
+				.trim()
+				.length(3)
+				.nullable()
+				.optional(),
 			expectedVersion: humanResourcesExpectedVersionSchema,
 		})
 		.strict();
@@ -1658,7 +1663,12 @@ export const updateHeadcountPlanLineInputSchema =
 			plannedFte: headcountFteSchema.optional(),
 			plannedHeadcount: z.number().int().nonnegative().optional(),
 			costEnvelopeAmount: z.string().trim().nullable().optional(),
-			costEnvelopeCurrencyCode: z.string().trim().length(3).nullable().optional(),
+			costEnvelopeCurrencyCode: z
+				.string()
+				.trim()
+				.length(3)
+				.nullable()
+				.optional(),
 			expectedVersion: humanResourcesExpectedVersionSchema,
 		})
 		.strict();
@@ -1724,15 +1734,14 @@ export const getHeadcountPlanByIdInputSchema =
 		})
 		.strict();
 
-export const listHeadcountPlansInputSchema =
-	humanResourcesMutationContextSchema
-		.extend({
-			page: z.number().int().positive().optional(),
-			pageSize: z.number().int().positive().max(100).optional(),
-			status: headcountPlanStatusSchema.optional(),
-			planningScopeKey: z.string().trim().optional(),
-		})
-		.strict();
+export const listHeadcountPlansInputSchema = humanResourcesMutationContextSchema
+	.extend({
+		page: z.number().int().positive().optional(),
+		pageSize: z.number().int().positive().max(100).optional(),
+		status: headcountPlanStatusSchema.optional(),
+		planningScopeKey: z.string().trim().optional(),
+	})
+	.strict();
 
 export const getApprovedHeadcountPlanInputSchema =
 	humanResourcesMutationContextSchema
@@ -1808,7 +1817,10 @@ export const updateLeavePolicyInputSchema = humanResourcesMutationContextSchema
 		allowsPartialDay: z.boolean().optional(),
 		effectiveTo: isoDateSchema.nullable().optional(),
 		minTenureDays: z.number().int().nonnegative().nullable().optional(),
-		allowedEmploymentStatuses: z.array(employmentStatusSchema).min(1).optional(),
+		allowedEmploymentStatuses: z
+			.array(employmentStatusSchema)
+			.min(1)
+			.optional(),
 		expectedVersion: humanResourcesExpectedVersionSchema,
 	})
 	.strict();
@@ -1905,11 +1917,12 @@ export const adjustLeaveEntitlementInputSchema =
 		})
 		.strict();
 
-export const getLeaveEntitlementInputSchema = humanResourcesMutationContextSchema
-	.extend({
-		entitlementId: humanResourcesLeaveEntitlementIdSchema,
-	})
-	.strict();
+export const getLeaveEntitlementInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			entitlementId: humanResourcesLeaveEntitlementIdSchema,
+		})
+		.strict();
 
 export const listLeaveEntitlementsInputSchema =
 	humanResourcesMutationContextSchema
@@ -1950,14 +1963,15 @@ export const submitLeaveRequestInputSchema = humanResourcesMutationContextSchema
 	})
 	.strict();
 
-export const approveLeaveRequestInputSchema = humanResourcesMutationContextSchema
-	.extend({
-		requestId: humanResourcesLeaveRequestIdSchema,
-		managerEmployeeId: humanResourcesEmployeeIdSchema.optional(),
-		note: z.string().trim().max(2000).nullable().optional(),
-		expectedVersion: humanResourcesExpectedVersionSchema,
-	})
-	.strict();
+export const approveLeaveRequestInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			requestId: humanResourcesLeaveRequestIdSchema,
+			managerEmployeeId: humanResourcesEmployeeIdSchema.optional(),
+			note: z.string().trim().max(2000).nullable().optional(),
+			expectedVersion: humanResourcesExpectedVersionSchema,
+		})
+		.strict();
 
 export const rejectLeaveRequestInputSchema = humanResourcesMutationContextSchema
 	.extend({
@@ -2177,14 +2191,13 @@ export const performanceGoalStatusTransitionInputSchema =
 		})
 		.strict();
 
-export const recordGoalProgressInputSchema =
-	humanResourcesMutationContextSchema
-		.extend({
-			goalId: humanResourcesGoalIdSchema,
-			progressNote: z.string().trim().min(1).max(2000),
-			progressValue: performanceWeightSchema.optional(),
-		})
-		.strict();
+export const recordGoalProgressInputSchema = humanResourcesMutationContextSchema
+	.extend({
+		goalId: humanResourcesGoalIdSchema,
+		progressNote: z.string().trim().min(1).max(2000),
+		progressValue: performanceWeightSchema.optional(),
+	})
+	.strict();
 
 export const getPerformanceGoalByIdInputSchema =
 	humanResourcesMutationContextSchema
@@ -2193,15 +2206,14 @@ export const getPerformanceGoalByIdInputSchema =
 		})
 		.strict();
 
-export const listEmployeeGoalsInputSchema =
-	humanResourcesMutationContextSchema
-		.extend({
-			employeeId: humanResourcesEmployeeIdSchema,
-			page: z.number().int().positive().optional(),
-			pageSize: z.number().int().positive().max(100).optional(),
-			status: performanceGoalStatusSchema.optional(),
-		})
-		.strict();
+export const listEmployeeGoalsInputSchema = humanResourcesMutationContextSchema
+	.extend({
+		employeeId: humanResourcesEmployeeIdSchema,
+		page: z.number().int().positive().optional(),
+		pageSize: z.number().int().positive().max(100).optional(),
+		status: performanceGoalStatusSchema.optional(),
+	})
+	.strict();
 
 export const startPerformanceReviewInputSchema =
 	humanResourcesMutationContextSchema
@@ -2811,7 +2823,13 @@ export const nominateSuccessionCandidateInputSchema =
 			idempotencyKey: humanResourcesIdempotencyKeySchema,
 			successionPlanId: humanResourcesSuccessionPlanIdSchema,
 			employeeId: humanResourcesEmployeeIdSchema.nullable().optional(),
-			externalCandidateRef: z.string().trim().min(1).max(200).nullable().optional(),
+			externalCandidateRef: z
+				.string()
+				.trim()
+				.min(1)
+				.max(200)
+				.nullable()
+				.optional(),
 			nominatorUserId: z.string().trim().min(1),
 			readiness: successionReadinessCodeSchema,
 			readinessEffectiveOn: isoDateSchema,

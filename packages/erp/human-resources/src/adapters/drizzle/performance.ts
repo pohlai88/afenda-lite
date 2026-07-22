@@ -9,7 +9,7 @@ import {
 	hrPerformanceCycle,
 	hrPerformanceCycleParticipant,
 	hrPerformanceGoal,
-	hrPerformanceGoalProgress,
+	type hrPerformanceGoalProgress,
 	hrPerformanceImprovementCheckpoint,
 	hrPerformanceImprovementPlan,
 	hrPerformanceReview,
@@ -27,11 +27,6 @@ import {
 } from "@afenda/events/schemas";
 
 import {
-	humanResourcesAssessmentIdSchema,
-	humanResourcesGoalProgressIdSchema,
-	humanResourcesImprovementCheckpointIdSchema,
-	humanResourcesPerformanceCycleParticipantIdSchema,
-	humanResourcesReviewParticipantIdSchema,
 	type HumanResourcesEmployeeId,
 	type HumanResourcesEmploymentId,
 	type HumanResourcesGoalId,
@@ -39,6 +34,11 @@ import {
 	type HumanResourcesPerformanceCycleId,
 	type HumanResourcesPerformanceCycleParticipantId,
 	type HumanResourcesReviewId,
+	humanResourcesAssessmentIdSchema,
+	humanResourcesGoalProgressIdSchema,
+	humanResourcesImprovementCheckpointIdSchema,
+	humanResourcesPerformanceCycleParticipantIdSchema,
+	humanResourcesReviewParticipantIdSchema,
 	parseHumanResourcesAssessmentId,
 	parseHumanResourcesEmployeeId,
 	parseHumanResourcesEmploymentId,
@@ -77,7 +77,10 @@ import {
 	assertReviewStatusTransition,
 	assertValidCyclePeriod,
 } from "../../shared/performance-guards";
-import { parseRatingScale, validateRatingInScale } from "../../shared/performance-rating";
+import {
+	parseRatingScale,
+	validateRatingInScale,
+} from "../../shared/performance-rating";
 import {
 	isPerformanceCycleOpen,
 	isPerformanceGoalProgressable,
@@ -97,6 +100,7 @@ import {
 	mapPersistenceFailure,
 } from "../../shared/persistence-errors";
 import type {
+	HumanResourcesStore,
 	IdempotentImprovementPlanRecord,
 	IdempotentPerformanceCycleRecord,
 	IdempotentPerformanceGoalRecord,
@@ -104,7 +108,6 @@ import type {
 	PerformanceCycleCreateRecord,
 	PerformanceGoalCreateRecord,
 } from "../../store";
-import type { HumanResourcesStore } from "../../store";
 import type {
 	EmployeePerformanceHistory,
 	PerformanceAssessment,
@@ -337,7 +340,9 @@ function mapCycleSql(row: CycleSqlRow): Result<PerformanceCycle> {
 	if (!ratingScale.ok) return ratingScale;
 	const status = performanceCycleStatusSchema.safeParse(row.status);
 	if (!status.success) return fail("INTERNAL_ERROR", "Invalid cycle status");
-	const weightingModel = performanceWeightingModelSchema.safeParse(row.weighting_model);
+	const weightingModel = performanceWeightingModelSchema.safeParse(
+		row.weighting_model,
+	);
 	if (!weightingModel.success) {
 		return fail("INTERNAL_ERROR", "Invalid weighting model");
 	}
@@ -359,7 +364,9 @@ function mapCycleSql(row: CycleSqlRow): Result<PerformanceCycle> {
 	});
 }
 
-function mapCycle(row: typeof hrPerformanceCycle.$inferSelect): Result<PerformanceCycle> {
+function mapCycle(
+	row: typeof hrPerformanceCycle.$inferSelect,
+): Result<PerformanceCycle> {
 	return mapCycleSql({
 		id: row.id,
 		organization_id: row.organizationId,
@@ -380,7 +387,9 @@ function mapCycle(row: typeof hrPerformanceCycle.$inferSelect): Result<Performan
 	});
 }
 
-function mapParticipantSql(row: ParticipantSqlRow): Result<PerformanceCycleParticipant> {
+function mapParticipantSql(
+	row: ParticipantSqlRow,
+): Result<PerformanceCycleParticipant> {
 	const id = parseHumanResourcesPerformanceCycleParticipantId(row.id);
 	if (!id.ok) return id;
 	const cycleId = parseHumanResourcesPerformanceCycleId(row.cycle_id);
@@ -390,7 +399,8 @@ function mapParticipantSql(row: ParticipantSqlRow): Result<PerformanceCycleParti
 	const employmentId = parseHumanResourcesEmploymentId(row.employment_id);
 	if (!employmentId.ok) return employmentId;
 	const status = performanceCycleParticipantStatusSchema.safeParse(row.status);
-	if (!status.success) return fail("INTERNAL_ERROR", "Invalid participant status");
+	if (!status.success)
+		return fail("INTERNAL_ERROR", "Invalid participant status");
 	return ok({
 		id: id.data,
 		organizationId: row.organization_id,
@@ -456,7 +466,9 @@ function mapGoalSql(row: GoalSqlRow): Result<PerformanceGoal> {
 	});
 }
 
-function mapGoal(row: typeof hrPerformanceGoal.$inferSelect): Result<PerformanceGoal> {
+function mapGoal(
+	row: typeof hrPerformanceGoal.$inferSelect,
+): Result<PerformanceGoal> {
 	return mapGoalSql({
 		id: row.id,
 		organization_id: row.organizationId,
@@ -480,7 +492,9 @@ function mapGoal(row: typeof hrPerformanceGoal.$inferSelect): Result<Performance
 	});
 }
 
-function mapGoalProgressSql(row: GoalProgressSqlRow): Result<PerformanceGoalProgress> {
+function mapGoalProgressSql(
+	row: GoalProgressSqlRow,
+): Result<PerformanceGoalProgress> {
 	const id = parseHumanResourcesGoalProgressId(row.id);
 	if (!id.ok) return id;
 	const goalId = parseHumanResourcesGoalId(row.goal_id);
@@ -542,7 +556,9 @@ function mapReviewSql(row: ReviewSqlRow): Result<PerformanceReview> {
 	});
 }
 
-function mapReview(row: typeof hrPerformanceReview.$inferSelect): Result<PerformanceReview> {
+function mapReview(
+	row: typeof hrPerformanceReview.$inferSelect,
+): Result<PerformanceReview> {
 	return mapReviewSql({
 		id: row.id,
 		organization_id: row.organizationId,
@@ -590,7 +606,9 @@ function mapReviewParticipantSql(
 	});
 }
 
-function mapAssessmentSql(row: AssessmentSqlRow): Result<PerformanceAssessment> {
+function mapAssessmentSql(
+	row: AssessmentSqlRow,
+): Result<PerformanceAssessment> {
 	const id = parseHumanResourcesAssessmentId(row.id);
 	if (!id.ok) return id;
 	const reviewId = parseHumanResourcesReviewId(row.review_id);
@@ -641,10 +659,13 @@ function mapPlanSql(row: PlanSqlRow): Result<PerformanceImprovementPlan> {
 	if (!employeeId.ok) return employeeId;
 	const employmentId = parseHumanResourcesEmploymentId(row.employment_id);
 	if (!employmentId.ok) return employmentId;
-	const managerId = parseHumanResourcesEmployeeId(row.accountable_manager_employee_id);
+	const managerId = parseHumanResourcesEmployeeId(
+		row.accountable_manager_employee_id,
+	);
 	if (!managerId.ok) return managerId;
 	const status = performanceImprovementPlanStatusSchema.safeParse(row.status);
-	if (!status.success) return fail("INTERNAL_ERROR", "Invalid improvement plan status");
+	if (!status.success)
+		return fail("INTERNAL_ERROR", "Invalid improvement plan status");
 	return ok({
 		id: id.data,
 		organizationId: row.organization_id,
@@ -700,7 +721,8 @@ function mapCheckpointSql(
 	const planId = parseHumanResourcesImprovementPlanId(row.plan_id);
 	if (!planId.ok) return planId;
 	const outcome = performanceCheckpointOutcomeSchema.safeParse(row.outcome);
-	if (!outcome.success) return fail("INTERNAL_ERROR", "Invalid checkpoint outcome");
+	if (!outcome.success)
+		return fail("INTERNAL_ERROR", "Invalid checkpoint outcome");
 	return ok({
 		id: id.data,
 		organizationId: row.organization_id,
@@ -760,7 +782,10 @@ async function assertEmployeeEmployment(
 			HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
 		);
 	}
-	const employment = await host.getEmploymentById({ organizationId, employmentId });
+	const employment = await host.getEmploymentById({
+		organizationId,
+		employmentId,
+	});
 	if (!employment.ok || employment.data === null) {
 		return notFound(
 			"Employment not found",
@@ -797,7 +822,9 @@ async function isActiveParticipantDb(
 	}
 }
 
-function newBrandId<T>(schema: { safeParse: (v: string) => { success: boolean; data?: T } }): Result<T> {
+function newBrandId<T>(schema: {
+	safeParse: (v: string) => { success: boolean; data?: T };
+}): Result<T> {
 	const parsed = schema.safeParse(randomUUID());
 	if (!parsed.success || parsed.data === undefined) {
 		return fail(
@@ -826,14 +853,20 @@ async function mutateGoalStatus(
 	});
 	if (!existing.ok) return existing;
 	if (existing.data === null) {
-		return notFound("Performance goal not found", HUMAN_RESOURCES_ERROR_NOT_FOUND);
+		return notFound(
+			"Performance goal not found",
+			HUMAN_RESOURCES_ERROR_NOT_FOUND,
+		);
 	}
 	const versionCheck = assertExpectedVersion(
 		existing.data.version,
 		input.expectedVersion,
 	);
 	if (!versionCheck.ok) return versionCheck;
-	const transition = assertGoalStatusTransition(existing.data.status, nextStatus);
+	const transition = assertGoalStatusTransition(
+		existing.data.status,
+		nextStatus,
+	);
 	if (!transition.ok) return transition;
 
 	const nextVersion = input.expectedVersion + 1;
@@ -871,11 +904,17 @@ async function mutateGoalStatus(
 		]);
 		const row = rows[0];
 		if (!row) {
-			return missAfterOptimisticUpdate({ found: true, entityLabel: "Performance goal" });
+			return missAfterOptimisticUpdate({
+				found: true,
+				entityLabel: "Performance goal",
+			});
 		}
 		return mapGoalSql(row);
 	} catch (error) {
-		return mapPersistenceFailure(error, "Failed to update performance goal status");
+		return mapPersistenceFailure(
+			error,
+			"Failed to update performance goal status",
+		);
 	}
 }
 
@@ -897,12 +936,18 @@ async function mutateReviewStatus(
 	});
 	if (!detail.ok) return detail;
 	if (detail.data === null) {
-		return notFound("Performance review not found", HUMAN_RESOURCES_ERROR_NOT_FOUND);
+		return notFound(
+			"Performance review not found",
+			HUMAN_RESOURCES_ERROR_NOT_FOUND,
+		);
 	}
 	const review = detail.data.review;
 	const immutable = assertReviewNotFinalized(review.status);
 	if (!immutable.ok) return immutable;
-	const versionCheck = assertExpectedVersion(review.version, input.expectedVersion);
+	const versionCheck = assertExpectedVersion(
+		review.version,
+		input.expectedVersion,
+	);
 	if (!versionCheck.ok) return versionCheck;
 	const transition = assertReviewStatusTransition(review.status, nextStatus);
 	if (!transition.ok) return transition;
@@ -942,11 +987,17 @@ async function mutateReviewStatus(
 		]);
 		const row = rows[0];
 		if (!row) {
-			return missAfterOptimisticUpdate({ found: true, entityLabel: "Performance review" });
+			return missAfterOptimisticUpdate({
+				found: true,
+				entityLabel: "Performance review",
+			});
 		}
 		return mapReviewSql(row);
 	} catch (error) {
-		return mapPersistenceFailure(error, "Failed to update performance review status");
+		return mapPersistenceFailure(
+			error,
+			"Failed to update performance review status",
+		);
 	}
 }
 
@@ -967,11 +1018,20 @@ async function mutatePlanStatus(
 	});
 	if (!existing.ok) return existing;
 	if (existing.data === null) {
-		return notFound("Improvement plan not found", HUMAN_RESOURCES_ERROR_NOT_FOUND);
+		return notFound(
+			"Improvement plan not found",
+			HUMAN_RESOURCES_ERROR_NOT_FOUND,
+		);
 	}
-	const versionCheck = assertExpectedVersion(existing.data.version, input.expectedVersion);
+	const versionCheck = assertExpectedVersion(
+		existing.data.version,
+		input.expectedVersion,
+	);
 	if (!versionCheck.ok) return versionCheck;
-	const transition = assertImprovementPlanStatusTransition(existing.data.status, nextStatus);
+	const transition = assertImprovementPlanStatusTransition(
+		existing.data.status,
+		nextStatus,
+	);
 	if (!transition.ok) return transition;
 
 	const nextVersion = input.expectedVersion + 1;
@@ -1009,11 +1069,17 @@ async function mutatePlanStatus(
 		]);
 		const row = rows[0];
 		if (!row) {
-			return missAfterOptimisticUpdate({ found: true, entityLabel: "Improvement plan" });
+			return missAfterOptimisticUpdate({
+				found: true,
+				entityLabel: "Improvement plan",
+			});
 		}
 		return mapPlanSql(row);
 	} catch (error) {
-		return mapPersistenceFailure(error, "Failed to update improvement plan status");
+		return mapPersistenceFailure(
+			error,
+			"Failed to update improvement plan status",
+		);
 	}
 }
 
@@ -1039,12 +1105,18 @@ async function submitAssessment(
 	});
 	if (!detail.ok) return detail;
 	if (detail.data === null) {
-		return notFound("Performance review not found", HUMAN_RESOURCES_ERROR_NOT_FOUND);
+		return notFound(
+			"Performance review not found",
+			HUMAN_RESOURCES_ERROR_NOT_FOUND,
+		);
 	}
 	const review = detail.data.review;
 	const immutable = assertReviewNotFinalized(review.status);
 	if (!immutable.ok) return immutable;
-	const versionCheck = assertExpectedVersion(review.version, input.expectedVersion);
+	const versionCheck = assertExpectedVersion(
+		review.version,
+		input.expectedVersion,
+	);
 	if (!versionCheck.ok) return versionCheck;
 	const transition = assertReviewStatusTransition(review.status, nextStatus);
 	if (!transition.ok) return transition;
@@ -1055,9 +1127,15 @@ async function submitAssessment(
 	});
 	if (!cycle.ok) return cycle;
 	if (cycle.data === null) {
-		return notFound("Performance cycle not found", HUMAN_RESOURCES_ERROR_NOT_FOUND);
+		return notFound(
+			"Performance cycle not found",
+			HUMAN_RESOURCES_ERROR_NOT_FOUND,
+		);
 	}
-	const ratingCheck = validateRatingInScale(input.rating, cycle.data.ratingScale);
+	const ratingCheck = validateRatingInScale(
+		input.rating,
+		cycle.data.ratingScale,
+	);
 	if (!ratingCheck.ok) return ratingCheck;
 
 	const assessment = detail.data.assessments.find((item) => item.kind === kind);
@@ -1122,7 +1200,10 @@ async function submitAssessment(
 		]);
 		const row = rows[0];
 		if (!row) {
-			return missAfterOptimisticUpdate({ found: true, entityLabel: "Performance review" });
+			return missAfterOptimisticUpdate({
+				found: true,
+				entityLabel: "Performance review",
+			});
 		}
 		return mapReviewSql(row);
 	} catch (error) {
@@ -1130,7 +1211,7 @@ async function submitAssessment(
 	}
 }
 
-const drizzlePerformanceMethods: DrizzlePerformanceMethods &
+export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 	ThisType<PerformanceHost & DrizzlePerformanceMethods> = {
 	async getPerformanceCycleById(input) {
 		try {
@@ -1173,7 +1254,10 @@ const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				createRequestFingerprint: row.createRequestFingerprint,
 			});
 		} catch (error) {
-			return mapPersistenceFailure(error, "Failed to find cycle by idempotency key");
+			return mapPersistenceFailure(
+				error,
+				"Failed to find cycle by idempotency key",
+			);
 		}
 	},
 
@@ -1184,7 +1268,10 @@ const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 		});
 		if (!existing.ok) return existing;
 		if (existing.data !== null) {
-			if (existing.data.createRequestFingerprint === record.createRequestFingerprint) {
+			if (
+				existing.data.createRequestFingerprint ===
+				record.createRequestFingerprint
+			) {
 				return ok(existing.data.cycle);
 			}
 			return conflict("Idempotency key already used with different data");
@@ -1256,7 +1343,10 @@ const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				});
 				if (!replay.ok) return replay;
 				if (replay.data !== null) {
-					if (replay.data.createRequestFingerprint === record.createRequestFingerprint) {
+					if (
+						replay.data.createRequestFingerprint ===
+						record.createRequestFingerprint
+					) {
 						return ok(replay.data.cycle);
 					}
 					return conflict("Idempotency key already used with different data");
@@ -1280,7 +1370,10 @@ const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 		});
 		if (!existing.ok) return existing;
 		if (existing.data === null) {
-			return notFound("Performance cycle not found", HUMAN_RESOURCES_ERROR_NOT_FOUND);
+			return notFound(
+				"Performance cycle not found",
+				HUMAN_RESOURCES_ERROR_NOT_FOUND,
+			);
 		}
 		if (existing.data.status !== "draft") {
 			return invalidState("Performance cycle can only be edited while draft");
@@ -1351,14 +1444,20 @@ const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 		});
 		if (!existing.ok) return existing;
 		if (existing.data === null) {
-			return notFound("Performance cycle not found", HUMAN_RESOURCES_ERROR_NOT_FOUND);
+			return notFound(
+				"Performance cycle not found",
+				HUMAN_RESOURCES_ERROR_NOT_FOUND,
+			);
 		}
 		const versionCheck = assertExpectedVersion(
 			existing.data.version,
 			input.expectedVersion,
 		);
 		if (!versionCheck.ok) return versionCheck;
-		const transition = assertCycleStatusTransition(existing.data.status, "open");
+		const transition = assertCycleStatusTransition(
+			existing.data.status,
+			"open",
+		);
 		if (!transition.ok) return transition;
 
 		const cycle = existing.data;
@@ -1434,14 +1533,20 @@ const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 		});
 		if (!existing.ok) return existing;
 		if (existing.data === null) {
-			return notFound("Performance cycle not found", HUMAN_RESOURCES_ERROR_NOT_FOUND);
+			return notFound(
+				"Performance cycle not found",
+				HUMAN_RESOURCES_ERROR_NOT_FOUND,
+			);
 		}
 		const versionCheck = assertExpectedVersion(
 			existing.data.version,
 			input.expectedVersion,
 		);
 		if (!versionCheck.ok) return versionCheck;
-		const transition = assertCycleStatusTransition(existing.data.status, "closed");
+		const transition = assertCycleStatusTransition(
+			existing.data.status,
+			"closed",
+		);
 		if (!transition.ok) return transition;
 
 		const cycle = existing.data;
@@ -1497,14 +1602,20 @@ const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 		});
 		if (!existing.ok) return existing;
 		if (existing.data === null) {
-			return notFound("Performance cycle not found", HUMAN_RESOURCES_ERROR_NOT_FOUND);
+			return notFound(
+				"Performance cycle not found",
+				HUMAN_RESOURCES_ERROR_NOT_FOUND,
+			);
 		}
 		const versionCheck = assertExpectedVersion(
 			existing.data.version,
 			input.expectedVersion,
 		);
 		if (!versionCheck.ok) return versionCheck;
-		const transition = assertCycleStatusTransition(existing.data.status, "cancelled");
+		const transition = assertCycleStatusTransition(
+			existing.data.status,
+			"cancelled",
+		);
 		if (!transition.ok) return transition;
 
 		const cycle = existing.data;
@@ -1560,7 +1671,10 @@ const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 		});
 		if (!cycle.ok) return cycle;
 		if (cycle.data === null) {
-			return notFound("Performance cycle not found", HUMAN_RESOURCES_ERROR_NOT_FOUND);
+			return notFound(
+				"Performance cycle not found",
+				HUMAN_RESOURCES_ERROR_NOT_FOUND,
+			);
 		}
 		if (!isPerformanceCycleOpen(cycle.data.status)) {
 			return invalidState("Participants can only be added to open cycles");
@@ -1580,7 +1694,10 @@ const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				.from(hrPerformanceCycleParticipant)
 				.where(
 					and(
-						eq(hrPerformanceCycleParticipant.organizationId, input.organizationId),
+						eq(
+							hrPerformanceCycleParticipant.organizationId,
+							input.organizationId,
+						),
 						eq(hrPerformanceCycleParticipant.cycleId, input.cycleId),
 						eq(hrPerformanceCycleParticipant.employmentId, input.employmentId),
 					),
@@ -1594,8 +1711,9 @@ const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				}
 				const nextVersion = existing.version + 1;
 				const auditId = randomUUID();
-				const [rows] = await runNeonHttpTransaction<[ParticipantSqlRow[]]>((sqlTag) => [
-					sqlTag`
+				const [rows] = await runNeonHttpTransaction<[ParticipantSqlRow[]]>(
+					(sqlTag) => [
+						sqlTag`
 						WITH mutated AS (
 							UPDATE hr_performance_cycle_participant
 							SET status = 'active',
@@ -1620,7 +1738,8 @@ const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 						)
 						SELECT mutated.* FROM mutated, audited
 					`,
-				]);
+					],
+				);
 				const row = rows[0];
 				if (!row) {
 					return missAfterOptimisticUpdate({
@@ -1631,12 +1750,15 @@ const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				return mapParticipantSql(row);
 			}
 
-			const idResult = newBrandId(humanResourcesPerformanceCycleParticipantIdSchema);
+			const idResult = newBrandId(
+				humanResourcesPerformanceCycleParticipantIdSchema,
+			);
 			if (!idResult.ok) return idResult;
 			const auditId = randomUUID();
 
-			const [rows] = await runNeonHttpTransaction<[ParticipantSqlRow[]]>((sqlTag) => [
-				sqlTag`
+			const [rows] = await runNeonHttpTransaction<[ParticipantSqlRow[]]>(
+				(sqlTag) => [
+					sqlTag`
 					WITH mutated AS (
 						INSERT INTO hr_performance_cycle_participant (
 							id, organization_id, cycle_id, employee_id, employment_id,
@@ -1661,7 +1783,8 @@ const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 					)
 					SELECT mutated.* FROM mutated, audited
 				`,
-			]);
+				],
+			);
 			const row = rows[0];
 			if (!row) {
 				return conflict("Participant is already active in this cycle");
@@ -1682,7 +1805,10 @@ const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				.from(hrPerformanceCycleParticipant)
 				.where(
 					and(
-						eq(hrPerformanceCycleParticipant.organizationId, input.organizationId),
+						eq(
+							hrPerformanceCycleParticipant.organizationId,
+							input.organizationId,
+						),
 						eq(hrPerformanceCycleParticipant.id, input.participantId),
 						eq(hrPerformanceCycleParticipant.cycleId, input.cycleId),
 					),
@@ -1690,9 +1816,15 @@ const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				.limit(1);
 			const existing = rows[0];
 			if (!existing) {
-				return notFound("Cycle participant not found", HUMAN_RESOURCES_ERROR_NOT_FOUND);
+				return notFound(
+					"Cycle participant not found",
+					HUMAN_RESOURCES_ERROR_NOT_FOUND,
+				);
 			}
-			const versionCheck = assertExpectedVersion(existing.version, input.expectedVersion);
+			const versionCheck = assertExpectedVersion(
+				existing.version,
+				input.expectedVersion,
+			);
 			if (!versionCheck.ok) return versionCheck;
 			if (existing.status === "removed") {
 				return invalidState("Participant is already removed");
@@ -1700,8 +1832,9 @@ const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 
 			const nextVersion = input.expectedVersion + 1;
 			const auditId = randomUUID();
-			const [updated] = await runNeonHttpTransaction<[ParticipantSqlRow[]]>((sqlTag) => [
-				sqlTag`
+			const [updated] = await runNeonHttpTransaction<[ParticipantSqlRow[]]>(
+				(sqlTag) => [
+					sqlTag`
 					WITH mutated AS (
 						UPDATE hr_performance_cycle_participant
 						SET status = 'removed',
@@ -1728,7 +1861,8 @@ const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 					)
 					SELECT mutated.* FROM mutated, audited
 				`,
-			]);
+				],
+			);
 			const row = updated[0];
 			if (!row) {
 				return missAfterOptimisticUpdate({
@@ -1780,7 +1914,10 @@ const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				.from(hrPerformanceCycleParticipant)
 				.where(
 					and(
-						eq(hrPerformanceCycleParticipant.organizationId, input.organizationId),
+						eq(
+							hrPerformanceCycleParticipant.organizationId,
+							input.organizationId,
+						),
 						eq(hrPerformanceCycleParticipant.cycleId, input.cycleId),
 					),
 				);
@@ -1837,7 +1974,10 @@ const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				createRequestFingerprint: row.createRequestFingerprint,
 			});
 		} catch (error) {
-			return mapPersistenceFailure(error, "Failed to find goal by idempotency key");
+			return mapPersistenceFailure(
+				error,
+				"Failed to find goal by idempotency key",
+			);
 		}
 	},
 
@@ -1848,7 +1988,10 @@ const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 		});
 		if (!existing.ok) return existing;
 		if (existing.data !== null) {
-			if (existing.data.createRequestFingerprint === record.createRequestFingerprint) {
+			if (
+				existing.data.createRequestFingerprint ===
+				record.createRequestFingerprint
+			) {
 				return ok(existing.data.goal);
 			}
 			return conflict("Idempotency key already used with different data");
@@ -1860,7 +2003,10 @@ const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 		});
 		if (!cycle.ok) return cycle;
 		if (cycle.data === null) {
-			return notFound("Performance cycle not found", HUMAN_RESOURCES_ERROR_NOT_FOUND);
+			return notFound(
+				"Performance cycle not found",
+				HUMAN_RESOURCES_ERROR_NOT_FOUND,
+			);
 		}
 		if (!isPerformanceCycleOpen(cycle.data.status)) {
 			return invalidState("Goals can only be created in open cycles");
@@ -1933,7 +2079,8 @@ const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				`,
 			]);
 			const row = rows[0];
-			if (!row) return fail("INTERNAL_ERROR", "Failed to create performance goal");
+			if (!row)
+				return fail("INTERNAL_ERROR", "Failed to create performance goal");
 			return mapGoalSql(row);
 		} catch (error) {
 			if (isCreateIdempotencyUniqueViolation(error)) {
@@ -1943,7 +2090,10 @@ const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				});
 				if (!replay.ok) return replay;
 				if (replay.data !== null) {
-					if (replay.data.createRequestFingerprint === record.createRequestFingerprint) {
+					if (
+						replay.data.createRequestFingerprint ===
+						record.createRequestFingerprint
+					) {
 						return ok(replay.data.goal);
 					}
 					return conflict("Idempotency key already used with different data");
@@ -1960,7 +2110,10 @@ const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 		});
 		if (!existing.ok) return existing;
 		if (existing.data === null) {
-			return notFound("Performance goal not found", HUMAN_RESOURCES_ERROR_NOT_FOUND);
+			return notFound(
+				"Performance goal not found",
+				HUMAN_RESOURCES_ERROR_NOT_FOUND,
+			);
 		}
 		const editable = assertGoalEditable(existing.data.status);
 		if (!editable.ok) return editable;
@@ -1976,7 +2129,10 @@ const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 		});
 		if (!cycle.ok) return cycle;
 		if (cycle.data === null) {
-			return notFound("Performance cycle not found", HUMAN_RESOURCES_ERROR_NOT_FOUND);
+			return notFound(
+				"Performance cycle not found",
+				HUMAN_RESOURCES_ERROR_NOT_FOUND,
+			);
 		}
 
 		const periodStart = input.periodStart ?? existing.data.periodStart;
@@ -1992,8 +2148,11 @@ const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 
 		const title = input.title ?? existing.data.title;
 		const description =
-			input.description !== undefined ? input.description : existing.data.description;
-		const weight = input.weight !== undefined ? input.weight : existing.data.weight;
+			input.description !== undefined
+				? input.description
+				: existing.data.description;
+		const weight =
+			input.weight !== undefined ? input.weight : existing.data.weight;
 		const nextVersion = input.expectedVersion + 1;
 		const auditId = randomUUID();
 
@@ -2031,7 +2190,10 @@ const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			]);
 			const row = rows[0];
 			if (!row) {
-				return missAfterOptimisticUpdate({ found: true, entityLabel: "Performance goal" });
+				return missAfterOptimisticUpdate({
+					found: true,
+					entityLabel: "Performance goal",
+				});
 			}
 			return mapGoalSql(row);
 		} catch (error) {
@@ -2062,14 +2224,20 @@ const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 		});
 		if (!existing.ok) return existing;
 		if (existing.data === null) {
-			return notFound("Performance goal not found", HUMAN_RESOURCES_ERROR_NOT_FOUND);
+			return notFound(
+				"Performance goal not found",
+				HUMAN_RESOURCES_ERROR_NOT_FOUND,
+			);
 		}
 		const versionCheck = assertExpectedVersion(
 			existing.data.version,
 			input.expectedVersion,
 		);
 		if (!versionCheck.ok) return versionCheck;
-		const transition = assertGoalStatusTransition(existing.data.status, "approved");
+		const transition = assertGoalStatusTransition(
+			existing.data.status,
+			"approved",
+		);
 		if (!transition.ok) return transition;
 
 		const goal = existing.data;
@@ -2079,7 +2247,10 @@ const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 		});
 		if (!cycle.ok) return cycle;
 		if (cycle.data === null) {
-			return notFound("Performance cycle not found", HUMAN_RESOURCES_ERROR_NOT_FOUND);
+			return notFound(
+				"Performance cycle not found",
+				HUMAN_RESOURCES_ERROR_NOT_FOUND,
+			);
 		}
 
 		if (cycle.data.weightingModel === "percent100") {
@@ -2165,7 +2336,10 @@ const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			]);
 			const row = rows[0];
 			if (!row) {
-				return missAfterOptimisticUpdate({ found: true, entityLabel: "Performance goal" });
+				return missAfterOptimisticUpdate({
+					found: true,
+					entityLabel: "Performance goal",
+				});
 			}
 			return mapGoalSql(row);
 		} catch (error) {
@@ -2180,7 +2354,10 @@ const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 		});
 		if (!existing.ok) return existing;
 		if (existing.data === null) {
-			return notFound("Performance goal not found", HUMAN_RESOURCES_ERROR_NOT_FOUND);
+			return notFound(
+				"Performance goal not found",
+				HUMAN_RESOURCES_ERROR_NOT_FOUND,
+			);
 		}
 		if (!isPerformanceGoalProgressable(existing.data.status)) {
 			return invalidState("Goal is not in a progressable status");
@@ -2192,8 +2369,9 @@ const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 		const recordedAt = new Date();
 
 		try {
-			const [rows] = await runNeonHttpTransaction<[GoalProgressSqlRow[]]>((sqlTag) => [
-				sqlTag`
+			const [rows] = await runNeonHttpTransaction<[GoalProgressSqlRow[]]>(
+				(sqlTag) => [
+					sqlTag`
 					WITH mutated AS (
 						INSERT INTO hr_performance_goal_progress (
 							id, organization_id, goal_id, recorded_at,
@@ -2218,7 +2396,8 @@ const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 					)
 					SELECT mutated.* FROM mutated, audited
 				`,
-			]);
+				],
+			);
 			const row = rows[0];
 			if (!row) return fail("INTERNAL_ERROR", "Failed to record goal progress");
 			return mapGoalProgressSql(row);
@@ -2273,7 +2452,10 @@ const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 		});
 		if (!cycle.ok) return cycle;
 		if (cycle.data === null) {
-			return notFound("Performance cycle not found", HUMAN_RESOURCES_ERROR_NOT_FOUND);
+			return notFound(
+				"Performance cycle not found",
+				HUMAN_RESOURCES_ERROR_NOT_FOUND,
+			);
 		}
 		if (!isPerformanceCycleOpen(cycle.data.status)) {
 			return invalidState("Reviews can only be started in open cycles");
@@ -2309,7 +2491,9 @@ const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				)
 				.limit(1);
 			if (duplicate[0]) {
-				return conflict("Performance review already exists for this employee in cycle");
+				return conflict(
+					"Performance review already exists for this employee in cycle",
+				);
 			}
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to check duplicate review");
@@ -2317,8 +2501,12 @@ const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 
 		const reviewIdResult = parseHumanResourcesReviewId(randomUUID());
 		if (!reviewIdResult.ok) return reviewIdResult;
-		const selfParticipantId = newBrandId(humanResourcesReviewParticipantIdSchema);
-		const managerParticipantId = newBrandId(humanResourcesReviewParticipantIdSchema);
+		const selfParticipantId = newBrandId(
+			humanResourcesReviewParticipantIdSchema,
+		);
+		const managerParticipantId = newBrandId(
+			humanResourcesReviewParticipantIdSchema,
+		);
 		const selfAssessmentId = newBrandId(humanResourcesAssessmentIdSchema);
 		const managerAssessmentId = newBrandId(humanResourcesAssessmentIdSchema);
 		if (
@@ -2327,14 +2515,18 @@ const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			!selfAssessmentId.ok ||
 			!managerAssessmentId.ok
 		) {
-			return fail("INTERNAL_ERROR", "Failed to allocate performance review identifiers");
+			return fail(
+				"INTERNAL_ERROR",
+				"Failed to allocate performance review identifiers",
+			);
 		}
 
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction<[ReviewSqlRow[]]>((sqlTag) => [
-				sqlTag`
+			const [rows] = await runNeonHttpTransaction<[ReviewSqlRow[]]>(
+				(sqlTag) => [
+					sqlTag`
 					WITH inserted_review AS (
 						INSERT INTO hr_performance_review (
 							id, organization_id, cycle_id, employee_id, employment_id,
@@ -2389,13 +2581,17 @@ const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 					)
 					SELECT inserted_review.* FROM inserted_review, audited
 				`,
-			]);
+				],
+			);
 			const row = rows[0];
-			if (!row) return fail("INTERNAL_ERROR", "Failed to start performance review");
+			if (!row)
+				return fail("INTERNAL_ERROR", "Failed to start performance review");
 			return mapReviewSql(row);
 		} catch (error) {
 			if (isPostgresUniqueViolation(error)) {
-				return conflict("Performance review already exists for this employee in cycle");
+				return conflict(
+					"Performance review already exists for this employee in cycle",
+				);
 			}
 			return mapPersistenceFailure(error, "Failed to start performance review");
 		}
@@ -2413,7 +2609,10 @@ const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 		});
 		if (!review.ok) return review;
 		if (review.data === null) {
-			return notFound("Performance review not found", HUMAN_RESOURCES_ERROR_NOT_FOUND);
+			return notFound(
+				"Performance review not found",
+				HUMAN_RESOURCES_ERROR_NOT_FOUND,
+			);
 		}
 		if (input.managerEmployeeId === review.data.review.employeeId) {
 			return invalidInput("Manager cannot be the same as the review employee");
@@ -2447,22 +2646,32 @@ const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 		});
 		if (!existing.ok) return existing;
 		if (existing.data === null) {
-			return notFound("Performance review not found", HUMAN_RESOURCES_ERROR_NOT_FOUND);
+			return notFound(
+				"Performance review not found",
+				HUMAN_RESOURCES_ERROR_NOT_FOUND,
+			);
 		}
 		const review = existing.data.review;
 		const immutable = assertReviewNotFinalized(review.status);
 		if (!immutable.ok) return immutable;
-		const versionCheck = assertExpectedVersion(review.version, input.expectedVersion);
+		const versionCheck = assertExpectedVersion(
+			review.version,
+			input.expectedVersion,
+		);
 		if (!versionCheck.ok) return versionCheck;
-		const transition = assertReviewStatusTransition(review.status, "acknowledged");
+		const transition = assertReviewStatusTransition(
+			review.status,
+			"acknowledged",
+		);
 		if (!transition.ok) return transition;
 
 		const nextVersion = input.expectedVersion + 1;
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction<[ReviewSqlRow[]]>((sqlTag) => [
-				sqlTag`
+			const [rows] = await runNeonHttpTransaction<[ReviewSqlRow[]]>(
+				(sqlTag) => [
+					sqlTag`
 					WITH mutated AS (
 						UPDATE hr_performance_review
 						SET acknowledgement_note = ${input.acknowledgementNote},
@@ -2489,14 +2698,21 @@ const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 					)
 					SELECT mutated.* FROM mutated, audited
 				`,
-			]);
+				],
+			);
 			const row = rows[0];
 			if (!row) {
-				return missAfterOptimisticUpdate({ found: true, entityLabel: "Performance review" });
+				return missAfterOptimisticUpdate({
+					found: true,
+					entityLabel: "Performance review",
+				});
 			}
 			return mapReviewSql(row);
 		} catch (error) {
-			return mapPersistenceFailure(error, "Failed to acknowledge performance review");
+			return mapPersistenceFailure(
+				error,
+				"Failed to acknowledge performance review",
+			);
 		}
 	},
 
@@ -2508,7 +2724,10 @@ const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				.where(
 					and(
 						eq(hrPerformanceReview.organizationId, input.organizationId),
-						eq(hrPerformanceReview.finalizeIdempotencyKey, input.finalizeIdempotencyKey),
+						eq(
+							hrPerformanceReview.finalizeIdempotencyKey,
+							input.finalizeIdempotencyKey,
+						),
 					),
 				)
 				.limit(1);
@@ -2517,7 +2736,10 @@ const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				return mapReview(idemRow);
 			}
 		} catch (error) {
-			return mapPersistenceFailure(error, "Failed to check finalize idempotency");
+			return mapPersistenceFailure(
+				error,
+				"Failed to check finalize idempotency",
+			);
 		}
 
 		const detail = await this.getPerformanceReviewById({
@@ -2527,10 +2749,16 @@ const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 		});
 		if (!detail.ok) return detail;
 		if (detail.data === null) {
-			return notFound("Performance review not found", HUMAN_RESOURCES_ERROR_NOT_FOUND);
+			return notFound(
+				"Performance review not found",
+				HUMAN_RESOURCES_ERROR_NOT_FOUND,
+			);
 		}
 		const review = detail.data.review;
-		const versionCheck = assertExpectedVersion(review.version, input.expectedVersion);
+		const versionCheck = assertExpectedVersion(
+			review.version,
+			input.expectedVersion,
+		);
 		if (!versionCheck.ok) return versionCheck;
 		const transition = assertReviewStatusTransition(review.status, "finalized");
 		if (!transition.ok) return transition;
@@ -2541,18 +2769,30 @@ const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 		});
 		if (!cycle.ok) return cycle;
 		if (cycle.data === null) {
-			return notFound("Performance cycle not found", HUMAN_RESOURCES_ERROR_NOT_FOUND);
+			return notFound(
+				"Performance cycle not found",
+				HUMAN_RESOURCES_ERROR_NOT_FOUND,
+			);
 		}
-		const ratingCheck = validateRatingInScale(input.overallRating, cycle.data.ratingScale);
+		const ratingCheck = validateRatingInScale(
+			input.overallRating,
+			cycle.data.ratingScale,
+		);
 		if (!ratingCheck.ok) return ratingCheck;
 
-		const selfAssessment = detail.data.assessments.find((a) => a.kind === "self");
-		const managerAssessment = detail.data.assessments.find((a) => a.kind === "manager");
+		const selfAssessment = detail.data.assessments.find(
+			(a) => a.kind === "self",
+		);
+		const managerAssessment = detail.data.assessments.find(
+			(a) => a.kind === "manager",
+		);
 		if (!selfAssessment || !managerAssessment) {
 			return invalidState("Review is missing required assessments");
 		}
 		if (!selfAssessment.submittedAt || !managerAssessment.submittedAt) {
-			return invalidState("Both self and manager assessments must be submitted");
+			return invalidState(
+				"Both self and manager assessments must be submitted",
+			);
 		}
 
 		const nextVersion = input.expectedVersion + 1;
@@ -2567,8 +2807,9 @@ const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 		});
 
 		try {
-			const [rows] = await runNeonHttpTransaction<[ReviewSqlRow[]]>((sqlTag) => [
-				sqlTag`
+			const [rows] = await runNeonHttpTransaction<[ReviewSqlRow[]]>(
+				(sqlTag) => [
+					sqlTag`
 					WITH mutated AS (
 						UPDATE hr_performance_review
 						SET overall_rating = ${input.overallRating},
@@ -2608,10 +2849,14 @@ const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 					)
 					SELECT mutated.* FROM mutated, audited, outboxed
 				`,
-			]);
+				],
+			);
 			const row = rows[0];
 			if (!row) {
-				return missAfterOptimisticUpdate({ found: true, entityLabel: "Performance review" });
+				return missAfterOptimisticUpdate({
+					found: true,
+					entityLabel: "Performance review",
+				});
 			}
 			return mapReviewSql(row);
 		} catch (error) {
@@ -2632,7 +2877,10 @@ const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				const replayRow = replay[0];
 				if (replayRow) return mapReview(replayRow);
 			}
-			return mapPersistenceFailure(error, "Failed to finalize performance review");
+			return mapPersistenceFailure(
+				error,
+				"Failed to finalize performance review",
+			);
 		}
 	},
 
@@ -2644,13 +2892,19 @@ const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 		});
 		if (!existing.ok) return existing;
 		if (existing.data === null) {
-			return notFound("Performance review not found", HUMAN_RESOURCES_ERROR_NOT_FOUND);
+			return notFound(
+				"Performance review not found",
+				HUMAN_RESOURCES_ERROR_NOT_FOUND,
+			);
 		}
 		const review = existing.data.review;
 		if (!isPerformanceReviewFinalized(review.status)) {
 			return invalidState("Only finalized reviews can be reopened");
 		}
-		const versionCheck = assertExpectedVersion(review.version, input.expectedVersion);
+		const versionCheck = assertExpectedVersion(
+			review.version,
+			input.expectedVersion,
+		);
 		if (!versionCheck.ok) return versionCheck;
 		const transition = assertReviewStatusTransition(review.status, "reopened");
 		if (!transition.ok) return transition;
@@ -2667,8 +2921,9 @@ const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 		});
 
 		try {
-			const [rows] = await runNeonHttpTransaction<[ReviewSqlRow[]]>((sqlTag) => [
-				sqlTag`
+			const [rows] = await runNeonHttpTransaction<[ReviewSqlRow[]]>(
+				(sqlTag) => [
+					sqlTag`
 					WITH mutated AS (
 						UPDATE hr_performance_review
 						SET status = 'reopened',
@@ -2706,14 +2961,21 @@ const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 					)
 					SELECT mutated.* FROM mutated, audited, outboxed
 				`,
-			]);
+				],
+			);
 			const row = rows[0];
 			if (!row) {
-				return missAfterOptimisticUpdate({ found: true, entityLabel: "Performance review" });
+				return missAfterOptimisticUpdate({
+					found: true,
+					entityLabel: "Performance review",
+				});
 			}
 			return mapReviewSql(row);
 		} catch (error) {
-			return mapPersistenceFailure(error, "Failed to reopen performance review");
+			return mapPersistenceFailure(
+				error,
+				"Failed to reopen performance review",
+			);
 		}
 	},
 
@@ -2739,7 +3001,10 @@ const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				.from(hrPerformanceReviewParticipant)
 				.where(
 					and(
-						eq(hrPerformanceReviewParticipant.organizationId, input.organizationId),
+						eq(
+							hrPerformanceReviewParticipant.organizationId,
+							input.organizationId,
+						),
 						eq(hrPerformanceReviewParticipant.reviewId, input.reviewId),
 					),
 				);
@@ -2791,7 +3056,7 @@ const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 
 	async listEmployeePerformanceReviews(input) {
 		try {
-			let query = db
+			const query = db
 				.select()
 				.from(hrPerformanceReview)
 				.where(
@@ -2818,7 +3083,10 @@ const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				pageSize: input.pageSize,
 			});
 		} catch (error) {
-			return mapPersistenceFailure(error, "Failed to list employee performance reviews");
+			return mapPersistenceFailure(
+				error,
+				"Failed to list employee performance reviews",
+			);
 		}
 	},
 
@@ -2829,9 +3097,15 @@ const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				.from(hrPerformanceReviewParticipant)
 				.where(
 					and(
-						eq(hrPerformanceReviewParticipant.organizationId, input.organizationId),
+						eq(
+							hrPerformanceReviewParticipant.organizationId,
+							input.organizationId,
+						),
 						eq(hrPerformanceReviewParticipant.role, "manager"),
-						eq(hrPerformanceReviewParticipant.employeeId, input.managerEmployeeId),
+						eq(
+							hrPerformanceReviewParticipant.employeeId,
+							input.managerEmployeeId,
+						),
 					),
 				);
 			const reviewIds = participantRows.map((p) => p.reviewId);
@@ -2873,7 +3147,10 @@ const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				pageSize: input.pageSize,
 			});
 		} catch (error) {
-			return mapPersistenceFailure(error, "Failed to list reviews pending manager action");
+			return mapPersistenceFailure(
+				error,
+				"Failed to list reviews pending manager action",
+			);
 		}
 	},
 
@@ -2884,7 +3161,10 @@ const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				.from(hrPerformanceImprovementPlan)
 				.where(
 					and(
-						eq(hrPerformanceImprovementPlan.organizationId, input.organizationId),
+						eq(
+							hrPerformanceImprovementPlan.organizationId,
+							input.organizationId,
+						),
 						eq(hrPerformanceImprovementPlan.id, input.planId),
 					),
 				)
@@ -2904,8 +3184,14 @@ const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				.from(hrPerformanceImprovementPlan)
 				.where(
 					and(
-						eq(hrPerformanceImprovementPlan.organizationId, input.organizationId),
-						eq(hrPerformanceImprovementPlan.createIdempotencyKey, input.idempotencyKey),
+						eq(
+							hrPerformanceImprovementPlan.organizationId,
+							input.organizationId,
+						),
+						eq(
+							hrPerformanceImprovementPlan.createIdempotencyKey,
+							input.idempotencyKey,
+						),
 					),
 				)
 				.limit(1);
@@ -2918,7 +3204,10 @@ const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				createRequestFingerprint: row.createRequestFingerprint,
 			});
 		} catch (error) {
-			return mapPersistenceFailure(error, "Failed to find plan by idempotency key");
+			return mapPersistenceFailure(
+				error,
+				"Failed to find plan by idempotency key",
+			);
 		}
 	},
 
@@ -2929,7 +3218,10 @@ const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 		});
 		if (!existing.ok) return existing;
 		if (existing.data !== null) {
-			if (existing.data.createRequestFingerprint === record.createRequestFingerprint) {
+			if (
+				existing.data.createRequestFingerprint ===
+				record.createRequestFingerprint
+			) {
 				return ok(existing.data.plan);
 			}
 			return conflict("Idempotency key already used with different data");
@@ -2947,7 +3239,10 @@ const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			.limit(1);
 		const reviewRow = reviewRows[0];
 		if (!reviewRow) {
-			return notFound("Performance review not found", HUMAN_RESOURCES_ERROR_NOT_FOUND);
+			return notFound(
+				"Performance review not found",
+				HUMAN_RESOURCES_ERROR_NOT_FOUND,
+			);
 		}
 		const review = mapReview(reviewRow);
 		if (!review.ok) return review;
@@ -2965,7 +3260,9 @@ const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 
 		const idResult = parseHumanResourcesImprovementPlanId(randomUUID());
 		if (!idResult.ok) return idResult;
-		const checkpointId = newBrandId(humanResourcesImprovementCheckpointIdSchema);
+		const checkpointId = newBrandId(
+			humanResourcesImprovementCheckpointIdSchema,
+		);
 		if (!checkpointId.ok) return checkpointId;
 		const auditId = randomUUID();
 
@@ -3014,7 +3311,8 @@ const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				`,
 			]);
 			const row = rows[0];
-			if (!row) return fail("INTERNAL_ERROR", "Failed to create improvement plan");
+			if (!row)
+				return fail("INTERNAL_ERROR", "Failed to create improvement plan");
 			return mapPlanSql(row);
 		} catch (error) {
 			if (isCreateIdempotencyUniqueViolation(error)) {
@@ -3024,7 +3322,10 @@ const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				});
 				if (!replay.ok) return replay;
 				if (replay.data !== null) {
-					if (replay.data.createRequestFingerprint === record.createRequestFingerprint) {
+					if (
+						replay.data.createRequestFingerprint ===
+						record.createRequestFingerprint
+					) {
 						return ok(replay.data.plan);
 					}
 					return conflict("Idempotency key already used with different data");
@@ -3041,11 +3342,20 @@ const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 		});
 		if (!existing.ok) return existing;
 		if (existing.data === null) {
-			return notFound("Improvement plan not found", HUMAN_RESOURCES_ERROR_NOT_FOUND);
+			return notFound(
+				"Improvement plan not found",
+				HUMAN_RESOURCES_ERROR_NOT_FOUND,
+			);
 		}
-		const versionCheck = assertExpectedVersion(existing.data.version, input.expectedVersion);
+		const versionCheck = assertExpectedVersion(
+			existing.data.version,
+			input.expectedVersion,
+		);
 		if (!versionCheck.ok) return versionCheck;
-		const transition = assertImprovementPlanStatusTransition(existing.data.status, "open");
+		const transition = assertImprovementPlanStatusTransition(
+			existing.data.status,
+			"open",
+		);
 		if (!transition.ok) return transition;
 
 		const plan = existing.data;
@@ -3103,7 +3413,10 @@ const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			]);
 			const row = rows[0];
 			if (!row) {
-				return missAfterOptimisticUpdate({ found: true, entityLabel: "Improvement plan" });
+				return missAfterOptimisticUpdate({
+					found: true,
+					entityLabel: "Improvement plan",
+				});
 			}
 			return mapPlanSql(row);
 		} catch (error) {
@@ -3122,7 +3435,10 @@ const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 		});
 		if (!plan.ok) return plan;
 		if (plan.data === null) {
-			return notFound("Improvement plan not found", HUMAN_RESOURCES_ERROR_NOT_FOUND);
+			return notFound(
+				"Improvement plan not found",
+				HUMAN_RESOURCES_ERROR_NOT_FOUND,
+			);
 		}
 
 		try {
@@ -3131,21 +3447,32 @@ const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				.from(hrPerformanceImprovementCheckpoint)
 				.where(
 					and(
-						eq(hrPerformanceImprovementCheckpoint.organizationId, input.organizationId),
+						eq(
+							hrPerformanceImprovementCheckpoint.organizationId,
+							input.organizationId,
+						),
 						eq(hrPerformanceImprovementCheckpoint.planId, input.planId),
-						eq(hrPerformanceImprovementCheckpoint.sequenceNumber, input.sequenceNumber),
+						eq(
+							hrPerformanceImprovementCheckpoint.sequenceNumber,
+							input.sequenceNumber,
+						),
 					),
 				)
 				.limit(1);
 			const existing = rows[0];
 			if (!existing) {
-				return notFound("Improvement checkpoint not found", HUMAN_RESOURCES_ERROR_NOT_FOUND);
+				return notFound(
+					"Improvement checkpoint not found",
+					HUMAN_RESOURCES_ERROR_NOT_FOUND,
+				);
 			}
 
 			const priorOutcome = performanceCheckpointOutcomeSchema.parse(
 				existing.outcome,
 			);
-			const nextOutcome = performanceCheckpointOutcomeSchema.parse(input.outcome);
+			const nextOutcome = performanceCheckpointOutcomeSchema.parse(
+				input.outcome,
+			);
 			const outcomeCheck = assertCheckpointOutcomeTransition(
 				priorOutcome,
 				nextOutcome,
@@ -3155,8 +3482,9 @@ const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			const auditId = randomUUID();
 			const recordedAt = new Date();
 
-			const [updated] = await runNeonHttpTransaction<[CheckpointSqlRow[]]>((sqlTag) => [
-				sqlTag`
+			const [updated] = await runNeonHttpTransaction<[CheckpointSqlRow[]]>(
+				(sqlTag) => [
+					sqlTag`
 					WITH mutated AS (
 						UPDATE hr_performance_improvement_checkpoint
 						SET outcome = ${input.outcome},
@@ -3182,7 +3510,8 @@ const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 					)
 					SELECT mutated.* FROM mutated, audited
 				`,
-			]);
+				],
+			);
 			const row = updated[0];
 			if (!row) {
 				return missAfterOptimisticUpdate({
@@ -3192,7 +3521,10 @@ const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			}
 			return mapCheckpointSql(row);
 		} catch (error) {
-			return mapPersistenceFailure(error, "Failed to record improvement checkpoint");
+			return mapPersistenceFailure(
+				error,
+				"Failed to record improvement checkpoint",
+			);
 		}
 	},
 
@@ -3203,12 +3535,21 @@ const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 		});
 		if (!existing.ok) return existing;
 		if (existing.data === null) {
-			return notFound("Improvement plan not found", HUMAN_RESOURCES_ERROR_NOT_FOUND);
+			return notFound(
+				"Improvement plan not found",
+				HUMAN_RESOURCES_ERROR_NOT_FOUND,
+			);
 		}
-		if (existing.data.status === "completed" || existing.data.status === "unsuccessful") {
+		if (
+			existing.data.status === "completed" ||
+			existing.data.status === "unsuccessful"
+		) {
 			return invalidState("Completed improvement plans cannot be amended");
 		}
-		const versionCheck = assertExpectedVersion(existing.data.version, input.expectedVersion);
+		const versionCheck = assertExpectedVersion(
+			existing.data.version,
+			input.expectedVersion,
+		);
 		if (!versionCheck.ok) return versionCheck;
 
 		const measurableActions =
@@ -3255,7 +3596,10 @@ const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			]);
 			const row = rows[0];
 			if (!row) {
-				return missAfterOptimisticUpdate({ found: true, entityLabel: "Improvement plan" });
+				return missAfterOptimisticUpdate({
+					found: true,
+					entityLabel: "Improvement plan",
+				});
 			}
 			return mapPlanSql(row);
 		} catch (error) {
@@ -3270,11 +3614,20 @@ const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 		});
 		if (!existing.ok) return existing;
 		if (existing.data === null) {
-			return notFound("Improvement plan not found", HUMAN_RESOURCES_ERROR_NOT_FOUND);
+			return notFound(
+				"Improvement plan not found",
+				HUMAN_RESOURCES_ERROR_NOT_FOUND,
+			);
 		}
-		const versionCheck = assertExpectedVersion(existing.data.version, input.expectedVersion);
+		const versionCheck = assertExpectedVersion(
+			existing.data.version,
+			input.expectedVersion,
+		);
 		if (!versionCheck.ok) return versionCheck;
-		const transition = assertImprovementPlanStatusTransition(existing.data.status, "completed");
+		const transition = assertImprovementPlanStatusTransition(
+			existing.data.status,
+			"completed",
+		);
 		if (!transition.ok) return transition;
 
 		const plan = existing.data;
@@ -3332,11 +3685,17 @@ const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			]);
 			const row = rows[0];
 			if (!row) {
-				return missAfterOptimisticUpdate({ found: true, entityLabel: "Improvement plan" });
+				return missAfterOptimisticUpdate({
+					found: true,
+					entityLabel: "Improvement plan",
+				});
 			}
 			return mapPlanSql(row);
 		} catch (error) {
-			return mapPersistenceFailure(error, "Failed to complete improvement plan");
+			return mapPersistenceFailure(
+				error,
+				"Failed to complete improvement plan",
+			);
 		}
 	},
 
@@ -3353,7 +3712,9 @@ const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			const rows = await db
 				.select()
 				.from(hrPerformanceImprovementPlan)
-				.where(eq(hrPerformanceImprovementPlan.organizationId, input.organizationId))
+				.where(
+					eq(hrPerformanceImprovementPlan.organizationId, input.organizationId),
+				)
 				.orderBy(desc(hrPerformanceImprovementPlan.createdAt));
 			const filtered = rows.filter(
 				(p) => p.status === "open" || p.status === "acknowledged",
@@ -3374,7 +3735,10 @@ const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				pageSize: input.pageSize,
 			});
 		} catch (error) {
-			return mapPersistenceFailure(error, "Failed to list active improvement plans");
+			return mapPersistenceFailure(
+				error,
+				"Failed to list active improvement plans",
+			);
 		}
 	},
 
@@ -3426,7 +3790,10 @@ const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 					.from(hrPerformanceImprovementPlan)
 					.where(
 						and(
-							eq(hrPerformanceImprovementPlan.organizationId, input.organizationId),
+							eq(
+								hrPerformanceImprovementPlan.organizationId,
+								input.organizationId,
+							),
 							eq(hrPerformanceImprovementPlan.reviewId, reviewMapped.data.id),
 						),
 					);
@@ -3453,12 +3820,13 @@ const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				entries,
 			});
 		} catch (error) {
-			return mapPersistenceFailure(error, "Failed to load employee performance history");
+			return mapPersistenceFailure(
+				error,
+				"Failed to load employee performance history",
+			);
 		}
 	},
 };
-
-
 
 export function attachDrizzlePerformance(target: PerformanceHost): void {
 	Object.assign(target, drizzlePerformanceMethods);

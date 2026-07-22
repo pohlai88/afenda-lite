@@ -2,8 +2,6 @@
 
 import { resolveDatabaseUrlForTests } from "@afenda/testing/require-database-for-ci";
 import { afterAll, describe, expect, it } from "vitest";
-
-import { createEmployee } from "../src/core/employee";
 import {
 	createDocumentRequirement,
 	publishDocumentRequirement,
@@ -14,6 +12,7 @@ import {
 } from "../src/compliance/employee-document";
 import { issuePolicyAcknowledgementRequirement } from "../src/compliance/policy-acknowledgement";
 import { recordWorkEligibility } from "../src/compliance/work-eligibility";
+import { createEmployee } from "../src/core/employee";
 import { cleanupHumanResourcesNeonOrgs } from "./helpers/neon-cleanup";
 import {
 	createWorkforceHarness,

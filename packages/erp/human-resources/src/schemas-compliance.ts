@@ -73,15 +73,19 @@ export const updateEmployeeDocumentMetadataInputSchema =
 		metadata: z.record(z.string(), z.unknown()).nullable().optional(),
 	});
 
-export const verifyEmployeeDocumentInputSchema = versionedMutationSchema.extend({
-	documentId: humanResourcesEmployeeDocumentIdSchema,
-	evidenceDate: z.string().date(),
-});
+export const verifyEmployeeDocumentInputSchema = versionedMutationSchema.extend(
+	{
+		documentId: humanResourcesEmployeeDocumentIdSchema,
+		evidenceDate: z.string().date(),
+	},
+);
 
-export const rejectEmployeeDocumentInputSchema = versionedMutationSchema.extend({
-	documentId: humanResourcesEmployeeDocumentIdSchema,
-	rejectionReason: z.string().trim().min(1).max(512),
-});
+export const rejectEmployeeDocumentInputSchema = versionedMutationSchema.extend(
+	{
+		documentId: humanResourcesEmployeeDocumentIdSchema,
+		rejectionReason: z.string().trim().min(1).max(512),
+	},
+);
 
 export const employeeDocumentTransitionInputSchema =
 	versionedMutationSchema.extend({
@@ -117,16 +121,17 @@ export const listExpiringEmployeeDocumentsInputSchema =
 		pageSize: z.number().int().positive().max(100).optional(),
 	});
 
-export const recordWorkEligibilityInputSchema = humanResourcesMutationContextSchema
-	.extend({
-		employeeId: humanResourcesEmployeeIdSchema,
-		countryCode: z.string().trim().min(2).max(3),
-		jurisdiction: z.string().trim().min(1).max(128).optional(),
-		issuedOn: z.string().date(),
-		expiresOn: z.string().date().optional(),
-		documentRef: z.string().trim().min(1).max(2048).optional(),
-	})
-	.merge(idempotencySchema);
+export const recordWorkEligibilityInputSchema =
+	humanResourcesMutationContextSchema
+		.extend({
+			employeeId: humanResourcesEmployeeIdSchema,
+			countryCode: z.string().trim().min(2).max(3),
+			jurisdiction: z.string().trim().min(1).max(128).optional(),
+			issuedOn: z.string().date(),
+			expiresOn: z.string().date().optional(),
+			documentRef: z.string().trim().min(1).max(2048).optional(),
+		})
+		.merge(idempotencySchema);
 
 export const verifyWorkEligibilityInputSchema = versionedMutationSchema.extend({
 	eligibilityId: humanResourcesWorkEligibilityIdSchema,

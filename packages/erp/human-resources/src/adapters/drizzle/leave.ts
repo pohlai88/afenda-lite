@@ -23,6 +23,11 @@ import {
 } from "@afenda/events/schemas";
 
 import {
+	type HumanResourcesEmployeeId,
+	type HumanResourcesEmploymentId,
+	type HumanResourcesLeaveEntitlementId,
+	type HumanResourcesLeavePolicyId,
+	type HumanResourcesLeaveRequestId,
 	parseHumanResourcesEmployeeId,
 	parseHumanResourcesEmploymentId,
 	parseHumanResourcesLeaveAdjustmentId,
@@ -31,24 +36,15 @@ import {
 	parseHumanResourcesLeavePolicyId,
 	parseHumanResourcesLeaveRequestId,
 	parseHumanResourcesLeaveRequestSegmentId,
-	type HumanResourcesEmployeeId,
-	type HumanResourcesEmploymentId,
-	type HumanResourcesLeaveEntitlementId,
-	type HumanResourcesLeavePolicyId,
-	type HumanResourcesLeaveRequestId,
 } from "../../brands";
 import { HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE } from "../../error-codes";
 import type { MutationPorts, OutboxFactInput } from "../../ports";
 import { assertExpectedVersion } from "../../shared/concurrency";
+import { conflict, invalidState, notFound } from "../../shared/domain-guards";
 import {
-	employmentStatusSchema,
 	type EmploymentStatus,
+	employmentStatusSchema,
 } from "../../shared/employment-status";
-import {
-	conflict,
-	invalidState,
-	notFound,
-} from "../../shared/domain-guards";
 import {
 	computeLeaveBalance,
 	negateLeaveQuantity,
@@ -64,6 +60,8 @@ import {
 import {
 	approvalDecisionSchema,
 	dayPortionSchema,
+	type LeavePolicyStatus,
+	type LeaveRequestStatus,
 	leaveAdjustmentKindSchema,
 	leaveAdjustmentStatusSchema,
 	leaveEntitlementStatusSchema,
@@ -71,8 +69,6 @@ import {
 	leaveRequestStatusSchema,
 	leaveTypeSchema,
 	leaveUnitSchema,
-	type LeavePolicyStatus,
-	type LeaveRequestStatus,
 } from "../../shared/leave-status";
 import {
 	isCreateIdempotencyUniqueViolation,
@@ -86,8 +82,8 @@ import type {
 	LeaveAdjustmentCreateRecord,
 	LeaveEntitlementGrantRecord,
 	LeavePolicyCreateRecord,
-	LeaveRequestCreateRecord,
 	LeaveRequestAmendRecord,
+	LeaveRequestCreateRecord,
 } from "../../store";
 import type {
 	ApprovedLeaveHandoff,
@@ -163,7 +159,12 @@ type LeaveHost = {
 		page: number;
 		pageSize: number;
 	}): Promise<
-		Result<{ reportingLines: ReportingLine[]; totalCount: number; page: number; pageSize: number }>
+		Result<{
+			reportingLines: ReportingLine[];
+			totalCount: number;
+			page: number;
+			pageSize: number;
+		}>
 	>;
 } & DrizzleLeaveMethods;
 
@@ -286,7 +287,9 @@ function mapLeaveAdjustment(
 ): Result<LeaveAdjustment> {
 	const id = parseHumanResourcesLeaveAdjustmentId(row.id);
 	if (!id.ok) return id;
-	const entitlementId = parseHumanResourcesLeaveEntitlementId(row.entitlementId);
+	const entitlementId = parseHumanResourcesLeaveEntitlementId(
+		row.entitlementId,
+	);
 	if (!entitlementId.ok) return entitlementId;
 	let sourceRequestId: LeaveAdjustment["sourceRequestId"] = null;
 	if (row.sourceRequestId !== null) {
@@ -327,7 +330,9 @@ function mapLeaveRequest(
 	if (!employeeId.ok) return employeeId;
 	const employmentId = parseHumanResourcesEmploymentId(row.employmentId);
 	if (!employmentId.ok) return employmentId;
-	const entitlementId = parseHumanResourcesLeaveEntitlementId(row.entitlementId);
+	const entitlementId = parseHumanResourcesLeaveEntitlementId(
+		row.entitlementId,
+	);
 	if (!entitlementId.ok) return entitlementId;
 	const policyId = parseHumanResourcesLeavePolicyId(row.policyId);
 	if (!policyId.ok) return policyId;
@@ -368,7 +373,8 @@ function mapLeaveRequestSegment(
 	const requestId = parseHumanResourcesLeaveRequestId(row.requestId);
 	if (!requestId.ok) return requestId;
 	const dayPortion = dayPortionSchema.safeParse(row.dayPortion);
-	if (!dayPortion.success) return invalidState("Invalid leave segment day portion");
+	if (!dayPortion.success)
+		return invalidState("Invalid leave segment day portion");
 	return ok({
 		id: id.data,
 		organizationId: row.organizationId,
@@ -470,7 +476,10 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 			if (row === undefined) return ok(null);
 			return mapLeavePolicyEligibility(row);
 		} catch (error) {
-			return mapPersistenceFailure(error, "Failed to load leave policy eligibility");
+			return mapPersistenceFailure(
+				error,
+				"Failed to load leave policy eligibility",
+			);
 		}
 	},
 
@@ -586,7 +595,10 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 			if (row === undefined) return ok(null);
 			return mapLeavePolicy(row);
 		} catch (error) {
-			return mapPersistenceFailure(error, "Failed to find leave policy by code");
+			return mapPersistenceFailure(
+				error,
+				"Failed to find leave policy by code",
+			);
 		}
 	},
 
@@ -783,15 +795,18 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 	},
 
 	async supersedeLeavePolicy(input, ports, meta) {
-		const superseded = await transitionLeavePolicyStatus.call(this as LeaveHost, {
-			organizationId: input.organizationId,
-			policyId: input.policyId,
-			expectedVersion: input.expectedVersion,
-			actorUserId: input.actorUserId,
-			nextStatus: "superseded",
-			ports,
-			meta,
-		});
+		const superseded = await transitionLeavePolicyStatus.call(
+			this as LeaveHost,
+			{
+				organizationId: input.organizationId,
+				policyId: input.policyId,
+				expectedVersion: input.expectedVersion,
+				actorUserId: input.actorUserId,
+				nextStatus: "superseded",
+				ports,
+				meta,
+			},
+		);
 		if (!superseded.ok) return superseded;
 
 		const created = await this.createLeavePolicy(
@@ -834,7 +849,10 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 					),
 				);
 		} catch (error) {
-			return mapPersistenceFailure(error, "Failed to publish superseding leave policy");
+			return mapPersistenceFailure(
+				error,
+				"Failed to publish superseding leave policy",
+			);
 		}
 
 		return this.getLeavePolicyById({
@@ -965,7 +983,8 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				if (!replay.ok) return replay;
 				if (replay.data !== null) {
 					if (
-						replay.data.createRequestFingerprint === record.createRequestFingerprint
+						replay.data.createRequestFingerprint ===
+						record.createRequestFingerprint
 					) {
 						return ok(replay.data.entitlement);
 					}
@@ -1014,15 +1033,18 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 		);
 		if (!versionCheck.ok) return versionCheck;
 
-		const expired = await transitionLeaveEntitlementStatus.call(this as LeaveHost, {
-			organizationId: input.organizationId,
-			entitlementId: input.entitlementId,
-			expectedVersion: input.expectedVersion,
-			actorUserId: input.actorUserId,
-			nextStatus: "carried_forward",
-			ports,
-			meta,
-		});
+		const expired = await transitionLeaveEntitlementStatus.call(
+			this as LeaveHost,
+			{
+				organizationId: input.organizationId,
+				entitlementId: input.entitlementId,
+				expectedVersion: input.expectedVersion,
+				actorUserId: input.actorUserId,
+				nextStatus: "carried_forward",
+				ports,
+				meta,
+			},
+		);
 		if (!expired.ok) return expired;
 
 		const granted = await this.grantLeaveEntitlement(
@@ -1079,7 +1101,8 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 			entitlementId: record.entitlementId,
 		});
 		if (!entitlement.ok) return entitlement;
-		if (entitlement.data === null) return notFound("Leave entitlement not found");
+		if (entitlement.data === null)
+			return notFound("Leave entitlement not found");
 		const active = assertLeaveEntitlementActive(entitlement.data.status);
 		if (!active.ok) return active;
 
@@ -1305,7 +1328,10 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 			}
 			return ok(segments);
 		} catch (error) {
-			return mapPersistenceFailure(error, "Failed to list leave request segments");
+			return mapPersistenceFailure(
+				error,
+				"Failed to list leave request segments",
+			);
 		}
 	},
 
@@ -1322,9 +1348,8 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				);
 			requests = requests.filter(
 				(row) =>
-					activeOverlapStatuses().includes(
-						row.status as LeaveRequestStatus,
-					) && row.id !== input.excludeRequestId,
+					activeOverlapStatuses().includes(row.status as LeaveRequestStatus) &&
+					row.id !== input.excludeRequestId,
 			);
 			if (requests.length === 0) return ok([]);
 			const requestIds = requests.map((row) => row.id);
@@ -1345,7 +1370,10 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 			}
 			return ok(segments);
 		} catch (error) {
-			return mapPersistenceFailure(error, "Failed to list overlapping leave segments");
+			return mapPersistenceFailure(
+				error,
+				"Failed to list overlapping leave segments",
+			);
 		}
 	},
 
@@ -1376,7 +1404,9 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 			});
 
 			for (const segment of record.segments) {
-				const segmentId = parseHumanResourcesLeaveRequestSegmentId(randomUUID());
+				const segmentId = parseHumanResourcesLeaveRequestSegmentId(
+					randomUUID(),
+				);
 				if (!segmentId.ok) return segmentId;
 				await db.insert(hrLeaveRequestSegment).values({
 					id: segmentId.data,
@@ -1396,7 +1426,8 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				if (!replay.ok) return replay;
 				if (replay.data !== null) {
 					if (
-						replay.data.createRequestFingerprint === record.createRequestFingerprint
+						replay.data.createRequestFingerprint ===
+						record.createRequestFingerprint
 					) {
 						return ok(replay.data.request);
 					}
@@ -1477,7 +1508,9 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				);
 
 			for (const segment of record.segments) {
-				const segmentId = parseHumanResourcesLeaveRequestSegmentId(randomUUID());
+				const segmentId = parseHumanResourcesLeaveRequestSegmentId(
+					randomUUID(),
+				);
 				if (!segmentId.ok) return segmentId;
 				await db.insert(hrLeaveRequestSegment).values({
 					id: segmentId.data,
@@ -1548,19 +1581,22 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 		);
 		if (!consumption.ok) return consumption;
 
-		const approved = await transitionLeaveRequestStatus.call(this as LeaveHost, {
-			organizationId: input.organizationId,
-			requestId: input.requestId,
-			expectedVersion: input.expectedVersion,
-			actorUserId: input.actorUserId,
-			nextStatus: "approved",
-			note: input.note,
-			decision: "approved",
-			ports,
-			meta,
-			emitEvent: HUMAN_RESOURCES_LEAVE_APPROVED_EVENT,
-			approvedAt: new Date(),
-		});
+		const approved = await transitionLeaveRequestStatus.call(
+			this as LeaveHost,
+			{
+				organizationId: input.organizationId,
+				requestId: input.requestId,
+				expectedVersion: input.expectedVersion,
+				actorUserId: input.actorUserId,
+				nextStatus: "approved",
+				note: input.note,
+				decision: "approved",
+				ports,
+				meta,
+				emitEvent: HUMAN_RESOURCES_LEAVE_APPROVED_EVENT,
+				approvedAt: new Date(),
+			},
+		);
 		if (!approved.ok) {
 			try {
 				await db
@@ -1706,7 +1742,9 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 						eq(hrLeaveRequest.status, "submitted"),
 					),
 				);
-			rows = rows.filter((row) => reportIds.has(row.employeeId as HumanResourcesEmployeeId));
+			rows = rows.filter((row) =>
+				reportIds.has(row.employeeId as HumanResourcesEmployeeId),
+			);
 			rows.sort((a, b) => a.startDate.localeCompare(b.startDate));
 			const totalCount = rows.length;
 			const start = (input.page - 1) * input.pageSize;
@@ -1838,7 +1876,10 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 			};
 			return ok(handoff);
 		} catch (error) {
-			return mapPersistenceFailure(error, "Failed to get approved leave handoff");
+			return mapPersistenceFailure(
+				error,
+				"Failed to get approved leave handoff",
+			);
 		}
 	},
 };
@@ -1894,7 +1935,10 @@ async function transitionLeavePolicyStatus(
 			return notFound("Leave policy not found or stale version");
 		}
 	} catch (error) {
-		return mapPersistenceFailure(error, "Failed to transition leave policy status");
+		return mapPersistenceFailure(
+			error,
+			"Failed to transition leave policy status",
+		);
 	}
 
 	const audit = await recordAudit(input.ports, {
@@ -2081,7 +2125,9 @@ async function transitionLeaveRequestStatus(
 		}
 
 		if (input.decision !== undefined) {
-			const decisionId = parseHumanResourcesLeaveApprovalDecisionId(randomUUID());
+			const decisionId = parseHumanResourcesLeaveApprovalDecisionId(
+				randomUUID(),
+			);
 			if (!decisionId.ok) return decisionId;
 			const decision = approvalDecisionSchema.safeParse(input.decision);
 			if (!decision.success) return invalidState("Invalid approval decision");
@@ -2096,7 +2142,10 @@ async function transitionLeaveRequestStatus(
 			});
 		}
 	} catch (error) {
-		return mapPersistenceFailure(error, "Failed to transition leave request status");
+		return mapPersistenceFailure(
+			error,
+			"Failed to transition leave request status",
+		);
 	}
 
 	const audit = await recordAudit(input.ports, {

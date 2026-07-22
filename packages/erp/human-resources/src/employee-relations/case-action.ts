@@ -9,12 +9,12 @@ import {
 	HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_APPROVE_ACTION,
 	HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_RECOMMEND_ACTION,
 } from "../module-ids";
+import { runEmployeeRelationsCommand } from "../shared/employee-relations-command";
+import { fingerprintEmployeeCaseActionRecommend } from "../shared/fingerprint";
 import {
 	approveEmployeeCaseActionInputSchema,
 	recommendEmployeeCaseActionInputSchema,
 } from "./schemas";
-import { fingerprintEmployeeCaseActionRecommend } from "../shared/fingerprint";
-import { runEmployeeRelationsCommand } from "../shared/employee-relations-command";
 import type { EmployeeCaseAction } from "./types";
 
 export const HUMAN_RESOURCES_AGGREGATE_EMPLOYEE_CASE_ACTION =

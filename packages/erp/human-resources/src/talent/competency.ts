@@ -36,10 +36,7 @@ import {
 	fingerprintCompetencyAssessmentSupersede,
 	fingerprintCompetencyCreate,
 } from "../shared/fingerprint";
-import {
-	runTalentCommand,
-	runTalentQuery,
-} from "../shared/talent-command";
+import { runTalentCommand, runTalentQuery } from "../shared/talent-command";
 import type {
 	Competency,
 	CompetencyAssessment,

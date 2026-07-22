@@ -16,10 +16,7 @@ export function assertValidDocumentDateRange(input: {
 	issuedOn: string;
 	expiresOn: string | null;
 }): Result<void> {
-	if (
-		input.expiresOn !== null &&
-		input.expiresOn < input.issuedOn
-	) {
+	if (input.expiresOn !== null && input.expiresOn < input.issuedOn) {
 		return fail(
 			"VALIDATION_ERROR",
 			"Expiry date cannot precede issue date.",
@@ -47,17 +44,21 @@ export function assertDocumentRequirementStatusTransition(
 	from: DocumentRequirementStatus,
 	to: DocumentRequirementStatus,
 ): Result<void> {
-	const allowed: Record<DocumentRequirementStatus, DocumentRequirementStatus[]> =
-		{
-			draft: ["published", "retired"],
-			published: ["retired"],
-			retired: [],
-		};
+	const allowed: Record<
+		DocumentRequirementStatus,
+		DocumentRequirementStatus[]
+	> = {
+		draft: ["published", "retired"],
+		published: ["retired"],
+		retired: [],
+	};
 	if (!allowed[from].includes(to)) {
 		return fail(
 			"CONFLICT",
 			`Cannot transition document requirement from ${from} to ${to}.`,
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION),
+			humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
+			),
 		);
 	}
 	return { ok: true, data: undefined };
@@ -81,7 +82,9 @@ export function assertEmployeeDocumentVerificationTransition(
 		return fail(
 			"CONFLICT",
 			`Cannot transition employee document from ${from} to ${to}.`,
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION),
+			humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
+			),
 		);
 	}
 	return { ok: true, data: undefined };
@@ -102,7 +105,9 @@ export function assertWorkEligibilityStatusTransition(
 		return fail(
 			"CONFLICT",
 			`Cannot transition work eligibility from ${from} to ${to}.`,
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION),
+			humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
+			),
 		);
 	}
 	return { ok: true, data: undefined };
@@ -125,7 +130,9 @@ export function assertPolicyAcknowledgementStatusTransition(
 		return fail(
 			"CONFLICT",
 			`Cannot transition policy acknowledgement from ${from} to ${to}.`,
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION),
+			humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
+			),
 		);
 	}
 	return { ok: true, data: undefined };

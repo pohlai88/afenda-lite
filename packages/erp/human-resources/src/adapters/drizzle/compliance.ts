@@ -299,7 +299,10 @@ function mapEmployeeDocument(
 		row.verificationStatus,
 	);
 	if (!verificationStatus.success) {
-		return fail("INTERNAL_ERROR", "Invalid employee document verification status");
+		return fail(
+			"INTERNAL_ERROR",
+			"Invalid employee document verification status",
+		);
 	}
 	return ok({
 		id: id.data,
@@ -387,7 +390,9 @@ function mapWorkEligibility(
 	});
 }
 
-function mapWorkEligibilitySql(row: WorkEligibilitySqlRow): Result<WorkEligibility> {
+function mapWorkEligibilitySql(
+	row: WorkEligibilitySqlRow,
+): Result<WorkEligibility> {
 	return mapWorkEligibility({
 		id: row.id,
 		organizationId: row.organization_id,
@@ -493,7 +498,10 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			if (!row) return ok(null);
 			return mapDocumentRequirement(row);
 		} catch (error) {
-			return mapPersistenceFailure(error, "Failed to load document requirement");
+			return mapPersistenceFailure(
+				error,
+				"Failed to load document requirement",
+			);
 		}
 	},
 
@@ -536,9 +544,10 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction<[DocumentRequirementSqlRow[]]>(
-				(sqlTag) => [
-					sqlTag`
+			const [rows] = await runNeonHttpTransaction<
+				[DocumentRequirementSqlRow[]]
+			>((sqlTag) => [
+				sqlTag`
 						WITH mutated AS (
 							INSERT INTO hr_document_requirement (
 								id, organization_id, code, name, document_type,
@@ -566,8 +575,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 						)
 						SELECT mutated.* FROM mutated, audited
 					`,
-				],
-			);
+			]);
 			const row = rows[0];
 			if (!row) {
 				return conflict("Unable to create document requirement");
@@ -577,7 +585,10 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			if (isPostgresUniqueViolation(error)) {
 				return conflict("Document requirement code already exists");
 			}
-			return mapPersistenceFailure(error, "Failed to create document requirement");
+			return mapPersistenceFailure(
+				error,
+				"Failed to create document requirement",
+			);
 		}
 	},
 
@@ -603,9 +614,10 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction<[DocumentRequirementSqlRow[]]>(
-				(sqlTag) => [
-					sqlTag`
+			const [rows] = await runNeonHttpTransaction<
+				[DocumentRequirementSqlRow[]]
+			>((sqlTag) => [
+				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_document_requirement
 							SET name = COALESCE(${input.name}, name),
@@ -634,8 +646,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 						)
 						SELECT mutated.* FROM mutated, audited
 					`,
-				],
-			);
+			]);
 			const row = rows[0];
 			if (!row) {
 				return missAfterOptimisticUpdate({
@@ -645,7 +656,10 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			}
 			return mapDocumentRequirementSql(row);
 		} catch (error) {
-			return mapPersistenceFailure(error, "Failed to update document requirement");
+			return mapPersistenceFailure(
+				error,
+				"Failed to update document requirement",
+			);
 		}
 	},
 
@@ -673,9 +687,10 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction<[DocumentRequirementSqlRow[]]>(
-				(sqlTag) => [
-					sqlTag`
+			const [rows] = await runNeonHttpTransaction<
+				[DocumentRequirementSqlRow[]]
+			>((sqlTag) => [
+				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_document_requirement
 							SET status = 'published',
@@ -701,8 +716,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 						)
 						SELECT mutated.* FROM mutated, audited
 					`,
-				],
-			);
+			]);
 			const row = rows[0];
 			if (!row) {
 				return missAfterOptimisticUpdate({
@@ -712,7 +726,10 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			}
 			return mapDocumentRequirementSql(row);
 		} catch (error) {
-			return mapPersistenceFailure(error, "Failed to publish document requirement");
+			return mapPersistenceFailure(
+				error,
+				"Failed to publish document requirement",
+			);
 		}
 	},
 
@@ -740,9 +757,10 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction<[DocumentRequirementSqlRow[]]>(
-				(sqlTag) => [
-					sqlTag`
+			const [rows] = await runNeonHttpTransaction<
+				[DocumentRequirementSqlRow[]]
+			>((sqlTag) => [
+				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_document_requirement
 							SET status = 'retired',
@@ -768,8 +786,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 						)
 						SELECT mutated.* FROM mutated, audited
 					`,
-				],
-			);
+			]);
 			const row = rows[0];
 			if (!row) {
 				return missAfterOptimisticUpdate({
@@ -779,7 +796,10 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			}
 			return mapDocumentRequirementSql(row);
 		} catch (error) {
-			return mapPersistenceFailure(error, "Failed to retire document requirement");
+			return mapPersistenceFailure(
+				error,
+				"Failed to retire document requirement",
+			);
 		}
 	},
 
@@ -1054,7 +1074,10 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 					return ok(retry.data.document);
 				}
 			}
-			return mapPersistenceFailure(error, "Failed to register employee document");
+			return mapPersistenceFailure(
+				error,
+				"Failed to register employee document",
+			);
 		}
 	},
 
@@ -1518,7 +1541,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 						eq(hrDocumentRequirement.status, "published"),
 					),
 				);
-			let missing: DocumentRequirement[] = [];
+			const missing: DocumentRequirement[] = [];
 			if (input.employeeId === undefined) {
 				for (const row of published) {
 					const mapped = mapDocumentRequirement(row);
@@ -1965,7 +1988,9 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			existing.data.status !== "suspended" &&
 			existing.data.status !== "pending"
 		) {
-			return invalidState("Work eligibility cannot be renewed in its current status");
+			return invalidState(
+				"Work eligibility cannot be renewed in its current status",
+			);
 		}
 		const dateRange = assertValidDocumentDateRange({
 			issuedOn: input.issuedOn,
@@ -2249,9 +2274,10 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 		});
 
 		try {
-			const [rows] = await runNeonHttpTransaction<[PolicyAcknowledgementSqlRow[]]>(
-				(sqlTag) => [
-					sqlTag`
+			const [rows] = await runNeonHttpTransaction<
+				[PolicyAcknowledgementSqlRow[]]
+			>((sqlTag) => [
+				sqlTag`
 						WITH employee AS (
 							SELECT id FROM hr_employee
 							WHERE id = ${record.employeeId}
@@ -2298,8 +2324,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 						)
 						SELECT mutated.* FROM mutated, audited, outboxed
 					`,
-				],
-			);
+			]);
 			const row = rows[0];
 			if (!row) {
 				return conflict("Unable to issue policy acknowledgement requirement");
@@ -2364,9 +2389,10 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 		});
 
 		try {
-			const [rows] = await runNeonHttpTransaction<[PolicyAcknowledgementSqlRow[]]>(
-				(sqlTag) => [
-					sqlTag`
+			const [rows] = await runNeonHttpTransaction<
+				[PolicyAcknowledgementSqlRow[]]
+			>((sqlTag) => [
+				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_policy_acknowledgement
 							SET requirement_status = 'acknowledged',
@@ -2407,8 +2433,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 						)
 						SELECT mutated.* FROM mutated, audited, outboxed
 					`,
-				],
-			);
+			]);
 			const row = rows[0];
 			if (!row) {
 				return missAfterOptimisticUpdate({
@@ -2446,9 +2471,10 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 		const auditId = randomUUID();
 
 		try {
-			const [rows] = await runNeonHttpTransaction<[PolicyAcknowledgementSqlRow[]]>(
-				(sqlTag) => [
-					sqlTag`
+			const [rows] = await runNeonHttpTransaction<
+				[PolicyAcknowledgementSqlRow[]]
+			>((sqlTag) => [
+				sqlTag`
 						WITH mutated AS (
 							UPDATE hr_policy_acknowledgement
 							SET requirement_status = 'revoked',
@@ -2474,8 +2500,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 						)
 						SELECT mutated.* FROM mutated, audited
 					`,
-				],
-			);
+			]);
 			const row = rows[0];
 			if (!row) {
 				return missAfterOptimisticUpdate({
@@ -2512,9 +2537,10 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 		if (!brandedNewId.ok) return brandedNewId;
 		const auditId = randomUUID();
 		try {
-			const [rows] = await runNeonHttpTransaction<[PolicyAcknowledgementSqlRow[]]>(
-				(sqlTag) => [
-					sqlTag`
+			const [rows] = await runNeonHttpTransaction<
+				[PolicyAcknowledgementSqlRow[]]
+			>((sqlTag) => [
+				sqlTag`
 						WITH existing AS (
 							SELECT *
 							FROM hr_policy_acknowledgement
@@ -2559,8 +2585,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 						)
 						SELECT mutated.* FROM mutated, audited
 					`,
-				],
-			);
+			]);
 			const row = rows[0];
 			if (!row) {
 				return missAfterOptimisticUpdate({
@@ -2627,11 +2652,16 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 				if (!mapped.ok) return mapped;
 				acknowledgements.push(mapped.data);
 			}
-			acknowledgements.sort((a, b) => b.issuedAt.getTime() - a.issuedAt.getTime());
+			acknowledgements.sort(
+				(a, b) => b.issuedAt.getTime() - a.issuedAt.getTime(),
+			);
 			const totalCount = acknowledgements.length;
 			const offset = (input.page - 1) * input.pageSize;
 			return ok({
-				acknowledgements: acknowledgements.slice(offset, offset + input.pageSize),
+				acknowledgements: acknowledgements.slice(
+					offset,
+					offset + input.pageSize,
+				),
 				totalCount,
 				page: input.page,
 				pageSize: input.pageSize,

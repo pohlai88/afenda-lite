@@ -99,20 +99,14 @@ export const talentProfileAssessmentMethodCodeSchema = z.enum(
 	TALENT_PROFILE_ASSESSMENT_METHOD_CODES,
 );
 export const talentPoolStatusSchema = z.enum(TALENT_POOL_STATUSES);
-export const talentPoolMemberStatusSchema = z.enum(
-	TALENT_POOL_MEMBER_STATUSES,
-);
+export const talentPoolMemberStatusSchema = z.enum(TALENT_POOL_MEMBER_STATUSES);
 export const careerPlanStatusSchema = z.enum(CAREER_PLAN_STATUSES);
-export const careerPlanActionStatusSchema = z.enum(
-	CAREER_PLAN_ACTION_STATUSES,
-);
+export const careerPlanActionStatusSchema = z.enum(CAREER_PLAN_ACTION_STATUSES);
 export const successionPlanStatusSchema = z.enum(SUCCESSION_PLAN_STATUSES);
 export const successionCandidateStatusSchema = z.enum(
 	SUCCESSION_CANDIDATE_STATUSES,
 );
-export const successionReadinessCodeSchema = z.enum(
-	SUCCESSION_READINESS_CODES,
-);
+export const successionReadinessCodeSchema = z.enum(SUCCESSION_READINESS_CODES);
 
 /** Maximum age (days) before a succession readiness assessment is considered stale. */
 export const SUCCESSION_READINESS_MAX_AGE_DAYS = 365;

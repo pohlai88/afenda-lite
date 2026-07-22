@@ -27,10 +27,7 @@ import {
 	fingerprintTalentPoolCreate,
 	fingerprintTalentPoolMemberCreate,
 } from "../shared/fingerprint";
-import {
-	runTalentCommand,
-	runTalentQuery,
-} from "../shared/talent-command";
+import { runTalentCommand, runTalentQuery } from "../shared/talent-command";
 import type {
 	TalentPool,
 	TalentPoolMember,

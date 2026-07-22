@@ -316,7 +316,9 @@ export const humanResourcesReviewIdSchema = z
 	.string()
 	.uuid()
 	.brand<"HumanResourcesReviewId">();
-export type HumanResourcesReviewId = z.infer<typeof humanResourcesReviewIdSchema>;
+export type HumanResourcesReviewId = z.infer<
+	typeof humanResourcesReviewIdSchema
+>;
 
 export const humanResourcesReviewParticipantIdSchema = z
 	.string()
@@ -1098,7 +1100,8 @@ export function parseHumanResourcesReviewId(
 export function parseHumanResourcesPerformanceCycleParticipantId(
 	id: string,
 ): Result<HumanResourcesPerformanceCycleParticipantId> {
-	const parsed = humanResourcesPerformanceCycleParticipantIdSchema.safeParse(id);
+	const parsed =
+		humanResourcesPerformanceCycleParticipantIdSchema.safeParse(id);
 	if (!parsed.success) {
 		return fail(
 			"INTERNAL_ERROR",

@@ -15,6 +15,12 @@ import {
 	submitPerformanceGoal,
 } from "../src/performance/goal";
 import {
+	acknowledgeImprovementPlan,
+	createImprovementPlan,
+	openImprovementPlan,
+	recordImprovementCheckpoint,
+} from "../src/performance/improvement-plan";
+import {
 	addCycleParticipant,
 	createPerformanceCycle,
 	getPerformanceCycleById,
@@ -23,20 +29,14 @@ import {
 	openPerformanceCycle,
 } from "../src/performance/performance-cycle";
 import {
-	acknowledgeImprovementPlan,
-	createImprovementPlan,
-	openImprovementPlan,
-	recordImprovementCheckpoint,
-} from "../src/performance/improvement-plan";
-import {
 	finalizePerformanceReview,
 	getPerformanceReviewById,
 	startPerformanceReview,
 	submitManagerAssessment,
 	submitSelfAssessment,
 } from "../src/performance/review";
-import { cleanupHumanResourcesNeonOrgs } from "./helpers/neon-cleanup";
 import { ensurePerformanceSchemaForTests } from "./helpers/ensure-performance-schema";
+import { cleanupHumanResourcesNeonOrgs } from "./helpers/neon-cleanup";
 import {
 	createWorkforceHarness,
 	type WorkforceStoreAdapter,
@@ -187,9 +187,9 @@ function definePerformanceParitySuite(adapter: WorkforceStoreAdapter): void {
 		);
 		expect(cycles.ok).toBe(true);
 		if (!cycles.ok) return;
-		expect(cycles.data.cycles.some((cycle) => cycle.id === opened.data.id)).toBe(
-			true,
-		);
+		expect(
+			cycles.data.cycles.some((cycle) => cycle.id === opened.data.id),
+		).toBe(true);
 	});
 
 	it("goal submit and approve workflow", async () => {

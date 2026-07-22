@@ -1,8 +1,8 @@
 import { fail, ok, type Result } from "@afenda/errors/result";
 
 import {
-	HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
 	HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+	HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
 	humanResourcesErrorDetails,
 } from "../error-codes";
 import { invalidInput, invalidState } from "./domain-guards";
@@ -101,7 +101,9 @@ export function assertGoalStatusTransition(
 	return ok(undefined);
 }
 
-export function assertGoalEditable(status: PerformanceGoalStatus): Result<void> {
+export function assertGoalEditable(
+	status: PerformanceGoalStatus,
+): Result<void> {
 	if (status !== "draft" && status !== "rejected") {
 		return invalidState("Goal can only be edited while draft or rejected");
 	}
@@ -223,7 +225,9 @@ export function assertCheckpointOutcomeTransition(
 		return invalidState("Checkpoint outcomes are append-only once recorded");
 	}
 	if (next === "pending") {
-		return invalidInput("Checkpoint outcome must be met or missed when recording");
+		return invalidInput(
+			"Checkpoint outcome must be met or missed when recording",
+		);
 	}
 	return ok(undefined);
 }

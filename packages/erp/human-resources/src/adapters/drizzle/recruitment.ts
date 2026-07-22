@@ -1,6 +1,4 @@
-import {
-	randomUUID,
-} from "node:crypto";
+import { randomUUID } from "node:crypto";
 import {
 	and,
 	asc,
@@ -16,11 +14,7 @@ import {
 	runNeonHttpTransaction,
 	sql,
 } from "@afenda/db";
-import {
-	fail,
-	ok,
-	type Result,
-} from "@afenda/errors/result";
+import { fail, ok, type Result } from "@afenda/errors/result";
 import {
 	HUMAN_RESOURCES_OFFER_ACCEPTED_EVENT,
 	HUMAN_RESOURCES_REQUISITION_APPROVED_EVENT,
@@ -50,12 +44,8 @@ import {
 	HUMAN_RESOURCES_ERROR_INVALID_INPUT,
 	humanResourcesErrorDetails,
 } from "../../error-codes";
-import type {
-	MutationPorts,
-} from "../../ports";
-import {
-	assertExpectedVersion,
-} from "../../shared/concurrency";
+import type { MutationPorts } from "../../ports";
+import { assertExpectedVersion } from "../../shared/concurrency";
 import {
 	conflict,
 	missAfterOptimisticUpdate,
@@ -699,7 +689,7 @@ function buildOfferAcceptanceHandoff(input: {
 
 function uniqueConstraintMessage(error: unknown): string {
 	if (typeof error === "object" && error !== null && "message" in error) {
-		const message = (error as { message: unknown; }).message;
+		const message = (error as { message: unknown }).message;
 		if (typeof message === "string") {
 			return message;
 		}
@@ -713,9 +703,7 @@ function eventPayloadJson(value: Record<string, unknown>): string {
 
 type DrizzleRecruitmentHost = Pick<
 	HumanResourcesStore,
-	| "getDepartmentById"
-	| "getJobById"
-	| "getPositionById"
+	"getDepartmentById" | "getJobById" | "getPositionById"
 >;
 
 export type DrizzleRecruitmentMethods = Pick<
@@ -754,12 +742,15 @@ export type DrizzleRecruitmentMethods = Pick<
 	| "listOffers"
 >;
 
-async function validateRequisitionReferences(host: DrizzleRecruitmentHost & DrizzleRecruitmentMethods, input: {
-	organizationId: string;
-	jobId: HumanResourcesJobId | null;
-	positionId: HumanResourcesPositionId | null;
-	departmentId: HumanResourcesDepartmentId | null;
-}): Promise<Result<void>> {
+async function validateRequisitionReferences(
+	host: DrizzleRecruitmentHost & DrizzleRecruitmentMethods,
+	input: {
+		organizationId: string;
+		jobId: HumanResourcesJobId | null;
+		positionId: HumanResourcesPositionId | null;
+		departmentId: HumanResourcesDepartmentId | null;
+	},
+): Promise<Result<void>> {
 	if (input.jobId !== null) {
 		const job = await host.getJobById({
 			organizationId: input.organizationId,
@@ -890,7 +881,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 	async createDraftRequisition(
 		record: RequisitionCreateRecord,
 		_ports: MutationPorts,
-		meta: { correlationId: string; },
+		meta: { correlationId: string },
 	): Promise<Result<JobRequisition>> {
 		const existingByKey = await this.findRequisitionByIdempotencyKey({
 			organizationId: record.organizationId,
@@ -1001,7 +992,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			actorUserId: string;
 		},
 		_ports: MutationPorts,
-		meta: { correlationId: string; },
+		meta: { correlationId: string },
 	): Promise<Result<JobRequisition>> {
 		const existing = await this.getRequisitionById({
 			organizationId: input.organizationId,
@@ -1107,7 +1098,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			emitApprovedEvent?: boolean;
 		},
 		_ports: MutationPorts,
-		meta: { correlationId: string; },
+		meta: { correlationId: string },
 	): Promise<Result<JobRequisition>> {
 		const existing = await this.getRequisitionById({
 			organizationId: input.organizationId,
@@ -1420,7 +1411,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 	async createCandidate(
 		record: CandidateCreateRecord,
 		_ports: MutationPorts,
-		meta: { correlationId: string; },
+		meta: { correlationId: string },
 	): Promise<Result<Candidate>> {
 		const existingByKey = await this.findCandidateByIdempotencyKey({
 			organizationId: record.organizationId,
@@ -1520,7 +1511,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			actorUserId: string;
 		},
 		_ports: MutationPorts,
-		meta: { correlationId: string; },
+		meta: { correlationId: string },
 	): Promise<Result<Candidate>> {
 		const existing = await this.getCandidateById({
 			organizationId: input.organizationId,
@@ -1694,7 +1685,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 	async createApplication(
 		record: ApplicationCreateRecord,
 		_ports: MutationPorts,
-		meta: { correlationId: string; },
+		meta: { correlationId: string },
 	): Promise<Result<CandidateApplication>> {
 		const candidate = await this.getCandidateById({
 			organizationId: record.organizationId,
@@ -1837,7 +1828,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			actorUserId: string;
 		},
 		_ports: MutationPorts,
-		meta: { correlationId: string; },
+		meta: { correlationId: string },
 	): Promise<Result<CandidateApplication>> {
 		const existing = await this.getApplicationById({
 			organizationId: input.organizationId,
@@ -1999,7 +1990,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 	async scheduleInterview(
 		record: InterviewScheduleRecord,
 		_ports: MutationPorts,
-		meta: { correlationId: string; },
+		meta: { correlationId: string },
 	): Promise<Result<Interview>> {
 		const application = await this.getApplicationById({
 			organizationId: record.organizationId,
@@ -2085,7 +2076,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			actorUserId: string;
 		},
 		_ports: MutationPorts,
-		meta: { correlationId: string; },
+		meta: { correlationId: string },
 	): Promise<Result<Interview>> {
 		const existing = await this.getInterviewById({
 			organizationId: input.organizationId,
@@ -2249,7 +2240,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 	async recordInterviewEvaluation(
 		record: InterviewEvaluationCreateRecord,
 		_ports: MutationPorts,
-		meta: { correlationId: string; },
+		meta: { correlationId: string },
 	): Promise<Result<InterviewEvaluation>> {
 		const interview = await this.getInterviewById({
 			organizationId: record.organizationId,
@@ -2476,7 +2467,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 	async createOffer(
 		record: OfferCreateRecord,
 		_ports: MutationPorts,
-		meta: { correlationId: string; },
+		meta: { correlationId: string },
 	): Promise<Result<EmploymentOffer>> {
 		const application = await this.getApplicationById({
 			organizationId: record.organizationId,
@@ -2580,7 +2571,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			actorUserId: string;
 		},
 		_ports: MutationPorts,
-		meta: { correlationId: string; },
+		meta: { correlationId: string },
 	): Promise<Result<EmploymentOffer>> {
 		const existing = await this.getOfferById({
 			organizationId: input.organizationId,
@@ -2668,7 +2659,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			asOfDate?: string;
 		},
 		_ports: MutationPorts,
-		meta: { correlationId: string; },
+		meta: { correlationId: string },
 	): Promise<Result<EmploymentOffer>> {
 		const existing = await this.getOfferById({
 			organizationId: input.organizationId,
@@ -2842,7 +2833,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			asOfDate: string;
 		},
 		_ports: MutationPorts,
-		meta: { correlationId: string; },
+		meta: { correlationId: string },
 	): Promise<Result<OfferAcceptanceHandoff>> {
 		const existingByKey = await this.findOfferByAcceptIdempotencyKey({
 			organizationId: input.organizationId,

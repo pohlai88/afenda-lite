@@ -27,7 +27,11 @@ import {
 } from "../schemas";
 import { fingerprintLeavePolicyCreate } from "../shared/fingerprint";
 import { runLeaveCommand, runLeaveQuery } from "../shared/leave-command";
-import type { LeavePolicy, LeavePolicyListPage, ResolvedLeavePolicy } from "../types";
+import type {
+	LeavePolicy,
+	LeavePolicyListPage,
+	ResolvedLeavePolicy,
+} from "../types";
 
 export const HUMAN_RESOURCES_AGGREGATE_LEAVE_POLICY = "leave_policy" as const;
 export type HumanResourcesLeavePolicyAggregate =

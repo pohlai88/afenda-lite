@@ -89,92 +89,95 @@ const ER_PARITY_PERMISSIONS = [
 	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_CASE_ACTION_APPROVE,
 ] as const;
 
-describe.skipIf(!hasDatabase)("Employee relations memory vs drizzle parity", () => {
-	afterAll(async () => {
-		await cleanupHumanResourcesNeonOrgs([ORG]);
-	});
-
-	for (const adapter of ["memory", "drizzle"] as const) {
-		it(`${adapter}: open → finding → approve action`, async () => {
-			const suffix = uniqueSuffix(adapter);
-			const ready = createWorkforceHarness(adapter);
-			const authReady = {
-				...ready,
-				authorization: createGrantingHumanResourcesAuthorization([
-					...ER_PARITY_PERMISSIONS,
-				]),
-			};
-			const { employee, employment } = await seedEmployeeEmployment(
-				authReady,
-				suffix,
-			);
-
-			const opened = await openEmployeeCase(
-				{
-					organizationId: ORG,
-					actorUserId: ACTOR,
-					correlationId: `corr-open-${suffix}`,
-					idempotencyKey: `idem-case-${suffix}`,
-					employeeId: employee.id,
-					employmentId: employment.id,
-					caseType: "conduct",
-					severity: "high",
-					allegationSummary: "Parity allegation",
-					classificationCode: "PARITY-01",
-					ownerActorUserId: ACTOR,
-					subjectActorUserId: null,
-					conflictedActorUserIds: [],
-				},
-				authReady,
-			);
-			expect(opened.ok).toBe(true);
-			if (!opened.ok) return;
-
-			const finding = await recordEmployeeCaseFinding(
-				{
-					organizationId: ORG,
-					actorUserId: ACTOR,
-					correlationId: `corr-finding-${suffix}`,
-					caseId: opened.data.id,
-					findingCode: "SUBSTANTIATED",
-					findingSummary: "Parity finding",
-					expectedVersion: opened.data.version,
-				},
-				authReady,
-			);
-			expect(finding.ok).toBe(true);
-			if (!finding.ok) return;
-
-			const recommended = await recommendEmployeeCaseAction(
-				{
-					organizationId: ORG,
-					actorUserId: ACTOR,
-					correlationId: `corr-rec-${suffix}`,
-					caseId: opened.data.id,
-					idempotencyKey: `idem-action-${suffix}`,
-					actionType: "warning",
-					expectedVersion: finding.data.version,
-				},
-				authReady,
-			);
-			expect(recommended.ok).toBe(true);
-			if (!recommended.ok) return;
-
-			const approved = await approveEmployeeCaseAction(
-				{
-					organizationId: ORG,
-					actorUserId: ACTOR,
-					correlationId: `corr-app-${suffix}`,
-					caseId: opened.data.id,
-					actionId: recommended.data.id,
-					policyValidationRecorded: true,
-					expectedVersion: finding.data.version + 1,
-				},
-				authReady,
-			);
-			expect(approved.ok).toBe(true);
-			if (!approved.ok) return;
-			expect(approved.data.status).toBe("approved");
+describe.skipIf(!hasDatabase)(
+	"Employee relations memory vs drizzle parity",
+	() => {
+		afterAll(async () => {
+			await cleanupHumanResourcesNeonOrgs([ORG]);
 		});
-	}
-});
+
+		for (const adapter of ["memory", "drizzle"] as const) {
+			it(`${adapter}: open → finding → approve action`, async () => {
+				const suffix = uniqueSuffix(adapter);
+				const ready = createWorkforceHarness(adapter);
+				const authReady = {
+					...ready,
+					authorization: createGrantingHumanResourcesAuthorization([
+						...ER_PARITY_PERMISSIONS,
+					]),
+				};
+				const { employee, employment } = await seedEmployeeEmployment(
+					authReady,
+					suffix,
+				);
+
+				const opened = await openEmployeeCase(
+					{
+						organizationId: ORG,
+						actorUserId: ACTOR,
+						correlationId: `corr-open-${suffix}`,
+						idempotencyKey: `idem-case-${suffix}`,
+						employeeId: employee.id,
+						employmentId: employment.id,
+						caseType: "conduct",
+						severity: "high",
+						allegationSummary: "Parity allegation",
+						classificationCode: "PARITY-01",
+						ownerActorUserId: ACTOR,
+						subjectActorUserId: null,
+						conflictedActorUserIds: [],
+					},
+					authReady,
+				);
+				expect(opened.ok).toBe(true);
+				if (!opened.ok) return;
+
+				const finding = await recordEmployeeCaseFinding(
+					{
+						organizationId: ORG,
+						actorUserId: ACTOR,
+						correlationId: `corr-finding-${suffix}`,
+						caseId: opened.data.id,
+						findingCode: "SUBSTANTIATED",
+						findingSummary: "Parity finding",
+						expectedVersion: opened.data.version,
+					},
+					authReady,
+				);
+				expect(finding.ok).toBe(true);
+				if (!finding.ok) return;
+
+				const recommended = await recommendEmployeeCaseAction(
+					{
+						organizationId: ORG,
+						actorUserId: ACTOR,
+						correlationId: `corr-rec-${suffix}`,
+						caseId: opened.data.id,
+						idempotencyKey: `idem-action-${suffix}`,
+						actionType: "warning",
+						expectedVersion: finding.data.version,
+					},
+					authReady,
+				);
+				expect(recommended.ok).toBe(true);
+				if (!recommended.ok) return;
+
+				const approved = await approveEmployeeCaseAction(
+					{
+						organizationId: ORG,
+						actorUserId: ACTOR,
+						correlationId: `corr-app-${suffix}`,
+						caseId: opened.data.id,
+						actionId: recommended.data.id,
+						policyValidationRecorded: true,
+						expectedVersion: finding.data.version + 1,
+					},
+					authReady,
+				);
+				expect(approved.ok).toBe(true);
+				if (!approved.ok) return;
+				expect(approved.data.status).toBe("approved");
+			});
+		}
+	},
+);

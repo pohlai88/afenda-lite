@@ -379,9 +379,7 @@ export function assertSuccessionCandidateNominatable(input: {
 		);
 	}
 	if (hasExternal && !input.allowsExternalCandidates) {
-		return invalidState(
-			"Succession plan does not allow external candidates",
-		);
+		return invalidState("Succession plan does not allow external candidates");
 	}
 	if (hasEmployee && input.employmentStatus !== "active") {
 		return invalidState(

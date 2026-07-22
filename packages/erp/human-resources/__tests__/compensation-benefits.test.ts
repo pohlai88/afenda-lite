@@ -620,7 +620,7 @@ describe("compensation & benefits (HR-07)", () => {
 			"src/compensation-benefits/benefit-plan.ts",
 			"src/compensation-benefits/benefit-enrollment.ts",
 			"src/shared/compensation-command.ts",
-			"src/adapters/drizzle/compensation.ts",
+			"src/adapters/drizzle/compensation-benefits.ts",
 		];
 
 		for (const relativePath of modules) {

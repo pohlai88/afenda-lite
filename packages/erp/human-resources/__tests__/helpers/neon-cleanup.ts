@@ -1,9 +1,19 @@
 import {
 	db,
 	eq,
+	hrBenefitEligibility,
+	hrBenefitEnrollment,
+	hrBenefitPlan,
 	hrCandidate,
 	hrCandidateApplication,
+	hrCareerPlan,
+	hrCareerPlanAction,
 	hrClearance,
+	hrCompensationGrade,
+	hrCompensationReview,
+	hrCompensationReviewCycle,
+	hrCompetency,
+	hrCompetencyAssessment,
 	hrDepartment,
 	hrDocumentRequirement,
 	hrEmployee,
@@ -12,6 +22,7 @@ import {
 	hrEmployeeCaseAppeal,
 	hrEmployeeCaseEvent,
 	hrEmployeeCertification,
+	hrEmployeeCompensation,
 	hrEmployeeDocument,
 	hrEmployment,
 	hrEmploymentConfirmation,
@@ -25,7 +36,12 @@ import {
 	hrInterview,
 	hrInterviewEvaluation,
 	hrJob,
+	hrJobCompetency,
 	hrJobRequisition,
+	hrLearningAssignment,
+	hrLearningCompletion,
+	hrLearningCourse,
+	hrLearningSession,
 	hrLeaveAdjustment,
 	hrLeaveApprovalDecision,
 	hrLeaveEntitlement,
@@ -33,10 +49,6 @@ import {
 	hrLeavePolicyEligibility,
 	hrLeaveRequest,
 	hrLeaveRequestSegment,
-	hrLearningAssignment,
-	hrLearningCompletion,
-	hrLearningCourse,
-	hrLearningSession,
 	hrOffboardingCase,
 	hrOffboardingTask,
 	hrOnboardingCase,
@@ -50,10 +62,17 @@ import {
 	hrPerformanceImprovementPlan,
 	hrPerformanceReview,
 	hrPerformanceReviewParticipant,
-	hrPosition,
 	hrPolicyAcknowledgement,
+	hrPosition,
 	hrProbationReview,
 	hrReportingLine,
+	hrSalaryBand,
+	hrSuccessionCandidate,
+	hrSuccessionPlan,
+	hrTalentPool,
+	hrTalentPoolMember,
+	hrTalentProfile,
+	hrTalentProfileAssessment,
 	hrTermination,
 	hrWorkAssignment,
 	hrWorkEligibility,
@@ -79,9 +98,7 @@ function isForeignKeyViolation(error: unknown): boolean {
 			return true;
 		}
 		current =
-			typeof current === "object" &&
-			current !== null &&
-			"cause" in current
+			typeof current === "object" && current !== null && "cause" in current
 				? (current as { cause: unknown }).cause
 				: null;
 	}
@@ -223,7 +240,9 @@ export async function cleanupHumanResourcesNeonOrgs(
 			.where(eq(hrEmploymentContract.organizationId, organizationId));
 		await db
 			.delete(hrPerformanceImprovementCheckpoint)
-			.where(eq(hrPerformanceImprovementCheckpoint.organizationId, organizationId));
+			.where(
+				eq(hrPerformanceImprovementCheckpoint.organizationId, organizationId),
+			);
 		await db
 			.delete(hrPerformanceImprovementPlan)
 			.where(eq(hrPerformanceImprovementPlan.organizationId, organizationId));
@@ -248,6 +267,39 @@ export async function cleanupHumanResourcesNeonOrgs(
 		await db
 			.delete(hrPerformanceCycle)
 			.where(eq(hrPerformanceCycle.organizationId, organizationId));
+		await db
+			.delete(hrSuccessionCandidate)
+			.where(eq(hrSuccessionCandidate.organizationId, organizationId));
+		await db
+			.delete(hrSuccessionPlan)
+			.where(eq(hrSuccessionPlan.organizationId, organizationId));
+		await db
+			.delete(hrCareerPlanAction)
+			.where(eq(hrCareerPlanAction.organizationId, organizationId));
+		await db
+			.delete(hrCareerPlan)
+			.where(eq(hrCareerPlan.organizationId, organizationId));
+		await db
+			.delete(hrTalentPoolMember)
+			.where(eq(hrTalentPoolMember.organizationId, organizationId));
+		await db
+			.delete(hrTalentPool)
+			.where(eq(hrTalentPool.organizationId, organizationId));
+		await db
+			.delete(hrTalentProfileAssessment)
+			.where(eq(hrTalentProfileAssessment.organizationId, organizationId));
+		await db
+			.delete(hrTalentProfile)
+			.where(eq(hrTalentProfile.organizationId, organizationId));
+		await db
+			.delete(hrCompetencyAssessment)
+			.where(eq(hrCompetencyAssessment.organizationId, organizationId));
+		await db
+			.delete(hrJobCompetency)
+			.where(eq(hrJobCompetency.organizationId, organizationId));
+		await db
+			.delete(hrCompetency)
+			.where(eq(hrCompetency.organizationId, organizationId));
 		await deleteLeaveGraphForOrganization(organizationId);
 		await db
 			.delete(hrEmployeeCaseEvent)
@@ -262,8 +314,41 @@ export async function cleanupHumanResourcesNeonOrgs(
 			.delete(hrEmployeeCase)
 			.where(eq(hrEmployeeCase.organizationId, organizationId));
 		await db
-			.delete(hrEmployment)
-			.where(eq(hrEmployment.organizationId, organizationId));
+			.delete(hrCompensationReview)
+			.where(eq(hrCompensationReview.organizationId, organizationId));
+		await db
+			.delete(hrCompensationReviewCycle)
+			.where(eq(hrCompensationReviewCycle.organizationId, organizationId));
+		await db
+			.delete(hrBenefitEnrollment)
+			.where(eq(hrBenefitEnrollment.organizationId, organizationId));
+		await db
+			.delete(hrBenefitEligibility)
+			.where(eq(hrBenefitEligibility.organizationId, organizationId));
+		await db
+			.delete(hrBenefitPlan)
+			.where(eq(hrBenefitPlan.organizationId, organizationId));
+		for (let attempt = 1; attempt <= 3; attempt++) {
+			await db
+				.delete(hrEmployeeCompensation)
+				.where(eq(hrEmployeeCompensation.organizationId, organizationId));
+			try {
+				await db
+					.delete(hrEmployment)
+					.where(eq(hrEmployment.organizationId, organizationId));
+				break;
+			} catch (error) {
+				if (!isForeignKeyViolation(error) || attempt === 3) {
+					throw error;
+				}
+			}
+		}
+		await db
+			.delete(hrSalaryBand)
+			.where(eq(hrSalaryBand.organizationId, organizationId));
+		await db
+			.delete(hrCompensationGrade)
+			.where(eq(hrCompensationGrade.organizationId, organizationId));
 		await db
 			.delete(hrPosition)
 			.where(eq(hrPosition.organizationId, organizationId));

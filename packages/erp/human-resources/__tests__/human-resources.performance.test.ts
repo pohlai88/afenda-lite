@@ -21,6 +21,11 @@ import {
 	HUMAN_RESOURCES_ERROR_STALE_VERSION,
 } from "../src/error-codes";
 import {
+	approvePerformanceGoal,
+	createPerformanceGoal,
+	submitPerformanceGoal,
+} from "../src/performance/goal";
+import {
 	acknowledgeImprovementPlan,
 	createImprovementPlan,
 	getImprovementPlanById,
@@ -36,12 +41,6 @@ import {
 	openPerformanceCycle,
 	removeCycleParticipant,
 } from "../src/performance/performance-cycle";
-import {
-	approvePerformanceGoal,
-	createPerformanceGoal,
-	submitPerformanceGoal,
-} from "../src/performance/goal";
-import type { PerformanceReview } from "../src/types";
 import {
 	acknowledgePerformanceReview,
 	finalizePerformanceReview,
@@ -63,6 +62,7 @@ import {
 	HUMAN_RESOURCES_PERMISSION_PERFORMANCE_REVIEW_REOPEN,
 } from "../src/permissions";
 import { createMemoryHumanResourcesStore } from "../src/testing";
+import type { PerformanceReview } from "../src/types";
 import { createGrantingHumanResourcesAuthorization } from "./helpers/memory-authorization";
 import { createMemoryMutationPorts } from "./helpers/memory-ports";
 import { humanResourcesCodeFromResult } from "./helpers/result-details";
@@ -872,7 +872,11 @@ describe("Performance review workflow", () => {
 			organizationId: ORG_A,
 			suffix: "immutable",
 		});
-		const finalized = await finalizeReview(ready, seeded.review, "idem-immutable");
+		const finalized = await finalizeReview(
+			ready,
+			seeded.review,
+			"idem-immutable",
+		);
 		expect(finalized.ok).toBe(true);
 		if (!finalized.ok) return;
 
@@ -900,7 +904,8 @@ describe("Performance review workflow", () => {
 		const fullReady = {
 			store,
 			ports,
-			authorization: createGrantingHumanResourcesAuthorization(PERF_PERMISSIONS),
+			authorization:
+				createGrantingHumanResourcesAuthorization(PERF_PERMISSIONS),
 		};
 		const ownReadReady = {
 			store,
@@ -991,7 +996,11 @@ describe("Performance improvement plan", () => {
 			organizationId: ORG_A,
 			suffix: "pip",
 		});
-		const finalized = await finalizeReview(ready, seeded.review, "idem-pip-finalize");
+		const finalized = await finalizeReview(
+			ready,
+			seeded.review,
+			"idem-pip-finalize",
+		);
 		if (!finalized.ok) throw new Error(finalized.code);
 
 		const plan = await createImprovementPlan(

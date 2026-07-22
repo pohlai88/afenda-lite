@@ -6,12 +6,12 @@ import {
 	HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_RECORD_EVENT,
 	HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_REDACT_EVIDENCE_REFERENCE,
 } from "../module-ids";
+import { runEmployeeRelationsCommand } from "../shared/employee-relations-command";
 import {
 	addEmployeeCaseEvidenceReferenceInputSchema,
 	recordEmployeeCaseEventInputSchema,
 	redactEmployeeCaseEvidenceReferenceInputSchema,
 } from "./schemas";
-import { runEmployeeRelationsCommand } from "../shared/employee-relations-command";
 import type { EmployeeCaseEvent } from "./types";
 
 export const HUMAN_RESOURCES_AGGREGATE_EMPLOYEE_CASE_EVENT =

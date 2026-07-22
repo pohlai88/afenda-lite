@@ -3,9 +3,7 @@ import type { Result } from "@afenda/errors/result";
 import type { HumanResourcesCommandOptions } from "../command-options";
 import { HUMAN_RESOURCES_QUERY_EMPLOYEE_COMPLIANCE_SUMMARY_GET } from "../module-ids";
 import { getEmployeeComplianceSummaryInputSchema } from "../schemas-compliance";
-import {
-	runComplianceEmployeeScopedQuery,
-} from "../shared/compliance-command";
+import { runComplianceEmployeeScopedQuery } from "../shared/compliance-command";
 import type { EmployeeComplianceSummary } from "../types";
 
 export async function getEmployeeComplianceSummary(
