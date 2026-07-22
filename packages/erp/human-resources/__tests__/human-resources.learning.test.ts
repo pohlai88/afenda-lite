@@ -16,31 +16,23 @@ import {
 	HUMAN_RESOURCES_ERROR_FORBIDDEN,
 	HUMAN_RESOURCES_ERROR_INVALID_INPUT,
 	HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
-	HUMAN_RESOURCES_ERROR_NOT_FOUND,
 	HUMAN_RESOURCES_ERROR_STALE_VERSION,
 } from "../src/error-codes";
 import {
-	getCertification,
 	issueCertification,
 	listCertifications,
 	revokeCertification,
 } from "../src/learning/certification";
-import {
-	getCompletion,
-	listCompletions,
-	recordCompletion,
-} from "../src/learning/completion";
+import { listCompletions, recordCompletion } from "../src/learning/completion";
 import {
 	archiveCourse,
 	createCourse,
-	getCourse,
 	listCourses,
 	updateCourse,
 } from "../src/learning/course";
 import {
 	assignLearning,
 	enrolAssignment,
-	getLearningAssignment,
 	listLearningAssignments,
 	waiveAssignment,
 } from "../src/learning/learning-assignment";
@@ -48,12 +40,10 @@ import {
 	cancelSession,
 	completeSession,
 	createSession,
-	getSession,
 	listSessions,
 	startSession,
 } from "../src/learning/learning-session";
 import {
-	HUMAN_RESOURCES_PERMISSION_CERTIFICATION_MANAGE,
 	HUMAN_RESOURCES_PERMISSION_CODES,
 	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_CREATE,
 	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_READ,

@@ -12,7 +12,7 @@ import {
 	getProbationReviewInputSchema,
 	openProbationInputSchema,
 	recordProbationOutcomeInputSchema,
-} from "../schemas";
+} from "../schemas/lifecycle";
 import { fingerprintProbationOpen } from "../shared/fingerprint";
 import {
 	runLifecycleCommand,

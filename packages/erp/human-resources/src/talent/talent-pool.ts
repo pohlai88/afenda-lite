@@ -22,7 +22,7 @@ import {
 	nominateTalentPoolMemberInputSchema,
 	removeTalentPoolMemberInputSchema,
 	updateTalentPoolInputSchema,
-} from "../schemas";
+} from "../schemas/talent";
 import {
 	fingerprintTalentPoolCreate,
 	fingerprintTalentPoolMemberCreate,

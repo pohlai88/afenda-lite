@@ -6,14 +6,14 @@ import { createGrantingHumanResourcesAuthorization } from "./memory-authorizatio
 import { createMemoryMutationPorts } from "./memory-ports";
 import { seedDepartmentAndJob } from "./seed-department-and-job";
 
+export { seedDepartmentAndJob };
+
 export type WorkforceStoreAdapter = "memory" | "drizzle";
 
 export type WorkforceHarness = HumanResourcesCommandOptions & {
 	adapter: WorkforceStoreAdapter;
 	ports: ReturnType<typeof createMemoryMutationPorts>;
 };
-
-export { seedDepartmentAndJob };
 
 /** Shared Memory / Drizzle harness for workforce semantic parity suites. */
 export function createWorkforceHarness(

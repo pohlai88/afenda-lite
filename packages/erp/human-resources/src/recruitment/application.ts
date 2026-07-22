@@ -19,7 +19,7 @@ import {
 	createApplicationInputSchema,
 	getApplicationInputSchema,
 	listApplicationsInputSchema,
-} from "../schemas";
+} from "../schemas/recruitment";
 import {
 	runRecruitmentCommand,
 	runRecruitmentQuery,

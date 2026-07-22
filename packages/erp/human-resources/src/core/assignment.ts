@@ -22,7 +22,7 @@ import {
 	createAssignmentInputSchema,
 	endAssignmentInputSchema,
 	getAssignmentInputSchema,
-} from "../schemas";
+} from "../schemas/organization";
 import type { WorkAssignment } from "../types";
 
 export async function createAssignment(

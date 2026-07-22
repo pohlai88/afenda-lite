@@ -14,26 +14,23 @@ import {
 	HUMAN_RESOURCES_COMMAND_IMPROVEMENT_PLAN_CREATE,
 	HUMAN_RESOURCES_COMMAND_IMPROVEMENT_PLAN_OPEN,
 	HUMAN_RESOURCES_COMMAND_IMPROVEMENT_PLAN_RECORD_CHECKPOINT,
-	HUMAN_RESOURCES_QUERY_EMPLOYEE_PERFORMANCE_HISTORY_GET,
 	HUMAN_RESOURCES_QUERY_IMPROVEMENT_PLAN_GET,
 	HUMAN_RESOURCES_QUERY_IMPROVEMENT_PLAN_LIST_ACTIVE,
 } from "../module-ids";
 import {
 	amendImprovementPlanInputSchema,
 	createImprovementPlanInputSchema,
-	getEmployeePerformanceHistoryInputSchema,
 	getImprovementPlanByIdInputSchema,
 	improvementPlanStatusTransitionInputSchema,
 	listActiveImprovementPlansInputSchema,
 	recordImprovementCheckpointInputSchema,
-} from "../schemas";
+} from "../schemas/performance";
 import { fingerprintImprovementPlanCreate } from "../shared/fingerprint";
 import {
 	runPerformanceCommand,
 	runPerformanceQuery,
 } from "../shared/performance-command";
 import type {
-	EmployeePerformanceHistory,
 	PerformanceImprovementCheckpoint,
 	PerformanceImprovementPlan,
 	PerformanceImprovementPlanListPage,
@@ -295,19 +292,5 @@ export async function listActiveImprovementPlans(
 	});
 }
 
-export async function getEmployeePerformanceHistory(
-	input: unknown,
-	options: HumanResourcesCommandOptions = {},
-): Promise<Result<EmployeePerformanceHistory>> {
-	return runPerformanceQuery(input, options, {
-		schema: getEmployeePerformanceHistoryInputSchema,
-		invalidMessage: "Invalid employee performance history get input",
-		query: HUMAN_RESOURCES_QUERY_EMPLOYEE_PERFORMANCE_HISTORY_GET,
-		execute: (data, { store }) =>
-			store.getEmployeePerformanceHistory({
-				organizationId: data.organizationId,
-				employeeId: data.employeeId,
-				includeConfidential: data.includeConfidential,
-			}),
-	});
-}
+// Re-export from review module to avoid duplication
+export { getEmployeePerformanceHistory } from "./review";

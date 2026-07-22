@@ -20,7 +20,7 @@ import {
 	recordClearanceInputSchema,
 	recordExitInterviewInputSchema,
 	startOffboardingInputSchema,
-} from "../schemas";
+} from "../schemas/lifecycle";
 import { fingerprintOffboardingStart } from "../shared/fingerprint";
 import {
 	runLifecycleCommand,

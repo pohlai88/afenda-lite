@@ -25,7 +25,7 @@ import {
 	getEmployeeByIdInputSchema,
 	listEmployeesInputSchema,
 	updateEmployeeInputSchema,
-} from "../schemas";
+} from "../schemas/core";
 import { normalizeEmployeeNumber } from "../shared/employee-number";
 import { fingerprintEmployeeCreate } from "../shared/fingerprint";
 import type { Employee, EmployeeListPage } from "../types";

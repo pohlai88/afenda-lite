@@ -15,7 +15,7 @@ import {
 	getCompletionByAssignmentInputSchema,
 	listCompletionsInputSchema,
 	recordCompletionInputSchema,
-} from "../schemas";
+} from "../schemas/learning";
 import { fingerprintCompletionRecord } from "../shared/fingerprint";
 import {
 	runLearningCommand,

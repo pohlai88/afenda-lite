@@ -25,7 +25,7 @@ import {
 	getOfferInputSchema,
 	listOffersInputSchema,
 	offerStatusTransitionInputSchema,
-} from "../schemas";
+} from "../schemas/recruitment";
 import { fingerprintOfferAccept } from "../shared/fingerprint";
 import {
 	runRecruitmentCommand,

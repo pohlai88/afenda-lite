@@ -8,7 +8,7 @@ import {
 import {
 	confirmEmploymentInputSchema,
 	getEmploymentConfirmationInputSchema,
-} from "../schemas";
+} from "../schemas/lifecycle";
 import { fingerprintConfirmation } from "../shared/fingerprint";
 import {
 	runLifecycleCommand,

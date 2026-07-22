@@ -1,14 +1,15 @@
-# Human Resources schema refactor
+# Human Resources — Zod schemas
 
-This is a drop-in, behavior-preserving split of the supplied `schemas.ts` and
-`schemas-compliance.ts` files.
+Domain-sliced Zod input schemas for `@afenda/human-resources`. Root barrels at `src/schemas.ts` and `src/schemas-compliance.ts` re-export this tree for backward-compatible imports.
 
-## Target structure
+**Status:** Slices A–D complete. Domain commands use narrow `../schemas/<domain>` imports; package `src/index.ts` keeps `./schemas` for public re-exports.
+
+## Layout
 
 ```text
 src/
-├── schemas.ts                         # compatibility barrel
-├── schemas-compliance.ts              # compatibility barrel
+├── schemas.ts                         # compatibility barrel → schemas/index
+├── schemas-compliance.ts              # compatibility barrel → schemas/compliance
 └── schemas/
     ├── common.ts                      # context, idempotency, OCC, ISO date primitives
     ├── core.ts                        # employee, employment, employment contract
@@ -20,7 +21,7 @@ src/
     ├── workforce-planning.ts          # headcount plans, lines, reservations, handoffs
     ├── leave.ts                       # policies, entitlements, requests, approvals, handoffs
     ├── performance.ts                 # cycles, goals, reviews, improvement plans
-    ├── compliance.ts                  # existing separate compliance entrypoint
+    ├── compliance.ts                  # separate compliance entrypoint
     ├── talent/
     │   ├── competency.ts
     │   ├── profile.ts
@@ -31,28 +32,20 @@ src/
     └── index.ts
 ```
 
-## Integration
-
-1. Copy `src/schemas/` into the package.
-2. Replace the existing `src/schemas.ts` and `src/schemas-compliance.ts` with the supplied barrels.
-3. Keep existing imports unchanged. Examples:
+## Import patterns
 
 ```ts
+// Package consumers (unchanged)
 import { createEmployeeInputSchema } from "./schemas";
 import { registerEmployeeDocumentInputSchema } from "./schemas-compliance";
-```
 
-Internal domain code may now use narrow imports:
-
-```ts
+// Domain-owned code (preferred)
 import { createCourseInputSchema } from "./schemas/learning";
 import { createCareerPlanInputSchema } from "./schemas/talent/career-plan";
 ```
 
-## Important contract note
+## Contract note
 
-The supplied compliance file defines a second `humanResourcesMutationContextSchema`
-that has only `organizationId` and `actorUserId`, while the primary schema context also
-requires `correlationId` and is strict. This refactor intentionally preserves that current
-behavior rather than silently changing validation. A separate follow-up should decide
-whether compliance commands must adopt the authoritative correlation-aware context.
+`schemas/compliance.ts` defines a narrower `humanResourcesMutationContextSchema` (org + actor only). The main tree requires `correlationId` and uses `.strict()`. That dual shape is intentional — do not unify without an explicit compliance contract change.
+
+See [INTEGRATION.md](./INTEGRATION.md) for slice history and [VALIDATION.md](./VALIDATION.md) for export parity evidence.

@@ -12,10 +12,6 @@ import {
 	HUMAN_RESOURCES_COMMAND_EMPLOYEE_DOCUMENT_REVOKE_VERIFICATION,
 	HUMAN_RESOURCES_COMMAND_EMPLOYEE_DOCUMENT_UPDATE_METADATA,
 	HUMAN_RESOURCES_COMMAND_EMPLOYEE_DOCUMENT_VERIFY,
-	HUMAN_RESOURCES_QUERY_EMPLOYEE_DOCUMENT_GET,
-	HUMAN_RESOURCES_QUERY_EMPLOYEE_DOCUMENT_LIST,
-	HUMAN_RESOURCES_QUERY_EMPLOYEE_DOCUMENT_LIST_EXPIRING,
-	HUMAN_RESOURCES_QUERY_EMPLOYEE_DOCUMENT_LIST_MISSING_REQUIRED,
 } from "../module-ids";
 import {
 	employeeDocumentTransitionInputSchema,
@@ -27,13 +23,12 @@ import {
 	rejectEmployeeDocumentInputSchema,
 	updateEmployeeDocumentMetadataInputSchema,
 	verifyEmployeeDocumentInputSchema,
-} from "../schemas-compliance";
+} from "../schemas/compliance";
 import {
 	requireComplianceEmployeeReadScope,
 	requireIdentityDocumentSensitiveRead,
 	runComplianceCommand,
 	runComplianceEmployeeScopedQuery,
-	runComplianceQuery,
 } from "../shared/compliance-command";
 import { assertValidDocumentDateRange } from "../shared/compliance-guards";
 import {

@@ -36,7 +36,7 @@ import {
 	returnLeaveRequestInputSchema,
 	submitLeaveRequestInputSchema,
 	withdrawLeaveRequestInputSchema,
-} from "../schemas";
+} from "../schemas/leave";
 import { fingerprintLeaveRequestCreate } from "../shared/fingerprint";
 import {
 	assertLeaveRequestSensitiveReadAllowed,

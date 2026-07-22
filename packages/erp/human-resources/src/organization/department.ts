@@ -29,7 +29,7 @@ import {
 	listDepartmentsInputSchema,
 	organizationTreeInputSchema,
 	updateDepartmentInputSchema,
-} from "../schemas";
+} from "../schemas/organization";
 import type { Department, OrganizationTreePage } from "../types";
 
 export const HUMAN_RESOURCES_AGGREGATE_DEPARTMENT = "department" as const;

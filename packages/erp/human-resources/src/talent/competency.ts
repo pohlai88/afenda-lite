@@ -30,7 +30,7 @@ import {
 	retireCompetencyInputSchema,
 	supersedeCompetencyAssessmentInputSchema,
 	updateCompetencyInputSchema,
-} from "../schemas";
+} from "../schemas/talent";
 import {
 	fingerprintCompetencyAssessmentCreate,
 	fingerprintCompetencyAssessmentSupersede,

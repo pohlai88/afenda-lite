@@ -18,7 +18,7 @@ import {
 	getSessionInputSchema,
 	listSessionsInputSchema,
 	sessionStatusTransitionInputSchema,
-} from "../schemas";
+} from "../schemas/learning";
 import { fingerprintSessionCreate } from "../shared/fingerprint";
 import {
 	runLearningCommand,

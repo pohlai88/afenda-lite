@@ -8,7 +8,7 @@ import {
 import {
 	createEmployeeCompensationInputSchema,
 	endEmployeeCompensationInputSchema,
-} from "../schemas";
+} from "../schemas/compensation";
 import {
 	assertCurrencyExists,
 	runCompensationCommand,

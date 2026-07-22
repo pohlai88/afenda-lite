@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { fail, type Result } from "@afenda/errors/result";
 
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
@@ -24,7 +24,7 @@ import {
 	resolveApplicableLeavePolicyInputSchema,
 	supersedeLeavePolicyInputSchema,
 	updateLeavePolicyInputSchema,
-} from "../schemas";
+} from "../schemas/leave";
 import { fingerprintLeavePolicyCreate } from "../shared/fingerprint";
 import { runLeaveCommand, runLeaveQuery } from "../shared/leave-command";
 import type {
@@ -46,7 +46,7 @@ export async function createLeavePolicy(
 		invalidMessage: "Invalid leave policy create input",
 		command: HUMAN_RESOURCES_COMMAND_LEAVE_POLICY_CREATE,
 		execute: async (data, { store, ports }) => {
-			const fingerprint = fingerprintLeavePolicyCreate({
+			const _fingerprint = fingerprintLeavePolicyCreate({
 				code: data.code,
 				name: data.name,
 				leaveType: data.leaveType,

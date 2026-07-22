@@ -14,7 +14,7 @@ import {
 	getOnboardingCaseInputSchema,
 	listOnboardingTasksInputSchema,
 	startOnboardingInputSchema,
-} from "../schemas";
+} from "../schemas/lifecycle";
 import { fingerprintOnboardingStart } from "../shared/fingerprint";
 import {
 	runLifecycleCommand,

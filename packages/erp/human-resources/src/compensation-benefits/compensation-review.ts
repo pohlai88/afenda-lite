@@ -12,7 +12,7 @@ import {
 	createCompensationReviewDraftInputSchema,
 	finalizeCompensationReviewInputSchema,
 	recordCompensationRecommendationInputSchema,
-} from "../schemas";
+} from "../schemas/compensation";
 import {
 	assertCurrencyExists,
 	runCompensationCommand,

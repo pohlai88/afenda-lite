@@ -1,16 +1,4 @@
-export { createDrizzleHumanResourcesStore } from "../adapters/drizzle";
+// Testing utilities for human resources package
 
-export {
-	createMemoryHumanResourcesStore,
-	type MemoryHumanResourcesStore,
-} from "../adapters/memory/store";
-
-export type { MutationPorts } from "../ports";
-
-export type {
-	EmployeeCreateRecord,
-	HumanResourcesStore,
-	IdempotentEmployeeRecord,
-} from "../store";
-
-export { createMemoryWorkCalendar } from "../work-calendar";
+// Memory store factory for testing
+export { createMemoryHumanResourcesStore } from "../adapters/memory/store";

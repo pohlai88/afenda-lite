@@ -14,8 +14,6 @@ import {
 import { fail, ok, type Result } from "@afenda/errors/result";
 
 import {
-	type HumanResourcesHeadcountPlanId,
-	type HumanResourcesHeadcountPlanLineId,
 	type HumanResourcesHeadcountReservationId,
 	parseHumanResourcesDepartmentId,
 	parseHumanResourcesHeadcountPlanId,
@@ -1398,7 +1396,7 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 		}
 	},
 
-	async reserveHeadcount(record, ports, meta) {
+	async reserveHeadcount(record, _ports, meta) {
 		const existingIdempotent =
 			await this.findHeadcountReservationByIdempotencyKey({
 				organizationId: record.organizationId,

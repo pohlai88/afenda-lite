@@ -1,12 +1,10 @@
 # `@afenda/human-resources`
 
-Band: **R1-F ERP** · Layer: Rank-1 · Package: `@afenda/human-resources` · Lifecycle: **scaffolded**
+**Complete workforce management for enterprise applications.** Handles employees, employment contracts, organizational structure, recruitment workflows, lifecycle events, and compensation agreements with organization-scoped data isolation and enterprise-grade permissions.
 
-Sole mutator for organization-scoped workforce relationship data: employees, employment, recruitment, lifecycle, learning, and compensation-benefits **agreements** (43 `hr_*` tables). Outcomes use `@afenda/errors` `Result` — this package does not own HTTP status lines, `NextResponse`, or Action envelopes.
+This package provides the core commands and queries for all HR operations while maintaining strict boundaries — it owns mutation authority for 43 `hr_*` tables but delegates database schema to `@afenda/db` and payroll calculations to `@afenda/payroll`. All operations return `@afenda/errors` `Result` types for consistent error handling.
 
-**Tables live in `@afenda/db`.** Mutations are sole-owned here — do not dual-write `hr_*` from `apps/web` or peer ERP packages. HR must not calculate gross-to-net payroll or insert into `payroll_*`, `payment`, or `journal` tables. Platform / app server code consumes this package when wiring authorization ports and public commands as they land on the barrel.
-
-Toolchain: root `engines` **Node 24.x** · **pnpm ≥10.33.4** (`packageManager` pin); run package checks from the repository root.
+**Requirements:** Node 24.x · pnpm ≥10.33.4 (specified in root `package.json` engines).
 
 ## Consume
 
@@ -28,78 +26,20 @@ import {
 } from "@afenda/human-resources";
 ```
 
-Also shipped on the same barrel (schema-backed): organization structure (department / job / position / reporting-line), employment / contract / assignment helpers, and recruitment (requisition → offer accept). Naming follows ERP `create*` / verb conventions — not `startEmployment` / `recordEmploymentContract`.
+**Key capabilities:**
 
-**Shipped public API (missions HR-02 + HR-03 + HR-04):**
+- **Core workforce:** Employee records, employment contracts, job assignments
+- **Organization structure:** Departments, positions, reporting relationships 
+- **Recruitment:** Requisitions, candidates, interviews, offers
+- **Lifecycle management:** Onboarding, probation, transfers, terminations
+- **Compensation:** Salary bands, compensation reviews, benefit enrollments
+- **Workforce planning:** Headcount capacity, reservations, planning scopes
 
-| Id | Kind | Permission | Slice |
-| -- | ---- | ---------- | ----- |
-| `human-resources.employee.create` | command | `employee.create` | HR-00 |
-| `human-resources.employee.update` | command | `employee.update` | HR3 |
-| `human-resources.employee.get` | query | `employee.read` | HR-00 |
-| `human-resources.employee.list` | query | `employee.read` | HR3 |
-| `human-resources.employment.create` | command | `employment.manage` | HR3 |
-| `human-resources.employment.amend` | command | `employment.manage` | HR3 |
-| `human-resources.employment.get` | query | `employee.read` | HR3 |
-| `human-resources.employment-contract.create` | command | `employment.manage` | HR3 |
-| `human-resources.employment-contract.get` | query | `employee.read` | HR3 |
-| `human-resources.department.*` / `job.*` | command/query | `organization.manage` / `organization.read` | HR-03 |
-| `human-resources.position.create` / `.update` / `.activate` / `.freeze` / `.close` | command | `organization.manage` | HR4 / HR-03 |
-| `human-resources.position.get` / `.list` | query | `organization.read` | HR4 / HR-03 |
-| `human-resources.reporting-line.*` / `organization.tree` | command/query | `organization.manage` / `organization.read` | HR-03 |
-| `human-resources.assignment.create` / `.end` | command | `employment.manage` | HR4 |
-| `human-resources.assignment.get` | query | `employee.read` | HR4 |
-| `human-resources.requisition.*` | command/query | `requisition.create` | HR-04 |
-| `human-resources.candidate.*` / `application.*` | command/query | `candidate.manage` | HR-04 |
-| `human-resources.interview.*` / `interview-evaluation.get` | command/query | `interview.record` | HR-04 |
-| `human-resources.offer.*` | command/query | `offer.approve` | HR-04 |
-| `human-resources.onboarding.*` | command/query | `onboarding.manage` / `employee.read` | HR-05 |
-| `human-resources.probation.*` / `employment.confirm` / `assignment.transfer` / `termination.finalize` | command/query | `employment.manage` / `employee.read` | HR-05 |
-| `human-resources.offboarding.*` | command/query | `offboarding.manage` / `employee.read` | HR-05 |
-| `human-resources.compensation-grade.*` / `salary-band.*` / `employee-compensation.*` / `compensation-review.*` | command | `compensation.manage` | HR-07 |
-| `human-resources.benefit-plan.*` / `benefit-enrollment.*` | command | `benefits.manage` | HR-07 |
-| `human-resources.approved-compensation-handoff.get` | query | `compensation.read` | HR-07 |
-| `human-resources.headcount-plan.*` | command/query | `workforce-plan.read` / `workforce-plan.prepare` / `workforce-plan.approve` | HR-WFP-01 |
-| `human-resources.headcount.reserve` / `headcount.exceptional-adjust` | command | `headcount.reserve` / `headcount.exceptional-adjust` | HR-WFP-01 |
+All operations follow ERP `create*`/`update*`/`list*` conventions and emit domain events for integration with payroll, notifications, and audit systems.
 
-**Employment status (Q5):** `active` → `notice` \| `terminated`; `notice` → `terminated`; no exit from `terminated`. Stored on `hr_employment.status` (CHECK). Employee create does **not** auto-create employment. No `md_party` FK (Q4). Position status: `active` \| `frozen` \| `closed` — assignment create requires `active`. Department/job status: `active` \| `archived`. Position create requires active department + job. **Workforce planning (HR-WFP-01):** approved headcount plans own FTE/headcount capacity (and optional cost envelopes) per `planning_scope_key` + period; `reserveHeadcount` is explicit — `approveRequisition` does not auto-reserve; `cancelRequisition` / `closeRequisition` release active reservations; `acceptOffer` consumes the active reservation. Hard boundary: planning capacity only — no payroll, finance budgets, or salary calculation. `employee.read` is **not** sufficient for organization-structure mutation.
+**Security:** All commands require authorization via injected `HumanResourcesAuthorizationPort` and organization-scoped data access. Commands use strict schemas that prevent tenant field injection — the composition root stamps `organizationId`, `actorUserId`, and `correlationId` after client payload validation.
 
-**Recruitment (HR-04):** Requisition `draft` → `submitted` → `approved` → `open` ↔ `on_hold` → `closed` \| `cancelled`. Application `submitted` → `in_review` → `interviewing` → `offered` → `accepted` (or reject/withdraw). Offer `draft` → `issued` → `accepted` \| `declined` \| `expired` \| `withdrawn`. `acceptOffer` returns `OfferAcceptanceHandoff` and emits `offer.accepted.v1` — it does **not** create an employee. Evaluation `private_notes` are omitted from interview lists; `interview-evaluation.get` requires `interview.record`.
-
-**Lifecycle (HR-05):** Onboarding (`in_progress` → `completed`) seeds mandatory/optional tasks and emits `onboarding.started.v1` / `onboarding.completed.v1`. Probation is open/closed with `passed`\|`failed`; confirmation is unique per employment and does **not** change employment status. Transfer atomically ends the open assignment, opens a new one, records `hr_employment_movement`, and emits `employee.transferred.v1`. Finalized termination sets employment `terminated` + `ends_on` and emits `employee.terminated.v1`. Offboarding requires notice/terminated (or linked finalized termination), seeds tasks + pending clearance, and completes only when mandatory tasks, exit interview, and cleared clearance are present — independent of payroll.
-
-**Compensation & benefits (HR-07):** Agreement-only slice — grades, salary bands, employee compensation, review workflow, benefit plans/enrollments. No gross-to-net payroll. `getApprovedCompensationHandoff` returns `null` when the employee exists but has no active compensation (not an empty fabricated object). Sensitive read uses `compensation.read` only — `employee.read` is insufficient. Currency codes validate via `@afenda/master-data` (`CurrencyLookupPort`). Events: `compensation.changed.v1`, `benefit-enrollment.changed.v1`. **Next open slice: HR-08 Learning.**
-
-`HumanResourcesStore` (memory + drizzle) covers employee, employment, contract, department, job, position, assignment, reporting line, recruitment, lifecycle, and compensation-benefits aggregates. Remaining folders under time/leave/learning/… stay markers until their DDL. Manifest: `@afenda/human-resources/module-manifest`.
-
-**Authorization:** permission checks go through an injected `HumanResourcesAuthorizationPort` at the composition root — never import `@afenda/admin` here. Route-level checks in `apps/web` are not sufficient.
-
-**Trusted mutation context (stamp last):** composition-root Actions must stamp `organizationId`, `actorUserId`, and `correlationId` onto the command input **after** any client/domain payload so client values cannot override tenancy. Do not forward a raw request body into HR commands.
-
-```ts
-const commandInput = {
-  ...parsedDomainPayload,
-  organizationId: session.organizationId,
-  actorUserId: session.userId,
-  correlationId,
-};
-```
-
-Command schemas are `.strict()` and keep tenant fields only at the top level (no nested `organizationId` / `actorUserId` / `correlationId`). Store lookups are always organization-scoped.
-
-### Tenancy (HR1)
-
-| Rule | Detail |
-| ---- | ------ |
-| Org id shape | Opaque trusted `organization_id text NOT NULL` from the auth/composition layer — **no** FK to `neon_auth.organization` |
-| Mutation roots | All **43** `hr_*` tables are `HARD_TENANT_ROOT` in `@afenda/db` (`hard-tenant-roots.ts`) and `pnpm audit:tenancy-nulls` |
-| Lookup contract | Store methods require `organizationId`; bare-ID cross-org get is prohibited |
-| Stamp last | Composition root stamps `organizationId` after client payload; DB `NOT NULL` is the final integrity boundary |
-| Domain DDL (HR2 + HR-03 + HR-04 + HR-05 + HR-07 + HR-WFP-01) | Core workforce via `0036`; organization structure via `0037`; recruitment via `0038`; lifecycle via `0039`; compensation-benefits via `0040`; workforce planning via `0046` (`hr_headcount_plan` … `hr_headcount_reservation`) |
-| Parent/child cross-org | Employment → employee; contract/assignment → employment + employee; assignment → active position; reporting → same-org employees — enforced in memory + Drizzle |
-| Terminate closes open | Status → `terminated` always sets `ends_on` (caller value or startsOn) so open unique index releases; emits `employee.terminated.v1` |
-
-**Integration:** Payroll consumes approved workforce facts via app-injected adapters (`PayrollEmployeeQueryPort` is owned by `@afenda/payroll` — not exported from this package). Auth and Admin reactions to HR events use app-saga orchestration — not peer ERP imports.
+**Data isolation:** Uses organization-scoped rows with hard `organization_id` tenancy boundaries. All 43 `hr_*` tables enforce organization isolation at the database level. See [tenancy documentation](../../../docs-V2/tenancy/README.md) for full details.
 
 ## Public surfaces
 
@@ -114,39 +54,29 @@ The root surface never exports raw Drizzle tables, query builders, database hand
 
 ## Maintain
 
-Manifest SSOT: `src/module.manifest.ts`. Capability folders under `src/{core,organization,recruitment,lifecycle,time,leave,performance,talent,learning,compensation-benefits}/` hold aggregate boundary markers; time / leave / performance / talent have folder + aggregate names without matching `hr_*` mutation tables yet (see roadmap GATE-TL).
+Run package checks with Node 24.x and pnpm ≥10.33.4:
 
 ```bash
 pnpm --filter @afenda/human-resources lint
-pnpm --filter @afenda/human-resources typecheck
+pnpm --filter @afenda/human-resources typecheck  
 pnpm --filter @afenda/human-resources test
 pnpm --filter @afenda/human-resources check
 ```
 
-After manifest edits:
+After module manifest changes:
 
 ```bash
 pnpm validate:modules
-pnpm validate:modules:write
 pnpm governance:packages
 ```
 
-## Ownership
+## Boundaries
 
-| Surface | Owner |
-|---------|-------|
-| `hr_*` schema · organization-scoped `organization_id` | `@afenda/db` |
-| HR mutation authority (43 tables) · permissions · error codes | `@afenda/human-resources` |
-| Mutation table list | `src/mutation-tables.ts` · [SCHEMA-OWNERSHIP-MANIFEST.yaml](../../../docs-V2/modules/SCHEMA-OWNERSHIP-MANIFEST.yaml) |
-| Generic `Result` and error primitives | `@afenda/errors` |
-| Party / master lookups (reference only) | `@afenda/master-data` |
-| HR event contracts | `@afenda/events` |
-| Grants and authorization evaluation | authorization subsystem via injected adapter |
-| ActionResult adapters · HR UI | `apps/web` |
+**This package owns:** HR domain commands, business rules, validation, and events for 43 `hr_*` tables.
 
-**Anti-goals:** gross-to-net payroll calculation; writes to `payroll_*`, `payment`, `journal`; shadow employee master tables outside `hr_*`; peer ERP package imports.
+**Dependencies:** Database schema (`@afenda/db`), error handling (`@afenda/errors`), master data lookups (`@afenda/master-data`), domain events (`@afenda/events`).
 
-Must not import Surfaces, `apps/*`, or Next.js. See [docs-V2/monorepo](../../../docs-V2/monorepo/README.md).
+**Anti-goals:** Payroll calculations, financial journal entries, UI components, HTTP handlers. See [monorepo documentation](../../../docs-V2/monorepo/README.md) for package boundaries.
 
 ## Authority
 

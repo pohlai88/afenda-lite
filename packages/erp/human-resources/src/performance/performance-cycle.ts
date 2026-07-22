@@ -26,7 +26,7 @@ import {
 	performanceCycleStatusTransitionInputSchema,
 	removeCycleParticipantInputSchema,
 	updatePerformanceCycleInputSchema,
-} from "../schemas";
+} from "../schemas/performance";
 import { fingerprintPerformanceCycleCreate } from "../shared/fingerprint";
 import {
 	runPerformanceCommand,

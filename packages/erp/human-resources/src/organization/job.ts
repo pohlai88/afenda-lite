@@ -27,7 +27,7 @@ import {
 	jobStatusTransitionInputSchema,
 	listJobsInputSchema,
 	updateJobInputSchema,
-} from "../schemas";
+} from "../schemas/organization";
 import type { Job } from "../types";
 
 export const HUMAN_RESOURCES_AGGREGATE_JOB = "job" as const;

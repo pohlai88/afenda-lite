@@ -10,7 +10,7 @@ import {
 	archiveBenefitPlanInputSchema,
 	createBenefitPlanInputSchema,
 	updateBenefitPlanInputSchema,
-} from "../schemas";
+} from "../schemas/compensation";
 import { runCompensationCommand } from "../shared/compensation-command";
 import type { BenefitPlan } from "../types";
 

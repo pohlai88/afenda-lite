@@ -22,7 +22,7 @@ import {
 	listDirectReportsInputSchema,
 	replacePrimaryReportingLineInputSchema,
 	resolvePrimaryManagerInputSchema,
-} from "../schemas";
+} from "../schemas/organization";
 import type { ReportingLine } from "../types";
 
 export const HUMAN_RESOURCES_AGGREGATE_REPORTING_LINE =

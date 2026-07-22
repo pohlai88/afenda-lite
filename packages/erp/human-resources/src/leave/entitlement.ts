@@ -22,7 +22,7 @@ import {
 	getLeaveEntitlementInputSchema,
 	grantLeaveEntitlementInputSchema,
 	listLeaveEntitlementsInputSchema,
-} from "../schemas";
+} from "../schemas/leave";
 import {
 	fingerprintLeaveAdjustment,
 	fingerprintLeaveEntitlementGrant,

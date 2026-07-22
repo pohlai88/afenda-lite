@@ -2287,7 +2287,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 			hasRequiredCompletion: completion.data.courseId === record.courseId,
 			issuedOn: record.issuedOn,
 			expiresOn: record.expiresOn,
-			todayDate: new Date().toISOString().split("T")[0]!,
+			todayDate: new Date().toISOString().slice(0, 10),
 		});
 		if (!issuableCheck.ok) return issuableCheck;
 

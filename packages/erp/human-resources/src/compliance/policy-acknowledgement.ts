@@ -10,8 +10,6 @@ import {
 	HUMAN_RESOURCES_COMMAND_POLICY_ACKNOWLEDGEMENT_ISSUE,
 	HUMAN_RESOURCES_COMMAND_POLICY_ACKNOWLEDGEMENT_REVOKE,
 	HUMAN_RESOURCES_COMMAND_POLICY_ACKNOWLEDGEMENT_SUPERSEDE,
-	HUMAN_RESOURCES_QUERY_POLICY_ACKNOWLEDGEMENT_LIST_OUTSTANDING,
-	HUMAN_RESOURCES_QUERY_POLICY_ACKNOWLEDGEMENT_STATUS_GET,
 } from "../module-ids";
 import {
 	acknowledgePolicyInputSchema,
@@ -20,11 +18,10 @@ import {
 	listOutstandingPolicyAcknowledgementsInputSchema,
 	revokePolicyAcknowledgementInputSchema,
 	supersedePolicyAcknowledgementRequirementInputSchema,
-} from "../schemas-compliance";
+} from "../schemas/compliance";
 import {
 	runComplianceCommand,
 	runComplianceEmployeeScopedQuery,
-	runComplianceQuery,
 } from "../shared/compliance-command";
 import { fingerprintPolicyAcknowledgementIssue } from "../shared/fingerprint";
 import type {

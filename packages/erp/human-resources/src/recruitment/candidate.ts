@@ -17,7 +17,7 @@ import {
 	getCandidateInputSchema,
 	listCandidatesInputSchema,
 	updateCandidateProfileInputSchema,
-} from "../schemas";
+} from "../schemas/recruitment";
 import { fingerprintCandidateCreate } from "../shared/fingerprint";
 import {
 	runRecruitmentCommand,

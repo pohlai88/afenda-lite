@@ -10,7 +10,7 @@ import {
 	addHeadcountPlanLineInputSchema,
 	removeHeadcountPlanLineInputSchema,
 	updateHeadcountPlanLineInputSchema,
-} from "../schemas";
+} from "../schemas/workforce-planning";
 import { runWorkforcePlanningCommand } from "../shared/workforce-planning-command";
 import type { HeadcountPlanLine } from "../types";
 

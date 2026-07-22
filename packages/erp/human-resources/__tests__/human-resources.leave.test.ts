@@ -13,7 +13,6 @@ import type { HumanResourcesPermission } from "../src/authorization";
 import { createEmployee } from "../src/core/employee";
 import { createEmployment } from "../src/core/employment";
 import {
-	HUMAN_RESOURCES_ERROR_CONFLICT,
 	HUMAN_RESOURCES_ERROR_FORBIDDEN,
 	HUMAN_RESOURCES_ERROR_INVALID_INPUT,
 	HUMAN_RESOURCES_ERROR_STALE_VERSION,

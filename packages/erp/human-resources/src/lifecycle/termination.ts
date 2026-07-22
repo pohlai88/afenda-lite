@@ -8,7 +8,7 @@ import {
 import {
 	finalizeTerminationInputSchema,
 	getTerminationInputSchema,
-} from "../schemas";
+} from "../schemas/lifecycle";
 import { fingerprintTermination } from "../shared/fingerprint";
 import {
 	runLifecycleCommand,

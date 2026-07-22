@@ -15,7 +15,7 @@ import {
 	createDocumentRequirementInputSchema,
 	documentRequirementTransitionInputSchema,
 	updateDocumentRequirementInputSchema,
-} from "../schemas-compliance";
+} from "../schemas/compliance";
 import { runComplianceCommand } from "../shared/compliance-command";
 import type { DocumentRequirement } from "../types";
 

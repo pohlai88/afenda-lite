@@ -10,10 +10,8 @@ import {
 import {
 	type HumanResourcesCommandOptions,
 	resolveCommandDeps,
-	resolveWorkCalendar,
 } from "../command-options";
 import {
-	HUMAN_RESOURCES_ERROR_FORBIDDEN,
 	HUMAN_RESOURCES_ERROR_UNAUTHORIZED,
 	humanResourcesErrorDetails,
 } from "../error-codes";

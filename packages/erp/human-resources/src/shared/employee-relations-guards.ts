@@ -1,6 +1,4 @@
 import { fail, type Result } from "@afenda/errors/result";
-
-import { HUMAN_RESOURCES_ERROR_CONFLICT } from "../error-codes";
 import { conflict, invalidState } from "./domain-guards";
 import type {
 	EmployeeCaseActionType,
@@ -99,5 +97,3 @@ export function assertEmployeeCaseStatusAllowsAppeal(
 	}
 	return { ok: true, data: undefined };
 }
-
-export { HUMAN_RESOURCES_ERROR_CONFLICT };

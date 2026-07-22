@@ -2,7 +2,7 @@ import type { Result } from "@afenda/errors/result";
 
 import type { HumanResourcesCommandOptions } from "../command-options";
 import { HUMAN_RESOURCES_COMMAND_ASSIGNMENT_TRANSFER } from "../module-ids";
-import { transferAssignmentInputSchema } from "../schemas";
+import { transferAssignmentInputSchema } from "../schemas/lifecycle";
 import { runLifecycleCommand } from "../shared/lifecycle-command";
 import type { EmploymentMovement } from "../types";
 

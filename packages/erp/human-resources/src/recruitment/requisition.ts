@@ -25,7 +25,7 @@ import {
 	getRequisitionInputSchema,
 	listRequisitionsInputSchema,
 	requisitionStatusTransitionInputSchema,
-} from "../schemas";
+} from "../schemas/recruitment";
 import { fingerprintRequisitionCreate } from "../shared/fingerprint";
 import {
 	runRecruitmentCommand,

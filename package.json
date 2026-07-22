@@ -71,6 +71,7 @@
 		"check:docs-app": "pnpm --filter @afenda/docs generate:openapi-docs && pnpm --filter @afenda/docs generate:package-docs && pnpm --filter @afenda/docs lint:links",
 		"housekeeping:knip:ui-system": "knip --directory packages/surfaces/ui-system",
 		"housekeeping:knip:web": "knip --directory apps/web",
+		"housekeeping:knip:human-resources": "knip --directory packages/erp/human-resources",
 		"check:nav": "node scripts/collapse-script-unavailable.mjs \"check:nav\"",
 		"check:proxy": "node scripts/collapse-script-unavailable.mjs \"check:proxy\"",
 		"check:db-schema": "node scripts/collapse-script-unavailable.mjs \"check:db-schema\"",

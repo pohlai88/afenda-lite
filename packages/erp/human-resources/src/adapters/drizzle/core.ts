@@ -576,7 +576,9 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 				)
 				.limit(1);
 			if (result.length === 0) return ok(null);
-			return mapEmployment(result[0]!);
+			const record = result[0];
+			if (!record) return ok(null);
+			return mapEmployment(record);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to load employment");
 		}
@@ -599,7 +601,9 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 				)
 				.limit(1);
 			if (result.length === 0) return ok(null);
-			return mapEmployment(result[0]!);
+			const record = result[0];
+			if (!record) return ok(null);
+			return mapEmployment(record);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to find open employment");
 		}

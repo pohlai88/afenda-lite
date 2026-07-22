@@ -1,6 +1,5 @@
 import { createDrizzleHumanResourcesStore } from "./adapters/drizzle";
 import type { MemoryHumanResourcesStore } from "./adapters/memory/store";
-import { createMemoryHumanResourcesStore } from "./adapters/memory/store";
 import type { HumanResourcesStore } from "./store";
 
 let cached: HumanResourcesStore | undefined;

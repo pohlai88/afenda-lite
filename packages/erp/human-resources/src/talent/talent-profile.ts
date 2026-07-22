@@ -20,7 +20,7 @@ import {
 	getTalentProfileByEmployeeInputSchema,
 	recordTalentProfileAssessmentInputSchema,
 	updateTalentProfileInputSchema,
-} from "../schemas";
+} from "../schemas/talent";
 import { fingerprintTalentProfileCreate } from "../shared/fingerprint";
 import {
 	requireTalentProfileSensitiveRead,

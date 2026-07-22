@@ -22,7 +22,7 @@ import {
 	amendEmploymentInputSchema,
 	createEmploymentInputSchema,
 	getEmploymentInputSchema,
-} from "../schemas";
+} from "../schemas/core";
 import { resolveAmendEndsOn } from "../shared/domain-guards";
 import { assertEmploymentStatusTransition } from "../shared/employment-status";
 import type { Employment } from "../types";

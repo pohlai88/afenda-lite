@@ -700,7 +700,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 							WHERE id = ${input.requirementId}
 								AND organization_id = ${input.organizationId}
 								AND version = ${input.expectedVersion}
-								AND status = ${existing.data!.status}
+								AND status = ${existing.data?.status}
 							RETURNING *
 						),
 						audited AS (
@@ -770,7 +770,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 							WHERE id = ${input.requirementId}
 								AND organization_id = ${input.organizationId}
 								AND version = ${input.expectedVersion}
-								AND status = ${existing.data!.status}
+								AND status = ${existing.data?.status}
 							RETURNING *
 						),
 						audited AS (
@@ -1113,7 +1113,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 				: input.metadata === null
 					? null
 					: JSON.stringify(input.metadata);
-		const asOf = new Date().toISOString().split("T")[0]!;
+		const asOf = new Date().toISOString().slice(0, 10);
 		const emitNearingExpiry = isNearingExpiry({
 			expiresOn: nextExpiresOn,
 			asOf,
@@ -1235,7 +1235,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 							WHERE id = ${input.documentId}
 								AND organization_id = ${input.organizationId}
 								AND version = ${input.expectedVersion}
-								AND verification_status = ${existing.data!.verificationStatus}
+								AND verification_status = ${existing.data?.verificationStatus}
 							RETURNING *
 						),
 						audited AS (
@@ -1320,7 +1320,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 							WHERE id = ${input.documentId}
 								AND organization_id = ${input.organizationId}
 								AND version = ${input.expectedVersion}
-								AND verification_status = ${existing.data!.verificationStatus}
+								AND verification_status = ${existing.data?.verificationStatus}
 							RETURNING *
 						),
 						audited AS (
@@ -1387,7 +1387,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 							WHERE id = ${input.documentId}
 								AND organization_id = ${input.organizationId}
 								AND version = ${input.expectedVersion}
-								AND verification_status = ${existing.data!.verificationStatus}
+								AND verification_status = ${existing.data?.verificationStatus}
 							RETURNING *
 						),
 						audited AS (
@@ -1459,7 +1459,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 							WHERE id = ${input.documentId}
 								AND organization_id = ${input.organizationId}
 								AND version = ${input.expectedVersion}
-								AND verification_status = ${existing.data!.verificationStatus}
+								AND verification_status = ${existing.data?.verificationStatus}
 							RETURNING *
 						),
 						audited AS (
@@ -1593,7 +1593,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 		try {
 			const endDate = new Date(`${input.asOf}T00:00:00.000Z`);
 			endDate.setUTCDate(endDate.getUTCDate() + withinDays);
-			const endOn = endDate.toISOString().split("T")[0]!;
+			const endOn = endDate.toISOString().slice(0, 10);
 			const conditions = [
 				eq(hrEmployeeDocument.organizationId, input.organizationId),
 				ne(hrEmployeeDocument.verificationStatus, "expired"),
@@ -1855,7 +1855,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 							WHERE id = ${input.eligibilityId}
 								AND organization_id = ${input.organizationId}
 								AND version = ${input.expectedVersion}
-								AND status = ${existing.data!.status}
+								AND status = ${existing.data?.status}
 							RETURNING *
 						),
 						audited AS (
@@ -1930,7 +1930,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 							WHERE id = ${input.eligibilityId}
 								AND organization_id = ${input.organizationId}
 								AND version = ${input.expectedVersion}
-								AND status = ${existing.data!.status}
+								AND status = ${existing.data?.status}
 							RETURNING *
 						),
 						audited AS (
@@ -2088,7 +2088,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 							WHERE id = ${input.eligibilityId}
 								AND organization_id = ${input.organizationId}
 								AND version = ${input.expectedVersion}
-								AND status = ${existing.data!.status}
+								AND status = ${existing.data?.status}
 							RETURNING *
 						),
 						audited AS (
@@ -2404,7 +2404,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 							WHERE id = ${input.acknowledgementId}
 								AND organization_id = ${input.organizationId}
 								AND version = ${input.expectedVersion}
-								AND requirement_status = ${existing.data!.requirementStatus}
+								AND requirement_status = ${existing.data?.requirementStatus}
 							RETURNING *
 						),
 						audited AS (
@@ -2484,7 +2484,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 							WHERE id = ${input.acknowledgementId}
 								AND organization_id = ${input.organizationId}
 								AND version = ${input.expectedVersion}
-								AND requirement_status = ${existing.data!.requirementStatus}
+								AND requirement_status = ${existing.data?.requirementStatus}
 							RETURNING *
 						),
 						audited AS (
@@ -2675,7 +2675,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 	},
 
 	async getEmployeeComplianceSummary(input) {
-		const asOf = input.asOf ?? new Date().toISOString().split("T")[0]!;
+		const asOf = input.asOf ?? new Date().toISOString().slice(0, 10);
 		const employee = await this.getEmployeeById({
 			organizationId: input.organizationId,
 			employeeId: input.employeeId,

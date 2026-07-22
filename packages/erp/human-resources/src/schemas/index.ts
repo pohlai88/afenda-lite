@@ -1,20 +1,17 @@
-// Drizzle adapter exports for human resources
+// Schema exports barrel for human resources
 
-export * from "./compensation-benefits";
+// Common schemas and utilities
+export * from "./common";
+export * from "./compensation";
 export * from "./compliance";
-export * from "./compose";
-// Domain adapters
+// Domain-specific schemas
 export * from "./core";
-// Utilities
-export * from "./coverage";
-export * from "./employee-relations";
 export * from "./learning";
 export * from "./leave";
 export * from "./lifecycle";
 export * from "./organization";
 export * from "./performance";
 export * from "./recruitment";
-// Store composition and main entry
-export * from "./store";
+// Talent schemas (subdirectory)
 export * from "./talent";
 export * from "./workforce-planning";

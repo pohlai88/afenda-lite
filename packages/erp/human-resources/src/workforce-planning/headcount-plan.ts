@@ -29,7 +29,7 @@ import {
 	listHeadcountPlansInputSchema,
 	supersedeHeadcountPlanInputSchema,
 	updateHeadcountPlanInputSchema,
-} from "../schemas";
+} from "../schemas/workforce-planning";
 import { fingerprintHeadcountPlanCreate } from "../shared/fingerprint";
 import {
 	runWorkforcePlanningCommand,

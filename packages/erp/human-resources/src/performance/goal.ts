@@ -24,7 +24,7 @@ import {
 	performanceGoalStatusTransitionInputSchema,
 	recordGoalProgressInputSchema,
 	updatePerformanceGoalInputSchema,
-} from "../schemas";
+} from "../schemas/performance";
 import { fingerprintPerformanceGoalCreate } from "../shared/fingerprint";
 import {
 	runPerformanceCommand,

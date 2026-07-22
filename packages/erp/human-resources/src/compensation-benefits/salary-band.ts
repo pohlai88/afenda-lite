@@ -10,7 +10,7 @@ import {
 	archiveSalaryBandInputSchema,
 	createSalaryBandInputSchema,
 	supersedeSalaryBandInputSchema,
-} from "../schemas";
+} from "../schemas/compensation";
 import {
 	assertCurrencyExists,
 	runCompensationCommand,

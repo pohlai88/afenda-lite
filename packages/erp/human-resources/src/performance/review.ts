@@ -2,10 +2,6 @@ import type { Result } from "@afenda/errors/result";
 
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
-	HUMAN_RESOURCES_ERROR_CONFLICT,
-	humanResourcesErrorDetails,
-} from "../error-codes";
-import {
 	HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_ACKNOWLEDGE,
 	HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_FINALIZE,
 	HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_REOPEN,
@@ -30,7 +26,7 @@ import {
 	startPerformanceReviewInputSchema,
 	submitManagerAssessmentInputSchema,
 	submitSelfAssessmentInputSchema,
-} from "../schemas";
+} from "../schemas/performance";
 import { fingerprintPerformanceReviewFinalize } from "../shared/fingerprint";
 import {
 	requirePerformanceConfidentialRead,

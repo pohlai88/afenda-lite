@@ -21,7 +21,7 @@ import {
 	listHeadcountReservationsInputSchema,
 	releaseHeadcountReservationInputSchema,
 	reserveHeadcountInputSchema,
-} from "../schemas";
+} from "../schemas/workforce-planning";
 import { fingerprintHeadcountReservation } from "../shared/fingerprint";
 import {
 	runWorkforcePlanningCommand,

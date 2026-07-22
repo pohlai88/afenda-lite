@@ -33,7 +33,6 @@ import {
 	waiveAssignment,
 } from "../src/learning/learning-assignment";
 import {
-	cancelSession,
 	completeSession,
 	createSession,
 	getSession,

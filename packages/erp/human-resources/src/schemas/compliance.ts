@@ -13,11 +13,7 @@ import {
 	policyAcknowledgementStatusSchema,
 	workEligibilityStatusSchema,
 } from "../shared/compliance-status";
-
-export const humanResourcesMutationContextSchema = z.object({
-	organizationId: z.string().trim().min(1),
-	actorUserId: z.string().trim().min(1),
-});
+import { humanResourcesMutationContextSchema } from "./common";
 
 const versionedMutationSchema = humanResourcesMutationContextSchema.extend({
 	expectedVersion: z.number().int().positive(),

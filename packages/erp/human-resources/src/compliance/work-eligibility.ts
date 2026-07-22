@@ -11,7 +11,6 @@ import {
 	HUMAN_RESOURCES_COMMAND_WORK_ELIGIBILITY_RENEW,
 	HUMAN_RESOURCES_COMMAND_WORK_ELIGIBILITY_SUSPEND,
 	HUMAN_RESOURCES_COMMAND_WORK_ELIGIBILITY_VERIFY,
-	HUMAN_RESOURCES_QUERY_WORK_ELIGIBILITY_GET,
 	HUMAN_RESOURCES_QUERY_WORK_ELIGIBILITY_LIST_RISK,
 } from "../module-ids";
 import {
@@ -21,9 +20,8 @@ import {
 	renewWorkEligibilityInputSchema,
 	verifyWorkEligibilityInputSchema,
 	workEligibilityTransitionInputSchema,
-} from "../schemas-compliance";
+} from "../schemas/compliance";
 import {
-	requireComplianceEmployeeReadScope,
 	runComplianceCommand,
 	runComplianceEmployeeScopedQuery,
 	runComplianceQuery,

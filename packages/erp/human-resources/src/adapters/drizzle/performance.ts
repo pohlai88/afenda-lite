@@ -32,7 +32,6 @@ import {
 	type HumanResourcesGoalId,
 	type HumanResourcesImprovementPlanId,
 	type HumanResourcesPerformanceCycleId,
-	type HumanResourcesPerformanceCycleParticipantId,
 	type HumanResourcesReviewId,
 	humanResourcesAssessmentIdSchema,
 	humanResourcesGoalProgressIdSchema,
@@ -99,30 +98,16 @@ import {
 	isPostgresUniqueViolation,
 	mapPersistenceFailure,
 } from "../../shared/persistence-errors";
+import type { HumanResourcesStore } from "../../store";
 import type {
-	HumanResourcesStore,
-	IdempotentImprovementPlanRecord,
-	IdempotentPerformanceCycleRecord,
-	IdempotentPerformanceGoalRecord,
-	ImprovementPlanCreateRecord,
-	PerformanceCycleCreateRecord,
-	PerformanceGoalCreateRecord,
-} from "../../store";
-import type {
-	EmployeePerformanceHistory,
 	PerformanceAssessment,
 	PerformanceCycle,
-	PerformanceCycleListPage,
 	PerformanceCycleParticipant,
 	PerformanceGoal,
-	PerformanceGoalListPage,
 	PerformanceGoalProgress,
 	PerformanceImprovementCheckpoint,
 	PerformanceImprovementPlan,
-	PerformanceImprovementPlanListPage,
 	PerformanceReview,
-	PerformanceReviewDetail,
-	PerformanceReviewListPage,
 	PerformanceReviewParticipant,
 } from "../../types";
 import { projectPerformanceReviewDetail } from "../../types";
@@ -512,7 +497,7 @@ function mapGoalProgressSql(
 	});
 }
 
-function mapGoalProgress(
+function _mapGoalProgress(
 	row: typeof hrPerformanceGoalProgress.$inferSelect,
 ): Result<PerformanceGoalProgress> {
 	return mapGoalProgressSql({
@@ -738,7 +723,7 @@ function mapCheckpointSql(
 	});
 }
 
-function mapCheckpoint(
+function _mapCheckpoint(
 	row: typeof hrPerformanceImprovementCheckpoint.$inferSelect,
 ): Result<PerformanceImprovementCheckpoint> {
 	return mapCheckpointSql({

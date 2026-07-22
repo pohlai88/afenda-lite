@@ -30,7 +30,7 @@ import {
 	removeSuccessionCandidateInputSchema,
 	successionPlanStatusTransitionInputSchema,
 	updateSuccessionPlanInputSchema,
-} from "../schemas";
+} from "../schemas/talent";
 import {
 	fingerprintSuccessionCandidateCreate,
 	fingerprintSuccessionPlanCreate,

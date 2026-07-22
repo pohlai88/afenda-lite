@@ -28,7 +28,7 @@ import {
 	listPositionsInputSchema,
 	positionStatusTransitionInputSchema,
 	updatePositionInputSchema,
-} from "../schemas";
+} from "../schemas/organization";
 import type { Position } from "../types";
 
 export async function createPosition(

@@ -20,7 +20,7 @@ import { parseHumanResourcesInput } from "../parse-input";
 import {
 	createEmploymentContractInputSchema,
 	getEmploymentContractInputSchema,
-} from "../schemas";
+} from "../schemas/core";
 import type { EmploymentContract } from "../types";
 
 export async function createEmploymentContract(

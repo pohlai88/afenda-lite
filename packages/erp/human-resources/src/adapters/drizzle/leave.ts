@@ -37,7 +37,6 @@ import {
 	parseHumanResourcesLeaveRequestId,
 	parseHumanResourcesLeaveRequestSegmentId,
 } from "../../brands";
-import { HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE } from "../../error-codes";
 import type { MutationPorts, OutboxFactInput } from "../../ports";
 import { assertExpectedVersion } from "../../shared/concurrency";
 import { conflict, invalidState, notFound } from "../../shared/domain-guards";
@@ -79,23 +78,15 @@ import type {
 	HumanResourcesStore,
 	IdempotentLeaveEntitlementRecord,
 	IdempotentLeaveRequestRecord,
-	LeaveAdjustmentCreateRecord,
-	LeaveEntitlementGrantRecord,
-	LeavePolicyCreateRecord,
-	LeaveRequestAmendRecord,
-	LeaveRequestCreateRecord,
 } from "../../store";
 import type {
 	ApprovedLeaveHandoff,
 	LeaveAdjustment,
 	LeaveBalance,
 	LeaveEntitlement,
-	LeaveEntitlementListPage,
 	LeavePolicy,
 	LeavePolicyEligibility,
-	LeavePolicyListPage,
 	LeaveRequest,
-	LeaveRequestListPage,
 	LeaveRequestSegment,
 	ReportingLine,
 	ResolvedLeavePolicy,

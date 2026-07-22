@@ -17,7 +17,7 @@ import {
 	getCertificationInputSchema,
 	issueCertificationInputSchema,
 	listCertificationsInputSchema,
-} from "../schemas";
+} from "../schemas/learning";
 import { fingerprintCertificationIssue } from "../shared/fingerprint";
 import {
 	runLearningCommand,

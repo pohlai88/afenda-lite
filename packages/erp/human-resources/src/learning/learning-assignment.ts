@@ -18,7 +18,7 @@ import {
 	getLearningAssignmentInputSchema,
 	listLearningAssignmentsInputSchema,
 	waiveLearningAssignmentInputSchema,
-} from "../schemas";
+} from "../schemas/learning";
 import { fingerprintLearningAssignmentCreate } from "../shared/fingerprint";
 import {
 	runLearningCommand,
@@ -140,7 +140,7 @@ export async function waiveAssignment(
 	});
 }
 
-export async function getAssignment(
+export async function getLearningAssignmentByAssignmentId(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<LearningAssignment | null>> {
@@ -161,7 +161,7 @@ export async function getLearningAssignment(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<LearningAssignment | null>> {
-	return getAssignment(input, options);
+	return getLearningAssignmentByAssignmentId(input, options);
 }
 
 export async function listAssignments(

@@ -6,10 +6,5 @@
 		"types": ["node"]
 	},
 	"include": ["src/**/*.ts"],
-	"exclude": [
-		"node_modules",
-		"dist",
-		"src/adapters/schema",
-		"src/adapters/store"
-	]
+	"exclude": ["node_modules", "dist"]
 }

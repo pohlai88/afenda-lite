@@ -24,7 +24,7 @@ import {
 	getCareerPlanByIdInputSchema,
 	listEmployeeCareerPlansInputSchema,
 	updateCareerPlanInputSchema,
-} from "../schemas";
+} from "../schemas/talent";
 import { fingerprintCareerPlanCreate } from "../shared/fingerprint";
 import { runTalentCommand, runTalentQuery } from "../shared/talent-command";
 import type {

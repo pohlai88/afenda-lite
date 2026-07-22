@@ -12,7 +12,7 @@ import {
 	endBenefitEnrollmentInputSchema,
 	enrolBenefitInputSchema,
 	getApprovedCompensationHandoffInputSchema,
-} from "../schemas";
+} from "../schemas/compensation";
 import {
 	runCompensationCommand,
 	runCompensationQuery,

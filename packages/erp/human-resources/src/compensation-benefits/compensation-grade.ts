@@ -10,7 +10,7 @@ import {
 	archiveCompensationGradeInputSchema,
 	createCompensationGradeInputSchema,
 	updateCompensationGradeInputSchema,
-} from "../schemas";
+} from "../schemas/compensation";
 import { runCompensationCommand } from "../shared/compensation-command";
 import type { CompensationGrade } from "../types";
 

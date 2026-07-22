@@ -18,7 +18,7 @@ import {
 	getCourseInputSchema,
 	listCoursesInputSchema,
 	updateCourseInputSchema,
-} from "../schemas";
+} from "../schemas/learning";
 import { fingerprintCourseCreate } from "../shared/fingerprint";
 import {
 	runLearningCommand,

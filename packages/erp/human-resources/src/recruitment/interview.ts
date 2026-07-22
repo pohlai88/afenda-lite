@@ -20,7 +20,7 @@ import {
 	listInterviewsInputSchema,
 	recordInterviewEvaluationInputSchema,
 	scheduleInterviewInputSchema,
-} from "../schemas";
+} from "../schemas/recruitment";
 import {
 	runRecruitmentCommand,
 	runRecruitmentQuery,
