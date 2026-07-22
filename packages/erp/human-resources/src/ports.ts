@@ -34,3 +34,7 @@ export type MutationPorts = {
 	audit: AuditFactPort;
 	outbox: OutboxPort;
 };
+
+export type CurrencyLookupPort = {
+	exists(currencyCode: string): Promise<Result<boolean>>;
+};

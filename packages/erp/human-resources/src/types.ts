@@ -1,9 +1,17 @@
 import type {
 	HumanResourcesApplicationId,
 	HumanResourcesAssignmentId,
+	HumanResourcesBenefitEnrollmentId,
+	HumanResourcesBenefitPlanId,
 	HumanResourcesCandidateId,
+	HumanResourcesCertificationId,
 	HumanResourcesClearanceId,
+	HumanResourcesCompensationGradeId,
+	HumanResourcesCompensationReviewId,
+	HumanResourcesCompletionId,
+	HumanResourcesCourseId,
 	HumanResourcesDepartmentId,
+	HumanResourcesEmployeeCompensationId,
 	HumanResourcesEmployeeId,
 	HumanResourcesEmploymentConfirmationId,
 	HumanResourcesEmploymentContractId,
@@ -13,6 +21,7 @@ import type {
 	HumanResourcesInterviewEvaluationId,
 	HumanResourcesInterviewId,
 	HumanResourcesJobId,
+	HumanResourcesLearningAssignmentId,
 	HumanResourcesOffboardingCaseId,
 	HumanResourcesOffboardingTaskId,
 	HumanResourcesOfferId,
@@ -22,6 +31,8 @@ import type {
 	HumanResourcesProbationReviewId,
 	HumanResourcesReportingLineId,
 	HumanResourcesRequisitionId,
+	HumanResourcesSalaryBandId,
+	HumanResourcesSessionId,
 	HumanResourcesTerminationId,
 } from "./brands";
 import type {
@@ -31,6 +42,14 @@ import type {
 	PositionStatus,
 	ReportingRelationshipKind,
 } from "./shared/employment-status";
+import type {
+	BenefitEnrollmentStatus,
+	BenefitPlanStatus,
+	CompensationGradeStatus,
+	CompensationReviewStatus,
+	EmployeeCompensationStatus,
+	SalaryBandStatus,
+} from "./shared/compensation-status";
 import type {
 	ClearanceStatus,
 	LifecycleTaskStatus,
@@ -49,6 +68,12 @@ import type {
 	OfferStatus,
 	RequisitionStatus,
 } from "./shared/recruitment-status";
+import type {
+	AssignmentStatus,
+	CertificationStatus,
+	CourseStatus,
+	SessionStatus,
+} from "./shared/learning-status";
 
 export type Employee = {
 	id: HumanResourcesEmployeeId;
@@ -484,4 +509,284 @@ export type Clearance = {
 	updatedBy: string;
 	createdAt: Date;
 	updatedAt: Date;
+};
+
+export type CompensationGrade = {
+	id: HumanResourcesCompensationGradeId;
+	organizationId: string;
+	code: string;
+	name: string;
+	status: CompensationGradeStatus;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type SalaryBand = {
+	id: HumanResourcesSalaryBandId;
+	organizationId: string;
+	gradeId: HumanResourcesCompensationGradeId;
+	currencyCode: string;
+	minAmount: string;
+	midAmount: string;
+	maxAmount: string;
+	effectiveFrom: string;
+	effectiveTo: string | null;
+	status: SalaryBandStatus;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type EmployeeCompensation = {
+	id: HumanResourcesEmployeeCompensationId;
+	organizationId: string;
+	employeeId: HumanResourcesEmployeeId;
+	employmentId: HumanResourcesEmploymentId;
+	gradeId: HumanResourcesCompensationGradeId | null;
+	salaryBandId: HumanResourcesSalaryBandId | null;
+	baseAmount: string;
+	currencyCode: string;
+	effectiveFrom: string;
+	effectiveTo: string | null;
+	reason: string;
+	status: EmployeeCompensationStatus;
+	sourceReviewId: HumanResourcesCompensationReviewId | null;
+	createIdempotencyKey: string;
+	fingerprint: string;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type CompensationReview = {
+	id: HumanResourcesCompensationReviewId;
+	organizationId: string;
+	employeeId: HumanResourcesEmployeeId;
+	employmentId: HumanResourcesEmploymentId;
+	status: CompensationReviewStatus;
+	proposedBaseAmount: string | null;
+	proposedCurrencyCode: string | null;
+	proposedGradeId: HumanResourcesCompensationGradeId | null;
+	proposedSalaryBandId: HumanResourcesSalaryBandId | null;
+	recommendationNote: string | null;
+	effectiveFrom: string | null;
+	finalizedAt: Date | null;
+	appliedCompensationId: HumanResourcesEmployeeCompensationId | null;
+	createIdempotencyKey: string;
+	fingerprint: string;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type BenefitPlan = {
+	id: HumanResourcesBenefitPlanId;
+	organizationId: string;
+	code: string;
+	name: string;
+	eligibilityNote: string | null;
+	status: BenefitPlanStatus;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type BenefitEnrollment = {
+	id: HumanResourcesBenefitEnrollmentId;
+	organizationId: string;
+	employeeId: HumanResourcesEmployeeId;
+	employmentId: HumanResourcesEmploymentId;
+	planId: HumanResourcesBenefitPlanId;
+	effectiveFrom: string;
+	effectiveTo: string | null;
+	status: BenefitEnrollmentStatus;
+	createIdempotencyKey: string;
+	fingerprint: string;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type CompensationGradeListPage = {
+	grades: CompensationGrade[];
+	totalCount: number;
+	page: number;
+	pageSize: number;
+};
+
+export type SalaryBandListPage = {
+	bands: SalaryBand[];
+	totalCount: number;
+	page: number;
+	pageSize: number;
+};
+
+export type EmployeeCompensationListPage = {
+	compensations: EmployeeCompensation[];
+	totalCount: number;
+	page: number;
+	pageSize: number;
+};
+
+export type CompensationReviewListPage = {
+	reviews: CompensationReview[];
+	totalCount: number;
+	page: number;
+	pageSize: number;
+};
+
+export type BenefitPlanListPage = {
+	plans: BenefitPlan[];
+	totalCount: number;
+	page: number;
+	pageSize: number;
+};
+
+export type BenefitEnrollmentListPage = {
+	enrollments: BenefitEnrollment[];
+	totalCount: number;
+	page: number;
+	pageSize: number;
+};
+
+export type LearningCourse = {
+	id: HumanResourcesCourseId;
+	organizationId: string;
+	code: string;
+	title: string;
+	description: string | null;
+	durationHours: string | null;
+	status: CourseStatus;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type LearningSession = {
+	id: HumanResourcesSessionId;
+	organizationId: string;
+	courseId: HumanResourcesCourseId;
+	sessionCode: string;
+	instructorActorId: string | null;
+	location: string | null;
+	maxParticipants: number | null;
+	startsOn: string;
+	endsOn: string;
+	status: SessionStatus;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type LearningAssignment = {
+	id: HumanResourcesLearningAssignmentId;
+	organizationId: string;
+	employeeId: HumanResourcesEmployeeId;
+	employmentId: HumanResourcesEmploymentId;
+	courseId: HumanResourcesCourseId;
+	sessionId: HumanResourcesSessionId | null;
+	assignedOn: string;
+	dueOn: string | null;
+	status: AssignmentStatus;
+	assigneeNote: string | null;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type LearningCompletion = {
+	id: HumanResourcesCompletionId;
+	organizationId: string;
+	employeeId: HumanResourcesEmployeeId;
+	assignmentId: HumanResourcesLearningAssignmentId;
+	sessionId: HumanResourcesSessionId;
+	courseId: HumanResourcesCourseId;
+	completedOn: string;
+	evidenceNote: string | null;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type EmployeeCertification = {
+	id: HumanResourcesCertificationId;
+	organizationId: string;
+	employeeId: HumanResourcesEmployeeId;
+	courseId: HumanResourcesCourseId;
+	certificationCode: string;
+	issuedOn: string;
+	expiresOn: string | null;
+	status: CertificationStatus;
+	version: number;
+	createdBy: string;
+	updatedBy: string;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
+export type CourseListPage = {
+	courses: LearningCourse[];
+	totalCount: number;
+	page: number;
+	pageSize: number;
+};
+
+export type SessionListPage = {
+	sessions: LearningSession[];
+	totalCount: number;
+	page: number;
+	pageSize: number;
+};
+
+export type LearningAssignmentListPage = {
+	assignments: LearningAssignment[];
+	totalCount: number;
+	page: number;
+	pageSize: number;
+};
+
+export type CompletionListPage = {
+	completions: LearningCompletion[];
+	totalCount: number;
+	page: number;
+	pageSize: number;
+};
+
+export type CertificationListPage = {
+	certifications: EmployeeCertification[];
+	totalCount: number;
+	page: number;
+	pageSize: number;
+};
+
+/**
+ * Minimized DTO for approved compensation handoff to payroll or external systems.
+ * Active agreement + active enrollments only.
+ */
+export type ApprovedCompensationHandoff = {
+	organizationId: string;
+	employeeId: HumanResourcesEmployeeId;
+	activeCompensation: EmployeeCompensation | null;
+	activeBenefitEnrollments: BenefitEnrollment[];
 };

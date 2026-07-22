@@ -2,9 +2,11 @@ import { sql } from "drizzle-orm";
 import {
 	type AnyPgColumn,
 	boolean,
+	check,
 	date,
 	index,
 	integer,
+	numeric,
 	pgTable,
 	text,
 	timestamp,
@@ -930,49 +932,530 @@ export const hrClearance = pgTable(
 	],
 );
 
-export const hrLearningCourse = createErpScaffoldTable("hr_learning_course");
-export const hrLearningProgram = createErpScaffoldTable("hr_learning_program");
-export const hrLearningSession = createErpScaffoldTable("hr_learning_session");
-export const hrLearningAssignment = createErpScaffoldTable(
-	"hr_learning_assignment",
+export const hrLearningCourse = pgTable(
+	"hr_learning_course",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		code: text("code").notNull(),
+		title: text("title").notNull(),
+		description: text("description"),
+		durationHours: numeric("duration_hours", { precision: 10, scale: 2 }),
+		/** active | archived */
+		status: text("status").notNull(),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_learning_course_org_id_idx").on(t.organizationId, t.id),
+		uniqueIndex("hr_learning_course_org_code_uidx").on(
+			t.organizationId,
+			t.code,
+		),
+		index("hr_learning_course_org_status_idx").on(t.organizationId, t.status),
+		check(
+			"hr_learning_course_status_check",
+			sql`${t.status} IN ('active', 'archived')`,
+		),
+	],
 );
+
+export const hrLearningSession = pgTable(
+	"hr_learning_session",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		courseId: uuid("course_id")
+			.notNull()
+			.references(() => hrLearningCourse.id),
+		code: text("code").notNull(),
+		title: text("title").notNull(),
+		scheduledStartsAt: timestamp("scheduled_starts_at", {
+			withTimezone: true,
+		}).notNull(),
+		scheduledEndsAt: timestamp("scheduled_ends_at", {
+			withTimezone: true,
+		}).notNull(),
+		actualStartsAt: timestamp("actual_starts_at", { withTimezone: true }),
+		actualEndsAt: timestamp("actual_ends_at", { withTimezone: true }),
+		/** scheduled | in_progress | completed | cancelled */
+		status: text("status").notNull(),
+		capacity: integer("capacity"),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_learning_session_org_id_idx").on(t.organizationId, t.id),
+		index("hr_learning_session_org_course_idx").on(
+			t.organizationId,
+			t.courseId,
+		),
+		uniqueIndex("hr_learning_session_org_code_uidx").on(
+			t.organizationId,
+			t.code,
+		),
+		index("hr_learning_session_org_status_idx").on(t.organizationId, t.status),
+		check(
+			"hr_learning_session_status_check",
+			sql`${t.status} IN ('scheduled', 'in_progress', 'completed', 'cancelled')`,
+		),
+		check(
+			"hr_learning_session_scheduled_range_check",
+			sql`${t.scheduledEndsAt} >= ${t.scheduledStartsAt}`,
+		),
+		check(
+			"hr_learning_session_actual_range_check",
+			sql`${t.actualEndsAt} IS NULL OR ${t.actualStartsAt} IS NULL OR ${t.actualEndsAt} >= ${t.actualStartsAt}`,
+		),
+	],
+);
+
+export const hrLearningAssignment = pgTable(
+	"hr_learning_assignment",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		employeeId: uuid("employee_id")
+			.notNull()
+			.references(() => hrEmployee.id),
+		courseId: uuid("course_id")
+			.notNull()
+			.references(() => hrLearningCourse.id),
+		sessionId: uuid("session_id").references(() => hrLearningSession.id),
+		assignedBy: text("assigned_by").notNull(),
+		assignedAt: timestamp("assigned_at", { withTimezone: true }).notNull(),
+		dueOn: date("due_on"),
+		/** pending | in_progress | completed | withdrawn */
+		status: text("status").notNull(),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_learning_assignment_org_id_idx").on(t.organizationId, t.id),
+		index("hr_learning_assignment_org_employee_idx").on(
+			t.organizationId,
+			t.employeeId,
+		),
+		index("hr_learning_assignment_org_course_idx").on(
+			t.organizationId,
+			t.courseId,
+		),
+		index("hr_learning_assignment_org_session_idx").on(
+			t.organizationId,
+			t.sessionId,
+		),
+		uniqueIndex("hr_learning_assignment_org_employee_course_active_uidx").on(
+			t.organizationId,
+			t.employeeId,
+			t.courseId,
+		).where(sql`${t.status} IN ('pending', 'in_progress')`),
+		check(
+			"hr_learning_assignment_status_check",
+			sql`${t.status} IN ('pending', 'in_progress', 'completed', 'withdrawn')`,
+		),
+	],
+);
+
+export const hrLearningCompletion = pgTable(
+	"hr_learning_completion",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		assignmentId: uuid("assignment_id")
+			.notNull()
+			.references(() => hrLearningAssignment.id),
+		employeeId: uuid("employee_id")
+			.notNull()
+			.references(() => hrEmployee.id),
+		courseId: uuid("course_id")
+			.notNull()
+			.references(() => hrLearningCourse.id),
+		sessionId: uuid("session_id").references(() => hrLearningSession.id),
+		completedAt: timestamp("completed_at", { withTimezone: true }).notNull(),
+		/** passed | failed | attended */
+		outcome: text("outcome").notNull(),
+		assessorUserId: text("assessor_user_id"),
+		notes: text("notes"),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_learning_completion_org_id_idx").on(t.organizationId, t.id),
+		index("hr_learning_completion_org_employee_idx").on(
+			t.organizationId,
+			t.employeeId,
+		),
+		index("hr_learning_completion_org_course_idx").on(
+			t.organizationId,
+			t.courseId,
+		),
+		uniqueIndex("hr_learning_completion_org_assignment_uidx").on(
+			t.organizationId,
+			t.assignmentId,
+		),
+		check(
+			"hr_learning_completion_outcome_check",
+			sql`${t.outcome} IN ('passed', 'failed', 'attended')`,
+		),
+	],
+);
+
+export const hrEmployeeCertification = pgTable(
+	"hr_employee_certification",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		employeeId: uuid("employee_id")
+			.notNull()
+			.references(() => hrEmployee.id),
+		courseId: uuid("course_id")
+			.notNull()
+			.references(() => hrLearningCourse.id),
+		completionId: uuid("completion_id")
+			.notNull()
+			.references(() => hrLearningCompletion.id),
+		certificationCode: text("certification_code").notNull(),
+		issuedOn: date("issued_on").notNull(),
+		expiresOn: date("expires_on"),
+		/** active | expired | revoked */
+		status: text("status").notNull(),
+		revokedAt: timestamp("revoked_at", { withTimezone: true }),
+		revokedBy: text("revoked_by"),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_employee_certification_org_id_idx").on(t.organizationId, t.id),
+		index("hr_employee_certification_org_employee_idx").on(
+			t.organizationId,
+			t.employeeId,
+		),
+		index("hr_employee_certification_org_course_idx").on(
+			t.organizationId,
+			t.courseId,
+		),
+		uniqueIndex("hr_employee_certification_org_completion_uidx").on(
+			t.organizationId,
+			t.completionId,
+		),
+		index("hr_employee_certification_org_status_idx").on(
+			t.organizationId,
+			t.status,
+		),
+		check(
+			"hr_employee_certification_status_check",
+			sql`${t.status} IN ('active', 'expired', 'revoked')`,
+		),
+		check(
+			"hr_employee_certification_expiry_check",
+			sql`${t.expiresOn} IS NULL OR ${t.expiresOn} >= ${t.issuedOn}`,
+		),
+	],
+);
+
+export const hrLearningProgram = createErpScaffoldTable("hr_learning_program");
 export const hrLearningAttendance = createErpScaffoldTable(
 	"hr_learning_attendance",
 );
 export const hrLearningAssessment = createErpScaffoldTable(
 	"hr_learning_assessment",
 );
-export const hrLearningCompletion = createErpScaffoldTable(
-	"hr_learning_completion",
-);
-export const hrEmployeeCertification = createErpScaffoldTable(
-	"hr_employee_certification",
-);
 export const hrDevelopmentPlan = createErpScaffoldTable("hr_development_plan");
 
-export const hrCompensationGrade = createErpScaffoldTable(
+export const hrCompensationGrade = pgTable(
 	"hr_compensation_grade",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		code: text("code").notNull(),
+		name: text("name").notNull(),
+		/** active | archived */
+		status: text("status").notNull(),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_compensation_grade_org_id_idx").on(t.organizationId, t.id),
+		index("hr_compensation_grade_org_status_idx").on(
+			t.organizationId,
+			t.status,
+		),
+		uniqueIndex("hr_compensation_grade_org_code_uidx").on(
+			t.organizationId,
+			t.code,
+		),
+	],
 );
-export const hrSalaryBand = createErpScaffoldTable("hr_salary_band");
-export const hrEmployeeCompensation = createErpScaffoldTable(
+
+export const hrSalaryBand = pgTable(
+	"hr_salary_band",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		gradeId: uuid("grade_id")
+			.notNull()
+			.references(() => hrCompensationGrade.id),
+		minimumAmount: text("minimum_amount").notNull(),
+		midpointAmount: text("midpoint_amount").notNull(),
+		maximumAmount: text("maximum_amount").notNull(),
+		currencyCode: text("currency_code").notNull(),
+		effectiveFrom: date("effective_from").notNull(),
+		effectiveTo: date("effective_to"),
+		/** active | superseded | archived */
+		status: text("status").notNull(),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_salary_band_org_id_idx").on(t.organizationId, t.id),
+		index("hr_salary_band_org_grade_idx").on(t.organizationId, t.gradeId),
+		index("hr_salary_band_org_status_idx").on(t.organizationId, t.status),
+	],
+);
+
+export const hrEmployeeCompensation = pgTable(
 	"hr_employee_compensation",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		employeeId: uuid("employee_id")
+			.notNull()
+			.references(() => hrEmployee.id),
+		employmentId: uuid("employment_id")
+			.notNull()
+			.references(() => hrEmployment.id),
+		gradeId: uuid("grade_id").references(() => hrCompensationGrade.id),
+		salaryBandId: uuid("salary_band_id").references(() => hrSalaryBand.id),
+		baseAmount: text("base_amount").notNull(),
+		currencyCode: text("currency_code").notNull(),
+		effectiveFrom: date("effective_from").notNull(),
+		effectiveTo: date("effective_to"),
+		reason: text("reason").notNull(),
+		/** active | ended */
+		status: text("status").notNull(),
+		sourceReviewId: uuid("source_review_id"),
+		createIdempotencyKey: text("create_idempotency_key").notNull(),
+		createRequestFingerprint: text("create_request_fingerprint").notNull(),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_employee_compensation_org_id_idx").on(t.organizationId, t.id),
+		index("hr_employee_compensation_org_employee_idx").on(
+			t.organizationId,
+			t.employeeId,
+		),
+		index("hr_employee_compensation_org_employment_idx").on(
+			t.organizationId,
+			t.employmentId,
+		),
+		uniqueIndex("hr_employee_compensation_org_employment_active_uidx")
+			.on(t.organizationId, t.employmentId)
+			.where(sql`${t.status} = 'active'`),
+		uniqueIndex("hr_employee_compensation_org_create_idempotency_uidx").on(
+			t.organizationId,
+			t.createIdempotencyKey,
+		),
+	],
 );
+
 export const hrAllowanceEntitlement = createErpScaffoldTable(
 	"hr_allowance_entitlement",
 );
 export const hrBonusEligibility = createErpScaffoldTable(
 	"hr_bonus_eligibility",
 );
-export const hrBenefitPlan = createErpScaffoldTable("hr_benefit_plan");
+
+export const hrBenefitPlan = pgTable(
+	"hr_benefit_plan",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		code: text("code").notNull(),
+		name: text("name").notNull(),
+		eligibilityNote: text("eligibility_note"),
+		/** active | archived */
+		status: text("status").notNull(),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_benefit_plan_org_id_idx").on(t.organizationId, t.id),
+		index("hr_benefit_plan_org_status_idx").on(t.organizationId, t.status),
+		uniqueIndex("hr_benefit_plan_org_code_uidx").on(t.organizationId, t.code),
+	],
+);
+
 export const hrBenefitEligibility = createErpScaffoldTable(
 	"hr_benefit_eligibility",
 );
-export const hrBenefitEnrollment = createErpScaffoldTable(
+
+export const hrBenefitEnrollment = pgTable(
 	"hr_benefit_enrollment",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		employeeId: uuid("employee_id")
+			.notNull()
+			.references(() => hrEmployee.id),
+		employmentId: uuid("employment_id")
+			.notNull()
+			.references(() => hrEmployment.id),
+		planId: uuid("plan_id")
+			.notNull()
+			.references(() => hrBenefitPlan.id),
+		effectiveFrom: date("effective_from").notNull(),
+		effectiveTo: date("effective_to"),
+		/** active | ended | cancelled */
+		status: text("status").notNull(),
+		createIdempotencyKey: text("create_idempotency_key").notNull(),
+		createRequestFingerprint: text("create_request_fingerprint").notNull(),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_benefit_enrollment_org_id_idx").on(t.organizationId, t.id),
+		index("hr_benefit_enrollment_org_employee_idx").on(
+			t.organizationId,
+			t.employeeId,
+		),
+		index("hr_benefit_enrollment_org_plan_idx").on(t.organizationId, t.planId),
+		uniqueIndex("hr_benefit_enrollment_org_employee_plan_active_uidx")
+			.on(t.organizationId, t.employeeId, t.planId)
+			.where(sql`${t.status} = 'active'`),
+		uniqueIndex("hr_benefit_enrollment_org_create_idempotency_uidx").on(
+			t.organizationId,
+			t.createIdempotencyKey,
+		),
+	],
 );
+
 export const hrCompensationReviewCycle = createErpScaffoldTable(
 	"hr_compensation_review_cycle",
 );
-export const hrCompensationReview = createErpScaffoldTable(
+
+export const hrCompensationReview = pgTable(
 	"hr_compensation_review",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		employeeId: uuid("employee_id")
+			.notNull()
+			.references(() => hrEmployee.id),
+		employmentId: uuid("employment_id")
+			.notNull()
+			.references(() => hrEmployment.id),
+		/** draft | recorded | finalized */
+		status: text("status").notNull(),
+		proposedBaseAmount: text("proposed_base_amount"),
+		proposedCurrencyCode: text("proposed_currency_code"),
+		proposedGradeId: uuid("proposed_grade_id").references(
+			() => hrCompensationGrade.id,
+		),
+		proposedSalaryBandId: uuid("proposed_salary_band_id").references(
+			() => hrSalaryBand.id,
+		),
+		recommendationNote: text("recommendation_note"),
+		effectiveFrom: date("effective_from"),
+		finalizedAt: timestamp("finalized_at", { withTimezone: true }),
+		appliedCompensationId: uuid("applied_compensation_id").references(
+			() => hrEmployeeCompensation.id,
+		),
+		createIdempotencyKey: text("create_idempotency_key").notNull(),
+		createRequestFingerprint: text("create_request_fingerprint").notNull(),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_compensation_review_org_id_idx").on(t.organizationId, t.id),
+		index("hr_compensation_review_org_employee_idx").on(
+			t.organizationId,
+			t.employeeId,
+		),
+		index("hr_compensation_review_org_employment_idx").on(
+			t.organizationId,
+			t.employmentId,
+		),
+		uniqueIndex("hr_compensation_review_org_create_idempotency_uidx").on(
+			t.organizationId,
+			t.createIdempotencyKey,
+		),
+	],
 );

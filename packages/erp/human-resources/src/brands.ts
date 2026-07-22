@@ -194,6 +194,94 @@ export type HumanResourcesClearanceId = z.infer<
 	typeof humanResourcesClearanceIdSchema
 >;
 
+export const humanResourcesCompensationGradeIdSchema = z
+	.string()
+	.uuid()
+	.brand<"HumanResourcesCompensationGradeId">();
+export type HumanResourcesCompensationGradeId = z.infer<
+	typeof humanResourcesCompensationGradeIdSchema
+>;
+
+export const humanResourcesSalaryBandIdSchema = z
+	.string()
+	.uuid()
+	.brand<"HumanResourcesSalaryBandId">();
+export type HumanResourcesSalaryBandId = z.infer<
+	typeof humanResourcesSalaryBandIdSchema
+>;
+
+export const humanResourcesEmployeeCompensationIdSchema = z
+	.string()
+	.uuid()
+	.brand<"HumanResourcesEmployeeCompensationId">();
+export type HumanResourcesEmployeeCompensationId = z.infer<
+	typeof humanResourcesEmployeeCompensationIdSchema
+>;
+
+export const humanResourcesCompensationReviewIdSchema = z
+	.string()
+	.uuid()
+	.brand<"HumanResourcesCompensationReviewId">();
+export type HumanResourcesCompensationReviewId = z.infer<
+	typeof humanResourcesCompensationReviewIdSchema
+>;
+
+export const humanResourcesBenefitPlanIdSchema = z
+	.string()
+	.uuid()
+	.brand<"HumanResourcesBenefitPlanId">();
+export type HumanResourcesBenefitPlanId = z.infer<
+	typeof humanResourcesBenefitPlanIdSchema
+>;
+
+export const humanResourcesBenefitEnrollmentIdSchema = z
+	.string()
+	.uuid()
+	.brand<"HumanResourcesBenefitEnrollmentId">();
+export type HumanResourcesBenefitEnrollmentId = z.infer<
+	typeof humanResourcesBenefitEnrollmentIdSchema
+>;
+
+export const humanResourcesCourseIdSchema = z
+	.string()
+	.uuid()
+	.brand<"HumanResourcesCourseId">();
+export type HumanResourcesCourseId = z.infer<
+	typeof humanResourcesCourseIdSchema
+>;
+
+export const humanResourcesSessionIdSchema = z
+	.string()
+	.uuid()
+	.brand<"HumanResourcesSessionId">();
+export type HumanResourcesSessionId = z.infer<
+	typeof humanResourcesSessionIdSchema
+>;
+
+export const humanResourcesLearningAssignmentIdSchema = z
+	.string()
+	.uuid()
+	.brand<"HumanResourcesLearningAssignmentId">();
+export type HumanResourcesLearningAssignmentId = z.infer<
+	typeof humanResourcesLearningAssignmentIdSchema
+>;
+
+export const humanResourcesCompletionIdSchema = z
+	.string()
+	.uuid()
+	.brand<"HumanResourcesCompletionId">();
+export type HumanResourcesCompletionId = z.infer<
+	typeof humanResourcesCompletionIdSchema
+>;
+
+export const humanResourcesCertificationIdSchema = z
+	.string()
+	.uuid()
+	.brand<"HumanResourcesCertificationId">();
+export type HumanResourcesCertificationId = z.infer<
+	typeof humanResourcesCertificationIdSchema
+>;
+
 /** Brand after UUID generation or trusted DB load — never cast without parse. */
 export function parseHumanResourcesEmployeeId(
 	id: string,
@@ -525,6 +613,160 @@ export function parseHumanResourcesClearanceId(
 		return fail(
 			"INTERNAL_ERROR",
 			"Invalid clearance identifier",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
+		);
+	}
+	return ok(parsed.data);
+}
+
+export function parseHumanResourcesCompensationGradeId(
+	id: string,
+): Result<HumanResourcesCompensationGradeId> {
+	const parsed = humanResourcesCompensationGradeIdSchema.safeParse(id);
+	if (!parsed.success) {
+		return fail(
+			"INTERNAL_ERROR",
+			"Invalid compensation grade identifier",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
+		);
+	}
+	return ok(parsed.data);
+}
+
+export function parseHumanResourcesSalaryBandId(
+	id: string,
+): Result<HumanResourcesSalaryBandId> {
+	const parsed = humanResourcesSalaryBandIdSchema.safeParse(id);
+	if (!parsed.success) {
+		return fail(
+			"INTERNAL_ERROR",
+			"Invalid salary band identifier",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
+		);
+	}
+	return ok(parsed.data);
+}
+
+export function parseHumanResourcesEmployeeCompensationId(
+	id: string,
+): Result<HumanResourcesEmployeeCompensationId> {
+	const parsed = humanResourcesEmployeeCompensationIdSchema.safeParse(id);
+	if (!parsed.success) {
+		return fail(
+			"INTERNAL_ERROR",
+			"Invalid employee compensation identifier",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
+		);
+	}
+	return ok(parsed.data);
+}
+
+export function parseHumanResourcesCompensationReviewId(
+	id: string,
+): Result<HumanResourcesCompensationReviewId> {
+	const parsed = humanResourcesCompensationReviewIdSchema.safeParse(id);
+	if (!parsed.success) {
+		return fail(
+			"INTERNAL_ERROR",
+			"Invalid compensation review identifier",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
+		);
+	}
+	return ok(parsed.data);
+}
+
+export function parseHumanResourcesBenefitPlanId(
+	id: string,
+): Result<HumanResourcesBenefitPlanId> {
+	const parsed = humanResourcesBenefitPlanIdSchema.safeParse(id);
+	if (!parsed.success) {
+		return fail(
+			"INTERNAL_ERROR",
+			"Invalid benefit plan identifier",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
+		);
+	}
+	return ok(parsed.data);
+}
+
+export function parseHumanResourcesBenefitEnrollmentId(
+	id: string,
+): Result<HumanResourcesBenefitEnrollmentId> {
+	const parsed = humanResourcesBenefitEnrollmentIdSchema.safeParse(id);
+	if (!parsed.success) {
+		return fail(
+			"INTERNAL_ERROR",
+			"Invalid benefit enrollment identifier",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
+		);
+	}
+	return ok(parsed.data);
+}
+
+export function parseHumanResourcesCourseId(
+	id: string,
+): Result<HumanResourcesCourseId> {
+	const parsed = humanResourcesCourseIdSchema.safeParse(id);
+	if (!parsed.success) {
+		return fail(
+			"INTERNAL_ERROR",
+			"Invalid course identifier",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
+		);
+	}
+	return ok(parsed.data);
+}
+
+export function parseHumanResourcesSessionId(
+	id: string,
+): Result<HumanResourcesSessionId> {
+	const parsed = humanResourcesSessionIdSchema.safeParse(id);
+	if (!parsed.success) {
+		return fail(
+			"INTERNAL_ERROR",
+			"Invalid session identifier",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
+		);
+	}
+	return ok(parsed.data);
+}
+
+export function parseHumanResourcesLearningAssignmentId(
+	id: string,
+): Result<HumanResourcesLearningAssignmentId> {
+	const parsed = humanResourcesLearningAssignmentIdSchema.safeParse(id);
+	if (!parsed.success) {
+		return fail(
+			"INTERNAL_ERROR",
+			"Invalid learning assignment identifier",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
+		);
+	}
+	return ok(parsed.data);
+}
+
+export function parseHumanResourcesCompletionId(
+	id: string,
+): Result<HumanResourcesCompletionId> {
+	const parsed = humanResourcesCompletionIdSchema.safeParse(id);
+	if (!parsed.success) {
+		return fail(
+			"INTERNAL_ERROR",
+			"Invalid completion identifier",
+			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
+		);
+	}
+	return ok(parsed.data);
+}
+
+export function parseHumanResourcesCertificationId(
+	id: string,
+): Result<HumanResourcesCertificationId> {
+	const parsed = humanResourcesCertificationIdSchema.safeParse(id);
+	if (!parsed.success) {
+		return fail(
+			"INTERNAL_ERROR",
+			"Invalid certification identifier",
 			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
 		);
 	}

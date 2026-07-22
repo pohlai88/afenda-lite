@@ -113,3 +113,29 @@ export function fingerprintOffboardingStart(input: {
 		terminationId: input.terminationId,
 	});
 }
+
+export function fingerprintEmployeeCompensationCreate(input: {
+	employmentId: string;
+	baseAmount: string;
+	currencyCode: string;
+	effectiveFrom: string;
+	reason: string;
+}): string {
+	return sha256Fingerprint(input);
+}
+
+export function fingerprintCompensationReviewDraft(input: {
+	employeeId: string;
+	employmentId: string;
+}): string {
+	return sha256Fingerprint(input);
+}
+
+export function fingerprintBenefitEnrollment(input: {
+	employeeId: string;
+	employmentId: string;
+	planId: string;
+	effectiveFrom: string;
+}): string {
+	return sha256Fingerprint(input);
+}

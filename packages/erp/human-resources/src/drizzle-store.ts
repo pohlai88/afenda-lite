@@ -67,6 +67,10 @@ import {
 	parseHumanResourcesRequisitionId,
 } from "./brands";
 import {
+	attachDrizzleCompensation,
+	type DrizzleCompensationMethods,
+} from "./drizzle-compensation";
+import {
 	attachDrizzleLifecycle,
 	type DrizzleLifecycleMethods,
 } from "./drizzle-lifecycle";
@@ -1190,7 +1194,7 @@ function eventPayloadJson(value: Record<string, unknown>): string {
 
 type DrizzleWorkforceStore = Omit<
 	HumanResourcesStore,
-	keyof DrizzleLifecycleMethods
+	keyof DrizzleLifecycleMethods | keyof DrizzleCompensationMethods
 >;
 
 /** Drizzle store: workforce methods on the class; lifecycle methods attached at construct. */
@@ -1198,6 +1202,9 @@ export class DrizzleHumanResourcesStore implements DrizzleWorkforceStore {
 	constructor() {
 		attachDrizzleLifecycle(
 			this as unknown as Parameters<typeof attachDrizzleLifecycle>[0],
+		);
+		attachDrizzleCompensation(
+			this as unknown as Parameters<typeof attachDrizzleCompensation>[0],
 		);
 	}
 
