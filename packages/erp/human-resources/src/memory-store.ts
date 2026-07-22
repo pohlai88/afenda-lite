@@ -8103,6 +8103,316 @@ export class MemoryHumanResourcesStore implements HumanResourcesStore {
 
 		return ok(handoff);
 	}
+
+	// Learning Course methods
+	async countActiveAssignmentsForCourse(input: {
+		organizationId: string;
+		courseId: HumanResourcesCourseId;
+	}): Promise<Result<number>> {
+		const count = Array.from(this.learningAssignments.values()).filter(
+			(a) =>
+				a.organizationId === input.organizationId &&
+				a.courseId === input.courseId &&
+				isAssignmentActive(a.status),
+		).length;
+		return ok(count);
+	}
+
+	async getCourseById(input: {
+		organizationId: string;
+		courseId: HumanResourcesCourseId;
+	}): Promise<Result<LearningCourse | null>> {
+		const course = this.courses.get(input.courseId);
+		if (!course || course.organizationId !== input.organizationId) {
+			return ok(null);
+		}
+		return ok({ ...course });
+	}
+
+	async findCourseByIdempotencyKey(input: {
+		organizationId: string;
+		idempotencyKey: string;
+	}): Promise<Result<IdempotentCourseRecord | null>> {
+		const key = this.idempotencyMapKey(
+			input.organizationId,
+			input.idempotencyKey,
+		);
+		const record = this.courseIdempotencyByKey.get(key);
+		if (!record) {
+			return ok(null);
+		}
+		return ok({ ...record, course: { ...record.course } });
+	}
+
+	async createCourse(
+		record: CourseCreateRecord,
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<LearningCourse>> {
+		const existing = Array.from(this.courses.values()).find(
+			(c) =>
+				c.organizationId === record.organizationId && c.code === record.code,
+		);
+		if (existing) {
+			return fail(
+				"CONFLICT",
+				"Course with this code already exists",
+				humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_DUPLICATE),
+			);
+		}
+
+		const idResult = parseHumanResourcesCourseId(randomUUID());
+		if (!idResult.ok) {
+			return idResult;
+		}
+
+		const now = new Date();
+		const course: LearningCourse = {
+			id: idResult.data,
+			organizationId: record.organizationId,
+			code: record.code,
+			title: record.title,
+			description: record.description,
+			durationHours: record.durationHours,
+			status: "active",
+			version: 1,
+			createdBy: record.createdBy,
+			updatedBy: record.createdBy,
+			createdAt: now,
+			updatedAt: now,
+		};
+
+		this.courses.set(course.id, course);
+
+		const idempotencyKey = this.idempotencyMapKey(
+			record.organizationId,
+			record.createRequestFingerprint,
+		);
+		this.courseIdempotencyByKey.set(idempotencyKey, {
+			course: { ...course },
+			createRequestFingerprint: record.createRequestFingerprint,
+		});
+
+		const audit = await ports.audit.record({
+			organizationId: course.organizationId,
+			actorUserId: course.createdBy,
+			correlationId: meta.correlationId,
+			entity: "hr_learning_course",
+			entityId: course.id,
+			action: "CREATE",
+			changes: [],
+		});
+		if (!audit.ok) {
+			this.courses.delete(course.id);
+			this.courseIdempotencyByKey.delete(idempotencyKey);
+			return audit;
+		}
+
+		return ok({ ...course });
+	}
+
+	async updateCourse(
+		input: {
+			organizationId: string;
+			courseId: HumanResourcesCourseId;
+			title?: string;
+			description?: string | null;
+			durationHours?: string | null;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<LearningCourse>> {
+		const course = this.courses.get(input.courseId);
+		if (!course || course.organizationId !== input.organizationId) {
+			return notFound("Course not found");
+		}
+
+		const versionCheck = assertExpectedVersion(
+			course.version,
+			input.expectedVersion,
+		);
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
+
+		const now = new Date();
+		const updated: LearningCourse = {
+			...course,
+			title: input.title ?? course.title,
+			description: input.description !== undefined ? input.description : course.description,
+			durationHours: input.durationHours !== undefined ? input.durationHours : course.durationHours,
+			version: course.version + 1,
+			updatedBy: input.actorUserId,
+			updatedAt: now,
+		};
+
+		this.courses.set(input.courseId, updated);
+
+		const audit = await ports.audit.record({
+			organizationId: updated.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_learning_course",
+			entityId: updated.id,
+			action: "UPDATE",
+			changes: [],
+		});
+		if (!audit.ok) {
+			this.courses.set(input.courseId, course);
+			return audit;
+		}
+
+		return ok({ ...updated });
+	}
+
+	async activateCourse(
+		input: {
+			organizationId: string;
+			courseId: HumanResourcesCourseId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<LearningCourse>> {
+		const course = this.courses.get(input.courseId);
+		if (!course || course.organizationId !== input.organizationId) {
+			return notFound("Course not found");
+		}
+
+		const versionCheck = assertExpectedVersion(
+			course.version,
+			input.expectedVersion,
+		);
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
+
+		if (course.status === "active") {
+			return conflict("Course is already active");
+		}
+
+		const now = new Date();
+		const updated: LearningCourse = {
+			...course,
+			status: "active",
+			version: course.version + 1,
+			updatedBy: input.actorUserId,
+			updatedAt: now,
+		};
+
+		this.courses.set(input.courseId, updated);
+
+		const audit = await ports.audit.record({
+			organizationId: updated.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_learning_course",
+			entityId: updated.id,
+			action: "UPDATE",
+			changes: [],
+		});
+		if (!audit.ok) {
+			this.courses.set(input.courseId, course);
+			return audit;
+		}
+
+		return ok({ ...updated });
+	}
+
+	async archiveCourse(
+		input: {
+			organizationId: string;
+			courseId: HumanResourcesCourseId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<LearningCourse>> {
+		const course = this.courses.get(input.courseId);
+		if (!course || course.organizationId !== input.organizationId) {
+			return notFound("Course not found");
+		}
+
+		const versionCheck = assertExpectedVersion(
+			course.version,
+			input.expectedVersion,
+		);
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
+
+		const activeCount = await this.countActiveAssignmentsForCourse({
+			organizationId: input.organizationId,
+			courseId: input.courseId,
+		});
+		if (!activeCount.ok) {
+			return activeCount;
+		}
+
+		const archiveGuard = assertCourseCanArchive({
+			status: course.status,
+			hasActiveAssignments: activeCount.data > 0,
+		});
+		if (!archiveGuard.ok) {
+			return archiveGuard;
+		}
+
+		const now = new Date();
+		const updated: LearningCourse = {
+			...course,
+			status: "archived",
+			version: course.version + 1,
+			updatedBy: input.actorUserId,
+			updatedAt: now,
+		};
+
+		this.courses.set(input.courseId, updated);
+
+		const audit = await ports.audit.record({
+			organizationId: updated.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_learning_course",
+			entityId: updated.id,
+			action: "UPDATE",
+			changes: [],
+		});
+		if (!audit.ok) {
+			this.courses.set(input.courseId, course);
+			return audit;
+		}
+
+		return ok({ ...updated });
+	}
+
+	async listCourses(input: {
+		organizationId: string;
+		page: number;
+		pageSize: number;
+		status?: CourseStatus;
+	}): Promise<Result<CourseListPage>> {
+		let filtered = Array.from(this.courses.values()).filter(
+			(c) => c.organizationId === input.organizationId,
+		);
+
+		if (input.status !== undefined) {
+			filtered = filtered.filter((c) => c.status === input.status);
+		}
+
+		filtered.sort((a, b) => a.title.localeCompare(b.title));
+
+		const totalCount = filtered.length;
+		const start = (input.page - 1) * input.pageSize;
+		const courses = filtered
+			.slice(start, start + input.pageSize)
+			.map((c) => ({ ...c }));
+
+		return ok({ courses, totalCount, page: input.page, pageSize: input.pageSize });
+	}
 }
 
 export function createMemoryHumanResourcesStore(): MemoryHumanResourcesStore {
