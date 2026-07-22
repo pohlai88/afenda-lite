@@ -23,9 +23,12 @@ import {
 	type HumanResourcesBenefitEnrollmentId,
 	type HumanResourcesBenefitPlanId,
 	type HumanResourcesCandidateId,
+	type HumanResourcesCertificationId,
 	type HumanResourcesClearanceId,
 	type HumanResourcesCompensationGradeId,
 	type HumanResourcesCompensationReviewId,
+	type HumanResourcesCompletionId,
+	type HumanResourcesCourseId,
 	type HumanResourcesDepartmentId,
 	type HumanResourcesEmployeeCompensationId,
 	type HumanResourcesEmployeeId,
@@ -34,6 +37,7 @@ import {
 	type HumanResourcesEmploymentId,
 	type HumanResourcesInterviewId,
 	type HumanResourcesJobId,
+	type HumanResourcesLearningAssignmentId,
 	type HumanResourcesOffboardingCaseId,
 	type HumanResourcesOffboardingTaskId,
 	type HumanResourcesOfferId,
@@ -44,15 +48,19 @@ import {
 	type HumanResourcesReportingLineId,
 	type HumanResourcesRequisitionId,
 	type HumanResourcesSalaryBandId,
+	type HumanResourcesSessionId,
 	type HumanResourcesTerminationId,
 	parseHumanResourcesApplicationId,
 	parseHumanResourcesAssignmentId,
 	parseHumanResourcesBenefitEnrollmentId,
 	parseHumanResourcesBenefitPlanId,
 	parseHumanResourcesCandidateId,
+	parseHumanResourcesCertificationId,
 	parseHumanResourcesClearanceId,
 	parseHumanResourcesCompensationGradeId,
 	parseHumanResourcesCompensationReviewId,
+	parseHumanResourcesCompletionId,
+	parseHumanResourcesCourseId,
 	parseHumanResourcesDepartmentId,
 	parseHumanResourcesEmployeeCompensationId,
 	parseHumanResourcesEmployeeId,
@@ -64,6 +72,7 @@ import {
 	parseHumanResourcesInterviewEvaluationId,
 	parseHumanResourcesInterviewId,
 	parseHumanResourcesJobId,
+	parseHumanResourcesLearningAssignmentId,
 	parseHumanResourcesOffboardingCaseId,
 	parseHumanResourcesOffboardingTaskId,
 	parseHumanResourcesOfferId,
@@ -74,6 +83,7 @@ import {
 	parseHumanResourcesReportingLineId,
 	parseHumanResourcesRequisitionId,
 	parseHumanResourcesSalaryBandId,
+	parseHumanResourcesSessionId,
 	parseHumanResourcesTerminationId,
 } from "./brands";
 import {
@@ -114,6 +124,19 @@ import {
 	positionStatusSchema,
 } from "./shared/employment-status";
 import { fingerprintTransfer } from "./shared/fingerprint";
+import type {
+	AssignmentStatus,
+	CertificationStatus,
+	CourseStatus,
+	SessionStatus,
+} from "./shared/learning-status";
+import {
+	isCourseActive,
+	isSessionActive,
+	isAssignmentActive,
+	isAssignmentTerminal,
+	isCertificationActive,
+} from "./shared/learning-status";
 import {
 	assertClearanceStatusTransition,
 	assertEmploymentActiveForOnboarding,
@@ -128,6 +151,21 @@ import {
 	assertProbationOpen,
 	assertTerminationEffectiveDate,
 } from "./shared/lifecycle-guards";
+import {
+	assertCourseActive,
+	assertCourseCanArchive,
+	assertSessionSchedulable,
+	assertSessionNotTerminal,
+	assertSessionCapacityAvailable,
+	assertEmploymentActiveForAssignment,
+	assertAssignmentEnrollable,
+	assertAssignmentNotTerminal,
+	assertCompletionRecordable,
+	assertNoDuplicateCompletion,
+	assertCertificationIssuable,
+	assertCertificationCanRevoke,
+	assertCertificationCanExpire,
+} from "./shared/learning-guards";
 import type {
 	LifecycleTaskStatus,
 	ProbationOutcome,
@@ -169,19 +207,102 @@ import {
 } from "./shared/recruitment-status";
 import type { HumanResourcesStore } from "./store";
 import type {
+	ApplicationCreateRecord,
+	AssignmentCreateRecord,
+	CandidateCreateRecord,
+	CertificationCreateRecord,
+	CompletionCreateRecord,
+	CourseCreateRecord,
+	DepartmentCreateRecord,
+	EmployeeCreateRecord,
+	EmploymentConfirmationCreateRecord,
+	EmploymentContractCreateRecord,
+	EmploymentCreateRecord,
+	IdempotentCandidateRecord,
+	IdempotentCertificationRecord,
+	IdempotentCompletionRecord,
+	IdempotentCourseRecord,
+	IdempotentEmployeeRecord,
+	IdempotentEmploymentConfirmationRecord,
+	IdempotentEmploymentMovementRecord,
+	IdempotentLearningAssignmentRecord,
+	IdempotentOfferAcceptRecord,
+	IdempotentOffboardingCaseRecord,
+	IdempotentOnboardingCaseRecord,
+	IdempotentProbationReviewRecord,
+	IdempotentRequisitionRecord,
+	IdempotentSessionRecord,
+	IdempotentTerminationRecord,
+	InterviewEvaluationCreateRecord,
+	InterviewScheduleRecord,
+	JobCreateRecord,
+	LearningAssignmentCreateRecord,
+	OfferCreateRecord,
+	OnboardingCaseCreateRecord,
+	OffboardingCaseCreateRecord,
+	PositionCreateRecord,
+	ProbationReviewCreateRecord,
+	ReportingLineCreateRecord,
+	RequisitionCreateRecord,
+	SessionCreateRecord,
+	TerminationCreateRecord,
+} from "./store";
+import type {
+	ApplicationListPage,
 	ApprovedCompensationHandoff,
 	BenefitEnrollment,
 	BenefitEnrollmentListPage,
 	BenefitPlan,
 	BenefitPlanListPage,
+	Candidate,
+	CandidateApplication,
+	CandidateListPage,
+	CertificationListPage,
+	Clearance,
 	CompensationGrade,
 	CompensationGradeListPage,
 	CompensationReview,
 	CompensationReviewListPage,
+	CompletionListPage,
+	CourseListPage,
+	Department,
+	Employee,
 	EmployeeCompensation,
 	EmployeeCompensationListPage,
+	EmployeeCertification,
+	EmployeeListPage,
+	Employment,
+	EmploymentConfirmation,
+	EmploymentContract,
+	EmploymentMovement,
+	EmploymentOffer,
+	ExitInterview,
+	Interview,
+	InterviewEvaluation,
+	InterviewListPage,
+	Job,
+	JobRequisition,
+	LearningAssignment,
+	LearningAssignmentListPage,
+	LearningCompletion,
+	LearningCourse,
+	LearningSession,
+	OffboardingCase,
+	OffboardingTask,
+	OfferAcceptanceHandoff,
+	OfferListPage,
+	OnboardingCase,
+	OnboardingTask,
+	OrganizationTreePage,
+	Position,
+	ProbationReview,
+	ReportingLine,
+	RequisitionListPage,
 	SalaryBand,
 	SalaryBandListPage,
+	SessionListPage,
+	Termination,
+	WorkAssignment,
 } from "./types";
 
 function cloneEmployee(employee: Employee): Employee {
@@ -396,6 +517,34 @@ export class MemoryHumanResourcesStore implements HumanResourcesStore {
 		BenefitEnrollment
 	>();
 
+	// Learning
+	private readonly courses = new Map<string, LearningCourse>();
+	private readonly courseIdempotencyByKey = new Map<
+		string,
+		IdempotentCourseRecord
+	>();
+	private readonly sessions = new Map<string, LearningSession>();
+	private readonly sessionIdempotencyByKey = new Map<
+		string,
+		IdempotentSessionRecord
+	>();
+	private readonly learningAssignments = new Map<string, LearningAssignment>();
+	private readonly assignmentIdempotencyByKey = new Map<
+		string,
+		IdempotentLearningAssignmentRecord
+	>();
+	private readonly completions = new Map<string, LearningCompletion>();
+	private readonly completionByAssignmentId = new Map<string, string>();
+	private readonly completionIdempotencyByKey = new Map<
+		string,
+		IdempotentCompletionRecord
+	>();
+	private readonly certifications = new Map<string, EmployeeCertification>();
+	private readonly certificationIdempotencyByKey = new Map<
+		string,
+		IdempotentCertificationRecord
+	>();
+
 	private idempotencyMapKey(organizationId: string, idempotencyKey: string) {
 		return `${organizationId}:${idempotencyKey}`;
 	}
@@ -438,6 +587,17 @@ export class MemoryHumanResourcesStore implements HumanResourcesStore {
 		this.exitInterviews.clear();
 		this.clearances.clear();
 		this.offboardingIdempotencyByKey.clear();
+		this.courses.clear();
+		this.courseIdempotencyByKey.clear();
+		this.sessions.clear();
+		this.sessionIdempotencyByKey.clear();
+		this.learningAssignments.clear();
+		this.assignmentIdempotencyByKey.clear();
+		this.completions.clear();
+		this.completionByAssignmentId.clear();
+		this.completionIdempotencyByKey.clear();
+		this.certifications.clear();
+		this.certificationIdempotencyByKey.clear();
 	}
 
 	// Employee methods
