@@ -9044,6 +9044,176 @@ export class MemoryHumanResourcesStore implements HumanResourcesStore {
 
 		return ok({ assignments, totalCount, page: input.page, pageSize: input.pageSize });
 	}
+
+	// Learning Completion methods
+	async getCompletionById(input: {
+		organizationId: string;
+		completionId: HumanResourcesCompletionId;
+	}): Promise<Result<LearningCompletion | null>> {
+		const completion = this.completions.get(input.completionId);
+		if (!completion || completion.organizationId !== input.organizationId) {
+			return ok(null);
+		}
+		return ok({ ...completion });
+	}
+
+	async findCompletionByIdempotencyKey(input: {
+		organizationId: string;
+		idempotencyKey: string;
+	}): Promise<Result<IdempotentCompletionRecord | null>> {
+		const key = this.idempotencyMapKey(
+			input.organizationId,
+			input.idempotencyKey,
+		);
+		const record = this.completionIdempotencyByKey.get(key);
+		if (!record) {
+			return ok(null);
+		}
+		return ok({ ...record, completion: { ...record.completion } });
+	}
+
+	async findCompletionByAssignmentId(input: {
+		organizationId: string;
+		assignmentId: HumanResourcesLearningAssignmentId;
+	}): Promise<Result<LearningCompletion | null>> {
+		const completionId = this.completionByAssignmentId.get(input.assignmentId);
+		if (!completionId) {
+			return ok(null);
+		}
+		const completion = this.completions.get(completionId);
+		if (!completion || completion.organizationId !== input.organizationId) {
+			return ok(null);
+		}
+		return ok({ ...completion });
+	}
+
+	async recordCompletion(
+		record: CompletionCreateRecord,
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<LearningCompletion>> {
+		const assignment = this.learningAssignments.get(record.assignmentId);
+		if (!assignment || assignment.organizationId !== record.organizationId) {
+			return notFound(
+				"Assignment not found",
+				HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+			);
+		}
+
+		const existingCompletionId = this.completionByAssignmentId.get(record.assignmentId);
+		const duplicateCheck = assertNoDuplicateCompletion({
+			hasExistingCompletion: existingCompletionId !== undefined,
+		});
+		if (!duplicateCheck.ok) {
+			return duplicateCheck;
+		}
+
+		const course = this.courses.get(assignment.courseId);
+		if (!course) {
+			return notFound("Course not found");
+		}
+
+		let sessionStatus: SessionStatus = "scheduled";
+		if (assignment.sessionId !== null) {
+			const session = this.sessions.get(assignment.sessionId);
+			if (!session) {
+				return notFound("Session not found");
+			}
+			sessionStatus = session.status;
+		}
+
+		const recordableGuard = assertCompletionRecordable({
+			assignmentStatus: assignment.status,
+			sessionStatus,
+			completedAt: record.completedAt,
+		});
+		if (!recordableGuard.ok) {
+			return recordableGuard;
+		}
+
+		const idResult = parseHumanResourcesCompletionId(randomUUID());
+		if (!idResult.ok) {
+			return idResult;
+		}
+
+		const now = new Date();
+		const completion: LearningCompletion = {
+			id: idResult.data,
+			organizationId: record.organizationId,
+			assignmentId: record.assignmentId,
+			employeeId: record.employeeId,
+			courseId: record.courseId,
+			sessionId: record.sessionId,
+			completedAt: record.completedAt,
+			outcome: record.outcome,
+			assessorUserId: record.assessorUserId,
+			notes: record.notes,
+			version: 1,
+			createdBy: record.createdBy,
+			updatedBy: record.createdBy,
+			createdAt: now,
+			updatedAt: now,
+		};
+
+		this.completions.set(completion.id, completion);
+		this.completionByAssignmentId.set(record.assignmentId, completion.id);
+
+		const idempotencyKey = this.idempotencyMapKey(
+			record.organizationId,
+			record.recordRequestFingerprint,
+		);
+		this.completionIdempotencyByKey.set(idempotencyKey, {
+			completion: { ...completion },
+			recordRequestFingerprint: record.recordRequestFingerprint,
+		});
+
+		const audit = await ports.audit.record({
+			organizationId: completion.organizationId,
+			actorUserId: completion.createdBy,
+			correlationId: meta.correlationId,
+			entity: "hr_learning_completion",
+			entityId: completion.id,
+			action: "CREATE",
+			changes: [],
+		});
+		if (!audit.ok) {
+			this.completions.delete(completion.id);
+			this.completionByAssignmentId.delete(record.assignmentId);
+			this.completionIdempotencyByKey.delete(idempotencyKey);
+			return audit;
+		}
+
+		return ok({ ...completion });
+	}
+
+	async listCompletions(input: {
+		organizationId: string;
+		page: number;
+		pageSize: number;
+		employeeId?: HumanResourcesEmployeeId;
+		courseId?: HumanResourcesCourseId;
+	}): Promise<Result<CompletionListPage>> {
+		let filtered = Array.from(this.completions.values()).filter(
+			(c) => c.organizationId === input.organizationId,
+		);
+
+		if (input.employeeId !== undefined) {
+			filtered = filtered.filter((c) => c.employeeId === input.employeeId);
+		}
+		if (input.courseId !== undefined) {
+			filtered = filtered.filter((c) => c.courseId === input.courseId);
+		}
+
+		filtered.sort((a, b) => b.completedAt.getTime() - a.completedAt.getTime());
+
+		const totalCount = filtered.length;
+		const start = (input.page - 1) * input.pageSize;
+		const completions = filtered
+			.slice(start, start + input.pageSize)
+			.map((c) => ({ ...c }));
+
+		return ok({ completions, totalCount, page: input.page, pageSize: input.pageSize });
+	}
 }
 
 export function createMemoryHumanResourcesStore(): MemoryHumanResourcesStore {

@@ -716,12 +716,14 @@ export type LearningAssignment = {
 export type LearningCompletion = {
 	id: HumanResourcesCompletionId;
 	organizationId: string;
-	employeeId: HumanResourcesEmployeeId;
 	assignmentId: HumanResourcesLearningAssignmentId;
-	sessionId: HumanResourcesSessionId;
+	employeeId: HumanResourcesEmployeeId;
 	courseId: HumanResourcesCourseId;
-	completedOn: string;
-	evidenceNote: string | null;
+	sessionId: HumanResourcesSessionId | null;
+	completedAt: Date;
+	outcome: string;
+	assessorUserId: string | null;
+	notes: string | null;
 	version: number;
 	createdBy: string;
 	updatedBy: string;

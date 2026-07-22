@@ -230,17 +230,13 @@ export function assertAssignmentNotTerminal(
 export function assertCompletionRecordable(input: {
 	assignmentStatus: AssignmentStatus;
 	sessionStatus: SessionStatus;
-	completedOn: string;
-	sessionStartsOn: string;
+	completedAt: Date;
 }): Result<void> {
 	if (input.assignmentStatus !== "in_progress") {
 		return invalidState("Assignment must be in progress to record completion");
 	}
 	if (input.sessionStatus !== "completed") {
 		return invalidState("Session must be completed to record completion");
-	}
-	if (input.completedOn < input.sessionStartsOn) {
-		return invalidInput("Completion date cannot be before session start date");
 	}
 	return ok(undefined);
 }

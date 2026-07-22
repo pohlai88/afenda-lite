@@ -423,9 +423,13 @@ export type IdempotentLearningAssignmentRecord = {
 export type CompletionCreateRecord = {
 	organizationId: string;
 	assignmentId: HumanResourcesLearningAssignmentId;
-	completedOn: string;
-	resultNotes: string | null;
-	certificateEvidence: string | null;
+	employeeId: HumanResourcesEmployeeId;
+	courseId: HumanResourcesCourseId;
+	sessionId: HumanResourcesSessionId | null;
+	completedAt: Date;
+	outcome: string;
+	assessorUserId: string | null;
+	notes: string | null;
 	createdBy: string;
 	recordRequestFingerprint: string;
 };
