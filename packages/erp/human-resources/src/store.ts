@@ -389,10 +389,11 @@ export type IdempotentCourseRecord = {
 export type SessionCreateRecord = {
 	organizationId: string;
 	courseId: HumanResourcesCourseId;
-	startsOn: string;
-	endsOn: string | null;
-	location: string | null;
-	maxParticipants: number | null;
+	code: string;
+	title: string;
+	scheduledStartsAt: Date;
+	scheduledEndsAt: Date | null;
+	capacity: number | null;
 	createdBy: string;
 	createRequestFingerprint: string;
 };

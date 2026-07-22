@@ -8413,6 +8413,338 @@ export class MemoryHumanResourcesStore implements HumanResourcesStore {
 
 		return ok({ courses, totalCount, page: input.page, pageSize: input.pageSize });
 	}
+
+	// Learning Session methods
+	async getSessionById(input: {
+		organizationId: string;
+		sessionId: HumanResourcesSessionId;
+	}): Promise<Result<LearningSession | null>> {
+		const session = this.sessions.get(input.sessionId);
+		if (!session || session.organizationId !== input.organizationId) {
+			return ok(null);
+		}
+		return ok({ ...session });
+	}
+
+	async findSessionByIdempotencyKey(input: {
+		organizationId: string;
+		idempotencyKey: string;
+	}): Promise<Result<IdempotentSessionRecord | null>> {
+		const key = this.idempotencyMapKey(
+			input.organizationId,
+			input.idempotencyKey,
+		);
+		const record = this.sessionIdempotencyByKey.get(key);
+		if (!record) {
+			return ok(null);
+		}
+		return ok({ ...record, session: { ...record.session } });
+	}
+
+	async countEnrolledInSession(input: {
+		organizationId: string;
+		sessionId: HumanResourcesSessionId;
+	}): Promise<Result<number>> {
+		const count = Array.from(this.learningAssignments.values()).filter(
+			(a) =>
+				a.organizationId === input.organizationId &&
+				a.sessionId !== null &&
+				a.sessionId === input.sessionId &&
+				a.status === "enrolled",
+		).length;
+		return ok(count);
+	}
+
+	async createSession(
+		record: SessionCreateRecord,
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<LearningSession>> {
+		const course = this.courses.get(record.courseId);
+		if (!course || course.organizationId !== record.organizationId) {
+			return notFound(
+				"Course not found",
+				HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+			);
+		}
+
+		const activeGuard = assertCourseActive(course.status);
+		if (!activeGuard.ok) {
+			return activeGuard;
+		}
+
+		const scheduledEndsAt = record.scheduledEndsAt ?? record.scheduledStartsAt;
+
+		const schedulableGuard = assertSessionSchedulable({
+			scheduledStartsAt: record.scheduledStartsAt,
+			scheduledEndsAt: scheduledEndsAt,
+		});
+		if (!schedulableGuard.ok) {
+			return schedulableGuard;
+		}
+
+		const idResult = parseHumanResourcesSessionId(randomUUID());
+		if (!idResult.ok) {
+			return idResult;
+		}
+
+		const now = new Date();
+		const session: LearningSession = {
+			id: idResult.data,
+			organizationId: record.organizationId,
+			courseId: record.courseId,
+			code: record.code,
+			title: record.title,
+			scheduledStartsAt: record.scheduledStartsAt,
+			scheduledEndsAt: scheduledEndsAt,
+			actualStartsAt: null,
+			actualEndsAt: null,
+			capacity: record.capacity,
+			status: "scheduled",
+			version: 1,
+			createdBy: record.createdBy,
+			updatedBy: record.createdBy,
+			createdAt: now,
+			updatedAt: now,
+		};
+
+		this.sessions.set(session.id, session);
+
+		const idempotencyKey = this.idempotencyMapKey(
+			record.organizationId,
+			record.createRequestFingerprint,
+		);
+		this.sessionIdempotencyByKey.set(idempotencyKey, {
+			session: { ...session },
+			createRequestFingerprint: record.createRequestFingerprint,
+		});
+
+		const audit = await ports.audit.record({
+			organizationId: session.organizationId,
+			actorUserId: session.createdBy,
+			correlationId: meta.correlationId,
+			entity: "hr_learning_session",
+			entityId: session.id,
+			action: "CREATE",
+			changes: [],
+		});
+		if (!audit.ok) {
+			this.sessions.delete(session.id);
+			this.sessionIdempotencyByKey.delete(idempotencyKey);
+			return audit;
+		}
+
+		return ok({ ...session });
+	}
+
+	async startSession(
+		input: {
+			organizationId: string;
+			sessionId: HumanResourcesSessionId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<LearningSession>> {
+		const session = this.sessions.get(input.sessionId);
+		if (!session || session.organizationId !== input.organizationId) {
+			return notFound("Session not found");
+		}
+
+		const versionCheck = assertExpectedVersion(
+			session.version,
+			input.expectedVersion,
+		);
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
+
+		const terminalGuard = assertSessionNotTerminal(session.status);
+		if (!terminalGuard.ok) {
+			return terminalGuard;
+		}
+
+		if (session.status === "in_progress") {
+			return conflict("Session is already in progress");
+		}
+
+		const now = new Date();
+		const updated: LearningSession = {
+			...session,
+			status: "in_progress",
+			version: session.version + 1,
+			updatedBy: input.actorUserId,
+			updatedAt: now,
+		};
+
+		this.sessions.set(input.sessionId, updated);
+
+		const audit = await ports.audit.record({
+			organizationId: updated.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_learning_session",
+			entityId: updated.id,
+			action: "UPDATE",
+			changes: [],
+		});
+		if (!audit.ok) {
+			this.sessions.set(input.sessionId, session);
+			return audit;
+		}
+
+		return ok({ ...updated });
+	}
+
+	async completeSession(
+		input: {
+			organizationId: string;
+			sessionId: HumanResourcesSessionId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<LearningSession>> {
+		const session = this.sessions.get(input.sessionId);
+		if (!session || session.organizationId !== input.organizationId) {
+			return notFound("Session not found");
+		}
+
+		const versionCheck = assertExpectedVersion(
+			session.version,
+			input.expectedVersion,
+		);
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
+
+		const terminalGuard = assertSessionNotTerminal(session.status);
+		if (!terminalGuard.ok) {
+			return terminalGuard;
+		}
+
+		if (session.status === "completed") {
+			return conflict("Session is already completed");
+		}
+
+		const now = new Date();
+		const updated: LearningSession = {
+			...session,
+			status: "completed",
+			version: session.version + 1,
+			updatedBy: input.actorUserId,
+			updatedAt: now,
+		};
+
+		this.sessions.set(input.sessionId, updated);
+
+		const audit = await ports.audit.record({
+			organizationId: updated.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_learning_session",
+			entityId: updated.id,
+			action: "UPDATE",
+			changes: [],
+		});
+		if (!audit.ok) {
+			this.sessions.set(input.sessionId, session);
+			return audit;
+		}
+
+		return ok({ ...updated });
+	}
+
+	async cancelSession(
+		input: {
+			organizationId: string;
+			sessionId: HumanResourcesSessionId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<LearningSession>> {
+		const session = this.sessions.get(input.sessionId);
+		if (!session || session.organizationId !== input.organizationId) {
+			return notFound("Session not found");
+		}
+
+		const versionCheck = assertExpectedVersion(
+			session.version,
+			input.expectedVersion,
+		);
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
+
+		const terminalGuard = assertSessionNotTerminal(session.status);
+		if (!terminalGuard.ok) {
+			return terminalGuard;
+		}
+
+		if (session.status === "cancelled") {
+			return conflict("Session is already cancelled");
+		}
+
+		const now = new Date();
+		const updated: LearningSession = {
+			...session,
+			status: "cancelled",
+			version: session.version + 1,
+			updatedBy: input.actorUserId,
+			updatedAt: now,
+		};
+
+		this.sessions.set(input.sessionId, updated);
+
+		const audit = await ports.audit.record({
+			organizationId: updated.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_learning_session",
+			entityId: updated.id,
+			action: "UPDATE",
+			changes: [],
+		});
+		if (!audit.ok) {
+			this.sessions.set(input.sessionId, session);
+			return audit;
+		}
+
+		return ok({ ...updated });
+	}
+
+	async listSessions(input: {
+		organizationId: string;
+		page: number;
+		pageSize: number;
+		status?: SessionStatus;
+		courseId?: HumanResourcesCourseId;
+	}): Promise<Result<SessionListPage>> {
+		let filtered = Array.from(this.sessions.values()).filter(
+			(s) => s.organizationId === input.organizationId,
+		);
+
+		if (input.status !== undefined) {
+			filtered = filtered.filter((s) => s.status === input.status);
+		}
+		if (input.courseId !== undefined) {
+			filtered = filtered.filter((s) => s.courseId === input.courseId);
+		}
+
+		filtered.sort((a, b) => b.scheduledStartsAt.getTime() - a.scheduledStartsAt.getTime());
+
+		const totalCount = filtered.length;
+		const start = (input.page - 1) * input.pageSize;
+		const sessions = filtered
+			.slice(start, start + input.pageSize)
+			.map((s) => ({ ...s }));
+
+		return ok({ sessions, totalCount, page: input.page, pageSize: input.pageSize });
+	}
 }
 
 export function createMemoryHumanResourcesStore(): MemoryHumanResourcesStore {
