@@ -4,9 +4,14 @@ import { fail, ok, type Result } from "@afenda/errors/result";
 import {
 	HUMAN_RESOURCES_EMPLOYEE_CREATED_EVENT,
 	HUMAN_RESOURCES_EMPLOYEE_TERMINATED_EVENT,
+	HUMAN_RESOURCES_EMPLOYEE_TRANSFERRED_EVENT,
 	HUMAN_RESOURCES_EMPLOYMENT_CHANGED_EVENT,
 	HUMAN_RESOURCES_EMPLOYMENT_STARTED_EVENT,
+	HUMAN_RESOURCES_OFFBOARDING_COMPLETED_EVENT,
+	HUMAN_RESOURCES_OFFBOARDING_STARTED_EVENT,
 	HUMAN_RESOURCES_OFFER_ACCEPTED_EVENT,
+	HUMAN_RESOURCES_ONBOARDING_COMPLETED_EVENT,
+	HUMAN_RESOURCES_ONBOARDING_STARTED_EVENT,
 	HUMAN_RESOURCES_REQUISITION_APPROVED_EVENT,
 } from "@afenda/events/schemas";
 
@@ -14,30 +19,48 @@ import {
 	type HumanResourcesApplicationId,
 	type HumanResourcesAssignmentId,
 	type HumanResourcesCandidateId,
+	type HumanResourcesClearanceId,
 	type HumanResourcesDepartmentId,
 	type HumanResourcesEmployeeId,
+	type HumanResourcesEmploymentConfirmationId,
 	type HumanResourcesEmploymentContractId,
 	type HumanResourcesEmploymentId,
 	type HumanResourcesInterviewId,
 	type HumanResourcesJobId,
+	type HumanResourcesOffboardingCaseId,
+	type HumanResourcesOffboardingTaskId,
 	type HumanResourcesOfferId,
+	type HumanResourcesOnboardingCaseId,
+	type HumanResourcesOnboardingTaskId,
 	type HumanResourcesPositionId,
+	type HumanResourcesProbationReviewId,
 	type HumanResourcesReportingLineId,
 	type HumanResourcesRequisitionId,
+	type HumanResourcesTerminationId,
 	parseHumanResourcesApplicationId,
 	parseHumanResourcesAssignmentId,
 	parseHumanResourcesCandidateId,
+	parseHumanResourcesClearanceId,
 	parseHumanResourcesDepartmentId,
 	parseHumanResourcesEmployeeId,
+	parseHumanResourcesEmploymentConfirmationId,
 	parseHumanResourcesEmploymentContractId,
 	parseHumanResourcesEmploymentId,
+	parseHumanResourcesEmploymentMovementId,
+	parseHumanResourcesExitInterviewId,
 	parseHumanResourcesInterviewEvaluationId,
 	parseHumanResourcesInterviewId,
 	parseHumanResourcesJobId,
+	parseHumanResourcesOffboardingCaseId,
+	parseHumanResourcesOffboardingTaskId,
 	parseHumanResourcesOfferId,
+	parseHumanResourcesOnboardingCaseId,
+	parseHumanResourcesOnboardingTaskId,
 	parseHumanResourcesPositionId,
+	parseHumanResourcesProbationReviewId,
 	parseHumanResourcesReportingLineId,
 	parseHumanResourcesRequisitionId,
+	parseHumanResourcesTerminationId,
 } from "./brands";
 import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
@@ -53,6 +76,7 @@ import {
 	assertActivePosition,
 	conflict,
 	invalidInput,
+	invalidState,
 	notFound,
 } from "./shared/domain-guards";
 import {
@@ -64,6 +88,25 @@ import {
 	type PositionStatus,
 	positionStatusSchema,
 } from "./shared/employment-status";
+import { fingerprintTransfer } from "./shared/fingerprint";
+import {
+	assertClearanceStatusTransition,
+	assertEmploymentActiveForOnboarding,
+	assertEmploymentForOffboarding,
+	assertLatestProbationPassed,
+	assertLifecycleTaskStatusTransition,
+	assertOffboardingCaseInProgress,
+	assertOffboardingReadyToComplete,
+	assertOnboardingCaseInProgress,
+	assertProbationDateRange,
+	assertProbationExtension,
+	assertProbationOpen,
+	assertTerminationEffectiveDate,
+} from "./shared/lifecycle-guards";
+import type {
+	LifecycleTaskStatus,
+	ProbationOutcome,
+} from "./shared/lifecycle-status";
 import {
 	assertActiveDepartment,
 	assertActiveJob,
@@ -105,43 +148,64 @@ import type {
 	CandidateCreateRecord,
 	DepartmentCreateRecord,
 	EmployeeCreateRecord,
+	EmploymentConfirmationCreateRecord,
 	EmploymentContractCreateRecord,
 	EmploymentCreateRecord,
 	HumanResourcesStore,
 	IdempotentCandidateRecord,
 	IdempotentEmployeeRecord,
+	IdempotentEmploymentConfirmationRecord,
+	IdempotentEmploymentMovementRecord,
+	IdempotentOffboardingCaseRecord,
 	IdempotentOfferAcceptRecord,
+	IdempotentOnboardingCaseRecord,
+	IdempotentProbationReviewRecord,
 	IdempotentRequisitionRecord,
+	IdempotentTerminationRecord,
 	InterviewEvaluationCreateRecord,
 	InterviewScheduleRecord,
 	JobCreateRecord,
+	OffboardingCaseCreateRecord,
 	OfferCreateRecord,
+	OnboardingCaseCreateRecord,
 	PositionCreateRecord,
+	ProbationReviewCreateRecord,
 	ReportingLineCreateRecord,
 	RequisitionCreateRecord,
+	TerminationCreateRecord,
 } from "./store";
 import type {
 	ApplicationListPage,
 	Candidate,
 	CandidateApplication,
 	CandidateListPage,
+	Clearance,
 	Department,
 	Employee,
 	EmployeeListPage,
 	Employment,
+	EmploymentConfirmation,
 	EmploymentContract,
+	EmploymentMovement,
 	EmploymentOffer,
+	ExitInterview,
 	Interview,
 	InterviewEvaluation,
 	InterviewListPage,
 	Job,
 	JobRequisition,
+	OffboardingCase,
+	OffboardingTask,
 	OfferAcceptanceHandoff,
 	OfferListPage,
+	OnboardingCase,
+	OnboardingTask,
 	OrganizationTreePage,
 	Position,
+	ProbationReview,
 	ReportingLine,
 	RequisitionListPage,
+	Termination,
 	WorkAssignment,
 } from "./types";
 
@@ -180,6 +244,63 @@ function cloneHandoff(handoff: OfferAcceptanceHandoff): OfferAcceptanceHandoff {
 		...handoff,
 		acceptedAt: new Date(handoff.acceptedAt),
 		offer: cloneOffer(handoff.offer),
+	};
+}
+
+function cloneOnboardingCase(value: OnboardingCase): OnboardingCase {
+	return {
+		...value,
+		startedAt: new Date(value.startedAt),
+		completedAt: value.completedAt ? new Date(value.completedAt) : null,
+		createdAt: new Date(value.createdAt),
+		updatedAt: new Date(value.updatedAt),
+	};
+}
+
+function cloneProbationReview(value: ProbationReview): ProbationReview {
+	return {
+		...value,
+		createdAt: new Date(value.createdAt),
+		updatedAt: new Date(value.updatedAt),
+	};
+}
+
+function cloneEmploymentConfirmation(
+	value: EmploymentConfirmation,
+): EmploymentConfirmation {
+	return {
+		...value,
+		createdAt: new Date(value.createdAt),
+		updatedAt: new Date(value.updatedAt),
+	};
+}
+
+function cloneEmploymentMovement(
+	value: EmploymentMovement,
+): EmploymentMovement {
+	return {
+		...value,
+		createdAt: new Date(value.createdAt),
+		updatedAt: new Date(value.updatedAt),
+	};
+}
+
+function cloneTermination(value: Termination): Termination {
+	return {
+		...value,
+		finalizedAt: value.finalizedAt ? new Date(value.finalizedAt) : null,
+		createdAt: new Date(value.createdAt),
+		updatedAt: new Date(value.updatedAt),
+	};
+}
+
+function cloneOffboardingCase(value: OffboardingCase): OffboardingCase {
+	return {
+		...value,
+		startedAt: new Date(value.startedAt),
+		completedAt: value.completedAt ? new Date(value.completedAt) : null,
+		createdAt: new Date(value.createdAt),
+		updatedAt: new Date(value.updatedAt),
 	};
 }
 
@@ -238,6 +359,43 @@ export class MemoryHumanResourcesStore implements HumanResourcesStore {
 		string,
 		IdempotentOfferAcceptRecord
 	>();
+	private readonly onboardingCases = new Map<string, OnboardingCase>();
+	private readonly onboardingTasks = new Map<string, OnboardingTask>();
+	private readonly onboardingIdempotencyByKey = new Map<
+		string,
+		IdempotentOnboardingCaseRecord
+	>();
+	private readonly probationReviews = new Map<string, ProbationReview>();
+	private readonly probationIdempotencyByKey = new Map<
+		string,
+		IdempotentProbationReviewRecord
+	>();
+	private readonly employmentConfirmations = new Map<
+		string,
+		EmploymentConfirmation
+	>();
+	private readonly confirmationIdempotencyByKey = new Map<
+		string,
+		IdempotentEmploymentConfirmationRecord
+	>();
+	private readonly employmentMovements = new Map<string, EmploymentMovement>();
+	private readonly transferIdempotencyByKey = new Map<
+		string,
+		IdempotentEmploymentMovementRecord
+	>();
+	private readonly terminations = new Map<string, Termination>();
+	private readonly terminationIdempotencyByKey = new Map<
+		string,
+		IdempotentTerminationRecord
+	>();
+	private readonly offboardingCases = new Map<string, OffboardingCase>();
+	private readonly offboardingTasks = new Map<string, OffboardingTask>();
+	private readonly exitInterviews = new Map<string, ExitInterview>();
+	private readonly clearances = new Map<string, Clearance>();
+	private readonly offboardingIdempotencyByKey = new Map<
+		string,
+		IdempotentOffboardingCaseRecord
+	>();
 
 	private idempotencyMapKey(organizationId: string, idempotencyKey: string) {
 		return `${organizationId}:${idempotencyKey}`;
@@ -265,6 +423,22 @@ export class MemoryHumanResourcesStore implements HumanResourcesStore {
 		this.interviewEvaluationByInterviewId.clear();
 		this.offers.clear();
 		this.offerAcceptIdempotencyByKey.clear();
+		this.onboardingCases.clear();
+		this.onboardingTasks.clear();
+		this.onboardingIdempotencyByKey.clear();
+		this.probationReviews.clear();
+		this.probationIdempotencyByKey.clear();
+		this.employmentConfirmations.clear();
+		this.confirmationIdempotencyByKey.clear();
+		this.employmentMovements.clear();
+		this.transferIdempotencyByKey.clear();
+		this.terminations.clear();
+		this.terminationIdempotencyByKey.clear();
+		this.offboardingCases.clear();
+		this.offboardingTasks.clear();
+		this.exitInterviews.clear();
+		this.clearances.clear();
+		this.offboardingIdempotencyByKey.clear();
 	}
 
 	// Employee methods
@@ -4228,6 +4402,1712 @@ export class MemoryHumanResourcesStore implements HumanResourcesStore {
 			page: input.page,
 			pageSize: input.pageSize,
 		});
+	}
+
+	// --- Lifecycle: onboarding ---
+
+	async getOnboardingCase(input: {
+		organizationId: string;
+		onboardingCaseId: HumanResourcesOnboardingCaseId;
+	}): Promise<Result<OnboardingCase | null>> {
+		const row = this.onboardingCases.get(input.onboardingCaseId);
+		if (!row || row.organizationId !== input.organizationId) {
+			return ok(null);
+		}
+		return ok(cloneOnboardingCase(row));
+	}
+
+	async findOnboardingByStartIdempotencyKey(input: {
+		organizationId: string;
+		idempotencyKey: string;
+	}): Promise<Result<IdempotentOnboardingCaseRecord | null>> {
+		const record = this.onboardingIdempotencyByKey.get(
+			this.idempotencyMapKey(input.organizationId, input.idempotencyKey),
+		);
+		if (record === undefined) {
+			return ok(null);
+		}
+		return ok({
+			onboardingCase: cloneOnboardingCase(record.onboardingCase),
+			startRequestFingerprint: record.startRequestFingerprint,
+		});
+	}
+
+	async startOnboarding(
+		record: OnboardingCaseCreateRecord,
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<OnboardingCase>> {
+		const existingByKey = await this.findOnboardingByStartIdempotencyKey({
+			organizationId: record.organizationId,
+			idempotencyKey: record.idempotencyKey,
+		});
+		if (!existingByKey.ok) {
+			return existingByKey;
+		}
+		if (existingByKey.data !== null) {
+			if (
+				existingByKey.data.startRequestFingerprint !==
+				record.startRequestFingerprint
+			) {
+				return conflict("Idempotency key reused with different payload");
+			}
+			return ok(cloneOnboardingCase(existingByKey.data.onboardingCase));
+		}
+
+		const employment = this.employments.get(record.employmentId);
+		if (!employment || employment.organizationId !== record.organizationId) {
+			return notFound(
+				"Employment not found",
+				HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+			);
+		}
+		const activeCheck = assertEmploymentActiveForOnboarding(employment.status);
+		if (!activeCheck.ok) {
+			return activeCheck;
+		}
+
+		if (record.sourceOfferId !== null) {
+			const offer = this.offers.get(record.sourceOfferId);
+			if (!offer || offer.organizationId !== record.organizationId) {
+				return notFound(
+					"Offer not found",
+					HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+				);
+			}
+		}
+
+		for (const existing of this.onboardingCases.values()) {
+			if (
+				existing.organizationId === record.organizationId &&
+				existing.employmentId === record.employmentId &&
+				existing.status === "in_progress"
+			) {
+				return conflict(
+					"Employment already has an in-progress onboarding case",
+				);
+			}
+		}
+
+		const caseIdResult = parseHumanResourcesOnboardingCaseId(randomUUID());
+		if (!caseIdResult.ok) {
+			return caseIdResult;
+		}
+
+		const now = new Date();
+		const onboardingCase: OnboardingCase = {
+			id: caseIdResult.data,
+			organizationId: record.organizationId,
+			employmentId: record.employmentId,
+			employeeId: employment.employeeId,
+			status: "in_progress",
+			sourceOfferId: record.sourceOfferId,
+			startedAt: now,
+			completedAt: null,
+			version: 1,
+			createdBy: record.createdBy,
+			updatedBy: record.createdBy,
+			createdAt: now,
+			updatedAt: now,
+		};
+
+		const seededTasks: OnboardingTask[] = [];
+		for (const seed of record.tasks) {
+			const taskIdResult = parseHumanResourcesOnboardingTaskId(randomUUID());
+			if (!taskIdResult.ok) {
+				return taskIdResult;
+			}
+			seededTasks.push({
+				id: taskIdResult.data,
+				organizationId: record.organizationId,
+				caseId: onboardingCase.id,
+				code: seed.code.trim(),
+				title: seed.title.trim(),
+				mandatory: seed.mandatory,
+				status: "pending",
+				completedAt: null,
+				version: 1,
+				createdBy: record.createdBy,
+				updatedBy: record.createdBy,
+				createdAt: now,
+				updatedAt: now,
+			});
+		}
+
+		this.onboardingCases.set(onboardingCase.id, onboardingCase);
+		for (const task of seededTasks) {
+			this.onboardingTasks.set(task.id, task);
+		}
+		const idemKey = this.idempotencyMapKey(
+			record.organizationId,
+			record.idempotencyKey,
+		);
+		this.onboardingIdempotencyByKey.set(idemKey, {
+			onboardingCase: cloneOnboardingCase(onboardingCase),
+			startRequestFingerprint: record.startRequestFingerprint,
+		});
+
+		const audit = await ports.audit.record({
+			organizationId: onboardingCase.organizationId,
+			actorUserId: record.createdBy,
+			correlationId: meta.correlationId,
+			entity: "hr_onboarding_case",
+			entityId: onboardingCase.id,
+			action: "CREATE",
+			changes: [],
+		});
+		if (!audit.ok) {
+			this.onboardingCases.delete(onboardingCase.id);
+			for (const task of seededTasks) {
+				this.onboardingTasks.delete(task.id);
+			}
+			this.onboardingIdempotencyByKey.delete(idemKey);
+			return audit;
+		}
+
+		const outbox = await ports.outbox.append({
+			organizationId: onboardingCase.organizationId,
+			actorUserId: record.createdBy,
+			correlationId: meta.correlationId,
+			type: HUMAN_RESOURCES_ONBOARDING_STARTED_EVENT,
+			payload: {
+				organizationId: onboardingCase.organizationId,
+				entityType: "hr_onboarding_case",
+				entityId: onboardingCase.id,
+				actorId: record.createdBy,
+				correlationId: meta.correlationId,
+			},
+		});
+		if (!outbox.ok) {
+			this.onboardingCases.delete(onboardingCase.id);
+			for (const task of seededTasks) {
+				this.onboardingTasks.delete(task.id);
+			}
+			this.onboardingIdempotencyByKey.delete(idemKey);
+			return outbox;
+		}
+
+		return ok(cloneOnboardingCase(onboardingCase));
+	}
+
+	async completeOnboardingTask(
+		input: {
+			organizationId: string;
+			taskId: HumanResourcesOnboardingTaskId;
+			newStatus: LifecycleTaskStatus;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<OnboardingCase>> {
+		const task = this.onboardingTasks.get(input.taskId);
+		if (!task || task.organizationId !== input.organizationId) {
+			return notFound("Onboarding task not found");
+		}
+		const onboardingCase = this.onboardingCases.get(task.caseId);
+		if (
+			!onboardingCase ||
+			onboardingCase.organizationId !== input.organizationId
+		) {
+			return notFound("Onboarding case not found");
+		}
+		const caseActive = assertOnboardingCaseInProgress(onboardingCase.status);
+		if (!caseActive.ok) {
+			return caseActive;
+		}
+		const versionCheck = assertExpectedVersion(
+			task.version,
+			input.expectedVersion,
+		);
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
+		const transition = assertLifecycleTaskStatusTransition(
+			task.status,
+			input.newStatus,
+		);
+		if (!transition.ok) {
+			return transition;
+		}
+
+		const now = new Date();
+		const previousTask = { ...task };
+		const updatedTask: OnboardingTask = {
+			...task,
+			status: input.newStatus,
+			completedAt: now,
+			version: task.version + 1,
+			updatedBy: input.actorUserId,
+			updatedAt: now,
+		};
+		this.onboardingTasks.set(task.id, updatedTask);
+
+		const audit = await ports.audit.record({
+			organizationId: updatedTask.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_onboarding_task",
+			entityId: updatedTask.id,
+			action: "UPDATE",
+			changes: [],
+		});
+		if (!audit.ok) {
+			this.onboardingTasks.set(task.id, previousTask);
+			return audit;
+		}
+
+		return ok(cloneOnboardingCase(onboardingCase));
+	}
+
+	async completeOnboarding(
+		input: {
+			organizationId: string;
+			onboardingCaseId: HumanResourcesOnboardingCaseId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<OnboardingCase>> {
+		const onboardingCase = this.onboardingCases.get(input.onboardingCaseId);
+		if (
+			!onboardingCase ||
+			onboardingCase.organizationId !== input.organizationId
+		) {
+			return notFound("Onboarding case not found");
+		}
+		const caseActive = assertOnboardingCaseInProgress(onboardingCase.status);
+		if (!caseActive.ok) {
+			return caseActive;
+		}
+		const versionCheck = assertExpectedVersion(
+			onboardingCase.version,
+			input.expectedVersion,
+		);
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
+
+		const tasks = Array.from(this.onboardingTasks.values()).filter(
+			(task) =>
+				task.organizationId === input.organizationId &&
+				task.caseId === onboardingCase.id,
+		);
+		const mandatoryIncomplete = tasks.some(
+			(task) =>
+				task.mandatory &&
+				task.status !== "completed" &&
+				task.status !== "waived",
+		);
+		if (mandatoryIncomplete) {
+			return invalidState("All mandatory tasks must be completed or waived");
+		}
+
+		const now = new Date();
+		const previous = { ...onboardingCase };
+		const updated: OnboardingCase = {
+			...onboardingCase,
+			status: "completed",
+			completedAt: now,
+			version: onboardingCase.version + 1,
+			updatedBy: input.actorUserId,
+			updatedAt: now,
+		};
+		this.onboardingCases.set(updated.id, updated);
+
+		const audit = await ports.audit.record({
+			organizationId: updated.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_onboarding_case",
+			entityId: updated.id,
+			action: "UPDATE",
+			changes: [],
+		});
+		if (!audit.ok) {
+			this.onboardingCases.set(updated.id, previous);
+			return audit;
+		}
+
+		const outbox = await ports.outbox.append({
+			organizationId: updated.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			type: HUMAN_RESOURCES_ONBOARDING_COMPLETED_EVENT,
+			payload: {
+				organizationId: updated.organizationId,
+				entityType: "hr_onboarding_case",
+				entityId: updated.id,
+				actorId: input.actorUserId,
+				correlationId: meta.correlationId,
+			},
+		});
+		if (!outbox.ok) {
+			this.onboardingCases.set(updated.id, previous);
+			return outbox;
+		}
+
+		return ok(cloneOnboardingCase(updated));
+	}
+
+	// --- Lifecycle: probation ---
+
+	async getProbationReview(input: {
+		organizationId: string;
+		probationReviewId: HumanResourcesProbationReviewId;
+	}): Promise<Result<ProbationReview | null>> {
+		const row = this.probationReviews.get(input.probationReviewId);
+		if (!row || row.organizationId !== input.organizationId) {
+			return ok(null);
+		}
+		return ok(cloneProbationReview(row));
+	}
+
+	async findProbationByOpenIdempotencyKey(input: {
+		organizationId: string;
+		idempotencyKey: string;
+	}): Promise<Result<IdempotentProbationReviewRecord | null>> {
+		const record = this.probationIdempotencyByKey.get(
+			this.idempotencyMapKey(input.organizationId, input.idempotencyKey),
+		);
+		if (record === undefined) {
+			return ok(null);
+		}
+		return ok({
+			probationReview: cloneProbationReview(record.probationReview),
+			openRequestFingerprint: record.openRequestFingerprint,
+		});
+	}
+
+	async openProbation(
+		record: ProbationReviewCreateRecord,
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<ProbationReview>> {
+		const existingByKey = await this.findProbationByOpenIdempotencyKey({
+			organizationId: record.organizationId,
+			idempotencyKey: record.idempotencyKey,
+		});
+		if (!existingByKey.ok) {
+			return existingByKey;
+		}
+		if (existingByKey.data !== null) {
+			if (
+				existingByKey.data.openRequestFingerprint !==
+				record.openRequestFingerprint
+			) {
+				return conflict("Idempotency key reused with different payload");
+			}
+			return ok(cloneProbationReview(existingByKey.data.probationReview));
+		}
+
+		const employment = this.employments.get(record.employmentId);
+		if (!employment || employment.organizationId !== record.organizationId) {
+			return notFound(
+				"Employment not found",
+				HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+			);
+		}
+		if (employment.status !== "active") {
+			return invalidState("Employment must be active to open probation");
+		}
+		const dateCheck = assertProbationDateRange({
+			startsOn: record.startsOn,
+			endsOn: record.endsOn,
+		});
+		if (!dateCheck.ok) {
+			return dateCheck;
+		}
+
+		for (const existing of this.probationReviews.values()) {
+			if (
+				existing.organizationId === record.organizationId &&
+				existing.employmentId === record.employmentId &&
+				existing.status === "open"
+			) {
+				return conflict("Employment already has an open probation review");
+			}
+		}
+
+		const idResult = parseHumanResourcesProbationReviewId(randomUUID());
+		if (!idResult.ok) {
+			return idResult;
+		}
+		const now = new Date();
+		const probation: ProbationReview = {
+			id: idResult.data,
+			organizationId: record.organizationId,
+			employmentId: record.employmentId,
+			employeeId: employment.employeeId,
+			status: "open",
+			startsOn: record.startsOn,
+			endsOn: record.endsOn,
+			outcome: null,
+			outcomeActorId: null,
+			outcomeRecordedOn: null,
+			version: 1,
+			createdBy: record.createdBy,
+			updatedBy: record.createdBy,
+			createdAt: now,
+			updatedAt: now,
+		};
+
+		this.probationReviews.set(probation.id, probation);
+		const idemKey = this.idempotencyMapKey(
+			record.organizationId,
+			record.idempotencyKey,
+		);
+		this.probationIdempotencyByKey.set(idemKey, {
+			probationReview: cloneProbationReview(probation),
+			openRequestFingerprint: record.openRequestFingerprint,
+		});
+
+		const audit = await ports.audit.record({
+			organizationId: probation.organizationId,
+			actorUserId: record.createdBy,
+			correlationId: meta.correlationId,
+			entity: "hr_probation_review",
+			entityId: probation.id,
+			action: "CREATE",
+			changes: [],
+		});
+		if (!audit.ok) {
+			this.probationReviews.delete(probation.id);
+			this.probationIdempotencyByKey.delete(idemKey);
+			return audit;
+		}
+
+		return ok(cloneProbationReview(probation));
+	}
+
+	async extendProbation(
+		input: {
+			organizationId: string;
+			probationReviewId: HumanResourcesProbationReviewId;
+			newEndsOn: string;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<ProbationReview>> {
+		const probation = this.probationReviews.get(input.probationReviewId);
+		if (!probation || probation.organizationId !== input.organizationId) {
+			return notFound("Probation review not found");
+		}
+		const openCheck = assertProbationOpen(probation.status);
+		if (!openCheck.ok) {
+			return openCheck;
+		}
+		const versionCheck = assertExpectedVersion(
+			probation.version,
+			input.expectedVersion,
+		);
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
+		const extension = assertProbationExtension({
+			currentEndsOn: probation.endsOn,
+			newEndsOn: input.newEndsOn,
+		});
+		if (!extension.ok) {
+			return extension;
+		}
+
+		const now = new Date();
+		const previous = { ...probation };
+		const updated: ProbationReview = {
+			...probation,
+			endsOn: input.newEndsOn,
+			version: probation.version + 1,
+			updatedBy: input.actorUserId,
+			updatedAt: now,
+		};
+		this.probationReviews.set(updated.id, updated);
+
+		const audit = await ports.audit.record({
+			organizationId: updated.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_probation_review",
+			entityId: updated.id,
+			action: "UPDATE",
+			changes: [],
+		});
+		if (!audit.ok) {
+			this.probationReviews.set(updated.id, previous);
+			return audit;
+		}
+
+		return ok(cloneProbationReview(updated));
+	}
+
+	async recordProbationOutcome(
+		input: {
+			organizationId: string;
+			probationReviewId: HumanResourcesProbationReviewId;
+			outcome: ProbationOutcome;
+			concludedOn: string;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<ProbationReview>> {
+		const probation = this.probationReviews.get(input.probationReviewId);
+		if (!probation || probation.organizationId !== input.organizationId) {
+			return notFound("Probation review not found");
+		}
+		const openCheck = assertProbationOpen(probation.status);
+		if (!openCheck.ok) {
+			return openCheck;
+		}
+		const versionCheck = assertExpectedVersion(
+			probation.version,
+			input.expectedVersion,
+		);
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
+
+		const now = new Date();
+		const previous = { ...probation };
+		const updated: ProbationReview = {
+			...probation,
+			status: "closed",
+			outcome: input.outcome,
+			outcomeActorId: input.actorUserId,
+			outcomeRecordedOn: input.concludedOn,
+			version: probation.version + 1,
+			updatedBy: input.actorUserId,
+			updatedAt: now,
+		};
+		this.probationReviews.set(updated.id, updated);
+
+		const audit = await ports.audit.record({
+			organizationId: updated.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_probation_review",
+			entityId: updated.id,
+			action: "UPDATE",
+			changes: [],
+		});
+		if (!audit.ok) {
+			this.probationReviews.set(updated.id, previous);
+			return audit;
+		}
+
+		return ok(cloneProbationReview(updated));
+	}
+
+	// --- Lifecycle: confirmation ---
+
+	async getEmploymentConfirmation(input: {
+		organizationId: string;
+		employmentConfirmationId: HumanResourcesEmploymentConfirmationId;
+	}): Promise<Result<EmploymentConfirmation | null>> {
+		const row = this.employmentConfirmations.get(
+			input.employmentConfirmationId,
+		);
+		if (!row || row.organizationId !== input.organizationId) {
+			return ok(null);
+		}
+		return ok(cloneEmploymentConfirmation(row));
+	}
+
+	async findConfirmationByIdempotencyKey(input: {
+		organizationId: string;
+		idempotencyKey: string;
+	}): Promise<Result<IdempotentEmploymentConfirmationRecord | null>> {
+		const record = this.confirmationIdempotencyByKey.get(
+			this.idempotencyMapKey(input.organizationId, input.idempotencyKey),
+		);
+		if (record === undefined) {
+			return ok(null);
+		}
+		return ok({
+			employmentConfirmation: cloneEmploymentConfirmation(
+				record.employmentConfirmation,
+			),
+			confirmRequestFingerprint: record.confirmRequestFingerprint,
+		});
+	}
+
+	async confirmEmployment(
+		record: EmploymentConfirmationCreateRecord,
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<EmploymentConfirmation>> {
+		const existingByKey = await this.findConfirmationByIdempotencyKey({
+			organizationId: record.organizationId,
+			idempotencyKey: record.idempotencyKey,
+		});
+		if (!existingByKey.ok) {
+			return existingByKey;
+		}
+		if (existingByKey.data !== null) {
+			if (
+				existingByKey.data.confirmRequestFingerprint !==
+				record.confirmRequestFingerprint
+			) {
+				return conflict("Idempotency key reused with different payload");
+			}
+			return ok(
+				cloneEmploymentConfirmation(existingByKey.data.employmentConfirmation),
+			);
+		}
+
+		const employment = this.employments.get(record.employmentId);
+		if (!employment || employment.organizationId !== record.organizationId) {
+			return notFound(
+				"Employment not found",
+				HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+			);
+		}
+
+		for (const existing of this.employmentConfirmations.values()) {
+			if (
+				existing.organizationId === record.organizationId &&
+				existing.employmentId === record.employmentId
+			) {
+				return conflict("Employment already has a confirmation");
+			}
+		}
+
+		const probationRows = Array.from(this.probationReviews.values())
+			.filter(
+				(row) =>
+					row.organizationId === record.organizationId &&
+					row.employmentId === record.employmentId,
+			)
+			.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+		const hasAnyProbation = probationRows.length > 0;
+		const latestClosed =
+			probationRows.find((row) => row.status === "closed") ?? null;
+		const probationGate = assertLatestProbationPassed({
+			hasAnyProbation,
+			latestClosedProbation: latestClosed,
+		});
+		if (!probationGate.ok) {
+			return probationGate;
+		}
+
+		const idResult = parseHumanResourcesEmploymentConfirmationId(randomUUID());
+		if (!idResult.ok) {
+			return idResult;
+		}
+		const now = new Date();
+		const confirmation: EmploymentConfirmation = {
+			id: idResult.data,
+			organizationId: record.organizationId,
+			employmentId: record.employmentId,
+			employeeId: employment.employeeId,
+			confirmedOn: record.confirmedOn,
+			confirmedBy: record.createdBy,
+			evidenceNote: record.evidenceNote,
+			version: 1,
+			createdBy: record.createdBy,
+			updatedBy: record.createdBy,
+			createdAt: now,
+			updatedAt: now,
+		};
+
+		this.employmentConfirmations.set(confirmation.id, confirmation);
+		const idemKey = this.idempotencyMapKey(
+			record.organizationId,
+			record.idempotencyKey,
+		);
+		this.confirmationIdempotencyByKey.set(idemKey, {
+			employmentConfirmation: cloneEmploymentConfirmation(confirmation),
+			confirmRequestFingerprint: record.confirmRequestFingerprint,
+		});
+
+		const audit = await ports.audit.record({
+			organizationId: confirmation.organizationId,
+			actorUserId: record.createdBy,
+			correlationId: meta.correlationId,
+			entity: "hr_employment_confirmation",
+			entityId: confirmation.id,
+			action: "CREATE",
+			changes: [],
+		});
+		if (!audit.ok) {
+			this.employmentConfirmations.delete(confirmation.id);
+			this.confirmationIdempotencyByKey.delete(idemKey);
+			return audit;
+		}
+
+		return ok(cloneEmploymentConfirmation(confirmation));
+	}
+
+	// --- Lifecycle: transfer ---
+
+	async findTransferByIdempotencyKey(input: {
+		organizationId: string;
+		idempotencyKey: string;
+	}): Promise<Result<IdempotentEmploymentMovementRecord | null>> {
+		const record = this.transferIdempotencyByKey.get(
+			this.idempotencyMapKey(input.organizationId, input.idempotencyKey),
+		);
+		if (record === undefined) {
+			return ok(null);
+		}
+		return ok({
+			employmentMovement: cloneEmploymentMovement(record.employmentMovement),
+			transferRequestFingerprint: record.transferRequestFingerprint,
+		});
+	}
+
+	async transferAssignment(
+		input: {
+			organizationId: string;
+			employmentId: HumanResourcesEmploymentId;
+			toPositionId: HumanResourcesPositionId;
+			effectiveOn: string;
+			reason: string;
+			idempotencyKey: string;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<EmploymentMovement>> {
+		const openAssignment = await this.findOpenAssignmentByEmployment({
+			organizationId: input.organizationId,
+			employmentId: input.employmentId,
+		});
+		if (!openAssignment.ok) {
+			return openAssignment;
+		}
+		if (openAssignment.data === null) {
+			return notFound("Open assignment not found");
+		}
+
+		const fingerprint = fingerprintTransfer({
+			employmentId: input.employmentId,
+			fromPositionId: openAssignment.data.positionId,
+			toPositionId: input.toPositionId,
+			effectiveOn: input.effectiveOn,
+		});
+
+		const existingByKey = await this.findTransferByIdempotencyKey({
+			organizationId: input.organizationId,
+			idempotencyKey: input.idempotencyKey,
+		});
+		if (!existingByKey.ok) {
+			return existingByKey;
+		}
+		if (existingByKey.data !== null) {
+			if (existingByKey.data.transferRequestFingerprint !== fingerprint) {
+				return conflict("Idempotency key reused with different payload");
+			}
+			return ok(cloneEmploymentMovement(existingByKey.data.employmentMovement));
+		}
+
+		const employment = this.employments.get(input.employmentId);
+		if (!employment || employment.organizationId !== input.organizationId) {
+			return notFound(
+				"Employment not found",
+				HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+			);
+		}
+
+		const toPosition = this.positions.get(input.toPositionId);
+		if (!toPosition || toPosition.organizationId !== input.organizationId) {
+			return notFound(
+				"Position not found",
+				HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+			);
+		}
+		const activeCheck = assertActivePosition(toPosition.status);
+		if (!activeCheck.ok) {
+			return activeCheck;
+		}
+		if (toPosition.id === openAssignment.data.positionId) {
+			return conflict("Target position must differ from current position");
+		}
+
+		const dateCheck = assertValidDateRange(
+			openAssignment.data.startsOn,
+			input.effectiveOn,
+		);
+		if (!dateCheck.ok) {
+			return dateCheck;
+		}
+
+		const newAssignmentIdResult = parseHumanResourcesAssignmentId(randomUUID());
+		if (!newAssignmentIdResult.ok) {
+			return newAssignmentIdResult;
+		}
+		const movementIdResult = parseHumanResourcesEmploymentMovementId(
+			randomUUID(),
+		);
+		if (!movementIdResult.ok) {
+			return movementIdResult;
+		}
+
+		const now = new Date();
+		const previousAssignment = { ...openAssignment.data };
+		const endedAssignment: WorkAssignment = {
+			...openAssignment.data,
+			endsOn: input.effectiveOn,
+			version: openAssignment.data.version + 1,
+			updatedBy: input.actorUserId,
+			updatedAt: now,
+		};
+		const newAssignment: WorkAssignment = {
+			id: newAssignmentIdResult.data,
+			organizationId: input.organizationId,
+			employmentId: input.employmentId,
+			employeeId: employment.employeeId,
+			positionId: input.toPositionId,
+			startsOn: input.effectiveOn,
+			endsOn: null,
+			version: 1,
+			createdBy: input.actorUserId,
+			updatedBy: input.actorUserId,
+			createdAt: now,
+			updatedAt: now,
+		};
+		const movement: EmploymentMovement = {
+			id: movementIdResult.data,
+			organizationId: input.organizationId,
+			employmentId: input.employmentId,
+			employeeId: employment.employeeId,
+			movementKind: "transfer",
+			fromAssignmentId: endedAssignment.id,
+			toAssignmentId: newAssignment.id,
+			fromPositionId: endedAssignment.positionId,
+			toPositionId: input.toPositionId,
+			effectiveOn: input.effectiveOn,
+			reason: input.reason.trim(),
+			version: 1,
+			createdBy: input.actorUserId,
+			updatedBy: input.actorUserId,
+			createdAt: now,
+			updatedAt: now,
+		};
+
+		this.assignments.set(endedAssignment.id, endedAssignment);
+		this.assignments.set(newAssignment.id, newAssignment);
+		this.employmentMovements.set(movement.id, movement);
+		const idemKey = this.idempotencyMapKey(
+			input.organizationId,
+			input.idempotencyKey,
+		);
+		this.transferIdempotencyByKey.set(idemKey, {
+			employmentMovement: cloneEmploymentMovement(movement),
+			transferRequestFingerprint: fingerprint,
+		});
+
+		const audit = await ports.audit.record({
+			organizationId: movement.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_employment_movement",
+			entityId: movement.id,
+			action: "CREATE",
+			changes: [],
+		});
+		if (!audit.ok) {
+			this.assignments.set(endedAssignment.id, previousAssignment);
+			this.assignments.delete(newAssignment.id);
+			this.employmentMovements.delete(movement.id);
+			this.transferIdempotencyByKey.delete(idemKey);
+			return audit;
+		}
+
+		const outbox = await ports.outbox.append({
+			organizationId: movement.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			type: HUMAN_RESOURCES_EMPLOYEE_TRANSFERRED_EVENT,
+			payload: {
+				organizationId: movement.organizationId,
+				entityType: "hr_employee",
+				entityId: employment.employeeId,
+				actorId: input.actorUserId,
+				correlationId: meta.correlationId,
+			},
+		});
+		if (!outbox.ok) {
+			this.assignments.set(endedAssignment.id, previousAssignment);
+			this.assignments.delete(newAssignment.id);
+			this.employmentMovements.delete(movement.id);
+			this.transferIdempotencyByKey.delete(idemKey);
+			return outbox;
+		}
+
+		return ok(cloneEmploymentMovement(movement));
+	}
+
+	// --- Lifecycle: termination ---
+
+	async getTermination(input: {
+		organizationId: string;
+		terminationId: HumanResourcesTerminationId;
+	}): Promise<Result<Termination | null>> {
+		const row = this.terminations.get(input.terminationId);
+		if (!row || row.organizationId !== input.organizationId) {
+			return ok(null);
+		}
+		return ok(cloneTermination(row));
+	}
+
+	async findTerminationByIdempotencyKey(input: {
+		organizationId: string;
+		idempotencyKey: string;
+	}): Promise<Result<IdempotentTerminationRecord | null>> {
+		const record = this.terminationIdempotencyByKey.get(
+			this.idempotencyMapKey(input.organizationId, input.idempotencyKey),
+		);
+		if (record === undefined) {
+			return ok(null);
+		}
+		return ok({
+			termination: cloneTermination(record.termination),
+			terminationRequestFingerprint: record.terminationRequestFingerprint,
+		});
+	}
+
+	async finalizeTermination(
+		record: TerminationCreateRecord,
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<Termination>> {
+		const existingByKey = await this.findTerminationByIdempotencyKey({
+			organizationId: record.organizationId,
+			idempotencyKey: record.idempotencyKey,
+		});
+		if (!existingByKey.ok) {
+			return existingByKey;
+		}
+		if (existingByKey.data !== null) {
+			if (
+				existingByKey.data.terminationRequestFingerprint !==
+				record.terminationRequestFingerprint
+			) {
+				return conflict("Idempotency key reused with different payload");
+			}
+			return ok(cloneTermination(existingByKey.data.termination));
+		}
+
+		const employment = this.employments.get(record.employmentId);
+		if (!employment || employment.organizationId !== record.organizationId) {
+			return notFound(
+				"Employment not found",
+				HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+			);
+		}
+		const effectiveCheck = assertTerminationEffectiveDate({
+			effectiveOn: record.effectiveOn,
+			employmentStartsOn: employment.startsOn,
+		});
+		if (!effectiveCheck.ok) {
+			return effectiveCheck;
+		}
+
+		for (const existing of this.terminations.values()) {
+			if (
+				existing.organizationId === record.organizationId &&
+				existing.employmentId === record.employmentId &&
+				existing.status === "finalized"
+			) {
+				return conflict("Employment already has a finalized termination");
+			}
+		}
+
+		const idResult = parseHumanResourcesTerminationId(randomUUID());
+		if (!idResult.ok) {
+			return idResult;
+		}
+		const now = new Date();
+		const termination: Termination = {
+			id: idResult.data,
+			organizationId: record.organizationId,
+			employmentId: record.employmentId,
+			employeeId: employment.employeeId,
+			status: "finalized",
+			reasonCode: record.reasonCode,
+			reasonDetail: record.reasonDetail,
+			effectiveOn: record.effectiveOn,
+			finalizedAt: now,
+			version: 1,
+			createdBy: record.createdBy,
+			updatedBy: record.createdBy,
+			createdAt: now,
+			updatedAt: now,
+		};
+		const previousEmployment = { ...employment };
+		const updatedEmployment: Employment = {
+			...employment,
+			status: "terminated",
+			endsOn: record.effectiveOn,
+			version: employment.version + 1,
+			updatedBy: record.createdBy,
+			updatedAt: now,
+		};
+
+		this.terminations.set(termination.id, termination);
+		this.employments.set(employment.id, updatedEmployment);
+		const idemKey = this.idempotencyMapKey(
+			record.organizationId,
+			record.idempotencyKey,
+		);
+		this.terminationIdempotencyByKey.set(idemKey, {
+			termination: cloneTermination(termination),
+			terminationRequestFingerprint: record.terminationRequestFingerprint,
+		});
+
+		const audit = await ports.audit.record({
+			organizationId: termination.organizationId,
+			actorUserId: record.createdBy,
+			correlationId: meta.correlationId,
+			entity: "hr_termination",
+			entityId: termination.id,
+			action: "CREATE",
+			changes: [],
+		});
+		if (!audit.ok) {
+			this.terminations.delete(termination.id);
+			this.employments.set(employment.id, previousEmployment);
+			this.terminationIdempotencyByKey.delete(idemKey);
+			return audit;
+		}
+
+		const outbox = await ports.outbox.append({
+			organizationId: termination.organizationId,
+			actorUserId: record.createdBy,
+			correlationId: meta.correlationId,
+			type: HUMAN_RESOURCES_EMPLOYEE_TERMINATED_EVENT,
+			payload: {
+				organizationId: termination.organizationId,
+				entityType: "hr_employee",
+				entityId: employment.employeeId,
+				actorId: record.createdBy,
+				correlationId: meta.correlationId,
+			},
+		});
+		if (!outbox.ok) {
+			this.terminations.delete(termination.id);
+			this.employments.set(employment.id, previousEmployment);
+			this.terminationIdempotencyByKey.delete(idemKey);
+			return outbox;
+		}
+
+		return ok(cloneTermination(termination));
+	}
+
+	// --- Lifecycle: offboarding ---
+
+	async getOffboardingCase(input: {
+		organizationId: string;
+		offboardingCaseId: HumanResourcesOffboardingCaseId;
+	}): Promise<Result<OffboardingCase | null>> {
+		const row = this.offboardingCases.get(input.offboardingCaseId);
+		if (!row || row.organizationId !== input.organizationId) {
+			return ok(null);
+		}
+		return ok(cloneOffboardingCase(row));
+	}
+
+	async findOffboardingByStartIdempotencyKey(input: {
+		organizationId: string;
+		idempotencyKey: string;
+	}): Promise<Result<IdempotentOffboardingCaseRecord | null>> {
+		const record = this.offboardingIdempotencyByKey.get(
+			this.idempotencyMapKey(input.organizationId, input.idempotencyKey),
+		);
+		if (record === undefined) {
+			return ok(null);
+		}
+		return ok({
+			offboardingCase: cloneOffboardingCase(record.offboardingCase),
+			startRequestFingerprint: record.startRequestFingerprint,
+		});
+	}
+
+	async startOffboarding(
+		record: OffboardingCaseCreateRecord,
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<OffboardingCase>> {
+		const existingByKey = await this.findOffboardingByStartIdempotencyKey({
+			organizationId: record.organizationId,
+			idempotencyKey: record.idempotencyKey,
+		});
+		if (!existingByKey.ok) {
+			return existingByKey;
+		}
+		if (existingByKey.data !== null) {
+			if (
+				existingByKey.data.startRequestFingerprint !==
+				record.startRequestFingerprint
+			) {
+				return conflict("Idempotency key reused with different payload");
+			}
+			return ok(cloneOffboardingCase(existingByKey.data.offboardingCase));
+		}
+
+		const employment = this.employments.get(record.employmentId);
+		if (!employment || employment.organizationId !== record.organizationId) {
+			return notFound(
+				"Employment not found",
+				HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+			);
+		}
+
+		let hasFinalizedTermination = false;
+		if (record.terminationId !== null) {
+			const termination = this.terminations.get(record.terminationId);
+			if (
+				!termination ||
+				termination.organizationId !== record.organizationId ||
+				termination.employmentId !== record.employmentId
+			) {
+				return notFound(
+					"Termination not found",
+					HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+				);
+			}
+			if (termination.status !== "finalized") {
+				return invalidState("Linked termination must be finalized");
+			}
+			hasFinalizedTermination = true;
+		} else {
+			hasFinalizedTermination = Array.from(this.terminations.values()).some(
+				(row) =>
+					row.organizationId === record.organizationId &&
+					row.employmentId === record.employmentId &&
+					row.status === "finalized",
+			);
+		}
+
+		const eligibility = assertEmploymentForOffboarding({
+			employmentStatus: employment.status,
+			hasTermination: hasFinalizedTermination,
+		});
+		if (!eligibility.ok) {
+			return eligibility;
+		}
+
+		for (const existing of this.offboardingCases.values()) {
+			if (
+				existing.organizationId === record.organizationId &&
+				existing.employmentId === record.employmentId &&
+				existing.status === "in_progress"
+			) {
+				return conflict(
+					"Employment already has an in-progress offboarding case",
+				);
+			}
+		}
+
+		const caseIdResult = parseHumanResourcesOffboardingCaseId(randomUUID());
+		if (!caseIdResult.ok) {
+			return caseIdResult;
+		}
+		const clearanceIdResult = parseHumanResourcesClearanceId(randomUUID());
+		if (!clearanceIdResult.ok) {
+			return clearanceIdResult;
+		}
+
+		const now = new Date();
+		const offboardingCase: OffboardingCase = {
+			id: caseIdResult.data,
+			organizationId: record.organizationId,
+			employmentId: record.employmentId,
+			employeeId: employment.employeeId,
+			terminationId: record.terminationId,
+			status: "in_progress",
+			startedAt: now,
+			completedAt: null,
+			version: 1,
+			createdBy: record.createdBy,
+			updatedBy: record.createdBy,
+			createdAt: now,
+			updatedAt: now,
+		};
+
+		const seededTasks: OffboardingTask[] = [];
+		for (const seed of record.tasks) {
+			const taskIdResult = parseHumanResourcesOffboardingTaskId(randomUUID());
+			if (!taskIdResult.ok) {
+				return taskIdResult;
+			}
+			seededTasks.push({
+				id: taskIdResult.data,
+				organizationId: record.organizationId,
+				caseId: offboardingCase.id,
+				code: seed.code.trim(),
+				title: seed.title.trim(),
+				mandatory: seed.mandatory,
+				status: "pending",
+				completedAt: null,
+				version: 1,
+				createdBy: record.createdBy,
+				updatedBy: record.createdBy,
+				createdAt: now,
+				updatedAt: now,
+			});
+		}
+
+		const clearance: Clearance = {
+			id: clearanceIdResult.data,
+			organizationId: record.organizationId,
+			offboardingCaseId: offboardingCase.id,
+			employmentId: record.employmentId,
+			status: "pending",
+			clearedOn: null,
+			version: 1,
+			createdBy: record.createdBy,
+			updatedBy: record.createdBy,
+			createdAt: now,
+			updatedAt: now,
+		};
+
+		this.offboardingCases.set(offboardingCase.id, offboardingCase);
+		for (const task of seededTasks) {
+			this.offboardingTasks.set(task.id, task);
+		}
+		this.clearances.set(clearance.id, clearance);
+		const idemKey = this.idempotencyMapKey(
+			record.organizationId,
+			record.idempotencyKey,
+		);
+		this.offboardingIdempotencyByKey.set(idemKey, {
+			offboardingCase: cloneOffboardingCase(offboardingCase),
+			startRequestFingerprint: record.startRequestFingerprint,
+		});
+
+		const audit = await ports.audit.record({
+			organizationId: offboardingCase.organizationId,
+			actorUserId: record.createdBy,
+			correlationId: meta.correlationId,
+			entity: "hr_offboarding_case",
+			entityId: offboardingCase.id,
+			action: "CREATE",
+			changes: [],
+		});
+		if (!audit.ok) {
+			this.offboardingCases.delete(offboardingCase.id);
+			for (const task of seededTasks) {
+				this.offboardingTasks.delete(task.id);
+			}
+			this.clearances.delete(clearance.id);
+			this.offboardingIdempotencyByKey.delete(idemKey);
+			return audit;
+		}
+
+		const outbox = await ports.outbox.append({
+			organizationId: offboardingCase.organizationId,
+			actorUserId: record.createdBy,
+			correlationId: meta.correlationId,
+			type: HUMAN_RESOURCES_OFFBOARDING_STARTED_EVENT,
+			payload: {
+				organizationId: offboardingCase.organizationId,
+				entityType: "hr_offboarding_case",
+				entityId: offboardingCase.id,
+				actorId: record.createdBy,
+				correlationId: meta.correlationId,
+			},
+		});
+		if (!outbox.ok) {
+			this.offboardingCases.delete(offboardingCase.id);
+			for (const task of seededTasks) {
+				this.offboardingTasks.delete(task.id);
+			}
+			this.clearances.delete(clearance.id);
+			this.offboardingIdempotencyByKey.delete(idemKey);
+			return outbox;
+		}
+
+		return ok(cloneOffboardingCase(offboardingCase));
+	}
+
+	async completeOffboardingTask(
+		input: {
+			organizationId: string;
+			taskId: HumanResourcesOffboardingTaskId;
+			newStatus: LifecycleTaskStatus;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<OffboardingCase>> {
+		const task = this.offboardingTasks.get(input.taskId);
+		if (!task || task.organizationId !== input.organizationId) {
+			return notFound("Offboarding task not found");
+		}
+		const offboardingCase = this.offboardingCases.get(task.caseId);
+		if (
+			!offboardingCase ||
+			offboardingCase.organizationId !== input.organizationId
+		) {
+			return notFound("Offboarding case not found");
+		}
+		const caseActive = assertOffboardingCaseInProgress(offboardingCase.status);
+		if (!caseActive.ok) {
+			return caseActive;
+		}
+		const versionCheck = assertExpectedVersion(
+			task.version,
+			input.expectedVersion,
+		);
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
+		const transition = assertLifecycleTaskStatusTransition(
+			task.status,
+			input.newStatus,
+		);
+		if (!transition.ok) {
+			return transition;
+		}
+
+		const now = new Date();
+		const previousTask = { ...task };
+		const updatedTask: OffboardingTask = {
+			...task,
+			status: input.newStatus,
+			completedAt: now,
+			version: task.version + 1,
+			updatedBy: input.actorUserId,
+			updatedAt: now,
+		};
+		this.offboardingTasks.set(task.id, updatedTask);
+
+		const audit = await ports.audit.record({
+			organizationId: updatedTask.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_offboarding_task",
+			entityId: updatedTask.id,
+			action: "UPDATE",
+			changes: [],
+		});
+		if (!audit.ok) {
+			this.offboardingTasks.set(task.id, previousTask);
+			return audit;
+		}
+
+		return ok(cloneOffboardingCase(offboardingCase));
+	}
+
+	async recordExitInterview(
+		input: {
+			organizationId: string;
+			offboardingCaseId: HumanResourcesOffboardingCaseId;
+			conductedOn: string;
+			notes: string | null;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<OffboardingCase>> {
+		const offboardingCase = this.offboardingCases.get(input.offboardingCaseId);
+		if (
+			!offboardingCase ||
+			offboardingCase.organizationId !== input.organizationId
+		) {
+			return notFound("Offboarding case not found");
+		}
+		const caseActive = assertOffboardingCaseInProgress(offboardingCase.status);
+		if (!caseActive.ok) {
+			return caseActive;
+		}
+		for (const existing of this.exitInterviews.values()) {
+			if (
+				existing.organizationId === input.organizationId &&
+				existing.offboardingCaseId === offboardingCase.id
+			) {
+				return conflict("Exit interview already recorded for this case");
+			}
+		}
+		if (input.notes === null || input.notes.trim().length === 0) {
+			return invalidInput("Exit interview notes are required");
+		}
+
+		const idResult = parseHumanResourcesExitInterviewId(randomUUID());
+		if (!idResult.ok) {
+			return idResult;
+		}
+		const now = new Date();
+		const interview: ExitInterview = {
+			id: idResult.data,
+			organizationId: input.organizationId,
+			offboardingCaseId: offboardingCase.id,
+			employmentId: offboardingCase.employmentId,
+			conductedOn: input.conductedOn,
+			notes: input.notes.trim(),
+			version: 1,
+			createdBy: input.actorUserId,
+			updatedBy: input.actorUserId,
+			createdAt: now,
+			updatedAt: now,
+		};
+		this.exitInterviews.set(interview.id, interview);
+
+		const audit = await ports.audit.record({
+			organizationId: interview.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_exit_interview",
+			entityId: interview.id,
+			action: "CREATE",
+			changes: [],
+		});
+		if (!audit.ok) {
+			this.exitInterviews.delete(interview.id);
+			return audit;
+		}
+
+		return ok(cloneOffboardingCase(offboardingCase));
+	}
+
+	async recordClearance(
+		input: {
+			organizationId: string;
+			clearanceId: HumanResourcesClearanceId;
+			clearedOn: string;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<OffboardingCase>> {
+		const clearance = this.clearances.get(input.clearanceId);
+		if (!clearance || clearance.organizationId !== input.organizationId) {
+			return notFound("Clearance not found");
+		}
+		const offboardingCase = this.offboardingCases.get(
+			clearance.offboardingCaseId,
+		);
+		if (
+			!offboardingCase ||
+			offboardingCase.organizationId !== input.organizationId
+		) {
+			return notFound("Offboarding case not found");
+		}
+		const caseActive = assertOffboardingCaseInProgress(offboardingCase.status);
+		if (!caseActive.ok) {
+			return caseActive;
+		}
+		const versionCheck = assertExpectedVersion(
+			clearance.version,
+			input.expectedVersion,
+		);
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
+		const transition = assertClearanceStatusTransition(
+			clearance.status,
+			"cleared",
+		);
+		if (!transition.ok) {
+			return transition;
+		}
+
+		const now = new Date();
+		const previous = { ...clearance };
+		const updated: Clearance = {
+			...clearance,
+			status: "cleared",
+			clearedOn: input.clearedOn,
+			version: clearance.version + 1,
+			updatedBy: input.actorUserId,
+			updatedAt: now,
+		};
+		this.clearances.set(updated.id, updated);
+
+		const audit = await ports.audit.record({
+			organizationId: updated.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_clearance",
+			entityId: updated.id,
+			action: "UPDATE",
+			changes: [],
+		});
+		if (!audit.ok) {
+			this.clearances.set(updated.id, previous);
+			return audit;
+		}
+
+		return ok(cloneOffboardingCase(offboardingCase));
+	}
+
+	async completeOffboarding(
+		input: {
+			organizationId: string;
+			offboardingCaseId: HumanResourcesOffboardingCaseId;
+			expectedVersion: number;
+			actorUserId: string;
+		},
+		ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<OffboardingCase>> {
+		const offboardingCase = this.offboardingCases.get(input.offboardingCaseId);
+		if (
+			!offboardingCase ||
+			offboardingCase.organizationId !== input.organizationId
+		) {
+			return notFound("Offboarding case not found");
+		}
+		const caseActive = assertOffboardingCaseInProgress(offboardingCase.status);
+		if (!caseActive.ok) {
+			return caseActive;
+		}
+		const versionCheck = assertExpectedVersion(
+			offboardingCase.version,
+			input.expectedVersion,
+		);
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
+
+		const tasks = Array.from(this.offboardingTasks.values()).filter(
+			(task) =>
+				task.organizationId === input.organizationId &&
+				task.caseId === offboardingCase.id,
+		);
+		const mandatoryTasksComplete = tasks.every(
+			(task) =>
+				!task.mandatory ||
+				task.status === "completed" ||
+				task.status === "waived",
+		);
+		const hasExitInterview = Array.from(this.exitInterviews.values()).some(
+			(row) =>
+				row.organizationId === input.organizationId &&
+				row.offboardingCaseId === offboardingCase.id,
+		);
+		const clearance =
+			Array.from(this.clearances.values()).find(
+				(row) =>
+					row.organizationId === input.organizationId &&
+					row.offboardingCaseId === offboardingCase.id,
+			) ?? null;
+		const ready = assertOffboardingReadyToComplete({
+			mandatoryTasksComplete,
+			hasExitInterview,
+			clearanceStatus: clearance?.status ?? null,
+		});
+		if (!ready.ok) {
+			return ready;
+		}
+
+		const now = new Date();
+		const previous = { ...offboardingCase };
+		const updated: OffboardingCase = {
+			...offboardingCase,
+			status: "completed",
+			completedAt: now,
+			version: offboardingCase.version + 1,
+			updatedBy: input.actorUserId,
+			updatedAt: now,
+		};
+		this.offboardingCases.set(updated.id, updated);
+
+		const audit = await ports.audit.record({
+			organizationId: updated.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			entity: "hr_offboarding_case",
+			entityId: updated.id,
+			action: "UPDATE",
+			changes: [],
+		});
+		if (!audit.ok) {
+			this.offboardingCases.set(updated.id, previous);
+			return audit;
+		}
+
+		const outbox = await ports.outbox.append({
+			organizationId: updated.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			type: HUMAN_RESOURCES_OFFBOARDING_COMPLETED_EVENT,
+			payload: {
+				organizationId: updated.organizationId,
+				entityType: "hr_offboarding_case",
+				entityId: updated.id,
+				actorId: input.actorUserId,
+				correlationId: meta.correlationId,
+			},
+		});
+		if (!outbox.ok) {
+			this.offboardingCases.set(updated.id, previous);
+			return outbox;
+		}
+
+		return ok(cloneOffboardingCase(updated));
+	}
+
+	async listOnboardingTasks(input: {
+		organizationId: string;
+		onboardingCaseId: HumanResourcesOnboardingCaseId;
+	}): Promise<Result<OnboardingTask[]>> {
+		const onboardingCase = this.onboardingCases.get(input.onboardingCaseId);
+		if (
+			!onboardingCase ||
+			onboardingCase.organizationId !== input.organizationId
+		) {
+			return notFound("Onboarding case not found");
+		}
+		const tasks = Array.from(this.onboardingTasks.values())
+			.filter(
+				(task) =>
+					task.organizationId === input.organizationId &&
+					task.caseId === input.onboardingCaseId,
+			)
+			.map((task) => ({ ...task }));
+		tasks.sort((a, b) => a.code.localeCompare(b.code));
+		return ok(tasks);
+	}
+
+	async listOffboardingTasks(input: {
+		organizationId: string;
+		offboardingCaseId: HumanResourcesOffboardingCaseId;
+	}): Promise<Result<OffboardingTask[]>> {
+		const offboardingCase = this.offboardingCases.get(input.offboardingCaseId);
+		if (
+			!offboardingCase ||
+			offboardingCase.organizationId !== input.organizationId
+		) {
+			return notFound("Offboarding case not found");
+		}
+		const tasks = Array.from(this.offboardingTasks.values())
+			.filter(
+				(task) =>
+					task.organizationId === input.organizationId &&
+					task.caseId === input.offboardingCaseId,
+			)
+			.map((task) => ({ ...task }));
+		tasks.sort((a, b) => a.code.localeCompare(b.code));
+		return ok(tasks);
+	}
+
+	async getClearanceByOffboardingCase(input: {
+		organizationId: string;
+		offboardingCaseId: HumanResourcesOffboardingCaseId;
+	}): Promise<Result<Clearance | null>> {
+		const offboardingCase = this.offboardingCases.get(input.offboardingCaseId);
+		if (
+			!offboardingCase ||
+			offboardingCase.organizationId !== input.organizationId
+		) {
+			return notFound("Offboarding case not found");
+		}
+		const clearance =
+			Array.from(this.clearances.values()).find(
+				(row) =>
+					row.organizationId === input.organizationId &&
+					row.offboardingCaseId === input.offboardingCaseId,
+			) ?? null;
+		return ok(clearance === null ? null : { ...clearance });
 	}
 }
 

@@ -220,6 +220,48 @@ commands:
   - id: human-resources.offer.withdraw
     moduleId: human-resources
     permission: human-resources.offer.approve
+  - id: human-resources.onboarding.start
+    moduleId: human-resources
+    permission: human-resources.onboarding.manage
+  - id: human-resources.onboarding.complete-task
+    moduleId: human-resources
+    permission: human-resources.onboarding.manage
+  - id: human-resources.onboarding.complete
+    moduleId: human-resources
+    permission: human-resources.onboarding.manage
+  - id: human-resources.probation.open
+    moduleId: human-resources
+    permission: human-resources.employment.manage
+  - id: human-resources.probation.extend
+    moduleId: human-resources
+    permission: human-resources.employment.manage
+  - id: human-resources.probation.record-outcome
+    moduleId: human-resources
+    permission: human-resources.employment.manage
+  - id: human-resources.employment.confirm
+    moduleId: human-resources
+    permission: human-resources.employment.manage
+  - id: human-resources.assignment.transfer
+    moduleId: human-resources
+    permission: human-resources.employment.manage
+  - id: human-resources.termination.finalize
+    moduleId: human-resources
+    permission: human-resources.employment.manage
+  - id: human-resources.offboarding.start
+    moduleId: human-resources
+    permission: human-resources.offboarding.manage
+  - id: human-resources.offboarding.complete-task
+    moduleId: human-resources
+    permission: human-resources.offboarding.manage
+  - id: human-resources.offboarding.record-exit-interview
+    moduleId: human-resources
+    permission: human-resources.offboarding.manage
+  - id: human-resources.offboarding.record-clearance
+    moduleId: human-resources
+    permission: human-resources.offboarding.manage
+  - id: human-resources.offboarding.complete
+    moduleId: human-resources
+    permission: human-resources.offboarding.manage
   - id: inventory.movement.create
     moduleId: inventory
     permission: inventory.movement.create
